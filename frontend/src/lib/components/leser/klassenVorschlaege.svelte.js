@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 /**
  * Die Klassen der Schule für jede Klassenauswahl — Anlegen-Dialog, Leserakte,
@@ -26,7 +26,7 @@ export function erzeugeKlassenVorschlaege() {
 	async function lade() {
 		try {
 			const res = await apiFetch('/api/klassen');
-			if (!res.ok) throw new Error(await extractApiError(res));
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			const daten = await res.json();
 			liste = Array.isArray(daten) ? daten : [];
 			ladefehler = false;

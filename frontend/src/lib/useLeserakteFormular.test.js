@@ -48,7 +48,7 @@ describe('useLeserakteFormular.save', () => {
 			onSave: () => {},
 			showSnackbar: () => {}
 		});
-		hook.syncData();
+		hook.uebernimmLeser();
 		return hook;
 	}
 
@@ -57,9 +57,9 @@ describe('useLeserakteFormular.save', () => {
 		const hook = baueFormular();
 
 		for (const feld of ['strasse', 'hausnummer', 'plz', 'ort', 'eltern_email']) {
-			hook.formData[feld] = '';
+			hook.eingaben[feld] = '';
 		}
-		await hook.save();
+		await hook.speichere();
 
 		const [, payload] = patchMock.mock.calls[0];
 		for (const feld of ['strasse', 'hausnummer', 'plz', 'ort', 'eltern_email']) {
@@ -79,8 +79,8 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
-			hook.formData.klasse = '10a';
-			await hook.save();
+			hook.eingaben.klasse = '10a';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload.klasse).toBe('10a');
@@ -94,9 +94,9 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
-			hook.formData.klasse = '10a';
-			hook.formData.abgaenger_jahr = '2033';
-			await hook.save();
+			hook.eingaben.klasse = '10a';
+			hook.eingaben.abgaenger_jahr = '2033';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload.abgaenger_jahr, 'wer beides setzt, meint beides').toBe(2033);
@@ -106,8 +106,8 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
-			hook.formData.vorname = 'Mira';
-			await hook.save();
+			hook.eingaben.vorname = 'Mira';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ vorname: 'Mira' });
@@ -117,8 +117,8 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
-			hook.formData.abgaenger_jahr = '2032';
-			await hook.save();
+			hook.eingaben.abgaenger_jahr = '2032';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ abgaenger_jahr: 2032 });
@@ -129,9 +129,9 @@ describe('useLeserakteFormular.save', () => {
 		patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 		const hook = baueFormular();
 
-		hook.formData.vorname = '';
-		hook.formData.klasse = '';
-		await hook.save();
+		hook.eingaben.vorname = '';
+		hook.eingaben.klasse = '';
+		await hook.speichere();
 
 		const [, payload] = patchMock.mock.calls[0];
 		expect(payload.vorname).toBe('');
@@ -174,7 +174,7 @@ describe('useLeserakteFormular.save', () => {
 				onSave: () => {},
 				showSnackbar: () => {}
 			});
-			hook.syncData();
+			hook.uebernimmLeser();
 			return hook;
 		}
 
@@ -182,11 +182,11 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
 
-			hook.formData.strasse = 'Kleegartenstr.';
-			hook.formData.hausnummer = '8';
-			hook.formData.plz = '61381';
-			hook.formData.ort = 'Friedrichsdorf';
-			await hook.save();
+			hook.eingaben.strasse = 'Kleegartenstr.';
+			hook.eingaben.hausnummer = '8';
+			hook.eingaben.plz = '61381';
+			hook.eingaben.ort = 'Friedrichsdorf';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			for (const feld of ['klasse', 'abgaenger_jahr', 'lusd_id']) {
@@ -209,8 +209,8 @@ describe('useLeserakteFormular.save', () => {
 		it('schickt eine beim Kollegen eingetragene Eltern-Adresse mit', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
-			hook.formData.eltern_email = 'privat@example.org';
-			await hook.save();
+			hook.eingaben.eltern_email = 'privat@example.org';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ eltern_email: 'privat@example.org' });
@@ -232,9 +232,9 @@ describe('useLeserakteFormular.save', () => {
 				onSave: () => {},
 				showSnackbar: () => {}
 			});
-			hook.syncData();
-			hook.formData.barcode_id = '';
-			await hook.save();
+			hook.uebernimmLeser();
+			hook.eingaben.barcode_id = '';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ barcode_id: '' });
@@ -246,8 +246,8 @@ describe('useLeserakteFormular.save', () => {
 		it('schickt die Schul-Adresse beim Kollegen mit', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
-			hook.formData.email = 'neu.kollegin@schule.example';
-			await hook.save();
+			hook.eingaben.email = 'neu.kollegin@schule.example';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload.email).toBe('neu.kollegin@schule.example');
@@ -256,8 +256,8 @@ describe('useLeserakteFormular.save', () => {
 		it('schickt eine eingetragene Ausweisnummer sehr wohl mit', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
-			hook.formData.barcode_id = 'L-0007';
-			await hook.save();
+			hook.eingaben.barcode_id = 'L-0007';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload.barcode_id).toBe('L-0007');
@@ -266,12 +266,12 @@ describe('useLeserakteFormular.save', () => {
 		it('schickt beim Schüler die geänderten Schülerfelder mit, die Schul-Adresse nie', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
-			hook.formData.klasse = '7b';
-			hook.formData.eltern_email = 'neu@example.org';
+			hook.eingaben.klasse = '7b';
+			hook.eingaben.eltern_email = 'neu@example.org';
 			// Ein Schüler hat kein Konto: Schon der leere String wäre eine Aussage, die der
 			// Server mit 400 abweist. Auch eine getippte Adresse geht nicht mit.
-			hook.formData.email = 'kind@schule.example';
-			await hook.save();
+			hook.eingaben.email = 'kind@schule.example';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ klasse: '7b', eltern_email: 'neu@example.org' });
@@ -286,8 +286,8 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
-			hook.formData.eltern_email = 'neu@example.org';
-			await hook.save();
+			hook.eingaben.eltern_email = 'neu@example.org';
+			await hook.speichere();
 
 			expect(patchMock).toHaveBeenCalledWith('/api/schueler/abc', {
 				eltern_email: 'neu@example.org'
@@ -298,9 +298,9 @@ describe('useLeserakteFormular.save', () => {
 			const onSave = vi.fn();
 			const showSnackbar = vi.fn();
 			const hook = useLeserakteFormular({ getStudent: () => schueler, onSave, showSnackbar });
-			hook.syncData();
+			hook.uebernimmLeser();
 
-			await hook.save();
+			await hook.speichere();
 
 			expect(patchMock).not.toHaveBeenCalled();
 			expect(onSave).toHaveBeenCalledTimes(1);
@@ -311,10 +311,10 @@ describe('useLeserakteFormular.save', () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
-			hook.formData.ort = 'Offenbach';
-			hook.formData.ort = 'Frankfurt';
-			hook.formData.plz = '63065';
-			await hook.save();
+			hook.eingaben.ort = 'Offenbach';
+			hook.eingaben.ort = 'Frankfurt';
+			hook.eingaben.plz = '63065';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ plz: '63065' });
@@ -328,13 +328,13 @@ describe('useLeserakteFormular.save', () => {
 				onSave: () => {},
 				showSnackbar: () => {}
 			});
-			hook.syncData();
+			hook.uebernimmLeser();
 			// Die Akte lädt neu, die Versetzung hat die Klasse inzwischen geändert.
 			leser = { ...schueler, klasse: '8a', abgaenger_jahr: 2031 };
-			hook.syncData();
+			hook.uebernimmLeser();
 
-			hook.formData.strasse = 'Nebenstr';
-			await hook.save();
+			hook.eingaben.strasse = 'Nebenstr';
+			await hook.speichere();
 
 			const [, payload] = patchMock.mock.calls[0];
 			expect(payload).toEqual({ strasse: 'Nebenstr' });
@@ -345,8 +345,8 @@ describe('useLeserakteFormular.save', () => {
 		patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 		const hook = baueFormular();
 
-		hook.formData.geburtsdatum = '';
-		await hook.save();
+		hook.eingaben.geburtsdatum = '';
+		await hook.speichere();
 
 		const [, payload] = patchMock.mock.calls[0];
 		expect(payload.geburtsdatum).toBeNull();

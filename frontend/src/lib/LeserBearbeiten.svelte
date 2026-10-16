@@ -41,11 +41,11 @@
 	}
 
 	// Getter statt Werte: So liest der Hook bei jedem Zugriff das aktuelle Prop. Direkt
-	// übergeben wären es Schnappschüsse vom Aufbau der Komponente — `save()` hätte das
+	// übergeben wären es Schnappschüsse vom Aufbau der Komponente — `speichere()` hätte das
 	// PATCH dann an den zuvor geöffneten Schüler geschickt. Siehe useLeserakteFormular.
 	//
-	// Das Hook-Objekt wird GEHALTEN und nicht ganz auseinandergenommen: `formData` ist ein
-	// Proxy und überlebt die Destrukturierung, ein einfacher Wert nicht. `saving` und
+	// Das Hook-Objekt wird GEHALTEN und nicht ganz auseinandergenommen: `eingaben` ist ein
+	// Proxy und überlebt die Destrukturierung, ein einfacher Wert nicht. `speichert` und
 	// `kontoVorhanden` sind Getter auf $state — einmal herausdestrukturiert, stünde für
 	// immer der Wert vom Aufbau der Komponente da (der Speichern-Knopf hätte nie
 	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `formular.`, dort wo sie
@@ -55,12 +55,12 @@
 		onSave: () => onSave(),
 		showSnackbar
 	});
-	const { formData, syncData, save } = formular;
+	const { eingaben, uebernimmLeser, speichere } = formular;
 
-	// Der Effekt verfolgt `student` über den Getter in syncData — wechselt das Prop,
+	// Der Effekt verfolgt `student` über den Getter in uebernimmLeser — wechselt das Prop,
 	// wird das Formular neu befüllt statt die alten Werte zu behalten.
 	$effect(() => {
-		syncData();
+		uebernimmLeser();
 	});
 </script>
 
@@ -98,8 +98,8 @@
 		</div>
 
 		<div class="flex items-center gap-3 shrink-0">
-			<Button size="lg" onclick={save} disabled={formular.saving} class="px-6">
-				{#if formular.saving}
+			<Button size="lg" onclick={speichere} disabled={formular.speichert} class="px-6">
+				{#if formular.speichert}
 					<Ladekreis size="sm" farbe="aktuell" />
 					Speichert…
 				{:else}
@@ -113,7 +113,7 @@
 	<!-- ── Scrollable Body ────────────────────────────────────────────────── -->
 	<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
 		<LeserakteFelder
-			{formData}
+			{eingaben}
 			klassen={klassenListe.liste}
 			klassenFehler={klassenListe.ladefehler}
 			lusdVerknuepft={!!student?.lusd_id}

@@ -19,7 +19,7 @@ const GESCANNT = '9783060130764';
 
 vi.mock('$lib/components/scanner/barcodeErkennung.js', async (importOriginal) => ({
 	...(await importOriginal()),
-	createBarcodeDetector: async () => ({
+	erzeugeBarcodeErkenner: async () => ({
 		name: 'test',
 		detector: { detect: async () => [{ rawValue: '9783060130764' }] }
 	})

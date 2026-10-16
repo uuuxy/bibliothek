@@ -1,5 +1,5 @@
 <script>
-	import { showToast } from '../../inventur/lib/store.svelte.js';
+	import { melde } from '../../inventur/lib/store.svelte.js';
 	import { apiClient } from '../apiFetch.js';
 	import Select from './ui/Select.svelte';
 	import Feld from './ui/Feld.svelte';
@@ -89,7 +89,7 @@
 					ex.ersatzwert_bekannt = antwort.ersatzwert_bekannt === true;
 				}
 				onDone();
-				showToast('Status erfolgreich gespeichert', 'success');
+				melde('Status erfolgreich gespeichert', 'success');
 			} else {
 				const fehlerAntwort = await res.json().catch(() => ({}));
 				fehler = fehlerAntwort.error || 'Fehler beim Speichern';

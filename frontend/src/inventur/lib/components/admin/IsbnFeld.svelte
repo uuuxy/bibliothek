@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import StrichcodeScannerOverlay from '$lib/components/scanner/StrichcodeScannerOverlay.svelte';
-	import { showToast } from '$lib/store.svelte.js';
+	import { melde } from '$lib/store.svelte.js';
 	import { Camera, RefreshCw } from '@lucide/svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	/** abfrage: die ISBN-Abfrage der Maske (erzeugeIsbnAbfrage); die Maske wartet vor dem
@@ -34,7 +34,7 @@
 
 	function aufKnopf() {
 		if (!formular.isbn) {
-			showToast('Bitte zuerst eine ISBN eingeben.', 'error');
+			melde('Bitte zuerst eine ISBN eingeben.', 'error');
 			return;
 		}
 		return abfrage.nachschlagen(true);

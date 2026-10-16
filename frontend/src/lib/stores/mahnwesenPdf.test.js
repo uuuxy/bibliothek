@@ -54,7 +54,7 @@ afterEach(() => {
 
 const heute = () => new Date().toISOString().slice(0, 10);
 
-describe('useMahnwesenPdf.printSelectedMahnungen', () => {
+describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 	const schuelerListe = [
 		{
 			schueler_id: 's1',
@@ -66,43 +66,43 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 
 	it('tut nichts bei leerer Auswahl', async () => {
 		const store = useMahnwesenPdf();
-		await store.printSelectedMahnungen(new Set(), () => schuelerListe, vi.fn());
+		await store.druckeGewaehlteMahnungen(new Set(), () => schuelerListe, vi.fn());
 		expect(apiFetch).not.toHaveBeenCalled();
 	});
 
 	it('sammelt die ausleih_ids der Auswahl, lädt das PDF und räumt auf', async () => {
 		apiFetchMock.mockResolvedValueOnce(mockPdfResponse());
 		const store = useMahnwesenPdf();
-		const selectedIds = new Set(['s1', 's2']);
+		const gewaehlteKennungen = new Set(['s1', 's2']);
 		const refreshData = vi.fn(async () => {});
 
-		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, refreshData);
+		await store.druckeGewaehlteMahnungen(gewaehlteKennungen, () => schuelerListe, refreshData);
 
 		expect(apiFetch).toHaveBeenCalledWith('/api/admin/mahnungen/bulk-print', {
 			method: 'POST',
 			body: JSON.stringify({ ausleih_ids: ['a1', 'a2', 'a3'] })
 		});
 		expect(clicks).toEqual([{ href: 'blob:mock-url', download: `mahnbriefe_${heute()}.pdf` }]);
-		expect(selectedIds.size).toBe(0);
+		expect(gewaehlteKennungen.size).toBe(0);
 		expect(refreshData).toHaveBeenCalledTimes(1);
-		expect(store.pdfLoading).toBe(false);
+		expect(store.drucktPdf).toBe(false);
 	});
 
 	it('meldet eine Auswahl ohne überfällige Medien, ohne den Server zu rufen', async () => {
 		const store = useMahnwesenPdf();
-		const selectedIds = new Set(['s3']);
+		const gewaehlteKennungen = new Set(['s3']);
 
-		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, vi.fn());
+		await store.druckeGewaehlteMahnungen(gewaehlteKennungen, () => schuelerListe, vi.fn());
 
 		expect(apiFetch).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Keine überfälligen Medien für die ausgewählten Schüler gefunden.',
 			'info'
 		);
-		expect(store.pdfLoading).toBe(false);
+		expect(store.drucktPdf).toBe(false);
 	});
 
-	it('setzt pdfLoading während des Ladens und danach zurück', async () => {
+	it('setzt drucktPdf während des Ladens und danach zurück', async () => {
 		/** @type {(value: any) => void} */
 		let resolveFetch = () => {};
 		apiFetchMock.mockImplementationOnce(
@@ -113,26 +113,26 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 		);
 		const store = useMahnwesenPdf();
 
-		const pending = store.printSelectedMahnungen(new Set(['s2']), () => schuelerListe, vi.fn());
-		expect(store.pdfLoading).toBe(true);
+		const pending = store.druckeGewaehlteMahnungen(new Set(['s2']), () => schuelerListe, vi.fn());
+		expect(store.drucktPdf).toBe(true);
 
 		resolveFetch(mockPdfResponse());
 		await pending;
-		expect(store.pdfLoading).toBe(false);
+		expect(store.drucktPdf).toBe(false);
 	});
 
 	it('behält Auswahl und Daten bei einem Serverfehler', async () => {
 		apiFetchMock.mockResolvedValueOnce(mockErrorResponse('Drucker brennt'));
 		const store = useMahnwesenPdf();
-		const selectedIds = new Set(['s2']);
+		const gewaehlteKennungen = new Set(['s2']);
 		const refreshData = vi.fn();
 
-		await store.printSelectedMahnungen(selectedIds, () => schuelerListe, refreshData);
+		await store.druckeGewaehlteMahnungen(gewaehlteKennungen, () => schuelerListe, refreshData);
 
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 		expect(String(vi.mocked(snackbars.addToast).mock.calls[0][0])).toContain('Drucker brennt');
-		expect(selectedIds.size).toBe(1); // Auswahl bleibt für einen zweiten Versuch
+		expect(gewaehlteKennungen.size).toBe(1); // Auswahl bleibt für einen zweiten Versuch
 		expect(refreshData).not.toHaveBeenCalled();
-		expect(store.pdfLoading).toBe(false);
+		expect(store.drucktPdf).toBe(false);
 	});
 });

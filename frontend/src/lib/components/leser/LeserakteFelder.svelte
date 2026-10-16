@@ -43,14 +43,14 @@
 	import { KLASSEN_LADEFEHLER } from './klassenVorschlaege.svelte.js';
 
 	/**
-	 * `formData` ist der $state-Proxy aus useLeserakteFormular und wird hier direkt an den
+	 * `eingaben` ist der $state-Proxy aus useLeserakteFormular und wird hier direkt an den
 	 * Feldern gebunden — kein $bindable: Gebunden werden die EIGENSCHAFTEN des Objekts,
 	 * das Objekt selbst wird nie ersetzt. Ein $bindable verlangte vom Aufrufer ein
-	 * `bind:`, und dort ist formData ein `const` aus der Hook-Destrukturierung.
-	 * @type {{ formData: any, klassen?: string[], klassenFehler?: boolean, lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
+	 * `bind:`, und dort ist eingaben ein `const` aus der Hook-Destrukturierung.
+	 * @type {{ eingaben: any, klassen?: string[], klassenFehler?: boolean, lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
 	 */
 	let {
-		formData,
+		eingaben,
 		klassen = [],
 		klassenFehler = false,
 		lusdVerknuepft = false,
@@ -61,13 +61,13 @@
 	// Klasse an, die es an der Schule nicht gibt. Die eigene Klasse steht immer mit in der
 	// Liste — auch wenn sie dort fehlt (etwa bei einem Leser im Papierkorb).
 	const klassenOptionen = $derived(
-		[...new Set([...klassen, formData.klasse].filter(Boolean))].map((k) => ({
+		[...new Set([...klassen, eingaben.klasse].filter(Boolean))].map((k) => ({
 			value: k,
 			label: k
 		}))
 	);
 
-	const kollege = $derived(istKollegium({ art: formData.art }));
+	const kollege = $derived(istKollegium({ art: eingaben.art }));
 
 	// Die Grenze verläuft in BEIDE Richtungen: Wer Schüler ist, kann nur Schüler bleiben;
 	// wer keiner ist, wird keiner. Gesperrt ist deshalb immer die jeweils andere Seite.
@@ -92,7 +92,7 @@
 	<div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 		<LeserArtWahl
 			id="art"
-			bind:art={formData.art}
+			bind:art={eingaben.art}
 			gesperrt={gesperrteArten}
 			hint={kollege
 				? 'Innerhalb des Kollegiums wechselbar. Ein Schüler kommt aus der LUSD — dorthin führt kein Weg.'
@@ -101,13 +101,13 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-		<Feld id="vorname" label="Vorname *" bind:value={formData.vorname} feld="font-semibold" />
-		<Feld id="nachname" label="Nachname *" bind:value={formData.nachname} feld="font-semibold" />
+		<Feld id="vorname" label="Vorname *" bind:value={eingaben.vorname} feld="font-semibold" />
+		<Feld id="nachname" label="Nachname *" bind:value={eingaben.nachname} feld="font-semibold" />
 		<Feld
 			id="geburtsdatum"
 			label="Geburtsdatum{schuelerPflicht}"
 			type="date"
-			bind:value={formData.geburtsdatum}
+			bind:value={eingaben.geburtsdatum}
 			hint={kollege ? undefined : 'Der Schlüssel, an dem der LUSD-Import wiedererkennt.'}
 		/>
 	</div>
@@ -125,7 +125,7 @@
 			>
 			<Select
 				id="klasse"
-				bind:value={formData.klasse}
+				bind:value={eingaben.klasse}
 				options={klassenOptionen}
 				placeholder="Klasse wählen"
 				disabled={kollege}
@@ -141,7 +141,7 @@
 			id="abgangsjahr"
 			label="Abgangsjahr"
 			type="number"
-			bind:value={formData.abgaenger_jahr}
+			bind:value={eingaben.abgaenger_jahr}
 			feld="font-semibold"
 			disabled={kollege}
 			hint={kollege ? 'Gehört zur Klasse.' : undefined}
@@ -152,7 +152,7 @@
 		<Feld
 			id="lusd_id"
 			label="LUSD-ID"
-			bind:value={formData.lusd_id}
+			bind:value={eingaben.lusd_id}
 			feld="font-mono"
 			disabled={kollege || lusdVerknuepft}
 			hint={kollege
@@ -164,7 +164,7 @@
 		<Feld
 			id="barcode"
 			label="Ausweisnummer{schuelerPflicht}"
-			bind:value={formData.barcode_id}
+			bind:value={eingaben.barcode_id}
 			feld="font-mono"
 		/>
 
@@ -175,4 +175,4 @@
 	</div>
 </section>
 
-<LeserKontaktFelder {formData} {kontoVorhanden} />
+<LeserKontaktFelder {eingaben} {kontoVorhanden} />

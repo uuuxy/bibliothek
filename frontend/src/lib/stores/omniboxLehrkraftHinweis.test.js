@@ -9,17 +9,17 @@ import 'fake-indexeddb/auto';
 // gescannter Ausweis ist ein LESER, und seine Art steht an ihm. Der Hinweis hängt an der Art,
 // nicht mehr an einem eigenen Antworttyp.
 //
-// Der Store meldet über seine eigene zeigeMeldung → snackbars.addToast (omnibox.svelte.js), nicht
+// Der Store meldet über seine eigene melde → snackbars.addToast (omnibox.svelte.js), nicht
 // über den Inventur-Store. Beobachtet wird deshalb addToast am echten snackbars.
 vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn() }
 }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';

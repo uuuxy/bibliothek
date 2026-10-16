@@ -34,8 +34,8 @@
 	const darfMahnen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	$effect(() => {
-		if (offlineSync.pendingCount === 0) {
-			mahnwesenStore.fetchData();
+		if (offlineSync.wartendeAnzahl === 0) {
+			mahnwesenStore.lade();
 		}
 	});
 
@@ -49,7 +49,7 @@
 </script>
 
 <div class="w-full h-full flex flex-col">
-	{#if offlineSync.pendingCount > 0}
+	{#if offlineSync.wartendeAnzahl > 0}
 		<div
 			class="p-4 bg-error-container text-on-error-container flex items-start gap-4 animate-fade-in w-full"
 		>
@@ -58,7 +58,7 @@
 				<h2 class="text-lg font-bold">Mahnwesen blockiert</h2>
 				<p class="text-sm mt-1">
 					Es befinden sich noch <strong
-						>{offlineSync.pendingCount} ungesynchronisierte Offline-Ausleihe(n)/Rückgabe(n)</strong
+						>{offlineSync.wartendeAnzahl} ungesynchronisierte Offline-Ausleihe(n)/Rückgabe(n)</strong
 					> auf diesem Gerät.
 				</p>
 				<p class="text-xs mt-2">
@@ -76,7 +76,7 @@
 				{darfBescheid}
 				{darfMahnen}
 			/>
-			{#if mahnwesenStore.activeFilter === 'Schadensersatz'}
+			{#if mahnwesenStore.stufenFilter === 'Schadensersatz'}
 				<BescheideTabelle darfSchreiben={darfBescheid} onBescheid={(id) => (bescheidFuer = id)} />
 			{:else}
 				<MahnwesenTabelle />
@@ -94,7 +94,7 @@
 			onclose={() => (bescheidFuer = '')}
 			onErstellt={async () => {
 				await bescheideStore.lade();
-				await mahnwesenStore.fetchData();
+				await mahnwesenStore.lade();
 			}}
 		/>
 	{/key}
@@ -111,6 +111,6 @@
 	onclose={() => (mahnlaufOffen = false)}
 	onconfirm={(auswahl) => {
 		mahnlaufOffen = false;
-		mahnwesenStore.sendBulkOverdueMails(auswahl);
+		mahnwesenStore.sendeMahnmails(auswahl);
 	}}
 />

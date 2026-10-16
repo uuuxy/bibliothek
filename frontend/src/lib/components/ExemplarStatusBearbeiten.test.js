@@ -8,7 +8,7 @@ vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn()
 }));
 
-vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 // Der Status, mit dem der Editor öffnet, kommt aus den zwei Merkmalen des Exemplars
 // (ausleihbar, ausgesondert) und nicht aus dem Wortlaut der Notiz: Wer an einem gesperrten

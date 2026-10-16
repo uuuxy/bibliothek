@@ -1,5 +1,5 @@
 import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../apiFetch.js';
-import { showToast } from '../../inventur/lib/store.svelte.js';
+import { melde } from '../../inventur/lib/store.svelte.js';
 
 /**
  * Ersatz, falls der Server keine Meldung schickt; dieselben Worte wie mahnlistenMeldung im Server.
@@ -23,11 +23,11 @@ function mahnlistenVersendet(n) {
  *
  * @param {{ klassen: string[], overrideEmail?: string }} auswahl
  */
-async function sendBulkOverdueMails(auswahl) {
+async function sendeMahnmails(auswahl) {
 	// Ohne Auswahl gar nicht erst losschicken: Ein fehlendes klassen-Feld bedeutet
 	// serverseitig „ALLE Klassen" — genau der Rundumschlag, den der Dialog verhindert.
 	if (!auswahl?.klassen?.length) {
-		showToast('Keine Klasse ausgewählt.', 'error');
+		melde('Keine Klasse ausgewählt.', 'error');
 		return;
 	}
 
@@ -46,15 +46,15 @@ async function sendBulkOverdueMails(auswahl) {
 		if (res.ok) {
 			// failed_count > 0: Teil des Laufs ist NICHT zugestellt — als Warnung, nicht
 			// als Erfolg (vorher hieß jeder 200er „versendet"; Prüfung 22.08.2026, A8).
-			showToast(
+			melde(
 				json.message ?? mahnlistenVersendet(json.sent_count ?? 0),
 				(json.failed_count ?? 0) > 0 ? 'warning' : 'success'
 			);
 		} else {
-			showToast(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
+			melde(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
 		}
 	} catch (e) {
-		showToast(`Netzwerkfehler beim Mahnversand: ${e}`, 'error');
+		melde(`Netzwerkfehler beim Mahnversand: ${e}`, 'error');
 	}
 }
 
@@ -66,5 +66,5 @@ async function sendBulkOverdueMails(auswahl) {
  * Handler — nicht zwei Wege zum selben Versand.
  */
 export function useMahnwesenMail() {
-	return { sendBulkOverdueMails };
+	return { sendeMahnmails };
 }

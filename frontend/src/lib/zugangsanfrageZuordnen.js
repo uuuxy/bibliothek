@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from './apiFetch.js';
+import { apiFetch, leseApiFehler } from './apiFetch.js';
 
 /**
  * Ordnet eine Zugangsanfrage dem Eintrag zu, der schon in der Leserdatei steht: Das Konto
@@ -25,7 +25,7 @@ export async function ordneZu(zielID, quelleID) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ quelle_id: quelleID })
 		});
-		if (!res.ok) return (await extractApiError(res)) || 'Zuordnen fehlgeschlagen';
+		if (!res.ok) return (await leseApiFehler(res)) || 'Zuordnen fehlgeschlagen';
 		return '';
 	} catch (e) {
 		return e instanceof Error ? e.message : 'Zuordnen fehlgeschlagen';

@@ -1,7 +1,7 @@
 import { apiFetch } from '../../lib/apiFetch.js';
 import { bestaetigen, fragen } from '../../lib/stores/bestaetigung.svelte.js';
 import { DubletteFehler, speichereBuch } from './buch_speichern.js';
-import { appState, showToast } from './store.svelte.js';
+import { appState, melde } from './store.svelte.js';
 
 /** @typedef {import('./buch_speichern.js').VorhandenerTitel} VorhandenerTitel */
 
@@ -89,7 +89,7 @@ export async function frageWennVergeben(isbn) {
 	try {
 		treffer = await vorhandenerTitel(isbn);
 	} catch {
-		showToast('Ob es diese ISBN schon gibt, ließ sich nicht prüfen.', 'warning');
+		melde('Ob es diese ISBN schon gibt, ließ sich nicht prüfen.', 'warning');
 		return false;
 	}
 	if (!treffer) return false;

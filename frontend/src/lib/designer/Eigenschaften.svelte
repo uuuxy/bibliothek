@@ -6,7 +6,7 @@
 	 * el.type — Schrift in EigenschaftenText, Bild-Upload weiter unten; photo und
 	 * barcode bringen ihre Bedienung am Element selbst mit.
 	 */
-	import { idStore, bringForward, sendBackward, removeElement } from './idDesignerStore.svelte.js';
+	import { idStore, bringForward, sendBackward, entferne } from './idDesignerStore.svelte.js';
 	import EigenschaftenText from './EigenschaftenText.svelte';
 	import ZahlenFeld from './ZahlenFeld.svelte';
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
@@ -56,7 +56,7 @@
 
 	function loesche() {
 		if (!el) return;
-		removeElement(side, el.id);
+		entferne(side, el.id);
 	}
 </script>
 

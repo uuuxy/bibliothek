@@ -14,7 +14,7 @@ import { authStore } from './stores/authStore.svelte.js';
 vi.mock('./apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(async () => ({ ok: true, json: async () => [] })),
-	extractApiError: vi.fn(async () => '')
+	leseApiFehler: vi.fn(async () => '')
 }));
 
 beforeEach(() => {

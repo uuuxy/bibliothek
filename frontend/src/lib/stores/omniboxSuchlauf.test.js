@@ -6,7 +6,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 }));
 
 import { apiFetch } from '../apiFetch.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 
 /**
  * Antwort mit genau einem Schüler. Als Response getypt: apiFetch verspricht eine
@@ -33,7 +33,7 @@ describe('Omnibox-Suchlauf', () => {
 	afterEach(() => vi.useRealTimers());
 
 	it('verwirft die Antwort eines überholten Suchlaufs', async () => {
-		const store = createOmniboxStore();
+		const store = erzeugeOmniboxStore();
 		/** @type {(r: Response) => void} */
 		let alteAntwort = () => {};
 		vi.mocked(apiFetch)
@@ -61,7 +61,7 @@ describe('Omnibox-Suchlauf', () => {
 	});
 
 	it('füllt eine geleerte Liste nicht nachträglich wieder', async () => {
-		const store = createOmniboxStore();
+		const store = erzeugeOmniboxStore();
 		/** @type {(r: Response) => void} */
 		let antwort = () => {};
 		vi.mocked(apiFetch).mockImplementationOnce(
@@ -86,7 +86,7 @@ describe('Omnibox-Suchlauf', () => {
 	// Fehlschlag die Trefferliste des vorigen Suchtextes weiter im offenen Dropdown —
 	// und waehleTreffer bucht ohne Rückfrage auf den ersten Treffer.
 	it('verwirft die Treffer, wenn die Suche fehlschlägt', async () => {
-		const store = createOmniboxStore();
+		const store = erzeugeOmniboxStore();
 		vi.mocked(apiFetch).mockImplementation(async () => treffer('Müller'));
 		store.eingabe = 'Mül';
 		store.verarbeiteEingabe();
@@ -105,7 +105,7 @@ describe('Omnibox-Suchlauf', () => {
 	});
 
 	it('verwirft die Treffer auch bei einem Netzfehler', async () => {
-		const store = createOmniboxStore();
+		const store = erzeugeOmniboxStore();
 		vi.mocked(apiFetch).mockImplementation(async () => treffer('Müller'));
 		store.eingabe = 'Mül';
 		store.verarbeiteEingabe();

@@ -31,12 +31,12 @@
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import { istKollegium, artMitKonto } from '../../leserArt.js';
 
-	/** @type {{ formData: any, kontoVorhanden?: boolean }} */
-	let { formData, kontoVorhanden = false } = $props();
+	/** @type {{ eingaben: any, kontoVorhanden?: boolean }} */
+	let { eingaben, kontoVorhanden = false } = $props();
 
-	const kollege = $derived(istKollegium({ art: formData.art }));
+	const kollege = $derived(istKollegium({ art: eingaben.art }));
 	// Nachtragbar ist die Adresse nur, wo ein Zugang zur Art gehört und noch keiner besteht.
-	const nachtragbar = $derived(artMitKonto(formData.art) && !kontoVorhanden);
+	const nachtragbar = $derived(artMitKonto(eingaben.art) && !kontoVorhanden);
 </script>
 
 <section>
@@ -49,15 +49,15 @@
 			id="strasse"
 			label="Straße"
 			class="col-span-3"
-			bind:value={formData.strasse}
+			bind:value={eingaben.strasse}
 			placeholder="Musterstraße"
 		/>
-		<Feld id="hausnummer" label="Nr." bind:value={formData.hausnummer} placeholder="12a" />
+		<Feld id="hausnummer" label="Nr." bind:value={eingaben.hausnummer} placeholder="12a" />
 		<Feld
 			id="plz"
 			label="PLZ"
 			class="col-span-2"
-			bind:value={formData.plz}
+			bind:value={eingaben.plz}
 			placeholder="12345"
 			maxlength={5}
 			feld="font-mono"
@@ -66,7 +66,7 @@
 			id="ort"
 			label="Ort"
 			class="col-span-2"
-			bind:value={formData.ort}
+			bind:value={eingaben.ort}
 			placeholder="Musterstadt"
 		/>
 
@@ -75,7 +75,7 @@
 			label={nachtragbar ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
 			class="col-span-4"
 			type="email"
-			bind:value={formData.email}
+			bind:value={eingaben.email}
 			placeholder={nachtragbar ? 'vorname.nachname@schule.de' : ''}
 			disabled={!nachtragbar && !(kollege && kontoVorhanden)}
 			readonly={kollege && kontoVorhanden}
@@ -92,7 +92,7 @@
 			label="Eltern E-Mail"
 			class="col-span-4"
 			type="email"
-			bind:value={formData.eltern_email}
+			bind:value={eingaben.eltern_email}
 			placeholder={kollege ? '' : 'eltern@schule.de'}
 			disabled={kollege}
 			hint={kollege ? 'Gehört zum Schüler.' : undefined}

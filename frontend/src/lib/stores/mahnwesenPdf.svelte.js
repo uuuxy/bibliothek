@@ -4,22 +4,22 @@ import { SvelteDate } from 'svelte/reactivity';
 
 /** Der Druck der Mahnbriefe aus der Auswahl. */
 export function useMahnwesenPdf() {
-	let pdfLoading = $state(false);
+	let drucktPdf = $state(false);
 
 	/**
 	 * Druckt die Mahnbriefe der angehakten Schüler; der Server zählt dabei die Mahnung.
-	 * @param {Set<string>} selectedIds
+	 * @param {Set<string>} gewaehlteKennungen
 	 * @param {Function} getFilteredSchueler
 	 * @param {Function} refreshData
 	 */
-	async function printSelectedMahnungen(selectedIds, getFilteredSchueler, refreshData) {
-		if (selectedIds.size === 0) return;
+	async function druckeGewaehlteMahnungen(gewaehlteKennungen, getFilteredSchueler, refreshData) {
+		if (gewaehlteKennungen.size === 0) return;
 
-		pdfLoading = true;
+		drucktPdf = true;
 		try {
 			const aktuelleListe = getFilteredSchueler();
 			const ausleihIds = [];
-			for (const schuelerId of selectedIds) {
+			for (const schuelerId of gewaehlteKennungen) {
 				const s = aktuelleListe.find(/** @type {any} */ (x) => x.schueler_id === schuelerId);
 				if (s?.medien) {
 					for (const m of s.medien) {
@@ -54,19 +54,19 @@ export function useMahnwesenPdf() {
 			a.click();
 			URL.revokeObjectURL(url);
 
-			selectedIds.clear();
+			gewaehlteKennungen.clear();
 			await refreshData();
 		} catch (e) {
 			snackbars.addToast('Fehler: ' + String(e), 'error');
 		} finally {
-			pdfLoading = false;
+			drucktPdf = false;
 		}
 	}
 
 	return {
-		get pdfLoading() {
-			return pdfLoading;
+		get drucktPdf() {
+			return drucktPdf;
 		},
-		printSelectedMahnungen
+		druckeGewaehlteMahnungen
 	};
 }

@@ -20,8 +20,8 @@
      „at the top of the content pane under an app bar". Eine Knopfzeile darüber gibt es in
      dieser Reihenfolge nicht.
 
-     Warum die Zeile NICHT an `data` hängt (die Reiter schon): Schlägt das Laden fehl,
-     bleibt `data` null — die Reiter würden dann „Alle 0" behaupten, was der Fehlermeldung
+     Warum die Zeile NICHT an `daten` hängt (die Reiter schon): Schlägt das Laden fehl,
+     bleibt `daten` null — die Reiter würden dann „Alle 0" behaupten, was der Fehlermeldung
      darunter widerspricht. Der Knopf „Neu laden" ist in genau diesem Moment aber der
      einzige Rückweg und muss stehen bleiben. Vorher trug ihn Seitenrahmen und er überlebte
      jeden Fehler; das darf der Umzug nicht kosten. -->
@@ -38,13 +38,13 @@
 <div class="mt-4 flex flex-col gap-3 print:hidden">
 	<Suchpille
 		id="mahnwesen-suchfeld"
-		bind:wert={mahnwesenStore.searchQuery}
+		bind:wert={mahnwesenStore.suche}
 		platzhalter="Schüler oder Klasse suchen …"
 		etikett="Schüler oder Klasse suchen"
 	/>
 	<div class="flex flex-wrap items-center gap-3">
 		<Select
-			bind:value={mahnwesenStore.selectedKlasse}
+			bind:value={mahnwesenStore.gewaehlteKlasse}
 			options={[
 				{ value: '', label: 'Alle Klassen' },
 				...mahnwesenStore.klassen.map((/** @type {any} */ k) => ({

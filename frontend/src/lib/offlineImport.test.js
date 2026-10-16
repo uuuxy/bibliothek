@@ -19,17 +19,17 @@ vi.mock('./offlineWarteschlange.js', async (importOriginal) => ({
 		enqueueSpy(...args);
 		return Promise.resolve();
 	},
-	loadQueue: () => Promise.resolve([]),
+	ladeWarteschlange: () => Promise.resolve([]),
 	dequeueOfflineAction: () => Promise.resolve()
 }));
 
-vi.mock('./audio.js', () => ({ playSoundSuccess: () => {}, playSoundError: () => {} }));
+vi.mock('./audio.js', () => ({ spieleErfolgston: () => {}, spieleFehlerton: () => {} }));
 vi.mock('./apiFetch.js', () => ({
 	apiClient: { post: () => Promise.resolve({ ok: true, json: () => ({ results: [] }) }) },
 	apiFetch: () => Promise.resolve({ ok: true })
 }));
 
-/** Sicherungsdatei, wie exportQueueAsJSON sie schreibt: die rohen Queue-Objekte. */
+/** Sicherungsdatei, wie exportiereWarteschlange sie schreibt: die rohen Queue-Objekte. */
 function sicherungsdatei(items) {
 	// Absichtlich nur die zwei Felder, die der Import liest (name, text) — ein echtes
 	// File nachzubauen braucht acht weitere, die hier nichts pruefen wuerden.
@@ -49,7 +49,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 	it('reicht die Idempotenz-ID aus der Datei durch', async () => {
 		const { offlineSync } = await import('./stores/offlineSync.svelte.js');
 
-		const anzahl = await offlineSync.importQueueFromJSON(
+		const anzahl = await offlineSync.importiereWarteschlange(
 			sicherungsdatei([
 				{
 					id: '11111111-2222-3333-4444-555555555555',
@@ -81,7 +81,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 			leser_id: 'schueler-7',
 			gescannt_am: 1757900000000
 		};
-		await offlineSync.importQueueFromJSON(sicherungsdatei([eintrag]));
+		await offlineSync.importiereWarteschlange(sicherungsdatei([eintrag]));
 		expect(enqueueSpy).toHaveBeenCalledWith(eintrag);
 	});
 
@@ -92,8 +92,8 @@ describe('Einspielen einer Offline-Sicherung', () => {
 				{ id: 'stabile-id', action_type: 'checkin', barcode_id: 'B-4711', timestamp: 1 }
 			]);
 
-		await offlineSync.importQueueFromJSON(datei());
-		await offlineSync.importQueueFromJSON(datei());
+		await offlineSync.importiereWarteschlange(datei());
+		await offlineSync.importiereWarteschlange(datei());
 
 		const idsBeiderLaeufe = enqueueSpy.mock.calls.map((c) => c[0].id);
 		expect(idsBeiderLaeufe).toEqual(['stabile-id', 'stabile-id']);
@@ -101,14 +101,14 @@ describe('Einspielen einer Offline-Sicherung', () => {
 
 	// Ein unlesbarer Zeitpunkt wurde zu NaN, und aus NaN baute der Sync
 	// `new Date(NaN).toISOString()` — das wirft, und zwar beim Bauen der Portion, also
-	// ausserhalb jedes Fangnetzes: Die Runde brach ab, `isSyncing` blieb auf „läuft", und
+	// ausserhalb jedes Fangnetzes: Die Runde brach ab, `gleichtAb` blieb auf „läuft", und
 	// danach lief kein Sync mehr bis zum Neuladen der Seite. Ein einziger Eintrag einer
 	// fremden Datei legte so die ganze Warteschlange still.
 	it('macht aus einem unlesbaren Zeitpunkt JETZT, nicht NaN', async () => {
 		const { offlineSync } = await import('./stores/offlineSync.svelte.js');
 		const vorher = Date.now();
 
-		const anzahl = await offlineSync.importQueueFromJSON(
+		const anzahl = await offlineSync.importiereWarteschlange(
 			sicherungsdatei([
 				{ id: 'iso', action_type: 'checkout', barcode_id: 'B-9', timestamp: '2026-09-16T10:00:00Z' }
 			])
@@ -125,7 +125,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 	it('überspringt Einträge ohne Barcode, statt sie kaputt weiterzureichen', async () => {
 		const { offlineSync } = await import('./stores/offlineSync.svelte.js');
 
-		const anzahl = await offlineSync.importQueueFromJSON(
+		const anzahl = await offlineSync.importiereWarteschlange(
 			sicherungsdatei([
 				{ id: 'a', action_type: 'checkin', barcode_id: 'B-1', timestamp: 1 },
 				{ id: 'b', action_type: 'checkin', timestamp: 2 },

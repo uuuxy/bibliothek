@@ -5,7 +5,7 @@
      Kopfzeile und Schließen-Knopf stellt das Bauteil. -->
 <script>
 	import { Merge, CircleAlert } from '@lucide/svelte';
-	import { apiClient, extractApiError } from '../../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
@@ -54,7 +54,7 @@
 				quelle_id: quelle
 			});
 			if (!res.ok) {
-				fehler = await extractApiError(res);
+				fehler = await leseApiFehler(res);
 				return;
 			}
 			const erg = await res.json();

@@ -23,7 +23,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import BestellMittelDialog from './BestellMittelDialog.svelte';
-	import { mittelLabel } from './mittel.js';
+	import { mittelBeschriftung } from './mittel.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { ArrowLeft } from '@lucide/svelte';
@@ -108,7 +108,7 @@
 					     Anschreiben, das der Händler bekommen hat (Migration 109). „ohne
 					     Zuordnung" ist eine Alt-Bestellung, deren Topf nicht eindeutig war —
 					     nie ein geratener. -->
-					<StatusChip ton="neutral" text={mittelLabel(bestellung.mittel)} />
+					<StatusChip ton="neutral" text={mittelBeschriftung(bestellung.mittel)} />
 					{#if darfKorrigieren}
 						<button
 							onclick={() => (mittelDialogOffen = true)}

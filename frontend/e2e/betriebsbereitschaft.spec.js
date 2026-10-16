@@ -77,7 +77,7 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	// überhaupt gerendert wird.
 	//
 	// Die Selbstprüfung ist eine Kategorie der EINSTELLUNGEN; deren Menüeintrag speist
-	// tabIstGesperrt(). Eine eigene /betriebsbereitschaft-Route existiert nicht mehr —
+	// bildschirmGesperrt(). Eine eigene /betriebsbereitschaft-Route existiert nicht mehr —
 	// der frühere URL-Schleichweg ist damit strukturell weg, geprüft wird der Weg über
 	// die Einstellungs-URL.
 	await page.goto('/einstellungen');

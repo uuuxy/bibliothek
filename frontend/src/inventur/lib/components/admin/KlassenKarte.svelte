@@ -1,6 +1,6 @@
 <script>
 	import KlassenBuchKachel from '$lib/components/admin/KlassenBuchKachel.svelte';
-	import { sortBooksBySubjectAndTitle } from '$lib/titelSortierung.js';
+	import { sortiereNachFachUndTitel } from '$lib/titelSortierung.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ChevronDown, Pencil, Trash } from '@lucide/svelte';
 
@@ -36,7 +36,7 @@
 	const zaehlerChip =
 		'bg-secondary-container text-on-secondary-container inline-flex min-w-26 shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums';
 
-	let sortierteTitel = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
+	let sortierteTitel = $derived([...group.books].sort(sortiereNachFachUndTitel));
 	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);
 </script>
 

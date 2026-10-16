@@ -1,36 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiFetch, extractApiError } from './apiFetch.js';
+import { apiFetch, leseApiFehler } from './apiFetch.js';
 
 /** Baut eine minimale Response-Attrappe mit gegebenem Body/Status. */
 function fakeResponse(body, status = 400) {
 	return /** @type {any} */ ({ status, text: async () => body });
 }
 
-// extractApiError kapselt das Auspacken der einheitlichen Backend-Fehlerform
+// leseApiFehler kapselt das Auspacken der einheitlichen Backend-Fehlerform
 // {"error": "..."} — ohne diese Stelle landete roher JSON-Text in Toasts/Bannern.
-describe('extractApiError', () => {
+describe('leseApiFehler', () => {
 	it('zieht die Meldung aus dem {"error":...}-JSON', async () => {
-		const msg = await extractApiError(fakeResponse('{"error":"Bitte zuerst zurückbuchen"}', 409));
+		const msg = await leseApiFehler(fakeResponse('{"error":"Bitte zuerst zurückbuchen"}', 409));
 		expect(msg).toBe('Bitte zuerst zurückbuchen');
 	});
 
 	it('akzeptiert auch {"message":...} als Fallback-Feld', async () => {
-		const msg = await extractApiError(fakeResponse('{"message":"kaputt"}'));
+		const msg = await leseApiFehler(fakeResponse('{"message":"kaputt"}'));
 		expect(msg).toBe('kaputt');
 	});
 
 	it('gibt Rohtext zurück, wenn der Body kein JSON ist', async () => {
-		const msg = await extractApiError(fakeResponse('plain text error'));
+		const msg = await leseApiFehler(fakeResponse('plain text error'));
 		expect(msg).toBe('plain text error');
 	});
 
 	it('fällt bei leerem Body auf den HTTP-Status zurück', async () => {
-		const msg = await extractApiError(fakeResponse('', 503));
+		const msg = await leseApiFehler(fakeResponse('', 503));
 		expect(msg).toBe('Fehler 503');
 	});
 
 	it('gibt bei JSON ohne error/message den Rohtext zurück', async () => {
-		const msg = await extractApiError(fakeResponse('{"foo":"bar"}'));
+		const msg = await leseApiFehler(fakeResponse('{"foo":"bar"}'));
 		expect(msg).toBe('{"foo":"bar"}');
 	});
 
@@ -41,7 +41,7 @@ describe('extractApiError', () => {
 				throw new Error('stream kaputt');
 			}
 		});
-		expect(await extractApiError(res)).toBe('Fehler 500');
+		expect(await leseApiFehler(res)).toBe('Fehler 500');
 	});
 });
 

@@ -8,7 +8,7 @@
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { snackbars } from './stores/snackbars.svelte.js';
-	import { permissionsMetadata } from './rechteKategorien.js';
+	import { rechteBeschreibungen } from './rechteKategorien.js';
 	import { fehlertext } from './utils/fehlertext.js';
 
 	// State Runes (Svelte 5)
@@ -127,7 +127,7 @@
 			{:else}
 				<RechteMatrix
 					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
-					metadata={permissionsMetadata}
+					metadata={rechteBeschreibungen}
 					permissionsState={rechteJeRolle}
 					{updatingKeys}
 					onToggle={schalteRecht}

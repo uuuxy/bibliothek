@@ -10,7 +10,7 @@
 // bleiben Handarbeit — wer eine Route umhängt, zieht die Zeile hier nach.
 import { BookOpen, Settings, ShoppingCart, Users } from '@lucide/svelte';
 
-export const permissionsMetadata = [
+export const rechteBeschreibungen = [
 	{
 		category: 'Schülerverwaltung',
 		icon: Users,

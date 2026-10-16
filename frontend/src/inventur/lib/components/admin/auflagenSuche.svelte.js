@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from '../../../../lib/apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 
 /**
  * Die Suche des Dialogs „Andere Auflage zuordnen" (docs/OFFEN.md 4.18, Stufe 2) — eigene
@@ -36,7 +36,7 @@ export function erzeugeAuflagenSuche(bekannte) {
 		try {
 			const [mit, ohne] = await Promise.all([apiFetch(pfad), apiFetch(`${pfad}&bestand=ohne`)]);
 			const antwort = [mit, ohne].find((a) => !a.ok) ?? null;
-			const meldung = antwort ? await extractApiError(antwort) : '';
+			const meldung = antwort ? await leseApiFehler(antwort) : '';
 			const liste = antwort ? [] : kandidaten([await mit.json(), await ohne.json()], bekannte());
 			if (meine !== nr) return;
 			treffer = liste;

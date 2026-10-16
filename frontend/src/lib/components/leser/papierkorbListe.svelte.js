@@ -14,7 +14,7 @@
 //     zeigte den Knopf trotzdem an jeder Zeile, und ein Klick tat NICHTS: keine Meldung,
 //     keine Änderung, kein Nachladen. Eine Tür, die sich nicht öffnet und nicht sagt,
 //     warum.
-//  2. `loadDeletedStudents` hatte ebenfalls kein `else` — ein gescheiterter Abruf ließ
+//  2. `ladeGeloeschte` hatte ebenfalls kein `else` — ein gescheiterter Abruf ließ
 //     die Liste leer und die Ansicht schrieb „Der Papierkorb ist leer." Das ist keine
 //     fehlende Meldung, das ist eine falsche Auskunft über gelöschte Schülerdaten.
 

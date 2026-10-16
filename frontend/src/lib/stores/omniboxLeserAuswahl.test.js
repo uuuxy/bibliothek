@@ -7,7 +7,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 }));
 
 import { apiFetch, apiClient } from '../apiFetch.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 
 /**
  * Eine Trefferliste mit genau einem Leser.
@@ -45,7 +45,7 @@ describe('Omnibox: Auswahl aus der Trefferliste', () => {
 
 	/** @param {any} leser */
 	async function waehleErstenTreffer(leser) {
-		const store = createOmniboxStore();
+		const store = erzeugeOmniboxStore();
 		vi.mocked(apiFetch).mockImplementation(async () => trefferliste(leser));
 		vi.mocked(apiClient.post).mockImplementation(async () => geladen(leser));
 

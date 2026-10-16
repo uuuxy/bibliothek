@@ -12,7 +12,7 @@
      Die Register hängen an geladenen Daten: ohne sie stünde dort „Alle 0", und das wäre
      neben der Fehlermeldung der Tabelle eine Behauptung statt einer Zahl. Suche und
      Werkzeugzeile stehen unabhängig davon — sie tragen den Rückweg „Neu laden". -->
-{#if mahnwesenStore.data && !mahnwesenStore.loading}
+{#if mahnwesenStore.daten && !mahnwesenStore.laedt}
 	<MahnwesenReiter />
 {/if}
 <MahnwesenSuchleiste {onMahnlauf} {onBescheid} {darfBescheid} {darfMahnen} />

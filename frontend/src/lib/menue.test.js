@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ALLE_KATEGORIE_RECHTE } from './components/einstellungen/kategorien.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { canSeeItem, erlaubteTabs, menuGroups, tabIstGesperrt } from './menue.js';
+import { darfSehen, erlaubteBildschirme, menueGruppen, bildschirmGesperrt } from './menue.js';
 
 /**
  * Liest die geseedeten Rechte einer Rolle aus db/rechte_vorgabe.go.
@@ -60,11 +60,11 @@ const kollegium = { rolle: 'kollegium', permissions: geseedeteRechte('KOLLEGIUM'
 const helfer = { rolle: 'helfer', permissions: geseedeteRechte('HELFER') };
 
 /** Alle Menüpunkte flach, unabhängig von der Gruppierung. */
-const allePunkte = menuGroups.flatMap((g) => g.items);
+const allePunkte = menueGruppen.flatMap((g) => g.items);
 
 describe('Menü-Sichtbarkeit', () => {
 	it('zeigt dem Admin ausnahmslos jeden Menüpunkt', () => {
-		const unsichtbar = allePunkte.filter((item) => !canSeeItem(item, admin)).map((i) => i.id);
+		const unsichtbar = allePunkte.filter((item) => !darfSehen(item, admin)).map((i) => i.id);
 
 		expect(
 			unsichtbar,
@@ -74,7 +74,7 @@ describe('Menü-Sichtbarkeit', () => {
 	});
 
 	it('zeigt dem Kollegium nur sein Portal', () => {
-		const sichtbar = allePunkte.filter((item) => canSeeItem(item, kollegium)).map((i) => i.id);
+		const sichtbar = allePunkte.filter((item) => darfSehen(item, kollegium)).map((i) => i.id);
 		expect(
 			sichtbar,
 			`Eine Lehrkraft meldet sich an, um einen Klassensatz zu reservieren — mehr ist der\n` +
@@ -92,13 +92,13 @@ describe('Menü-Sichtbarkeit', () => {
 		if (!settings) throw new Error('Menüpunkt settings fehlt — Test läuft ins Leere');
 
 		for (const rolle of ['kollegium', 'mitarbeiter', 'helfer']) {
-			expect(canSeeItem(settings, { rolle, permissions: ['manage_users'] }), rolle).toBe(false);
-			expect(canSeeItem(settings, { rolle, permissions: ['view_students'] }), rolle).toBe(false);
-			expect(canSeeItem(settings, { rolle, permissions: ['manage_settings'] }), rolle).toBe(true);
-			expect(canSeeItem(settings, { rolle, permissions: ['import_students'] }), rolle).toBe(true);
-			expect(canSeeItem(settings, { rolle, permissions: ['manage_inventory'] }), rolle).toBe(true);
+			expect(darfSehen(settings, { rolle, permissions: ['manage_users'] }), rolle).toBe(false);
+			expect(darfSehen(settings, { rolle, permissions: ['view_students'] }), rolle).toBe(false);
+			expect(darfSehen(settings, { rolle, permissions: ['manage_settings'] }), rolle).toBe(true);
+			expect(darfSehen(settings, { rolle, permissions: ['import_students'] }), rolle).toBe(true);
+			expect(darfSehen(settings, { rolle, permissions: ['manage_inventory'] }), rolle).toBe(true);
 		}
-		expect(canSeeItem(settings, admin)).toBe(true);
+		expect(darfSehen(settings, admin)).toBe(true);
 	});
 
 	it('hängt Abgänger unter Verwaltung an view_graduates und den Schuljahreswechsel unter System an edit_books', () => {
@@ -107,25 +107,23 @@ describe('Menü-Sichtbarkeit', () => {
 		// Einstellungs-Kategorie. Eine Sammelseite mit drei Reitern unter Verwaltung gab es
 		// für einen Abend — sie hat nicht getragen.
 		const gruppe = (/** @type {string} */ id) =>
-			menuGroups.find((g) => g.items.some((i) => i.id === id))?.name;
+			menueGruppen.find((g) => g.items.some((i) => i.id === id))?.name;
 		expect(gruppe('graduates')).toBe('Verwaltung');
 		expect(gruppe('schuljahr')).toBe('System');
 		const abgaenger = allePunkte.find((i) => i.id === 'graduates');
 		const schuljahr = allePunkte.find((i) => i.id === 'schuljahr');
 		if (!abgaenger || !schuljahr) throw new Error('Menüpunkt fehlt — Test läuft ins Leere');
-		expect(canSeeItem(abgaenger, { rolle: 'mitarbeiter', permissions: ['view_graduates'] })).toBe(
+		expect(darfSehen(abgaenger, { rolle: 'mitarbeiter', permissions: ['view_graduates'] })).toBe(
 			true
 		);
-		expect(canSeeItem(abgaenger, { rolle: 'mitarbeiter', permissions: ['edit_books'] })).toBe(
+		expect(darfSehen(abgaenger, { rolle: 'mitarbeiter', permissions: ['edit_books'] })).toBe(false);
+		expect(darfSehen(schuljahr, { rolle: 'mitarbeiter', permissions: ['edit_books'] })).toBe(true);
+		expect(darfSehen(schuljahr, { rolle: 'mitarbeiter', permissions: ['view_graduates'] })).toBe(
 			false
 		);
-		expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: ['edit_books'] })).toBe(true);
-		expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: ['view_graduates'] })).toBe(
+		expect(darfSehen(schuljahr, { rolle: 'kollegium', permissions: ['create_reservations'] })).toBe(
 			false
 		);
-		expect(
-			canSeeItem(schuljahr, { rolle: 'kollegium', permissions: ['create_reservations'] })
-		).toBe(false);
 	});
 
 	it('nennt am Menüpunkt „Einstellungen" genau die Rechte der Kategorien', () => {
@@ -145,34 +143,32 @@ describe('Menü-Sichtbarkeit', () => {
 		// Kein expect(...).toBeTruthy(): Das verengt den Typ nicht, und ohne den Punkt
 		// prüfte der Test unten stillschweigend gegen undefined.
 		if (!portal) throw new Error('Menüpunkt kollegium_portal fehlt — Test läuft ins Leere');
-		expect(canSeeItem(portal, helfer)).toBe(false);
+		expect(darfSehen(portal, helfer)).toBe(false);
 		expect(
-			canSeeItem(portal, { rolle: 'mitarbeiter', permissions: geseedeteRechte('MITARBEITER') })
+			darfSehen(portal, { rolle: 'mitarbeiter', permissions: geseedeteRechte('MITARBEITER') })
 		).toBe(true);
-		expect(canSeeItem(portal, { rolle: 'mitarbeiter', permissions: ['view_books'] })).toBe(false);
-		expect(canSeeItem(portal, { rolle: 'helfer', permissions: ['create_reservations'] })).toBe(
-			true
-		);
+		expect(darfSehen(portal, { rolle: 'mitarbeiter', permissions: ['view_books'] })).toBe(false);
+		expect(darfSehen(portal, { rolle: 'helfer', permissions: ['create_reservations'] })).toBe(true);
 	});
 
 	it('sperrt auch die Unteransichten, die keinen Menüpunkt haben', () => {
 		// Buchakte und Statistik-Detail haben keinen eigenen Menüeintrag und waren deshalb
 		// von der Router-Prüfung ausgenommen — per URL-Zeile standen sie jedem angemeldeten
 		// Benutzer offen. Sie erben jetzt die Regel ihrer Elternansicht.
-		const erlaubtKollegium = erlaubteTabs(kollegium);
-		expect(tabIstGesperrt('book_detail', erlaubtKollegium), 'book_detail').toBe(true);
-		expect(tabIstGesperrt('stats_detail', erlaubtKollegium), 'stats_detail').toBe(true);
+		const erlaubtKollegium = erlaubteBildschirme(kollegium);
+		expect(bildschirmGesperrt('book_detail', erlaubtKollegium), 'book_detail').toBe(true);
+		expect(bildschirmGesperrt('stats_detail', erlaubtKollegium), 'stats_detail').toBe(true);
 
 		// Und bleiben offen, wo die Elternansicht offen ist — sonst wäre jeder Sprung in
 		// eine Buchakte ein Rauswurf.
-		const erlaubtAdmin = erlaubteTabs(admin);
-		expect(tabIstGesperrt('book_detail', erlaubtAdmin), 'book_detail/admin').toBe(false);
-		expect(tabIstGesperrt('stats_detail', erlaubtAdmin), 'stats_detail/admin').toBe(false);
+		const erlaubtAdmin = erlaubteBildschirme(admin);
+		expect(bildschirmGesperrt('book_detail', erlaubtAdmin), 'book_detail/admin').toBe(false);
+		expect(bildschirmGesperrt('stats_detail', erlaubtAdmin), 'stats_detail/admin').toBe(false);
 
 		// Der Helfer darf den Katalog (view_books), aber keine Statistiken.
-		const erlaubtHelfer = erlaubteTabs(helfer);
-		expect(tabIstGesperrt('book_detail', erlaubtHelfer), 'book_detail/helfer').toBe(false);
-		expect(tabIstGesperrt('stats_detail', erlaubtHelfer), 'stats_detail/helfer').toBe(true);
+		const erlaubtHelfer = erlaubteBildschirme(helfer);
+		expect(bildschirmGesperrt('book_detail', erlaubtHelfer), 'book_detail/helfer').toBe(false);
+		expect(bildschirmGesperrt('stats_detail', erlaubtHelfer), 'stats_detail/helfer').toBe(true);
 	});
 
 	it('stellt Statistiken und Bestandsbücher in die Sektion „Berichte", nicht in den System-Topf', () => {
@@ -185,7 +181,7 @@ describe('Menü-Sichtbarkeit', () => {
 		// ihre vier Routen (api/routen_katalog.go); die Helfer haben view_orders ab Werk
 		// NICHT, ein Platz im Bestellwesen hätte sie ausgesperrt.
 		const gruppe = (/** @type {string} */ id) =>
-			menuGroups.find((g) => g.items.some((i) => i.id === id))?.name;
+			menueGruppen.find((g) => g.items.some((i) => i.id === id))?.name;
 		expect(gruppe('stats')).toBe('Berichte');
 		expect(gruppe('bestandsbuecher')).toBe('Berichte');
 		expect(gruppe('system-logs')).toBe('System');
@@ -204,8 +200,8 @@ describe('Menü-Sichtbarkeit', () => {
 		const bestellberichte = punkt('bestellberichte');
 		if (!bestandsbuecher || !bestellberichte)
 			throw new Error('Menüpunkt fehlt — Test läuft ins Leere');
-		expect(canSeeItem(bestandsbuecher, helfer), 'Helfer sieht die Bestandsbücher').toBe(true);
-		expect(canSeeItem(bestellberichte, helfer), 'Helfer sieht die Bestellberichte NICHT').toBe(
+		expect(darfSehen(bestandsbuecher, helfer), 'Helfer sieht die Bestandsbücher').toBe(true);
+		expect(darfSehen(bestellberichte, helfer), 'Helfer sieht die Bestellberichte NICHT').toBe(
 			false
 		);
 	});
@@ -235,11 +231,11 @@ describe('Menü-Sichtbarkeit', () => {
 
 		expect(quelle).not.toMatch(/id: 'berichte'/);
 		expect(quelle).not.toMatch(/BestellBerichte/);
-		expect(menuGroups.filter((g) => g.name === 'Berichte')).toHaveLength(1);
+		expect(menueGruppen.filter((g) => g.name === 'Berichte')).toHaveLength(1);
 	});
 
 	it('lässt ohne Anmeldung nichts durch', () => {
-		expect(allePunkte.every((item) => canSeeItem(item, null))).toBe(false);
-		expect(allePunkte.some((item) => canSeeItem(item, null))).toBe(false);
+		expect(allePunkte.every((item) => darfSehen(item, null))).toBe(false);
+		expect(allePunkte.some((item) => darfSehen(item, null))).toBe(false);
 	});
 });

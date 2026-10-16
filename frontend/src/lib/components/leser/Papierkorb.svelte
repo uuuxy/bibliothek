@@ -25,7 +25,7 @@
 	let loeschKandidat = $state(null);
 
 	/** Der Elternbildschirm lädt nach, wenn er selbst etwas gelöscht hat. */
-	export async function loadDeletedStudents() {
+	export async function ladeGeloeschte() {
 		await papierkorb.laden();
 	}
 

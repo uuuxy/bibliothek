@@ -10,7 +10,7 @@ import { snackbars } from './stores/snackbars.svelte.js';
 vi.mock('./apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
-	extractApiError: vi.fn(async () => 'Der Server meldet einen Fehler.')
+	leseApiFehler: vi.fn(async () => 'Der Server meldet einen Fehler.')
 }));
 
 const KONTO = {

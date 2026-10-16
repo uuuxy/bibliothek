@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import BuchakteExemplare from './BuchakteExemplare.svelte';
 import { authStore } from './stores/authStore.svelte.js';
-import { druckWarteschlange, clearPrintQueue } from './stores/druckWarteschlange.svelte.js';
+import { druckWarteschlange, leereDruckwarteschlange } from './stores/druckWarteschlange.svelte.js';
 
-vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 /**
  * Das Etikett eines Exemplars entsteht im Druck-Center, auf dem Bogen nach der Vorlage
@@ -25,7 +25,7 @@ function etikettKnopf(nummer = 'B-10001') {
 }
 
 beforeEach(() => {
-	clearPrintQueue();
+	leereDruckwarteschlange();
 });
 
 describe('Etikett aus der Buchakte', () => {

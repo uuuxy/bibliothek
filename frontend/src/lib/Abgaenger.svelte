@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
 	import AbgaengerTabelle from './components/AbgaengerTabelle.svelte';
 	import AbgaengerKopfzeile from './components/AbgaengerKopfzeile.svelte';
@@ -68,7 +68,7 @@
 		try {
 			await dienst.ladeKontoauszuege(gewaehlteKlasse, suche, gefilterteAbgaenger);
 		} catch (err) {
-			showToast(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
+			melde(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
 		} finally {
 			drucktKontoauszuege = false;
 		}
@@ -103,14 +103,14 @@
 		// Ohne Auswahl gar nicht erst losschicken: Ein fehlendes klassen-Feld bedeutet
 		// serverseitig ALLE Klassen — genau der Rundumschlag, den der Dialog verhindert.
 		if (!auswahl.klassen.length) {
-			showToast('Keine Klasse ausgewählt.', 'error');
+			melde('Keine Klasse ausgewählt.', 'error');
 			return;
 		}
 		try {
 			const { ok, meldung } = await dienst.sendeKontoauszuege(auswahl);
-			showToast(meldung, ok ? 'success' : 'error');
+			melde(meldung, ok ? 'success' : 'error');
 		} catch (e) {
-			showToast(`Netzwerkfehler beim Versand: ${e}`, 'error');
+			melde(`Netzwerkfehler beim Versand: ${e}`, 'error');
 		}
 	}
 

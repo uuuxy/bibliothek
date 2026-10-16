@@ -189,7 +189,9 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
   Abschnitt 12).
 - [x] Die Oberfläche, Stufe 1: Datei- und Ordnernamen deutsch ([STIL.md](STIL.md), Abschnitt 13;
   `frontend-hygiene-sprache.test.js`), bis auf zwei geteilte Bauteile (5.66).
-- [ ] Die Oberfläche, Stufe 2: Namen innerhalb der Dateien (5.66).
+- [x] Die Oberfläche, Stufe 2: Namen innerhalb der Dateien (5.66), bis auf `apiDelete`, das wie
+  die HTTP-Methode heißt.
+- [ ] Die Oberfläche, Stufe 3: Props, die ein Bauteil vom Rufer bekommt (5.66).
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
 ### Später: kleine Fehler und Aufräumarbeit
@@ -461,40 +463,27 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Die Oberfläche, Stufe 2: Die Ratsche steht seit dem 16.10.2026 im zweiten Teil von
-  `frontend-hygiene-sprache.test.js`. Ihr Bestand: 482 Erklärungen mit `let`, `const`, `var`,
-  `function` und `class` in 130 Dateien tragen ein englisches Wort, am häufigsten `handle` (46),
-  `data` (45), `error` (39), `selected` (28), `loading` (26), `delete`, `load`, `search`, `edit`,
-  `book`, `user`, `student`. Nicht gezählt: Props, Schlüssel von Objekten und die Methoden der
-  Stores (`addToast`, `loadClassGroups`), die Kennungen der Bildschirme in `routenTabelle.js`
-  (`students_dir`, `settings`, `inventory`, `orders`, `graduates`, `stats`) und die Beschriftung
-  „Admin-Audit-Log" im Reiter der System-Logs. Erledigt sind am 16.10.2026 fünf Bereiche: 56
-  Funktionen (`handle…` und lokale Funktionen), in 31 Dateien die Zustandsnamen `error`,
-  `errorMessage`, `errorMsg`, `loading`, `isLoading`, `saving`, `isSaving`, `isSubmitting` und
-  `isDeleting` (jetzt `fehler`, `laedt`, `speichert`, `laeuft`) und in 29 Dateien `data`, `result`,
-  `results`, `book` und `books` (jetzt `daten`, `ergebnis`, `ergebnisse`, `buch`, `buecher`), dazu
-  in 18 Dateien Suchtext, Treffer, Reiter und Auswahl (`suche`, `treffer`, `aktiverReiter`,
-  `gewaehlteKlasse`, `gewaehlteKlassen`, `alleGewaehlt`), dazu alle 208 übrigen Namen, die nur in
-  ihrer Datei gelten, und die Props von `KontenTabelle`, `KontoBearbeitenDialog`,
-  `KontoLoeschenDialog` und `Zugangsanfragen`, dazu die Schlüssel von `useLeserakte`,
-  `useInventurlauf`, `useInventur`, `useFehlbestand`, `useBuchakte` und des Stores der Theke
-  (`stores/omnibox.svelte.js`) samt allen Aufrufern und den Props, die diese Werte durchreichen
-  (`OmniboxInput`, `OmniboxTreffer`, `ThekenKamera`). Der Bestand steht bei 56 Erklärungen in 26
-  Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich (der Bau ist deterministisch,
-  eine geänderte Zeichenkette zeigt er an); umbenannte Props stehen im Bündel und sind dort der
-  einzige Unterschied. Ersetzen nach Wortgrenze trägt dafür nicht, es traf Klassen
-  (`text-error`), das Attribut `loading="lazy"` und Schlüssel. Umbenannt wird deshalb am
-  Syntaxbaum (`svelte/compiler`, `acorn`): jeder Bezeichner gleichen Namens in der Datei, ohne
-  Eigenschaften, Schlüssel, Importe und Exporte; Kurzformen werden ausgeschrieben (`{error}` wird
-  `error={fehler}`). In TypeScript reicht der Knoten eines Bezeichners bis zum Ende seiner
-  Typangabe; ersetzt wird nur der Name, sonst fällt die Angabe weg (svelte-check meldet es, der
-  Bau nicht). Schreibt das Ausschreiben einer Kurzform eine Datei über ihre Größe im Bestand,
-  bekommen die Props des Kindes denselben Namen, oder ein kürzeres Wort hält die Zeile. Übrig sind
-  nur Namen über Dateigrenzen: 26, die ein Store als Schlüssel, Getter oder Methode nach außen
-  gibt (`stores/etiketten.svelte.js` 12, das Mahnwesen 7), und 30 exportierte. Umbenannt wird ein Store als Ganzes, damit Schlüssel und Variable dasselbe Wort
-  tragen: erst die Variablen im Store, dann die Schlüssel des zurückgegebenen Objekts und bei
-  jedem Aufrufer `instanz.name`; wer die ganze Instanz weiterreicht (`state={ablauf}`), ist
-  selbst Aufrufer.
+- Die Oberfläche, Stufe 3: Props. Von 951 Props in 231 Bauteilen tragen 116 ein englisches Wort
+  (gezählt am 16.10.2026 nach der Liste der Ratsche, ohne Ereignisse `on…`), etwa `book`,
+  `filteredBooks`, `isSelected`, `students`, `profile`. Stufe 2 ist abgeschlossen: Die Ratsche im
+  zweiten Teil von `frontend-hygiene-sprache.test.js` zählt nur noch `apiDelete`, das neben
+  `apiGet`, `apiPost` und `apiPut` wie die HTTP-Methode heißt. Umbenannt wurden am 16.10.2026 alle
+  Namen, die eine Datei erklärt, die Schlüssel aller Stores und `use…`-Module samt Aufrufern und
+  die Exporte. Verfahren und Beleg, je Bereich als eigener Commit: Umbenannt wird am Syntaxbaum
+  (`svelte/compiler`, `acorn`), nie nach Wortlaut, der Klassen (`text-error`), Attribute
+  (`loading="lazy"`) und Schlüssel trifft. Ein Store als Ganzes: erst die Variablen im Modul,
+  dann die Schlüssel des zurückgegebenen Objekts und bei jedem Aufrufer `instanz.name`; wer die
+  ganze Instanz weiterreicht (`state={ablauf}`), ist selbst Aufrufer. Was das Werkzeug nicht
+  sieht und von Hand nachgezogen wird: Testattrappen, die einen Store als Objekt nachbauen,
+  `Object.assign` mit Schlüsseln, Destrukturierung beim Aufrufer, JSDoc-Typen wie
+  `@returns {{ … }}` (svelte-check meldet sie) und ein neuer Name, den eine Datei schon lokal
+  führt (Vitest und svelte-check melden ihn). In TypeScript reicht der Knoten eines Bezeichners
+  bis zum Ende seiner Typangabe; ersetzt wird nur der Name. Schiebt ein längerer Name eine Datei
+  über ihre Größe im Bestand, trägt das Kind denselben Namen (dann wieder Kurzform) oder ein
+  kürzeres Wort hält die Zeile. Beleg je Bereich: Bündel vor und nach, beide roh gleich
+  formatiert; jedes Wort, das nur im alten steht, hat seinen Partner in gleicher Zahl im neuen.
+  Props stehen im Bündel und zeigen sich dort wie Schlüssel. Für Stufe 3 fehlt noch eine
+  Ratsche, die Props zählt.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und

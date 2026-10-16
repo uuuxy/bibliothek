@@ -28,13 +28,13 @@
 	/** @type {{ verbindungVerloren?: boolean }} */
 	let { verbindungVerloren = false } = $props();
 
-	let ohneNetz = $derived(offlineSync.isOffline || verbindungVerloren);
+	let ohneNetz = $derived(offlineSync.ohneNetz || verbindungVerloren);
 	// Die Liste der Meldungen darf `view_students` sehen; die ZAHL gehört jeder
 	// Theken-Rolle. Ein Helfer sieht also, dass etwas offen ist, und holt jemanden —
 	// besser als eine Meldung, die niemandem auffällt (OFFEN.md 2, Entscheidung 13.09.).
 	let darfMeldungenSehen = $derived(hatRecht(authStore.currentUser, 'view_students'));
 	let sichtbar = $derived(
-		offlineSync.pendingCount > 0 ||
+		offlineSync.wartendeAnzahl > 0 ||
 			ohneNetz ||
 			offlineSync.warteschlangeFehler ||
 			offlineSync.abgelehntMitStatus !== null ||
@@ -47,7 +47,7 @@
 
 	async function sichere() {
 		try {
-			await offlineSync.exportQueueAsJSON();
+			await offlineSync.exportiereWarteschlange();
 		} catch (err) {
 			console.error('Sicherung nicht möglich:', err);
 			snackbars.addToast(
@@ -71,7 +71,7 @@
 		const fehler = [];
 		for (const file of files) {
 			try {
-				gesamt += await offlineSync.importQueueFromJSON(file);
+				gesamt += await offlineSync.importiereWarteschlange(file);
 			} catch (err) {
 				fehler.push(`${file.name}: ${fehlertext(err)}`);
 			}
@@ -94,7 +94,7 @@
 	<div
 		class="fixed top-0 right-0 left-0 z-9999 border-b {haengt
 			? 'bg-error text-on-error border-error'
-			: offlineSync.pendingCount > 0
+			: offlineSync.wartendeAnzahl > 0
 				? 'bg-error-container text-on-error-container border-outline-variant'
 				: 'bg-surface-container-low text-on-surface-variant border-outline-variant'}"
 		role="status"
@@ -115,22 +115,23 @@
 					<!-- Warten hilft hier nicht: Die Vorgänge sind gespeichert, aber diese Anmeldung
 					     darf sie nicht buchen. Ohne diesen Satz lief der Versuch jede Minute ins
 					     Leere, und das Band zeigte weiter nur „noch nicht im System". -->
-					{offlineSync.pendingCount}
-					{offlineSync.pendingCount === 1 ? 'Vorgang wartet' : 'Vorgänge warten'} — diese Anmeldung darf
-					an der Theke nicht buchen. Bitte mit dem Bibliotheks-Konto anmelden; gespeichert bleibt alles.
+					{offlineSync.wartendeAnzahl}
+					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang wartet' : 'Vorgänge warten'} — diese Anmeldung
+					darf an der Theke nicht buchen. Bitte mit dem Bibliotheks-Konto anmelden; gespeichert bleibt
+					alles.
 				{:else if offlineSync.abgelehntMitStatus !== null}
-					{offlineSync.pendingCount}
-					{offlineSync.pendingCount === 1 ? 'Vorgang lässt' : 'Vorgänge lassen'} sich nicht buchen — der
-					Server weist sie ab. Gespeichert bleibt alles; bitte die Bibliothek verständigen.
-				{:else if offlineSync.pendingCount > 0}
+					{offlineSync.wartendeAnzahl}
+					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang lässt' : 'Vorgänge lassen'} sich nicht buchen —
+					der Server weist sie ab. Gespeichert bleibt alles; bitte die Bibliothek verständigen.
+				{:else if offlineSync.wartendeAnzahl > 0}
 					<!-- „Vorgänge", nicht „Vorgange": Die Mehrzahl wurde bis zum 16.09.2026 durch
 					     Anhaengen eines „e" an „Vorgang" gebildet, der Umlaut fiel weg. Auf dem
 					     Bildschirmfoto des Stufe-1-Nachweises steht „0 Vorgange nur auf diesem
 					     Rechner" — gefunden hat es der erste Test dieser Datei. -->
-					{offlineSync.pendingCount}
-					{offlineSync.pendingCount === 1 ? 'Vorgang' : 'Vorgänge'} nur auf diesem Rechner — noch nicht
+					{offlineSync.wartendeAnzahl}
+					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang' : 'Vorgänge'} nur auf diesem Rechner — noch nicht
 					im System.
-					{#if offlineSync.isSyncing}
+					{#if offlineSync.gleichtAb}
 						Wird übertragen …
 					{:else if ohneNetz}
 						Sobald die Verbindung zurück ist, geschieht das von selbst. Vorher bitte sichern.
@@ -159,7 +160,7 @@
 				</Button>
 			{/if}
 
-			{#if offlineSync.pendingCount > 0}
+			{#if offlineSync.wartendeAnzahl > 0}
 				<Button variant="secondary" size="sm" onclick={sichere} class="shrink-0">
 					<Download size={16} strokeWidth={2.5} />
 					Sicherung speichern

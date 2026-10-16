@@ -13,7 +13,7 @@ import { apiFetch } from './apiFetch.js';
 // still nachladen, solange hier nichts Ungespeichertes steht, sonst stehen lassen und
 // hinweisen.
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 const STAND = {
 	plan: null,

@@ -10,15 +10,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 
 const STORNO = 'Buch reaktiviert. Die Forderung über 12,00 € ist storniert.';
 const AUFSICHT =
@@ -33,7 +33,7 @@ function antwort(data) {
 // jedem Fall gestoppt: Ein Timer, der die Datei überlebt, feuert nach dem Abbau von jsdom
 // und reisst den ganzen Lauf rot — so stand die CI am 16.09.2026 bei 697 grünen Tests.
 // Belegt in stores/omniboxZeitgeber.test.js.
-/** @type {ReturnType<typeof createOmniboxStore>[]} */
+/** @type {ReturnType<typeof erzeugeOmniboxStore>[]} */
 const stores = [];
 afterEach(() => {
 	while (stores.length) stores.pop()?.stoppeZeitgeber();
@@ -42,7 +42,7 @@ afterEach(() => {
 /** @param {any} data */
 async function scanne(data) {
 	vi.mocked(apiClient.post).mockResolvedValue(antwort(data));
-	const store = createOmniboxStore();
+	const store = erzeugeOmniboxStore();
 	stores.push(store);
 	store.eingabe = 'B-ZURUECK-1';
 	await store.fuehreAktionAus(null, null);

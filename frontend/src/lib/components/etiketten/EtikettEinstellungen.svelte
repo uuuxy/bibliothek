@@ -3,7 +3,7 @@
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Printer } from '@lucide/svelte';
-	import { labelStore } from '../../stores/etiketten.svelte.js';
+	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
 	import EtikettLayoutOptionen from './EtikettLayoutOptionen.svelte';
@@ -27,7 +27,7 @@
 					</p>
 				</div>
 			</div>
-			<Button variant="secondary" class="w-full" onclick={labelStore.resetPendingCopies}>
+			<Button variant="secondary" class="w-full" onclick={etikettenStore.leereDruckauftrag}>
 				Auswahl zurücksetzen / Anderes Buch wählen
 			</Button>
 		</div>
@@ -45,26 +45,26 @@
 					>
 					<!-- Suchfeld-Rolle (Autocomplete), Spinner im nachlaufend-Snippet. -->
 					<Suchfeld
-						bind:wert={labelStore.searchVal}
-						oninput={labelStore.handleSearchInput}
+						bind:wert={etikettenStore.suche}
+						oninput={etikettenStore.verarbeiteSuche}
 						platzhalter="Titel, Autor oder ISBN eingeben..."
 						etikett="Buchtitel im Katalog suchen"
 					>
 						{#snippet nachlaufend()}
-							{#if labelStore.isSearching}
+							{#if etikettenStore.sucht}
 								<Ladekreis size="sm" />
 							{/if}
 						{/snippet}
 					</Suchfeld>
 
-					{#if labelStore.searchResults.length > 0}
+					{#if etikettenStore.treffer.length > 0}
 						<div class="relative">
 							<div
 								class="absolute right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-sm bg-surface-container shadow-xl"
 							>
-								{#each labelStore.searchResults as r, _i (_i)}
+								{#each etikettenStore.treffer as r, _i (_i)}
 									<button
-										onclick={() => labelStore.selectBookTitle(r)}
+										onclick={() => etikettenStore.waehleTitel(r)}
 										class="flex w-full cursor-pointer flex-col gap-0.5 px-3.5 py-2.5 text-left"
 									>
 										<span class="text-xs font-bold text-on-surface">{r.titel}</span>
@@ -90,12 +90,12 @@
 					<div class="space-y-1.5">
 						<span class="block text-xs font-medium text-on-surface-variant">Aus Klasse laden</span>
 						<Select
-							bind:value={labelStore.selectedClass}
-							options={labelStore.classGroups.map((/** @type {any} */ g) => ({
+							bind:value={etikettenStore.gewaehlteKlasse}
+							options={etikettenStore.klassen.map((/** @type {any} */ g) => ({
 								value: g.className,
 								label: g.className
 							}))}
-							onchange={() => labelStore.handleClassChange()}
+							onchange={() => etikettenStore.wechsleKlasse()}
 							placeholder="Klasse wählen"
 							aria-label="Aus Klasse laden"
 						/>
@@ -104,17 +104,17 @@
 					<div class="space-y-1.5">
 						<span class="block text-xs font-medium text-on-surface-variant">Buch aus Klasse</span>
 						<Select
-							disabled={!labelStore.selectedClass}
-							options={labelStore.classBooks.map((/** @type {any} */ b) => ({
+							disabled={!etikettenStore.gewaehlteKlasse}
+							options={etikettenStore.klassenTitel.map((/** @type {any} */ b) => ({
 								value: String(b.id),
 								label: b.title
 							}))}
 							onchange={(/** @type {string} */ id) => {
-								const buch = labelStore.classBooks.find(
+								const buch = etikettenStore.klassenTitel.find(
 									(/** @type {any} */ b) => String(b.id) === id
 								);
 								if (buch) {
-									labelStore.selectBookTitle({
+									etikettenStore.waehleTitel({
 										id: String(buch.id),
 										titel: buch.title,
 										autor: buch.author

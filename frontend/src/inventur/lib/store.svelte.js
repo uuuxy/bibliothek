@@ -22,6 +22,6 @@ export const appState = $state({
  * @param {string} message
  * @param {import('../../lib/stores/snackbars.svelte.js').ToastTyp} [type='success']
  */
-export function showToast(message, type = 'success') {
+export function melde(message, type = 'success') {
 	snackbars.addToast(message, type);
 }

@@ -49,8 +49,8 @@ beforeAll(async () => {
 			]
 		})
 	});
-	await mahnwesenStore.fetchData();
-	if (mahnwesenStore.filteredSchueler.length !== 2) throw new Error('Testdaten nicht geladen');
+	await mahnwesenStore.lade();
+	if (mahnwesenStore.gefilterteSchueler.length !== 2) throw new Error('Testdaten nicht geladen');
 });
 
 describe('MahnwesenTabelle', () => {

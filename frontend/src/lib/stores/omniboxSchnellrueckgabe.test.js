@@ -10,10 +10,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 vi.mock('./buchBarcodes.svelte.js', () => ({
 	buchBarcodes: {
@@ -27,9 +27,9 @@ vi.mock('./buchBarcodes.svelte.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { playSoundError } from '../audio.js';
+import { spieleFehlerton } from '../audio.js';
 import { snackbars } from './snackbars.svelte.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 import { thekeLeeren } from './thekeLeeren.js';
 import { escapeSchliesst } from '../components/ui/escapeSchliesst.js';
 import { omniboxStore } from './omnibox.svelte.js';
@@ -47,10 +47,10 @@ const ablehnung = (text) => ({
 	text: async () => JSON.stringify({ error: text })
 });
 
-/** @type {ReturnType<typeof createOmniboxStore>[]} */
+/** @type {ReturnType<typeof erzeugeOmniboxStore>[]} */
 const stores = [];
 function neueTheke() {
-	const store = createOmniboxStore();
+	const store = erzeugeOmniboxStore();
 	stores.push(store);
 	return store;
 }
@@ -60,7 +60,7 @@ afterEach(() => {
 	omniboxStore.stoppeZeitgeber();
 });
 
-/** @param {ReturnType<typeof createOmniboxStore>} store @param {string} code */
+/** @param {ReturnType<typeof erzeugeOmniboxStore>} store @param {string} code */
 async function scanne(store, code) {
 	store.eingabe = code;
 	await store.fuehreAktionAus(null, null);
@@ -176,7 +176,7 @@ describe('Schnellrückgabe', () => {
 
 		await scanne(theke, 'B-FREI');
 
-		expect(playSoundError).toHaveBeenCalledTimes(1);
+		expect(spieleFehlerton).toHaveBeenCalledTimes(1);
 		expect(theke.bildschirmLeuchten).toBe('error');
 		expect(theke.fehler).toContain('nicht ausgeliehen');
 		expect(theke.schnellrueckgabe).toBe(true);

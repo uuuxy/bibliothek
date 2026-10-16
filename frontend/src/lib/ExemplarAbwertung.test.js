@@ -8,7 +8,7 @@ vi.mock('./apiFetch.js', () => ({
 	apiFetch: vi.fn()
 }));
 
-vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 /**
  * Der Beschädigungsgrad im Status-Editor (Migration 127, Anforderungsliste Nr. 2).

@@ -9,7 +9,7 @@ import {
 	apiPost,
 	apiPut,
 	apiDelete,
-	extractApiError,
+	leseApiFehler,
 	FRIST_MAILVERSAND_MS
 } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
@@ -333,7 +333,7 @@ class BestellStore {
 			const res = await apiClient.post('/api/bestellungen/suche', { query });
 			if (seq !== this.#searchSeq) return;
 			if (!res.ok) {
-				snackbars.addToast(await extractApiError(res), 'error');
+				snackbars.addToast(await leseApiFehler(res), 'error');
 				this.#leereTreffer();
 				return;
 			}

@@ -10,7 +10,7 @@
      bestätigen gibt; die abbrechende nie. -->
 <script>
 	import { CircleAlert } from '@lucide/svelte';
-	import { apiClient, extractApiError } from '../../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Dialog from '../../Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
@@ -57,7 +57,7 @@
 		try {
 			const res = await apiClient.post('/api/buecher/aus-isbn', { isbn: wert });
 			if (!res.ok) {
-				fehler = await extractApiError(res);
+				fehler = await leseApiFehler(res);
 				return;
 			}
 			gefunden = await res.json();
@@ -80,7 +80,7 @@
 					ist_lernmittel: true
 				});
 				if (!lm.ok) {
-					fehler = await extractApiError(lm);
+					fehler = await leseApiFehler(lm);
 					return;
 				}
 			}
@@ -88,7 +88,7 @@
 				titel_id: gefunden.titel_id
 			});
 			if (!res.ok) {
-				fehler = await extractApiError(res);
+				fehler = await leseApiFehler(res);
 				return;
 			}
 			snackbars.addToast(

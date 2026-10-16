@@ -65,7 +65,7 @@ const BESTAND = {
 	],
 	'src/lib/components/leser/zusammenfuehrenSuche.svelte.js': [
 		1,
-		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus extractApiError'
+		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus leseApiFehler'
 	],
 	'src/lib/useLeserakte.svelte.js': [
 		1,

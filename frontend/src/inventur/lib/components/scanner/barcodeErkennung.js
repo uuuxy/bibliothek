@@ -44,7 +44,7 @@ export function istNichtsGefunden(fehler) {
 	);
 }
 
-export async function createBarcodeDetector() {
+export async function erzeugeBarcodeErkenner() {
 	if ('BarcodeDetector' in window) {
 		const BarcodeErkenner = /** @type {any} */ (window).BarcodeDetector;
 		const formats = await BarcodeErkenner.getSupportedFormats();

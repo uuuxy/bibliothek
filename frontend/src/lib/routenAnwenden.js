@@ -13,7 +13,7 @@
  */
 import { uiStore } from './stores/uiStore.svelte.js';
 import { appState } from '../inventur/lib/store.svelte.js';
-import { tabToPath } from './routenTabelle.js';
+import { pfadJeBildschirm } from './routenTabelle.js';
 
 /**
  * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad.
@@ -36,15 +36,17 @@ export function applyPathToState(path) {
 		appState.activeBookId = path.replace('/medienkatalog/buch/', '');
 		return;
 	}
-	// Parametrisierte Sonderroute: der Tab braucht einen Zusatzparameter, passt nicht in tabToPath.
+	// Parametrisierte Sonderroute: der Tab braucht einen Zusatzparameter, passt nicht in pfadJeBildschirm.
 	const statistikArt = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
 	if (statistikArt && ['renner', 'ladenhueter'].includes(statistikArt)) {
 		uiStore.activeTab = 'stats_detail';
 		uiStore.statsDetailKind = /** @type {'renner'|'ladenhueter'} */ (statistikArt);
 		return;
 	}
-	const passenderReiter = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
-	if (passenderReiter) uiStore.activeTab = passenderReiter;
+	const passenderBildschirm = Object.keys(pfadJeBildschirm).find(
+		(key) => pfadJeBildschirm[key] === path
+	);
+	if (passenderBildschirm) uiStore.activeTab = passenderBildschirm;
 }
 
 /** Zielpfad für den aktuellen Tab — inkl. der parametrisierten Sonderrouten. */
@@ -55,5 +57,5 @@ export function currentTargetPath() {
 	if (uiStore.activeTab === 'stats_detail') {
 		return `/statistiken/${uiStore.statsDetailKind}`;
 	}
-	return tabToPath[uiStore.activeTab];
+	return pfadJeBildschirm[uiStore.activeTab];
 }

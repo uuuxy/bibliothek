@@ -188,7 +188,7 @@ import { snackbars } from './stores/snackbars.svelte.js';
  * @param {Response} res
  * @returns {Promise<string>}
  */
-export async function extractApiError(res) {
+export async function leseApiFehler(res) {
 	let body = '';
 	try {
 		body = await res.text();
@@ -217,7 +217,7 @@ async function werteAntwortAus(res) {
 			return text;
 		}
 	} else {
-		const fehlerText = await extractApiError(res);
+		const fehlerText = await leseApiFehler(res);
 		snackbars.addToast(fehlerText, 'error');
 		const err = new Error(fehlerText);
 		// Markiert den Fehler als "dem Nutzer bereits gezeigt". Ohne das legen Aufrufer

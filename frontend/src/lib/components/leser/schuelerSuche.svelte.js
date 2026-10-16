@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 
 /**
@@ -20,12 +20,12 @@ import { uiStore } from '../../stores/uiStore.svelte.js';
  */
 export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	/** @type {any[]} */
-	let students = $state.raw([]);
+	let schueler = $state.raw([]);
 	let laedt = $state(false);
 	/** Leer heißt leer — ein Ladefehler heißt Ladefehler (wie im Papierkorb). */
 	let ladefehler = $state('');
 	let sucheLaeuft = $state(false);
-	let suche = $state('');
+	let suchtext = $state('');
 	/** Jahrgangsfilter, '' = alle (17.09.2026, OFFEN.md 9.5). Serverseitig wie die Suche:
 	 *  Ein Filter im Browser säße hinter der Kappung bei 500 Zeilen und zeigte dann einen
 	 *  Teil des Jahrgangs, ohne das zu sagen. */
@@ -60,7 +60,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		const nr = ++ladeNr;
 		laedt = true;
 		try {
-			const q = suche.trim();
+			const q = suchtext.trim();
 			const text = q ? `&q=${encodeURIComponent(q)}` : '';
 			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
 			const richtung = sortierAbsteigend ? 'ab' : 'auf';
@@ -78,15 +78,15 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			// gebucht (Sweep „verschluckte Fehlantwort", Register 10.09.2026).
 			if (nr !== ladeNr) return;
 			if (res.ok) {
-				students = (await res.json()) || [];
+				schueler = (await res.json()) || [];
 				ladefehler = '';
 			} else {
-				students = [];
-				ladefehler = await extractApiError(res);
+				schueler = [];
+				ladefehler = await leseApiFehler(res);
 			}
 		} catch (err) {
 			if (nr === ladeNr) {
-				students = [];
+				schueler = [];
 				ladefehler = 'Die Leserdatei konnte nicht geladen werden (Netzwerkfehler).';
 			}
 			console.error('Fehler beim Laden der Leserdatei:', err);
@@ -114,7 +114,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		const klasse = uiStore.requestedKlassenDruck;
 		if (!klasse) return;
 		uiStore.requestedKlassenDruck = null;
-		suche = klasse;
+		suchtext = klasse;
 		lade().then(nachKlassenDruck);
 	});
 
@@ -145,8 +145,8 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	ladeJahrgaenge();
 
 	return {
-		get students() {
-			return students;
+		get schueler() {
+			return schueler;
 		},
 		get jahrgang() {
 			return jahrgang;
@@ -166,11 +166,11 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		get ladefehler() {
 			return ladefehler;
 		},
-		get query() {
-			return suche;
+		get suchtext() {
+			return suchtext;
 		},
-		set query(wert) {
-			suche = wert;
+		set suchtext(wert) {
+			suchtext = wert;
 		},
 		get sortierung() {
 			return { spalte: sortierSpalte, absteigend: sortierAbsteigend };
@@ -189,7 +189,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			lade();
 		},
 		get suchend() {
-			return suche.trim().length > 0 || jahrgang !== '';
+			return suchtext.trim().length > 0 || jahrgang !== '';
 		},
 		get gekuerzt() {
 			// NUR der Suchtext hebt die Kappung auf, ein Filter NICHT.
@@ -201,7 +201,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			// angehängt. Am echten Postgres nachgemessen: 520 Leser einer Klasse ergeben 500
 			// Zeilen. Ein Jahrgang dieser Schule bleibt darunter, aber das ist Glück und keine
 			// Zusicherung — und ein Schutz, den nur ein Kommentar behauptet, ist keiner.
-			return !suche.trim() && students.length >= LISTEN_GRENZE;
+			return !suchtext.trim() && schueler.length >= LISTEN_GRENZE;
 		},
 		lade,
 

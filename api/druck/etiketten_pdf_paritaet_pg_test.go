@@ -57,7 +57,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		t.Fatalf("Buchformular-Weg: Status %d — %s", recGet.Code, recGet.Body.String())
 	}
 
-	// Weg 2: Druck-Center — genau die Nutzlast aus etiketten.svelte.js (triggerPrint):
+	// Weg 2: Druck-Center — genau die Nutzlast aus etiketten.svelte.js (drucke):
 	// nur BarcodeID, Titel und Autor. Wird hier ein Feld ergänzt, gehört es nicht hierher,
 	// sondern in buchetikett.ErgaenzeServerfelder.
 	payload := `{

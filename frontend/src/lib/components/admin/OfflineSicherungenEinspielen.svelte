@@ -41,7 +41,7 @@
 
 		for (const file of files) {
 			try {
-				vorgaenge += await offlineSync.importQueueFromJSON(file);
+				vorgaenge += await offlineSync.importiereWarteschlange(file);
 			} catch (err) {
 				fehler.push(`${file.name}: ${fehlertext(err)}`);
 			}
@@ -74,9 +74,9 @@
 			<Upload size={18} aria-hidden="true" />
 			{laeuft ? 'Wird eingespielt …' : 'Sicherungsdateien auswählen'}
 		</Button>
-		{#if offlineSync.pendingCount > 0}
+		{#if offlineSync.wartendeAnzahl > 0}
 			<span class="text-sm text-on-surface-variant">
-				{offlineSync.pendingCount} Vorgang/Vorgänge warten noch auf Übertragung
+				{offlineSync.wartendeAnzahl} Vorgang/Vorgänge warten noch auf Übertragung
 			</span>
 		{/if}
 	</div>

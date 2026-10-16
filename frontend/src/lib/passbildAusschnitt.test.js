@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { passbildAusschnitt, PASSBILD_FORM } from './passbildAusschnitt.js';
+import { passbildAusschnitt, PASSBILD_BILDFORM } from './passbildAusschnitt.js';
 
 describe('passbildAusschnitt', () => {
 	it('nimmt aus einem breiten Kamerabild die volle Höhe und die Mitte', () => {
@@ -27,7 +27,7 @@ describe('passbildAusschnitt', () => {
 			[333, 777]
 		]) {
 			const a = passbildAusschnitt(b, h);
-			expect(Math.abs(a.breite / a.hoehe - PASSBILD_FORM)).toBeLessThan(0.002);
+			expect(Math.abs(a.breite / a.hoehe - PASSBILD_BILDFORM)).toBeLessThan(0.002);
 			expect(a.x >= 0 && a.y >= 0 && a.x + a.breite <= b && a.y + a.hoehe <= h).toBe(true);
 		}
 	});

@@ -3,7 +3,7 @@
      Hilfsrahmen). Steht getrennt, weil es die einzige Gruppe ist, die nichts über
      den INHALT der Etiketten sagt. -->
 <script>
-	import { labelStore } from '../../stores/etiketten.svelte.js';
+	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -24,7 +24,7 @@
 		<div class="space-y-1.5">
 			<span class="text-xs font-medium text-on-surface-variant block">Etikettenformat</span>
 			<Select
-				bind:value={labelStore.formatId}
+				bind:value={etikettenStore.formatId}
 				options={ETIKETT_FORMATE}
 				aria-label="Etikettenformat"
 			/>
@@ -38,12 +38,14 @@
 				<Feld
 					type="number"
 					min="1"
-					max={labelStore.maxPositions}
-					bind:value={labelStore.startPosition}
+					max={etikettenStore.felderJeBogen}
+					bind:value={etikettenStore.startFeld}
 					aria-label="Startposition auf dem A4-Bogen"
 					feld="w-24"
 				/>
-				<span class="text-label-small text-on-surface-variant">max. {labelStore.maxPositions}</span>
+				<span class="text-label-small text-on-surface-variant"
+					>max. {etikettenStore.felderJeBogen}</span
+				>
 			</div>
 			<p class="text-xs text-on-surface-variant mt-1">
 				Für angebrochene Bögen: Gibt an, auf welchem Feld der Druck starten soll.
@@ -53,12 +55,15 @@
 		<div class="space-y-1.5">
 			<span class="text-xs font-medium text-on-surface-variant block">Barcode-Ausgabe</span>
 			<Select
-				bind:value={labelStore.barcodeType}
+				bind:value={etikettenStore.barcodeArt}
 				options={BARCODE_AUSGABE}
 				aria-label="Barcode-Ausgabe"
 			/>
 		</div>
 
-		<Kaestchen bind:checked={labelStore.labelBorder} label="Hilfsrahmen auf dem Etikett zeichnen" />
+		<Kaestchen
+			bind:checked={etikettenStore.mitRahmen}
+			label="Hilfsrahmen auf dem Etikett zeichnen"
+		/>
 	</div>
 </div>

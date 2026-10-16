@@ -1,12 +1,12 @@
 import {
-	loadQueue,
+	ladeWarteschlange,
 	dequeueOfflineAction,
 	enqueueOfflineAction,
 	normalisiereEintrag
 } from '../offlineWarteschlange.js';
 import { apiClient } from '../apiFetch.js';
-import { playSoundSuccess } from '../audio.js';
-import { showToast } from '../../inventur/lib/store.svelte.js';
+import { spieleErfolgston } from '../audio.js';
+import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
 
 // Baut die Portion fuer die Nachbuch-Tuer (POST /api/action/nachbuchen).
@@ -178,8 +178,8 @@ async function verarbeiteNachbuchErgebnisse(antwort, batchItems) {
 	return { pruefen, weiter };
 }
 
-async function exportQueueAsJSON() {
-	const q = await loadQueue();
+async function exportiereWarteschlange() {
+	const q = await ladeWarteschlange();
 	if (q.length === 0) return;
 	const blob = new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' });
 	const url = URL.createObjectURL(blob);
@@ -198,7 +198,7 @@ async function exportQueueAsJSON() {
 function meldeZuPruefende(pruefen) {
 	if (pruefen.length === 0) return;
 	const liste = pruefen.map((p) => `„${p.barcode}“: ${p.meldung}`).join('; ');
-	showToast(
+	melde(
 		pruefen.length === 1
 			? `Offline-Scan ${liste} — bitte von Hand prüfen.`
 			: `${pruefen.length} Offline-Scans brauchen Prüfung: ${liste} — bitte von Hand prüfen.`,
@@ -207,18 +207,18 @@ function meldeZuPruefende(pruefen) {
 }
 
 function erzeugeOfflineSync() {
-	let pendingCount = $state(0);
-	let isSyncing = $state(false);
+	let wartendeAnzahl = $state(0);
+	let gleichtAb = $state(false);
 	// Die Warteschlange ließ sich nicht lesen (Commit 5): Das Band sagt es, statt 0 zu zeigen.
 	let warteschlangeFehler = $state(false);
 	// Der Server hat den Stapel abgelehnt, und Warten hilft nicht (4xx). Siehe sendeBatch.
 	/** @type {number | null} */
 	let abgelehntMitStatus = $state(null);
 
-	async function updateCount() {
+	async function zaehleNeu() {
 		try {
-			const q = await loadQueue();
-			pendingCount = q.length;
+			const q = await ladeWarteschlange();
+			wartendeAnzahl = q.length;
 			warteschlangeFehler = false;
 		} catch {
 			warteschlangeFehler = true;
@@ -251,7 +251,7 @@ function erzeugeOfflineSync() {
 			const antwort = await res.json();
 			const { pruefen, weiter } = await verarbeiteNachbuchErgebnisse(antwort, batchItems);
 			meldeZuPruefende(pruefen);
-			await updateCount();
+			await zaehleNeu();
 			if (!weiter) return false;
 
 			// Network Jitter: 200-500 ms Pause vor dem nächsten Batch, damit mehrere
@@ -277,7 +277,7 @@ function erzeugeOfflineSync() {
 	// nach Inaktivität lässt so erst die Warteschlange durch (leerlaufSperre).
 	/** @type {Promise<void> | null} */
 	let laufenderSync = null;
-	function startSync() {
+	function starteAbgleich() {
 		if (netzLage.offline) return Promise.resolve();
 		laufenderSync ??= sendeWarteschlange().finally(() => {
 			laufenderSync = null;
@@ -286,7 +286,7 @@ function erzeugeOfflineSync() {
 	}
 
 	async function sendeWarteschlange() {
-		isSyncing = true;
+		gleichtAb = true;
 
 		let syncedAny = false;
 
@@ -294,7 +294,7 @@ function erzeugeOfflineSync() {
 			/** @type {import('../offlineWarteschlange.js').OfflineEintrag[]} */
 			let q;
 			try {
-				q = await loadQueue();
+				q = await ladeWarteschlange();
 				warteschlangeFehler = false;
 			} catch {
 				warteschlangeFehler = true;
@@ -302,7 +302,7 @@ function erzeugeOfflineSync() {
 			}
 			if (q.length === 0) break;
 
-			// loadQueue liefert nach Scan-Zeitpunkt geordnet.
+			// ladeWarteschlange liefert nach Scan-Zeitpunkt geordnet.
 			//
 			// Portion 25 (Vorgabe des Plans): Die Tuer nimmt bis zu 50, aber jede Portion
 			// laeuft in EINER Transaktion je Eintrag, und eine kleinere Portion laesst nach
@@ -315,10 +315,10 @@ function erzeugeOfflineSync() {
 			syncedAny = true;
 		}
 
-		if (syncedAny && pendingCount === 0) {
-			playSoundSuccess();
+		if (syncedAny && wartendeAnzahl === 0) {
+			spieleErfolgston();
 		}
-		isSyncing = false;
+		gleichtAb = false;
 	}
 
 	/**
@@ -337,7 +337,7 @@ function erzeugeOfflineSync() {
 	 * Format 2 (`art`/`barcode`, mit Scan-Zeitpunkt) werden gleich behandelt.
 	 * @param {File} file
 	 */
-	async function importQueueFromJSON(file) {
+	async function importiereWarteschlange(file) {
 		try {
 			const text = await file.text();
 			const items = JSON.parse(text);
@@ -353,8 +353,8 @@ function erzeugeOfflineSync() {
 			}
 			await Promise.all(promises);
 
-			await updateCount();
-			startSync();
+			await zaehleNeu();
+			starteAbgleich();
 			return importedCount;
 		} catch (e) {
 			console.error(e);
@@ -368,45 +368,45 @@ function erzeugeOfflineSync() {
 	// Herunterfahren von Windows bekommt der Browser oft keine Gelegenheit mehr,
 	// diesen Dialog zu zeigen. Deshalb steht dieselbe Anweisung dauerhaft im Banner.
 	function warneVorDemSchliessen(e) {
-		if (pendingCount > 0) {
+		if (wartendeAnzahl > 0) {
 			e.preventDefault();
-			const msg = `${pendingCount} Vorgang/Vorgänge sind nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
+			const msg = `${wartendeAnzahl} Vorgang/Vorgänge sind nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
 			e.returnValue = msg;
 			return msg;
 		}
 	}
 
 	// Einmalig je Seite: Jede Anmeldung ruft init() (hintergrundAbrufe.svelte.js); ohne
-	// Sperre stapelten Logout→Login Listener und 30-s-Intervalle, und startSync() lief
+	// Sperre stapelten Logout→Login Listener und 30-s-Intervalle, und starteAbgleich() lief
 	// mehrfach parallel gegen dieselbe Warteschlange.
 	let initialisiert = false;
 	function init() {
 		if (initialisiert) return;
 		initialisiert = true;
 		if (typeof window !== 'undefined') {
-			updateCount();
+			zaehleNeu();
 
 			// Ob das Netz da ist, misst netzLage — navigator.onLine allein ist eine Behauptung.
-			netzLage.beiRueckkehr(() => startSync());
+			netzLage.beiRueckkehr(() => starteAbgleich());
 
 			window.addEventListener('beforeunload', warneVorDemSchliessen);
 			// Jede Minute ein Anlauf, falls das online-Ereignis fehlte oder ein Eintrag nach
 			// 5xx/429 liegen blieb (die Runde endet dort, statt sofort erneut zu senden).
 			setInterval(() => {
-				if (pendingCount > 0 && !netzLage.offline) startSync();
+				if (wartendeAnzahl > 0 && !netzLage.offline) starteAbgleich();
 			}, 60000);
 		}
 	}
 
 	return {
-		get isOffline() {
+		get ohneNetz() {
 			return netzLage.offline;
 		},
-		get pendingCount() {
-			return pendingCount;
+		get wartendeAnzahl() {
+			return wartendeAnzahl;
 		},
-		get isSyncing() {
-			return isSyncing;
+		get gleichtAb() {
+			return gleichtAb;
 		},
 		get warteschlangeFehler() {
 			return warteschlangeFehler;
@@ -415,10 +415,10 @@ function erzeugeOfflineSync() {
 		get abgelehntMitStatus() {
 			return abgelehntMitStatus;
 		},
-		updateCount,
-		startSync,
-		exportQueueAsJSON,
-		importQueueFromJSON,
+		zaehleNeu,
+		starteAbgleich,
+		exportiereWarteschlange,
+		importiereWarteschlange,
 		init
 	};
 }

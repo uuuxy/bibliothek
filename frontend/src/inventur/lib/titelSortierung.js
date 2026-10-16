@@ -1,4 +1,4 @@
-export const subjectOrder = [
+export const faecherReihenfolge = [
 	'mathe',
 	'deutsch',
 	'englisch',
@@ -25,7 +25,7 @@ export const subjectOrder = [
  * @param {{subject?: string, title: string, track?: string}} a
  * @param {{subject?: string, title: string, track?: string}} b
  */
-export function sortBooksBySubjectAndTitle(a, b) {
+export function sortiereNachFachUndTitel(a, b) {
 	let subjA = (a.subject || '').toLowerCase().trim();
 	let subjB = (b.subject || '').toLowerCase().trim();
 
@@ -33,8 +33,8 @@ export function sortBooksBySubjectAndTitle(a, b) {
 	if (subjA === 'mathematik') subjA = 'mathe';
 	if (subjB === 'mathematik') subjB = 'mathe';
 
-	let indexA = subjectOrder.indexOf(subjA);
-	let indexB = subjectOrder.indexOf(subjB);
+	let indexA = faecherReihenfolge.indexOf(subjA);
+	let indexB = faecherReihenfolge.indexOf(subjB);
 	if (indexA === -1) indexA = 999;
 	if (indexB === -1) indexB = 999;
 

@@ -7,21 +7,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { playSoundSuccess, playSoundError } from '../audio.js';
+import { spieleErfolgston, spieleFehlerton } from '../audio.js';
 import { snackbars } from './snackbars.svelte.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 
 const IDA = { id: 'l-1', vorname: 'Ida', nachname: 'Berg', art: 'schueler' };
 const OLE = { id: 'l-2', vorname: 'Ole', nachname: 'Kern', art: 'schueler' };
 
-/** @type {ReturnType<typeof createOmniboxStore>[]} */
+/** @type {ReturnType<typeof erzeugeOmniboxStore>[]} */
 const stores = [];
 afterEach(() => {
 	while (stores.length) stores.pop()?.stoppeZeitgeber();
@@ -29,7 +29,7 @@ afterEach(() => {
 
 /** @param {any} [leser] der Leser, der schon an der Theke steht */
 function neuerStore(leser = null) {
-	const store = createOmniboxStore();
+	const store = erzeugeOmniboxStore();
 	stores.push(store);
 	store.aktiverLeser = leser;
 	return store;
@@ -37,7 +37,7 @@ function neuerStore(leser = null) {
 
 /**
  * Scannt und liefert den Rückruf, mit dem die Theke die Akte neu lädt.
- * @param {ReturnType<typeof createOmniboxStore>} store
+ * @param {ReturnType<typeof erzeugeOmniboxStore>} store
  * @param {any} antwort was die Buchungstür antwortet
  * @param {string} [scan]
  */
@@ -51,7 +51,7 @@ async function scanneMitAntwort(store, antwort, scan = 'B-518-1') {
 
 /**
  * Ein Scan, den der Server annimmt.
- * @param {ReturnType<typeof createOmniboxStore>} store
+ * @param {ReturnType<typeof erzeugeOmniboxStore>} store
  * @param {any} data der Körper der Antwort
  * @param {string} [scan]
  */
@@ -71,7 +71,7 @@ describe('Theke: ein Leser wird geladen', () => {
 		expect(store.abholbereit).toEqual([{ titel: 'Mathe 7' }]);
 		expect(store.bildschirmLeuchten).toBe('success');
 		expect(store.randLeuchten).toBe('green');
-		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
+		expect(spieleErfolgston).toHaveBeenCalledTimes(1);
 	});
 
 	// Bliebe das Abholfach des vorigen Lesers stehen, griffe die Theke für den falschen
@@ -97,7 +97,7 @@ describe('Theke: Ausleihe', () => {
 		expect(snackbars.addToast).toHaveBeenCalledWith('„Mathe 7" ausgeliehen an Ida.', 'success');
 		expect(neuLaden).toHaveBeenCalledTimes(1);
 		expect(store.randLeuchten).toBe('green');
-		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
+		expect(spieleErfolgston).toHaveBeenCalledTimes(1);
 	});
 
 	// Derselbe Scan gibt zurück oder leiht aus; am Ton ist zu hören, was geschah.
@@ -105,10 +105,10 @@ describe('Theke: Ausleihe', () => {
 		const store = neuerStore(IDA);
 
 		await scanne(store, { type: 'ausleihe', book: { titel: 'Mathe 7' } });
-		expect(playSoundSuccess).toHaveBeenLastCalledWith('ausleihe');
+		expect(spieleErfolgston).toHaveBeenLastCalledWith('ausleihe');
 
 		await scanne(store, { type: 'rueckgabe', book: { titel: 'Mathe 7' } });
-		expect(playSoundSuccess).toHaveBeenLastCalledWith();
+		expect(spieleErfolgston).toHaveBeenLastCalledWith();
 	});
 
 	// Kinder derselben Klasse haben eine andere Auflage: gebucht, aber als Warnung gezeigt.
@@ -160,7 +160,7 @@ describe('Theke: Hinweis des Servers', () => {
 		expect(neuLaden).toHaveBeenCalledTimes(1);
 		expect(store.bildschirmLeuchten).toBe('success');
 		expect(store.randLeuchten).toBe('green');
-		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
+		expect(spieleErfolgston).toHaveBeenCalledTimes(1);
 	});
 });
 
@@ -176,7 +176,7 @@ describe('Theke: Gerät mit Zubehör', () => {
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
 		expect(store.bildschirmLeuchten).toBe('');
-		expect(playSoundSuccess).not.toHaveBeenCalled();
+		expect(spieleErfolgston).not.toHaveBeenCalled();
 	});
 });
 
@@ -227,9 +227,9 @@ describe('Theke: der Server lehnt den Scan ab', () => {
 			'A-9'
 		);
 
-		expect(playSoundError, 'das nächste Buch ginge an Ida').toHaveBeenCalledTimes(1);
+		expect(spieleFehlerton, 'das nächste Buch ginge an Ida').toHaveBeenCalledTimes(1);
 		expect(store.bildschirmLeuchten).toBe('error');
-		expect(playSoundSuccess).not.toHaveBeenCalled();
+		expect(spieleErfolgston).not.toHaveBeenCalled();
 		expect(store.aktiverLeser?.id).toBe('l-1');
 	});
 });
@@ -245,6 +245,6 @@ describe('Theke: eine Antwort unbekannter Art', () => {
 		expect(neuLaden).not.toHaveBeenCalled();
 		expect(store.bildschirmLeuchten).toBe('');
 		expect(store.wackelt).toBe(false);
-		expect(playSoundSuccess).not.toHaveBeenCalled();
+		expect(spieleErfolgston).not.toHaveBeenCalled();
 	});
 });

@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { tabToPath } from './routenTabelle.js';
+import { pfadJeBildschirm } from './routenTabelle.js';
 
 // Invariante gegen die "weiße Seite"-Bugklasse: JEDER Wert, der jemals auf
 // uiStore.activeTab gesetzt werden kann (Literal-Zuweisung, Seitenleiste-Menü-ID,
-// tabToPath-Deeplink), MUSS vom Router auch gerendert werden. Der White-Screen
+// pfadJeBildschirm-Deeplink), MUSS vom Router auch gerendert werden. Der White-Screen
 // beim Etikettendruck war genau ein Bruch dieser Invariante (App.svelte setzte
 // 'labels', der Router kannte nur 'druck-center') — und blieb wochenlang
 // unbemerkt, weil kein Gate darauf lief. Dieser Test ist dieses Gate: frei,
@@ -63,7 +63,7 @@ describe('Routing-Konsistenz (activeTab ↔ Router)', () => {
 		const menuSrc = readFileSync(join(libDir, 'menue.js'), 'utf8');
 		const assignmentSrcs = collectSourceFiles(srcRoot).map((f) => readFileSync(f, 'utf8'));
 
-		const tabKeys = Object.keys(tabToPath);
+		const tabKeys = Object.keys(pfadJeBildschirm);
 		const { rendered, targets, unrenderable } = findUnrenderableTabs({
 			routerSrc,
 			menuSrc,

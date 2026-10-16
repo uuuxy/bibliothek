@@ -13,10 +13,10 @@ import 'fake-indexeddb/auto';
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 vi.mock('./buchBarcodes.svelte.js', () => ({
 	buchBarcodes: {
@@ -30,10 +30,10 @@ vi.mock('./buchBarcodes.svelte.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { playSoundError } from '../audio.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { spieleFehlerton } from '../audio.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
-import { loadQueue, dequeueOfflineAction } from '../offlineWarteschlange.js';
+import { ladeWarteschlange, dequeueOfflineAction } from '../offlineWarteschlange.js';
 
 const MIA = { id: 'leser-1', art: 'schueler', vorname: 'Mia', nachname: 'Muster', klasse: '07B' };
 const TOM = { id: 'leser-2', art: 'schueler', vorname: 'Tom', nachname: 'Test', klasse: '07B' };
@@ -51,10 +51,10 @@ const ablehnung = (text, status = 409, kopf = {}) => ({
 const AUSLEIHE = antwort({ type: 'ausleihe', book: BUCH });
 const RUECKGABE = antwort({ type: 'rueckgabe', book: BUCH, student: MIA });
 
-/** @type {ReturnType<typeof createOmniboxStore>[]} */
+/** @type {ReturnType<typeof erzeugeOmniboxStore>[]} */
 const stores = [];
 function neueTheke() {
-	const store = createOmniboxStore();
+	const store = erzeugeOmniboxStore();
 	stores.push(store);
 	return store;
 }
@@ -65,10 +65,10 @@ afterEach(() => {
 });
 beforeEach(async () => {
 	vi.clearAllMocks();
-	for (const eintrag of await loadQueue()) await dequeueOfflineAction(eintrag.id);
+	for (const eintrag of await ladeWarteschlange()) await dequeueOfflineAction(eintrag.id);
 });
 
-/** Scannt, ohne auf die Buchung zu warten. @param {ReturnType<typeof createOmniboxStore>} store @param {string} code */
+/** Scannt, ohne auf die Buchung zu warten. @param {ReturnType<typeof erzeugeOmniboxStore>} store @param {string} code */
 function scanne(store, code) {
 	store.eingabe = code;
 	return store.fuehreAktionAus(null, null);
@@ -157,7 +157,7 @@ describe('Scan während der laufenden Buchung', () => {
 
 		expect(gebuchteNummern(), 'der Doppelscan gäbe das Buch gleich wieder zurück').toEqual(['B-1']);
 		expect(theke.fehler).toBe('');
-		expect(playSoundError).not.toHaveBeenCalled();
+		expect(spieleFehlerton).not.toHaveBeenCalled();
 	});
 
 	it('verwirft dieselbe Nummer auch, solange sie noch wartet', async () => {
@@ -234,7 +234,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		expect(theke.fehler).toBe(
 			`Fehler: Ausweis A-9 ist nicht registriert · ${genannt(['B-1', 'B-2'])}`
 		);
-		expect(playSoundError, 'wer nicht hinsieht, hört es').toHaveBeenCalled();
+		expect(spieleFehlerton, 'wer nicht hinsieht, hört es').toHaveBeenCalled();
 		expect(theke.bildschirmLeuchten).toBe('error');
 		expect(theke.randLeuchten).toBe('red');
 	});
@@ -400,7 +400,9 @@ describe('Ohne Netz', () => {
 		await laeuft;
 
 		expect(theke.offlineAusweis).toBe('A-10001');
-		const abgelegt = (await loadQueue()).map((e) => `${e.barcode} ${e.art} ${e.ausweis_barcode}`);
+		const abgelegt = (await ladeWarteschlange()).map(
+			(e) => `${e.barcode} ${e.art} ${e.ausweis_barcode}`
+		);
 		expect(abgelegt.toSorted()).toEqual(['B-1 ausleihe A-10001', 'B-2 ausleihe A-10001']);
 		expect(theke.fehler).toBe('');
 	});
@@ -421,7 +423,7 @@ describe('Ein Scan bei offener Rückfrage', () => {
 
 		theke.scanBeiRueckfrage();
 
-		expect(playSoundError, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(1);
+		expect(spieleFehlerton, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(1);
 		expect(theke.bildschirmLeuchten).toBe('error');
 		expect(apiClient.post).not.toHaveBeenCalled();
 		expect(theke.rueckfrageOffen(), 'ein Mensch beantwortet sie').toBe(true);

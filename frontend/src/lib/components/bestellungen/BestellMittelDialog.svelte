@@ -16,7 +16,7 @@
 	import Radio from '../ui/Radio.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
-	import { MITTEL, MITTEL_REIHENFOLGE, mittelLabel } from './mittel.js';
+	import { MITTEL, MITTEL_REIHENFOLGE, mittelBeschriftung } from './mittel.js';
 
 	/**
 	 * @type {{
@@ -55,7 +55,7 @@
 				mittel: gewaehlt,
 				grund: grund.trim()
 			});
-			snackbars.addToast(`Topf geändert: ${mittelLabel(gewaehlt)}.`, 'success');
+			snackbars.addToast(`Topf geändert: ${mittelBeschriftung(gewaehlt)}.`, 'success');
 			await onAktualisieren();
 			onclose();
 		} catch {
@@ -80,7 +80,7 @@
 			<legend class="text-xs font-medium text-on-surface-variant">Bezahlt aus</legend>
 			{#each MITTEL_REIHENFOLGE as m (m)}
 				<label class="flex items-center gap-3 text-sm text-on-surface">
-					<Radio bind:group={gewaehlt} value={m} aria-label={mittelLabel(m)} />
+					<Radio bind:group={gewaehlt} value={m} aria-label={mittelBeschriftung(m)} />
 					<span
 						>{MITTEL[m].label}
 						<span class="text-on-surface-variant">({MITTEL[m].traeger})</span></span

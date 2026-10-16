@@ -52,7 +52,7 @@
 <Reiter
 	etikett="Mahnstufen"
 	reiter={register}
-	aktiv={mahnwesenStore.activeFilter}
-	onwahl={(id) => (mahnwesenStore.activeFilter = id)}
+	aktiv={mahnwesenStore.stufenFilter}
+	onwahl={(id) => (mahnwesenStore.stufenFilter = id)}
 	klasse="print:hidden"
 />

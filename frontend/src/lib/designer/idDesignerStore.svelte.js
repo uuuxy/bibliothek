@@ -362,7 +362,7 @@ export function sendBackward(side, id) {
 /**
  * Fügt ein freies Textelement auf der angegebenen Seite hinzu.
  *
- * Die Seite ist ein Parameter (wie bei addImageElements): Die Funktion schrieb früher
+ * Die Seite ist ein Parameter (wie bei fuegeBilderHinzu): Die Funktion schrieb früher
  * fest auf die Rückseite, weshalb die Toolbar den „+ Text"-Button auf der Vorderseite
  * ausblenden musste. Gerendert wurden Text-Elemente aber schon immer auf beiden Seiten
  * (Kartenseite.svelte führt 'text' in der isText-Liste) — es fehlte nur der Weg, auf der
@@ -370,7 +370,7 @@ export function sendBackward(side, id) {
  *
  * @param {'front'|'back'} side
  */
-export function addTextElement(side) {
+export function fuegeTextHinzu(side) {
 	const neu = {
 		id: nextId(),
 		type: 'text',
@@ -397,7 +397,7 @@ export function addTextElement(side) {
  * (eine Fläche ist fast immer Hintergrund); nach vorn holen geht über das Panel.
  * @param {'front'|'back'} side
  */
-export function addBoxElement(side) {
+export function fuegeRahmenHinzu(side) {
 	const neu = {
 		id: nextId(),
 		type: 'box',
@@ -423,7 +423,7 @@ export function addBoxElement(side) {
  * @param {'front'|'back'} side
  * @param {string[]} dataUrls - base64 data-URLs of the uploaded images
  */
-export function addImageElements(side, dataUrls) {
+export function fuegeBilderHinzu(side, dataUrls) {
 	const newEls = dataUrls.map((url, i) => ({
 		id: nextId(),
 		type: 'image',
@@ -447,7 +447,7 @@ export function addImageElements(side, dataUrls) {
  * @param {'front'|'back'} side
  * @param {string} id
  */
-export function removeElement(side, id) {
+export function entferne(side, id) {
 	if (side === 'front') {
 		idStore.front.elements = idStore.front.elements.filter((e) => e.id !== id);
 	} else {

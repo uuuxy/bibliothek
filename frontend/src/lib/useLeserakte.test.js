@@ -13,7 +13,7 @@ import { apiFetch } from './apiFetch.js';
 // Fall-ID der Zeile („Zahlung verbucht", „Storno"). Ein Klick auf der Akte von B hätte
 // die Zahlung einem Schadensfall von A gutgeschrieben — Kopf, Ausdruck und Audit zeigen B.
 vi.mock('./apiFetch.js', async (original) => ({
-	// extractApiError bleibt die ECHTE Funktion: Der Test unten prüft genau, was sie aus
+	// leseApiFehler bleibt die ECHTE Funktion: Der Test unten prüft genau, was sie aus
 	// einer Fehlerantwort macht.
 	...(await original()),
 	apiFetch: vi.fn()

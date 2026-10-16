@@ -31,7 +31,7 @@ export async function ladeOffeneSessions() {
  * Neue Session eröffnen.
  * @param {{type: string, signatur?: string, subject?: string, grade?: number}} payload
  */
-export async function starteSession(payload) {
+export async function starteLauf(payload) {
 	const res = await apiFetch('/api/inventur/start', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },

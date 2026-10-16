@@ -7,7 +7,7 @@ import { uiLogin, menuepunkt } from './helpers.js';
 // jede Navigation aus dem Cache mit der App-Shell — richtig für App-Pfade, falsch für
 // Server-Antworten. Ein Klick auf den Download-Link ist wegen target="_blank" eine
 // Navigation: Statt des Berichts kam die App-Shell zurück, die SPA startete auf
-// /api/bestellhistorie/bericht, fand den Pfad nicht in tabToPath und zeigte ihren
+// /api/bestellhistorie/bericht, fand den Pfad nicht in pfadJeBildschirm und zeigte ihren
 // Standard-Reiter.
 //
 // Heimtückisch daran: Dieselbe URL lieferte per fetch weiterhin ein sauberes PDF — nur

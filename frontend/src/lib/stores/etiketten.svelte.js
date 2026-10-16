@@ -3,7 +3,7 @@
 
 import { apiFetch } from '../apiFetch.js';
 import { felderProBogen } from '../etikettformate.js';
-import { druckWarteschlange, clearPrintQueue } from './druckWarteschlange.svelte.js';
+import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
 import { normalisiereScan } from '../scanEinordnen.js';
 import { dekodiereLitteraEtikett } from '../litteraEtikett.js';
@@ -41,31 +41,31 @@ async function vermerkeGedruckt(gedruckt) {
 function erzeugeEtikettenStore() {
 	let suche = $state('');
 	let treffer = $state.raw(/** @type {any[]} */ ([]));
-	let isSearching = $state(false);
+	let sucht = $state(false);
 
-	let classGroups = $state.raw(/** @type {any[]} */ ([]));
-	let selectedClass = $state('');
-	let classBooks = $state.raw(/** @type {any[]} */ ([]));
+	let klassen = $state.raw(/** @type {any[]} */ ([]));
+	let gewaehlteKlasse = $state('');
+	let klassenTitel = $state.raw(/** @type {any[]} */ ([]));
 
-	let selectedTitle = $state(/** @type {any} */ (null));
-	let barcodeType = $state('code39'); // "code39" | "qr"
-	let labelBorder = $state(true);
-	let startPosition = $state(1); // 1 to 21
+	let gewaehlterTitel = $state(/** @type {any} */ (null));
+	let barcodeArt = $state('code39'); // "code39" | "qr"
+	let mitRahmen = $state(true);
+	let startFeld = $state(1); // 1 to 21
 
 	// Vorgabe = die des Servers (pdf/etikett_formate.go EtikettFormatVorgabe): das Papier des
 	// Lieferantenwegs. Bis 24.08.2026 stand hier avery_3475 — zwei Vorgaben für ein Raster.
 	let formatId = $state('zweckform_l4760');
 	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette: Die drei
 	// Zahlen standen hier als dritte Kopie derselben Raster (24.08.2026).
-	let maxPositions = $derived(felderProBogen(formatId));
-	let generationMode = $state('existing');
+	let felderJeBogen = $derived(felderProBogen(formatId));
+	let modus = $state('existing');
 	// Tief reaktiv, nicht $state.raw: Das Kästchen in Schritt 2 schreibt `checked` an das
-	// Exemplar selbst, und der Bogen (finalLabels) muss das sehen.
-	let existingCopies = $state(/** @type {any[]} */ ([]));
+	// Exemplar selbst, und der Bogen (bogen) muss das sehen.
+	let vorhandeneExemplare = $state(/** @type {any[]} */ ([]));
 	// Ausgesonderte Exemplare stehen nicht mehr im Regal und deshalb nicht in der Liste; ihre
 	// Zahl steht als Hinweis darunter. Dieselbe Regel wie repository.EtikettOffenBedingung.
 	let ausgesondertAnzahl = $state(0);
-	let loadingCopies = $state(false);
+	let laedtExemplare = $state(false);
 	// Ein gescheiterter Abruf ist ein eigener Zustand: Eine leere Liste hieße „kein Exemplar"
 	// und legte nahe, neue Barcodes zu erzeugen.
 	let exemplareNichtGeladen = $state(false);
@@ -76,12 +76,12 @@ function erzeugeEtikettenStore() {
 	let exemplarSuche = $state('');
 	let sichtbareExemplare = $derived.by(() => {
 		const text = exemplarSuche.trim().toLowerCase();
-		if (!text) return existingCopies;
-		return existingCopies.filter((c) => String(c.barcode_id).toLowerCase().includes(text));
+		if (!text) return vorhandeneExemplare;
+		return vorhandeneExemplare.filter((c) => String(c.barcode_id).toLowerCase().includes(text));
 	});
 	let auswahl = $derived({
-		gewaehlt: existingCopies.filter((c) => c.checked).length,
-		gesamt: existingCopies.length
+		gewaehlt: vorhandeneExemplare.filter((c) => c.checked).length,
+		gesamt: vorhandeneExemplare.length
 	});
 	/** @type {'alle' | 'teil' | 'keine'} */
 	let auswahlSichtbar = $derived.by(() => {
@@ -89,15 +89,15 @@ function erzeugeEtikettenStore() {
 		if (gewaehlt === 0) return 'keine';
 		return gewaehlt === sichtbareExemplare.length ? 'alle' : 'teil';
 	});
-	let newQuantity = $state(9);
-	let newStartNum = $state(20060);
+	let neueAnzahl = $state(9);
+	let neueStartnummer = $state(20060);
 
 	let suchVerzoegerung = /** @type {any} */ (null);
 	// Zählt die Titelsuchen wie exemplarLauf die Abrufe der Exemplare.
 	let suchLauf = 0;
 
 	/** @type {Array<{isBlank?: boolean, barcode_id?: string, titel?: string, autor?: string}>} */
-	let finalLabels = $derived.by(() => {
+	let bogen = $derived.by(() => {
 		if ((druckWarteschlange.copies?.length ?? 0) > 0) {
 			const copies = /** @type {any[]} */ (druckWarteschlange.copies);
 			const etikettenListe = copies.map((c) => ({
@@ -105,43 +105,43 @@ function erzeugeEtikettenStore() {
 				titel: c.titel,
 				autor: c.autor || ''
 			}));
-			const offsetCount = Math.max(0, startPosition - 1);
+			const offsetCount = Math.max(0, startFeld - 1);
 			const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
 			return [...leereFelder, ...etikettenListe];
 		}
 
-		if (!selectedTitle) return [];
+		if (!gewaehlterTitel) return [];
 
 		let etikettenListe = [];
-		if (generationMode === 'existing') {
-			etikettenListe = existingCopies
+		if (modus === 'existing') {
+			etikettenListe = vorhandeneExemplare
 				.filter((c) => c.checked)
 				.map((c) => ({
 					barcode_id: c.barcode_id,
-					titel: selectedTitle.titel,
-					autor: selectedTitle.autor || ''
+					titel: gewaehlterTitel.titel,
+					autor: gewaehlterTitel.autor || ''
 				}));
 		} else {
-			etikettenListe = Array.from({ length: Math.max(1, newQuantity) }, (_, i) => ({
-				barcode_id: `B-${newStartNum + i}`,
-				titel: selectedTitle.titel,
-				autor: selectedTitle.autor || ''
+			etikettenListe = Array.from({ length: Math.max(1, neueAnzahl) }, (_, i) => ({
+				barcode_id: `B-${neueStartnummer + i}`,
+				titel: gewaehlterTitel.titel,
+				autor: gewaehlterTitel.autor || ''
 			}));
 		}
 
-		const offsetCount = Math.max(0, startPosition - 1);
+		const offsetCount = Math.max(0, startFeld - 1);
 		const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
 
 		return [...leereFelder, ...etikettenListe];
 	});
 
-	async function loadClassGroups() {
+	async function ladeKlassen() {
 		try {
 			const res = await apiFetch('/api/class-books');
 			if (res.ok) {
 				const body = await res.json();
 				if (body?.data) {
-					classGroups = body.data;
+					klassen = body.data;
 				}
 			}
 		} catch (err) {
@@ -149,20 +149,20 @@ function erzeugeEtikettenStore() {
 		}
 	}
 
-	function handleClassChange() {
-		const group = classGroups.find((g) => g.className === selectedClass);
+	function wechsleKlasse() {
+		const group = klassen.find((g) => g.className === gewaehlteKlasse);
 		if (group) {
-			classBooks = group.books || [];
+			klassenTitel = group.books || [];
 		} else {
-			classBooks = [];
+			klassenTitel = [];
 		}
-		selectedTitle = null;
-		existingCopies = [];
+		gewaehlterTitel = null;
+		vorhandeneExemplare = [];
 		ausgesondertAnzahl = 0;
 		exemplareNichtGeladen = false;
 		exemplarSuche = '';
 		exemplarLauf++;
-		loadingCopies = false;
+		laedtExemplare = false;
 	}
 
 	/**
@@ -188,7 +188,7 @@ function erzeugeEtikettenStore() {
 		for (const nummer of [scan, dekodiereLitteraEtikett(scan), ohnePruefzeichen(scan)]) {
 			const gesucht = nummer?.toLowerCase();
 			const exemplar = gesucht
-				? existingCopies.find((c) => String(c.barcode_id).toLowerCase() === gesucht)
+				? vorhandeneExemplare.find((c) => String(c.barcode_id).toLowerCase() === gesucht)
 				: undefined;
 			if (exemplar) {
 				exemplar.checked = true;
@@ -199,15 +199,15 @@ function erzeugeEtikettenStore() {
 		return false;
 	}
 
-	function handleSearchInput() {
+	function verarbeiteSuche() {
 		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
 		const lauf = ++suchLauf;
 		if (!suche.trim()) {
 			treffer = [];
-			isSearching = false;
+			sucht = false;
 			return;
 		}
-		isSearching = true;
+		sucht = true;
 		suchVerzoegerung = setTimeout(async () => {
 			try {
 				// Titel-Tür (view_books) — nie POST /api/action (dort löst ein gescannter
@@ -234,57 +234,57 @@ function erzeugeEtikettenStore() {
 				treffer = [];
 				console.error('Fehler bei Buchtitelsuche:', err);
 			} finally {
-				if (lauf === suchLauf) isSearching = false;
+				if (lauf === suchLauf) sucht = false;
 			}
 		}, 300);
 	}
 
 	/** @param {any} titleObj */
-	async function selectBookTitle(titleObj) {
-		selectedTitle = titleObj;
+	async function waehleTitel(titleObj) {
+		gewaehlterTitel = titleObj;
 		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
 		suchLauf++;
-		isSearching = false;
+		sucht = false;
 		treffer = [];
 		suche = titleObj.titel;
-		selectedClass = '';
-		classBooks = [];
+		gewaehlteKlasse = '';
+		klassenTitel = [];
 		await ladeVorhandeneExemplare();
 	}
 
 	async function ladeVorhandeneExemplare() {
-		if (!selectedTitle) return;
+		if (!gewaehlterTitel) return;
 		const lauf = ++exemplarLauf;
-		loadingCopies = true;
+		laedtExemplare = true;
 		exemplarSuche = '';
 		ausgesondertAnzahl = 0;
 		exemplareNichtGeladen = false;
 		try {
-			const res = await apiFetch(`/api/buecher/titel/${selectedTitle.id}/exemplare`);
+			const res = await apiFetch(`/api/buecher/titel/${gewaehlterTitel.id}/exemplare`);
 			if (res.ok) {
 				/** @type {any[]} */
 				const alle = (await res.json()) || [];
 				if (lauf !== exemplarLauf) return;
-				existingCopies = alle
+				vorhandeneExemplare = alle
 					.filter((c) => !c.ist_ausgesondert)
 					.map((c) => ({ ...c, checked: true }));
-				ausgesondertAnzahl = alle.length - existingCopies.length;
+				ausgesondertAnzahl = alle.length - vorhandeneExemplare.length;
 			} else if (lauf === exemplarLauf) {
-				existingCopies = [];
+				vorhandeneExemplare = [];
 				exemplareNichtGeladen = true;
 			}
 		} catch (err) {
 			if (lauf !== exemplarLauf) return;
 			console.error('Fehler beim Laden der Exemplare:', err);
-			existingCopies = [];
+			vorhandeneExemplare = [];
 			exemplareNichtGeladen = true;
 		} finally {
-			if (lauf === exemplarLauf) loadingCopies = false;
+			if (lauf === exemplarLauf) laedtExemplare = false;
 		}
 	}
 
-	async function triggerPrint() {
-		const zuDrucken = finalLabels.filter((l) => !l.isBlank);
+	async function drucke() {
+		const zuDrucken = bogen.filter((l) => !l.isBlank);
 		if (zuDrucken.length === 0) return;
 
 		try {
@@ -293,8 +293,8 @@ function erzeugeEtikettenStore() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					formatId: formatId,
-					startPosition: startPosition,
-					isQR: barcodeType === 'qr',
+					startPosition: startFeld,
+					isQR: barcodeArt === 'qr',
 					items: zuDrucken.map((l) => ({
 						BarcodeID: l.barcode_id,
 						Titel: l.titel,
@@ -319,46 +319,46 @@ function erzeugeEtikettenStore() {
 	}
 
 	return {
-		get searchVal() {
+		get suche() {
 			return suche;
 		},
-		set searchVal(v) {
+		set suche(v) {
 			suche = v;
 		},
-		get searchResults() {
+		get treffer() {
 			return treffer;
 		},
-		get isSearching() {
-			return isSearching;
+		get sucht() {
+			return sucht;
 		},
 
-		get classGroups() {
-			return classGroups;
+		get klassen() {
+			return klassen;
 		},
-		get selectedClass() {
-			return selectedClass;
+		get gewaehlteKlasse() {
+			return gewaehlteKlasse;
 		},
-		set selectedClass(v) {
-			selectedClass = v;
+		set gewaehlteKlasse(v) {
+			gewaehlteKlasse = v;
 		},
-		get classBooks() {
-			return classBooks;
+		get klassenTitel() {
+			return klassenTitel;
 		},
 
-		get selectedTitle() {
-			return selectedTitle;
+		get gewaehlterTitel() {
+			return gewaehlterTitel;
 		},
-		get barcodeType() {
-			return barcodeType;
+		get barcodeArt() {
+			return barcodeArt;
 		},
-		set barcodeType(v) {
-			barcodeType = v;
+		set barcodeArt(v) {
+			barcodeArt = v;
 		},
-		get labelBorder() {
-			return labelBorder;
+		get mitRahmen() {
+			return mitRahmen;
 		},
-		set labelBorder(v) {
-			labelBorder = v;
+		set mitRahmen(v) {
+			mitRahmen = v;
 		},
 		get formatId() {
 			return formatId;
@@ -366,27 +366,27 @@ function erzeugeEtikettenStore() {
 		set formatId(v) {
 			formatId = v;
 		},
-		get startPosition() {
-			return startPosition;
+		get startFeld() {
+			return startFeld;
 		},
-		set startPosition(v) {
-			startPosition = v;
+		set startFeld(v) {
+			startFeld = v;
 		},
 
-		get generationMode() {
-			return generationMode;
+		get modus() {
+			return modus;
 		},
-		set generationMode(v) {
-			generationMode = v;
+		set modus(v) {
+			modus = v;
 		},
-		get existingCopies() {
-			return existingCopies;
+		get vorhandeneExemplare() {
+			return vorhandeneExemplare;
 		},
-		set existingCopies(v) {
-			existingCopies = v;
+		set vorhandeneExemplare(v) {
+			vorhandeneExemplare = v;
 		},
-		get loadingCopies() {
-			return loadingCopies;
+		get laedtExemplare() {
+			return laedtExemplare;
 		},
 		get exemplareNichtGeladen() {
 			return exemplareNichtGeladen;
@@ -409,39 +409,39 @@ function erzeugeEtikettenStore() {
 		get auswahlSichtbar() {
 			return auswahlSichtbar;
 		},
-		get newQuantity() {
-			return newQuantity;
+		get neueAnzahl() {
+			return neueAnzahl;
 		},
-		set newQuantity(v) {
-			newQuantity = v;
+		set neueAnzahl(v) {
+			neueAnzahl = v;
 		},
-		get newStartNum() {
-			return newStartNum;
+		get neueStartnummer() {
+			return neueStartnummer;
 		},
-		set newStartNum(v) {
-			newStartNum = v;
-		},
-
-		get finalLabels() {
-			return finalLabels;
-		},
-		get maxPositions() {
-			return maxPositions;
+		set neueStartnummer(v) {
+			neueStartnummer = v;
 		},
 
-		loadClassGroups,
-		handleClassChange,
-		handleSearchInput,
-		selectBookTitle,
+		get bogen() {
+			return bogen;
+		},
+		get felderJeBogen() {
+			return felderJeBogen;
+		},
+
+		ladeKlassen,
+		wechsleKlasse,
+		verarbeiteSuche,
+		waehleTitel,
 		ladeExemplare: ladeVorhandeneExemplare,
 		setzeSichtbare,
 		uebernimmNummer,
-		triggerPrint,
+		drucke,
 
-		resetPendingCopies() {
-			clearPrintQueue();
+		leereDruckauftrag() {
+			leereDruckwarteschlange();
 		}
 	};
 }
 
-export const labelStore = erzeugeEtikettenStore();
+export const etikettenStore = erzeugeEtikettenStore();

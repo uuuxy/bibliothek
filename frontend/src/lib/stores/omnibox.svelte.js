@@ -2,7 +2,7 @@
 // Status- und Logikverwaltung für die Omnibox (Svelte 5 Runes)
 
 import { apiFetch, apiClient } from '../apiFetch.js';
-import { playSoundSuccess, playSoundError } from '../audio.js';
+import { spieleErfolgston, spieleFehlerton } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
@@ -35,16 +35,16 @@ function leserMitKlasse(leser) {
 // Auto-Dismiss — zwei Meldungswege mit zwei Optiken für dieselbe Sache.
 //
 // Steht auf Modulebene, weil die Funktion nichts aus dem Store einfängt: Sonst würde
-// bei jedem createOmniboxStore() eine neue, identische Funktion angelegt (sonarjs S7721).
+// bei jedem erzeugeOmniboxStore() eine neue, identische Funktion angelegt (sonarjs S7721).
 /**
  * @param {string} message
  * @param {import('./snackbars.svelte.js').ToastTyp} [type='success']
  */
-function zeigeMeldung(message, type = 'success') {
+function melde(message, type = 'success') {
 	snackbars.addToast(message, type);
 }
 
-export function createOmniboxStore() {
+export function erzeugeOmniboxStore() {
 	// aktiverLeser ist der LESER, der gerade an der Theke steht — Schüler oder Kollege,
 	// unterscheidbar an `art`. Ein zweiter Platz für Lehrkräfte ist mit Migration 125
 	// weggefallen; solange es zwei gab, musste jede Stelle beide abfragen und sich für
@@ -93,7 +93,7 @@ export function createOmniboxStore() {
 	 * @type {{message: string, query: string, art: 'uebergehbar' | 'leser'} | null}
 	 */
 	let sperrHinweis = $state(null);
-	// isOffline is now handled globally via offlineSync
+	// ohneNetz is now handled globally via offlineSync
 	let offlineAnzahl = $state(0);
 
 	// Kamerascanner-Status
@@ -273,7 +273,7 @@ export function createOmniboxStore() {
 					// scheitert (500, oder 429 vom Rate-Limiter) — und der nächste Klick
 					// oder Enter buchte auf Müller, während im Feld Schmidt stand.
 					verwirfTreffer();
-					zeigeMeldung('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
+					melde('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
 					return;
 				}
 				const ergebnisse = await res.json();
@@ -347,13 +347,13 @@ export function createOmniboxStore() {
 	// aktive Sitzung aus.
 	function verarbeiteFremdrueckgabe(daten) {
 		leuchteBildschirm('warning');
-		playSoundError();
+		spieleFehlerton();
 		leuchteRand('orange');
 		const prevName = formatVorbesitzerName(daten);
 		letzteFremdrueckgabe = { vorbesitzerName: prevName };
 		const aktiv = aktiverLeser?.vorname;
 		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
-		zeigeMeldung(
+		melde(
 			`„${daten.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
 			'warning'
 		);
@@ -365,11 +365,11 @@ export function createOmniboxStore() {
 			verarbeiteFremdrueckgabe(daten);
 		} else {
 			leuchteBildschirm('success');
-			playSoundSuccess();
+			spieleErfolgston();
 			leuchteRand('green');
 			const titel = daten.book?.titel ?? daten.geraet?.modellname;
 			// In der Schnellrückgabe erscheint kein Konto: Die Meldung nennt, bei wem das Buch war.
-			zeigeMeldung(
+			melde(
 				schnellrueckgabe && daten.student
 					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(daten.student)}.`
 					: `„${titel}" erfolgreich zurückgegeben.`
@@ -415,8 +415,8 @@ export function createOmniboxStore() {
 	// Kanäle, weil es zwei Dinge sind: Eine offene Aufgabe in einer grünen Erfolgsmeldung
 	// wird überlesen.
 	function zeigeRueckkehrHinweise(daten, { ohneMeldung = false } = {}) {
-		if (!ohneMeldung && daten.message) zeigeMeldung(daten.message, 'success');
-		if (daten.aufsicht_informieren) zeigeMeldung(daten.aufsicht_informieren, 'warning');
+		if (!ohneMeldung && daten.message) melde(daten.message, 'success');
+		if (daten.aufsicht_informieren) melde(daten.aufsicht_informieren, 'warning');
 	}
 
 	// Ein Leser ist geladen: Er steht jetzt an der Theke, sein Abholfach kommt mit.
@@ -425,13 +425,13 @@ export function createOmniboxStore() {
 		aktiverLeser = daten.student;
 		abholbereit = daten.abholbereit ?? [];
 		leuchteBildschirm('success');
-		playSoundSuccess();
+		spieleErfolgston();
 		leuchteRand('green');
 		// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
 		// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
 		// Schüler mit fehlender Angabe.
 		if (daten.student?.art && daten.student.art !== 'schueler') {
-			zeigeMeldung(`Geladen: ${daten.student.vorname} ${daten.student.nachname}`);
+			melde(`Geladen: ${daten.student.vorname} ${daten.student.nachname}`);
 		}
 	}
 
@@ -441,15 +441,15 @@ export function createOmniboxStore() {
 		// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
 		letzterAuflagenHinweis = daten.auflagen_hinweis ?? null;
 		leuchteBildschirm(letzterAuflagenHinweis ? 'warning' : 'success');
-		playSoundSuccess('ausleihe');
+		spieleErfolgston('ausleihe');
 		leuchteRand(letzterAuflagenHinweis ? 'orange' : 'green');
-		zeigeMeldung(
+		melde(
 			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${aktiverLeser?.vorname}.`
 		);
 		// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
 		// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
 		if (daten.regalfreigabe_barcode) {
-			zeigeMeldung(
+			melde(
 				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen.`,
 				'warning'
 			);
@@ -483,9 +483,9 @@ export function createOmniboxStore() {
 		}
 		if (daten.type === 'info') {
 			leuchteBildschirm('success');
-			playSoundSuccess();
+			spieleErfolgston();
 			leuchteRand('green');
-			zeigeMeldung(daten.message, 'success');
+			melde(daten.message, 'success');
 			zeigeRueckkehrHinweise(daten, { ohneMeldung: true });
 			if (reloadProfileCb) reloadProfileCb();
 			return true;
@@ -495,7 +495,7 @@ export function createOmniboxStore() {
 			prueflisteAnfrage = { query: q, geraet: daten.geraet, overrideBlock };
 		} else if (daten.type === 'search_results') {
 			wackle();
-			zeigeMeldung('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
+			melde('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
 		}
 		return false;
 	}
@@ -581,17 +581,17 @@ export function createOmniboxStore() {
 			// das Buch muss zurück ins Regal oder auf den Zettel.
 			console.error('Offline-Eintrag nicht gespeichert:', err);
 			leuchteBildschirm('error');
-			playSoundError();
+			spieleFehlerton();
 			zeigeFehlerBanner(
 				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden — Buch zurücklegen und den Vorgang notieren.`
 			);
-			offlineSync.updateCount();
+			offlineSync.zaehleNeu();
 			return false;
 		}
-		offlineSync.updateCount();
+		offlineSync.zaehleNeu();
 		leuchteBildschirm('warning');
-		playSoundSuccess();
-		zeigeMeldung(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
+		spieleErfolgston();
+		melde(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
 		return true;
 	}
 
@@ -612,8 +612,8 @@ export function createOmniboxStore() {
 		// die folgenden Buecher an eine ANDERE Person gingen.
 		aktiverLeser = null;
 		leuchteBildschirm('warning');
-		playSoundSuccess();
-		zeigeMeldung(
+		spieleErfolgston();
+		melde(
 			`Ohne Netz gemerkt: Ausweis „${nummer}". Die folgenden Bücher werden ihm zugeordnet.`,
 			'warning'
 		);
@@ -684,7 +684,7 @@ export function createOmniboxStore() {
 		if (aktiverLeser?.id) return true;
 
 		leuchteBildschirm('error');
-		playSoundError();
+		spieleFehlerton();
 		zeigeFehlerBanner(
 			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c liess sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
 				`bitte den Ausweis erneut scannen.`
@@ -717,7 +717,7 @@ export function createOmniboxStore() {
 				`NICHT gebucht; bitte notieren.`
 		};
 		leuchteBildschirm('error');
-		playSoundError();
+		spieleFehlerton();
 		zeigeFehlerBanner(meldungen[einordnung.art] ?? 'Dieser Scan wurde ohne Netz NICHT gebucht.');
 	}
 
@@ -738,7 +738,7 @@ export function createOmniboxStore() {
 		// Wer scannt, sieht auf das Buch: Ein Scan, der nichts gebucht hat, ist zu hören. Nach
 		// einem gescheiterten Ausweis steht der Leser davor noch an der Theke.
 		leuchteBildschirm('error');
-		playSoundError();
+		spieleFehlerton();
 		if (e instanceof Error && e.message === 'BLOCK_ALERT') return;
 		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
 		// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
@@ -854,7 +854,7 @@ export function createOmniboxStore() {
 		if (wartend.length === 0) return;
 		nichtGebucht = [...nichtGebucht, ...wartend.splice(0).map((w) => w.q)];
 		leuchteBildschirm('error');
-		playSoundError();
+		spieleFehlerton();
 		leuchteRand('red');
 		zeichneBanner();
 	}
@@ -951,7 +951,7 @@ export function createOmniboxStore() {
 	// Wer auf das Buch sieht, hört es.
 	function scanBeiRueckfrage() {
 		leuchteBildschirm('error');
-		playSoundError();
+		spieleFehlerton();
 	}
 
 	// Eine offene Rückfrage oder die laufende Kamera: Beide behalten ihre Eingabe.
@@ -1101,7 +1101,7 @@ export function createOmniboxStore() {
 		set sperrHinweis(v) {
 			sperrHinweis = v;
 		},
-		// isOffline handled globally
+		// ohneNetz handled globally
 		get offlineAnzahl() {
 			return offlineAnzahl;
 		},
@@ -1160,7 +1160,7 @@ export function createOmniboxStore() {
 		leuchteBildschirm,
 		wackle,
 		leuchteRand,
-		zeigeMeldung,
+		melde,
 		verarbeiteEingabe,
 		uebernimmZusammengefuehrt,
 		schalteSchnellrueckgabe,
@@ -1171,4 +1171,4 @@ export function createOmniboxStore() {
 	};
 }
 
-export const omniboxStore = createOmniboxStore();
+export const omniboxStore = erzeugeOmniboxStore();

@@ -4,18 +4,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../apiFetch.js', () => ({
 	apiClient: { post: vi.fn() }
 }));
-vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { enqueueOfflineAction, loadQueue, dequeueOfflineAction } from '../offlineWarteschlange.js';
+import {
+	enqueueOfflineAction,
+	ladeWarteschlange,
+	dequeueOfflineAction
+} from '../offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
-import { showToast } from '../../inventur/lib/store.svelte.js';
+import { melde } from '../../inventur/lib/store.svelte.js';
 
 /** Einträge in Format 2, wie schnappschuss() sie im Omnibox-Store baut. */
 let zaehler = 0;
@@ -37,7 +41,7 @@ const rueckgabe = (barcode) => ({
 });
 
 async function clearQueue() {
-	for (const item of await loadQueue()) {
+	for (const item of await ladeWarteschlange()) {
 		await dequeueOfflineAction(item.id);
 	}
 }
@@ -83,7 +87,7 @@ describe('offlineWarteschlange', () => {
 		await enqueueOfflineAction(rueckgabe('B-1'));
 		await enqueueOfflineAction(ausleihe('B-2', 'schueler-1'));
 
-		const q = await loadQueue();
+		const q = await ladeWarteschlange();
 		expect(q).toHaveLength(2);
 		expect(new Set(q.map((i) => i.id)).size).toBe(2);
 
@@ -91,11 +95,11 @@ describe('offlineWarteschlange', () => {
 		expect(checkout?.leser_id).toBe('schueler-1');
 
 		await dequeueOfflineAction(q[0].id);
-		expect(await loadQueue()).toHaveLength(1);
+		expect(await ladeWarteschlange()).toHaveLength(1);
 	});
 });
 
-describe('offlineSync.startSync', () => {
+describe('offlineSync.starteAbgleich', () => {
 	beforeEach(async () => {
 		await clearQueue();
 		vi.clearAllMocks();
@@ -108,7 +112,7 @@ describe('offlineSync.startSync', () => {
 		await enqueueOfflineAction(ausleihe('B-100', 'schueler-42'));
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
 		const [pfad, rumpf] = vi.mocked(apiClient.post).mock.calls[0];
 		expect(pfad).toBe('/api/action/nachbuchen');
@@ -123,8 +127,8 @@ describe('offlineSync.startSync', () => {
 			schluessel: expect.any(String)
 		});
 		expect(rumpf.eintraege[0].gescannt_am).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-		expect(await loadQueue()).toHaveLength(0);
-		expect(offlineSync.pendingCount).toBe(0);
+		expect(await ladeWarteschlange()).toHaveLength(0);
+		expect(offlineSync.wartendeAnzahl).toBe(0);
 	});
 
 	it('wirft fachlich Abgelehntes (nicht_gebucht) aus der Queue statt endlos zu haengen', async () => {
@@ -133,8 +137,8 @@ describe('offlineSync.startSync', () => {
 			antworte(() => ({ ergebnis: 'nicht_gebucht', grund: 'Barcode nicht gefunden' }))
 		);
 
-		await offlineSync.startSync();
-		expect(await loadQueue()).toHaveLength(0);
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange()).toHaveLength(0);
 	});
 
 	it('behält die Queue, wenn die Anfrage selbst scheitert (z. B. 502)', async () => {
@@ -142,8 +146,8 @@ describe('offlineSync.startSync', () => {
 
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 502 }));
 
-		await offlineSync.startSync();
-		expect(await loadQueue()).toHaveLength(1);
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange()).toHaveLength(1);
 		// 502 heißt „der Server kommt gleich wieder" — nichts anzusagen, die nächste Runde
 		// läuft in einer Minute.
 		expect(offlineSync.abgelehntMitStatus).toBeNull();
@@ -158,8 +162,8 @@ describe('offlineSync.startSync', () => {
 
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
 
-		await offlineSync.startSync();
-		expect(await loadQueue(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
 		expect(offlineSync.abgelehntMitStatus).toBe(403);
 	});
 
@@ -170,8 +174,8 @@ describe('offlineSync.startSync', () => {
 
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 423 }));
 
-		await offlineSync.startSync();
-		expect(await loadQueue(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
 		expect(offlineSync.abgelehntMitStatus).toBeNull();
 	});
 
@@ -185,9 +189,9 @@ describe('offlineSync.startSync', () => {
 			/** @type {any} */ (new Promise((fertig) => (antworte = fertig)))
 		);
 
-		const erster = offlineSync.startSync();
+		const erster = offlineSync.starteAbgleich();
 		let zweiterFertig = false;
-		const zweiter = offlineSync.startSync().then(() => {
+		const zweiter = offlineSync.starteAbgleich().then(() => {
 			zweiterFertig = true;
 		});
 		await new Promise((fertig) => setTimeout(fertig, 20));
@@ -201,13 +205,13 @@ describe('offlineSync.startSync', () => {
 	it('vergisst die Ablehnung, sobald ein Stapel wieder durchgeht', async () => {
 		await enqueueOfflineAction(rueckgabe('B-202'));
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 		expect(offlineSync.abgelehntMitStatus).toBe(403);
 
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ ergebnisse: [] }) })
 		);
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 		expect(offlineSync.abgelehntMitStatus).toBeNull();
 	});
 });
@@ -239,10 +243,10 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 			)
 		);
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
-		expect(await loadQueue(), 'die Warteschlange ist geleert').toHaveLength(0);
-		const meldungen = vi.mocked(showToast).mock.calls.map((c) => String(c[0]));
+		expect(await ladeWarteschlange(), 'die Warteschlange ist geleert').toHaveLength(0);
+		const meldungen = vi.mocked(melde).mock.calls.map((c) => String(c[0]));
 		expect(meldungen.join(' | ')).toContain('B-10243');
 		expect(meldungen.join(' | '), 'der angenommene Scan gehört nicht in die Warnung').not.toContain(
 			'B-10234'
@@ -252,8 +256,8 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 	it('schweigt, wenn alles angenommen wurde (Gegenprobe)', async () => {
 		await enqueueOfflineAction(rueckgabe('B-10234'));
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
-		await offlineSync.startSync();
-		expect(vi.mocked(showToast)).not.toHaveBeenCalled();
+		await offlineSync.starteAbgleich();
+		expect(vi.mocked(melde)).not.toHaveBeenCalled();
 	});
 });
 
@@ -276,7 +280,7 @@ describe('offlineSync: die Ausleihe trägt ihren Leser mit', () => {
 			gescannt_am: ++zaehler
 		});
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 		return vi.mocked(apiClient.post).mock.calls[0][1].eintraege[0];
 	}
 
@@ -308,8 +312,11 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ ergebnisse: [] }) })
 		);
-		await offlineSync.startSync();
-		expect(await loadQueue(), 'der Eintrag bleibt, bis der Server ihn beantwortet').toHaveLength(1);
+		await offlineSync.starteAbgleich();
+		expect(
+			await ladeWarteschlange(),
+			'der Eintrag bleibt, bis der Server ihn beantwortet'
+		).toHaveLength(1);
 		expect(apiClient.post, 'keine Endlosschleife: die Runde endet').toHaveBeenCalledTimes(1);
 	});
 
@@ -318,10 +325,10 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 		vi.mocked(apiClient.post).mockImplementation(
 			antworte(() => ({ ergebnis: 'zurueckgegeben', daten: { type: 'rueckgabe' } }))
 		);
-		await offlineSync.startSync();
-		expect(await loadQueue(), 'endgueltig entschieden, also ausgebucht').toHaveLength(0);
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange(), 'endgueltig entschieden, also ausgebucht').toHaveLength(0);
 		const meldungen = vi
-			.mocked(showToast)
+			.mocked(melde)
 			.mock.calls.map((c) => String(c[0]))
 			.join(' | ');
 		expect(meldungen).toContain('B-10234');
@@ -332,9 +339,9 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 	it('wie gescannt gebucht: still ausgebucht', async () => {
 		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
-		await offlineSync.startSync();
-		expect(await loadQueue()).toHaveLength(0);
-		expect(showToast).not.toHaveBeenCalled();
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange()).toHaveLength(0);
+		expect(melde).not.toHaveBeenCalled();
 	});
 
 	// „wiederholen" ist das einzige der neun Woerter, das NICHT endgueltig ist: Der Server
@@ -346,9 +353,9 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 				antworte(() => ({ ergebnis: 'wiederholen', grund: 'Server nicht erreichbar' }))
 			)
 			.mockImplementation(antworte(wieGescannt));
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 		expect(apiClient.post, 'ein Versuch je Runde').toHaveBeenCalledTimes(1);
-		expect(await loadQueue(), 'der Eintrag wartet auf die nächste Runde').toHaveLength(1);
+		expect(await ladeWarteschlange(), 'der Eintrag wartet auf die nächste Runde').toHaveLength(1);
 	});
 });
 
@@ -368,7 +375,7 @@ describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
 		await enqueueOfflineAction(rueckgabe('B-10235'));
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
 		const eintraege = vi.mocked(apiClient.post).mock.calls[0][1].eintraege;
 		const mitSchueler = eintraege.find((/** @type {any} */ e) => e.barcode === 'B-10234');
@@ -393,11 +400,11 @@ describe('offlineSync: die Nachbuch-Tuer', () => {
 			antworte(() => ({ ergebnis: 'umgebucht', daten: { type: 'ausleihe' } }))
 		);
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
-		expect(await loadQueue(), 'endgueltig entschieden').toHaveLength(0);
+		expect(await ladeWarteschlange(), 'endgueltig entschieden').toHaveLength(0);
 		const meldungen = vi
-			.mocked(showToast)
+			.mocked(melde)
 			.mock.calls.map((c) => String(c[0]))
 			.join(' | ');
 		expect(meldungen).toContain('B-10234');
@@ -424,7 +431,7 @@ describe('offlineSync: die Nachbuch-Tuer', () => {
 		});
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
 		const rumpf = vi.mocked(apiClient.post).mock.calls[0][1];
 		const gescannt = new Date(rumpf.eintraege[0].gescannt_am).getTime();
@@ -448,7 +455,7 @@ describe('offlineSync: die Nachbuch-Tuer', () => {
 		});
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
 		const rumpf = vi.mocked(apiClient.post).mock.calls[0][1];
 		expect(new Date(rumpf.eintraege[0].gescannt_am).getTime()).toBe(vorhin);
@@ -460,10 +467,12 @@ describe('offlineSync: die Nachbuch-Tuer', () => {
 		for (let i = 0; i < 30; i++) await enqueueOfflineAction(rueckgabe(`B-${1000 + i}`));
 		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
 
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 
 		expect(vi.mocked(apiClient.post).mock.calls[0][1].eintraege).toHaveLength(25);
-		expect(await loadQueue(), 'die zweite Portion folgt in derselben Runde').toHaveLength(0);
+		expect(await ladeWarteschlange(), 'die zweite Portion folgt in derselben Runde').toHaveLength(
+			0
+		);
 	});
 });
 
@@ -484,8 +493,8 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 	async function meldungenNach(eintrag, ergebnis) {
 		await enqueueOfflineAction(eintrag);
 		vi.mocked(apiClient.post).mockImplementation(antworte(() => ergebnis));
-		await offlineSync.startSync();
-		return vi.mocked(showToast).mock.calls;
+		await offlineSync.starteAbgleich();
+		return vi.mocked(melde).mock.calls;
 	}
 
 	it.each([
@@ -497,7 +506,7 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 		const meldungen = await meldungenNach(rueckgabe('B-10243'), { ergebnis, grund });
 
 		expect(meldungen).toEqual([[`Offline-Scan „B-10243“: ${text} ${HAND}`, 'error']]);
-		expect(await loadQueue(), 'endgültig entschieden, also ausgebucht').toHaveLength(0);
+		expect(await ladeWarteschlange(), 'endgültig entschieden, also ausgebucht').toHaveLength(0);
 	});
 
 	it('nennt erst die Absicht des Scans, dann die Wirkung am Server', async () => {
@@ -516,7 +525,7 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 		const meldungen = await meldungenNach(rueckgabe('B-10234'), { ergebnis: 'bereits_gebucht' });
 
 		expect(meldungen).toEqual([]);
-		expect(await loadQueue()).toHaveLength(0);
+		expect(await ladeWarteschlange()).toHaveLength(0);
 	});
 
 	it('gibt eine offene Aufgabe mit dem Barcode weiter, auch wenn wie gescannt gebucht wurde', async () => {
@@ -571,7 +580,7 @@ describe('offlineSync: die Uhr des Rechners', () => {
 				})
 			)
 		);
-		await offlineSync.startSync();
+		await offlineSync.starteAbgleich();
 		const zeilen = warnung.mock.calls.map((c) => String(c[0]));
 		warnung.mockRestore();
 		return zeilen;
@@ -584,7 +593,7 @@ describe('offlineSync: die Uhr des Rechners', () => {
 		expect(await bucheMitVersatz(61)).toEqual([
 			'Offline-Sync: Uhr dieses Rechners weicht um 61 s ab.'
 		]);
-		expect(await loadQueue()).toHaveLength(0);
+		expect(await ladeWarteschlange()).toHaveLength(0);
 	});
 
 	it('schweigt bis zu einer Minute', async () => {

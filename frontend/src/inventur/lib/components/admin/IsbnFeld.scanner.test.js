@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import IsbnFeld from './IsbnFeld.svelte';

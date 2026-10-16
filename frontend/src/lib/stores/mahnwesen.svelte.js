@@ -46,13 +46,13 @@ function erzeugeMahnwesen() {
 	let heuteRetourniert = $state(0);
 
 	// Filter und Auswahl
-	let expandedKlassen = /** @type {Set<string>} */ (new SvelteSet());
+	let offeneKlassen = /** @type {Set<string>} */ (new SvelteSet());
 	let gewaehlteKlasse = $state(''); // Klassenfilter (leer = alle)
 	let suche = $state(''); // Freitextsuche über Name/Klasse
 
 	// MD3 Filter & Bulk Actions
-	let activeFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung"
-	let selectedIds = /** @type {Set<string>} */ (new SvelteSet());
+	let stufenFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung"
+	let gewaehlteKennungen = /** @type {Set<string>} */ (new SvelteSet());
 
 	const pdfStore = useMahnwesenPdf();
 	const mailStore = useMahnwesenMail();
@@ -61,7 +61,7 @@ function erzeugeMahnwesen() {
 	let klassen = $derived(daten?.klassen ?? []);
 	// Die Gruppe der Ehemaligen ist keine Klasse; Versand und Klassendruck bieten sie nicht an.
 	let versandKlassen = $derived(klassen.filter((/** @type {any} */ k) => !k.ehemalige));
-	let totalOverdue = $derived(
+	let ueberfaelligGesamt = $derived(
 		klassen.reduce(
 			(/** @type {number} */ sum, /** @type {any} */ k) =>
 				sum +
@@ -92,10 +92,10 @@ function erzeugeMahnwesen() {
 		return liste;
 	});
 
-	let filteredSchueler = $derived(() => {
+	let gefilterteSchueler = $derived(() => {
 		let liste = flatSchueler();
-		if (activeFilter !== 'Alle')
-			liste = liste.filter((/** @type {any} */ s) => s.mahnstufe === activeFilter);
+		if (stufenFilter !== 'Alle')
+			liste = liste.filter((/** @type {any} */ s) => s.mahnstufe === stufenFilter);
 		if (gewaehlteKlasse)
 			liste = liste.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse);
 		const q = suche.trim().toLowerCase();
@@ -116,7 +116,7 @@ function erzeugeMahnwesen() {
 	/**
 	 * Fetches Mahnwesen data from API.
 	 */
-	async function fetchData() {
+	async function lade() {
 		laedt = true;
 		fehler = null;
 		try {
@@ -125,7 +125,7 @@ function erzeugeMahnwesen() {
 			const json = await res.json();
 			daten = json;
 			heuteRetourniert = json.heute_retourniert || 0;
-			selectedIds.clear();
+			gewaehlteKennungen.clear();
 		} catch (e) {
 			fehler = String(e);
 		} finally {
@@ -134,63 +134,63 @@ function erzeugeMahnwesen() {
 	}
 
 	/** @param {string} klasse */
-	function toggleKlasse(klasse) {
-		const s = new SvelteSet(expandedKlassen);
+	function schalteKlasse(klasse) {
+		const s = new SvelteSet(offeneKlassen);
 		if (s.has(klasse)) s.delete(klasse);
 		else s.add(klasse);
-		expandedKlassen = s;
+		offeneKlassen = s;
 	}
 
-	// WICHTIG: selectedIds ist ein reaktives SvelteSet, aber KEIN $state-Binding. Deshalb muss
-	// es IN-PLACE mutiert werden (add/delete/clear) — eine Neuzuweisung (selectedIds = neuesSet)
+	// WICHTIG: gewaehlteKennungen ist ein reaktives SvelteSet, aber KEIN $state-Binding. Deshalb muss
+	// es IN-PLACE mutiert werden (add/delete/clear) — eine Neuzuweisung (gewaehlteKennungen = neuesSet)
 	// wäre nicht reaktiv, die Checkboxen und die Auswahl-Toolbar würden nicht reagieren.
 	/** @param {string} id */
-	function toggleSelect(id) {
-		if (selectedIds.has(id)) selectedIds.delete(id);
-		else selectedIds.add(id);
+	function schalteAuswahl(id) {
+		if (gewaehlteKennungen.has(id)) gewaehlteKennungen.delete(id);
+		else gewaehlteKennungen.add(id);
 	}
 
-	function selectAllSchueler() {
-		selectedIds.clear();
-		for (const s of filteredSchueler()) selectedIds.add(s.schueler_id);
+	function waehleAlle() {
+		gewaehlteKennungen.clear();
+		for (const s of gefilterteSchueler()) gewaehlteKennungen.add(s.schueler_id);
 	}
 
-	function deselectAllSchueler() {
-		selectedIds.clear();
+	function waehleKeine() {
+		gewaehlteKennungen.clear();
 	}
 
 	/** Wrapper for bulk printing that supplies needed state context. */
 	async function druckeGewaehlteMahnungen() {
-		await pdfStore.printSelectedMahnungen(selectedIds, filteredSchueler, fetchData);
+		await pdfStore.druckeGewaehlteMahnungen(gewaehlteKennungen, gefilterteSchueler, lade);
 	}
 
 	return {
-		get data() {
+		get daten() {
 			return daten;
 		},
-		get loading() {
+		get laedt() {
 			return laedt;
 		},
-		get error() {
+		get fehler() {
 			return fehler;
 		},
-		get expandedKlassen() {
-			return expandedKlassen;
+		get offeneKlassen() {
+			return offeneKlassen;
 		},
-		get selectedKlasse() {
+		get gewaehlteKlasse() {
 			return gewaehlteKlasse;
 		},
-		set selectedKlasse(v) {
+		set gewaehlteKlasse(v) {
 			gewaehlteKlasse = v;
 			// Sichtbereich ändert sich → Auswahl leeren, damit sie stets zur Liste passt.
-			selectedIds.clear();
+			gewaehlteKennungen.clear();
 		},
-		get searchQuery() {
+		get suche() {
 			return suche;
 		},
-		set searchQuery(v) {
+		set suche(v) {
 			suche = v;
-			selectedIds.clear();
+			gewaehlteKennungen.clear();
 		},
 		get klassen() {
 			return klassen;
@@ -198,40 +198,40 @@ function erzeugeMahnwesen() {
 		get versandKlassen() {
 			return versandKlassen;
 		},
-		get totalOverdue() {
-			return totalOverdue;
+		get ueberfaelligGesamt() {
+			return ueberfaelligGesamt;
 		},
 		get heuteRetourniert() {
 			return heuteRetourniert;
 		},
-		get activeFilter() {
-			return activeFilter;
+		get stufenFilter() {
+			return stufenFilter;
 		},
-		set activeFilter(v) {
-			activeFilter = v;
-			selectedIds.clear();
+		set stufenFilter(v) {
+			stufenFilter = v;
+			gewaehlteKennungen.clear();
 		},
-		get selectedIds() {
-			return selectedIds;
+		get gewaehlteKennungen() {
+			return gewaehlteKennungen;
 		},
-		get filteredSchueler() {
-			return filteredSchueler();
+		get gefilterteSchueler() {
+			return gefilterteSchueler();
 		},
 
-		fetchData,
-		toggleKlasse,
-		toggleSelect,
-		selectAllSchueler,
-		deselectAllSchueler,
+		lade,
+		schalteKlasse,
+		schalteAuswahl,
+		waehleAlle,
+		waehleKeine,
 
 		// Mail: nur noch der Massenversand (Einzelversand je Klasse entfernt am 18.09.2026,
 		// siehe mahnwesenMail.svelte.js).
-		sendBulkOverdueMails: mailStore.sendBulkOverdueMails,
+		sendeMahnmails: mailStore.sendeMahnmails,
 
-		get pdfLoading() {
-			return pdfStore.pdfLoading;
+		get drucktPdf() {
+			return pdfStore.drucktPdf;
 		},
-		printSelectedMahnungen: druckeGewaehlteMahnungen
+		druckeGewaehlteMahnungen
 	};
 }
 

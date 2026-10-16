@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { istNichtsGefunden, GELESENE_FORMATE, createBarcodeDetector } from './barcodeErkennung.js';
+import { istNichtsGefunden, GELESENE_FORMATE, erzeugeBarcodeErkenner } from './barcodeErkennung.js';
 
 // Die Rückfall-Bibliothek, wie der Erkenner sie braucht: ein Objekt, das eine Bilddatei liest.
 const { scanFileV2 } = vi.hoisted(() => ({ scanFileV2: vi.fn() }));
@@ -56,7 +56,7 @@ describe('Die Formatliste der Kamera', () => {
 	});
 });
 
-// jsdom hat keinen eingebauten Erkenner, createBarcodeDetector fällt also auf die Bibliothek
+// jsdom hat keinen eingebauten Erkenner, erzeugeBarcodeErkenner fällt also auf die Bibliothek
 // zurück — der Weg von Safari auf dem iPhone.
 describe('Rückfall-Erkenner: was detect() aus einem Bild macht', () => {
 	const bild = /** @type {any} */ ({ width: 4, height: 4 });
@@ -77,7 +77,7 @@ describe('Rückfall-Erkenner: was detect() aus einem Bild macht', () => {
 	});
 
 	async function erkenner() {
-		const gefunden = await createBarcodeDetector();
+		const gefunden = await erzeugeBarcodeErkenner();
 		expect(gefunden?.name).toBe('zxing-fallback');
 		return /** @type {NonNullable<typeof gefunden>} */ (gefunden).detector;
 	}

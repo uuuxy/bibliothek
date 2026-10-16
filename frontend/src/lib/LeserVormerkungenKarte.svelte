@@ -1,7 +1,7 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import { Trash } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[] }} */
@@ -13,13 +13,13 @@
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
 			if (res.ok) {
 				vormerkungen = vormerkungen.filter((v) => v.id !== id);
-				showToast('Vormerkung gelöscht', 'success');
+				melde('Vormerkung gelöscht', 'success');
 			} else {
 				const err = await res.json().catch(() => ({}));
-				showToast(err.error || 'Fehler beim Löschen', 'error');
+				melde(err.error || 'Fehler beim Löschen', 'error');
 			}
 		} catch {
-			showToast('Netzwerkfehler', 'error');
+			melde('Netzwerkfehler', 'error');
 		}
 	}
 </script>

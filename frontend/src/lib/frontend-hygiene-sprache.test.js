@@ -242,32 +242,8 @@ function englischImNamen(name) {
 
 /** @type {Record<string, number>} */
 const NAMEN_BESTAND = {
-	'src/inventur/lib/components/admin/AdminBuchAktionen.svelte': 1,
-	'src/inventur/lib/components/scanner/barcodeErkennung.js': 1,
-	'src/inventur/lib/store.svelte.js': 1,
-	'src/inventur/lib/titelSortierung.js': 2,
-	'src/lib/apiFetch.js': 2,
-	'src/lib/audio.js': 2,
-	'src/lib/components/bestellungen/mittel.js': 1,
-	'src/lib/components/leser/Papierkorb.svelte': 1,
-	'src/lib/components/leser/schuelerSuche.svelte.js': 1,
-	'src/lib/designer/idDesignerStore.svelte.js': 4,
-	'src/lib/inventurApi.js': 1,
-	'src/lib/lmfplanDienst.js': 1,
-	'src/lib/menue.js': 5,
-	'src/lib/offlineWarteschlange.js': 1,
-	'src/lib/passbildAusschnitt.js': 1,
-	'src/lib/rechteKategorien.js': 1,
-	'src/lib/routenTabelle.js': 1,
-	'src/lib/stores/druckWarteschlange.svelte.js': 1,
-	'src/lib/stores/etiketten.svelte.js': 13,
-	'src/lib/stores/leerlaufSperre.svelte.js': 1,
-	'src/lib/stores/mahnwesen.svelte.js': 4,
-	'src/lib/stores/mahnwesenMail.svelte.js': 1,
-	'src/lib/stores/mahnwesenPdf.svelte.js': 2,
-	'src/lib/stores/offlineSync.svelte.js': 3,
-	'src/lib/stores/omnibox.svelte.js': 1,
-	'src/lib/useLeserakteFormular.svelte.js': 3
+	// apiDelete heißt wie die HTTP-Methode, wie apiGet, apiPost und apiPut daneben.
+	'src/lib/apiFetch.js': 1
 };
 
 describe('Namen innerhalb der Dateien der Oberfläche sind deutsch', () => {

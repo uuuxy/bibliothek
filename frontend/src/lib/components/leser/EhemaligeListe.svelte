@@ -8,7 +8,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Archive } from '@lucide/svelte';
-	import { apiFetch, extractApiError } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 
@@ -44,7 +44,7 @@
 				ladefehler = '';
 			} else {
 				zeilen = [];
-				ladefehler = await extractApiError(res);
+				ladefehler = await leseApiFehler(res);
 			}
 		} catch (err) {
 			if (nr === ladeNr) {

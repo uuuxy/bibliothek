@@ -10,8 +10,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import { Plus, Unlink } from '@lucide/svelte';
-	import { apiFetch, extractApiError } from '../../../../lib/apiFetch.js';
-	import { showToast } from '$lib/store.svelte.js';
+	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
+	import { melde } from '$lib/store.svelte.js';
 	import { bestandSatz } from '../../../../lib/utils/format.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import AuflagenZeile from './AuflagenZeile.svelte';
@@ -37,7 +37,7 @@
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${formular.id}/auflagen`);
 			if (!res.ok) {
-				fehler = await extractApiError(res);
+				fehler = await leseApiFehler(res);
 				return;
 			}
 			auflagen = (await res.json()).auflagen ?? [];
@@ -56,15 +56,15 @@
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${a.id}/auflagen`, { method: 'DELETE' });
 			if (!res.ok) {
-				showToast(await extractApiError(res), 'error');
+				melde(await leseApiFehler(res), 'error');
 				return;
 			}
 			// Die Antwort gilt dem gelösten Titel; die Liste DIESES Titels wird neu gelesen,
 			// denn mit dem vorletzten fällt auch der letzte heraus.
 			await laden();
-			showToast(`Gelöst: ${auflagenBeschriftung(a)}`, 'success');
+			melde(`Gelöst: ${auflagenBeschriftung(a)}`, 'success');
 		} catch {
-			showToast('Netzwerkfehler — die Auflage wurde nicht gelöst.', 'error');
+			melde('Netzwerkfehler — die Auflage wurde nicht gelöst.', 'error');
 		} finally {
 			loest = '';
 		}

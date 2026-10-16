@@ -2,7 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import { TriangleAlert, CalendarPlus, Undo2 } from '@lucide/svelte';
 	import AusleiheRueckgabe from './AusleiheRueckgabe.svelte';
 	import BuchCover from './components/ui/BuchCover.svelte';
@@ -30,15 +30,15 @@
 				// Die Meldung nennt das neue Datum: Wer auf den Knopf sieht, sähe sonst nichts
 				// passieren.
 				const neu = new Date(daten.neues_rueckgabe_datum).toLocaleDateString('de-DE');
-				showToast(`Verlängert bis ${neu}.`, 'success');
+				melde(`Verlängert bis ${neu}.`, 'success');
 			} else {
 				const fehler = await response.json().catch(() => ({}));
 				// Die Begründung des Servers („Ausleihe gesperrt (Grund)") sagt, was zu tun ist.
-				showToast(fehler.error ?? 'Verlängerung nicht möglich.', 'error');
+				melde(fehler.error ?? 'Verlängerung nicht möglich.', 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			showToast('Netzwerkfehler bei der Verlängerung.', 'error');
+			melde('Netzwerkfehler bei der Verlängerung.', 'error');
 		} finally {
 			extendingIds.delete(id);
 		}

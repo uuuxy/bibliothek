@@ -6,7 +6,7 @@ vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchFormular from './BuchFormular.svelte';

@@ -60,7 +60,7 @@
 //
 // Wer dieses Gate erweitert, erweitert die Öffnerliste — nicht die Regel.
 import { test, expect } from '@playwright/test';
-import { tabToPath } from '../src/lib/routenTabelle.js';
+import { pfadJeBildschirm } from '../src/lib/routenTabelle.js';
 import { uiLogin } from './helpers.js';
 
 /** Die Pfade der Routen-Tabelle — eine handgepflegte Liste veraltet still. */
@@ -69,7 +69,7 @@ function routen() {
 	// aus Router.svelte gezogen wurde. Ein Regex über fremden Quelltext bricht bei jedem
 	// Umzug — und diese Spec war danach rot, während die Schwester im Unit-Test still auf
 	// eine leere Liste fiel.
-	return Object.values(tabToPath);
+	return Object.values(pfadJeBildschirm);
 }
 
 /** Läuft IM BROWSER. Liefert je Fund Tag, Grösse, Klasse und die gemessenen Werte. */

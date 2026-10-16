@@ -10,6 +10,6 @@ export const druckWarteschlange = $state({
 	copies: null
 });
 
-export function clearPrintQueue() {
+export function leereDruckwarteschlange() {
 	druckWarteschlange.copies = null;
 }

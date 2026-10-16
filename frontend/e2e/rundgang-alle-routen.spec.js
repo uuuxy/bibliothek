@@ -21,12 +21,12 @@
 // (sie ist Daten, und der Router ist eine geduldete Datei über 200 Zeilen). Der Umzug hat
 // genau diesen Test rot gemacht — die volle Suite war der Grund, warum es auffiel.
 import { test, expect } from '@playwright/test';
-import { tabToPath } from '../src/lib/routenTabelle.js';
+import { pfadJeBildschirm } from '../src/lib/routenTabelle.js';
 import { uiLogin, gehZu } from './helpers.js';
 
 /** Die Pfade der Routen-Tabelle — importiert, nicht aus Quelltext gelesen. */
 function routen() {
-	return Object.values(tabToPath);
+	return Object.values(pfadJeBildschirm);
 }
 
 const ROUTEN = routen();

@@ -8,7 +8,7 @@
 	import Zugangsanfragen from './Zugangsanfragen.svelte';
 	import KontoBearbeitenDialog from './KontoBearbeitenDialog.svelte';
 	import KontoLoeschenDialog from './KontoLoeschenDialog.svelte';
-	import { apiFetch, extractApiError } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import {
 		leeresBenutzerFormular,
 		benutzerFormularAus,
@@ -60,7 +60,7 @@
 			if (!res.ok) {
 				if (res.status === 403)
 					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
-				throw new Error(await extractApiError(res));
+				throw new Error(await leseApiFehler(res));
 			}
 			konten = await res.json();
 		} catch (err) {
@@ -84,7 +84,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
-			if (!res.ok) throw new Error(await extractApiError(res));
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			formularOffen = false;
 			snackbars.addToast(
 				istAenderung ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
@@ -106,8 +106,8 @@
 			const res = await apiFetch(`/api/benutzer/${zuLoeschen.id}`, { method: 'DELETE' });
 			if (!res.ok) {
 				// Bei 409 (offene Handapparat-Ausleihen) trägt die Server-Meldung bereits den
-				// Hinweis „Bitte zuerst zurückbuchen.“; extractApiError packt sie aus dem JSON aus.
-				throw new Error(await extractApiError(res));
+				// Hinweis „Bitte zuerst zurückbuchen.“; leseApiFehler packt sie aus dem JSON aus.
+				throw new Error(await leseApiFehler(res));
 			}
 			loeschfrageOffen = false;
 			zuLoeschen = null;

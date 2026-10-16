@@ -13,14 +13,14 @@ import { render } from '@testing-library/svelte';
 // Bedingung anfasst, wieder eine einzige daraus macht.
 
 const sync = {
-	pendingCount: 0,
-	isOffline: false,
-	isSyncing: false,
+	wartendeAnzahl: 0,
+	ohneNetz: false,
+	gleichtAb: false,
 	warteschlangeFehler: false,
 	/** @type {number | null} */
 	abgelehntMitStatus: null,
-	exportQueueAsJSON: vi.fn(),
-	importQueueFromJSON: vi.fn()
+	exportiereWarteschlange: vi.fn(),
+	importiereWarteschlange: vi.fn()
 };
 
 // Die Meldungen aus dem Nachbuchen haengen am selben Band (Schritt C, 16.09.2026).
@@ -50,9 +50,9 @@ const { default: OfflineAnzeige } = await import('./OfflineAnzeige.svelte');
 
 describe('Offline-Band', () => {
 	beforeEach(() => {
-		sync.pendingCount = 0;
-		sync.isOffline = false;
-		sync.isSyncing = false;
+		sync.wartendeAnzahl = 0;
+		sync.ohneNetz = false;
+		sync.gleichtAb = false;
 		sync.warteschlangeFehler = false;
 		sync.abgelehntMitStatus = null;
 		meldungen.offen = 0;
@@ -62,7 +62,7 @@ describe('Offline-Band', () => {
 	});
 
 	it('ist kein Vollbild — es deckt die Anwendung nicht zu', () => {
-		sync.isOffline = true;
+		sync.ohneNetz = true;
 		const screen = render(OfflineAnzeige, {});
 		const band = screen.container.querySelector('div');
 		expect(band).not.toBeNull();
@@ -73,7 +73,7 @@ describe('Offline-Band', () => {
 	});
 
 	it('ohne Netz und ohne offene Vorgaenge bleibt es leise', () => {
-		sync.isOffline = true;
+		sync.ohneNetz = true;
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 		expect(text).toContain('Scannen geht weiter');
@@ -83,8 +83,8 @@ describe('Offline-Band', () => {
 	});
 
 	it('nennt offene Vorgaenge mit Zahl und bietet die Sicherung an', () => {
-		sync.isOffline = true;
-		sync.pendingCount = 3;
+		sync.ohneNetz = true;
+		sync.wartendeAnzahl = 3;
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 		expect(text).toContain('3 Vorgänge nur auf diesem Rechner');
@@ -107,7 +107,7 @@ describe('Offline-Band', () => {
 	// lief der Versuch jede Minute ins Leere. Sichtbar war nur der Zähler, und der sagt
 	// „noch nicht im System", nicht „geht so nicht mehr".
 	it('sagt es, wenn die Vorgänge mit dieser Anmeldung nicht zu buchen sind', () => {
-		sync.pendingCount = 4;
+		sync.wartendeAnzahl = 4;
 		sync.abgelehntMitStatus = 403;
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
@@ -119,7 +119,7 @@ describe('Offline-Band', () => {
 	});
 
 	it('nennt eine andere Ablehnung, ohne den Menschen mit einer Zahl allein zu lassen', () => {
-		sync.pendingCount = 1;
+		sync.wartendeAnzahl = 1;
 		sync.abgelehntMitStatus = 400;
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
@@ -129,7 +129,7 @@ describe('Offline-Band', () => {
 
 	// Die Gegenprobe: Ein Server, der gleich wiederkommt, darf die Theke NICHT anschreien.
 	it('bleibt bei 502 leise — dort hilft Warten', () => {
-		sync.pendingCount = 2;
+		sync.wartendeAnzahl = 2;
 		sync.abgelehntMitStatus = null; // sendeBatch merkt sich 5xx bewusst nicht
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');

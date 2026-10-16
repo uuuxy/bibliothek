@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../../../../lib/apiFetch.js', () => ({
 	apiFetch: vi.fn(),
-	extractApiError: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
 }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';

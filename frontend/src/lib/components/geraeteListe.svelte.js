@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from '../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../apiFetch.js';
 
 /**
  * Die Geräteliste (Laptops, Tablets) — eigene Datei, weil GeraeteVerwaltung an der
@@ -20,7 +20,7 @@ export function erzeugeGeraeteListe() {
 		laedt = true;
 		try {
 			const res = await apiFetch('/api/geraete');
-			if (!res.ok) throw new Error(await extractApiError(res));
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			const daten = await res.json();
 			liste = Array.isArray(daten?.data) ? daten.data : [];
 			ladefehler = '';

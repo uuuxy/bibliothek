@@ -1,7 +1,7 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
-	import { appState, showToast } from '$lib/store.svelte.js';
+	import { appState, melde } from '$lib/store.svelte.js';
 	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
 	import {
 		stehtInSicht,
@@ -29,9 +29,9 @@
 			await loescheTitel(formular.id);
 			books = books.filter((/** @type {any} */ b) => b.id !== formular.id);
 			isEditMode = false;
-			showToast('Titel gelöscht.', 'success');
+			melde('Titel gelöscht.', 'success');
 		} catch (fehler) {
-			showToast(fehlertext(fehler), 'error');
+			melde(fehlertext(fehler), 'error');
 		}
 	}
 
@@ -40,7 +40,7 @@
 	let speichert = false;
 
 	/** Speichert die Maske. Pflicht ist der Titel, das prüft der Knopf (BuchFormular). */
-	export async function saveChanges() {
+	export async function speichereAenderungen() {
 		if (speichert) return;
 		speichert = true;
 		try {
@@ -67,7 +67,7 @@
 			if (isEditMode) {
 				isEditMode = false;
 			}
-			showToast(
+			melde(
 				neu && bestand === 0
 					? 'Titel ohne Exemplar gespeichert. Er steht unter „Ohne Exemplare“.'
 					: 'Buch erfolgreich gespeichert!',
@@ -84,7 +84,7 @@
 			if (e instanceof BestandVeraltetFehler) {
 				formular.stock = formular.stockGesehen = e.bestand;
 			}
-			showToast(fehlertext(e), 'error');
+			melde(fehlertext(e), 'error');
 		} finally {
 			speichert = false;
 		}
@@ -137,9 +137,9 @@
 			const coverUrl = await coverNeuHolen(formular.id);
 			uebernimmGespeichert(formular, 'coverUrl', coverUrl);
 			books = books.map((/** @type {any} */ b) => (b.id === formular.id ? { ...b, coverUrl } : b));
-			showToast('Cover neu geholt', 'success');
+			melde('Cover neu geholt', 'success');
 		} catch (err) {
-			showToast(fehlertext(err), 'error');
+			melde(fehlertext(err), 'error');
 		}
 	}
 
@@ -185,9 +185,9 @@
 			books = books.map((/** @type {any} */ b) =>
 				b.id === formular.id ? { ...b, coverUrl: json.data.coverUrl } : b
 			);
-			showToast('Cover erfolgreich hochgeladen', 'success');
+			melde('Cover erfolgreich hochgeladen', 'success');
 		} catch (err) {
-			showToast(fehlertext(err), 'error');
+			melde(fehlertext(err), 'error');
 		}
 	}
 </script>

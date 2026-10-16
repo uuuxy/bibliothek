@@ -8,7 +8,7 @@
      Ausleihdatum steht beim Zeigen auf dem Datum. Eine Dauerleihe hat keine Frist. -->
 <script>
 	import { apiFetch } from './apiFetch.js';
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import { Check, Pencil, X } from '@lucide/svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import UeberfaelligZeichen from './components/UeberfaelligZeichen.svelte';
@@ -37,14 +37,14 @@
 				const daten = await response.json();
 				book.rueckgabe_frist = daten.faellig_am;
 				bearbeitet = false;
-				showToast(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt.`, 'success');
+				melde(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt.`, 'success');
 			} else {
 				const fehler = await response.json().catch(() => ({}));
-				showToast(fehler.error ?? 'Datum konnte nicht gespeichert werden.', 'error');
+				melde(fehler.error ?? 'Datum konnte nicht gespeichert werden.', 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			showToast('Netzwerkfehler beim Speichern des Datums.', 'error');
+			melde('Netzwerkfehler beim Speichern des Datums.', 'error');
 		} finally {
 			speichert = false;
 		}

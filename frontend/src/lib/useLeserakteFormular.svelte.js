@@ -65,26 +65,26 @@ function nutzlast(daten, leser, hatKonto) {
  * Hook arbeitete danach dauerhaft mit dem Schüler, der beim Aufbau der Komponente
  * gerade aktuell war. Zwei Folgen, beide still:
  *
- *   1. `syncData()` füllte das Formular erneut mit den ALTEN Daten, wenn der Aufrufer
+ *   1. `uebernimmLeser()` füllte das Formular erneut mit den ALTEN Daten, wenn der Aufrufer
  *      dieselbe Komponente mit einem anderen Schüler weiterverwendete.
  *   2. `save()` schickte das PATCH an `/api/schueler/<alte-id>` — die Eingaben landeten
  *      am falschen Datensatz, mit Erfolgsmeldung.
  *
  * Der Svelte-Compiler warnte darauf hin ("This reference only captures the initial
  * value of `student`"). Über einen Getter liest der Hook bei jedem Zugriff den
- * aktuellen Wert, und ein `$effect`, der `syncData()` aufruft, verfolgt das Prop
+ * aktuellen Wert, und ein `$effect`, der `uebernimmLeser()` aufruft, verfolgt das Prop
  * dadurch auch richtig.
  *
  * @param {Object} props
  * @param {() => any} props.getStudent - Liefert den aktuell bearbeiteten Schüler
  * @param {() => void} props.onSave - Callback when the save is successful
  * @param {(msg: string, type: 'success' | 'error') => void} props.showSnackbar - Callback to show notifications
- * @returns {{ formData: any, saving: boolean, kontoVorhanden: boolean, syncData: () => void, save: () => Promise<void> }}
+ * @returns {{ eingaben: any, speichert: boolean, kontoVorhanden: boolean, uebernimmLeser: () => void, speichere: () => Promise<void> }}
  */
 export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	let speichert = $state(false);
 
-	let formData = $state({
+	let eingaben = $state({
 		vorname: '',
 		nachname: '',
 		art: 'schueler',
@@ -118,11 +118,11 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	 * Syncs the form data with the provided student object.
 	 * Call this in an $effect when the student prop changes.
 	 */
-	function syncData() {
+	function uebernimmLeser() {
 		const leser = getStudent();
 		if (!leser) return;
-		// Erst ein schlichtes Objekt: Der Aufrufer ruft syncData in einem $effect, und wer dort
-		// formData läse, füllte die Maske bei jedem Tastendruck neu.
+		// Erst ein schlichtes Objekt: Der Aufrufer ruft uebernimmLeser in einem $effect, und wer dort
+		// eingaben läse, füllte die Maske bei jedem Tastendruck neu.
 		const werte = {
 			vorname: leser.vorname || '',
 			nachname: leser.nachname || '',
@@ -141,7 +141,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 			eltern_email: leser.eltern_email || '',
 			email: leser.email || ''
 		};
-		Object.assign(formData, werte);
+		Object.assign(eingaben, werte);
 		kontoVorhanden = !!leser.email;
 		geladen = nutzlast(werte, leser, !!leser.email);
 	}
@@ -151,13 +151,13 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	 * jedes Feld, das der Rumpf nennt: Mit allen Feldern schriebe die Maske zurück, was ein
 	 * anderer Platz, der LUSD-Import oder die Versetzung inzwischen geändert hat.
 	 */
-	async function save() {
+	async function speichere() {
 		const leser = getStudent();
 		if (!leser?.id) {
 			showSnackbar('Kein Schüler ausgewählt.', 'error');
 			return;
 		}
-		const payload = nurGeaendertes(geladen, nutzlast(formData, leser, kontoVorhanden));
+		const payload = nurGeaendertes(geladen, nutzlast(eingaben, leser, kontoVorhanden));
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(payload).length === 0) {
 			showSnackbar('Änderungen gespeichert.', 'success');
@@ -181,16 +181,16 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	}
 
 	return {
-		get formData() {
-			return formData;
+		get eingaben() {
+			return eingaben;
 		},
 		get kontoVorhanden() {
 			return kontoVorhanden;
 		},
-		get saving() {
+		get speichert() {
 			return speichert;
 		},
-		syncData,
-		save
+		uebernimmLeser,
+		speichere
 	};
 }

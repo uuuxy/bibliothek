@@ -3,7 +3,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { bestaetigen, loeschenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
 	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
-	import { appState, showToast } from '$lib/store.svelte.js';
+	import { appState, melde } from '$lib/store.svelte.js';
 	import Bestandstabelle from '$lib/components/admin/Bestandstabelle.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
@@ -80,7 +80,7 @@
 			geholt = await titelFuerMaske(buch);
 		} catch {
 			if (meine !== oeffnung) return;
-			showToast('Buch konnte nicht vollständig geladen werden — Bearbeiten abgebrochen', 'error');
+			melde('Buch konnte nicht vollständig geladen werden — Bearbeiten abgebrochen', 'error');
 			return;
 		}
 		if (meine !== oeffnung) return;
@@ -96,7 +96,7 @@
 			await loescheBuecher(ids);
 			liste.buecher = liste.buecher.filter((b) => !ids.includes(b.id));
 		} catch (fehler) {
-			showToast(/** @type {any} */ (fehler).message, 'error');
+			melde(/** @type {any} */ (fehler).message, 'error');
 		}
 	}
 
@@ -104,7 +104,7 @@
 		try {
 			const externe = await holeExterneCover();
 			if (!externe.length) {
-				showToast('Keine externen Cover mehr vorhanden.', 'info');
+				melde('Keine externen Cover mehr vorhanden.', 'info');
 				return;
 			}
 			if (
@@ -118,12 +118,12 @@
 			const ids = externe.map((/** @type {any} */ b) => b.id);
 			const ergebnis = await retryExterneCover(ids);
 			await aktualisiereBuecher();
-			showToast(
+			melde(
 				`Cover lokalisiert. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
 				'info'
 			);
 		} catch (fehler) {
-			showToast(/** @type {any} */ (fehler).message, 'error');
+			melde(/** @type {any} */ (fehler).message, 'error');
 		}
 	}
 </script>
@@ -134,7 +134,7 @@
 			bind:formular
 			bind:wirdGescannt
 			onClose={() => (istBearbeitenModus = false)}
-			onSave={() => buchAktionen.saveChanges()}
+			onSave={() => buchAktionen.speichereAenderungen()}
 			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.ladeCoverHoch(ereignis)}
 			onCoverNeuHolen={() => buchAktionen.holeCoverNeu()}
 			onAssignClass={() => (klassenZuweisenIds = formular.id ? [formular.id] : [])}

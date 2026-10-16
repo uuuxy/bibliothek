@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('./store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('./store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
 import { bestaetigen } from '../../lib/stores/bestaetigung.svelte.js';
-import { appState, showToast } from './store.svelte.js';
+import { appState, melde } from './store.svelte.js';
 import { vorhandenerTitel, frageWennVergeben } from './buch_vorhanden.js';
 
 /** @param {number} status @param {any} koerper */
@@ -65,7 +65,7 @@ describe('buch_vorhanden: die ISBN ist schon vergeben', () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { vorhanden: null } }));
 		expect(await frageWennVergeben('9783791504544')).toBe(false);
 		expect(bestaetigen).not.toHaveBeenCalled();
-		expect(showToast).not.toHaveBeenCalled();
+		expect(melde).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -75,7 +75,7 @@ describe('buch_vorhanden: die ISBN ist schon vergeben', () => {
 		vi.mocked(apiFetch).mockImplementation(antwortet);
 		expect(await frageWennVergeben('9783791504544')).toBe(false);
 		expect(bestaetigen).not.toHaveBeenCalled();
-		expect(showToast).toHaveBeenCalledWith(
+		expect(melde).toHaveBeenCalledWith(
 			'Ob es diese ISBN schon gibt, ließ sich nicht prüfen.',
 			'warning'
 		);

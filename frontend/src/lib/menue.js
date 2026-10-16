@@ -12,7 +12,7 @@
  * Prüft ein einzelnes Recht. Die EINE Stelle, an der die Regel steht: Admin darf
  * alles, sonst entscheidet die Rechteliste aus role_permissions ('*' = alles).
  *
- * Bewusst geteilt mit canSeeItem — eine Ansicht, die ihre Rechteprüfung selbst
+ * Bewusst geteilt mit darfSehen — eine Ansicht, die ihre Rechteprüfung selbst
  * nachbaut, weicht beim nächsten Rollen-Feinschliff still von der Navigation ab:
  * Der Menüpunkt wäre dann sichtbar und die Aktion darin gesperrt, oder umgekehrt.
  *
@@ -34,7 +34,7 @@ export function hatRecht(currentUser, permission) {
  * @param {any} currentUser
  * @returns {boolean}
  */
-export function canSeeItem(item, currentUser) {
+export function darfSehen(item, currentUser) {
 	if (!currentUser) return false;
 
 	const r = (currentUser.rolle || '').toLowerCase();
@@ -81,7 +81,7 @@ export function canSeeItem(item, currentUser) {
 // view_students und antworten mit 403 —, aber eine Lehrkraft landete auf einer leeren,
 // defekt wirkenden Seite statt in ihrem Portal.
 /** @type {Record<string, string>} */
-const unteransichtBrauchtReiter = {
+const unteransichtBrauchtBildschirm = {
 	book_detail: 'media_catalog',
 	stats_detail: 'stats'
 };
@@ -92,29 +92,29 @@ const unteransichtBrauchtReiter = {
  * @param {any} currentUser
  * @returns {Set<string>}
  */
-export function erlaubteTabs(currentUser) {
+export function erlaubteBildschirme(currentUser) {
 	return new Set(
-		menuGroups
+		menueGruppen
 			.flatMap((g) => g.items)
-			.filter((i) => canSeeItem(i, currentUser))
+			.filter((i) => darfSehen(i, currentUser))
 			.map((i) => i.id)
 	);
 }
 
 /**
- * Darf dieser Bildschirm NICHT geöffnet werden? Beantwortet dieselbe Frage wie canSeeItem,
+ * Darf dieser Bildschirm NICHT geöffnet werden? Beantwortet dieselbe Frage wie darfSehen,
  * nur für einen Tab statt für einen Menüpunkt — bewusst hier und nicht im Router, damit es
  * nicht wieder zwei Definitionen davon gibt, was eine Rolle erreichen darf.
  *
  * @param {string} tab
- * @param {Set<string>} erlaubt Ergebnis von erlaubteTabs
+ * @param {Set<string>} erlaubt Ergebnis von erlaubteBildschirme
  * @returns {boolean}
  */
-export function tabIstGesperrt(tab, erlaubt) {
-	const elternReiter = unteransichtBrauchtReiter[tab];
-	if (elternReiter) return !erlaubt.has(elternReiter);
+export function bildschirmGesperrt(tab, erlaubt) {
+	const elternBildschirm = unteransichtBrauchtBildschirm[tab];
+	if (elternBildschirm) return !erlaubt.has(elternBildschirm);
 
-	const menuepunkte = new Set(menuGroups.flatMap((g) => g.items).map((i) => i.id));
+	const menuepunkte = new Set(menueGruppen.flatMap((g) => g.items).map((i) => i.id));
 	return menuepunkte.has(tab) && !erlaubt.has(tab);
 }
 
@@ -125,12 +125,12 @@ export function tabIstGesperrt(tab, erlaubt) {
  * @param {string} tab
  * @returns {string}
  */
-export function tabTitel(tab) {
-	for (const g of menuGroups) for (const i of g.items) if (i.id === tab) return i.label;
+export function bildschirmTitel(tab) {
+	for (const g of menueGruppen) for (const i of g.items) if (i.id === tab) return i.label;
 	return { book_detail: 'Buchakte', stats_detail: 'Statistik im Detail' }[tab] ?? 'Bibliothek';
 }
 
-export const menuGroups = [
+export const menueGruppen = [
 	{
 		name: 'Kiosk',
 		items: [{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk' }]

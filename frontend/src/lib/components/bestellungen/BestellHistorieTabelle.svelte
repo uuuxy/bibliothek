@@ -16,7 +16,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { CircleCheck, Clock, ChevronRight, MailWarning } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
-	import { mittelLabel } from './mittel.js';
+	import { mittelBeschriftung } from './mittel.js';
 
 	/**
 	 * @type {{
@@ -76,7 +76,7 @@
 					</td>
 					<td class="whitespace-nowrap">
 						{#if b.mittel}
-							<StatusChip ton="neutral" text={mittelLabel(b.mittel)} />
+							<StatusChip ton="neutral" text={mittelBeschriftung(b.mittel)} />
 						{:else}
 							<span class="text-sm text-on-surface-variant">ohne Zuordnung</span>
 						{/if}

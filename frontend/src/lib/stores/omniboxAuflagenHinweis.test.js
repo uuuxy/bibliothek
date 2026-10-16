@@ -9,14 +9,14 @@ import { render } from '@testing-library/svelte';
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { createOmniboxStore } from './omnibox.svelte.js';
+import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 import OmniboxThekeHinweise from '../components/OmniboxThekeHinweise.svelte';
 import { omniboxStore } from './omnibox.svelte.js';
 
@@ -27,13 +27,13 @@ const HINWEIS = {
 	andere: [{ auflage: '3. Aufl.', erscheinungsjahr: 2019, kinder: 12 }]
 };
 
-/** @type {ReturnType<typeof createOmniboxStore>[]} */
+/** @type {ReturnType<typeof erzeugeOmniboxStore>[]} */
 const stores = [];
 afterEach(() => {
 	while (stores.length) stores.pop()?.stoppeZeitgeber();
 });
 
-/** @param {ReturnType<typeof createOmniboxStore>} store @param {any} data */
+/** @param {ReturnType<typeof erzeugeOmniboxStore>} store @param {any} data */
 async function scanne(store, data) {
 	vi.mocked(apiClient.post).mockResolvedValue(
 		/** @type {any} */ ({ ok: true, json: async () => data })
@@ -43,7 +43,7 @@ async function scanne(store, data) {
 }
 
 function neuerStore() {
-	const store = createOmniboxStore();
+	const store = erzeugeOmniboxStore();
 	stores.push(store);
 	return store;
 }

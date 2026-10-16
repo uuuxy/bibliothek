@@ -83,7 +83,7 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 
 		for (const form of [
 			'error = err instanceof Error ? err.message : String(err);',
-			'showToast(fehler instanceof Error ? fehler.message : String(fehler));',
+			'melde(fehler instanceof Error ? fehler.message : String(fehler));',
 			'fehler = String(e instanceof Error ? e.message : e);'
 		]) {
 			expect(FEHLERTEXT.test(form), form).toBe(true);

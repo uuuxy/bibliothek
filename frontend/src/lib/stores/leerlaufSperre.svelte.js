@@ -32,7 +32,7 @@ const AKTIVITAETS_EREIGNISSE = ['pointerdown', 'pointermove', 'keydown', 'wheel'
 /** Mehr als einmal pro Sekunde muss die Uhr nicht neu gestellt werden. */
 const DROSSEL_MS = 1000;
 
-export class IdleLock {
+export class LeerlaufSperre {
 	gesperrt = $state(false);
 	/**
 	 * Steht hinter dem Sperrbildschirm die aufgebaute Anwendung dieses Fensters? Dann bleibt
@@ -191,7 +191,7 @@ export class IdleLock {
 	 */
 	sperren() {
 		if (!this.#laeuft) return;
-		if (offlineSync.isOffline) {
+		if (offlineSync.ohneNetz) {
 			this.thekeLeeren();
 			this.#loescheTimer();
 			this.#sperreFaellig = true;
@@ -234,7 +234,7 @@ export class IdleLock {
 	 * sie nicht an, und sie lägen bis zum Aufschließen nur auf diesem Rechner.
 	 */
 	async #sperreAmServer() {
-		if (offlineSync.pendingCount > 0) await offlineSync.startSync();
+		if (offlineSync.wartendeAnzahl > 0) await offlineSync.starteAbgleich();
 		// Inzwischen aufgeschlossen: Eine verspätete Sperre träfe jemanden bei der Arbeit.
 		if (!this.#laeuft || !this.gesperrt) return;
 		const ergebnis = await sperreAmServer();
@@ -271,7 +271,7 @@ export class IdleLock {
 		}
 		// Gesperrt wurde noch mit Netz, verloren ging es danach. „Netzwerkfehler" sagte
 		// weder, dass Warten hilft, noch dass die gescannten Vorgänge gespeichert bleiben.
-		if (offlineSync.isOffline) {
+		if (offlineSync.ohneNetz) {
 			this.entsperrFehler =
 				'Ohne Netz lässt sich das Passwort nicht prüfen — die Anmeldung läuft über den Schulserver. ' +
 				'Sobald die Verbindung zurück ist, geht es hier weiter; gescannte Vorgänge bleiben gespeichert.';
@@ -379,7 +379,7 @@ async function fehlertext(res) {
 	return `Wiederanmeldung fehlgeschlagen (${res.status}).`;
 }
 
-export const leerlaufSperre = new IdleLock();
+export const leerlaufSperre = new LeerlaufSperre();
 
 // Einmal beim Modul-Laden, wie der 401-Haken des authStore.
 registriereSitzungGesperrtHandler(() => leerlaufSperre.vomServerGesperrt());

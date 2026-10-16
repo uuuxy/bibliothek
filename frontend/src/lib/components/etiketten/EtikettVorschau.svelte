@@ -1,7 +1,7 @@
 <script>
 	import { strichcodeBildUrl } from '../../strichcodeBild.js';
 	import { etikettFormat } from '../../etikettformate.js';
-	import { labelStore } from '../../stores/etiketten.svelte.js';
+	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 
 	// Das Blatt ist in echten Millimetern gezeichnet, zwei Drittel von A4. Ist die Spalte
@@ -12,16 +12,16 @@
 	// Raster und Ränder kommen aus dem gewählten Format, gedruckt wird nach denselben Zahlen
 	// (pdf/etikett_formate.go). Die Spalten dürfen schmaler werden als ihr Maß: Drei Etiketten
 	// von 70 mm füllen das Blatt ganz, und sein Rahmen nimmt ihnen zwei Pixel.
-	const format = $derived(etikettFormat(labelStore.formatId));
+	const format = $derived(etikettFormat(etikettenStore.formatId));
 	const mm = (/** @type {number} */ wert) => `${Math.floor(((wert * 2) / 3) * 10) / 10}mm`;
 	let platz = $state(0);
 	let blattHoehe = $state(0);
 	const massstab = $derived(platz > 0 ? Math.min(1, platz / (BLATT_BREITE_MM * PX_JE_MM)) : 1);
 	// Gezeichnet wird der erste Bogen: Format, Rahmen und Startposition stehen darauf. Alle
 	// Bogen zeigt die PDF, die „A4-Bogen drucken" in einem neuen Tab öffnet.
-	const ersterBogen = $derived(labelStore.finalLabels.slice(0, labelStore.maxPositions));
-	const bogenZahl = $derived(Math.ceil(labelStore.finalLabels.length / labelStore.maxPositions));
-	const etikettenZahl = $derived(labelStore.finalLabels.filter((lbl) => !lbl.isBlank).length);
+	const ersterBogen = $derived(etikettenStore.bogen.slice(0, etikettenStore.felderJeBogen));
+	const bogenZahl = $derived(Math.ceil(etikettenStore.bogen.length / etikettenStore.felderJeBogen));
+	const etikettenZahl = $derived(etikettenStore.bogen.filter((lbl) => !lbl.isBlank).length);
 </script>
 
 <!-- Die Vorschau bekommt die kleinere Hälfte (5 von 12): Die Arbeit geschieht im Formular
@@ -34,14 +34,14 @@
 		>A4 Etiketten-Vorschau · {format.kurz}</span
 	>
 
-	{#if !labelStore.selectedTitle && (druckWarteschlange.copies?.length ?? 0) === 0}
+	{#if !etikettenStore.gewaehlterTitel && (druckWarteschlange.copies?.length ?? 0) === 0}
 		<div class="grow flex flex-col items-center justify-center text-on-surface-variant py-12">
 			<span>Kein Buch ausgewählt</span>
 			<span class="mt-1 text-xs text-on-surface-variant"
 				>Suche einen Titel links, um die Live-Vorschau zu aktivieren.</span
 			>
 		</div>
-	{:else if labelStore.finalLabels.length === 0}
+	{:else if etikettenStore.bogen.length === 0}
 		<div class="grow flex flex-col items-center justify-center text-on-surface-variant py-12">
 			<span>Keine Etiketten gewählt</span>
 			<span class="mt-1 text-xs text-on-surface-variant"
@@ -79,7 +79,7 @@
 								</div>
 							{:else}
 								<div
-									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between {labelStore.labelBorder
+									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between {etikettenStore.mitRahmen
 										? 'border border-outline-variant'
 										: ''}"
 									style="width: {mm(format.breite)}; max-width: 100%; height: {mm(
@@ -101,11 +101,11 @@
 									<div class="flex flex-col items-center justify-center grow pt-0.5">
 										<img
 											src={strichcodeBildUrl(lbl.barcode_id, {
-												qr: labelStore.barcodeType === 'qr',
+												qr: etikettenStore.barcodeArt === 'qr',
 												width: 150,
 												height: 50
 											})}
-											class="{labelStore.barcodeType === 'qr'
+											class="{etikettenStore.barcodeArt === 'qr'
 												? 'h-6 w-6'
 												: 'h-4 w-full'} object-contain"
 											alt="Barcode"

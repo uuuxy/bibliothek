@@ -10,12 +10,12 @@ vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({
 vi.mock('../../../../lib/stores/authStore.svelte.js', () => ({ authStore: { currentUser: null } }));
 vi.mock('$lib/store.svelte.js', () => ({
 	appState: { bestandsAnsicht: 'mit', bookToEdit: null, selectedBook: null },
-	showToast: vi.fn()
+	melde: vi.fn()
 }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { bestaetigen, fragen } from '../../../../lib/stores/bestaetigung.svelte.js';
-import { appState, showToast } from '$lib/store.svelte.js';
+import { appState, melde } from '$lib/store.svelte.js';
 import AdminBuchAktionen from './AdminBuchAktionen.svelte';
 
 /** @param {number} status @param {any} koerper */
@@ -56,13 +56,13 @@ describe('AdminBuchAktionen: vergebene ISBN beim Anlegen', () => {
 			isbn: '9783791504544',
 			title: 'Drachenreiter',
 			stock: 1
-		}).saveChanges();
+		}).speichereAenderungen();
 
 		const frage = vi.mocked(bestaetigen).mock.calls[0][0];
 		expect(frage.aktion).toBe('Titel öffnen');
 		expect(frage.text).toContain(MELDUNG);
 		expect(appState.bookToEdit).toEqual({ id: 'titel-1' });
-		expect(showToast).not.toHaveBeenCalled();
+		expect(melde).not.toHaveBeenCalled();
 	});
 
 	it('Abbrechen lässt die Maske stehen', async () => {
@@ -73,15 +73,20 @@ describe('AdminBuchAktionen: vergebene ISBN beim Anlegen', () => {
 			isbn: '9783791504544',
 			title: 'Drachenreiter',
 			stock: 1
-		}).saveChanges();
+		}).speichereAenderungen();
 		expect(appState.bookToEdit).toBeNull();
 	});
 
 	it('beim Ändern bleibt es bei der Meldung', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(DUBLETTE);
-		await maske({ id: 'titel-2', isbn: '9783791504544', title: 'Anderer', stock: 1 }).saveChanges();
+		await maske({
+			id: 'titel-2',
+			isbn: '9783791504544',
+			title: 'Anderer',
+			stock: 1
+		}).speichereAenderungen();
 		expect(bestaetigen).not.toHaveBeenCalled();
-		expect(showToast).toHaveBeenCalledWith(MELDUNG, 'error');
+		expect(melde).toHaveBeenCalledWith(MELDUNG, 'error');
 	});
 });
 
@@ -100,21 +105,26 @@ describe('AdminBuchAktionen: Titel ohne ISBN', () => {
 			stock: 1,
 			stockGesehen: 1
 		};
-		await maske({ ...geladen, signatur: 'Z 1', geladen }).saveChanges();
+		await maske({ ...geladen, signatur: 'Z 1', geladen }).speichereAenderungen();
 
 		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('PUT');
 		// Die leere ISBN hindert das Speichern nicht; hinaus geht nur das geänderte Feld.
 		expect(rumpf(0)).toEqual({ signatur: 'Z 1' });
-		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
 	});
 
 	it('ein neuer Titel ohne ISBN wird angelegt', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));
-		await maske({ id: null, isbn: '', title: 'Die Siedler von Catan', stock: 1 }).saveChanges();
+		await maske({
+			id: null,
+			isbn: '',
+			title: 'Die Siedler von Catan',
+			stock: 1
+		}).speichereAenderungen();
 
 		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('POST');
 		expect(rumpf(0).isbn).toBe('');
-		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
 	});
 });
 
@@ -134,7 +144,7 @@ describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
 	it('fragt, ob es dasselbe Medium ist, mit zwei Antworten', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
 		vi.mocked(fragen).mockResolvedValue(null);
-		await maske(heft()).saveChanges();
+		await maske(heft()).speichereAenderungen();
 
 		const frage = vi.mocked(fragen).mock.calls[0][0];
 		expect(frage.titel).toBe('Ist es dasselbe Medium?');
@@ -146,42 +156,42 @@ describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
 	it('„Titel öffnen" führt zum vorhandenen und legt nichts an', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
 		vi.mocked(fragen).mockResolvedValue(true);
-		await maske(heft()).saveChanges();
+		await maske(heft()).speichereAenderungen();
 
 		expect(appState.bookToEdit).toEqual({ id: 'titel-7' });
 		expect(apiFetch).toHaveBeenCalledTimes(1);
-		expect(showToast).not.toHaveBeenCalled();
+		expect(melde).not.toHaveBeenCalled();
 	});
 
 	it('„Anderes Medium" schickt denselben Titel noch einmal und meldet das Speichern', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(GLEICH);
 		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { data: { id: 'neu', stock: 1 } }));
 		vi.mocked(fragen).mockResolvedValue(false);
-		await maske(heft()).saveChanges();
+		await maske(heft()).speichereAenderungen();
 
 		expect(apiFetch).toHaveBeenCalledTimes(2);
 		expect('anderesMedium' in rumpf(0)).toBe(false);
 		expect(rumpf(1)).toMatchObject({ title: 'Bild der Wissenschaft', anderesMedium: true });
 		expect(appState.bookToEdit).toBeNull();
-		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+		expect(melde).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
 	});
 
 	it('den Dialog nur zu schließen ist keine Antwort: nichts wird angelegt', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
 		vi.mocked(fragen).mockResolvedValue(null);
-		await maske(heft()).saveChanges();
+		await maske(heft()).speichereAenderungen();
 
 		expect(apiFetch).toHaveBeenCalledTimes(1);
 		expect(appState.bookToEdit).toBeNull();
-		expect(showToast).not.toHaveBeenCalled();
+		expect(melde).not.toHaveBeenCalled();
 	});
 
 	it('nach dem Schließen fragt der nächste Klick auf „Speichern" wieder', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
 		vi.mocked(fragen).mockResolvedValue(null);
 		const aktionen = maske(heft());
-		await aktionen.saveChanges();
-		await aktionen.saveChanges();
+		await aktionen.speichereAenderungen();
+		await aktionen.speichereAenderungen();
 
 		expect(fragen).toHaveBeenCalledTimes(2);
 	});
@@ -190,14 +200,24 @@ describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
 describe('AdminBuchAktionen: neuer Titel ohne Exemplar', () => {
 	it('die Meldung nennt die Sicht, in der er steht', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 0 } }));
-		await maske({ id: null, isbn: '9783791504544', title: 'Nur Titel', stock: 0 }).saveChanges();
-		expect(vi.mocked(showToast).mock.calls[0][0]).toContain('„Ohne Exemplare“');
+		await maske({
+			id: null,
+			isbn: '9783791504544',
+			title: 'Nur Titel',
+			stock: 0
+		}).speichereAenderungen();
+		expect(vi.mocked(melde).mock.calls[0][0]).toContain('„Ohne Exemplare“');
 	});
 
 	it('mit Exemplar bleibt es bei der gewohnten Meldung', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));
-		await maske({ id: null, isbn: '9783791504544', title: 'Mit Buch', stock: 1 }).saveChanges();
-		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+		await maske({
+			id: null,
+			isbn: '9783791504544',
+			title: 'Mit Buch',
+			stock: 1
+		}).speichereAenderungen();
+		expect(melde).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
 	});
 });
 
@@ -211,7 +231,7 @@ describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 	it('verringert: fragt mit beiden Zahlen, auch wenn der Titel nicht in der Liste steht', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-3' } }));
 		vi.mocked(bestaetigen).mockResolvedValue(true);
-		await maske({ ...titel, stock: 1 }).saveChanges();
+		await maske({ ...titel, stock: 1 }).speichereAenderungen();
 
 		const frage = vi.mocked(bestaetigen).mock.calls[0][0];
 		expect(frage.titel).toBe('Bestand von 3 auf 1 verringern?');
@@ -221,20 +241,20 @@ describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 
 	it('Abbrechen: nichts wird gespeichert', async () => {
 		vi.mocked(bestaetigen).mockResolvedValue(false);
-		await maske({ ...titel, stock: 1 }).saveChanges();
+		await maske({ ...titel, stock: 1 }).speichereAenderungen();
 		expect(apiFetch).not.toHaveBeenCalled();
 	});
 
 	it('geleertes Feld: keine Rückfrage, der Bestand geht nicht mit', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-3' } }));
-		await maske({ ...titel, stock: null }).saveChanges();
+		await maske({ ...titel, stock: null }).speichereAenderungen();
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect('stock' in rumpf()).toBe(false);
 	});
 
 	it('unverändert: keine Rückfrage, der Bestand geht nicht mit', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-3' } }));
-		await maske({ ...titel, stock: 3 }).saveChanges();
+		await maske({ ...titel, stock: 3 }).speichereAenderungen();
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect('stock' in rumpf()).toBe(false);
 	});
@@ -243,8 +263,8 @@ describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 		const meldung = 'Der Bestand wurde inzwischen an anderer Stelle geändert: jetzt 6 statt 3.';
 		vi.mocked(apiFetch).mockResolvedValue(antwort(409, { error: meldung, bestand: 6 }));
 		const formular = { ...titel, stock: 5, signatur: 'Fun 1' };
-		await maske(formular).saveChanges();
-		expect(showToast).toHaveBeenCalledWith(meldung, 'error');
+		await maske(formular).speichereAenderungen();
+		expect(melde).toHaveBeenCalledWith(meldung, 'error');
 		expect(formular).toMatchObject({ stock: 6, stockGesehen: 6, signatur: 'Fun 1' });
 	});
 });
@@ -259,13 +279,13 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 		vi.mocked(apiFetch).mockImplementation(() => new Promise((fertig) => wartende.push(fertig)));
 		const aktionen = maske({ id: null, isbn: '9783791504544', title: 'Mit Buch', stock: 1 });
 
-		const erster = aktionen.saveChanges();
-		const zweiter = aktionen.saveChanges();
+		const erster = aktionen.speichereAenderungen();
+		const zweiter = aktionen.speichereAenderungen();
 		for (const fertig of wartende) fertig(antwort(201, { data: { id: 'neu', stock: 1 } }));
 		await Promise.all([erster, zweiter]);
 
 		expect(apiFetch).toHaveBeenCalledTimes(1);
-		expect(showToast).toHaveBeenCalledTimes(1);
+		expect(melde).toHaveBeenCalledTimes(1);
 	});
 
 	it('nach einer Ablehnung geht das Speichern wieder', async () => {
@@ -273,10 +293,10 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { data: { id: 'neu', stock: 1 } }));
 		const aktionen = maske({ id: null, isbn: '9783791504544', title: 'Mit Buch', stock: 1 });
 
-		await aktionen.saveChanges();
-		await aktionen.saveChanges();
+		await aktionen.speichereAenderungen();
+		await aktionen.speichereAenderungen();
 
 		expect(apiFetch).toHaveBeenCalledTimes(2);
-		expect(showToast).toHaveBeenLastCalledWith('Buch erfolgreich gespeichert!', 'success');
+		expect(melde).toHaveBeenLastCalledWith('Buch erfolgreich gespeichert!', 'success');
 	});
 });

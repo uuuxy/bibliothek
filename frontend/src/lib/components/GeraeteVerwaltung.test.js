@@ -6,7 +6,7 @@ import { apiFetch } from '../apiFetch.js';
 vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn(), put: vi.fn() },
-	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
 
 vi.mock('../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));

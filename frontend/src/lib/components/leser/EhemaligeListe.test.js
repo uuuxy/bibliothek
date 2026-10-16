@@ -7,7 +7,7 @@ vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	// Die echte Auspack-Logik steht in apiFetch.test.js; hier genügt die Form
 	// {"error": …}, die das Backend einheitlich liefert (apierrors.schreibeFehlerJSON).
-	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
 
 // Der Reiter „Ehemalige / Archiv" muss die WEGGEGANGENEN laden (status=ehemalige) —

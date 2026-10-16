@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 /**
  * Die Klassensatz-Reservierungen als Liste — eigene Datei, weil die Ansicht an der
@@ -20,7 +20,7 @@ export function erzeugeKlassensatzListe() {
 		laedt = true;
 		try {
 			const res = await apiFetch('/api/reservierungen/klassensatz');
-			if (!res.ok) throw new Error(await extractApiError(res));
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			liste = (await res.json()) || [];
 			ladefehler = '';
 		} catch (err) {

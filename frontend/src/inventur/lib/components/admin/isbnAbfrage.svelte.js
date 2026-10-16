@@ -1,5 +1,5 @@
 import { apiFetch } from '../../../../lib/apiFetch.js';
-import { showToast } from '$lib/store.svelte.js';
+import { melde } from '$lib/store.svelte.js';
 import { frageWennVergeben } from '../../buch_vorhanden.js';
 
 /** @typedef {{ text: string, fehler: boolean }} Ausgang */
@@ -98,9 +98,9 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 	}
 
 	/** @param {Ausgang} ergebnis */
-	function melde(ergebnis) {
+	function meldeAusgang(ergebnis) {
 		ausgang = ergebnis;
-		showToast(ergebnis.text, ergebnis.fehler ? 'error' : 'info');
+		melde(ergebnis.text, ergebnis.fehler ? 'error' : 'info');
 	}
 
 	/** @param {any} formular */
@@ -116,7 +116,7 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 		try {
 			const antwort = await apiFetch(`/api/lookup/${encodeURIComponent(isbn)}`);
 			if (veraltet()) return;
-			if (!antwort.ok) return melde(AUSGAENGE[antwort.status] ?? GESCHEITERT);
+			if (!antwort.ok) return meldeAusgang(AUSGAENGE[antwort.status] ?? GESCHEITERT);
 			const daten = (await antwort.json()).data ?? {};
 			if (veraltet()) return;
 			const frei = felderAus(daten).filter(([feld]) => formular[feld] === beimBeginn[feld]);
@@ -127,12 +127,12 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 				schreibe(formular, 'listenpreis', daten.preis);
 			}
 			uebernommenZu = isbn;
-			if (!daten.title) return melde(NICHTS_BEKANNT);
+			if (!daten.title) return meldeAusgang(NICHTS_BEKANNT);
 			dnbVorschlag()?.lade(isbn);
-			showToast(`Metadaten übernommen: ${daten.title}`, 'success');
+			melde(`Metadaten übernommen: ${daten.title}`, 'success');
 		} catch (err) {
 			console.error('Fehler beim Nachschlagen der ISBN', err);
-			if (!veraltet()) melde(GESCHEITERT);
+			if (!veraltet()) meldeAusgang(GESCHEITERT);
 		} finally {
 			aktiv = false;
 		}

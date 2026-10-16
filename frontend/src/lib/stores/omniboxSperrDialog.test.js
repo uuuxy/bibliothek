@@ -13,12 +13,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const post = vi.hoisted(() => vi.fn());
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post } }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
-vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 import { omniboxStore } from './omnibox.svelte.js';
 

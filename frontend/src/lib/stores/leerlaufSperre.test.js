@@ -6,7 +6,11 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 }));
 // Der Netz-Zustand wird gestellt, nicht gemessen: Die Sperre haengt seit dem 16.09.2026
 // daran, und `navigator.onLine` laesst sich in jsdom nicht zuverlaessig umschalten.
-const netz = vi.hoisted(() => ({ isOffline: false, pendingCount: 0, startSync: async () => {} }));
+const netz = vi.hoisted(() => ({
+	ohneNetz: false,
+	wartendeAnzahl: 0,
+	starteAbgleich: async () => {}
+}));
 vi.mock('./offlineSync.svelte.js', () => ({ offlineSync: netz }));
 // Die Rückkehr des Netzes meldet netzLage (gemessen an /health), nicht mehr das
 // `online`-Ereignis des Fensters: Ein Browser, der dauerhaft „offline" meldet, feuert es nie.
@@ -28,7 +32,7 @@ vi.mock('../liveEvents.js', () => ({
 
 import { apiFetch } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
-import { IdleLock } from './leerlaufSperre.svelte.js';
+import { LeerlaufSperre } from './leerlaufSperre.svelte.js';
 import { authStore } from './authStore.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 
@@ -39,7 +43,7 @@ import { omniboxStore } from './omnibox.svelte.js';
  * die Fristen sind Minuten, kein Test wartet fünf davon.
  */
 describe('leerlaufSperre', () => {
-	/** @type {IdleLock} */
+	/** @type {LeerlaufSperre} */
 	let lock;
 
 	beforeEach(() => {
@@ -48,13 +52,13 @@ describe('leerlaufSperre', () => {
 		vi.mocked(abonniere).mockClear();
 		// Der Merker einer Sperre liegt im Browser und überlebt sonst den Test davor.
 		localStorage.clear();
-		lock = new IdleLock();
+		lock = new LeerlaufSperre();
 		lock.thekeLeerenMinuten = 1;
 		lock.sperreMinuten = 3;
 		omniboxStore.aktiverLeser = { id: 's1', vorname: 'Mia' };
 		omniboxStore.eingabe = 'Mü';
 		authStore.currentUser = { email: 'theke@schule.example', rolle: 'mitarbeiter' };
-		netz.isOffline = false;
+		netz.ohneNetz = false;
 	});
 
 	afterEach(() => {
@@ -189,7 +193,7 @@ describe('leerlaufSperre', () => {
 	// einer Tür, die niemand öffnen kann.
 	describe('ohne Netz', () => {
 		it('leert die Theke, sperrt aber nicht', () => {
-			netz.isOffline = true;
+			netz.ohneNetz = true;
 			lock.start();
 			vi.advanceTimersByTime(4 * 60_000);
 			// Der Datenschutz-Teil greift weiter: Der naechste Bediener sieht das Profil
@@ -201,12 +205,12 @@ describe('leerlaufSperre', () => {
 		});
 
 		it('holt die faellige Sperre nach, sobald die Verbindung zurueck ist', () => {
-			netz.isOffline = true;
+			netz.ohneNetz = true;
 			lock.start();
 			vi.advanceTimersByTime(4 * 60_000);
 			expect(lock.gesperrt).toBe(false);
 
-			netz.isOffline = false;
+			netz.ohneNetz = false;
 			netzIstZurueck();
 			// Es war laenger als die Frist niemand da, und der Bildschirm stand offen.
 			expect(lock.gesperrt).toBe(true);
@@ -217,7 +221,7 @@ describe('leerlaufSperre', () => {
 		// mitten in der Arbeit, sobald das Netz zurueckkam, und nahm den ohne Netz
 		// gemerkten Ausweis mit (Rasterdurchgang 16.09.2026).
 		it('sperrt nicht nach, wenn nach der faelligen Sperre wieder jemand da war', () => {
-			netz.isOffline = true;
+			netz.ohneNetz = true;
 			lock.start();
 			vi.advanceTimersByTime(4 * 60_000);
 			expect(lock.gesperrt).toBe(false);
@@ -227,16 +231,16 @@ describe('leerlaufSperre', () => {
 			vi.advanceTimersByTime(1_000);
 			window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
 
-			netz.isOffline = false;
+			netz.ohneNetz = false;
 			netzIstZurueck();
 			expect(lock.gesperrt, 'es war nicht laenger als die Frist niemand da').toBe(false);
 		});
 
 		it('sperrt beim Netzwechsel NICHT, wenn gar keine Sperre faellig war', () => {
-			netz.isOffline = true;
+			netz.ohneNetz = true;
 			lock.start();
 			vi.advanceTimersByTime(30_000);
-			netz.isOffline = false;
+			netz.ohneNetz = false;
 			netzIstZurueck();
 			expect(lock.gesperrt).toBe(false);
 		});
@@ -247,7 +251,7 @@ describe('leerlaufSperre', () => {
 			vi.advanceTimersByTime(4 * 60_000);
 			expect(lock.gesperrt).toBe(true);
 
-			netz.isOffline = true;
+			netz.ohneNetz = true;
 			const ok = await lock.entsperren('geheim');
 			expect(ok).toBe(false);
 			// Die Auskunft muss sagen, dass Warten hilft und nichts verloren ist.

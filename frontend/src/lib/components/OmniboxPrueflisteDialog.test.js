@@ -11,12 +11,12 @@ vi.mock('../apiFetch.js', () => ({
 	registriereSitzungAbgelaufenHandler: vi.fn()
 }));
 vi.mock('../audio.js', () => ({
-	playSoundSuccess: vi.fn(),
-	playSoundError: vi.fn(),
-	playSuccessBeep: vi.fn(),
-	playErrorBeep: vi.fn()
+	spieleErfolgston: vi.fn(),
+	spieleFehlerton: vi.fn(),
+	spieleErfolgspiep: vi.fn(),
+	spieleFehlerpiep: vi.fn()
 }));
-vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn(), appState: {} }));
+vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn(), appState: {} }));
 
 import { omniboxStore } from '../stores/omnibox.svelte.js';
 import { apiClient } from '../apiFetch.js';

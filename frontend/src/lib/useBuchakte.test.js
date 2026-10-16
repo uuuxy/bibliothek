@@ -20,14 +20,14 @@ import { appState } from '../inventur/lib/store.svelte.js';
 //   Rückfrage die Exemplarzahl des neuen nannte.
 vi.mock('./apiFetch.js', () => ({
 	apiFetch: vi.fn(),
-	extractApiError: vi.fn(async (/** @type {any} */ res) => {
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => {
 		const text = await res.text();
 		return text ? JSON.parse(text).error : `Fehler ${res.status}`;
 	})
 }));
 vi.mock('../inventur/lib/store.svelte.js', () => ({
 	appState: { selectedBook: null, bookToEdit: null, requestAdminView: false, activeBookId: null },
-	showToast: vi.fn()
+	melde: vi.fn()
 }));
 vi.mock('./stores/uiStore.svelte.js', () => ({ uiStore: { activeTab: 'book_detail' } }));
 

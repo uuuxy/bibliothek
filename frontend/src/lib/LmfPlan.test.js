@@ -16,7 +16,7 @@ import { VORSCHAU_ENTPRELLUNG_MS } from './lmfplanDienst.js';
 // Gemockt wird apiFetch, nicht der Dienst: So läuft der echte Lesepfad (lmfplanDienst)
 // mit, und der Fehler entsteht dort, wo er im Betrieb entsteht.
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 const STAND = {
 	plan: null,

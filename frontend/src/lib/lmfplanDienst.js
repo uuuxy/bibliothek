@@ -87,7 +87,7 @@ export function stundeText(stunde) {
 }
 
 /** @param {string} art */
-export function artLabel(art) {
+export function artBeschriftung(art) {
 	return ARTEN.find((a) => a.wert === art)?.label ?? art;
 }
 

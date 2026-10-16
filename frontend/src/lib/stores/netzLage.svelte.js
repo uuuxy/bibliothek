@@ -5,7 +5,7 @@
 // kann „offline" melden und den Server trotzdem erreichen. Beobachtet am Testserver: Das
 // Band „Keine Verbindung" stand dauerhaft, schon am Anmeldebildschirm und nach jedem
 // Neuladen, während die Seite darunter ihre Daten lud. Am Band hing dabei das Wenigste —
-// die Warteschlange übertrug in so einem Browser nie (startSync fragte navigator.onLine),
+// die Warteschlange übertrug in so einem Browser nie (starteAbgleich fragte navigator.onLine),
 // und die Leerlauf-Sperre griff nie (sie wartet ohne Netz).
 //
 // Deshalb: „offline" ist eine Behauptung des Browsers, und /health entscheidet. „online"

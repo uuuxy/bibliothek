@@ -6,7 +6,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 vi.mock('./offlineSync.svelte.js', () => ({
-	offlineSync: { isOffline: false, pendingCount: 0, startSync: async () => {} }
+	offlineSync: { ohneNetz: false, wartendeAnzahl: 0, starteAbgleich: async () => {} }
 }));
 vi.mock('./netzLage.svelte.js', () => ({ netzLage: { beiRueckkehr: () => () => {} } }));
 vi.mock('../liveEvents.js', () => ({
@@ -16,14 +16,14 @@ vi.mock('../liveEvents.js', () => ({
 }));
 
 import { apiFetch } from '../apiFetch.js';
-import { IdleLock } from './leerlaufSperre.svelte.js';
+import { LeerlaufSperre } from './leerlaufSperre.svelte.js';
 import { authStore } from './authStore.svelte.js';
 
 // App.svelte stellt den Wächter aus einem $effect scharf. Hinge der Effekt am Zustand, den
 // start() liest und schreibt, löste jeder Lauf den nächsten aus; Tests, die start() direkt
 // rufen, sehen das nicht.
 describe('leerlaufSperre.start in einem $effect', () => {
-	/** @type {IdleLock} */
+	/** @type {LeerlaufSperre} */
 	let lock;
 
 	beforeEach(() => {
@@ -33,7 +33,7 @@ describe('leerlaufSperre.start in einem $effect', () => {
 		vi.mocked(apiFetch).mockImplementation(
 			async () => /** @type {any} */ ({ ok: false, status: 423 })
 		);
-		lock = new IdleLock();
+		lock = new LeerlaufSperre();
 		authStore.currentUser = { email: 'theke@schule.example', permissions: [] };
 		authStore.isLoggedIn = true;
 	});

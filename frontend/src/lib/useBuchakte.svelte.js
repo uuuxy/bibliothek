@@ -1,7 +1,7 @@
 import { appState } from '../inventur/lib/store.svelte.js';
 import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 import { uiStore } from './stores/uiStore.svelte.js';
-import { apiFetch, extractApiError } from './apiFetch.js';
+import { apiFetch, leseApiFehler } from './apiFetch.js';
 import { coverKandidaten } from './utils/coverSrc.js';
 
 /**
@@ -34,7 +34,7 @@ async function holeKopf(id) {
 	try {
 		const res = await apiFetch(`/api/books/${id}`, { credentials: 'include' });
 		if (res.ok) return { kopf: await res.json(), fehler: '' };
-		return { kopf: null, fehler: res.status === 404 ? '' : await extractApiError(res) };
+		return { kopf: null, fehler: res.status === 404 ? '' : await leseApiFehler(res) };
 	} catch (err) {
 		console.error('Fehler beim Laden des Buches:', err);
 		return { kopf: null, fehler: 'Der Titel konnte nicht geladen werden (Netzwerkfehler).' };
@@ -151,7 +151,7 @@ export function useBuchakte() {
 		laedt = false;
 	}
 
-	async function loescheTitel(showToast, onBack) {
+	async function loescheTitel(melde, onBack) {
 		if (!buch) return;
 		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
 			return;
@@ -161,18 +161,18 @@ export function useBuchakte() {
 				credentials: 'include'
 			});
 			if (res.ok) {
-				if (showToast) showToast('Titel erfolgreich gelöscht', 'success');
+				if (melde) melde('Titel erfolgreich gelöscht', 'success');
 				if (onBack) onBack();
 			} else {
 				const err = await res.json().catch((e) => {
 					console.error('Fehler:', e);
 					return {};
 				});
-				if (showToast) showToast(err.error || 'Fehler beim Löschen des Titels.', 'error');
+				if (melde) melde(err.error || 'Fehler beim Löschen des Titels.', 'error');
 			}
 		} catch (e) {
 			console.error('Titel löschen fehlgeschlagen:', e);
-			if (showToast) showToast('Netzwerkfehler beim Löschen des Titels.', 'error');
+			if (melde) melde('Netzwerkfehler beim Löschen des Titels.', 'error');
 		}
 	}
 

@@ -5,7 +5,7 @@
      Der Platzhalter im else-Zweig ist Absicht: Ohne ihn spränge die Schrittfolge von
      1 auf 3 und sähe aus wie ein übersprungener Schritt. -->
 <script>
-	import { labelStore } from '../../stores/etiketten.svelte.js';
+	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -23,74 +23,75 @@
 
 	// Die Zahl nennt alle gewählten Exemplare, auch die, die das Nummernfeld gerade ausblendet.
 	const ueberschrift = $derived(
-		labelStore.loadingCopies || labelStore.auswahl.gesamt === 0
+		etikettenStore.laedtExemplare || etikettenStore.auswahl.gesamt === 0
 			? 'Exemplare auswählen'
-			: `Exemplare auswählen: ${labelStore.auswahl.gewaehlt} von ${labelStore.auswahl.gesamt}`
+			: `Exemplare auswählen: ${etikettenStore.auswahl.gewaehlt} von ${etikettenStore.auswahl.gesamt}`
 	);
-	const gesucht = $derived(labelStore.exemplarSuche.trim());
-	const sichtbar = $derived(labelStore.sichtbareExemplare.length);
+	const gesucht = $derived(etikettenStore.exemplarSuche.trim());
+	const sichtbar = $derived(etikettenStore.sichtbareExemplare.length);
 	const alleText = $derived.by(() => {
-		if (!gesucht) return `Alle ${labelStore.auswahl.gesamt} Exemplare`;
+		if (!gesucht) return `Alle ${etikettenStore.auswahl.gesamt} Exemplare`;
 		return sichtbar === 1 ? 'Der eine Treffer' : `Alle ${sichtbar} Treffer`;
 	});
 	const ausgesondertText = $derived(
-		labelStore.ausgesondertAnzahl === 1
+		etikettenStore.ausgesondertAnzahl === 1
 			? '1 ausgesondertes Exemplar steht nicht in der Liste.'
-			: `${labelStore.ausgesondertAnzahl} ausgesonderte Exemplare stehen nicht in der Liste.`
+			: `${etikettenStore.ausgesondertAnzahl} ausgesonderte Exemplare stehen nicht in der Liste.`
 	);
 </script>
 
-{#if labelStore.selectedTitle}
+{#if etikettenStore.gewaehlterTitel}
 	<div class="space-y-4 border-b border-outline-variant py-5">
 		<h3 class="text-base font-semibold text-on-surface-variant">2. Barcodes generieren</h3>
 
 		<Segmente
 			etikett="Woher die Barcodes kommen"
 			optionen={ARTEN}
-			wert={labelStore.generationMode}
-			onwahl={(art) => (labelStore.generationMode = art)}
+			wert={etikettenStore.modus}
+			onwahl={(art) => (etikettenStore.modus = art)}
 			klasse="w-full"
 		/>
 
-		{#if labelStore.generationMode === 'existing'}
+		{#if etikettenStore.modus === 'existing'}
 			<div class="space-y-2">
 				<span class="block text-xs font-medium text-on-surface-variant">{ueberschrift}</span>
-				{#if labelStore.loadingCopies}
+				{#if etikettenStore.laedtExemplare}
 					<div class="flex items-center justify-center py-4">
 						<Ladekreis size="md" />
 					</div>
-				{:else if labelStore.exemplareNichtGeladen}
+				{:else if etikettenStore.exemplareNichtGeladen}
 					<LadeFehler
 						titel="Exemplare nicht geladen"
 						text="Die Exemplare dieses Titels konnten nicht abgerufen werden. Welche es schon gibt, ist deshalb nicht zu sehen."
-						onerneut={labelStore.ladeExemplare}
+						onerneut={etikettenStore.ladeExemplare}
 					/>
-				{:else if labelStore.existingCopies.length === 0}
+				{:else if etikettenStore.vorhandeneExemplare.length === 0}
 					<p class="text-xs text-on-surface-variant">
 						Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.
 					</p>
 				{:else}
 					<!-- Ein Kästchen für alle (M3: „A parent checkbox allows for easy selection or
 					     deselection of all items“). Es wirkt auf das, was zu sehen ist. -->
-					{#if labelStore.existingCopies.length > 1 && sichtbar > 0}
+					{#if etikettenStore.vorhandeneExemplare.length > 1 && sichtbar > 0}
 						<Kaestchen
 							label={alleText}
-							checked={labelStore.auswahlSichtbar === 'alle'}
-							indeterminate={labelStore.auswahlSichtbar === 'teil'}
-							onchange={() => labelStore.setzeSichtbare(labelStore.auswahlSichtbar !== 'alle')}
+							checked={etikettenStore.auswahlSichtbar === 'alle'}
+							indeterminate={etikettenStore.auswahlSichtbar === 'teil'}
+							onchange={() =>
+								etikettenStore.setzeSichtbare(etikettenStore.auswahlSichtbar !== 'alle')}
 						/>
 					{/if}
-					{#if labelStore.existingCopies.length > ZEILEN_IM_KASTEN}
+					{#if etikettenStore.vorhandeneExemplare.length > ZEILEN_IM_KASTEN}
 						<!-- Als Formular, damit die Eingabetaste zählt: Ein Handscanner schickt sie nach
 						     der Nummer, und das Exemplar steht dann auf dem Bogen. -->
 						<form
 							onsubmit={(e) => {
 								e.preventDefault();
-								labelStore.uebernimmNummer();
+								etikettenStore.uebernimmNummer();
 							}}
 						>
 							<Suchfeld
-								bind:wert={labelStore.exemplarSuche}
+								bind:wert={etikettenStore.exemplarSuche}
 								platzhalter="Nummer eingeben oder scannen …"
 								etikett="Exemplar nach Nummer suchen"
 							/>
@@ -99,7 +100,7 @@
 					<div
 						class="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-outline-variant p-2"
 					>
-						{#each labelStore.sichtbareExemplare as copy (copy.barcode_id)}
+						{#each etikettenStore.sichtbareExemplare as copy (copy.barcode_id)}
 							<label
 								class="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-xs text-on-surface hover:bg-on-surface/8"
 							>
@@ -119,15 +120,26 @@
 						{/each}
 					</div>
 				{/if}
-				{#if !labelStore.loadingCopies && labelStore.ausgesondertAnzahl > 0}
+				{#if !etikettenStore.laedtExemplare && etikettenStore.ausgesondertAnzahl > 0}
 					<p class="text-xs text-on-surface-variant">{ausgesondertText}</p>
 				{/if}
 			</div>
 		{:else}
 			<!-- Generating new sequential labels -->
 			<div class="grid grid-cols-2 gap-3">
-				<Feld label="Menge" type="number" min="1" max="100" bind:value={labelStore.newQuantity} />
-				<Feld label="Start-Ziffer (B-)" type="number" min="1" bind:value={labelStore.newStartNum} />
+				<Feld
+					label="Menge"
+					type="number"
+					min="1"
+					max="100"
+					bind:value={etikettenStore.neueAnzahl}
+				/>
+				<Feld
+					label="Start-Ziffer (B-)"
+					type="number"
+					min="1"
+					bind:value={etikettenStore.neueStartnummer}
+				/>
 			</div>
 		{/if}
 	</div>

@@ -13,7 +13,7 @@ function getAudioCtx() {
  * Scan gibt zurück oder leiht aus, und am Ton ist zu hören, was geschah.
  * @param {'ausleihe'} [buchung]
  */
-export function playSoundSuccess(buchung) {
+export function spieleErfolgston(buchung) {
 	try {
 		const ctx = getAudioCtx();
 		const notes = buchung === 'ausleihe' ? [1320, 880] : [880, 1320];
@@ -35,7 +35,7 @@ export function playSoundSuccess(buchung) {
 	}
 }
 
-export function playSoundError() {
+export function spieleFehlerton() {
 	try {
 		const ctx = getAudioCtx();
 		const osc = ctx.createOscillator();
@@ -54,7 +54,7 @@ export function playSoundError() {
 	}
 }
 
-export function playSuccessBeep() {
+export function spieleErfolgspiep() {
 	try {
 		const ctx = getAudioCtx();
 		const osc = ctx.createOscillator();
@@ -73,7 +73,7 @@ export function playSuccessBeep() {
 	}
 }
 
-export function playErrorBeep() {
+export function spieleFehlerpiep() {
 	try {
 		const ctx = getAudioCtx();
 		const osc = ctx.createOscillator();

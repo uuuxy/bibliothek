@@ -54,7 +54,7 @@ const AUSNAHMEN = [
 	{
 		datei: 'src/lib/menue.js',
 		grund:
-			'Die EINE Stelle der Regel: Admin-Vorrang in hatRecht/canSeeItem und die Portal-Weiche ' +
+			'Die EINE Stelle der Regel: Admin-Vorrang in hatRecht/darfSehen und die Portal-Weiche ' +
 			'für die Rolle kollegium. Alle anderen Dateien rufen hatRecht auf.'
 	},
 	{

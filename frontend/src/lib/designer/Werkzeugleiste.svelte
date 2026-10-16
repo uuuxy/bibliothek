@@ -9,13 +9,13 @@
 	 *                `onPrint`, `barcodeType`, `onBarcodeType`
 	 *
 	 * Element additions (text, multi-image) are handled directly here via
-	 * `addTextElement` and `addImageElements` from the shared store.
+	 * `fuegeTextHinzu` and `fuegeBilderHinzu` from the shared store.
 	 */
 	import {
 		idStore,
-		addTextElement,
-		addImageElements,
-		addBoxElement
+		fuegeTextHinzu,
+		fuegeBilderHinzu,
+		fuegeRahmenHinzu
 	} from './idDesignerStore.svelte.js';
 	import { KARTEN_HINTERGRUENDE } from './kartenFarben.js';
 	import Button from '../components/ui/Button.svelte';
@@ -75,7 +75,7 @@
 					})
 			)
 		);
-		addImageElements(side, bildDaten);
+		fuegeBilderHinzu(side, bildDaten);
 		// Reset input so the same files can be re-selected
 		/** @type {HTMLInputElement} */ (e.currentTarget).value = '';
 	}
@@ -106,9 +106,9 @@
 			(v) => onSide(/** @type {'front'|'back'} */ (v))
 		)}
 
-		<Button variant="secondary" size="sm" onclick={() => addTextElement(side)}>+ Text</Button>
+		<Button variant="secondary" size="sm" onclick={() => fuegeTextHinzu(side)}>+ Text</Button>
 
-		<Button variant="secondary" size="sm" onclick={() => addBoxElement(side)}>+ Fläche</Button>
+		<Button variant="secondary" size="sm" onclick={() => fuegeRahmenHinzu(side)}>+ Fläche</Button>
 
 		<!-- Multi-image upload: die eigentliche Auswahl-Fläche ist die geteilte Button-
 		     Komponente (dieselbe Pillenform/Höhe wie "+ Text" daneben, statt eines eigens

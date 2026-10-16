@@ -13,7 +13,7 @@
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
 	import { ruhtWennTraege } from './actions/ruhtWennTraege.js';
-	import { passbildAusschnitt, PASSBILD_FORM } from './passbildAusschnitt.js';
+	import { passbildAusschnitt, PASSBILD_BILDFORM } from './passbildAusschnitt.js';
 
 	/** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */
 	let { studentId, onCapture, onClose } = $props();
@@ -28,7 +28,7 @@
 	// Breite zu Höhe des Kamerabilds. Der Sucher nimmt diese Form an, damit er das ganze Bild
 	// zeigt; bis die Kamera sie nennt, gilt das angefragte Breitbild.
 	let bildform = $state(16 / 9);
-	const hochkant = $derived(bildform < PASSBILD_FORM);
+	const hochkant = $derived(bildform < PASSBILD_BILDFORM);
 
 	function leseBildform() {
 		if (videoEl?.videoWidth && videoEl.videoHeight) {

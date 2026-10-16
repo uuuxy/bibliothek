@@ -198,7 +198,7 @@ class AuthStore {
 		// (/api/action, /scan, /search). Wer es hat, gehört in die Verwaltung; das
 		// Kollegium hat es bewusst nicht (db/rechte_vorgabe.go) und sieht sein Portal. Entschieden
 		// wird damit nichts Neues: Welchen Bildschirm jemand öffnen darf, liest der
-		// Router ohnehin aus denselben Rechten (Router.svelte, erlaubteTabs).
+		// Router ohnehin aus denselben Rechten (Router.svelte, erlaubteBildschirme).
 		const arbeitetInDerBibliothek = hatRecht(konto, 'perform_actions');
 		appState.guestAuthenticated = true;
 		appState.adminAuthenticated = arbeitetInDerBibliothek;

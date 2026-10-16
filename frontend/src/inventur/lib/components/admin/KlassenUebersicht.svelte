@@ -10,7 +10,7 @@
 	import SuchZustand from '../../../../lib/components/ui/SuchZustand.svelte';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
-	import { showToast } from '$lib/store.svelte.js';
+	import { melde } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menue.js';
@@ -103,7 +103,7 @@
 			if (!res.ok) throw new Error('Fehler beim Löschen');
 			ladeKlassen();
 		} catch (err) {
-			showToast(/** @type {any} */ (err).message, 'error');
+			melde(/** @type {any} */ (err).message, 'error');
 		}
 	}
 </script>

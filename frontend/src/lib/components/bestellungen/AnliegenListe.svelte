@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { apiFetch, extractApiError, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -44,7 +44,7 @@
 				ladefehler = '';
 			} else {
 				anliegen = [];
-				ladefehler = await extractApiError(res);
+				ladefehler = await leseApiFehler(res);
 			}
 		} catch {
 			anliegen = [];

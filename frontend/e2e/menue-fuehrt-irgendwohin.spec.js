@@ -74,7 +74,7 @@ for (const [rolle, email] of ROLLEN) {
 		expect(
 			tot,
 			`Menüpunkte, die ins Leere führen (Rolle ${rolle}).\n` +
-				`Ursache ist fast immer eine zweite Rechte-Definition neben canSeeItem in menue.js:\n  ` +
+				`Ursache ist fast immer eine zweite Rechte-Definition neben darfSehen in menue.js:\n  ` +
 				tot.join('\n  ')
 		).toEqual([]);
 	});

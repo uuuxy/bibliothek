@@ -1,7 +1,7 @@
 <script>
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { menuGroups, canSeeItem, hatRecht } from '../../menue.js';
+	import { menueGruppen, darfSehen, hatRecht } from '../../menue.js';
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
 	import { ChevronsLeft, ChevronDown } from '@lucide/svelte';
 	import NavIcon from './NavIcon.svelte';
@@ -119,8 +119,8 @@
 			</div>
 
 			<nav class="space-y-6 px-3 py-6">
-				{#each menuGroups as group (group.name)}
-					{#if group.items.some((item) => canSeeItem(item, authStore.currentUser))}
+				{#each menueGruppen as group (group.name)}
+					{#if group.items.some((item) => darfSehen(item, authStore.currentUser))}
 						<div class="space-y-1">
 							{#if group.name === 'System'}
 								{#if !zu}
@@ -144,7 +144,7 @@
 								{#if systemOpen || zu}
 									<div class="animate-fade-in space-y-1">
 										{#each group.items as item (item.id)}
-											{#if canSeeItem(item, authStore.currentUser)}
+											{#if darfSehen(item, authStore.currentUser)}
 												{@render navItem(item)}
 											{/if}
 										{/each}
@@ -165,7 +165,7 @@
 									>
 								{/if}
 								{#each group.items as item (item.id)}
-									{#if canSeeItem(item, authStore.currentUser)}
+									{#if darfSehen(item, authStore.currentUser)}
 										{@render navItem(item)}
 									{/if}
 								{/each}

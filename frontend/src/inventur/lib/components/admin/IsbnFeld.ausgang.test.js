@@ -3,10 +3,10 @@ import { render, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
-import { showToast } from '$lib/store.svelte.js';
+import { melde } from '$lib/store.svelte.js';
 import IsbnFeld from './IsbnFeld.svelte';
 import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
@@ -57,7 +57,7 @@ describe('IsbnFeld: der Ausgang einer Abfrage ohne Treffer', () => {
 		expect(hinweis()).toContain('Die Katalogdienste sind nicht erreichbar.');
 		expect(hinweis()).toContain('Angaben von Hand eintragen');
 		expect(eingabe.getAttribute('aria-invalid')).toBe('true');
-		expect(showToast).toHaveBeenCalledWith(hinweis(), 'error');
+		expect(melde).toHaveBeenCalledWith(hinweis(), 'error');
 		expect(formular.title).toBe('');
 	});
 
@@ -70,7 +70,7 @@ describe('IsbnFeld: der Ausgang einer Abfrage ohne Treffer', () => {
 
 		expect(hinweis()).toBe('Zu dieser ISBN ist bei den Katalogdiensten nichts bekannt.');
 		expect(eingabe.getAttribute('aria-invalid')).toBeNull();
-		expect(showToast).toHaveBeenCalledWith(hinweis(), 'info');
+		expect(melde).toHaveBeenCalledWith(hinweis(), 'info');
 	});
 
 	it('der eigene Server antwortet nicht: Fehler am Feld', async () => {

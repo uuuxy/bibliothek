@@ -55,7 +55,7 @@ beforeAll(async () => {
 			]
 		})
 	});
-	await mahnwesenStore.fetchData();
+	await mahnwesenStore.lade();
 	if (mahnwesenStore.klassen.length === 0) throw new Error('Testdaten nicht geladen');
 });
 
@@ -76,9 +76,9 @@ describe('MahnwesenAktionen', () => {
 	it('zeigt „Mahnbriefe drucken" nur mit dem Recht der Route (darfMahnen)', () => {
 		// Der Knopf gehört zur Auswahl: Ohne ein markiertes Kind wäre „kein Knopf" auch ohne
 		// Rechteprüfung wahr.
-		mahnwesenStore.selectAllSchueler();
+		mahnwesenStore.waehleAlle();
 		try {
-			expect(mahnwesenStore.selectedIds.size).toBe(1);
+			expect(mahnwesenStore.gewaehlteKennungen.size).toBe(1);
 			const mit = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: true });
 			expect(mit.queryByRole('button', { name: 'Mahnbriefe drucken' })).toBeTruthy();
 			mit.unmount();
@@ -89,7 +89,7 @@ describe('MahnwesenAktionen', () => {
 			expect(ohne.queryByText('1 ausgewählt')).toBeTruthy();
 			expect(ohne.queryByRole('button', { name: 'Auswahl aufheben' })).toBeTruthy();
 		} finally {
-			mahnwesenStore.deselectAllSchueler();
+			mahnwesenStore.waehleKeine();
 		}
 	});
 
@@ -117,7 +117,7 @@ describe('MahnwesenAktionen', () => {
 			zeile.unmount();
 
 			// Nichts in der Liste, nichts zu drucken: Die Suche trifft kein Kind.
-			mahnwesenStore.searchQuery = 'gibt es nicht';
+			mahnwesenStore.suche = 'gibt es nicht';
 			const leer = render(MahnwesenAktionen, {
 				...PROPS,
 				darfBescheid: false,
@@ -125,7 +125,7 @@ describe('MahnwesenAktionen', () => {
 			});
 			expect(leer.getByRole('button', { name: 'Liste drucken' })).toHaveProperty('disabled', true);
 		} finally {
-			mahnwesenStore.searchQuery = '';
+			mahnwesenStore.suche = '';
 			oeffnen.mockRestore();
 		}
 	});
@@ -165,7 +165,7 @@ describe('MahnwesenAktionen', () => {
 				]
 			})
 		});
-		await mahnwesenStore.fetchData();
+		await mahnwesenStore.lade();
 		expect(mahnwesenStore.klassen).toHaveLength(1);
 		expect(mahnwesenStore.versandKlassen).toEqual([]);
 

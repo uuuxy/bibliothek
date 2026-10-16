@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('./store.svelte.js', () => ({ appState: {}, showToast: vi.fn() }));
+vi.mock('./store.svelte.js', () => ({ appState: {}, melde: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
 import { alsRumpf, geaenderteFelder, merkeStand, uebernimmGespeichert } from './buch_felder.js';
 import { leeresBuchFormular } from './components/admin/buchFormularRegeln.js';

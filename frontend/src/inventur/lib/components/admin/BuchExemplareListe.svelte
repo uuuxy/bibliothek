@@ -1,7 +1,7 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
-	import { showToast } from '$lib/store.svelte.js';
+	import { melde } from '$lib/store.svelte.js';
 	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
 	import { Trash } from '@lucide/svelte';
@@ -73,13 +73,13 @@
 				ausgesondert += 1;
 				// Die Zahl im Feld kommt neu vom Server, die Maske zählt nicht selbst.
 				await ladeBestandNach(formular);
-				showToast('Exemplar erfolgreich gelöscht', 'success');
+				melde('Exemplar erfolgreich gelöscht', 'success');
 			} else {
 				const err = await res.json().catch(() => ({}));
-				showToast(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
+				melde(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
 			}
 		} catch {
-			showToast('Netzwerkfehler beim Löschen.', 'error');
+			melde('Netzwerkfehler beim Löschen.', 'error');
 		}
 	}
 </script>

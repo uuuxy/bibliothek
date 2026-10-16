@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('./store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('./store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
 import {
 	speichereBuch,

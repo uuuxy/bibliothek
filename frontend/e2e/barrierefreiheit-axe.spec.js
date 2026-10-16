@@ -23,7 +23,7 @@ const OEFFENTLICH = [
 	['Katalog', '/katalog']
 ];
 
-/** Jede interne Hauptansicht (Router.svelte, tabToPath) — außer dem Kollegiums-Portal,
+/** Jede interne Hauptansicht (Router.svelte, pfadJeBildschirm) — außer dem Kollegiums-Portal,
  *  das ein Admin nicht sieht. */
 const INTERN = [
 	['Ausleihe', '/kiosk'],

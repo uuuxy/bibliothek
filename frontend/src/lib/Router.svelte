@@ -3,7 +3,7 @@
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { leerlaufSperre } from './stores/leerlaufSperre.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
-	import { erlaubteTabs, tabIstGesperrt } from './menue.js';
+	import { erlaubteBildschirme, bildschirmGesperrt } from './menue.js';
 	import { escapeGehoertJemandAnderem } from './escapeRegel.js';
 
 	import Berechtigungen from './Berechtigungen.svelte';
@@ -31,11 +31,11 @@
 
 	// ── Wer darf welchen Bildschirm? EINE Regel, nicht zwei ────────────────────
 	// Bis zum 08.08.2026 stand hier eine handgepflegte Helfer-Liste ('kiosk',
-	// 'media_catalog') neben canSeeItem im Menü — zwei Definitionen, die auseinanderliefen:
+	// 'media_catalog') neben darfSehen im Menü — zwei Definitionen, die auseinanderliefen:
 	// Als „Schulklassen" von manage_users auf view_books wechselte, sah der Helfer den
 	// Menüpunkt und wurde beim Klick wortlos an die Theke geworfen. Ein Menüpunkt, der
 	// nichts tut, sieht aus wie ein Defekt der Seite dahinter. Jetzt liest der Router
-	// dieselbe Regel (erlaubteTabs/tabIstGesperrt bei canSeeItem in menue.js) nur ab.
+	// dieselbe Regel (erlaubteBildschirme/bildschirmGesperrt bei darfSehen in menue.js) nur ab.
 
 	function oeffneTitel(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
@@ -50,7 +50,7 @@
 	$effect(() => {
 		if (authStore.isLoggedIn && authStore.currentUser) {
 			const path = window.location.pathname;
-			const erlaubt = erlaubteTabs(authStore.currentUser);
+			const erlaubt = erlaubteBildschirme(authStore.currentUser);
 
 			if (!uiStore.isInitialRouteMatched && path !== '/') {
 				applyPathToState(path);
@@ -61,7 +61,7 @@
 			// Helfer ist das der Kiosk (Gruppe „Kiosk" steht in menue.js oben), für die
 			// Lehrkraft ihr Portal. Kein Rollenname im Router: Wer eine Rolle ergänzt,
 			// pflegt ihre Rechte in menue.js und hier gar nichts.
-			if (tabIstGesperrt(uiStore.activeTab, erlaubt)) {
+			if (bildschirmGesperrt(uiStore.activeTab, erlaubt)) {
 				uiStore.activeTab = [...erlaubt][0] ?? 'kiosk';
 			}
 

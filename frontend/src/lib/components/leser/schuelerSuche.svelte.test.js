@@ -4,7 +4,7 @@ import { apiFetch } from '../../apiFetch.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
-	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
 }));
 
 // Die Suche der Schülerdatei läuft auf dem Server, und nur die JÜNGSTE Antwort darf die
@@ -42,19 +42,19 @@ describe('Leserdatei-Suche', () => {
 		});
 		try {
 			await suche.lade();
-			expect(suche.students).toHaveLength(1);
+			expect(suche.schueler).toHaveLength(1);
 
 			vi.mocked(apiFetch).mockResolvedValue(fehler('Datenbank nicht erreichbar'));
-			suche.query = 'Xaver';
+			suche.suchtext = 'Xaver';
 			await suche.lade();
 
-			expect(suche.students, 'die Treffer der vorigen Suche stehen noch da').toHaveLength(0);
+			expect(suche.schueler, 'die Treffer der vorigen Suche stehen noch da').toHaveLength(0);
 			expect(suche.ladefehler).toBe('Datenbank nicht erreichbar');
 
 			// Und der nächste gelungene Lauf räumt die Meldung wieder weg.
 			vi.mocked(apiFetch).mockResolvedValue(ok(treffer));
 			await suche.lade();
-			expect(suche.students).toHaveLength(1);
+			expect(suche.schueler).toHaveLength(1);
 			expect(suche.ladefehler).toBe('');
 		} finally {
 			stopp();
@@ -78,7 +78,7 @@ describe('Leserdatei-Suche', () => {
 			await suche.lade();
 			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe('/api/schueler?art=alle');
 
-			suche.query = 'Wendlandt';
+			suche.suchtext = 'Wendlandt';
 			await suche.lade();
 			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe('/api/schueler?art=alle&q=Wendlandt');
 		} finally {
@@ -104,7 +104,7 @@ describe('Leserdatei-Suche', () => {
 			suche.sortiere('nachname');
 			expect(letzte()).toBe('/api/schueler?art=alle&jahrgang=7&sortierung=nachname&richtung=ab');
 
-			suche.query = 'Müller & Co';
+			suche.suchtext = 'Müller & Co';
 			await suche.lade();
 			expect(letzte()).toBe(
 				'/api/schueler?art=alle&q=M%C3%BCller%20%26%20Co&jahrgang=7&sortierung=nachname&richtung=ab'
@@ -137,11 +137,11 @@ describe('Leserdatei-Suche', () => {
 		try {
 			suche.jahrgang = '5';
 			await suche.lade();
-			expect(suche.students).toHaveLength(500);
+			expect(suche.schueler).toHaveLength(500);
 			expect(suche.gekuerzt, 'die gefilterte Liste gibt sich als vollständig aus').toBe(true);
 
 			// Mit Suchtext gibt es kein LIMIT — dann ist die Liste wirklich vollständig.
-			suche.query = 'Nr';
+			suche.suchtext = 'Nr';
 			await suche.lade();
 			expect(suche.gekuerzt).toBe(false);
 		} finally {

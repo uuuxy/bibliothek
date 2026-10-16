@@ -2,7 +2,7 @@
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
 	import { sucheSchuelerFuerVormerkung } from './vormerkungSchuelersuche.js';
@@ -28,12 +28,12 @@
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
 			if (res.ok) {
 				vormerkungen = vormerkungen.filter((v) => v.id !== id);
-				showToast('Vormerkung gelöscht', 'success');
+				melde('Vormerkung gelöscht', 'success');
 			} else {
-				showToast((await res.json().catch(() => ({}))).error || 'Fehler beim Löschen', 'error');
+				melde((await res.json().catch(() => ({}))).error || 'Fehler beim Löschen', 'error');
 			}
 		} catch {
-			showToast('Netzwerkfehler', 'error');
+			melde('Netzwerkfehler', 'error');
 		}
 	}
 
@@ -60,7 +60,7 @@
 				notiz
 			});
 			if (res.ok) {
-				showToast('Erfolgreich vorgemerkt', 'success');
+				melde('Erfolgreich vorgemerkt', 'success');
 				isAdding = false;
 				suche = '';
 				treffer = [];
@@ -68,13 +68,13 @@
 				const listenAntwort = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
 				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
 				if (listenAntwort.ok) vormerkungen = await listenAntwort.json();
-				else showToast('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
+				else melde('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
 			} else {
 				const err = await res.json().catch(() => ({}));
-				showToast(err.error || 'Fehler beim Hinzufügen', 'error');
+				melde(err.error || 'Fehler beim Hinzufügen', 'error');
 			}
 		} catch {
-			showToast('Netzwerkfehler', 'error');
+			melde('Netzwerkfehler', 'error');
 		}
 	}
 </script>

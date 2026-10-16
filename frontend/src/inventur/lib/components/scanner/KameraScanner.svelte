@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { createBarcodeDetector } from '$lib/components/scanner/barcodeErkennung.js';
+	import { erzeugeBarcodeErkenner } from '$lib/components/scanner/barcodeErkennung.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ruhtWennTraege } from '../../../../lib/actions/ruhtWennTraege.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
@@ -36,7 +36,7 @@
 		starting = true;
 
 		try {
-			const erkennung = await createBarcodeDetector();
+			const erkennung = await erzeugeBarcodeErkenner();
 			if (!erkennung) {
 				onStatusChange('Barcode-Erkennung wird von diesem Browser nicht unterstützt.');
 				return;

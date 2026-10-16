@@ -1,13 +1,13 @@
 <script>
 	import { Printer } from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import { labelStore } from './stores/etiketten.svelte.js';
+	import { etikettenStore } from './stores/etiketten.svelte.js';
 	import EtikettEinstellungen from './components/etiketten/EtikettEinstellungen.svelte';
 	import EtikettVorschau from './components/etiketten/EtikettVorschau.svelte';
 	import Button from './components/ui/Button.svelte';
 
 	onMount(() => {
-		labelStore.loadClassGroups();
+		etikettenStore.ladeKlassen();
 	});
 </script>
 
@@ -22,8 +22,8 @@
 	<div class="flex justify-end border-t border-outline-variant pt-5">
 		<Button
 			size="lg"
-			onclick={labelStore.triggerPrint}
-			disabled={labelStore.finalLabels.filter((lbl) => !lbl.isBlank).length === 0}
+			onclick={etikettenStore.drucke}
+			disabled={etikettenStore.bogen.filter((lbl) => !lbl.isBlank).length === 0}
 			class="px-5"
 		>
 			<Printer class="h-4 w-4" aria-hidden="true" />

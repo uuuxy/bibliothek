@@ -11,7 +11,7 @@
 // Zustand darf den Bildschirm nicht überleben, sonst zeigte ein erneutes Öffnen für
 // einen Moment den Plan von vorhin (Rasterfrage 8, Ansichtswechsel).
 
-import { showToast } from '../inventur/lib/store.svelte.js';
+import { melde } from '../inventur/lib/store.svelte.js';
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import * as dienst from './lmfplanDienst.js';
 import { fehlertext } from './utils/fehlertext.js';
@@ -24,7 +24,7 @@ import { fehlertext } from './utils/fehlertext.js';
 // trotzdem gelaufen sein.
 /** @param {unknown} e @param {string} was */
 function schreibfehler(e, was) {
-	showToast(`${was} fehlgeschlagen: ${fehlertext(e)}`, 'error');
+	melde(`${was} fehlgeschlagen: ${fehlertext(e)}`, 'error');
 }
 
 export function erzeugePlaner() {
@@ -115,7 +115,7 @@ export function erzeugePlaner() {
 		} catch (e) {
 			if (meine !== ladeNr) return;
 			zustand.ladeFehler = true;
-			showToast(`${e}`, 'error');
+			melde(`${e}`, 'error');
 		} finally {
 			if (meine === ladeNr) zustand.laedt = false;
 		}
@@ -140,7 +140,7 @@ export function erzeugePlaner() {
 			zustand.ausfaelle = z.ausfaelle;
 			zustand.beginn = z.beginn;
 		} catch (e) {
-			if (meine === laufNr) showToast(`${e}`, 'error');
+			if (meine === laufNr) melde(`${e}`, 'error');
 		}
 	}
 
@@ -155,7 +155,7 @@ export function erzeugePlaner() {
 		zustand.speichert = true;
 		try {
 			const erg = await dienst.speicherePlan(zustand.art, zustand.entwurf);
-			showToast(erg.meldung, erg.ok ? 'success' : 'error');
+			melde(erg.meldung, erg.ok ? 'success' : 'error');
 			if (erg.ok) await lade();
 		} catch (e) {
 			schreibfehler(e, 'Speichern');
@@ -181,11 +181,11 @@ export function erzeugePlaner() {
 		try {
 			const gespeichert = await dienst.speicherePlan(zustand.art, zustand.entwurf);
 			if (!gespeichert.ok) {
-				showToast(gespeichert.meldung, 'error');
+				melde(gespeichert.meldung, 'error');
 				return;
 			}
 			const erg = await dienst.veroeffentlichePlan(zustand.art);
-			showToast(erg.meldung, erg.ok ? 'success' : 'error');
+			melde(erg.meldung, erg.ok ? 'success' : 'error');
 			// Auch nach einem Fehlschlag neu laden: Veröffentlichen stempelt zuerst und
 			// koppelt danach die Fristen (zwei Schritte, keine gemeinsame Transaktion).
 			// Bricht der zweite ab, IST der Plan veröffentlicht — der Planer darf dann nicht
@@ -211,7 +211,7 @@ export function erzeugePlaner() {
 			return;
 		try {
 			const erg = await dienst.verwerfePlan(zustand.art);
-			showToast(erg.meldung, erg.ok ? 'success' : 'error');
+			melde(erg.meldung, erg.ok ? 'success' : 'error');
 			// Wie beim Veröffentlichen: Gelöscht wird zuerst, die Fristen kehren danach
 			// zurück. Nach einem Fehlschlag ist der Plan womöglich weg — neu laden, sonst
 			// zeigt der Planer einen Plan, den es nicht mehr gibt.
@@ -223,7 +223,7 @@ export function erzeugePlaner() {
 	}
 
 	// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
-	const pdf = () => dienst.ladePdf(false, true).catch((e) => showToast(`${e}`, 'error'));
+	const pdf = () => dienst.ladePdf(false, true).catch((e) => melde(`${e}`, 'error'));
 
 	return {
 		zustand,

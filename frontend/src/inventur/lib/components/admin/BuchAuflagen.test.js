@@ -4,9 +4,9 @@ import { render, fireEvent } from '@testing-library/svelte';
 vi.mock('../../../../lib/apiFetch.js', () => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn() },
-	extractApiError: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
 }));
-vi.mock('$lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchAuflagen from './BuchAuflagen.svelte';

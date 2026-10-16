@@ -89,7 +89,7 @@ export function normalisiereEintrag(roh) {
 	// Ein unlesbarer Zeitpunkt wird zu JETZT, nicht zu NaN. `Number('2026-09-16T10:00:00Z')`
 	// ist NaN, und aus NaN baut der Sync `new Date(NaN).toISOString()` — das WIRFT. Der Wurf
 	// kam aus dem Bauen der Portion, also ausserhalb jedes Fangnetzes: Die Runde brach ab,
-	// `isSyncing` blieb auf „läuft", und danach lief kein Sync mehr, bis die Seite neu geladen
+	// `gleichtAb` blieb auf „läuft", und danach lief kein Sync mehr, bis die Seite neu geladen
 	// wurde. Ein einziger Eintrag einer fremden oder von Hand gebauten Sicherungsdatei legte
 	// so die ganze Warteschlange still (Rasterdurchgang 16.09.2026).
 	//
@@ -121,7 +121,7 @@ export function normalisiereEintrag(roh) {
  * Lädt die Warteschlange aus IndexedDB, in Format 2, nach Scan-Zeitpunkt geordnet.
  * @returns {Promise<OfflineEintrag[]>}
  */
-export async function loadQueue() {
+export async function ladeWarteschlange() {
 	try {
 		const db = await getDB();
 		const roh = await db.getAll(STORE_NAME);

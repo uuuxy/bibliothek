@@ -11,7 +11,7 @@ vi.mock('../../apiFetch.js', () => ({
 }));
 
 import { apiFetch } from '../../apiFetch.js';
-import { labelStore } from '../../stores/etiketten.svelte.js';
+import { etikettenStore } from '../../stores/etiketten.svelte.js';
 import EtikettVorschau from './EtikettVorschau.svelte';
 
 // Die Vorschau zeichnet den gewählten Bogen in zwei Dritteln der Größe: Spalten, Etikett und
@@ -25,14 +25,14 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 				json: async () => [{ barcode_id: 'B-0041873' }, { barcode_id: 'B-0041874' }]
 			})
 		);
-		labelStore.generationMode = 'existing';
-		labelStore.startPosition = 1;
-		await labelStore.selectBookTitle({ id: 't1', titel: 'Titel', autor: 'Autorin' });
+		etikettenStore.modus = 'existing';
+		etikettenStore.startFeld = 1;
+		await etikettenStore.waehleTitel({ id: 't1', titel: 'Titel', autor: 'Autorin' });
 	});
 
 	/** @param {string} formatId */
 	function gezeichnet(formatId) {
-		labelStore.formatId = formatId;
+		etikettenStore.formatId = formatId;
 		flushSync();
 		const blatt = /** @type {HTMLElement} */ (
 			document.querySelector('[data-testid="etiketten-blatt"]')
@@ -64,7 +64,7 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 			rand: '7.1mm 2.2mm 0px',
 			etikett: ['32.1mm', '14.1mm']
 		});
-		labelStore.formatId = 'zweckform_l4760';
+		etikettenStore.formatId = 'zweckform_l4760';
 	});
 });
 
@@ -73,13 +73,13 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		labelStore.formatId = 'zweckform_l4760';
-		labelStore.generationMode = 'existing';
-		labelStore.startPosition = 1;
+		etikettenStore.formatId = 'zweckform_l4760';
+		etikettenStore.modus = 'existing';
+		etikettenStore.startFeld = 1;
 	});
 
 	afterEach(() => {
-		labelStore.startPosition = 1;
+		etikettenStore.startFeld = 1;
 	});
 
 	/** @param {number} anzahl */
@@ -91,7 +91,7 @@ describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 					Array.from({ length: anzahl }, (_, i) => ({ barcode_id: `B-${1000 + i}` }))
 			})
 		);
-		await labelStore.selectBookTitle({ id: `t${anzahl}`, titel: 'Titel', autor: 'Autorin' });
+		await etikettenStore.waehleTitel({ id: `t${anzahl}`, titel: 'Titel', autor: 'Autorin' });
 		flushSync();
 	}
 
@@ -111,7 +111,7 @@ describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 	it('zählt freigelassene Felder zum Bogen und nicht zu den Etiketten', async () => {
 		const screen = render(EtikettVorschau);
 		await waehleTitelMit(41);
-		labelStore.startPosition = 3;
+		etikettenStore.startFeld = 3;
 		flushSync();
 
 		expect(felder()).toBe(21);

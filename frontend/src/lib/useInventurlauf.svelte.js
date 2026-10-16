@@ -1,5 +1,5 @@
 import { apiFetch } from './apiFetch.js';
-import { ladeOffeneSessions, starteSession, brichAb } from './inventurApi.js';
+import { ladeOffeneSessions, starteLauf, brichAb } from './inventurApi.js';
 
 /**
  * Session-Start und -Verwaltung: Scope wählen (global/Signatur/Filter), Inventur
@@ -69,7 +69,7 @@ export function useInventurlauf(opts = {}) {
 			if (gewaehlterJahrgang) payload.grade = Number(gewaehlterJahrgang);
 		}
 
-		const r = await starteSession(payload);
+		const r = await starteLauf(payload);
 		if (r.ok) {
 			laufKennung = r.data.session_id;
 			stand = { erwartet: r.data.erwartet, erfasst: 0, label: r.data.label };

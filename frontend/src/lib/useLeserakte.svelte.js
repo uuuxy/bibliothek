@@ -1,4 +1,4 @@
-import { apiFetch, apiClient, extractApiError } from './apiFetch.js';
+import { apiFetch, apiClient, leseApiFehler } from './apiFetch.js';
 import { istKollegium } from './leserArt.js';
 import { snackbars } from './stores/snackbars.svelte.js';
 import { fehlertext } from './utils/fehlertext.js';
@@ -124,10 +124,10 @@ export function useLeserakte() {
 		try {
 			const res = await apiFetch(`/api/print/rechnung/${akte.id}`);
 			if (!res.ok) {
-				// extractApiError statt res.text(): Der Server antwortet mit JSON
+				// leseApiFehler statt res.text(): Der Server antwortet mit JSON
 				// ({"error": "…"}), und `String(e)` machte daraus „Error: {"error":…}" im
 				// Toast — der Mensch an der Theke las die Klammern mit (OFFEN.md 5.12).
-				throw new Error((await extractApiError(res)) || 'Keine ausstehenden Rechnungen gefunden');
+				throw new Error((await leseApiFehler(res)) || 'Keine ausstehenden Rechnungen gefunden');
 			}
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
@@ -151,7 +151,7 @@ export function useLeserakte() {
 		try {
 			const res = await apiFetch(`/api/print/kontoauszug/${akte.id}`);
 			if (!res.ok) {
-				throw new Error((await extractApiError(res)) || 'Keine aktiven Ausleihen gefunden');
+				throw new Error((await leseApiFehler(res)) || 'Keine aktiven Ausleihen gefunden');
 			}
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);

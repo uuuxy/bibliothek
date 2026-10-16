@@ -37,7 +37,7 @@
 	// Ermessensentscheidung, und jede Referenznummer wird unwiderruflich verbraucht.
 	// Deshalb erscheint der Knopf nur bei GENAU EINER Markierung.
 	const einzelnMarkiert = $derived(
-		mahnwesenStore.selectedIds.size === 1 ? [...mahnwesenStore.selectedIds][0] : ''
+		mahnwesenStore.gewaehlteKennungen.size === 1 ? [...mahnwesenStore.gewaehlteKennungen][0] : ''
 	);
 
 	// Wen „Alle anmahnen" erreicht: die Kinder der Klassen, nicht die Ehemaligen.
@@ -51,19 +51,19 @@
 	// Druckt die Liste, wie Reiter, Klassenfilter und Suche sie gerade zeigen. Das Blatt
 	// entsteht im Browser aus den geladenen Zeilen und zählt keine Mahnung.
 	function listeDrucken() {
-		const html = baueMahnlisteDruckHtml(mahnwesenStore.filteredSchueler, {
-			ansicht: mahnwesenStore.activeFilter,
-			klasse: mahnwesenStore.selectedKlasse,
-			suche: mahnwesenStore.searchQuery
+		const html = baueMahnlisteDruckHtml(mahnwesenStore.gefilterteSchueler, {
+			ansicht: mahnwesenStore.stufenFilter,
+			klasse: mahnwesenStore.gewaehlteKlasse,
+			suche: mahnwesenStore.suche
 		});
 		if (!druckeDokument(html)) snackbars.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 </script>
 
-{#if mahnwesenStore.selectedIds.size > 0}
+{#if mahnwesenStore.gewaehlteKennungen.size > 0}
 	<Button
 		variant="secondary"
-		onclick={mahnwesenStore.deselectAllSchueler}
+		onclick={mahnwesenStore.waehleKeine}
 		aria-label="Auswahl aufheben"
 		title="Auswahl aufheben"
 		class="px-2 text-on-surface-variant"
@@ -71,12 +71,12 @@
 		<X class="h-4 w-4" aria-hidden="true" />
 	</Button>
 	<span class="text-sm font-semibold text-on-surface"
-		>{mahnwesenStore.selectedIds.size} ausgewählt</span
+		>{mahnwesenStore.gewaehlteKennungen.size} ausgewählt</span
 	>
 	<!-- Der Druck zählt die Mahnung: nur mit dem Recht der Route dahinter (create_orders). -->
 	{#if darfMahnen}
-		<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
-			{#if mahnwesenStore.pdfLoading}
+		<Button onclick={mahnwesenStore.druckeGewaehlteMahnungen} disabled={mahnwesenStore.drucktPdf}>
+			{#if mahnwesenStore.drucktPdf}
 				<Ladekreis size="sm" farbe="aktuell" />
 			{:else}
 				<Printer class="h-4 w-4" aria-hidden="true" />
@@ -95,7 +95,7 @@
 {:else}
 	<Button
 		variant="secondary"
-		onclick={mahnwesenStore.fetchData}
+		onclick={mahnwesenStore.lade}
 		aria-label="Daten neu laden"
 		data-tip="Daten neu laden"
 		title="Neu laden"
@@ -107,7 +107,7 @@
 	<Button
 		variant="secondary"
 		onclick={listeDrucken}
-		disabled={mahnwesenStore.filteredSchueler.length === 0}
+		disabled={mahnwesenStore.gefilterteSchueler.length === 0}
 	>
 		<Printer class="h-4 w-4" aria-hidden="true" />
 		Liste drucken

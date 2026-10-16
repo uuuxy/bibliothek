@@ -1,8 +1,8 @@
 <script>
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { erlaubteTabs, hatRecht } from './menue.js';
+	import { erlaubteBildschirme, hatRecht } from './menue.js';
 	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
@@ -31,7 +31,7 @@
 	// den Bildschirm nicht öffnen darf, bekäme statt des Bogens den ersten erlaubten: Der
 	// Router stellt einen gesperrten Reiter zurück.
 	const darfEtikett = $derived(
-		darfBearbeiten && erlaubteTabs(authStore.currentUser).has('druck-center')
+		darfBearbeiten && erlaubteBildschirme(authStore.currentUser).has('druck-center')
 	);
 
 	/** Dieselbe Übergabe wie Wareneingang und Nachdruck — das Druck-Center öffnet sich selbst. */
@@ -78,13 +78,13 @@
 					book.gesamt = zahlen.bestand;
 					if (book.verfuegbar !== undefined) book.verfuegbar = zahlen.verfuegbar;
 				}
-				showToast('Exemplar erfolgreich gelöscht', 'success');
+				melde('Exemplar erfolgreich gelöscht', 'success');
 			} else {
 				const err = await res.json().catch(() => ({}));
-				showToast(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
+				melde(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
 			}
 		} catch {
-			showToast('Netzwerkfehler beim Löschen.', 'error');
+			melde('Netzwerkfehler beim Löschen.', 'error');
 		}
 	}
 
@@ -116,7 +116,7 @@
 		}
 		gewaehlteExemplare.clear();
 		if (successCount > 0) {
-			showToast(`${successCount} Exemplare erfolgreich gelöscht`, 'success');
+			melde(`${successCount} Exemplare erfolgreich gelöscht`, 'success');
 			if (book && book.id) loadAll(book.id);
 		}
 	}

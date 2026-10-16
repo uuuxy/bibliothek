@@ -5,17 +5,17 @@ vi.mock('../apiFetch.js', async (original) => ({
 	apiFetch: vi.fn()
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({
-	showToast: vi.fn()
+	melde: vi.fn()
 }));
 
 import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../apiFetch.js';
-import { showToast } from '../../inventur/lib/store.svelte.js';
+import { melde } from '../../inventur/lib/store.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
-const showToastMock = vi.mocked(showToast);
+const showToastMock = vi.mocked(melde);
 
-describe('useMahnwesenMail.sendBulkOverdueMails', () => {
+describe('useMahnwesenMail.sendeMahnmails', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -28,7 +28,7 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 		);
 		const store = useMahnwesenMail();
 
-		await store.sendBulkOverdueMails(auswahl);
+		await store.sendeMahnmails(auswahl);
 
 		expect(apiFetch).toHaveBeenCalledWith('/api/mail/send-bulk-overdue', {
 			method: 'POST',
@@ -38,7 +38,7 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ klassen: ['5a', '6b'], override_email: '' })
 		});
-		expect(showToast).toHaveBeenCalledWith('Mahnlisten von 3 Klassen versendet', 'success');
+		expect(melde).toHaveBeenCalledWith('Mahnlisten von 3 Klassen versendet', 'success');
 	});
 
 	it('reicht die Override-Adresse mit — sie entscheidet, wer die Listen bekommt', async () => {
@@ -50,18 +50,18 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 		);
 		const store = useMahnwesenMail();
 
-		await store.sendBulkOverdueMails({ ...auswahl, overrideEmail: 'sek@schule.de' });
+		await store.sendeMahnmails({ ...auswahl, overrideEmail: 'sek@schule.de' });
 
 		const body = JSON.parse(/** @type {any} */ (apiFetchMock.mock.calls[0][1]).body);
 		expect(body.override_email).toBe('sek@schule.de');
 		// Die Server-Meldung nennt den Empfänger; ein selbstgebautes „n versendet" nicht.
-		expect(showToast).toHaveBeenCalledWith('an sek@schule.de', 'success');
+		expect(melde).toHaveBeenCalledWith('an sek@schule.de', 'success');
 	});
 
 	it('schickt ohne Auswahl gar nicht erst los (leeres Feld hiesse serverseitig ALLE Klassen)', async () => {
 		const store = useMahnwesenMail();
 
-		await store.sendBulkOverdueMails({ klassen: [] });
+		await store.sendeMahnmails({ klassen: [] });
 
 		expect(apiFetch).not.toHaveBeenCalled();
 		expect(showToastMock.mock.calls[0][1]).toBe('error');
@@ -76,16 +76,16 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 		);
 		const store = useMahnwesenMail();
 
-		await store.sendBulkOverdueMails({ klassen: ['5a'] });
+		await store.sendeMahnmails({ klassen: ['5a'] });
 
-		expect(showToast).toHaveBeenCalledWith('Mahnwesen ist derzeit pausiert (Ferien)', 'error');
+		expect(melde).toHaveBeenCalledWith('Mahnwesen ist derzeit pausiert (Ferien)', 'error');
 	});
 
 	it('fängt Netzwerkfehler ab und meldet sie als Fehler-Toast', async () => {
 		apiFetchMock.mockRejectedValueOnce(new Error('boom'));
 		const store = useMahnwesenMail();
 
-		await store.sendBulkOverdueMails({ klassen: ['5a'] });
+		await store.sendeMahnmails({ klassen: ['5a'] });
 
 		expect(showToastMock).toHaveBeenCalledTimes(1);
 		expect(showToastMock.mock.calls[0][1]).toBe('error');

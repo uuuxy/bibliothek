@@ -1,5 +1,5 @@
 <script>
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { melde } from '../inventur/lib/store.svelte.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import BuchakteAusleiher from './BuchakteAusleiher.svelte';
 	import BuchakteExemplare from './BuchakteExemplare.svelte';
@@ -87,7 +87,7 @@
 			onCoverError={akte.naechsteQuelle}
 			onCoverLoad={akte.pruefeGeladenes}
 			onEdit={darfBearbeiten ? akte.bearbeiteTitel : undefined}
-			onDelete={darfLoeschen ? () => akte.loescheTitel(showToast, onBack) : undefined}
+			onDelete={darfLoeschen ? () => akte.loescheTitel(melde, onBack) : undefined}
 		/>
 
 		{#if akte.fehlendeListen.length > 0}

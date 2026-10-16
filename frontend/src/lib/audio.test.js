@@ -35,7 +35,7 @@ class AttrappenKontext {
 
 vi.stubGlobal('AudioContext', AttrappenKontext);
 
-import { playSoundSuccess } from './audio.js';
+import { spieleErfolgston } from './audio.js';
 
 beforeEach(() => {
 	toene = [];
@@ -43,24 +43,24 @@ beforeEach(() => {
 
 describe('Ton für Gebuchtes', () => {
 	it('steigt bei Rückgabe und geladenem Leser', () => {
-		playSoundSuccess();
+		spieleErfolgston();
 
 		expect(toene.map((t) => t.freq)).toEqual([880, 1320]);
 	});
 
 	it('fällt bei einer Ausleihe', () => {
-		playSoundSuccess('ausleihe');
+		spieleErfolgston('ausleihe');
 
 		expect(toene.map((t) => t.freq)).toEqual([1320, 880]);
 	});
 
 	// Die Ausleihe dauert nicht länger als die Rückgabe: Der nächste Scan wartet auf keinen Ton.
 	it('setzt beide Töne zu denselben Zeiten', () => {
-		playSoundSuccess();
+		spieleErfolgston();
 		const rueckgabe = toene.map((t) => t.zeit);
 		toene = [];
 
-		playSoundSuccess('ausleihe');
+		spieleErfolgston('ausleihe');
 
 		expect(toene.map((t) => t.zeit)).toEqual(rueckgabe);
 	});

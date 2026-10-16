@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiClient: { post: vi.fn(), put: vi.fn() },
-	extractApiError: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
+	leseApiFehler: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 

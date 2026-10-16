@@ -35,7 +35,7 @@ export function anderesMittel(mittel) {
  * wird als solche benannt, nie einem Topf zugeschlagen.
  * @param {string | null | undefined} mittel
  */
-export function mittelLabel(mittel) {
+export function mittelBeschriftung(mittel) {
 	return mittel && mittel in MITTEL
 		? `${MITTEL[/** @type {Mittel} */ (mittel)].label} (${MITTEL[/** @type {Mittel} */ (mittel)].traeger})`
 		: 'ohne Zuordnung';

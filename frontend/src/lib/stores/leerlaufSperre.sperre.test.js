@@ -5,9 +5,9 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 const netz = vi.hoisted(() => ({
-	isOffline: false,
-	pendingCount: 0,
-	startSync: /** @type {() => Promise<void>} */ (async () => {})
+	ohneNetz: false,
+	wartendeAnzahl: 0,
+	starteAbgleich: /** @type {() => Promise<void>} */ (async () => {})
 }));
 vi.mock('./offlineSync.svelte.js', () => ({ offlineSync: netz }));
 const rueckkehr = vi.hoisted(() => /** @type {Set<() => void>} */ (new Set()));
@@ -27,7 +27,7 @@ vi.mock('../liveEvents.js', () => ({
 
 import { apiFetch } from '../apiFetch.js';
 import { trenne } from '../liveEvents.js';
-import { IdleLock } from './leerlaufSperre.svelte.js';
+import { LeerlaufSperre } from './leerlaufSperre.svelte.js';
 import { authStore } from './authStore.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 
@@ -68,7 +68,7 @@ function anderesFenster(key, newValue) {
  * selbst steht in auth/sperre_pg_test.go; hier steht, was das Fenster ihm sagt und glaubt.
  */
 describe('leerlaufSperre: Sperre am Server', () => {
-	/** @type {IdleLock} */
+	/** @type {LeerlaufSperre} */
 	let lock;
 	/** @type {import('vitest').MockInstance} */
 	let uebernimm;
@@ -81,12 +81,12 @@ describe('leerlaufSperre: Sperre am Server', () => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(trenne).mockClear();
 		serverAntwortet(SPERRBAR);
-		netz.isOffline = false;
-		netz.pendingCount = 0;
-		netz.startSync = async () => {};
+		netz.ohneNetz = false;
+		netz.wartendeAnzahl = 0;
+		netz.starteAbgleich = async () => {};
 		uebernimm = vi.spyOn(authStore, 'uebernimmKonto').mockImplementation(() => {});
 		abgelaufen = vi.spyOn(authStore, 'sitzungAbgelaufen').mockImplementation(() => {});
-		lock = new IdleLock();
+		lock = new LeerlaufSperre();
 		lock.thekeLeerenMinuten = 1;
 		lock.sperreMinuten = 3;
 		omniboxStore.aktiverLeser = { id: 's1', vorname: 'Mia' };
@@ -117,8 +117,8 @@ describe('leerlaufSperre: Sperre am Server', () => {
 	it('schickt erst die ohne Netz gescannten Vorgänge, dann die Sperre', async () => {
 		/** @type {string[]} */
 		const reihenfolge = [];
-		netz.pendingCount = 2;
-		netz.startSync = async () => {
+		netz.wartendeAnzahl = 2;
+		netz.starteAbgleich = async () => {
 			await new Promise((fertig) => setTimeout(fertig, 500));
 			reihenfolge.push('warteschlange');
 		};
@@ -136,8 +136,8 @@ describe('leerlaufSperre: Sperre am Server', () => {
 	});
 
 	it('sperrt nicht nachträglich, wenn während der Warteschlange aufgeschlossen wurde', async () => {
-		netz.pendingCount = 1;
-		netz.startSync = () => new Promise((fertig) => setTimeout(fertig, 5_000));
+		netz.wartendeAnzahl = 1;
+		netz.starteAbgleich = () => new Promise((fertig) => setTimeout(fertig, 5_000));
 		serverAntwortet({ ...SPERRBAR, '/api/auth/entsperren': { status: 200, body: KONTO } });
 		await fristLaeuftAb();
 		expect(await lock.entsperren('richtig')).toBe(true);

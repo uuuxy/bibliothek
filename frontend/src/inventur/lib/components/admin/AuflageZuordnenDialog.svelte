@@ -6,8 +6,8 @@
      (repository/auflagen.go); der Dialog bietet nur an, was dort durchgeht. -->
 <script>
 	import { CircleAlert } from '@lucide/svelte';
-	import { apiClient, apiFetch, extractApiError } from '../../../../lib/apiFetch.js';
-	import { showToast } from '$lib/store.svelte.js';
+	import { apiClient, apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
+	import { melde } from '$lib/store.svelte.js';
 	import Dialog from '../../../../lib/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
@@ -64,12 +64,12 @@
 				titel_id: gewaehlt.id
 			});
 			if (!res.ok) {
-				fehler = await extractApiError(res);
+				fehler = await leseApiFehler(res);
 				return;
 			}
 			const antwort = await res.json();
 			onZugeordnet(antwort.auflagen ?? []);
-			showToast(`Zugeordnet: ${auflagenBeschriftung(gewaehlt)}`, 'success');
+			melde(`Zugeordnet: ${auflagenBeschriftung(gewaehlt)}`, 'success');
 			open = false;
 		} catch {
 			fehler = 'Netzwerkfehler — die Zuordnung hat den Server nicht erreicht.';

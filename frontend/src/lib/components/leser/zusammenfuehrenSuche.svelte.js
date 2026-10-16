@@ -1,4 +1,4 @@
-import { apiFetch, extractApiError } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 /**
  * Die Kandidatensuche des Zusammenführen-Dialogs — eigene Datei wie schuelerSuche.svelte.js:
@@ -41,7 +41,7 @@ export function erzeugeKandidatenSuche(profilId) {
 				`/api/schueler/${profilId()}/zusammenfuehren-kandidaten?q=${encodeURIComponent(q)}`
 			);
 			const liste = res.ok ? ((await res.json()) ?? []) : [];
-			const meldung = res.ok ? '' : await extractApiError(res);
+			const meldung = res.ok ? '' : await leseApiFehler(res);
 			if (meine !== nr) return;
 			treffer = liste;
 			fehler = meldung;

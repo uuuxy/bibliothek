@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
-vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 vi.mock('./stores/bestaetigung.svelte.js', () => ({
 	loeschenBestaetigen: vi.fn(async () => true)
 }));

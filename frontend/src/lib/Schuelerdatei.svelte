@@ -31,7 +31,7 @@
 	let anlegenOffen = $state(false);
 
 	// Markierung für den Ausweis-Stapeldruck (leserAuswahl.svelte.js, Größen-Ratsche).
-	const gewaehlt = erzeugeLeserAuswahl(() => suche.students);
+	const gewaehlt = erzeugeLeserAuswahl(() => suche.schueler);
 
 	// Serversuche & Laden der Liste liegen in schuelerSuche.svelte.js (Größen-Ratsche);
 	// die erste Ladung stößt das Modul selbst an. Der Rückruf läuft nach dem Sprung aus
@@ -105,12 +105,12 @@
 			{#if aktiverReiter === 'active'}
 				<div class="w-full no-print animate-fade-in">
 					<SchuelerdateiLeiste
-						bind:searchQuery={suche.query}
+						bind:searchQuery={suche.suchtext}
 						bind:jahrgang={suche.jahrgang}
 						jahrgaenge={suche.jahrgaenge}
 						jahrgaengeFehler={suche.jahrgaengeFehler}
 						darfAnlegen={rechte.anlegen}
-						trefferzahl={suche.students.length}
+						trefferzahl={suche.schueler.length}
 						suchend={suche.suchend}
 						gekuerzt={suche.gekuerzt}
 						onsearch={() => suche.angestossen()}
@@ -134,7 +134,7 @@
 
 					<div class="mt-6">
 						<AktiveLeserListe
-							filteredStudents={suche.students}
+							filteredStudents={suche.schueler}
 							loading={suche.beschaeftigt}
 							ladefehler={suche.ladefehler}
 							onErneut={() => suche.lade()}

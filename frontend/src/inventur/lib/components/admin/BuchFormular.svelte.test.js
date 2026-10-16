@@ -5,7 +5,7 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 // Kamera-Fenster über die Maske bis zur Frage läuft echt.
 vi.mock('$lib/components/scanner/barcodeErkennung.js', async (importOriginal) => ({
 	...(await importOriginal()),
-	createBarcodeDetector: async () => ({
+	erzeugeBarcodeErkenner: async () => ({
 		name: 'test',
 		detector: { detect: async () => [{ rawValue: '9783060130764' }] }
 	})
@@ -15,7 +15,7 @@ vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';

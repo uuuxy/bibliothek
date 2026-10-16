@@ -24,7 +24,7 @@
  *
  * @type {Record<string, string>}
  */
-export const tabToPath = {
+export const pfadJeBildschirm = {
 	settings: '/einstellungen',
 	inventory: '/inventur',
 	students_dir: '/schuelerdatei',

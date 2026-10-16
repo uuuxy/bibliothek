@@ -3,11 +3,11 @@ import { render, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
-import { appState, showToast } from '$lib/store.svelte.js';
+import { appState, melde } from '$lib/store.svelte.js';
 import IsbnFeld from './IsbnFeld.svelte';
 import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
@@ -162,7 +162,7 @@ describe('IsbnFeld: neue Maske, die ISBN ist frei', () => {
 		await fireEvent.blur(eingabe);
 		await fertig();
 
-		expect(showToast).toHaveBeenCalledWith(
+		expect(melde).toHaveBeenCalledWith(
 			'Ob es diese ISBN schon gibt, ließ sich nicht prüfen.',
 			'warning'
 		);
@@ -192,7 +192,7 @@ describe('IsbnFeld: vorhandener Titel', () => {
 		const { knopf } = feld({ id: null, isbn: '', title: '' });
 		await fireEvent.click(knopf);
 		await fertig();
-		expect(showToast).toHaveBeenCalledWith('Bitte zuerst eine ISBN eingeben.', 'error');
+		expect(melde).toHaveBeenCalledWith('Bitte zuerst eine ISBN eingeben.', 'error');
 		expect(vi.mocked(apiFetch)).not.toHaveBeenCalled();
 	});
 });

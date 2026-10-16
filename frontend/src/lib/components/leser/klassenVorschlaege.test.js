@@ -4,7 +4,7 @@ import { apiFetch } from '../../apiFetch.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
-	extractApiError: vi.fn(async () => 'Serverfehler')
+	leseApiFehler: vi.fn(async () => 'Serverfehler')
 }));
 
 // Die Auswahl im Anlegen-Dialog las bis zum 15.09.2026 die Tabelle lesergruppen, die kein

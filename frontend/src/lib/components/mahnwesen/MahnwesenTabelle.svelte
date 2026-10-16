@@ -15,33 +15,33 @@
 
 	// Derived state for 'Select All' checkbox
 	let alleGewaehlt = $derived(
-		mahnwesenStore.filteredSchueler.length > 0 &&
-			mahnwesenStore.selectedIds.size === mahnwesenStore.filteredSchueler.length
+		mahnwesenStore.gefilterteSchueler.length > 0 &&
+			mahnwesenStore.gewaehlteKennungen.size === mahnwesenStore.gefilterteSchueler.length
 	);
 
 	let indeterminate = $derived(
-		mahnwesenStore.selectedIds.size > 0 &&
-			mahnwesenStore.selectedIds.size < mahnwesenStore.filteredSchueler.length
+		mahnwesenStore.gewaehlteKennungen.size > 0 &&
+			mahnwesenStore.gewaehlteKennungen.size < mahnwesenStore.gefilterteSchueler.length
 	);
 
 	// Toggle all
 	function toggleAll() {
-		if (alleGewaehlt) mahnwesenStore.deselectAllSchueler();
-		else mahnwesenStore.selectAllSchueler();
+		if (alleGewaehlt) mahnwesenStore.waehleKeine();
+		else mahnwesenStore.waehleAlle();
 	}
 </script>
 
-{#if mahnwesenStore.loading}
+{#if mahnwesenStore.laedt}
 	<div class="flex justify-center py-20">
 		<Ladekreis size="lg" />
 	</div>
-{:else if mahnwesenStore.error}
+{:else if mahnwesenStore.fehler}
 	<LadeFehler
-		onerneut={mahnwesenStore.fetchData}
+		onerneut={mahnwesenStore.lade}
 		titel="Mahnliste nicht geladen"
-		text={mahnwesenStore.error}
+		text={mahnwesenStore.fehler}
 	/>
-{:else if !mahnwesenStore.data || mahnwesenStore.klassen.length === 0}
+{:else if !mahnwesenStore.daten || mahnwesenStore.klassen.length === 0}
 	<div class="py-16 text-center text-base text-on-surface-variant">
 		Keine überfälligen Ausleihen vorhanden.
 	</div>
@@ -72,12 +72,12 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each mahnwesenStore.filteredSchueler as schueler, _i (_i)}
-						<tr aria-selected={mahnwesenStore.selectedIds.has(schueler.schueler_id)}>
+					{#each mahnwesenStore.gefilterteSchueler as schueler, _i (_i)}
+						<tr aria-selected={mahnwesenStore.gewaehlteKennungen.has(schueler.schueler_id)}>
 							<td class="w-12 text-center">
 								<Kaestchen
-									checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
-									onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
+									checked={mahnwesenStore.gewaehlteKennungen.has(schueler.schueler_id)}
+									onclick={() => mahnwesenStore.schalteAuswahl(schueler.schueler_id)}
 									aria-label="{schueler.name} auswählen"
 								/>
 							</td>
@@ -148,7 +148,7 @@
 							</td>
 						</tr>
 					{/each}
-					{#if mahnwesenStore.filteredSchueler.length === 0}
+					{#if mahnwesenStore.gefilterteSchueler.length === 0}
 						<tr>
 							<td colspan="5" class="text-center">
 								Keine Treffer für die aktuelle Auswahl (Tab, Klasse oder Suche).
