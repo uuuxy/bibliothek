@@ -84,7 +84,7 @@
 					     kennt. Sie steht oben: Unter vielen Treffern aus dem Bestand läse sie niemand.
 					     Der Wortlaut ist der des Schlagwort-Vorschlags aus der DNB. -->
 					<p class="px-3.5 py-2.5 text-sm text-error" role="alert">
-						Die DNB ist nicht erreichbar — bitte später erneut versuchen.
+						Die DNB ist nicht erreichbar. Bitte später erneut versuchen.
 					</p>
 				{/if}
 				{#if localResults.length > 0}

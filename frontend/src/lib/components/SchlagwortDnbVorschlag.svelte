@@ -43,7 +43,7 @@
 		<p class="text-xs text-on-surface-variant" role="status">Die DNB kennt diese ISBN nicht.</p>
 	{:else if status === 'fehler'}
 		<p class="text-xs text-error" role="alert">
-			Die DNB ist nicht erreichbar — bitte später erneut versuchen.
+			Die DNB ist nicht erreichbar. Bitte später erneut versuchen.
 		</p>
 	{/if}
 	{#if status === '' || status === 'laedt' || status === 'fehler'}

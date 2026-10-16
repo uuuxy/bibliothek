@@ -8,7 +8,7 @@ import { uiLogin, gehZu } from './helpers.js';
 // Die Antwort der Tür ist hier nachgestellt; der Stack fragte sonst die echte DNB. Dass die
 // Tür den Kopf setzt, prüft api/bestellung/bestellsuche_pg_test.go.
 
-const HINWEIS = 'Die DNB ist nicht erreichbar — bitte später erneut versuchen.';
+const HINWEIS = 'Die DNB ist nicht erreichbar. Bitte später erneut versuchen.';
 
 /**
  * @param {import('@playwright/test').Page} page
