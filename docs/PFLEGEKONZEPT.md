@@ -419,6 +419,11 @@ Neue Notizen entstehen weiter. Damit sich nichts ansammelt, gilt: Was für die P
 kommt mit dem Commit, der es hervorbringt, in eines der Dokumente oben (`CLAUDE.md`,
 Abschnitt 4).
 
+Die Dokumente nennen, was gilt; wie es dazu kam, steht in der Commit-Nachricht. Ein Datum
+steht nur bei einer Entscheidung, einer Quelle, einer Frist oder einer Messung, deren
+Gültigkeit es begrenzt. `docs/vorgeschichte_ratsche_test.go` zählt je Dokument die Zeilen mit
+Datum und lässt die Zahl nur sinken.
+
 ### 7.3 Das Blatt bei der Schule
 
 Auf Papier bei der Schule, nicht im Repository:

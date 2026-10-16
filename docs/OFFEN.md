@@ -209,8 +209,7 @@ der Nummer nichts mehr dazu offen ist.
   (Tür und Abfrage), die Größen in 11.1 unter R4.
 - [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
   Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
-- [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
-  `internal/testdaten`.
+- [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
 - [x] **Meldungen in Satzschreibung und auf Deutsch (5.68):** erledigt am 16.10.2026. Der Text
   eines Fehlers ohne Meldung geht unter keinem Status mehr hinaus (`apierrors`), und die
   Meldungs-Ratsche prüft die festen Sätze jedes Fehlerstatus außer 500, auch 502 und 503.
@@ -476,10 +475,6 @@ null, auf der Oberfläche ist jede Datei von `main.js` aus erreichbar. Die eine 
 der Elternbrief je Schadensfall, ist entfernt. Der Zuwachs steckt in Tests, die je eine Zusage
 halten; sie zu löschen hieße, Regeln zu lockern. Offen:
 
-- **Vorgeschichte in den Dokumenten:** die 30 datierten Prüfläufe in [sweeps.md](sweeps.md) ins
-  Register falten, Stand- und Anlass-Absätze und Einschübe wie „bis dahin …" streichen; geschätzt
-  800 bis 1.000 Zeilen. Dazu eine Ratsche, die Zeilen mit Datum in `docs/*.md` nur sinken lässt,
-  sonst wächst es nach (Dokumente +7.400 Zeilen in 30 Tagen).
 - **SQL-Testdaten:** 730 Anweisungen mit 3.443 Zeilen legen Titel, Exemplare, Schüler, Leser,
   Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
   wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket

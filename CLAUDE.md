@@ -84,6 +84,9 @@ Tabelle · TabelleSortKopf · Zaehlerpille.
   kommt mit dem Commit, der es hervorbringt, ins passende Dokument; welches, nennt
   `docs/PFLEGEKONZEPT.md` 7.2. Eine Notiz außerhalb des Repositorys ersetzt das nicht.
 - Dokumente nennen die Sache, nicht den Absender: keine Personennamen, keine prüfende Stelle.
+- Dokumente nennen, was gilt; die Vorgeschichte steht in der Commit-Nachricht. Ein Datum nur bei
+  einer Entscheidung, einer Quelle, einer Frist oder einer Messung, deren Gültigkeit es begrenzt
+  (`docs/vorgeschichte_ratsche_test.go` lässt die Zeilen mit Datum je Dokument nur sinken).
 - Sachlich schreiben: Aussage, Beleg, nächster Schritt. Keine Werbesprache, keine Bewertungen.
 - Commit-Nachrichten auf Deutsch, ohne Werkzeug-Hinweis.
 - Kommentare im Code: ein bis zwei Sätze, warum der Code so ist. Kein Datum, keine
