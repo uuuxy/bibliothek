@@ -207,8 +207,8 @@ Gewichts:
 - [ ] Lokale Namen in Tests deutsch und `t.Helper()` in den Hilfsfunktionen, je mit Ratsche.
   (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
-- [ ] Oberfläche: `stores/omnibox.svelte.js` (1.174 Zeilen) nach seinen Sachen teilen, mit
-  deiner Freigabe; die Ratsche der Dateigröße zählt JS-Module schon. (5.72)
+- [ ] Oberfläche: `stores/omnibox.svelte.js` (1.142 Zeilen) nach seinen Sachen teilen, in
+  sieben Stufen, je Stufe deine Freigabe. (5.72)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -552,12 +552,45 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
 `frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
-JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 1.174. Googles Maßstab für
+JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 1.142. Googles Maßstab für
 Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
 tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösung, Warteschlange,
-Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Weg: ihn nach
-seinen Sachen teilen, in Stufen mit den Browser-Tests der Theke und einer Probe mit dem
-Handscanner. Vorher deine Freigabe, weil er der Kern der Theke ist.
+Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Freigegeben
+ist ein Plan in Stufen, je Stufe ein Commit, ein Push und deine Freigabe für die nächste:
+
+- **Stufe 1:** Kommentare auf das Warum kürzen (5.70 für diese Datei). Nachweis: Der Bau hat
+  vorher und nachher dieselben Prüfsummen.
+- **Stufen 2 bis 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
+  `omniboxRueckmeldung.svelte.js` (Leuchten, Wackeln, Fehlerbanner samt nicht gebuchter Nummern,
+  ihre Zeitgeber), `omniboxSuche.svelte.js` (Entprellung, Suchlauf-Nummer, Trefferliste,
+  Auswahl, `/api/search`), `omniboxAntwort.svelte.js` (was eine Antwort des Servers am Zustand
+  der Theke ändert), `omniboxOhneNetz.svelte.js` (Schnappschuss, Ablage in der Warteschlange,
+  Ausweis-Merker), `omniboxReihe.svelte.js` (`fuehreAktionAus`, die Reihe der Scans, der einzige
+  Versand an `/api/action`). In `omnibox.svelte.js` bleiben der Zustand der Theke, Rückfrage
+  und Fokus (`frontend-hygiene-theken-fenster.test.js` liest dort `rueckfrageOffen`),
+  Zusammenführen, `gibZurueck` und die Fassade.
+- **Stufe 7:** Suche und Rückmeldung werden Unterobjekte der Fassade (`omniboxStore.suche.…`,
+  `omniboxStore.rueckmeldung.…`), damit der Aufruf die Datei nennt: 36 Stellen in 4 Dateien
+  und 33 in 7, Tests eingeschlossen. Danach den Bestand der Größen-Ratsche austragen und
+  ARCHITEKTUR.md 5.3 nachziehen.
+
+Regeln für jeden Schnitt: Code wird verschoben, nicht umgeschrieben. Ein Zustand lebt in genau
+einem Teil; die anderen bekommen Funktionen, kein geteiltes Objekt. Der Ausweis-Merker schickt
+über dieselbe Funktion wie der Scan: Es bleibt ein Weg zu `/api/action`, und die Erlaubnisliste
+von `frontend-hygiene-action-endpunkt.test.js` tauscht die Datei, statt zu wachsen. Bauteile
+importieren nur `omnibox.svelte.js`; ein kleines Gate hält das, sonst entginge ein Import am Teil
+vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Die Rückgabe des Stores trägt `@satisfies`:
+Ein Objektliteral in JS hat sonst einen offenen Typ, und svelte-check meldet keinen Zugriff auf
+einen Namen, den der Store nicht hat (gesehen an `activeTeacher`, einem Feld von vor Migration
+125); mit dem geschlossenen Typ meldet es jeden, auch in Bauteilen.
+
+Nachweis je Stufe: die Store-Tests (13 Dateien, 91 Fälle) und `scanOhneFokus.test.js` ohne
+Änderung grün, svelte-check ohne Fehler und Warnung, vitest ganz, am frisch gebauten Stack
+(`scripts/stack-neu.sh`) die Browser-Tests der Theke: `theke-scan-reihe`,
+`theke-schnellrueckgabe`, `theke-suchleiste`, `theke-bestand-im-treffer`, `sperre-scan`,
+`scanner-fokus-menue`, `kiosk-scannerfokus` (tippt blind und zählt in der Datenbank),
+`escape-kurzbefehl`, `auflagen-theke`. Nach Stufe 7 eine Probe mit dem echten Handscanner an
+der Theke, durch dich.
 
 ### 5.73 Statistik: ein Lesefehler sieht aus wie ein leerer Bestand
 

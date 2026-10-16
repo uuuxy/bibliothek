@@ -45,7 +45,6 @@ describe('Warteschlange nicht erreichbar', () => {
 		vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.spyOn(console, 'warn').mockImplementation(() => {});
 		omniboxStore.aktiverLeser = null;
-		omniboxStore.activeTeacher = null;
 	});
 
 	it('enqueue und ladeWarteschlange werfen, statt still zu schweigen', async () => {

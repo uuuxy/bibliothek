@@ -66,7 +66,6 @@ export function erzeugeOmniboxStore() {
 	// zum nächsten Scan — wie die Fremdrückgabe, als Zeile über dem Konto (OmniboxThekeHinweise).
 	let letzterAuflagenHinweis = $state(/** @type {any} */ (null));
 	let wackelt = $state(false);
-	let scanFehler = $state(false);
 	let fehler = $state('');
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
 	let meldungsZeitgeber = null;
@@ -93,8 +92,6 @@ export function erzeugeOmniboxStore() {
 	 * @type {{message: string, query: string, art: 'uebergehbar' | 'leser'} | null}
 	 */
 	let sperrHinweis = $state(null);
-	// ohneNetz is now handled globally via offlineSync
-	let offlineAnzahl = $state(0);
 
 	// Kamerascanner-Status
 	let kameraOffen = $state(false);
@@ -1013,7 +1010,9 @@ export function erzeugeOmniboxStore() {
 		return fuehreAktionAus(null, reloadProfileCb, false, false, 'rueckgabe');
 	}
 
-	return {
+	// Ohne Kontexttyp gibt TypeScript einem Objektliteral in JS einen offenen Typ, und ein Zugriff
+	// auf einen Namen, den der Store nicht hat, bliebe ohne Meldung; @satisfies schließt ihn.
+	return /** @satisfies {object} */ ({
 		get aktiverLeser() {
 			return aktiverLeser;
 		},
@@ -1047,14 +1046,8 @@ export function erzeugeOmniboxStore() {
 		get randLeuchten() {
 			return randLeuchten;
 		},
-		set randLeuchten(v) {
-			randLeuchten = v;
-		},
 		get bildschirmLeuchten() {
 			return bildschirmLeuchten;
-		},
-		set bildschirmLeuchten(v) {
-			bildschirmLeuchten = v;
 		},
 		get letzteFremdrueckgabe() {
 			return letzteFremdrueckgabe;
@@ -1068,20 +1061,8 @@ export function erzeugeOmniboxStore() {
 		get wackelt() {
 			return wackelt;
 		},
-		set wackelt(v) {
-			wackelt = v;
-		},
-		get scanFehler() {
-			return scanFehler;
-		},
-		set scanFehler(v) {
-			scanFehler = v;
-		},
 		get fehler() {
 			return fehler;
-		},
-		set fehler(v) {
-			fehler = v;
 		},
 		get vormerkungHinweis() {
 			return vormerkungHinweis;
@@ -1101,13 +1082,6 @@ export function erzeugeOmniboxStore() {
 		set sperrHinweis(v) {
 			sperrHinweis = v;
 		},
-		// ohneNetz handled globally
-		get offlineAnzahl() {
-			return offlineAnzahl;
-		},
-		set offlineAnzahl(v) {
-			offlineAnzahl = v;
-		},
 		get kameraOffen() {
 			return kameraOffen;
 		},
@@ -1119,12 +1093,6 @@ export function erzeugeOmniboxStore() {
 		},
 		set kamera(v) {
 			kamera = v;
-		},
-		get suchVerzoegerung() {
-			return suchVerzoegerung;
-		},
-		set suchVerzoegerung(v) {
-			suchVerzoegerung = v;
 		},
 		get trefferlisteOffen() {
 			return trefferlisteOffen;
@@ -1168,7 +1136,7 @@ export function erzeugeOmniboxStore() {
 		gibZurueck,
 		waehleTreffer,
 		fuehreAktionAus
-	};
+	});
 }
 
 export const omniboxStore = erzeugeOmniboxStore();
