@@ -33,7 +33,7 @@ func TestMahnUebersicht_AggregiertKorrekt(t *testing.T) {
 	testdaten.LegeAusleiheMitFristAn(t, pool, leser, "Buch 7", now.AddDate(0, 0, 5))
 
 	rec := httptest.NewRecorder()
-	srv.GetDashboardSummaryHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/dashboard/summary", nil))
+	srv.MahnUebersicht().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/dashboard/summary", nil))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
