@@ -22,7 +22,7 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen reposi
 	// (Admin, Leitung und Mitarbeiter ja, Kollegium und Helfer nein; db/rechte_vorgabe.go).
 	mux.Handle("PATCH /api/schueler/{id}", s.verlangeRecht("edit_students")(s.leser().LeserAendern(protokollAbfragen)))
 	mux.Handle("PATCH /api/admin/students/{id}/lock", s.verlangeRecht("edit_students")(s.leser().LeserSperren(protokollAbfragen)))
-	mux.Handle("DELETE /api/schueler/{id}", s.verlangeRecht("delete_students")(s.leser().LeserLoeschen(protokollAbfragen)))
+	mux.Handle("DELETE /api/schueler/{id}", s.verlangeRecht("delete_students")(s.leser().LeserLoeschen(leserAbfragen)))
 
 	// Die Auskunft nach Art. 15 DSGVO hängt an manage_students_admin: Sie bündelt alle
 	// personenbezogenen Daten eines Lesers. Zeigt auf ihn ein Zugangskonto, verlangt die Tür
@@ -40,7 +40,7 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen reposi
 	mux.Handle("GET /api/schueler/deleted", s.verlangeRecht("delete_students")(s.leser().Papierkorb()))
 	mux.Handle("POST /api/schueler/{id}/restore", s.verlangeRecht("delete_students")(s.leser().LeserWiederherstellen()))
 	// Endgültig löschen: ein eigenes, stärkeres Recht als das Löschen in den Papierkorb.
-	mux.Handle("DELETE /api/schueler/deleted/{id}", s.verlangeRecht("manage_students_admin")(s.leser().LeserEndgueltigLoeschen(protokollAbfragen)))
+	mux.Handle("DELETE /api/schueler/deleted/{id}", s.verlangeRecht("manage_students_admin")(s.leser().LeserEndgueltigLoeschen(leserAbfragen)))
 
 	// Fotos: Die beiden Richtungen sprechen verschiedene Kennungen an. Hochgeladen wird über die
 	// UUID des Lesers (der Aufrufer kennt den Datensatz), ausgeliefert über den Barcode:
@@ -103,8 +103,8 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen reposi
 	mux.Handle("GET /api/bescheide/ausstehend", s.verlangeRecht("view_students")(s.schaden().BescheideAusstehend(bescheidAbfragen)))
 	mux.Handle("GET /api/bescheide/{id}/pdf", s.verlangeRecht("view_students")(s.schaden().BescheidPDF(bescheidAbfragen)))
 	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.verlangeRecht("edit_students")(s.schaden().BescheidUebergeben(bescheidAbfragen, protokollDerBescheide)))
-	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.verlangeRecht("edit_students")(s.schaden().ZahlungVerbuchen(protokollDerBescheide)))
-	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.verlangeRecht("edit_students")(s.schaden().ForderungStornieren(protokollDerBescheide)))
+	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.verlangeRecht("edit_students")(s.schaden().ZahlungVerbuchen(schadensAbfragen)))
+	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.verlangeRecht("edit_students")(s.schaden().ForderungStornieren(schadensAbfragen)))
 
 	// Mahnwesen
 	mux.Handle("GET /api/mahnwesen", s.verlangeRecht("view_students")(s.mahnwesen().UeberfaelligeAusleihen(mahnAbfragen)))

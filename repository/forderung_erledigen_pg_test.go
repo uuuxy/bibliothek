@@ -28,7 +28,6 @@ func legeOffenenSchadensfallAn(t *testing.T, pool *pgxpool.Pool, schuelerID, exe
 func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewProtokollAbfragen(pool)
 
 	schueler := legeSchuelerAn(t, pool, "S-GEB-1", "Mia", "8b")
 	exemplare := legeSignaturMitExemplarenAn(t, pool, "GebErl", 2)
@@ -46,7 +45,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	// (1) Storno: setzt ist_bezahlt und die Spalten des Stornos, der Eintrag trägt den Betrag
 	// aus der Datenbank.
 	storno := legeOffenenSchadensfallAn(t, pool, schueler, exemplare[0], 12.50)
-	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "Buch wiedergefunden"); err != nil {
+	if err := NewSchadensAbfragen(pool).StorniereForderung(ctx, storno, bearbeiter, "Buch wiedergefunden"); err != nil {
 		t.Fatalf("Storno: %v", err)
 	}
 	var istBezahlt bool
@@ -72,17 +71,17 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 
 	// (2) Ein zweites Storno und das Bezahlen eines erledigten Falls liefern
 	// ErrSchadensfallErledigt.
-	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "nochmal"); !errors.Is(err, ErrSchadensfallErledigt) {
+	if err := NewSchadensAbfragen(pool).StorniereForderung(ctx, storno, bearbeiter, "nochmal"); !errors.Is(err, ErrSchadensfallErledigt) {
 		t.Errorf("Doppel-Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
 	}
-	if err := repo.VerbucheZahlung(ctx, storno, bearbeiter); !errors.Is(err, ErrSchadensfallErledigt) {
+	if err := NewSchadensAbfragen(pool).VerbucheZahlung(ctx, storno, bearbeiter); !errors.Is(err, ErrSchadensfallErledigt) {
 		t.Errorf("Bezahlen nach Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
 	}
 
 	// (3) Bezahlt: setzt ist_bezahlt und lässt die Spalten des Stornos unberührt. Bezahlt und
 	// storniert bleiben unterscheidbar (Auskunft, Kontoauszug).
 	bezahlt := legeOffenenSchadensfallAn(t, pool, schueler, exemplare[1], 7.00)
-	if err := repo.VerbucheZahlung(ctx, bezahlt, bearbeiter); err != nil {
+	if err := NewSchadensAbfragen(pool).VerbucheZahlung(ctx, bezahlt, bearbeiter); err != nil {
 		t.Fatalf("Bezahlen: %v", err)
 	}
 	var bezahltFlag bool
@@ -97,7 +96,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	}
 
 	// (4) Eine unbekannte ID liefert ErrSchadensfallNichtGefunden und nicht den Konflikt.
-	err := repo.VerbucheZahlung(ctx, "00000000-0000-0000-0000-000000000000", bearbeiter)
+	err := NewSchadensAbfragen(pool).VerbucheZahlung(ctx, "00000000-0000-0000-0000-000000000000", bearbeiter)
 	if !errors.Is(err, ErrSchadensfallNichtGefunden) {
 		t.Errorf("unbekannte ID: erwartet ErrSchadensfallNichtGefunden, bekam %v", err)
 	}

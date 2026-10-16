@@ -182,8 +182,7 @@ func TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auditRepo := repository.NewProtokollAbfragen(pool)
-	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
 		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
 	var lusdSpuren int
@@ -267,8 +266,7 @@ func TestLeserEndgueltigLoeschen_OffeneAusleiheBlockiert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auditRepo := repository.NewProtokollAbfragen(pool)
-	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err == nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, sid, ""); err == nil {
 		t.Error("Purge trotz offener Ausleihe durchgelaufen — Buch wäre verwaist")
 	}
 
@@ -343,8 +341,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	}
 
 	// LoescheAbgaengerEndgueltig ist blockiert, solange das Buch offen ist.
-	auditRepo := repository.NewProtokollAbfragen(pool)
-	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
 		t.Error("LoescheAbgaengerEndgueltig trotz offenem Buch durchgelaufen")
 	}
 
@@ -352,7 +349,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() WHERE id = $1`, loanID); err != nil {
 		t.Fatal(err)
 	}
-	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheAbgaengerEndgueltig(ctx, sid, ""); err != nil {
 		t.Fatalf("LoescheAbgaengerEndgueltig nach Rückgabe: %v", err)
 	}
 	var exists bool

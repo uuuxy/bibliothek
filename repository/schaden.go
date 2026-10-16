@@ -35,6 +35,13 @@ type SchadensAbfragen interface {
 	// LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst, für die Liste
 	// der Forderungen in der Akte.
 	LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error)
+
+	// StorniereForderung storniert eine offene Forderung mit Begründung und protokolliert es.
+	// Den Betrag liest es aus der Datenbank, der Rufer übergibt ihn nicht.
+	StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error
+
+	// VerbucheZahlung verbucht die Zahlung einer offenen Forderung und protokolliert es.
+	VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error
 }
 
 // Schadensfall ist eine Zeile der Liste der Forderungen in der Akte eines Lesers. Titel und

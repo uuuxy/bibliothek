@@ -60,7 +60,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 		muss(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, schuelerID)
 		muss(`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 			VALUES ($1, $2, 'Einband gerissen', 9.50)`, exemplarID, schuelerID)
-		if err := audit.LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
+		if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
 			t.Fatalf("Titel %q löschen: %v", name, err)
 		}
 		return titelID, exemplarID

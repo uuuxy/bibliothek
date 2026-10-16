@@ -69,7 +69,7 @@ func TestDSGVOBlatt_ProtokollzeilenInWorten(t *testing.T) {
 		VALUES ($1, $2, 'Blatt-Schaden', 24.50, false) RETURNING id`, exID, sid).Scan(&schadenID); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)
 	}
-	if err := auditRepo.StorniereForderung(ctx, schadenID, bearbeiter, "Blatt-Grund der Stornierung"); err != nil {
+	if err := repository.NewSchadensAbfragen(pool).StorniereForderung(ctx, schadenID, bearbeiter, "Blatt-Grund der Stornierung"); err != nil {
 		t.Fatalf("StorniereForderung: %v", err)
 	}
 
@@ -93,7 +93,7 @@ func TestDSGVOBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 
 	// In den Papierkorb: der Eintrag an der Leserzeile selbst.
-	if err := auditRepo.LegeLeserInPapierkorb(ctx, sid, bearbeiter, "Blatt-Löschgrund"); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, sid, bearbeiter, "Blatt-Löschgrund"); err != nil {
 		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 

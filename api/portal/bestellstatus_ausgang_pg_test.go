@@ -20,7 +20,7 @@ import (
 //   - der Status-Editor der Buchakte (KatalogAbfragen.AendereExemplarStatus): ein
 //     angekommenes Buch auf „verfügbar" gestellt statt über den Wareneingang; es muss
 //     ausleihbar und gezählt sein;
-//   - das Aussondern (ProtokollAbfragen.SondereExemplarAus): ein Buch, das der Händler nicht
+//   - das Aussondern (KatalogAbfragen.SondereExemplarAus): ein Buch, das der Händler nicht
 //     liefert; es darf nicht im Wareneingang bleiben, und „alle einbuchen" darf das
 //     ausgesonderte Exemplar nicht wieder ausleihbar machen.
 func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {

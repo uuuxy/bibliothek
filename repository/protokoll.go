@@ -11,44 +11,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ProtokollAbfragen schreibt die Einträge des Protokolls und führt die Vorgänge aus, die mit
-// ihrem Eintrag in einer Transaktion stehen: das Löschen von Titel, Konto und Leser, das
-// Aussondern eines Exemplars und das Erledigen einer Forderung. So gibt es den Vorgang nicht
-// ohne seine Spur.
+// ProtokollAbfragen schreibt die Einträge des Protokolls. Die Vorgänge, die mit ihrem Eintrag in
+// einer Transaktion stehen, führen die Abfragen ihrer Sache aus: Titel löschen und Exemplar
+// aussondern KatalogAbfragen, Konto löschen KontoAbfragen, Leser löschen LeserAbfragen,
+// Forderung erledigen SchadensAbfragen. So gibt es den Vorgang nicht ohne seine Spur.
 //
 // Dass Einträge nur angefügt werden, ist eine Regel des Codes und keine der Datenbank: Kein
 // Weg ändert oder löscht einen Eintrag, außer der Tilgung des Personenbezugs
 // (TilgeSchuelerSpuren, jobs/cron_dsgvo.go). Ein Trigger, der jede Änderung verbietet, stünde
 // der Löschpflicht entgegen (Art. 17 DSGVO) und ließe genau diese Tilgung scheitern.
 type ProtokollAbfragen interface {
-	// LoescheTitel löscht einen Titel mit seinen Exemplaren und protokolliert es.
-	LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error
-	// SondereExemplarAus setzt ein Exemplar auf ausgesondert und protokolliert es.
-	SondereExemplarAus(ctx context.Context, exemplarID string, bearbeiterID string) error
-	// LoescheKonto löscht ein Konto und protokolliert es.
-	LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error
-
-	// LegeLeserInPapierkorb legt einen Leser in den Papierkorb, aus dem er sich zurückholen
-	// lässt. Seine Daten bleiben; endgültig löscht LoescheLeserEndgueltig.
-	LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error
-
-	// LoescheLeserEndgueltig entfernt einen Leser aus dem Papierkorb: Die Ausleihen verlieren
-	// ihren Leser, die Einträge des Protokolls ihren Personenbezug, erledigte Schadensfälle
-	// und die Zeile des Lesers werden gelöscht. Eine offene Ausleihe oder eine unbezahlte
-	// Forderung verhindert es.
-	LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
-
-	// LoescheAbgaengerEndgueltig tut dasselbe für einen Abgänger, der nicht im Papierkorb
-	// liegt; der nächtliche Lauf ruft es. Offene Vorgänge verhindern es ebenso.
-	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
-
-	// StorniereForderung storniert eine offene Forderung mit Begründung und protokolliert es.
-	// Den Betrag liest es aus der Datenbank, der Rufer übergibt ihn nicht.
-	StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error
-
-	// VerbucheZahlung verbucht die Zahlung einer offenen Forderung und protokolliert es.
-	VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error
-
 	// ProtokolliereAusleihe schreibt den Eintrag zur Ausleihe in die Transaktion der Ausleihe,
 	// vor deren Commit: Lässt sich die Spur nicht schreiben, gibt es die Ausleihe nicht.
 	ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error

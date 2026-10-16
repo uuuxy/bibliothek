@@ -67,6 +67,9 @@ type KontoAbfragen interface {
 	// jetzt ein Admin ist und die Bearbeitung damit Admin-Rechte verlangt, steht nur in der
 	// Datenbank.
 	LadeRolle(ctx context.Context, id string) (string, error)
+
+	// LoescheKonto löscht ein Konto und protokolliert es.
+	LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error
 }
 
 type pgKontoAbfragen struct {

@@ -79,7 +79,7 @@ type verlusteLoeschenAnfrage struct {
 }
 
 // VerlusteEndgueltigLoeschen löscht als Verlust gebuchte Exemplare endgültig. Der allgemeine
-// Weg zum Löschen sondert nur aus (ProtokollAbfragen.SondereExemplarAus); diese Tür rührt nur
+// Weg zum Löschen sondert nur aus (KatalogAbfragen.SondereExemplarAus); diese Tür rührt nur
 // Exemplare an, die schon als Verlust gelten.
 // @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
 func (t *Tueren) VerlusteEndgueltigLoeschen() http.HandlerFunc {

@@ -44,7 +44,7 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
-		srv.ExemplarAussondern(repository.NewProtokollAbfragen(pool))(rec, req)
+		srv.ExemplarAussondern(repository.NewKatalogAbfragen(pool))(rec, req)
 		return rec
 	}
 

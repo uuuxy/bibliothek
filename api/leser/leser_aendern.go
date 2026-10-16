@@ -67,7 +67,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /schueler/{id} [delete]
-func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserLoeschen(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
@@ -104,7 +104,7 @@ func (t *Tueren) LeserLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 		}
 
 		// In den Papierkorb, in einer Transaktion mit dem Eintrag im Protokoll.
-		if err := protokollAbfragen.LegeLeserInPapierkorb(ctx, id, claims.KontoID, "Manuelle Löschung"); err != nil {
+		if err := leserAbfragen.LegeLeserInPapierkorb(ctx, id, claims.KontoID, "Manuelle Löschung"); err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}

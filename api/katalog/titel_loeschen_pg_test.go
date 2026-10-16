@@ -37,7 +37,7 @@ func TestTitelLoeschen_VerliehenesExemplarNenntDenBarcode(t *testing.T) {
 	testdaten.LegeAusleiheVorZweiTagenAn(t, pool, exemplarID, schuelerID)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	rec := tuertest.RufeAlsAdmin(t, adminID, srv.TitelLoeschen(repository.NewProtokollAbfragen(pool)),
+	rec := tuertest.RufeAlsAdmin(t, adminID, srv.TitelLoeschen(repository.NewKatalogAbfragen(pool)),
 		http.MethodDelete, "/api/buecher/titel/"+titelID, "", map[string]string{"id": titelID})
 
 	if rec.Code != http.StatusBadRequest {

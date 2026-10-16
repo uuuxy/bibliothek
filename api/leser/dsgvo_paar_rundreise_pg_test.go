@@ -129,8 +129,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 	// Der echte Lösch-Weg beginnt mit dem Papierkorb; der schreibt den PII-Snapshot
 	// (Vorname, Nachname, Barcode) in audit_log.details, genau die Spur, die die
 	// Tilgung später neutralisieren muss.
-	auditRepo := repository.NewProtokollAbfragen(pool)
-	if err := auditRepo.LegeLeserInPapierkorb(ctx, sid, "", "Rundreise"); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, sid, "", "Rundreise"); err != nil {
 		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 
@@ -182,7 +181,7 @@ func TestDSGVORundreise_EndgueltigesLoeschenTilgtWasDieAuskunftZeigt(t *testing.
 	}
 
 	// ── Der echte Lösch-Weg zu Ende: endgültig löschen aus dem Papierkorb ──
-	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
 		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
 

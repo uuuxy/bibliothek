@@ -120,6 +120,20 @@ type LeserAbfragen interface {
 	// LadeEhemaligenListe liefert die Weggegangenen (ist_abgaenger = true) für den Reiter
 	// „Ehemalige / Archiv", mit denselben Zeilen und derselben Suche wie die Aktiven.
 	LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
+
+	// LegeLeserInPapierkorb legt einen Leser in den Papierkorb, aus dem er sich zurückholen
+	// lässt. Seine Daten bleiben; endgültig löscht LoescheLeserEndgueltig.
+	LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error
+
+	// LoescheLeserEndgueltig entfernt einen Leser aus dem Papierkorb: Die Ausleihen verlieren
+	// ihren Leser, die Einträge des Protokolls ihren Personenbezug, erledigte Schadensfälle
+	// und die Zeile des Lesers werden gelöscht. Eine offene Ausleihe oder eine unbezahlte
+	// Forderung verhindert es.
+	LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
+
+	// LoescheAbgaengerEndgueltig tut dasselbe für einen Abgänger, der nicht im Papierkorb
+	// liegt; der nächtliche Lauf ruft es. Offene Vorgänge verhindern es ebenso.
+	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
 }
 
 type pgLeserAbfragen struct {

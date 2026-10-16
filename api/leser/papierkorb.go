@@ -138,7 +138,7 @@ func wiederherstellungsKollision(err error) (string, bool) {
 // LeserEndgueltigLoeschen entfernt einen Leser, der im Papierkorb liegt, endgültig
 // (repository.LoescheLeserEndgueltig); offene Ausleihen und unbezahlte Forderungen
 // verhindern es.
-func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserEndgueltigLoeschen(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -153,7 +153,7 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 		}
 
 		ctx := r.Context()
-		if err := protokollAbfragen.LoescheLeserEndgueltig(ctx, id, claims.KontoID); err != nil {
+		if err := leserAbfragen.LoescheLeserEndgueltig(ctx, id, claims.KontoID); err != nil {
 			// Blockade (offene Ausleihen / unbezahlte Schäden / nicht im Papierkorb) ist ein
 			// Konflikt, alles andere nicht: Bekäme jeder Fehler die 409, auch ein
 			// Verbindungsabbruch, suchte die Bibliothek einen offenen Vorgang, den es nicht gibt,

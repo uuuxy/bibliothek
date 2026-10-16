@@ -154,7 +154,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'AR-FRITZ-1' WHERE id = $1`, fritzLeser); err != nil {
 		t.Fatalf("Ausweis für Fritz: %v", err)
 	}
-	if err := repository.NewProtokollAbfragen(pool).LoescheKonto(ctx, fritz, ada); err != nil {
+	if err := repository.NewKontoAbfragen(pool).LoescheKonto(ctx, fritz, ada); err != nil {
 		t.Fatalf("Konto von Fritz löschen: %v", err)
 	}
 	for name, h := range map[string]http.HandlerFunc{

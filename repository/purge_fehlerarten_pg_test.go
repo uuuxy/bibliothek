@@ -23,7 +23,7 @@ import (
 func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := repository.NewProtokollAbfragen(pool)
+	repo := repository.NewLeserAbfragen(pool)
 
 	var schueler string
 	if err := pool.QueryRow(ctx, `

@@ -13,7 +13,7 @@ import (
 )
 
 // TitelLoeschen löscht einen Titel mit seinen Exemplaren und schreibt den Vorgang ins
-// Protokoll (ProtokollAbfragen.LoescheTitel). Ist ein Exemplar verliehen, lehnt die Tür mit
+// Protokoll (KatalogAbfragen.LoescheTitel). Ist ein Exemplar verliehen, lehnt die Tür mit
 // 400 ab.
 //
 // @Summary      Titel löschen
@@ -28,7 +28,7 @@ import (
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id} [delete]
-func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) TitelLoeschen(katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
@@ -43,7 +43,7 @@ func (t *Tueren) TitelLoeschen(protokollAbfragen repository.ProtokollAbfragen) h
 
 		ctx := r.Context()
 
-		err := protokollAbfragen.LoescheTitel(ctx, id, claims.KontoID)
+		err := katalogAbfragen.LoescheTitel(ctx, id, claims.KontoID)
 		if err != nil {
 			if errors.Is(err, repository.ErrTitelNichtGefunden) {
 				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, tuer.MeldungTitelNichtGefunden, err)

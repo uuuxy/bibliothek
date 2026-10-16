@@ -48,6 +48,15 @@ func (m *leserAttrappe) LadeSchuelerListe(ctx context.Context, klassen []string,
 func (m *leserAttrappe) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
 	return nil, nil
 }
+func (m *leserAttrappe) LegeLeserInPapierkorb(ctx context.Context, leserID, bearbeiterID, grund string) error {
+	return nil
+}
+func (m *leserAttrappe) LoescheLeserEndgueltig(ctx context.Context, leserID, bearbeiterID string) error {
+	return nil
+}
+func (m *leserAttrappe) LoescheAbgaengerEndgueltig(ctx context.Context, leserID, bearbeiterID string) error {
+	return nil
+}
 func (m *leserAttrappe) LadeEhemaligenListe(ctx context.Context, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
 	return nil, nil
 }
@@ -60,20 +69,6 @@ func (m *protokollAttrappe) ProtokolliereAdminAktion(ctx context.Context, adminI
 	m.adminAktionen++
 	return nil
 }
-func (m *protokollAttrappe) LoescheTitel(ctx context.Context, t, b string) error       { return nil }
-func (m *protokollAttrappe) SondereExemplarAus(ctx context.Context, c, b string) error { return nil }
-func (m *protokollAttrappe) LoescheKonto(ctx context.Context, u, b string) error       { return nil }
-func (m *protokollAttrappe) LegeLeserInPapierkorb(ctx context.Context, s, b, g string) error {
-	return nil
-}
-func (m *protokollAttrappe) LoescheLeserEndgueltig(ctx context.Context, s, b string) error {
-	return nil
-}
-func (m *protokollAttrappe) LoescheAbgaengerEndgueltig(ctx context.Context, s, b string) error {
-	return nil
-}
-func (m *protokollAttrappe) StorniereForderung(ctx context.Context, s, b, g string) error { return nil }
-func (m *protokollAttrappe) VerbucheZahlung(ctx context.Context, s, b string) error       { return nil }
 func (m *protokollAttrappe) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
 	return nil
 }

@@ -25,7 +25,6 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 
 	konto := func(vorname, rolle string) string {
@@ -57,7 +56,7 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, claims))
 		}
 		rec := httptest.NewRecorder()
-		srv.KontoLoeschen(auditRepo, userRepo)(rec, req)
+		srv.KontoLoeschen(userRepo)(rec, req)
 		return rec
 	}
 	alsAdmin := &auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}

@@ -398,7 +398,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Bezahlt über den echten Pfad, danach ist die Frist vorbei.
-	if err := repository.NewProtokollAbfragen(pool).VerbucheZahlung(ctx, f, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if err := repository.NewSchadensAbfragen(pool).VerbucheZahlung(ctx, f, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Bezahlt: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `UPDATE schadensersatz_bescheide SET frist_bis = CURRENT_DATE - 1 WHERE id = $1`, b.ID); err != nil {

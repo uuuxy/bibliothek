@@ -31,7 +31,6 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
 			`DELETE FROM benutzer WHERE email LIKE '%@konto-eintraege.invalid'`); err != nil {
@@ -61,7 +60,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	}
 	loescheKonto := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoLoeschen(userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -96,7 +95,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		if _, err := pool.Exec(ctx, `UPDATE leser SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`, leserID); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
-		if err := auditRepo.LoescheLeserEndgueltig(ctx, leserID, admin); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, leserID, admin); err != nil {
 			t.Fatalf("endgültig löschen: %v", err)
 		}
 	}
@@ -124,7 +123,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 			&auth.Claims{KontoID: admin, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.leser().LeserLoeschen(auditRepo)(rec, req)
+		srv.leser().LeserLoeschen(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Leserzeile in den Papierkorb: Status %d — %s", rec.Code, rec.Body.String())
 		}

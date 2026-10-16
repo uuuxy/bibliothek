@@ -7,7 +7,7 @@ import (
 
 func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen repository.KatalogAbfragen, protokollAbfragen repository.ProtokollAbfragen) {
 	// ── Titel und Exemplare ──
-	mux.Handle("DELETE /api/buecher/titel/{id}", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschen(protokollAbfragen)))
+	mux.Handle("DELETE /api/buecher/titel/{id}", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschen(katalogAbfragen)))
 	// Die Signatur aus dem Bestellkorb korrigieren: create_orders, nicht edit_books, dasselbe
 	// Recht wie das Anlegen des Titels über /aus-isbn (api/katalog/isbn_zu_titel.go).
 	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.verlangeRecht("create_orders")(s.katalog().TitelSignaturSetzen()))
@@ -70,7 +70,7 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen re
 	mux.Handle("GET /api/bestand/zugangsbuch", s.verlangeRecht("view_books")(s.katalog().Zugangsbuch()))
 	mux.Handle("GET /api/bestand/zugangsbuch/pdf", s.verlangeRecht("view_books")(s.katalog().ZugangsbuchPDF()))
 
-	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.verlangeRecht("delete_books")(s.katalog().ExemplarAussondern(protokollAbfragen)))
+	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.verlangeRecht("delete_books")(s.katalog().ExemplarAussondern(katalogAbfragen)))
 
 	// Einzelne Felder eines Exemplars ändern
 	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.verlangeRecht("edit_books")(s.katalog().ExemplarBarcodeSetzen(katalogAbfragen)))

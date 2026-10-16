@@ -31,7 +31,6 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "restore-kollision@test.invalid")
 
 	// Eine Zeile in den Papierkorb legen und danach ihren Platz besetzen.
@@ -41,7 +40,7 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 		if err := pool.QueryRow(ctx, anlegen).Scan(&id); err != nil {
 			t.Fatalf("Schüler anlegen: %v", err)
 		}
-		if err := auditRepo.LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		if _, err := pool.Exec(ctx, zwilling); err != nil {
@@ -98,7 +97,7 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 			 VALUES ('S-ZW-FREI', 'Cem', 'Cord', '7a', 2030) RETURNING id`).Scan(&id); err != nil {
 			t.Fatalf("Schüler anlegen: %v", err)
 		}
-		if err := auditRepo.LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		if rec := wiederherstellen(id); rec.Code != http.StatusOK {

@@ -11,7 +11,7 @@ import (
 )
 
 // ExemplarAussondern sondert ein Exemplar aus: Die Zeile bleibt und gilt als ausgesondert, weil
-// Ausleihen und Schadensfälle an ihr hängen (ProtokollAbfragen.SondereExemplarAus). Ein
+// Ausleihen und Schadensfälle an ihr hängen (KatalogAbfragen.SondereExemplarAus). Ein
 // verliehenes Exemplar lehnt die Tür mit 400 ab.
 //
 // @Summary      Exemplar aussondern
@@ -26,7 +26,7 @@ import (
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/exemplare/{id} [delete]
-func (t *Tueren) ExemplarAussondern(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) ExemplarAussondern(katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
@@ -42,7 +42,7 @@ func (t *Tueren) ExemplarAussondern(protokollAbfragen repository.ProtokollAbfrag
 
 		ctx := r.Context()
 
-		err := protokollAbfragen.SondereExemplarAus(ctx, id, claims.KontoID)
+		err := katalogAbfragen.SondereExemplarAus(ctx, id, claims.KontoID)
 		if err != nil {
 			// Am Fehlerwert erkannt, nicht am Text der Meldung: Eine umformulierte Meldung machte
 			// aus der Auskunft sonst einen Serverfehler.

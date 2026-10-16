@@ -20,7 +20,17 @@ import (
 type Zeitplan struct {
 	pool              db.Pool
 	protokollAbfragen repository.ProtokollAbfragen
-	cron              *cron.Cron
+	// leserLoeschung löscht einen Leser endgültig; die Vorgabe sind die Abfragen der Leser am
+	// Pool, ein Test setzt eine Attrappe ein.
+	leserLoeschung leserLoeschung
+	cron           *cron.Cron
+}
+
+// leserLoeschung sind die zwei Wege, auf denen ein nächtlicher Lauf einen Leser endgültig löscht
+// (repository.LeserAbfragen).
+type leserLoeschung interface {
+	LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
+	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
 }
 
 // NewZeitplan baut den Zeitplan.
@@ -34,6 +44,7 @@ func NewZeitplan(pool db.Pool, protokollAbfragen repository.ProtokollAbfragen) *
 	return &Zeitplan{
 		pool:              pool,
 		protokollAbfragen: protokollAbfragen,
+		leserLoeschung:    repository.NewLeserAbfragen(pool),
 		cron:              cron.New(cron.WithLocation(time.UTC)),
 	}
 }

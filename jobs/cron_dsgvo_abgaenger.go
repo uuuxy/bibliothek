@@ -60,7 +60,7 @@ func (z *Zeitplan) FuehreAbgaengerLoeschungAus() {
 		// Personendaten. LoescheAbgaengerEndgueltig entfernt sie wirklich (Ausleihen anonymisiert,
 		// Datensatz gelöscht); der Grund der Löschung steht über den festen Kontext der Methode im
 		// Protokoll.
-		if err := z.protokollAbfragen.LoescheAbgaengerEndgueltig(ctx, a.ID, ""); err != nil {
+		if err := z.leserLoeschung.LoescheAbgaengerEndgueltig(ctx, a.ID, ""); err != nil {
 			log.Printf("Scheduler GDPR Delete: failed to purge student ID %s: %v",
 				logger.OhneUmbruch(a.ID), err)
 			fehlschlaege = append(fehlschlaege, a.ID)

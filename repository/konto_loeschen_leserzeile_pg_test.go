@@ -21,10 +21,9 @@ func TestLoescheKonto_LeserzeileGehtMitWennUnberuehrt(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewProtokollAbfragen(pool)
 
 	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.unberuehrt@schule.example")
-	if err := repo.LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
+	if err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
@@ -41,7 +40,6 @@ func TestLoescheKonto_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewProtokollAbfragen(pool)
 
 	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.mitbuch@schule.example")
 	bearbeiter := legeBearbeiterAn(t, pool)
@@ -49,7 +47,7 @@ func TestLoescheKonto_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 	loan := legeAusleiheAn(t, pool, copyID, leser, bearbeiter)
 	bucheRueckgabe(t, pool, loan)
 
-	if err := repo.LoescheKonto(ctx, konto, bearbeiter); err != nil {
+	if err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, bearbeiter); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
@@ -64,14 +62,13 @@ func TestLoescheKonto_LeserzeileBleibtMitAusweis(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewProtokollAbfragen(pool)
 
 	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.mitausweis@schule.example")
 	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'A-77001' WHERE id = $1`, leser); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := repo.LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
+	if err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 

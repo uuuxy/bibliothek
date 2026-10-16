@@ -479,14 +479,6 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- `repository.ProtokollAbfragen` trägt neben dem Schreiben der Einträge das Löschen von Titel,
-  Konto und Leser, das Aussondern eines Exemplars und das Erledigen einer Forderung, weil jeder
-  dieser Vorgänge mit seinem Eintrag in einer Transaktion steht. Wer „Titel löschen" sucht,
-  sucht beim Titel. Die Dateien heißen schon nach ihrer Sache (`titel_loeschen.go`,
-  `leser_loeschen.go`, `konto_loeschen.go`, `exemplar_aussondern.go`, `forderung_erledigen.go`);
-  die Methoden ziehen an die Abfragen ihrer Sache (`KatalogAbfragen`, `LeserAbfragen`,
-  `KontoAbfragen`, `SchadensAbfragen`). Die Rufer halten dann die Abfragen der Sache statt
-  `ProtokollAbfragen`, ihre Attrappen ziehen mit.
 - Die Oberfläche, Stufe 2: Gezählt am 16.10.2026 über die Erklärungen mit `let`, `const`,
   `function` und `class` in den 459 Dateien ohne Tests: 326 verschiedene Namen (402 Erklärungen)
   tragen ein englisches Wort, am häufigsten `handle` (46), `error` (39), `selected` (28),

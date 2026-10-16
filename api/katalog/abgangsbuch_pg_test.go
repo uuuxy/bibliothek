@@ -142,12 +142,11 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "abgang-zulauf@test.invalid")
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nie geliefert", "Nie 1", 0)
 
 	geloescht := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-LOESCHEN")
-	if err := auditRepo.SondereExemplarAus(ctx, geloescht, bearbeiter); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, geloescht, bearbeiter); err != nil {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
 	ausgesondert := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-STATUS")
@@ -156,7 +155,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
 	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "AB-BESTAND", true, "")
-	if err := auditRepo.SondereExemplarAus(ctx, imBestand, bearbeiter); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, imBestand, bearbeiter); err != nil {
 		t.Fatalf("Exemplar aus dem Bestand löschen: %v", err)
 	}
 
@@ -212,7 +211,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Mit Zulauf geloescht", "Zul 1", 0)
 	testdaten.LegeExemplarAn(t, pool, titelID, "AG-BESTAND", true, "")
 	testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AG-ZULAUF")
-	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 	if n := geloescht(); n != 1 {
@@ -351,7 +350,7 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 
 	// Durch die echte Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal
 	// nimmt — samt der Protokollspur, aus der die Zahl entsteht.
-	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 

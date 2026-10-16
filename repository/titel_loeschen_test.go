@@ -27,7 +27,6 @@ func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewProtokollAbfragen(mock)
 	const titelID = "11111111-1111-1111-1111-111111111111"
 
 	mock.ExpectBegin()
@@ -42,7 +41,7 @@ func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	// Kein ExpectExec("DELETE …"): Der Abbruch kommt vor jeder Anweisung, die etwas löscht.
 	mock.ExpectRollback()
 
-	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
+	err = NewKatalogAbfragen(mock).LoescheTitel(context.Background(), titelID, "admin-1")
 
 	var mitAusleihen *TitelHatAusleihenFehler
 	if !errors.As(err, &mitAusleihen) {
@@ -66,7 +65,6 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewProtokollAbfragen(mock)
 	const titelID = "22222222-2222-2222-2222-222222222222"
 
 	mock.ExpectBegin()
@@ -135,7 +133,7 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	if err := repo.LoescheTitel(context.Background(), titelID, "admin-1"); err != nil {
+	if err := NewKatalogAbfragen(mock).LoescheTitel(context.Background(), titelID, "admin-1"); err != nil {
 		t.Fatalf("Löschen ohne offene Ausleihen muss durchgehen, bekam: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -152,7 +150,6 @@ func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 	}
 	defer mock.Close()
 
-	repo := NewProtokollAbfragen(mock)
 	const titelID = "33333333-3333-3333-3333-333333333333"
 	leseFehler := errors.New("verbindung während der iteration verloren")
 
@@ -168,7 +165,7 @@ func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 	// Kein ExpectExec: Bei unklarer Lage wird nichts gelöscht.
 	mock.ExpectRollback()
 
-	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
+	err = NewKatalogAbfragen(mock).LoescheTitel(context.Background(), titelID, "admin-1")
 	if err == nil {
 		t.Fatal("ein Lesefehler darf nicht als 'keine offenen Ausleihen' durchgehen")
 	}

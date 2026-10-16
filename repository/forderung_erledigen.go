@@ -42,7 +42,7 @@ func ladeBetragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID str
 // StorniereForderung setzt eine offene Forderung auf storniert und schreibt den Eintrag dazu;
 // die Zeile bleibt als Beleg stehen. ist_bezahlt wird mitgesetzt: Wer offene Forderungen zählt,
 // fragt nur ist_bezahlt = false, und bezahlt und storniert unterscheidet storniert_am.
-func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
+func (a *pgSchadensAbfragen) StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfa
 // VerbucheZahlung verbucht die Zahlung einer offenen Forderung, im Alltag bar an der Theke, und
 // schreibt den Eintrag dazu. Die Spalten der Stornierung bleiben leer; so bleiben bezahlt und
 // storniert unterscheidbar.
-func (a *pgProtokollAbfragen) VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error {
+func (a *pgSchadensAbfragen) VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err

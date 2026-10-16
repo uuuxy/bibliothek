@@ -39,7 +39,7 @@ func TestLeserEndgueltigLoeschen_MeldungNenntDenGrund(t *testing.T) {
 	loesche := func(t *testing.T, leserID string) (status int, meldung string) {
 		t.Helper()
 		rec := tuertest.RufeAlsAdmin(t, "00000000-0000-0000-0000-0000000000ad",
-			srv.LeserEndgueltigLoeschen(repository.NewProtokollAbfragen(pool)),
+			srv.LeserEndgueltigLoeschen(repository.NewLeserAbfragen(pool)),
 			http.MethodDelete, "/api/schueler/"+leserID+"/endgueltig", "", map[string]string{"id": leserID})
 		return rec.Code, tuertest.Fehlermeldung(t, rec)
 	}

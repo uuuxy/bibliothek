@@ -20,7 +20,7 @@ var (
 // SondereExemplarAus bucht ein Exemplar aus und schreibt den Eintrag dazu. Die Zeile bleibt in
 // der Tabelle und gilt als ausgesondert, weil Ausleihen und Schadensfälle an ihr hängen. Ein
 // verliehenes Exemplar lehnt es ab.
-func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID string, bearbeiterID string) error {
+func (a *pgKatalogAbfragen) SondereExemplarAus(ctx context.Context, exemplarID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err

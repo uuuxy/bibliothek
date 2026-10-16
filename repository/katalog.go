@@ -56,6 +56,12 @@ type KatalogAbfragen interface {
 	// Anfrage je Titel, und liefert die Zahl der verarbeiteten Titel. Einen Titel ohne ISBN
 	// ordnet die Funktion über seinen Titel zu.
 	SchreibeTitel(ctx context.Context, titel []Titel) (int, error)
+
+	// LoescheTitel löscht einen Titel mit seinen Exemplaren und protokolliert es.
+	LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error
+
+	// SondereExemplarAus setzt ein Exemplar auf ausgesondert und protokolliert es.
+	SondereExemplarAus(ctx context.Context, exemplarID string, bearbeiterID string) error
 }
 
 type pgKatalogAbfragen struct {

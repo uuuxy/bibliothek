@@ -33,7 +33,7 @@ type kontoLoeschung struct {
 // darüber nimmt die Tilgung beim endgültigen Löschen des Lesers Name und Adresse heraus
 // (protokollSchluesselMitPersonenbezug). Jeder Schlüssel steht wörtlich hier, damit das Gate in
 // protokoll_personenbezug_test.go ihn sieht.
-func (a *pgProtokollAbfragen) protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschung) error {
+func protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschung) error {
 	details := map[string]any{
 		"vorname":  l.vorname,
 		"nachname": l.nachname,
@@ -67,7 +67,7 @@ func (a *pgProtokollAbfragen) protokolliereKontoLoeschung(ctx context.Context, t
 // loescheKontenDerLeserzeile löscht die Zugangskonten, die auf eine Leserzeile zeigen, und
 // schreibt je Konto den Löscheintrag: die Tür „Leserzeile eines Kollegen in den Papierkorb"
 // (LegeLeserInPapierkorb).
-func (a *pgProtokollAbfragen) loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string) (int64, error) {
+func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string) (int64, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id::text, coalesce(vorname, ''), coalesce(nachname, ''), coalesce(email, ''), coalesce(rolle::text, '')
 		FROM benutzer WHERE leser_id = $1 FOR UPDATE`, leserID)
@@ -103,7 +103,7 @@ func (a *pgProtokollAbfragen) loescheKontenDerLeserzeile(ctx context.Context, tx
 		geloescht++
 		leser := leserID
 		k.leserID, k.bearbeiterID, k.kontext = &leser, bearbeiterID, &kontext
-		if err := a.protokolliereKontoLoeschung(ctx, tx, k); err != nil {
+		if err := protokolliereKontoLoeschung(ctx, tx, k); err != nil {
 			return geloescht, err
 		}
 	}

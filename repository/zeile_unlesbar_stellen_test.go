@@ -137,7 +137,7 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 				pgxmock.NewRows([]string{"barcode_id"}).AddRow(nil))
 			// Kein ExpectExec: Bei unklarer Lage wird nichts gelöscht.
 			mock.ExpectRollback()
-			return NewProtokollAbfragen(mock).LoescheTitel(ctx, titelID, "admin-1")
+			return NewKatalogAbfragen(mock).LoescheTitel(ctx, titelID, "admin-1")
 		}},
 	}
 	for _, f := range faelle {

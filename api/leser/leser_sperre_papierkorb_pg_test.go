@@ -33,7 +33,6 @@ func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndWiederherstellen(t *testin
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "papierkorb@test.invalid")
 
 	gesperrt := testdaten.LegeSchuelerAn(t, pool, "S-SPERRE-1", "Mia", "5a")
@@ -50,7 +49,7 @@ func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndWiederherstellen(t *testin
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
-		srv.LeserLoeschen(auditRepo)(rec, req)
+		srv.LeserLoeschen(repository.NewLeserAbfragen(pool))(rec, req)
 		return rec
 	}
 	wiederherstellen := func(id string) *httptest.ResponseRecorder {
@@ -121,7 +120,6 @@ func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "papierkorb-uhr@test.invalid")
 	schueler := testdaten.LegeSchuelerAn(t, pool, "S-UHR-1", "Uri", "5a")
 
@@ -131,7 +129,7 @@ func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 			&auth.Claims{KontoID: bearbeiter}))
 		rec := httptest.NewRecorder()
-		srv.LeserLoeschen(auditRepo)(rec, req)
+		srv.LeserLoeschen(repository.NewLeserAbfragen(pool))(rec, req)
 		return rec
 	}
 	geloeschtAm := func() time.Time {

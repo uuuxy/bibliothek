@@ -51,13 +51,13 @@ func erledigungsFehler(err error, aktion string) error {
 
 // ZahlungVerbuchen verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
 // Ohne Rumpf: Der Betrag kommt immer aus der Datenbank, nie von der Oberfläche.
-func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) ZahlungVerbuchen(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
 			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, nil)
 		}
-		if err := protokollAbfragen.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.KontoID); err != nil {
+		if err := schadensAbfragen.VerbucheZahlung(r.Context(), r.PathValue("id"), claims.KontoID); err != nil {
 			return erledigungsFehler(err, "Verbuchen")
 		}
 		tuer.AntworteErfolg(w)
@@ -67,7 +67,7 @@ func (t *Tueren) ZahlungVerbuchen(protokollAbfragen repository.ProtokollAbfragen
 
 // ForderungStornieren storniert eine Forderung mit Pflicht-Begründung
 // (POST /api/schadensfaelle/{id}/storno).
-func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) ForderungStornieren(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
@@ -83,7 +83,7 @@ func (t *Tueren) ForderungStornieren(protokollAbfragen repository.ProtokollAbfra
 		if grund == "" {
 			return apierrors.BadRequest("Ein Stornierungsgrund ist erforderlich", nil)
 		}
-		if err := protokollAbfragen.StorniereForderung(r.Context(), r.PathValue("id"), claims.KontoID, grund); err != nil {
+		if err := schadensAbfragen.StorniereForderung(r.Context(), r.PathValue("id"), claims.KontoID, grund); err != nil {
 			return erledigungsFehler(err, "Stornieren")
 		}
 		tuer.AntworteErfolg(w)

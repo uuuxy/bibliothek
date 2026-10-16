@@ -34,7 +34,6 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	// baueFall legt einen Schüler mit genau einem offenen Vorgang an.
 	// vorgang: "ausleihe" = Buch noch draußen, "schaden" = Gebühr unbezahlt.
@@ -117,7 +116,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 
 		t.Run("endgültiges Löschen von Hand blockiert bei "+vorgang, func(t *testing.T) {
 			sid := baueFall(t, "SP-PURGE", vorgang, true)
-			if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err == nil {
+			if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, sid, ""); err == nil {
 				t.Fatalf("LoescheLeserEndgueltig trotz offenem Vorgang (%s) durchgelaufen", vorgang)
 			}
 			var da bool
@@ -131,7 +130,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 
 		t.Run("Cronjob blockiert bei "+vorgang, func(t *testing.T) {
 			sid := baueFall(t, "SP-CRON", vorgang, false)
-			if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
+			if err := repository.NewLeserAbfragen(pool).LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
 				t.Fatalf("LoescheAbgaengerEndgueltig trotz offenem Vorgang (%s) durchgelaufen", vorgang)
 			}
 			nochDa(t, sid)
@@ -174,8 +173,7 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 		t.Fatalf("Schadensfall: %v", err)
 	}
 
-	auditRepo := repository.NewProtokollAbfragen(pool)
-	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
 		t.Fatal("Vorbedingung verfehlt: die unbezahlte Gebühr sperrt nicht")
 	} else if !strings.Contains(err.Error(), "blockiert") {
 		t.Fatalf("unerwarteter Fehler statt Blockade: %v", err)
@@ -183,11 +181,11 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 
 	// Über den echten Storno-Weg, nicht per UPDATE von Hand — sonst prüfte der Test
 	// seine eigene Annahme statt des Codes.
-	if err := auditRepo.StorniereForderung(ctx, fallID, adminFuerStorno(t, pool), "Kulanz"); err != nil {
+	if err := repository.NewSchadensAbfragen(pool).StorniereForderung(ctx, fallID, adminFuerStorno(t, pool), "Kulanz"); err != nil {
 		t.Fatalf("Storno: %v", err)
 	}
 
-	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheAbgaengerEndgueltig(ctx, sid, ""); err != nil {
 		t.Fatalf("nach dem Storno muss die Löschung durchgehen, sonst läuft die Frist nie ab: %v", err)
 	}
 }

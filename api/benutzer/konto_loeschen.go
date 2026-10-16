@@ -28,15 +28,15 @@ import (
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer/{id} [delete]
-func (t *Tueren) KontoLoeschen(protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) KontoLoeschen(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		t.loescheKonto(w, r, protokollAbfragen, kontoAbfragen)
+		t.loescheKonto(w, r, kontoAbfragen)
 	}
 }
 
 // loescheKonto prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
 // Löschens ein.
-func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen repository.KontoAbfragen) {
+func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
@@ -63,7 +63,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 		return
 	}
 
-	err := protokollAbfragen.LoescheKonto(ctx, id, claims.KontoID)
+	err := kontoAbfragen.LoescheKonto(ctx, id, claims.KontoID)
 	if err != nil {
 		if errors.Is(err, repository.ErrKontoNichtGefunden) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungKontoNichtGefunden, err)

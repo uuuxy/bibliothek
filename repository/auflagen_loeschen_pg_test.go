@@ -21,7 +21,6 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	repo := NewProtokollAbfragen(pool)
 	bearbeiter := legeBearbeiterAn(t, pool)
 	werke := func() (n int) {
 		t.Helper()
@@ -32,7 +31,7 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	}
 
 	// Drei Auflagen, eine gelöscht: Das Buch bleibt mit zweien.
-	if err := repo.LoescheTitel(ctx, c, bearbeiter); err != nil {
+	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, c, bearbeiter); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if n := werke(); n != 1 {
@@ -43,7 +42,7 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	}
 
 	// Noch eine gelöscht: Das Werk fällt, der letzte Titel ist wieder sein eigenes Buch.
-	if err := repo.LoescheTitel(ctx, b, bearbeiter); err != nil {
+	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, b, bearbeiter); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	var werkID *string

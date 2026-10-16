@@ -11,7 +11,7 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen r
 	mux.Handle("GET /api/benutzer", s.verlangeRecht("manage_users")(s.benutzer().Konten(kontoAbfragen)))
 	mux.Handle("POST /api/benutzer", s.verlangeRecht("manage_users")(s.benutzer().KontoAnlegen(kontoAbfragen)))
 	mux.Handle("PUT /api/benutzer/{id}", s.verlangeRecht("manage_users")(s.benutzer().KontoAendern(kontoAbfragen)))
-	mux.Handle("DELETE /api/benutzer/{id}", s.verlangeRecht("manage_users")(s.benutzer().KontoLoeschen(protokollAbfragen, kontoAbfragen)))
+	mux.Handle("DELETE /api/benutzer/{id}", s.verlangeRecht("manage_users")(s.benutzer().KontoLoeschen(kontoAbfragen)))
 
 	// ── Einstellungen ──
 	einstellungsAbfragen := repository.NewEinstellungsAbfragen(pool)

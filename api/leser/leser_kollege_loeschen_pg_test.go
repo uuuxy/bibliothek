@@ -30,7 +30,6 @@ func TestKollegeLoeschen(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	loesche := func(t *testing.T, id, alsKonto string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -39,7 +38,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 			&auth.Claims{KontoID: alsKonto, Rolle: auth.RolleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.LeserLoeschen(auditRepo)(rec, req)
+		srv.LeserLoeschen(repository.NewLeserAbfragen(pool))(rec, req)
 		return rec
 	}
 

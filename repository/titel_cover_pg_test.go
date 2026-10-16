@@ -54,10 +54,9 @@ func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 		t.Errorf("Cover nur dieser Titel: %v, erwartet nur %s — das geteilte trägt ein weiterer Titel", nur, eigen)
 	}
 
-	repo := NewProtokollAbfragen(pool)
 	bearbeiter := legeBearbeiterAn(t, pool)
 	for _, id := range []string{allein, erster} {
-		if err := repo.LoescheTitel(ctx, id, bearbeiter); err != nil {
+		if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, id, bearbeiter); err != nil {
 			t.Fatalf("LoescheTitel: %v", err)
 		}
 	}
@@ -68,7 +67,7 @@ func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 		t.Fatalf("%s ist entfernt, ein zweiter Titel trägt es noch", geteilt)
 	}
 
-	if err := repo.LoescheTitel(ctx, zweiter, bearbeiter); err != nil {
+	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, zweiter, bearbeiter); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if vorhanden(geteilt) {

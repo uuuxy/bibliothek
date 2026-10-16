@@ -166,7 +166,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 			t.Fatalf("Konto der Lehrkraft lesen: %v", err)
 		}
 		selbst := &auth.Claims{KontoID: kontoID, Rolle: auth.RolleAdmin}
-		rec := rufe(t, srv.LeserLoeschen(repository.NewProtokollAbfragen(pool)), http.MethodDelete, "/api/schueler/"+lehrkraft, lehrkraft, "", selbst)
+		rec := rufe(t, srv.LeserLoeschen(repository.NewLeserAbfragen(pool)), http.MethodDelete, "/api/schueler/"+lehrkraft, lehrkraft, "", selbst)
 		erwarte(t, rec, http.StatusForbidden, "Der eigene Eintrag lässt sich nicht löschen. Mit ihm fiele der eigene Zugang.")
 	})
 }

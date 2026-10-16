@@ -26,7 +26,7 @@ var ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 // Exemplar verliehen, lehnt es ab. Zurückgegebene Ausleihen und alle Schadensfälle des Titels
 // fallen mit, weil ihre Fremdschlüssel den Titel sonst hielten; unbezahlte Forderungen stehen
 // vorher im Protokoll (protokolliereOffeneForderungen).
-func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error {
+func (a *pgKatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 		return err
 	}
 
-	if err = a.protokolliereTitelLoeschung(ctx, tx, vorher, bearbeiterID); err != nil {
+	if err = protokolliereTitelLoeschung(ctx, tx, vorher, bearbeiterID); err != nil {
 		return err
 	}
 
@@ -198,7 +198,7 @@ func protokolliereWasMitDemTitelFaellt(ctx context.Context, tx pgx.Tx, titelID s
 // protokolliereTitelLoeschung schreibt den Eintrag zum Titel und je Exemplar den
 // Barcode-Eintrag in der Form der Geschwister-Pfade (SondereExemplarAus, Verlust-Löschen), in der
 // Transaktion des Löschens: entweder Löschung und Spur oder keins von beiden.
-func (a *pgProtokollAbfragen) protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVorDemLoeschen, bearbeiterID string) error {
+func protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVorDemLoeschen, bearbeiterID string) error {
 	if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "buecher_titel", Aktion: "DELETE", DatensatzID: vorher.id,
 		BearbeiterID: &bearbeiterID, Akteur: "USER",

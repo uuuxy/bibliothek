@@ -41,7 +41,7 @@ func TestLoescheLeserEndgueltig_BedientNaechstenWartenden(t *testing.T) {
 		t.Fatalf("weichlöschen: %v", err)
 	}
 
-	if err := NewProtokollAbfragen(pool).LoescheLeserEndgueltig(ctx, gehend, bearbeiter); err != nil {
+	if err := NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, gehend, bearbeiter); err != nil {
 		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
 

@@ -38,7 +38,7 @@ func (a *pgKatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string,
 // Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK ab.
 //
 // Ein verliehenes Exemplar lässt sich nicht aussondern, wie beim Ausbuchen
-// (ProtokollAbfragen.SondereExemplarAus): Es verschwände aus Katalog, Kiosk und Inventur,
+// (KatalogAbfragen.SondereExemplarAus): Es verschwände aus Katalog, Kiosk und Inventur,
 // während der Schüler in der Mahnstrecke bliebe. Eine unbekannte Kennung ist ein Fehler, kein
 // stiller Erfolg.
 //

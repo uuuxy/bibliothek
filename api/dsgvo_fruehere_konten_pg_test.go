@@ -52,7 +52,6 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
 			`DELETE FROM benutzer WHERE email LIKE '%@fruehere-konten.invalid'`); err != nil {
@@ -86,7 +85,7 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 		t.Fatalf("Konto ändern: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	if rec := alsAdmin(srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+	if rec := alsAdmin(srv.benutzer().KontoLoeschen(userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 		map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 		t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -121,7 +120,7 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		RETURNING id::text`).Scan(&olga); err != nil {
 		t.Fatalf("Zugangsanfrage anlegen: %v", err)
 	}
-	if rec := alsAdmin(srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+olga, "",
+	if rec := alsAdmin(srv.benutzer().KontoLoeschen(userRepo), http.MethodDelete, "/api/benutzer/"+olga, "",
 		map[string]string{"id": olga}); rec.Code != http.StatusOK {
 		t.Fatalf("Zugangsanfrage ablehnen (Konto löschen): Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -146,7 +145,7 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Konto des Kollegen anlegen: %v", err)
 	}
-	if err := auditRepo.LegeLeserInPapierkorb(ctx, kollege, admin, "Test"); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, kollege, admin, "Test"); err != nil {
 		t.Fatalf("Kollegen löschen: %v", err)
 	}
 	a = auskunftZu(kollege)
@@ -156,7 +155,7 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 
 	// Beim endgültigen Löschen des Lesers fallen Name und Adresse aus dem Löscheintrag; der
 	// Eintrag selbst bleibt (Rolle, Kennung als Pseudonym).
-	if err := auditRepo.LoescheLeserEndgueltig(ctx, kollege, admin); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, kollege, admin); err != nil {
 		t.Fatalf("Kollegen endgültig löschen: %v", err)
 	}
 	var details map[string]any
@@ -227,7 +226,7 @@ func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	}
 	loescheKonto := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoLoeschen(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().KontoLoeschen(userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -311,7 +310,7 @@ func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		if _, err := pool.Exec(ctx, `UPDATE leser SET deleted_at = NOW() WHERE id = $1`, leserID); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
-		if err := auditRepo.LoescheLeserEndgueltig(ctx, leserID, admin); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, leserID, admin); err != nil {
 			t.Fatalf("endgültig löschen: %v", err)
 		}
 		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs

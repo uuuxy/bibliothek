@@ -53,7 +53,7 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 	}{
 		{"endgültig gelöscht (Papierkorb, LoescheLeserEndgueltig)", "schueler", func(t *testing.T, id string) {
 			ausfuehren(t, `UPDATE leser SET deleted_at = now() WHERE id = $1`, id)
-			if err := repository.NewProtokollAbfragen(pool).LoescheLeserEndgueltig(ctx, id, ""); err != nil {
+			if err := repository.NewLeserAbfragen(pool).LoescheLeserEndgueltig(ctx, id, ""); err != nil {
 				t.Fatalf("LoescheLeserEndgueltig: %v", err)
 			}
 		}},

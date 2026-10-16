@@ -18,7 +18,7 @@ import (
 //
 // Die Tür ruft es mit der ID des Bearbeiters, der nächtliche Lauf mit leerer ID; der Eintrag
 // nennt dann SYSTEM.
-func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error {
+func (a *pgLeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 	// der Akte die Schul-E-Mail nachträgt (api/leser/leser_schul_email.go).
 	var kontenGeloescht int64
 	if !leserart.IstSchueler(art) {
-		if kontenGeloescht, err = a.loescheKontenDerLeserzeile(ctx, tx, leserID, bearbeiterID); err != nil {
+		if kontenGeloescht, err = loescheKontenDerLeserzeile(ctx, tx, leserID, bearbeiterID); err != nil {
 			return err
 		}
 	}
@@ -136,7 +136,7 @@ func pruefeKeineOffenenVorgaenge(ctx context.Context, tx pgx.Tx, leserID string)
 // gelöscht, die Spuren in den Nebentabellen getilgt (TilgeSchuelerSpuren, dabei fallen auch die
 // Vormerkungen), die Zeile des Lesers entfernt und das Löschen ohne Personenbezug
 // protokolliert.
-func (a *pgProtokollAbfragen) tilgeSpurenUndLoescheLeser(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID, kontextText string) error {
+func tilgeSpurenUndLoescheLeser(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID, kontextText string) error {
 	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1`, leserID); err != nil {
 		return fmt.Errorf("anonymizing loans: %w", err)
 	}
@@ -195,7 +195,7 @@ func (e *LoeschenBlockiertFehler) Error() string {
 
 // LoescheLeserEndgueltig entfernt einen Leser, der im Papierkorb liegt, endgültig. Offene
 // Ausleihen und unbezahlte Forderungen verhindern es.
-func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
+func (a *pgLeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserI
 	if err = pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {
 		return err
 	}
-	if err = a.tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung (Purge)"); err != nil {
+	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung (Purge)"); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -228,7 +228,7 @@ func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserI
 // Abgänger liegt nicht im Papierkorb; wen es trifft (Karenz, Merkmal Abgänger), wählt der
 // Rufer. Offene Vorgänge prüft die Funktion trotzdem, weil zwischen Auswahl und Löschen ein
 // Buch ausgeliehen sein kann.
-func (a *pgProtokollAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
+func (a *pgLeserAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -238,7 +238,7 @@ func (a *pgProtokollAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, le
 	if err = pruefeKeineOffenenVorgaenge(ctx, tx, leserID); err != nil {
 		return err
 	}
-	if err = a.tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung (Abgänger-Cronjob)"); err != nil {
+	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, bearbeiterID, "DSGVO-Löschung (Abgänger-Cronjob)"); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

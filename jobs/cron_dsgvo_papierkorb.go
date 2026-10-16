@@ -38,7 +38,7 @@ func (z *Zeitplan) FuehrePapierkorbLoeschungAus() {
 	var fehlschlaege []string
 	for _, id := range ids {
 		// Leerer Bearbeiter: Das Protokoll nennt SYSTEM als Akteur statt einer Person.
-		if err := z.protokollAbfragen.LoescheLeserEndgueltig(ctx, id, ""); err != nil {
+		if err := z.leserLoeschung.LoescheLeserEndgueltig(ctx, id, ""); err != nil {
 			log.Printf("Scheduler Papierkorb: Leser %s nicht gelöscht: %v", logger.OhneUmbruch(id), err)
 			fehlschlaege = append(fehlschlaege, id)
 			continue
