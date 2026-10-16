@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { parse } from 'svelte/compiler';
 import {
 	srcRoot,
 	relPfad,
@@ -282,6 +283,154 @@ describe('Namen innerhalb der Dateien der Oberfläche sind deutsch', () => {
 
 	it('führt keinen Bestand, der inzwischen kleiner ist', () => {
 		const veraltet = Object.entries(NAMEN_BESTAND)
+			.filter(([pfad, n]) => (zaehlung.get(pfad) ?? 0) < n)
+			.map(([pfad, n]) => `${pfad}: ${n} → ${zaehlung.get(pfad) ?? 0}`);
+		expect(veraltet, 'Diese Einträge im Bestand senken oder austragen.').toEqual([]);
+	});
+});
+
+// Ratsche: Props sind deutsch (docs/STIL.md, Abschnitt 13), Stufe 3 des Umbaus (OFFEN 5.66).
+// Gezählt werden die Schlüssel in `let { … } = $props()` jeder Komponente, mit derselben Liste wie
+// die Namen. Englisch bleiben nach Abschnitt 13 die Ereignisse (on…), `class` und `children`, die
+// Svelte und das Web vorgeben.
+//
+// PROPS_BESTAND nennt je Komponente, wie viele Props noch ein englisches Wort tragen; die Zahl
+// kann nur sinken. Wer eine Prop umbenennt, zieht jeden Rufer mit, auch Tests.
+const PROPS_BESTAND = {
+	'src/inventur/lib/components/BuchKarte.svelte': 1,
+	'src/inventur/lib/components/BuchRasterStartseite.svelte': 1,
+	'src/inventur/lib/components/KlassenSuchfeld.svelte': 2,
+	'src/inventur/lib/components/StartseitenFilter.svelte': 1,
+	'src/inventur/lib/components/admin/AdminBuchAktionen.svelte': 2,
+	'src/inventur/lib/components/admin/Bestandstabelle.svelte': 2,
+	'src/inventur/lib/components/admin/BestandstabelleLeiste.svelte': 2,
+	'src/inventur/lib/components/admin/BestandstabelleZeile.svelte': 2,
+	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte': 1,
+	'src/inventur/lib/components/admin/KlassensatzKlassenwahl.svelte': 1,
+	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte': 2,
+	'src/inventur/lib/components/admin/KlassensatzZusammenfassung.svelte': 5,
+	'src/inventur/lib/components/admin/KlassensatzZuweisenDialog.svelte': 1,
+	'src/lib/AusleihQuittung.svelte': 1,
+	'src/lib/AusleiheRueckgabe.svelte': 1,
+	'src/lib/Ausweiskarte.svelte': 1,
+	'src/lib/Buchakte.svelte': 1,
+	'src/lib/BuchakteAusleiher.svelte': 2,
+	'src/lib/BuchakteExemplare.svelte': 2,
+	'src/lib/BuchakteHistorie.svelte': 1,
+	'src/lib/BuchakteKopf.svelte': 2,
+	'src/lib/BuchakteVormerkungen.svelte': 1,
+	'src/lib/KollegiumPortal.svelte': 1,
+	'src/lib/KontoBearbeitenDialog.svelte': 1,
+	'src/lib/KontoLoeschenDialog.svelte': 1,
+	'src/lib/LeserAusleihenKarte.svelte': 1,
+	'src/lib/LeserAusleihenListe.svelte': 1,
+	'src/lib/LeserBearbeiten.svelte': 1,
+	'src/lib/LeserGebuehrenKarte.svelte': 1,
+	'src/lib/LeserGefahrenzone.svelte': 1,
+	'src/lib/LeserLoeschenDialog.svelte': 1,
+	'src/lib/LeserSperreDialog.svelte': 1,
+	'src/lib/Leserakte.svelte': 2,
+	'src/lib/LeserakteAktionen.svelte': 3,
+	'src/lib/LeserakteGebuehren.svelte': 1,
+	'src/lib/LeserakteKopf.svelte': 1,
+	'src/lib/LeserakteStammdaten.svelte': 1,
+	'src/lib/RechteMatrix.svelte': 2,
+	'src/lib/SchadenMeldenDialog.svelte': 1,
+	'src/lib/WebcamAufnahme.svelte': 1,
+	'src/lib/components/ExemplarKarte.svelte': 1,
+	'src/lib/components/bestellungen/ArbeitsZeile.svelte': 1,
+	'src/lib/components/bestellungen/BestellHistorieKopf.svelte': 1,
+	'src/lib/components/bestellungen/Bestellbedarf.svelte': 1,
+	'src/lib/components/bestellungen/TrefferPruefung.svelte': 1,
+	'src/lib/components/bestellungen/WareneingangTabelle.svelte': 1,
+	'src/lib/components/bestellungen/WarenkorbPosition.svelte': 1,
+	'src/lib/components/inventur/FehlbestandBericht.svelte': 1,
+	'src/lib/components/layout/RouteFallback.svelte': 1,
+	'src/lib/components/leser/AbgangsjahrFeld.svelte': 1,
+	'src/lib/components/leser/AktiveLeserListe.svelte': 2,
+	'src/lib/components/leser/AusweisStapeldruck.svelte': 1,
+	'src/lib/components/leser/LeserKontoStatus.svelte': 1,
+	'src/lib/components/leser/SchuelerDokumente.svelte': 3,
+	'src/lib/components/leser/SchuelerZusammenfuehren.svelte': 1,
+	'src/lib/components/leser/SchuelerZusammenfuehrenDialog.svelte': 1,
+	'src/lib/components/leser/SchuelerdateiLeiste.svelte': 1,
+	'src/lib/components/omnibox/LeserTreffer.svelte': 2,
+	'src/lib/components/omnibox/TitelTreffer.svelte': 2,
+	'src/lib/components/portal/KlassensatzFormular.svelte': 1,
+	'src/lib/components/portal/PortalProblemZeile.svelte': 1,
+	'src/lib/components/portal/PortalTrefferkarte.svelte': 2,
+	'src/lib/components/portal/ProblemFormular.svelte': 1,
+	'src/lib/components/statistik/StatistikVerlauf.svelte': 1,
+	'src/lib/components/ui/ChipFeld.svelte': 1,
+	'src/lib/components/ui/Feld.svelte': 1,
+	'src/lib/components/ui/Kaestchen.svelte': 1,
+	'src/lib/components/ui/Ladekreis.svelte': 1,
+	'src/lib/components/ui/Radio.svelte': 1,
+	'src/lib/components/ui/Switch.svelte': 1,
+	'src/lib/designer/CanvasElement.svelte': 2,
+	'src/lib/designer/CanvasFlaeche.svelte': 2,
+	'src/lib/designer/Druckvorschau.svelte': 1,
+	'src/lib/designer/Eigenschaften.svelte': 1,
+	'src/lib/designer/Kartenseite.svelte': 1,
+	'src/lib/designer/Werkzeugleiste.svelte': 2,
+	'src/lib/designer/WerkzeugleisteDruck.svelte': 1,
+	'src/lib/designer/ZahlenFeld.svelte': 1
+};
+
+/** Die Props einer Komponente, wie sie `let { … } = $props()` nennt. @param {string} text */
+function propsAus(text) {
+	const baum = parse(text, { modern: true });
+	/** @type {string[]} */
+	const namen = [];
+	for (const s of /** @type {any[]} */ (baum.instance?.content.body ?? [])) {
+		for (const d of s.declarations ?? []) {
+			if (d.init?.type !== 'CallExpression' || d.init.callee?.name !== '$props') continue;
+			if (d.id?.type !== 'ObjectPattern') continue;
+			for (const p of d.id.properties) if (p.key?.name) namen.push(p.key.name);
+		}
+	}
+	return namen;
+}
+
+/** Trägt die Prop ein englisches Wort, das nicht Svelte oder das Web vorgibt? @param {string} name */
+const englischeProp = (name) =>
+	!/^on[A-Z]/.test(name) && name !== 'class' && name !== 'children' && englischImNamen(name);
+
+describe('Props der Bauteile sind deutsch', () => {
+	/** @type {Map<string, number>} */
+	const zaehlung = new Map();
+	let gelesen = 0;
+	for (const datei of sammleQuelldateien(srcRoot)) {
+		if (!datei.endsWith('.svelte')) continue;
+		const props = propsAus(readFileSync(datei, 'utf8'));
+		gelesen += props.length;
+		const n = props.filter(englischeProp).length;
+		if (n > 0) zaehlung.set(relPfad(datei), n);
+	}
+
+	it('liest überhaupt Props und erkennt eine englische', () => {
+		expect(gelesen).toBeGreaterThan(800);
+		expect(propsAus('<script>let { book, onclick, class: k } = $props();</script>')).toEqual([
+			'book',
+			'onclick',
+			'class'
+		]);
+		expect(['book', 'onclick', 'class', 'children', 'titel'].filter(englischeProp)).toEqual([
+			'book'
+		]);
+	});
+
+	it('kennt kein Bauteil mit mehr englischen Props als im Bestand', () => {
+		const neu = [...zaehlung]
+			.filter(([pfad, n]) => n > (PROPS_BESTAND[pfad] ?? 0))
+			.map(([pfad, n]) => `${pfad}: ${n} (Bestand ${PROPS_BESTAND[pfad] ?? 0})`);
+		expect(neu, 'Englisches Wort in einer Prop. Deutsch benennen nach docs/STIL.md 13.').toEqual(
+			[]
+		);
+	});
+
+	it('führt keinen Bestand, der inzwischen kleiner ist', () => {
+		const veraltet = Object.entries(PROPS_BESTAND)
 			.filter(([pfad, n]) => (zaehlung.get(pfad) ?? 0) < n)
 			.map(([pfad, n]) => `${pfad}: ${n} → ${zaehlung.get(pfad) ?? 0}`);
 		expect(veraltet, 'Diese Einträge im Bestand senken oder austragen.').toEqual([]);
