@@ -1,8 +1,8 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-10-07. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-10-16. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
-Zuordnung repariert. Der Code steht in `api/lusd_*.go` und
+Zuordnung repariert. Der Code steht in `api/leser/lusd.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
 die Bedienung im [Handbuch](HANDBUCH.md), die Abnahme in der
 [Abnahme-Checkliste §1](abnahme_checkliste.md). Was eine Simulation in Schulgröße ergab
@@ -67,8 +67,8 @@ Die Datei entscheidet, die Vorschau nennt die Stufe im Banner:
 
 Der Namensschlüssel beider Namensstufen ist die Normalform `suchnorm` (Migration 054;
 Go-Zwilling `repository.suchnorm`, Parität geratscht): Müller ≡ Mueller ≡ MÜLLER,
-Öztürk ≡ Oeztuerk. Bis 05.09.2026 war er nur lower+trim, und eine Handanlage „Anna Müller"
-wurde vom Export „Anna Mueller" nie gefunden (Neuanlage + „nicht im Export"). Fallen zwei
+Öztürk ≡ Oeztuerk. Mit lower+trim allein fände der Export „Anna Mueller" die Handanlage
+„Anna Müller" nie (Neuanlage + „nicht im Export"). Fallen zwei
 Bestandsschüler erst in der Normalform zusammen (Bauer/Baur), meldet die Vorschau sie als
 mehrdeutig und fasst sie nicht an — weder Zuordnung noch Abgang.
 
@@ -78,8 +78,8 @@ Handanlagen, die nie in einem Export standen, bleiben unangetastet („nicht im 
 
 Was ohne Schüler-ID **nicht** von selbst geht: eine **Namensänderung** in der LUSD
 (Schreibkorrektur, Umlaut, zweiter Vorname fällt weg, Adoption) oder ein **korrigiertes
-Geburtsdatum**. Der Schlüssel findet dann niemanden — bis zum 02.09.2026 hieß das
-Abgänger + Neuanlage, und der Abgänger ohne Bücher wurde sofort anonymisiert. Littera
+Geburtsdatum**. Der Schlüssel findet dann niemanden; ohne §3 bis §5 hieße das Abgänger +
+Neuanlage, und der Abgänger ohne Bücher würde sofort anonymisiert. Littera
 hatte dasselbe Problem (Abgleich über Vorname + Zuname + Geburtsdatum, gedruckte
 Abgängerliste zum Abhaken). Die Antwort darauf sind §3 bis §5.
 
@@ -100,7 +100,7 @@ allem, was der Export sonst hergibt, dieselbe Person sind
 | **sicher**     | Schuleintritt + Name, oder Schuleintritt + Geburtsdatum + Vorname                                         | vorangekreuzt               |
 | **vermutlich** | Geburtsdatum + ein weiteres Signal; oder Name + Klasse/Anschrift bei abweichendem Datum (Datumskorrektur) | angeboten, nicht angekreuzt |
 
-Zwei Schutzregeln (Rasterdurchgang 02.09.2026): Ein **abweichender Vorname bei gleichem
+Zwei Schutzregeln: Ein **abweichender Vorname bei gleichem
 Geburtsdatum** ist ein Gegen-Signal — so sehen Zwillinge aus — und macht ein Paar nie
 „sicher" (Grund nennt „Vorname abweichend (Zwilling?)"). Bei **Gleichstand** zweier
 Kandidaten mit exakt gleich starken Signalen wird kein Paar gebildet, statt zu raten;
@@ -120,13 +120,13 @@ Kombination wird mit 400 abgewiesen, nicht geraten.
 
 ## 4. Abgänger: Karenzzeit statt sofortiger Anonymisierung
 
-Wer bestätigt war und im Export fehlt, wird Abgänger. Seit dem 02.09.2026:
+Wer bestätigt war und im Export fehlt, wird Abgänger:
 
 | Zustand                                  | Was passiert                                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | offene Ausleihe oder unbezahlter Schaden | gesperrt, Name und Anschrift bleiben (Mahnung/Rechnung), Grund „Automatisierte Abgänger-Sperre (offene Vorgänge)" |
 | nichts offen, Karenz > 0                 | **nur gesperrt**, Grund „… (Karenzzeit vor Anonymisierung)"; der nächtliche Job anonymisiert nach Ablauf          |
-| nichts offen, Karenz = 0                 | sofort anonymisiert (Verhalten bis 02.09.2026)                                                                    |
+| nichts offen, Karenz = 0                 | sofort anonymisiert                                                                                               |
 
 Die **Karenzzeit** steht in _Einstellungen → Datenschutz & Sitzung → Abgänger-Karenzzeit_
 (Vorgabe **90 Tage**, Schlüssel `abgaenger_karenz_tage`). Ihre Uhr läuft ab dem späteren
@@ -195,9 +195,8 @@ Regeln (`repository/leser_zusammenfuehren.go`):
 Neu gespeichert wird nur `schul_eintritt_am` (Datum, keine besondere Kategorie; bewusst
 **nicht** Geburtsort oder Geschlecht — der Eintritt reicht für die Paarung und ist das am
 wenigsten personenbezogene Feld). Es wird mit dem Datensatz anonymisiert und steht in der
-Art.-15-Auskunft. Die Karenzzeit **verkürzt** die Aufbewahrung gegenüber vorher (Abgänger
-wurden bisher nach 360 Tagen anonymisiert, jetzt nach 90) und verlängert nichts: Wer
-offene Vorgänge hat, blieb schon immer stehen. Die Kandidatensuche und die Vorschau liegen
+Art.-15-Auskunft. Die Karenzzeit (Vorgabe 90 Tage) verlängert keine Aufbewahrung:
+Wer offene Vorgänge hat, bleibt ohnehin stehen. Die Kandidatensuche und die Vorschau liegen
 auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_pg_test.go`).
 
 ## 8. Für die Entwicklung: wo steht was
@@ -245,9 +244,9 @@ Schuljahre. Gezählt wurde nach jedem Schritt an der Datenbank.
 | Jahr 2, Schuljahreswechsel | 1.587 Klassenwechsel, 202 Abgänge, 251 Neue, davon 6 mit dem Namen eines vorhandenen Schülers                                       | jede Klasse wie in der Datei, kein Ausweis geändert, alle 5.670 Ausleihen an vorhandenen Lesern, Abgänger mit Büchern gesperrt       |
 | Jahr 3                     | 10 Abgänger ohne und 10 mit offenen Büchern, 5 Rückkehrer, zwei Zeilen mit gleichem Namen und Geburtsdatum in verschiedenen Klassen | Rückkehrer mit derselben Kennung wieder aktiv, keine Dublette; die zwei Zeilen wurden eine Person                                    |
 
-Aus den Befunden dieses Laufs entstanden die Paarung bei Umbenennung (§3), die Karenzzeit
-vor der Anonymisierung (§4) und das Zusammenführen von Hand (§5): Im zweiten Jahr waren aus
-8 Nachnamensänderungen und 5 berichtigten Geburtsdaten 13 doppelte Datensätze entstanden,
-und im dritten verloren Abgänger ohne offene Bücher ihren Namen noch im Import. Das
+Ohne die Paarung bei Umbenennung (§3), die Karenzzeit vor der Anonymisierung (§4) und das
+Zusammenführen von Hand (§5) entstanden in diesem Lauf im zweiten Jahr aus 8
+Nachnamensänderungen und 5 berichtigten Geburtsdaten 13 doppelte Datensätze, und im dritten
+verloren Abgänger ohne offene Bücher ihren Namen noch im Import. Das
 Messprotokoll mit allen Zahlen steht im Verlauf des Repositorys:
 `git show 424f186a:docs/lusd-simulation-2026-09-02.md`.

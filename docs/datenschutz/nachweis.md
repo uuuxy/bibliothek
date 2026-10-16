@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 09.10.2026 (Entwurf)
+Stand: 16.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -106,7 +106,7 @@ Kurzfassung; vollständig im Anhang des [Verzeichnisses](vvt_entwurf.md) und im
   Sicherung nur in den zwei Fällen aus Abschnitt 4. Die Verbindung zum Browser ist
   verschlüsselt; Mail verschickt das Programm nur über eine verschlüsselte Verbindung.
 - **Browser:** Antworten mit Personendaten legt der Browser nicht in seinem Zwischenspeicher
-  ab (seit dem 30.09.2026), auch nicht an Rechnern, die mehrere Personen benutzen. Von den
+  ab, auch nicht an Rechnern, die mehrere Personen benutzen. Von den
   Antworten des Programms behält er nur Buchcover und die Buchnummern der Theke.
 - **Geheimnisse:** Mit den Beispielschlüsseln aus der Vorlage verweigert der Server im Betrieb
   den Start, außer jemand schaltet diese Prüfung ausdrücklich ab.
@@ -142,8 +142,8 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 
 - **Auskunft:** in der Akte jedes Lesers als PDF, ab Werk für Admin und Leitung. Hat die Person
   ein Zugangskonto, braucht es zusätzlich das Recht, Konten zu verwalten (ab Werk nur Admin).
-  Jeder Abruf steht im Protokoll. Die Einträge beider Protokolle nennt das Blatt seit dem
-  08.10.2026 in Worten („Ausleihe", „Von Hand gesperrt"), mit Titel und Nummer des Buchs oder
+  Jeder Abruf steht im Protokoll. Die Einträge beider Protokolle nennt das Blatt
+  in Worten („Ausleihe", „Von Hand gesperrt"), mit Titel und Nummer des Buchs oder
   mit Grund, Betrag, Referenznummer, Ausweisnummern und LUSD-ID. Nicht darauf stehen die
   Kennungen des Programms und das Konto, das gebucht hat (Art. 15 Abs. 4 DSGVO; EuGH C-579/21).
   Ein frei getippter Grund steht da, wie er gespeichert ist, und kann eine andere Person
@@ -200,32 +200,30 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   Wird er als S3-Speicher eingerichtet, löscht das Programm dort nie: Ohne eine Löschregel am
   Speicher bliebe jede Sicherung dort unbegrenzt, mit allen Personen, die zu ihrem Zeitpunkt im
   Programm standen.
-- Seit dem 29.09.2026 decken die Sicherungen die Sommerferien ab; gelöschte Personen bleiben
+- Die Sicherungen decken die Sommerferien ab; gelöschte Personen bleiben
   damit bis zu etwa drei Monate in den Sicherungen. Wer einen älteren Stand zurückspielt, holt
   Personen zurück, die seitdem von Hand endgültig gelöscht wurden, und das Protokoll dieser
   Löschung ist mit zurückgespielt. Die Anleitung zum Zurückspielen hält deren Kennungen vorher
   fest und nennt danach, wer erneut zu löschen ist
   ([resilience_and_recovery.md](../resilience_and_recovery.md), Abschnitt 2a, Schritte 5b und
   8); das Nachholen ist Handarbeit.
-- Seit dem 29.09.2026 fällt ein gelöschter Kollege nach 180 Tagen im Papierkorb endgültig, und
-  erledigte Klassensatz-Reservierungen fallen nach der Frist für erledigte Wünsche und Meldungen;
-  eine Reservierung, die vor dem Einspielen von Migration 089 (31.08.2026) erledigt wurde, hat
-  keinen Zeitpunkt und bleibt stehen.
+- Ein gelöschter Kollege fällt nach 180 Tagen im Papierkorb endgültig, erledigte
+  Klassensatz-Reservierungen nach der Frist für erledigte Wünsche und Meldungen; eine
+  Reservierung, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
 - Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere
   nur aus dem Schulnetz (entschieden am 28.09.2026); die Sperre am Eingang ist nicht eingerichtet
   (4.23).
-- Ein gelöschtes Zugangskonto nennt die Auskunft seit dem 29.09.2026; Löschungen von davor
-  trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der
-  Nachtrag einer Schul-E-Mail stehen seit dem 08.10.2026 unter dem früheren Konto; Einträge von
-  davor tragen die Kennung des Kontos nicht.
-- Siebenmal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte
-  oder dessen Eintrag sie nicht fand; jedes Mal behoben, zuletzt am 08.10.2026 der getippte
-  Grund einer Stornierung, die Löschspur einer zusammengeführten Leserzeile und Name und
-  Adresse in den Einträgen über ein früheres Zugangskonto. Seit dem 29.09.2026 prüft ein Test
-  jede Stelle im Code, die einen Protokolleintrag mit der Kennung eines Lesers baut, seit dem
-  08.10.2026 auch die mit der Kennung eines Zugangskontos. Offen sind Einträge von vor der
-  jeweiligen Behebung: zu Lesern, die schon gelöscht waren, Stornierungen, die die Kennung noch
-  nicht trugen, und Einträge früherer Konten solcher Leser (5.35).
+- Ein gelöschtes Zugangskonto nennt die Auskunft; Löschungen vor dem 29.09.2026 tragen den
+  Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der Nachtrag
+  einer Schul-E-Mail stehen unter dem früheren Konto; Einträge vor dem 08.10.2026 tragen die
+  Kennung des Kontos nicht.
+- Ein Wert einer Person, den die Anonymisierung nicht kennt oder dessen Eintrag sie nicht
+  findet, bliebe im Protokoll. Ein Test prüft jede Stelle im Code, die einen Protokolleintrag
+  mit der Kennung eines Lesers oder eines Zugangskontos baut
+  (`repository/protokoll_personenbezug_test.go`). Einträge, die vor einer Behebung geschrieben
+  wurden, gibt es am Testserver nicht (gezählt am 08.10.2026: kein alter Eintrag zu einem
+  gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über ein
+  früheres Konto).
 - Anmeldungen stehen nicht im Protokoll; nach einem Missbrauch lässt sich nicht nachsehen, wann
   und von wo ein Konto angemeldet war (6.1).
 
