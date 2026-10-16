@@ -318,9 +318,8 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Stand des Pull Requests: nach `npm ci` je ein angehobenes Paket auf die alte Fassung
   zurücksetzen (`npm install --no-save --ignore-scripts <Paket>@<Fassung>`) und den Linter
   fahren. Meldet ESLint eine Eigenschaft als unbenutzt, die ihr Bauteil nur setzt und über
-  `bind:` an den Aufrufer gibt (`$bindable()`), ist die Meldung falsch; sie kommt mit
-  typescript-eslint 8.71.1 und ist bei den Herstellern als Fehler dieser Fassung gemeldet. Das
-  Update wartet auf die korrigierte Fassung ([OFFEN.md](OFFEN.md) 5.10).
+  `bind:` an den Aufrufer gibt (`$bindable()`), ist die Meldung falsch; sie kam mit
+  typescript-eslint 8.71.1, 8.71.2 behebt sie.
 - **`actionlint` ist rot nach dem Wechsel des Runner-Abbilds.** actionlint führt die Namen der
   Abbilder von GitHub als feste Liste je Fassung; kennt die eingesetzte Fassung einen Namen
   nicht, meldet sie jede Zeile `runs-on` damit („label … is unknown"). Ein Probelauf mit dem

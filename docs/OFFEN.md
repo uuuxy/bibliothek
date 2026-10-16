@@ -64,7 +64,8 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [x] Drei Updates von Dependabot (731, 732, 733): übernommen am 12.10.2026, nach dem
   Vorschlag; was am zusammengeführten Stand geprüft ist, steht in den drei Merge-Commits. Der
   Schritt mit upload-artifact läuft nur nach einem roten Browser-Test und ist ungeprüft. Das
-  vierte Update (730, zehn Pakete der Oberfläche) ist rot und steht unter 5.10.
+  vierte Update (730, zehn Pakete der Oberfläche) ist übernommen, mit typescript-eslint
+  8.71.2; was geprüft ist, steht im Merge-Commit.
 - [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
   wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
   lässt es sich mit dem Rückbau dieses einen Commits.
@@ -201,8 +202,7 @@ Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wir
 der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
-  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, drei falsche Warnungen des
-  Linters im Sammel-Update der Oberfläche.
+  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
@@ -361,21 +361,6 @@ Vermerk.
   Tages meldet der neue Stand mit denselben Ausnahmen nichts (489 Dateien, 61 Vermerke
   `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
-- **Das Sammel-Update der Oberfläche vom 12.10.2026 ist rot** (Pull Request 730, zehn Pakete).
-  Der Linter meldet nach dem Update drei gebundene Eigenschaften (`$bindable()`) als „assigned
-  a value but only used as a type" (`@typescript-eslint/no-unused-vars`), und er läuft mit
-  `--max-warnings 0`: `wert` in `ThekenKamera.svelte`, `element` in `ui/Suchpille.svelte`
-  und `showWebcam` in `LeserakteKopf.svelte`. Jedes der drei Bauteile setzt den Wert nur,
-  und er geht über `bind:` an den Aufrufer; die Meldung ist falsch. Nachgestellt am 12.10.2026
-  in einem eigenen Arbeitsverzeichnis mit `npm ci`: Sie kommt mit typescript-eslint 8.71.1 und
-  bleibt mit 8.71.0 aus; eslint, eslint-plugin-svelte und svelte ändern daran nichts. Bei den
-  Herstellern ist es als Fehler dieser Fassung gemeldet (typescript-eslint, Meldung 12980,
-  Korrektur für die nächste Fassung zugesagt; eslint-plugin-svelte, Meldung 1607, offen).
-  Prettier, svelte-check, Vitest und der Bau sind mit dem Update grün, die Browser-Tests liefen
-  im Pull Request durch. Nächster Schritt: das Sammel-Update der folgenden Woche ansehen
-  (Dependabot prüft montags). Meldet der Linter dann weiter, typescript-eslint in
-  `.github/dependabot.yml` zurückhalten, bis die Korrektur erschienen ist; die drei Stellen
-  bleiben, wie sie sind. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
