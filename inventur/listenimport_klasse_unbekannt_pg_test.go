@@ -52,8 +52,7 @@ func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 		}
 		zeile := func(spalten map[string]int, werte ...string) Titel {
 			t.Helper()
-			buch, err := verarbeiteImportZeile(importZeile{
-				Kontext:   ctx,
+			buch, err := verarbeiteImportZeile(ctx, importZeile{
 				Zeile:     append([]string{isbn, "Die 13½ Leben des Käpt'n Blaubär", "Moers"}, werte...),
 				Spalten:   spalten,
 				Metadaten: offlineMetadatenClient(),

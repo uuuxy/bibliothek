@@ -148,8 +148,7 @@ func (t *Tueren) verarbeiteImportZeilen(ctx context.Context, datenZeilen [][]str
 			defer func() { <-begrenzung }()
 			defer safego.FangePanic("excel-import-zeile")
 
-			eintrag, err := verarbeiteImportZeile(importZeile{
-				Kontext:   ctx,
+			eintrag, err := verarbeiteImportZeile(ctx, importZeile{
 				Zeile:     zeile,
 				Spalten:   spalten,
 				Abfragen:  t.abfragen,

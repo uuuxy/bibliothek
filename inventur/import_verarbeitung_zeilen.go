@@ -11,7 +11,6 @@ import (
 
 // importZeile bündelt die Parameter für die Verarbeitung einer Importzeile.
 type importZeile struct {
-	Kontext   context.Context
 	Zeile     []string
 	Spalten   map[string]int
 	Abfragen  *TitelAbfragen
@@ -20,7 +19,7 @@ type importZeile struct {
 
 // verarbeiteImportZeile verarbeitet eine einzelne Excel-Zeile und erstellt das
 // entsprechende Book-Objekt für den Batch-Import.
-func verarbeiteImportZeile(konfig importZeile) (*Titel, error) {
+func verarbeiteImportZeile(ctx context.Context, konfig importZeile) (*Titel, error) {
 	spalteLesen := func(name string) string {
 		stelle := konfig.Spalten[name]
 		if stelle >= 0 && stelle < len(konfig.Zeile) {
@@ -60,7 +59,7 @@ func verarbeiteImportZeile(konfig importZeile) (*Titel, error) {
 		ZuletztGezaehlt: nil,
 	}
 
-	ergaenzeMetadaten(konfig.Kontext, konfig.Metadaten, &eintrag)
+	ergaenzeMetadaten(ctx, konfig.Metadaten, &eintrag)
 
 	if eintrag.Fach == "" || strings.EqualFold(eintrag.Fach, "unbekannt") {
 		if erratenesFach := errateFachAusTitel(eintrag.Titel); erratenesFach != "" {

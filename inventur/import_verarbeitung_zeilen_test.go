@@ -75,10 +75,11 @@ func TestVerarbeiteImportZeile_FachNurWennFach(t *testing.T) {
 	}
 	for _, f := range faelle {
 		cfg := importZeile{
-			Zeile:   []string{"9783161484100", "Ein Titel", "Ein Autor", f.spalte},
-			Spalten: map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": 3},
+			Zeile:     []string{"9783161484100", "Ein Titel", "Ein Autor", f.spalte},
+			Spalten:   map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": 3},
+			Metadaten: offlineMetadatenClient(),
 		}
-		buch, err := verarbeiteImportZeile(cfg)
+		buch, err := verarbeiteImportZeile(t.Context(), cfg)
 		if err != nil || buch == nil {
 			t.Fatalf("Spalte %q: %v", f.spalte, err)
 		}

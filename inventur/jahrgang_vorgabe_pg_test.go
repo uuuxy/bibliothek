@@ -269,8 +269,7 @@ func TestListenimport_JahrgangBleibtUnbekanntUndWirdNachgetragen(t *testing.T) {
 			return s
 		}
 
-		zeile, err := verarbeiteImportZeile(importZeile{
-			Kontext:   ctx,
+		zeile, err := verarbeiteImportZeile(ctx, importZeile{
 			Zeile:     []string{isbn, "Die Welle", "Rhue"},
 			Spalten:   map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": -1, "bestand": -1},
 			Metadaten: offlineMetadatenClient(),
@@ -341,8 +340,7 @@ func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
 			loesche()
 			t.Cleanup(loesche)
 
-			zeile, err := verarbeiteImportZeile(importZeile{
-				Kontext:   ctx,
+			zeile, err := verarbeiteImportZeile(ctx, importZeile{
 				Zeile:     []string{isbn, "Die Welle", "Rhue", fall.klasse},
 				Spalten:   map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": 3, "bestand": -1},
 				Metadaten: offlineMetadatenClient(),
