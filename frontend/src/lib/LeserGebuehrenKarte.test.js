@@ -44,7 +44,7 @@ beforeEach(() => {
 describe('LeserGebuehrenKarte', () => {
 	it('zeigt Aktionen nur am offenen Fall — und nur mit Bearbeitungsrecht', () => {
 		const screen = render(LeserGebuehrenKarte, {
-			props: { gebuehren: [OFFEN, STORNIERT], canEdit: true, onChanged: () => {} }
+			props: { gebuehren: [OFFEN, STORNIERT], darfBearbeiten: true, onChanged: () => {} }
 		});
 		// Ein offener Fall: je ein Bezahlt-/Storno-Knopf; der stornierte Fall trägt keine.
 		expect(screen.getAllByRole('button', { name: /Bezahlt/ })).toHaveLength(1);
@@ -54,7 +54,7 @@ describe('LeserGebuehrenKarte', () => {
 		screen.unmount();
 
 		const ohneRecht = render(LeserGebuehrenKarte, {
-			props: { gebuehren: [OFFEN], canEdit: false, onChanged: () => {} }
+			props: { gebuehren: [OFFEN], darfBearbeiten: false, onChanged: () => {} }
 		});
 		expect(ohneRecht.queryByRole('button', { name: /Bezahlt/ })).toBeNull();
 	});
@@ -65,7 +65,7 @@ describe('LeserGebuehrenKarte', () => {
 		);
 		const onChanged = vi.fn();
 		const screen = render(LeserGebuehrenKarte, {
-			props: { gebuehren: [OFFEN], canEdit: true, onChanged }
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
 		});
 
 		await fireEvent.click(screen.getByRole('button', { name: /^Stornieren$/ }));
@@ -95,7 +95,7 @@ describe('LeserGebuehrenKarte', () => {
 			/** @type {any} */ ({ ok: true, json: async () => ({}) })
 		);
 		const screen = render(LeserGebuehrenKarte, {
-			props: { gebuehren: [OFFEN], canEdit: true, onChanged: () => {} }
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged: () => {} }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
 		expect(apiClient.post).toHaveBeenCalledWith('/api/schadensfaelle/sf-1/bezahlt', {});
@@ -113,7 +113,7 @@ describe('LeserGebuehrenKarte', () => {
 		);
 		const onChanged = vi.fn();
 		const screen = render(LeserGebuehrenKarte, {
-			props: { gebuehren: [OFFEN], canEdit: true, onChanged }
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
 		expect(onChanged).toHaveBeenCalled();
@@ -123,7 +123,7 @@ describe('LeserGebuehrenKarte', () => {
 		vi.mocked(apiClient.post).mockRejectedValue(new Error('offline'));
 		const onChanged = vi.fn();
 		const screen = render(LeserGebuehrenKarte, {
-			props: { gebuehren: [OFFEN], canEdit: true, onChanged }
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
 		expect(onChanged).not.toHaveBeenCalled();
@@ -134,8 +134,8 @@ describe('LeserGebuehrenKarte', () => {
 // (15.09.2026). Der Knopf gehört nur zu einer offenen Forderung, die noch auf keinem Brief
 // steht — sonst führte er in einen leeren Dialog.
 describe('LeserGebuehrenKarte: Bescheid erstellen', () => {
-	const props = (gebuehr, canEdit = true) => ({
-		props: { schuelerId: 's1', gebuehren: [gebuehr], canEdit, onChanged: () => {} }
+	const props = (gebuehr, darfBearbeiten = true) => ({
+		props: { schuelerId: 's1', gebuehren: [gebuehr], darfBearbeiten, onChanged: () => {} }
 	});
 
 	it('bietet den Bescheid bei einer offenen Forderung ohne Brief an', () => {

@@ -134,10 +134,10 @@
 			anlegen();
 		}}
 	>
-		<Feld id="sys-kuerzel" label="Kürzel" bind:value={kuerzel} placeholder="Deu" class="w-28" />
+		<Feld id="sys-kuerzel" etikett="Kürzel" bind:value={kuerzel} placeholder="Deu" class="w-28" />
 		<Feld
 			id="sys-bezeichnung"
-			label="Bezeichnung"
+			etikett="Bezeichnung"
 			bind:value={bezeichnung}
 			placeholder="Deutsch"
 			class="grow min-w-48"
@@ -148,7 +148,7 @@
 	</form>
 
 	{#if laedt}
-		<div class="flex justify-center py-6"><Ladekreis label="Sachgruppen laden" /></div>
+		<div class="flex justify-center py-6"><Ladekreis etikett="Sachgruppen laden" /></div>
 	{:else if liste.length === 0}
 		<p class="text-sm text-on-surface-variant">
 			Noch keine Sachgruppen. Ohne sie schlägt das Buchformular nur „BIB“ bzw. „LMF“ ohne Fachkürzel

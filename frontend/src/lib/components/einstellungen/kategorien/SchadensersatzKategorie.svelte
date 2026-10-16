@@ -116,19 +116,19 @@
 				>Aus: der heutige Listenpreis, wie es die Arbeitshilfe verlangt.</span
 			>
 		</div>
-		<Switch bind:checked={immerKaufpreis} label="Berechnungsgrundlage umschalten" />
+		<Switch bind:checked={immerKaufpreis} etikett="Berechnungsgrundlage umschalten" />
 	</div>
 
 	<div class="grid gap-5 sm:grid-cols-2">
 		<Feld
 			id="bescheid-bereich"
-			label="Nummer des Schulamtsbereichs"
+			etikett="Nummer des Schulamtsbereichs"
 			bind:value={bereichNr}
 			placeholder="z. B. 5830"
 		/>
 		<Feld
 			id="bescheid-schulnummer"
-			label="Schulnummer"
+			etikett="Schulnummer"
 			bind:value={schulnummer}
 			placeholder="z. B. 1234"
 		/>
@@ -136,33 +136,33 @@
 
 	<Feld
 		id="bescheid-aufsicht"
-		label="Aufsichtsbehörde (Name und Anschrift)"
+		etikett="Aufsichtsbehörde (Name und Anschrift)"
 		bind:value={aufsicht}
 		placeholder="Name, Straße, PLZ Ort"
 	/>
 	<Feld
 		id="bescheid-schulleitung"
-		label="Name der Schulleitung (Unterschriftszeile)"
+		etikett="Name der Schulleitung (Unterschriftszeile)"
 		bind:value={schulleitung}
 	/>
 
 	<div class="grid gap-5 sm:grid-cols-3">
-		<Feld id="bescheid-gz" label="Geschäftszeichen" bind:value={geschaeftszeichen} />
-		<Feld id="bescheid-bearbeiter" label="Bearbeiter" bind:value={bearbeiter} />
-		<Feld id="bescheid-durchwahl" label="Durchwahl" bind:value={durchwahl} />
+		<Feld id="bescheid-gz" etikett="Geschäftszeichen" bind:value={geschaeftszeichen} />
+		<Feld id="bescheid-bearbeiter" etikett="Bearbeiter" bind:value={bearbeiter} />
+		<Feld id="bescheid-durchwahl" etikett="Durchwahl" bind:value={durchwahl} />
 	</div>
 
-	<Feld id="bescheid-zahlstelle" label="Zahlstelle" bind:value={zahlstelle} />
+	<Feld id="bescheid-zahlstelle" etikett="Zahlstelle" bind:value={zahlstelle} />
 	<Feld
 		id="bescheid-bank"
-		label="Bankverbindung (eine Angabe je Zeile)"
+		etikett="Bankverbindung (eine Angabe je Zeile)"
 		bind:value={bankverbindung}
 		mehrzeilig
 		zeilen={4}
 	/>
 	<Feld
 		id="bescheid-frist"
-		label="Zahlungsfrist (Tage ab Briefdatum)"
+		etikett="Zahlungsfrist (Tage ab Briefdatum)"
 		type="number"
 		min="1"
 		bind:value={fristTage}

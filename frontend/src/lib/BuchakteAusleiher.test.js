@@ -17,8 +17,8 @@ describe('Buchakte, Reiter „Ausleiher“: Druckknopf', () => {
 
 	it('heißt „Liste drucken“ und nennt keine Mahnliste', () => {
 		const screen = render(BuchakteAusleiher, {
-			borrowers: [ausleiher],
-			book: { title: 'Die Räuber' },
+			ausleiher: [ausleiher],
+			titel: { title: 'Die Räuber' },
 			onBack: () => {}
 		});
 		expect(screen.getByRole('button', { name: 'Liste drucken' })).toBeTruthy();

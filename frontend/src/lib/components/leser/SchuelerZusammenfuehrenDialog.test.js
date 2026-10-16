@@ -56,7 +56,7 @@ async function tippe(screen, text) {
 
 function oeffne() {
 	return render(SchuelerZusammenfuehrenDialog, {
-		props: { open: true, profile: PROFIL, onMerged: vi.fn() }
+		props: { open: true, leser: PROFIL, onMerged: vi.fn() }
 	});
 }
 
@@ -125,8 +125,8 @@ describe('SchuelerZusammenfuehrenDialog: Kandidatensuche', () => {
 		expect(apiFetch).toHaveBeenCalledTimes(1);
 
 		// Zu, wieder auf — an der Theke ist das der nächste Schüler.
-		await screen.rerender({ open: false, profile: PROFIL, onMerged: vi.fn() });
-		await screen.rerender({ open: true, profile: PROFIL, onMerged: vi.fn() });
+		await screen.rerender({ open: false, leser: PROFIL, onMerged: vi.fn() });
+		await screen.rerender({ open: true, leser: PROFIL, onMerged: vi.fn() });
 		spaet.einloesen(antwort([KANDIDAT('k1', 'Vorig')]));
 		await stillhalten();
 
@@ -141,7 +141,7 @@ describe('SchuelerZusammenfuehrenDialog: Kandidatensuche', () => {
 		await fireEvent.input(screen.getByLabelText('Anderen Datensatz suchen'), {
 			target: { value: 'Al' }
 		});
-		await screen.rerender({ open: false, profile: PROFIL, onMerged: vi.fn() });
+		await screen.rerender({ open: false, leser: PROFIL, onMerged: vi.fn() });
 		await vi.advanceTimersByTimeAsync(300);
 		expect(apiFetch).not.toHaveBeenCalled();
 	});

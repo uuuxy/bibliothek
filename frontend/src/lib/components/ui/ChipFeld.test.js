@@ -9,7 +9,7 @@ import ChipFeld from './ChipFeld.svelte';
  * nie Buchstabe für Buchstabe.
  */
 const aufbau = (/** @type {Record<string, any>} */ props = {}) =>
-	render(ChipFeld, { label: 'Schlagworte', ...props });
+	render(ChipFeld, { etikett: 'Schlagworte', ...props });
 
 /** Getippter Text: Der Browser meldet ihn als insertText, nicht als Auswahl. */
 const tippe = (/** @type {HTMLElement} */ feld, /** @type {string} */ text) =>

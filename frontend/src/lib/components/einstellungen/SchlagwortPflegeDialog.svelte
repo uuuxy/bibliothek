@@ -131,7 +131,7 @@
 	onbestaetigen={ausfuehren}
 >
 	<Feld
-		label={texte.label}
+		etikett={texte.label}
 		bind:value={eingabe}
 		hint={hinweis}
 		list={auftrag?.art === 'zusammenfuehren' ? listeId : undefined}
@@ -139,7 +139,7 @@
 		autocomplete="off"
 	/>
 	{#if wahl}
-		<Kaestchen bind:checked={behalten} label="„{wort}“ als Verweis behalten" />
+		<Kaestchen bind:checked={behalten} etikett="„{wort}“ als Verweis behalten" />
 	{/if}
 	{#if auftrag?.art === 'zusammenfuehren'}
 		<datalist id={listeId}>

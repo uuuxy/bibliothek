@@ -36,7 +36,7 @@
 >
 	<ListenNichtGeladen listen={fehlendeListen} onErneut={onChanged} />
 
-	<LeserAusleihenKarte books={buecher} {onReturnClick} {onDamageClick} />
+	<LeserAusleihenKarte ausleihen={buecher} {onReturnClick} {onDamageClick} />
 
 	{#if vormerkungen.length > 0}
 		<LeserVormerkungenKarte bind:vormerkungen />

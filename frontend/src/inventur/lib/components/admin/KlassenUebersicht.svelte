@@ -111,9 +111,9 @@
 <div class="space-y-10">
 	<div class="flex flex-col gap-3">
 		<KlassenSuchfeld
-			bind:klasseSearchQuery={klassenSuche}
+			bind:klassenSuche
 			bind:isKlasseDropdownOpen
-			filteredKlassenList={gefilterteKlassen}
+			klassen={gefilterteKlassen}
 			onSelectKlasse={(klasse) => {
 				klassenSuche = klasse;
 				isKlasseDropdownOpen = false;

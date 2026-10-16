@@ -17,7 +17,7 @@
 
 	/**
 	 * @type {{
-	 *   book: {
+	 *   titel: {
 	 *     id: string,
 	 *     isbn: string,
 	 *     title: string,
@@ -37,7 +37,7 @@
 	 * bearbeitbar=false: reine Ansicht (Kollegiums-Portal, 25.08.2026). Ohne den Schalter
 	 * wäre jede Kachel dort ein Knopf, hinter dem für die Rolle ein 403 liegt.
 	 */
-	let { book, onEdit = undefined, bearbeitbar = true } = $props();
+	let { titel, onEdit = undefined, bearbeitbar = true } = $props();
 
 	/** @type {string[]} */
 	let coverCandidates = $state([]);
@@ -46,12 +46,12 @@
 	let coverFailed = $state(false);
 
 	/** Bestand als Satz wie auf der Katalog-Kachel; ohne Zahlen im Payload bleibt die Zeile leer. */
-	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar, book.imZulauf));
+	const bestand = $derived(bestandSatz(titel.gesamt, titel.verfuegbar, titel.imZulauf));
 
 	// Lokale Liste statt Lesen des eigenen $state im selben Effekt (sonst Endlosschleife,
 	// siehe BuchKarte.svelte).
 	$effect(() => {
-		const kandidaten = coverKandidaten(book?.coverUrl, book?.isbn);
+		const kandidaten = coverKandidaten(titel?.coverUrl, titel?.isbn);
 		coverCandidates = kandidaten;
 		currentCandidateIndex = 0;
 		coverFailed = kandidaten.length === 0;
@@ -86,7 +86,7 @@
 				onload={pruefeGeladenes}
 			/>
 		{:else}
-			<BuchKarteCover subject={book.subject} title={book.title} />
+			<BuchKarteCover subject={titel.subject} title={titel.title} />
 		{/if}
 	</div>
 	<div class="flex flex-col gap-0.5 text-sm">
@@ -95,29 +95,29 @@
 		     in der CI rot geworden, weil dort eine Klasse aufgeklappt war). -->
 		<h3
 			class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
-			title={book.title}
+			title={titel.title}
 		>
-			{book.title}
+			{titel.title}
 		</h3>
 		{#if bestand}
 			<span class="text-on-surface-variant">{bestand}</span>
 		{/if}
-		{#if book.auflagenBestand?.length}
+		{#if titel.auflagenBestand?.length}
 			<!-- Ein Buch in mehreren Auflagen (Portal „Schulbücher", docs/OFFEN.md 4.18, Stufe 6):
 			     Die Zahlen darüber sind die Summe; hier steht, woraus sie besteht — wie auf der
 			     Kachel des Medienkatalogs. -->
 			<span class="text-xs text-on-surface-variant" data-testid="schulbuch-auflagen"
-				>{auflagenAufschluesselung(book.auflagenBestand)}</span
+				>{auflagenAufschluesselung(titel.auflagenBestand)}</span
 			>
 		{/if}
-		{#if book.quelle === 'ausleihe'}
+		{#if titel.quelle === 'ausleihe'}
 			<!-- Live aus den Ausleihen abgeleitet, nicht gespeichert (05.09.2026): mehr als die
 			     Hälfte der Klasse hat den Titel. Die Handliste bleibt unangetastet. -->
 			<span class="text-xs text-on-surface-variant" data-testid="klassensatz-aus-ausleihen">
-				aus Ausleihen · {book.leser} Leser
+				aus Ausleihen · {titel.leser} Leser
 			</span>
 		{/if}
-		{#if book.auflagen?.length}
+		{#if titel.auflagen?.length}
 			<!-- Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): Kinder der Klasse haben eine
 			     andere Auflage als die der Kachel — andere Auflagen haben andere Seitenzahlen.
 			     Begleittext der Karte (M3 Cards, Anatomie: „Supporting text"), in der Warnrolle
@@ -125,7 +125,7 @@
 			<div class="text-xs text-warning" data-testid="klassensatz-auflagen">
 				<p>Auflagen in der Klasse</p>
 				<ul>
-					{#each auflagenDerKlasse(book.auflagen, book.id) as zeile, i (i)}
+					{#each auflagenDerKlasse(titel.auflagen, titel.id) as zeile, i (i)}
 						<li>{zeile}</li>
 					{/each}
 				</ul>
@@ -137,15 +137,15 @@
 {#if bearbeitbar}
 	<div
 		class="m3-state flex cursor-pointer flex-col gap-2 rounded-2xl p-2"
-		onclick={() => onEdit?.(book)}
+		onclick={() => onEdit?.(titel)}
 		role="button"
 		tabindex="0"
-		aria-label="{book.title} bearbeiten"
+		aria-label="{titel.title} bearbeiten"
 		onkeydown={(e) => {
 			if (e.target !== e.currentTarget) return;
 			if (e.key === 'Enter' || e.key === ' ') {
 				e.preventDefault();
-				onEdit?.(book);
+				onEdit?.(titel);
 			}
 		}}
 	>

@@ -104,26 +104,26 @@
 		<div class="rounded-xl border border-outline-variant p-4">
 			<div class="grid gap-3 sm:grid-cols-2">
 				<Feld
-					label="Modellname *"
+					etikett="Modellname *"
 					bind:value={formular.modellname}
 					placeholder="z. B. iPad 9. Gen"
 				/>
 				<Feld
-					label="Barcode (G-…) *"
+					etikett="Barcode (G-…) *"
 					bind:value={formular.barcode_id}
 					disabled={bearbeiteId != null}
 				/>
 				<Feld
-					label="Seriennummer"
+					etikett="Seriennummer"
 					bind:value={formular.seriennummer}
 					disabled={bearbeiteId != null}
 				/>
 				<Feld
-					label="Zubehör (Checkliste, mit Komma getrennt)"
+					etikett="Zubehör (Checkliste, mit Komma getrennt)"
 					bind:value={formular.zubehoer}
 					placeholder="Ladekabel, Stift, Hülle"
 				/>
-				<Feld label="Zustandsnotiz" bind:value={formular.zustand_notiz} class="sm:col-span-2" />
+				<Feld etikett="Zustandsnotiz" bind:value={formular.zustand_notiz} class="sm:col-span-2" />
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
 				<Button variant="secondary" onclick={schliesseFormular} disabled={speichert}

@@ -77,7 +77,7 @@
 
 	{#if laedt}
 		<div class="flex justify-center py-20">
-			<Ladekreis size="lg" label="Logbuch lädt" />
+			<Ladekreis size="lg" etikett="Logbuch lädt" />
 		</div>
 	{:else if fehler}
 		<LadeFehler onerneut={fetchLogs} titel="Logbuch nicht geladen" text={fehler} />

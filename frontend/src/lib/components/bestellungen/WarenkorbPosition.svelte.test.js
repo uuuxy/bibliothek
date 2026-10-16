@@ -35,7 +35,7 @@ function position(menge) {
 		}
 	];
 	// Die Position aus dem Speicher, nicht das Objekt von oben: Nur sie ist reaktiv.
-	const { getByRole } = render(WarenkorbPosition, { item: bestellStore.cart[0] });
+	const { getByRole } = render(WarenkorbPosition, { position: bestellStore.cart[0] });
 	return {
 		minus: /** @type {HTMLButtonElement} */ (getByRole('button', { name: 'Menge verringern' })),
 		plus: /** @type {HTMLButtonElement} */ (getByRole('button', { name: 'Menge erhöhen' }))

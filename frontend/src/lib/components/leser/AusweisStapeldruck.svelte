@@ -12,8 +12,8 @@
 	import { ladeAusweisDesign } from '../../designer/ausweisDesignLaden.js';
 	import Druckvorschau from '../../designer/Druckvorschau.svelte';
 
-	/** @type {{ students: any[] }} */
-	let { students } = $props();
+	/** @type {{ leserListe: any[] }} */
+	let { leserListe } = $props();
 
 	// Cache-Buster für die Barcode-Bilder, damit ein zweiter Druck nach einer Änderung
 	// nicht die alten PNGs aus dem Browser-Cache zieht (wie im Designer).
@@ -25,4 +25,4 @@
 	});
 </script>
 
-<Druckvorschau {students} barcodeType={idStore.barcodeType} {timestamp} />
+<Druckvorschau {leserListe} barcodeType={idStore.barcodeType} {timestamp} />

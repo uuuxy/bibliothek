@@ -7,9 +7,9 @@
 	import { initialen } from './avatarKachel.js';
 	import { leserArtText, istKollegium } from './leserArt.js';
 
-	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
+	/** @type {{ leser: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
 	let {
-		profile = $bindable(),
+		leser = $bindable(),
 		rechte = { bearbeiten: false, foto: false },
 		timestamp,
 		showWebcam = $bindable(),
@@ -19,12 +19,12 @@
 		offen = undefined
 	} = $props();
 
-	const initials = $derived(initialen(profile));
+	const initials = $derived(initialen(leser));
 
 	let imageFailed = $state(false);
 	// Ein Kollege ist kein Schüler mit fehlenden Angaben: Klasse und Abgangsjahr gibt es
 	// bei ihm nicht, und „Klasse " mit nichts dahinter sähe aus wie ein Datenfehler.
-	const kollege = $derived(istKollegium(profile));
+	const kollege = $derived(istKollegium(leser));
 </script>
 
 <div
@@ -41,11 +41,11 @@
 
 	<!-- Foto -->
 	<div class="relative group">
-		{#if profile.foto_url && !imageFailed}
+		{#if leser.foto_url && !imageFailed}
 			<img
-				src={profile.foto_url.startsWith('data:')
-					? profile.foto_url
-					: profile.foto_url + '?t=' + timestamp}
+				src={leser.foto_url.startsWith('data:')
+					? leser.foto_url
+					: leser.foto_url + '?t=' + timestamp}
 				alt="Passbild"
 				class="w-28 h-28 object-cover rounded-2xl border border-outline-variant"
 				onerror={() => (imageFailed = true)}
@@ -71,34 +71,34 @@
 
 	<!-- Name & Metadaten -->
 	<div class="w-full space-y-2">
-		{#if ausleiheGesperrt(profile)}
+		{#if ausleiheGesperrt(leser)}
 			<StatusChip ton="fehler" text="Ausleihe gesperrt" icon={Lock} />
 		{/if}
 
 		<h3 class="text-3xl leading-tight font-bold wrap-break-word text-on-surface">
-			{profile.vorname}
-			{profile.nachname}
+			{leser.vorname}
+			{leser.nachname}
 		</h3>
 		<p class="text-lg font-bold text-on-surface-variant">
-			{kollege ? leserArtText(profile.art) : `Klasse ${profile.klasse}`}
+			{kollege ? leserArtText(leser.art) : `Klasse ${leser.klasse}`}
 		</p>
 
 		{#if !kollege}
-			<AbgangsjahrFeld bind:profile darfBearbeiten={rechte.bearbeiten} />
+			<AbgangsjahrFeld bind:leser darfBearbeiten={rechte.bearbeiten} />
 		{/if}
 
 		<!-- Ohne Ausweisnummer ist ein Kollege nur ohne aktiven Zugang (offene Anfrage,
 		     deaktiviert, keine Schul-Adresse): Ein aktiver bekommt und behält eine
 		     (Migrationen 136, 145). Eine leere Zeile sähe nach einem Anzeigefehler aus;
 		     ohne Nummer gibt es auch keinen Ausweis zu drucken. -->
-		{#if profile.barcode_id}
-			<p class="text-sm text-on-surface-variant font-mono tracking-widest">{profile.barcode_id}</p>
+		{#if leser.barcode_id}
+			<p class="text-sm text-on-surface-variant font-mono tracking-widest">{leser.barcode_id}</p>
 		{:else}
 			<p class="text-sm text-on-surface-variant italic">Noch keine Ausweisnummer</p>
 		{/if}
 	</div>
 
-	<LeserKontoStatus {profile} {onLock} {offen} />
+	<LeserKontoStatus {leser} {onLock} {offen} />
 
 	<!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk). Ausweis-Druck & DSGVO-
 	     Auskunft leben bewusst rechts unter „Dokumente & Aktionen" — die Identitäts-

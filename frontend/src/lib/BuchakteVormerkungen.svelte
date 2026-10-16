@@ -10,8 +10,8 @@
 	import Feld from './components/ui/Feld.svelte';
 	import { Clock, Trash } from '@lucide/svelte';
 
-	/** @type {{ vormerkungen: any[], book: any }} */
-	let { vormerkungen = $bindable(), book } = $props();
+	/** @type {{ vormerkungen: any[], titel: any }} */
+	let { vormerkungen = $bindable(), titel } = $props();
 
 	let isAdding = $state(false);
 	let suche = $state('');
@@ -55,7 +55,7 @@
 	async function legeVormerkungAn(studentId) {
 		try {
 			const res = await apiClient.post('/api/vormerkungen', {
-				titel_id: book.id,
+				titel_id: titel.id,
 				schueler_id: studentId,
 				notiz
 			});
@@ -65,7 +65,7 @@
 				suche = '';
 				treffer = [];
 				notiz = '';
-				const listenAntwort = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
+				const listenAntwort = await apiFetch(`/api/vormerkungen?titel_id=${titel.id}`);
 				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
 				if (listenAntwort.ok) vormerkungen = await listenAntwort.json();
 				else melde('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
@@ -100,7 +100,7 @@
 					<div class="flex flex-1 w-full items-end gap-2">
 						<Feld
 							id="student-search-input"
-							label="Schüler suchen (Name oder Barcode)"
+							etikett="Schüler suchen (Name oder Barcode)"
 							bind:value={suche}
 							onkeydown={(e) => e.key === 'Enter' && sucheLeser()}
 							placeholder="z.B. Max Mustermann"
@@ -112,7 +112,7 @@
 					</div>
 					<Feld
 						id="notiz-input"
-						label="Interne Notiz (optional)"
+						etikett="Interne Notiz (optional)"
 						bind:value={notiz}
 						placeholder="z.B. Braucht es dringend für Referat"
 						class="flex-1 w-full"

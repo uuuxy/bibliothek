@@ -87,7 +87,7 @@
 
 		<Feld
 			id="extendDatum"
-			label="Neues Rückgabedatum"
+			etikett="Neues Rückgabedatum"
 			type="date"
 			bind:value={neuesDatum}
 			class="w-48"

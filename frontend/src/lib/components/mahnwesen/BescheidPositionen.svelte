@@ -48,7 +48,7 @@
 					<div class="pt-1">
 						<Kaestchen
 							bind:checked={gewaehlt[p.key]}
-							label=""
+							etikett=""
 							aria-label="{p.titel} in den Bescheid aufnehmen"
 							disabled={p.topf !== 'land'}
 						/>

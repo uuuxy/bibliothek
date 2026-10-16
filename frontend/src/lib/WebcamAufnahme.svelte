@@ -15,8 +15,8 @@
 	import { ruhtWennTraege } from './actions/ruhtWennTraege.js';
 	import { passbildAusschnitt, PASSBILD_BILDFORM } from './passbildAusschnitt.js';
 
-	/** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */
-	let { studentId, onCapture, onClose } = $props();
+	/** @type {{ leserKennung: string, onCapture: (url: string) => void, onClose: () => void }} */
+	let { leserKennung, onCapture, onClose } = $props();
 
 	/** @type {HTMLVideoElement | null} */
 	let videoEl = $state(null);
@@ -80,7 +80,7 @@
 			const bildDaten = canvas.toDataURL('image/jpeg', 0.95);
 
 			// Upload to backend
-			const res = await apiClient.post(`/api/schueler/${studentId}/photo`, {
+			const res = await apiClient.post(`/api/schueler/${leserKennung}/photo`, {
 				photo_data: bildDaten
 			});
 

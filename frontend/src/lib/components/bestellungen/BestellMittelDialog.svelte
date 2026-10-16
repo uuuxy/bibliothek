@@ -91,7 +91,7 @@
 
 		<Feld
 			id="mittel-grund"
-			label="Grund der Korrektur"
+			etikett="Grund der Korrektur"
 			bind:value={grund}
 			placeholder="z. B. Titel war falsch als Lernmittel gekennzeichnet"
 			required

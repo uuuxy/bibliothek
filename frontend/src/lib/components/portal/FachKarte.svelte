@@ -74,7 +74,7 @@
 			data-testid="schulbuecher-raster"
 		>
 			{#each buecher as book (book.id)}
-				<KlassenBuchKachel {book} bearbeitbar={false} />
+				<KlassenBuchKachel titel={book} bearbeitbar={false} />
 			{/each}
 		</div>
 	{/if}

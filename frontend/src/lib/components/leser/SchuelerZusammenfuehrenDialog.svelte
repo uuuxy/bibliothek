@@ -14,8 +14,8 @@
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
 	import Dialog from '../../Dialog.svelte';
 
-	/** @type {{ open: boolean, profile: any, onMerged: (zielId: string) => void }} */
-	let { open = $bindable(false), profile, onMerged } = $props();
+	/** @type {{ open: boolean, leser: any, onMerged: (zielId: string) => void }} */
+	let { open = $bindable(false), leser, onMerged } = $props();
 
 	/** @type {any | null} */
 	let anderer = $state(null);
@@ -24,7 +24,7 @@
 	let laeuft = $state(false);
 	let fehler = $state('');
 	// Entprellung, Antwort-Reihenfolge und Fehlerzustand der Suche: zusammenfuehrenSuche.svelte.js.
-	const s = erzeugeKandidatenSuche(() => profile.id);
+	const s = erzeugeKandidatenSuche(() => leser.id);
 
 	// Der Dialog bleibt gemountet; ohne Reset blitzte beim nächsten Öffnen der vorige
 	// Kandidat auf — für einen anderen Schüler. Zurückgesetzt wird beim ÖFFNEN wie beim
@@ -46,8 +46,8 @@
 		if (!anderer || laeuft) return;
 		laeuft = true;
 		fehler = '';
-		const ziel = bleibt === 'dieser' ? profile.id : anderer.id;
-		const quelle = bleibt === 'dieser' ? anderer.id : profile.id;
+		const ziel = bleibt === 'dieser' ? leser.id : anderer.id;
+		const quelle = bleibt === 'dieser' ? anderer.id : leser.id;
 		try {
 			// apiClient.post liefert die Response (apiPost packt sie aus und verschluckt res.ok).
 			const res = await apiClient.post(`/api/schueler/${ziel}/zusammenfuehren`, {
@@ -89,7 +89,7 @@
 			nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach nur noch im Protokoll.
 		</p>
 
-		<ZusammenfuehrenKandidat kandidat={profile} etikett="Dieser Datensatz" />
+		<ZusammenfuehrenKandidat kandidat={leser} etikett="Dieser Datensatz" />
 
 		<div class="space-y-2">
 			<Suchfeld
@@ -130,7 +130,7 @@
 
 			<fieldset class="space-y-2">
 				<legend class="text-xs font-bold text-on-surface">Welcher Datensatz bleibt?</legend>
-				{#each [{ wert: 'dieser', text: `${profile.vorname} ${profile.nachname} (${profile.barcode_id})` }, { wert: 'anderer', text: `${anderer.vorname} ${anderer.nachname} (${anderer.barcode_id})` }] as w (w.wert)}
+				{#each [{ wert: 'dieser', text: `${leser.vorname} ${leser.nachname} (${leser.barcode_id})` }, { wert: 'anderer', text: `${anderer.vorname} ${anderer.nachname} (${anderer.barcode_id})` }] as w (w.wert)}
 					<label class="flex items-center gap-2 text-sm cursor-pointer">
 						<Radio name="bleibt" value={w.wert} bind:group={bleibt} />
 						<span>{w.text}</span>

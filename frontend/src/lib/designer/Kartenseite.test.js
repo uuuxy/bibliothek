@@ -63,7 +63,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 		const { getByText } = render(Kartenseite, {
 			props: {
 				side: 'front',
-				student: SCHUELER_OHNE_FOTO,
+				leser: SCHUELER_OHNE_FOTO,
 				barcodeType: 'code39',
 				platzhalter: true
 			}
@@ -75,7 +75,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 
 	it('lässt sie auf dem echten Ausweis leer — ohne Rahmen und ohne Aufschrift', () => {
 		const { queryByText } = render(Kartenseite, {
-			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
+			props: { side: 'front', leser: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
 		});
 
 		expect(queryByText('LOGO')).toBeNull();
@@ -100,7 +100,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 		];
 
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: null, barcodeType: 'code39' }
+			props: { side: 'front', leser: null, barcodeType: 'code39' }
 		});
 
 		const flaeche = container.querySelector('div[style*="background-color"]');
@@ -115,7 +115,7 @@ describe('Kartenseite: leere Bildfelder', () => {
 		const { queryByText, getByAltText } = render(Kartenseite, {
 			props: {
 				side: 'front',
-				student: SCHUELER_OHNE_FOTO,
+				leser: SCHUELER_OHNE_FOTO,
 				barcodeType: 'code39',
 				platzhalter: true
 			}
@@ -147,7 +147,7 @@ describe('Kartenseite: Strichcode folgt dem Element', () => {
 	it('fordert das Bild in der Größe des Elements an, nicht in festen Pixeln', () => {
 		idStore.front.elements = [barcodeElement(20)];
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
+			props: { side: 'front', leser: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
 		});
 		const img = /** @type {HTMLImageElement} */ (container.querySelector('img[alt="Barcode"]'));
 		const erwartet = strichcodeBildOptionenFuerElement(barcodeElement(20), 'code39');
@@ -157,7 +157,7 @@ describe('Kartenseite: Strichcode folgt dem Element', () => {
 	it('gibt dem Bild keine feste Höhe mehr — es füllt das Element', () => {
 		idStore.front.elements = [barcodeElement(20)];
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
+			props: { side: 'front', leser: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
 		});
 		const img = /** @type {HTMLImageElement} */ (container.querySelector('img[alt="Barcode"]'));
 		expect(img.className).not.toMatch(/h-\[\d+mm\]/);

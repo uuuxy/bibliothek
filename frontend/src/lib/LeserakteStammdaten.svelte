@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @type {{
-	 *   profile: any,
+	 *   leser: any,
 	 *   darfBearbeiten?: boolean,
 	 *   darfZusammenfuehren?: boolean,
 	 *   onEdit: () => void,
@@ -9,7 +9,7 @@
 	 * }}
 	 */
 	let {
-		profile,
+		leser,
 		darfBearbeiten = false,
 		darfZusammenfuehren = false,
 		onEdit,
@@ -21,7 +21,7 @@
 	import { istKollegium, leserArtText } from './leserArt.js';
 	import { Folder, Info, SquarePen } from '@lucide/svelte';
 
-	const kollege = $derived(istKollegium(profile));
+	const kollege = $derived(istKollegium(leser));
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Keine Angabe';
@@ -74,33 +74,33 @@
 			     führt, ist sie bei jedem die erste Auskunft, nicht nur bei den anderen. -->
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Art</p>
-				<p class="text-on-surface font-semibold">{leserArtText(profile.art)}</p>
+				<p class="text-on-surface font-semibold">{leserArtText(leser.art)}</p>
 			</div>
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Geburtsdatum</p>
-				<p class="text-on-surface font-semibold">{formatDate(profile.geburtsdatum)}</p>
+				<p class="text-on-surface font-semibold">{formatDate(leser.geburtsdatum)}</p>
 			</div>
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">LUSD ID</p>
-				<p class="text-on-surface font-semibold">{profile.lusd_id || 'Keine Angabe'}</p>
+				<p class="text-on-surface font-semibold">{leser.lusd_id || 'Keine Angabe'}</p>
 			</div>
 		</div>
 
 		<div class="space-y-6">
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Postanschrift</p>
-				{#if profile.strasse}
-					<p class="text-on-surface font-semibold">{profile.strasse} {profile.hausnummer}</p>
-					<p class="text-on-surface font-semibold">{profile.plz} {profile.ort}</p>
+				{#if leser.strasse}
+					<p class="text-on-surface font-semibold">{leser.strasse} {leser.hausnummer}</p>
+					<p class="text-on-surface font-semibold">{leser.plz} {leser.ort}</p>
 				{:else}
 					<p class="text-on-surface-variant italic text-sm">Keine Adresse hinterlegt</p>
 				{/if}
 			</div>
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Eltern E-Mail</p>
-				{#if profile.eltern_email}
-					<a href="mailto:{profile.eltern_email}" class="text-primary hover:underline font-semibold"
-						>{profile.eltern_email}</a
+				{#if leser.eltern_email}
+					<a href="mailto:{leser.eltern_email}" class="text-primary hover:underline font-semibold"
+						>{leser.eltern_email}</a
 					>
 				{:else}
 					<p class="text-on-surface-variant italic text-sm">Keine E-Mail hinterlegt</p>
@@ -133,6 +133,6 @@
 	     zu reparieren, weil das Zusammenführen gegen die Sicht `schueler` schrieb. Das Recht
 	     bleibt, wie es war (merge_students: Admin und Leitung ab Werk). -->
 	{#if darfZusammenfuehren}
-		<SchuelerZusammenfuehren {profile} {onMerged} />
+		<SchuelerZusammenfuehren {leser} {onMerged} />
 	{/if}
 </div>

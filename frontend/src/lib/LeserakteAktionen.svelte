@@ -9,10 +9,10 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} profile
+	 * @property {any} leser
 	 * @property {boolean} [darfAuskunft]  manage_students_admin — DSGVO-Auskunft (Art. 15)
-	 * @property {boolean} kontoauszugPdfLoading
-	 * @property {boolean} rechnungPdfLoading
+	 * @property {boolean} kontoauszugLaedt
+	 * @property {boolean} rechnungLaedt
 	 * @property {() => void} downloadKontoauszugPDF
 	 * @property {() => void} downloadRechnungPDF
 	 * @property {(side: 'front'|'back'|'both') => void} onPrint
@@ -21,10 +21,10 @@
 	 */
 	/** @type {Props} */
 	let {
-		profile,
+		leser,
 		darfAuskunft = false,
-		kontoauszugPdfLoading,
-		rechnungPdfLoading,
+		kontoauszugLaedt,
+		rechnungLaedt,
 		downloadKontoauszugPDF,
 		downloadRechnungPDF,
 		onPrint,
@@ -43,12 +43,12 @@
 	// mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist schlechter als keiner —
 	// und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern eines Schülers. Die
 	// DSGVO-Auskunft gibt es seit dem 24.09.2026 für jeden Leser (SchuelerDokumente).
-	const kollege = $derived(istKollegium(profile));
+	const kollege = $derived(istKollegium(leser));
 
 	// Ohne Ausweisnummer gibt es keinen Ausweis zu drucken: Die Karte trüge ein leeres
 	// Strichcodefeld und wäre an der Theke nicht scanbar. Eingetragen wird die Nummer in
 	// „Benutzer & Rechte" (Kollegium) bzw. beim Anlegen (Schüler).
-	const ohneAusweis = $derived(!profile.barcode_id);
+	const ohneAusweis = $derived(!leser.barcode_id);
 
 	// Seit 07.09.2026 das eine Menü des Hauses (ui/Menue.svelte) mit dem Split-Button als
 	// Auslöser. Die Hinweiszeilen der Einträge („Foto & Ausweisdaten") sind weg: M3-Menüs
@@ -122,19 +122,19 @@
 		     Karte nicht erscheint, waere eine Zusage, die der Druck nicht einloest. -->
 	{#if !kollege}
 		<AusweisGueltigkeit
-			vorschlag={profile.ausweis_gueltig_bis ?? null}
+			vorschlag={leser.ausweis_gueltig_bis ?? null}
 			wert={gueltigBis}
-			klasse={profile.klasse ?? ''}
+			klasse={leser.klasse ?? ''}
 			onWert={onGueltigBis}
 		/>
 	{/if}
 
 	<SchuelerDokumente
-		{profile}
+		{leser}
 		{kollege}
 		{darfAuskunft}
-		{kontoauszugPdfLoading}
-		{rechnungPdfLoading}
+		{kontoauszugLaedt}
+		{rechnungLaedt}
 		{downloadKontoauszugPDF}
 		{downloadRechnungPDF}
 	/>

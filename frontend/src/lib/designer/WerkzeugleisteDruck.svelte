@@ -19,13 +19,13 @@
 
 	/**
 	 * @type {{
-	 *   printMode: 'card'|'etikett',
-	 *   onPrintMode: (m: 'card'|'etikett') => void,
+	 *   druckArt: 'card'|'etikett',
+	 *   onDruckArt: (m: 'card'|'etikett') => void,
 	 *   side: 'front'|'back',
 	 *   onPrint: () => void
 	 * }}
 	 */
-	const { printMode, onPrintMode, side, onPrint } = $props();
+	const { druckArt, onDruckArt, side, onPrint } = $props();
 
 	const MODI = [
 		{ value: 'card', label: 'Kartendrucker' },
@@ -35,7 +35,7 @@
 	// Der Etikettenbogen kennt keine Rückseite — die Beschriftung darf keine versprechen,
 	// die der Knopf nicht drucken kann.
 	const knopfText = $derived(
-		printMode === 'etikett'
+		druckArt === 'etikett'
 			? 'Muster-Etikett drucken'
 			: side === 'back'
 				? 'Testdruck Rückseite'
@@ -50,9 +50,9 @@
 		>
 			{#each MODI as modus (modus.value)}
 				<button
-					onclick={() => onPrintMode(/** @type {'card'|'etikett'} */ (modus.value))}
-					aria-pressed={printMode === modus.value}
-					class="cursor-pointer rounded-lg px-3 py-1.5 font-bold transition-all {printMode ===
+					onclick={() => onDruckArt(/** @type {'card'|'etikett'} */ (modus.value))}
+					aria-pressed={druckArt === modus.value}
+					class="cursor-pointer rounded-lg px-3 py-1.5 font-bold transition-all {druckArt ===
 					modus.value
 						? 'bg-surface text-on-surface shadow-xs'
 						: 'text-on-surface-variant hover:text-on-surface'}">{modus.label}</button
@@ -60,7 +60,7 @@
 			{/each}
 		</div>
 
-		{#if printMode === 'etikett'}
+		{#if druckArt === 'etikett'}
 			<Select
 				bind:value={idStore.etikettFormat}
 				options={ETIKETT_FORMATE}

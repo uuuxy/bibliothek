@@ -19,9 +19,9 @@
 	 * 15.09.2026 gab es den Bescheid nur in der Mahnliste, wo dieses Kind nicht mehr stand.
 	 * Derselbe Dialog wie im Mahnwesen; er entscheidet selbst, welche Forderung auf den
 	 * Brief des Landes darf.
-	 * @type {{ schuelerId?: string, gebuehren: any[], canEdit: boolean, onChanged: () => void }}
+	 * @type {{ schuelerId?: string, gebuehren: any[], darfBearbeiten: boolean, onChanged: () => void }}
 	 */
-	let { schuelerId = '', gebuehren = [], canEdit = false, onChanged } = $props();
+	let { schuelerId = '', gebuehren = [], darfBearbeiten = false, onChanged } = $props();
 
 	let stornoFall = $state(/** @type {any} */ (null));
 	let stornoGrund = $state('');
@@ -30,7 +30,7 @@
 
 	// Ein Brief braucht eine offene Forderung, die noch auf keinem Brief steht.
 	const bescheidMoeglich = $derived(
-		canEdit &&
+		darfBearbeiten &&
 			schuelerId !== '' &&
 			gebuehren.some((f) => !f.ist_bezahlt && !f.storniert_am && !f.bescheid_id)
 	);
@@ -119,7 +119,7 @@
 						{/if}
 					</div>
 
-					{#if canEdit && !f.ist_bezahlt}
+					{#if darfBearbeiten && !f.ist_bezahlt}
 						<div class="flex items-center gap-2 shrink-0">
 							<Button
 								variant="secondary"
@@ -166,7 +166,7 @@
 
 			<Feld
 				id="storno-grund"
-				label="Stornierungsgrund"
+				etikett="Stornierungsgrund"
 				bind:value={stornoGrund}
 				placeholder="z.B. Buch wiedergefunden, Kulanzentscheidung..."
 			/>

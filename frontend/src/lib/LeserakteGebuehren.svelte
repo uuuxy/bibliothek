@@ -14,7 +14,7 @@
 	 *   gebuehren: any[],
 	 *   bescheide: any[],
 	 *   fehlendeListen?: string[],
-	 *   canEdit: boolean,
+	 *   darfBearbeiten: boolean,
 	 *   onChanged: () => void
 	 * }}
 	 */
@@ -23,7 +23,7 @@
 		gebuehren = [],
 		bescheide = [],
 		fehlendeListen = [],
-		canEdit = false,
+		darfBearbeiten = false,
 		onChanged
 	} = $props();
 </script>
@@ -35,7 +35,7 @@
 		<p class="text-sm text-on-surface-variant">Keine Gebühren, Schäden oder Bescheide.</p>
 	{/if}
 
-	<LeserGebuehrenKarte {schuelerId} {gebuehren} {canEdit} {onChanged} />
+	<LeserGebuehrenKarte {schuelerId} {gebuehren} {darfBearbeiten} {onChanged} />
 
 	<LeserBescheideKarte {bescheide} />
 </div>

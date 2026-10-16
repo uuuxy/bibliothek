@@ -12,17 +12,17 @@
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 	/**
 	 * @type {{
-	 *   klasseSearchQuery: string,
+	 *   klassenSuche: string,
 	 *   isKlasseDropdownOpen: boolean,
-	 *   filteredKlassenList: string[],
+	 *   klassen: string[],
 	 *   onSelectKlasse?: (klasse: string) => void,
 	 *   class?: string
 	 * }}
 	 */
 	let {
-		klasseSearchQuery = $bindable(''),
+		klassenSuche = $bindable(''),
 		isKlasseDropdownOpen = $bindable(false),
-		filteredKlassenList = [],
+		klassen = [],
 		onSelectKlasse,
 		class: className = ''
 	} = $props();
@@ -32,7 +32,7 @@
 	<div class="relative w-full">
 		<Suchpille
 			id="klassensaetze-suchfeld"
-			bind:wert={klasseSearchQuery}
+			bind:wert={klassenSuche}
 			etikett="Klasse suchen"
 			platzhalter="Klasse suchen (z.B. 5f1) …"
 			onfocus={() => (isKlasseDropdownOpen = true)}
@@ -47,11 +47,11 @@
 				/>
 			{/snippet}
 		</Suchpille>
-		{#if isKlasseDropdownOpen && filteredKlassenList.length > 0}
+		{#if isKlasseDropdownOpen && klassen.length > 0}
 			<ul
 				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl max-h-60 overflow-y-auto py-1"
 			>
-				{#each filteredKlassenList as klasse (klasse)}
+				{#each klassen as klasse (klasse)}
 					<li>
 						<button
 							type="button"
@@ -63,7 +63,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else if isKlasseDropdownOpen && filteredKlassenList.length === 0}
+		{:else if isKlasseDropdownOpen && klassen.length === 0}
 			<div
 				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl py-4 px-5 text-on-surface-variant text-center text-sm"
 			>

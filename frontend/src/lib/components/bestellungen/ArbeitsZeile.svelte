@@ -20,7 +20,7 @@
 	 * @prop {{ text: string, ton?: string, tip?: string }} [chip] - Zustand rechts vom Nebentext
 	 * @prop {{ text: string, ton?: string }} [art] - Chip an der Headline (Wunsch / Meldung)
 	 * @prop {number} [anzahl]
-	 * @prop {string} [anzahlLabel]
+	 * @prop {string} [anzahlText]
 	 * @prop {string} [notiz] - Zitat der Lehrkraft, hinter dem Nebentext
 	 * @prop {import('svelte').Snippet} aktion
 	 */
@@ -32,7 +32,7 @@
 		chip = undefined,
 		art = undefined,
 		anzahl = undefined,
-		anzahlLabel = 'Exemplare',
+		anzahlText = 'Exemplare',
 		notiz = '',
 		aktion
 	} = $props();
@@ -63,7 +63,7 @@
 	<div class="w-24 shrink-0 text-right">
 		{#if anzahl != null}
 			<p class="text-lg font-semibold tabular-nums leading-tight text-on-surface">{anzahl}</p>
-			<p class="text-label-small uppercase tracking-wide text-on-surface-variant">{anzahlLabel}</p>
+			<p class="text-label-small uppercase tracking-wide text-on-surface-variant">{anzahlText}</p>
 		{/if}
 	</div>
 	<div class="shrink-0">{@render aktion()}</div>

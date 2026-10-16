@@ -52,7 +52,9 @@ describe('Kamera hinter der Sperre', () => {
 		[
 			'die Aufnahme des Ausweisfotos',
 			() =>
-				render(WebcamAufnahme, { props: { studentId: 's1', onCapture: vi.fn(), onClose: vi.fn() } })
+				render(WebcamAufnahme, {
+					props: { leserKennung: 's1', onCapture: vi.fn(), onClose: vi.fn() }
+				})
 		]
 	])('%s hält den Strom an und läuft nach dem Aufschließen wieder', async (_name, baue) => {
 		const { unmount, container } = baue();

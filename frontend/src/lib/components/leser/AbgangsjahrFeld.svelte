@@ -13,8 +13,8 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
-	/** @type {{ profile: any, darfBearbeiten?: boolean }} */
-	let { profile = $bindable(), darfBearbeiten = false } = $props();
+	/** @type {{ leser: any, darfBearbeiten?: boolean }} */
+	let { leser = $bindable(), darfBearbeiten = false } = $props();
 
 	let bearbeiten = $state(false);
 	let eingabe = $state(0);
@@ -22,7 +22,7 @@
 	let fehler = $state('');
 
 	function starte() {
-		eingabe = profile.abgaenger_jahr;
+		eingabe = leser.abgaenger_jahr;
 		fehler = '';
 		bearbeiten = true;
 	}
@@ -50,9 +50,9 @@
 		speichert = true;
 		fehler = '';
 		try {
-			const res = await apiClient.patch(`/api/schueler/${profile.id}`, { abgaenger_jahr: jahr });
+			const res = await apiClient.patch(`/api/schueler/${leser.id}`, { abgaenger_jahr: jahr });
 			if (res.ok) {
-				profile.abgaenger_jahr = jahr;
+				leser.abgaenger_jahr = jahr;
 				bearbeiten = false;
 			} else {
 				const d = await res.json().catch(() => ({}));
@@ -79,7 +79,7 @@
 		<Button
 			variant="secondary"
 			size="sm"
-			onclick={() => (eingabe = ausKlasse(profile.klasse))}
+			onclick={() => (eingabe = ausKlasse(leser.klasse))}
 			title="Automatisch aus Klasse berechnen"
 			><RotateCcw class="h-3.5 w-3.5" aria-hidden="true" /> Neu berechnen</Button
 		>
@@ -101,8 +101,8 @@
 		class="text-base text-on-surface-variant font-semibold hover:underline cursor-pointer"
 		title="Abgangsjahr bearbeiten"
 	>
-		Abgang {profile.abgaenger_jahr} ✎
+		Abgang {leser.abgaenger_jahr} ✎
 	</button>
 {:else}
-	<p class="text-base text-on-surface-variant font-semibold">Abgang {profile.abgaenger_jahr}</p>
+	<p class="text-base text-on-surface-variant font-semibold">Abgang {leser.abgaenger_jahr}</p>
 {/if}

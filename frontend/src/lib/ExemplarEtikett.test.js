@@ -20,7 +20,9 @@ function etikettKnopf(nummer = 'B-10001') {
 	const exemplare = [
 		{ id: 'ex-1', barcode_id: nummer, ist_ausleihbar: true, ist_verfuegbar: true }
 	];
-	const screen = render(BuchakteExemplare, { props: { exemplare, book, loadAll: () => {} } });
+	const screen = render(BuchakteExemplare, {
+		props: { exemplare, titel: book, ladeAlles: () => {} }
+	});
 	return screen.queryByRole('button', { name: `Etikett für ${nummer} im Druck-Center drucken` });
 }
 

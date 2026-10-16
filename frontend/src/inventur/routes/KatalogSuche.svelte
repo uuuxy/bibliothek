@@ -76,7 +76,7 @@
 </script>
 
 <div class="w-full text-on-surface font-sans">
-	<StartseitenFilter bind:searchQuery={suche} />
+	<StartseitenFilter bind:suche />
 
 	<div class="relative">
 		<!-- „Nichts gefunden" muss zu sehen sein. Das Raster zeigte bei null Treffern eine
@@ -94,7 +94,7 @@
 			/>
 		{/if}
 		<BuchRasterStartseite
-			filteredBooks={sichtbareTitel}
+			titelListe={sichtbareTitel}
 			onBookClick={(book) => navigateToDetail(book)}
 			onEditClick={darfBearbeiten
 				? (book) => {

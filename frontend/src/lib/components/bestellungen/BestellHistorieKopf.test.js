@@ -13,7 +13,7 @@ import BestellHistorieKopf from './BestellHistorieKopf.svelte';
 // ohne Zuordnung, die einzige Stelle, an der man sie zum Nachtragen findet.
 
 const euro = (/** @type {number} */ n) => `${n.toFixed(2).replace('.', ',')} €`;
-const topfLabel = (/** @type {string} */ w) =>
+const topfName = (/** @type {string} */ w) =>
 	({ land: 'Lernmittelfreiheit', schultraeger: 'Schülerbücherei' })[w] ?? 'ohne Zuordnung';
 
 const basis = {
@@ -29,7 +29,7 @@ const basis = {
 		{ value: 'ohne', label: 'ohne Zuordnung' }
 	],
 	euro,
-	topfLabel,
+	topfName,
 	onFilterWechsel: () => {}
 };
 

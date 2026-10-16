@@ -25,7 +25,7 @@ describe('Ausleihliste: Dauerleihe', () => {
 	});
 
 	it('nennt statt des Datums „ohne Frist“ und meldet Dauerleihe', () => {
-		const screen = render(LeserAusleihenListe, { books: [buch(true)] });
+		const screen = render(LeserAusleihenListe, { ausleihen: [buch(true)] });
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('ohne Frist');
 		expect(text, 'das Fristdatum steht trotzdem da').not.toContain('1.2.2025');
@@ -38,7 +38,7 @@ describe('Ausleihliste: Dauerleihe', () => {
 	// Die Gegenprobe: Ohne sie misst der Test nur, dass niemand überfällig wird — auch
 	// dann, wenn die Regel zu weit greift und Schüler mitnimmt.
 	it('lässt die befristete Ausleihe überfällig werden', () => {
-		const screen = render(LeserAusleihenListe, { books: [buch(false)] });
+		const screen = render(LeserAusleihenListe, { ausleihen: [buch(false)] });
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('Überfällig');
 		expect(text).toContain('1.2.2025');

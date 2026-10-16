@@ -16,8 +16,8 @@
 	import { ChevronLeft, FaceSlightlyFrowning } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 
-	/** @type {{ bookId: string | null, onBack: () => void }} */
-	let { bookId, onBack } = $props();
+	/** @type {{ titelId: string | null, onBack: () => void }} */
+	let { titelId, onBack } = $props();
 
 	const akte = useBuchakte();
 
@@ -50,7 +50,7 @@
 	// je wieder zum Auslöser dieses Effekts wird — am 06.09.2026 tat es das, und die
 	// Akte lief in einer Endlosschleife, bis Svelte sie abbrach (siehe useBuchakte).
 	$effect(() => {
-		const id = bookId;
+		const id = titelId;
 		if (id) untrack(() => akte.ladeAlles(id));
 	});
 </script>
@@ -79,8 +79,8 @@
 		</div>
 	{:else if akte.buch}
 		<BuchakteKopf
-			book={akte.buch}
-			borrowers={akte.ausleiher}
+			titel={akte.buch}
+			ausleiher={akte.ausleiher}
 			exemplare={akte.exemplare}
 			coverSrc={akte.coverQuelle}
 			coverFailed={akte.coverFehlt}
@@ -107,24 +107,24 @@
 		<!-- Tab Content -->
 		<div class="w-full">
 			{#if akte.aktiverReiter === 'ausleiher'}
-				<BuchakteAusleiher borrowers={akte.ausleiher} book={akte.buch} {onBack} />
+				<BuchakteAusleiher ausleiher={akte.ausleiher} titel={akte.buch} {onBack} />
 			{:else if akte.aktiverReiter === 'exemplare'}
 				<BuchakteExemplare
 					bind:exemplare={akte.exemplare}
-					book={akte.buch}
-					loadAll={akte.ladeAlles}
+					titel={akte.buch}
+					ladeAlles={akte.ladeAlles}
 				/>
 			{:else if akte.aktiverReiter === 'historie'}
-				<BuchakteHistorie history={akte.verlauf} />
+				<BuchakteHistorie verlauf={akte.verlauf} />
 			{:else if akte.aktiverReiter === 'vormerkungen'}
-				<BuchakteVormerkungen bind:vormerkungen={akte.vormerkungen} book={akte.buch} />
+				<BuchakteVormerkungen bind:vormerkungen={akte.vormerkungen} titel={akte.buch} />
 			{/if}
 		</div>
 	{:else if akte.kopfFehler}
 		<!-- „Nicht gefunden" wäre hier eine Aussage über den Bestand. Der Abruf ist
 		     gescheitert — den Titel gibt es womöglich, es kam nur nichts an. -->
 		<LadeFehler
-			onerneut={() => bookId && akte.ladeAlles(bookId)}
+			onerneut={() => titelId && akte.ladeAlles(titelId)}
 			titel="Titel nicht geladen"
 			text={akte.kopfFehler}
 		/>

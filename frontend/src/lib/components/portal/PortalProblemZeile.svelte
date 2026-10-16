@@ -8,8 +8,8 @@
 	import Button from '../ui/Button.svelte';
 	import ProblemFormular from './ProblemFormular.svelte';
 
-	/** @type {{ form: import('./problemMeldung.svelte.js').MeldeFormular, onumschalten: () => void, onsenden: () => Promise<boolean>, onabbrechen: () => void }} */
-	let { form, onumschalten, onsenden, onabbrechen } = $props();
+	/** @type {{ formular: import('./problemMeldung.svelte.js').MeldeFormular, onumschalten: () => void, onsenden: () => Promise<boolean>, onabbrechen: () => void }} */
+	let { formular, onumschalten, onsenden, onabbrechen } = $props();
 
 	/** @type {HTMLButtonElement | undefined} */
 	let knopf = $state();
@@ -31,11 +31,16 @@
 <!-- Die Hülle hält den Knopf auf seiner Breite: Als Kind einer Spalte zöge er sich sonst über
      die ganze Zeile. -->
 <div class="flex">
-	<Button variant="secondary" bind:element={knopf} aria-expanded={form.open} onclick={onumschalten}>
+	<Button
+		variant="secondary"
+		bind:element={knopf}
+		aria-expanded={formular.open}
+		onclick={onumschalten}
+	>
 		<TriangleAlert class="h-4 w-4" aria-hidden="true" />
 		Problem melden
 	</Button>
 </div>
-{#if form.open}
-	<ProblemFormular {form} mitWorum onsenden={senden} onabbrechen={abbrechen} />
+{#if formular.open}
+	<ProblemFormular {formular} mitWorum onsenden={senden} onabbrechen={abbrechen} />
 {/if}

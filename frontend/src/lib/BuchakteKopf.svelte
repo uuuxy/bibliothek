@@ -16,8 +16,8 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} book
-	 * @property {any[]} borrowers
+	 * @property {any} titel
+	 * @property {any[]} ausleiher
 	 * @property {any[]} exemplare
 	 * @property {string} coverSrc
 	 * @property {boolean} coverFailed
@@ -29,8 +29,8 @@
 
 	/** @type {Props} */
 	let {
-		book,
-		borrowers,
+		titel,
+		ausleiher,
 		exemplare,
 		coverSrc,
 		coverFailed,
@@ -42,30 +42,32 @@
 
 	let copied = $state(false);
 
-	const jahrgang = $derived(jahrgangSpanne(book.jahrgangVon, book.jahrgangBis));
+	const jahrgang = $derived(jahrgangSpanne(titel.jahrgangVon, titel.jahrgangBis));
 
 	/** Einordnung in einer Zeile, wie „Sept. 2026 · Buch 3 · Verlag" im Play Store. */
 	const einordnung = $derived(
 		[
-			book.subject,
+			titel.subject,
 			jahrgang ? `Jahrgang ${jahrgang}` : '',
-			book.istLernmittel ? 'Lernmittel' : '',
-			book.auflage || '',
-			book.medientyp && book.medientyp !== 'Buch' ? book.medientyp : ''
+			titel.istLernmittel ? 'Lernmittel' : '',
+			titel.auflage || '',
+			titel.medientyp && titel.medientyp !== 'Buch' ? titel.medientyp : ''
 		]
 			.filter(Boolean)
 			.join(' · ')
 	);
 
-	const nummerArt = $derived(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN');
-	const signatur = $derived(book.signatur || book.erweiterte_eigenschaften?.signatur || '');
+	const nummerArt = $derived(
+		titel.medientyp === 'CD' || titel.medientyp === 'DVD' ? 'EAN' : 'ISBN'
+	);
+	const signatur = $derived(titel.signatur || titel.erweiterte_eigenschaften?.signatur || '');
 	const standort = $derived(standortZeile(standorteAusExemplaren(exemplare)));
 	// Den Bestand nennt „1 von 2 verfügbar"; daneben steht nur, was diese Zahl nicht sagt.
 	const bestellt = $derived(exemplarZahlen(exemplare).bestellt);
 
 	function kopieren() {
-		if (!book.isbn) return;
-		navigator.clipboard.writeText(book.isbn);
+		if (!titel.isbn) return;
+		navigator.clipboard.writeText(titel.isbn);
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}
@@ -74,10 +76,10 @@
 <div class="flex flex-col-reverse gap-8 sm:flex-row sm:items-start">
 	<div class="min-w-0 flex-1">
 		<h1 class="text-3xl leading-tight font-semibold wrap-break-word text-on-surface">
-			{book.title}
+			{titel.title}
 		</h1>
-		{#if book.untertitel}
-			<p class="mt-1 text-lg text-on-surface-variant">{book.untertitel}</p>
+		{#if titel.untertitel}
+			<p class="mt-1 text-lg text-on-surface-variant">{titel.untertitel}</p>
 		{/if}
 		{#if einordnung}
 			<p class="mt-2 text-sm text-on-surface-variant">{einordnung}</p>
@@ -90,10 +92,10 @@
 				title="{nummerArt} kopieren"
 				aria-label="{nummerArt} kopieren"
 			>
-				<span>{nummerArt}: {book.isbn || '–'}</span>
+				<span>{nummerArt}: {titel.isbn || '–'}</span>
 				{#if copied}
 					<span class="font-sans text-xs font-medium text-primary">Kopiert!</span>
-				{:else if book.isbn}
+				{:else if titel.isbn}
 					<Copy class="h-3.5 w-3.5" aria-hidden="true" />
 				{/if}
 			</button>
@@ -115,12 +117,12 @@
 		<dl class="mt-6 flex divide-x divide-outline-variant">
 			<div class="pr-6">
 				<dd class="text-lg font-semibold tabular-nums text-on-surface">
-					{book.verfuegbar ?? 0} von {book.gesamt ?? 0}
+					{titel.verfuegbar ?? 0} von {titel.gesamt ?? 0}
 				</dd>
 				<dt class="text-xs text-on-surface-variant">verfügbar</dt>
 			</div>
 			<div class="px-6">
-				<dd class="text-lg font-semibold tabular-nums text-on-surface">{borrowers.length}</dd>
+				<dd class="text-lg font-semibold tabular-nums text-on-surface">{ausleiher.length}</dd>
 				<dt class="text-xs text-on-surface-variant">Ausleiher</dt>
 			</div>
 			{#if bestellt > 0}
@@ -157,13 +159,13 @@
 			{#if coverSrc && !coverFailed}
 				<img
 					src={coverSrc}
-					alt={`Cover ${book.title}`}
+					alt={`Cover ${titel.title}`}
 					class="h-full w-full object-cover"
 					onerror={onCoverError}
 					onload={onCoverLoad}
 				/>
 			{:else}
-				<BuchKarteCover subject={book.subject} title={book.title} />
+				<BuchKarteCover subject={titel.subject} title={titel.title} />
 			{/if}
 		</div>
 	</div>

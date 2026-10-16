@@ -87,14 +87,14 @@
 					>Meldet Lernmittel, deren Bestand unter die Schwelle fällt.</span
 				>
 			</div>
-			<Switch bind:checked={warnungAktiv} label="Bestellbedarf-Warnung umschalten" />
+			<Switch bind:checked={warnungAktiv} etikett="Bestellbedarf-Warnung umschalten" />
 		</div>
 		{#if warnungAktiv}
 			<div class="max-w-xs">
 				<Feld
 					type="number"
 					bind:value={schwelle}
-					label="Warnen unter x Exemplaren"
+					etikett="Warnen unter x Exemplaren"
 					min={1}
 					max={50}
 					hint="Gezählt werden eigene, nicht ausgesonderte Exemplare."
@@ -109,7 +109,7 @@
 					>Aus: Bestellhistorie und Berichte zählen Exemplare statt Euro.</span
 				>
 			</div>
-			<Switch bind:checked={preiseErfassen} label="Preise im Bestellwesen umschalten" />
+			<Switch bind:checked={preiseErfassen} etikett="Preise im Bestellwesen umschalten" />
 		</div>
 
 		<div class="border-t border-outline-variant pt-6">
@@ -117,7 +117,7 @@
 				type="number"
 				min={1}
 				bind:value={linkTage}
-				label="Bestätigungs-Link gültig (Tage)"
+				etikett="Bestätigungs-Link gültig (Tage)"
 				hint="Solange kann der Händler über den Link aus der Bestellmail bestätigen und Etiketten drucken. Gilt für neu erzeugte Links; laufende behalten ihr Datum."
 				feld="w-32"
 			/>

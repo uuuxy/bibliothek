@@ -145,7 +145,7 @@
 	{:else if uiStore.activeTab === 'mahnwesen'}
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
 	{:else if uiStore.activeTab === 'kollegium_portal'}
-		<div class="w-full animate-fade-in"><KollegiumPortal user={authStore.currentUser} /></div>
+		<div class="w-full animate-fade-in"><KollegiumPortal konto={authStore.currentUser} /></div>
 	{:else if uiStore.activeTab === 'berechtigungen'}
 		<div class="w-full animate-fade-in"><Berechtigungen /></div>
 	{:else if uiStore.activeTab === 'settings'}
@@ -153,7 +153,7 @@
 	{:else if uiStore.activeTab === 'book_detail'}
 		<div class="w-full animate-fade-in">
 			<Buchakte
-				bookId={appState.activeBookId}
+				titelId={appState.activeBookId}
 				onBack={() => {
 					uiStore.activeTab = 'media_catalog';
 					appState.activeBookId = null;
@@ -162,6 +162,6 @@
 		</div>
 	{:else}
 		<!-- Unbekannter Tab: sichtbarer Fallback statt lautloser weißer Seite (+ Sentry). -->
-		<RouteFallback tab={uiStore.activeTab} />
+		<RouteFallback bildschirm={uiStore.activeTab} />
 	{/if}
 </div>

@@ -18,9 +18,9 @@
 	// stellt die Schulleitung fest, nicht die Bücherei. Gebucht wird trotzdem, was den
 	// Bestand angeht. Entschieden wird es am Server (repository/schaden_melden.go); hier
 	// steht nur, was der Dialog zeigt und fragt.
-	/** @type {{ book: any, onCancel: () => void, onSubmit: (grund: string, betrag: number, art: string) => void, isSubmitting?: boolean }} */
-	let { book, onCancel, onSubmit, isSubmitting } = $props();
-	const ohneForderung = $derived(!!book?.ohneForderung);
+	/** @type {{ ausleihe: any, onCancel: () => void, onSubmit: (grund: string, betrag: number, art: string) => void, isSubmitting?: boolean }} */
+	let { ausleihe, onCancel, onSubmit, isSubmitting } = $props();
+	const ohneForderung = $derived(!!ausleihe?.ohneForderung);
 
 	let grund = $state('Verloren');
 	// Startwert 0, nicht 15: Bis zum 17.09.2026 stand hier eine feste 15,00 € ohne jeden
@@ -45,7 +45,7 @@
 	//
 	// Ohne Forderung (Kollege) wird nicht gefragt: Dann gibt es kein Betragsfeld.
 	$effect(() => {
-		const exemplarId = book?.id;
+		const exemplarId = ausleihe?.id;
 		if (!exemplarId || ohneForderung) return;
 
 		let abgebrochen = false;
@@ -79,14 +79,14 @@
 	}
 </script>
 
-{#if book}
+{#if ausleihe}
 	<Dialog open={true} onclose={onCancel} ebene="darueber" beschriftetDurch="schaden-titel">
 		<div class="p-6">
 			<h3 id="schaden-titel" class="text-xl font-bold text-on-surface mb-2">
 				Verlust/Schaden melden
 			</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
-				Für <strong>{book.titel}</strong> ({book.barcode_id}).
+				Für <strong>{ausleihe.titel}</strong> ({ausleihe.barcode_id}).
 				{#if ohneForderung}
 					Die Ausleihe wird beendet und das Exemplar ausgesondert. Eine Forderung entsteht nicht:
 					Ersatz von einer Lehrkraft zu verlangen ist Sache der Schulleitung, nicht der Bücherei.
@@ -103,20 +103,20 @@
 					<Radio
 						bind:group={art}
 						value="nicht_zurueckgegeben"
-						label="Nicht zurückgegeben (verloren)"
+						etikett="Nicht zurückgegeben (verloren)"
 					/>
-					<Radio bind:group={art} value="beschaedigt" label="Beschädigt zurückgegeben" />
+					<Radio bind:group={art} value="beschaedigt" etikett="Beschädigt zurückgegeben" />
 				</fieldset>
 				<Feld
 					id="damage-reason"
-					label="Grund"
+					etikett="Grund"
 					bind:value={grund}
 					placeholder="z.B. Wasserschaden, Verloren..."
 				/>
 				{#if !ohneForderung}
 					<Feld
 						id="damage-amount"
-						label="Ersatzbetrag"
+						etikett="Ersatzbetrag"
 						type="number"
 						step="0.01"
 						min="0"

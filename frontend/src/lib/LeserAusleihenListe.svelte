@@ -11,8 +11,8 @@
 	import StatusChip from './components/ui/StatusChip.svelte';
 	import { istUeberfaellig } from './utils/ueberfaellig.js';
 
-	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
-	let { books = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
+	/** @type {{ ausleihen: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
+	let { ausleihen = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
 
 	const extendingIds = new SvelteSet();
 
@@ -62,7 +62,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each books as book (book.id || book.barcode_id || Math.random())}
+			{#each ausleihen as book (book.id || book.barcode_id || Math.random())}
 				<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Sperr-Automatik. -->
 				{@const ueberfaellig = istUeberfaellig(book)}
 				{@const ausleiheId = book.ausleihe_id || book.id}
@@ -112,7 +112,7 @@
 						</div>
 					</td>
 					<td class="hidden whitespace-nowrap tabular-nums @4xl:table-cell">{book.barcode_id}</td>
-					<td class="whitespace-nowrap"><AusleiheRueckgabe {book} {ueberfaellig} /></td>
+					<td class="whitespace-nowrap"><AusleiheRueckgabe ausleihe={book} {ueberfaellig} /></td>
 					<!-- Symbole ohne Text: Die Spalte bleibt schmal, die Sprechblase nennt die Aktion,
 					     und nach dem Klick sagt die Meldung, was geschehen ist. -->
 					<td class="text-right whitespace-nowrap">

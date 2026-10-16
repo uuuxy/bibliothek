@@ -74,7 +74,7 @@
 					     deselection of all items“). Es wirkt auf das, was zu sehen ist. -->
 					{#if etikettenStore.vorhandeneExemplare.length > 1 && sichtbar > 0}
 						<Kaestchen
-							label={alleText}
+							etikett={alleText}
 							checked={etikettenStore.auswahlSichtbar === 'alle'}
 							indeterminate={etikettenStore.auswahlSichtbar === 'teil'}
 							onchange={() =>
@@ -128,14 +128,14 @@
 			<!-- Generating new sequential labels -->
 			<div class="grid grid-cols-2 gap-3">
 				<Feld
-					label="Menge"
+					etikett="Menge"
 					type="number"
 					min="1"
 					max="100"
 					bind:value={etikettenStore.neueAnzahl}
 				/>
 				<Feld
-					label="Start-Ziffer (B-)"
+					etikett="Start-Ziffer (B-)"
 					type="number"
 					min="1"
 					bind:value={etikettenStore.neueStartnummer}

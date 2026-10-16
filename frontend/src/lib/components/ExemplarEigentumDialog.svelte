@@ -91,7 +91,7 @@
 
 		<Feld
 			id="eigentum-grund"
-			label="Grund der Änderung"
+			etikett="Grund der Änderung"
 			bind:value={grund}
 			placeholder="z. B. Klassensatz aus LMF-Mitteln gekauft"
 			required

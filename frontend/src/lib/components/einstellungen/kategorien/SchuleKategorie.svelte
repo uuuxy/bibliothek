@@ -91,24 +91,24 @@
 	<div class="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
 		<Feld
 			bind:value={name}
-			label="Name der Schule"
+			etikett="Name der Schule"
 			type="text"
 			maxlength={120}
 			placeholder="z. B. Städtisches Gymnasium Musterstadt"
 		/>
 		<Feld
 			bind:value={strasse}
-			label="Straße und Hausnummer"
+			etikett="Straße und Hausnummer"
 			type="text"
 			maxlength={120}
 			placeholder="z. B. Musterstraße 12"
 		/>
 		<!-- Reicht die drei Zeilen des Aussenrasters durch (siehe Feld). -->
 		<div class="row-span-3 grid grid-cols-3 grid-rows-subgrid gap-x-4">
-			<Feld bind:value={plz} label="PLZ" type="text" maxlength={10} placeholder="12345" />
+			<Feld bind:value={plz} etikett="PLZ" type="text" maxlength={10} placeholder="12345" />
 			<Feld
 				bind:value={ort}
-				label="Ort"
+				etikett="Ort"
 				type="text"
 				maxlength={80}
 				placeholder="Musterstadt"
@@ -120,7 +120,7 @@
 		     (am 21.09.2026 am gerenderten Raster gemessen). -->
 		<Feld
 			bind:value={eigentumsvermerk}
-			label="Eigentumsvermerk"
+			etikett="Eigentumsvermerk"
 			class="md:col-start-1"
 			type="text"
 			maxlength={80}
@@ -129,7 +129,7 @@
 		/>
 		<Feld
 			bind:value={eigentumsvermerkSchuelerbuecherei}
-			label="Eigentumsvermerk Schülerbücherei"
+			etikett="Eigentumsvermerk Schülerbücherei"
 			type="text"
 			maxlength={80}
 			placeholder="z. B. Eigentum der Stadt Musterstadt"

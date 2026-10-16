@@ -191,7 +191,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
   `frontend-hygiene-sprache.test.js`), bis auf zwei geteilte Bauteile (5.66).
 - [x] Die Oberfläche, Stufe 2: Namen innerhalb der Dateien (5.66), bis auf `apiDelete`, das wie
   die HTTP-Methode heißt.
-- [ ] Die Oberfläche, Stufe 3: Props, die ein Bauteil vom Rufer bekommt (5.66).
+- [x] Die Oberfläche, Stufe 3: Props, die ein Bauteil vom Rufer bekommt (5.66).
 - [ ] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
 ### Später: kleine Fehler und Aufräumarbeit
@@ -463,27 +463,6 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Die Oberfläche, Stufe 3: Props. Von 951 Props in 231 Bauteilen tragen 116 ein englisches Wort
-  (gezählt am 16.10.2026 nach der Liste der Ratsche, ohne Ereignisse `on…`), etwa `book`,
-  `filteredBooks`, `isSelected`, `students`, `profile`. Stufe 2 ist abgeschlossen: Die Ratsche im
-  zweiten Teil von `frontend-hygiene-sprache.test.js` zählt nur noch `apiDelete`, das neben
-  `apiGet`, `apiPost` und `apiPut` wie die HTTP-Methode heißt. Umbenannt wurden am 16.10.2026 alle
-  Namen, die eine Datei erklärt, die Schlüssel aller Stores und `use…`-Module samt Aufrufern und
-  die Exporte. Verfahren und Beleg, je Bereich als eigener Commit: Umbenannt wird am Syntaxbaum
-  (`svelte/compiler`, `acorn`), nie nach Wortlaut, der Klassen (`text-error`), Attribute
-  (`loading="lazy"`) und Schlüssel trifft. Ein Store als Ganzes: erst die Variablen im Modul,
-  dann die Schlüssel des zurückgegebenen Objekts und bei jedem Aufrufer `instanz.name`; wer die
-  ganze Instanz weiterreicht (`state={ablauf}`), ist selbst Aufrufer. Was das Werkzeug nicht
-  sieht und von Hand nachgezogen wird: Testattrappen, die einen Store als Objekt nachbauen,
-  `Object.assign` mit Schlüsseln, Destrukturierung beim Aufrufer, JSDoc-Typen wie
-  `@returns {{ … }}` (svelte-check meldet sie) und ein neuer Name, den eine Datei schon lokal
-  führt (Vitest und svelte-check melden ihn). In TypeScript reicht der Knoten eines Bezeichners
-  bis zum Ende seiner Typangabe; ersetzt wird nur der Name. Schiebt ein längerer Name eine Datei
-  über ihre Größe im Bestand, trägt das Kind denselben Namen (dann wieder Kurzform) oder ein
-  kürzeres Wort hält die Zeile. Beleg je Bereich: Bündel vor und nach, beide roh gleich
-  formatiert; jedes Wort, das nur im alten steht, hat seinen Partner in gleicher Zahl im neuen.
-  Props stehen im Bündel und zeigen sich dort wie Schlüssel. Für Stufe 3 fehlt noch eine
-  Ratsche, die Props zählt.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und

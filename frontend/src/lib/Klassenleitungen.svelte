@@ -133,7 +133,7 @@
 		<div class="flex-1 w-full">
 			<Feld
 				bind:value={newMappingEmail}
-				label="E-Mail"
+				etikett="E-Mail"
 				type="email"
 				placeholder="lehrkraft@schule.de"
 			/>

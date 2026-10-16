@@ -125,14 +125,14 @@
 				<div class="flex flex-col h-full gap-6">
 					<Feld
 						id="betreff"
-						label="Betreff"
+						etikett="Betreff"
 						value={gewaehlteVorlage.betreff}
 						oninput={setzeBetreff}
 					/>
 
 					<Feld
 						id="text_body"
-						label="Text-Inhalt"
+						etikett="Text-Inhalt"
 						mehrzeilig
 						zeilen={12}
 						feld="font-mono resize-y"

@@ -17,7 +17,7 @@ describe('Exemplarkarte: Zustand', () => {
 	const karte = (ex) =>
 		render(ExemplarKarte, {
 			ex: { id: 'e1', barcode_id: 'B-0041873', ist_verfuegbar: true, ...ex },
-			selected: false,
+			gewaehlt: false,
 			darfBearbeiten: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}
@@ -55,7 +55,7 @@ describe('Exemplarkarte: abgelehnter Barcode', () => {
 	const karte = () =>
 		render(ExemplarKarte, {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
-			selected: false,
+			gewaehlt: false,
 			darfBearbeiten: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}

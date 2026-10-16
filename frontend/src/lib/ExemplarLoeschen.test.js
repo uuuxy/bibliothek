@@ -34,7 +34,7 @@ describe('Buchakte: Exemplar löschen führt den Bestand im Kopf nach', () => {
 	async function loesche(karte) {
 		const book = { id: 't-1', title: 'Momo', gesamt: 2, verfuegbar: 1 };
 		const screen = render(BuchakteExemplare, {
-			props: { exemplare: exemplare(), book, loadAll: () => {} }
+			props: { exemplare: exemplare(), titel: book, ladeAlles: () => {} }
 		});
 		await fireEvent.click(screen.getAllByRole('button', { name: 'Exemplar löschen' })[karte]);
 		await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(1));

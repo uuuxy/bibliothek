@@ -28,7 +28,7 @@
 	/** @type {{
 	 *   checked?: boolean,
 	 *   indeterminate?: boolean,
-	 *   label?: string,
+	 *   etikett?: string,
 	 *   disabled?: boolean,
 	 *   ungueltig?: boolean,
 	 *   class?: string,
@@ -38,7 +38,7 @@
 	let {
 		checked = $bindable(false),
 		indeterminate = false,
-		label = '',
+		etikett = '',
 		disabled = false,
 		ungueltig = false,
 		class: klasse = '',
@@ -80,14 +80,14 @@
 	</span>
 {/snippet}
 
-{#if label}
+{#if etikett}
 	<label
 		class="inline-flex items-center gap-3 text-sm text-on-surface select-none {disabled
 			? 'cursor-not-allowed opacity-60'
 			: 'cursor-pointer'} {klasse}"
 	>
 		{@render kasten('')}
-		<span>{label}</span>
+		<span>{etikett}</span>
 	</label>
 {:else}
 	{@render kasten(klasse)}

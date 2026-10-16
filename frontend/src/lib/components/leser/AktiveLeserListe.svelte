@@ -23,8 +23,8 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {any[]} filteredStudents
-	 * @property {boolean} loading
+	 * @property {any[]} leserListe
+	 * @property {boolean} laedt
 	 * @property {string} [ladefehler]  gescheiterter Abruf — dann steht hier kein leeres
 	 *   Verzeichnis, sondern der Grund (die Suche der Leserdatei setzt ihn)
 	 * @property {() => void} [onErneut]
@@ -38,8 +38,8 @@
 	 */
 	/** @type {Props} */
 	let {
-		filteredStudents = [],
-		loading = false,
+		leserListe = [],
+		laedt = false,
 		ladefehler = '',
 		onErneut,
 		onSelectStudent = () => {},
@@ -54,8 +54,7 @@
 	// die Liste woanders (Kiosk, Abgänger) unverändert schmal.
 	const auswaehlbar = $derived(typeof onToggle === 'function');
 	const alleGewaehlt = $derived(
-		filteredStudents.length > 0 &&
-			filteredStudents.every((/** @type {any} */ s) => auswahl.has(s.id))
+		leserListe.length > 0 && leserListe.every((/** @type {any} */ s) => auswahl.has(s.id))
 	);
 	const teilweise = $derived(auswahl.size > 0 && !alleGewaehlt);
 </script>
@@ -76,13 +75,13 @@
 {/snippet}
 
 <div class="w-full">
-	{#if loading}
+	{#if laedt}
 		<div class="py-16 flex justify-center items-center">
 			<Ladekreis size="lg" />
 		</div>
 	{:else if ladefehler}
 		<LadeFehler onerneut={onErneut} titel="Verzeichnis nicht geladen" text={ladefehler} />
-	{:else if filteredStudents.length === 0}
+	{:else if leserListe.length === 0}
 		<div class="py-16 text-center text-base text-on-surface-variant">
 			Keine Leser im Verzeichnis gefunden.
 		</div>
@@ -117,7 +116,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each filteredStudents as s, _i (_i)}
+					{#each leserListe as s, _i (_i)}
 						<!-- Die ZEILE ist kein Knopf mehr, der NAME ist es (wie im Mahnwesen). Eine Zeile
 						     mit role="button", in der ein Kästchen steckt, ist ein Bedienelement im
 						     Bedienelement — für Screenreader unlesbar, für axe 273 Verstöße

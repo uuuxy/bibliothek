@@ -71,7 +71,7 @@
      aus dem State-Layer aller Knöpfe. -->
 <Feld
 	id="buch-isbn"
-	label={formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
+	etikett={formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
 	bind:value={formular.isbn}
 	bind:element={eingabe}
 	onblur={beiVerlassen}

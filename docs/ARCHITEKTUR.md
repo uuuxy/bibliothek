@@ -1956,7 +1956,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt, dazu die Prüfung der Zugänge, am 13.10.2026 der Umzug von Testdateien zu ihrem Paket (Stufe 5) und der eigene Bauzwischenspeicher einer Wegwerf-Arbeitskopie; am 13.10.2026 abends in 8.14 der Handgriff zum Umzug einer Regel aus einer Datei mit Tür; am 15.10.2026 in 8.14 der neue Name der Prüfung der Schreibtüren am Protokoll und der Handgriff für einen Wert des Pakets, in den ein Test schrieb, in 8.10 der Postausgang
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt, dazu die Prüfung der Zugänge, am 13.10.2026 der Umzug von Testdateien zu ihrem Paket (Stufe 5) und der eigene Bauzwischenspeicher einer Wegwerf-Arbeitskopie; am 13.10.2026 abends in 8.14 der Handgriff zum Umzug einer Regel aus einer Datei mit Tür; am 15.10.2026 in 8.14 der neue Name der Prüfung der Schreibtüren am Protokoll und der Handgriff für einen Wert des Pakets, in den ein Test schrieb, in 8.10 der Postausgang; am 16.10.2026 in 8.14 der Handgriff zum Umbenennen in der Oberfläche
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2637,6 +2637,19 @@ wenn man ihn einmal gebraucht hat.
 - **Ein Umbau, der die Oberfläche nicht ändern soll,** wird am Bau belegt: `npx vite build
   --outDir <Ordner>` vor und nach dem Umbau, dann die Prüfsummen der Dateien vergleichen. Zwei
   Bauten desselben Stands sind gleich (15 Dateien, nachgestellt am 07.10.2026).
+- **Namen der Oberfläche werden am Syntaxbaum umbenannt, nie nach Wortlaut** (`svelte/compiler`,
+  `acorn`): Ersetzen nach Wortgrenze trifft Klassen (`text-error`), Attribute (`loading="lazy"`)
+  und Schlüssel. Ein Store wird als Ganzes umbenannt: erst die Variablen im Modul, dann die
+  Schlüssel des zurückgegebenen Objekts und bei jedem Aufrufer `instanz.name`; eine Prop in der
+  Komponente und bei jedem Rufer samt `bind:` und Kurzform. Was das Werkzeug nicht sieht, melden
+  svelte-check und Vitest: Attrappen eines Stores, Props, die ein Test in einer Konstante baut und
+  per Spread übergibt, `Object.assign` mit Schlüsseln, JSDoc-Typen wie `@returns {{ … }}`, einen
+  neuen Namen, den die Datei schon führt, und in TypeScript die Typangabe, die zum Knoten des
+  Bezeichners gehört. Belegt wird am Bau: beide Bündel roh mit derselben Prettier-Einstellung
+  formatieren und die Wörter zählen, die nur in einem stehen; jedes alte Wort braucht einen
+  Partner in gleicher Zahl. Lokale Namen und Exporte verschwinden beim Verkleinern, Schlüssel und
+  Props stehen im Bündel. Die Ratsche ist `frontend-hygiene-sprache.test.js` (Pfade, Namen,
+  Props); die Umbenennungs-Commits stehen in `.git-blame-ignore-revs`.
 - **Eine Änderung der Oberfläche ansehen, ohne den Stack neu zu bauen:** `npm run dev` im
   Ordner `frontend` (Port 5173, reicht die Abrufe an den laufenden Stack durch) und eine
   Wegwerf-Spec in `frontend/e2e/`, gestartet mit

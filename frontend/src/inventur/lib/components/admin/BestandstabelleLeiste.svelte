@@ -7,8 +7,8 @@
 
 	/**
 	 * @type {{
-	 *   booksLength: number,
-	 *   selectedCount: number,
+	 *   titelAnzahl: number,
+	 *   anzahlGewaehlt: number,
 	 *   onDelete: () => void,
 	 *   onAssignClass: () => void,
 	 *   onScan: () => void,
@@ -16,7 +16,7 @@
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { booksLength, selectedCount, onDelete, onAssignClass, onScan, onCreateNew, onRetryCovers } =
+	let { titelAnzahl, anzahlGewaehlt, onDelete, onAssignClass, onScan, onCreateNew, onRetryCovers } =
 		$props();
 </script>
 
@@ -32,7 +32,7 @@
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
 		<h2 class="shrink-0 text-lg font-bold text-on-surface">
-			Bücher ({booksLength})
+			Bücher ({titelAnzahl})
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,
 		     switch views, or sort elements"): der Katalog und die Aufräumsicht mit den Titeln,
@@ -47,14 +47,14 @@
 			wert={appState.bestandsAnsicht}
 			onwahl={(wert) => (appState.bestandsAnsicht = wert === 'ohne' ? 'ohne' : 'mit')}
 		/>
-		{#if selectedCount > 0}
+		{#if anzahlGewaehlt > 0}
 			<Button variant="secondary" onclick={onAssignClass}>
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
-				Zum Klassensatz hinzufügen ({selectedCount})
+				Zum Klassensatz hinzufügen ({anzahlGewaehlt})
 			</Button>
 			<Button variant="danger" onclick={onDelete}>
 				<Trash class="w-4 h-4" aria-hidden="true" />
-				Löschen ({selectedCount})
+				Löschen ({anzahlGewaehlt})
 			</Button>
 		{/if}
 

@@ -7,7 +7,7 @@
 	import { filtereBedarf } from './bedarfFilter.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { resthoehe } from '../../actions/resthoehe.js';
-	let { recommendations, onAddToCart } = $props();
+	let { vorschlaege, onAddToCart } = $props();
 
 	// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): die Zeile, deren Dialog offen ist.
 	/** @type {any | null} */
@@ -23,7 +23,7 @@
 	// Schnellfilter: bei 335 Titeln ist Suchen schneller als Scrollen.
 	let filter = $state('');
 
-	let gefiltert = $derived(filtereBedarf(recommendations, filter));
+	let gefiltert = $derived(filtereBedarf(vorschlaege, filter));
 
 	let sichtbare = $derived(gefiltert.slice(0, maxVisible));
 
@@ -32,7 +32,7 @@
 		// Nur gelesen, um die Abhaengigkeit herzustellen: Aendert sich die Liste oder der
 		// Filter, faengt die Anzeige wieder bei 60 Eintraegen an. `void` statt des
 		// Komma-Operators — den meldet die Typpruefung als wirkungslosen Ausdruck.
-		void recommendations;
+		void vorschlaege;
 		void filter;
 		maxVisible = 60;
 	});
@@ -50,7 +50,7 @@
 	}
 
 	let kritischeAnzahl = $derived(
-		recommendations.filter((/** @type {any} */ r) => stufe(r) === 'kritisch').length
+		vorschlaege.filter((/** @type {any} */ r) => stufe(r) === 'kritisch').length
 	);
 </script>
 
@@ -64,10 +64,10 @@
 			<div class="min-w-0">
 				<h2 class="text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
 					Bestellbedarf
-					{#if recommendations.length}
+					{#if vorschlaege.length}
 						<span
 							class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
-							>{recommendations.length}</span
+							>{vorschlaege.length}</span
 						>
 					{/if}
 				</h2>
@@ -84,9 +84,9 @@
 					     der eine echte Fehler darin. In M3 traegt die Error-Rolle Zustaende, die
 					     korrigiert werden MUESSEN. Das hier ist eine Kennzahl. -->
 					<p class="text-sm text-on-surface-variant mt-1">
-						{kritischeAnzahl} von {recommendations.length} Titeln ohne ein einziges Exemplar
+						{kritischeAnzahl} von {vorschlaege.length} Titeln ohne ein einziges Exemplar
 					</p>
-				{:else if recommendations.length}
+				{:else if vorschlaege.length}
 					<p class="text-sm text-on-surface-variant mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
 				{/if}
 			</div>
@@ -100,19 +100,19 @@
 			</a>
 		</div>
 
-		{#if recommendations.length}
+		{#if vorschlaege.length}
 			<Suchpille
 				kamera
 				id="bestellbedarf-suchfeld"
 				bind:wert={filter}
-				platzhalter="In {recommendations.length} Titeln filtern …"
+				platzhalter="In {vorschlaege.length} Titeln filtern …"
 				etikett="Bestellvorschläge filtern"
 			/>
 		{/if}
 	</header>
 
 	<!-- List -->
-	{#if !recommendations.length}
+	{#if !vorschlaege.length}
 		<div
 			class="flex flex-col items-center justify-center text-center py-16 px-6 text-on-surface-variant"
 		>

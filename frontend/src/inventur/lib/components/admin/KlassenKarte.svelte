@@ -102,7 +102,7 @@
 			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-4 pt-1 pb-6"
 		>
 			{#each sortierteTitel as book (book.id)}
-				<KlassenBuchKachel {book} {onEdit} bearbeitbar={darfPflegen} />
+				<KlassenBuchKachel titel={book} {onEdit} bearbeitbar={darfPflegen} />
 			{/each}
 		</div>
 	{/if}

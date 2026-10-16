@@ -13,7 +13,7 @@
 	/** @type {{
 	 *   group?: any,
 	 *   value: any,
-	 *   label?: string,
+	 *   etikett?: string,
 	 *   disabled?: boolean,
 	 *   class?: string,
 	 *   [rest: string]: any
@@ -21,7 +21,7 @@
 	let {
 		group = $bindable(),
 		value,
-		label = '',
+		etikett = '',
 		disabled = false,
 		class: klasse = '',
 		...rest
@@ -51,14 +51,14 @@
 	</span>
 {/snippet}
 
-{#if label}
+{#if etikett}
 	<label
 		class="inline-flex items-center gap-3 text-sm text-on-surface select-none {disabled
 			? 'cursor-not-allowed opacity-60'
 			: 'cursor-pointer'} {klasse}"
 	>
 		{@render knopf('')}
-		<span>{label}</span>
+		<span>{etikett}</span>
 	</label>
 {:else}
 	{@render knopf(klasse)}

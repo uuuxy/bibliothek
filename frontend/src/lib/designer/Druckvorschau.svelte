@@ -25,25 +25,25 @@
 	 * Passbildfelder als Rahmen zeigen, der echte Stapeldruck aus der Schuelerdatei
 	 * niemals (siehe Kartenseite.svelte).
 	 *
-	 * @type {{ students: any[], barcodeType: 'code39'|'qr', timestamp: number, platzhalter?: boolean }}
+	 * @type {{ leserListe: any[], barcodeType: 'code39'|'qr', timestamp: number, platzhalter?: boolean }}
 	 */
-	const { students, barcodeType, timestamp, platzhalter = false } = $props();
+	const { leserListe, barcodeType, timestamp, platzhalter = false } = $props();
 </script>
 
 <!-- Kartendrucker: Vorderseite -->
 <div class="print-rendered-output print-section-card hidden print:block">
-	{#each students as student (student.id)}
+	{#each leserListe as student (student.id)}
 		<div class="print-card-box" style={kartenStil(idStore.front.theme)}>
-			<Kartenseite side="front" {student} {barcodeType} {timestamp} {platzhalter} />
+			<Kartenseite side="front" leser={student} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
 </div>
 
 <!-- Kartendrucker: Rückseite (statische Elemente; kein personenbezogener Inhalt) -->
 <div class="print-rendered-output print-section-back-card hidden">
-	{#each students as _student (_student.id)}
+	{#each leserListe as _student (_student.id)}
 		<div class="print-card-box" style={kartenStil(idStore.back.theme)}>
-			<Kartenseite side="back" student={null} {barcodeType} {timestamp} {platzhalter} />
+			<Kartenseite side="back" leser={null} {barcodeType} {timestamp} {platzhalter} />
 		</div>
 	{/each}
 </div>

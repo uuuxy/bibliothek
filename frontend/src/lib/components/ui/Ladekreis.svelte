@@ -15,14 +15,14 @@
      damit von selbst weiß, ohne dass der Aufrufer eine Farbe nennt. Zugänglich als
      role="progressbar" ohne Wert (= unbestimmt) mit sprechendem Namen. -->
 <script>
-	/** @type {{ size?: 'sm' | 'md' | 'lg', farbe?: 'primary' | 'aktuell', label?: string, class?: string }} */
-	let { size = 'md', farbe = 'primary', label = 'Lädt', class: klasse = '' } = $props();
+	/** @type {{ size?: 'sm' | 'md' | 'lg', farbe?: 'primary' | 'aktuell', etikett?: string, class?: string }} */
+	let { size = 'md', farbe = 'primary', etikett = 'Lädt', class: klasse = '' } = $props();
 	const masse = { sm: 'h-4 w-4 border-2', md: 'h-6 w-6 border-[3px]', lg: 'h-10 w-10 border-4' };
 </script>
 
 <span
 	role="progressbar"
-	aria-label={label}
+	aria-label={etikett}
 	class="inline-block shrink-0 animate-spin rounded-full border-current/25 border-t-current {masse[
 		size
 	] ?? masse.md} {farbe === 'primary' ? 'text-primary' : ''} {klasse}"

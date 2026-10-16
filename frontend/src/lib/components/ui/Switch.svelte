@@ -15,12 +15,12 @@
 <script>
 	/** @type {{
 	 *   checked: boolean,
-	 *   label?: string,
+	 *   etikett?: string,
 	 *   id?: string,
 	 *   disabled?: boolean,
 	 *   onchange?: (v: boolean) => void
 	 * }} */
-	let { checked = $bindable(false), label = '', id, disabled = false, onchange } = $props();
+	let { checked = $bindable(false), etikett = '', id, disabled = false, onchange } = $props();
 
 	function umlegen() {
 		if (disabled) return;
@@ -34,7 +34,7 @@
 	type="button"
 	role="switch"
 	aria-checked={checked}
-	aria-label={label || undefined}
+	aria-label={etikett || undefined}
 	{disabled}
 	onclick={umlegen}
 	class="relative inline-flex h-8 w-13 shrink-0 items-center rounded-full border-2 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 {checked

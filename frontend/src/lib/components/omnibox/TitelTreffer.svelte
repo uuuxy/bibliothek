@@ -1,7 +1,7 @@
 <script>
 	import { bestandSatz } from '../../utils/format.js';
 
-	let { book, index, selected, onSelect } = $props();
+	let { treffer, index, gewaehlt, onSelect } = $props();
 
 	// Vierte Spalte: der Bestand. Punkt 4 des Protokolls vom 16.09.2026 — „Bücher, zu
 	// denen es keine Exemplare gibt, tauchen in der Trefferliste auf". Verstecken wäre
@@ -11,9 +11,9 @@
 	// Fehlt die Zahl, bleibt die Spalte leer: `bestand` ist ein Zeiger und nur die
 	// Suchabfragen füllen ihn (repository/titel.go). „Keine Exemplare" über einen
 	// Titel zu schreiben, den niemand gezählt hat, wäre eine Behauptung.
-	const satz = $derived(bestandSatz(book.bestand, book.verfuegbar, book.im_zulauf));
+	const satz = $derived(bestandSatz(treffer.bestand, treffer.verfuegbar, treffer.im_zulauf));
 	// „2 bestellt" ist kein Titel ohne Bestand: Die Bücher kommen (docs/OFFEN.md 5.5).
-	const ohneBestand = $derived(book.bestand === 0 && !book.im_zulauf);
+	const ohneBestand = $derived(treffer.bestand === 0 && !treffer.im_zulauf);
 </script>
 
 <!-- Gleiches Spaltenraster wie LeserTreffer, damit beide Gruppen im selben
@@ -24,12 +24,12 @@
 <div
 	id="dropdown-item-{index}"
 	role="option"
-	aria-selected={selected}
-	aria-label="Buch: {book.titel} von {book.autor}, Signatur {book.signatur || 'keine'}{satz
+	aria-selected={gewaehlt}
+	aria-label="Buch: {treffer.titel} von {treffer.autor}, Signatur {treffer.signatur || 'keine'}{satz
 		? `, ${satz}`
 		: ''}"
 	tabindex="-1"
-	class="m3-state grid grid-cols-[minmax(0,1fr)_5rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer text-on-surface {selected
+	class="m3-state grid grid-cols-[minmax(0,1fr)_5rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer text-on-surface {gewaehlt
 		? 'bg-on-surface/8'
 		: ''}"
 	onclick={() => onSelect(index)}
@@ -40,9 +40,9 @@
 		}
 	}}
 >
-	<span class="truncate font-medium">{book.titel}</span>
-	<span class="text-sm truncate text-on-surface-variant">{book.signatur}</span>
-	<span class="text-sm truncate text-on-surface-variant">{book.autor}</span>
+	<span class="truncate font-medium">{treffer.titel}</span>
+	<span class="text-sm truncate text-on-surface-variant">{treffer.signatur}</span>
+	<span class="text-sm truncate text-on-surface-variant">{treffer.autor}</span>
 	<!-- „Keine Exemplare" wird abgesetzt, „0 von 5 verfügbar" nicht: Das eine ist ein
 	     Titel ohne Bestand — dort ist nichts zu holen, auch nicht morgen —, das andere
 	     der Normalfall im Schuljahr, in dem fast jedes Lernmittel verliehen ist. Ein

@@ -49,7 +49,7 @@ describe('BuchakteVormerkungen', () => {
 				: antwort([VORMERKUNG])
 		);
 		vi.mocked(apiClient.post).mockResolvedValue(antwort({}));
-		const screen = render(BuchakteVormerkungen, { vormerkungen: [], book: { id: 't1' } });
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
 		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
 		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Barcode)'), {
@@ -74,14 +74,20 @@ describe('BuchakteVormerkungen', () => {
 	// tab." Eine Überschrift darunter sagte dasselbe ein zweites Mal; die anderen Reiter der
 	// Akte tragen keine.
 	it('wiederholt den Namen des Reiters nicht als Überschrift', () => {
-		const screen = render(BuchakteVormerkungen, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
+		const screen = render(BuchakteVormerkungen, {
+			vormerkungen: [VORMERKUNG],
+			titel: { id: 't1' }
+		});
 		expect(screen.queryAllByRole('heading')).toEqual([]);
 		expect(screen.getByRole('button', { name: '+ Schüler vormerken' })).toBeTruthy();
 	});
 
 	it('löscht eine Vormerkung nach der Rückfrage', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort({}));
-		const screen = render(BuchakteVormerkungen, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
+		const screen = render(BuchakteVormerkungen, {
+			vormerkungen: [VORMERKUNG],
+			titel: { id: 't1' }
+		});
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Vormerkung löschen' }));
 

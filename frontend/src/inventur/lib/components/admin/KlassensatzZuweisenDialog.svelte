@@ -14,8 +14,8 @@
 		KLASSEN_LADEFEHLER
 	} from '../../../../lib/components/leser/klassenVorschlaege.svelte.js';
 
-	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
-	let { bookIds, onClose, onAssigned } = $props();
+	/** @type {{ titelIds: string[], onClose: () => void, onAssigned: () => void }} */
+	let { titelIds, onClose, onAssigned } = $props();
 
 	let klassenName = $state('');
 	/** @type {string[]} */
@@ -60,7 +60,7 @@
 		try {
 			const res = await apiClient.post('/api/admin/class-books/add', {
 				classNames: [name],
-				bookIds
+				bookIds: titelIds
 			});
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}));
@@ -81,8 +81,8 @@
 	<div class="p-6 space-y-5">
 		<h3 class="text-lg font-bold text-on-surface">Zum Klassensatz hinzufügen</h3>
 		<p class="text-sm text-on-surface-variant">
-			{bookIds.length}
-			{bookIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
+			{titelIds.length}
+			{titelIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
 		</p>
 
 		<div class="grid gap-y-1.5">

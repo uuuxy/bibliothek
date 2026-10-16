@@ -11,8 +11,8 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
-	/** @type {{ form: import('./problemMeldung.svelte.js').MeldeFormular, mitWorum?: boolean, onsenden: () => void, onabbrechen: () => void }} */
-	let { form, mitWorum = false, onsenden, onabbrechen } = $props();
+	/** @type {{ formular: import('./problemMeldung.svelte.js').MeldeFormular, mitWorum?: boolean, onsenden: () => void, onabbrechen: () => void }} */
+	let { formular, mitWorum = false, onsenden, onabbrechen } = $props();
 
 	/** @type {HTMLInputElement | undefined} */
 	let worumFeld = $state();
@@ -23,7 +23,9 @@
 	$effect(() => (mitWorum ? worumFeld : klasseFeld)?.focus());
 
 	// Ohne Beschreibung nennt die Meldung nur ein Buch.
-	const vollstaendig = $derived((!mitWorum || form.worum.trim() !== '') && form.text.trim() !== '');
+	const vollstaendig = $derived(
+		(!mitWorum || formular.worum.trim() !== '') && formular.text.trim() !== ''
+	);
 </script>
 
 <div class="grid max-w-3xl grid-cols-1 gap-y-4">
@@ -37,35 +39,35 @@
 	</div>
 	{#if mitWorum}
 		<Feld
-			bind:value={form.worum}
+			bind:value={formular.worum}
 			bind:element={worumFeld}
-			label="Worum geht es? *"
+			etikett="Worum geht es? *"
 			type="text"
 			maxlength={300}
 			placeholder="z. B. die Bücher der 8G3"
 		/>
 	{/if}
 	<Feld
-		bind:value={form.klasse}
+		bind:value={formular.klasse}
 		bind:element={klasseFeld}
-		label="Klasse / Kurs"
+		etikett="Klasse / Kurs"
 		type="text"
 		maxlength={50}
 		placeholder="z. B. 8G3"
 		feld="w-full sm:w-64"
 	/>
 	<Feld
-		bind:value={form.text}
-		label="Was stimmt nicht? *"
+		bind:value={formular.text}
+		etikett="Was stimmt nicht? *"
 		mehrzeilig
 		zeilen={2}
 		maxlength={1000}
 		placeholder="z. B. falsche Auflage bekommen, Seiten fehlen"
 	/>
 	<div class="flex justify-end gap-2">
-		<Button variant="secondary" onclick={onabbrechen} disabled={form.sending}>Abbrechen</Button>
-		<Button onclick={onsenden} disabled={form.sending || !vollstaendig}>
-			{form.sending ? 'Wird gesendet …' : 'Absenden'}
+		<Button variant="secondary" onclick={onabbrechen} disabled={formular.sending}>Abbrechen</Button>
+		<Button onclick={onsenden} disabled={formular.sending || !vollstaendig}>
+			{formular.sending ? 'Wird gesendet …' : 'Absenden'}
 		</Button>
 	</div>
 </div>

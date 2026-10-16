@@ -12,15 +12,15 @@
 		KLASSEN_LADEFEHLER
 	} from '../../../../lib/components/leser/klassenVorschlaege.svelte.js';
 
-	/** @type {{ selectedClasses: string[], vorhandeneGruppen?: { className: string }[] }} */
-	let { selectedClasses = $bindable([]), vorhandeneGruppen = [] } = $props();
+	/** @type {{ gewaehlteKlassen: string[], vorhandeneGruppen?: { className: string }[] }} */
+	let { gewaehlteKlassen = $bindable([]), vorhandeneGruppen = [] } = $props();
 
 	const klassenListe = erzeugeKlassenVorschlaege();
 	onMount(klassenListe.lade);
 
 	const optionen = $derived(
 		[...new Set([...klassenListe.liste, ...vorhandeneGruppen.map((g) => g.className)])]
-			.filter((k) => !selectedClasses.includes(k))
+			.filter((k) => !gewaehlteKlassen.includes(k))
 			.sort()
 			.map((k) => ({ value: k, label: k }))
 	);
@@ -30,20 +30,20 @@
 
 	/** @param {string} name */
 	function hinzufuegen(name) {
-		if (name && !selectedClasses.includes(name)) selectedClasses = [...selectedClasses, name];
+		if (name && !gewaehlteKlassen.includes(name)) gewaehlteKlassen = [...gewaehlteKlassen, name];
 		auswahl = '';
 	}
 
 	/** @param {string} name */
 	function entferneKlasse(name) {
-		selectedClasses = selectedClasses.filter((c) => c !== name);
+		gewaehlteKlassen = gewaehlteKlassen.filter((c) => c !== name);
 	}
 </script>
 
 <div class="mb-4 grid gap-y-1.5 sm:mb-6">
 	<label for="class-input" class="text-sm font-medium text-on-surface-variant">Zielklassen</label>
 	<div class="flex flex-wrap items-center gap-2">
-		{#each selectedClasses as selectedClass (selectedClass)}
+		{#each gewaehlteKlassen as selectedClass (selectedClass)}
 			<span
 				class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-sm font-semibold"
 			>

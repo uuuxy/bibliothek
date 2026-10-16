@@ -9,16 +9,16 @@
 
 	/**
 	 * @type {{
-	 *   label: string, value: number, min: number, max?: number, step: number,
+	 *   etikett: string, value: number, min: number, max?: number, step: number,
 	 *   onInput: (v: number) => void
 	 * }}
 	 */
-	let { label, value, min, max, step, onInput } = $props();
+	let { etikett, value, min, max, step, onInput } = $props();
 </script>
 
 <Feld
 	type="number"
-	{label}
+	{etikett}
 	{min}
 	{max}
 	{step}

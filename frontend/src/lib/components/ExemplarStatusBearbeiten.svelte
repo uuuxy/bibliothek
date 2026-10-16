@@ -126,7 +126,7 @@
 	<div class="mb-2 max-w-40">
 		<Feld
 			bind:value={abwertung}
-			label="Wertverlust (%)"
+			etikett="Wertverlust (%)"
 			type="number"
 			min="0"
 			max="100"

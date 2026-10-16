@@ -49,11 +49,11 @@
 	import ChipAngebote from './ChipAngebote.svelte';
 	import Feld from './Feld.svelte';
 
-	/** @type {{ werte?: string[] | null, id?: string, label?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], ontippen?: (text: string) => void, max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, angeboteNeu?: string[], angeboteNeuEtikett?: string, 'aria-label'?: string }} */
+	/** @type {{ werte?: string[] | null, id?: string, etikett?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], ontippen?: (text: string) => void, max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, angeboteNeu?: string[], angeboteNeuEtikett?: string, 'aria-label'?: string }} */
 	let {
 		werte = $bindable([]),
 		id = undefined,
-		label = undefined,
+		etikett = undefined,
 		hint = 'Mit Enter oder Komma übernehmen.',
 		placeholder = '',
 		vorschlaege = [],
@@ -141,8 +141,8 @@
 <div class="space-y-2">
 	<Feld
 		id={feldId}
-		{label}
-		aria-label={label ? undefined : ariaLabel}
+		{etikett}
+		aria-label={etikett ? undefined : ariaLabel}
 		bind:value={eingabe}
 		bind:element={feldElement}
 		list={listeId}
@@ -164,7 +164,7 @@
 	{#if liste.length}
 		<!-- Eigener Name, nicht der des Feldes: Zwei Elemente mit demselben Namen sagt ein
 		     Screenreader als dasselbe an. -->
-		<ul class="flex flex-wrap gap-2" aria-label="{label ?? ariaLabel} (gewählt)">
+		<ul class="flex flex-wrap gap-2" aria-label="{etikett ?? ariaLabel} (gewählt)">
 			{#each liste as wert (schluessel(wert))}
 				<li
 					class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-sm font-semibold text-on-secondary-container"

@@ -5,8 +5,8 @@
 	import Kartenseite from './designer/Kartenseite.svelte';
 	import { kartenStil } from './designer/kartenFarben.js';
 
-	/** @type {{ profile: any, timestamp: number }} */
-	let { profile, timestamp } = $props();
+	/** @type {{ leser: any, timestamp: number }} */
+	let { leser, timestamp } = $props();
 
 	// Rückseite nur mitdrucken, wenn sie Inhalt hat (sonst leere zweite Kartenseite).
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
@@ -26,12 +26,12 @@
 -->
 <div class="single-card-print-section" style="display:none" aria-hidden="true">
 	<div class="print-card-box single-card-front" style={kartenStil(idStore.front.theme)}>
-		<Kartenseite side="front" student={profile} barcodeType={idStore.barcodeType} {timestamp} />
+		<Kartenseite side="front" {leser} barcodeType={idStore.barcodeType} {timestamp} />
 	</div>
 	{#if hasBack}
 		<!-- Rückseite: student={null} — exakt wie im Batch-Druck (statischer Inhalt). -->
 		<div class="print-card-box single-card-back" style={kartenStil(idStore.back.theme)}>
-			<Kartenseite side="back" student={null} barcodeType={idStore.barcodeType} {timestamp} />
+			<Kartenseite side="back" leser={null} barcodeType={idStore.barcodeType} {timestamp} />
 		</div>
 	{/if}
 </div>

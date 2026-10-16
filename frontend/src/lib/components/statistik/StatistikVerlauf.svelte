@@ -5,8 +5,8 @@
      eine visuell versteckte Tabelle als barrierefreier „Table-View". Keine Personendaten. -->
 <script>
 	/** @typedef {{ monat: string, ausleihen: number, rueckgaben: number }} TrendPunkt */
-	/** @type {{ data?: TrendPunkt[] }} */
-	let { data = [] } = $props();
+	/** @type {{ daten?: TrendPunkt[] }} */
+	let { daten = [] } = $props();
 
 	// Zwei feste Reihenfarben, auf Unterscheidbarkeit bei Farbfehlsichtigkeit geprüft; die
 	// Rollen der Oberfläche führen kein solches Paar.
@@ -48,8 +48,8 @@
 	const plotH = $derived(Math.max(1, VBH - M.top - M.bottom));
 	const baselineY = $derived(M.top + plotH);
 
-	const hatDaten = $derived(data.some((d) => d.ausleihen > 0 || d.rueckgaben > 0));
-	const maxVal = $derived(Math.max(1, ...data.flatMap((d) => [d.ausleihen, d.rueckgaben])));
+	const hatDaten = $derived(daten.some((d) => d.ausleihen > 0 || d.rueckgaben > 0));
+	const maxVal = $derived(Math.max(1, ...daten.flatMap((d) => [d.ausleihen, d.rueckgaben])));
 
 	/** „Schöne" Schrittweite (1/2/5·10ⁿ), damit Y-Ticks ganzzahlig bleiben. @param {number} max */
 	function niceStep(max) {
@@ -70,12 +70,12 @@
 	});
 
 	const groups = $derived.by(() => {
-		const n = data.length || 1;
+		const n = daten.length || 1;
 		const groupW = plotW / n;
 		const barW = Math.min(18, groupW * 0.22);
 		const gap = 3; // 2px+ Surface-Gap zwischen benachbarten Balken (Mark-Spec)
 		const pairW = barW * 2 + gap;
-		return data.map((d, i) => {
+		return daten.map((d, i) => {
 			const cx = M.left + groupW * (i + 0.5);
 			const x1 = cx - pairW / 2;
 			const yA = baselineY - (d.ausleihen / yMax) * plotH;
@@ -110,7 +110,7 @@
 		const el = /** @type {SVGSVGElement} */ (e.currentTarget);
 		const rect = el.getBoundingClientRect();
 		const vbX = ((e.clientX - rect.left) / rect.width) * VBW;
-		const n = data.length || 1;
+		const n = daten.length || 1;
 		const idx = Math.floor((vbX - M.left) / (plotW / n));
 		hoverIdx = idx >= 0 && idx < n ? idx : -1;
 	}
@@ -229,7 +229,7 @@
 				<tr><th>Monat</th><th>Ausleihen</th><th>Rückgaben</th></tr>
 			</thead>
 			<tbody>
-				{#each data as d, _i (_i)}
+				{#each daten as d, _i (_i)}
 					<tr>
 						<td>{monatKurz(d.monat)} {jahr(d.monat)}</td>
 						<td>{d.ausleihen}</td>

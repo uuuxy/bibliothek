@@ -14,8 +14,8 @@
 	import Button from './components/ui/Button.svelte';
 	import { BookOpen, Trash } from '@lucide/svelte';
 
-	/** @type {{ exemplare: any[], book: any, loadAll: (id: string) => void }} */
-	let { exemplare = $bindable([]), book, loadAll } = $props();
+	/** @type {{ exemplare: any[], titel: any, ladeAlles: (id: string) => void }} */
+	let { exemplare = $bindable([]), titel, ladeAlles } = $props();
 
 	const gewaehlteExemplare = new SvelteSet();
 	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
@@ -37,7 +37,7 @@
 	/** Dieselbe Übergabe wie Wareneingang und Nachdruck — das Druck-Center öffnet sich selbst. */
 	function etikettDrucken(/** @type {any} */ ex) {
 		druckWarteschlange.copies = [
-			{ barcode_id: ex.barcode_id, titel: book.title, autor: book.author }
+			{ barcode_id: ex.barcode_id, titel: titel.title, autor: titel.author }
 		];
 	}
 
@@ -58,7 +58,7 @@
 	/** Nach dem Ändern von Eigentum oder Standort: neu laden (die Werte kommen vom Server) und Markierung weg. */
 	async function nachAenderung() {
 		gewaehlteExemplare.clear();
-		if (book?.id) await loadAll(book.id);
+		if (titel?.id) await ladeAlles(titel.id);
 	}
 
 	/** @param {any} ex */
@@ -73,10 +73,10 @@
 				exemplare = exemplare.filter((e) => e.id !== ex.id);
 				// Den Kopf aus der Liste nachführen, nach der Grenze der Karten: Ein bestelltes
 				// Exemplar stand nie im Bestand, sein Löschen ändert „1 von 2 verfügbar" nicht.
-				if (book) {
+				if (titel) {
 					const zahlen = exemplarZahlen(exemplare);
-					book.gesamt = zahlen.bestand;
-					if (book.verfuegbar !== undefined) book.verfuegbar = zahlen.verfuegbar;
+					titel.gesamt = zahlen.bestand;
+					if (titel.verfuegbar !== undefined) titel.verfuegbar = zahlen.verfuegbar;
 				}
 				melde('Exemplar erfolgreich gelöscht', 'success');
 			} else {
@@ -117,7 +117,7 @@
 		gewaehlteExemplare.clear();
 		if (successCount > 0) {
 			melde(`${successCount} Exemplare erfolgreich gelöscht`, 'success');
-			if (book && book.id) loadAll(book.id);
+			if (titel && titel.id) ladeAlles(titel.id);
 		}
 	}
 </script>
@@ -133,7 +133,7 @@
 			<ExemplarKarte
 				{darfBearbeiten}
 				{ex}
-				selected={gewaehlteExemplare.has(ex.id)}
+				gewaehlt={gewaehlteExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}
 				onDelete={() => loescheExemplar(ex)}
 				onEtikett={darfEtikett ? () => etikettDrucken(ex) : undefined}

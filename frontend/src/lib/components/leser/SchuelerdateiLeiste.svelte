@@ -14,10 +14,10 @@
 	 * gekappt, und ein Filter im Browser säße hinter dieser Kappung — er zeigte dann einen
 	 * Teil des Jahrgangs und sähe dabei vollständig aus.
 	 *
-	 * @type {{ searchQuery?: string, jahrgang?: string, jahrgaenge?: number[], jahrgaengeFehler?: boolean, darfAnlegen?: boolean, trefferzahl?: number, suchend?: boolean, gekuerzt?: boolean, onsearch?: () => void, oncreate?: () => void }}
+	 * @type {{ suche?: string, jahrgang?: string, jahrgaenge?: number[], jahrgaengeFehler?: boolean, darfAnlegen?: boolean, trefferzahl?: number, suchend?: boolean, gekuerzt?: boolean, onsearch?: () => void, oncreate?: () => void }}
 	 */
 	let {
-		searchQuery = $bindable(''),
+		suche = $bindable(''),
 		jahrgang = $bindable(''),
 		jahrgaenge = [],
 		jahrgaengeFehler = false,
@@ -48,7 +48,7 @@
 		kamera
 		autofokus
 		id="schuelerdatei-suchfeld"
-		bind:wert={searchQuery}
+		bind:wert={suche}
 		oninput={onsearch}
 		platzhalter="Name, Klasse oder Ausweisnummer eingeben …"
 		etikett="Leser suchen"

@@ -29,11 +29,11 @@
 	 * @type {{
 	 *   zoom: number, onZoom: (v: number) => void,
 	 *   side: 'front'|'back', onSide: (s: 'front'|'back') => void,
-	 *   printMode: 'card'|'etikett', onPrintMode: (m: 'card'|'etikett') => void,
+	 *   druckArt: 'card'|'etikett', onDruckArt: (m: 'card'|'etikett') => void,
 	 *   onPrint: () => void,
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
 	 *   onVorlage: (kennung: string) => void,
-	 *   previewStudent: any,
+	 *   muster: any,
 	 * }}
 	 */
 	const {
@@ -41,13 +41,13 @@
 		onZoom,
 		side,
 		onSide,
-		printMode,
-		onPrintMode,
+		druckArt,
+		onDruckArt,
 		onPrint,
 		barcodeType,
 		onBarcodeType,
 		onVorlage,
-		previewStudent
+		muster
 	} = $props();
 
 	/** Current theme for the active side. */
@@ -82,7 +82,7 @@
 </script>
 
 <div class="w-full space-y-4 no-print">
-	<WerkzeugleisteDruck {printMode} {onPrintMode} {side} {onPrint} />
+	<WerkzeugleisteDruck {druckArt} {onDruckArt} {side} {onPrint} />
 
 	<WerkzeugleisteAuswahl
 		{barcodeType}
@@ -125,13 +125,13 @@
 			onchange={ladeBilderHoch}
 		/>
 
-		{#if previewStudent}
+		{#if muster}
 			<!-- Ausdrücklich als Muster benannt: Hier stand früher ein echter Schüler aus
 			     der gewählten Klasse, und man konnte meinen, dieser Bildschirm drucke ihn.
 			     Gedruckt wird in der Schülerdatei. -->
 			<span class="text-sm text-on-surface-variant font-medium ml-auto">
-				Musterkarte: {previewStudent.vorname}
-				{previewStudent.nachname}
+				Musterkarte: {muster.vorname}
+				{muster.nachname}
 			</span>
 		{/if}
 	</div>

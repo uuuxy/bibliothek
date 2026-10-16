@@ -15,7 +15,7 @@
 	 * @property {boolean} istAenderung
 	 * @property {any} formular
 	 * @property {boolean} speichert
-	 * @property {string | null} error
+	 * @property {string | null} fehler
 	 * @property {(e: SubmitEvent) => void} speichereKonto
 	 */
 	/** @type {Props} */
@@ -25,7 +25,7 @@
 		istAenderung,
 		formular = $bindable(),
 		speichert,
-		error,
+		fehler,
 		speichereKonto
 	} = $props();
 
@@ -42,23 +42,23 @@
 		</h3>
 	{/snippet}
 	<form onsubmit={speichereKonto} class="p-6 space-y-4">
-		{#if error}
+		{#if fehler}
 			<div
 				role="alert"
 				class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
 				<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
-				<span>{error}</span>
+				<span>{fehler}</span>
 			</div>
 		{/if}
 		<div class="grid grid-cols-2 gap-4">
-			<Feld id="vorname" label="Vorname" bind:value={formular.vorname} required />
-			<Feld id="nachname" label="Nachname" bind:value={formular.nachname} required />
+			<Feld id="vorname" etikett="Vorname" bind:value={formular.vorname} required />
+			<Feld id="nachname" etikett="Nachname" bind:value={formular.nachname} required />
 		</div>
-		<Feld id="email" label="E-Mail Adresse" type="email" bind:value={formular.email} required />
+		<Feld id="email" etikett="E-Mail Adresse" type="email" bind:value={formular.email} required />
 		<Feld
 			id="barcode_id"
-			label="Ausweisnummer"
+			etikett="Ausweisnummer"
 			bind:value={formular.barcode_id}
 			hint="Leeres Feld: Das Programm vergibt die nächste freie Nummer."
 		/>
@@ -72,7 +72,11 @@
 		{/each}
 		{#if istAenderung}
 			<div class="flex items-center gap-3 py-1.5">
-				<Switch id="benutzer-aktiv" bind:checked={formular.aktiv} label="Benutzerkonto ist aktiv" />
+				<Switch
+					id="benutzer-aktiv"
+					bind:checked={formular.aktiv}
+					etikett="Benutzerkonto ist aktiv"
+				/>
 				<label
 					for="benutzer-aktiv"
 					class="cursor-pointer text-xs font-bold text-on-surface-variant"

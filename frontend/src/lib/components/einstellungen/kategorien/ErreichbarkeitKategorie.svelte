@@ -96,7 +96,7 @@
 	<div class="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
 		<Feld
 			bind:value={adresse}
-			label="Öffentliche Adresse"
+			etikett="Öffentliche Adresse"
 			type="text"
 			maxlength={200}
 			placeholder="https://bibliothek.schule.de"
@@ -104,7 +104,7 @@
 		/>
 		<Feld
 			bind:value={alarmEmpfaenger}
-			label="Alarm-Empfänger"
+			etikett="Alarm-Empfänger"
 			type="text"
 			maxlength={300}
 			placeholder="it@schule.de, leitung@schule.de"

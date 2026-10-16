@@ -47,15 +47,15 @@
 	<div class="grid grid-cols-4 gap-4 md:grid-cols-8">
 		<Feld
 			id="strasse"
-			label="Straße"
+			etikett="Straße"
 			class="col-span-3"
 			bind:value={eingaben.strasse}
 			placeholder="Musterstraße"
 		/>
-		<Feld id="hausnummer" label="Nr." bind:value={eingaben.hausnummer} placeholder="12a" />
+		<Feld id="hausnummer" etikett="Nr." bind:value={eingaben.hausnummer} placeholder="12a" />
 		<Feld
 			id="plz"
-			label="PLZ"
+			etikett="PLZ"
 			class="col-span-2"
 			bind:value={eingaben.plz}
 			placeholder="12345"
@@ -64,7 +64,7 @@
 		/>
 		<Feld
 			id="ort"
-			label="Ort"
+			etikett="Ort"
 			class="col-span-2"
 			bind:value={eingaben.ort}
 			placeholder="Musterstadt"
@@ -72,7 +72,7 @@
 
 		<Feld
 			id="schul_email"
-			label={nachtragbar ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
+			etikett={nachtragbar ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
 			class="col-span-4"
 			type="email"
 			bind:value={eingaben.email}
@@ -89,7 +89,7 @@
 		/>
 		<Feld
 			id="eltern_email"
-			label="Eltern E-Mail"
+			etikett="Eltern E-Mail"
 			class="col-span-4"
 			type="email"
 			bind:value={eingaben.eltern_email}

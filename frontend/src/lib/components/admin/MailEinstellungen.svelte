@@ -118,23 +118,23 @@
 			</div>
 
 			<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-				<Feld bind:value={host} label="SMTP Host" type="text" placeholder="smtp.example.com" />
-				<Feld bind:value={port} label="SMTP Port" type="text" placeholder="587" />
+				<Feld bind:value={host} etikett="SMTP Host" type="text" placeholder="smtp.example.com" />
+				<Feld bind:value={port} etikett="SMTP Port" type="text" placeholder="587" />
 				<Feld
 					bind:value={benutzername}
-					label="Benutzername"
+					etikett="Benutzername"
 					type="text"
 					placeholder="Benutzername oder E-Mail"
 				/>
 				<Feld
 					bind:value={sender}
-					label="Absender-E-Mail"
+					etikett="Absender-E-Mail"
 					type="email"
 					placeholder="noreply@bibliothek-schule.de"
 				/>
 				<Feld
 					bind:value={password}
-					label="Passwort"
+					etikett="Passwort"
 					type="password"
 					placeholder={hasPassword ? '•••••••• (hinterlegt)' : 'Passwort eingeben'}
 					hint="Leer lassen, um das gespeicherte Passwort nicht zu ändern."
@@ -162,7 +162,7 @@
 				<div class="w-full sm:w-72">
 					<Feld
 						bind:value={testEmail}
-						label="Test-Empfänger"
+						etikett="Test-Empfänger"
 						type="email"
 						placeholder="empfaenger@schule.de"
 					/>

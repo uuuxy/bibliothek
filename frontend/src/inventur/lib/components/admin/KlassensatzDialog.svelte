@@ -156,7 +156,7 @@
 				<div
 					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
 				>
-					<KlassensatzKlassenwahl bind:selectedClasses={gewaehlteKlassen} {vorhandeneGruppen} />
+					<KlassensatzKlassenwahl bind:gewaehlteKlassen {vorhandeneGruppen} />
 
 					{#if ueberschriebeneKlassen.length > 0}
 						<!-- Warnung statt Verbot: Meist ist es gewollt (ein Jahrgang bekommt denselben
@@ -170,9 +170,9 @@
 					{/if}
 
 					<KlassensatzTitelRaster
-						books={buecher.liste}
+						titelListe={buecher.liste}
 						buecherFehler={buecher.fehler}
-						bind:selectedBookIds={gewaehlteKennungen}
+						bind:gewaehlteKennungen
 					/>
 				</div>
 			</div>
@@ -182,11 +182,11 @@
 				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-outline-variant pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
 				<KlassensatzZusammenfassung
-					selectedClasses={gewaehlteKlassen}
-					selectedBookIds={gewaehlteKennungen}
-					selectedBooksList={gewaehlteTitel}
-					isSaving={speichert}
-					isUpdate={!!initialGroup}
+					{gewaehlteKlassen}
+					{gewaehlteKennungen}
+					{gewaehlteTitel}
+					{speichert}
+					istAenderung={!!initialGroup}
 					onToggleBook={schalteTitel}
 					onsave={speichereZuweisungen}
 					oncancel={onClose}

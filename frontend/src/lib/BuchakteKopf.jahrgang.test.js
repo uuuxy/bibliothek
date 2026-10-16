@@ -6,8 +6,8 @@ import BuchakteKopf from './BuchakteKopf.svelte';
 function einordnung(zusatz) {
 	const nichts = () => {};
 	const { container } = render(BuchakteKopf, {
-		book: { id: 't-1', title: 'Natura', author: 'Beyer', subject: 'Biologie', ...zusatz },
-		borrowers: [],
+		titel: { id: 't-1', title: 'Natura', author: 'Beyer', subject: 'Biologie', ...zusatz },
+		ausleiher: [],
 		exemplare: [],
 		coverSrc: '',
 		coverFailed: true,

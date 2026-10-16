@@ -44,7 +44,7 @@
 	{#if ablauf.fehlbestand.length > 0}
 		<FehlbestandBericht
 			eintraege={ablauf.fehlbestand}
-			label={ablauf.fehlbestandBezeichnung}
+			etikett={ablauf.fehlbestandBezeichnung}
 			onSchliessen={ablauf.fehlbestandSchliessen}
 			onGefunden={ablauf.fehlbestandGefunden}
 			onEndgueltigLoeschen={ablauf.fehlbestandEndgueltigLoeschen}

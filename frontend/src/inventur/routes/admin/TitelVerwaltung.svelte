@@ -147,8 +147,8 @@
 		</div>
 	{:else}
 		<Bestandstabelle
-			books={liste.buecher}
-			loading={liste.wirdGeladen}
+			titelListe={liste.buecher}
+			laedt={liste.wirdGeladen}
 			onOpenDetail={oeffneDetails}
 			onCreateNew={neuesBuchErstellen}
 			onScan={neuesBuchScannen}
@@ -160,14 +160,14 @@
 
 	<AdminBuchAktionen
 		bind:this={buchAktionen}
-		bind:books={liste.buecher}
-		bind:isEditMode={istBearbeitenModus}
+		bind:titelListe={liste.buecher}
+		bind:istBearbeitung={istBearbeitenModus}
 		bind:formular
 	/>
 
 	{#if klassenZuweisenIds && klassenZuweisenIds.length > 0}
 		<KlassensatzZuweisenDialog
-			bookIds={klassenZuweisenIds}
+			titelIds={klassenZuweisenIds}
 			onClose={() => (klassenZuweisenIds = null)}
 			onAssigned={() => (klassenZuweisenIds = null)}
 		/>

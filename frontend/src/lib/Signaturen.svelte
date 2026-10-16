@@ -59,7 +59,7 @@
 	>
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
 			{#if laedt}
-				<div class="flex justify-center py-6"><Ladekreis label="Signaturen laden" /></div>
+				<div class="flex justify-center py-6"><Ladekreis etikett="Signaturen laden" /></div>
 			{:else if signaturen.length === 0}
 				<p class="text-sm text-on-surface-variant">
 					Noch kein Buch trägt eine Signatur. Sie entsteht am Buch selbst — im Buchformular,

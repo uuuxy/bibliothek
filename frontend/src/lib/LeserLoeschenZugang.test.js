@@ -22,13 +22,14 @@ const schueler = { vorname: 'Mia', nachname: 'Muster', art: 'schueler', klasse: 
 
 /** @param {any} profile */
 const zone = (profile) =>
-	render(LeserGefahrenzone, { props: { profile, onDelete: () => {} } }).container.textContent ?? '';
+	render(LeserGefahrenzone, { props: { leser: profile, onDelete: () => {} } }).container
+		.textContent ?? '';
 
 // Nur der Text des Dialogs selbst — im selben Test steht die Zone schon im Dokument.
 /** @param {any} profile */
 const dialog = (profile) =>
 	render(LeserLoeschenDialog, {
-		props: { open: true, profile, onclose: () => {}, onsuccess: () => {} }
+		props: { open: true, leser: profile, onclose: () => {}, onsuccess: () => {} }
 	}).getByRole('dialog').textContent ?? '';
 
 // Derselbe Text mit einfachen Leerzeichen: Wo die Vorlage umbricht, entscheidet Prettier.
@@ -68,7 +69,7 @@ describe('Löschen in der Akte: der Dialog sagt, was geschieht', () => {
 
 	it('der bestätigende Knopf sagt, was er tut', () => {
 		const screen = render(LeserLoeschenDialog, {
-			props: { open: true, profile: schueler, onclose: () => {}, onsuccess: () => {} }
+			props: { open: true, leser: schueler, onclose: () => {}, onsuccess: () => {} }
 		});
 		expect(screen.getByRole('button', { name: 'In den Papierkorb' })).toBeTruthy();
 	});

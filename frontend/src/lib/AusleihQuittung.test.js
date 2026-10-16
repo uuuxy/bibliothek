@@ -8,7 +8,7 @@ import AusleihQuittung from './AusleihQuittung.svelte';
 describe('AusleihQuittung', () => {
 	it('nennt je Ausleihe Nummer, Ausleihdatum und Frist', () => {
 		const { container } = render(AusleihQuittung, {
-			profile: {
+			leser: {
 				vorname: 'Emil',
 				nachname: 'Tischbein',
 				klasse: '05F',
@@ -36,7 +36,7 @@ describe('AusleihQuittung', () => {
 		/** @param {boolean} dauerleihe */
 		const quittung = (dauerleihe) =>
 			render(AusleihQuittung, {
-				profile: {
+				leser: {
 					vorname: 'Kim',
 					nachname: 'Kollegin',
 					entliehene_buecher: [

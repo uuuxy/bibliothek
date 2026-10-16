@@ -5,7 +5,7 @@ import { snackbars } from '../../stores/snackbars.svelte.js';
 import { FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 
 const PROPS = {
-	label: 'Lehrbuchsammlung',
+	etikett: 'Lehrbuchsammlung',
 	onSchliessen: () => {},
 	onGefunden: async () => {},
 	onEndgueltigLoeschen: async () => {}

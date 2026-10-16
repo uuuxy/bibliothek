@@ -37,7 +37,7 @@
 			)}
 		</div>
 		{#each suchTreffer.students as student, i (i)}
-			<LeserTreffer {student} index={i} selected={markierterTreffer === i} {onSelect} />
+			<LeserTreffer leser={student} index={i} gewaehlt={markierterTreffer === i} {onSelect} />
 		{/each}
 	{/if}
 	{#if suchTreffer.books.length > 0}
@@ -50,7 +50,7 @@
 		</div>
 		{#each suchTreffer.books as book, j (j)}
 			{@const index = j + suchTreffer.students.length}
-			<TitelTreffer {book} {index} selected={markierterTreffer === index} {onSelect} />
+			<TitelTreffer treffer={book} {index} gewaehlt={markierterTreffer === index} {onSelect} />
 		{/each}
 	{/if}
 </div>

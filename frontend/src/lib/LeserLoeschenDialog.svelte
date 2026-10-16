@@ -14,17 +14,17 @@
 	import { TriangleAlert } from '@lucide/svelte';
 	import { istKollegium } from './leserArt.js';
 
-	let { open = false, profile, onclose, onsuccess } = $props();
+	let { open = false, leser, onclose, onsuccess } = $props();
 
-	const kollege = $derived(istKollegium({ art: profile?.art }));
+	const kollege = $derived(istKollegium({ art: leser?.art }));
 	// `email` ist die Adresse am Konto; leer heißt: kein Zugang, der erlöschen könnte.
-	const mitZugang = $derived(kollege && !!profile?.email);
+	const mitZugang = $derived(kollege && !!leser?.email);
 
 	let fehler = $state('');
 	let laeuft = $state(false);
 	let confirmText = $state('');
 
-	let expectedConfirmText = $derived(profile ? `${profile.vorname} ${profile.nachname}` : '');
+	let expectedConfirmText = $derived(leser ? `${leser.vorname} ${leser.nachname}` : '');
 	let isConfirmed = $derived(confirmText === expectedConfirmText);
 
 	$effect(() => {
@@ -36,14 +36,14 @@
 	});
 
 	async function loescheLeser() {
-		if (profile?.entliehene_buecher && profile.entliehene_buecher.length > 0) {
+		if (leser?.entliehene_buecher && leser.entliehene_buecher.length > 0) {
 			fehler = 'Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher';
 			return;
 		}
 		fehler = '';
 		laeuft = true;
 		try {
-			const res = await apiFetch(`/api/schueler/${profile.id}`, { method: 'DELETE' });
+			const res = await apiFetch(`/api/schueler/${leser.id}`, { method: 'DELETE' });
 			if (res.ok) {
 				onsuccess?.();
 			} else {
@@ -68,14 +68,14 @@
 	}
 </script>
 
-{#if open && profile}
+{#if open && leser}
 	<Dialog open={true} onclose={schliesse} beschriftetDurch="loeschen-titel">
 		<div class="p-6 text-on-surface text-left">
 			<h3 id="loeschen-titel" class="text-lg font-bold text-error flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
 				<span>{kollege ? 'Kollegen löschen' : 'Schüler löschen'}</span>
 			</h3>
-			{#if profile.entliehene_buecher && profile.entliehene_buecher.length > 0}
+			{#if leser.entliehene_buecher && leser.entliehene_buecher.length > 0}
 				<div
 					role="alert"
 					class="mt-4 p-4 bg-error-container text-on-error-container rounded-2xl text-sm font-semibold"
@@ -87,9 +87,10 @@
 				</div>
 			{:else}
 				<p class="mt-4 text-sm text-on-surface-variant leading-relaxed font-sans">
-					<strong>{profile.vorname} {profile.nachname}</strong> kommt in den Papierkorb der
-					Leserdatei und lässt sich dort bis zu 180 Tage lang wiederherstellen. Danach wird der
-					Eintrag {kollege ? 'endgültig gelöscht' : 'anonymisiert'}.
+					<strong>{leser.vorname} {leser.nachname}</strong> kommt in den Papierkorb der Leserdatei
+					und lässt sich dort bis zu 180 Tage lang wiederherstellen. Danach wird der Eintrag {kollege
+						? 'endgültig gelöscht'
+						: 'anonymisiert'}.
 				</p>
 
 				{#if mitZugang}

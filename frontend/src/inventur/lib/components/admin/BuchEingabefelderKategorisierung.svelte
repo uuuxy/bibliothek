@@ -105,7 +105,9 @@
 		<div class="grid grid-cols-2 gap-4">
 			<Feld
 				id="buch-jahrgang-von"
-				label={formular.istLernmittel ? 'Im Unterricht von Jahrgang' : 'Geeignet für Jahrgang von'}
+				etikett={formular.istLernmittel
+					? 'Im Unterricht von Jahrgang'
+					: 'Geeignet für Jahrgang von'}
 				type="number"
 				min="1"
 				max="13"
@@ -113,7 +115,7 @@
 			/>
 			<Feld
 				id="buch-jahrgang-bis"
-				label="bis Jahrgang"
+				etikett="bis Jahrgang"
 				type="number"
 				min="1"
 				max="13"
@@ -128,7 +130,7 @@
 				<Kaestchen
 					id="buch-mehrjahresband"
 					bind:checked={formular.mehrjahresband}
-					label="Mehrjahresband"
+					etikett="Mehrjahresband"
 					aria-describedby="buch-mehrjahresband-hinweis"
 				/>
 				<p id="buch-mehrjahresband-hinweis" class="mt-1.5 pl-7.5 text-xs text-on-surface-variant">

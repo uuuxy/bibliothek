@@ -10,13 +10,13 @@
 	 *
 	 * @prop {any[]} incomingShipments - Array der erwarteten Lieferungen.
 	 * @prop {number} totalItems - Gesamtanzahl der Exemplare.
-	 * @prop {string[]} selectedExemplarIds - Bindable Array mit ausgewählten Exemplar-IDs.
+	 * @prop {string[]} gewaehlteExemplare - Bindable Array mit ausgewählten Exemplar-IDs.
 	 */
-	let { incomingShipments = [], totalItems = 0, selectedExemplarIds = $bindable([]) } = $props();
+	let { incomingShipments = [], totalItems = 0, gewaehlteExemplare = $bindable([]) } = $props();
 
 	let alleGewaehlt = $derived(
-		selectedExemplarIds.length > 0 &&
-			selectedExemplarIds.length ===
+		gewaehlteExemplare.length > 0 &&
+			gewaehlteExemplare.length ===
 				incomingShipments.flatMap((/** @type {any} */ s) =>
 					s.items.flatMap((/** @type {any} */ i) => i.exemplar_ids || [])
 				).length
@@ -24,9 +24,9 @@
 
 	function toggleAll() {
 		if (alleGewaehlt) {
-			selectedExemplarIds = [];
+			gewaehlteExemplare = [];
 		} else {
-			selectedExemplarIds = incomingShipments.flatMap((s) =>
+			gewaehlteExemplare = incomingShipments.flatMap((s) =>
 				s.items.flatMap((/** @type {any} */ i) => i.exemplar_ids || [])
 			);
 		}
@@ -39,9 +39,9 @@
 	function schalteAuswahlUm(e, ids) {
 		const target = /** @type {HTMLInputElement} */ (e.target);
 		if (target.checked) {
-			selectedExemplarIds = [...selectedExemplarIds, ...ids];
+			gewaehlteExemplare = [...gewaehlteExemplare, ...ids];
 		} else {
-			selectedExemplarIds = selectedExemplarIds.filter((id) => !ids.includes(id));
+			gewaehlteExemplare = gewaehlteExemplare.filter((id) => !ids.includes(id));
 		}
 	}
 </script>
@@ -77,7 +77,7 @@
 					<tbody>
 						{#each group.items as item, _i (_i)}
 							{@const gewaehlt = item.exemplar_ids.every((/** @type {string} */ id) =>
-								selectedExemplarIds.includes(id)
+								gewaehlteExemplare.includes(id)
 							)}
 							<tr aria-selected={gewaehlt}>
 								<td class="w-12">

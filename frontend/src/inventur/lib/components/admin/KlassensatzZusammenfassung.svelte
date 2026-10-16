@@ -3,11 +3,11 @@
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import { Save, Table, X } from '@lucide/svelte';
 	let {
-		selectedClasses = [],
-		selectedBookIds = new Set(),
-		selectedBooksList = [],
-		isSaving = false,
-		isUpdate = false,
+		gewaehlteKlassen = [],
+		gewaehlteKennungen = new Set(),
+		gewaehlteTitel = [],
+		speichert = false,
+		istAenderung = false,
 		onToggleBook = () => {},
 		onsave = () => {},
 		// Abbrechen steht in derselben Aktionszeile wie Speichern (M3-Dialog: rechts
@@ -21,14 +21,14 @@
 >
 	<h3 class="text-xl font-bold text-on-surface">Auswahl</h3>
 	<div class="bg-surface-container-high px-3 py-1.5 rounded-full text-sm font-bold text-on-surface">
-		{selectedBookIds.size}
+		{gewaehlteKennungen.size}
 	</div>
 </div>
 
 <div
 	class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full p-4 space-y-2"
 >
-	{#if selectedBooksList.length === 0}
+	{#if gewaehlteTitel.length === 0}
 		<div
 			class="h-full flex flex-col items-center justify-center text-center p-8 text-on-surface-variant"
 		>
@@ -36,7 +36,7 @@
 			<p class="text-sm font-medium">Deine Auswahl ist noch leer</p>
 		</div>
 	{:else}
-		{#each selectedBooksList as book (book.id)}
+		{#each gewaehlteTitel as book (book.id)}
 			<div
 				class="flex items-center gap-3.5 hover:bg-surface-container p-2 rounded-xl transition-colors group"
 			>
@@ -71,12 +71,14 @@
 >
 	<Button variant="ghost" onclick={() => oncancel()}>Abbrechen</Button>
 	<Button
-		disabled={selectedClasses.length === 0 || (!isUpdate && selectedBookIds.size === 0) || isSaving}
+		disabled={gewaehlteKlassen.length === 0 ||
+			(!istAenderung && gewaehlteKennungen.size === 0) ||
+			speichert}
 		onclick={(e) => onsave(e)}
 	>
 		<Save class="h-4 w-4" aria-hidden="true" />
 		<!-- Kurz halten: In der 340 px schmalen Spalte bräche „Auswahl speichern" auf zwei
 		     Zeilen um. Was gespeichert wird, sagt die Überschrift des Dialogs. -->
-		<span class="whitespace-nowrap">{isSaving ? 'Speichert …' : 'Speichern'}</span>
+		<span class="whitespace-nowrap">{speichert ? 'Speichert …' : 'Speichern'}</span>
 	</Button>
 </footer>

@@ -36,7 +36,7 @@ describe('Akte eines Lesers', () => {
 
 	it('zeigt einem Kollegen persönliche Daten statt Stammdaten & Adresse', () => {
 		const screen = render(LeserakteStammdaten, {
-			profile: akte('lehrkraft'),
+			leser: akte('lehrkraft'),
 			darfBearbeiten: true,
 			darfZusammenfuehren: true,
 			onEdit: vi.fn()
@@ -56,7 +56,7 @@ describe('Akte eines Lesers', () => {
 		/** @param {string} art */
 		const angaben = (art) => {
 			const screen = render(LeserakteStammdaten, {
-				profile: akte(art),
+				leser: akte(art),
 				darfBearbeiten: true,
 				onEdit: vi.fn()
 			});
@@ -76,7 +76,7 @@ describe('Akte eines Lesers', () => {
 		['liv', 'LiV']
 	])('nennt bei art=%s die Art „%s" in der Akte', (art, wort) => {
 		const screen = render(LeserakteStammdaten, {
-			profile: { ...akte(art), klasse: art === 'schueler' ? '07A' : '' },
+			leser: { ...akte(art), klasse: art === 'schueler' ? '07A' : '' },
 			onEdit: vi.fn()
 		});
 		const text = screen.container.textContent ?? '';
@@ -90,7 +90,7 @@ describe('Akte eines Lesers', () => {
 	it('bietet auch einem Kollegen das Bearbeiten an', async () => {
 		const onEdit = vi.fn();
 		const screen = render(LeserakteStammdaten, {
-			profile: akte('lehrkraft'),
+			leser: akte('lehrkraft'),
 			darfBearbeiten: true,
 			onEdit
 		});
@@ -101,7 +101,7 @@ describe('Akte eines Lesers', () => {
 
 	it('zeigt den Bearbeiten-Knopf ohne das Recht nicht', () => {
 		const screen = render(LeserakteStammdaten, {
-			profile: akte('lehrkraft'),
+			leser: akte('lehrkraft'),
 			darfBearbeiten: false,
 			onEdit: vi.fn()
 		});
@@ -110,7 +110,7 @@ describe('Akte eines Lesers', () => {
 
 	it('nennt eine LiV auch so', () => {
 		const screen = render(LeserakteStammdaten, {
-			profile: akte('liv'),
+			leser: akte('liv'),
 			onEdit: vi.fn()
 		});
 		expect(screen.container.textContent ?? '').toContain('LiV');
@@ -124,7 +124,7 @@ describe('Akte eines Lesers', () => {
 	it('bietet das Zusammenführen bei jedem an, der das Recht hat', () => {
 		for (const art of ['schueler', 'lehrkraft', 'liv']) {
 			const screen = render(LeserakteStammdaten, {
-				profile: akte(art),
+				leser: akte(art),
 				darfZusammenfuehren: true,
 				onEdit: vi.fn()
 			});
@@ -137,7 +137,7 @@ describe('Akte eines Lesers', () => {
 	// liest, sucht den Fehler an der falschen Stelle.
 	it('nennt dem Kollegen den richtigen Grund für ein Doppel', () => {
 		const kollege = render(LeserakteStammdaten, {
-			profile: akte('lehrkraft'),
+			leser: akte('lehrkraft'),
 			darfZusammenfuehren: true,
 			onEdit: vi.fn()
 		}).container.textContent;
@@ -151,7 +151,7 @@ describe('Akte eines Lesers', () => {
 		);
 
 		const schueler = render(LeserakteStammdaten, {
-			profile: akte('schueler'),
+			leser: akte('schueler'),
 			darfZusammenfuehren: true,
 			onEdit: vi.fn()
 		}).container.textContent;
@@ -161,7 +161,7 @@ describe('Akte eines Lesers', () => {
 
 	it('lässt die Akte eines Schülers, wie sie war', () => {
 		const screen = render(LeserakteStammdaten, {
-			profile: { ...akte('schueler'), klasse: '07A', strasse: 'Hauptstraße' },
+			leser: { ...akte('schueler'), klasse: '07A', strasse: 'Hauptstraße' },
 			onEdit: vi.fn()
 		});
 		const text = screen.container.textContent ?? '';

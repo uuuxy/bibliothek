@@ -35,7 +35,7 @@ beforeEach(() => {
 describe('Aufschrift des Ausweises', () => {
 	it('nennt den Ausweis einer Lehrkraft „Lehrerausweis"', () => {
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: leser('lehrkraft'), barcodeType: 'code39' }
+			props: { side: 'front', leser: leser('lehrkraft'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Lehrerausweis');
 		expect(container.textContent).not.toContain('Schülerausweis');
@@ -43,7 +43,7 @@ describe('Aufschrift des Ausweises', () => {
 
 	it('nennt den Ausweis einer LiV ebenfalls „Lehrerausweis"', () => {
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: leser('liv'), barcodeType: 'code39' }
+			props: { side: 'front', leser: leser('liv'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Lehrerausweis');
 	});
@@ -52,7 +52,7 @@ describe('Aufschrift des Ausweises', () => {
 	// das Wort, das Littera für jeden Ausweis führt (30.09.2026).
 	it('nennt den Ausweis eines Praktikums „Leserausweis"', () => {
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: leser('praktikum'), barcodeType: 'code39' }
+			props: { side: 'front', leser: leser('praktikum'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Leserausweis');
 		expect(container.textContent).not.toContain('Lehrerausweis');
@@ -60,7 +60,7 @@ describe('Aufschrift des Ausweises', () => {
 
 	it('bleibt beim Schüler „Schülerausweis"', () => {
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: leser('schueler'), barcodeType: 'code39' }
+			props: { side: 'front', leser: leser('schueler'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Schülerausweis');
 		expect(container.textContent).not.toContain('Lehrerausweis');
@@ -69,7 +69,7 @@ describe('Aufschrift des Ausweises', () => {
 	it('nennt eine Zeile ohne Art „Schülerausweis" — das ist die Vorgabe der Spalte', () => {
 		const ohneArt = { ...leser('schueler'), art: undefined };
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: ohneArt, barcodeType: 'code39' }
+			props: { side: 'front', leser: ohneArt, barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Schülerausweis');
 	});
@@ -78,7 +78,7 @@ describe('Aufschrift des Ausweises', () => {
 describe('Gültigkeit auf der Karte', () => {
 	it('steht beim Schüler', () => {
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: leser('schueler'), barcodeType: 'code39' }
+			props: { side: 'front', leser: leser('schueler'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Gültig bis: 31.07.2027');
 	});
@@ -87,7 +87,7 @@ describe('Gültigkeit auf der Karte', () => {
 		const { container } = render(Kartenseite, {
 			props: {
 				side: 'front',
-				student: { ...leser('lehrkraft'), ausweis_gueltig_bis: null },
+				leser: { ...leser('lehrkraft'), ausweis_gueltig_bis: null },
 				barcodeType: 'code39'
 			}
 		});
@@ -170,7 +170,7 @@ describe('Gespeichertes Design von früher', () => {
 			}
 		]);
 		const { container } = render(Kartenseite, {
-			props: { side: 'front', student: leser('lehrkraft'), barcodeType: 'code39' }
+			props: { side: 'front', leser: leser('lehrkraft'), barcodeType: 'code39' }
 		});
 		expect(container.textContent).toContain('Lehrerausweis');
 	});

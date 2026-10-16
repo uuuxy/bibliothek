@@ -56,7 +56,7 @@
 		Wähle links eine Signatur, um das Regal zu sehen.
 	</div>
 {:else if laedt}
-	<div class="flex justify-center p-6"><Ladekreis label="Regal lädt" /></div>
+	<div class="flex justify-center p-6"><Ladekreis etikett="Regal lädt" /></div>
 {:else if buecher.length === 0}
 	<div class="text-sm text-on-surface-variant p-6 text-center">
 		Unter „{signatur}“ steht kein Buch.

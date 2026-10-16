@@ -30,9 +30,9 @@
 	 * Vorgabe false: Ein ECHTER Ausweis darf niemals einen Rahmen mit der Aufschrift
 	 * "PASSBILD" tragen, nur weil beim Schueler kein Foto hinterlegt ist.
 	 *
-	 * @type {{ side: 'front'|'back', student: any, barcodeType: 'code39'|'qr', timestamp?: number, platzhalter?: boolean }}
+	 * @type {{ side: 'front'|'back', leser: any, barcodeType: 'code39'|'qr', timestamp?: number, platzhalter?: boolean }}
 	 */
-	const { side, student, barcodeType, timestamp = 0, platzhalter = false } = $props();
+	const { side, leser, barcodeType, timestamp = 0, platzhalter = false } = $props();
 
 	/** Sichtbare Elemente der Seite, aufsteigend nach zIndex (höhere Ebenen zuletzt). */
 	const elements = $derived(
@@ -80,16 +80,16 @@
         z-index: {el.zIndex};
       "
 		>
-			{#if el.type === 'name' && student}
-				{student.vorname} {student.nachname}
+			{#if el.type === 'name' && leser}
+				{leser.vorname} {leser.nachname}
 			{:else if el.type === 'dokumenttyp'}
-				{ausweisTitel(student?.art)}
-			{:else if el.type === 'validity' && student}
+				{ausweisTitel(leser?.art)}
+			{:else if el.type === 'validity' && leser}
 				<!-- Ein Kollege hat keine Klasse, aus der ein Ablaufjahr zu rechnen wäre, und sein
 				     Ausweis läuft mit keinem Schuljahr ab. Ohne diese Weiche stünde auf seiner
 				     Karte „Gültig bis: 31.07.–". -->
-				{#if !istKollegium(student)}
-					Gültig bis: 31.07.{student.ausweis_gueltig_bis ?? '–'}
+				{#if !istKollegium(leser)}
+					Gültig bis: 31.07.{leser.ausweis_gueltig_bis ?? '–'}
 				{/if}
 			{:else}
 				{el.content}
@@ -106,14 +106,14 @@
 				{@render leerstelle(el.type === 'logo' ? 'LOGO' : 'BILD')}
 			{/if}
 		</div>
-	{:else if isPhoto && student}
+	{:else if isPhoto && leser}
 		<div
 			class="absolute overflow-hidden flex items-center justify-center"
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
-			{#if student.foto_url}
+			{#if leser.foto_url}
 				<img
-					src="{student.foto_url}?t={timestamp}"
+					src="{leser.foto_url}?t={timestamp}"
 					onerror={(e) => {
 						/** @type {any} */ (e.currentTarget).style.display = 'none';
 					}}
@@ -124,7 +124,7 @@
 				{@render leerstelle('PASSBILD')}
 			{/if}
 		</div>
-	{:else if isBarcode && student}
+	{:else if isBarcode && leser}
 		<div
 			class="absolute flex flex-col items-center justify-center"
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
@@ -134,14 +134,14 @@
 			     gezogen war auf dem Papier nichts höher (OFFEN.md 5.5). -->
 			<img
 				src={strichcodeBildUrl(
-					student.barcode_id,
+					leser.barcode_id,
 					strichcodeBildOptionenFuerElement(el, barcodeType)
 				)}
 				class="max-w-full max-h-full object-contain"
 				alt="Barcode"
 			/>
 			<span class="font-bold mt-0.5 text-[6.5pt] tracking-widest" style="color: {NUMMER_FARBE};"
-				>{student.barcode_id}</span
+				>{leser.barcode_id}</span
 			>
 		</div>
 	{/if}

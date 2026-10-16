@@ -21,7 +21,7 @@ const buch = (/** @type {any} */ extra = {}) => ({
 describe('KlassenBuchKachel: Auflagen in der Klasse', () => {
 	it('zeigt die Auflagen der Klasse, die meisten Kinder zuerst, die der Kachel markiert', () => {
 		const { getByTestId } = render(KlassenBuchKachel, {
-			book: buch({
+			titel: buch({
 				auflagen: [
 					{ id: 'neu', auflage: '4. Aufl.', erscheinungsjahr: 2023, kinder: 4 },
 					{ id: 'alt', auflage: '3. Aufl.', erscheinungsjahr: 2019, kinder: 3 }
@@ -38,7 +38,7 @@ describe('KlassenBuchKachel: Auflagen in der Klasse', () => {
 	});
 
 	it('zeigt nichts davon ohne Aufschlüsselung', () => {
-		const { queryByTestId } = render(KlassenBuchKachel, { book: buch(), bearbeitbar: false });
+		const { queryByTestId } = render(KlassenBuchKachel, { titel: buch(), bearbeitbar: false });
 		expect(queryByTestId('klassensatz-auflagen')).toBeNull();
 	});
 });
@@ -50,7 +50,7 @@ describe('KlassenBuchKachel: Auflagen in der Klasse', () => {
 describe('KlassenBuchKachel: Bestand aus mehreren Auflagen', () => {
 	it('zeigt unter der Summe, woraus sie besteht', () => {
 		const { getByTestId, queryByTestId } = render(KlassenBuchKachel, {
-			book: buch({
+			titel: buch({
 				quelle: undefined,
 				verfuegbar: 46,
 				gesamt: 58,

@@ -161,7 +161,7 @@
 
 		<Feld
 			id="versand-override-email"
-			label="Alternative Empfänger-E-Mail (optional)"
+			etikett="Alternative Empfänger-E-Mail (optional)"
 			inputmode="email"
 			autocomplete="off"
 			bind:value={overrideEmail}

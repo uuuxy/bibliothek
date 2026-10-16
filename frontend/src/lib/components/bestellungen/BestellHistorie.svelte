@@ -144,7 +144,7 @@
 			{gesamtExemplare}
 			{aufteilung}
 			euro={formatEuro}
-			topfLabel={topfName}
+			{topfName}
 			{mittelFilter}
 			zeigeKennzahlen={bestellungen.length > 0}
 			bind:mittel

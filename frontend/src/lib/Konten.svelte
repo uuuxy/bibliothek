@@ -191,7 +191,7 @@
 	{istAenderung}
 	bind:formular
 	{speichert}
-	error={fehler}
+	{fehler}
 	{speichereKonto}
 />
 
@@ -203,6 +203,6 @@
 	}}
 	{zuLoeschen}
 	{loescht}
-	error={fehler}
+	{fehler}
 	{loescheKonto}
 />

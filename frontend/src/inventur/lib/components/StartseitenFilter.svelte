@@ -4,8 +4,8 @@
 <script>
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 
-	/** @type {{ searchQuery: string }} */
-	let { searchQuery = $bindable('') } = $props();
+	/** @type {{ suche: string }} */
+	let { suche = $bindable('') } = $props();
 </script>
 
 <!-- Volle Breite und DIESELBE linke Kante wie das Kartenraster darunter (04.09.2026):
@@ -20,7 +20,7 @@
 			kamera
 			autofokus
 			id="katalog-suchfeld"
-			bind:wert={searchQuery}
+			bind:wert={suche}
 			platzhalter="Titel, Fach oder Klasse eingeben …"
 			etikett="Suchen nach Titel, Fach, Klasse oder Autor"
 		/>

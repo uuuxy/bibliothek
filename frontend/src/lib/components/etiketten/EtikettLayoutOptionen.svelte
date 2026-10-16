@@ -63,7 +63,7 @@
 
 		<Kaestchen
 			bind:checked={etikettenStore.mitRahmen}
-			label="Hilfsrahmen auf dem Etikett zeichnen"
+			etikett="Hilfsrahmen auf dem Etikett zeichnen"
 		/>
 	</div>
 </div>

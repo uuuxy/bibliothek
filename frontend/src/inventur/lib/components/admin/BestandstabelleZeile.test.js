@@ -28,8 +28,8 @@ const buch = (zusatz = {}) => ({
 function zeile(book, isSelected = false) {
 	const nichts = () => {};
 	return render(BestandstabelleZeile, {
-		book,
-		isSelected,
+		titel: book,
+		gewaehlt: isSelected,
 		onOpenDetail: nichts,
 		onToggleSelect: nichts
 	});
@@ -109,8 +109,8 @@ describe('Titel-Verwaltung: Zeile', () => {
 	it('öffnet die Akte über den Knopf am Titel und über die Zeile je einmal', async () => {
 		const geoeffnet = vi.fn();
 		const { getByRole, container } = render(BestandstabelleZeile, {
-			book: buch(),
-			isSelected: false,
+			titel: buch(),
+			gewaehlt: false,
 			onOpenDetail: geoeffnet,
 			onToggleSelect: () => {}
 		});

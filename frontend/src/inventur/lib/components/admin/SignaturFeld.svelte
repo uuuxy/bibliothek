@@ -35,7 +35,7 @@
 
 <Feld
 	id="buch-signatur"
-	label={pflicht ? 'Signatur (Buchrücken) *' : 'Signatur (Buchrücken)'}
+	etikett={pflicht ? 'Signatur (Buchrücken) *' : 'Signatur (Buchrücken)'}
 	bind:value={formular.signatur}
 	list="signatur-vorschlaege"
 	placeholder={beispiele ? `z. B. ${beispiele}` : 'Signatur des Regals'}

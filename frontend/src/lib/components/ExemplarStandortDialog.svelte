@@ -86,14 +86,14 @@
 	<!-- Ein Scan in das offene Feld wäre sonst der Standort der markierten Exemplare. -->
 	<div use:scanSchutz={() => {}}>
 		<Feld
-			label="Standort"
+			etikett="Standort"
 			bind:value={standort}
 			list={listeId}
 			autocomplete="off"
 			disabled={entfernen}
 		/>
 	</div>
-	<Kaestchen bind:checked={entfernen} label="Standort entfernen" />
+	<Kaestchen bind:checked={entfernen} etikett="Standort entfernen" />
 	<datalist id={listeId}>
 		{#each vorhandene as s (s.standort)}
 			<option value={s.standort}>{anzahlText(s.anzahl)}</option>

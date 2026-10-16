@@ -68,7 +68,7 @@ describe('BedarfZeile', () => {
 describe('Bestellbedarf: Filter', () => {
 	it('findet das Buch auch über die ISBN der alten Auflage', async () => {
 		const screen = render(Bestellbedarf, {
-			recommendations: [buch, einzeln],
+			vorschlaege: [buch, einzeln],
 			onAddToCart: vi.fn()
 		});
 		await fireEvent.input(screen.getByLabelText('Bestellvorschläge filtern'), {

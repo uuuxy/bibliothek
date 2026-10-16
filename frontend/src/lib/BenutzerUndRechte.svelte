@@ -120,15 +120,15 @@
 				meldet die Betriebsbereitschaft.
 			</p>
 			{#if laedt}
-				<div class="flex justify-center p-12"><Ladekreis size="lg" label="Rechte laden" /></div>
+				<div class="flex justify-center p-12"><Ladekreis size="lg" etikett="Rechte laden" /></div>
 			{:else if fehler}
 				<!-- Ohne geladene Matrix stünden alle Schalter auf „aus", als wären die Rechte entzogen. -->
 				<LadeFehler titel="Rechte nicht geladen" text={fehler} onerneut={ladeRechte} />
 			{:else}
 				<RechteMatrix
 					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
-					metadata={rechteBeschreibungen}
-					permissionsState={rechteJeRolle}
+					beschreibungen={rechteBeschreibungen}
+					{rechteJeRolle}
 					{updatingKeys}
 					onToggle={schalteRecht}
 				/>

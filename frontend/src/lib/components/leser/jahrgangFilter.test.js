@@ -16,7 +16,7 @@ describe('Jahrgangsfilter in der Leserdatei', () => {
 	/** @param {Partial<Record<string, any>>} extra */
 	function zeichne(extra = {}) {
 		return render(SchuelerdateiLeiste, {
-			searchQuery: '',
+			suche: '',
 			jahrgang: '',
 			jahrgaenge: [5, 6, 11, 13],
 			trefferzahl: 0,

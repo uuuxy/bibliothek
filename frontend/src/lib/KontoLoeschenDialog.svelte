@@ -15,11 +15,11 @@
 	 * @property {() => void} onclose
 	 * @property {any} zuLoeschen
 	 * @property {boolean} loescht
-	 * @property {string | null} error
+	 * @property {string | null} fehler
 	 * @property {() => void} loescheKonto
 	 */
 	/** @type {Props} */
-	let { open, onclose, zuLoeschen, loescht, error, loescheKonto } = $props();
+	let { open, onclose, zuLoeschen, loescht, fehler, loescheKonto } = $props();
 </script>
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
@@ -32,14 +32,14 @@
 				>{zuLoeschen?.vorname} {zuLoeschen?.nachname}</strong
 			> löschen möchten? Diese Aktion wird im Logbuch vermerkt.
 		</p>
-		{#if error}
+		{#if fehler}
 			<!-- Etwa offene Ausleihen im Handapparat: Der Satz des Servers sagt, was zu tun ist. -->
 			<div
 				role="alert"
 				class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
 				<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
-				<span>{error}</span>
+				<span>{fehler}</span>
 			</div>
 		{/if}
 		<!-- „Abbrechen" bleibt bedienbar, auch solange gelöscht wird: Es schließt den Dialog wie

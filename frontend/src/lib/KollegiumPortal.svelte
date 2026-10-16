@@ -20,8 +20,8 @@
 		erzeugeReservierungsListen
 	} from './components/portal/klassensatzReservierung.svelte.js';
 	import { erzeugeProblemMeldung, OHNE_BUCH } from './components/portal/problemMeldung.svelte.js';
-	/** @type {{ user: any }} */
-	let { user } = $props();
+	/** @type {{ konto: any }} */
+	let { konto } = $props();
 
 	let reiter = $state('buecher');
 
@@ -44,7 +44,7 @@
 
 	// Formular-Zustand und Absenden je Titel — ausgelagert, Begründung dort.
 	const reservierung = erzeugeKlassensatzReservierung(
-		() => user,
+		() => konto,
 		listen.warteschlangeFuer,
 		listen.lade
 	);
@@ -114,7 +114,7 @@
 				/>
 			{/if}
 			<PortalProblemZeile
-				form={meldung.form(OHNE_BUCH)}
+				formular={meldung.form(OHNE_BUCH)}
 				onumschalten={meldeOhneBuch}
 				onsenden={() => meldung.senden(OHNE_BUCH)}
 				onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
@@ -138,8 +138,8 @@
 				{#each suche.treffer as book (book.id ?? book.titel_id)}
 					{@const titelId = book.id ?? book.titel_id}
 					<PortalTrefferkarte
-						{book}
-						form={reservierung.form(titelId)}
+						treffer={book}
+						formular={reservierung.form(titelId)}
 						meldung={meldung.form(titelId)}
 						warteschlange={listen.warteschlangeFuer(titelId)}
 						ontoggle={() => reserviereAmTreffer(titelId)}

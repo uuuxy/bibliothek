@@ -32,7 +32,7 @@ const DUBLETTE = antwort(409, {
 function maske(formular) {
 	if (formular.id && !formular.geladen) formular.geladen = { ...formular };
 	const { component } = render(AdminBuchAktionen, {
-		props: { books: [], isEditMode: true, formular }
+		props: { titelListe: [], istBearbeitung: true, formular }
 	});
 	return component;
 }

@@ -7,7 +7,7 @@ import BuchakteHistorie from './BuchakteHistorie.svelte';
 describe('BuchakteHistorie', () => {
 	it('nennt Leser, Klasse, Exemplar und den Stand der Rückgabe', () => {
 		const screen = render(BuchakteHistorie, {
-			history: [
+			verlauf: [
 				{
 					schueler_name: 'Ida',
 					schueler_nachname: 'Imker',
@@ -39,7 +39,7 @@ describe('BuchakteHistorie', () => {
 	});
 
 	it('sagt, wenn es noch keine Ausleihe gab', () => {
-		const screen = render(BuchakteHistorie, { history: [] });
+		const screen = render(BuchakteHistorie, { verlauf: [] });
 		expect(screen.getByText('Noch keine Ausleihen in der Datenbank vorhanden.')).toBeTruthy();
 	});
 });

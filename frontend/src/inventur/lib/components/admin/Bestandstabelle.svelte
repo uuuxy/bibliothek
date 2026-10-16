@@ -8,8 +8,8 @@
 
 	/**
 	 * @type {{
-	 *   books: any[],
-	 *   loading: boolean,
+	 *   titelListe: any[],
+	 *   laedt: boolean,
 	 *   onOpenDetail: (book: any) => void,
 	 *   onCreateNew: () => void,
 	 *   onScan: () => void,
@@ -19,8 +19,8 @@
 	 * }}
 	 */
 	let {
-		books,
-		loading,
+		titelListe,
+		laedt,
 		onOpenDetail,
 		onCreateNew,
 		onScan,
@@ -32,7 +32,7 @@
 	// Auswahl für die Massenaktionen: bestandstabelleAuswahl.svelte.js. Der Effekt hält sie auf
 	// dem, was in der Liste steht — sonst trifft „Löschen" nach dem Filtern Unsichtbares.
 	const auswahl = erzeugeAuswahl();
-	$effect(() => auswahl.angleichen(books));
+	$effect(() => auswahl.angleichen(titelListe));
 
 	// Performance: Begrenzung der gerenderten DOM-Elemente
 	let maxVisible = $state(50);
@@ -51,8 +51,8 @@
 
 <div class="w-full">
 	<BestandstabelleLeiste
-		booksLength={books.length}
-		selectedCount={auswahl.anzahl}
+		titelAnzahl={titelListe.length}
+		anzahlGewaehlt={auswahl.anzahl}
 		onDelete={loesche}
 		onAssignClass={ordneKlasseZu}
 		{onScan}
@@ -67,8 +67,8 @@
 					<th class="w-10">
 						<Kaestchen
 							aria-label="Alle Bücher auswählen"
-							checked={auswahl.alleGewaehlt(books)}
-							onclick={() => auswahl.alleUmschalten(books)}
+							checked={auswahl.alleGewaehlt(titelListe)}
+							onclick={() => auswahl.alleUmschalten(titelListe)}
 						/>
 					</th>
 					<th class="w-20">Cover</th>
@@ -85,16 +85,16 @@
 
 			<tbody>
 				<!-- Die Reihenfolge kommt vom Server: nach dem Titel (GET /api/books). -->
-				{#each books.slice(0, maxVisible) as book (book.id)}
+				{#each titelListe.slice(0, maxVisible) as book (book.id)}
 					<BestandstabelleZeile
-						{book}
-						isSelected={auswahl.enthaelt(book.id)}
+						titel={book}
+						gewaehlt={auswahl.enthaelt(book.id)}
 						{onOpenDetail}
 						onToggleSelect={(id) => auswahl.umschalten(id)}
 					/>
 				{/each}
 
-				{#if books.length === 0 && !loading}
+				{#if titelListe.length === 0 && !laedt}
 					<tr>
 						<td colspan="10" class="text-center">Keine Bücher gefunden.</td>
 					</tr>
@@ -102,10 +102,10 @@
 			</tbody>
 		</Tabelle>
 
-		{#if books.length > maxVisible}
+		{#if titelListe.length > maxVisible}
 			<div class="flex justify-center p-4">
 				<Button variant="secondary" onclick={() => (maxVisible += 50)}>
-					Weitere Bücher laden ({books.length - maxVisible} verbleibend)
+					Weitere Bücher laden ({titelListe.length - maxVisible} verbleibend)
 				</Button>
 			</div>
 		{/if}

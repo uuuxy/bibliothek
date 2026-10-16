@@ -102,8 +102,8 @@
 <div class="py-6 space-y-6">
 	<div class="space-y-4">
 		<div class="flex flex-wrap items-end gap-4">
-			<Feld bind:value={von} label="Von" type="date" class="w-44" />
-			<Feld bind:value={bis} label="Bis" type="date" class="w-44" />
+			<Feld bind:value={von} etikett="Von" type="date" class="w-44" />
+			<Feld bind:value={bis} etikett="Bis" type="date" class="w-44" />
 			<Button variant="secondary" onclick={laden} disabled={laeuft}>Anzeigen</Button>
 			<!-- Ein Link, kein Knopf: Er führt zum Blatt und lässt sich in einem neuen Reiter öffnen.
 			     Die Form ist die von ui/Button. -->

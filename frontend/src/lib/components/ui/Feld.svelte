@@ -44,7 +44,7 @@
 	 * unverändert auf dem <input>.
 	 *
 	 * @prop {string|number} [value] - Gebundener Wert (bindable).
-	 * @prop {string} [label] - Beschriftung über dem Feld.
+	 * @prop {string} [etikett] - Beschriftung über dem Feld.
 	 * @prop {'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url'} [type='text']
 	 * @prop {string} [hint=''] - Hilfetext unter dem Feld.
 	 * @prop {boolean} [ungueltig=false] - Fehlerzustand: Rahmen und Hinweis in `error`.
@@ -65,10 +65,10 @@
 	 * Inhalt legt, gibt die Innenabstände über `feld` mit (z. B. feld="pl-36").
 	 */
 
-	/** @type {{ value?: any, label?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
+	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
 		value = $bindable(),
-		label = undefined,
+		etikett = undefined,
 		type = 'text',
 		hint = '',
 		ungueltig = false,
@@ -173,9 +173,9 @@
 	{/if}
 {/snippet}
 
-{#if label}
+{#if etikett}
 	<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5 {className}">
-		<label for={feldId} class="text-sm font-medium text-on-surface-variant">{label}</label>
+		<label for={feldId} class="text-sm font-medium text-on-surface-variant">{etikett}</label>
 		{@render eingabe()}
 		{#if hint}
 			<span id={hinweisId} class="text-xs {ungueltig ? 'text-error' : 'text-on-surface-variant'}"

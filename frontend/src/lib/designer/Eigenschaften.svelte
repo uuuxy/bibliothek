@@ -13,14 +13,14 @@
 	import Switch from '../components/ui/Switch.svelte';
 	import { MousePointer2, Trash } from '@lucide/svelte';
 
-	/** @type {{ selectedId: string|null, side: 'front'|'back' }} */
-	const { selectedId, side } = $props();
+	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back' }} */
+	const { gewaehlteKennung, side } = $props();
 
 	/** Currently selected element object (live reference — mutations are reactive). */
 	const el = $derived(
-		selectedId
+		gewaehlteKennung
 			? ((side === 'front' ? idStore.front.elements : idStore.back.elements).find(
-					(e) => e.id === selectedId
+					(e) => e.id === gewaehlteKennung
 				) ?? null)
 			: null
 	);
@@ -98,7 +98,7 @@
 			<span class="text-xs font-medium text-on-surface-variant block">Position &amp; Größe</span>
 			<div class="grid grid-cols-2 gap-2">
 				<ZahlenFeld
-					label="X (mm)"
+					etikett="X (mm)"
 					value={el.x}
 					min={0}
 					max={80}
@@ -106,7 +106,7 @@
 					onInput={(v) => (el.x = v)}
 				/>
 				<ZahlenFeld
-					label="Y (mm)"
+					etikett="Y (mm)"
 					value={el.y}
 					min={0}
 					max={50}
@@ -114,7 +114,7 @@
 					onInput={(v) => (el.y = v)}
 				/>
 				<ZahlenFeld
-					label="Breite (mm)"
+					etikett="Breite (mm)"
 					value={el.width}
 					min={3}
 					max={85}
@@ -122,7 +122,7 @@
 					onInput={(v) => (el.width = v)}
 				/>
 				<ZahlenFeld
-					label="Höhe (mm)"
+					etikett="Höhe (mm)"
 					value={el.height}
 					min={2}
 					max={53}
@@ -168,7 +168,7 @@
 						/>
 					</div>
 					<ZahlenFeld
-						label="Ecken (mm)"
+						etikett="Ecken (mm)"
 						value={el.style.radius ?? 0}
 						min={0}
 						max={10}
@@ -189,7 +189,7 @@
 					onchange={ladeBildHoch}
 					class="w-full text-xs text-on-surface-variant file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-surface-container file:text-on-surface hover:file:bg-surface-container-highest cursor-pointer"
 				/>
-				<Kaestchen bind:checked={el.proportional} label="Proportionale Skalierung" />
+				<Kaestchen bind:checked={el.proportional} etikett="Proportionale Skalierung" />
 			</div>
 		{/if}
 	{/if}

@@ -15,12 +15,12 @@
 
 	/**
 	 * @type {{
-	 *   student: any,
+	 *   leser: any,
 	 *   onClose: () => void,
 	 *   onSave: () => void,
 	 * }}
 	 */
-	let { student, onClose, onSave } = $props();
+	let { leser, onClose, onSave } = $props();
 
 	/** @type {{ msg: string, type: 'success' | 'error' } | null} */
 	let snackbar = $state(null);
@@ -51,7 +51,7 @@
 	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `formular.`, dort wo sie
 	// gebraucht werden.
 	const formular = useLeserakteFormular({
-		getStudent: () => student,
+		getStudent: () => leser,
 		onSave: () => onSave(),
 		showSnackbar
 	});
@@ -88,11 +88,11 @@
 				     dem 16.09.2026 jeder Leser, und „Schüler bearbeiten" über der Akte einer
 				     Lehrkraft ist schlicht eine falsche Auskunft. -->
 				<h2 class="text-xl font-black text-on-surface leading-tight">
-					{leserArtText(student?.art)} bearbeiten
+					{leserArtText(leser?.art)} bearbeiten
 				</h2>
 				<p class="text-xs text-on-surface-variant font-medium mt-0.5">
-					{student?.vorname}
-					{student?.nachname}{student?.barcode_id ? ` · ${student.barcode_id}` : ''}
+					{leser?.vorname}
+					{leser?.nachname}{leser?.barcode_id ? ` · ${leser.barcode_id}` : ''}
 				</p>
 			</div>
 		</div>
@@ -116,7 +116,7 @@
 			{eingaben}
 			klassen={klassenListe.liste}
 			klassenFehler={klassenListe.ladefehler}
-			lusdVerknuepft={!!student?.lusd_id}
+			lusdVerknuepft={!!leser?.lusd_id}
 			kontoVorhanden={formular.kontoVorhanden}
 		/>
 

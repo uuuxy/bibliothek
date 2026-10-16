@@ -87,12 +87,12 @@
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-		<Feld type="number" bind:value={fristBuch} label="Tage / Buch" min={1} max={365} />
-		<Feld type="number" bind:value={fristMedien} label="Tage / Medien" min={1} max={365} />
-		<Feld type="number" bind:value={maxAusleihen} label="Max. Ausleihen" min={1} max={50} />
+		<Feld type="number" bind:value={fristBuch} etikett="Tage / Buch" min={1} max={365} />
+		<Feld type="number" bind:value={fristMedien} etikett="Tage / Medien" min={1} max={365} />
+		<Feld type="number" bind:value={maxAusleihen} etikett="Max. Ausleihen" min={1} max={50} />
 		<Feld
 			bind:value={lmfStichtag}
-			label="LMF-Stichtag (MM-TT)"
+			etikett="LMF-Stichtag (MM-TT)"
 			type="text"
 			placeholder="07-31"
 			pattern={'\\d{2}-\\d{2}'}
@@ -100,7 +100,7 @@
 		/>
 		<Feld
 			bind:value={lmfEingang}
-			label="Eingangsjahrgänge"
+			etikett="Eingangsjahrgänge"
 			type="text"
 			placeholder="5, 7"
 			hint="Jahrgänge, die nach den Ferien Bücher bekommen"
@@ -116,11 +116,11 @@
 					>Alle neuen Ausleihen laufen bis zum Ferienende statt bis zur Regelfrist.</span
 				>
 			</div>
-			<Switch bind:checked={leseclubAktiv} label="Ferien-Leseclub umschalten" />
+			<Switch bind:checked={leseclubAktiv} etikett="Ferien-Leseclub umschalten" />
 		</div>
 		{#if leseclubAktiv}
 			<div class="max-w-xs">
-				<Feld bind:value={leseclubZieldatum} label="Ferienende" type="date" />
+				<Feld bind:value={leseclubZieldatum} etikett="Ferienende" type="date" />
 			</div>
 		{/if}
 	</div>

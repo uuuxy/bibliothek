@@ -70,26 +70,26 @@
 	<!-- Der Titel ist das Pflichtfeld der Maske: Stern an der Beschriftung, der Fehler am Feld. -->
 	<Feld
 		id="buch-titel"
-		label="Titel *"
+		etikett="Titel *"
 		bind:value={formular.title}
 		required
 		ungueltig={titelFehlt}
 		hint={titelFehlt ? 'Bitte den Titel eintragen. Gespeichert wird erst mit ihm.' : ''}
 	/>
 
-	<Feld id="buch-untertitel" label="Untertitel" bind:value={formular.untertitel} />
+	<Feld id="buch-untertitel" etikett="Untertitel" bind:value={formular.untertitel} />
 
 	<Feld
 		id="buch-autor"
-		label={formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}
+		etikett={formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}
 		bind:value={formular.author}
 	/>
 
 	<div class="grid grid-cols-2 gap-4">
-		<Feld id="buch-verlag" label="Verlag" bind:value={formular.verlag} />
+		<Feld id="buch-verlag" etikett="Verlag" bind:value={formular.verlag} />
 		<Feld
 			id="buch-jahr"
-			label="Erscheinungsjahr"
+			etikett="Erscheinungsjahr"
 			type="number"
 			bind:value={formular.erscheinungsjahr}
 		/>
@@ -101,13 +101,13 @@
 	<div class="grid grid-cols-2 gap-4">
 		<Feld
 			id="buch-auflage"
-			label="Auflage"
+			etikett="Auflage"
 			bind:value={formular.auflage}
 			hint="Wie auf dem Titelblatt, z. B. „4. Aufl. 2023“. Leer lassen, wenn es nur eine gibt."
 		/>
 		<Feld
 			id="buch-listenpreis"
-			label="Listenpreis"
+			etikett="Listenpreis"
 			type="number"
 			step="0.01"
 			min="0"
@@ -123,7 +123,7 @@
 	<div class="space-y-2">
 		<ChipFeld
 			id="buch-schlagworte"
-			label="Schlagworte"
+			etikett="Schlagworte"
 			bind:werte={formular.schlagworte}
 			vorschlaege={schlagwortVorschlaege.liste}
 			ontippen={schlagwortVorschlaege.getippt}

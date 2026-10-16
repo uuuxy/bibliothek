@@ -308,7 +308,7 @@
 			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
 			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
 				<div class="lg:col-span-2 {FLAECHE} p-5 h-72 flex flex-col">
-					<StatistikVerlauf data={kennzahlen.monats_trend ?? []} />
+					<StatistikVerlauf daten={kennzahlen.monats_trend ?? []} />
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">

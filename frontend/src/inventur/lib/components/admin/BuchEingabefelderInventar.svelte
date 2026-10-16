@@ -10,7 +10,7 @@
 <div class="grid grid-cols-2 gap-4">
 	<Feld
 		id="buch-bestand"
-		label="Aktueller Bestand"
+		etikett="Aktueller Bestand"
 		type="number"
 		bind:value={formular.stock}
 		hint={bestandHinweis(formular.id, formular.stock)}
@@ -18,5 +18,5 @@
 	>
 		{#snippet nachlaufend()}Stück{/snippet}
 	</Feld>
-	<Feld id="buch-zaehldatum" label="Zähldatum" type="date" bind:value={formular.lastCounted} />
+	<Feld id="buch-zaehldatum" etikett="Zähldatum" type="date" bind:value={formular.lastCounted} />
 </div>

@@ -26,8 +26,8 @@
 	<OmniboxThekeHinweise />
 	<Leserakte
 		bind:this={profil}
-		student={leser}
-		defaultTab="ausleihen"
+		{leser}
+		startReiter="ausleihen"
 		onMerged={omniboxStore.uebernimmZusammengefuehrt}
 		onDeselect={abwaehlen}
 		onReturnClick={(barcode) => omniboxStore.gibZurueck(barcode, () => profil?.ladeNeu())}

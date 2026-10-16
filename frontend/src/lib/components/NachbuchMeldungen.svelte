@@ -60,7 +60,7 @@
 		<div class="mb-3">
 			<Kaestchen
 				bind:checked={m.auchQuittierte}
-				label="Auch erledigte zeigen"
+				etikett="Auch erledigte zeigen"
 				onchange={() => m.lade()}
 			/>
 		</div>

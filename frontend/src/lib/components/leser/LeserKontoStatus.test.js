@@ -10,7 +10,7 @@ describe('LeserKontoStatus', () => {
 	it('bietet bei der Sperre der Ehemaligen das Aufheben an', async () => {
 		const onLock = vi.fn();
 		const screen = render(LeserKontoStatus, {
-			profile: {
+			leser: {
 				art: 'schueler',
 				ist_gesperrt: true,
 				block_reason: 'Automatisierte Abgänger-Sperre (offene Vorgänge)'
@@ -23,14 +23,14 @@ describe('LeserKontoStatus', () => {
 	});
 
 	it('bietet bei einem freien Schüler das Sperren an', () => {
-		const screen = render(LeserKontoStatus, { profile: { art: 'schueler' }, onLock: vi.fn() });
+		const screen = render(LeserKontoStatus, { leser: { art: 'schueler' }, onLock: vi.fn() });
 		expect(screen.getByRole('button', { name: /Schüler sperren/ })).toBeTruthy();
 	});
 
 	it('verschließt den Knopf bei einem Kollegen und sagt warum', () => {
 		const onLock = vi.fn();
 		const screen = render(LeserKontoStatus, {
-			profile: { art: 'lehrkraft', is_manually_blocked: true, block_reason: 'alt' },
+			leser: { art: 'lehrkraft', is_manually_blocked: true, block_reason: 'alt' },
 			onLock
 		});
 		const knopf = /** @type {HTMLButtonElement} */ (
@@ -49,7 +49,7 @@ describe('LeserKontoStatus', () => {
 	// Zeile nie als „nichts offen" gelesen wird.
 	it('nennt den offenen Betrag, wenn etwas offen ist', () => {
 		const screen = render(LeserKontoStatus, {
-			profile: { art: 'schueler' },
+			leser: { art: 'schueler' },
 			offen: { anzahl: 2, summe: 19.5 }
 		});
 		expect(screen.getByText('Offene Forderungen')).toBeTruthy();
@@ -60,7 +60,7 @@ describe('LeserKontoStatus', () => {
 	it('sagt „keine", wenn nichts offen ist — auch beim Kollegen', () => {
 		for (const art of ['schueler', 'lehrkraft']) {
 			const screen = render(LeserKontoStatus, {
-				profile: { art },
+				leser: { art },
 				offen: { anzahl: 0, summe: 0 }
 			});
 			expect(screen.getByText('Offene Forderungen')).toBeTruthy();

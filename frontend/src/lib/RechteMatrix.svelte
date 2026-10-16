@@ -6,8 +6,8 @@
 	 * im Eltern-BenutzerUndRechte; hier nur Anzeige + Toggle-Callback.
 	 *
 	 * @typedef {Object} Props
-	 * @property {any[]} metadata - Kategorien/Items (rechteKategorien.js).
-	 * @property {Record<string, Record<string, boolean>>} permissionsState
+	 * @property {any[]} beschreibungen - Kategorien/Items (rechteKategorien.js).
+	 * @property {Record<string, Record<string, boolean>>} rechteJeRolle
 	 * @property {Record<string, boolean>} updatingKeys
 	 * @property {(role: string, key: string, currentVal: boolean) => void} onToggle
 	 * @property {boolean} [schreibgeschuetzt] - PUT /api/admin/permissions ist Admin-only; mit
@@ -15,7 +15,13 @@
 	 */
 
 	/** @type {Props} */
-	let { metadata, permissionsState, updatingKeys, onToggle, schreibgeschuetzt = false } = $props();
+	let {
+		beschreibungen,
+		rechteJeRolle,
+		updatingKeys,
+		onToggle,
+		schreibgeschuetzt = false
+	} = $props();
 </script>
 
 <!-- Ein Schalter-Block für alle Rollen. Das {#key} setzt den Schalter nach jedem Speichern
@@ -23,7 +29,7 @@
      umgelegt, obwohl das Recht unverändert ist. -->
 {#snippet roleToggle(item, roleLabel, roleKey)}
 	{@const isUpdating = updatingKeys[`${roleKey}-${item.key}`]}
-	{@const wert = permissionsState[roleKey]?.[item.key] ?? false}
+	{@const wert = rechteJeRolle[roleKey]?.[item.key] ?? false}
 	<div
 		class="flex items-center gap-3"
 		title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
@@ -35,7 +41,7 @@
 			<Switch
 				checked={wert}
 				disabled={isUpdating || schreibgeschuetzt}
-				label="{roleLabel} Rechte umschalten"
+				etikett="{roleLabel} Rechte umschalten"
 				onchange={() => onToggle(roleKey, item.key, wert)}
 			/>
 		{/key}
@@ -43,7 +49,7 @@
 {/snippet}
 
 <div class="space-y-12">
-	{#each metadata as cat, _i (_i)}
+	{#each beschreibungen as cat, _i (_i)}
 		<div>
 			<div class="pb-3 mb-1 border-b border-outline-variant flex items-center gap-3">
 				<cat.icon class="text-on-surface-variant h-5 w-5" aria-hidden="true" />
@@ -67,7 +73,7 @@
 									class="text-xs font-bold text-on-surface-variant tracking-wider w-24 text-right"
 									>ADMIN</span
 								>
-								<Switch checked disabled label="Administrator hat immer alle Rechte" />
+								<Switch checked disabled etikett="Administrator hat immer alle Rechte" />
 							</div>
 
 							{@render roleToggle(item, 'LEITUNG', 'leitung')}

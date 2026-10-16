@@ -72,11 +72,7 @@
 	</div>
 
 	<!-- Content/Table Section -->
-	<WareneingangTabelle
-		{incomingShipments}
-		{totalItems}
-		bind:selectedExemplarIds={gewaehlteExemplare}
-	/>
+	<WareneingangTabelle {incomingShipments} {totalItems} bind:gewaehlteExemplare />
 
 	<!-- Einbuchen steht in der Leiste unter der Liste, wie bei den Exemplaren der Buchakte:
 	     Ein Knopf im Kopf wäre bei einer langen Lieferung aus dem Bild, sobald man markiert. -->

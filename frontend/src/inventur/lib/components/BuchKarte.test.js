@@ -22,7 +22,11 @@ describe('BuchKarte — wohin die Klicks gehen', () => {
 	it('der Stift öffnet NUR die Bearbeitung, nicht auch die Akte', async () => {
 		const akte = vi.fn();
 		const bearbeiten = vi.fn();
-		const { getByRole } = render(BuchKarte, { book: buch, onclick: akte, onEditClick: bearbeiten });
+		const { getByRole } = render(BuchKarte, {
+			titel: buch,
+			onclick: akte,
+			onEditClick: bearbeiten
+		});
 
 		await fireEvent.click(getByRole('button', { name: 'Buch schnell bearbeiten' }));
 
@@ -32,7 +36,7 @@ describe('BuchKarte — wohin die Klicks gehen', () => {
 
 	it('der Titel öffnet die Akte über die Fläche — genau einmal', async () => {
 		const akte = vi.fn();
-		const { getByRole } = render(BuchKarte, { book: buch, onclick: akte });
+		const { getByRole } = render(BuchKarte, { titel: buch, onclick: akte });
 
 		await fireEvent.click(getByRole('button', { name: buch.title }));
 
@@ -45,7 +49,7 @@ describe('BuchKarte — wohin die Klicks gehen', () => {
 describe('BuchKarte — ein Buch in mehreren Auflagen', () => {
 	it('zeigt die Summe und die Aufschlüsselung', () => {
 		const { getByText } = render(BuchKarte, {
-			book: {
+			titel: {
 				...buch,
 				auflage: '3. Aufl.',
 				buch: {
@@ -66,7 +70,7 @@ describe('BuchKarte — ein Buch in mehreren Auflagen', () => {
 	});
 
 	it('ohne weitere Auflagen bleibt es bei den eigenen Zahlen', () => {
-		const { getByText, queryByText } = render(BuchKarte, { book: buch });
+		const { getByText, queryByText } = render(BuchKarte, { titel: buch });
 		expect(getByText('27 von 28 verfügbar')).toBeTruthy();
 		expect(queryByText(/Bestand aus/)).toBeNull();
 	});

@@ -24,7 +24,7 @@ beforeEach(() => {
 // benannte Leiste mit der Rolle tablist, ein Reiter je Bereich.
 describe('Buchakte: Reiter', () => {
 	it('stehen in einer benannten Reiterleiste und wechseln mit einem Klick', async () => {
-		const screen = render(Buchakte, { bookId: 'A', onBack: vi.fn() });
+		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
 
 		const leiste = await screen.findByRole('tablist', { name: 'Bereiche der Buchakte' });
 		const namen = [...leiste.querySelectorAll('[role="tab"]')].map((r) => r.textContent?.trim());
@@ -68,7 +68,7 @@ describe('Buchakte: Zahlen zu den Exemplaren', () => {
 
 	it('der Reiter zählt den Bestand, der Kopf nennt die bestellten', async () => {
 		antworteMitExemplaren(exemplare);
-		const screen = render(Buchakte, { bookId: 'A', onBack: vi.fn() });
+		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
 
 		expect(await screen.findByRole('tab', { name: 'Exemplare (2)' })).toBeTruthy();
 		const bestellt = screen.getByText('bestellt', { selector: 'dt' });
@@ -78,7 +78,7 @@ describe('Buchakte: Zahlen zu den Exemplaren', () => {
 
 	it('ohne bestelltes Exemplar steht im Kopf keine dritte Zahl', async () => {
 		antworteMitExemplaren(exemplare.filter((ex) => ex.im_bestand));
-		const screen = render(Buchakte, { bookId: 'A', onBack: vi.fn() });
+		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
 
 		expect(await screen.findByRole('tab', { name: 'Exemplare (2)' })).toBeTruthy();
 		expect(screen.queryByText('bestellt', { selector: 'dt' })).toBeNull();

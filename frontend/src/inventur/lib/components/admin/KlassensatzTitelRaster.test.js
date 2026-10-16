@@ -14,7 +14,7 @@ const buch = (zusatz) => ({
 
 /** Der Text der Karten, je Buch. @param {any[]} books */
 function karten(books) {
-	const { container } = render(KlassensatzTitelRaster, { books });
+	const { container } = render(KlassensatzTitelRaster, { titelListe: books });
 	return [...container.querySelectorAll('button')].map((k) => (k.textContent ?? '').trim());
 }
 

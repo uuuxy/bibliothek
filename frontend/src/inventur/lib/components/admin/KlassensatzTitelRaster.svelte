@@ -4,12 +4,16 @@
 	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
 	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
-	let { books = [], buecherFehler = false, selectedBookIds = $bindable(new Set()) } = $props();
+	let {
+		titelListe = [],
+		buecherFehler = false,
+		gewaehlteKennungen = $bindable(new Set())
+	} = $props();
 
 	let suche = $state('');
 
 	const gefilterteTitel = $derived(
-		books.filter(
+		titelListe.filter(
 			(b) =>
 				b.title.toLowerCase().includes(suche.toLowerCase()) ||
 				b.subject.toLowerCase().includes(suche.toLowerCase()) ||
@@ -27,10 +31,10 @@
 	 * @param {string} id
 	 */
 	function schalteTitelUm(id) {
-		if (selectedBookIds.has(id)) {
-			selectedBookIds = new Set([...selectedBookIds].filter((bId) => bId !== id));
+		if (gewaehlteKennungen.has(id)) {
+			gewaehlteKennungen = new Set([...gewaehlteKennungen].filter((bId) => bId !== id));
 		} else {
-			selectedBookIds = new Set([...selectedBookIds, id]);
+			gewaehlteKennungen = new Set([...gewaehlteKennungen, id]);
 		}
 	}
 
@@ -84,14 +88,14 @@
 		{@const jahrgang = jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)}
 		<button
 			onclick={() => schalteTitelUm(book.id)}
-			aria-pressed={selectedBookIds.has(book.id)}
+			aria-pressed={gewaehlteKennungen.has(book.id)}
 			class="group relative flex flex-col text-left rounded-3xl overflow-hidden transition-all duration-300 transform active:scale-95
-            {selectedBookIds.has(book.id)
+            {gewaehlteKennungen.has(book.id)
 				? 'bg-primary-container/30 ring-4 ring-primary shadow-xl scale-[1.02]'
 				: 'bg-surface-container-lowest shadow-md hover:shadow-xl'}"
 		>
 			<!-- Selection Overlay -->
-			{#if selectedBookIds.has(book.id)}
+			{#if gewaehlteKennungen.has(book.id)}
 				<div
 					class="absolute top-4 right-4 z-10 bg-primary text-on-primary p-1.5 rounded-full border-2 border-surface-container-lowest animate-in zoom-in-50 duration-200"
 				>

@@ -82,8 +82,8 @@
 	{#if geoeffneterLeser}
 		<div class="animate-fade-in flex-1 overflow-y-auto">
 			<Leserakte
-				student={geoeffneterLeser}
-				defaultTab={profilReiter}
+				leser={geoeffneterLeser}
+				startReiter={profilReiter}
 				onMerged={(id) => (geoeffneterLeser = { id })}
 				onDeselect={() => {
 					geoeffneterLeser = null;
@@ -105,7 +105,7 @@
 			{#if aktiverReiter === 'active'}
 				<div class="w-full no-print animate-fade-in">
 					<SchuelerdateiLeiste
-						bind:searchQuery={suche.suchtext}
+						bind:suche={suche.suchtext}
 						bind:jahrgang={suche.jahrgang}
 						jahrgaenge={suche.jahrgaenge}
 						jahrgaengeFehler={suche.jahrgaengeFehler}
@@ -134,8 +134,8 @@
 
 					<div class="mt-6">
 						<AktiveLeserListe
-							filteredStudents={suche.schueler}
-							loading={suche.beschaeftigt}
+							leserListe={suche.schueler}
+							laedt={suche.beschaeftigt}
 							ladefehler={suche.ladefehler}
 							onErneut={() => suche.lade()}
 							auswahl={gewaehlt.auswahl}
@@ -180,5 +180,5 @@
      PDF vom Server, und jede Karte hier zöge ein Barcode-Bild über die Leitung, das
      niemand zu sehen bekommt. -->
 {#if gewaehlt.markierte.length > 0 && !druck.etikettModus}
-	<AusweisStapeldruck students={gewaehlt.markierte} />
+	<AusweisStapeldruck leserListe={gewaehlt.markierte} />
 {/if}

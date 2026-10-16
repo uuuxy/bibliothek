@@ -44,7 +44,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		});
 
 		const screen = render(SchadenMeldenDialog, {
-			book: buch,
+			ausleihe: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});
@@ -57,7 +57,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 	it('fragt den Server nach genau diesem Exemplar', async () => {
 		serverLiefert({ betrag: 12, herleitung: 'egal', ist_lernmittel: false });
 
-		render(SchadenMeldenDialog, { book: buch, onCancel: vi.fn(), onSubmit: vi.fn() });
+		render(SchadenMeldenDialog, { ausleihe: buch, onCancel: vi.fn(), onSubmit: vi.fn() });
 
 		await waitFor(() =>
 			expect(apiFetch).toHaveBeenCalledWith('/api/buecher/exemplare/e1/ersatzwert-vorschlag')
@@ -72,7 +72,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		});
 
 		const screen = render(SchadenMeldenDialog, {
-			book: buch,
+			ausleihe: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});
@@ -90,7 +90,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		vi.mocked(apiFetch).mockImplementation(() => Promise.reject(new Error('Netz weg')));
 
 		const screen = render(SchadenMeldenDialog, {
-			book: buch,
+			ausleihe: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});
@@ -118,7 +118,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 				})
 		);
 		const onSubmit = vi.fn();
-		const screen = render(SchadenMeldenDialog, { book: buch, onCancel: vi.fn(), onSubmit });
+		const screen = render(SchadenMeldenDialog, { ausleihe: buch, onCancel: vi.fn(), onSubmit });
 
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
 		await fireEvent.input(feld, { target: { value: '12.5' } });
@@ -136,7 +136,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		serverLiefert({ betrag: 99, herleitung: 'darf nie erscheinen', ist_lernmittel: true });
 
 		render(SchadenMeldenDialog, {
-			book: { ...buch, ohneForderung: true },
+			ausleihe: { ...buch, ohneForderung: true },
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});

@@ -76,10 +76,10 @@
 	onclose={() => (offen = false)}
 	onbestaetigen={hinzufuegen}
 >
-	<Feld id="lmf-freier-tag-datum" label="Freier Tag" type="date" bind:value={datum} />
+	<Feld id="lmf-freier-tag-datum" etikett="Freier Tag" type="date" bind:value={datum} />
 	<Feld
 		id="lmf-freier-tag-grund"
-		label="Grund"
+		etikett="Grund"
 		bind:value={grund}
 		placeholder="z. B. Pädagogischer Tag"
 	/>

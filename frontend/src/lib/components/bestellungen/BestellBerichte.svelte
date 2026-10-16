@@ -117,7 +117,7 @@
 			</div>
 
 			{#if typ === 'monat'}
-				<Feld id="monat" label="Monat" type="month" bind:value={monatJahr} />
+				<Feld id="monat" etikett="Monat" type="month" bind:value={monatJahr} />
 			{:else if typ === 'jahr'}
 				<div class="space-y-1.5">
 					<label class="block text-sm font-medium text-on-surface" for="jahr">Jahr</label>
@@ -141,10 +141,10 @@
 					{/if}
 				</div>
 				<div class="grid grid-cols-2 gap-4">
-					<Feld id="von" label="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
+					<Feld id="von" etikett="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
 					<Feld
 						id="bis"
-						label="Bis"
+						etikett="Bis"
 						type="date"
 						bind:value={bisDatum}
 						ungueltig={rangeInvalid}

@@ -49,7 +49,7 @@
 	<tr aria-selected="true" class="align-top">
 		<td class="space-y-2">
 			<Feld aria-label="Name" bind:value={neuerName} />
-			<Switch bind:checked={istHauptlieferant} label="Hauptlieferant der Schule ({s.name})" />
+			<Switch bind:checked={istHauptlieferant} etikett="Hauptlieferant der Schule ({s.name})" />
 		</td>
 		<td class="space-y-2">
 			<Feld aria-label="E-Mail" type="email" bind:value={neueEmail} />

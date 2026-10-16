@@ -102,7 +102,7 @@
 			>
 				<Feld
 					id="bescheid-frist"
-					label="Zahlungsfrist (steht als Datum im Brief)"
+					etikett="Zahlungsfrist (steht als Datum im Brief)"
 					type="date"
 					bind:value={formular.frist}
 					feld="w-44"

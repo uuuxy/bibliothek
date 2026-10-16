@@ -21,14 +21,14 @@
 	 * Konto löscht. `email` im Profil ist die Adresse am Konto, leer heißt kein Konto.
 	 *
 	 * @prop {() => void} onDelete - Callback, der den Lösch-/Archivierungsdialog öffnet.
-	 * @prop {any} profile - die geladene Akte (art, email).
+	 * @prop {any} leser - die geladene Akte (art, email).
 	 */
 
-	/** @type {{ onDelete: () => void, profile: any }} */
-	let { onDelete, profile } = $props();
+	/** @type {{ onDelete: () => void, leser: any }} */
+	let { onDelete, leser } = $props();
 
-	const kollege = $derived(istKollegium(profile));
-	const mitZugang = $derived(kollege && !!profile?.email);
+	const kollege = $derived(istKollegium(leser));
+	const mitZugang = $derived(kollege && !!leser?.email);
 </script>
 
 <section

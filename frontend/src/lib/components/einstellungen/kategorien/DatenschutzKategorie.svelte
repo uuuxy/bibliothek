@@ -130,7 +130,7 @@
 		<Feld
 			type="number"
 			bind:value={lesehistorie}
-			label="Lesehistorie Schülerbücherei (Tage)"
+			etikett="Lesehistorie Schülerbücherei (Tage)"
 			min={0}
 			max={3650}
 			hint="Vorgabe 1 (einen Tag nach der Rückgabe)."
@@ -138,7 +138,7 @@
 		<Feld
 			type="number"
 			bind:value={lesehistorieLmf}
-			label="Lesehistorie Lernmittel (Tage)"
+			etikett="Lesehistorie Lernmittel (Tage)"
 			min={0}
 			max={3650}
 			hint="Vorgabe 730 (zwei Schuljahre)."
@@ -146,7 +146,7 @@
 		<Feld
 			type="number"
 			bind:value={anliegen}
-			label="Erledigte Anliegen aufbewahren (Tage)"
+			etikett="Erledigte Anliegen aufbewahren (Tage)"
 			min={0}
 			max={3650}
 			hint="Vorgabe 365."
@@ -154,7 +154,7 @@
 		<Feld
 			type="number"
 			bind:value={protokollMonate}
-			label="Prüfprotokoll aufbewahren (Monate)"
+			etikett="Prüfprotokoll aufbewahren (Monate)"
 			min={6}
 			max={120}
 			hint="Vorgabe 24. Mindestens 6 — darunter ist nicht mehr nachvollziehbar, wer eine Gebühr storniert oder einen Bestand geändert hat."
@@ -162,7 +162,7 @@
 		<Feld
 			type="number"
 			bind:value={thekeLeeren}
-			label="Theke leeren nach (Min.)"
+			etikett="Theke leeren nach (Min.)"
 			min={0}
 			max={1440}
 			hint="Vorgabe 5."
@@ -170,7 +170,7 @@
 		<Feld
 			type="number"
 			bind:value={sperre}
-			label="Sperrbildschirm nach (Min.)"
+			etikett="Sperrbildschirm nach (Min.)"
 			min={0}
 			max={1440}
 			hint="Vorgabe 15."
@@ -178,7 +178,7 @@
 		<Feld
 			type="number"
 			bind:value={abgaengerKarenz}
-			label="Abgänger-Karenzzeit (Tage)"
+			etikett="Abgänger-Karenzzeit (Tage)"
 			min={0}
 			max={365}
 			hint="Vorgabe 90. 0 = sofort anonymisieren."

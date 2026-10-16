@@ -53,7 +53,7 @@
 
 	{#if laedt}
 		<div class="flex justify-center py-20">
-			<Ladekreis size="lg" label="Admin-Audit-Log lädt" />
+			<Ladekreis size="lg" etikett="Admin-Audit-Log lädt" />
 		</div>
 	{:else if fehler}
 		<LadeFehler onerneut={fetchLogs} titel="Admin-Audit-Log nicht geladen" text={fehler} />

@@ -143,10 +143,10 @@
 	</Tabelle>
 
 	<div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
-		<Feld id="sommerferien-von" label="Beginn" type="date" bind:value={von} />
+		<Feld id="sommerferien-von" etikett="Beginn" type="date" bind:value={von} />
 		<Feld
 			id="sommerferien-bis"
-			label="Ende"
+			etikett="Ende"
 			type="date"
 			bind:value={bis}
 			ungueltig={Boolean(von && bis) && !aufnehmbar}

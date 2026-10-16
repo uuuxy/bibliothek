@@ -77,7 +77,7 @@
 
 		<Feld
 			id="altbestand-stichtag"
-			label="Beklebt bis"
+			etikett="Beklebt bis"
 			type="date"
 			bind:value={stichtag}
 			onchange={zaehle}

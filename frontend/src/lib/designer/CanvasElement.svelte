@@ -15,12 +15,12 @@
 
 	/**
 	 * @type {{
-	 *   el: any, isSelected: boolean, student: any, barcodeType: string,
+	 *   el: any, gewaehlt: boolean, leser: any, barcodeType: string,
 	 *   onStartDrag: (e: PointerEvent, id: string) => void,
 	 *   onStartResize: (e: PointerEvent, id: string, corner: 'nw'|'ne'|'sw'|'se') => void
 	 * }}
 	 */
-	const { el, isSelected, student, barcodeType, onStartDrag, onStartResize } = $props();
+	const { el, gewaehlt, leser, barcodeType, onStartDrag, onStartResize } = $props();
 
 	const isBox = $derived(el.type === 'box');
 	const isBarcode = $derived(
@@ -43,7 +43,7 @@
       z-index: {el.zIndex};
       cursor: move;
     "
-	class="{isSelected
+	class="{gewaehlt
 		? 'ring-2 ring-primary ring-offset-0'
 		: 'hover:ring-1 hover:ring-outline hover:ring-dashed'} rounded-xs"
 >
@@ -68,11 +68,11 @@
         "
 		>
 			{#if el.type === 'name'}
-				{student ? `${student.vorname} ${student.nachname}` : 'Max Mustermann'}
+				{leser ? `${leser.vorname} ${leser.nachname}` : 'Max Mustermann'}
 			{:else if el.type === 'dokumenttyp'}
-				{ausweisTitel(student?.art)}
+				{ausweisTitel(leser?.art)}
 			{:else if el.type === 'validity'}
-				{`Gültig bis: 31.07.${student?.ausweis_gueltig_bis ?? '–'}`}
+				{`Gültig bis: 31.07.${leser?.ausweis_gueltig_bis ?? '–'}`}
 			{:else}
 				{el.content}
 			{/if}
@@ -103,11 +103,11 @@
 		</div>
 	{:else if isBarcode}
 		<div class="w-full h-full flex flex-col items-center justify-center">
-			{#if student}
+			{#if leser}
 				<!-- Dieselbe Größenregel wie auf dem Papier (Kartenseite), aus EINER Funktion. -->
 				<img
 					src={strichcodeBildUrl(
-						student.barcode_id,
+						leser.barcode_id,
 						strichcodeBildOptionenFuerElement(el, barcodeType)
 					)}
 					class="max-w-full max-h-full object-contain pointer-events-none"
@@ -115,7 +115,7 @@
 				/>
 				<span
 					class="font-bold text-[6.5pt] tracking-widest pointer-events-none"
-					style="color: {NUMMER_FARBE};">{student.barcode_id}</span
+					style="color: {NUMMER_FARBE};">{leser.barcode_id}</span
 				>
 			{:else}
 				<div class="text-[5px] text-on-surface-variant font-bold">BARCODE</div>
@@ -123,7 +123,7 @@
 		</div>
 	{/if}
 
-	{#if isSelected}
+	{#if gewaehlt}
 		{@render resizeHandle('nw', 'top-0 left-0 cursor-nw-resize -translate-x-1/2 -translate-y-1/2')}
 		{@render resizeHandle('ne', 'top-0 right-0 cursor-ne-resize translate-x-1/2 -translate-y-1/2')}
 		{@render resizeHandle(

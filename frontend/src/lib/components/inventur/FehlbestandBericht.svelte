@@ -25,12 +25,12 @@
 
 	/**
 	 * @type {{
-	 *   eintraege: any[], label?: string, onSchliessen: () => void,
+	 *   eintraege: any[], etikett?: string, onSchliessen: () => void,
 	 *   onGefunden: (exemplarId: string) => Promise<void>,
 	 *   onEndgueltigLoeschen: (exemplarIds: string[]) => Promise<void>
 	 * }}
 	 */
-	let { eintraege, label = '', onSchliessen, onGefunden, onEndgueltigLoeschen } = $props();
+	let { eintraege, etikett = '', onSchliessen, onGefunden, onEndgueltigLoeschen } = $props();
 
 	let loeschDialogOffen = $state(false);
 	let loeschtGerade = $state(false);
@@ -43,7 +43,7 @@
 
 	// Auf das Blatt kommt, was noch zu suchen ist; Geklärtes steht dort nur als Zahl.
 	function drucken() {
-		const html = baueFehlbestandDruckHtml(offene, { label, gebucht: eintraege.length });
+		const html = baueFehlbestandDruckHtml(offene, { label: etikett, gebucht: eintraege.length });
 		if (!druckeDokument(html)) snackbars.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 
@@ -78,7 +78,7 @@
 			<PackageSearch class="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
 			<div>
 				<h2 class="text-base font-bold text-on-surface">
-					Fehlbestand{label ? ` — ${label}` : ''}
+					Fehlbestand{etikett ? ` — ${etikett}` : ''}
 				</h2>
 				<p class="mt-0.5 text-sm text-on-surface-variant">
 					{eintraege.length}

@@ -19,7 +19,7 @@
 	 *   mittel: string,
 	 *   mittelFilter: Array<{ value: string, label: string }>,
 	 *   euro: (n: number) => string,
-	 *   topfLabel: (wert: string) => string,
+	 *   topfName: (wert: string) => string,
 	 *   onFilterWechsel: () => void
 	 * }}
 	 */
@@ -32,7 +32,7 @@
 		mittel = $bindable(''),
 		mittelFilter,
 		euro,
-		topfLabel,
+		topfName,
 		onFilterWechsel
 	} = $props();
 </script>
@@ -73,7 +73,7 @@
 				<div class="mt-1 space-y-0.5 text-xs text-on-surface-variant">
 					{#each aufteilung as t (t.mittel)}
 						<div>
-							{topfLabel(t.mittel)}:
+							{topfName(t.mittel)}:
 							<span class="font-semibold">
 								{bestellStore.preiseErfassen ? euro(t.gesamtbetrag) : t.gesamt_exemplare}
 							</span>

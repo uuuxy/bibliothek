@@ -22,8 +22,8 @@ const buch = (/** @type {string} */ id, /** @type {string} */ titel) => ({
 /** @param {any[]} books */
 function zeige(books, onDelete = vi.fn()) {
 	return render(Bestandstabelle, {
-		books,
-		loading: false,
+		titelListe: books,
+		laedt: false,
 		onOpenDetail: vi.fn(),
 		onCreateNew: vi.fn(),
 		onScan: vi.fn(),
@@ -44,7 +44,7 @@ describe('Bestandstabelle: Auswahl und Massenaktion', () => {
 		expect(getByRole('button', { name: /Löschen \(3\)/ })).toBeTruthy();
 
 		// Suche eingegrenzt: nur noch ein Titel in der Liste.
-		await rerender({ books: [buch('1', 'Mathe 5')] });
+		await rerender({ titelListe: [buch('1', 'Mathe 5')] });
 
 		// Die Werkzeugleiste zählt jetzt nur noch die sichtbare Zeile …
 		expect(

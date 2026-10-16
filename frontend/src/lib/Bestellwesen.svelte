@@ -149,7 +149,7 @@
 							: 'lg:col-span-11 xl:col-span-11'}"
 					>
 						<Bestellbedarf
-							recommendations={bestellStore.recommendations}
+							vorschlaege={bestellStore.recommendations}
 							onAddToCart={(book) => bestellStore.addToCart(book)}
 						/>
 					</div>

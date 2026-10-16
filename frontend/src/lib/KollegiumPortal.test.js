@@ -61,7 +61,7 @@ describe('KollegiumPortal', () => {
 	});
 
 	it('lässt nach einer gesendeten Anfrage sofort die nächste Klasse zu', async () => {
-		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 
 		await sucheUndOeffneFormular(screen);
 
@@ -86,7 +86,7 @@ describe('KollegiumPortal', () => {
 	 * eines Elements.
 	 */
 	it('zeigt am Treffer, wie viele Exemplare frei sind und wie viele es gibt', async () => {
-		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 
 		await fireEvent.input(
 			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
@@ -108,7 +108,7 @@ describe('KollegiumPortal', () => {
 			)
 		);
 
-		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 		await fireEvent.input(
 			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
 			{
@@ -133,7 +133,7 @@ describe('KollegiumPortal', () => {
 			)
 		);
 
-		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 		await fireEvent.input(
 			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
 			{ target: { value: 'Seydlitz' } }
@@ -154,7 +154,7 @@ describe('KollegiumPortal', () => {
 			)
 		);
 
-		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 		await sucheUndOeffneFormular(screen);
 
 		expect(await screen.findByText('Titel ist gesperrt.')).toBeTruthy();
@@ -182,7 +182,7 @@ function portalMitTreffer() {
 					: { ok: true, text: async () => '', json: async () => ({}) }
 		)
 	);
-	return render(KollegiumPortal, { user: { klasse: '' } });
+	return render(KollegiumPortal, { konto: { klasse: '' } });
 }
 
 /** @param {any} screen */
@@ -337,7 +337,7 @@ describe('Problem melden im Portal', () => {
 				}
 			)
 		);
-		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 
 		expect(await screen.findByRole('heading', { name: 'Deine Reservierungen' })).toBeTruthy();
 		expect(await screen.findByRole('heading', { name: 'Deine Meldungen' })).toBeTruthy();
@@ -374,7 +374,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 			}
 		)
 	);
-	const screen = render(KollegiumPortal, { user: { klasse: '' } });
+	const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 
 	await fireEvent.input(
 		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),

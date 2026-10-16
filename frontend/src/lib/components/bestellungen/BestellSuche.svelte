@@ -164,6 +164,6 @@
 	<!-- {#key}: Ein neuer Treffer bekommt ein frisches Fenster mit frischen Feldern,
 	     statt die Eingaben des vorigen zu erben. -->
 	{#key gewaehlterTitel.id}
-		<TrefferPruefung book={gewaehlterTitel} onDone={() => (gewaehlterTitel = null)} />
+		<TrefferPruefung treffer={gewaehlterTitel} onDone={() => (gewaehlterTitel = null)} />
 	{/key}
 {/if}

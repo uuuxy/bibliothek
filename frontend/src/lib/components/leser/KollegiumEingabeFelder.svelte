@@ -39,19 +39,19 @@
 </script>
 
 <Feld
-	label="Vorname *"
+	etikett="Vorname *"
 	bind:value={vorname}
 	placeholder={fachbereich ? 'z.B. Fachbereich' : 'z.B. Katrin'}
 />
 
 <Feld
-	label="Nachname *"
+	etikett="Nachname *"
 	bind:value={nachname}
 	placeholder={fachbereich ? 'z.B. Erdkunde' : 'z.B. Wendland'}
 />
 
 <Feld
-	label={mitKonto ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
+	etikett={mitKonto ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
 	type="email"
 	bind:value={email}
 	placeholder={mitKonto ? 'vorname.nachname@schule.de' : ''}
@@ -62,7 +62,7 @@
 />
 
 <Feld
-	label="Ausweisnummer (optional)"
+	etikett="Ausweisnummer (optional)"
 	bind:value={barcode}
 	placeholder="Wird automatisch vergeben, wenn leer"
 />

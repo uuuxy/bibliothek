@@ -11,8 +11,8 @@ const zu = { open: false, worum: '', klasse: '', text: '', sending: false };
 /** @param {Record<string, any>} book */
 const aufbau = (book) =>
 	render(PortalTrefferkarte, {
-		book: { id: 't1', titel: 'Natura 2', ...book },
-		form: { open: false, success: '', anzahl: 1 },
+		treffer: { id: 't1', titel: 'Natura 2', ...book },
+		formular: { open: false, success: '', anzahl: 1 },
 		meldung: zu,
 		warteschlange: [],
 		ontoggle: vi.fn(),

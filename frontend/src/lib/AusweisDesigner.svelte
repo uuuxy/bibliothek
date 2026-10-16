@@ -154,8 +154,8 @@
 			side = s;
 			gewaehlteKennung = null;
 		}}
-		printMode={idStore.printMode}
-		onPrintMode={(m) => {
+		druckArt={idStore.printMode}
+		onDruckArt={(m) => {
 			idStore.printMode = m;
 		}}
 		onPrint={drucke}
@@ -164,22 +164,22 @@
 			idStore.barcodeType = t;
 		}}
 		onVorlage={vorlageAnwenden}
-		previewStudent={muster}
+		{muster}
 	/>
 
 	<div class="w-full flex flex-col lg:flex-row gap-5">
 		<CanvasFlaeche
 			{side}
-			selectedId={gewaehlteKennung}
+			{gewaehlteKennung}
 			onSelect={(id) => {
 				gewaehlteKennung = id;
 			}}
-			student={muster}
+			leser={muster}
 			{zoom}
 			barcodeType={idStore.barcodeType}
 		/>
 
-		<Eigenschaften selectedId={gewaehlteKennung} {side} />
+		<Eigenschaften {gewaehlteKennung} {side} />
 	</div>
 </div>
 
@@ -187,4 +187,4 @@
      Kartendrucker prüfen lässt, bevor ein Stapel echter Ausweise durchläuft.
      Echte Schüler druckt dieser Bildschirm nicht mehr — das tut die Schülerdatei
      (markieren → „Ausweise drucken"). -->
-<Druckvorschau students={[muster]} barcodeType={idStore.barcodeType} {timestamp} platzhalter />
+<Druckvorschau leserListe={[muster]} barcodeType={idStore.barcodeType} {timestamp} platzhalter />

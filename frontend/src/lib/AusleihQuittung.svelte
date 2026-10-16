@@ -4,10 +4,10 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} profile
+	 * @property {any} leser
 	 */
 	/** @type {Props} */
-	let { profile } = $props();
+	let { leser } = $props();
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Keine Angabe';
@@ -30,8 +30,8 @@
 	<div class="flex justify-between mb-8">
 		<div>
 			<p class="text-sm text-on-surface-variant">Schüler/in</p>
-			<p class="font-bold text-lg">{profile.vorname} {profile.nachname}</p>
-			<p class="text-sm">{profile.klasse || ''}</p>
+			<p class="font-bold text-lg">{leser.vorname} {leser.nachname}</p>
+			<p class="text-sm">{leser.klasse || ''}</p>
 		</div>
 		<div class="text-right">
 			<p class="text-sm text-on-surface-variant">Datum</p>
@@ -41,7 +41,7 @@
 
 	<div class="mb-4">
 		<h3 class="font-bold text-lg mb-2 border-b border-outline-variant pb-2">Offene Ausleihen</h3>
-		{#if profile.entliehene_buecher && profile.entliehene_buecher.length > 0}
+		{#if leser.entliehene_buecher && leser.entliehene_buecher.length > 0}
 			<table class="w-full text-left text-sm border-collapse">
 				<thead>
 					<tr class="border-b border-outline-variant">
@@ -53,7 +53,7 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-outline-variant">
-					{#each profile.entliehene_buecher as book, _i (_i)}
+					{#each leser.entliehene_buecher as book, _i (_i)}
 						<tr>
 							<td class="py-3 px-2">
 								{#if coverSrc(book.cover_url, book.isbn)}

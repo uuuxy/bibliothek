@@ -22,23 +22,23 @@
 	import { untrack } from 'svelte';
 
 	/**
-	 * @type {{ book: any, onDone: () => void }}
+	 * @type {{ treffer: any, onDone: () => void }}
 	 * book — der Treffer (lokal oder eben über /aus-isbn angelegt); onDone schließt das
 	 * Fenster, ob übernommen oder abgebrochen.
 	 */
-	let { book, onDone } = $props();
+	let { treffer, onDone } = $props();
 
 	// Bewusst der ANFANGSWERT des Treffers (untrack): Das Fenster ist ein Formular über
 	// einem Treffer, BestellSuche hängt es je Treffer neu ein ({#key}). Folgte es dem Prop
 	// weiter, überschriebe ein Nachladen die Eingabe.
 	let menge = $state(1);
 	let generateBarcodes = $state(true);
-	let signatur = $state(untrack(() => book.signatur ?? ''));
-	let istLernmittel = $state(untrack(() => Boolean(book.ist_lernmittel)));
+	let signatur = $state(untrack(() => treffer.signatur ?? ''));
+	let istLernmittel = $state(untrack(() => Boolean(treffer.ist_lernmittel)));
 	// Vergleichswerte, um beim Bestätigen zu erkennen, ob tatsächlich bearbeitet wurde —
 	// unverändert übernommen wird nie ein zusätzlicher Request ausgelöst (weder für einen
 	// unangetasteten Vorschlag noch für eine bereits vorhandene Angabe).
-	const signaturBeiStart = untrack(() => book.signatur ?? '');
+	const signaturBeiStart = untrack(() => treffer.signatur ?? '');
 
 	// Die Signaturen der Schülerbücherei sind die Littera-Codes am Regal. Sie kommen aus
 	// dem BESTAND (GET /api/signaturen) — bis zum 22.09.2026 schlug die DNB-Kategorie hier
@@ -56,13 +56,13 @@
 	});
 	/** @type {{ speichereWennGeaendert: () => Promise<void> } | undefined} */
 	let schlagwortTeil = $state();
-	const lernmittelBeiStart = untrack(() => Boolean(book.ist_lernmittel));
+	const lernmittelBeiStart = untrack(() => Boolean(treffer.ist_lernmittel));
 
 	async function uebernehmen() {
 		const neueSignatur = signatur.trim();
 		if (neueSignatur !== signaturBeiStart) {
 			try {
-				await apiPut(`/api/buecher/titel/${book.id}/signatur`, { signatur: neueSignatur });
+				await apiPut(`/api/buecher/titel/${treffer.id}/signatur`, { signatur: neueSignatur });
 			} catch {
 				snackbars.addToast(
 					'Signatur konnte nicht gespeichert werden — Titel wird trotzdem bestellt.',
@@ -73,7 +73,9 @@
 		await schlagwortTeil?.speichereWennGeaendert();
 		if (istLernmittel !== lernmittelBeiStart) {
 			try {
-				await apiPut(`/api/buecher/titel/${book.id}/lernmittel`, { ist_lernmittel: istLernmittel });
+				await apiPut(`/api/buecher/titel/${treffer.id}/lernmittel`, {
+					ist_lernmittel: istLernmittel
+				});
 			} catch {
 				snackbars.addToast(
 					'Lernmittel-Kennzeichen konnte nicht gespeichert werden — Titel wird trotzdem bestellt.',
@@ -84,7 +86,7 @@
 		// Der Warenkorb bekommt den GEPRÜFTEN Stand, nicht den Treffer: Daraus wird der
 		// Vorschlag für den Topf der Bestellung.
 		bestellStore.addToCart(
-			{ ...book, signatur: neueSignatur, ist_lernmittel: istLernmittel },
+			{ ...treffer, signatur: neueSignatur, ist_lernmittel: istLernmittel },
 			menge,
 			generateBarcodes
 		);
@@ -97,10 +99,15 @@
      keinen Rahmen. -->
 <div class="mt-3 p-4 rounded-xl border border-outline-variant space-y-3.5 animate-fade-in">
 	<div class="flex items-center gap-3 min-w-0">
-		<BuchCover coverUrl={book.cover_url} isbn={book.isbn} titel={book.titel} klasse="shrink-0" />
+		<BuchCover
+			coverUrl={treffer.cover_url}
+			isbn={treffer.isbn}
+			titel={treffer.titel}
+			klasse="shrink-0"
+		/>
 		<div class="min-w-0">
-			<div class="font-bold text-on-surface text-sm truncate">{book.titel}</div>
-			<div class="text-xs text-on-surface-variant truncate">{book.autor}</div>
+			<div class="font-bold text-on-surface text-sm truncate">{treffer.titel}</div>
+			<div class="text-xs text-on-surface-variant truncate">{treffer.autor}</div>
 		</div>
 	</div>
 
@@ -129,16 +136,16 @@
 
 	<TrefferPruefungSchlagworte
 		bind:this={schlagwortTeil}
-		titelId={book.id}
-		angebote={book.schlagwort_vorschlaege ?? []}
-		angeboteNeu={book.schlagwort_vorschlaege_neu ?? []}
-		isbn={book.isbn}
-		mitDnbKnopf={!book.dnb_vorschlag_da}
+		titelId={treffer.id}
+		angebote={treffer.schlagwort_vorschlaege ?? []}
+		angeboteNeu={treffer.schlagwort_vorschlaege_neu ?? []}
+		isbn={treffer.isbn}
+		mitDnbKnopf={!treffer.dnb_vorschlag_da}
 	/>
 
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-
 	     freiheit), alles andere die Schülerbücherei aus Mitteln des Schulträgers. -->
-	<Kaestchen bind:checked={istLernmittel} label="Lernmittel (Schulbuch der Lernmittelfreiheit)" />
+	<Kaestchen bind:checked={istLernmittel} etikett="Lernmittel (Schulbuch der Lernmittelfreiheit)" />
 
 	<div class="flex items-center justify-between gap-3">
 		<div class="flex items-center gap-2">
@@ -152,7 +159,7 @@
 				feld="w-16 text-center font-bold"
 			/>
 		</div>
-		<Kaestchen bind:checked={generateBarcodes} label="Barcodes generieren" />
+		<Kaestchen bind:checked={generateBarcodes} etikett="Barcodes generieren" />
 	</div>
 
 	<div class="flex items-center gap-2">

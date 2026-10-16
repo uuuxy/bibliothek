@@ -16,8 +16,8 @@
 	import CanvasElement from './CanvasElement.svelte';
 	import { kartenStil } from './kartenFarben.js';
 
-	/** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string }} */
-	const { side, selectedId, onSelect, student, zoom, barcodeType } = $props();
+	/** @type {{ side: 'front'|'back', gewaehlteKennung: string|null, onSelect: (id: string|null)=>void, leser: any, zoom: number, barcodeType: string }} */
+	const { side, gewaehlteKennung, onSelect, leser, zoom, barcodeType } = $props();
 
 	/** Elements for the active side, sorted ascending by zIndex so higher layers render on top. */
 	const elements = $derived(
@@ -180,8 +180,8 @@
 				{#each elements as el (el.id)}
 					<CanvasElement
 						{el}
-						isSelected={selectedId === el.id}
-						{student}
+						gewaehlt={gewaehlteKennung === el.id}
+						{leser}
 						{barcodeType}
 						onStartDrag={startDrag}
 						onStartResize={startResize}

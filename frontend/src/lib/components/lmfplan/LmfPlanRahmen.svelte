@@ -69,7 +69,7 @@
 	<div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
 		<Feld
 			id="lmf-plan-anker-tag"
-			label={ende ? 'Letzter Tag' : 'Erster Tag'}
+			etikett={ende ? 'Letzter Tag' : 'Erster Tag'}
 			type="date"
 			bind:value={entwurf[tagFeld]}
 			hint={ende ? 'Donnerstag vor den Sommerferien' : 'Erster Schultag nach den Sommerferien'}

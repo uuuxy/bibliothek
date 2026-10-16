@@ -10,8 +10,8 @@
 	import Button from './components/ui/Button.svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
 
-	/** @type {{ open: boolean, profile: any, onsuccess: (updatedProfile: any) => void }} */
-	let { open = $bindable(false), profile, onsuccess } = $props();
+	/** @type {{ open: boolean, leser: any, onsuccess: (updatedProfile: any) => void }} */
+	let { open = $bindable(false), leser, onsuccess } = $props();
 
 	let laeuft = $state(false);
 	let fehler = $state('');
@@ -20,10 +20,10 @@
 	// Aufheben, sobald eine Sperre am Leser besteht — von Hand oder die der Ehemaligen; die Tür
 	// nimmt beide weg (api/leser/leser_sperre.go, seit dem 24.09.2026). Dasselbe Prädikat wie der
 	// Knopf, der dieses Fenster öffnet (LeserKontoStatus).
-	let gesperrt = $derived(ausleiheGesperrt(profile));
+	let gesperrt = $derived(ausleiheGesperrt(leser));
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem
 	// Backend-Check und dem DB-Constraint chk_schueler_block_reason.
-	let wirdGesperrt = $derived(profile && !gesperrt);
+	let wirdGesperrt = $derived(leser && !gesperrt);
 
 	// Das Modal bleibt (via bind:open) dauerhaft gemountet, der State überlebt also das
 	// Schließen. Ohne diesen Reset blitzte beim nächsten Öffnen — ggf. für einen anderen
@@ -36,7 +36,7 @@
 	});
 
 	async function bestaetige() {
-		if (!profile) return;
+		if (!leser) return;
 		if (wirdGesperrt && reason.trim() === '') {
 			fehler = 'Bitte einen Grund für die Sperre angeben.';
 			return;
@@ -44,7 +44,7 @@
 		laeuft = true;
 		fehler = '';
 		try {
-			const res = await apiClient.patch(`/api/admin/students/${profile.id}/lock`, {
+			const res = await apiClient.patch(`/api/admin/students/${leser.id}/lock`, {
 				is_locked: !gesperrt,
 				reason: reason.trim()
 			});
@@ -86,11 +86,11 @@
 		<p class="text-sm font-medium leading-relaxed">
 			{#if gesperrt}
 				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
-					>{profile.vorname} {profile.nachname}</span
+					>{leser.vorname} {leser.nachname}</span
 				> wirklich freigeben?
 			{:else}
 				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
-					>{profile?.vorname} {profile?.nachname}</span
+					>{leser?.vorname} {leser?.nachname}</span
 				> wirklich sperren?
 			{/if}
 		</p>

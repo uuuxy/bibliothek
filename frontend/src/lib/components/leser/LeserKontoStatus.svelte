@@ -22,11 +22,11 @@
 	import Button from '../ui/Button.svelte';
 	import { formatEuro } from '../../utils/format.js';
 
-	/** @type {{ profile: any, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
-	let { profile, onLock, offen = { anzahl: 0, summe: 0 } } = $props();
+	/** @type {{ leser: any, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
+	let { leser, onLock, offen = { anzahl: 0, summe: 0 } } = $props();
 
-	const gesperrt = $derived(ausleiheGesperrt(profile));
-	const kollege = $derived(istKollegium(profile));
+	const gesperrt = $derived(ausleiheGesperrt(leser));
+	const kollege = $derived(istKollegium(leser));
 </script>
 
 <div class="w-full space-y-3 border-t border-b border-outline-variant py-3">
@@ -48,10 +48,10 @@
 	     gesperrt wurde (nur die DSGVO-Auskunft druckte ihn). Sichtbar nur im
 	     gesperrten Zustand; das Profil steht ohnehin hinter view_students
 	     (PII-Matrix: Sperrgrund = Stufe 2 hinter genau diesem Recht). -->
-	{#if gesperrt && profile.block_reason}
+	{#if gesperrt && leser.block_reason}
 		<p class="text-sm text-on-surface-variant">
 			<span class="font-medium text-on-surface">Grund:</span>
-			{profile.block_reason}
+			{leser.block_reason}
 		</p>
 	{/if}
 

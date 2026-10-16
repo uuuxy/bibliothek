@@ -22,23 +22,23 @@
 	import { druckeAusweis } from './ausweisDruck.js';
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} student - The selected student object
+	 * @property {any} leser - The selected student object
 	 * @property {() => void} onDeselect - Callback when profile is closed
 	 * @property {(barcode: string) => void} [onReturnClick] - Callback for returning a book
 	 * @property {(zielId: string) => void} [onMerged] - Nach dem Zusammenführen: der Aufrufer hängt seinen aktiven Schüler auf das Ziel um
 	 * @property {import('svelte').Snippet} [leftActions] - Optional slot for left card actions
 	 * @property {import('svelte').Snippet} [rightTop] - Optional slot for right content top
-	 * @property {'ausleihen'|'gebuehren'|'stammdaten'} [defaultTab] - Reiter, der beim Öffnen oben liegt
+	 * @property {'ausleihen'|'gebuehren'|'stammdaten'} [startReiter] - Reiter, der beim Öffnen oben liegt
 	 */
 	/** @type {Props} */
 	let {
-		student,
+		leser,
 		onDeselect,
 		onReturnClick = undefined,
 		onMerged = undefined,
 		leftActions,
 		rightTop,
-		defaultTab = 'ausleihen'
+		startReiter = 'ausleihen'
 	} = $props();
 
 	const st = useLeserakte();
@@ -50,13 +50,13 @@
 	// Der Aufrufer bestimmt den Reiter, der beim Öffnen oben liegt. Bei jedem Wechsel des
 	// Lesers zurück auf ihn, sonst speichert ein offenes Blatt auf den falschen Leser.
 	$effect(() => {
-		if (!student?.id) return;
-		st.aktiverReiter = defaultTab;
+		if (!leser?.id) return;
+		st.aktiverReiter = startReiter;
 		st.schliesseAlleBlaetter();
-		st.ladeAkte(student.id);
+		st.ladeAkte(leser.id);
 	});
 
-	export const ladeNeu = () => st.ladeAkte(st.akte?.id ?? student?.id);
+	export const ladeNeu = () => st.ladeAkte(st.akte?.id ?? leser?.id);
 
 	// Vom Bediener gesetztes Ablaufjahr für genau diesen Ausdruck; null = Vorschlag des Servers.
 	// Nicht gespeichert, beim Wechsel des Lesers fällt es zurück.
@@ -92,7 +92,7 @@
 			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-on-surface animate-fade-in no-print print:hidden font-sans"
 		>
 			<LeserakteKopf
-				bind:profile={st.akte}
+				bind:leser={st.akte}
 				{rechte}
 				timestamp={st.fotoStand}
 				bind:showWebcam={st.kameraOffen}
@@ -106,10 +106,10 @@
 			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pt-4 pb-4">
 				{#if rechte.einsehen}
 					<LeserakteAktionen
-						profile={st.akte}
+						leser={st.akte}
 						darfAuskunft={darfAuskunftUeber(rechte, st.akte)}
-						kontoauszugPdfLoading={st.kontoauszugLaedt}
-						rechnungPdfLoading={st.rechnungLaedt}
+						kontoauszugLaedt={st.kontoauszugLaedt}
+						rechnungLaedt={st.rechnungLaedt}
 						downloadKontoauszugPDF={st.ladeKontoauszugHerunter}
 						downloadRechnungPDF={st.ladeRechnungHerunter}
 						onPrint={druckeAusweis}
@@ -146,12 +146,12 @@
 							gebuehren={st.gebuehren}
 							bescheide={st.bescheide}
 							fehlendeListen={st.fehlendeListen.filter((l) => l !== 'Vormerkungen')}
-							canEdit={rechte.bearbeiten}
+							darfBearbeiten={rechte.bearbeiten}
 							onChanged={() => st.ladeAkte(st.akte.id)}
 						/>
 					{:else if st.aktiverReiter === 'stammdaten'}
 						<LeserakteStammdaten
-							profile={st.akte}
+							leser={st.akte}
 							darfBearbeiten={rechte.bearbeiten}
 							darfZusammenfuehren={rechte.zusammenfuehren}
 							onEdit={() => (st.bearbeitenOffen = true)}
@@ -160,7 +160,7 @@
 
 						<!-- Gefahrenzone am unteren Ende des Stammdaten-Reiters, seit 16.09.2026 auch beim Kollegium -->
 						{#if rechte.loeschen}
-							<LeserGefahrenzone profile={st.akte} onDelete={() => (st.loeschfrageOffen = true)} />
+							<LeserGefahrenzone leser={st.akte} onDelete={() => (st.loeschfrageOffen = true)} />
 						{/if}
 					{/if}
 				</div>
@@ -168,7 +168,7 @@
 		</div>
 	{:else}
 		<LeserBearbeiten
-			student={st.akte}
+			leser={st.akte}
 			onClose={() => (st.bearbeitenOffen = false)}
 			onSave={() => st.nachBearbeiten(st.akte.id)}
 		/>
@@ -183,7 +183,7 @@
 
 {#if st.kameraOffen}
 	<WebcamAufnahme
-		studentId={st.akte.id}
+		leserKennung={st.akte.id}
 		onCapture={() => st.nachFoto(st.akte.id)}
 		onClose={() => (st.kameraOffen = false)}
 	/>
@@ -193,29 +193,29 @@
 	<!-- Die Abweichung liegt auf dem Profil, nicht in Kartenseite: So drucken Profil, Klassensatz
 	     und Designer dieselbe Karte. -->
 	<Ausweiskarte
-		profile={{ ...st.akte, ausweis_gueltig_bis: gueltigBisEffektiv }}
+		leser={{ ...st.akte, ausweis_gueltig_bis: gueltigBisEffektiv }}
 		timestamp={st.fotoStand}
 	/>
 {/if}
 
 <LeserLoeschenDialog
 	open={st.loeschfrageOffen}
-	profile={st.akte}
+	leser={st.akte}
 	onclose={() => (st.loeschfrageOffen = false)}
 	onsuccess={() => st.nachLoeschen(onDeselect)}
 />
 
 {#if st.schadenOffen && st.schadenExemplar}
 	<SchadenMeldenDialog
-		book={st.schadenExemplar}
+		ausleihe={st.schadenExemplar}
 		isSubmitting={st.meldetSchaden}
 		onCancel={() => (st.schadenOffen = false)}
 		onSubmit={(r, a, art) => st.meldeSchaden(st.akte.id, r, a, art)}
 	/>
 {/if}
 
-<LeserSperreDialog bind:open={st.sperreOffen} profile={st.akte} onsuccess={st.nachSperre} />
+<LeserSperreDialog bind:open={st.sperreOffen} leser={st.akte} onsuccess={st.nachSperre} />
 
 {#if st.akte}
-	<AusleihQuittung profile={st.akte} />
+	<AusleihQuittung leser={st.akte} />
 {/if}

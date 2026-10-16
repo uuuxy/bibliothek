@@ -11,29 +11,37 @@
 	import { MITTEL, anderesMittel } from './mittel.js';
 	import { X, Tag } from '@lucide/svelte';
 
-	/** @type {{ item: import('../../stores/bestellStore.svelte.js').CartItem }} */
-	let { item } = $props();
+	/** @type {{ position: import('../../stores/bestellStore.svelte.js').CartItem }} */
+	let { position } = $props();
 
 	/** Wohin die Position wechseln würde — der Knopf nennt das ZIEL, nicht den Zustand. */
-	const ziel = $derived(MITTEL[anderesMittel(item.mittel)]);
+	const ziel = $derived(MITTEL[anderesMittel(position.mittel)]);
 </script>
 
 <div class="space-y-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
 	<div class="flex items-start gap-2.5">
-		<BuchCover coverUrl={item.cover_url} isbn={item.isbn} titel={item.titel} klasse="shrink-0" />
+		<BuchCover
+			coverUrl={position.cover_url}
+			isbn={position.isbn}
+			titel={position.titel}
+			klasse="shrink-0"
+		/>
 		<div class="min-w-0 flex-1">
 			<h4 class="truncate text-sm leading-snug font-semibold text-on-surface">
-				{item.titel}
+				{position.titel}
 			</h4>
-			<p class="truncate font-mono text-xs text-on-surface-variant">{item.isbn || '—'}</p>
-			{#if item.generate_barcodes}
+			<p class="truncate font-mono text-xs text-on-surface-variant">{position.isbn || '—'}</p>
+			{#if position.generate_barcodes}
 				<div class="mt-1">
-					<StatusChip icon={Tag} text={item.menge === 1 ? '1 Barcode' : `${item.menge} Barcodes`} />
+					<StatusChip
+						icon={Tag}
+						text={position.menge === 1 ? '1 Barcode' : `${position.menge} Barcodes`}
+					/>
 				</div>
 			{/if}
 		</div>
 		<button
-			onclick={() => bestellStore.removeFromCart(item)}
+			onclick={() => bestellStore.removeFromCart(position)}
 			aria-label="Entfernen"
 			class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-surface-variant transition-colors hover:text-error"
 		>
@@ -49,15 +57,15 @@
 			     ist dann gesperrt, statt ohne Wirkung zu bleiben. -->
 			<button
 				aria-label="Menge verringern"
-				disabled={item.menge <= 1}
-				onclick={() => (item.menge = Math.max(1, item.menge - 1))}
+				disabled={position.menge <= 1}
+				onclick={() => (position.menge = Math.max(1, position.menge - 1))}
 				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
 				>−</button
 			><span class="min-w-6 px-2 text-center text-sm font-bold text-on-surface tabular-nums"
-				>{item.menge}</span
+				>{position.menge}</span
 			><button
 				aria-label="Menge erhöhen"
-				onclick={() => (item.menge += 1)}
+				onclick={() => (position.menge += 1)}
 				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">+</button
 			>
 		</div>
@@ -66,7 +74,7 @@
 				<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unverändert ist: Er ist
 				     der DNB-Ladenpreis bei Erscheinen, nicht der Preis, den die Schule zahlt. Wer
 				     ihn überschreibt, verliert das Abzeichen. -->
-				{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
+				{#if position.preis_vorschlag > 0 && Number(position.preis) === position.preis_vorschlag}
 					<StatusChip
 						ton="warten"
 						text="DNB"
@@ -76,7 +84,7 @@
 				<Feld
 					type="number"
 					step="0.01"
-					bind:value={item.preis}
+					bind:value={position.preis}
 					aria-label="Preis"
 					feld="w-20 text-right font-semibold"
 				/>
@@ -90,9 +98,9 @@
 	     dass jemand erst den Titel bearbeiten muss. Der Knopf nennt das Ziel. -->
 	<div class="pl-10">
 		<button
-			onclick={() => bestellStore.verschiebe(item)}
+			onclick={() => bestellStore.verschiebe(position)}
 			class="text-label-small font-medium text-primary hover:underline cursor-pointer"
-			aria-label="{item.titel} in die Bestellung „{ziel.label}“ verschieben"
+			aria-label="{position.titel} in die Bestellung „{ziel.label}“ verschieben"
 		>
 			→ {ziel.label} ({ziel.traeger})
 		</button>

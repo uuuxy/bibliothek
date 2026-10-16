@@ -52,7 +52,7 @@
 					</span>
 				</div>
 				{#each gruppe.items as item (item.id)}
-					<WarenkorbPosition {item} />
+					<WarenkorbPosition position={item} />
 				{/each}
 			</section>
 		{/each}
@@ -73,7 +73,7 @@
 					>
 				{/if}
 			</div>
-			<Kaestchen bind:checked={bestellStore.attachBarcodes} label="Barcodes mitschicken" />
+			<Kaestchen bind:checked={bestellStore.attachBarcodes} etikett="Barcodes mitschicken" />
 			<Button
 				size="lg"
 				onclick={() => bestellStore.submitOrder()}

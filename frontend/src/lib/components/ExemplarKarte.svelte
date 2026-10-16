@@ -12,9 +12,9 @@
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
 	 * (Barcode/Status) lokal; Auswahl, Löschen und Etikett laufen über Callbacks zum Eltern-Tab.
-	 * @type {{ ex: any, selected: boolean, darfBearbeiten?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
+	 * @type {{ ex: any, gewaehlt: boolean, darfBearbeiten?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
 	 */
-	let { ex, selected, darfBearbeiten = false, onToggleSelect, onDelete, onEtikett } = $props();
+	let { ex, gewaehlt, darfBearbeiten = false, onToggleSelect, onDelete, onEtikett } = $props();
 
 	let barcodeBearbeiten = $state(false);
 	let neuerBarcode = $state('');
@@ -67,7 +67,7 @@
      Bedienelement im Bedienelement lässt sich nicht bedienen. Ausgewählt wird über das
      Kästchen. Sie trägt einen Rahmen und keinen Schatten. -->
 <div
-	class="rounded-xl border bg-surface-container-lowest p-4 transition-colors {selected
+	class="rounded-xl border bg-surface-container-lowest p-4 transition-colors {gewaehlt
 		? 'border-primary bg-primary-container/30 ring-1 ring-primary'
 		: 'border-outline-variant hover:border-outline'}"
 >
@@ -108,7 +108,7 @@
 			<div class="flex items-center gap-3">
 				{#if darfBearbeiten}
 					<Kaestchen
-						checked={selected}
+						checked={gewaehlt}
 						onchange={onToggleSelect}
 						aria-label="Exemplar {ex.barcode_id} auswählen"
 					/>

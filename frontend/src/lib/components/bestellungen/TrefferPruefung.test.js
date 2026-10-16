@@ -31,7 +31,7 @@ const titel = { id: 't-1', titel: 'Mathematik 7', autor: 'Autor', isbn: '978', s
 
 /** @param {any} buch */
 function fenster(buch = titel) {
-	return render(TrefferPruefung, { book: buch, onDone: () => {} });
+	return render(TrefferPruefung, { treffer: buch, onDone: () => {} });
 }
 
 describe('TrefferPruefung: die Frage „Lernmittel?"', () => {

@@ -13,8 +13,8 @@
 	import Feld from './components/ui/Feld.svelte';
 	import UeberfaelligZeichen from './components/UeberfaelligZeichen.svelte';
 
-	/** @type {{ book: any, ueberfaellig: boolean }} */
-	let { book, ueberfaellig } = $props();
+	/** @type {{ ausleihe: any, ueberfaellig: boolean }} */
+	let { ausleihe, ueberfaellig } = $props();
 
 	let bearbeitet = $state(false);
 	let neuesDatum = $state('');
@@ -22,10 +22,10 @@
 
 	/** @param {string} wert */
 	const datum = (wert) => new Date(wert).toLocaleDateString('de-DE');
-	const geliehenAm = $derived(datum(book.ausgeliehen_am));
+	const geliehenAm = $derived(datum(ausleihe.ausgeliehen_am));
 
 	async function speichere() {
-		const id = book.ausleihe_id || book.id;
+		const id = ausleihe.ausleihe_id || ausleihe.id;
 		if (!id || !neuesDatum) return;
 		speichert = true;
 		try {
@@ -35,7 +35,7 @@
 			});
 			if (response.ok) {
 				const daten = await response.json();
-				book.rueckgabe_frist = daten.faellig_am;
+				ausleihe.rueckgabe_frist = daten.faellig_am;
 				bearbeitet = false;
 				melde(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt.`, 'success');
 			} else {
@@ -84,7 +84,7 @@
 	</div>
 {:else}
 	<div class="flex items-center gap-1">
-		{#if book.ist_dauerleihe}
+		{#if ausleihe.ist_dauerleihe}
 			<span data-tip="Geliehen am {geliehenAm}">Dauerleihe</span>
 			<span class="sr-only">, ohne Frist, geliehen am {geliehenAm}</span>
 		{:else}
@@ -94,7 +94,7 @@
 					? `Überfällig, geliehen am ${geliehenAm}`
 					: `Geliehen am ${geliehenAm}`}
 			>
-				{datum(book.rueckgabe_frist)}
+				{datum(ausleihe.rueckgabe_frist)}
 			</span>
 			<span class="sr-only">, geliehen am {geliehenAm}</span>
 			{#if ueberfaellig}
@@ -105,7 +105,7 @@
 			type="button"
 			class="icon-btn text-on-surface-variant"
 			onclick={() => {
-				neuesDatum = (book.rueckgabe_frist ?? '').split('T')[0];
+				neuesDatum = (ausleihe.rueckgabe_frist ?? '').split('T')[0];
 				bearbeitet = true;
 			}}
 			aria-label="Rückgabedatum bearbeiten"

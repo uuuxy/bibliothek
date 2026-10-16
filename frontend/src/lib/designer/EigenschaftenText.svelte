@@ -30,7 +30,7 @@
 	<span class="text-xs font-medium text-on-surface-variant block">Textformatierung</span>
 
 	{#if !istDynamisch}
-		<Feld label="Inhalt" bind:value={el.content} />
+		<Feld etikett="Inhalt" bind:value={el.content} />
 	{/if}
 
 	<div class="space-y-1">
@@ -40,7 +40,7 @@
 
 	<div class="grid grid-cols-2 gap-2">
 		<ZahlenFeld
-			label="Größe (pt)"
+			etikett="Größe (pt)"
 			value={el.style.fontSize}
 			min={4}
 			max={20}
@@ -76,6 +76,6 @@
 		onchange={(e) => {
 			el.style.fontWeight = e.currentTarget.checked ? 'bold' : 'normal';
 		}}
-		label="Fett"
+		etikett="Fett"
 	/>
 </div>

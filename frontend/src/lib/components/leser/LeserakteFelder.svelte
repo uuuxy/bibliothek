@@ -101,11 +101,11 @@
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-		<Feld id="vorname" label="Vorname *" bind:value={eingaben.vorname} feld="font-semibold" />
-		<Feld id="nachname" label="Nachname *" bind:value={eingaben.nachname} feld="font-semibold" />
+		<Feld id="vorname" etikett="Vorname *" bind:value={eingaben.vorname} feld="font-semibold" />
+		<Feld id="nachname" etikett="Nachname *" bind:value={eingaben.nachname} feld="font-semibold" />
 		<Feld
 			id="geburtsdatum"
-			label="Geburtsdatum{schuelerPflicht}"
+			etikett="Geburtsdatum{schuelerPflicht}"
 			type="date"
 			bind:value={eingaben.geburtsdatum}
 			hint={kollege ? undefined : 'Der Schlüssel, an dem der LUSD-Import wiedererkennt.'}
@@ -139,7 +139,7 @@
 		</div>
 		<Feld
 			id="abgangsjahr"
-			label="Abgangsjahr"
+			etikett="Abgangsjahr"
 			type="number"
 			bind:value={eingaben.abgaenger_jahr}
 			feld="font-semibold"
@@ -151,7 +151,7 @@
 		     Server lehnt Änderung und Leerung ohnehin ab. -->
 		<Feld
 			id="lusd_id"
-			label="LUSD-ID"
+			etikett="LUSD-ID"
 			bind:value={eingaben.lusd_id}
 			feld="font-mono"
 			disabled={kollege || lusdVerknuepft}
@@ -163,7 +163,7 @@
 		/>
 		<Feld
 			id="barcode"
-			label="Ausweisnummer{schuelerPflicht}"
+			etikett="Ausweisnummer{schuelerPflicht}"
 			bind:value={eingaben.barcode_id}
 			feld="font-mono"
 		/>

@@ -24,7 +24,7 @@
 
 	/**
 	 * @type {{
-	 *   book: {
+	 *   titel: {
 	 *     id: string,
 	 *     isbn: string,
 	 *     title: string,
@@ -44,7 +44,7 @@
 	 *   onEditClick?: () => void
 	 * }}
 	 */
-	let { book, onclick, onEditClick } = $props();
+	let { titel, onclick, onEditClick } = $props();
 
 	/** @type {string[]} */
 	let coverCandidates = $state([]);
@@ -53,23 +53,25 @@
 	let coverFailed = $state(false);
 	let copied = $state(false);
 
-	const nummerArt = $derived(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN');
+	const nummerArt = $derived(
+		titel.medientyp === 'CD' || titel.medientyp === 'DVD' ? 'EAN' : 'ISBN'
+	);
 
 	/** Bestand als Satz: „27 von 28 verfügbar", „Keine Exemplare" bei einem Titel ohne
 	 *  Exemplare — der frühere rote Punkt sah für beides gleich aus. Bewusst OHNE Rot bei
 	 *  0: Im Schuljahr ist fast jedes Lernmittel komplett verliehen; ein Katalog, der
 	 *  überall rot ist, sagt nichts mehr. Der Wortlaut kommt aus format.js, weil ihn
 	 *  seit dem 17.09.2026 auch die Theke braucht. */
-	const zahlen = $derived(book.buch ?? book);
+	const zahlen = $derived(titel.buch ?? titel);
 	const bestand = $derived(bestandSatz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
 
-	const geprueft = $derived(book.lastCounted ? formatDatum(book.lastCounted) : '');
+	const geprueft = $derived(titel.lastCounted ? formatDatum(titel.lastCounted) : '');
 
 	/** @param {Event} e */
 	function copyIsbn(e) {
 		e.stopPropagation();
-		if (!book.isbn) return;
-		navigator.clipboard.writeText(book.isbn);
+		if (!titel.isbn) return;
+		navigator.clipboard.writeText(titel.isbn);
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}
@@ -92,7 +94,7 @@
 	// von coverCandidates ab, das er gerade schreibt — Endlosschleife, Svelte bricht mit
 	// effect_update_depth_exceeded ab und die ganze Seite reagiert nicht mehr (E2E 02.09.).
 	$effect(() => {
-		const kandidaten = coverKandidaten(book?.coverUrl, book?.isbn);
+		const kandidaten = coverKandidaten(titel?.coverUrl, titel?.isbn);
 		coverCandidates = kandidaten;
 		currentCandidateIndex = 0;
 		coverFailed = kandidaten.length === 0;
@@ -117,19 +119,19 @@
 		{#if coverSrc && !coverFailed}
 			<img
 				src={coverSrc}
-				alt={`Cover von ${book.title}`}
+				alt={`Cover von ${titel.title}`}
 				loading="lazy"
 				class="h-full w-full object-cover"
 				onerror={naechsteQuelle}
 				onload={pruefeGeladenes}
 			/>
 		{:else}
-			<BuchKarteCover subject={book.subject} title={book.title} />
+			<BuchKarteCover subject={titel.subject} title={titel.title} />
 		{/if}
 	</div>
 
 	<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
-		<h2 class="text-base leading-snug font-semibold text-on-surface" title={book.title}>
+		<h2 class="text-base leading-snug font-semibold text-on-surface" title={titel.title}>
 			<!-- Ohne eigenen Handler: Enter/Leertaste erzeugen ein click-Ereignis, das zur
 			     Fläche aufsteigt und dort die Akte öffnet — ein Handler hier navigierte doppelt.
 			     Der Knopf trägt die Semantik (Tastatur, Screenreader), die Fläche das Verhalten. -->
@@ -137,14 +139,14 @@
 				type="button"
 				class="line-clamp-2 block w-full cursor-pointer text-left wrap-break-word hover:underline"
 			>
-				{book.title}
+				{titel.title}
 			</button>
 		</h2>
 
 		<!-- Die Auflage steht direkt unter dem Titel: Zwei Zeilen „Lambacher Schweizer 7"
 		     im Katalog sind zwei verschiedene Bücher, und das sieht man sonst nirgends. -->
-		{#if book.auflage}
-			<p class="truncate text-xs" title={book.auflage}>{book.auflage}</p>
+		{#if titel.auflage}
+			<p class="truncate text-xs" title={titel.auflage}>{titel.auflage}</p>
 		{/if}
 
 		<button
@@ -153,18 +155,18 @@
 			title="{nummerArt} kopieren"
 			aria-label="{nummerArt} kopieren"
 		>
-			<span class="truncate" title={book.isbn}>{nummerArt}: {book.isbn || '–'}</span>
+			<span class="truncate" title={titel.isbn}>{nummerArt}: {titel.isbn || '–'}</span>
 			{#if copied}
 				<span class="font-sans text-xs font-medium text-primary">Kopiert!</span>
-			{:else if book.isbn}
+			{:else if titel.isbn}
 				<Copy class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 			{/if}
 		</button>
 
-		{#if book.signatur}
+		{#if titel.signatur}
 			<div class="flex items-center gap-1.5">
 				<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-				<span class="truncate font-mono">{book.signatur}</span>
+				<span class="truncate font-mono">{titel.signatur}</span>
 			</div>
 		{/if}
 
@@ -185,8 +187,8 @@
 				</button>
 			{/if}
 		</div>
-		{#if book.buch}
-			<p class="text-xs">{auflagenAufschluesselung(book.buch.auflagen)}</p>
+		{#if titel.buch}
+			<p class="text-xs">{auflagenAufschluesselung(titel.buch.auflagen)}</p>
 		{/if}
 
 		{#if geprueft}

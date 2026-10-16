@@ -3,13 +3,13 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 
-	let { tab } = $props();
+	let { bildschirm } = $props();
 
 	// Der Router rendert diese Komponente nur in seinem {:else}: wenn ein activeTab gesetzt
 	// ist, den kein Zweig behandelt. Ohne sie stünde dort eine weiße Seite; so sieht man es,
 	// und Sentry erfährt den Namen des Tabs.
 	$effect(() => {
-		Sentry.captureMessage(`Router: unbehandelter activeTab '${tab}'`, 'error');
+		Sentry.captureMessage(`Router: unbehandelter activeTab '${bildschirm}'`, 'error');
 	});
 </script>
 

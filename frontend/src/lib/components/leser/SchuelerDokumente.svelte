@@ -18,34 +18,34 @@
 
 	/**
 	 * @type {{
-	 *   profile: any,
+	 *   leser: any,
 	 *   kollege?: boolean,
 	 *   darfAuskunft?: boolean,
-	 *   kontoauszugPdfLoading: boolean,
-	 *   rechnungPdfLoading: boolean,
+	 *   kontoauszugLaedt: boolean,
+	 *   rechnungLaedt: boolean,
 	 *   downloadKontoauszugPDF: () => void,
 	 *   downloadRechnungPDF: () => void
 	 * }}
 	 */
 	let {
-		profile,
+		leser,
 		kollege = false,
 		darfAuskunft = false,
-		kontoauszugPdfLoading,
-		rechnungPdfLoading,
+		kontoauszugLaedt,
+		rechnungLaedt,
 		downloadKontoauszugPDF,
 		downloadRechnungPDF
 	} = $props();
 
 	async function downloadDsgvoAuskunft() {
 		try {
-			const res = await apiFetch(`/api/schueler/${profile.id}/dsgvo-auskunft/pdf`);
+			const res = await apiFetch(`/api/schueler/${leser.id}/dsgvo-auskunft/pdf`);
 			if (res.ok) {
 				const blob = await res.blob();
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement('a');
 				a.href = url;
-				a.download = `dsgvo-auskunft-${profile.nachname || 'Unbekannt'}-${profile.vorname || 'Unbekannt'}.pdf`;
+				a.download = `dsgvo-auskunft-${leser.nachname || 'Unbekannt'}-${leser.vorname || 'Unbekannt'}.pdf`;
 				document.body.appendChild(a);
 				a.click();
 				document.body.removeChild(a);
@@ -71,11 +71,9 @@
 	<Button
 		variant="secondary"
 		onclick={downloadKontoauszugPDF}
-		disabled={kontoauszugPdfLoading || !(profile.entliehene_buecher?.length > 0)}
+		disabled={kontoauszugLaedt || !(leser.entliehene_buecher?.length > 0)}
 	>
-		{#if kontoauszugPdfLoading}{@render spinner()}{:else}<Printer
-				class="w-4 h-4 text-primary"
-			/>{/if}
+		{#if kontoauszugLaedt}{@render spinner()}{:else}<Printer class="w-4 h-4 text-primary" />{/if}
 		Kontoauszug
 	</Button>
 
@@ -89,18 +87,16 @@
      fängt das Ereignis ab, das der graue Knopf durchlässt. -->
 	<span
 		class="inline-flex"
-		data-tip={!profile.has_open_damages
+		data-tip={!leser.has_open_damages
 			? 'Kein offener Schadensfall — eine Ersatzforderung gibt es erst, wenn ein Schaden erfasst ist'
 			: 'Ersatzforderung über offene Schäden drucken'}
 	>
 		<Button
 			variant="secondary"
 			onclick={downloadRechnungPDF}
-			disabled={rechnungPdfLoading || !profile.has_open_damages}
+			disabled={rechnungLaedt || !leser.has_open_damages}
 		>
-			{#if rechnungPdfLoading}{@render spinner()}{:else}<TriangleAlert
-					class="w-4 h-4 text-error"
-				/>{/if}
+			{#if rechnungLaedt}{@render spinner()}{:else}<TriangleAlert class="w-4 h-4 text-error" />{/if}
 			Ersatzforderung
 		</Button>
 	</span>

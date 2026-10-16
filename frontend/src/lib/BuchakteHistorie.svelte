@@ -1,7 +1,7 @@
 <script>
 	import { Clock } from '@lucide/svelte';
-	/** @type {{ history: any[] }} */
-	let { history } = $props();
+	/** @type {{ verlauf: any[] }} */
+	let { verlauf } = $props();
 
 	/** @param {string} d */
 	function fmtDate(d) {
@@ -14,7 +14,7 @@
 	}
 </script>
 
-{#if history.length === 0}
+{#if verlauf.length === 0}
 	<div class="py-16 flex flex-col items-center text-on-surface-variant gap-3">
 		<Clock class="w-10 h-10" aria-hidden="true" />
 		<p class="font-semibold text-sm">Noch keine Ausleihen in der Datenbank vorhanden.</p>
@@ -22,10 +22,10 @@
 {:else}
 	<div class="w-full">
 		<div class="px-1 py-3 border-b border-outline-variant flex items-center justify-between">
-			<p class="text-sm font-medium text-on-surface-variant">Letzte {history.length} Ausleihen</p>
+			<p class="text-sm font-medium text-on-surface-variant">Letzte {verlauf.length} Ausleihen</p>
 		</div>
 		<ul class="divide-y divide-outline-variant">
-			{#each history as h, _i (_i)}
+			{#each verlauf as h, _i (_i)}
 				<li class="px-5 py-3 flex items-center justify-between hover:bg-surface transition-colors">
 					<div class="flex items-center gap-3 min-w-0">
 						<div

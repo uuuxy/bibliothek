@@ -5,8 +5,8 @@
 	 * Warteschlange und zwei Aktionen — „Klassensatz reservieren" und „Problem melden". Je
 	 * Karte ist höchstens eines der beiden Formulare offen; ihr Zustand gehört dem Aufrufer.
 	 *
-	 * @prop {any} book
-	 * @prop {any} form - Reservierung dieses Titels (klassensatzReservierung.svelte.js).
+	 * @prop {any} treffer
+	 * @prop {any} formular - Reservierung dieses Titels (klassensatzReservierung.svelte.js).
 	 * @prop {import('./problemMeldung.svelte.js').MeldeFormular} meldung - Meldung zu diesem Titel.
 	 * @prop {{ klasse: string, anzahl: number, erstellt_am: string }[]} warteschlange
 	 * @prop {() => void} ontoggle
@@ -23,10 +23,10 @@
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { bestandSatz, zulaufSatz } from '../../utils/format.js';
 
-	/** @type {{ book: any, form: any, meldung: import('./problemMeldung.svelte.js').MeldeFormular, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void, onmelden: () => void, onmeldungsenden: () => Promise<boolean>, onmeldungabbrechen: () => void }} */
+	/** @type {{ treffer: any, formular: any, meldung: import('./problemMeldung.svelte.js').MeldeFormular, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void, onmelden: () => void, onmeldungsenden: () => Promise<boolean>, onmeldungabbrechen: () => void }} */
 	let {
-		book,
-		form,
+		treffer,
+		formular,
 		meldung,
 		warteschlange,
 		ontoggle,
@@ -51,27 +51,27 @@
 		meldeKnopf?.focus();
 	}
 
-	const bild = $derived(coverSrc(book.cover_url, book.isbn));
+	const bild = $derived(coverSrc(treffer.cover_url, treffer.isbn));
 
 	// Reservieren bucht nichts — das Abzeichen „60 von 60 verfügbar" sinkt erst, wenn die
 	// Bibliothek den Satz ausleiht. Die Vormerkungen werden hier abgezogen: eine Zahl, die
 	// sagt, ob es jetzt reicht, statt „40 reserviert für 8a" daneben zum Selbstrechnen.
 	const vorgemerkt = $derived(warteschlange.reduce((sum, o) => sum + (o.anzahl ?? 0), 0));
 	const rechnerischFrei = $derived(
-		book.verfuegbar == null ? null : Math.max(0, book.verfuegbar - vorgemerkt)
+		treffer.verfuegbar == null ? null : Math.max(0, treffer.verfuegbar - vorgemerkt)
 	);
 	const reichtNicht = $derived(
-		rechnerischFrei != null && vorgemerkt > 0 && Number(form.anzahl) > rechnerischFrei
+		rechnerischFrei != null && vorgemerkt > 0 && Number(formular.anzahl) > rechnerischFrei
 	);
 
 	// Steht nichts im Regal, aber etwas ist bestellt, sagt das Abzeichen „30 bestellt" wie
 	// im Medienkatalog. „nicht verfügbar (0 im Bestand)" läse sich wie ein Titel, den es
 	// nicht gibt — reservieren lässt er sich aber schon.
-	const nurBestellt = $derived(book.gesamt === 0 && book.im_zulauf > 0);
+	const nurBestellt = $derived(treffer.gesamt === 0 && treffer.im_zulauf > 0);
 
 	// Steht etwas im Regal und ist Weiteres bestellt, nennt ein zweites Abzeichen den Zulauf:
 	// Die Obergrenze der Reservierung zählt ihn mit.
-	const zulaufDazu = $derived(book.gesamt > 0 && book.im_zulauf > 0);
+	const zulaufDazu = $derived(treffer.gesamt > 0 && treffer.im_zulauf > 0);
 </script>
 
 <div class="w-full">
@@ -90,38 +90,38 @@
 
 		<div class="min-w-0 flex-1 basis-48">
 			<h3 class="truncate text-base leading-tight font-medium text-on-surface">
-				{book.titel || book.title || 'Unbekannter Titel'}
+				{treffer.titel || treffer.title || 'Unbekannter Titel'}
 			</h3>
-			<p class="mt-0.5 text-xs text-on-surface-variant">{book.autor ?? book.author ?? ''}</p>
-			{#if book.isbn}
-				<p class="mt-1 text-label-small text-outline">ISBN {book.isbn}</p>
+			<p class="mt-0.5 text-xs text-on-surface-variant">{treffer.autor ?? treffer.author ?? ''}</p>
+			{#if treffer.isbn}
+				<p class="mt-1 text-label-small text-outline">ISBN {treffer.isbn}</p>
 			{/if}
 
 			<!-- Für einen Klassensatz zählt beides: wie viele gerade frei sind UND wie viele
 			     es überhaupt gibt. „3 verfügbar" allein sagt einer Lehrkraft nicht, ob der
 			     Titel für 28 Schüler je reichen kann. -->
-			{#if book.verfuegbar != null}
+			{#if treffer.verfuegbar != null}
 				<p class="mt-1.5 text-xs">
 					<span
 						class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {nurBestellt
 							? 'bg-surface-container-high text-on-surface-variant'
-							: book.verfuegbar > 0
+							: treffer.verfuegbar > 0
 								? 'bg-secondary-container text-on-secondary-container'
 								: 'bg-error-container text-on-error-container'}"
 					>
 						{#if nurBestellt}
-							{bestandSatz(book.gesamt, book.verfuegbar, book.im_zulauf)}
-						{:else if book.verfuegbar > 0}
-							{book.verfuegbar} von {book.gesamt} verfügbar
+							{bestandSatz(treffer.gesamt, treffer.verfuegbar, treffer.im_zulauf)}
+						{:else if treffer.verfuegbar > 0}
+							{treffer.verfuegbar} von {treffer.gesamt} verfügbar
 						{:else}
-							nicht verfügbar ({book.gesamt} im Bestand)
+							nicht verfügbar ({treffer.gesamt} im Bestand)
 						{/if}
 					</span>
 					{#if zulaufDazu}
 						<span
 							class="ml-1 inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small font-medium text-on-surface-variant"
 						>
-							{zulaufSatz(book.im_zulauf)}
+							{zulaufSatz(treffer.im_zulauf)}
 						</span>
 					{/if}
 					{#if vorgemerkt > 0 && rechnerischFrei != null}
@@ -158,9 +158,9 @@
 		<div class="ml-auto flex max-w-full shrink-0 flex-col items-end gap-2">
 			<div class="flex flex-wrap items-center justify-end gap-1">
 				<Button variant="secondary" size="sm" onclick={ontoggle}>
-					{#if form.open}
+					{#if formular.open}
 						Abbrechen
-					{:else if form.success}
+					{:else if formular.success}
 						Weitere Klasse reservieren
 					{:else}
 						Klassensatz reservieren
@@ -171,25 +171,25 @@
 					size="sm"
 					bind:element={meldeKnopf}
 					aria-expanded={meldung.open}
-					aria-label="Problem melden zu {book.titel || book.title || 'Unbekannter Titel'}"
+					aria-label="Problem melden zu {treffer.titel || treffer.title || 'Unbekannter Titel'}"
 					onclick={onmelden}
 				>
 					Problem melden
 				</Button>
 			</div>
-			{#if form.success}
-				<span class="text-xs font-medium text-primary" title={form.success}>✓ Gesendet</span>
+			{#if formular.success}
+				<span class="text-xs font-medium text-primary" title={formular.success}>✓ Gesendet</span>
 			{/if}
 		</div>
 	</div>
 
-	{#if form.open}
+	{#if formular.open}
 		<div class="border-t border-outline-variant bg-surface-container-low px-4 py-4">
-			<KlassensatzFormular {form} {reichtNicht} {rechnerischFrei} {warteschlange} {onsenden} />
+			<KlassensatzFormular {formular} {reichtNicht} {rechnerischFrei} {warteschlange} {onsenden} />
 		</div>
 	{:else if meldung.open}
 		<div class="border-t border-outline-variant bg-surface-container-low px-4 py-4">
-			<ProblemFormular form={meldung} onsenden={sendeMeldung} onabbrechen={schliesseMeldung} />
+			<ProblemFormular formular={meldung} onsenden={sendeMeldung} onabbrechen={schliesseMeldung} />
 		</div>
 	{/if}
 </div>

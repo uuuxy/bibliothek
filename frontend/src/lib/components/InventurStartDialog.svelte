@@ -78,7 +78,7 @@
 				     könnte nur vorhandene Werte anbieten und damit kein ganzes Regal. -->
 				<Feld
 					id="inv-signatur"
-					label="Signatur auswählen"
+					etikett="Signatur auswählen"
 					list="inv-signatur-vorschlaege"
 					bind:value={state.gewaehlteSignatur}
 					placeholder="z. B. LMF Deu 7"

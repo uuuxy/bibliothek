@@ -22,7 +22,7 @@ const daten = {
 			status: 'offen'
 		}
 	],
-	canEdit: true,
+	darfBearbeiten: true,
 	onChanged: () => {}
 };
 

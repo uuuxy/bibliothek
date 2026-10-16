@@ -45,15 +45,15 @@
 			Neuer Lieferant
 		</h2>
 		<form onsubmit={speichere} class="space-y-4 text-sm">
-			<Feld id="n" label="Name" bind:value={newName} required />
-			<Feld id="e" label="E-Mail" type="email" bind:value={newEmail} required />
-			<Feld id="c" label="Kundennummer" bind:value={newCustNum} required />
+			<Feld id="n" etikett="Name" bind:value={newName} required />
+			<Feld id="e" etikett="E-Mail" type="email" bind:value={newEmail} required />
+			<Feld id="c" etikett="Kundennummer" bind:value={newCustNum} required />
 			<!-- Händler führen Lernmittel und Bibliothek oft als getrennte Kundenkonten
 			     (anderer Nachlass, andere Rechnungsstelle). Bestellungen der Schülerbücherei
 			     tragen dann diese Nummer; leer heißt: dieselbe wie oben (Migration 109). -->
 			<Feld
 				id="cs"
-				label="Kundennummer Schülerbücherei (falls abweichend)"
+				etikett="Kundennummer Schülerbücherei (falls abweichend)"
 				bind:value={newCustNumSchultraeger}
 			/>
 			<!-- EIN Schalter statt drei. Vorher standen hier „beklebt die Bücher",
@@ -75,7 +75,7 @@
 				<Switch
 					id="ist-hauptlieferant"
 					bind:checked={newIstHaupt}
-					label="Hauptlieferant der Schule"
+					etikett="Hauptlieferant der Schule"
 				/>
 			</div>
 			<p class="text-xs text-on-surface-variant">

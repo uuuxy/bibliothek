@@ -11,7 +11,7 @@ describe('Verlust/Schaden melden', () => {
 
 	it('fragt bei einem Kollegen nicht nach einem Ersatzbetrag', () => {
 		const screen = render(SchadenMeldenDialog, {
-			book: { ...buch, ohneForderung: true },
+			ausleihe: { ...buch, ohneForderung: true },
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});
@@ -25,7 +25,7 @@ describe('Verlust/Schaden melden', () => {
 	it('schickt bei einem Kollegen den Betrag 0', async () => {
 		const onSubmit = vi.fn();
 		const screen = render(SchadenMeldenDialog, {
-			book: { ...buch, ohneForderung: true },
+			ausleihe: { ...buch, ohneForderung: true },
 			onCancel: vi.fn(),
 			onSubmit
 		});
@@ -36,7 +36,7 @@ describe('Verlust/Schaden melden', () => {
 
 	it('fragt bei einem Schüler weiter nach dem Ersatzbetrag', () => {
 		const screen = render(SchadenMeldenDialog, {
-			book: buch,
+			ausleihe: buch,
 			onCancel: vi.fn(),
 			onSubmit: vi.fn()
 		});

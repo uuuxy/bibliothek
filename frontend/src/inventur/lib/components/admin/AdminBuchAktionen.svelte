@@ -15,7 +15,7 @@
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 
-	let { books = $bindable(), isEditMode = $bindable(), formular = $bindable() } = $props();
+	let { titelListe = $bindable(), istBearbeitung = $bindable(), formular = $bindable() } = $props();
 
 	export function darfLoeschen() {
 		return hatRecht(authStore.currentUser, 'delete_books');
@@ -27,8 +27,8 @@
 		if (!(await loeschenBestaetigen(`„${formular.title}“ mit allen Exemplaren löschen?`))) return;
 		try {
 			await loescheTitel(formular.id);
-			books = books.filter((/** @type {any} */ b) => b.id !== formular.id);
-			isEditMode = false;
+			titelListe = titelListe.filter((/** @type {any} */ b) => b.id !== formular.id);
+			istBearbeitung = false;
 			melde('Titel gelöscht.', 'success');
 		} catch (fehler) {
 			melde(fehlertext(fehler), 'error');
@@ -53,10 +53,10 @@
 			if (!updated) return;
 			// Die Antwort ist der gespeicherte Titel samt Bestand; die Zeile der Liste wird sie.
 			const bestand = Number(updated.stock) || 0;
-			if (books.some((/** @type {any} */ b) => b.id === updated.id)) {
-				books = books.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b));
+			if (titelListe.some((/** @type {any} */ b) => b.id === updated.id)) {
+				titelListe = titelListe.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b));
 			} else if (stehtInSicht(bestand, appState.bestandsAnsicht)) {
-				books = [updated, ...books];
+				titelListe = [updated, ...titelListe];
 			}
 
 			// Sync with appState so Omnibox/Catalog update immediately
@@ -64,8 +64,8 @@
 				appState.selectedBook = updated;
 			}
 
-			if (isEditMode) {
-				isEditMode = false;
+			if (istBearbeitung) {
+				istBearbeitung = false;
 			}
 			melde(
 				neu && bestand === 0
@@ -136,7 +136,9 @@
 		try {
 			const coverUrl = await coverNeuHolen(formular.id);
 			uebernimmGespeichert(formular, 'coverUrl', coverUrl);
-			books = books.map((/** @type {any} */ b) => (b.id === formular.id ? { ...b, coverUrl } : b));
+			titelListe = titelListe.map((/** @type {any} */ b) =>
+				b.id === formular.id ? { ...b, coverUrl } : b
+			);
 			melde('Cover neu geholt', 'success');
 		} catch (err) {
 			melde(fehlertext(err), 'error');
@@ -182,7 +184,7 @@
 			}
 			const json = await res.json();
 			uebernimmGespeichert(formular, 'coverUrl', json.data.coverUrl);
-			books = books.map((/** @type {any} */ b) =>
+			titelListe = titelListe.map((/** @type {any} */ b) =>
 				b.id === formular.id ? { ...b, coverUrl: json.data.coverUrl } : b
 			);
 			melde('Cover erfolgreich hochgeladen', 'success');

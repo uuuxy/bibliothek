@@ -76,7 +76,7 @@
 						{#if !z.verweis_auf_id}
 							<Switch
 								checked={z.ist_filter}
-								label="„{z.wort}“ als Filter im Portal"
+								etikett="„{z.wort}“ als Filter im Portal"
 								onchange={(an) => onfilter(z, an)}
 							/>
 						{/if}
