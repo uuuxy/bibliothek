@@ -20,16 +20,16 @@
 	let barcodeInputEl = $state();
 
 	$effect(() => {
-		if (ablauf.status === 'active' && barcodeInputEl && !ablauf.isScanning) {
+		if (ablauf.status === 'active' && barcodeInputEl && !ablauf.scanLaeuft) {
 			barcodeInputEl.focus();
 		}
 	});
 
 	onMount(async () => {
-		await ablauf.loadSignaturen();
-		await ablauf.loadFaecher();
-		await ablauf.loadOffeneSessions();
-		await ablauf.loadAbgeschlosseneInventuren();
+		await ablauf.ladeSignaturen();
+		await ablauf.ladeFaecher();
+		await ablauf.ladeOffeneLaeufe();
+		await ablauf.ladeFruehereInventuren();
 	});
 
 	function focusInput() {
@@ -44,7 +44,7 @@
 	{#if ablauf.fehlbestand.length > 0}
 		<FehlbestandBericht
 			eintraege={ablauf.fehlbestand}
-			label={ablauf.fehlbestandLabel}
+			label={ablauf.fehlbestandBezeichnung}
 			onSchliessen={ablauf.fehlbestandSchliessen}
 			onGefunden={ablauf.fehlbestandGefunden}
 			onEndgueltigLoeschen={ablauf.fehlbestandEndgueltigLoeschen}
@@ -67,23 +67,23 @@
 					gezielt nach einer bestimmten Signatur / Kategorie scannen.
 				</p>
 			</div>
-			<Button size="lg" onclick={() => (ablauf.showStartModal = true)} class="px-6">
+			<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
 				<Plus class="w-5 h-5" aria-hidden="true" />
 				<span>Neue Bestandsprüfung starten</span>
 			</Button>
 
-			{#if ablauf.errorMessage}
+			{#if ablauf.fehler}
 				<div
 					class="w-full max-w-lg mx-auto p-3 bg-warning-container rounded-lg text-sm text-on-warning-container"
 				>
-					{ablauf.errorMessage}
+					{ablauf.fehler}
 				</div>
 			{/if}
 
-			{#if ablauf.offeneSessions.length > 0}
+			{#if ablauf.offeneLaeufe.length > 0}
 				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
 					<h4 class="text-sm font-semibold text-on-surface-variant">Laufende Inventuren</h4>
-					{#each ablauf.offeneSessions as session (session.session_id)}
+					{#each ablauf.offeneLaeufe as session (session.session_id)}
 						<div
 							class="flex items-center justify-between gap-3 p-3 bg-warning-container text-on-warning-container rounded-lg"
 						>
@@ -97,12 +97,8 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-2 shrink-0">
-								<Button size="sm" onclick={() => ablauf.resumeSession(session)}>Fortsetzen</Button>
-								<Button
-									variant="secondary"
-									size="sm"
-									onclick={() => ablauf.verwerfeSession(session)}
-								>
+								<Button size="sm" onclick={() => ablauf.setzeLaufFort(session)}>Fortsetzen</Button>
+								<Button variant="secondary" size="sm" onclick={() => ablauf.verwerfeLauf(session)}>
 									Verwerfen
 								</Button>
 							</div>
@@ -161,18 +157,18 @@
 					<div>
 						<span class="text-sm font-semibold text-on-surface-variant">Aktueller Fortschritt</span>
 						<div class="text-2xl font-bold text-on-surface mt-1">
-							{ablauf.stats.erfasst} / {ablauf.stats.erwartet}
+							{ablauf.stand.erfasst} / {ablauf.stand.erwartet}
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>
 						</div>
 					</div>
-					<div class="text-3xl font-bold text-primary">{ablauf.getProgressPercent()}%</div>
+					<div class="text-3xl font-bold text-primary">{ablauf.fortschrittProzent()}%</div>
 				</div>
 				<!-- Spur und Anzeige wie der lineare Fortschritt in M3 (material-web.dev, Tokens
 				     track-color: surface-container-highest, active-indicator-color: primary). -->
 				<div class="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
 					<div
 						class="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
-						style="width: {ablauf.getProgressPercent()}%"
+						style="width: {ablauf.fortschrittProzent()}%"
 					></div>
 				</div>
 			</div>
@@ -183,18 +179,18 @@
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
-					ablauf.handleScan(ablauf.barcodeInput, focusInput);
+					ablauf.verarbeiteScan(ablauf.barcodeEingabe, focusInput);
 				}}
 			>
 				<Suchpille
 					id="inventur-scan"
 					bind:element={barcodeInputEl}
-					bind:wert={ablauf.barcodeInput}
+					bind:wert={ablauf.barcodeEingabe}
 					etikett="Barcode scannen"
 					platzhalter="Barcode scannen..."
 				>
 					{#snippet nachlaufend()}
-						{#if ablauf.isScanning}
+						{#if ablauf.scanLaeuft}
 							<Ladekreis size="md" />
 						{:else}
 							<ScanBarcode class="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden="true" />
@@ -204,9 +200,9 @@
 			</form>
 			<!-- Die Rückmeldung zum letzten Scan (ScanRueckmeldung.svelte: Erfolg, Warnung,
 			     Fehler auf eigenen Farbrollen). Das Einblenden bleibt hier, am {#if}. -->
-			{#if ablauf.lastScan}
+			{#if ablauf.letzterScan}
 				<div transition:slide>
-					<ScanRueckmeldung scan={ablauf.lastScan} />
+					<ScanRueckmeldung scan={ablauf.letzterScan} />
 				</div>
 			{/if}
 
@@ -225,11 +221,11 @@
 </Seitenrahmen>
 
 <InventurStartDialog
-	open={ablauf.showStartModal}
+	open={ablauf.startOffen}
 	state={ablauf}
 	onClose={() => {
-		ablauf.showStartModal = false;
-		ablauf.clearError();
+		ablauf.startOffen = false;
+		ablauf.leereFehler();
 	}}
-	onStart={ablauf.startInventory}
+	onStart={ablauf.starteInventur}
 />

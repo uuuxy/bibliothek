@@ -42,9 +42,10 @@
 	let { open, state, onClose, onStart } = $props();
 
 	const bereit = $derived(
-		state.scopeType === 'global' ||
-			(state.scopeType === 'signature' && String(state.selectedSignatur).trim() !== '') ||
-			(state.scopeType === 'filter' && (state.selectedFach !== '' || state.selectedGrade !== ''))
+		state.bereichArt === 'global' ||
+			(state.bereichArt === 'signature' && String(state.gewaehlteSignatur).trim() !== '') ||
+			(state.bereichArt === 'filter' &&
+				(state.gewaehltesFach !== '' || state.gewaehlterJahrgang !== ''))
 	);
 </script>
 
@@ -61,7 +62,7 @@
 			<legend class="sr-only">Bereich der Inventur</legend>
 			{#each BEREICHE as b (b.wert)}
 				<label class="flex cursor-pointer items-start gap-3 text-sm text-on-surface">
-					<Radio bind:group={state.scopeType} value={b.wert} aria-label={b.name} />
+					<Radio bind:group={state.bereichArt} value={b.wert} aria-label={b.name} />
 					<span>
 						<span class="block font-medium">{b.name}</span>
 						<span class="block text-xs text-on-surface-variant">{b.text}</span>
@@ -70,7 +71,7 @@
 			{/each}
 		</fieldset>
 
-		{#if state.scopeType === 'signature'}
+		{#if state.bereichArt === 'signature'}
 			<div transition:slide>
 				<!-- Freie Eingabe mit Vorschlagsliste: Die Signatur wird als Präfix gelesen,
 				     „LMF Deu 7" erfasst also auch „LMF Deu 7 / Bie". Eine reine Auswahlliste
@@ -79,7 +80,7 @@
 					id="inv-signatur"
 					label="Signatur auswählen"
 					list="inv-signatur-vorschlaege"
-					bind:value={state.selectedSignatur}
+					bind:value={state.gewaehlteSignatur}
 					placeholder="z. B. LMF Deu 7"
 					hint="Erfasst alles, was mit dieser Signatur beginnt — „LMF Deu 7“ also auch „LMF Deu 7 / Bie“."
 				/>
@@ -91,7 +92,7 @@
 			</div>
 		{/if}
 
-		{#if state.scopeType === 'filter'}
+		{#if state.bereichArt === 'filter'}
 			<div transition:slide class="grid grid-cols-2 gap-3">
 				<div class="space-y-1.5">
 					<label for="inventur-fach" class="block text-xs font-medium text-on-surface-variant"
@@ -99,7 +100,7 @@
 					>
 					<Select
 						id="inventur-fach"
-						bind:value={state.selectedFach}
+						bind:value={state.gewaehltesFach}
 						options={[
 							{ value: '', label: 'Alle Fächer' },
 							...state.faecher.map((/** @type {string} */ f) => ({ value: f, label: f }))
@@ -110,13 +111,13 @@
 					<label for="inventur-klasse" class="block text-xs font-medium text-on-surface-variant"
 						>Klasse</label
 					>
-					<Select id="inventur-klasse" bind:value={state.selectedGrade} options={KLASSEN} />
+					<Select id="inventur-klasse" bind:value={state.gewaehlterJahrgang} options={KLASSEN} />
 				</div>
 			</div>
 		{/if}
 
-		{#if state.errorMessage}
-			<p class="text-sm text-error" role="alert">{state.errorMessage}</p>
+		{#if state.fehler}
+			<p class="text-sm text-error" role="alert">{state.fehler}</p>
 		{/if}
 
 		<div class="flex justify-end gap-2 pt-2">

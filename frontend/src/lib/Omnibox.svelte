@@ -37,7 +37,7 @@
 		if (appState.triggerStudentScan) {
 			omniboxStore.queryVal = appState.triggerStudentScan;
 			appState.triggerStudentScan = '';
-			omniboxStore.submitAction(null, () => leserakte?.reloadProfile());
+			omniboxStore.submitAction(null, () => leserakte?.ladeNeu());
 		}
 	});
 
@@ -50,7 +50,7 @@
 			try {
 				const nachricht = JSON.parse(e.data);
 				if (omniboxStore.activeStudent && nachricht.student_id === omniboxStore.activeStudent.id) {
-					leserakte?.reloadProfile();
+					leserakte?.ladeNeu();
 				}
 			} catch (err) {
 				console.error('SSE Parsing-Fehler in der Omnibox:', err);
@@ -137,7 +137,7 @@
 			     Die Pille liegt bündig an der Kante des Rollbereichs, außen würde er abgeschnitten.
 			     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
-				onsubmit={(e) => omniboxStore.submitAction(e, () => leserakte?.reloadProfile())}
+				onsubmit={(e) => omniboxStore.submitAction(e, () => leserakte?.ladeNeu())}
 				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.isShaking
 					? 'animate-shake'
 					: ''} {farbZustand}"
@@ -179,7 +179,7 @@
 			<ThekenKamera
 				stopCamera={stoppeKamera}
 				bind:queryVal={omniboxStore.queryVal}
-				submitAction={(e) => omniboxStore.submitAction(e, () => leserakte?.reloadProfile())}
+				submitAction={(e) => omniboxStore.submitAction(e, () => leserakte?.ladeNeu())}
 			/>
 		{/if}
 
@@ -189,8 +189,8 @@
 
 <OmniboxVormerkungHinweis />
 
-<OmniboxSperrHinweis onReload={() => leserakte?.reloadProfile()} />
-<OmniboxPrueflisteDialog onReload={() => leserakte?.reloadProfile()} />
+<OmniboxSperrHinweis onReload={() => leserakte?.ladeNeu()} />
+<OmniboxPrueflisteDialog onReload={() => leserakte?.ladeNeu()} />
 
 <style>
 	/* Rütteln ohne Skalierung: Eine angedockte Leiste soll nicht aufpumpen. */

@@ -8,28 +8,28 @@ import { ladeOffeneSessions, starteSession, brichAb } from './inventurApi.js';
  * Mechanik nicht mehr, sobald eine Session aktiv ist.
  * @param {{ onActivate?: () => void }} [opts] onActivate wird aufgerufen, sobald eine
  *   Session aktiv wird (Start oder Fortsetzen) — der Aufrufer nutzt das, um scan-
- *   lokalen Zustand (lastScan) zu leeren, den dieses Modul nicht selbst besitzt.
+ *   lokalen Zustand (letzterScan) zu leeren, den dieses Modul nicht selbst besitzt.
  */
 export function useInventurlauf(opts = {}) {
 	const { onActivate } = opts;
 
 	let status = $state('idle'); // 'idle' | 'active'
-	let sessionId = $state('');
-	let scopeType = $state('global');
+	let laufKennung = $state('');
+	let bereichArt = $state('global');
 	// Die Signatur ist der Text vom Buchruecken, kein Fremdschluessel mehr. Sie wirkt
 	// als Praefix: "LMF Deu 7" erfasst auch "LMF Deu 7 / Bie" (Migration 060).
-	let selectedSignatur = $state('');
+	let gewaehlteSignatur = $state('');
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	// Filter-Scope: gezielte Teil-Inventur nach Fach und/oder Klasse ("nur Mathe, Kl. 5").
-	let selectedFach = $state('');
-	let selectedGrade = $state('');
+	let gewaehltesFach = $state('');
+	let gewaehlterJahrgang = $state('');
 	let faecher = $state(/** @type {string[]} */ ([]));
-	let offeneSessions = $state(/** @type {any[]} */ ([]));
-	let stats = $state({ erwartet: 0, erfasst: 0, label: '' });
-	let showStartModal = $state(false);
+	let offeneLaeufe = $state(/** @type {any[]} */ ([]));
+	let stand = $state({ erwartet: 0, erfasst: 0, label: '' });
+	let startOffen = $state(false);
 	let fehler = $state('');
 
-	async function loadSignaturen() {
+	async function ladeSignaturen() {
 		try {
 			const res = await apiFetch('/api/signaturen');
 			if (res.ok) signaturen = (await res.json()) || [];
@@ -38,7 +38,7 @@ export function useInventurlauf(opts = {}) {
 		}
 	}
 
-	async function loadFaecher() {
+	async function ladeFaecher() {
 		try {
 			const res = await apiFetch('/api/faecher');
 			if (res.ok) faecher = (await res.json()) || [];
@@ -47,34 +47,34 @@ export function useInventurlauf(opts = {}) {
 		}
 	}
 
-	async function loadOffeneSessions() {
-		offeneSessions = await ladeOffeneSessions();
+	async function ladeOffeneLaeufe() {
+		offeneLaeufe = await ladeOffeneSessions();
 	}
 
-	async function startInventory() {
+	async function starteInventur() {
 		fehler = '';
-		const payload = { type: scopeType };
-		if (scopeType === 'signature') {
-			if (!selectedSignatur.trim()) {
+		const payload = { type: bereichArt };
+		if (bereichArt === 'signature') {
+			if (!gewaehlteSignatur.trim()) {
 				fehler = 'Bitte wähle eine Signatur aus.';
 				return;
 			}
-			payload.signatur = selectedSignatur.trim();
-		} else if (scopeType === 'filter') {
-			if (!selectedFach && !selectedGrade) {
+			payload.signatur = gewaehlteSignatur.trim();
+		} else if (bereichArt === 'filter') {
+			if (!gewaehltesFach && !gewaehlterJahrgang) {
 				fehler = 'Bitte wähle mindestens ein Fach oder eine Klasse.';
 				return;
 			}
-			if (selectedFach) payload.subject = selectedFach;
-			if (selectedGrade) payload.grade = Number(selectedGrade);
+			if (gewaehltesFach) payload.subject = gewaehltesFach;
+			if (gewaehlterJahrgang) payload.grade = Number(gewaehlterJahrgang);
 		}
 
 		const r = await starteSession(payload);
 		if (r.ok) {
-			sessionId = r.data.session_id;
-			stats = { erwartet: r.data.erwartet, erfasst: 0, label: r.data.label };
+			laufKennung = r.data.session_id;
+			stand = { erwartet: r.data.erwartet, erfasst: 0, label: r.data.label };
 			status = 'active';
-			showStartModal = false;
+			startOffen = false;
 			onActivate?.();
 			return;
 		}
@@ -82,102 +82,102 @@ export function useInventurlauf(opts = {}) {
 			// Für diesen Bereich läuft bereits eine Inventur — statt sie zu überschreiben
 			// (der alte Datenverlust-Bug), die laufende anzeigen und zum Fortsetzen anbieten.
 			fehler = 'Für diesen Bereich läuft bereits eine Inventur. Unten fortsetzen oder verwerfen.';
-			await loadOffeneSessions();
-			showStartModal = false;
+			await ladeOffeneLaeufe();
+			startOffen = false;
 			return;
 		}
 		fehler = r.error || 'Fehler beim Starten der Inventur.';
 	}
 
-	/** @param {any} session laufende Session aus offeneSessions */
-	function resumeSession(session) {
-		sessionId = session.session_id;
-		stats = { erwartet: session.erwartet, erfasst: session.erfasst, label: session.label };
+	/** @param {any} session laufende Session aus offeneLaeufe */
+	function setzeLaufFort(session) {
+		laufKennung = session.session_id;
+		stand = { erwartet: session.erwartet, erfasst: session.erfasst, label: session.label };
 		fehler = '';
 		status = 'active';
 		onActivate?.();
 	}
 
 	/** @param {any} session */
-	async function verwerfeSession(session) {
+	async function verwerfeLauf(session) {
 		fehler = '';
 		await brichAb(session.session_id);
-		await loadOffeneSessions();
+		await ladeOffeneLaeufe();
 	}
 
-	// errorMessage wird an zwei Stellen angezeigt (Start-Modal + Hauptschirm). Ohne diesen
+	// fehler wird an zwei Stellen angezeigt (Start-Modal + Hauptschirm). Ohne diesen
 	// Reset blieb eine modal-lokale Meldung (z. B. „Bitte wähle eine Signatur aus.“) nach
 	// dem Abbrechen kontextlos als Banner auf dem Hauptschirm stehen.
-	function clearError() {
+	function leereFehler() {
 		fehler = '';
 	}
 
 	/** Aufrufer ist der Abschluss der Session (finishInventory in useInventur). */
-	function resetToIdle() {
+	function setzeZurueck() {
 		status = 'idle';
-		sessionId = '';
-		stats = { erwartet: 0, erfasst: 0, label: '' };
+		laufKennung = '';
+		stand = { erwartet: 0, erfasst: 0, label: '' };
 	}
 
 	return {
 		get status() {
 			return status;
 		},
-		get sessionId() {
-			return sessionId;
+		get laufKennung() {
+			return laufKennung;
 		},
-		get scopeType() {
-			return scopeType;
+		get bereichArt() {
+			return bereichArt;
 		},
-		set scopeType(v) {
-			scopeType = v;
+		set bereichArt(v) {
+			bereichArt = v;
 		},
-		get selectedSignatur() {
-			return selectedSignatur;
+		get gewaehlteSignatur() {
+			return gewaehlteSignatur;
 		},
-		set selectedSignatur(v) {
-			selectedSignatur = v;
+		set gewaehlteSignatur(v) {
+			gewaehlteSignatur = v;
 		},
 		get signaturen() {
 			return signaturen;
 		},
-		get selectedFach() {
-			return selectedFach;
+		get gewaehltesFach() {
+			return gewaehltesFach;
 		},
-		set selectedFach(v) {
-			selectedFach = v;
+		set gewaehltesFach(v) {
+			gewaehltesFach = v;
 		},
-		get selectedGrade() {
-			return selectedGrade;
+		get gewaehlterJahrgang() {
+			return gewaehlterJahrgang;
 		},
-		set selectedGrade(v) {
-			selectedGrade = v;
+		set gewaehlterJahrgang(v) {
+			gewaehlterJahrgang = v;
 		},
 		get faecher() {
 			return faecher;
 		},
-		get offeneSessions() {
-			return offeneSessions;
+		get offeneLaeufe() {
+			return offeneLaeufe;
 		},
-		get stats() {
-			return stats;
+		get stand() {
+			return stand;
 		},
-		get showStartModal() {
-			return showStartModal;
+		get startOffen() {
+			return startOffen;
 		},
-		set showStartModal(v) {
-			showStartModal = v;
+		set startOffen(v) {
+			startOffen = v;
 		},
-		get errorMessage() {
+		get fehler() {
 			return fehler;
 		},
-		clearError,
-		loadSignaturen,
-		loadFaecher,
-		loadOffeneSessions,
-		startInventory,
-		resumeSession,
-		verwerfeSession,
-		resetToIdle
+		leereFehler,
+		ladeSignaturen,
+		ladeFaecher,
+		ladeOffeneLaeufe,
+		starteInventur,
+		setzeLaufFort,
+		verwerfeLauf,
+		setzeZurueck
 	};
 }

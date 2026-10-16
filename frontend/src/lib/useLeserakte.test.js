@@ -23,7 +23,7 @@ vi.mock('./apiFetch.js', async (original) => ({
 const ok = (body) => ({ ok: true, json: async () => body });
 const fehler = { ok: false, status: 500, json: async () => ({}) };
 
-describe('useLeserakte.fetchProfile', () => {
+describe('useLeserakte.ladeAkte', () => {
 	// Mit Klammern, ohne Rückgabe: mockReset() gibt das Mock zurück, und Vitest ruft einen
 	// zurückgegebenen Funktionswert nach dem Test als Aufräumer auf — apiFetch() ohne
 	// Argumente. Solange jede Implementierung auflöste, fiel das nicht auf; die erste
@@ -40,7 +40,7 @@ describe('useLeserakte.fetchProfile', () => {
 			return /** @type {any} */ (ok({ id: 'A', vorname: 'Anna' }));
 		});
 		const st = useLeserakte();
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		expect(st.gebuehren).toEqual([{ id: 'f-A' }]);
 
 		// Schüler B: die Gebühren-Anfrage scheitert.
@@ -50,8 +50,8 @@ describe('useLeserakte.fetchProfile', () => {
 			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
 			return /** @type {any} */ (ok({ id: 'B', vorname: 'Ben' }));
 		});
-		await st.fetchProfile('B');
-		expect(st.profile?.id).toBe('B');
+		await st.ladeAkte('B');
+		expect(st.akte?.id).toBe('B');
 		expect(st.gebuehren, 'Gebühren von A stehen unter dem Namen von B').toEqual([]);
 	});
 
@@ -75,12 +75,12 @@ describe('useLeserakte.fetchProfile', () => {
 
 		const st = useLeserakte();
 		antworten('A', true);
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		expect(st.bescheide).toEqual([{ id: 'bescheid-A' }]);
 
 		antworten('B', false);
-		await st.fetchProfile('B');
-		expect(st.profile?.id).toBe('B');
+		await st.ladeAkte('B');
+		expect(st.akte?.id).toBe('B');
 		expect(st.bescheide, 'der Bescheid von A steht unter dem Namen von B').toEqual([]);
 	});
 
@@ -102,7 +102,7 @@ describe('useLeserakte.fetchProfile', () => {
 	it('vermerkt einen gescheiterten Abruf, statt ihn als „nichts da" zu zeigen', async () => {
 		antwortenJe({ bescheide: { ok: false, status: 503, json: async () => ({}) } });
 		const st = useLeserakte();
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		expect(st.bescheide).toEqual([]);
 		expect(st.fehlendeListen, 'der Ausfall muss in der Akte sichtbar sein').toEqual(['Bescheide']);
 
@@ -110,30 +110,30 @@ describe('useLeserakte.fetchProfile', () => {
 			schadensfaelle: fehler,
 			vormerkungen: { ok: false, status: 504, json: async () => ({}) }
 		});
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		expect(st.fehlendeListen).toEqual(['Vormerkungen', 'Gebühren']);
 	});
 
 	it('403 (Rolle ohne Einsicht) und eine leere Liste sind kein Ladefehler', async () => {
 		antwortenJe({ bescheide: { ok: false, status: 403, json: async () => ({}) } });
 		const st = useLeserakte();
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		expect(st.bescheide).toEqual([]);
 		expect(st.fehlendeListen).toEqual([]);
 
 		antwortenJe({});
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		expect(st.fehlendeListen).toEqual([]);
 	});
 
 	it('ein Netzwerkfehler lässt keinen Vermerk des vorigen Laufs stehen und setzt alle', async () => {
 		antwortenJe({ bescheide: { ok: false, status: 503, json: async () => ({}) } });
 		const st = useLeserakte();
-		await st.fetchProfile('A');
+		await st.ladeAkte('A');
 		// Der Netzwerkfehler wird im Hook protokolliert (console.error) — hier stumm, wie in liveEvents.test.js.
 		vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.mocked(apiFetch).mockRejectedValue(new TypeError('Failed to fetch'));
-		await st.fetchProfile('B');
+		await st.ladeAkte('B');
 		expect(st.fehlendeListen).toEqual(['Vormerkungen', 'Gebühren', 'Bescheide']);
 	});
 
@@ -150,29 +150,29 @@ describe('useLeserakte.fetchProfile', () => {
 			return /** @type {any} */ (ok({ id: istA ? 'A' : 'B', vorname: istA ? 'Anna' : 'Ben' }));
 		});
 		const st = useLeserakte();
-		const langsam = st.fetchProfile('A');
-		await st.fetchProfile('B');
-		expect(st.profile?.id).toBe('B');
+		const langsam = st.ladeAkte('A');
+		await st.ladeAkte('B');
+		expect(st.akte?.id).toBe('B');
 		loesenA();
 		await langsam;
-		expect(st.profile?.id, 'die ältere Antwort hat die jüngere überschrieben').toBe('B');
-		expect(st.loading).toBe(false);
+		expect(st.akte?.id, 'die ältere Antwort hat die jüngere überschrieben').toBe('B');
+		expect(st.laedt).toBe(false);
 	});
 
 	it('schließt beim Schülerwechsel jedes offene Blatt', () => {
 		const st = useLeserakte();
-		st.showEditModal = true;
-		st.showDamageModal = true;
-		st.showLockModal = true;
-		st.showDeleteConfirm = true;
-		st.showWebcam = true;
+		st.bearbeitenOffen = true;
+		st.schadenOffen = true;
+		st.sperreOffen = true;
+		st.loeschfrageOffen = true;
+		st.kameraOffen = true;
 		st.schliesseAlleBlaetter();
 		expect([
-			st.showEditModal,
-			st.showDamageModal,
-			st.showLockModal,
-			st.showDeleteConfirm,
-			st.showWebcam
+			st.bearbeitenOffen,
+			st.schadenOffen,
+			st.sperreOffen,
+			st.loeschfrageOffen,
+			st.kameraOffen
 		]).toEqual([false, false, false, false, false]);
 	});
 });
@@ -201,11 +201,11 @@ describe('useLeserakte: Fehlermeldungen', () => {
 		});
 
 		const hook = useLeserakte();
-		await hook.fetchProfile('A');
-		await hook.downloadRechnungPDF();
+		await hook.ladeAkte('A');
+		await hook.ladeRechnungHerunter();
 
-		expect(hook.globalErrorToast).toBe('Keine offene Forderung ohne Bescheid.');
-		expect(hook.globalErrorToast).not.toContain('{');
-		expect(hook.globalErrorToast).not.toContain('Error:');
+		expect(hook.fehlermeldung).toBe('Keine offene Forderung ohne Bescheid.');
+		expect(hook.fehlermeldung).not.toContain('{');
+		expect(hook.fehlermeldung).not.toContain('Error:');
 	});
 });

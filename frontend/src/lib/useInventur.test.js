@@ -78,18 +78,18 @@ describe('Scan während der Anfrage', () => {
 		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode));
 		const inventur = useInventur();
 
-		const erster = inventur.handleScan('B-1');
-		const zweiter = inventur.handleScan('B-2');
-		const dritter = inventur.handleScan('B-3');
+		const erster = inventur.verarbeiteScan('B-1');
+		const zweiter = inventur.verarbeiteScan('B-2');
+		const dritter = inventur.verarbeiteScan('B-3');
 		expect(scan).toHaveBeenCalledTimes(1);
 
 		ersterFertig(treffer('B-1'));
 		await Promise.all([erster, zweiter, dritter]);
 
 		expect(scan.mock.calls.map((aufruf) => aufruf[1])).toEqual(['B-1', 'B-2', 'B-3']);
-		expect(inventur.stats.erfasst).toBe(3);
-		expect(inventur.lastScan.barcode).toBe('B-3');
-		expect(inventur.isScanning).toBe(false);
+		expect(inventur.stand.erfasst).toBe(3);
+		expect(inventur.letzterScan.barcode).toBe('B-3');
+		expect(inventur.scanLaeuft).toBe(false);
 	});
 
 	it('bucht die folgenden Scans auch, wenn einer scheitert', async () => {
@@ -97,11 +97,11 @@ describe('Scan während der Anfrage', () => {
 		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode));
 		const inventur = useInventur();
 
-		await Promise.all([inventur.handleScan('B-1'), inventur.handleScan('B-2')]);
+		await Promise.all([inventur.verarbeiteScan('B-1'), inventur.verarbeiteScan('B-2')]);
 
 		expect(scan).toHaveBeenCalledTimes(2);
-		expect(inventur.stats.erfasst).toBe(1);
-		expect(inventur.lastScan.barcode).toBe('B-2');
+		expect(inventur.stand.erfasst).toBe(1);
+		expect(inventur.letzterScan.barcode).toBe('B-2');
 	});
 
 	it('fragt vor dem Abschluss erst, wenn die eingereihten Scans gebucht sind', async () => {
@@ -111,7 +111,7 @@ describe('Scan während der Anfrage', () => {
 		frage.mockResolvedValue(false);
 		const inventur = useInventur();
 
-		const laufend = inventur.handleScan('B-1');
+		const laufend = inventur.verarbeiteScan('B-1');
 		const abschlussFrage = inventur.abschliessenNachRueckfrage();
 		await Promise.resolve();
 		expect(frage, 'die Zahl der fehlenden Bücher stimmt erst nach dem Scan').not.toHaveBeenCalled();

@@ -37,7 +37,7 @@
 	// „Exemplare" zählt den Bestand wie „1 von 2 verfügbar" im Kopf; bestellte und
 	// ausgesonderte stehen im Reiter mit ihrem Wort an der Karte.
 	const reiter = $derived([
-		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.borrowers.length) },
+		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.ausleiher.length) },
 		{ id: 'exemplare', label: zaehler('Exemplare', exemplarZahlen(akte.exemplare).bestand) },
 		...(darfVormerken
 			? [{ id: 'vormerkungen', label: zaehler('Vormerkungen', akte.vormerkungen.length) }]
@@ -46,12 +46,12 @@
 	]);
 
 	// Der Effekt hängt an GENAU einer Sache: der Titel-ID. untrack sorgt dafür, dass
-	// nichts, was loadAll unterwegs liest (appState.selectedBook, sein eigener Zustand),
+	// nichts, was ladeAlles unterwegs liest (appState.selectedBook, sein eigener Zustand),
 	// je wieder zum Auslöser dieses Effekts wird — am 06.09.2026 tat es das, und die
 	// Akte lief in einer Endlosschleife, bis Svelte sie abbrach (siehe useBuchakte).
 	$effect(() => {
 		const id = bookId;
-		if (id) untrack(() => akte.loadAll(id));
+		if (id) untrack(() => akte.ladeAlles(id));
 	});
 </script>
 
@@ -68,26 +68,26 @@
 			</button>
 			<span class="text-on-surface-variant">/</span>
 			<span class="text-on-surface-variant text-sm truncate max-w-xs"
-				>{akte.book?.title ?? 'Lade...'}</span
+				>{akte.buch?.title ?? 'Lade...'}</span
 			>
 		</div>
 	</div>
 
-	{#if akte.isLoading}
+	{#if akte.laedt}
 		<div class="flex justify-center items-center py-32">
 			<Ladekreis size="lg" />
 		</div>
-	{:else if akte.book}
+	{:else if akte.buch}
 		<BuchakteKopf
-			book={akte.book}
-			borrowers={akte.borrowers}
+			book={akte.buch}
+			borrowers={akte.ausleiher}
 			exemplare={akte.exemplare}
-			coverSrc={akte.coverSrc}
-			coverFailed={akte.coverFailed}
-			onCoverError={akte.onCoverError}
-			onCoverLoad={akte.onCoverLoad}
-			onEdit={darfBearbeiten ? akte.editTitle : undefined}
-			onDelete={darfLoeschen ? () => akte.deleteTitle(showToast, onBack) : undefined}
+			coverSrc={akte.coverQuelle}
+			coverFailed={akte.coverFehlt}
+			onCoverError={akte.naechsteQuelle}
+			onCoverLoad={akte.pruefeGeladenes}
+			onEdit={darfBearbeiten ? akte.bearbeiteTitel : undefined}
+			onDelete={darfLoeschen ? () => akte.loescheTitel(showToast, onBack) : undefined}
 		/>
 
 		{#if akte.fehlendeListen.length > 0}
@@ -100,31 +100,31 @@
 		<Reiter
 			etikett="Bereiche der Buchakte"
 			{reiter}
-			aktiv={akte.activeTab}
-			onwahl={(id) => (akte.activeTab = id)}
+			aktiv={akte.aktiverReiter}
+			onwahl={(id) => (akte.aktiverReiter = id)}
 		/>
 
 		<!-- Tab Content -->
 		<div class="w-full">
-			{#if akte.activeTab === 'ausleiher'}
-				<BuchakteAusleiher borrowers={akte.borrowers} book={akte.book} {onBack} />
-			{:else if akte.activeTab === 'exemplare'}
+			{#if akte.aktiverReiter === 'ausleiher'}
+				<BuchakteAusleiher borrowers={akte.ausleiher} book={akte.buch} {onBack} />
+			{:else if akte.aktiverReiter === 'exemplare'}
 				<BuchakteExemplare
 					bind:exemplare={akte.exemplare}
-					book={akte.book}
-					loadAll={akte.loadAll}
+					book={akte.buch}
+					loadAll={akte.ladeAlles}
 				/>
-			{:else if akte.activeTab === 'historie'}
-				<BuchakteHistorie history={akte.history} />
-			{:else if akte.activeTab === 'vormerkungen'}
-				<BuchakteVormerkungen bind:vormerkungen={akte.vormerkungen} book={akte.book} />
+			{:else if akte.aktiverReiter === 'historie'}
+				<BuchakteHistorie history={akte.verlauf} />
+			{:else if akte.aktiverReiter === 'vormerkungen'}
+				<BuchakteVormerkungen bind:vormerkungen={akte.vormerkungen} book={akte.buch} />
 			{/if}
 		</div>
 	{:else if akte.kopfFehler}
 		<!-- „Nicht gefunden" wäre hier eine Aussage über den Bestand. Der Abruf ist
 		     gescheitert — den Titel gibt es womöglich, es kam nur nichts an. -->
 		<LadeFehler
-			onerneut={() => bookId && akte.loadAll(bookId)}
+			onerneut={() => bookId && akte.ladeAlles(bookId)}
 			titel="Titel nicht geladen"
 			text={akte.kopfFehler}
 		/>

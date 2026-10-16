@@ -246,7 +246,6 @@ const NAMEN_BESTAND = {
 	'src/inventur/lib/components/scanner/barcodeErkennung.js': 1,
 	'src/inventur/lib/store.svelte.js': 1,
 	'src/inventur/lib/titelSortierung.js': 2,
-	'src/lib/Leserakte.svelte': 1,
 	'src/lib/apiFetch.js': 2,
 	'src/lib/audio.js': 2,
 	'src/lib/components/bestellungen/mittel.js': 1,
@@ -268,11 +267,6 @@ const NAMEN_BESTAND = {
 	'src/lib/stores/mahnwesenPdf.svelte.js': 2,
 	'src/lib/stores/offlineSync.svelte.js': 3,
 	'src/lib/stores/omnibox.svelte.js': 20,
-	'src/lib/useBuchakte.svelte.js': 7,
-	'src/lib/useFehlbestand.svelte.js': 2,
-	'src/lib/useInventur.svelte.js': 2,
-	'src/lib/useInventurlauf.svelte.js': 14,
-	'src/lib/useLeserakte.svelte.js': 17,
 	'src/lib/useLeserakteFormular.svelte.js': 3
 };
 

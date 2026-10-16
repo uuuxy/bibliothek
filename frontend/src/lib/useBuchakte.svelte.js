@@ -45,11 +45,11 @@ export function useBuchakte() {
 	/** @type {any} */
 	let buch = $state(null);
 	/** @type {any[]} */
-	let borrowers = $state([]);
+	let ausleiher = $state([]);
 	/** @type {any[]} */
 	let exemplare = $state([]);
 	/** @type {any[]} */
-	let history = $state([]);
+	let verlauf = $state([]);
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
 	let aktiverReiter = $state('ausleiher');
@@ -62,7 +62,7 @@ export function useBuchakte() {
 
 	let coverCandidates = $state([]);
 	let currentCandidateIndex = $state(0);
-	let coverFailed = $state(false);
+	let coverFehlt = $state(false);
 
 	// Sequenznummer wie in der Schülerakte (useLeserakte) und im bestellStore: Die
 	// Buch-Akte bleibt beim Wechsel MONTIERT — die Omnibox setzt nur appState.activeBookId,
@@ -80,32 +80,32 @@ export function useBuchakte() {
 	 * der Kopf des VORHER geöffneten Titels stehen, während die Reiter darunter schon zum
 	 * neuen gehörten. Das ist hier nicht nur Anzeige:
 	 *
-	 *   - „Gesamten Titel löschen" schickt `book.id` — also den ALTEN Titel, samt allen
+	 *   - „Gesamten Titel löschen" schickt `buch.id` — also den ALTEN Titel, samt allen
 	 *     Exemplaren, Ausleihen und offenen Forderungen. Die Rückfrage nannte dabei die
 	 *     Exemplarzahl des NEUEN („ALLE 12 zugehörigen Exemplare").
 	 *   - „Titel bearbeiten" öffnet den Editor auf dem alten Titel.
 	 *
 	 * @param {string} id
 	 */
-	async function loadAll(id) {
+	async function ladeAlles(id) {
 		const meine = ++laufNr;
 		laedt = true;
 		// Alles, was zum vorigen Titel gehört, geht mit ihm. Ein leerer Kopf ist die
 		// ehrliche Antwort auf „konnte nicht geladen werden" — der alte Kopf ist eine
 		// falsche.
 		buch = null;
-		borrowers = [];
+		ausleiher = [];
 		exemplare = [];
-		history = [];
+		verlauf = [];
 		vormerkungen = [];
 		fehlendeListen = [];
 		kopfFehler = '';
 
-		// Der Kopf läuft durch eine LOKALE Variable, nie durch `book` zurück: Dieser Lauf
-		// steht in einem $effect (Buchakte.svelte). Ein Effekt, der `book` schreibt und im
+		// Der Kopf läuft durch eine LOKALE Variable, nie durch `buch` zurück: Dieser Lauf
+		// steht in einem $effect (Buchakte.svelte). Ein Effekt, der `buch` schreibt und im
 		// selben Atemzug wieder liest, abonniert es — und löst sich beim nächsten Anlass
-		// mit seinem eigenen `book = null` endlos selbst aus, bis Svelte nach 1.000
-		// Umläufen abbricht (effect_update_depth_exceeded) und isLoading hängen bleibt.
+		// mit seinem eigenen `buch = null` endlos selbst aus, bis Svelte nach 1.000
+		// Umläufen abbricht (effect_update_depth_exceeded) und laedt hängen bleibt.
 		/** @type {any} */
 		let kopf = null;
 		if (appState.selectedBook?.id === id) {
@@ -123,7 +123,7 @@ export function useBuchakte() {
 		const candidates = coverKandidaten(kopf?.coverUrl, kopf?.isbn);
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;
-		coverFailed = candidates.length === 0;
+		coverFehlt = candidates.length === 0;
 
 		const [bRes, eRes, hRes, vRes] = await Promise.allSettled([
 			apiFetch(`/api/buecher/titel/${id}/ausleiher`, { credentials: 'include' }),
@@ -135,9 +135,9 @@ export function useBuchakte() {
 
 		/** @type {[string, PromiseSettledResult<any>, (w: any[]) => void][]} */
 		const listen = [
-			['Ausleiher', bRes, (w) => (borrowers = w)],
+			['Ausleiher', bRes, (w) => (ausleiher = w)],
 			['Exemplare', eRes, (w) => (exemplare = w)],
-			['Historie', hRes, (w) => (history = w)],
+			['Historie', hRes, (w) => (verlauf = w)],
 			['Vormerkungen', vRes, (w) => (vormerkungen = w)]
 		];
 		/** @type {string[]} */
@@ -151,7 +151,7 @@ export function useBuchakte() {
 		laedt = false;
 	}
 
-	async function deleteTitle(showToast, onBack) {
+	async function loescheTitel(showToast, onBack) {
 		if (!buch) return;
 		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
 			return;
@@ -176,7 +176,7 @@ export function useBuchakte() {
 		}
 	}
 
-	function editTitle() {
+	function bearbeiteTitel() {
 		if (!buch) return;
 		appState.bookToEdit = buch;
 		appState.requestAdminView = true;
@@ -184,25 +184,25 @@ export function useBuchakte() {
 		appState.activeBookId = null;
 	}
 
-	function onCoverError() {
+	function naechsteQuelle() {
 		if (currentCandidateIndex < coverCandidates.length - 1) {
 			currentCandidateIndex++;
 		} else {
-			coverFailed = true;
+			coverFehlt = true;
 		}
 	}
 
-	function onCoverLoad(event) {
+	function pruefeGeladenes(event) {
 		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) onCoverError();
+		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
 	}
 
 	return {
-		get book() {
+		get buch() {
 			return buch;
 		},
-		get borrowers() {
-			return borrowers;
+		get ausleiher() {
+			return ausleiher;
 		},
 		get kopfFehler() {
 			return kopfFehler;
@@ -216,8 +216,8 @@ export function useBuchakte() {
 		set exemplare(v) {
 			exemplare = v;
 		},
-		get history() {
-			return history;
+		get verlauf() {
+			return verlauf;
 		},
 		get vormerkungen() {
 			return vormerkungen;
@@ -225,25 +225,25 @@ export function useBuchakte() {
 		set vormerkungen(v) {
 			vormerkungen = v;
 		},
-		get activeTab() {
+		get aktiverReiter() {
 			return aktiverReiter;
 		},
-		set activeTab(v) {
+		set aktiverReiter(v) {
 			aktiverReiter = v;
 		},
-		get isLoading() {
+		get laedt() {
 			return laedt;
 		},
-		get coverSrc() {
+		get coverQuelle() {
 			return coverCandidates[currentCandidateIndex] || '';
 		},
-		get coverFailed() {
-			return coverFailed;
+		get coverFehlt() {
+			return coverFehlt;
 		},
-		loadAll,
-		deleteTitle,
-		editTitle,
-		onCoverError,
-		onCoverLoad
+		ladeAlles,
+		loescheTitel,
+		bearbeiteTitel,
+		naechsteQuelle,
+		pruefeGeladenes
 	};
 }

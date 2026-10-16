@@ -476,8 +476,9 @@ Ordner des Pakets und für die Form `paket.Name`.
   in 18 Dateien Suchtext, Treffer, Reiter und Auswahl (`suche`, `treffer`, `aktiverReiter`,
   `gewaehlteKlasse`, `gewaehlteKlassen`, `alleGewaehlt`), dazu alle 208 übrigen Namen, die nur in
   ihrer Datei gelten, und die Props von `KontenTabelle`, `KontoBearbeitenDialog`,
-  `KontoLoeschenDialog` und `Zugangsanfragen`. Der Bestand steht bei 118 Erklärungen in 32
-  Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich (der Bau ist deterministisch,
+  `KontoLoeschenDialog` und `Zugangsanfragen`, dazu die Schlüssel von `useLeserakte`,
+  `useInventurlauf`, `useInventur`, `useFehlbestand` und `useBuchakte` samt allen Aufrufern. Der
+  Bestand steht bei 75 Erklärungen in 26 Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich (der Bau ist deterministisch,
   eine geänderte Zeichenkette zeigt er an); umbenannte Props stehen im Bündel und sind dort der
   einzige Unterschied. Ersetzen nach Wortgrenze trägt dafür nicht, es traf Klassen
   (`text-error`), das Attribut `loading="lazy"` und Schlüssel. Umbenannt wird deshalb am
@@ -487,10 +488,12 @@ Ordner des Pakets und für die Form `paket.Name`.
   Typangabe; ersetzt wird nur der Name, sonst fällt die Angabe weg (svelte-check meldet es, der
   Bau nicht). Schreibt das Ausschreiben einer Kurzform eine Datei über ihre Größe im Bestand,
   bekommen die Props des Kindes denselben Namen, oder ein kürzeres Wort hält die Zeile. Übrig sind
-  nur Namen über Dateigrenzen: 87, die ein Store oder ein `use…`-Modul als Schlüssel, Getter oder
-  Methode nach außen gibt (`useLeserakte` 17, `stores/omnibox.svelte.js` 19, `useInventurlauf`
-  14, `stores/etiketten.svelte.js` 12), und 31 exportierte. Für sie gilt dasselbe Verfahren über
-  alle Dateien, die den Namen benutzen, samt Tests.
+  nur Namen über Dateigrenzen: 45, die ein Store als Schlüssel, Getter oder Methode nach außen
+  gibt (`stores/omnibox.svelte.js` 19, `stores/etiketten.svelte.js` 12, das Mahnwesen 7), und 30
+  exportierte. Umbenannt wird ein Store als Ganzes, damit Schlüssel und Variable dasselbe Wort
+  tragen: erst die Variablen im Store, dann die Schlüssel des zurückgegebenen Objekts und bei
+  jedem Aufrufer `instanz.name`; wer die ganze Instanz weiterreicht (`state={ablauf}`), ist
+  selbst Aufrufer.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und

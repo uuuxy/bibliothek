@@ -11,7 +11,7 @@
 	import { apiFetch } from './apiFetch.js';
 
 	// `book.ohneForderung` = der Entleiher ist ein Kollege. Gesetzt wird es beim Öffnen
-	// (useLeserakte: openDamageModal), damit die Entscheidung an EINER Stelle steht. Dann entsteht keine Forderung
+	// (useLeserakte: oeffneSchaden), damit die Entscheidung an EINER Stelle steht. Dann entsteht keine Forderung
 	// (entschieden am 16.09.2026): Der Bescheid ist ein Schreiben an Erziehungsberechtigte
 	// und braucht Klasse und Anschrift, die von einer Lehrkraft nirgends stehen; gehaftet
 	// wird gegenüber dem Dienstherrn und nur bei Vorsatz oder grober Fahrlässigkeit — das

@@ -45,18 +45,18 @@
 	// Aktionen folgen dem Recht ihrer Route, nicht der Rolle — Zuordnung in schuelerRechte.js.
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
 	// Anzahl und Summe kommen mit dem Profil vom Server, nicht aus der Liste des Reiters.
-	const offen = $derived(st.profile?.offene_forderungen ?? { anzahl: 0, summe: 0 });
+	const offen = $derived(st.akte?.offene_forderungen ?? { anzahl: 0, summe: 0 });
 
 	// Der Aufrufer bestimmt den Reiter, der beim Öffnen oben liegt. Bei jedem Wechsel des
 	// Lesers zurück auf ihn, sonst speichert ein offenes Blatt auf den falschen Leser.
 	$effect(() => {
 		if (!student?.id) return;
-		st.activeTab = defaultTab;
+		st.aktiverReiter = defaultTab;
 		st.schliesseAlleBlaetter();
-		st.fetchProfile(student.id);
+		st.ladeAkte(student.id);
 	});
 
-	export const reloadProfile = () => st.fetchProfile(st.profile?.id ?? student?.id);
+	export const ladeNeu = () => st.ladeAkte(st.akte?.id ?? student?.id);
 
 	// Vom Bediener gesetztes Ablaufjahr für genau diesen Ausdruck; null = Vorschlag des Servers.
 	// Nicht gespeichert, beim Wechsel des Lesers fällt es zurück.
@@ -64,56 +64,54 @@
 	let zuletztGezeigteId = $state(/** @type {string|null} */ (null));
 	$effect(() => {
 		// Nur beim Wechsel des Lesers: Ein Neuladen des Profils lässt die getippte Jahreszahl stehen.
-		const id = st.profile?.id ?? null;
+		const id = st.akte?.id ?? null;
 		if (id !== zuletztGezeigteId) {
 			zuletztGezeigteId = id;
 			gueltigBisOverride = null;
 		}
 	});
-	const gueltigBisEffektiv = $derived(
-		gueltigBisOverride ?? st.profile?.ausweis_gueltig_bis ?? null
-	);
+	const gueltigBisEffektiv = $derived(gueltigBisOverride ?? st.akte?.ausweis_gueltig_bis ?? null);
 </script>
 
-{#if st.loading}
+{#if st.laedt}
 	<div class="w-full py-12 flex justify-center items-center">
 		<Ladekreis size="lg" />
 	</div>
-{:else if st.profile}
-	{#if st.globalErrorToast}
+{:else if st.akte}
+	{#if st.fehlermeldung}
 		<div
 			class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-error text-on-error flex items-center gap-2"
 		>
 			<Info class="h-5 w-5" aria-hidden="true" />
-			{st.globalErrorToast}
+			{st.fehlermeldung}
 		</div>
 	{/if}
 
-	{#if !st.showEditModal}
+	{#if !st.bearbeitenOffen}
 		<div
 			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-on-surface animate-fade-in no-print print:hidden font-sans"
 		>
 			<LeserakteKopf
-				bind:profile={st.profile}
+				bind:profile={st.akte}
 				{rechte}
-				timestamp={st.timestamp}
-				bind:showWebcam={st.showWebcam}
+				timestamp={st.fotoStand}
+				bind:showWebcam={st.kameraOffen}
 				{onDeselect}
 				{leftActions}
 				{offen}
-				onLock={rechte.bearbeiten ? () => (st.showLockModal = true) : undefined}
+				onLock={rechte.bearbeiten ? () => (st.sperreOffen = true) : undefined}
 			/>
 
 			<!-- pt-4: Die Knopfzeile steht auf der Höhe des Schließen-Knopfs der linken Spalte. -->
 			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pt-4 pb-4">
 				{#if rechte.einsehen}
 					<LeserakteAktionen
-						profile={st.profile}
-						darfAuskunft={darfAuskunftUeber(rechte, st.profile)}
-						kontoauszugPdfLoading={st.kontoauszugPdfLoading}
-						rechnungPdfLoading={st.rechnungPdfLoading}
-						downloadKontoauszugPDF={st.downloadKontoauszugPDF}
-						downloadRechnungPDF={st.downloadRechnungPDF}
+						profile={st.akte}
+						darfAuskunft={darfAuskunftUeber(rechte, st.akte)}
+						kontoauszugPdfLoading={st.kontoauszugLaedt}
+						rechnungPdfLoading={st.rechnungLaedt}
+						downloadKontoauszugPDF={st.ladeKontoauszugHerunter}
+						downloadRechnungPDF={st.ladeRechnungHerunter}
 						onPrint={druckeAusweis}
 						gueltigBis={gueltigBisEffektiv}
 						onGueltigBis={(jahr) => (gueltigBisOverride = jahr)}
@@ -127,45 +125,42 @@
 						{ id: 'gebuehren', label: 'Gebühren & Schäden', anzahl: offen.anzahl },
 						{ id: 'stammdaten', label: 'Stammdaten & Adresse' }
 					]}
-					aktiv={st.activeTab}
-					onwahl={(id) => (st.activeTab = id)}
+					aktiv={st.aktiverReiter}
+					onwahl={(id) => (st.aktiverReiter = id)}
 				/>
 
 				<div class="flex-1 relative">
-					{#if st.activeTab === 'ausleihen'}
+					{#if st.aktiverReiter === 'ausleihen'}
 						<LeserakteAusleihen
-							buecher={st.profile.entliehene_buecher || []}
+							buecher={st.akte.entliehene_buecher || []}
 							bind:vormerkungen={st.vormerkungen}
 							fehlendeListen={st.fehlendeListen.filter((l) => l === 'Vormerkungen')}
 							{onReturnClick}
-							onDamageClick={rechte.bearbeiten ? st.openDamageModal : undefined}
-							onChanged={() => st.fetchProfile(st.profile.id)}
+							onDamageClick={rechte.bearbeiten ? st.oeffneSchaden : undefined}
+							onChanged={() => st.ladeAkte(st.akte.id)}
 							{rightTop}
 						/>
-					{:else if st.activeTab === 'gebuehren'}
+					{:else if st.aktiverReiter === 'gebuehren'}
 						<LeserakteGebuehren
-							schuelerId={st.profile.id}
+							schuelerId={st.akte.id}
 							gebuehren={st.gebuehren}
 							bescheide={st.bescheide}
 							fehlendeListen={st.fehlendeListen.filter((l) => l !== 'Vormerkungen')}
 							canEdit={rechte.bearbeiten}
-							onChanged={() => st.fetchProfile(st.profile.id)}
+							onChanged={() => st.ladeAkte(st.akte.id)}
 						/>
-					{:else if st.activeTab === 'stammdaten'}
+					{:else if st.aktiverReiter === 'stammdaten'}
 						<LeserakteStammdaten
-							profile={st.profile}
+							profile={st.akte}
 							darfBearbeiten={rechte.bearbeiten}
 							darfZusammenfuehren={rechte.zusammenfuehren}
-							onEdit={() => (st.showEditModal = true)}
-							onMerged={(id) => (st.fetchProfile(id), onMerged?.(id))}
+							onEdit={() => (st.bearbeitenOffen = true)}
+							onMerged={(id) => (st.ladeAkte(id), onMerged?.(id))}
 						/>
 
 						<!-- Gefahrenzone am unteren Ende des Stammdaten-Reiters, seit 16.09.2026 auch beim Kollegium -->
 						{#if rechte.loeschen}
-							<LeserGefahrenzone
-								profile={st.profile}
-								onDelete={() => (st.showDeleteConfirm = true)}
-							/>
+							<LeserGefahrenzone profile={st.akte} onDelete={() => (st.loeschfrageOffen = true)} />
 						{/if}
 					{/if}
 				</div>
@@ -173,58 +168,54 @@
 		</div>
 	{:else}
 		<LeserBearbeiten
-			student={st.profile}
-			onClose={() => (st.showEditModal = false)}
-			onSave={() => st.handleSaveEdit(st.profile.id)}
+			student={st.akte}
+			onClose={() => (st.bearbeitenOffen = false)}
+			onSave={() => st.nachBearbeiten(st.akte.id)}
 		/>
 	{/if}
 {:else}
 	<LadeFehler
-		onerneut={reloadProfile}
+		onerneut={ladeNeu}
 		titel="Akte nicht geladen"
 		text="Die Daten dieses Lesers konnten nicht abgerufen werden."
 	/>
 {/if}
 
-{#if st.showWebcam}
+{#if st.kameraOffen}
 	<WebcamAufnahme
-		studentId={st.profile.id}
-		onCapture={() => st.handlePhotoCaptured(st.profile.id)}
-		onClose={() => (st.showWebcam = false)}
+		studentId={st.akte.id}
+		onCapture={() => st.nachFoto(st.akte.id)}
+		onClose={() => (st.kameraOffen = false)}
 	/>
 {/if}
 
-{#if st.profile}
+{#if st.akte}
 	<!-- Die Abweichung liegt auf dem Profil, nicht in Kartenseite: So drucken Profil, Klassensatz
 	     und Designer dieselbe Karte. -->
 	<Ausweiskarte
-		profile={{ ...st.profile, ausweis_gueltig_bis: gueltigBisEffektiv }}
-		timestamp={st.timestamp}
+		profile={{ ...st.akte, ausweis_gueltig_bis: gueltigBisEffektiv }}
+		timestamp={st.fotoStand}
 	/>
 {/if}
 
 <LeserLoeschenDialog
-	open={st.showDeleteConfirm}
-	profile={st.profile}
-	onclose={() => (st.showDeleteConfirm = false)}
-	onsuccess={() => st.handleDeleteSuccess(onDeselect)}
+	open={st.loeschfrageOffen}
+	profile={st.akte}
+	onclose={() => (st.loeschfrageOffen = false)}
+	onsuccess={() => st.nachLoeschen(onDeselect)}
 />
 
-{#if st.showDamageModal && st.damageBook}
+{#if st.schadenOffen && st.schadenExemplar}
 	<SchadenMeldenDialog
-		book={st.damageBook}
-		isSubmitting={st.isSubmittingDamage}
-		onCancel={() => (st.showDamageModal = false)}
-		onSubmit={(r, a, art) => st.submitDamageReport(st.profile.id, r, a, art)}
+		book={st.schadenExemplar}
+		isSubmitting={st.meldetSchaden}
+		onCancel={() => (st.schadenOffen = false)}
+		onSubmit={(r, a, art) => st.meldeSchaden(st.akte.id, r, a, art)}
 	/>
 {/if}
 
-<LeserSperreDialog
-	bind:open={st.showLockModal}
-	profile={st.profile}
-	onsuccess={st.handleLockSuccess}
-/>
+<LeserSperreDialog bind:open={st.sperreOffen} profile={st.akte} onsuccess={st.nachSperre} />
 
-{#if st.profile}
-	<AusleihQuittung profile={st.profile} />
+{#if st.akte}
+	<AusleihQuittung profile={st.akte} />
 {/if}

@@ -15,7 +15,7 @@ import { appState } from '../inventur/lib/store.svelte.js';
 // Zwilling des Schülerakten-Fundes desselben Tages (529def4d) — nur hängt hier ein
 // unumkehrbarer Massenlöschbefehl daran:
 //
-//   „Gesamten Titel löschen" schickt `book.id`. Stand dort noch der VORIGE Titel, fällt
+//   „Gesamten Titel löschen" schickt `buch.id`. Stand dort noch der VORIGE Titel, fällt
 //   dieser — mit allen Exemplaren, Ausleihen und offenen Forderungen —, während die
 //   Rückfrage die Exemplarzahl des neuen nannte.
 vi.mock('./apiFetch.js', () => ({
@@ -47,7 +47,7 @@ function antworten(id, kopfFehler = false) {
 	};
 }
 
-describe('useBuchakte.loadAll', () => {
+describe('useBuchakte.ladeAlles', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 	});
@@ -55,14 +55,14 @@ describe('useBuchakte.loadAll', () => {
 	it('lässt den Kopf des vorigen Titels nicht stehen — sonst löscht der Knopf den falschen', async () => {
 		vi.mocked(apiFetch).mockImplementation(antworten('A'));
 		const akte = useBuchakte();
-		await akte.loadAll('A');
-		expect(akte.book?.id).toBe('A');
+		await akte.ladeAlles('A');
+		expect(akte.buch?.id).toBe('A');
 
 		// Titel B: die Kopf-Anfrage scheitert (429 vom Rate-Limiter, fünf parallele Anfragen).
 		vi.mocked(apiFetch).mockImplementation(antworten('B', true));
-		await akte.loadAll('B');
+		await akte.ladeAlles('B');
 
-		expect(akte.book, 'der Kopf von A steht über den Listen von B').toBeNull();
+		expect(akte.buch, 'der Kopf von A steht über den Listen von B').toBeNull();
 		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
 	});
 
@@ -84,12 +84,12 @@ describe('useBuchakte.loadAll', () => {
 		});
 
 		const akte = useBuchakte();
-		const langsam = akte.loadAll('A');
-		await akte.loadAll('B');
+		const langsam = akte.ladeAlles('A');
+		await akte.ladeAlles('B');
 		loesenA();
 		await langsam;
 
-		expect(akte.book?.id, 'die überholte Antwort von A hat B überschrieben').toBe('B');
+		expect(akte.buch?.id, 'die überholte Antwort von A hat B überschrieben').toBe('B');
 		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
 	});
 
@@ -106,10 +106,10 @@ describe('useBuchakte.loadAll', () => {
 			return /** @type {any} */ (ok([]));
 		});
 		const akte = useBuchakte();
-		await akte.loadAll('A');
+		await akte.ladeAlles('A');
 
 		expect(akte.fehlendeListen).toEqual(['Ausleiher', 'Historie']);
-		expect(akte.borrowers, 'die Anzeige braucht trotzdem ein Array').toEqual([]);
+		expect(akte.ausleiher, 'die Anzeige braucht trotzdem ein Array').toEqual([]);
 	});
 
 	// „Buch nicht gefunden." ist ebenfalls eine Aussage über den Bestand, und die Akte traf
@@ -128,8 +128,8 @@ describe('useBuchakte.loadAll', () => {
 			return /** @type {any} */ (ok([]));
 		});
 		const akte = useBuchakte();
-		await akte.loadAll('A');
-		expect(akte.book).toBeNull();
+		await akte.ladeAlles('A');
+		expect(akte.buch).toBeNull();
 		expect(akte.kopfFehler).toBe('Datenbank nicht erreichbar');
 
 		// Der 404 dagegen IST die Auskunft „gibt es nicht" — dann bleibt es beim alten Bild.
@@ -138,8 +138,8 @@ describe('useBuchakte.loadAll', () => {
 				? /** @type {any} */ ({ ok: false, status: 404, text: async () => '' })
 				: /** @type {any} */ (ok([]))
 		);
-		await akte.loadAll('B');
-		expect(akte.book).toBeNull();
+		await akte.ladeAlles('B');
+		expect(akte.buch).toBeNull();
 		expect(akte.kopfFehler).toBe('');
 	});
 
@@ -151,11 +151,11 @@ describe('useBuchakte.loadAll', () => {
 			return /** @type {any} */ (ok([]));
 		});
 		const akte = useBuchakte();
-		await akte.loadAll('A');
+		await akte.ladeAlles('A');
 		expect(akte.fehlendeListen).toEqual(['Ausleiher']);
 
 		vi.mocked(apiFetch).mockImplementation(antworten('B'));
-		await akte.loadAll('B');
+		await akte.ladeAlles('B');
 		expect(akte.fehlendeListen).toEqual([]);
 	});
 
@@ -168,7 +168,7 @@ describe('useBuchakte.loadAll', () => {
 });
 
 // Woher der Kopf kommt, und was ein Lauf noch schreiben darf, den ein jüngerer überholt hat.
-describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
+describe('useBuchakte.ladeAlles: Kopf und überholte Läufe', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		appState.selectedBook = null;
@@ -184,14 +184,14 @@ describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 		const akte = useBuchakte();
 
 		appState.selectedBook = { id: 'X', titel: 'ein anderer Titel' };
-		await akte.loadAll('A');
-		expect(akte.book).toEqual({ id: 'A', titel: 'Titel A' });
+		await akte.ladeAlles('A');
+		expect(akte.buch).toEqual({ id: 'A', titel: 'Titel A' });
 		expect(abrufe()).toContain('/api/books/A');
 
 		vi.mocked(apiFetch).mockClear();
 		appState.selectedBook = { id: 'A', titel: 'mitgereicht' };
-		await akte.loadAll('A');
-		expect(akte.book).toEqual({ id: 'A', titel: 'mitgereicht' });
+		await akte.ladeAlles('A');
+		expect(akte.buch).toEqual({ id: 'A', titel: 'mitgereicht' });
 		expect(abrufe()).not.toContain('/api/books/A');
 		expect(abrufe(), 'die Listen lädt die Akte trotzdem').toHaveLength(4);
 	});
@@ -204,11 +204,11 @@ describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 		});
 		const akte = useBuchakte();
 
-		await akte.loadAll('A');
+		await akte.ladeAlles('A');
 
-		expect(akte.book).toBeNull();
+		expect(akte.buch).toBeNull();
 		expect(akte.kopfFehler).toBe('Der Titel konnte nicht geladen werden (Netzwerkfehler).');
-		expect(akte.isLoading).toBe(false);
+		expect(akte.laedt).toBe(false);
 		konsole.mockRestore();
 	});
 
@@ -224,12 +224,12 @@ describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 		});
 		const akte = useBuchakte();
 
-		const langsam = akte.loadAll('A');
-		await akte.loadAll('B');
+		const langsam = akte.ladeAlles('A');
+		await akte.ladeAlles('B');
 		scheitereA(new Error('Failed to fetch'));
 		await langsam;
 
-		expect(akte.book, 'der gescheiterte Lauf A hat den Kopf von B geleert').toEqual({ id: 'B' });
+		expect(akte.buch, 'der gescheiterte Lauf A hat den Kopf von B geleert').toEqual({ id: 'B' });
 		expect(akte.kopfFehler, 'der Fehler von A steht über dem Titel B').toBe('');
 	});
 
@@ -255,14 +255,14 @@ describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 			});
 			const akte = useBuchakte();
 
-			const alt = akte.loadAll('A');
+			const alt = akte.ladeAlles('A');
 			await vi.waitFor(() => expect(koerperVonA).not.toBeNull());
 			if (weg === 'mitgereicht') appState.selectedBook = { id: 'B', titel: 'Titel B' };
-			await akte.loadAll('B');
+			await akte.ladeAlles('B');
 			/** @type {any} */ (koerperVonA)({ id: 'A', titel: 'Titel A' });
 			await alt;
 
-			expect(akte.book, 'der Kopf von A steht über den Listen von B').toEqual({
+			expect(akte.buch, 'der Kopf von A steht über den Listen von B').toEqual({
 				id: 'B',
 				titel: 'Titel B'
 			});
@@ -283,18 +283,18 @@ describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 		});
 		const akte = useBuchakte();
 
-		const alt = akte.loadAll('A');
-		const jung = akte.loadAll('B');
+		const alt = akte.ladeAlles('A');
+		const jung = akte.ladeAlles('B');
 		kommt['/api/books/A'](ok({ id: 'A' }));
 		await alt;
 
-		expect(akte.isLoading, 'B lädt noch').toBe(true);
-		expect(akte.book).toBeNull();
+		expect(akte.laedt, 'B lädt noch').toBe(true);
+		expect(akte.buch).toBeNull();
 
 		kommt['/api/books/B'](ok({ id: 'B' }));
 		await jung;
-		expect(akte.isLoading).toBe(false);
-		expect(akte.book).toEqual({ id: 'B' });
+		expect(akte.laedt).toBe(false);
+		expect(akte.buch).toEqual({ id: 'B' });
 	});
 
 	// Der Kopf von A ist schon da, seine Listen noch nicht: Wechselt die Akte jetzt zu B,
@@ -314,13 +314,13 @@ describe('useBuchakte.loadAll: Kopf und überholte Läufe', () => {
 		});
 		const akte = useBuchakte();
 
-		const langsam = akte.loadAll('A');
+		const langsam = akte.ladeAlles('A');
 		await vi.waitFor(() => expect(abrufe()).toContain('/api/buecher/titel/A/exemplare'));
-		await akte.loadAll('B');
+		await akte.ladeAlles('B');
 		listenVonAKommen();
 		await langsam;
 
-		expect(akte.book).toEqual({ id: 'B' });
+		expect(akte.buch).toEqual({ id: 'B' });
 		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
 		expect(akte.fehlendeListen, 'die Fehlliste von A steht unter dem Titel B').toEqual([]);
 	});

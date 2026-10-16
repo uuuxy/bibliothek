@@ -5,7 +5,7 @@ import { fehlertext } from './utils/fehlertext.js';
 
 export function useLeserakte() {
 	/** @type {any} */
-	let profile = $state(null);
+	let akte = $state(null);
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
 	/** @type {any[]} */
@@ -18,24 +18,24 @@ export function useLeserakte() {
 	// Bescheid vor" (Review 14.09.2026, OFFEN.md 1.5).
 	let fehlendeListen = $state(/** @type {string[]} */ ([]));
 	let laedt = $state(true);
-	let showWebcam = $state(false);
-	let timestamp = $state(Date.now());
-	let showDeleteConfirm = $state(false);
+	let kameraOffen = $state(false);
+	let fotoStand = $state(Date.now());
+	let loeschfrageOffen = $state(false);
 	let aktiverReiter = $state('ausleihen');
-	let showEditModal = $state(false);
-	let showDamageModal = $state(false);
-	let showLockModal = $state(false);
-	let damageBook = $state(/** @type {any} */ (null));
-	let isSubmittingDamage = $state(false);
-	let globalErrorToast = $state(/** @type {string|null} */ (null));
-	let rechnungPdfLoading = $state(false);
-	let kontoauszugPdfLoading = $state(false);
+	let bearbeitenOffen = $state(false);
+	let schadenOffen = $state(false);
+	let sperreOffen = $state(false);
+	let schadenExemplar = $state(/** @type {any} */ (null));
+	let meldetSchaden = $state(false);
+	let fehlermeldung = $state(/** @type {string|null} */ (null));
+	let rechnungLaedt = $state(false);
+	let kontoauszugLaedt = $state(false);
 
 	// Sequenznummer wie im bestellStore: Zwei Akten kurz hintereinander geöffnet, und die
 	// langsamere Antwort gewinnt. `laufNr` verwirft, was überholt wurde.
 	let laufNr = 0;
 
-	async function fetchProfile(studentId) {
+	async function ladeAkte(studentId) {
 		if (!studentId) return;
 		const meine = ++laufNr;
 		laedt = true;
@@ -66,7 +66,7 @@ export function useLeserakte() {
 				if (res.status !== 403) fehlend.push(name);
 				return [];
 			};
-			profile = resProfile.ok ? await resProfile.json() : null;
+			akte = resProfile.ok ? await resProfile.json() : null;
 			vormerkungen = await listeOderVermerk(resVormerkungen, 'Vormerkungen', (j) => j);
 			gebuehren = await listeOderVermerk(resGebuehren, 'Gebühren', (j) => j.data);
 			bescheide = await listeOderVermerk(resBescheide, 'Bescheide', (j) => j.data);
@@ -74,7 +74,7 @@ export function useLeserakte() {
 		} catch (err) {
 			if (meine !== laufNr) return;
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
-			profile = null;
+			akte = null;
 			vormerkungen = [];
 			gebuehren = [];
 			bescheide = [];
@@ -92,37 +92,37 @@ export function useLeserakte() {
 	// tippte, ohne zu speichern, und dann B's Ausweis scannte, sah dasselbe Formular mit
 	// B's Daten, A's Eingabe war wortlos weg — und „Speichern" ging als PATCH auf B.
 	function schliesseAlleBlaetter() {
-		showEditModal = false;
-		showDamageModal = false;
-		showLockModal = false;
-		showDeleteConfirm = false;
-		showWebcam = false;
-		damageBook = null;
-		globalErrorToast = null;
+		bearbeitenOffen = false;
+		schadenOffen = false;
+		sperreOffen = false;
+		loeschfrageOffen = false;
+		kameraOffen = false;
+		schadenExemplar = null;
+		fehlermeldung = null;
 	}
 
-	function handleDeleteSuccess(onDeselect) {
-		showDeleteConfirm = false;
+	function nachLoeschen(onDeselect) {
+		loeschfrageOffen = false;
 		if (onDeselect) onDeselect();
 	}
 
-	function handleSaveEdit(studentId) {
-		showEditModal = false;
-		fetchProfile(studentId);
+	function nachBearbeiten(studentId) {
+		bearbeitenOffen = false;
+		ladeAkte(studentId);
 	}
 
-	function handlePhotoCaptured(studentId) {
-		timestamp = Date.now();
-		showWebcam = false;
-		fetchProfile(studentId);
+	function nachFoto(studentId) {
+		fotoStand = Date.now();
+		kameraOffen = false;
+		ladeAkte(studentId);
 	}
 
-	async function downloadRechnungPDF() {
-		if (!profile) return;
-		rechnungPdfLoading = true;
-		globalErrorToast = null;
+	async function ladeRechnungHerunter() {
+		if (!akte) return;
+		rechnungLaedt = true;
+		fehlermeldung = null;
 		try {
-			const res = await apiFetch(`/api/print/rechnung/${profile.id}`);
+			const res = await apiFetch(`/api/print/rechnung/${akte.id}`);
 			if (!res.ok) {
 				// extractApiError statt res.text(): Der Server antwortet mit JSON
 				// ({"error": "…"}), und `String(e)` machte daraus „Error: {"error":…}" im
@@ -133,23 +133,23 @@ export function useLeserakte() {
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = `Rechnung_${profile.vorname}_${profile.nachname}.pdf`;
+			a.download = `Rechnung_${akte.vorname}_${akte.nachname}.pdf`;
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			globalErrorToast = fehlertext(e);
-			setTimeout(() => (globalErrorToast = null), 4000);
+			fehlermeldung = fehlertext(e);
+			setTimeout(() => (fehlermeldung = null), 4000);
 		} finally {
-			rechnungPdfLoading = false;
+			rechnungLaedt = false;
 		}
 	}
 
-	async function downloadKontoauszugPDF() {
-		if (!profile) return;
-		kontoauszugPdfLoading = true;
-		globalErrorToast = null;
+	async function ladeKontoauszugHerunter() {
+		if (!akte) return;
+		kontoauszugLaedt = true;
+		fehlermeldung = null;
 		try {
-			const res = await apiFetch(`/api/print/kontoauszug/${profile.id}`);
+			const res = await apiFetch(`/api/print/kontoauszug/${akte.id}`);
 			if (!res.ok) {
 				throw new Error((await extractApiError(res)) || 'Keine aktiven Ausleihen gefunden');
 			}
@@ -157,14 +157,14 @@ export function useLeserakte() {
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = `Kontoauszug_${profile.vorname}_${profile.nachname}.pdf`;
+			a.download = `Kontoauszug_${akte.vorname}_${akte.nachname}.pdf`;
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			globalErrorToast = fehlertext(e);
-			setTimeout(() => (globalErrorToast = null), 4000);
+			fehlermeldung = fehlertext(e);
+			setTimeout(() => (fehlermeldung = null), 4000);
 		} finally {
-			kontoauszugPdfLoading = false;
+			kontoauszugLaedt = false;
 		}
 	}
 
@@ -172,21 +172,21 @@ export function useLeserakte() {
 	// entsteht: Bei einem Kollegen entsteht keine (entschieden am 16.09.2026, Begründung in
 	// repository/schaden_melden.go). Der Server entscheidet das selbst; hier steht es, damit
 	// der Dialog nicht nach einem Betrag fragt, den niemand fordern wird.
-	function openDamageModal(book) {
-		damageBook = { ...book, ohneForderung: istKollegium(profile) };
-		showDamageModal = true;
+	function oeffneSchaden(book) {
+		schadenExemplar = { ...book, ohneForderung: istKollegium(akte) };
+		schadenOffen = true;
 	}
 
-	async function submitDamageReport(studentId, reason, amount, art) {
-		if (!damageBook) return;
-		isSubmittingDamage = true;
+	async function meldeSchaden(studentId, reason, amount, art) {
+		if (!schadenExemplar) return;
+		meldetSchaden = true;
 		try {
 			const res = await apiClient.post(`/api/damage/report`, {
-				loan_id: damageBook.ausleihe_id,
+				loan_id: schadenExemplar.ausleihe_id,
 				schueler_id: studentId,
 				// LaufendeAusleihe liefert die Exemplar-ID als `id` — ein
 				// `exemplar_id`-Feld gibt es dort nicht (500: leere UUID).
-				copy_id: damageBook.id,
+				copy_id: schadenExemplar.id,
 				beschreibung: reason,
 				art,
 				betrag: amount
@@ -196,13 +196,13 @@ export function useLeserakte() {
 				// Bibliothek und widersprach dem Bescheid des Landes (OFFEN.md 5.2). Der Brief
 				// ist ein eigener Schritt — „Bescheid erstellen" an der Gebühren-Karte.
 				snackbars.addToast(
-					damageBook.ohneForderung
+					schadenExemplar.ohneForderung
 						? 'Verlust/Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
 						: 'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
 					'success'
 				);
-				showDamageModal = false;
-				fetchProfile(studentId);
+				schadenOffen = false;
+				ladeAkte(studentId);
 			} else {
 				const err = await res.json().catch((e) => {
 					console.error('Fehler:', e);
@@ -214,33 +214,33 @@ export function useLeserakte() {
 			console.error('Schaden melden fehlgeschlagen:', e);
 			snackbars.addToast('Netzwerkfehler.', 'error');
 		} finally {
-			isSubmittingDamage = false;
+			meldetSchaden = false;
 		}
 	}
 
-	function handleLockSuccess(updated) {
-		if (profile) {
+	function nachSperre(updated) {
+		if (akte) {
 			// Sofortiges Feedback: die zwei Sperren so, wie der Server sie nach dem Umschalten
 			// meldet (seit dem 24.09.2026 nennt die Antwort beide — Aufheben nimmt auch die der
 			// Ehemaligen weg). Die frühere Formel (manuell || offene Schäden) erfand eine dritte
 			// Sperr-Definition (sperrStatus.js).
-			profile.is_manually_blocked = updated.is_manually_blocked;
-			profile.ist_gesperrt = updated.ist_gesperrt;
+			akte.is_manually_blocked = updated.is_manually_blocked;
+			akte.ist_gesperrt = updated.ist_gesperrt;
 			// Dann die EINE Wahrheit vom Server holen — wie nach Bearbeiten/Foto.
 			// Der Sperrgrund (Anzeige seit 01.09.2026) steckt bewusst NICHT in der
 			// Lock-Antwort (sie ist Stufe 1 hinter edit_students, der Grund Stufe 2
 			// hinter view_students, PII-Matrix); und die Behalten/Löschen-Logik des
 			// Servers clientseitig nachzubauen wäre eine doppelte Wahrheitsquelle.
-			fetchProfile(profile.id);
+			ladeAkte(akte.id);
 		}
 	}
 
 	return {
-		get profile() {
-			return profile;
+		get akte() {
+			return akte;
 		},
-		set profile(v) {
-			profile = v;
+		set akte(v) {
+			akte = v;
 		},
 		get vormerkungen() {
 			return vormerkungen;
@@ -257,72 +257,72 @@ export function useLeserakte() {
 		get fehlendeListen() {
 			return fehlendeListen;
 		},
-		get loading() {
+		get laedt() {
 			return laedt;
 		},
-		get showWebcam() {
-			return showWebcam;
+		get kameraOffen() {
+			return kameraOffen;
 		},
-		set showWebcam(v) {
-			showWebcam = v;
+		set kameraOffen(v) {
+			kameraOffen = v;
 		},
-		get timestamp() {
-			return timestamp;
+		get fotoStand() {
+			return fotoStand;
 		},
-		get showDeleteConfirm() {
-			return showDeleteConfirm;
+		get loeschfrageOffen() {
+			return loeschfrageOffen;
 		},
-		set showDeleteConfirm(v) {
-			showDeleteConfirm = v;
+		set loeschfrageOffen(v) {
+			loeschfrageOffen = v;
 		},
-		get activeTab() {
+		get aktiverReiter() {
 			return aktiverReiter;
 		},
-		set activeTab(v) {
+		set aktiverReiter(v) {
 			aktiverReiter = v;
 		},
-		get showEditModal() {
-			return showEditModal;
+		get bearbeitenOffen() {
+			return bearbeitenOffen;
 		},
-		set showEditModal(v) {
-			showEditModal = v;
+		set bearbeitenOffen(v) {
+			bearbeitenOffen = v;
 		},
-		get showDamageModal() {
-			return showDamageModal;
+		get schadenOffen() {
+			return schadenOffen;
 		},
-		set showDamageModal(v) {
-			showDamageModal = v;
+		set schadenOffen(v) {
+			schadenOffen = v;
 		},
-		get showLockModal() {
-			return showLockModal;
+		get sperreOffen() {
+			return sperreOffen;
 		},
-		set showLockModal(v) {
-			showLockModal = v;
+		set sperreOffen(v) {
+			sperreOffen = v;
 		},
-		get damageBook() {
-			return damageBook;
+		get schadenExemplar() {
+			return schadenExemplar;
 		},
-		get isSubmittingDamage() {
-			return isSubmittingDamage;
+		get meldetSchaden() {
+			return meldetSchaden;
 		},
-		get globalErrorToast() {
-			return globalErrorToast;
+		get fehlermeldung() {
+			return fehlermeldung;
 		},
-		get rechnungPdfLoading() {
-			return rechnungPdfLoading;
+		get rechnungLaedt() {
+			return rechnungLaedt;
 		},
-		get kontoauszugPdfLoading() {
-			return kontoauszugPdfLoading;
+		get kontoauszugLaedt() {
+			return kontoauszugLaedt;
 		},
-		fetchProfile,
+		ladeAkte,
 		schliesseAlleBlaetter,
-		handleDeleteSuccess,
-		handleSaveEdit,
-		handlePhotoCaptured,
-		downloadRechnungPDF,
-		downloadKontoauszugPDF,
-		openDamageModal,
-		submitDamageReport,
-		handleLockSuccess
+		nachLoeschen,
+		nachBearbeiten,
+		nachFoto,
+		ladeRechnungHerunter,
+		ladeKontoauszugHerunter,
+		oeffneSchaden,
+		meldeSchaden,
+		nachSperre
 	};
 }

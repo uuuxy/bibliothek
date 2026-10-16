@@ -17,7 +17,7 @@ export function useFehlbestand() {
 	/** Fehlbestand der zuletzt abgeschlossenen (oder nachträglich aufgerufenen)
 	 *  Inventur — bleibt stehen, bis er ausdruecklich geschlossen wird. */
 	let fehlbestand = $state.raw(/** @type {any[]} */ ([]));
-	let fehlbestandLabel = $state('');
+	let fehlbestandBezeichnung = $state('');
 
 	// Frühere Inventuren: Der Bericht entstand bisher NUR aus der Antwort von
 	// schliesseAb() und lebte damit im Arbeitsspeicher dieses einen Browsers. Ein
@@ -31,12 +31,12 @@ export function useFehlbestand() {
 	 * @param {any[]} liste @param {string} label */
 	function setzeFehlbestand(liste, label) {
 		fehlbestand = liste;
-		fehlbestandLabel = label;
+		fehlbestandBezeichnung = label;
 	}
 
 	function fehlbestandSchliessen() {
 		fehlbestand = [];
-		fehlbestandLabel = '';
+		fehlbestandBezeichnung = '';
 	}
 
 	/** Ein Buch wurde beim Regal-Absuchen doch gefunden — zurück in Umlauf, im Bericht
@@ -104,7 +104,7 @@ export function useFehlbestand() {
 		}
 	}
 
-	async function loadAbgeschlosseneInventuren() {
+	async function ladeFruehereInventuren() {
 		abgeschlosseneInventuren = await ladeAbgeschlosseneInventuren();
 	}
 
@@ -118,7 +118,7 @@ export function useFehlbestand() {
 				return;
 			}
 			fehlbestand = r.data ?? [];
-			fehlbestandLabel = inventur.label;
+			fehlbestandBezeichnung = inventur.label;
 			if (fehlbestand.length === 0) {
 				snackbars.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
 			}
@@ -131,8 +131,8 @@ export function useFehlbestand() {
 		get fehlbestand() {
 			return fehlbestand;
 		},
-		get fehlbestandLabel() {
-			return fehlbestandLabel;
+		get fehlbestandBezeichnung() {
+			return fehlbestandBezeichnung;
 		},
 		setzeFehlbestand,
 		fehlbestandSchliessen,
@@ -144,7 +144,7 @@ export function useFehlbestand() {
 		get ladeFruehereLaeuft() {
 			return ladeFruehereLaeuft;
 		},
-		loadAbgeschlosseneInventuren,
+		ladeFruehereInventuren,
 		zeigeFrueherenFehlbestand
 	};
 }

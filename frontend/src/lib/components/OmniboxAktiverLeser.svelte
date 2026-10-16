@@ -30,6 +30,6 @@
 		defaultTab="ausleihen"
 		onMerged={omniboxStore.uebernimmZusammengefuehrt}
 		onDeselect={abwaehlen}
-		onReturnClick={(barcode) => omniboxStore.gibZurueck(barcode, () => profil?.reloadProfile())}
+		onReturnClick={(barcode) => omniboxStore.gibZurueck(barcode, () => profil?.ladeNeu())}
 	/>
 {/if}
