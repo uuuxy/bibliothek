@@ -13,7 +13,8 @@ import (
 // Paar-Gate: Die Go-Rechnung des Abgangsjahres (repository.AbschlussJahrgang) und das SQL-Prädikat
 // „ist Abschlussklasse" (repository.AbschlussklasseSQL) sind Zwillinge derselben Regel.
 // Verglichen wird nicht eine Stichprobe, sondern der Formenraum: Jahrgang 1–13 × Zweig
-// (keiner, F, G, H, R, T, plus Kleinschreibung und Leerzeichen) × Zug. Zwilling mit
+// (keiner, F, G, H, R, T, plus Kleinschreibung, Leerzeichen und Unicode-Leerraum wie das
+// geschützte Leerzeichen) × Zug. Zwilling mit
 // Vollprobe (sweeps.md) — der suchnorm-Zwilling lag bei einer Stichprobe 110 Zeichen
 // daneben, ohne dass es jemand sah.
 func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
@@ -22,7 +23,7 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 
 	var formen []string
 	for jg := 1; jg <= 13; jg++ {
-		for _, zweig := range []string{"", "F", "G", "H", "R", "T", "f", "h", " H"} {
+		for _, zweig := range []string{"", "F", "G", "H", "R", "T", "f", "h", " H", "\u00a0H", "\u202fR", "\u3000h"} {
 			for _, zug := range []string{"", "1", "2"} {
 				formen = append(formen, fmt.Sprintf("%02d%s%s", jg, zweig, zug), fmt.Sprintf("%d%s%s", jg, zweig, zug))
 			}

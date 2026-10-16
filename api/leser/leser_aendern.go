@@ -425,6 +425,13 @@ type leserAendernAnfrage struct {
 // Spalte ein Feld setzt, steht in repository.LeserAenderung. ok=false: Die Ablehnung ist
 // schon beantwortet.
 func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repository.LeserAenderung, bool) {
+	// Leerraum am Rand fällt weg wie beim Anlegen (LeserAnlegen): Sonst wäre „09H1 " aus der
+	// Akte eine andere Klasse als „09H1" aus Anlage und LUSD-Import.
+	for _, wert := range []*string{req.Vorname, req.Nachname, req.Klasse, req.BarcodeID} {
+		if wert != nil {
+			*wert = strings.TrimSpace(*wert)
+		}
+	}
 	// Die Sperre des Spezialwerts 'lehrer' gilt auch für die zweite Tür (PATCH) —
 	// siehe pruefeKlassenname und Migration 072.
 	if req.Klasse != nil {

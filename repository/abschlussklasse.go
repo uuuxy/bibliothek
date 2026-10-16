@@ -26,6 +26,11 @@ func klassenZahlSQL(spalte string) string {
 	return fmt.Sprintf(`(substring(%s from '^\d{1,9}')::int)`, spalte)
 }
 
+// leerraumKlasseSQL sind die 25 Zeichen mit der Unicode-Eigenschaft White_Space für eine
+// Klasse in einem regulären Ausdruck von PostgreSQL, dieselben wie in titeltext_normalform
+// (Migration 160). Go zählt sie alle zum Leerraum (unicode.IsSpace).
+const leerraumKlasseSQL = `\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000`
+
 // AbschlussklasseSQL liefert das SQL-Prädikat „diese Klasse ist eine Abschlussklasse" für einen
 // Spaltenausdruck. Es ist die eine Regel für das Ende eines Bildungsgangs an dieser Schule,
 // gelesen aus Jahrgang und Zweig der Klasse, nie aus dem Klassennamen als Text: `klasse IN
@@ -47,7 +52,10 @@ func AbschlussklasseSQL(spalte string) string {
 	// COALESCE ist Pflicht: Ohne Zweigbuchstaben („12", „13") wäre substring NULL, das ganze
 	// Prädikat NULL — im WHERE nur „nicht wahr", in der Versetzung aber ein Schreiben von NULL
 	// in ist_abgaenger NOT NULL.
-	zweig := fmt.Sprintf(`coalesce(lower(substring(%s from '^\d+\s*([A-Za-z])')), '')`, spalte)
+	//
+	// Zwischen Jahrgang und Zweig gilt jeder Leerraum, den AbschlussJahrgang wegnimmt; `\s` träfe in
+	// PostgreSQL das geschützte Leerzeichen nicht.
+	zweig := fmt.Sprintf(`coalesce(lower(substring(%s from '^\d+[`+leerraumKlasseSQL+`]*([A-Za-z])')), '')`, spalte)
 	return fmt.Sprintf(`(%[1]s ~ '^\d+' AND (
 		   (%[2]s >= 9  AND %[3]s = 'h')
 		OR (%[2]s >= 10 AND %[3]s = 'r')
