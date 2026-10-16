@@ -4353,7 +4353,7 @@ Fenstern bekannt ist:
   mitziehen.
 - Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
   Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): die Nummer eines
-  Exemplars speichern (`saveBarcode` in `ExemplarKarte.svelte`), eine Sachgruppe „Sichern"
+  Exemplars speichern (`speichereBarcode` in `ExemplarKarte.svelte`), eine Sachgruppe „Sichern"
   (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
   oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
   Zustand sperren oder das Feld nennen.

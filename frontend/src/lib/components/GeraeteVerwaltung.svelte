@@ -17,30 +17,30 @@
 
 	// Laden, Ladezustand und Ladefehler liegen in geraeteListe.svelte.js (Größen-Ratsche).
 	const geraete = erzeugeGeraeteListe();
-	let formOffen = $state(false);
+	let formularOffen = $state(false);
 	/** @type {string | null} */
 	let bearbeiteId = $state(null);
 	/** @type {any} */
-	let form = $state(leeresGeraetFormular());
+	let formular = $state(leeresGeraetFormular());
 	let speichert = $state(false);
 
 	onMount(geraete.lade);
 
 	function oeffneAnlegen() {
 		bearbeiteId = null;
-		form = leeresGeraetFormular();
-		formOffen = true;
+		formular = leeresGeraetFormular();
+		formularOffen = true;
 	}
 
 	/** @param {any} g */
 	function oeffneBearbeiten(g) {
 		bearbeiteId = g.id;
-		form = geraetFormularAus(g);
-		formOffen = true;
+		formular = geraetFormularAus(g);
+		formularOffen = true;
 	}
 
-	function schliesseForm() {
-		formOffen = false;
+	function schliesseFormular() {
+		formularOffen = false;
 		bearbeiteId = null;
 	}
 
@@ -49,11 +49,11 @@
 		try {
 			// Ein vorhandenes Gerät schickt nur das Geänderte (geraetFormular.js).
 			const res = bearbeiteId
-				? await apiClient.put(`/api/geraete/${bearbeiteId}`, geraetNutzlast(form, true))
-				: await apiClient.post('/api/geraete', geraetNutzlast(form, false));
+				? await apiClient.put(`/api/geraete/${bearbeiteId}`, geraetNutzlast(formular, true))
+				: await apiClient.post('/api/geraete', geraetNutzlast(formular, false));
 			if (res.ok) {
 				snackbars.addToast(bearbeiteId ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
-				schliesseForm();
+				schliesseFormular();
 				geraete.lade();
 			} else {
 				const err = await res.json().catch(() => ({}));
@@ -100,21 +100,35 @@
 		</Button>
 	</div>
 
-	{#if formOffen}
+	{#if formularOffen}
 		<div class="rounded-xl border border-outline-variant p-4">
 			<div class="grid gap-3 sm:grid-cols-2">
-				<Feld label="Modellname *" bind:value={form.modellname} placeholder="z. B. iPad 9. Gen" />
-				<Feld label="Barcode (G-…) *" bind:value={form.barcode_id} disabled={bearbeiteId != null} />
-				<Feld label="Seriennummer" bind:value={form.seriennummer} disabled={bearbeiteId != null} />
+				<Feld
+					label="Modellname *"
+					bind:value={formular.modellname}
+					placeholder="z. B. iPad 9. Gen"
+				/>
+				<Feld
+					label="Barcode (G-…) *"
+					bind:value={formular.barcode_id}
+					disabled={bearbeiteId != null}
+				/>
+				<Feld
+					label="Seriennummer"
+					bind:value={formular.seriennummer}
+					disabled={bearbeiteId != null}
+				/>
 				<Feld
 					label="Zubehör (Checkliste, mit Komma getrennt)"
-					bind:value={form.zubehoer}
+					bind:value={formular.zubehoer}
 					placeholder="Ladekabel, Stift, Hülle"
 				/>
-				<Feld label="Zustandsnotiz" bind:value={form.zustand_notiz} class="sm:col-span-2" />
+				<Feld label="Zustandsnotiz" bind:value={formular.zustand_notiz} class="sm:col-span-2" />
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
-				<Button variant="secondary" onclick={schliesseForm} disabled={speichert}>Abbrechen</Button>
+				<Button variant="secondary" onclick={schliesseFormular} disabled={speichert}
+					>Abbrechen</Button
+				>
 				<Button variant="primary" onclick={speichere} disabled={speichert}>
 					{bearbeiteId ? 'Speichern' : 'Anlegen'}
 				</Button>

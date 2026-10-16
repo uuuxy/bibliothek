@@ -16,7 +16,7 @@
 
 	let host = $state('');
 	let port = $state('');
-	let user = $state('');
+	let benutzername = $state('');
 	let sender = $state('');
 	let password = $state('');
 	let hasPassword = $state(false);
@@ -29,7 +29,7 @@
 	 * nach 5 Sekunden verschwindet, nicht lesbar.
 	 * @type {{ ok: boolean, message: string } | null}
 	 */
-	let testResult = $state(null);
+	let testErgebnis = $state(null);
 
 	async function laden() {
 		laedt = true;
@@ -37,7 +37,7 @@
 			const daten = await apiGet('/api/admin/settings/mail');
 			host = daten.smtp_host || '';
 			port = daten.smtp_port || '';
-			user = daten.smtp_user || '';
+			benutzername = daten.smtp_user || '';
 			sender = daten.sender_email || '';
 			hasPassword = daten.has_password || false;
 			testEmail = sender; // default
@@ -52,13 +52,13 @@
 
 	onMount(laden);
 
-	async function saveConfig() {
+	async function speichereEinstellungen() {
 		speichert = true;
 		try {
 			await apiPut('/api/admin/settings/mail', {
 				smtp_host: host,
 				smtp_port: port,
-				smtp_user: user,
+				smtp_user: benutzername,
 				smtp_password: password,
 				sender_email: sender
 			});
@@ -75,13 +75,13 @@
 		}
 	}
 
-	async function testConfig() {
+	async function sendeTestmail() {
 		if (!testEmail) {
 			snackbars.addToast('Bitte eine Test-E-Mail-Adresse angeben', 'error');
 			return;
 		}
 		testing = true;
-		testResult = null;
+		testErgebnis = null;
 		try {
 			// Der Testversand wartet auf den Mailserver; seine Diagnose kommt erst nach dessen Frist.
 			await apiPost(
@@ -89,9 +89,9 @@
 				{ to: testEmail },
 				{ timeoutMs: FRIST_MAILVERSAND_MS }
 			);
-			testResult = { ok: true, message: `Test-E-Mail an ${testEmail} versendet.` };
+			testErgebnis = { ok: true, message: `Test-E-Mail an ${testEmail} versendet.` };
 		} catch (e) {
-			testResult = {
+			testErgebnis = {
 				ok: false,
 				message: /** @type {Error} */ (e)?.message || 'Unbekannter Fehler beim Testversand.'
 			};
@@ -121,7 +121,7 @@
 				<Feld bind:value={host} label="SMTP Host" type="text" placeholder="smtp.example.com" />
 				<Feld bind:value={port} label="SMTP Port" type="text" placeholder="587" />
 				<Feld
-					bind:value={user}
+					bind:value={benutzername}
 					label="Benutzername"
 					type="text"
 					placeholder="Benutzername oder E-Mail"
@@ -143,7 +143,7 @@
 			</div>
 
 			<div class="flex justify-end">
-				<Button onclick={saveConfig} disabled={speichert}>
+				<Button onclick={speichereEinstellungen} disabled={speichert}>
 					{speichert ? 'Wird gespeichert …' : 'Postausgang speichern'}
 				</Button>
 			</div>
@@ -167,22 +167,22 @@
 						placeholder="empfaenger@schule.de"
 					/>
 				</div>
-				<Button variant="secondary" onclick={testConfig} disabled={testing || !testEmail}>
+				<Button variant="secondary" onclick={sendeTestmail} disabled={testing || !testEmail}>
 					{testing ? 'Wird gesendet …' : 'Test-E-Mail senden'}
 				</Button>
 			</div>
 
-			{#if testResult}
+			{#if testErgebnis}
 				<div
-					class="rounded-xl border px-4 py-3 text-sm {testResult.ok
+					class="rounded-xl border px-4 py-3 text-sm {testErgebnis.ok
 						? 'border-outline-variant bg-secondary-container text-on-secondary-container'
 						: 'border-error bg-error-container text-on-error-container'}"
 				>
 					<p class="font-medium">
-						{testResult.ok ? 'Test-E-Mail versendet' : 'Testversand fehlgeschlagen'}
+						{testErgebnis.ok ? 'Test-E-Mail versendet' : 'Testversand fehlgeschlagen'}
 					</p>
-					{#if !testResult.ok}
-						<p class="mt-1 wrap-break-word">{testResult.message}</p>
+					{#if !testErgebnis.ok}
+						<p class="mt-1 wrap-break-word">{testErgebnis.message}</p>
 					{/if}
 				</div>
 			{/if}

@@ -17,7 +17,7 @@
 	 *     (auth/selbstanmeldung_littera_pg_test.go).
 	 *  2. Leserzeile OHNE Konto (16.09.2026, abends): Der Altbestand — ein Kollege, der vor
 	 *     der Schul-E-Mail-Pflicht von Hand eingetragen wurde. Er steht in der Leserdatei,
-	 *     hat aber kein Konto, also findet ihn die Selbstanmeldung nicht. In `users` steht
+	 *     hat aber kein Konto, also findet ihn die Selbstanmeldung nicht. In `konten` steht
 	 *     er ebenfalls nicht — die Warnung oben konnte ihn gar nicht sehen. Gesucht wird
 	 *     er deshalb dort, wo er steht: über die Kandidatensuche des Zusammenführens, von
 	 *     der Leserzeile des Antrags aus (die der Wächter trg_benutzer_hat_leserzeile als
@@ -32,7 +32,7 @@
 	 * Konto zieht auf den vorhandenen Eintrag um, die Zeile des Wächters geht darin auf
 	 * (repository/zugangsanfrage_zuordnen_pg_test.go).
 	 *
-	 * @prop {any[]} users - die geladene Benutzerliste (/api/benutzer)
+	 * @prop {any[]} konten - die geladene Benutzerliste (/api/benutzer)
 	 * @prop {() => any} onZugeordnet - Liste neu laden, nachdem zwei Einträge einer wurden
 	 */
 	import { apiFetch } from './apiFetch.js';
@@ -41,8 +41,8 @@
 	import { authStore } from './stores/authStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
 
-	/** @type {{ users: any[], onZugeordnet?: () => any }} */
-	let { users, onZugeordnet } = $props();
+	/** @type {{ konten: any[], onZugeordnet?: () => any }} */
+	let { konten, onZugeordnet } = $props();
 
 	const LITTERA_PLATZHALTER = '@littera.invalid';
 
@@ -56,7 +56,7 @@
 	/** @param {{ zielID: string, quelleID: string }} d */
 	const istZuordenbar = (d) => Boolean(d.zielID && d.quelleID);
 
-	const anfragen = $derived(users.filter((u) => !u.aktiv && u.zugang_beantragt_am));
+	const anfragen = $derived(konten.filter((u) => !u.aktiv && u.zugang_beantragt_am));
 	const namen = $derived(
 		anfragen.map((u) => `${u.vorname} ${u.nachname}`.trim() || u.email).join(', ')
 	);
@@ -75,7 +75,7 @@
 	// geratene Name bliebe übrig.
 	const trefferAusListe = $derived(
 		anfragen.flatMap((a) =>
-			users
+			konten
 				.filter((u) => norm(u.email).endsWith(LITTERA_PLATZHALTER) && gleicherName(a, u))
 				.map((u) => ({
 					schluessel: `lit|${a.id}|${u.id}`,

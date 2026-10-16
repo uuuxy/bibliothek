@@ -34,7 +34,7 @@ async function serverErreichbar() {
 	}
 }
 
-function createNetzLage() {
+function erzeugeNetzLage() {
 	let offline = $state(false);
 	// Eine Liste statt eines Set: In einer `.svelte.js` ist ein gewöhnliches Set verboten
 	// (svelte/prefer-svelte-reactivity), und beobachtet wird die Zuhörerschaft nie.
@@ -93,4 +93,4 @@ function createNetzLage() {
 	};
 }
 
-export const netzLage = createNetzLage();
+export const netzLage = erzeugeNetzLage();

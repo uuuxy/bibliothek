@@ -17,10 +17,10 @@ export function useMahnwesenPdf() {
 
 		pdfLoading = true;
 		try {
-			const currentList = getFilteredSchueler();
+			const aktuelleListe = getFilteredSchueler();
 			const ausleihIds = [];
 			for (const schuelerId of selectedIds) {
-				const s = currentList.find(/** @type {any} */ (x) => x.schueler_id === schuelerId);
+				const s = aktuelleListe.find(/** @type {any} */ (x) => x.schueler_id === schuelerId);
 				if (s?.medien) {
 					for (const m of s.medien) {
 						if (m.ausleihe_id) ausleihIds.push(m.ausleihe_id);

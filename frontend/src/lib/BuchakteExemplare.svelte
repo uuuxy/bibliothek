@@ -17,7 +17,7 @@
 	/** @type {{ exemplare: any[], book: any, loadAll: (id: string) => void }} */
 	let { exemplare = $bindable([]), book, loadAll } = $props();
 
-	const selectedExemplare = new SvelteSet();
+	const gewaehlteExemplare = new SvelteSet();
 	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 	// Löschen hängt am Server an delete_books (routen_katalog.go) — die Leiste zeigt den Knopf
@@ -43,21 +43,21 @@
 
 	/** @param {string} id */
 	function toggleSelect(id) {
-		if (selectedExemplare.has(id)) {
-			selectedExemplare.delete(id);
+		if (gewaehlteExemplare.has(id)) {
+			gewaehlteExemplare.delete(id);
 		} else {
-			selectedExemplare.add(id);
+			gewaehlteExemplare.add(id);
 		}
 	}
 
 	/** Wie Littera „Exemplare: Alle" — ein Klassensatz hat 30 Bände und mehr. */
 	function alleAuswaehlen() {
-		for (const ex of exemplare) selectedExemplare.add(ex.id);
+		for (const ex of exemplare) gewaehlteExemplare.add(ex.id);
 	}
 
 	/** Nach dem Ändern von Eigentum oder Standort: neu laden (die Werte kommen vom Server) und Markierung weg. */
 	async function nachAenderung() {
-		selectedExemplare.clear();
+		gewaehlteExemplare.clear();
 		if (book?.id) await loadAll(book.id);
 	}
 
@@ -88,14 +88,14 @@
 		}
 	}
 
-	async function deleteSelectedCopies() {
-		if (selectedExemplare.size === 0) return;
-		if (!(await loeschenBestaetigen(`${selectedExemplare.size} Exemplare löschen?`))) return;
+	async function loescheGewaehlte() {
+		if (gewaehlteExemplare.size === 0) return;
+		if (!(await loeschenBestaetigen(`${gewaehlteExemplare.size} Exemplare löschen?`))) return;
 
 		let successCount = 0;
 
 		const ergebnisse = await Promise.allSettled(
-			Array.from(selectedExemplare).map(async (id) => {
+			Array.from(gewaehlteExemplare).map(async (id) => {
 				const res = await apiFetch(`/api/buecher/exemplare/${id}`, {
 					method: 'DELETE',
 					credentials: 'include'
@@ -114,7 +114,7 @@
 				console.error('Fehler beim Löschen:', ergebnis.reason);
 			}
 		}
-		selectedExemplare.clear();
+		gewaehlteExemplare.clear();
 		if (successCount > 0) {
 			showToast(`${successCount} Exemplare erfolgreich gelöscht`, 'success');
 			if (book && book.id) loadAll(book.id);
@@ -133,7 +133,7 @@
 			<ExemplarKarte
 				{darfBearbeiten}
 				{ex}
-				selected={selectedExemplare.has(ex.id)}
+				selected={gewaehlteExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}
 				onDelete={() => loescheExemplar(ex)}
 				onEtikett={darfEtikett ? () => etikettDrucken(ex) : undefined}
@@ -142,13 +142,13 @@
 	</div>
 	<!-- M3 Selection/Toolbars: die gemeinsame schwebende Leiste unter der Liste, wie auf der
 	     Pflegeseite der Schlagworte. -->
-	{#if selectedExemplare.size > 0 && darfBearbeiten}
+	{#if gewaehlteExemplare.size > 0 && darfBearbeiten}
 		<AuswahlLeiste
-			satz="{selectedExemplare.size} markiert"
+			satz="{gewaehlteExemplare.size} markiert"
 			beschriftung="Aktionen für die markierten Exemplare"
-			onleeren={() => selectedExemplare.clear()}
+			onleeren={() => gewaehlteExemplare.clear()}
 		>
-			{#if selectedExemplare.size < exemplare.length}
+			{#if gewaehlteExemplare.size < exemplare.length}
 				<Button variant="ghost" onclick={alleAuswaehlen}>Alle auswählen</Button>
 			{/if}
 			<!-- M3 Toolbars: „Avoid emphasizing more than one action at a time" — eine gefüllte
@@ -156,7 +156,7 @@
 			<Button variant="secondary" onclick={() => (standortOffen = true)}>Standort ändern</Button>
 			<Button onclick={() => (eigentumOffen = true)}>Eigentum ändern</Button>
 			{#if darfLoeschen}
-				<Button variant="danger" onclick={deleteSelectedCopies}>
+				<Button variant="danger" onclick={loescheGewaehlte}>
 					<Trash class="h-4 w-4" aria-hidden="true" />
 					Löschen
 				</Button>
@@ -167,13 +167,13 @@
 
 <ExemplarEigentumDialog
 	open={eigentumOffen}
-	exemplarIds={Array.from(selectedExemplare)}
+	exemplarIds={Array.from(gewaehlteExemplare)}
 	onclose={() => (eigentumOffen = false)}
 	onGeaendert={nachAenderung}
 />
 <ExemplarStandortDialog
 	open={standortOffen}
-	exemplarIds={Array.from(selectedExemplare)}
+	exemplarIds={Array.from(gewaehlteExemplare)}
 	onclose={() => (standortOffen = false)}
 	onGeaendert={nachAenderung}
 />

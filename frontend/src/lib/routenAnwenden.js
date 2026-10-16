@@ -37,14 +37,14 @@ export function applyPathToState(path) {
 		return;
 	}
 	// Parametrisierte Sonderroute: der Tab braucht einen Zusatzparameter, passt nicht in tabToPath.
-	const statsKind = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
-	if (statsKind && ['renner', 'ladenhueter'].includes(statsKind)) {
+	const statistikArt = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
+	if (statistikArt && ['renner', 'ladenhueter'].includes(statistikArt)) {
 		uiStore.activeTab = 'stats_detail';
-		uiStore.statsDetailKind = /** @type {'renner'|'ladenhueter'} */ (statsKind);
+		uiStore.statsDetailKind = /** @type {'renner'|'ladenhueter'} */ (statistikArt);
 		return;
 	}
-	const matchedTab = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
-	if (matchedTab) uiStore.activeTab = matchedTab;
+	const passenderReiter = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
+	if (passenderReiter) uiStore.activeTab = passenderReiter;
 }
 
 /** Zielpfad für den aktuellen Tab — inkl. der parametrisierten Sonderrouten. */

@@ -169,11 +169,11 @@
 			if (!res.ok) {
 				let message = 'Upload fehlgeschlagen';
 				try {
-					const errorJson = await res.json();
-					if (errorJson?.message) {
-						message = errorJson.message;
-					} else if (errorJson?.error) {
-						message = errorJson.error;
+					const fehlerAntwort = await res.json();
+					if (fehlerAntwort?.message) {
+						message = fehlerAntwort.message;
+					} else if (fehlerAntwort?.error) {
+						message = fehlerAntwort.error;
 					}
 				} catch {
 					// fallback to default message

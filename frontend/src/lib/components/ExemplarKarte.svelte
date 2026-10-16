@@ -16,35 +16,35 @@
 	 */
 	let { ex, selected, darfBearbeiten = false, onToggleSelect, onDelete, onEtikett } = $props();
 
-	let editingBarcode = $state(false);
-	let editBarcodeValue = $state('');
-	let barcodeError = $state('');
+	let barcodeBearbeiten = $state(false);
+	let neuerBarcode = $state('');
+	let barcodeFehler = $state('');
 
-	let editingStatus = $state(false);
+	let zustandBearbeiten = $state(false);
 	const status = $derived(exemplarStatus(ex));
 	// Platzhalter (AUTO-, SYS-) bekommen statt des Etikett-Knopfs „Barcode scannen".
 	const platzhalter = $derived(/^(AUTO|SYS)-/.test(ex.barcode_id));
 
-	async function saveBarcode() {
-		if (!editBarcodeValue.trim()) return;
-		if (editBarcodeValue.trim() === ex.barcode_id) {
-			editingBarcode = false;
+	async function speichereBarcode() {
+		if (!neuerBarcode.trim()) return;
+		if (neuerBarcode.trim() === ex.barcode_id) {
+			barcodeBearbeiten = false;
 			return;
 		}
-		barcodeError = '';
+		barcodeFehler = '';
 		try {
 			const res = await apiClient.put(`/api/buecher/exemplare/${ex.id}/barcode`, {
-				barcode: editBarcodeValue.trim()
+				barcode: neuerBarcode.trim()
 			});
 			if (res.ok) {
-				ex.barcode_id = editBarcodeValue.trim();
-				editingBarcode = false;
+				ex.barcode_id = neuerBarcode.trim();
+				barcodeBearbeiten = false;
 			} else {
-				const errorData = await res.json().catch(() => ({}));
-				barcodeError = errorData.error || 'Fehler beim Speichern';
+				const fehlerAntwort = await res.json().catch(() => ({}));
+				barcodeFehler = fehlerAntwort.error || 'Fehler beim Speichern';
 			}
 		} catch {
-			barcodeError = 'Netzwerkfehler';
+			barcodeFehler = 'Netzwerkfehler';
 		}
 	}
 
@@ -53,12 +53,12 @@
 			const res = await apiFetch('/api/barcode/next');
 			if (res.ok) {
 				const daten = await res.json();
-				editBarcodeValue = daten.next_barcode;
+				neuerBarcode = daten.next_barcode;
 			} else {
-				barcodeError = 'Fehler beim Generieren der ID';
+				barcodeFehler = 'Fehler beim Generieren der ID';
 			}
 		} catch {
-			barcodeError = 'Netzwerkfehler';
+			barcodeFehler = 'Netzwerkfehler';
 		}
 	}
 </script>
@@ -72,23 +72,23 @@
 		: 'border-outline-variant hover:border-outline'}"
 >
 	<div class="flex items-start justify-between mb-3">
-		{#if editingBarcode}
+		{#if barcodeBearbeiten}
 			<div class="flex-1 mr-2">
 				<!-- autofocus bewusst: Das Feld erscheint erst auf Klick und ersetzt an dieser
 				     Stelle den Barcode. Wer es oeffnet, will sofort tippen oder scannen. -->
 				<Feld
-					bind:value={editBarcodeValue}
+					bind:value={neuerBarcode}
 					aria-label="Barcode des Exemplars"
 					autofocus
 					onfocus={(e) => e.currentTarget.select()}
-					ungueltig={!!barcodeError}
-					hint={barcodeError}
+					ungueltig={!!barcodeFehler}
+					hint={barcodeFehler}
 					feld="font-mono"
 					onkeydown={(e) => {
-						if (e.key === 'Enter') saveBarcode();
+						if (e.key === 'Enter') speichereBarcode();
 						if (e.key === 'Escape') {
-							editingBarcode = false;
-							barcodeError = '';
+							barcodeBearbeiten = false;
+							barcodeFehler = '';
 						}
 					}}
 				/>
@@ -101,7 +101,7 @@
 					>
 						Interne ID generieren
 					</Button>
-					<Button size="sm" onclick={saveBarcode} class="text-label-small">Speichern</Button>
+					<Button size="sm" onclick={speichereBarcode} class="text-label-small">Speichern</Button>
 				</div>
 			</div>
 		{:else}
@@ -138,9 +138,9 @@
 							<button
 								class="text-xs px-2 py-1 bg-warning-container text-on-warning-container font-semibold rounded-lg cursor-pointer flex items-center gap-1 whitespace-nowrap"
 								onclick={() => {
-									editingBarcode = true;
-									editBarcodeValue = ''; // Leer lassen für den Scanner
-									barcodeError = '';
+									barcodeBearbeiten = true;
+									neuerBarcode = ''; // Leer lassen für den Scanner
+									barcodeFehler = '';
 								}}
 							>
 								<Plus class="w-3.5 h-3.5" aria-hidden="true" />
@@ -152,9 +152,9 @@
 								aria-label="Barcode zuweisen oder ändern"
 								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
 								onclick={() => {
-									editingBarcode = true;
-									editBarcodeValue = ex.barcode_id;
-									barcodeError = '';
+									barcodeBearbeiten = true;
+									neuerBarcode = ex.barcode_id;
+									barcodeFehler = '';
 								}}
 							>
 								<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
@@ -166,13 +166,13 @@
 		{/if}
 		<div class="flex items-center gap-2">
 			<StatusChip {...status} />
-			{#if !editingStatus}
+			{#if !zustandBearbeiten}
 				<button
 					title="Status ändern"
 					aria-label="Status ändern"
 					class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
 					onclick={() => {
-						editingStatus = true;
+						zustandBearbeiten = true;
 					}}
 				>
 					<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
@@ -191,8 +191,8 @@
 			{/if}
 		</div>
 	</div>
-	{#if editingStatus}
-		<ExemplarStatusBearbeiten {ex} onDone={() => (editingStatus = false)} />
+	{#if zustandBearbeiten}
+		<ExemplarStatusBearbeiten {ex} onDone={() => (zustandBearbeiten = false)} />
 	{:else}
 		<ExemplarZustand {ex} />
 	{/if}

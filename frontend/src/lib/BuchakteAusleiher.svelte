@@ -20,7 +20,7 @@
 		...Array.from(new Set(borrowers.map((b) => b.klasse || 'Unbekannt'))).sort()
 	]);
 
-	let filteredBorrowers = $derived(
+	let gefilterteAusleiher = $derived(
 		borrowers.filter((b) => {
 			const matchKlasse = filterKlasse === 'Alle' || (b.klasse || 'Unbekannt') === filterKlasse;
 			const matchName =
@@ -32,8 +32,8 @@
 		})
 	);
 
-	function printAusleiher() {
-		const html = baueAusleiherDruckHtml(filteredBorrowers, book, filterKlasse);
+	function druckeAusleiher() {
+		const html = baueAusleiherDruckHtml(gefilterteAusleiher, book, filterKlasse);
 		if (!druckeDokument(html)) snackbars.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 </script>
@@ -58,17 +58,17 @@
 			etikett="Nach Name filtern"
 			klasse="flex-1 max-w-xs"
 		/>
-		{#if filteredBorrowers.length !== borrowers.length}
+		{#if gefilterteAusleiher.length !== borrowers.length}
 			<span class="text-xs text-on-surface-variant self-center"
-				>{filteredBorrowers.length} von {borrowers.length}</span
+				>{gefilterteAusleiher.length} von {borrowers.length}</span
 			>
 		{/if}
 		<div class="flex-1"></div>
-		<Button variant="secondary" onclick={printAusleiher}>
+		<Button variant="secondary" onclick={druckeAusleiher}>
 			<Printer class="w-4 h-4" aria-hidden="true" />
 			Liste drucken
 		</Button>
 	</div>
 
-	<AusleiherListe zeilen={filteredBorrowers} {onBack} {fmtDate} />
+	<AusleiherListe zeilen={gefilterteAusleiher} {onBack} {fmtDate} />
 {/if}

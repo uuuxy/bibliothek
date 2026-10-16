@@ -30,7 +30,7 @@ export function useInventur() {
 	const fb = useFehlbestand();
 	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurlauf, aber
 	// lastScan bleibt hier — es ist Zustand des Scan-Bildschirms, nicht der Session.
-	const session = useInventurlauf({ onActivate: () => (lastScan = null) });
+	const lauf = useInventurlauf({ onActivate: () => (lastScan = null) });
 
 	// Scans, die eintreffen, solange einer am Server ist. Ein Handscanner wartet nicht auf die
 	// Antwort; ein verworfener Scan fiele beim Abschluss als Verlust auf.
@@ -42,9 +42,9 @@ export function useInventur() {
 	/** @param {string} barcode */
 	async function bucheScan(barcode) {
 		try {
-			const r = await scanne(session.sessionId, barcode);
+			const r = await scanne(lauf.sessionId, barcode);
 			const ergebnis = deuteScanErgebnis(r, barcode);
-			if (ergebnis.zaehlen) session.stats.erfasst++;
+			if (ergebnis.zaehlen) lauf.stats.erfasst++;
 			lastScan = ergebnis.lastScan;
 		} catch (e) {
 			console.error('Scan fehlgeschlagen:', e);
@@ -81,8 +81,8 @@ export function useInventur() {
 		return scansGebucht;
 	}
 
-	async function finishInventory() {
-		const r = await schliesseAb(session.sessionId);
+	async function schliesseInventurAb() {
+		const r = await schliesseAb(lauf.sessionId);
 		if (r.ok) {
 			snackbars.addToast(
 				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
@@ -94,12 +94,12 @@ export function useInventur() {
 			// mit „47 Bücher verloren" kann niemand ins Regal gehen und nachsehen, ob eines
 			// davon nur falsch einsortiert war. Rekonstruieren liess sie sich danach auch
 			// nicht: Durch die Aussonderung fallen die Exemplare aus dem Scope.
-			fb.setzeFehlbestand(r.data.fehlbestand ?? [], session.stats.label);
+			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stats.label);
 			// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den
 			// Abschluss ueberleben, sonst waere er im selben Moment wieder verschwunden.
-			session.resetToIdle();
+			lauf.resetToIdle();
 			lastScan = null;
-			await session.loadOffeneSessions();
+			await lauf.loadOffeneSessions();
 			// Die gerade beendete Inventur gehört sofort in die Auswahl früherer Läufe —
 			// sonst müsste man die Seite neu laden, um sie dort zu finden.
 			await fb.loadAbgeschlosseneInventuren();
@@ -118,7 +118,7 @@ export function useInventur() {
 		await scansGebucht;
 		const ja = await bestaetigen({
 			titel: 'Inventur abschließen?',
-			text: abschlussText(session.stats.erwartet - session.stats.erfasst),
+			text: abschlussText(lauf.stats.erwartet - lauf.stats.erfasst),
 			aktion: 'Ja, unwiderruflich abschließen',
 			gefaehrlich: true
 		});
@@ -126,20 +126,20 @@ export function useInventur() {
 			focusInput?.();
 			return;
 		}
-		await finishInventory();
+		await schliesseInventurAb();
 	}
 
 	/** @param {any} offene laufende Session aus offeneSessions */
 	async function verwerfeSession(offene) {
-		await session.verwerfeSession(offene);
+		await lauf.verwerfeSession(offene);
 		// Wie nach dem Abschluss: Die verworfene Inventur steht sofort unter den früheren —
 		// als verworfen, nicht als vollständig (Migration 149).
 		await fb.loadAbgeschlosseneInventuren();
 	}
 
 	function getProgressPercent() {
-		if (session.stats.erwartet === 0) return 0;
-		return Math.min(100, Math.round((session.stats.erfasst / session.stats.erwartet) * 100));
+		if (lauf.stats.erwartet === 0) return 0;
+		return Math.min(100, Math.round((lauf.stats.erfasst / lauf.stats.erwartet) * 100));
 	}
 
 	return {
@@ -161,43 +161,43 @@ export function useInventur() {
 		loadAbgeschlosseneInventuren: fb.loadAbgeschlosseneInventuren,
 		zeigeFrueherenFehlbestand: fb.zeigeFrueherenFehlbestand,
 		get status() {
-			return session.status;
+			return lauf.status;
 		},
 		get scopeType() {
-			return session.scopeType;
+			return lauf.scopeType;
 		},
 		set scopeType(v) {
-			session.scopeType = v;
+			lauf.scopeType = v;
 		},
 		get selectedSignatur() {
-			return session.selectedSignatur;
+			return lauf.selectedSignatur;
 		},
 		set selectedSignatur(v) {
-			session.selectedSignatur = v;
+			lauf.selectedSignatur = v;
 		},
 		get signaturen() {
-			return session.signaturen;
+			return lauf.signaturen;
 		},
 		get selectedFach() {
-			return session.selectedFach;
+			return lauf.selectedFach;
 		},
 		set selectedFach(v) {
-			session.selectedFach = v;
+			lauf.selectedFach = v;
 		},
 		get selectedGrade() {
-			return session.selectedGrade;
+			return lauf.selectedGrade;
 		},
 		set selectedGrade(v) {
-			session.selectedGrade = v;
+			lauf.selectedGrade = v;
 		},
 		get faecher() {
-			return session.faecher;
+			return lauf.faecher;
 		},
 		get offeneSessions() {
-			return session.offeneSessions;
+			return lauf.offeneSessions;
 		},
 		get stats() {
-			return session.stats;
+			return lauf.stats;
 		},
 		get lastScan() {
 			return lastScan;
@@ -212,20 +212,20 @@ export function useInventur() {
 			return isScanning;
 		},
 		get showStartModal() {
-			return session.showStartModal;
+			return lauf.showStartModal;
 		},
 		set showStartModal(v) {
-			session.showStartModal = v;
+			lauf.showStartModal = v;
 		},
 		get errorMessage() {
-			return session.errorMessage;
+			return lauf.errorMessage;
 		},
-		clearError: session.clearError,
-		loadSignaturen: session.loadSignaturen,
-		loadFaecher: session.loadFaecher,
-		loadOffeneSessions: session.loadOffeneSessions,
-		startInventory: session.startInventory,
-		resumeSession: session.resumeSession,
+		clearError: lauf.clearError,
+		loadSignaturen: lauf.loadSignaturen,
+		loadFaecher: lauf.loadFaecher,
+		loadOffeneSessions: lauf.loadOffeneSessions,
+		startInventory: lauf.startInventory,
+		resumeSession: lauf.resumeSession,
 		verwerfeSession,
 		handleScan,
 		abschliessenNachRueckfrage,

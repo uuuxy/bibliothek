@@ -13,13 +13,13 @@
 	 * @typedef {Object} Props
 	 * @property {boolean} open
 	 * @property {() => void} onclose
-	 * @property {any} userToDelete
-	 * @property {boolean} deletingUser
+	 * @property {any} zuLoeschen
+	 * @property {boolean} loescht
 	 * @property {string | null} error
-	 * @property {() => void} confirmDeleteUser
+	 * @property {() => void} loescheKonto
 	 */
 	/** @type {Props} */
-	let { open, onclose, userToDelete, deletingUser, error, confirmDeleteUser } = $props();
+	let { open, onclose, zuLoeschen, loescht, error, loescheKonto } = $props();
 </script>
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
@@ -29,7 +29,7 @@
 		</h2>
 		<p class="text-sm leading-relaxed text-on-surface-variant">
 			Sind Sie sicher, dass Sie den Benutzer <strong
-				>{userToDelete?.vorname} {userToDelete?.nachname}</strong
+				>{zuLoeschen?.vorname} {zuLoeschen?.nachname}</strong
 			> löschen möchten? Diese Aktion wird im Logbuch vermerkt.
 		</p>
 		{#if error}
@@ -46,8 +46,8 @@
 		     Escape. Die Anfrage läuft zu Ende, ihr Ergebnis steht dann auf der Seite. -->
 		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
-			<Button variant="danger-solid" onclick={confirmDeleteUser} disabled={deletingUser}>
-				{#if deletingUser}<Ladekreis size="sm" farbe="aktuell" />{/if}
+			<Button variant="danger-solid" onclick={loescheKonto} disabled={loescht}>
+				{#if loescht}<Ladekreis size="sm" farbe="aktuell" />{/if}
 				Löschen
 			</Button>
 		</div>

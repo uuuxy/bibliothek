@@ -8,20 +8,20 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {boolean} loadingUsers
-	 * @property {any[]} filteredUsers
-	 * @property {(user: any) => void} openEditUserModal
-	 * @property {(user: any) => void} openDeleteConfirm
+	 * @property {boolean} laedt
+	 * @property {any[]} konten
+	 * @property {(user: any) => void} oeffneKonto
+	 * @property {(user: any) => void} frageLoeschen
 	 */
 	/** @type {Props} */
-	let { loadingUsers, filteredUsers, openEditUserModal, openDeleteConfirm } = $props();
+	let { laedt, konten, oeffneKonto, frageLoeschen } = $props();
 </script>
 
-{#if loadingUsers}
+{#if laedt}
 	<div class="animate-pulse p-12 text-center font-medium text-on-surface-variant">
 		Lade Systembenutzer...
 	</div>
-{:else if filteredUsers.length === 0}
+{:else if konten.length === 0}
 	<SuchZustand symbol={Search} titel="Keine Systembenutzer gefunden" />
 {:else}
 	<div class="overflow-x-auto">
@@ -37,7 +37,7 @@
 				</tr>
 			</thead>
 			<tbody class="font-medium">
-				{#each filteredUsers as user, _i (_i)}
+				{#each konten as user, _i (_i)}
 					<tr>
 						<td>
 							<span class="font-semibold">{user.vorname} {user.nachname}</span>
@@ -67,10 +67,10 @@
 							{/if}
 						</td>
 						<td class="space-x-2 text-right whitespace-nowrap">
-							<Button variant="secondary" size="sm" onclick={() => openEditUserModal(user)}>
+							<Button variant="secondary" size="sm" onclick={() => oeffneKonto(user)}>
 								Bearbeiten
 							</Button>
-							<Button variant="danger" size="sm" onclick={() => openDeleteConfirm(user)}>
+							<Button variant="danger" size="sm" onclick={() => frageLoeschen(user)}>
 								Löschen
 							</Button>
 						</td>

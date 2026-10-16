@@ -76,13 +76,13 @@
 				<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
 					<tbody>
 						{#each group.items as item, _i (_i)}
-							{@const isSelected = item.exemplar_ids.every((/** @type {string} */ id) =>
+							{@const gewaehlt = item.exemplar_ids.every((/** @type {string} */ id) =>
 								selectedExemplarIds.includes(id)
 							)}
-							<tr aria-selected={isSelected}>
+							<tr aria-selected={gewaehlt}>
 								<td class="w-12">
 									<Kaestchen
-										checked={isSelected}
+										checked={gewaehlt}
 										onchange={(e) => schalteAuswahlUm(e, item.exemplar_ids || [])}
 										aria-label="{item.titel} auswählen"
 									/>

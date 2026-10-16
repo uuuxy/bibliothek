@@ -32,25 +32,25 @@
 	];
 
 	/** @type {any[]} */
-	let classGroups = $state([]);
+	let gruppen = $state([]);
 	let laedt = $state(true);
 	let fehler = $state(null);
 	let isManaging = $state(false);
 	let managingGroup = $state(null);
 
 	let filterBranch = $state('');
-	let sortOrder = $state('asc');
-	let klasseSearchQuery = $state('');
+	let reihenfolge = $state('asc');
+	let klassenSuche = $state('');
 	let isKlasseDropdownOpen = $state(false);
 
 	// Der Name filtert direkt, statt einen Eintrag „auszuwählen": „5" zeigt alle
 	// fünften Klassen, „5f1" genau eine. Die Vorschlagsliste setzt nur das Feld.
 	// Set: Doppelte Namen wären doppelte each-Keys und rissen die Liste ab.
-	const suchbegriff = $derived(klasseSearchQuery.trim().toLowerCase());
-	const namen = $derived([...new Set(classGroups.map((g) => g.className.replace('Klasse ', '')))]);
-	const filteredKlassenList = $derived(namen.filter((n) => n.toLowerCase().includes(suchbegriff)));
+	const suchbegriff = $derived(klassenSuche.trim().toLowerCase());
+	const namen = $derived([...new Set(gruppen.map((g) => g.className.replace('Klasse ', '')))]);
+	const gefilterteKlassen = $derived(namen.filter((n) => n.toLowerCase().includes(suchbegriff)));
 	const sichtbareGruppen = $derived(
-		classGroups.filter((g) => g.className.toLowerCase().includes(suchbegriff))
+		gruppen.filter((g) => g.className.toLowerCase().includes(suchbegriff))
 	);
 
 	// Höchstens eine Klasse ist ausgeklappt: Mit mehreren offenen wäre die Liste nach zwei
@@ -66,21 +66,21 @@
 		}
 	});
 
-	async function loadGroups() {
+	async function ladeKlassen() {
 		laedt = true;
 		// Ein neuer Versuch beginnt ohne den Fehler des letzten, sonst bliebe die Meldung stehen.
 		fehler = null;
 		try {
-			const query = new URLSearchParams({
+			const parameter = new URLSearchParams({
 				branch: filterBranch,
-				sort: sortOrder
+				sort: reihenfolge
 			});
-			const res = await apiFetch(`/api/class-books?${query.toString()}`, {
+			const res = await apiFetch(`/api/class-books?${parameter.toString()}`, {
 				credentials: 'include'
 			});
 			if (!res.ok) throw new Error('Fehler beim Laden der Klassen-Bücher');
 			const json = await res.json();
-			classGroups = json.data || [];
+			gruppen = json.data || [];
 		} catch (err) {
 			fehler = /** @type {any} */ (err).message;
 		} finally {
@@ -88,7 +88,7 @@
 		}
 	}
 
-	onMount(loadGroups);
+	onMount(ladeKlassen);
 
 	/**
 	 * @param {string} className
@@ -101,7 +101,7 @@
 				{ method: 'DELETE', credentials: 'include' }
 			);
 			if (!res.ok) throw new Error('Fehler beim Löschen');
-			loadGroups();
+			ladeKlassen();
 		} catch (err) {
 			showToast(/** @type {any} */ (err).message, 'error');
 		}
@@ -111,11 +111,11 @@
 <div class="space-y-10">
 	<div class="flex flex-col gap-3">
 		<KlassenSuchfeld
-			bind:klasseSearchQuery
+			bind:klasseSearchQuery={klassenSuche}
 			bind:isKlasseDropdownOpen
-			{filteredKlassenList}
+			filteredKlassenList={gefilterteKlassen}
 			onSelectKlasse={(klasse) => {
-				klasseSearchQuery = klasse;
+				klassenSuche = klasse;
 				isKlasseDropdownOpen = false;
 			}}
 			class="w-full"
@@ -125,15 +125,15 @@
 			<Select
 				bind:value={filterBranch}
 				options={ZWEIGE}
-				onchange={() => loadGroups()}
+				onchange={() => ladeKlassen()}
 				class="w-44"
 				aria-label="Klassen nach Zweig filtern"
 			/>
 
 			<Select
-				bind:value={sortOrder}
+				bind:value={reihenfolge}
 				options={SORTIERUNG}
-				onchange={() => loadGroups()}
+				onchange={() => ladeKlassen()}
 				class="w-48"
 				aria-label="Sortierung"
 			/>
@@ -158,16 +158,16 @@
 		<LadeFehler
 			titel="Klassensätze nicht geladen"
 			text="Die Klassensätze konnten nicht abgerufen werden."
-			onerneut={loadGroups}
+			onerneut={ladeKlassen}
 		/>
 	{:else if sichtbareGruppen.length === 0}
 		<!-- Zwei verschiedene Leermeldungen: „nichts angelegt" schickt sonst jemanden
 		     auf die Suche nach Daten, die es gibt — sein Suchbegriff passt nur nicht. -->
-		{#if classGroups.length > 0}
+		{#if gruppen.length > 0}
 			<SuchZustand
 				symbol={BookOpen}
 				titel="Keine Klasse gefunden"
-				hinweis={`Zu „${klasseSearchQuery}" gibt es keinen Klassensatz. Suchfeld leeren zeigt wieder alle.`}
+				hinweis={`Zu „${klassenSuche}" gibt es keinen Klassensatz. Suchfeld leeren zeigt wieder alle.`}
 			/>
 		{:else}
 			<SuchZustand
@@ -202,11 +202,11 @@
 	<KlassensatzDialog
 		isOpen={isManaging}
 		initialGroup={managingGroup}
-		vorhandeneGruppen={classGroups}
+		vorhandeneGruppen={gruppen}
 		onClose={() => (isManaging = false)}
 		onSaved={() => {
 			isManaging = false;
-			loadGroups();
+			ladeKlassen();
 		}}
 	/>
 {/if}

@@ -27,28 +27,28 @@
 	/** @type {{ onImported?: (result: LusdPreviewResult) => void }} */
 	let { onImported = () => {} } = $props();
 
-	let selectedFile = $state(/** @type {File | null} */ (null));
+	let gewaehlteDatei = $state(/** @type {File | null} */ (null));
 	let stage = $state(/** @type {'upload' | 'preview' | 'done'} */ ('upload'));
-	let previewLoading = $state(false);
-	let importLoading = $state(false);
-	let previewResult = $state(/** @type {LusdPreviewResult | null} */ (null));
-	let importResult = $state(/** @type {LusdPreviewResult | null} */ (null));
+	let probeLaeuft = $state(false);
+	let importLaeuft = $state(false);
+	let probeErgebnis = $state(/** @type {LusdPreviewResult | null} */ (null));
+	let importErgebnis = $state(/** @type {LusdPreviewResult | null} */ (null));
 	let fehler = $state(/** @type {string | null} */ (null));
 	/** Vom Admin bestätigte Umbenennungs-Paare (Zeilennummern der Datei); wird in
 	 *  place geändert — SvelteSet ist selbst reaktiv, ein $state-Umschlag wäre doppelt. */
 	const gewaehltePaare = new SvelteSet();
 
-	const dateiGroesse = $derived(`${((selectedFile?.size ?? 0) / 1024).toFixed(1)} KB`);
-	const activeResult = $derived(stage === 'done' ? importResult : previewResult);
-	const info = $derived(modusInfo(activeResult?.modus));
-	const summaryRows = $derived(activeResult ? rubriken(activeResult) : []);
+	const dateiGroesse = $derived(`${((gewaehlteDatei?.size ?? 0) / 1024).toFixed(1)} KB`);
+	const angezeigtesErgebnis = $derived(stage === 'done' ? importErgebnis : probeErgebnis);
+	const info = $derived(modusInfo(angezeigtesErgebnis?.modus));
+	const uebersichtZeilen = $derived(angezeigtesErgebnis ? rubriken(angezeigtesErgebnis) : []);
 
 	// Bezugsgröße ist der aktive DB-Bestand (kommt vom Server), NICHT die
 	// CSV-Zeilenzahl — sonst rutscht ein Teilexport unter die Schwelle.
-	const hasRiskyGraduates = $derived(
-		!!previewResult &&
-			previewResult.active_db_students > 0 &&
-			previewResult.graduates.length / previewResult.active_db_students >= 0.3
+	const vieleAbgaenger = $derived(
+		!!probeErgebnis &&
+			probeErgebnis.active_db_students > 0 &&
+			probeErgebnis.graduates.length / probeErgebnis.active_db_students >= 0.3
 	);
 	/** Serverseitige 409-Bremse hat gegriffen — zweite, bewusste Bestätigung nötig. */
 	let needsGraduateConfirm = $state(false);
@@ -58,14 +58,14 @@
 		// Neue Datei = neuer Durchgang, auch für die Massenabgang-Bestätigung (10.09.2026).
 		if (target.files && target.files[0]) {
 			resetFlow();
-			selectedFile = target.files[0];
+			gewaehlteDatei = target.files[0];
 		}
 	}
 
 	function resetFlow() {
-		selectedFile = null;
-		previewResult = null;
-		importResult = null;
+		gewaehlteDatei = null;
+		probeErgebnis = null;
+		importErgebnis = null;
 		fehler = null;
 		needsGraduateConfirm = false;
 		gewaehltePaare.clear();
@@ -74,13 +74,13 @@
 
 	/** Sendet die aktuell gewählte Datei an einen der beiden LUSD-Endpoints. @param {string} url */
 	async function submitLusdFile(url, confirmGraduates = false) {
-		const formData = new FormData();
-		formData.append('csvFile', /** @type {File} */ (selectedFile));
-		if (confirmGraduates) formData.append('confirm_graduates', 'true');
-		const wahl = umbenennungenFormwert(previewResult?.umbenennungen ?? [], gewaehltePaare);
-		if (wahl) formData.append('umbenennungen', wahl);
+		const formulardaten = new FormData();
+		formulardaten.append('csvFile', /** @type {File} */ (gewaehlteDatei));
+		if (confirmGraduates) formulardaten.append('confirm_graduates', 'true');
+		const wahl = umbenennungenFormwert(probeErgebnis?.umbenennungen ?? [], gewaehltePaare);
+		if (wahl) formulardaten.append('umbenennungen', wahl);
 
-		const res = await apiFetch(url, { method: 'POST', body: formData });
+		const res = await apiFetch(url, { method: 'POST', body: formulardaten });
 		if (!res.ok) {
 			const daten = await res.json().catch(() => null);
 			const err = new Error(daten?.error || 'Fehler bei der Verarbeitung der LUSD-Datei.');
@@ -90,41 +90,41 @@
 		return res.json();
 	}
 
-	async function runPreview() {
-		if (!selectedFile || previewLoading) return;
-		previewLoading = true;
+	async function starteProbe() {
+		if (!gewaehlteDatei || probeLaeuft) return;
+		probeLaeuft = true;
 		fehler = null;
 		needsGraduateConfirm = false;
 		try {
-			previewResult = await submitLusdFile('/api/lusd/preview');
+			probeErgebnis = await submitLusdFile('/api/lusd/preview');
 			gewaehltePaare.clear();
-			for (const z of vorausgewaehlteZeilen(previewResult?.umbenennungen ?? []))
+			for (const z of vorausgewaehlteZeilen(probeErgebnis?.umbenennungen ?? []))
 				gewaehltePaare.add(z);
 			stage = 'preview';
 		} catch (err) {
 			// Nur das Inline-Banner unten — kein zusätzlicher Toast mit identischem Text.
 			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
-			previewLoading = false;
+			probeLaeuft = false;
 		}
 	}
 
 	async function finalizeImport(confirmGraduates = false) {
-		if (!selectedFile || importLoading) return;
-		importLoading = true;
+		if (!gewaehlteDatei || importLaeuft) return;
+		importLaeuft = true;
 		fehler = null;
 		try {
-			importResult = await submitLusdFile('/api/lusd/import', confirmGraduates);
+			importErgebnis = await submitLusdFile('/api/lusd/import', confirmGraduates);
 			stage = 'done';
 			needsGraduateConfirm = false;
 			snackbars.addToast('LUSD-Import erfolgreich übernommen.', 'success');
-			onImported(/** @type {LusdPreviewResult} */ (importResult));
+			onImported(/** @type {LusdPreviewResult} */ (importErgebnis));
 		} catch (err) {
 			// 409 = serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten.
 			needsGraduateConfirm = /** @type {any} */ (err).status === 409;
 			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
-			importLoading = false;
+			importLaeuft = false;
 		}
 	}
 </script>
@@ -164,7 +164,7 @@
 {/snippet}
 
 {#snippet ergebnis(abgeschlossen)}
-	{#if activeResult}
+	{#if angezeigtesErgebnis}
 		<p
 			class="text-xs font-semibold rounded-xl p-3 {info.warn
 				? 'bg-error-container text-on-error-container'
@@ -174,11 +174,11 @@
 		</p>
 		<div class="divide-y divide-outline-variant">
 			<LusdUmbenennungen
-				paare={activeResult.umbenennungen ?? []}
+				paare={angezeigtesErgebnis.umbenennungen ?? []}
 				gewaehlt={gewaehltePaare}
 				{abgeschlossen}
 			/>
-			{#each summaryRows as section (section.key)}
+			{#each uebersichtZeilen as section (section.key)}
 				{@render diffSection(section)}
 			{/each}
 		</div>
@@ -226,12 +226,12 @@
 				accept=".csv,.xlsx"
 				class="sr-only"
 				onchange={beiDateiwahl}
-				disabled={previewLoading || importLoading}
+				disabled={probeLaeuft || importLaeuft}
 			/>
 			<FolderOpen class="h-8 w-8 text-on-surface-variant" aria-hidden="true" />
-			{#if selectedFile}
+			{#if gewaehlteDatei}
 				<div class="space-y-1">
-					<p class="text-xs font-bold text-on-surface max-w-xs truncate">{selectedFile.name}</p>
+					<p class="text-xs font-bold text-on-surface max-w-xs truncate">{gewaehlteDatei.name}</p>
 					<p class="text-label-small text-on-surface-variant">{dateiGroesse}</p>
 				</div>
 			{:else}
@@ -251,34 +251,34 @@
 
 		{#if stage === 'upload'}
 			<div class="flex justify-end">
-				<Button onclick={runPreview} disabled={!selectedFile || previewLoading}>
-					{#if previewLoading}{@render spinner('Vorschau wird geladen…')}{:else}Vorschau laden{/if}
+				<Button onclick={starteProbe} disabled={!gewaehlteDatei || probeLaeuft}>
+					{#if probeLaeuft}{@render spinner('Vorschau wird geladen…')}{:else}Vorschau laden{/if}
 				</Button>
 			</div>
 		{/if}
 
-		{#if stage === 'preview' && previewResult}
+		{#if stage === 'preview' && probeErgebnis}
 			<div class="space-y-4">
 				<p class="text-xs text-on-surface-variant">
-					{previewResult.total_csv_records} Datensätze in der Datei · {previewResult.active_db_students}
+					{probeErgebnis.total_csv_records} Datensätze in der Datei · {probeErgebnis.active_db_students}
 					aktive Schüler im Bestand
-					{#if previewResult.skipped_no_id > 0}
+					{#if probeErgebnis.skipped_no_id > 0}
 						· <span class="text-warning font-semibold"
-							>{previewResult.skipped_no_id} Zeilen ohne LUSD-ID werden übersprungen</span
+							>{probeErgebnis.skipped_no_id} Zeilen ohne LUSD-ID werden übersprungen</span
 						>
 					{/if}
-					{#if previewResult.dubletten_in_datei > 0}
+					{#if probeErgebnis.dubletten_in_datei > 0}
 						· <span class="text-on-surface-variant font-semibold"
-							>{previewResult.dubletten_in_datei} doppelte Zeilen zusammengelegt (letzte gewinnt)</span
+							>{probeErgebnis.dubletten_in_datei} doppelte Zeilen zusammengelegt (letzte gewinnt)</span
 						>
 					{/if}
 				</p>
-				{#if hasRiskyGraduates}
+				{#if vieleAbgaenger}
 					<div
 						class="flex items-center gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 					>
 						<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span
-							>Auffällig viele Abgänger ({previewResult.graduates.length} von {previewResult.active_db_students}
+							>Auffällig viele Abgänger ({probeErgebnis.graduates.length} von {probeErgebnis.active_db_students}
 							aktiven Schülern) — Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span
 						>
@@ -293,14 +293,14 @@
 						<Button
 							variant="danger-solid"
 							onclick={() => finalizeImport(true)}
-							disabled={importLoading}
+							disabled={importLaeuft}
 						>
-							{#if importLoading}{@render spinner('Import wird übernommen…')}{:else}Massenabgang
+							{#if importLaeuft}{@render spinner('Import wird übernommen…')}{:else}Massenabgang
 								bestätigen &amp; endgültig importieren{/if}
 						</Button>
 					{:else}
-						<Button onclick={() => finalizeImport(false)} disabled={importLoading}>
-							{#if importLoading}{@render spinner('Import wird übernommen…')}{:else}Import
+						<Button onclick={() => finalizeImport(false)} disabled={importLaeuft}>
+							{#if importLaeuft}{@render spinner('Import wird übernommen…')}{:else}Import
 								finalisieren{/if}
 						</Button>
 					{/if}

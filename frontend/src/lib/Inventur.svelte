@@ -12,7 +12,7 @@
 	import { formatDatum } from './utils/format.js';
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
 
-	const inventoryState = useInventur();
+	const ablauf = useInventur();
 
 	// $state, nicht `let`: Das Feld wird per bind:this gefüllt und unten in einem $effect
 	// gelesen. Es entsteht erst, wenn die Inventur läuft; ohne $state liefe der Effekt nur
@@ -20,16 +20,16 @@
 	let barcodeInputEl = $state();
 
 	$effect(() => {
-		if (inventoryState.status === 'active' && barcodeInputEl && !inventoryState.isScanning) {
+		if (ablauf.status === 'active' && barcodeInputEl && !ablauf.isScanning) {
 			barcodeInputEl.focus();
 		}
 	});
 
 	onMount(async () => {
-		await inventoryState.loadSignaturen();
-		await inventoryState.loadFaecher();
-		await inventoryState.loadOffeneSessions();
-		await inventoryState.loadAbgeschlosseneInventuren();
+		await ablauf.loadSignaturen();
+		await ablauf.loadFaecher();
+		await ablauf.loadOffeneSessions();
+		await ablauf.loadAbgeschlosseneInventuren();
 	});
 
 	function focusInput() {
@@ -41,17 +41,17 @@
 	<!-- Steht GANZ OBEN und ueberlebt das Zuruecksetzen: Der Bericht ist das Ergebnis der
 	     Arbeit, nicht eine Randnotiz. Vorher endete eine Inventur mit einer Zahl im Toast,
 	     die drei Sekunden spaeter weg war. -->
-	{#if inventoryState.fehlbestand.length > 0}
+	{#if ablauf.fehlbestand.length > 0}
 		<FehlbestandBericht
-			eintraege={inventoryState.fehlbestand}
-			label={inventoryState.fehlbestandLabel}
-			onSchliessen={inventoryState.fehlbestandSchliessen}
-			onGefunden={inventoryState.fehlbestandGefunden}
-			onEndgueltigLoeschen={inventoryState.fehlbestandEndgueltigLoeschen}
+			eintraege={ablauf.fehlbestand}
+			label={ablauf.fehlbestandLabel}
+			onSchliessen={ablauf.fehlbestandSchliessen}
+			onGefunden={ablauf.fehlbestandGefunden}
+			onEndgueltigLoeschen={ablauf.fehlbestandEndgueltigLoeschen}
 		/>
 	{/if}
 
-	{#if inventoryState.status === 'idle'}
+	{#if ablauf.status === 'idle'}
 		<div class="p-12 text-center flex flex-col items-center justify-center space-y-6">
 			<!-- Neutral wie der Leerzustand der Abgängerliste (AbgaengerTabelle.svelte): Die
 			     Hauptfarbe bleibt dem einen gefüllten Knopf darunter. -->
@@ -67,23 +67,23 @@
 					gezielt nach einer bestimmten Signatur / Kategorie scannen.
 				</p>
 			</div>
-			<Button size="lg" onclick={() => (inventoryState.showStartModal = true)} class="px-6">
+			<Button size="lg" onclick={() => (ablauf.showStartModal = true)} class="px-6">
 				<Plus class="w-5 h-5" aria-hidden="true" />
 				<span>Neue Bestandsprüfung starten</span>
 			</Button>
 
-			{#if inventoryState.errorMessage}
+			{#if ablauf.errorMessage}
 				<div
 					class="w-full max-w-lg mx-auto p-3 bg-warning-container rounded-lg text-sm text-on-warning-container"
 				>
-					{inventoryState.errorMessage}
+					{ablauf.errorMessage}
 				</div>
 			{/if}
 
-			{#if inventoryState.offeneSessions.length > 0}
+			{#if ablauf.offeneSessions.length > 0}
 				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
 					<h4 class="text-sm font-semibold text-on-surface-variant">Laufende Inventuren</h4>
-					{#each inventoryState.offeneSessions as session (session.session_id)}
+					{#each ablauf.offeneSessions as session (session.session_id)}
 						<div
 							class="flex items-center justify-between gap-3 p-3 bg-warning-container text-on-warning-container rounded-lg"
 						>
@@ -97,13 +97,11 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-2 shrink-0">
-								<Button size="sm" onclick={() => inventoryState.resumeSession(session)}>
-									Fortsetzen
-								</Button>
+								<Button size="sm" onclick={() => ablauf.resumeSession(session)}>Fortsetzen</Button>
 								<Button
 									variant="secondary"
 									size="sm"
-									onclick={() => inventoryState.verwerfeSession(session)}
+									onclick={() => ablauf.verwerfeSession(session)}
 								>
 									Verwerfen
 								</Button>
@@ -119,10 +117,10 @@
 			     zweiten Arbeitsplatz, der mit der Liste ins Regal geht, sah ihn nie. Die Daten
 			     liegen dauerhaft auf dem Server; hier ist der Weg zurück zu ihnen. Eine verworfene
 			     Inventur hat nichts gebucht und keinen Bericht; ihr Bereich ist nicht geprüft. -->
-			{#if inventoryState.abgeschlosseneInventuren.length > 0}
+			{#if ablauf.abgeschlosseneInventuren.length > 0}
 				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
 					<h4 class="text-sm font-semibold text-on-surface-variant">Frühere Inventuren</h4>
-					{#each inventoryState.abgeschlosseneInventuren as inventur (inventur.session_id)}
+					{#each ablauf.abgeschlosseneInventuren as inventur (inventur.session_id)}
 						<div
 							class="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-outline-variant"
 						>
@@ -144,8 +142,8 @@
 									variant="secondary"
 									size="sm"
 									class="shrink-0"
-									disabled={inventoryState.ladeFruehereLaeuft}
-									onclick={() => inventoryState.zeigeFrueherenFehlbestand(inventur)}
+									disabled={ablauf.ladeFruehereLaeuft}
+									onclick={() => ablauf.zeigeFrueherenFehlbestand(inventur)}
 								>
 									Fehlbestand
 								</Button>
@@ -163,18 +161,18 @@
 					<div>
 						<span class="text-sm font-semibold text-on-surface-variant">Aktueller Fortschritt</span>
 						<div class="text-2xl font-bold text-on-surface mt-1">
-							{inventoryState.stats.erfasst} / {inventoryState.stats.erwartet}
+							{ablauf.stats.erfasst} / {ablauf.stats.erwartet}
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>
 						</div>
 					</div>
-					<div class="text-3xl font-bold text-primary">{inventoryState.getProgressPercent()}%</div>
+					<div class="text-3xl font-bold text-primary">{ablauf.getProgressPercent()}%</div>
 				</div>
 				<!-- Spur und Anzeige wie der lineare Fortschritt in M3 (material-web.dev, Tokens
 				     track-color: surface-container-highest, active-indicator-color: primary). -->
 				<div class="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
 					<div
 						class="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
-						style="width: {inventoryState.getProgressPercent()}%"
+						style="width: {ablauf.getProgressPercent()}%"
 					></div>
 				</div>
 			</div>
@@ -185,18 +183,18 @@
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
-					inventoryState.handleScan(inventoryState.barcodeInput, focusInput);
+					ablauf.handleScan(ablauf.barcodeInput, focusInput);
 				}}
 			>
 				<Suchpille
 					id="inventur-scan"
 					bind:element={barcodeInputEl}
-					bind:wert={inventoryState.barcodeInput}
+					bind:wert={ablauf.barcodeInput}
 					etikett="Barcode scannen"
 					platzhalter="Barcode scannen..."
 				>
 					{#snippet nachlaufend()}
-						{#if inventoryState.isScanning}
+						{#if ablauf.isScanning}
 							<Ladekreis size="md" />
 						{:else}
 							<ScanBarcode class="h-5 w-5 shrink-0 text-on-surface-variant" aria-hidden="true" />
@@ -206,9 +204,9 @@
 			</form>
 			<!-- Die Rückmeldung zum letzten Scan (ScanRueckmeldung.svelte: Erfolg, Warnung,
 			     Fehler auf eigenen Farbrollen). Das Einblenden bleibt hier, am {#if}. -->
-			{#if inventoryState.lastScan}
+			{#if ablauf.lastScan}
 				<div transition:slide>
-					<ScanRueckmeldung scan={inventoryState.lastScan} />
+					<ScanRueckmeldung scan={ablauf.lastScan} />
 				</div>
 			{/if}
 
@@ -216,7 +214,7 @@
 				<Button
 					variant="danger"
 					size="lg"
-					onclick={() => inventoryState.abschliessenNachRueckfrage(focusInput)}
+					onclick={() => ablauf.abschliessenNachRueckfrage(focusInput)}
 					class="px-6"
 				>
 					Inventur abschließen
@@ -227,11 +225,11 @@
 </Seitenrahmen>
 
 <InventurStartDialog
-	open={inventoryState.showStartModal}
-	state={inventoryState}
+	open={ablauf.showStartModal}
+	state={ablauf}
 	onClose={() => {
-		inventoryState.showStartModal = false;
-		inventoryState.clearError();
+		ablauf.showStartModal = false;
+		ablauf.clearError();
 	}}
-	onStart={inventoryState.startInventory}
+	onStart={ablauf.startInventory}
 />

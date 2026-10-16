@@ -18,14 +18,14 @@
 	let { open, titel, aktion, gueltig, onclose, onbestaetigen, children } = $props();
 
 	/** @type {HTMLFormElement | undefined} */
-	let form = $state();
+	let formular = $state();
 	// Der Dialog braucht einen Namen (Dialog.svelte: beschriftetDurch) — eindeutig je Instanz.
 	const eigen = $props.id();
 	const titelId = `${eigen}-titel`;
 
 	$effect(() => {
 		if (!open) return;
-		tick().then(() => form?.querySelector('input')?.focus());
+		tick().then(() => formular?.querySelector('input')?.focus());
 	});
 
 	/** @param {SubmitEvent} e */
@@ -36,7 +36,7 @@
 </script>
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch={titelId}>
-	<form bind:this={form} onsubmit={absenden} class="space-y-6 p-6">
+	<form bind:this={formular} onsubmit={absenden} class="space-y-6 p-6">
 		<h2 id={titelId} class="text-lg font-medium text-on-surface">{titel}</h2>
 		<div class="space-y-4">
 			{@render children()}

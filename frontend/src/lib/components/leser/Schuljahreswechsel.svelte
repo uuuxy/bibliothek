@@ -12,7 +12,7 @@
 	let awaitingConfirmation = $state(false);
 	let laedt = $state(false);
 	/** @type {PromoteStudentsResponse | null} */
-	let preview = $state(null);
+	let probe = $state(null);
 	/** @type {PromoteStudentsResponse | null} */
 	let ergebnis = $state(null);
 	/** @type {string | null} */
@@ -52,7 +52,7 @@
 	}
 
 	function reset() {
-		preview = null;
+		probe = null;
 		ergebnis = null;
 		awaitingConfirmation = false;
 		fehler = null;
@@ -72,12 +72,12 @@
 		return res.json();
 	}
 
-	async function runPreview() {
+	async function starteProbe() {
 		if (laedt) return;
 		laedt = true;
 		fehler = null;
 		try {
-			preview = await sendeWechsel({ dry_run: true });
+			probe = await sendeWechsel({ dry_run: true });
 		} catch (err) {
 			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
@@ -148,11 +148,11 @@
 		</div>
 		{@render summaryRows(ergebnis)}
 		<Button onclick={reset}>Fertig</Button>
-	{:else if !preview}
+	{:else if !probe}
 		<!-- Stufe 1: erst die unverbindliche Vorschau — der Server rechnet das
          identische SQL in einer Transaktion und rollt zurück. -->
 		<div class="flex justify-end">
-			<Button onclick={runPreview} disabled={laedt}>
+			<Button onclick={starteProbe} disabled={laedt}>
 				{#if laedt}
 					<Ladekreis size="sm" farbe="aktuell" /> Vorschau wird berechnet…
 				{:else}
@@ -167,7 +167,7 @@
 			<Info class="h-4 w-4 shrink-0" aria-hidden="true" />
 			<span>Unverbindliche Vorschau — es wurde noch nichts geändert.</span>
 		</div>
-		{@render summaryRows(preview)}
+		{@render summaryRows(probe)}
 
 		<div
 			class="flex items-start gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"

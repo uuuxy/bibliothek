@@ -126,7 +126,7 @@ class AuthStore {
 	/**
 	 * Gemeinsamer Einstieg für Login und Session-Restore: setzt den Store-Zustand,
 	 * startet SSE + Refresh-Loop und pflegt die appState-Rollen-Flags.
-	 * @param {any} user
+	 * @param {any} konto
 	 * @param {Function} [onRoleCallback]
 	 */
 	/**
@@ -162,10 +162,10 @@ class AuthStore {
 
 	/**
 	 * Die Sperre ist aufgeschlossen: Der Server hat das Konto wie bei der Anmeldung geliefert.
-	 * @param {any} user
+	 * @param {any} konto
 	 */
-	uebernimmKonto(user) {
-		this.#applyLogin(user);
+	uebernimmKonto(konto) {
+		this.#applyLogin(konto);
 	}
 
 	/** Die Anmeldung ist gesperrt: Die Live-Leitung endet, bis aufgeschlossen ist. */
@@ -173,11 +173,11 @@ class AuthStore {
 		trenne();
 	}
 
-	#applyLogin(user, onRoleCallback) {
+	#applyLogin(konto, onRoleCallback) {
 		// Eine neue Anmeldung ist gewollt: Ein alter Merker darf sie beim nächsten Laden nicht beenden.
 		merkeAbmeldung(false);
 		this.abmeldeHinweis = null;
-		this.currentUser = user;
+		this.currentUser = konto;
 		this.isLoggedIn = true;
 		// Grace-Period: direkt nach dem Login gilt die Verbindung als frisch,
 		// bis der erste SSE-Ping eintrifft (Server pingt alle 15s).
@@ -199,10 +199,10 @@ class AuthStore {
 		// Kollegium hat es bewusst nicht (db/rechte_vorgabe.go) und sieht sein Portal. Entschieden
 		// wird damit nichts Neues: Welchen Bildschirm jemand öffnen darf, liest der
 		// Router ohnehin aus denselben Rechten (Router.svelte, erlaubteTabs).
-		const arbeitetInDerBibliothek = hatRecht(user, 'perform_actions');
+		const arbeitetInDerBibliothek = hatRecht(konto, 'perform_actions');
 		appState.guestAuthenticated = true;
 		appState.adminAuthenticated = arbeitetInDerBibliothek;
-		if (onRoleCallback) onRoleCallback(user?.rolle || '');
+		if (onRoleCallback) onRoleCallback(konto?.rolle || '');
 	}
 
 	/**
@@ -293,13 +293,13 @@ class AuthStore {
 				/** @type {any} */ (fehler).bleibtStehen = res.status === 403;
 				throw fehler;
 			}
-			const user = await res.json();
+			const konto = await res.json();
 			this.loginEmail = '';
 			this.loginPassword = '';
-			this.#applyLogin(user, onRoleCallback);
+			this.#applyLogin(konto, onRoleCallback);
 		} catch (err) {
-			const errorMessage = /** @type {any} */ (err).message || String(err);
-			this.loginError = errorMessage;
+			const meldung = /** @type {any} */ (err).message || String(err);
+			this.loginError = meldung;
 			this.loginPassword = '';
 			if (!(/** @type {any} */ (err)?.bleibtStehen)) {
 				setTimeout(() => {

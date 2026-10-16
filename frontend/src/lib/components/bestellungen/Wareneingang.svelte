@@ -10,7 +10,7 @@
 
 	let laeuft = $state(false);
 	/** @type {string[]} */
-	let selectedExemplarIds = $state([]);
+	let gewaehlteExemplare = $state([]);
 
 	let totalItems = $derived(
 		incomingShipments.reduce(
@@ -21,15 +21,15 @@
 	);
 
 	async function bucheAlleEin() {
-		if (selectedExemplarIds.length === 0) return;
+		if (gewaehlteExemplare.length === 0) return;
 
 		laeuft = true;
 		try {
 			const daten = await apiPost('/api/bestellungen/bulk-receive', {
-				exemplar_ids: selectedExemplarIds
+				exemplar_ids: gewaehlteExemplare
 			});
 			snackbars.addToast(`${daten.received_count} Exemplare erfolgreich eingebucht!`, 'success');
-			selectedExemplarIds = [];
+			gewaehlteExemplare = [];
 			onReceived(daten.received_items ?? []);
 		} catch {
 			// API handler shows error toast
@@ -72,17 +72,21 @@
 	</div>
 
 	<!-- Content/Table Section -->
-	<WareneingangTabelle {incomingShipments} {totalItems} bind:selectedExemplarIds />
+	<WareneingangTabelle
+		{incomingShipments}
+		{totalItems}
+		bind:selectedExemplarIds={gewaehlteExemplare}
+	/>
 
 	<!-- Einbuchen steht in der Leiste unter der Liste, wie bei den Exemplaren der Buchakte:
 	     Ein Knopf im Kopf wäre bei einer langen Lieferung aus dem Bild, sobald man markiert. -->
-	{#if selectedExemplarIds.length > 0}
+	{#if gewaehlteExemplare.length > 0}
 		<AuswahlLeiste
-			satz={selectedExemplarIds.length === 1
+			satz={gewaehlteExemplare.length === 1
 				? '1 Exemplar markiert'
-				: `${selectedExemplarIds.length} Exemplare markiert`}
+				: `${gewaehlteExemplare.length} Exemplare markiert`}
 			beschriftung="Aktionen für die markierten Positionen"
-			onleeren={() => (selectedExemplarIds = [])}
+			onleeren={() => (gewaehlteExemplare = [])}
 		>
 			<Button onclick={bucheAlleEin} disabled={laeuft}>
 				{#if laeuft}

@@ -42,7 +42,7 @@
 	} = $props();
 
 	const voll = $derived(size === 'voll');
-	const sizeClass = $derived(
+	const breitenKlasse = $derived(
 		{
 			sm: 'max-w-sm',
 			md: 'max-w-md',
@@ -76,7 +76,7 @@
 		     outline-width noch outline-color (material-web v0.192). Die Erhebung ist die
 		     Abgrenzung. Die Fläche bleibt weiß wie die Arbeitsfläche. -->
 		<div
-			class="bg-surface-container-lowest w-full {sizeClass} {voll
+			class="bg-surface-container-lowest w-full {breitenKlasse} {voll
 				? ''
 				: 'rounded-3xl'} shadow-2xl overflow-hidden animate-scale-up"
 			role="dialog"

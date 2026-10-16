@@ -67,7 +67,7 @@
 		uiStore.requestedSettingsTab = null;
 	});
 
-	async function loadSettings() {
+	async function ladeEinstellungen() {
 		// /api/einstellungen verlangt manage_settings. Ohne das Recht gibt es hier
 		// nichts zu laden — und keinen 403-Toast für eine Seite, die nur LUSD-Import
 		// oder LMF-Aktionen zeigt.
@@ -91,7 +91,7 @@
 
 	async function erneutLaden() {
 		laedt = true;
-		await loadSettings();
+		await ladeEinstellungen();
 		laedt = false;
 	}
 
@@ -120,7 +120,7 @@
 					<ArrowLeft size={18} /> Alle Einstellungen
 				</button>
 
-				<KategorieDetail {aktiv} {sichtbar} {daten} onSaved={loadSettings} />
+				<KategorieDetail {aktiv} {sichtbar} {daten} onSaved={ladeEinstellungen} />
 			</div>
 		</div>
 	{/if}

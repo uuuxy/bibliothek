@@ -5,21 +5,21 @@
 
 	let files: FileList | null = $state(null);
 	let isImporting = $state(false);
-	let importResult: { type: 'success' | 'error'; message: string } | null = $state(null);
+	let importErgebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
 
 	async function ladeHoch() {
 		if (!files || files.length === 0) return;
 
 		isImporting = true;
-		importResult = null;
+		importErgebnis = null;
 
-		const formData = new FormData();
-		formData.append('file', files[0]);
+		const formulardaten = new FormData();
+		formulardaten.append('file', files[0]);
 
 		try {
 			const res = await apiFetch('/api/import/littera', {
 				method: 'POST',
-				body: formData
+				body: formulardaten
 			});
 
 			const daten = await res.json();
@@ -37,13 +37,13 @@
 				successMsg = `CSV-Import erfolgreich! ${daten.new_titles_count} neue Titel und ${daten.imported_copies_count} Exemplare wurden angelegt.`;
 			}
 
-			importResult = {
+			importErgebnis = {
 				type: 'success',
 				message: successMsg
 			};
 			files = null; // reset input
 		} catch (err) {
-			importResult = {
+			importErgebnis = {
 				type: 'error',
 				message: (err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.'
 			};
@@ -94,13 +94,13 @@
 		</Button>
 	</div>
 
-	{#if importResult}
+	{#if importErgebnis}
 		<div
-			class="mt-4 p-4 rounded-xl text-sm font-semibold {importResult.type === 'error'
+			class="mt-4 p-4 rounded-xl text-sm font-semibold {importErgebnis.type === 'error'
 				? 'bg-error-container text-on-error-container'
 				: 'bg-success-container text-on-success-container'}"
 		>
-			{importResult.message}
+			{importErgebnis.message}
 		</div>
 	{/if}
 </div>

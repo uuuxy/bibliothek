@@ -20,29 +20,29 @@
 	import { fehlertext } from './utils/fehlertext.js';
 
 	/** @type {any[]} */
-	let users = $state.raw([]);
-	let loadingUsers = $state(false);
-	let userSearchQuery = $state('');
+	let konten = $state.raw([]);
+	let laedt = $state(false);
+	let suchtext = $state('');
 
 	/** @type {string | null} */
 	let fehler = $state(null);
 
-	let showUserModal = $state(false);
-	let isEditingUser = $state(false);
+	let formularOffen = $state(false);
+	let istAenderung = $state(false);
 	// Aufbau, Übernahme und Nutzlast des Formulars: benutzerFormular.js.
 	/** @type {any} */
-	let userForm = $state(leeresBenutzerFormular());
-	let submittingUser = $state(false);
+	let formular = $state(leeresBenutzerFormular());
+	let speichert = $state(false);
 
-	let showDeleteConfirm = $state(false);
+	let loeschfrageOffen = $state(false);
 	/** @type {any} */
-	let userToDelete = $state(null);
-	let deletingUser = $state(false);
+	let zuLoeschen = $state(null);
+	let loescht = $state(false);
 
-	let filteredUsers = $derived.by(() => {
-		const suche = userSearchQuery.trim().toLowerCase();
-		if (!suche) return users;
-		return users.filter(
+	let gefilterteKonten = $derived.by(() => {
+		const suche = suchtext.trim().toLowerCase();
+		if (!suche) return konten;
+		return konten.filter(
 			(u) =>
 				u.vorname.toLowerCase().includes(suche) ||
 				u.nachname.toLowerCase().includes(suche) ||
@@ -52,8 +52,8 @@
 		);
 	});
 
-	async function fetchUsers() {
-		loadingUsers = true;
+	async function ladeKonten() {
+		laedt = true;
 		fehler = null;
 		try {
 			const res = await apiFetch('/api/benutzer');
@@ -62,92 +62,92 @@
 					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
 				throw new Error(await extractApiError(res));
 			}
-			users = await res.json();
+			konten = await res.json();
 		} catch (err) {
 			fehler = fehlertext(err);
 		} finally {
-			loadingUsers = false;
+			laedt = false;
 		}
 	}
 
 	/** @param {SubmitEvent} e */
 	async function speichereKonto(e) {
 		e.preventDefault();
-		submittingUser = true;
+		speichert = true;
 		fehler = null;
 		try {
-			const url = isEditingUser ? `/api/benutzer/${userForm.id}` : '/api/benutzer';
-			const method = isEditingUser ? 'PUT' : 'POST';
-			const payload = benutzerNutzlast(userForm);
+			const url = istAenderung ? `/api/benutzer/${formular.id}` : '/api/benutzer';
+			const method = istAenderung ? 'PUT' : 'POST';
+			const payload = benutzerNutzlast(formular);
 			const res = await apiFetch(url, {
 				method,
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
 			if (!res.ok) throw new Error(await extractApiError(res));
-			showUserModal = false;
+			formularOffen = false;
 			snackbars.addToast(
-				isEditingUser ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
+				istAenderung ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
 				'success'
 			);
-			fetchUsers();
+			ladeKonten();
 		} catch (err) {
 			fehler = fehlertext(err);
 		} finally {
-			submittingUser = false;
+			speichert = false;
 		}
 	}
 
-	async function confirmDeleteUser() {
-		if (!userToDelete) return;
-		deletingUser = true;
+	async function loescheKonto() {
+		if (!zuLoeschen) return;
+		loescht = true;
 		fehler = null;
 		try {
-			const res = await apiFetch(`/api/benutzer/${userToDelete.id}`, { method: 'DELETE' });
+			const res = await apiFetch(`/api/benutzer/${zuLoeschen.id}`, { method: 'DELETE' });
 			if (!res.ok) {
 				// Bei 409 (offene Handapparat-Ausleihen) trägt die Server-Meldung bereits den
 				// Hinweis „Bitte zuerst zurückbuchen.“; extractApiError packt sie aus dem JSON aus.
 				throw new Error(await extractApiError(res));
 			}
-			showDeleteConfirm = false;
-			userToDelete = null;
+			loeschfrageOffen = false;
+			zuLoeschen = null;
 			snackbars.addToast('Benutzer erfolgreich gelöscht.', 'success');
-			fetchUsers();
+			ladeKonten();
 		} catch (err) {
 			// Der Dialog bleibt offen: Der Satz des Servers sagt, was zu tun ist, und steht
 			// deshalb dort, wo die Frage gestellt wurde.
 			fehler = fehlertext(err);
 		} finally {
-			deletingUser = false;
+			loescht = false;
 		}
 	}
 
-	function openNewUserModal() {
-		isEditingUser = false;
-		userForm = leeresBenutzerFormular();
+	function oeffneNeuesKonto() {
+		istAenderung = false;
+		formular = leeresBenutzerFormular();
 		fehler = null;
-		showUserModal = true;
+		formularOffen = true;
 	}
 
 	/** @param {any} user */
-	function openEditUserModal(user) {
-		isEditingUser = true;
-		userForm = benutzerFormularAus(user);
+	function oeffneKonto(user) {
+		istAenderung = true;
+		formular = benutzerFormularAus(user);
 		fehler = null;
-		showUserModal = true;
+		formularOffen = true;
 	}
 
 	/** @param {any} user */
-	function openDeleteConfirm(user) {
-		userToDelete = user;
+	function frageLoeschen(user) {
+		zuLoeschen = user;
 		fehler = null;
-		showDeleteConfirm = true;
+		loeschfrageOffen = true;
 	}
 
-	onMount(fetchUsers);
+	onMount(ladeKonten);
 </script>
 
-{#if fehler && !showUserModal && !showDeleteConfirm}
+{#if fehler && !formularOffen && !loeschfrageOffen}
 	<div
 		role="alert"
 		class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
@@ -165,44 +165,44 @@
 	</div>
 {/if}
 
-<Zugangsanfragen {users} onZugeordnet={fetchUsers} />
+<Zugangsanfragen {konten} onZugeordnet={ladeKonten} />
 
 <!-- `mt-4`: Abstand Reiterband→Pille ist im Haus 24 px + 16 px; er fehlte hier. -->
 <div class="mt-4 mb-4 flex flex-col gap-3">
 	<Suchpille
 		id="benutzer-suchfeld"
-		bind:wert={userSearchQuery}
+		bind:wert={suchtext}
 		platzhalter="Name oder E-Mail eingeben …"
 		etikett="Benutzer suchen"
 	/>
 	<div class="flex">
-		<Button onclick={openNewUserModal} class="w-full sm:w-auto">
+		<Button onclick={oeffneNeuesKonto} class="w-full sm:w-auto">
 			<Plus class="h-4 w-4" aria-hidden="true" />
 			Benutzer anlegen
 		</Button>
 	</div>
 </div>
 
-<KontenTabelle {loadingUsers} {filteredUsers} {openEditUserModal} {openDeleteConfirm} />
+<KontenTabelle {laedt} konten={gefilterteKonten} {oeffneKonto} {frageLoeschen} />
 
 <KontoBearbeitenDialog
-	open={showUserModal}
-	onclose={() => (showUserModal = false)}
-	{isEditingUser}
-	bind:userForm
-	{submittingUser}
+	open={formularOffen}
+	onclose={() => (formularOffen = false)}
+	{istAenderung}
+	bind:formular
+	{speichert}
 	error={fehler}
 	{speichereKonto}
 />
 
 <KontoLoeschenDialog
-	open={showDeleteConfirm && !!userToDelete}
+	open={loeschfrageOffen && !!zuLoeschen}
 	onclose={() => {
-		showDeleteConfirm = false;
+		loeschfrageOffen = false;
 		fehler = null;
 	}}
-	{userToDelete}
-	{deletingUser}
+	{zuLoeschen}
+	{loescht}
 	error={fehler}
-	{confirmDeleteUser}
+	{loescheKonto}
 />

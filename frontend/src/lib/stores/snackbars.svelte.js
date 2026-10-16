@@ -37,11 +37,11 @@ export const snackbars = new (class {
 
 	/** @param {number} id */
 	#starte(id) {
-		const toast = this.toasts.find((t) => t.id === id);
-		if (!toast) return;
+		const meldung = this.toasts.find((t) => t.id === id);
+		if (!meldung) return;
 		this.#timers.set(
 			id,
-			setTimeout(() => this.removeToast(id), toast.aktion ? 10000 : 5000)
+			setTimeout(() => this.removeToast(id), meldung.aktion ? 10000 : 5000)
 		);
 	}
 

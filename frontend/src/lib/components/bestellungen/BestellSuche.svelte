@@ -11,11 +11,11 @@
 	import { fensterAusAntwort } from './ausIsbn.js';
 
 	/** @type {any} */
-	let stagedBook = $state(null);
+	let gewaehlterTitel = $state(null);
 	let resolvingDnb = $state(false);
 
-	let localResults = $derived(bestellStore.searchResults.filter((r) => r.source === 'local'));
-	let dnbResults = $derived(bestellStore.searchResults.filter((r) => r.source === 'dnb'));
+	let katalogTreffer = $derived(bestellStore.searchResults.filter((r) => r.source === 'local'));
+	let dnbTreffer = $derived(bestellStore.searchResults.filter((r) => r.source === 'dnb'));
 
 	/** @param {any} book */
 	async function waehleTitel(book) {
@@ -23,9 +23,9 @@
 		resolvingDnb = true;
 		try {
 			// Die Tür nimmt den Titel aus dem Katalog oder legt ihn aus der DNB an (ausIsbn.js).
-			const localBook = await apiPost('/api/buecher/aus-isbn', { isbn: book.isbn });
-			if (localBook && localBook.titel_id) {
-				stelleTitelBereit(fensterAusAntwort(localBook, book));
+			const katalogTitel = await apiPost('/api/buecher/aus-isbn', { isbn: book.isbn });
+			if (katalogTitel && katalogTitel.titel_id) {
+				stelleTitelBereit(fensterAusAntwort(katalogTitel, book));
 			} else {
 				snackbars.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
 			}
@@ -38,7 +38,7 @@
 
 	/** @param {any} book */
 	function stelleTitelBereit(book) {
-		stagedBook = book;
+		gewaehlterTitel = book;
 		bestellStore.resetSearch();
 	}
 </script>
@@ -87,13 +87,13 @@
 						Die DNB ist nicht erreichbar. Bitte später erneut versuchen.
 					</p>
 				{/if}
-				{#if localResults.length > 0}
+				{#if katalogTreffer.length > 0}
 					<div
 						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
 					>
 						Im lokalen Bestand
 					</div>
-					{#each localResults as b, _i (_i)}
+					{#each katalogTreffer as b, _i (_i)}
 						<button
 							onclick={() => waehleTitel(b)}
 							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base"
@@ -110,16 +110,16 @@
 					{/each}
 				{/if}
 
-				{#if dnbResults.length > 0}
+				{#if dnbTreffer.length > 0}
 					<div
 						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
 					>
 						Neu aus DNB (Externe Suche)
 					</div>
-					{#each dnbResults as b, _i (_i)}
+					{#each dnbTreffer as b, _i (_i)}
 						{@const isDuplicate =
 							b.is_duplicate ||
-							localResults.some(
+							katalogTreffer.some(
 								(l) => (l.isbn || '').replace(/-/g, '') === (b.isbn || '').replace(/-/g, '')
 							)}
 						<button
@@ -160,10 +160,10 @@
 	</div>
 </div>
 
-{#if stagedBook}
+{#if gewaehlterTitel}
 	<!-- {#key}: Ein neuer Treffer bekommt ein frisches Fenster mit frischen Feldern,
 	     statt die Eingaben des vorigen zu erben. -->
-	{#key stagedBook.id}
-		<TrefferPruefung book={stagedBook} onDone={() => (stagedBook = null)} />
+	{#key gewaehlterTitel.id}
+		<TrefferPruefung book={gewaehlterTitel} onDone={() => (gewaehlterTitel = null)} />
 	{/key}
 {/if}

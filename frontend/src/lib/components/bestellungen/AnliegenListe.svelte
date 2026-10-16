@@ -35,7 +35,7 @@
 		].filter((g) => g.liste.length > 0)
 	);
 
-	async function loadAnliegen() {
+	async function ladeAnliegen() {
 		laedt = true;
 		try {
 			const res = await apiFetch('/api/anliegen/offen');
@@ -54,7 +54,7 @@
 		}
 	}
 
-	onMount(loadAnliegen);
+	onMount(ladeAnliegen);
 
 	/** @param {string} id */
 	function requestConfirm(id) {
@@ -179,7 +179,7 @@
 			Lade Anliegen…
 		</div>
 	{:else if ladefehler}
-		<LadeFehler onerneut={loadAnliegen} titel="Anliegen nicht geladen" text={ladefehler} />
+		<LadeFehler onerneut={ladeAnliegen} titel="Anliegen nicht geladen" text={ladefehler} />
 	{:else if anliegen.length === 0}
 		<div class="py-16 text-center text-on-surface-variant text-base">Keine offenen Anliegen.</div>
 	{:else}

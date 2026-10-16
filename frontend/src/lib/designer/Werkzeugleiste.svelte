@@ -65,7 +65,7 @@
 		const files = /** @type {HTMLInputElement} */ (e.currentTarget).files;
 		if (!files || files.length === 0) return;
 		/** @type {string[]} */
-		const dataUrls = await Promise.all(
+		const bildDaten = await Promise.all(
 			Array.from(files).map(
 				(file) =>
 					new Promise((resolve) => {
@@ -75,7 +75,7 @@
 					})
 			)
 		);
-		addImageElements(side, dataUrls);
+		addImageElements(side, bildDaten);
 		// Reset input so the same files can be re-selected
 		/** @type {HTMLInputElement} */ (e.currentTarget).value = '';
 	}

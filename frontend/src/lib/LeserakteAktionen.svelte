@@ -61,7 +61,7 @@
 	];
 
 	/** @param {string} side */
-	function doPrint(side) {
+	function druckeAusweis(side) {
 		onPrint(/** @type {'front'|'back'|'both'} */ (side));
 	}
 </script>
@@ -73,10 +73,15 @@
 	<!-- Primäraktion: Ausweis drucken. Mit Rückseite → Split-Button mit Seitenwahl. -->
 	<div class="relative">
 		{#if hasBack}
-			<Menue etikett="Ausweisseiten wählen" eintraege={seiten} onwahl={doPrint} ausrichtung="links">
+			<Menue
+				etikett="Ausweisseiten wählen"
+				eintraege={seiten}
+				onwahl={druckeAusweis}
+				ausrichtung="links"
+			>
 				{#snippet ausloeser({ offen, umschalten })}
 					<div class="inline-flex rounded-md shadow-sm">
-						<Button type="button" onclick={() => doPrint('both')} class="rounded-r-none">
+						<Button type="button" onclick={() => druckeAusweis('both')} class="rounded-r-none">
 							<IdCard class="w-4 h-4" />
 							Ausweis drucken
 						</Button>
@@ -100,7 +105,7 @@
 					? 'Ohne Ausweisnummer lässt sich keine Karte drucken — die Nummer steht in „Benutzer & Rechte"'
 					: undefined}
 			>
-				<Button variant="primary" onclick={() => doPrint('both')} disabled={ohneAusweis}>
+				<Button variant="primary" onclick={() => druckeAusweis('both')} disabled={ohneAusweis}>
 					<IdCard class="w-4 h-4" />
 					Ausweis drucken
 				</Button>

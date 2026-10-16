@@ -79,13 +79,13 @@
 			const teile = [];
 			if (q) teile.push(`q=${encodeURIComponent(q)}`);
 			if (status !== 'offen') teile.push(`status=${status}`);
-			const query = teile.length > 0 ? `?${teile.join('&')}` : '';
+			const anhang = teile.length > 0 ? `?${teile.join('&')}` : '';
 
 			// Beide Wege tragen dieselben Filter — sonst nennt die Fußzeile eine Zahl aus
 			// einer anderen Menge als die Zeilen darüber. Der Zähler darf scheitern, ohne
 			// die Liste mitzureißen: Er ist die Beschriftung, nicht der Inhalt.
-			const zaehlerP = apiGet(`/api/exemplare/etiketten-offen/anzahl${query}`).catch(() => null);
-			const liste = (await apiGet(`/api/exemplare/etiketten-offen${query}`)) || [];
+			const zaehlerP = apiGet(`/api/exemplare/etiketten-offen/anzahl${anhang}`).catch(() => null);
+			const liste = (await apiGet(`/api/exemplare/etiketten-offen${anhang}`)) || [];
 			const zaehler = await zaehlerP;
 			if (meiner !== lauf) return;
 

@@ -14,13 +14,13 @@ const konto = (/** @type {Record<string, any>} */ felder = {}) => ({
 	...felder
 });
 
-/** @param {any[]} filteredUsers @param {Record<string, any>} [rest] */
-const tabelle = (filteredUsers, rest = {}) =>
+/** @param {any[]} konten @param {Record<string, any>} [rest] */
+const tabelle = (konten, rest = {}) =>
 	render(KontenTabelle, {
-		loadingUsers: false,
-		filteredUsers,
-		openEditUserModal: vi.fn(),
-		openDeleteConfirm: vi.fn(),
+		laedt: false,
+		konten,
+		oeffneKonto: vi.fn(),
+		frageLoeschen: vi.fn(),
 		...rest
 	});
 
@@ -79,16 +79,16 @@ describe('KontenTabelle', () => {
 	});
 
 	it('reicht das Konto der Zeile an Bearbeiten und Löschen', async () => {
-		const openEditUserModal = vi.fn();
-		const openDeleteConfirm = vi.fn();
+		const oeffneKonto = vi.fn();
+		const frageLoeschen = vi.fn();
 		const eins = konto();
-		const screen = tabelle([eins], { openEditUserModal, openDeleteConfirm });
+		const screen = tabelle([eins], { oeffneKonto, frageLoeschen });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Bearbeiten' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
 
-		expect(openEditUserModal).toHaveBeenCalledWith(eins);
-		expect(openDeleteConfirm).toHaveBeenCalledWith(eins);
+		expect(oeffneKonto).toHaveBeenCalledWith(eins);
+		expect(frageLoeschen).toHaveBeenCalledWith(eins);
 	});
 
 	it('sagt ohne Sinnbild, dass niemand gefunden wurde', () => {

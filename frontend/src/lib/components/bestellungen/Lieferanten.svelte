@@ -14,7 +14,7 @@
 	let newIstHaupt = $state(false);
 
 	/** @type {string|null} */
-	let editingId = $state(null);
+	let bearbeiteteKennung = $state(null);
 
 	/** @param {SubmitEvent} e */
 	function speichere(e) {
@@ -28,10 +28,10 @@
 	}
 
 	/** @param {Record<string, any>} aenderung die seit dem Öffnen geänderten Felder */
-	async function saveEdit(aenderung) {
-		if (!editingId) return;
-		await onEditSupplier(editingId, aenderung);
-		editingId = null;
+	async function speichereAenderung(aenderung) {
+		if (!bearbeiteteKennung) return;
+		await onEditSupplier(bearbeiteteKennung, aenderung);
+		bearbeiteteKennung = null;
 	}
 </script>
 
@@ -112,14 +112,14 @@
 						{#each suppliers as s (s.id)}
 							<!-- {#key}: Der Bearbeiten-Zustand beginnt mit den Werten der Zeile —
 							     nicht mit denen eines früheren Bearbeitens. -->
-							{#key editingId === s.id}
+							{#key bearbeiteteKennung === s.id}
 								<LieferantZeile
 									{s}
-									bearbeiten={editingId === s.id}
-									onEdit={(z) => (editingId = z.id)}
+									bearbeiten={bearbeiteteKennung === s.id}
+									onEdit={(z) => (bearbeiteteKennung = z.id)}
 									onRemove={onRemoveSupplier}
-									onSave={saveEdit}
-									onCancel={() => (editingId = null)}
+									onSave={speichereAenderung}
+									onCancel={() => (bearbeiteteKennung = null)}
 								/>
 							{/key}
 						{/each}

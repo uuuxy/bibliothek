@@ -29,7 +29,7 @@ beforeEach(() => {
 describe('Zugangsanfragen', () => {
 	it('nennt offene Anträge mit Zahl und Namen, ignoriert deaktivierte Konten', () => {
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{
 					vorname: 'Erika',
 					nachname: 'Musterfrau',
@@ -66,7 +66,7 @@ describe('Zugangsanfragen', () => {
 	// gleiche Person); die Freischaltung muss den Treffer aber zeigen.
 	it('zeigt beim Antrag den gleichnamigen Eintrag aus der Littera-Übernahme', () => {
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{
 					vorname: 'Erika',
 					nachname: 'Musterfrau',
@@ -92,7 +92,7 @@ describe('Zugangsanfragen', () => {
 
 	it('zeigt keinen Treffer für eine gleichnamige Person mit eigener Adresse', () => {
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{
 					vorname: 'Erika',
 					nachname: 'Musterfrau',
@@ -114,7 +114,7 @@ describe('Zugangsanfragen', () => {
 	});
 
 	// Der Altbestand: ein Kollege, der vor der Schul-E-Mail-Pflicht von Hand eingetragen
-	// wurde. Er hat eine Leserzeile, aber KEIN Konto — in `users` steht er also nicht, und
+	// wurde. Er hat eine Leserzeile, aber KEIN Konto — in `konten` steht er also nicht, und
 	// die Warnung über die Littera-Platzhalter konnte ihn nicht sehen. Gefunden wird er
 	// über die Kandidatensuche, von der Leserzeile des Antrags aus.
 	it('zeigt den gleichnamigen Eintrag aus der Leserdatei, der noch kein Konto hat', async () => {
@@ -127,7 +127,7 @@ describe('Zugangsanfragen', () => {
 			})
 		);
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{
 					vorname: 'Erika',
 					nachname: 'Musterfrau',
@@ -157,7 +157,7 @@ describe('Zugangsanfragen', () => {
 			})
 		);
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{
 					vorname: 'Erika',
 					nachname: 'Musterfrau',
@@ -177,7 +177,7 @@ describe('Zugangsanfragen', () => {
 	it('bleibt ohne das Recht zur Kandidatensuche brauchbar', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{
 					vorname: 'Erika',
 					nachname: 'Musterfrau',
@@ -196,7 +196,7 @@ describe('Zugangsanfragen', () => {
 
 	it('zeigt nichts, wenn kein Antrag offen ist', () => {
 		const screen = render(Zugangsanfragen, {
-			users: [
+			konten: [
 				{ vorname: 'Alt', nachname: 'Konto', email: 'a@x', aktiv: false, zugang_beantragt_am: null }
 			]
 		});
@@ -242,7 +242,7 @@ describe('Zugangsanfrage zuordnen', () => {
 		]);
 		let neuGeladen = 0;
 		const screen = render(Zugangsanfragen, {
-			users: [anfrage],
+			konten: [anfrage],
 			onZugeordnet: () => {
 				neuGeladen += 1;
 			}
@@ -276,7 +276,7 @@ describe('Zugangsanfrage zuordnen', () => {
 		mitKandidaten([
 			{ id: 'leser-alt', vorname: 'Erika', nachname: 'Musterfrau', barcode_id: 'A-4711' }
 		]);
-		const screen = render(Zugangsanfragen, { users: [anfrage] });
+		const screen = render(Zugangsanfragen, { konten: [anfrage] });
 
 		await waitFor(() =>
 			expect(screen.getByRole('status').textContent).toContain('bisher ohne Zugang')

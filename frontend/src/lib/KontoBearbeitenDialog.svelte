@@ -12,9 +12,9 @@
 	 * @typedef {Object} Props
 	 * @property {boolean} open
 	 * @property {() => void} onclose
-	 * @property {boolean} isEditingUser
-	 * @property {any} userForm
-	 * @property {boolean} submittingUser
+	 * @property {boolean} istAenderung
+	 * @property {any} formular
+	 * @property {boolean} speichert
 	 * @property {string | null} error
 	 * @property {(e: SubmitEvent) => void} speichereKonto
 	 */
@@ -22,9 +22,9 @@
 	let {
 		open,
 		onclose,
-		isEditingUser,
-		userForm = $bindable(),
-		submittingUser,
+		istAenderung,
+		formular = $bindable(),
+		speichert,
 		error,
 		speichereKonto
 	} = $props();
@@ -38,7 +38,7 @@
 <Dialog {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
 	{#snippet header()}
 		<h3 id="benutzer-formular-titel" class="text-base font-bold text-on-surface">
-			{isEditingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
+			{istAenderung ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
 		</h3>
 	{/snippet}
 	<form onsubmit={speichereKonto} class="p-6 space-y-4">
@@ -52,14 +52,14 @@
 			</div>
 		{/if}
 		<div class="grid grid-cols-2 gap-4">
-			<Feld id="vorname" label="Vorname" bind:value={userForm.vorname} required />
-			<Feld id="nachname" label="Nachname" bind:value={userForm.nachname} required />
+			<Feld id="vorname" label="Vorname" bind:value={formular.vorname} required />
+			<Feld id="nachname" label="Nachname" bind:value={formular.nachname} required />
 		</div>
-		<Feld id="email" label="E-Mail Adresse" type="email" bind:value={userForm.email} required />
+		<Feld id="email" label="E-Mail Adresse" type="email" bind:value={formular.email} required />
 		<Feld
 			id="barcode_id"
 			label="Ausweisnummer"
-			bind:value={userForm.barcode_id}
+			bind:value={formular.barcode_id}
 			hint="Leeres Feld: Das Programm vergibt die nächste freie Nummer."
 		/>
 		{#each AUSWAHLEN as auswahl (auswahl.id)}
@@ -67,12 +67,12 @@
 				<label for={auswahl.id} class="block text-xs font-medium text-on-surface-variant"
 					>{auswahl.label}</label
 				>
-				<Select id={auswahl.id} bind:value={userForm[auswahl.id]} options={auswahl.options} />
+				<Select id={auswahl.id} bind:value={formular[auswahl.id]} options={auswahl.options} />
 			</div>
 		{/each}
-		{#if isEditingUser}
+		{#if istAenderung}
 			<div class="flex items-center gap-3 py-1.5">
-				<Switch id="benutzer-aktiv" bind:checked={userForm.aktiv} label="Benutzerkonto ist aktiv" />
+				<Switch id="benutzer-aktiv" bind:checked={formular.aktiv} label="Benutzerkonto ist aktiv" />
 				<label
 					for="benutzer-aktiv"
 					class="cursor-pointer text-xs font-bold text-on-surface-variant"
@@ -83,8 +83,8 @@
 		{/if}
 		<div class="flex items-center justify-end gap-3 border-t border-outline-variant pt-3">
 			<Button variant="secondary" type="button" onclick={onclose}>Abbrechen</Button>
-			<Button type="submit" disabled={submittingUser}>
-				{#if submittingUser}<Ladekreis size="sm" farbe="aktuell" />{/if}
+			<Button type="submit" disabled={speichert}>
+				{#if speichert}<Ladekreis size="sm" farbe="aktuell" />{/if}
 				Speichern
 			</Button>
 		</div>

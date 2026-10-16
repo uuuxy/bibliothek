@@ -36,7 +36,7 @@
 		`${name} (${akte.fehlendeListen.includes(name) ? '?' : anzahl})`;
 	// „Exemplare" zählt den Bestand wie „1 von 2 verfügbar" im Kopf; bestellte und
 	// ausgesonderte stehen im Reiter mit ihrem Wort an der Karte.
-	const tabs = $derived([
+	const reiter = $derived([
 		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.borrowers.length) },
 		{ id: 'exemplare', label: zaehler('Exemplare', exemplarZahlen(akte.exemplare).bestand) },
 		...(darfVormerken
@@ -99,7 +99,7 @@
 
 		<Reiter
 			etikett="Bereiche der Buchakte"
-			reiter={tabs}
+			{reiter}
 			aktiv={akte.activeTab}
 			onwahl={(id) => (akte.activeTab = id)}
 		/>

@@ -23,7 +23,7 @@
 	let gesperrt = $derived(ausleiheGesperrt(profile));
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem
 	// Backend-Check und dem DB-Constraint chk_schueler_block_reason.
-	let willLock = $derived(profile && !gesperrt);
+	let wirdGesperrt = $derived(profile && !gesperrt);
 
 	// Das Modal bleibt (via bind:open) dauerhaft gemountet, der State überlebt also das
 	// Schließen. Ohne diesen Reset blitzte beim nächsten Öffnen — ggf. für einen anderen
@@ -37,7 +37,7 @@
 
 	async function bestaetige() {
 		if (!profile) return;
-		if (willLock && reason.trim() === '') {
+		if (wirdGesperrt && reason.trim() === '') {
 			fehler = 'Bitte einen Grund für die Sperre angeben.';
 			return;
 		}
@@ -95,7 +95,7 @@
 			{/if}
 		</p>
 
-		{#if willLock}
+		{#if wirdGesperrt}
 			<label class="block space-y-1.5">
 				<span class="text-xs font-bold text-on-surface"
 					>Grund der Sperre <span class="text-error">*</span></span

@@ -17,7 +17,7 @@
 
 	let { onSelectBook } = $props();
 
-	let studentProfileComponent = $state(/** @type {any} */ (null));
+	let leserakte = $state(/** @type {any} */ (null));
 
 	// Rückmeldung des Scanners: rot = blockiert oder fehlgeschlagen, grün = gebucht, orange =
 	// Hinweis. Die Farbe trägt nur der Rand, die Fläche bleibt die des Feldes im Fokus, wie beim
@@ -37,7 +37,7 @@
 		if (appState.triggerStudentScan) {
 			omniboxStore.queryVal = appState.triggerStudentScan;
 			appState.triggerStudentScan = '';
-			omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile());
+			omniboxStore.submitAction(null, () => leserakte?.reloadProfile());
 		}
 	});
 
@@ -48,9 +48,9 @@
 		// zuzumachen, und das nähme sie allen anderen weg.
 		const abmelden = abonniere('action', (e) => {
 			try {
-				const actionData = JSON.parse(e.data);
-				if (omniboxStore.activeStudent && actionData.student_id === omniboxStore.activeStudent.id) {
-					studentProfileComponent?.reloadProfile();
+				const nachricht = JSON.parse(e.data);
+				if (omniboxStore.activeStudent && nachricht.student_id === omniboxStore.activeStudent.id) {
+					leserakte?.reloadProfile();
 				}
 			} catch (err) {
 				console.error('SSE Parsing-Fehler in der Omnibox:', err);
@@ -78,7 +78,7 @@
 				if (omniboxStore.showCamera) {
 					// Escape schliesst die Kamera. Das Abschalten selbst gehoert dem Bauteil
 					// (ThekenKamera → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
-					stopCamera();
+					stoppeKamera();
 				}
 			}
 		}
@@ -100,7 +100,7 @@
 		omniboxStore.showCamera = true;
 	}
 
-	function stopCamera() {
+	function stoppeKamera() {
 		omniboxStore.showCamera = false;
 		// Ein Handscanner tippt blind: Ohne Fokus landet der naechste Scan im Nichts.
 		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
@@ -137,8 +137,7 @@
 			     Die Pille liegt bündig an der Kante des Rollbereichs, außen würde er abgeschnitten.
 			     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
-				onsubmit={(e) =>
-					omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
+				onsubmit={(e) => omniboxStore.submitAction(e, () => leserakte?.reloadProfile())}
 				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.isShaking
 					? 'animate-shake'
 					: ''} {farbZustand}"
@@ -155,7 +154,7 @@
 					onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
 					onIndexChange={(idx) => (omniboxStore.selectedDropdownIndex = idx)}
 					onEscape={() => (omniboxStore.isDropdownOpen = false)}
-					onToggleCamera={omniboxStore.showCamera ? stopCamera : starteKamera}
+					onToggleCamera={omniboxStore.showCamera ? stoppeKamera : starteKamera}
 				/>
 
 				{#if omniboxStore.isDropdownOpen && omniboxStore.totalDropdownItems > 0}
@@ -178,21 +177,20 @@
 		<!-- HTML5 Kamera-Scanner (Mobile) -->
 		{#if omniboxStore.showCamera}
 			<ThekenKamera
-				{stopCamera}
+				stopCamera={stoppeKamera}
 				bind:queryVal={omniboxStore.queryVal}
-				submitAction={(e) =>
-					omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
+				submitAction={(e) => omniboxStore.submitAction(e, () => leserakte?.reloadProfile())}
 			/>
 		{/if}
 
-		<OmniboxAktiverLeser bind:profil={studentProfileComponent} />
+		<OmniboxAktiverLeser bind:profil={leserakte} />
 	</div>
 </div>
 
 <OmniboxVormerkungHinweis />
 
-<OmniboxSperrHinweis onReload={() => studentProfileComponent?.reloadProfile()} />
-<OmniboxPrueflisteDialog onReload={() => studentProfileComponent?.reloadProfile()} />
+<OmniboxSperrHinweis onReload={() => leserakte?.reloadProfile()} />
+<OmniboxPrueflisteDialog onReload={() => leserakte?.reloadProfile()} />
 
 <style>
 	/* Rütteln ohne Skalierung: Eine angedockte Leiste soll nicht aufpumpen. */

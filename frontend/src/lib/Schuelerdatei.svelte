@@ -24,11 +24,11 @@
 
 	let aktiverReiter = $state('active');
 
-	let activeStudent = $state(/** @type {any} */ (null));
+	let geoeffneterLeser = $state(/** @type {any} */ (null));
 
 	// Die Klassen des Anlegen-Dialogs (eigene Datei, Größen-Ratsche).
 	const klassen = erzeugeKlassenVorschlaege();
-	let showCreateModal = $state(false);
+	let anlegenOffen = $state(false);
 
 	// Markierung für den Ausweis-Stapeldruck (leserAuswahl.svelte.js, Größen-Ratsche).
 	const gewaehlt = erzeugeLeserAuswahl(() => suche.students);
@@ -45,7 +45,7 @@
 	/** Selbst gesucht und angeklickt = Datenpflege-Absicht: Profil öffnet Stammdaten. @param {any} s */
 	function oeffneStammdaten(s) {
 		profilReiter = 'stammdaten';
-		activeStudent = s;
+		geoeffneterLeser = s;
 	}
 
 	// Ausweiskarten oder Klebeetiketten — die Entscheidung steht im zentral
@@ -53,7 +53,7 @@
 	const druck = erzeugeAusweisdruck();
 
 	function beiLeserAngelegt() {
-		showCreateModal = false;
+		anlegenOffen = false;
 		suche.lade();
 		klassen.lade(); // Klassenliste aktualisieren
 	}
@@ -74,19 +74,19 @@
 		profilReiter = uiStore.requestedStudentReiter ?? 'ausleihen';
 		uiStore.requestedStudentId = null;
 		uiStore.requestedStudentReiter = null;
-		activeStudent = { id };
+		geoeffneterLeser = { id };
 	});
 </script>
 
 <div class="w-full h-full flex flex-col text-on-surface">
-	{#if activeStudent}
+	{#if geoeffneterLeser}
 		<div class="animate-fade-in flex-1 overflow-y-auto">
 			<Leserakte
-				student={activeStudent}
+				student={geoeffneterLeser}
 				defaultTab={profilReiter}
-				onMerged={(id) => (activeStudent = { id })}
+				onMerged={(id) => (geoeffneterLeser = { id })}
 				onDeselect={() => {
-					activeStudent = null;
+					geoeffneterLeser = null;
 					suche.lade();
 					profilReiter = 'stammdaten';
 				}}
@@ -118,7 +118,7 @@
 							// Frisch laden: Die Liste ist die einzige Wahl, und ein Abruf, der beim
 							// Öffnen der Leserdatei scheiterte, bliebe sonst bis zum Neuladen stehen.
 							klassen.lade();
-							showCreateModal = true;
+							anlegenOffen = true;
 						}}
 					/>
 
@@ -165,10 +165,10 @@
 </div>
 
 <LeserAnlegenDialog
-	open={showCreateModal}
+	open={anlegenOffen}
 	klassen={klassen.liste}
 	klassenFehler={klassen.ladefehler}
-	onclose={() => (showCreateModal = false)}
+	onclose={() => (anlegenOffen = false)}
 	onsuccess={beiLeserAngelegt}
 />
 

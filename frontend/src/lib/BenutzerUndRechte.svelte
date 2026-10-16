@@ -12,12 +12,12 @@
 	import { fehlertext } from './utils/fehlertext.js';
 
 	// State Runes (Svelte 5)
-	let activeSubTab = $state('users'); // "users" | "permissions"
+	let aktiverReiter = $state('users'); // "users" | "permissions"
 
 	// Permissions State
 	/** @type {Record<string, Record<string, boolean>>} */
-	let permissionsState = $state({});
-	let loadingPermissions = $state(true);
+	let rechteJeRolle = $state({});
+	let laedt = $state(true);
 
 	// Der Grund, aus dem die Matrix nicht geladen werden konnte.
 	/** @type {string | null} */
@@ -26,8 +26,8 @@
 	let updatingKeys = $state({});
 
 	// Load permissions
-	async function fetchPermissions() {
-		loadingPermissions = true;
+	async function ladeRechte() {
+		laedt = true;
 		fehler = null;
 		try {
 			const res = await apiFetch('/api/admin/permissions');
@@ -45,11 +45,11 @@
 				if (!newState[item.role]) newState[item.role] = {};
 				newState[item.role][item.permission] = item.allowed;
 			});
-			permissionsState = newState;
+			rechteJeRolle = newState;
 		} catch (err) {
 			fehler = fehlertext(err);
 		} finally {
-			loadingPermissions = false;
+			laedt = false;
 		}
 	}
 
@@ -59,11 +59,11 @@
 	 * @param {string} permission
 	 * @param {boolean} currentVal
 	 */
-	async function togglePermission(role, permission, currentVal) {
+	async function schalteRecht(role, permission, currentVal) {
 		if (role === 'admin') return;
 
-		const updateKey = `${role}-${permission}`;
-		updatingKeys = { ...updatingKeys, [updateKey]: true };
+		const schluessel = `${role}-${permission}`;
+		updatingKeys = { ...updatingKeys, [schluessel]: true };
 		const newVal = !currentVal;
 
 		try {
@@ -82,19 +82,19 @@
 					.catch(() => null);
 				throw new Error(grund || 'Fehler beim Speichern der Berechtigung.');
 			}
-			permissionsState[role][permission] = newVal;
+			rechteJeRolle[role][permission] = newVal;
 
 			snackbars.addToast('Rechte erfolgreich aktualisiert.', 'success');
 		} catch (err) {
 			snackbars.addToast(fehlertext(err), 'error');
 		} finally {
 			const copy = { ...updatingKeys };
-			delete copy[updateKey];
+			delete copy[schluessel];
 			updatingKeys = copy;
 		}
 	}
 
-	onMount(fetchPermissions);
+	onMount(ladeRechte);
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print pb-12">
@@ -103,15 +103,15 @@
 	     weil selten und folgenschwer. -->
 	<Reiter
 		etikett="Benutzer & Rechte"
-		aktiv={activeSubTab}
-		onwahl={(id) => (activeSubTab = id)}
+		aktiv={aktiverReiter}
+		onwahl={(id) => (aktiverReiter = id)}
 		reiter={[
 			{ id: 'users', label: 'Benutzer', steuert: 'panel-users' },
 			{ id: 'permissions', label: 'Rollen & Rechte', steuert: 'panel-permissions' }
 		]}
 	/>
 
-	{#if activeSubTab === 'permissions'}
+	{#if aktiverReiter === 'permissions'}
 		<div id="panel-permissions" role="tabpanel" aria-labelledby="tab-permissions">
 			<!-- Der Satz zur Tragweite gilt dieser Tabelle: Sie steuert Menü und API, und die
 			     Drift-Warnung der Betriebsbereitschaft zeigt hierher. -->
@@ -119,24 +119,24 @@
 				Rollen-Rechte. Was hier steht, steuert Menü und API — Abweichungen von der Code-Vorgabe
 				meldet die Betriebsbereitschaft.
 			</p>
-			{#if loadingPermissions}
+			{#if laedt}
 				<div class="flex justify-center p-12"><Ladekreis size="lg" label="Rechte laden" /></div>
 			{:else if fehler}
 				<!-- Ohne geladene Matrix stünden alle Schalter auf „aus", als wären die Rechte entzogen. -->
-				<LadeFehler titel="Rechte nicht geladen" text={fehler} onerneut={fetchPermissions} />
+				<LadeFehler titel="Rechte nicht geladen" text={fehler} onerneut={ladeRechte} />
 			{:else}
 				<RechteMatrix
 					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
 					metadata={permissionsMetadata}
-					{permissionsState}
+					permissionsState={rechteJeRolle}
 					{updatingKeys}
-					onToggle={togglePermission}
+					onToggle={schalteRecht}
 				/>
 			{/if}
 		</div>
 	{/if}
 
-	{#if activeSubTab === 'users'}
+	{#if aktiverReiter === 'users'}
 		<!-- `flex flex-col`: Ohne das kollabiert der `mt-4` der Suchzeile in Konten mit
 		     dem Außenabstand dieser Tafel, und die Pille sitzt 16 px zu hoch. In einem
 		     Flex-Container kollabieren Ränder nicht. -->

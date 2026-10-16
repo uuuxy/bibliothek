@@ -474,15 +474,23 @@ Ordner des Pakets und für die Form `paket.Name`.
   `isDeleting` (jetzt `fehler`, `laedt`, `speichert`, `laeuft`) und in 29 Dateien `data`, `result`,
   `results`, `book` und `books` (jetzt `daten`, `ergebnis`, `ergebnisse`, `buch`, `buecher`), dazu
   in 18 Dateien Suchtext, Treffer, Reiter und Auswahl (`suche`, `treffer`, `aktiverReiter`,
-  `gewaehlteKlasse`, `gewaehlteKlassen`, `alleGewaehlt`); der Bestand steht bei 331 Erklärungen in
-  102 Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich (der Bau ist deterministisch,
-  eine geänderte Zeichenkette zeigt er an). Ersetzen nach Wortgrenze trägt dafür nicht, es traf
-  Klassen (`text-error`), das Attribut `loading="lazy"` und Schlüssel. Umbenannt wird deshalb am
+  `gewaehlteKlasse`, `gewaehlteKlassen`, `alleGewaehlt`), dazu alle 208 übrigen Namen, die nur in
+  ihrer Datei gelten, und die Props von `KontenTabelle`, `KontoBearbeitenDialog`,
+  `KontoLoeschenDialog` und `Zugangsanfragen`. Der Bestand steht bei 118 Erklärungen in 32
+  Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich (der Bau ist deterministisch,
+  eine geänderte Zeichenkette zeigt er an); umbenannte Props stehen im Bündel und sind dort der
+  einzige Unterschied. Ersetzen nach Wortgrenze trägt dafür nicht, es traf Klassen
+  (`text-error`), das Attribut `loading="lazy"` und Schlüssel. Umbenannt wird deshalb am
   Syntaxbaum (`svelte/compiler`, `acorn`): jeder Bezeichner gleichen Namens in der Datei, ohne
   Eigenschaften, Schlüssel, Importe und Exporte; Kurzformen werden ausgeschrieben (`{error}` wird
-  `error={fehler}`). Nächster Schritt: die übrigen Namen nach demselben Verfahren, `query` für
-  Parameter einer Adresse mit eigenem Wort, danach die Methoden der Stores und Props, die über
-  Dateigrenzen gehen; die lässt das Verfahren aus.
+  `error={fehler}`). In TypeScript reicht der Knoten eines Bezeichners bis zum Ende seiner
+  Typangabe; ersetzt wird nur der Name, sonst fällt die Angabe weg (svelte-check meldet es, der
+  Bau nicht). Schreibt das Ausschreiben einer Kurzform eine Datei über ihre Größe im Bestand,
+  bekommen die Props des Kindes denselben Namen, oder ein kürzeres Wort hält die Zeile. Übrig sind
+  nur Namen über Dateigrenzen: 87, die ein Store oder ein `use…`-Modul als Schlüssel, Getter oder
+  Methode nach außen gibt (`useLeserakte` 17, `stores/omnibox.svelte.js` 19, `useInventurlauf`
+  14, `stores/etiketten.svelte.js` 12), und 31 exportierte. Für sie gilt dasselbe Verfahren über
+  alle Dateien, die den Namen benutzen, samt Tests.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und

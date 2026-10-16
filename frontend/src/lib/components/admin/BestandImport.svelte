@@ -20,10 +20,13 @@
 		if (!files || files.length === 0) return;
 		laeuft = true;
 		ergebnis = null;
-		const formData = new FormData();
-		formData.append('file', files[0]);
+		const formulardaten = new FormData();
+		formulardaten.append('file', files[0]);
 		try {
-			const res = await apiFetch('/api/admin/import-bestand', { method: 'POST', body: formData });
+			const res = await apiFetch('/api/admin/import-bestand', {
+				method: 'POST',
+				body: formulardaten
+			});
 			const daten = await res.json();
 			if (!res.ok) throw new Error(daten.error || 'Bestands-Import fehlgeschlagen');
 			ergebnis = {

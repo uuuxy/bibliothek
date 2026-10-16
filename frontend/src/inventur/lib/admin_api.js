@@ -53,13 +53,13 @@ export async function holeBuchDetail(id) {
  * @returns {Promise<{ imported: number, failed: number, message: string }>}
  */
 export async function importiereListe(datei, schluessel) {
-	const formData = new FormData();
-	formData.append('file', datei);
+	const formulardaten = new FormData();
+	formulardaten.append('file', datei);
 	const res = await apiFetch('/api/books/import', {
 		method: 'POST',
 		credentials: 'include',
 		headers: { 'X-Idempotency-Key': schluessel },
-		body: formData
+		body: formulardaten
 	});
 	if (!res.ok) {
 		const errJson = await res.json().catch(() => ({}));

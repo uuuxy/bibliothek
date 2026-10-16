@@ -20,7 +20,7 @@
 	import { buecherLaden, buecherSuchen, buecherJeBuch } from '$lib/startseiten_api.js';
 
 	let suche = $state('');
-	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
+	let gewaehlterTitel = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
 	// Der Stift auf der Kachel gehört nur denen, die bearbeiten dürfen. Vorher sah ihn
 	// jeder — und ohne Recht tat er dasselbe wie der Klick auf die Kachel.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
@@ -38,14 +38,14 @@
 	/** @type {any[]} */
 	let buecher = $state.raw([]);
 	// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6).
-	let filteredBooks = $derived(buecherJeBuch(buecher, buecherSuchen(buecher, suche)));
+	let gefilterteTitel = $derived(buecherJeBuch(buecher, buecherSuchen(buecher, suche)));
 
 	let displayLimit = $state(50);
-	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));
+	let sichtbareTitel = $derived(gefilterteTitel.slice(0, displayLimit));
 
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		filteredBooks;
+		gefilterteTitel;
 		displayLimit = 50;
 	});
 
@@ -62,14 +62,14 @@
 		}
 	}
 
-	// Synchronize appState.selectedBook with local selectedBook
+	// Synchronize appState.selectedBook with local gewaehlterTitel
 	$effect(() => {
 		if (appState.selectedBook) {
-			selectedBook = appState.selectedBook;
+			gewaehlterTitel = appState.selectedBook;
 		}
 	});
 	$effect(() => {
-		if (selectedBook === null) {
+		if (gewaehlterTitel === null) {
 			appState.selectedBook = null;
 		}
 	});
@@ -86,7 +86,7 @@
 		     18.09.2026). Der Hinweis wiederholt den Suchtext: Bei einem Scan steht dort der
 		     gelesene Code. Form und Wortlaut wie im OPAC und im Kollegiums-Portal
 		     (ui/SuchZustand); die M3-Seite zur Suche trifft dazu keine Aussage. -->
-		{#if suche.trim() !== '' && filteredBooks.length === 0}
+		{#if suche.trim() !== '' && gefilterteTitel.length === 0}
 			<SuchZustand
 				symbol={Search}
 				titel="Keine Bücher gefunden"
@@ -94,7 +94,7 @@
 			/>
 		{/if}
 		<BuchRasterStartseite
-			filteredBooks={paginatedBooks}
+			filteredBooks={sichtbareTitel}
 			onBookClick={(book) => navigateToDetail(book)}
 			onEditClick={darfBearbeiten
 				? (book) => {
@@ -106,10 +106,10 @@
 					}
 				: undefined}
 		/>
-		{#if displayLimit < filteredBooks.length}
+		{#if displayLimit < gefilterteTitel.length}
 			<div class="mt-8 flex justify-center">
 				<Button variant="secondary" onclick={() => (displayLimit += 50)} class="px-6">
-					Mehr laden ({filteredBooks.length - displayLimit} weitere)
+					Mehr laden ({gefilterteTitel.length - displayLimit} weitere)
 				</Button>
 			</div>
 		{/if}

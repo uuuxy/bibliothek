@@ -13,7 +13,7 @@
 	import Eigenschaften from './designer/Eigenschaften.svelte';
 	import Werkzeugleiste from './designer/Werkzeugleiste.svelte';
 
-	let selectedId = $state(/** @type {string|null} */ (null));
+	let gewaehlteKennung = $state(/** @type {string|null} */ (null));
 	let side = $state(/** @type {"front"|"back"} */ ('front'));
 	let zoom = $state(150);
 	// Cache-Buster für die Barcode-Bilder des Testdrucks.
@@ -21,7 +21,7 @@
 
 	const ablage = erzeugeDesignAblage();
 	/** @type {any} */
-	let saveTimer = null;
+	let speicherZeitgeber = null;
 
 	// Dieser Bildschirm lädt KEINE echten Schüler mehr.
 	//
@@ -37,7 +37,7 @@
 	// wie die Karte AUSSIEHT, nicht was auf einer bestimmten Karte steht. Das echte Datum
 	// kommt beim Drucken vom Server (schueler.ausweis_gueltig_bis, Regel in
 	// internal/ausweis).
-	const PLATZHALTER_STUDENT = {
+	const PLATZHALTER_LESER = {
 		id: 'placeholder',
 		barcode_id: 'DEMO-S-001',
 		vorname: 'Max',
@@ -45,7 +45,7 @@
 		klasse: '9R1',
 		ausweis_gueltig_bis: new Date().getFullYear() + 1
 	};
-	const muster = $derived({ ...PLATZHALTER_STUDENT });
+	const muster = $derived({ ...PLATZHALTER_LESER });
 
 	onMount(() => {
 		ablage.laden();
@@ -64,31 +64,31 @@
 	$effect(() => {
 		const body = JSON.stringify(serializeDesign()); // liest reaktiven State → Dependency
 		if (!ablage.geladen) return;
-		clearTimeout(saveTimer);
+		clearTimeout(speicherZeitgeber);
 		ablage.beginneSpeichern();
 		ausstehend = body;
-		saveTimer = setTimeout(() => {
+		speicherZeitgeber = setTimeout(() => {
 			ausstehend = null;
 			ablage.speichern(body);
 		}, 800);
-		return () => clearTimeout(saveTimer);
+		return () => clearTimeout(speicherZeitgeber);
 	});
 	onDestroy(() => {
 		if (ausstehend !== null) ablage.speichern(ausstehend);
 	});
 
 	async function zuruecksetzen() {
-		if (await ablage.zuruecksetzen()) selectedId = null;
+		if (await ablage.zuruecksetzen()) gewaehlteKennung = null;
 	}
 
 	/** @param {string} kennung */
 	async function vorlageAnwenden(kennung) {
-		if (await ablage.vorlageAnwenden(kennung)) selectedId = null;
+		if (await ablage.vorlageAnwenden(kennung)) gewaehlteKennung = null;
 	}
 
 	// Etikettenbogen: dasselbe PDF wie der echte Bogen, nur mit einem Muster-Schüler.
 	// Kartendrucker: die Druck-CSS des Browsers, wie bisher.
-	async function triggerPrint() {
+	async function drucke() {
 		if (idStore.printMode === 'etikett') {
 			await oeffneEtikettenbogen({ formatId: idStore.etikettFormat, muster: true });
 			return;
@@ -152,13 +152,13 @@
 		{side}
 		onSide={(s) => {
 			side = s;
-			selectedId = null;
+			gewaehlteKennung = null;
 		}}
 		printMode={idStore.printMode}
 		onPrintMode={(m) => {
 			idStore.printMode = m;
 		}}
-		onPrint={triggerPrint}
+		onPrint={drucke}
 		barcodeType={idStore.barcodeType}
 		onBarcodeType={(t) => {
 			idStore.barcodeType = t;
@@ -170,16 +170,16 @@
 	<div class="w-full flex flex-col lg:flex-row gap-5">
 		<CanvasFlaeche
 			{side}
-			{selectedId}
+			selectedId={gewaehlteKennung}
 			onSelect={(id) => {
-				selectedId = id;
+				gewaehlteKennung = id;
 			}}
 			student={muster}
 			{zoom}
 			barcodeType={idStore.barcodeType}
 		/>
 
-		<Eigenschaften {selectedId} {side} />
+		<Eigenschaften selectedId={gewaehlteKennung} {side} />
 	</div>
 </div>
 

@@ -242,122 +242,57 @@ function englischImNamen(name) {
 
 /** @type {Record<string, number>} */
 const NAMEN_BESTAND = {
-	'src/inventur/lib/admin_api.js': 1,
-	'src/inventur/lib/components/BuchKarte.svelte': 2,
-	'src/inventur/lib/components/admin/AdminBuchAktionen.svelte': 2,
-	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte': 2,
-	'src/inventur/lib/components/admin/KlassenKarte.svelte': 1,
-	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 6,
-	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 4,
-	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte': 1,
-	'src/inventur/lib/components/admin/KlassensatzZuweisenDialog.svelte': 2,
-	'src/inventur/lib/components/scanner/KameraScanner.svelte': 2,
-	'src/inventur/lib/components/scanner/barcodeErkennung.js': 2,
+	'src/inventur/lib/components/admin/AdminBuchAktionen.svelte': 1,
+	'src/inventur/lib/components/scanner/barcodeErkennung.js': 1,
 	'src/inventur/lib/store.svelte.js': 1,
 	'src/inventur/lib/titelSortierung.js': 2,
-	'src/inventur/routes/KatalogSuche.svelte': 3,
-	'src/lib/Abgaenger.svelte': 6,
-	'src/lib/AusweisDesigner.svelte': 4,
-	'src/lib/BenutzerUndRechte.svelte': 6,
-	'src/lib/Buchakte.svelte': 1,
-	'src/lib/BuchakteAusleiher.svelte': 2,
-	'src/lib/BuchakteExemplare.svelte': 2,
-	'src/lib/BuchakteVormerkungen.svelte': 2,
-	'src/lib/Dialog.svelte': 1,
-	'src/lib/Einstellungen.svelte': 1,
-	'src/lib/Inventur.svelte': 1,
-	'src/lib/Klassenleitungen.svelte': 2,
-	'src/lib/Konten.svelte': 16,
-	'src/lib/LeserAnlegenDialog.svelte': 1,
-	'src/lib/LeserBearbeiten.svelte': 1,
-	'src/lib/LeserGebuehrenKarte.svelte': 1,
-	'src/lib/LeserLoeschenDialog.svelte': 2,
-	'src/lib/LeserSperreDialog.svelte': 1,
 	'src/lib/Leserakte.svelte': 1,
-	'src/lib/LeserakteAktionen.svelte': 1,
-	'src/lib/LitteraImport.svelte': 2,
-	'src/lib/MailVorlagen.svelte': 6,
-	'src/lib/Medienkatalog.svelte': 1,
-	'src/lib/Omnibox.svelte': 3,
-	'src/lib/OpacSuche.svelte': 1,
-	'src/lib/SchadenMeldenDialog.svelte': 2,
-	'src/lib/Schuelerdatei.svelte': 2,
-	'src/lib/Statistik.svelte': 4,
-	'src/lib/UeberfaelligQuote.svelte': 1,
-	'src/lib/WebcamAufnahme.svelte': 5,
-	'src/lib/abgaengerDienst.js': 1,
-	'src/lib/actions/tastaturNavigation.js': 2,
-	'src/lib/apiFetch.js': 3,
+	'src/lib/apiFetch.js': 2,
 	'src/lib/audio.js': 2,
-	'src/lib/components/ExemplarKarte.svelte': 6,
-	'src/lib/components/ExemplarStatusBearbeiten.svelte': 6,
-	'src/lib/components/GeraeteVerwaltung.svelte': 3,
-	'src/lib/components/admin/BestandImport.svelte': 1,
-	'src/lib/components/admin/Datenverwaltung.svelte': 2,
-	'src/lib/components/admin/MailEinstellungen.svelte': 4,
-	'src/lib/components/bestellungen/AnliegenListe.svelte': 1,
-	'src/lib/components/bestellungen/BestaetigungEtiketten.svelte': 1,
-	'src/lib/components/bestellungen/BestellHistorie.svelte': 1,
-	'src/lib/components/bestellungen/BestellSuche.svelte': 4,
-	'src/lib/components/bestellungen/LieferantZeile.svelte': 5,
-	'src/lib/components/bestellungen/Lieferanten.svelte': 2,
-	'src/lib/components/bestellungen/Wareneingang.svelte': 1,
-	'src/lib/components/bestellungen/WareneingangTabelle.svelte': 1,
 	'src/lib/components/bestellungen/mittel.js': 1,
-	'src/lib/components/einstellungen/kategorien/DatenschutzKategorie.svelte': 1,
-	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 1,
-	'src/lib/components/leser/LusdImport.svelte': 10,
-	'src/lib/components/leser/Papierkorb.svelte': 2,
-	'src/lib/components/leser/Schuljahreswechsel.svelte': 2,
-	'src/lib/components/leser/schuelerSuche.svelte.js': 3,
-	'src/lib/components/statistik/StatistikVerlauf.svelte': 1,
-	'src/lib/components/ui/EingabeDialog.svelte': 1,
-	'src/lib/components/ui/Feld.svelte': 1,
-	'src/lib/components/ui/TabelleSortKopf.svelte': 1,
-	'src/lib/designer/CanvasFlaeche.svelte': 2,
-	'src/lib/designer/Werkzeugleiste.svelte': 1,
-	'src/lib/designer/idDesignAltbestand.js': 1,
+	'src/lib/components/leser/Papierkorb.svelte': 1,
+	'src/lib/components/leser/schuelerSuche.svelte.js': 1,
 	'src/lib/designer/idDesignerStore.svelte.js': 4,
 	'src/lib/inventurApi.js': 1,
 	'src/lib/lmfplanDienst.js': 1,
-	'src/lib/menue.js': 8,
+	'src/lib/menue.js': 5,
 	'src/lib/offlineWarteschlange.js': 1,
 	'src/lib/passbildAusschnitt.js': 1,
 	'src/lib/rechteKategorien.js': 1,
-	'src/lib/routenAnwenden.js': 2,
 	'src/lib/routenTabelle.js': 1,
-	'src/lib/stores/authStore.svelte.js': 2,
-	'src/lib/stores/bestellStore.svelte.js': 5,
 	'src/lib/stores/druckWarteschlange.svelte.js': 1,
-	'src/lib/stores/etiketten.svelte.js': 21,
+	'src/lib/stores/etiketten.svelte.js': 13,
 	'src/lib/stores/leerlaufSperre.svelte.js': 1,
-	'src/lib/stores/mahnwesen.svelte.js': 8,
+	'src/lib/stores/mahnwesen.svelte.js': 4,
 	'src/lib/stores/mahnwesenMail.svelte.js': 1,
-	'src/lib/stores/mahnwesenPdf.svelte.js': 3,
-	'src/lib/stores/netzLage.svelte.js': 1,
-	'src/lib/stores/offlineSync.svelte.js': 7,
-	'src/lib/stores/omnibox.svelte.js': 26,
-	'src/lib/stores/snackbars.svelte.js': 1,
+	'src/lib/stores/mahnwesenPdf.svelte.js': 2,
+	'src/lib/stores/offlineSync.svelte.js': 3,
+	'src/lib/stores/omnibox.svelte.js': 20,
 	'src/lib/useBuchakte.svelte.js': 7,
 	'src/lib/useFehlbestand.svelte.js': 2,
-	'src/lib/useInventur.svelte.js': 4,
+	'src/lib/useInventur.svelte.js': 2,
 	'src/lib/useInventurlauf.svelte.js': 14,
 	'src/lib/useLeserakte.svelte.js': 17,
-	'src/lib/useLeserakteFormular.svelte.js': 6
+	'src/lib/useLeserakteFormular.svelte.js': 3
 };
 
 describe('Namen innerhalb der Dateien der Oberfläche sind deutsch', () => {
 	/** @type {Map<string, number>} */
 	const zaehlung = new Map();
+	// Gelesene Erklärungen insgesamt: Die Selbstprobe hängt so nicht am Bestand, der sinken soll.
+	let erklaerungen = 0;
 	for (const datei of sammleQuelldateien(srcRoot)) {
 		const text = ohneKommentare(readFileSync(datei, 'utf8'));
 		let n = 0;
-		for (const m of text.matchAll(ERKLAERUNG)) if (englischImNamen(m[1])) n++;
+		for (const m of text.matchAll(ERKLAERUNG)) {
+			erklaerungen++;
+			if (englischImNamen(m[1])) n++;
+		}
 		if (n > 0) zaehlung.set(relPfad(datei), n);
 	}
 
 	it('liest überhaupt Dateien und erkennt einen englischen Namen', () => {
-		expect(zaehlung.size).toBeGreaterThan(50);
+		expect(erklaerungen).toBeGreaterThan(3000);
 		expect(englischImNamen('handleDeleteClick')).toBe(true);
 		expect(englischImNamen('selectedTitel')).toBe(true);
 		expect(englischImNamen('ladeLeser')).toBe(false);

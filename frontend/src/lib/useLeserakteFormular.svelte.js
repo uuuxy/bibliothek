@@ -8,11 +8,11 @@ import { nurGeaendertes } from './utils/geaendert.js';
  * Die Felder der anderen Seite gehen nicht mit, auch nicht leer. Ein leerer String hieße
  * am Server „räum das weg" und käme als 400 zurück.
  * @param {any} daten Werte der Maske
- * @param {any} student der geladene Leser
+ * @param {any} leser der geladene Leser
  * @param {boolean} hatKonto
  * @returns {Record<string, unknown>}
  */
-function schulfelder(daten, student, hatKonto) {
+function schulfelder(daten, leser, hatKonto) {
 	const ausweis = { barcode_id: daten.barcode_id };
 	if (istKollegium({ art: daten.art })) {
 		// Ohne Zugang zur Art und ohne Konto ist das Feld verschlossen: Eine davor getippte
@@ -21,9 +21,9 @@ function schulfelder(daten, student, hatKonto) {
 	}
 	// Das Abgangsjahr geht nicht mit, wenn die Klasse wechselt und niemand es angefasst
 	// hat: Dann leitet der Server es aus der neuen Klasse ab (repository.AbgaengerJahr).
-	const geladenesJahr = student?.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
+	const geladenesJahr = leser?.abgaenger_jahr ? String(leser.abgaenger_jahr) : '';
 	const jahrAngefasst = daten.abgaenger_jahr !== geladenesJahr;
-	const klasseGeaendert = daten.klasse !== (student?.klasse || '');
+	const klasseGeaendert = daten.klasse !== (leser?.klasse || '');
 
 	/** @type {Record<string, unknown>} */
 	const felder = { ...ausweis, lusd_id: daten.lusd_id, klasse: daten.klasse };
@@ -38,11 +38,11 @@ function schulfelder(daten, student, hatKonto) {
  * JSON-null hieße dort „nicht mitgeschickt", und Löschen wäre nicht möglich. Nur das
  * Geburtsdatum geht leer als null hinaus, der Server lässt es sich nicht leeren.
  * @param {any} daten
- * @param {any} student
+ * @param {any} leser
  * @param {boolean} hatKonto
  * @returns {Record<string, unknown>}
  */
-function nutzlast(daten, student, hatKonto) {
+function nutzlast(daten, leser, hatKonto) {
 	return {
 		vorname: daten.vorname,
 		nachname: daten.nachname,
@@ -53,7 +53,7 @@ function nutzlast(daten, student, hatKonto) {
 		plz: daten.plz,
 		ort: daten.ort,
 		eltern_email: daten.eltern_email,
-		...schulfelder(daten, student, hatKonto)
+		...schulfelder(daten, leser, hatKonto)
 	};
 }
 
@@ -119,31 +119,31 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	 * Call this in an $effect when the student prop changes.
 	 */
 	function syncData() {
-		const student = getStudent();
-		if (!student) return;
+		const leser = getStudent();
+		if (!leser) return;
 		// Erst ein schlichtes Objekt: Der Aufrufer ruft syncData in einem $effect, und wer dort
 		// formData läse, füllte die Maske bei jedem Tastendruck neu.
 		const werte = {
-			vorname: student.vorname || '',
-			nachname: student.nachname || '',
+			vorname: leser.vorname || '',
+			nachname: leser.nachname || '',
 			// Eine Zeile ohne Art ist ein Schüler, wie in der Spalte und in leserArtText().
-			art: student.art || 'schueler',
-			geburtsdatum: student.geburtsdatum ? student.geburtsdatum.slice(0, 10) : '',
-			lusd_id: student.lusd_id || '',
-			klasse: student.klasse || '',
-			barcode_id: student.barcode_id || '',
+			art: leser.art || 'schueler',
+			geburtsdatum: leser.geburtsdatum ? leser.geburtsdatum.slice(0, 10) : '',
+			lusd_id: leser.lusd_id || '',
+			klasse: leser.klasse || '',
+			barcode_id: leser.barcode_id || '',
 			// Die Abfrage liefert für eine leere Spalte die 0, und "0" wäre ein wahrer String.
-			abgaenger_jahr: student.abgaenger_jahr ? String(student.abgaenger_jahr) : '',
-			strasse: student.strasse || '',
-			hausnummer: student.hausnummer || '',
-			plz: student.plz || '',
-			ort: student.ort || '',
-			eltern_email: student.eltern_email || '',
-			email: student.email || ''
+			abgaenger_jahr: leser.abgaenger_jahr ? String(leser.abgaenger_jahr) : '',
+			strasse: leser.strasse || '',
+			hausnummer: leser.hausnummer || '',
+			plz: leser.plz || '',
+			ort: leser.ort || '',
+			eltern_email: leser.eltern_email || '',
+			email: leser.email || ''
 		};
 		Object.assign(formData, werte);
-		kontoVorhanden = !!student.email;
-		geladen = nutzlast(werte, student, !!student.email);
+		kontoVorhanden = !!leser.email;
+		geladen = nutzlast(werte, leser, !!leser.email);
 	}
 
 	/**
@@ -152,12 +152,12 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	 * anderer Platz, der LUSD-Import oder die Versetzung inzwischen geändert hat.
 	 */
 	async function save() {
-		const student = getStudent();
-		if (!student?.id) {
+		const leser = getStudent();
+		if (!leser?.id) {
 			showSnackbar('Kein Schüler ausgewählt.', 'error');
 			return;
 		}
-		const payload = nurGeaendertes(geladen, nutzlast(formData, student, kontoVorhanden));
+		const payload = nurGeaendertes(geladen, nutzlast(formData, leser, kontoVorhanden));
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(payload).length === 0) {
 			showSnackbar('Änderungen gespeichert.', 'success');
@@ -166,10 +166,10 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		}
 		speichert = true;
 		try {
-			const res = await apiClient.patch(`/api/schueler/${student.id}`, payload);
+			const res = await apiClient.patch(`/api/schueler/${leser.id}`, payload);
 			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
-				throw new Error(data.error || 'Speichern fehlgeschlagen');
+				const antwort = await res.json().catch(() => ({}));
+				throw new Error(antwort.error || 'Speichern fehlgeschlagen');
 			}
 			showSnackbar('Änderungen gespeichert.', 'success');
 			onSave();

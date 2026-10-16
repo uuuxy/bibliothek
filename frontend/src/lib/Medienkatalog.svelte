@@ -8,11 +8,11 @@
 
 	// Wer mit einem Titel zum Bearbeiten kommt, beginnt in der Titel-Verwaltung: Der Katalog
 	// stünde sonst einen Takt lang da und lüde dabei seine ganze Liste.
-	let activeView = $state(appState.requestAdminView ? 'admin' : 'catalog'); // "catalog" | "admin" | "geraete"
+	let aktiverReiter = $state(appState.requestAdminView ? 'admin' : 'catalog'); // "catalog" | "admin" | "geraete"
 
 	$effect(() => {
 		if (appState.requestAdminView) {
-			activeView = 'admin';
+			aktiverReiter = 'admin';
 			appState.requestAdminView = false;
 		}
 	});
@@ -21,8 +21,8 @@
 <Seitenrahmen>
 	<Reiter
 		etikett="Medienkatalog Navigation"
-		aktiv={activeView}
-		onwahl={(id) => (activeView = id)}
+		aktiv={aktiverReiter}
+		onwahl={(id) => (aktiverReiter = id)}
 		reiter={[
 			{ id: 'catalog', label: 'Suche & Filter' },
 			{ id: 'admin', label: 'Titel-Verwaltung' },
@@ -32,11 +32,11 @@
 
 	<!-- Content -->
 	<div class="w-full">
-		{#if activeView === 'catalog'}
+		{#if aktiverReiter === 'catalog'}
 			<KatalogSuche />
-		{:else if activeView === 'admin'}
+		{:else if aktiverReiter === 'admin'}
 			<TitelVerwaltung />
-		{:else if activeView === 'geraete'}
+		{:else if aktiverReiter === 'geraete'}
 			<GeraeteVerwaltung />
 		{/if}
 	</div>

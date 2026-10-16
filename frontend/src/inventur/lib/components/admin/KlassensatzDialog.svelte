@@ -28,13 +28,13 @@
 	} = $props();
 
 	let gewaehlteKlassen = $state(/** @type {string[]} */ ([]));
-	let selectedBookIds = $state(/** @type {Set<number>} */ (new Set()));
+	let gewaehlteKennungen = $state(/** @type {Set<number>} */ (new Set()));
 	const buecher = erzeugeBuecherListe();
 	let speichert = $state(false);
 
 	$effect(() => {
-		if (gewaehlteKlassen.length === 0 && selectedBookIds.size > 0) {
-			selectedBookIds = new Set();
+		if (gewaehlteKlassen.length === 0 && gewaehlteKennungen.size > 0) {
+			gewaehlteKennungen = new Set();
 		}
 	});
 
@@ -42,14 +42,14 @@
 		if (initialGroup) {
 			gewaehlteKlassen = [initialGroup.className];
 			// Nur Handgepflegtes vorgewählt (Regel samt Begründung: klassensatzVorauswahl.js).
-			selectedBookIds = vorauswahlAusGruppe(initialGroup);
+			gewaehlteKennungen = vorauswahlAusGruppe(initialGroup);
 		}
 
 		await buecher.laden();
 	});
 
-	const selectedBooksList = $derived(
-		buecher.liste.filter((/** @type {any} */ b) => selectedBookIds.has(b.id))
+	const gewaehlteTitel = $derived(
+		buecher.liste.filter((/** @type {any} */ b) => gewaehlteKennungen.has(b.id))
 	);
 
 	// Der Speicherpfad ersetzt: UpdateClassBooks löscht die Zuweisungen aller Zielklassen und
@@ -82,24 +82,24 @@
 	/**
 	 * @param {number} id
 	 */
-	function toggleBook(id) {
-		if (selectedBookIds.has(id)) {
-			selectedBookIds = new Set([...selectedBookIds].filter((bId) => bId !== id));
+	function schalteTitel(id) {
+		if (gewaehlteKennungen.has(id)) {
+			gewaehlteKennungen = new Set([...gewaehlteKennungen].filter((bId) => bId !== id));
 		} else {
-			selectedBookIds = new Set([...selectedBookIds, id]);
+			gewaehlteKennungen = new Set([...gewaehlteKennungen, id]);
 		}
 	}
 
-	async function saveAssignments() {
+	async function speichereZuweisungen() {
 		if (gewaehlteKlassen.length === 0) return;
-		if (!initialGroup && selectedBookIds.size === 0) return;
+		if (!initialGroup && gewaehlteKennungen.size === 0) return;
 
 		speichert = true;
 		try {
 			const endpoint = initialGroup ? '/api/admin/class-books' : '/api/admin/class-books/add';
 			const payload = {
 				classNames: gewaehlteKlassen,
-				bookIds: Array.from(selectedBookIds),
+				bookIds: Array.from(gewaehlteKennungen),
 				oldClassName: initialGroup ? initialGroup.className : undefined
 			};
 
@@ -116,7 +116,7 @@
 			if (res.ok) {
 				onSaved({
 					classes: gewaehlteKlassen,
-					count: selectedBookIds.size
+					count: gewaehlteKennungen.size
 				});
 				onClose();
 			} else {
@@ -172,7 +172,7 @@
 					<KlassensatzTitelRaster
 						books={buecher.liste}
 						buecherFehler={buecher.fehler}
-						bind:selectedBookIds
+						bind:selectedBookIds={gewaehlteKennungen}
 					/>
 				</div>
 			</div>
@@ -183,12 +183,12 @@
 			>
 				<KlassensatzZusammenfassung
 					selectedClasses={gewaehlteKlassen}
-					{selectedBookIds}
-					{selectedBooksList}
+					selectedBookIds={gewaehlteKennungen}
+					selectedBooksList={gewaehlteTitel}
 					isSaving={speichert}
 					isUpdate={!!initialGroup}
-					onToggleBook={toggleBook}
-					onsave={saveAssignments}
+					onToggleBook={schalteTitel}
+					onsave={speichereZuweisungen}
 					oncancel={onClose}
 				/>
 			</aside>

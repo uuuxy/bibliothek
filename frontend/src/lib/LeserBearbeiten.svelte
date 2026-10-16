@@ -48,14 +48,14 @@
 	// Proxy und überlebt die Destrukturierung, ein einfacher Wert nicht. `saving` und
 	// `kontoVorhanden` sind Getter auf $state — einmal herausdestrukturiert, stünde für
 	// immer der Wert vom Aufbau der Komponente da (der Speichern-Knopf hätte nie
-	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `form.`, dort wo sie
+	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `formular.`, dort wo sie
 	// gebraucht werden.
-	const form = useLeserakteFormular({
+	const formular = useLeserakteFormular({
 		getStudent: () => student,
 		onSave: () => onSave(),
 		showSnackbar
 	});
-	const { formData, syncData, save } = form;
+	const { formData, syncData, save } = formular;
 
 	// Der Effekt verfolgt `student` über den Getter in syncData — wechselt das Prop,
 	// wird das Formular neu befüllt statt die alten Werte zu behalten.
@@ -98,8 +98,8 @@
 		</div>
 
 		<div class="flex items-center gap-3 shrink-0">
-			<Button size="lg" onclick={save} disabled={form.saving} class="px-6">
-				{#if form.saving}
+			<Button size="lg" onclick={save} disabled={formular.saving} class="px-6">
+				{#if formular.saving}
 					<Ladekreis size="sm" farbe="aktuell" />
 					Speichert…
 				{:else}
@@ -117,7 +117,7 @@
 			klassen={klassenListe.liste}
 			klassenFehler={klassenListe.ladefehler}
 			lusdVerknuepft={!!student?.lusd_id}
-			kontoVorhanden={form.kontoVorhanden}
+			kontoVorhanden={formular.kontoVorhanden}
 		/>
 
 		<!-- Bottom spacing -->

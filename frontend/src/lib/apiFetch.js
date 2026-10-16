@@ -217,9 +217,9 @@ async function werteAntwortAus(res) {
 			return text;
 		}
 	} else {
-		const errorText = await extractApiError(res);
-		snackbars.addToast(errorText, 'error');
-		const err = new Error(errorText);
+		const fehlerText = await extractApiError(res);
+		snackbars.addToast(fehlerText, 'error');
+		const err = new Error(fehlerText);
 		// Markiert den Fehler als "dem Nutzer bereits gezeigt". Ohne das legen Aufrufer
 		// in ihrem catch-Block gern noch einen generischen Toast ("Fehler beim Speichern")
 		// obendrauf — der verdeckt die eigentliche Servermeldung, die die Ursache nennt.

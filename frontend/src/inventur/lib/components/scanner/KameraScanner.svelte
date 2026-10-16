@@ -14,7 +14,7 @@
 	/** @type {any} */
 	let animFrameId = null;
 	/** @type {any} */
-	let detector = null;
+	let erkenner = null;
 	let starting = false;
 	let lastDecoded = '';
 	let lastDecodeTime = 0;
@@ -36,12 +36,12 @@
 		starting = true;
 
 		try {
-			const detectorResult = await createBarcodeDetector();
-			if (!detectorResult) {
+			const erkennung = await createBarcodeDetector();
+			if (!erkennung) {
 				onStatusChange('Barcode-Erkennung wird von diesem Browser nicht unterstützt.');
 				return;
 			}
-			detector = detectorResult.detector;
+			erkenner = erkennung.detector;
 
 			// Kamera-Stream starten
 			stream = await navigator.mediaDevices.getUserMedia({
@@ -73,7 +73,7 @@
 	}
 
 	function scanLoop() {
-		if (!scanning || !videoEl || !detector) return;
+		if (!scanning || !videoEl || !erkenner) return;
 
 		animFrameId = requestAnimationFrame(async () => {
 			if (!scanning || !videoEl || videoEl.readyState < 2) {
@@ -83,7 +83,7 @@
 			}
 
 			try {
-				const barcodes = await detector.detect(videoEl);
+				const barcodes = await erkenner.detect(videoEl);
 				fehlerInFolge = 0;
 				if (barcodes && barcodes.length > 0) {
 					const code = barcodes[0].rawValue;
@@ -132,7 +132,7 @@
 			videoEl.srcObject = null;
 		}
 
-		detector = null;
+		erkenner = null;
 	}
 
 	export function restart() {

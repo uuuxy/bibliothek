@@ -81,7 +81,7 @@ export function canSeeItem(item, currentUser) {
 // view_students und antworten mit 403 —, aber eine Lehrkraft landete auf einer leeren,
 // defekt wirkenden Seite statt in ihrem Portal.
 /** @type {Record<string, string>} */
-const unteransichtBrauchtTab = {
+const unteransichtBrauchtReiter = {
 	book_detail: 'media_catalog',
 	stats_detail: 'stats'
 };
@@ -111,11 +111,11 @@ export function erlaubteTabs(currentUser) {
  * @returns {boolean}
  */
 export function tabIstGesperrt(tab, erlaubt) {
-	const elternTab = unteransichtBrauchtTab[tab];
-	if (elternTab) return !erlaubt.has(elternTab);
+	const elternReiter = unteransichtBrauchtReiter[tab];
+	if (elternReiter) return !erlaubt.has(elternReiter);
 
-	const menuIDs = new Set(menuGroups.flatMap((g) => g.items).map((i) => i.id));
-	return menuIDs.has(tab) && !erlaubt.has(tab);
+	const menuepunkte = new Set(menuGroups.flatMap((g) => g.items).map((i) => i.id));
+	return menuepunkte.has(tab) && !erlaubt.has(tab);
 }
 
 /**

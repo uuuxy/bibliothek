@@ -38,26 +38,26 @@
 	// Liste kann älter sein als der Lieferant, und das Merkmal Hauptlieferant ginge sonst aus
 	// ihr zurück, auch wenn es inzwischen ein anderer Händler trägt.
 	const geladen = untrack(() => lieferantStand(s));
-	let editName = $state(geladen.name);
-	let editEmail = $state(geladen.email);
-	let editCustNum = $state(geladen.customerNumber);
-	let editCustNumSchultraeger = $state(geladen.kundennummer_schultraeger);
-	let editIstHaupt = $state(geladen.ist_hauptlieferant);
+	let neuerName = $state(geladen.name);
+	let neueEmail = $state(geladen.email);
+	let neueKundennummer = $state(geladen.customerNumber);
+	let neueKundennummerSchultraeger = $state(geladen.kundennummer_schultraeger);
+	let istHauptlieferant = $state(geladen.ist_hauptlieferant);
 </script>
 
 {#if bearbeiten}
 	<tr aria-selected="true" class="align-top">
 		<td class="space-y-2">
-			<Feld aria-label="Name" bind:value={editName} />
-			<Switch bind:checked={editIstHaupt} label="Hauptlieferant der Schule ({s.name})" />
+			<Feld aria-label="Name" bind:value={neuerName} />
+			<Switch bind:checked={istHauptlieferant} label="Hauptlieferant der Schule ({s.name})" />
 		</td>
 		<td class="space-y-2">
-			<Feld aria-label="E-Mail" type="email" bind:value={editEmail} />
-			<Feld aria-label="Kundennummer" bind:value={editCustNum} />
+			<Feld aria-label="E-Mail" type="email" bind:value={neueEmail} />
+			<Feld aria-label="Kundennummer" bind:value={neueKundennummer} />
 			<Feld
 				aria-label="Kundennummer Schülerbücherei"
 				placeholder="Kundennummer Schülerbücherei (falls abweichend)"
-				bind:value={editCustNumSchultraeger}
+				bind:value={neueKundennummerSchultraeger}
 			/>
 		</td>
 		<td class="text-right whitespace-nowrap">
@@ -65,11 +65,11 @@
 				onclick={() =>
 					onSave(
 						nurGeaendertes(geladen, {
-							name: editName,
-							email: editEmail,
-							customerNumber: editCustNum,
-							ist_hauptlieferant: editIstHaupt,
-							kundennummer_schultraeger: editCustNumSchultraeger
+							name: neuerName,
+							email: neueEmail,
+							customerNumber: neueKundennummer,
+							ist_hauptlieferant: istHauptlieferant,
+							kundennummer_schultraeger: neueKundennummerSchultraeger
 						})
 					)}
 				aria-label="Änderungen für Lieferant {s.name} speichern"

@@ -74,7 +74,7 @@
 		setTimeout(() => (copied = false), 2000);
 	}
 
-	function onCoverError() {
+	function naechsteQuelle() {
 		if (currentCandidateIndex < coverCandidates.length - 1) {
 			currentCandidateIndex++;
 		} else {
@@ -83,9 +83,9 @@
 	}
 
 	/** @param {Event} event */
-	function onCoverLoad(event) {
+	function pruefeGeladenes(event) {
 		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) onCoverError();
+		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
 	}
 
 	// Lokale Liste statt Lesen des eigenen $state im selben Effekt: Der Effekt hinge sonst
@@ -120,8 +120,8 @@
 				alt={`Cover von ${book.title}`}
 				loading="lazy"
 				class="h-full w-full object-cover"
-				onerror={onCoverError}
-				onload={onCoverLoad}
+				onerror={naechsteQuelle}
+				onload={pruefeGeladenes}
 			/>
 		{:else}
 			<BuchKarteCover subject={book.subject} title={book.title} />

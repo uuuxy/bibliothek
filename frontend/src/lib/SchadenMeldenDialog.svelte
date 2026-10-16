@@ -22,13 +22,13 @@
 	let { book, onCancel, onSubmit, isSubmitting } = $props();
 	const ohneForderung = $derived(!!book?.ohneForderung);
 
-	let damageReason = $state('Verloren');
+	let grund = $state('Verloren');
 	// Startwert 0, nicht 15: Bis zum 17.09.2026 stand hier eine feste 15,00 € ohne jeden
 	// Bezug zum Buch — das Protokoll des Medienzentrums vom 16.09.2026 nennt genau das
 	// („fehlende Restwertberechnung z.Zt. Handeingabe"). Der Server rechnet den Vorschlag
 	// und sagt dazu, WIE er entstanden ist; bis seine Antwort da ist, steht hier lieber 0
 	// als eine Zahl, die gleich wegspringt.
-	let damageAmount = $state(0);
+	let schadensbetrag = $state(0);
 	// Hat jemand den Betrag selbst eingetragen? Dann bleibt er stehen, auch wenn der Vorschlag
 	// erst danach eintrifft — sonst entstünde die Forderung über den Vorschlag statt den Betrag.
 	let vonHand = false;
@@ -59,7 +59,7 @@
 			})
 			.then((v) => {
 				if (abgebrochen) return;
-				if (!vonHand) damageAmount = v.betrag ?? 0;
+				if (!vonHand) schadensbetrag = v.betrag ?? 0;
 				herleitung = v.herleitung ?? '';
 			})
 			.catch(() => {
@@ -75,7 +75,7 @@
 	});
 
 	function melde() {
-		onSubmit(damageReason, ohneForderung ? 0 : damageAmount, art);
+		onSubmit(grund, ohneForderung ? 0 : schadensbetrag, art);
 	}
 </script>
 
@@ -110,7 +110,7 @@
 				<Feld
 					id="damage-reason"
 					label="Grund"
-					bind:value={damageReason}
+					bind:value={grund}
 					placeholder="z.B. Wasserschaden, Verloren..."
 				/>
 				{#if !ohneForderung}
@@ -121,7 +121,7 @@
 						step="0.01"
 						min="0"
 						hint={herleitung}
-						bind:value={damageAmount}
+						bind:value={schadensbetrag}
 						oninput={() => (vonHand = true)}
 					>
 						{#snippet nachlaufend()}€{/snippet}
@@ -132,7 +132,7 @@
 					<Button
 						variant="danger-solid"
 						onclick={melde}
-						disabled={isSubmitting || !damageReason.trim() || damageAmount < 0}
+						disabled={isSubmitting || !grund.trim() || schadensbetrag < 0}
 					>
 						{isSubmitting ? 'Wird gemeldet...' : 'Melden'}
 					</Button>

@@ -17,7 +17,7 @@
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
 
-	let className = $state('');
+	let klassenName = $state('');
 	/** @type {string[]} */
 	let existing = $state([]);
 	let speichert = $state(false);
@@ -49,8 +49,8 @@
 		}
 	});
 
-	async function assign() {
-		const name = className.trim();
+	async function weiseZu() {
+		const name = klassenName.trim();
 		if (!name) {
 			fehler = 'Bitte eine Klasse wählen.';
 			return;
@@ -89,7 +89,7 @@
 			<label for="klasse-name" class="text-sm font-medium text-on-surface-variant">Klasse</label>
 			<Select
 				id="klasse-name"
-				bind:value={className}
+				bind:value={klassenName}
 				options={optionen}
 				placeholder={klassenPlatzhalter(optionen.length, ladefehler)}
 			/>
@@ -104,7 +104,7 @@
 
 		<div class="flex justify-end gap-3">
 			<Button variant="ghost" onclick={onClose}>Abbrechen</Button>
-			<Button onclick={assign} disabled={speichert}>
+			<Button onclick={weiseZu} disabled={speichert}>
 				{speichert ? 'Speichern...' : 'Zuweisen'}
 			</Button>
 		</div>

@@ -37,7 +37,7 @@
 		}
 	}
 
-	async function searchStudent() {
+	async function sucheLeser() {
 		if (!suche.trim()) {
 			treffer = [];
 			return;
@@ -65,9 +65,9 @@
 				suche = '';
 				treffer = [];
 				notiz = '';
-				const listRes = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
+				const listenAntwort = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
 				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
-				if (listRes.ok) vormerkungen = await listRes.json();
+				if (listenAntwort.ok) vormerkungen = await listenAntwort.json();
 				else showToast('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
 			} else {
 				const err = await res.json().catch(() => ({}));
@@ -102,11 +102,11 @@
 							id="student-search-input"
 							label="Schüler suchen (Name oder Barcode)"
 							bind:value={suche}
-							onkeydown={(e) => e.key === 'Enter' && searchStudent()}
+							onkeydown={(e) => e.key === 'Enter' && sucheLeser()}
 							placeholder="z.B. Max Mustermann"
 							class="flex-1"
 						/>
-						<Button variant="secondary" onclick={searchStudent} disabled={isSearching}>
+						<Button variant="secondary" onclick={sucheLeser} disabled={isSearching}>
 							{isSearching ? '...' : 'Suchen'}
 						</Button>
 					</div>

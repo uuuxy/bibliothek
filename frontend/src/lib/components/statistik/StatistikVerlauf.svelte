@@ -28,7 +28,7 @@
 		'Dez'
 	];
 	/** @param {string} ym  "2026-07" → "Jul" */
-	const monatLabel = (ym) => MONATE_KURZ[Number(ym.split('-')[1]) - 1] ?? ym;
+	const monatKurz = (ym) => MONATE_KURZ[Number(ym.split('-')[1]) - 1] ?? ym;
 	/** @param {string} ym  "2026-07" → "2026" */
 	const jahr = (ym) => ym.split('-')[0];
 
@@ -189,7 +189,7 @@
 						y={baselineY + 16}
 						text-anchor="middle"
 						class="fill-on-surface-variant"
-						style="font-size:11px">{monatLabel(g.monat)}</text
+						style="font-size:11px">{monatKurz(g.monat)}</text
 					>
 				{/each}
 
@@ -209,7 +209,7 @@
 					class="pointer-events-none absolute z-10 -translate-x-1/2 -top-1 rounded-lg bg-inverse-surface text-inverse-on-surface px-3 py-2 shadow-lg text-xs whitespace-nowrap"
 					style="left:{(hovered.cx / VBW) * 100}%"
 				>
-					<div class="font-bold mb-1">{monatLabel(hovered.monat)} {jahr(hovered.monat)}</div>
+					<div class="font-bold mb-1">{monatKurz(hovered.monat)} {jahr(hovered.monat)}</div>
 					<div class="flex items-center gap-1.5">
 						<span class="w-2 h-2 rounded-sm" style="background:{FARBE_AUSLEIHEN}"></span>
 						Ausleihen: <span class="font-bold tabular-nums">{hovered.ausleihen}</span>
@@ -231,7 +231,7 @@
 			<tbody>
 				{#each data as d, _i (_i)}
 					<tr>
-						<td>{monatLabel(d.monat)} {jahr(d.monat)}</td>
+						<td>{monatKurz(d.monat)} {jahr(d.monat)}</td>
 						<td>{d.ausleihen}</td>
 						<td>{d.rueckgaben}</td>
 					</tr>

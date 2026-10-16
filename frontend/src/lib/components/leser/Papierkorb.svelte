@@ -29,7 +29,7 @@
 		await papierkorb.laden();
 	}
 
-	async function purgeStudent() {
+	async function loescheEndgueltig() {
 		if (!loeschKandidat) return;
 		const id = loeschKandidat.id;
 		await papierkorb.endgueltigLoeschen(id);
@@ -148,6 +148,6 @@
 	open={loeschKandidat !== null}
 	name={loeschKandidat ? `${loeschKandidat.vorname} ${loeschKandidat.nachname}` : ''}
 	laeuft={papierkorb.loeschtGerade}
-	onConfirm={purgeStudent}
+	onConfirm={loescheEndgueltig}
 	onClose={() => (loeschKandidat = null)}
 />

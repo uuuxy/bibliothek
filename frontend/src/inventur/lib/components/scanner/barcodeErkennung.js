@@ -46,8 +46,8 @@ export function istNichtsGefunden(fehler) {
 
 export async function createBarcodeDetector() {
 	if ('BarcodeDetector' in window) {
-		const BarcodeDetector = /** @type {any} */ (window).BarcodeDetector;
-		const formats = await BarcodeDetector.getSupportedFormats();
+		const BarcodeErkenner = /** @type {any} */ (window).BarcodeDetector;
+		const formats = await BarcodeErkenner.getSupportedFormats();
 		const neededFormats = GELESENE_FORMATE;
 		const supportedFormats = neededFormats.filter((/** @type {string} */ format) =>
 			formats.includes(format)
@@ -55,7 +55,7 @@ export async function createBarcodeDetector() {
 		if (supportedFormats.length > 0) {
 			return {
 				name: 'native',
-				detector: new BarcodeDetector({ formats: supportedFormats })
+				detector: new BarcodeErkenner({ formats: supportedFormats })
 			};
 		}
 	}

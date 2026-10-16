@@ -93,7 +93,7 @@
 		(uebersicht.nach_mittel ?? []).filter((/** @type {any} */ t) => t.gesamt > 0)
 	);
 	/** @param {string} wert */
-	const topfLabel = (wert) =>
+	const topfName = (wert) =>
 		wert && wert in MITTEL ? `${MITTEL[/** @type {any} */ (wert)].label}` : 'ohne Zuordnung';
 
 	/** @param {string} iso */
@@ -144,7 +144,7 @@
 			{gesamtExemplare}
 			{aufteilung}
 			euro={formatEuro}
-			{topfLabel}
+			topfLabel={topfName}
 			{mittelFilter}
 			zeigeKennzahlen={bestellungen.length > 0}
 			bind:mittel

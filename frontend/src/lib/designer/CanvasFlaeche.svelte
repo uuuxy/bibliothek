@@ -8,7 +8,7 @@
 	 *
 	 * Drag & Resize:
 	 *   Both operations bind pointermove/pointerup on `window` to allow the pointer
-	 *   to travel outside the card boundary. `activeDragCleanup` stores the teardown
+	 *   to travel outside the card boundary. `ziehenAufraeumen` stores the teardown
 	 *   function and is called by onDestroy to prevent listener leaks on unmount.
 	 */
 	import { onDestroy } from 'svelte';
@@ -30,17 +30,17 @@
 	const theme = $derived(side === 'front' ? idStore.front.theme : idStore.back.theme);
 
 	/** @type {(() => void) | null} */
-	let activeDragCleanup = null;
+	let ziehenAufraeumen = null;
 	// Called on unmount — removes any stale window listeners from an in-progress drag.
-	onDestroy(() => activeDragCleanup?.());
+	onDestroy(() => ziehenAufraeumen?.());
 
 	/** @type {HTMLDivElement | undefined} */
-	let cardEl = $state(undefined);
+	let karteEl = $state(undefined);
 
 	/** Convert screen-space pixel delta to card-space millimetres. */
 	function pxToMm() {
-		if (!cardEl) return 1;
-		return 85.6 / cardEl.getBoundingClientRect().width;
+		if (!karteEl) return 1;
+		return 85.6 / karteEl.getBoundingClientRect().width;
 	}
 
 	/**
@@ -74,11 +74,11 @@
 		function onUp() {
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
-			activeDragCleanup = null;
+			ziehenAufraeumen = null;
 		}
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
-		activeDragCleanup = () => {
+		ziehenAufraeumen = () => {
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
 		};
@@ -141,11 +141,11 @@
 		function onUp() {
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
-			activeDragCleanup = null;
+			ziehenAufraeumen = null;
 		}
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
-		activeDragCleanup = () => {
+		ziehenAufraeumen = () => {
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
 		};
@@ -171,7 +171,7 @@
 		     Plastikkarte, kein Bedienelement — das Typografie-Gate misst darin nicht
 		     (e2e/typo-rollen.spec.js). Die Schriftgrößen hier sind die des DRUCKS. -->
 		<div
-			bind:this={cardEl}
+			bind:this={karteEl}
 			data-ausweis-vorschau
 			class="card-container shadow-2xl relative border border-outline-variant rounded-lg overflow-visible select-none"
 			style="width: 85.6mm; height: 53.98mm; background: white;"

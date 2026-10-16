@@ -69,7 +69,7 @@ export function createOmniboxStore() {
 	let scanError = $state(false);
 	let fehler = $state('');
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
-	let errorMessageTimer = null;
+	let meldungsZeitgeber = null;
 	let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
 	// Abholfach-Hinweis zum AKTIVEN Schüler (Betreiber-Entscheidung 01.09.2026):
 	// beim Ausweis-Scan liefert der Server die abholbereiten Vormerkungen mit —
@@ -121,11 +121,11 @@ export function createOmniboxStore() {
 	// document is not defined"), obwohl jeder einzelne Test grün ist. Genau so stand die
 	// CI am 16.09.2026 rot bei 697 grünen Tests; am 11.09.2026 war es tastaturNavigation.
 	/** @type {ReturnType<typeof setTimeout> | null} */
-	let screenFlashTimer = null;
+	let bildschirmZeitgeber = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let shakeTimer = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
-	let flashTimer = null;
+	let randZeitgeber = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let fokusTimer = null;
 
@@ -146,9 +146,9 @@ export function createOmniboxStore() {
 
 	function triggerScreenFlash(type) {
 		screenFlash = type;
-		if (screenFlashTimer) clearTimeout(screenFlashTimer);
-		screenFlashTimer = setTimeout(() => {
-			screenFlashTimer = null;
+		if (bildschirmZeitgeber) clearTimeout(bildschirmZeitgeber);
+		bildschirmZeitgeber = setTimeout(() => {
+			bildschirmZeitgeber = null;
 			screenFlash = '';
 		}, 300);
 	}
@@ -164,9 +164,9 @@ export function createOmniboxStore() {
 
 	function triggerFlash(color) {
 		flashBorder = color;
-		if (flashTimer) clearTimeout(flashTimer);
-		flashTimer = setTimeout(() => {
-			flashTimer = null;
+		if (randZeitgeber) clearTimeout(randZeitgeber);
+		randZeitgeber = setTimeout(() => {
+			randZeitgeber = null;
 			flashBorder = '';
 		}, 1000);
 	}
@@ -176,20 +176,20 @@ export function createOmniboxStore() {
 	// Rückruf mehr auf eine Seite greifen, die es nicht mehr gibt.
 	function stoppeZeitgeber() {
 		for (const t of [
-			screenFlashTimer,
+			bildschirmZeitgeber,
 			shakeTimer,
-			flashTimer,
+			randZeitgeber,
 			fokusTimer,
-			errorMessageTimer,
+			meldungsZeitgeber,
 			debounceTimer
 		]) {
 			if (t) clearTimeout(t);
 		}
-		screenFlashTimer = null;
+		bildschirmZeitgeber = null;
 		shakeTimer = null;
-		flashTimer = null;
+		randZeitgeber = null;
 		fokusTimer = null;
-		errorMessageTimer = null;
+		meldungsZeitgeber = null;
 		debounceTimer = null;
 	}
 
@@ -207,9 +207,9 @@ export function createOmniboxStore() {
 	}
 
 	function stoppeBannerUhr() {
-		if (errorMessageTimer) {
-			clearTimeout(errorMessageTimer);
-			errorMessageTimer = null;
+		if (meldungsZeitgeber) {
+			clearTimeout(meldungsZeitgeber);
+			meldungsZeitgeber = null;
 		}
 	}
 
@@ -218,8 +218,8 @@ export function createOmniboxStore() {
 	function zeigeFehlerBanner(message) {
 		stoppeBannerUhr();
 		bannerMeldung = message;
-		errorMessageTimer = setTimeout(() => {
-			errorMessageTimer = null;
+		meldungsZeitgeber = setTimeout(() => {
+			meldungsZeitgeber = null;
 			bannerMeldung = '';
 			zeichneBanner();
 		}, 6000);
@@ -308,8 +308,8 @@ export function createOmniboxStore() {
 	function selectDropdownItem(index, onSelectBook) {
 		const { students, books } = unifiedSearchResults;
 		if (index < students.length) {
-			const student = students[index];
-			queryVal = `leser:${student.id}`;
+			const gewaehlterLeser = students[index];
+			queryVal = `leser:${gewaehlterLeser.id}`;
 			isDropdownOpen = false;
 			submitAction(null, null); // Ohne Event
 		} else {
@@ -323,11 +323,11 @@ export function createOmniboxStore() {
 	// Liest die Fehlermeldung aus einer nicht-ok HTTP-Antwort. Bei einem
 	// Sperr-/Überfälligkeits-403 wird blockAlert gesetzt und BLOCK_ALERT geworfen,
 	// sonst ein generischer Fehler. Wirft in jedem Fall.
-	async function handleActionHttpError(res, q) {
+	async function verarbeiteAktionsFehler(res, q) {
 		let errStr = await res.text();
 		try {
-			const errData = JSON.parse(errStr);
-			if (errData.error) errStr = errData.error;
+			const fehlerAntwort = JSON.parse(errStr);
+			if (fehlerAntwort.error) errStr = fehlerAntwort.error;
 		} catch (e) {
 			console.debug('Fehlerantwort war kein JSON, nutze Rohtext:', e);
 		}
@@ -677,7 +677,7 @@ export function createOmniboxStore() {
 		}
 
 		try {
-			if (!res.ok) await handleActionHttpError(res, gemerkt); // wirft immer
+			if (!res.ok) await verarbeiteAktionsFehler(res, gemerkt); // wirft immer
 			verarbeiteAktionsErgebnis(await res.json(), reloadProfileCb, gemerkt);
 		} catch (e) {
 			verarbeiteAntwortfehler(e);
@@ -921,7 +921,7 @@ export function createOmniboxStore() {
 
 		try {
 			if (!res.ok) {
-				await handleActionHttpError(res, q); // wirft immer
+				await verarbeiteAktionsFehler(res, q); // wirft immer
 			}
 			const daten = await res.json();
 			return verarbeiteAktionsErgebnis(daten, reloadProfileCb, q, overrideBlock);

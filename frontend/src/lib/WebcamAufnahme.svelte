@@ -23,22 +23,22 @@
 	/** @type {MediaStream | null} */
 	let stream = $state(null);
 	/** @type {string | null} */
-	let errorMsg = $state(null);
+	let kameraFehler = $state(null);
 	let isCapturing = $state(false);
 	// Breite zu Höhe des Kamerabilds. Der Sucher nimmt diese Form an, damit er das ganze Bild
 	// zeigt; bis die Kamera sie nennt, gilt das angefragte Breitbild.
 	let bildform = $state(16 / 9);
 	const hochkant = $derived(bildform < PASSBILD_FORM);
 
-	function formLesen() {
+	function leseBildform() {
 		if (videoEl?.videoWidth && videoEl.videoHeight) {
 			bildform = videoEl.videoWidth / videoEl.videoHeight;
 		}
 	}
 
-	async function startCamera() {
+	async function starteKamera() {
 		try {
-			errorMsg = null;
+			kameraFehler = null;
 			stream = await navigator.mediaDevices.getUserMedia({
 				video: {
 					width: { ideal: 1920 }, // High resolution for sharp details
@@ -52,11 +52,11 @@
 			}
 		} catch (err) {
 			const fehler = /** @type {any} */ (err);
-			errorMsg = 'Kamera-Zugriff fehlgeschlagen: ' + fehler.message;
+			kameraFehler = 'Kamera-Zugriff fehlgeschlagen: ' + fehler.message;
 		}
 	}
 
-	async function capturePhoto() {
+	async function nehmeFotoAuf() {
 		if (!videoEl || !stream || isCapturing) return;
 		isCapturing = true;
 
@@ -77,11 +77,11 @@
 			ctx.drawImage(videoEl, a.x, a.y, a.breite, a.hoehe, 0, 0, a.breite, a.hoehe);
 
 			// Export high-quality JPEG
-			const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+			const bildDaten = canvas.toDataURL('image/jpeg', 0.95);
 
 			// Upload to backend
 			const res = await apiClient.post(`/api/schueler/${studentId}/photo`, {
-				photo_data: dataUrl
+				photo_data: bildDaten
 			});
 
 			if (!res.ok) {
@@ -92,7 +92,7 @@
 			onCapture(daten.url);
 		} catch (err) {
 			const fehler = /** @type {any} */ (err);
-			errorMsg = 'Aufnahme fehlgeschlagen: ' + fehler.message;
+			kameraFehler = 'Aufnahme fehlgeschlagen: ' + fehler.message;
 		} finally {
 			// Auch im Erfolgsfall zurücksetzen. Heute schließt der Aufrufer das Overlay
 			// direkt danach, die Komponente verschwindet also ohnehin — aber daran darf
@@ -111,7 +111,7 @@
 	}
 
 	onMount(() => {
-		startCamera();
+		starteKamera();
 		return () => stoppeKamera();
 	});
 </script>
@@ -123,18 +123,18 @@
 	<!-- Hinter der Sperre läuft keine Kamera (wie KameraScanner). -->
 	<div
 		class="space-y-4 p-6"
-		use:ruhtWennTraege={{ anhalten: stoppeKamera, fortsetzen: startCamera }}
+		use:ruhtWennTraege={{ anhalten: stoppeKamera, fortsetzen: starteKamera }}
 	>
-		{#if errorMsg}
+		{#if kameraFehler}
 			<div
 				role="alert"
 				class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
 				<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
-				<span>{errorMsg}</span>
+				<span>{kameraFehler}</span>
 			</div>
 			<div class="flex justify-end">
-				<Button variant="secondary" onclick={startCamera}>Erneut versuchen</Button>
+				<Button variant="secondary" onclick={starteKamera}>Erneut versuchen</Button>
 			</div>
 		{:else}
 			<!-- Der Sucher hat die Form des Kamerabilds und höchstens 60 % der Fensterhöhe. Über dem
@@ -149,8 +149,8 @@
 					bind:this={videoEl}
 					autoplay
 					playsinline
-					onloadedmetadata={formLesen}
-					onresize={formLesen}
+					onloadedmetadata={leseBildform}
+					onresize={leseBildform}
 					class="h-full w-full object-cover"
 				></video>
 				<div class="pointer-events-none absolute inset-0 flex {hochkant ? 'flex-col' : ''}">
@@ -174,7 +174,7 @@
 				<p class="text-sm text-on-surface-variant">
 					Gespeichert wird der helle Ausschnitt im Hochformat 3:4.
 				</p>
-				<Button onclick={capturePhoto} disabled={isCapturing} class="shrink-0">
+				<Button onclick={nehmeFotoAuf} disabled={isCapturing} class="shrink-0">
 					{#if isCapturing}
 						<Ladekreis size="sm" farbe="aktuell" />
 						Speichert …

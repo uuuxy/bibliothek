@@ -41,7 +41,7 @@
 	let lesehistorie = $state(geladen.lesehistorie_tage);
 	let lesehistorieLmf = $state(geladen.lesehistorie_lernmittel_tage);
 	let anliegen = $state(geladen.anliegen_tage);
-	let auditMonate = $state(geladen.audit_aufbewahrung_monate);
+	let protokollMonate = $state(geladen.audit_aufbewahrung_monate);
 	let thekeLeeren = $state(geladen.theke_leeren_minuten);
 	let sperre = $state(geladen.sperre_minuten);
 	let abgaengerKarenz = $state(geladen.abgaenger_karenz_tage);
@@ -74,7 +74,7 @@
 					// einstellungenSpeichern.js, bevor etwas rausgeht.
 					schluessel: 'audit_aufbewahrung_monate',
 					label: 'Prüfprotokoll aufbewahren',
-					wert: auditMonate,
+					wert: protokollMonate,
 					min: 6
 				},
 				{
@@ -153,7 +153,7 @@
 		/>
 		<Feld
 			type="number"
-			bind:value={auditMonate}
+			bind:value={protokollMonate}
 			label="Prüfprotokoll aufbewahren (Monate)"
 			min={6}
 			max={120}

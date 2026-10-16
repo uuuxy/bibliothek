@@ -17,10 +17,10 @@
 
 	// State Runes (Svelte 5). Abruf, Reihenfolge-Schutz und Fehlerzustand: statistikAbruf.
 	const abruf = statistikAbruf();
-	const stats = $derived(abruf.daten);
-	let selectedTimeframe = $state('all');
+	const kennzahlen = $derived(abruf.daten);
+	let zeitraum = $state('all');
 	/** Bestandsfilter: '' = Gesamt, 'freihand' = Schülerbücherei, 'lmf' = Lernmittel */
-	let selectedType = $state('');
+	let medientyp = $state('');
 	/** Segmented Control der „Bestands-Analysen"-Card. @type {'renner' | 'ladenhueter'} */
 	let analyse = $state('renner');
 
@@ -58,41 +58,41 @@
 
 	// Die Card zeigt Top 8 (eine Tabelle statt zwei → mehr Platz pro Zeile);
 	// die volle Liste liegt auf der Detailseite.
-	const topRenner = $derived(stats?.popular_titles?.slice(0, 8) ?? []);
-	const topWarmers = $derived(stats?.shelf_warmers?.slice(0, 8) ?? []);
+	const topRenner = $derived(kennzahlen?.popular_titles?.slice(0, 8) ?? []);
+	const topWarmers = $derived(kennzahlen?.shelf_warmers?.slice(0, 8) ?? []);
 	const aktiveListe = $derived(analyse === 'renner' ? topRenner : topWarmers);
 
 	// Farbe folgt dem Wert: „Schaden"-Kennzahlen werden erst rot, wenn es wirklich etwas zu
 	// melden gibt. Bei 0 bleiben sie ruhig-grün — so behält Rot seine Signalwirkung und der
 	// Bestzustand sieht nicht wie eine Alarmtafel aus.
 	const verlusteFarbe = $derived(
-		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-error' : 'text-success'
+		(kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-error' : 'text-success'
 	);
 
 	// Zweiter, farbunabhängiger Kanal (WCAG 1.4.1): Bei Handlungsbedarf erscheint zusätzlich
 	// ein Warn-Icon. Im Bestzustand (0) bleibt es icon-frei — die Ampelfarbe steht dann nicht
 	// mehr allein für die Aussage; die Zahl selbst und das (fehlende) Icon tragen sie mit.
 	const verlusteStatus = $derived(
-		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null
+		(kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null
 	);
 
 	// limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
 	// dadurch keinen einzigen weiteren API-Call.
-	function fetchStats() {
+	function ladeKennzahlen() {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const params = new URLSearchParams({ limit: '100' });
-		if (selectedTimeframe !== 'all') params.set('zeitraum', selectedTimeframe);
-		if (selectedType) params.set('type', selectedType);
+		if (zeitraum !== 'all') params.set('zeitraum', zeitraum);
+		if (medientyp) params.set('type', medientyp);
 		abruf.laden(params);
 	}
 
 	// Re-fetch whenever timeframe or Bestandsfilter changes
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		selectedTimeframe; // track dependency
+		zeitraum; // track dependency
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		selectedType;
-		fetchStats();
+		medientyp;
+		ladeKennzahlen();
 	});
 </script>
 
@@ -249,8 +249,8 @@
 				<Segmente
 					etikett="Bestand filtern"
 					optionen={BESTAND_TYPES}
-					wert={selectedType}
-					onwahl={(v) => (selectedType = v)}
+					wert={medientyp}
+					onwahl={(v) => (medientyp = v)}
 				/>
 			</div>
 			<div class="flex items-center gap-2">
@@ -258,8 +258,8 @@
 				<Segmente
 					etikett="Zeitraum filtern"
 					optionen={TIMEFRAMES}
-					wert={selectedTimeframe}
-					onwahl={(v) => (selectedTimeframe = v)}
+					wert={zeitraum}
+					onwahl={(v) => (zeitraum = v)}
 				/>
 			</div>
 		</div>
@@ -268,37 +268,37 @@
 			{@render skeleton()}
 		{:else if abruf.fehler}
 			<LadeFehler
-				onerneut={fetchStats}
+				onerneut={ladeKennzahlen}
 				titel="Statistik nicht geladen"
 				text="Die Kennzahlen konnten nicht abgerufen werden."
 			/>
-		{:else if stats}
+		{:else if kennzahlen}
 			<!-- 1) KPI-Reihe: vier gleichwertige Kacheln in EINEM durchgehenden 4er-Grid. -->
 			<div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
 				{@render kpi(
 					'Gesamtbestand',
-					num(stats.loss_stats.gesamt_bestand),
+					num(kennzahlen.loss_stats.gesamt_bestand),
 					'Physische Buchkopien im System',
 					'text-on-surface'
 				)}
 				{@render kpi(
 					'Aktuell verliehen',
-					num(stats.zirkulation?.aktuell_verliehen ?? 0),
-					`von ${num(stats.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
+					num(kennzahlen.zirkulation?.aktuell_verliehen ?? 0),
+					`von ${num(kennzahlen.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
 					'text-primary'
 				)}
 				<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
 				     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
 				{@render kpi(
 					'Zirkulationsquote',
-					`${num(stats.zirkulationsquote ?? 0)}\u00a0%`,
+					`${num(kennzahlen.zirkulationsquote ?? 0)}\u00a0%`,
 					'verliehen ÷ aktiver Bestand',
 					'text-on-surface'
 				)}
 				{@render kpi(
 					'Verluste & Schäden',
-					num(stats.loss_stats.verlorene_exemplare),
-					`${num(stats.loss_stats.verlust_quote ?? 0)}\u00a0% Quote · ${euro(stats.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
+					num(kennzahlen.loss_stats.verlorene_exemplare),
+					`${num(kennzahlen.loss_stats.verlust_quote ?? 0)}\u00a0% Quote · ${euro(kennzahlen.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
 					verlusteFarbe,
 					verlusteStatus
 				)}
@@ -308,11 +308,11 @@
 			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
 			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
 				<div class="lg:col-span-2 {FLAECHE} p-5 h-72 flex flex-col">
-					<StatistikVerlauf data={stats.monats_trend ?? []} />
+					<StatistikVerlauf data={kennzahlen.monats_trend ?? []} />
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">
-					<UeberfaelligQuote aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
+					<UeberfaelligQuote aktuellVerliehen={kennzahlen.zirkulation?.aktuell_verliehen ?? 0} />
 				</div>
 			</div>
 

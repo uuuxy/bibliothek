@@ -27,7 +27,7 @@
 	// „CD verloren" an einem gesperrten Buch hieße sonst „Verloren", und das Speichern sonderte
 	// es aus.
 	// svelte-ignore state_referenced_locally
-	let editStatusType = $state(
+	let neuerStatus = $state(
 		ex.ist_ausleihbar
 			? 'Verfügbar'
 			: ex.ist_ausgesondert
@@ -35,21 +35,21 @@
 				: 'Gesperrt (Defekt/Reserviert)'
 	);
 	// svelte-ignore state_referenced_locally
-	let editStatusNote = $state(ex.zustand_notiz || '');
+	let neueNotiz = $state(ex.zustand_notiz || '');
 	// Der Beschädigungsgrad (Migration 127): Was das Buch durch seinen Zustand an Wert
 	// verloren hat. Er steht in DIESEM Dialog, weil er zum Zustand gehört — und er
 	// überlebt „Verfügbar", anders als die Notiz: Ein Band mit Wasserrand darf
 	// ausleihbar sein und trägt seinen Abschlag weiter in jeden künftigen Ersatzbetrag.
 	// svelte-ignore state_referenced_locally
-	let editAbwertung = $state(ex.zustand_abwertung_prozent ?? 0);
-	let statusError = $state('');
+	let abwertung = $state(ex.zustand_abwertung_prozent ?? 0);
+	let fehler = $state('');
 
-	async function saveStatus() {
-		statusError = '';
+	async function speichereStatus() {
+		fehler = '';
 		try {
-			const isAusleihbar = editStatusType === 'Verfügbar';
-			const isAusgesondert = editStatusType === 'Verloren' ? true : false;
-			const notiz = isAusleihbar ? '' : editStatusNote.trim();
+			const isAusleihbar = neuerStatus === 'Verfügbar';
+			const isAusgesondert = neuerStatus === 'Verloren' ? true : false;
+			const notiz = isAusleihbar ? '' : neueNotiz.trim();
 			/** @type {Record<string, any>} */
 			const koerper = {
 				ist_ausleihbar: isAusleihbar,
@@ -60,7 +60,7 @@
 			// etwas eingetragen ist. Hätte eine alte Antwort das Feld nicht geliefert,
 			// wäre die 0 aus dem Startwert sonst eine stille Löschung eines erfassten
 			// Schadens — der Server lässt ein FEHLENDES Feld ausdrücklich unangetastet.
-			const grad = Number(editAbwertung);
+			const grad = Number(abwertung);
 			const bekannt = typeof ex.zustand_abwertung_prozent === 'number';
 			if (Number.isFinite(grad) && (bekannt || grad !== 0)) {
 				koerper.zustand_abwertung_prozent = grad;
@@ -91,27 +91,27 @@
 				onDone();
 				showToast('Status erfolgreich gespeichert', 'success');
 			} else {
-				const errData = await res.json().catch(() => ({}));
-				statusError = errData.error || 'Fehler beim Speichern';
+				const fehlerAntwort = await res.json().catch(() => ({}));
+				fehler = fehlerAntwort.error || 'Fehler beim Speichern';
 			}
 		} catch {
-			statusError = 'Netzwerkfehler';
+			fehler = 'Netzwerkfehler';
 		}
 	}
 </script>
 
 <div class="mt-2 rounded-xl border border-outline-variant p-3">
 	<div class="flex items-center gap-2 mb-2">
-		<Select bind:value={editStatusType} options={STATUS} aria-label="Status des Exemplars" />
+		<Select bind:value={neuerStatus} options={STATUS} aria-label="Status des Exemplars" />
 	</div>
-	{#if editStatusType !== 'Verfügbar'}
+	{#if neuerStatus !== 'Verfügbar'}
 		<Feld
-			bind:value={editStatusNote}
+			bind:value={neueNotiz}
 			placeholder="Notiz (optional)"
 			aria-label="Notiz zum Status"
 			feld="mb-2"
 			onkeydown={(e) => {
-				if (e.key === 'Enter') saveStatus();
+				if (e.key === 'Enter') speichereStatus();
 				if (e.key === 'Escape') onDone();
 			}}
 		/>
@@ -125,7 +125,7 @@
 	     des Hauses (Feld.svelte) und benennt das Feld auch für den Screenreader. -->
 	<div class="mb-2 max-w-40">
 		<Feld
-			bind:value={editAbwertung}
+			bind:value={abwertung}
 			label="Wertverlust (%)"
 			type="number"
 			min="0"
@@ -133,7 +133,7 @@
 			step="5"
 			feld="w-24"
 			onkeydown={(e) => {
-				if (e.key === 'Enter') saveStatus();
+				if (e.key === 'Enter') speichereStatus();
 				if (e.key === 'Escape') onDone();
 			}}
 		/>
@@ -151,9 +151,9 @@
 	{/if}
 	<div class="flex items-center justify-between gap-2">
 		<Button variant="ghost" size="sm" onclick={onDone}>Abbrechen</Button>
-		<Button size="sm" onclick={saveStatus}>Speichern</Button>
+		<Button size="sm" onclick={speichereStatus}>Speichern</Button>
 	</div>
-	{#if statusError}
-		<p class="text-label-small text-error mt-1">{statusError}</p>
+	{#if fehler}
+		<p class="text-label-small text-error mt-1">{fehler}</p>
 	{/if}
 </div>

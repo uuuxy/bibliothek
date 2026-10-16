@@ -41,23 +41,23 @@ function baueNachbuchPayload(batchItems) {
 
 	return {
 		gesendet_am: new Date(jetzt).toISOString(),
-		eintraege: batchItems.map((item) => {
-			let gescannt = item.gescannt_am;
-			if (mono !== null && item.ursprung === ursprung && typeof item.mono === 'number') {
-				gescannt = jetzt - (mono - item.mono);
+		eintraege: batchItems.map((posten) => {
+			let gescannt = posten.gescannt_am;
+			if (mono !== null && posten.ursprung === ursprung && typeof posten.mono === 'number') {
+				gescannt = jetzt - (mono - posten.mono);
 			}
 			/** @type {any} */
 			const e = {
-				schluessel: item.id,
-				absicht: item.art,
-				barcode: item.barcode,
+				schluessel: posten.id,
+				absicht: posten.art,
+				barcode: posten.barcode,
 				gescannt_am: new Date(gescannt).toISOString()
 			};
 			// Eine Ausleihe traegt ihre Person, eine Rueckgabe nicht — der Server findet
 			// den Vorbesitzer selbst. `ausweis_barcode` kennt die Tuer bereits; gefuellt
 			// wird es, sobald die Theke Ausweise offline annimmt.
-			if (item.art === 'ausleihe' && item.leser_id) e.leser_id = item.leser_id;
-			if (item.ausweis_barcode) e.ausweis_barcode = item.ausweis_barcode;
+			if (posten.art === 'ausleihe' && posten.leser_id) e.leser_id = posten.leser_id;
+			if (posten.ausweis_barcode) e.ausweis_barcode = posten.ausweis_barcode;
 			return e;
 		})
 	};
@@ -96,35 +96,35 @@ const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 //   - `aufsicht_informieren` ist keine Meldung, sondern eine Aufgabe: Das Buch stand auf
 //     einem Bescheid, der schon bei der Schulaufsicht liegt.
 /**
- * @param {import('../offlineWarteschlange.js').OfflineEintrag} item
+ * @param {import('../offlineWarteschlange.js').OfflineEintrag} posten
  * @param {any} erg das endgültige Ergebnis des Servers zu diesem Eintrag
  * @returns {{ barcode: string, meldung: string }[]}
  */
-function zuPruefendeFuer(item, erg) {
+function zuPruefendeFuer(posten, erg) {
 	/** @type {{ barcode: string, meldung: string }[]} */
 	const pruefen = [];
 	if (erg.ergebnis === 'nicht_gebucht' || erg.ergebnis === 'veraltet') {
 		pruefen.push({
-			barcode: item.barcode,
+			barcode: posten.barcode,
 			meldung: erg.grund ? `nicht gebucht (${erg.grund})` : 'nicht gebucht'
 		});
 	} else if (erg.ergebnis === 'umgebucht') {
 		pruefen.push({
-			barcode: item.barcode,
+			barcode: posten.barcode,
 			meldung: 'lag bei jemand anderem — dort zurückgenommen und neu ausgeliehen'
 		});
 	} else {
 		const gebucht = erg.daten?.type;
-		if (gebucht && gebucht !== item.art) {
+		if (gebucht && gebucht !== posten.art) {
 			pruefen.push({
-				barcode: item.barcode,
-				meldung: `als ${nenne(item.art)} gescannt, der Server buchte ${nenne(gebucht)}`
+				barcode: posten.barcode,
+				meldung: `als ${nenne(posten.art)} gescannt, der Server buchte ${nenne(gebucht)}`
 			});
 		}
 	}
 
 	if (erg.aufsicht_informieren) {
-		pruefen.push({ barcode: item.barcode, meldung: erg.aufsicht_informieren });
+		pruefen.push({ barcode: posten.barcode, meldung: erg.aufsicht_informieren });
 	}
 
 	return pruefen;
@@ -142,16 +142,16 @@ function zuPruefendeFuer(item, erg) {
 // Ein Schluessel, den der Server GAR NICHT beantwortet hat, bleibt ebenfalls liegen.
 // Schweigen ist kein Erfolg — bis zum 15.09.2026 galt es als erledigt.
 /**
- * @param {any} data
+ * @param {any} antwort
  * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
  * @returns {Promise<{ pruefen: { barcode: string, meldung: string }[], weiter: boolean }>}
  */
-async function verarbeiteNachbuchErgebnisse(data, batchItems) {
+async function verarbeiteNachbuchErgebnisse(antwort, batchItems) {
 	/** @type {{ barcode: string, meldung: string }[]} */
 	const pruefen = [];
 	let weiter = true;
 
-	const versatz = Number(data?.uhr_versatz_sekunden ?? 0);
+	const versatz = Number(antwort?.uhr_versatz_sekunden ?? 0);
 	if (Math.abs(versatz) > 60) {
 		// Kein Abbruch: Der Server rechnet den Versatz selbst heraus. Die Zeile sagt nur,
 		// dass die Uhr dieses Rechners deutlich falsch geht — das gehoert in die Wartung.
@@ -163,17 +163,17 @@ async function verarbeiteNachbuchErgebnisse(data, batchItems) {
 	// nichts sein — das Ding lebt nur fuer die Dauer dieser Auswertung.
 	/** @type {Record<string, any>} */
 	const nachSchluessel = Object.create(null);
-	for (const e of data?.ergebnisse ?? []) if (e?.schluessel) nachSchluessel[e.schluessel] = e;
+	for (const e of antwort?.ergebnisse ?? []) if (e?.schluessel) nachSchluessel[e.schluessel] = e;
 
-	for (const item of batchItems) {
-		const erg = nachSchluessel[item.id];
+	for (const posten of batchItems) {
+		const erg = nachSchluessel[posten.id];
 		if (!erg || !NACHBUCH_ENDGUELTIG.has(erg.ergebnis)) {
 			weiter = false;
 			continue;
 		}
 
-		pruefen.push(...zuPruefendeFuer(item, erg));
-		await dequeueOfflineAction(item.id);
+		pruefen.push(...zuPruefendeFuer(posten, erg));
+		await dequeueOfflineAction(posten.id);
 	}
 	return { pruefen, weiter };
 }
@@ -206,7 +206,7 @@ function meldeZuPruefende(pruefen) {
 	);
 }
 
-function createOfflineSyncStore() {
+function erzeugeOfflineSync() {
 	let pendingCount = $state(0);
 	let isSyncing = $state(false);
 	// Die Warteschlange ließ sich nicht lesen (Commit 5): Das Band sagt es, statt 0 zu zeigen.
@@ -248,8 +248,8 @@ function createOfflineSyncStore() {
 			}
 			abgelehntMitStatus = null;
 
-			const data = await res.json();
-			const { pruefen, weiter } = await verarbeiteNachbuchErgebnisse(data, batchItems);
+			const antwort = await res.json();
+			const { pruefen, weiter } = await verarbeiteNachbuchErgebnisse(antwort, batchItems);
 			meldeZuPruefende(pruefen);
 			await updateCount();
 			if (!weiter) return false;
@@ -367,7 +367,7 @@ function createOfflineSyncStore() {
 	// durchhalten kann. Verlassen darf man sich darauf ohnehin nicht — beim
 	// Herunterfahren von Windows bekommt der Browser oft keine Gelegenheit mehr,
 	// diesen Dialog zu zeigen. Deshalb steht dieselbe Anweisung dauerhaft im Banner.
-	function handleBeforeUnload(e) {
+	function warneVorDemSchliessen(e) {
 		if (pendingCount > 0) {
 			e.preventDefault();
 			const msg = `${pendingCount} Vorgang/Vorgänge sind nur auf diesem Rechner gespeichert. Bitte zuerst "Sicherung speichern" — danach darf der Rechner aus.`;
@@ -389,7 +389,7 @@ function createOfflineSyncStore() {
 			// Ob das Netz da ist, misst netzLage — navigator.onLine allein ist eine Behauptung.
 			netzLage.beiRueckkehr(() => startSync());
 
-			window.addEventListener('beforeunload', handleBeforeUnload);
+			window.addEventListener('beforeunload', warneVorDemSchliessen);
 			// Jede Minute ein Anlauf, falls das online-Ereignis fehlte oder ein Eintrag nach
 			// 5xx/429 liegen blieb (die Runde endet dort, statt sofort erneut zu senden).
 			setInterval(() => {
@@ -423,4 +423,4 @@ function createOfflineSyncStore() {
 	};
 }
 
-export const offlineSync = createOfflineSyncStore();
+export const offlineSync = erzeugeOfflineSync();

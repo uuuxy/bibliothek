@@ -12,13 +12,13 @@
 	import { vorlagenName } from './mailVorlagenInfo.js';
 
 	/** @type {any[]} */
-	let templates = $state([]);
-	let selectedTemplateId = $state(null);
+	let vorlagen = $state([]);
+	let gewaehlteKennung = $state(null);
 	let speichert = $state(false);
 	let fehler = $state('');
 	let laedt = $state(true);
 
-	let selectedTemplate = $derived(templates.find((t) => t.id === selectedTemplateId) || null);
+	let gewaehlteVorlage = $derived(vorlagen.find((t) => t.id === gewaehlteKennung) || null);
 
 	$effect(() => {
 		ladeVorlagen();
@@ -28,9 +28,9 @@
 		try {
 			const res = await apiClient.get('/api/mail-templates');
 			if (res.ok) {
-				templates = (await res.json()) || [];
-				if (templates.length > 0 && !selectedTemplateId) {
-					selectedTemplateId = templates[0].id;
+				vorlagen = (await res.json()) || [];
+				if (vorlagen.length > 0 && !gewaehlteKennung) {
+					gewaehlteKennung = vorlagen[0].id;
 				}
 			} else {
 				fehler = 'Fehler beim Laden der Vorlagen.';
@@ -43,15 +43,15 @@
 		}
 	}
 
-	async function saveTemplate() {
-		if (!selectedTemplate) return;
+	async function speichereVorlage() {
+		if (!gewaehlteVorlage) return;
 		speichert = true;
 		fehler = '';
 
 		try {
-			const res = await apiClient.put(`/api/mail-templates/${selectedTemplate.id}`, {
-				betreff: selectedTemplate.betreff,
-				text_body: selectedTemplate.text_body
+			const res = await apiClient.put(`/api/mail-templates/${gewaehlteVorlage.id}`, {
+				betreff: gewaehlteVorlage.betreff,
+				text_body: gewaehlteVorlage.text_body
 			});
 
 			if (res.ok) {
@@ -68,17 +68,17 @@
 	}
 
 	/** @param {Event} e */
-	function updateBetreff(e) {
-		if (!selectedTemplateId) return;
+	function setzeBetreff(e) {
+		if (!gewaehlteKennung) return;
 		const val = /** @type {HTMLInputElement} */ (e.target).value;
-		templates = templates.map((t) => (t.id === selectedTemplateId ? { ...t, betreff: val } : t));
+		vorlagen = vorlagen.map((t) => (t.id === gewaehlteKennung ? { ...t, betreff: val } : t));
 	}
 
 	/** @param {Event} e */
-	function updateTextBody(e) {
-		if (!selectedTemplateId) return;
+	function setzeText(e) {
+		if (!gewaehlteKennung) return;
 		const val = /** @type {HTMLTextAreaElement} */ (e.target).value;
-		templates = templates.map((t) => (t.id === selectedTemplateId ? { ...t, text_body: val } : t));
+		vorlagen = vorlagen.map((t) => (t.id === gewaehlteKennung ? { ...t, text_body: val } : t));
 	}
 </script>
 
@@ -98,8 +98,8 @@
 			{#if laedt}
 				<div class="py-4 text-sm text-center text-on-surface-variant">Lade Vorlagen...</div>
 			{:else}
-				{#each templates as t, _i (_i)}
-					{@const gewaehlt = selectedTemplateId === t.id}
+				{#each vorlagen as t, _i (_i)}
+					{@const gewaehlt = gewaehlteKennung === t.id}
 					<button
 						type="button"
 						aria-current={gewaehlt ? 'true' : undefined}
@@ -107,7 +107,7 @@
 							? 'bg-secondary-container text-on-secondary-container'
 							: 'text-on-surface-variant hover:bg-surface-container'}"
 						onclick={() => {
-							selectedTemplateId = t.id;
+							gewaehlteKennung = t.id;
 							fehler = '';
 						}}
 					>
@@ -121,13 +121,13 @@
 		</div>
 
 		<div class="lg:w-2/3">
-			{#if selectedTemplate}
+			{#if gewaehlteVorlage}
 				<div class="flex flex-col h-full gap-6">
 					<Feld
 						id="betreff"
 						label="Betreff"
-						value={selectedTemplate.betreff}
-						oninput={updateBetreff}
+						value={gewaehlteVorlage.betreff}
+						oninput={setzeBetreff}
 					/>
 
 					<Feld
@@ -136,19 +136,19 @@
 						mehrzeilig
 						zeilen={12}
 						feld="font-mono resize-y"
-						value={selectedTemplate.text_body}
-						oninput={updateTextBody}
+						value={gewaehlteVorlage.text_body}
+						oninput={setzeText}
 					/>
 
-					<MailVorlagenPlatzhalter typ={selectedTemplate.typ} />
+					<MailVorlagenPlatzhalter typ={gewaehlteVorlage.typ} />
 
 					<div class="flex justify-end pt-2">
-						<Button size="lg" onclick={saveTemplate} disabled={speichert} class="px-6">
+						<Button size="lg" onclick={speichereVorlage} disabled={speichert} class="px-6">
 							{speichert ? 'Speichern...' : 'Vorlage Speichern'}
 						</Button>
 					</div>
 				</div>
-			{:else if templates.length > 0}
+			{:else if vorlagen.length > 0}
 				<div
 					class="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant rounded-xl text-on-surface-variant"
 				>

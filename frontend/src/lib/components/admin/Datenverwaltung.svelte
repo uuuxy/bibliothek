@@ -22,33 +22,33 @@
 	const darfExport = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	let isExporting = $state(false);
-	let exportError = $state<string | null>(null);
+	let exportFehler = $state<string | null>(null);
 
 	async function exportiere() {
 		isExporting = true;
-		exportError = null;
+		exportFehler = null;
 		try {
 			await exportiereCSV();
 		} catch (err) {
-			exportError = (err instanceof Error && err.message) || 'Export fehlgeschlagen';
+			exportFehler = (err instanceof Error && err.message) || 'Export fehlgeschlagen';
 		} finally {
 			isExporting = false;
 		}
 	}
 
 	let isSyncingCovers = $state(false);
-	let syncCoversResult: { type: 'success' | 'error'; message: string } | null = $state(null);
+	let coverAbgleichErgebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
 
 	async function gleicheCoverAb() {
 		isSyncingCovers = true;
-		syncCoversResult = null;
+		coverAbgleichErgebnis = null;
 		try {
 			const res = await apiFetch('/api/admin/sync-covers', { method: 'POST' });
 			const daten = await res.json();
 			if (!res.ok) throw new Error(daten.error || 'Fehler beim Starten des Cover-Syncs');
-			syncCoversResult = { type: 'success', message: daten.message || 'Job gestartet.' };
+			coverAbgleichErgebnis = { type: 'success', message: daten.message || 'Job gestartet.' };
 		} catch (err) {
-			syncCoversResult = {
+			coverAbgleichErgebnis = {
 				type: 'error',
 				message: (err instanceof Error && err.message) || 'Job konnte nicht gestartet werden.'
 			};
@@ -116,13 +116,13 @@
 				isSyncingCovers
 			)}
 
-			{#if syncCoversResult}
+			{#if coverAbgleichErgebnis}
 				<div
-					class="mt-4 rounded-xl p-4 text-sm font-semibold {syncCoversResult.type === 'error'
+					class="mt-4 rounded-xl p-4 text-sm font-semibold {coverAbgleichErgebnis.type === 'error'
 						? 'bg-error-container text-on-error-container'
 						: 'bg-success-container text-on-success-container'}"
 				>
-					{syncCoversResult.message}
+					{coverAbgleichErgebnis.message}
 				</div>
 			{/if}
 		</div>
@@ -134,9 +134,9 @@
 		<div>
 			{@render actionButton('Katalog als CSV herunterladen', Download, exportiere, isExporting)}
 		</div>
-		{#if exportError}
+		{#if exportFehler}
 			<div class="rounded-xl bg-error-container p-4 text-sm font-semibold text-on-error-container">
-				{exportError}
+				{exportFehler}
 			</div>
 		{/if}
 	</div>

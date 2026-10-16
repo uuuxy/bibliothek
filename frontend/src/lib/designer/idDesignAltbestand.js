@@ -18,7 +18,7 @@
  * eingebettetes SVG ist (jemand hat eine eigene Datei hochgeladen), bleibt unangetastet.
  */
 
-const SVG_DATA_URI = 'data:image/svg+xml';
+const SVG_ANFANG = 'data:image/svg+xml';
 
 /** Kopfband alt: 856×143 — 135 schwarz, darunter 8 grün. Schmales Band: 72 + 8. */
 const ALT = {
@@ -111,7 +111,7 @@ export function heileAltBaender(elements) {
 			continue;
 		}
 		const istAltBild =
-			el?.type === 'image' && typeof el.content === 'string' && el.content.startsWith(SVG_DATA_URI);
+			el?.type === 'image' && typeof el.content === 'string' && el.content.startsWith(SVG_ANFANG);
 		if (!istAltBild) {
 			out.push(el);
 			continue;

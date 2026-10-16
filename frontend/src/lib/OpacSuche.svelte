@@ -16,7 +16,7 @@
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let debounce;
 
-	async function search() {
+	async function starteSuche() {
 		const q = suche.trim();
 		if (!q) {
 			ergebnisse = [];
@@ -41,7 +41,7 @@
 
 	function onInput() {
 		clearTimeout(debounce);
-		debounce = setTimeout(search, 400);
+		debounce = setTimeout(starteSuche, 400);
 	}
 </script>
 

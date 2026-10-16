@@ -36,7 +36,9 @@
 	} = $props();
 
 	const aktiv = $derived(sortierung.spalte === spalte);
-	const ariaSort = $derived(!aktiv ? 'none' : sortierung.absteigend ? 'descending' : 'ascending');
+	const ariaSortierung = $derived(
+		!aktiv ? 'none' : sortierung.absteigend ? 'descending' : 'ascending'
+	);
 	// Was der nächste Klick TUT, steht im Titel — nicht, was gerade gilt. „Nach Name
 	// sortieren" an einer schon sortierten Spalte wäre eine Lüge über den Knopf.
 	const titel = $derived(
@@ -51,7 +53,7 @@
 {#if !onsortiere}
 	<th class={klasse}>{text}</th>
 {:else}
-	<th class={klasse} aria-sort={ariaSort}>
+	<th class={klasse} aria-sort={ariaSortierung}>
 		<button
 			type="button"
 			onclick={() => onsortiere(spalte)}

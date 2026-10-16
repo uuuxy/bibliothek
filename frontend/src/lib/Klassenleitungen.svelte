@@ -15,22 +15,22 @@
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
 	let mappingRows = $state([]);
-	let mappingLoading = $state(false);
+	let zuordnungLaedt = $state(false);
 	let newMappingKlasse = $state('');
 	let newMappingEmail = $state('');
-	let mappingSaving = $state(false);
+	let zuordnungSpeichert = $state(false);
 	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
 	// Klasse an, die es an der Schule nicht gibt, und ihre Mahnliste ging an niemanden.
 	const klassenListe = erzeugeKlassenVorschlaege();
 
 	async function fetchMapping() {
-		mappingLoading = true;
+		zuordnungLaedt = true;
 		try {
 			mappingRows = (await apiGet('/api/klassen-mapping')) || [];
 		} catch {
 			/* ignore */
 		} finally {
-			mappingLoading = false;
+			zuordnungLaedt = false;
 		}
 	}
 
@@ -40,7 +40,7 @@
 
 	async function upsertMapping() {
 		if (!newMappingKlasse.trim() || !newMappingEmail.trim()) return;
-		mappingSaving = true;
+		zuordnungSpeichert = true;
 		try {
 			await apiPost('/api/klassen-mapping', {
 				klasse: newMappingKlasse.trim(),
@@ -53,7 +53,7 @@
 		} catch {
 			// Toast already shown by apiPost
 		} finally {
-			mappingSaving = false;
+			zuordnungSpeichert = false;
 		}
 	}
 
@@ -79,7 +79,7 @@
 		</p>
 	</div>
 
-	{#if mappingLoading}
+	{#if zuordnungLaedt}
 		<div class="py-8 flex justify-center">
 			<Ladekreis size="lg" />
 		</div>
@@ -140,10 +140,10 @@
 		</div>
 		<Button
 			onclick={upsertMapping}
-			disabled={mappingSaving || !newMappingKlasse.trim() || !newMappingEmail.trim()}
+			disabled={zuordnungSpeichert || !newMappingKlasse.trim() || !newMappingEmail.trim()}
 			class="w-full md:w-auto whitespace-nowrap"
 		>
-			{mappingSaving ? 'Lädt…' : 'Hinzufügen'}
+			{zuordnungSpeichert ? 'Lädt…' : 'Hinzufügen'}
 		</Button>
 	</div>
 </div>

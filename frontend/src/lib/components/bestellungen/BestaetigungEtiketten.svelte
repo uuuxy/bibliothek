@@ -24,9 +24,10 @@
 		// Das Raster gilt nur für die kleinen Etiketten. Das große Lernmittel-Etikett hat
 		// ein festes Raster (4 Stück auf A4) und wird ausgeschnitten, nicht auf
 		// vorgestanzte Bögen gedruckt.
-		const query = groesse === 'klein' && formatId ? `?format=${encodeURIComponent(formatId)}` : '';
+		const parameterText =
+			groesse === 'klein' && formatId ? `?format=${encodeURIComponent(formatId)}` : '';
 		window.open(
-			`/api/public/bestellung/${encodeURIComponent(token)}/etiketten/${groesse}${query}`,
+			`/api/public/bestellung/${encodeURIComponent(token)}/etiketten/${groesse}${parameterText}`,
 			'_blank',
 			'noopener'
 		);

@@ -35,7 +35,7 @@
 			gebuehren.some((f) => !f.ist_bezahlt && !f.storniert_am && !f.bescheid_id)
 	);
 
-	function schliesseStornoModal() {
+	function schliesseStorno() {
 		// Zustand vollständig zurücksetzen — ein stehen gebliebener Grund würde
 		// beim nächsten Fall als vorausgefüllte Begründung durchrutschen.
 		stornoFall = null;
@@ -55,7 +55,7 @@
 			// Auch nach einem Fehler-STATUS neu laden (nur bei Netzwerkfehler nicht):
 			// 409 heisst am Mehrplatz-System "eine Kollegin war schneller" — die Akte
 			// muss danach den echten Zustand zeigen, nicht den veralteten Knopf.
-			schliesseStornoModal();
+			schliesseStorno();
 			onChanged?.();
 		} catch {
 			snackbars.addToast('Netzwerkfehler.', 'error');
@@ -153,12 +153,7 @@
 {#if stornoFall}
 	<!-- Ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist. Seit
 	     07.09.2026 auf Dialog.svelte (Register 05.09.). -->
-	<Dialog
-		open={true}
-		onclose={schliesseStornoModal}
-		ebene="darueber"
-		beschriftetDurch="storno-titel"
-	>
+	<Dialog open={true} onclose={schliesseStorno} ebene="darueber" beschriftetDurch="storno-titel">
 		<div class="p-6">
 			<h3 id="storno-titel" class="text-xl font-bold text-on-surface mb-2">
 				Gebühr wirklich stornieren?
@@ -177,9 +172,7 @@
 			/>
 
 			<div class="flex justify-end gap-2 mt-6">
-				<Button variant="secondary" onclick={schliesseStornoModal} disabled={laeuft}>
-					Abbrechen
-				</Button>
+				<Button variant="secondary" onclick={schliesseStorno} disabled={laeuft}>Abbrechen</Button>
 				<Button
 					variant="danger"
 					onclick={() =>

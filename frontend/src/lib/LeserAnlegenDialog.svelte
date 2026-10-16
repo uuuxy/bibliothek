@@ -27,7 +27,7 @@
 	let newBarcode = $state('');
 	let newGeburtsdatum = $state('');
 	let newEmail = $state('');
-	let createError = $state('');
+	let fehler = $state('');
 	let duplicateConflict = $state('');
 	let speichert = $state(false);
 
@@ -47,7 +47,7 @@
 			newBarcode = '';
 			newGeburtsdatum = '';
 			newEmail = '';
-			createError = '';
+			fehler = '';
 			duplicateConflict = '';
 		}
 	});
@@ -72,9 +72,9 @@
 	}
 
 	async function legeAn() {
-		createError = fehlendeAngabe();
+		fehler = fehlendeAngabe();
 		duplicateConflict = '';
-		if (createError) return;
+		if (fehler) return;
 
 		speichert = true;
 		try {
@@ -105,9 +105,9 @@
 			// 16.09.2026 stand hier ein fester Satz über Schüler; bei einer Lehrkraft war
 			// er schlicht falsch.
 			if (res.status === 409) duplicateConflict = meldung || 'Diese Person gibt es bereits.';
-			else createError = meldung || `Fehler beim Anlegen (${leserArtText(art)}).`;
+			else fehler = meldung || `Fehler beim Anlegen (${leserArtText(art)}).`;
 		} catch (err) {
-			createError = 'Netzwerkfehler beim Anlegen.';
+			fehler = 'Netzwerkfehler beim Anlegen.';
 			console.error(err);
 		} finally {
 			speichert = false;
@@ -131,9 +131,9 @@
 			</div>
 		{/if}
 
-		{#if createError}
+		{#if fehler}
 			<div class="p-3 bg-error-container rounded-xl text-xs font-semibold text-on-error-container">
-				{createError}
+				{fehler}
 			</div>
 		{/if}
 

@@ -20,7 +20,7 @@
 	// `email` ist die Adresse am Konto; leer heißt: kein Zugang, der erlöschen könnte.
 	const mitZugang = $derived(kollege && !!profile?.email);
 
-	let deleteError = $state('');
+	let fehler = $state('');
 	let laeuft = $state(false);
 	let confirmText = $state('');
 
@@ -29,18 +29,18 @@
 
 	$effect(() => {
 		if (open) {
-			deleteError = '';
+			fehler = '';
 			laeuft = false;
 			confirmText = '';
 		}
 	});
 
-	async function deleteStudent() {
+	async function loescheLeser() {
 		if (profile?.entliehene_buecher && profile.entliehene_buecher.length > 0) {
-			deleteError = 'Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher';
+			fehler = 'Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher';
 			return;
 		}
-		deleteError = '';
+		fehler = '';
 		laeuft = true;
 		try {
 			const res = await apiFetch(`/api/schueler/${profile.id}`, { method: 'DELETE' });
@@ -50,13 +50,13 @@
 				const errText = await res.text();
 				try {
 					const errObj = JSON.parse(errText);
-					deleteError = errObj.error || 'Fehler beim Löschen des Schülers.';
+					fehler = errObj.error || 'Fehler beim Löschen des Schülers.';
 				} catch {
-					deleteError = errText || 'Fehler beim Löschen des Schülers.';
+					fehler = errText || 'Fehler beim Löschen des Schülers.';
 				}
 			}
 		} catch (err) {
-			deleteError = 'Netzwerkfehler beim Löschen des Schülers.';
+			fehler = 'Netzwerkfehler beim Löschen des Schülers.';
 			console.error(err);
 		} finally {
 			laeuft = false;
@@ -114,12 +114,12 @@
 					/>
 				</div>
 
-				{#if deleteError}
+				{#if fehler}
 					<div
 						role="alert"
 						class="mt-4 p-3 bg-error-container text-on-error-container rounded-xl text-xs font-semibold"
 					>
-						{deleteError}
+						{fehler}
 					</div>
 				{/if}
 				<div class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
@@ -133,7 +133,7 @@
 					<Button
 						variant="danger-solid"
 						size="lg"
-						onclick={deleteStudent}
+						onclick={loescheLeser}
 						disabled={laeuft || !isConfirmed}
 						class="w-full sm:w-auto"
 					>

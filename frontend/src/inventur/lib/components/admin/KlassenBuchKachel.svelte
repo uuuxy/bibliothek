@@ -57,7 +57,7 @@
 		coverFailed = kandidaten.length === 0;
 	});
 
-	function onCoverError() {
+	function naechsteQuelle() {
 		if (currentCandidateIndex < coverCandidates.length - 1) {
 			currentCandidateIndex++;
 		} else {
@@ -66,9 +66,9 @@
 	}
 
 	/** @param {Event} event */
-	function onCoverLoad(event) {
+	function pruefeGeladenes(event) {
 		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) onCoverError();
+		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
 	}
 </script>
 
@@ -82,8 +82,8 @@
 				alt=""
 				loading="lazy"
 				class="h-full w-full object-cover"
-				onerror={onCoverError}
-				onload={onCoverLoad}
+				onerror={naechsteQuelle}
+				onload={pruefeGeladenes}
 			/>
 		{:else}
 			<BuchKarteCover subject={book.subject} title={book.title} />

@@ -34,8 +34,8 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	 *  Serverseitig wie Suche und Filter: Im Browser sortiert säße die Sortierung HINTER
 	 *  der Kappung bei 500 Zeilen — sie ordnete dann die ersten 500 der Kartei-Reihenfolge
 	 *  um, statt die ersten 500 der gewählten. Das sieht richtig aus und ist es nicht. */
-	let sortSpalte = $state('');
-	let sortAbsteigend = $state(false);
+	let sortierSpalte = $state('');
+	let sortierAbsteigend = $state(false);
 	/** Die besetzten Jahrgänge fürs Auswahlfeld — vom Server, damit die Ableitung
 	 *  „Klassenname → Jahrgang" nicht ein zweites Mal in JavaScript entsteht. */
 	let jahrgaenge = $state.raw(/** @type {number[]} */ ([]));
@@ -63,9 +63,9 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			const q = suche.trim();
 			const text = q ? `&q=${encodeURIComponent(q)}` : '';
 			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
-			const richtung = sortAbsteigend ? 'ab' : 'auf';
-			const so = sortSpalte
-				? `&sortierung=${encodeURIComponent(sortSpalte)}&richtung=${richtung}`
+			const richtung = sortierAbsteigend ? 'ab' : 'auf';
+			const so = sortierSpalte
+				? `&sortierung=${encodeURIComponent(sortierSpalte)}&richtung=${richtung}`
 				: '';
 			// art=alle: die LESERDATEI. Ohne diesen Zusatz liefert die Tür nur Schüler —
 			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
@@ -173,18 +173,18 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			suche = wert;
 		},
 		get sortierung() {
-			return { spalte: sortSpalte, absteigend: sortAbsteigend };
+			return { spalte: sortierSpalte, absteigend: sortierAbsteigend };
 		},
 		/** Ein Klick auf einen Spaltenkopf: fremde Spalte → aufsteigend, dieselbe →
 		 *  Richtung umdrehen. Kein dritter Zustand „unsortiert": Eine Liste ist immer
 		 *  irgendwie sortiert, und ein Klick, der die Ordnung wegnimmt, verwirrt mehr
 		 *  als er hilft. */
 		sortiere(spalte) {
-			if (sortSpalte === spalte) {
-				sortAbsteigend = !sortAbsteigend;
+			if (sortierSpalte === spalte) {
+				sortierAbsteigend = !sortierAbsteigend;
 			} else {
-				sortSpalte = spalte;
-				sortAbsteigend = false;
+				sortierSpalte = spalte;
+				sortierAbsteigend = false;
 			}
 			lade();
 		},

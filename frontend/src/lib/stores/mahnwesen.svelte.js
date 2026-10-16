@@ -38,7 +38,7 @@ function berechneMahnstufe(maxTage) {
 /**
  * Creates the central Mahnwesen store.
  */
-function createMahnwesenStore() {
+function erzeugeMahnwesen() {
 	let daten = $state(/** @type {{ klassen: any[] } | null} */ (null));
 	let laedt = $state(true);
 	let fehler = $state(/** @type {string|null} */ (null));
@@ -75,12 +75,12 @@ function createMahnwesenStore() {
 
 	// Flache Liste für MD3 Table
 	let flatSchueler = $derived(() => {
-		let list = [];
+		let liste = [];
 		for (const k of klassen) {
 			for (const s of k.schueler) {
 				const maxTage = maxTageUeberfaellig(s.medien);
 				const mahnstufe = berechneMahnstufe(maxTage);
-				list.push({
+				liste.push({
 					...s,
 					maxTage,
 					mahnstufe,
@@ -89,24 +89,25 @@ function createMahnwesenStore() {
 				});
 			}
 		}
-		return list;
+		return liste;
 	});
 
 	let filteredSchueler = $derived(() => {
-		let list = flatSchueler();
+		let liste = flatSchueler();
 		if (activeFilter !== 'Alle')
-			list = list.filter((/** @type {any} */ s) => s.mahnstufe === activeFilter);
-		if (gewaehlteKlasse) list = list.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse);
+			liste = liste.filter((/** @type {any} */ s) => s.mahnstufe === activeFilter);
+		if (gewaehlteKlasse)
+			liste = liste.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse);
 		const q = suche.trim().toLowerCase();
 		if (q) {
-			list = list.filter(
+			liste = liste.filter(
 				(/** @type {any} */ s) =>
 					(s.name || '').toLowerCase().includes(q) || (s.klasse || '').toLowerCase().includes(q)
 			);
 		}
 		// Dringlichkeit zuerst: am längsten überfällig oben, dann alphabetisch. So arbeitet man
 		// die Liste von oben nach unten ab.
-		return [...list].sort(
+		return [...liste].sort(
 			(/** @type {any} */ a, /** @type {any} */ b) =>
 				b.maxTage - a.maxTage || String(a.name).localeCompare(String(b.name), 'de')
 		);
@@ -159,7 +160,7 @@ function createMahnwesenStore() {
 	}
 
 	/** Wrapper for bulk printing that supplies needed state context. */
-	async function printSelectedMahnungenWrapper() {
+	async function druckeGewaehlteMahnungen() {
 		await pdfStore.printSelectedMahnungen(selectedIds, filteredSchueler, fetchData);
 	}
 
@@ -230,8 +231,8 @@ function createMahnwesenStore() {
 		get pdfLoading() {
 			return pdfStore.pdfLoading;
 		},
-		printSelectedMahnungen: printSelectedMahnungenWrapper
+		printSelectedMahnungen: druckeGewaehlteMahnungen
 	};
 }
 
-export const mahnwesenStore = createMahnwesenStore();
+export const mahnwesenStore = erzeugeMahnwesen();

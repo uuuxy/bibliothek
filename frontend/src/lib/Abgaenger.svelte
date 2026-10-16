@@ -11,13 +11,13 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
-	function openProfile(student) {
+	function oeffneLeserakte(student) {
 		uiStore.oeffneAkte(student.id);
 	}
 
 	// State Runes
 	/** @type {any[]} */
-	let graduates = $state([]);
+	let alleAbgaenger = $state([]);
 	let laedt = $state(true);
 	// Saisonfenster vom Server: Von Mai bis Juli zeigt die Liste die Abschlussklassen;
 	// außerhalb ist sie leer, und die Tabelle erklärt warum, statt „alle entlastet" zu melden.
@@ -30,14 +30,14 @@
 	// gilt genauso für den Ausdruck: Was auf dem Bildschirm steht, steht auf dem Papier.
 	let suche = $state('');
 	let classes = $derived(
-		[...new Set(graduates.map((/** @type {any} */ s) => s.klasse))].sort((a, b) =>
+		[...new Set(alleAbgaenger.map((/** @type {any} */ s) => s.klasse))].sort((a, b) =>
 			String(a).localeCompare(String(b), 'de', { numeric: true })
 		)
 	);
-	let filteredGraduates = $derived(
+	let gefilterteAbgaenger = $derived(
 		(gewaehlteKlasse
-			? graduates.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse)
-			: graduates
+			? alleAbgaenger.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse)
+			: alleAbgaenger
 		)
 			.filter((/** @type {any} */ s) => {
 				const q = suche.trim().toLowerCase();
@@ -61,16 +61,16 @@
 
 	// Kontoauszug-Druck. Das PDF heißt intern noch /abgaenger/pdf, ist aber seit
 	// Langem der Kontoauszug mit Freigabezeile — eine Seite je Abgänger.
-	let loadingKontoauszuege = $state(false);
+	let drucktKontoauszuege = $state(false);
 
-	async function printKontoauszuege() {
-		loadingKontoauszuege = true;
+	async function druckeKontoauszuege() {
+		drucktKontoauszuege = true;
 		try {
-			await dienst.ladeKontoauszuege(gewaehlteKlasse, suche, filteredGraduates);
+			await dienst.ladeKontoauszuege(gewaehlteKlasse, suche, gefilterteAbgaenger);
 		} catch (err) {
 			showToast(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
 		} finally {
-			loadingKontoauszuege = false;
+			drucktKontoauszuege = false;
 		}
 	}
 
@@ -88,7 +88,7 @@
 	// Frontend die Adressen schlicht nicht kannte.
 	let klassenFuerVersand = $derived(
 		classes.map((k) => {
-			const schueler = graduates.filter((/** @type {any} */ s) => s.klasse === k);
+			const schueler = alleAbgaenger.filter((/** @type {any} */ s) => s.klasse === k);
 			return {
 				klasse: String(k),
 				schueler,
@@ -118,7 +118,7 @@
 	async function ladeListe() {
 		try {
 			const antwort = await dienst.ladeAbgaenger();
-			graduates = antwort.abgaenger;
+			alleAbgaenger = antwort.abgaenger;
 			fenster = antwort.fenster;
 			ladefehler = null;
 		} catch (err) {
@@ -142,8 +142,8 @@
 		// selbst aus der Liste fallen.
 		const abmelden = abonniere('action', (e) => {
 			try {
-				const actionData = JSON.parse(e.data);
-				if (actionData.event === 'rueckgabe' || actionData.event === 'fremdrueckgabe') {
+				const nachricht = JSON.parse(e.data);
+				if (nachricht.event === 'rueckgabe' || nachricht.event === 'fremdrueckgabe') {
 					ladeListe();
 				}
 			} catch (err) {
@@ -160,11 +160,11 @@
 		bind:suche
 		bind:klasse={gewaehlteKlasse}
 		klassen={classes}
-		gesamt={graduates.length}
-		gefiltert={filteredGraduates.length}
+		gesamt={alleAbgaenger.length}
+		gefiltert={gefilterteAbgaenger.length}
 		{laedt}
-		druckLaeuft={loadingKontoauszuege}
-		onDrucken={printKontoauszuege}
+		druckLaeuft={drucktKontoauszuege}
+		onDrucken={druckeKontoauszuege}
 		onMailen={() => (versandOffen = true)}
 	/>
 
@@ -177,10 +177,10 @@
 			<AbgaengerTabelle
 				{ladefehler}
 				onErneut={erneutLaden}
-				zeilen={filteredGraduates}
-				leer={graduates.length === 0}
+				zeilen={gefilterteAbgaenger}
+				leer={alleAbgaenger.length === 0}
 				{fenster}
-				onProfil={openProfile}
+				onProfil={oeffneLeserakte}
 			/>
 		</div>
 	{/if}

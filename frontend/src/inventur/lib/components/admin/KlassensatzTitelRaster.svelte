@@ -8,7 +8,7 @@
 
 	let suche = $state('');
 
-	const filteredBooks = $derived(
+	const gefilterteTitel = $derived(
 		books.filter(
 			(b) =>
 				b.title.toLowerCase().includes(suche.toLowerCase()) ||
@@ -21,7 +21,7 @@
 	// Sekunden, bis der Dialog steht. Die Zahl im Suchfeld nennt alle Treffer, nicht die
 	// gezeichneten — sonst verschwiege die Oberfläche, dass es mehr gibt.
 	const ANZEIGE_GRENZE = 60;
-	const sichtbareBuecher = $derived(filteredBooks.slice(0, ANZEIGE_GRENZE));
+	const sichtbareBuecher = $derived(gefilterteTitel.slice(0, ANZEIGE_GRENZE));
 
 	/**
 	 * @param {string} id
@@ -62,10 +62,10 @@
 		</p>
 	{/if}
 
-	{#if filteredBooks.length > ANZEIGE_GRENZE}
+	{#if gefilterteTitel.length > ANZEIGE_GRENZE}
 		<p class="mt-2 px-1 text-xs text-on-surface-variant">
-			Gezeigt werden die ersten {ANZEIGE_GRENZE} von {filteredBooks.length}. Suchbegriff eingrenzen,
-			um das gesuchte Buch zu sehen.
+			Gezeigt werden die ersten {ANZEIGE_GRENZE} von {gefilterteTitel.length}. Suchbegriff
+			eingrenzen, um das gesuchte Buch zu sehen.
 		</p>
 	{/if}
 </div>
@@ -73,7 +73,7 @@
 {#snippet nachlaufend()}
 	<span
 		class="shrink-0 whitespace-nowrap rounded-full bg-on-surface/5 px-3 py-1 text-xs font-bold text-on-surface-variant"
-		>{filteredBooks.length} Treffer</span
+		>{gefilterteTitel.length} Treffer</span
 	>
 {/snippet}
 

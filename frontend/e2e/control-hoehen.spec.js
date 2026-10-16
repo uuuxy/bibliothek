@@ -6,7 +6,7 @@
 //
 // Warum ein E2E-Test und kein Klassen-Grep: Die Höhe entsteht erst im Browser aus
 // Zeilenhöhe + Padding + Rahmen, und sie steckt oft in einer Variablen oder in einem
-// Ausdruck (class={inputClass}). Statisch war die Inventur nachweislich falsch —
+// Ausdruck (class={feldKlasse}). Statisch war die Inventur nachweislich falsch —
 // gemessen wird deshalb offsetHeight an der laufenden Anwendung.
 //
 // ── Warum 36 und nicht 40 (Material-3-Dichte) ─────────────────────────────────

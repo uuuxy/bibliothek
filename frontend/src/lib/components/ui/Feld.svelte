@@ -89,7 +89,7 @@
 	const feldId = $derived(id ?? `feld-${nummer}`);
 	const hinweisId = $derived(`${feldId}-hinweis`);
 
-	const inputClass = $derived(
+	const feldKlasse = $derived(
 		// Breite nur setzen, wenn `feld` keine mitbringt: w-full und w-64 sind gleich
 		// spezifisch, dann entschiede die Stylesheet-Reihenfolge statt des Aufrufs.
 		// Mehrzeilig wächst mit den Zeilen, die 36-px-Grundlinie gilt für eine Zeile.
@@ -122,7 +122,7 @@
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value
-			class={inputClass}
+			class={feldKlasse}
 			{...restFuerTextarea}></textarea>
 	{:else if type === 'number'}
 		<input
@@ -132,7 +132,7 @@
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value
-			class={inputClass}
+			class={feldKlasse}
 			{...rest}
 		/>
 	{:else}
@@ -143,7 +143,7 @@
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value
-			class={inputClass}
+			class={feldKlasse}
 			{...rest}
 		/>
 	{/if}

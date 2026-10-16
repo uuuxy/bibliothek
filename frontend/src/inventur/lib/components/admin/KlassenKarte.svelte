@@ -36,7 +36,7 @@
 	const zaehlerChip =
 		'bg-secondary-container text-on-secondary-container inline-flex min-w-26 shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums';
 
-	let sortedBooks = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
+	let sortierteTitel = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
 	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);
 </script>
 
@@ -101,7 +101,7 @@
 			id={rasterID}
 			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-4 pt-1 pb-6"
 		>
-			{#each sortedBooks as book (book.id)}
+			{#each sortierteTitel as book (book.id)}
 				<KlassenBuchKachel {book} {onEdit} bearbeitbar={darfPflegen} />
 			{/each}
 		</div>

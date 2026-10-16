@@ -25,7 +25,7 @@ import {
 /** @typedef {{ id: string, titel: string, autor: string, isbn: string, verlag: string, cover_url: string, menge: number, preis: number, preis_vorschlag: number, generate_barcodes: boolean, ist_lernmittel: boolean, mittel: Mittel }} CartItem */
 /** @typedef {{ mittel: Mittel, label: string, traeger: string, items: CartItem[], menge: number, summe: number }} Warenkorbgruppe */
 
-class OrderStore {
+class BestellStore {
 	/** @type {Supplier[]} */
 	suppliers = $state([]);
 	selectedSupplierId = $state('');
@@ -337,9 +337,9 @@ class OrderStore {
 				this.#leereTreffer();
 				return;
 			}
-			const data = await res.json();
+			const antwort = await res.json();
 			if (seq !== this.#searchSeq) return;
-			this.searchResults = data || [];
+			this.searchResults = antwort || [];
 			this.dnbAusfall = res.headers.get('X-DNB-Ausfall') === '1';
 			this.showDropdown = this.searchResults.length > 0 || this.dnbAusfall;
 		} catch {
@@ -471,13 +471,13 @@ class OrderStore {
 	 * scheitert, bleibt liegen und lässt sich erneut auslösen (mit demselben Schlüssel).
 	 */
 	async submitOrder() {
-		const supplier = this.selectedSupplier;
-		if (!this.cart.length || !supplier) return;
+		const lieferant = this.selectedSupplier;
+		if (!this.cart.length || !lieferant) return;
 		if (this.submitting) return; // Doppelklick abfangen, bevor die Anfrage rausgeht
 		this.submitting = true;
 		try {
 			for (const gruppe of this.gruppen) {
-				await this.#bestelleGruppe(supplier.id, gruppe);
+				await this.#bestelleGruppe(lieferant.id, gruppe);
 			}
 			await this.loadIncomingShipments();
 			this.loadRecommendations();
@@ -523,19 +523,19 @@ class OrderStore {
 		try {
 			// Der Server speichert und verschickt danach die Mail. Gäbe die Oberfläche vorher auf,
 			// meldete der zweite Versuch „war bereits erfasst", ohne dass die Mail hinausging.
-			const data = await apiPost(
+			const antwort = await apiPost(
 				'/api/bestellungen',
 				{ ...rumpf, idempotency_key: key },
 				{ timeoutMs: FRIST_MAILVERSAND_MS }
 			);
 			this.cart = this.cart.filter((i) => i.mittel !== gruppe.mittel);
 			delete this.pendingIdempotencyKeys[gruppe.mittel]; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
-			const toastType = data?.status === 'warning' ? 'error' : 'success';
+			const meldungsArt = antwort?.status === 'warning' ? 'error' : 'success';
 			const barcodeInfo =
-				data?.ordered_qty != null ? ` (${data.ordered_qty} Barcodes reserviert.)` : '';
+				antwort?.ordered_qty != null ? ` (${antwort.ordered_qty} Barcodes reserviert.)` : '';
 			snackbars.addToast(
-				`${gruppe.label}: ${data?.message ?? 'Bestellung ausgelöst.'}${barcodeInfo}`,
-				toastType
+				`${gruppe.label}: ${antwort?.message ?? 'Bestellung ausgelöst.'}${barcodeInfo}`,
+				meldungsArt
 			);
 			return true;
 		} catch {
@@ -544,4 +544,4 @@ class OrderStore {
 	}
 }
 
-export const bestellStore = new OrderStore();
+export const bestellStore = new BestellStore();

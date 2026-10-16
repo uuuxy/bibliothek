@@ -39,8 +39,8 @@ export function kontoauszugAdresse(klasse, suche = '', sichtbar = []) {
 		if (sichtbar.length === 0) throw new Error('Die Suche zeigt niemanden.');
 		parameter.set('ids', sichtbar.map((s) => s.id).join(','));
 	}
-	const query = parameter.toString();
-	return query ? `/api/abgaenger/pdf?${query}` : '/api/abgaenger/pdf';
+	const parameterText = parameter.toString();
+	return parameterText ? `/api/abgaenger/pdf?${parameterText}` : '/api/abgaenger/pdf';
 }
 
 /** Der Dateiname sagt, was im PDF steht: die Auswahl einer Suche, eine Klasse oder alle.

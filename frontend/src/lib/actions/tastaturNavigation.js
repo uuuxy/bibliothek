@@ -19,7 +19,7 @@
  */
 export function tastaturNavigation(node, params) {
 	let { totalItems, isOpen, onSelect, onIndexChange, onEscape } = params;
-	let selectedIndex = params.selectedIndex ?? -1;
+	let markierterIndex = params.selectedIndex ?? -1;
 
 	/** @param {KeyboardEvent} e */
 	function beiTaste(e) {
@@ -27,17 +27,17 @@ export function tastaturNavigation(node, params) {
 
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			selectedIndex = (selectedIndex + 1) % totalItems;
-			onIndexChange(selectedIndex);
-			scrollIntoView();
+			markierterIndex = (markierterIndex + 1) % totalItems;
+			onIndexChange(markierterIndex);
+			zeigeMarkierten();
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			selectedIndex = selectedIndex <= 0 ? totalItems - 1 : selectedIndex - 1;
-			onIndexChange(selectedIndex);
-			scrollIntoView();
-		} else if (e.key === 'Enter' && selectedIndex >= 0) {
+			markierterIndex = markierterIndex <= 0 ? totalItems - 1 : markierterIndex - 1;
+			onIndexChange(markierterIndex);
+			zeigeMarkierten();
+		} else if (e.key === 'Enter' && markierterIndex >= 0) {
 			e.preventDefault();
-			onSelect(selectedIndex);
+			onSelect(markierterIndex);
 		} else if (e.key === 'Escape') {
 			onEscape();
 		}
@@ -48,10 +48,10 @@ export function tastaturNavigation(node, params) {
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let scrollTimer;
 
-	function scrollIntoView() {
+	function zeigeMarkierten() {
 		clearTimeout(scrollTimer);
 		scrollTimer = setTimeout(() => {
-			const el = document.getElementById(`dropdown-item-${selectedIndex}`);
+			const el = document.getElementById(`dropdown-item-${markierterIndex}`);
 			if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 		}, 10);
 	}
@@ -66,10 +66,10 @@ export function tastaturNavigation(node, params) {
 			onSelect = newParams.onSelect;
 			onIndexChange = newParams.onIndexChange;
 			onEscape = newParams.onEscape;
-			if (newParams.selectedIndex !== undefined) selectedIndex = newParams.selectedIndex;
+			if (newParams.selectedIndex !== undefined) markierterIndex = newParams.selectedIndex;
 			// Reset index when closed
 			if (!isOpen) {
-				selectedIndex = -1;
+				markierterIndex = -1;
 				onIndexChange(-1);
 			}
 		},

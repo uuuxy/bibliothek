@@ -11,7 +11,7 @@ import { ohnePruefzeichen } from '../code39Pruefzeichen.js';
 
 // Bewusst im Modul-Scope und nicht im Store: Die Funktion greift auf nichts aus
 // dem Store zu — nur auf apiFetch und ihr Argument. Innen definiert wurde sie bei
-// jedem createLabelStore() neu angelegt (sonarjs S7721).
+// jedem erzeugeEtikettenStore() neu angelegt (sonarjs S7721).
 /**
  * Bucht den Druck gegen, damit die Nachdruck-Liste die Exemplare loswird.
  *
@@ -38,7 +38,7 @@ async function vermerkeGedruckt(gedruckt) {
 	}
 }
 
-function createLabelStore() {
+function erzeugeEtikettenStore() {
 	let suche = $state('');
 	let treffer = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
@@ -92,7 +92,7 @@ function createLabelStore() {
 	let newQuantity = $state(9);
 	let newStartNum = $state(20060);
 
-	let searchTimeout = /** @type {any} */ (null);
+	let suchVerzoegerung = /** @type {any} */ (null);
 	// Zählt die Titelsuchen wie exemplarLauf die Abrufe der Exemplare.
 	let suchLauf = 0;
 
@@ -100,21 +100,21 @@ function createLabelStore() {
 	let finalLabels = $derived.by(() => {
 		if ((druckWarteschlange.copies?.length ?? 0) > 0) {
 			const copies = /** @type {any[]} */ (druckWarteschlange.copies);
-			const rawList = copies.map((c) => ({
+			const etikettenListe = copies.map((c) => ({
 				barcode_id: c.barcode_id,
 				titel: c.titel,
 				autor: c.autor || ''
 			}));
 			const offsetCount = Math.max(0, startPosition - 1);
-			const offsetLabels = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
-			return [...offsetLabels, ...rawList];
+			const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
+			return [...leereFelder, ...etikettenListe];
 		}
 
 		if (!selectedTitle) return [];
 
-		let rawList = [];
+		let etikettenListe = [];
 		if (generationMode === 'existing') {
-			rawList = existingCopies
+			etikettenListe = existingCopies
 				.filter((c) => c.checked)
 				.map((c) => ({
 					barcode_id: c.barcode_id,
@@ -122,7 +122,7 @@ function createLabelStore() {
 					autor: selectedTitle.autor || ''
 				}));
 		} else {
-			rawList = Array.from({ length: Math.max(1, newQuantity) }, (_, i) => ({
+			etikettenListe = Array.from({ length: Math.max(1, newQuantity) }, (_, i) => ({
 				barcode_id: `B-${newStartNum + i}`,
 				titel: selectedTitle.titel,
 				autor: selectedTitle.autor || ''
@@ -130,9 +130,9 @@ function createLabelStore() {
 		}
 
 		const offsetCount = Math.max(0, startPosition - 1);
-		const offsetLabels = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
+		const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
 
-		return [...offsetLabels, ...rawList];
+		return [...leereFelder, ...etikettenListe];
 	});
 
 	async function loadClassGroups() {
@@ -200,7 +200,7 @@ function createLabelStore() {
 	}
 
 	function handleSearchInput() {
-		if (searchTimeout) clearTimeout(searchTimeout);
+		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
 		const lauf = ++suchLauf;
 		if (!suche.trim()) {
 			treffer = [];
@@ -208,7 +208,7 @@ function createLabelStore() {
 			return;
 		}
 		isSearching = true;
-		searchTimeout = setTimeout(async () => {
+		suchVerzoegerung = setTimeout(async () => {
 			try {
 				// Titel-Tür (view_books) — nie POST /api/action (dort löst ein gescannter
 				// B-Barcode ohne aktiven Schüler eine Rückgabe aus, Inventur 03.09.2026) und seit
@@ -242,17 +242,17 @@ function createLabelStore() {
 	/** @param {any} titleObj */
 	async function selectBookTitle(titleObj) {
 		selectedTitle = titleObj;
-		if (searchTimeout) clearTimeout(searchTimeout);
+		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
 		suchLauf++;
 		isSearching = false;
 		treffer = [];
 		suche = titleObj.titel;
 		selectedClass = '';
 		classBooks = [];
-		await loadExistingCopies();
+		await ladeVorhandeneExemplare();
 	}
 
-	async function loadExistingCopies() {
+	async function ladeVorhandeneExemplare() {
 		if (!selectedTitle) return;
 		const lauf = ++exemplarLauf;
 		loadingCopies = true;
@@ -284,8 +284,8 @@ function createLabelStore() {
 	}
 
 	async function triggerPrint() {
-		const itemsToPrint = finalLabels.filter((l) => !l.isBlank);
-		if (itemsToPrint.length === 0) return;
+		const zuDrucken = finalLabels.filter((l) => !l.isBlank);
+		if (zuDrucken.length === 0) return;
 
 		try {
 			const res = await apiFetch('/api/print/labels', {
@@ -295,7 +295,7 @@ function createLabelStore() {
 					formatId: formatId,
 					startPosition: startPosition,
 					isQR: barcodeType === 'qr',
-					items: itemsToPrint.map((l) => ({
+					items: zuDrucken.map((l) => ({
 						BarcodeID: l.barcode_id,
 						Titel: l.titel,
 						Autor: l.autor
@@ -307,7 +307,7 @@ function createLabelStore() {
 				const blob = await res.blob();
 				const url = window.URL.createObjectURL(blob);
 				window.open(url, '_blank');
-				await vermerkeGedruckt(itemsToPrint);
+				await vermerkeGedruckt(zuDrucken);
 			} else {
 				console.error('Fehler beim Erstellen des PDFs');
 				snackbars.addToast('Fehler beim Erstellen des PDFs', 'error');
@@ -433,7 +433,7 @@ function createLabelStore() {
 		handleClassChange,
 		handleSearchInput,
 		selectBookTitle,
-		ladeExemplare: loadExistingCopies,
+		ladeExemplare: ladeVorhandeneExemplare,
 		setzeSichtbare,
 		uebernimmNummer,
 		triggerPrint,
@@ -444,4 +444,4 @@ function createLabelStore() {
 	};
 }
 
-export const labelStore = createLabelStore();
+export const labelStore = erzeugeEtikettenStore();
