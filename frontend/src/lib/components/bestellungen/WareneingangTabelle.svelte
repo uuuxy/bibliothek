@@ -36,7 +36,7 @@
 	 * @param {Event} e
 	 * @param {string[]} ids
 	 */
-	function toggleItemSelection(e, ids) {
+	function schalteAuswahlUm(e, ids) {
 		const target = /** @type {HTMLInputElement} */ (e.target);
 		if (target.checked) {
 			selectedExemplarIds = [...selectedExemplarIds, ...ids];
@@ -83,7 +83,7 @@
 								<td class="w-12">
 									<Kaestchen
 										checked={isSelected}
-										onchange={(e) => toggleItemSelection(e, item.exemplar_ids || [])}
+										onchange={(e) => schalteAuswahlUm(e, item.exemplar_ids || [])}
 										aria-label="{item.titel} auswählen"
 									/>
 								</td>

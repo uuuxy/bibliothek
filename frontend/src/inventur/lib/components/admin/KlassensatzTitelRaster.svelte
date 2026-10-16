@@ -26,7 +26,7 @@
 	/**
 	 * @param {string} id
 	 */
-	function toggleBook(id) {
+	function schalteTitelUm(id) {
 		if (selectedBookIds.has(id)) {
 			selectedBookIds = new Set([...selectedBookIds].filter((bId) => bId !== id));
 		} else {
@@ -83,7 +83,7 @@
 	{#each sichtbareBuecher as book (book.id)}
 		{@const jahrgang = jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)}
 		<button
-			onclick={() => toggleBook(book.id)}
+			onclick={() => schalteTitelUm(book.id)}
 			aria-pressed={selectedBookIds.has(book.id)}
 			class="group relative flex flex-col text-left rounded-3xl overflow-hidden transition-all duration-300 transform active:scale-95
             {selectedBookIds.has(book.id)

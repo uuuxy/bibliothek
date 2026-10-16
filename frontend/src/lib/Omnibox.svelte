@@ -96,7 +96,7 @@
 
 	// Die Kamera: Hier steht nur, dass sie gezeigt wird. Starten, Lesen und Aufhören gehören
 	// ThekenKamera.svelte — der Strom gehört dem Bauteil, das ihn anfordert.
-	function startCamera() {
+	function starteKamera() {
 		omniboxStore.showCamera = true;
 	}
 
@@ -155,7 +155,7 @@
 					onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
 					onIndexChange={(idx) => (omniboxStore.selectedDropdownIndex = idx)}
 					onEscape={() => (omniboxStore.isDropdownOpen = false)}
-					onToggleCamera={omniboxStore.showCamera ? stopCamera : startCamera}
+					onToggleCamera={omniboxStore.showCamera ? stopCamera : starteKamera}
 				/>
 
 				{#if omniboxStore.isDropdownOpen && omniboxStore.totalDropdownItems > 0}

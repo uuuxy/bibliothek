@@ -59,7 +59,7 @@
 	}
 
 	/** @param {{ dry_run?: boolean, confirm?: boolean }} body */
-	async function callPromote(body) {
+	async function sendeWechsel(body) {
 		const res = await apiFetch('/api/students/promote', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -77,7 +77,7 @@
 		loading = true;
 		errorMessage = null;
 		try {
-			preview = await callPromote({ dry_run: true });
+			preview = await sendeWechsel({ dry_run: true });
 		} catch (err) {
 			errorMessage = /** @type {any} */ (err).message || String(err);
 		} finally {
@@ -95,7 +95,7 @@
 		loading = true;
 		errorMessage = null;
 		try {
-			result = await callPromote({ confirm: true });
+			result = await sendeWechsel({ confirm: true });
 		} catch (err) {
 			errorMessage = /** @type {any} */ (err).message || String(err);
 		} finally {

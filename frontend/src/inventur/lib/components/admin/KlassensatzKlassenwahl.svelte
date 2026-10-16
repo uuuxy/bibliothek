@@ -35,7 +35,7 @@
 	}
 
 	/** @param {string} name */
-	function removeClass(name) {
+	function entferneKlasse(name) {
 		selectedClasses = selectedClasses.filter((c) => c !== name);
 	}
 </script>
@@ -49,7 +49,7 @@
 			>
 				{selectedClass}
 				<button
-					onclick={() => removeClass(selectedClass)}
+					onclick={() => entferneKlasse(selectedClass)}
 					class="hover:opacity-70 rounded-full transition-opacity ml-1"
 					aria-label="Klasse {selectedClass} entfernen"
 					title="Klasse entfernen"

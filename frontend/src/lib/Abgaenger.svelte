@@ -115,7 +115,7 @@
 	}
 
 	// Fetch graduates list from backend api
-	async function fetchGraduates() {
+	async function ladeListe() {
 		try {
 			const antwort = await dienst.ladeAbgaenger();
 			graduates = antwort.abgaenger;
@@ -130,12 +130,12 @@
 
 	function erneutLaden() {
 		loading = true;
-		fetchGraduates();
+		ladeListe();
 	}
 
 	onMount(() => {
 		// Initial fetch
-		fetchGraduates();
+		ladeListe();
 
 		// Live-Abgleich über die gemeinsame Leitung (liveEvents.js): Wird an einem
 		// anderen Arbeitsplatz ein Buch zurückgegeben, muss der Abgänger hier von
@@ -144,7 +144,7 @@
 			try {
 				const actionData = JSON.parse(e.data);
 				if (actionData.event === 'rueckgabe' || actionData.event === 'fremdrueckgabe') {
-					fetchGraduates();
+					ladeListe();
 				}
 			} catch (err) {
 				console.error('Failed to parse SSE payload:', err);

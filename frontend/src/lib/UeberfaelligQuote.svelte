@@ -28,7 +28,7 @@
 	const buckets = $derived(summary?.overdue_buckets ?? []);
 	const maxBucket = $derived(Math.max(1, ...buckets.map((b) => b.count)));
 
-	async function fetchSummary() {
+	async function ladeUebersicht() {
 		try {
 			const res = await apiFetch('/api/dashboard/summary');
 			if (res.ok) {
@@ -49,7 +49,7 @@
 	}
 
 	$effect(() => {
-		fetchSummary();
+		ladeUebersicht();
 	});
 </script>
 

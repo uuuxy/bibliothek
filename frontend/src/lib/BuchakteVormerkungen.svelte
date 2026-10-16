@@ -22,7 +22,7 @@
 	// Recht — dasselbe, das der Server an der Route verlangt (schuelerRechte.js).
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
 
-	async function deleteVormerkung(id) {
+	async function loescheVormerkung(id) {
 		if (!(await loeschenBestaetigen('Vormerkung löschen?'))) return;
 		try {
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
@@ -52,7 +52,7 @@
 		}
 	}
 
-	async function addVormerkung(studentId) {
+	async function legeVormerkungAn(studentId) {
 		try {
 			const res = await apiClient.post('/api/vormerkungen', {
 				titel_id: book.id,
@@ -134,7 +134,7 @@
 								<Button
 									variant="secondary"
 									size="sm"
-									onclick={() => addVormerkung(r.id)}
+									onclick={() => legeVormerkungAn(r.id)}
 									class="border-transparent bg-secondary-container text-on-secondary-container"
 								>
 									Auswählen
@@ -184,7 +184,7 @@
 						</td>
 						<td class="text-right">
 							<button
-								onclick={() => deleteVormerkung(v.id)}
+								onclick={() => loescheVormerkung(v.id)}
 								class="icon-btn text-error"
 								title="Vormerkung löschen"
 								aria-label="Vormerkung löschen"

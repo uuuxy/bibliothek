@@ -30,10 +30,10 @@
 	);
 
 	onMount(() => {
-		loadExemplare();
+		ladeExemplare();
 	});
 
-	async function loadExemplare() {
+	async function ladeExemplare() {
 		if (!formular.id) return;
 		loading = true;
 		error = '';
@@ -60,7 +60,7 @@
 	}
 
 	/** @param {any} ex */
-	async function deleteCopy(ex) {
+	async function loescheExemplar(ex) {
 		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
 		try {
 			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
@@ -138,7 +138,7 @@
 								title="Exemplar löschen"
 								aria-label="Exemplar löschen"
 								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
-								onclick={() => deleteCopy(ex)}
+								onclick={() => loescheExemplar(ex)}
 							>
 								<Trash class="w-4 h-4" aria-hidden="true" />
 							</button>

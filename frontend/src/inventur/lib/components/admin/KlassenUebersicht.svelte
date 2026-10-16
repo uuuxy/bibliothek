@@ -93,7 +93,7 @@
 	/**
 	 * @param {string} className
 	 */
-	async function deleteGroup(className) {
+	async function loescheKlasse(className) {
 		if (!(await loeschenBestaetigen(`Buchliste von ${className} löschen?`))) return;
 		try {
 			const res = await apiFetch(
@@ -191,7 +191,7 @@
 						managingGroup = group;
 						isManaging = true;
 					}}
-					onDelete={() => deleteGroup(group.className)}
+					onDelete={() => loescheKlasse(group.className)}
 				/>
 			{/each}
 		</div>

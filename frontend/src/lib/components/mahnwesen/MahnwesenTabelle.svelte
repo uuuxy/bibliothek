@@ -9,7 +9,7 @@
 	import { gemahntSatz } from '../../mahnungen.js';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
-	function openProfile(schuelerId) {
+	function zeigeAkte(schuelerId) {
 		uiStore.oeffneAkte(schuelerId);
 	}
 
@@ -85,7 +85,7 @@
 								<div class="flex items-center gap-1.5">
 									<button
 										type="button"
-										onclick={() => openProfile(schueler.schueler_id)}
+										onclick={() => zeigeAkte(schueler.schueler_id)}
 										class="font-semibold text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
 										aria-label="Profil von {schueler.name} anzeigen"
 									>

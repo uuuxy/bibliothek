@@ -7,7 +7,7 @@
 	/** @type {{ vormerkungen: any[] }} */
 	let { vormerkungen = $bindable() } = $props();
 
-	async function deleteVormerkung(id) {
+	async function loescheVormerkung(id) {
 		if (!(await loeschenBestaetigen('Vormerkung löschen?'))) return;
 		try {
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
@@ -56,7 +56,7 @@
 						{/if}
 					</div>
 					<button
-						onclick={() => deleteVormerkung(v.id)}
+						onclick={() => loescheVormerkung(v.id)}
 						class="icon-btn text-error"
 						title="Vormerkung löschen"
 						aria-label="Vormerkung löschen"

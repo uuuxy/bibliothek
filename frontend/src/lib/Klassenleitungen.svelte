@@ -58,7 +58,7 @@
 	}
 
 	/** @param {string} klasse */
-	async function deleteMapping(klasse) {
+	async function loescheZuordnung(klasse) {
 		try {
 			await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);
 			await fetchMapping();
@@ -101,7 +101,7 @@
 						<td>{row.lehrer_email}</td>
 						<td class="text-right">
 							<button
-								onclick={() => deleteMapping(row.klasse)}
+								onclick={() => loescheZuordnung(row.klasse)}
 								class="icon-btn h-9 w-9 text-error"
 								aria-label="Zuordnung für {row.klasse} löschen"
 								data-tip="Zuordnung löschen"

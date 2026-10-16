@@ -21,10 +21,10 @@
 	let selectedTemplate = $derived(templates.find((t) => t.id === selectedTemplateId) || null);
 
 	$effect(() => {
-		loadTemplates();
+		ladeVorlagen();
 	});
 
-	async function loadTemplates() {
+	async function ladeVorlagen() {
 		try {
 			const res = await apiClient.get('/api/mail-templates');
 			if (res.ok) {

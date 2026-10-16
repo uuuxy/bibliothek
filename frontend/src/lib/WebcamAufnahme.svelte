@@ -101,7 +101,7 @@
 		}
 	}
 
-	function stopCamera() {
+	function stoppeKamera() {
 		if (stream) {
 			for (const track of stream.getTracks()) {
 				track.stop();
@@ -112,7 +112,7 @@
 
 	onMount(() => {
 		startCamera();
-		return () => stopCamera();
+		return () => stoppeKamera();
 	});
 </script>
 
@@ -121,7 +121,10 @@
 		<h3 id="webcam-titel" class="text-base font-bold text-on-surface">Passbild aufnehmen</h3>
 	{/snippet}
 	<!-- Hinter der Sperre läuft keine Kamera (wie KameraScanner). -->
-	<div class="space-y-4 p-6" use:ruhtWennTraege={{ anhalten: stopCamera, fortsetzen: startCamera }}>
+	<div
+		class="space-y-4 p-6"
+		use:ruhtWennTraege={{ anhalten: stoppeKamera, fortsetzen: startCamera }}
+	>
 		{#if errorMsg}
 			<div
 				role="alert"

@@ -18,14 +18,14 @@
 	let dnbResults = $derived(bestellStore.searchResults.filter((r) => r.source === 'dnb'));
 
 	/** @param {any} book */
-	async function openStaging(book) {
-		if (book.source !== 'dnb') return stageBook(book);
+	async function waehleTitel(book) {
+		if (book.source !== 'dnb') return stelleTitelBereit(book);
 		resolvingDnb = true;
 		try {
 			// Die Tür nimmt den Titel aus dem Katalog oder legt ihn aus der DNB an (ausIsbn.js).
 			const localBook = await apiPost('/api/buecher/aus-isbn', { isbn: book.isbn });
 			if (localBook && localBook.titel_id) {
-				stageBook(fensterAusAntwort(localBook, book));
+				stelleTitelBereit(fensterAusAntwort(localBook, book));
 			} else {
 				snackbars.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
 			}
@@ -37,7 +37,7 @@
 	}
 
 	/** @param {any} book */
-	function stageBook(book) {
+	function stelleTitelBereit(book) {
 		stagedBook = book;
 		bestellStore.resetSearch();
 	}
@@ -63,7 +63,7 @@
 		>
 		<Suchfeld
 			kamera
-			onscan={(code) => scanUebernehmen(code, bestellStore, openStaging)}
+			onscan={(code) => scanUebernehmen(code, bestellStore, waehleTitel)}
 			autofokus
 			id="book"
 			bind:wert={bestellStore.searchQuery}
@@ -95,7 +95,7 @@
 					</div>
 					{#each localResults as b, _i (_i)}
 						<button
-							onclick={() => openStaging(b)}
+							onclick={() => waehleTitel(b)}
 							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base"
 						>
 							<BuchCover coverUrl={b.cover_url} isbn={b.isbn} titel={b.titel} dekorativ />
@@ -123,7 +123,7 @@
 								(l) => (l.isbn || '').replace(/-/g, '') === (b.isbn || '').replace(/-/g, '')
 							)}
 						<button
-							onclick={() => !isDuplicate && openStaging(b)}
+							onclick={() => !isDuplicate && waehleTitel(b)}
 							disabled={isDuplicate}
 							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base {isDuplicate
 								? 'opacity-50 cursor-not-allowed'

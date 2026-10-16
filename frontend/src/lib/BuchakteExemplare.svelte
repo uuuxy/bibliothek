@@ -62,7 +62,7 @@
 	}
 
 	/** @param {any} ex */
-	async function deleteCopy(ex) {
+	async function loescheExemplar(ex) {
 		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
 		try {
 			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
@@ -135,7 +135,7 @@
 				{ex}
 				selected={selectedExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}
-				onDelete={() => deleteCopy(ex)}
+				onDelete={() => loescheExemplar(ex)}
 				onEtikett={darfEtikett ? () => etikettDrucken(ex) : undefined}
 			/>
 		{/each}
