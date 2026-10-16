@@ -17,7 +17,13 @@ linters:
     - recvcheck     # Die Methoden eines Typs nehmen alle einen Zeiger oder alle einen Wert (Decisions, „Receiver type")
     - containedctx  # Kein Kontext als Feld eines Typs (Decisions, „Contexts")
     - contextcheck  # Wer einen Kontext hat, reicht ihn weiter, statt einen neuen anzulegen (Decisions, „Contexts")
+    - ireturn       # Ein Erzeuger liefert den Typ, keine Schnittstelle (docs/STIL.md, Abschnitt 14)
   settings:
+    ireturn:
+      # Nur die Schnittstellen dieses Projekts: pgx.Rows, pgx.Tx und die Attrappen von pgxmock gibt
+      # die Bibliothek vor.
+      reject:
+        - ^bibliothek/
     depguard:
       rules:
         # Ohne eigene Regel ließe depguard nur die Standardbibliothek zu; diese sperrt nur, was
@@ -71,3 +77,22 @@ linters:
       - path: _test\.go
         linters:
           - contextcheck
+      # Erzeuger, die noch eine Schnittstelle liefern (docs/STIL.md, Abschnitt 14). Die Liste wird
+      # nur kürzer: Wer einen Erzeuger auf den Typ umstellt, streicht seine Zeile.
+      - { linters: [ireturn], text: ^NewAusleihAbfragen returns }
+      - { linters: [ireturn], text: ^NewBescheidAbfragen returns }
+      - { linters: [ireturn], text: ^NewBestelldetailAbfragen returns }
+      - { linters: [ireturn], text: ^NewEinstellungsAbfragen returns }
+      - { linters: [ireturn], text: ^NewGeraeteAbfragen returns }
+      - { linters: [ireturn], text: ^NewKatalogAbfragen returns }
+      - { linters: [ireturn], text: ^NewKontoAbfragen returns }
+      - { linters: [ireturn], text: ^NewLeserAbfragen returns }
+      - { linters: [ireturn], text: ^NewLieferantenAbfragen returns }
+      - { linters: [ireturn], text: ^NewProtokollAbfragen returns }
+      - { linters: [ireturn], text: ^NewReservierungsAbfragen returns }
+      - { linters: [ireturn], text: ^NewSchadensAbfragen returns }
+      - { linters: [ireturn], text: ^NewVormerkungsAbfragen returns }
+      - { linters: [ireturn], text: ^NewAusleihDienst returns }
+      - { linters: [ireturn], text: ^NewGeraeteDienst returns }
+      - { linters: [ireturn], text: ^NewNachbuchDienst returns }
+      - { linters: [ireturn], text: ^NewOmniboxDienst returns }

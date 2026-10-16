@@ -2146,12 +2146,15 @@ sieht.
   in die Gruppe der Standardbibliothek und rät für `pgx` den Pfad ohne `/v5`; ein Werkzeug ohne
   Typprüfung trifft jeden Bezeichner gleichen Namens (umbenannt wird mit `gopls rename` oder
   über `go/types`). Eine Prüfung, die einen Aufruf am Namen erkennt, sieht ihn mit Paketnamen
-  nicht (`*ast.Ident` gegen `*ast.SelectorExpr`). Eine Prüfung, die den Baum ab einem relativen
-  Ordner liest, findet nach einem Umzug nichts mehr und bleibt grün; sie trägt deshalb eine
-  Untergrenze (`abgangsdatum_ratsche_test.go` scheitert bei null Funden). Als falsche Wurzel für
-  die Gegenprobe taugt nur ein Ordner, in dem der Gegenstand wirklich nicht steht; `docs/` taugt
-  nicht, dort nennt die Schnittstellenbeschreibung fast jedes Feld. Ein Literal ohne
-  Feldnamen weist `go vet` ab, sobald der Typ aus einem anderen Paket kommt. Eine
+  nicht (`*ast.Ident` gegen `*ast.SelectorExpr`). Eine Prüfung über `go/types` lädt mit
+  `NeedDeps` und bricht bei einem Ladefehler ab (`sichtbarkeit_ratsche_test.go`): Ohne `NeedDeps`
+  liest `go/packages` aus `x/tools` die Paketdaten einer neueren Go-Fassung nicht, die Typen sind
+  dann ungültig, und `types.Implements` sagt für einen ungültigen Typ ja. Eine Prüfung, die den
+  Baum ab einem relativen Ordner liest, findet nach einem Umzug nichts mehr und bleibt grün; sie
+  trägt deshalb eine Untergrenze (`abgangsdatum_ratsche_test.go` scheitert bei null Funden). Als
+  falsche Wurzel für die Gegenprobe taugt nur ein Ordner, in dem der Gegenstand wirklich nicht
+  steht; `docs/` taugt nicht, dort nennt die Schnittstellenbeschreibung fast jedes Feld. Ein
+  Literal ohne Feldnamen weist `go vet` ab, sobald der Typ aus einem anderen Paket kommt. Eine
   Wegwerf-Arbeitskopie baut in einen eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit ihr
   gelöscht wird ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5). Wer danach noch einen alten Pfad nennt,
   steht in der Ausgabe von `docs/dateiverweise_test.go`.

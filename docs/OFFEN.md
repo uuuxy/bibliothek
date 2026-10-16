@@ -199,11 +199,13 @@ Was nach dem Abgleich vom 16.10.2026 noch von Googles Regelwerk abweicht, in der
 Gewichts:
 
 - [ ] Schnittstellen beim Nutzer statt beim Hersteller: `New…` in `repository/` und
-  `internal/service` liefert den Typ. Groß; vorher ein Plan in Stufen zu deiner Freigabe. (5.71)
+  `internal/service` liefert den Typ. In vier Stufen, je Stufe deine Freigabe; das Gate steht.
+  (5.71)
 - [x] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
 - [x] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
   (5.71)
-- [ ] Testmeldungen in Googles Form und lokale Namen in Tests deutsch, je mit Ratsche. (5.71)
+- [ ] Lokale Namen in Tests deutsch und `t.Helper()` in den Hilfsfunktionen, je mit Ratsche.
+  (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
 - [ ] Oberfläche: `stores/omnibox.svelte.js` (1.174 Zeilen) nach seinen Sachen teilen, mit
   deiner Freigabe; die Ratsche der Dateigröße zählt JS-Module schon. (5.72)
@@ -509,16 +511,39 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
 (Best Practices, „Package size"); die größte Go-Datei hat 629 Zeilen, die Komplexität hält
 `komplexitaet_ratsche_test.go`.
 
-- **Schnittstellen beim Hersteller.** Decisions, „Interfaces": „The consumer of the interface
-  should define it (not the package implementing the interface)" und „Functions should take
-  interfaces as arguments but return concrete types." `repository/` erklärt 16 öffentliche
-  Schnittstellen, `internal/service` vier; 16 Erzeuger `New…` liefern eine Schnittstelle
-  (`NewKatalogAbfragen`, `NewAusleihDienst` …). Die größten haben 15, 14 und 12 Methoden
-  (`BescheidAbfragen`, `LeserAbfragen`, `KatalogAbfragen`). Andere Pakete nennen sie 198-mal in
-  60 Programm- und 24 Testdateien. Weg: Der Erzeuger liefert `*KatalogAbfragen`; wer eine
-  Attrappe braucht, erklärt bei sich eine Schnittstelle mit den Methoden, die er ruft. In Stufen
-  je Schnittstelle, umbenannt mit `gopls rename`, belegt mit der Liste der Tests vorher und
-  nachher.
+- **Schnittstellen beim Hersteller.** Decisions, „Interfaces": „Avoid creating interfaces until
+  a real need exists", „The consumer of the interface should define it (not the package
+  implementing the interface), ensuring it includes only the methods they actually use" und
+  „Functions should take interfaces as arguments but return concrete types." Die Regel steht in
+  [STIL.md](STIL.md) 14; `ireturn` hält sie, die 17 Erzeuger, die noch eine Schnittstelle
+  liefern, stehen als Ausnahmen in `.golangci.yml`. Einen Bedarf schafft hier nur eine Attrappe
+  im Test; wohin jede gereicht wird, ist mit `go/types` über alle Pakete samt Tests gemessen.
+  Freigegeben ist ein Plan in Stufen, je Schnittstelle ein Commit, je Stufe ein Push und deine
+  Freigabe für die nächste:
+  1. Ohne Attrappe: `ReservierungsAbfragen`, `LieferantenAbfragen`, `BestelldetailAbfragen`,
+     `service.AusleihDienst`, `service.GeraeteDienst`. Die Schnittstelle fällt, der Typ
+     `pg…Abfragen` bekommt ihren Namen (`gopls rename`), der Erzeuger liefert ihn.
+     [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.4.1 nennt in `ausleihe.go` noch die Schnittstelle.
+  2. Attrappe als Parameter einer Tür: `KontoAbfragen` (benutzer), `SchadensAbfragen` und
+     `BescheidAbfragen` (schaden), `GeraeteAbfragen` (katalog), `VormerkungsAbfragen`,
+     `OmniboxDienst` und `NachbuchDienst` (theke), `EinstellungsAbfragen` (system, theke). Eine
+     kleine Schnittstelle bekommt nur die Tür, an die die Attrappe geht, mit den Methoden ihres
+     Weges; die übrigen Türen nehmen den Typ. Die einzige Attrappe von `BescheidAbfragen` (15
+     Methoden) geht an `Bescheide`.
+  3. Attrappe als Feld eines Dienstes: `LeserAbfragen`, `KatalogAbfragen`, `AusleihAbfragen` und
+     `ProtokollAbfragen` in `internal/service`, `ProtokollAbfragen` auch in `jobs`; die Tests
+     setzen die Felder direkt (`&ausleihDienst{leserAbfragen: …}`). Kleine Schnittstellen in
+     beiden Paketen; ihre Namen legt die Stufe vorher in STIL.md fest, weil Felder und Parameter
+     schon `leserAbfragen` heißen.
+  4. Abschluss: keine Ausnahme mehr in `.golangci.yml`; STIL.md Abschnitt 2 nennt `…Abfragen`
+     ohne `pg`.
+
+  Es bleiben `Datenbank`, `KontoSchreiber` und `SpurenDatenbank` (Parameter von Funktionen in
+  `repository/`) und `tuer.Mailversand` (mehrere Umsetzungen). Nachweis je Stufe: `go build`,
+  `go vet`, golangci-lint wie in CI, die volle Suite mit `TEST_DATABASE_URL`, `go test -list`
+  vorher und nachher gleich, die Funde von `ireturn` sinken um genau die der Stufe. Ein
+  nil-Zeiger in einer Schnittstelle ist nicht nil: Je Stufe jede Prüfung auf nil an den
+  geänderten Parametern und Feldern lesen.
 - **Tests.** Decisions, „Test helpers": Eine Hilfsfunktion ruft `t.Helper()`, damit die Meldung
   die Zeile des Tests nennt; 26 tun es nicht. Lokale Namen in Tests zählt `stil_ratsche_test.go`
   nicht: 31 englische Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in

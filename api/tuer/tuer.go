@@ -44,7 +44,7 @@ type Mailversand interface {
 
 // Post liefert, worüber die Tür Mails verschickt. Ohne eingerichteten Versand lehnt er jede Mail
 // mit mailservice.ErrMailNichtKonfiguriert ab, wie ein Server ohne SMTP-Konfiguration.
-func (b *Basis) Post() Mailversand {
+func (b *Basis) Post() Mailversand { //nolint:ireturn // liefert eine von mehreren Umsetzungen: die eingesetzte oder den Ersatz ohne Versand
 	if b.Mail != nil {
 		return b.Mail
 	}

@@ -18,7 +18,8 @@ fremden Nutzer gegen Abschnitt 6, `fehlertext_ratsche_test.go` jeden Fehlertext 
 `meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
 Zustand der Paketebene, `testmeldung_ratsche_test.go` jede Meldung in Tests gegen Abschnitt 10,
 `leerimport_ratsche_test.go` jeden Leerimport und `kontext_ratsche_test.go` jeden selbst
-angelegten Kontext gegen Abschnitt 12. Für die Oberfläche
+angelegten Kontext gegen Abschnitt 12, `ireturn` im Linter jeden Erzeuger, der eine
+Schnittstelle liefert, gegen Abschnitt 14. Für die Oberfläche
 gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
@@ -317,4 +318,22 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   der Dateien gilt dieselbe Regel; der zweite Teil derselben Prüfung zählt je Datei die
   erklärten Namen (let, const, var, function, class) mit einem englischen Wort, auch dieser
   Bestand darf nur sinken.
+
+## 14. Schnittstellen
+
+- Eine Schnittstelle entsteht erst, wenn es sie braucht: „Avoid creating interfaces until a
+  real need exists" (Decisions, „Interfaces"). Den Bedarf schafft eine zweite Umsetzung
+  (`tuer.Mailversand`: der eingesetzte Versand oder der Ersatz ohne Versand) oder eine Attrappe
+  im Test.
+- Sie steht beim Nutzer und trägt nur die Methoden, die er ruft: „The consumer of the interface
+  should define it (not the package implementing the interface), ensuring it includes only the
+  methods they actually use". Bekommt eine Tür eine Attrappe als Parameter, erklärt das Paket der
+  Tür die Schnittstelle; tauschen die Tests eines Dienstes ein Feld aus, erklärt der Dienst sie.
+- Ein Erzeuger liefert den Typ: „Functions should take interfaces as arguments but return
+  concrete types". Eine Schnittstelle als Parameter steht dort, wo Verschiedenes hineinpasst
+  (`repository.Datenbank`: Pool oder Transaktion).
+- `ireturn` im Linter meldet jede Funktion, die eine Schnittstelle dieses Projekts liefert
+  (`.golangci.yml`). Die Erzeuger, die das noch tun, stehen dort als Ausnahmen; wer einen auf den
+  Typ umstellt, streicht seine Zeile, und eine neue kommt nicht hinzu. Wer mit Grund eine
+  Schnittstelle liefert, schreibt den Grund an die Stelle (`tuer.Basis.Post`).
 
