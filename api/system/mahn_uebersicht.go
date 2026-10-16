@@ -30,7 +30,7 @@ type ueberfaelligZeitspanne struct {
 	Anzahl      int    `json:"count"`
 }
 
-// MahnUebersicht liefert die Kennzahlen der überfälligen Ausleihen, nur zusammengefasst und
+// GetDashboardSummaryHandler liefert die Kennzahlen der überfälligen Ausleihen, nur zusammengefasst und
 // ohne Namen (siehe mahnUebersicht).
 func (t *Tueren) GetDashboardSummaryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
