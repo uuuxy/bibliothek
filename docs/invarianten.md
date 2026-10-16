@@ -13,32 +13,19 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-08
-(Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
-Postgres abgesichert).
-
-> **Nachgeprüft am 11.08.2026**, Zeile für Zeile gegen Code und laufende Datenbank: Alle
-> 40 genannten Dateien existieren, alle genannten Migrationen ebenfalls, und die
-> stichprobenartig nachgemessenen Verhaltenszusagen halten — `mahnstufe` wird tatsächlich
-> nur an **einer** Stelle geschrieben (`api/mahnwesen/mahnbriefe.go`), die Bestätigung ist über
-> `WHERE bestaetigt_am IS NULL` wirklich atomar, HELFER hat in der laufenden Datenbank
-> exakt die zwei dokumentierten Rechte, und `GET /api/scan` ist wirklich weg. Korrigiert
-> wurde eine Fundstelle (Lieferant, siehe unten) und das Rollen-Vokabular in Abschnitt 9.
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben; die 🟢-Invarianten sind in
+CI gegen echtes Postgres abgesichert. Stand: 2026-10-08
 
 > **Fundstellen werden benannt, nicht gezählt.** Die Spalte nennt Constraint-, Index-
-> und Spaltennamen — keine Zeilennummern. Bis zum 06.08.2026 stand dort `schema.sql:NNN`;
-> alle 21 Verweise zeigten nach dem Wachstum der Datei auf etwas anderes als gemeint
-> (`check_return_date` war als `:370` notiert und stand auf `:499`). Die Invarianten selbst
-> stimmten — nur der Weg dorthin war falsch, und das fällt beim Lesen nicht auf.
-> `docs/invarianten_fundstellen_test.go` prüft jetzt, dass jeder genannte Name in
+> und Spaltennamen — keine Zeilennummern: Eine Zeilennummer zeigt nach dem Wachstum der
+> Datei auf etwas anderes als gemeint, und das fällt beim Lesen nicht auf.
+> `docs/invarianten_fundstellen_test.go` prüft, dass jeder genannte Name in
 > `schema.sql` wirklich existiert.
 >
-> **Migrationsnummern sind ebenfalls keine haltbare Fundstelle** (11.08.2026). Sie
-> existieren als Datei weiter, auch wenn eine spätere Migration ihr Werk zurücknimmt —
-> eine Existenzprüfung bliebe also grün. Genau so ist es hier passiert: Der Lieferanten-
-> Eintrag nannte `migrations/058`, doch Migration 066 hatte Spalte **und** Index längst
-> ersetzt (`ist_standard` → `ist_hauptlieferant`). Die Invariante galt, ihr Beleg zeigte
-> ins Leere. Deshalb gilt auch hier: **das lebende Objekt beim Namen nennen**, dann trägt
+> **Migrationsnummern sind ebenfalls keine haltbare Fundstelle.** Sie existieren als Datei
+> weiter, auch wenn eine spätere Migration ihr Werk zurücknimmt — eine Existenzprüfung
+> bliebe also grün (Migration 066 ersetzte Spalte **und** Index aus 058,
+> `ist_standard` → `ist_hauptlieferant`). Deshalb gilt auch hier: **das lebende Objekt beim Namen nennen**, dann trägt
 > das Gate die Prüfung. Migrationsnummern nur als Zusatz zur Herkunft.
 
 ---
@@ -48,7 +35,7 @@ Postgres abgesichert).
 | Invariante                                                                                                                                                                                                                                                     | Durchsetzung                                                                              | Fundstelle                                                                     |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Höchstens **eine aktive** Ausleihe je Exemplar/Gerät                                                                                                                                                                                                           | 🟢 partieller Unique-Index                                                                | `uniq_ausleihen_aktiv_exemplar`, `uniq_ausleihen_aktiv_geraet`                 |
-| **Ein Entleiher**: `ausleihen.schueler_id` zeigt auf genau einen Leser; NULL heißt anonymisiert (Migration 125 — die frühere zweite Spalte `ausleiher_benutzer_id` ist entfallen)                                                                              | 🟢 Fremdschlüssel auf `leser`                                                             | `ausleihen_schueler_id_fkey`                                                   |
+| **Ein Entleiher**: `ausleihen.schueler_id` zeigt auf genau einen Leser; NULL heißt anonymisiert (Migration 125)                                                                              | 🟢 Fremdschlüssel auf `leser`                                                             | `ausleihen_schueler_id_fkey`                                                   |
 | Genau **ein Objekt** (Exemplar XOR Gerät)                                                                                                                                                                                                                      | 🟢 CHECK                                                                                  | `check_loan_item`                                                              |
 | Rückgabe nie vor Ausleihe                                                                                                                                                                                                                                      | 🟢 CHECK                                                                                  | `check_return_date`                                                            |
 | Ein Leser mit Sperre am Leser (von Hand oder vom Programm für Ehemalige) leiht nichts — an der Theke nur die Rückgabe, aufgehoben wird in der Akte; beim Lernmittel zählt nur die Sperre von Hand, auch bei der Verlängerung (Entscheidung 28.09.2026); ein anonymisierter Datensatz bekommt nichts; Kollegen werden nie gesperrt (Entscheidung 24.09.2026) | 🟡 ein Prüfweg für Buch, Gerät und Nachbuchen; Einzelverlängerung und Frist von Hand fragen denselben, Klassenverlängerung und LMF-Plan eine gemeinsame Bedingung + PG-Test je Regel, am Rückbau rot gesehen | `internal/service/ausleih_sperren.go` (`pruefeAusleihSperren`, `PruefeSperreAmLeser`, `pruefeSperrschalter`), `api/theke/ausleihe.go` (`pruefeAusleihSperre`), `repository/lmf_termine.go` (`sqlSchulbuchFristGehtMit`), `internal/service/ausleih_sperren_pg_test.go`, `api/verlaengerung_sperre_schulbuch_pg_test.go` |
@@ -56,18 +43,18 @@ Postgres abgesichert).
 | Ausleih-Limit `max_ausleihen_schueler` (LMF + eigene Rückgabe ausgenommen)                                                                                                                                                                                     | 🟡 Unit-Tests, Abdeckung 90 % (23.09.2026)                                                | `internal/service/ausleihe_am_leser.go` (`pruefeSchuelerAusleihlimit`), `ausleihe_am_leser_test.go` |
 | Abholbereit reserviertes Exemplar geht nicht an Dritte                                                                                                                                                                                                         | 🟡 Unit-Tests, Abdeckung 90,9 % (23.09.2026)                                              | `internal/service/ausleihe_am_leser.go` (`pruefeVormerkungKonflikt`), `repository/ausleihe_schranken.go` (`FindeVormerkungAmExemplar`), `internal/service/ausleihe_vormerkung_pg_test.go` |
 | Doppel-Scan desselben Exemplars → sauberer Konflikt (409 statt 500)                                                                                                                                                                                            | 🟢 Unique-Index + 🟡 `deuteAnlegeFehler`, Abdeckung 100 % (23.09.2026)                      | `internal/service/ausleihe_faelle.go` (`deuteAnlegeFehler`)                 |
-| **Sperrreihenfolge** Schüler → Ausleihe → Exemplar (seit 15.09.2026, Stufe 2): Wer Zeilen sperrt, sperrt zuerst die Zeile des Lesers (`leser`), dann `ausleihen`, dann `buecher_exemplare` — Online-Scan und Nachbuchen gleich, sonst verklemmen sie sich gegeneinander. Seit Migration 137 hält die Datenbank selbst sie nicht: Der Rückgabe-Trigger sperrt die Leserzeile des Ausleihers NACH der Ausleihe. Geben zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, bricht Postgres eine der beiden Transaktionen ab (40P01, nachgestellt am 23.09.2026). Entschieden am 24.09.2026: bleibt so. Die Theke meldet den Fehler, erneutes Scannen bucht, das Nachbuchen holt es in der nächsten Runde nach; die Abhilfe, der Stempel in einer eigenen Tabelle, kommt mit dem nächsten Umbau der Karenz-Uhr | 🟡 Konvention der Schreibpfade; der Rückgabe-Trigger hält sie nicht, ein Gate gibt es nicht | `internal/service/ausleihe_am_leser.go` (`zaehleAktiveSchuelerAusleihen`), `internal/service/nachbuchen.go`, `repository/ausleihe_zeilensperren.go` (`SperreLeserzeile`, `SperreExemplarzeile`), `repository/ausleihe.go` (`AusleihAbfragen.SperreOffene`, `stempleBewegungZum`), `trg_leser_stempel_rueckgabe`, `repository/raster_2309_pg_test.go` |
+| **Sperrreihenfolge** Schüler → Ausleihe → Exemplar: Wer Zeilen sperrt, sperrt zuerst die Zeile des Lesers (`leser`), dann `ausleihen`, dann `buecher_exemplare` — Online-Scan und Nachbuchen gleich, sonst verklemmen sie sich gegeneinander. Die Datenbank selbst hält sie nicht: Der Rückgabe-Trigger (Migration 137) sperrt die Leserzeile des Ausleihers NACH der Ausleihe. Geben zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, bricht Postgres eine der beiden Transaktionen ab (40P01). Entschieden am 24.09.2026: bleibt so. Die Theke meldet den Fehler, erneutes Scannen bucht, das Nachbuchen holt es in der nächsten Runde nach; die Abhilfe, der Stempel in einer eigenen Tabelle, kommt mit dem nächsten Umbau der Karenz-Uhr | 🟡 Konvention der Schreibpfade; der Rückgabe-Trigger hält sie nicht, ein Gate gibt es nicht | `internal/service/ausleihe_am_leser.go` (`zaehleAktiveSchuelerAusleihen`), `internal/service/nachbuchen.go`, `repository/ausleihe_zeilensperren.go` (`SperreLeserzeile`, `SperreExemplarzeile`), `repository/ausleihe.go` (`AusleihAbfragen.SperreOffene`, `stempleBewegungZum`), `trg_leser_stempel_rueckgabe`, `repository/raster_2309_pg_test.go` |
 | Jede Bewegung eines Exemplars (Ausleihe, Rückgabe, Rückholen, Aussonderung, Reaktivierung, jeder Wechsel von `ist_ausleihbar`) setzt `letzte_bewegung_am`, und der Stempel läuft nie rückwärts (auch nicht mit früherem Scan-Zeitpunkt oder aus einer früher begonnenen Transaktion); jede Ausleihe trägt `erfasst_am` (Scan-Zeitpunkt, höchstens Serverzeit) | 🟢 Zustandswechsel des Exemplars: Trigger (Migration 132), der einen vom Schreiber gesetzten Stempel stehen lässt; 🟡 Ausleihe und Rückgabe: von den Schreibern gesetzt (`sqlStempelVor`), PG-Test je Bewegung und für beide Rückwärts-Wege | `migrations/116_bewegungsstempel.sql`, `migrations/132_bewegungsstempel_bei_zustandswechsel.sql`, `repository/ausleihe.go`, `repository/bewegungsstempel_pg_test.go`  |
 | Ein Idempotenz-Schlüssel der Theke wird genau einmal gebucht — online oder beim Nachbuchen: Die Nachbuch-Tür liest, was unter dem Schlüssel steht (nichts → buchen und Ergebnis ablegen; Reservierung → „wiederholen"; eigenes Ergebnis → dasselbe zurück; Online-Ausleihe/-Rückgabe → „bereits_gebucht"; nur Fremdrückgabe → Ausleihe ab der Rückgabe nachholen, Wächter entscheidet) und übernimmt eine Online-Antwort nur, wenn sie genau die gelesene ist; Scan-Zeitpunkte werden um den gemessenen Uhrversatz des Rechners umgerechnet | 🟡 Code + PG-Tests je Fall, Rückbau-Proben | `api/theke/nachbuchen_schluessel.go`, `api/theke/nachbuchen_schluessel_pg_test.go`, `api/theke/nachbuchen_uhr_pg_test.go`, `repository/idempotenz.go` (`UebernimmIdempotenzAntwort`) |
 | `nachbuch_meldungen` (Migration 117): Ergebnis ist eines von sieben Wörtern; ein Schlüssel = eine Meldung; quittierte fallen nach der Lesehistorie-Frist, höchstens 30 Tage; offene haben keine Frist, der Wächter nennt sie nach 14 Tagen; Personenspalten wandern beim Zusammenführen und werden getilgt | 🟢 CHECK + UNIQUE; 🟡 Löschjob und Wächter aus EINEM Prädikat                              | `chk_nachbuch_ergebnis`, `uniq_nachbuch_meldungen_schluessel`, `repository/loeschfristen.go` (`praedikatNachbuchMeldungen`) |
-| Leser, die keine Schüler sind (`art` ≠ `schueler`): Dauerleihe (`ist_handapparat`) mit gespeicherter Frist von einem Jahr; für sie gelten weder Ausleih-Limit noch Sperrprüfung — seit dem 24.09.2026 auch am Gerät —, und die Überfällig-Zählung lässt Dauerleihen aus (Entscheidung 16.09.2026)    | 🟡 Unit-Tests, Abdeckung 93,8 % (23.09.2026)                                              | `internal/service/ausleih_vorgang.go` (`ladeVorgang`), `ausleih_sperren.go` (`istKollegium`), `repository/ueberfaellige_ausleihen.go` (`ZaehleUeberfaelligeAusleihen`), `ausleihe_faelle.go` (`legeAusleiheAn`) |
+| Leser, die keine Schüler sind (`art` ≠ `schueler`): Dauerleihe (`ist_handapparat`) mit gespeicherter Frist von einem Jahr; für sie gelten weder Ausleih-Limit noch Sperrprüfung — auch am Gerät —, und die Überfällig-Zählung lässt Dauerleihen aus (Entscheidung 16.09.2026)    | 🟡 Unit-Tests, Abdeckung 93,8 % (23.09.2026)                                              | `internal/service/ausleih_vorgang.go` (`ladeVorgang`), `ausleih_sperren.go` (`istKollegium`), `repository/ueberfaellige_ausleihen.go` (`ZaehleUeberfaelligeAusleihen`), `ausleihe_faelle.go` (`legeAusleiheAn`) |
 | Eine Frist nach Tagen (Buch, Medium, Gerät, Verlängerung, Abholfrist einer Vormerkung) endet an einem Schultag: Fällt sie auf ein Wochenende, einen Feiertag Hessens oder in die Ferien, gilt der nächste Schultag. Stichtage (Lernmittel, LMF-Plan, Ferien-Leseclub), von Hand gesetzte Fristen und die Jahresfrist der Dauerleihe rücken nicht (Entscheidung 24.09.2026, Abholfrist 28.09.2026) | 🟡 eine Rechnung für alle fünf + Unit- und PG-Tests mit fester Uhr | `pkg/lmfplan/tagesfrist.go` (`Ferientabelle.Tagesfrist`), `repository/vormerkung_abholfrist.go` (`Abholfrist`), `pkg/lmfplan/uebrige_ferien.go` |
 | Herbst-, Weihnachts- und Osterferien Hessen reichen mindestens zwei Jahre voraus | 🟡 Selbstprüfung „Ferien für Leihfristen" + Horizont-Test (rot ab Januar 2029) | `pkg/lmfplan/uebrige_ferien.go` |
 | **Mahnstufe steigt NUR beim Druck der Mahnbriefe aus der Auswahl** („Mahnbriefe drucken"), NIE beim Mail-Versand oder beim Ausdruck der Liste („Liste drucken"). Der Druck zählt und liest die Briefe in DERSELBEN Tx (Papier == DB) nach derselben Bedingung: das offene Buch eines Schülers außerhalb des Papierkorbs, dessen Frist abgelaufen ist. Eine Ausleihe steigt höchstens einmal je Kalendertag der Schule; ein zweiter Druck am selben Tag liefert den Brief und zählt nicht | 🟡 nur `ErhoeheMahnstufe` erhöht `mahnstufe`, gerufen vom Druck in `api/mahnwesen/mahnbriefe.go`; alle Mail-Pfade bewusst nicht; PG-Tests am Router (`TestMahnbriefDruck_NurMitAbgelaufenerFrist`) und an der Tür (`TestMahnbriefeDrucken_NurOffeneHochzaehlen`) | `api/mahnwesen/mahnbriefe.go`, `repository/mahnbriefe.go` (`ErhoeheMahnstufe`, `sqlMahnbriefe`, `LadeMahnbriefe`), `api/mahnwesen/mahnlisten_versand.go`, `api/mahnwesen/mahnwesen_mail.go` |
 | **Mahnliste geht an die Klassenleitung, nie an Schüler** — je Klasse eine Mail an genau eine Adresse (kein TO/CC über mehrere Betroffene)                                                                                                                      | 🟡 `versendeKlassenMahnungen` überspringt Klassen ohne hinterlegte Adresse; getestet      | `api/mahnwesen/mahnlisten_versand.go`, `api/mahnwesen/mahnlisten_versand_test.go`                |
 | **Ein Ehemaliger geht an keine Klassenleitung.** Die Mahnliste führt Ehemalige als eigene Gruppe, gleich welche Klasse sie zuletzt trugen; der Mahnlauf lässt die Gruppe fallen, auch ausdrücklich gewählt und mit eigener Adresse, und die Mahnliste einer Klasse nennt nur ihre heutigen Schüler | 🟡 Test am Router mit LUSD-Markierung, Versetzung, Mail und Druck; fünf Rückbauten rot | `repository/mahnwesen_ueberfaellige.go`, `api/mahnwesen/mahnlisten_versand.go`, `api/mahnwesen/mahnwesen_mail.go`, `api/mahnwesen/mahnwesen_ehemalige_pg_test.go` |
-| **Massenversand-Auswahl: leer heißt niemand, nicht alle.** Fehlendes `klassen`-Feld = alle (alter Vertrag), leeres Array = 400                                                                                                                                 | 🟡 `parseKlassenVersandRequest`, Zeiger-Semantik + Test                                   | `api/mahnwesen/mahnlisten_versand.go`                                                   |
-| **`override_email` ist die einzige Abweichung** von „jede Lehrkraft nur die eigene Klasse": Ein Empfänger sieht dann mehrere Klassen (Vertretung/Sekretariat). Weiterhin eine Mail je Klasse, kein Sammel-PDF — und die Adresse steht im Klartext im Audit-Log | 🟡 Handler + `logKlassenVersandAudit` (zwei Einträge: Absicht vor, Ergebnis nach Versand) | `api/mahnwesen/mahnlisten_versand.go`, `frontend/src/lib/Mahnwesen.svelte`              |
+| **Massenversand-Auswahl: leer heißt niemand, nicht alle.** Fehlendes `klassen`-Feld = alle (alter Vertrag), leeres Array = 400                                                                                                                                 | 🟡 `leseKlassenVersandAnfrage`, Zeiger-Semantik + Test                                   | `api/mahnwesen/mahnlisten_versand.go`                                                   |
+| **`override_email` ist die einzige Abweichung** von „jede Lehrkraft nur die eigene Klasse": Ein Empfänger sieht dann mehrere Klassen (Vertretung/Sekretariat). Weiterhin eine Mail je Klasse, kein Sammel-PDF — und die Adresse steht im Klartext im Audit-Log | 🟡 Handler + `protokolliereKlassenVersand` (zwei Einträge: Absicht vor, Ergebnis nach Versand) | `api/mahnwesen/mahnlisten_versand.go`, `frontend/src/lib/Mahnwesen.svelte`              |
 
 **Bewertung:** Sehr robust. Die datenkritischen Invarianten sind bereits auf DB-Ebene. Die
 Geschäftsregeln (Sperre/Limit/Overdue) liegen bewusst im Code (brauchen Kontext + Override) —
@@ -98,21 +85,18 @@ Tabelle.
 | Bei der Anonymisierung fällt der **Freitext erledigter** Schadensfälle: die Beschreibung und der getippte Grund einer Stornierung, an der Forderung und im Eintrag `STORNIERUNG` des Protokolls; der Fall selbst (Betrag, Datum, bezahlt/storniert) bleibt als Beleg, eine **offene** Forderung behält ihre Begründung | 🟡 Statement in der EINEN Spurenliste + PG-Test in beide Richtungen; der Eintrag trägt die Kennung des Lesers | `repository/spur_tilgung.go` (`spurTilgungen`), `repository/schadensfall_freitext_tilgung_pg_test.go`, `api/schaden/stornierungsgrund_tilgung_pg_test.go` |
 | Neben der Kennung eines Lesers (`schueler_id`) überlebt im Protokoll **kein Wert seiner Leserzeile und kein Freitext über ihn** die Anonymisierung; jeder Schlüssel daneben ist als getilgt oder bleibt eingeordnet | 🟡 eine Schlüsselliste für beide Protokolle + AST-Ratsche über jede Map mit `schueler_id` + PG-Tests | `repository/protokoll_personenbezug.go`, `repository/protokoll_personenbezug_test.go`, `repository/titel_loeschspur_tilgung_pg_test.go`, `api/leser/sperrgrund_tilgung_pg_test.go` |
 | **DSGVO-Retention-Kette schliesst:** Abgänger mit offenen Vorgängen → gesperrt (Name bleibt); ohne Vorgänge → für die Karenzzeit (`abgaenger_karenz_tage`, Uhr = spätester von Abgang `abgaenger_seit` und letztem abgeschlossenem Vorgang `letzter_vorgang_am` — Rückgabe oder Schadensabschluss, seit Migration 137 am Leser gestempelt, weil die Lesehistorie-Befristung die Zuordnung der Ausleihe löst) gesperrt, dann anonymisiert; nach Rückgabe/Bezahlung → Karenz → anonymisiert → ab Stichjahr endgültig gelöscht (nur anonymisierte Zeilen; der Löschjob läuft nach der Anonymisierung). Import, Job und Wächter teilen das Prädikat | 🟡 `abgaenger_jahr` aufs Abgangsjahr + `PraedikatAnonymisierung(karenz, kulanz)` + Cronjob `LoescheAbgaengerEndgueltig` (echte Löschung, nicht Soft-Delete) | `internal/lusd/anwenden.go`, `repository/lusd_import.go`, `jobs/cron_dsgvo.go`, `repository/loeschfristen.go`, `repository/leser_loeschen.go`          |
-| **Leer heißt löschen — aber nur, wo Löschen erlaubt ist.** Optionale Stammdaten (Anschrift, Eltern-Mail) werden mit leerem Wert auf NULL gesetzt; Pflichtfelder (Vor-/Nachname, Klasse, beim Schüler die Ausweisnummer) lehnen den leeren Wert mit 400 ab; eine geleerte Ausweisnummer eines Kollegen wird NULL, bei aktivem Konto zieht die Datenbank eine neue (Migration 145). Ein **fehlendes** Feld heißt weiterhin „unverändert“                                                  | 🟢 `addStrLeerbar` + Pflichtfeld-Wächter, PG-Test über den laufenden Handler                                                                   | `api/leser/leser_aendern.go`, `api/leser/schueler_feld_leeren_pg_test.go`, `frontend/src/lib/useLeserakteFormular.test.js` |
+| **Leer heißt löschen — aber nur, wo Löschen erlaubt ist.** Optionale Stammdaten (Anschrift, Eltern-Mail) werden mit leerem Wert auf NULL gesetzt; Pflichtfelder (Vor-/Nachname, Klasse, beim Schüler die Ausweisnummer) lehnen den leeren Wert mit 400 ab; eine geleerte Ausweisnummer eines Kollegen wird NULL, bei aktivem Konto zieht die Datenbank eine neue (Migration 145). Ein **fehlendes** Feld heißt weiterhin „unverändert“                                                  | 🟢 `leerbar` (`repository/leser_aenderung.go`) + Pflichtfeld-Wächter, PG-Test über den laufenden Handler                                                                   | `api/leser/leser_aendern.go`, `api/leser/schueler_feld_leeren_pg_test.go`, `frontend/src/lib/useLeserakteFormular.test.js` |
 | Manuelles Löschen: Soft-Delete (Papierkorb, `LegeLeserInPapierkorb`) vs. endgültig (`LoescheLeserEndgueltig`, Recht `manage_students_admin`) sind getrennt                                                                                                                                                                                                                                                                                                                                                | 🟡 Restore hebt Lösch-Sperre auf; Purge blockiert bei offenen Vorgängen                                                                        | `api/leser/papierkorb.go`, `repository/leser_loeschen.go`                                                      |
 
-**Hinweis (Retention):** Der frühere Zustand hatte eine tote Kette — `SperreAbgaenger`
-setzte `abgaenger_jahr` nicht (blieb auf Anlege-Default Jahr+5), also erfasste der
-Cronjob den Abgänger nie; und der Job rief `LegeLeserInPapierkorb` (Soft-Delete), sodass die PII
-selbst im Erfolgsfall nur im Papierkorb lag. Beides behoben (Tests:
-`TestAbgaengerRetentionKette`, `TestAbgaengerLoeschung_Loescht`).
+**Hinweis (Retention):** Die Kette vom Abgang bis zur Löschung hält nur, wenn jedes Glied
+seinen Teil schreibt: Die Sperre beim Abgang setzt `abgaenger_jahr`, sonst erfasste der
+Löschlauf den Abgänger nie, und der Löschlauf löscht endgültig statt in den Papierkorb
+(Tests: `TestAbgaengerRetentionKette`, `TestAbgaengerLoeschung_Loescht`).
 
-**Hinweis (Löschen von Feldern):** Bis zum 23.08.2026 kam eine geleerte Anschrift gar
-nicht erst an — das Formular schickte JSON-null, was im `*string` als nil ankommt und
-„nicht mitgeschickt“ bedeutet. Die Oberfläche meldete trotzdem „gespeichert“. Die
-Gegenprobe zeigte die andere Hälfte: Ein leerer String räumte damals Vorname, Nachname,
-Ausweisnummer und Klasse mit 200 weg. Beide Richtungen sind jetzt geregelt und gegatet;
-`geburtsdatum` bleibt bewusst unlöschbar (Schlüssel des LUSD-Abgleichs).
+**Hinweis (Löschen von Feldern):** Anschrift und Eltern-E-Mail lassen sich einzeln leeren;
+Vorname, Nachname, Ausweisnummer und Klasse lehnt die Tür leer mit 400 ab
+(`api/leser/schueler_feld_leeren_pg_test.go`). `geburtsdatum` bleibt bewusst unlöschbar
+(Schlüssel des LUSD-Abgleichs).
 
 ---
 
@@ -187,16 +171,14 @@ Ausweisnummer und Klasse mit 200 weg. Beide Richtungen sind jetzt geregelt und g
 | Ein Bestätigungs-Token gehört zu genau einer Bestellung, gespeichert nur als Hash                                              | 🟢 Partieller Unique-Index auf `bestaetigungs_token_hash`               | `migrations/063`                                                                  |
 | Die Etikettenseite des Links zeigt nur Exemplare DIESER Bestellung mit Vorab-Barcode                                           | 🟡 SQL-Filter + PG-Test                                                 | `api/bestellung/bestellbestaetigung_etiketten.go`, `api/bestellung/bestellbestaetigung_ablauf_pg_test.go` |
 
-**Hinweis zum Bestellbedarf (aktualisiert 25.09.2026):** Ohne die LMF-Vorauswahl bestand
-die Liste zu ~99% aus Titeln, die niemand nachbestellen will (gemessen: 12.079 von 12.707
-Titeln), weil alle Titel den Default-Meldebestand 5 tragen, der Median aber bei 1 Exemplar
-liegt. **Entschieden:** Die frühere offene Frage („wird `meldebestand` je Titel gepflegt?")
-ist gegenstandslos — der Auslöser ist jetzt die Einstellung `bestellbedarf_schwelle`
-(Vorgabe 3, in der Oberfläche änderbar, abschaltbar über
-`bestellbedarf_warnung_aktiv`). `meldebestand` wird nur noch informativ mitgeliefert und
-löst nichts mehr aus (`repository/bestellbedarf.go`). Seit dem 25.09.2026 zählt die Liste am
-Buch: Auflagen mit derselben `werk_id` (Migration 148) bilden eine Zeile, ihre Summe steht gegen
-die Schwelle (docs/OFFEN.md 4.18, `TestLadeBestellbedarf_ZaehltAmBuch`).
+**Hinweis zum Bestellbedarf:** Der Auslöser ist die Einstellung `bestellbedarf_schwelle`
+(Vorgabe 3, in der Oberfläche änderbar, abschaltbar über `bestellbedarf_warnung_aktiv`),
+nicht der Meldebestand am Titel: Mit ihm bestünde die Liste zu ~99 % aus Titeln, die niemand
+nachbestellen will (gemessen: 12.079 von 12.707 Titeln), weil alle Titel die Vorgabe 5
+tragen, der Median aber bei 1 Exemplar liegt. `meldebestand` wird nur informativ
+mitgeliefert (`repository/bestellbedarf.go`). Die Liste zählt am Buch: Auflagen mit
+derselben `werk_id` (Migration 148) bilden eine Zeile, ihre Summe steht gegen die Schwelle
+(`TestLadeBestellbedarf_ZaehltAmBuch`).
 
 ---
 
@@ -217,7 +199,7 @@ die Schwelle (docs/OFFEN.md 4.18, `TestLadeBestellbedarf_ZaehltAmBuch`).
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `benutzer.rolle` ∈ Enum — heute `admin`, `leitung`, `kollegium`, `mitarbeiter`, `helfer` (kleingeschr.; `leitung` seit Migration 121)                                                                                                                  | 🟢 ENUM                                               | `benutzer_rolle`                                                                                    |
 | **[G5]** **Genau eine** Quelle für die Rolle eines Benutzers: `benutzer.rolle`                                                                                                                                | 🟢 Legacy-Tabelle entfernt + Test verhindert Rückkehr | `migrations/044`, `rollen_vokabular_pg_test.go`                                                     |
-| **Ausleihen darf jeder aktive Leser** — die Rolle sagt, was jemand im Programm TUN darf, nicht ob er Bücher bekommt (Migration 125). Die frühere Bedingung `SQLAktiveLehrkraft` und das Feld `benutzer.personenart` sind entfallen | 🟢 eine Ausweis-Abfrage + PG-Tests | `repository/leser_suche.go` (`LeserAbfragen.FindeZuBarcode`), `repository/leser_ausweis_pg_test.go`, `internal/service/geraet_lehrkraft_pg_test.go` |
+| **Ausleihen darf jeder aktive Leser** — die Rolle sagt, was jemand im Programm TUN darf, nicht ob er Bücher bekommt (Migration 125) | 🟢 eine Ausweis-Abfrage + PG-Tests | `repository/leser_suche.go` (`LeserAbfragen.FindeZuBarcode`), `repository/leser_ausweis_pg_test.go`, `internal/service/geraet_lehrkraft_pg_test.go` |
 | **Jedes Konto hat eine Leserzeile** — sonst fände die Theke die Person nicht; Konten entstehen an fünf Stellen, die Zusage steht deshalb in der Datenbank | 🟢 Trigger + PG-Test | `trg_benutzer_hat_leserzeile`, `db/bedingung_konto_leserzeile_pg_test.go` |
 | **Theken-Suche `GET /api/search` nur aus der Omnibox**; Suchfelder außerhalb der Theke haben eigene Türen mit dem Recht ihrer Daten (`/api/buecher/titel/suche` view_books, `/api/schueler?q=` view_students) | 🟢 Quelltext-Ratsche + E2E am Draht                   | `frontend-hygiene-action-endpunkt.test.js`, `suchfelder-eigene-tuer.spec.js`, `api/routen_katalog.go` |
 | Welche Rechte eine Rolle hat: `role_permissions` (GROSS; Middleware mappt per `UPPER()`)                                                                                                                      | 🟡 konfigurierbar (bewusst)                           | `api/tuer/rechte.go` (`ladeUndMerkeRecht`)                                                               |
@@ -226,13 +208,10 @@ die Schwelle (docs/OFFEN.md 4.18, `TestLadeBestellbedarf_ZaehltAmBuch`).
 | **Gesperrt wird nur, was sich ohne Mailserver aufschließen lässt** — eine Anmeldung ohne Zeile in `sitzungen` sperrt der Server nicht und erneuert sie nicht | 🟡 Code + PG-Test | `auth/sitzungen.go` (`Sperre`, `Verlaengere`), `auth/sperre_pg_test.go` |
 | Der Prüfwert des Passworts lebt nicht länger als die Anmeldung: Abmelden, Ablauf und das Löschen des Kontos nehmen die Zeile mit | 🟢 FK mit CASCADE, 🟡 Abmelden und Abräumen | `sitzungen` (`benutzer_id`), `auth/sperre_pg_test.go` |
 
-> **Zum Rollen-Vokabular (11.08.2026):** `helfer` kam mit Migration 042 dazu, `kollegium`
-> hieß bis Migration 069 `lehrer`. Der alte Name war doppelt belegt, auch als Entleihertyp
-> (`schueler.klasse = 'lehrer'`). Diesen Gebrauch gibt es seit Migration 072 nicht mehr,
-> `lehrer` ist als Klassenname gesperrt (`api/leser/leser_klasse_regel.go`); eine Lehrkraft
-> steht seit Migration 123 in `leser` mit `art = 'lehrkraft'`. Migration 070 hat den Rechteumfang der
-> Rolle auf `create_reservations` zurückgenommen; das ist aber eine **Vorgabe**, keine
-> Invariante: Die Zeile darüber gilt, ein Administrator darf mehr erteilen. Siehe
+> **Zum Rollen-Vokabular:** `lehrer` ist als Klassenname gesperrt
+> (`api/leser/leser_klasse_regel.go`); eine Lehrkraft steht in `leser` mit
+> `art = 'lehrkraft'` (Migration 123). Dass das Kollegium nur `create_reservations` hält
+> (Migration 070), ist eine **Vorgabe**, keine Invariante: Die Zeile darüber gilt, ein Administrator darf mehr erteilen. Siehe
 > [FACHKONZEPT §12](FACHKONZEPT.md).
 
 ---
@@ -263,35 +242,6 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
 | Sommerferien-Tabelle (Hessen, KMK) reicht mindestens zwei Jahre voraus                                                                       | 🟡 Selbstprüfung „Ferientabelle" + Horizont-Test (rot ab Januar 2029)                               | `pkg/lmfplan/sommerferien.go`, `internal/bereitschaft/ferien.go`                   |
 
 ---
-
-## Lücken-Register (priorisiert)
-
-| #           | Lücke                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Schwere     | Soll-Durchsetzung                                                    | Blockiert durch |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------- | --------------- |
-| ~~**G1**~~  | **ERLEDIGT (Entscheidung B, 2026-07-15):** LUSD importiert jetzt Anschrift + `eltern_email` (optional). Zweck Rechnung/Mahnung; Anonymisierung bei Abgang löscht die Daten. Kommentar korrigiert. ~~**Offen:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis dokumentieren (Betreiber).~~ **ERLEDIGT: In `docs/SECURITY.md` dokumentiert.**                                                                                                                                                                                                                                                                          | erledigt    | `repository/lusd_import.go`, `internal/lusd/datei.go`, `schueler.strasse`/`eltern_email` | —               |
-| ~~**G4a**~~ | ~~`stock`, `meldebestand`, `einkaufspreis`, `menge`, `einzelpreis`, `gesamtbetrag`, `anzahl` ohne DB-Wertebereich~~ **ERLEDIGT (Migration 039):** Non-Negativitäts-/Positivitäts-CHECKs, in CI gegen echtes PG geprüft.                                                                                                                                                                                                                                                                                                                                                                                                         | 🟢 erledigt | `migrations/039_wertebereich_constraints.sql`                        | —               |
-| ~~**G2**~~  | **ERLEDIGT:** `vormerkungen.status` (Migration 040), `cover_status` (Migration 041 — die vermutete inkonsistente Schreibung war ein Grep-Artefakt aus JSON-Responses; Vokabular ist durchgängig GROSS). **Dauerhaft ohne CHECK (Beschluss):** `medientyp` — offenes, frei eingebbares Vokabular. _Hinweis:_ `inventur_status` (früher `chk_inventur_status`) entfiel mit Migration 045 — der Inventur-Zustand ist jetzt session-gebunden statt eine globale Spalte.                                                                                                                                                             | 🟢 erledigt | `migrations/040`, `migrations/041`, `migrations/045`                 | —               |
-| ~~**G4b**~~ | **ERLEDIGT:** `grade_level` = 0–13 (0 = unkategorisiert, 5–13 kooperative Gesamtschule inkl. Oberstufe), NULL erlaubt. Deckt sich mit App-Validierung. **Nebenbefund gefixt:** `leseKlassenstufe` klemmte fälschlich bei 10 → Jahrgang 11–13 wurde beim Import als 5 einsortiert; jetzt 5–13.                                                                                                                                                                                                                                                                                                                                  | 🟢 erledigt | `migrations/040`, `import_verarbeitung_zeilen.go`                    | —               |
-| ~~**G3**~~  | **ERLEDIGT (Migration 043):** `aussonderung_grund` {VERLUST, BESCHAEDIGUNG, AUSSORTIERT, BESTANDSKORREKTUR} + `chk_aussonderung_grund` (im Umlauf = NULL, ausgesondert = genau ein Wert). Backfill aus `zustand_notiz`-Markern, alle **8** Schreibpfade angepasst, gegen echtes PG + e2e verifiziert. _(Audit 16.07.: der 8. Pfad — `KatalogAbfragen.AendereExemplarStatus`, einziger mit parametrisiertem `ist_ausgesondert` — war zunächst übersehen; Lehre: nach Grep-Filtern mit `WHERE`-Ausschluss immer ungefiltert gegenprüfen.)_ Bewusst kein Status „Ausgeliehen" — Ausleihzustand lebt allein in `ausleihen` (Unique-Index Migration 033). | 🟢 erledigt | `migrations/043_aussonderung_grund.sql`                              | —               |
-| ~~**G5**~~  | **ERLEDIGT:** Handapparat-Bug behoben (Laufzeit liest `benutzer.rolle`), Rolle `helfer` erreichbar (Migration 042), Legacy-Tabelle `benutzer_rollen` entfernt (Migration 044) samt Bootstrap-Befüllung in `db/erster_admin.go`. Ein Test verhindert ihre Rückkehr. **Wichtig war die Reihenfolge:** Migrationen laufen vor `SchreibeRechteVorgabe` — ein verbliebenes `CREATE TABLE IF NOT EXISTS` hätte die Tabelle direkt nach dem DROP als leere Ruine neu angelegt.                                                                                                                                                                       | 🟢 erledigt | `migrations/044`, `db/erster_admin.go`                                         | —               |
-| ~~**G6**~~  | **ERLEDIGT:** Seed-Liste vervollständigt (038–043) + CI-Drift-Guard: Test vergleicht `migrations/*.sql` gegen die Seed-Liste in `schema.sql` und schlägt bei jeder Abweichung fehl.                                                                                                                                                                                                                                                                                                                                                                                                                                             | 🟢 erledigt | `db/migrationen_drift_test.go`                                        | —               |
-
----
-
-## Fahrplan
-
-- ✅ **Phase 0 — Katalog vervollständigen.** _(dieses Dokument)_
-- ✅ **Phase 1 — G1 entscheiden (Governance).** Entscheidung B umgesetzt (Import + Löschung bei
-  Anonymisierung). ~~**Offen beim Betreiber:** Rechtsgrundlage/Aufbewahrung im Verarbeitungsverzeichnis.~~ **ERLEDIGT (in `SECURITY.md` dokumentiert).**
-- ✅ **Phase 2 — Constraints nachrüsten.** Migrationen 039–043: 12 CHECKs + ENUM-Wert, jede gegen
-  echtes Postgres verifiziert (damals 15/16, heute 18) (Verletzung provoziert → Fehler erwartet; gültige Werte akzeptiert).
-- ✅ **Phase 3 — Prozess härten (G6).** `db/migrationen_drift_test.go` läuft in CI.
-- ✅ **Phase 4 — In Tests überführen.** Die 🟡-Ausleihregeln als Unit-Tests
-  (`ausleihe_am_leser_test.go`); die 🟢-Invarianten als Integrationstests gegen echtes
-  Postgres 18 im CI-Service-Container (Produktionsversion) (`db/constraints_*_pg_test.go`): jede Verletzung
-  wird provoziert und muss am erwarteten Constraint scheitern, jeder gültige Wert muss
-  durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
-  dass das **in CI** nicht unbemerkt passiert.
 
 ## Das Raster — die neunzehn Fragen, und ihre Frontend-Lesart
 
@@ -328,23 +278,22 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 18. **Veralteter Stand** — zwischen Laden und Speichern liegt Zeit. Was schreibt der Pfad zurück, das die Person nicht angefasst hat, und was überschreibt er damit, wenn inzwischen ein anderer Arbeitsplatz, ein Import oder ein Hintergrundlauf gespeichert hat?
 19. **Spur** — hinterlässt der Pfad einen Eintrag, an dem sich später ablesen lässt, wer was wann geändert hat? Steht darin genug, um die Änderung zu erklären, und kein Personenbezug, den die Tilgung nicht kennt?
 
-### Zu Frage 12 (neu am 06.09.2026)
+### Zu Frage 12
 
-Die ersten elf Fragen sehen vom Code aus auf die Daten. Frage 12 sieht zurück, und das
-ist keine Wortklauberei — zwei Funde desselben Abends kamen aus der DDL und wären beim
-Lesen des Go-Codes nie aufgefallen:
+Die ersten elf Fragen sehen vom Code aus auf die Daten. Frage 12 sieht zurück: auf das, was
+die Datenbank ohnehin tut und wovon der Code nichts weiß. Zwei Beispiele aus der DDL, die
+beim Lesen des Go-Codes nicht auffallen:
 
 - `CONSTRAINT check_damage_item` verlangt genau eines von `exemplar_id`/`geraet_id`. Der
-  Geräteschaden ist damit ausdrücklich vorgesehen; die Rechnung an die Eltern verband per
-  INNER JOIN und hätte ihn verloren (`ce875654`).
-- An `buecher_titel` hängen vier Kinder mit `ON DELETE CASCADE`. Drei davon erwähnte kein
-  Löschpfad — dahinter standen ein wartender Schüler und eine Lehrkraft mit einer
-  angemeldeten Klassensatz-Anforderung (`77bbf931`).
+  Geräteschaden ist damit ausdrücklich vorgesehen; eine Rechnung, die per INNER JOIN mit dem
+  Exemplar verbindet, verlöre ihn.
+- An `buecher_titel` hängen Kinder mit `ON DELETE CASCADE`. Ein Löschpfad, der sie nicht
+  nennt, nimmt still mit, was daran hängt, etwa einen wartenden Schüler oder eine
+  angemeldete Klassensatz-Anforderung.
 
-Beides stand jahrelang lesbar in `schema.sql` und wurde nie gelesen, weil niemand die
-Frage gestellt hat. **Frage 1 („Konvention statt Regel") ist nicht dieselbe Frage:** Sie
-fragt, ob eine Zusicherung des Codes von der Datenbank gehalten wird. Frage 12 fragt
-umgekehrt nach dem, was die Datenbank ohnehin tut — und wovon der Code nichts weiß.
+**Frage 1 („Konvention statt Regel") ist nicht dieselbe Frage:** Sie fragt, ob eine
+Zusicherung des Codes von der Datenbank gehalten wird. Frage 12 fragt umgekehrt nach dem,
+was die Datenbank ohnehin tut — und wovon der Code nichts weiß.
 
 Mechanischer Teil: `repository/schema_gegenrichtung_pg_test.go` friert die drei Inventare
 ein (Stand 16.09.2026, an der Datenbank gemessen: 38 Fremdschlüssel mit Löschwirkung,
@@ -368,49 +317,39 @@ Liste von 96 Namen wäre der Dateibaum und würde nichts aussagen.
 Eine Frontend-Lesart hat Frage 12 nicht; das Gegenstück dort ist die Bugklasse „Nie
 verdrahtet" (`docs/sweeps.md`): Felder, die der Server liefert und die niemand liest.
 
-Zweite Schärfung ohne neue Nummer (23.09.2026): *Wer läuft gegen die Regel?* Eine neue
-CHECK-Bedingung oder ein Wächter-Trigger gilt für jeden Schreiber der beteiligten Spalten,
-nicht nur für die Tür, die gerade entsteht. Die Antwort in der Ratsche zählt die Schreiber
-auf und sagt je Schreiber, was er bekommt: einen Satz (400/409) oder einen Abbruch. Belege
-vom 22. und 23.09.2026: der Nummern-Wächter am Kollegiumskonto (500 statt 409, `66e0d30f`), der
-negative Listenpreis beim Ändern (500, `1bec2f99`), der Mehrjahresband im
-Katalogisat-Import (der ganze Import fiel) und an der Lernmittel-Tür des Bestellfensters
-(500). An `chk_mehrjahresband_spanne` stand als Antwort „die Datenbank hält sie für jeden
-anderen Schreiber" — wahr, aber keine Antwort darauf, was aus diesen Schreibern wird.
+Zweite Schärfung ohne neue Nummer: *Wer läuft gegen die Regel?* Eine neue CHECK-Bedingung
+oder ein Wächter-Trigger gilt für jeden Schreiber der beteiligten Spalten, nicht nur für die
+Tür, die gerade entsteht. Die Antwort in der Ratsche zählt die Schreiber auf und sagt je
+Schreiber, was er bekommt: einen Satz (400/409) oder einen Abbruch (500). „Die Datenbank hält
+sie für jeden anderen Schreiber" ist wahr, aber keine Antwort darauf, was aus diesen
+Schreibern wird.
 
-### Zu Frage 13 (neu am 17.09.2026)
+### Zu Frage 13
 
 Ein Name bleibt, seine Bedeutung wechselt — und niemand merkt es, weil der Code
-weiterläuft. `schueler` war bis Migration 124 eine Tabelle und ist seither eine SICHT auf
-`leser` mit `WHERE art = 'schueler'`. Ein `UPDATE schueler` trifft damit beim Kollegium
-null Zeilen: eine stille 404, kein Fehler.
+weiterläuft. Beispiel: `schueler` ist eine SICHT auf `leser` mit `WHERE art = 'schueler'`
+(Migration 124). Ein `UPDATE schueler` trifft damit beim Kollegium null Zeilen: eine stille
+404, kein Fehler. Das ist nicht Frage 3 („zwei Wahrheitsquellen"): Ein solcher Pfad ist nicht
+doppelt formuliert, er meint schlicht etwas anderes als vor dem Wechsel.
 
-Der Beleg, warum das eine eigene Frage verdient und nicht unter Frage 3 („zwei
-Wahrheitsquellen") fällt: Beim Durchgang vom 16.09.2026 gab es 15 Schreibpfade gegen diese
-Sicht, heute sind es neun — die sechs, die gewandert sind, waren Zeile für Zeile die Funde
-jenes Durchgangs. Sie waren nicht doppelt formuliert, sie meinten schlicht etwas anderes
-als am Vortag.
-
-Mechanischer Teil: `docs/schreibpfade_gegen_sicht_test.go` führt die neun Schreibpfade mit
-je einer Begründung, warum die Filterung dort richtig ist. Alle neun SIND richtig — sie
-führen die Schülerarbeit. Die Regel ist deshalb nicht „gegen eine Sicht schreibt man
-nicht", sondern: **Eine zehnte Zeile ist eine Frage.**
+Mechanischer Teil: `docs/schreibpfade_gegen_sicht_test.go` führt die Schreibpfade gegen die
+Sicht je Datei mit einer Begründung, warum die Filterung dort richtig ist: LUSD-Abgleich,
+Versetzung, Anonymisierung der Abgänger, der Littera-Schülerlauf und eine Prüfhilfe der
+Tests. Die Regel ist deshalb nicht „gegen eine Sicht schreibt man nicht", sondern: **Eine
+neue Zeile ist eine Frage.**
 
 Dazu eine Schärfung von Frage 12 ohne neue Nummer: *Wer räumt weg, was die Datenbank
 selbst angelegt hat?* Das Inventar fragt bei Fremdschlüsseln in die Löschrichtung, bei
 Triggern nur in die Anlegerichtung. Vier Trigger schreiben in fremde Tabellen, zwei davon
 legen Zeilen an, die kein Go-Code je löscht.
 
-### Zu Frage 14 (neu am 23.09.2026)
+### Zu Frage 14
 
 Die dreizehn Fragen davor lesen Code und Schema; keine fragt die Zeilen, auf die eine
-Änderung trifft. Migration 135 („Klasse N wird Spanne N bis N", 22.09.2026) war an der
-lokalen Datenbank entworfen, in der ein einziger Testtitel eine Klasse trug. Auf dem
-Testserver trugen 153 Titel eine, darunter mehrjährige Bände mit nur einem Jahr und
-Klassen, die der Signatur widersprechen. Die Migration lief dort, wurde zurückgenommen und
-brauchte ein Reparaturskript aus der Vorab-Sicherung (`7981e347`, `bf91c54d`). Dieselbe
-Form schon einmal ohne Migration: Eine Empfehlung zur Cover-Abdeckung aus der
-Seed-Datenbank lag um den Faktor 27 daneben (04.09.2026).
+Änderung trifft. Eine Regel, die an der lokalen Datenbank entworfen ist, sieht dort oft nur
+eine Form der Daten. Beispiel: Für Migration 135 („Klasse N wird Spanne N bis N") trug lokal
+ein einziger Testtitel eine Klasse, am Testserver 153 Titel, darunter mehrjährige Bände mit
+nur einem Jahr und Klassen, die der Signatur widersprechen.
 
 Gemessen wird lesend am Testserver. Die lokale Datenbank ist ein Seed-Bestand; Fragen nach
 Mengen, Verteilungen und Altformen beantwortet sie nicht.
@@ -420,76 +359,39 @@ Migration, die vorhandene Zeilen ändert oder Daten wegnimmt, im Kopf einen Satz
 „gemessen" und dem Datum oder „Ohne Messung:" mit Grund. Die Zeile beweist nicht, dass
 gemessen wurde; sie stellt die Frage dort, wo die Migration entsteht.
 
-### Zu den Fragen 15 bis 18 (neu am 01.10.2026)
+### Zu den Fragen 15 bis 18
 
 Die vierzehn Fragen davor lesen Code, Schema und Daten. Keine fragt nach dem, was zwischen
 Mensch und Server liegt: nach der Eingabe, die der Server noch nicht kennt, nach dem Gerät,
 das sie liefert, nach dem Dienst, der gerade fehlt, und nach dem Stand, der seit dem Laden
-veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderungen seit dem
-30.09.2026 gestellt; jede brachte einen nachgestellten Fund. Was davon offen ist, steht in
-[OFFEN.md](OFFEN.md) 5.5 und 5.10.
+veraltet ist. Die Bugklassen dazu stehen in [sweeps.md](sweeps.md).
 
-- **15 · Ungespeichertes.** Seit `729a7271` (22.08.2026) rendert `App.svelte` hinter der
-  Sperre nach Inaktivität die Anwendung nicht. Was getippt und nicht gespeichert war, ist
-  nach dem Aufschließen weg: Die Maske „Neues Buch" ist zu, die Seite steht auf ihrem ersten
-  Reiter (im Browser nachgestellt). Der Verlassen-Schutz des LMF-Planers
-  (`uiStore.verlassenSperre`) wird nur beim Wechsel des Menüpunkts und beim Schließen des
-  Fensters gefragt. Dieselbe Form früher: die umgeordnete Reihenfolge im Planer
-  (07.09.2026), die letzte Änderung im Ausweis-Designer (24.08.2026). Frage 8 fragt in der
-  Frontend-Lesart das Gegenteil: was beim Verlassen zurück auf Anfang muss. Behoben am
-  01.10.2026: Die Anwendung bleibt hinter dem Sperrbildschirm stehen, ausgeblendet und
-  träge. Dabei gefunden: Eine offene Rückfrage blieb über dem Sperrbildschirm sichtbar.
+- **15 · Ungespeichertes.** Hinter dem Sperrbildschirm bleibt die Anwendung stehen,
+  ausgeblendet und träge; eine offene Rückfrage ist dort nicht zu sehen. Der
+  Verlassen-Schutz des LMF-Planers (`uiStore.verlassenSperre`) wird nur beim Wechsel des
+  Menüpunkts und beim Schließen des Fensters gefragt. Frage 8 fragt in der Frontend-Lesart
+  das Gegenteil: was beim Verlassen zurück auf Anfang muss.
 - **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
-  Mit dem Scanner-Fenster der Titel-Verwaltung (`63c436c6`) entfiel das Feld „Handscanner /
-  ISBN-Eingabe", das auf Enter hörte. In der Maske „Neues Buch" stand der Fokus nach dem
-  Öffnen in keinem Feld, und Enter im ISBN-Feld löste weder die Frage nach dem vorhandenen
-  Titel noch die ISBN-Abfrage aus (im Browser nachgestellt, blind getippt; behoben am
-  02.10.2026, `frontend/e2e/buch-anlegen-handscanner.spec.js`). Dieselbe Form
-  früher: das Scanfeld der Theke ohne Fokus nach dem ersten Scan (`768f44f`, 28.07.2026),
-  ein Dialog, der beim Scan aufgeht und den nächsten Scan bekommt (24.09.2026,
-  `frontend/e2e/sperre.spec.js`; seit dem 07.10.2026 drückt das Enter eines Scans in den
-  Rückfragen der Theke keinen Knopf, `frontend/src/lib/scanOhneFokus.js`,
-  `frontend/e2e/theke-scan-reihe.spec.js`). Derselbe Durchgang fand den Sperrbildschirm: Dort steht
-  der Fokus im Passwortfeld, ein Scan ging als Passwort zum Server und zählte als
-  Fehlversuch, und nach fünf Scans war das Konto an diesem Rechner 15 Minuten gesperrt.
-  Behoben am 01.10.2026 (`frontend/src/lib/scanErkennung.js`,
-  `frontend/e2e/sperre-scan.spec.js`); bis dahin stand der Fund nicht im Repository.
-- **17 · Ausfall.** Antworteten die Katalogdienste nicht, ließ sich kein neues Buch
-  speichern, dem Cover oder Listenpreis fehlte: `ergaenzeBuchMetadaten` fragte vor dem
-  Schreiben DNB, Google Books und OpenLibrary der Reihe nach (je 8 s Frist), die Oberfläche
-  gab nach 10 s auf, gespeichert wurde nichts (am Stack nachgestellt mit Diensten, die nicht
-  antworten; mit Cover und Preis antwortete dieselbe Tür sofort mit 201). Dasselbe galt beim
-  Ändern jedes Titels ohne Cover. Behoben am 02.10.2026: Das Speichern fragt keinen Dienst
-  (`inventur/speichern_ohne_katalogdienste_pg_test.go`). Dieselbe Frage hat
-  früher drei Türen offen gehalten: Ohne Netz wird nicht gesperrt (`f7133548`, 16.09.2026),
-  ein Ausfall des Mailservers zählt nicht als Fehlversuch (20.08.2026) und sperrt seit
-  Migration 155 niemanden aus (`0d6ff8e0`, dort auch der Fall im Übergang beim Update).
-- **18 · Veralteter Stand.** `PUT /api/books/{id}` schreibt den Titel als Ganzes, und die
-  Maske schickt den Bestand als Zahl aus dem Augenblick des Öffnens mit, auch wenn niemand
-  das Feld angefasst hat (`speichereBuch`). Zwei Folgen, beide nachgestellt: Speichern zwei
-  Arbeitsplätze denselben Titel nacheinander, gilt der zweite Stand ganz — die Signatur des
-  ersten ist ohne Meldung zurückgesetzt. Kommen zwischen Öffnen und Speichern fünf Exemplare
-  dazu, sondert das Speichern einer Signatur-Änderung fünf Exemplare wieder aus
-  (`gleicheBestandAb`), darunter das ursprüngliche. Die Rückfrage „Gesamtbestand verringern?"
-  vergleicht gegen die geladene Liste, nicht gegen den Titel: Steht er nicht in ihr, kommt
-  sie nicht. Der LMF-Planer hat für dieselbe Lage ein Signal über die Live-Leitung
-  (`fremdesSignal`). Behoben am 01.10.2026 für den Bestand: Er geht nur geändert und mit der
-  Zahl vom Öffnen mit, der Server lehnt bei abweichendem Stand ab, und die Rückfrage misst
-  an der geladenen Zahl. Beim Beheben kam ein dritter Fall dazu: Der Server zählte bestellte
-  Exemplare zum Bestand, die Maske nicht — jedes Speichern eines Titels mit offener
-  Bestellung sonderte aus. Behoben am 06.10.2026 für die übrigen Felder des Titels: Die Maske
-  schickt die Felder, die sie seit dem Öffnen geändert hat, und der Server schreibt die, die
-  der Rumpf nennt (`inventur/titel_genannte_felder_pg_test.go`,
-  `frontend/e2e/buchmaske-zwei-plaetze.spec.js`). Ändern zwei Plätze dasselbe Feld, gilt der
-  spätere Eintrag. Behoben am 07.10.2026 für die Leserakte: „Stammdaten bearbeiten" schickte
-  bis zu dreizehn Felder mit dem Stand vom Laden der Akte, darunter Klasse und Abgangsjahr;
-  nach einer Versetzung oder einem LUSD-Import dazwischen stand wieder der alte Wert in der
-  Zeile (`frontend/e2e/leserakte-zwei-plaetze.spec.js`). Behoben am 08.10.2026 für Benutzer,
-  Gerät, Lieferant und die Kategorien der Einstellungen (`benutzer-nur-geaendertes.spec.js`,
+  Ein Feld, in das gescannt wird, hat nach dem Öffnen den Fokus und hört auf Enter
+  (`frontend/e2e/buch-anlegen-handscanner.spec.js`); das Enter eines Scans drückt in den
+  Rückfragen der Theke keinen Knopf (`frontend/src/lib/scanOhneFokus.js`,
+  `frontend/e2e/theke-scan-reihe.spec.js`), und im Passwortfeld gilt ein Scan nicht als
+  Passwort (`frontend/src/lib/scanErkennung.js`, `frontend/e2e/sperre-scan.spec.js`).
+- **17 · Ausfall.** Das Speichern eines Titels fragt keinen Katalogdienst
+  (`inventur/speichern_ohne_katalogdienste_pg_test.go`). Ohne Netz wird nicht gesperrt, und ein
+  Ausfall des Mailservers zählt nicht als Fehlversuch und sperrt niemanden aus (Migration 155).
+- **18 · Veralteter Stand.** Eine Maske schickt, was sie seit dem Öffnen geändert hat, und die
+  Tür schreibt, was der Rumpf nennt; den Bestand eines Titels schickt die Maske mit der Zahl
+  vom Öffnen, und der Server lehnt bei abweichendem Stand ab. So halten es Titel, Leserakte,
+  Benutzer, Gerät, Lieferant und die Kategorien der Einstellungen
+  (`inventur/titel_genannte_felder_pg_test.go`, `frontend/e2e/buchmaske-zwei-plaetze.spec.js`,
+  `frontend/e2e/leserakte-zwei-plaetze.spec.js`, `benutzer-nur-geaendertes.spec.js`,
   `geraet-nur-geaendertes.spec.js`, `lieferant-nur-geaendertes.spec.js` und
-  `einstellungen-kategorien.spec.js` in `frontend/e2e/`). Eine Kategorie gibt dafür den Stand
-  beim Öffnen mit, auch die Vorgabe für eine nie gesetzte Einstellung: Verglichen mit dem
-  rohen Wert vom Server wiche die Vorgabe immer ab und ginge bei jedem Speichern mit.
+  `einstellungen-kategorien.spec.js` in `frontend/e2e/`). Ändern zwei Plätze dasselbe Feld,
+  gilt der spätere Eintrag. Eine Kategorie gibt den Stand beim Öffnen mit, auch die Vorgabe
+  für eine nie gesetzte Einstellung: Verglichen mit dem rohen Wert vom Server wiche die
+  Vorgabe immer ab und ginge bei jedem Speichern mit. Der LMF-Planer hat für dieselbe Lage ein
+  Signal über die Live-Leitung (`fremdesSignal`).
 
 Ein Gate hat von den vier Fragen nur ein Teil von 17 (die Fristen an den Aufrufen mit
 Mailversand, `api/mail_routen_frist_test.go`). Für 16 gibt es ein Muster
@@ -499,103 +401,69 @@ zwei Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`,
 `frontend/e2e/leserakte-zwei-plaetze.spec.js`), für 15 den Test mit der Maske vor und nach
 der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
 
-Schärfungen ohne neue Nummer, vom selben Durchgang, von den Durchgängen am 02.10.2026, am
-03.10.2026 und am 05.10.2026 über die Änderungen danach und vom Durchgang über den ganzen
-Bestand am 07.10.2026:
+Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle hält:
 
 - **Frage 3, der einzige Auslöser:** Blendet eine Änderung ein Element aus oder nimmt sie es
-  weg — was hat nur dieses Element ausgelöst? Beleg vom 02.10.2026: Das Miniaturbild der
-  Ausleihliste war der Auslöser der Großansicht des Covers; ausgeblendet war sie nicht mehr
-  zu erreichen (`e2e/cover-grossansicht.spec.js`, gefunden vom vollen Browser-Lauf).
+  weg — was hat nur dieses Element ausgelöst? (`e2e/cover-grossansicht.spec.js`: das
+  Miniaturbild der Ausleihliste öffnet die Großansicht des Covers.)
+- **Frage 3, die Prüfung der Schwester:** Führen zwei Türen zum selben Vorgang, prüft jede,
+  was die andere prüft? (`repository/schaden_melden_ausleihe_pg_test.go`: „Verlust melden"
+  in der Akte prüft wie der Bescheid, ob die Ausleihe noch läuft.)
 - **Frage 5, der zweite Versuch:** Was geschieht beim zweiten Mal — Doppelklick, erneutes
-  Senden nach einer Zeitüberschreitung, zweiter Lauf? Belege vom 01.10.2026: Zwei Abfragen
-  und zwei Speicherversuche derselben ISBN ergeben vier Cover-Dateien (OFFEN.md 5.5); die
-  Kontrast-Spec scheitert im zweiten Lauf auf derselben Datenbank (OFFEN.md 5.10). Vom
-  02.10.2026: Ein Doppelklick auf „Speichern" der Buchmaske schickte zwei Anfragen, und die
-  zweite kam als Ablehnung des veralteten Bestands zurück.
+  Senden nach einer Zeitüberschreitung, zweiter Lauf?
+- **Frage 5, das Formular nach dem Ladefehler:** Zeigt eine Maske nach einem gescheiterten
+  Abruf leere Felder, schreibt „Speichern" sie über die echten Werte
+  (`MailEinstellungen.test.js`; `ui/LadeFehler`).
 - **Frage 6, die Reihenfolge als Schutz:** Trägt eine Prüfung nur, weil eine Anweisung davor
-  eine Zeile sperrt? Dann steht die Reihenfolge in einem Test. Beleg vom 02.10.2026: Der
-  Vergleich mit dem gesehenen Bestand zählt erst nach dem UPDATE des Titels
-  (`inventur/bestand_gleichzeitig_pg_test.go`).
+  eine Zeile sperrt? Dann steht die Reihenfolge in einem Test
+  (`inventur/bestand_gleichzeitig_pg_test.go`: Der Vergleich mit dem gesehenen Bestand zählt
+  erst nach dem UPDATE des Titels).
 - **Frage 8, was liegen bleibt:** Der Lebenszyklus gilt auch für Dateien auf der Platte und
   für Einträge im Speicher des Browsers, nicht nur für Zeilen — und für Schwebendes, das an
-  der Seite hängt statt an seinem Bauteil. Beleg vom 02.10.2026: Die Sprechblase blieb über
-  der geleerten Theke und über dem Sperrbildschirm stehen (`actions/tooltip.js`).
+  der Seite hängt statt an seinem Bauteil, etwa eine Sprechblase über der geleerten Theke
+  (`actions/tooltip.js`).
 - **Frage 10, der Übergang:** Was lebt über ein Update oder einen Rückbau hinweg — offene
   Fenster mit dem alten Programm, laufende Anmeldungen, eingereihte Vorgänge,
-  zwischengespeicherte Seiten — und versteht jede Seite die Form der anderen? Belege:
-  Anmeldungen ohne Zeile in `sitzungen` nach dem Einspielen von Migration 155 (`0d6ff8e0`);
-  die neuere Startseite nach einem Rückbau (ARCHITEKTUR.md 11.5).
-- **Frage 14, die Menge:** Schneidet der Pfad an einer Grenze ab, und sagt er es? Beleg: die
-  Vorschläge nur aus den 500 häufigsten Wörtern (`1a0ba055`, 30.09.2026).
-- **Frage 14, die Zeile ohne den Pflichtwert:** Verlangt eine Maske oder ihre Tür beim Ändern
-  ein Feld, das Zeilen im Bestand nicht tragen? An Zeilen mit dem Wert fällt es nie auf. Beleg
-  vom 03.10.2026: Ein Titel ohne ISBN ließ sich in der Maske „Buch bearbeiten" nicht speichern;
-  in der Littera-Sicherung von 2010 tragen 2.193 von 10.732 Titeln keine
-  (`inventur/titel_ohne_isbn_pg_test.go`). Dazu gehört die Zeile, deren Wert die Prüfung nicht
-  besteht: Eine Tür prüft, was sich ändert.
-- **Frage 16, der Scan vor der Antwort:** Was geschieht mit dem nächsten Scan, solange die
-  Antwort auf den vorigen aussteht — fragt er neu, oder schließt er sich dem laufenden Ablauf
-  an, und zu welcher Eingabe gehört dann die Antwort? Beleg vom 03.10.2026: In der Maske
-  „Neues Buch" standen nach einem zweiten Scan während der ISBN-Abfrage die Angaben des ersten
-  Buchs unter der ISBN des zweiten (`isbnAbfrage.test.js`).
+  zwischengespeicherte Seiten — und versteht jede Seite die Form der anderen? (Die neuere
+  Startseite nach einem Rückbau: ARCHITEKTUR.md 11.5.)
 - **Frage 11, die Ablage unter einem Schlüssel:** Liegt ein Ergebnis unter einem Schlüssel, den
   auch eine andere Anmeldung vorlegen kann, in der Fassung, die der erste Absender lesen
-  durfte? Die Warteschlange der Theke gehört dem Rechner, nicht der Person. Beleg vom
-  05.10.2026: Die Nachbuch-Tür legte den Grund mit dem Freitext der Sperre ab, und die
-  wiederholte Portion gab ihn an einen Helfer (`api/theke/nachbuchen_sperrgrund_pg_test.go`).
-- **Frage 18, die jüngste Öffnung:** Fordert ein Bildschirm nacheinander zwei Inhalte an
-  (zweiter Klick, „Neu"), welche Antwort gilt, wenn die erste später ankommt? Beleg vom
-  05.10.2026: In der Titel-Verwaltung legte sich die späte Antwort zum zuerst angeklickten
-  Titel über die offene Maske des zweiten, samt dem dort Getippten
-  (`frontend/e2e/titel-oeffnen-rennen.spec.js`).
-- **Frage 16, der Scan vor der Antwort, an jedem Scanfeld:** Ein Handscanner wartet nicht.
-  Ist das Feld gesperrt oder ohne Fokus, solange die Anfrage läuft, geht der nächste Scan
-  verloren, ohne Meldung. Beleg vom 07.10.2026: Die Inventur zählte von drei Büchern eines,
-  wenn die Antwort auf das erste nach 1,5 s kam, und der Abschluss hätte die zwei anderen
-  als Verlust ausgesondert (`frontend/e2e/inventur-scan-reihe.spec.js`, behoben). Die Theke
-  ließ einen Scan während einer laufenden Buchung ebenfalls fallen, gegen den Doppelscan; in
-  der Schnellrückgabe blieb das zweite Buch dabei verliehen. Seit dem 07.10.2026 reiht sie
-  ihn ein und bucht ihn danach, dieselbe Nummer fällt weiter weg; ging ein Scan nicht glatt
-  durch, wird der Rest nicht gebucht und genannt (`frontend/e2e/theke-scan-reihe.spec.js`,
-  `frontend/src/lib/stores/omniboxScanReihe.test.js`).
+  durfte? Die Warteschlange der Theke gehört dem Rechner, nicht der Person
+  (`api/theke/nachbuchen_sperrgrund_pg_test.go`).
+- **Frage 14, die Menge:** Schneidet der Pfad an einer Grenze ab, und sagt er es?
+- **Frage 14, die Zeile ohne den Pflichtwert:** Verlangt eine Maske oder ihre Tür beim Ändern
+  ein Feld, das Zeilen im Bestand nicht tragen? An Zeilen mit dem Wert fällt es nie auf; in
+  der Littera-Sicherung von 2010 tragen 2.193 von 10.732 Titeln keine ISBN
+  (`inventur/titel_ohne_isbn_pg_test.go`). Dazu gehört die Zeile, deren Wert die Prüfung
+  nicht besteht: Eine Tür prüft, was sich ändert.
+- **Frage 16, der Scan vor der Antwort:** Was geschieht mit dem nächsten Scan, solange die
+  Antwort auf den vorigen aussteht — fragt er neu, oder schließt er sich dem laufenden Ablauf
+  an, und zu welcher Eingabe gehört dann die Antwort? (`isbnAbfrage.test.js`.) Ein
+  Handscanner wartet nicht: Ist das Feld gesperrt oder ohne Fokus, solange die Anfrage läuft,
+  geht der nächste Scan verloren, ohne Meldung. Inventur und Theke reihen Scans deshalb ein;
+  an der Theke fällt dieselbe Nummer weiter weg, und ging ein Scan nicht glatt durch, wird der
+  Rest nicht gebucht und genannt (`frontend/e2e/inventur-scan-reihe.spec.js`,
+  `frontend/e2e/theke-scan-reihe.spec.js`, `frontend/src/lib/stores/omniboxScanReihe.test.js`).
 - **Frage 16, was wartet:** Reiht ein Scanfeld Scans ein, bucht es sie in dem Zustand, den
   der Scan davor hinterlassen hat. Was geschieht mit den wartenden, wenn der Scan davor
   scheitert, eine Rückfrage aufgeht oder jemand den Zustand von außen ändert (Escape,
-  Abmelden)? Beleg vom 07.10.2026: An der Theke geht nach einem gescheiterten Ausweis das
-  nächste Buch an den Leser davor (im Browser nachgestellt); die Reihe der Theke hält deshalb
-  nach jedem Scan an, der nicht glatt durchging
+  Abmelden)? Die Reihe der Theke hält nach jedem Scan an, der nicht glatt durchging
   (`frontend/src/lib/stores/omniboxScanReihe.test.js`), und jeder gescheiterte Scan gibt den
   Fehlerton (`frontend/src/lib/stores/omniboxAntwortArten.test.js`).
 - **Frage 17, die Fristenkette:** Welche Frist endet zuerst — die der Oberfläche, die des
   Servers, die des fremden Dienstes —, und was sieht die Person, wenn die Oberfläche zuerst
   aufgibt? Der Server arbeitet dann weiter, seine Antwort sieht niemand, und der zweite
-  Versuch trifft eine Arbeit, die schon geschehen ist. Belege vom 07.10.2026: Die
-  Oberfläche gab jeder ändernden Anfrage 10 s; der Versand der Mahnlisten öffnet je Klasse
-  eine SMTP-Sitzung ohne Gesamtfrist, ein zweiter Klick nach „Netzwerk-Timeout" hätte jede
-  Liste noch einmal verschickt. Bei der Bestellung war die Verbindungsfrist zum Mailserver
-  so lang wie die Frist der Oberfläche: Die Antwort „gespeichert, aber E-Mail-Versand
-  fehlgeschlagen" kam nie an, die Wiederholung meldete „war bereits erfasst"
-  (`api/mail_routen_frist_test.go`).
-- **Frage 5, das Formular nach dem Ladefehler:** Zeigt eine Maske nach einem gescheiterten
-  Abruf leere Felder, schreibt „Speichern" sie über die echten Werte. Beleg vom 07.10.2026:
-  die Mailserver-Angaben (`MailEinstellungen.test.js`); dieselbe Form am 31.08.2026 an den
-  Einstellungen und am 05.09.2026 im LMF-Planer (`ui/LadeFehler`).
-- **Frage 3, die Prüfung der Schwester:** Führen zwei Türen zum selben Vorgang, prüft jede,
-  was die andere prüft? Beleg vom 07.10.2026: Der Bescheid lehnte ein Buch ab, das
-  inzwischen zurück ist, „Verlust melden" in der Akte nicht — das Buch im Regal wurde als
-  Verlust ausgesondert, das Kind bekam eine Forderung (`repository/schaden_melden_ausleihe_pg_test.go`).
+  Versuch trifft eine Arbeit, die schon geschehen ist (`api/mail_routen_frist_test.go`).
+- **Frage 18, die jüngste Öffnung:** Fordert ein Bildschirm nacheinander zwei Inhalte an
+  (zweiter Klick, „Neu"), welche Antwort gilt, wenn die erste später ankommt?
+  (`frontend/e2e/titel-oeffnen-rennen.spec.js`.)
 
-### Zu Frage 19 (neu am 07.10.2026)
+### Zu Frage 19
 
 Die achtzehn Fragen davor fragen, ob ein Pfad das Richtige tut. Keine fragt, ob sich später
-ablesen lässt, dass er es getan hat. Der Durchgang über den Bestand fand am 07.10.2026: Eine
-Änderung an der Rechte-Matrix (`PUT /api/admin/permissions`) schrieb keinen Eintrag, während
-Konten und Einstellungen ihren schreiben. Die Matrix entscheidet an jeder Route, wer welche
-Daten sieht; wer einer Rolle wann ein Recht gab, ließ sich nicht nachsehen (behoben,
-`api/benutzer/rechte_matrix_protokoll_pg_test.go`). Dieselbe Form früher: Anlage und Rollenwechsel von
-Konten ohne Eintrag (bis 16.08.2026, aufgefallen an vier Admin-Konten, deren Herkunft niemand
-mehr feststellen konnte), die Anlage eines Kontos aus der Leserdatei ohne Eintrag (29.09.2026).
+ablesen lässt, dass er es getan hat. Beispiel: Die Rechte-Matrix entscheidet an jeder Route,
+wer welche Daten sieht; ohne Eintrag ließe sich nicht nachsehen, wer einer Rolle wann ein
+Recht gab (`api/benutzer/rechte_matrix_protokoll_pg_test.go`).
 
 Gefragt wird an jeder Tür, die festlegt, wer etwas darf oder sieht (Rechte, Konten, Sperren),
 wohin etwas geht (Adressen für Mahnlisten und Bestellungen, Mailserver, Vorlagen) oder die
@@ -604,18 +472,14 @@ Hälfte der Frage hält die Gegenrichtung: Was in einen Eintrag kommt, bleibt bi
 Audit-Aufbewahrung; Werte einer Person darin muss die Tilgung kennen
 (`repository/protokoll_personenbezug_test.go`).
 
-Ein Gate hat die Frage nicht. Eine grobe Messung am 07.10.2026 (Syntaxbaum über sechs
-Pakete, nach Namen verbunden) nennt 60 von 97 ändernden Routen, deren Anmeldung keine
-Funktion nennt, die in ein Protokoll schreibt; sie sieht keine Routen über Variablen und
-keine Trigger. Am Code gelesen und seit dem 07.10.2026 mit Eintrag: die Zuordnung der
-Klassenleitungen, die Mail-Vorlagen, die Lieferanten, die Verlängerung der Lernmittel einer
-ganzen Klasse (`api/verwaltung_protokoll_pg_test.go`).
-
-Am 08.10.2026 durchgesehen: die 107 Anmeldungen ändernder Routen (POST, PUT, PATCH, DELETE)
-gegen die Stellen, die in `audit_log` oder `audit_logs` schreiben. Seitdem mit Eintrag:
-Schlagworte zusammenführen, umleiten und löschen (die Titel hängen danach an einem anderen Wort
-oder an keinem; `TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll`). Ohne Eintrag bleiben
-Türen, die nichts von dem tun, was die Frage nennt, oder deren Zeile die Person selbst festhält:
+Ein Gate hat die Frage nicht. Durchgesehen am 08.10.2026: die 107 Anmeldungen ändernder
+Routen (POST, PUT, PATCH, DELETE) gegen die Stellen, die in `audit_log` oder `audit_logs`
+schreiben. Einen Eintrag schreiben unter anderem die Zuordnung der Klassenleitungen, die
+Mail-Vorlagen, die Lieferanten, die Verlängerung der Lernmittel einer ganzen Klasse
+(`api/verwaltung_protokoll_pg_test.go`) und die Schlagwort-Pflege beim Zusammenführen,
+Umleiten und Löschen (`TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll`). Ohne Eintrag
+bleiben Türen, die nichts von dem tun, was die Frage nennt, oder deren Zeile die Person
+selbst festhält:
 
 - Theke: ausleihen und zurücknehmen, auch nach einem Netzausfall (die Ausleihe trägt, wer sie
   gebucht und wer sie beendet hat), eine Ausleihe verlängern, eine Vormerkung anlegen oder
@@ -635,23 +499,22 @@ Türen, die nichts von dem tun, was die Frage nennt, oder deren Zeile die Person
 - Geräte, Wünsche und Meldungen des Kollegiums, Klassensatz-Reservierungen, die Sperre des
   Bildschirms, An- und Abmelden.
 
-Das Aussondern steht seit dem 08.10.2026 auch auf den drei Wegen mit der Person im Protokoll,
-die bis dahin keine festhielten: der Status in der Buchakte, ein kleinerer Bestand in „Buch
+Das Aussondern steht mit der Person im Protokoll, auch auf diesen drei Wegen: der Status in
+der Buchakte, ein kleinerer Bestand in „Buch
 bearbeiten", der Abschluss einer Inventur (`repository.ProtokolliereAussonderung`,
 `TestAussondern_StehtMitDerPersonImProtokoll`). Der Eintrag nennt Bearbeiter, Weg und Grund;
 den Grund liest er vom Exemplar. Die Zustandsnotiz steht nicht darin: Sie ist Freitext, kann
 eine Person nennen und bliebe bis zur Audit-Aufbewahrung. Das Abgangsbuch liest diese Einträge
 nicht, es zählt im Protokoll nur gelöschte Exemplare (`aktion = 'DELETE'`).
 
-### Frontend-Lesart (ergänzt 31.08.2026)
+### Frontend-Lesart
 
-Anlass: Beim Komplett-Durchgang 31.08. fielen alle drei Frontend-A-Funde unter
-vorhandene Fragen — verfehlt wurden sie trotzdem, weil das Raster backend-gelesen
-wurde („Schreibpfad" = Handler, „Tür" = Endpunkt). Dieselben Fragen, übersetzt:
+Das Raster wird leicht nur am Server gelesen („Schreibpfad" = Handler, „Tür" = Endpunkt).
+Dieselben Fragen, übersetzt für die Oberfläche:
 
 | Frage                  | Backend-Begriff                             | Frontend-Begriff                                                                                                                                  |
 | ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2 · Spezialwert        | leer/0/nil im Rumpf                         | ein geleertes Zahlenfeld wird beim Umrechnen zur 0 — „nicht anfassen" und „kein Stück" sind dann dieselbe Eingabe (01.10.2026, Bestand in der Buchmaske) |
+| 2 · Spezialwert        | leer/0/nil im Rumpf                         | ein geleertes Zahlenfeld wird beim Umrechnen zur 0 — „nicht anfassen" und „kein Stück" sind dann dieselbe Eingabe (etwa der Bestand in der Buchmaske) |
 | 3 · zwei Türen         | zweiter Endpunkt schreibt denselben Zustand | zweiter Ort für denselben Zustand: Komponenten-State neben dem Store, localStorage neben dem Backend (Multi-PC!)                                  |
 | 5 · stille Fehler      | 200 ohne Wirkung                            | Ladefehler ohne Fehlerzustand — ein catch, das alten Inhalt stehen lässt und nichts anzeigt; Erfolgsmeldung aus der Eingabe statt aus der Antwort; ein Knopf, dessen Weg ohne Anfrage und ohne Meldung endet |
 | 6 · Zeit               | Zeitzone, Tx-Fenster                        | Antwort-Reihenfolge: überholt die langsame Antwort die schnelle? Sequenznummer wie im bestellStore                                                  |
@@ -675,24 +538,16 @@ ob der Stand noch der gelesene ist?". Frage 19 ist am Server gestellt.
 | e2e (Playwright)               | Funktioniert der Weg durch die App?  | Inventur-Verlust bucht korrekt aus     |
 
 Die mittlere Ebene ist nicht ersetzbar: pgxmock kennt keine Constraints, und e2e läuft nur
-Happy-Paths. Genau in dieser Lücke sass der NULL-Bug in Migration 043.
+Happy-Paths.
 
-## Restarbeit
+Die 🟡-Ausleihregeln prüfen Unit-Tests (`internal/service/ausleihe_am_leser_test.go`); die
+🟢-Invarianten Integrationstests gegen echtes Postgres 18 im CI-Service-Container
+(`db/bedingung_*_pg_test.go`): Jede Verletzung wird provoziert und muss am erwarteten
+Constraint scheitern, jeder gültige Wert muss durchgehen. Ohne Datenbank überspringen sie
+sich; `TestDBTestsLaufenInCI` stellt sicher, dass das **in CI** nicht unbemerkt passiert.
+`db/migrationen_drift_test.go` hält die Liste der Migrationen in `schema.sql` gegen die
+Dateien.
 
-Offene Arbeit steht in [OFFEN.md](OFFEN.md). Die Liste, die hier mit Stand 23.07.2026 stand, ist
-abgearbeitet:
+## Offene Arbeit
 
-- **Oberstufen-Diagnose** (16.07.2026, gegen die lokale DB): alle 12.707 Titel hatten
-  `grade_level = NULL`, kein genutzter Import-Pfad befüllt das Feld. Der Clamp-Bug war real,
-  hatte aber nie Datenwirkung.
-- **Rechtsgrundlage und Aufbewahrung der Adressdaten:** in `SECURITY.md` dokumentiert.
-- **Rolle `helfer`** (am 08.08.2026 am Code und an der Datenbank nachgeprüft): Die
-  Kiosk-Kernfunktion hängt an einem eigenen Recht `perform_actions` statt an `view_students`
-  (`api/routen_theke.go` — `POST /api/action`, `GET /api/search`). `db/rechte_vorgabe.go` erteilt
-  `HELFER` genau `perform_actions` und `view_books` (Betreiber-Entscheidung 30.07.2026, siehe
-  FACHKONZEPT Abschnitt 12). `helfer-kiosk.spec.js` prüft: Rolle vergebbar, Weiche in den
-  Kiosk, kein Zugriff auf fremde Bereiche. `GET /api/scan` hatte im ganzen Repository keinen
-  Aufrufer und ist seit dem 08.08.2026 ausgebaut; der Kiosk scannt über die Omnibox.
-- **Echter LUSD-Export:** am 02.09.2026 zwei echte Exporte importiert
-  ([LUSD.md](LUSD.md), §9).
-- **Branch-Protection:** steht als Punkt 7.6 in [OFFEN.md](OFFEN.md).
+Offene Arbeit steht in [OFFEN.md](OFFEN.md).
