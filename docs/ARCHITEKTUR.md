@@ -192,7 +192,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | Svelte/JavaScript (`frontend/src`) | 83.128 Zeilen in 745 Dateien, davon 309 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 161 Dateien, davon 156 Specs               |
 | Registrierte HTTP-Routen          | 229 (davon 88 Operationen Swagger-annotiert) |
-| Datenbank-Migrationen             | 166 Dateien, die höchste Nummer ist 163    |
+| Datenbank-Migrationen             | 167 Dateien, die höchste Nummer ist 164    |
 | Tabellen / Sichten in `schema.sql`| 44 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
 Die Befehle, mit denen diese Zahlen in zehn Sekunden neu erhoben werden, stehen in
@@ -653,7 +653,7 @@ HTTP-Anfrage
 | `sse/`                  | 191 Zeilen, 1 Datei        | Broker und Tür für Server-Sent Events                                                                                                                                     |
 | `apierrors/`            | 241 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`AntworteFehler`) und ihre Abbildung auf HTTP-Status                                                                                         |
 | `internal/*` (übrige)   | 6.912 Zeilen, 59 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
-| `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
+| `migrations/`           | 167 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (6 Kommandos)    | 1.776 Zeilen, 10 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`                                                             |
 

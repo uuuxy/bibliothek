@@ -208,7 +208,7 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
   Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
-  `internal/testdaten`, Migration 164 mit der Tabelle `subjects`.
+  `internal/testdaten`.
 - [x] **Meldungen in Satzschreibung und auf Deutsch (5.68):** erledigt am 16.10.2026. Der Text
   eines Fehlers ohne Meldung geht unter keinem Status mehr hinaus (`apierrors`), und die
   Meldungs-Ratsche prüft die festen Sätze jedes Fehlerstatus außer 500, auch 502 und 503.
@@ -513,17 +513,6 @@ halten; sie zu löschen hieße, Regeln zu lockern. Offen:
   Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
   wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket
   zusammen mit dem Umbau nach [STIL.md](STIL.md).
-
-**Entfernen, mit deinem Ja (gegeben am 16.10.2026).**
-
-- **Migration 164** für zwei Spalten ohne Schreiber seit dem Entfernen des Elternbriefs:
-  `ALTER TABLE schadensfaelle DROP COLUMN IF EXISTS elternbrief_generiert, DROP COLUMN IF EXISTS elternbrief_generiert_am;`
-  dazu die zwei Zeilen in `schema.sql`. Auf dem Testserver gehen dabei nur diese zwei Vermerke
-  verloren. In dieselbe Migration gehört `DROP TABLE IF EXISTS subjects;` (gefunden am
-  16.10.2026 beim Befragen der Schema-Ratsche): Kein Go-Code und keine Sicht liest oder schreibt
-  die Tabelle, `schema.sql` legt sie mit 16 Fächern an, die Fächer des Programms stehen in
-  `systematik_kategorien`. Mit ihr fallen die Zeilen in `schema.sql` und der Eintrag
-  `subjects_name_key` in `repository/schema_gegenrichtung_sperren_pg_test.go`.
 
 ---
 

@@ -49,7 +49,7 @@ var schreibendeVerwaltungsRouten = map[string][2]string{
 	"Cover-Sync starten":          {http.MethodPost, "/api/admin/sync-covers"},
 	"Bestand importieren":         {http.MethodPost, "/api/admin/import-bestand"},
 	"Buch anlegen":                {http.MethodPost, "/api/books"},
-	"Fach anlegen":                {http.MethodPost, "/api/subjects"},
+	"Sachgruppe anlegen":          {http.MethodPost, "/api/systematics"},
 }
 
 func TestCSRFMiddlewareSchuetztMutationenOhneToken(t *testing.T) {

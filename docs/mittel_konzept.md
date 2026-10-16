@@ -226,7 +226,7 @@ Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
   Ersatzbeschaffung als Alternative, Zahlungsweg aus den Einstellungen — ohne Nummer im
   Landesformat, ohne den Schlussabsatz des Landesbescheids.
 - Beide ersetzen `pdf/rechnung.go` und `api/schaden/rechnung.go`; der Elternbrief je
-  Schadensfall ist schon entfernt, die Spalten `elternbrief_generiert*` stehen noch im Schema.
+  Schadensfall ist entfernt, seine Spalten mit Migration 164.
   Der Eltern-**Mahnbrief** (überfällig, ohne Geld) bleibt, wie er ist.
 
 ### 4.5 Oberfläche

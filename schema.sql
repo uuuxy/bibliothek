@@ -82,34 +82,6 @@ INSERT INTO system_einstellungen (schluessel, wert) VALUES
 ON CONFLICT (schluessel) DO NOTHING;
 
 
--- Table: subjects (Active subjects for inventory module)
-CREATE TABLE subjects (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT true
-);
-
--- Seed default subjects
-INSERT INTO subjects (name, is_active) VALUES
-('Deutsch', true),
-('Englisch', true),
-('Mathematik', true),
-('Physik', true),
-('Chemie', true),
-('Biologie', true),
-('Geschichte', true),
-('Geographie', true),
-('Politik', true),
-('Informatik', true),
-('Kunst', true),
-('Musik', true),
-('Religion', true),
-('Latein', true),
-('Französisch', true),
-('Naturwissenschaften', true)
-ON CONFLICT (name) DO NOTHING;
-
-
 -- Table: benutzer (System administrators, teachers, and library staff)
 CREATE TABLE benutzer (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1235,8 +1207,6 @@ CREATE TABLE schadensfaelle (
     -- schadensersatz_bescheide erst nach dieser Tabelle entsteht.
     bescheid_id UUID,
     ist_bezahlt BOOLEAN NOT NULL DEFAULT false,
-    elternbrief_generiert BOOLEAN NOT NULL DEFAULT false,
-    elternbrief_generiert_am TIMESTAMP WITH TIME ZONE,
     
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1981,7 +1951,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('160_titeltext_normalform.sql'),
 ('161_bestellung_mail_gescheitert.sql'),
 ('162_jahrgang_unbekannt.sql'),
-('163_klasse_entfaellt.sql')
+('163_klasse_entfaellt.sql'),
+('164_elternbrief_vermerk_und_subjects_entfallen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

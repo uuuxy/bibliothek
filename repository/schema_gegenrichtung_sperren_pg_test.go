@@ -156,9 +156,6 @@ var eindeutigkeitBestand = []string{
 	// den Topf nicht; für den Schulträger sieht docs/mittel_konzept.md ein eigenes Format vor, bis
 	// dahin lehnt die Tür jeden anderen Topf ab (api/schaden/bescheid_erstellen.go).
 	"schadensersatz_bescheide_referenznummer_key @ schadensersatz_bescheide (referenznummer)",
-	// Befragt: Kein Schreiber und kein Leser im Programm; die Tabelle subjects legt nur schema.sql
-	// mit 16 Fächern an. Ihr Entfernen steht in OFFEN 5.67.
-	"subjects_name_key @ subjects (name)",
 	// Befragt, mit den beiden Regeln der Bezeichnung: Anlegen und Ändern einer Sachgruppe antworten
 	// mit 409 und einem Satz, der das Feld nennt (meldungDoppelteSachgruppe). Die Importe legen
 	// fehlende Fächer an (registriereFach): Ein besetztes Kürzel bekommt eine Endung aus einem
