@@ -289,5 +289,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   `einstellungen`, `statistik`).
 - `frontend/src/lib/frontend-hygiene-sprache.test.js` hält es für Datei- und Ordnernamen: Ihr
   Bestand nennt je Pfad, was noch umzubenennen ist, und darf nur sinken. Für Namen innerhalb
-  der Dateien gilt dieselbe Regel; geprüft wird sie dort noch nicht.
+  der Dateien gilt dieselbe Regel; der zweite Teil derselben Prüfung zählt je Datei die
+  erklärten Namen (let, const, var, function, class) mit einem englischen Wort, auch dieser
+  Bestand darf nur sinken.
 

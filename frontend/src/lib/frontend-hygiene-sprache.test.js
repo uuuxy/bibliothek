@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { srcRoot, relPfad, sammleQuelldateien, sammleTestdateien } from './hygiene-quellen.js';
+import { readFileSync } from 'node:fs';
+import {
+	srcRoot,
+	relPfad,
+	sammleQuelldateien,
+	sammleTestdateien,
+	ohneKommentare
+} from './hygiene-quellen.js';
 
 // Ratsche: Datei- und Ordnernamen der Oberfläche sind deutsch (docs/STIL.md, Abschnitt 13).
 //
@@ -15,7 +22,9 @@ import { srcRoot, relPfad, sammleQuelldateien, sammleTestdateien } from './hygie
 // rot, ein Pfad aus dem Bestand mit einem Wort mehr ebenso; wer einen Pfad umbenennt, trägt ihn
 // aus.
 //
-// Sieht nicht: Namen innerhalb der Dateien, Wörter außerhalb der Liste und die Namen unter e2e/.
+// Der zweite Teil unten prüft die Namen, die eine Datei erklärt, mit derselben Liste.
+//
+// Sieht nicht: Wörter außerhalb der Liste und die Namen unter e2e/.
 const ENGLISCH = new Set([
 	'active',
 	'alert',
@@ -189,5 +198,215 @@ describe('Datei- und Ordnernamen der Oberfläche sind deutsch', () => {
 			})
 			.map(([pfad]) => pfad);
 		expect(veraltet, 'Diese Einträge im Bestand austragen oder kürzen.').toEqual([]);
+	});
+});
+
+// Ratsche: Namen innerhalb der Dateien sind deutsch (docs/STIL.md, Abschnitt 13), Stufe 2 des
+// Umbaus (OFFEN 5.66). Gezählt werden die Namen, die eine Quelldatei erklärt (let, const, var,
+// function, class), ohne Kommentare, zerlegt an Großbuchstaben, gegen dieselbe Liste wie die
+// Pfade und dazu Wörter, die in Namen häufig sind und in Pfaden nicht vorkamen. Wörter von Svelte
+// und dem Web (value, event, submit, open) stehen nicht darin, ebenso wenig die Bauteile von M3.
+//
+// NAMEN_BESTAND nennt je Datei, wie viele Erklärungen noch ein englisches Wort tragen; die Zahl
+// kann nur sinken.
+//
+// Sieht nicht: Props, Schlüssel von Objekten, Parameter, Methoden der Stores und Namen in Tests.
+const ENGLISCH_IN_NAMEN = new Set([
+	...ENGLISCH,
+	'handle',
+	'error',
+	'errors',
+	'selected',
+	'loading',
+	'loaded',
+	'load',
+	'save',
+	'saving',
+	'deleting',
+	'remove',
+	'add',
+	'query',
+	'editing',
+	'update',
+	'users'
+]);
+
+const ERKLAERUNG = /\b(?:let|const|var|function|class)\s+([A-Za-z_$][\w$]*)/g;
+
+/** Trägt der Name ein englisches Wort? @param {string} name */
+function englischImNamen(name) {
+	return (name.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g) ?? []).some((w) =>
+		ENGLISCH_IN_NAMEN.has(w.toLowerCase())
+	);
+}
+
+/** @type {Record<string, number>} */
+const NAMEN_BESTAND = {
+	'src/App.svelte': 2,
+	'src/inventur/lib/admin_api.js': 1,
+	'src/inventur/lib/components/BuchKarte.svelte': 2,
+	'src/inventur/lib/components/admin/AdminBuchAktionen.svelte': 4,
+	'src/inventur/lib/components/admin/Bestandstabelle.svelte': 2,
+	'src/inventur/lib/components/admin/BuchCoverUpload.svelte': 1,
+	'src/inventur/lib/components/admin/BuchExemplareListe.svelte': 4,
+	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte': 2,
+	'src/inventur/lib/components/admin/KlassenKarte.svelte': 1,
+	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 9,
+	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 6,
+	'src/inventur/lib/components/admin/KlassensatzKlassenwahl.svelte': 1,
+	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte': 4,
+	'src/inventur/lib/components/admin/KlassensatzZuweisenDialog.svelte': 4,
+	'src/inventur/lib/components/scanner/KameraScanner.svelte': 2,
+	'src/inventur/lib/components/scanner/StrichcodeScannerOverlay.svelte': 1,
+	'src/inventur/lib/components/scanner/barcodeErkennung.js': 3,
+	'src/inventur/lib/store.svelte.js': 1,
+	'src/inventur/lib/titelSortierung.js': 2,
+	'src/inventur/routes/KatalogSuche.svelte': 5,
+	'src/lib/Abgaenger.svelte': 9,
+	'src/lib/AusleiheRueckgabe.svelte': 1,
+	'src/lib/AusweisDesigner.svelte': 4,
+	'src/lib/BenutzerUndRechte.svelte': 8,
+	'src/lib/Bestellwesen.svelte': 2,
+	'src/lib/Buchakte.svelte': 1,
+	'src/lib/BuchakteAusleiher.svelte': 2,
+	'src/lib/BuchakteExemplare.svelte': 5,
+	'src/lib/BuchakteVormerkungen.svelte': 6,
+	'src/lib/Dialog.svelte': 1,
+	'src/lib/DruckCenter.svelte': 1,
+	'src/lib/Einstellungen.svelte': 2,
+	'src/lib/Inventur.svelte': 1,
+	'src/lib/Klassenleitungen.svelte': 3,
+	'src/lib/Konten.svelte': 19,
+	'src/lib/LMFVerlaengerung.svelte': 2,
+	'src/lib/LeserAnlegenDialog.svelte': 2,
+	'src/lib/LeserAusleihenListe.svelte': 2,
+	'src/lib/LeserBearbeiten.svelte': 1,
+	'src/lib/LeserGebuehrenKarte.svelte': 1,
+	'src/lib/LeserLoeschenDialog.svelte': 4,
+	'src/lib/LeserSperreDialog.svelte': 3,
+	'src/lib/LeserVormerkungenKarte.svelte': 1,
+	'src/lib/Leserakte.svelte': 1,
+	'src/lib/LeserakteAktionen.svelte': 1,
+	'src/lib/LitteraImport.svelte': 4,
+	'src/lib/Logbuch.svelte': 2,
+	'src/lib/MailVorlagen.svelte': 9,
+	'src/lib/Medienkatalog.svelte': 1,
+	'src/lib/Omnibox.svelte': 5,
+	'src/lib/OpacSuche.svelte': 4,
+	'src/lib/Router.svelte': 3,
+	'src/lib/SchadenMeldenDialog.svelte': 3,
+	'src/lib/Schuelerdatei.svelte': 4,
+	'src/lib/Statistik.svelte': 4,
+	'src/lib/SystemLogs.svelte': 1,
+	'src/lib/UeberfaelligQuote.svelte': 3,
+	'src/lib/VerwaltungsProtokoll.svelte': 2,
+	'src/lib/WebcamAufnahme.svelte': 9,
+	'src/lib/abgaengerDienst.js': 1,
+	'src/lib/actions/tastaturNavigation.js': 3,
+	'src/lib/apiFetch.js': 5,
+	'src/lib/audio.js': 2,
+	'src/lib/components/ExemplarKarte.svelte': 7,
+	'src/lib/components/ExemplarStatusBearbeiten.svelte': 6,
+	'src/lib/components/GeraeteVerwaltung.svelte': 3,
+	'src/lib/components/OfflineAnzeige.svelte': 2,
+	'src/lib/components/admin/BestandImport.svelte': 2,
+	'src/lib/components/admin/Datenverwaltung.svelte': 5,
+	'src/lib/components/admin/MailEinstellungen.svelte': 7,
+	'src/lib/components/bestellungen/AnliegenListe.svelte': 3,
+	'src/lib/components/bestellungen/BestaetigungEtiketten.svelte': 1,
+	'src/lib/components/bestellungen/BestellHistorie.svelte': 2,
+	'src/lib/components/bestellungen/BestellSuche.svelte': 6,
+	'src/lib/components/bestellungen/KlassensatzReservierungen.svelte': 1,
+	'src/lib/components/bestellungen/LieferantZeile.svelte': 5,
+	'src/lib/components/bestellungen/Lieferanten.svelte': 3,
+	'src/lib/components/bestellungen/Wareneingang.svelte': 3,
+	'src/lib/components/bestellungen/WareneingangTabelle.svelte': 3,
+	'src/lib/components/bestellungen/mittel.js': 1,
+	'src/lib/components/einstellungen/kategorien/DatenschutzKategorie.svelte': 1,
+	'src/lib/components/etiketten/EtikettEinstellungen.svelte': 1,
+	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 1,
+	'src/lib/components/layout/Seitenleiste.svelte': 2,
+	'src/lib/components/leser/KlassenDruckEinstieg.svelte': 1,
+	'src/lib/components/leser/LusdImport.svelte': 13,
+	'src/lib/components/leser/Papierkorb.svelte': 2,
+	'src/lib/components/leser/Schuljahreswechsel.svelte': 7,
+	'src/lib/components/leser/schuelerSuche.svelte.js': 4,
+	'src/lib/components/mahnwesen/MahnwesenTabelle.svelte': 2,
+	'src/lib/components/portal/PortalSchulbuecher.svelte': 1,
+	'src/lib/components/portal/problemMeldung.svelte.js': 1,
+	'src/lib/components/statistik/StatistikVerlauf.svelte': 1,
+	'src/lib/components/statistik/statistikAbruf.svelte.js': 1,
+	'src/lib/components/ui/EingabeDialog.svelte': 1,
+	'src/lib/components/ui/Feld.svelte': 1,
+	'src/lib/components/ui/TabelleSortKopf.svelte': 1,
+	'src/lib/designer/CanvasFlaeche.svelte': 2,
+	'src/lib/designer/Eigenschaften.svelte': 2,
+	'src/lib/designer/Werkzeugleiste.svelte': 2,
+	'src/lib/designer/idDesignAltbestand.js': 1,
+	'src/lib/designer/idDesignPersistenz.svelte.js': 1,
+	'src/lib/designer/idDesignerStore.svelte.js': 4,
+	'src/lib/inventurApi.js': 1,
+	'src/lib/lmfplanDienst.js': 1,
+	'src/lib/menue.js': 8,
+	'src/lib/offlineWarteschlange.js': 1,
+	'src/lib/passbildAusschnitt.js': 1,
+	'src/lib/rechteKategorien.js': 1,
+	'src/lib/routenAnwenden.js': 2,
+	'src/lib/routenTabelle.js': 1,
+	'src/lib/stores/authStore.svelte.js': 2,
+	'src/lib/stores/bestellStore.svelte.js': 5,
+	'src/lib/stores/druckWarteschlange.svelte.js': 1,
+	'src/lib/stores/etiketten.svelte.js': 23,
+	'src/lib/stores/leerlaufSperre.svelte.js': 1,
+	'src/lib/stores/mahnwesen.svelte.js': 13,
+	'src/lib/stores/mahnwesenMail.svelte.js': 1,
+	'src/lib/stores/mahnwesenPdf.svelte.js': 3,
+	'src/lib/stores/netzLage.svelte.js': 1,
+	'src/lib/stores/offlineSync.svelte.js': 7,
+	'src/lib/stores/omnibox.svelte.js': 30,
+	'src/lib/stores/snackbars.svelte.js': 1,
+	'src/lib/stores/uiStore.svelte.js': 3,
+	'src/lib/useBuchakte.svelte.js': 10,
+	'src/lib/useFehlbestand.svelte.js': 2,
+	'src/lib/useInventur.svelte.js': 4,
+	'src/lib/useInventurlauf.svelte.js': 15,
+	'src/lib/useLeserakte.svelte.js': 19,
+	'src/lib/useLeserakteFormular.svelte.js': 7
+};
+
+describe('Namen innerhalb der Dateien der Oberfläche sind deutsch', () => {
+	/** @type {Map<string, number>} */
+	const zaehlung = new Map();
+	for (const datei of sammleQuelldateien(srcRoot)) {
+		const text = ohneKommentare(readFileSync(datei, 'utf8'));
+		let n = 0;
+		for (const m of text.matchAll(ERKLAERUNG)) if (englischImNamen(m[1])) n++;
+		if (n > 0) zaehlung.set(relPfad(datei), n);
+	}
+
+	it('liest überhaupt Dateien und erkennt einen englischen Namen', () => {
+		expect(zaehlung.size).toBeGreaterThan(50);
+		expect(englischImNamen('handleDeleteClick')).toBe(true);
+		expect(englischImNamen('selectedTitel')).toBe(true);
+		expect(englischImNamen('ladeLeser')).toBe(false);
+		expect(englischImNamen('eventQuelle')).toBe(false);
+	});
+
+	it('kennt keine Datei mit mehr englischen Namen als im Bestand', () => {
+		const neu = [...zaehlung]
+			.filter(([pfad, n]) => n > (NAMEN_BESTAND[pfad] ?? 0))
+			.map(([pfad, n]) => `${pfad}: ${n} (Bestand ${NAMEN_BESTAND[pfad] ?? 0})`);
+		expect(
+			neu,
+			'Englisches Wort in einem erklärten Namen. Deutsch benennen nach docs/STIL.md, Abschnitte 2 ' +
+				'und 13.'
+		).toEqual([]);
+	});
+
+	it('führt keinen Bestand, der inzwischen kleiner ist', () => {
+		const veraltet = Object.entries(NAMEN_BESTAND)
+			.filter(([pfad, n]) => (zaehlung.get(pfad) ?? 0) < n)
+			.map(([pfad, n]) => `${pfad}: ${n} → ${zaehlung.get(pfad) ?? 0}`);
+		expect(veraltet, 'Diese Einträge im Bestand senken oder austragen.').toEqual([]);
 	});
 });

@@ -479,15 +479,15 @@ Ordner des Pakets und für die Form `paket.Name`.
 
 **Danach, je als eigener Schritt:**
 
-- Die Oberfläche, Stufe 2: Gezählt am 16.10.2026 über die Erklärungen mit `let`, `const`,
-  `function` und `class` in den 459 Dateien ohne Tests: 326 verschiedene Namen (402 Erklärungen)
-  tragen ein englisches Wort, am häufigsten `handle` (46), `error` (39), `selected` (28),
-  `loading` (26), `delete`, `load`, `search`, `edit`, `book`, `user`, `student`. Dazu kommen
-  Props, Schlüssel von Objekten und die Methoden der Stores (`addToast`, `loadClassGroups`), die
-  Kennungen der Bildschirme in `routenTabelle.js` (`students_dir`, `settings`, `inventory`,
-  `orders`, `graduates`, `stats`) und die Beschriftung „Admin-Audit-Log" im Reiter der
-  System-Logs. Nächster Schritt: eine Ratsche über die erklärten Namen wie die für die
-  Dateinamen, dann Bereich für Bereich; der Bau bleibt dabei bis auf Klassennamen mit
+- Die Oberfläche, Stufe 2: Die Ratsche steht seit dem 16.10.2026 im zweiten Teil von
+  `frontend-hygiene-sprache.test.js`. Ihr Bestand: 482 Erklärungen mit `let`, `const`, `var`,
+  `function` und `class` in 130 Dateien tragen ein englisches Wort, am häufigsten `handle` (46),
+  `data` (45), `error` (39), `selected` (28), `loading` (26), `delete`, `load`, `search`,
+  `edit`, `book`, `user`, `student`. Nicht gezählt: Props, Schlüssel von Objekten und die
+  Methoden der Stores (`addToast`, `loadClassGroups`), die Kennungen der Bildschirme in
+  `routenTabelle.js` (`students_dir`, `settings`, `inventory`, `orders`, `graduates`, `stats`)
+  und die Beschriftung „Admin-Audit-Log" im Reiter der System-Logs. Nächster Schritt: Bereich
+  für Bereich umbenennen und den Bestand senken; der Bau bleibt dabei bis auf Klassennamen mit
   Geltungsbereich gleich.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
