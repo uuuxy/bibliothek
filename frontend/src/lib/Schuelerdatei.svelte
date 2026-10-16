@@ -52,7 +52,7 @@
 	// gespeicherten Design, die Wege dahinter sind grundverschieden (ausweisdruck.svelte.js).
 	const druck = erzeugeAusweisdruck();
 
-	function handleStudentCreated() {
+	function beiLeserAngelegt() {
 		showCreateModal = false;
 		suche.lade();
 		klassen.lade(); // Klassenliste aktualisieren
@@ -169,7 +169,7 @@
 	klassen={klassen.liste}
 	klassenFehler={klassen.ladefehler}
 	onclose={() => (showCreateModal = false)}
-	onsuccess={handleStudentCreated}
+	onsuccess={beiLeserAngelegt}
 />
 
 <!-- Die Druckfläche steht AUSSERHALB des .no-print-Wrappers oben, sonst blendet die

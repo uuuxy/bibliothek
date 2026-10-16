@@ -10,7 +10,7 @@
 	/**
 	 * @param {string} code
 	 */
-	function handleScan(code) {
+	function beiScan(code) {
 		onScan(code);
 		isScanning = false;
 	}
@@ -34,7 +34,7 @@
 			</button>
 			<h3 class="text-lg font-bold mb-4 text-center">ISBN scannen</h3>
 			<KameraScanner
-				onDecode={handleScan}
+				onDecode={beiScan}
 				onStatusChange={(/** @type {string} */ s) => (scanStatus = s)}
 			/>
 			<p class="text-center text-sm text-on-surface-variant mt-2">{scanStatus}</p>

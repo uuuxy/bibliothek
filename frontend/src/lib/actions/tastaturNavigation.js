@@ -22,7 +22,7 @@ export function tastaturNavigation(node, params) {
 	let selectedIndex = params.selectedIndex ?? -1;
 
 	/** @param {KeyboardEvent} e */
-	function handleKeydown(e) {
+	function beiTaste(e) {
 		if (!isOpen || totalItems === 0) return;
 
 		if (e.key === 'ArrowDown') {
@@ -56,7 +56,7 @@ export function tastaturNavigation(node, params) {
 		}, 10);
 	}
 
-	node.addEventListener('keydown', handleKeydown);
+	node.addEventListener('keydown', beiTaste);
 
 	return {
 		/** @param {KeyboardNavParams} newParams */
@@ -75,7 +75,7 @@ export function tastaturNavigation(node, params) {
 		},
 		destroy() {
 			clearTimeout(scrollTimer);
-			node.removeEventListener('keydown', handleKeydown);
+			node.removeEventListener('keydown', beiTaste);
 		}
 	};
 }

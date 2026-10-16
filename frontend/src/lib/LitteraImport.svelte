@@ -7,7 +7,7 @@
 	let isImporting = $state(false);
 	let importResult: { type: 'success' | 'error'; message: string } | null = $state(null);
 
-	async function handleUpload() {
+	async function ladeHoch() {
 		if (!files || files.length === 0) return;
 
 		isImporting = true;
@@ -81,7 +81,7 @@
 
 		<Button
 			size="lg"
-			onclick={handleUpload}
+			onclick={ladeHoch}
 			disabled={isImporting || !files || files.length === 0}
 			class="px-6"
 		>

@@ -32,15 +32,15 @@
 	$effect(() => initTooltips());
 
 	$effect(() => {
-		const handleError = (event) => Sentry.captureException(event.error || event);
-		const handleRejection = (event) => Sentry.captureException(event.reason);
+		const beiFehler = (event) => Sentry.captureException(event.error || event);
+		const beiAbweisung = (event) => Sentry.captureException(event.reason);
 
-		window.addEventListener('error', handleError);
-		window.addEventListener('unhandledrejection', handleRejection);
+		window.addEventListener('error', beiFehler);
+		window.addEventListener('unhandledrejection', beiAbweisung);
 
 		return () => {
-			window.removeEventListener('error', handleError);
-			window.removeEventListener('unhandledrejection', handleRejection);
+			window.removeEventListener('error', beiFehler);
+			window.removeEventListener('unhandledrejection', beiAbweisung);
 		};
 	});
 

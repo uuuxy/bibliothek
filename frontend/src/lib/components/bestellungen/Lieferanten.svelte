@@ -17,7 +17,7 @@
 	let editingId = $state(null);
 
 	/** @param {SubmitEvent} e */
-	function handleSubmit(e) {
+	function speichere(e) {
 		e.preventDefault();
 		onAddSupplier(newName, newEmail, newCustNum, newIstHaupt, newCustNumSchultraeger);
 		newName = '';
@@ -44,7 +44,7 @@
 		<h2 class="text-base font-bold text-on-surface border-b border-outline-variant pb-3">
 			Neuer Lieferant
 		</h2>
-		<form onsubmit={handleSubmit} class="space-y-4 text-sm">
+		<form onsubmit={speichere} class="space-y-4 text-sm">
 			<Feld id="n" label="Name" bind:value={newName} required />
 			<Feld id="e" label="E-Mail" type="email" bind:value={newEmail} required />
 			<Feld id="c" label="Kundennummer" bind:value={newCustNum} required />

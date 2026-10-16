@@ -24,7 +24,7 @@
 	let isExporting = $state(false);
 	let exportError = $state<string | null>(null);
 
-	async function handleExport() {
+	async function exportiere() {
 		isExporting = true;
 		exportError = null;
 		try {
@@ -39,7 +39,7 @@
 	let isSyncingCovers = $state(false);
 	let syncCoversResult: { type: 'success' | 'error'; message: string } | null = $state(null);
 
-	async function handleSyncCovers() {
+	async function gleicheCoverAb() {
 		isSyncingCovers = true;
 		syncCoversResult = null;
 		try {
@@ -112,7 +112,7 @@
 			{@render actionButton(
 				'Fehlende Cover im Hintergrund laden',
 				Upload,
-				handleSyncCovers,
+				gleicheCoverAb,
 				isSyncingCovers
 			)}
 
@@ -132,7 +132,7 @@
 {#snippet exportContent()}
 	<div class="flex flex-col gap-4">
 		<div>
-			{@render actionButton('Katalog als CSV herunterladen', Download, handleExport, isExporting)}
+			{@render actionButton('Katalog als CSV herunterladen', Download, exportiere, isExporting)}
 		</div>
 		{#if exportError}
 			<div class="rounded-xl bg-error-container p-4 text-sm font-semibold text-on-error-container">

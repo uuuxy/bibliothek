@@ -71,7 +71,7 @@
 	}
 
 	/** @param {SubmitEvent} e */
-	async function handleSaveUser(e) {
+	async function speichereKonto(e) {
 		e.preventDefault();
 		submittingUser = true;
 		error = null;
@@ -192,7 +192,7 @@
 	bind:userForm
 	{submittingUser}
 	{error}
-	{handleSaveUser}
+	{speichereKonto}
 />
 
 <KontoLoeschenDialog

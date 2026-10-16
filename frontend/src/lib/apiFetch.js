@@ -206,7 +206,7 @@ export async function extractApiError(res) {
 	return body;
 }
 
-async function handleSmartResponse(res) {
+async function werteAntwortAus(res) {
 	if (res.ok) {
 		if (res.status === 204) return null;
 		const text = await res.text();
@@ -230,7 +230,7 @@ async function handleSmartResponse(res) {
 
 export async function apiGet(url, options = {}) {
 	const res = await apiFetch(url, { ...options, method: 'GET' });
-	return handleSmartResponse(res);
+	return werteAntwortAus(res);
 }
 
 export async function apiPost(url, data, options = {}) {
@@ -240,7 +240,7 @@ export async function apiPost(url, data, options = {}) {
 		headers: { 'Content-Type': 'application/json', ...options.headers },
 		body: data ? JSON.stringify(data) : undefined
 	});
-	return handleSmartResponse(res);
+	return werteAntwortAus(res);
 }
 
 export async function apiPut(url, data, options = {}) {
@@ -250,12 +250,12 @@ export async function apiPut(url, data, options = {}) {
 		headers: { 'Content-Type': 'application/json', ...options.headers },
 		body: data ? JSON.stringify(data) : undefined
 	});
-	return handleSmartResponse(res);
+	return werteAntwortAus(res);
 }
 
 export async function apiDelete(url, options = {}) {
 	const res = await apiFetch(url, { ...options, method: 'DELETE' });
-	return handleSmartResponse(res);
+	return werteAntwortAus(res);
 }
 
 // ── Zentraler Sitzungsverlust-Haken ─────────────────────────────────────────

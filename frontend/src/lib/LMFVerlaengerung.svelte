@@ -23,7 +23,7 @@
 	const klassen = $derived(klassenListe.liste);
 	onMount(klassenListe.lade);
 
-	async function handleGlobalExtend() {
+	async function verlaengereAlle() {
 		if (!klasse.trim() || !neuesDatum) {
 			snackbars.addToast('Bitte Klasse wählen und neues Rückgabedatum eingeben.', 'warning');
 			return;
@@ -94,7 +94,7 @@
 		/>
 
 		<Button
-			onclick={handleGlobalExtend}
+			onclick={verlaengereAlle}
 			disabled={isExtending || !klasse.trim() || !neuesDatum}
 			class="px-6"
 		>

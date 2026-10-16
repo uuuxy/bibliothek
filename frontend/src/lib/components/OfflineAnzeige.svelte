@@ -45,7 +45,7 @@
 	// während der Zähler allein nur „es läuft noch" heißt.
 	let haengt = $derived(offlineSync.warteschlangeFehler || offlineSync.abgelehntMitStatus !== null);
 
-	async function handleBackup() {
+	async function sichere() {
 		try {
 			await offlineSync.exportQueueAsJSON();
 		} catch (err) {
@@ -62,7 +62,7 @@
 
 	// Mehrere Dateien auf einmal: Bei zehn Kiosk-Rechnern liegen im Sicherungsordner
 	// zehn Dateien. Sie einzeln auszuwählen lädt dazu ein, eine zu übersehen.
-	async function handleFileSelect(e) {
+	async function waehleDatei(e) {
 		const input = /** @type {HTMLInputElement} */ (e.target);
 		const files = [...(input.files ?? [])];
 		if (files.length === 0) return;
@@ -160,7 +160,7 @@
 			{/if}
 
 			{#if offlineSync.pendingCount > 0}
-				<Button variant="secondary" size="sm" onclick={handleBackup} class="shrink-0">
+				<Button variant="secondary" size="sm" onclick={sichere} class="shrink-0">
 					<Download size={16} strokeWidth={2.5} />
 					Sicherung speichern
 				</Button>
@@ -172,7 +172,7 @@
 				accept=".json"
 				multiple
 				bind:this={fileInput}
-				onchange={handleFileSelect}
+				onchange={waehleDatei}
 				class="hidden"
 			/>
 

@@ -55,7 +55,7 @@
 	});
 
 	/** @param {any[]} receivedItems */
-	async function handleShipmentReceived(receivedItems) {
+	async function beiWareneingang(receivedItems) {
 		activeTab = 'bestellungen';
 		await bestellStore.loadIncomingShipments();
 		bestellStore.loadRecommendations();
@@ -214,7 +214,7 @@
 		<Wareneingang
 			incomingShipments={bestellStore.incomingShipments}
 			onBack={() => (activeTab = 'bestellungen')}
-			onReceived={handleShipmentReceived}
+			onReceived={beiWareneingang}
 		/>
 	{/if}
 

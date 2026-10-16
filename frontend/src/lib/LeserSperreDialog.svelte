@@ -35,7 +35,7 @@
 		}
 	});
 
-	async function handleConfirm() {
+	async function bestaetige() {
 		if (!profile) return;
 		if (willLock && reason.trim() === '') {
 			errorMsg = 'Bitte einen Grund für die Sperre angeben.';
@@ -127,7 +127,7 @@
 		</Button>
 		<Button
 			variant={gesperrt ? 'success' : 'danger-solid'}
-			onclick={handleConfirm}
+			onclick={bestaetige}
 			disabled={isSubmitting}
 		>
 			{#if isSubmitting}

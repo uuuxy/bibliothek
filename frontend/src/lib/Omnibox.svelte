@@ -68,7 +68,7 @@
 
 	$effect(() => {
 		/** @param {KeyboardEvent} e */
-		function handleKeyDown(e) {
+		function beiTaste(e) {
 			if (e.key === 'Escape') {
 				omniboxStore.escapeGedrueckt();
 				omniboxStore.queryVal = '';
@@ -86,10 +86,10 @@
 		// nirgends steht; bei offener Rückfrage drückt er dort keinen Knopf. In der
 		// Capture-Phase, damit Zeichen und Enter abgefangen sind, bevor ein Element sie bekommt.
 		const thekenTaste = thekenTasten(omniboxStore);
-		window.addEventListener('keydown', handleKeyDown);
+		window.addEventListener('keydown', beiTaste);
 		window.addEventListener('keydown', thekenTaste, true);
 		return () => {
-			window.removeEventListener('keydown', handleKeyDown);
+			window.removeEventListener('keydown', beiTaste);
 			window.removeEventListener('keydown', thekenTaste, true);
 		};
 	});

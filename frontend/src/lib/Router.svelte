@@ -37,7 +37,7 @@
 	// nichts tut, sieht aus wie ein Defekt der Seite dahinter. Jetzt liest der Router
 	// dieselbe Regel (erlaubteTabs/tabIstGesperrt bei canSeeItem in menue.js) nur ab.
 
-	function handleSelectBook(book) {
+	function oeffneTitel(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
 		// öffnen (book_detail → Buchakte via bookId, inkl. Deep-Link /medienkatalog/buch/{id}) —
 		// NICHT den allgemeinen Medienkatalog.
@@ -75,12 +75,12 @@
 	// Escape-Regel: escapeRegel.js (Theke, außer die Taste gehört schon jemandem).
 	$effect(() => {
 		/** @param {KeyboardEvent} e */
-		function handleGlobalKeyDown(e) {
+		function beiTaste(e) {
 			if (e.key !== 'Escape' || uiStore.activeTab === 'kiosk') return;
 			if (escapeGehoertJemandAnderem(e)) return;
 			uiStore.activeTab = 'kiosk';
 		}
-		function handlePopState() {
+		function beiVerlaufswechsel() {
 			// Hinter der Sperre bleibt der Bildschirm, wie er ist: Die Zurück-Taste des
 			// Browsers verließe sonst die offene Maske. Die Adresszeile geht zurück.
 			if (leerlaufSperre.gesperrt) {
@@ -93,11 +93,11 @@
 				window.history.pushState(null, '', currentTargetPath());
 			}
 		}
-		window.addEventListener('keydown', handleGlobalKeyDown);
-		window.addEventListener('popstate', handlePopState);
+		window.addEventListener('keydown', beiTaste);
+		window.addEventListener('popstate', beiVerlaufswechsel);
 		return () => {
-			window.removeEventListener('keydown', handleGlobalKeyDown);
-			window.removeEventListener('popstate', handlePopState);
+			window.removeEventListener('keydown', beiTaste);
+			window.removeEventListener('popstate', beiVerlaufswechsel);
 		};
 	});
 </script>
@@ -105,7 +105,7 @@
 <div class="print-flow flex-1 overflow-y-auto flex flex-col w-full">
 	{#if uiStore.activeTab === 'kiosk'}
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
-			<Omnibox onSelectBook={handleSelectBook} />
+			<Omnibox onSelectBook={oeffneTitel} />
 		</div>
 		<!-- Der Zweig 'books' ist entfallen (nie gesetzt, unerreichbar; Audit 01.08.2026) —
 		     die Buchansicht läuft über 'book_detail' und appState.activeBookId. -->

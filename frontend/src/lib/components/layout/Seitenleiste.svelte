@@ -19,14 +19,14 @@
 	const schmalesFenster = new MediaQuery('(width < 80rem)');
 	const zu = $derived(uiStore.sidebarWahl ?? schmalesFenster.current);
 
-	function handleLogout() {
+	function meldeAb() {
 		authStore.handleLogout(() => {
 			uiStore.activeTab = 'kiosk';
 		});
 	}
 
 	/** @param {string} id */
-	function handleNavigate(id) {
+	function navigiere(id) {
 		uiStore.activeTab = id;
 		uiStore.selectedBook = null;
 	}
@@ -57,7 +57,7 @@
      Navigationsziel eine Pille. -->
 {#snippet navItem(/** @type {any} */ item)}
 	<button
-		onclick={() => handleNavigate(item.id)}
+		onclick={() => navigiere(item.id)}
 		class="relative flex w-full items-center rounded-full text-sm font-medium transition-colors
 			{zu ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2'}
 			{uiStore.activeTab === item.id
@@ -182,7 +182,7 @@
 				<BackupStatusBadge collapsed={zu} />
 			{/if}
 
-			<SeitenleisteFuss collapsed={zu} benutzer={authStore.currentUser} onLogout={handleLogout} />
+			<SeitenleisteFuss collapsed={zu} benutzer={authStore.currentUser} onLogout={meldeAb} />
 		</div>
 	</div>
 </aside>

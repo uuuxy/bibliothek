@@ -61,7 +61,7 @@
 
 	/** Handle multi-file image upload → creates one element per file. */
 	/** @param {Event} e */
-	async function handleMultiImageUpload(e) {
+	async function ladeBilderHoch(e) {
 		const files = /** @type {HTMLInputElement} */ (e.currentTarget).files;
 		if (!files || files.length === 0) return;
 		/** @type {string[]} */
@@ -122,7 +122,7 @@
 			accept="image/*"
 			multiple
 			class="sr-only"
-			onchange={handleMultiImageUpload}
+			onchange={ladeBilderHoch}
 		/>
 
 		{#if previewStudent}

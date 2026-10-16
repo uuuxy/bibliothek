@@ -20,7 +20,7 @@
 		)
 	);
 
-	async function handleBulkReceive() {
+	async function bucheAlleEin() {
 		if (selectedExemplarIds.length === 0) return;
 
 		isSubmitting = true;
@@ -84,7 +84,7 @@
 			beschriftung="Aktionen für die markierten Positionen"
 			onleeren={() => (selectedExemplarIds = [])}
 		>
-			<Button onclick={handleBulkReceive} disabled={isSubmitting}>
+			<Button onclick={bucheAlleEin} disabled={isSubmitting}>
 				{#if isSubmitting}
 					<Ladekreis size="sm" farbe="aktuell" />
 				{/if}

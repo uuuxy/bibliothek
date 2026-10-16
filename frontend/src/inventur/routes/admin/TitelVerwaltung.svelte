@@ -135,8 +135,8 @@
 			bind:wirdGescannt
 			onClose={() => (istBearbeitenModus = false)}
 			onSave={() => buchAktionen.saveChanges()}
-			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.handleCoverUpload(ereignis)}
-			onCoverNeuHolen={() => buchAktionen.handleCoverNeuHolen()}
+			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.ladeCoverHoch(ereignis)}
+			onCoverNeuHolen={() => buchAktionen.holeCoverNeu()}
 			onAssignClass={() => (klassenZuweisenIds = formular.id ? [formular.id] : [])}
 			onDelete={buchAktionen?.darfLoeschen() ? () => buchAktionen.titelLoeschen() : undefined}
 		/>

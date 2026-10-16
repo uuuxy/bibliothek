@@ -17,7 +17,7 @@
 	const extendingIds = new SvelteSet();
 
 	/** @param {any} book */
-	async function handleExtend(book) {
+	async function verlaengere(book) {
 		const id = book.ausleihe_id || book.id;
 		if (!id || extendingIds.has(id)) return;
 		extendingIds.add(id);
@@ -120,7 +120,7 @@
 							<button
 								type="button"
 								class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/38"
-								onclick={() => handleExtend(book)}
+								onclick={() => verlaengere(book)}
 								disabled={extendingIds.has(ausleiheId)}
 								data-tip="Um die Standard-Leihfrist verlängern"
 								aria-label="Ausleihe verlängern"

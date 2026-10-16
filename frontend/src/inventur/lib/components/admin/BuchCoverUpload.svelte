@@ -17,7 +17,7 @@
 	}
 
 	/** @param {Event} e */
-	function handleFileChange(e) {
+	function beiDateiwahl(e) {
 		onCoverUpload(e);
 	}
 </script>
@@ -92,7 +92,7 @@
 			type="file"
 			hidden
 			bind:this={fileInput}
-			onchange={handleFileChange}
+			onchange={beiDateiwahl}
 			accept="image/*"
 		/>
 		<!-- Zwei Aktionen niedrigster Priorität unter dem Bild: M3 Buttons, „Text style":

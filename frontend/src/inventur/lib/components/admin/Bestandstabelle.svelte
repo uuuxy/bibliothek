@@ -37,12 +37,12 @@
 	// Performance: Begrenzung der gerenderten DOM-Elemente
 	let maxVisible = $state(50);
 
-	function handleDelete() {
+	function loesche() {
 		onDelete(auswahl.ids);
 		auswahl.leeren();
 	}
 
-	function handleAssignClass() {
+	function ordneKlasseZu() {
 		// Auswahl bleibt bestehen, bis der Dialog abgeschlossen/abgebrochen ist —
 		// der Picker hält die IDs bereits über seine Prop.
 		onAssignClass(auswahl.ids);
@@ -53,8 +53,8 @@
 	<BestandstabelleLeiste
 		booksLength={books.length}
 		selectedCount={auswahl.anzahl}
-		onDelete={handleDelete}
-		onAssignClass={handleAssignClass}
+		onDelete={loesche}
+		onAssignClass={ordneKlasseZu}
 		{onScan}
 		{onCreateNew}
 		{onRetryCovers}

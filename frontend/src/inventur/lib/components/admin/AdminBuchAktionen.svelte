@@ -131,7 +131,7 @@
 	}
 
 	/** „Cover neu holen": nur das Bild, Titel und Autor bleiben (Server-Regel). */
-	export async function handleCoverNeuHolen() {
+	export async function holeCoverNeu() {
 		if (!formular.id) return;
 		try {
 			const coverUrl = await coverNeuHolen(formular.id);
@@ -144,7 +144,7 @@
 	}
 
 	/** @param {Event} e */
-	export async function handleCoverUpload(e) {
+	export async function ladeCoverHoch(e) {
 		const target = /** @type {HTMLInputElement} */ (e.target);
 		let file = target.files ? target.files[0] : null;
 		if (!file || !formular.id) return;

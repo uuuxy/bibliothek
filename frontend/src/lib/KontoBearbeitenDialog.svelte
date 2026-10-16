@@ -16,7 +16,7 @@
 	 * @property {any} userForm
 	 * @property {boolean} submittingUser
 	 * @property {string | null} error
-	 * @property {(e: SubmitEvent) => void} handleSaveUser
+	 * @property {(e: SubmitEvent) => void} speichereKonto
 	 */
 	/** @type {Props} */
 	let {
@@ -26,7 +26,7 @@
 		userForm = $bindable(),
 		submittingUser,
 		error,
-		handleSaveUser
+		speichereKonto
 	} = $props();
 
 	// Die Rolle sagt, was jemand darf — mehr entscheidet dieses Formular nicht. Das Feld
@@ -41,7 +41,7 @@
 			{isEditingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
 		</h3>
 	{/snippet}
-	<form onsubmit={handleSaveUser} class="p-6 space-y-4">
+	<form onsubmit={speichereKonto} class="p-6 space-y-4">
 		{#if error}
 			<div
 				role="alert"

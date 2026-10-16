@@ -42,7 +42,7 @@
 	];
 
 	/** @param {Event} e */
-	function handleImageUpload(e) {
+	function ladeBildHoch(e) {
 		const files = /** @type {HTMLInputElement} */ (e.currentTarget).files;
 		if (!files || !el) return;
 		const file = files[0];
@@ -54,7 +54,7 @@
 		reader.readAsDataURL(file);
 	}
 
-	function handleDelete() {
+	function loesche() {
 		if (!el) return;
 		removeElement(side, el.id);
 	}
@@ -75,7 +75,7 @@
 			<h3 class="text-base font-medium text-on-surface">{el.id}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
-					onclick={handleDelete}
+					onclick={loesche}
 					class="icon-btn text-on-surface-variant"
 					data-tip="Element löschen"
 					aria-label="Element löschen"
@@ -186,7 +186,7 @@
 				<input
 					type="file"
 					accept="image/*"
-					onchange={handleImageUpload}
+					onchange={ladeBildHoch}
 					class="w-full text-xs text-on-surface-variant file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-surface-container file:text-on-surface hover:file:bg-surface-container-highest cursor-pointer"
 				/>
 				<Kaestchen bind:checked={el.proportional} label="Proportionale Skalierung" />

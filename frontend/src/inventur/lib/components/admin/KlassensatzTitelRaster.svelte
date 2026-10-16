@@ -37,7 +37,7 @@
 	/**
 	 * @param {Event & { target: any }} event
 	 */
-	function handleImageError(event) {
+	function beiBildfehler(event) {
 		event.target.style.display = 'none';
 		event.target.nextElementSibling.style.display = 'flex';
 	}
@@ -106,7 +106,7 @@
 						src={book.coverUrl}
 						alt={book.title}
 						class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-						onerror={handleImageError}
+						onerror={beiBildfehler}
 					/>
 					<div
 						class="w-full h-full hidden items-center justify-center bg-surface-container text-outline-variant"

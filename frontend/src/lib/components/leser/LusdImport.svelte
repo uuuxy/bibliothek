@@ -53,7 +53,7 @@
 	/** Serverseitige 409-Bremse hat gegriffen — zweite, bewusste Bestätigung nötig. */
 	let needsGraduateConfirm = $state(false);
 
-	function handleFileChange(/** @type {Event} */ e) {
+	function beiDateiwahl(/** @type {Event} */ e) {
 		const target = /** @type {HTMLInputElement} */ (e.target);
 		// Neue Datei = neuer Durchgang, auch für die Massenabgang-Bestätigung (10.09.2026).
 		if (target.files && target.files[0]) {
@@ -225,7 +225,7 @@
 				type="file"
 				accept=".csv,.xlsx"
 				class="sr-only"
-				onchange={handleFileChange}
+				onchange={beiDateiwahl}
 				disabled={previewLoading || importLoading}
 			/>
 			<FolderOpen class="h-8 w-8 text-on-surface-variant" aria-hidden="true" />

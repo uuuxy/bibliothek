@@ -63,13 +63,13 @@
 		}
 	}
 
-	function handleClose() {
+	function schliesse() {
 		onclose?.();
 	}
 </script>
 
 {#if open && profile}
-	<Dialog open={true} onclose={handleClose} beschriftetDurch="loeschen-titel">
+	<Dialog open={true} onclose={schliesse} beschriftetDurch="loeschen-titel">
 		<div class="p-6 text-on-surface text-left">
 			<h3 id="loeschen-titel" class="text-lg font-bold text-error flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
@@ -83,7 +83,7 @@
 					Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher
 				</div>
 				<div class="mt-6 flex justify-end">
-					<Button variant="secondary" onclick={handleClose}>Schließen</Button>
+					<Button variant="secondary" onclick={schliesse}>Schließen</Button>
 				</div>
 			{:else}
 				<p class="mt-4 text-sm text-on-surface-variant leading-relaxed font-sans">
@@ -126,7 +126,7 @@
 					<Button
 						variant="secondary"
 						size="lg"
-						onclick={handleClose}
+						onclick={schliesse}
 						disabled={isDeleting}
 						class="w-full sm:w-auto">Abbrechen</Button
 					>

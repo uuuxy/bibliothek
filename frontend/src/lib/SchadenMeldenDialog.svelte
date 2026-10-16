@@ -74,7 +74,7 @@
 		};
 	});
 
-	function handleSubmit() {
+	function melde() {
 		onSubmit(damageReason, ohneForderung ? 0 : damageAmount, art);
 	}
 </script>
@@ -131,7 +131,7 @@
 					<Button variant="ghost" onclick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
 					<Button
 						variant="danger-solid"
-						onclick={handleSubmit}
+						onclick={melde}
 						disabled={isSubmitting || !damageReason.trim() || damageAmount < 0}
 					>
 						{isSubmitting ? 'Wird gemeldet...' : 'Melden'}
