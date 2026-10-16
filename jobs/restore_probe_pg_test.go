@@ -32,7 +32,7 @@ func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
 	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "")
 
-	(&BackupLauf{}).FuehreAus()
+	(&backupLauf{}).fuehreAus()
 	sicherung := einzigeSicherung(t, verzeichnis)
 
 	pool, err := pgxpool.New(ctx, quellDSN)
@@ -43,7 +43,7 @@ func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
 	z := &Zeitplan{pool: pool}
 
 	t.Run("echtes Backup wird wiederhergestellt", func(t *testing.T) {
-		z.FuehreRestoreProbeAus()
+		z.fuehreRestoreProbeAus()
 		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("Probe meldet Fehlschlag: %s", e.Fehler)
@@ -79,7 +79,7 @@ func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
 			t.Fatalf("Korrumpieren fehlgeschlagen: %v", err)
 		}
 
-		z.FuehreRestoreProbeAus()
+		z.fuehreRestoreProbeAus()
 		e := leseProbeErgebnis(t, pool)
 		if e.Erfolg {
 			t.Fatal("Probe meldet ERFOLG für eine korrumpierte Backup-Datei — damit wäre sie gefährlicher als keine Probe")

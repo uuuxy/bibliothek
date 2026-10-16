@@ -34,18 +34,18 @@ func legeKlassensatzZuordnungenAn(ctx context.Context, tx pgx.Tx, neueKlassen, t
 	return nil
 }
 
-// KlassensatzMindestLeser ist die Mindestzahl: Ab so vielen Kindern derselben Klasse mit demselben Titel — und
+// klassensatzMindestLeser ist die Mindestzahl: Ab so vielen Kindern derselben Klasse mit demselben Titel — und
 // mehr als der Hälfte der Klasse — gilt ein Titel als Klassensatz „aus Ausleihen". Die
 // Hälfte allein reichte nicht: In einer Restklasse mit vier Kindern wären zwei Leser schon
 // ein Satz.
-const KlassensatzMindestLeser = 5
+const klassensatzMindestLeser = 5
 
-// LadeKlassensatzGruppen liefert je Klasse ihre Titel der Klassensätze aus zwei Quellen (über
+// ladeKlassensatzGruppen liefert je Klasse ihre Titel der Klassensätze aus zwei Quellen (über
 // die LUSD weiß das Programm, in welcher Klasse jeder Schüler ist, also kann sich die Liste
 // selbst aktualisieren): der von Hand gepflegten Zuordnung (class_books, Quelle „hand"; bleibt
 // unangetastet, nichts wird geschrieben oder gelöscht) und den laufenden Ausleihen (Quelle
 // „ausleihe", jedes Mal gerechnet, nie gespeichert): Halten mehr als die Hälfte der aktiven
-// Kinder einer Klasse, mindestens KlassensatzMindestLeser, denselben Titel, ist das ihr
+// Kinder einer Klasse, mindestens klassensatzMindestLeser, denselben Titel, ist das ihr
 // Klassensatz, Schulbuch oder Lektüre. Ein Titel, der schon von Hand zugeordnet ist, erscheint
 // nur einmal (hand). Beide Quellen laufen durch dieselbe Sortierung; zweig filtert auf den
 // Bildungsgang, reihenfolge bestimmt die Reihenfolge der Klassen.
@@ -58,7 +58,7 @@ const KlassensatzMindestLeser = 5
 // Klasse hat, nicht, was zuletzt erschien. Eine Zuordnung von Hand deckt das ganze Buch ab.
 // Haben Kinder der Klasse eine andere Auflage als die der Kachel, trägt die Zeile die
 // Aufschlüsselung.
-func (a *TitelAbfragen) LadeKlassensatzGruppen(ctx context.Context, zweig string, reihenfolge string) ([]klassensatzGruppe, error) {
+func (a *TitelAbfragen) ladeKlassensatzGruppen(ctx context.Context, zweig string, reihenfolge string) ([]klassensatzGruppe, error) {
 	neueste := repository.SQLNeuesteAuflageZuerst("t")
 	abfrage := `
 		WITH klassen_groesse AS (
@@ -130,7 +130,7 @@ func (a *TitelAbfragen) LadeKlassensatzGruppen(ctx context.Context, zweig string
 		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, cb.quelle, cb.leser
 		ORDER BY ` + klassenSortierung(zweig, reihenfolge)
 
-	zeilen, err := a.pool.Query(ctx, abfrage, zweig, KlassensatzMindestLeser)
+	zeilen, err := a.pool.Query(ctx, abfrage, zweig, klassensatzMindestLeser)
 	if err != nil {
 		return nil, fmt.Errorf("klassen-bücher konnten nicht geladen werden: %w", err)
 	}
@@ -206,10 +206,10 @@ func leseKlassensatzTitel(zeilen pgx.Rows) (string, klassensatzTitel, error) {
 	return klasse, eintrag, nil
 }
 
-// AendereKlassensaetze schreibt die Buchzuordnung einer Klasse neu. oldClassName wird dabei
-// durch newClassNames ersetzt — so lässt sich derselbe Satz in einem Zug auf mehrere
+// aendereKlassensaetze schreibt die Buchzuordnung einer Klasse neu. alteKlasse wird dabei
+// durch neueKlassen ersetzt — so lässt sich derselbe Satz in einem Zug auf mehrere
 // Klassen verteilen, ohne ihn mehrfach anzulegen.
-func (a *TitelAbfragen) AendereKlassensaetze(ctx context.Context, alteKlasse string, neueKlassen []string, titelIDs []string) error {
+func (a *TitelAbfragen) aendereKlassensaetze(ctx context.Context, alteKlasse string, neueKlassen []string, titelIDs []string) error {
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("transaktion konnte nicht gestartet werden: %w", err)
@@ -242,9 +242,9 @@ func (a *TitelAbfragen) AendereKlassensaetze(ctx context.Context, alteKlasse str
 	return nil
 }
 
-// LoescheKlassensatzGruppe löst die Klassensätze der genannten Klassen auf. Betroffen ist nur
+// loescheKlassensatzGruppe löst die Klassensätze der genannten Klassen auf. Betroffen ist nur
 // die Zuordnung — die Titel selbst bleiben im Katalog.
-func (a *TitelAbfragen) LoescheKlassensatzGruppe(ctx context.Context, klassen []string) error {
+func (a *TitelAbfragen) loescheKlassensatzGruppe(ctx context.Context, klassen []string) error {
 	if len(klassen) == 0 {
 		return nil
 	}
@@ -255,9 +255,9 @@ func (a *TitelAbfragen) LoescheKlassensatzGruppe(ctx context.Context, klassen []
 	return nil
 }
 
-// OrdneTitelKlassenZu ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
-// Zuordnung zu ersetzen — anders als AendereKlassensaetze, das sie neu schreibt.
-func (a *TitelAbfragen) OrdneTitelKlassenZu(ctx context.Context, klassen []string, titelIDs []string) error {
+// ordneTitelKlassenZu ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
+// Zuordnung zu ersetzen — anders als aendereKlassensaetze, das sie neu schreibt.
+func (a *TitelAbfragen) ordneTitelKlassenZu(ctx context.Context, klassen []string, titelIDs []string) error {
 	if len(klassen) == 0 || len(titelIDs) == 0 {
 		return nil
 	}

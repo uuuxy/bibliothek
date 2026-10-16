@@ -54,9 +54,9 @@ func titelBreite(mitGezaehlt bool) float64 {
 	return nutzBreite - belegt
 }
 
-// SchulbuecherAlsPDF baut die Bestandsliste. fachName ist die Überschrift („Englisch"
+// schulbuecherAlsPDF baut die Bestandsliste. fachName ist die Überschrift („Englisch"
 // oder "" für alle Fächer), zusatz die aktive Einschränkung als Klartext.
-func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byte, error) {
+func schulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byte, error) {
 	// Die Zählspalte erscheint nur, wenn in dieser Auswahl überhaupt etwas gezählt wurde.
 	// Eine Spalte, die auf jedem Blatt leer bliebe, nähme der Titelspalte 17 mm weg und
 	// behauptete zugleich eine Angabe, die es nicht gibt.

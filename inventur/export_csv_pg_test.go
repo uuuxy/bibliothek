@@ -90,7 +90,7 @@ func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) 
 
 	var zeilen [][]string
 	kopf := func() error { return nil }
-	err := abfragen.LadeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
+	err := abfragen.ladeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
 		if strings.HasPrefix(zeile[0], marke) {
 			zeilen = append(zeilen, slices.Clone(zeile))
 		}

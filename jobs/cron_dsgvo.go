@@ -46,13 +46,13 @@ func (z *Zeitplan) FuehreBearbeiterAnonymisierungAus() {
 
 // ── DSGVO: Anonymisierung alter Leser (180 Tage im Papierkorb, Karenz nach dem Abgang) ──
 
-// FuehreSchuelerAnonymisierungAus anonymisiert Schüler, die
+// fuehreSchuelerAnonymisierungAus anonymisiert Schüler, die
 //   - seit mehr als 180 Tagen im Papierkorb liegen (deleted_at < NOW - 180 Tage) oder
 //   - länger als die Karenz (Einstellung abgaenger_karenz_tage, Vorgabe 90) Abgänger sind
 //     (abgaenger_seit) und keine offenen Vorgänge mehr haben.
 //
 // Vorname, Nachname und Klasse werden geleert oder gehasht, anonymized_at wird gesetzt.
-func (z *Zeitplan) FuehreSchuelerAnonymisierungAus() {
+func (z *Zeitplan) fuehreSchuelerAnonymisierungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -104,7 +104,7 @@ func (z *Zeitplan) FuehreSchuelerAnonymisierungAus() {
 }
 
 // bereinigeAnonymisierteSchuelerSpuren tilgt die Personendaten anonymisierter Schüler aus den
-// übrigen Tabellen, die FuehreSchuelerAnonymisierungAus selbst nicht anfasst. Die Anweisungen
+// übrigen Tabellen, die fuehreSchuelerAnonymisierungAus selbst nicht anfasst. Die Anweisungen
 // kommen aus repository.SpurTilgungen, derselben Liste, die auch die endgültige Löschung und der
 // Abgang aus der LUSD nehmen; jobs/dsgvo_spuren_paarung_pg_test.go hält die Paarung fest.
 //

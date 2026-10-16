@@ -267,7 +267,7 @@ func ErzeugeBestellbericht(b Bestellbericht, schule SchuleInfo) ([]byte, error) 
 	p.Ln(12)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(datumsformat))), "", 1, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.ortDatum(schulzeit.Jetzt().Format(datumsformat))), "", 1, "R", false, 0, "")
 	p.Ln(6)
 
 	// Berichtstitel

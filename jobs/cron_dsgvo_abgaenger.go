@@ -23,7 +23,7 @@ import (
 //   - seit Beginn des Kalenderjahres mindestens 30 Tage vergangen sind (Näherung für „30 Tage
 //     nach Ende des Schuljahres"). Gelöscht wird nur, was die Karenz durchlaufen hat, also schon
 //     anonymisiert ist; die Löschung läuft deshalb nach der Anonymisierung
-//     (FuehreNaechtlicheDSGVOAus).
+//     (fuehreNaechtlicheDSGVOAus).
 //
 // Jede Löschung steht einzeln im audit_log (Akteur: SYSTEM).
 func (z *Zeitplan) FuehreAbgaengerLoeschungAus() {

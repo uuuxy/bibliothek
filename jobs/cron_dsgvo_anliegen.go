@@ -21,8 +21,8 @@ import (
 // Angefasst werden nur erledigte Anliegen. Ein offener Wunsch ist eine laufende Sache und hat
 // keine Frist; er verschwindet erst, wenn ihn jemand erledigt.
 
-// FuehreAnliegenBefristungAus löscht erledigte Anliegen nach Ablauf der Frist.
-func (z *Zeitplan) FuehreAnliegenBefristungAus() {
+// fuehreAnliegenBefristungAus löscht erledigte Anliegen nach Ablauf der Frist.
+func (z *Zeitplan) fuehreAnliegenBefristungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -59,8 +59,8 @@ func (z *Zeitplan) FuehreAnliegenBefristungAus() {
 // angefordert_von das Konto der Lehrkraft. Sie fallen nach derselben Frist wie die erledigten
 // Anliegen, mit derselben Einstellung. Offene Reservierungen bleiben.
 
-// FuehreKlassensatzBefristungAus löscht erledigte Reservierungen von Klassensätzen nach der Frist.
-func (z *Zeitplan) FuehreKlassensatzBefristungAus() {
+// fuehreKlassensatzBefristungAus löscht erledigte Reservierungen von Klassensätzen nach der Frist.
+func (z *Zeitplan) fuehreKlassensatzBefristungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 

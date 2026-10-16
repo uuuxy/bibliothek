@@ -47,13 +47,13 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile("smtp.schule.de", "587", "bib", verschluesselt, "bib@schule.de"))
 
-	konfig, err := LadeSMTPKonfig(context.Background(), mock)
+	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
-		t.Fatalf("LadeSMTPKonfig: %v", err)
+		t.Fatalf("ladeSMTPKonfig: %v", err)
 	}
 
-	if konfig.Adresse() != "smtp.schule.de:587" {
-		t.Errorf("Adresse = %q, want smtp.schule.de:587", konfig.Adresse())
+	if konfig.adresse() != "smtp.schule.de:587" {
+		t.Errorf("adresse() = %q, want smtp.schule.de:587", konfig.adresse())
 	}
 	if konfig.Absender != "bib@schule.de" {
 		t.Errorf("Absender = %q — die Umgebung hat gewonnen", konfig.Absender)
@@ -64,7 +64,7 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	if konfig.Passwort != "geheim123" {
 		t.Errorf("Passwort wurde nicht entschlüsselt: %q", konfig.Passwort)
 	}
-	if konfig.Auth() == nil {
+	if konfig.auth() == nil {
 		t.Error("mit Benutzer und Passwort muss eine SMTP-Auth entstehen")
 	}
 }
@@ -83,13 +83,13 @@ func TestLadeSMTPKonfigFaelltAufUmgebungZurueck(t *testing.T) {
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile("", "", "", nil, ""))
 
-	konfig, err := LadeSMTPKonfig(context.Background(), mock)
+	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
-		t.Fatalf("LadeSMTPKonfig: %v", err)
+		t.Fatalf("ladeSMTPKonfig: %v", err)
 	}
 
-	if konfig.Adresse() != "smtp.umgebung.de:587" {
-		t.Errorf("Adresse = %q, want smtp.umgebung.de:587 (Port-Vorgabe)", konfig.Adresse())
+	if konfig.adresse() != "smtp.umgebung.de:587" {
+		t.Errorf("adresse() = %q, want smtp.umgebung.de:587 (Port-Vorgabe)", konfig.adresse())
 	}
 	// Ohne SMTP_FROM ist der Benutzer die beste verfügbare Absenderadresse.
 	if konfig.Absender != "bib@umgebung.de" {
@@ -107,11 +107,11 @@ func TestLadeSMTPKonfigOhneZeileTraegtDieUmgebung(t *testing.T) {
 	mock := attrappe(t)
 	mock.ExpectQuery(`SELECT smtp_host`).WillReturnError(pgx.ErrNoRows)
 
-	konfig, err := LadeSMTPKonfig(context.Background(), mock)
+	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
-		t.Fatalf("LadeSMTPKonfig: %v", err)
+		t.Fatalf("ladeSMTPKonfig: %v", err)
 	}
-	if konfig.Adresse() != "smtp.umgebung.de:2525" || konfig.Absender != "bib@umgebung.de" {
+	if konfig.adresse() != "smtp.umgebung.de:2525" || konfig.Absender != "bib@umgebung.de" {
 		t.Errorf("Konfiguration %+v, erwartet die der Umgebung", konfig)
 	}
 }
@@ -126,17 +126,17 @@ func TestLadeSMTPKonfigErgaenztPortUndAbsender(t *testing.T) {
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile(" smtp.schule.de ", " ", "", nil, " "))
 
-	konfig, err := LadeSMTPKonfig(context.Background(), mock)
+	konfig, err := ladeSMTPKonfig(context.Background(), mock)
 	if err != nil {
-		t.Fatalf("LadeSMTPKonfig: %v", err)
+		t.Fatalf("ladeSMTPKonfig: %v", err)
 	}
-	if konfig.Adresse() != "smtp.schule.de:587" {
-		t.Errorf("Adresse = %q, want smtp.schule.de:587", konfig.Adresse())
+	if konfig.adresse() != "smtp.schule.de:587" {
+		t.Errorf("adresse() = %q, want smtp.schule.de:587", konfig.adresse())
 	}
 	if konfig.Absender != absenderVorgabe {
 		t.Errorf("Absender = %q, want die Vorgabe %q", konfig.Absender, absenderVorgabe)
 	}
-	if konfig.Auth() != nil {
+	if konfig.auth() != nil {
 		t.Error("ohne Benutzer und Passwort darf keine SMTP-Auth entstehen")
 	}
 }
@@ -152,12 +152,12 @@ func TestLadeSMTPKonfigMeldetUnlesbaresPasswort(t *testing.T) {
 	mock.ExpectQuery(`SELECT smtp_host`).
 		WillReturnRows(konfigZeile("smtp.schule.de", "587", "bib", []byte("kein-gueltiger-geheimtext"), "bib@schule.de"))
 
-	if _, err := LadeSMTPKonfig(context.Background(), mock); err == nil {
+	if _, err := ladeSMTPKonfig(context.Background(), mock); err == nil {
 		t.Fatal("erwartet Fehler bei unlesbarem Passwort, bekam nil")
 	}
 }
 
-// IstKonfiguriert entscheidet, ob ein Versand versucht oder übersprungen wird. Die
+// istKonfiguriert entscheidet, ob ein Versand versucht oder übersprungen wird. Die
 // Platzhalter stammen aus der Beispielkonfiguration; ein Versuch, einen Host namens "Ihr
 // SMTP-Host" zu erreichen, hilft niemandem.
 func TestIstKonfiguriert(t *testing.T) {
@@ -175,8 +175,8 @@ func TestIstKonfiguriert(t *testing.T) {
 
 	for name, f := range faelle {
 		t.Run(name, func(t *testing.T) {
-			if got := f.konfig.IstKonfiguriert(); got != f.want {
-				t.Errorf("IstKonfiguriert() = %v, want %v", got, f.want)
+			if got := f.konfig.istKonfiguriert(); got != f.want {
+				t.Errorf("istKonfiguriert() = %v, want %v", got, f.want)
 			}
 		})
 	}

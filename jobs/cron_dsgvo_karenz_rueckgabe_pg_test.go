@@ -111,7 +111,7 @@ func TestSchuelerAnonymisierung_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
 	offen := legeAbgaenger("KR-OFFEN")
 	legeAusleihe(offen, legeExemplar("KR-OFFEN-EX"), "150 days", "")
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreSchuelerAnonymisierungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreSchuelerAnonymisierungAus()
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen muss die Karenz-Uhr neu starten — anonymisiert trotzdem (Uhr = nur abgaenger_seit?)")

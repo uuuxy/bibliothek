@@ -16,8 +16,8 @@ import (
 // Anweisung und Bedingung stehen in repository/: dieselbe Bedingung wie im Wächter des
 // Rückstands (loeschrueckstand.go), nur mit anderer Kulanz.
 
-// FuehreNachbuchMeldungenBefristungAus löscht quittierte Meldungen nach der Frist.
-func (z *Zeitplan) FuehreNachbuchMeldungenBefristungAus() {
+// fuehreNachbuchMeldungenBefristungAus löscht quittierte Meldungen nach der Frist.
+func (z *Zeitplan) fuehreNachbuchMeldungenBefristungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 

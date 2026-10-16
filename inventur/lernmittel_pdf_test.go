@@ -61,7 +61,7 @@ func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
 		})
 	}
 
-	doc, err := SchulbuecherAlsPDF(titel, "Biologie", "")
+	doc, err := schulbuecherAlsPDF(titel, "Biologie", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestSchulbuecherAlsPDF_Inhalt(t *testing.T) {
 		},
 	}
 
-	doc, err := SchulbuecherAlsPDF(titel, "Chemie", "Filter")
+	doc, err := schulbuecherAlsPDF(titel, "Chemie", "Filter")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestSchulbuecherAlsPDF_Kuerzen(t *testing.T) {
 		langerAutor = "Annegret Müller-Lüdenscheidt und Kollegen"
 		langerZweig = "Gymnasialzweig und Realschulzweig"
 	)
-	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{
+	doc, err := schulbuecherAlsPDF([]LernmittelTitel{
 		{ID: "1", Titel: langerTitel, Autor: langerAutor, ISBN: "ISBN-PROBE-1", JahrgangVon: 7, JahrgangBis: 7, Zweig: langerZweig},
 		{ID: "2", Titel: "Atlas", Autor: "Diercke", ISBN: "ISBN-PROBE-2", JahrgangVon: 7, JahrgangBis: 7, Zweig: "G"},
 	}, "", "")
@@ -184,7 +184,7 @@ func TestSchulbuecherAlsPDF_Kuerzen(t *testing.T) {
 }
 
 func TestSchulbuecherAlsPDF_LeereAuswahl(t *testing.T) {
-	doc, err := SchulbuecherAlsPDF(nil, "", "")
+	doc, err := schulbuecherAlsPDF(nil, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestSchulbuecherAlsPDF_LeereAuswahl(t *testing.T) {
 func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 	// 1. Ohne Gezaehlt
 	titelOhne := []LernmittelTitel{{Titel: "Buch 1"}}
-	docOhne, err := SchulbuecherAlsPDF(titelOhne, "", "")
+	docOhne, err := schulbuecherAlsPDF(titelOhne, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 
 	// 2. Mit Gezaehlt
 	titelMit := []LernmittelTitel{{Titel: "Buch 1", Gezaehlt: "02.02.2022"}}
-	docMit, err := SchulbuecherAlsPDF(titelMit, "", "")
+	docMit, err := schulbuecherAlsPDF(titelMit, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -371,7 +371,7 @@ func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {
 		},
 		{Titel: "Mathe 8", ISBN: "978-B8", Fach: "Mathematik", JahrgangVon: 8, JahrgangBis: 8, Gesamt: 5, Verfuegbar: 5},
 	}
-	doc, err := SchulbuecherAlsPDF(titel, "Mathematik", "")
+	doc, err := schulbuecherAlsPDF(titel, "Mathematik", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func TestSchulbuecherAlsPDF_QuerformatBleibtInSeinerSpalte(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{{ID: "1", Titel: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
+	doc, err := schulbuecherAlsPDF([]LernmittelTitel{{ID: "1", Titel: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
 	if err != nil {
 		t.Fatal(err)
 	}

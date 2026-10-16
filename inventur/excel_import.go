@@ -235,7 +235,7 @@ func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []Ti
 // speichereTitelEinzeln führt einzelne Inserts als Fallback aus, wenn der Batch-Insert fehlschlägt.
 func (t *Tueren) speichereTitelEinzeln(ctx context.Context, eintraege []Titel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
 	for _, eintrag := range eintraege {
-		_, einzelFehler := t.abfragen.SchreibeTitel(ctx, eintrag)
+		_, einzelFehler := t.abfragen.schreibeTitel(ctx, eintrag)
 		if einzelFehler != nil {
 			gescheitert++
 			if ersterFehler == nil {

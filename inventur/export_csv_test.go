@@ -48,7 +48,7 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 			return nil
 		}
 
-		err = abfragen.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
+		err = abfragen.ladeTitelFuerCSVExport(ctx, kopf, schreibe)
 		if err != nil {
 			t.Fatalf("abfragen.LadeTitelFuerCSVExport: %v", err)
 		}
@@ -91,7 +91,7 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 		}
 		schreibe := func(zeile []string) error { return nil }
 
-		err = abfragen.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
+		err = abfragen.ladeTitelFuerCSVExport(ctx, kopf, schreibe)
 		if err == nil {
 			t.Fatal("abfragen.LadeTitelFuerCSVExport: kein Fehler, erwartet einen")
 		}
@@ -127,7 +127,7 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 		}
 		schreibe := func(zeile []string) error { return nil }
 
-		err = abfragen.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
+		err = abfragen.ladeTitelFuerCSVExport(ctx, kopf, schreibe)
 		if err == nil {
 			t.Fatal("abfragen.LadeTitelFuerCSVExport: kein Fehler, erwartet einen")
 		}
@@ -162,7 +162,7 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 			return errors.New("schreibe error")
 		}
 
-		err = abfragen.LadeTitelFuerCSVExport(ctx, kopf, schreibe)
+		err = abfragen.ladeTitelFuerCSVExport(ctx, kopf, schreibe)
 		if err == nil {
 			t.Fatal("abfragen.LadeTitelFuerCSVExport: kein Fehler, erwartet einen")
 		}

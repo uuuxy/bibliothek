@@ -66,7 +66,7 @@ func raeumeCoverDateienAuf(t *testing.T, id string) {
 }
 
 // altesCover legt ein echtes Cover in uploads/ an und liefert die Zeile, mit der
-// LadeTitel darauf zeigt.
+// ladeTitel darauf zeigt.
 func altesCover(t *testing.T, id string) (name string, zeile *pgxmock.Rows) {
 	t.Helper()
 	name = "cover_" + id + "_alt.jpg"

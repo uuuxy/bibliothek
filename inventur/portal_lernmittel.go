@@ -21,7 +21,7 @@ import (
 func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	filter := lernmittelFilterParam(r)
-	faecher, err := t.abfragen.LadeLernmittelFaecher(ctx, filter)
+	faecher, err := t.abfragen.ladeLernmittelFaecher(ctx, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Fächer: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
@@ -32,7 +32,7 @@ func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
-	titel, err := t.abfragen.LadeLernmittelTitel(ctx, fachName, !gewaehlt, filter)
+	titel, err := t.abfragen.ladeLernmittelTitel(ctx, fachName, !gewaehlt, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Titel: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
@@ -52,7 +52,7 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 		fachName = strings.TrimSpace(fach[0])
 	}
 	filter := lernmittelFilterParam(r)
-	titel, err := t.abfragen.LadeLernmittelTitel(r.Context(), fachName, !gewaehlt, filter)
+	titel, err := t.abfragen.ladeLernmittelTitel(r.Context(), fachName, !gewaehlt, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel-Export: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
@@ -62,7 +62,7 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 	if gewaehlt {
 		ueberschrift = fachAnzeige(fachName)
 	}
-	datei, err := SchulbuecherAlsPDF(titel, ueberschrift, filterKlartext(filter))
+	datei, err := schulbuecherAlsPDF(titel, ueberschrift, filterKlartext(filter))
 	if err != nil {
 		log.Printf("Portal Lernmittel-Export: PDF: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
@@ -82,14 +82,14 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 // filterKlartext beschreibt die aktive Einschränkung für den Kopf des PDFs. Ohne sie
 // sähe eine gefilterte Liste wie der volle Bestand aus — der gefährlichste Ausdruck
 // überhaupt, weil ihn niemand als Auszug erkennt.
-func filterKlartext(f LernmittelFilter) string {
+func filterKlartext(f lernmittelFilter) string {
 	var teile []string
 	if f.Jahrgang > 0 {
 		teile = append(teile, fmt.Sprintf("Jahrgang %d", f.Jahrgang))
 	}
 	switch f.Zweig {
 	case "":
-	case ZweigOhne:
+	case zweigOhne:
 		teile = append(teile, "ohne Schulzweig")
 	default:
 		teile = append(teile, f.Zweig)
@@ -103,9 +103,9 @@ func filterKlartext(f LernmittelFilter) string {
 // lernmittelFilterParam liest ?jahrgang= (5–13), ?zweig= und ?q=; alles andere heißt
 // „alle". Der Suchtext wird gekappt: Er geht als ILIKE-Muster in die Abfrage, in der Form,
 // in der Titeltexte gespeichert sind (repository.TiteltextNormalform).
-func lernmittelFilterParam(r *http.Request) LernmittelFilter {
+func lernmittelFilterParam(r *http.Request) lernmittelFilter {
 	q := r.URL.Query()
-	f := LernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: repository.TiteltextNormalform(q.Get("q"))}
+	f := lernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: repository.TiteltextNormalform(q.Get("q"))}
 	// Nach Zeichen kappen, nicht nach Bytes: Ein Schnitt mitten in einem Mehrbyte-Zeichen
 	// schickt ungültiges UTF-8 an Postgres, und aus einer Suche würde ein 500er.
 	if r := []rune(f.Suche); len(r) > 100 {

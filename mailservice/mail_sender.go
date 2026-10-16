@@ -42,7 +42,7 @@ func NewPostausgang(konfig func() (SMTPKonfig, error)) *Postausgang {
 	return &Postausgang{konfig: konfig}
 }
 
-// KonfigAusDatenbank liefert die in der Oberfläche gespeicherte Konfiguration (LadeSMTPKonfig),
+// KonfigAusDatenbank liefert die in der Oberfläche gespeicherte Konfiguration (ladeSMTPKonfig),
 // damit der Test-Knopf und jeder echte Versand dieselbe Quelle nutzen.
 func KonfigAusDatenbank(pool db.Pool) func() (SMTPKonfig, error) {
 	return func() (SMTPKonfig, error) {
@@ -50,7 +50,7 @@ func KonfigAusDatenbank(pool db.Pool) func() (SMTPKonfig, error) {
 		// Konfiguration darf den Versand vieler Mails nicht aufhalten.
 		ctx, abbruch := context.WithTimeout(context.Background(), 5*time.Second)
 		defer abbruch()
-		return LadeSMTPKonfig(ctx, pool)
+		return ladeSMTPKonfig(ctx, pool)
 	}
 }
 
@@ -65,7 +65,7 @@ func (p *Postausgang) Konfig() (SMTPKonfig, error) {
 func (p *Postausgang) IstKonfiguriert() bool {
 	konfig, err := p.konfig()
 	if err != nil {
-		// Der Fehler steht im Log: LadeSMTPKonfig erzeugt ihn, damit er auffällt („Ein
+		// Der Fehler steht im Log: ladeSMTPKonfig erzeugt ihn, damit er auffällt („Ein
 		// unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe ist").
 		// Ohne die Zeile meldete der Mahnlauf nach einem Wechsel des Schlüssels nur „SMTP nicht
 		// konfiguriert", während Host, Port und Benutzer stimmen, und der Admin suchte an der
@@ -74,7 +74,7 @@ func (p *Postausgang) IstKonfiguriert() bool {
 			"fehler", err)
 		return false
 	}
-	return konfig.IstKonfiguriert()
+	return konfig.istKonfiguriert()
 }
 
 // Sende verschickt eine Mail mit Text und Anhängen über SMTP, mit der Konfiguration des
@@ -84,7 +84,7 @@ func (p *Postausgang) Sende(nachricht Nachricht) error {
 	if err != nil {
 		return err
 	}
-	if !konfig.IstKonfiguriert() {
+	if !konfig.istKonfiguriert() {
 		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
 	}
 
@@ -111,13 +111,13 @@ func (p *Postausgang) Sende(nachricht Nachricht) error {
 		return err
 	}
 
-	return VersendeUeberSMTP(konfig, absender, []string{nachricht.An}, rohtext)
+	return versendeUeberSMTP(konfig, absender, []string{nachricht.An}, rohtext)
 }
 
 // baueMailNachricht setzt die ganze Nachricht im Format MIME zusammen: Kopfzeilen, Text und
-// Anhänge. Die Kopfzeilen prüft PruefeKopfzeilen hier, wo sie entstehen, für jeden Aufrufer.
+// Anhänge. Die Kopfzeilen prüft pruefeKopfzeilen hier, wo sie entstehen, für jeden Aufrufer.
 func baueMailNachricht(nachricht Nachricht, absender string) ([]byte, error) {
-	absender, an, betreff, err := PruefeKopfzeilen(absender, nachricht.An, nachricht.Betreff)
+	absender, an, betreff, err := pruefeKopfzeilen(absender, nachricht.An, nachricht.Betreff)
 	if err != nil {
 		return nil, err
 	}

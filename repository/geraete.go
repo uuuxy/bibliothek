@@ -86,8 +86,8 @@ type GeraetAenderung struct {
 	IstAusleihbar *bool
 }
 
-// IstLeer sagt, ob die Änderung kein Feld nennt.
-func (a GeraetAenderung) IstLeer() bool {
+// istLeer sagt, ob die Änderung kein Feld nennt.
+func (a GeraetAenderung) istLeer() bool {
 	return a.Modellname == nil && a.Zubehoer == nil && a.ZustandNotiz == nil &&
 		a.Seriennummer == nil && a.IstAusleihbar == nil
 }
@@ -159,7 +159,7 @@ func (a *pgGeraeteAbfragen) LegeAn(ctx context.Context, modellname string, serie
 // ohne Seriennummer an die Eindeutigkeit. Nennt die Änderung nichts, wird nichts geschrieben;
 // ein unbekanntes Gerät bleibt pgx.ErrNoRows.
 func (a *pgGeraeteAbfragen) Aendere(ctx context.Context, id string, aenderung GeraetAenderung) error {
-	if aenderung.IstLeer() {
+	if aenderung.istLeer() {
 		var vorhanden bool
 		if err := a.db.QueryRow(ctx,
 			`SELECT EXISTS (SELECT 1 FROM geraete WHERE id = $1 AND ist_ausgesondert = false)`, id).Scan(&vorhanden); err != nil {

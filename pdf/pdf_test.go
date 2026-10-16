@@ -179,10 +179,10 @@ func TestAbsenderzeile(t *testing.T) {
 }
 
 func TestOrtDatum(t *testing.T) {
-	if got := testSchule().OrtDatum("01.02.2026"); got != "Oberursel, den 01.02.2026" {
-		t.Errorf("OrtDatum() = %q", got)
+	if got := testSchule().ortDatum("01.02.2026"); got != "Oberursel, den 01.02.2026" {
+		t.Errorf("ortDatum() = %q", got)
 	}
-	if got := (SchuleInfo{Name: "X"}).OrtDatum("01.02.2026"); got != "01.02.2026" {
-		t.Errorf("OrtDatum() ohne Ort = %q, erwartet nur das Datum", got)
+	if got := (SchuleInfo{Name: "X"}).ortDatum("01.02.2026"); got != "01.02.2026" {
+		t.Errorf("ortDatum() ohne Ort = %q, erwartet nur das Datum", got)
 	}
 }

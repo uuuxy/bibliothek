@@ -172,7 +172,7 @@ func TestAendereKlassensaetze(t *testing.T) {
 			abfragen := NewTitelAbfragen(mock)
 			f.mockSetup(mock)
 
-			err = abfragen.AendereKlassensaetze(context.Background(), f.oldClassName, f.newClassNames, f.bookIDs)
+			err = abfragen.aendereKlassensaetze(context.Background(), f.oldClassName, f.newClassNames, f.bookIDs)
 			if f.wantErr {
 				if err == nil {
 					t.Errorf("expected error, got nil")
@@ -251,9 +251,9 @@ func TestLoescheKlassensatzGruppe(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			f.mockSetup()
 
-			err := abfragen.LoescheKlassensatzGruppe(context.Background(), f.classNames)
+			err := abfragen.loescheKlassensatzGruppe(context.Background(), f.classNames)
 			if (err != nil) != f.wantErr {
-				t.Errorf("LoescheKlassensatzGruppe() error = %v, wantErr %v", err, f.wantErr)
+				t.Errorf("loescheKlassensatzGruppe() error = %v, wantErr %v", err, f.wantErr)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -294,7 +294,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 					AddRow("6B", "550e8400-e29b-41d4-a716-446655440002", "Buch 1", "Mathe", "R", "url1", "123", 4, 8, 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CASE.*ASC, b\.titel ASC`).
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(zeilen)
 			},
 			wantErr:    false,
@@ -311,7 +311,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 					AddRow("10F", "550e8400-e29b-41d4-a716-446655440003", "Buch 3", "Englisch", "F", "url3", "789", 1, 1, 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CAST.*DESC, cb\.class_name DESC, b\.titel ASC`).
-					WithArgs("F", KlassensatzMindestLeser).
+					WithArgs("F", klassensatzMindestLeser).
 					WillReturnRows(zeilen)
 			},
 			wantErr:    false,
@@ -323,7 +323,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 			sortOrder: "",
 			mockSetup: func() {
 				mock.ExpectQuery(`(?s)SELECT.*`).
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnError(fmt.Errorf("db error"))
 			},
 			wantErr:    true,
@@ -341,7 +341,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, "invalid", 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(zeilen)
 			},
 			wantErr:    true,
@@ -359,7 +359,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 					RowError(0, fmt.Errorf("row error"))
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(zeilen)
 			},
 			wantErr:    true,
@@ -378,7 +378,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "ausleihe", 6, []byte(`{kaputt`))
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(zeilen)
 			},
 			wantErr:    true,
@@ -390,12 +390,12 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			f.mockSetup()
 
-			gruppen, err := abfragen.LadeKlassensatzGruppen(ctx, f.branch, f.sortOrder)
+			gruppen, err := abfragen.ladeKlassensatzGruppen(ctx, f.branch, f.sortOrder)
 			if (err != nil) != f.wantErr {
-				t.Errorf("LadeKlassensatzGruppen() error = %v, wantErr %v", err, f.wantErr)
+				t.Errorf("ladeKlassensatzGruppen() error = %v, wantErr %v", err, f.wantErr)
 			}
 			if len(gruppen) != f.wantGroups {
-				t.Errorf("LadeKlassensatzGruppen() got %d groups, want %d", len(gruppen), f.wantGroups)
+				t.Errorf("ladeKlassensatzGruppen() got %d groups, want %d", len(gruppen), f.wantGroups)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -486,9 +486,9 @@ func TestOrdneTitelKlassenZu(t *testing.T) {
 			abfragen := NewTitelAbfragen(mock)
 			f.mockSetup(mock)
 
-			err = abfragen.OrdneTitelKlassenZu(context.Background(), f.classNames, f.bookIDs)
+			err = abfragen.ordneTitelKlassenZu(context.Background(), f.classNames, f.bookIDs)
 			if (err != nil) != f.wantErr {
-				t.Errorf("OrdneTitelKlassenZu() error = %v, wantErr %v", err, f.wantErr)
+				t.Errorf("ordneTitelKlassenZu() error = %v, wantErr %v", err, f.wantErr)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

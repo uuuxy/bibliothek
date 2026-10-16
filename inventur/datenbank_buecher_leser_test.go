@@ -116,7 +116,7 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "cover_url"}).
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg"))
 
-		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
+		eintraege, err := abfragen.ladeTitelMitFremdemCover(ctx, 10)
 		if err != nil {
 			t.Fatalf("abfragen.LadeTitelMitFremdemCover: %v", err)
 		}
@@ -146,7 +146,7 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "cover_url"}).
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg"))
 
-		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 0)
+		eintraege, err := abfragen.ladeTitelMitFremdemCover(ctx, 0)
 		if err != nil {
 			t.Fatalf("abfragen.LadeTitelMitFremdemCover: %v", err)
 		}
@@ -175,7 +175,7 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 			WithArgs(100).
 			WillReturnError(fmt.Errorf("db failure"))
 
-		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, -1)
+		eintraege, err := abfragen.ladeTitelMitFremdemCover(ctx, -1)
 		if err == nil || !strings.Contains(err.Error(), "bücher mit externen covern konnten nicht geladen werden") {
 			t.Errorf("abfragen.LadeTitelMitFremdemCover: Fehler %v, erwartet einen mit %q", err, "bücher mit externen covern konnten nicht geladen werden")
 		}
@@ -200,7 +200,7 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title"}). // Missing column to trigger scan error
 												AddRow("book-1", "123", "Title 1"))
 
-		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
+		eintraege, err := abfragen.ladeTitelMitFremdemCover(ctx, 10)
 		if err == nil || !strings.Contains(err.Error(), "bücher mit externen covern konnten nicht gelesen werden") {
 			t.Errorf("abfragen.LadeTitelMitFremdemCover: Fehler %v, erwartet einen mit %q", err, "bücher mit externen covern konnten nicht gelesen werden")
 		}
@@ -226,7 +226,7 @@ func TestTitelAbfragen_LadeTitelMitFremdemCover(t *testing.T) {
 				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg").
 				RowError(1, fmt.Errorf("row error")))
 
-		eintraege, err := abfragen.LadeTitelMitFremdemCover(ctx, 10)
+		eintraege, err := abfragen.ladeTitelMitFremdemCover(ctx, 10)
 		if err == nil || !strings.Contains(err.Error(), "fehler beim iterieren externer cover-bücher") {
 			t.Errorf("abfragen.LadeTitelMitFremdemCover: Fehler %v, erwartet einen mit %q", err, "fehler beim iterieren externer cover-bücher")
 		}

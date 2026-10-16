@@ -146,10 +146,10 @@ func einWort(roh string) (string, error) {
 	return woerter[0], nil
 }
 
-// regelFehler übersetzt eine Ausnahme der Trigger in ErrSchlagwortRegel.
+// uebersetzeTriggerAusnahme übersetzt eine Ausnahme der Trigger in ErrSchlagwortRegel.
 // Die Tür prüft dieselben Regeln vorher; die Datenbank ist der Rückhalt, etwa wenn zwei
 // Pflegende gleichzeitig arbeiten.
-func regelFehler(err error, was string) error {
+func uebersetzeTriggerAusnahme(err error, was string) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && strings.HasPrefix(pgErr.Message, "schlagwort_verweis_") {
 		// Der Code vor dem Doppelpunkt ist für die Erkennung da, der Satz dahinter für Menschen.
@@ -216,7 +216,7 @@ func BenenneSchlagwortUm(ctx context.Context, q Datenbank, id, neu string, alteA
 			INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)
 			ON CONFLICT (lower(wort)) DO NOTHING`, alt.wort, id)
 		if err != nil {
-			return "", false, regelFehler(err, "umbenennen: alte schreibweise als verweis")
+			return "", false, uebersetzeTriggerAusnahme(err, "umbenennen: alte schreibweise als verweis")
 		}
 		verweis = tag.RowsAffected() == 1
 	}
@@ -331,7 +331,7 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAl
 			schritt.args = []any{ziel.id}
 		}
 		if _, err := tx.Exec(ctx, schritt.sql, schritt.args...); err != nil {
-			return SchlagwortZusammenfuehrung{}, regelFehler(err, "zusammenführen: "+schritt.was)
+			return SchlagwortZusammenfuehrung{}, uebersetzeTriggerAusnahme(err, "zusammenführen: "+schritt.was)
 		}
 	}
 	return ergebnis, nil
@@ -486,7 +486,7 @@ func legeVerweisAn(ctx context.Context, tx pgx.Tx, wort, zielID string) (Schlagw
 	}
 	tag, err := tx.Exec(ctx, `INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)`, wort, ziel.id)
 	if err != nil {
-		return SchlagwortZusammenfuehrung{}, regelFehler(err, "verweis anlegen")
+		return SchlagwortZusammenfuehrung{}, uebersetzeTriggerAusnahme(err, "verweis anlegen")
 	}
 	if tag.RowsAffected() != 1 {
 		return SchlagwortZusammenfuehrung{}, fmt.Errorf("verweis anlegen: %d Zeilen statt 1", tag.RowsAffected())
@@ -511,7 +511,7 @@ func SetzeSchlagwortFilter(ctx context.Context, q Datenbank, id string, an bool)
 	}
 	tag, err := tx.Exec(ctx, `UPDATE schlagworte SET ist_filter = $2 WHERE id = $1`, id, an)
 	if err != nil {
-		return regelFehler(err, "filter setzen")
+		return uebersetzeTriggerAusnahme(err, "filter setzen")
 	}
 	if tag.RowsAffected() != 1 {
 		return ErrSchlagwortNichtGefunden

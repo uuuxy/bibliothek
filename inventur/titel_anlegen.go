@@ -9,15 +9,15 @@ import (
 	"bibliothek/db"
 )
 
-// LegeTitelAn legt einen Titel an. Trägt ein anderer die ISBN, lehnt sie ab (DubletteISBN);
-// heißt ohne ISBN ein anderer gleich, nennt sie ihn (DubletteTitel).
+// LegeTitelAn legt einen Titel an. Trägt ein anderer die ISBN, lehnt sie ab (dubletteISBN);
+// heißt ohne ISBN ein anderer gleich, nennt sie ihn (dubletteTitel).
 func (a *TitelAbfragen) LegeTitelAn(ctx context.Context, eintrag Titel) (string, error) {
 	return a.legeTitelZeileAn(ctx, eintrag, false)
 }
 
-// LegeTitelAlsAnderesMediumAn legt einen Titel ohne ISBN auch neben einem gleichnamigen an: Die
+// legeTitelAlsAnderesMediumAn legt einen Titel ohne ISBN auch neben einem gleichnamigen an: Die
 // Maske hat gefragt, und es ist ein anderes Heft, ein anderer Band oder eine andere Ausgabe.
-func (a *TitelAbfragen) LegeTitelAlsAnderesMediumAn(ctx context.Context, eintrag Titel) (string, error) {
+func (a *TitelAbfragen) legeTitelAlsAnderesMediumAn(ctx context.Context, eintrag Titel) (string, error) {
 	return a.legeTitelZeileAn(ctx, eintrag, true)
 }
 
@@ -350,9 +350,9 @@ func (a *TitelAbfragen) legeImportExemplareAn(ctx context.Context, q repository.
 	return err
 }
 
-// SchreibeTitel schreibt einen einzelnen Titel aus dem Listenimport, neu oder nach
+// schreibeTitel schreibt einen einzelnen Titel aus dem Listenimport, neu oder nach
 // titelBeiKonflikt, und legt seine Exemplare an.
-func (a *TitelAbfragen) SchreibeTitel(ctx context.Context, eintrag Titel) (string, error) {
+func (a *TitelAbfragen) schreibeTitel(ctx context.Context, eintrag Titel) (string, error) {
 	// subject ist ein Fremdschlüssel auf die Systematik, siehe LegeTitelAn.
 	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {

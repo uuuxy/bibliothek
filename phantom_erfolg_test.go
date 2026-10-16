@@ -91,9 +91,9 @@ var phantomBestand = map[string]int{
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,
 	// Legt das Passbild an oder ersetzt es: Die Anweisung trifft immer genau eine Zeile.
 	"repository/leser_foto.go:SchreibeFoto":                            1,
-	"inventur/datenbank_klassen.go:OrdneTitelKlassenZu":                1,
-	"inventur/datenbank_klassen.go:LoescheKlassensatzGruppe":           1,
-	"inventur/datenbank_klassen.go:AendereKlassensaetze":               2,
+	"inventur/datenbank_klassen.go:ordneTitelKlassenZu":                1,
+	"inventur/datenbank_klassen.go:loescheKlassensatzGruppe":           1,
+	"inventur/datenbank_klassen.go:aendereKlassensaetze":               2,
 	"inventur/datenbank_klassen.go:legeKlassensatzZuordnungenAn":       1,
 	"inventur/titel_anlegen.go:legeImportExemplareAn":                  1,
 	"inventur/titel_loeschen_spur.go:protokolliereGeloeschteExemplare": 1,

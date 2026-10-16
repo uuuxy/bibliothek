@@ -30,7 +30,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}).AddRow(
@@ -48,7 +48,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}).AddRow(
@@ -65,7 +65,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}))
@@ -79,7 +79,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "desc",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("F", KlassensatzMindestLeser).
+					WithArgs("F", klassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}))
@@ -93,7 +93,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", KlassensatzMindestLeser).
+					WithArgs("", klassensatzMindestLeser).
 					WillReturnError(errors.New("db error"))
 			},
 			expectedStatus: http.StatusInternalServerError,

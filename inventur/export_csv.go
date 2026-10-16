@@ -43,7 +43,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
 	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen (je Zeile).
-	err := t.abfragen.LadeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
+	err := t.abfragen.ladeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
 		return csvSchreiber.Write(csvutil.EntschaerfeZeile(zeile))
 	})
 	csvSchreiber.Flush()
@@ -58,7 +58,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// LadeTitelFuerCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
+// ladeTitelFuerCSVExport liest alle Titel×Exemplare und ruft schreibe je Zeile auf —
 // ohne die Gesamtmenge im Speicher zu halten. kopf wird genau einmal nach erfolgreichem
 // Query-Start aufgerufen (der Aufrufer sendet dort seine Header). Bricht schreibe ab
 // (z. B. Verbindung weg), endet der Stream mit diesem Fehler.
@@ -68,7 +68,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 // Eigentum ist das des Exemplars nach repository.ExemplarTopfSQL, dieselbe Regel wie am
 // Etikett. Der Standort steht am Exemplar. Eine Zeile ohne Exemplar hat weder Eigentum noch
 // Standort.
-func (a *TitelAbfragen) LadeTitelFuerCSVExport(ctx context.Context, kopf func() error, schreibe func(zeile []string) error) error {
+func (a *TitelAbfragen) ladeTitelFuerCSVExport(ctx context.Context, kopf func() error, schreibe func(zeile []string) error) error {
 	abfrage := `
 		SELECT
 			t.titel,

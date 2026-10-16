@@ -257,9 +257,9 @@ func (p *personenlauf) verarbeitePerson(ctx context.Context, tx pgx.Tx, l Leser)
 
 // schreibePerson legt die Person nach ihrer Art an: Schüler in die Schülerdatei, im Kollegium
 // mit Konto, wo eines dazugehört (leserart.HatKonto), sonst nur die Leserzeile. Die
-// Littera-Gruppe steht als Art an der Leserzeile (ZielArt).
+// Littera-Gruppe steht als Art an der Leserzeile (zielArt).
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
-	ziel := l.Art.ZielArt()
+	ziel := l.Art.zielArt()
 	switch {
 	case leserart.IstSchueler(ziel):
 		return p.schreibeSchueler(ctx, tx, l)
@@ -327,7 +327,7 @@ func (p *personenlauf) abgangsjahr(l Leser) (jahr int, rueckfall bool) {
 }
 
 func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Zielleser, error) {
-	art := l.Art.ZielArt()
+	art := l.Art.zielArt()
 	var leserID string
 	err := tx.QueryRow(ctx, sqlKontoEinfuegen,
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
@@ -361,7 +361,7 @@ func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser
 		uebernahme.Nullbar(p.ausweis(l)),
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
 		p.kuerze(l, "nachname", l.Nachname, uebernahme.MaxMedientyp),
-		l.Art.ZielArt(), p.s.opt.Jetzt,
+		l.Art.zielArt(), p.s.opt.Jetzt,
 	).Scan(&leserID)
 	if err != nil {
 		return Zielleser{}, fmt.Errorf("beim Konto %s %s: %w", l.Vorname, l.Nachname, err)

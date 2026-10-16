@@ -16,10 +16,10 @@ import (
 // deshalb nach derselben Frist wie ein Schüler endgültig gelöscht. Sein Zugangskonto ist schon
 // beim Löschen gegangen (LegeLeserInPapierkorb).
 
-// FuehrePapierkorbLoeschungAus löscht Kollegen endgültig, die seit 180 Tagen im Papierkorb
+// fuehrePapierkorbLoeschungAus löscht Kollegen endgültig, die seit 180 Tagen im Papierkorb
 // liegen. Derselbe Weg wie „Endgültig löschen" von Hand: LoescheLeserEndgueltig prüft Papierkorb
 // und offene Vorgänge ein zweites Mal, in der Transaktion der Löschung.
-func (z *Zeitplan) FuehrePapierkorbLoeschungAus() {
+func (z *Zeitplan) fuehrePapierkorbLoeschungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 

@@ -96,7 +96,7 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 
 	select {
 	case err := <-ergebnis:
-		var veraltet *BestandVeraltet
+		var veraltet *bestandVeraltet
 		if !errors.As(err, &veraltet) {
 			t.Fatalf("der zweite Speichervorgang wurde nicht abgelehnt (Antwort: %v); im Bestand und ausgesondert: %v", err, zaehle())
 		}

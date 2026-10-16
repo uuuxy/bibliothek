@@ -99,7 +99,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 				t.Fatalf("Gerät anlegen: %v", err)
 			}
 			kennung := f.kennung
-			res, err := svc.VerarbeiteScan(ctx, barcode, &kennung, true, false, mitarbeiterID)
+			res, err := svc.verarbeiteScan(ctx, barcode, &kennung, true, false, mitarbeiterID)
 
 			var offen int
 			if qerr := pool.QueryRow(ctx, `

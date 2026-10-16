@@ -142,7 +142,7 @@ func vorsilbenAusOmniboxSwitch(t *testing.T) map[string]string {
 	handlerZuArt := map[string]string{
 		"verarbeiteAusweis":               "ausweis",
 		"verarbeiteExemplar":              "buch",
-		"VerarbeiteScan":                  "geraet",
+		"verarbeiteScan":                  "geraet",
 		"verarbeiteLeserID":               "", // keine Scanner-Vorsilbe, sondern die Trefferauswahl
 		"verarbeiteOhneVorsilbe":          "",
 		"uebernimmGeraeteErgebnis":        "geraet",

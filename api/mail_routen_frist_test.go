@@ -123,7 +123,7 @@ func TestVersandFunktionen_Selbstprobe(t *testing.T) {
 			"func (s *Server) Erinnern() { mailservice.Sende(nil) }\n" +
 			"func (s *Server) Benachrichtigen() { s.Post().Sende(nil) }\n" +
 			"func (s *Server) Sammeln() { versende(s.Post().Sende) }\n",
-		"thema/versand.go": "package thema\nfunc Verschicke() { _ = mailservice.VersendeUeberSMTP }\n" +
+		"thema/versand.go": "package thema\nfunc Verschicke() { _ = mailservice.SendeTestmail }\n" +
 			"func Zaehle() int { return 1 }\n",
 		// Drei Funktionen namens Starte: Nur die mittlere erreicht den Versand.
 		"thema/starte.go":  "package thema\nfunc Starte() { Verschicke() }\n",
@@ -201,8 +201,7 @@ func versandFunktionen(t *testing.T, quellen map[string]string) (sendet map[stri
 			ast.Inspect(funktion.Body, func(knoten ast.Node) bool {
 				switch k := knoten.(type) {
 				case *ast.SelectorExpr:
-					if x, ok := k.X.(*ast.Ident); ok && x.Name == "mailservice" &&
-						(k.Sel.Name == "SendeTestmail" || k.Sel.Name == "VersendeUeberSMTP") {
+					if x, ok := k.X.(*ast.Ident); ok && x.Name == "mailservice" && k.Sel.Name == "SendeTestmail" {
 						sendet[name] = true
 					}
 					nennt[name][k.Sel.Name] = true

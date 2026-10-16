@@ -14,10 +14,10 @@ import (
 	"bibliothek/db"
 )
 
-// ErrUmbruchInKopfzeile meldet einen Zeilenumbruch in einem Kopfzeilen-Wert.
-var ErrUmbruchInKopfzeile = errors.New("zeilenumbruch im E-Mail-Kopf")
+// errUmbruchInKopfzeile meldet einen Zeilenumbruch in einem Kopfzeilen-Wert.
+var errUmbruchInKopfzeile = errors.New("zeilenumbruch im E-Mail-Kopf")
 
-// KopfzeilenWert stellt sicher, dass ein Wert gefahrlos in eine Kopfzeile geschrieben werden
+// kopfzeilenWert stellt sicher, dass ein Wert gefahrlos in eine Kopfzeile geschrieben werden
 // kann. Ein CR oder LF darin beendet die Kopfzeile vorzeitig, und alles danach liest der
 // Mailserver als weitere Kopfzeile; so schmuggelt man ein "Bcc:" in eine Mail, die für einen
 // einzigen Empfänger gedacht war.
@@ -29,14 +29,14 @@ var ErrUmbruchInKopfzeile = errors.New("zeilenumbruch im E-Mail-Kopf")
 //
 // Abgewiesen statt bereinigt: Eine Adresse mit Zeilenumbruch ist ein Angriff oder ein Fehler in
 // den Daten, und beides soll auffallen, statt still zurechtgebogen zu werden.
-func KopfzeilenWert(feld, wert string) (string, error) {
+func kopfzeilenWert(feld, wert string) (string, error) {
 	if strings.ContainsAny(wert, "\r\n") {
-		return "", fmt.Errorf("%w: Feld %q", ErrUmbruchInKopfzeile, feld)
+		return "", fmt.Errorf("%w: Feld %q", errUmbruchInKopfzeile, feld)
 	}
 	return wert, nil
 }
 
-// PruefeKopfzeilen prüft die drei Kopfzeilen jeder ausgehenden Mail, der einfachen Testmail hier
+// pruefeKopfzeilen prüft die drei Kopfzeilen jeder ausgehenden Mail, der einfachen Testmail hier
 // wie der Mail mit Anhängen in mail_sender.go. Ein Zeilenumbruch im Betreff einer Vorlage
 // könnte sonst beliebige weitere Kopfzeilen anhängen (Reply-To, ein zweites From, ein
 // vorzeitiges Ende des Kopfteils).
@@ -44,7 +44,7 @@ func KopfzeilenWert(feld, wert string) (string, error) {
 // Zwei Regeln: Ein Betreff kann aus einer Vorlage in der Datenbank stammen, wo beim Bearbeiten
 // leicht ein Umbruch stehen bleibt; der wird geglättet, er ist ein Tippfehler. Eine Adresse mit
 // Umbruch wird abgewiesen, sie ist keine Adresse, die man reparieren möchte.
-func PruefeKopfzeilen(absender, an, betreff string) (string, string, string, error) {
+func pruefeKopfzeilen(absender, an, betreff string) (string, string, string, error) {
 	betreff = strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(betreff)
 
 	felder := []struct {
@@ -53,7 +53,7 @@ func PruefeKopfzeilen(absender, an, betreff string) (string, string, string, err
 	}{{"From", &absender}, {"To", &an}, {"Subject", &betreff}}
 
 	for _, f := range felder {
-		geprueft, err := KopfzeilenWert(f.name, *f.wert)
+		geprueft, err := kopfzeilenWert(f.name, *f.wert)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -64,7 +64,7 @@ func PruefeKopfzeilen(absender, an, betreff string) (string, string, string, err
 
 // baueTextNachricht setzt eine einfache Textmail zusammen und prüft dabei jede Kopfzeile.
 func baueTextNachricht(absender, an, betreff, text string) ([]byte, error) {
-	absender, an, betreff, err := PruefeKopfzeilen(absender, an, betreff)
+	absender, an, betreff, err := pruefeKopfzeilen(absender, an, betreff)
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +109,14 @@ func BeschreibeSMTPFehler(adresse string, err error) error {
 }
 
 // SendeTestmail verschickt eine einfache Testmail, um die SMTP-Konfiguration zu prüfen. Die
-// Konfiguration kommt aus LadeSMTPKonfig, derselben Quelle, aus der jeder echte Versand liest;
+// Konfiguration kommt aus ladeSMTPKonfig, derselben Quelle, aus der jeder echte Versand liest;
 // sonst sagte der Knopf etwas über eine Konfiguration, die niemand benutzt.
 func SendeTestmail(ctx context.Context, pool db.Pool, an string) error {
-	konfig, err := LadeSMTPKonfig(ctx, pool)
+	konfig, err := ladeSMTPKonfig(ctx, pool)
 	if err != nil {
 		return err
 	}
-	if !konfig.IstKonfiguriert() {
+	if !konfig.istKonfiguriert() {
 		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
 	}
 
@@ -142,5 +142,5 @@ func SendeTestmail(ctx context.Context, pool db.Pool, an string) error {
 
 	// Derselbe Weg wie jede echte Mail, sonst sagte der Knopf etwas über Code, den der Mahnlauf
 	// gar nicht ausführt.
-	return VersendeUeberSMTP(konfig, absender, []string{an}, rohtext)
+	return versendeUeberSMTP(konfig, absender, []string{an}, rohtext)
 }

@@ -24,12 +24,12 @@ func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{{ISBN: isbn, Bestand: 2}})
 			return err
 		},
-		"SchreibeTitel (Einzel-Rückfall)": func(isbn string) error {
-			_, err := abfragen.SchreibeTitel(ctx, Titel{ISBN: isbn, Bestand: 2})
+		"schreibeTitel (Einzel-Rückfall)": func(isbn string) error {
+			_, err := abfragen.schreibeTitel(ctx, Titel{ISBN: isbn, Bestand: 2})
 			return err
 		},
 	}
-	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300000-1", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-300000-2"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300000-1", "schreibeTitel (Einzel-Rückfall)": "978-9-99-300000-2"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]

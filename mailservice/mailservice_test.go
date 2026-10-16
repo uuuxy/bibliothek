@@ -42,14 +42,14 @@ func TestParseAddressWeistKopfzeilenSchmuggelAb(t *testing.T) {
 // Kopfzeile entsteht; sie greift auch, wenn ParseAddress davor entfiele.
 func TestKopfzeilenWertWeistUmbruchAb(t *testing.T) {
 	for _, p := range angriffe {
-		if _, err := KopfzeilenWert("To", p); err == nil {
-			t.Errorf("KopfzeilenWert ließ %q durch", p)
-		} else if !errors.Is(err, ErrUmbruchInKopfzeile) {
+		if _, err := kopfzeilenWert("To", p); err == nil {
+			t.Errorf("kopfzeilenWert ließ %q durch", p)
+		} else if !errors.Is(err, errUmbruchInKopfzeile) {
 			t.Errorf("falscher Fehlertyp für %q: %v", p, err)
 		}
 	}
 
-	if _, err := KopfzeilenWert("To", "opfer@example.com"); err != nil {
+	if _, err := kopfzeilenWert("To", "opfer@example.com"); err != nil {
 		t.Errorf("gültige Adresse wurde abgewiesen: %v", err)
 	}
 }

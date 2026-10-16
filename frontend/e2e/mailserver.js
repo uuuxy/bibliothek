@@ -8,7 +8,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 // endet dort mit „connection refused“.
 //
 // Der Host bleibt nicht leer: Ohne ihn weicht der Server auf die Umgebung aus
-// (mailservice.LadeSMTPKonfig), und dort steht derselbe Mailserver.
+// (mailservice.ladeSMTPKonfig), und dort steht derselbe Mailserver.
 export const STUMM = Object.freeze({ host: '127.0.0.1', port: '9' });
 
 /** Trägt, was vor dem Lauf eingetragen war; liegt nur, solange die Einstellung stumm steht. */

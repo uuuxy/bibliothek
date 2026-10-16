@@ -67,9 +67,9 @@ func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 		}
 	})
 
-	gruppen, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
+	gruppen, err := NewTitelAbfragen(pool).ladeKlassensatzGruppen(ctx, "", "")
 	if err != nil {
-		t.Fatalf("LadeKlassensatzGruppen: %v", err)
+		t.Fatalf("ladeKlassensatzGruppen: %v", err)
 	}
 	je := map[string]map[string]klassensatzTitel{}
 	for _, g := range gruppen {

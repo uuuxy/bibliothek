@@ -21,8 +21,8 @@ import (
 // fiele auf den Abgang zurück, und die Zeile würde in derselben Nacht anonymisiert, obwohl 85
 // Tage Fenster eingestellt sind.
 //
-// Der Lauf ist derselbe wie im Betrieb (FuehreLesehistorieBefristungAus, dann
-// FuehreSchuelerAnonymisierungAus) und in derselben Reihenfolge wie im Cron. Rechnet die Uhr
+// Der Lauf ist derselbe wie im Betrieb (fuehreLesehistorieBefristungAus, dann
+// fuehreSchuelerAnonymisierungAus) und in derselben Reihenfolge wie im Cron. Rechnet die Uhr
 // über schueler_id, wird der Test rot: RUECK wird anonymisiert.
 func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T) {
 	adminDSN := os.Getenv(datenbankVariable)
@@ -104,7 +104,7 @@ func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T
 	legeAusleihe(alt, legeExemplar("KL-ALT-EX"), "200 days", "95 days")
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.FuehreLesehistorieBefristungAus()
+	z.fuehreLesehistorieBefristungAus()
 
 	// Die Vorbedingung des Tests: Der Lauf hat die Zuordnung wirklich genommen. Ohne
 	// diese Probe könnte der Test grün sein, weil gar nichts getrennt wurde.
@@ -116,7 +116,7 @@ func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T
 		t.Fatalf("Vorbedingung: Der Lesehistorie-Lauf hat die Ausleihe nicht getrennt (%d noch zugeordnet) — der Test prüft dann nichts", nochZugeordnet)
 	}
 
-	z.FuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus()
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen, Karenz 90 — die Zeile muss noch 85 Tage stehen bleiben. " +

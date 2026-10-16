@@ -71,8 +71,8 @@ type Ausleihe struct {
 	Mahnungen      int
 }
 
-// IstOffen sagt, ob das Buch noch beim Leser ist.
-func (a Ausleihe) IstOffen() bool { return !a.Zurueckgegeben }
+// istOffen sagt, ob das Buch noch beim Leser ist.
+func (a Ausleihe) istOffen() bool { return !a.Zurueckgegeben }
 
 // leseAusleihen liest die Tabelle `Verleih`.
 //
@@ -133,7 +133,7 @@ func istWahr(roh string) bool {
 func NurOffene(ausleihen []Ausleihe) []Ausleihe {
 	var offen []Ausleihe
 	for _, a := range ausleihen {
-		if a.IstOffen() {
+		if a.istOffen() {
 			offen = append(offen, a)
 		}
 	}

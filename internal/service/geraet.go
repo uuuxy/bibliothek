@@ -15,9 +15,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// GeraeteErgebnis ist das Ergebnis eines Scans an einem Gerät: Ausleihe, Rückgabe oder die
+// geraeteErgebnis ist das Ergebnis eines Scans an einem Gerät: Ausleihe, Rückgabe oder die
 // Bitte, die Checkliste des Zubehörs zu bestätigen.
-type GeraeteErgebnis struct {
+type geraeteErgebnis struct {
 	// Art ist "ausleihe", "rueckgabe" oder "geraet_check", wenn erst die Checkliste bestätigt
 	// werden muss.
 	Art string
@@ -37,11 +37,11 @@ type GeraeteErgebnis struct {
 
 // GeraeteDienst bucht den Scan eines Geräts (Laptop, Tablet).
 type GeraeteDienst interface {
-	// VerarbeiteScan leiht ein freies Gerät dem geöffneten Leser aus und nimmt ein verliehenes
+	// verarbeiteScan leiht ein freies Gerät dem geöffneten Leser aus und nimmt ein verliehenes
 	// zurück. Hat das Gerät Zubehör, muss vor der Ausleihe die Checkliste bestätigt sein.
 	// uebergehen übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht die
 	// Sperre am Leser, wie beim Buch (pruefeAusleihSperren).
-	VerarbeiteScan(ctx context.Context, nummer string, aktiverLeserID *string, checklisteBestaetigt, uebergehen bool, bearbeiterID string) (*GeraeteErgebnis, error)
+	verarbeiteScan(ctx context.Context, nummer string, aktiverLeserID *string, checklisteBestaetigt, uebergehen bool, bearbeiterID string) (*geraeteErgebnis, error)
 }
 
 // geraeteDienst erfüllt GeraeteDienst.
@@ -142,7 +142,7 @@ func geraeteRueckgabeFrist(ab time.Time, kalender lmfplan.Ferientabelle) time.Ti
 }
 
 // leiheGeraetAus leiht das freie Gerät dem geöffneten Leser aus.
-func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, bearbeiterID string) (*GeraeteErgebnis, error) {
+func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, bearbeiterID string) (*geraeteErgebnis, error) {
 	if leser == nil {
 		return nil, meldung(ErrUngueltigerZustand, "Bitte scannen Sie zuerst einen Ausweis")
 	}
@@ -152,7 +152,7 @@ func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 		sommerferien = lage.einst.Sommerferien
 	}
 	frist := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
-	erg := &GeraeteErgebnis{Leser: leser}
+	erg := &geraeteErgebnis{Leser: leser}
 	// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe, dieselbe Regel wie beim Buch
 	// (legeAusleiheAn).
 	ausleiheID, err := repository.LeiheGeraetAus(ctx, tx, repository.GeraeteAusleihe{
@@ -192,7 +192,7 @@ func (d *geraeteDienst) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *reposi
 
 // findeVorbesitzer sagt, ob es eine Fremdrückgabe ist (der Rückgeber ist nicht der Ausleiher),
 // und legt dann den Ausleiher als Vorbesitzer in erg.
-func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, erg *GeraeteErgebnis) (bool, error) {
+func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, erg *geraeteErgebnis) (bool, error) {
 	if offeneAusleihe.SchuelerID == nil {
 		return false, nil
 	}
@@ -209,8 +209,8 @@ func (d *geraeteDienst) findeVorbesitzer(ctx context.Context, offeneAusleihe *re
 }
 
 // gibGeraetZurueck nimmt das verliehene Gerät zurück.
-func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, bearbeiterID string) (*GeraeteErgebnis, error) {
-	erg := &GeraeteErgebnis{}
+func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, offeneAusleihe *repository.Ausleihe, leser *repository.Leser, bearbeiterID string) (*geraeteErgebnis, error) {
+	erg := &geraeteErgebnis{}
 
 	istFremd, err := d.findeVorbesitzer(ctx, offeneAusleihe, leser, erg)
 	if err != nil {
@@ -240,15 +240,15 @@ func (d *geraeteDienst) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repo
 	return erg, nil
 }
 
-// VerarbeiteScan bucht den Scan eines Geräts.
-func (d *geraeteDienst) VerarbeiteScan(
+// verarbeiteScan bucht den Scan eines Geräts.
+func (d *geraeteDienst) verarbeiteScan(
 	ctx context.Context,
 	nummer string,
 	aktiverLeserID *string,
 	checklisteBestaetigt bool,
 	uebergehen bool,
 	bearbeiterID string,
-) (*GeraeteErgebnis, error) {
+) (*geraeteErgebnis, error) {
 	g, err := d.ladeGeraet(ctx, nummer)
 	if err != nil {
 		return nil, err
@@ -287,7 +287,7 @@ func (d *geraeteDienst) VerarbeiteScan(
 	// override_block mit der Bestätigung erneut (OmniboxPrueflisteDialog.svelte), und
 	// protokolliert wird erst in leiheGeraetAus.
 	if g.Zubehoer != "" && !checklisteBestaetigt {
-		return &GeraeteErgebnis{Art: "geraet_check", Geraet: &g}, nil
+		return &geraeteErgebnis{Art: "geraet_check", Geraet: &g}, nil
 	}
 
 	if !istVerliehen {

@@ -45,12 +45,12 @@ func TestSichereCoverURL(t *testing.T) {
 
 	for _, tc := range faelle {
 		t.Run(tc.name, func(t *testing.T) {
-			ergebnisURL, ok := SichereCoverURL(tc.rohURL)
+			ergebnisURL, ok := sichereCoverURL(tc.rohURL)
 			if ok != tc.expectedOk {
-				t.Errorf("SichereCoverURL(%q) meldet %v, erwartet %v", tc.rohURL, ok, tc.expectedOk)
+				t.Errorf("sichereCoverURL(%q) meldet %v, erwartet %v", tc.rohURL, ok, tc.expectedOk)
 			}
 			if ergebnisURL != tc.expectedURL {
-				t.Errorf("SichereCoverURL(%q) = %q, erwartet %q", tc.rohURL, ergebnisURL, tc.expectedURL)
+				t.Errorf("sichereCoverURL(%q) = %q, erwartet %q", tc.rohURL, ergebnisURL, tc.expectedURL)
 			}
 		})
 	}

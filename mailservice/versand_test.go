@@ -32,13 +32,13 @@ func erlaubeKlartext(t *testing.T) {
 func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
-	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
 	if err == nil {
 		t.Fatal("Versand über eine Klartextverbindung wurde als erfolgreich gemeldet")
 	}
-	if !errors.Is(err, ErrSMTPKlartext) {
-		t.Errorf("Fehler = %v, want ErrSMTPKlartext", err)
+	if !errors.Is(err, errSMTPKlartext) {
+		t.Errorf("Fehler = %v, want errSMTPKlartext", err)
 	}
 	// Der Marker entscheidet über den Status der Antwort (502 statt eines neutralen 500); ohne ihn
 	// erreicht die Begründung den Admin im Formular nicht.
@@ -63,7 +63,7 @@ func TestVersendeUeberSMTPErlaubtKlartextMitAusnahme(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
-	if err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	if err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n")); err != nil {
 		t.Fatalf("Versand mit SMTP_ALLOW_PLAINTEXT=true fehlgeschlagen: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestVersendeUeberSMTPStelltZu(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
 
-	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
 	if err != nil {
 		t.Fatalf("Versand fehlgeschlagen: %v", err)
@@ -102,7 +102,7 @@ func TestVersendeUeberSMTPWertetAbbruchNachAnnahmeAlsZugestellt(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, sitzungen := smtptest.Starte(t, smtptest.BrichtVorQuitAb)
 
-	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
 	if err != nil {
 		t.Fatalf("angenommene Nachricht wurde als Fehlschlag gemeldet: %v", err)
@@ -120,7 +120,7 @@ func TestVersendeUeberSMTPMeldetAbweisung(t *testing.T) {
 	erlaubeKlartext(t)
 	host, port, _ := smtptest.Starte(t, smtptest.LehntNachrichtAb)
 
-	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
 	if err == nil {
 		t.Fatal("abgewiesene Nachricht wurde als versendet gemeldet")
@@ -137,7 +137,7 @@ func TestVersendeUeberSMTPMeldetAbweisung(t *testing.T) {
 func TestVersendeUeberSMTPMeldetUnerreichbarenServer(t *testing.T) {
 	host, port := smtptest.GeschlossenerPort(t)
 
-	err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
 	if !errors.Is(err, ErrSMTPVersand) {
 		t.Fatalf("Fehler = %v, want ErrSMTPVersand", err)
@@ -159,9 +159,9 @@ func TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb(t *testing.T) {
 	}
 	for name, f := range faelle {
 		t.Run(name, func(t *testing.T) {
-			err := VersendeUeberSMTP(testKonfig(host, port), f.absender, []string{f.empfaenger}, []byte("x"))
-			if !errors.Is(err, ErrUmbruchInKopfzeile) {
-				t.Fatalf("Fehler = %v, want ErrUmbruchInKopfzeile", err)
+			err := versendeUeberSMTP(testKonfig(host, port), f.absender, []string{f.empfaenger}, []byte("x"))
+			if !errors.Is(err, errUmbruchInKopfzeile) {
+				t.Fatalf("Fehler = %v, want errUmbruchInKopfzeile", err)
 			}
 		})
 	}
@@ -198,7 +198,7 @@ func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
 		t.Fatalf("Nachricht konnte nicht gebaut werden: %v", err)
 	}
 
-	if err := VersendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+	if err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, nachricht); err != nil {
 		t.Fatalf("Versand fehlgeschlagen: %v", err)
 	}
@@ -230,7 +230,7 @@ func TestVersendeUeberSMTPSchmuggeltNichtsAusDemMailtext(t *testing.T) {
 }
 
 // TestVersendeUeberSMTP_SchweigenderServerHaengtNicht: Ein Server, der die Verbindung annimmt und
-// dann schweigt (Firewall, überlasteter Relay), hält VersendeUeberSMTP nicht unbegrenzt fest,
+// dann schweigt (Firewall, überlasteter Relay), hält versendeUeberSMTP nicht unbegrenzt fest,
 // denn die Frist eines Kontexts bricht kein blockierendes Lesen auf einem Socket ab. Am
 // schwersten träfe es den Wächter für kritische Alarme, dessen Schleife sonst für immer stünde.
 // Der Versand kehrt innerhalb der Frist der Sitzung mit einem Fehler zurück.
@@ -263,7 +263,7 @@ func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
 
 	fertig := make(chan error, 1)
 	go func() {
-		fertig <- versendeUeberSMTP(fristen, konfig, "test@schule.invalid", []string{"ziel@schule.invalid"}, []byte("Subject: t\r\n\r\nx"))
+		fertig <- versendeMitFristen(fristen, konfig, "test@schule.invalid", []string{"ziel@schule.invalid"}, []byte("Subject: t\r\n\r\nx"))
 	}()
 
 	select {
@@ -272,6 +272,6 @@ func TestVersendeUeberSMTP_SchweigenderServerHaengtNicht(t *testing.T) {
 			t.Fatal("Versand an einen schweigenden Server darf nicht als Erfolg enden")
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("VersendeUeberSMTP hängt an einem schweigenden Server — die Sitzungsfrist greift nicht")
+		t.Fatal("versendeUeberSMTP hängt an einem schweigenden Server — die Sitzungsfrist greift nicht")
 	}
 }

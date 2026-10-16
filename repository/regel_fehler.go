@@ -5,28 +5,28 @@ import (
 	"fmt"
 )
 
-// RegelFehler ist eine Ablehnung mit ihrem Grund. Art ist der benannte Fehler, an dem die Tür den
+// regelFehler ist eine Ablehnung mit ihrem Grund. Art ist der benannte Fehler, an dem die Tür den
 // Status erkennt (ErrStandortUngueltig, ErrSchlagwortRegel …), Grund die Einzelheit in Worten der
 // Bibliothek, die sie hinter ihren Satz setzt („höchstens 60 Zeichen").
-type RegelFehler struct {
+type regelFehler struct {
 	Art   error
 	Grund string
 }
 
-func (e *RegelFehler) Error() string { return e.Art.Error() + ": " + e.Grund }
+func (e *regelFehler) Error() string { return e.Art.Error() + ": " + e.Grund }
 
-func (e *RegelFehler) Unwrap() error { return e.Art }
+func (e *regelFehler) Unwrap() error { return e.Art }
 
-// GrundAus liefert den Grund eines RegelFehler in der Kette, sonst "".
+// GrundAus liefert den Grund eines regelFehler in der Kette, sonst "".
 func GrundAus(err error) string {
-	var regel *RegelFehler
+	var regel *regelFehler
 	if errors.As(err, &regel) {
 		return regel.Grund
 	}
 	return ""
 }
 
-// MitGrund setzt den Grund eines RegelFehler hinter den Satz der Tür; ohne Grund bleibt der Satz
+// MitGrund setzt den Grund eines regelFehler hinter den Satz der Tür; ohne Grund bleibt der Satz
 // allein.
 func MitGrund(satz string, err error) string {
 	if grund := GrundAus(err); grund != "" {
@@ -35,7 +35,7 @@ func MitGrund(satz string, err error) string {
 	return satz
 }
 
-// regelVerletzt baut einen RegelFehler; der Grund ist ein Formattext wie bei fmt.Errorf.
+// regelVerletzt baut einen regelFehler; der Grund ist ein Formattext wie bei fmt.Errorf.
 func regelVerletzt(art error, format string, args ...any) error {
-	return &RegelFehler{Art: art, Grund: fmt.Sprintf(format, args...)}
+	return &regelFehler{Art: art, Grund: fmt.Sprintf(format, args...)}
 }

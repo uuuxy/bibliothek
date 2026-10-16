@@ -37,7 +37,7 @@ func TestBaueMailNachricht_WeistUmbruecheInAdressenAb(t *testing.T) {
 			if err == nil {
 				t.Fatal("die Nachricht wurde gebaut — eine Adresse mit Zeilenumbruch muss abgewiesen werden")
 			}
-			if !errors.Is(err, ErrUmbruchInKopfzeile) {
+			if !errors.Is(err, errUmbruchInKopfzeile) {
 				t.Errorf("unerwarteter Fehler: %v", err)
 			}
 		})

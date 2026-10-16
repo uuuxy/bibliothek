@@ -17,7 +17,7 @@ import (
 // die Anonymisierung: Wer nach dem Stichtag zurückgab, hätte kein Fenster für eine Reparatur,
 // wer im November zurückgab, ein verkürztes.
 //
-// Gefahren wird die ganze Folge der Nacht (FuehreNaechtlicheDSGVOAus), nicht ein einzelner
+// Gefahren wird die ganze Folge der Nacht (fuehreNaechtlicheDSGVOAus), nicht ein einzelner
 // Lauf: Die Regel „nach der Karenz anonymisiert und in derselben Nacht gelöscht" hängt an der
 // Reihenfolge. Die Fälle sind so gebaut, dass eine Löschung ohne Karenz bei SPAET rot wird
 // (gelöscht trotz Rückgabe vor fünf Tagen) und die umgekehrte Reihenfolge bei REIF (anonymisiert,
@@ -114,7 +114,7 @@ func TestNaechtlicheDSGVO_LoeschungWartetDieKarenzAb(t *testing.T) {
 	schaden := legeAbgaenger("LK-SCHADEN", "")
 	legeSchaden(schaden, legeExemplar("LK-SCHADEN-EX"), false)
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).FuehreNaechtlicheDSGVOAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreNaechtlicheDSGVOAus()
 
 	if da, anonym := zustand(spaet); !da || anonym {
 		t.Errorf("SPAET: Rückgabe vor 5 Tagen muss die volle Karenz bekommen — existiert=%v, anonymisiert=%v (Löschung kennt die Karenz nicht?)", da, anonym)

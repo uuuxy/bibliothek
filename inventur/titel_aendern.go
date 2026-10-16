@@ -176,7 +176,7 @@ func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, ei
 	case err != nil:
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
 	case nennt("author") && eintrag.Autor == "" && autor != "":
-		return ErrAutorGeleert
+		return errAutorGeleert
 	}
 	if err := pruefeSpanneNachAenderung(eintrag, nennt, titelSpanne{lernmittel, mehrjahresband, von, bis}); err != nil {
 		return err
@@ -185,7 +185,7 @@ func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, ei
 	case !nennt("isbn") || eintrag.ISBN == "" || isbnutil.Normalform(eintrag.ISBN) == isbnutil.Normalform(isbn):
 		return nil
 	case !validiereISBN(eintrag.ISBN):
-		return ErrISBNFormat
+		return errISBNFormat
 	}
 	return isbnVergeben(ctx, tx, eintrag.ISBN, id)
 }
@@ -233,15 +233,15 @@ type Bestandsangabe struct {
 	BearbeiterID string
 }
 
-// BestandVeraltet lehnt eine Bestandsänderung ab, deren Maske einen anderen Stand gesehen
+// bestandVeraltet lehnt eine Bestandsänderung ab, deren Maske einen anderen Stand gesehen
 // hat, als jetzt gilt: Zwischen Öffnen und Speichern hat jemand Exemplare angelegt,
 // ausgesondert oder eingebucht. Die Tür antwortet mit 409 und nennt den Stand.
-type BestandVeraltet struct {
+type bestandVeraltet struct {
 	Gesehen *int
 	Aktuell int
 }
 
-func (e *BestandVeraltet) Error() string {
+func (e *bestandVeraltet) Error() string {
 	if e.Gesehen == nil {
 		return fmt.Sprintf("bestand ohne gesehenen stand geändert, aktuell %d", e.Aktuell)
 	}
@@ -250,7 +250,7 @@ func (e *BestandVeraltet) Error() string {
 
 // Meldung ist der Satz für die Maske. Ohne gesehene Zahl kommt die Anfrage von einer Seite,
 // die vor dem Update geladen wurde: Sie kann die Zahl nicht mitschicken, bis sie neu lädt.
-func (e *BestandVeraltet) Meldung() string {
+func (e *bestandVeraltet) Meldung() string {
 	if e.Gesehen == nil {
 		return fmt.Sprintf("Der Bestand lässt sich mit dieser Fassung der Seite nicht ändern (er steht bei %d). "+
 			"Nichts gespeichert: bitte die Seite neu laden und den Titel neu öffnen.", e.Aktuell)
@@ -274,7 +274,7 @@ func (a *TitelAbfragen) setzeBestand(ctx context.Context, q repository.Datenbank
 		return nil
 	}
 	if angabe.Gesehen == nil || *angabe.Gesehen != aktuell {
-		return &BestandVeraltet{Gesehen: angabe.Gesehen, Aktuell: aktuell}
+		return &bestandVeraltet{Gesehen: angabe.Gesehen, Aktuell: aktuell}
 	}
 	if err := a.gleicheExemplareAn(ctx, q, titelID, aktuell, angabe.Soll, angabe.BearbeiterID); err != nil {
 		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)

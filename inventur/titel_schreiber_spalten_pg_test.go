@@ -70,8 +70,8 @@ func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 			_, err := abfragen.LegeTitelAn(ctx, b)
 			return err
 		}},
-		{"SchreibeTitel (Einzel-Rückfall)", "false", func(b Titel) error {
-			_, err := abfragen.SchreibeTitel(ctx, b)
+		{"schreibeTitel (Einzel-Rückfall)", "false", func(b Titel) error {
+			_, err := abfragen.schreibeTitel(ctx, b)
 			return err
 		}},
 		{"SchreibeTitelStapel", "false", func(b Titel) error {

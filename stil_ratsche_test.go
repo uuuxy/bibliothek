@@ -63,8 +63,9 @@ var (
 //
 // Blindheit: Die Oberfläche liest die Prüfung nicht. In Testdateien zählt sie Namen und
 // Dateinamen, aber kein Datum: Dort ist ein Datum meist ein Testwert (eine feste Uhr, ein
-// Ferientag). Sie sieht nur Wörter der drei Listen oben; ob ein deutscher Name die richtige Sache trifft, ob ein Name öffentlich
-// sein muss und ob ein Kommentar das Warum nennt, liest ein Mensch. Lokale Variablen und
+// Ferientag). Sie sieht nur Wörter der drei Listen oben; ob ein deutscher Name die richtige Sache
+// trifft und ob ein Kommentar das Warum nennt, liest ein Mensch, ob ein Name öffentlich sein
+// muss, prüft sichtbarkeit_ratsche_test.go. Lokale Variablen und
 // Parameter zählt sie nicht. Das Datum einer Quelle (stilQuelle) zählt sie nicht als Datum.
 func TestStil_BestandWaechstNicht(t *testing.T) {
 	ist, funde, namen, gelesen := stilMessen(t)

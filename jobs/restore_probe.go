@@ -46,10 +46,10 @@ const (
 	probeMindestTabellen = 20
 )
 
-// FuehreRestoreProbeAus führt die Probe aus und speichert das Ergebnis. Fehlt der Schlüssel der
+// fuehreRestoreProbeAus führt die Probe aus und speichert das Ergebnis. Fehlt der Schlüssel der
 // Sicherung oder die DATABASE_URL, unterbleibt sie ohne Meldung; diesen Zustand meldet die
 // Betriebsbereitschaft schon über den Befund der Sicherung als kritisch.
-func (z *Zeitplan) FuehreRestoreProbeAus() {
+func (z *Zeitplan) fuehreRestoreProbeAus() {
 	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return
@@ -158,7 +158,7 @@ func (z *Zeitplan) probeBeimStartNachFehlschlag() {
 		return
 	}
 	log.Printf("Restore-Probe: letzter Lauf war fehlgeschlagen (%s) — probe beim Start erneut", letzte.Fehler)
-	z.FuehreRestoreProbeAus()
+	z.fuehreRestoreProbeAus()
 }
 
 // kuerzeFehlertext macht die Ausgabe von psql auf Stderr tauglich für das Ergebnis: Zeilen mit

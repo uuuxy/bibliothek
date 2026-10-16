@@ -11,12 +11,12 @@ import (
 // Schulbücher je Fach für das Portal des Kollegiums: Die Fachsprecher wollen wissen, wie viele
 // Mathebücher die Schule hat. Grundlage ist allein der Schalter der Lernmittel
 // (buecher_titel.ist_lernmittel) und das Fach (buecher_titel.subject, Fremdschlüssel auf
-// systematik_kategorien). Gezählt wird wie bei den Klassensätzen (LadeKlassensatzGruppen): gesamt
+// systematik_kategorien). Gezählt wird wie bei den Klassensätzen (ladeKlassensatzGruppen): gesamt
 // = nicht ausgesondert und nicht nur bestellt; verliehen = offene Ausleihe; verfügbar =
 // ausleihbar, nicht ausgesondert, nicht verliehen.
 
-// FachBestand ist eine Fach-Kachel: Titel und Exemplare eines Fachs. Fach "" = ohne Fach.
-type FachBestand struct {
+// fachBestand ist eine Fach-Kachel: Titel und Exemplare eines Fachs. Fach "" = ohne Fach.
+type fachBestand struct {
 	Fach       string `json:"fach"`
 	Titel      int    `json:"titel"`
 	Gesamt     int    `json:"gesamt"`
@@ -64,17 +64,17 @@ type AuflageImBestand struct {
 	Gesamt           int    `json:"gesamt_bestand"`
 }
 
-// LernmittelFilter sind die drei Einschränkungen des Portal-Reiters. Nullwerte heißen
-// „alles": Jahrgang 0, Zweig "" (ZweigOhne = nur Bücher ohne Zweig), Suche "".
-type LernmittelFilter struct {
+// lernmittelFilter sind die drei Einschränkungen des Portal-Reiters. Nullwerte heißen
+// „alles": Jahrgang 0, Zweig "" (zweigOhne = nur Bücher ohne Zweig), Suche "".
+type lernmittelFilter struct {
 	Jahrgang int
 	Zweig    string
 	Suche    string
 }
 
-// ZweigOhne ist der Filterwert für „kein Schulzweig gesetzt" — ein Zeichen, das als
+// zweigOhne ist der Filterwert für „kein Schulzweig gesetzt" — ein Zeichen, das als
 // Zweigname nicht vorkommt, damit es keinen echten Wert verdeckt.
-const ZweigOhne = "-"
+const zweigOhne = "-"
 
 // lernmittelFilterSQL: $1 Jahrgang (0 = alle; ein Atlas 5–10 zählt bei Jahrgang 7 mit), $2 Zweig,
 // $3 Suchtext über Titel, ISBN, Autor und Fach.
@@ -83,11 +83,11 @@ const ZweigOhne = "-"
 // gilt für alle"), und so ist der Altbestand: Littera hat den Zweig nie geliefert, 470 von 578
 // Schulbüchern tragen keinen. Ein Filter auf „Gymnasium", der nur `track = 'Gymnasium'` prüft,
 // versteckte deshalb fünf Sechstel des Bestands vor dem Fachsprecher. Gesucht wird darum
-// „dieser Zweig oder für alle"; ZweigOhne ist die Gegenrichtung, nur die ohne Angabe.
+// „dieser Zweig oder für alle"; zweigOhne ist die Gegenrichtung, nur die ohne Angabe.
 var lernmittelFilterSQL = `
 	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
-	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '')
-	     OR ($2 <> '` + ZweigOhne + `' AND (COALESCE(b.track, '') = '' OR b.track = $2)))
+	AND ($2 = '' OR ($2 = '` + zweigOhne + `' AND COALESCE(b.track, '') = '')
+	     OR ($2 <> '` + zweigOhne + `' AND (COALESCE(b.track, '') = '' OR b.track = $2)))
 	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%'
 	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%'
 	     OR ` + repository.SQLSuchtextIstISBN("b", "$3") + `)`
@@ -142,10 +142,10 @@ func lernmittelJeBuchSQL() string {
 		JOIN vertreter v ON v.buch = b.buch`
 }
 
-// LadeLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
+// ladeLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
 // (Fach ""), am Ende sortiert. Gezählt wird über dieselben Zeilen wie die Liste darunter
 // (lernmittelJeBuchSQL): „Titel" sind Bücher, ein Buch in drei Auflagen zählt einmal.
-func (a *TitelAbfragen) LadeLernmittelFaecher(ctx context.Context, f LernmittelFilter) ([]FachBestand, error) {
+func (a *TitelAbfragen) ladeLernmittelFaecher(ctx context.Context, f lernmittelFilter) ([]fachBestand, error) {
 	zeilen, err := a.pool.Query(ctx, `
 		SELECT subject, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
 		FROM (`+lernmittelJeBuchSQL()+`) zeilen
@@ -155,9 +155,9 @@ func (a *TitelAbfragen) LadeLernmittelFaecher(ctx context.Context, f LernmittelF
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
 	defer zeilen.Close()
-	ausgabe := []FachBestand{}
+	ausgabe := []fachBestand{}
 	for zeilen.Next() {
-		var f FachBestand
+		var f fachBestand
 		if err := zeilen.Scan(&f.Fach, &f.Titel, &f.Gesamt, &f.Verliehen, &f.Verfuegbar); err != nil {
 			return nil, err
 		}
@@ -166,9 +166,9 @@ func (a *TitelAbfragen) LadeLernmittelFaecher(ctx context.Context, f LernmittelF
 	return ausgabe, zeilen.Err()
 }
 
-// LadeLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
+// ladeLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
 // alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert.
-func (a *TitelAbfragen) LadeLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
+func (a *TitelAbfragen) ladeLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f lernmittelFilter) ([]LernmittelTitel, error) {
 	zeilen, err := a.pool.Query(ctx, lernmittelJeBuchSQL()+`
 		WHERE ($4 OR v.subject = $5)
 		ORDER BY (v.subject = ''), v.subject, NULLIF(v.jahrgang_von, 0) NULLS LAST, v.titel`,

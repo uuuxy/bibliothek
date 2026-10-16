@@ -37,7 +37,7 @@ func TestUebersetzeDatenbankfehler(t *testing.T) {
 		{
 			name:    "doppelte ISBN",
 			eingabe: &pgconn.PgError{Code: "23505", ConstraintName: "buecher_titel_isbn_key"},
-			want:    ErrISBNDoppelt,
+			want:    errISBNDoppelt,
 		},
 		{name: "anderer Code", eingabe: andererCode, want: andererCode},
 		{name: "Verstoß gegen eine andere Regel", eingabe: andereRegel, want: andereRegel},

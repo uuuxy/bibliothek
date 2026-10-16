@@ -42,8 +42,8 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 			t.Fatalf("erster Titel: %v", err)
 		}
 		_, err := abfragen.LegeTitelAn(ctx, Titel{ISBN: "9783123456789", Titel: titel + " (zweite Schreibweise)"})
-		if !errors.Is(err, ErrISBNDoppelt) {
-			t.Errorf("zweite Schreibweise: Fehler %v, erwartet ErrDuplicateISBN — es ist dieselbe Nummer", err)
+		if !errors.Is(err, errISBNDoppelt) {
+			t.Errorf("zweite Schreibweise: Fehler %v, erwartet errISBNDoppelt — es ist dieselbe Nummer", err)
 		}
 	})
 
@@ -57,8 +57,8 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 			t.Fatalf("erster Titel: %v", err)
 		}
 		_, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer"})
-		if !errors.Is(err, ErrDubletteTitel) {
-			t.Errorf("zweiter gleicher Titel: Fehler %v, erwartet ErrDubletteTitel", err)
+		if !errors.Is(err, errDubletteTitel) {
+			t.Errorf("zweiter gleicher Titel: Fehler %v, erwartet errDubletteTitel", err)
 		}
 
 		// Eine andere Auflage ist ein anderes Buch und darf angelegt werden.
@@ -82,8 +82,8 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		}
 		for _, auflage := range []string{"", "3. aufl. ", "3.   Aufl."} {
 			_, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: auflage})
-			if !errors.Is(err, ErrDubletteTitel) {
-				t.Errorf("Auflage %q: Fehler %v, erwartet ErrDubletteTitel", auflage, err)
+			if !errors.Is(err, errDubletteTitel) {
+				t.Errorf("Auflage %q: Fehler %v, erwartet errDubletteTitel", auflage, err)
 			}
 		}
 		if _, err := abfragen.LegeTitelAn(ctx, Titel{Titel: titel, Autor: "Meyer", Auflage: "4. Aufl."}); err != nil {
@@ -120,8 +120,8 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 			{Titel: "Dubletten-Probe La Peste", Autor: "Camus, Albert"},
 		} {
 			_, err := abfragen.LegeTitelAn(ctx, eingabe)
-			if !errors.Is(err, ErrDubletteTitel) {
-				t.Errorf("%+q von %+q: Fehler %v, erwartet ErrDubletteTitel", eingabe.Titel, eingabe.Autor, err)
+			if !errors.Is(err, errDubletteTitel) {
+				t.Errorf("%+q von %+q: Fehler %v, erwartet errDubletteTitel", eingabe.Titel, eingabe.Autor, err)
 			}
 		}
 	})

@@ -13,11 +13,11 @@ etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das 
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
 Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
-Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext und
+Tests an Namen und Dateinamen, `sichtbarkeit_ratsche_test.go` jeden öffentlichen Namen ohne
+fremden Nutzer gegen Abschnitt 6, `fehlertext_ratsche_test.go` jeden Fehlertext und
 `meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
 Zustand der Paketebene und `leerimport_ratsche_test.go` jeden Leerimport gegen Abschnitt 12. Für
-die Oberfläche gilt dasselbe Wörterbuch
-(Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
+die Oberfläche gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 
@@ -159,6 +159,10 @@ klein (`lmf.FachMathematik` bis `lmf.FachNaWi`).
 
 Eine Naht, die es nur gibt, damit ein Test etwas austauschen kann, endet auf `FuerTest`.
 
+`sichtbarkeit_ratsche_test.go` hält die Regel mit `go/types` über alle Pakete samt Tests.
+Ausgenommen sind Methoden, die eine Schnittstelle verlangt (`Error`, `String`, `ServeHTTP`);
+was die Prüfung nicht sieht, steht in ihrem Kopf.
+
 ## 7. Dateien
 
 Eine Datei heißt wie die Sache, die in ihr steht, deutsch und mit Unterstrich: `leser_sperre.go`.
@@ -203,7 +207,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   namens cmp ein. Für einen Typ des eigenen Pakets mit kleinen Feldern nennt der Vergleich
   `cmp.AllowUnexported`.
 - Die Meldung nennt die Funktion, dann was sie lieferte, dann was erwartet war:
-  `SichereCoverURL(%q) = %q, erwartet %q` (Decisions, „Identify the function", „Got before
+  `sichereCoverURL(%q) = %q, erwartet %q` (Decisions, „Identify the function", „Got before
   want"). Ein Unterschied aus `cmp.Diff` nennt seine Richtung: `(-erwartet +ist)`.
 - Eine Abweichung meldet `t.Error`, damit ein Lauf alle zeigt; `t.Fatal` steht dort, wo die
   folgenden Prüfungen sinnlos würden, etwa nach einem unerwarteten Fehler (Decisions, „Keep
@@ -250,7 +254,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   ideally be presented structurally" (Best Practices, „Error structure").
 - Erklärt eine Prüfung ihre Regel selbst, steht der Grund als Feld neben der Regel
   (`lmfplan.SommerferienFehler.Grund`); die Tür setzt den Namen der Einstellung davor. In
-  `repository/` baut `regelVerletzt` einen `RegelFehler` aus dem benannten Fehler und dem Grund
+  `repository/` baut `regelVerletzt` einen `regelFehler` aus dem benannten Fehler und dem Grund
   in Worten der Bibliothek („höchstens 60 Zeichen"); die Tür erkennt den Fehler mit `errors.Is`
   und setzt den Grund mit `repository.MitGrund` hinter ihren Satz („Standort nicht geändert:
   höchstens 60 Zeichen"). Die

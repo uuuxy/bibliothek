@@ -20,12 +20,12 @@ func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"SchreibeTitel (Einzel-Rückfall)": func(b Titel) error {
-			_, err := abfragen.SchreibeTitel(ctx, b)
+		"schreibeTitel (Einzel-Rückfall)": func(b Titel) error {
+			_, err := abfragen.schreibeTitel(ctx, b)
 			return err
 		},
 	}
-	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300001-1", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-300001-2"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-300001-1", "schreibeTitel (Einzel-Rückfall)": "978-9-99-300001-2"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]

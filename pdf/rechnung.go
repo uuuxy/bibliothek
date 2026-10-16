@@ -192,7 +192,7 @@ func baueFuss(m core.Maroto, positionen []RechnungsPosition, zahlung Zahlungsang
 	traeger = math.Round(traeger*100) / 100
 
 	m.AddRow(20, col.New(12))
-	for _, block := range ZahlungswegBloecke(land, traeger, zahlung) {
+	for _, block := range zahlungswegBloecke(land, traeger, zahlung) {
 		if block.Ueberschrift != "" {
 			m.AddRow(6, col.New(12).Add(
 				text.New(block.Ueberschrift, props.Text{Size: 9, Style: fontstyle.Bold}),

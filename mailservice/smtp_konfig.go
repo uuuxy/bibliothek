@@ -36,24 +36,24 @@ type SMTPKonfig struct {
 	Absender string
 }
 
-// Adresse liefert das host:port für net/smtp.
-func (k SMTPKonfig) Adresse() string {
+// adresse liefert das host:port für net/smtp.
+func (k SMTPKonfig) adresse() string {
 	return k.Host + ":" + k.Port
 }
 
-// Auth liefert die Anmeldung am SMTP-Server oder nil, wenn keine Zugangsdaten
+// auth liefert die Anmeldung am SMTP-Server oder nil, wenn keine Zugangsdaten
 // hinterlegt sind (Relay im Schulnetz, das nach IP zulässt).
-func (k SMTPKonfig) Auth() smtp.Auth {
+func (k SMTPKonfig) auth() smtp.Auth {
 	if k.Benutzer == "" || k.Passwort == "" {
 		return nil
 	}
 	return smtp.PlainAuth("", k.Benutzer, k.Passwort, k.Host)
 }
 
-// IstKonfiguriert meldet, ob mit dieser Konfiguration ein Versand überhaupt versucht
+// istKonfiguriert meldet, ob mit dieser Konfiguration ein Versand überhaupt versucht
 // werden kann. Eine nicht ausgefüllte Beispielkonfiguration führt zu „übersprungen" und nicht
 // zu einem Versuch, einen Host namens "Ihr SMTP-Host" zu erreichen.
-func (k SMTPKonfig) IstKonfiguriert() bool {
+func (k SMTPKonfig) istKonfiguriert() bool {
 	if strings.TrimSpace(k.Host) == "" || strings.TrimSpace(k.Port) == "" {
 		return false
 	}
@@ -87,11 +87,11 @@ func KonfigAusUmgebung() SMTPKonfig {
 	return k
 }
 
-// LadeSMTPKonfig liefert die Konfiguration, mit der tatsächlich versendet wird.
+// ladeSMTPKonfig liefert die Konfiguration, mit der tatsächlich versendet wird.
 // Jeder Versand benutzt diese Funktion; nur so sagt der Knopf für den Testversand etwas über den
 // Mahnlauf. Die gespeicherte Zeile liest sie über dieselbe Funktion
 // wie die Maske der Mail-Einstellungen (repository.MailEinstellungsAbfragen.Lade).
-func LadeSMTPKonfig(ctx context.Context, pool db.Pool) (SMTPKonfig, error) {
+func ladeSMTPKonfig(ctx context.Context, pool db.Pool) (SMTPKonfig, error) {
 	gespeichert, err := repository.NewMailEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		// Keine Zeile (frische Datenbank, noch nicht gelaufene Migration): Die Umgebung

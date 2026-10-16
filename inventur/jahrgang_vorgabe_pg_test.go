@@ -92,12 +92,12 @@ func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 			t.Errorf("%s: %d von %d Titeln gelesen", weg, gelesen, len(soll))
 		}
 	}
-	// Cover-Upload und Cover-Abgleich lesen den Titel über LadeTitel: An der leeren Spalte
+	// Cover-Upload und Cover-Abgleich lesen den Titel über ladeTitel: An der leeren Spalte
 	// darf das Lesen nicht scheitern.
-	if buch, err := abfragen.LadeTitel(ctx, idOhne); err != nil {
-		t.Errorf("LadeTitel an einem Titel ohne Jahrgang: %v", err)
+	if buch, err := abfragen.ladeTitel(ctx, idOhne); err != nil {
+		t.Errorf("ladeTitel an einem Titel ohne Jahrgang: %v", err)
 	} else if buch.JahrgangVon != 0 || buch.JahrgangBis != 0 {
-		t.Errorf("LadeTitel: gelesen %d bis %d, erwartet 0 bis 0", buch.JahrgangVon, buch.JahrgangBis)
+		t.Errorf("ladeTitel: gelesen %d bis %d, erwartet 0 bis 0", buch.JahrgangVon, buch.JahrgangBis)
 	}
 
 	// Die Datenbank hält die Regel auch für Schreiber, die nicht durch pruefeJahrgangsSpanne
@@ -237,12 +237,12 @@ func TestListenimport_JahrgangBleibtUnbekanntUndWirdNachgetragen(t *testing.T) {
 			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"SchreibeTitel (Einzel-Rückfall)": func(b Titel) error {
-			_, err := abfragen.SchreibeTitel(ctx, b)
+		"schreibeTitel (Einzel-Rückfall)": func(b Titel) error {
+			_, err := abfragen.schreibeTitel(ctx, b)
 			return err
 		},
 	}
-	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-200000-4", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-200000-5"}
+	isbns := map[string]string{"SchreibeTitelStapel": "978-9-99-200000-4", "schreibeTitel (Einzel-Rückfall)": "978-9-99-200000-5"}
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]
@@ -312,8 +312,8 @@ func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
 			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
 			return err
 		},
-		"SchreibeTitel (Einzel-Rückfall)": func(b Titel) error {
-			_, err := abfragen.SchreibeTitel(ctx, b)
+		"schreibeTitel (Einzel-Rückfall)": func(b Titel) error {
+			_, err := abfragen.schreibeTitel(ctx, b)
 			return err
 		},
 	}
@@ -321,8 +321,8 @@ func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
 		klasse, soll string
 		isbns        map[string]string
 	}{
-		{"7", "7 bis 7", map[string]string{"SchreibeTitelStapel": "978-9-99-200001-1", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-200001-2"}},
-		{"3", "leer bis leer", map[string]string{"SchreibeTitelStapel": "978-9-99-200001-3", "SchreibeTitel (Einzel-Rückfall)": "978-9-99-200001-4"}},
+		{"7", "7 bis 7", map[string]string{"SchreibeTitelStapel": "978-9-99-200001-1", "schreibeTitel (Einzel-Rückfall)": "978-9-99-200001-2"}},
+		{"3", "leer bis leer", map[string]string{"SchreibeTitelStapel": "978-9-99-200001-3", "schreibeTitel (Einzel-Rückfall)": "978-9-99-200001-4"}},
 	}
 
 	for _, fall := range faelle {

@@ -9,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LadeTitel liest einen Titel samt Metadaten. Fehlt er, kommt repository.ErrTitelNichtGefunden zurück, ein
+// ladeTitel liest einen Titel samt Metadaten. Fehlt er, kommt repository.ErrTitelNichtGefunden zurück, ein
 // Bedienfehler, kein Fehler des Servers. Jeder andere Fehler (Verbindung, Scan einer Spalte mit
 // NULL in einen String) geht weiter: Hieße auch er „buch nicht gefunden", wäre ein
 // Auseinanderlaufen des Schemas als 404 verkleidet.
-func (a *TitelAbfragen) LadeTitel(ctx context.Context, id string) (*Titel, error) {
+func (a *TitelAbfragen) ladeTitel(ctx context.Context, id string) (*Titel, error) {
 	abfrage := `
 		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(track, '') AS track,
 		       (SELECT COUNT(*)::int FROM buecher_exemplare e WHERE e.titel_id = buecher_titel.id AND e.ist_ausgesondert = false) AS stock,
@@ -49,9 +49,9 @@ func (a *TitelAbfragen) LadeTitel(ctx context.Context, id string) (*Titel, error
 	return &eintrag, nil
 }
 
-// AendereTitelMetadaten schreibt die bibliografischen Angaben eines Titels — der Weg, über
+// aendereTitelMetadaten schreibt die bibliografischen Angaben eines Titels — der Weg, über
 // den ein DNB-Treffer im Katalog landet.
-func (a *TitelAbfragen) AendereTitelMetadaten(ctx context.Context, id string, titelText, autor, coverURL string) error {
+func (a *TitelAbfragen) aendereTitelMetadaten(ctx context.Context, id string, titelText, autor, coverURL string) error {
 	abfrage := `
 		UPDATE buecher_titel
 		SET titel = COALESCE(NULLIF($1, ''), titel),

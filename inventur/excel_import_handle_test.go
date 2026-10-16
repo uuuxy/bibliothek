@@ -211,7 +211,7 @@ func TestExcelImport(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
-		// Rückfall je Zeile: SchreibeTitel schlägt kein Fach nach (das Fach ist leer statt „Unbekannt")
+		// Rückfall je Zeile: schreibeTitel schlägt kein Fach nach (das Fach ist leer statt „Unbekannt")
 		// und öffnet direkt seine eigene Transaktion.
 		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WillReturnError(errTest)

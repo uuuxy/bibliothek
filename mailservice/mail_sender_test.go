@@ -76,7 +76,7 @@ func TestSende_UngueltigerEmpfaenger(t *testing.T) {
 
 // Ein unlesbares SMTP-Passwort muss auffallen.
 //
-// LadeSMTPKonfig erzeugt diesen Fehler ausdrücklich, damit er nicht still bleibt („Ein
+// ladeSMTPKonfig erzeugt diesen Fehler ausdrücklich, damit er nicht still bleibt („Ein
 // unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe ist"). Meldete
 // IstKonfiguriert nur „nicht konfiguriert", suchte der Admin nach einem Wechsel des Schlüssels
 // in den Einstellungen, wo Host, Port und Benutzer stimmen.

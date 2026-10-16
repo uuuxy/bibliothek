@@ -36,13 +36,13 @@ const lmfSortierhinweis = "Sortiert nach Zeitpunkt/Termin"
 
 var wochentage = [...]string{"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"}
 
-// Wochentag liefert den deutschen Namen; PDF und Tests nehmen dieselbe Tabelle.
-func Wochentag(t time.Time) string { return wochentage[t.Weekday()] }
+// wochentag liefert den deutschen Namen; PDF und Tests nehmen dieselbe Tabelle.
+func wochentag(t time.Time) string { return wochentage[t.Weekday()] }
 
-// WochentagKurz ist die zweibuchstabige Abkürzung („Do."). Sie steht nur im zweispaltigen
+// wochentagKurz ist die zweibuchstabige Abkürzung („Do."). Sie steht nur im zweispaltigen
 // Satz: dort ist für den ausgeschriebenen Tag kein Platz.
-func WochentagKurz(t time.Time) string {
-	name := Wochentag(t)
+func wochentagKurz(t time.Time) string {
+	name := wochentag(t)
 	return string([]rune(name)[:2]) + "."
 }
 

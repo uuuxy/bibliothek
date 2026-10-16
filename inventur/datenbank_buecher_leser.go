@@ -202,8 +202,9 @@ func (a *TitelAbfragen) LadeTitelListe(ctx context.Context, fach string, suchanf
 	return eintraege, nil
 }
 
-// LadeTitelMitFremdemCover lists books having external cover URLs.
-func (a *TitelAbfragen) LadeTitelMitFremdemCover(ctx context.Context, grenze int) ([]Titel, error) {
+// ladeTitelMitFremdemCover liefert bis zu grenze Titel, deren Cover noch auf einer fremden
+// Adresse (http…) liegt.
+func (a *TitelAbfragen) ladeTitelMitFremdemCover(ctx context.Context, grenze int) ([]Titel, error) {
 	if grenze <= 0 {
 		grenze = 100
 	}
@@ -236,10 +237,10 @@ func (a *TitelAbfragen) LadeTitelMitFremdemCover(ctx context.Context, grenze int
 	return eintraege, nil
 }
 
-// LadeSchlagworteDesTitels lädt die Schlagworte eines Titels für den
+// ladeSchlagworteDesTitels lädt die Schlagworte eines Titels für den
 // Einzel-Read. Nicht in buchListenSelect: Die Katalogliste bleibt schlank, und ein Feld,
 // das dort als nil steht, sagt „nicht geladen" — Speichern lässt es dann unangetastet.
-func (a *TitelAbfragen) LadeSchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
+func (a *TitelAbfragen) ladeSchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
 	return repository.LadeSchlagworteDesTitels(ctx, a.pool, id)
 }
 

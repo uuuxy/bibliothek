@@ -45,7 +45,7 @@ var (
 	ErrDateiLeer         = errors.New("die Datei ist leer")
 	ErrKeinBlatt         = errors.New("die Excel-Datei enthält kein Blatt mit Daten")
 	ErrExcelUnlesbar     = errors.New("die Excel-Datei ist nicht lesbar")
-	ErrZeileUnlesbar     = errors.New("die Zeile ist nicht lesbar")
+	errZeileUnlesbar     = errors.New("die Zeile ist nicht lesbar")
 	ErrPflichtfeldLeer   = errors.New("leeres Pflichtfeld (Vorname, Nachname oder Klasse)")
 	ErrGeburtsdatumFehlt = errors.New("geburtsdatum fehlt oder ist unlesbar")
 )
@@ -116,7 +116,7 @@ func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
 			break
 		}
 		if err != nil {
-			return nil, &ZeileFehler{Zeile: gelesen, Art: ErrZeileUnlesbar, Ursache: err}
+			return nil, &ZeileFehler{Zeile: gelesen, Art: errZeileUnlesbar, Ursache: err}
 		}
 		// FieldPos liefert die Dateizeile — der Reader überspringt Leerzeilen still,
 		// ein eigener Zähler läge danach daneben.

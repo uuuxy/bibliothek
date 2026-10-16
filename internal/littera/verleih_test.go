@@ -26,7 +26,7 @@ func TestLeseAusleihen(t *testing.T) {
 	}
 
 	offen := ausleihen[0]
-	if !offen.IstOffen() {
+	if !offen.istOffen() {
 		t.Error("erste Zeile ist nicht zurueckgegeben, muss offen sein")
 	}
 	// der Fallstrick: Rueckgabedatum ist die Frist, nicht die Rueckgabe.
@@ -41,7 +41,7 @@ func TestLeseAusleihen(t *testing.T) {
 	}
 
 	zurueck := ausleihen[1]
-	if zurueck.IstOffen() {
+	if zurueck.istOffen() {
 		t.Error("zweite Zeile ist zurueckgegeben")
 	}
 	if zurueck.RueckgabeAm.Format("2006-01-02") != "2009-09-10" {
@@ -82,7 +82,7 @@ func TestZurueckgegebenIstEigenesKennzeichen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
-	if ausleihen[0].IstOffen() {
+	if ausleihen[0].istOffen() {
 		t.Error("Zurueckgegeben=1 ohne Rueckgabedatum muss trotzdem als zurueckgegeben gelten")
 	}
 	if len(NurOffene(ausleihen)) != 0 {
@@ -130,10 +130,10 @@ func TestWahrheitswert(t *testing.T) {
 }
 
 func TestAusleiheIstOffen_GegenteilVonZurueckgegeben(t *testing.T) {
-	if (Ausleihe{Zurueckgegeben: true}).IstOffen() {
+	if (Ausleihe{Zurueckgegeben: true}).istOffen() {
 		t.Error("zurueckgegeben darf nicht offen sein")
 	}
-	if !(Ausleihe{Zurueckgegeben: false}).IstOffen() {
+	if !(Ausleihe{Zurueckgegeben: false}).istOffen() {
 		t.Error("nicht zurueckgegeben muss offen sein")
 	}
 	_ = time.Time{}

@@ -192,7 +192,7 @@ func (d *omniboxDienst) verarbeite(ctx context.Context, eingabe OmniboxEingabe) 
 	case strings.HasPrefix(eingabe.Text, "B-"), strings.HasPrefix(eingabe.Text, "LMF-"):
 		return erg, d.verarbeiteExemplar(ctx, eingabe, erg)
 	case strings.HasPrefix(eingabe.Text, "G-"):
-		geraeteErg, err := d.geraete.VerarbeiteScan(ctx, eingabe.Text, eingabe.AktiverLeserID, eingabe.ChecklisteBestaetigt, eingabe.SperreUebergehen, eingabe.BearbeiterID)
+		geraeteErg, err := d.geraete.verarbeiteScan(ctx, eingabe.Text, eingabe.AktiverLeserID, eingabe.ChecklisteBestaetigt, eingabe.SperreUebergehen, eingabe.BearbeiterID)
 		if err == nil {
 			d.uebernimmGeraeteErgebnis(geraeteErg, erg)
 		}
@@ -250,7 +250,7 @@ func (d *omniboxDienst) verarbeiteOhneVorsilbe(ctx context.Context, eingabe Omni
 }
 
 // uebernimmGeraeteErgebnis überträgt das Ergebnis des Geräts in die Antwort der Omnibox.
-func (d *omniboxDienst) uebernimmGeraeteErgebnis(geraeteErg *GeraeteErgebnis, erg *OmniboxErgebnis) {
+func (d *omniboxDienst) uebernimmGeraeteErgebnis(geraeteErg *geraeteErgebnis, erg *OmniboxErgebnis) {
 	if geraeteErg == nil {
 		return
 	}

@@ -17,15 +17,15 @@ import (
 func TestPruefeTitelEingabe(t *testing.T) {
 	faelle := []struct {
 		name       string
-		eingabe    TitelEingabe
+		eingabe    titelEingabe
 		wantResult bool
 		wantError  string
 	}{
-		{name: "Titel und ISBN", eingabe: TitelEingabe{Titel: "T", ISBN: "978-3-16-148410-0"}, wantResult: true},
-		{name: "ohne ISBN", eingabe: TitelEingabe{Titel: "T"}, wantResult: true},
-		{name: "ohne Titel", eingabe: TitelEingabe{ISBN: "978-3-16-148410-0"}, wantError: "Der Titel darf nicht leer sein"},
-		{name: "Titel nur aus Leerzeichen", eingabe: TitelEingabe{Titel: "  "}, wantError: "Der Titel darf nicht leer sein"},
-		{name: "Nummer ohne ISBN-Form", eingabe: TitelEingabe{Titel: "T", ISBN: "123"}, wantError: "Die ISBN ist ungültig"},
+		{name: "Titel und ISBN", eingabe: titelEingabe{Titel: "T", ISBN: "978-3-16-148410-0"}, wantResult: true},
+		{name: "ohne ISBN", eingabe: titelEingabe{Titel: "T"}, wantResult: true},
+		{name: "ohne Titel", eingabe: titelEingabe{ISBN: "978-3-16-148410-0"}, wantError: "Der Titel darf nicht leer sein"},
+		{name: "Titel nur aus Leerzeichen", eingabe: titelEingabe{Titel: "  "}, wantError: "Der Titel darf nicht leer sein"},
+		{name: "Nummer ohne ISBN-Form", eingabe: titelEingabe{Titel: "T", ISBN: "123"}, wantError: "Die ISBN ist ungültig"},
 	}
 
 	for _, f := range faelle {

@@ -21,14 +21,14 @@ type TitelAbfragen struct {
 // Störung; die Tür darf daraus keinen 500 machen. Einen unbekannten Titel meldet
 // repository.ErrTitelNichtGefunden.
 var (
-	ErrISBNDoppelt = errors.New("ein buch mit dieser ISBN existiert bereits")
-	// ErrDubletteTitel: derselbe Titel desselben Autors steht ohne ISBN schon im
+	errISBNDoppelt = errors.New("ein buch mit dieser ISBN existiert bereits")
+	// errDubletteTitel: derselbe Titel desselben Autors steht ohne ISBN schon im
 	// Katalog — die Dublettenkontrolle ohne Nummer.
-	ErrDubletteTitel = errors.New("dieser titel steht ohne ISBN bereits im katalog")
-	// ErrISBNFormat: Die ISBN wurde geändert, und der neue Wert hat nicht die Form einer ISBN.
-	ErrISBNFormat = errors.New("ungültiges ISBN-Format")
-	// ErrAutorGeleert: Eine Änderung nennt keinen Autor, der Titel trägt aber einen.
-	ErrAutorGeleert = errors.New("der autor des titels darf nicht geleert werden")
+	errDubletteTitel = errors.New("dieser titel steht ohne ISBN bereits im katalog")
+	// errISBNFormat: Die ISBN wurde geändert, und der neue Wert hat nicht die Form einer ISBN.
+	errISBNFormat = errors.New("ungültiges ISBN-Format")
+	// errAutorGeleert: Eine Änderung nennt keinen Autor, der Titel trägt aber einen.
+	errAutorGeleert = errors.New("der autor des titels darf nicht geleert werden")
 )
 
 // NewTitelAbfragen bindet das Inventur-Repository an einen Verbindungspool.
@@ -43,7 +43,7 @@ func uebersetzeDatenbankfehler(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		if pgErr.Code == "23505" && pgErr.ConstraintName == "buecher_titel_isbn_key" {
-			return ErrISBNDoppelt
+			return errISBNDoppelt
 		}
 	}
 	return err

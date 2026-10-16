@@ -201,7 +201,7 @@ Gewichts:
 - [ ] Schnittstellen beim Nutzer statt beim Hersteller: `New…` in `repository/` und
   `internal/service` liefert den Typ. Groß; vorher ein Plan in Stufen zu deiner Freigabe. (5.71)
 - [ ] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
-- [ ] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
+- [x] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
   (5.71)
 - [ ] Testmeldungen in Googles Form und lokale Namen in Tests deutsch, je mit Ratsche. (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
@@ -527,17 +527,6 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   `internal/service/cover.go` und `mailservice/mail_sender.go` je einmal. Weg: den Kontext der
   Anfrage bis zur Abfrage reichen; die Läufe bekommen den Kontext des Servers. Vorher je Lauf
   klären, was er bei einem Abbruch hinterlässt (eine halb geschriebene Sicherung).
-- **Öffentliche Namen ohne fremden Nutzer.** [STIL.md](STIL.md) 6, nach Best Practices: „Every
-  exported type increases the cognitive load for the reader." Gemessen mit `go/types`: Von 2.017
-  öffentlichen Namen nennt 68 kein anderes Paket, auch kein Test eines anderen Pakets
-  (ausgenommen Methoden einer Schnittstelle wie `Error`, `Unwrap` und `Meldung`, die Türen, ganze
-  Aufzählungen und Typen in der Signatur eines genutzten Namens): 29 in `inventur` (etwa
-  `TitelAbfragen.LadeKlassensatzGruppen`, das einen klein geschriebenen Typ liefert, und fünf
-  `Err…`), 15 in `jobs` (die Läufe `Zeitplan.Fuehre…Aus`, `BackupLauf`), je 9 in `mailservice`
-  und `pdf`. Keine Prüfung hält die Regel;
-  `stil_ratsche_test.go` sagt das in seinem Kopf. Weg: die Messung als Ratsche einchecken
-  (Bestand je Paket, der nur sinkt), dann klein schreiben. Eine Prüfung, die einen Namen als Text
-  führt, zieht mit (`api/mail_routen_frist_test.go` nennt `VersendeUeberSMTP`).
 - **Tests.** Decisions, „Identify the function": „your failure message should be
   `YourFunc(%v) = %v, want %v` instead of just `got %v, want %v`", dazu „Got before want" und „Test
   helpers" (`t.Helper`). [STIL.md](STIL.md) 10 hat die Regel, der Bestand nicht: Von 10.284

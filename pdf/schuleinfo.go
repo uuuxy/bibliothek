@@ -20,8 +20,8 @@ func (s SchuleInfo) Absenderzeile() string {
 	return s.Name + " · " + s.Strasse + " · " + s.PLZ + " " + s.Ort
 }
 
-// OrtDatum liefert "Ort, den TT.MM.JJJJ" für die Datumszeile; ohne Ort nur das Datum.
-func (s SchuleInfo) OrtDatum(datum string) string {
+// ortDatum liefert "Ort, den TT.MM.JJJJ" für die Datumszeile; ohne Ort nur das Datum.
+func (s SchuleInfo) ortDatum(datum string) string {
 	if s.Ort == "" {
 		return datum
 	}

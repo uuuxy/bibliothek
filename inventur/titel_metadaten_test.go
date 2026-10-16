@@ -39,7 +39,7 @@ func TestLadeTitel(t *testing.T) {
 				map[string]any{"key": "value"}, "4. Aufl. 2023",
 			))
 
-		eintrag, err := abfragen.LadeTitel(ctx, "valid-id")
+		eintrag, err := abfragen.ladeTitel(ctx, "valid-id")
 		if err != nil {
 			t.Fatalf("abfragen.LadeTitel: %v", err)
 		}
@@ -69,7 +69,7 @@ func TestLadeTitel(t *testing.T) {
 			WithArgs("invalid-id").
 			WillReturnError(pgx.ErrNoRows)
 
-		eintrag, err := abfragen.LadeTitel(ctx, "invalid-id")
+		eintrag, err := abfragen.ladeTitel(ctx, "invalid-id")
 		if !errors.Is(err, repository.ErrTitelNichtGefunden) {
 			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet %v", err, repository.ErrTitelNichtGefunden)
 		}
@@ -93,7 +93,7 @@ func TestLadeTitel(t *testing.T) {
 			WithArgs("error-id").
 			WillReturnError(attrappenFehler)
 
-		eintrag, err := abfragen.LadeTitel(ctx, "error-id")
+		eintrag, err := abfragen.ladeTitel(ctx, "error-id")
 		if !errors.Is(err, attrappenFehler) {
 			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet %v", err, attrappenFehler)
 		}
@@ -122,7 +122,7 @@ func TestAendereTitelMetadaten(t *testing.T) {
 			WithArgs("New Title", "New Author", "http://new-cover", "valid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err = abfragen.AendereTitelMetadaten(ctx, "valid-id", "New Title", "New Author", "http://new-cover")
+		err = abfragen.aendereTitelMetadaten(ctx, "valid-id", "New Title", "New Author", "http://new-cover")
 		if err != nil {
 			t.Fatalf("abfragen.AendereTitelMetadaten: %v", err)
 		}
@@ -140,7 +140,7 @@ func TestAendereTitelMetadaten(t *testing.T) {
 			WithArgs("New Title", "New Author", "http://new-cover", "invalid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-		err = abfragen.AendereTitelMetadaten(ctx, "invalid-id", "New Title", "New Author", "http://new-cover")
+		err = abfragen.aendereTitelMetadaten(ctx, "invalid-id", "New Title", "New Author", "http://new-cover")
 		if !errors.Is(err, repository.ErrTitelNichtGefunden) {
 			t.Errorf("abfragen.AendereTitelMetadaten: Fehler %v, erwartet %v", err, repository.ErrTitelNichtGefunden)
 		}
@@ -159,7 +159,7 @@ func TestAendereTitelMetadaten(t *testing.T) {
 			WithArgs("New Title", "New Author", "http://new-cover", "error-id").
 			WillReturnError(attrappenFehler)
 
-		err = abfragen.AendereTitelMetadaten(ctx, "error-id", "New Title", "New Author", "http://new-cover")
+		err = abfragen.aendereTitelMetadaten(ctx, "error-id", "New Title", "New Author", "http://new-cover")
 		if err == nil {
 			t.Error("abfragen.AendereTitelMetadaten: kein Fehler, erwartet einen")
 		}

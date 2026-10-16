@@ -61,19 +61,19 @@ const (
 // dem Start und dem Server, damit nie zwei Läufe zugleich laufen.
 func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// Täglich um Mitternacht: Anonymisierung und Löschung nach DSGVO.
-	if _, err := z.cron.AddFunc("0 0 * * *", z.FuehreNaechtlicheDSGVOAus); err != nil {
+	if _, err := z.cron.AddFunc("0 0 * * *", z.fuehreNaechtlicheDSGVOAus); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return
 	}
 
 	// Täglich um 03:00 UTC die Aufbewahrung des Protokolls, nach der Sicherung (02:30), damit
 	// die Sicherung des Tages die Einträge noch vor ihrer Löschung enthält.
-	if _, err := z.cron.AddFunc(zeitProtokollAufbewahrung, z.FuehreProtokollAufbewahrungAus); err != nil {
+	if _, err := z.cron.AddFunc(zeitProtokollAufbewahrung, z.fuehreProtokollAufbewahrungAus); err != nil {
 		log.Printf("Scheduler: Failed to register audit retention job: %v", err)
 	}
 
 	// Täglich um 02:30 UTC die verschlüsselte Sicherung der Datenbank, in einer ruhigen Zeit.
-	backup := &BackupLauf{}
+	backup := &backupLauf{}
 
 	// Beim Start sagen, nicht erst um 02:30 in einer Logzeile, die niemand liest.
 	//
@@ -89,12 +89,12 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	} else if IstSchluesselSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")) {
 		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist kürzer als %d Zeichen. Auch scrypt "+
 			"rettet eine kurze Passphrase nicht — sie ist an einer entwendeten "+
-			"Backup-Datei offline durchprobierbar.", MinBackupSchluesselLaenge)
+			"Backup-Datei offline durchprobierbar.", minBackupSchluesselLaenge)
 	}
 
 	if _, err := z.cron.AddFunc(zeitSicherung, func() {
 		log.Println("Scheduler Backup: starting scheduled daily database backup...")
-		backup.FuehreAus()
+		backup.fuehreAus()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}
@@ -102,7 +102,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// Stündlich die abgelaufenen Idempotenz-Schlüssel löschen, damit die Tabelle nicht ohne
 	// Grenze wächst. 24 Stunden reichen weit über die Wiederholung eines Scans hinaus.
 	if _, err := z.cron.AddFunc("17 * * * *", func() {
-		z.FuehreIdempotenzBereinigungAus()
+		z.fuehreIdempotenzBereinigungAus()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
 	}
@@ -120,7 +120,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// abholt, verliert den Platz) und das Exemplar dem nächsten Wartenden zuteilen. Ohne den
 	// Lauf bliebe eine nicht abgeholte Vormerkung für immer 'abholbereit', und die Wartenden
 	// dahinter kämen nie an die Reihe.
-	if _, err := z.cron.AddFunc("23 * * * *", z.FuehreVormerkungsVerfallAus); err != nil {
+	if _, err := z.cron.AddFunc("23 * * * *", z.fuehreVormerkungsVerfallAus); err != nil {
 		log.Printf("Scheduler: Failed to register vormerkung expiry job: %v", err)
 	}
 
@@ -128,7 +128,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// Aufbewahrung des Protokolls (03:00), damit sie die jüngste Datei prüft und keinem Lauf in
 	// die Quere kommt. Sie belegt, dass die echten Dateien auf der Platte sich wiederherstellen
 	// lassen; die Übung in der CI belegt nur das Verfahren (jobs/restore_probe.go).
-	if _, err := z.cron.AddFunc(zeitRestoreProbe, z.FuehreRestoreProbeAus); err != nil {
+	if _, err := z.cron.AddFunc(zeitRestoreProbe, z.fuehreRestoreProbeAus); err != nil {
 		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
 	}
 	// Nach einem gescheiterten Lauf probt der Start erneut, sonst stünde die
@@ -146,10 +146,10 @@ func (z *Zeitplan) Stoppe() {
 	z.cron.Stop()
 }
 
-// FuehreIdempotenzBereinigungAus löscht die Idempotenz-Schlüssel, die älter als 24 Stunden
+// fuehreIdempotenzBereinigungAus löscht die Idempotenz-Schlüssel, die älter als 24 Stunden
 // sind, damit die Tabelle nicht ohne Grenze wächst. Ein Scanner wiederholt eine Anfrage nach
 // Sekunden oder Minuten; 24 Stunden sind großzügig.
-func (z *Zeitplan) FuehreIdempotenzBereinigungAus() {
+func (z *Zeitplan) fuehreIdempotenzBereinigungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -163,9 +163,9 @@ func (z *Zeitplan) FuehreIdempotenzBereinigungAus() {
 	}
 }
 
-// FuehreVormerkungsVerfallAus lässt abgelaufene Vormerkungen im Zustand „abholbereit"
+// fuehreVormerkungsVerfallAus lässt abgelaufene Vormerkungen im Zustand „abholbereit"
 // verfallen und teilt das Exemplar dem nächsten Wartenden zu (LasseAbgelaufeneVerfallen).
-func (z *Zeitplan) FuehreVormerkungsVerfallAus() {
+func (z *Zeitplan) fuehreVormerkungsVerfallAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
@@ -179,30 +179,30 @@ func (z *Zeitplan) FuehreVormerkungsVerfallAus() {
 	}
 }
 
-// FuehreNaechtlicheDSGVOAus führt die Läufe der Nacht nach DSGVO nacheinander aus. Sie ist
+// fuehreNaechtlicheDSGVOAus führt die Läufe der Nacht nach DSGVO nacheinander aus. Sie ist
 // eine Methode, damit ein Test dieselbe Folge in derselben Reihenfolge fahren kann wie der
 // Cron.
-func (z *Zeitplan) FuehreNaechtlicheDSGVOAus() {
+func (z *Zeitplan) fuehreNaechtlicheDSGVOAus() {
 	z.FuehreBearbeiterAnonymisierungAus()
 	// Erst anonymisieren, dann löschen: Die Löschung trifft nur anonymisierte Zeilen
 	// (repository.praedikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in dieselbe
 	// Nacht, die Karenz wird am Stichtag nicht abgeschnitten, und der Wächter der
 	// Betriebsbereitschaft sieht nie eine anonymisierte Hülle einen Tag lang als Rückstand.
-	z.FuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus()
 	z.FuehreAbgaengerLoeschungAus()
 	// Gelöschte Kollegen nach 180 Tagen im Papierkorb endgültig löschen
 	// (cron_dsgvo_papierkorb.go).
-	z.FuehrePapierkorbLoeschungAus()
+	z.fuehrePapierkorbLoeschungAus()
 	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene Ausleihen nach
 	// der Frist vom Leser. Die Fristen stehen in den Einstellungen.
-	z.FuehreLesehistorieBefristungAus()
+	z.fuehreLesehistorieBefristungAus()
 	// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen aus dem
 	// Portal des Kollegiums tragen Freitext, Klasse und den Namen der Lehrkraft.
-	z.FuehreAnliegenBefristungAus()
+	z.fuehreAnliegenBefristungAus()
 	// Erledigte Reservierungen von Klassensätzen befristen (cron_dsgvo_anliegen.go), mit
 	// derselben Frist wie die Anliegen.
-	z.FuehreKlassensatzBefristungAus()
+	z.fuehreKlassensatzBefristungAus()
 	// Quittierte Nachbuch-Meldungen befristen (cron_dsgvo_nachbuch.go): Frist der
 	// Lesehistorie, höchstens 30 Tage, denn sie nennen Ausleiher und Vorbesitzer mit Namen.
-	z.FuehreNachbuchMeldungenBefristungAus()
+	z.fuehreNachbuchMeldungenBefristungAus()
 }

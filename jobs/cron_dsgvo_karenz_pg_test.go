@@ -61,7 +61,7 @@ func TestSchuelerAnonymisierung_KarenzUhrUndEinstellung(t *testing.T) {
 	a := lege("KZ-A", "100 days", "1 day")
 	b := lege("KZ-B", "0 days", "400 days")
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.FuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus()
 	if !anonymisiert(a) {
 		t.Error("A (abgaenger_seit vor 100 Tagen) muss bei Karenz 90 anonymisiert sein — rechnet der Job mit aktualisiert_am?")
 	}
@@ -72,7 +72,7 @@ func TestSchuelerAnonymisierung_KarenzUhrUndEinstellung(t *testing.T) {
 	// Einstellung: dieselbe Zeile wie A überlebt eine Karenz von 200 Tagen.
 	setzeKarenz("200")
 	c := lege("KZ-C", "100 days", "1 day")
-	z.FuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus()
 	if anonymisiert(c) {
 		t.Error("C darf bei Karenz 200 nicht anonymisiert sein — liest der Job die Einstellung?")
 	}
@@ -119,7 +119,7 @@ func TestSchuelerAnonymisierung_OhneEinstellungenWirdNichtsAnonymisiert(t *testi
 		t.Fatalf("Tabelle umbenennen: %v", err)
 	}
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.FuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus()
 	if _, err := pool.Exec(ctx, `ALTER TABLE system_einstellungen_weg RENAME TO system_einstellungen`); err != nil {
 		t.Fatalf("Tabelle zurückbenennen: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestSchuelerAnonymisierung_OhneEinstellungenWirdNichtsAnonymisiert(t *testi
 		repository.AbgaengerKarenzSchluessel); err != nil {
 		t.Fatal(err)
 	}
-	z.FuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus()
 	if err := pool.QueryRow(ctx, `SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1`, id).Scan(&anonym); err != nil {
 		t.Fatal(err)
 	}

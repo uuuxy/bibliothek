@@ -25,13 +25,13 @@ import (
 // Rechnung des Kreises beschlossen ist. Ein Brief, der sich einen Zahlungsweg ausdenkt, schickt
 // Geld an die falsche Stelle.
 const (
-	// ZahlungswegLandSatz nennt die Zahlstelle; darunter stehen die Zeilen der Bankverbindung.
-	ZahlungswegLandSatz = "Bitte überweisen Sie den Betrag auf das Konto %s:"
-	// ZahlungswegTraegerSatz bleibt offen, siehe oben.
-	ZahlungswegTraegerSatz = "Den Zahlungsweg für Bücher der Schülerbücherei nennt Ihnen die Schule."
-	// ZahlungswegTraegerFehlt ist die beschlossene Zeile, solange die Bankverbindung des
+	// zahlungswegLandSatz nennt die Zahlstelle; darunter stehen die Zeilen der Bankverbindung.
+	zahlungswegLandSatz = "Bitte überweisen Sie den Betrag auf das Konto %s:"
+	// zahlungswegTraegerSatz bleibt offen, siehe oben.
+	zahlungswegTraegerSatz = "Den Zahlungsweg für Bücher der Schülerbücherei nennt Ihnen die Schule."
+	// zahlungswegTraegerFehlt ist die beschlossene Zeile, solange die Bankverbindung des
 	// Schulträgers nicht hinterlegt ist.
-	ZahlungswegTraegerFehlt = "(Bankverbindung des Schulträgers nicht hinterlegt)"
+	zahlungswegTraegerFehlt = "(Bankverbindung des Schulträgers nicht hinterlegt)"
 )
 
 // Zahlungsangaben sind die Werte aus den Einstellungen, mit denen der Brief das Konto des
@@ -42,19 +42,19 @@ type Zahlungsangaben struct {
 	Bankverbindung string
 }
 
-// ZahlungswegBlock ist ein Zahlungsweg, wie er im Brief steht: eine Überschrift (nur wenn ein
+// zahlungswegBlock ist ein Zahlungsweg, wie er im Brief steht: eine Überschrift (nur wenn ein
 // Brief beide Töpfe trägt) und die Zeilen darunter.
-type ZahlungswegBlock struct {
+type zahlungswegBlock struct {
 	Ueberschrift string
 	Zeilen       []string
 }
 
-// ZahlungswegZeilen liefert die Zeilen für einen Topf.
-func ZahlungswegZeilen(land bool, a Zahlungsangaben) []string {
+// zahlungswegZeilen liefert die Zeilen für einen Topf.
+func zahlungswegZeilen(land bool, a Zahlungsangaben) []string {
 	if !land {
-		return []string{ZahlungswegTraegerSatz, ZahlungswegTraegerFehlt}
+		return []string{zahlungswegTraegerSatz, zahlungswegTraegerFehlt}
 	}
-	zeilen := []string{fmt.Sprintf(ZahlungswegLandSatz, a.Zahlstelle)}
+	zeilen := []string{fmt.Sprintf(zahlungswegLandSatz, a.Zahlstelle)}
 	for _, z := range strings.Split(a.Bankverbindung, "\n") {
 		if z = strings.TrimSpace(z); z != "" {
 			zeilen = append(zeilen, z)
@@ -63,7 +63,7 @@ func ZahlungswegZeilen(land bool, a Zahlungsangaben) []string {
 	return zeilen
 }
 
-// ZahlungswegBloecke teilt einen Brief auf, der Forderungen aus beiden Töpfen trägt.
+// zahlungswegBloecke teilt einen Brief auf, der Forderungen aus beiden Töpfen trägt.
 //
 // Das kommt vor: Die Rechnung listet alle offenen Forderungen eines Schülers, und darunter
 // können ein Lernmittel des Landes und ein Buch der Schülerbücherei stehen. Zwei Töpfe in einer
@@ -73,20 +73,20 @@ func ZahlungswegZeilen(land bool, a Zahlungsangaben) []string {
 //
 // Trägt der Brief nur einen Topf, bekommt der Block keine Überschrift: Dann geht es um den
 // ganzen Betrag, und eine Teilsumme danebenzuschreiben verwirrt nur.
-func ZahlungswegBloecke(betragLand, betragTraeger float64, a Zahlungsangaben) []ZahlungswegBlock {
+func zahlungswegBloecke(betragLand, betragTraeger float64, a Zahlungsangaben) []zahlungswegBlock {
 	beide := betragLand > 0 && betragTraeger > 0
-	var bloecke []ZahlungswegBlock
+	var bloecke []zahlungswegBlock
 	// Beträge von 0,00 EUR bekommen keinen Weg: Da ist nichts zu zahlen. Einen Brief ohne jede
 	// Position gibt es nicht, die Tür weist ihn vorher mit 404 ab.
 	if betragLand > 0 {
-		b := ZahlungswegBlock{Zeilen: ZahlungswegZeilen(true, a)}
+		b := zahlungswegBlock{Zeilen: zahlungswegZeilen(true, a)}
 		if beide {
 			b.Ueberschrift = fmt.Sprintf("Für die Lernmittel des Landes (%s EUR):", betrag.Text(betragLand))
 		}
 		bloecke = append(bloecke, b)
 	}
 	if betragTraeger > 0 {
-		b := ZahlungswegBlock{Zeilen: ZahlungswegZeilen(false, a)}
+		b := zahlungswegBlock{Zeilen: zahlungswegZeilen(false, a)}
 		if beide {
 			b.Ueberschrift = fmt.Sprintf("Für die Bücher der Schülerbücherei (%s EUR):", betrag.Text(betragTraeger))
 		}

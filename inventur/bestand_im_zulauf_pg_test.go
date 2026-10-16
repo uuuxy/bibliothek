@@ -91,20 +91,20 @@ func TestBestandNenntDenZulauf(t *testing.T) {
 		}
 	}
 
-	gruppen, err := abfragen.LadeKlassensatzGruppen(ctx, klasse, "")
+	gruppen, err := abfragen.ladeKlassensatzGruppen(ctx, klasse, "")
 	if err != nil {
-		t.Fatalf("LadeKlassensatzGruppen: %v", err)
+		t.Fatalf("ladeKlassensatzGruppen: %v", err)
 	}
 	gesehen := 0
 	for _, g := range gruppen {
 		for _, b := range g.Titel {
 			if _, ok := erwartet[b.ID]; ok {
 				gesehen++
-				pruefe("LadeKlassensatzGruppen/"+b.Titel, b.ID, b.Gesamt, b.Verfuegbar, b.ImZulauf)
+				pruefe("ladeKlassensatzGruppen/"+b.Titel, b.ID, b.Gesamt, b.Verfuegbar, b.ImZulauf)
 			}
 		}
 	}
 	if gesehen != 2 {
-		t.Errorf("LadeKlassensatzGruppen: %d Titel gesehen, erwartet 2", gesehen)
+		t.Errorf("ladeKlassensatzGruppen: %d Titel gesehen, erwartet 2", gesehen)
 	}
 }

@@ -116,7 +116,7 @@ func ErzeugeBestellanschreiben(b Bestellanschreiben, schule SchuleInfo) ([]byte,
 	p.Ln(15)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(datumsformat))), "", 0, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.ortDatum(schulzeit.Jetzt().Format(datumsformat))), "", 0, "R", false, 0, "")
 	p.Ln(10)
 
 	p.SetFont("Arial", "B", 9)

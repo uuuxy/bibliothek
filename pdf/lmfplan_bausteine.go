@@ -103,9 +103,9 @@ func (b lmfSatzbau) tabellenkopf(i int) lmfBaustein {
 // datenzeile ist ein Termin. Der Wochentag steht zweispaltig abgekürzt — „Donnerstag"
 // bräuchte dort mehr Platz als die halbe Tabelle.
 func (b lmfSatzbau) datenzeile(z LMFPlanZeile, i int) lmfBaustein {
-	tag := Wochentag(z.Datum)
+	tag := wochentag(z.Datum)
 	if b.modus.kurzerTag {
-		tag = WochentagKurz(z.Datum)
+		tag = wochentagKurz(z.Datum)
 	}
 	return b.fuenfSpalter(
 		[5]string{tag, z.Datum.Format(datumsformat), stundeText(z.Stunde), z.Klassen, z.Vermerk},

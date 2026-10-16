@@ -16,7 +16,7 @@ import (
 // pruefeTitelEingabe prüft Titel und ISBN. Pflicht ist der Titel;
 // die ISBN darf fehlen (Zeitschrift, Spiel, altes Buch) und wird nur geprüft, wenn sie dasteht.
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
-func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe TitelEingabe) bool {
+func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe titelEingabe) bool {
 	if strings.TrimSpace(eingabe.Titel) == "" {
 		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel darf nicht leer sein")
 		return false
@@ -49,15 +49,15 @@ func ListenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
 func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseWriter, buch *Titel, anderesMedium bool) bool {
 	anlegen := t.abfragen.LegeTitelAn
 	if anderesMedium {
-		anlegen = t.abfragen.LegeTitelAlsAnderesMediumAn
+		anlegen = t.abfragen.legeTitelAlsAnderesMediumAn
 	}
 	erstellteID, fehler := anlegen(ctx, *buch)
 	if fehler != nil {
-		if errors.Is(fehler, ErrISBNDoppelt) {
+		if errors.Is(fehler, errISBNDoppelt) {
 			schreibeDubletteISBN(antwort, fehler)
 			return false
 		}
-		var gleichnamig *DubletteTitel
+		var gleichnamig *dubletteTitel
 		if errors.As(fehler, &gleichnamig) {
 			schreibeDubletteTitel(antwort, gleichnamig)
 			return false
@@ -75,7 +75,7 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 // Exemplare" der Titelliste, das sagt die Meldung dazu. Der Rückfall ohne Titel ist die
 // Verletzung des UNIQUE-Index bei zwei gleichzeitigen Anfragen (handleDbError).
 func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
-	var dublette *DubletteISBN
+	var dublette *dubletteISBN
 	if !errors.As(fehler, &dublette) {
 		schreibeFehler(antwort, http.StatusConflict, "Einen Titel mit dieser ISBN gibt es bereits")
 		return
@@ -90,7 +90,7 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 // schreibeDubletteTitel antwortet mit 409 und nennt unter „vorhanden" den Titel, der ohne ISBN
 // gleich heißt. „gleicherTitel" sagt der Maske, dass sie fragen und nach der Antwort „anderes
 // Medium" noch einmal schicken darf; eine vergebene ISBN lässt sich so nicht übergehen.
-func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *DubletteTitel) {
+func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *dubletteTitel) {
 	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":         gleichnamig.Meldung(),
 		"vorhanden":     gleichnamig.alsAntwort(),
@@ -160,7 +160,7 @@ func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Reques
 // speichert, was die Anfrage nennt: Ein Titel ohne Autor bleibt ohne ihn, und die
 // Katalogdienste fragt das Anlegen nicht — was sie wissen, zeigt die Maske vor dem Speichern.
 func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request) {
-	var eingabe TitelEingabe
+	var eingabe titelEingabe
 
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
 		schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")

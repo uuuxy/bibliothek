@@ -30,8 +30,8 @@ import (
 // Bücherei nach der Rückgabe so wenig wissen wie bei einem Kind. Eine laufende Dauerleihe ist
 // nicht betroffen; die Frist beginnt mit der Rückgabe.
 
-// FuehreLesehistorieBefristungAus trennt abgeschlossene Ausleihen nach der Frist vom Leser.
-func (z *Zeitplan) FuehreLesehistorieBefristungAus() {
+// fuehreLesehistorieBefristungAus trennt abgeschlossene Ausleihen nach der Frist vom Leser.
+func (z *Zeitplan) fuehreLesehistorieBefristungAus() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 

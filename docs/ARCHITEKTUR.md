@@ -372,7 +372,7 @@ graph TB
 | **Cover-Dateien**                | `GET /uploads/...`                              | ausgehend       | **Bewusst ohne Anmeldung** (Katalog/Monitor brauchen Cover); in der Allowlist von `geschuetzte_routen_test.go` vermerkt          |
 | **Backend → PostgreSQL**         | Postgres-Wire über `pgx/v5`-Pool                | ausgehend       | Netz nur intern; Passwort aus `.env`; `pg_dump` erhält es über eine temporäre `.pgpass`, nicht über `PGPASSWORD`                    |
 | **Backend → IMAP**               | IMAP über implizites TLS, Port 993, min. TLS 1.2 | ausgehend       | Feste Cipher-Auswahl; `IMAP_HOST=mock` akzeptiert in Entwicklung/Test jedes Passwort und wird beim Start laut protokolliert         |
-| **Backend → SMTP**               | SMTP mit **erzwungenem** STARTTLS und Zertifikatsprüfung | ausgehend | Bietet der Server kein STARTTLS, bricht der Versand ab (`ErrSMTPKlartext`); nur ein ausdrückliches `SMTP_ALLOW_PLAINTEXT=true` erlaubt es. Kopfzeilen werden gegen CR/LF-Einschmuggelung geprüft |
+| **Backend → SMTP**               | SMTP mit **erzwungenem** STARTTLS und Zertifikatsprüfung | ausgehend | Bietet der Server kein STARTTLS, bricht der Versand ab (`errSMTPKlartext`); nur ein ausdrückliches `SMTP_ALLOW_PLAINTEXT=true` erlaubt es. Kopfzeilen werden gegen CR/LF-Einschmuggelung geprüft |
 | **Backend → Metadaten/Cover**    | HTTPS GET an eine **Host-Allowlist**             | ausgehend       | `pkg/coverquelle` baut die URL aus geprüften Teilen **neu** auf (Schema fest HTTPS, Host aus der Konstante); `pkg/safehttp` lehnt Verbindungen zu nicht-öffentlichen IPs ab (SSRF) |
 | **Backend → S3 (optional)**      | S3-API über `minio-go`                           | ausgehend       | Nur aktiv, wenn `S3_ENDPOINT/ACCESS_KEY/SECRET_KEY/BUCKET` vollständig gesetzt sind; sonst überspringt der Job den Offsite-Upload und sagt das |
 | **Backend → Sentry (optional)**  | HTTPS                                            | ausgehend       | Nur bei gesetztem `SENTRY_DSN`                                                                                                     |
@@ -917,17 +917,17 @@ Basis des Servers.
 
 | Job                              | Zeitplan (UTC)                  | Inhalt                                                                                                     |
 | -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `FuehreNaechtlicheDSGVOAus`      | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
-| `FuehreProtokollAufbewahrungAus` | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
-| `BackupLauf.FuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
+| `fuehreNaechtlicheDSGVOAus`      | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
+| `fuehreProtokollAufbewahrungAus` | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
+| `backupLauf.fuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
 | Idempotenz-TTL                   | `17 * * * *`                    | Schlüssel älter als 24 h entfernen (**stündlicher Takt**, 24 h ist die Aufbewahrung)                        |
 | Vormerkungs-Verfall              | `23 * * * *`                    | Abgelaufene „abholbereit"-Reservierungen abräumen                                                           |
 | Cover-Sync                       | `0 */6 * * *` + on demand       | Worker-Pool (8), Re-Entrancy-Guard, Retry für FAILED                                                        |
-| `FuehreRestoreProbeAus`          | `30 3 * * 0`                    | Jüngstes Backup in eine Wegwerf-Datenbank einspielen; Ergebnis wird Befund der Selbstprüfung                |
+| `fuehreRestoreProbeAus`          | `30 3 * * 0`                    | Jüngstes Backup in eine Wegwerf-Datenbank einspielen; Ergebnis wird Befund der Selbstprüfung                |
 
 Daneben laufen **zwei** Starter im Prozess selbst: `starteDSGVOLauf` (beim Start und alle
 24 h, nur `FuehreBearbeiterAnonymisierungAus` + `FuehreAbgaengerLoeschungAus` — **nicht**
-`FuehreSchuelerAnonymisierungAus`) und `starteBereitschaftsWaechter` (3 Minuten nach dem Start,
+`fuehreSchuelerAnonymisierungAus`) und `starteBereitschaftsWaechter` (3 Minuten nach dem Start,
 danach alle 24 h). Der erste Lauf nach 3 Minuten ist Absicht: Ein Deploy mit kaputter
 Umgebung meldet sich noch am selben Vormittag, nicht erst am nächsten Tag.
 
@@ -1280,9 +1280,9 @@ in der Zukunft liegt, beginnt die Mahnfolge neu. Mahnlisten gehen an die Klassen
 ### 6.8 Der Nachtlauf: DSGVO, Backup, Restore-Probe
 
 ```
-00:00 UTC  FuehreNaechtlicheDSGVOAus
+00:00 UTC  fuehreNaechtlicheDSGVOAus
              1. FuehreBearbeiterAnonymisierungAus  bearbeiter_id nach 14 Tagen entfernen
-             2. FuehreSchuelerAnonymisierungAus    fällige Schüler-PII inkl. Audit-Spuren tilgen
+             2. fuehreSchuelerAnonymisierungAus    fällige Schüler-PII inkl. Audit-Spuren tilgen
              3. FuehreAbgaengerLoeschungAus        Hard-Delete ab 30. Januar des Folgejahres,
                                                 NUR anonymisierte Zeilen
              4. Papierkorb: gelöschte Kollegen nach 180 Tagen endgültig löschen
@@ -1661,7 +1661,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | **Parsing-Differential**      | Die Cover-/Metadaten-URL wird aus geprüften Teilen **neu gebaut** (Schema fest HTTPS, Host aus der Konstante, nur Pfad und Query vom Aufrufer). Geprüft wurde bisher mit `url.Parse`, angefragt der rohe String — verschiedene Parser sind sich über `\`, `@`, `#`, `?` nicht einig |
 | **Path-Traversal**            | `os.OpenRoot` bindet Dateizugriffe **OS-seitig** an ein Verzeichnis (SPA-Auslieferung, Cover-Einbettung ins PDF). Manuelle `filepath.Clean`+`HasPrefix`-Logik ist fehleranfällig und war als Existenz-Orakel außerhalb des Verzeichnisses nutzbar |
 | **Log-Injection**             | `slog.SetDefault` mit JSON-Handler: Ein Zeilenumbruch aus einer Anfrage wird zu `\n` **innerhalb** des JSON-Strings und kann keinen zweiten Eintrag erzeugen. Am laufenden Server nachgemessen. Wer diese Zeile entfernt oder `log.SetOutput` dahinter setzt, hebt beides auf |
-| **SMTP-Header-Injection**     | `mailservice.KopfzeilenWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
+| **SMTP-Header-Injection**     | `mailservice.kopfzeilenWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
 | **Dekompressionsbombe**       | Bild-Uploads werden gegen aufgeblähte Pixelmaße geprüft, bevor dekodiert wird                                                                                                   |
 | **Token im Pfad**             | Der Bestätigungslink des Händlers trägt sein Geheimnis im Pfad; `maskiereToken` hält es aus der Logzeile (sonst wäre die Hash-Speicherung in der Datenbank entwertet)             |
 | **Panics**                    | `panikMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit      |
@@ -1985,7 +1985,7 @@ Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben.
   wie ein Server ohne SMTP. Ein Test fängt ab, was eine Tür verschickt (`tuertest.FangeMailAb`),
   oder gibt der Basis eine Attrappe.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
-  Versand ab (`ErrSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht,
+  Versand ab (`errSMTPKlartext`): Sonst bekäme ein Angreifer, der die EHLO-Antwort streicht,
   Mahntexte mit Schülernamen. `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und
   protokolliert die Folgen.
 - **Kopfzeilen-Härtung** direkt an der Schreibstelle (Betreff, Absender, Empfänger).
@@ -3184,7 +3184,7 @@ Gewicht.
   aus. Nächster Schritt mit Anlass: Klassen außerhalb von 1 bis 13 ausnehmen und in der Vorschau
   nennen.
 - **Klassensätze aus den Ausleihen.** Für ET1 bis ET3 entsteht keiner: Die Übersicht zählt nur
-  Klassen, deren Name mit einer Ziffer beginnt (`LadeKlassensatzGruppen`), und nur Ausleihen auf
+  Klassen, deren Name mit einer Ziffer beginnt (`ladeKlassensatzGruppen`), und nur Ausleihen auf
   die Ausweise der Kinder. Die Theke warnt bei einer anderen Auflage als der Klasse und bei einem
   Buch, das auf ein anderes Kind verbucht ist, nicht aber bei einem Buch eines anderen Jahrgangs
   oder einem zweiten Exemplar desselben Titels.

@@ -127,7 +127,7 @@ func TestCoverAktualisieren_SucheScheitert(t *testing.T) {
 	titelID := "11111111-1111-1111-1111-111111111111"
 	zuletztGezaehlt := "2023-01-01"
 
-	// LadeTitel nachspielen.
+	// ladeTitel nachspielen.
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
@@ -203,7 +203,7 @@ func TestCoverAktualisieren_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	titelID := "22222222-2222-2222-2222-222222222222"
 	zuletztGezaehlt := "2023-01-01"
 
-	// LadeTitel nachspielen.
+	// ladeTitel nachspielen.
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
@@ -229,7 +229,7 @@ func TestCoverAktualisieren_KeinCoverIst404OhneSchreiben(t *testing.T) {
 }
 
 // Erfolg: Google liefert Metadaten, DNB das Bild. Geschrieben wird nur das Cover — Titel
-// und Autor gehen mit leeren Werten an AendereTitelMetadaten, das einen leeren Wert übergeht
+// und Autor gehen mit leeren Werten an aendereTitelMetadaten, das einen leeren Wert übergeht
 // (NULLIF auf den leeren Text, dann COALESCE mit dem alten Wert); die Antwort trägt den alten
 // Titel und den neuen lokalen Cover-Pfad.
 func TestCoverAktualisieren_Erfolg(t *testing.T) {
@@ -294,13 +294,13 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 	titelID := "33333333-3333-3333-3333-333333333333"
 	zuletztGezaehlt := "2023-01-01"
 
-	// LadeTitel nachspielen.
+	// ladeTitel nachspielen.
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
 			AddRow(titelID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &zuletztGezaehlt, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	// mock AendereTitelMetadaten: Titel und Autor leer, nur das Cover.
+	// mock aendereTitelMetadaten: Titel und Autor leer, nur das Cover.
 	mock.ExpectExec(`UPDATE buecher_titel`).
 		WithArgs("", "", pgxmock.AnyArg(), titelID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

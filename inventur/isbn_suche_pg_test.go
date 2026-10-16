@@ -45,7 +45,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		if len(liste) != 1 || liste[0].ID != id {
 			t.Errorf("Titel-Verwaltung, Suche %q: %d Treffer, erwartet den Titel %q", suchtext, len(liste), titel)
 		}
-		lernmittel, err := abfragen.LadeLernmittelTitel(ctx, "", true, LernmittelFilter{Suche: suchtext})
+		lernmittel, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Suche: suchtext})
 		if err != nil {
 			t.Fatalf("GetLernmittelTitel(%q): %v", suchtext, err)
 		}

@@ -7,7 +7,7 @@ Dieses Dokument beschreibt die Backup-Strategien, Wiederherstellungsverfahren so
 Es gibt **zwei** Backup-Wege. Maßgeblich für die Wiederherstellung ist, welches Format vorliegt.
 
 ### 1a. Automatisches verschlüsseltes Backup (Primär, Produktion)
-Der eingebaute Zeitplan (`jobs.BackupLauf`) läuft täglich um **02:30 UTC** und erzeugt
+Der eingebaute Zeitplan (`backupLauf` in `jobs/backup.go`) läuft täglich um **02:30 UTC** und erzeugt
 **AES-256-GCM-verschlüsselte**, gzip-komprimierte `pg_dump`-Dateien:
 
 ```

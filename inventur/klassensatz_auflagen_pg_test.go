@@ -77,9 +77,9 @@ func TestLadeKlassensatzGruppen_ZaehltAmBuch(t *testing.T) {
 	leihe(neu, "KB-D1", "KB-D2", "KB-D3", "KB-D4", "KB-D5", "KB-D6")
 	leihe(neu, "KB-E1", "KB-E2", "KB-E3", "KB-E4", "KB-E5", "KB-E6")
 
-	gruppen, err := NewTitelAbfragen(pool).LadeKlassensatzGruppen(ctx, "", "")
+	gruppen, err := NewTitelAbfragen(pool).ladeKlassensatzGruppen(ctx, "", "")
 	if err != nil {
-		t.Fatalf("LadeKlassensatzGruppen: %v", err)
+		t.Fatalf("ladeKlassensatzGruppen: %v", err)
 	}
 	je := map[string][]klassensatzTitel{}
 	for _, g := range gruppen {

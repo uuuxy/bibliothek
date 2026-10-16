@@ -46,6 +46,8 @@ linters:
         - name: redefines-builtin-id
         # Ein umbenannter Import ist klein und ohne Unterstrich (Decisions, „Import renaming").
         - name: import-alias-naming
+        # Eine öffentliche Funktion liefert keinen klein geschriebenen Typ (docs/STIL.md, Abschnitt 6).
+        - name: unexported-return
     rowserrcheck:
       # rowserrcheck kennt database/sql von Haus aus nicht pgx — hier explizit
       # den pgx-v5-Treiber registrieren, sonst prüft es unsere Query-Aufrufe nicht.

@@ -26,7 +26,7 @@ func TestHandUpload_SetztCoverStatusFound(t *testing.T) {
 		}
 	})
 
-	if err := NewTitelAbfragen(pool).AendereTitelMetadaten(ctx, id, "", "", "/uploads/covers/hand.webp"); err != nil {
+	if err := NewTitelAbfragen(pool).aendereTitelMetadaten(ctx, id, "", "", "/uploads/covers/hand.webp"); err != nil {
 		t.Fatal(err)
 	}
 	var status string

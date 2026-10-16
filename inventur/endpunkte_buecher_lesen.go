@@ -174,7 +174,7 @@ func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (Titel, error) {
 		return Titel{}, repository.ErrTitelNichtGefunden
 	}
 	buch := buecher[0]
-	buch.Schlagworte, err = t.abfragen.LadeSchlagworteDesTitels(ctx, id)
+	buch.Schlagworte, err = t.abfragen.ladeSchlagworteDesTitels(ctx, id)
 	if err != nil {
 		return Titel{}, err
 	}
@@ -207,7 +207,7 @@ func (t *Tueren) TitelVorhanden(antwort http.ResponseWriter, anfrage *http.Reque
 		return
 	}
 
-	vorhanden, fehler := t.abfragen.TitelMitISBN(anfrage.Context(), isbn)
+	vorhanden, fehler := t.abfragen.titelMitISBN(anfrage.Context(), isbn)
 	if fehler != nil {
 		log.Printf("Dublettenkontrolle vorab: %v", fehler)
 		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")

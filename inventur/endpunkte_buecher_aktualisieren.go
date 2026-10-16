@@ -81,9 +81,9 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 
 // leseAenderung liest den Rumpf einer Änderung: die Werte und die Namen der Felder, die er
 // nennt. Ein Feld, das fehlt, bleibt am Titel, wie es ist. Groß- und Kleinschreibung der
-// Namen zählt nicht, wie beim Dekodieren in TitelEingabe.
-func leseAenderung(anfrage *http.Request) (TitelEingabe, []string, error) {
-	var eingabe TitelEingabe
+// Namen zählt nicht, wie beim Dekodieren in titelEingabe.
+func leseAenderung(anfrage *http.Request) (titelEingabe, []string, error) {
+	var eingabe titelEingabe
 	var roh json.RawMessage
 	var genannt map[string]json.RawMessage
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&roh); fehler != nil {
@@ -111,7 +111,7 @@ func leseAenderung(anfrage *http.Request) (TitelEingabe, []string, error) {
 // ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format, halbe Spanne,
 // Mehrjahresband ohne Spanne, kleinerer Bestand ohne Sitzung; alles andere 500.
 func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler error) {
-	if errors.Is(fehler, ErrISBNDoppelt) {
+	if errors.Is(fehler, errISBNDoppelt) {
 		schreibeDubletteISBN(antwort, fehler)
 		return
 	}
@@ -119,7 +119,7 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		schreibeFehler(antwort, http.StatusBadRequest, meldung)
 		return
 	}
-	var veraltet *BestandVeraltet
+	var veraltet *bestandVeraltet
 	if errors.As(fehler, &veraltet) {
 		// Mit dem Stand in der Antwort stellt die Maske ihr Feld nach, ohne dass die
 		// übrigen Eingaben verloren gehen.
@@ -133,12 +133,12 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
 		return
 	}
-	if errors.Is(fehler, ErrAutorGeleert) {
+	if errors.Is(fehler, errAutorGeleert) {
 		schreibeFehler(antwort, http.StatusBadRequest,
 			"Der Autor darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.")
 		return
 	}
-	if errors.Is(fehler, ErrISBNFormat) {
+	if errors.Is(fehler, errISBNFormat) {
 		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN ist ungültig")
 		return
 	}
@@ -153,7 +153,7 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt
 // sie nichts (nil), und die Exemplare bleiben unangetastet. Wer speichert, nennt die Sitzung
 // der Anfrage; ohne sie lehnt der Schreibpfad einen kleineren Bestand ab.
-func bestandsangabe(anfrage *http.Request, eingabe TitelEingabe) *Bestandsangabe {
+func bestandsangabe(anfrage *http.Request, eingabe titelEingabe) *Bestandsangabe {
 	if eingabe.Bestand == nil {
 		return nil
 	}
@@ -168,7 +168,7 @@ func bestandsangabe(anfrage *http.Request, eingabe TitelEingabe) *Bestandsangabe
 // Fehler ist als Meldung für die Oberfläche geschrieben.
 // ISBN und Mehrjahresband prüft sie nicht: Was sich ändert und was am Titel steht, weiß erst
 // der Schreibpfad, der den gespeicherten Titel liest (pruefeAenderung).
-func bereinigeTitelEingabe(eingabe *TitelEingabe) error {
+func bereinigeTitelEingabe(eingabe *titelEingabe) error {
 	eingabe.ISBN = strings.TrimSpace(eingabe.ISBN)
 	eingabe.Titel = strings.TrimSpace(eingabe.Titel)
 	eingabe.Autor = strings.TrimSpace(eingabe.Autor)

@@ -33,29 +33,29 @@ type smtpFristen struct {
 	verbindung, sitzung time.Duration
 }
 
-// VersendeUeberSMTP überträgt eine fertige Nachricht an den konfigurierten Server.
+// versendeUeberSMTP überträgt eine fertige Nachricht an den konfigurierten Server.
 // Fehler tragen den Marker ErrSMTPVersand und die Übersetzung aus
 // BeschreibeSMTPFehler; der Aufrufer antwortet damit mit 502 und lesbarer Ursache statt mit einem
 // neutralen 500.
-func VersendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
-	return versendeUeberSMTP(smtpFristen{verbindung: smtpVerbindungsTimeout, sitzung: smtpSitzungsFrist},
+func versendeUeberSMTP(konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
+	return versendeMitFristen(smtpFristen{verbindung: smtpVerbindungsTimeout, sitzung: smtpSitzungsFrist},
 		konfig, absender, empfaenger, nachricht)
 }
 
-func versendeUeberSMTP(fristen smtpFristen, konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
+func versendeMitFristen(fristen smtpFristen, konfig SMTPKonfig, absender string, empfaenger []string, nachricht []byte) error {
 	// Die Adressen des Umschlags dürfen keinen Zeilenumbruch enthalten, sonst schmuggelt man
 	// Befehle in die Sitzung. net/smtp.SendMail prüft das mit; auf diesem Weg steht die Prüfung
 	// ausdrücklich.
-	if _, err := KopfzeilenWert("MAIL FROM", absender); err != nil {
+	if _, err := kopfzeilenWert("MAIL FROM", absender); err != nil {
 		return err
 	}
 	for _, e := range empfaenger {
-		if _, err := KopfzeilenWert("RCPT TO", e); err != nil {
+		if _, err := kopfzeilenWert("RCPT TO", e); err != nil {
 			return err
 		}
 	}
 
-	adresse := konfig.Adresse()
+	adresse := konfig.adresse()
 	conn, err := net.DialTimeout("tcp", adresse, fristen.verbindung)
 	if err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
@@ -78,7 +78,7 @@ func versendeUeberSMTP(fristen smtpFristen, konfig SMTPKonfig, absender string, 
 	if err := sichereVerbindung(c, konfig.Host); err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
 	}
-	if err := authentifiziere(c, konfig.Auth()); err != nil {
+	if err := authentifiziere(c, konfig.auth()); err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
 	}
 
@@ -97,10 +97,10 @@ func versendeUeberSMTP(fristen smtpFristen, konfig SMTPKonfig, absender string, 
 	return nil
 }
 
-// ErrSMTPKlartext meldet, dass der Server kein STARTTLS anbietet und der Versand
+// errSMTPKlartext meldet, dass der Server kein STARTTLS anbietet und der Versand
 // deshalb unterblieben ist. Eigener Fehlerwert, damit der Betrieb die Ursache in der
 // Oberfläche erkennt statt eines allgemeinen Verbindungsfehlers.
-var ErrSMTPKlartext = errors.New("SMTP-Server bietet kein STARTTLS an — Versand abgebrochen, weil die Nachricht sonst im Klartext über das Netz ginge (Ausnahme: SMTP_ALLOW_PLAINTEXT=true)")
+var errSMTPKlartext = errors.New("SMTP-Server bietet kein STARTTLS an — Versand abgebrochen, weil die Nachricht sonst im Klartext über das Netz ginge (Ausnahme: SMTP_ALLOW_PLAINTEXT=true)")
 
 // sichereVerbindung hebt die Sitzung auf TLS und bricht ab, wenn das nicht geht.
 //
@@ -122,7 +122,7 @@ func sichereVerbindung(c *smtp.Client, host string) error {
 			log.Printf("mail: WARNUNG — %s bietet kein STARTTLS an, SMTP_ALLOW_PLAINTEXT=true erlaubt den Klartextversand. Mailinhalte (Schülernamen, Elternadressen) gehen unverschlüsselt über das Netz.", host)
 			return nil
 		}
-		return ErrSMTPKlartext
+		return errSMTPKlartext
 	}
 	tlsKonfig := &tls.Config{
 		ServerName:         host,

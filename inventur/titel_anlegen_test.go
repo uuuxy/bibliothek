@@ -184,7 +184,7 @@ func TestSchreibeTitel(t *testing.T) {
 
 		mock.ExpectCommit()
 
-		id, err := abfragen.SchreibeTitel(ctx, eintrag)
+		id, err := abfragen.schreibeTitel(ctx, eintrag)
 		if err != nil {
 			t.Fatalf("abfragen.SchreibeTitel: %v", err)
 		}
@@ -215,7 +215,7 @@ func TestSchreibeTitel(t *testing.T) {
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		_, err = abfragen.SchreibeTitel(ctx, eintrag)
+		_, err = abfragen.schreibeTitel(ctx, eintrag)
 		if err == nil || !strings.Contains(err.Error(), "buch konnte nicht importiert werden") {
 			t.Errorf("abfragen.SchreibeTitel: Fehler %v, erwartet einen mit %q", err, "buch konnte nicht importiert werden")
 		}

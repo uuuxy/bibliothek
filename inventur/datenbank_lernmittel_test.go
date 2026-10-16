@@ -47,7 +47,7 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "").WillReturnError(dbFehler)
 
-		faecher, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
+		faecher, err := abfragen.ladeLernmittelFaecher(context.Background(), lernmittelFilter{})
 		if !errors.Is(err, dbFehler) {
 			t.Errorf("abfragen.LadeLernmittelFaecher: Fehler %v, erwartet %v", err, dbFehler)
 		}
@@ -61,7 +61,7 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "").
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).AddRow("Mathematik", "zwei", 3, 1, 2))
 
-		faecher, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
+		faecher, err := abfragen.ladeLernmittelFaecher(context.Background(), lernmittelFilter{})
 		if err == nil {
 			t.Error("abfragen.LadeLernmittelFaecher: kein Fehler, erwartet einen")
 		}
@@ -77,7 +77,7 @@ func TestLadeLernmittelFaecher_ReichtFehlerWeiter(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows(lernmittelFachSpalten).
 				AddRow("Mathematik", 2, 3, 1, 2).RowError(1, dbFehler))
 
-		_, err := abfragen.LadeLernmittelFaecher(context.Background(), LernmittelFilter{})
+		_, err := abfragen.ladeLernmittelFaecher(context.Background(), lernmittelFilter{})
 		if !errors.Is(err, dbFehler) {
 			t.Errorf("abfragen.LadeLernmittelFaecher: Fehler %v, erwartet %v", err, dbFehler)
 		}
@@ -98,7 +98,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnError(dbFehler)
 
-		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		titel, err := abfragen.ladeLernmittelTitel(context.Background(), "Physik", false, lernmittelFilter{})
 		if !errors.Is(err, dbFehler) {
 			t.Errorf("abfragen.LadeLernmittelTitel: Fehler %v, erwartet %v", err, dbFehler)
 		}
@@ -111,7 +111,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock, abfragen := lernmittelAttrappe(t)
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").WillReturnRows(zeile("fünf", nil))
 
-		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		titel, err := abfragen.ladeLernmittelTitel(context.Background(), "Physik", false, lernmittelFilter{})
 		if err == nil {
 			t.Error("abfragen.LadeLernmittelTitel: kein Fehler, erwartet einen")
 		}
@@ -125,7 +125,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").
 			WillReturnRows(zeile(5, []byte(`kein json`)))
 
-		titel, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		titel, err := abfragen.ladeLernmittelTitel(context.Background(), "Physik", false, lernmittelFilter{})
 		if err == nil || !strings.Contains(err.Error(), "auflagen von titel-1") {
 			t.Errorf("abfragen.LadeLernmittelTitel: Fehler %v, erwartet einen mit %q", err, "auflagen von titel-1")
 		}
@@ -139,7 +139,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 		mock.ExpectQuery(abfrage).WithArgs(0, "", "", false, "Physik").
 			WillReturnRows(zeile(5, nil).RowError(1, dbFehler))
 
-		_, err := abfragen.LadeLernmittelTitel(context.Background(), "Physik", false, LernmittelFilter{})
+		_, err := abfragen.ladeLernmittelTitel(context.Background(), "Physik", false, lernmittelFilter{})
 		if !errors.Is(err, dbFehler) {
 			t.Errorf("abfragen.LadeLernmittelTitel: Fehler %v, erwartet %v", err, dbFehler)
 		}

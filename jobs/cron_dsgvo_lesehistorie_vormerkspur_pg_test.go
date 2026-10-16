@@ -98,7 +98,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 		t.Errorf("Wächter vor dem Lauf: %d fällige Zeilen, erwartet 1 (die Zeile der alten Vormerkung)", n)
 	}
 
-	NewZeitplan(pool, audit).FuehreLesehistorieBefristungAus()
+	NewZeitplan(pool, audit).fuehreLesehistorieBefristungAus()
 
 	for _, schluessel := range []string{"schueler_id", "betrifft"} {
 		if traegt(alt, "vormerkungen", schluessel) {

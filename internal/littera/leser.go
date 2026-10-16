@@ -10,7 +10,7 @@ import (
 // Littera führt alle Personen in einer Tabelle `Leser` — Schüler, Lehrkräfte,
 // Praktikanten, das Sekretariat und sogar Sammelkonten der Fachbereiche. Diese
 // Anwendung trennt sie: Schüler nach `schueler`, alle anderen ins Kollegium, jeweils mit
-// ihrer Art an der Leserzeile (leser.art, ZielArt). Ohne diese Einordnung landeten
+// ihrer Art an der Leserzeile (leser.art, zielArt). Ohne diese Einordnung landeten
 // 158 Lehrkräfte in der Schülerdatei.
 //
 // Die Unterscheidung steht in den Daten selbst und muss nicht geraten werden:
@@ -51,9 +51,9 @@ const (
 	ArtFachbereich
 )
 
-// ZielArt ist die Art der Leserzeile, in der ein Littera-Leser landet (chk_leser_art); "" für
+// zielArt ist die Art der Leserzeile, in der ein Littera-Leser landet (chk_leser_art); "" für
 // einen Leser ohne Zuordnung, den der Lauf nicht schreibt.
-func (a LeserArt) ZielArt() string {
+func (a LeserArt) zielArt() string {
 	switch a {
 	case ArtSchueler, ArtAbgegangen:
 		return "schueler"

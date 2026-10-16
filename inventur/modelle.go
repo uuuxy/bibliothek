@@ -71,10 +71,10 @@ type Titel struct {
 	Standorte []repository.StandortZahl `json:"standorte,omitempty"`
 }
 
-// TitelEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
+// titelEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
 // Beim Aktualisieren zählen nur die Felder, die der Rumpf nennt (leseAenderung): Ein Feld, das
 // fehlt, bleibt am Titel, wie es ist.
-type TitelEingabe struct {
+type titelEingabe struct {
 	ISBN          string `json:"isbn"`
 	Fach          string `json:"subject"`
 	Schulzweig    string `json:"track"`

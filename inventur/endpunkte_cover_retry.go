@@ -11,7 +11,7 @@ import (
 // FremdeCoverListe ist die Tür GET /api/admin/books/external-covers: die Titel, deren Cover
 // noch von außen geladen wird.
 func (t *Tueren) FremdeCoverListe(w http.ResponseWriter, r *http.Request) {
-	eintraege, err := t.abfragen.LadeTitelMitFremdemCover(r.Context(), 300)
+	eintraege, err := t.abfragen.ladeTitelMitFremdemCover(r.Context(), 300)
 	if err != nil {
 		log.Printf("Fehler beim Laden externer Cover-Bücher: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden")
@@ -44,7 +44,7 @@ func (t *Tueren) FremdeCoverNeuLaden(w http.ResponseWriter, r *http.Request) {
 	if len(eingabe.IDs) > 0 {
 		eintraege, err = t.abfragen.LadeTitelNachIDs(r.Context(), eingabe.IDs)
 	} else {
-		eintraege, err = t.abfragen.LadeTitelMitFremdemCover(r.Context(), eingabe.Limit)
+		eintraege, err = t.abfragen.ladeTitelMitFremdemCover(r.Context(), eingabe.Limit)
 	}
 	if err != nil {
 		log.Printf("Fehler beim Laden externer Cover für Retry: %v", err)
@@ -87,7 +87,7 @@ func (t *Tueren) ladeCoverErneut(ctx context.Context, eintrag Titel) string {
 		return coverGescheitert
 	}
 
-	if aenderFehler := t.abfragen.AendereTitelMetadaten(ctx, eintrag.ID, "", "", nachschlagen.CoverURL); aenderFehler != nil {
+	if aenderFehler := t.abfragen.aendereTitelMetadaten(ctx, eintrag.ID, "", "", nachschlagen.CoverURL); aenderFehler != nil {
 		return coverGescheitert
 	}
 	return coverAktualisiert

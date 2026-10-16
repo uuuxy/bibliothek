@@ -29,7 +29,7 @@ func TestTitelEingabe_LiestAlleFelder(t *testing.T) {
 		"erscheinungsjahr": 2024
 	}`
 
-	var eingabe TitelEingabe
+	var eingabe titelEingabe
 	if err := json.NewDecoder(strings.NewReader(rumpf)).Decode(&eingabe); err != nil {
 		t.Fatalf("Decode fehlgeschlagen: %v", err)
 	}
@@ -54,14 +54,14 @@ func TestTitelEingabe_LiestAlleFelder(t *testing.T) {
 func TestBereinigeTitelEingabe(t *testing.T) {
 	faelle := []struct {
 		name        string
-		eingabe     TitelEingabe
+		eingabe     titelEingabe
 		wantErr     bool
 		errMsg      string
-		wantEingabe *TitelEingabe
+		wantEingabe *titelEingabe
 	}{
 		{
 			name: "Valid input",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:    "978-3-16-148410-0",
 				Bestand: zeigerAuf(10),
 				Titel:   " Test Titel ",
@@ -72,7 +72,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		// Titel ohne ISBN oder mit einer Nummer, die keine ISBN ist, bleibt speicherbar.
 		{
 			name: "Ohne ISBN",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:    "",
 				Bestand: zeigerAuf(10),
 			},
@@ -80,7 +80,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		},
 		{
 			name: "Nummer ohne ISBN-Form",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:    "123",
 				Bestand: zeigerAuf(10),
 			},
@@ -88,7 +88,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		},
 		{
 			name: "Negative stock",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:    "978-3-16-148410-0",
 				Bestand: zeigerAuf(-1),
 			},
@@ -99,7 +99,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		// kam eine 500 „buch konnte nicht aktualisiert werden", ohne zu sagen, was erlaubt ist.
 		{
 			name: "Negativer Listenpreis",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:        "978-3-16-148410-0",
 				Listenpreis: zeigerAufPreis(-0.01),
 			},
@@ -108,7 +108,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		},
 		{
 			name: "Listenpreis 0 ist erlaubt",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:        "978-3-16-148410-0",
 				Listenpreis: zeigerAufPreis(0),
 			},
@@ -116,7 +116,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		},
 		{
 			name: "Trims spaces from fields",
-			eingabe: TitelEingabe{
+			eingabe: titelEingabe{
 				ISBN:       "  978-3-16-148410-0  ",
 				Titel:      "  Titel  ",
 				Autor:      "  Autor  ",
@@ -128,7 +128,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 				Verlag:     "  Verlag  ",
 			},
 			wantErr: false,
-			wantEingabe: &TitelEingabe{
+			wantEingabe: &titelEingabe{
 				ISBN:       "978-3-16-148410-0",
 				Titel:      "Titel",
 				Autor:      "Autor",
@@ -161,7 +161,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 	}
 }
 
-// zeigerAuf macht aus einer geschriebenen Zahl den Zeiger, den TitelEingabe.Bestand
+// zeigerAuf macht aus einer geschriebenen Zahl den Zeiger, den titelEingabe.Bestand
 // verlangt — "nicht mitgeschickt" ist dort ein eigener Fall (nil).
 func zeigerAuf(n int) *int { return &n }
 

@@ -42,7 +42,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string, i
 	// losgeschickt hätte der HTTP-Client den rohen String — und wo sich beide Parser
 	// über ein Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den
 	// freigegebenen (Parsing Differential, gosec G704). Siehe pkg/coverquelle.
-	sichereURL, ok := SichereCoverURL(coverURL)
+	sichereURL, ok := sichereCoverURL(coverURL)
 	if !ok {
 		log.Printf("SSRF Schutz: Cover-URL %s stammt nicht von einem erlaubten Host", coverURL)
 		return nil

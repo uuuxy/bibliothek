@@ -28,21 +28,21 @@ func entschaerfePgpass(s string) string {
 	return strings.ReplaceAll(s, ":", "\\:")
 }
 
-// MinBackupSchluesselLaenge ist die Mindestlänge der Passphrase für die Sicherung.
+// minBackupSchluesselLaenge ist die Mindestlänge der Passphrase für die Sicherung.
 //
 // Den Schlüssel leitet scrypt ab (internal/backupkrypto), speicherhart und je Datei gesalzen;
 // das nimmt dem Raten an einer entwendeten Sicherung die Geschwindigkeit. Die Prüfung der Länge
 // bleibt als zweite Verteidigung: scrypt erschwert das Raten, ersetzt aber keine Entropie der
 // Passphrase, eine kurze bleibt kurz.
-const MinBackupSchluesselLaenge = 32
+const minBackupSchluesselLaenge = 32
 
 // IstSchluesselSchwach meldet, ob die Passphrase der Sicherung zu kurz ist. Ein leerer Schlüssel
 // gilt hier nicht als schwach: Das ist der eigene, schwerere Fall „gar keine Sicherung".
 func IstSchluesselSchwach(schluessel string) bool {
-	return schluessel != "" && len(schluessel) < MinBackupSchluesselLaenge
+	return schluessel != "" && len(schluessel) < minBackupSchluesselLaenge
 }
 
-// BackupLauf ist die tägliche verschlüsselte Sicherung der Datenbank. Er ruft pg_dump auf (muss
+// backupLauf ist die tägliche verschlüsselte Sicherung der Datenbank. Er ruft pg_dump auf (muss
 // im PATH stehen), packt mit gzip und verschlüsselt mit AES-256-GCM, mit einem Schlüssel aus
 // BACKUP_ENCRYPTION_KEY.
 //
@@ -50,10 +50,10 @@ func IstSchluesselSchwach(schluessel string) bool {
 //   - DATABASE_URL          – DSN von PostgreSQL (im Betrieb schon gesetzt)
 //   - BACKUP_ENCRYPTION_KEY – Passphrase mit mindestens 32 Zeichen, aus der der Schlüssel entsteht
 //   - BACKUP_DIR            – Zielverzeichnis (Vorgabe: ./backups)
-type BackupLauf struct{}
+type backupLauf struct{}
 
-// FuehreAus führt die ganze Sicherung aus: Dump, gzip, Verschlüsselung mit AES-256-GCM.
-func (b *BackupLauf) FuehreAus() {
+// fuehreAus führt die ganze Sicherung aus: Dump, gzip, Verschlüsselung mit AES-256-GCM.
+func (b *backupLauf) fuehreAus() {
 	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return
@@ -115,7 +115,7 @@ func leseBackupUmgebung() (schluessel, dsn, verzeichnis string, ok bool) {
 	if IstSchluesselSchwach(schluessel) {
 		log.Printf("Backup: BACKUP_ENCRYPTION_KEY ist nur %d Zeichen lang (empfohlen: >= %d) – "+
 			"scrypt erschwert das Raten, ersetzt aber keine Entropie; kurze Passphrasen bleiben angreifbar",
-			len(schluessel), MinBackupSchluesselLaenge)
+			len(schluessel), minBackupSchluesselLaenge)
 	}
 
 	dsn = os.Getenv("DATABASE_URL")
