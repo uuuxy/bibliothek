@@ -195,6 +195,20 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Die Oberfläche, Stufe 3: Props, die ein Bauteil vom Rufer bekommt (5.66).
 - [x] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
 
+Was nach dem Abgleich vom 16.10.2026 noch von Googles Regelwerk abweicht, in der Reihenfolge des
+Gewichts:
+
+- [ ] Schnittstellen beim Nutzer statt beim Hersteller: `New…` in `repository/` und
+  `internal/service` liefert den Typ. Groß; vorher ein Plan in Stufen zu deiner Freigabe. (5.71)
+- [ ] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
+- [ ] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
+  (5.71)
+- [ ] Testmeldungen in Googles Form und lokale Namen in Tests deutsch, je mit Ratsche. (5.71)
+- [ ] Leerimporte nur in `main` und in Tests. (5.71)
+- [ ] Oberfläche: Die Ratsche der Dateigröße zählt auch JS-Module; danach
+  `stores/omnibox.svelte.js` (1.174 Zeilen) nach seinen Sachen teilen, mit deiner Freigabe.
+  (5.72)
+
 ### Später: kleine Fehler und Aufräumarbeit
 
 Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einzelheiten steht.
@@ -478,6 +492,83 @@ leerem Bestand; für die Oberfläche fehlt eine Prüfung. Vorschlag: in
 Bestand einfrieren, der nur sinken darf (das Datum einer Quelle ausgenommen, wie im Go-Code),
 dann Datei für Datei die Kommentare auf das Warum kürzen, nach jeder Datei `npx svelte-check`
 und `npx vitest run`.
+
+---
+
+### 5.71 Abgleich mit Googles Regelwerk für Go: was noch abweicht
+
+Gemessen am 16.10.2026 mit einem erweiterten Satz von golangci-lint (revive, errorlint,
+containedctx, contextcheck, thelper, ireturn und weitere; die Konfiguration ist nicht
+eingecheckt) und mit `go/types` über alle Pakete. Was schon gilt, steht mit seiner Prüfung in
+[STIL.md](STIL.md); hier steht der Rest, je mit der Stelle bei Google (gelesen am 16.10.2026).
+Funktions- und Dateilänge sind kein Punkt: Google setzt keine Höchstlänge für Funktionen, und für
+Dateien gilt „it is usually not a good idea to have a single file with many thousands of lines"
+(Best Practices, „Package size"); die größte Go-Datei hat 629 Zeilen, die Komplexität hält
+`komplexitaet_ratsche_test.go`.
+
+- **Schnittstellen beim Hersteller.** Decisions, „Interfaces": „The consumer of the interface
+  should define it (not the package implementing the interface)" und „Functions should take
+  interfaces as arguments but return concrete types." `repository/` erklärt 16 öffentliche
+  Schnittstellen, `internal/service` vier; 16 Erzeuger `New…` liefern eine Schnittstelle
+  (`NewKatalogAbfragen`, `NewAusleihDienst` …). Die größten haben 15, 14 und 12 Methoden
+  (`BescheidAbfragen`, `LeserAbfragen`, `KatalogAbfragen`). Andere Pakete nennen sie 198-mal in
+  60 Programm- und 24 Testdateien. Weg: Der Erzeuger liefert `*KatalogAbfragen`; wer eine
+  Attrappe braucht, erklärt bei sich eine Schnittstelle mit den Methoden, die er ruft. In Stufen
+  je Schnittstelle, umbenannt mit `gopls rename`, belegt mit der Liste der Tests vorher und
+  nachher.
+- **Kontext.** Decisions, „Contexts": „Do not add a context member to a struct type" und „Unless
+  you are implementing a server framework, you shouldn't create contexts with
+  context.Background() in library code." Einen Kontext als Feld tragen `auth.Sitzungen` und
+  `auth.Sperrliste` (für ihre Aufräum-Schleifen) und `inventur.importZeile`. Die Prüfung des
+  Tokens bei jeder Anfrage nimmt keinen Kontext an (`Anmeldung.PruefeToken`,
+  `PruefeTokenTrotzSperre`; acht Aufrufe im Programmcode) und legt in `Sperrliste.istWiderrufen`
+  einen eigenen mit zwei Sekunden an, ebenso `Sitzungen.istGesperrt`, `Sperrliste.Widerrufe` und
+  `auth/token.go`. `jobs/` beginnt an 16 Stellen mit `context.Background()`,
+  `internal/service/cover.go` und `mailservice/mail_sender.go` je einmal. Weg: den Kontext der
+  Anfrage bis zur Abfrage reichen; die Läufe bekommen den Kontext des Servers. Vorher je Lauf
+  klären, was er bei einem Abbruch hinterlässt (eine halb geschriebene Sicherung).
+- **Öffentliche Namen ohne fremden Nutzer.** [STIL.md](STIL.md) 6, nach Best Practices: „Every
+  exported type increases the cognitive load for the reader." Gemessen mit `go/types`: Von 2.017
+  öffentlichen Namen nennt 68 kein anderes Paket, auch kein Test eines anderen Pakets
+  (ausgenommen Methoden einer Schnittstelle wie `Error`, `Unwrap` und `Meldung`, die Türen, ganze
+  Aufzählungen und Typen in der Signatur eines genutzten Namens): 29 in `inventur` (etwa
+  `TitelAbfragen.LadeKlassensatzGruppen`, das einen klein geschriebenen Typ liefert, und fünf
+  `Err…`), 15 in `jobs` (die Läufe `Zeitplan.Fuehre…Aus`, `BackupLauf`), je 9 in `mailservice`
+  und `pdf`. Dazu stehen zwei Fehlerwerte gleichen Namens für dieselbe Sache:
+  `inventur.ErrTitelNichtGefunden` („kein buch mit dieser ID gefunden") und
+  `repository.ErrTitelNichtGefunden` („titel nicht gefunden"). Keine Prüfung hält die Regel;
+  `stil_ratsche_test.go` sagt das in seinem Kopf. Weg: die Messung als Ratsche einchecken
+  (Bestand je Paket, der nur sinkt), dann klein schreiben. Eine Prüfung, die einen Namen als Text
+  führt, zieht mit (`api/mail_routen_frist_test.go` nennt `VersendeUeberSMTP`).
+- **Tests.** Decisions, „Identify the function": „your failure message should be
+  `YourFunc(%v) = %v, want %v` instead of just `got %v, want %v`", dazu „Got before want" und „Test
+  helpers" (`t.Helper`). [STIL.md](STIL.md) 10 hat die Regel, der Bestand nicht: Von 10.284
+  Meldungen in `t.Errorf` und `t.Fatalf` sind 710 englisch (got, want, expected), 73 nennen das
+  Erwartete vor dem Ergebnis, 395 beginnen mit „erwartet" ohne die Funktion; 26 Hilfsfunktionen
+  rufen kein `t.Helper()`. Lokale Namen in Tests zählt `stil_ratsche_test.go` nicht: 31 englische
+  Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in 11, `staffID`,
+  `activeLeserID`). Weg: je eine Ratsche, die den Bestand einfriert, dann Datei für Datei.
+- **Leerimporte.** Decisions, „Import blank": „Packages that are imported only for their side
+  effects (using the syntax import _ "package") may only be imported in a main package, or in tests
+  that require them." Sieben Stellen in Bibliotheken: die Bilddecoder in
+  `inventur/cover_downloader.go` (zwei), `inventur/cover_hochladen.go` (zwei),
+  `api/katalog/cover.go` und `pkg/imageutil/webp.go`, dazu `bibliothek/docs` in `api/router.go`.
+  Vor dem Umzug nach `main.go` prüfen, welche Kommandos unter `cmd/` Bilder lesen: Ihnen fehlte
+  der Decoder sonst ohne Meldung beim Bau, erst beim Lesen eines Bilds.
+
+### 5.72 Dateigröße der Oberfläche: JS-Module ohne Prüfung
+
+`CLAUDE.md` nennt 200 Zeilen „je Frontend-Datei"; `frontend-hygiene-dateigroesse.test.js` zählt
+nur `.svelte`-Dateien (Bestand: zwölf über 200). Zwölf JS-Module haben über 300 Zeilen, gezählt am
+16.10.2026: `stores/omnibox.svelte.js` 1.174, `stores/bestellStore.svelte.js` 547,
+`designer/idDesignerStore.svelte.js` 546, `designer/ausweisVorlagen.js` 484 und acht weitere
+bis 301. Googles Maßstab für Dateien (Best Practices, „Package size"): „files should be focused
+enough that a maintainer can tell which file contains something". Der Omnibox-Store trägt
+Eingabe, Auflösung, Warteschlange, Sperrdialog, Leserauswahl und Zusammenführen
+([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Weg: (1) die Ratsche auf `.js` ausdehnen und den
+Bestand einfrieren; (2) den Omnibox-Store nach seinen Sachen teilen, in Stufen mit den
+Browser-Tests der Theke und einer Probe mit dem Handscanner. Vorher deine Freigabe, weil er der
+Kern der Theke ist.
 
 ---
 
