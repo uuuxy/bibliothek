@@ -125,7 +125,6 @@ func TestSperreUebergehenNurMitRechtSchuelerdatenAendern(t *testing.T) {
 }
 
 type geraeteListenAttrappe struct {
-	repository.GeraeteAbfragen
 	zeilen []repository.GeraetMitStatus
 }
 

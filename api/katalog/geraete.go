@@ -8,6 +8,7 @@ package katalog
 // ohne Vorsilbe nur Buch, Ausweis und Suche kennt.
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -42,9 +43,15 @@ type geraetAendernAnfrage struct {
 	IstAusleihbar *bool   `json:"ist_ausleihbar"`
 }
 
+// geraeteListe liefert alle Geräte im Bestand, das neueste zuerst, mit dem Namen dessen, der das
+// Gerät gerade hat (repository.GeraeteAbfragen).
+type geraeteListe interface {
+	LadeAlle(ctx context.Context) ([]repository.GeraetMitStatus, error)
+}
+
 // Geraete liefert die Geräteliste samt aktuellem Ausleiher.
 // GET /api/geraete
-func (t *Tueren) Geraete(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
+func (t *Tueren) Geraete(geraeteAbfragen geraeteListe) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		geraete, err := geraeteAbfragen.LadeAlle(r.Context())
 		if err != nil {
@@ -68,7 +75,7 @@ func (t *Tueren) Geraete(geraeteAbfragen repository.GeraeteAbfragen) http.Handle
 }
 
 // GeraetAnlegen legt ein Gerät an. POST /api/geraete
-func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
+func (t *Tueren) GeraetAnlegen(geraeteAbfragen *repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req geraetAnlegenAnfrage
 		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
@@ -104,7 +111,7 @@ func (t *Tueren) GeraetAnlegen(geraeteAbfragen repository.GeraeteAbfragen) http.
 
 // GeraetAendern pflegt Stammdaten und den Defekt-Status.
 // PUT /api/geraete/{id}
-func (t *Tueren) GeraetAendern(geraeteAbfragen repository.GeraeteAbfragen) http.HandlerFunc {
+func (t *Tueren) GeraetAendern(geraeteAbfragen *repository.GeraeteAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req geraetAendernAnfrage
 		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.

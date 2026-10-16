@@ -66,12 +66,8 @@ type GeraetMitStatus struct {
 }
 
 // GeraeteAbfragen liest und schreibt die Geräte für ihre Verwaltung.
-type GeraeteAbfragen interface {
-	LadeAlle(ctx context.Context) ([]GeraetMitStatus, error)
-	LegeAn(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error)
-	// Aendere ändert Stammdaten und ob das Gerät ausleihbar ist (nicht ausleihbar heißt defekt
-	// oder gesperrt).
-	Aendere(ctx context.Context, id string, aenderung GeraetAenderung) error
+type GeraeteAbfragen struct {
+	db db.Pool
 }
 
 // GeraetAenderung nennt, was an einem Gerät geändert wird. Ein Feld ohne Wert (nil) ist nicht
@@ -92,18 +88,14 @@ func (a GeraetAenderung) istLeer() bool {
 		a.Seriennummer == nil && a.IstAusleihbar == nil
 }
 
-type pgGeraeteAbfragen struct {
-	db db.Pool
-}
-
 // NewGeraeteAbfragen liefert die Abfragen der Geräte am übergebenen Pool.
-func NewGeraeteAbfragen(pool db.Pool) GeraeteAbfragen {
-	return &pgGeraeteAbfragen{db: pool}
+func NewGeraeteAbfragen(pool db.Pool) *GeraeteAbfragen {
+	return &GeraeteAbfragen{db: pool}
 }
 
 // LadeAlle liefert alle Geräte, die nicht ausgesondert sind, das neueste zuerst, mit dem
 // Namen dessen, der das Gerät gerade hat; check_loan_borrower lässt höchstens einen zu.
-func (a *pgGeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, error) {
+func (a *GeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT g.id, g.modellname, g.seriennummer, g.barcode_id, g.zubehoer,
 		       g.ist_ausleihbar, g.ist_ausgesondert, g.zustand_notiz,
@@ -140,7 +132,7 @@ func (a *pgGeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, er
 
 // LegeAn legt ein Gerät an und liefert seine ID. Eine leere Seriennummer oder Zustandsnotiz
 // wird NULL.
-func (a *pgGeraeteAbfragen) LegeAn(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error) {
+func (a *GeraeteAbfragen) LegeAn(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error) {
 	var id string
 	err := a.db.QueryRow(ctx, `
 		INSERT INTO geraete (modellname, seriennummer, barcode_id, zubehoer, zustand_notiz)
@@ -153,12 +145,13 @@ func (a *pgGeraeteAbfragen) LegeAn(ctx context.Context, modellname string, serie
 	return id, nil
 }
 
-// Aendere schreibt, was die Änderung nennt. Der Dialog zum Bearbeiten nennt das Kennzeichen
+// Aendere schreibt, was die Änderung nennt: Stammdaten und ob das Gerät ausleihbar ist (nicht
+// ausleihbar heißt defekt oder gesperrt). Der Dialog zum Bearbeiten nennt das Kennzeichen
 // „defekt" nie (es liegt auf einem eigenen Knopf), der Knopf nennt nur das Kennzeichen. Eine
 // leere Seriennummer oder Zustandsnotiz wird NULL: Als leerer Text stieße das zweite Gerät
 // ohne Seriennummer an die Eindeutigkeit. Nennt die Änderung nichts, wird nichts geschrieben;
 // ein unbekanntes Gerät bleibt pgx.ErrNoRows.
-func (a *pgGeraeteAbfragen) Aendere(ctx context.Context, id string, aenderung GeraetAenderung) error {
+func (a *GeraeteAbfragen) Aendere(ctx context.Context, id string, aenderung GeraetAenderung) error {
 	if aenderung.istLeer() {
 		var vorhanden bool
 		if err := a.db.QueryRow(ctx,

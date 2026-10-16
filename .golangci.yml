@@ -81,7 +81,6 @@ linters:
       # nur kürzer: Wer einen Erzeuger auf den Typ umstellt, streicht seine Zeile.
       - { linters: [ireturn], text: ^NewAusleihAbfragen returns }
       - { linters: [ireturn], text: ^NewEinstellungsAbfragen returns }
-      - { linters: [ireturn], text: ^NewGeraeteAbfragen returns }
       - { linters: [ireturn], text: ^NewKatalogAbfragen returns }
       - { linters: [ireturn], text: ^NewLeserAbfragen returns }
       - { linters: [ireturn], text: ^NewProtokollAbfragen returns }

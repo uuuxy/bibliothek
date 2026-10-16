@@ -67,7 +67,7 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 
 // geraetAusListe holt ein Gerät über die Verwaltungs-Liste — genau den Weg, den
 // die Oberfläche nimmt.
-func geraetAusListe(t *testing.T, repo GeraeteAbfragen, id string) GeraetMitStatus {
+func geraetAusListe(t *testing.T, repo *GeraeteAbfragen, id string) GeraetMitStatus {
 	t.Helper()
 	liste, err := repo.LadeAlle(context.Background())
 	if err != nil {
