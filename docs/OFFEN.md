@@ -332,7 +332,7 @@ Vermerk.
   Workflow-Datei) auf `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf
   steht an jedem CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der
   CodeQL-Lauf rot.
-- **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026 abends
+- **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist
   `v2.11.1-0.20261003002531-6258dcebc4e2`, der Entwicklungsstand der Bibliothek vom
   03.10.2026. Er enthält die Korrekturen zu den neun Meldungen vom 07.10.2026 (CVE-2026-107217
   bis CVE-2026-107225) und zu den sechs vom 08.10.2026 (CVE-2026-107211 bis CVE-2026-107216,
@@ -344,7 +344,7 @@ Vermerk.
   Werte, roh und formatiert (1.176 Blätter, 72.836 Zeilen, verglichen am 08.10.2026). Eine der
   sechs Meldungen trifft den eigenen Lesepfad: Eine Zeilennummer jenseits der Blattgrenze ließ
   `GetRows` jede fehlende Zeile abzählen, nach der Meldung bis zu elf Tage lang
-  (CVE-2026-107212; `pkg/xlsxgrenze/zeilennummer_test.go`, am Stand davor rot). Das Programm
+  (CVE-2026-107212; `pkg/xlsxgrenze/zeilennummer_test.go`). Das Programm
   liest mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
   (`inventur/excel_import.go`, `internal/lusd/quelle.go`, `api/system/littera_import.go`), alle
   durch `xlsxgrenze.LeseMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
@@ -353,7 +353,7 @@ Vermerk.
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5. Fällt an einem der drei Importe etwas
   auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
 - **gosec auf einem unveröffentlichten Stand.** Der Sicherheits-Prüflauf und der Hook vor dem
-  Push bauen seit dem 09.10.2026 gosec vom Entwicklungsstand des 05.10.2026
+  Push bauen gosec vom Entwicklungsstand des 05.10.2026
   (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51); die Fassung steht
   in `scripts/gosec-gate.sh`. Die jüngste
   veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am Stand des
@@ -363,7 +363,7 @@ Vermerk.
 - **Das Sammel-Update der Oberfläche vom 12.10.2026 ist rot** (Pull Request 730, zehn Pakete).
   Der Linter meldet nach dem Update drei gebundene Eigenschaften (`$bindable()`) als „assigned
   a value but only used as a type" (`@typescript-eslint/no-unused-vars`), und er läuft mit
-  `--max-warnings 0`: `queryVal` in `ThekenKamera.svelte`, `element` in `ui/Suchpille.svelte`
+  `--max-warnings 0`: `wert` in `ThekenKamera.svelte`, `element` in `ui/Suchpille.svelte`
   und `showWebcam` in `LeserakteKopf.svelte`. Jedes der drei Bauteile setzt den Wert nur,
   und er geht über `bind:` an den Aufrufer; die Meldung ist falsch. Nachgestellt am 12.10.2026
   in einem eigenen Arbeitsverzeichnis mit `npm ci`: Sie kommt mit typescript-eslint 8.71.1 und
@@ -396,14 +396,14 @@ Schulserver feststeht.
   `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht fest, solange die Zeilen davor
   gleich bleiben, und `update.sh` baut ohne `--pull` und ohne `--no-cache`. Der Trivy-Scan der
   CI prüft ein frisch gebautes Image, nicht das am Server. **Entschieden: `--pull --no-cache`;**
-  jedes Update baut dann alles neu (in der CI 93 Sekunden). Seit dem 13.10.2026 leert
-  `update.sh` nach jedem Update den Build-Cache ganz (Schritt 7): Das folgende Update baut
+  jedes Update baut dann alles neu (in der CI 93 Sekunden). `update.sh` leert nach jedem
+  Update den Build-Cache ganz (Schritt 7): Das folgende Update baut
   damit schon jede Schicht neu, auch die mit `apk upgrade`. Offen bleibt `--pull` für die
   Basis-Images.
 - **Das Löschen hängt am Lauf** (gefunden am 28.09.2026). `update.sh` und `scripts/backup.sh`
   löschen alte Sicherungen nur, wenn sie laufen. Kommt kein Update mehr, bleibt die letzte
   Vorab-Sicherung für immer; ein Klartext-Rest nach einem misslungenen Update bleibt bis zum
-  ersten Lauf eines der beiden Skripte nach zwei Tagen. Die Meldungen sagen das seit d0391f6d.
+  ersten Lauf eines der beiden Skripte nach zwei Tagen. Die Meldungen sagen das.
   Vorschlag, nicht nachgestellt: Mit fertigen Images bleibt das alte Image am Server. Läuft
   der alte Container, verschlüsselt Schritt 1 die Sicherung sofort, und der Rückweg
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
@@ -452,11 +452,11 @@ nimmt auch den Go-Code mit: Kommentare anderer Pakete nennen den Namen, und das 
 nur das erste Wort über der Erklärung nach. Eine Prüfung, die einen Aufruf an seinem Namen
 erkennt, bekommt vor dem Umbenennen ein Merkmal, das den Namen überlebt
 (`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des Ergebnisses). Einen
-umbenannten Dateinamen in Dokumenten und Kommentaren meldet `go test ./docs/`. Steht der Kommentar über dem Feld eines Anfrage- oder
-Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o docs`. Führt ein
-anderes Paket einen eigenen Bezeichner desselben Namens (`inventur.NewBookRepository`, das Feld
-`CustomerNumber` in `api/bestellung`), bleibt er: Die Suche als Text gilt deshalb nur im
-Ordner des Pakets und für die Form `paket.Name`.
+umbenannten Dateinamen in Dokumenten und Kommentaren meldet `go test ./docs/`. Steht der
+Kommentar über dem Feld eines Anfrage- oder Antworttyps, steht er auch in `docs/docs.go`:
+danach `swag init -g main.go -o docs`. Führt ein anderes Paket einen eigenen Bezeichner
+desselben Namens (einen Erzeuger oder ein Feld), bleibt er: Die Suche als Text gilt deshalb
+nur im Ordner des Pakets und für die Form `paket.Name`.
 
 **Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten
 ([STIL.md](STIL.md), Abschnitt 9).
@@ -539,14 +539,13 @@ CSV-Verzeichnis ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1b): `FremdLeserNummer` gef
 Schlagworten (4.20). Ob es die volle Datenbank ist, zeigt erst das Einspielen; dass die jüngere
 Datei kleiner ist, ist ungeklärt.
 **Etiketten vor dem Lauf prüfen:** `LITTERA_CSV_DIR=… go test ./internal/littera/` gegen die
-ausgegebenen Tabellen. Der Test vergleicht seit dem 28.09.2026 den vollen EAN-13 jedes Etiketts
-mit der Rechnung (`pruefeEtiketten`); bis dahin prüfte er nur die Nummer und sah nicht, dass die
-Übernahme für Nummern unter sechs Stellen falsch rechnete (1b594d1e). Exemplare, deren Etikett
+ausgegebenen Tabellen. Der Test vergleicht den vollen EAN-13 jedes Etiketts mit der Rechnung
+(`pruefeEtiketten`). Exemplare, deren Etikett
 schon ein anderes trägt (2010: 8), stehen nach dem Lauf unter „Fehlende Etiketten"
 ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
 
-**Lesergruppen ohne Zuordnung vor dem Umstiegstag klären.** Seit dem 28.09.2026 übernimmt der
-Lauf jeden Leser ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1); eine Lesergruppe ohne Zuordnung hält
+**Lesergruppen ohne Zuordnung vor dem Umstiegstag klären.** Der Lauf übernimmt jeden
+Leser ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1); eine Lesergruppe ohne Zuordnung hält
 ihn an, bevor er schreibt. In der Sicherung von 2010 ist das „Undefinierte Untergruppe" (5
 Personen, 21 Ausleihen). Mit dem frischen Backup die Generalprobe fahren ([SCRIPTS.md](SCRIPTS.md),
 Abschnitt 1b; mit der Sicherung von 2010 am 28.09.2026 bestanden, 15.612 von 15.615 Ausleihen);
@@ -697,13 +696,13 @@ Buch scannen. Erwartet: Das Feld bleibt leer, der Dialog bleibt offen, nichts ä
 **Die Maske „Buch bearbeiten" ansehen:**
 zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
 Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
-Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
-03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
-Signatur zum Feld. Seit dem 03.10.2026 ist die ISBN freiwillig, Pflicht ist der Titel (Stern
+Zähldatum unter „Exemplare". Ein Feld „Beschreibung / Klappentext" gibt es
+nicht; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
+Signatur zum Feld. Die ISBN ist freiwillig, Pflicht ist der Titel (Stern
 an der Beschriftung): einen Titel ohne ISBN öffnen, die Signatur ändern und speichern; ein
 Medium ohne ISBN neu anlegen und danach noch einmal mit demselben Titel und Autor — die
-Maske fragt dann „Ist es dasselbe Medium?". Seit dem 03.10.2026 sind die zehn- und die
-dreizehnstellige ISBN dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom Titelblatt
+Maske fragt dann „Ist es dasselbe Medium?". Die zehn- und die
+dreizehnstellige ISBN sind dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom Titelblatt
 anlegen — gespeichert steht die dreizehnstellige im Feld — und danach in „Neues Buch"
 seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
 
@@ -715,7 +714,7 @@ Druck-Center, Reiter „Schülerausweise". Gemessen ist das in der Druckansicht 
 
 **Das Mahnwesen ansehen:** Kinder anhaken, „Mahnbriefe drucken". Es
 kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
-„1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
+„1× gemahnt, zuletzt …". „Liste drucken" druckt die Liste als Tabelle, je
 Buch eine Zeile; einmal ausdrucken und ansehen.
 
 **Der Jahrgang am Titel.** Das Update nimmt jedem Titel, der „5 bis 10" trug, den Jahrgang (am
