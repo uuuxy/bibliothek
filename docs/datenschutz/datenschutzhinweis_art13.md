@@ -1,6 +1,6 @@
 # Datenschutzhinweis Schulbibliothek / Lernmittel — Entwurf (Art. 13 DSGVO)
 
-**Status:** Entwurf aus dem Projekt (22.08.2026) für die Schule. **Nachtrag 05.09.2026:** Absatz „Wie lange" an die Karenz ab dem letzten Vorgang angepasst — zum Gegenlesen durch die Schule. **Nachtrag 08.10.2026:** Herkunft aus dem bisherigen Programm ergänzt, wie im Verzeichnis. Zwei Fassungen, weil zwei
+**Status:** Entwurf aus dem Projekt für die Schule (Stand: 16.10.2026). Zwei Fassungen, weil zwei
 Rechtsgrundlagen: **A** gehört in die Information bei der Schulaufnahme (§ 5 Abs. 2 SchDSV),
 **B** wird bei der Anmeldung zur Schülerbücherei ausgegeben (HBDI-Muster) — mit
 Einwilligungsfeld. Eckige Klammern füllt die Schule. Fachlich prüft der schulische

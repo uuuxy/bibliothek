@@ -65,9 +65,8 @@ Umfang, gemessen am 08.10.2026: rund 76.300 Zeilen Go im Produktivcode, dazu 118
 Zeilen in 811 Testdateien; etwa 83.100 Zeilen Svelte/JavaScript und 161 e2e-Dateien. Die
 genauen Zahlen und alle Messbefehle stehen in [Architektur, Kapitel 1.4](docs/ARCHITEKTUR.md#1-einführung-und-ziele).
 
-Diese Zahlen altern. Die vorige Fassung stand auf dem Stand vom Juli und lag bei den
-Testzeilen um 47 % daneben — deshalb steht hier das Messdatum und darunter der Befehl,
-mit dem man sie in zehn Sekunden neu erhebt, statt einer gepflegten Behauptung:
+Diese Zahlen altern; deshalb steht hier das Messdatum und darunter der Befehl, mit dem man
+sie in zehn Sekunden neu erhebt, statt einer gepflegten Behauptung:
 
 ```bash
 ls migrations/*.sql | wc -l
@@ -183,7 +182,7 @@ Alles Weitere liegt in `docs/`.
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [WEGWEISER.md](docs/WEGWEISER.md)           | **Der Einstieg in den Code auf einer Seite:** der Weg einer Anfrage, vom Menüpunkt zum Ordner, die Stelle für häufige Änderungen |
 | [STIL.md](docs/STIL.md)                     | **Wie der Code geschrieben ist:** Namen, Sichtbarkeit und Kommentare nach Googles Regelwerk für Go, auf einer Seite |
-| [ARCHITEKTUR.md](docs/ARCHITEKTUR.md)       | **arc42-Architekturdokumentation** (12 Kapitel in einer Datei): Ziele und Stakeholder, Randbedingungen, Kontext, Lösungsstrategie, Bausteinsicht, zehn Laufzeitszenarien, Verteilung/CI, querschnittliche Konzepte, 24 Architekturentscheidungen als ADR, Qualitätsszenarien mit Gate, Risiken und Schulden, Glossar. Die frühere Kurzfassung ARCHITECTURE.md ist am 18.09.2026 darin aufgegangen |
+| [ARCHITEKTUR.md](docs/ARCHITEKTUR.md)       | **arc42-Architekturdokumentation** (12 Kapitel in einer Datei): Ziele und Stakeholder, Randbedingungen, Kontext, Lösungsstrategie, Bausteinsicht, zehn Laufzeitszenarien, Verteilung/CI, querschnittliche Konzepte, 24 Architekturentscheidungen als ADR, Qualitätsszenarien mit Gate, Risiken und Schulden, Glossar. |
 | [invarianten.md](docs/invarianten.md)       | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist                                                                                                                                                                                                                                                                                                                            |
 | [sweeps.md](docs/sweeps.md)                 | Die Prüfachsen: Bugklassen, ihre Detektoren und Ratschen — neben dem Raster die Bestands-Achse                                                                                                                                                                                                                                                                                                              |
 | [OFFEN.md](docs/OFFEN.md)                   | **Die eine Liste** alles Offenen — Fahrplan, Fehler, Entscheidungen, Betrieb; neue Funde kommen nur hierher                                                                                                                                                                                                                                                                                     |
