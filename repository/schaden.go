@@ -28,20 +28,8 @@ func (a SchadensArt) IstGueltig() bool {
 
 // SchadensAbfragen bucht einen Verlust oder Schaden an einer Ausleihe und liest die
 // Schadensfälle eines Lesers.
-type SchadensAbfragen interface {
-	// Melde bucht einen Verlust oder Schaden an einer Ausleihe. Einen Schuldner nimmt
-	// die Tür nicht entgegen: Er steht an der Ausleihe.
-	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error)
-	// LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst, für die Liste
-	// der Forderungen in der Akte.
-	LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error)
-
-	// StorniereForderung storniert eine offene Forderung mit Begründung und protokolliert es.
-	// Den Betrag liest es aus der Datenbank, der Rufer übergibt ihn nicht.
-	StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error
-
-	// VerbucheZahlung verbucht die Zahlung einer offenen Forderung und protokolliert es.
-	VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error
+type SchadensAbfragen struct {
+	db db.Pool
 }
 
 // Schadensfall ist eine Zeile der Liste der Forderungen in der Akte eines Lesers. Titel und
@@ -62,18 +50,15 @@ type Schadensfall struct {
 	BescheidID *string `json:"bescheid_id"`
 }
 
-type pgSchadensAbfragen struct {
-	db db.Pool
-}
-
 // NewSchadensAbfragen liefert die Abfragen der Schadensfälle an Postgres.
-func NewSchadensAbfragen(db db.Pool) SchadensAbfragen {
-	return &pgSchadensAbfragen{db: db}
+func NewSchadensAbfragen(db db.Pool) *SchadensAbfragen {
+	return &SchadensAbfragen{db: db}
 }
 
-// LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst. Mit LEFT JOIN, weil
-// exemplar_id bei einem Geräteschaden leer ist; Titel und Barcode bleiben dann leer.
-func (a *pgSchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error) {
+// LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst, für die Liste der
+// Forderungen in der Akte. Mit LEFT JOIN, weil exemplar_id bei einem Geräteschaden leer ist;
+// Titel und Barcode bleiben dann leer.
+func (a *SchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT sf.id, sf.beschreibung, sf.betrag, sf.ist_bezahlt, sf.erstellt_am,
 		       sf.storniert_am, sf.stornierungsgrund, t.titel, e.barcode_id, sf.bescheid_id
@@ -104,9 +89,10 @@ func (a *pgSchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([
 // während das Formular der Schadensmeldung offen stand. Die Tür antwortet mit 409.
 var ErrExemplarNeuVerliehen = errors.New("exemplar inzwischen neu ausgeliehen")
 
-// Melde bucht einen Verlust oder Schaden in eigener Transaktion, für „Verlust/Schaden melden"
-// in der Akte. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
-func (a *pgSchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+// Melde bucht einen Verlust oder Schaden an einer Ausleihe in eigener Transaktion, für
+// „Verlust/Schaden melden" in der Akte. Einen Schuldner nimmt es nicht entgegen: Er steht an der
+// Ausleihe. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
+func (a *SchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return "", err

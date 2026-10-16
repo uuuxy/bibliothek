@@ -18,7 +18,6 @@ import (
 // Das SQL-Verhalten selbst sichert repository/forderung_erledigen_pg_test.go.
 
 type gebuehrAttrappe struct {
-	repository.SchadensAbfragen
 	stornoErr  error
 	bezahltErr error
 	grund      string

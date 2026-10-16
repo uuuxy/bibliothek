@@ -1,6 +1,7 @@
 package schaden
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -10,9 +11,17 @@ import (
 	"bibliothek/repository"
 )
 
+// schadensMeldung bucht einen Verlust oder Schaden an einer Ausleihe und liefert die ID des
+// Schadensfalls (repository.SchadensAbfragen). Hat sich die Lage geändert, seit die Akte offen
+// steht, liefert es repository.ErrExemplarNeuVerliehen oder
+// repository.ErrAusleiheInzwischenZurueck.
+type schadensMeldung interface {
+	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art repository.SchadensArt, betrag float64) (string, error)
+}
+
 // SchadenMelden meldet einen Verlust oder Schaden (POST /api/damage/report): Das Exemplar wird
 // ausgesondert, die Forderung angelegt und die Ausleihe beendet.
-func (t *Tueren) SchadenMelden(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
+func (t *Tueren) SchadenMelden(schadensAbfragen schadensMeldung) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {

@@ -1,6 +1,7 @@
 package schaden
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -19,9 +20,23 @@ import (
 // Arbeitsplätze am Kiosk sind dauerhaft mit der Rolle Helfer angemeldet, und Forderungen
 // erledigen dürfen nur Rollen, die Schülerdaten bearbeiten.
 
+// zahlungsBuchung verbucht die Zahlung einer offenen Forderung (repository.SchadensAbfragen);
+// repository.ErrSchadensfallNichtGefunden oder repository.ErrSchadensfallErledigt, wenn es keine
+// offene Forderung dieser Kennung gibt.
+type zahlungsBuchung interface {
+	VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error
+}
+
+// forderungsStorno storniert eine offene Forderung mit Begründung (repository.SchadensAbfragen);
+// den Betrag liest es selbst. Gibt es keine offene Forderung dieser Kennung, liefert es dieselben
+// Fehler wie zahlungsBuchung.
+type forderungsStorno interface {
+	StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error
+}
+
 // SchadensfaelleDesSchuelers liefert alle Schadensfälle eines Schülers für
 // die Gebühren-Sektion der Schülerakte (GET /api/schueler/{id}/schadensfaelle).
-func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
+func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen *repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -51,7 +66,7 @@ func erledigungsFehler(err error, aktion string) error {
 
 // ZahlungVerbuchen verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
 // Ohne Rumpf: Der Betrag kommt immer aus der Datenbank, nie von der Oberfläche.
-func (t *Tueren) ZahlungVerbuchen(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
+func (t *Tueren) ZahlungVerbuchen(schadensAbfragen zahlungsBuchung) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {
@@ -67,7 +82,7 @@ func (t *Tueren) ZahlungVerbuchen(schadensAbfragen repository.SchadensAbfragen) 
 
 // ForderungStornieren storniert eine Forderung mit Pflicht-Begründung
 // (POST /api/schadensfaelle/{id}/storno).
-func (t *Tueren) ForderungStornieren(schadensAbfragen repository.SchadensAbfragen) http.HandlerFunc {
+func (t *Tueren) ForderungStornieren(schadensAbfragen forderungsStorno) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {

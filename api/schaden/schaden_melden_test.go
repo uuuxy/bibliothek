@@ -16,7 +16,6 @@ import (
 // meldeAttrappe gibt beim Melden den Fehler zurück, den der Test braucht. Wann die Abfragen
 // ihn liefern, prüft repository/schaden_melden_ausleihe_pg_test.go an der Datenbank.
 type meldeAttrappe struct {
-	repository.SchadensAbfragen
 	err error
 }
 
