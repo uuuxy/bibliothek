@@ -2,53 +2,7 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-15 (Adresse des Browsers: Der Server legt den Ermittler mit den
-> vertrauten Proxys an und setzt ihn an den Anfang seiner Kette).
-> Davor 2026-10-09 (Löschroutinen: Die Selbstprüfung zählt auch den Rückstand
-> der Bearbeiter an zurückgegebenen Ausleihen; gosec läuft im Hook vor dem Push mit, Fassung,
-> Aufruf und Ausschlussliste stehen in `scripts/gosec-gate.sh`).
-> Davor 2026-10-08 (XLSX-Importe: alle Lesestellen durch
-> `xlsxgrenze.LeseMappe` — Absturz-Schranke und Abweisung verschlüsselter Container; excelize
-> auf dem Stand mit den Korrekturen zu fünfzehn gemeldeten Schwachstellen).
-> Davor 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll;
-> Bestätigungs-Link: die Angabe „180 Tage" berichtigt, gültig ist er 21 Tage als Vorgabe).
-> Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
-> getipptes Passwort gilt als Scan).
-> Davor 2026-10-01 (Einrichtung: was `APP_ENV` schaltet, die Vorlage ohne
-> `IMAP_HOST=mock`; `/uploads/` liefert nur Dateien direkt im Verzeichnis aus; die Sperre nach
-> Inaktivität gilt am Server, dazu ein Prüfwert des Passworts für die Dauer der Anmeldung).
-> Davor 2026-09-30 (Security-Header: Antworten unter `/api/` tragen
-> `Cache-Control: no-store`, der Browser legt sie nicht ab).
-> Davor 2026-09-29 (Löschroutinen: erledigte Klassensatz-Reservierungen fallen
-> nach der Frist der Anliegen, gelöschte Kollegen nach 180 Tagen im Papierkorb).
-> Davor 2026-09-26 (Protokoll: die einmalige Bereinigung zu gelöschten Lesern, Migration 147;
-> übergangen wird ein Hinweis, keine Sperre).
-> Davor 2026-09-25 (Ausnahmeliste von govulncheck leer: GO-2026-6452 gilt in
-> der Datenbank als behoben, die Abwehr über gleiche Entpackgrenzen bleibt).
-> Davor 2026-09-24 (Anonymisierung: die Ausweisnummer wird ersetzt, eine
-> `A-`-Nummer bleibt als bloße Zahl gesperrt, Migration 146).
-> Davor 2026-09-23 (Endpunkte ohne Anmeldung: was das Routen-Gate als Schutz
-> annimmt, die Tabelle mit allen Einträgen der Allowlist; `RequireRoles` ist seit dem
-> 04.08.2026 entfallen).
-> Davor 2026-09-17 (das Vuln-Gate mit benannten Ausnahmen:
-> `scripts/govulncheck-gate.sh` und `security/vuln-ausnahmen.json`).
-> Davor 2026-09-16 (Rollenkonzept: `leitung` ergänzt — Admin minus
-> `manage_users` und `manage_settings`, Migration 122; Kollegium als Grundzustand statt
-> als vergebene Rolle beschrieben).
-> Davor 2026-09-11 (Token-Prüfung: Ist die Datenbank beim Abgleich mit
-> Sperrliste oder Kontostatus nicht erreichbar, wird die Anfrage weiterhin abgelehnt, aber mit
-> 503 statt 401 — die Sitzung gilt nicht als abgelaufen, der Arbeitsplatz bleibt angemeldet).
-> Davor 2026-09-07 (Sicherheits-Audit über Auth/Authz, Injection, Dateien,
-> SSRF, Secrets, XSS, DoS: kein aus dem Netz ausnutzbarer Fund; drei Fixes — Secret-Guard
-> kennt die .env.example-Platzhalter, Theken-Antwort reduziert Lehrkräfte auf Identität
-> (MitarbeiterKiosk), XLSX-Entpackgrenze 256 MB für alle drei Importwege; Audit-Zeile der
-> Ausleihe steht seit demselben Tag IN der Transaktion).
-> Davor 2026-09-05 abends (Sicherheits-Audit: Client-IP ein Hop, Cover-Proxy
-> an den Katalog gebunden, Secret-Guard als Vorgabe scharf, Login-Rumpfgrenze, OPAC-Joker).
-> Davor 2026-09-05 (Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang).
-> Davor 2026-09-02 (PII-Stufen gemessen: GET + lesende POSTs), 2026-08-24 (Löschbarkeit einzelner Felder), 2026-08-06
-> (Audit-Nachlese: Cover-Proxy, SMTP-STARTTLS,
-> Lesefristen, Panic-Log, Secret-Guard-Klarstellung)
+> Zuletzt aktualisiert: 2026-10-15
 
 ---
 
@@ -78,18 +32,18 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
 ### JWT (JSON Web Tokens)
 
 - **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
-- **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist- oder die Kontostatus-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 503), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen. Bewusst nicht 401: Eine 401 meldet den Arbeitsplatz im Client ab — ein kurzer Datenbank-Aussetzer hätte bis 11.09.2026 alle Arbeitsplätze abgemeldet.
+- **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist- oder die Kontostatus-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 503), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen. Bewusst nicht 401: Eine 401 meldet den Arbeitsplatz im Client ab — ein kurzer Datenbank-Aussetzer meldete sonst alle Arbeitsplätze ab.
 - **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
-- **Inaktivität (seit 22.08.2026):** Zwei Fristen im Client, beide in den Einstellungen („Datenschutz & Sitzung", 0 = aus): Nach **5 Minuten** ohne Bedienung lässt die Theken-Ansicht den geladenen Schüler/Lehrer fallen (der nächste an der Theke sieht nicht den vorigen), nach **15 Minuten** kommt der **Sperrbildschirm** — verdeckt die ganze Anwendung, weiter nur mit dem eigenen Passwort oder per Abmelden. Die Sitzung selbst läuft weiter (Kiosk-Tabs überleben die Nacht). Als Bedienung zählen Zeiger, Tastatur (= Scanner), Berührung, Rad — nicht SSE-Pings oder Poller. Die Fristen holt jeder angemeldete Client von `GET /api/einstellungen/sitzung` (`VerlangeAnmeldung`, nur zwei Zahlen).
-  - **Was hinter dem Sperrbildschirm steht** (seit 01.10.2026): Die Anwendung bleibt aufgebaut, damit eine halb ausgefüllte Maske die Sperre überlebt; bis dahin wurde sie abgebaut, und was getippt und nicht gespeichert war, war nach dem Aufschließen weg. Hinter der Sperre ist sie ausgeblendet und träge (`hidden`, `inert`, `Anwendungsrahmen.svelte`): Die Druckvorschau zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht — die drei Gründe, aus denen sie am 22.08.2026 abgebaut wurde. Tasten, Klicks und die Zurück-Taste des Browsers erreichen sie nicht (`frontend/src/lib/sperrSchild.js`, `Router.svelte`), eine laufende Kamera ruht (`actions/ruhtWennTraege.js`), Meldungen und eine offene Rückfrage sind nicht zu sehen; die Rückfrage steht nach dem Aufschließen wieder da. Nach einem Start in die Sperre (neu geladen, neuer Tab) steht nichts dahinter. **Grenze:** Die ausgeblendete Seite liegt im Speicher des Browsers. Wer an einem gesperrten Rechner die Entwicklerwerkzeuge öffnet oder die Seite über das Menü des Browsers speichert, kann lesen, was vor der Sperre auf dem Bildschirm stand. Neue Daten gibt der Server erst nach dem Passwort heraus. Gates: `frontend/e2e/sperre-ungespeichertes.spec.js` (Maske bleibt; Druck, Tab, Zugänglichkeitsbaum, Escape, Zurück-Taste, offene Rückfrage), `frontend/src/lib/sperrSchild.test.js`, `frontend/src/lib/frontend-hygiene-seitenweite-zuhoerer.test.js` (jeder Zuhörer an `window` oder `document` ist abgeschirmt oder begründet ausgenommen), `frontend/src/lib/kameraHinterDerSperre.test.js`.
-  - **Die Sperre gilt am Server** (seit Migration 155, entschieden am 01.10.2026): Mit dem Sperrbildschirm sperrt der Client die Anmeldung (`POST /api/auth/sperren`). Bis das Passwort eingegeben ist, beantwortet der Server jede Anfrage dieser Anmeldung mit 423 — auch nach dem Neuladen, in einem neuen Tab und mit einem erneuerten Token (das Token trägt die Kennung der Zeile in `sitzungen`). Über die Anmeldung selbst liefert er dann nur die E-Mail-Adresse.
+- **Inaktivität:** Zwei Fristen im Client, beide in den Einstellungen („Datenschutz & Sitzung", 0 = aus): Nach **5 Minuten** ohne Bedienung lässt die Theken-Ansicht den geladenen Schüler/Lehrer fallen (der nächste an der Theke sieht nicht den vorigen), nach **15 Minuten** kommt der **Sperrbildschirm** — verdeckt die ganze Anwendung, weiter nur mit dem eigenen Passwort oder per Abmelden. Die Sitzung selbst läuft weiter (Kiosk-Tabs überleben die Nacht). Als Bedienung zählen Zeiger, Tastatur (= Scanner), Berührung, Rad — nicht SSE-Pings oder Poller. Die Fristen holt jeder angemeldete Client von `GET /api/einstellungen/sitzung` (`VerlangeAnmeldung`, nur zwei Zahlen).
+  - **Was hinter dem Sperrbildschirm steht:** Die Anwendung bleibt aufgebaut, damit eine halb ausgefüllte Maske die Sperre überlebt. Hinter der Sperre ist sie ausgeblendet und träge (`hidden`, `inert`, `Anwendungsrahmen.svelte`): Die Druckvorschau zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht. Tasten, Klicks und die Zurück-Taste des Browsers erreichen sie nicht (`frontend/src/lib/sperrSchild.js`, `Router.svelte`), eine laufende Kamera ruht (`actions/ruhtWennTraege.js`), Meldungen und eine offene Rückfrage sind nicht zu sehen; die Rückfrage steht nach dem Aufschließen wieder da. Nach einem Start in die Sperre (neu geladen, neuer Tab) steht nichts dahinter. **Grenze:** Die ausgeblendete Seite liegt im Speicher des Browsers. Wer an einem gesperrten Rechner die Entwicklerwerkzeuge öffnet oder die Seite über das Menü des Browsers speichert, kann lesen, was vor der Sperre auf dem Bildschirm stand. Neue Daten gibt der Server erst nach dem Passwort heraus. Gates: `frontend/e2e/sperre-ungespeichertes.spec.js` (Maske bleibt; Druck, Tab, Zugänglichkeitsbaum, Escape, Zurück-Taste, offene Rückfrage), `frontend/src/lib/sperrSchild.test.js`, `frontend/src/lib/frontend-hygiene-seitenweite-zuhoerer.test.js` (jeder Zuhörer an `window` oder `document` ist abgeschirmt oder begründet ausgenommen), `frontend/src/lib/kameraHinterDerSperre.test.js`.
+  - **Die Sperre gilt am Server** (Migration 155, entschieden am 01.10.2026): Mit dem Sperrbildschirm sperrt der Client die Anmeldung (`POST /api/auth/sperren`). Bis das Passwort eingegeben ist, beantwortet der Server jede Anfrage dieser Anmeldung mit 423 — auch nach dem Neuladen, in einem neuen Tab und mit einem erneuerten Token (das Token trägt die Kennung der Zeile in `sitzungen`). Über die Anmeldung selbst liefert er dann nur die E-Mail-Adresse.
   - **Aufschließen** (`POST /api/auth/entsperren`): Das Passwort prüft der Mailserver, mit denselben Zählern für Fehlversuche wie die Anmeldung. Nur wenn er nicht erreichbar ist, entscheidet der Prüfwert der Anmeldung (oben); lehnt der Mailserver ab, gilt das.
-  - **Ein Scan ist kein Passwort** (seit 01.10.2026): Am Sperrbildschirm steht der Fokus im Passwortfeld, und ein Handscanner tippt blind in das Feld, das ihn hat. Sein Scan ging als Passwort zum Server und zählte als Fehlversuch; nach fünf Scans war das Konto an diesem Rechner 15 Minuten gesperrt, auch für das richtige Passwort. Der Client erkennt den Scan an den Abständen der Tastendrücke (mindestens sechs Zeichen, jeder Abstand bis zum Enter höchstens 50 ms; `frontend/src/lib/scanErkennung.js`), schickt ihn nicht ab, stellt das Feld auf den Stand vor dem Scan zurück und meldet „Scan erkannt". Das Enter des Scanners drückt auch keinen Knopf: Steht der Fokus auf „Abmelden …", wird nicht abgemeldet. Dieselbe Regel gilt an der Anmeldemaske. Die Zähler am Server gelten unverändert; ein Scanner, der langsamer tippt als die Grenze, wird nicht erkannt. Umgekehrt gilt ein Passwort als Scan, wenn ein Programm oder ein Schlüsselgerät es in dieser Geschwindigkeit tippt (Auto-Type eines Passwortmanagers); eingefügt oder vom Browser ausgefüllt gilt es nicht, weil dabei keine Zeichentasten gedrückt werden. Gates: `frontend/src/lib/scanErkennung.test.js`, Live-Pfad `frontend/e2e/sperre-scan.spec.js` (blind getippt, ohne Klick; am alten Stand rot).
+  - **Ein Scan ist kein Passwort:** Am Sperrbildschirm steht der Fokus im Passwortfeld, und ein Handscanner tippt blind in das Feld, das ihn hat. Ginge sein Scan als Passwort zum Server, zählte er als Fehlversuch; nach fünf Scans wäre das Konto an diesem Rechner 15 Minuten gesperrt, auch für das richtige Passwort. Der Client erkennt den Scan an den Abständen der Tastendrücke (mindestens sechs Zeichen, jeder Abstand bis zum Enter höchstens 50 ms; `frontend/src/lib/scanErkennung.js`), schickt ihn nicht ab, stellt das Feld auf den Stand vor dem Scan zurück und meldet „Scan erkannt". Das Enter des Scanners drückt auch keinen Knopf: Steht der Fokus auf „Abmelden …", wird nicht abgemeldet. Dieselbe Regel gilt an der Anmeldemaske. Die Zähler am Server gelten unverändert; ein Scanner, der langsamer tippt als die Grenze, wird nicht erkannt. Umgekehrt gilt ein Passwort als Scan, wenn ein Programm oder ein Schlüsselgerät es in dieser Geschwindigkeit tippt (Auto-Type eines Passwortmanagers); eingefügt oder vom Browser ausgefüllt gilt es nicht, weil dabei keine Zeichentasten gedrückt werden. Gates: `frontend/src/lib/scanErkennung.test.js`, Live-Pfad `frontend/e2e/sperre-scan.spec.js` (blind getippt, ohne Klick; am alten Stand rot).
   - **Mehrere Fenster:** Die Anmeldung gehört dem ganzen Browser. Bedienung in einem Fenster hält die Sperre für alle auf, und gesperrt wie aufgeschlossen wird in allen zugleich. Ob gesperrt ist, sagt dabei allein der Server; die Fenster geben sich nur Bescheid.
   - **Ohne Verbindung zum Server** wird nicht gesperrt, nur die Theke geleert (FACHKONZEPT.md 18.4). Kommt die Verbindung zurück, überträgt der Rechner erst die Warteschlange und sperrt dann.
   - **Eine Anmeldung ohne Zeile in `sitzungen`** (ausgestellt vor Migration 155) sperrt der Server nicht und erneuert sie nicht: Ohne Prüfwert ließe sie sich bei einem Ausfall des Mailservers nicht aufschließen. Für sie bleibt die Sperre bis zum Ablauf des Tokens ein Sichtschutz im Fenster.
   - Gates: `auth/sperre_pg_test.go` (Server, auch mit totem Mailserver), `api/sperre_middleware_test.go` (423 an jeder geschützten Route), `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, mehrere Fenster), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js` (423 hinter der Sperre, Neuladen, neuer Tab). Jedes am Rückbau rot gesehen.
-- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/anmelden.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
+- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Der Code setzt `http.SameSiteStrictMode` (`auth/anmelden.go`).
 
 ### Brute-Force-Schutz (Login)
 
@@ -100,12 +54,12 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
   Seitenaufruf lädt dutzende Bilder gleichzeitig, und SSE ist eine Dauerverbindung. Die
   Ausnahme gilt der **Auslieferung**; der teure Zweig des Cover-Proxys (fremder Download)
   hat eine eigene Bremse, siehe „Cover-Proxy" weiter unten.
-- **Anmelde-Rumpf begrenzt** (seit 05.09.2026, `anmeldeRumpfMaxBytes` = 16 KB): `/login` ist der
+- **Anmelde-Rumpf begrenzt** (`anmeldeRumpfMaxBytes` = 16 KB): `/login` ist der
   eine unangemeldete Endpunkt, der JSON liest, und die serverweite 100-MB-Grenze gilt den
   Importen. `json.Decoder` puffert einen Zeichenkettenwert vollständig — fünfzig parallele
   100-MB-Rümpfe wären fünf Gigabyte Speicher ohne ein gültiges Passwort.
 
-### Welche IP zählt — genau ein Proxy-Hop (`pkg/clientip`, seit 05.09.2026)
+### Welche IP zählt — genau ein Proxy-Hop (`pkg/clientip`)
 
 Alle IP-gebundenen Schutzmechanismen (beide Login-Limiter, der globale Rate-Limiter, die
 Cover-Bremse, das Audit-Log) fragen `clientip.AusAnfrage`. Die Regel: `X-Forwarded-For`
@@ -123,19 +77,17 @@ Start nicht verhindert. Der Start nennt ihn als Warnung im Log, die Selbstprüfu
 „Vertraute Proxys"; beide fragen `clientip.UnlesbareEintraege`, also dieselbe Regel wie der
 Ermittler.
 
-Bis zum 05.09.2026 lief das Paket **rekursiv**: Er übersprang jeden Eintrag, der in
-einem vertrauten Netz lag. Der Compose-Default vertraut allen RFC-1918-Netzen (das
-Docker-Subnetz ist je Host anders), und die Schul-Clients liegen selbst in 192.168.x/10.x.
-Gemessen: Client 192.168.1.50 und Client 192.168.1.77 wurden beide zu Caddys Adresse
-172.18.0.5 — die ganze Schule war für den volumetrischen Login-Limiter **ein** Client
-(50 Fehlversuche in 15 Minuten von irgendwem sperrten die Anmeldung für alle), das
-50-req/s-Budget galt für das Gebäude, und das Audit-Log notierte den Proxy. Reicht ein
-Proxy den eingehenden Header durch, kehrte sich das um: `X-Forwarded-For: 8.8.8.8` vom
-Client kam als Client-IP durch, die Limiter waren frei wählbar. Beides ist mit „ein Hop,
-rechtester Eintrag" weg; eine Proxy-**Kette** löst das Paket bewusst nicht mehr bis zum
-Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
-`TestErmittler_LanClientHinterProxy`, `TestErmittler_DurchgereichterHeaderIstNichtWaehlbar`
-(beide mit dem alten Code rot gesehen).
+Ein Verfahren, das **rekursiv** jeden Eintrag in einem vertrauten Netz überspringt, scheitert
+hier: Der Compose-Default vertraut allen RFC-1918-Netzen (das Docker-Subnetz ist je Host
+anders), und die Schul-Clients liegen selbst in 192.168.x/10.x. Gemessen: Client 192.168.1.50
+und Client 192.168.1.77 wurden beide zu Caddys Adresse 172.18.0.5 — die ganze Schule wäre für
+den volumetrischen Login-Limiter **ein** Client (50 Fehlversuche in 15 Minuten von irgendwem
+sperrten die Anmeldung für alle), das 50-req/s-Budget gälte für das Gebäude, und das
+Audit-Log notierte den Proxy. Reicht ein Proxy den eingehenden Header durch, kehrt sich das um:
+`X-Forwarded-For: 8.8.8.8` vom Client käme als Client-IP durch, die Limiter wären frei
+wählbar. „Ein Hop, rechtester Eintrag" schließt beides aus; eine Proxy-**Kette** löst das
+Paket bewusst nicht bis zum Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch).
+Gates: `TestErmittler_LanClientHinterProxy`, `TestErmittler_DurchgereichterHeaderIstNichtWaehlbar`.
 
 ---
 
@@ -143,33 +95,33 @@ Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
 
 ### verlangeRecht-Middleware
 
-- Alle schützenswerten Endpunkte sind über `verlangeRecht` abgesichert (im Inventur-Modul über die hereingereichten Wächter `VerlangeLesen`, `VerlangeAendern`, `VerlangeLoeschen` und `VerlangeAnmeldung`); `RequireRoles` ist am 04.08.2026 entfallen.
+- Alle schützenswerten Endpunkte sind über `verlangeRecht` abgesichert (im Inventur-Modul über die hereingereichten Wächter `VerlangeLesen`, `VerlangeAendern`, `VerlangeLoeschen` und `VerlangeAnmeldung`); einen Wächter, der nach der Rolle fragt, gibt es nicht.
 - **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
 - **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
-- **PII-Matrix (seit 18.08.2026):** [`docs/PII_MATRIX.de.md`](PII_MATRIX.de.md) stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht davor; `api/pii_matrix_test.go` hält Tabelle und Registrierung deckungsgleich — eine neue Route ohne Einstufung wird rot. Der Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und wird ohne `view_students` überall ausgeblendet (`ohneSperrgrund`). Seit dem 01.09.2026 ist die Stufe **gemessen, nicht nur behauptet**: `api/pii_antwort_pg_test.go` ruft jede GET-Route und die lesenden POSTs (Theken-Scan samt Batch, LUSD-Vorschau) über den echten Router mit genau dem Recht ihrer Zeile auf und prüft die Antwort gegen Kanarienwerte je Stufe.
+- **PII-Matrix:** [`docs/PII_MATRIX.de.md`](PII_MATRIX.de.md) stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht davor; `api/pii_matrix_test.go` hält Tabelle und Registrierung deckungsgleich — eine neue Route ohne Einstufung wird rot. Der Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und wird ohne `view_students` überall ausgeblendet (`ohneSperrgrund`). Die Stufe ist **gemessen, nicht nur behauptet**: `api/pii_antwort_pg_test.go` ruft jede GET-Route und die lesenden POSTs (Theken-Scan samt Batch, LUSD-Vorschau) über den echten Router mit genau dem Recht ihrer Zeile auf und prüft die Antwort gegen Kanarienwerte je Stufe.
 
-### `manage_users` ist nicht Administrator (seit 06.08.2026)
+### `manage_users` ist nicht Administrator
 
-`manage_users` ist ein **delegierbares** Recht (seit 24.08.2026 nur noch Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — der BenutzerUndRechte bietet es auch für
-MITARBEITER, KOLLEGIUM und HELFER an. Bis zum 06.08.2026 war es damit gleichbedeutend mit
-Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/benutzer/admin_schutz.go`):
+`manage_users` ist ein **delegierbares** Recht (Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — die Benutzerverwaltung bietet es auch für
+MITARBEITER, KOLLEGIUM und HELFER an. Drei Wege führten von ihm zum Administrator; jeder ist
+geschlossen (`api/benutzer/admin_schutz.go`):
 
-| Weg                  | Vorher                                                                                                                                                                                                                                                                                    | Jetzt                                                                                          |
+| Weg                  | Angriff                                                                                                                                                                                                                                                                                   | Regel                                                                                          |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Selbstbeförderung    | `PUT /api/benutzer/{eigene-id}` mit `rolle:"admin"` ging durch — der Selbstschutz unterstellte, wer sich selbst bearbeitet, sei bereits Admin, und ließ ausgerechnet diesen Fall zu                                                                                                       | Die **eigene Rolle** ist für niemanden änderbar, gleich welcher Rolle                          |
+| Selbstbeförderung    | `PUT /api/benutzer/{eigene-id}` mit `rolle:"admin"`; ein Selbstschutz, der unterstellt, wer sich selbst bearbeitet, sei bereits Admin, ließe ausgerechnet diesen Fall zu                                                                                                       | Die **eigene Rolle** ist für niemanden änderbar, gleich welcher Rolle                          |
 | Fremdbeförderung     | `POST /api/benutzer`/`PUT /api/benutzer/{id}` mit `rolle:"admin"` für ein beliebiges Konto                                                                                                                                                                                                | Die Rolle `admin` vergibt nur ein Administrator                                                |
-| Übernahme per E-Mail | Die Anmeldung prüft per IMAP und sucht den Benutzer danach über seine **E-Mail** (`auth/anmelden.go`). Wer die E-Mail eines Admin-Datensatzes auf die eigene Schuladresse setzte, bekam beim nächsten Login mit den **eigenen** Zugangsdaten die Admin-Sitzung — ganz ohne Rollenänderung | Ein Konto, das **heute** Administrator ist, kann nur ein Administrator bearbeiten oder löschen |
+| Übernahme per E-Mail | Die Anmeldung prüft per IMAP und sucht den Benutzer danach über seine **E-Mail** (`auth/anmelden.go`). Wer die E-Mail eines Admin-Datensatzes auf die eigene Schuladresse setzt, bekäme beim nächsten Login mit den **eigenen** Zugangsdaten die Admin-Sitzung — ganz ohne Rollenänderung | Ein Konto, das **heute** Administrator ist, kann nur ein Administrator bearbeiten oder löschen |
 
-Zusätzlich ändert die **Rechte-Matrix** (`PUT /api/admin/permissions`) nur noch ein
-Administrator. Vorher genügte `manage_users`, und damit schloss sich der Kreis: Der
-Endpunkt konnte der eigenen Rolle jedes weitere Recht zuschalten. Konten verwalten und
+Zusätzlich ändert die **Rechte-Matrix** (`PUT /api/admin/permissions`) nur ein
+Administrator: Sonst könnte `manage_users` der eigenen Rolle jedes weitere Recht
+zuschalten. Konten verwalten und
 festlegen, was Rollen dürfen, sind zwei verschiedene Dinge. Jede Änderung an der Matrix
 steht im Protokoll (`RECHT_GEAENDERT`: Rolle, Recht, erteilt oder entzogen, mit Zeitpunkt
 und bearbeitender Person).
 
 Was `manage_users` weiterhin darf: alle Konten **unterhalb** der Administratorebene
 anlegen, ändern und löschen. Die Delegation an ein Sekretariat bleibt also möglich — sie
-ist jetzt nur keine Hintertür zum Administrator mehr.
+ist nur keine Hintertür zum Administrator.
 
 Gates: `api/benutzer/admin_schutz_test.go` (alle drei Wege plus die Gegenproben, dass
 Administratoren und die normale Kontoverwaltung unverändert funktionieren) und
@@ -181,12 +133,12 @@ Administratoren und die normale Kontoverwaltung unverändert funktionieren) und
 jeder Lehrkraft (siehe unten).
 
 - `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
-- `leitung`: die Rechte des Admins **minus** `manage_users` und `manage_settings` (Migration 122, seit 16.09.2026). Das Soll wird von der Admin-Zeile ABGELEITET und nicht abgeschrieben, sonst bekäme die Leitung jedes künftige Recht nicht und niemand merkte es. Warum ausgerechnet `manage_users` fehlt, obwohl die Leitung die Bibliothek führt: Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail — die Rechtevergabe wäre der Weg in jedes Konto der Anlage.
+- `leitung`: die Rechte des Admins **minus** `manage_users` und `manage_settings` (Migration 122). Das Soll wird von der Admin-Zeile ABGELEITET und nicht abgeschrieben, sonst bekäme die Leitung jedes künftige Recht nicht und niemand merkte es. Warum ausgerechnet `manage_users` fehlt, obwohl die Leitung die Bibliothek führt: Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail — die Rechtevergabe wäre der Weg in jedes Konto der Anlage.
 - `mitarbeiter`: Grundrechte für die Theke-Betrieb.
 - `helfer`: Kiosk-/Thekenbetrieb ohne die breiten Schülerrechte (Migration 042) — Scannen, Ausleihe, Rückgabe, Katalogzugriff, aber keine Schülerlisten und kein Mahnwesen.
 - `kollegium`: **Genau ein** Recht — `create_reservations` (Klassensatz im Kollegiums-Portal reservieren). Alles Weitere ist seit Migration 070 entzogen; die Suche im Portal (Katalog des Kollegiums: Titeldaten und Zählwerte, auch Lernmittel) hängt am selben Recht und fasst keine Personendaten an. Die Rolle hieß bis Migration 069 `lehrer`.
 
-  **Fachlich ist das keine Rolle, sondern der Grundzustand.** Wer sich über „Mein Portal" mit der Schuladresse selbst anmeldet, bekommt diesen Wert; eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu erhebt. Der Rechte-Editor führt deshalb seit dem 16.09.2026 nur noch die vier Spalten oben — was das Kollegium darf, steht fest in `db/rechte_vorgabe.go` und ist kein Schalter je Schule. Sicherheitsrelevant ist daran die Richtung: Die Zeile existiert weiter in `role_permissions`, sie wird nur nicht mehr je Schule verändert.
+  **Fachlich ist das keine Rolle, sondern der Grundzustand.** Wer sich über „Mein Portal" mit der Schuladresse selbst anmeldet, bekommt diesen Wert; eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu erhebt. Der Rechte-Editor führt deshalb nur die vier Spalten oben — was das Kollegium darf, steht fest in `db/rechte_vorgabe.go` und ist kein Schalter je Schule. Sicherheitsrelevant ist daran die Richtung: Die Zeile existiert weiter in `role_permissions`, sie wird nur nicht je Schule verändert.
 - Alle Enum-Werte in der Datenbank sind **lowercase** (`admin`, `kollegium`, `mitarbeiter`, `helfer`, `leitung` — `schema.sql`, Typ `benutzer_rolle`). SQL-Vergleiche nutzen `LOWER(rolle::text)` um Casing-Fehler zu vermeiden (Bugfix: `LEHRER`-Enum führte zu HTTP 500 in der Omnibox).
 
 > **Rechtevorgaben driften auf einer bestehenden Datenbank.** `db.SchreibeRechteVorgabe` legt
@@ -242,10 +194,8 @@ Zuschnitt begrenzt den Schaden:
   gleich aus, sonst verriete die Antwort, dass ein geratener Token einmal echt war.
 - **Nicht in Logfiles:** Der Token steht im Pfad, also maskiert `maskiereToken`
   (`api/middleware.go`) ihn in **allen drei** Logzeilen — Request-Log, 500er-Stacktrace
-  und Panic-Recovery. Ohne das hätte ein weitergereichtes Logfile funktionierende Links
-  enthalten und die Hash-Speicherung entwertet (Request-Log und 500er gefunden im
-  Smoke-Test am laufenden Server, 05.08.2026; die Panic-Zeile schrieb den rohen Pfad
-  noch bis zum 06.08.2026 — sie war beim ersten Fix schlicht übersehen worden).
+  und Panic-Recovery. Ohne das enthielte ein weitergereichtes Logfile funktionierende Links
+  und entwertete die Hash-Speicherung.
 - **CSRF gilt weiter:** Die Seite nutzt den normalen Double-Submit-Weg; ein POST ohne
   `X-CSRF-Token` wird mit 403 abgewiesen (nachgewiesen am laufenden Server).
 
@@ -271,9 +221,9 @@ Zuschnitt begrenzt den Schaden:
 #### Die eine Naht, an der Svelte nicht mehr schützt: der Druckpfad
 
 Die Ausleiher-Liste baut ihr Druckdokument als String und schreibt es per
-`document.write` in ein neues Fenster. Dort endet Svelters automatische Maskierung.
-Bis zum 06.08.2026 gingen `schueler_name`, `schueler_nachname`, `klasse`,
-`exemplar_barcode` und der Buchtitel unmaskiert hinein.
+`document.write` in ein neues Fenster. Dort endet Svelters automatische Maskierung;
+`schueler_name`, `schueler_nachname`, `klasse`, `exemplar_barcode` und der Buchtitel werden
+deshalb ausdrücklich maskiert.
 
 Gemessen (Chromium, mit dem echten CSP-String) sah das so aus:
 
@@ -288,9 +238,8 @@ Der Inhalt der gedruckten Klassenliste ließ sich an einen fremden Server tragen
 Beides ist behoben — die Werte werden maskiert (`utils/escapeHtml.js`), und `img-src`
 kennt kein `https:` mehr (siehe unten).
 
-Nebenbefund derselben Messung: Der Auto-Druck lag als `<script>` **im geschriebenen
-Dokument** und wurde von derselben CSP blockiert. Das Fenster ging auf und blieb stehen;
-gedruckt werden musste von Hand. Der Aufruf steht jetzt im Opener.
+Der Auto-Druck steht im Opener: Als `<script>` **im geschriebenen Dokument** blockierte ihn
+dieselbe CSP, und das Fenster bliebe ohne Druck stehen.
 
 Gate: `frontend/src/lib/utils/ausleiherDruck.test.js` prüft das **fertige Dokument**,
 nicht den Maskier-Helfer — ein Test des Helfers belegt nur, dass er maskiert, nicht,
@@ -311,21 +260,19 @@ dass er an jeder Einsetzstelle aufgerufen wird.
 
 - 10 MB Body-Limit, 0600 Dateiberechtigungen.
 - Ebenfalls `PruefeBildgroesse` vor dem vollständigen Decode.
-- **Pfadbindung über `os.OpenRoot`** (seit 06.08.2026, `inventur/uploads_pfad.go`). Vorher
-  stand an drei Stellen `filepath.Join` → `filepath.Clean` → `strings.HasPrefix`. Das hält
-  den geradlinigen Fall auf, ist aber eine Prüfung **im Programm** über einen Pfad, der
-  danach trotzdem ans Betriebssystem geht. Ein Symlink in `uploads/` genügte:
-  `HasPrefix("uploads/raus.jpg", "uploads/")` ist wahr, und geschrieben wurde außerhalb.
-  Nachgestellt in `inventur/uploads_pfad_test.go` — mit der früheren Prüfung ist der
-  Symlink-Test **rot**, mit `os.OpenRoot` grün, weil die Auflösung am Kernel scheitert.
+- **Pfadbindung über `os.OpenRoot`** (`inventur/uploads_pfad.go`). Eine Prüfung **im
+  Programm** (`filepath.Join` → `filepath.Clean` → `strings.HasPrefix`) hält den
+  geradlinigen Fall auf, aber der Pfad geht danach trotzdem ans Betriebssystem. Ein Symlink
+  in `uploads/` genügte: `HasPrefix("uploads/raus.jpg", "uploads/")` ist wahr, und
+  geschrieben würde außerhalb. Mit `os.OpenRoot` scheitert die Auflösung am Kernel
+  (`inventur/uploads_pfad_test.go`, Symlink-Test).
 
 ### Cover-Proxy (`GET /api/images/cover`) — der teuerste öffentliche Pfad
 
 Dieser Endpunkt ist der einzige **unauthentifizierte** Pfad, der eine ausgehende
 Verbindung und eine vollständige Bilddekodierung auslöst: ein Aufruf = ein fremder
-Download + ein `image.Decode`. Bis zum 06.08.2026 war daran nichts begrenzt — er steht
-zusätzlich in der Ausnahmeliste des globalen Rate-Limiters, weil ein Katalogaufruf
-dutzende Bilder gleichzeitig lädt. Jetzt gilt:
+Download + ein `image.Decode`. Er steht zusätzlich in der Ausnahmeliste des globalen
+Rate-Limiters, weil ein Katalogaufruf dutzende Bilder gleichzeitig lädt. Deshalb gilt:
 
 | Grenze                | Wert                                          | Wogegen                                                                                    |
 | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -334,21 +281,17 @@ dutzende Bilder gleichzeitig lädt. Jetzt gilt:
 | Bildgröße             | 50 MP (`PruefeBildgroesse`, nur Header)       | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
 | Downloads/IP          | 30/s — **nur der Cache-Fehltreffer**          | Verstärkung: eine Anfrage von außen = eine ausgehende Anfrage von uns                      |
 
-**Gebunden an den Katalog (seit 05.09.2026, `api/katalog/cover_quelle_bindung.go`).** Cache-Schlüssel
-(`isbn`) und Inhalt (`url`) waren bis dahin zwei unabhängige Angaben: Wer zuerst kam,
-bestimmte dauerhaft, welches Bild unter dieser ISBN lag — ohne Anmeldung. Am Handler
-nachgestellt: ein Aufruf mit der ISBN eines Schulbuchs und der Adresse eines beliebigen
-Google-Books-Covers, danach lieferte der Cache dem Flur-Monitor byte-identisch das fremde
-Bild. Und jeder ISBN-artige Schlüssel legte eine neue Datei an (sechs Schlüssel, sechs
-Dateien, keine Räumung) — ein Plattenfüller auf dem Host der Datenbank, mit 30 Downloads
-pro Sekunde und Adresse. Jetzt lädt der Server nur Adressen, die er für diese ISBN
+**Gebunden an den Katalog (`api/katalog/cover_quelle_bindung.go`).** Wären Cache-Schlüssel
+(`isbn`) und Inhalt (`url`) zwei unabhängige Angaben, bestimmte, wer zuerst kommt, dauerhaft
+und ohne Anmeldung, welches Bild unter einer ISBN liegt, und jeder ISBN-artige Schlüssel
+legte eine neue Datei an — ein Plattenfüller auf dem Host der Datenbank. Der Server lädt
+deshalb nur Adressen, die er für diese ISBN
 **selbst kennt** (gespeicherte `cover_url` eines Titels mit dieser ISBN) oder **selbst
 herleiten** könnte (die zwei Kandidaten-Muster aus `coverSrc.js`, ohne Anmeldung nur für
 Katalog-ISBNs; angemeldet auch für die ISBN-Suche beim Anlegen). Dateiname ist ISBN plus
-Hash der geprüften Adresse — zwei Adressen teilen sich nie eine Datei. Alte
-`<isbn>.webp`-Dateien im Cache werden nicht mehr gelesen; sie sind tot, nicht gefährlich.
-Gates: `api/katalog/cover_quelle_bindung_test.go` (Handler mit gestubbtem Download; der Aufbau
-zeigte mit dem alten Code das Vergiften und die sechs Dateien) und
+Hash der geprüften Adresse — zwei Adressen teilen sich nie eine Datei. Dateien der Form
+`<isbn>.webp` im Cache liest der Server nicht. Gates:
+`api/katalog/cover_quelle_bindung_test.go` (Handler mit gestubbtem Download) und
 `TestCoverKandidaten_MusterGleichWieImFrontend` (Server- und Frontend-Muster identisch).
 
 Ausgelieferte Cache-Treffer bleiben ungebremst; sie sind ein Datei-Read. Wichtig zum
@@ -357,9 +300,8 @@ Freiwilligen befüllt — die Allowlist begrenzt das **Ziel**, nicht den **Inhal
 präpariertes Bild ist über einen erlaubten Host erreichbar, deshalb greifen die
 Größengrenzen unabhängig von ihr.
 
-Denselben Header-Guard hat seit dem 06.08.2026 auch der Cover-Downloader des
-Inventur-Moduls (`inventur/cover_downloader.go`); dort gab es bereits ein 10-MB-Limit
-auf der Leitung, aber keines für den Speicher.
+Denselben Header-Guard hat der Cover-Downloader des Inventur-Moduls
+(`inventur/cover_downloader.go`), neben dem 10-MB-Limit auf der Leitung.
 
 ---
 
@@ -367,20 +309,19 @@ auf der Leitung, aber keines für den Speicher.
 
 ### SMTP STARTTLS
 
-- **STARTTLS ist Pflicht** (`mailservice.sichereVerbindung`, 06.08.2026): Bietet der Server
-  die Erweiterung nicht an, bricht der Versand mit `ErrSMTPKlartext` ab, statt die Nachricht
-  im Klartext zu schicken. Vorher hieß die Funktion `starttlsWennMoeglich` und gab in genau
-  diesem Fall `nil` zurück — die Vertraulichkeit jeder Mahnung hing damit am Wohlwollen der
-  Gegenstelle, und ein MITM konnte sie durch Streichen der Erweiterung aus der EHLO-Antwort
-  selbst herbeiführen („STARTTLS stripping").
-  Die **AUTH-Zugangsdaten** waren dabei nie in Gefahr: `smtp.PlainAuth` verweigert die
+- **STARTTLS ist Pflicht** (`mailservice.sichereVerbindung`): Bietet der Server die
+  Erweiterung nicht an, bricht der Versand mit `ErrSMTPKlartext` ab, statt die Nachricht im
+  Klartext zu schicken. Sonst hinge die Vertraulichkeit jeder Mahnung am Wohlwollen der
+  Gegenstelle, und ein MITM könnte den Klartext durch Streichen der Erweiterung aus der
+  EHLO-Antwort selbst herbeiführen („STARTTLS stripping").
+  Die **AUTH-Zugangsdaten** sind dabei nicht in Gefahr: `smtp.PlainAuth` verweigert die
   Übertragung über eine unverschlüsselte Verbindung von sich aus. Der **Inhalt** schon —
-  und bei einem Relay ohne Zugangsdaten (Versand nach IP, im Schulnetz üblich) fiel diese
+  und bei einem Relay ohne Zugangsdaten (Versand nach IP, im Schulnetz üblich) fällt diese
   Bremse ganz weg.
-- **Kein Bruch im Schulbetrieb:** `srv1.philipp-reis-schule.de` bietet STARTTLS auf 25 und
+- **Kein Bruch im Schulbetrieb:** Der Mailserver der Schule bietet STARTTLS auf 25 und
   587 an (EHLO-Probe ohne Anmeldung, 06.08.2026). Belegt durch
   `TestVersendeUeberSMTPBrichtOhneSTARTTLSAb` und seine Gegenprobe.
-- **Zertifikatsprüfung aktiv:** `ServerName` wird gesetzt, `MinVersion: TLS 1.2` erzwungen. `InsecureSkipVerify` war zuvor auf `true` gesetzt — ein MITM-Angreifer konnte dadurch SMTP-Credentials und den gesamten E-Mail-Inhalt (inkl. Personendaten für Mahnwesen) mitlesen. **Behoben.**
+- **Zertifikatsprüfung aktiv:** `ServerName` wird gesetzt, `MinVersion: TLS 1.2` erzwungen. Ohne die Prüfung (`InsecureSkipVerify`) läse ein MITM-Angreifer SMTP-Credentials und den gesamten E-Mail-Inhalt mit (inkl. Personendaten für Mahnwesen).
 - **Zwei getrennte Opt-outs**, weil es zwei verschiedene Zugeständnisse sind:
   `SMTP_ALLOW_INSECURE_TLS=true` schaltet die Zertifikatsprüfung ab (TLS bleibt),
   `SMTP_ALLOW_PLAINTEXT=true` erlaubt den Versand ganz ohne TLS. Beide protokollieren eine
@@ -396,7 +337,7 @@ auf der Leitung, aber keines für den Speicher.
 ## 🔏 CSRF-Schutz
 
 - **Methode:** Double-Submit Cookie mit Constant-Time-Vergleich.
-- **Achtung (behoben):** `sync-covers` und `import-bestand` sind global registrierte Endpunkte unter `/api/admin/…`. Durch eine zu breite Ausnahme-Regel für `/api/admin/*` waren diese temporär ohne CSRF-Schutz. Die Ausnahme wurde entfernt — beide Endpunkte durchlaufen jetzt die globale CSRF-Prüfung. Das Frontend sendet den Token bereits korrekt (keine Frontend-Änderung nötig).
+- **Keine Ausnahme nach Präfix:** `sync-covers` und `import-bestand` sind global registrierte Endpunkte unter `/api/admin/…` und durchlaufen die globale CSRF-Prüfung; eine Ausnahme-Regel für `/api/admin/*` nähme sie heraus.
 
 ---
 
@@ -409,7 +350,7 @@ Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Default
 ### Lösung (`main.go/leseKonfig` + `bereitschaft.IstGeheimnisSchutzScharf`)
 
 Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
-(`bereitschaft.IstBeispielGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
+(`bereitschaft.IstBeispielGeheimnis`) aktiv ist — und zwar **als Vorgabe**:
 
 | Umgebung                         | `ENFORCE_PROD_SECRETS` | Verhalten                                     |
 | -------------------------------- | ---------------------- | --------------------------------------------- |
@@ -419,12 +360,12 @@ Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
 | `local` / `development` / `test` | nicht gesetzt          | startet — dort sind die Beispielwerte richtig |
 | irgendeine                       | unlesbar (`ja`, `0`)   | verweigert — unsicher muss man hinschreiben   |
 
-Bis zum 05.09.2026 galt `== "true"`: aus, solange niemand den Schalter setzte. Eine
-vergessene Zeile in der `.env` genügte, damit der Schulserver mit dem JWT-Schlüssel aus dem
-Repository lief — Admin-Sitzungen fälschbar, nichts rot. Dieselbe Regel liest die
+Müsste der Schalter gesetzt werden, genügte eine vergessene Zeile in der `.env`, damit der
+Schulserver mit dem JWT-Schlüssel aus dem Repository liefe — Admin-Sitzungen fälschbar,
+nichts rot. Dieselbe Regel liest die
 Selbstprüfung (`internal/bereitschaft/geheimnisse.go`), damit Seite und Server nicht verschieden
 entscheiden. Gates: `internal/bereitschaft/geheimnisse_test.go`,
-`TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
+`TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT`.
 
 Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
 `IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort, und Swagger öffentlich
@@ -442,24 +383,20 @@ Weg, den Mailserver der Schule einzutragen und `APP_ENV` stehen zu lassen (Gates
 - `JWT_SECRET`: ≥ 32 Zeichen
 - `APP_ENCRYPTION_KEY`: genau 32 Bytes (oder 64 Hex-Zeichen)
 
-**Was `docker-compose.yml` erzwingt — und was nicht.** Hier stand bis zum 06.08.2026,
-die Compose-Datei erzwinge per `${VAR:?Fehlermeldung}`, dass _alle_ Secrets gesetzt sind.
-Das stimmt nur für zwei davon. Tatsächlich:
+**Was `docker-compose.yml` erzwingt.** Per `${VAR:?Fehlermeldung}` verlangt die
+Compose-Datei vier Werte:
 
 | Variable             | Compose-Verhalten                                                                         |
 | -------------------- | ----------------------------------------------------------------------------------------- |
 | `POSTGRES_PASSWORD`  | `${…:?}` — Stack startet ohne sie **nicht**                                               |
 | `IMAP_HOST`          | `${…:?}` — Stack startet ohne sie **nicht**                                               |
-| `JWT_SECRET`         | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo) |
-| `APP_ENCRYPTION_KEY` | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo) |
+| `JWT_SECRET`         | `${…:?}` — Stack startet ohne sie **nicht**                                               |
+| `APP_ENCRYPTION_KEY` | `${…:?}` — Stack startet ohne sie **nicht**                                               |
 
-Bis zum 05.09.2026 fielen die beiden letzten auf committete Defaults zurück, und der
-Code-Guard war standardmäßig aus: Ein Prod-Deploy ohne gesetzte `.env`-Werte lief mit im
-Repo nachlesbaren Schlüsseln. Jetzt greifen beide Schranken — Compose verlangt die Werte,
-der Server lehnt die bekannten ab.
+Zwei Schranken greifen: Compose verlangt die Werte, der Server lehnt die bekannten ab.
 
 > **Wenn der Stack deshalb nicht startet:** Fehlt einer der beiden Werte in der `.env`,
-> bricht `./update.sh` seit dem 05.09.2026 an `${…:?}` ab. Schlimmer als der Abbruch wäre
+> bricht `./update.sh` an `${…:?}` ab. Schlimmer als der Abbruch wäre
 > der naheliegende „Fix", einfach neue Schlüssel zu erzeugen: Mit einem neuen
 > `APP_ENCRYPTION_KEY` sind die AES-verschlüsselten Schülerfotos und das gespeicherte
 > SMTP-Passwort **nicht mehr lesbar**. Der Wechsel ist eine Schlüsselrotation mit
@@ -475,16 +412,16 @@ der Server lehnt die bekannten ab.
 Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
 - **Ausleihen-Anonymisierung (`FuehreBearbeiterAnonymisierungAus`):** Entfernt `bearbeiter_id` und `rueckgabe_bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden; eine laufende Ausleihe behält ihren Bearbeiter. Die Bedingung steht in `repository.praedikatBearbeiterKennung`, und die Selbstprüfung zählt mit ihr den Rückstand („Bearbeiter zurückgegebener Ausleihen").
-- **Abgänger-Löschung (`FuehreAbgaengerLoeschungAus`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen — die Löschung wartet seit 05.09.2026 die Karenz ab und läuft im Cron nach der Anonymisierung (`AbgaengerStichjahr`; nicht zu verwechseln mit der Karenzzeit vor der Anonymisierung, s. u.), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
-- **Lesehistorie befristen (`FuehreLesehistorieBefristungAus`, seit 22.08.2026):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 1 Tag** (seit dem 29.09.2026, vorher 90 Tage; HBDI-Muster „Schulbibliothek": „unverzüglich gelöscht, sofern … nicht mehr notwendig", Muster der LAG Schulbibliotheken in Hessen: „nach Rückgabe des Mediums Löschung beim Ausleiher"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Die lange Frist gilt jedem Buch im Eigentum des Landes (`repository.ExemplarTopfSQL`, seit dem 29.09.2026; vorher allein `ist_lernmittel` am Titel): Der Leitfaden knüpft die Bestandsverzeichnisse an „alle aus Landesmitteln beschafften Gegenstände" (11.1). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet. Seit dem 16.09.2026 gilt die Befristung **jedem Leser**, auch dem Kollegium (bis Migration 125 traf sie von selbst nur Schüler, weil eine Lehrerausleihe in einer anderen Spalte stand); eine laufende Dauerleihe ist nicht betroffen, weil die Frist mit der Rückgabe beginnt. Gate: `jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter — am Rückbau rot gesehen) und `jobs/cron_dsgvo_lesehistorie_eigentum_pg_test.go` (die Klasse folgt dem Eigentum, rot an der alten Regel). Vorher behielt jede Ausleihe ihre `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen.
-- **Gelöschte Kollegen endgültig löschen (`FuehrePapierkorbLoeschungAus`, seit 29.09.2026):** Ein Kollege, der seit 180 Tagen im Papierkorb liegt, wird über denselben Weg wie „Endgültig löschen" von Hand (`LoescheLeserEndgueltig`) entfernt; offene Ausleihen und unbezahlte Forderungen halten ihn. Anonymisieren lässt sich ein Kollege nicht (`chk_leser_nur_schueler_werden_abgaenger`), sein Zugangskonto geht schon beim Löschen.
-- **Anonymisierung alter Datensätze (`FuehreSchuelerAnonymisierungAus`):** Leert nach Frist (Soft-Delete > 180 Tage; Abgänger nach der einstellbaren **Karenzzeit** `abgaenger_karenz_tage`, Vorgabe 90 Tage ab dem spätesten von Abgang `abgaenger_seit` und letztem abgeschlossenem Vorgang `letzter_vorgang_am` — letzte Rückgabe oder letzter Schadensabschluss, seit Migration 137 als Spalte am Leser gespeichert statt zur Laufzeit über `ausleihen.schueler_id` gerechnet, weil die Lesehistorie-Befristung genau diese Zuordnung löst und die Karenz sonst verkürzte; der Zeitpunkt steht in der Art.-15-Auskunft und sagt nichts darüber, was ausgeliehen war — bis 02.09.2026 fest 360 Tage, bis 05.09.2026 nur ab dem Abgang) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail), ersetzt die Ausweisnummer durch `ANON-…`, löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID, die Ausweisnummern und den Sperrgrund aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung. Einträge in `audit_logs` zu Lesern, die schon gelöscht waren, bevor der Sperrgrund zur Tilgung gehörte, erreicht der nächtliche Lauf nicht; sie hat Migration 147 einmal nach derselben Anweisung bereinigt (25.09.2026). Eine `A-`-Nummer, die dabei — oder beim endgültigen Löschen, Zusammenführen, Leeren, Umschreiben — aus `leser` verschwindet, hält ein Trigger in `ausweisnummern_ausgeschieden` fest: nur die Zahl, ohne Person und ohne Datum. Der Generator vergibt sie deshalb nicht noch einmal, und eine alte Karte findet an der Theke niemanden (Migration 146).
-- **Erledigte Anliegen und Klassensatz-Reservierungen befristen (`FuehreAnliegenBefristungAus`, `FuehreKlassensatzBefristungAus`):** Löscht erledigte Wünsche, Meldungen und Klassensatz-Reservierungen aus dem Kollegiums-Portal nach der Einstellung `anliegen_tage` (Vorgabe 365 Tage nach der Erledigung, 0 = aus); offene bleiben. Die Reservierungen seit dem 29.09.2026; eine, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
+- **Abgänger-Löschung (`FuehreAbgaengerLoeschungAus`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen — die Löschung wartet die Karenz ab und läuft im Cron nach der Anonymisierung (`AbgaengerStichjahr`; nicht zu verwechseln mit der Karenzzeit vor der Anonymisierung, s. u.), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
+- **Lesehistorie befristen (`FuehreLesehistorieBefristungAus`):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 1 Tag** (HBDI-Muster „Schulbibliothek": „unverzüglich gelöscht, sofern … nicht mehr notwendig", Muster der LAG Schulbibliotheken in Hessen: „nach Rückgabe des Mediums Löschung beim Ausleiher"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Die lange Frist gilt jedem Buch im Eigentum des Landes (`repository.ExemplarTopfSQL`): Der Leitfaden knüpft die Bestandsverzeichnisse an „alle aus Landesmitteln beschafften Gegenstände" (11.1). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet. Die Befristung gilt **jedem Leser**, auch dem Kollegium; eine laufende Dauerleihe ist nicht betroffen, weil die Frist mit der Rückgabe beginnt. Gate: `jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter — am Rückbau rot gesehen) und `jobs/cron_dsgvo_lesehistorie_eigentum_pg_test.go` (die Klasse folgt dem Eigentum, rot an der alten Regel).
+- **Gelöschte Kollegen endgültig löschen (`FuehrePapierkorbLoeschungAus`):** Ein Kollege, der seit 180 Tagen im Papierkorb liegt, wird über denselben Weg wie „Endgültig löschen" von Hand (`LoescheLeserEndgueltig`) entfernt; offene Ausleihen und unbezahlte Forderungen halten ihn. Anonymisieren lässt sich ein Kollege nicht (`chk_leser_nur_schueler_werden_abgaenger`), sein Zugangskonto geht schon beim Löschen.
+- **Anonymisierung alter Datensätze (`FuehreSchuelerAnonymisierungAus`):** Leert nach Frist (Soft-Delete > 180 Tage; Abgänger nach der einstellbaren **Karenzzeit** `abgaenger_karenz_tage`, Vorgabe 90 Tage ab dem spätesten von Abgang `abgaenger_seit` und letztem abgeschlossenem Vorgang `letzter_vorgang_am` — letzte Rückgabe oder letzter Schadensabschluss, als Spalte am Leser gespeichert (Migration 137), weil die Lesehistorie-Befristung die Zuordnung über `ausleihen.schueler_id` löst; der Zeitpunkt steht in der Art.-15-Auskunft und sagt nichts darüber, was ausgeliehen war) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail), ersetzt die Ausweisnummer durch `ANON-…`, löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID, die Ausweisnummern und den Sperrgrund aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung. Eine `A-`-Nummer, die dabei — oder beim endgültigen Löschen, Zusammenführen, Leeren, Umschreiben — aus `leser` verschwindet, hält ein Trigger in `ausweisnummern_ausgeschieden` fest: nur die Zahl, ohne Person und ohne Datum. Der Generator vergibt sie deshalb nicht noch einmal, und eine alte Karte findet an der Theke niemanden (Migration 146).
+- **Erledigte Anliegen und Klassensatz-Reservierungen befristen (`FuehreAnliegenBefristungAus`, `FuehreKlassensatzBefristungAus`):** Löscht erledigte Wünsche, Meldungen und Klassensatz-Reservierungen aus dem Kollegiums-Portal nach der Einstellung `anliegen_tage` (Vorgabe 365 Tage nach der Erledigung, 0 = aus); offene bleiben. Eine Reservierung, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
 
 ### Datenverschlüsselung
 
 - Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
-- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format (`BKDF`-Kennung); der frühere schwache SHA-256-Weg ist ganz entfernt, Dateien ohne die Kennung werden abgelehnt (im Pilotbetrieb keine schützenswerten Altbackups). 0600 Dateiberechtigungen, Rotation (die jüngsten 14 Nächte, dazu 12 Wochenstände; `jobs/backup_aufbewahrung.go`). Seit dem 23.08.2026 gilt das für **alle drei** Backup-Wege: Auch `scripts/backup.sh` und die Vorab-Sicherung von `./update.sh` verschlüsseln über dieselbe Ableitung (`internal/backupkrypto`, Werkzeug `cmd/encrypt-backup` im Container — der Schlüssel verlässt ihn nicht). Klartext-Dumps entstehen nur noch als benannter Ausnahmefall (fehlgeschlagener Deploy = Rollback-Weg, Verschlüsselung nicht möglich) und werden beim nächsten Lauf eines der beiden Skripte nach 2 statt 30 Tagen gelöscht — gelöscht wird nur bei einem Lauf, nicht nach der Uhr.
+- DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format (`BKDF`-Kennung); Dateien ohne die Kennung werden abgelehnt. 0600 Dateiberechtigungen, Rotation (die jüngsten 14 Nächte, dazu 12 Wochenstände; `jobs/backup_aufbewahrung.go`). Das gilt für **alle drei** Backup-Wege: Auch `scripts/backup.sh` und die Vorab-Sicherung von `./update.sh` verschlüsseln über dieselbe Ableitung (`internal/backupkrypto`, Werkzeug `cmd/encrypt-backup` im Container — der Schlüssel verlässt ihn nicht). Klartext-Dumps entstehen nur als benannter Ausnahmefall (fehlgeschlagener Deploy = Rollback-Weg, Verschlüsselung nicht möglich) und werden beim nächsten Lauf eines der beiden Skripte nach 2 statt 30 Tagen gelöscht — gelöscht wird nur bei einem Lauf, nicht nach der Uhr.
 
 #### `APP_ENCRYPTION_KEY` wechseln
 
@@ -499,12 +436,11 @@ Dafür gibt es `cmd/rotate-encryption-key`. Es entschlüsselt jeden Datensatz mi
 und verschlüsselt ihn mit dem neuen Schlüssel, alles in **einer** Transaktion: Entweder
 ist am Ende alles umgeschlüsselt oder nichts.
 
-**Kein Platzhalter in den Befehlen.** Der Schlüssel steht in einer Shell-Variablen, und
-zwar aus einem konkreten Grund: Eine Anleitung mit `<neu>` wurde am 06.08.2026 wörtlich
-eingefügt. Die beiden Rotationsbefehle scheiterten harmlos an der bash-Syntax — die Zeile
-`echo "APP_ENCRYPTION_KEY=<neu>" >> .env` lief aber durch, schrieb fünf Zeichen in die
-`.env`, und der Server verweigerte beim nächsten Start den Dienst (Längenprüfung in
-`main.go`). Die Anwendung war unten, bis die Zeile wieder entfernt war.
+**Kein Platzhalter in den Befehlen.** Der Schlüssel steht in einer Shell-Variablen: Wörtlich
+eingefügt scheitert ein Befehl mit `<neu>` harmlos an der bash-Syntax, die Zeile
+`echo "APP_ENCRYPTION_KEY=<neu>" >> .env` aber läuft durch, schreibt fünf Zeichen in die
+`.env`, und der Server verweigert beim nächsten Start den Dienst (Längenprüfung in
+`main.go`).
 
 **Auf dem Server** (kein Go nötig — das Binary liegt im Image, und im Container sind
 `APP_ENCRYPTION_KEY` und `DATABASE_URL` bereits gesetzt). Alles in **derselben**
@@ -556,13 +492,13 @@ APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
 ```
 
 > **Reihenfolge beachten, wenn noch `ENFORCE_PROD_SECRETS=false` in der `.env` steht:**
-> Einen Schalter setzt man nicht mehr — der Guard ist seit dem 05.09.2026 von selbst
+> Einen Schalter setzt man nicht — der Guard ist von selbst
 > scharf (`bereitschaft.IstGeheimnisSchutzScharf`). Erst rotieren, dann den Schlüssel in die `.env`,
 > **dann** die `false`-Zeile entfernen. Andersherum verweigert der Server den Start, weil
 > er noch den bekannten Default vorfindet.
 
 > **Steht `APP_ENCRYPTION_KEY` gar nicht in der `.env`?** Auf dem Prod-Stack startet
-> `docker-compose.yml` dann nicht (`${APP_ENCRYPTION_KEY:?}`, seit 05.09.2026). Nur der
+> `docker-compose.yml` dann nicht (`${APP_ENCRYPTION_KEY:?}`). Nur der
 > lokale Stack (`docker-compose.local.yml`) fällt auf den Default
 > `super-secure-aes-key-32-chars-ok` zurück — dort ist er im Container als
 > Umgebungsvariable gesetzt, das Kommando findet ihn also von selbst.
@@ -581,7 +517,7 @@ grep -n APP_ENCRYPTION_KEY .env           # steht dort ein unbrauchbarer Wert?
 Ist der Wert kaputt und wurde **noch nicht** rotiert, muss der **alte, gültige** Wert
 zurück in die Zeile — mit ihm sind die Daten verschlüsselt. Er steht im Backup der `.env`
 bzw. in der Passwortablage. Die Zeile nur zu entfernen hilft auf dem Prod-Stack nicht:
-`docker-compose.yml` hat seit dem 05.09.2026 keinen Default mehr, ohne die Zeile startet
+`docker-compose.yml` hat keinen Default, ohne die Zeile startet
 der Stack gar nicht.
 
 ```bash
@@ -680,8 +616,7 @@ Dann den alten Schlüssel aus der Kopie streichen und auf dem Blatt bei der Schu
 ### Adressdaten, Eltern-E-Mail und Rechtsgrundlage (VVT-Grundlage)
 
 Adressspalten (`strasse`, `hausnummer`, `plz`, `ort`) und `eltern_email` sind **bewusst
-vorhanden**. Migration 003 enthielt ursprünglich einen `RAISE EXCEPTION`-Wächter, der
-Adressspalten blockiert hätte — er wurde entfernt, weil die Daten fachlich nötig sind.
+vorhanden**, weil die Daten fachlich nötig sind.
 Beides steht in Anlage 1 der SchDSV (1.4 Anschrift, 1.14 E-Mail der Eltern).
 
 **Was das System mit der Eltern-E-Mail tatsächlich tut (Stand 22.08.2026, am Code
@@ -690,20 +625,13 @@ geprüft):** Sie wird im Schülerprofil als `mailto:`-Link angezeigt
 vorhanden" geführt, und die Vorlage `MAHNUNG_ELTERN` füllt den **gedruckten**
 Elternbrief (`pdf/mahnbrief.go`). **Es geht keine automatische E-Mail an Eltern** —
 Mahn-Mails des Bulk-Laufs gehen an die **Klassenleitungen**
-(`api/mahnwesen/mahnlisten_versand.go`). Bis zum 22.08.2026 behauptete dieser Abschnitt „E-Mail
-für Eltern-Mahnungen"; das war Absicht, nicht Zustand. Entscheidung: **Doku an den Code
-angeglichen, keine Eltern-Mahnmail gebaut** — § 15 SchDSV erlaubt die Eltern-E-Mail nur
+(`api/mahnwesen/mahnlisten_versand.go`). Entscheidung: **keine Eltern-Mahnmail** — § 15 SchDSV erlaubt die Eltern-E-Mail nur
 für erforderliche Schulkommunikation, und der gedruckte Brief plus Klassenleitung deckt
 das Mahnwesen ab. Wer eine Eltern-Mahnmail einführt, ergänzt das VVT und den
 Datenschutzhinweis **vorher**.
 
-**Berichtigung und Löschung einzelner Felder (seit 23.08.2026):** Anschrift und
-Eltern-E-Mail lassen sich im Schülerprofil einzeln leeren — das schreibt NULL in die
-Spalte. Bis dahin ging das **nicht**: Das Formular schickte für ein geräumtes Feld
-JSON-null, was im Backend als „nicht mitgeschickt“ ankam; die Oberfläche meldete
-„gespeichert“, und beim nächsten Öffnen stand der alte Wert wieder da. Wer die Löschung
-einer Adresse oder der Eltern-Mail verlangte, konnte sie also nur über die vollständige
-Anonymisierung bekommen. Belegt durch `api/leser/schueler_feld_leeren_pg_test.go` (gegen echtes
+**Berichtigung und Löschung einzelner Felder:** Anschrift und Eltern-E-Mail lassen sich im
+Schülerprofil einzeln leeren — das schreibt NULL in die Spalte. Belegt durch `api/leser/schueler_feld_leeren_pg_test.go` (gegen echtes
 PostgreSQL, in beide Richtungen: löschbar ist, was löschbar sein darf — Vor-/Nachname,
 Klasse und Ausweisnummer werden mit 400 abgelehnt, `geburtsdatum` bleibt als Schlüssel
 des LUSD-Abgleichs unlöschbar).
@@ -720,7 +648,7 @@ Rechtsgrundlagen** (Entwurf nach HBDI-Muster in
 | **Eltern-E-Mail**   | `mailto:`-Link für manuelle Kontaktaufnahme; kein Versand durch das System                                                                                                                     | dito                                                                                                                                                        |
 | **Löschung**        | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen                                                                                                                                | Abgänger-Routine + Lesehistorie-Trennung nach 90 Tagen                                                                                                      |
 
-Bis zum 22.08.2026 stand hier „Art. 6 Abs. 1 lit. c i. V. m. lit. b" — lit. b
+Lit. b
 (Vertrag) passt auf keine der beiden Tätigkeiten, lit. c (rechtliche Verpflichtung)
 trifft allenfalls die Lernmittel mittelbar. Die Einordnung oben folgt dem hessischen
 Rahmen (SchDSV, § 83a HSchG, HBDI-Muster); bestätigen muss sie der schulische
@@ -735,10 +663,10 @@ nach Frist (oben). Was bei der Schule liegt: [datenschutz/nachweis.md](datenschu
 ## ⏱️ Verbindungsfristen (Slowloris)
 
 Eine Anfrage, die formal korrekt ist und trotzdem nie endet, hält Verbindung, Goroutine
-und im Zweifel eine Datenbankverbindung fest. Bis zum 06.08.2026 stand am `http.Server`
-nur `ReadHeaderTimeout` — die **Kopfzeilen** waren begrenzt, der **Rumpf** nicht. Wer
-`Content-Length: 10000000` ankündigte und danach ein Byte pro Minute nachreichte, blieb
-beliebig lange verbunden. Die `fristMiddleware` half dagegen nicht: Ein
+und im Zweifel eine Datenbankverbindung fest. `ReadHeaderTimeout` allein begrenzt nur die
+**Kopfzeilen**, nicht den **Rumpf**: Wer `Content-Length: 10000000` ankündigt und danach ein
+Byte pro Minute nachreicht, bliebe beliebig lange verbunden. Die `fristMiddleware` hilft
+dagegen nicht: Ein
 Kontext-Deadline bricht kein blockierendes `Read` auf der Verbindung ab.
 
 | Frist                                   | Wert                        | Gilt für                                                                                              |
@@ -773,23 +701,22 @@ Restriktive HTTP-Header in `internal/middleware/sicherheitskopfzeilen.go`:
 - `X-Frame-Options: DENY`
 - `Cache-Control: no-store` für jede Antwort unter `/api/` (Abschnitt unten)
 
-### Der Browser legt keine Antwort der Schnittstelle ab (seit 30.09.2026)
+### Der Browser legt keine Antwort der Schnittstelle ab
 
 Jede Antwort unter `/api/` trägt `Cache-Control: no-store`, gesetzt in derselben Middleware.
 Das verlangt OWASP ASVS 5.0, 14.3.2: „anti-caching HTTP response header fields (i.e.,
-Cache-Control: no-store) so that sensitive data is not cached in browsers". Vorher durfte der
-Browser Listen, Akten und die Auskunft als PDF auf der Festplatte ablegen. Das Abmelden löscht
+Cache-Control: no-store) so that sensitive data is not cached in browsers". Ohne den Kopf legt
+der Browser Listen, Akten und die Auskunft als PDF auf der Festplatte ab. Das Abmelden löscht
 dort nichts; an einem Rechner, an dem nacheinander mehrere Leute unter demselben Konto arbeiten,
-ließen sie sich mit einem Werkzeug auslesen, bis der Browser sie selbst überschrieb. `no-store`
+ließen sie sich mit einem Werkzeug auslesen, bis der Browser sie selbst überschreibt. `no-store`
 gilt auch für Zwischenspeicher im Netz (RFC 9111, 5.2.2.5).
 
 - **Ausnahmen:** Die Vorgabe steht vor dem Handler, ein eigener Kopf überschreibt sie. Das tun
   zwei Routen ohne Personendaten: die Buchcover (`/api/images/cover`, `public`) und die
   Buchnummern der Theke (`/api/action/buchbarcodes`, `no-cache` mit ETag, an der 200 wie an der
   304). Das Passfoto setzt `no-store` selbst.
-- **Strichcode-Bilder** (`/api/barcode`) tragen seit dem 30.09.2026 keinen eigenen Kopf mehr.
-  Vorher lagen sie ein Jahr lang im Browser, und ihre Adresse enthält beim Ausweis die
-  Ausweisnummer.
+- **Strichcode-Bilder** (`/api/barcode`) tragen keinen eigenen Kopf: Ihre Adresse enthält
+  beim Ausweis die Ausweisnummer.
 - **Nicht betroffen:** die Programmdateien der Oberfläche außerhalb von `/api/`. Der Service
   Worker legt nur sie ab, keine Antwort der Schnittstelle (`frontend/vite.config.js`). Die
   Warteschlange der Theke ohne Netz ist ein eigener Speicher mit Ausweis- und Buchnummern bis
@@ -802,16 +729,15 @@ gilt auch für Zwischenspeicher im Netz (RFC 9111, 5.2.2.5).
   nur beim Abmelden über den Knopf, und der Browser legt keine Antwort mit Personendaten mehr
   ab, die es dort zu löschen gäbe.
 
-### `img-src` ohne `https:` (seit 06.08.2026)
+### `img-src` ohne `https:`
 
-Das pauschale `https:` erlaubte Bilder von **jedem** fremden Server. Was das wert war,
-ist oben unter XSS gemessen: Bilder waren der offene Weg für eingeschleustes Markup,
-während Skripte blockiert wurden.
+Ein pauschales `https:` erlaubte Bilder von **jedem** fremden Server. Was das wert wäre,
+ist oben unter XSS gemessen: Bilder sind der offene Weg für eingeschleustes Markup,
+während Skripte blockiert werden.
 
-Gebraucht wurde `https:` von acht Ansichten, die Cover direkt bei Google Books und
-OpenLibrary holten. Das war ohnehin die falsche Bauweise — es meldete den Browser jeder
-Lehrkraft bei einem Dritten an und gab dabei preis, welche ISBNs die Schule gerade
-ansieht. Alle acht laufen jetzt über den eigenen Cover-Proxy
+Cover direkt bei Google Books und OpenLibrary zu holen, meldete den Browser jeder Lehrkraft
+bei einem Dritten an und gäbe dabei preis, welche ISBNs die Schule gerade ansieht. Alle
+Ansichten laufen deshalb über den eigenen Cover-Proxy
 (`frontend/src/lib/utils/coverSrc.js` → `/api/images/cover`, Host-Allowlist in
 `api/katalog/cover.go`). Die Bilder kommen unverändert an, nur eben vom eigenen Server.
 
@@ -829,7 +755,7 @@ Frontend-Quelltext nach direkt eingebundenen Fremdadressen. Genau dieses Gate ha
 Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
 (`lib/useBuchakte.svelte.js`).
 
-### Antworten gehen mit gzip gepackt hinaus (seit 04.10.2026)
+### Antworten gehen mit gzip gepackt hinaus
 
 `api/kompression.go` packt JSON-Antworten, den CSV-Export des Bestands und die
 Textdateien der Oberfläche (HTML, CSS, JavaScript, SVG), wenn der Browser es anbietet.
@@ -866,44 +792,39 @@ Code, der sich nicht geändert hat) und auf Knopfdruck:
 | `npm audit`               | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`)                                                                                                  | Eigener Code                        |
 | `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik                     |
 
-**`govulncheck` läuft seit dem 17.09.2026 über `scripts/govulncheck-gate.sh`**, in der CI
+**`govulncheck` läuft über `scripts/govulncheck-gate.sh`**, in der CI
 wie im pre-push. Der Unterschied zum nackten `govulncheck ./...`: Das Gate kennt benannte
 Ausnahmen (`security/vuln-ausnahmen.json`) — je mit Grund, einem Nachweis, der als Test im
 Repo steht, und einer Wiedervorlage. Es wird rot bei allem, was nicht in der Liste steht,
 bei einer überfälligen Wiedervorlage und auch dann, wenn eine Ausnahme gar nicht mehr
-gemeldet wird: Dann gibt es einen Fix, und der Eintrag gehört gelöscht. Anlass war
-GO-2026-6452 (excelize) — für alle Versionen ab 0, ohne eine mit Fix; ohne Ausnahme wäre
-kein Push mehr möglich gewesen, und `--no-verify` wäre zur Gewohnheit geworden.
+gemeldet wird: Dann gibt es einen Fix, und der Eintrag gehört gelöscht. Ohne benannte
+Ausnahme hielte eine Meldung ohne Fix jeden Push auf, und `--no-verify` würde zur
+Gewohnheit.
 
-Am 24.09.2026 abends trug die Schwachstellen-Datenbank 2.11.0 als behobene Fassung nach — die
-Fassung, die wir benutzen. Das Gate meldete daraufhin die Ausnahme als überflüssig; sie ist
-seit dem 25.09.2026 gelöscht, die Liste ist leer. Behoben war in 2.11.0 nur der gewöhnliche
-Weg; auf dem Auslagerungs-Weg stürzte 2.11.0 weiter ab, sobald die beiden Entpackgrenzen
-auseinanderlagen. Der seit dem 08.10.2026 eingesetzte Stand der Bibliothek korrigiert auch
-diesen Weg (`TestNegativerSharedStringIndex_AuslagerungsWegStuerztNichtAb` in
-`pkg/xlsxgrenze/negativer_sharedstring_test.go`, an 2.11.0 rot). **Die Abwehr bleibt als
-zweite Lage:** `xlsxgrenze.Optionen()` setzt beide Grenzen gleich, und die Tests daneben
+Die Liste der Ausnahmen ist leer. Gegen GO-2026-6452 (excelize) korrigiert der eingesetzte
+Stand der Bibliothek auch den Auslagerungs-Weg
+(`TestNegativerSharedStringIndex_AuslagerungsWegStuerztNichtAb` in
+`pkg/xlsxgrenze/negativer_sharedstring_test.go`). **Die Abwehr bleibt als zweite Lage:** `xlsxgrenze.Optionen()` setzt beide Grenzen gleich, und die Tests daneben
 halten das fest.
 
-Seit dem 08.10.2026 öffnen und lesen die drei Importwege ihre Datei nur noch über
+Die drei Importwege öffnen und lesen ihre Datei nur über
 `xlsxgrenze.LeseMappe`: Die Entpackgrenze, die Abweisung verschlüsselter OLE-Container (deren
 Entschlüsselungsweg in excelize an einer selbst gewählten Zahl ungebremst rechnet,
 CVE-2026-107219) und eine Schranke, die einen Absturz der Bibliothek an einer präparierten
 Datei zum Fehler „ungültige Datei" macht, statt den Prozess zu reißen — excelize fängt eigene
-Abstürze nicht ab. Am 07.10.2026 wurden neun Schwachstellen dieser Art gemeldet (Dependabot
-Nr. 21 bis 29), am 08.10.2026 sechs weitere (CVE-2026-107211 bis CVE-2026-107216). Ihre
-Korrekturen liegen auf dem Entwicklungsstand der Bibliothek, eine veröffentlichte Fassung damit
-gibt es am 08.10.2026 nicht; eingesetzt ist deshalb der Stand vom 03.10.2026
-(`v2.11.1-0.20261003002531-6258dcebc4e2`), der alle fünfzehn enthält (OFFEN.md 5.10). Wer eine
+Abstürze nicht ab. Eingesetzt ist der Entwicklungsstand der Bibliothek vom 03.10.2026
+(`v2.11.1-0.20261003002531-6258dcebc4e2`) mit den Korrekturen zu fünfzehn gemeldeten
+Schwachstellen dieser Art (Dependabot Nr. 21 bis 29, CVE-2026-107211 bis CVE-2026-107216);
+eine veröffentlichte Fassung mit ihnen gab es am 08.10.2026 nicht (OFFEN.md 5.10). Wer eine
 vierte Lesestelle baut, geht durch `LeseMappe`, nicht an ihr vorbei.
 
-Die Schranke fängt einen Absturz, keine Schleife. Eine der sechs Meldungen vom 08.10.2026
+Die Schranke fängt einen Absturz, keine Schleife. Eine der Meldungen
 betrifft das Lesen der Zeilen selbst (CVE-2026-107212): Stand hinter einer gültigen Zeile eine
 mit einer Nummer weit jenseits der Blattgrenze von 1.048.576, zählte `GetRows` jede fehlende
 Zeile ab; nach der Meldung hält eine Datei von 1,5 KB die Anfrage elf Tage auf einem
 Prozessorkern fest. Dagegen hilft nur der korrigierte Stand der Bibliothek, der die Zeile mit
 einem Fehler abweist (`TestLeseMappe_ZeilennummerJenseitsDerBlattgrenzeWirdAbgewiesen` in
-`pkg/xlsxgrenze/zeilennummer_test.go`, am Stand vom 10.09.2026 rot). Die übrigen fünf liegen
+`pkg/xlsxgrenze/zeilennummer_test.go`). Die übrigen dieser sechs liegen
 auf Wegen, die das Programm nicht geht: Entschlüsselung (der OLE-Container wird vorher
 abgewiesen), Pivot-Tabellen, Datenschnitte und das Rechnen von Formeln.
 
@@ -913,11 +834,9 @@ abgewiesen), Pivot-Tabellen, Datenschnitte und das Rechnen von Formeln.
 Das ist die Prüfung, die keine der vier oben leistet: Sie baut einen Datenflussgraphen
 und fragt, ob etwas von außen Kontrolliertes irgendwo ungeprüft ankommt.
 
-> **Kein zweiter CodeQL-Job.** Am 11.08.2026 stand einer in `security-scan.yml`,
-> begründet mit einer Lücke, die es nicht gab — das Standard-Setup lief nachweislich
-> schon vorher (grüne `Analyze (…)`-Checks auf `e4753eb`). Zwei Konfigurationen vertragen
-> sich nicht: Der eigene Job scheiterte reproduzierbar beim Hochladen des Ergebnisses und
-> hinterließ zwei dauerhaft rote Checks ohne einen einzigen zusätzlichen Befund. Wer je
+> **Kein zweiter CodeQL-Job.** Zwei Konfigurationen vertragen sich nicht: Ein eigener Job
+> neben dem Standard-Setup scheitert reproduzierbar beim Hochladen des Ergebnisses und
+> hinterlässt zwei dauerhaft rote Checks ohne einen zusätzlichen Befund. Wer je
 > eigene Query-Suiten braucht, schaltet **zuerst** das Standard-Setup ab.
 
 Zwei Dinge dazu ehrlich benannt:
@@ -966,4 +885,4 @@ diesen Schutz auf.
 ## 📋 Audit-Trail
 
 - Alle administrativen Aktionen und Buchbewegungen werden in `audit_logs` protokolliert (append-only als Konvention — kein UPDATE/DELETE außer der DSGVO-PII-Tilgung; kein DB-Trigger-Zwang, siehe Migration 083).
-- Ausleihe und Rückgabe (Bücher wie Geräte) schreiben ihre Audit-Zeile seit dem 07.09.2026 **in derselben Transaktion**, vor dem Commit: Kann die Spur nicht geschrieben werden, gibt es die Buchung nicht (`repository.ProtokollAbfragen.ProtokolliereAusleihe/ProtokolliereRueckgabe` verlangen die Transaktion des Aufrufers). Bis dahin lief die Zeile nach dem Commit in eigener Transaktion — brach die Verbindung dazwischen ab, galt die Ausleihe ohne Revisionsspur. Admin-Aktionen (`ProtokolliereAdminAktion`: Übergehen eines Hinweises, Wareneingang-Sammelbuchung) stehen weiter neben dem Vorgang.
+- Ausleihe und Rückgabe (Bücher wie Geräte) schreiben ihre Audit-Zeile **in derselben Transaktion**, vor dem Commit: Kann die Spur nicht geschrieben werden, gibt es die Buchung nicht (`repository.ProtokollAbfragen.ProtokolliereAusleihe/ProtokolliereRueckgabe` verlangen die Transaktion des Aufrufers). Admin-Aktionen (`ProtokolliereAdminAktion`: Übergehen eines Hinweises, Wareneingang-Sammelbuchung) stehen weiter neben dem Vorgang.
