@@ -207,8 +207,8 @@ Gewichts:
 - [ ] Lokale Namen in Tests deutsch und `t.Helper()` in den Hilfsfunktionen, je mit Ratsche.
   (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
-- [ ] Oberfläche: `stores/omnibox.svelte.js` (1.140 Zeilen) nach seinen Sachen teilen, in
-  sieben Stufen, je Stufe deine Freigabe. (5.72)
+- [ ] Oberfläche: `stores/omnibox.svelte.js` (1.015 Zeilen) nach seinen Sachen teilen, in
+  noch sechs Stufen, je Stufe deine Freigabe. (5.72)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -551,14 +551,12 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
 `frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
-JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 1.140. Googles Maßstab für
+JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 1.015. Googles Maßstab für
 Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
 tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösung, Warteschlange,
 Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Freigegeben
 ist ein Plan in Stufen, je Stufe ein Commit, ein Push und deine Freigabe für die nächste:
 
-- **Stufe 1:** Kommentare auf das Warum kürzen (5.70 für diese Datei). Nachweis: Der Bau hat
-  vorher und nachher dieselben Prüfsummen.
 - **Stufen 2 bis 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
   `omniboxRueckmeldung.svelte.js` (Leuchten, Wackeln, Fehlerbanner samt nicht gebuchter Nummern,
   ihre Zeitgeber), `omniboxSuche.svelte.js` (Entprellung, Suchlauf-Nummer, Trefferliste,

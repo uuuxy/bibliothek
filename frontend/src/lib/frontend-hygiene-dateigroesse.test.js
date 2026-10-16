@@ -36,7 +36,7 @@ const BESTAND = {
 	'src/lib/stores/leerlaufSperre.svelte.js': 388,
 	'src/lib/stores/mahnwesen.svelte.js': 238,
 	'src/lib/stores/offlineSync.svelte.js': 426,
-	'src/lib/stores/omnibox.svelte.js': 1140,
+	'src/lib/stores/omnibox.svelte.js': 1015,
 	'src/lib/useBuchakte.svelte.js': 252,
 	'src/lib/useInventur.svelte.js': 234,
 	'src/lib/useLeserakte.svelte.js': 328

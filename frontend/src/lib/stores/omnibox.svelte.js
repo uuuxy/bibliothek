@@ -1,5 +1,4 @@
-// stores/omnibox.svelte.js
-// Status- und Logikverwaltung für die Omnibox (Svelte 5 Runes)
+// Zustand und Abläufe der Omnibox an der Theke: Eingabe, Suche, Scan und seine Antwort.
 
 import { apiFetch, apiClient } from '../apiFetch.js';
 import { spieleErfolgston, spieleFehlerton } from '../audio.js';
@@ -30,12 +29,9 @@ function leserMitKlasse(leser) {
 	return leser.klasse ? `${name} (${leser.klasse})` : name;
 }
 
-// Geht an den globalen snackbars (SnackbarAnzeige.svelte in App.svelte). Vorher
-// hielt die Omnibox einen eigenen Toast-Zustand samt eigenem Markup und eigenem
-// Auto-Dismiss — zwei Meldungswege mit zwei Optiken für dieselbe Sache.
-//
-// Steht auf Modulebene, weil die Funktion nichts aus dem Store einfängt: Sonst würde
-// bei jedem erzeugeOmniboxStore() eine neue, identische Funktion angelegt (sonarjs S7721).
+// Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte), damit die Theke keinen
+// zweiten Meldungsweg mit eigener Optik hat. Auf Modulebene, weil sie nichts aus dem Store
+// einfängt (sonarjs S7721).
 /**
  * @param {string} message
  * @param {import('./snackbars.svelte.js').ToastTyp} [type='success']
@@ -45,14 +41,11 @@ function melde(message, type = 'success') {
 }
 
 export function erzeugeOmniboxStore() {
-	// aktiverLeser ist der LESER, der gerade an der Theke steht — Schüler oder Kollege,
-	// unterscheidbar an `art`. Ein zweiter Platz für Lehrkräfte ist mit Migration 125
-	// weggefallen; solange es zwei gab, musste jede Stelle beide abfragen und sich für
-	// eine entscheiden.
+	// Der Leser, der an der Theke steht, ob Schüler oder Kollege (unterscheidbar an `art`). Es
+	// gibt nur diesen einen Platz, damit keine Stelle zwischen zweien wählen muss.
 	let aktiverLeser = $state(/** @type {any} */ (null));
-	// Der ohne Netz gescannte Ausweis — nur die NUMMER, kein Name, keine Ausleihen.
-	// Aufloesen kann ihn nur der Server; bis dahin tragen die folgenden Buecher sie mit
-	// (offlineWarteschlange: `ausweis_barcode`, die Nachbuch-Tuer kennt das Feld).
+	// Der ohne Netz gescannte Ausweis, nur seine Nummer: Auflösen kann ihn nur der Server, bis
+	// dahin tragen die folgenden Bücher sie mit (`ausweis_barcode` in der Warteschlange).
 	let offlineAusweis = $state('');
 	// Schnellrückgabe: Jeder Scan nimmt nur zurück. Sie und ein geladener Leser schließen
 	// einander aus; ohne Leser bekommt der Server keinen und leiht nie aus.
@@ -62,20 +55,17 @@ export function erzeugeOmniboxStore() {
 	let randLeuchten = $state('');
 	let bildschirmLeuchten = $state(''); // "success" | "error" | ""
 	let letzteFremdrueckgabe = $state(/** @type {any} */ (null));
-	// Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): der Hinweis der letzten Ausleihe, bis
-	// zum nächsten Scan — wie die Fremdrückgabe, als Zeile über dem Konto (OmniboxThekeHinweise).
+	// Gehört das ausgeliehene Buch zu einer anderen Auflage als die der Klasse, steht der Hinweis
+	// bis zum nächsten Scan über dem Konto, wie die Fremdrückgabe (OmniboxThekeHinweise).
 	let letzterAuflagenHinweis = $state(/** @type {any} */ (null));
 	let wackelt = $state(false);
 	let fehler = $state('');
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
 	let meldungsZeitgeber = null;
 	let vormerkungHinweis = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
-	// Abholfach-Hinweis zum AKTIVEN Schüler (Betreiber-Entscheidung 01.09.2026):
-	// beim Ausweis-Scan liefert der Server die abholbereiten Vormerkungen mit —
-	// die Mitarbeiterin greift ins Abholfach, solange der Schüler vor ihr steht.
-	// Wird bei JEDEM Setzen von aktiverLeser mit überschrieben (?? []), damit
-	// kein Hinweis eines vorherigen Schülers stehen bleibt (bekannte Bugklasse
-	// „nie zurückgesetzter UI-State").
+	// Die abholbereiten Vormerkungen des geladenen Lesers, damit an der Theke ins Abholfach
+	// gegriffen wird, solange er davorsteht. Jeder Scan, der einen Leser lädt, überschreibt sie
+	// (?? []), sonst bliebe der Hinweis des vorigen stehen.
 	let abholbereit = $state(/** @type {{titel: string, bereitgestellt_bis?: string}[]} */ ([]));
 	/**
 	 * Geräte-Scan mit Zubehör: Der Server unterbricht mit type=geraet_check und
@@ -106,15 +96,8 @@ export function erzeugeOmniboxStore() {
 
 	let belegt = $derived(!!(aktiverLeser || trefferlisteOffen));
 
-	// UI Feedback-Methoden
-	//
-	// Jeder dieser Zeitgeber bekommt ein HANDLE und wird vor dem Neuplanen verworfen —
-	// dasselbe Muster wie in actions/tastaturNavigation.js und actions/tooltip.js. Der Grund ist
-	// nicht Ordnungsliebe: Ein Timer, der die Seite überlebt, feuert ins Leere. In der
-	// Testumgebung ist „ins Leere" ein Absturz — nach dem Abbau von jsdom gibt es kein
-	// `document` mehr, und der Rückruf reisst den GANZEN Lauf mit („Unhandled Errors:
-	// document is not defined"), obwohl jeder einzelne Test grün ist. Genau so stand die
-	// CI am 16.09.2026 rot bei 697 grünen Tests; am 11.09.2026 war es tastaturNavigation.
+	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
+	// überlebt, feuert nach dem Abbau von jsdom ins Leere und reißt den ganzen Testlauf mit.
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let bildschirmZeitgeber = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
@@ -166,9 +149,8 @@ export function erzeugeOmniboxStore() {
 		}, 1000);
 	}
 
-	// Stoppt JEDEN laufenden Zeitgeber dieses Stores. Die Theke ruft es beim Verlassen der
-	// Seite (Omnibox.svelte, onDestroy), die Tests beim Abräumen — danach kann kein
-	// Rückruf mehr auf eine Seite greifen, die es nicht mehr gibt.
+	// Stoppt jeden laufenden Zeitgeber dieses Stores, beim Verlassen der Seite (Omnibox.svelte)
+	// und beim Abräumen der Tests: Danach greift kein Rückruf auf eine Seite, die es nicht mehr gibt.
 	function stoppeZeitgeber() {
 		for (const t of [
 			bildschirmZeitgeber,
@@ -252,23 +234,16 @@ export function erzeugeOmniboxStore() {
 		}
 		suchVerzoegerung = setTimeout(async () => {
 			if (!eingabe.trim()) return;
-			// Sequenznummer wie im bestellStore: Der Entprell-Timer verwirft nur NOCH NICHT
-			// gestartete Abrufe — zwei gleichzeitig laufende beantwortet der Server in
-			// beliebiger Reihenfolge. Ohne diese Prüfung tauschte eine verspätete Antwort
-			// die Trefferliste unter dem sichtbaren Suchtext aus, und der nächste Klick
-			// (bzw. Enter) buchte auf den FALSCHEN Schüler — ohne Rückfrage
-			// (Fund 31.08.2026).
+			// Zwei laufende Abrufe beantwortet der Server in beliebiger Reihenfolge. Ohne die
+			// Nummer tauschte eine verspätete Antwort die Trefferliste unter dem Suchtext aus,
+			// und der nächste Klick buchte auf den falschen Schüler.
 			const seq = ++suchLauf;
 			try {
 				const res = await apiFetch(`/api/search?q=${encodeURIComponent(eingabe.trim())}`);
 				if (seq !== suchLauf) return;
 				if (!res.ok) {
-					// Dieselbe Gefahr wie oben, nur über den anderen Ausgang (Sweep
-					// „verschluckte Fehlantwort", 06.09.2026): Bis hierher blieb bei einem
-					// Fehlschlag die Liste des VORIGEN Suchtextes stehen — samt offenem
-					// Dropdown. „Müller" getippt, Treffer da; „Schmidt" getippt, Abruf
-					// scheitert (500, oder 429 vom Rate-Limiter) — und der nächste Klick
-					// oder Enter buchte auf Müller, während im Feld Schmidt stand.
+					// Dieselbe Gefahr beim Fehlschlag: Bliebe die Liste des vorigen Suchtextes stehen,
+					// buchte der nächste Klick auf einen Treffer, der zum Feld nicht mehr passt.
 					verwirfTreffer();
 					melde('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
 					return;
@@ -284,21 +259,17 @@ export function erzeugeOmniboxStore() {
 				markierterTreffer = -1;
 			} catch (err) {
 				if (seq !== suchLauf) return;
-				// Netzfehler: ebenfalls verwerfen, aber ohne Toast — im WLAN-Loch käme
-				// bei jedem Tastendruck einer, und das Offline-Overlay sagt es bereits.
+				// Netzfehler: ebenfalls verwerfen, aber ohne Toast. Im WLAN-Loch käme bei jedem
+				// Tastendruck einer, und die Offline-Anzeige sagt es bereits.
 				verwirfTreffer();
 				console.error('Suche fehlgeschlagen:', err);
 			}
 		}, 300);
 	}
 
-	// Dropdown-Auswahl
-	//
-	// Ein Leser wird über seine ID geladen, nicht über die Ausweisnummer: Ein Kollege aus
-	// der Selbstanmeldung hat keine, und bis zum 16.09.2026 schickte der Klick auf ihn
-	// eine leere Eingabe los — sichtbar passierte gar nichts. Aufgelöst wird die ID auf
-	// demselben Weg wie ein Scan (POST /api/action), damit der Abholfach-Hinweis und die
-	// Sperrprüfung an beiden Wegen gleich sind.
+	// Ein Leser aus der Trefferliste wird über seine ID geladen, weil ein Kollege aus der
+	// Selbstanmeldung keine Ausweisnummer hat; auf demselben Weg wie ein Scan (POST /api/action),
+	// damit Abholfach-Hinweis und Sperrprüfung an beiden Wegen gleich sind.
 	function waehleTreffer(index, onSelectBook) {
 		const { students, books } = suchTreffer;
 		if (index < students.length) {
@@ -326,10 +297,8 @@ export function erzeugeOmniboxStore() {
 			console.debug('Fehlerantwort war kein JSON, nutze Rohtext:', e);
 		}
 
-		// Der Dialog hängt am Merkmal des Servers, nicht am Wortlaut (omniboxSperrDialog.test.js).
-		// Bis zum 13.09.2026 entschieden hier die Wörter „Sperre", „Sperr-Automatik" und
-		// „überfällig": Die Schadens-Sperre traf keins, und bei der System-Sperre hing es am
-		// Sperrgrund, den eine Helferin gar nicht zu sehen bekommt.
+		// Der Dialog hängt am Merkmal des Servers, nicht am Wortlaut der Meldung, der je Sperre
+		// anders lautet (omniboxSperrDialog.test.js).
 		const art = res.headers.get('X-Sperre');
 		if (res.status === 403 && (art === 'uebergehbar' || art === 'leser')) {
 			sperrHinweis = { message: errStr, query: q, art };
@@ -339,9 +308,8 @@ export function erzeugeOmniboxStore() {
 		throw new Error(errStr || 'Aktion fehlgeschlagen');
 	}
 
-	// Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht — bewusst kein
-	// automatisches Umbuchen. Info ohne Unterbrechung; erneuter Scan leiht es an die
-	// aktive Sitzung aus.
+	// Ein fremdes Buch bei geladenem Leser wird nur beim Vorbesitzer ausgebucht, bewusst ohne
+	// Umbuchen. Ein erneuter Scan leiht es dem geladenen Leser aus.
 	function verarbeiteFremdrueckgabe(daten) {
 		leuchteBildschirm('warning');
 		spieleFehlerton();
@@ -406,11 +374,9 @@ export function erzeugeOmniboxStore() {
 		if (!escapeIstBelegt()) schalteSchnellrueckgabe(false);
 	}
 
-	// Die Rückkehr eines abgeschriebenen Buches (#597): Der Server sagt in `message`, was
-	// er erledigt hat (Forderung storniert — grün), und in `aufsicht_informieren`, was ein
-	// Mensch noch tun muss (der Bescheid liegt bei der Schulaufsicht — Warnung). Zwei
-	// Kanäle, weil es zwei Dinge sind: Eine offene Aufgabe in einer grünen Erfolgsmeldung
-	// wird überlesen.
+	// Die Rückkehr eines abgeschriebenen Buches: `message` sagt, was der Server erledigt hat
+	// (grün), `aufsicht_informieren`, was ein Mensch noch tun muss (Warnung). Eine offene Aufgabe
+	// in einer grünen Erfolgsmeldung würde überlesen.
 	function zeigeRueckkehrHinweise(daten, { ohneMeldung = false } = {}) {
 		if (!ohneMeldung && daten.message) melde(daten.message, 'success');
 		if (daten.aufsicht_informieren) melde(daten.aufsicht_informieren, 'warning');
@@ -433,9 +399,9 @@ export function erzeugeOmniboxStore() {
 	}
 
 	function verarbeiteAusleihe(daten, reloadProfileCb) {
-		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer
-		// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
-		// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
+		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer anderen
+		// Auflage als die der Klasse, blitzt es wie bei der Fremdrückgabe, und die Zeile über dem
+		// Konto sagt, welche.
 		letzterAuflagenHinweis = daten.auflagen_hinweis ?? null;
 		leuchteBildschirm(letzterAuflagenHinweis ? 'warning' : 'success');
 		spieleErfolgston('ausleihe');
@@ -443,8 +409,8 @@ export function erzeugeOmniboxStore() {
 		melde(
 			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${aktiverLeser?.vorname}.`
 		);
-		// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
-		// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
+		// Der Schüler hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen: Das
+		// reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
 		if (daten.regalfreigabe_barcode) {
 			melde(
 				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen.`,
@@ -497,21 +463,11 @@ export function erzeugeOmniboxStore() {
 		return false;
 	}
 
-	// Der Schnappschuss VOM SCAN: Absicht, Person, Zeitpunkt und Idempotenz-Schlüssel, bevor
-	// die Anfrage hinausgeht (OFFEN.md 2.2, Commit 1). Bis zum 15.09.2026 las der Offline-Pfad
-	// Person und Absicht erst NACH der hängenden Anfrage (Timeout 10 s): Escape oder „Theke
-	// leeren" in dieser Zeit, und das Buch ging als Rückgabe ohne Person in die Warteschlange.
+	// Der Schnappschuss des Scans, bevor die Anfrage hinausgeht: Escape oder „Theke leeren"
+	// während einer hängenden Anfrage ändern weder Person noch Absicht.
 	//
-	// Ist ein Schüler geladen, ist der Scan eine AUSLEIHE — bis zum Rasterdurchgang am
-	// 06.09.2026 wurde jeder Offline-Scan als Rückgabe abgelegt, und der Server las das
-	// Schweigen als Rückgabe: Das Buch war schon draußen, die Rückgabe scheiterte, der
-	// Eintrag flog aus der Warteschlange. Das Kind hatte das Buch, das System sagte
-	// „verfügbar".
-	//
-	// Die Absicht kann der Aufrufer vorgeben: „Buch zurückgeben" in der Akte ist eine
-	// Rückgabe, auch mit geladenem Schüler (Commit 3). Ohne Vorgabe gilt: Schüler ODER
-	// Ein geladener Leser → Ausleihe, sonst Rückgabe. Bis zum 15.09.2026 entschied nur
-	// der Schüler, und ein Buch mit geladener Lehrkraft wurde als Rückgabe eingereiht.
+	// Ohne Vorgabe ist der Scan eine Ausleihe, wenn ein Leser geladen oder ein Ausweis gemerkt
+	// ist, sonst eine Rückgabe; „Buch zurückgeben" in der Akte gibt die Rückgabe vor.
 	/**
 	 * @param {string} q
 	 * @param {string} idempotencyKey
@@ -519,13 +475,7 @@ export function erzeugeOmniboxStore() {
 	 * @returns {import('../offlineWarteschlange.js').OfflineEintrag}
 	 */
 	function schnappschuss(q, idempotencyKey, absicht) {
-		// Uhr-Anker neben dem Zeitstempel: `performance.now()` laeuft gleichmaessig und
-		// springt nicht, die Wanduhr schon — und zwar gern genau dann, wenn das Netz
-		// zurueckkommt, also zwischen Scan und Versand. Der Sync rechnet daraus den
-		// Scan-Zeitpunkt neu, solange der Eintrag aus demselben Seitenaufruf stammt
-		// (offlineWarteschlange.js, OfflineEintrag).
-		// Ohne geladene Person, aber mit Ausweis-Merker: Das ist eine AUSLEIHE an die
-		// Person hinter dem Merker. Ohne beides bleibt es eine Rueckgabe.
+		// Ohne geladenen Leser, aber mit gemerktem Ausweis geht das Buch an die Person dahinter.
 		const merker = !aktiverLeser?.id && offlineAusweis ? offlineAusweis : '';
 		return {
 			id: idempotencyKey,
@@ -534,24 +484,16 @@ export function erzeugeOmniboxStore() {
 			leser_id: aktiverLeser?.id ?? null,
 			...(merker ? { ausweis_barcode: merker } : {}),
 			gescannt_am: Date.now(),
+			// Die Wanduhr springt gern, wenn das Netz zurückkommt, performance.now() nicht. Daraus
+			// rechnet das Nachbuchen den Zeitpunkt des Scans neu (offlineWarteschlange.js).
 			mono: Math.round(performance.now()),
 			ursprung: Math.round(performance.timeOrigin ?? 0)
 		};
 	}
 
-	// Speichert einen Scan offline.
-	//
-	// Bis zum 16.09.2026 stand hier `if (!barcode.startsWith('B-')) { Toast; return; }` —
-	// jede andere Form, also Littera-Ziffern, `LMF-` und JEDER Ausweis, bekam einen nackten
-	// „Netzwerkfehler" und war weg. Das ist Wort fuer Wort der Punkt, den Stufe 1 haette
-	// beheben sollen; gefunden hat es erst der Nachweis von Hand am Stack, weil jeder
-	// Offline-Testfall `B-10234` scannte.
-	//
-	// Eingeordnet wird jetzt wie am Server (scanEinordnen.js, Zwilling von
-	// omnibox.go), mit der Barcode-Liste dieses Rechners als Nachschlagewerk.
-	// Gebucht wird unter der NUMMER aus der Einordnung, nicht unter dem Aufdruck: Ein
-	// Littera-Etikett traegt im Strichcode eine EAN-13, der Server kennt nur die Nummer
-	// darin.
+	// Legt einen Scan ohne Netz ab. Eingeordnet wird wie am Server (scanEinordnen.js), mit der
+	// Buchliste dieses Rechners; abgelegt wird die Nummer aus der Einordnung, weil ein
+	// Littera-Etikett eine EAN-13 trägt und der Server nur die Nummer darin kennt.
 	/**
 	 * @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
 	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
@@ -563,9 +505,8 @@ export function erzeugeOmniboxStore() {
 			return true;
 		}
 		if (einordnung.art !== 'buch') {
-			// „unklar" sperrt die Zuordnung bis zum naechsten eindeutigen Ausweis
-			// (Entscheidung vom 13.09.2026): Der Merker faellt, damit das naechste Buch
-			// nicht einer Person zugeschrieben wird, bei der niemand mehr sicher ist.
+			// Nach einem unklaren Scan fällt der Merker: Das nächste Buch soll keiner Person
+			// zugeschrieben werden, bei der niemand mehr sicher ist.
 			if (einordnung.art === 'unklar') offlineAusweis = '';
 			verwirfOfflineScan(einordnung);
 			return false;
@@ -574,8 +515,8 @@ export function erzeugeOmniboxStore() {
 		try {
 			await enqueueOfflineAction(eintrag);
 		} catch (err) {
-			// Laut, nicht „gespeichert" (Commit 5): Ohne Warteschlange ist der Scan verloren —
-			// das Buch muss zurück ins Regal oder auf den Zettel.
+			// Laut, nicht „gespeichert": Ohne Warteschlange ist der Scan verloren, das Buch muss
+			// zurück ins Regal oder auf den Zettel.
 			console.error('Offline-Eintrag nicht gespeichert:', err);
 			leuchteBildschirm('error');
 			spieleFehlerton();
@@ -592,21 +533,14 @@ export function erzeugeOmniboxStore() {
 		return true;
 	}
 
-	// Was die Theke ohne Netz NICHT annimmt — und warum der Bediener das erfahren muss.
-	//
-	// Ein nackter „Netzwerkfehler" war die schlechteste aller Auskuenfte: Er sagte weder,
-	// dass der Scan verworfen wurde, noch warum, noch was jetzt zu tun ist. Wer ihn sah,
-	// durfte annehmen, es habe trotzdem geklappt.
-	// Der Ausweis ohne Netz: Die Theke merkt sich die NUMMER und sonst nichts. Ein Name
-	// stuende hier nur, wenn Personendaten auf dem Rechner laegen — und genau das soll
-	// nicht sein (Entscheidung vom 13.09.2026). Der Server loest die Nummer beim
-	// Nachbuchen auf.
+	// Ohne Netz merkt sich die Theke vom Ausweis nur die Nummer, weil auf dem Rechner keine
+	// Personendaten liegen sollen. Der Server löst sie beim Nachbuchen auf.
 	/** @param {string} nummer */
 	function merkeOfflineAusweis(nummer) {
 		schnellrueckgabe = false;
 		offlineAusweis = nummer;
-		// Die zuvor geladene Person weicht: Sonst zeigte die Theke einen Namen, waehrend
-		// die folgenden Buecher an eine ANDERE Person gingen.
+		// Die zuvor geladene Person weicht: Sonst zeigte die Theke einen Namen, während die
+		// folgenden Bücher an eine andere Person gingen.
 		aktiverLeser = null;
 		leuchteBildschirm('warning');
 		spieleErfolgston();
@@ -617,37 +551,18 @@ export function erzeugeOmniboxStore() {
 	}
 
 	/**
-	 * Der gefaehrlichste Fall des Offline-Betriebs: Ein ohne Netz gemerkter Ausweis steht
-	 * noch, und das naechste Buch wird gescannt.
+	 * Löst einen ohne Netz gemerkten Ausweis auf, bevor das nächste Buch hinausgeht: Ohne
+	 * Leser-Kennung läse der Server den Scan als Rückgabe.
 	 *
-	 * Der Merker traegt nur die NUMMER; der Online-Weg braucht die Leser-Kennung. Ginge das
-	 * Buch einfach hinaus, schickte es `active_leser_id` gar nicht mit — und der Server
-	 * liest das Schweigen als RUECKGABE. Aus einer Ausleihe an A-10001 wuerde still eine
-	 * Rueckgabe.
-	 *
-	 * Entschieden wird an der WIRKUNG, nicht an einer Vorhersage. Bis zum 16.09.2026 fragte
-	 * diese Stelle `navigator.onLine` — und lag damit ausgerechnet im haeufigsten Ausfall
-	 * falsch: Faellt der SERVER aus (Neustart, Reverse Proxy, Docker), bleibt das WLAN da.
-	 * `navigator.onLine` sagte dann „online", der Ausweis war aber gerade offline gemerkt
-	 * worden; die Theke bat um einen erneuten Ausweisscan, der wieder nur offline ankam,
-	 * und bat erneut. Eine Schleife, in der sich KEIN Buch mehr auf eine Karte buchen liess
-	 * (Rasterdurchgang 16.09.2026).
-	 *
-	 * Deshalb wird der Merker zuerst aufgeloest — mit genau dem Ausweisscan, den die Theke
-	 * sonst vom Bediener verlangt hat. Ein Ausweisscan ist harmlos: Er bucht nichts, er
-	 * laedt eine Person. Aus seinem Ergebnis ergibt sich alles Weitere:
-	 *
-	 *  - Person geladen: Der Merker ist verbraucht, das Buch geht normal online hinaus.
-	 *  - Versand gescheitert: Es gibt wirklich keine Verbindung. Der Merker bleibt stehen,
-	 *    das Buch nimmt seinen gewoehnlichen Weg und landet mit `ausweis_barcode` in der
-	 *    Warteschlange — der Server loest die Karte beim Nachbuchen auf.
-	 *  - Der Server hat geantwortet, aber keine Person geladen (Nummer unbekannt, gesperrt,
-	 *    Suchtreffer): Dann ist nicht sicher, WEM das Buch gehoert. Es wird NICHT gebucht,
-	 *    der Merker faellt, und das steht als Meldung da.
+	 * Entschieden wird an der Wirkung eines Ausweisscans, der nichts bucht, nicht an
+	 * `navigator.onLine`, das bei einem Ausfall des Servers weiter „online" meldet. Lädt er die
+	 * Person, geht das Buch normal hinaus. Scheitert der Versand, bleibt der Merker, und das Buch
+	 * geht mit `ausweis_barcode` in die Warteschlange. Antwortet der Server ohne Person, ist
+	 * unklar, wem das Buch gehört: Es wird nicht gebucht, und der Merker fällt.
 	 *
 	 * @param {string} q der rohe Scan
 	 * @param {(() => void) | null} [reloadProfileCb]
-	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgefuehrt
+	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgeführt
 	 */
 	async function merkerAufgeloest(q, reloadProfileCb) {
 		if (!offlineAusweis) return true;
@@ -697,18 +612,16 @@ export function erzeugeOmniboxStore() {
 			ausweis:
 				`Ohne Netz laesst sich der Ausweis \u201e${einordnung.nummer}\u201c noch nicht laden. ` +
 				`Buecher dieser Person bitte notieren und nach der Rueckkehr der Verbindung buchen.`,
-			// Geraete offline stehen nicht im Umfang (OFFEN.md 2.4): Sie haengen an einer
-			// Checkliste, die es ohne Netz nicht gibt.
+			// Geräte gehen ohne Netz nicht: Sie hängen an einer Checkliste, die es nur online gibt.
 			geraet:
 				`Geraete lassen sich ohne Netz nicht ausgeben oder zuruecknehmen — die Checkliste dazu gibt es nur online. ` +
 				`\u201e${einordnung.nummer}\u201c wurde NICHT gebucht.`,
-			// Eine Namenssuche ohne Netz kann es nicht geben: Auf dem Theken-Rechner liegen
-			// keine Personendaten (Entscheidung vom 13.09.2026). Das ist keine Luecke, die
-			// noch zugeht — es ist die Zusage.
+			// Ohne Netz gibt es keine Namenssuche, weil auf dem Rechner der Theke keine
+			// Personendaten liegen sollen.
 			suche:
 				`Ohne Netz laesst sich nicht nach Namen suchen — auf diesem Rechner stehen keine Personendaten. ` +
 				`Bitte den Ausweis scannen oder den Vorgang notieren.`,
-			// Die sichere Seite: Wer hier raet, schreibt das naechste Buch einer fremden Person zu.
+			// Die sichere Seite: Wer hier rät, schreibt das nächste Buch einer fremden Person zu.
 			unklar:
 				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig — die Nummer steht nicht in der Buchliste dieses Rechners. ` +
 				`NICHT gebucht; bitte notieren.`
@@ -737,8 +650,7 @@ export function erzeugeOmniboxStore() {
 		leuchteBildschirm('error');
 		spieleFehlerton();
 		if (e instanceof Error && e.message === 'BLOCK_ALERT') return;
-		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
-		// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
+		// Nur das Banner an der Omnibox, kein Toast dazu: Derselbe Fehler stünde sonst zweimal da.
 		zeigeFehlerBanner(`Fehler: ${fehlertext(e)}`);
 	}
 
@@ -764,28 +676,16 @@ export function erzeugeOmniboxStore() {
 			return;
 		}
 
-		// Enter direkt nach dem Tippen, ohne vorher mit den Pfeiltasten auszuwählen: Wenn
-		// die Vorschlagsliste genau EINEN Treffer hat, ist der gemeint.
-		//
-		// Ohne das ging der rohe Text an /api/action — und der Weg dort endet für eine
-		// Eingabe ohne Präfix in der Titelsuche (verarbeiteOhneVorsilbe → verarbeiteSuche),
-		// die nur Bücher kennt. Ein getippter Nachname lieferte damit zuverlässig "nichts
-		// gefunden", obwohl der Schüler im Vorschlag direkt darüber stand.
-		//
-		// Bewusst eng gefasst — genau ein Schüler und kein Buch daneben:
-		//   • Bei "Müller" mit zwölf Namensgleichen darf Enter nicht raten und ein fremdes
-		//     Konto öffnen. Dann bleibt die Liste zur Auswahl stehen.
-		//   • Bücher bleiben außen vor. Ihr Zweig in waehleTreffer braucht einen
-		//     onSelectBook-Rückruf, den es hier nicht gibt; automatisch ausgelöst würde ein
-		//     Buchscan still ins Leere laufen statt auszuleihen.
+		// Enter ohne Auswahl nimmt den einen Schüler, wenn die Liste genau ihn zeigt: Der rohe Text
+		// liefe am Server in die Titelsuche, die nur Bücher kennt. Bei Namensgleichen rät Enter
+		// nicht, und ein Buch braucht den Rückruf onSelectBook, den es hier nicht gibt.
 		if (trefferlisteOffen && suchTreffer.students.length === 1 && suchTreffer.books.length === 0) {
 			waehleTreffer(0, null);
 			return;
 		}
 
-		// EINMAL vereinheitlichen, gleich am Anfang: Dann gilt derselbe Wert fuer den
-		// Online-Versand, fuer den Schnappschuss und fuer die Einordnung ohne Netz. Ein
-		// von Hand getipptes `s-10001` traf sonst weder hier noch dort etwas.
+		// Einmal vereinheitlichen, gleich am Anfang: Dann gilt derselbe Wert für den Versand, den
+		// Schnappschuss und die Einordnung ohne Netz.
 		const q = normalisiereScan(eingabe);
 		if (!q) return;
 
@@ -867,19 +767,17 @@ export function erzeugeOmniboxStore() {
 		letzterAuflagenHinweis = null;
 		clearFehlerBanner();
 
-		// Der Schnappschuss entsteht VOR allem Weiteren (OFFEN.md 2.2, Commit 1): Escape
-		// oder „Theke leeren" waehrend einer laufenden Anfrage darf die Absicht des Scans
-		// nicht mehr aendern.
+		// Der Schnappschuss entsteht vor allem Weiteren, damit Escape oder „Theke leeren" die
+		// Absicht des Scans nicht mehr ändern.
 		let eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
 
-		// Steht ein ohne Netz gemerkter Ausweis, gehoert das naechste Buch IHM — erst
-		// aufloesen, dann buchen (merkerAufgeloest). Ohne Merker bleibt dieser Weg
-		// unberuehrt: kein zusaetzlicher Wartepunkt zwischen Scan und Versand.
+		// Steht ein ohne Netz gemerkter Ausweis, gehört ihm das nächste Buch: erst auflösen, dann
+		// buchen (merkerAufgeloest).
 		if (offlineAusweis) {
 			if (!(await merkerAufgeloest(q, reloadProfileCb))) return false;
-			// Die Aufloesung hat die Person geladen: Sie gehoert in den Schnappschuss, und
-			// der Merker faellt aus ihm heraus — sonst truege der Eintrag beides, und beim
-			// Nachbuchen entschiede die Reihenfolge der Felder, wem das Buch gehoert.
+			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker
+			// nicht mehr. Trüge der Eintrag beides, entschiede beim Nachbuchen die Reihenfolge der
+			// Felder, wem das Buch gehört.
 			if (eintrag.ausweis_barcode && aktiverLeser?.id) {
 				const ohneMerker = { ...eintrag };
 				delete ohneMerker.ausweis_barcode;
@@ -887,14 +785,12 @@ export function erzeugeOmniboxStore() {
 			}
 		}
 
-		// Zwei Fehlerklassen, zwei Zweige: Scheitert der Versand, hat der Server nichts gesehen —
-		// der Schnappschuss geht in die Warteschlange. Kam eine Antwort an, ist nichts offline:
-		// Was ihre Auswertung wirft, wird gezeigt und nicht eingereiht. Der Server kennt den
-		// Idempotenz-Schlüssel schon; nach Ablauf seines Caches (24 h) würde neu gebucht.
+		// Scheitert der Versand, hat der Server nichts gesehen: Der Schnappschuss geht in die
+		// Warteschlange. Kam eine Antwort an, wird ihr Fehler gezeigt und nicht eingereiht; nach
+		// Ablauf seines Idempotenz-Caches (24 h) buchte der Server sonst ein zweites Mal.
 		//
-		// Rot gehört in den Fehlerfall: Feuerte es bei jedem Scan, überschriebe es das Grün des
-		// Erfolgspfads und das Orange der Fremdrückgabe. Sieht Erfolg wie Fehler aus, schaut
-		// niemand mehr auf die Farbe.
+		// Rot nur im Fehlerfall: Sonst überschriebe es das Grün des Erfolgs und das Orange der
+		// Fremdrückgabe, und niemand sähe mehr auf die Farbe.
 		let res;
 		try {
 			res = await apiClient.post('/api/action', {
@@ -923,18 +819,12 @@ export function erzeugeOmniboxStore() {
 	}
 
 	/**
-	 * Gibt dem Scanfeld nach einer Buchung den Fokus.
+	 * Gibt dem Scanfeld nach einer Buchung den Fokus: Ein Handscanner tippt blind, ohne Fokus
+	 * landen seine Zeichen im Nichts. Der $effect in Omnibox.svelte hilft hier nicht, er läuft
+	 * nur ohne geladenen Leser (`!belegt`).
 	 *
-	 * Ein Handscanner ist eine Tastatur und tippt blind. Ohne Fokus landen seine Zeichen im
-	 * Nichts — keine Ausleihe, keine Fehlermeldung. Das Feld behält den Fokus während der
-	 * Buchung; ein Klick davor oder das neu gerenderte Profil kann ihn woanders gelassen haben.
-	 *
-	 * Der $effect in Omnibox.svelte fängt das nicht ab: Er läuft nur, solange KEIN Leser
-	 * geladen ist (`!belegt`) — also genau nicht während des Ausleihens.
-	 *
-	 * Nicht zurückholen, solange ein Dialog eine menschliche Entscheidung braucht
-	 * (Sperre, Vormerkung) oder die Kamera scannt — dort würde der Fokussprung die
-	 * Bedienung stören und den Dialog wegtippbar machen.
+	 * Nicht, solange eine Rückfrage offen ist oder die Kamera scannt: Der Fokussprung machte den
+	 * Dialog wegtippbar.
 	 */
 	function scanfeldWiederScharfstellen() {
 		if (entscheidungOffen()) return;
@@ -959,18 +849,9 @@ export function erzeugeOmniboxStore() {
 	// Rückfrage offen ist oder die Kamera scannt.
 	const scanfeldBereit = () => !entscheidungOffen();
 
-	// Der Fokussprung selbst — DIE Stelle, an der ein Zeitgeber dieses Stores die Seite
-	// anfasst, und damit die, die nach dem Abbau der Testumgebung den ganzen Lauf riss
-	// (siehe stoppeZeitgeber). Bis zum 16.09.2026 stand derselbe Dreizeiler ein zweites
-	// Mal in Omnibox.svelte; zwei Timer für eine Sache sind auch zwei Stellen, an denen
-	// das Aufräumen fehlen kann.
-	//
-	// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
-	//
-	// Beim Feuern wird noch einmal gefragt, nicht nur beim Planen: Zwei Scans kurz
-	// hintereinander öffneten den Sperr-Dialog, BEVOR der Zeitgeber des ersten Scans feuerte
-	// (e2e am 24.09.2026, drei von vier Läufen) — er zog den Fokus dann aus dem Dialog ins
-	// Scanfeld dahinter, und der nächste Scan wäre dort gelandet statt im Dialog.
+	// Die einzige Stelle, an der ein Zeitgeber dieses Stores die Seite anfasst (stoppeZeitgeber).
+	// Sie wartet, bis Svelte das Profil neu gezeichnet hat, und fragt beim Feuern noch einmal:
+	// Ein zweiter Scan kann inzwischen den Sperr-Dialog geöffnet haben, der den Fokus behält.
 	function fokussiereScanfeld() {
 		if (fokusTimer) clearTimeout(fokusTimer);
 		fokusTimer = setTimeout(() => {
@@ -980,17 +861,13 @@ export function erzeugeOmniboxStore() {
 		}, 50);
 	}
 
-	// Auch jeder Wechsel zur Ausleihe gibt dem Scanfeld den Fokus zurück (14.09.2026): Ein
-	// Klick auf „Ausleihe" ließ ihn auf dem Knopf der Seitenleiste, und der nächste Scan lief
-	// ohne Meldung ins Leere (e2e/scanner-fokus-menue.spec.js).
+	// Auch der Wechsel zur Ausleihe gibt dem Scanfeld den Fokus: Sonst bliebe er auf dem Knopf
+	// der Seitenleiste, und der nächste Scan liefe ins Leere (e2e/scanner-fokus-menue.spec.js).
 	uiStore.beimWechselZurTheke = scanfeldWiederScharfstellen;
 
-	// Nach dem Zusammenführen zweier Datensätze (Leserakte → onMerged): Der aktive
-	// Schüler wird auf das Ziel umgehängt. Bis zum 15.09.2026 blieb an der Theke die
-	// gelöschte Kennung stehen — die Akte zeigte schon das Ziel, aber jede weitere Buchung
-	// und jeder Eintrag in der Offline-Warteschlange (enqueueOfflineAction) lief auf einen
-	// Datensatz, den es nicht mehr gab (OFFEN.md 3.2). Die Kennung wird SOFORT gesetzt, damit
-	// kein Scan dazwischen die alte erwischt; Name und Sperrflags kommen nach.
+	// Nach dem Zusammenführen zweier Datensätze (Leserakte → onMerged) hängt die Theke auf das
+	// Ziel um. Die Kennung steht sofort, damit kein Scan dazwischen die gelöschte erwischt; Name
+	// und Sperren kommen nach.
 	/** @param {string} zielId */
 	async function uebernimmZusammengefuehrt(zielId) {
 		aktiverLeser = { id: zielId };
@@ -1000,10 +877,8 @@ export function erzeugeOmniboxStore() {
 		aktiverLeser = await res.json();
 	}
 
-	// „Buch zurückgeben" aus der Akte: derselbe Weg wie ein Scan des Barcodes, aber mit
-	// bekannter Absicht. Online entscheidet ohnehin der Server (das Buch liegt beim
-	// geladenen Schüler → Rückgabe); offline hätte „Schüler geladen" bis zum 15.09.2026 eine
-	// Ausleihe eingereiht — beim Doppelklick eine echte zweite (OFFEN.md 2.2, Commit 3).
+	// „Buch zurückgeben" aus der Akte: derselbe Weg wie ein Scan, aber mit bekannter Absicht.
+	// Ohne Netz reihte ein geladener Leser den Scan sonst als Ausleihe ein.
 	/** @param {string} barcode @param {(() => void) | null} [reloadProfileCb] */
 	function gibZurueck(barcode, reloadProfileCb = null) {
 		eingabe = barcode;
