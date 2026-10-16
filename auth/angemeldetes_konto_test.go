@@ -27,7 +27,7 @@ func TestAngemeldetesKonto_OhneCookieIst401(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 	rec := rufeAngemeldetesKonto(t, a, mock, nil)
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("erwartet 401, bekam %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 401", rec.Code)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestAngemeldetesKonto_AktiverAdminBekommtDieAntwortDerAnmeldung(t *testing.
 
 	rec := rufeAngemeldetesKonto(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	var antwort anmeldeAntwort
@@ -87,7 +87,7 @@ func TestAngemeldetesKonto_OhneAdminRechteAusDerMatrix(t *testing.T) {
 
 	rec := rufeAngemeldetesKonto(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	var antwort anmeldeAntwort
@@ -118,7 +118,7 @@ func TestAngemeldetesKonto_DeaktiviertesKontoIst401(t *testing.T) {
 
 	rec := rufeAngemeldetesKonto(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("erwartet 401 für deaktivierten Benutzer, bekam %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 401 für deaktivierten Benutzer", rec.Code)
 	}
 }
 
@@ -156,7 +156,7 @@ func TestAngemeldetesKonto_KontoAbfrageScheitert(t *testing.T) {
 
 			rec := rufeAngemeldetesKonto(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 			if rec.Code != f.status {
-				t.Errorf("erwartet %d, bekam %d: %s", f.status, rec.Code, rec.Body.String())
+				t.Errorf("rec.Code = %d, erwartet %d: %s", rec.Code, f.status, rec.Body.String())
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("offene Erwartungen: %v", err)

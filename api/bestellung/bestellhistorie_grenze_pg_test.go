@@ -79,22 +79,22 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 
 	// Das Limit greift auf der Liste …
 	if geladen := holeHistorie(t, srv, "?limit=2"); len(geladen) != 2 {
-		t.Fatalf("mit limit=2 geladen: %d Bestellungen, want 2", len(geladen))
+		t.Fatalf("mit limit=2 geladen: %d Bestellungen, erwartet 2", len(geladen))
 	}
 
 	// … die Kennzahlen sehen davon unbeeindruckt alle sechs neuen Bestellungen.
 	nachher := holeUebersicht(t, srv)
 	if delta := nachher.Gesamt - vorher.Gesamt; delta != 6 {
-		t.Errorf("Gesamt stieg um %d, want 6", delta)
+		t.Errorf("Gesamt stieg um %d, erwartet 6", delta)
 	}
 	// Nur Lieferanten mit dem externen Schritt können warten — die zwei Bestellungen bei
 	// „Normalo" dürfen den Zähler nicht aufblähen, sonst sucht jemand eine Bestätigung,
 	// die es für diesen Händler gar nicht gibt.
 	if delta := nachher.OffeneBestaetigungen - vorher.OffeneBestaetigungen; delta != 3 {
-		t.Errorf("OffeneBestaetigungen stiegen um %d, want 3", delta)
+		t.Errorf("OffeneBestaetigungen stiegen um %d, erwartet 3", delta)
 	}
 	if delta := nachher.GesamtExemplare - vorher.GesamtExemplare; delta != 18 {
-		t.Errorf("GesamtExemplare stiegen um %d, want 18 (6 × 3)", delta)
+		t.Errorf("GesamtExemplare stiegen um %d, erwartet 18 (6 × 3)", delta)
 	}
 }
 
@@ -115,10 +115,10 @@ func TestBestellhistorie_HoechstgrenzeIstNichtVerhandelbar(t *testing.T) {
 	}
 
 	if geladen := holeHistorie(t, srv, "?limit=99999"); len(geladen) != bestellhistorieHoechstGrenze {
-		t.Fatalf("geladen: %d, want %d (Obergrenze)", len(geladen), bestellhistorieHoechstGrenze)
+		t.Fatalf("geladen: %d, erwartet %d (Obergrenze)", len(geladen), bestellhistorieHoechstGrenze)
 	}
 	if geladen := holeHistorie(t, srv, ""); len(geladen) != bestellhistorieVorgabeGrenze {
-		t.Fatalf("ohne Parameter geladen: %d, want %d (Vorgabe)", len(geladen), bestellhistorieVorgabeGrenze)
+		t.Fatalf("ohne Parameter geladen: %d, erwartet %d (Vorgabe)", len(geladen), bestellhistorieVorgabeGrenze)
 	}
 }
 
@@ -143,9 +143,9 @@ func TestBestellhistorie_PositionenNurFuerGeladeneBestellungen(t *testing.T) {
 
 	geladen := holeHistorie(t, srv, "?limit=1")
 	if len(geladen) != 1 {
-		t.Fatalf("geladen = %d, want 1", len(geladen))
+		t.Fatalf("geladen = %d, erwartet 1", len(geladen))
 	}
 	if len(geladen[0].Positionen) != 1 {
-		t.Fatalf("Positionen = %d, want 1 — die Zuordnung muss auch mit Limit stimmen", len(geladen[0].Positionen))
+		t.Fatalf("Positionen = %d, erwartet 1 — die Zuordnung muss auch mit Limit stimmen", len(geladen[0].Positionen))
 	}
 }

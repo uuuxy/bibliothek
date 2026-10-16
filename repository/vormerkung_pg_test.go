@@ -95,7 +95,7 @@ func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 		t.Fatalf("Verfall: %v", err)
 	}
 	if verfallen != 1 || neuBereit != 1 {
-		t.Fatalf("erwartet 1 verfallen + 1 neu bereit, war %d/%d", verfallen, neuBereit)
+		t.Fatalf("repo.LasseAbgelaufeneVerfallen(ctx) = %d/%d, erwartet 1 verfallen + 1 neu bereit", verfallen, neuBereit)
 	}
 
 	// Die nicht abgeholte Vormerkung ist weg.
@@ -153,7 +153,7 @@ func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {
 		t.Fatalf("Verfall: %v", err)
 	}
 	if verfallen != 1 || neuBereit != 0 {
-		t.Fatalf("erwartet 1 verfallen + 0 neu bereit (Exemplar weg), war %d/%d", verfallen, neuBereit)
+		t.Fatalf("repo.LasseAbgelaufeneVerfallen(ctx) = %d/%d, erwartet 1 verfallen + 0 neu bereit (Exemplar weg)", verfallen, neuBereit)
 	}
 	// Nächster bleibt wartend.
 	var status string

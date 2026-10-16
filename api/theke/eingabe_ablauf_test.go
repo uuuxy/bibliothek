@@ -117,7 +117,7 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if lr.Leser == nil || lr.Leser.ID != studentID {
-		t.Errorf("expected student to be populated")
+		t.Errorf("BucheAmLeser(…).Leser = %v, erwartet %s", lr.Leser, studentID)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -199,7 +199,7 @@ func TestRueckgabeAnDerTheke(t *testing.T) {
 	}
 
 	if resp.Art != "rueckgabe" {
-		t.Errorf("expected type 'rueckgabe', got '%s'", resp.Art)
+		t.Errorf("resp.Art = '%s', erwartet type 'rueckgabe'", resp.Art)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

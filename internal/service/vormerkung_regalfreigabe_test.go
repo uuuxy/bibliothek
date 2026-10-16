@@ -63,7 +63,7 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 	entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", resp)
 
 	if resp.RegalfreigabeBarcode != "" {
-		t.Errorf("kein Regal-Hinweis erwartet, war %q", resp.RegalfreigabeBarcode)
+		t.Errorf("resp.RegalfreigabeBarcode = %q, erwartet kein Regal-Hinweis", resp.RegalfreigabeBarcode)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Mock-Erwartungen: %v", err)
@@ -89,7 +89,7 @@ func TestRegalfreigabe_KeineVormerkung(t *testing.T) {
 	entferneErfuellteVormerkung(context.Background(), tx, copyX, "s1", resp)
 
 	if resp.RegalfreigabeBarcode != "" {
-		t.Errorf("kein Hinweis erwartet, war %q", resp.RegalfreigabeBarcode)
+		t.Errorf("resp.RegalfreigabeBarcode = %q, erwartet kein Hinweis", resp.RegalfreigabeBarcode)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Mock-Erwartungen: %v", err)

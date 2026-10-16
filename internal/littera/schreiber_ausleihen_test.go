@@ -51,7 +51,7 @@ func TestFristVorAusgabeWirdGemeldet(t *testing.T) {
 	l.meldeFristVorAusgabe(a)
 
 	if l.bericht.FristVorAusgabe != 1 {
-		t.Errorf("erwartet FristVorAusgabe = 1, bekommen %d", l.bericht.FristVorAusgabe)
+		t.Errorf("l.bericht.FristVorAusgabe = %d, erwartet FristVorAusgabe = 1", l.bericht.FristVorAusgabe)
 	}
 
 	text := protokoll()
@@ -74,7 +74,7 @@ func TestKeineFristWirdDurchVerleihdatumErsetzt(t *testing.T) {
 	frist := l.frist(a)
 
 	if !frist.Equal(start) {
-		t.Errorf("erwartet Frist = Verleihdatum, bekommen %v", frist)
+		t.Errorf("l.frist(a) = %v, erwartet Frist = Verleihdatum", frist)
 	}
 
 	text := protokoll()
@@ -86,12 +86,12 @@ func TestKeineFristWirdDurchVerleihdatumErsetzt(t *testing.T) {
 func TestBuchbarIstOffen(t *testing.T) {
 	b1 := buchbar{RueckgabeAm: nil}
 	if !b1.istOffen() {
-		t.Errorf("Erwartet, dass Buchung ohne RueckgabeAm offen bleibt")
+		t.Errorf("buchbar{RueckgabeAm: nil}.istOffen() = false, erwartet true")
 	}
 	jetzt := time.Now()
 	b2 := buchbar{RueckgabeAm: &jetzt}
 	if b2.istOffen() {
-		t.Errorf("Erwartet, dass Buchung mit RueckgabeAm nicht offen bleibt")
+		t.Errorf("buchbar{RueckgabeAm: &jetzt}.istOffen() = true, erwartet false")
 	}
 }
 
@@ -109,7 +109,7 @@ func TestFristRegulaerBleibtErhalten(t *testing.T) {
 	fristNach := l.frist(a)
 
 	if !fristNach.Equal(fristVor) {
-		t.Errorf("erwartet Frist = %v, bekommen %v", fristVor, fristNach)
+		t.Errorf("l.frist(a) = %v, erwartet Frist = %v", fristNach, fristVor)
 	}
 }
 
@@ -126,31 +126,31 @@ func TestHatBeideEnden(t *testing.T) {
 	// Gutfall
 	aGut := Ausleihe{ID: "A1", ExemplarID: "E1", LeserID: "L1"}
 	if !l.hatBeideEnden(aGut) {
-		t.Errorf("Erwartet true, wenn beide Enden gefunden wurden")
+		t.Errorf("l.hatBeideEnden(aGut) = false, erwartet true")
 	}
 
 	// Ohne Exemplar
 	aOhneEx := Ausleihe{ID: "A2", ExemplarID: "E2", LeserID: "L1"}
 	if l.hatBeideEnden(aOhneEx) {
-		t.Errorf("Erwartet false, wenn Exemplar fehlt")
+		t.Errorf("l.hatBeideEnden(ohne Exemplar) = true, erwartet false")
 	}
 	if l.bericht.OhneExemplar != 1 {
-		t.Errorf("Erwartet OhneExemplar = 1, bekommen %d", l.bericht.OhneExemplar)
+		t.Errorf("l.bericht.OhneExemplar = %d, erwartet OhneExemplar = 1", l.bericht.OhneExemplar)
 	}
 	if !strings.Contains(protokoll(), "das ausgeliehene Exemplar steht nicht im übernommenen Bestand") {
-		t.Errorf("Erwartet Protokollierung des fehlenden Exemplars")
+		t.Errorf("Protokoll nennt das fehlende Exemplar nicht")
 	}
 
 	// Ohne Entleiher
 	aOhneEnt := Ausleihe{ID: "A3", ExemplarID: "E1", LeserID: "L2"}
 	if l.hatBeideEnden(aOhneEnt) {
-		t.Errorf("Erwartet false, wenn Entleiher fehlt")
+		t.Errorf("l.hatBeideEnden(ohne Entleiher) = true, erwartet false")
 	}
 	if l.bericht.OhneLeser != 1 {
-		t.Errorf("Erwartet OhneLeser = 1, bekommen %d", l.bericht.OhneLeser)
+		t.Errorf("l.bericht.OhneLeser = %d, erwartet OhneLeser = 1", l.bericht.OhneLeser)
 	}
 	if !strings.Contains(protokoll(), "der Entleiher wurde nicht übernommen") {
-		t.Errorf("Erwartet Protokollierung des fehlenden Entleihers")
+		t.Errorf("Protokoll nennt den fehlenden Entleiher nicht")
 	}
 }
 
@@ -166,28 +166,28 @@ func TestRueckgabeAm(t *testing.T) {
 	// Nicht zurückgegeben
 	a1 := Ausleihe{ID: "A1", Zurueckgegeben: false}
 	if r1 := l.rueckgabeAm(a1); r1 != nil {
-		t.Errorf("Erwartet nil für nicht zurückgegebene Ausleihe, bekommen %v", r1)
+		t.Errorf("l.rueckgabeAm(a1) = %v, erwartet nil für nicht zurückgegebene Ausleihe", r1)
 	}
 
 	// Zurückgegeben, aber Datum fehlt
 	a2 := Ausleihe{ID: "A2", Zurueckgegeben: true}
 	if r2 := l.rueckgabeAm(a2); r2 != nil {
-		t.Errorf("Erwartet nil für Ausleihe ohne Rückgabedatum, bekommen %v", r2)
+		t.Errorf("l.rueckgabeAm(a2) = %v, erwartet nil für Ausleihe ohne Rückgabedatum", r2)
 	}
 
 	// Rückgabedatum liegt vor Verleihdatum
 	a3 := Ausleihe{ID: "A3", Zurueckgegeben: true, AusgeliehenAm: start.AddDate(0, 0, 10), RueckgabeAm: start}
 	if r3 := l.rueckgabeAm(a3); r3 != nil {
-		t.Errorf("Erwartet nil für Ausleihe mit unmöglichem Rückgabedatum, bekommen %v", r3)
+		t.Errorf("l.rueckgabeAm(a3) = %v, erwartet nil für Ausleihe mit unmöglichem Rückgabedatum", r3)
 	}
 	if !strings.Contains(protokoll(), "Rückgabedatum liegt vor dem Verleihdatum") {
-		t.Errorf("Erwartet Protokollierung des unmöglichen Rückgabedatums")
+		t.Errorf("Protokoll nennt das unmögliche Rückgabedatum nicht")
 	}
 
 	// Erfolgreiche Rückgabe
 	a4 := Ausleihe{ID: "A4", Zurueckgegeben: true, AusgeliehenAm: start, RueckgabeAm: start.AddDate(0, 0, 10)}
 	if r4 := l.rueckgabeAm(a4); r4 == nil || !r4.Equal(a4.RueckgabeAm) {
-		t.Errorf("Erwartet %v, bekommen %v", a4.RueckgabeAm, r4)
+		t.Errorf("l.rueckgabeAm(a4) = %v, erwartet %v", r4, a4.RueckgabeAm)
 	}
 }
 
@@ -223,19 +223,19 @@ func TestAussortieren(t *testing.T) {
 	ergebnis := l.aussortieren(ausleihen)
 
 	if len(ergebnis) != 1 {
-		t.Errorf("Erwartet 1 buchbare Ausleihe, bekommen %d", len(ergebnis))
+		t.Errorf("len(ergebnis) = %d, erwartet 1 buchbare Ausleihe", len(ergebnis))
 	} else if ergebnis[0].ID != "A2" {
-		t.Errorf("Erwartet Ausleihe A2, bekommen %s", ergebnis[0].ID)
+		t.Errorf("ergebnis[0].ID = %s, erwartet Ausleihe A2", ergebnis[0].ID)
 	}
 
 	if l.bericht.OhneLeser != 1 {
-		t.Errorf("Erwartet OhneLeser = 1, bekommen %d", l.bericht.OhneLeser)
+		t.Errorf("l.bericht.OhneLeser = %d, erwartet OhneLeser = 1", l.bericht.OhneLeser)
 	}
 	if l.bericht.OhneExemplar != 1 {
-		t.Errorf("Erwartet OhneExemplar = 1, bekommen %d", l.bericht.OhneExemplar)
+		t.Errorf("l.bericht.OhneExemplar = %d, erwartet OhneExemplar = 1", l.bericht.OhneExemplar)
 	}
 	if l.bericht.Doppelbelegung != 1 {
-		t.Errorf("Erwartet Doppelbelegung = 1, bekommen %d", l.bericht.Doppelbelegung)
+		t.Errorf("l.bericht.Doppelbelegung = %d, erwartet Doppelbelegung = 1", l.bericht.Doppelbelegung)
 	}
 
 	protokollText := protokoll()

@@ -62,7 +62,7 @@ func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 
 	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"gross"}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 
 	var bestaetigtAmGesetzt bool
@@ -76,7 +76,7 @@ func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 		t.Error("bestaetigt_am wurde nicht gesetzt")
 	}
 	if groesse != "gross" {
-		t.Errorf("etiketten_groesse = %q, want %q", groesse, "gross")
+		t.Errorf("etiketten_groesse = %q, erwartet %q", groesse, "gross")
 	}
 }
 
@@ -92,7 +92,7 @@ func TestBestellungBestaetigen_LieferantOhneFlag(t *testing.T) {
 
 	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"klein"}`)
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("Status = %d, want 400, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 400, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -112,7 +112,7 @@ func TestBestellungBestaetigen_DoppeltBestaetigenGibt409(t *testing.T) {
 
 	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"gross"}`)
 	if rec.Code != http.StatusConflict {
-		t.Fatalf("Status = %d, want 409, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 409, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -127,6 +127,6 @@ func TestBestellungBestaetigen_UngueltigeGroesse(t *testing.T) {
 
 	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"mittel"}`)
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("Status = %d, want 400, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 400, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 }

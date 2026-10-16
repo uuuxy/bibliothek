@@ -132,10 +132,10 @@ func TestAntworteFehler_AbbruchIstKein500(t *testing.T) {
 	rec := httptest.NewRecorder()
 	AntworteFehler(rec, http.StatusInternalServerError, fmt.Errorf("query: %w", context.Canceled))
 	if rec.Code != statusAbgebrochen {
-		t.Fatalf("Status = %d, want 499", rec.Code)
+		t.Fatalf("Status = %d, erwartet 499", rec.Code)
 	}
 	if meldung := leseFehlermeldung(t, rec.Body.String()); !strings.Contains(meldung, "abgebrochen") {
-		t.Errorf("Meldung = %q, want Hinweis auf Abbruch", meldung)
+		t.Errorf("Meldung = %q, erwartet Hinweis auf Abbruch", meldung)
 	}
 }
 
@@ -147,7 +147,7 @@ func TestMitFehlerantwort_AbgebrochenerKontextIstKein500(t *testing.T) {
 	// Der Fehler der Tür wickelt context.Canceled nicht ein; der Kontext allein reicht.
 	MitFehlerantwort(func(http.ResponseWriter, *http.Request) error { return errors.New("scan: broken pipe") })(rec, req)
 	if rec.Code != statusAbgebrochen {
-		t.Fatalf("Status = %d, want 499", rec.Code)
+		t.Fatalf("Status = %d, erwartet 499", rec.Code)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestMitFehlerantwort_EchterFehlerBleibt500(t *testing.T) {
 	rec := httptest.NewRecorder()
 	MitFehlerantwort(func(http.ResponseWriter, *http.Request) error { return errors.New("kaputt") })(rec, req)
 	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("Status = %d, want 500", rec.Code)
+		t.Fatalf("Status = %d, erwartet 500", rec.Code)
 	}
 }
 

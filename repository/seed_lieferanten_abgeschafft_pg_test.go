@@ -61,7 +61,7 @@ func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 		t.Fatalf("Lieferanten lesen (rows): %v", err)
 	}
 	if len(uebrig) != 1 || uebrig[0] != "Buchhandlung Echt" {
-		t.Fatalf("nach Migration 107 übrig: %v, want nur Buchhandlung Echt", uebrig)
+		t.Fatalf("nach Migration 107 übrig: %v, erwartet nur Buchhandlung Echt", uebrig)
 	}
 
 	// Der Beleg bleibt: Name und Adresse stehen in der Bestellung selbst.
@@ -72,7 +72,7 @@ func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 		t.Fatalf("Bestellung nach Migration: %v", err)
 	}
 	if belegName != "Klett Verlag" || belegLieferant != nil {
-		t.Errorf("Beleg = %q / lieferant_id=%v, want Klett Verlag / NULL", belegName, belegLieferant)
+		t.Errorf("Beleg = %q / lieferant_id=%v, erwartet Klett Verlag / NULL", belegName, belegLieferant)
 	}
 
 	// Die Selbstprüfung: nach der Migration sauber …

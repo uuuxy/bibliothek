@@ -20,7 +20,7 @@ func TestLeseTitel_Auflage(t *testing.T) {
 		t.Fatalf("Titel lesen: %v", err)
 	}
 	if len(titel) != 3 {
-		t.Fatalf("drei Titel erwartet, waren %d", len(titel))
+		t.Fatalf("len(titel) = %d, erwartet drei Titel", len(titel))
 	}
 	for i, soll := range []string{"2. Aufl.", "", ""} {
 		if titel[i].Auflage != soll {

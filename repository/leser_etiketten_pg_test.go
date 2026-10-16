@@ -54,7 +54,7 @@ func TestLadeEtikettZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 	// Erst die ganze 7A, dann die ganze 7B — innerhalb der Klasse nach Nachname.
 	erwartet := []string{"07A/Bock", "07A/Dill", "07B/Aal", "07B/Cent"}
 	if len(folge) != len(erwartet) {
-		t.Fatalf("erwartet %v, bekommen %v", erwartet, folge)
+		t.Fatalf("folge = %v, erwartet %v", folge, erwartet)
 	}
 	for i := range erwartet {
 		if folge[i] != erwartet[i] {
@@ -92,7 +92,7 @@ func TestLadeEtikettZeilen_SortiertUndNurLebende(t *testing.T) {
 	}
 	erwartet := []string{"Anders, Bea", "Müller, Ayse", "Zimmermann, Tim"}
 	if len(namen) != len(erwartet) {
-		t.Fatalf("erwartet %v, bekommen %v", erwartet, namen)
+		t.Fatalf("namen = %v, erwartet %v", namen, erwartet)
 	}
 	for i := range erwartet {
 		if namen[i] != erwartet[i] {
@@ -126,7 +126,7 @@ func TestLadeEtikettZeilen_UnbekannteIDsSindKeinFehler(t *testing.T) {
 		t.Fatalf("LadeEtikettZeilen mit unbekannter ID: %v", err)
 	}
 	if len(zeilen) != 1 || zeilen[0].BarcodeID != "ETI-5" {
-		t.Errorf("erwartet genau Lea Berger, bekommen %+v", zeilen)
+		t.Errorf("repo.LadeEtikettZeilen(…) = %+v, erwartet genau Lea Berger", zeilen)
 	}
 }
 
@@ -142,7 +142,7 @@ func TestLadeEtikettZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
 		t.Fatalf("leere Liste: %v", err)
 	}
 	if len(zeilen) != 0 {
-		t.Errorf("erwartet keine Zeilen, bekommen %d", len(zeilen))
+		t.Errorf("len(zeilen) = %d, erwartet keine Zeilen", len(zeilen))
 	}
 }
 

@@ -48,7 +48,7 @@ func TestTitelKommtOhneLeerraumInFolge(t *testing.T) {
 		return z
 	}
 	if got, want := lies("1"), (zeile{"La Peste", "Roman in fünf Teilen", "Camus, Albert", "Rowohlt Taschenbuch"}); got != want {
-		t.Errorf("Titel 1:\n got %+q\nwant %+q", got, want)
+		t.Errorf("Titel 1:\n     ist %+q\nerwartet %+q", got, want)
 	}
 	if got := lies("2").titel; got != "Mumienherz. Die Rückkehr des Seth / 1" {
 		t.Errorf("Titel 2: %+q", got)

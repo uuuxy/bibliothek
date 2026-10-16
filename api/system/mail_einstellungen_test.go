@@ -65,7 +65,7 @@ func TestTestmailSenden_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 	rec := sendeTestmail(t, s, `{"to":"admin@schule.de"}`)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Konfiguration wurde nicht gelesen: %v", err)
@@ -73,7 +73,7 @@ func TestTestmailSenden_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 
 	sitzung := <-sitzungen
 	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "admin@schule.de" {
-		t.Fatalf("Empfänger am Server = %v, want genau [admin@schule.de]", sitzung.Empfaenger)
+		t.Fatalf("Empfänger am Server = %v, erwartet genau [admin@schule.de]", sitzung.Empfaenger)
 	}
 	for _, want := range []string{"From: bibliothek@schule.de", "To: admin@schule.de", "Subject: Test-E-Mail"} {
 		if !strings.Contains(sitzung.Nachricht, want) {
@@ -93,7 +93,7 @@ func TestTestmailSenden_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 	rec := sendeTestmail(t, s, `{"to":"admin@schule.de"}`)
 
 	if rec.Code != http.StatusBadGateway {
-		t.Fatalf("erwartet 502 (Zielserver versagt), bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 502 (Zielserver versagt): %s", rec.Code, rec.Body.String())
 	}
 	meldung := tuertest.Fehlermeldung(t, rec)
 	if !strings.Contains(meldung, host+":"+port) {
@@ -130,7 +130,7 @@ func TestSende_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 
 	sitzung := <-sitzungen
 	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "lehrerin@schule.de" {
-		t.Fatalf("Empfänger am Server = %v, want [lehrerin@schule.de]", sitzung.Empfaenger)
+		t.Fatalf("Empfänger am Server = %v, erwartet [lehrerin@schule.de]", sitzung.Empfaenger)
 	}
 	if !strings.Contains(sitzung.Nachricht, "From: gespeichert@schule.de") {
 		t.Errorf("Absender kommt nicht aus der gespeicherten Konfiguration:\n%s", sitzung.Nachricht)
@@ -151,10 +151,10 @@ func TestSende_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
 	ausUmgebung := func(context.Context) (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }
 	err := mailservice.NewPostausgang(ausUmgebung).Sende(t.Context(), mailservice.Nachricht{An: "lehrerin@schule.de", Betreff: "x", Text: "y"})
 	if !errors.Is(err, mailservice.ErrMailNichtKonfiguriert) {
-		t.Fatalf("Fehler = %v, want ErrMailNichtKonfiguriert", err)
+		t.Fatalf("Fehler = %v, erwartet ErrMailNichtKonfiguriert", err)
 	}
 	if mailFehlerStatus(err) != http.StatusServiceUnavailable {
-		t.Errorf("Status = %d, want 503", mailFehlerStatus(err))
+		t.Errorf("Status = %d, erwartet 503", mailFehlerStatus(err))
 	}
 }
 
@@ -172,7 +172,7 @@ func TestMailEinstellungenSchreiben_UnbrauchbarerAbsenderKommtNichtInDieDatenban
 	s.MailEinstellungenSchreiben(repo)(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 	if !strings.Contains(tuertest.Fehlermeldung(t, rec), "Absender") {
 		t.Errorf("Meldung benennt das Feld nicht: %q", tuertest.Fehlermeldung(t, rec))
@@ -196,7 +196,7 @@ func TestTestmailSenden_OhneEmpfaengerKeinVerbindungsversuch(t *testing.T) {
 			rec := sendeTestmail(t, s, body)
 
 			if rec.Code != http.StatusBadRequest {
-				t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
+				t.Fatalf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("DB darf ohne Empfänger nicht berührt werden: %v", err)
@@ -221,7 +221,7 @@ func TestTestmailSenden_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 			rec := sendeTestmail(t, s, `{"to":"`+adresse+`"}`)
 
 			if rec.Code != http.StatusBadRequest {
-				t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
+				t.Fatalf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 			}
 			if !strings.Contains(tuertest.Fehlermeldung(t, rec), "Empfänger") {
 				t.Errorf("Meldung benennt das Feld nicht: %q", tuertest.Fehlermeldung(t, rec))

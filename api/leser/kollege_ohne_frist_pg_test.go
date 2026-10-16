@@ -112,7 +112,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 			t.Fatal("die Akte liefert keine Ausleihliste")
 		}
 		if len(buecher) != 1 {
-			t.Fatalf("erwartet ein Buch, gefunden: %d", len(buecher))
+			t.Fatalf("entliehene_buecher = %d Bücher, erwartet 1", len(buecher))
 		}
 		eintrag, ok := buecher[0].(map[string]any)
 		if !ok {
@@ -131,7 +131,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 			t.Fatal("die Akte liefert keine Ausleihliste")
 		}
 		if len(buecher) != 1 {
-			t.Fatalf("erwartet ein Buch, gefunden: %d", len(buecher))
+			t.Fatalf("entliehene_buecher = %d Bücher, erwartet 1", len(buecher))
 		}
 		eintrag, ok := buecher[0].(map[string]any)
 		if !ok {

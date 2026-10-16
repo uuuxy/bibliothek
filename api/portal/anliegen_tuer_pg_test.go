@@ -61,7 +61,7 @@ func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	// Unbekannte Felder sind kein Fehler: Wer sie schickt, bekommt seine Meldung trotzdem
 	// angelegt. Verloren ginge sonst eine Meldung, nicht ein Feld.
 	if rec.Code != http.StatusCreated {
-		t.Fatalf("Status = %d, want 201 — %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 201 — %s", rec.Code, rec.Body.String())
 	}
 	var antwort map[string]string
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil || antwort["id"] == "" {
@@ -80,7 +80,7 @@ func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 		t.Errorf("titel_id wurde geschrieben — die Tür nimmt wieder eine Titel-Kennung an")
 	}
 	if isbn != "" {
-		t.Errorf("isbn = %q, want leer — die Tür nimmt wieder eine ISBN an", isbn)
+		t.Errorf("isbn = %q, erwartet leer — die Tür nimmt wieder eine ISBN an", isbn)
 	}
 	// Die Gegenprobe: Was das Formular wirklich schickt, kommt an, jedes in seiner Spalte.
 	if titelText != "Markl Biologie 2" || klasse != "8G3" || kommentar != "falsche Auflage bekommen" {

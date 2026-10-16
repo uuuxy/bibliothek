@@ -58,13 +58,13 @@ func TestNachtragMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 		}
 		switch {
 		case want == nil && got != nil:
-			t.Errorf("Bestellung %s: Topf %q geraten, want NULL", id, *got)
+			t.Errorf("Bestellung %s: Topf %q geraten, erwartet NULL", id, *got)
 		case want != nil && (got == nil || *got != *want):
 			ist := "NULL"
 			if got != nil {
 				ist = *got
 			}
-			t.Errorf("Bestellung %s: Topf %s, want %q", id, ist, *want)
+			t.Errorf("Bestellung %s: Topf %s, erwartet %q", id, ist, *want)
 		}
 	}
 

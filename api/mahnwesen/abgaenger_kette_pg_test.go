@@ -131,7 +131,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	// ginge — die zweite Mail scheiterte am Testserver und zählte still als übersprungen.
 	if antwort := rec.Body.String(); !strings.Contains(antwort, `"sent_count":1`) ||
 		!strings.Contains(antwort, `"skipped_count":0`) {
-		t.Fatalf("erwartet genau eine Mail ohne Übersprungene: %s", antwort)
+		t.Fatalf("Antwort = %s, erwartet genau eine Mail ohne Übersprungene", antwort)
 	}
 
 	// 3. Was wirklich rausging: eine Mail, zwei PDFs, jedes mit den Büchern seines Schülers.

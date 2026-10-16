@@ -117,7 +117,7 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 				gescannt, res.Art, ausweis)
 		}
 		if res.Leser.BarcodeID != ausweis {
-			t.Errorf("Leser hat Ausweis %q, want %q", res.Leser.BarcodeID, ausweis)
+			t.Errorf("Leser hat Ausweis %q, erwartet %q", res.Leser.BarcodeID, ausweis)
 		}
 	})
 
@@ -134,7 +134,7 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 			t.Fatalf("Scan von %q (auf dem Etikett steht %q): %v", gescannt, buchNummer, err)
 		}
 		if res.Art != "ausleihe" {
-			t.Fatalf("Type = %q, want „ausleihe\" — Scan %q, Etikett %q", res.Art, gescannt, buchNummer)
+			t.Fatalf("Type = %q, erwartet „ausleihe\" — Scan %q, Etikett %q", res.Art, gescannt, buchNummer)
 		}
 
 		var offen int
@@ -144,7 +144,7 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 			t.Fatalf("Ausleihen zählen: %v", err)
 		}
 		if offen != 1 {
-			t.Errorf("%d offene Ausleihen, want 1 — der Scan hat nicht gebucht", offen)
+			t.Errorf("%d offene Ausleihen, erwartet 1 — der Scan hat nicht gebucht", offen)
 		}
 	})
 

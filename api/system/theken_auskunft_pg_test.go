@@ -129,13 +129,13 @@ func TestThekenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	auskunft := rufeThekenAuskunft(t, srv, w.adminID, w.barcode)
 
 	if len(auskunft.Exemplare) != 1 {
-		t.Fatalf("erwartet 1 Exemplar-Treffer, waren %d: %+v", len(auskunft.Exemplare), auskunft.Exemplare)
+		t.Fatalf("len(auskunft.Exemplare) = %d, erwartet 1 Exemplar-Treffer: %+v", len(auskunft.Exemplare), auskunft.Exemplare)
 	}
 	if e := auskunft.Exemplare[0]; e.Status != "geloescht" || e.Titel != "Theken-Testband" {
 		t.Errorf("Exemplar-Treffer falsch: %+v", e)
 	}
 	if len(auskunft.Ereignisse) != 2 {
-		t.Fatalf("erwartet 2 Ereignisse (Ausleihe+Rückgabe), waren %d", len(auskunft.Ereignisse))
+		t.Fatalf("len(auskunft.Ereignisse) = %d, erwartet 2 Ereignisse (Ausleihe+Rückgabe)", len(auskunft.Ereignisse))
 	}
 	for _, e := range auskunft.Ereignisse {
 		if e.Entleiher != "Selma Suchspur" || e.Klasse != "05A" || e.PersonenbezugGetilgt {
@@ -157,7 +157,7 @@ func TestThekenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 		t.Fatalf("Protokoll zählen: %v", err)
 	}
 	if protokolle != 1 {
-		t.Errorf("erwartet genau 1 TRESEN_AUSKUNFT-Protokolleintrag, waren %d", protokolle)
+		t.Errorf("protokolle = %d, erwartet genau 1 TRESEN_AUSKUNFT-Protokolleintrag", protokolle)
 	}
 }
 
@@ -182,10 +182,10 @@ func TestThekenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 	auskunft := rufeThekenAuskunft(t, srv, w.adminID, w.barcode)
 
 	if len(auskunft.Exemplare) != 1 || auskunft.Exemplare[0].Status != "im_bestand" {
-		t.Fatalf("erwartet 1 Treffer im Bestand, war: %+v", auskunft.Exemplare)
+		t.Fatalf("auskunft.Exemplare = %+v, erwartet 1 Treffer im Bestand", auskunft.Exemplare)
 	}
 	if len(auskunft.Ereignisse) != 1 {
-		t.Fatalf("erwartet 1 Ereignis, waren %d", len(auskunft.Ereignisse))
+		t.Fatalf("len(auskunft.Ereignisse) = %d, erwartet 1 Ereignis", len(auskunft.Ereignisse))
 	}
 	if e := auskunft.Ereignisse[0]; !e.PersonenbezugGetilgt || e.Entleiher != "" {
 		t.Errorf("nach Tilgung erwartet getilgt=true ohne Namen, war: %+v", e)
@@ -202,7 +202,7 @@ func TestThekenAuskunftOhneTreffer(t *testing.T) {
 
 	auskunft := rufeThekenAuskunft(t, srv, w.adminID, "NIE-VERGEBEN-4711")
 	if len(auskunft.Exemplare) != 0 || len(auskunft.Ereignisse) != 0 {
-		t.Errorf("erwartet leere Auskunft, war: %+v", auskunft)
+		t.Errorf("rufeThekenAuskunft(…) = %+v, erwartet leere Auskunft", auskunft)
 	}
 
 	var protokolle int
@@ -228,7 +228,7 @@ func TestThekenAuskunftOhneBarcode(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.ThekenAuskunft(nil).ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("erwartet 400 ohne barcode, war %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 400 ohne barcode", rec.Code)
 	}
 }
 
@@ -261,7 +261,7 @@ func TestThekenAuskunftNenntDenKollegen(t *testing.T) {
 
 	auskunft := rufeThekenAuskunft(t, srv, w.adminID, w.barcode)
 	if len(auskunft.Ereignisse) != 1 {
-		t.Fatalf("erwartet 1 Ereignis, waren %d", len(auskunft.Ereignisse))
+		t.Fatalf("len(auskunft.Ereignisse) = %d, erwartet 1 Ereignis", len(auskunft.Ereignisse))
 	}
 	e := auskunft.Ereignisse[0]
 	if e.PersonenbezugGetilgt || e.Entleiher != "Kim Kollegin" || e.Klasse != "LiV" {

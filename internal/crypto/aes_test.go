@@ -58,7 +58,7 @@ func TestSchluesselAusUmgebung(t *testing.T) {
 				t.Errorf("SchluesselAusUmgebung() Fehler = %v, erwartet mit %q", err, f.wantMeldung)
 			}
 			if !f.wantFehler && len(schluessel) != f.wantLaenge {
-				t.Errorf("SchluesselAusUmgebung() Länge = %v, want %v", len(schluessel), f.wantLaenge)
+				t.Errorf("SchluesselAusUmgebung() Länge = %v, erwartet %v", len(schluessel), f.wantLaenge)
 			}
 		})
 	}
@@ -106,7 +106,7 @@ func TestVerschluesseleUndEntschluessele(t *testing.T) {
 	}
 
 	if !bytes.Equal(klartext, entschluesselt) {
-		t.Errorf("Entschluessele() = %v, want %v", string(entschluesselt), string(klartext))
+		t.Errorf("Entschluessele() = %v, erwartet %v", string(entschluesselt), string(klartext))
 	}
 }
 
@@ -117,7 +117,7 @@ func TestEntschluessele_Fehler(t *testing.T) {
 		zuKurz := []byte("short")
 		_, err := Entschluessele(zuKurz)
 		if err == nil || !strings.Contains(err.Error(), "ciphertext ist zu kurz") {
-			t.Errorf("Entschluessele(zu kurz) Fehler = %v, want 'ciphertext ist zu kurz'", err)
+			t.Errorf("Entschluessele(zu kurz) Fehler = %v, erwartet 'ciphertext ist zu kurz'", err)
 		}
 	})
 
@@ -134,7 +134,7 @@ func TestEntschluessele_Fehler(t *testing.T) {
 
 		_, err = Entschluessele(geheimtext)
 		if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
-			t.Errorf("Entschluessele(verändert) Fehler = %v, want 'entschlüsselung fehlgeschlagen'", err)
+			t.Errorf("Entschluessele(verändert) Fehler = %v, erwartet 'entschlüsselung fehlgeschlagen'", err)
 		}
 	})
 }
@@ -174,7 +174,7 @@ func TestVerschluesseleMitUndEntschluesseleMit(t *testing.T) {
 	}
 
 	if !bytes.Equal(klartext, entschluesselt) {
-		t.Errorf("EntschluesseleMit() = %v, want %v", string(entschluesselt), string(klartext))
+		t.Errorf("EntschluesseleMit() = %v, erwartet %v", string(entschluesselt), string(klartext))
 	}
 }
 
@@ -201,7 +201,7 @@ func TestVerschluesseleMitUndEntschluesseleMit_Fehler(t *testing.T) {
 		zuKurz := []byte("short")
 		_, err := EntschluesseleMit(gueltig, zuKurz)
 		if err == nil || !strings.Contains(err.Error(), "ciphertext ist zu kurz") {
-			t.Errorf("EntschluesseleMit(zu kurz) Fehler = %v, want 'ciphertext ist zu kurz'", err)
+			t.Errorf("EntschluesseleMit(zu kurz) Fehler = %v, erwartet 'ciphertext ist zu kurz'", err)
 		}
 	})
 
@@ -217,7 +217,7 @@ func TestVerschluesseleMitUndEntschluesseleMit_Fehler(t *testing.T) {
 
 		_, err = EntschluesseleMit(gueltig, geheimtext)
 		if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
-			t.Errorf("EntschluesseleMit(verändert) Fehler = %v, want 'entschlüsselung fehlgeschlagen'", err)
+			t.Errorf("EntschluesseleMit(verändert) Fehler = %v, erwartet 'entschlüsselung fehlgeschlagen'", err)
 		}
 	})
 }

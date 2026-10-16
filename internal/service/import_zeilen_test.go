@@ -24,7 +24,7 @@ func TestISBNOhneTrenner(t *testing.T) {
 
 	for _, tt := range tests {
 		if got := isbnutil.OhneTrenner(tt.val); got != tt.want {
-			t.Errorf("isbnutil.OhneTrenner(%q) = %q, want %q", tt.val, got, tt.want)
+			t.Errorf("isbnutil.OhneTrenner(%q) = %q, erwartet %q", tt.val, got, tt.want)
 		}
 	}
 }
@@ -107,14 +107,14 @@ func TestBaueNeuTitelAusZeile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cacheKey, newTitel, ok := baueNeuTitelAusZeile(tt.row, headerMap, lookup)
 			if ok != tt.wantOk {
-				t.Errorf("baueNeuTitelAusZeile ok = %v, want %v", ok, tt.wantOk)
+				t.Errorf("baueNeuTitelAusZeile ok = %v, erwartet %v", ok, tt.wantOk)
 			}
 			if ok {
 				if cacheKey != tt.wantCacheKey {
-					t.Errorf("cacheKey = %q, want %q", cacheKey, tt.wantCacheKey)
+					t.Errorf("cacheKey = %q, erwartet %q", cacheKey, tt.wantCacheKey)
 				}
 				if newTitel.ISBN != tt.wantISBN {
-					t.Errorf("ISBN = %q, want %q", newTitel.ISBN, tt.wantISBN)
+					t.Errorf("ISBN = %q, erwartet %q", newTitel.ISBN, tt.wantISBN)
 				}
 			}
 		})
@@ -136,13 +136,13 @@ func TestSammleNeueTitel(t *testing.T) {
 	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, lookup)
 
 	if len(newTitlesOrder) != 2 {
-		t.Fatalf("len(newTitlesOrder) = %d, want 2", len(newTitlesOrder))
+		t.Fatalf("len(newTitlesOrder) = %d, erwartet 2", len(newTitlesOrder))
 	}
 	if newTitlesOrder[0] != "111" || newTitlesOrder[1] != "222" {
 		t.Errorf("newTitlesOrder = %v", newTitlesOrder)
 	}
 	if len(newTitlesMap) != 2 {
-		t.Fatalf("len(newTitlesMap) = %d, want 2", len(newTitlesMap))
+		t.Fatalf("len(newTitlesMap) = %d, erwartet 2", len(newTitlesMap))
 	}
 }
 
@@ -162,7 +162,7 @@ func TestSammleExemplare(t *testing.T) {
 	copies := sammleExemplare(rows, headerMap, lookup)
 
 	if len(copies) != 3 {
-		t.Fatalf("len(copies) = %d, want 3", len(copies))
+		t.Fatalf("len(copies) = %d, erwartet 3", len(copies))
 	}
 
 	tests := []struct {
@@ -178,13 +178,13 @@ func TestSammleExemplare(t *testing.T) {
 
 	for _, tt := range tests {
 		if copies[tt.i].TitelID != tt.titelID {
-			t.Errorf("copies[%d].TitelID = %q, want %q", tt.i, copies[tt.i].TitelID, tt.titelID)
+			t.Errorf("copies[%d].TitelID = %q, erwartet %q", tt.i, copies[tt.i].TitelID, tt.titelID)
 		}
 		if copies[tt.i].IstAusleihbar != tt.istAusleihbar {
-			t.Errorf("copies[%d].IstAusleihbar = %v, want %v", tt.i, copies[tt.i].IstAusleihbar, tt.istAusleihbar)
+			t.Errorf("copies[%d].IstAusleihbar = %v, erwartet %v", tt.i, copies[tt.i].IstAusleihbar, tt.istAusleihbar)
 		}
 		if copies[tt.i].ZustandNotiz != tt.zustandNotiz {
-			t.Errorf("copies[%d].ZustandNotiz = %q, want %q", tt.i, copies[tt.i].ZustandNotiz, tt.zustandNotiz)
+			t.Errorf("copies[%d].ZustandNotiz = %q, erwartet %q", tt.i, copies[tt.i].ZustandNotiz, tt.zustandNotiz)
 		}
 	}
 }
@@ -213,10 +213,10 @@ func TestImportiereZeilen_LeereZeilen(t *testing.T) {
 		t.Errorf("ImportiereZeilen() error = %v", err)
 	}
 	if newTitles != 0 {
-		t.Errorf("newTitles = %v, want 0", newTitles)
+		t.Errorf("newTitles = %v, erwartet 0", newTitles)
 	}
 	if newCopies != 0 {
-		t.Errorf("newCopies = %v, want 0", newCopies)
+		t.Errorf("newCopies = %v, erwartet 0", newCopies)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -229,16 +229,16 @@ func TestSpaltenWert(t *testing.T) {
 	headerMap := map[string]int{"col1": 0, "col2": 1, "col3": 2, "col4": 3}
 
 	if got := spaltenWert(row, headerMap, "col1"); got != "Wert1" {
-		t.Errorf("spaltenWert col1 = %v, want Wert1", got)
+		t.Errorf("spaltenWert col1 = %v, erwartet Wert1", got)
 	}
 	if got := spaltenWert(row, headerMap, "col2"); got != "Wert2" {
-		t.Errorf("spaltenWert col2 = %v, want Wert2 (trimmed)", got)
+		t.Errorf("spaltenWert col2 = %v, erwartet Wert2 (trimmed)", got)
 	}
 	if got := spaltenWert(row, headerMap, "col4"); got != "" {
-		t.Errorf("spaltenWert col4 = %v, want empty string for out of bounds", got)
+		t.Errorf("spaltenWert col4 = %v, erwartet leer außerhalb der Zeile", got)
 	}
 	if got := spaltenWert(row, headerMap, "notexist"); got != "" {
-		t.Errorf("spaltenWert notexist = %v, want empty string", got)
+		t.Errorf("spaltenWert notexist = %v, erwartet leer", got)
 	}
 }
 
@@ -255,13 +255,13 @@ func TestSammleSignaturen_UeberISBNOderTitel(t *testing.T) {
 
 	updates := sammleSignaturen(rows, headerMap, lookup)
 	if len(updates) != 2 {
-		t.Fatalf("len(updates) = %v, want 2", len(updates))
+		t.Fatalf("len(updates) = %v, erwartet 2", len(updates))
 	}
 	if updates["id1"] != "Sig1" {
-		t.Errorf("updates[id1] = %v, want Sig1", updates["id1"])
+		t.Errorf("updates[id1] = %v, erwartet Sig1", updates["id1"])
 	}
 	if updates["id2"] != "Sig2" {
-		t.Errorf("updates[id2] = %v, want Sig2", updates["id2"])
+		t.Errorf("updates[id2] = %v, erwartet Sig2", updates["id2"])
 	}
 }
 
@@ -281,7 +281,7 @@ func TestFachDerZeile_KategorieNurWennFach(t *testing.T) {
 	for _, f := range faelle {
 		got := fachDerZeile(&importTitelNeu{Fach: f.fach, Kategorie: f.kategorie})
 		if got != f.want {
-			t.Errorf("fachDerZeile(Fach=%q, Kategorie=%q) = %q, want %q", f.fach, f.kategorie, got, f.want)
+			t.Errorf("fachDerZeile(Fach=%q, Kategorie=%q) = %q, erwartet %q", f.fach, f.kategorie, got, f.want)
 		}
 	}
 }

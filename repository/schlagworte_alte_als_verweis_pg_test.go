@@ -44,16 +44,16 @@ func TestSchlagwortPflege_UmbenennenLaesstDieAlteSchreibweiseAlsVerweis(t *testi
 
 	neu, verweis, err := BenenneSchlagwortUm(ctx, pool, ids["Krimi"], "Kriminalroman", true)
 	if err != nil || neu != "Kriminalroman" {
-		t.Fatalf("umbenennen: %q, %v — want Kriminalroman", neu, err)
+		t.Fatalf("umbenennen: %q, %v — erwartet Kriminalroman", neu, err)
 	}
 	if !verweis {
-		t.Error("umbenennen meldet keinen Verweis — want die alte Schreibweise als Verweis")
+		t.Error("umbenennen meldet keinen Verweis — erwartet die alte Schreibweise als Verweis")
 	}
 	if _, err := SetzeSchlagworte(ctx, pool, titelIDVon(t, pool, "Emil"), gelesen); err != nil {
 		t.Fatal(err)
 	}
 	if got := woerterAm(t, pool, "Emil"); !slices.Equal(got, []string{"Berlin", "Kriminalroman"}) {
-		t.Errorf("nach dem Speichern der offenen Maske trägt „Emil“ %v, want [Berlin Kriminalroman]", got)
+		t.Errorf("nach dem Speichern der offenen Maske trägt „Emil“ %v, erwartet [Berlin Kriminalroman]", got)
 	}
 	if z := pflegeZeile(t, pool, "Krimi"); z.VerweisAufID != ids["Krimi"] || z.VerweisAuf != "Kriminalroman" {
 		t.Errorf("„Krimi“ nach dem Umbenennen: %+v — erwartet Verweis auf dasselbe Wort, jetzt Kriminalroman", z)
@@ -63,7 +63,7 @@ func TestSchlagwortPflege_UmbenennenLaesstDieAlteSchreibweiseAlsVerweis(t *testi
 		t.Fatal(err)
 	}
 	if liste.Gesamt != 3 || liste.Verweise != 1 {
-		t.Errorf("Pflegeliste zählt gesamt=%d verweise=%d, want 3 und 1 (Berlin, Kriminalroman, Verweis Krimi)",
+		t.Errorf("Pflegeliste zählt gesamt=%d verweise=%d, erwartet 3 und 1 (Berlin, Kriminalroman, Verweis Krimi)",
 			liste.Gesamt, liste.Verweise)
 	}
 }
@@ -77,13 +77,13 @@ func TestSchlagwortPflege_UmbenennenOhneVerweis(t *testing.T) {
 
 	neu, verweis, err := BenenneSchlagwortUm(ctx, pool, ids["Krimi"], "Kriminalroman", false)
 	if err != nil || neu != "Kriminalroman" || verweis {
-		t.Fatalf("umbenennen: %q, verweis=%v, %v — want Kriminalroman ohne Verweis", neu, verweis, err)
+		t.Fatalf("umbenennen: %q, verweis=%v, %v — erwartet Kriminalroman ohne Verweis", neu, verweis, err)
 	}
 	if n := schreibweisenGibtEs(t, pool, "Krimi"); n != 0 {
-		t.Errorf("%d Zeile(n) „Krimi“ nach dem Umbenennen ohne Verweis, want 0", n)
+		t.Errorf("%d Zeile(n) „Krimi“ nach dem Umbenennen ohne Verweis, erwartet 0", n)
 	}
 	if got := woerterAm(t, pool, "Emil"); !slices.Equal(got, []string{"Kriminalroman"}) {
-		t.Errorf("„Emil“ trägt %v, want [Kriminalroman]", got)
+		t.Errorf("„Emil“ trägt %v, erwartet [Kriminalroman]", got)
 	}
 }
 
@@ -101,14 +101,14 @@ func TestSchlagwortPflege_UmbenennenAufDenEigenenVerweisTauscht(t *testing.T) {
 
 	neu, verweis, err := BenenneSchlagwortUm(ctx, pool, ids["Krimi"], "kriminalroman", true)
 	if err != nil || neu != "kriminalroman" || !verweis {
-		t.Fatalf("umbenennen auf den eigenen Verweis: %q, verweis=%v, %v — want kriminalroman mit Verweis", neu, verweis, err)
+		t.Fatalf("umbenennen auf den eigenen Verweis: %q, verweis=%v, %v — erwartet kriminalroman mit Verweis", neu, verweis, err)
 	}
 	wort := pflegeZeile(t, pool, "kriminalroman")
 	if wort.ID != ids["Krimi"] || wort.VerweisAufID != "" || !slices.Equal(wort.Verweise, []string{"Krimi"}) || wort.Titel != 1 {
 		t.Errorf("nach dem Tausch: %+v — erwartet dasselbe Wort mit 1 Titel und dem Verweis Krimi", wort)
 	}
 	if n := schreibweisenGibtEs(t, pool, "Kriminalroman"); n != 1 {
-		t.Errorf("%d Zeilen „kriminalroman“, want 1 — der alte Verweis geht im Wort auf", n)
+		t.Errorf("%d Zeilen „kriminalroman“, erwartet 1 — der alte Verweis geht im Wort auf", n)
 	}
 
 	krimi := pflegeZeile(t, pool, "Krimi")
@@ -116,16 +116,16 @@ func TestSchlagwortPflege_UmbenennenAufDenEigenenVerweisTauscht(t *testing.T) {
 	// nicht sagt, was stattdessen geht — deshalb prüft die Tür vorher und nennt den Weg.
 	if _, _, err := BenenneSchlagwortUm(ctx, pool, krimi.ID, "Krimis", true); !errors.Is(err, ErrSchlagwortRegel) ||
 		!strings.Contains(err.Error(), "Verweis anlegen") {
-		t.Errorf("Verweis umbenennen und behalten: %v, want ErrSchlagwortRegel mit dem Weg „Verweis anlegen“", err)
+		t.Errorf("Verweis umbenennen und behalten: %v, erwartet ErrSchlagwortRegel mit dem Weg „Verweis anlegen“", err)
 	}
 	if neu, verweis, err := BenenneSchlagwortUm(ctx, pool, krimi.ID, "Krimis", false); err != nil || neu != "Krimis" || verweis {
-		t.Errorf("Verweis umbenennen: %q, verweis=%v, %v — want Krimis ohne weiteren Verweis", neu, verweis, err)
+		t.Errorf("Verweis umbenennen: %q, verweis=%v, %v — erwartet Krimis ohne weiteren Verweis", neu, verweis, err)
 	}
 	if z := pflegeZeile(t, pool, "Krimis"); z.VerweisAufID != ids["Krimi"] {
 		t.Errorf("„Krimis“: %+v — erwartet Verweis auf kriminalroman", z)
 	}
 	if n := schreibweisenGibtEs(t, pool, "Krimi"); n != 0 {
-		t.Errorf("%d Zeilen „Krimi“ nach dem Umbenennen des Verweises, want 0", n)
+		t.Errorf("%d Zeilen „Krimi“ nach dem Umbenennen des Verweises, erwartet 0", n)
 	}
 }
 
@@ -148,17 +148,17 @@ func TestSchlagwortPflege_ZusammenfuehrenOhneVerweis(t *testing.T) {
 
 	ergebnis, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"], false)
 	if err != nil || ergebnis.Titel != 2 {
-		t.Fatalf("zusammenführen ohne Verweis: titel=%d, %v — want 2", ergebnis.Titel, err)
+		t.Fatalf("zusammenführen ohne Verweis: titel=%d, %v — erwartet 2", ergebnis.Titel, err)
 	}
 	if n := schreibweisenGibtEs(t, pool, "Tierfantasy"); n != 0 {
-		t.Errorf("%d Zeile(n) „Tierfantasy“ nach dem Zusammenführen ohne Verweis, want 0", n)
+		t.Errorf("%d Zeile(n) „Tierfantasy“ nach dem Zusammenführen ohne Verweis, erwartet 0", n)
 	}
 	for titelName, want := range map[string][]string{
 		"Tintenherz":  {"Abenteuer", "Fantasy"},
 		"Woodwalkers": {"Fantasy"},
 	} {
 		if got := woerterAm(t, pool, titelName); !slices.Equal(got, want) {
-			t.Errorf("%s: %q, want %q", titelName, got, want)
+			t.Errorf("%s: %q, erwartet %q", titelName, got, want)
 		}
 	}
 	ziel := pflegeZeile(t, pool, "Fantasy")

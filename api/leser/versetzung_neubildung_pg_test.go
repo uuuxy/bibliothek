@@ -69,6 +69,6 @@ func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 		"13T1": "g@schule.example",
 	}
 	if !cmp.Equal(got, erwartet) {
-		t.Errorf("Zuordnungen nach der Versetzung:\n got      %v\n erwartet %v", got, erwartet)
+		t.Errorf("Zuordnungen nach der Versetzung = %v, erwartet %v", got, erwartet)
 	}
 }

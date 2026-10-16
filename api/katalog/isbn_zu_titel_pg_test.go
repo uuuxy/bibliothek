@@ -34,7 +34,7 @@ func TestSchreibeTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *test
 		t.Fatalf("schreibeTitelAusMetadaten: %v", err)
 	}
 	if resp.Vorhanden {
-		t.Error("Vorhanden = true, want false (neu angelegter Titel)")
+		t.Error("Vorhanden = true, erwartet false (neu angelegter Titel)")
 	}
 	if resp.Signatur != "" {
 		t.Errorf("Signatur = %q — ein neuer Titel bekommt keine erfundene Signatur", resp.Signatur)
@@ -45,7 +45,7 @@ func TestSchreibeTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *test
 		t.Fatalf("subject lesen: %v", err)
 	}
 	if subject != "Deutsch" {
-		t.Errorf("subject in DB = %q, want %q", subject, "Deutsch")
+		t.Errorf("subject in DB = %q, erwartet %q", subject, "Deutsch")
 	}
 }
 
@@ -65,7 +65,7 @@ func TestSchreibeTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T)
 		t.Fatalf("schreibeTitelAusMetadaten: %v", err)
 	}
 	if resp.Signatur != "" {
-		t.Errorf("Signatur = %q, want leer", resp.Signatur)
+		t.Errorf("Signatur = %q, erwartet leer", resp.Signatur)
 	}
 }
 
@@ -91,9 +91,9 @@ func TestFindeLokalenTitel_LiefertVorhandeneSignaturUnveraendert(t *testing.T) {
 		t.Fatal("Titel nicht gefunden, obwohl er existiert")
 	}
 	if !resp.Vorhanden {
-		t.Error("Vorhanden = false, want true")
+		t.Error("Vorhanden = false, erwartet true")
 	}
 	if resp.Signatur != "Pg" {
-		t.Errorf("Signatur = %q, want %q (unverändert übernommen)", resp.Signatur, "Pg")
+		t.Errorf("Signatur = %q, erwartet %q (unverändert übernommen)", resp.Signatur, "Pg")
 	}
 }

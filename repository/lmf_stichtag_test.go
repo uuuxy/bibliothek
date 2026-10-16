@@ -42,7 +42,7 @@ func TestLMFStichtagImSchuljahr(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got := LMFStichtagImSchuljahr(f.tag, f.stichtag).Format("2006-01-02")
 			if got != f.will {
-				t.Errorf("Stichtag %q am %s: got %s, will %s",
+				t.Errorf("Stichtag %q am %s = %s, erwartet %s",
 					f.stichtag, f.tag.Format("2006-01-02"), got, f.will)
 			}
 		})
@@ -67,7 +67,7 @@ func TestLMFStichtagAbTag(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got := LMFStichtagAbTag(f.tag, f.stichtag).Format("2006-01-02")
 			if got != f.will {
-				t.Errorf("Stichtag %q am %s: got %s, will %s",
+				t.Errorf("Stichtag %q am %s = %s, erwartet %s",
 					f.stichtag, f.tag.Format("2006-01-02"), got, f.will)
 			}
 		})

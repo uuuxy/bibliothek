@@ -37,10 +37,10 @@ func TestImSavepoint(t *testing.T) {
 			t.Fatalf("unerwarteter Fehler: %v", err)
 		}
 		if !erg.Uebernommen {
-			t.Error("erwartet: Uebernommen = true")
+			t.Error("ImSavepoint(…).Uebernommen = false, erwartet true")
 		}
 		if erg.Zurueckgerollt != nil {
-			t.Errorf("erwartet: Zurueckgerollt = nil, erhalten: %v", erg.Zurueckgerollt)
+			t.Errorf("ImSavepoint(…).Zurueckgerollt = %v, erwartet nil", erg.Zurueckgerollt)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -74,10 +74,10 @@ func TestImSavepoint(t *testing.T) {
 			t.Fatalf("unerwarteter Fehler: %v", err)
 		}
 		if erg.Uebernommen {
-			t.Error("erwartet: Uebernommen = false")
+			t.Error("ImSavepoint(…).Uebernommen = true, erwartet false")
 		}
 		if erg.Zurueckgerollt != zeilenFehler {
-			t.Errorf("erwartet: Zurueckgerollt = %v, erhalten: %v", zeilenFehler, erg.Zurueckgerollt)
+			t.Errorf("ImSavepoint(…).Zurueckgerollt = %v, erwartet %v", erg.Zurueckgerollt, zeilenFehler)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -108,16 +108,16 @@ func TestImSavepoint(t *testing.T) {
 
 		erg, err := ImSavepoint(context.Background(), tx, "Titel 3", fn)
 		if err == nil {
-			t.Fatal("erwartet: Fehler, erhalten: nil")
+			t.Fatal("ImSavepoint(…) = nil, erwartet einen Fehler")
 		}
 		if !strings.Contains(err.Error(), "abgebrochen bei Titel 3") {
 			t.Errorf("Fehlermeldung falsch: %v", err)
 		}
 		if erg.Uebernommen {
-			t.Error("erwartet: Uebernommen = false")
+			t.Error("ImSavepoint(…).Uebernommen = true, erwartet false")
 		}
 		if erg.Zurueckgerollt != nil {
-			t.Error("erwartet: Zurueckgerollt = nil")
+			t.Error("ImSavepoint(…).Zurueckgerollt ist gesetzt, erwartet nil")
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -147,7 +147,7 @@ func TestImSavepoint(t *testing.T) {
 
 		_, err = ImSavepoint(context.Background(), tx, "Titel 4", fn)
 		if err == nil {
-			t.Fatal("erwartet: Fehler, erhalten: nil")
+			t.Fatal("ImSavepoint(…) = nil, erwartet einen Fehler")
 		}
 		if !strings.Contains(err.Error(), "konnte den Savepoint") {
 			t.Errorf("Fehlermeldung falsch: %v", err)
@@ -181,7 +181,7 @@ func TestImSavepoint(t *testing.T) {
 
 		_, err = ImSavepoint(context.Background(), tx, "Titel 5", fn)
 		if err == nil {
-			t.Fatal("erwartet: Fehler, erhalten: nil")
+			t.Fatal("ImSavepoint(…) = nil, erwartet einen Fehler")
 		}
 		if !strings.Contains(err.Error(), "nicht freigeben") {
 			t.Errorf("Fehlermeldung falsch: %v", err)
@@ -216,7 +216,7 @@ func TestImSavepoint(t *testing.T) {
 
 		_, err = ImSavepoint(context.Background(), tx, "Titel 6", fn)
 		if err == nil {
-			t.Fatal("erwartet: Fehler, erhalten: nil")
+			t.Fatal("ImSavepoint(…) = nil, erwartet einen Fehler")
 		}
 		if !strings.Contains(err.Error(), "nicht zurückrollen") {
 			t.Errorf("Fehlermeldung falsch: %v", err)

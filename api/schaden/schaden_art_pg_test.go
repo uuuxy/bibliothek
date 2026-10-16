@@ -64,6 +64,6 @@ func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 
 	// Ohne Angabe kein stiller Vorgabewert: Die Fallgruppe steht im Brief an die Eltern.
 	if rec, _ := melde("ohne", ""); rec.Code != http.StatusBadRequest {
-		t.Errorf("Meldung ohne art: Status %d, want 400: %s", rec.Code, rec.Body.String())
+		t.Errorf("Meldung ohne art: Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 }

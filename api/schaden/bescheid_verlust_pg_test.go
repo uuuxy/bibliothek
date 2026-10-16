@@ -145,14 +145,14 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a1: 24.90, a2: 12.00}))
 	if rec.Code != http.StatusCreated {
-		t.Fatalf("Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 	var b repository.Bescheid
 	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
 		t.Fatal(err)
 	}
 	if b.Gesamtbetrag != 36.90 || b.AnzahlPositionen != 2 {
-		t.Errorf("Brief: Summe %.2f, Positionen %d — want 36.90 und 2", b.Gesamtbetrag, b.AnzahlPositionen)
+		t.Errorf("Brief: Summe %.2f, Positionen %d — erwartet 36.90 und 2", b.Gesamtbetrag, b.AnzahlPositionen)
 	}
 
 	for ausleihe, want := range map[string]float64{a1: 24.90, a2: 12.00} {
@@ -191,7 +191,7 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 	}
 	// 4. Der Vorschlag nennt die Bücher danach nicht mehr — sie stehen auf dem Brief.
 	if v := bescheidVorschlagUeberTuer(t, srv, pool, sid); len(v.Ausleihen) != 0 || len(v.Positionen) != 0 {
-		t.Errorf("Vorschlag nach dem Brief: Ausleihen %d, Positionen %d — want 0/0", len(v.Ausleihen), len(v.Positionen))
+		t.Errorf("Vorschlag nach dem Brief: Ausleihen %d, Positionen %d — erwartet 0/0", len(v.Ausleihen), len(v.Positionen))
 	}
 }
 
@@ -234,7 +234,7 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 		rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 			bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{f.ausleihe: 10}))
 		if rec.Code != http.StatusConflict {
-			t.Errorf("%s: Status %d, want 409: %s", f.name, rec.Code, rec.Body.String())
+			t.Errorf("%s: Status %d, erwartet 409: %s", f.name, rec.Code, rec.Body.String())
 			continue
 		}
 		if got := tuertest.Fehlermeldung(t, rec); got != f.meldung {
@@ -246,7 +246,7 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 		t.Fatal(err)
 	}
 	if briefe != 0 || nummernkreisStand(t, pool) != 0 {
-		t.Errorf("%d Briefe, Nummernkreis bei %d — want 0 und 0", briefe, nummernkreisStand(t, pool))
+		t.Errorf("%d Briefe, Nummernkreis bei %d — erwartet 0 und 0", briefe, nummernkreisStand(t, pool))
 	}
 	var fremdeBeendet bool
 	if err := pool.QueryRow(ctx, `SELECT rueckgabe_am IS NOT NULL FROM ausleihen WHERE id = $1`, fremd).Scan(&fremdeBeendet); err != nil {
@@ -276,7 +276,7 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a: 9.90}))
 	if rec.Code != http.StatusConflict {
-		t.Fatalf("Status %d, want 409: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 	const erwartet = "1 von 1 Forderungen konnten nicht zugeordnet werden — " +
 		"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
@@ -290,7 +290,7 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !laeuft || !imUmlauf {
-		t.Errorf("nach der Abweisung: Ausleihe läuft=%v, Exemplar im Umlauf=%v — want true/true", laeuft, imUmlauf)
+		t.Errorf("nach der Abweisung: Ausleihe läuft=%v, Exemplar im Umlauf=%v — erwartet true/true", laeuft, imUmlauf)
 	}
 	if nummernkreisStand(t, pool) != 0 {
 		t.Error("die Abweisung hat eine Nummer verbraucht")

@@ -83,11 +83,11 @@ func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 		}
 		for spalte, paar := range soll {
 			if paar[0] != paar[1] {
-				t.Errorf("%s: %s = %v, want %v (Bestand)", weg, spalte, paar[0], paar[1])
+				t.Errorf("%s: %s = %v, erwartet %v (Bestand)", weg, spalte, paar[0], paar[1])
 			}
 		}
 		if exemplare != 2 {
-			t.Errorf("%s: %d Exemplare, want 2 (der Import legt dazu)", weg, exemplare)
+			t.Errorf("%s: %d Exemplare, erwartet 2 (der Import legt dazu)", weg, exemplare)
 		}
 	}
 }

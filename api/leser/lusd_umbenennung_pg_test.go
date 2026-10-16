@@ -67,7 +67,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 		t.Errorf("Ergebnis nach Bestätigung: neu=%d abg=%d bestaetigt=%v", len(res.Neuzugaenge), len(res.Abgaenger), res.Umbenennungen[0].Bestaetigt)
 	}
 	if n := zaehle(t, pool, "lower(nachname) LIKE 'm%'"); n != 1 {
-		t.Fatalf("erwartet EINE Zeile für Anna, waren %d", n)
+		t.Fatalf("zaehle(…) = %d, erwartet EINE Zeile für Anna", n)
 	}
 	var nachname, klasse, barcode string
 	var abg bool
@@ -132,7 +132,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 		t.Fatalf("Apply ohne Wahl: %v", err)
 	}
 	if n := zaehle(t, pool, "nachname IN ('Müller','Schulz')"); n != 2 {
-		t.Fatalf("erwartet Abgänger + Neuanlage (2 Zeilen), waren %d", n)
+		t.Fatalf("zaehle(…) = %d, erwartet Abgänger + Neuanlage (2 Zeilen)", n)
 	}
 	var vorname, grund string
 	var abg, gesperrt, seit bool
@@ -162,7 +162,7 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(prev.Umbenennungen) != 1 || prev.Umbenennungen[0].Sicher || prev.Umbenennungen[0].NeuGeburtsdatum != "2012-01-10" {
-		t.Fatalf("erwartet ein vermutliches Paar mit neuem Datum: %+v", prev.Umbenennungen)
+		t.Fatalf("Vorschau.Umbenennungen = %+v, erwartet ein vermutliches Paar mit neuem Datum", prev.Umbenennungen)
 	}
 	if _, err := s.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
 		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: benID}}}); err != nil {
@@ -195,7 +195,7 @@ func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(prev.Umbenennungen) != 1 || !prev.Umbenennungen[0].WarAbgaenger || !prev.Umbenennungen[0].Sicher {
-		t.Fatalf("erwartet sicheres Paar mit früherem Abgänger: %+v", prev.Umbenennungen)
+		t.Fatalf("Vorschau.Umbenennungen = %+v, erwartet das sichere Paar mit dem früheren Abgänger", prev.Umbenennungen)
 	}
 	if _, err := s.berechneLUSDLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
 		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: altID}}}); err != nil {

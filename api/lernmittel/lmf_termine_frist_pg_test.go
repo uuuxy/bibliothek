@@ -246,7 +246,7 @@ func TestLMFPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 			ist.In(schulzeit.Zone()), soll.In(schulzeit.Zone()))
 	}
 	if !ist.Equal(tag("2027-06-28")) {
-		t.Errorf("erwartet der frühere Termin 28.06.2027, war %v", ist.In(schulzeit.Zone()))
+		t.Errorf("ist.In(schulzeit.Zone()) = %v, erwartet der frühere Termin 28.06.2027", ist.In(schulzeit.Zone()))
 	}
 }
 

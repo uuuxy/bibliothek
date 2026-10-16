@@ -50,7 +50,7 @@ func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Fatalf("%d Zeilen gespeichert", len(st.Zeilen))
 	}
 	if z := st.Zeilen[2]; len(z.Klassen) != 2 || z.Datum != "2026-06-11" || z.Stunde != 5 {
-		t.Errorf("Zeile 3: Klassen dedupliziert/kanonisiert und Platz Do 5. Std. erwartet, war %+v", z)
+		t.Errorf("Zeile 3 = %+v, erwartet die Klassen dedupliziert und kanonisiert, Platz Do 5. Std.", z)
 	}
 	if z := st.Zeilen[4]; z.Datum != "2026-06-12" || z.Stunde != 1 {
 		t.Errorf("Zeile 5 muss am Freitag in der 1. Stunde liegen, war %+v", z)

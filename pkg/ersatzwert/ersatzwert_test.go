@@ -38,13 +38,13 @@ func TestStaffelNachArbeitshilfe(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got := Berechne(f.verleihjahr, f.kaufpreis, f.neupreis, 0, PreisquelleListenpreis)
 			if got.Betrag != f.wantBetrag {
-				t.Errorf("Betrag = %.2f, want %.2f", got.Betrag, f.wantBetrag)
+				t.Errorf("Betrag = %.2f, erwartet %.2f", got.Betrag, f.wantBetrag)
 			}
 			if got.Prozent != f.wantProzent {
-				t.Errorf("Prozent = %d, want %d", got.Prozent, f.wantProzent)
+				t.Errorf("Prozent = %d, erwartet %d", got.Prozent, f.wantProzent)
 			}
 			if got.Basis != f.wantBasis {
-				t.Errorf("Basis = %q, want %q", got.Basis, f.wantBasis)
+				t.Errorf("Basis = %q, erwartet %q", got.Basis, f.wantBasis)
 			}
 		})
 	}
@@ -54,10 +54,10 @@ func TestStaffelNachArbeitshilfe(t *testing.T) {
 // stehen, und 33,33 € muss 33,33 € bleiben.
 func TestBetragAufCentGerundet(t *testing.T) {
 	if got := Berechne(3, 0, 55.55, 0, PreisquelleListenpreis).Betrag; got != 33.33 {
-		t.Errorf("60 %% von 55,55 = %.4f, want 33.33", got)
+		t.Errorf("60 %% von 55,55 = %.4f, erwartet 33.33", got)
 	}
 	if got := Berechne(2, 0, 12.345, 0, PreisquelleListenpreis).Betrag; got != 9.88 {
-		t.Errorf("80 %% von 12,345 = %.4f, want 9.88", got)
+		t.Errorf("80 %% von 12,345 = %.4f, erwartet 9.88", got)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestVerleihjahrNimmtDasMaximum(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if got := Verleihjahr(f.ausleihen, f.bestandsalter); got != f.want {
-			t.Errorf("Verleihjahr(%d, %d) = %d, want %d", f.ausleihen, f.bestandsalter, got, f.want)
+			t.Errorf("Verleihjahr(%d, %d) = %d, erwartet %d", f.ausleihen, f.bestandsalter, got, f.want)
 		}
 	}
 }
@@ -109,13 +109,13 @@ func TestZustandAbschlagMindertDenZeitwert(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got := Berechne(f.verleihjahr, f.kaufpreis, f.neupreis, f.abschlag, PreisquelleListenpreis)
 			if got.Betrag != f.wantBetrag {
-				t.Errorf("Betrag = %.2f, want %.2f — die Zahl steht in einem Bescheid",
+				t.Errorf("Betrag = %.2f, erwartet %.2f — die Zahl steht in einem Bescheid",
 					got.Betrag, f.wantBetrag)
 			}
 			// Der Abschlag verschiebt die Staffel nicht: Prozentsatz und Basispreis sind, was
 			// die Herleitung nennt („60 % von 41,50 €, abzüglich 20 %").
 			if got.Prozent != f.wantProzent {
-				t.Errorf("Prozent = %d, want %d — der Abschlag verschiebt die Staffel nicht",
+				t.Errorf("Prozent = %d, erwartet %d — der Abschlag verschiebt die Staffel nicht",
 					got.Prozent, f.wantProzent)
 			}
 			if got.ZustandAbschlag != f.abschlag {
@@ -143,7 +143,7 @@ func TestZustandAbschlagWirdGekappt(t *testing.T) {
 
 	ueber := Berechne(3, 20, 41.50, 140, PreisquelleListenpreis)
 	if ueber.Betrag != 0 {
-		t.Errorf("Betrag bei 140 %% = %.2f, want 0", ueber.Betrag)
+		t.Errorf("Betrag bei 140 %% = %.2f, erwartet 0", ueber.Betrag)
 	}
 	if ueber.ZustandAbschlag != 100 {
 		t.Errorf("ZustandAbschlag = %d, want 100 — gekappt, und die Herleitung nennt den "+
@@ -247,18 +247,18 @@ func TestNeuwertRegelNimmtDenListenpreis(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got := BerechneNeuwert(f.kaufpreis, f.listenpreis, f.abschlag, f.quelle)
 			if got.Betrag != f.wantBetrag {
-				t.Errorf("Betrag = %.2f, want %.2f", got.Betrag, f.wantBetrag)
+				t.Errorf("Betrag = %.2f, erwartet %.2f", got.Betrag, f.wantBetrag)
 			}
 			if got.Basis != f.wantBasis {
-				t.Errorf("Basis = %q, want %q", got.Basis, f.wantBasis)
+				t.Errorf("Basis = %q, erwartet %q", got.Basis, f.wantBasis)
 			}
 			// Verleihjahr 0 ist das Kennzeichen dieser Regel: Daran unterscheidet die
 			// Herleitung sie von der Staffel.
 			if got.Verleihjahr != 0 {
-				t.Errorf("Verleihjahr = %d, want 0 — diese Rechnung kennt keines", got.Verleihjahr)
+				t.Errorf("Verleihjahr = %d, erwartet 0 — diese Rechnung kennt keines", got.Verleihjahr)
 			}
 			if got.Prozent != 100 {
-				t.Errorf("Prozent = %d, want 100 — kein Altersabschlag", got.Prozent)
+				t.Errorf("Prozent = %d, erwartet 100 — kein Altersabschlag", got.Prozent)
 			}
 		})
 	}

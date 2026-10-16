@@ -63,7 +63,7 @@ func TestSuche_ErkenntScansOhneZuBuchen(t *testing.T) {
 	// `schueler`, wäre Treffer nil, und die Suchleiste fiele auf die unscharfe Namenssuche
 	// zurück.
 	if r := suche("A-KOLL-77"); r.Treffer == nil || r.Treffer.Typ != "schueler" || r.Treffer.ID != kollegeID {
-		t.Errorf("Ausweis eines Kollegen: %+v — want Treffer auf %s", r.Treffer, kollegeID)
+		t.Errorf("Ausweis eines Kollegen: %+v — erwartet Treffer auf %s", r.Treffer, kollegeID)
 	}
 	if r := suche("Sprung"); r.Treffer != nil || len(r.Leser) != 1 || len(r.Titel) != 1 {
 		t.Errorf("Freitext: treffer=%+v schueler=%d buecher=%d", r.Treffer, len(r.Leser), len(r.Titel))

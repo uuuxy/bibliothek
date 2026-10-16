@@ -64,9 +64,9 @@ func pruefeISBNs(t *testing.T, ist map[string]*string, soll map[string]string) {
 		got := ist[titel]
 		switch {
 		case want == "" && got != nil:
-			t.Errorf("%s: ISBN %q, want NULL", titel, *got)
+			t.Errorf("%s: ISBN %q, erwartet NULL", titel, *got)
 		case want != "" && (got == nil || *got != want):
-			t.Errorf("%s: ISBN %v, want %q", titel, isbnAnzeige(got), want)
+			t.Errorf("%s: ISBN %v, erwartet %q", titel, isbnAnzeige(got), want)
 		}
 	}
 }

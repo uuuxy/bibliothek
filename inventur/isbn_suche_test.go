@@ -26,7 +26,7 @@ func TestISBNSuche_LehntUngueltigeISBNAb(t *testing.T) {
 	tueren.ISBNSuche(rr, anfrage)
 
 	if rr.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
+		t.Fatalf("rr.Code = %d, erwartet %d", rr.Code, http.StatusBadRequest)
 	}
 }
 
@@ -63,7 +63,7 @@ func TestISBNSuche_SucheScheitert(t *testing.T) {
 	// Ein Ausfall des Netzes ist kein fehlender Treffer: keine Quelle erreichbar → 502
 	// (lookup_ausfall_test.go), nur „erreichbar ohne Treffer" → 404.
 	if rr.Code != http.StatusBadGateway {
-		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusBadGateway, rr.Code, rr.Body.String())
+		t.Fatalf("ISBNSuche: Status %d, erwartet %d: %s", rr.Code, http.StatusBadGateway, rr.Body.String())
 	}
 }
 
@@ -102,7 +102,7 @@ func findeISBNMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorde
 	tueren.ISBNSuche(rr, baueISBNAnfrage("9783161484100"))
 
 	if rr.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
+		t.Fatalf("ISBNSuche: Status %d, erwartet %d: %s", rr.Code, http.StatusOK, rr.Body.String())
 	}
 	return rr
 }
@@ -118,7 +118,7 @@ func TestISBNSuche_Erfolg(t *testing.T) {
 
 	erwartetesJSON := `"title":"Mocked Title"`
 	if !strings.Contains(rr.Body.String(), erwartetesJSON) {
-		t.Fatalf("expected response to contain %s, got %s", erwartetesJSON, rr.Body.String())
+		t.Fatalf("ISBNSuche: Antwort %s, erwartet darin %s", rr.Body.String(), erwartetesJSON)
 	}
 }
 
@@ -154,9 +154,9 @@ func TestISBNSuche_LehntFehlendeISBNAb(t *testing.T) {
 	tueren.ISBNSuche(rr, anfrage)
 
 	if rr.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
+		t.Fatalf("rr.Code = %d, erwartet %d", rr.Code, http.StatusBadRequest)
 	}
 	if !strings.Contains(rr.Body.String(), "Die ISBN fehlt") {
-		t.Fatalf("expected response to contain isbn fehlt, got %s", rr.Body.String())
+		t.Fatalf("ISBNSuche: Antwort %s, erwartet „Die ISBN fehlt“", rr.Body.String())
 	}
 }

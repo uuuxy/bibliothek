@@ -57,7 +57,7 @@ func TestLUSDVorschau_XLSXOhneIDDurchDieVordertuer(t *testing.T) {
 	rec := httptest.NewRecorder()
 	s.LUSDVorschau().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var res lusd.Vorschau
 	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {

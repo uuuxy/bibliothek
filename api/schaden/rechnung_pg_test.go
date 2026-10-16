@@ -91,7 +91,7 @@ func TestLadeRechnungPosten_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAufBescheid: 24.90}))
 	if rec.Code != http.StatusCreated {
-		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Bescheid anlegen: Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 
 	items, err := ladeRechnungPosten(ctx, pool, uuid.MustParse(sid))
@@ -123,7 +123,7 @@ func TestRechnungPDF_AlleForderungenAufBescheid(t *testing.T) {
 	f := testdaten.LegeForderungAn(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
 	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.50})); rec.Code != http.StatusCreated {
-		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Bescheid anlegen: Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)

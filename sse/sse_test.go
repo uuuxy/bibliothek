@@ -86,7 +86,7 @@ func TestHerunterfahrenSchliesstOffeneStroeme(t *testing.T) {
 	select {
 	case _, ok := <-fenster:
 		if ok {
-			t.Error("erwartet war ein geschlossener Kanal als Abbruchsignal")
+			t.Error("Kanal nach cancel() offen, erwartet geschlossen als Abbruchsignal")
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("der Client-Kanal wurde beim Herunterfahren nicht geschlossen — " +
@@ -267,7 +267,7 @@ func TestTuerLiefertStromUndEreignisse(t *testing.T) {
 
 	leser := bufio.NewReader(resp.Body)
 	if zeile := leseZeile(t, leser); zeile != "event: connected" {
-		t.Fatalf("Handshake erwartet, bekam %q", zeile)
+		t.Fatalf("leseZeile(t, leser) = %q, erwartet Handshake", zeile)
 	}
 
 	// Warten, bis die Tür ihr Fenster angemeldet hat, sonst geht das Ereignis ins Leere.

@@ -18,7 +18,7 @@ func ptr[T any](v T) *T {
 func TestVerarbeiteAusleihe_Schueler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		t.Fatalf("pgxmock.NewPool() = %v", err)
 	}
 	defer mock.Close()
 
@@ -71,20 +71,20 @@ func TestVerarbeiteAusleihe_Schueler(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result == nil {
-		t.Fatal("expected result, got nil")
+		t.Fatal("verarbeiteAusleihe(…) = nil, erwartet ein Ergebnis")
 	}
 	if result.Art != "ausleihe" {
-		t.Errorf("expected type ausleihe, got %s", result.Art)
+		t.Errorf("result.Art = %s, erwartet type ausleihe", result.Art)
 	}
 	if result.Leser == nil || result.Leser.ID != "student1" {
-		t.Errorf("expected student in result")
+		t.Errorf("verarbeiteAusleihe(…).Leser = %v, erwartet student1", result.Leser)
 	}
 }
 
 func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		t.Fatalf("pgxmock.NewPool() = %v", err)
 	}
 	defer mock.Close()
 
@@ -132,10 +132,10 @@ func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result == nil {
-		t.Fatal("expected result, got nil")
+		t.Fatal("verarbeiteAusleihe(…) = nil, erwartet ein Ergebnis")
 	}
 	if result.Art != "ausleihe" {
-		t.Errorf("expected type ausleihe, got %s", result.Art)
+		t.Errorf("result.Art = %s, erwartet type ausleihe", result.Art)
 	}
 	if result.Leser == nil || result.Leser.ID != "teacher1" {
 		t.Errorf("die Lehrkraft muss als Leser in der Antwort stehen")
@@ -145,7 +145,7 @@ func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		t.Fatalf("pgxmock.NewPool() = %v", err)
 	}
 	defer mock.Close()
 
@@ -179,10 +179,10 @@ func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 	result, err := svc.verarbeiteAusleihe(context.Background(), tx, exemplar, chkCtx, staffID, resp)
 
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal("verarbeiteAusleihe(…) = nil, erwartet einen Fehler")
 	}
 	if result != nil {
-		t.Fatalf("expected nil result, got %v", result)
+		t.Fatalf("verarbeiteAusleihe(…) = %v, erwartet nil", result)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -193,7 +193,7 @@ func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		t.Fatalf("pgxmock.NewPool() = %v", err)
 	}
 	defer mock.Close()
 
@@ -238,10 +238,10 @@ func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 	result, err := svc.verarbeiteAusleihe(context.Background(), tx, exemplar, chkCtx, staffID, resp)
 
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal("verarbeiteAusleihe(…) = nil, erwartet den Fehler des Commits")
 	}
 	if result != nil {
-		t.Fatalf("expected nil result, got %v", result)
+		t.Fatalf("verarbeiteAusleihe(…) = %v, erwartet nil", result)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

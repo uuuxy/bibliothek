@@ -45,7 +45,7 @@ func TestMahnbriefeDrucken_NurOffeneHochzaehlen(t *testing.T) {
 	srv.MahnbriefeDrucken()(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if got := rec.Body.Bytes(); len(got) < 4 || string(got[:4]) != "%PDF" {
 		t.Fatalf("Antwort ist kein PDF (Kopf: %q)", pdftest.ErsteBytes(rec.Body.Bytes(), 8))

@@ -70,18 +70,18 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 
 	rec := holeOeffentlicheBestellung(srv, token)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("GET Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("GET Status = %d, erwartet 200, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 	var ansicht oeffentlicheBestellung
 	if err := json.Unmarshal(rec.Body.Bytes(), &ansicht); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
 	if ansicht.LieferantName != "Naacher" || ansicht.BestaetigtAm != nil {
-		t.Fatalf("Ansicht = %+v, want Naacher und unbestätigt", ansicht)
+		t.Fatalf("Ansicht = %+v, erwartet Naacher und unbestätigt", ansicht)
 	}
 
 	if rec := bestaetigeUeberLink(srv, token, `{"etiketten_groesse":"gross"}`); rec.Code != http.StatusOK {
-		t.Fatalf("POST Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("POST Status = %d, erwartet 200, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 
 	var durch, groesse string
@@ -94,7 +94,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 		t.Fatalf("Zustand lesen: %v", err)
 	}
 	if !bestaetigt || durch != "lieferant" || groesse != "gross" {
-		t.Fatalf("bestaetigt=%v durch=%q groesse=%q — want true/lieferant/gross", bestaetigt, durch, groesse)
+		t.Fatalf("bestaetigt=%v durch=%q groesse=%q — erwartet true/lieferant/gross", bestaetigt, durch, groesse)
 	}
 }
 
@@ -109,11 +109,11 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	if rec := bestaetigeUeberLink(srv, token, `{}`); rec.Code != http.StatusOK {
-		t.Fatalf("erster POST = %d, want 200", rec.Code)
+		t.Fatalf("erster POST = %d, erwartet 200", rec.Code)
 	}
 	rec := bestaetigeUeberLink(srv, token, `{}`)
 	if rec.Code != http.StatusConflict {
-		t.Fatalf("zweiter POST = %d, want 409, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("zweiter POST = %d, erwartet 409, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -134,10 +134,10 @@ func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 	for name, token := range faelle {
 		t.Run(name, func(t *testing.T) {
 			if rec := holeOeffentlicheBestellung(srv, token); rec.Code != http.StatusNotFound {
-				t.Fatalf("GET = %d, want 404", rec.Code)
+				t.Fatalf("GET = %d, erwartet 404", rec.Code)
 			}
 			if rec := bestaetigeUeberLink(srv, token, `{}`); rec.Code != http.StatusNotFound {
-				t.Fatalf("POST = %d, want 404", rec.Code)
+				t.Fatalf("POST = %d, erwartet 404", rec.Code)
 			}
 		})
 	}
@@ -165,7 +165,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.BestaetigungsLinkErneuern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 
 	var antwort struct {
@@ -179,11 +179,11 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	}
 
 	if rec := holeOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusNotFound {
-		t.Fatalf("alter Token = %d, want 404 (er muss tot sein)", rec.Code)
+		t.Fatalf("alter Token = %d, erwartet 404 (er muss tot sein)", rec.Code)
 	}
 	neuerToken := strings.TrimPrefix(antwort.Link, "https://bib.example.invalid/bestellung/")
 	if rec := holeOeffentlicheBestellung(srv, neuerToken); rec.Code != http.StatusOK {
-		t.Fatalf("neuer Token = %d, want 200", rec.Code)
+		t.Fatalf("neuer Token = %d, erwartet 200", rec.Code)
 	}
 }
 

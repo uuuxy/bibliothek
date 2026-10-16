@@ -66,7 +66,7 @@ func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {
 				wantBetrag = 1.12
 			}
 			if ausExemplar.Betrag != wantBetrag {
-				t.Errorf("Betrag = %.2f, want %.2f (Herleitung: %q)",
+				t.Errorf("Betrag = %.2f, erwartet %.2f (Herleitung: %q)",
 					ausExemplar.Betrag, wantBetrag, ausExemplar.Herleitung)
 			}
 		})

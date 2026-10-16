@@ -76,7 +76,7 @@ func TestAusleihFristSetzen_SperrKonsistenzUndProtokoll(t *testing.T) {
 		vorher := auditZaehler()
 		w := call(ausleiheGesperrt, zukunft)
 		if w.Code != http.StatusForbidden {
-			t.Fatalf("erwartet 403, war %d: %s", w.Code, w.Body.String())
+			t.Fatalf("w.Code = %d, erwartet 403: %s", w.Code, w.Body.String())
 		}
 		if auditZaehler() != vorher {
 			t.Error("ein abgelehnter Override darf keinen Audit-Eintrag erzeugen")
@@ -101,7 +101,7 @@ func TestAusleihFristSetzen_SperrKonsistenzUndProtokoll(t *testing.T) {
 		}
 		ausleiheKollege := testdaten.LegeAusleiheMitFristAn(t, pool, kollege, "Buch Kollege", alteFrist)
 		if w := call(ausleiheKollege, zukunft); w.Code != http.StatusOK {
-			t.Fatalf("erwartet 200, war %d: %s", w.Code, w.Body.String())
+			t.Fatalf("w.Code = %d, erwartet 200: %s", w.Code, w.Body.String())
 		}
 	})
 
@@ -109,14 +109,14 @@ func TestAusleihFristSetzen_SperrKonsistenzUndProtokoll(t *testing.T) {
 		vorher := auditZaehler()
 		w := call(ausleiheNormal, zukunft)
 		if w.Code != http.StatusOK {
-			t.Fatalf("erwartet 200, war %d: %s", w.Code, w.Body.String())
+			t.Fatalf("w.Code = %d, erwartet 200: %s", w.Code, w.Body.String())
 		}
 		var resp map[string]any
 		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
 			t.Fatalf("Antwort unlesbar: %v", err)
 		}
 		if resp["success"] != true {
-			t.Errorf("success erwartet, war %v", resp["success"])
+			t.Errorf("resp[\"success\"] = %v, erwartet true", resp["success"])
 		}
 		if auditZaehler() != vorher+1 {
 			t.Error("ein durchgeführter Override muss GENAU EINEN Audit-Eintrag erzeugen")

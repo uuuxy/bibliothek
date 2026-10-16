@@ -63,14 +63,14 @@ func TestTitelHistorie_GetrennteAusleiheIstAnonymNichtLehrkraft(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.gibTitelHistorie(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var got []historieZeile
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatalf("Antwort: %v", err)
 	}
 	if len(got) != 3 {
-		t.Fatalf("erwartet 3 Einträge, bekam %d: %+v", len(got), got)
+		t.Fatalf("Historie: %d Einträge, erwartet 3: %+v", len(got), got)
 	}
 	if got[0].Vorname != "Mia" || got[0].Klasse != "07A" {
 		t.Errorf("zugeordnete Ausleihe: %+v", got[0])

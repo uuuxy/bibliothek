@@ -139,6 +139,6 @@ func TestTitelExemplare_TitelOhneExemplare(t *testing.T) {
 	titel := testdaten.LegeTitelAn(t, pool, "Ohne Exemplare", 0)
 
 	if zeilen := exemplarZeilen(t, srv, titel); len(zeilen) != 0 {
-		t.Errorf("erwartet: leere Liste, bekommen: %d Zeilen", len(zeilen))
+		t.Errorf("len(zeilen) = %d Zeilen, erwartet leere Liste", len(zeilen))
 	}
 }

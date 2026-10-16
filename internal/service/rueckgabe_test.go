@@ -67,10 +67,10 @@ func TestVerarbeiteRueckgabe_RueckgabeFehler(t *testing.T) {
 	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, exemplar, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
-		t.Errorf("expected %v, got %v", expectedErr, err)
+		t.Errorf("svc.verarbeiteRueckgabe(…) = %v, erwartet %v", err, expectedErr)
 	}
 	if result != nil {
-		t.Errorf("expected result to be nil, got %v", result)
+		t.Errorf("verarbeiteRueckgabe(…) = %v, erwartet nil", result)
 	}
 }
 
@@ -113,10 +113,10 @@ func TestVerarbeiteRueckgabe_CommitFehler(t *testing.T) {
 	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, exemplar, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
-		t.Errorf("expected %v, got %v", expectedErr, err)
+		t.Errorf("svc.verarbeiteRueckgabe(…) = %v, erwartet %v", err, expectedErr)
 	}
 	if result != nil {
-		t.Errorf("expected result to be nil, got %v", result)
+		t.Errorf("verarbeiteRueckgabe(…) = %v, erwartet nil", result)
 	}
 }
 
@@ -162,10 +162,10 @@ func TestVerarbeiteRueckgabe_Gelingt(t *testing.T) {
 	}
 
 	if result.Art != "rueckgabe" {
-		t.Errorf("expected type rueckgabe, got %v", result.Art)
+		t.Errorf("result.Art = %v, erwartet type rueckgabe", result.Art)
 	}
 	if result.AusleiheID == nil || *result.AusleiheID != "loan1" {
-		t.Errorf("expected loan1, got %v", result.AusleiheID)
+		t.Errorf("result.AusleiheID = %v, erwartet loan1", result.AusleiheID)
 	}
 }
 
@@ -225,16 +225,16 @@ func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 	}
 
 	if result.Art != "rueckgabe" {
-		t.Errorf("expected type rueckgabe, got %v", result.Art)
+		t.Errorf("result.Art = %v, erwartet type rueckgabe", result.Art)
 	}
 	if !result.HatVormerkung {
-		t.Errorf("expected HasVormerkung to be true")
+		t.Errorf("verarbeiteRueckgabe(…).HatVormerkung = false, erwartet true")
 	}
 	if result.VorgemerktFuer != "Max Mustermann, 10A" {
-		t.Errorf("expected VormerkungUser to be Max Mustermann, 10A, got %v", result.VorgemerktFuer)
+		t.Errorf("verarbeiteRueckgabe(…).VorgemerktFuer = %v, erwartet Max Mustermann, 10A", result.VorgemerktFuer)
 	}
 	if result.VormerkungTitel != "Test Book" {
-		t.Errorf("expected VormerkungTitel to be Test Book, got %v", result.VormerkungTitel)
+		t.Errorf("verarbeiteRueckgabe(…).VormerkungTitel = %v, erwartet Test Book", result.VormerkungTitel)
 	}
 }
 

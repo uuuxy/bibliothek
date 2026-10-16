@@ -114,13 +114,13 @@ func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
 	mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
 	err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "falsch")
 	if err == nil {
-		t.Fatal("erwartet Fehler bei NO")
+		t.Fatal("pruefeIMAPAnmeldung(…) bei NO = nil, erwartet einen Fehler")
 	}
 	if errors.Is(err, errMailserverNichtErreichbar) {
 		t.Fatalf("NO vom Server ist ein falsches Passwort, kein Ausfall: %v", err)
 	}
 	if !errors.Is(err, errAnmeldungAbgelehnt) {
-		t.Fatalf("erwartet errAnmeldungAbgelehnt, bekam %v", err)
+		t.Fatalf("a.pruefeIMAPAnmeldung(…) = %v, erwartet errAnmeldungAbgelehnt", err)
 	}
 }
 

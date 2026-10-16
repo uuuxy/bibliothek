@@ -45,7 +45,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(faecher) != 2 || faecher[0].Fach != "Mathematik" || faecher[1].Fach != "" {
-		t.Fatalf("erwartet Mathematik + ohne Fach, bekam %+v", faecher)
+		t.Fatalf("abfragen.ladeLernmittelFaecher(…) = %+v, erwartet Mathematik + ohne Fach", faecher)
 	}
 	ma := faecher[0]
 	// Mathe 7: 2 aktive (1 verliehen), 1 ausgesondert zählt nicht; Mathe 8: 1. Roman zählt nicht (kein Lernmittel).

@@ -56,10 +56,10 @@ func TestUUIDPruefungGreiftNurBeimParameterID(t *testing.T) {
 	}
 
 	if got := rufe(baue("GET /api/schueler/{id}/photo")); got != http.StatusBadRequest {
-		t.Errorf("mit {id}: Status %d; want 400 — die Vorbedingung des Bugs stimmt nicht mehr", got)
+		t.Errorf("mit {id}: Status %d; erwartet 400 — die Vorbedingung des Bugs stimmt nicht mehr", got)
 	}
 	if got := rufe(baue("GET /api/schueler/{barcode_id}/photo")); got != http.StatusOK {
-		t.Errorf("mit {barcode_id}: Status %d; want 200 (Barcode muss durchkommen)", got)
+		t.Errorf("mit {barcode_id}: Status %d; erwartet 200 (Barcode muss durchkommen)", got)
 	}
 }
 
@@ -93,7 +93,7 @@ func TestUUIDPruefungDecktNurEchteUUIDParameterAb(t *testing.T) {
 
 			blockiert := rec.Code == http.StatusBadRequest
 			if blockiert != f.willBlock {
-				t.Errorf("%s → Status %d (blockiert=%v); want blockiert=%v", f.pfad, rec.Code, blockiert, f.willBlock)
+				t.Errorf("%s → Status %d (blockiert=%v); erwartet blockiert=%v", f.pfad, rec.Code, blockiert, f.willBlock)
 			}
 		})
 	}
@@ -115,12 +115,12 @@ func TestFotoRoutenKollidierenNicht(t *testing.T) {
 	const uuid = "11111111-2222-3333-4444-555555555555"
 	mux.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/api/schueler/"+uuid+"/photo", nil))
 	if ziel != "upload:"+uuid {
-		t.Errorf("POST landete bei %q; want upload mit UUID", ziel)
+		t.Errorf("POST landete bei %q; erwartet upload mit UUID", ziel)
 	}
 
 	const barcode = "S-abg1-ms3p7309e19de436"
 	mux.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/schueler/"+barcode+"/photo", nil))
 	if !strings.HasPrefix(ziel, "serve:") || ziel != "serve:"+barcode {
-		t.Errorf("GET landete bei %q; want serve mit Barcode", ziel)
+		t.Errorf("GET landete bei %q; erwartet serve mit Barcode", ziel)
 	}
 }

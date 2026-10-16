@@ -54,7 +54,7 @@ func TestImportiereLitteraXML_FalscheWurzelIstKeinKatalogisat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := svc.ImportiereLitteraXML(context.Background(), strings.NewReader(tt.xml))
 			if !errors.Is(err, ErrKeinKatalogisat) {
-				t.Errorf("err = %v, want ErrKeinKatalogisat", err)
+				t.Errorf("err = %v, erwartet ErrKeinKatalogisat", err)
 			}
 		})
 	}
@@ -74,7 +74,7 @@ func TestBereinigeImportTitel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		if got := bereinigeImportTitel(tt.in); got != tt.want {
-			t.Errorf("bereinigeImportTitel(%q) = %q, want %q", tt.in, got, tt.want)
+			t.Errorf("bereinigeImportTitel(%q) = %q, erwartet %q", tt.in, got, tt.want)
 		}
 	}
 }
@@ -89,7 +89,7 @@ func TestTitelZeilenFelder_LMFAusKategorieUndSignatur(t *testing.T) {
 		t.Errorf("Kategorie-LMF: %+v", z)
 	}
 	if z.fach != lmf.FachMathematik || z.von != 6 || z.bis != 6 {
-		t.Errorf("Kategorie-LMF: Fach/Jahrgang aus LMF Ma 6 erwartet, war %+v", z)
+		t.Errorf("titelZeilenFelder(Kategorie-LMF) = %+v, erwartet Fach und Jahrgang aus LMF Ma 6", z)
 	}
 
 	// LMF-Präfix in der Signatur (Littera-Konvention wie im XML-Feld 700)
@@ -120,11 +120,11 @@ func TestSammleSignaturen(t *testing.T) {
 
 	updates := sammleSignaturen(rows, headerMap, lookup)
 	if len(updates) != 1 || updates["id-faust"] != "De GOE" {
-		t.Errorf("updates = %v, want {id-faust: De GOE}", updates)
+		t.Errorf("updates = %v, erwartet {id-faust: De GOE}", updates)
 	}
 
 	// Ohne Signatur-Spalte: gar keine Updates (nil)
 	if u := sammleSignaturen(rows, map[string]int{"titel": 0}, lookup); u != nil {
-		t.Errorf("ohne Signatur-Spalte: updates = %v, want nil", u)
+		t.Errorf("ohne Signatur-Spalte: updates = %v, erwartet nil", u)
 	}
 }

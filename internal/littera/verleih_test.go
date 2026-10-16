@@ -22,7 +22,7 @@ func TestLeseAusleihen(t *testing.T) {
 
 	// Die Zeile ohne Exemplar faellt raus — ohne Buch ist nichts zu buchen.
 	if len(ausleihen) != 3 {
-		t.Fatalf("erwartet 3 Ausleihen, waren %d", len(ausleihen))
+		t.Fatalf("len(ausleihen) = %d, erwartet 3 Ausleihen", len(ausleihen))
 	}
 
 	offen := ausleihen[0]
@@ -66,7 +66,7 @@ func TestNurOffene(t *testing.T) {
 	}
 	offen := NurOffene(ausleihen)
 	if len(offen) != 2 {
-		t.Fatalf("erwartet 2 offene, waren %d", len(offen))
+		t.Fatalf("len(offen) = %d, erwartet 2 offene", len(offen))
 	}
 }
 

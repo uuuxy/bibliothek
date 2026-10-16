@@ -84,7 +84,7 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 	// Der zweite Arbeitsplatz drückt denselben Haken: nichts, keine zweite Mail.
 	nochmal, err := repo.Erledige(ctx, id1, "doppelt")
 	if err != nil || nochmal != nil {
-		t.Fatalf("Doppel-Abhaken muss leer ausgehen, got %+v (err=%v)", nochmal, err)
+		t.Fatalf("repo.Erledige(…) beim zweiten Mal = %+v, %v, erwartet nil, nil: Doppel-Abhaken geht leer aus", nochmal, err)
 	}
 
 	// Die Lehrkraft sieht ihren Status: 1 erledigt (mit Notiz), 1 offen.
@@ -105,6 +105,6 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 		}
 	}
 	if erledigte != 1 {
-		t.Errorf("genau 1 erledigtes Anliegen erwartet, got %d", erledigte)
+		t.Errorf("erledigte = %d, erwartet genau 1 erledigtes Anliegen", erledigte)
 	}
 }

@@ -33,13 +33,13 @@ func TestPruefeTitelEingabe(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			ergebnis := pruefeTitelEingabe(recorder, f.eingabe)
 			if ergebnis != f.wantResult {
-				t.Errorf("got result %v, want %v", ergebnis, f.wantResult)
+				t.Errorf("pruefeTitelEingabe(…) = %v, erwartet %v", ergebnis, f.wantResult)
 			}
 			if f.wantResult {
 				return
 			}
 			if recorder.Code != http.StatusBadRequest || !strings.Contains(recorder.Body.String(), f.wantError) {
-				t.Errorf("got %d %s, want 400 mit %q", recorder.Code, recorder.Body.String(), f.wantError)
+				t.Errorf("pruefeTitelEingabe(…): Status %d, %s, erwartet 400 mit %q", recorder.Code, recorder.Body.String(), f.wantError)
 			}
 		})
 	}
@@ -61,7 +61,7 @@ func TestTitelLoeschen(t *testing.T) {
 		tueren.TitelLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusBadRequest)
 		}
 	})
 
@@ -71,7 +71,7 @@ func TestTitelLoeschen(t *testing.T) {
 		tueren.TitelLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusBadRequest)
 		}
 	})
 
@@ -127,7 +127,7 @@ func TestTitelLoeschen(t *testing.T) {
 		tueren.TitelLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusOK {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusOK)
 		}
 	})
 }
@@ -165,7 +165,7 @@ func TestTitelAnlegen(t *testing.T) {
 		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusBadRequest)
 		}
 	})
 
@@ -176,7 +176,7 @@ func TestTitelAnlegen(t *testing.T) {
 		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Der Titel darf nicht leer sein") {
-			t.Errorf("got %d %s, want 400 mit „titel darf nicht leer sein“", rec.Code, rec.Body.String())
+			t.Errorf("TitelAnlegen: Status %d, %s, erwartet 400 mit „Der Titel darf nicht leer sein“", rec.Code, rec.Body.String())
 		}
 	})
 
@@ -189,7 +189,7 @@ func TestTitelAnlegen(t *testing.T) {
 		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusBadRequest)
 		}
 		var antwort struct {
 			Error string `json:"error"`
@@ -252,7 +252,7 @@ func TestTitelAnlegen(t *testing.T) {
 		tueren.TitelAnlegen(rec, anfrage)
 
 		if rec.Code != http.StatusCreated {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusCreated)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusCreated)
 		}
 
 		var httpAntwort map[string]any
@@ -260,7 +260,7 @@ func TestTitelAnlegen(t *testing.T) {
 			t.Fatalf("failed to parse response body: %v", err)
 		}
 		if httpAntwort["message"] != "Titel angelegt" {
-			t.Errorf("got message %v, want 'Titel angelegt'", httpAntwort["message"])
+			t.Errorf("TitelAnlegen: Meldung %v, erwartet 'Titel angelegt'", httpAntwort["message"])
 		}
 	})
 }

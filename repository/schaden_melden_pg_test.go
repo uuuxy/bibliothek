@@ -26,7 +26,7 @@ func TestSchadenMelden_NichtZurueckgegebenIstVerlust(t *testing.T) {
 		t.Fatalf("Verlust melden: %v", err)
 	}
 	if grund := aussonderungsGrund(t, pool, copyID); grund != "VERLUST" {
-		t.Errorf("aussonderung_grund = %q, want VERLUST", grund)
+		t.Errorf("aussonderung_grund = %q, erwartet VERLUST", grund)
 	}
 	var beendet bool
 	if err := pool.QueryRow(ctx, `SELECT rueckgabe_am IS NOT NULL FROM ausleihen WHERE id = $1`, loan).Scan(&beendet); err != nil {
@@ -66,7 +66,7 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 		t.Fatal("gefunden=false, erwartet true")
 	}
 	if befund.StornierteForderungen != 1 || befund.StornierterBetrag != 18.50 {
-		t.Errorf("Befund = %+v, want 1 stornierte Forderung über 18,50", befund)
+		t.Errorf("Befund = %+v, erwartet 1 stornierte Forderung über 18,50", befund)
 	}
 	var storniert bool
 	var grund string
@@ -126,7 +126,7 @@ func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 
 	// Der Bestand wird trotzdem geführt: Das Buch ist weg, die Ausleihe ist beendet.
 	if grund := aussonderungsGrund(t, pool, copyID); grund != "VERLUST" {
-		t.Errorf("aussonderung_grund = %q, want VERLUST", grund)
+		t.Errorf("aussonderung_grund = %q, erwartet VERLUST", grund)
 	}
 	var beendet bool
 	if err := pool.QueryRow(ctx,

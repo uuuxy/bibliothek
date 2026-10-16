@@ -63,7 +63,7 @@ func TestAnmelden_CookieFolgtDerKonfiguration(t *testing.T) {
 			Anmelden(mock, a, nurHTTPS)(rec, anfrage)
 
 			if rec.Code != http.StatusOK {
-				t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+				t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 			}
 			c := sitzungsCookie(t, rec)
 			if c.Secure != nurHTTPS {
@@ -95,7 +95,7 @@ func TestSitzungVerlaengern_CookieFolgtDerKonfiguration(t *testing.T) {
 			SitzungVerlaengern(a, nurHTTPS)(rec, anfrage)
 
 			if rec.Code != http.StatusOK {
-				t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+				t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 			}
 			c := sitzungsCookie(t, rec)
 			if c.Secure != nurHTTPS {

@@ -167,7 +167,7 @@ func TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus(t *testin
 		t.Fatalf("Geräteliste unlesbar: %v / %s", err, helferAntwort)
 	}
 	if wert, ok := helferDaten.Data[0]["ausgeliehen_an"]; !ok || wert != "" {
-		t.Errorf("verliehen-Status muss als leerer Name sichtbar bleiben, got %v", helferDaten.Data[0]["ausgeliehen_an"])
+		t.Errorf("Geräteliste ausgeliehen_an = %v, erwartet den leeren Namen als Zeichen für „verliehen“", helferDaten.Data[0]["ausgeliehen_an"])
 	}
 
 	adminAntwort := geraeteAnfrage(s, "admin").Body.String()

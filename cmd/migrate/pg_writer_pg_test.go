@@ -275,7 +275,7 @@ func TestHoechsteBarcodeNummerZaehltNumerisch(t *testing.T) {
 		t.Fatalf("highestBarcodeSeq: %v", err)
 	}
 	if nummer != 100000 {
-		t.Errorf("100000 erwartet, geliefert: %d — die Nummern werden wieder als Text sortiert", nummer)
+		t.Errorf("hoechsteBarcodeNummer(…) = %d, erwartet 100000 — die Nummern werden wieder als Text sortiert", nummer)
 	}
 }
 
@@ -295,7 +295,7 @@ func TestHoechsteBarcodeNummerIgnoriertFremdformate(t *testing.T) {
 		t.Fatalf("highestBarcodeSeq: %v", err)
 	}
 	if nummer != 42 {
-		t.Errorf("42 erwartet, geliefert: %d", nummer)
+		t.Errorf("hoechsteBarcodeNummer(…) = %d, erwartet 42", nummer)
 	}
 }
 
@@ -309,6 +309,6 @@ func TestHoechsteBarcodeNummerOhneBestand(t *testing.T) {
 		t.Fatalf("highestBarcodeSeq: %v", err)
 	}
 	if nummer != 0 {
-		t.Errorf("0 erwartet, geliefert: %d", nummer)
+		t.Errorf("hoechsteBarcodeNummer(…) = %d, erwartet 0", nummer)
 	}
 }

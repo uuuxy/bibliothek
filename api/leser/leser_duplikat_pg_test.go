@@ -119,6 +119,6 @@ func TestLeserAnlegen_SchreibvarianteIstDuplikat(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Fatalf("%d Zeilen für denselben Menschen, want 1", anzahl)
+		t.Fatalf("%d Zeilen für denselben Menschen, erwartet 1", anzahl)
 	}
 }

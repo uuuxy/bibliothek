@@ -26,7 +26,7 @@ func TestIstGeheimnisSchutzScharf(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if got := IstGeheimnisSchutzScharf(f.umgebung, f.roh); got != f.will {
-			t.Errorf("IstGeheimnisSchutzScharf(%q, %q) = %v; want %v", f.umgebung, f.roh, got, f.will)
+			t.Errorf("IstGeheimnisSchutzScharf(%q, %q) = %v; erwartet %v", f.umgebung, f.roh, got, f.will)
 		}
 	}
 }

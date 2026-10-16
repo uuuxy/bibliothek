@@ -12,7 +12,7 @@ func TestMaskiereLikeJoker(t *testing.T) {
 	}
 	for in, will := range faelle {
 		if got := maskiereLikeJoker(in); got != will {
-			t.Errorf("maskiereLikeJoker(%q) = %q; want %q", in, got, will)
+			t.Errorf("maskiereLikeJoker(%q) = %q; erwartet %q", in, got, will)
 		}
 	}
 }

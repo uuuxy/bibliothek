@@ -12,14 +12,14 @@ import (
 
 func TestJahrOderNil(t *testing.T) {
 	if got := jahrOderNil(0); got != nil {
-		t.Errorf("jahrOderNil(0) = %v, want nil", got)
+		t.Errorf("jahrOderNil(0) = %v, erwartet nil", got)
 	}
 
 	if got := jahrOderNil(2023); got == nil || *got != 2023 {
 		if got == nil {
-			t.Errorf("jahrOderNil(2023) = nil, want 2023")
+			t.Errorf("jahrOderNil(2023) = nil, erwartet 2023")
 		} else {
-			t.Errorf("jahrOderNil(2023) = %v, want 2023", *got)
+			t.Errorf("jahrOderNil(2023) = %v, erwartet 2023", *got)
 		}
 	}
 }
@@ -42,13 +42,13 @@ func TestJSONEigenschaften(t *testing.T) {
 	}
 
 	if len(parsed) != 2 {
-		t.Errorf("expected 2 keys, got %d", len(parsed))
+		t.Errorf("len(parsed) = %d, erwartet 2 keys", len(parsed))
 	}
 	if parsed["quelle"] != "littera" {
-		t.Errorf("expected quelle=littera, got %v", parsed["quelle"])
+		t.Errorf("parsed[\"quelle\"] = %v, erwartet littera", parsed["quelle"])
 	}
 	if parsed["zahl"] != "123" {
-		t.Errorf("expected zahl=123, got %v", parsed["zahl"])
+		t.Errorf("parsed[\"zahl\"] = %v, erwartet 123", parsed["zahl"])
 	}
 	if _, ok := parsed["leer"]; ok {
 		t.Errorf("did not expect empty value to be included")
@@ -63,21 +63,21 @@ func TestErworbenAm(t *testing.T) {
 	got1 := erworbenAm(e1, ersatz)
 	expected1 := time.Date(2007, 5, 3, 0, 0, 0, 0, time.UTC)
 	if got1.Year() != expected1.Year() || got1.Month() != expected1.Month() || got1.Day() != expected1.Day() {
-		t.Errorf("erworbenAm valid date = %v, want %v", got1, expected1)
+		t.Errorf("erworbenAm valid date = %v, erwartet %v", got1, expected1)
 	}
 
 	// Invalid date
 	e2 := Exemplar{Zugangsdatum: "ungültig"}
 	got2 := erworbenAm(e2, ersatz)
 	if !got2.Equal(ersatz) {
-		t.Errorf("erworbenAm invalid date = %v, want %v", got2, ersatz)
+		t.Errorf("erworbenAm invalid date = %v, erwartet %v", got2, ersatz)
 	}
 
 	// Empty date
 	e3 := Exemplar{Zugangsdatum: ""}
 	got3 := erworbenAm(e3, ersatz)
 	if !got3.Equal(ersatz) {
-		t.Errorf("erworbenAm empty date = %v, want %v", got3, ersatz)
+		t.Errorf("erworbenAm empty date = %v, erwartet %v", got3, ersatz)
 	}
 }
 
@@ -108,22 +108,22 @@ func TestFelder(t *testing.T) {
 	f := l.felder(titel)
 
 	if f.titel != "Mein Buch" {
-		t.Errorf("titel = %v, want Mein Buch", f.titel)
+		t.Errorf("titel = %v, erwartet Mein Buch", f.titel)
 	}
 	if f.untertitel == nil || *f.untertitel != "Band 1" {
-		t.Errorf("untertitel = %v, want Band 1", f.untertitel)
+		t.Errorf("untertitel = %v, erwartet Band 1", f.untertitel)
 	}
 	if f.autor == nil || *f.autor != "Autor A" {
-		t.Errorf("autor = %v, want Autor A", f.autor)
+		t.Errorf("autor = %v, erwartet Autor A", f.autor)
 	}
 	if f.verlag == nil || *f.verlag != "Ein Verlag" {
-		t.Errorf("verlag = %v, want Ein Verlag", f.verlag)
+		t.Errorf("verlag = %v, erwartet Ein Verlag", f.verlag)
 	}
 	if f.signatur == nil || *f.signatur != "Sig 123" {
-		t.Errorf("signatur = %v, want Sig 123", f.signatur)
+		t.Errorf("signatur = %v, erwartet Sig 123", f.signatur)
 	}
 	if f.medientyp != "Zeitschrift" {
-		t.Errorf("medientyp = %v, want Zeitschrift", f.medientyp)
+		t.Errorf("medientyp = %v, erwartet Zeitschrift", f.medientyp)
 	}
 	prot.Schliesse()
 }
@@ -148,7 +148,7 @@ func TestFelder_LeererHaupttitel(t *testing.T) {
 
 	expectedTitel := "[ohne Titel, Littera T2]"
 	if f.titel != expectedTitel {
-		t.Errorf("titel = %v, want %v", f.titel, expectedTitel)
+		t.Errorf("titel = %v, erwartet %v", f.titel, expectedTitel)
 	}
 
 	prot.Schliesse()
@@ -157,6 +157,6 @@ func TestFelder_LeererHaupttitel(t *testing.T) {
 		t.Fatalf("protokoll lesen: %v", err)
 	}
 	if !strings.Contains(string(data), "WARNUNG") || !strings.Contains(string(data), "Haupttitel ist leer") {
-		t.Errorf("expected warning in protokoll, got: %s", string(data))
+		t.Errorf("string(data) = %s, erwartet warning in protokoll", string(data))
 	}
 }

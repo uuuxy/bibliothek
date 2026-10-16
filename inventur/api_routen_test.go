@@ -57,7 +57,7 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 	t.Run("vorhandene Datei", func(t *testing.T) {
 		f, err := fs.Open("file.txt")
 		if err != nil {
-			t.Errorf("kein Fehler erwartet, bekam %v", err)
+			t.Errorf("fs.Open(…) = %v, erwartet kein Fehler", err)
 		}
 		schliesse(t, f)
 	})
@@ -65,7 +65,7 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 	t.Run("nicht vorhandene Datei", func(t *testing.T) {
 		_, err := fs.Open("nonexistent.txt")
 		if err == nil {
-			t.Error("Fehler erwartet, bekam nil")
+			t.Error("fs.Open(\"nonexistent.txt\") = nil, erwartet einen Fehler")
 		}
 	})
 
@@ -76,7 +76,7 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 			t.Fatal("das Verzeichnis liess sich oeffnen — der Dateiserver zeigt dann seine Dateinamen als Liste")
 		}
 		if !errors.Is(err, os.ErrNotExist) {
-			t.Errorf("os.ErrNotExist erwartet, bekam %v", err)
+			t.Errorf("fs.Open(…) = %v, erwartet os.ErrNotExist", err)
 		}
 	})
 
@@ -89,7 +89,7 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 		// Es muss ein „existiert nicht" sein: nur daraus macht net/http ein 404.
 		// Ein anderer Fehler wuerde als 500 durchschlagen und die SPA-Weiche stoeren.
 		if !errors.Is(err, os.ErrNotExist) {
-			t.Errorf("os.ErrNotExist erwartet, bekam %v", err)
+			t.Errorf("fs.Open(…) = %v, erwartet os.ErrNotExist", err)
 		}
 	})
 }
@@ -264,13 +264,13 @@ func TestNewTueren_UndServeHTTP(t *testing.T) {
 	tueren := NewTueren(config)
 
 	if tueren.abfragen != nil {
-		t.Errorf("Expected repo to be nil")
+		t.Errorf("NewTueren(config).abfragen = %v, erwartet nil", tueren.abfragen)
 	}
 	if tueren.metadaten != nil {
-		t.Errorf("Expected metadaten to be nil")
+		t.Errorf("NewTueren(config).metadaten = %v, erwartet nil", tueren.metadaten)
 	}
 	if tueren.mux == nil {
-		t.Errorf("Expected mux to be initialized")
+		t.Errorf("NewTueren(config).mux = nil, erwartet einen Mux")
 	}
 
 	faelle := []struct {
@@ -335,13 +335,13 @@ func TestNewTueren_UndServeHTTP(t *testing.T) {
 			tueren.ServeHTTP(rr, anfrage)
 
 			if rr.Code != tc.expectedStatus {
-				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rr.Code)
+				t.Errorf("rr.Code = %d, erwartet %d", rr.Code, tc.expectedStatus)
 			}
 
 			if tc.expectedHeader != "" {
 				got := rr.Header().Get("X-Middleware")
 				if got != tc.expectedHeader {
-					t.Errorf("Expected header %q, got %q", tc.expectedHeader, got)
+					t.Errorf("rr.Header().Get(…) = %q, erwartet %q", got, tc.expectedHeader)
 				}
 			}
 		})

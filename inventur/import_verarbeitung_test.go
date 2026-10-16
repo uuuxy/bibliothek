@@ -27,7 +27,7 @@ func TestErrateFachAusTitel(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			ergebnis := errateFachAusTitel(f.title)
 			if ergebnis != f.expected {
-				t.Errorf("errateFachAusTitel(%q) = %q; want %q", f.title, ergebnis, f.expected)
+				t.Errorf("errateFachAusTitel(%q) = %q; erwartet %q", f.title, ergebnis, f.expected)
 			}
 		})
 	}

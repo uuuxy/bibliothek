@@ -38,7 +38,7 @@ func TestValidiereISBN(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			ergebnis := validiereISBN(f.isbn)
 			if ergebnis != f.expected {
-				t.Errorf("validiereISBN(%q) = %v; expected %v", f.isbn, ergebnis, f.expected)
+				t.Errorf("validiereISBN(%q) = %v, erwartet %v", f.isbn, ergebnis, f.expected)
 			}
 		})
 	}

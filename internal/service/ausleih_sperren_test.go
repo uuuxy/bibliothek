@@ -115,7 +115,7 @@ func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 	t.Run("leere Art heißt Schüler (Sicht schueler) — die Sperre gilt", func(t *testing.T) {
 		leser := &repository.Leser{ID: "s1", IstVonHandGesperrt: true, Sperrgrund: strPtr("Test")}
 		if _, err := pruefeMitAttrappe(t, leser, false, false, keineAbfrage); !IstSperreAmLeser(err) {
-			t.Errorf("erwartet Sperre am Leser, bekam %v", err)
+			t.Errorf("pruefeMitAttrappe(…) = %v, erwartet Sperre am Leser", err)
 		}
 	})
 }
@@ -147,13 +147,13 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 	t.Run("offene Forderung ohne override_block", func(t *testing.T) {
 		_, err := pruefeMitAttrappe(t, schueler(nil), false, false, forderung)
 		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
-			t.Errorf("erwartet übergehbare Sperre, bekam %v", err)
+			t.Errorf("pruefeMitAttrappe(…) = %v, erwartet übergehbare Sperre", err)
 		}
 	})
 	t.Run("überfällig ohne override_block", func(t *testing.T) {
 		_, err := pruefeMitAttrappe(t, schueler(nil), false, false, ueberfaellig)
 		if !errors.Is(err, ErrGesperrt) || !IstUebergehbareSperre(err) {
-			t.Errorf("erwartet übergehbare Sperre, bekam %v", err)
+			t.Errorf("pruefeMitAttrappe(…) = %v, erwartet übergehbare Sperre", err)
 		}
 	})
 	t.Run("beide übergangen", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 			t.Fatalf("override_block soll beide Hinweise übergehen: %v", err)
 		}
 		if len(lage.uebergangen) != 2 || lage.einst == nil {
-			t.Errorf("erwartet zwei Einträge fürs Protokoll und die Einstellungen, bekam %v / %v", lage.uebergangen, lage.einst)
+			t.Errorf("pruefeMitAttrappe(…) = übergangen %v, Einstellungen %v, erwartet zwei Einträge fürs Protokoll und die Einstellungen", lage.uebergangen, lage.einst)
 		}
 	})
 	t.Run("ohne Hinweis: nichts übergangen", func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 			erwarteEinstellungenUndUeberfaellige(mock, 0)
 		})
 		if err != nil || len(lage.uebergangen) != 0 {
-			t.Errorf("erwartet freie Ausleihe ohne Protokolleintrag, bekam err=%v uebergangen=%v", err, lage.uebergangen)
+			t.Errorf("pruefeMitAttrappe(…) = Fehler %v, übergangen %v, erwartet die freie Ausleihe ohne Protokolleintrag", err, lage.uebergangen)
 		}
 	})
 }
@@ -192,7 +192,7 @@ func TestAusleihSperren_ProtokollJeHinweis(t *testing.T) {
 	}
 	protokolliereUebergangen(context.Background(), audit, "staff1", "s1", []string{"a", "b"})
 	if audit.adminAktionen != 2 {
-		t.Errorf("erwartet 2 Einträge, bekam %d", audit.adminAktionen)
+		t.Errorf("audit.adminAktionen = %d, erwartet 2 Einträge", audit.adminAktionen)
 	}
 }
 

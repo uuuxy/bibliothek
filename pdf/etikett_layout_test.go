@@ -220,12 +220,12 @@ func TestEtikettFormate_SindVollstaendigUndErzeugbar(t *testing.T) {
 func TestIstBekanntesEtikettFormat(t *testing.T) {
 	for _, gueltig := range []string{"", "zweckform_l4760", "avery_3475", "standard_52"} {
 		if !IstBekanntesEtikettFormat(gueltig) {
-			t.Errorf("IstBekanntesEtikettFormat(%q) = false, want true", gueltig)
+			t.Errorf("IstBekanntesEtikettFormat(%q) = false, erwartet true", gueltig)
 		}
 	}
 	for _, ungueltig := range []string{"zweckform", "AVERY_3475", "../etc/passwd", "standard_53"} {
 		if IstBekanntesEtikettFormat(ungueltig) {
-			t.Errorf("IstBekanntesEtikettFormat(%q) = true, want false", ungueltig)
+			t.Errorf("IstBekanntesEtikettFormat(%q) = true, erwartet false", ungueltig)
 		}
 	}
 }

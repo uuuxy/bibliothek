@@ -9,7 +9,7 @@ import (
 func TestNewAusleihAbfragen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		t.Fatalf("pgxmock.NewPool() = %v", err)
 	}
 	defer mock.Close()
 

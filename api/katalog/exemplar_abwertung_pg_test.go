@@ -130,7 +130,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		t.Fatalf("Antwort lesen: %v — %s", err, leseRec.Body.String())
 	}
 	if len(gelesen) != 1 {
-		t.Fatalf("erwartet ein Exemplar, waren %d", len(gelesen))
+		t.Fatalf("len(gelesen) = %d, erwartet ein Exemplar", len(gelesen))
 	}
 	if gelesen[0].ZustandAbwertungProzent != 20 {
 		t.Errorf("gelesener Grad = %d, erwartet 20", gelesen[0].ZustandAbwertungProzent)
@@ -201,7 +201,7 @@ func TestTitelExemplare_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 		t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
 	}
 	if len(gelesen) != 1 {
-		t.Fatalf("erwartet ein Exemplar, waren %d", len(gelesen))
+		t.Fatalf("len(gelesen) = %d, erwartet ein Exemplar", len(gelesen))
 	}
 	if gelesen[0].Ersatzwert != 19.92 {
 		t.Errorf("Ersatzwert = %.2f, erwartet 19.92 (Herleitung: %q)",
@@ -273,7 +273,7 @@ func TestTitelExemplare_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 			t.Fatalf("Antwort lesen: %v", err)
 		}
 		if len(gelesen) != 1 {
-			t.Fatalf("erwartet ein Exemplar, waren %d", len(gelesen))
+			t.Fatalf("len(gelesen) = %d, erwartet ein Exemplar", len(gelesen))
 		}
 		return gelesen[0].Ersatzwert, gelesen[0].ErsatzwertHerleitung
 	}

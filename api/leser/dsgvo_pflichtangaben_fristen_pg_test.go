@@ -70,7 +70,7 @@ func TestDSGVOAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		rec := httptest.NewRecorder()
 		srv.DSGVOAuskunft()(rec, req)
 		if rec.Code != http.StatusOK {
-			t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+			t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
 		var antwort auskunft.Antwort
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
@@ -110,10 +110,10 @@ func TestDSGVOAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 // Löschjob (repository.ProtokollAufbewahrungMonateOderVorgabe).
 func TestDSGVOAuskunft_ProtokollfristUnterUntergrenzeMeldetVorgabe(t *testing.T) {
 	if got := repository.ProtokollAufbewahrungMonateOderVorgabe(nil); got != repository.ProtokollAufbewahrungMonateVorgabe {
-		t.Errorf("ohne Einstellung: %d, want %d", got, repository.ProtokollAufbewahrungMonateVorgabe)
+		t.Errorf("ohne Einstellung: %d, erwartet %d", got, repository.ProtokollAufbewahrungMonateVorgabe)
 	}
 	null := 0
 	if got := repository.ProtokollAufbewahrungMonateOderVorgabe(&null); got != repository.ProtokollAufbewahrungMonateVorgabe {
-		t.Errorf("0 Monate: %d, want %d (Untergrenze)", got, repository.ProtokollAufbewahrungMonateVorgabe)
+		t.Errorf("0 Monate: %d, erwartet %d (Untergrenze)", got, repository.ProtokollAufbewahrungMonateVorgabe)
 	}
 }

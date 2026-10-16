@@ -126,7 +126,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 				t.Fatalf("etikettenboegen: %v", err)
 			}
 			if len(boegen) != 2 {
-				t.Fatalf("erwartet kleinen und großen Bogen, bekam %d", len(boegen))
+				t.Fatalf("len(boegen) = %d, erwartet kleinen und großen Bogen", len(boegen))
 			}
 			for _, b := range boegen {
 				text := pdftest.Suchtext(t, b.Inhalt)

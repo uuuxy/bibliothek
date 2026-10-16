@@ -101,7 +101,7 @@ func TestFindeUmbenennungen_KonkurrenzUndModus(t *testing.T) {
 
 	paare := findeUmbenennungen(datei, bestand, idx, z)
 	if len(paare) != 1 || paare[0].Zeile != 3 || paare[0].SchuelerID != "alt" || !paare[0].Sicher {
-		t.Fatalf("erwartet genau das sichere Paar Zeile 3 ↔ alt: %+v", paare)
+		t.Fatalf("findeUmbenennungen(…) = %+v, erwartet genau das sichere Paar Zeile 3 ↔ alt", paare)
 	}
 	if paare[0].AltNachname != "Müller" || paare[0].NeuNachname != "Mueller" || paare[0].NeuGeburtsdatum != "2013-05-04" {
 		t.Errorf("Paar trägt falsche Angaben: %+v", paare[0])
@@ -126,7 +126,7 @@ func TestFindeUmbenennungen_FruehereAbgaenger(t *testing.T) {
 	}}
 	paare := findeUmbenennungen(datei, nil, idx, Zuordnung{neuZeilen: []int{0}})
 	if len(paare) != 1 || paare[0].SchuelerID != "alt" || !paare[0].WarAbgaenger {
-		t.Fatalf("erwartet Paar mit dem früheren Abgänger (war_abgaenger): %+v", paare)
+		t.Fatalf("findeUmbenennungen(…) = %+v, erwartet das Paar mit dem früheren Abgänger (war_abgaenger)", paare)
 	}
 }
 

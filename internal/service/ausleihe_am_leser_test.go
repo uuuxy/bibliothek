@@ -164,7 +164,7 @@ func TestDeuteAnlegeFehler(t *testing.T) {
 				return
 			}
 			if got != tt.wantSameAs {
-				t.Errorf("Fehler soll unveraendert durchgereicht werden: got %v, want %v", got, tt.wantSameAs)
+				t.Errorf("Fehler soll unveraendert durchgereicht werden = %v, erwartet %v", got, tt.wantSameAs)
 			}
 		})
 	}
@@ -187,7 +187,7 @@ func TestLadeVorgang_NichtSchuelerBekommtJahresfrist(t *testing.T) {
 		t.Fatalf("eine aktive Lehrkraft soll aufgelöst werden, bekam: %v", err)
 	}
 	if chkCtx.istSchueler() || chkCtx.leserID != "l1" {
-		t.Errorf("erwartet Nicht-Schüler l1, bekam Art %q / %q", chkCtx.leser.Art, chkCtx.leserID)
+		t.Errorf("ladeVorgang(…) = Art %q, Leser %q, erwartet den Nicht-Schüler l1", chkCtx.leser.Art, chkCtx.leserID)
 	}
 	erwarteterTag := time.Now().In(schulzeit.Zone()).AddDate(1, 0, 0)
 	if !istGleicherTag(chkCtx.frist, erwarteterTag) {
@@ -400,7 +400,7 @@ func TestIstEigeneRueckgabe(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := istEigeneRueckgabe(tt.chkCtx, tt.loan); got != tt.expected {
-				t.Errorf("istEigeneRueckgabe() = %v; want %v", got, tt.expected)
+				t.Errorf("istEigeneRueckgabe() = %v; erwartet %v", got, tt.expected)
 			}
 		})
 	}

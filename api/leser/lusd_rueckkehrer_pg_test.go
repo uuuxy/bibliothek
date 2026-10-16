@@ -59,7 +59,7 @@ func TestLUSDImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatal(err)
 		}
 		if count != 1 {
-			t.Errorf("erwartet genau 1 aktive Zeile für L-RETURN, waren %d", count)
+			t.Errorf("count = %d, erwartet genau 1 aktive Zeile für L-RETURN", count)
 		}
 
 		gesperrt, abgaenger, reason, _ := testdaten.LadeSchuelerStatus(t, pool, id)

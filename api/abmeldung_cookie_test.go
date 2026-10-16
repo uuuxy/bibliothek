@@ -47,7 +47,7 @@ func TestAbmeldungCookieFolgtDerKonfiguration(t *testing.T) {
 			s.abmelden()(rec, req)
 
 			if rec.Code != http.StatusOK {
-				t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+				t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 			}
 
 			var gefunden *http.Cookie

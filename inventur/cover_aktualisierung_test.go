@@ -39,7 +39,7 @@ func TestCoverAktualisieren_UngueltigeKennung(t *testing.T) {
 		tueren.CoverAktualisieren(w, anfrage)
 
 		if w.Code != http.StatusBadRequest {
-			t.Errorf("Kennung %q: expected status %d, got %d", id, http.StatusBadRequest, w.Code)
+			t.Errorf("CoverAktualisieren(Kennung %q): Status %d, erwartet %d", id, w.Code, http.StatusBadRequest)
 		}
 	}
 }
@@ -64,7 +64,7 @@ func TestCoverAktualisieren_TitelFehlt(t *testing.T) {
 	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusNotFound {
-		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
+		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusNotFound)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -94,7 +94,7 @@ func TestCoverAktualisieren_DatenbankfehlerIst500(t *testing.T) {
 	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusInternalServerError {
-		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusInternalServerError)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
@@ -141,7 +141,7 @@ func TestCoverAktualisieren_SucheScheitert(t *testing.T) {
 	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusNotFound {
-		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
+		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusNotFound)
 	}
 
 	var antwort map[string]string
@@ -217,7 +217,7 @@ func TestCoverAktualisieren_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusNotFound {
-		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
+		t.Errorf("w.Code = %d, erwartet 404: %s", w.Code, w.Body.String())
 	}
 	if !strings.Contains(w.Body.String(), "kein Cover") {
 		t.Errorf("die Antwort sagt nicht, dass es KEIN Cover gibt: %s", w.Body.String())
@@ -313,7 +313,7 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 	tueren.CoverAktualisieren(w, anfrage)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusOK)
 	}
 
 	var tuerAntwort map[string]any
@@ -327,11 +327,11 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 
 	daten, ok := tuerAntwort["data"].(map[string]any)
 	if !ok {
-		t.Fatalf("expected data field in response")
+		t.Fatalf("Antwort ohne Feld 'data'")
 	}
 	coverURL, ok := daten["coverUrl"].(string)
 	if !ok || daten["title"] != "Old Title" || daten["author"] != "Old Author" || !strings.HasPrefix(coverURL, "/uploads/cover_auto_") {
-		t.Fatalf("erwartet: Titel und Autor unverändert, Cover lokal — bekommen: %v", daten)
+		t.Fatalf("CoverAktualisieren: data = %v, erwartet Titel und Autor unverändert, Cover lokal", daten)
 	}
 	if err := os.Remove(filepath.Join("uploads", filepath.Base(coverURL))); err != nil {
 		t.Errorf("heruntergeladenes Testbild aufräumen: %v", err)

@@ -48,7 +48,7 @@ func TestPruefeIMAPKonfiguration(t *testing.T) {
 			err := PruefeIMAPKonfiguration()
 			if f.willFehler {
 				if err == nil {
-					t.Fatalf("APP_ENV=%q IMAP_HOST=%q: kein Fehler; want Fehler", f.appEnv, f.imapHost)
+					t.Fatalf("APP_ENV=%q IMAP_HOST=%q: kein Fehler; erwartet Fehler", f.appEnv, f.imapHost)
 				}
 				if !strings.Contains(err.Error(), f.fehlerEnth) {
 					t.Errorf("Fehlertext %q enthält %q nicht", err.Error(), f.fehlerEnth)
@@ -95,7 +95,7 @@ func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "mock")
 		if err := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
-			t.Fatal("Mock in Produktion hat die Anmeldung akzeptiert; want Ablehnung")
+			t.Fatal("Mock in Produktion hat die Anmeldung akzeptiert; erwartet Ablehnung")
 		}
 	})
 
@@ -105,7 +105,7 @@ func TestPruefeIMAPAnmeldung_AttrappeNurLokal(t *testing.T) {
 		t.Setenv("APP_ENV", "production")
 		t.Setenv("IMAP_HOST", "")
 		if err := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@example.test", "beliebig"); err == nil {
-			t.Fatal("leerer IMAP_HOST wurde akzeptiert; want Ablehnung ohne Netzzugriff")
+			t.Fatal("leerer IMAP_HOST wurde akzeptiert; erwartet Ablehnung ohne Netzzugriff")
 		}
 	})
 }
@@ -131,7 +131,7 @@ func TestPruefeIMAPAnmeldung_ToterServerIstAusfall(t *testing.T) {
 
 	pruefFehler := (&Anmeldung{}).pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "egal")
 	if !errors.Is(pruefFehler, errMailserverNichtErreichbar) {
-		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", pruefFehler)
+		t.Fatalf("(&Anmeldung{}).pruefeIMAPAnmeldung(…) = %v, erwartet ErrMailserverNichtErreichbar", pruefFehler)
 	}
 }
 

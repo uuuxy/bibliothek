@@ -100,7 +100,7 @@ func TestLesefrist_ImportpfadDarfLangsamSein(t *testing.T) {
 		t.Fatalf("Import-Upload wurde abgebrochen, obwohl die Frist verlängert sein sollte: %v", err)
 	}
 	if status != http.StatusOK {
-		t.Fatalf("Status = %d, want 200 — der Import-Pfad bekam die lange Frist nicht", status)
+		t.Fatalf("Status = %d, erwartet 200 — der Import-Pfad bekam die lange Frist nicht", status)
 	}
 }
 

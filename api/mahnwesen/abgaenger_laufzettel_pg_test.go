@@ -36,7 +36,7 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	}
 
 	if len(students) != 1 {
-		t.Fatalf("erwartet genau 1 Laufzettel (nur Abgänger mit Buch), waren %d", len(students))
+		t.Fatalf("len(students) = %d, erwartet genau 1 Laufzettel (nur Abgänger mit Buch)", len(students))
 	}
 	if students[0].Schueler.Vorname != "Anna" || len(students[0].Buecher) != 1 {
 		t.Errorf("falscher/leerer Laufzettel: %+v", students[0])

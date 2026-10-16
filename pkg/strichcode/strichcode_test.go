@@ -35,6 +35,6 @@ func TestPNG_KurzerInhaltBehaeltWunschbreite(t *testing.T) {
 		t.Fatalf("Ausgabe ist kein gültiges PNG: %v", err)
 	}
 	if bild.Bounds().Dx() != 300 || bild.Bounds().Dy() != 100 {
-		t.Errorf("erwartet 300x100, bekam %dx%d", bild.Bounds().Dx(), bild.Bounds().Dy())
+		t.Errorf("Bild = %dx%d, erwartet 300x100", bild.Bounds().Dx(), bild.Bounds().Dy())
 	}
 }

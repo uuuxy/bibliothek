@@ -175,9 +175,9 @@ func TestAendereKlassensaetze(t *testing.T) {
 			err = abfragen.aendereKlassensaetze(context.Background(), f.oldClassName, f.newClassNames, f.bookIDs)
 			if f.wantErr {
 				if err == nil {
-					t.Errorf("expected error, got nil")
+					t.Errorf("aendereKlassensaetze(…) = nil, erwartet einen Fehler")
 				} else if err.Error() != f.errMsg {
-					t.Errorf("expected error message %q, got %q", f.errMsg, err.Error())
+					t.Errorf("err.Error() = %q, erwartet %q", err.Error(), f.errMsg)
 				}
 			} else {
 				if err != nil {
@@ -395,7 +395,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 				t.Errorf("ladeKlassensatzGruppen() error = %v, wantErr %v", err, f.wantErr)
 			}
 			if len(gruppen) != f.wantGroups {
-				t.Errorf("ladeKlassensatzGruppen() got %d groups, want %d", len(gruppen), f.wantGroups)
+				t.Errorf("len(ladeKlassensatzGruppen(…)) = %d, erwartet %d", len(gruppen), f.wantGroups)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

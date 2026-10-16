@@ -35,7 +35,7 @@ func TestEinstellungenSchreiben_LMFStichtagIstEinKalendertag(t *testing.T) {
 				strings.NewReader(`{"lmf_stichtag": "`+f.wert+`"}`))
 			(&Tueren{Basis: &tuer.Basis{}}).EinstellungenSchreiben(repo).ServeHTTP(w, r)
 			if w.Code != f.erwarte {
-				t.Errorf("Stichtag %q: Status %d, want %d — %s", f.wert, w.Code, f.erwarte, w.Body.String())
+				t.Errorf("Stichtag %q: Status %d, erwartet %d — %s", f.wert, w.Code, f.erwarte, w.Body.String())
 			}
 			if f.erwarte == http.StatusBadRequest && repo.gespeichert {
 				t.Errorf("Stichtag %q abgelehnt, aber gespeichert", f.wert)

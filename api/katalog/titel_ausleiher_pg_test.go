@@ -82,14 +82,14 @@ func TestTitelAusleiher_AusleiheEinerLehrkraftStehtDrin(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.TitelAusleiher()(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var got []ausleiherZeile
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatalf("Antwort: %v", err)
 	}
 	if len(got) != 3 {
-		t.Fatalf("erwartet 3 Ausleiher (Schülerin, Lehrkraft, Fachbereich), bekam %d: %+v", len(got), got)
+		t.Fatalf("Ausleiher: %d, erwartet 3 (Schülerin, Lehrkraft, Fachbereich): %+v", len(got), got)
 	}
 	if got[0].Vorname != "Mia" || got[0].Klasse != "07A" || got[0].ExemplarBarcode != "B-AUSL-1" {
 		t.Errorf("Schüler-Ausleihe: %+v", got[0])

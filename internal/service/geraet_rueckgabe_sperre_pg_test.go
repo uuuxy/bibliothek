@@ -113,7 +113,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 			t.Fatalf("Rückgabe eines verliehenen, danach defekt gemeldeten Geräts abgewiesen: %v", err)
 		}
 		if res.Art != "rueckgabe" || offeneAusleihen(t, barcode) != 0 {
-			t.Fatalf("erwartet Rückgabe ohne offene Ausleihe, war Typ %q, offen %d", res.Art, offeneAusleihen(t, barcode))
+			t.Fatalf("verarbeiteScan(…) = Art %q, %d offene Ausleihen, erwartet die Rückgabe ohne offene Ausleihe", res.Art, offeneAusleihen(t, barcode))
 		}
 	})
 
@@ -130,7 +130,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 			t.Fatalf("Rückgabe durch den gesperrten Schüler abgewiesen: %v", err)
 		}
 		if res.Art != "rueckgabe" || offeneAusleihen(t, barcode) != 0 {
-			t.Fatalf("erwartet Rückgabe ohne offene Ausleihe, war Typ %q, offen %d", res.Art, offeneAusleihen(t, barcode))
+			t.Fatalf("verarbeiteScan(…) = Art %q, %d offene Ausleihen, erwartet die Rückgabe ohne offene Ausleihe", res.Art, offeneAusleihen(t, barcode))
 		}
 	})
 
@@ -139,7 +139,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		sperreGeraet(t, barcode)
 
 		if _, err := svc.verarbeiteScan(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); !errors.Is(err, ErrGesperrt) {
-			t.Fatalf("erwartet ErrGesperrt, war %v", err)
+			t.Fatalf("svc.verarbeiteScan(…) = %v, erwartet ErrGesperrt", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {
 			t.Fatalf("gesperrtes Gerät wurde trotzdem verliehen (%d offen)", n)
@@ -152,7 +152,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		sperreSchueler(t, schuelerID)
 
 		if _, err := svc.verarbeiteScan(ctx, barcode, &schuelerID, true, false, mitarbeiterID); !errors.Is(err, ErrGesperrt) {
-			t.Fatalf("erwartet ErrGesperrt, war %v", err)
+			t.Fatalf("svc.verarbeiteScan(…) = %v, erwartet ErrGesperrt", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {
 			t.Fatalf("gesperrter Schüler bekam trotzdem ein Gerät (%d offen)", n)

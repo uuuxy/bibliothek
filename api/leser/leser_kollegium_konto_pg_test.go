@@ -92,7 +92,7 @@ func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
 		// Der Kern: eine Leserzeile, und das Konto hängt an genau ihr. Liefe der Wächter
 		// an, stünden hier zwei.
 		if n := zaehleLeser(t, pool, "Wendlandt"); n != 1 {
-			t.Fatalf("erwartet genau eine Leserzeile, gefunden: %d", n)
+			t.Fatalf("zaehleLeser(…, \"Wendlandt\") = %d, erwartet genau 1", n)
 		}
 		var art string
 		if err := pool.QueryRow(ctx, `SELECT art FROM leser WHERE id = $1`, leserID).Scan(&art); err != nil {

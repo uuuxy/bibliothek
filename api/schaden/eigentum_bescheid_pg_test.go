@@ -101,10 +101,10 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 	// 4. Der Brief: Die Lektüre darf auf den Landes-Bescheid, das Schulbuch des Trägers nicht.
 	if rec := bescheidErstellenUeberTuer(t, srv, pool, sidLand,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fLand: 1.40})); rec.Code != http.StatusCreated {
-		t.Errorf("Landes-Bescheid für die Lektüre: Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Errorf("Landes-Bescheid für die Lektüre: Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 	if rec := bescheidErstellenUeberTuer(t, srv, pool, sidTraeger,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fTraeger: 14.00})); rec.Code != http.StatusConflict {
-		t.Errorf("Landes-Bescheid für ein Buch des Schulträgers: Status %d, want 409: %s", rec.Code, rec.Body.String())
+		t.Errorf("Landes-Bescheid für ein Buch des Schulträgers: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 }

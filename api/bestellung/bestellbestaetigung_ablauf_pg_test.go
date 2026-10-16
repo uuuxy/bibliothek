@@ -62,7 +62,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 		t.Fatalf("Exemplare zählen: %v", err)
 	}
 	if zugeordnet != 5 {
-		t.Fatalf("Exemplare mit Bestellbezug = %d, want 5", zugeordnet)
+		t.Fatalf("Exemplare mit Bestellbezug = %d, erwartet 5", zugeordnet)
 	}
 
 	// Nur die drei Exemplare der Position mit Vorab-Barcode gehören auf den Bogen.
@@ -71,7 +71,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 		t.Fatalf("Etiketten laden: %v", err)
 	}
 	if len(etiketten) != 3 {
-		t.Fatalf("Etiketten = %d, want 3 (nur Positionen mit Vorab-Barcode)", len(etiketten))
+		t.Fatalf("Etiketten = %d, erwartet 3 (nur Positionen mit Vorab-Barcode)", len(etiketten))
 	}
 	// „Ansch.J." steht auf der physischen Etikettenvorlage der Schule (Foto vom
 	// Lernmittel-Etikett: Schulname / Titel / Ansch.J. / Barcode / Exemplar-Nr. /
@@ -79,12 +79,12 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	jahr := strconv.Itoa(time.Now().Year())
 	for _, e := range etiketten {
 		if e.AnschaffungsJahr != jahr {
-			t.Fatalf("Etikett der Seite trägt Anschaffungsjahr %q, want %q", e.AnschaffungsJahr, jahr)
+			t.Fatalf("Etikett der Seite trägt Anschaffungsjahr %q, erwartet %q", e.AnschaffungsJahr, jahr)
 		}
 	}
 	for _, e := range res.Etiketten {
 		if e.AnschaffungsJahr != jahr {
-			t.Fatalf("Etikett des Mailanhangs trägt Anschaffungsjahr %q, want %q", e.AnschaffungsJahr, jahr)
+			t.Fatalf("Etikett des Mailanhangs trägt Anschaffungsjahr %q, erwartet %q", e.AnschaffungsJahr, jahr)
 		}
 	}
 
@@ -103,7 +103,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 		srv.OeffentlicheEtiketten().ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
-			t.Fatalf("Etiketten %s: Status = %d, want 200, body: %s", groesse, rec.Code, rec.Body.String())
+			t.Fatalf("Etiketten %s: Status = %d, erwartet 200, Rumpf: %s", groesse, rec.Code, rec.Body.String())
 		}
 		if !bytes.HasPrefix(rec.Body.Bytes(), []byte("%PDF")) {
 			t.Fatalf("Etiketten %s: Antwort ist kein PDF", groesse)
@@ -142,6 +142,6 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 		t.Fatalf("Token-Hash lesen: %v", err)
 	}
 	if hash != nil {
-		t.Fatalf("Token-Hash = %q, want NULL", *hash)
+		t.Fatalf("Token-Hash = %q, erwartet NULL", *hash)
 	}
 }

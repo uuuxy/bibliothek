@@ -98,7 +98,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	for klasse, mail := range erwartet {
 		var got string
 		if err := pool.QueryRow(ctx, `SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = $1`, klasse).Scan(&got); err != nil || got != mail {
-			t.Errorf("Zuordnung %s: erwartet %s, got %q (err=%v)", klasse, mail, got, err)
+			t.Errorf("Zuordnung %s = %q (Fehler %v), erwartet %s", klasse, got, err, mail)
 		}
 	}
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM klassen_lehrer_mapping`).Scan(&n); err != nil || n != 3 {
@@ -107,7 +107,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	// Und der Schüler trägt den Namen, auf den die Zuordnung jetzt zeigt.
 	var klasse string
 	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE barcode_id = 'F3-S-1'`).Scan(&klasse); err != nil || klasse != "06A" {
-		t.Errorf("Schüler-Klasse: erwartet 6a, got %q", klasse)
+		t.Errorf("Schüler-Klasse = %q, erwartet 6a", klasse)
 	}
 }
 
@@ -142,7 +142,7 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 	}
 	var mail string
 	if err := pool.QueryRow(ctx, `SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = '10A'`).Scan(&mail); err != nil || mail != "g@schule.example" {
-		t.Errorf("'09A' muss zu '10A' geworden sein, got %q", mail)
+		t.Errorf("lehrer_email der 10A = %q, erwartet g@schule.example (die Zuordnung der 09A)", mail)
 	}
 }
 
@@ -213,7 +213,7 @@ func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 		}
 	}
 	if ok != 1 || konflikt != 1 {
-		t.Fatalf("erwartet genau 1×200 + 1×409, war %d×200 / %d×409", ok, konflikt)
+		t.Fatalf("Antworten = %d×200 und %d×409, erwartet je 1", ok, konflikt)
 	}
 
 	// Der Schüler steht in 6a — nicht 7a.

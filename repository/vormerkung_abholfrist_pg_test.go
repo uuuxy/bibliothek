@@ -123,7 +123,7 @@ func TestAbholfrist_VerfallLauf(t *testing.T) {
 				t.Fatalf("Verfall: %v", err)
 			}
 			if verfallen != 1 || neuBereit != 1 {
-				t.Fatalf("erwartet 1 verfallen und 1 nachgerückt, war %d/%d", verfallen, neuBereit)
+				t.Fatalf("vormerkungenMitUhr(pool, fall.jetzt).LasseAbgelaufeneVerfallen(…) = %d/%d, erwartet 1 verfallen und 1 nachgerückt", verfallen, neuBereit)
 			}
 			if ist := abholfristVon(t, pool, nils); !ist.Equal(fall.soll) {
 				t.Errorf("Abholfrist %s, erwartet %s", ist.In(schulzeit.Zone()), fall.soll)

@@ -42,7 +42,7 @@ func TestTokenPruefungGestoert_Ist503(t *testing.T) {
 			f.mocks(mock)
 			rec := rufeAngemeldetesKonto(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 			if rec.Code != http.StatusServiceUnavailable {
-				t.Errorf("Status %d, want 503 — eine 401 meldet den Arbeitsplatz ab", rec.Code)
+				t.Errorf("AngemeldetesKonto: Status %d, erwartet 503 — eine 401 meldet den Arbeitsplatz ab", rec.Code)
 			}
 			pruefeFehlerwertOhneUrsache(t, rec, f.ursache)
 		})
@@ -55,7 +55,7 @@ func TestTokenPruefungGestoert_Ist503(t *testing.T) {
 			f.mocks(mock)
 			rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 			if rec.Code != http.StatusServiceUnavailable {
-				t.Errorf("Status %d, want 503 — eine 401 meldet den Arbeitsplatz ab", rec.Code)
+				t.Errorf("SitzungVerlaengern: Status %d, erwartet 503 — eine 401 meldet den Arbeitsplatz ab", rec.Code)
 			}
 			pruefeFehlerwertOhneUrsache(t, rec, f.ursache)
 		})

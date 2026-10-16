@@ -65,7 +65,7 @@ func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 			mittel, testdaten.In28Tagen(), f)
 		rec := bescheidErstellenUeberTuer(t, srv, pool, sid, rumpf)
 		if rec.Code != http.StatusConflict {
-			t.Errorf("mittel=%s für ein Nicht-Lernmittel: Status %d, want 409: %s", mittel, rec.Code, rec.Body.String())
+			t.Errorf("mittel=%s für ein Nicht-Lernmittel: Status %d, erwartet 409: %s", mittel, rec.Code, rec.Body.String())
 		}
 	}
 	var briefe, nummern int
@@ -96,7 +96,7 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f1: 24.90, f2: 12.00}))
 	if rec.Code != http.StatusCreated {
-		t.Fatalf("Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 	var b repository.Bescheid
 	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
@@ -109,10 +109,10 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	}
 	// 2. Die Summe ist die der Positionen, nicht die der Forderungsbeträge von vorher (0).
 	if b.Gesamtbetrag != 36.90 {
-		t.Errorf("Gesamtbetrag = %.2f, want 36.90", b.Gesamtbetrag)
+		t.Errorf("Gesamtbetrag = %.2f, erwartet 36.90", b.Gesamtbetrag)
 	}
 	if b.AnzahlPositionen != 2 {
-		t.Errorf("AnzahlPositionen = %d, want 2", b.AnzahlPositionen)
+		t.Errorf("AnzahlPositionen = %d, erwartet 2", b.AnzahlPositionen)
 	}
 	// 3. Die Forderungen tragen den festgesetzten Betrag UND den Brief.
 	for id, want := range map[string]float64{f1: 24.90, f2: 12.00} {
@@ -123,7 +123,7 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 			t.Fatal(err)
 		}
 		if betrag != want {
-			t.Errorf("Forderung %s: Betrag %.2f, want %.2f", id, betrag, want)
+			t.Errorf("Forderung %s: Betrag %.2f, erwartet %.2f", id, betrag, want)
 		}
 		if bescheidID == nil || *bescheidID != b.ID {
 			t.Errorf("Forderung %s hängt nicht am Bescheid", id)
@@ -173,7 +173,7 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 18.50}))
 	if rec.Code != http.StatusConflict {
-		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, want 409: %s", rec.Code, rec.Body.String())
+		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 	// Die Antwort trägt den Satz, an dem das Sekretariat abliest, was zu prüfen ist.
 	const erwartet = "1 von 1 Forderungen konnten nicht zugeordnet werden — " +
@@ -191,7 +191,7 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 		t.Fatal(err)
 	}
 	if letzte != 1 {
-		t.Errorf("letzte_nr = %d, want 1 — der abgewiesene Brief hat eine Nummer verbraucht", letzte)
+		t.Errorf("letzte_nr = %d, erwartet 1 — der abgewiesene Brief hat eine Nummer verbraucht", letzte)
 	}
 }
 
@@ -217,7 +217,7 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 20.00}))
 	if rec.Code != http.StatusConflict {
-		t.Fatalf("Status %d, want 409: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 	// Die Meldung nennt, WAS fehlt — sonst sucht das Sekretariat.
 	for _, erwartet := range []string{"Schulamtsbereichs", "Schulnummer", "Aufsichtsbehörde", "Einstellungen"} {
@@ -305,7 +305,7 @@ func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
 		t.Fatal(err)
 	}
 	if letzte != anzahl {
-		t.Errorf("letzte_nr = %d, want %d — der Zähler hat Lücken oder Doppelungen", letzte, anzahl)
+		t.Errorf("letzte_nr = %d, erwartet %d — der Zähler hat Lücken oder Doppelungen", letzte, anzahl)
 	}
 }
 
@@ -345,7 +345,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 		return rec
 	}
 	if rec := uebergeben(); rec.Code != http.StatusConflict {
-		t.Errorf("Übergabe vor Fristablauf: %d, want 409: %s", rec.Code, rec.Body.String())
+		t.Errorf("Übergabe vor Fristablauf: %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 
 	// 2. Frist vorbei: Übergabe geht.
@@ -359,7 +359,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 
 	// 3. Ein zweites Mal nicht — der Zeitpunkt der Übergabe darf nicht überschrieben werden.
 	if rec := uebergeben(); rec.Code != http.StatusConflict {
-		t.Errorf("zweite Übergabe: %d, want 409", rec.Code)
+		t.Errorf("zweite Übergabe: %d, erwartet 409", rec.Code)
 	}
 
 	var status string
@@ -410,10 +410,10 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 		t.Fatal(err)
 	}
 	if gelesen.Status != "erledigt" || gelesen.FristAbgelaufen {
-		t.Errorf("bezahlter Bescheid: Status %q, frist_abgelaufen %v — want erledigt/false", gelesen.Status, gelesen.FristAbgelaufen)
+		t.Errorf("bezahlter Bescheid: Status %q, frist_abgelaufen %v — erwartet erledigt/false", gelesen.Status, gelesen.FristAbgelaufen)
 	}
 	if err := repo.Uebergebe(ctx, b.ID); !errors.Is(err, pgx.ErrNoRows) {
-		t.Errorf("Übergabe eines bezahlten Bescheids: err = %v, want pgx.ErrNoRows (409)", err)
+		t.Errorf("Übergabe eines bezahlten Bescheids: err = %v, erwartet pgx.ErrNoRows (409)", err)
 	}
 	offen, err := repo.LadeListe(ctx, true)
 	if err != nil {
@@ -494,6 +494,6 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 		t.Fatal(err)
 	}
 	if letzte != 1 {
-		t.Errorf("letzte_nr = %d, want 1 — ein Nachdruck hat eine Nummer verbraucht", letzte)
+		t.Errorf("letzte_nr = %d, erwartet 1 — ein Nachdruck hat eine Nummer verbraucht", letzte)
 	}
 }

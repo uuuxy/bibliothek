@@ -59,7 +59,7 @@ func TestKlassenDrift(t *testing.T) {
 		l.KlassenOhneLehrkraft = nil
 		b := pruefeKlassenDrift(l)
 		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "nicht geprüft") {
-			t.Errorf("nil muss als 'nicht geprüft' warnen, got %+v", b)
+			t.Errorf("pruefeKlassenDrift(nil) = %+v, erwartet die Warnung 'nicht geprüft'", b)
 		}
 	})
 	t.Run("Klasse ohne Lehrkraft wird benannt", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestKlassenDrift(t *testing.T) {
 		l.KlassenOhneLehrkraft = []string{"06a"}
 		b := pruefeKlassenDrift(l)
 		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "06a") {
-			t.Errorf("06a muss in der Warnung stehen, got %+v", b)
+			t.Errorf("pruefeKlassenDrift(06a) = %+v, erwartet eine Warnung mit 06a", b)
 		}
 		if b.Abhilfe == "" || b.Folge == "" {
 			t.Error("Warnung ohne Folge/Abhilfe landet auf einem Zettel statt in der Zuordnung")
@@ -77,7 +77,7 @@ func TestKlassenDrift(t *testing.T) {
 		l := lageEingerichtet()
 		l.VerwaisteBuecherliste = []string{"7x"}
 		if b := pruefeKlassenDrift(l); b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "7x") {
-			t.Errorf("7x muss in der Warnung stehen, got %+v", b)
+			t.Errorf("pruefeKlassenDrift(7x) = %+v, erwartet eine Warnung mit 7x", b)
 		}
 	})
 }

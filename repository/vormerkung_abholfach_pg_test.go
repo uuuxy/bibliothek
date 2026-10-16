@@ -64,7 +64,7 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 			t.Fatalf("%s: %v", tuer.name, err)
 		}
 		if status != "wartend" || bereit != nil {
-			t.Errorf("%s: Vormerkung steht auf %q mit Exemplar %v — want wartend ohne Exemplar", tuer.name, status, bereit)
+			t.Errorf("%s: Vormerkung steht auf %q mit Exemplar %v — erwartet wartend ohne Exemplar", tuer.name, status, bereit)
 		}
 	}
 }
@@ -103,6 +103,6 @@ func TestVormerkungLoeschen_AbholbereitRuecktNach(t *testing.T) {
 		t.Fatal(err)
 	}
 	if status != "abholbereit" || bereit == nil || *bereit != ex {
-		t.Errorf("Nächster nicht bedient: status %q, Exemplar %v — want abholbereit auf %s", status, bereit, ex)
+		t.Errorf("Nächster nicht bedient: Status %q, Exemplar %v, erwartet abholbereit auf %s", status, bereit, ex)
 	}
 }

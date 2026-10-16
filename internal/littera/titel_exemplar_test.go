@@ -25,7 +25,7 @@ func TestLeseTitel_EchteSpaltennamen(t *testing.T) {
 	// Die Zeile ohne Buchungsnummer faellt raus — ohne Schluessel laesst sich ihr
 	// kein Exemplar zuordnen, sie waere ein Katalogeintrag ohne Buecher.
 	if len(titel) != 3 {
-		t.Fatalf("erwartet 3 Titel (Zeile ohne Schluessel verworfen), waren %d", len(titel))
+		t.Fatalf("len(titel) = %d, erwartet 3 Titel (Zeile ohne Schluessel verworfen)", len(titel))
 	}
 
 	if titel[0].Haupttitel != "Geschichte und Geschehen I" {
@@ -37,7 +37,7 @@ func TestLeseTitel_EchteSpaltennamen(t *testing.T) {
 
 	// Verfasserangabe ist die Autorenquelle ...
 	if titel[1].Autor != "Reinhard Neebe" {
-		t.Errorf("Autor aus Verfasserangabe erwartet, war %q", titel[1].Autor)
+		t.Errorf("titel[1].Autor = %q, erwartet Autor aus Verfasserangabe", titel[1].Autor)
 	}
 	// ... Haupteintrag nicht: Er wiederholt bei Sachbuechern den Titel, und der haette
 	// hier als Autorenname gestanden.
@@ -46,7 +46,7 @@ func TestLeseTitel_EchteSpaltennamen(t *testing.T) {
 	}
 	// Urheber greift, wenn Verfasserangabe leer ist.
 	if titel[2].Autor != "Meier, Anna" {
-		t.Errorf("Rueckfall auf Urheber erwartet, war %q", titel[2].Autor)
+		t.Errorf("titel[2].Autor = %q, erwartet Rueckfall auf Urheber", titel[2].Autor)
 	}
 }
 
@@ -83,7 +83,7 @@ func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
 
 	// Das Exemplar ohne Titel-Fremdschluessel faellt raus.
 	if len(ex) != 4 {
-		t.Fatalf("erwartet 4 Exemplare, waren %d", len(ex))
+		t.Fatalf("len(ex) = %d, erwartet 4 Exemplare", len(ex))
 	}
 
 	if ex[0].Signatur != "LMF Deu 7 / Bie" {
@@ -142,7 +142,7 @@ func TestSignaturJeTitel_HaeufigsterWertUndAbweichungen(t *testing.T) {
 	signaturen, abweichend := signaturJeTitel(exemplare)
 
 	if signaturen["1"] != "LMF Deu 7 / Bie" {
-		t.Errorf("haeufigster Wert erwartet, war %q", signaturen["1"])
+		t.Errorf("signaturJeTitel(…)[\"1\"] = %q, erwartet den häufigsten Wert", signaturen["1"])
 	}
 	if signaturen["2"] != "Ga / Bos" {
 		t.Errorf("Titel 2 falsch: %q", signaturen["2"])
@@ -184,7 +184,7 @@ func TestCSVMitKommaImFeld(t *testing.T) {
 		t.Fatalf("lesen: %v", err)
 	}
 	if len(titel) != 1 {
-		t.Fatalf("erwartet 1 Titel, waren %d", len(titel))
+		t.Fatalf("len(titel) = %d, erwartet 1 Titel", len(titel))
 	}
 	if titel[0].Haupttitel != "Titel, mit Komma" {
 		t.Errorf("Titel mit Komma falsch zerlegt: %q", titel[0].Haupttitel)

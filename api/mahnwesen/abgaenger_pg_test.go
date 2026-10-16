@@ -78,7 +78,7 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 		}
 	}
 	if len(antwort.Abgaenger) != 5 {
-		t.Errorf("erwartet 5 Zeilen, waren %d", len(antwort.Abgaenger))
+		t.Errorf("len(antwort.Abgaenger) = %d, erwartet 5 Zeilen", len(antwort.Abgaenger))
 	}
 }
 

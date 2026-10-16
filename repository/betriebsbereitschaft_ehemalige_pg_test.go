@@ -60,6 +60,6 @@ func TestZaehleEhemaligeMitOffenenVorgaengen(t *testing.T) {
 		t.Fatalf("zählen: %v", err)
 	}
 	if n != 2 {
-		t.Errorf("erwartet 2 (BuchOffen, ForderungOffen), gezählt %d", n)
+		t.Errorf("ZaehleEhemaligeMitOffenenVorgaengen(…) = %d, erwartet 2 (BuchOffen, ForderungOffen)", n)
 	}
 }

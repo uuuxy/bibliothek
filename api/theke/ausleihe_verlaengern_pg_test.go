@@ -80,7 +80,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]any) {
 				if success, ok := resp["success"].(bool); !ok || !success {
-					t.Errorf("Expected success=true, got %v", resp["success"])
+					t.Errorf("resp[\"success\"] = %v, erwartet true", resp["success"])
 				}
 
 				// Die Verlängerung rechnet ab dem späteren von alter Frist und heute
@@ -122,7 +122,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			expectedStatus: http.StatusForbidden,
 			verify: func(t *testing.T, resp map[string]any) {
 				if msg, ok := resp["error"].(string); !ok || msg == "" {
-					t.Errorf("Expected error message, got %v", resp)
+					t.Errorf("Antwort = %v, erwartet eine Fehlermeldung", resp)
 				}
 			},
 		},
@@ -184,7 +184,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			mux.ServeHTTP(rec, req)
 
 			if rec.Code != tt.expectedStatus {
-				t.Fatalf("expected status %d, got %d: %s", tt.expectedStatus, rec.Code, rec.Body.String())
+				t.Fatalf("rec.Code = %d, erwartet %d: %s", rec.Code, tt.expectedStatus, rec.Body.String())
 			}
 
 			if tt.verify != nil && rec.Code == http.StatusOK {

@@ -64,65 +64,65 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 	// Der Suchtext kommt über ?suche= an: Die Tür reicht ihn an die Abfrage weiter.
 	if rec := ruf(srv.SchlagworteZurPflege(), http.MethodGet, "/api/schlagworte/pflege?suche=tier", "", ""); rec.Code != http.StatusOK ||
 		!strings.Contains(rec.Body.String(), `"treffer":1`) || strings.Contains(rec.Body.String(), `"wort":"Fantasy"`) {
-		t.Errorf("Suche an der Tür: %d %s, want nur Tierfantasy", rec.Code, rec.Body.String())
+		t.Errorf("Suche an der Tür: %d %s, erwartet nur Tierfantasy", rec.Code, rec.Body.String())
 	}
 	if rec := ruf(srv.SchlagwortUmbenennen(), http.MethodPut, "", ids["Tierfantasy"], `{"wort":"fantasy","alte_als_verweis":true}`); rec.Code != http.StatusConflict ||
 		!strings.Contains(rec.Body.String(), "Zusammenführen") {
-		t.Errorf("umbenennen auf vorhandenes Wort: %d %s, want 409 mit Hinweis", rec.Code, rec.Body.String())
+		t.Errorf("umbenennen auf vorhandenes Wort: %d %s, erwartet 409 mit Hinweis", rec.Code, rec.Body.String())
 	}
 	if rec := ruf(srv.SchlagwortUmbenennen(), http.MethodPut, "", "keine-uuid", `{"wort":"X"}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("ungültige Kennung: %d, want 400", rec.Code)
+		t.Errorf("ungültige Kennung: %d, erwartet 400", rec.Code)
 	}
 	if rec := ruf(srv.SchlagwortFilterSetzen(), http.MethodPut, "", ids["Fantasy"], `{}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("Filter ohne Feld: %d, want 400", rec.Code)
+		t.Errorf("Filter ohne Feld: %d, erwartet 400", rec.Code)
 	}
 	if rec := ruf(srv.SchlagworteZusammenfuehren(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"keine-uuid"}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("Ziel keine UUID: %d, want 400", rec.Code)
+		t.Errorf("Ziel keine UUID: %d, erwartet 400", rec.Code)
 	}
 
 	// alte_als_verweis ist Pflicht: Ohne das Feld wäre die Vorgabe je Tür eine andere.
 	if rec := ruf(srv.SchlagwortUmbenennen(), http.MethodPut, "", ids["Fantasy"], `{"wort":"Fantasie"}`); rec.Code != http.StatusBadRequest ||
 		!strings.Contains(rec.Body.String(), "Die Angabe alte_als_verweis fehlt") {
-		t.Errorf("umbenennen ohne alte_als_verweis: %d %s, want 400", rec.Code, rec.Body.String())
+		t.Errorf("umbenennen ohne alte_als_verweis: %d %s, erwartet 400", rec.Code, rec.Body.String())
 	}
 	if rec := ruf(srv.SchlagworteZusammenfuehren(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"`+ids["Fantasy"]+`"}`); rec.Code != http.StatusBadRequest ||
 		!strings.Contains(rec.Body.String(), "Die Angabe alte_als_verweis fehlt") {
-		t.Errorf("zusammenführen ohne alte_als_verweis: %d %s, want 400", rec.Code, rec.Body.String())
+		t.Errorf("zusammenführen ohne alte_als_verweis: %d %s, erwartet 400", rec.Code, rec.Body.String())
 	}
 
 	var aenderung schlagwortPflegeAntwort
 	rec := ruf(srv.SchlagwortUmbenennen(), http.MethodPut, "", ids["Fantasy"], `{"wort":"Fantasie","alte_als_verweis":true}`)
 	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Wort != "Fantasie" || aenderung.Verweise != 1 {
-		t.Fatalf("umbenennen mit Verweis: %d %s, want 200 mit wort=Fantasie, verweise=1", rec.Code, rec.Body.String())
+		t.Fatalf("umbenennen mit Verweis: %d %s, erwartet 200 mit wort=Fantasie, verweise=1", rec.Code, rec.Body.String())
 	}
 
 	rec = ruf(srv.SchlagworteZusammenfuehren(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"`+ids["Fantasy"]+`","alte_als_verweis":true}`)
 	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Titel != 1 {
-		t.Fatalf("zusammenführen: %d %s, want 200 mit titel=1", rec.Code, rec.Body.String())
+		t.Fatalf("zusammenführen: %d %s, erwartet 200 mit titel=1", rec.Code, rec.Body.String())
 	}
 	if rec := ruf(srv.SchlagwortFilterSetzen(), http.MethodPut, "", ids["Tierfantasy"], `{"ist_filter":true}`); rec.Code != http.StatusConflict {
-		t.Errorf("Verweis als Filter: %d %s, want 409", rec.Code, rec.Body.String())
+		t.Errorf("Verweis als Filter: %d %s, erwartet 409", rec.Code, rec.Body.String())
 	}
 
 	loeschen := srv.SchlagworteLoeschen()
 	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":["keine-uuid"]}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("löschen mit ungültiger Kennung: %d, want 400", rec.Code)
+		t.Errorf("löschen mit ungültiger Kennung: %d, erwartet 400", rec.Code)
 	}
 	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":[]}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("löschen ohne Auswahl: %d, want 400", rec.Code)
+		t.Errorf("löschen ohne Auswahl: %d, erwartet 400", rec.Code)
 	}
 	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":[""]}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("löschen mit leerer Kennung: %d, want 400", rec.Code)
+		t.Errorf("löschen mit leerer Kennung: %d, erwartet 400", rec.Code)
 	}
 	rec = ruf(loeschen, http.MethodPost, "", "", `{"ids":["`+ids["Fantasy"]+`"]}`)
 	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil ||
 		aenderung.Woerter != 1 || aenderung.Titel != 1 || aenderung.Verweise != 2 {
-		t.Errorf("löschen: %d %s, want 200 mit woerter=1, titel=1, verweise=2 (Fantasy vom Umbenennen, Tierfantasy vom Zusammenführen)", rec.Code, rec.Body.String())
+		t.Errorf("löschen: %d %s, erwartet 200 mit woerter=1, titel=1, verweise=2 (Fantasy vom Umbenennen, Tierfantasy vom Zusammenführen)", rec.Code, rec.Body.String())
 	}
 	// Fehlt eins der gewählten Wörter, fällt keins — und die Meldung sagt das, damit niemand
 	// bei 30 markierten Wörtern rätselt, ob 29 davon weg sind.
 	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":["`+ids["Fantasy"]+`"]}`); rec.Code != http.StatusNotFound ||
 		!strings.Contains(rec.Body.String(), "gelöscht wurde nichts") {
-		t.Errorf("zweites Löschen: %d %s, want 404 mit „gelöscht wurde nichts“", rec.Code, rec.Body.String())
+		t.Errorf("zweites Löschen: %d %s, erwartet 404 mit „gelöscht wurde nichts“", rec.Code, rec.Body.String())
 	}
 }

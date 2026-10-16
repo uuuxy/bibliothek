@@ -50,6 +50,6 @@ func TestVorschauZeileOhneKlassenLiefertLeereListe(t *testing.T) {
 			"zwei Formen derselben Zeile: %s", roh)
 	}
 	if !strings.Contains(string(roh), `"klassen":[]`) {
-		t.Errorf("erwartet `klassen: []` wie nach dem Speichern (schreibeKlassen), war: %s", roh)
+		t.Errorf("Vorschau = %s, erwartet `klassen: []` wie nach dem Speichern (schreibeKlassen)", roh)
 	}
 }

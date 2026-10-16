@@ -38,7 +38,7 @@ func TestVersendeUeberSMTPBrichtOhneSTARTTLSAb(t *testing.T) {
 		t.Fatal("Versand über eine Klartextverbindung wurde als erfolgreich gemeldet")
 	}
 	if !errors.Is(err, errSMTPKlartext) {
-		t.Errorf("Fehler = %v, want errSMTPKlartext", err)
+		t.Errorf("Fehler = %v, erwartet errSMTPKlartext", err)
 	}
 	// Der Marker entscheidet über den Status der Antwort (502 statt eines neutralen 500); ohne ihn
 	// erreicht die Begründung den Admin im Formular nicht.
@@ -85,7 +85,7 @@ func TestVersendeUeberSMTPStelltZu(t *testing.T) {
 
 	sitzung := <-sitzungen
 	if len(sitzung.Empfaenger) != 1 || sitzung.Empfaenger[0] != "lehrerin@schule.de" {
-		t.Fatalf("Empfänger = %v, want [lehrerin@schule.de]", sitzung.Empfaenger)
+		t.Fatalf("Empfänger = %v, erwartet [lehrerin@schule.de]", sitzung.Empfaenger)
 	}
 	if !strings.Contains(sitzung.Nachricht, "Inhalt") {
 		t.Errorf("Nachricht kam nicht an: %q", sitzung.Nachricht)
@@ -140,7 +140,7 @@ func TestVersendeUeberSMTPMeldetUnerreichbarenServer(t *testing.T) {
 	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
 		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
 	if !errors.Is(err, ErrSMTPVersand) {
-		t.Fatalf("Fehler = %v, want ErrSMTPVersand", err)
+		t.Fatalf("Fehler = %v, erwartet ErrSMTPVersand", err)
 	}
 	if !strings.Contains(err.Error(), host+":"+port) {
 		t.Errorf("Meldung nennt den Server nicht: %v", err)
@@ -161,7 +161,7 @@ func TestVersendeUeberSMTPWeistUmbruchImEnvelopeAb(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := versendeUeberSMTP(testKonfig(host, port), f.absender, []string{f.empfaenger}, []byte("x"))
 			if !errors.Is(err, errUmbruchInKopfzeile) {
-				t.Fatalf("Fehler = %v, want errUmbruchInKopfzeile", err)
+				t.Fatalf("Fehler = %v, erwartet errUmbruchInKopfzeile", err)
 			}
 		})
 	}

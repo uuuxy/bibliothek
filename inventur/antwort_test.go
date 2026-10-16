@@ -15,13 +15,13 @@ func TestSchreibeJSON(t *testing.T) {
 		schreibeJSON(recorder, http.StatusOK, nutzlast)
 
 		if recorder.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, recorder.Code)
+			t.Errorf("recorder.Code = %d, erwartet %d", recorder.Code, http.StatusOK)
 		}
 
 		contentType := recorder.Header().Get("Content-Type")
 		expectedContentType := "application/json; charset=utf-8"
 		if contentType != expectedContentType {
-			t.Errorf("expected Content-Type %q, got %q", expectedContentType, contentType)
+			t.Errorf("recorder.Header().Get(…) = %q, erwartet Content-Type %q", contentType, expectedContentType)
 		}
 
 		var antwort map[string]string
@@ -30,7 +30,7 @@ func TestSchreibeJSON(t *testing.T) {
 		}
 
 		if antwort["message"] != "success" {
-			t.Errorf("expected message 'success', got %v", antwort["message"])
+			t.Errorf("Meldung = %v, erwartet 'success'", antwort["message"])
 		}
 	})
 
@@ -40,11 +40,11 @@ func TestSchreibeJSON(t *testing.T) {
 		schreibeJSON(recorder, http.StatusNoContent, nil)
 
 		if recorder.Code != http.StatusNoContent {
-			t.Errorf("expected status %d, got %d", http.StatusNoContent, recorder.Code)
+			t.Errorf("recorder.Code = %d, erwartet %d", recorder.Code, http.StatusNoContent)
 		}
 
 		if recorder.Body.String() != "null\n" {
-			t.Errorf("expected body 'null\\n', got %q", recorder.Body.String())
+			t.Errorf("Rumpf = %q, erwartet 'null\\n'", recorder.Body.String())
 		}
 	})
 
@@ -58,7 +58,7 @@ func TestSchreibeJSON(t *testing.T) {
 		schreibeJSON(recorder, http.StatusInternalServerError, nutzlast)
 
 		if recorder.Code != http.StatusInternalServerError {
-			t.Errorf("expected status %d, got %d", http.StatusInternalServerError, recorder.Code)
+			t.Errorf("recorder.Code = %d, erwartet %d", recorder.Code, http.StatusInternalServerError)
 		}
 	})
 }

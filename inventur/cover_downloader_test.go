@@ -24,7 +24,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		client := &http.Client{}
 		ergebnis := ladeCoverBytes(ctx, client, "", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -32,7 +32,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		client := &http.Client{}
 		ergebnis := ladeCoverBytes(ctx, client, openLibraryLeeresCover, coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -40,7 +40,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		client := &http.Client{}
 		ergebnis := ladeCoverBytes(ctx, client, "http://%42", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -48,7 +48,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		client := &http.Client{}
 		ergebnis := ladeCoverBytes(ctx, client, "https://evil.com/img.png", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -62,7 +62,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		}
 		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -79,7 +79,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		}
 		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -99,7 +99,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		}
 		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if ergebnis != nil {
-			t.Errorf("expected nil, got %v", ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
 		}
 	})
 
@@ -120,7 +120,7 @@ func TestLadeCoverBytes(t *testing.T) {
 		}
 		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
 		if !bytes.Equal(ergebnis, expectedBytes) {
-			t.Errorf("expected %v, got %v", expectedBytes, ergebnis)
+			t.Errorf("ladeCoverBytes(…) = %v, erwartet %v", ergebnis, expectedBytes)
 		}
 	})
 }
@@ -157,16 +157,16 @@ func TestSpeichereCoverDatei(t *testing.T) {
 	t.Run("successful save", func(t *testing.T) {
 		ergebnis := speichereCoverDatei([]byte("dummy data"), "1234567890", ".webp")
 		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_1234567890_") {
-			t.Errorf("expected path to start with /uploads/cover_auto_1234567890_, got %s", ergebnis)
+			t.Errorf("speichereCoverDatei(…) = %s, erwartet den Anfang /uploads/cover_auto_1234567890_", ergebnis)
 		}
 		if !strings.HasSuffix(ergebnis, ".webp") {
-			t.Errorf("expected path to end with .webp, got %s", ergebnis)
+			t.Errorf("speichereCoverDatei(…) = %s, erwartet die Endung .webp", ergebnis)
 		}
 
 		// Die Datei muss bestehen.
 		lokalerPfad := filepath.Join(".", ergebnis)
 		if _, err := os.Stat(lokalerPfad); os.IsNotExist(err) {
-			t.Errorf("expected file %s to exist, but it does not", lokalerPfad)
+			t.Errorf("Datei %s fehlt nach speichereCoverDatei(…)", lokalerPfad)
 		}
 	})
 
@@ -191,7 +191,7 @@ func TestSpeichereCoverDatei(t *testing.T) {
 	t.Run("path traversal attempt in isbn is sanitized", func(t *testing.T) {
 		ergebnis := speichereCoverDatei([]byte("dummy data"), "../../../etc/passwd", ".webp")
 		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_passwd_") {
-			t.Errorf("expected path traversal to be sanitized to base name, got %s", ergebnis)
+			t.Errorf("speichereCoverDatei(…, \"../../../etc/passwd\", …) = %s, erwartet den bereinigten Namen /uploads/cover_auto_passwd_…", ergebnis)
 		}
 	})
 }
@@ -216,7 +216,7 @@ func TestSpeichereCoverLokal(t *testing.T) {
 		}
 		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if ergebnis != "" {
-			t.Errorf("expected empty string, got %s", ergebnis)
+			t.Errorf("speichereCoverLokal(…) = %s, erwartet leer", ergebnis)
 		}
 	})
 
@@ -242,7 +242,7 @@ func TestSpeichereCoverLokal(t *testing.T) {
 		}
 		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if ergebnis != "" {
-			t.Errorf("expected empty string for small image, got %s", ergebnis)
+			t.Errorf("speichereCoverLokal(…) bei kleinem Bild = %s, erwartet leer", ergebnis)
 		}
 	})
 
@@ -273,7 +273,7 @@ func TestSpeichereCoverLokal(t *testing.T) {
 		}
 		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_123_") {
-			t.Errorf("expected path to start with /uploads/cover_auto_123_, got %s", ergebnis)
+			t.Errorf("speichereCoverLokal(…) = %s, erwartet den Anfang /uploads/cover_auto_123_", ergebnis)
 		}
 	})
 }

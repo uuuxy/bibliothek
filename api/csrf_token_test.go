@@ -141,7 +141,7 @@ func TestCSRFToken_NeuesToken(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200 OK, erhalten %d", rec.Code)
+		t.Fatalf("rec.Code = %d, erwartet 200", rec.Code)
 	}
 
 	setCookie := rec.Header().Get("Set-Cookie")
@@ -174,7 +174,7 @@ func TestCSRFToken_BestehendesToken(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200 OK, erhalten %d", rec.Code)
+		t.Fatalf("rec.Code = %d, erwartet 200", rec.Code)
 	}
 
 	setCookie := rec.Header().Get("Set-Cookie")
@@ -188,6 +188,6 @@ func TestCSRFToken_BestehendesToken(t *testing.T) {
 	}
 
 	if response["csrf_token"] != "existing-tok-123" {
-		t.Errorf("erwartet 'existing-tok-123', erhalten %q", response["csrf_token"])
+		t.Errorf("response[\"csrf_token\"] = %q, erwartet 'existing-tok-123'", response["csrf_token"])
 	}
 }

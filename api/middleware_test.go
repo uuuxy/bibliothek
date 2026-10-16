@@ -21,12 +21,12 @@ func TestHTTPSMiddleware(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusMovedPermanently {
-			t.Errorf("Expected 301, got %d", rr.Code)
+			t.Errorf("rr.Code = %d, erwartet 301", rr.Code)
 		}
 
 		loc := rr.Header().Get("Location")
 		if loc != "https://example.com/foo" {
-			t.Errorf("Expected https://example.com/foo, got %s", loc)
+			t.Errorf("rr.Header().Get(…) = %s, erwartet https://example.com/foo", loc)
 		}
 	})
 
@@ -65,7 +65,7 @@ func TestHTTPSMiddleware(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusBadRequest {
-			t.Errorf("Expected 400, got %d", rr.Code)
+			t.Errorf("rr.Code = %d, erwartet 400", rr.Code)
 		}
 	})
 
@@ -80,12 +80,12 @@ func TestHTTPSMiddleware(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusMovedPermanently {
-			t.Errorf("Expected 301, got %d", rr.Code)
+			t.Errorf("rr.Code = %d, erwartet 301", rr.Code)
 		}
 
 		loc := rr.Header().Get("Location")
 		if loc != "https://bibliothek.schule.de/foo" {
-			t.Errorf("Expected https://bibliothek.schule.de/foo, got %s", loc)
+			t.Errorf("rr.Header().Get(…) = %s, erwartet https://bibliothek.schule.de/foo", loc)
 		}
 	})
 
@@ -100,7 +100,7 @@ func TestHTTPSMiddleware(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusOK {
-			t.Errorf("Expected 200, got %d", rr.Code)
+			t.Errorf("rr.Code = %d, erwartet 200", rr.Code)
 		}
 	})
 }

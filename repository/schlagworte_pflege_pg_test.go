@@ -103,7 +103,7 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 		"Woodwalkers": {"Fantasy"},
 	} {
 		if got := woerterAm(t, pool, titelName); !slices.Equal(got, want) {
-			t.Errorf("%s: %q, want %q", titelName, got, want)
+			t.Errorf("%s: %q, erwartet %q", titelName, got, want)
 		}
 	}
 	alt := pflegeZeile(t, pool, "Tierfantasy")
@@ -122,11 +122,11 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 		t.Fatal(err)
 	}
 	if !slices.Equal(got, []string{"Fantasy"}) {
-		t.Errorf("getippter Verweis: %q, want [Fantasy]", got)
+		t.Errorf("getippter Verweis: %q, erwartet [Fantasy]", got)
 	}
 
 	if _, err := FuehreSchlagworteZusammen(ctx, pool, ids["Fantasy"], ids["Tierfantasy"], true); !errors.Is(err, ErrSchlagwortRegel) {
-		t.Errorf("mit dem eigenen Verweis zusammenführen: %v, want ErrSchlagwortRegel", err)
+		t.Errorf("mit dem eigenen Verweis zusammenführen: %v, erwartet ErrSchlagwortRegel", err)
 	}
 }
 
@@ -177,13 +177,13 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 	})
 
 	if neu, verweis, err := BenenneSchlagwortUm(ctx, pool, ids["gewalt"], "  Gewalt ", true); err != nil || neu != "Gewalt" || verweis {
-		t.Errorf("Schreibweise ändern: %q, verweis=%v, %v — want Gewalt ohne Verweis (dasselbe Wort)", neu, verweis, err)
+		t.Errorf("Schreibweise ändern: %q, verweis=%v, %v — erwartet Gewalt ohne Verweis (dasselbe Wort)", neu, verweis, err)
 	}
 	if _, _, err := BenenneSchlagwortUm(ctx, pool, ids["Schule"], "magie", true); !errors.Is(err, ErrSchlagwortGibtEs) {
-		t.Errorf("umbenennen auf ein vorhandenes Wort: %v, want ErrSchlagwortGibtEs", err)
+		t.Errorf("umbenennen auf ein vorhandenes Wort: %v, erwartet ErrSchlagwortGibtEs", err)
 	}
 	if _, _, err := BenenneSchlagwortUm(ctx, pool, "00000000-0000-0000-0000-000000000000", "X", true); !errors.Is(err, ErrSchlagwortNichtGefunden) {
-		t.Errorf("unbekanntes Wort: %v, want ErrSchlagwortNichtGefunden", err)
+		t.Errorf("unbekanntes Wort: %v, erwartet ErrSchlagwortNichtGefunden", err)
 	}
 
 	// Ein neuer Verweis entsteht ohne Titel; als Filter lässt er sich nicht markieren.
@@ -195,7 +195,7 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 		t.Errorf("Verweis: %+v", verweis)
 	}
 	if err := SetzeSchlagwortFilter(ctx, pool, verweis.ID, true); !errors.Is(err, ErrSchlagwortRegel) {
-		t.Errorf("Verweis als Filter: %v, want ErrSchlagwortRegel", err)
+		t.Errorf("Verweis als Filter: %v, erwartet ErrSchlagwortRegel", err)
 	}
 
 	// Verweis auf eine Schreibweise, die Titel trägt: das ist ein Zusammenführen.
@@ -203,14 +203,14 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 		t.Fatalf("Verweis auf vorhandenes Wort: %v", err)
 	}
 	if got := woerterAm(t, pool, "Die Welle"); !slices.Equal(got, []string{"Gewalt"}) {
-		t.Errorf("Die Welle nach dem Verweis: %q, want [Gewalt]", got)
+		t.Errorf("Die Welle nach dem Verweis: %q, erwartet [Gewalt]", got)
 	}
 
 	// Löschen: Titel verlieren das Wort, Verweise darauf fallen mit.
 	geloescht, err := LoescheSchlagworte(ctx, pool, []string{ids["Magie"]})
 	want := SchlagwortLoeschung{Woerter: 1, Titel: 1, Verweise: 1, Namen: []string{"Magie"}}
 	if err != nil || !cmp.Equal(geloescht, want) {
-		t.Errorf("löschen: %+v err=%v, want 1 Wort, 1 Titel, 1 Verweis", geloescht, err)
+		t.Errorf("löschen: %+v err=%v, erwartet 1 Wort, 1 Titel, 1 Verweis", geloescht, err)
 	}
 	if got := woerterAm(t, pool, "Krabat"); len(got) != 0 {
 		t.Errorf("Krabat nach dem Löschen: %q", got)
@@ -220,7 +220,7 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 	if rest != 0 {
-		t.Errorf("%d Zeilen von Magie/Zauberei übrig, want 0", rest)
+		t.Errorf("%d Zeilen von Magie/Zauberei übrig, erwartet 0", rest)
 	}
 }
 
@@ -421,7 +421,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 	// Die Zahlen gelten für die ganze Tabelle, nicht für die gelieferten Zeilen: Der einzige
 	// Filter steht weit hinter der Kappung und zählt trotzdem.
 	if ohne.Gesamt != 5012 || ohne.Verweise != 1 || ohne.Filter != 1 || ohne.Treffer != 5012 {
-		t.Errorf("ohne Suche gesamt=%d verweise=%d filter=%d treffer=%d, want 5012, 1, 1, 5012",
+		t.Errorf("ohne Suche gesamt=%d verweise=%d filter=%d treffer=%d, erwartet 5012, 1, 1, 5012",
 			ohne.Gesamt, ohne.Verweise, ohne.Filter, ohne.Treffer)
 	}
 
@@ -430,7 +430,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 		t.Fatal(err)
 	}
 	if pinguin.Treffer != 1 || len(pinguin.Zeilen) != 1 {
-		t.Fatalf("Suche „zwergp“: treffer=%d, %d Zeilen, want 1 und 1", pinguin.Treffer, len(pinguin.Zeilen))
+		t.Fatalf("Suche „zwergp“: treffer=%d, %d Zeilen, erwartet 1 und 1", pinguin.Treffer, len(pinguin.Zeilen))
 	}
 	z := pinguin.Zeilen[0]
 	if z.Wort != "Zwergpinguin" || z.Titel != 1 || !z.IstFilter || !slices.Equal(z.Verweise, []string{"Frackvogel"}) {
@@ -447,7 +447,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 		woerter = append(woerter, zeile.Wort)
 	}
 	if frack.Treffer != 2 || !slices.Equal(woerter, []string{"Frackvogel", "Zwergpinguin"}) {
-		t.Errorf("Suche „frackvogel“: treffer=%d, Zeilen %q, want 2 und [Frackvogel Zwergpinguin]",
+		t.Errorf("Suche „frackvogel“: treffer=%d, Zeilen %q, erwartet 2 und [Frackvogel Zwergpinguin]",
 			frack.Treffer, woerter)
 	}
 
@@ -457,7 +457,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 		t.Fatal(err)
 	}
 	if joker.Treffer != 0 || len(joker.Zeilen) != 0 {
-		t.Errorf("Suche „%%“: treffer=%d, %d Zeilen, want 0 — ein Joker hätte alles getroffen",
+		t.Errorf("Suche „%%“: treffer=%d, %d Zeilen, erwartet 0 — ein Joker hätte alles getroffen",
 			joker.Treffer, len(joker.Zeilen))
 	}
 }

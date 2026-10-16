@@ -54,14 +54,14 @@ func TestLeseCSVZeilen(t *testing.T) {
 			ergebnis, err := leseCSVZeilen(r)
 			if f.expectErr {
 				if err == nil {
-					t.Errorf("expected error, got nil")
+					t.Errorf("leseCSVZeilen(…) = nil, erwartet einen Fehler")
 				}
 			} else {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
 				if !cmp.Equal(ergebnis, f.expect) {
-					t.Errorf("expected %v, got %v", f.expect, ergebnis)
+					t.Errorf("leseCSVZeilen(r) = %v, erwartet %v", ergebnis, f.expect)
 				}
 			}
 		})
@@ -120,10 +120,10 @@ func TestDetermineColumnIndices(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			idx, mitKopf := bestimmeSpalten(f.header)
 			if mitKopf != f.expectedHasHead {
-				t.Errorf("expected hasHeader=%v, got %v", f.expectedHasHead, mitKopf)
+				t.Errorf("bestimmeSpalten(f.header) = %v, erwartet hasHeader=%v", mitKopf, f.expectedHasHead)
 			}
 			if !cmp.Equal(idx, f.expectedIdx) {
-				t.Errorf("expected %v, got %v", f.expectedIdx, idx)
+				t.Errorf("bestimmeSpalten(f.header) = %v, erwartet %v", idx, f.expectedIdx)
 			}
 		})
 	}
@@ -182,7 +182,7 @@ func TestErrateSpaltenAusInhalt(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			errateSpaltenAusInhalt(f.header, f.initIdx)
 			if !cmp.Equal(f.initIdx, f.expected) {
-				t.Errorf("expected %v, got %v", f.expected, f.initIdx)
+				t.Errorf("f.initIdx = %v, erwartet %v", f.initIdx, f.expected)
 			}
 		})
 	}

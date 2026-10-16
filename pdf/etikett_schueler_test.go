@@ -137,7 +137,7 @@ func TestSchuelerEtikettenBogenBrichtNachEinerSeiteUm(t *testing.T) {
 		t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 	}
 	if seiten := pdf.PageCount(); seiten != 2 {
-		t.Errorf("erwartet 2 Seiten (2 auf der ersten, 3 auf der zweiten), erzeugt: %d", seiten)
+		t.Errorf("ErzeugeSchuelerEtiketten(…) = %d Seiten, erwartet 2 (2 auf der ersten, 3 auf der zweiten)", seiten)
 	}
 }
 

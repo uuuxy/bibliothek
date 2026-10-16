@@ -145,7 +145,7 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(treffer) != 1 || treffer[0].Nachname != "Suchwort-Alt" || !treffer[0].IstAbgaenger || !treffer[0].IstGesperrt {
-		t.Errorf("erwartet genau den gesperrten Abgänger: %+v", treffer)
+		t.Errorf("FindeZusammenfuehrenKandidaten(…) = %+v, erwartet genau den gesperrten Abgänger", treffer)
 	}
 }
 

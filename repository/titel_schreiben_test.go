@@ -34,10 +34,10 @@ func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 	}
 	q := batch.QueuedQueries[0]
 	if q.SQL != testQUpdate {
-		t.Fatalf("SQL = %q, want UPDATE (Titel-Fallback statt INSERT-Dublette)", q.SQL)
+		t.Fatalf("SQL = %q, erwartet UPDATE (Titel-Fallback statt INSERT-Dublette)", q.SQL)
 	}
 	if q.Arguments[0] != "id-bestand" {
-		t.Errorf("Update-ID = %v, want id-bestand", q.Arguments[0])
+		t.Errorf("Update-ID = %v, erwartet id-bestand", q.Arguments[0])
 	}
 	if q.Arguments[6] != "9783060619000" {
 		t.Errorf("ISBN-Nachtrag fehlt im Update: args = %v", q.Arguments)
@@ -60,7 +60,7 @@ func TestReiheTitelEin_InBatchDedupUeberVarianten(t *testing.T) {
 		t.Error("identische ISBN muss als In-Batch-Dublette übersprungen werden")
 	}
 	if len(batch.QueuedQueries) != 1 {
-		t.Errorf("QueuedQueries = %d, want 1", len(batch.QueuedQueries))
+		t.Errorf("QueuedQueries = %d, erwartet 1", len(batch.QueuedQueries))
 	}
 }
 
@@ -84,7 +84,7 @@ func TestNormalisiereTitelSchluessel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		if got := NormalisiereTitelSchluessel(tt.in); got != tt.want {
-			t.Errorf("NormalisiereTitelSchluessel(%+q) = %+q, want %+q", tt.in, got, tt.want)
+			t.Errorf("NormalisiereTitelSchluessel(%+q) = %+q, erwartet %+q", tt.in, got, tt.want)
 		}
 	}
 }
@@ -99,7 +99,7 @@ func TestReiheTitelEin_QuoteVariantenMatchen(t *testing.T) {
 	ok := reiheTitelEin(batch, Titel{Titel: `Kein Bock auf Lernen?`}, c, testQUpdate)
 
 	if !ok || batch.QueuedQueries[0].SQL != testQUpdate || batch.QueuedQueries[0].Arguments[0] != "id-quoted" {
-		t.Errorf("Quote-Variante muss die bestehende Zeile updaten, got ok=%v %v", ok, batch.QueuedQueries[0])
+		t.Errorf("reiheTitelEin(Quote-Variante) = %v, %v, erwartet UPDATE der bestehenden Zeile", ok, batch.QueuedQueries[0])
 	}
 }
 
@@ -113,6 +113,6 @@ func TestReiheTitelEin_ISBNVorTitel(t *testing.T) {
 	reiheTitelEin(batch, Titel{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate)
 
 	if q := batch.QueuedQueries[0]; q.SQL != testQUpdate || q.Arguments[0] != "id-isbn" {
-		t.Errorf("erwartet UPDATE auf id-isbn, got %q %v", q.SQL, q.Arguments[0])
+		t.Errorf("reiheTitelEin(…) = %q mit %v, erwartet UPDATE auf id-isbn", q.SQL, q.Arguments[0])
 	}
 }

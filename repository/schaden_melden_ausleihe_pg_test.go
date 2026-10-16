@@ -31,7 +31,7 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	// Der verspätete Klick auf „Schaden melden" nennt die alte Ausleihe.
 	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
-		t.Fatalf("erwartet ErrExemplarNeuVerliehen, war: %v", err)
+		t.Fatalf("repo.Melde(…) = %v, erwartet ErrExemplarNeuVerliehen", err)
 	}
 
 	// Das Exemplar bleibt im Bestand, und die Ausleihe von B läuft weiter.
@@ -73,7 +73,7 @@ func TestSchadenMelden_Normalfall(t *testing.T) {
 		t.Error("Exemplar wurde nicht ausgesondert")
 	}
 	if grund := aussonderungsGrund(t, pool, copyID); grund != "BESCHAEDIGUNG" {
-		t.Errorf("aussonderung_grund = %q, want BESCHAEDIGUNG", grund)
+		t.Errorf("aussonderung_grund = %q, erwartet BESCHAEDIGUNG", grund)
 	}
 }
 
@@ -111,7 +111,7 @@ func TestSchadenMelden_Idempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Errorf("erwartet genau 1 Schadensfall für die Ausleihe, waren %d (Doppelbelastung des Schülers)", anzahl)
+		t.Errorf("anzahl = %d, erwartet genau 1 Schadensfall für die Ausleihe (Doppelbelastung des Schülers)", anzahl)
 	}
 }
 
@@ -208,7 +208,7 @@ func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 	_, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 12.0)
 	if !errors.Is(err, ErrAusleiheInzwischenZurueck) {
-		t.Fatalf("erwartet ErrAusleiheInzwischenZurueck, war: %v", err)
+		t.Fatalf("NewSchadensAbfragen(pool).Melde(…) = %v, erwartet ErrAusleiheInzwischenZurueck", err)
 	}
 	if ausgesondert := ausgesonderteZahl(t, pool, []string{copyID}); ausgesondert != 0 {
 		t.Error("das zurückgegebene Exemplar wurde ausgesondert")

@@ -46,7 +46,7 @@ func TestLadeVorgang_LehrkraftOhneAusweis(t *testing.T) {
 		t.Fatalf("eine aktive Lehrkraft ohne Ausweis muss ausleihen können, bekam: %v", err)
 	}
 	if chk.leserID != leserID || chk.leser == nil || chk.leser.BarcodeID != "" {
-		t.Fatalf("erwartet Leser %s ohne Ausweisnummer, bekam %q/%+v", leserID, chk.leserID, chk.leser)
+		t.Fatalf("ladeVorgang(…) = Leser %q, %+v, erwartet %s ohne Ausweisnummer", chk.leserID, chk.leser, leserID)
 	}
 	if chk.istSchueler() {
 		t.Errorf("eine Lehrkraft ist kein Schüler, Art gelesen: %q", chk.leser.Art)

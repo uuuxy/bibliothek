@@ -52,7 +52,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 
 	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if antwort := rec.Body.String(); !strings.Contains(antwort, `"success"`) {
 		t.Errorf("Antwort meldet keinen Erfolg, obwohl der Link mitging: %s", antwort)
@@ -96,7 +96,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 
 	rec := bestelleUeberTuer(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	antwort := rec.Body.String()
 	if !strings.Contains(antwort, `"warning"`) || !strings.Contains(antwort, "öffentliche Adresse") {
@@ -128,7 +128,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Zahlen", 0)
 
 	if rec := bestelleUeberTuer(t, srv, lieferant, titel); rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
@@ -154,7 +154,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	titel := testdaten.LegeTitelAn(t, pool, "LMF-Mathe-Topf", 0)
 
 	if rec := bestelleUeberTuer(t, srv, lieferant, titel); rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var gueltigBis time.Time
 	if err := pool.QueryRow(context.Background(),
@@ -196,7 +196,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.BestellungAnlegen(service.NewBestellDienst(srv.DB, repository.NewKatalogAbfragen(srv.DB.Pool)))(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
@@ -260,7 +260,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Fatalf("genau 1 Bestellung erwartet, waren %d", anzahl)
+		t.Fatalf("anzahl = %d, erwartet genau 1 Bestellung", anzahl)
 	}
 
 	// Keine zweite Mail: Der Kanal darf jetzt leer sein.

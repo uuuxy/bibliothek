@@ -32,7 +32,7 @@ func testSucheISBNInvalid(t *testing.T) {
 	client := &MetadatenClient{}
 	_, err := client.SucheNachISBN(context.Background(), "invalid")
 	if err == nil || !strings.Contains(err.Error(), "ungültiges ISBN format") {
-		t.Errorf("Expected invalid ISBN error, got: %v", err)
+		t.Errorf("SucheNachISBN(…, \"invalid\") = %v, erwartet den Fehler „ungültiges ISBN format“", err)
 	}
 }
 
@@ -80,10 +80,10 @@ func testSucheISBNDNB(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if ergebnis.Titel != "DNB Book" {
-		t.Errorf("Expected title 'DNB Book', got '%s'", ergebnis.Titel)
+		t.Errorf("SucheNachISBN(…).Titel = '%s', erwartet 'DNB Book'", ergebnis.Titel)
 	}
 	if ergebnis.Autor != "DNB Author" {
-		t.Errorf("Expected author 'DNB Author', got '%s'", ergebnis.Autor)
+		t.Errorf("SucheNachISBN(…).Autor = '%s', erwartet 'DNB Author'", ergebnis.Autor)
 	}
 }
 
@@ -129,10 +129,10 @@ func testSucheISBNGoogle(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if ergebnis.Titel != "Google Book" {
-		t.Errorf("Expected title 'Google Book', got '%s'", ergebnis.Titel)
+		t.Errorf("SucheNachISBN(…).Titel = '%s', erwartet 'Google Book'", ergebnis.Titel)
 	}
 	if ergebnis.Autor != "Google Author" {
-		t.Errorf("Expected author 'Google Author', got '%s'", ergebnis.Autor)
+		t.Errorf("SucheNachISBN(…).Autor = '%s', erwartet 'Google Author'", ergebnis.Autor)
 	}
 }
 
@@ -176,10 +176,10 @@ func testSucheISBNOpenLibrary(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if ergebnis.Titel != "OpenLibrary Book" {
-		t.Errorf("Expected title 'OpenLibrary Book', got '%s'", ergebnis.Titel)
+		t.Errorf("SucheNachISBN(…).Titel = '%s', erwartet 'OpenLibrary Book'", ergebnis.Titel)
 	}
 	if ergebnis.Autor != "OpenLibrary Author" {
-		t.Errorf("Expected author 'OpenLibrary Author', got '%s'", ergebnis.Autor)
+		t.Errorf("SucheNachISBN(…).Autor = '%s', erwartet 'OpenLibrary Author'", ergebnis.Autor)
 	}
 }
 
@@ -200,7 +200,7 @@ func testSucheISBNNotFound(t *testing.T) {
 
 	_, err := client.SucheNachISBN(context.Background(), "9783161484100")
 	if err == nil || !strings.Contains(err.Error(), "keine metadaten für ISBN gefunden") {
-		t.Errorf("Expected not found error, got: %v", err)
+		t.Errorf("SucheNachISBN(…) = %v, erwartet den Fehler „keine metadaten für ISBN gefunden“", err)
 	}
 }
 

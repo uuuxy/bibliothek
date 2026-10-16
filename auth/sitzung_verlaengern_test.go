@@ -88,7 +88,7 @@ func TestSitzungVerlaengern_OhneCookieIst401(t *testing.T) {
 	a, _ := newTestAnmeldung(t, 12*time.Hour)
 	rec := rufeSitzungVerlaengern(t, a, nil)
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("erwartet 401, bekam %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 401", rec.Code)
 	}
 }
 
@@ -97,7 +97,7 @@ func TestSitzungVerlaengern_UngueltigesTokenIst401(t *testing.T) {
 	erwarteNichtWiderrufen(mock)
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: "kein-jwt"})
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("erwartet 401, bekam %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 401", rec.Code)
 	}
 }
 
@@ -115,10 +115,10 @@ func TestSitzungVerlaengern_FrischesTokenBleibtOhneNeuesCookie(t *testing.T) {
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if got := rec.Body.String(); !strings.Contains(got, `"refresh":"skipped"`) {
-		t.Errorf("erwartet refresh=skipped, Body: %s", got)
+		t.Errorf("SitzungVerlaengern: Rumpf %s, erwartet refresh=skipped", got)
 	}
 	if len(rec.Result().Cookies()) != 0 {
 		t.Errorf("bei skipped darf kein neues Cookie gesetzt werden")
@@ -140,10 +140,10 @@ func TestSitzungVerlaengern_FrischesTokenMitSitzungFasstDieZeileNichtAn(t *testi
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if got := rec.Body.String(); !strings.Contains(got, `"refresh":"skipped"`) {
-		t.Errorf("erwartet refresh=skipped, Body: %s", got)
+		t.Errorf("SitzungVerlaengern: Rumpf %s, erwartet refresh=skipped", got)
 	}
 	if len(rec.Result().Cookies()) != 0 {
 		t.Errorf("ein frisches Token darf kein neues Cookie bekommen")
@@ -170,15 +170,15 @@ func TestSitzungVerlaengern_AltesTokenWirdMitNeuemCookieErneuert(t *testing.T) {
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if got := rec.Body.String(); !strings.Contains(got, `"refresh":"renewed"`) {
-		t.Errorf("erwartet refresh=renewed, Body: %s", got)
+		t.Errorf("SitzungVerlaengern: Rumpf %s, erwartet refresh=renewed", got)
 	}
 
 	cookies := rec.Result().Cookies()
 	if len(cookies) != 1 || cookies[0].Name != "session_token" || cookies[0].Value == "" {
-		t.Fatalf("erwartet neues session_token-Cookie, bekam %+v", cookies)
+		t.Fatalf("rec.Result().Cookies() = %+v, erwartet neues session_token-Cookie", cookies)
 	}
 	if !cookies[0].HttpOnly {
 		t.Errorf("Session-Cookie muss HttpOnly sein")
@@ -220,12 +220,12 @@ func TestSitzungVerlaengern_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	cookies := rec.Result().Cookies()
 	if len(cookies) != 1 {
-		t.Fatalf("erwartet neues session_token-Cookie, bekam %+v", cookies)
+		t.Fatalf("rec.Result().Cookies() = %+v, erwartet neues session_token-Cookie", cookies)
 	}
 
 	erwarteNichtWiderrufen(mock)
@@ -236,7 +236,7 @@ func TestSitzungVerlaengern_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 		t.Fatalf("neues Token ungültig: %v", err)
 	}
 	if claims.Rolle != RolleHelfer {
-		t.Errorf("Refresh hat Rolle %q fortgeschrieben; want %q (aktuelle DB-Rolle)", claims.Rolle, RolleHelfer)
+		t.Errorf("Refresh hat Rolle %q fortgeschrieben; erwartet %q (aktuelle DB-Rolle)", claims.Rolle, RolleHelfer)
 	}
 }
 
@@ -258,7 +258,7 @@ func TestPruefeToken_RolleKommtAusDerDatenbank(t *testing.T) {
 		t.Fatalf("PruefeToken: %v", err)
 	}
 	if claims.Rolle != RolleHelfer {
-		t.Errorf("claims.Rolle = %q; want %q (Token sagt ADMIN, die DB sagt HELFER)", claims.Rolle, RolleHelfer)
+		t.Errorf("claims.Rolle = %q; erwartet %q (Token sagt ADMIN, die DB sagt HELFER)", claims.Rolle, RolleHelfer)
 	}
 }
 
@@ -277,6 +277,6 @@ func TestSitzungVerlaengern_WiderrufenesTokenIst401(t *testing.T) {
 
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("erwartet 401 für widerrufenes Token, bekam %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 401 für widerrufenes Token", rec.Code)
 	}
 }

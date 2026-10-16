@@ -40,7 +40,7 @@ func TestKuerzeAufZeichenHaeltDieObergrenze(t *testing.T) {
 			got := KuerzeAufZeichen(f.ein, f.max)
 
 			if n := utf8.RuneCountInString(got); n != f.max {
-				t.Errorf("%d Zeichen erwartet, geliefert: %d", f.max, n)
+				t.Errorf("KuerzeAufZeichen(…) = %d Zeichen, erwartet %d", n, f.max)
 			}
 			// Der eigentliche Punkt: Ein byteweiser Schnitt hinterlässt ungültiges UTF-8.
 			if !utf8.ValidString(got) {
@@ -84,7 +84,7 @@ func TestByteweisesKuerzenWaereKaputt(t *testing.T) {
 	}
 	alt := titel[:37] + "…"
 	if utf8.ValidString(alt) {
-		t.Fatal("erwartet war ungültiges UTF-8 — der byteweise Schnitt trifft hier keine Zeichengrenze")
+		t.Fatal("Vorbedingung verfehlt: titel[:37] + „…“ ist gültiges UTF-8, erwartet ein ungültiges, weil der byteweise Schnitt keine Zeichengrenze trifft")
 	}
 
 	neu := KuerzeAufZeichen(titel, 38)

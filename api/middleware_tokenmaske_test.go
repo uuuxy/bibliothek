@@ -19,7 +19,7 @@ func TestMaskiereToken(t *testing.T) {
 
 	for pfad, erwartet := range faelle {
 		if got := maskiereToken(pfad); got != erwartet {
-			t.Errorf("maskiereToken(%q) = %q, want %q", pfad, got, erwartet)
+			t.Errorf("maskiereToken(%q) = %q, erwartet %q", pfad, got, erwartet)
 		}
 	}
 }

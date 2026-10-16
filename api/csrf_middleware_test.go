@@ -188,7 +188,7 @@ func TestCSRFMiddlewareLeeresToken(t *testing.T) {
 		mw.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusForbidden {
-			t.Errorf("Erwartet 403 bei leerem Header, erhalten %d", rec.Code)
+			t.Errorf("rec.Code = %d bei leerem Header, erwartet 403", rec.Code)
 		}
 	})
 
@@ -200,7 +200,7 @@ func TestCSRFMiddlewareLeeresToken(t *testing.T) {
 		mw.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusForbidden {
-			t.Errorf("Erwartet 403 bei leerem Cookie, erhalten %d", rec.Code)
+			t.Errorf("rec.Code = %d bei leerem Cookie, erwartet 403", rec.Code)
 		}
 	})
 }

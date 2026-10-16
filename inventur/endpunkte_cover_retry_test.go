@@ -40,7 +40,7 @@ func testListExternalCoversSuccess(t *testing.T) {
 	tueren.FremdeCoverListe(w, anfrage)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusOK)
 	}
 
 	var antwort map[string][]Titel
@@ -50,11 +50,11 @@ func testListExternalCoversSuccess(t *testing.T) {
 
 	eintraege, ok := antwort["data"]
 	if !ok {
-		t.Fatalf("Expected 'data' key in response")
+		t.Fatalf("Antwort ohne Schlüssel 'data'")
 	}
 
 	if len(eintraege) != 2 {
-		t.Errorf("Expected 2 books, got %d", len(eintraege))
+		t.Errorf("len(eintraege) = %d, erwartet 2 Titel", len(eintraege))
 	}
 	if eintraege[0].ID != "1" || eintraege[1].ID != "2" {
 		t.Errorf("Unexpected book IDs returned")
@@ -84,7 +84,7 @@ func testListExternalCoversDatabaseError(t *testing.T) {
 	tueren.FremdeCoverListe(w, anfrage)
 
 	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status code %d, got %d", http.StatusInternalServerError, w.Code)
+		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusInternalServerError)
 	}
 
 	var antwort map[string]string

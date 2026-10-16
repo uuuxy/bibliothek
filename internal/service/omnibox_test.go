@@ -64,18 +64,18 @@ func TestVerarbeiteAusweis(t *testing.T) {
 
 			if tt.expectError {
 				if err == nil {
-					t.Fatalf("expected an error but got none")
+					t.Fatalf("verarbeiteAusweis(…) = nil, erwartet einen Fehler")
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("did not expect an error, but got: %v", err)
+				t.Fatalf("verarbeiteAusweis(…) = %v, erwartet nil", err)
 			}
 			if resp.Art != "student" {
-				t.Errorf("expected resp.Type to be \"student\", got %q", resp.Art)
+				t.Errorf("verarbeiteAusweis(…): Art = %q, erwartet student", resp.Art)
 			}
 			if resp.Leser != tt.leser {
-				t.Errorf("expected resp.Student to be %v, got %v", tt.leser, resp.Leser)
+				t.Errorf("verarbeiteAusweis(…): Leser = %v, erwartet %v", resp.Leser, tt.leser)
 			}
 		})
 	}
@@ -101,31 +101,31 @@ func TestNewOmniboxDienst(t *testing.T) {
 	)
 
 	if svc == nil {
-		t.Fatalf("Expected NewOmniboxDienst to return a non-nil instance")
+		t.Fatalf("NewOmniboxDienst(…) = nil")
 	}
 
 	impl, ok := svc.(*omniboxDienst)
 	if !ok {
-		t.Fatalf("Expected implementation to be of type *omniboxDienst, got %T", svc)
+		t.Fatalf("NewOmniboxDienst(…) = %T, erwartet *omniboxDienst", svc)
 	}
 
 	if impl.pool != pool {
-		t.Errorf("Expected pool to be injected")
+		t.Errorf("NewOmniboxDienst(…).pool ist nicht der übergebene Pool")
 	}
 	if impl.leserAbfragen != studentRepo {
-		t.Errorf("Expected studentRepo to be injected")
+		t.Errorf("NewOmniboxDienst(…).leserAbfragen sind nicht die übergebenen")
 	}
 	if impl.katalogAbfragen != bookRepo {
-		t.Errorf("Expected bookRepo to be injected")
+		t.Errorf("NewOmniboxDienst(…).katalogAbfragen sind nicht die übergebenen")
 	}
 	if impl.ausleihAbfragen != loanRepo {
-		t.Errorf("Expected loanRepo to be injected")
+		t.Errorf("NewOmniboxDienst(…).ausleihAbfragen sind nicht die übergebenen")
 	}
 	if impl.ausleihe != loanSvc {
-		t.Errorf("Expected loanSvc to be injected")
+		t.Errorf("NewOmniboxDienst(…).ausleihe ist nicht der übergebene Dienst")
 	}
 	if impl.geraete != deviceSvc {
-		t.Errorf("Expected deviceSvc to be injected")
+		t.Errorf("NewOmniboxDienst(…).geraete ist nicht der übergebene Dienst")
 	}
 }
 
@@ -183,7 +183,7 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err != expectedErr {
-			t.Errorf("Expected error %v, got %v", expectedErr, err)
+			t.Errorf("verarbeiteExemplar(…) = %v, erwartet %v", err, expectedErr)
 		}
 	})
 
@@ -203,9 +203,9 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err == nil {
-			t.Errorf("Expected an error when copy is not found, got nil")
+			t.Errorf("verarbeiteExemplar(…) ohne Exemplar = nil, erwartet einen Fehler")
 		} else if !errors.Is(err, ErrNichtGefunden) {
-			t.Errorf("Expected ErrNichtGefunden, got %v", err)
+			t.Errorf("svc.verarbeiteExemplar(ctx, q, resp) = %v, erwartet ErrNichtGefunden", err)
 		}
 	})
 
@@ -239,10 +239,10 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
+			t.Fatalf("verarbeiteExemplar(…) = %v, erwartet nil", err)
 		}
 		if resp.Art != "ausleihe" {
-			t.Errorf("Expected resp.Type to be 'ausleihe', got %s", resp.Art)
+			t.Errorf("verarbeiteExemplar(…): Art = %s, erwartet ausleihe", resp.Art)
 		}
 	})
 
@@ -275,10 +275,10 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		err := svc.verarbeiteExemplar(ctx, q, resp)
 
 		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
+			t.Fatalf("verarbeiteExemplar(…) = %v, erwartet nil", err)
 		}
 		if resp.Art != "rueckgabe" {
-			t.Errorf("Expected resp.Type to be 'rueckgabe', got %s", resp.Art)
+			t.Errorf("verarbeiteExemplar(…): Art = %s, erwartet rueckgabe", resp.Art)
 		}
 	})
 }
@@ -343,20 +343,20 @@ func TestVerarbeiteSuche(t *testing.T) {
 
 			if tt.expectedError {
 				if err == nil {
-					t.Errorf("Expected an error but got nil")
+					t.Errorf("verarbeiteSuche(…) = nil, erwartet einen Fehler")
 				}
 				if err != nil && err.Error() != tt.mockErr.Error() {
-					t.Errorf("Expected error %v, got %v", tt.mockErr, err)
+					t.Errorf("verarbeiteSuche(…) = %v, erwartet %v", err, tt.mockErr)
 				}
 			} else {
 				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
+					t.Errorf("verarbeiteSuche(…) = %v, erwartet nil", err)
 				}
 				if resp.Art != tt.expectedType {
-					t.Errorf("Expected response type %q, got %q", tt.expectedType, resp.Art)
+					t.Errorf("verarbeiteSuche(…): Art = %q, erwartet %q", resp.Art, tt.expectedType)
 				}
 				if len(resp.Treffer) != len(tt.mockTitles) {
-					t.Errorf("Expected %d search results, got %d", len(tt.mockTitles), len(resp.Treffer))
+					t.Errorf("verarbeiteSuche(…): %d Treffer, erwartet %d", len(resp.Treffer), len(tt.mockTitles))
 				}
 			}
 		})

@@ -23,7 +23,7 @@ func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 	repo := NewVormerkungsAbfragen(pool)
 
 	if _, err := repo.LegeAn(ctx, titelID, "", kollege); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
-		t.Errorf("Vormerkung für einen Kollegen: err = %v — want ErrVormerkungNurFuerSchueler", err)
+		t.Errorf("Vormerkung für einen Kollegen: err = %v — erwartet ErrVormerkungNurFuerSchueler", err)
 	}
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`, kollege).Scan(&n); err != nil {
@@ -36,7 +36,7 @@ func TestVormerkungLegeAn_NurFuerSchueler(t *testing.T) {
 	// Eine ID, die es nicht gibt, bekommt dieselbe Antwort und keinen Fehler des
 	// Fremdschlüssels (500).
 	if _, err := repo.LegeAn(ctx, titelID, "", "00000000-0000-4000-8000-000000000001"); !errors.Is(err, ErrVormerkungNurFuerSchueler) {
-		t.Errorf("Vormerkung für eine unbekannte Id: err = %v — want ErrVormerkungNurFuerSchueler", err)
+		t.Errorf("Vormerkung für eine unbekannte Id: err = %v — erwartet ErrVormerkungNurFuerSchueler", err)
 	}
 
 	// Gegenprobe: Schüler und die Vormerkung ohne Person (Notiz für die Theke) gehen weiter.

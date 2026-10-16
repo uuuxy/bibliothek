@@ -63,7 +63,7 @@ func TestCoverAbgleichAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 	}
 	for name, f := range faelle {
 		if gewaehlt[name] != f.gewaehlt {
-			t.Errorf("%s: vom Sync gewählt = %v, want %v", name, gewaehlt[name], f.gewaehlt)
+			t.Errorf("%s: vom Sync gewählt = %v, erwartet %v", name, gewaehlt[name], f.gewaehlt)
 		}
 	}
 }

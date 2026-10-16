@@ -39,7 +39,7 @@ func TestLeserWiederherstellen_HebtLoeschSperreAuf(t *testing.T) {
 	srv.LeserWiederherstellen().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	var deletedAt *string
@@ -230,7 +230,7 @@ func TestLeserWiederherstellen_AnonymisierteZeileBleibtImPapierkorb(t *testing.T
 	rec := httptest.NewRecorder()
 	srv.LeserWiederherstellen().ServeHTTP(rec, req)
 	if rec.Code != http.StatusConflict {
-		t.Fatalf("erwartet 409 für anonymisierte Zeile, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 409 für anonymisierte Zeile: %s", rec.Code, rec.Body.String())
 	}
 	var nochImPapierkorb bool
 	if err := pool.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM schueler WHERE id=$1`, id).Scan(&nochImPapierkorb); err != nil {
@@ -383,7 +383,7 @@ func TestPapierkorb_NenntDieAnonymisiertenZeilen(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.Papierkorb().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	var zeilen []map[string]any
@@ -407,7 +407,7 @@ func TestPapierkorb_NenntDieAnonymisiertenZeilen(t *testing.T) {
 		}
 	}
 	if len(gesehen) != 2 {
-		t.Fatalf("erwartet beide Zeilen im Papierkorb, gesehen: %v", gesehen)
+		t.Fatalf("Papierkorb = %v, erwartet beide Zeilen", gesehen)
 	}
 	if gesehen["P-FRISCH"] != nil {
 		t.Errorf("frisch gelöschte Zeile: anonymized_at soll null sein, war %v", gesehen["P-FRISCH"])

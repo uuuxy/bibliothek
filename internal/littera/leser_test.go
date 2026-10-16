@@ -97,7 +97,7 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 	// Die Zeile ohne Buchungsnummer faellt raus — ohne internen Schluessel laesst sich
 	// keine Ausleihe zuordnen.
 	if len(leser) != 5 {
-		t.Fatalf("erwartet 5 Leser, waren %d", len(leser))
+		t.Fatalf("len(leser) = %d, erwartet 5 Leser", len(leser))
 	}
 
 	if leser[0].Klasse != "07H1" || leser[0].Art != ArtSchueler {
@@ -118,7 +118,7 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 	// der Punkt: Lehrkraefte duerfen nicht in der Schuelermenge landen.
 	schueler := nurArt(leser, ArtSchueler)
 	if len(schueler) != 2 {
-		t.Fatalf("erwartet 2 Schueler, waren %d", len(schueler))
+		t.Fatalf("len(schueler) = %d, erwartet 2 Schueler", len(schueler))
 	}
 	for _, s := range schueler {
 		if s.Nachname == "Lehrkraft" {

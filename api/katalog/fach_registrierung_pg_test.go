@@ -100,7 +100,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 		t.Fatalf("Hash-Kürzel lesen: %v", err)
 	}
 	if !strings.Contains(hashKuerzel, "~") {
-		t.Errorf("erwartet Hash-Suffix im Ausweich-Kürzel, war %q", hashKuerzel)
+		t.Errorf("hashKuerzel = %q, erwartet Hash-Suffix im Ausweich-Kürzel", hashKuerzel)
 	}
 }
 

@@ -133,7 +133,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 			t.Fatalf("Fremdrückgabe von %s abgewiesen: %v", barcode, err)
 		}
 		if !lr.Fremdrueckgabe || lr.Art != "rueckgabe" {
-			t.Errorf("erwartet Fremdrückgabe, bekam Type=%q Fremdrueckgabe=%v", lr.Art, lr.Fremdrueckgabe)
+			t.Errorf("BucheAmLeser(…) = Art %q, Fremdrueckgabe %v, erwartet die Fremdrückgabe", lr.Art, lr.Fremdrueckgabe)
 		}
 		var offen int
 		if err := pool.QueryRow(ctx,

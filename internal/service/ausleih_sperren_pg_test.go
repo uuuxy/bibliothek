@@ -215,7 +215,7 @@ func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {
 
 	err := th.buch(t, schulbuch, anonym, true)
 	if !errors.Is(err, service.ErrGesperrt) || service.IstSperreAmLeser(err) || service.IstUebergehbareSperre(err) {
-		t.Errorf("erwartet Sperre ohne Merkmal, bekam %v", err)
+		t.Errorf("th.buch(t, schulbuch, anonym, true) = %v, erwartet Sperre ohne Merkmal", err)
 	}
 	if th.offen(t, schulbuch) != 0 {
 		t.Error("das Schulbuch ging an einen anonymisierten Datensatz")
@@ -357,7 +357,7 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 
 	err := th.buch(t, buecherei, kind, true)
 	if !errors.Is(err, service.ErrGesperrt) || service.IstUebergehbareSperre(err) {
-		t.Fatalf("erwartet die Abweisung am Ausleihlimit, bekam %v", err)
+		t.Fatalf("th.buch(t, buecherei, kind, true) = %v, erwartet die Abweisung am Ausleihlimit", err)
 	}
 	if n := th.uebergangen(t, kind); n != 0 {
 		t.Errorf("nichts wurde ausgeliehen, trotzdem %d Protokolleinträge „übergangen“", n)

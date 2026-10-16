@@ -127,7 +127,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 					got.Herleitung, f.wantNichtSatz)
 			}
 			if got.Topf != f.groessen.Topf {
-				t.Errorf("Topf = %q, want %q — der Dialog benennt die Regel danach",
+				t.Errorf("Topf = %q, erwartet %q — der Dialog benennt die Regel danach",
 					got.Topf, f.groessen.Topf)
 			}
 		})
@@ -149,7 +149,7 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	got := ErsatzwertVorschlagAus(mitAbschlag, ersatzwert.PreisquelleListenpreis)
 
 	if got.Betrag != 19.92 {
-		t.Errorf("Betrag = %.2f, want 19.92 (Herleitung: %q)", got.Betrag, got.Herleitung)
+		t.Errorf("Betrag = %.2f, erwartet 19.92 (Herleitung: %q)", got.Betrag, got.Herleitung)
 	}
 	for _, teil := range []string{"3. Verleihjahr", "60 %", "41,50", "Listenpreis",
 		"abzüglich 20 % für den Zustand"} {
@@ -164,7 +164,7 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	ohneAbschlag.ZustandAbschlag = 0
 	ohne := ErsatzwertVorschlagAus(ohneAbschlag, ersatzwert.PreisquelleListenpreis)
 	if ohne.Betrag != 24.90 {
-		t.Errorf("Betrag ohne Abschlag = %.2f, want 24.90", ohne.Betrag)
+		t.Errorf("Betrag ohne Abschlag = %.2f, erwartet 24.90", ohne.Betrag)
 	}
 	if strings.Contains(ohne.Herleitung, "abzüglich") {
 		t.Errorf("Herleitung = %q — ohne Abschlag darf kein Abzug im Satz stehen",

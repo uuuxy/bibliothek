@@ -26,7 +26,7 @@ func TestHatKennung(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if got := HatKennung(f.wert); got != f.want {
-			t.Errorf("HatKennung(%q) = %v, want %v", f.wert, got, f.want)
+			t.Errorf("HatKennung(%q) = %v, erwartet %v", f.wert, got, f.want)
 		}
 	}
 }
@@ -107,7 +107,7 @@ func TestZerlege(t *testing.T) {
 	for _, f := range faelle {
 		z, ok := Zerlege(f.signatur)
 		if ok != f.ok || z.Fach != f.fach || z.JahrgangVon != f.von || z.JahrgangBis != f.bis {
-			t.Errorf("Zerlege(%q) = {%q %d %d} ok=%v, want {%q %d %d} ok=%v",
+			t.Errorf("Zerlege(%q) = {%q %d %d} ok=%v, erwartet {%q %d %d} ok=%v",
 				f.signatur, z.Fach, z.JahrgangVon, z.JahrgangBis, ok, f.fach, f.von, f.bis, f.ok)
 		}
 	}
@@ -139,7 +139,7 @@ func TestFachAusText(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if got := FachAusText(f.text); got != f.want {
-			t.Errorf("FachAusText(%q) = %q, want %q", f.text, got, f.want)
+			t.Errorf("FachAusText(%q) = %q, erwartet %q", f.text, got, f.want)
 		}
 	}
 }
@@ -154,7 +154,7 @@ func TestFachAusText_Deterministisch(t *testing.T) {
 		}
 	}
 	if erstes != FachMathematik {
-		t.Errorf("erwartet %q (steht in der Liste vor Physik), war %q", FachMathematik, erstes)
+		t.Errorf("FachAusText(…) = %q, erwartet %q (steht in der Liste vor Physik)", erstes, FachMathematik)
 	}
 }
 
@@ -173,7 +173,7 @@ func TestFachAusSchlagworten(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if got := FachAusSchlagworten(f.sw); got != f.want {
-			t.Errorf("FachAusSchlagworten(%v) = %q, want %q", f.sw, got, f.want)
+			t.Errorf("FachAusSchlagworten(%v) = %q, erwartet %q", f.sw, got, f.want)
 		}
 	}
 }
@@ -195,7 +195,7 @@ func TestJahrgangAusZielgruppe(t *testing.T) {
 	for _, f := range faelle {
 		von, bis := jahrgangAusZielgruppe(f.z)
 		if von != f.von || bis != f.bis {
-			t.Errorf("jahrgangAusZielgruppe(%q) = %d–%d, want %d–%d", f.z, von, bis, f.von, f.bis)
+			t.Errorf("jahrgangAusZielgruppe(%q) = %d–%d, erwartet %d–%d", f.z, von, bis, f.von, f.bis)
 		}
 	}
 }
@@ -217,7 +217,7 @@ func TestJahrgangAusZielgruppen(t *testing.T) {
 	for _, f := range faelle {
 		von, bis := JahrgangAusZielgruppen(f.z)
 		if von != f.von || bis != f.bis {
-			t.Errorf("JahrgangAusZielgruppen(%q) = %d–%d, want %d–%d", f.z, von, bis, f.von, f.bis)
+			t.Errorf("JahrgangAusZielgruppen(%q) = %d–%d, erwartet %d–%d", f.z, von, bis, f.von, f.bis)
 		}
 	}
 }
@@ -232,7 +232,7 @@ func TestFachExakt(t *testing.T) {
 	}
 	for text, want := range faelle {
 		if got := FachExakt(text); got != want {
-			t.Errorf("FachExakt(%q) = %q, want %q", text, got, want)
+			t.Errorf("FachExakt(%q) = %q, erwartet %q", text, got, want)
 		}
 	}
 }

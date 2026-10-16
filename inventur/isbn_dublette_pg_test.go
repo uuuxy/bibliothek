@@ -37,7 +37,7 @@ func TestISBNDublette_WirdAlsDubletteErkannt(t *testing.T) {
 	t.Run("Anlegen", func(t *testing.T) {
 		_, err := abfragen.LegeTitelAn(ctx, Titel{ISBN: isbn, Titel: "Dublette", Autor: "Test"})
 		if !errors.Is(err, errISBNDoppelt) {
-			t.Fatalf("erwartet errISBNDoppelt, bekam %v", err)
+			t.Fatalf("abfragen.LegeTitelAn(…) = %v, erwartet errISBNDoppelt", err)
 		}
 	})
 
@@ -48,7 +48,7 @@ func TestISBNDublette_WirdAlsDubletteErkannt(t *testing.T) {
 		}
 		err = abfragen.AendereTitel(ctx, zweiter, Titel{ISBN: isbn, Titel: "Zweiter Titel", Autor: "Test"}, []string{"isbn", "title", "author"}, nil)
 		if !errors.Is(err, errISBNDoppelt) {
-			t.Fatalf("erwartet errISBNDoppelt, bekam %v", err)
+			t.Fatalf("abfragen.AendereTitel(…) = %v, erwartet errISBNDoppelt", err)
 		}
 	})
 }

@@ -92,7 +92,7 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 
 	// lower(): Der Import übernimmt die Schreibweise des Exports ("HAND") — LUSD ist die Quelle.
 	if n := zaehle(t, pool, "lower(nachname) IN ('hand','littera','kind')"); n != 3 {
-		t.Fatalf("erwartet 3 Zeilen (2 zugeordnet + 1 neu), waren %d — Duplikate", n)
+		t.Fatalf("zaehle(…) = %d, erwartet 3 Zeilen (2 zugeordnet + 1 neu) — Duplikate", n)
 	}
 	for id, klasse := range map[string]string{handID: "06A", littID: "7b"} {
 		var k string
@@ -143,7 +143,7 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(prev.Abgaenger) != 1 || prev.Abgaenger[0].ID != abID {
-		t.Fatalf("erwartet genau den bestätigten Schüler als Abgänger: %+v", prev.Abgaenger)
+		t.Fatalf("Vorschau.Abgaenger = %+v, erwartet genau den bestätigten Schüler", prev.Abgaenger)
 	}
 	if len(prev.NichtImExport) != 1 || prev.NichtImExport[0].ID != handID {
 		t.Fatalf("Handanlage muss als „nicht im Export“ gemeldet werden: %+v", prev.NichtImExport)
@@ -190,7 +190,7 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(prev.Rueckkehrer) != 1 || len(prev.Neuzugaenge) != 0 {
-		t.Fatalf("erwartet 1 Rückkehrer, 0 Neuzugänge: %+v", prev)
+		t.Fatalf("Vorschau = %+v, erwartet 1 Rückkehrer, 0 Neuzugänge", prev)
 	}
 	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
@@ -228,13 +228,13 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(prev.Mehrdeutig) == 0 || len(prev.Neuzugaenge) != 0 || len(prev.Klassenwechsel) != 0 {
-		t.Fatalf("erwartet Mehrdeutig-Meldung ohne Neuzugang/Wechsel: %+v", prev)
+		t.Fatalf("Vorschau = %+v, erwartet die Meldung „mehrdeutig“ ohne Neuzugang und Wechsel", prev)
 	}
 	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "lower(nachname)='müller'"); n != 2 {
-		t.Fatalf("erwartet weiterhin 2 Zeilen, waren %d", n)
+		t.Fatalf("zaehle(…) = %d, erwartet weiterhin 2 Zeilen", n)
 	}
 	if n := zaehle(t, pool, "lower(nachname)='müller' AND klasse IN ('07A','07B')"); n != 2 {
 		t.Error("mehrdeutige Schüler wurden verändert")
@@ -266,8 +266,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(prev.Neuzugaenge) != 0 || len(prev.Adoptionen) != 1 || len(prev.Mehrdeutig) != 1 {
-		t.Fatalf("erwartet 0 neu, 1 Adoption (Datum nachgetragen), 1 mehrdeutig: neu=%d adopt=%d mehrdeutig=%d",
-			len(prev.Neuzugaenge), len(prev.Adoptionen), len(prev.Mehrdeutig))
+		t.Fatalf("Vorschau: neu=%d, Adoptionen=%d, mehrdeutig=%d, erwartet 0, 1 (Datum nachgetragen) und 1", len(prev.Neuzugaenge), len(prev.Adoptionen), len(prev.Mehrdeutig))
 	}
 	if len(prev.NichtAbgleichbar) != 2 {
 		t.Fatalf("nur die beiden Pauls bleiben nicht abgleichbar, waren %d", len(prev.NichtAbgleichbar))
@@ -276,7 +275,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "nachname IN ('Lanis','Doppel')"); n != 3 {
-		t.Fatalf("erwartet 3 Zeilen (kein Duplikat), waren %d", n)
+		t.Fatalf("zaehle(…) = %d, erwartet 3 Zeilen (kein Duplikat)", n)
 	}
 	var geb *time.Time
 	var klasse string

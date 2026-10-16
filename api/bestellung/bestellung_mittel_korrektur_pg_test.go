@@ -86,7 +86,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndProtokoll(t *testing.T) {
 		t.Errorf("Antwort: %+v — muss neuen Topf, alten Topf und geaendert=true nennen", antwort)
 	}
 	if got := topfInDB(t, pool, id); got == nil || *got != "schultraeger" {
-		t.Errorf("Topf in der Datenbank: %v, want schultraeger", got)
+		t.Errorf("Topf in der Datenbank: %v, erwartet schultraeger", got)
 	}
 
 	// Die Kundennummer auf dem Beleg bleibt — sie ist die Abschrift dessen, was rausging.
@@ -112,7 +112,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndProtokoll(t *testing.T) {
 	erwartet := map[string]string{"von": "land", "nach": "schultraeger", "grund": "Titel war falsch als Lernmittel gekennzeichnet", "bestellung_id": id}
 	for schluessel, wert := range erwartet {
 		if details[schluessel] != wert {
-			t.Errorf("Audit-Details[%s] = %q, want %q (gesamt: %s)", schluessel, details[schluessel], wert, string(detailsRoh))
+			t.Errorf("Audit-Details[%s] = %q, erwartet %q (gesamt: %s)", schluessel, details[schluessel], wert, string(detailsRoh))
 		}
 	}
 
@@ -126,7 +126,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndProtokoll(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Errorf("%d Audit-Einträge, want 1 — eine Wiederholung ohne Änderung darf nichts protokollieren", anzahl)
+		t.Errorf("%d Audit-Einträge, erwartet 1 — eine Wiederholung ohne Änderung darf nichts protokollieren", anzahl)
 	}
 }
 
@@ -156,7 +156,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 		`{"grund":"x"}`,
 	} {
 		if rec := korrigiereTopfUeberTuer(t, srv, pool, id, rumpf); rec.Code != http.StatusBadRequest {
-			t.Errorf("%s: Status %d, want 400: %s", rumpf, rec.Code, rec.Body.String())
+			t.Errorf("%s: Status %d, erwartet 400: %s", rumpf, rec.Code, rec.Body.String())
 		}
 	}
 	if got := topfInDB(t, pool, id); got == nil || *got != "land" {
@@ -172,7 +172,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 
 	unbekannt := "00000000-0000-0000-0000-000000000000"
 	if rec := korrigiereTopfUeberTuer(t, srv, pool, unbekannt, `{"mittel":"land","grund":"x"}`); rec.Code != http.StatusNotFound {
-		t.Errorf("unbekannte Bestellung: Status %d, want 404", rec.Code)
+		t.Errorf("unbekannte Bestellung: Status %d, erwartet 404", rec.Code)
 	}
 }
 
@@ -193,6 +193,6 @@ func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T
 		t.Fatalf("Alt-Bestellung zuordnen: %d %s", rec.Code, rec.Body.String())
 	}
 	if got := topfInDB(t, pool, id); got == nil || *got != "land" {
-		t.Errorf("Topf: %v, want land", got)
+		t.Errorf("Topf: %v, erwartet land", got)
 	}
 }

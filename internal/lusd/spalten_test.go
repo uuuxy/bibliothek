@@ -16,7 +16,7 @@ func TestNormiereKopf(t *testing.T) {
 	}
 	for in, want := range cases {
 		if got := normiereKopf(in); got != want {
-			t.Errorf("normiereKopf(%q) = %q; want %q", in, got, want)
+			t.Errorf("normiereKopf(%q) = %q; erwartet %q", in, got, want)
 		}
 	}
 }

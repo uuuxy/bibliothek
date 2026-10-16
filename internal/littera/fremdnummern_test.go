@@ -21,20 +21,20 @@ func TestLeseAusweisnummern(t *testing.T) {
 	}
 
 	if len(nummern) != 2 {
-		t.Errorf("erwartet 2 Nummern, erhalten %d", len(nummern))
+		t.Errorf("leseAusweisnummern(…) = %d Nummern, erwartet 2", len(nummern))
 	}
 	if nummern["1"] != "B97601826459" {
-		t.Errorf("erwartet letzte Nummer für Leser 1 ('B97601826459'), erhalten %q", nummern["1"])
+		t.Errorf("leseAusweisnummern(…)[\"1\"] = %q, erwartet die letzte Nummer 'B97601826459'", nummern["1"])
 	}
 	if nummern["2"] != "B97601826458" {
-		t.Errorf("erwartet 'B97601826458' für Leser 2, erhalten %q", nummern["2"])
+		t.Errorf("leseAusweisnummern(…)[\"2\"] = %q, erwartet 'B97601826458'", nummern["2"])
 	}
 	if _, ok := nummern["3"]; ok {
 		t.Errorf("Leser 3 ohne FremdNummer sollte ignoriert werden")
 	}
 
 	if len(mehrfach) != 1 || mehrfach[0] != "1" {
-		t.Errorf("erwartet '1' in mehrfach, erhalten %v", mehrfach)
+		t.Errorf("leseAusweisnummern(…): mehrfach = %v, erwartet [1]", mehrfach)
 	}
 }
 
@@ -42,7 +42,7 @@ func TestLeseAusweisnummernLesefehler(t *testing.T) {
 	r := &fehlerReader{}
 	_, _, err := leseAusweisnummern(r)
 	if err == nil {
-		t.Fatal("erwartet Fehler bei Lesefehler")
+		t.Fatal("leseAusweisnummern(fehlerReader) = nil, erwartet einen Fehler")
 	}
 }
 
@@ -60,13 +60,13 @@ func TestLeseFremdbarcodes(t *testing.T) {
 	}
 
 	if len(barcodes) != 2 {
-		t.Errorf("erwartet 2 Barcodes, erhalten %d", len(barcodes))
+		t.Errorf("leseFremdbarcodes(…) = %d Barcodes, erwartet 2", len(barcodes))
 	}
 	if barcodes["1"] != "E-1234" {
-		t.Errorf("erwartet 'E-1234' für Buchungsnummer 1, erhalten %q", barcodes["1"])
+		t.Errorf("leseFremdbarcodes(…)[\"1\"] = %q, erwartet 'E-1234'", barcodes["1"])
 	}
 	if barcodes["2"] != "E-5678" {
-		t.Errorf("erwartet 'E-5678' für Buchungsnummer 2, erhalten %q", barcodes["2"])
+		t.Errorf("leseFremdbarcodes(…)[\"2\"] = %q, erwartet 'E-5678'", barcodes["2"])
 	}
 	if _, ok := barcodes["3"]; ok {
 		t.Errorf("Buchungsnummer 3 ohne Exemplarnummer sollte ignoriert werden")
@@ -77,7 +77,7 @@ func TestLeseFremdbarcodesLesefehler(t *testing.T) {
 	r := &fehlerReader{}
 	_, err := leseFremdbarcodes(r)
 	if err == nil {
-		t.Fatal("erwartet Fehler bei Lesefehler")
+		t.Fatal("leseFremdbarcodes(fehlerReader) = nil, erwartet einen Fehler")
 	}
 }
 

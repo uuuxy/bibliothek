@@ -92,7 +92,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"N131-C"}`))
 		code, body := rec.Code, rec.Body.String()
 		if code != http.StatusConflict || !strings.Contains(body, "Barcode eines Buchs") {
-			t.Fatalf("erwartet 409 „Barcode eines Buchs“, war %d: %s", code, body)
+			t.Fatalf("code = %d, erwartet 409 „Barcode eines Buchs“: %s", code, body)
 		}
 	})
 

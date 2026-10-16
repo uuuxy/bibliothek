@@ -59,7 +59,7 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 		"01.01.2024|Unbekannter Lieferant": {"01.01.2024", "Unbekannter Lieferant", 1, 1},
 	}
 	if len(groups) != len(erwartet) {
-		t.Fatalf("expected %d groups, got %d", len(erwartet), len(groups))
+		t.Fatalf("LadeZulauf(…) = %d Gruppen, erwartet %d", len(groups), len(erwartet))
 	}
 	gesehen := map[string]bool{}
 	for _, g := range groups {
@@ -73,11 +73,11 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 			t.Errorf("%s: %s / %s, erwartet %s / %s", g.ID, g.Datum, g.LieferantName, soll.datum, soll.lieferant)
 		}
 		if len(g.Posten) != soll.posten {
-			t.Errorf("%s: %d Positionen erwartet, bekam %d", g.ID, soll.posten, len(g.Posten))
+			t.Errorf("%s: %d Positionen, erwartet %d", g.ID, len(g.Posten), soll.posten)
 			continue
 		}
 		if g.Posten[0].Menge != soll.menge {
-			t.Errorf("%s: Menge %d erwartet, bekam %d", g.ID, soll.menge, g.Posten[0].Menge)
+			t.Errorf("%s: Menge %d, erwartet %d", g.ID, g.Posten[0].Menge, soll.menge)
 		}
 	}
 	for id := range erwartet {
@@ -119,7 +119,7 @@ func TestLadeZulauf_AbfragefehlerGehtWeiter(t *testing.T) {
 
 	_, err = LadeZulauf(context.Background(), mock)
 	if !errors.Is(err, expectedErr) {
-		t.Fatalf("expected error %v, got %v", expectedErr, err)
+		t.Fatalf("LadeZulauf(…) = %v, erwartet %v", err, expectedErr)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unmet expectations: %v", err)

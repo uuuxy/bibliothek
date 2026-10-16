@@ -38,7 +38,7 @@ func TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
 	if res.Art != "rueckgabe" || loanSvc.zuletzt == nil || loanSvc.zuletzt.ID != "ex1" {
-		t.Fatalf("Littera-EAN muss beim Exemplar 58968 landen, got Type=%q zuletzt=%v", res.Art, loanSvc.zuletzt)
+		t.Fatalf("VerarbeiteEingabe(5896800039556) = Art %q, zuletzt %v, erwartet die Rückgabe von Exemplar 58968 (ex1)", res.Art, loanSvc.zuletzt)
 	}
 }
 
@@ -56,6 +56,6 @@ func TestVerarbeiteEingabe_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
 		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
 	if res.Art != "search_results" {
-		t.Fatalf("unbekannte Littera-EAN muss in der Suche landen, got Type=%q", res.Art)
+		t.Fatalf("VerarbeiteEingabe(1241170039561) = Art %q, erwartet die Suche", res.Art)
 	}
 }

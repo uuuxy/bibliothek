@@ -38,7 +38,7 @@ func TestStatistik_BestandsFilterErreichtJedeAbfrage(t *testing.T) {
 	server.Statistik()(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	body := rec.Body.String()
 	for _, want := range []string{

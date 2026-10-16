@@ -70,7 +70,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		t.Fatalf("erster Lauf: %d %s", erster.Code, erster.Body.String())
 	}
 	if n := zaehleExemplare(); n != 3 {
-		t.Fatalf("nach erstem Lauf %d Exemplare, want 3", n)
+		t.Fatalf("nach erstem Lauf %d Exemplare, erwartet 3", n)
 	}
 
 	zweiter := sende(schluessel)
@@ -88,7 +88,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		t.Errorf("zweite Antwort weicht ab: %v vs %v", a, b)
 	}
 	if n := zaehleExemplare(); n != 3 {
-		t.Errorf("nach Wiederholung %d Exemplare, want 3 — der Import lief doppelt", n)
+		t.Errorf("nach Wiederholung %d Exemplare, erwartet 3 — der Import lief doppelt", n)
 	}
 
 	// Ein reservierter, noch offener Lauf: 409, kein zweiter Import.
@@ -98,7 +98,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 	}
 	dritter := sende(offen)
 	if dritter.Code != http.StatusConflict {
-		t.Errorf("laufender Schlüssel: %d, want 409", dritter.Code)
+		t.Errorf("laufender Schlüssel: %d, erwartet 409", dritter.Code)
 	}
 	if n := zaehleExemplare(); n != 3 {
 		t.Errorf("laufender Schlüssel hat importiert: %d Exemplare", n)
@@ -109,9 +109,9 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		t.Fatalf("ohne Schlüssel: %d %s", vierter.Code, vierter.Body.String())
 	}
 	if n := zaehleExemplare(); n != 6 {
-		t.Errorf("ohne Schlüssel %d Exemplare, want 6", n)
+		t.Errorf("ohne Schlüssel %d Exemplare, erwartet 6", n)
 	}
 	if kaputt := sende("kein-uuid"); kaputt.Code != http.StatusBadRequest {
-		t.Errorf("ungültiger Schlüssel: %d, want 400", kaputt.Code)
+		t.Errorf("ungültiger Schlüssel: %d, erwartet 400", kaputt.Code)
 	}
 }

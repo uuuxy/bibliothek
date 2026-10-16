@@ -74,7 +74,7 @@ func TestRueckgabewert(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			if got := rueckgabewert(f.bericht); got != f.want {
-				t.Errorf("rueckgabewert() = %v, want %v", got, f.want)
+				t.Errorf("rueckgabewert() = %v, erwartet %v", got, f.want)
 			}
 		})
 	}
@@ -91,16 +91,16 @@ func TestOptionen(t *testing.T) {
 	opt := optionen(s)
 
 	if opt.BatchGroesse != 100 {
-		t.Errorf("BatchGroesse = %v, want 100", opt.BatchGroesse)
+		t.Errorf("BatchGroesse = %v, erwartet 100", opt.BatchGroesse)
 	}
 	if string(opt.Barcodes) != "neu" {
-		t.Errorf("Barcodes = %v, want 'neu'", opt.Barcodes)
+		t.Errorf("Barcodes = %v, erwartet 'neu'", opt.Barcodes)
 	}
 	if !opt.LehrkraefteInaktiv {
-		t.Error("LehrkraefteInaktiv = false, want true")
+		t.Error("LehrkraefteInaktiv = false, erwartet true")
 	}
 	if opt.SchuljahrEnde != 2025 {
-		t.Errorf("SchuljahrEnde = %v, want 2025", opt.SchuljahrEnde)
+		t.Errorf("SchuljahrEnde = %v, erwartet 2025", opt.SchuljahrEnde)
 	}
 }
 

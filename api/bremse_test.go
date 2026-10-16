@@ -58,18 +58,18 @@ func TestAnfrageBremse_BarcodeSalveIstAusgenommen(t *testing.T) {
 
 	// 40 Barcodes in einem Rutsch, Bucket=5 → ohne Ausnahme wären 35 geblockt.
 	if got := schickeNAnfragen(t, "/api/barcode?content=112622&width=150&height=50", 40); got != 0 {
-		t.Fatalf("/api/barcode: %d Requests mit 429; want 0 (Endpoint ist vom Rate-Limiter ausgenommen)", got)
+		t.Fatalf("/api/barcode: %d Requests mit 429; erwartet 0 (Endpoint ist vom Rate-Limiter ausgenommen)", got)
 	}
 
 	// Gegenprobe: ein normaler API-Pfad wird nach dem 5. Token weiter limitiert.
 	if got := schickeNAnfragen(t, "/api/books", 40); got == 0 {
-		t.Fatal("/api/books: 0 Requests mit 429; want >0 (normale Pfade bleiben limitiert)")
+		t.Fatal("/api/books: 0 Requests mit 429, erwartet mehr als 0 (normale Pfade bleiben limitiert)")
 	}
 
 	// /api/barcode/next (JSON, kein Fan-out) bleibt ebenfalls limitiert — der
 	// exakte Pfad-Match darf den Unterpfad nicht mit ausnehmen.
 	if got := schickeNAnfragen(t, "/api/barcode/next", 40); got == 0 {
-		t.Fatal("/api/barcode/next: 0 Requests mit 429; want >0 (nur exakt /api/barcode ist ausgenommen)")
+		t.Fatal("/api/barcode/next: 0 Requests mit 429; erwartet >0 (nur exakt /api/barcode ist ausgenommen)")
 	}
 }
 
@@ -84,16 +84,16 @@ func TestAnmeldeBremse_AufruferHinterProxyZaehlenGetrennt(t *testing.T) {
 
 	// Angreifer verbrennt sein Kontingent und wird gesperrt.
 	if got := scheitereNMal(t, &b, proxys, proxy, "203.0.113.9", maxAnmeldeFehlversucheJeAdresse); got != http.StatusUnauthorized {
-		t.Fatalf("letzter erlaubter Versuch des Angreifers: Status %d; want 401 (noch nicht gesperrt)", got)
+		t.Fatalf("letzter erlaubter Versuch des Angreifers: Status %d; erwartet 401 (noch nicht gesperrt)", got)
 	}
 	if got := scheitereNMal(t, &b, proxys, proxy, "203.0.113.9", 1); got != http.StatusTooManyRequests {
-		t.Fatalf("Versuch über dem Limit: Status %d; want 429 (gesperrt)", got)
+		t.Fatalf("Versuch über dem Limit: Status %d; erwartet 429 (gesperrt)", got)
 	}
 
 	// Ein anderer, unbeteiligter Nutzer hinter demselben Proxy darf sich
 	// weiterhin einloggen — sein Zähler ist eigenständig.
 	if got := scheitereNMal(t, &b, proxys, proxy, "198.51.100.7", 1); got != http.StatusUnauthorized {
-		t.Fatalf("unbeteiligter Nutzer: Status %d; want 401 (nicht mitgesperrt)", got)
+		t.Fatalf("unbeteiligter Nutzer: Status %d; erwartet 401 (nicht mitgesperrt)", got)
 	}
 }
 
@@ -110,7 +110,7 @@ func TestAnmeldeBremse_FremderAufruferKannXFFNichtFaelschen(t *testing.T) {
 	scheitereNMal(t, &b, proxys, attacker, "1.1.1.1", maxAnmeldeFehlversucheJeAdresse-10)
 	scheitereNMal(t, &b, proxys, attacker, "2.2.2.2", 10)
 	if got := scheitereNMal(t, &b, proxys, attacker, "3.3.3.3", 1); got != http.StatusTooManyRequests {
-		t.Fatalf("Angreifer über dem Limit: Status %d; want 429 (XFF-Spoof wirkungslos)", got)
+		t.Fatalf("Angreifer über dem Limit: Status %d; erwartet 429 (XFF-Spoof wirkungslos)", got)
 	}
 }
 
@@ -138,7 +138,7 @@ func TestAnmeldeBremse_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testi
 	// in die Sperre. Ohne diese Zusicherung wäre die Schicht wirkungslos statt weit.
 	scheitereNMal(t, &b, proxys, proxy, nat, maxAnmeldeFehlversucheJeAdresse)
 	if got := scheitereNMal(t, &b, proxys, proxy, nat, 1); got != http.StatusTooManyRequests {
-		t.Fatalf("Credential-Stuffing über dem Limit: Status %d; want 429", got)
+		t.Fatalf("Credential-Stuffing über dem Limit: Status %d; erwartet 429", got)
 	}
 }
 
@@ -172,7 +172,7 @@ func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
 		do("") // das volle Kontingent ist wieder nötig
 	}
 	if got := do(""); got != http.StatusTooManyRequests {
-		t.Fatalf("nach Reset + vollem Kontingent an Fehlversuchen: Status %d; want 429", got)
+		t.Fatalf("nach Reset + vollem Kontingent an Fehlversuchen: Status %d; erwartet 429", got)
 	}
 }
 

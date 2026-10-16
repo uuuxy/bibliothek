@@ -42,7 +42,7 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 		rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 			testdaten.BescheidRumpf(fall.frist, map[string]float64{f: 18.00}))
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("Frist %s (%s): Status %d, want 400 — %s", fall.name, fall.frist, rec.Code, rec.Body.String())
+			t.Errorf("Frist %s (%s): Status %d, erwartet 400 — %s", fall.name, fall.frist, rec.Code, rec.Body.String())
 			continue
 		}
 		if !strings.Contains(rec.Body.String(), fall.meldung) {
@@ -54,13 +54,13 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 	// eigene Forderung, die erste steht dann schon auf einem.
 	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(tag(1), map[string]float64{f: 18.00})); rec.Code != http.StatusCreated {
-		t.Fatalf("Frist morgen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Frist morgen: Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 	f2 := testdaten.LegeForderungAn(t, pool, sid, testdaten.LegeExemplarAn(t, pool, titelID, "FRIST-2", true, ""),
 		"beschaedigt", "Chemie 8 beschädigt")
 	if rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f2: 9.00})); rec.Code != http.StatusCreated {
-		t.Fatalf("Frist in vier Wochen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Frist in vier Wochen: Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 }
 

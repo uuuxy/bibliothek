@@ -85,7 +85,7 @@ func TestHoleExemplarZurueck_UnbekanntesExemplarIstKeinErfolg(t *testing.T) {
 	_, _, bearbeiterID := rueckholenAufbau(t, pool)
 	_, err := HoleExemplarZurueck(context.Background(), pool, "00000000-0000-0000-0000-000000000000", bearbeiterID, nil)
 	if !errors.Is(err, ErrExemplarNichtGefunden) {
-		t.Fatalf("erwartet ErrExemplarNichtGefunden, bekommen: %v", err)
+		t.Fatalf("HoleExemplarZurueck(…) = %v, erwartet ErrExemplarNichtGefunden", err)
 	}
 }
 

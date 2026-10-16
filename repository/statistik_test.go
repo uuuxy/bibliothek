@@ -20,7 +20,7 @@ func TestBestandsFilterBedingung(t *testing.T) {
 	for _, c := range cases {
 		frag, name := BestandsFilterBedingung(c.in)
 		if frag != c.wantFragment || name != c.wantName {
-			t.Errorf("BestandsFilterBedingung(%q) = (%q, %q), want (%q, %q)", c.in, frag, name, c.wantFragment, c.wantName)
+			t.Errorf("BestandsFilterBedingung(%q) = (%q, %q), erwartet (%q, %q)", c.in, frag, name, c.wantFragment, c.wantName)
 		}
 	}
 }

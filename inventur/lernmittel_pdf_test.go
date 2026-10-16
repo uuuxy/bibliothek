@@ -253,7 +253,7 @@ func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got := jahrgangText(f.t)
 			if got != f.want {
-				t.Errorf("jahrgangText() = %v, want %v", got, f.want)
+				t.Errorf("jahrgangText() = %v, erwartet %v", got, f.want)
 			}
 		})
 	}

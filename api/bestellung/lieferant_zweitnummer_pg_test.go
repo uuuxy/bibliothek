@@ -35,7 +35,7 @@ func lieferantAnlegenUeberTuer(t *testing.T, srv *Tueren, rumpf string) lieferan
 	rec := httptest.NewRecorder()
 	srv.LieferantAnlegen()(rec, req)
 	if rec.Code != http.StatusCreated {
-		t.Fatalf("Anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Anlegen: Status %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 	var resp lieferantAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -53,7 +53,7 @@ func lieferantAendernUeberTuer(t *testing.T, srv *Tueren, id, rumpf string) lief
 	rec := httptest.NewRecorder()
 	srv.LieferantAendern()(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Ändern: Status %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Ändern: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var resp lieferantAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -99,20 +99,20 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 
 	// 1. Anlegen: getrimmt gespeichert und in der Antwort.
 	if angelegt.KundennummerSchultraeger != "BIB-ZWEI" {
-		t.Errorf("Antwort nach dem Anlegen: %q, want %q", angelegt.KundennummerSchultraeger, "BIB-ZWEI")
+		t.Errorf("Antwort nach dem Anlegen: %q, erwartet %q", angelegt.KundennummerSchultraeger, "BIB-ZWEI")
 	}
 	if got := zweitnummerAusListe(t, srv, angelegt.ID); got != "BIB-ZWEI" {
-		t.Errorf("Liste nach dem Anlegen: %q, want %q", got, "BIB-ZWEI")
+		t.Errorf("Liste nach dem Anlegen: %q, erwartet %q", got, "BIB-ZWEI")
 	}
 
 	// 2. Ändern mit Feld: neuer Wert gilt.
 	geaendert := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler","email":"zwei@example.invalid","customerNumber":"K-EINS","kundennummer_schultraeger":"BIB-DREI"}`)
 	if geaendert.KundennummerSchultraeger != "BIB-DREI" {
-		t.Errorf("Antwort nach dem Ändern: %q, want %q", geaendert.KundennummerSchultraeger, "BIB-DREI")
+		t.Errorf("Antwort nach dem Ändern: %q, erwartet %q", geaendert.KundennummerSchultraeger, "BIB-DREI")
 	}
 	if got := zweitnummerAusListe(t, srv, angelegt.ID); got != "BIB-DREI" {
-		t.Errorf("Liste nach dem Ändern: %q, want %q", got, "BIB-DREI")
+		t.Errorf("Liste nach dem Ändern: %q, erwartet %q", got, "BIB-DREI")
 	}
 
 	// 3. Ändern ohne Feld: die Nummer bleibt. Das ist der Kern — ein Aufrufer, der das
@@ -123,7 +123,7 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 		t.Errorf("Antwort ohne Feld: %q — die Antwort spiegelt die Eingabe statt des Stands", ohneFeld.KundennummerSchultraeger)
 	}
 	if got := zweitnummerAusListe(t, srv, angelegt.ID); got != "BIB-DREI" {
-		t.Errorf("OHNE Feld wurde die Zweitnummer gelöscht: %q, want %q", got, "BIB-DREI")
+		t.Errorf("OHNE Feld wurde die Zweitnummer gelöscht: %q, erwartet %q", got, "BIB-DREI")
 	}
 
 	// 4. Leerer String: ausdrücklich gelöscht — die Unterscheidung muss in beide
@@ -131,7 +131,7 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 	geleert := lieferantAendernUeberTuer(t, srv, angelegt.ID,
 		`{"name":"Zweitnummer-Haendler NEU","email":"zwei@example.invalid","customerNumber":"K-EINS","kundennummer_schultraeger":""}`)
 	if geleert.KundennummerSchultraeger != "" {
-		t.Errorf("Antwort nach dem Leeren: %q, want leer", geleert.KundennummerSchultraeger)
+		t.Errorf("Antwort nach dem Leeren: %q, erwartet leer", geleert.KundennummerSchultraeger)
 	}
 	if got := zweitnummerAusListe(t, srv, angelegt.ID); got != "" {
 		t.Errorf("Leeren hat nicht gewirkt: %q", got)
@@ -144,7 +144,7 @@ func TestLieferantZweitnummer_HinUndZurueckUeberDieEchtenTueren(t *testing.T) {
 		t.Fatal(err)
 	}
 	if inDb != "" {
-		t.Errorf("Datenbank: %q, want leer", inDb)
+		t.Errorf("Datenbank: %q, erwartet leer", inDb)
 	}
 }
 
@@ -160,6 +160,6 @@ func TestLieferantZweitnummer_UnbekannterLieferantIst404(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.LieferantAendern()(rec, req)
 	if rec.Code != http.StatusNotFound {
-		t.Errorf("Status %d, want 404: %s", rec.Code, rec.Body.String())
+		t.Errorf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}
 }

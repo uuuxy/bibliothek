@@ -33,7 +33,7 @@ func TestTitelSignaturSetzen_SpeichertNeueSignatur(t *testing.T) {
 	srv.TitelSignaturSetzen().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200, body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 200, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 
 	var signatur string
@@ -41,7 +41,7 @@ func TestTitelSignaturSetzen_SpeichertNeueSignatur(t *testing.T) {
 		t.Fatalf("Signatur lesen: %v", err)
 	}
 	if signatur != "JF Panem" {
-		t.Errorf("Signatur in DB = %q, want %q", signatur, "JF Panem")
+		t.Errorf("Signatur in DB = %q, erwartet %q", signatur, "JF Panem")
 	}
 }
 
@@ -62,6 +62,6 @@ func TestTitelSignaturSetzen_UnbekannteIDGibt404(t *testing.T) {
 	srv.TitelSignaturSetzen().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
-		t.Errorf("Status = %d, want 404, body: %s", rec.Code, rec.Body.String())
+		t.Errorf("Status = %d, erwartet 404, Rumpf: %s", rec.Code, rec.Body.String())
 	}
 }

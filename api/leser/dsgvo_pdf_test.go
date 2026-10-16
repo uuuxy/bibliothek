@@ -127,7 +127,7 @@ func TestDSGVOAuskunftPDF_Erfolg(t *testing.T) {
 	rec := dsgvoPDFAnfrage(t, mock, dsgvoTestID)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if rec.Header().Get("Content-Type") != "application/pdf" {
 		t.Errorf("falscher Content-Type: %s", rec.Header().Get("Content-Type"))
@@ -152,7 +152,7 @@ func TestDSGVOAuskunftPDF_OhneKennung(t *testing.T) {
 
 	rec := dsgvoPDFAnfrage(t, mock, "")
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -169,6 +169,6 @@ func TestDSGVOAuskunftPDF_Unbekannt(t *testing.T) {
 
 	rec := dsgvoPDFAnfrage(t, mock, dsgvoTestID)
 	if rec.Code != http.StatusNotFound {
-		t.Errorf("erwartet 404, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}
 }

@@ -31,7 +31,7 @@ func TestVormerkungLegeAn_LehntAbWennTitelSchonAusgeliehen(t *testing.T) {
 
 	_, err = repo.LegeAn(context.Background(), "titel-1", "Notiz", "schueler-1")
 	if !errors.Is(err, ErrTitelBereitsAusgeliehen) {
-		t.Fatalf("erwartet ErrTitelBereitsAusgeliehen, bekam: %v", err)
+		t.Fatalf("repo.LegeAn(…) = %v, erwartet ErrTitelBereitsAusgeliehen", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene/unerwartete Mock-Erwartungen: %v", err)
@@ -113,7 +113,7 @@ func TestVormerkungLadeListe_VerlangtFilter(t *testing.T) {
 	// Kein ExpectQuery: Es findet keine Abfrage statt.
 	_, err = repo.LadeListe(context.Background(), "", "")
 	if !errors.Is(err, ErrVormerkungFilterFehlt) {
-		t.Fatalf("erwartet ErrVormerkungFilterFehlt ohne Filter, war: %v", err)
+		t.Fatalf("repo.LadeListe(…) = %v, erwartet ErrVormerkungFilterFehlt ohne Filter", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("es darf keine Query abgesetzt werden: %v", err)

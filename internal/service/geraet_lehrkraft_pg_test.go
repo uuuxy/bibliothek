@@ -111,7 +111,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 
 			if f.verliehen {
 				if err != nil || res == nil || res.Art != "ausleihe" || offen != 1 {
-					t.Fatalf("erwartet Ausleihe, war err=%v, offen=%d", err, offen)
+					t.Fatalf("verarbeiteScan(…) = Fehler %v, %d offen, erwartet die Ausleihe", err, offen)
 				}
 				var dauerleihe bool
 				if qerr := pool.QueryRow(ctx, `
@@ -126,7 +126,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 				return
 			}
 			if !errors.Is(err, f.fehler) {
-				t.Errorf("erwartet %v (Bedienfehler statt 500), war %v", f.fehler, err)
+				t.Errorf("svc.verarbeiteScan(…) = %v, erwartet %v (Bedienfehler statt 500)", err, f.fehler)
 			}
 			if offen != 0 {
 				t.Errorf("Gerät wurde trotzdem verliehen (%d offen)", offen)

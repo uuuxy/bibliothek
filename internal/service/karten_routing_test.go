@@ -26,7 +26,7 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 		t.Fatalf("die echte Kartennummer muss aufloesen: %v", err)
 	}
 	if resp.Art != "student" || resp.Leser == nil {
-		t.Fatalf("Schueler erwartet, geliefert: Type=%q Student=%v", resp.Art, resp.Leser)
+		t.Fatalf("VerarbeiteEingabe(Karte) = Art %q, Leser %v, erwartet einen Schüler", resp.Art, resp.Leser)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 		t.Fatalf("der Lehrerausweis muss ohne Praefix aufloesen: %v", err)
 	}
 	if resp.Art != "student" || resp.Leser == nil {
-		t.Fatalf("Leser erwartet, geliefert: Type=%q Student=%v", resp.Art, resp.Leser)
+		t.Fatalf("VerarbeiteEingabe(Lehrerausweis) = Art %q, Leser %v, erwartet einen Leser", resp.Art, resp.Leser)
 	}
 	if resp.Leser.Nachname != "Berg" || resp.Leser.Art != "lehrkraft" {
 		t.Errorf("falsche Person geladen: %+v", resp.Leser)
@@ -69,7 +69,7 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 			t.Fatalf("%q muss zur Volltextsuche werden: %v", eingabe, err)
 		}
 		if resp.Art != "search_results" {
-			t.Errorf("%q: Volltextsuche erwartet, geliefert Type=%q", eingabe, resp.Art)
+			t.Errorf("VerarbeiteEingabe(%q) = Art %q, erwartet die Volltextsuche", eingabe, resp.Art)
 		}
 		if resp.Leser != nil {
 			t.Errorf("%q: ohne Treffer darf keine Person gemeldet werden", eingabe)
@@ -92,7 +92,7 @@ func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 		t.Fatalf("der Schüler mit der Ersatznummer muss laden: %v", err)
 	}
 	if resp.Art != "student" || resp.Leser == nil || resp.Leser.ID != "s1" {
-		t.Fatalf("Schüler erwartet, geliefert: Type=%q Student=%v", resp.Art, resp.Leser)
+		t.Fatalf("VerarbeiteEingabe(L-4711) = Art %q, Leser %v, erwartet den Schüler s1", resp.Art, resp.Leser)
 	}
 }
 
@@ -111,7 +111,7 @@ func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 		t.Fatalf("die Lehrkraft mit S-Nummer muss laden: %v", err)
 	}
 	if resp.Art != "student" || resp.Leser == nil || resp.Leser.ID != "l1" {
-		t.Fatalf("Leser erwartet, geliefert: Type=%q Student=%v", resp.Art, resp.Leser)
+		t.Fatalf("VerarbeiteEingabe(S-0815) = Art %q, Leser %v, erwartet die Lehrkraft l1", resp.Art, resp.Leser)
 	}
 }
 
@@ -125,7 +125,7 @@ func TestUnbekannterAusweisMeldetSichLaut(t *testing.T) {
 	for _, code := range []string{"S-404", "L-404"} {
 		resp, err := svc.VerarbeiteEingabe(context.Background(), OmniboxEingabe{Text: code})
 		if !errors.Is(err, ErrNichtGefunden) {
-			t.Errorf("%s: ErrNichtGefunden erwartet, geliefert %v (Type %q)", code, err, resp.Art)
+			t.Errorf("VerarbeiteEingabe(%s) = %v (Art %q), erwartet ErrNichtGefunden", code, err, resp.Art)
 		}
 	}
 }

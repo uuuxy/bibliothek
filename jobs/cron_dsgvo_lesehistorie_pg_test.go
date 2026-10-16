@@ -192,7 +192,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		t.Fatalf("audit_log: %v", err)
 	}
 	if auditZeilen != 1 {
-		t.Errorf("erwartet genau 1 Audit-Eintrag mit 4/1 Trennungen, gefunden %d", auditZeilen)
+		t.Errorf("Audit-Einträge mit 4/1 Trennungen = %d, erwartet genau 1", auditZeilen)
 	}
 
 	// Abgeschaltet: 0 Tage für die Schülerbücherei trennt nichts mehr, die Lernmittel laufen weiter.

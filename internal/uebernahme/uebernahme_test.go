@@ -14,7 +14,7 @@ func TestKuerzeZaehltZeichen(t *testing.T) {
 	got := Kuerze(Kuerzung{Protokoll: p, QuellID: "1", Kennung: "", Feld: "titel", Wert: lang, Max: MaxFreitext})
 
 	if r := []rune(got); len(r) != MaxFreitext {
-		t.Fatalf("%d Zeichen erwartet, geliefert: %d", MaxFreitext, len(r))
+		t.Fatalf("len(r) = %d, erwartet %d Zeichen", len(r), MaxFreitext)
 	}
 	if strings.ContainsRune(got, '�') {
 		t.Error("die Kürzung hat ein Zeichen zerschnitten")
@@ -53,7 +53,7 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 	t.Run("ungültige Prüfziffer", func(t *testing.T) {
 		p := testProtokoll(t)
 		if got := KlaereISBN(p, "1", "9783161484101", map[string]string{}); got != "" {
-			t.Errorf("leere ISBN erwartet, geliefert: %q", got)
+			t.Errorf("KlaereISBN(…) = %q, erwartet leere ISBN", got)
 		}
 		if p.Warnungen() != 1 || p.FehlerAnzahl() != 0 {
 			t.Errorf("WARNUNG erwartet, gezählt: %d/%d", p.Warnungen(), p.FehlerAnzahl())
@@ -64,7 +64,7 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 		p := testProtokoll(t)
 		gesehen := map[string]string{"9783161484100": "7"}
 		if got := KlaereISBN(p, "9", "978-3-16-148410-0", gesehen); got != "" {
-			t.Errorf("leere ISBN erwartet, geliefert: %q", got)
+			t.Errorf("KlaereISBN(…) = %q, erwartet leere ISBN", got)
 		}
 		if gesehen["9783161484100"] != "7" {
 			t.Error("die bestehende Reservierung darf nicht überschrieben werden")
@@ -96,7 +96,7 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 		p := testProtokoll(t)
 		gesehen := map[string]string{}
 		if got := KlaereISBN(p, "3", "978-3-16-148410-0", gesehen); got != "9783161484100" {
-			t.Errorf("normalisierte ISBN erwartet, geliefert: %q", got)
+			t.Errorf("KlaereISBN(…) = %q, erwartet normalisierte ISBN", got)
 		}
 		if gesehen["9783161484100"] != "3" {
 			t.Error("die ISBN muss für den laufenden Import reserviert werden")

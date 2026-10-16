@@ -11,7 +11,7 @@ import (
 func TestTitelVerwaltung_Routen(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+		t.Fatalf("pgxmock.NewPool() = %v", err)
 	}
 	defer mockPool.Close()
 
@@ -89,7 +89,7 @@ func TestTitelVerwaltung_Routen(t *testing.T) {
 			tueren.TitelVerwaltung(rec, anfrage)
 
 			if rec.Code != tc.expectedStatus {
-				t.Errorf("Expected status %d, got %d", tc.expectedStatus, rec.Code)
+				t.Errorf("rec.Code = %d, erwartet %d", rec.Code, tc.expectedStatus)
 			}
 
 			if err := mockPool.ExpectationsWereMet(); err != nil {

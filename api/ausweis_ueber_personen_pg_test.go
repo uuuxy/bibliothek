@@ -91,7 +91,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"AW118-A"}`))
 		code, body := rec.Code, rec.Body.String()
 		if code != http.StatusBadRequest || !strings.Contains(body, "bereits verwendet") {
-			t.Fatalf("erwartet 400 „bereits verwendet“, war %d: %s", code, body)
+			t.Fatalf("code = %d, erwartet 400 „bereits verwendet“: %s", code, body)
 		}
 	})
 

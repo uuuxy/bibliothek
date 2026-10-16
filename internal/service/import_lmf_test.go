@@ -32,7 +32,7 @@ func TestHatLMFKennung(t *testing.T) {
 
 	for _, tt := range tests {
 		if got := hatLMFKennung(tt.wert); got != tt.want {
-			t.Errorf("hatLMFKennung(%q) = %v, want %v", tt.wert, got, tt.want)
+			t.Errorf("hatLMFKennung(%q) = %v, erwartet %v", tt.wert, got, tt.want)
 		}
 	}
 }
@@ -54,7 +54,7 @@ func TestEntferneLMFToken(t *testing.T) {
 
 	for _, tt := range tests {
 		if got := entferneLMFToken(tt.wert); got != tt.want {
-			t.Errorf("entferneLMFToken(%q) = %q, want %q", tt.wert, got, tt.want)
+			t.Errorf("entferneLMFToken(%q) = %q, erwartet %q", tt.wert, got, tt.want)
 		}
 	}
 }
@@ -134,7 +134,7 @@ func TestImportiereLitteraXML_LMFUndSignatur(t *testing.T) {
 		t.Fatalf("ImportiereLitteraXML: %v", err)
 	}
 	if count != 4 {
-		t.Fatalf("importierte Titel = %d, want 4", count)
+		t.Fatalf("importierte Titel = %d, erwartet 4", count)
 	}
 
 	want := []repository.Titel{
@@ -147,7 +147,7 @@ func TestImportiereLitteraXML_LMFUndSignatur(t *testing.T) {
 		g := repo.titel[i]
 		if g.Titel != w.Titel || g.Signatur != w.Signatur || g.IstLernmittel != w.IstLernmittel ||
 			g.Fach != w.Fach || g.JahrgangVon != w.JahrgangVon || g.JahrgangBis != w.JahrgangBis {
-			t.Errorf("Titel[%d] = {%q %q lernmittel=%v fach=%q %d–%d}, want {%q %q lernmittel=%v fach=%q %d–%d}",
+			t.Errorf("Titel[%d] = {%q %q lernmittel=%v fach=%q %d–%d}, erwartet {%q %q lernmittel=%v fach=%q %d–%d}",
 				i, g.Titel, g.Signatur, g.IstLernmittel, g.Fach, g.JahrgangVon, g.JahrgangBis,
 				w.Titel, w.Signatur, w.IstLernmittel, w.Fach, w.JahrgangVon, w.JahrgangBis)
 		}
@@ -190,17 +190,17 @@ func TestImportiereLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
 		t.Fatalf("ImportiereLitteraXML: %v", err)
 	}
 	if len(repo.titel) != 1 {
-		t.Fatalf("%d Titel, want 1", len(repo.titel))
+		t.Fatalf("%d Titel, erwartet 1", len(repo.titel))
 	}
 	g := repo.titel[0]
 	wantSW := []string{"Weimarer Republik", "Geschichte", "Sekundarstufe 2", "Referendare", "Lehrer"}
 	if !slices.Equal(g.Schlagworte, wantSW) {
-		t.Errorf("Schlagworte = %q, want %q", g.Schlagworte, wantSW)
+		t.Errorf("Schlagworte = %q, erwartet %q", g.Schlagworte, wantSW)
 	}
 	if g.JahrgangVon != 11 || g.JahrgangBis != 13 {
-		t.Errorf("Jahrgang = %d–%d, want 11–13 (aus „Sekundarstufe 2“, nicht aus dem letzten Wert)", g.JahrgangVon, g.JahrgangBis)
+		t.Errorf("Jahrgang = %d–%d, erwartet 11–13 (aus „Sekundarstufe 2“, nicht aus dem letzten Wert)", g.JahrgangVon, g.JahrgangBis)
 	}
 	if g.Fach != lmf.FachGeschichte {
-		t.Errorf("Fach = %q, want %q", g.Fach, lmf.FachGeschichte)
+		t.Errorf("Fach = %q, erwartet %q", g.Fach, lmf.FachGeschichte)
 	}
 }

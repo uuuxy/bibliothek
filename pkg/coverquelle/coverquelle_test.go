@@ -53,10 +53,10 @@ func TestSichereURL(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			got, ok := SichereURL(f.eingabe, BildHosts)
 			if ok != f.ok {
-				t.Fatalf("SichereURL(%q) ok = %v; want %v", f.eingabe, ok, f.ok)
+				t.Fatalf("SichereURL(%q) ok = %v; erwartet %v", f.eingabe, ok, f.ok)
 			}
 			if got != f.will {
-				t.Errorf("SichereURL(%q) = %q; want %q", f.eingabe, got, f.will)
+				t.Errorf("SichereURL(%q) = %q; erwartet %q", f.eingabe, got, f.will)
 			}
 		})
 	}

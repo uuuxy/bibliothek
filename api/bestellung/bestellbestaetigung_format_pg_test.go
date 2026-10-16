@@ -159,8 +159,7 @@ func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
 
 	rec := etikettenBogenHolen(t, srv, token, "klein", "gibtesnicht")
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("Status = %d, want 400 — unbekanntes Format wurde angenommen (body: %s)",
-			rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 400 — unbekanntes Format wurde angenommen (Rumpf: %s)", rec.Code, rec.Body.String())
 	}
 	if bytes.HasPrefix(rec.Body.Bytes(), []byte("%PDF")) {
 		t.Fatal("trotz unbekanntem Format kam ein PDF zurück")
@@ -233,10 +232,10 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 		t.Fatalf("Bestellung lesen: %v", err)
 	}
 	if groesse == nil || *groesse != "klein" {
-		t.Errorf("etiketten_groesse = %v, want 'klein'", groesse)
+		t.Errorf("etiketten_groesse = %v, erwartet 'klein'", groesse)
 	}
 	if format == nil || *format != "standard_52" {
-		t.Errorf("etiketten_format = %v, want 'standard_52' — das Raster ging verloren", format)
+		t.Errorf("etiketten_format = %v, erwartet 'standard_52' — das Raster ging verloren", format)
 	}
 }
 
@@ -263,7 +262,7 @@ func TestOeffentlicheBestellung_LiefertDieFormatauswahl(t *testing.T) {
 		t.Fatalf("Seite bekommt %d Formate, es gibt %d", len(ansicht.EtikettenFormate), len(pdf.EtikettFormate()))
 	}
 	if ansicht.EtikettenFormatVorgabe != pdf.EtikettFormatVorgabe {
-		t.Errorf("Vorgabe = %q, want %q", ansicht.EtikettenFormatVorgabe, pdf.EtikettFormatVorgabe)
+		t.Errorf("Vorgabe = %q, erwartet %q", ansicht.EtikettenFormatVorgabe, pdf.EtikettFormatVorgabe)
 	}
 	// Jedes angebotene Format muss über den Endpunkt auch wirklich druckbar sein.
 	for _, f := range ansicht.EtikettenFormate {

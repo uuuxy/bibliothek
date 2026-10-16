@@ -40,7 +40,7 @@ func TestBucheWareneingang_NenntEtikettStandJeExemplar(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if len(items) != 2 {
-		t.Fatalf("erwartet 2 Exemplare, bekam %d", len(items))
+		t.Fatalf("len(items) = %d, erwartet 2 Exemplare", len(items))
 	}
 	// Das Frontend baut aus etikett_gedruckt=false die Druckempfehlung —
 	// dieses Feld muss den DB-Wert exakt durchreichen.
@@ -74,7 +74,7 @@ func TestBucheWareneingang_OhnePassendeExemplareEinFehler(t *testing.T) {
 		IPAdresse:    "127.0.0.1",
 	})
 	if err == nil {
-		t.Fatalf("erwartet Fehler bei leerem Ergebnis, bekam Items: %+v", items)
+		t.Fatalf("BucheWareneingang(…) = Items: %+v, erwartet Fehler bei leerem Ergebnis", items)
 	}
 	// Der Handler mappt exakt diese Meldung auf 404 — Wortlaut ist Vertrag.
 	if err.Error() != "keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)" {

@@ -27,7 +27,7 @@ func TestSperrgrund_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
 		t.Fatal("INSERT eines gesperrten Schülers ohne block_reason muss am CHECK scheitern")
 	}
 	if !strings.Contains(err.Error(), "chk_schueler_block_reason") {
-		t.Errorf("erwartet Verletzung von chk_schueler_block_reason, war: %v", err)
+		t.Errorf("pool.Exec(…) = %v, erwartet Verletzung von chk_schueler_block_reason", err)
 	}
 
 	// Leerer/whitespace-Grund zählt ebenfalls als „kein Grund".
@@ -90,7 +90,7 @@ func TestAnonymisiereAbgaenger_SetztFestenGrund(t *testing.T) {
 
 	gesperrt, grund := gesperrtState(t, pool, sid)
 	if !gesperrt || grund != "Abgänger anonymisiert" {
-		t.Errorf("erwartet gesperrt mit festem Grund 'Abgänger anonymisiert', war gesperrt=%v grund=%q", gesperrt, grund)
+		t.Errorf("gesperrtState(t, pool, sid) = gesperrt=%v grund=%q, erwartet gesperrt mit festem Grund 'Abgänger anonymisiert'", gesperrt, grund)
 	}
 }
 

@@ -30,10 +30,10 @@ func TestDekodiereMARC(t *testing.T) {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 		if len(ergebnis.Records.Record) != 1 {
-			t.Fatalf("Expected 1 record, got %d", len(ergebnis.Records.Record))
+			t.Fatalf("dekodiereMARC(xmlDaten): %d Datensätze, erwartet 1", len(ergebnis.Records.Record))
 		}
 		if len(ergebnis.Records.Record[0].RecordData.Record.Datafield) != 1 {
-			t.Fatalf("Expected 1 datafield")
+			t.Fatalf("dekodiereMARC(xmlDaten): %d Datenfelder, erwartet 1", len(ergebnis.Records.Record[0].RecordData.Record.Datafield))
 		}
 	})
 
@@ -41,7 +41,7 @@ func TestDekodiereMARC(t *testing.T) {
 		xmlDaten := []byte(`<invalid>`)
 		_, err := dekodiereMARC(xmlDaten)
 		if err == nil {
-			t.Fatalf("Expected error for invalid XML, got nil")
+			t.Fatalf("dekodiereMARC(<invalid>) = nil, erwartet einen Fehler")
 		}
 	})
 }
@@ -72,7 +72,7 @@ func TestVerarbeiteFeld_Und_Subfelder(t *testing.T) {
 		},
 	})
 	if b.hauptAutor != "Jane Doe" {
-		t.Errorf("Expected hauptAutor 'Jane Doe', got '%s'", b.hauptAutor)
+		t.Errorf("b.hauptAutor = '%s', erwartet 'Jane Doe'", b.hauptAutor)
 	}
 
 	// Test Publication Details
@@ -84,10 +84,10 @@ func TestVerarbeiteFeld_Und_Subfelder(t *testing.T) {
 		},
 	})
 	if b.verlag != "Awesome Publisher" {
-		t.Errorf("Expected verlag 'Awesome Publisher', got '%s'", b.verlag)
+		t.Errorf("b.verlag = '%s', erwartet 'Awesome Publisher'", b.verlag)
 	}
 	if b.jahr != "2023" {
-		t.Errorf("Expected jahr '2023', got '%s'", b.jahr)
+		t.Errorf("b.jahr = '%s', erwartet '2023'", b.jahr)
 	}
 
 	// Test Genre
@@ -98,7 +98,7 @@ func TestVerarbeiteFeld_Und_Subfelder(t *testing.T) {
 		},
 	})
 	if len(b.genres) != 1 || b.genres[0] != "Fantasy" {
-		t.Errorf("Expected genre 'Fantasy', got %v", b.genres)
+		t.Errorf("b.genres = %v, erwartet 'Fantasy'", b.genres)
 	}
 
 	// Test Zielgruppe
@@ -109,7 +109,7 @@ func TestVerarbeiteFeld_Und_Subfelder(t *testing.T) {
 		},
 	})
 	if b.zielgruppe != "ab 12 Jahre" {
-		t.Errorf("Expected zielgruppe 'ab 12 Jahre', got '%s'", b.zielgruppe)
+		t.Errorf("b.zielgruppe = '%s', erwartet 'ab 12 Jahre'", b.zielgruppe)
 	}
 }
 
@@ -118,14 +118,14 @@ func TestAutorUndTitel(t *testing.T) {
 		hauptAutor: "Jane Doe",
 	}
 	if b1.autor() != "Jane Doe" {
-		t.Errorf("Expected 'Jane Doe', got '%s'", b1.autor())
+		t.Errorf("b1.autor() = '%s', erwartet 'Jane Doe'", b1.autor())
 	}
 
 	b2 := &marcBibDaten{
 		extrahierteAutoren: []string{"John Doe"},
 	}
 	if b2.autor() != "John Doe" {
-		t.Errorf("Expected 'John Doe', got '%s'", b2.autor())
+		t.Errorf("b2.autor() = '%s', erwartet 'John Doe'", b2.autor())
 	}
 
 	b3 := &marcBibDaten{
@@ -133,14 +133,14 @@ func TestAutorUndTitel(t *testing.T) {
 		extrahierteAutoren: []string{"John Doe"},
 	}
 	if b3.autor() != "Jane Doe (John Doe)" {
-		t.Errorf("Expected 'Jane Doe (John Doe)', got '%s'", b3.autor())
+		t.Errorf("b3.autor() = '%s', erwartet 'Jane Doe (John Doe)'", b3.autor())
 	}
 
 	b4 := &marcBibDaten{
 		titelTeile: []string{"Part 1", "Part 2"},
 	}
 	if b4.titel() != "Part 1 Part 2" {
-		t.Errorf("Expected 'Part 1 Part 2', got '%s'", b4.titel())
+		t.Errorf("b4.titel() = '%s', erwartet 'Part 1 Part 2'", b4.titel())
 	}
 }
 

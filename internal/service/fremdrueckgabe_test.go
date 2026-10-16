@@ -53,10 +53,10 @@ func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
 	}
 
 	if res.Art != "rueckgabe" {
-		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Art)
+		t.Errorf("verarbeiteFremdrueckgabe(…): Art = %s, erwartet rueckgabe", res.Art)
 	}
 	if res.Vorbesitzer == nil || res.Vorbesitzer.ID != "s1" {
-		t.Errorf("expected res.Vorbesitzer to be s1")
+		t.Errorf("verarbeiteFremdrueckgabe(…).Vorbesitzer = %v, erwartet s1", res.Vorbesitzer)
 	}
 
 	if err := mockPool.ExpectationsWereMet(); err != nil {
@@ -101,7 +101,7 @@ func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 	}
 
 	if res.Art != "rueckgabe" {
-		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Art)
+		t.Errorf("verarbeiteFremdrueckgabe(…): Art = %s, erwartet rueckgabe", res.Art)
 	}
 	if res.Vorbesitzer == nil || res.Vorbesitzer.ID != "t1" {
 		t.Errorf("der Kollege muss als Vorbesitzer in der Antwort stehen, bekam: %+v", res.Vorbesitzer)
@@ -140,10 +140,10 @@ func TestVerarbeiteFremdrueckgabe_RueckgabeFehler(t *testing.T) {
 	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, exemplar, activeLoan, "staff1", resp)
 
 	if err == nil {
-		t.Fatalf("expected error, got nil")
+		t.Fatalf("verarbeiteFremdrueckgabe(…) = nil, erwartet einen Fehler")
 	}
 	if res != nil {
-		t.Errorf("expected res to be nil, got %v", res)
+		t.Errorf("verarbeiteFremdrueckgabe(…) = %v, erwartet nil", res)
 	}
 }
 
@@ -176,10 +176,10 @@ func TestVerarbeiteFremdrueckgabe_CommitFehler(t *testing.T) {
 	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, exemplar, activeLoan, "staff1", resp)
 
 	if err == nil {
-		t.Fatalf("expected commit error, got nil")
+		t.Fatalf("verarbeiteFremdrueckgabe(…) = nil, erwartet den Fehler des Commits")
 	}
 	if res != nil {
-		t.Errorf("expected res to be nil, got %v", res)
+		t.Errorf("verarbeiteFremdrueckgabe(…) = %v, erwartet nil", res)
 	}
 
 	if err := mockPool.ExpectationsWereMet(); err != nil {

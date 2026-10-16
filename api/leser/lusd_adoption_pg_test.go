@@ -45,7 +45,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 		t.Fatalf("Vorschau: %v", err)
 	}
 	if len(prev.Adoptionen) != 1 {
-		t.Fatalf("erwartet 1 Adoption, waren %d (Neuzugaenge: %d)", len(prev.Adoptionen), len(prev.Neuzugaenge))
+		t.Fatalf("len(prev.Adoptionen) = %d, erwartet 1 Adoption (Neuzugaenge: %d)", len(prev.Adoptionen), len(prev.Neuzugaenge))
 	}
 	if prev.Adoptionen[0].SchuelerID != waiseID || prev.Adoptionen[0].LUSDID != "LUSD-ADOPT-1" {
 		t.Errorf("Adoption falsch: %+v", prev.Adoptionen[0])
@@ -54,7 +54,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 		t.Errorf("Geburtsdatum falsch: %q", prev.Adoptionen[0].Geburtsdatum)
 	}
 	if len(prev.Neuzugaenge) != 0 {
-		t.Errorf("keine Neuzugänge erwartet, waren %d", len(prev.Neuzugaenge))
+		t.Errorf("len(prev.Neuzugaenge) = %d, erwartet keine Neuzugänge", len(prev.Neuzugaenge))
 	}
 
 	// Anwenden: derselbe Datensatz bekommt die LUSD-ID + neue Klasse, kein Duplikat.
@@ -67,7 +67,7 @@ func TestLUSDZuordnung_AdoptiertWaiseStattDuplikat(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Fatalf("erwartet 1 Datensatz (adoptiert, nicht dupliziert), waren %d", anzahl)
+		t.Fatalf("anzahl = %d, erwartet 1 Datensatz (adoptiert, nicht dupliziert)", anzahl)
 	}
 	var lusd, klasse string
 	if err := pool.QueryRow(ctx,
@@ -106,7 +106,7 @@ func TestLUSDZuordnung_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 		t.Errorf("ohne Geburtsdatum darf nicht adoptiert werden, waren %d Adoptionen", len(prev.Adoptionen))
 	}
 	if len(prev.Neuzugaenge) != 1 {
-		t.Errorf("erwartet 1 Neuzugang, waren %d", len(prev.Neuzugaenge))
+		t.Errorf("len(prev.Neuzugaenge) = %d, erwartet 1 Neuzugang", len(prev.Neuzugaenge))
 	}
 }
 
@@ -144,6 +144,6 @@ func TestLUSDZuordnung_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
 		t.Errorf("der eine verbliebene Schüler muss eindeutig adoptiert werden, waren %d Adoptionen", len(prev.Adoptionen))
 	}
 	if len(prev.Neuzugaenge) != 0 {
-		t.Errorf("erwartet 0 Neuzugänge, waren %d", len(prev.Neuzugaenge))
+		t.Errorf("len(prev.Neuzugaenge) = %d, erwartet 0 Neuzugänge", len(prev.Neuzugaenge))
 	}
 }

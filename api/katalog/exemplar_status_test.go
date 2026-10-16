@@ -77,7 +77,7 @@ func TestExemplarStatusAendern_AussondernFuehrtGrundMit(t *testing.T) {
 	rec := sendeExemplarStatus(t, handler, `{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"Wasserschaden"}`)
 
 	if rec.Code != http.StatusOK {
-		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Aussondern schreibt aussonderung_grund nicht mit: %v", err)
@@ -95,7 +95,7 @@ func TestExemplarStatusAendern_ReaktivierenLoeschtGrund(t *testing.T) {
 	rec := sendeExemplarStatus(t, handler, `{"ist_ausleihbar":true,"ist_ausgesondert":true,"zustand_notiz":"war mal Verlust"}`)
 
 	if rec.Code != http.StatusOK {
-		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Reaktivieren räumt aussonderung_grund nicht: %v", err)
@@ -122,7 +122,7 @@ func TestExemplarStatusAendern_BeschaedigungsgradWirdGeschrieben(t *testing.T) {
 		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"Wasserrand, lesbar","zustand_abwertung_prozent":20}`)
 
 	if rec.Code != http.StatusOK {
-		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("der Beschädigungsgrad kommt nicht an der Spalte an: %v", err)
@@ -141,7 +141,7 @@ func TestExemplarStatusAendern_OhneFeldBleibtDerGradUnangetastet(t *testing.T) {
 		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"gesperrt"}`)
 
 	if rec.Code != http.StatusOK {
-		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("ein fehlendes Feld kommt nicht als nil an — dann ist es eine stille 0: %v", err)
@@ -161,7 +161,7 @@ func TestExemplarStatusAendern_VerfuegbarBehaeltDenBeschaedigungsgrad(t *testing
 		`{"ist_ausleihbar":true,"ist_ausgesondert":false,"zustand_notiz":"Wasserrand","zustand_abwertung_prozent":30}`)
 
 	if rec.Code != http.StatusOK {
-		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Freigeben räumt den Beschädigungsgrad — er ist eine Eigenschaft des "+

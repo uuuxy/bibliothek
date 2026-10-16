@@ -26,7 +26,7 @@ func TestDekodiereLitteraEtikett(t *testing.T) {
 	for _, f := range faelle {
 		nummer, ok := dekodiereLitteraEtikett(f.scan)
 		if ok != f.ok || nummer != f.nummer {
-			t.Errorf("%s (%q): got (%q, %v), erwartet (%q, %v)", f.grund, f.scan, nummer, ok, f.nummer, f.ok)
+			t.Errorf("%s (%q) = (%q, %v), erwartet (%q, %v)", f.grund, f.scan, nummer, ok, f.nummer, f.ok)
 		}
 	}
 }

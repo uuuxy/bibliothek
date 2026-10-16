@@ -76,7 +76,7 @@ func TestAbgaengerJahrAm(t *testing.T) {
 	}
 	for _, f := range faelle {
 		if got := repository.AbgaengerJahrAm(f.klasse, f.jetzt); got != f.want {
-			t.Errorf("%s am %s = %d, want %d", f.klasse, f.jetzt.Format("2006-01"), got, f.want)
+			t.Errorf("%s am %s = %d, erwartet %d", f.klasse, f.jetzt.Format("2006-01"), got, f.want)
 		}
 	}
 }

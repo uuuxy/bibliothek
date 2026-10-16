@@ -44,8 +44,7 @@ func TestLUSDZuordnung_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 		t.Fatalf("Vorschau: %v", err)
 	}
 	if len(prev.Adoptionen) != 1 || len(prev.Neuzugaenge) != 0 {
-		t.Fatalf("erwartet 1 Adoption und 0 Neuzugänge, waren %d Adoptionen / %d Neuzugänge",
-			len(prev.Adoptionen), len(prev.Neuzugaenge))
+		t.Fatalf("berechneLUSDAenderungen(…) = %d Adoptionen, %d Neuzugänge, erwartet 1 und 0", len(prev.Adoptionen), len(prev.Neuzugaenge))
 	}
 
 	if _, err := s.berechneLUSDAenderungen(ctx, []lusd.Zeile{rec}, true, true); err != nil {
@@ -57,7 +56,7 @@ func TestLUSDZuordnung_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Fatalf("erwartet 1 Datensatz (adoptiert), waren %d — der Littera-Schüler wurde dupliziert", anzahl)
+		t.Fatalf("anzahl = %d, erwartet 1 Datensatz (adoptiert) — der Littera-Schüler wurde dupliziert", anzahl)
 	}
 	var lusd, klasse string
 	if err := pool.QueryRow(ctx,

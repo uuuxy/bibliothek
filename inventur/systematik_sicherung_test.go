@@ -35,7 +35,7 @@ func TestStelleFaecherSicher_Bekannt(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if ergebnis["Deutsch"] != "Deutsch" {
-		t.Errorf("erwartet Deutsch, bekommen %q", ergebnis["Deutsch"])
+		t.Errorf("StelleFaecherSicher(…)[\"Deutsch\"] = %q, erwartet Deutsch", ergebnis["Deutsch"])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -69,7 +69,7 @@ func TestStelleFaecherSicher_UnbekanntNeu(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if ergebnis["Neues Fach"] != "Neues Fach" {
-		t.Errorf("erwartet Neues Fach, bekommen %q", ergebnis["Neues Fach"])
+		t.Errorf("StelleFaecherSicher(…)[\"Neues Fach\"] = %q, erwartet Neues Fach", ergebnis["Neues Fach"])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -112,7 +112,7 @@ func TestStelleFaecherSicher_KuerzelKollision(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if ergebnis["Mathe"] != "Mathe" {
-		t.Errorf("erwartet Mathe, bekommen %q", ergebnis["Mathe"])
+		t.Errorf("StelleFaecherSicher(…)[\"Mathe\"] = %q, erwartet Mathe", ergebnis["Mathe"])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -147,7 +147,7 @@ func TestStelleFaecherSicher_Mehrere(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if len(ergebnis) != 2 {
-		t.Errorf("erwartet 2 Einträge, bekommen %d", len(ergebnis))
+		t.Errorf("len(ergebnis) = %d, erwartet 2 Einträge", len(ergebnis))
 	}
 	if ergebnis["Deutsch"] != "Deutsch" || ergebnis["Neues Fach"] != "Neues Fach" {
 		t.Errorf("falsche Werte in map: %v", ergebnis)

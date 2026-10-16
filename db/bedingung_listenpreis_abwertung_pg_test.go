@@ -72,7 +72,7 @@ func TestListenpreisUndAbwertungImWertebereich(t *testing.T) {
 				t.Fatalf("Exemplar ohne Abwertung anlegen: %v", err)
 			}
 			if prozent != 0 {
-				t.Errorf("zustand_abwertung_prozent = %d, want 0", prozent)
+				t.Errorf("zustand_abwertung_prozent = %d, erwartet 0", prozent)
 			}
 		})
 	})

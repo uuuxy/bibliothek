@@ -16,7 +16,7 @@ func TestLeseDatei_OhneIDSpalteIstNamensmodus(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if datei.Modus != ModusName || datei.Modus.String() != "name_geburtsdatum" {
-		t.Fatalf("erwartet Namensmodus, war %v", datei.Modus)
+		t.Fatalf("datei.Modus = %v, erwartet Namensmodus", datei.Modus)
 	}
 	if len(datei.Zeilen) != 2 || datei.Zeilen[0].Geburtsdatum == nil || datei.Zeilen[1].Geburtsdatum == nil {
 		t.Fatalf("Zeilen/Geburtsdaten falsch: %+v", datei.Zeilen)
@@ -34,7 +34,7 @@ func TestLeseDatei_LeereIDSpalteIstNamensmodus(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if datei.Modus != ModusName {
-		t.Fatalf("erwartet Namensmodus bei leerer ID-Spalte, war %v", datei.Modus)
+		t.Fatalf("datei.Modus = %v, erwartet Namensmodus bei leerer ID-Spalte", datei.Modus)
 	}
 }
 
@@ -47,7 +47,7 @@ func TestLeseDatei_EineIDReichtFuerIDModus(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if datei.Modus != ModusID || len(datei.Zeilen) != 2 {
-		t.Fatalf("erwartet ID-Modus mit 2 Zeilen, war %v / %d", datei.Modus, len(datei.Zeilen))
+		t.Fatalf("LeseDatei(csv) = Modus %v mit %d Zeilen, erwartet ID-Modus mit 2 Zeilen", datei.Modus, len(datei.Zeilen))
 	}
 }
 
@@ -60,7 +60,7 @@ func TestLeseDatei_LanisKlassenlisteIstNurNameModus(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if datei.Modus != ModusNurName || datei.Modus.String() != "name" {
-		t.Fatalf("erwartet Nur-Name-Modus, war %v", datei.Modus)
+		t.Fatalf("datei.Modus = %v, erwartet Nur-Name-Modus", datei.Modus)
 	}
 	if len(datei.Zeilen) != 2 || datei.Zeilen[0].Nachname != "Mustermann" || datei.Zeilen[0].Klasse != "05G1" {
 		t.Fatalf("Zeilen falsch: %+v", datei.Zeilen)
@@ -106,7 +106,7 @@ func TestLeseDatei_NamensmodusDublettenLetzteGewinnt(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if len(datei.Zeilen) != 2 || datei.DublettenInDatei != 1 {
-		t.Fatalf("erwartet 2 Zeilen und 1 Dublette, waren %d / %d", len(datei.Zeilen), datei.DublettenInDatei)
+		t.Fatalf("LeseDatei(csv) = %d Zeilen, %d Dubletten, erwartet 2 Zeilen und 1 Dublette", len(datei.Zeilen), datei.DublettenInDatei)
 	}
 	if datei.Zeilen[0].Klasse != "6a" || datei.Zeilen[1].Nachname != "Beispiel" {
 		t.Errorf("letzte Zeile muss an erster Position gewinnen: %+v", datei.Zeilen)
@@ -115,7 +115,7 @@ func TestLeseDatei_NamensmodusDublettenLetzteGewinnt(t *testing.T) {
 	// Ein Schulformwechsler, oder zwei Kinder mit demselben Namen und einem Tippfehler im
 	// Geburtsdatum. Eine bloße Zahl („1 zusammengelegt") verschwieg, wer zusammenfiel.
 	if len(datei.Zusammengelegt) != 1 {
-		t.Fatalf("erwartet 1 zusammengelegte Zeile mit abweichender Klasse, waren %d: %+v", len(datei.Zusammengelegt), datei.Zusammengelegt)
+		t.Fatalf("len(datei.Zusammengelegt) = %d, erwartet 1 zusammengelegte Zeile mit abweichender Klasse: %+v", len(datei.Zusammengelegt), datei.Zusammengelegt)
 	}
 	if z := datei.Zusammengelegt[0]; z.ID != "zeile-4" || z.Nachname != "MUSTERMANN" || z.AlteKlasse != "5a" || z.NeueKlasse != "6a" {
 		t.Errorf("Vorschau-Eintrag nennt nicht Zeile, Namen und beide Klassen: %+v", z)

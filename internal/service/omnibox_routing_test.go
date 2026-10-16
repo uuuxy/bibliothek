@@ -53,7 +53,7 @@ func TestVerarbeiteEingabe_AusweisOhnePraefix(t *testing.T) {
 		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
 	if res.Art != "student" || res.Leser == nil || res.Leser.ID != "s1" {
-		t.Fatalf("Ausweisnummer ohne Präfix muss den Schüler öffnen, got Type=%q Student=%v", res.Art, res.Leser)
+		t.Fatalf("VerarbeiteEingabe(20240001737) = Art %q, Leser %v, erwartet den Schüler s1", res.Art, res.Leser)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
 	if res.Art != "search_results" {
-		t.Fatalf("unbekannte Eingabe muss in der Suche landen, got Type=%q", res.Art)
+		t.Fatalf("VerarbeiteEingabe(gibtesnicht) = Art %q, erwartet die Suche", res.Art)
 	}
 }
 
@@ -102,7 +102,7 @@ func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
 		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
 	if res.Art != "student" || res.Leser == nil || res.Leser.ID != "l1" {
-		t.Fatalf("Auswahl aus der Trefferliste muss den Leser öffnen, got Type=%q Student=%v", res.Art, res.Leser)
+		t.Fatalf("VerarbeiteEingabe(leser:l1) = Art %q, Leser %v, erwartet den Leser l1", res.Art, res.Leser)
 	}
 }
 

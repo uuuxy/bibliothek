@@ -35,7 +35,7 @@ func TestLeseMappe_AbsturzDerBibliothekWirdEinFehler(t *testing.T) {
 		panic("index out of range [-1]")
 	})
 	if !errors.Is(err, errMappeBeschaedigt) {
-		t.Fatalf("erwartet errMappeBeschaedigt, war %v", err)
+		t.Fatalf("LeseMappe(…) = %v, erwartet errMappeBeschaedigt", err)
 	}
 	if !IstUnlesbar(err) {
 		t.Fatalf("IstUnlesbar muss den abgefangenen Absturz als unlesbare Datei einordnen")
@@ -52,7 +52,7 @@ func TestLeseMappe_OleContainerWirdVorExcelizeAbgewiesen(t *testing.T) {
 		return nil, nil
 	})
 	if !errors.Is(err, errMappeVerschluesselt) {
-		t.Fatalf("erwartet errMappeVerschluesselt, war %v", err)
+		t.Fatalf("LeseMappe(…) = %v, erwartet errMappeVerschluesselt", err)
 	}
 }
 
@@ -62,7 +62,7 @@ func TestLeseMappe_KaputtesZipIstBeschaedigtNichtFehler500(t *testing.T) {
 		return nil, nil
 	})
 	if !errors.Is(err, errMappeBeschaedigt) {
-		t.Fatalf("erwartet errMappeBeschaedigt, war %v", err)
+		t.Fatalf("LeseMappe(…) = %v, erwartet errMappeBeschaedigt", err)
 	}
 }
 

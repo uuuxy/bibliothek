@@ -16,7 +16,7 @@ func TestConstantsValues(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			if f.actual != f.expected {
-				t.Errorf("expected %q, got %q", f.expected, f.actual)
+				t.Errorf("%s = %q, erwartet %q", f.name, f.actual, f.expected)
 			}
 		})
 	}

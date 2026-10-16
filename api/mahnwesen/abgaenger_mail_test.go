@@ -40,13 +40,13 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 	t.Run("nil = alle Klassen", func(t *testing.T) {
 		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, nil)
 		if len(gewaehlt) != 2 || unbekannt != nil {
-			t.Fatalf("gewaehlt=%d unbekannt=%v, want 2 und nil", len(gewaehlt), unbekannt)
+			t.Fatalf("gewaehlt=%d unbekannt=%v, erwartet 2 und nil", len(gewaehlt), unbekannt)
 		}
 		if len(gewaehlt[0].Eintraege) != 2 || gewaehlt[0].Klasse != "5a" {
-			t.Fatalf("5a = %+v, want zwei Abgänger", gewaehlt[0])
+			t.Fatalf("5a = %+v, erwartet zwei Abgänger", gewaehlt[0])
 		}
 		if gewaehlt[0].Empfaenger != "lehrer5a@schule.de" {
-			t.Fatalf("Empfänger = %q, want lehrer5a@schule.de", gewaehlt[0].Empfaenger)
+			t.Fatalf("Empfänger = %q, erwartet lehrer5a@schule.de", gewaehlt[0].Empfaenger)
 		}
 	})
 
@@ -54,10 +54,10 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 		auswahl := []string{"6c", "05A"}
 		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, &auswahl)
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "6c" {
-			t.Fatalf("gewaehlt = %+v, want genau [6c]", gewaehlt)
+			t.Fatalf("gewaehlt = %+v, erwartet genau [6c]", gewaehlt)
 		}
 		if len(unbekannt) != 1 || unbekannt[0] != "05A" {
-			t.Fatalf("unbekannt = %v, want [05A] — ein Format-Versatz darf nicht still verpuffen", unbekannt)
+			t.Fatalf("unbekannt = %v, erwartet [05A] — ein Format-Versatz darf nicht still verpuffen", unbekannt)
 		}
 	})
 
@@ -65,7 +65,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 		auswahl := []string{"5a", "5a"}
 		gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, &auswahl)
 		if len(gewaehlt) != 1 {
-			t.Fatalf("gewaehlt = %d, want 1 — sonst bekommt die Klassenleitung zwei Mails", len(gewaehlt))
+			t.Fatalf("gewaehlt = %d, erwartet 1 — sonst bekommt die Klassenleitung zwei Mails", len(gewaehlt))
 		}
 	})
 
@@ -73,7 +73,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 		gewaehlt, _ := waehleAbgaengerKlassen(eintraege, map[string]string{}, nil)
 		for _, k := range gewaehlt {
 			if k.Empfaenger != "" {
-				t.Fatalf("Empfänger = %q, want leer (kein Mapping vorhanden)", k.Empfaenger)
+				t.Fatalf("Empfänger = %q, erwartet leer (kein Mapping vorhanden)", k.Empfaenger)
 			}
 		}
 	})
@@ -92,13 +92,13 @@ func TestVersendeAbgaengerKontoauszuege_EinPDFJeSchueler(t *testing.T) {
 		func(_ context.Context, m mailservice.Nachricht) error { mails = append(mails, m); return nil })
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
-		t.Fatalf("%+v, want sent=1", erg)
+		t.Fatalf("%+v, erwartet sent=1", erg)
 	}
 	if len(mails) != 1 {
-		t.Fatalf("%d Mails, want genau 1 je Klasse", len(mails))
+		t.Fatalf("%d Mails, erwartet genau 1 je Klasse", len(mails))
 	}
 	if len(mails[0].Anhaenge) != 2 {
-		t.Fatalf("%d Anhänge, want 2 (ein PDF je Schüler)", len(mails[0].Anhaenge))
+		t.Fatalf("%d Anhänge, erwartet 2 (ein PDF je Schüler)", len(mails[0].Anhaenge))
 	}
 	if mails[0].Anhaenge[0].Name != "Kontoauszug_Max_Mustermann.pdf" {
 		t.Fatalf("Anhangname = %q — Leerzeichen im Namen machen den Anhang unhandlich", mails[0].Anhaenge[0].Name)
@@ -124,10 +124,10 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 		})
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
-		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
+		t.Fatalf("sent=%d skipped=%d failed=%d, erwartet 1/2/0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
 	}
 	if len(empfaenger) != 1 || empfaenger[0] != "lehrer5a@schule.de" {
-		t.Fatalf("Empfänger = %v, want nur lehrer5a@schule.de", empfaenger)
+		t.Fatalf("Empfänger = %v, erwartet nur lehrer5a@schule.de", empfaenger)
 	}
 }
 
@@ -152,10 +152,10 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPDFScheitert(t *testing.T) {
 	}}, kaputt, sammeln)
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
-		t.Fatalf("%+v, want sent=1 — ein kaputtes PDF darf die Klasse nicht blockieren", erg)
+		t.Fatalf("%+v, erwartet sent=1 — ein kaputtes PDF darf die Klasse nicht blockieren", erg)
 	}
 	if len(mails[0].Anhaenge) != 1 {
-		t.Fatalf("%d Anhänge, want 1 (nur der heile Kontoauszug)", len(mails[0].Anhaenge))
+		t.Fatalf("%d Anhänge, erwartet 1 (nur der heile Kontoauszug)", len(mails[0].Anhaenge))
 	}
 
 	mails = nil
@@ -166,10 +166,10 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPDFScheitert(t *testing.T) {
 	}}, kaputt, sammeln)
 
 	if erg.Versendet != 0 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 1 {
-		t.Fatalf("%+v, want failed=1 — alle PDFs kaputt ist ein Problem, keine Absicht; und ohne Anhang keine leere Mail", erg)
+		t.Fatalf("%+v, erwartet failed=1 — alle PDFs kaputt ist ein Problem, keine Absicht; und ohne Anhang keine leere Mail", erg)
 	}
 	if len(mails) != 0 {
-		t.Fatalf("%d Mails verschickt, want 0 — eine Mail ohne Kontoauszug ist nur Rauschen", len(mails))
+		t.Fatalf("%d Mails verschickt, erwartet 0 — eine Mail ohne Kontoauszug ist nur Rauschen", len(mails))
 	}
 }
 
@@ -184,7 +184,7 @@ func TestLenkeAbgaengerUm(t *testing.T) {
 
 	for _, k := range umgelenkt {
 		if k.Empfaenger != "sekretariat@schule.de" {
-			t.Fatalf("Klasse %s → %q, want sekretariat@schule.de", k.Klasse, k.Empfaenger)
+			t.Fatalf("Klasse %s → %q, erwartet sekretariat@schule.de", k.Klasse, k.Empfaenger)
 		}
 	}
 	if original[0].Empfaenger != "lehrer5a@schule.de" {
@@ -206,7 +206,7 @@ func TestAbgaengerKontoauszuegeVersenden_LeereAuswahlOhneDBZugriff(t *testing.T)
 	server.AbgaengerKontoauszuegeVersenden()(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unerwarteter DB-Zugriff: %v", err)
@@ -226,7 +226,7 @@ func TestWaehleAbgaengerKlassen_SchreibweiseDerKlassenleitungEgal(t *testing.T) 
 	gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, nil)
 
 	if len(gewaehlt) != 1 || gewaehlt[0].Empfaenger != "nberger@philipp-reis-schule.de" {
-		t.Fatalf("Empfänger = %q, want nberger@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)
+		t.Fatalf("Empfänger = %q, erwartet nberger@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)
 	}
 }
 
@@ -248,7 +248,7 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 			return nil
 		})
 	if erg.Versendet != 1 || erg.Fehlgeschlagen != 1 || erg.Abgebrochen {
-		t.Fatalf("%+v, want sent=1 failed=1 ohne Abbruch", erg)
+		t.Fatalf("%+v, erwartet sent=1 failed=1 ohne Abbruch", erg)
 	}
 
 	// Totes Relay (ErrSMTPVersand): Abbruch, die restlichen zählen als fehlgeschlagen.
@@ -257,7 +257,7 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 			return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
 		})
 	if !erg.Abgebrochen || erg.Fehlgeschlagen != 2 || erg.Versendet != 0 {
-		t.Fatalf("%+v, want Abbruch mit failed=2", erg)
+		t.Fatalf("%+v, erwartet Abbruch mit failed=2", erg)
 	}
 }
 

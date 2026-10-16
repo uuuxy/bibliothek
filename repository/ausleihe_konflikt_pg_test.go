@@ -60,7 +60,7 @@ func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 		t.Fatal("zweite Ausleihe meldete KEINEN Fehler — genau der stille Datenverlust")
 	}
 	if !errors.Is(err, ErrAusleiheKonflikt) {
-		t.Errorf("erwartet ErrAusleiheKonflikt, war: %v", err)
+		t.Errorf("repo.LegeAn(…) = %v, erwartet ErrAusleiheKonflikt", err)
 	}
 }
 

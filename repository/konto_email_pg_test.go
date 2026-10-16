@@ -39,7 +39,7 @@ func TestIstEmailVergeben_IgnoriertGrossKleinschreibung(t *testing.T) {
 	}
 	// Die eigene Adresse in anderer Schreibweise ist beim Bearbeiten kein Konflikt.
 	if gibt, err := repo.IstEmailVergeben(ctx, "Erika.Muster@schule.example", id); err != nil || gibt {
-		t.Errorf("eigene Adresse in anderer Schreibweise: vergeben=%v err=%v, want false", gibt, err)
+		t.Errorf("eigene Adresse in anderer Schreibweise: vergeben=%v err=%v, erwartet false", gibt, err)
 	}
 	// Die zweite Sicherung ist die Datenbank selbst (Index uniq_benutzer_email_lower).
 	if _, err := pool.Exec(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)

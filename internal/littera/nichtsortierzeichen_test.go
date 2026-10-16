@@ -32,7 +32,7 @@ func TestLeseTitel_OhneNichtsortierzeichen(t *testing.T) {
 				t.Fatalf("Titel lesen: %v", err)
 			}
 			if len(titel) != 1 {
-				t.Fatalf("ein Titel erwartet, waren %d", len(titel))
+				t.Fatalf("len(titel) = %d, erwartet ein Titel", len(titel))
 			}
 			if titel[0].Haupttitel != f.titel {
 				t.Errorf("Haupttitel: erwartet %q, war %q", f.titel, titel[0].Haupttitel)
@@ -55,7 +55,7 @@ func TestLeseTitel_NurNichtsortierzeichenIstLeer(t *testing.T) {
 		t.Fatalf("Titel lesen: %v", err)
 	}
 	if len(titel) != 1 || titel[0].Haupttitel != "" {
-		t.Errorf("leerer Haupttitel erwartet, war %+v", titel)
+		t.Errorf("leseTitel(…) = %+v, erwartet leerer Haupttitel", titel)
 	}
 }
 

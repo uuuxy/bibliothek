@@ -85,7 +85,7 @@ func TestLUSDAenderungen_MassenabgangHaeltVorJedemSchreiben(t *testing.T) {
 	_, err = s.berechneLUSDAenderungen(t.Context(), records, true, false)
 	var massErr *lusd.MassenabgangFehler
 	if !errors.As(err, &massErr) {
-		t.Fatalf("erwartet lusd.MassenabgangFehler, bekam: %v", err)
+		t.Fatalf("s.berechneLUSDAenderungen(…) = %v, erwartet lusd.MassenabgangFehler", err)
 	}
 	if massErr.Abgaenger != 8 || massErr.Aktive != 10 {
 		t.Errorf("Zahlen falsch: %+v", massErr)

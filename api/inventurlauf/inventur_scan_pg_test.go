@@ -190,7 +190,7 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := inventurScan(t, srv, tt.laufID, tt.barcode)
 			if rec.Code != tt.wantCode {
-				t.Errorf("erwartet %d, war %d: %s", tt.wantCode, rec.Code, rec.Body.String())
+				t.Errorf("rec.Code = %d, erwartet %d: %s", rec.Code, tt.wantCode, rec.Body.String())
 			}
 			if tt.wantStatus != "" {
 				var payload scanAntwort
@@ -199,7 +199,7 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 						t.Errorf("Status: erwartet %q, war %q", tt.wantStatus, payload.Status)
 					}
 					if tt.name == "Ausgeliehenes Exemplar (Warnung aber OK)" && len(payload.Warnungen) == 0 {
-						t.Errorf("Erwartet Warnung für ausgeliehenes Buch, bekam keine")
+						t.Errorf("Scan eines ausgeliehenen Buchs ohne Warnung")
 					}
 				}
 			}

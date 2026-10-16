@@ -70,7 +70,7 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.TitelLernmittelSetzen()(rec, req)
 	if rec.Code != http.StatusNotFound {
-		t.Errorf("Status %d, want 404", rec.Code)
+		t.Errorf("Status %d, erwartet 404", rec.Code)
 	}
 }
 

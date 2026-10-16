@@ -42,7 +42,7 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 		t.Fatalf("LadeBestellbedarf: unerwarteter Fehler: %v", err)
 	}
 	if len(results) != 1 {
-		t.Fatalf("erwartet 1 Treffer, waren %d", len(results))
+		t.Fatalf("len(results) = %d, erwartet 1 Treffer", len(results))
 	}
 
 	got := results[0]
@@ -85,7 +85,7 @@ func TestBestellbedarfFilterVorgabeIstLMF(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/api/bestellungen"+f.query, nil)
 			if got := bestellbedarfFilter(r); got != f.wantFragment {
-				t.Errorf("erwartet %q, war %q", f.wantFragment, got)
+				t.Errorf("bestellbedarfFilter(r) = %q, erwartet %q", got, f.wantFragment)
 			}
 		})
 	}
@@ -114,7 +114,7 @@ func TestBestellbedarfLeereListeIstArray(t *testing.T) {
 	server.Bestellbedarf().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
 
 	if body := strings.TrimSpace(rec.Body.String()); body != "[]" {
-		t.Errorf("erwartet [], war: %s", body)
+		t.Errorf("strings.TrimSpace(rec.Body.String()) = %s, erwartet []", body)
 	}
 }
 
@@ -136,7 +136,7 @@ func TestNachbestellmenge(t *testing.T) {
 	for name, f := range faelle {
 		t.Run(name, func(t *testing.T) {
 			if got := nachbestellmenge(f.schwelle, f.gesamt); got != f.want {
-				t.Errorf("nachbestellmenge(%d, %d) = %d, want %d", f.schwelle, f.gesamt, got, f.want)
+				t.Errorf("nachbestellmenge(%d, %d) = %d, erwartet %d", f.schwelle, f.gesamt, got, f.want)
 			}
 			if got := nachbestellmenge(f.schwelle, f.gesamt); got < 0 {
 				t.Errorf("negative Bestellmenge auf der Händler-Liste: %d", got)

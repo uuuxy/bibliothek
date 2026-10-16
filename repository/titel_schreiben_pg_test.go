@@ -43,17 +43,17 @@ func TestSchreibeTitel_LeereFelderUeberschreibenBestandNicht(t *testing.T) {
 	}
 
 	if autor != "Fontane, Theodor" {
-		t.Errorf("autor = %q, will von leerem Reimport nicht überschrieben werden — want %q", autor, "Fontane, Theodor")
+		t.Errorf("autor = %q, will von leerem Reimport nicht überschrieben werden — erwartet %q", autor, "Fontane, Theodor")
 	}
 	if verlag != "Reclam" {
-		t.Errorf("verlag = %q, will von leerem Reimport nicht überschrieben werden — want %q", verlag, "Reclam")
+		t.Errorf("verlag = %q, will von leerem Reimport nicht überschrieben werden — erwartet %q", verlag, "Reclam")
 	}
 	if jahr == nil || *jahr != 2001 {
-		t.Errorf("erscheinungsjahr = %v, will von jahr=0 im Reimport nicht auf NULL gesetzt werden — want 2001", jahr)
+		t.Errorf("erscheinungsjahr = %v, will von jahr=0 im Reimport nicht auf NULL gesetzt werden — erwartet 2001", jahr)
 	}
 	// Die Signatur darf sich ändern — Reimport bringt hier bewusst einen neuen Wert.
 	if signatur != "Pg" {
-		t.Errorf("signatur = %q, want %q (neuer Wert aus dem Reimport)", signatur, "Pg")
+		t.Errorf("signatur = %q, erwartet %q (neuer Wert aus dem Reimport)", signatur, "Pg")
 	}
 }
 

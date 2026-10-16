@@ -96,7 +96,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 		// Eine Leserzeile: Der Wächter trg_benutzer_hat_leserzeile darf keine zweite
 		// angelegt haben — genau der Doppeleintrag, den das hier verhindern soll.
 		if n := zaehleLeser(t, pool, "Altbestand"); n != 1 {
-			t.Fatalf("erwartet genau eine Leserzeile, gefunden: %d", n)
+			t.Fatalf("zaehleLeser(…, \"Altbestand\") = %d, erwartet genau 1", n)
 		}
 	})
 
@@ -114,7 +114,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 			t.Fatalf("Konten zählen: %v", err)
 		}
 		if n != 1 {
-			t.Fatalf("erwartet genau ein Konto, gefunden: %d", n)
+			t.Fatalf("Konten des Lesers = %d, erwartet genau 1", n)
 		}
 	})
 
@@ -274,7 +274,7 @@ func TestAusweisnummerLeeren(t *testing.T) {
 			t.Fatalf("Ausweisnummer lesen: %v", err)
 		}
 		if nummer == nil || !strings.HasPrefix(*nummer, "A-") || *nummer == "A-TIPPKONTO" {
-			t.Fatalf("erwartet eine neue Nummer aus dem Generator, steht: %v", nummer)
+			t.Fatalf("barcode_id = %v, erwartet eine neue Nummer aus dem Generator", nummer)
 		}
 	})
 

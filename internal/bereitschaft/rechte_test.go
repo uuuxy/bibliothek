@@ -23,7 +23,7 @@ func TestBetriebsbereitschaft_OptionalesRechtIstKeineDrift(t *testing.T) {
 		delete(l.RechteLive["HELFER"], "manage_vormerkungen")
 		b := befundZu(t, Pruefe(l), "Rechte-Vorgabe")
 		if b.Stufe != StufeWarnung || !strings.Contains(b.Befund+b.Folge, "HELFER/manage_vormerkungen fehlt live") {
-			t.Errorf("fehlende optionale Zeile muss warnen, got %q: %s", b.Stufe, b.Befund)
+			t.Errorf("Befund Rechte-Vorgabe = %q: %s, erwartet eine Warnung über die fehlende optionale Zeile", b.Stufe, b.Befund)
 		}
 	})
 }

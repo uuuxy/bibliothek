@@ -23,7 +23,7 @@ func TestFuehreAus_OhneDateiIstEinFehlerVorJederVerbindung(t *testing.T) {
 	var out bytes.Buffer
 	err := fuehreAus(nil, keineUmgebung, &out)
 	if err == nil || !strings.Contains(err.Error(), "-file") {
-		t.Fatalf("erwartet den Hinweis auf -file, bekam %v", err)
+		t.Fatalf("fuehreAus(nil, keineUmgebung, &out) = %v, erwartet den Hinweis auf -file", err)
 	}
 }
 
@@ -31,7 +31,7 @@ func TestFuehreAus_OhneDatenbankIstEinFehler(t *testing.T) {
 	var out bytes.Buffer
 	err := fuehreAus([]string{"-file", "egal.xml"}, keineUmgebung, &out)
 	if err == nil || !strings.Contains(err.Error(), "DATABASE_URL") {
-		t.Fatalf("erwartet den Hinweis auf DATABASE_URL, bekam %v", err)
+		t.Fatalf("fuehreAus(…) = %v, erwartet den Hinweis auf DATABASE_URL", err)
 	}
 }
 
@@ -44,7 +44,7 @@ func TestFuehreAus_FehlendeDateiScheitertVorDerDatenbank(t *testing.T) {
 	var out bytes.Buffer
 	err := fuehreAus([]string{"-file", filepath.Join(t.TempDir(), "nirgends.xml"), "-db", "::unlesbar::"}, keineUmgebung, &out)
 	if err == nil || !strings.Contains(err.Error(), "XML-Datei konnte nicht geöffnet werden") {
-		t.Fatalf("erwartet den Dateifehler, bekam %v", err)
+		t.Fatalf("fuehreAus(…) = %v, erwartet den Dateifehler", err)
 	}
 }
 

@@ -47,7 +47,7 @@ func TestEinstellungenSchreiben_ZahlAusserhalbDerSpanneWirdAbgelehnt(t *testing.
 			r := httptest.NewRequest(http.MethodPut, "/api/einstellungen", strings.NewReader(f.rumpf))
 			(&Tueren{Basis: &tuer.Basis{}}).EinstellungenSchreiben(repo).ServeHTTP(w, r)
 			if w.Code != f.erwarte {
-				t.Errorf("Status %d, want %d — %s", w.Code, f.erwarte, w.Body.String())
+				t.Errorf("Status %d, erwartet %d — %s", w.Code, f.erwarte, w.Body.String())
 			}
 			if f.erwarte == http.StatusBadRequest && repo.gespeichert {
 				t.Error("abgelehnt, aber gespeichert — genau das war der Fund: die Antwort und die Datenbank sagten Verschiedenes")
@@ -67,7 +67,7 @@ func TestEinstellungenSchreiben_MeldungNenntFeldUndSpanne(t *testing.T) {
 	(&Tueren{Basis: &tuer.Basis{}}).EinstellungenSchreiben(repo).ServeHTTP(w, r)
 
 	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Status %d, want 400", w.Code)
+		t.Fatalf("Status %d, erwartet 400", w.Code)
 	}
 	rumpf := w.Body.String()
 	for _, teil := range []string{"Max. überfällige Titel", "Leihfrist Bücher", "Nichts gespeichert"} {

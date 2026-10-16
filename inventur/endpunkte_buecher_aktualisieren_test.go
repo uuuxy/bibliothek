@@ -146,11 +146,11 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			err := bereinigeTitelEingabe(&f.eingabe)
 			if (err != nil) != f.wantErr {
-				t.Errorf("bereinigeUndValidiereBuchEingabe() error = %v, wantErr %v", err, f.wantErr)
+				t.Errorf("bereinigeTitelEingabe(…) = Fehler %v, erwartet Fehler: %v", err, f.wantErr)
 				return
 			}
 			if f.wantErr && err.Error() != f.errMsg {
-				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", f.errMsg, err.Error())
+				t.Errorf("bereinigeTitelEingabe(…) = Fehler %q, erwartet %q", err.Error(), f.errMsg)
 			}
 			if !f.wantErr && f.wantEingabe != nil {
 				if diff := cmp.Diff(*f.wantEingabe, f.eingabe); diff != "" {

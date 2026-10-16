@@ -25,7 +25,7 @@ func TestLeseKlassenstufe(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			ergebnis := leseKlassenstufe(f.gradeStr)
 			if ergebnis != f.expected {
-				t.Errorf("leseKlassenstufe(%q) = %d; want %d", f.gradeStr, ergebnis, f.expected)
+				t.Errorf("leseKlassenstufe(%q) = %d; erwartet %d", f.gradeStr, ergebnis, f.expected)
 			}
 		})
 	}
@@ -51,7 +51,7 @@ func TestLeseBestand(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			ergebnis := leseBestand(f.input)
 			if ergebnis != f.expected {
-				t.Errorf("leseBestand(%q) = %d; want %d", f.input, ergebnis, f.expected)
+				t.Errorf("leseBestand(%q) = %d; erwartet %d", f.input, ergebnis, f.expected)
 			}
 		})
 	}

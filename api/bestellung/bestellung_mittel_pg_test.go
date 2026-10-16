@@ -52,7 +52,7 @@ func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	for _, mittel := range []string{"", "kreis"} {
 		rec := bestelleMitTopf(t, srv, lieferant, titel, mittel)
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("mittel=%q: Status %d, want 400: %s", mittel, rec.Code, rec.Body.String())
+			t.Errorf("mittel=%q: Status %d, erwartet 400: %s", mittel, rec.Code, rec.Body.String())
 		}
 	}
 	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant); n != 0 {
@@ -104,10 +104,10 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 				t.Fatalf("Bestellung lesen: %v", err)
 			}
 			if mittel != f.mittel {
-				t.Errorf("mittel = %q, want %q", mittel, f.mittel)
+				t.Errorf("mittel = %q, erwartet %q", mittel, f.mittel)
 			}
 			if kundennummer != f.kundennummer {
-				t.Errorf("kundennummer = %q, want %q", kundennummer, f.kundennummer)
+				t.Errorf("kundennummer = %q, erwartet %q", kundennummer, f.kundennummer)
 			}
 		})
 	}

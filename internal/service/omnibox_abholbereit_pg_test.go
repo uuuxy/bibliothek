@@ -79,11 +79,10 @@ func TestSchuelerScanTraegtAbholfachHinweis(t *testing.T) {
 		t.Fatalf("VerarbeiteEingabe: %v", err)
 	}
 	if res.Art != "student" || res.Leser == nil {
-		t.Fatalf("erwartet Schüler-Antwort, war Typ %q", res.Art)
+		t.Fatalf("res.Art = Typ %q, erwartet Schüler-Antwort", res.Art)
 	}
 	if len(res.Abholbereit) != 1 {
-		t.Fatalf("erwartet genau 1 Abholfach-Hinweis (die wartende Vormerkung zählt nicht), waren %d: %+v",
-			len(res.Abholbereit), res.Abholbereit)
+		t.Fatalf("len(res.Abholbereit) = %d, erwartet genau 1 Abholfach-Hinweis (die wartende Vormerkung zählt nicht): %+v", len(res.Abholbereit), res.Abholbereit)
 	}
 	if h := res.Abholbereit[0]; h.Titel != "Abholfach-Testband" || h.BereitgestelltBis == nil {
 		t.Errorf("Hinweis unvollständig: %+v", h)

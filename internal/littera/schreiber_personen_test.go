@@ -24,7 +24,7 @@ func TestKleinOhneRand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			if got := kleinOhneRand(tt.input); got != tt.expected {
-				t.Errorf("kleinOhneRand(%q) = %q, want %q", tt.input, got, tt.expected)
+				t.Errorf("kleinOhneRand(%q) = %q, erwartet %q", tt.input, got, tt.expected)
 			}
 		})
 	}
@@ -46,7 +46,7 @@ func TestPersonenlaufAusweis(t *testing.T) {
 	// 1. Regular case: Lesernummer exists and is not used
 	l1 := Leser{ID: "1", Lesernummer: "101"}
 	if got := p.ausweis(l1); got != "101" {
-		t.Errorf("expected 101, got %q", got)
+		t.Errorf("p.ausweis(l1) = %q, erwartet 101", got)
 	}
 	if !p.belegteAusweise["101"] {
 		t.Errorf("101 should be marked as used")
@@ -55,7 +55,7 @@ func TestPersonenlaufAusweis(t *testing.T) {
 	// 2. Collision case: Lesernummer already used
 	l2 := Leser{ID: "2", Lesernummer: "101"}
 	if got := p.ausweis(l2); got != "A-2" {
-		t.Errorf("expected A-2 due to collision, got %q", got)
+		t.Errorf("p.ausweis(l2) = %q, erwartet A-2 wegen der Kollision", got)
 	}
 	if !p.belegteAusweise["A-2"] {
 		t.Errorf("A-2 should be marked as used")
@@ -64,7 +64,7 @@ func TestPersonenlaufAusweis(t *testing.T) {
 	// 3. Empty Lesernummer
 	l3 := Leser{ID: "3", Lesernummer: ""}
 	if got := p.ausweis(l3); got != "A-3" {
-		t.Errorf("expected A-3 due to empty lesernummer, got %q", got)
+		t.Errorf("p.ausweis(l3) = %q, erwartet A-3 bei leerer Lesernummer", got)
 	}
 	if !p.belegteAusweise["A-3"] {
 		t.Errorf("A-3 should be marked as used")
@@ -86,7 +86,7 @@ func TestPersonenlaufMailadresse(t *testing.T) {
 	// 1. Regular case: Email exists and is not used
 	l1 := Leser{ID: "1", EMail: "Test@Example.com"}
 	if got := p.mailadresse(l1); got != "test@example.com" {
-		t.Errorf("expected test@example.com, got %q", got)
+		t.Errorf("p.mailadresse(l1) = %q, erwartet test@example.com", got)
 	}
 	if !p.belegteMails["test@example.com"] {
 		t.Errorf("test@example.com should be marked as used")
@@ -96,7 +96,7 @@ func TestPersonenlaufMailadresse(t *testing.T) {
 	l2 := Leser{ID: "2", EMail: "test@example.com"}
 	expected2 := "littera-2@littera.invalid"
 	if got := p.mailadresse(l2); got != expected2 {
-		t.Errorf("expected %q, got %q", expected2, got)
+		t.Errorf("p.mailadresse(l2) = %q, erwartet %q", got, expected2)
 	}
 	if !p.belegteMails[expected2] {
 		t.Errorf("%q should be marked as used", expected2)
@@ -106,7 +106,7 @@ func TestPersonenlaufMailadresse(t *testing.T) {
 	l3 := Leser{ID: "3", EMail: ""}
 	expected3 := "littera-3@littera.invalid"
 	if got := p.mailadresse(l3); got != expected3 {
-		t.Errorf("expected %q, got %q", expected3, got)
+		t.Errorf("p.mailadresse(l3) = %q, erwartet %q", got, expected3)
 	}
 	if !p.belegteMails[expected3] {
 		t.Errorf("%q should be marked as used", expected3)
@@ -124,21 +124,21 @@ func TestPersonenlaufAbgangsjahr(t *testing.T) {
 	l1 := Leser{Klasse: "10R1"}
 	jahr, rueckfall := p.abgangsjahr(l1)
 	if rueckfall || jahr != 2027 {
-		t.Errorf("expected 2027, false; got %d, %v", jahr, rueckfall)
+		t.Errorf("p.abgangsjahr(l1) = %d, %v, erwartet 2027, false", jahr, rueckfall)
 	}
 
 	// 2. Uncalculable class, but ArtAbgegangen: the current school year, no placeholder
 	l2 := Leser{Klasse: "Ab", Art: ArtAbgegangen}
 	jahr, rueckfall = p.abgangsjahr(l2)
 	if rueckfall || jahr != 2027 {
-		t.Errorf("expected 2027, false; got %d, %v", jahr, rueckfall)
+		t.Errorf("p.abgangsjahr(l2) = %d, %v, erwartet 2027, false", jahr, rueckfall)
 	}
 
 	// 3. Uncalculable class („Im Ausland“, aus): the application's fallback, marked for the warning
 	l3 := Leser{Klasse: "AUS", Art: ArtSchueler}
 	jahr, rueckfall = p.abgangsjahr(l3)
 	if !rueckfall || jahr != 2031 {
-		t.Errorf("expected 2031, true; got %d, %v", jahr, rueckfall)
+		t.Errorf("p.abgangsjahr(l3) = %d, %v, erwartet 2031, true", jahr, rueckfall)
 	}
 }
 
@@ -158,14 +158,14 @@ func TestPersonenlaufKuerze(t *testing.T) {
 	// Value within limits
 	val1 := "Short"
 	if got := p.kuerze(l, "feld", val1, 10); got != val1 {
-		t.Errorf("expected %q, got %q", val1, got)
+		t.Errorf("p.kuerze(…) = %q, erwartet %q", got, val1)
 	}
 
 	// Value exceeding limits
 	val2 := "VeryLongString"
 	expected2 := "VeryLongSt"
 	if got := p.kuerze(l, "feld", val2, 10); got != expected2 {
-		t.Errorf("expected %q, got %q", expected2, got)
+		t.Errorf("p.kuerze(…) = %q, erwartet %q", got, expected2)
 	}
 }
 

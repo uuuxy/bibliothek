@@ -72,7 +72,7 @@ func TestTiteltextNormalform_NachMigration160(t *testing.T) {
 	exec(`ALTER TABLE buecher_titel ENABLE TRIGGER trg_titel_text_normalform`)
 	// Die Altzeile steht, wie sie geschrieben wurde: Sonst prüfte der Rest nur den Trigger.
 	if got := lies("9783608126044"); got != alt {
-		t.Fatalf("Altzeile am Trigger vorbei:\n got %+q\nwant %+q", got, alt)
+		t.Fatalf("Altzeile am Trigger vorbei:\n     ist %+q\nerwartet %+q", got, alt)
 	}
 
 	migration, err := os.ReadFile(filepath.Join("..", "migrations", "160_titeltext_normalform.sql"))
@@ -93,7 +93,7 @@ func TestTiteltextNormalform_NachMigration160(t *testing.T) {
 		signatur: alt.signatur,
 	}
 	if got := lies("9783608126044"); got != want {
-		t.Errorf("nach der Migration:\n got %+q\nwant %+q", got, want)
+		t.Errorf("nach der Migration:\n     ist %+q\nerwartet %+q", got, want)
 	}
 	var abweichend int
 	if err := tx.QueryRow(ctx, `

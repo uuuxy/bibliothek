@@ -103,7 +103,7 @@ func TestJahrgangFilterFindetAuchDieOberstufe(t *testing.T) {
 			t.Fatalf("klassenFilter: %v", err)
 		}
 		if len(got) != 1 || got[0] != "05F1" {
-			t.Errorf("klassenFilter = %v, want [05F1] — die Klasse ist die genauere Angabe", got)
+			t.Errorf("klassenFilter = %v, erwartet [05F1] — die Klasse ist die genauere Angabe", got)
 		}
 	})
 
@@ -127,7 +127,7 @@ func TestJahrgangFilterFindetAuchDieOberstufe(t *testing.T) {
 				t.Fatalf("klassenFilter(%q): %v", eingabe, err)
 			}
 			if !leer || got != nil {
-				t.Errorf("klassenFilter(%q) = %v, leer = %v — want leere Liste", eingabe, got, leer)
+				t.Errorf("klassenFilter(%q) = %v, leer = %v — erwartet leere Liste", eingabe, got, leer)
 			}
 		}
 	})

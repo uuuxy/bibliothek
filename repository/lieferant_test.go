@@ -13,12 +13,12 @@ func TestLieferant_KundennummerFuer(t *testing.T) {
 	mit := Lieferant{Kundennummer: "K-1", KundennummerSchultraeger: "B-2"}
 
 	if got := ohne.KundennummerFuer(mitteltopf.Schultraeger); got != "K-1" {
-		t.Errorf("ohne zweite Nummer: %q, want K-1", got)
+		t.Errorf("ohne zweite Nummer: %q, erwartet K-1", got)
 	}
 	if got := mit.KundennummerFuer(mitteltopf.Schultraeger); got != "B-2" {
-		t.Errorf("mit zweiter Nummer: %q, want B-2", got)
+		t.Errorf("mit zweiter Nummer: %q, erwartet B-2", got)
 	}
 	if got := mit.KundennummerFuer(mitteltopf.Land); got != "K-1" {
-		t.Errorf("Land nimmt immer die erste Nummer: %q, want K-1", got)
+		t.Errorf("Land nimmt immer die erste Nummer: %q, erwartet K-1", got)
 	}
 }

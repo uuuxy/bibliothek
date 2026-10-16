@@ -102,13 +102,13 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.Kaufpreis != 20.00 {
-			t.Errorf("Kaufpreis = %.2f, want 20.00", g.Kaufpreis)
+			t.Errorf("Kaufpreis = %.2f, erwartet 20.00", g.Kaufpreis)
 		}
 		if g.Topf != mitteltopf.Land {
 			t.Errorf("Topf = %q — der Titel ist als Lernmittel angelegt, ohne Bestellung und ohne Eigentum am Exemplar gilt Land", g.Topf)
 		}
 		if jahr := ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand); jahr != 1 {
-			t.Errorf("Verleihjahr = %d, want 1 (im Bestand: %d, mit Ausleihe: %d)",
+			t.Errorf("Verleihjahr = %d, erwartet 1 (im Bestand: %d, mit Ausleihe: %d)",
 				jahr, g.SchuljahreImBestand, g.SchuljahreMitAusleihe)
 		}
 	})
@@ -121,12 +121,12 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.SchuljahreImBestand != 4 {
-			t.Fatalf("SchuljahreImBestand = %d, want 4", g.SchuljahreImBestand)
+			t.Fatalf("SchuljahreImBestand = %d, erwartet 4", g.SchuljahreImBestand)
 		}
 		v := ersatzwert.Berechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
 			g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag, ersatzwert.PreisquelleListenpreis)
 		if v.Prozent != 20 {
-			t.Errorf("Prozent = %d, want 20 — fünftes Verleihjahr", v.Prozent)
+			t.Errorf("Prozent = %d, erwartet 20 — fünftes Verleihjahr", v.Prozent)
 		}
 	})
 
@@ -144,13 +144,13 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.SchuljahreMitAusleihe != 1 {
-			t.Errorf("SchuljahreMitAusleihe = %d, want 1 — drei Ausleihen, aber EIN Schuljahr",
+			t.Errorf("SchuljahreMitAusleihe = %d, erwartet 1 — drei Ausleihen, aber EIN Schuljahr",
 				g.SchuljahreMitAusleihe)
 		}
 		v := ersatzwert.Berechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
 			g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag, ersatzwert.PreisquelleListenpreis)
 		if v.Betrag != 40.00 {
-			t.Errorf("Betrag = %.2f, want 40.00 (voller Kaufpreis im ersten Verleihjahr)", v.Betrag)
+			t.Errorf("Betrag = %.2f, erwartet 40.00 (voller Kaufpreis im ersten Verleihjahr)", v.Betrag)
 		}
 	})
 

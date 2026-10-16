@@ -40,7 +40,7 @@ func TestLUSDImport_DubletteInDerselbenDatei(t *testing.T) {
 		t.Fatal(err)
 	}
 	if count != 1 {
-		t.Errorf("erwartet genau 1 aktive Zeile für L-DUP, waren %d", count)
+		t.Errorf("count = %d, erwartet genau 1 aktive Zeile für L-DUP", count)
 	}
 
 	// Die zweite Zeile gewinnt (letzter Stand aus dem Export).

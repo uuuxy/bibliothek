@@ -182,7 +182,7 @@ func TestReservierungIdempotenz(t *testing.T) {
 		t.Fatal(err)
 	}
 	if anzahl != 1 {
-		t.Fatalf("genau 1 Reservierung erwartet, waren %d", anzahl)
+		t.Fatalf("anzahl = %d, erwartet genau 1 Reservierung", anzahl)
 	}
 
 	// Ein anderer Schlüssel (eine gewollte zweite Reservierung) legt an.

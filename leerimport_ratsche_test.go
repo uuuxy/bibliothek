@@ -77,11 +77,11 @@ func TestServer_LiestDieBildformate(t *testing.T) {
 		}
 		bild, gelesen, err := image.Decode(bytes.NewReader(daten))
 		if err != nil {
-			t.Errorf("image.Decode(%s-Probe) = %v, want ein Bild: Kein Paket des Servers bindet den Decoder ein, er gehört in main.go", format, err)
+			t.Errorf("image.Decode(%s-Probe) = %v, erwartet ein Bild: Kein Paket des Servers bindet den Decoder ein, er gehört in main.go", format, err)
 			continue
 		}
 		if gelesen != format || bild.Bounds().Dx() != 1 {
-			t.Errorf("image.Decode(%s-Probe) = Format %q mit %d Pixel Breite, want %q mit 1", format, gelesen, bild.Bounds().Dx(), format)
+			t.Errorf("image.Decode(%s-Probe) = Format %q mit %d Pixel Breite, erwartet %q mit 1", format, gelesen, bild.Bounds().Dx(), format)
 		}
 	}
 }
@@ -91,9 +91,9 @@ func TestServer_LiestDieBildformate(t *testing.T) {
 func TestServer_KenntDieAPIBeschreibung(t *testing.T) {
 	beschreibung, err := swag.ReadDoc()
 	if err != nil {
-		t.Fatalf("swag.ReadDoc() = %v, want die Beschreibung: main.go bindet bibliothek/docs nicht ein", err)
+		t.Fatalf("swag.ReadDoc() = %v, erwartet die Beschreibung: main.go bindet bibliothek/docs nicht ein", err)
 	}
 	if !strings.Contains(beschreibung, `"paths"`) {
-		t.Errorf("swag.ReadDoc() liefert %d Zeichen ohne \"paths\", want die Beschreibung der Adressen", len(beschreibung))
+		t.Errorf("swag.ReadDoc() liefert %d Zeichen ohne \"paths\", erwartet die Beschreibung der Adressen", len(beschreibung))
 	}
 }

@@ -112,31 +112,31 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 	detail := holeDetail(t, srv, pool, bestellung)
 
 	if len(detail.Positionen) != 2 {
-		t.Fatalf("Positionen = %d, want 2", len(detail.Positionen))
+		t.Fatalf("Positionen = %d, erwartet 2", len(detail.Positionen))
 	}
 
 	// Sortiert nach titel_name: "Lambacher …" vor "Titel ohne Angaben".
 	gepflegt := detail.Positionen[0]
 	if gepflegt.Autor != "Ruth Zeidler" || gepflegt.Verlag != "Klett" {
-		t.Errorf("Autor/Verlag = %q/%q, want Ruth Zeidler/Klett", gepflegt.Autor, gepflegt.Verlag)
+		t.Errorf("Autor/Verlag = %q/%q, erwartet Ruth Zeidler/Klett", gepflegt.Autor, gepflegt.Verlag)
 	}
 	if gepflegt.CoverURL != "/uploads/cover/ls7.webp" {
 		t.Errorf("CoverURL = %q — ohne Cover ist die Ansicht nur eine schmalere Tabelle", gepflegt.CoverURL)
 	}
 	if gepflegt.Gesamtpreis != 49.00 {
-		t.Errorf("Gesamtpreis = %v, want 49.00 (2 × 24,50)", gepflegt.Gesamtpreis)
+		t.Errorf("Gesamtpreis = %v, erwartet 49.00 (2 × 24,50)", gepflegt.Gesamtpreis)
 	}
 
 	// NULL-Spalten kommen als leere Zeichenkette an, nicht als 500.
 	leer := detail.Positionen[1]
 	if leer.Autor != "" || leer.Verlag != "" || leer.CoverURL != "" {
-		t.Errorf("ungepflegter Titel: Autor=%q Verlag=%q Cover=%q, want jeweils leer",
+		t.Errorf("ungepflegter Titel: Autor=%q Verlag=%q Cover=%q, erwartet jeweils leer",
 			leer.Autor, leer.Verlag, leer.CoverURL)
 	}
 
 	// Der eigentliche Zugewinn: die Exemplare dieser Lieferung, mit ihren Nummern.
 	if len(detail.Exemplare) != 2 {
-		t.Fatalf("Exemplare = %d, want 2 (Altbestand ohne bestellung_id gehört nicht dazu)",
+		t.Fatalf("Exemplare = %d, erwartet 2 (Altbestand ohne bestellung_id gehört nicht dazu)",
 			len(detail.Exemplare))
 	}
 	barcodes := map[string]bool{}
@@ -171,6 +171,6 @@ func TestBestelldetail_UnbekannteBestellungIst404(t *testing.T) {
 	srv.Bestelldetail(repository.NewBestelldetailAbfragen(pool)).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
-		t.Fatalf("Status = %d, want 404 — body: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Status = %d, erwartet 404 — Rumpf: %s", rec.Code, rec.Body.String())
 	}
 }

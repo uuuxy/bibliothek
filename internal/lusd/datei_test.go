@@ -124,7 +124,7 @@ func TestLeseCSV_IDSpalteOhneWerteUndOhneGeburtsdatumIstNurName(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if datei.Modus != ModusNurName || len(datei.Zeilen) != 2 {
-		t.Fatalf("erwartet Nur-Name-Modus mit 2 Zeilen, war %v / %d", datei.Modus, len(datei.Zeilen))
+		t.Fatalf("LeseDatei(csv) = Modus %v mit %d Zeilen, erwartet Nur-Name-Modus mit 2 Zeilen", datei.Modus, len(datei.Zeilen))
 	}
 }
 
@@ -144,7 +144,7 @@ func TestLeseCSV_ZeilenOhneLUSDIDBleibenEinzeln(t *testing.T) {
 		t.Errorf("Zeilen ohne LUSD-ID sollen erhalten bleiben, bekam %d", len(rows))
 	}
 	if len(ids) != 1 {
-		t.Errorf("genau eine LUSD-ID erwartet, bekam %v", ids)
+		t.Errorf("leseCSV([]byte(csv)) = %v, erwartet genau eine LUSD-ID", ids)
 	}
 }
 

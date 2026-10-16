@@ -53,13 +53,13 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	}
 
 	if konfig.adresse() != "smtp.schule.de:587" {
-		t.Errorf("adresse() = %q, want smtp.schule.de:587", konfig.adresse())
+		t.Errorf("adresse() = %q, erwartet smtp.schule.de:587", konfig.adresse())
 	}
 	if konfig.Absender != "bib@schule.de" {
 		t.Errorf("Absender = %q — die Umgebung hat gewonnen", konfig.Absender)
 	}
 	if konfig.Benutzer != "bib" {
-		t.Errorf("Benutzer = %q, want bib", konfig.Benutzer)
+		t.Errorf("Benutzer = %q, erwartet bib", konfig.Benutzer)
 	}
 	if konfig.Passwort != "geheim123" {
 		t.Errorf("Passwort wurde nicht entschlüsselt: %q", konfig.Passwort)
@@ -89,11 +89,11 @@ func TestLadeSMTPKonfigFaelltAufUmgebungZurueck(t *testing.T) {
 	}
 
 	if konfig.adresse() != "smtp.umgebung.de:587" {
-		t.Errorf("adresse() = %q, want smtp.umgebung.de:587 (Port-Vorgabe)", konfig.adresse())
+		t.Errorf("adresse() = %q, erwartet smtp.umgebung.de:587 (Port-Vorgabe)", konfig.adresse())
 	}
 	// Ohne SMTP_FROM ist der Benutzer die beste verfügbare Absenderadresse.
 	if konfig.Absender != "bib@umgebung.de" {
-		t.Errorf("Absender = %q, want bib@umgebung.de", konfig.Absender)
+		t.Errorf("Absender = %q, erwartet bib@umgebung.de", konfig.Absender)
 	}
 }
 
@@ -131,10 +131,10 @@ func TestLadeSMTPKonfigErgaenztPortUndAbsender(t *testing.T) {
 		t.Fatalf("ladeSMTPKonfig: %v", err)
 	}
 	if konfig.adresse() != "smtp.schule.de:587" {
-		t.Errorf("adresse() = %q, want smtp.schule.de:587", konfig.adresse())
+		t.Errorf("adresse() = %q, erwartet smtp.schule.de:587", konfig.adresse())
 	}
 	if konfig.Absender != absenderVorgabe {
-		t.Errorf("Absender = %q, want die Vorgabe %q", konfig.Absender, absenderVorgabe)
+		t.Errorf("Absender = %q, erwartet die Vorgabe %q", konfig.Absender, absenderVorgabe)
 	}
 	if konfig.auth() != nil {
 		t.Error("ohne Benutzer und Passwort darf keine SMTP-Auth entstehen")
@@ -153,7 +153,7 @@ func TestLadeSMTPKonfigMeldetUnlesbaresPasswort(t *testing.T) {
 		WillReturnRows(konfigZeile("smtp.schule.de", "587", "bib", []byte("kein-gueltiger-geheimtext"), "bib@schule.de"))
 
 	if _, err := ladeSMTPKonfig(context.Background(), mock); err == nil {
-		t.Fatal("erwartet Fehler bei unlesbarem Passwort, bekam nil")
+		t.Fatal("ladeSMTPKonfig(…) bei unlesbarem Passwort = nil, erwartet einen Fehler")
 	}
 }
 
@@ -176,7 +176,7 @@ func TestIstKonfiguriert(t *testing.T) {
 	for name, f := range faelle {
 		t.Run(name, func(t *testing.T) {
 			if got := f.konfig.istKonfiguriert(); got != f.want {
-				t.Errorf("istKonfiguriert() = %v, want %v", got, f.want)
+				t.Errorf("istKonfiguriert() = %v, erwartet %v", got, f.want)
 			}
 		})
 	}

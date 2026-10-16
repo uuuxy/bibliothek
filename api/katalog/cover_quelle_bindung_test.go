@@ -109,10 +109,10 @@ func TestCover_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 	rr := holeCover(s, testISBN, "https://covers.openlibrary.org/b/id/FREMD-L.jpg")
 
 	if !bytes.Equal(rr.Body.Bytes(), transparentesGIF) {
-		t.Fatalf("fremde Adresse wurde ausgeliefert (%d Bytes) — want Fallback-GIF", rr.Body.Len())
+		t.Fatalf("fremde Adresse wurde ausgeliefert (%d Bytes), erwartet das Ersatz-GIF", rr.Body.Len())
 	}
 	if *downloads != 0 {
-		t.Fatalf("Downloads = %d; want 0 — der Server darf fremde Bilder gar nicht erst holen", *downloads)
+		t.Fatalf("Downloads = %d; erwartet 0 — der Server darf fremde Bilder gar nicht erst holen", *downloads)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatal(err)
@@ -131,10 +131,10 @@ func TestCover_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 	zweiter := holeCover(s, "978-3-16-148410-0", "https://covers.openlibrary.org/b/isbn/"+testISBN+"-L.jpg")
 
 	if ct := erster.Header().Get("Content-Type"); ct != "image/webp" {
-		t.Fatalf("Content-Type = %q; want image/webp (Body %d Bytes)", ct, erster.Body.Len())
+		t.Fatalf("Content-Type = %q (Rumpf %d Bytes), erwartet image/webp", ct, erster.Body.Len())
 	}
 	if *downloads != 1 {
-		t.Fatalf("Downloads = %d; want 1 — der zweite Aufruf kommt aus dem Cache ohne DB", *downloads)
+		t.Fatalf("Downloads = %d; erwartet 1 — der zweite Aufruf kommt aus dem Cache ohne DB", *downloads)
 	}
 	if !bytes.Equal(erster.Body.Bytes(), zweiter.Body.Bytes()) {
 		t.Fatal("Cache-Treffer liefert ein anderes Bild als der Download")
@@ -159,7 +159,7 @@ func TestCover_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(eintraege) != 2 {
-		t.Fatalf("Dateien im Cache = %d; want 2", len(eintraege))
+		t.Fatalf("Dateien im Cache = %d; erwartet 2", len(eintraege))
 	}
 }
 

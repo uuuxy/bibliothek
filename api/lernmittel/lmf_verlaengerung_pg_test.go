@@ -41,7 +41,7 @@ func TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust(t *testing.T) {
 	srv.LernmittelDerKlasseVerlaengern()(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	// Berliner Tagesende zum Datum (Sommer/CEST = 21:59:59 UTC), wie die Tür es setzt, nicht

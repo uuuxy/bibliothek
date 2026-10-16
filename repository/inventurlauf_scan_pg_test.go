@@ -10,10 +10,10 @@ func TestNewInventurAbfragen(t *testing.T) {
 	pool := pgTestPool(t)
 	repo := NewInventurAbfragen(pool)
 	if repo == nil {
-		t.Fatal("erwartet, dass NewInventurAbfragen ein Repository zurückgibt, war aber nil")
+		t.Fatal("NewInventurAbfragen(pool) = nil, erwartet die Abfragen")
 	}
 	if repo.db == nil {
-		t.Fatal("erwartet, dass das übergebene DB-Objekt gespeichert wird, war aber nil")
+		t.Fatal("NewInventurAbfragen(pool).db = nil, erwartet den übergebenen Pool")
 	}
 }
 

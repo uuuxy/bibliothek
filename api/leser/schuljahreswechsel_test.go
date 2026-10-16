@@ -62,7 +62,7 @@ func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testi
 
 	rec := rufeSchuljahreswechsel(t, s, `{"dry_run": true}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	body := rec.Body.String()
 	if !strings.Contains(body, `"promoted_count":120`) || !strings.Contains(body, `"dry_run":true`) {
@@ -85,7 +85,7 @@ func TestSchuljahreswechsel_ZweiterLaufImZeitfensterIst409(t *testing.T) {
 
 	rec := rufeSchuljahreswechsel(t, s, `{"confirm": true}`)
 	if rec.Code != http.StatusConflict {
-		t.Errorf("erwartet 409 bei Doppellauf, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 409 bei Doppellauf: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -111,7 +111,7 @@ func TestSchuljahreswechsel_EchterLaufSchreibtProtokoll(t *testing.T) {
 
 	rec := rufeSchuljahreswechsel(t, s, `{"confirm": true}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	body := rec.Body.String()
 	if !strings.Contains(body, `"archived_count":42`) || !strings.Contains(body, `"dry_run":false`) {

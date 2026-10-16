@@ -34,7 +34,7 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 	// Der Wegweiser nennt die Rolle, unter der eine Lehrkraft angelegt wird (Wortlaut:
 	// leser_klasse_regel_test.go). „Benutzer & Rechte" steht im JSON als &.
 	if w.Code != 400 || !strings.Contains(w.Body.String(), "Rolle Kollegium") {
-		t.Errorf("POST mit klasse='Lehrer' muss 400 mit Wegweiser liefern, got %d: %s", w.Code, w.Body.String())
+		t.Errorf("POST mit klasse='Lehrer': Status %d, erwartet 400 mit Wegweiser: %s", w.Code, w.Body.String())
 	}
 
 	klasse := "LEHRER"
@@ -43,7 +43,7 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 		t.Error("PATCH mit klasse='LEHRER' muss abgelehnt werden")
 	}
 	if w2.Code != 400 {
-		t.Errorf("PATCH-Ablehnung muss 400 sein, got %d", w2.Code)
+		t.Errorf("PATCH-Ablehnung: Status %d, erwartet 400", w2.Code)
 	}
 }
 

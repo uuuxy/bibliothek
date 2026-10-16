@@ -55,11 +55,11 @@ func TestListenpreisAusNachschlagen(t *testing.T) {
 
 			switch {
 			case f.want == nil && got != nil:
-				t.Errorf("Listenpreis = %.2f, want nil — %s", *got, f.warum)
+				t.Errorf("Listenpreis = %.2f, erwartet nil — %s", *got, f.warum)
 			case f.want != nil && got == nil:
-				t.Errorf("Listenpreis = nil, want %.2f — %s", *f.want, f.warum)
+				t.Errorf("Listenpreis = nil, erwartet %.2f — %s", *f.want, f.warum)
 			case f.want != nil && got != nil && *got != *f.want:
-				t.Errorf("Listenpreis = %.2f, want %.2f — %s", *got, *f.want, f.warum)
+				t.Errorf("Listenpreis = %.2f, erwartet %.2f — %s", *got, *f.want, f.warum)
 			}
 		})
 	}

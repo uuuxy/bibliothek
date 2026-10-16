@@ -52,7 +52,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "suchnorm(nachname) = suchnorm('Müller')"); n != 1 {
-		t.Errorf("erwartet genau eine Müller/Mueller-Zeile, waren %d — Duplikat angelegt", n)
+		t.Errorf("zaehle(…) = %d, erwartet genau eine Müller/Mueller-Zeile — Duplikat angelegt", n)
 	}
 	var klasse string
 	var bestaetigt bool

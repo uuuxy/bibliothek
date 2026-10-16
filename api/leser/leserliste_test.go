@@ -52,6 +52,6 @@ func TestLeserlisteLeereListeIstArray(t *testing.T) {
 		t.Fatal("leere Schülerliste kam als null zurück — das Frontend bricht darauf ab (.length auf null)")
 	}
 	if body != "[]" {
-		t.Errorf("erwartet [], war: %s", body)
+		t.Errorf("strings.TrimSpace(rec.Body.String()) = %s, erwartet []", body)
 	}
 }

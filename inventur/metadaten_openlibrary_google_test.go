@@ -48,16 +48,16 @@ func TestSucheOpenLibrary(t *testing.T) {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 		if ergebnis.Titel != "OpenLibrary Book" {
-			t.Errorf("Expected title 'OpenLibrary Book', got '%s'", ergebnis.Titel)
+			t.Errorf("sucheOpenLibrary(…).Titel = '%s', erwartet 'OpenLibrary Book'", ergebnis.Titel)
 		}
 		if ergebnis.Untertitel != "OpenLibrary Subtitle" {
-			t.Errorf("Expected subtitle 'OpenLibrary Subtitle', got '%s'", ergebnis.Untertitel)
+			t.Errorf("sucheOpenLibrary(…).Untertitel = '%s', erwartet 'OpenLibrary Subtitle'", ergebnis.Untertitel)
 		}
 		if ergebnis.Autor != "OpenLibrary Author" {
-			t.Errorf("Expected author 'OpenLibrary Author', got '%s'", ergebnis.Autor)
+			t.Errorf("sucheOpenLibrary(…).Autor = '%s', erwartet 'OpenLibrary Author'", ergebnis.Autor)
 		}
 		if ergebnis.CoverURL != "http://large.cover" {
-			t.Errorf("Expected cover URL 'http://large.cover', got '%s'", ergebnis.CoverURL)
+			t.Errorf("ergebnis.CoverURL = '%s', erwartet 'http://large.cover'", ergebnis.CoverURL)
 		}
 	})
 
@@ -85,7 +85,7 @@ func TestSucheOpenLibrary(t *testing.T) {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 		if ergebnis.CoverURL != "http://medium.cover" {
-			t.Errorf("Expected fallback to medium cover, got '%s'", ergebnis.CoverURL)
+			t.Errorf("sucheOpenLibrary(…).CoverURL = '%s', erwartet das mittlere Cover", ergebnis.CoverURL)
 		}
 	})
 
@@ -106,7 +106,7 @@ func TestSucheOpenLibrary(t *testing.T) {
 
 		_, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
 		if err == nil || !strings.Contains(err.Error(), "nicht gefunden") {
-			t.Errorf("Expected 'nicht gefunden' error, got: %v", err)
+			t.Errorf("sucheOpenLibrary(…) = %v, erwartet den Fehler „nicht gefunden“", err)
 		}
 	})
 
@@ -127,7 +127,7 @@ func TestSucheOpenLibrary(t *testing.T) {
 
 		_, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
 		if err == nil || !strings.Contains(err.Error(), "status 500") {
-			t.Errorf("Expected HTTP error, got: %v", err)
+			t.Errorf("sucheOpenLibrary(…) = %v, erwartet den Fehler mit „status 500“", err)
 		}
 	})
 
@@ -148,7 +148,7 @@ func TestSucheOpenLibrary(t *testing.T) {
 
 		_, err := client.sucheOpenLibrary(context.Background(), "9783161484100")
 		if err == nil {
-			t.Errorf("Expected json decode error, got nil")
+			t.Errorf("sucheOpenLibrary(…) = nil, erwartet einen Fehler beim Lesen des JSON")
 		}
 	})
 }
@@ -194,16 +194,16 @@ func TestSucheBeiGoogle(t *testing.T) {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 		if ergebnis.Titel != "Google Book" {
-			t.Errorf("Expected title 'Google Book', got '%s'", ergebnis.Titel)
+			t.Errorf("sucheBeiGoogle(…).Titel = '%s', erwartet 'Google Book'", ergebnis.Titel)
 		}
 		if ergebnis.Untertitel != "Google Subtitle" {
-			t.Errorf("Expected subtitle 'Google Subtitle', got '%s'", ergebnis.Untertitel)
+			t.Errorf("sucheBeiGoogle(…).Untertitel = '%s', erwartet 'Google Subtitle'", ergebnis.Untertitel)
 		}
 		if ergebnis.Autor != "Google Author" {
-			t.Errorf("Expected author 'Google Author', got '%s'", ergebnis.Autor)
+			t.Errorf("sucheBeiGoogle(…).Autor = '%s', erwartet 'Google Author'", ergebnis.Autor)
 		}
 		if ergebnis.CoverURL != "https://thumbnail.cover" {
-			t.Errorf("Expected cover URL 'https://thumbnail.cover', got '%s'", ergebnis.CoverURL)
+			t.Errorf("ergebnis.CoverURL = '%s', erwartet 'https://thumbnail.cover'", ergebnis.CoverURL)
 		}
 	})
 
@@ -233,7 +233,7 @@ func TestSucheBeiGoogle(t *testing.T) {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 		if ergebnis.CoverURL != "https://small.thumbnail.cover" {
-			t.Errorf("Expected fallback to small thumbnail cover, got '%s'", ergebnis.CoverURL)
+			t.Errorf("sucheBeiGoogle(…).CoverURL = '%s', erwartet das kleine Vorschaubild", ergebnis.CoverURL)
 		}
 	})
 
@@ -254,7 +254,7 @@ func TestSucheBeiGoogle(t *testing.T) {
 
 		_, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err == nil || !strings.Contains(err.Error(), "nicht gefunden") {
-			t.Errorf("Expected 'nicht gefunden' error, got: %v", err)
+			t.Errorf("sucheBeiGoogle(…) = %v, erwartet den Fehler „nicht gefunden“", err)
 		}
 	})
 
@@ -275,7 +275,7 @@ func TestSucheBeiGoogle(t *testing.T) {
 
 		_, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err == nil || !strings.Contains(err.Error(), "status 404") {
-			t.Errorf("Expected HTTP error, got: %v", err)
+			t.Errorf("sucheBeiGoogle(…) = %v, erwartet den Fehler mit „status 404“", err)
 		}
 	})
 
@@ -296,7 +296,7 @@ func TestSucheBeiGoogle(t *testing.T) {
 
 		_, err := client.sucheBeiGoogle(context.Background(), "9783161484100")
 		if err == nil {
-			t.Errorf("Expected json decode error, got nil")
+			t.Errorf("sucheBeiGoogle(…) = nil, erwartet einen Fehler beim Lesen des JSON")
 		}
 	})
 }

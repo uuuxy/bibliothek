@@ -33,7 +33,7 @@ func TestVerbieteInterneZieladressen(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			err := verbieteInterneZieladressen("tcp4", f.adresse, nil)
 			if gesperrt := err != nil; gesperrt != f.gesperrt {
-				t.Errorf("verbieteInterneZieladressen(%q) gesperrt = %v (err: %v); want %v", f.adresse, gesperrt, err, f.gesperrt)
+				t.Errorf("verbieteInterneZieladressen(%q) gesperrt = %v (err: %v); erwartet %v", f.adresse, gesperrt, err, f.gesperrt)
 			}
 		})
 	}
@@ -81,7 +81,7 @@ func TestNewClient_FolgtKeinerWeiterleitungAufsLoopback(t *testing.T) {
 		if cerr := resp.Body.Close(); cerr != nil {
 			t.Errorf("Body schließen: %v", cerr)
 		}
-		t.Fatal("gehärteter Client hat eine Loopback-Adresse erreicht; want Ablehnung")
+		t.Fatal("gehärteter Client hat eine Loopback-Adresse erreicht; erwartet Ablehnung")
 	}
 	if !strings.Contains(err.Error(), "nicht öffentlich") {
 		t.Errorf("Ablehnung kam nicht aus der Adressprüfung: %v", err)

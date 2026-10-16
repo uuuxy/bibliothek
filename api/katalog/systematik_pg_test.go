@@ -204,7 +204,7 @@ func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 	}
 	mit, ok := antwort["titel_mitgezogen"].(float64)
 	if !ok || mit != 2 {
-		t.Errorf("erwartet 2 mitgezogene Titel, waren %v", antwort["titel_mitgezogen"])
+		t.Errorf("titel_mitgezogen = %v, erwartet 2", antwort["titel_mitgezogen"])
 	}
 
 	// Die zwei Titel tragen jetzt das neue Fach, der Fremdtitel nicht.
@@ -218,7 +218,7 @@ func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 		t.Fatalf("Bestand prüfen: %v", err)
 	}
 	if aufNeu != 2 {
-		t.Errorf("erwartet 2 Titel auf dem neuen Fach, waren %d", aufNeu)
+		t.Errorf("aufNeu = %d, erwartet 2 Titel auf dem neuen Fach", aufNeu)
 	}
 	if aufAlt != 0 {
 		t.Errorf("kein Titel darf auf dem alten Fach zurückbleiben, waren %d", aufAlt)

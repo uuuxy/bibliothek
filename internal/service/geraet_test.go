@@ -109,7 +109,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 		})
 		_, lage, err := svc.ladeAkteur(context.Background(), &sid, true)
 		if err != nil || len(lage.uebergangen) != 1 || lage.einst == nil {
-			t.Fatalf("erwartet Ausleihe mit einem Protokolleintrag, war err=%v uebergangen=%v", err, lage.uebergangen)
+			t.Fatalf("ladeAkteur(…) = Fehler %v, übergangen %v, erwartet die Ausleihe mit einem Protokolleintrag", err, lage.uebergangen)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Error(err)

@@ -45,7 +45,7 @@ func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 	server.MahnlistenVersenden(mahnRepo)(rec, req)
 
 	if rec.Code != http.StatusServiceUnavailable {
-		t.Fatalf("erwartet 503 ohne SMTP, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 503 ohne SMTP: %s", rec.Code, rec.Body.String())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unerfüllte Mock-Erwartungen: %v", err)
@@ -90,10 +90,10 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 	erg := versendeKlassenMahnungen(t.Context(), klassen, fakePDF, fakeSend)
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
-		t.Fatalf("sent=%d skipped=%d failed=%d, want sent=1 skipped=2 failed=0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
+		t.Fatalf("sent=%d skipped=%d failed=%d, erwartet sent=1 skipped=2 failed=0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
 	}
 	if len(empfaenger) != 1 || empfaenger[0] != "lehrer5a@schule.de" {
-		t.Fatalf("Empfänger = %v, want genau [lehrer5a@schule.de] — keine Mail an Klassen ohne Adresse!", empfaenger)
+		t.Fatalf("Empfänger = %v, erwartet genau [lehrer5a@schule.de] — keine Mail an Klassen ohne Adresse!", empfaenger)
 	}
 }
 
@@ -121,7 +121,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 
 	erg := versendeKlassenMahnungen(t.Context(), klassen, fakePDF, fakeSend)
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 1 || erg.Abgebrochen {
-		t.Fatalf("%+v, want sent=1 skipped=0 failed=1 nicht abgebrochen (Einzelfehler = fehlgeschlagen, Lauf läuft weiter)", erg)
+		t.Fatalf("%+v, erwartet sent=1 skipped=0 failed=1 nicht abgebrochen (Einzelfehler = fehlgeschlagen, Lauf läuft weiter)", erg)
 	}
 }
 
@@ -150,7 +150,7 @@ func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T
 	}
 	erg := versendeKlassenMahnungen(t.Context(), klassen, fakePDF, fakeSend)
 	if erg.Versendet != 1 || erg.Fehlgeschlagen != 2 || erg.Uebersprungen != 1 || !erg.Abgebrochen {
-		t.Fatalf("%+v, want sent=1 failed=2 (5b + nicht versuchte 5c) skipped=1 abgebrochen", erg)
+		t.Fatalf("%+v, erwartet sent=1 failed=2 (5b + nicht versuchte 5c) skipped=1 abgebrochen", erg)
 	}
 	if len(versuche) != 2 {
 		t.Fatalf("nach dem Mailserver-Fehler darf keine weitere Klasse versucht werden: %v", versuche)
@@ -217,7 +217,7 @@ func TestLeseKlassenVersandAnfrage(t *testing.T) {
 			got, err := leseKlassenVersandAnfrage(req, absenderKonfig(""))
 			if tt.wantErr {
 				if err == nil {
-					t.Fatalf("Fehler erwartet, bekam keinen (%+v)", got)
+					t.Fatalf("leseKlassenVersandAnfrage(…) = keinen (%+v), erwartet Fehler", got)
 				}
 				return
 			}
@@ -226,13 +226,13 @@ func TestLeseKlassenVersandAnfrage(t *testing.T) {
 			}
 			if tt.wantAlle {
 				if got.Klassen != nil {
-					t.Fatalf("Klassen = %v, want nil (= alle Klassen)", *got.Klassen)
+					t.Fatalf("Klassen = %v, erwartet nil (= alle Klassen)", *got.Klassen)
 				}
 			} else if !cmp.Equal(*got.Klassen, tt.wantKlassen) {
-				t.Fatalf("Klassen = %v, want %v", *got.Klassen, tt.wantKlassen)
+				t.Fatalf("Klassen = %v, erwartet %v", *got.Klassen, tt.wantKlassen)
 			}
 			if got.Umleitung != tt.wantEmail {
-				t.Fatalf("Umleitung = %q, want %q", got.Umleitung, tt.wantEmail)
+				t.Fatalf("Umleitung = %q, erwartet %q", got.Umleitung, tt.wantEmail)
 			}
 		})
 	}
@@ -251,7 +251,7 @@ func TestWaehleKlassen(t *testing.T) {
 	t.Run("nil = alle Klassen (alter Vertrag)", func(t *testing.T) {
 		gewaehlt, unbekannt := waehleKlassen(alle, nil)
 		if len(gewaehlt) != 3 || unbekannt != nil {
-			t.Fatalf("gewaehlt=%d unbekannt=%v, want 3 und nil", len(gewaehlt), unbekannt)
+			t.Fatalf("gewaehlt=%d unbekannt=%v, erwartet 3 und nil", len(gewaehlt), unbekannt)
 		}
 	})
 
@@ -259,10 +259,10 @@ func TestWaehleKlassen(t *testing.T) {
 		auswahl := []string{"6b"}
 		gewaehlt, unbekannt := waehleKlassen(alle, &auswahl)
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "6b" {
-			t.Fatalf("gewaehlt = %+v, want genau [6b]", gewaehlt)
+			t.Fatalf("gewaehlt = %+v, erwartet genau [6b]", gewaehlt)
 		}
 		if unbekannt != nil {
-			t.Fatalf("unbekannt = %v, want nil", unbekannt)
+			t.Fatalf("unbekannt = %v, erwartet nil", unbekannt)
 		}
 	})
 
@@ -270,10 +270,10 @@ func TestWaehleKlassen(t *testing.T) {
 		auswahl := []string{"5a", "05A"}
 		gewaehlt, unbekannt := waehleKlassen(alle, &auswahl)
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "5a" {
-			t.Fatalf("gewaehlt = %+v, want genau [5a]", gewaehlt)
+			t.Fatalf("gewaehlt = %+v, erwartet genau [5a]", gewaehlt)
 		}
 		if !cmp.Equal(unbekannt, []string{"05A"}) {
-			t.Fatalf("unbekannt = %v, want [05A]", unbekannt)
+			t.Fatalf("unbekannt = %v, erwartet [05A]", unbekannt)
 		}
 	})
 
@@ -281,7 +281,7 @@ func TestWaehleKlassen(t *testing.T) {
 		auswahl := []string{"5a", "5a", "5a"}
 		gewaehlt, _ := waehleKlassen(alle, &auswahl)
 		if len(gewaehlt) != 1 {
-			t.Fatalf("gewaehlt = %d Klassen, want 1 — sonst bekommt die Klasse drei Mahnungen", len(gewaehlt))
+			t.Fatalf("gewaehlt = %d Klassen, erwartet 1 — sonst bekommt die Klasse drei Mahnungen", len(gewaehlt))
 		}
 	})
 }
@@ -312,11 +312,11 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	)
 
 	if erg.Versendet != 2 || erg.Uebersprungen != 1 {
-		t.Fatalf("sent=%d skipped=%d, want sent=2 skipped=1 (7c hat keine Fälle)", erg.Versendet, erg.Uebersprungen)
+		t.Fatalf("sent=%d skipped=%d, erwartet sent=2 skipped=1 (7c hat keine Fälle)", erg.Versendet, erg.Uebersprungen)
 	}
 	for _, e := range empfaenger {
 		if e != "sekretariat@schule.de" {
-			t.Fatalf("Empfänger = %v, want ausschliesslich sekretariat@schule.de", empfaenger)
+			t.Fatalf("Empfänger = %v, erwartet ausschliesslich sekretariat@schule.de", empfaenger)
 		}
 	}
 	if original[0].LehrerEmail != "lehrer5a@schule.de" {
@@ -404,7 +404,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		if got := ergaenzeSchulDomain(t.Context(), tt.eingabe, konfig); got != tt.want {
-			t.Errorf("ergaenzeSchulDomain(%q) = %q, want %q", tt.eingabe, got, tt.want)
+			t.Errorf("ergaenzeSchulDomain(%q) = %q, erwartet %q", tt.eingabe, got, tt.want)
 		}
 	}
 }
@@ -413,7 +413,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 // die Adressprüfung und scheitert dort mit einer klaren Meldung.
 func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
 	if got := ergaenzeSchulDomain(t.Context(), "mueller", absenderKonfig("")); got != "mueller" {
-		t.Fatalf("ergaenzeSchulDomain = %q, want unverändert %q", got, "mueller")
+		t.Fatalf("ergaenzeSchulDomain = %q, erwartet unverändert %q", got, "mueller")
 	}
 }
 
@@ -427,6 +427,6 @@ func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if got.Umleitung != "mueller@philipp-reis-schule.de" {
-		t.Fatalf("Umleitung = %q, want mueller@philipp-reis-schule.de", got.Umleitung)
+		t.Fatalf("Umleitung = %q, erwartet mueller@philipp-reis-schule.de", got.Umleitung)
 	}
 }

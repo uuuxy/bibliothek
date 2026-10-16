@@ -55,7 +55,7 @@ func TestZweiteZeile(t *testing.T) {
 	}
 	for _, c := range faelle {
 		if got := zweiteZeile(c.jahr, c.signatur); got != c.want {
-			t.Errorf("zweiteZeile(%q, %q) = %q, want %q", c.jahr, c.signatur, got, c.want)
+			t.Errorf("zweiteZeile(%q, %q) = %q, erwartet %q", c.jahr, c.signatur, got, c.want)
 		}
 	}
 }

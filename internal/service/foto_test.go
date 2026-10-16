@@ -21,7 +21,7 @@ func TestSchreibeLeserFoto(t *testing.T) {
 	t.Run("successful upload", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mock.Close()
 
@@ -40,7 +40,7 @@ func TestSchreibeLeserFoto(t *testing.T) {
 
 		expectedURL := "/api/schueler/barcode-123/photo"
 		if photoURL != expectedURL {
-			t.Errorf("expected url %s, got %s", expectedURL, photoURL)
+			t.Errorf("SchreibeLeserFoto(…) = %s, erwartet url %s", photoURL, expectedURL)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -51,7 +51,7 @@ func TestSchreibeLeserFoto(t *testing.T) {
 	t.Run("missing student", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mock.Close()
 
@@ -61,18 +61,18 @@ func TestSchreibeLeserFoto(t *testing.T) {
 
 		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-not-found", validBase64)
 		if err == nil {
-			t.Error("expected error, got nil")
+			t.Error("SchreibeLeserFoto(unbekannter Schüler) = nil, erwartet einen Fehler")
 		}
 		if photoURL != "" {
-			t.Errorf("expected empty url, got %s", photoURL)
+			t.Errorf("SchreibeLeserFoto(…) = Adresse %s, erwartet leer", photoURL)
 		}
 
 		expectedErr := "schüler nicht gefunden"
 		if err.Error() != expectedErr {
-			t.Errorf("expected error %s, got %s", expectedErr, err.Error())
+			t.Errorf("SchreibeLeserFoto(…) = Fehler %s, erwartet %s", err.Error(), expectedErr)
 		}
 		if !errors.Is(err, ErrFotoLeserUnbekannt) {
-			t.Errorf("expected ErrFotoLeserUnbekannt, got %v", err)
+			t.Errorf("SchreibeLeserFoto(…) = %v, erwartet ErrFotoLeserUnbekannt", err)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -83,7 +83,7 @@ func TestSchreibeLeserFoto(t *testing.T) {
 	t.Run("invalid base64 string format", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mock.Close()
 
@@ -94,10 +94,10 @@ func TestSchreibeLeserFoto(t *testing.T) {
 		invalidBase64 := "data:image/png;base64,invalid-base-64!!!"
 		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-123", invalidBase64)
 		if !errors.Is(err, ErrFotoUnlesbar) {
-			t.Errorf("expected ErrFotoUnlesbar, got %v", err)
+			t.Errorf("SchreibeLeserFoto(…) = %v, erwartet ErrFotoUnlesbar", err)
 		}
 		if photoURL != "" {
-			t.Errorf("expected empty url, got %s", photoURL)
+			t.Errorf("SchreibeLeserFoto(…) = Adresse %s, erwartet leer", photoURL)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -108,7 +108,7 @@ func TestSchreibeLeserFoto(t *testing.T) {
 	t.Run("database insertion failure", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mock.Close()
 
@@ -122,10 +122,10 @@ func TestSchreibeLeserFoto(t *testing.T) {
 
 		photoURL, err := SchreibeLeserFoto(context.Background(), mock, "student-123", validBase64)
 		if err == nil {
-			t.Error("expected error, got nil")
+			t.Error("SchreibeLeserFoto(…) bei Datenbankfehler = nil, erwartet einen Fehler")
 		}
 		if photoURL != "" {
-			t.Errorf("expected empty url, got %s", photoURL)
+			t.Errorf("SchreibeLeserFoto(…) = Adresse %s, erwartet leer", photoURL)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {

@@ -75,7 +75,7 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 			}
 		}
 		if got := rec.Header().Get("Content-Disposition"); !strings.Contains(got, "Kontoauszuege_Auswahl.pdf") {
-			t.Errorf("Dateiname = %q, want Kontoauszuege_Auswahl.pdf", got)
+			t.Errorf("Dateiname = %q, erwartet Kontoauszuege_Auswahl.pdf", got)
 		}
 	})
 
@@ -83,20 +83,20 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 		// Finn ist kein Abgänger. Seine Kennung neben der von Cem: gedruckt wird nur Cem.
 		_, text := kontoauszugPDF(t, srv, "?ids="+cem+","+finn)
 		if !strings.Contains(text, "Cem") || strings.Contains(text, "Finn") {
-			t.Errorf("erwartet nur Cem; Text: %.200s", text)
+			t.Errorf("Druck enthält %.200s, erwartet nur Cem", text)
 		}
 		// Nur Finn: nichts zu drucken — 404 wie bei einer leeren Liste, kein Kontoauszug
 		// eines Schülers, den die Abgängerliste nicht zeigt.
 		rec, _ := kontoauszugPDF(t, srv, "?ids="+finn)
 		if rec.Code != http.StatusNotFound {
-			t.Errorf("nur ein Nicht-Abgänger gewählt: Status = %d, want 404", rec.Code)
+			t.Errorf("nur ein Nicht-Abgänger gewählt: Status = %d, erwartet 404", rec.Code)
 		}
 	})
 
 	t.Run("Klasse und Auswahl gelten zusammen", func(t *testing.T) {
 		rec, _ := kontoauszugPDF(t, srv, "?klasse=10R1&ids="+anna)
 		if rec.Code != http.StatusNotFound {
-			t.Errorf("Anna ist nicht in 10R1: Status = %d, want 404", rec.Code)
+			t.Errorf("Anna ist nicht in 10R1: Status = %d, erwartet 404", rec.Code)
 		}
 	})
 
@@ -106,7 +106,7 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 		for _, query := range []string{"?ids=", "?ids=,", "?ids=%20"} {
 			rec, _ := kontoauszugPDF(t, srv, query)
 			if rec.Code != http.StatusBadRequest {
-				t.Errorf("%s: Status = %d, want 400", query, rec.Code)
+				t.Errorf("%s: Status = %d, erwartet 400", query, rec.Code)
 			}
 		}
 	})
@@ -115,7 +115,7 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 		for _, query := range []string{"?ids=mueller", "?ids=" + anna + ",x", "?ids=urn:uuid:" + anna} {
 			rec, _ := kontoauszugPDF(t, srv, query)
 			if rec.Code != http.StatusBadRequest {
-				t.Errorf("%s: Status = %d, want 400 — %s", query, rec.Code, rec.Body.String())
+				t.Errorf("%s: Status = %d, erwartet 400 — %s", query, rec.Code, rec.Body.String())
 			}
 		}
 	})
@@ -130,6 +130,6 @@ func TestAbgaengerDruck_AuswahlAendertDieSaisonNicht(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: testdaten.WinterUhr}}
 	rec, _ := kontoauszugPDF(t, srv, "?ids="+anna)
 	if rec.Code != http.StatusNotFound {
-		t.Errorf("im Oktober mit Auswahl: Status = %d, want 404", rec.Code)
+		t.Errorf("im Oktober mit Auswahl: Status = %d, erwartet 404", rec.Code)
 	}
 }

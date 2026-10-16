@@ -46,7 +46,7 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 		t.Fatalf("Apply: %v", err)
 	}
 	if n := zaehle(t, pool, "lower(nachname) IN ('hand','ohne','kind')"); n != 3 {
-		t.Fatalf("erwartet 3 Zeilen, waren %d — Duplikate", n)
+		t.Fatalf("zaehle(…) = %d, erwartet 3 Zeilen — Duplikate", n)
 	}
 	for id, klasse := range map[string]string{mitDatum: "06G1", ohneDatum: "6b"} {
 		var k string
@@ -86,7 +86,7 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	// Mehrdeutig: die CSV-Zeile "Max Mustermann", die beiden Bestandszeilen und die
 	// zwei "Tom Doppelt".
 	if len(prev.Mehrdeutig) != 5 {
-		t.Fatalf("erwartet 5 Mehrdeutig-Einträge, waren %d: %+v", len(prev.Mehrdeutig), prev.Mehrdeutig)
+		t.Fatalf("len(prev.Mehrdeutig) = %d, erwartet 5 Mehrdeutig-Einträge: %+v", len(prev.Mehrdeutig), prev.Mehrdeutig)
 	}
 	if len(prev.Neuzugaenge) != 0 || len(prev.Klassenwechsel) != 1 || len(prev.Abgaenger) != 0 {
 		t.Fatalf("Vorschau falsch: neu=%d wechsel=%d abgänger=%d", len(prev.Neuzugaenge), len(prev.Klassenwechsel), len(prev.Abgaenger))
@@ -135,7 +135,7 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 		t.Fatalf("Bestandsschüler mit Doppelname in der Datei darf KEIN Abgänger sein: %+v", prev.Abgaenger)
 	}
 	if len(prev.Mehrdeutig) != 2 {
-		t.Fatalf("erwartet 2 Mehrdeutig-Zeilen, waren %d", len(prev.Mehrdeutig))
+		t.Fatalf("len(prev.Mehrdeutig) = %d, erwartet 2 Mehrdeutig-Zeilen", len(prev.Mehrdeutig))
 	}
 	if _, err := s.berechneLUSD(ctx, datei, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
@@ -184,6 +184,6 @@ func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 		t.Errorf("Abgänger wurde angefasst: abgaenger=%v gesperrt=%v klasse=%q", abg, gesperrt, klasse)
 	}
 	if n := zaehle(t, pool, "nachname='Alt'"); n != 1 {
-		t.Errorf("erwartet 1 Zeile 'Alt', waren %d", n)
+		t.Errorf("zaehle(…) = %d, erwartet 1 Zeile 'Alt'", n)
 	}
 }

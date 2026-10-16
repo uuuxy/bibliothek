@@ -51,10 +51,10 @@ func TestBaueSichereCoverURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, ok := baueSichereCoverURL(tt.input)
 			if ok != tt.ok {
-				t.Fatalf("baueSichereCoverURL(%q) ok = %v; want %v", tt.input, ok, tt.ok)
+				t.Fatalf("baueSichereCoverURL(%q) ok = %v; erwartet %v", tt.input, ok, tt.ok)
 			}
 			if result != tt.expected {
-				t.Errorf("baueSichereCoverURL(%q) = %q; want %q", tt.input, result, tt.expected)
+				t.Errorf("baueSichereCoverURL(%q) = %q; erwartet %q", tt.input, result, tt.expected)
 			}
 		})
 	}
@@ -71,7 +71,7 @@ func TestIstCoverCacheSchluessel(t *testing.T) {
 	for _, s := range gueltig {
 		t.Run("gültig/"+s, func(t *testing.T) {
 			if !istCoverCacheSchluessel(s) {
-				t.Errorf("istCoverCacheSchluessel(%q) = false, want true", s)
+				t.Errorf("istCoverCacheSchluessel(%q) = false, erwartet true", s)
 			}
 		})
 	}
@@ -90,7 +90,7 @@ func TestIstCoverCacheSchluessel(t *testing.T) {
 	for name, s := range ungueltig {
 		t.Run("ungültig/"+name, func(t *testing.T) {
 			if istCoverCacheSchluessel(s) {
-				t.Errorf("istCoverCacheSchluessel(%q) = true, want false", s)
+				t.Errorf("istCoverCacheSchluessel(%q) = true, erwartet false", s)
 			}
 		})
 	}
@@ -122,10 +122,10 @@ func TestCover_TransparentesGIFOhneDownload(t *testing.T) {
 			s.Cover()(rec, req)
 
 			if rec.Code != 200 {
-				t.Errorf("Status = %d; want 200", rec.Code)
+				t.Errorf("Status = %d; erwartet 200", rec.Code)
 			}
 			if ct := rec.Header().Get("Content-Type"); ct != "image/gif" {
-				t.Errorf("Content-Type = %q; want image/gif", ct)
+				t.Errorf("Content-Type = %q; erwartet image/gif", ct)
 			}
 			if !bytes.Equal(rec.Body.Bytes(), transparentesGIF) {
 				t.Errorf("Body ist nicht das Fallback-GIF (%d Bytes)", rec.Body.Len())

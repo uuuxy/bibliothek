@@ -62,7 +62,7 @@ func TestInventurlaufUeberlappungWirdAbgewiesen(t *testing.T) {
 	sig := "BIB Deu"
 	_, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &sig}, "Signatur BIB Deu", "")
 	if !errors.Is(err, ErrInventurUeberlappt) {
-		t.Fatalf("erwartet ErrInventurUeberlappt neben globaler Session, war: %v", err)
+		t.Fatalf("repo.LegeLaufAn(…) = %v, erwartet ErrInventurUeberlappt neben globaler Session", err)
 	}
 
 	// Den Lauf über den ganzen Bestand abschließen; die Zeile wird frei.

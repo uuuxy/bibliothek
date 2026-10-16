@@ -70,7 +70,7 @@ func TestAnmelden_UnbekanntesKontoIst401(t *testing.T) {
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("erwartet 401, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 401: %s", rec.Code, rec.Body.String())
 	}
 	if got, want := fehlermeldungAus(t, rec), "E-Mail-Adresse oder Passwort stimmt nicht"; got != want {
 		t.Errorf("Anmelden: Meldung %q, erwartet %q", got, want)
@@ -91,7 +91,7 @@ func TestAnmelden_DeaktiviertesKontoIst403(t *testing.T) {
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
-		t.Errorf("erwartet 403, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("rec.Code = %d, erwartet 403: %s", rec.Code, rec.Body.String())
 	}
 	const erwartet = "Konto deaktiviert. Bitte an die Bibliothek wenden."
 	if got := fehlermeldungAus(t, rec); got != erwartet {
@@ -123,12 +123,12 @@ func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	cookies := rec.Result().Cookies()
 	if len(cookies) != 1 || cookies[0].Name != "session_token" || cookies[0].Value == "" {
-		t.Fatalf("erwartet session_token-Cookie, bekam %+v", cookies)
+		t.Fatalf("rec.Result().Cookies() = %+v, erwartet session_token-Cookie", cookies)
 	}
 	if !cookies[0].HttpOnly {
 		t.Errorf("Session-Cookie muss HttpOnly sein")
@@ -190,7 +190,7 @@ func TestAnmelden_BremseWeistDenSechstenVersuchAb(t *testing.T) {
 	// Der sechste Versuch wird abgewiesen, ohne dass die Datenbank noch gefragt wird.
 	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusTooManyRequests {
-		t.Errorf("erwartet 429 nach 5 Fehlversuchen, bekam %d", rec.Code)
+		t.Errorf("rec.Code = %d, erwartet 429 nach 5 Fehlversuchen", rec.Code)
 	}
 	if got, want := fehlermeldungAus(t, rec), "Zu viele fehlgeschlagene Anmeldungen. Bitte 15 Minuten warten."; got != want {
 		t.Errorf("Anmelden: Meldung %q, erwartet %q", got, want)
@@ -239,7 +239,7 @@ func TestAnmelden_AusweisnummerImTokenKommtAusDerDatenbank(t *testing.T) {
 	rec := rufeAnmelden(t, a, mock,
 		`{"email":"nberger@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	cookies := rec.Result().Cookies()
@@ -350,7 +350,7 @@ func TestAnmelden_UebergrosserRumpfWirdAbgewiesen(t *testing.T) {
 	rumpf := `{"email":"x@example.test","password":"` + strings.Repeat("a", anmeldeRumpfMaxBytes) + `"}`
 	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("Status = %d; want 400 — der Rumpf darf nicht bis zur Anmeldung kommen", rec.Code)
+		t.Fatalf("Status = %d; erwartet 400 — der Rumpf darf nicht bis zur Anmeldung kommen", rec.Code)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("es darf kein Datenbankzugriff stattfinden: %v", err)

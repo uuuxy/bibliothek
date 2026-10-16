@@ -32,13 +32,13 @@ func TestFindeImKatalog_LiefertSignatur(t *testing.T) {
 
 	results := findeImKatalog(ctx, pool, "Effi Briest")
 	if len(results) != 1 {
-		t.Fatalf("Treffer = %d, want 1", len(results))
+		t.Fatalf("Treffer = %d, erwartet 1", len(results))
 	}
 	if results[0].Signatur != "Pg" {
-		t.Errorf("Signatur = %q, want %q", results[0].Signatur, "Pg")
+		t.Errorf("Signatur = %q, erwartet %q", results[0].Signatur, "Pg")
 	}
 	if results[0].Quelle != "local" {
-		t.Errorf("Source = %q, want %q", results[0].Quelle, "local")
+		t.Errorf("Source = %q, erwartet %q", results[0].Quelle, "local")
 	}
 }
 

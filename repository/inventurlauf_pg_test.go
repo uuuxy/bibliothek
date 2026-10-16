@@ -123,7 +123,7 @@ func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 		t.Fatalf("ListOffene: %v", err)
 	}
 	if len(offen) != 1 {
-		t.Fatalf("erwartet 1 offene Session, waren %d", len(offen))
+		t.Fatalf("len(offen) = %d, erwartet 1 offene Session", len(offen))
 	}
 	if err := repo.VerwerfeLauf(ctx, offen[0].ID); err != nil {
 		t.Fatalf("Abort: %v", err)

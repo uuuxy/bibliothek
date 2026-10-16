@@ -63,7 +63,7 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	}
 
 	if len(klassen) != 2 {
-		t.Fatalf("erwartet 2 Klassen, bekam %d", len(klassen))
+		t.Fatalf("len(klassen) = %d, erwartet 2 Klassen", len(klassen))
 	}
 
 	k7a := klassen[0]
@@ -141,7 +141,7 @@ func TestLadeUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if len(klassen) != 0 {
-		t.Errorf("erwartet leere Liste, bekam %d Klassen", len(klassen))
+		t.Errorf("len(klassen) = %d Klassen, erwartet leere Liste", len(klassen))
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)

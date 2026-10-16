@@ -65,10 +65,10 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ext != ".jpg" {
-			t.Errorf("expected .jpg extension, got %s", ext)
+			t.Errorf("verarbeiteHochgeladenesBild(jpeg) = Endung %s, erwartet .jpg", ext)
 		}
 		if len(ergebnis) == 0 {
-			t.Error("expected non-empty image data")
+			t.Error("verarbeiteHochgeladenesBild(jpeg) lieferte keine Bilddaten")
 		}
 	})
 
@@ -79,10 +79,10 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ext != ".png" {
-			t.Errorf("expected .png extension, got %s", ext)
+			t.Errorf("verarbeiteHochgeladenesBild(png) = Endung %s, erwartet .png", ext)
 		}
 		if len(ergebnis) == 0 {
-			t.Error("expected non-empty image data")
+			t.Error("verarbeiteHochgeladenesBild(png) lieferte keine Bilddaten")
 		}
 	})
 
@@ -90,7 +90,7 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 		bildDaten := []byte("not an image")
 		_, _, err := verarbeiteHochgeladenesBild(bildDaten, "test-id")
 		if err == nil {
-			t.Fatal("expected error for invalid image data, got nil")
+			t.Fatal("verarbeiteHochgeladenesBild(kein Bild) = nil, erwartet einen Fehler")
 		}
 	})
 
@@ -101,7 +101,7 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ext != ".jpg" {
-			t.Errorf("expected .jpg extension, got %s", ext)
+			t.Errorf("verarbeiteHochgeladenesBild(großes JPEG) = Endung %s, erwartet .jpg", ext)
 		}
 
 		bild, format, err := image.Decode(bytes.NewReader(ergebnis))
@@ -109,11 +109,11 @@ func TestVerarbeiteHochgeladenesBild(t *testing.T) {
 			t.Fatalf("failed to decode result image: %v", err)
 		}
 		if format != "jpeg" {
-			t.Errorf("expected jpeg format, got %s", format)
+			t.Errorf("image.Decode(ergebnis) = Format %s, erwartet jpeg", format)
 		}
 		bounds := bild.Bounds()
 		if bounds.Dx() > 600 || bounds.Dy() > 900 {
-			t.Errorf("image was not properly resized. got %dx%d", bounds.Dx(), bounds.Dy())
+			t.Errorf("verarbeiteHochgeladenesBild(1200×1800) = %d×%d Pixel, erwartet höchstens 600×900", bounds.Dx(), bounds.Dy())
 		}
 	})
 }
@@ -140,10 +140,10 @@ func TestLeseCoverUpload(t *testing.T) {
 
 		_, ok := leseCoverUpload(w, anfrage, "123")
 		if ok {
-			t.Error("expected leseCoverUpload() to fail with wrong field name")
+			t.Error("leseCoverUpload() mit falschem Feldnamen = ok, erwartet eine Ablehnung")
 		}
 		if w.Code != http.StatusBadRequest {
-			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+			t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusBadRequest)
 		}
 	})
 
@@ -153,10 +153,10 @@ func TestLeseCoverUpload(t *testing.T) {
 
 		_, ok := leseCoverUpload(w, anfrage, "123")
 		if ok {
-			t.Error("expected leseCoverUpload() to fail with invalid extension")
+			t.Error("leseCoverUpload() mit ungültiger Endung = ok, erwartet eine Ablehnung")
 		}
 		if w.Code != http.StatusBadRequest {
-			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+			t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusBadRequest)
 		}
 	})
 
@@ -166,10 +166,10 @@ func TestLeseCoverUpload(t *testing.T) {
 
 		_, ok := leseCoverUpload(w, anfrage, "123")
 		if ok {
-			t.Error("expected leseCoverUpload() to fail with empty file")
+			t.Error("leseCoverUpload() mit leerer Datei = ok, erwartet eine Ablehnung")
 		}
 		if w.Code != http.StatusBadRequest {
-			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+			t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusBadRequest)
 		}
 	})
 }
@@ -191,18 +191,18 @@ func TestSpeichereHochgeladenesCover(t *testing.T) {
 		}
 
 		if !strings.HasPrefix(adresse, "/uploads/") {
-			t.Errorf("expected URL to start with /uploads/, got %s", adresse)
+			t.Errorf("speichereHochgeladenesCover() = %s, erwartet eine Adresse unter /uploads/", adresse)
 		}
 
 		if !strings.HasSuffix(adresse, ".jpg") {
-			t.Errorf("expected URL to end with .jpg, got %s", adresse)
+			t.Errorf("speichereHochgeladenesCover() = %s, erwartet die Endung .jpg", adresse)
 		}
 
 		// Die Datei muss bestehen.
 		dateiname := filepath.Base(adresse)
 		dateipfad := filepath.Join("uploads", dateiname)
 		if _, err := os.Stat(dateipfad); os.IsNotExist(err) {
-			t.Errorf("expected file %s to be created, but it was not", dateipfad)
+			t.Errorf("Datei %s fehlt nach speichereHochgeladenesCover()", dateipfad)
 		}
 
 		// Die erzeugte Datei löschen.
@@ -224,7 +224,7 @@ func TestSpeichereHochgeladenesCover(t *testing.T) {
 
 		// Die Adresse darf keinen Weg aus dem Verzeichnis heraus enthalten.
 		if strings.Contains(adresse, "..") {
-			t.Errorf("expected URL to not contain path traversal elements, got %s", adresse)
+			t.Errorf("speichereHochgeladenesCover() = %s, erwartet eine Adresse ohne „..“", adresse)
 		}
 
 		dateiname := filepath.Base(adresse)
@@ -330,7 +330,7 @@ func TestCoverHochladen(t *testing.T) {
 		t.Run(fall.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
-				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				t.Fatalf("pgxmock.NewPool() = %v", err)
 			}
 			defer mock.Close()
 
@@ -367,7 +367,7 @@ func TestCoverHochladen(t *testing.T) {
 			tueren.CoverHochladen(w, anfrage)
 
 			if w.Code != fall.expectedStatus {
-				t.Errorf("expected status %d, got %d. Body: %s", fall.expectedStatus, w.Code, w.Body.String())
+				t.Errorf("CoverHochladen: Status %d, erwartet %d: %s", w.Code, fall.expectedStatus, w.Body.String())
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

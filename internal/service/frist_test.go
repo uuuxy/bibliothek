@@ -52,7 +52,7 @@ func TestLeseJahrgang(t *testing.T) {
 	}
 	for _, c := range cases {
 		if got := leseJahrgang(c.klasse); got != c.want {
-			t.Errorf("leseJahrgang(%q) = %d, want %d", c.klasse, got, c.want)
+			t.Errorf("leseJahrgang(%q) = %d, erwartet %d", c.klasse, got, c.want)
 		}
 	}
 }
@@ -69,7 +69,7 @@ func TestBerechneFrist_GewoehnlichesBuch(t *testing.T) {
 	got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
 	if !got.Equal(want) {
-		t.Errorf("reguläres Buch: got %v, want %v", got, want)
+		t.Errorf("reguläres Buch = %v, erwartet %v", got, want)
 	}
 }
 
@@ -79,7 +79,7 @@ func TestBerechneFrist_Medien(t *testing.T) {
 		got := berechneFrist(jetzt, fristAngaben{IstLernmittel: false, Medientyp: mt, LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 		want := time.Date(2026, time.September, 8, 23, 59, 59, 0, schulzeit.Zone())
 		if !got.Equal(want) {
-			t.Errorf("Medium %q: got %v, want %v", mt, got, want)
+			t.Errorf("Medium %q = %v, erwartet %v", mt, got, want)
 		}
 	}
 }
@@ -89,10 +89,10 @@ func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
 		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 
 		if got.Month() != time.July || got.Day() != 31 {
-			t.Errorf("LMF %q: Stichtag soll 31.07 sein, got %02d-%02d", titel, got.Month(), got.Day())
+			t.Errorf("berechneFrist(LMF %q) = %02d-%02d, erwartet den Stichtag 07-31", titel, got.Month(), got.Day())
 		}
 		if got.Hour() != 23 || got.Minute() != 59 || got.Second() != 59 {
-			t.Errorf("LMF %q: Frist soll auf 23:59:59 enden, got %v", titel, got)
+			t.Errorf("berechneFrist(LMF %q) = %v, erwartet das Ende um 23:59:59", titel, got)
 		}
 
 		// Jahr: laufendes Schuljahr, ab August rollt es ins nächste Kalenderjahr.
@@ -104,7 +104,7 @@ func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
 			wantYear++
 		}
 		if got.Year() != wantYear {
-			t.Errorf("LMF %q: Stichtagsjahr got %d, want %d", titel, got.Year(), wantYear)
+			t.Errorf("LMF %q: Stichtagsjahr = %d, erwartet %d", titel, got.Year(), wantYear)
 		}
 
 		// Der Stichtag muss in der Schul-Zeitzone liegen, nicht in der Server-Zeitzone.
@@ -121,14 +121,14 @@ func TestBerechneFrist_LMF_StichtagVorgabe(t *testing.T) {
 func TestBerechneFrist_LMF_NurInSignatur(t *testing.T) {
 	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	if got.Month() != time.July || got.Day() != 31 {
-		t.Errorf("LMF nur in Signatur: Stichtag soll 31.07 sein, got %02d-%02d", got.Month(), got.Day())
+		t.Errorf("berechneFrist(LMF nur in Signatur) = %02d-%02d, erwartet den Stichtag 07-31", got.Month(), got.Day())
 	}
 }
 
 func TestBerechneFrist_LMF_EigenerStichtag(t *testing.T) {
 	got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 	if got.Month() != time.June || got.Day() != 15 {
-		t.Errorf("benutzerdefinierter Stichtag 06-15: got %02d-%02d", got.Month(), got.Day())
+		t.Errorf("berechneFrist(Stichtag 06-15) = %02d-%02d, erwartet 06-15", got.Month(), got.Day())
 	}
 }
 
@@ -136,7 +136,7 @@ func TestBerechneFrist_LMF_UngueltigerStichtagGiltAls31Juli(t *testing.T) {
 	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
 		got := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 0, Sommerferien: ""})
 		if got.Month() != time.July || got.Day() != 31 {
-			t.Errorf("ungültiger Stichtag %q soll auf 31.07 zurückfallen, got %02d-%02d", bad, got.Month(), got.Day())
+			t.Errorf("berechneFrist(Stichtag %q) = %02d-%02d, erwartet den Rückfall auf 07-31", bad, got.Month(), got.Day())
 		}
 	}
 }
@@ -146,12 +146,11 @@ func TestBerechneFrist_LMF_ZusatzJahre(t *testing.T) {
 	plus2 := berechneFrist(time.Now(), fristAngaben{IstLernmittel: true, Medientyp: "Buch", LMFStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, ZusatzJahre: 2, Sommerferien: ""})
 
 	if plus2.Year() != base.Year()+2 {
-		t.Errorf("additionalYears=2 soll Stichtagsjahr um 2 erhöhen: base %d, got %d", base.Year(), plus2.Year())
+		t.Errorf("berechneFrist(ZusatzJahre 2) = Jahr %d, erwartet %d + 2", plus2.Year(), base.Year())
 	}
 	// Monat/Tag bleiben unverändert.
 	if plus2.Month() != base.Month() || plus2.Day() != base.Day() {
-		t.Errorf("additionalYears darf Monat/Tag nicht verändern: base %02d-%02d, got %02d-%02d",
-			base.Month(), base.Day(), plus2.Month(), plus2.Day())
+		t.Errorf("berechneFrist(ZusatzJahre 2) = %02d-%02d, erwartet unverändert %02d-%02d", plus2.Month(), plus2.Day(), base.Month(), base.Day())
 	}
 }
 
@@ -187,22 +186,22 @@ func TestLadeEinstellungen_LiestWerteUndUebergehtUngueltige(t *testing.T) {
 	}
 
 	if got.FristBuchTage != 30 {
-		t.Errorf("FristBuchTage = %d, want 30", got.FristBuchTage)
+		t.Errorf("FristBuchTage = %d, erwartet 30", got.FristBuchTage)
 	}
 	if got.FristMedienTage != 7 {
-		t.Errorf("ungültiger Wert soll Default behalten: FristMedienTage = %d, want 7", got.FristMedienTage)
+		t.Errorf("ungültiger Wert soll Default behalten: FristMedienTage = %d, erwartet 7", got.FristMedienTage)
 	}
 	if got.MaxAusleihenSchueler != 8 {
-		t.Errorf("MaxAusleihenSchueler = %d, want 8", got.MaxAusleihenSchueler)
+		t.Errorf("MaxAusleihenSchueler = %d, erwartet 8", got.MaxAusleihenSchueler)
 	}
 	if got.LMFStichtag != "06-30" {
-		t.Errorf("LMFStichtag = %q, want 06-30", got.LMFStichtag)
+		t.Errorf("LMFStichtag = %q, erwartet 06-30", got.LMFStichtag)
 	}
 	if !got.FerienLeseclubAktiv {
 		t.Error("FerienLeseclubAktiv soll true sein")
 	}
 	if got.UeberfaelligSperreAbMedien != 3 {
-		t.Errorf("UeberfaelligSperreAbMedien = %d, want 3", got.UeberfaelligSperreAbMedien)
+		t.Errorf("UeberfaelligSperreAbMedien = %d, erwartet 3", got.UeberfaelligSperreAbMedien)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -222,7 +221,7 @@ func TestLadeEinstellungen_LeereTabelleBehaeltVorgaben(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if got.FristBuchTage != 21 || got.MaxAusleihenSchueler != 5 || got.LMFStichtag != "07-31" {
-		t.Errorf("leere Tabelle soll sichere Defaults liefern, got %+v", got)
+		t.Errorf("ladeEinstellungen(…) bei leerer Tabelle = %+v, erwartet die Vorgaben", got)
 	}
 }
 
@@ -258,7 +257,7 @@ func TestBestimmeFrist_LeseclubGehtVor(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if got.Year() != 2030 || got.Month() != time.September || got.Day() != 15 {
-		t.Errorf("Leseclub-Zieldatum soll greifen: got %v, want 2030-09-15", got)
+		t.Errorf("Leseclub-Zieldatum soll greifen = %v, erwartet 2030-09-15", got)
 	}
 }
 
@@ -282,7 +281,7 @@ func TestBestimmeFrist_LeseclubVergangenGiltNicht(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if !got.After(time.Now()) {
-		t.Errorf("vergangenes Leseclub-Zieldatum darf keine Frist sein: got %v", got)
+		t.Errorf("bestimmeFrist(…) = %v, erwartet eine Frist in der Zukunft statt des vergangenen Leseclub-Zieldatums", got)
 	}
 }
 
@@ -307,7 +306,7 @@ func TestBestimmeFrist_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 		t.Errorf("Leseclub ist ausgeschaltet, die Frist ist trotzdem sein Zieldatum: %v", got)
 	}
 	if !got.After(time.Now()) || got.After(time.Now().AddDate(0, 6, 0)) {
-		t.Errorf("erwartet die Leihfrist für Bücher ab heute: got %v", got)
+		t.Errorf("bestimmeFrist(…) = %v, erwartet die Leihfrist für Bücher ab heute", got)
 	}
 }
 
@@ -332,7 +331,7 @@ func TestBestimmeFrist_LMFOhneLeseclub(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if got.Month() != time.July || got.Day() != 31 {
-		t.Errorf("LMF soll Stichtag (31.07) folgen, nicht Leseclub: got %v", got)
+		t.Errorf("bestimmeFrist(LMF) = %v, erwartet den Stichtag 31.07 statt des Leseclubs", got)
 	}
 }
 
@@ -354,7 +353,7 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if got.Year() != 2027 || got.Month() != time.June || got.Day() != 28 || got.Hour() != 23 {
-		t.Errorf("Frist soll das Tagesende des Klassen-Termins sein: got %v", got)
+		t.Errorf("bestimmeFrist(…, \"9H1\") = %v, erwartet das Tagesende des Klassen-Termins", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unerfüllte Erwartungen: %v", err)
@@ -369,7 +368,7 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if got.Month() != time.July || got.Day() != 31 {
-		t.Errorf("mehrjährig soll beim Stichtag bleiben: got %v", got)
+		t.Errorf("bestimmeFrist(Mehrjahresband) = %v, erwartet den Stichtag", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("mehrjährig: unerwarteter Lookup? %v", err)
@@ -394,7 +393,7 @@ func TestBestimmeFrist_DatenbankfehlerNimmtFesteWerte(t *testing.T) {
 	}
 	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schulzeit.Zone())
 	if !got.Equal(want) {
-		t.Errorf("Notfall-Default soll 21 Tage sein: got %v, want %v", got, want)
+		t.Errorf("Notfall-Default soll 21 Tage sein = %v, erwartet %v", got, want)
 	}
 }
 
@@ -420,7 +419,7 @@ func TestLadeEinstellungen_LeererWertFaelltAufVorgabeZurueck(t *testing.T) {
 		t.Errorf("leeres Zieldatum muss nil bleiben, bekam %q", *got.FerienLeseclubZieldatum)
 	}
 	if got.FristBuchTage != 21 {
-		t.Errorf("leerer Zahlwert muss Default behalten: FristBuchTage = %d, want 21", got.FristBuchTage)
+		t.Errorf("leerer Zahlwert muss Default behalten: FristBuchTage = %d, erwartet 21", got.FristBuchTage)
 	}
 }
 

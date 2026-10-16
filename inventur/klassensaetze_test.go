@@ -105,7 +105,7 @@ func TestKlassensaetze(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			mock, err := pgxmock.NewPool()
 			if err != nil {
-				t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				t.Fatalf("pgxmock.NewPool() = %v", err)
 			}
 			defer mock.Close()
 
@@ -225,7 +225,7 @@ func TestNormalisiereKlassenname(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			ergebnis := normalisiereKlassenname(f.input)
 			if ergebnis != f.expected {
-				t.Errorf("formatClassName(%q) = %q, want %q", f.input, ergebnis, f.expected)
+				t.Errorf("formatClassName(%q) = %q, erwartet %q", f.input, ergebnis, f.expected)
 			}
 		})
 	}
@@ -247,7 +247,7 @@ func TestKlassensatzGruppeLoeschen(t *testing.T) {
 		tueren.KlassensatzGruppeLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusBadRequest)
 		}
 	})
 
@@ -261,7 +261,7 @@ func TestKlassensatzGruppeLoeschen(t *testing.T) {
 		tueren.KlassensatzGruppeLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusInternalServerError {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusInternalServerError)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusInternalServerError)
 		}
 	})
 
@@ -275,7 +275,7 @@ func TestKlassensatzGruppeLoeschen(t *testing.T) {
 		tueren.KlassensatzGruppeLoeschen(rec, anfrage)
 
 		if rec.Code != http.StatusOK {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusOK)
+			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusOK)
 		}
 	})
 }
@@ -284,7 +284,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 	t.Run("Invalid JSON", func(t *testing.T) {
 		mockPool, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mockPool.Close()
 
@@ -296,14 +296,14 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusBadRequest {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			t.Errorf("status = %v, erwartet %v", status, http.StatusBadRequest)
 		}
 	})
 
 	t.Run("No class names", func(t *testing.T) {
 		mockPool, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mockPool.Close()
 
@@ -323,14 +323,14 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusBadRequest {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			t.Errorf("status = %v, erwartet %v", status, http.StatusBadRequest)
 		}
 	})
 
 	t.Run("Class name too long", func(t *testing.T) {
 		mockPool, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mockPool.Close()
 
@@ -350,14 +350,14 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusBadRequest {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			t.Errorf("status = %v, erwartet %v", status, http.StatusBadRequest)
 		}
 	})
 
 	t.Run("Repository error", func(t *testing.T) {
 		mockPool, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mockPool.Close()
 
@@ -378,14 +378,14 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusInternalServerError {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
+			t.Errorf("status = %v, erwartet %v", status, http.StatusInternalServerError)
 		}
 	})
 
 	t.Run("Success", func(t *testing.T) {
 		mockPool, err := pgxmock.NewPool()
 		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+			t.Fatalf("pgxmock.NewPool() = %v", err)
 		}
 		defer mockPool.Close()
 
@@ -407,7 +407,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		tueren.KlassensaetzeZuordnen(rr, anfrage)
 
 		if status := rr.Code; status != http.StatusOK {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+			t.Errorf("status = %v, erwartet %v", status, http.StatusOK)
 		}
 	})
 }
@@ -516,12 +516,12 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			tueren.KlassensaetzeAendern(w, anfrage)
 
 			if w.Code != f.expectedStatus {
-				t.Errorf("expected status %v, got %v", f.expectedStatus, w.Code)
+				t.Errorf("w.Code = %v, erwartet %v", w.Code, f.expectedStatus)
 			}
 
 			rumpfText := strings.TrimSpace(w.Body.String())
 			if !strings.Contains(rumpfText, f.expectedBody) {
-				t.Errorf("expected body to contain %q, got %q", f.expectedBody, rumpfText)
+				t.Errorf("Rumpf %q, erwartet darin %q", rumpfText, f.expectedBody)
 			}
 
 			if err := mock.ExpectationsWereMet(); err != nil {

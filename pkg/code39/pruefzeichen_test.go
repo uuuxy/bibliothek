@@ -53,7 +53,7 @@ func TestPruefzeichenStimmtMitDemEchtenDrucker(t *testing.T) {
 					"alten Etiketts bliebe damit unauffindbar", gedruckt)
 			}
 			if kern != inhalt {
-				t.Errorf("OhnePruefzeichen(%q) = %q, want %q", gedruckt, kern, inhalt)
+				t.Errorf("OhnePruefzeichen(%q) = %q, erwartet %q", gedruckt, kern, inhalt)
 			}
 		})
 	}

@@ -88,6 +88,6 @@ func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 	speichere(`{"lesehistorie_tage": 120}`)
 	speichere(`{"sperre_minuten": 0}`)
 	if e := naechstes(); e != "sitzungsfristen" {
-		t.Fatalf("erwartet sitzungsfristen als nächstes Ereignis, war %q", e)
+		t.Fatalf("naechstes() = %q, erwartet sitzungsfristen als nächstes Ereignis", e)
 	}
 }

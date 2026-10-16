@@ -29,7 +29,7 @@ func TestLeseDatei_XLSXMitTitelzeilenUndDatumszellen(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if datei.Modus != ModusName || len(datei.Zeilen) != 2 {
-		t.Fatalf("erwartet Name+Geburtsdatum mit 2 Zeilen, war %v / %d", datei.Modus, len(datei.Zeilen))
+		t.Fatalf("LeseDatei(xlsx) = Modus %v mit %d Zeilen, erwartet Name+Geburtsdatum mit 2 Zeilen", datei.Modus, len(datei.Zeilen))
 	}
 	if datei.Zeilen[0].Geburtsdatum == nil || !datei.Zeilen[0].Geburtsdatum.Equal(geb) {
 		t.Errorf("Excel-Datumszelle falsch gelesen: %v", datei.Zeilen[0].Geburtsdatum)
@@ -115,7 +115,7 @@ func TestLeseDatei_XLSXLiestAlleBlaetterMitKopfzeile(t *testing.T) {
 		t.Errorf("ohne ID und Geburtsdatum muss der Nur-Name-Modus gelten, war %v", datei.Modus)
 	}
 	if len(datei.Zeilen) != 4 {
-		t.Fatalf("erwartet 4 Schüler aus drei Blättern, bekam %d: %+v", len(datei.Zeilen), datei.Zeilen)
+		t.Fatalf("len(datei.Zeilen) = %d, erwartet 4 Schüler aus drei Blättern: %+v", len(datei.Zeilen), datei.Zeilen)
 	}
 	klassen := map[string]string{}
 	for _, z := range datei.Zeilen {
@@ -150,6 +150,6 @@ func TestLeseDatei_XLSXTitelzeileUeberJedemBlatt(t *testing.T) {
 		gelesen[z.Nachname] = z.Vorname + " " + z.Klasse
 	}
 	if len(datei.Zeilen) != 2 || gelesen["Adler"] != "Ava 06F1" || gelesen["Cato"] != "Cem 06F2" {
-		t.Errorf("erwartet Adler (Ava 06F1) und Cato (Cem 06F2), bekam %v", gelesen)
+		t.Errorf("gelesen = %v, erwartet Adler (Ava 06F1) und Cato (Cem 06F2)", gelesen)
 	}
 }

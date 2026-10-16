@@ -75,7 +75,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		vorher := auditZaehler()
 		rec := patch(id, `{"lusd_id":"LUSD-NEU-1"}`)
 		if rec.Code != http.StatusOK {
-			t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+			t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
 		if lusdVon(id) != "LUSD-NEU-1" {
 			t.Errorf("lusd_id nicht nachgetragen: %q", lusdVon(id))
@@ -90,7 +90,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		id := neueID("W-2", &alt)
 		rec := patch(id, `{"lusd_id":"LUSD-ANDERS"}`)
 		if rec.Code != http.StatusForbidden {
-			t.Fatalf("erwartet 403, war %d: %s", rec.Code, rec.Body.String())
+			t.Fatalf("rec.Code = %d, erwartet 403: %s", rec.Code, rec.Body.String())
 		}
 		if lusdVon(id) != "LUSD-ALT" {
 			t.Errorf("lusd_id wurde trotz 403 verändert: %q", lusdVon(id))
@@ -102,7 +102,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		id := neueID("W-3", &alt)
 		rec := patch(id, `{"lusd_id":""}`)
 		if rec.Code != http.StatusForbidden {
-			t.Fatalf("erwartet 403, war %d: %s", rec.Code, rec.Body.String())
+			t.Fatalf("rec.Code = %d, erwartet 403: %s", rec.Code, rec.Body.String())
 		}
 		if lusdVon(id) != "LUSD-BLEIBT" {
 			t.Errorf("lusd_id wurde geleert: %q", lusdVon(id))
@@ -115,7 +115,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		waise := neueID("W-4b", nil)
 		rec := patch(waise, `{"lusd_id":"LUSD-BELEGT"}`)
 		if rec.Code != http.StatusConflict {
-			t.Fatalf("erwartet 409, war %d: %s", rec.Code, rec.Body.String())
+			t.Fatalf("rec.Code = %d, erwartet 409: %s", rec.Code, rec.Body.String())
 		}
 		if lusdVon(waise) != "" {
 			t.Errorf("Waise bekam trotz Dublette eine lusd_id: %q", lusdVon(waise))
@@ -129,7 +129,7 @@ func TestLUSDIDKontrolliertNachtragbar(t *testing.T) {
 		// Formular schickt die bestehende lusd_id und eine echte Änderung mit.
 		rec := patch(id, `{"lusd_id":"LUSD-GLEICH","klasse":"6b"}`)
 		if rec.Code != http.StatusOK {
-			t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+			t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
 		if auditZaehler() != vorher {
 			t.Error("ein No-op auf lusd_id darf keinen Audit-Eintrag erzeugen")

@@ -90,7 +90,7 @@ func TestFindeZumBestellen_KatalogUndDNBZusammen(t *testing.T) {
 	}
 
 	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
+		t.Fatalf("FindeZumBestellen(…) = %d Treffer, erwartet 2", len(results))
 	}
 
 	// Jedes Feld des eigenen Treffers kommt aus seiner Spalte; jede trägt einen eigenen Wert.
@@ -107,7 +107,7 @@ func TestFindeZumBestellen_KatalogUndDNBZusammen(t *testing.T) {
 	}
 
 	if !results[1].IstDublette {
-		t.Errorf("expected DNB result to be marked as duplicate")
+		t.Errorf("FindeZumBestellen(…)[1].IstDublette = false, erwartet true")
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -149,11 +149,11 @@ func TestFindeZumBestellen_NurKatalogWennDNBScheitert(t *testing.T) {
 	}
 
 	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
+		t.Fatalf("FindeZumBestellen(…) = %d Treffer, erwartet 1", len(results))
 	}
 
 	if results[0].Quelle != "local" {
-		t.Errorf("expected local result, got %s", results[0].Quelle)
+		t.Errorf("FindeZumBestellen(…)[0].Quelle = %s, erwartet local", results[0].Quelle)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -221,11 +221,11 @@ func TestFindeZumBestellen_NurDNBWennKatalogScheitert(t *testing.T) {
 	}
 
 	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
+		t.Fatalf("FindeZumBestellen(…) = %d Treffer, erwartet 1", len(results))
 	}
 
 	if results[0].Quelle != "dnb" {
-		t.Errorf("expected DNB result, got %s", results[0].Quelle)
+		t.Errorf("FindeZumBestellen(…)[0].Quelle = %s, erwartet dnb", results[0].Quelle)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -250,13 +250,13 @@ func TestBaueDNBTreffer(t *testing.T) {
 	item := baueDNBTreffer(ergebnis, existing)
 
 	if item.Titel != "Test Titel" {
-		t.Errorf("erwartet Titel 'Test Titel', bekam %q", item.Titel)
+		t.Errorf("item.Titel = %q, erwartet Titel 'Test Titel'", item.Titel)
 	}
 	if item.CoverURL != "http://example.com/cover.jpg" {
-		t.Errorf("erwartet CoverURL 'http://example.com/cover.jpg', bekam %q", item.CoverURL)
+		t.Errorf("item.CoverURL = %q, erwartet CoverURL 'http://example.com/cover.jpg'", item.CoverURL)
 	}
 	if !item.IstDublette {
-		t.Errorf("erwartet, dass IstDublette true ist")
+		t.Errorf("baueDNBTreffer(…).IstDublette = false, erwartet true")
 	}
 
 	ergebnisOhneCover := ergebnis
@@ -266,10 +266,10 @@ func TestBaueDNBTreffer(t *testing.T) {
 	item2 := baueDNBTreffer(ergebnisOhneCover, existingLeer)
 
 	if item2.CoverURL != "https://portal.dnb.de/opac/mvb/cover?isbn=978-3-16-148410-0" {
-		t.Errorf("erwartet DNB Cover-Fallback, bekam %q", item2.CoverURL)
+		t.Errorf("baueDNBTreffer(ohne Cover).CoverURL = %q, erwartet den Cover-Fallback der DNB", item2.CoverURL)
 	}
 	if item2.IstDublette {
-		t.Errorf("erwartet, dass IstDublette false ist")
+		t.Errorf("baueDNBTreffer(ohne Cover).IstDublette = true, erwartet false")
 	}
 }
 
