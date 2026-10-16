@@ -336,9 +336,10 @@ hier.** Ein Gate ohne benannte Blindheit wird beim nächsten Fund zur falschen S
 Ob die Tests prüfen, was sie zusagen, zeigt ein Durchgang über vier Fragen:
 
 1. **Erreichbarkeit:** Läuft jeder Test in einem Gate? Kein `only`, `skip` oder `fixme` in
-   den Specs, das `include` von Vitest deckt jede Testdatei, im Go-Code keine Build-Tags und
-   kein `t.Skip` außerhalb der Tests an der Datenbank und an Littera-Daten. Ein Benchmark
-   ohne `-bench` in Hook oder CI misst nie etwas.
+   den Specs, das `include` von Vitest deckt jede Testdatei, im Go-Code kein `t.Skip`
+   außerhalb der Tests an der Datenbank und an Littera-Daten. Ein Build-Tag nimmt einen Test
+   aus jedem Gate, mit Absicht nur bei Nachstellungen von Hand (`raster`); ein Benchmark ohne
+   `-bench` in Hook oder CI misst nie etwas.
 2. **Rot-Beweis:** Kann jede Ratsche noch rot werden? Je Ratsche ein eingeschleuster
    Verstoß, als Probe-Datei oder vorübergehende Änderung, danach zurückgenommen — nie über
    `git checkout` auf alte Stände.
