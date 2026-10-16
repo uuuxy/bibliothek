@@ -16,8 +16,8 @@ import "testing"
 //   - Eindeutigkeit: UNIQUE-Bedingungen und eindeutige Indizes, auch die mit Bedingung
 //     (Teilindex). Der zweite gleiche Wert wird abgelehnt (23505).
 //
-// Wie dort ein Änderungs-Melder, kein Urteil: Der Bestand ist eine Arbeitsliste, befragte
-// Einträge tragen ihre Antwort als Kommentar.
+// Wie dort ein Änderungs-Melder, kein Urteil: Jeder Eintrag trägt seine Antwort als Kommentar,
+// ein neuer braucht sie ebenso.
 //
 // Sieht nicht: Primärschlüssel und Teilindizes ohne Eindeutigkeit (sie beschleunigen nur,
 // über Daten entscheiden sie nicht). Ob ein Schreiber die Ablehnung behandelt, liest ein
@@ -27,7 +27,7 @@ import "testing"
 
 // Fremdschlüssel, an denen ein Löschen scheitert.
 var fkSperrenBestand = []string{
-	// Befragt: Zwei Wege löschen Exemplare und räumen vorher ab. Das Löschen eines Titels lehnt
+	// Befragt: Drei Wege löschen Exemplare und räumen vorher ab. Das Löschen eines Titels lehnt
 	// verliehene Exemplare mit Satz ab (400 mit den Barcodes, repository.LoescheTitel); die
 	// Massenaktion der Bestandstabelle löscht auch die offenen Ausleihen, mit Spur im Protokoll
 	// (inventur.LoescheTitel). Das Löschen von Verlusten weist offene Vorgänge mit Satz ab (409,
@@ -63,7 +63,7 @@ var fkSperrenBestand = []string{
 	"RESTRICT  leser.klasse -> klassen",
 	"RESTRICT  lmf_plan_ausgelassen.klasse -> klassen",
 	"RESTRICT  lmf_termin_klassen.klasse -> klassen",
-	// Befragt: wie ausleihen.exemplar_id. Beide Wege löschen die Schadensfälle vor den
+	// Befragt: wie ausleihen.exemplar_id. Alle drei Wege löschen die Schadensfälle vor den
 	// Exemplaren, das Löschen eines Titels auch die unbezahlten, mit Spur im Protokoll.
 	"RESTRICT  schadensfaelle.exemplar_id -> buecher_exemplare",
 	// Befragt: wie ausleihen.geraet_id.
@@ -94,40 +94,142 @@ var fkAenderungenBestand = []string{
 // Eindeutigkeit: Name des Index, Tabelle, Spalten oder Ausdrücke und die Bedingung eines
 // Teilindex.
 var eindeutigkeitBestand = []string{
+	// Befragt, mit uniq_benutzer_email_lower: Die Benutzerverwaltung prüft die Adresse vorher ohne
+	// Rücksicht auf die Schreibweise (pruefeEmailEindeutig, 400 mit Satz), die Leserdatei fängt
+	// eine belegte Adresse beim Anlegen eines Kollegen ab (antworteAufKontoFehler, 409). Der Antrag
+	// auf Zugang schreibt die Adresse klein und übergeht eine belegte (LegeZugangsanfrageAn, ON
+	// CONFLICT DO NOTHING); die Übernahme aus Littera vergibt je Person eine Platzhalter-Adresse.
+	// Legen zwei Plätze zugleich dieselbe Adresse an, bekommt der zweite 500 mit dem neutralen Satz
+	// von apierrors.
 	"benutzer_email_key @ benutzer (email)",
+	// Befragt: Neue Exemplare ziehen ihre Nummer aus barcode_seq, abgeglichen gegen den Bestand
+	// (ZieheFreieExemplarBarcodes). Das Ändern einer Nummer antwortet auf eine vergebene mit 409
+	// (IstExemplarBarcodeVergeben, api/katalog/exemplar_barcode.go), der Bestands-Import übergeht
+	// sie (ON CONFLICT DO NOTHING), die Übernahme aus Littera gibt doppelten Nummern vorher eine
+	// neue (klaereBarcodes).
 	"buecher_exemplare_barcode_id_key @ buecher_exemplare (barcode_id)",
+	// Befragt: Das Anlegen über die ISBN schreibt mit ON CONFLICT (isbn) DO UPDATE
+	// (repository/titel_isbn.go). Anlegen und Ändern in der Bestandstabelle übersetzen die
+	// Verletzung in ErrISBNDoppelt, die Türen antworten mit 409 und Satz
+	// (inventur/endpunkte_buecher_schreiben.go, endpunkte_buecher_aktualisieren.go). Die Importe
+	// gleichen vorher gegen den Bestand und die Datei ab (titelSchreibLauf), die Übernahme aus
+	// Littera klärt doppelte ISBN vorher.
 	"buecher_titel_isbn_key @ buecher_titel (isbn)",
+	// Befragt, mit geraete_seriennummer_key: Anlegen und Ändern übersetzen die Verletzung in einen
+	// Fehler, der das Feld nennt (geraetEindeutigkeit); die Tür antwortet mit 409 und Satz
+	// (geraetKonflikt, api/katalog/geraete.go).
 	"geraete_barcode_id_key @ geraete (barcode_id)",
+	// Befragt: wie geraete_barcode_id_key.
 	"geraete_seriennummer_key @ geraete (seriennummer)",
+	// Befragt: Der Wert ist der SHA-256 eines Geheimnisses aus 256 Bit Zufall
+	// (bestelllink.ErzeugeToken). Ein zweiter gleicher Wert ist nicht zu erwarten; die Regel hält
+	// die Suche über den Link eindeutig.
 	"idx_bestellungen_token_hash @ bestellungen_verlauf (bestaetigungs_token_hash) WHERE (bestaetigungs_token_hash IS NOT NULL)",
+	// Befragt, für die drei Indizes offener Läufe: Der Start übersetzt die Verletzung in
+	// ErrInventurLaeuftBereits (LegeLaufAn), die Tür antwortet mit 409 und Satz
+	// (antworteAufLaufkollision). Das Umbenennen einer Sachgruppe stellt offene Läufe auf den neuen
+	// Namen um; trifft es einen offenen Lauf auf dem neuen Namen mit demselben Jahrgang, bricht es
+	// mit 500 und dem neutralen Satz ab.
 	"idx_inv_session_offen_filter @ inventur_sessions (COALESCE(scope_subject, ''::text), COALESCE((scope_grade)::integer, '-1'::integer)) WHERE ((abgeschlossen_am IS NULL) AND ((scope_type)::text = 'filter'::text))",
 	"idx_inv_session_offen_global @ inventur_sessions ((true)) WHERE ((abgeschlossen_am IS NULL) AND ((scope_type)::text = 'global'::text))",
 	"idx_inv_session_offen_signature @ inventur_sessions (btrim(scope_signatur)) WHERE ((abgeschlossen_am IS NULL) AND ((scope_type)::text = 'signature'::text))",
+	// Befragt: Einziger Schreiber ist der Abschluss eines Laufs; er schreibt mit ON CONFLICT DO
+	// NOTHING und zählt die Verluste an der Aussonderung, nicht an der Mitschrift
+	// (repository/inventurlauf_abschluss.go).
 	"idx_inventur_verluste_einmalig @ inventur_verluste (session_id, exemplar_id) WHERE (exemplar_id IS NOT NULL)",
+	// Befragt: Das Merkmal setzt nur SetzeHauptlieferant, erst räumen, dann setzen, in einer
+	// Transaktion; das Anlegen setzt es nie. Zwei Wechsel im selben Augenblick können sich treffen,
+	// weil das Räumen des zweiten den eben gesetzten nicht sieht; dann bricht der zweite mit 500
+	// und dem neutralen Satz ab.
 	"idx_lieferanten_ein_hauptlieferant @ lieferanten (ist_hauptlieferant) WHERE ist_hauptlieferant",
+	// Befragt, mit uniq_klassen_normkey: Einzige Schreiber sind die Trigger klasse_kanonisieren und
+	// class_name_kanonisieren. Sie suchen die eingetragene Schreibweise über klassen_normkey, legen
+	// Unbekanntes mit ON CONFLICT DO NOTHING an und lesen danach noch einmal; auch zwei
+	// gleichzeitige Schreibweisen derselben neuen Klasse enden auf einem Namen.
 	"klassen_name_key @ klassen (name)",
+	// Befragt: Kein Schreiber im Programm legt eine Vorlage an oder ändert ihre Art; die Tür ändert
+	// nur Betreff und Text (repository/mail_vorlagen.go). Die Vorlagen legen die Migrationen an.
 	"mail_vorlagen_typ_key @ mail_vorlagen (typ)",
+	// Befragt, mit uniq_bescheid_nummer: Einziger Schreiber ist das Anlegen eines Bescheids. Die
+	// laufende Nummer zieht es je Topf und Kassenjahr aus der gesperrten Zeile von
+	// schadensersatz_nummern (zieheLaufendeNummer). Die Referenznummer im Format des Landes nennt
+	// den Topf nicht; für den Schulträger sieht docs/mittel_konzept.md ein eigenes Format vor, bis
+	// dahin lehnt die Tür jeden anderen Topf ab (api/schaden/bescheid_erstellen.go).
 	"schadensersatz_bescheide_referenznummer_key @ schadensersatz_bescheide (referenznummer)",
+	// Befragt: Kein Schreiber und kein Leser im Programm; die Tabelle subjects legt nur schema.sql
+	// mit 16 Fächern an. Ihr Entfernen steht in OFFEN 5.67.
 	"subjects_name_key @ subjects (name)",
+	// Befragt, mit den beiden Regeln der Bezeichnung: Anlegen und Ändern einer Sachgruppe antworten
+	// mit 409 und einem Satz, der das Feld nennt (meldungDoppelteSachgruppe). Die Importe legen
+	// fehlende Fächer an (registriereFach): Ein besetztes Kürzel bekommt eine Endung aus einem
+	// Hash, eine besetzte Bezeichnung übergehen sie und lesen die vorhandene.
 	"systematik_kategorien_kuerzel_key @ systematik_kategorien (kuerzel)",
+	// Befragt: Die Ausleihe an der Theke und das Nachbuchen schreiben mit ON CONFLICT DO NOTHING
+	// (sqlAusleihe). Die Theke gibt bei demselben Leser die bestehende Ausleihe zurück und weist
+	// sonst mit 409 und Satz ab (deuteAusleiheKonflikt); das Nachbuchen weist die Zeile ab. Die
+	// Übernahme aus Littera siebt eine zweite offene Ausleihe vorher aus (Doppelbelegung).
 	"uniq_ausleihen_aktiv_exemplar @ ausleihen (exemplar_id) WHERE ((rueckgabe_am IS NULL) AND (exemplar_id IS NOT NULL))",
+	// Befragt: Die Ausleihe eines Geräts übersetzt die Verletzung in einen Konflikt mit Satz, an
+	// der Tür 409 (internal/service/geraet.go).
 	"uniq_ausleihen_aktiv_geraet @ ausleihen (geraet_id) WHERE ((rueckgabe_am IS NULL) AND (geraet_id IS NOT NULL))",
+	// Befragt: wie benutzer_email_key.
 	"uniq_benutzer_email_lower @ benutzer (lower((email)::text))",
+	// Befragt: Jedes Konto bekommt seine eigene Leserzeile (Trigger trg_benutzer_hat_leserzeile,
+	// LegeKollegiumskontoAn mit der neuen Zeile). Die Zusammenführung bricht ab, wenn beide Seiten
+	// ein Konto haben, mit 409 und Satz (ErrZusammenfuehrenZweiKonten); ein Konto unter der
+	// Platzhalter-Domäne räumt sie vorher.
 	"uniq_benutzer_leser @ benutzer (leser_id) WHERE (leser_id IS NOT NULL)",
+	// Befragt: wie schadensersatz_bescheide_referenznummer_key.
 	"uniq_bescheid_nummer @ schadensersatz_bescheide (mittel, kassenjahr, laufende_nr)",
+	// Befragt: Der Schlüssel kommt von der Oberfläche, einer je Absenden. Der Bestellkopf schreibt
+	// mit ON CONFLICT DO NOTHING, danach liefert der Dienst die schon angelegte Bestellung
+	// (LegeBestellkopfAn, LadeBestellungZuIdempotenzSchluessel).
 	"uniq_bestellung_idempotenz @ bestellungen_verlauf (idempotenz_schluessel) WHERE (idempotenz_schluessel IS NOT NULL)",
+	// Befragt: wie klassen_name_key.
 	"uniq_klassen_normkey @ klassen (klassen_normkey((name)::text))",
+	// Befragt: wie uniq_bestellung_idempotenz; die Reservierung liefert die schon angelegte zurück
+	// und verschickt keine zweite Mail (ReservierungsAbfragen.LegeAn).
 	"uniq_ksr_idempotenz @ klassensatz_reservierungen (idempotenz_schluessel) WHERE (idempotenz_schluessel IS NOT NULL)",
+	// Befragt: Das Speichern schreibt mit ON CONFLICT (art, schuljahr_beginn) DO UPDATE: je Art und
+	// Schuljahr ein Plan, ein zweites Speichern ersetzt ihn (LMFAbfragen.SchreibePlan).
 	"uniq_lmf_plaene_art_schuljahr @ lmf_plaene (art, schuljahr_beginn)",
+	// Befragt: Bezugspunkt des zusammengesetzten Fremdschlüssels fk_lmf_termine_plan_art (Migration
+	// 115). id ist der Primärschlüssel, ein zweiter gleicher Wert kann nicht entstehen.
 	"uniq_lmf_plaene_id_art @ lmf_plaene (id, art)",
+	// Befragt: Das Speichern löscht die Zeilen des Plans und schreibt sie mit den Positionen 1 bis
+	// n neu, in der Transaktion, in der das Upsert die Zeile des Plans sperrt; zwei
+	// Speichervorgänge desselben Plans warten aufeinander (LMFAbfragen.SchreibePlan).
 	"uniq_lmf_termine_plan_position @ lmf_termine (plan_id, \"position\")",
+	// Befragt: Der Schlüssel kommt vom Theken-Rechner; eine Wiederholung schreibt mit ON CONFLICT
+	// DO NOTHING keine zweite Meldung (SchreibeNachbuchMeldung).
 	"uniq_nachbuch_meldungen_schluessel @ nachbuch_meldungen (idempotency_key)",
+	// Befragt: Das Speichern der Schlagworte eines Titels legt neue Wörter mit ON CONFLICT DO
+	// NOTHING an (repository/schlagworte.go). Die Pflegeseite prüft vor dem Umbenennen, ob die
+	// Schreibweise frei ist (409, ErrSchlagwortGibtEs), und führt bei einem neuen Verweis ein
+	// vorhandenes Wort zusammen. Läuft zwischen Prüfung und Schreiben ein zweiter Platz dagegen,
+	// bricht sie mit 500 und dem neutralen Satz ab.
 	"uniq_schlagworte_wort @ schlagworte (lower(wort))",
+	// Befragt: Das Anlegen eines Lesers und die Benutzerverwaltung prüfen vorher
+	// (IstAusweisnummerVergeben). Greift die Datenbank, antworten Anlegen und Ändern von Leser und
+	// Konto mit 409 und Satz (IstAusweisKollision); das Wiederherstellen aus dem Papierkorb nennt
+	// den aktiven Zwilling (wiederherstellungsKollision).
 	"uniq_schueler_barcode_active @ leser (barcode_id) WHERE (deleted_at IS NULL)",
+	// Befragt: Das Ändern prüft vorher und antwortet mit 409 und Satz (api/leser/leser_aendern.go);
+	// der LUSD-Abgleich sucht vor dem Anlegen die Zeile, die die ID schon hält (belegteLUSDID); das
+	// Wiederherstellen nennt den Zwilling (wiederherstellungsKollision).
 	"uniq_schueler_lusd_id_active @ leser (lusd_id) WHERE ((deleted_at IS NULL) AND (lusd_id IS NOT NULL))",
+	// Befragt: wie systematik_kategorien_kuerzel_key.
 	"uniq_systematik_bezeichnung @ systematik_kategorien (bezeichnung)",
+	// Befragt: wie systematik_kategorien_kuerzel_key.
 	"uniq_systematik_bezeichnung_ci @ systematik_kategorien (lower((bezeichnung)::text))",
+	// Befragt: Anlegen und Ändern eines Schülers antworten mit 409 und Satz
+	// (meldungSchuelerDuplikat), das Wiederherstellen nennt den Zwilling. Der LUSD-Abgleich und die
+	// Übernahme aus Littera ordnen über Name und Geburtsdatum zu, bevor sie schreiben
+	// (internal/lusd/klassifizierung.go, internal/littera/schreiber_personen.go).
 	"unique_schueler_name_gebdatum @ leser (suchnorm((vorname)::text), suchnorm((nachname)::text), geburtsdatum) WHERE ((geburtsdatum IS NOT NULL) AND (deleted_at IS NULL) AND (lusd_id IS NULL))",
+	// Befragt: Das Vormerken erkennt die zweite Vormerkung am Constraint und antwortet mit 409 und
+	// Satz (ErrVormerkungBereitsVorhanden); die Zusammenführung räumt doppelte Vormerkungen vor dem
+	// Umhängen ab.
 	"vormerkungen_titel_id_schueler_id_key @ vormerkungen (titel_id, schueler_id)",
 }
 

@@ -198,10 +198,9 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Gates und Werkzeuge (5.10):** die Eindeutigkeitsregeln der Schema-Ratsche sind nicht
-  befragt, Zugangs- und Abgangsbuch haben keine Höchstspanne, der erste Lauf von
-  `release.yml` auf Ubuntu 26, die Excel-Bibliothek und gosec auf einem unveröffentlichten
-  Stand, drei falsche Warnungen des Linters im Sammel-Update der Oberfläche.
+- [ ] **Gates und Werkzeuge (5.10):** Zugangs- und Abgangsbuch haben keine Höchstspanne, der
+  erste Lauf von `release.yml` auf Ubuntu 26, die Excel-Bibliothek und gosec auf einem
+  unveröffentlichten Stand, drei falsche Warnungen des Linters im Sammel-Update der Oberfläche.
 - [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
@@ -209,7 +208,8 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
   Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
-  `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164.
+  `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164 mit der
+  Tabelle `subjects`.
 - [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** Feste Meldungen, Fehlertexte an
   der Oberfläche und die Meldung eines 500 sind erledigt; offen sind die Wege, die keine Ratsche
   prüft.
@@ -323,15 +323,6 @@ Vermerk.
 
 ### 5.10 Gates und Werkzeuge
 
-- **Die Eindeutigkeitsregeln der Schema-Ratsche sind nicht befragt.** Seit dem 08.10.2026
-  friert `repository/schema_gegenrichtung_sperren_pg_test.go` ein, was die Datenbank ablehnt
-  oder weiterträgt; eine neue Regel macht den Test rot. Die 12 Fremdschlüssel, an denen ein
-  Löschen scheitert, und die 6, die ein Umbenennen weitertragen, tragen seit dem 16.10.2026
-  ihre Antwort: Jeder Löschweg räumt vorher ab, die Sperre trifft nur eine Zeile, die zwischen
-  Prüfung und Löschen entsteht; Klassen und Geräte löscht kein Schreiber. Offen sind die 35
-  Eindeutigkeitsregeln. Nächster Schritt: je Regel den Schreiber suchen, der dagegen laufen
-  kann, und nachstellen, was er bekommt; ohne eigene Behandlung ist es der neutrale Satz von
-  `apierrors`. Kategorie B.
 - **Zugangs- und Abgangsbuch ohne Höchstspanne.** Die Zeilen in den Abschnitten von
   `GET /api/bestand/zugangsbuch` und `GET /api/bestand/abgangsbuch`, auch als PDF, begrenzt nur
   der Zeitraum `?von`/`?bis` (`bestandsbuchZeitraum`, `api/katalog/bestandsbuch.go`); die
@@ -543,7 +534,11 @@ ausdrückliches Ja.
 - **Migration 164** für zwei Spalten ohne Schreiber seit dem Entfernen des Elternbriefs:
   `ALTER TABLE schadensfaelle DROP COLUMN IF EXISTS elternbrief_generiert, DROP COLUMN IF EXISTS elternbrief_generiert_am;`
   dazu die zwei Zeilen in `schema.sql`. Auf dem Testserver gehen dabei nur diese zwei Vermerke
-  verloren.
+  verloren. In dieselbe Migration gehört `DROP TABLE IF EXISTS subjects;` (gefunden am
+  16.10.2026 beim Befragen der Schema-Ratsche): Kein Go-Code und keine Sicht liest oder schreibt
+  die Tabelle, `schema.sql` legt sie mit 16 Fächern an, die Fächer des Programms stehen in
+  `systematik_kategorien`. Mit ihr fallen die Zeilen in `schema.sql` und der Eintrag
+  `subjects_name_key` in `repository/schema_gegenrichtung_sperren_pg_test.go`.
 
 ---
 
