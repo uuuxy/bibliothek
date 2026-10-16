@@ -27,26 +27,63 @@ import "testing"
 
 // Fremdschlüssel, an denen ein Löschen scheitert.
 var fkSperrenBestand = []string{
+	// Befragt: Zwei Wege löschen Exemplare und räumen vorher ab. Das Löschen eines Titels lehnt
+	// verliehene Exemplare mit Satz ab (400 mit den Barcodes, repository.LoescheTitel); die
+	// Massenaktion der Bestandstabelle löscht auch die offenen Ausleihen, mit Spur im Protokoll
+	// (inventur.LoescheTitel). Das Löschen von Verlusten weist offene Vorgänge mit Satz ab (409,
+	// ErrVerlustNochGebunden). Danach fallen Schadensfälle und zurückgegebene Ausleihen in
+	// derselben Transaktion. Die Sperre trifft nur eine Ausleihe oder Forderung, die zwischen
+	// Abräumen und Löschen entsteht: Dann bricht das Löschen mit 500 ab, mit dem neutralen Satz
+	// von apierrors, an der Massenaktion mit deren festem Satz.
 	"RESTRICT  ausleihen.exemplar_id -> buecher_exemplare",
+	// Befragt: Kein Schreiber löscht ein Gerät, es gibt keine Route dafür; die Oberfläche führt
+	// es höchstens als nicht ausleihbar (repository/geraete.go). Die Sperre trifft nur ein
+	// Löschen von Hand.
 	"RESTRICT  ausleihen.geraet_id -> geraete",
+	// Befragt: Drei Wege löschen Leser und räumen vorher ab. Das endgültige Löschen aus dem
+	// Papierkorb und das der Abgänger lehnen offene Ausleihen und unbezahlte Forderungen ab
+	// (LoeschenBlockiertFehler, an der Tür 409 mit Satz), nehmen den übrigen Ausleihen den Leser
+	// und löschen die erledigten Schadensfälle (tilgeSpurenUndLoescheLeser). Die Zusammenführung
+	// sperrt beide Zeilen und verschiebt die Vorgänge vorher (FuehreLeserZusammen). Das Löschen
+	// eines Kontos entfernt die Leserzeile nur, wenn kein Fremdschlüssel auf sie zeigt
+	// (loescheUnberuehrteLeserzeile). Die Sperre trifft nur eine Ausleihe, die zwischen Prüfung
+	// und Löschen entsteht: Dann bricht das Löschen ab, an der Tür mit 500 und dem neutralen
+	// Satz von apierrors.
 	"RESTRICT  ausleihen.schueler_id -> leser",
 	// Befragt: Das Löschen einer Sachgruppe zählt vorher die Titel am Fach und antwortet mit
 	// 409 und einem Satz; hängt sich zwischen Zählung und Löschen ein Titel an, fängt der
 	// Handler die Ablehnung (23503) mit demselben Satz (api/katalog/systematik.go).
 	"RESTRICT  buecher_titel.subject -> systematik_kategorien",
+	// Befragt, für die fünf Bezüge auf klassen: Kein Schreiber im Programm löscht eine Klasse
+	// oder benennt sie um; umbenannt hat nur Migration 087, einmal. Das Vokabular füllen die
+	// Trigger der Tabellen (Migration 079), die Versetzung hängt Schüler an andere Namen. Die
+	// Sperre trifft nur ein Löschen von Hand.
 	"RESTRICT  class_books.class_name -> klassen",
 	"RESTRICT  klassen_lehrer_mapping.klasse -> klassen",
 	"RESTRICT  leser.klasse -> klassen",
 	"RESTRICT  lmf_plan_ausgelassen.klasse -> klassen",
 	"RESTRICT  lmf_termin_klassen.klasse -> klassen",
+	// Befragt: wie ausleihen.exemplar_id. Beide Wege löschen die Schadensfälle vor den
+	// Exemplaren, das Löschen eines Titels auch die unbezahlten, mit Spur im Protokoll.
 	"RESTRICT  schadensfaelle.exemplar_id -> buecher_exemplare",
+	// Befragt: wie ausleihen.geraet_id.
 	"RESTRICT  schadensfaelle.geraet_id -> geraete",
+	// Befragt: wie ausleihen.schueler_id. Die Zusammenführung verschiebt die Schadensfälle, das
+	// endgültige Löschen löscht die erledigten.
 	"RESTRICT  schadensfaelle.schueler_id -> leser",
 }
 
 // Fremdschlüssel, die eine Änderung des Schlüssels weitertragen.
 var fkAenderungenBestand = []string{
+	// Befragt: Umbenannt wird über SachgruppeAendern (PUT /api/systematics/{id}); die Antwort
+	// nennt die mitgezogenen Titel (titel_mitgezogen). Einen Protokolleintrag gibt es nicht, wie
+	// bei jeder Änderung am Katalog; dort stehen nur Löschungen. Die einzige Abschrift des Fachs
+	// als Text, den Bereich offener Inventuren (scope_subject), stellt die Tür in derselben
+	// Transaktion um (BenenneFachOffenerInventurenUm); abgeschlossene Läufe und die Signaturen
+	// behalten den alten Wert mit Absicht.
 	"CASCADE  buecher_titel.subject -> systematik_kategorien",
+	// Befragt, für die fünf Bezüge auf klassen: Kein Schreiber im Programm benennt eine Klasse
+	// um; umbenannt hat nur Migration 087, einmal.
 	"CASCADE  class_books.class_name -> klassen",
 	"CASCADE  klassen_lehrer_mapping.klasse -> klassen",
 	"CASCADE  leser.klasse -> klassen",

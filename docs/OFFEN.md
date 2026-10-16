@@ -198,8 +198,8 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Gates und Werkzeuge (5.10):** der Bestand der Schema-Ratsche ist nicht befragt (was die
-  Datenbank ablehnt), Zugangs- und Abgangsbuch haben keine Höchstspanne, der erste Lauf von
+- [ ] **Gates und Werkzeuge (5.10):** die Eindeutigkeitsregeln der Schema-Ratsche sind nicht
+  befragt, Zugangs- und Abgangsbuch haben keine Höchstspanne, der erste Lauf von
   `release.yml` auf Ubuntu 26, die Excel-Bibliothek und gosec auf einem unveröffentlichten
   Stand, drei falsche Warnungen des Linters im Sammel-Update der Oberfläche.
 - [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
@@ -323,14 +323,15 @@ Vermerk.
 
 ### 5.10 Gates und Werkzeuge
 
-- **Der Bestand der Schema-Ratsche ist nicht befragt.** Seit dem 08.10.2026 friert
-  `repository/schema_gegenrichtung_sperren_pg_test.go` ein, was die Datenbank ablehnt oder
-  weiterträgt: 12 Fremdschlüssel, an denen ein Löschen scheitert, 6, die ein Umbenennen
-  weitertragen (Klasse, Sachgruppe), 35 Eindeutigkeitsregeln. Eine neue Regel macht den Test
-  rot. Zu den vorhandenen steht erst an einer die Antwort (Sachgruppe löschen: 409 mit Satz).
-  Nächster Schritt: je Eintrag den Schreiber suchen, der dagegen laufen kann, und nachstellen,
-  was er bekommt; ohne eigene Behandlung ist es der neutrale Satz von `apierrors`. Zuerst die
-  elf übrigen Löschsperren (Leser, Exemplar, Gerät, Klasse). Kategorie B.
+- **Die Eindeutigkeitsregeln der Schema-Ratsche sind nicht befragt.** Seit dem 08.10.2026
+  friert `repository/schema_gegenrichtung_sperren_pg_test.go` ein, was die Datenbank ablehnt
+  oder weiterträgt; eine neue Regel macht den Test rot. Die 12 Fremdschlüssel, an denen ein
+  Löschen scheitert, und die 6, die ein Umbenennen weitertragen, tragen seit dem 16.10.2026
+  ihre Antwort: Jeder Löschweg räumt vorher ab, die Sperre trifft nur eine Zeile, die zwischen
+  Prüfung und Löschen entsteht; Klassen und Geräte löscht kein Schreiber. Offen sind die 35
+  Eindeutigkeitsregeln. Nächster Schritt: je Regel den Schreiber suchen, der dagegen laufen
+  kann, und nachstellen, was er bekommt; ohne eigene Behandlung ist es der neutrale Satz von
+  `apierrors`. Kategorie B.
 - **Zugangs- und Abgangsbuch ohne Höchstspanne.** Die Zeilen in den Abschnitten von
   `GET /api/bestand/zugangsbuch` und `GET /api/bestand/abgangsbuch`, auch als PDF, begrenzt nur
   der Zeitraum `?von`/`?bis` (`bestandsbuchZeitraum`, `api/katalog/bestandsbuch.go`); die
