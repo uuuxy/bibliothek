@@ -14,8 +14,8 @@
 	let { vormerkungen = $bindable(), book } = $props();
 
 	let isAdding = $state(false);
-	let searchVal = $state('');
-	let searchResults = $state.raw(/** @type {any[]} */ ([]));
+	let suche = $state('');
+	let treffer = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
 	let notiz = $state('');
 	// Die Schülersuche läuft über die Schülerdatei (GET /api/schueler?q=), also gilt deren
@@ -38,15 +38,15 @@
 	}
 
 	async function searchStudent() {
-		if (!searchVal.trim()) {
-			searchResults = [];
+		if (!suche.trim()) {
+			treffer = [];
 			return;
 		}
 		isSearching = true;
 		try {
-			searchResults = await sucheSchuelerFuerVormerkung(searchVal);
+			treffer = await sucheSchuelerFuerVormerkung(suche);
 		} catch {
-			searchResults = [];
+			treffer = [];
 		} finally {
 			isSearching = false;
 		}
@@ -62,8 +62,8 @@
 			if (res.ok) {
 				showToast('Erfolgreich vorgemerkt', 'success');
 				isAdding = false;
-				searchVal = '';
-				searchResults = [];
+				suche = '';
+				treffer = [];
 				notiz = '';
 				const listRes = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
 				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
@@ -101,7 +101,7 @@
 						<Feld
 							id="student-search-input"
 							label="Schüler suchen (Name oder Barcode)"
-							bind:value={searchVal}
+							bind:value={suche}
 							onkeydown={(e) => e.key === 'Enter' && searchStudent()}
 							placeholder="z.B. Max Mustermann"
 							class="flex-1"
@@ -119,11 +119,11 @@
 					/>
 				</div>
 
-				{#if searchResults.length > 0}
+				{#if treffer.length > 0}
 					<div
 						class="mt-4 border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest"
 					>
-						{#each searchResults as r, _i (_i)}
+						{#each treffer as r, _i (_i)}
 							<div
 								class="flex items-center justify-between p-3 border-b border-outline-variant last:border-0 hover:bg-surface transition-colors"
 							>
@@ -142,7 +142,7 @@
 							</div>
 						{/each}
 					</div>
-				{:else if searchVal && !isSearching && searchResults.length === 0}
+				{:else if suche && !isSearching && treffer.length === 0}
 					<p class="text-sm text-on-surface-variant mt-2">Keine Schüler gefunden.</p>
 				{/if}
 			{/if}

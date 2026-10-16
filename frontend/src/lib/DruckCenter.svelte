@@ -7,14 +7,14 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 
-	let activeTab = $state('labels');
+	let aktiverReiter = $state('labels');
 
 	// Ein Verweis aus einer anderen Ansicht (z. B. der Hinweis auf offene Etiketten im
 	// Bestellwesen) bestimmt den Reiter. Sofort zurücksetzen, sonst klebt die Wahl am
 	// nächsten Aufruf des Druck-Centers, ohne dass jemand versteht, warum.
 	$effect(() => {
 		if (!uiStore.requestedDruckCenterTab) return;
-		activeTab = uiStore.requestedDruckCenterTab;
+		aktiverReiter = uiStore.requestedDruckCenterTab;
 		uiStore.requestedDruckCenterTab = null;
 	});
 </script>
@@ -30,8 +30,8 @@
 	     „Es gibt keine Inhaltsbreite mehr, nur noch volle." -->
 	<Reiter
 		etikett="Druck-Center"
-		aktiv={activeTab}
-		onwahl={(id) => (activeTab = id)}
+		aktiv={aktiverReiter}
+		onwahl={(id) => (aktiverReiter = id)}
 		reiter={[
 			{ id: 'labels', label: 'Buch-Etiketten' },
 			// Das Badge steht hier UND an „Druck-Center" in der Seitenleiste: Der Zähler
@@ -53,18 +53,18 @@
 		     bekam nur "Fehlende Etiketten" dieses Padding, die anderen beiden Reiter waren
 		     komplett randlos und nur zufällig ähnlich weit eingerückt wie die Tab-Leiste
 		     (deren max-w-6xl mx-auto bei anderer Fensterbreite auseinandergelaufen wäre). -->
-		{#if activeTab === 'labels'}
+		{#if aktiverReiter === 'labels'}
 			<div class="animate-fade-in h-full py-6">
 				<Etikettendruck />
 			</div>
-		{:else if activeTab === 'nachdruck'}
+		{:else if aktiverReiter === 'nachdruck'}
 			<!-- Nach dem Übergeben direkt zum Etikettendruck: Die Auswahl liegt dort schon
 			     bereit, und ein Hinweis "wechseln Sie jetzt nach nebenan" wäre eine Arbeit,
 			     die das Programm selbst erledigen kann. -->
 			<div class="animate-fade-in h-full py-6">
-				<EtikettenNachdruck onUebergeben={() => (activeTab = 'labels')} />
+				<EtikettenNachdruck onUebergeben={() => (aktiverReiter = 'labels')} />
 			</div>
-		{:else if activeTab === 'klassen'}
+		{:else if aktiverReiter === 'klassen'}
 			<div class="animate-fade-in h-full py-6">
 				<KlassenDruckEinstieg />
 			</div>

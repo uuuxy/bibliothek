@@ -7,7 +7,7 @@
 	import Reiter from './components/ui/Reiter.svelte';
 	import { hatRecht } from './menue.js';
 
-	let activeTab = $state('system');
+	let aktiverReiter = $state('system');
 	// Das Admin-Audit-Log liest GET /api/admin/auditlog, und die Route verlangt
 	// manage_users — der Reiter folgt demselben Recht, nicht der Rolle.
 	const darfAdminLog = $derived(hatRecht(authStore.currentUser, 'manage_users'));
@@ -22,18 +22,23 @@
 </script>
 
 <Seitenrahmen>
-	<Reiter etikett="System-Logs" {reiter} aktiv={activeTab} onwahl={(id) => (activeTab = id)} />
+	<Reiter
+		etikett="System-Logs"
+		{reiter}
+		aktiv={aktiverReiter}
+		onwahl={(id) => (aktiverReiter = id)}
+	/>
 
 	<div class="flex-1 overflow-y-auto">
-		{#if activeTab === 'system'}
+		{#if aktiverReiter === 'system'}
 			<div class="animate-fade-in h-full">
 				<Logbuch />
 			</div>
-		{:else if activeTab === 'admin' && darfAdminLog}
+		{:else if aktiverReiter === 'admin' && darfAdminLog}
 			<div class="animate-fade-in h-full">
 				<VerwaltungsProtokoll />
 			</div>
-		{:else if activeTab === 'thekenauskunft' && darfThekenAuskunft}
+		{:else if aktiverReiter === 'thekenauskunft' && darfThekenAuskunft}
 			<div class="animate-fade-in h-full p-6">
 				<ThekenAuskunft />
 			</div>

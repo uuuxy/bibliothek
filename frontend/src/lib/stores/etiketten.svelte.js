@@ -39,8 +39,8 @@ async function vermerkeGedruckt(gedruckt) {
 }
 
 function createLabelStore() {
-	let searchVal = $state('');
-	let searchResults = $state.raw(/** @type {any[]} */ ([]));
+	let suche = $state('');
+	let treffer = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
 
 	let classGroups = $state.raw(/** @type {any[]} */ ([]));
@@ -202,8 +202,8 @@ function createLabelStore() {
 	function handleSearchInput() {
 		if (searchTimeout) clearTimeout(searchTimeout);
 		const lauf = ++suchLauf;
-		if (!searchVal.trim()) {
-			searchResults = [];
+		if (!suche.trim()) {
+			treffer = [];
 			isSearching = false;
 			return;
 		}
@@ -216,22 +216,22 @@ function createLabelStore() {
 				// Schüler-Kiosk-Daten mit, die dieser Bildschirm nie zeigt, und hing am
 				// Theken-Recht perform_actions, das ein Druckbildschirm nicht braucht.
 				const res = await apiFetch(
-					`/api/buecher/titel/suche?q=${encodeURIComponent(searchVal.trim())}`
+					`/api/buecher/titel/suche?q=${encodeURIComponent(suche.trim())}`
 				);
 				if (res.ok) {
 					const body = await res.json();
 					if (lauf !== suchLauf) return;
-					searchResults = body.books || [];
+					treffer = body.books || [];
 				} else if (lauf === suchLauf) {
 					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieben die
 					// Treffer des VORIGEN Suchtextes stehen — man klickt auf eine Zeile,
 					// die zu einer anderen Eingabe gehört, und druckt deren Etikett.
-					searchResults = [];
+					treffer = [];
 					snackbars.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
 				}
 			} catch (err) {
 				if (lauf !== suchLauf) return;
-				searchResults = [];
+				treffer = [];
 				console.error('Fehler bei Buchtitelsuche:', err);
 			} finally {
 				if (lauf === suchLauf) isSearching = false;
@@ -245,8 +245,8 @@ function createLabelStore() {
 		if (searchTimeout) clearTimeout(searchTimeout);
 		suchLauf++;
 		isSearching = false;
-		searchResults = [];
-		searchVal = titleObj.titel;
+		treffer = [];
+		suche = titleObj.titel;
 		selectedClass = '';
 		classBooks = [];
 		await loadExistingCopies();
@@ -320,13 +320,13 @@ function createLabelStore() {
 
 	return {
 		get searchVal() {
-			return searchVal;
+			return suche;
 		},
 		set searchVal(v) {
-			searchVal = v;
+			suche = v;
 		},
 		get searchResults() {
-			return searchResults;
+			return treffer;
 		},
 		get isSearching() {
 			return isSearching;

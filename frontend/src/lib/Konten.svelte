@@ -40,15 +40,15 @@
 	let deletingUser = $state(false);
 
 	let filteredUsers = $derived.by(() => {
-		const query = userSearchQuery.trim().toLowerCase();
-		if (!query) return users;
+		const suche = userSearchQuery.trim().toLowerCase();
+		if (!suche) return users;
 		return users.filter(
 			(u) =>
-				u.vorname.toLowerCase().includes(query) ||
-				u.nachname.toLowerCase().includes(query) ||
-				u.email.toLowerCase().includes(query) ||
-				(u.barcode_id && u.barcode_id.toLowerCase().includes(query)) ||
-				u.rolle.toLowerCase().includes(query)
+				u.vorname.toLowerCase().includes(suche) ||
+				u.nachname.toLowerCase().includes(suche) ||
+				u.email.toLowerCase().includes(suche) ||
+				(u.barcode_id && u.barcode_id.toLowerCase().includes(suche)) ||
+				u.rolle.toLowerCase().includes(suche)
 		);
 	});
 

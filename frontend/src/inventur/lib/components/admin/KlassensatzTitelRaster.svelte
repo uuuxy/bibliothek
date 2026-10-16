@@ -6,14 +6,14 @@
 	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
 	let { books = [], buecherFehler = false, selectedBookIds = $bindable(new Set()) } = $props();
 
-	let searchQuery = $state('');
+	let suche = $state('');
 
 	const filteredBooks = $derived(
 		books.filter(
 			(b) =>
-				b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				b.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				b.author.toLowerCase().includes(searchQuery.toLowerCase())
+				b.title.toLowerCase().includes(suche.toLowerCase()) ||
+				b.subject.toLowerCase().includes(suche.toLowerCase()) ||
+				b.author.toLowerCase().includes(suche.toLowerCase())
 		)
 	);
 
@@ -48,7 +48,7 @@
 
 	<Suchpille
 		id="book-search-field"
-		bind:wert={searchQuery}
+		bind:wert={suche}
 		platzhalter="Titel, Fach oder ISBN eingeben …"
 		etikett="Bücher durchsuchen"
 		autofokus

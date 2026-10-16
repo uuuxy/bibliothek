@@ -47,8 +47,8 @@ function createMahnwesenStore() {
 
 	// Filter und Auswahl
 	let expandedKlassen = /** @type {Set<string>} */ (new SvelteSet());
-	let selectedKlasse = $state(''); // Klassenfilter (leer = alle)
-	let searchQuery = $state(''); // Freitextsuche über Name/Klasse
+	let gewaehlteKlasse = $state(''); // Klassenfilter (leer = alle)
+	let suche = $state(''); // Freitextsuche über Name/Klasse
 
 	// MD3 Filter & Bulk Actions
 	let activeFilter = $state('Alle'); // "Alle", "1. Erinnerung", "Mahnung"
@@ -96,8 +96,8 @@ function createMahnwesenStore() {
 		let list = flatSchueler();
 		if (activeFilter !== 'Alle')
 			list = list.filter((/** @type {any} */ s) => s.mahnstufe === activeFilter);
-		if (selectedKlasse) list = list.filter((/** @type {any} */ s) => s.klasse === selectedKlasse);
-		const q = searchQuery.trim().toLowerCase();
+		if (gewaehlteKlasse) list = list.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse);
+		const q = suche.trim().toLowerCase();
 		if (q) {
 			list = list.filter(
 				(/** @type {any} */ s) =>
@@ -177,18 +177,18 @@ function createMahnwesenStore() {
 			return expandedKlassen;
 		},
 		get selectedKlasse() {
-			return selectedKlasse;
+			return gewaehlteKlasse;
 		},
 		set selectedKlasse(v) {
-			selectedKlasse = v;
+			gewaehlteKlasse = v;
 			// Sichtbereich ändert sich → Auswahl leeren, damit sie stets zur Liste passt.
 			selectedIds.clear();
 		},
 		get searchQuery() {
-			return searchQuery;
+			return suche;
 		},
 		set searchQuery(v) {
-			searchQuery = v;
+			suche = v;
 			selectedIds.clear();
 		},
 		get klassen() {

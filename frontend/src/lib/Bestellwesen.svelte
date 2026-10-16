@@ -17,7 +17,7 @@
 	import AnliegenListe from './components/bestellungen/AnliegenListe.svelte';
 	import { resthoehe } from './actions/resthoehe.js';
 
-	let activeTab = $state('bestellungen');
+	let aktiverReiter = $state('bestellungen');
 
 	/**
 	 * Exemplare im Zulauf — speist das Badge am Wareneingang-Reiter. Bis zum 09.08.2026
@@ -56,7 +56,7 @@
 
 	/** @param {any[]} receivedItems */
 	async function beiWareneingang(receivedItems) {
-		activeTab = 'bestellungen';
+		aktiverReiter = 'bestellungen';
 		await bestellStore.loadIncomingShipments();
 		bestellStore.loadRecommendations();
 		// Zaehlt das Badge am Druck-Center neu: Frisch eingebuchte Exemplare tragen noch
@@ -114,8 +114,8 @@
 	     Druck-Center „999+" neben „30674" stellte. -->
 	<Reiter
 		etikett="Bereiche des Bestellwesens"
-		aktiv={activeTab}
-		onwahl={(id) => (activeTab = id)}
+		aktiv={aktiverReiter}
+		onwahl={(id) => (aktiverReiter = id)}
 		klasse="shrink-0"
 		reiter={[
 			{ id: 'bestellungen', label: 'Bestellungen' },
@@ -130,7 +130,7 @@
 		]}
 	/>
 
-	{#if activeTab === 'bestellungen'}
+	{#if aktiverReiter === 'bestellungen'}
 		{#key 'bestellungen'}
 			<div class="flex flex-col gap-5">
 				<!-- Zwei Bereiche statt zwei Karten. Die Trennung traegt eine senkrechte
@@ -205,7 +205,7 @@
 		{/key}
 	{/if}
 
-	{#if activeTab === 'wareneingang'}
+	{#if aktiverReiter === 'wareneingang'}
 		<!-- Eigener Reiter statt Unteransicht hinter einem Banner. Vorher fuehrte der einzige
 		     Weg hierher ueber einen Streifen ueber dem Bestellbedarf; wer ihn wegdachte, fand
 		     den Wareneingang nicht mehr. Als Reiter steht er gleichrangig neben den anderen
@@ -213,20 +213,20 @@
 		     ohne die halbe Breite zu belegen. -->
 		<Wareneingang
 			incomingShipments={bestellStore.incomingShipments}
-			onBack={() => (activeTab = 'bestellungen')}
+			onBack={() => (aktiverReiter = 'bestellungen')}
 			onReceived={beiWareneingang}
 		/>
 	{/if}
 
-	{#if activeTab === 'historie'}
+	{#if aktiverReiter === 'historie'}
 		<BestellHistorie />
 	{/if}
 
-	{#if activeTab === 'klassensaetze'}
+	{#if aktiverReiter === 'klassensaetze'}
 		<KlassensatzReservierungen />
 	{/if}
 
-	{#if activeTab === 'anliegen'}
+	{#if aktiverReiter === 'anliegen'}
 		<AnliegenListe />
 	{/if}
 </Seitenrahmen>

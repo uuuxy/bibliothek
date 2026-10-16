@@ -478,19 +478,21 @@ Ordner des Pakets und für die Form `paket.Name`.
   `book`, `user`, `student`. Nicht gezählt: Props, Schlüssel von Objekten und die Methoden der
   Stores (`addToast`, `loadClassGroups`), die Kennungen der Bildschirme in `routenTabelle.js`
   (`students_dir`, `settings`, `inventory`, `orders`, `graduates`, `stats`) und die Beschriftung
-  „Admin-Audit-Log" im Reiter der System-Logs. Erledigt sind am 16.10.2026 vier Bereiche: 56
+  „Admin-Audit-Log" im Reiter der System-Logs. Erledigt sind am 16.10.2026 fünf Bereiche: 56
   Funktionen (`handle…` und lokale Funktionen), in 31 Dateien die Zustandsnamen `error`,
   `errorMessage`, `errorMsg`, `loading`, `isLoading`, `saving`, `isSaving`, `isSubmitting` und
   `isDeleting` (jetzt `fehler`, `laedt`, `speichert`, `laeuft`) und in 29 Dateien `data`, `result`,
-  `results`, `book` und `books` (jetzt `daten`, `ergebnis`, `ergebnisse`, `buch`, `buecher`); der
-  Bestand steht bei 352 Erklärungen in 106 Dateien. Beleg je Bereich: Das gebaute Bündel ist
-  byte-gleich (der Bau ist deterministisch, eine geänderte Zeichenkette zeigt er an). Ersetzen nach
-  Wortgrenze trägt dafür nicht, es traf Klassen (`text-error`), das Attribut `loading="lazy"` und
-  Schlüssel. Umbenannt wird deshalb am Syntaxbaum (`svelte/compiler`, `acorn`): jeder Bezeichner
-  gleichen Namens in der Datei, ohne Eigenschaften, Schlüssel, Importe und Exporte; Kurzformen
-  werden ausgeschrieben (`{error}` wird `error={fehler}`). Nächster Schritt: `selected…`, `query`,
-  `activeTab` und die übrigen Namen nach demselben Verfahren, danach die Methoden der Stores und
-  Props, die über Dateigrenzen gehen; die lässt das Verfahren aus.
+  `results`, `book` und `books` (jetzt `daten`, `ergebnis`, `ergebnisse`, `buch`, `buecher`), dazu
+  in 18 Dateien Suchtext, Treffer, Reiter und Auswahl (`suche`, `treffer`, `aktiverReiter`,
+  `gewaehlteKlasse`, `gewaehlteKlassen`, `alleGewaehlt`); der Bestand steht bei 331 Erklärungen in
+  102 Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich (der Bau ist deterministisch,
+  eine geänderte Zeichenkette zeigt er an). Ersetzen nach Wortgrenze trägt dafür nicht, es traf
+  Klassen (`text-error`), das Attribut `loading="lazy"` und Schlüssel. Umbenannt wird deshalb am
+  Syntaxbaum (`svelte/compiler`, `acorn`): jeder Bezeichner gleichen Namens in der Datei, ohne
+  Eigenschaften, Schlüssel, Importe und Exporte; Kurzformen werden ausgeschrieben (`{error}` wird
+  `error={fehler}`). Nächster Schritt: die übrigen Namen nach demselben Verfahren, `query` für
+  Parameter einer Adresse mit eigenem Wort, danach die Methoden der Stores und Props, die über
+  Dateigrenzen gehen; die lässt das Verfahren aus.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und

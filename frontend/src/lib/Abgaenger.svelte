@@ -25,7 +25,7 @@
 	let ladefehler = $state(/** @type {string | null} */ (null));
 
 	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Ausdruck.
-	let selectedKlasse = $state('');
+	let gewaehlteKlasse = $state('');
 	// Suche über Name und Klasse (04.09.2026) — greift zusammen mit dem Klassenfilter und
 	// gilt genauso für den Ausdruck: Was auf dem Bildschirm steht, steht auf dem Papier.
 	let suche = $state('');
@@ -35,8 +35,8 @@
 		)
 	);
 	let filteredGraduates = $derived(
-		(selectedKlasse
-			? graduates.filter((/** @type {any} */ s) => s.klasse === selectedKlasse)
+		(gewaehlteKlasse
+			? graduates.filter((/** @type {any} */ s) => s.klasse === gewaehlteKlasse)
 			: graduates
 		)
 			.filter((/** @type {any} */ s) => {
@@ -66,7 +66,7 @@
 	async function printKontoauszuege() {
 		loadingKontoauszuege = true;
 		try {
-			await dienst.ladeKontoauszuege(selectedKlasse, suche, filteredGraduates);
+			await dienst.ladeKontoauszuege(gewaehlteKlasse, suche, filteredGraduates);
 		} catch (err) {
 			showToast(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
 		} finally {
@@ -158,7 +158,7 @@
 <Seitenrahmen>
 	<AbgaengerKopfzeile
 		bind:suche
-		bind:klasse={selectedKlasse}
+		bind:klasse={gewaehlteKlasse}
 		klassen={classes}
 		gesamt={graduates.length}
 		gefiltert={filteredGraduates.length}

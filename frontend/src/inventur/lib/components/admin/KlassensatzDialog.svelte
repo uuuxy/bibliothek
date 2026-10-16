@@ -27,20 +27,20 @@
 		vorhandeneGruppen = []
 	} = $props();
 
-	let selectedClasses = $state(/** @type {string[]} */ ([]));
+	let gewaehlteKlassen = $state(/** @type {string[]} */ ([]));
 	let selectedBookIds = $state(/** @type {Set<number>} */ (new Set()));
 	const buecher = erzeugeBuecherListe();
 	let speichert = $state(false);
 
 	$effect(() => {
-		if (selectedClasses.length === 0 && selectedBookIds.size > 0) {
+		if (gewaehlteKlassen.length === 0 && selectedBookIds.size > 0) {
 			selectedBookIds = new Set();
 		}
 	});
 
 	onMount(async () => {
 		if (initialGroup) {
-			selectedClasses = [initialGroup.className];
+			gewaehlteKlassen = [initialGroup.className];
 			// Nur Handgepflegtes vorgewählt (Regel samt Begründung: klassensatzVorauswahl.js).
 			selectedBookIds = vorauswahlAusGruppe(initialGroup);
 		}
@@ -56,7 +56,7 @@
 	// schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Wer zu 05F1 noch 06A2
 	// dazunimmt, löscht deren Satz; die Warnung unten nennt die betroffenen Klassen.
 	const ueberschriebeneKlassen = $derived(
-		selectedClasses
+		gewaehlteKlassen
 			.filter((/** @type {string} */ name) => name !== initialGroup?.className)
 			.map((/** @type {string} */ name) =>
 				vorhandeneGruppen.find((/** @type {any} */ g) => g.className === name)
@@ -91,14 +91,14 @@
 	}
 
 	async function saveAssignments() {
-		if (selectedClasses.length === 0) return;
+		if (gewaehlteKlassen.length === 0) return;
 		if (!initialGroup && selectedBookIds.size === 0) return;
 
 		speichert = true;
 		try {
 			const endpoint = initialGroup ? '/api/admin/class-books' : '/api/admin/class-books/add';
 			const payload = {
-				classNames: selectedClasses,
+				classNames: gewaehlteKlassen,
 				bookIds: Array.from(selectedBookIds),
 				oldClassName: initialGroup ? initialGroup.className : undefined
 			};
@@ -115,7 +115,7 @@
 
 			if (res.ok) {
 				onSaved({
-					classes: selectedClasses,
+					classes: gewaehlteKlassen,
 					count: selectedBookIds.size
 				});
 				onClose();
@@ -156,7 +156,7 @@
 				<div
 					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
 				>
-					<KlassensatzKlassenwahl bind:selectedClasses {vorhandeneGruppen} />
+					<KlassensatzKlassenwahl bind:selectedClasses={gewaehlteKlassen} {vorhandeneGruppen} />
 
 					{#if ueberschriebeneKlassen.length > 0}
 						<!-- Warnung statt Verbot: Meist ist es gewollt (ein Jahrgang bekommt denselben
@@ -182,7 +182,7 @@
 				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-outline-variant pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
 				<KlassensatzZusammenfassung
-					{selectedClasses}
+					selectedClasses={gewaehlteKlassen}
 					{selectedBookIds}
 					{selectedBooksList}
 					isSaving={speichert}

@@ -14,7 +14,7 @@
 	 */
 	let { incomingShipments = [], totalItems = 0, selectedExemplarIds = $bindable([]) } = $props();
 
-	let allSelected = $derived(
+	let alleGewaehlt = $derived(
 		selectedExemplarIds.length > 0 &&
 			selectedExemplarIds.length ===
 				incomingShipments.flatMap((/** @type {any} */ s) =>
@@ -23,7 +23,7 @@
 	);
 
 	function toggleAll() {
-		if (allSelected) {
+		if (alleGewaehlt) {
 			selectedExemplarIds = [];
 		} else {
 			selectedExemplarIds = incomingShipments.flatMap((s) =>
@@ -53,7 +53,7 @@
 		</h3>
 		{#if incomingShipments.length > 0}
 			<Button variant="ghost" size="sm" onclick={toggleAll}>
-				{allSelected ? 'Auswahl aufheben' : 'Alle auswählen'}
+				{alleGewaehlt ? 'Auswahl aufheben' : 'Alle auswählen'}
 			</Button>
 		{/if}
 	</div>

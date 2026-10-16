@@ -52,7 +52,7 @@ export function useBuchakte() {
 	let history = $state([]);
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
-	let activeTab = $state('ausleiher');
+	let aktiverReiter = $state('ausleiher');
 	let laedt = $state(true);
 
 	/** Listen, deren Abruf gescheitert ist — ihre Zahl ist keine Zahl, sondern ein Fragezeichen. */
@@ -226,10 +226,10 @@ export function useBuchakte() {
 			vormerkungen = v;
 		},
 		get activeTab() {
-			return activeTab;
+			return aktiverReiter;
 		},
 		set activeTab(v) {
-			activeTab = v;
+			aktiverReiter = v;
 		},
 		get isLoading() {
 			return laedt;

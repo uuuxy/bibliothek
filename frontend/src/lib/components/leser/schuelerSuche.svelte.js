@@ -25,7 +25,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	/** Leer heißt leer — ein Ladefehler heißt Ladefehler (wie im Papierkorb). */
 	let ladefehler = $state('');
 	let sucheLaeuft = $state(false);
-	let query = $state('');
+	let suche = $state('');
 	/** Jahrgangsfilter, '' = alle (17.09.2026, OFFEN.md 9.5). Serverseitig wie die Suche:
 	 *  Ein Filter im Browser säße hinter der Kappung bei 500 Zeilen und zeigte dann einen
 	 *  Teil des Jahrgangs, ohne das zu sagen. */
@@ -60,7 +60,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		const nr = ++ladeNr;
 		laedt = true;
 		try {
-			const q = query.trim();
+			const q = suche.trim();
 			const text = q ? `&q=${encodeURIComponent(q)}` : '';
 			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
 			const richtung = sortAbsteigend ? 'ab' : 'auf';
@@ -114,7 +114,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		const klasse = uiStore.requestedKlassenDruck;
 		if (!klasse) return;
 		uiStore.requestedKlassenDruck = null;
-		query = klasse;
+		suche = klasse;
 		lade().then(nachKlassenDruck);
 	});
 
@@ -167,10 +167,10 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			return ladefehler;
 		},
 		get query() {
-			return query;
+			return suche;
 		},
 		set query(wert) {
-			query = wert;
+			suche = wert;
 		},
 		get sortierung() {
 			return { spalte: sortSpalte, absteigend: sortAbsteigend };
@@ -189,7 +189,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			lade();
 		},
 		get suchend() {
-			return query.trim().length > 0 || jahrgang !== '';
+			return suche.trim().length > 0 || jahrgang !== '';
 		},
 		get gekuerzt() {
 			// NUR der Suchtext hebt die Kappung auf, ein Filter NICHT.
@@ -201,7 +201,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			// angehängt. Am echten Postgres nachgemessen: 520 Leser einer Klasse ergeben 500
 			// Zeilen. Ein Jahrgang dieser Schule bleibt darunter, aber das ist Glück und keine
 			// Zusicherung — und ein Schutz, den nur ein Kommentar behauptet, ist keiner.
-			return !query.trim() && students.length >= LISTEN_GRENZE;
+			return !suche.trim() && students.length >= LISTEN_GRENZE;
 		},
 		lade,
 

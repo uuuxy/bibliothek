@@ -14,7 +14,7 @@
 	}
 
 	// Derived state for 'Select All' checkbox
-	let allSelected = $derived(
+	let alleGewaehlt = $derived(
 		mahnwesenStore.filteredSchueler.length > 0 &&
 			mahnwesenStore.selectedIds.size === mahnwesenStore.filteredSchueler.length
 	);
@@ -26,7 +26,7 @@
 
 	// Toggle all
 	function toggleAll() {
-		if (allSelected) mahnwesenStore.deselectAllSchueler();
+		if (alleGewaehlt) mahnwesenStore.deselectAllSchueler();
 		else mahnwesenStore.selectAllSchueler();
 	}
 </script>
@@ -59,7 +59,7 @@
 					<tr>
 						<th class="w-12 text-center">
 							<Kaestchen
-								checked={allSelected}
+								checked={alleGewaehlt}
 								{indeterminate}
 								onclick={toggleAll}
 								aria-label="Alle überfälligen Schüler auswählen"

@@ -21,7 +21,7 @@ export function useLeserakte() {
 	let showWebcam = $state(false);
 	let timestamp = $state(Date.now());
 	let showDeleteConfirm = $state(false);
-	let activeTab = $state('ausleihen');
+	let aktiverReiter = $state('ausleihen');
 	let showEditModal = $state(false);
 	let showDamageModal = $state(false);
 	let showLockModal = $state(false);
@@ -276,10 +276,10 @@ export function useLeserakte() {
 			showDeleteConfirm = v;
 		},
 		get activeTab() {
-			return activeTab;
+			return aktiverReiter;
 		},
 		set activeTab(v) {
-			activeTab = v;
+			aktiverReiter = v;
 		},
 		get showEditModal() {
 			return showEditModal;

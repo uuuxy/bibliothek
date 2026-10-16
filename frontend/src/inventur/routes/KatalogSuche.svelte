@@ -19,7 +19,7 @@
 	import { authStore } from '../../lib/stores/authStore.svelte.js';
 	import { buecherLaden, buecherSuchen, buecherJeBuch } from '$lib/startseiten_api.js';
 
-	let searchQuery = $state('');
+	let suche = $state('');
 	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
 	// Der Stift auf der Kachel gehört nur denen, die bearbeiten dürfen. Vorher sah ihn
 	// jeder — und ohne Recht tat er dasselbe wie der Klick auf die Kachel.
@@ -38,7 +38,7 @@
 	/** @type {any[]} */
 	let buecher = $state.raw([]);
 	// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6).
-	let filteredBooks = $derived(buecherJeBuch(buecher, buecherSuchen(buecher, searchQuery)));
+	let filteredBooks = $derived(buecherJeBuch(buecher, buecherSuchen(buecher, suche)));
 
 	let displayLimit = $state(50);
 	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));
@@ -76,7 +76,7 @@
 </script>
 
 <div class="w-full text-on-surface font-sans">
-	<StartseitenFilter bind:searchQuery />
+	<StartseitenFilter bind:searchQuery={suche} />
 
 	<div class="relative">
 		<!-- „Nichts gefunden" muss zu sehen sein. Das Raster zeigte bei null Treffern eine
@@ -86,11 +86,11 @@
 		     18.09.2026). Der Hinweis wiederholt den Suchtext: Bei einem Scan steht dort der
 		     gelesene Code. Form und Wortlaut wie im OPAC und im Kollegiums-Portal
 		     (ui/SuchZustand); die M3-Seite zur Suche trifft dazu keine Aussage. -->
-		{#if searchQuery.trim() !== '' && filteredBooks.length === 0}
+		{#if suche.trim() !== '' && filteredBooks.length === 0}
 			<SuchZustand
 				symbol={Search}
 				titel="Keine Bücher gefunden"
-				hinweis={`Kein Titel passt zu „${searchQuery.trim()}".`}
+				hinweis={`Kein Titel passt zu „${suche.trim()}".`}
 			/>
 		{/if}
 		<BuchRasterStartseite

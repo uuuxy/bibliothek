@@ -22,7 +22,7 @@
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
 	const reiterListe = $derived(schuelerdateiReiter(rechte));
 
-	let activeTab = $state('active');
+	let aktiverReiter = $state('active');
 
 	let activeStudent = $state(/** @type {any} */ (null));
 
@@ -38,7 +38,7 @@
 	// dem Druck-Center („Klassenweise drucken"): Die Klasse ist dann gesucht und
 	// geladen, hier werden die Treffer markiert.
 	const suche = erzeugeSchuelerSuche(() => {
-		activeTab = 'active';
+		aktiverReiter = 'active';
 		gewaehlt.alleSichtbarenMarkieren();
 	});
 
@@ -97,12 +97,12 @@
 			<Reiter
 				etikett="Schülerdatei"
 				reiter={reiterListe}
-				aktiv={activeTab}
-				onwahl={(id) => (activeTab = id)}
+				aktiv={aktiverReiter}
+				onwahl={(id) => (aktiverReiter = id)}
 			/>
 
 			<!-- Tab Content -->
-			{#if activeTab === 'active'}
+			{#if aktiverReiter === 'active'}
 				<div class="w-full no-print animate-fade-in">
 					<SchuelerdateiLeiste
 						bind:searchQuery={suche.query}
@@ -147,9 +147,9 @@
 						/>
 					</div>
 				</div>
-			{:else if activeTab === 'graduates'}
+			{:else if aktiverReiter === 'graduates'}
 				<EhemaligeListe onSelect={oeffneStammdaten} />
-			{:else if activeTab === 'deleted'}
+			{:else if aktiverReiter === 'deleted'}
 				<div class="w-full animate-fade-in space-y-6">
 					<Papierkorb
 						darfEndgueltigLoeschen={rechte.endgueltigLoeschen}

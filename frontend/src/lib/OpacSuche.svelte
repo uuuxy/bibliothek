@@ -6,7 +6,7 @@
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
 
-	let query = $state('');
+	let suche = $state('');
 	/** @type {any[]} */
 	let ergebnisse = $state.raw([]);
 	let laedt = $state(false);
@@ -17,7 +17,7 @@
 	let debounce;
 
 	async function search() {
-		const q = query.trim();
+		const q = suche.trim();
 		if (!q) {
 			ergebnisse = [];
 			searched = false;
@@ -75,7 +75,7 @@
 		     jemand einen Fehler sieht. -->
 		<Suchpille
 			id="opac-suchfeld"
-			bind:wert={query}
+			bind:wert={suche}
 			oninput={onInput}
 			platzhalter="Titel, Autor oder ISBN eingeben …"
 			etikett="Im Medienkatalog suchen"
