@@ -9,16 +9,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"image"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
 	"io"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
-
-	_ "golang.org/x/image/webp"
 )
 
 // coverAbruferKennung ist der User-Agent, mit dem das Programm sich bei DNB, Google und

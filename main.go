@@ -40,6 +40,16 @@ import (
 	"bibliothek/sse"
 
 	"github.com/getsentry/sentry-go"
+
+	// Die Bildformate, die der Server liest: Cover und Ausweisfotos. WebP dekodiert libwebp aus
+	// chai2010/webp, mit dem pkg/imageutil die Cover auch schreibt.
+	_ "github.com/chai2010/webp"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	// Die API-Doku unter /swagger liest die Beschreibung, die dieses Paket beim Start anmeldet.
+	_ "bibliothek/docs"
 )
 
 // @title           Schulbibliothek API

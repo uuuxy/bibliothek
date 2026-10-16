@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-	_ "image/png"
 	"io"
 	"log"
 	"net/http"
@@ -18,7 +17,6 @@ import (
 	"time"
 
 	"golang.org/x/image/draw"
-	_ "golang.org/x/image/webp"
 )
 
 const (

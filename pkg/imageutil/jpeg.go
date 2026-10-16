@@ -9,18 +9,14 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
-
-	// Cover liegen als WebP auf der Platte. Ohne diesen Decoder scheitert image.Decode an den
-	// Dateien, die das Programm selbst schreibt.
-	_ "golang.org/x/image/webp"
 )
 
 // JPEGQualitaet ist die Qualitätsstufe für erzeugte JPEG. Bei den hier üblichen Bildgrößen
 // fällt 80 nicht auf und braucht deutlich weniger Platz als ein verlustfreies PNG.
 const JPEGQualitaet = 80
 
-// AlsJPEG wandelt ein Bild in ein Baseline-JPEG; das Paket bringt die Decoder für JPEG, PNG
-// und WebP mit.
+// AlsJPEG wandelt ein Bild in ein Baseline-JPEG. Es liest jedes Format, dessen Decoder das
+// Programm einbindet; der Server bindet sie in main.go ein.
 //
 // Gebraucht wird es zum Einbetten in ein PDF: gofpdf kennt nur JPG, PNG und GIF, die Cover
 // liegen aber als WebP vor. Das Ziel ist JPEG, weil Cover Fotos sind und als PNG ein Vielfaches

@@ -204,7 +204,7 @@ Gewichts:
 - [ ] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
   (5.71)
 - [ ] Testmeldungen in Googles Form und lokale Namen in Tests deutsch, je mit Ratsche. (5.71)
-- [ ] Leerimporte nur in `main` und in Tests. (5.71)
+- [x] Leerimporte nur in `main` und in Tests. (5.71)
 - [ ] Oberfläche: Die Ratsche der Dateigröße zählt auch JS-Module; danach
   `stores/omnibox.svelte.js` (1.174 Zeilen) nach seinen Sachen teilen, mit deiner Freigabe.
   (5.72)
@@ -548,13 +548,6 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   rufen kein `t.Helper()`. Lokale Namen in Tests zählt `stil_ratsche_test.go` nicht: 31 englische
   Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in 11, `staffID`,
   `activeLeserID`). Weg: je eine Ratsche, die den Bestand einfriert, dann Datei für Datei.
-- **Leerimporte.** Decisions, „Import blank": „Packages that are imported only for their side
-  effects (using the syntax import _ "package") may only be imported in a main package, or in tests
-  that require them." Sieben Stellen in Bibliotheken: die Bilddecoder in
-  `inventur/cover_downloader.go` (zwei), `inventur/cover_hochladen.go` (zwei),
-  `api/katalog/cover.go` und `pkg/imageutil/webp.go`, dazu `bibliothek/docs` in `api/router.go`.
-  Vor dem Umzug nach `main.go` prüfen, welche Kommandos unter `cmd/` Bilder lesen: Ihnen fehlte
-  der Decoder sonst ohne Meldung beim Bau, erst beim Lesen eines Bilds.
 
 ### 5.72 Dateigröße der Oberfläche: JS-Module ohne Prüfung
 

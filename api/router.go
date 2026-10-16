@@ -43,7 +43,6 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
-	_ "bibliothek/docs"
 	"bibliothek/internal/middleware"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"

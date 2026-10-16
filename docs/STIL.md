@@ -1,6 +1,6 @@
 # Stil — wie der Code geschrieben ist
 
-Stand: 15.10.2026
+Stand: 16.10.2026
 
 Eine Seite mit den Regeln für Namen, Sichtbarkeit und Kommentare im Go-Code, über `gofmt` und
 den Linter hinaus. Maßstab ist Googles Regelwerk für Go
@@ -15,7 +15,8 @@ etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das 
 Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
 Tests an Namen und Dateinamen, `fehlertext_ratsche_test.go` jeden Fehlertext und
 `meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
-Zustand der Paketebene gegen Abschnitt 12. Für die Oberfläche gilt dasselbe Wörterbuch
+Zustand der Paketebene und `leerimport_ratsche_test.go` jeden Leerimport gegen Abschnitt 12. Für
+die Oberfläche gilt dasselbe Wörterbuch
 (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
@@ -272,6 +273,11 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - `paketzustand_ratsche_test.go` hält es: Ein Wert, dessen Anfangswert nicht erkennbar fest ist,
   steht mit Grund in `paketwerteOhneZustand`, und keine Funktion außer `init` weist einer
   Variable der Paketebene etwas zu. In Tests gilt Abschnitt 10.
+- Ein Paket, das nur für seine Nebenwirkung eingebunden wird (`import _`), steht in einem
+  Programm oder im Test, der es braucht; ausgenommen ist `embed` (Decisions, „Import blank":
+  „Avoid blank imports in library packages, even if the library indirectly depends on them").
+  Welche Bildformate der Server liest und dass er die API-Beschreibung anmeldet, legt `main.go`
+  fest. `leerimport_ratsche_test.go` hält beides.
 
 ## 13. Oberfläche
 
