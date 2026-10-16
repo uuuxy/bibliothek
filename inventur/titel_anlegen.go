@@ -213,13 +213,14 @@ func baueTitelStapel(eintraege []Titel) titelStapel {
 		daten.listenpreise[i] = b.Listenpreis
 		daten.lernmittel[i] = b.IstLernmittel
 
-		eigenschaften := b.ErweiterteEigenschaften
-		if eigenschaften == nil {
-			eigenschaften = make(map[string]any)
+		// Optimization: Avoid json.Marshal allocation for empty properties
+		if len(b.ErweiterteEigenschaften) == 0 {
+			daten.erweiterteEigenschaften[i] = []byte("{}")
+		} else {
+			// In JSON umwandeln für pgx JSONB-Array Kompatibilität
+			eigenschaftenJSON, _ := json.Marshal(b.ErweiterteEigenschaften) //nolint:errcheck
+			daten.erweiterteEigenschaften[i] = eigenschaftenJSON
 		}
-		// In JSON umwandeln für pgx JSONB-Array Kompatibilität
-		eigenschaftenJSON, _ := json.Marshal(eigenschaften) //nolint:errcheck
-		daten.erweiterteEigenschaften[i] = eigenschaftenJSON
 	}
 	return daten
 }
