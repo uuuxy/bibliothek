@@ -25,8 +25,6 @@ func newTestAnmeldung(t *testing.T, laufzeit time.Duration) (*Anmeldung, pgxmock
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	t.Cleanup(a.Sperrliste.Stoppe)
-	t.Cleanup(a.Sitzungen.Stoppe)
 	return a, mock
 }
 
@@ -191,7 +189,7 @@ func TestSitzungVerlaengern_AltesTokenWirdMitNeuemCookieErneuert(t *testing.T) {
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoStatus(mock, true, RolleMitarbeiter)
 	erwarteSperrzustand(mock, false)
-	claims, err := a.PruefeToken(cookies[0].Value)
+	claims, err := a.PruefeToken(t.Context(), cookies[0].Value)
 	if err != nil {
 		t.Fatalf("neues Token ungültig: %v", err)
 	}
@@ -233,7 +231,7 @@ func TestSitzungVerlaengern_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoStatus(mock, true, RolleHelfer)
 	erwarteSperrzustand(mock, false)
-	claims, err := a.PruefeToken(cookies[0].Value)
+	claims, err := a.PruefeToken(t.Context(), cookies[0].Value)
 	if err != nil {
 		t.Fatalf("neues Token ungültig: %v", err)
 	}
@@ -255,7 +253,7 @@ func TestPruefeToken_RolleKommtAusDerDatenbank(t *testing.T) {
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoStatus(mock, true, RolleHelfer)
 
-	claims, err := a.PruefeToken(token)
+	claims, err := a.PruefeToken(t.Context(), token)
 	if err != nil {
 		t.Fatalf("PruefeToken: %v", err)
 	}

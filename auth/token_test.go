@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -47,7 +48,7 @@ func TestPruefeToken_WiderrufWirktSofort(t *testing.T) {
 		erwarteNichtWiderrufen(mock)
 		erwarteKontoAktiv(mock, true)
 
-		if _, err := a.PruefeToken(token); err != nil {
+		if _, err := a.PruefeToken(t.Context(), token); err != nil {
 			t.Errorf("aktives Konto: unerwarteter Fehler: %v", err)
 		}
 	})
@@ -58,7 +59,7 @@ func TestPruefeToken_WiderrufWirktSofort(t *testing.T) {
 		erwarteNichtWiderrufen(mock)
 		erwarteKontoAktiv(mock, false)
 
-		if _, err := a.PruefeToken(token); err == nil {
+		if _, err := a.PruefeToken(t.Context(), token); err == nil {
 			t.Error("deaktiviertes Konto muss abgelehnt werden")
 		}
 	})
@@ -71,8 +72,29 @@ func TestPruefeToken_WiderrufWirktSofort(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnError(pgx.ErrNoRows)
 
-		if _, err := a.PruefeToken(token); err == nil {
+		if _, err := a.PruefeToken(t.Context(), token); err == nil {
 			t.Error("gelöschtes Konto muss abgelehnt werden")
 		}
 	})
+}
+
+// RaeumeAuf läuft, bis sein Kontext endet, und nicht länger: main.go startet es mit dem Kontext
+// des Servers.
+func TestAnmeldung_RaeumeAufEndetMitDemKontext(t *testing.T) {
+	a, err := NewAnmeldung(testSecret, nil, time.Hour)
+	if err != nil {
+		t.Fatalf("NewAnmeldung: %v", err)
+	}
+	ctx, abbrechen := context.WithCancel(t.Context())
+	fertig := make(chan struct{})
+	go func() {
+		a.RaeumeAuf(ctx)
+		close(fertig)
+	}()
+	abbrechen()
+	select {
+	case <-fertig:
+	case <-time.After(5 * time.Second):
+		t.Fatal("RaeumeAuf läuft nach dem Ende seines Kontexts weiter")
+	}
 }

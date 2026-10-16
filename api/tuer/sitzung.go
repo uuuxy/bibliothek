@@ -22,7 +22,7 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 	// PruefeToken prüft neben Signatur und Sperrliste auch, ob das Konto noch aktiv und die
 	// Sitzung nach Inaktivität nicht gesperrt ist, beides in der Datenbank; eine zweite Prüfung
 	// braucht es hier nicht.
-	claims, err := b.Auth.PruefeToken(cookie.Value)
+	claims, err := b.Auth.PruefeToken(r.Context(), cookie.Value)
 	if errors.Is(err, auth.ErrPruefungGestoert) {
 		// Datenbank-Aussetzer: abgelehnt, aber nicht als abgelaufene Sitzung. Eine 401
 		// meldet den Arbeitsplatz im Client ab (apiFetch → sitzungAbgelaufen).

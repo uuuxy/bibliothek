@@ -41,8 +41,6 @@ func sperreAnmeldung(t *testing.T, pool *pgxpool.Pool, dauer time.Duration) *Anm
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	t.Cleanup(a.Sperrliste.Stoppe)
-	t.Cleanup(a.Sitzungen.Stoppe)
 	return a
 }
 
@@ -119,7 +117,7 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	if gesperrt {
 		t.Fatal("eine frische Anmeldung darf nicht gesperrt sein")
 	}
-	if _, err := a.PruefeToken(cookie.Value); err != nil {
+	if _, err := a.PruefeToken(ctx, cookie.Value); err != nil {
 		t.Fatalf("vor der Sperre muss das Token gelten: %v", err)
 	}
 
@@ -127,7 +125,7 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	if !sperreSperren(t, a, cookie) {
 		t.Fatal("Sperren meldet gesperrt=false, obwohl die Anmeldung eine Zeile mit Prüfwert hat")
 	}
-	if _, err := a.PruefeToken(cookie.Value); !errors.Is(err, ErrSitzungGesperrt) {
+	if _, err := a.PruefeToken(ctx, cookie.Value); !errors.Is(err, ErrSitzungGesperrt) {
 		t.Fatalf("nach dem Sperren: PruefeToken = %v, erwartet ErrSitzungGesperrt", err)
 	}
 
@@ -164,7 +162,7 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	if got, want := fehlermeldungAus(t, rec), "Das Passwort stimmt nicht"; got != want {
 		t.Errorf("Entsperren mit falschem Passwort: Meldung %q, erwartet %q", got, want)
 	}
-	if _, err := a.PruefeToken(cookie.Value); !errors.Is(err, ErrSitzungGesperrt) {
+	if _, err := a.PruefeToken(ctx, cookie.Value); !errors.Is(err, ErrSitzungGesperrt) {
 		t.Fatalf("nach falschem Passwort muss die Sperre stehen: %v", err)
 	}
 	rec = sperreEntsperren(pool, a, cookie, "geheim-eins")
@@ -175,7 +173,7 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil || antwort.Email != email || len(antwort.Rechte) == 0 {
 		t.Errorf("Entsperren antwortet wie die Anmeldung: %+v (Fehler: %v)", antwort, err)
 	}
-	if _, err := a.PruefeToken(cookie.Value); err != nil {
+	if _, err := a.PruefeToken(ctx, cookie.Value); err != nil {
 		t.Fatalf("nach dem Entsperren muss das Token wieder gelten: %v", err)
 	}
 
@@ -225,7 +223,7 @@ func TestSperre_UeberdauertDieErneuerungDesTokens(t *testing.T) {
 	if neu.Value == cookie.Value {
 		t.Fatal("die Erneuerung hat kein neues Token ausgestellt")
 	}
-	if _, err := a.PruefeToken(neu.Value); !errors.Is(err, ErrSitzungGesperrt) {
+	if _, err := a.PruefeToken(t.Context(), neu.Value); !errors.Is(err, ErrSitzungGesperrt) {
 		t.Fatalf("erneuertes Token einer gesperrten Anmeldung: PruefeToken = %v, erwartet ErrSitzungGesperrt", err)
 	}
 }
@@ -246,7 +244,7 @@ func TestSperre_TokenOhneZeileWirdNichtGesperrtUndNichtErneuert(t *testing.T) {
 	if sperreSperren(t, a, cookie) {
 		t.Fatal("ein Token ohne Zeile meldet gesperrt=true — ohne Prüfwert ließe es sich bei einem Ausfall des Mailservers nicht aufschließen")
 	}
-	if _, err := a.PruefeToken(token); err != nil {
+	if _, err := a.PruefeToken(t.Context(), token); err != nil {
 		t.Fatalf("ein Token ohne Zeile bleibt gültig: %v", err)
 	}
 
@@ -290,7 +288,7 @@ func TestSperre_ZeileEndetMitDerAnmeldung(t *testing.T) {
 
 	// Abmelden.
 	cookie := sperreAnmelden(t, pool, a, email, "geheim")
-	claims, err := a.PruefeToken(cookie.Value)
+	claims, err := a.PruefeToken(ctx, cookie.Value)
 	if err != nil {
 		t.Fatalf("PruefeToken: %v", err)
 	}
@@ -315,7 +313,7 @@ func TestSperre_ZeileEndetMitDerAnmeldung(t *testing.T) {
 		kontoID); err != nil {
 		t.Fatalf("Zeile altern: %v", err)
 	}
-	a.Sitzungen.raeumeAb()
+	a.Sitzungen.raeumeAb(ctx)
 	if n := zeilen(); n != 1 {
 		t.Fatalf("nach dem Abräumen: %d Zeilen, erwartet 1 (die laufende)", n)
 	}

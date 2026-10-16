@@ -104,6 +104,22 @@ func NewAnmeldung(geheimnis string, pool Datenbank, laufzeit time.Duration) (*An
 	}, nil
 }
 
+// RaeumeAuf löscht alle 15 Minuten die abgelaufenen Einträge der Sperrliste und die Zeilen
+// abgelaufener Sitzungen, bis ctx endet. Ohne den Lauf wüchsen beide Tabellen ohne Grenze.
+func (a *Anmeldung) RaeumeAuf(ctx context.Context) {
+	takt := time.NewTicker(15 * time.Minute)
+	defer takt.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-takt.C:
+			a.Sperrliste.raeumeAb(ctx)
+			a.Sitzungen.raeumeAb(ctx)
+		}
+	}
+}
+
 // ErzeugeToken stellt ein signiertes Token mit Konto und Rolle aus. sitzungID ist die Kennung
 // aus Sitzungen.Beginne; ein Token ohne sie lässt sich nicht sperren.
 func (a *Anmeldung) ErzeugeToken(kontoID, ausweisnummer string, rolle Rolle, sitzungID string) (string, error) {
@@ -141,12 +157,12 @@ func (a *Anmeldung) ErzeugeToken(kontoID, ausweisnummer string, rolle Rolle, sit
 // PruefeToken prüft das Token wie PruefeTokenTrotzSperre und lehnt zusätzlich ab, wenn die
 // Anmeldung gesperrt ist (ErrSitzungGesperrt). Das ist die Prüfung für jede Anfrage, die Daten
 // liefert oder ändert.
-func (a *Anmeldung) PruefeToken(token string) (*Claims, error) {
-	claims, err := a.PruefeTokenTrotzSperre(token)
+func (a *Anmeldung) PruefeToken(ctx context.Context, token string) (*Claims, error) {
+	claims, err := a.PruefeTokenTrotzSperre(ctx, token)
 	if err != nil {
 		return nil, err
 	}
-	gesperrt, err := a.Sitzungen.istGesperrt(claims.SitzungID)
+	gesperrt, err := a.Sitzungen.istGesperrt(ctx, claims.SitzungID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: sitzung: %v", ErrPruefungGestoert, err)
 	}
@@ -160,8 +176,8 @@ func (a *Anmeldung) PruefeToken(token string) (*Claims, error) {
 // Kontos und liefert die Claims. Die Sperre nach Inaktivität prüft sie nicht; sie ist für die
 // Wege, die eine gesperrte Anmeldung braucht: aufschließen, abmelden, den eigenen Zustand lesen,
 // das Token erneuern.
-func (a *Anmeldung) PruefeTokenTrotzSperre(token string) (*Claims, error) {
-	widerrufen, err := a.Sperrliste.istWiderrufen(token)
+func (a *Anmeldung) PruefeTokenTrotzSperre(ctx context.Context, token string) (*Claims, error) {
+	widerrufen, err := a.Sperrliste.istWiderrufen(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)
 	}
@@ -188,7 +204,7 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(token string) (*Claims, error) {
 	// Signatur und Sperrliste allein reichen nicht: Ein deaktiviertes oder gelöschtes Konto hat
 	// sich nie abgemeldet, die Sperrliste kennt sein Token nicht, und es behielte bis zum Ablauf
 	// (12 Stunden) vollen Zugriff. Deshalb gilt bei jeder Prüfung der Stand in der Datenbank.
-	rolle, err := a.ladeKontoStatus(claims.KontoID)
+	rolle, err := a.ladeKontoStatus(ctx, claims.KontoID)
 	if err != nil {
 		return nil, err
 	}
@@ -204,8 +220,8 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(token string) (*Claims, error) {
 // ladeKontoStatus stellt sicher, dass das Konto noch besteht und aktiv ist, und liefert seine
 // aktuelle Rolle. Ein Fehler der Datenbank verweigert den Zugriff wie bei der Sperrliste,
 // gemeldet als ErrPruefungGestoert (503) und nicht als ungültige Sitzung (401).
-func (a *Anmeldung) ladeKontoStatus(kontoID string) (Rolle, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+func (a *Anmeldung) ladeKontoStatus(ctx context.Context, kontoID string) (Rolle, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	aktiv, rolle, err := repository.LadeKontoAktivUndRolle(ctx, a.pool, kontoID)

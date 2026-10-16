@@ -151,7 +151,7 @@ func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoAktiv(mock, true)
 	erwarteSperrzustand(mock, false)
-	claims, err := a.PruefeToken(cookies[0].Value)
+	claims, err := a.PruefeToken(t.Context(), cookies[0].Value)
 	if err != nil {
 		t.Fatalf("ausgestelltes Token ungültig: %v", err)
 	}

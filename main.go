@@ -370,6 +370,8 @@ func main() {
 		slog.Error("Failed to initialize authenticator", "error", err)
 		os.Exit(1)
 	}
+	// Abgelaufene Widerrufe und Sitzungen abräumen, bis der Server herunterfährt.
+	go anmeldung.RaeumeAuf(ctx)
 
 	// 4. Verteiler für Server-Sent Events.
 	broker := sse.NewBroker()
@@ -408,13 +410,6 @@ func main() {
 		slog.Error("Graceful shutdown failed", "error", err)
 		os.Exit(1)
 	}
-
-	// Das Abräumen von Sperrliste und Sitzungen anhalten (alle 15 Minuten). Beim Beenden des Prozesses
-	// wäre das folgenlos, die Goroutinen sterben ohnehin mit; trotzdem gehört es hierher: Ein
-	// geordnetes Herunterfahren, das die Hälfte stehen lässt, ist keins, und die nächste Aufgabe im
-	// Hintergrund würde sich an dieser Stelle orientieren.
-	anmeldung.Sperrliste.Stoppe()
-	anmeldung.Sitzungen.Stoppe()
 
 	slog.Info("Server stopped successfully.")
 }

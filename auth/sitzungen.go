@@ -18,16 +18,11 @@ import (
 type Sitzungen struct {
 	pool       Datenbank
 	schluessel []byte
-	ctx        context.Context
-	cancel     context.CancelFunc
 }
 
-// newSitzungen legt den Speicher an und startet das Abräumen abgelaufener Zeilen.
+// newSitzungen legt den Speicher an. Abgelaufene Zeilen räumt Anmeldung.RaeumeAuf ab.
 func newSitzungen(pool Datenbank, geheimnis []byte) *Sitzungen {
-	ctx, cancel := context.WithCancel(context.Background())
-	s := &Sitzungen{pool: pool, schluessel: pruefwertSchluessel(geheimnis), ctx: ctx, cancel: cancel}
-	go s.raeumSchleife()
-	return s
+	return &Sitzungen{pool: pool, schluessel: pruefwertSchluessel(geheimnis)}
 }
 
 // beginne legt die Zeile einer neuen Anmeldung an und liefert ihre Kennung für das Token.
@@ -45,11 +40,11 @@ func (s *Sitzungen) beginne(ctx context.Context, kontoID, passwort string, laeuf
 
 // istGesperrt meldet, ob die Anmeldung gesperrt ist. Ohne Kennung und ohne Zeile ist sie es
 // nicht: Sperren lässt sich nur, was sich auch wieder aufschließen lässt.
-func (s *Sitzungen) istGesperrt(sitzungID string) (bool, error) {
+func (s *Sitzungen) istGesperrt(ctx context.Context, sitzungID string) (bool, error) {
 	if sitzungID == "" {
 		return false, nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	gesperrt, err := repository.IstSitzungGesperrt(ctx, s.pool, sitzungID)
@@ -134,28 +129,9 @@ func (s *Sitzungen) Beende(ctx context.Context, sitzungID string) error {
 	return repository.LoescheSitzung(ctx, s.pool, sitzungID)
 }
 
-// Stoppe beendet das Abräumen im Hintergrund.
-func (s *Sitzungen) Stoppe() {
-	s.cancel()
-}
-
-// raeumSchleife räumt alle 15 Minuten die abgelaufenen Zeilen ab.
-func (s *Sitzungen) raeumSchleife() {
-	takt := time.NewTicker(15 * time.Minute)
-	defer takt.Stop()
-	for {
-		select {
-		case <-s.ctx.Done():
-			return
-		case <-takt.C:
-			s.raeumeAb()
-		}
-	}
-}
-
 // raeumeAb löscht Zeilen, deren Token abgelaufen ist.
-func (s *Sitzungen) raeumeAb() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func (s *Sitzungen) raeumeAb(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if err := repository.LoescheAbgelaufeneSitzungen(ctx, s.pool); err != nil {
 		log.Printf("sitzungen: Abräumen abgelaufener Zeilen fehlgeschlagen: %v", err)

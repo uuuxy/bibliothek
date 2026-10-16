@@ -13,7 +13,6 @@ func TestSitzungen_SperrzeitpunktBleibtUndEndeWirdGeschrieben(t *testing.T) {
 	ctx := context.Background()
 	kontoID, _ := sperreKonto(t, pool)
 	s := newSitzungen(pool, []byte(sperreTestGeheimnis))
-	t.Cleanup(s.Stoppe)
 
 	sitzungID, err := s.beginne(ctx, kontoID, "geheim", time.Now().Add(time.Hour))
 	if err != nil {

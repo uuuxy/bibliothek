@@ -362,7 +362,7 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldung) (
 		return nil, false
 	}
 
-	claims, err := anmeldung.PruefeTokenTrotzSperre(cookie.Value)
+	claims, err := anmeldung.PruefeTokenTrotzSperre(r.Context(), cookie.Value)
 	if errors.Is(err, ErrPruefungGestoert) {
 		// Ein Aussetzer der Datenbank ist keine abgelaufene Sitzung: 503 statt 401, sonst meldet
 		// die Oberfläche ab. Sie liest nur den Satz des Fehlerwerts; die Ursache („sperrliste:
@@ -425,7 +425,7 @@ func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			return
 		}
 
-		gesperrt, err := anmeldung.Sitzungen.istGesperrt(claims.SitzungID)
+		gesperrt, err := anmeldung.Sitzungen.istGesperrt(r.Context(), claims.SitzungID)
 		if err != nil {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 			return
@@ -468,7 +468,7 @@ func SitzungVerlaengern(anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
 
 		// Eine gesperrte Anmeldung wird verlängert wie jede andere: Sie läuft weiter, bis jemand
 		// aufschließt.
-		claims, err := anmeldung.PruefeTokenTrotzSperre(cookie.Value)
+		claims, err := anmeldung.PruefeTokenTrotzSperre(r.Context(), cookie.Value)
 		if errors.Is(err, ErrPruefungGestoert) {
 			// Ein Aussetzer der Datenbank ist keine abgelaufene Sitzung: 503 statt 401, sonst
 			// meldet die Oberfläche ab. Die Ursache bleibt im Log.

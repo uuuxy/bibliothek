@@ -33,7 +33,6 @@ func abmeldeServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	if err != nil {
 		t.Fatalf("authenticator init: %v", err)
 	}
-	t.Cleanup(a.Sperrliste.Stoppe)
 	return &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}, nurHTTPS: true}, mock
 }
 
