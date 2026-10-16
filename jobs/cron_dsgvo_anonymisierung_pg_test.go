@@ -62,7 +62,7 @@ func TestSchuelerAnonymisierung_LeertAllePII(t *testing.T) {
 	}
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus(ctx)
 
 	// (a) Die Anonymisierung muss gelaufen sein; scheitert die Abfrage stumm, bliebe
 	// anonymized_at NULL.
@@ -146,7 +146,7 @@ func TestSchuelerAnonymisierung_LoeschtFotosAnonymisierterSchueler(t *testing.T)
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-FOTO-AKTIV', 'Anna', 'Aktiv', '7a', 2030) RETURNING id`)
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreSchuelerAnonymisierungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreSchuelerAnonymisierungAus(ctx)
 
 	hatFoto := func(id string) bool {
 		t.Helper()
@@ -226,7 +226,7 @@ func TestSchuelerAnonymisierung_TilgtPersonendatenInAnderenTabellen(t *testing.T
 		t.Fatalf("vormerkung-Seed: %v", err)
 	}
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreSchuelerAnonymisierungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreSchuelerAnonymisierungAus(ctx)
 
 	// Die Anonymisierung muss gelaufen sein.
 	var anon bool

@@ -1,6 +1,7 @@
 package katalog
 
 import (
+	"context"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -12,7 +13,9 @@ import (
 // beim Start und im Zeitplan; läuft er schon, entfällt der zweite Lauf.
 func (t *Tueren) CoverAbgleichen(abgleich *service.CoverDienst) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		go abgleich.GleicheFehlendeCoverAb()
+		// Der Abgleich läuft weiter, wenn die Antwort hinaus ist; er erbt die Werte der Anfrage,
+		// nicht ihr Ende.
+		go abgleich.GleicheFehlendeCoverAb(context.WithoutCancel(r.Context()))
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{
 			"status":  "success",

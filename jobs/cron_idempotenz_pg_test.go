@@ -45,7 +45,7 @@ func TestIdempotenzBereinigung_LoeschtNurAbgelaufeneSchluessel(t *testing.T) {
 	legeAn(abgelaufen, 25)
 	legeAn(frisch, 23)
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreIdempotenzBereinigungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreIdempotenzBereinigungAus(ctx)
 
 	zeilen, err := pool.Query(ctx, `SELECT idempotency_key::text FROM idempotency_keys ORDER BY 1`)
 	if err != nil {

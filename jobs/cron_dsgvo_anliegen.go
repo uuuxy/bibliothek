@@ -22,8 +22,8 @@ import (
 // keine Frist; er verschwindet erst, wenn ihn jemand erledigt.
 
 // fuehreAnliegenBefristungAus löscht erledigte Anliegen nach Ablauf der Frist.
-func (z *Zeitplan) fuehreAnliegenBefristungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func (z *Zeitplan) fuehreAnliegenBefristungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
@@ -60,8 +60,8 @@ func (z *Zeitplan) fuehreAnliegenBefristungAus() {
 // Anliegen, mit derselben Einstellung. Offene Reservierungen bleiben.
 
 // fuehreKlassensatzBefristungAus löscht erledigte Reservierungen von Klassensätzen nach der Frist.
-func (z *Zeitplan) fuehreKlassensatzBefristungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func (z *Zeitplan) fuehreKlassensatzBefristungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)

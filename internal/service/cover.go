@@ -49,20 +49,18 @@ type fehlendesCover = repository.TitelMitISBN
 
 // GleicheFehlendeCoverAb holt für alle Titel ohne eigenes Cover die Cover nach, mehrere
 // zugleich. Auch Titel, deren letzter Versuch scheiterte, kommen wieder dran, damit ein
-// vorübergehender Fehler beim nächsten Lauf verschwindet.
-func (d *CoverDienst) GleicheFehlendeCoverAb() {
+// vorübergehender Fehler beim nächsten Lauf verschwindet. Endet ctx, holt er keine weiteren.
+func (d *CoverDienst) GleicheFehlendeCoverAb(ctx context.Context) {
 	if !d.laeuft.CompareAndSwap(false, true) {
 		log.Println("Cover Sync: Lauf bereits aktiv – überspringe.")
 		return
 	}
 	defer d.laeuft.Store(false)
 	// Das Netz für die äußere Goroutine, nicht nur für die Arbeiter: Die Funktion läuft als `go
-	// d.GleicheFehlendeCoverAb()` ohne die Erholung des HTTP-Servers, und eine Panik risse
+	// d.GleicheFehlendeCoverAb(ctx)` ohne die Erholung des HTTP-Servers, und eine Panik risse
 	// sonst den Prozess mit. Es steht nach dem Defer, der den Schalter zurücksetzt, damit bei
 	// einer Panik beides läuft; sonst übersprängen alle künftigen Läufe.
 	defer safego.FangePanic("cover-sync")
-
-	ctx := context.Background()
 
 	// Die Auswahl: noch nie versucht (PENDING), gescheitert (FAILED) und ältere Titel mit
 	// fremder Cover-Adresse (FOUND, aber nicht lokal). Diese bekommen ein eigenes WebP, damit

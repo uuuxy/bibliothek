@@ -49,16 +49,22 @@ const (
 // fuehreRestoreProbeAus führt die Probe aus und speichert das Ergebnis. Fehlt der Schlüssel der
 // Sicherung oder die DATABASE_URL, unterbleibt sie ohne Meldung; diesen Zustand meldet die
 // Betriebsbereitschaft schon über den Befund der Sicherung als kritisch.
-func (z *Zeitplan) fuehreRestoreProbeAus() {
+func (z *Zeitplan) fuehreRestoreProbeAus(ctx context.Context) {
 	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return
 	}
 	start := time.Now()
-	ergebnis := z.probeJuengsteSicherung(schluessel, dsn, verzeichnis)
+	ergebnis := z.probeJuengsteSicherung(ctx, schluessel, dsn, verzeichnis)
+	// Ein Abbruch beim Herunterfahren sagt nichts über die Sicherung. Gespeichert als Fehlschlag
+	// stünde die Betriebsbereitschaft zu Unrecht auf kritisch; es bleibt das letzte Ergebnis.
+	if ctx.Err() != nil {
+		log.Printf("Restore-Probe: abgebrochen, der Server fährt herunter (%v)", ctx.Err())
+		return
+	}
 	ergebnis.Zeitpunkt = time.Now().UTC()
 	ergebnis.DauerMS = time.Since(start).Milliseconds()
-	z.speichereProbeErgebnis(ergebnis)
+	z.speichereProbeErgebnis(ctx, ergebnis)
 	if ergebnis.Erfolg {
 		log.Printf("Restore-Probe: ERFOLG — %s in %d ms wiederhergestellt (%d Tabellen)",
 			ergebnis.BackupDatei, ergebnis.DauerMS, ergebnis.Tabellen)
@@ -69,7 +75,7 @@ func (z *Zeitplan) fuehreRestoreProbeAus() {
 
 // probeJuengsteSicherung spielt die jüngste Sicherung in eine Wegwerf-Datenbank ein und zählt
 // ihre Tabellen.
-func (z *Zeitplan) probeJuengsteSicherung(schluessel, dsn, verzeichnis string) RestoreProbeErgebnis {
+func (z *Zeitplan) probeJuengsteSicherung(ctx context.Context, schluessel, dsn, verzeichnis string) RestoreProbeErgebnis {
 	datei, err := juengsteBackupDatei(verzeichnis)
 	if err != nil {
 		return RestoreProbeErgebnis{Fehler: err.Error()}
@@ -87,7 +93,7 @@ func (z *Zeitplan) probeJuengsteSicherung(schluessel, dsn, verzeichnis string) R
 		return e
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancel()
 
 	// Wegwerf-Datenbank auf demselben Server; WITH (FORCE) räumt Reste eines abgebrochenen
@@ -101,8 +107,10 @@ func (z *Zeitplan) probeJuengsteSicherung(schluessel, dsn, verzeichnis string) R
 		e.Fehler = fmt.Sprintf("Wegwerf-Datenbank anlegen: %v", err)
 		return e
 	}
+	// Das Abräumen läuft auch nach einem Abbruch: Sonst bliebe die Wegwerf-Datenbank bis zum
+	// nächsten Lauf stehen.
 	defer func() {
-		hintergrund, abbruch := context.WithTimeout(context.Background(), time.Minute)
+		hintergrund, abbruch := context.WithTimeout(context.WithoutCancel(ctx), time.Minute)
 		defer abbruch()
 		if _, err := z.pool.Exec(hintergrund, `DROP DATABASE IF EXISTS `+probeDatenbank+` WITH (FORCE)`); err != nil {
 			log.Printf("Restore-Probe: Wegwerf-Datenbank blieb stehen (%v) — der nächste Lauf räumt sie ab", err)
@@ -130,13 +138,13 @@ func (z *Zeitplan) probeJuengsteSicherung(schluessel, dsn, verzeichnis string) R
 
 // speichereProbeErgebnis legt das Ergebnis als JSON in system_einstellungen ab, in derselben
 // Quelle, aus der die Seite der Betriebsbereitschaft alle Zustände liest.
-func (z *Zeitplan) speichereProbeErgebnis(e RestoreProbeErgebnis) {
+func (z *Zeitplan) speichereProbeErgebnis(ctx context.Context, e RestoreProbeErgebnis) {
 	wert, err := json.Marshal(e)
 	if err != nil {
 		log.Printf("Restore-Probe: Ergebnis nicht serialisierbar: %v", err)
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	zustand := repository.NewBetriebszustandAbfragen(z.pool)
 	if err := zustand.SchreibeEinstellungswert(ctx, RestoreProbeSchluessel, string(wert)); err != nil {
@@ -146,10 +154,10 @@ func (z *Zeitplan) speichereProbeErgebnis(e RestoreProbeErgebnis) {
 
 // probeBeimStartNachFehlschlag wiederholt die Restore-Probe beim Start, wenn der letzte
 // gespeicherte Lauf gescheitert ist (cron.go).
-func (z *Zeitplan) probeBeimStartNachFehlschlag() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	wert, err := repository.NewBetriebszustandAbfragen(z.pool).LadeEinstellungswert(ctx, RestoreProbeSchluessel)
+func (z *Zeitplan) probeBeimStartNachFehlschlag(ctx context.Context) {
+	lesen, abbrechen := context.WithTimeout(ctx, 10*time.Second)
+	defer abbrechen()
+	wert, err := repository.NewBetriebszustandAbfragen(z.pool).LadeEinstellungswert(lesen, RestoreProbeSchluessel)
 	if err != nil || wert == "" {
 		return // noch nie geprobt oder nicht lesbar: Der Lauf am Sonntag übernimmt
 	}
@@ -158,7 +166,7 @@ func (z *Zeitplan) probeBeimStartNachFehlschlag() {
 		return
 	}
 	log.Printf("Restore-Probe: letzter Lauf war fehlgeschlagen (%s) — probe beim Start erneut", letzte.Fehler)
-	z.fuehreRestoreProbeAus()
+	z.fuehreRestoreProbeAus(ctx)
 }
 
 // kuerzeFehlertext macht die Ausgabe von psql auf Stderr tauglich für das Ergebnis: Zeilen mit

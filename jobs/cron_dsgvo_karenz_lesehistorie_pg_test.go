@@ -104,7 +104,7 @@ func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T
 	legeAusleihe(alt, legeExemplar("KL-ALT-EX"), "200 days", "95 days")
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreLesehistorieBefristungAus()
+	z.fuehreLesehistorieBefristungAus(ctx)
 
 	// Die Vorbedingung des Tests: Der Lauf hat die Zuordnung wirklich genommen. Ohne
 	// diese Probe könnte der Test grün sein, weil gar nichts getrennt wurde.
@@ -116,7 +116,7 @@ func TestSchuelerAnonymisierung_LesehistorieVerstelltKarenzUhrNicht(t *testing.T
 		t.Fatalf("Vorbedingung: Der Lesehistorie-Lauf hat die Ausleihe nicht getrennt (%d noch zugeordnet) — der Test prüft dann nichts", nochZugeordnet)
 	}
 
-	z.fuehreSchuelerAnonymisierungAus()
+	z.fuehreSchuelerAnonymisierungAus(ctx)
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen, Karenz 90 — die Zeile muss noch 85 Tage stehen bleiben. " +

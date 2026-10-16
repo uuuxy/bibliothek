@@ -18,8 +18,8 @@ import (
 // FuehreBearbeiterAnonymisierungAus leert an Ausleihen, die seit mehr als 14 Tagen
 // abgeschlossen sind, die Kennung des Bearbeiters. Das erfüllt die Datensparsamkeit nach DSGVO
 // für die Person an der Theke.
-func (z *Zeitplan) FuehreBearbeiterAnonymisierungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func (z *Zeitplan) FuehreBearbeiterAnonymisierungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	anzahl, err := repository.AnonymisiereBearbeiterAlterAusleihen(ctx, z.pool)
@@ -52,8 +52,8 @@ func (z *Zeitplan) FuehreBearbeiterAnonymisierungAus() {
 //     (abgaenger_seit) und keine offenen Vorgänge mehr haben.
 //
 // Vorname, Nachname und Klasse werden geleert oder gehasht, anonymized_at wird gesetzt.
-func (z *Zeitplan) fuehreSchuelerAnonymisierungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	// Bei unlesbaren Einstellungen wird nicht anonymisiert. Die Vorgabe von 90 Tagen wäre

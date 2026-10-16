@@ -64,8 +64,8 @@ func TestLoeschRueckstand_WaechterUndLaufStellenDieselbeFrage(t *testing.T) {
 	// 03:00. Riefe der Test jeden Lauf einzeln auf, bliebe ein Lauf, der in der Folge der Nacht
 	// fehlt, grün und fiele erst im Betrieb als Rückstand auf.
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreNaechtlicheDSGVOAus()
-	z.fuehreProtokollAufbewahrungAus()
+	z.fuehreNaechtlicheDSGVOAus(ctx)
+	z.fuehreProtokollAufbewahrungAus(ctx)
 
 	// Richtung 2: Ist danach Ruhe? Jede verbleibende Zeile heißt, dass der Wächter eine andere
 	// Frage stellt als der Lauf, und genau gegen diese Klasse von Fehlern steht die Datei.
@@ -306,7 +306,7 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 	// sonst bewiese der Test nichts über den Schlüssel, an dem die Frist hängt.
 	spur("B-OHNE-ID", false)
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreLesehistorieBefristungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreLesehistorieBefristungAus(ctx)
 
 	lies := func(barcode string) string {
 		t.Helper()

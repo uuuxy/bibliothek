@@ -86,7 +86,7 @@ func TestPapierkorbLoeschung_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 		VALUES ($1, $2, 'Wasserschaden', 12.50) RETURNING id`, exemplar("PK-SCHADEN"), ids["K-FORDERUNG"])
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehrePapierkorbLoeschungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehrePapierkorbLoeschungAus(ctx)
 
 	for name, bleibt := range map[string]bool{
 		"K-ALT": false, "K-JUNG": true, "K-AUSLEIHE": true, "K-FORDERUNG": true, "K-AKTIV": true, "S-ALT": true,

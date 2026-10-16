@@ -52,8 +52,10 @@ func IstSchluesselSchwach(schluessel string) bool {
 //   - BACKUP_DIR            – Zielverzeichnis (Vorgabe: ./backups)
 type BackupLauf struct{}
 
-// FuehreAus führt die ganze Sicherung aus: Dump, gzip, Verschlüsselung mit AES-256-GCM.
-func (b *BackupLauf) FuehreAus() {
+// FuehreAus führt die ganze Sicherung aus: Dump, gzip, Verschlüsselung mit AES-256-GCM. Endet ctx
+// vorher, bricht pg_dump ab, und es entsteht keine Datei: Der Dump liegt bis zum Schreiben im
+// Speicher, und die Datei entsteht in einem Zug.
+func (b *BackupLauf) FuehreAus(ctx context.Context) {
 	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return
@@ -64,7 +66,7 @@ func (b *BackupLauf) FuehreAus() {
 
 	log.Printf("Backup: starting daily PostgreSQL backup → %s", zieldatei)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
 	gepackt, ok := erzeugeGepacktenDump(ctx, dsn)

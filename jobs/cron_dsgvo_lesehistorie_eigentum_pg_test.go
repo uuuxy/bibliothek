@@ -85,7 +85,7 @@ func TestLesehistorieBefristung_KlasseFolgtDemEigentum(t *testing.T) {
 		}
 	}
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreLesehistorieBefristungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreLesehistorieBefristungAus(ctx)
 
 	erwartung := map[string]bool{ // true = der Schüler bleibt zugeordnet
 		"LAND-EX": true, "LAND-BEST": true, "TRAEGER-EX": false, "ROMAN": false, "SCHULBUCH": true,

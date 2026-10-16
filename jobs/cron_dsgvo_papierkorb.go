@@ -19,8 +19,8 @@ import (
 // fuehrePapierkorbLoeschungAus löscht Kollegen endgültig, die seit 180 Tagen im Papierkorb
 // liegen. Derselbe Weg wie „Endgültig löschen" von Hand: LoescheLeserEndgueltig prüft Papierkorb
 // und offene Vorgänge ein zweites Mal, in der Transaktion der Löschung.
-func (z *Zeitplan) fuehrePapierkorbLoeschungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+func (z *Zeitplan) fuehrePapierkorbLoeschungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
 	// Die Kennungen sind vorab gelesen und die Zeilen geschlossen, bevor die Löschungen je

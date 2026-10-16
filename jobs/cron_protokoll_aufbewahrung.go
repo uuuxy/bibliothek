@@ -22,8 +22,8 @@ import (
 )
 
 // fuehreProtokollAufbewahrungAus löscht die Einträge des Protokolls jenseits der Frist.
-func (z *Zeitplan) fuehreProtokollAufbewahrungAus() {
-	ctx, abbrechen := context.WithTimeout(context.Background(), 2*time.Minute)
+func (z *Zeitplan) fuehreProtokollAufbewahrungAus(ctx context.Context) {
+	ctx, abbrechen := context.WithTimeout(ctx, 2*time.Minute)
 	defer abbrechen()
 
 	// Frist und Bedingung kommen aus repository/: derselbe Weg und dieselbe Untergrenze, die

@@ -140,8 +140,8 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 	}
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreNaechtlicheDSGVOAus()
-	z.fuehreProtokollAufbewahrungAus()
+	z.fuehreNaechtlicheDSGVOAus(ctx)
+	z.fuehreProtokollAufbewahrungAus(ctx)
 
 	// Nach dem Lauf: Jeder Lauf hat seinen Datensatz genommen.
 	faelle := []struct {

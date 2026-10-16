@@ -26,8 +26,8 @@ import (
 //     (fuehreNaechtlicheDSGVOAus).
 //
 // Jede Löschung steht einzeln im audit_log (Akteur: SYSTEM).
-func (z *Zeitplan) FuehreAbgaengerLoeschungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+func (z *Zeitplan) FuehreAbgaengerLoeschungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
 	// Die Karenz von 30 Tagen als Stichjahr. Die Rechnung steht in repository/, weil die

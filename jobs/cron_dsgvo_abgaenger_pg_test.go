@@ -90,7 +90,7 @@ func TestAbgaengerLoeschung_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 	}
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.FuehreAbgaengerLoeschungAus()
+	z.FuehreAbgaengerLoeschungAus(ctx)
 
 	zaehle := func(abfrage string, argumente ...any) int {
 		t.Helper()
@@ -192,7 +192,7 @@ func TestBearbeiterAnonymisierung_GegenEchtesPostgres(t *testing.T) {
 		`now() - interval '60 days', now() + interval '10 days', NULL`)
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.FuehreBearbeiterAnonymisierungAus()
+	z.FuehreBearbeiterAnonymisierungAus(ctx)
 
 	ohneBearbeiter := func(id string) bool {
 		t.Helper()

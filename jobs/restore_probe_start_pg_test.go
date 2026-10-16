@@ -25,7 +25,7 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "")
 
-	(&BackupLauf{}).FuehreAus()
+	(&BackupLauf{}).FuehreAus(ctx)
 	sicherung := einzigeSicherung(t, verzeichnis)
 
 	pool, err := pgxpool.New(ctx, quellDSN)
@@ -40,7 +40,7 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	frueher := time.Date(2026, time.January, 4, 3, 30, 0, 0, time.UTC)
 
 	t.Run("noch nie geprobt: der Start probt nicht", func(t *testing.T) {
-		z.probeBeimStartNachFehlschlag()
+		z.probeBeimStartNachFehlschlag(ctx)
 		var n int
 		if err := pool.QueryRow(ctx, `SELECT count(*) FROM system_einstellungen WHERE schluessel = $1`,
 			RestoreProbeSchluessel).Scan(&n); err != nil {
@@ -52,8 +52,8 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	})
 
 	t.Run("letzter Lauf gelungen: der Start probt nicht", func(t *testing.T) {
-		z.speichereProbeErgebnis(RestoreProbeErgebnis{Zeitpunkt: frueher, Erfolg: true, BackupDatei: marke, Tabellen: 40})
-		z.probeBeimStartNachFehlschlag()
+		z.speichereProbeErgebnis(ctx, RestoreProbeErgebnis{Zeitpunkt: frueher, Erfolg: true, BackupDatei: marke, Tabellen: 40})
+		z.probeBeimStartNachFehlschlag(ctx)
 		e := leseProbeErgebnis(t, pool)
 		if e.BackupDatei != marke || !e.Zeitpunkt.Equal(frueher) {
 			t.Errorf("nach gelungenem Lauf steht ein neues Ergebnis da (%s, %s) — der Start hat geprobt",
@@ -62,14 +62,26 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	})
 
 	t.Run("letzter Lauf fehlgeschlagen: der Start probt erneut", func(t *testing.T) {
-		z.speichereProbeErgebnis(RestoreProbeErgebnis{Zeitpunkt: frueher, BackupDatei: marke, Fehler: "entschlüsselung fehlgeschlagen"})
-		z.probeBeimStartNachFehlschlag()
+		z.speichereProbeErgebnis(ctx, RestoreProbeErgebnis{Zeitpunkt: frueher, BackupDatei: marke, Fehler: "entschlüsselung fehlgeschlagen"})
+		z.probeBeimStartNachFehlschlag(ctx)
 		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("nach dem Start steht weiter ein Fehlschlag da: %s", e.Fehler)
 		}
 		if e.BackupDatei != filepath.Base(sicherung) {
 			t.Errorf("der Start prüfte %q statt %q", e.BackupDatei, filepath.Base(sicherung))
+		}
+	})
+
+	t.Run("abgebrochen beim Herunterfahren: das letzte Ergebnis bleibt", func(t *testing.T) {
+		z.speichereProbeErgebnis(ctx, RestoreProbeErgebnis{Zeitpunkt: frueher, Erfolg: true, BackupDatei: marke, Tabellen: 40})
+		abgebrochen, abbrechen := context.WithCancel(ctx)
+		abbrechen()
+		z.fuehreRestoreProbeAus(abgebrochen)
+		e := leseProbeErgebnis(t, pool)
+		if e.BackupDatei != marke || !e.Erfolg {
+			t.Errorf("fuehreRestoreProbeAus(abgebrochen) hinterließ %q (Erfolg %v), erwartet das letzte Ergebnis %q",
+				e.BackupDatei, e.Erfolg, marke)
 		}
 	})
 }

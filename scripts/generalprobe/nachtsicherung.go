@@ -10,6 +10,9 @@
 // env -i lässt S3_* und SMTP_* weg: Die Probe lädt nichts hoch und schreibt keine Mail.
 package main
 
-import "bibliothek/jobs"
+import (
+	"bibliothek/jobs"
+	"context"
+)
 
-func main() { (&jobs.BackupLauf{}).FuehreAus() }
+func main() { (&jobs.BackupLauf{}).FuehreAus(context.Background()) }

@@ -54,7 +54,7 @@ func TestProtokollAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 	      VALUES ($1, 'LOGIN', '203.0.113.7', now() - make_interval(months => $2))`, 3)
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreProtokollAufbewahrungAus()
+	z.fuehreProtokollAufbewahrungAus(ctx)
 
 	zaehle := func(abfrage string) int {
 		t.Helper()

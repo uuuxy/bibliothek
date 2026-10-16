@@ -31,8 +31,8 @@ import (
 // nicht betroffen; die Frist beginnt mit der Rückgabe.
 
 // fuehreLesehistorieBefristungAus trennt abgeschlossene Ausleihen nach der Frist vom Leser.
-func (z *Zeitplan) fuehreLesehistorieBefristungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func (z *Zeitplan) fuehreLesehistorieBefristungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)

@@ -57,7 +57,7 @@ func TestAnliegenBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 	}
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreAnliegenBefristungAus()
+	z.fuehreAnliegenBefristungAus(ctx)
 
 	existiert := func(id string) bool {
 		t.Helper()
@@ -116,7 +116,7 @@ func TestAnliegenBefristung_NullSchaltetAb(t *testing.T) {
 		t.Fatalf("Einstellung: %v", err)
 	}
 
-	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreAnliegenBefristungAus()
+	NewZeitplan(pool, repository.NewProtokollAbfragen(pool)).fuehreAnliegenBefristungAus(ctx)
 
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lehrer_anliegen WHERE id = $1`, id).Scan(&n); err != nil {

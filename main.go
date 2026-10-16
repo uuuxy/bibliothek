@@ -128,8 +128,8 @@ func starteBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 func starteDSGVOLauf(ctx context.Context, zeitplan *jobs.Zeitplan) {
 	go func() {
 		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
-		zeitplan.FuehreBearbeiterAnonymisierungAus()
-		zeitplan.FuehreAbgaengerLoeschungAus()
+		zeitplan.FuehreBearbeiterAnonymisierungAus(ctx)
+		zeitplan.FuehreAbgaengerLoeschungAus(ctx)
 
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
@@ -138,8 +138,8 @@ func starteDSGVOLauf(ctx context.Context, zeitplan *jobs.Zeitplan) {
 			select {
 			case <-ticker.C:
 				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
-				zeitplan.FuehreBearbeiterAnonymisierungAus()
-				zeitplan.FuehreAbgaengerLoeschungAus()
+				zeitplan.FuehreBearbeiterAnonymisierungAus(ctx)
+				zeitplan.FuehreAbgaengerLoeschungAus(ctx)
 			case <-ctx.Done():
 				slog.Info("Background Worker: GDPR worker gracefully stopped.")
 				return
@@ -383,7 +383,7 @@ func main() {
 	protokollAbfragen := repository.NewProtokollAbfragen(verbindung.Pool)
 	coverAbgleich := service.NewCoverDienst(verbindung.Pool)
 	zeitplan := jobs.NewZeitplan(verbindung.Pool, protokollAbfragen)
-	zeitplan.Starte(coverAbgleich)
+	zeitplan.Starte(ctx, coverAbgleich)
 	defer zeitplan.Stoppe()
 
 	// Anonymisierung und Löschung nach DSGVO beim Start und alle 24 Stunden.
@@ -396,7 +396,7 @@ func main() {
 	httpServer := starteServer(port, server)
 
 	// 7. Fehlende Cover im Hintergrund nachladen.
-	go coverAbgleich.GleicheFehlendeCoverAb()
+	go coverAbgleich.GleicheFehlendeCoverAb(ctx)
 
 	// Warten auf das Signal zum Beenden.
 	<-ctx.Done()

@@ -61,7 +61,7 @@ func TestBearbeiterAnonymisierung_Anonymisiert(t *testing.T) {
 		WithArgs(repository.BearbeiterKennungTage, repository.KulanzJob).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	z.FuehreBearbeiterAnonymisierungAus()
+	z.FuehreBearbeiterAnonymisierungAus(t.Context())
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen an die Attrappe: %s", err)
@@ -88,7 +88,7 @@ func TestBearbeiterAnonymisierung_OhneTreffer(t *testing.T) {
 		WithArgs(repository.BearbeiterKennungTage, repository.KulanzJob).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-	z.FuehreBearbeiterAnonymisierungAus()
+	z.FuehreBearbeiterAnonymisierungAus(t.Context())
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen an die Attrappe: %s", err)
@@ -125,7 +125,7 @@ func TestAbgaengerLoeschung_Loescht(t *testing.T) {
 		WithArgs(stichjahr).
 		WillReturnRows(zeilen)
 
-	z.FuehreAbgaengerLoeschungAus()
+	z.FuehreAbgaengerLoeschungAus(t.Context())
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen an die Attrappe: %s", err)
@@ -167,7 +167,7 @@ func TestAbgaengerLoeschung_OhneLoeschreife(t *testing.T) {
 		WithArgs(stichjahr).
 		WillReturnRows(zeilen)
 
-	z.FuehreAbgaengerLoeschungAus()
+	z.FuehreAbgaengerLoeschungAus(t.Context())
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen an die Attrappe: %s", err)

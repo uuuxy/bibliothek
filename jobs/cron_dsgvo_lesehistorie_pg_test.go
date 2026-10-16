@@ -139,7 +139,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	}
 
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
-	z.fuehreLesehistorieBefristungAus()
+	z.fuehreLesehistorieBefristungAus(ctx)
 
 	auditTraegtSchueler := func(name string) bool {
 		t.Helper()
@@ -214,7 +214,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	              NOW() - interval '100 days') RETURNING id`, schuelerID).Scan(&spurAus); err != nil {
 		t.Fatalf("Spur einer Vormerkung: %v", err)
 	}
-	z.fuehreLesehistorieBefristungAus()
+	z.fuehreLesehistorieBefristungAus(ctx)
 	if !hatSchueler(fAus) {
 		t.Errorf("F-AUS: bei lesehistorie_tage=0 darf die Schülerbücherei NICHT getrennt werden")
 	}

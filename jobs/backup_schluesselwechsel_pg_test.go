@@ -39,7 +39,7 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 	// Die Nachtsicherung von gestern, mit dem Schlüssel von gestern. Name und Änderungszeit
 	// einen Tag zurück: Der Name trägt die Sekunde, und die Probe wählt nach der Änderungszeit.
 	t.Setenv("BACKUP_ENCRYPTION_KEY", alt)
-	(&BackupLauf{}).FuehreAus()
+	(&BackupLauf{}).FuehreAus(t.Context())
 	gestern := time.Now().UTC().Add(-24 * time.Hour)
 	vorher := filepath.Join(verzeichnis, backupPraefix+gestern.Format(sicherungsStempel)+backupEndung)
 	if err := os.Rename(einzigeSicherung(t, verzeichnis), vorher); err != nil {
@@ -64,7 +64,7 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 	z := &Zeitplan{pool: pool}
 
 	t.Run("vor der ersten neuen Sicherung scheitert die Probe am Schlüssel", func(t *testing.T) {
-		z.fuehreRestoreProbeAus()
+		z.fuehreRestoreProbeAus(t.Context())
 		e := leseProbeErgebnis(t, pool)
 		if e.Erfolg {
 			t.Fatal("die Probe meldet Erfolg für eine Sicherung, die der laufende Schlüssel nicht öffnet")
@@ -75,8 +75,8 @@ func TestSchluesselwechsel_AeltereSicherungBrauchtDenAltenSchluessel(t *testing.
 	})
 
 	t.Run("mit der ersten neuen Sicherung besteht die Probe wieder", func(t *testing.T) {
-		(&BackupLauf{}).FuehreAus()
-		z.fuehreRestoreProbeAus()
+		(&BackupLauf{}).FuehreAus(t.Context())
+		z.fuehreRestoreProbeAus(t.Context())
 		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("die Probe meldet Fehlschlag: %s", e.Fehler)

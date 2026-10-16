@@ -17,8 +17,8 @@ import (
 // Rückstands (loeschrueckstand.go), nur mit anderer Kulanz.
 
 // fuehreNachbuchMeldungenBefristungAus löscht quittierte Meldungen nach der Frist.
-func (z *Zeitplan) fuehreNachbuchMeldungenBefristungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func (z *Zeitplan) fuehreNachbuchMeldungenBefristungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)

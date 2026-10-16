@@ -57,18 +57,19 @@ const (
 	zeitRestoreProbe          = "30 3 * * 0"
 )
 
-// Starte meldet alle Läufe beim Cron an und startet ihn. Den Abgleich der Cover teilt er mit
-// dem Start und dem Server, damit nie zwei Läufe zugleich laufen.
-func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
+// Starte meldet alle Läufe beim Cron an und startet ihn. Die Läufe bekommen ctx, den Kontext
+// des Servers: Fährt er herunter, brechen sie ab. Den Abgleich der Cover teilt er mit dem Start
+// und dem Server, damit nie zwei Läufe zugleich laufen.
+func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDienst) {
 	// Täglich um Mitternacht: Anonymisierung und Löschung nach DSGVO.
-	if _, err := z.cron.AddFunc("0 0 * * *", z.fuehreNaechtlicheDSGVOAus); err != nil {
+	if _, err := z.cron.AddFunc("0 0 * * *", func() { z.fuehreNaechtlicheDSGVOAus(ctx) }); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return
 	}
 
 	// Täglich um 03:00 UTC die Aufbewahrung des Protokolls, nach der Sicherung (02:30), damit
 	// die Sicherung des Tages die Einträge noch vor ihrer Löschung enthält.
-	if _, err := z.cron.AddFunc(zeitProtokollAufbewahrung, z.fuehreProtokollAufbewahrungAus); err != nil {
+	if _, err := z.cron.AddFunc(zeitProtokollAufbewahrung, func() { z.fuehreProtokollAufbewahrungAus(ctx) }); err != nil {
 		log.Printf("Scheduler: Failed to register audit retention job: %v", err)
 	}
 
@@ -94,7 +95,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 
 	if _, err := z.cron.AddFunc(zeitSicherung, func() {
 		log.Println("Scheduler Backup: starting scheduled daily database backup...")
-		backup.FuehreAus()
+		backup.FuehreAus(ctx)
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}
@@ -102,7 +103,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// Stündlich die abgelaufenen Idempotenz-Schlüssel löschen, damit die Tabelle nicht ohne
 	// Grenze wächst. 24 Stunden reichen weit über die Wiederholung eines Scans hinaus.
 	if _, err := z.cron.AddFunc("17 * * * *", func() {
-		z.fuehreIdempotenzBereinigungAus()
+		z.fuehreIdempotenzBereinigungAus(ctx)
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
 	}
@@ -111,7 +112,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// vorübergehende Fehler, Status FAILED); dabei entsteht das WebP im Haus. Läuft der Abgleich
 	// noch vom Start oder vom Knopf, entfällt dieser Lauf.
 	if _, err := z.cron.AddFunc("0 */6 * * *", func() {
-		coverAbgleich.GleicheFehlendeCoverAb()
+		coverAbgleich.GleicheFehlendeCoverAb(ctx)
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
 	}
@@ -120,7 +121,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// abholt, verliert den Platz) und das Exemplar dem nächsten Wartenden zuteilen. Ohne den
 	// Lauf bliebe eine nicht abgeholte Vormerkung für immer 'abholbereit', und die Wartenden
 	// dahinter kämen nie an die Reihe.
-	if _, err := z.cron.AddFunc("23 * * * *", z.fuehreVormerkungsVerfallAus); err != nil {
+	if _, err := z.cron.AddFunc("23 * * * *", func() { z.fuehreVormerkungsVerfallAus(ctx) }); err != nil {
 		log.Printf("Scheduler: Failed to register vormerkung expiry job: %v", err)
 	}
 
@@ -128,14 +129,14 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	// Aufbewahrung des Protokolls (03:00), damit sie die jüngste Datei prüft und keinem Lauf in
 	// die Quere kommt. Sie belegt, dass die echten Dateien auf der Platte sich wiederherstellen
 	// lassen; die Übung in der CI belegt nur das Verfahren (jobs/restore_probe.go).
-	if _, err := z.cron.AddFunc(zeitRestoreProbe, z.fuehreRestoreProbeAus); err != nil {
+	if _, err := z.cron.AddFunc(zeitRestoreProbe, func() { z.fuehreRestoreProbeAus(ctx) }); err != nil {
 		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
 	}
 	// Nach einem gescheiterten Lauf probt der Start erneut, sonst stünde die
 	// Betriebsbereitschaft nach der Behebung bis zu sieben Tage auf „kritisch", und die
 	// Alarm-Mail käme jeden Tag. Nur nach einem Fehlschlag: Ein gesunder Stack soll nicht bei
 	// jedem Neustart eine Datenbank anlegen und einspielen.
-	go z.probeBeimStartNachFehlschlag()
+	go z.probeBeimStartNachFehlschlag(ctx)
 
 	z.cron.Start()
 	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
@@ -149,8 +150,8 @@ func (z *Zeitplan) Stoppe() {
 // fuehreIdempotenzBereinigungAus löscht die Idempotenz-Schlüssel, die älter als 24 Stunden
 // sind, damit die Tabelle nicht ohne Grenze wächst. Ein Scanner wiederholt eine Anfrage nach
 // Sekunden oder Minuten; 24 Stunden sind großzügig.
-func (z *Zeitplan) fuehreIdempotenzBereinigungAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func (z *Zeitplan) fuehreIdempotenzBereinigungAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	n, err := repository.LoescheAlteIdempotenzSchluessel(ctx, z.pool)
@@ -165,8 +166,8 @@ func (z *Zeitplan) fuehreIdempotenzBereinigungAus() {
 
 // fuehreVormerkungsVerfallAus lässt abgelaufene Vormerkungen im Zustand „abholbereit"
 // verfallen und teilt das Exemplar dem nächsten Wartenden zu (LasseAbgelaufeneVerfallen).
-func (z *Zeitplan) fuehreVormerkungsVerfallAus() {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func (z *Zeitplan) fuehreVormerkungsVerfallAus(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	verfallen, neuBereit, err := repository.NewVormerkungsAbfragen(z.pool).LasseAbgelaufeneVerfallen(ctx)
@@ -182,27 +183,27 @@ func (z *Zeitplan) fuehreVormerkungsVerfallAus() {
 // fuehreNaechtlicheDSGVOAus führt die Läufe der Nacht nach DSGVO nacheinander aus. Sie ist
 // eine Methode, damit ein Test dieselbe Folge in derselben Reihenfolge fahren kann wie der
 // Cron.
-func (z *Zeitplan) fuehreNaechtlicheDSGVOAus() {
-	z.FuehreBearbeiterAnonymisierungAus()
+func (z *Zeitplan) fuehreNaechtlicheDSGVOAus(ctx context.Context) {
+	z.FuehreBearbeiterAnonymisierungAus(ctx)
 	// Erst anonymisieren, dann löschen: Die Löschung trifft nur anonymisierte Zeilen
 	// (repository.praedikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in dieselbe
 	// Nacht, die Karenz wird am Stichtag nicht abgeschnitten, und der Wächter der
 	// Betriebsbereitschaft sieht nie eine anonymisierte Hülle einen Tag lang als Rückstand.
-	z.fuehreSchuelerAnonymisierungAus()
-	z.FuehreAbgaengerLoeschungAus()
+	z.fuehreSchuelerAnonymisierungAus(ctx)
+	z.FuehreAbgaengerLoeschungAus(ctx)
 	// Gelöschte Kollegen nach 180 Tagen im Papierkorb endgültig löschen
 	// (cron_dsgvo_papierkorb.go).
-	z.fuehrePapierkorbLoeschungAus()
+	z.fuehrePapierkorbLoeschungAus(ctx)
 	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene Ausleihen nach
 	// der Frist vom Leser. Die Fristen stehen in den Einstellungen.
-	z.fuehreLesehistorieBefristungAus()
+	z.fuehreLesehistorieBefristungAus(ctx)
 	// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen aus dem
 	// Portal des Kollegiums tragen Freitext, Klasse und den Namen der Lehrkraft.
-	z.fuehreAnliegenBefristungAus()
+	z.fuehreAnliegenBefristungAus(ctx)
 	// Erledigte Reservierungen von Klassensätzen befristen (cron_dsgvo_anliegen.go), mit
 	// derselben Frist wie die Anliegen.
-	z.fuehreKlassensatzBefristungAus()
+	z.fuehreKlassensatzBefristungAus(ctx)
 	// Quittierte Nachbuch-Meldungen befristen (cron_dsgvo_nachbuch.go): Frist der
 	// Lesehistorie, höchstens 30 Tage, denn sie nennen Ausleiher und Vorbesitzer mit Namen.
-	z.fuehreNachbuchMeldungenBefristungAus()
+	z.fuehreNachbuchMeldungenBefristungAus(ctx)
 }

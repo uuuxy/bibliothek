@@ -262,7 +262,7 @@ func TestGleicheFehlendeCoverAb_EinLaufUeberDieAuswahl(t *testing.T) {
 
 	svc := NewCoverDienst(pool)
 	svc.katalog = katalog{dnbSatz: true, cover: probeBild(t)}.client
-	svc.GleicheFehlendeCoverAb()
+	svc.GleicheFehlendeCoverAb(t.Context())
 
 	for name, mc := range map[string]fehlendesCover{"unversucht": offen, "zuvor gescheitert": gescheitert} {
 		if status, url := coverStand(t, pool, mc.ID); status != "FOUND" || !strings.HasPrefix(url, "/uploads/cover_auto_") {
@@ -292,7 +292,7 @@ func TestGleicheFehlendeCoverAb_ZweiterLaufWirdUebersprungen(t *testing.T) {
 		t.Error("der übersprungene Lauf fragt die Katalogdienste")
 		return katalog{}.client()
 	}
-	svc.GleicheFehlendeCoverAb()
+	svc.GleicheFehlendeCoverAb(t.Context())
 
 	if status, _ := coverStand(t, pool, offen.ID); status != "PENDING" {
 		t.Errorf("Stand %q — der übersprungene Lauf hat den Titel angefasst", status)

@@ -40,7 +40,7 @@ func (panikDatenbank) Query(context.Context, string, ...any) (pgx.Rows, error) {
 // überspringt jeder künftige Lauf für immer.
 func TestGleicheFehlendeCoverAbUeberlebtPanik(t *testing.T) {
 	svc := &CoverDienst{pool: panikDatenbank{}}
-	svc.GleicheFehlendeCoverAb() // darf nicht paniken — sonst stirbt der Test mit
+	svc.GleicheFehlendeCoverAb(t.Context()) // darf nicht paniken — sonst stirbt der Test mit
 
 	if svc.laeuft.Load() {
 		t.Error("laeuft blieb true nach dem Panik — künftige Cover-Läufe überspringen still für immer")
