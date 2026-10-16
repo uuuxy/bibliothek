@@ -26,10 +26,10 @@ import (
 // dashes are best avoided in UX writing". Ein Fehlertext beginnt dagegen klein (docs/STIL.md,
 // Abschnitt 11); er geht deshalb nie als Meldung hinaus.
 //
-// Regel: Ein Aufruf von apierrors mit einem Status unter 500 und festem Text ist ein Verstoß, wenn
-// er den Text als Fehlertext übergibt (AntworteFehler mit errors.New oder fmt.Errorf) oder wenn die
-// Meldung (AntworteFehlerMitMeldung, BadRequest, Conflict, NotFound, Unauthorized, New) klein
-// beginnt, ein englisches Wort trägt, ein Wort trägt, an dem der Filter für Datenbanktexte
+// Regel: Ein Aufruf von apierrors mit einem Fehlerstatus außer 500 und festem Text ist ein Verstoß,
+// wenn er den Text als Fehlertext übergibt (AntworteFehler mit errors.New oder fmt.Errorf) oder
+// wenn die Meldung (AntworteFehlerMitMeldung, BadRequest, Conflict, NotFound, Unauthorized, New)
+// klein beginnt, ein englisches Wort trägt, ein Wort trägt, an dem der Filter für Datenbanktexte
 // anschlägt, einen Gedankenstrich hat, als ein Satz mit Punkt endet oder als mehrere Sätze ohne.
 // meldungBestand nennt je Datei, wie viele Verstöße noch stehen; die Zahl kann nur sinken.
 //
@@ -388,7 +388,7 @@ func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten me
 	if name, ok := aufruf.Fun.(*ast.Ident); ok && name.Name == "schreibeFehler" && len(aufruf.Args) == 3 {
 		code := statusAus(aufruf.Args[1], status)
 		text, alsFehler, ok := festerText(aufruf.Args[2], konstanten)
-		if code <= 0 || code >= 500 || !ok || alsFehler || istMeldungsKonstante(aufruf.Args[2]) {
+		if !istMeldungsStatus(code) || !ok || alsFehler || istMeldungsKonstante(aufruf.Args[2]) {
 			return meldungAufruf{}, false
 		}
 		return meldungAufruf{status: code, text: text, gelesenFest: true}, true
@@ -423,7 +423,7 @@ func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten me
 			code, textArg = statusAus(aufruf.Args[0], status), aufruf.Args[1]
 		}
 	}
-	if code <= 0 || code >= 500 || textArg == nil || istMeldungsKonstante(textArg) {
+	if !istMeldungsStatus(code) || textArg == nil || istMeldungsKonstante(textArg) {
 		return meldungAufruf{}, false
 	}
 	text, alsFehler, ok := festerText(textArg, konstanten)
@@ -437,6 +437,13 @@ func meldungAusAufruf(aufruf *ast.CallExpr, status map[string]int, konstanten me
 		return meldungAufruf{}, false // die Vorgabe von apierrors.NotFound
 	}
 	return meldungAufruf{status: code, text: text, alsFehler: alsFehler, gelesenFest: true}, true
+}
+
+// istMeldungsStatus sagt, ob unter dem Status ein Satz an die Oberfläche geht: jeder Fehlerstatus
+// außer 500, dessen Meldung apierrors durch den neutralen Satz ersetzt. Ein 502 oder 503 trägt
+// seinen Satz wie ein 400.
+func istMeldungsStatus(code int) bool {
+	return code >= 400 && code <= 599 && code != http.StatusInternalServerError
 }
 
 // statusAus löst einen Status als Name aus net/http oder als Zahl auf, sonst -1.

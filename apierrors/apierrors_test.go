@@ -29,19 +29,22 @@ func leseFehlermeldung(t *testing.T, rumpf string) string {
 	return meldung
 }
 
-// Unter 500 und ohne Text aus der Datenbank bleibt die Meldung, wie sie ist.
-func TestAntworteFehler_BedienfehlerBehaeltSeineMeldung(t *testing.T) {
-	rec := httptest.NewRecorder()
-	AntworteFehler(rec, http.StatusConflict, errors.New("benutzer hat noch aktive ausleihen"))
+// Der Text eines Fehlers ohne Meldung geht nicht hinaus, unter 500 so wenig wie über 500: Er ist
+// für das Log geschrieben. Der Status bleibt, die Oberfläche liest meldungOhneSatz.
+func TestAntworteFehler_FehlerOhneMeldungGehtNichtHinaus(t *testing.T) {
+	for _, status := range []int{http.StatusBadRequest, http.StatusConflict, http.StatusBadGateway, http.StatusServiceUnavailable} {
+		rec := httptest.NewRecorder()
+		AntworteFehler(rec, status, errors.New("benutzer hat noch aktive ausleihen"))
 
-	if rec.Code != http.StatusConflict {
-		t.Errorf("Status: erwartet 409, war %d", rec.Code)
-	}
-	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
-		t.Errorf("Content-Type: erwartet application/json, war %q", ct)
-	}
-	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "benutzer hat noch aktive ausleihen" {
-		t.Errorf("Meldung verfälscht: %q", meldung)
+		if rec.Code != status {
+			t.Errorf("Status: erwartet %d, war %d", status, rec.Code)
+		}
+		if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+			t.Errorf("%d: Content-Type erwartet application/json, war %q", status, ct)
+		}
+		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != meldungOhneSatz {
+			t.Errorf("%d: Meldung %q, erwartet %q", status, meldung, meldungOhneSatz)
+		}
 	}
 }
 
@@ -184,11 +187,15 @@ func TestAntworteFehlerMitMeldung_UrsacheBleibtImLog(t *testing.T) {
 // Ohne Meldung antwortet die Funktion wie AntworteFehler; sonst hätten die beiden Wege zwei
 // Regeln.
 func TestAntworteFehlerMitMeldung_OhneMeldungWieAntworteFehler(t *testing.T) {
-	rec := httptest.NewRecorder()
-	AntworteFehlerMitMeldung(rec, http.StatusConflict, "", errors.New("benutzer hat noch aktive ausleihen"))
+	ursache := errors.New("benutzer hat noch aktive ausleihen")
+	ohneMeldung := httptest.NewRecorder()
+	AntworteFehlerMitMeldung(ohneMeldung, http.StatusConflict, "", ursache)
+	ueberAntworteFehler := httptest.NewRecorder()
+	AntworteFehler(ueberAntworteFehler, http.StatusConflict, ursache)
 
-	if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "benutzer hat noch aktive ausleihen" {
-		t.Errorf("Meldung verfälscht: %q", meldung)
+	if ohneMeldung.Body.String() != ueberAntworteFehler.Body.String() {
+		t.Errorf("AntworteFehlerMitMeldung ohne Meldung = %q, AntworteFehler = %q",
+			ohneMeldung.Body.String(), ueberAntworteFehler.Body.String())
 	}
 }
 
@@ -219,30 +226,35 @@ func TestAntworteFehlerMitMeldung_DatenbanktextWirdTrotzdemGefiltert(t *testing.
 	}
 }
 
-// Eine Meldung geht ohne Umweg über einen Fehlerwert hinaus. Antwort und Eintrag im Log sind
-// dieselben wie mit errors.New(Meldung) als Ursache, für jeden Text und jeden Status; ein 500
-// antwortet auf beiden Wegen mit der neutralen Meldung.
-func TestAntworteFehlerMitMeldung_OhneUrsacheWieMitFehlerwert(t *testing.T) {
-	const satz = "bitte einen grund für die korrektur angeben"
+// Eine Meldung geht ohne Umweg über einen Fehlerwert hinaus, unter und über 500; ein 500
+// antwortet mit der neutralen Meldung. Der Eintrag im Log nennt die Meldung, wie er sonst die
+// Ursache nennt.
+func TestAntworteFehlerMitMeldung_OhneUrsacheSchicktDieMeldung(t *testing.T) {
+	const satz = "Bitte einen Grund für die Korrektur angeben"
+	const text = "bitte einen grund für die korrektur angeben"
 	for _, status := range []int{
 		http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound,
 		http.StatusConflict, http.StatusRequestEntityTooLarge, http.StatusInternalServerError,
 		http.StatusBadGateway, http.StatusServiceUnavailable,
 	} {
-		mitFehlerwert := httptest.NewRecorder()
-		AntworteFehler(mitFehlerwert, status, errors.New(satz))
-		ohneUrsache := httptest.NewRecorder()
-		AntworteFehlerMitMeldung(ohneUrsache, status, satz, nil)
+		rec := httptest.NewRecorder()
+		AntworteFehlerMitMeldung(rec, status, satz, nil)
 
-		if ohneUrsache.Code != mitFehlerwert.Code || ohneUrsache.Body.String() != mitFehlerwert.Body.String() {
-			t.Errorf("AntworteFehlerMitMeldung(%d) = %d %q, erwartet %d %q", status,
-				ohneUrsache.Code, ohneUrsache.Body.String(), mitFehlerwert.Code, mitFehlerwert.Body.String())
+		erwartet := satz
+		if status == http.StatusInternalServerError {
+			erwartet = meldungInternerFehler
 		}
-		zeileMitFehlerwert, ok := logZeile(status, "", errors.New(satz))
+		if rec.Code != status {
+			t.Errorf("AntworteFehlerMitMeldung(%d): Status %d", status, rec.Code)
+		}
+		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != erwartet {
+			t.Errorf("AntworteFehlerMitMeldung(%d) = %q, erwartet %q", status, meldung, erwartet)
+		}
+		zeileMitFehlerwert, ok := logZeile(status, "", errors.New(text))
 		if !ok {
 			t.Fatalf("logZeile(%d) mit Ursache: kein Eintrag", status)
 		}
-		if zeile, ok := logZeile(status, satz, nil); !ok || zeile != zeileMitFehlerwert {
+		if zeile, ok := logZeile(status, text, nil); !ok || zeile != zeileMitFehlerwert {
 			t.Errorf("logZeile(%d) ohne Ursache = %q, %v, erwartet %q", status, zeile, ok, zeileMitFehlerwert)
 		}
 	}

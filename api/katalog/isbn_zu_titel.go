@@ -195,7 +195,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 			if errors.Is(err, inventur.ErrKatalogdiensteNichtErreichbar) {
 				// Netzausfall ist kein Nicht-Treffer: Bei 404 legt die Theke während
 				// einer WLAN-Störung Titel von Hand an, die längst in der DNB stehen.
-				apierrors.AntworteFehler(w, http.StatusBadGateway, errors.New("katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen"))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.", err)
 				return
 			}
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, fmt.Sprintf("Keine Angaben zur ISBN %s gefunden", req.ISBN), nil)

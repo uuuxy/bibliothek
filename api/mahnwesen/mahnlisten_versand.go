@@ -81,7 +81,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 
 		// 2. Ohne konfigurierten Mailserver kein Massenversand.
 		if !t.Post().IstKonfiguriert() {
-			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Der Massenversand ist nicht möglich, weil kein SMTP-Server eingerichtet ist", nil)
 			return
 		}
 

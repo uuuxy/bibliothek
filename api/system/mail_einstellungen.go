@@ -143,8 +143,9 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 		if err != nil {
 			// mailFehlerStatus: 502, wenn der Zielserver versagt hat — nur so erreicht
 			// die Diagnose (falscher Port, abgelehnte Zugangsdaten, Zertifikatsname)
-			// das Formular, für das sie geschrieben wurde.
-			apierrors.AntworteFehler(w, mailFehlerStatus(err), err)
+			// das Formular, für das sie geschrieben wurde. Sie geht mit Absicht als Text des
+			// Fehlers hinaus; der Satz von BeschreibeSMTPFehler ist für dieses Formular gebaut.
+			apierrors.AntworteFehlerMitMeldung(w, mailFehlerStatus(err), err.Error(), err)
 			return
 		}
 

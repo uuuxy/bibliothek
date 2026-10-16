@@ -225,19 +225,24 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   Abfrage"). Er geht als Meldung hinaus, nicht als Fehlertext: hinter `MitFehlerantwort` mit
   `apierrors.Conflict("Satz", err)`, sonst mit `apierrors.AntworteFehlerMitMeldung(w, status,
   "Satz", err)`. Eine Prüfung neben der Tür liefert `apierrors.BadRequest("Satz", nil)`;
-  `AntworteFehler` schickt dessen Meldung, die Ursache steht nur im Log.
+  `AntworteFehler` schickt dessen Meldung, die Ursache steht nur im Log. Ein Fehler ohne Meldung
+  geht unter keinem Status als Text hinaus: `AntworteFehler` antwortet dann mit „Die Anfrage ließ
+  sich nicht ausführen“.
 - Eine Meldung ist ein Satz nach M3 (Content design, Grammar and punctuation): groß begonnen,
   deutsch, ein einzelner Satz ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich. Sätze, die
   mehrere Türen teilen, stehen als Konstante beim Thema (`auth.MeldungNichtAngemeldet`).
-  `meldung_ratsche_test.go` hält es für jeden festen Text mit Status unter 500, auch für den
-  Formattext von `fmt.Sprintf`, für jede Textkonstante, deren Name mit `meldung` oder `Meldung`
-  beginnt, für die festen Rückgaben einer Funktion `meldung…` oder `…Meldung` und für den Satz
-  einer erfolgreichen Antwort (Schlüssel `message`); ein Satz, der über eine Variable in die
-  Antwort kommt, steht deshalb als solche Konstante.
+  `meldung_ratsche_test.go` hält es für jeden festen Text mit einem Fehlerstatus außer 500 (dessen
+  Meldung ist neutral), auch 502 und 503, auch für den Formattext von `fmt.Sprintf`, für jede
+  Textkonstante, deren Name mit `meldung` oder `Meldung` beginnt, für die festen Rückgaben einer
+  Funktion `meldung…` oder `…Meldung` und für den Satz einer erfolgreichen Antwort (Schlüssel
+  `message`); ein Satz, der über eine Variable in die Antwort kommt, steht deshalb als solche
+  Konstante.
 - Einen Fehler aus einer tieferen Schicht oder einer fremden Bibliothek gibt die Tür nicht als
   Meldung weiter, auch nicht mit `err.Error()`: Sein Text beginnt klein und ist oft englisch
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut
-  das für den Rumpf jeder Anfrage (`apierrors.MeldungAnfrageUnlesbar`, `tuer.Pruefmeldung`).
+  das für den Rumpf jeder Anfrage (`apierrors.MeldungAnfrageUnlesbar`, `tuer.Pruefmeldung`). Die
+  eine Ausnahme ist die Diagnose des Mailservers (502): Ihr Text ist für das Formular der
+  Testmail gebaut und geht mit Absicht hinaus (`api/system/mail_einstellungen.go`).
 - Braucht der Satz Einzelheiten aus einer tieferen Schicht, trägt der Fehler sie als Felder,
   und die Tür formuliert (`repository.KontoHatAusleihenFehler`, `lusd.MassenabgangFehler`): „If
   there is extra information in the error that the caller needs programmatically, it should

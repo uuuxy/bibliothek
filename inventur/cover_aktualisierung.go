@@ -33,7 +33,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
 			// Netzausfall ist kein Nicht-Treffer — sonst sieht „Cover neu laden" bei
 			// WLAN-Störung so aus, als gäbe es schlicht kein besseres Cover.
-			schreibeFehler(w, http.StatusBadGateway, "Katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen")
+			schreibeFehler(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.")
 			return
 		}
 		schreibeFehler(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel.")

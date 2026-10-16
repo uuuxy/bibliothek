@@ -66,7 +66,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 		{"DNB kennt die ISBN nicht", "9783751200530", tuertest.DNBAttrappe{Satz: leer}, http.StatusOK,
 			`{"dnb_satz":false,"schlagwort_vorschlaege":[],"schlagwort_vorschlaege_neu":[]}`},
 		{"DNB nicht erreichbar", "9783751200530", tuertest.DNBAttrappe{Status: http.StatusServiceUnavailable}, http.StatusBadGateway,
-			`DNB nicht erreichbar`},
+			`Die DNB ist nicht erreichbar. Bitte später erneut versuchen.`},
 		{"keine ISBN", "Dunkelnacht", tuertest.DNBAttrappe{Satz: satz}, http.StatusBadRequest,
 			`Keine gültige ISBN`},
 	}

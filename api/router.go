@@ -21,7 +21,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -379,7 +378,7 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 			return
 		}
 		if oberflaeche == nil {
-			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, errors.New("frontend assets unavailable"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Die Oberfläche ist auf dem Server nicht vorhanden", nil)
 			return
 		}
 		relativ := strings.TrimPrefix(r.URL.Path, "/")

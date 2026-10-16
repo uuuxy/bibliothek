@@ -51,7 +51,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		}
 
 		if !t.Post().IstKonfiguriert() {
-			apierrors.AntworteFehler(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Versand nicht möglich"))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Der Versand ist nicht möglich, weil kein SMTP-Server eingerichtet ist", nil)
 			return
 		}
 

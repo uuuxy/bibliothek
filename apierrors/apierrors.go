@@ -22,6 +22,11 @@ const MeldungAnfrageUnlesbar = "Die Anfrage ließ sich nicht lesen"
 // Internal und Satz von AntworteFehler bei jedem 500.
 const meldungInternerFehler = "Ein interner Serverfehler ist aufgetreten"
 
+// meldungOhneSatz ist die Meldung eines Fehlerstatus außer 500, zu dem kein Satz kommt: eine
+// Ursache ohne Meldung oder gar keine. Der Text eines Fehlers ist für das Log geschrieben, klein
+// und oft englisch (docs/STIL.md, Abschnitt 11); er geht deshalb nie hinaus.
+const meldungOhneSatz = "Die Anfrage ließ sich nicht ausführen"
+
 // Fehler ist die Antwort einer Tür, die scheitert: Status und Meldung gehen an die Oberfläche,
 // die Ursache bleibt im Server.
 type Fehler struct {
@@ -143,10 +148,9 @@ func MitFehlerantwort(tuer TuerMitFehler) http.HandlerFunc {
 }
 
 // AntworteFehler schreibt den Fehler ins Log und antwortet mit einer Meldung, die keine
-// Einzelheit des Servers verrät. Unter 500 ist die Meldung eines Fehlers vom Typ Fehler in der
-// Kette die Meldung, sonst der Text des Fehlers; heraus gefiltert wird nur, was
-// istDatenbankFehler erkennt. Gehört die Ursache eines Fehlers nicht an die Oberfläche, nimmt
-// der Rufer AntworteFehlerMitMeldung.
+// Einzelheit des Servers verrät. Außer bei 500 ist die Meldung eines Fehlers vom Typ Fehler in
+// der Kette die Meldung, sonst meldungOhneSatz; den Satz für einen anderen Fehler nennt der Rufer
+// mit AntworteFehlerMitMeldung.
 func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
 	AntworteFehlerMitMeldung(w, status, "", ursache)
 }
@@ -156,8 +160,8 @@ func AntworteFehler(w http.ResponseWriter, status int, ursache error) {
 // ein Verbindungsabriss weder SQL noch eine Bedingung nennt und am Filter vorbeiginge.
 //
 // Eine leere Meldung nimmt die Meldung eines Fehlers vom Typ Fehler in der Kette, wie
-// MitFehlerantwort, sonst den Text des Fehlers. Ohne Ursache steht die Meldung im Log, wie sonst
-// die Ursache. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose braucht 400, 409 oder 502.
+// MitFehlerantwort, sonst meldungOhneSatz. Ohne Ursache steht die Meldung im Log, wie sonst die
+// Ursache. Ein 500 bleibt auch mit Meldung neutral; eine Diagnose braucht 400, 409 oder 502.
 func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string, ursache error) {
 	if istAbbruch(ursache) {
 		antworteAbbruch(w)
@@ -167,11 +171,7 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 		log.Print(zeile)
 	}
 
-	text := http.StatusText(status)
-	if text == "" {
-		text = "Unknown Error"
-	}
-
+	text := meldungOhneSatz
 	if status != http.StatusInternalServerError {
 		var fehler *Fehler
 		switch {
@@ -179,13 +179,11 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 			text = meldung
 		case errors.As(ursache, &fehler):
 			text = fehler.Meldung
-		case ursache != nil:
-			text = ursache.Error()
 		}
 	}
 
-	// Geprüft wird der Text, der hinausgeht, nicht die Ursache: Ohne Meldung sind beide
-	// gleich, mit Meldung kommt es auf sie an.
+	// Geprüft wird der Text, der hinausgeht: Auch eine Meldung kann aus Versehen den Text einer
+	// Abfrage tragen.
 	ausDerDatenbank := istDatenbankFehler(strings.ToLower(text))
 
 	if status == http.StatusInternalServerError || ausDerDatenbank {
