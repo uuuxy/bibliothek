@@ -57,7 +57,7 @@ func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 // Mail an genau die hinterlegte Lehrer-Adresse (keine klassenübergreifenden Empfänger).
 func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 	var empfaenger []string
-	fakeSend := func(m mailservice.Nachricht) error {
+	fakeSend := func(_ context.Context, m mailservice.Nachricht) error {
 		empfaenger = append(empfaenger, m.An)
 		return nil
 	}
@@ -87,7 +87,7 @@ func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 		},
 	}
 
-	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
+	erg := versendeKlassenMahnungen(t.Context(), klassen, fakePDF, fakeSend)
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("sent=%d skipped=%d failed=%d, want sent=1 skipped=2 failed=0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
@@ -104,7 +104,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
 		return []byte("%PDF-fake"), nil
 	}
-	fakeSend := func(m mailservice.Nachricht) error {
+	fakeSend := func(_ context.Context, m mailservice.Nachricht) error {
 		if m.An == "kaputt@schule.de" {
 			return http.ErrHandlerTimeout // beliebiger Versandfehler
 		}
@@ -119,7 +119,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 		{Klasse: "err", LehrerEmail: "kaputt@schule.de", Schueler: schueler},
 	}
 
-	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
+	erg := versendeKlassenMahnungen(t.Context(), klassen, fakePDF, fakeSend)
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 1 || erg.Abgebrochen {
 		t.Fatalf("%+v, want sent=1 skipped=0 failed=1 nicht abgebrochen (Einzelfehler = fehlgeschlagen, Lauf läuft weiter)", erg)
 	}
@@ -132,7 +132,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil }
 	var versuche []string
-	fakeSend := func(m mailservice.Nachricht) error {
+	fakeSend := func(_ context.Context, m mailservice.Nachricht) error {
 		versuche = append(versuche, m.An)
 		if m.An == "zweite@schule.de" {
 			return fmt.Errorf("%w (Server relay:587): connection refused", mailservice.ErrSMTPVersand)
@@ -148,7 +148,7 @@ func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T
 		{Klasse: "5c", LehrerEmail: "dritte@schule.de", Schueler: schueler},
 		{Klasse: "5d", LehrerEmail: "", Schueler: schueler},
 	}
-	erg := versendeKlassenMahnungen(klassen, fakePDF, fakeSend)
+	erg := versendeKlassenMahnungen(t.Context(), klassen, fakePDF, fakeSend)
 	if erg.Versendet != 1 || erg.Fehlgeschlagen != 2 || erg.Uebersprungen != 1 || !erg.Abgebrochen {
 		t.Fatalf("%+v, want sent=1 failed=2 (5b + nicht versuchte 5c) skipped=1 abgebrochen", erg)
 	}
@@ -302,10 +302,13 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	umgelenkt := lenkeKlassenUm(original, "sekretariat@schule.de")
 
 	var empfaenger []string
-	erg := versendeKlassenMahnungen(
+	erg := versendeKlassenMahnungen(t.Context(),
 		umgelenkt,
 		func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil },
-		func(m mailservice.Nachricht) error { empfaenger = append(empfaenger, m.An); return nil },
+		func(_ context.Context, m mailservice.Nachricht) error {
+			empfaenger = append(empfaenger, m.An)
+			return nil
+		},
 	)
 
 	if erg.Versendet != 2 || erg.Uebersprungen != 1 {

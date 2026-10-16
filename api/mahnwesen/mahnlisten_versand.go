@@ -114,9 +114,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		// 6. Je Klasse eine eigene Mahnliste versenden. erzeugeMahnliste und Sende kommen
 		//    als Parameter, damit sich das Überspringen und die Adressierung ohne echten
 		//    PDF- und Mailversand prüfen lassen.
-		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, func(n mailservice.Nachricht) error {
-			return t.Post().Sende(r.Context(), n)
-		})
+		erg := versendeKlassenMahnungen(r.Context(), gewaehlt, erzeugeMahnliste, t.Post().Sende)
 
 		// 7. Ergebnis protokollieren.
 		t.protokolliereKlassenVersand(r, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
@@ -316,9 +314,10 @@ type versandErgebnis struct {
 // damit sich das Überspringen und die Adressierung ohne echten PDF- und Mailversand prüfen
 // lassen.
 func versendeKlassenMahnungen(
+	ctx context.Context,
 	klassen []repository.MahnwesenKlasse,
 	erzeugePDF func([]repository.MahnwesenKlasse) ([]byte, error),
-	sendeMail func(mailservice.Nachricht) error,
+	sendeMail func(context.Context, mailservice.Nachricht) error,
 ) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {
@@ -346,7 +345,7 @@ func versendeKlassenMahnungen(
 			pdfDaten, schuelerGesamt, medienGesamt,
 		)
 
-		if err := sendeMail(nachricht); err != nil {
+		if err := sendeMail(ctx, nachricht); err != nil {
 			log.Printf("bulk-overdue: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.LehrerEmail, err)
 			erg.Fehlgeschlagen++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {

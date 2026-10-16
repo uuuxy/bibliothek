@@ -15,6 +15,8 @@ linters:
     - depguard      # Sperrt Prüfbibliotheken neben dem Paket testing (docs/STIL.md, Abschnitt 10)
     - forbidigo     # Sperrt reflect.DeepEqual in Tests (docs/STIL.md, Abschnitt 10)
     - recvcheck     # Die Methoden eines Typs nehmen alle einen Zeiger oder alle einen Wert (Decisions, „Receiver type")
+    - containedctx  # Kein Kontext als Feld eines Typs (Decisions, „Contexts")
+    - contextcheck  # Wer einen Kontext hat, reicht ihn weiter, statt einen neuen anzulegen (Decisions, „Contexts")
   settings:
     depguard:
       rules:
@@ -64,3 +66,8 @@ linters:
       - path-except: _test\.go
         linters:
           - forbidigo
+      # Tests rufen die Prüfhilfen, die sich ihren Kontext selbst anlegen; die Regel gilt dem
+      # Programmcode (kontext_ratsche_test.go).
+      - path: _test\.go
+        linters:
+          - contextcheck

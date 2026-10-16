@@ -2,6 +2,7 @@ package mahnwesen
 
 import (
 	"bibliothek/mailservice"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -87,8 +88,8 @@ func TestVersendeAbgaengerKontoauszuege_EinPDFJeSchueler(t *testing.T) {
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Max", "Mustermann", "5a"), eintrag("Erika", "Musterfrau", "5a")},
 	}}
 
-	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m mailservice.Nachricht) error { mails = append(mails, m); return nil })
+	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF,
+		func(_ context.Context, m mailservice.Nachricht) error { mails = append(mails, m); return nil })
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 0 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("%+v, want sent=1", erg)
@@ -116,8 +117,11 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 		{Klasse: "7c", Empfaenger: "lehrer7c@schule.de", Eintraege: nil},
 	}
 
-	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m mailservice.Nachricht) error { empfaenger = append(empfaenger, m.An); return nil })
+	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF,
+		func(_ context.Context, m mailservice.Nachricht) error {
+			empfaenger = append(empfaenger, m.An)
+			return nil
+		})
 
 	if erg.Versendet != 1 || erg.Uebersprungen != 2 || erg.Fehlgeschlagen != 0 {
 		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen)
@@ -139,9 +143,9 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPDFScheitert(t *testing.T) {
 	}
 
 	var mails []mailservice.Nachricht
-	sammeln := func(m mailservice.Nachricht) error { mails = append(mails, m); return nil }
+	sammeln := func(_ context.Context, m mailservice.Nachricht) error { mails = append(mails, m); return nil }
 
-	erg := versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
+	erg := versendeAbgaengerKontoauszuege(t.Context(), []abgaengerKlasse{{
 		Klasse:     "5a",
 		Empfaenger: "lehrer5a@schule.de",
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Kaputt", "Fall", "5a"), eintrag("Heile", "Welt", "5a")},
@@ -155,7 +159,7 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPDFScheitert(t *testing.T) {
 	}
 
 	mails = nil
-	erg = versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
+	erg = versendeAbgaengerKontoauszuege(t.Context(), []abgaengerKlasse{{
 		Klasse:     "6b",
 		Empfaenger: "lehrer6b@schule.de",
 		Eintraege:  []pdf.KontoauszugEintrag{eintrag("Kaputt", "Fall", "6b")},
@@ -236,8 +240,8 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 	}
 
 	// Einzelfehler (abgelehnte Adresse): failed, kein Abbruch.
-	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m mailservice.Nachricht) error {
+	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF,
+		func(_ context.Context, m mailservice.Nachricht) error {
 			if m.An == "kl10a@schule.de" {
 				return errors.New("550 mailbox unavailable")
 			}
@@ -248,8 +252,8 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 	}
 
 	// Totes Relay (ErrSMTPVersand): Abbruch, die restlichen zählen als fehlgeschlagen.
-	erg = versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(mailservice.Nachricht) error {
+	erg = versendeAbgaengerKontoauszuege(t.Context(), klassen, fakeKontoauszugPDF,
+		func(context.Context, mailservice.Nachricht) error {
 			return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
 		})
 	if !erg.Abgebrochen || erg.Fehlgeschlagen != 2 || erg.Versendet != 0 {
@@ -270,12 +274,12 @@ func TestVersendeAbgaengerKontoauszuege_NachAbbruchBleibtUebersprungenUebersprun
 		{Klasse: "10e", Empfaenger: "kl10e@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Ida", "S", "10e")}},
 	}
 	pdfs := 0
-	erg := versendeAbgaengerKontoauszuege(klassen,
+	erg := versendeAbgaengerKontoauszuege(t.Context(), klassen,
 		func(e pdf.KontoauszugEintrag) ([]byte, error) {
 			pdfs++
 			return fakeKontoauszugPDF(e)
 		},
-		func(m mailservice.Nachricht) error {
+		func(_ context.Context, m mailservice.Nachricht) error {
 			if m.An == "kl10b@schule.de" {
 				return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
 			}

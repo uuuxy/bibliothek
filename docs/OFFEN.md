@@ -200,7 +200,7 @@ Gewichts:
 
 - [ ] Schnittstellen beim Nutzer statt beim Hersteller: `New…` in `repository/` und
   `internal/service` liefert den Typ. Groß; vorher ein Plan in Stufen zu deiner Freigabe. (5.71)
-- [ ] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
+- [x] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
 - [x] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
   (5.71)
 - [ ] Testmeldungen in Googles Form und lokale Namen in Tests deutsch, je mit Ratsche. (5.71)
@@ -517,17 +517,6 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   Attrappe braucht, erklärt bei sich eine Schnittstelle mit den Methoden, die er ruft. In Stufen
   je Schnittstelle, umbenannt mit `gopls rename`, belegt mit der Liste der Tests vorher und
   nachher.
-- **Kontext.** Decisions, „Contexts": „Do not add a context member to a struct type" und „Unless
-  you are implementing a server framework, you shouldn't create contexts with
-  context.Background() in library code." Einen Kontext als Feld tragen `auth.Sitzungen` und
-  `auth.Sperrliste` (für ihre Aufräum-Schleifen) und `inventur.importZeile`. Die Prüfung des
-  Tokens bei jeder Anfrage nimmt keinen Kontext an (`Anmeldung.PruefeToken`,
-  `PruefeTokenTrotzSperre`; acht Aufrufe im Programmcode) und legt in `Sperrliste.istWiderrufen`
-  einen eigenen mit zwei Sekunden an, ebenso `Sitzungen.istGesperrt`, `Sperrliste.Widerrufe` und
-  `auth/token.go`. `jobs/` beginnt an 16 Stellen mit `context.Background()`,
-  `internal/service/cover.go` und `mailservice/mail_sender.go` je einmal. Weg: den Kontext der
-  Anfrage bis zur Abfrage reichen; die Läufe bekommen den Kontext des Servers. Vorher je Lauf
-  klären, was er bei einem Abbruch hinterlässt (eine halb geschriebene Sicherung).
 - **Tests.** Decisions, „Identify the function": „your failure message should be
   `YourFunc(%v) = %v, want %v` instead of just `got %v, want %v`", dazu „Got before want" und „Test
   helpers" (`t.Helper`). [STIL.md](STIL.md) 10 hat die Regel, der Bestand nicht: Von 10.284

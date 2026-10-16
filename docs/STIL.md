@@ -16,8 +16,9 @@ Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden
 Tests an Namen und Dateinamen, `sichtbarkeit_ratsche_test.go` jeden öffentlichen Namen ohne
 fremden Nutzer gegen Abschnitt 6, `fehlertext_ratsche_test.go` jeden Fehlertext und
 `meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
-Zustand der Paketebene und `leerimport_ratsche_test.go` jeden Leerimport gegen Abschnitt 12. Für
-die Oberfläche gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
+Zustand der Paketebene, `leerimport_ratsche_test.go` jeden Leerimport und
+`kontext_ratsche_test.go` jeden selbst angelegten Kontext gegen Abschnitt 12. Für die Oberfläche
+gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
 
@@ -282,6 +283,12 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   „Avoid blank imports in library packages, even if the library indirectly depends on them").
   Welche Bildformate der Server liest und dass er die API-Beschreibung anmeldet, legt `main.go`
   fest. `leerimport_ratsche_test.go` hält beides.
+- Der Kontext einer Anfrage reist als erster Parameter bis zur Abfrage, die Läufe bekommen den
+  des Servers; kein Typ trägt einen als Feld (Decisions, „Contexts": „Do not add a context member
+  to a struct type"). `context.Background()` steht nur in Programmen, Tests und Prüfhilfen. Muss
+  Arbeit das Ende der Anfrage überdauern (der Widerruf beim Abmelden, ein Sammelversand, der
+  Abgleich der Cover), nimmt sie `context.WithoutCancel(ctx)`. Es halten `containedctx` und
+  `contextcheck` im Linter und `kontext_ratsche_test.go`.
 
 ## 13. Oberfläche
 

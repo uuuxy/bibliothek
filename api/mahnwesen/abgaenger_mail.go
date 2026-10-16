@@ -92,9 +92,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		audit.Phase = "start"
 		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, func(n mailservice.Nachricht) error {
-			return t.Post().Sende(r.Context(), n)
-		})
+		erg := versendeAbgaengerKontoauszuege(r.Context(), gewaehlt, erzeugeKontoauszugPDF, t.Post().Sende)
 
 		audit.Phase = "ende"
 		audit.Versendet, audit.Uebersprungen, audit.Fehlgeschlagen, audit.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
@@ -203,9 +201,10 @@ func erzeugeKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 // Auszüge als übersprungen, jede andere als fehlgeschlagen. Kontoauszüge doppelt zu senden ist
 // unschädlich, der Lauf darf wiederholt werden.
 func versendeAbgaengerKontoauszuege(
+	ctx context.Context,
 	klassen []abgaengerKlasse,
 	erzeugePDF func(pdf.KontoauszugEintrag) ([]byte, error),
-	sendeMail func(mailservice.Nachricht) error,
+	sendeMail func(context.Context, mailservice.Nachricht) error,
 ) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {
@@ -226,7 +225,7 @@ func versendeAbgaengerKontoauszuege(
 			continue
 		}
 
-		if err := sendeMail(baueAbgaengerMail(kl, anhaenge)); err != nil {
+		if err := sendeMail(ctx, baueAbgaengerMail(kl, anhaenge)); err != nil {
 			log.Printf("abgaenger-kontoauszug: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.Empfaenger, err)
 			erg.Fehlgeschlagen++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {
