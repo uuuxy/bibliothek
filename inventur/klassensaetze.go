@@ -112,7 +112,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "erfolgreich gespeichert"})
+	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Gespeichert"})
 }
 
 // KlassensatzGruppeLoeschen ist die Tür DELETE /api/admin/class-books: Sie löscht die
@@ -140,7 +140,7 @@ func (t *Tueren) KlassensatzGruppeLoeschen(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "klasse gelöscht"})
+	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Klasse gelöscht"})
 }
 
 func normalisiereKlassenname(name string) string {
@@ -197,5 +197,5 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "erfolgreich hinzugefügt"})
+	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Hinzugefügt"})
 }

@@ -572,8 +572,8 @@ ob über `AntworteFehler` oder `apierrors.Internal`. Offen:
   der Tür liefern `apierrors.BadRequest` mit Satz, und `AntworteFehler` schickt dessen Meldung.
   Dass eine solche Prüfung nie einen nackten Fehler liefert, hält keine Ratsche. Ebenso nicht
   geprüft: Meldungen mit 502 und 503 (die Diagnose des Mailservers geht mit Absicht unverändert
-  ans Formular), Antworten, die `{"error": …}` selbst schreiben, und die Sätze einer erfolgreichen
-  Antwort (`message`, etwa `mahnlistenMeldung`), die noch Gedankenstriche tragen.
+  ans Formular) und Antworten, die `{"error": …}` selbst schreiben. Die Sätze einer erfolgreichen
+  Antwort prüft die Ratsche seit dem 16.10.2026 (Schlüssel `message`, Funktionen `…Meldung`).
 
 ## 7. Betrieb (liegt bei der Schulseite)
 

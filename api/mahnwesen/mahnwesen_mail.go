@@ -2,6 +2,7 @@ package mahnwesen
 
 import (
 	"fmt"
+	"strings"
 
 	"bibliothek/api/tuer"
 	"bibliothek/mailservice"
@@ -85,4 +86,43 @@ func baueMahnMail(empfaenger mahnlisteEmpfaenger, pdfDaten []byte, schuelerGesam
 			},
 		},
 	}
+}
+
+// alsMeldung setzt Sätze zur Rückmeldung eines Versands zusammen: ein einzelner ohne Punkt,
+// mehrere mit (M3, Content design, Grammar and punctuation).
+func alsMeldung(saetze ...string) string {
+	if len(saetze) == 1 {
+		return saetze[0]
+	}
+	return strings.Join(saetze, ". ") + "."
+}
+
+// klassen nennt eine Zahl von Klassen in Einzahl oder Mehrzahl.
+func klassen(n int) string {
+	if n == 1 {
+		return "1 Klasse"
+	}
+	return fmt.Sprintf("%d Klassen", n)
+}
+
+// versandZiel nennt, wohin der Versand ging: an die Klassenleitungen oder an die Umleitung.
+func versandZiel(umleitung string) string {
+	if umleitung != "" {
+		return "an " + umleitung
+	}
+	return "an die Klassenleitungen"
+}
+
+// versandAusfall nennt, was nicht zugestellt wurde, und nach einem Fehler des Mailservers, was zu
+// tun ist; hinweis sagt, warum ein zweiter Lauf nicht schadet.
+func versandAusfall(erg versandErgebnis, hinweis string) []string {
+	var saetze []string
+	if erg.Fehlgeschlagen > 0 {
+		saetze = append(saetze, fmt.Sprintf("Für %s nicht zugestellt", klassen(erg.Fehlgeschlagen)))
+	}
+	if erg.Abgebrochen {
+		saetze = append(saetze, "Der Lauf brach nach einem Fehler des Mailservers ab",
+			"Bitte den Mailserver prüfen und erneut senden", hinweis)
+	}
+	return saetze
 }

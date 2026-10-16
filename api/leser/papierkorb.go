@@ -103,7 +103,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
-			"message": "Schüler erfolgreich wiederhergestellt",
+			"message": "Schüler wiederhergestellt",
 		})
 	}
 }
@@ -179,7 +179,7 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
-			"message": "Schüler endgültig und DSGVO-konform gelöscht",
+			"message": "Schüler endgültig gelöscht",
 		})
 	}
 }

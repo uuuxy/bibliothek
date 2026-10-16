@@ -162,7 +162,9 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await expect(von).toHaveValue('7');
 		await bis.fill('');
 		await speichern.click();
-		await expect(page.getByText(/gehören zusammen/)).toBeVisible({ timeout: 10000 });
+		await expect(page.getByText(/gehören „von“ und „bis“ zusammen/)).toBeVisible({
+			timeout: 10000
+		});
 		expect(spanne(), 'eine halbe Spanne ist nicht gespeichert').toBe('7-7');
 
 		// Ein eigener Wert in „bis" macht daraus eine Spanne, und die Titelliste nennt sie in der

@@ -153,7 +153,7 @@ func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Reques
 		return
 	}
 
-	schreibeJSON(antwort, http.StatusOK, map[string]string{"message": "bücher gelöscht"})
+	schreibeJSON(antwort, http.StatusOK, map[string]string{"message": "Titel gelöscht"})
 }
 
 // TitelAnlegen verarbeitet POST-Anfragen zum Erstellen eines neuen Buches und
@@ -216,7 +216,7 @@ func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request
 		return
 	}
 
-	schreibeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": t.gespeichert(anfrage.Context(), buch)})
+	schreibeJSON(antwort, http.StatusCreated, map[string]any{"message": "Titel angelegt", "data": t.gespeichert(anfrage.Context(), buch)})
 }
 
 // bestandOderNull löst den Zeiger für den ANLEGEN-Weg auf: Wer beim Anlegen keinen

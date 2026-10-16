@@ -243,7 +243,7 @@ func pruefeLMFPlan(art string, req lmfPlanAnfrage) (service.LMFPlanEntwurf, erro
 	for i, f := range req.FreieTage {
 		datum := strings.TrimSpace(f.Datum)
 		if _, err := time.Parse(tuer.DatumsformatISO, datum); err != nil {
-			return e, apierrors.BadRequest(fmt.Sprintf("Freier Tag %d: Das Datum muss die Form JJJJ-MM-TT haben", i+1), err)
+			return e, apierrors.BadRequest(fmt.Sprintf("Freier Tag %d: Das Datum muss die Form JJJJ-MM-TT haben.", i+1), err)
 		}
 		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LMFFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
 	}
@@ -290,10 +290,10 @@ func pruefeLMFPlanZeile(nr int, z lmfPlanAnfrageZeile) (repository.LMFPlanZeile,
 	}
 	tag, err := schulzeit.Kalendertag(strings.TrimSpace(z.Fest.Datum))
 	if err != nil {
-		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d: Ein fester Termin braucht ein Datum der Form JJJJ-MM-TT", nr), err)
+		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d: Ein fester Termin braucht ein Datum der Form JJJJ-MM-TT.", nr), err)
 	}
 	if z.Fest.Stunde < 1 || z.Fest.Stunde > 12 {
-		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d: Die feste Stunde muss zwischen 1 und 12 liegen", nr), nil)
+		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d: Die feste Stunde muss zwischen 1 und 12 liegen.", nr), nil)
 	}
 	return zeile, &lmfplan.Platz{Datum: tag, Stunde: z.Fest.Stunde}, nil
 }

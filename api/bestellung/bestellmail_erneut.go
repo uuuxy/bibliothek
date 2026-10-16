@@ -87,8 +87,8 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	t.merkeBestellmailVersendet(ctx, id, auftrag.Empfaenger)
 	t.ProtokolliereVerwaltung(ctx, aktionBestellmailErneutGesendet, map[string]any{"bestellung_id": id})
 
-	status, meldung := bestellVersandMeldung(auftrag.LieferantName, daten.IstHauptlieferant && !mitLink)
-	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": status, "message": meldung})
+	meldung, warnung := bestellVersandMeldung(auftrag.LieferantName, daten.IstHauptlieferant && !mitLink)
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": versandStatus(warnung), "message": meldung})
 }
 
 // aktionBestellmailVermerkEntfernt ist die Aktion im Protokoll.

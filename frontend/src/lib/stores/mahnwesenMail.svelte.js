@@ -2,6 +2,14 @@ import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../apiFetch.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
 /**
+ * Ersatz, falls der Server keine Meldung schickt; dieselben Worte wie mahnlistenMeldung im Server.
+ * @param {number} n
+ */
+function mahnlistenVersendet(n) {
+	return `Mahnlisten von ${n} ${n === 1 ? 'Klasse' : 'Klassen'} versendet`;
+}
+
+/**
  * Massenversand: schickt je gewählte überfällige Klasse die Mahnliste an die
  * Klassenleitung — oder, mit overrideEmail, an genau diese eine Adresse.
  * Rückmeldung über die globale Snackbar, da die Aktion aus der Aktionsleiste kommt.
@@ -39,7 +47,7 @@ async function sendBulkOverdueMails(auswahl) {
 			// failed_count > 0: Teil des Laufs ist NICHT zugestellt — als Warnung, nicht
 			// als Erfolg (vorher hieß jeder 200er „versendet"; Prüfung 22.08.2026, A8).
 			showToast(
-				json.message ?? `${json.sent_count ?? 0} Klassen-Mahnliste(n) versendet.`,
+				json.message ?? mahnlistenVersendet(json.sent_count ?? 0),
 				(json.failed_count ?? 0) > 0 ? 'warning' : 'success'
 			);
 		} else {

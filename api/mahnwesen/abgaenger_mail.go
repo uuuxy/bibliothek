@@ -289,18 +289,10 @@ func baueAbgaengerMail(kl abgaengerKlasse, anhaenge []mailservice.Anhang) mailse
 // gingen.
 func abgaengerVersandMeldung(erg versandErgebnis, umleitung string) string {
 	if erg.Versendet == 0 && erg.Uebersprungen == 0 && erg.Fehlgeschlagen == 0 {
-		return "Keine der gewählten Klassen hat noch offene Ausleihen – nichts versendet."
+		return "Keine der gewählten Klassen hat noch offene Ausleihen. Nichts versendet."
 	}
-	ziel := "an die Klassenleitungen"
-	if umleitung != "" {
-		ziel = "an " + umleitung
-	}
-	text := fmt.Sprintf("Kontoauszüge von %d Klasse(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen).", erg.Versendet, ziel, erg.Uebersprungen)
-	if erg.Fehlgeschlagen > 0 {
-		text += fmt.Sprintf(" %d FEHLGESCHLAGEN — nicht zugestellt.", erg.Fehlgeschlagen)
-	}
-	if erg.Abgebrochen {
-		text += " Lauf nach Mailserver-Fehler abgebrochen; bitte Mail-Server prüfen und erneut senden (doppelte Kontoauszüge sind unschädlich)."
-	}
-	return text
+	return alsMeldung(append([]string{fmt.Sprintf(
+		"Kontoauszüge von %s %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen)",
+		klassen(erg.Versendet), versandZiel(umleitung), erg.Uebersprungen)},
+		versandAusfall(erg, "Doppelte Kontoauszüge schaden nicht")...)...)
 }

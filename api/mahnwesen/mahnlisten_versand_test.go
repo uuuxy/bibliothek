@@ -154,7 +154,7 @@ func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T
 		t.Fatalf("nach dem Mailserver-Fehler darf keine weitere Klasse versucht werden: %v", versuche)
 	}
 	msg := mahnlistenMeldung(erg, "")
-	if !strings.Contains(msg, "2 FEHLGESCHLAGEN") || !strings.Contains(msg, "abgebrochen") {
+	if !strings.Contains(msg, "Für 2 Klassen nicht zugestellt") || !strings.Contains(msg, "Der Lauf brach nach einem Fehler des Mailservers ab") {
 		t.Fatalf("Meldung nennt den Ausfall nicht: %q", msg)
 	}
 }

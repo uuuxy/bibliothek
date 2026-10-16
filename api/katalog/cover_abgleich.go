@@ -16,7 +16,7 @@ func (t *Tueren) CoverAbgleichen(abgleich *service.CoverDienst) http.HandlerFunc
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{
 			"status":  "success",
-			"message": "Der Hintergrund-Job zum Herunterladen fehlender Cover wurde gestartet.",
+			"message": "Fehlende Cover werden im Hintergrund geladen",
 		})
 	}
 }

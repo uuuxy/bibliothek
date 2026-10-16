@@ -103,13 +103,22 @@ func (t *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 // Warnung fiele es erst auf, wenn die Bestätigung ausbleibt. Eine Warnung und kein Fehler: Die
 // Bestellung ist gespeichert, die Barcodes sind reserviert, und der Link lässt sich in der
 // Bestellhistorie nachträglich erzeugen.
-func bestellVersandMeldung(lieferantName string, ohneLink bool) (status, meldung string) {
+func bestellVersandMeldung(lieferantName string, ohneLink bool) (meldung string, warnung bool) {
 	if ohneLink {
-		return "warning", fmt.Sprintf(
-			"Bestellung an %s gesendet — aber OHNE Bestätigungs-Link: In den Einstellungen ist keine öffentliche Adresse hinterlegt. "+
-				"Link nachträglich in der Bestellhistorie erzeugen.", lieferantName)
+		return fmt.Sprintf(
+			"Bestellung an %s gesendet, aber ohne Bestätigungs-Link. In den Einstellungen ist keine öffentliche Adresse "+
+				"hinterlegt. Den Link nachträglich in der Bestellhistorie erzeugen.", lieferantName), true
 	}
-	return "success", fmt.Sprintf("Bestellung erfolgreich per E-Mail an %s gesendet.", lieferantName)
+	return fmt.Sprintf("Bestellung per E-Mail an %s gesendet", lieferantName), false
+}
+
+// versandStatus ist der Status der Antwort zur Rückmeldung: Mit einer Warnung zeigt die
+// Oberfläche keinen Erfolg.
+func versandStatus(warnung bool) string {
+	if warnung {
+		return "warning"
+	}
+	return "success"
 }
 
 // fristBestellmailVermerk begrenzt das Schreiben des Vermerks nach einem Versandversuch.

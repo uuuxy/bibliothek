@@ -94,7 +94,7 @@ export async function sendeKontoauszuege(auswahl) {
 	return {
 		ok: res.ok,
 		meldung: res.ok
-			? (json.message ?? 'Kontoauszüge versendet.')
+			? (json.message ?? 'Kontoauszüge versendet')
 			: (json.error ?? json.message ?? 'Versand fehlgeschlagen.')
 	};
 }

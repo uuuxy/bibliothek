@@ -58,5 +58,5 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 	}
 
 	eintrag.CoverURL = coverURL
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "cover aktualisiert", "data": eintrag})
+	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Cover aktualisiert", "data": eintrag})
 }

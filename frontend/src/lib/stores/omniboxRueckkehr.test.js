@@ -20,8 +20,7 @@ import { apiClient } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
 import { createOmniboxStore } from './omnibox.svelte.js';
 
-const STORNO =
-	'Buch reaktiviert. Die Forderung über 12,00 € wurde storniert — das Buch ist zurück.';
+const STORNO = 'Buch reaktiviert. Die Forderung über 12,00 € ist storniert.';
 const AUFSICHT =
 	'Die Forderung steht auf Bescheid 4801-2026-1234-0001, der bereits an die Schulaufsicht übergeben wurde — sie ist unverzüglich zu informieren.';
 

@@ -177,7 +177,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	schreibeJSON(w, http.StatusOK, map[string]any{
-		"message": "bild hochgeladen",
+		"message": "Bild hochgeladen",
 		"data": map[string]any{
 			"id":       id,
 			"coverUrl": coverURL,

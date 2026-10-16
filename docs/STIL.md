@@ -230,9 +230,10 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   deutsch, ein einzelner Satz ohne Punkt, mehrere Sätze mit Punkt, kein Gedankenstrich. Sätze, die
   mehrere Türen teilen, stehen als Konstante beim Thema (`auth.MeldungNichtAngemeldet`).
   `meldung_ratsche_test.go` hält es für jeden festen Text mit Status unter 500, auch für den
-  Formattext von `fmt.Sprintf` und für jede Textkonstante, deren Name mit `meldung` oder
-  `Meldung` beginnt; ein Satz, der über eine Variable in die Antwort kommt, steht deshalb als
-  solche Konstante.
+  Formattext von `fmt.Sprintf`, für jede Textkonstante, deren Name mit `meldung` oder `Meldung`
+  beginnt, für die festen Rückgaben einer Funktion `meldung…` oder `…Meldung` und für den Satz
+  einer erfolgreichen Antwort (Schlüssel `message`); ein Satz, der über eine Variable in die
+  Antwort kommt, steht deshalb als solche Konstante.
 - Einen Fehler aus einer tieferen Schicht oder einer fremden Bibliothek gibt die Tür nicht als
   Meldung weiter, auch nicht mit `err.Error()`: Sein Text beginnt klein und ist oft englisch
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut

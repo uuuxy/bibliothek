@@ -76,7 +76,7 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 	}
 
 	buch.ID = id
-	schreibeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": t.gespeichert(anfrage.Context(), buch)})
+	schreibeJSON(antwort, http.StatusOK, map[string]any{"message": "Titel gespeichert", "data": t.gespeichert(anfrage.Context(), buch)})
 }
 
 // leseAenderung liest den Rumpf einer Änderung: die Werte und die Namen der Felder, die er

@@ -475,7 +475,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 				mock.ExpectCommit()
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   "erfolgreich gespeichert",
+			expectedBody:   `"message":"Gespeichert"`,
 		},
 		{
 			name:   "Success multiple classNames",
@@ -492,7 +492,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 				mock.ExpectCommit()
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   "erfolgreich gespeichert",
+			expectedBody:   `"message":"Gespeichert"`,
 		},
 	}
 

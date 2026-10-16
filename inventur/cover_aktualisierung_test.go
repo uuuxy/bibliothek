@@ -321,7 +321,7 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	if tuerAntwort["message"] != "cover aktualisiert" {
+	if tuerAntwort["message"] != "Cover aktualisiert" {
 		t.Errorf("unexpected message: %v", tuerAntwort["message"])
 	}
 

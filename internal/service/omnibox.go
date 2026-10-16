@@ -399,7 +399,7 @@ func (d *omniboxDienst) holeExemplarZurueck(ctx context.Context, exemplarID, bea
 // übergebenen Forderung, dass sie etwas tun muss, das die Anwendung nicht kann.
 func rueckkehrMeldung(b repository.RueckkehrBefund) string {
 	if b.StornierteForderungen > 0 {
-		return fmt.Sprintf("Buch reaktiviert. Die Forderung über %s wurde storniert — das Buch ist zurück.", betrag.Euro(b.StornierterBetrag))
+		return fmt.Sprintf("Buch reaktiviert. Die Forderung über %s ist storniert.", betrag.Euro(b.StornierterBetrag))
 	}
 	return "Buch reaktiviert"
 }

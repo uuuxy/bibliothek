@@ -59,7 +59,7 @@ func (t *Tueren) FremdeCoverNeuLaden(w http.ResponseWriter, r *http.Request) {
 	}
 
 	schreibeJSON(w, http.StatusOK, map[string]any{
-		"message": "cover-retry abgeschlossen",
+		"message": "Cover erneut gesucht",
 		"data":    zahlen,
 	})
 }

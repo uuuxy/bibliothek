@@ -38,7 +38,7 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ klassen: ['5a', '6b'], override_email: '' })
 		});
-		expect(showToast).toHaveBeenCalledWith('3 Klassen-Mahnliste(n) versendet.', 'success');
+		expect(showToast).toHaveBeenCalledWith('Mahnlisten von 3 Klassen versendet', 'success');
 	});
 
 	it('reicht die Override-Adresse mit — sie entscheidet, wer die Listen bekommt', async () => {

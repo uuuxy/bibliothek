@@ -35,7 +35,9 @@ import (
 //
 // Von fmt.Sprintf liest sie den Formattext; er ist der feste Satz, die Werte setzt erst die Laufzeit
 // ein. Eine Textkonstante, deren Name mit meldung oder Meldung beginnt, prüft sie an ihrer
-// Deklaration, gleich, auf welchem Weg sie in die Antwort kommt.
+// Deklaration, gleich, auf welchem Weg sie in die Antwort kommt; ebenso den festen Text, den
+// eine Funktion mit meldung oder Meldung im Namen zurückgibt, und den Wert des Schlüssels
+// "message" in einer Antwort (Sätze einer erfolgreichen Antwort).
 //
 // Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen), einen Status aus
 // einer Variablen, eigene Helfer außer inventur.schreibeFehler und Antworten, die {"error": …}
@@ -58,9 +60,10 @@ var meldungEnglisch = map[string]bool{
 	"with": true, "type": true,
 }
 
-// meldungSatzende erkennt das Ende eines Satzes mitten im Text: ein Wort aus zwei Zeichen oder eine
-// Klammer, dann . ! ? oder :, dann ein großer Anfang. „z. B. G" ist so kein Satzende.
-var meldungSatzende = regexp.MustCompile(`(?:[\p{L}\p{N}]{2}|\))[.!?:]\s+[\p{Lu}„"]`)
+// meldungSatzende erkennt das Ende eines Satzes mitten im Text: ein Wort aus zwei Zeichen, eine
+// Klammer, ein schließendes Anführungszeichen oder ein Platzhalter von fmt (%s), dann . ! ? oder
+// :, dann ein großer Anfang. „z. B. G" ist so kein Satzende.
+var meldungSatzende = regexp.MustCompile(`(?:[\p{L}\p{N}]{2}|[)“"]|%[a-zA-Z])[.!?:]\s+[\p{Lu}„"]`)
 
 // meldungStatus löst die Namen der Status aus net/http auf (StatusBadRequest → 400).
 func meldungStatus() map[string]int {
@@ -131,6 +134,7 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 		{text: "Zu viele Versuche – bitte warten"},
 		{text: "Eingabe enthält select * from"},
 		{text: "Leser nicht gefunden", alsFehler: true},
+		{text: "Zeile %d. Bitte prüfen"},
 	}
 	for _, a := range verboten {
 		if meldungVerstoss(a) == "" {
@@ -143,6 +147,8 @@ func TestMeldungVerstoss_Formen(t *testing.T) {
 		{text: "Übergabe nicht möglich: Der Bescheid ist nicht mehr offen."},
 		{text: "Der Barcode muss mit G- beginnen, z. B. G-IPAD-01"},
 		{text: "ID fehlt"},
+		{text: "Unbekannte Art %q. Möglich sind: %s."},
+		{text: "Die Sortierung „%s“. Möglich sind a und b."},
 	}
 	for _, a := range erlaubt {
 		if grund := meldungVerstoss(a); grund != "" {
@@ -258,6 +264,8 @@ func sammleMeldungen(t *testing.T, wurzel string) []meldungAufruf {
 		konstanten := meldungKonstanten{eigene: eigene[ordner], fremde: fremde}
 		for _, datei := range paket {
 			aufrufe = append(aufrufe, meldungsKonstanten(fset, datei)...)
+			aufrufe = append(aufrufe, meldungsRueckgaben(fset, datei, konstanten)...)
+			aufrufe = append(aufrufe, meldungsSchluessel(fset, datei, konstanten)...)
 			ast.Inspect(datei, func(n ast.Node) bool {
 				aufruf, ok := n.(*ast.CallExpr)
 				if !ok {
@@ -296,6 +304,54 @@ func meldungsKonstanten(fset *token.FileSet, datei *ast.File) []meldungAufruf {
 					gefunden = append(gefunden, meldungAufruf{pos: fset.Position(name.Pos()), text: text, gelesenFest: true})
 				}
 			}
+		}
+		return true
+	})
+	return gefunden
+}
+
+// meldungsRueckgaben liest den festen Text, den eine Funktion mit meldung oder Meldung im Namen
+// zurückgibt; eine leere Rückgabe (kein Satz) zählt nicht.
+func meldungsRueckgaben(fset *token.FileSet, datei *ast.File, konstanten meldungKonstanten) []meldungAufruf {
+	var gefunden []meldungAufruf
+	for _, decl := range datei.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		name := ""
+		if ok {
+			name = fn.Name.Name
+		}
+		if !ok || fn.Body == nil || (!istMeldungsName(name) && !strings.HasSuffix(name, "Meldung")) {
+			continue
+		}
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			rueckgabe, ok := n.(*ast.ReturnStmt)
+			if !ok {
+				return true
+			}
+			for _, wert := range rueckgabe.Results {
+				if text, alsFehler, ok := festerText(wert, konstanten); ok && !alsFehler && text != "" && !istMeldungsKonstante(wert) {
+					gefunden = append(gefunden, meldungAufruf{pos: fset.Position(wert.Pos()), text: text, gelesenFest: true})
+				}
+			}
+			return true
+		})
+	}
+	return gefunden
+}
+
+// meldungsSchluessel liest den festen Wert des Schlüssels "message" in einem Literal einer Map.
+func meldungsSchluessel(fset *token.FileSet, datei *ast.File, konstanten meldungKonstanten) []meldungAufruf {
+	var gefunden []meldungAufruf
+	ast.Inspect(datei, func(n ast.Node) bool {
+		paar, ok := n.(*ast.KeyValueExpr)
+		if !ok {
+			return true
+		}
+		if schluessel, ok := paar.Key.(*ast.BasicLit); !ok || schluessel.Value != `"message"` {
+			return true
+		}
+		if text, alsFehler, ok := festerText(paar.Value, konstanten); ok && !alsFehler && !istMeldungsKonstante(paar.Value) {
+			gefunden = append(gefunden, meldungAufruf{pos: fset.Position(paar.Value.Pos()), text: text, gelesenFest: true})
 		}
 		return true
 	})

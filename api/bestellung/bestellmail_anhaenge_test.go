@@ -168,21 +168,21 @@ func pruefeEnthalten(t *testing.T, namen []string, erwartet ...string) {
 // und die Oberfläche meldete "erfolgreich gesendet" — dass der Händler nichts zum
 // Bestätigen hatte, fiel erst auf, als die Bestätigung wochenlang ausblieb.
 func TestBestellVersandMeldung_WarntWennDerLinkFehlt(t *testing.T) {
-	status, meldung := bestellVersandMeldung("Naacher", true)
-	if status != "warning" {
+	meldung, warnung := bestellVersandMeldung("Naacher", true)
+	if status := versandStatus(warnung); status != "warning" {
 		t.Errorf("status = %q, erwartet \"warning\" — die Oberfläche zeigt sonst einen Erfolgs-Toast", status)
 	}
-	for _, teil := range []string{"OHNE Bestätigungs-Link", "öffentliche Adresse", "Bestellhistorie"} {
+	for _, teil := range []string{"ohne Bestätigungs-Link", "öffentliche Adresse", "Bestellhistorie"} {
 		if !strings.Contains(meldung, teil) {
 			t.Errorf("Meldung nennt %q nicht — sie sagt dann nicht, was zu tun ist:\n%s", teil, meldung)
 		}
 	}
 
-	status, meldung = bestellVersandMeldung("Naacher", false)
-	if status != "success" {
+	meldung, warnung = bestellVersandMeldung("Naacher", false)
+	if status := versandStatus(warnung); status != "success" {
 		t.Errorf("status = %q, erwartet \"success\"", status)
 	}
-	if strings.Contains(meldung, "OHNE") {
+	if strings.Contains(meldung, "ohne Bestätigungs-Link") {
 		t.Errorf("Warnung erscheint, obwohl der Link mitging:\n%s", meldung)
 	}
 }

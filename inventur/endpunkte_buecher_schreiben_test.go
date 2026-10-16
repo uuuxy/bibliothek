@@ -259,8 +259,8 @@ func TestTitelAnlegen(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &httpAntwort); err != nil {
 			t.Fatalf("failed to parse response body: %v", err)
 		}
-		if httpAntwort["message"] != "buch erstellt" {
-			t.Errorf("got message %v, want 'buch erstellt'", httpAntwort["message"])
+		if httpAntwort["message"] != "Titel angelegt" {
+			t.Errorf("got message %v, want 'Titel angelegt'", httpAntwort["message"])
 		}
 	})
 }

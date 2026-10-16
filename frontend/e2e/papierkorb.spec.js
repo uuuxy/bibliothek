@@ -73,7 +73,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 		headers: { 'X-CSRF-Token': token }
 	});
 	expect(del.status(), 'Löschung trotz offener Forderung').toBe(400);
-	expect(await del.text()).toContain('unbezahlte Schadensfälle');
+	expect(await del.text()).toContain('unbezahlte Forderungen');
 });
 
 // Art.-17-Weg über die Oberfläche: Der Papierkorb bekam am 31.08.2026 den Knopf

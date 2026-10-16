@@ -286,20 +286,12 @@ func klassennamen(klassen []repository.MahnwesenKlasse) []string {
 // oder an die von Hand eingetippte Adresse gingen.
 func mahnlistenMeldung(erg versandErgebnis, umleitung string) string {
 	if erg.Versendet == 0 && erg.Uebersprungen == 0 && erg.Fehlgeschlagen == 0 {
-		return "Keine der gewählten Klassen hat noch überfällige Fälle – nichts versendet."
+		return "Keine der gewählten Klassen hat noch überfällige Fälle. Nichts versendet."
 	}
-	ziel := "an die Klassenleitungen"
-	if umleitung != "" {
-		ziel = "an " + umleitung
-	}
-	text := fmt.Sprintf("%d Klassen-Mahnliste(n) %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine Fälle).", erg.Versendet, ziel, erg.Uebersprungen)
-	if erg.Fehlgeschlagen > 0 {
-		text += fmt.Sprintf(" %d FEHLGESCHLAGEN — nicht zugestellt.", erg.Fehlgeschlagen)
-	}
-	if erg.Abgebrochen {
-		text += " Lauf nach Mailserver-Fehler abgebrochen; bitte Mail-Server prüfen und erneut senden (eine Klasse wird nie doppelt gemahnt — der Mailversand erhöht die Mahnstufe nicht)."
-	}
-	return text
+	return alsMeldung(append([]string{fmt.Sprintf(
+		"Mahnlisten von %s %s versendet, %d übersprungen (keine E-Mail hinterlegt oder keine Fälle)",
+		klassen(erg.Versendet), versandZiel(umleitung), erg.Uebersprungen)},
+		versandAusfall(erg, "Keine Klasse wird doppelt gemahnt, weil der Mailversand die Mahnstufe nicht erhöht")...)...)
 }
 
 // versandErgebnis trennt drei Ausgänge: versendet, übersprungen (keine Adresse, keine Fälle:

@@ -287,7 +287,31 @@ func TestVersendeAbgaengerKontoauszuege_NachAbbruchBleibtUebersprungenUebersprun
 	if pdfs != 2 {
 		t.Errorf("%d PDFs erzeugt, erwartet 2: nach dem Abbruch entsteht keins mehr", pdfs)
 	}
-	if msg := abgaengerVersandMeldung(erg, ""); !strings.Contains(msg, "2 übersprungen") || !strings.Contains(msg, "2 FEHLGESCHLAGEN") {
+	if msg := abgaengerVersandMeldung(erg, ""); !strings.Contains(msg, "2 übersprungen") || !strings.Contains(msg, "Für 2 Klassen nicht zugestellt") {
 		t.Errorf("die Rückmeldung nennt die Zahlen nicht: %s", msg)
+	}
+}
+
+// Die Rückmeldung eines Versands ist ein Satz ohne Punkt, mit Ausfall oder Abbruch mehrere mit
+// Punkt; die Zahl der Klassen steht in Einzahl oder Mehrzahl, ohne Klammer.
+func TestVersandMeldung_Saetze(t *testing.T) {
+	faelle := []struct {
+		name string
+		ist  string
+		soll string
+	}{
+		{"Kontoauszüge, eine Klasse", abgaengerVersandMeldung(versandErgebnis{Versendet: 1}, ""),
+			"Kontoauszüge von 1 Klasse an die Klassenleitungen versendet, 0 übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen)"},
+		{"Mahnlisten mit Umleitung und Abbruch",
+			mahnlistenMeldung(versandErgebnis{Versendet: 3, Uebersprungen: 1, Fehlgeschlagen: 1, Abgebrochen: true}, "test@schule.de"),
+			"Mahnlisten von 3 Klassen an test@schule.de versendet, 1 übersprungen (keine E-Mail hinterlegt oder keine Fälle). " +
+				"Für 1 Klasse nicht zugestellt. Der Lauf brach nach einem Fehler des Mailservers ab. Bitte den Mailserver " +
+				"prüfen und erneut senden. Keine Klasse wird doppelt gemahnt, weil der Mailversand die Mahnstufe nicht erhöht."},
+		{"nichts zu versenden", mahnlistenMeldung(versandErgebnis{}, ""), "Keine der gewählten Klassen hat noch überfällige Fälle. Nichts versendet."},
+	}
+	for _, f := range faelle {
+		if f.ist != f.soll {
+			t.Errorf("%s:\n  ist  %q\n  soll %q", f.name, f.ist, f.soll)
+		}
 	}
 }

@@ -96,7 +96,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 	if res.BereitsVorhanden {
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
-			"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.LieferantName),
+			"message":     fmt.Sprintf("Die Bestellung an %s war bereits erfasst, etwa nach einem Doppelklick. Eine zweite ist nicht ausgelöst.", res.LieferantName),
 			"ordered_qty": res.Menge,
 		})
 		return
@@ -107,7 +107,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 		t.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
-			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.LieferantName),
+			"message":     fmt.Sprintf("Bestellung gespeichert. Die Mail an %s ist nicht versendet, weil kein Mailserver eingetragen ist.", res.LieferantName),
 			"ordered_qty": res.Menge,
 		})
 		return
@@ -120,15 +120,15 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 		t.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "warning",
-			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.LieferantEmail),
+			"message":     fmt.Sprintf("Bestellung gespeichert, aber die Mail an %s ließ sich nicht versenden", res.LieferantEmail),
 			"ordered_qty": res.Menge,
 		})
 		return
 	}
 
-	status, meldung := bestellVersandMeldung(res.LieferantName, res.IstHauptlieferant && !mitLink)
+	meldung, warnung := bestellVersandMeldung(res.LieferantName, res.IstHauptlieferant && !mitLink)
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
-		"status":      status,
+		"status":      versandStatus(warnung),
 		"message":     meldung,
 		"ordered_qty": res.Menge,
 	})
