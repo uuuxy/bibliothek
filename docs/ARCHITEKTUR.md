@@ -2148,7 +2148,9 @@ sieht.
   über `go/types`). Eine Prüfung, die einen Aufruf am Namen erkennt, sieht ihn mit Paketnamen
   nicht (`*ast.Ident` gegen `*ast.SelectorExpr`). Eine Prüfung, die den Baum ab einem relativen
   Ordner liest, findet nach einem Umzug nichts mehr und bleibt grün; sie trägt deshalb eine
-  Untergrenze (`abgangsdatum_ratsche_test.go` scheitert bei null Funden). Ein Literal ohne
+  Untergrenze (`abgangsdatum_ratsche_test.go` scheitert bei null Funden). Als falsche Wurzel für
+  die Gegenprobe taugt nur ein Ordner, in dem der Gegenstand wirklich nicht steht; `docs/` taugt
+  nicht, dort nennt die Schnittstellenbeschreibung fast jedes Feld. Ein Literal ohne
   Feldnamen weist `go vet` ab, sobald der Typ aus einem anderen Paket kommt. Eine
   Wegwerf-Arbeitskopie baut in einen eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit ihr
   gelöscht wird ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5). Wer danach noch einen alten Pfad nennt,

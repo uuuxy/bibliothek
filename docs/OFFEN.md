@@ -231,6 +231,8 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Tippfehler in TRUSTED_PROXIES (5.69):** erledigt am 15.10.2026. Ein Eintrag, der weder
   Netz noch Adresse ist, steht als Warnung im Log des Starts und auf der Seite
   „Betriebsbereitschaft" (Bereich „Vertraute Proxys").
+- [ ] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
+  Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -531,6 +533,16 @@ tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösun
 Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Weg: ihn nach
 seinen Sachen teilen, in Stufen mit den Browser-Tests der Theke und einer Probe mit dem
 Handscanner. Vorher deine Freigabe, weil er der Kern der Theke ist.
+
+### 5.73 Statistik: ein Lesefehler sieht aus wie ein leerer Bestand
+
+Scheitert das Lesen von Rennern, Ladenhütern oder Monatstrend, setzt `api/system/statistik.go`
+den Abschnitt leer und schreibt den Fehler nur ins Log. Die Seite zeigt dann den Leerzustand; bei
+den Ladenhütern steht in Grün „Keine Ladenhüter — der Bestand ist in Bewegung"
+(`Statistik.svelte`, Snippet `keineLadenhueter`). Raster, Frage 5: Die Seite meldet Erfolg
+anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Abschnitte, die
+nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
+zuständige Seite von M3 lesen.
 
 ---
 

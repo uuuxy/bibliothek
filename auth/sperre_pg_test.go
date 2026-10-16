@@ -199,6 +199,51 @@ func TestSperre_GiltAmServerUndGehtOhneMailserverAuf(t *testing.T) {
 	}
 }
 
+// Hinter der Sperre bremst dieselbe Grenze wie bei der Anmeldung: Nach fünf falschen Passwörtern
+// weist der sechste Versuch auch das richtige ab, sonst ließe sich dort ohne Grenze raten. Beide
+// Wege zählen, auf denen ein Passwort als falsch gilt: Der Mailserver lehnt ab, oder er fällt aus
+// und der Prüfwert passt nicht.
+func TestSperre_BremseWeistDenSechstenVersuchAb(t *testing.T) {
+	for _, fall := range []struct {
+		name       string
+		mailserver func(t *testing.T, a *Anmeldung)
+	}{
+		{"Mailserver lehnt ab", func(t *testing.T, a *Anmeldung) {
+			t.Helper()
+			mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
+		}},
+		{"Mailserver ausgefallen", func(t *testing.T, _ *Anmeldung) {
+			t.Helper()
+			mailserverTot(t)
+		}},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			pool := pgPoolFuerSelbstanmeldung(t)
+			_, email := sperreKonto(t, pool)
+			a := sperreAnmeldung(t, pool, 12*time.Hour)
+			mitMiniIMAP(t, a, "OK LOGIN completed")
+			cookie := sperreAnmelden(t, pool, a, email, "geheim-eins")
+			sperreSperren(t, a, cookie)
+
+			fall.mailserver(t, a)
+			for versuch := 1; versuch <= 5; versuch++ {
+				if rec := sperreEntsperren(pool, a, cookie, "geraten"); rec.Code != http.StatusUnauthorized {
+					t.Fatalf("Versuch %d: Status = %d, erwartet 401: %s", versuch, rec.Code, rec.Body.String())
+				}
+			}
+
+			mitMiniIMAP(t, a, "OK LOGIN completed")
+			rec := sperreEntsperren(pool, a, cookie, "geheim-eins")
+			if rec.Code != http.StatusTooManyRequests {
+				t.Errorf("sechster Versuch mit richtigem Passwort: Status = %d, erwartet 429: %s", rec.Code, rec.Body.String())
+			}
+			if meldung := fehlermeldungAus(t, rec); meldung != MeldungZuVieleFehlversuche {
+				t.Errorf("sechster Versuch: Meldung = %q, erwartet %q", meldung, MeldungZuVieleFehlversuche)
+			}
+		})
+	}
+}
+
 // Eine Erneuerung des Tokens hebt die Sperre nicht auf: Das neue Token trägt dieselbe Kennung.
 func TestSperre_UeberdauertDieErneuerungDesTokens(t *testing.T) {
 	pool := pgPoolFuerSelbstanmeldung(t)
