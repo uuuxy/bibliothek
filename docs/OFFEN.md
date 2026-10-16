@@ -199,7 +199,7 @@ Was nach dem Abgleich vom 16.10.2026 noch von Googles Regelwerk abweicht, in der
 Gewichts:
 
 - [ ] Schnittstellen beim Nutzer statt beim Hersteller: `New…` in `repository/` und
-  `internal/service` liefert den Typ. In vier Stufen, je Stufe deine Freigabe; das Gate steht.
+  `internal/service` liefert den Typ. Noch drei Stufen, je Stufe deine Freigabe; das Gate steht.
   (5.71)
 - [x] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
 - [x] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
@@ -515,15 +515,12 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   a real need exists", „The consumer of the interface should define it (not the package
   implementing the interface), ensuring it includes only the methods they actually use" und
   „Functions should take interfaces as arguments but return concrete types." Die Regel steht in
-  [STIL.md](STIL.md) 14; `ireturn` hält sie, die 17 Erzeuger, die noch eine Schnittstelle
+  [STIL.md](STIL.md) 14; `ireturn` hält sie, die 13 Erzeuger, die noch eine Schnittstelle
   liefern, stehen als Ausnahmen in `.golangci.yml`. Einen Bedarf schafft hier nur eine Attrappe
-  im Test; wohin jede gereicht wird, ist mit `go/types` über alle Pakete samt Tests gemessen.
+  im Test; welcher Typ jede erfüllt, ist mit `go/types` über alle Pakete samt Tests gemessen.
+  Die Schnittstelle fällt, der Typ `pg…Abfragen` bekommt ihren Namen, der Erzeuger liefert ihn.
   Freigegeben ist ein Plan in Stufen, je Schnittstelle ein Commit, je Stufe ein Push und deine
   Freigabe für die nächste:
-  1. Ohne Attrappe: `ReservierungsAbfragen`, `LieferantenAbfragen`, `BestelldetailAbfragen`,
-     `service.AusleihDienst`, `service.GeraeteDienst`. Die Schnittstelle fällt, der Typ
-     `pg…Abfragen` bekommt ihren Namen (`gopls rename`), der Erzeuger liefert ihn.
-     [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.4.1 nennt in `ausleihe.go` noch die Schnittstelle.
   2. Attrappe als Parameter einer Tür: `KontoAbfragen` (benutzer), `SchadensAbfragen` und
      `BescheidAbfragen` (schaden), `GeraeteAbfragen` (katalog), `VormerkungsAbfragen`,
      `OmniboxDienst` und `NachbuchDienst` (theke), `EinstellungsAbfragen` (system, theke). Eine
@@ -532,9 +529,11 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
      Methoden) geht an `Bescheide`.
   3. Attrappe als Feld eines Dienstes: `LeserAbfragen`, `KatalogAbfragen`, `AusleihAbfragen` und
      `ProtokollAbfragen` in `internal/service`, `ProtokollAbfragen` auch in `jobs`; die Tests
-     setzen die Felder direkt (`&ausleihDienst{leserAbfragen: …}`). Kleine Schnittstellen in
-     beiden Paketen; ihre Namen legt die Stufe vorher in STIL.md fest, weil Felder und Parameter
-     schon `leserAbfragen` heißen.
+     setzen die Felder direkt (`&ausleihDienst{leserAbfragen: …}`). Ebenso `service.AusleihDienst`
+     am Feld `ausleihe` von `omniboxDienst` (Attrappen in `omnibox_test.go` und
+     `littera_etikett_routing_test.go`); [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.4.1 nennt in
+     `ausleihe.go` die Schnittstelle. Kleine Schnittstellen in beiden Paketen; ihre Namen legt
+     die Stufe vorher in STIL.md fest, weil Felder und Parameter schon `leserAbfragen` heißen.
   4. Abschluss: keine Ausnahme mehr in `.golangci.yml`; STIL.md Abschnitt 2 nennt `…Abfragen`
      ohne `pg`.
 
