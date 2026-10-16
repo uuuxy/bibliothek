@@ -2,25 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 
-// Ratsche auf die Komponenten-Regel „≤ 200 Zeilen pro .svelte-Datei"
-// (docs/ARCHITEKTUR.md, Abschnitt 5.3).
+// Ratsche auf die Regel „höchstens 200 Zeilen je Frontend-Datei" (CLAUDE.md,
+// docs/ARCHITEKTUR.md 5.3): Komponenten und JS-Module, Tests nicht. Googles Maßstab für
+// Dateien: „files should be focused enough that a maintainer can tell which file contains
+// something" (Best Practices, „Package size").
 //
-// Die Regel steht dort ohne Einschränkung — geprüft hat sie nie jemand. Am 23.08.2026
-// brachen sie 43 von 206 Dateien, die größte mit 412 Zeilen. Eine Regel, die ein
-// Fünftel des Baums verletzt und nichts davon merkt, ist keine Regel, sondern eine
-// Absichtserklärung. Aufgefallen ist es beim Nachprüfen des Befund-Registers: Dort
-// stand sie nicht, weil sie nie jemand gemessen hat.
-//
-// Die Ratsche macht daraus einen Zustand, der nur besser werden kann:
-//
-//   - Eine NEUE Datei über 200 Zeilen ist rot. Das ist der eigentliche Zweck.
-//   - Eine Datei aus dem Bestand, die WEITER wächst, ist ebenfalls rot — sonst wäre
-//     die Ausnahme ein Freibrief.
-//   - Wer eine Datei unter 200 bringt, muss sie austragen. Der Bestand ist damit eine
-//     Arbeitsliste, keine Duldung.
-//
-// Bewusst NICHT: ein Limit für .js/.go. Die Regel in docs/ARCHITEKTUR.md (5.3) gilt den
-// Svelte-Komponenten, und nur dafür steht hier ein Gate.
+//   - Eine neue Datei über 200 Zeilen ist rot.
+//   - Eine Datei aus dem Bestand, die weiter wächst, ist rot; die Ausnahme ist kein Freibrief.
+//   - Wer eine Datei unter 200 bringt, trägt sie aus: Der Bestand ist eine Arbeitsliste.
 const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
@@ -33,11 +22,28 @@ const BESTAND = {
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 242,
 	'src/lib/components/leser/LusdImport.svelte': 311,
-	'src/lib/components/leser/Schuljahreswechsel.svelte': 205
+	'src/lib/components/leser/Schuljahreswechsel.svelte': 205,
+	'src/lib/apiFetch.js': 301,
+	'src/lib/components/leser/schuelerSuche.svelte.js': 216,
+	'src/lib/designer/ausweisVorlagen.js': 484,
+	'src/lib/designer/idDesignerStore.svelte.js': 546,
+	'src/lib/lmfplanDienst.js': 384,
+	'src/lib/lmfplanPlaner.svelte.js': 241,
+	'src/lib/menue.js': 315,
+	'src/lib/stores/authStore.svelte.js': 368,
+	'src/lib/stores/bestellStore.svelte.js': 547,
+	'src/lib/stores/etiketten.svelte.js': 447,
+	'src/lib/stores/leerlaufSperre.svelte.js': 388,
+	'src/lib/stores/mahnwesen.svelte.js': 238,
+	'src/lib/stores/offlineSync.svelte.js': 426,
+	'src/lib/stores/omnibox.svelte.js': 1174,
+	'src/lib/useBuchakte.svelte.js': 252,
+	'src/lib/useInventur.svelte.js': 234,
+	'src/lib/useLeserakte.svelte.js': 328
 };
 
-describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {
-	const dateien = sammleQuelldateien(srcRoot).filter((p) => p.endsWith('.svelte'));
+describe('Dateigröße: höchstens 200 Zeilen je Komponente und JS-Modul', () => {
+	const dateien = sammleQuelldateien(srcRoot);
 	// Wie `wc -l` zaehlen, also Zeilenumbrueche: Ein abschliessendes \n erzeugt beim
 	// Split ein leeres letztes Element, und das ist keine Zeile. Ohne diese Zeile meldete
 	// das Gate JEDE Datei um eins zu gross und damit den ganzen Bestand als gewachsen.
@@ -48,8 +54,9 @@ describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {
 	};
 	const aktuell = new Map(dateien.map((a) => [relPfad(a), zeilenVon(a)]));
 
-	it('durchsucht ueberhaupt Dateien — sonst waere das Gate wertlos gruen', () => {
-		expect(dateien.length).toBeGreaterThan(150);
+	it('durchsucht Komponenten und JS-Module — sonst waere das Gate wertlos gruen', () => {
+		expect(dateien.filter((p) => p.endsWith('.svelte')).length).toBeGreaterThan(150);
+		expect(dateien.filter((p) => p.endsWith('.js')).length).toBeGreaterThan(100);
 	});
 
 	it('kennt keine NEUE Datei ueber 200 Zeilen', () => {
@@ -59,8 +66,8 @@ describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {
 		}
 		expect(
 			neu,
-			'Neue Komponente ueber 200 Zeilen. docs/ARCHITEKTUR.md (5.3) verlangt hoechstens 200 — ' +
-				'aufteilen (Teilkomponente, {#snippet}, Daten nach .js) oder die Regel dort aendern.'
+			'Neue Datei ueber 200 Zeilen. CLAUDE.md und docs/ARCHITEKTUR.md (5.3) verlangen hoechstens ' +
+				'200 — aufteilen (Teilkomponente, {#snippet}, ein Modul je Sache) oder die Regel dort aendern.'
 		).toEqual([]);
 	});
 

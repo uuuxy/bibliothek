@@ -205,9 +205,8 @@ Gewichts:
   (5.71)
 - [ ] Testmeldungen in Googles Form und lokale Namen in Tests deutsch, je mit Ratsche. (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
-- [ ] Oberfläche: Die Ratsche der Dateigröße zählt auch JS-Module; danach
-  `stores/omnibox.svelte.js` (1.174 Zeilen) nach seinen Sachen teilen, mit deiner Freigabe.
-  (5.72)
+- [ ] Oberfläche: `stores/omnibox.svelte.js` (1.174 Zeilen) nach seinen Sachen teilen, mit
+  deiner Freigabe; die Ratsche der Dateigröße zählt JS-Module schon. (5.72)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -536,19 +535,15 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in 11, `staffID`,
   `activeLeserID`). Weg: je eine Ratsche, die den Bestand einfriert, dann Datei für Datei.
 
-### 5.72 Dateigröße der Oberfläche: JS-Module ohne Prüfung
+### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
-`CLAUDE.md` nennt 200 Zeilen „je Frontend-Datei"; `frontend-hygiene-dateigroesse.test.js` zählt
-nur `.svelte`-Dateien (Bestand: zwölf über 200). Zwölf JS-Module haben über 300 Zeilen, gezählt am
-16.10.2026: `stores/omnibox.svelte.js` 1.174, `stores/bestellStore.svelte.js` 547,
-`designer/idDesignerStore.svelte.js` 546, `designer/ausweisVorlagen.js` 484 und acht weitere
-bis 301. Googles Maßstab für Dateien (Best Practices, „Package size"): „files should be focused
-enough that a maintainer can tell which file contains something". Der Omnibox-Store trägt
-Eingabe, Auflösung, Warteschlange, Sperrdialog, Leserauswahl und Zusammenführen
-([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Weg: (1) die Ratsche auf `.js` ausdehnen und den
-Bestand einfrieren; (2) den Omnibox-Store nach seinen Sachen teilen, in Stufen mit den
-Browser-Tests der Theke und einer Probe mit dem Handscanner. Vorher deine Freigabe, weil er der
-Kern der Theke ist.
+`frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
+JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 1.174. Googles Maßstab für
+Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
+tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösung, Warteschlange,
+Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Weg: ihn nach
+seinen Sachen teilen, in Stufen mit den Browser-Tests der Theke und einer Probe mit dem
+Handscanner. Vorher deine Freigabe, weil er der Kern der Theke ist.
 
 ---
 
