@@ -72,9 +72,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [x] Ändern eines Lesers: `repository/` nennt seit dem 09.10.2026 die Spalten, die sich
   ändern lassen (`repository.LeserAenderung`), die Tür reicht nur Werte. Gebaut nach dem
   Vorschlag; die Anweisung ist dieselbe wie vorher.
-- [ ] Großschreibung zur Betonung: Neun Meldungen schreiben ein Wort ganz groß („NICHT
-  gebucht", „JEDE neue Ausleihe"); M3 verlangt Satzschreibung. Vorschlag: klein, und die
-  Verneinung steht vorn, wo sie tragen muss („Nicht gebucht: …"). (4.34)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -338,18 +335,6 @@ den Schulträger, bei 90 Büchern ein seltener Fall.
 Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim Einrichten unter
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
-
-### 4.34 Großschreibung zur Betonung in Meldungen
-
-M3, Content design, „UX writing best practices": „use sentence-style capitalization, where only
-the first letter of the first word in a sentence or phrase is capitalized". Neun Meldungen in
-vier Dateien schreiben ein Wort ganz groß: sechs der Scan-Reihe und der Theke ohne Netz in
-`stores/omnibox.svelte.js` („NICHT gebucht", „NICHT gespeichert"), je eine in
-`KlassensatzTitelRaster.svelte` und `PortalLernmittel.svelte` („Das heißt NICHT …") und in
-`AusleiheKategorie.svelte` („JEDE neue Ausleihe"). An der Theke tragen Fehlerfarbe und Fehlerton
-die Warnung schon. Vorschlag: klein schreiben, und wo die Verneinung tragen muss, steht sie am
-Anfang („Nicht gebucht: …, bitte erneut scannen."). Vor dem Umbau die Bruchstücke in `e2e/`
-suchen.
 
 ---
 
