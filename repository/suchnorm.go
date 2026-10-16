@@ -47,8 +47,9 @@ func suchnorm(s string) string {
 		b.WriteString(zerlegeRune(r))
 	}
 	s = b.String()
-	// Sequenziell wie replace(replace(replace(replace(…)))) in SQL — NewReplacer wäre ein
-	// einziger Durchlauf mit anderer Überlappungsregel („sss").
+	// Sequenziell wie replace(replace(replace(replace(…)))) in SQL. strings.NewReplacer gäbe
+	// für diese vier Paare dasselbe aus, legt aber je Aufruf einen Puffer an; ReplaceAll ohne
+	// Treffer nicht.
 	s = strings.ReplaceAll(s, "ss", "s")
 	s = strings.ReplaceAll(s, "ue", "u")
 	s = strings.ReplaceAll(s, "oe", "o")
