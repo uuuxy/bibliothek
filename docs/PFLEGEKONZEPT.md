@@ -50,7 +50,7 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 1. **Code:** öffentlich auf GitHub (`uuuxy/bibliothek`), Lizenz EUPL 1.2 (`LICENSE`).
 2. **Prüfung vor dem Hochladen:** Auf dem Arbeitsplatz der Entwicklung laufen vor jedem Commit
    Formatierung und Lint, vor jedem Push die Tests und die Sicherheitsprüfungen
-   (`scripts/install-hooks.sh`, [SCRIPTS.md](SCRIPTS.md) §7).
+   (`scripts/install-hooks.sh`, [SCRIPTS.md](SCRIPTS.md) §5).
 3. **Prüfung auf GitHub:** vier CI-Jobs und vier Sicherheitsprüfungen je Stand. Ein Release
    (eine Versionsnummer wie `v2.14.0`) entsteht nur, wenn alle acht grün sind
    ([DEPLOYMENT.md](DEPLOYMENT.md) §8, `scripts/tag-gate.sh`). Was beim Einspielen von Hand zu
@@ -129,7 +129,7 @@ gelöscht wurden; wie sie nachgeholt werden, steht in
 Sicherung an, die beim ersten Update nach 30 Tagen gelöscht wird; eine Sicherung von Hand mit
 `scripts/backup.sh` wird beim ersten Lauf nach 7 Tagen gelöscht. Die Nachtsicherungen liegen im
 Container, diese beiden in `backups/` im Programmverzeichnis
-([SCRIPTS.md](SCRIPTS.md) §3). Alle Sicherungen liegen auf demselben Server —
+([SCRIPTS.md](SCRIPTS.md) §2). Alle Sicherungen liegen auf demselben Server —
 eine Kopie außer Haus ist vorbereitet, aber nicht eingerichtet ([OFFEN.md](OFFEN.md) 7.3).
 Wird sie als S3-Speicher eingerichtet, braucht der Speicher eine eigene Löschregel: Das
 Programm lädt dorthin nur hoch und löscht nie. Sonntags um 03:30 UTC spielt das Programm
@@ -289,7 +289,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   (16.09.2026).** Die Hooks fahren die Browser-Tests nicht. Diese greifen über Beschriftungen
   und Rollen zu. Wer ein sichtbares Wort umbenennt, eine Eingabe zur Pflicht macht oder eine
   Antwort ändert, sucht vorher in `frontend/e2e/` (auch in `helpers.js`) nach dem Wort und dem
-  Endpunkt und lässt die Suite am neu gebauten Stack laufen ([SCRIPTS.md](SCRIPTS.md) §4).
+  Endpunkt und lässt die Suite am neu gebauten Stack laufen ([SCRIPTS.md](SCRIPTS.md) §3).
 - **Am Arbeitsplatz scheitert jede Spec.** Zuerst die Umgebung: Läuft Docker (`docker info`)?
   Nach einem Update von Playwright fehlen die Browser der neuen Fassung
   (`npx playwright install chromium`). Läuft schon eine Suite? Solange ihr Merkzettel

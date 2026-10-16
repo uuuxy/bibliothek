@@ -307,44 +307,7 @@ Schlagwort zusammen), 2.767 Wörter, Abgleich stimmt. Das Fach bleibt bei 258 un
 
 ---
 
-## 2. Foto-Migration (`cmd/migrate-fotos`)
-
-Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
-
-- **Funktionsweise:** Iteriert über ein Verzeichnis mit Schülerfotos, validiert und verschlüsselt diese (AES-256-GCM), speichert sie als `BYTEA` in `schueler_fotos`, **liest sie zur Gegenprobe zurück** und **löscht die Quelldatei erst danach**.
-- **Zweck:** Konsolidierung der Infrastruktur (kein separates Foto-Verzeichnis) + Datensicherheit.
-
-**Warum es selbst aufräumt (seit 23.08.2026).** Bis dahin sagte das Werkzeug nur „Du
-kannst das Verzeichnis `uploads/fotos` jetzt sicher löschen" — ob das jemand tat, wusste
-niemand. Was liegen blieb, sind unverschlüsselte Schülerfotos auf der Platte, und ihre
-Dateinamen sind die Barcode-IDs vom Schülerausweis. Der Server liefert Unterordner von
-`uploads/` nicht aus (`inventur/api_routen.go`); ein Hinweis auf der Konsole ist für
-lesbare Fotos trotzdem die falsche Sicherung.
-
-Gelöscht wird **erst nach bestandener Gegenprobe**: Das eben geschriebene Foto wird
-zurückgelesen, entschlüsselt und mit dem Original verglichen. Bis dahin ist die Datei die
-einzige Kopie; ein „INSERT ohne Fehler" heißt noch nicht, dass sich das Bild je wieder
-anzeigen lässt. Scheitert die Probe, bleibt die Datei liegen und der Lauf meldet es.
-
-Am Ende sagt das Werkzeug, wie viele Dateien es entfernt hat — und wenn welche übrig
-sind, warum das zählt und wie man sie los wird (`shred -u uploads/fotos/*.jpg`).
-
-```bash
-# Aufräumen ausdrücklich abschalten (die Quelldateien bleiben dann unverschlüsselt liegen):
-FOTOS_BEHALTEN=1 docker compose exec backend ./migrate-fotos
-```
-
-> **Im Image seit 12.09.2026.** Bis dahin nannte dieser Abschnitt den Aufruf, ohne dass
-> das Werkzeug je im Container lag (das Dockerfile baute es nicht, der Schulserver hat
-> kein Go) — dafür lag ein fertiges Binary im Repo. Dass jedes hier genannte Werkzeug
-> auch im Image liegt, hält jetzt ein Gate fest (`docs/werkzeuge_im_image_test.go`).
-
-> **Auf dem Schulserver prüfen:** Der Lauf von vor dem 23.08.2026 hat nichts gelöscht.
-> `docker compose exec backend ls -la uploads/fotos` sagt, ob dort noch Altbestand liegt.
-
----
-
-## 3. Datenbank-Backup (`jobs/backup.go` / `scripts/backup.sh`)
+## 2. Datenbank-Backup (`jobs/backup.go` / `scripts/backup.sh`)
 
 Es gibt **drei Wege**, und seit dem 23.08.2026 verschlüsseln alle drei über dieselbe
 Ableitung (`internal/backupkrypto`, scrypt + AES-256-GCM). Hier stand bis zum 06.08.2026
@@ -383,7 +346,7 @@ Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ---
 
-## 4. Deployment (`./update.sh`)
+## 3. Deployment (`./update.sh`)
 
 **Der Weg, der benutzt wird.** Auf dem Server:
 
@@ -444,20 +407,7 @@ docker exec bibliothek-backend-local printenv GIT_COMMIT
 
 ---
 
-## 5. Concurrency-Lasttest (`cmd/stresstest`)
-
-Simuliert Race Conditions für parallele Barcode-Scans.
-
-```bash
-go run cmd/stresstest/main.go -port 8084
-```
-
-- Feuert via `sync.Cond` + Goroutinen zeitgleich Dutzende Requests gegen `/api/action`
-- Zweck: Verifikation der Transaktionssicherheit (FOR UPDATE + Unique Partial Index)
-
----
-
-## 6. Paket-Utilities (`pkg/`)
+## 4. Paket-Utilities (`pkg/`)
 
 ### `pkg/csvutil`
 
@@ -487,7 +437,7 @@ Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. 
 
 ---
 
-## 7. Übrige Skripte in `scripts/` (Kurzübersicht)
+## 5. Übrige Skripte in `scripts/` (Kurzübersicht)
 
 Bis zum 05.08.2026 beschrieb dieses Dokument nur die großen Werkzeuge; die folgenden
 Skripte lagen undokumentiert im Verzeichnis. Sie sind bewusst kurz gehalten — der
@@ -563,7 +513,6 @@ desselben Projekts, und ein neues meldet OK, ohne etwas geprüft zu haben.
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `seed_demo.sql`                   | Realistischer Demo-Datensatz für Pilot und Schulung.                                                                                                                                                                                                                                                                                                                  | Nur auf Test-/Demo-Datenbanken.                                                                                                                                                                                                                                                               |
 | `entferne_demo_daten.sql`         | Entfernt den Datensatz aus `seed_demo.sql` von einem benutzten System: Schüler `DEMO-S-*`, Exemplare `DEMO-B-*` samt Ausleihen, Schäden, Bescheiden, Inventur-Verlusten und Protokollzeilen. Die Vorschau listet jede Verflechtung mit echten Daten einzeln (echtes Exemplar an Demo-Schüler verliehen, echter Schüler mit Demo-Exemplar in der Historie, Abholfach). | **Löscht Daten.** Vorher Backup. Ohne Schalter nur Vorschau (endet mit `ROLLBACK`); zum Löschen `-v ausfuehren=ja` (endet mit `COMMIT`). Den Block am Anfang von `seed_demo.sql` dafür nicht nehmen: Er bricht an Schäden ab und lässt Bescheide und Verluste ohne Bezug stehen.              |
-| `seed_loadtest.sql`               | Datenbestand für den k6-Lasttest.                                                                                                                                                                                                                                                                                                                                     | Nur auf Wegwerf-Datenbanken.                                                                                                                                                                                                                                                                  |
 | `repair_titel_ortssuffix.sql`     | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt).                                                                                                                                                                                                                                                                                                              | Vorher Backup.                                                                                                                                                                                                                                                                                |
 | `repair_fach_kategorie.sql`       | Einmalige Reparatur (03.09.2026) für Bestände aus dem CSV-/Excel-Import vor diesem Datum: Litteras Kategorie-Spalte („Buch Pg/Kaf 078829 1. Aufl.“) war ungeprüft als Fach übernommen worden — 1.677 Schein-Fächer in der Systematik. Behält nur kanonische Fächer, zieht Schreibvarianten („Mathe“) zusammen, löscht verwaiste Nicht-Fächer.                         | **Ändert Daten.** Ohne Schalter nur Vorschau (endet mit `ROLLBACK`); zum Schreiben `-v ausfuehren=ja` an den psql-Aufruf hängen (endet mit `COMMIT`). Die letzte Ausgabezeile sagt, was passiert ist. Löscht auch handgepflegte Fächer — die Ausgabe „wird gelöscht" führt die Titelzahl mit. |
 | `signatur_report.sql`             | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038).                                                                                                                                                                                                                                                                                               | Nur lesend.                                                                                                                                                                                                                                                                                   |
@@ -588,26 +537,7 @@ Fremdschlüssel stehen auf `SET NULL`.
 | Skript             | Zweck                                                                      |
 | ------------------ | -------------------------------------------------------------------------- |
 | `import_isbns.go`  | Nachträglicher ISBN-Import in bestehende Titel.                            |
-| `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |
-
-> Ein zweites Skript zum Umzug der Fotos stand hier bis zum 11.08.2026. Es war ein Doppel von
-> `cmd/migrate-fotos` (Abschnitt 2) und wurde entfernt — zwei Wege in dieselbe
-> verschlüsselte Ablage, von denen nur einer gepflegt wurde.
-
-### Testdaten-Generator (`cmd/seed`)
-
-Füllt eine Datenbank mit Test-Admin, Schülern, Titeln und Exemplaren — die Vorstufe zum
-k6-Lasttest (Abschnitt 5). Liest `DATABASE_URL` und `JWT_SECRET` aus der Umgebung, kennt
-keine Flags und fragt **nicht** nach, bevor es schreibt. Ein zweiter Lauf legt nichts
-doppelt an und nennt dasselbe Scanner-Konto (`cmd/seed/main_pg_test.go`):
-
-```bash
-DATABASE_URL="postgres://…/bibliothek_test" go run ./cmd/seed
-```
-
-> **Nur auf Wegwerf-Datenbanken.** Das Werkzeug legt Massendaten an und prüft vorher
-> nicht, ob die Zieldatenbank leer ist. Auf einem Echtbestand vermischen sich Testdaten
-> unrettbar mit echten Schülern.
+| `monitor_stats.sh` | Protokolliert `docker stats` alle 15 Minuten über ~6 Stunden.              |
 
 ## `pruefe_secrets.sh` — Konfigurationsprüfung vor dem Deploy
 

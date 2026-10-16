@@ -509,7 +509,7 @@ Weicht er ab, bricht der Deploy mit Exit-Code 1 ab und nennt beide Stände; der 
 steht in der Meldung (`docker compose build --no-cache && docker compose up -d`). Trägt
 das Image gar keinen Commit, gibt es nur eine Warnung — das ist beim ersten Deploy nach
 dieser Neuerung der Normalfall, ab dem zweiten ist der Abgleich scharf. Lokal macht
-`./scripts/stack-neu.sh` dasselbe (siehe [SCRIPTS.md](SCRIPTS.md) §4).
+`./scripts/stack-neu.sh` dasselbe (siehe [SCRIPTS.md](SCRIPTS.md) §3).
 
 ### Neustart nach Host-Neustart
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// Der Dockerfile baut vier Werkzeuge mit CGO_ENABLED=0. Zieht eines davon über seine Importe
+// Der Dockerfile baut drei Werkzeuge mit CGO_ENABLED=0. Zieht eines davon über seine Importe
 // ein Paket mit cgo mit (die WebP-Bibliothek hinter pkg/imageutil), scheitert erst der Bau
 // des Images: `go build ./...`, die Tests und die Hooks laufen mit cgo und merken nichts.
 // Der Weg dorthin ist kurz — ein neuer Import in repository genügt.
@@ -19,7 +19,7 @@ func TestWerkzeugeOhneCgo_BindenKeinCgoPaketEin(t *testing.T) {
 	}
 	ohneCgo := regexp.MustCompile(`(?m)^RUN CGO_ENABLED=0 .*\bgo build\b.* (\./cmd/[a-z0-9-]+)\s*$`).
 		FindAllStringSubmatch(string(dockerfile), -1)
-	if len(ohneCgo) < 4 {
+	if len(ohneCgo) < 3 {
 		t.Fatalf("nur %d Zeilen „CGO_ENABLED=0 … go build … ./cmd/…\" im Dockerfile gefunden — der Leser greift nicht mehr", len(ohneCgo))
 	}
 

@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 15.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
+Stand: 16.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
 07.10.2026 aus dreizehn Dateien zu dieser einen zusammengeführt; jedes Kapitel nennt seinen
 eigenen Stand
 
@@ -655,7 +655,7 @@ HTTP-Anfrage
 | `internal/*` (übrige)   | 6.912 Zeilen, 59 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
-| `cmd/` (9 Kommandos)    | 2.524 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
+| `cmd/` (6 Kommandos)    | 1.776 Zeilen, 10 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`                                                             |
 
 ##### Themen unter `api/`
 
@@ -1116,7 +1116,7 @@ jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht ab
 | Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
 | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`repository`, `db`, `api`, `auth`, `jobs`, `inventur`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
-| `golang-jwt/jwt/v5`                                            | `auth`, `cmd/stresstest`                                         | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
+| `golang-jwt/jwt/v5`                                            | `auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
 | `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
 | `getsentry/sentry-go`                                          | `main.go`, `api`                                                 | Fehlerweitergabe, nur mit `SENTRY_DSN`                                                  |
@@ -1126,7 +1126,7 @@ jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht ab
 | `xuri/excelize/v2`                                             | `api`, `inventur`, `pkg/xlsxgrenze`                              | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
 | `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
-| `google/uuid`                                                  | `api`, `cmd/seed`                                                | Kennungen erzeugen                                                                      |
+| `google/uuid`                                                  | `api`, `repository`                                              | Kennungen erzeugen                                                                      |
 | `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
 | `swaggo/swag`, `swaggo/http-swagger`                           | `docs`, `api`                                                    | Swagger, nur lokal (A23)                                                                |
 | `golang.org/x/crypto`                                          | `internal/backupkrypto`                                          | scrypt-Schlüsselableitung des Backups                                                   |
@@ -1821,13 +1821,13 @@ Stand: 08.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 | Stufe                    | Basis                  | Erzeugnis                                                                                                          |
 | ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | 1 `frontend-builder`     | `node:24-alpine`       | `npm ci` (Lockfile verbindlich) → `npm run build` → `frontend/dist`                                                |
-| 2 `backend-builder`      | `golang:1.27.2-alpine` | `main` mit **CGO_ENABLED=1** (WebP), dazu `rotate-encryption-key`, `restore-backup`, `encrypt-backup`, `migrate-fotos` mit **CGO_ENABLED=0** |
+| 2 `backend-builder`      | `golang:1.27.2-alpine` | `main` mit **CGO_ENABLED=1** (WebP), dazu `rotate-encryption-key`, `restore-backup`, `encrypt-backup` mit **CGO_ENABLED=0** |
 | 3 Laufzeit               | `alpine:3.24`          | `apk upgrade` + `ca-certificates`, `tzdata`, **`postgresql18-client`**; Binaries, `schema.sql`, `migrations/`, `frontend/dist`; `USER appuser`; `EXPOSE 8081`; `HEALTHCHECK` auf `/health`; `CMD ["./main"]` |
 
 **Warum die Werkzeuge mit ins Image gehören:** Der Schulserver hat kein Go. Ein
 Wiederherstellungswerkzeug, das man genau dort nicht starten kann, wo man es braucht, ist
 keines — aufgefallen beim ersten echten Einsatz am 06.08.2026. Deshalb liegen
-`restore-backup`, `encrypt-backup`, `rotate-encryption-key` und `migrate-fotos` im Image,
+`restore-backup`, `encrypt-backup` und `rotate-encryption-key` im Image,
 und ein Gate (`docs/werkzeuge_im_image_test.go`) hält die Anleitungen damit deckungsgleich.
 
 **Warum die Go-Version patch-genau gepinnt ist:** CVE-Fixes stecken in
@@ -2555,7 +2555,7 @@ wenn man ihn einmal gebraucht hat.
 - **Tests an der Datenbank am Arbeitsplatz.** Läuft der lokale Stack, nimmt der Hook vor dem
   Push dessen Postgres (Port 5434, Datenbank `bibliothek_test`, Passwort aus `.env`) und fährt
   die `*_pg_test.go` mit (`scripts/git-hooks/pre-push`). Von Hand: `TEST_DATABASE_URL` auf
-  dieselbe Datenbank setzen oder den Wegwerf-Container aus [SCRIPTS.md](SCRIPTS.md) §7 nehmen.
+  dieselbe Datenbank setzen oder den Wegwerf-Container aus [SCRIPTS.md](SCRIPTS.md) §5 nehmen.
   Die Harness (`internal/pgtest`) lädt `schema.sql`, nicht die Migrationen, hält eine Sperre
   über alle Pakete und weigert sich bei einem Datenbanknamen ohne „test".
 - **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
@@ -3449,7 +3449,7 @@ keine Personendaten. Ein Unterordner kommt nicht ins Netz, auch kein von Hand an
 auf einem Server mit älterem Volume kann `uploads/fotos` noch liegen (OFFEN.md 7.8).
 
 **Fundstelle.** `inventur/api_routen.go` (`neuteredFileSystem`), `Dockerfile`,
-`api/router.go` (`registriereInventurRouten`), `cmd/migrate-fotos`, `internal/crypto`.
+`api/router.go` (`registriereInventurRouten`), `internal/crypto`.
 Gates: `inventur/api_routen_test.go`, `api/uploads_auslieferung_pg_test.go`.
 
 ---
@@ -3633,7 +3633,7 @@ gemessenes Limit:
 | Globales Rate-Limit                 | 50 Anfragen/s/IP, Auslieferungspfade ausgenommen                                          |
 | Nachbuch-Portion                    | 1–50 Einträge je Aufruf (mehr wäre eine zu lange offene Transaktion)                      |
 | Cover-Sync                          | Worker-Pool 8, alle 6 Stunden und auf Anforderung                                         |
-| Lastprüfung                         | `loadtest.js` / `loadtest_advanced.js` (k6), `cmd/stresstest`                              |
+| Lastprüfung                         | kein Lasttest; gleichzeitige Scans prüfen Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
 
 **Nicht Teil der Zusage:** horizontale Skalierung, Mehrmandantenfähigkeit, Hochverfügbarkeit
 ohne Wartungsfenster. Ein Deploy ist ein kurzer, geordneter Abriss der Verbindungen
@@ -4338,12 +4338,11 @@ Fenstern bekannt ist:
 
 #### Kleinigkeiten
 
-- gosec nimmt acht Regeln global aus (gemessen mit v2.29.0 am 28.09.2026, ohne `-exclude`):
-  G706 (38 Stellen in 20 Dateien, nachgezählt am 08.10.2026), G704 (6), G703 (5), G120 (5),
-  G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in
-  `scripts/gosec-gate.sh`. Eine neue Stelle dieser Regeln meldet gosec nicht.
-  Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen —
-  außerhalb von G706 sind es 28 Stellen in 14 Dateien.
+- gosec nimmt sieben Regeln global aus (gemessen mit der Fassung aus `scripts/gosec-gate.sh` am
+  16.10.2026, ohne `-exclude`): G706 (36 Stellen in 19 Dateien), G704 (6), G703 (5), G120 (5),
+  G124 (4), G115 (3), G101 (3); der Grund je Regel steht in `scripts/gosec-gate.sh`. Eine neue
+  Stelle dieser Regeln meldet gosec nicht. Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund,
+  dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 26 Stellen in 16 Dateien.
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
   Vormerk-Liste (`rechteKategorien.js`, `BuchakteVormerkungen.svelte`), das Etikett der

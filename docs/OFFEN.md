@@ -208,8 +208,7 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
   Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
-  `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164 mit der
-  Tabelle `subjects`.
+  `internal/testdaten`, Migration 164 mit der Tabelle `subjects`.
 - [x] **Meldungen in Satzschreibung und auf Deutsch (5.68):** erledigt am 16.10.2026. Der Text
   eines Fehlers ohne Meldung geht unter keinem Status mehr hinaus (`apierrors`), und die
   Meldungs-Ratsche prüft die festen Sätze jedes Fehlerstatus außer 500, auch 502 und 503.
@@ -515,28 +514,8 @@ halten; sie zu löschen hieße, Regeln zu lockern. Offen:
   wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket
   zusammen mit dem Umbau nach [STIL.md](STIL.md).
 
-**Entfernen, mit deinem Ja.** Die drei Schritte sind vorbereitet und warten auf ein
-ausdrückliches Ja.
+**Entfernen, mit deinem Ja (gegeben am 16.10.2026).**
 
-- **`cmd/migrate-fotos`** (Antwort vom 15.10.2026: nicht gelaufen, nichts läuft produktiv). Das
-  Werkzeug zieht nur Dateien um, die diese Anwendung bis zum 13.06.2026 beim Hochladen eines
-  Fotos nach `uploads/fotos` schrieb (40204696); seitdem geht jedes Foto verschlüsselt in die
-  Datenbank, und die Übernahme aus Littera liest keine Fotos. Ohne Anlage im Betrieb gibt es
-  diese Dateien nirgends, auch nicht zum Echtstart. Mit dem Ordner fallen zwei Stellen im
-  Dockerfile, ein Eintrag in `.gitignore`, je ein Eintrag in `phantom_erfolg_test.go`,
-  `docs/lesepfade_gegen_sicht_test.go` und `docs/compose_variablen_test.go` (`FOTOS_BEHALTEN`),
-  Abschnitt 2 in [SCRIPTS.md](SCRIPTS.md) (die Verweise auf die Abschnitte danach rücken auf)
-  und fünf Stellen in [ARCHITEKTUR.md](ARCHITEKTUR.md). Was auf dem Testserver noch liegen
-  kann, steht in 7.8.
-- **Lasttest:** `loadtest.js` und `loadtest_advanced.js` (k6, 274 Zeilen), `scripts/seed_loadtest.sql`,
-  das nur sie füllt, und die Ausnahme `javascript:S2245` in `sonar-project.properties`.
-  `cmd/stresstest` misst gegen keinen heutigen Stand etwas: Sein Token nennt das Konto
-  `00000000-0000-0000-0000-000000000001` aus einer `seed.sql`, die es nicht gibt, und der Server
-  prüft das Konto (`auth.Anmeldung.ladeKontoStatus`); jede Anfrage endet mit 401. Was es prüfen
-  sollte, prüfen Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`,
-  `TestBucheNach_ZweiParalleleAufrufeEinExemplar`). `cmd/seed` ist laut seinem Kopf die
-  Vorstufe zum Lasttest mit k6. Fallen alle vier, entfallen in `scripts/gosec-gate.sh` die
-  Ausnahmen G404 und G101.
 - **Migration 164** für zwei Spalten ohne Schreiber seit dem Entfernen des Elternbriefs:
   `ALTER TABLE schadensfaelle DROP COLUMN IF EXISTS elternbrief_generiert, DROP COLUMN IF EXISTS elternbrief_generiert_am;`
   dazu die zwei Zeilen in `schema.sql`. Auf dem Testserver gehen dabei nur diese zwei Vermerke

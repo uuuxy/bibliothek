@@ -328,7 +328,7 @@ func TestDatenbankAufrufe_ErkenntJedeForm(t *testing.T) {
 // Ein Eintrag mit Schrägstrich gilt für die Pakete darunter, ein Eintrag ohne nur für sich:
 // „db" darf kein Paket „db_export" freistellen.
 func TestInDatenbankschicht_GrenztPaketeAb(t *testing.T) {
-	drin := []string{"repository", "inventur", "db", "internal/littera", "cmd/seed", "cmd/migrate-fotos"}
+	drin := []string{"repository", "inventur", "db", "internal/littera", "cmd/migrate", "cmd/littera-import"}
 	for _, p := range drin {
 		if _, ok := inDatenbankschicht(p); !ok {
 			t.Errorf("%s gilt nicht als Datenbankschicht", p)

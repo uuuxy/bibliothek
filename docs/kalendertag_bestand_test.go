@@ -47,7 +47,6 @@ var bestandKalendertag = map[string]struct {
 	// Menschen, und es läuft ohnehin von Hand und tagsüber.
 	"cmd/migrate/pg_writer.go":               {1, "erworben_am beim Alt-Import"},
 	"repository/statistik.go":                {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
-	"cmd/seed/main.go":                       {1, "erfundene Abgangsjahre für Testdaten"},
 	"internal/uebernahme/protokoll.go":       {1, "Zeitstempel einer Protokollzeile"},
 	"internal/service/bestellung_anlegen.go": {1, "Anschaffungsjahr eines Exemplars"},
 	// Ein Datum aus einer Eingabe, als Tag in UTC gelesen: geduldet, wo danach kein Zeitpunkt

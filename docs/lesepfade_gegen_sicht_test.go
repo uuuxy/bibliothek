@@ -57,7 +57,6 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/schadensbrief.go": {1, "Anschrift der Ersatzforderung — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	// Die übrigen Stellen.
 	"repository/leser_pruefungen.go":        {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
-	"cmd/migrate-fotos/main.go":             {1, "Einmal-Werkzeug für Littera-Schülerfotos; eine Nummer ohne Schüler steht als Warnung im Lauf, nicht still"},
 	"internal/littera/schreiber.go":         {1, "Zielbestand-Probe zählt die littera:-Herkunft, die nur schreibeSchueler setzt; Kollegen aus Littera werden Konten (benutzer)"},
 	"inventur/datenbank_klassen.go":         {2, "Klassengruppen der Inventur — Klassen haben nur Schüler"},
 	"repository/betriebszustand.go":         {3, "Demo-Zähler (scripts/seed_demo.sql legt nur Schüler an, Präfix DEMO-S-), Klassenliste und Wächter Ehemalige (ist_abgaenger gibt es nur bei Schülern)"},

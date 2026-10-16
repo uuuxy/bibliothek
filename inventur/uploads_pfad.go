@@ -16,7 +16,7 @@ import (
 // uploads/ genügt, und HasPrefix sieht Symlinks nicht). os.OpenRoot bindet die Auflösung im
 // Betriebssystem an das Verzeichnis: Ein Name, der herausführt, scheitert am Kernel, nicht an
 // einer Prüfung der Zeichenkette. So arbeitet auch der Rest des Projekts (api/katalog/cover.go,
-// pkg/coverdatei, api/router.go, cmd/migrate-fotos).
+// pkg/coverdatei, api/router.go).
 
 const uploadsVerzeichnis = "uploads"
 
