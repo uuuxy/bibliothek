@@ -324,4 +324,37 @@ describe('useBuchakte.ladeAlles: Kopf und überholte Läufe', () => {
 		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
 		expect(akte.fehlendeListen, 'die Fehlliste von A steht unter dem Titel B').toEqual([]);
 	});
+
+	// Die Antworten von A sind da, ihre Körper noch nicht: res.json() wartet auf das letzte
+	// Stück einer großen Liste. Ist B inzwischen ganz geladen, dürfen die Listen von A danach
+	// nicht mehr unter dem Kopf von B landen.
+	it('ein beim Lesen der Listen überholter Lauf schreibt sie nicht mehr', async () => {
+		/** @type {() => void} */
+		let koerperVonAKommen = () => {};
+		const warteKoerper = new Promise((r) => (koerperVonAKommen = /** @type {any} */ (r)));
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			const istA = u.includes('/A') || u.endsWith('=A');
+			if (u.startsWith('/api/books/')) return /** @type {any} */ (ok({ id: istA ? 'A' : 'B' }));
+			const liste = u.includes('/exemplare') ? [{ id: istA ? 'e-A' : 'e-B' }] : [];
+			if (!istA) return /** @type {any} */ (ok(liste));
+			return /** @type {any} */ ({
+				ok: true,
+				json: async () => {
+					await warteKoerper;
+					return liste;
+				}
+			});
+		});
+		const akte = useBuchakte();
+
+		const langsam = akte.ladeAlles('A');
+		await vi.waitFor(() => expect(abrufe()).toContain('/api/vormerkungen?titel_id=A'));
+		await akte.ladeAlles('B');
+		koerperVonAKommen();
+		await langsam;
+
+		expect(akte.buch).toEqual({ id: 'B' });
+		expect(akte.exemplare, 'die Exemplare von A stehen unter dem Titel B').toEqual([{ id: 'e-B' }]);
+	});
 });

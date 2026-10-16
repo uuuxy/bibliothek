@@ -140,13 +140,16 @@ export function useBuchakte() {
 			['Historie', hRes, (w) => (verlauf = w)],
 			['Vormerkungen', vRes, (w) => (vormerkungen = w)]
 		];
+		// Wie beim Kopf erst prüfen, wenn die Körper gelesen sind: Ist ein jüngerer Titel
+		// inzwischen ganz geladen, lägen diese Listen sonst unter seinem Kopf.
+		const daten = await Promise.all(listen.map(([, antwort]) => jsonOderNull(antwort)));
+		if (meine !== laufNr) return;
 		/** @type {string[]} */
 		const fehlend = [];
-		for (const [name, antwort, setze] of listen) {
-			const daten = await jsonOderNull(antwort);
-			setze(daten ?? []);
-			if (daten === null) fehlend.push(name);
-		}
+		listen.forEach(([name, , setze], i) => {
+			setze(daten[i] ?? []);
+			if (daten[i] === null) fehlend.push(name);
+		});
 		fehlendeListen = fehlend;
 		laedt = false;
 	}
