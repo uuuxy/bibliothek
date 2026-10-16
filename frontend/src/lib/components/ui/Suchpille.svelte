@@ -143,10 +143,6 @@
 </div>
 {#if kameraOffen}
 	<div class="mt-2">
-		<ThekenKamera
-			stopCamera={() => (kameraOffen = false)}
-			bind:queryVal={wert}
-			submitAction={nachScan}
-		/>
+		<ThekenKamera stoppeKamera={() => (kameraOffen = false)} bind:wert {nachScan} />
 	</div>
 {/if}

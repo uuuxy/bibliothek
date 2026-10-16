@@ -70,8 +70,8 @@ beforeEach(async () => {
 
 /** Scannt, ohne auf die Buchung zu warten. @param {ReturnType<typeof createOmniboxStore>} store @param {string} code */
 function scanne(store, code) {
-	store.queryVal = code;
-	return store.submitAction(null, null);
+	store.eingabe = code;
+	return store.fuehreAktionAus(null, null);
 }
 
 /**
@@ -113,7 +113,7 @@ describe('Scan während der laufenden Buchung', () => {
 		const zweiter = scanne(theke, 'B-1');
 		const dritter = scanne(theke, 'B-2');
 		expect(gebuchteNummern(), 'vor der Antwort geht nur der erste Scan hinaus').toEqual(['A-1']);
-		expect(theke.queryVal, 'das Feld ist frei für den nächsten Scan').toBe('');
+		expect(theke.eingabe, 'das Feld ist frei für den nächsten Scan').toBe('');
 
 		ausweis.beantworte(antwort({ type: 'student', student: MIA }));
 		await Promise.all([erster, zweiter, dritter]);
@@ -124,7 +124,7 @@ describe('Scan während der laufenden Buchung', () => {
 		);
 		expect(anfrage('B-2').active_leser_id).toBe('leser-1');
 		expect(anfrage('B-1').idempotency_key).not.toBe(anfrage('B-2').idempotency_key);
-		expect(theke.errorMessage).toBe('');
+		expect(theke.fehler).toBe('');
 	});
 
 	it('nimmt in der Schnellrückgabe jedes Buch des Stapels zurück', async () => {
@@ -141,12 +141,12 @@ describe('Scan während der laufenden Buchung', () => {
 
 		expect(gebuchteNummern()).toEqual(['B-1', 'B-2', 'B-3']);
 		expect(anfrage('B-3').active_leser_id, 'mit Leser liehe der Server aus').toBeUndefined();
-		expect(theke.activeStudent).toBeNull();
+		expect(theke.aktiverLeser).toBeNull();
 	});
 
 	it('verwirft dieselbe Nummer, solange sie gebucht wird', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const buch = haltendeBuchung();
 
 		const laeuft = scanne(theke, 'B-1');
@@ -156,13 +156,13 @@ describe('Scan während der laufenden Buchung', () => {
 		await laeuft;
 
 		expect(gebuchteNummern(), 'der Doppelscan gäbe das Buch gleich wieder zurück').toEqual(['B-1']);
-		expect(theke.errorMessage).toBe('');
+		expect(theke.fehler).toBe('');
 		expect(playSoundError).not.toHaveBeenCalled();
 	});
 
 	it('verwirft dieselbe Nummer auch, solange sie noch wartet', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const erstes = haltendeBuchung();
 		vi.mocked(apiClient.post).mockResolvedValue(AUSLEIHE);
 
@@ -177,7 +177,7 @@ describe('Scan während der laufenden Buchung', () => {
 
 	it('bucht dieselbe Nummer wieder, sobald sie gebucht ist', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		vi.mocked(apiClient.post).mockResolvedValue(AUSLEIHE);
 
 		await scanne(theke, 'B-1');
@@ -198,7 +198,7 @@ describe('Scan während der laufenden Buchung', () => {
 
 	it('bleibt eine Reihe, auch wenn die Theke währenddessen neu geöffnet wird', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const erstes = haltendeBuchung();
 		vi.mocked(apiClient.post).mockResolvedValue(AUSLEIHE);
 
@@ -221,7 +221,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 
 	it('nach einem gescheiterten Scan: Das Buch geht nicht an den Leser davor', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = TOM;
+		theke.aktiverLeser = TOM;
 		const ausweis = haltendeBuchung();
 
 		const laeuft = scanne(theke, 'A-9');
@@ -231,30 +231,30 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		await laeuft;
 
 		expect(gebuchteNummern(), 'ein Buch ist an Tom gegangen').toEqual(['A-9']);
-		expect(theke.errorMessage).toBe(
+		expect(theke.fehler).toBe(
 			`Fehler: Ausweis A-9 ist nicht registriert · ${genannt(['B-1', 'B-2'])}`
 		);
 		expect(playSoundError, 'wer nicht hinsieht, hört es').toHaveBeenCalled();
-		expect(theke.screenFlash).toBe('error');
-		expect(theke.flashBorder).toBe('red');
+		expect(theke.bildschirmLeuchten).toBe('error');
+		expect(theke.randLeuchten).toBe('red');
 	});
 
 	it('nach einer Sperre: Die Rückfrage entscheidet ein Mensch', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const buch = haltendeBuchung();
 
 		const laeuft = scanne(theke, 'B-1');
 		scanne(theke, 'B-2');
 		// Der nächste Scan ist halb getippt, als die Rückfrage aufgeht.
-		theke.queryVal = 'B-3';
+		theke.eingabe = 'B-3';
 		buch.beantworte(ablehnung('Mia hat überfällige Medien.', 403, { 'X-Sperre': 'uebergehbar' }));
 		await laeuft;
 
-		expect(theke.blockAlert?.query).toBe('B-1');
+		expect(theke.sperrHinweis?.query).toBe('B-1');
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.errorMessage).toBe(genannt(['B-2']));
-		expect(theke.queryVal, 'der Rest stünde vor dem übernächsten Scan').toBe('');
+		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.eingabe, 'der Rest stünde vor dem übernächsten Scan').toBe('');
 		expect(theke.scanfeldBereit(), 'die Rückfrage behält die Tastatur').toBe(false);
 	});
 
@@ -268,14 +268,14 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		buch.beantworte(antwort({ type: 'rueckgabe', book: BUCH, student: MIA, has_vormerkung: true }));
 		await laeuft;
 
-		expect(theke.vormerkungAlert).not.toBeNull();
+		expect(theke.vormerkungHinweis).not.toBeNull();
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.errorMessage).toBe(genannt(['B-2']));
+		expect(theke.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('nach einer Fremdrückgabe: Ihre Hinweiszeile bleibt stehen', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const buch = haltendeBuchung();
 
 		const laeuft = scanne(theke, 'B-1');
@@ -285,16 +285,16 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		);
 		await laeuft;
 
-		expect(theke.lastFremdrueckgabe, 'der wartende Scan nähme die Zeile weg').toEqual({
+		expect(theke.letzteFremdrueckgabe, 'der wartende Scan nähme die Zeile weg').toEqual({
 			vorbesitzerName: 'Tom Test'
 		});
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.errorMessage).toBe(genannt(['B-2']));
+		expect(theke.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('nach einem Hinweis auf eine andere Auflage', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const buch = haltendeBuchung();
 		const hinweis = {
 			klasse: '07B',
@@ -307,20 +307,20 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		buch.beantworte(antwort({ type: 'ausleihe', book: BUCH, auflagen_hinweis: hinweis }));
 		await laeuft;
 
-		expect(theke.lastAuflagenHinweis).toEqual(hinweis);
+		expect(theke.letzterAuflagenHinweis).toEqual(hinweis);
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.errorMessage).toBe(genannt(['B-2']));
+		expect(theke.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('wenn der Leser von außen weggenommen wird (Escape, Akte schließen, Theke leeren)', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const buch = haltendeBuchung();
 
 		const laeuft = scanne(theke, 'B-1');
 		scanne(theke, 'B-2');
-		theke.activeStudent = null;
-		expect(theke.errorMessage, 'sofort, nicht erst nach der Antwort').toBe(genannt(['B-2']));
+		theke.aktiverLeser = null;
+		expect(theke.fehler, 'sofort, nicht erst nach der Antwort').toBe(genannt(['B-2']));
 
 		buch.beantworte(AUSLEIHE);
 		await laeuft;
@@ -328,7 +328,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		expect(anfrage('B-1').active_leser_id, 'der laufende Scan behält seine Absicht').toBe(
 			'leser-1'
 		);
-		expect(theke.errorMessage).toBe(genannt(['B-2']));
+		expect(theke.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('wenn die Schnellrückgabe umgeschaltet wird', async () => {
@@ -343,41 +343,41 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		await laeuft;
 
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.errorMessage).toBe(genannt(['B-2']));
+		expect(theke.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('nennt die Nummern, bis der nächste Scan kommt; der Grund verschwindet wie jede Meldung', async () => {
 		vi.useFakeTimers();
 		const theke = neueTheke();
-		theke.activeStudent = TOM;
+		theke.aktiverLeser = TOM;
 		const ausweis = haltendeBuchung();
 
 		const laeuft = scanne(theke, 'A-9');
 		scanne(theke, 'B-1');
 		ausweis.beantworte(ablehnung('Ausweis A-9 ist nicht registriert', 404));
 		await laeuft;
-		expect(theke.errorMessage).toContain('Fehler: Ausweis A-9 ist nicht registriert');
+		expect(theke.fehler).toContain('Fehler: Ausweis A-9 ist nicht registriert');
 
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(theke.errorMessage, 'die Rückfrage davor kann länger offen sein').toBe(genannt(['B-1']));
+		expect(theke.fehler, 'die Rückfrage davor kann länger offen sein').toBe(genannt(['B-1']));
 		await vi.advanceTimersByTimeAsync(60_000);
-		expect(theke.errorMessage).toBe(genannt(['B-1']));
+		expect(theke.fehler).toBe(genannt(['B-1']));
 
 		vi.mocked(apiClient.post).mockResolvedValue(AUSLEIHE);
 		await scanne(theke, 'B-1');
-		expect(theke.errorMessage).toBe('');
+		expect(theke.fehler).toBe('');
 	});
 
 	it('nach einem unerwarteten Abbruch: Die Theke bucht danach wieder', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.spyOn(crypto, 'randomUUID').mockImplementationOnce(() => {
 			throw new Error('kein Zufall');
 		});
 
 		await scanne(theke, 'B-1');
-		expect(theke.errorMessage).toBe('Fehler: kein Zufall');
+		expect(theke.fehler).toBe('Fehler: kein Zufall');
 		expect(gebuchteNummern()).toEqual([]);
 		fehler.mockRestore();
 
@@ -402,7 +402,7 @@ describe('Ohne Netz', () => {
 		expect(theke.offlineAusweis).toBe('A-10001');
 		const abgelegt = (await loadQueue()).map((e) => `${e.barcode} ${e.art} ${e.ausweis_barcode}`);
 		expect(abgelegt.toSorted()).toEqual(['B-1 ausleihe A-10001', 'B-2 ausleihe A-10001']);
-		expect(theke.errorMessage).toBe('');
+		expect(theke.fehler).toBe('');
 	});
 });
 
@@ -410,9 +410,9 @@ describe('Ohne Netz', () => {
 // (scanOhneFokus.js) und melden ihn hier.
 describe('Ein Scan bei offener Rückfrage', () => {
 	it.each([
-		['Sperre', { blockAlert: { message: 'Mia ist gesperrt.', query: 'B-1', art: 'leser' } }],
-		['Vormerkung', { vormerkungAlert: { titel: 'Natura 2', user: 'Tom Test' } }],
-		['Zubehör', { checklistAnfrage: { query: 'G-1', geraet: { modellname: 'Tablet' } } }]
+		['Sperre', { sperrHinweis: { message: 'Mia ist gesperrt.', query: 'B-1', art: 'leser' } }],
+		['Vormerkung', { vormerkungHinweis: { titel: 'Natura 2', user: 'Tom Test' } }],
+		['Zubehör', { prueflisteAnfrage: { query: 'G-1', geraet: { modellname: 'Tablet' } } }]
 	])('%s: rot und Fehlerton, gebucht wird nichts, sie bleibt offen', (_name, zustand) => {
 		const theke = neueTheke();
 		expect(theke.rueckfrageOffen()).toBe(false);
@@ -422,7 +422,7 @@ describe('Ein Scan bei offener Rückfrage', () => {
 		theke.scanBeiRueckfrage();
 
 		expect(playSoundError, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(1);
-		expect(theke.screenFlash).toBe('error');
+		expect(theke.bildschirmLeuchten).toBe('error');
 		expect(apiClient.post).not.toHaveBeenCalled();
 		expect(theke.rueckfrageOffen(), 'ein Mensch beantwortet sie').toBe(true);
 	});

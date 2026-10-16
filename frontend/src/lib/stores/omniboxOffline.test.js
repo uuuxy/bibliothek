@@ -9,7 +9,7 @@ import 'fake-indexeddb/auto';
 // Buch war schon draußen, die Rückgabe scheiterte mit 400, und der Eintrag flog aus der
 // Warteschlange. Das Kind hatte das Buch, das System sagte „verfügbar".
 //
-// Geprüft wird der ECHTE Weg: submitAction mit einem Netzwerkfehler, so wie er im
+// Geprüft wird der ECHTE Weg: fuehreAktionAus mit einem Netzwerkfehler, so wie er im
 // WLAN-Loch entsteht.
 vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn(async () => {
@@ -69,11 +69,11 @@ describe('Omnibox offline', () => {
 		// der Mock undefined, und der TypeError kam aus `res.ok` — der Test maß den Fehler aus
 		// Commit 2 (Auswertung im selben catch), nicht den Netzausfall.
 		vi.mocked(apiClient.post).mockRejectedValue(new TypeError('Failed to fetch'));
-		omniboxStore.activeStudent = null;
+		omniboxStore.aktiverLeser = null;
 		// Der Ausweis-Merker ueberlebt einen Scan mit Absicht — genau deshalb muss ihn
 		// jeder Fall ausdruecklich raeumen, sonst misst der naechste die Spuren des vorigen.
 		omniboxStore.offlineAusweis = '';
-		omniboxStore.queryVal = '';
+		omniboxStore.eingabe = '';
 	});
 
 	// Der Eintrag trägt die Person VOM SCAN, nicht die vom Zeitpunkt des Scheiterns
@@ -86,11 +86,11 @@ describe('Omnibox offline', () => {
 		vi.mocked(apiClient.post).mockImplementationOnce(
 			() => new Promise((_, rej) => (scheitern = /** @type {any} */ (rej)))
 		);
-		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
-		omniboxStore.queryVal = 'B-10234';
-		const laeuft = omniboxStore.submitAction(new Event('submit'));
+		omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		omniboxStore.eingabe = 'B-10234';
+		const laeuft = omniboxStore.fuehreAktionAus(new Event('submit'));
 		// Während die Anfrage hängt: Escape an der Theke.
-		omniboxStore.activeStudent = null;
+		omniboxStore.aktiverLeser = null;
 		scheitern(new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'));
 		await laeuft;
 
@@ -113,10 +113,10 @@ describe('Omnibox offline', () => {
 				json: async () => ({ type: 'rueckgabe', fremdrueckgabe: true })
 			})
 		);
-		omniboxStore.queryVal = 'B-10234';
-		await omniboxStore.submitAction(new Event('submit'));
+		omniboxStore.eingabe = 'B-10234';
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
 		expect(await loadQueue(), 'eine Antwort kam an — das ist kein Netzausfall').toHaveLength(0);
-		expect(omniboxStore.errorMessage, 'der Fehler wird gezeigt, nicht versteckt').toMatch(/Fehler/);
+		expect(omniboxStore.fehler, 'der Fehler wird gezeigt, nicht versteckt').toMatch(/Fehler/);
 	});
 
 	// „Buch zurückgeben" in der Akte ist eine RÜCKGABE — auch offline (OFFEN.md 2.2, Commit 3).
@@ -125,7 +125,7 @@ describe('Omnibox offline', () => {
 	// ein. Beim Nachbuchen wäre daraus eine Rückgabe geworden (Buch schon bei ihm) — beim
 	// Doppelklick aber die zweite Ausleihe eine echte, und das Kind hätte das Buch wieder.
 	it('„Buch zurückgeben" im Profil ist offline eine Rückgabe, auch beim Doppelklick', async () => {
-		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
 		await omniboxStore.gibZurueck('B-10234');
 		await omniboxStore.gibZurueck('B-10234');
 		const q = await loadQueue();
@@ -134,31 +134,31 @@ describe('Omnibox offline', () => {
 	});
 
 	// Mit geladenem Kollegen ist ein Offline-Buch eine Ausleihe an ihn (OFFEN.md 2.2,
-	// Commit 4; Entscheidung (b) vom 13.09.2026). Bis dahin entschied nur activeStudent, und
+	// Commit 4; Entscheidung (b) vom 13.09.2026). Bis dahin entschied nur aktiverLeser, und
 	// das Buch ging mit geladener Lehrkraft als Rückgabe in die Warteschlange.
 	//
 	// Seit Migration 125 steht ein Kollege in demselben Platz wie ein Schüler — der Eintrag
 	// trägt seine Leser-Kennung im selben Feld.
 	it('reiht mit geladenem Kollegen eine Ausleihe an ihn ein', async () => {
-		omniboxStore.activeStudent = {
+		omniboxStore.aktiverLeser = {
 			id: 'leser-3',
 			vorname: 'Karl',
 			nachname: 'Kraft',
 			art: 'lehrkraft'
 		};
-		omniboxStore.queryVal = 'B-10234';
-		await omniboxStore.submitAction(new Event('submit'));
+		omniboxStore.eingabe = 'B-10234';
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
 		const q = await loadQueue();
 		expect(q).toHaveLength(1);
 		expect(q[0].art, 'eine Ausleihe, keine Rückgabe').toBe('ausleihe');
 		expect(q[0].leser_id).toBe('leser-3');
-		omniboxStore.activeStudent = null;
+		omniboxStore.aktiverLeser = null;
 	});
 
 	it('reiht mit geladenem Schüler eine Ausleihe ein, ohne ihn eine Rückgabe', async () => {
-		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
-		omniboxStore.queryVal = 'B-10234';
-		await omniboxStore.submitAction(new Event('submit'));
+		omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		omniboxStore.eingabe = 'B-10234';
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 		let q = await loadQueue();
 		expect(q, 'der Scan wurde offline gespeichert').toHaveLength(1);
@@ -167,9 +167,9 @@ describe('Omnibox offline', () => {
 
 		// Gegenprobe: ohne Schüler bleibt es eine Rückgabe.
 		await leere();
-		omniboxStore.activeStudent = null;
-		omniboxStore.queryVal = 'B-10235';
-		await omniboxStore.submitAction(new Event('submit'));
+		omniboxStore.aktiverLeser = null;
+		omniboxStore.eingabe = 'B-10235';
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
 		q = await loadQueue();
 		expect(q).toHaveLength(1);
 		expect(q[0].art).toBe('rueckgabe');
@@ -183,9 +183,9 @@ describe('Omnibox offline', () => {
 	// Testfall dieser Datei konnte das sehen, weil jeder `B-10234` scannte.
 	describe('alle Buchformen, nicht nur B-', () => {
 		it('reiht ein LMF-Buch ein — auch ohne Barcode-Liste', async () => {
-			omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
-			omniboxStore.queryVal = 'LMF-2025-0007';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			const q = await loadQueue();
 			expect(q).toHaveLength(1);
 			expect(q[0].barcode).toBe('LMF-2025-0007');
@@ -193,8 +193,8 @@ describe('Omnibox offline', () => {
 		});
 
 		it('reiht eine nackte Littera-Nummer ein, die auf der Liste steht', async () => {
-			omniboxStore.queryVal = '58968';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = '58968';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			const q = await loadQueue();
 			expect(q).toHaveLength(1);
 			expect(q[0].barcode).toBe('58968');
@@ -203,8 +203,8 @@ describe('Omnibox offline', () => {
 		it('bucht ein Littera-Etikett unter der NUMMER, nicht unter dem Strichcode', async () => {
 			// Der Aufdruck lautet 58968, der Strichcode traegt die EAN-13 darum herum.
 			// Der Server kennt nur die Nummer.
-			omniboxStore.queryVal = '5896800039556';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = '5896800039556';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			const q = await loadQueue();
 			expect(q).toHaveLength(1);
 			expect(q[0].barcode).toBe('58968');
@@ -215,27 +215,27 @@ describe('Omnibox offline', () => {
 			// kurz darauf abgewiesen mit Begruendung; seit dem Ausweis-Merker wird er
 			// gemerkt. Eine Buchung ist er in keinem Fall.
 			Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
-			omniboxStore.queryVal = 'A-00042';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'A-00042';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await loadQueue(), 'ein Ausweis ist keine Buchung').toHaveLength(0);
 			expect(omniboxStore.offlineAusweis).toBe('A-00042');
 			Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
 		});
 
 		it('sagt bei einem getippten Namen, dass es ohne Netz keine Namenssuche gibt', async () => {
-			omniboxStore.queryVal = 'Mueller';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'Mueller';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await loadQueue()).toHaveLength(0);
-			expect(omniboxStore.errorMessage).toMatch(/nach Namen/);
+			expect(omniboxStore.fehler).toMatch(/nach Namen/);
 			// Ueber einen Namen von „der Buchliste" zu reden, half niemandem weiter.
-			expect(omniboxStore.errorMessage).not.toMatch(/Buchliste/);
+			expect(omniboxStore.fehler).not.toMatch(/Buchliste/);
 		});
 
 		it('nennt eine unbekannte Nummer unklar und bucht sie NICHT', async () => {
-			omniboxStore.queryVal = 'B97601826457';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'B97601826457';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await loadQueue()).toHaveLength(0);
-			expect(omniboxStore.errorMessage).toMatch(/nicht eindeutig|NICHT gebucht/);
+			expect(omniboxStore.fehler).toMatch(/nicht eindeutig|NICHT gebucht/);
 		});
 	});
 
@@ -255,20 +255,20 @@ describe('Omnibox offline', () => {
 		it('merkt sich den Ausweis und laesst die vorher geladene Person fallen', async () => {
 			// Sonst zeigte die Theke einen Namen, waehrend die folgenden Buecher an eine
 			// ANDERE Person gingen.
-			omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna' };
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(omniboxStore.offlineAusweis).toBe('S-10001');
-			expect(omniboxStore.activeStudent).toBeNull();
+			expect(omniboxStore.aktiverLeser).toBeNull();
 			expect(await loadQueue(), 'der Ausweis selbst ist keine Buchung').toHaveLength(0);
 		});
 
 		it('schreibt die folgenden Buecher dem gemerkten Ausweis zu', async () => {
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
-			omniboxStore.queryVal = 'LMF-2025-0007';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			const q = await loadQueue();
 			expect(q).toHaveLength(1);
@@ -279,10 +279,10 @@ describe('Omnibox offline', () => {
 		});
 
 		it('ein unklarer Scan sperrt die Zuordnung: der Merker faellt', async () => {
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
-			omniboxStore.queryVal = 'B97601826457'; // weder Buch noch erkennbarer Ausweis
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			omniboxStore.eingabe = 'B97601826457'; // weder Buch noch erkennbarer Ausweis
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(omniboxStore.offlineAusweis, 'bis zum naechsten eindeutigen Ausweis').toBe('');
 		});
@@ -292,8 +292,8 @@ describe('Omnibox offline', () => {
 		// Schweigen als RUECKGABE. Entschieden wird deshalb an der Wirkung eines
 		// Ausweisscans, nicht an `navigator.onLine`.
 		it('loest den Merker auf und bucht das Buch dann normal', async () => {
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(omniboxStore.offlineAusweis).toBe('S-10001');
 
 			// Die Verbindung ist zurueck: Der Ausweis laedt die Person, das Buch wird gebucht.
@@ -306,12 +306,12 @@ describe('Omnibox offline', () => {
 						})
 					: antwort({ type: 'ausleihe', book: { titel: 'Momo' } })
 			);
-			omniboxStore.queryVal = 'LMF-2025-0007';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(await loadQueue(), 'online gebucht, nichts eingereiht').toHaveLength(0);
 			expect(omniboxStore.offlineAusweis, 'der Merker ist verbraucht').toBe('');
-			expect(omniboxStore.activeStudent?.id, 'die Person steht an der Theke').toBe('leser-1');
+			expect(omniboxStore.aktiverLeser?.id, 'die Person steht an der Theke').toBe('leser-1');
 			// Drei Anfragen: der Ausweisscan ohne Netz (scheitert), die Aufloesung des
 			// Merkers, dann das Buch.
 			const gesendet = vi.mocked(apiClient.post).mock.calls.map((c) => c[1].query);
@@ -331,12 +331,12 @@ describe('Omnibox offline', () => {
 		// Ausweisscan, der wieder nur offline ankam. Kein Buch war mehr buchbar.
 		it('reiht das Buch ein, wenn das WLAN steht, aber der Server weg ist', async () => {
 			netz(true); // WLAN da — der Browser weiss nichts vom Serverausfall
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(omniboxStore.offlineAusweis, 'der Ausweis wird trotzdem gemerkt').toBe('S-10001');
 
-			omniboxStore.queryVal = 'LMF-2025-0007';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			const q = await loadQueue();
 			expect(q, 'das Buch liegt in der Warteschlange').toHaveLength(1);
@@ -348,19 +348,19 @@ describe('Omnibox offline', () => {
 		// Der Server antwortet, laedt aber keine Person: Nummer unbekannt, gesperrt,
 		// Suchtreffer. Dann ist nicht sicher, WEM das Buch gehoert.
 		it('bucht nichts, wenn sich der gemerkte Ausweis nicht laden laesst', async () => {
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			netz(true);
 			vi.mocked(apiClient.post).mockResolvedValue(
 				antwort({ type: 'search_results', students: [], books: [] })
 			);
-			omniboxStore.queryVal = 'LMF-2025-0007';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(await loadQueue(), 'nicht gebucht und nicht eingereiht').toHaveLength(0);
-			expect(omniboxStore.errorMessage).toMatch(/NICHT gebucht/);
-			expect(omniboxStore.errorMessage).toContain('S-10001');
+			expect(omniboxStore.fehler).toMatch(/NICHT gebucht/);
+			expect(omniboxStore.fehler).toContain('S-10001');
 			expect(omniboxStore.offlineAusweis, 'der Merker ist verbraucht').toBe('');
 			expect(
 				vi.mocked(apiClient.post).mock.calls.map((c) => c[1].query),
@@ -369,15 +369,15 @@ describe('Omnibox offline', () => {
 		});
 
 		it('einen Ausweis laesst sie bei zurueckgekehrter Verbindung durch — er ist der Ausweg', async () => {
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			netz(true);
-			omniboxStore.queryVal = 'S-10001';
-			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			// Der Online-Weg uebernimmt (hier scheitert er im Test) — entscheidend ist,
 			// dass die Bitte um den Ausweis nicht den Ausweis selbst abweist.
-			expect(omniboxStore.errorMessage ?? '').not.toMatch(/noch einmal scannen/);
+			expect(omniboxStore.fehler ?? '').not.toMatch(/noch einmal scannen/);
 		});
 	});
 });

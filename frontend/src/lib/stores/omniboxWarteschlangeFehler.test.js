@@ -44,7 +44,7 @@ describe('Warteschlange nicht erreichbar', () => {
 		vi.clearAllMocks();
 		vi.spyOn(console, 'error').mockImplementation(() => {});
 		vi.spyOn(console, 'warn').mockImplementation(() => {});
-		omniboxStore.activeStudent = null;
+		omniboxStore.aktiverLeser = null;
 		omniboxStore.activeTeacher = null;
 	});
 
@@ -62,9 +62,9 @@ describe('Warteschlange nicht erreichbar', () => {
 	});
 
 	it('die Theke meldet „NICHT gespeichert" mit Fehlerton, kein Erfolg', async () => {
-		omniboxStore.queryVal = 'B-10234';
-		await omniboxStore.submitAction(new Event('submit'));
-		expect(omniboxStore.errorMessage).toMatch(/NICHT gespeichert/);
+		omniboxStore.eingabe = 'B-10234';
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
+		expect(omniboxStore.fehler).toMatch(/NICHT gespeichert/);
 		expect(playSoundError).toHaveBeenCalled();
 		expect(playSoundSuccess).not.toHaveBeenCalled();
 		const erfolgsToast = snackbars.toasts.find((t) => /gespeichert\.$/.test(t.message));

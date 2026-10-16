@@ -40,16 +40,16 @@ function leserMitKlasse(leser) {
  * @param {string} message
  * @param {import('./snackbars.svelte.js').ToastTyp} [type='success']
  */
-function showToast(message, type = 'success') {
+function zeigeMeldung(message, type = 'success') {
 	snackbars.addToast(message, type);
 }
 
 export function createOmniboxStore() {
-	// activeStudent ist der LESER, der gerade an der Theke steht — Schüler oder Kollege,
+	// aktiverLeser ist der LESER, der gerade an der Theke steht — Schüler oder Kollege,
 	// unterscheidbar an `art`. Ein zweiter Platz für Lehrkräfte ist mit Migration 125
 	// weggefallen; solange es zwei gab, musste jede Stelle beide abfragen und sich für
 	// eine entscheiden.
-	let activeStudent = $state(/** @type {any} */ (null));
+	let aktiverLeser = $state(/** @type {any} */ (null));
 	// Der ohne Netz gescannte Ausweis — nur die NUMMER, kein Name, keine Ausleihen.
 	// Aufloesen kann ihn nur der Server; bis dahin tragen die folgenden Buecher sie mit
 	// (offlineWarteschlange: `ausweis_barcode`, die Nachbuch-Tuer kennt das Feld).
@@ -57,24 +57,24 @@ export function createOmniboxStore() {
 	// Schnellrückgabe: Jeder Scan nimmt nur zurück. Sie und ein geladener Leser schließen
 	// einander aus; ohne Leser bekommt der Server keinen und leiht nie aus.
 	let schnellrueckgabe = $state(false);
-	let queryVal = $state('');
+	let eingabe = $state('');
 
-	let flashBorder = $state('');
-	let screenFlash = $state(''); // "success" | "error" | ""
-	let lastFremdrueckgabe = $state(/** @type {any} */ (null));
+	let randLeuchten = $state('');
+	let bildschirmLeuchten = $state(''); // "success" | "error" | ""
+	let letzteFremdrueckgabe = $state(/** @type {any} */ (null));
 	// Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): der Hinweis der letzten Ausleihe, bis
 	// zum nächsten Scan — wie die Fremdrückgabe, als Zeile über dem Konto (OmniboxThekeHinweise).
-	let lastAuflagenHinweis = $state(/** @type {any} */ (null));
-	let isShaking = $state(false);
-	let scanError = $state(false);
+	let letzterAuflagenHinweis = $state(/** @type {any} */ (null));
+	let wackelt = $state(false);
+	let scanFehler = $state(false);
 	let fehler = $state('');
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
 	let meldungsZeitgeber = null;
-	let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
+	let vormerkungHinweis = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
 	// Abholfach-Hinweis zum AKTIVEN Schüler (Betreiber-Entscheidung 01.09.2026):
 	// beim Ausweis-Scan liefert der Server die abholbereiten Vormerkungen mit —
 	// die Mitarbeiterin greift ins Abholfach, solange der Schüler vor ihr steht.
-	// Wird bei JEDEM Setzen von activeStudent mit überschrieben (?? []), damit
+	// Wird bei JEDEM Setzen von aktiverLeser mit überschrieben (?? []), damit
 	// kein Hinweis eines vorherigen Schülers stehen bleibt (bekannte Bugklasse
 	// „nie zurückgesetzter UI-State").
 	let abholbereit = $state(/** @type {{titel: string, bereitgestellt_bis?: string}[]} */ ([]));
@@ -86,30 +86,28 @@ export function createOmniboxStore() {
 	 * schickt es mit, sonst hielte die Sperre den zweiten Versand wieder auf.
 	 * @type {{query: string, geraet: any, overrideBlock: boolean} | null}
 	 */
-	let checklistAnfrage = $state(null);
+	let prueflisteAnfrage = $state(null);
 	/**
 	 * Der Sperr-Dialog. art ist das Merkmal X-Sperre: „uebergehbar" (Hinweis — einmalig
 	 * übergehen) oder „leser" (Sperre am Leser — aufheben).
 	 * @type {{message: string, query: string, art: 'uebergehbar' | 'leser'} | null}
 	 */
-	let blockAlert = $state(null);
+	let sperrHinweis = $state(null);
 	// isOffline is now handled globally via offlineSync
-	let offlineQueueCount = $state(0);
+	let offlineAnzahl = $state(0);
 
 	// Kamerascanner-Status
-	let showCamera = $state(false);
-	let cameraScanner = $state(/** @type {any} */ (null));
+	let kameraOffen = $state(false);
+	let kamera = $state(/** @type {any} */ (null));
 
 	// Such-Status
-	let debounceTimer = $state(/** @type {any} */ (null));
-	let isDropdownOpen = $state(false);
-	let unifiedSearchResults = $state({ students: [], books: [], studentsTotal: 0, booksTotal: 0 });
-	let selectedDropdownIndex = $state(-1);
-	let totalDropdownItems = $derived(
-		unifiedSearchResults.students.length + unifiedSearchResults.books.length
-	);
+	let suchVerzoegerung = $state(/** @type {any} */ (null));
+	let trefferlisteOffen = $state(false);
+	let suchTreffer = $state({ students: [], books: [], studentsTotal: 0, booksTotal: 0 });
+	let markierterTreffer = $state(-1);
+	let trefferAnzahl = $derived(suchTreffer.students.length + suchTreffer.books.length);
 
-	let isActive = $derived(!!(activeStudent || isDropdownOpen));
+	let belegt = $derived(!!(aktiverLeser || trefferlisteOffen));
 
 	// UI Feedback-Methoden
 	//
@@ -144,30 +142,30 @@ export function createOmniboxStore() {
 	// Löst sich auf, sobald kein Scan mehr unterwegs ist oder wartet.
 	let reiheGebucht = Promise.resolve();
 
-	function triggerScreenFlash(type) {
-		screenFlash = type;
+	function leuchteBildschirm(type) {
+		bildschirmLeuchten = type;
 		if (bildschirmZeitgeber) clearTimeout(bildschirmZeitgeber);
 		bildschirmZeitgeber = setTimeout(() => {
 			bildschirmZeitgeber = null;
-			screenFlash = '';
+			bildschirmLeuchten = '';
 		}, 300);
 	}
 
-	function triggerShake() {
-		isShaking = true;
+	function wackle() {
+		wackelt = true;
 		if (shakeTimer) clearTimeout(shakeTimer);
 		shakeTimer = setTimeout(() => {
 			shakeTimer = null;
-			isShaking = false;
+			wackelt = false;
 		}, 500);
 	}
 
-	function triggerFlash(color) {
-		flashBorder = color;
+	function leuchteRand(color) {
+		randLeuchten = color;
 		if (randZeitgeber) clearTimeout(randZeitgeber);
 		randZeitgeber = setTimeout(() => {
 			randZeitgeber = null;
-			flashBorder = '';
+			randLeuchten = '';
 		}, 1000);
 	}
 
@@ -181,7 +179,7 @@ export function createOmniboxStore() {
 			randZeitgeber,
 			fokusTimer,
 			meldungsZeitgeber,
-			debounceTimer
+			suchVerzoegerung
 		]) {
 			if (t) clearTimeout(t);
 		}
@@ -190,7 +188,7 @@ export function createOmniboxStore() {
 		randZeitgeber = null;
 		fokusTimer = null;
 		meldungsZeitgeber = null;
-		debounceTimer = null;
+		suchVerzoegerung = null;
 	}
 
 	// Das Fehlerbanner hat zwei Teile. Was ein Scan meldet, verschwindet nach 6 s von selbst.
@@ -240,23 +238,23 @@ export function createOmniboxStore() {
 
 	/** Trefferliste und Dropdown leeren — eine Liste darf ihren Suchtext nie überleben. */
 	function verwirfTreffer() {
-		unifiedSearchResults = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
-		isDropdownOpen = false;
-		selectedDropdownIndex = -1;
+		suchTreffer = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
+		trefferlisteOffen = false;
+		markierterTreffer = -1;
 	}
 
-	function handleInput() {
-		clearTimeout(debounceTimer);
-		if (!queryVal.trim()) {
+	function verarbeiteEingabe() {
+		clearTimeout(suchVerzoegerung);
+		if (!eingabe.trim()) {
 			// Auch hier hochzählen: Ein noch laufender Abruf darf die eben geleerte
 			// Liste nicht wieder füllen.
 			suchLauf++;
-			isDropdownOpen = false;
-			unifiedSearchResults = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
+			trefferlisteOffen = false;
+			suchTreffer = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
 			return;
 		}
-		debounceTimer = setTimeout(async () => {
-			if (!queryVal.trim()) return;
+		suchVerzoegerung = setTimeout(async () => {
+			if (!eingabe.trim()) return;
 			// Sequenznummer wie im bestellStore: Der Entprell-Timer verwirft nur NOCH NICHT
 			// gestartete Abrufe — zwei gleichzeitig laufende beantwortet der Server in
 			// beliebiger Reihenfolge. Ohne diese Prüfung tauschte eine verspätete Antwort
@@ -265,7 +263,7 @@ export function createOmniboxStore() {
 			// (Fund 31.08.2026).
 			const seq = ++suchLauf;
 			try {
-				const res = await apiFetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
+				const res = await apiFetch(`/api/search?q=${encodeURIComponent(eingabe.trim())}`);
 				if (seq !== suchLauf) return;
 				if (!res.ok) {
 					// Dieselbe Gefahr wie oben, nur über den anderen Ausgang (Sweep
@@ -275,19 +273,18 @@ export function createOmniboxStore() {
 					// scheitert (500, oder 429 vom Rate-Limiter) — und der nächste Klick
 					// oder Enter buchte auf Müller, während im Feld Schmidt stand.
 					verwirfTreffer();
-					showToast('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
+					zeigeMeldung('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
 					return;
 				}
 				const ergebnisse = await res.json();
-				unifiedSearchResults = {
+				suchTreffer = {
 					students: ergebnisse.students || [],
 					books: ergebnisse.books || [],
 					studentsTotal: ergebnisse.students_total ?? (ergebnisse.students || []).length,
 					booksTotal: ergebnisse.books_total ?? (ergebnisse.books || []).length
 				};
-				isDropdownOpen =
-					unifiedSearchResults.students.length > 0 || unifiedSearchResults.books.length > 0;
-				selectedDropdownIndex = -1;
+				trefferlisteOffen = suchTreffer.students.length > 0 || suchTreffer.books.length > 0;
+				markierterTreffer = -1;
 			} catch (err) {
 				if (seq !== suchLauf) return;
 				// Netzfehler: ebenfalls verwerfen, aber ohne Toast — im WLAN-Loch käme
@@ -305,23 +302,23 @@ export function createOmniboxStore() {
 	// eine leere Eingabe los — sichtbar passierte gar nichts. Aufgelöst wird die ID auf
 	// demselben Weg wie ein Scan (POST /api/action), damit der Abholfach-Hinweis und die
 	// Sperrprüfung an beiden Wegen gleich sind.
-	function selectDropdownItem(index, onSelectBook) {
-		const { students, books } = unifiedSearchResults;
+	function waehleTreffer(index, onSelectBook) {
+		const { students, books } = suchTreffer;
 		if (index < students.length) {
 			const gewaehlterLeser = students[index];
-			queryVal = `leser:${gewaehlterLeser.id}`;
-			isDropdownOpen = false;
-			submitAction(null, null); // Ohne Event
+			eingabe = `leser:${gewaehlterLeser.id}`;
+			trefferlisteOffen = false;
+			fuehreAktionAus(null, null); // Ohne Event
 		} else {
 			const buch = books[index - students.length];
-			queryVal = '';
-			isDropdownOpen = false;
+			eingabe = '';
+			trefferlisteOffen = false;
 			if (onSelectBook) onSelectBook(buch);
 		}
 	}
 
 	// Liest die Fehlermeldung aus einer nicht-ok HTTP-Antwort. Bei einem
-	// Sperr-/Überfälligkeits-403 wird blockAlert gesetzt und BLOCK_ALERT geworfen,
+	// Sperr-/Überfälligkeits-403 wird sperrHinweis gesetzt und BLOCK_ALERT geworfen,
 	// sonst ein generischer Fehler. Wirft in jedem Fall.
 	async function verarbeiteAktionsFehler(res, q) {
 		let errStr = await res.text();
@@ -338,7 +335,7 @@ export function createOmniboxStore() {
 		// Sperrgrund, den eine Helferin gar nicht zu sehen bekommt.
 		const art = res.headers.get('X-Sperre');
 		if (res.status === 403 && (art === 'uebergehbar' || art === 'leser')) {
-			blockAlert = { message: errStr, query: q, art };
+			sperrHinweis = { message: errStr, query: q, art };
 			throw new Error('BLOCK_ALERT');
 		}
 
@@ -349,14 +346,14 @@ export function createOmniboxStore() {
 	// automatisches Umbuchen. Info ohne Unterbrechung; erneuter Scan leiht es an die
 	// aktive Sitzung aus.
 	function verarbeiteFremdrueckgabe(daten) {
-		triggerScreenFlash('warning');
+		leuchteBildschirm('warning');
 		playSoundError();
-		triggerFlash('orange');
+		leuchteRand('orange');
 		const prevName = formatVorbesitzerName(daten);
-		lastFremdrueckgabe = { vorbesitzerName: prevName };
-		const aktiv = activeStudent?.vorname;
+		letzteFremdrueckgabe = { vorbesitzerName: prevName };
+		const aktiv = aktiverLeser?.vorname;
 		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
-		showToast(
+		zeigeMeldung(
 			`„${daten.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
 			'warning'
 		);
@@ -367,27 +364,27 @@ export function createOmniboxStore() {
 		if (daten.fremdrueckgabe) {
 			verarbeiteFremdrueckgabe(daten);
 		} else {
-			triggerScreenFlash('success');
+			leuchteBildschirm('success');
 			playSoundSuccess();
-			triggerFlash('green');
+			leuchteRand('green');
 			const titel = daten.book?.titel ?? daten.geraet?.modellname;
 			// In der Schnellrückgabe erscheint kein Konto: Die Meldung nennt, bei wem das Buch war.
-			showToast(
+			zeigeMeldung(
 				schnellrueckgabe && daten.student
 					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(daten.student)}.`
 					: `„${titel}" erfolgreich zurückgegeben.`
 			);
 		}
 		if (daten.has_vormerkung) {
-			vormerkungAlert = {
+			vormerkungHinweis = {
 				titel: daten.vormerkung_titel || daten.book?.titel,
 				user: daten.vormerkung_user
 			};
 		}
 		if (reloadProfileCb) reloadProfileCb();
 
-		if (daten.student && !activeStudent && !schnellrueckgabe) {
-			activeStudent = daten.student;
+		if (daten.student && !aktiverLeser && !schnellrueckgabe) {
+			aktiverLeser = daten.student;
 			abholbereit = daten.abholbereit ?? [];
 		}
 	}
@@ -399,11 +396,11 @@ export function createOmniboxStore() {
 		verwirfWartende();
 		schnellrueckgabe = an;
 		if (!an) return;
-		activeStudent = null;
+		aktiverLeser = null;
 		abholbereit = [];
 		offlineAusweis = '';
-		lastFremdrueckgabe = null;
-		lastAuflagenHinweis = null;
+		letzteFremdrueckgabe = null;
+		letzterAuflagenHinweis = null;
 	}
 
 	// Escape beendet die Schnellrückgabe. Schließt es gerade einen Hinweis (Vormerkung),
@@ -418,23 +415,23 @@ export function createOmniboxStore() {
 	// Kanäle, weil es zwei Dinge sind: Eine offene Aufgabe in einer grünen Erfolgsmeldung
 	// wird überlesen.
 	function zeigeRueckkehrHinweise(daten, { ohneMeldung = false } = {}) {
-		if (!ohneMeldung && daten.message) showToast(daten.message, 'success');
-		if (daten.aufsicht_informieren) showToast(daten.aufsicht_informieren, 'warning');
+		if (!ohneMeldung && daten.message) zeigeMeldung(daten.message, 'success');
+		if (daten.aufsicht_informieren) zeigeMeldung(daten.aufsicht_informieren, 'warning');
 	}
 
 	// Ein Leser ist geladen: Er steht jetzt an der Theke, sein Abholfach kommt mit.
 	function verarbeiteLeser(daten) {
 		schnellrueckgabe = false;
-		activeStudent = daten.student;
+		aktiverLeser = daten.student;
 		abholbereit = daten.abholbereit ?? [];
-		triggerScreenFlash('success');
+		leuchteBildschirm('success');
 		playSoundSuccess();
-		triggerFlash('green');
+		leuchteRand('green');
 		// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
 		// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
 		// Schüler mit fehlender Angabe.
 		if (daten.student?.art && daten.student.art !== 'schueler') {
-			showToast(`Geladen: ${daten.student.vorname} ${daten.student.nachname}`);
+			zeigeMeldung(`Geladen: ${daten.student.vorname} ${daten.student.nachname}`);
 		}
 	}
 
@@ -442,17 +439,17 @@ export function createOmniboxStore() {
 		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer
 		// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
 		// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
-		lastAuflagenHinweis = daten.auflagen_hinweis ?? null;
-		triggerScreenFlash(lastAuflagenHinweis ? 'warning' : 'success');
+		letzterAuflagenHinweis = daten.auflagen_hinweis ?? null;
+		leuchteBildschirm(letzterAuflagenHinweis ? 'warning' : 'success');
 		playSoundSuccess('ausleihe');
-		triggerFlash(lastAuflagenHinweis ? 'orange' : 'green');
-		showToast(
-			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
+		leuchteRand(letzterAuflagenHinweis ? 'orange' : 'green');
+		zeigeMeldung(
+			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${aktiverLeser?.vorname}.`
 		);
 		// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
 		// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
 		if (daten.regalfreigabe_barcode) {
-			showToast(
+			zeigeMeldung(
 				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen.`,
 				'warning'
 			);
@@ -485,20 +482,20 @@ export function createOmniboxStore() {
 			return !daten.fremdrueckgabe;
 		}
 		if (daten.type === 'info') {
-			triggerScreenFlash('success');
+			leuchteBildschirm('success');
 			playSoundSuccess();
-			triggerFlash('green');
-			showToast(daten.message, 'success');
+			leuchteRand('green');
+			zeigeMeldung(daten.message, 'success');
 			zeigeRueckkehrHinweise(daten, { ohneMeldung: true });
 			if (reloadProfileCb) reloadProfileCb();
 			return true;
 		}
 		if (daten.type === 'geraet_check') {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
-			checklistAnfrage = { query: q, geraet: daten.geraet, overrideBlock };
+			prueflisteAnfrage = { query: q, geraet: daten.geraet, overrideBlock };
 		} else if (daten.type === 'search_results') {
-			triggerShake();
-			showToast('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
+			wackle();
+			zeigeMeldung('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
 		}
 		return false;
 	}
@@ -532,12 +529,12 @@ export function createOmniboxStore() {
 		// (offlineWarteschlange.js, OfflineEintrag).
 		// Ohne geladene Person, aber mit Ausweis-Merker: Das ist eine AUSLEIHE an die
 		// Person hinter dem Merker. Ohne beides bleibt es eine Rueckgabe.
-		const merker = !activeStudent?.id && offlineAusweis ? offlineAusweis : '';
+		const merker = !aktiverLeser?.id && offlineAusweis ? offlineAusweis : '';
 		return {
 			id: idempotencyKey,
-			art: absicht ?? (activeStudent?.id || merker ? 'ausleihe' : 'rueckgabe'),
+			art: absicht ?? (aktiverLeser?.id || merker ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
-			leser_id: activeStudent?.id ?? null,
+			leser_id: aktiverLeser?.id ?? null,
 			...(merker ? { ausweis_barcode: merker } : {}),
 			gescannt_am: Date.now(),
 			mono: Math.round(performance.now()),
@@ -583,7 +580,7 @@ export function createOmniboxStore() {
 			// Laut, nicht „gespeichert" (Commit 5): Ohne Warteschlange ist der Scan verloren —
 			// das Buch muss zurück ins Regal oder auf den Zettel.
 			console.error('Offline-Eintrag nicht gespeichert:', err);
-			triggerScreenFlash('error');
+			leuchteBildschirm('error');
 			playSoundError();
 			zeigeFehlerBanner(
 				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden — Buch zurücklegen und den Vorgang notieren.`
@@ -592,9 +589,9 @@ export function createOmniboxStore() {
 			return false;
 		}
 		offlineSync.updateCount();
-		triggerScreenFlash('warning');
+		leuchteBildschirm('warning');
 		playSoundSuccess();
-		showToast(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
+		zeigeMeldung(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
 		return true;
 	}
 
@@ -613,10 +610,10 @@ export function createOmniboxStore() {
 		offlineAusweis = nummer;
 		// Die zuvor geladene Person weicht: Sonst zeigte die Theke einen Namen, waehrend
 		// die folgenden Buecher an eine ANDERE Person gingen.
-		activeStudent = null;
-		triggerScreenFlash('warning');
+		aktiverLeser = null;
+		leuchteBildschirm('warning');
 		playSoundSuccess();
-		showToast(
+		zeigeMeldung(
 			`Ohne Netz gemerkt: Ausweis „${nummer}". Die folgenden Bücher werden ihm zugeordnet.`,
 			'warning'
 		);
@@ -684,9 +681,9 @@ export function createOmniboxStore() {
 		}
 
 		offlineAusweis = '';
-		if (activeStudent?.id) return true;
+		if (aktiverLeser?.id) return true;
 
-		triggerScreenFlash('error');
+		leuchteBildschirm('error');
 		playSoundError();
 		zeigeFehlerBanner(
 			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c liess sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
@@ -719,7 +716,7 @@ export function createOmniboxStore() {
 				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig — die Nummer steht nicht in der Buchliste dieses Rechners. ` +
 				`NICHT gebucht; bitte notieren.`
 		};
-		triggerScreenFlash('error');
+		leuchteBildschirm('error');
 		playSoundError();
 		zeigeFehlerBanner(meldungen[einordnung.art] ?? 'Dieser Scan wurde ohne Netz NICHT gebucht.');
 	}
@@ -740,7 +737,7 @@ export function createOmniboxStore() {
 	function verarbeiteAntwortfehler(e) {
 		// Wer scannt, sieht auf das Buch: Ein Scan, der nichts gebucht hat, ist zu hören. Nach
 		// einem gescheiterten Ausweis steht der Leser davor noch an der Theke.
-		triggerScreenFlash('error');
+		leuchteBildschirm('error');
 		playSoundError();
 		if (e instanceof Error && e.message === 'BLOCK_ALERT') return;
 		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
@@ -757,7 +754,7 @@ export function createOmniboxStore() {
 	 * @param {boolean} [confirmedChecklist]
 	 * @param {'ausleihe' | 'rueckgabe' | null} [absicht]
 	 */
-	async function submitAction(
+	async function fuehreAktionAus(
 		e,
 		reloadProfileCb,
 		overrideBlock = false,
@@ -765,8 +762,8 @@ export function createOmniboxStore() {
 		absicht = null
 	) {
 		if (e) e.preventDefault();
-		if (isDropdownOpen && selectedDropdownIndex >= 0) {
-			selectDropdownItem(selectedDropdownIndex, null);
+		if (trefferlisteOffen && markierterTreffer >= 0) {
+			waehleTreffer(markierterTreffer, null);
 			return;
 		}
 
@@ -781,26 +778,22 @@ export function createOmniboxStore() {
 		// Bewusst eng gefasst — genau ein Schüler und kein Buch daneben:
 		//   • Bei "Müller" mit zwölf Namensgleichen darf Enter nicht raten und ein fremdes
 		//     Konto öffnen. Dann bleibt die Liste zur Auswahl stehen.
-		//   • Bücher bleiben außen vor. Ihr Zweig in selectDropdownItem braucht einen
+		//   • Bücher bleiben außen vor. Ihr Zweig in waehleTreffer braucht einen
 		//     onSelectBook-Rückruf, den es hier nicht gibt; automatisch ausgelöst würde ein
 		//     Buchscan still ins Leere laufen statt auszuleihen.
-		if (
-			isDropdownOpen &&
-			unifiedSearchResults.students.length === 1 &&
-			unifiedSearchResults.books.length === 0
-		) {
-			selectDropdownItem(0, null);
+		if (trefferlisteOffen && suchTreffer.students.length === 1 && suchTreffer.books.length === 0) {
+			waehleTreffer(0, null);
 			return;
 		}
 
 		// EINMAL vereinheitlichen, gleich am Anfang: Dann gilt derselbe Wert fuer den
 		// Online-Versand, fuer den Schnappschuss und fuer die Einordnung ohne Netz. Ein
 		// von Hand getipptes `s-10001` traf sonst weder hier noch dort etwas.
-		const q = normalisiereScan(queryVal);
+		const q = normalisiereScan(eingabe);
 		if (!q) return;
 
-		queryVal = '';
-		isDropdownOpen = false;
+		eingabe = '';
+		trefferlisteOffen = false;
 
 		/** @type {Auftrag} */
 		const auftrag = { q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht };
@@ -837,7 +830,7 @@ export function createOmniboxStore() {
 				if (rueckfrageOffen()) {
 					// Die Rückfrage hat jetzt die Tastatur. Was vom nächsten Scan schon im Feld
 					// steht, stünde sonst vor dem übernächsten.
-					queryVal = '';
+					eingabe = '';
 				}
 				if (!glatt || rueckfrageOffen()) break;
 				auftrag = wartend.shift();
@@ -845,7 +838,7 @@ export function createOmniboxStore() {
 		} catch (e) {
 			// Unerwartet abgebrochen: Ob der laufende Scan gebucht ist, weiß hier niemand.
 			console.error('Buchung abgebrochen:', e);
-			triggerFlash('red');
+			leuchteRand('red');
 			verarbeiteAntwortfehler(e);
 		} finally {
 			laufendeNummer = '';
@@ -860,9 +853,9 @@ export function createOmniboxStore() {
 	function verwirfWartende() {
 		if (wartend.length === 0) return;
 		nichtGebucht = [...nichtGebucht, ...wartend.splice(0).map((w) => w.q)];
-		triggerScreenFlash('error');
+		leuchteBildschirm('error');
 		playSoundError();
-		triggerFlash('red');
+		leuchteRand('red');
 		zeichneBanner();
 	}
 
@@ -873,8 +866,8 @@ export function createOmniboxStore() {
 	 * @returns {Promise<boolean>}
 	 */
 	async function bucheScan({ q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht }) {
-		lastFremdrueckgabe = null;
-		lastAuflagenHinweis = null;
+		letzteFremdrueckgabe = null;
+		letzterAuflagenHinweis = null;
 		clearFehlerBanner();
 
 		// Der Schnappschuss entsteht VOR allem Weiteren (OFFEN.md 2.2, Commit 1): Escape
@@ -890,10 +883,10 @@ export function createOmniboxStore() {
 			// Die Aufloesung hat die Person geladen: Sie gehoert in den Schnappschuss, und
 			// der Merker faellt aus ihm heraus — sonst truege der Eintrag beides, und beim
 			// Nachbuchen entschiede die Reihenfolge der Felder, wem das Buch gehoert.
-			if (eintrag.ausweis_barcode && activeStudent?.id) {
+			if (eintrag.ausweis_barcode && aktiverLeser?.id) {
 				const ohneMerker = { ...eintrag };
 				delete ohneMerker.ausweis_barcode;
-				eintrag = { ...ohneMerker, leser_id: activeStudent.id, art: absicht ?? 'ausleihe' };
+				eintrag = { ...ohneMerker, leser_id: aktiverLeser.id, art: absicht ?? 'ausleihe' };
 			}
 		}
 
@@ -915,7 +908,7 @@ export function createOmniboxStore() {
 				idempotency_key: eintrag.id
 			});
 		} catch (e) {
-			triggerFlash('red');
+			leuchteRand('red');
 			return verarbeiteVersandfehler(e, eintrag);
 		}
 
@@ -926,7 +919,7 @@ export function createOmniboxStore() {
 			const daten = await res.json();
 			return verarbeiteAktionsErgebnis(daten, reloadProfileCb, q, overrideBlock);
 		} catch (e) {
-			triggerFlash('red');
+			leuchteRand('red');
 			verarbeiteAntwortfehler(e);
 			return false;
 		}
@@ -940,7 +933,7 @@ export function createOmniboxStore() {
 	 * Buchung; ein Klick davor oder das neu gerenderte Profil kann ihn woanders gelassen haben.
 	 *
 	 * Der $effect in Omnibox.svelte fängt das nicht ab: Er läuft nur, solange KEIN Leser
-	 * geladen ist (`!isActive`) — also genau nicht während des Ausleihens.
+	 * geladen ist (`!belegt`) — also genau nicht während des Ausleihens.
 	 *
 	 * Nicht zurückholen, solange ein Dialog eine menschliche Entscheidung braucht
 	 * (Sperre, Vormerkung) oder die Kamera scannt — dort würde der Fokussprung die
@@ -952,17 +945,17 @@ export function createOmniboxStore() {
 	}
 
 	// Eine Rückfrage, die ein Mensch beantwortet: Sperre, Vormerkung, Zubehör.
-	const rueckfrageOffen = () => !!(blockAlert || vormerkungAlert || checklistAnfrage);
+	const rueckfrageOffen = () => !!(sperrHinweis || vormerkungHinweis || prueflisteAnfrage);
 
 	// Ein Scan bei offener Rückfrage ist nicht gebucht, und sie bleibt stehen (scanOhneFokus.js).
 	// Wer auf das Buch sieht, hört es.
 	function scanBeiRueckfrage() {
-		triggerScreenFlash('error');
+		leuchteBildschirm('error');
 		playSoundError();
 	}
 
 	// Eine offene Rückfrage oder die laufende Kamera: Beide behalten ihre Eingabe.
-	const entscheidungOffen = () => showCamera || rueckfrageOffen();
+	const entscheidungOffen = () => kameraOffen || rueckfrageOffen();
 
 	// Darf ein Zeichen, das ohne Fokus getippt wird, ins Scanfeld (scanOhneFokus.js)? Auch
 	// während einer Buchung: Der Scan wird eingereiht (bucheReihe). Nicht, solange eine
@@ -1003,11 +996,11 @@ export function createOmniboxStore() {
 	// kein Scan dazwischen die alte erwischt; Name und Sperrflags kommen nach.
 	/** @param {string} zielId */
 	async function uebernimmZusammengefuehrt(zielId) {
-		activeStudent = { id: zielId };
+		aktiverLeser = { id: zielId };
 		const res = await apiFetch(`/api/schueler/${zielId}`);
 		// Inzwischen ein anderer Ausweis? Dann gehört das Nachgeladene niemandem mehr.
-		if (!res.ok || activeStudent?.id !== zielId) return;
-		activeStudent = await res.json();
+		if (!res.ok || aktiverLeser?.id !== zielId) return;
+		aktiverLeser = await res.json();
 	}
 
 	// „Buch zurückgeben" aus der Akte: derselbe Weg wie ein Scan des Barcodes, aber mit
@@ -1016,13 +1009,13 @@ export function createOmniboxStore() {
 	// Ausleihe eingereiht — beim Doppelklick eine echte zweite (OFFEN.md 2.2, Commit 3).
 	/** @param {string} barcode @param {(() => void) | null} [reloadProfileCb] */
 	function gibZurueck(barcode, reloadProfileCb = null) {
-		queryVal = barcode;
-		return submitAction(null, reloadProfileCb, false, false, 'rueckgabe');
+		eingabe = barcode;
+		return fuehreAktionAus(null, reloadProfileCb, false, false, 'rueckgabe');
 	}
 
 	return {
-		get activeStudent() {
-			return activeStudent;
+		get aktiverLeser() {
+			return aktiverLeser;
 		},
 		/** Die ohne Netz gemerkte Ausweisnummer ("" = keine). Nur die Nummer, kein Name. */
 		get offlineAusweis() {
@@ -1034,10 +1027,10 @@ export function createOmniboxStore() {
 			verwirfWartende();
 			offlineAusweis = v;
 		},
-		set activeStudent(v) {
+		set aktiverLeser(v) {
 			verwirfWartende();
 			if (v) schnellrueckgabe = false;
-			activeStudent = v;
+			aktiverLeser = v;
 		},
 		get schnellrueckgabe() {
 			return schnellrueckgabe;
@@ -1045,117 +1038,117 @@ export function createOmniboxStore() {
 		get abholbereit() {
 			return abholbereit;
 		},
-		get queryVal() {
-			return queryVal;
+		get eingabe() {
+			return eingabe;
 		},
-		set queryVal(v) {
-			queryVal = v;
+		set eingabe(v) {
+			eingabe = v;
 		},
-		get flashBorder() {
-			return flashBorder;
+		get randLeuchten() {
+			return randLeuchten;
 		},
-		set flashBorder(v) {
-			flashBorder = v;
+		set randLeuchten(v) {
+			randLeuchten = v;
 		},
-		get screenFlash() {
-			return screenFlash;
+		get bildschirmLeuchten() {
+			return bildschirmLeuchten;
 		},
-		set screenFlash(v) {
-			screenFlash = v;
+		set bildschirmLeuchten(v) {
+			bildschirmLeuchten = v;
 		},
-		get lastFremdrueckgabe() {
-			return lastFremdrueckgabe;
+		get letzteFremdrueckgabe() {
+			return letzteFremdrueckgabe;
 		},
-		set lastFremdrueckgabe(v) {
-			lastFremdrueckgabe = v;
+		set letzteFremdrueckgabe(v) {
+			letzteFremdrueckgabe = v;
 		},
-		get lastAuflagenHinweis() {
-			return lastAuflagenHinweis;
+		get letzterAuflagenHinweis() {
+			return letzterAuflagenHinweis;
 		},
-		get isShaking() {
-			return isShaking;
+		get wackelt() {
+			return wackelt;
 		},
-		set isShaking(v) {
-			isShaking = v;
+		set wackelt(v) {
+			wackelt = v;
 		},
-		get scanError() {
-			return scanError;
+		get scanFehler() {
+			return scanFehler;
 		},
-		set scanError(v) {
-			scanError = v;
+		set scanFehler(v) {
+			scanFehler = v;
 		},
-		get errorMessage() {
+		get fehler() {
 			return fehler;
 		},
-		set errorMessage(v) {
+		set fehler(v) {
 			fehler = v;
 		},
-		get vormerkungAlert() {
-			return vormerkungAlert;
+		get vormerkungHinweis() {
+			return vormerkungHinweis;
 		},
-		set vormerkungAlert(v) {
-			vormerkungAlert = v;
+		set vormerkungHinweis(v) {
+			vormerkungHinweis = v;
 		},
-		get checklistAnfrage() {
-			return checklistAnfrage;
+		get prueflisteAnfrage() {
+			return prueflisteAnfrage;
 		},
-		set checklistAnfrage(v) {
-			checklistAnfrage = v;
+		set prueflisteAnfrage(v) {
+			prueflisteAnfrage = v;
 		},
-		get blockAlert() {
-			return blockAlert;
+		get sperrHinweis() {
+			return sperrHinweis;
 		},
-		set blockAlert(v) {
-			blockAlert = v;
+		set sperrHinweis(v) {
+			sperrHinweis = v;
 		},
 		// isOffline handled globally
-		get offlineQueueCount() {
-			return offlineQueueCount;
+		get offlineAnzahl() {
+			return offlineAnzahl;
 		},
-		set offlineQueueCount(v) {
-			offlineQueueCount = v;
+		set offlineAnzahl(v) {
+			offlineAnzahl = v;
 		},
-		get showCamera() {
-			return showCamera;
+		get kameraOffen() {
+			return kameraOffen;
 		},
-		set showCamera(v) {
-			showCamera = v;
+		set kameraOffen(v) {
+			kameraOffen = v;
 		},
-		get cameraScanner() {
-			return cameraScanner;
+		get kamera() {
+			return kamera;
 		},
-		set cameraScanner(v) {
-			cameraScanner = v;
+		set kamera(v) {
+			kamera = v;
 		},
-		get debounceTimer() {
-			return debounceTimer;
+		get suchVerzoegerung() {
+			return suchVerzoegerung;
 		},
-		set debounceTimer(v) {
-			debounceTimer = v;
+		set suchVerzoegerung(v) {
+			suchVerzoegerung = v;
 		},
-		get isDropdownOpen() {
-			return isDropdownOpen;
+		get trefferlisteOffen() {
+			return trefferlisteOffen;
 		},
-		set isDropdownOpen(v) {
-			isDropdownOpen = v;
+		set trefferlisteOffen(v) {
+			trefferlisteOffen = v;
 		},
-		get unifiedSearchResults() {
-			return unifiedSearchResults;
+		get suchTreffer() {
+			return suchTreffer;
 		},
-		set unifiedSearchResults(v) {
-			unifiedSearchResults = v;
+		set suchTreffer(v) {
+			suchTreffer = v;
 		},
-		get selectedDropdownIndex() {
-			return selectedDropdownIndex;
+		get markierterTreffer() {
+			return markierterTreffer;
 		},
-		set selectedDropdownIndex(v) {
-			selectedDropdownIndex = v;
+		set markierterTreffer(v) {
+			markierterTreffer = v;
 		},
-		get totalDropdownItems() {
-			return totalDropdownItems;
+		get trefferAnzahl() {
+			return trefferAnzahl;
 		},
-		get isActive() {
-			return isActive;
+		get belegt() {
+			return belegt;
 		},
 
 		// Exportierte Methoden
@@ -1164,17 +1157,17 @@ export function createOmniboxStore() {
 		scanfeldBereit,
 		rueckfrageOffen,
 		scanBeiRueckfrage,
-		triggerScreenFlash,
-		triggerShake,
-		triggerFlash,
-		showToast,
-		handleInput,
+		leuchteBildschirm,
+		wackle,
+		leuchteRand,
+		zeigeMeldung,
+		verarbeiteEingabe,
 		uebernimmZusammengefuehrt,
 		schalteSchnellrueckgabe,
 		escapeGedrueckt,
 		gibZurueck,
-		selectDropdownItem,
-		submitAction
+		waehleTreffer,
+		fuehreAktionAus
 	};
 }
 

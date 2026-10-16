@@ -5,7 +5,7 @@
 
 	let { profil = $bindable(null) } = $props();
 
-	// Seit Migration 125 steht in activeStudent EIN Leser — Schüler oder Kollege. Seit dem
+	// Seit Migration 125 steht in aktiverLeser EIN Leser — Schüler oder Kollege. Seit dem
 	// 16.09.2026 bekommen beide dieselbe AKTE: Die Theke muss sehen, welche Bücher der
 	// Mensch vor ihr hat, und das ist bei einem Kollegen dieselbe Frage wie bei einem Kind.
 	//
@@ -13,11 +13,11 @@
 	// Absicht, sondern weil GET /api/schueler/{id} die Sicht `schueler` las und ihn mit
 	// 404 beantwortete. Was an ihm anders ist (keine Klasse, Frist ein Jahr), sagen die
 	// Akte selbst und der Hinweis darüber.
-	const leser = $derived(omniboxStore.activeStudent);
+	const leser = $derived(omniboxStore.aktiverLeser);
 
 	function abwaehlen() {
-		omniboxStore.activeStudent = null;
-		omniboxStore.lastFremdrueckgabe = null;
+		omniboxStore.aktiverLeser = null;
+		omniboxStore.letzteFremdrueckgabe = null;
 	}
 </script>
 

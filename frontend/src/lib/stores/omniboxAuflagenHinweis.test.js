@@ -38,8 +38,8 @@ async function scanne(store, data) {
 	vi.mocked(apiClient.post).mockResolvedValue(
 		/** @type {any} */ ({ ok: true, json: async () => data })
 	);
-	store.queryVal = 'B-518-1';
-	await store.submitAction(null, null);
+	store.eingabe = 'B-518-1';
+	await store.fuehreAktionAus(null, null);
 }
 
 function neuerStore() {
@@ -58,15 +58,15 @@ describe('Theke: Hinweis bei gemischten Auflagen', () => {
 			book: { titel: 'Mathe 7' },
 			auflagen_hinweis: HINWEIS
 		});
-		expect(store.lastAuflagenHinweis).toEqual(HINWEIS);
-		expect(store.screenFlash).toBe('warning');
+		expect(store.letzterAuflagenHinweis).toEqual(HINWEIS);
+		expect(store.bildschirmLeuchten).toBe('warning');
 	});
 
 	it('bleibt bei einer gewöhnlichen Ausleihe leer und blitzt grün', async () => {
 		const store = neuerStore();
 		await scanne(store, { type: 'ausleihe', book: { titel: 'Mathe 7' } });
-		expect(store.lastAuflagenHinweis).toBeNull();
-		expect(store.screenFlash).toBe('success');
+		expect(store.letzterAuflagenHinweis).toBeNull();
+		expect(store.bildschirmLeuchten).toBe('success');
 	});
 
 	// Der nächste Scan ist eine Rückgabe, keine Ausleihe: Eine Ausleihe setzt den Hinweis ohnehin
@@ -79,11 +79,11 @@ describe('Theke: Hinweis bei gemischten Auflagen', () => {
 			auflagen_hinweis: HINWEIS
 		});
 		await scanne(store, { type: 'rueckgabe', book: { titel: 'Deutsch 7' } });
-		expect(store.lastAuflagenHinweis).toBeNull();
+		expect(store.letzterAuflagenHinweis).toBeNull();
 	});
 
 	it('steht als Zeile über dem Konto', async () => {
-		omniboxStore.activeStudent = { vorname: 'Ida', art: 'schueler' };
+		omniboxStore.aktiverLeser = { vorname: 'Ida', art: 'schueler' };
 		await scanne(omniboxStore, {
 			type: 'ausleihe',
 			book: { titel: 'Mathe 7' },

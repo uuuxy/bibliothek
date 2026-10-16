@@ -12,7 +12,7 @@
 	import { X } from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
 
-	let { stopCamera, queryVal = $bindable(), submitAction } = $props();
+	let { stoppeKamera, wert = $bindable(), nachScan } = $props();
 
 	/** @type {any} */
 	let scanner = $state(null);
@@ -23,16 +23,16 @@
 	// kennen. Ein Scanner, der hinter der Sperre weiterläuft, bucht ein vorgehaltenes Buch —
 	// deshalb hängt hier ein Gate dran (leerlaufSperre.test.js).
 	$effect(() => {
-		if (scanner) omniboxStore.cameraScanner = { stop: () => scanner?.stopScanner() };
+		if (scanner) omniboxStore.kamera = { stop: () => scanner?.stopScanner() };
 	});
 	onDestroy(() => {
-		omniboxStore.cameraScanner = null;
+		omniboxStore.kamera = null;
 	});
 
 	function beiTreffer(code) {
-		queryVal = String(code).trim();
+		wert = String(code).trim();
 		schliessen();
-		submitAction();
+		nachScan();
 	}
 
 	async function schliessen() {
@@ -41,7 +41,7 @@
 		} catch {
 			// Ein Fehler beim Abschalten darf das Schliessen nicht aufhalten.
 		}
-		stopCamera();
+		stoppeKamera();
 	}
 </script>
 

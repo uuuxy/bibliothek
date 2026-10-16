@@ -3,13 +3,13 @@
 	import { tastaturNavigation } from '../actions/tastaturNavigation.js';
 
 	let {
-		queryVal = $bindable(),
-		isDropdownOpen,
-		selectedDropdownIndex = -1,
-		totalDropdownItems,
-		isActive,
+		eingabe = $bindable(),
+		trefferlisteOffen,
+		markierterTreffer = -1,
+		trefferAnzahl,
+		belegt,
 		schnellrueckgabe = false,
-		showCamera,
+		kameraOffen,
 		onInput,
 		onSelect,
 		onIndexChange,
@@ -21,7 +21,7 @@
 	// description of the information people can search").
 	const hinweis = $derived.by(() => {
 		if (schnellrueckgabe) return 'Schnellrückgabe: Bücher scannen';
-		return isActive ? 'Buch-Barcode (B-) scannen' : 'Scannen oder Namen eingeben';
+		return belegt ? 'Buch-Barcode (B-) scannen' : 'Scannen oder Namen eingeben';
 	});
 </script>
 
@@ -36,18 +36,18 @@
 	type="text"
 	role="combobox"
 	autocomplete="off"
-	aria-expanded={isDropdownOpen}
+	aria-expanded={trefferlisteOffen}
 	aria-autocomplete="list"
 	aria-controls="omnibox-dropdown"
-	aria-activedescendant={isDropdownOpen && selectedDropdownIndex >= 0
-		? `dropdown-item-${selectedDropdownIndex}`
+	aria-activedescendant={trefferlisteOffen && markierterTreffer >= 0
+		? `dropdown-item-${markierterTreffer}`
 		: undefined}
-	bind:value={queryVal}
+	bind:value={eingabe}
 	oninput={onInput}
 	use:tastaturNavigation={{
-		totalItems: totalDropdownItems,
-		isOpen: isDropdownOpen,
-		selectedIndex: selectedDropdownIndex,
+		totalItems: trefferAnzahl,
+		isOpen: trefferlisteOffen,
+		selectedIndex: markierterTreffer,
 		onSelect: onSelect,
 		onIndexChange: onIndexChange,
 		onEscape: onEscape
@@ -60,7 +60,7 @@
 	onclick={onToggleCamera}
 	title="Kamera-Scanner (Mobilgerät)"
 	aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
-	class="shrink-0 -mr-2 p-1.5 rounded-full transition-colors {showCamera
+	class="shrink-0 -mr-2 p-1.5 rounded-full transition-colors {kameraOffen
 		? 'bg-secondary-container text-on-secondary-container'
 		: 'text-on-surface-variant hover:text-primary'}"
 >

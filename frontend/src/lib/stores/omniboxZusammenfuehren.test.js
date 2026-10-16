@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Nach dem Zusammenführen zweier Datensätze hält die Theke ihren aktiven Schüler auf das
 // Ziel um (OFFEN.md 3.2, 15.09.2026). Bis dahin blieb die gelöschte Kennung stehen: Die
 // Akte zeigte schon das Ziel, aber jede weitere Buchung — und jeder Eintrag in der
-// Offline-Warteschlange (enqueueOfflineAction mit activeStudent.id) — lief auf einen
+// Offline-Warteschlange (enqueueOfflineAction mit aktiverLeser.id) — lief auf einen
 // Datensatz, den es nicht mehr gab.
 const apiFetch = vi.hoisted(() => vi.fn());
 vi.mock('../apiFetch.js', () => ({ apiFetch, apiClient: { post: vi.fn() } }));
@@ -27,7 +27,7 @@ afterEach(() => omniboxStore.stoppeZeitgeber());
 describe('Theke nach dem Zusammenführen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		omniboxStore.activeStudent = { id: 'quelle', vorname: 'Anna', is_manually_blocked: true };
+		omniboxStore.aktiverLeser = { id: 'quelle', vorname: 'Anna', is_manually_blocked: true };
 	});
 
 	it('hängt den aktiven Schüler auf das Ziel um, mit dessen Daten', async () => {
@@ -37,7 +37,7 @@ describe('Theke nach dem Zusammenführen', () => {
 		});
 		await omniboxStore.uebernimmZusammengefuehrt('ziel');
 		expect(apiFetch).toHaveBeenCalledWith('/api/schueler/ziel');
-		expect(omniboxStore.activeStudent).toEqual({
+		expect(omniboxStore.aktiverLeser).toEqual({
 			id: 'ziel',
 			vorname: 'Anna',
 			is_manually_blocked: false
@@ -47,9 +47,7 @@ describe('Theke nach dem Zusammenführen', () => {
 	it('trägt die Ziel-Kennung auch, wenn das Nachladen scheitert', async () => {
 		apiFetch.mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
 		await omniboxStore.uebernimmZusammengefuehrt('ziel');
-		expect(omniboxStore.activeStudent?.id, 'die gelöschte Kennung bliebe sonst stehen').toBe(
-			'ziel'
-		);
+		expect(omniboxStore.aktiverLeser?.id, 'die gelöschte Kennung bliebe sonst stehen').toBe('ziel');
 	});
 
 	it('lässt ein überholtes Nachladen nicht gewinnen', async () => {
@@ -61,9 +59,9 @@ describe('Theke nach dem Zusammenführen', () => {
 		});
 		const laeuft = omniboxStore.uebernimmZusammengefuehrt('ziel');
 		// Inzwischen wurde ein anderer Ausweis gescannt.
-		omniboxStore.activeStudent = { id: 'anderer', vorname: 'Ben' };
+		omniboxStore.aktiverLeser = { id: 'anderer', vorname: 'Ben' };
 		loesen();
 		await laeuft;
-		expect(omniboxStore.activeStudent?.id).toBe('anderer');
+		expect(omniboxStore.aktiverLeser?.id).toBe('anderer');
 	});
 });

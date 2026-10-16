@@ -37,7 +37,7 @@ import OmniboxSperrHinweis from './OmniboxSperrHinweis.svelte';
 
 /** @param {'leser' | 'uebergehbar'} art */
 function sperre(art) {
-	omniboxStore.blockAlert = {
+	omniboxStore.sperrHinweis = {
 		message:
 			art === 'leser'
 				? 'die ausleihe ist gesperrt: Manuelle Sperre: Ausweis verloren'
@@ -55,7 +55,7 @@ const ohneRecht = () =>
 describe('OmniboxSperrHinweis', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		omniboxStore.activeStudent = { id: 's1', vorname: 'Anna', is_manually_blocked: true };
+		omniboxStore.aktiverLeser = { id: 's1', vorname: 'Anna', is_manually_blocked: true };
 	});
 
 	it('Sperre am Leser: nur Aufheben, kein Übergehen', () => {
@@ -126,8 +126,8 @@ describe('OmniboxSperrHinweis', () => {
 			'/api/action',
 			expect.objectContaining({ query: 'B-1', override_block: false })
 		);
-		expect(omniboxStore.activeStudent?.is_manually_blocked).toBe(false);
-		expect(omniboxStore.blockAlert).toBeNull();
+		expect(omniboxStore.aktiverLeser?.is_manually_blocked).toBe(false);
+		expect(omniboxStore.sperrHinweis).toBeNull();
 	});
 
 	it('scheitert das Aufheben, steht der Grund im Dialog (M3: Fehler der Bestätigung im Dialog)', async () => {
@@ -148,6 +148,6 @@ describe('OmniboxSperrHinweis', () => {
 			)
 		);
 		expect(apiClient.post).not.toHaveBeenCalled();
-		expect(omniboxStore.blockAlert).not.toBeNull();
+		expect(omniboxStore.sperrHinweis).not.toBeNull();
 	});
 });

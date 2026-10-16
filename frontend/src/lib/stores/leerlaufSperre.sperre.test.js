@@ -89,7 +89,7 @@ describe('leerlaufSperre: Sperre am Server', () => {
 		lock = new IdleLock();
 		lock.thekeLeerenMinuten = 1;
 		lock.sperreMinuten = 3;
-		omniboxStore.activeStudent = { id: 's1', vorname: 'Mia' };
+		omniboxStore.aktiverLeser = { id: 's1', vorname: 'Mia' };
 		authStore.currentUser = { ...KONTO };
 	});
 
@@ -296,7 +296,7 @@ describe('leerlaufSperre: Sperre am Server', () => {
 			// Vier Minuten ohne Bedienung in diesem Fenster, im Browser nie mehr als 40 Sekunden.
 			expect(lock.gesperrt, 'die Sperre träfe die Arbeit im anderen Fenster').toBe(false);
 			expect(aufrufe()).not.toContain('/api/auth/sperren');
-			expect(omniboxStore.activeStudent, 'an dieser Theke war über eine Minute niemand').toBeNull();
+			expect(omniboxStore.aktiverLeser, 'an dieser Theke war über eine Minute niemand').toBeNull();
 			await vi.advanceTimersByTimeAsync(3 * 60_000 + 10);
 			expect(lock.gesperrt).toBe(true);
 		});

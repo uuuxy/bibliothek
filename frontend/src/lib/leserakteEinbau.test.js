@@ -48,7 +48,7 @@ describe('Einbauorte der Schülerakte', () => {
 	const dateien = sammleQuelldateien(srcRoot).filter((p) => p.endsWith('.svelte'));
 
 	// „Buch zurückgeben" an der Theke geht über gibZurueck, das die Absicht kennt — nicht
-	// über queryVal + submitAction, das offline aus dem geladenen Schüler eine Ausleihe
+	// über eingabe + fuehreAktionAus, das offline aus dem geladenen Schüler eine Ausleihe
 	// machte (OFFEN.md 2.2, Commit 3, 15.09.2026).
 	//
 	// Die Akte hängt seit dem 16.09.2026 in OmniboxAktiverLeser.svelte: Dort entscheidet die

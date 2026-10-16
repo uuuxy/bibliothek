@@ -31,13 +31,13 @@
 		orange: 'bg-surface-container-lowest border-warning ring-1 ring-warning',
 		red: 'bg-surface-container-lowest border-error ring-1 ring-error'
 	};
-	const farbZustand = $derived(RUECKMELDUNG[omniboxStore.flashBorder] ?? RUHE);
+	const farbZustand = $derived(RUECKMELDUNG[omniboxStore.randLeuchten] ?? RUHE);
 
 	$effect(() => {
 		if (appState.triggerStudentScan) {
-			omniboxStore.queryVal = appState.triggerStudentScan;
+			omniboxStore.eingabe = appState.triggerStudentScan;
 			appState.triggerStudentScan = '';
-			omniboxStore.submitAction(null, () => leserakte?.ladeNeu());
+			omniboxStore.fuehreAktionAus(null, () => leserakte?.ladeNeu());
 		}
 	});
 
@@ -49,7 +49,7 @@
 		const abmelden = abonniere('action', (e) => {
 			try {
 				const nachricht = JSON.parse(e.data);
-				if (omniboxStore.activeStudent && nachricht.student_id === omniboxStore.activeStudent.id) {
+				if (omniboxStore.aktiverLeser && nachricht.student_id === omniboxStore.aktiverLeser.id) {
 					leserakte?.ladeNeu();
 				}
 			} catch (err) {
@@ -62,7 +62,7 @@
 
 	// Fokussprung über den Store: EIN Zeitgeber mit Handle statt zweier gleicher Aufrufe.
 	$effect(() => {
-		if (!omniboxStore.isActive && !omniboxStore.isDropdownOpen && !omniboxStore.showCamera)
+		if (!omniboxStore.belegt && !omniboxStore.trefferlisteOffen && !omniboxStore.kameraOffen)
 			omniboxStore.fokussiereScanfeld();
 	});
 
@@ -71,11 +71,11 @@
 		function beiTaste(e) {
 			if (e.key === 'Escape') {
 				omniboxStore.escapeGedrueckt();
-				omniboxStore.queryVal = '';
-				omniboxStore.activeStudent = null;
-				omniboxStore.lastFremdrueckgabe = null;
-				omniboxStore.isDropdownOpen = false;
-				if (omniboxStore.showCamera) {
+				omniboxStore.eingabe = '';
+				omniboxStore.aktiverLeser = null;
+				omniboxStore.letzteFremdrueckgabe = null;
+				omniboxStore.trefferlisteOffen = false;
+				if (omniboxStore.kameraOffen) {
 					// Escape schliesst die Kamera. Das Abschalten selbst gehoert dem Bauteil
 					// (ThekenKamera → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
 					stoppeKamera();
@@ -97,11 +97,11 @@
 	// Die Kamera: Hier steht nur, dass sie gezeigt wird. Starten, Lesen und Aufhören gehören
 	// ThekenKamera.svelte — der Strom gehört dem Bauteil, das ihn anfordert.
 	function starteKamera() {
-		omniboxStore.showCamera = true;
+		omniboxStore.kameraOffen = true;
 	}
 
 	function stoppeKamera() {
-		omniboxStore.showCamera = false;
+		omniboxStore.kameraOffen = false;
 		// Ein Handscanner tippt blind: Ohne Fokus landet der naechste Scan im Nichts.
 		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
 	}
@@ -114,7 +114,7 @@
      Container trägt nur die Positionierung für das Relief; overflow-x-clip statt -hidden,
      weil hidden ihn zum Scrollbereich machte und die Leiste dann mit dem Inhalt wegrollte. -->
 <div class="relative flex flex-1 flex-col w-full overflow-x-clip">
-	{#if !omniboxStore.isActive}
+	{#if !omniboxStore.belegt}
 		<!-- Nur im Ruhezustand: Sobald ein Konto geladen ist, füllt der Inhalt die Fläche,
 		     und ein Wasserzeichen dahinter wäre Unruhe statt Dekoration. -->
 		<LogoRelief />
@@ -137,49 +137,49 @@
 			     Die Pille liegt bündig an der Kante des Rollbereichs, außen würde er abgeschnitten.
 			     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
-				onsubmit={(e) => omniboxStore.submitAction(e, () => leserakte?.ladeNeu())}
-				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.isShaking
+				onsubmit={(e) => omniboxStore.fuehreAktionAus(e, () => leserakte?.ladeNeu())}
+				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.wackelt
 					? 'animate-shake'
 					: ''} {farbZustand}"
 			>
 				<OmniboxInput
-					bind:queryVal={omniboxStore.queryVal}
-					isDropdownOpen={omniboxStore.isDropdownOpen}
-					selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
-					totalDropdownItems={omniboxStore.totalDropdownItems}
-					isActive={omniboxStore.isActive}
+					bind:eingabe={omniboxStore.eingabe}
+					trefferlisteOffen={omniboxStore.trefferlisteOffen}
+					markierterTreffer={omniboxStore.markierterTreffer}
+					trefferAnzahl={omniboxStore.trefferAnzahl}
+					belegt={omniboxStore.belegt}
 					schnellrueckgabe={omniboxStore.schnellrueckgabe}
-					showCamera={omniboxStore.showCamera}
-					onInput={omniboxStore.handleInput}
-					onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
-					onIndexChange={(idx) => (omniboxStore.selectedDropdownIndex = idx)}
-					onEscape={() => (omniboxStore.isDropdownOpen = false)}
-					onToggleCamera={omniboxStore.showCamera ? stoppeKamera : starteKamera}
+					kameraOffen={omniboxStore.kameraOffen}
+					onInput={omniboxStore.verarbeiteEingabe}
+					onSelect={(idx) => omniboxStore.waehleTreffer(idx, onSelectBook)}
+					onIndexChange={(idx) => (omniboxStore.markierterTreffer = idx)}
+					onEscape={() => (omniboxStore.trefferlisteOffen = false)}
+					onToggleCamera={omniboxStore.kameraOffen ? stoppeKamera : starteKamera}
 				/>
 
-				{#if omniboxStore.isDropdownOpen && omniboxStore.totalDropdownItems > 0}
+				{#if omniboxStore.trefferlisteOffen && omniboxStore.trefferAnzahl > 0}
 					<OmniboxTreffer
-						unifiedSearchResults={omniboxStore.unifiedSearchResults}
-						selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
-						onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
+						suchTreffer={omniboxStore.suchTreffer}
+						markierterTreffer={omniboxStore.markierterTreffer}
+						onSelect={(idx) => omniboxStore.waehleTreffer(idx, onSelectBook)}
 					/>
 				{/if}
 			</form>
 			<OmniboxSchnellrueckgabe />
 
-			{#if omniboxStore.errorMessage}
+			{#if omniboxStore.fehler}
 				<div class="mt-1 w-full p-3 bg-error text-on-error text-center">
-					{omniboxStore.errorMessage}
+					{omniboxStore.fehler}
 				</div>
 			{/if}
 		</div>
 
 		<!-- HTML5 Kamera-Scanner (Mobile) -->
-		{#if omniboxStore.showCamera}
+		{#if omniboxStore.kameraOffen}
 			<ThekenKamera
-				stopCamera={stoppeKamera}
-				bind:queryVal={omniboxStore.queryVal}
-				submitAction={(e) => omniboxStore.submitAction(e, () => leserakte?.ladeNeu())}
+				{stoppeKamera}
+				bind:wert={omniboxStore.eingabe}
+				nachScan={(e) => omniboxStore.fuehreAktionAus(e, () => leserakte?.ladeNeu())}
 			/>
 		{/if}
 

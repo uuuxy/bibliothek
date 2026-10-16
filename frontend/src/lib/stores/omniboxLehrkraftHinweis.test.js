@@ -9,7 +9,7 @@ import 'fake-indexeddb/auto';
 // gescannter Ausweis ist ein LESER, und seine Art steht an ihm. Der Hinweis hängt an der Art,
 // nicht mehr an einem eigenen Antworttyp.
 //
-// Der Store meldet über seine eigene showToast → snackbars.addToast (omnibox.svelte.js), nicht
+// Der Store meldet über seine eigene zeigeMeldung → snackbars.addToast (omnibox.svelte.js), nicht
 // über den Inventur-Store. Beobachtet wird deshalb addToast am echten snackbars.
 vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
@@ -37,8 +37,8 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
 		vi.clearAllMocks();
-		omniboxStore.activeStudent = null;
-		omniboxStore.queryVal = '';
+		omniboxStore.aktiverLeser = null;
+		omniboxStore.eingabe = '';
 	});
 
 	it('meldet den geladenen Kollegen ohne Wörter aus dem Code', async () => {
@@ -52,11 +52,11 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 				})
 			})
 		);
-		omniboxStore.queryVal = 'L-4711';
+		omniboxStore.eingabe = 'L-4711';
 
-		await omniboxStore.submitAction(new Event('submit'));
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
 
-		expect(omniboxStore.activeStudent?.id).toBe('l1');
+		expect(omniboxStore.aktiverLeser?.id).toBe('l1');
 		const texte = addToast.mock.calls.map((aufruf) => String(aufruf[0]));
 		const hinweis = texte.find((t) => t.includes('Karl Lehmann'));
 		expect(hinweis, `kein Hinweis mit dem Namen, gemeldet: ${JSON.stringify(texte)}`).toBeTruthy();
@@ -76,11 +76,11 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 				})
 			})
 		);
-		omniboxStore.queryVal = 'S-1';
+		omniboxStore.eingabe = 'S-1';
 
-		await omniboxStore.submitAction(new Event('submit'));
+		await omniboxStore.fuehreAktionAus(new Event('submit'));
 
-		expect(omniboxStore.activeStudent?.id).toBe('s1');
+		expect(omniboxStore.aktiverLeser?.id).toBe('s1');
 		const texte = addToast.mock.calls.map((aufruf) => String(aufruf[0]));
 		expect(texte.find((t) => t.includes('Mia Muster'))).toBeFalsy();
 	});

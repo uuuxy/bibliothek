@@ -31,7 +31,7 @@ afterEach(() => {
 function neuerStore(leser = null) {
 	const store = createOmniboxStore();
 	stores.push(store);
-	store.activeStudent = leser;
+	store.aktiverLeser = leser;
 	return store;
 }
 
@@ -44,8 +44,8 @@ function neuerStore(leser = null) {
 async function scanneMitAntwort(store, antwort, scan = 'B-518-1') {
 	vi.mocked(apiClient.post).mockResolvedValue(antwort);
 	const neuLaden = vi.fn();
-	store.queryVal = scan;
-	await store.submitAction(null, neuLaden);
+	store.eingabe = scan;
+	await store.fuehreAktionAus(null, neuLaden);
 	return neuLaden;
 }
 
@@ -67,10 +67,10 @@ describe('Theke: ein Leser wird geladen', () => {
 
 		await scanne(store, { type: 'student', student: IDA, abholbereit: [{ titel: 'Mathe 7' }] });
 
-		expect(store.activeStudent).toEqual(IDA);
+		expect(store.aktiverLeser).toEqual(IDA);
 		expect(store.abholbereit).toEqual([{ titel: 'Mathe 7' }]);
-		expect(store.screenFlash).toBe('success');
-		expect(store.flashBorder).toBe('green');
+		expect(store.bildschirmLeuchten).toBe('success');
+		expect(store.randLeuchten).toBe('green');
 		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
 	});
 
@@ -82,7 +82,7 @@ describe('Theke: ein Leser wird geladen', () => {
 
 		await scanne(store, { type: 'student', student: OLE });
 
-		expect(store.activeStudent).toEqual(OLE);
+		expect(store.aktiverLeser).toEqual(OLE);
 		expect(store.abholbereit).toEqual([]);
 	});
 });
@@ -96,7 +96,7 @@ describe('Theke: Ausleihe', () => {
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 		expect(snackbars.addToast).toHaveBeenCalledWith('„Mathe 7" ausgeliehen an Ida.', 'success');
 		expect(neuLaden).toHaveBeenCalledTimes(1);
-		expect(store.flashBorder).toBe('green');
+		expect(store.randLeuchten).toBe('green');
 		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
 	});
 
@@ -121,8 +121,8 @@ describe('Theke: Ausleihe', () => {
 			auflagen_hinweis: { klasse: '07B', andere: [] }
 		});
 
-		expect(store.flashBorder).toBe('orange');
-		expect(store.screenFlash).toBe('warning');
+		expect(store.randLeuchten).toBe('orange');
+		expect(store.bildschirmLeuchten).toBe('warning');
 	});
 
 	it('nennt bei einem Gerät das Modell', async () => {
@@ -158,8 +158,8 @@ describe('Theke: Hinweis des Servers', () => {
 		const neuLaden = await scanne(store, { type: 'info', message: 'Buch reaktiviert' });
 
 		expect(neuLaden).toHaveBeenCalledTimes(1);
-		expect(store.screenFlash).toBe('success');
-		expect(store.flashBorder).toBe('green');
+		expect(store.bildschirmLeuchten).toBe('success');
+		expect(store.randLeuchten).toBe('green');
 		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
 	});
 });
@@ -172,10 +172,10 @@ describe('Theke: Gerät mit Zubehör', () => {
 
 		const neuLaden = await scanne(store, { type: 'geraet_check', geraet }, 'g-77');
 
-		expect(store.checklistAnfrage).toEqual({ query: 'G-77', geraet, overrideBlock: false });
+		expect(store.prueflisteAnfrage).toEqual({ query: 'G-77', geraet, overrideBlock: false });
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
-		expect(store.screenFlash).toBe('');
+		expect(store.bildschirmLeuchten).toBe('');
 		expect(playSoundSuccess).not.toHaveBeenCalled();
 	});
 });
@@ -186,7 +186,7 @@ describe('Theke: Suchtreffer statt Buchung', () => {
 
 		const neuLaden = await scanne(store, { type: 'search_results' }, 'Mathe');
 
-		expect(store.isShaking).toBe(true);
+		expect(store.wackelt).toBe(true);
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Bitte wähle ein Ergebnis aus der Liste.',
@@ -207,8 +207,8 @@ describe('Theke: der Server lehnt den Scan ab', () => {
 			text: async () => JSON.stringify({ error: 'Das Exemplar ist ausgesondert.' })
 		});
 
-		expect(store.errorMessage).toBe('Fehler: Das Exemplar ist ausgesondert.');
-		expect(store.flashBorder).toBe('red');
+		expect(store.fehler).toBe('Fehler: Das Exemplar ist ausgesondert.');
+		expect(store.randLeuchten).toBe('red');
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
 	});
@@ -228,9 +228,9 @@ describe('Theke: der Server lehnt den Scan ab', () => {
 		);
 
 		expect(playSoundError, 'das nächste Buch ginge an Ida').toHaveBeenCalledTimes(1);
-		expect(store.screenFlash).toBe('error');
+		expect(store.bildschirmLeuchten).toBe('error');
 		expect(playSoundSuccess).not.toHaveBeenCalled();
-		expect(store.activeStudent?.id).toBe('l-1');
+		expect(store.aktiverLeser?.id).toBe('l-1');
 	});
 });
 
@@ -240,11 +240,11 @@ describe('Theke: eine Antwort unbekannter Art', () => {
 
 		const neuLaden = await scanne(store, { type: 'kuenftige_art' });
 
-		expect(store.activeStudent).toEqual(IDA);
+		expect(store.aktiverLeser).toEqual(IDA);
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
-		expect(store.screenFlash).toBe('');
-		expect(store.isShaking).toBe(false);
+		expect(store.bildschirmLeuchten).toBe('');
+		expect(store.wackelt).toBe(false);
 		expect(playSoundSuccess).not.toHaveBeenCalled();
 	});
 });

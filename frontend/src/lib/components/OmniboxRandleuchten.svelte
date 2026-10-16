@@ -3,8 +3,11 @@
 </script>
 
 <!-- ── Screen-edge flash overlay (Apple-style full-border glow) ── -->
-{#if omniboxStore.screenFlash}
-	<div class="screen-flash screen-flash--{omniboxStore.screenFlash}" aria-hidden="true"></div>
+{#if omniboxStore.bildschirmLeuchten}
+	<div
+		class="screen-flash screen-flash--{omniboxStore.bildschirmLeuchten}"
+		aria-hidden="true"
+	></div>
 {/if}
 
 <style>

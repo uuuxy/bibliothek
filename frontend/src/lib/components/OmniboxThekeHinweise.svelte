@@ -27,7 +27,7 @@
 	import { auflagenHinweisText } from '../utils/auflagenText.js';
 </script>
 
-{#if omniboxStore.lastFremdrueckgabe}
+{#if omniboxStore.letzteFremdrueckgabe}
 	<!-- Eine Betonung, nicht vier: Der entscheidende Teil ist, auf wen NICHT
 	     gebucht wurde. Wenn jedes zweite Wort fett ist, betont keines mehr. -->
 	<div
@@ -35,21 +35,21 @@
 	>
 		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span
-			>Fremdrückgabe: Buch war auf {omniboxStore.lastFremdrueckgabe.vorbesitzerName} verbucht und wurde
+			>Fremdrückgabe: Buch war auf {omniboxStore.letzteFremdrueckgabe.vorbesitzerName} verbucht und wurde
 			dort zurückgegeben —
-			<strong class="font-medium">nicht auf {omniboxStore.activeStudent.vorname} gebucht</strong>.
+			<strong class="font-medium">nicht auf {omniboxStore.aktiverLeser.vorname} gebucht</strong>.
 			Erneut scannen, um es auszuleihen.</span
 		>
 	</div>
 {/if}
 
-{#if omniboxStore.lastAuflagenHinweis}
+{#if omniboxStore.letzterAuflagenHinweis}
 	<div
 		class="bg-warning-container text-on-warning-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 		role="status"
 	>
 		<BookCopy class="h-4 w-4 shrink-0" aria-hidden="true" />
-		<span>{auflagenHinweisText(omniboxStore.lastAuflagenHinweis)}</span>
+		<span>{auflagenHinweisText(omniboxStore.letzterAuflagenHinweis)}</span>
 	</div>
 {/if}
 
@@ -59,7 +59,7 @@
 	>
 		<PackageCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span>
-			Abholfach: Für {omniboxStore.activeStudent.vorname} liegt bereit —
+			Abholfach: Für {omniboxStore.aktiverLeser.vorname} liegt bereit —
 			{#each omniboxStore.abholbereit as v, i (i)}
 				{i > 0 ? ' · ' : ''}<strong class="font-medium">„{v.titel}"</strong>{v.bereitgestellt_bis
 					? ` (bis ${new Date(v.bereitgestellt_bis).toLocaleDateString('de-DE')})`
@@ -70,14 +70,14 @@
 	</div>
 {/if}
 
-{#if istKollegium(omniboxStore.activeStudent)}
+{#if istKollegium(omniboxStore.aktiverLeser)}
 	<div
 		class="bg-secondary-container text-on-secondary-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 	>
 		<GraduationCap class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span>
-			{leserArtText(omniboxStore.activeStudent.art)} geladen — gescannte Bücher gehen auf
-			<strong class="font-medium">{omniboxStore.activeStudent.vorname}</strong>, Frist ein Jahr.
+			{leserArtText(omniboxStore.aktiverLeser.art)} geladen — gescannte Bücher gehen auf
+			<strong class="font-medium">{omniboxStore.aktiverLeser.vorname}</strong>, Frist ein Jahr.
 		</span>
 	</div>
 {/if}

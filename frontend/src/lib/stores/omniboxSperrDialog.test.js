@@ -47,15 +47,15 @@ function antwort403(meldung, kopf = {}) {
 }
 
 async function scanne() {
-	omniboxStore.queryVal = 'B-4711';
-	await omniboxStore.submitAction(new Event('submit'));
+	omniboxStore.eingabe = 'B-4711';
+	await omniboxStore.fuehreAktionAus(new Event('submit'));
 }
 
 describe('Sperr-Dialog an der Theke', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		omniboxStore.blockAlert = null;
-		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		omniboxStore.sperrHinweis = null;
+		omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
 	});
 
 	it('öffnet für eine übergehbare Sperre, auch wenn der Text keins der alten Wörter enthält', async () => {
@@ -69,10 +69,10 @@ describe('Sperr-Dialog an der Theke', () => {
 		);
 		await scanne();
 		expect(
-			omniboxStore.blockAlert,
+			omniboxStore.sperrHinweis,
 			'Schadens-Sperre ohne Dialog — kein Override möglich'
 		).not.toBeNull();
-		expect(omniboxStore.blockAlert?.query).toBe('B-4711');
+		expect(omniboxStore.sperrHinweis?.query).toBe('B-4711');
 	});
 
 	it('bleibt zu, wenn nur der Text nach Sperre klingt', async () => {
@@ -80,13 +80,13 @@ describe('Sperr-Dialog an der Theke', () => {
 			antwort403('ausleihe für diese/n Schüler/in ist gesperrt: Manuelle Sperre')
 		);
 		await scanne();
-		expect(omniboxStore.blockAlert, 'Dialog am Wortlaut statt am Merkmal').toBeNull();
+		expect(omniboxStore.sperrHinweis, 'Dialog am Wortlaut statt am Merkmal').toBeNull();
 	});
 
 	it('bleibt zu bei einem 403, das keine Sperre ist', async () => {
 		post.mockResolvedValue(antwort403('Keine Berechtigung für diese Aktion'));
 		await scanne();
-		expect(omniboxStore.blockAlert).toBeNull();
+		expect(omniboxStore.sperrHinweis).toBeNull();
 	});
 
 	// Seit dem 24.09.2026 trägt eine Sperre am Leser ihr eigenes Merkmal: Der Dialog öffnet
@@ -96,7 +96,7 @@ describe('Sperr-Dialog an der Theke', () => {
 			antwort403('die ausleihe ist gesperrt: Manuelle Sperre', { 'X-Sperre': 'leser' })
 		);
 		await scanne();
-		expect(omniboxStore.blockAlert?.art).toBe('leser');
+		expect(omniboxStore.sperrHinweis?.art).toBe('leser');
 	});
 
 	it('merkt sich beim Hinweis die Art „uebergehbar"', async () => {
@@ -106,7 +106,7 @@ describe('Sperr-Dialog an der Theke', () => {
 			})
 		);
 		await scanne();
-		expect(omniboxStore.blockAlert?.art).toBe('uebergehbar');
+		expect(omniboxStore.sperrHinweis?.art).toBe('uebergehbar');
 	});
 });
 
@@ -116,8 +116,8 @@ describe('Sperr-Dialog an der Theke', () => {
 describe('Zubehör-Liste nach dem Übergehen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		omniboxStore.checklistAnfrage = null;
-		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		omniboxStore.prueflisteAnfrage = null;
+		omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
 	});
 
 	it('merkt sich override_block des Scans', async () => {
@@ -125,9 +125,9 @@ describe('Zubehör-Liste nach dem Übergehen', () => {
 			ok: true,
 			json: async () => ({ type: 'geraet_check', geraet: { barcode_id: 'G-1', zubehoer: 'Kabel' } })
 		});
-		omniboxStore.queryVal = 'G-1';
-		await omniboxStore.submitAction(null, null, true);
-		expect(omniboxStore.checklistAnfrage?.overrideBlock).toBe(true);
+		omniboxStore.eingabe = 'G-1';
+		await omniboxStore.fuehreAktionAus(null, null, true);
+		expect(omniboxStore.prueflisteAnfrage?.overrideBlock).toBe(true);
 	});
 
 	it('ohne Übergehen bleibt es aus', async () => {
@@ -135,8 +135,8 @@ describe('Zubehör-Liste nach dem Übergehen', () => {
 			ok: true,
 			json: async () => ({ type: 'geraet_check', geraet: { barcode_id: 'G-1', zubehoer: 'Kabel' } })
 		});
-		omniboxStore.queryVal = 'G-1';
-		await omniboxStore.submitAction(null, null);
-		expect(omniboxStore.checklistAnfrage?.overrideBlock).toBe(false);
+		omniboxStore.eingabe = 'G-1';
+		await omniboxStore.fuehreAktionAus(null, null);
+		expect(omniboxStore.prueflisteAnfrage?.overrideBlock).toBe(false);
 	});
 });

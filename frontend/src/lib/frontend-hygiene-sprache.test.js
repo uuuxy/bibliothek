@@ -266,7 +266,7 @@ const NAMEN_BESTAND = {
 	'src/lib/stores/mahnwesenMail.svelte.js': 1,
 	'src/lib/stores/mahnwesenPdf.svelte.js': 2,
 	'src/lib/stores/offlineSync.svelte.js': 3,
-	'src/lib/stores/omnibox.svelte.js': 20,
+	'src/lib/stores/omnibox.svelte.js': 1,
 	'src/lib/useLeserakteFormular.svelte.js': 3
 };
 

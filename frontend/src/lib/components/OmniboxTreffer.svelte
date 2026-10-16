@@ -2,7 +2,7 @@
 	import LeserTreffer from './omnibox/LeserTreffer.svelte';
 	import TitelTreffer from './omnibox/TitelTreffer.svelte';
 
-	let { unifiedSearchResults, selectedDropdownIndex, onSelect } = $props();
+	let { suchTreffer, markierterTreffer, onSelect } = $props();
 
 	/**
 	 * Beschriftet eine Ergebnisgruppe. Die Liste ist serverseitig auf 10 begrenzt —
@@ -28,29 +28,29 @@
 	aria-label="Suchergebnisse"
 	class="absolute top-full left-0 right-0 mt-2 z-50 max-h-[60vh] overflow-y-auto overscroll-contain bg-surface-container rounded-sm shadow-xl py-2"
 >
-	{#if unifiedSearchResults.students.length > 0}
+	{#if suchTreffer.students.length > 0}
 		<div class="px-4 pt-3 pb-2 text-xs font-medium text-on-surface-variant">
 			{gruppenTitel(
 				'Leser',
-				unifiedSearchResults.students.length,
-				unifiedSearchResults.studentsTotal ?? unifiedSearchResults.students.length
+				suchTreffer.students.length,
+				suchTreffer.studentsTotal ?? suchTreffer.students.length
 			)}
 		</div>
-		{#each unifiedSearchResults.students as student, i (i)}
-			<LeserTreffer {student} index={i} selected={selectedDropdownIndex === i} {onSelect} />
+		{#each suchTreffer.students as student, i (i)}
+			<LeserTreffer {student} index={i} selected={markierterTreffer === i} {onSelect} />
 		{/each}
 	{/if}
-	{#if unifiedSearchResults.books.length > 0}
+	{#if suchTreffer.books.length > 0}
 		<div class="px-4 pt-3 pb-2 text-xs font-medium text-on-surface-variant">
 			{gruppenTitel(
 				'Bücher',
-				unifiedSearchResults.books.length,
-				unifiedSearchResults.booksTotal ?? unifiedSearchResults.books.length
+				suchTreffer.books.length,
+				suchTreffer.booksTotal ?? suchTreffer.books.length
 			)}
 		</div>
-		{#each unifiedSearchResults.books as book, j (j)}
-			{@const index = j + unifiedSearchResults.students.length}
-			<TitelTreffer {book} {index} selected={selectedDropdownIndex === index} {onSelect} />
+		{#each suchTreffer.books as book, j (j)}
+			{@const index = j + suchTreffer.students.length}
+			<TitelTreffer {book} {index} selected={markierterTreffer === index} {onSelect} />
 		{/each}
 	{/if}
 </div>

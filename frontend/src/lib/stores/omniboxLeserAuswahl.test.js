@@ -32,8 +32,8 @@ function geladen(leser) {
 // Die Auswahl eines Treffers an der Theke muss den LESER laden — auch einen Kollegen
 // ohne Ausweisnummer.
 //
-// Bis zum 16.09.2026 schrieb selectDropdownItem die Ausweisnummer in die Scanleiste und
-// schickte sie los. Bei einem Kollegen aus der Selbstanmeldung ist die leer: submitAction
+// Bis zum 16.09.2026 schrieb waehleTreffer die Ausweisnummer in die Scanleiste und
+// schickte sie los. Bei einem Kollegen aus der Selbstanmeldung ist die leer: fuehreAktionAus
 // bricht bei leerer Eingabe ab, und der Klick tat sichtbar gar nichts — kein Profil,
 // keine Meldung. Seitdem geht die ID hinaus, die jeder Treffer hat.
 describe('Omnibox: Auswahl aus der Trefferliste', () => {
@@ -49,12 +49,12 @@ describe('Omnibox: Auswahl aus der Trefferliste', () => {
 		vi.mocked(apiFetch).mockImplementation(async () => trefferliste(leser));
 		vi.mocked(apiClient.post).mockImplementation(async () => geladen(leser));
 
-		store.queryVal = 'Wendlandt';
-		store.handleInput();
+		store.eingabe = 'Wendlandt';
+		store.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
-		expect(store.isDropdownOpen, 'die Trefferliste ist gar nicht aufgegangen').toBe(true);
+		expect(store.trefferlisteOffen, 'die Trefferliste ist gar nicht aufgegangen').toBe(true);
 
-		store.selectDropdownItem(0, null);
+		store.waehleTreffer(0, null);
 		await vi.advanceTimersByTimeAsync(0);
 		return store;
 	}
@@ -75,7 +75,7 @@ describe('Omnibox: Auswahl aus der Trefferliste', () => {
 			/** @type {any} */ (koerper).query,
 			'ohne Ausweisnummer ging eine leere Eingabe hinaus — der Klick tat nichts'
 		).toBe('leser:l1');
-		expect(/** @type {any} */ (store.activeStudent)?.id).toBe('l1');
+		expect(/** @type {any} */ (store.aktiverLeser)?.id).toBe('l1');
 	});
 
 	it('lädt auch einen Schüler über seine ID, nicht über die Ausweisnummer', async () => {

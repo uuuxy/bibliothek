@@ -8,7 +8,7 @@
 	 * Zubehör-Checkliste beim Geräte-Scan: Der Server unterbricht mit
 	 * type=geraet_check; erst die Bestätigung hier schickt den Scan mit
 	 * confirmed_checklist erneut — dieselbe Mechanik wie der Sperr-Override. War der
-	 * Scan schon ein Übergehen, geht override_block mit (checklistAnfrage.overrideBlock).
+	 * Scan schon ein Übergehen, geht override_block mit (prueflisteAnfrage.overrideBlock).
 	 * Gilt für Ausleihe UND Rückgabe. Fehlt ein Teil bei der Rückgabe, wird abgebrochen;
 	 * eine Forderung für ein Gerät legt das Programm noch nicht an (docs/ARCHITEKTUR.md 11.5).
 	 *
@@ -19,26 +19,26 @@
 	let { onReload } = $props();
 
 	const teile = $derived(
-		(omniboxStore.checklistAnfrage?.geraet?.zubehoer ?? '')
+		(omniboxStore.prueflisteAnfrage?.geraet?.zubehoer ?? '')
 			.split(',')
 			.map((/** @type {string} */ t) => t.trim())
 			.filter(Boolean)
 	);
 
 	function bestaetigen() {
-		const anfrage = omniboxStore.checklistAnfrage;
+		const anfrage = omniboxStore.prueflisteAnfrage;
 		if (!anfrage) return;
-		omniboxStore.checklistAnfrage = null;
-		omniboxStore.queryVal = anfrage.query;
-		omniboxStore.submitAction(null, onReload, anfrage.overrideBlock, true);
+		omniboxStore.prueflisteAnfrage = null;
+		omniboxStore.eingabe = anfrage.query;
+		omniboxStore.fuehreAktionAus(null, onReload, anfrage.overrideBlock, true);
 	}
 
 	function abbrechen() {
-		omniboxStore.checklistAnfrage = null;
+		omniboxStore.prueflisteAnfrage = null;
 	}
 </script>
 
-{#if omniboxStore.checklistAnfrage}
+{#if omniboxStore.prueflisteAnfrage}
 	<Dialog open={true} onclose={abbrechen} ebene="oberst" beschriftetDurch="zubehoer-titel">
 		<div class="p-8">
 			<div class="flex items-center gap-3 mb-2">
@@ -46,8 +46,8 @@
 				<h2 id="zubehoer-titel" class="text-xl font-bold text-on-surface">Zubehör prüfen</h2>
 			</div>
 			<p class="text-sm text-on-surface-variant mb-4">
-				<strong>{omniboxStore.checklistAnfrage.geraet?.modellname}</strong>
-				({omniboxStore.checklistAnfrage.geraet?.barcode_id}) — bitte prüfen, ob alles dabei ist:
+				<strong>{omniboxStore.prueflisteAnfrage.geraet?.modellname}</strong>
+				({omniboxStore.prueflisteAnfrage.geraet?.barcode_id}) — bitte prüfen, ob alles dabei ist:
 			</p>
 
 			<ul class="mb-6 space-y-2">

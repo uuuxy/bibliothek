@@ -22,9 +22,9 @@ import { uiStore } from './uiStore.svelte.js';
 describe('Theken-Übergabe', () => {
 	beforeEach(() => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
-		omniboxStore.activeStudent = { id: 's1', vorname: 'Mia', nachname: 'Muster' };
-		omniboxStore.queryVal = 'Mül';
-		omniboxStore.blockAlert = {
+		omniboxStore.aktiverLeser = { id: 's1', vorname: 'Mia', nachname: 'Muster' };
+		omniboxStore.eingabe = 'Mül';
+		omniboxStore.sperrHinweis = {
 			message: 'Gesperrt: Ausweismissbrauch',
 			query: 'S-1',
 			art: 'leser'
@@ -34,16 +34,16 @@ describe('Theken-Übergabe', () => {
 
 	it('Abmelden leert die Theke — kein Profil für den nächsten Bediener', () => {
 		authStore.handleLogout();
-		expect(omniboxStore.activeStudent, 'Schülerprofil überlebt das Abmelden').toBeNull();
-		expect(omniboxStore.blockAlert, 'Sperrgrund (PII) überlebt das Abmelden').toBeNull();
-		expect(omniboxStore.queryVal).toBe('');
+		expect(omniboxStore.aktiverLeser, 'Schülerprofil überlebt das Abmelden').toBeNull();
+		expect(omniboxStore.sperrHinweis, 'Sperrgrund (PII) überlebt das Abmelden').toBeNull();
+		expect(omniboxStore.eingabe).toBe('');
 		expect(uiStore.requestedStudentId).toBeNull();
 	});
 
 	it('der Inaktivitäts-Wächter räumt dieselbe Liste', () => {
 		leerlaufSperre.thekeLeeren();
-		expect(omniboxStore.activeStudent).toBeNull();
-		expect(omniboxStore.blockAlert).toBeNull();
-		expect(omniboxStore.queryVal).toBe('');
+		expect(omniboxStore.aktiverLeser).toBeNull();
+		expect(omniboxStore.sperrHinweis).toBeNull();
+		expect(omniboxStore.eingabe).toBe('');
 	});
 });

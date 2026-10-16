@@ -22,7 +22,7 @@
 	// Wie Littera: Einen gesperrten Leser hebt man in den Leserdaten auf, Hinweise wie das
 	// Gebührenlimit übersteuert man im Verleih. Höchstens zwei Aktionen, die bestätigende
 	// oben (M3, Dialogs: „Dialogs should contain a maximum of two actions").
-	const amLeser = $derived(omniboxStore.blockAlert?.art === 'leser');
+	const amLeser = $derived(omniboxStore.sperrHinweis?.art === 'leser');
 	let fehler = $state('');
 
 	// Der erste Fokus steht auf „Abbrechen", wie im BestaetigungsDialog bei einer gefährlichen
@@ -33,30 +33,30 @@
 	/** @type {HTMLButtonElement | undefined} */
 	let abbruchKnopf = $state();
 	$effect(() => {
-		if (!omniboxStore.blockAlert) return;
+		if (!omniboxStore.sperrHinweis) return;
 		// Der Dialog rendert im selben Tick; der Fokus braucht das fertige DOM.
 		queueMicrotask(() => abbruchKnopf?.focus());
 	});
 
 	function schliessen() {
-		omniboxStore.blockAlert = null;
+		omniboxStore.sperrHinweis = null;
 		fehler = '';
 	}
 
 	/** Den Scan wiederholen; mit uebergehen als override_block. @param {boolean} uebergehen */
 	function nochmal(uebergehen) {
-		const q = omniboxStore.blockAlert?.query;
+		const q = omniboxStore.sperrHinweis?.query;
 		schliessen();
 		if (!q) return;
-		omniboxStore.queryVal = q;
-		omniboxStore.submitAction(null, onReload, uebergehen);
+		omniboxStore.eingabe = q;
+		omniboxStore.fuehreAktionAus(null, onReload, uebergehen);
 	}
 
 	// Aufheben über dieselbe Tür wie der Knopf in der Akte (PATCH …/lock, mit Protokoll).
 	// Danach geht der Scan ohne Übergehen durch. Scheitert es, steht der Grund im Dialog
 	// (M3: Fehler der bestätigenden Aktion erscheinen im Dialog).
 	async function hebeSperreAuf() {
-		const leser = omniboxStore.activeStudent;
+		const leser = omniboxStore.aktiverLeser;
 		if (!leser?.id) return;
 		fehler = '';
 		try {
@@ -79,7 +79,7 @@
 	}
 </script>
 
-{#if omniboxStore.blockAlert}
+{#if omniboxStore.sperrHinweis}
 	<!-- Der rote Schleier gehört zum Alarm: der dunkelste Ton der Fehlerfarbe statt des
 	     schwarzen scrim. -->
 	<div
@@ -100,7 +100,7 @@
 			<h2 id="omnibox-block-titel" class="text-2xl font-extrabold text-error mb-2">
 				Ausleihe blockiert
 			</h2>
-			<p class="text-on-surface-variant font-medium mb-6">{omniboxStore.blockAlert.message}</p>
+			<p class="text-on-surface-variant font-medium mb-6">{omniboxStore.sperrHinweis.message}</p>
 
 			<div class="space-y-3">
 				{#if fehler}

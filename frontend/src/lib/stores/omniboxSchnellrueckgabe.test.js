@@ -62,8 +62,8 @@ afterEach(() => {
 
 /** @param {ReturnType<typeof createOmniboxStore>} store @param {string} code */
 async function scanne(store, code) {
-	store.queryVal = code;
-	await store.submitAction(null, null);
+	store.eingabe = code;
+	await store.fuehreAktionAus(null, null);
 }
 
 /** Der Rumpf der letzten Anfrage an die Theken-Tür. @returns {any} */
@@ -81,7 +81,7 @@ describe('Schnellrückgabe', () => {
 
 		await scanne(theke, 'B-1');
 
-		expect(theke.activeStudent, 'die Rückgabe hat einen Leser geladen').toBeNull();
+		expect(theke.aktiverLeser, 'die Rückgabe hat einen Leser geladen').toBeNull();
 		expect(theke.schnellrueckgabe).toBe(true);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'„Natura 2" zurückgegeben, war bei Mia Muster (07B).',
@@ -112,7 +112,7 @@ describe('Schnellrückgabe', () => {
 		await scanne(theke, 'B-1');
 		await scanne(theke, 'B-2');
 
-		expect(theke.activeStudent?.id).toBe('leser-1');
+		expect(theke.aktiverLeser?.id).toBe('leser-1');
 		expect(letzteAnfrage().active_leser_id).toBe('leser-1');
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'„Natura 2" erfolgreich zurückgegeben.',
@@ -122,12 +122,12 @@ describe('Schnellrückgabe', () => {
 
 	it('Einschalten lässt den geladenen Leser und den gemerkten Ausweis fallen', async () => {
 		const theke = neueTheke();
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 		theke.offlineAusweis = 'S-10001';
 
 		theke.schalteSchnellrueckgabe(true);
 
-		expect(theke.activeStudent).toBeNull();
+		expect(theke.aktiverLeser).toBeNull();
 		expect(theke.offlineAusweis).toBe('');
 		vi.mocked(apiClient.post).mockResolvedValue(
 			antwort({ type: 'rueckgabe', book: BUCH, student: MIA })
@@ -144,7 +144,7 @@ describe('Schnellrückgabe', () => {
 		await scanne(theke, 'S-10001');
 
 		expect(theke.schnellrueckgabe).toBe(false);
-		expect(theke.activeStudent?.id).toBe('leser-1');
+		expect(theke.aktiverLeser?.id).toBe('leser-1');
 	});
 
 	it('ein ohne Netz gemerkter Ausweis beendet sie', async () => {
@@ -162,7 +162,7 @@ describe('Schnellrückgabe', () => {
 		const theke = neueTheke();
 		theke.schalteSchnellrueckgabe(true);
 
-		theke.activeStudent = MIA;
+		theke.aktiverLeser = MIA;
 
 		expect(theke.schnellrueckgabe).toBe(false);
 	});
@@ -177,8 +177,8 @@ describe('Schnellrückgabe', () => {
 		await scanne(theke, 'B-FREI');
 
 		expect(playSoundError).toHaveBeenCalledTimes(1);
-		expect(theke.screenFlash).toBe('error');
-		expect(theke.errorMessage).toContain('nicht ausgeliehen');
+		expect(theke.bildschirmLeuchten).toBe('error');
+		expect(theke.fehler).toContain('nicht ausgeliehen');
 		expect(theke.schnellrueckgabe).toBe(true);
 	});
 

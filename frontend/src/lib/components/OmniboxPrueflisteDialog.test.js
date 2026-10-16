@@ -28,7 +28,7 @@ afterEach(() => omniboxStore.stoppeZeitgeber());
 describe('OmniboxPrueflisteDialog', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ type: 'info' }) })
 		);
@@ -36,7 +36,7 @@ describe('OmniboxPrueflisteDialog', () => {
 
 	for (const overrideBlock of [true, false]) {
 		it(`schickt override_block=${overrideBlock} mit der Bestätigung`, async () => {
-			omniboxStore.checklistAnfrage = {
+			omniboxStore.prueflisteAnfrage = {
 				query: 'G-1',
 				geraet: { modellname: 'Tablet', barcode_id: 'G-1', zubehoer: 'Kabel' },
 				overrideBlock

@@ -21,12 +21,12 @@ import { uiStore } from './uiStore.svelte.js';
  * Der Kamera-Scanner dekodiert den Stream unabhängig von der Sichtbarkeit — lief er
  * weiter, buchte ein vor die Kamera gehaltener Barcode hinter der Sperre (Prüfung
  * 22.08.2026, A6). Stop ist fire-and-forget; der Store-Zeiger wird sofort genullt,
- * damit kein Decode-Callback mehr in submitAction läuft.
+ * damit kein Decode-Callback mehr in fuehreAktionAus läuft.
  */
 export function thekeLeeren() {
-	const scanner = omniboxStore.cameraScanner;
-	omniboxStore.cameraScanner = null;
-	omniboxStore.showCamera = false;
+	const scanner = omniboxStore.kamera;
+	omniboxStore.kamera = null;
+	omniboxStore.kameraOffen = false;
 	if (scanner) {
 		try {
 			Promise.resolve(scanner.stop()).catch(() => {});
@@ -34,7 +34,7 @@ export function thekeLeeren() {
 			/* Scanner war schon aus */
 		}
 	}
-	omniboxStore.activeStudent = null;
+	omniboxStore.aktiverLeser = null;
 	// Auch der ohne Netz gemerkte Ausweis geht mit: Er ist zwar nur eine Nummer, aber er
 	// entscheidet, WEM die naechsten Buecher zugeschrieben werden. Bliebe er stehen,
 	// liehe der naechste Bediener auf die Karte des vorigen aus.
@@ -42,9 +42,9 @@ export function thekeLeeren() {
 	// Die Schnellrückgabe endet mit: Wer nach der Pause an die Theke kommt, findet sie im
 	// gewöhnlichen Betrieb vor.
 	omniboxStore.schalteSchnellrueckgabe(false);
-	omniboxStore.queryVal = '';
-	omniboxStore.isDropdownOpen = false;
-	omniboxStore.unifiedSearchResults = {
+	omniboxStore.eingabe = '';
+	omniboxStore.trefferlisteOffen = false;
+	omniboxStore.suchTreffer = {
 		students: [],
 		books: [],
 		studentsTotal: 0,
@@ -53,9 +53,9 @@ export function thekeLeeren() {
 	// Die Meldungsliste nennt Namen und Klassen: Sie geht mit zu, wenn die Theke geleert
 	// wird — sonst stünde sie nach fünf Minuten Pause offen vor dem nächsten Bediener.
 	nachbuchMeldungen.schliesse();
-	omniboxStore.vormerkungAlert = null;
-	omniboxStore.blockAlert = null;
-	omniboxStore.checklistAnfrage = null;
+	omniboxStore.vormerkungHinweis = null;
+	omniboxStore.sperrHinweis = null;
+	omniboxStore.prueflisteAnfrage = null;
 	uiStore.requestedStudentId = null;
 	uiStore.requestedStudentReiter = null;
 }

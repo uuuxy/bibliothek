@@ -32,8 +32,8 @@ import { uiStore } from './uiStore.svelte.js';
 describe('Zeitgeber der Theke', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
-		omniboxStore.blockAlert = null;
-		omniboxStore.showCamera = false;
+		omniboxStore.sperrHinweis = null;
+		omniboxStore.kameraOffen = false;
 	});
 	afterEach(() => {
 		omniboxStore.stoppeZeitgeber();
@@ -41,9 +41,9 @@ describe('Zeitgeber der Theke', () => {
 	});
 
 	it('stoppt jeden laufenden Zeitgeber auf einen Schlag', () => {
-		omniboxStore.triggerScreenFlash('success');
-		omniboxStore.triggerShake();
-		omniboxStore.triggerFlash('green');
+		omniboxStore.leuchteBildschirm('success');
+		omniboxStore.wackle();
+		omniboxStore.leuchteRand('green');
 		uiStore.beimWechselZurTheke?.();
 		expect(vi.getTimerCount(), 'die Probe misst nichts, wenn gar kein Timer läuft').toBeGreaterThan(
 			0
@@ -82,12 +82,12 @@ describe('Zeitgeber der Theke', () => {
 		document.body.appendChild(feld);
 		try {
 			uiStore.beimWechselZurTheke?.();
-			omniboxStore.blockAlert = { message: 'gesperrt', query: 'B-1', art: 'leser' };
+			omniboxStore.sperrHinweis = { message: 'gesperrt', query: 'B-1', art: 'leser' };
 			vi.advanceTimersByTime(100);
 			expect(document.activeElement, 'der Zeitgeber zog den Fokus aus dem Dialog').not.toBe(feld);
 
 			// Gegenprobe: ohne Dialog springt der Fokus ins Feld — sonst misst der Test nichts.
-			omniboxStore.blockAlert = null;
+			omniboxStore.sperrHinweis = null;
 			uiStore.beimWechselZurTheke?.();
 			vi.advanceTimersByTime(100);
 			expect(document.activeElement).toBe(feld);

@@ -44,8 +44,8 @@ async function scanne(data) {
 	vi.mocked(apiClient.post).mockResolvedValue(antwort(data));
 	const store = createOmniboxStore();
 	stores.push(store);
-	store.queryVal = 'B-ZURUECK-1';
-	await store.submitAction(null, null);
+	store.eingabe = 'B-ZURUECK-1';
+	await store.fuehreAktionAus(null, null);
 	return store;
 }
 

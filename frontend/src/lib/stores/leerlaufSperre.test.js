@@ -51,8 +51,8 @@ describe('leerlaufSperre', () => {
 		lock = new IdleLock();
 		lock.thekeLeerenMinuten = 1;
 		lock.sperreMinuten = 3;
-		omniboxStore.activeStudent = { id: 's1', vorname: 'Mia' };
-		omniboxStore.queryVal = 'Mü';
+		omniboxStore.aktiverLeser = { id: 's1', vorname: 'Mia' };
+		omniboxStore.eingabe = 'Mü';
 		authStore.currentUser = { email: 'theke@schule.example', rolle: 'mitarbeiter' };
 		netz.isOffline = false;
 	});
@@ -65,10 +65,10 @@ describe('leerlaufSperre', () => {
 	it('leert die Theke nach der kurzen Frist, sperrt nach der langen', () => {
 		lock.start();
 		vi.advanceTimersByTime(59_000);
-		expect(omniboxStore.activeStudent).not.toBeNull();
+		expect(omniboxStore.aktiverLeser).not.toBeNull();
 		vi.advanceTimersByTime(2_000);
-		expect(omniboxStore.activeStudent).toBeNull();
-		expect(omniboxStore.queryVal).toBe('');
+		expect(omniboxStore.aktiverLeser).toBeNull();
+		expect(omniboxStore.eingabe).toBe('');
 		expect(lock.gesperrt).toBe(false);
 		vi.advanceTimersByTime(2 * 60_000);
 		expect(lock.gesperrt).toBe(true);
@@ -81,7 +81,7 @@ describe('leerlaufSperre', () => {
 			window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
 		}
 		// 250 s vergangen, aber nie 60 s am Stück: Theke steht noch, keine Sperre.
-		expect(omniboxStore.activeStudent).not.toBeNull();
+		expect(omniboxStore.aktiverLeser).not.toBeNull();
 		expect(lock.gesperrt).toBe(false);
 	});
 
@@ -90,7 +90,7 @@ describe('leerlaufSperre', () => {
 		lock.sperreMinuten = 0;
 		lock.start();
 		vi.advanceTimersByTime(60 * 60_000);
-		expect(omniboxStore.activeStudent).not.toBeNull();
+		expect(omniboxStore.aktiverLeser).not.toBeNull();
 		expect(lock.gesperrt).toBe(false);
 	});
 
@@ -98,7 +98,7 @@ describe('leerlaufSperre', () => {
 		lock.start();
 		vi.advanceTimersByTime(3 * 60_000 + 10);
 		expect(lock.gesperrt).toBe(true);
-		expect(omniboxStore.activeStudent).toBeNull();
+		expect(omniboxStore.aktiverLeser).toBeNull();
 		window.dispatchEvent(new MouseEvent('pointerdown'));
 		vi.advanceTimersByTime(10 * 60_000);
 		expect(lock.gesperrt).toBe(true);
@@ -139,13 +139,13 @@ describe('leerlaufSperre', () => {
 
 	it('Theke leeren stoppt den Kamera-Scanner — er würde sonst hinter der Sperre weiterbuchen', () => {
 		const stop = vi.fn(() => Promise.resolve());
-		omniboxStore.cameraScanner = /** @type {any} */ ({ stop });
-		omniboxStore.showCamera = true;
+		omniboxStore.kamera = /** @type {any} */ ({ stop });
+		omniboxStore.kameraOffen = true;
 		lock.start();
 		vi.advanceTimersByTime(60_000 + 10);
 		expect(stop).toHaveBeenCalledTimes(1);
-		expect(omniboxStore.cameraScanner).toBeNull();
-		expect(omniboxStore.showCamera).toBe(false);
+		expect(omniboxStore.kamera).toBeNull();
+		expect(omniboxStore.kameraOffen).toBe(false);
 	});
 
 	it('lädt die Fristen neu, wenn der Server sitzungsfristen signalisiert', async () => {
@@ -179,9 +179,9 @@ describe('leerlaufSperre', () => {
 		expect(lock.gesperrt).toBe(true);
 		lock.stop();
 		expect(lock.gesperrt).toBe(false);
-		omniboxStore.activeStudent = { id: 's2' };
+		omniboxStore.aktiverLeser = { id: 's2' };
 		vi.advanceTimersByTime(60 * 60_000);
-		expect(omniboxStore.activeStudent).not.toBeNull();
+		expect(omniboxStore.aktiverLeser).not.toBeNull();
 	});
 
 	// Ohne Netz sperrt die Theke nicht: Der Sperrbildschirm öffnet nur mit dem Passwort
@@ -194,8 +194,8 @@ describe('leerlaufSperre', () => {
 			vi.advanceTimersByTime(4 * 60_000);
 			// Der Datenschutz-Teil greift weiter: Der naechste Bediener sieht das Profil
 			// des vorigen nicht.
-			expect(omniboxStore.activeStudent).toBeNull();
-			expect(omniboxStore.queryVal).toBe('');
+			expect(omniboxStore.aktiverLeser).toBeNull();
+			expect(omniboxStore.eingabe).toBe('');
 			// Verdecken ohne Aufschliessen waere Aussperren.
 			expect(lock.gesperrt).toBe(false);
 		});
