@@ -486,9 +486,15 @@ Ordner des Pakets und für die Form `paket.Name`.
   `edit`, `book`, `user`, `student`. Nicht gezählt: Props, Schlüssel von Objekten und die
   Methoden der Stores (`addToast`, `loadClassGroups`), die Kennungen der Bildschirme in
   `routenTabelle.js` (`students_dir`, `settings`, `inventory`, `orders`, `graduates`, `stats`)
-  und die Beschriftung „Admin-Audit-Log" im Reiter der System-Logs. Nächster Schritt: Bereich
-  für Bereich umbenennen und den Bestand senken; der Bau bleibt dabei bis auf Klassennamen mit
-  Geltungsbereich gleich.
+  und die Beschriftung „Admin-Audit-Log" im Reiter der System-Logs. Erledigt sind am
+  16.10.2026 zwei Bereiche, 56 Funktionen (`handle…` und lokale Funktionen); der Bestand steht
+  bei 426 Erklärungen in 120 Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich,
+  sobald die Namen zurückgesetzt sind, die als Schlüssel stehen bleiben (der Bau ist
+  deterministisch). Nächster Schritt: die Zustandsvariablen (`error`, `loading`, `selected`,
+  `data`) und die Methoden der Stores. Für sie trägt Ersetzen nach Wortgrenze nicht: Am
+  16.10.2026 traf es Klassen (`text-error`), das Attribut `loading="lazy"` und Schlüssel, das
+  Bündel zeigte es an. Dafür ein Werkzeug, das Bezeichner erkennt (Umbenennen über den
+  Language Server von Svelte), Beleg wie bisher am Bündel.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und
