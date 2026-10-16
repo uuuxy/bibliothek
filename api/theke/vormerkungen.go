@@ -1,6 +1,7 @@
 package theke
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -17,9 +18,23 @@ type vormerkungAnfrage struct {
 	SchuelerID string `json:"schueler_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 }
 
+// vormerkungsListe liefert die Vormerkungen eines Titels oder eines Schülers, die ältesten zuerst
+// (repository.VormerkungsAbfragen); ohne beide Filter repository.ErrVormerkungFilterFehlt.
+type vormerkungsListe interface {
+	LadeListe(ctx context.Context, titelID, schuelerID string) ([]repository.Vormerkung, error)
+}
+
+// vormerkungsAnlage legt eine Vormerkung an und liefert ihre Kennung
+// (repository.VormerkungsAbfragen). Ein fachlicher Konflikt kommt als
+// repository.ErrVormerkungBereitsVorhanden, repository.ErrTitelBereitsAusgeliehen oder
+// repository.ErrVormerkungNurFuerSchueler zurück.
+type vormerkungsAnlage interface {
+	LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error)
+}
+
 // Vormerkungen liefert die Vormerkungen eines Titels oder eines Schülers
 // (GET /api/vormerkungen?titel_id=…&schueler_id=…).
-func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
+func (t *Tueren) Vormerkungen(vormerkungsAbfragen vormerkungsListe) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
@@ -51,7 +66,7 @@ func (t *Tueren) Vormerkungen(vormerkungsAbfragen repository.VormerkungsAbfragen
 }
 
 // VormerkungAnlegen legt eine Vormerkung an (POST /api/vormerkungen).
-func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
+func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen vormerkungsAnlage) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req vormerkungAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
@@ -80,7 +95,7 @@ func (t *Tueren) VormerkungAnlegen(vormerkungsAbfragen repository.VormerkungsAbf
 }
 
 // VormerkungLoeschen löscht eine Vormerkung (DELETE /api/vormerkungen/{id}).
-func (t *Tueren) VormerkungLoeschen(vormerkungsAbfragen repository.VormerkungsAbfragen) http.HandlerFunc {
+func (t *Tueren) VormerkungLoeschen(vormerkungsAbfragen *repository.VormerkungsAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

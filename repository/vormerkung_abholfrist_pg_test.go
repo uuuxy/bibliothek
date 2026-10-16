@@ -65,8 +65,8 @@ func abholfristVon(t *testing.T, pool *pgxpool.Pool, schuelerID string) time.Tim
 	return *bis
 }
 
-func vormerkungenMitUhr(pool *pgxpool.Pool, jetzt time.Time) *pgVormerkungsAbfragen {
-	return &pgVormerkungsAbfragen{db: pool, jetzt: func() time.Time { return jetzt }}
+func vormerkungenMitUhr(pool *pgxpool.Pool, jetzt time.Time) *VormerkungsAbfragen {
+	return &VormerkungsAbfragen{db: pool, jetzt: func() time.Time { return jetzt }}
 }
 
 // setzeSommerferien trägt die eigenen Sommerferien der Schule ein und stellt den alten Stand

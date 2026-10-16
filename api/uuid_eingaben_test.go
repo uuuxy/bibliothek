@@ -21,7 +21,6 @@ import (
 // tuertest.StatusOhneDB den Absturz und meldet ihn als „erreichte die Datenbank".
 
 type vormerkungsAttrappe struct {
-	repository.VormerkungsAbfragen
 	gerufen bool
 }
 

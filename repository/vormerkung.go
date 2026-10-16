@@ -48,13 +48,12 @@ type Vormerkung struct {
 }
 
 // VormerkungsAbfragen liest und schreibt die Vormerkungen.
-type VormerkungsAbfragen interface {
-	LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error)
-	LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error)
-	Loesche(ctx context.Context, id string) error
-	// LasseAbgelaufeneVerfallen löscht bereitgelegte Vormerkungen, deren Abholfrist abgelaufen
-	// ist, und bedient den Nächsten.
-	LasseAbgelaufeneVerfallen(ctx context.Context) (verfallen, neuBereitgestellt int, err error)
+type VormerkungsAbfragen struct {
+	db db.Pool
+	// jetzt ist die Uhr, ab der eine neue Abholfrist zählt (Nachrücken im Verfall-Lauf und
+	// beim Löschen); nil heißt time.Now. Tests setzen einen festen Tag vor einem Wochenende
+	// oder vor den Ferien.
+	jetzt func() time.Time
 }
 
 // LasseAbgelaufeneVerfallen behandelt bereitgelegte Vormerkungen, deren Abholfrist abgelaufen
@@ -69,7 +68,7 @@ type VormerkungsAbfragen interface {
 //
 // Alles in einer Transaktion; FOR UPDATE SKIP LOCKED verhindert, dass der Lauf und eine
 // gleichzeitige Rückgabe aufeinander warten oder dasselbe Exemplar zweimal zuteilen.
-func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (int, int, error) {
+func (a *VormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (int, int, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -110,16 +109,8 @@ func (a *pgVormerkungsAbfragen) LasseAbgelaufeneVerfallen(ctx context.Context) (
 	return len(freigaben), neuBereit, nil
 }
 
-type pgVormerkungsAbfragen struct {
-	db db.Pool
-	// jetzt ist die Uhr, ab der eine neue Abholfrist zählt (Nachrücken im Verfall-Lauf und
-	// beim Löschen); nil heißt time.Now. Tests setzen einen festen Tag vor einem Wochenende
-	// oder vor den Ferien.
-	jetzt func() time.Time
-}
-
 // uhr liefert den Zeitpunkt, ab dem eine neue Abholfrist zählt.
-func (a *pgVormerkungsAbfragen) uhr() time.Time {
+func (a *VormerkungsAbfragen) uhr() time.Time {
 	if a.jetzt != nil {
 		return a.jetzt()
 	}
@@ -127,8 +118,8 @@ func (a *pgVormerkungsAbfragen) uhr() time.Time {
 }
 
 // NewVormerkungsAbfragen liefert die Abfragen der Vormerkungen an Postgres.
-func NewVormerkungsAbfragen(db db.Pool) VormerkungsAbfragen {
-	return &pgVormerkungsAbfragen{db: db}
+func NewVormerkungsAbfragen(db db.Pool) *VormerkungsAbfragen {
+	return &VormerkungsAbfragen{db: db}
 }
 
 // ErrVormerkungFilterFehlt meldet einen Aufruf von LadeListe ohne Titel und ohne Schüler. Er
@@ -139,7 +130,7 @@ var ErrVormerkungFilterFehlt = errors.New("vormerkungen ohne titel und ohne sch�
 
 // LadeListe liefert die Vormerkungen eines Titels oder eines Schülers, die ältesten zuerst.
 // Ohne einen der beiden Filter liefert es ErrVormerkungFilterFehlt.
-func (a *pgVormerkungsAbfragen) LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error) {
+func (a *VormerkungsAbfragen) LadeListe(ctx context.Context, titelID, schuelerID string) ([]Vormerkung, error) {
 	var rows pgx.Rows
 	var err error
 
@@ -192,7 +183,7 @@ func (a *pgVormerkungsAbfragen) LadeListe(ctx context.Context, titelID, schueler
 // LegeAn legt eine Vormerkung an. Ein Schüler, der ein Exemplar des Titels selbst ausgeliehen
 // hat, bekommt ErrTitelBereitsAusgeliehen; die Prüfung läuft nur mit schuelerID, eine
 // Vormerkung ohne Schüler ist davon nicht betroffen.
-func (a *pgVormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
+func (a *VormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
 	if schuelerID != "" {
 		// Gegen die Sicht schueler, mit Absicht: Es ist dieselbe Frage, die die Warteschlange
 		// beim Bedienen stellt (ErrVormerkungNurFuerSchueler).
@@ -245,7 +236,7 @@ func (a *pgVormerkungsAbfragen) LegeAn(ctx context.Context, titelID, notiz, schu
 // Lag für die Vormerkung schon ein Exemplar im Abholfach, rückt der Nächste in derselben
 // Transaktion nach (vormerkung_nachruecken.go); sonst bliebe er für immer wartend, und das
 // Exemplar gälte als frei.
-func (a *pgVormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
+func (a *VormerkungsAbfragen) Loesche(ctx context.Context, id string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err

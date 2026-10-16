@@ -17,7 +17,6 @@ import (
 // ist die Einordnung im Handler, nicht die Abfrage in der Datenbank (die steht in
 // repository/vormerkung_pg_test.go am echten Constraint).
 type vormerkungsAttrappe struct {
-	repository.VormerkungsAbfragen
 	err error
 }
 
