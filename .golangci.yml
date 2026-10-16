@@ -14,6 +14,7 @@ linters:
     - unused        # Findet ungenutzte Variablen, Konstanten und Funktionen
     - depguard      # Sperrt Prüfbibliotheken neben dem Paket testing (docs/STIL.md, Abschnitt 10)
     - forbidigo     # Sperrt reflect.DeepEqual in Tests (docs/STIL.md, Abschnitt 10)
+    - recvcheck     # Die Methoden eines Typs nehmen alle einen Zeiger oder alle einen Wert (Decisions, „Receiver type")
   settings:
     depguard:
       rules:
@@ -39,6 +40,12 @@ linters:
         - name: package-comments
         # Ein Typ nennt seinen Empfänger in jeder Methode gleich, nie this oder self.
         - name: receiver-naming
+        # any statt interface{} (Decisions, „Use any").
+        - name: use-any
+        # Kein Name verdeckt eine eingebaute Funktion wie copy, max oder min.
+        - name: redefines-builtin-id
+        # Ein umbenannter Import ist klein und ohne Unterstrich (Decisions, „Import renaming").
+        - name: import-alias-naming
     rowserrcheck:
       # rowserrcheck kennt database/sql von Haus aus nicht pgx — hier explizit
       # den pgx-v5-Treiber registrieren, sonst prüft es unsere Query-Aufrufe nicht.

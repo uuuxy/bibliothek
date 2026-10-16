@@ -103,12 +103,12 @@ func istKuerzelKollision(err error) bool {
 		pgErr.ConstraintName == "systematik_kategorien_kuerzel_key"
 }
 
-// kuerzeRunen kappt auf max Zeichen (nicht Bytes — VARCHAR zählt Zeichen, und ein
+// kuerzeRunen kappt auf grenze Zeichen (nicht Bytes — VARCHAR zählt Zeichen, und ein
 // mittig zerschnittener Umlaut wäre ohnehin kein gültiges Kürzel).
-func kuerzeRunen(s string, max int) string {
+func kuerzeRunen(s string, grenze int) string {
 	r := []rune(s)
-	if len(r) <= max {
+	if len(r) <= grenze {
 		return s
 	}
-	return string(r[:max])
+	return string(r[:grenze])
 }

@@ -86,7 +86,7 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 
 // erfassteLautBericht liest die Zahl so, wie die Oberfläche sie zeigt: über die Liste der
 // abgeschlossenen Läufe.
-func erfassteLautBericht(t *testing.T, pool interface{}, repo *InventurAbfragen, sessionID string) int {
+func erfassteLautBericht(t *testing.T, pool any, repo *InventurAbfragen, sessionID string) int {
 	t.Helper()
 	_ = pool
 	sessions, err := repo.LadeAbgeschlosseneLaeufe(context.Background(), 50)

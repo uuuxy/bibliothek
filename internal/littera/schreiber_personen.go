@@ -462,8 +462,8 @@ func (p *personenlauf) mailadresse(l Leser) string {
 	return ersatz
 }
 
-func (p *personenlauf) kuerze(l Leser, feld, wert string, max int) string {
-	return uebernahme.Kuerze(uebernahme.Kuerzung{Protokoll: p.s.prot, QuellID: l.ID, Kennung: l.Lesernummer, Feld: feld, Wert: wert, Max: max})
+func (p *personenlauf) kuerze(l Leser, feld, wert string, grenze int) string {
+	return uebernahme.Kuerze(uebernahme.Kuerzung{Protokoll: p.s.prot, QuellID: l.ID, Kennung: l.Lesernummer, Feld: feld, Wert: wert, Max: grenze})
 }
 
 // kleinOhneRand bringt eine Adresse auf die Form, in der benutzer.email verglichen wird.

@@ -34,7 +34,7 @@ func TestVerarbeiteAusleihe_Schueler(t *testing.T) {
 	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
+	exemplar := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &ausleihVorgang{
 		leserID: "student1",
 		leser:   &repository.Leser{ID: "student1", Vorname: "Max", Art: "schueler"},
@@ -65,7 +65,7 @@ func TestVerarbeiteAusleihe_Schueler(t *testing.T) {
 
 	mock.ExpectRollback()
 
-	result, err := svc.verarbeiteAusleihe(context.Background(), tx, copy, chkCtx, staffID, resp)
+	result, err := svc.verarbeiteAusleihe(context.Background(), tx, exemplar, chkCtx, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -100,7 +100,7 @@ func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
+	exemplar := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &ausleihVorgang{
 		leserID: "teacher1",
 		leser:   &repository.Leser{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
@@ -126,7 +126,7 @@ func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 	mock.ExpectCommit()
 	mock.ExpectRollback()
 
-	result, err := svc.verarbeiteAusleihe(context.Background(), tx, copy, chkCtx, staffID, resp)
+	result, err := svc.verarbeiteAusleihe(context.Background(), tx, exemplar, chkCtx, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -161,7 +161,7 @@ func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
+	exemplar := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &ausleihVorgang{
 		leserID: "student1",
 		leser:   &repository.Leser{ID: "student1", Vorname: "Max", Art: "schueler"},
@@ -176,7 +176,7 @@ func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 		WithArgs(uuidCopy, "student1", chkCtx.frist, staffID, false, pgxmock.AnyArg()).
 		WillReturnError(dbErr)
 
-	result, err := svc.verarbeiteAusleihe(context.Background(), tx, copy, chkCtx, staffID, resp)
+	result, err := svc.verarbeiteAusleihe(context.Background(), tx, exemplar, chkCtx, staffID, resp)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -209,7 +209,7 @@ func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 	tx := beginneTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
+	exemplar := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &ausleihVorgang{
 		leserID: "teacher1",
 		leser:   &repository.Leser{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
@@ -235,7 +235,7 @@ func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit().WillReturnError(errors.New("commit failed"))
 
-	result, err := svc.verarbeiteAusleihe(context.Background(), tx, copy, chkCtx, staffID, resp)
+	result, err := svc.verarbeiteAusleihe(context.Background(), tx, exemplar, chkCtx, staffID, resp)
 
 	if err == nil {
 		t.Fatal("expected error, got nil")

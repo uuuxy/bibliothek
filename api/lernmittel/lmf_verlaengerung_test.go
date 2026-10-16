@@ -22,7 +22,7 @@ var errTest = errors.New("testfehler")
 func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 	tests := []struct {
 		name           string
-		payload        interface{}
+		payload        any
 		setupMock      func(mock pgxmock.PgxPoolIface)
 		expectedStatus int
 		expectedBody   string

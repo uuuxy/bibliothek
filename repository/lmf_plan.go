@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -273,7 +274,7 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 		}
 		var name string
 		err := tx.QueryRow(ctx, sql, elternID, k).Scan(&name)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			continue
 		}
 		if err != nil {

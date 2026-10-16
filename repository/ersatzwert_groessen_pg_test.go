@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -184,8 +185,8 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		if err == nil {
 			t.Fatal("kein Fehler für ein Exemplar, das es nicht gibt")
 		}
-		if err != pgx.ErrNoRows {
-			t.Errorf("Fehler = %v, want pgx.ErrNoRows — sonst wird daraus ein 500 statt 404", err)
+		if !errors.Is(err, pgx.ErrNoRows) {
+			t.Errorf("LadeGroessenFuerExemplar(unbekannt) = %v, erwartet pgx.ErrNoRows; sonst wird daraus ein 500 statt 404", err)
 		}
 	})
 }

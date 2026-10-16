@@ -169,7 +169,7 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(token string) (*Claims, error) {
 		return nil, errors.New("token has been revoked (logged out)")
 	}
 
-	gelesen, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+	gelesen, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}

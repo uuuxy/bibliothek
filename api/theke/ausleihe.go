@@ -108,7 +108,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		return
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"success":               true,
 		"neues_rueckgabe_datum": gesetzteFrist,
 	})
@@ -185,7 +185,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 		log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", protokollFehler)
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"success":    true,
 		"faellig_am": gesetzteFrist,
 	})

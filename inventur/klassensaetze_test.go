@@ -309,7 +309,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 
 		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		nutzlast := map[string]interface{}{
+		nutzlast := map[string]any{
 			"classNames": []string{"   ", ""},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
@@ -336,7 +336,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 
 		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		nutzlast := map[string]interface{}{
+		nutzlast := map[string]any{
 			"classNames": []string{"ThisClassNameIsWayTooLongToBeValidAndShouldBeRejected"},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
@@ -364,7 +364,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errors.New("db error"))
 
-		nutzlast := map[string]interface{}{
+		nutzlast := map[string]any{
 			"classNames": []string{"10A"},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
@@ -393,7 +393,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 
 		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
 
-		nutzlast := map[string]interface{}{
+		nutzlast := map[string]any{
 			"classNames": []string{"10A", "10B"},
 			"bookIds":    []string{"11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"},
 		}

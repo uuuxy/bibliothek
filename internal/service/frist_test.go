@@ -252,8 +252,8 @@ func TestBestimmeFrist_LeseclubGehtVor(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err := svc.bestimmeFrist(context.Background(), exemplar, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -276,8 +276,8 @@ func TestBestimmeFrist_LeseclubVergangenGiltNicht(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err := svc.bestimmeFrist(context.Background(), exemplar, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -298,8 +298,8 @@ func TestBestimmeFrist_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err := svc.bestimmeFrist(context.Background(), exemplar, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -326,8 +326,8 @@ func TestBestimmeFrist_LMFOhneLeseclub(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow((*time.Time)(nil), false))
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
-	copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-	got, err := svc.bestimmeFrist(context.Background(), copy, "9a")
+	exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+	got, err := svc.bestimmeFrist(context.Background(), exemplar, "9a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -348,8 +348,8 @@ func TestBestimmeFrist_LMFFolgtDemKlassenTermin(t *testing.T) {
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(&termin, false))
 
-	copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-	got, err := svc.bestimmeFrist(context.Background(), copy, "9H1")
+	exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+	got, err := svc.bestimmeFrist(context.Background(), exemplar, "9H1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
@@ -385,8 +385,8 @@ func TestBestimmeFrist_DatenbankfehlerNimmtFesteWerte(t *testing.T) {
 
 	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestBerechneFrist_GewoehnlichesBuch).
 	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schulzeit.Zone()) }
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
-	got, err := svc.bestimmeFrist(context.Background(), copy, "5a")
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err := svc.bestimmeFrist(context.Background(), exemplar, "5a")
 	// Bewusst kein Fehler: bei DB-Ausfall greifen Notfall-Defaults (21 Tage),
 	// damit die Ausleihe nicht komplett blockiert.
 	if err != nil {
@@ -465,8 +465,8 @@ func TestBestimmeFrist_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres
 			mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(fall.bevorstehend, fall.vergangen))
 
-			copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
-			got, err := svc.bestimmeFrist(context.Background(), copy, "9H2")
+			exemplar := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+			got, err := svc.bestimmeFrist(context.Background(), exemplar, "9H2")
 			if err != nil {
 				t.Fatalf("unerwarteter Fehler: %v", err)
 			}

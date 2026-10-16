@@ -131,8 +131,8 @@ func TestLadeVorgang_GewoehnlicherFall(t *testing.T) {
 
 	erwarteFristEinstellungen(mock)
 
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	ctx, err := svc.ladeVorgang(context.Background(), copy, aktiverSchueler("s1"))
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	ctx, err := svc.ladeVorgang(context.Background(), exemplar, aktiverSchueler("s1"))
 
 	if err != nil {
 		t.Fatalf("regulärer Schüler ohne Sperre soll durchgehen, bekam: %v", err)
@@ -155,8 +155,8 @@ func TestLadeVorgang_SperrtNicht(t *testing.T) {
 
 	erwarteFristEinstellungen(mock)
 
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	ctx, err := svc.ladeVorgang(context.Background(), copy, aktiverSchueler("s1"))
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	ctx, err := svc.ladeVorgang(context.Background(), exemplar, aktiverSchueler("s1"))
 
 	if err != nil {
 		t.Fatalf("Auflösen darf nicht sperren, bekam: %v", err)
@@ -173,8 +173,8 @@ func TestLadeVorgang_OhneAktivenLeser(t *testing.T) {
 	svc, _, mock := newVorgangDienst(t, nil)
 	defer mock.Close()
 
-	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	_, err := svc.ladeVorgang(context.Background(), copy, nil)
+	exemplar := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	_, err := svc.ladeVorgang(context.Background(), exemplar, nil)
 
 	if !errors.Is(err, ErrUngueltigerZustand) {
 		t.Errorf("ohne aktiven Leser soll ErrUngueltigerZustand kommen, bekam: %v", err)

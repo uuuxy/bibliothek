@@ -34,7 +34,7 @@ func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
 		ID:         "loan1",
 		SchuelerID: strPtr("s1"),
 	}
-	copy := &repository.Exemplar{
+	exemplar := &repository.Exemplar{
 		ID:        "copy1",
 		BarcodeID: "B-C1",
 		Titel:     "Testbuch",
@@ -46,7 +46,7 @@ func TestVerarbeiteFremdrueckgabe_Schueler(t *testing.T) {
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
-	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, exemplar, activeLoan, "staff1", resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -82,7 +82,7 @@ func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 		ID:         "loan2",
 		SchuelerID: strPtr("t1"),
 	}
-	copy := &repository.Exemplar{
+	exemplar := &repository.Exemplar{
 		ID:        "copy2",
 		BarcodeID: "B-C2",
 		Titel:     "Lehrerbuch",
@@ -94,7 +94,7 @@ func TestVerarbeiteFremdrueckgabe_Kollege(t *testing.T) {
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit()
 
-	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, exemplar, activeLoan, "staff1", resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -131,13 +131,13 @@ func TestVerarbeiteFremdrueckgabe_RueckgabeFehler(t *testing.T) {
 		ID:         "loan3",
 		SchuelerID: strPtr("s1"),
 	}
-	copy := &repository.Exemplar{
+	exemplar := &repository.Exemplar{
 		ID: "copy3",
 	}
 
 	resp := &AusleihErgebnis{}
 
-	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, exemplar, activeLoan, "staff1", resp)
 
 	if err == nil {
 		t.Fatalf("expected error, got nil")
@@ -162,7 +162,7 @@ func TestVerarbeiteFremdrueckgabe_CommitFehler(t *testing.T) {
 		ID:         "loan4",
 		SchuelerID: strPtr("s1"),
 	}
-	copy := &repository.Exemplar{
+	exemplar := &repository.Exemplar{
 		ID:        "copy4",
 		BarcodeID: "B-C4",
 		Titel:     "Testbuch",
@@ -173,7 +173,7 @@ func TestVerarbeiteFremdrueckgabe_CommitFehler(t *testing.T) {
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
 	mockPool.ExpectCommit().WillReturnError(pgx.ErrTxClosed)
 
-	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, copy, activeLoan, "staff1", resp)
+	res, err := svc.verarbeiteFremdrueckgabe(context.Background(), tx, exemplar, activeLoan, "staff1", resp)
 
 	if err == nil {
 		t.Fatalf("expected commit error, got nil")

@@ -50,9 +50,9 @@ func TestFreiesBuchWirdNichtAufDenScannerGebucht(t *testing.T) {
 
 	repo := &selbstausleiheAttrappe{pool: mock}
 	svc := &ausleihDienst{ausleihAbfragen: repo}
-	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", IstAusleihbar: true}
+	exemplar := &repository.Exemplar{ID: "c1", TitelID: "t1", IstAusleihbar: true}
 
-	_, err = svc.NimmZurueck(context.Background(), copy, "staff1")
+	_, err = svc.NimmZurueck(context.Background(), exemplar, "staff1")
 
 	if !errors.Is(err, ErrUngueltigerZustand) || !strings.Contains(err.Error(), "nicht ausgeliehen") {
 		t.Errorf("ein freies Buch ohne Ausweis muss „nicht ausgeliehen\" melden, bekam: %v", err)

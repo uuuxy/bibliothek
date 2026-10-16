@@ -116,8 +116,8 @@ func TestLMFPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *te
 // Ein Plan ist vorbei, wenn sein letzter Platz vor dem heutigen Kalendertag der Schule liegt.
 // Am Tag des letzten Platzes läuft er noch, bis Mitternacht in der Zone der Schule.
 func TestIstLMFPlanVorbei(t *testing.T) {
-	in := func(j int, m time.Month, d, h, min int) time.Time {
-		return time.Date(j, m, d, h, min, 0, 0, schulzeit.Zone())
+	in := func(j int, m time.Month, d, h, minute int) time.Time {
+		return time.Date(j, m, d, h, minute, 0, 0, schulzeit.Zone())
 	}
 	plan := repository.LMFPlanStand{
 		Plan: repository.LMFPlan{ErsterTag: "2026-06-22"},

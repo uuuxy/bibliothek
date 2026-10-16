@@ -62,7 +62,7 @@ func TestExcelImport(t *testing.T) {
 			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
 		}
 
-		var antwort map[string]interface{}
+		var antwort map[string]any
 		err = json.NewDecoder(w.Body).Decode(&antwort)
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
@@ -99,7 +99,7 @@ func TestExcelImport(t *testing.T) {
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
 		}
-		var antwort map[string]interface{}
+		var antwort map[string]any
 		err = json.NewDecoder(w.Body).Decode(&antwort)
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
@@ -158,7 +158,7 @@ func TestExcelImport(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusOK)
 		}
-		var antwort map[string]interface{}
+		var antwort map[string]any
 		err = json.NewDecoder(w.Body).Decode(&antwort)
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
@@ -222,7 +222,7 @@ func TestExcelImport(t *testing.T) {
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusBadRequest)
 		}
-		var antwort map[string]interface{}
+		var antwort map[string]any
 		err = json.NewDecoder(w.Body).Decode(&antwort)
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
@@ -285,7 +285,7 @@ func TestExcelImport(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Errorf("Status = %v, erwartet %v", w.Code, http.StatusOK)
 		}
-		var antwort map[string]interface{}
+		var antwort map[string]any
 		err = json.NewDecoder(w.Body).Decode(&antwort)
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)

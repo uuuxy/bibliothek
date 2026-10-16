@@ -27,7 +27,7 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanSvc := service.NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
-	copy := &repository.Exemplar{
+	exemplar := &repository.Exemplar{
 		ID:            "copy-1",
 		BarcodeID:     "B-1234",
 		TitelID:       "titel-1",
@@ -63,7 +63,7 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 
 	// AusleihAbfragen.SperreOffene findet keine offene Ausleihe des Exemplars.
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
-		WithArgs(copy.ID).
+		WithArgs(exemplar.ID).
 		WillReturnRows(pgxmock.NewRows([]string{}))
 
 	// Sperrgründe erst jetzt, nach dem Lesen der Ausleihe, weil die eigene Rückgabe nie
@@ -88,22 +88,22 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 			AddRow("standard_ausleihfrist_tage", testdaten.ZeigerAuf("14")))
 	// Liegt das Exemplar für jemanden bereit?
 	mock.ExpectQuery("SELECT v.schueler_id, s.vorname, s.nachname FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id WHERE v.bereitgestellt_exemplar_id = \\$1 AND v.status = 'abholbereit' AND v.bereitgestellt_bis > CURRENT_TIMESTAMP").
-		WithArgs(copy.ID).
+		WithArgs(exemplar.ID).
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}))
 
 	// Die Ausleihe (AusleihAbfragen.LegeAn).
 	mock.ExpectQuery("INSERT INTO ausleihen").
-		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID, false, pgxmock.AnyArg()).
+		WithArgs(exemplar.ID, studentID, pgxmock.AnyArg(), staffID, false, pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow("loan-1", &copy.ID, &studentID, time.Now(), time.Now(), nil, &staffID, nil, false, false))
+			AddRow("loan-1", &exemplar.ID, &studentID, time.Now(), time.Now(), nil, &staffID, nil, false, false))
 	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
-		WithArgs(copy.ID, pgxmock.AnyArg()).
+		WithArgs(exemplar.ID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	// Die eigene Vormerkung fällt weg; RETURNING liefert bereitgestellt_exemplar_id für den
 	// Hinweis aufs Regal. Hier gibt es keine, also ErrNoRows.
 	mock.ExpectQuery("DELETE FROM vormerkungen WHERE titel_id = \\$1 AND schueler_id = \\$2").
-		WithArgs(copy.TitelID, studentID).
+		WithArgs(exemplar.TitelID, studentID).
 		WillReturnError(pgx.ErrNoRows)
 
 	// Die Zeile im Protokoll in derselben Transaktion, vor dem Commit.
@@ -112,7 +112,7 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	lr, err := loanSvc.BucheAmLeser(context.Background(), copy, &studentID, staffID, false)
+	lr, err := loanSvc.BucheAmLeser(context.Background(), exemplar, &studentID, staffID, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

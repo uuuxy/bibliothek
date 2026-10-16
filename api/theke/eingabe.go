@@ -127,7 +127,7 @@ const IdempotenzSpeicherfrist = 5 * time.Second
 // committet ist, muss die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein
 // Serverfehler wird nicht gespeichert, sondern gibt den Schlüssel frei: Die Wiederholung soll
 // es neu versuchen.
-func (t *Tueren) legeAntwortAb(ctx context.Context, schluessel string, daten interface{}, status int) {
+func (t *Tueren) legeAntwortAb(ctx context.Context, schluessel string, daten any, status int) {
 	if schluessel == "" {
 		return
 	}

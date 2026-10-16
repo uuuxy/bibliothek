@@ -293,7 +293,7 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 
 	server.VertrauteProxys = vertrauteProxysAusUmgebung()
 
-	return
+	return dsn, jwtGeheimnis, port, server
 }
 
 // vertrauteProxysAusUmgebung liefert die vertrauten Proxys für die Adresse des Browsers

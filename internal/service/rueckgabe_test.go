@@ -56,7 +56,7 @@ func TestVerarbeiteRueckgabe_RueckgabeFehler(t *testing.T) {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
 
-	copy := &repository.Exemplar{ID: "copy1"}
+	exemplar := &repository.Exemplar{ID: "copy1"}
 	staffID := "staff1"
 	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
 	// Buch zurückbringt.
@@ -64,7 +64,7 @@ func TestVerarbeiteRueckgabe_RueckgabeFehler(t *testing.T) {
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 
-	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, exemplar, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("expected %v, got %v", expectedErr, err)
@@ -103,14 +103,14 @@ func TestVerarbeiteRueckgabe_CommitFehler(t *testing.T) {
 	expectedErr := errors.New("commit error")
 	mockPool.ExpectCommit().WillReturnError(expectedErr)
 
-	copy := &repository.Exemplar{ID: "copy1", TitelID: "t1"}
+	exemplar := &repository.Exemplar{ID: "copy1", TitelID: "t1"}
 	staffID := "staff1"
 	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
 	// Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 
-	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, exemplar, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("expected %v, got %v", expectedErr, err)
@@ -148,14 +148,14 @@ func TestVerarbeiteRueckgabe_Gelingt(t *testing.T) {
 
 	mockPool.ExpectCommit()
 
-	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
+	exemplar := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
 	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
 	// Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 
-	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, exemplar, activeLoan, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -211,14 +211,14 @@ func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 
 	mockPool.ExpectCommit()
 
-	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
+	exemplar := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
 	// Der Ausleiher steht in einer Spalte — auch, wenn es der Mitarbeiter selbst ist, der das
 	// Buch zurückbringt.
 	activeLoan := &repository.Ausleihe{ID: "loan1", SchuelerID: &leserID}
 	resp := &AusleihErgebnis{}
 
-	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.verarbeiteRueckgabe(context.Background(), tx, exemplar, activeLoan, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

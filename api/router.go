@@ -54,7 +54,7 @@ import (
 	"bibliothek/sse"
 
 	sentryhttp "github.com/getsentry/sentry-go/http"
-	httpSwagger "github.com/swaggo/http-swagger"
+	httpswagger "github.com/swaggo/http-swagger"
 )
 
 // Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), ob der
@@ -279,8 +279,8 @@ func (s *Server) registriereImportRouten(mux *http.ServeMux) {
 func (s *Server) registriereSwaggerRouten(mux *http.ServeMux) {
 	// Die Swagger-Seite gibt es nur im lokalen Betrieb und in der Entwicklung.
 	if os.Getenv("APP_ENV") == "local" || os.Getenv("APP_ENV") == "development" {
-		mux.Handle("GET /swagger/", httpSwagger.Handler(
-			httpSwagger.URL("/swagger/doc.json"),
+		mux.Handle("GET /swagger/", httpswagger.Handler(
+			httpswagger.URL("/swagger/doc.json"),
 		))
 		mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)

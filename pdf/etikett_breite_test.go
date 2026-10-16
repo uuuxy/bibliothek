@@ -33,14 +33,14 @@ var breitesEtikett = BuchEtikett{
 	Eigentumsvermerk: "Vermerk " + strings.Repeat("M", 60),
 }
 
-// aufZeichen kürzt wie die Obergrenze der Zeile: höchstens max Zeichen, das Auslassungszeichen
+// aufZeichen kürzt wie die Obergrenze der Zeile: höchstens grenze Zeichen, das Auslassungszeichen
 // eingerechnet.
-func aufZeichen(s string, max int) string {
+func aufZeichen(s string, grenze int) string {
 	r := []rune(s)
-	if len(r) <= max {
+	if len(r) <= grenze {
 		return s
 	}
-	return string(r[:max-1]) + "…"
+	return string(r[:grenze-1]) + "…"
 }
 
 func buchBogen(t *testing.T, format string, qr bool, etiketten ...BuchEtikett) []byte {

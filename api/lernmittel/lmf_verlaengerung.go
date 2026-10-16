@@ -74,7 +74,7 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 			})
 		}
 
-		tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"success":       true,
 			"updated_count": angepasst,
 		})

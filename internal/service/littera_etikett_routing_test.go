@@ -14,9 +14,9 @@ type etikettAusleihAttrappe struct {
 	zuletzt *repository.Exemplar
 }
 
-func (l *etikettAusleihAttrappe) NimmZurueck(_ context.Context, copy *repository.Exemplar, _ string) (*AusleihErgebnis, error) {
-	l.zuletzt = copy
-	return &AusleihErgebnis{Art: "rueckgabe", Exemplar: copy}, nil
+func (l *etikettAusleihAttrappe) NimmZurueck(_ context.Context, exemplar *repository.Exemplar, _ string) (*AusleihErgebnis, error) {
+	l.zuletzt = exemplar
+	return &AusleihErgebnis{Art: "rueckgabe", Exemplar: exemplar}, nil
 }
 
 // TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet bildet den Thekenfall ab:

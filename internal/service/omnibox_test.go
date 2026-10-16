@@ -145,20 +145,20 @@ func (m *katalogAttrappe) FindeExemplar(ctx context.Context, barcode string) (*r
 // ausleihDienstAttrappe erfüllt AusleihDienst mit Funktionen, die jeder Test selbst setzt.
 type ausleihDienstAttrappe struct {
 	AusleihDienst
-	bucheAmLeser func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
-	nimmZurueck  func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error)
+	bucheAmLeser func(ctx context.Context, exemplar *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
+	nimmZurueck  func(ctx context.Context, exemplar *repository.Exemplar, staffID string) (*AusleihErgebnis, error)
 }
 
-func (m *ausleihDienstAttrappe) BucheAmLeser(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
+func (m *ausleihDienstAttrappe) BucheAmLeser(ctx context.Context, exemplar *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
 	if m.bucheAmLeser != nil {
-		return m.bucheAmLeser(ctx, copy, activeLeserID, staffID, overrideBlock)
+		return m.bucheAmLeser(ctx, exemplar, activeLeserID, staffID, overrideBlock)
 	}
 	return nil, nil
 }
 
-func (m *ausleihDienstAttrappe) NimmZurueck(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
+func (m *ausleihDienstAttrappe) NimmZurueck(ctx context.Context, exemplar *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
 	if m.nimmZurueck != nil {
-		return m.nimmZurueck(ctx, copy, staffID)
+		return m.nimmZurueck(ctx, exemplar, staffID)
 	}
 	return nil, nil
 }
@@ -221,8 +221,8 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		}
 
 		loanSvc := &ausleihDienstAttrappe{
-			bucheAmLeser: func(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
-				if copy != bookCopy || activeLeserID == nil || *activeLeserID != studentID {
+			bucheAmLeser: func(ctx context.Context, exemplar *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error) {
+				if exemplar != bookCopy || activeLeserID == nil || *activeLeserID != studentID {
 					t.Errorf("BucheAmLeser called with wrong arguments")
 				}
 				return expectedLoanResult, nil
@@ -257,8 +257,8 @@ func TestVerarbeiteExemplar(t *testing.T) {
 		}
 
 		loanSvc := &ausleihDienstAttrappe{
-			nimmZurueck: func(ctx context.Context, copy *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
-				if copy != bookCopy {
+			nimmZurueck: func(ctx context.Context, exemplar *repository.Exemplar, staffID string) (*AusleihErgebnis, error) {
+				if exemplar != bookCopy {
 					t.Errorf("NimmZurueck called with wrong arguments")
 				}
 				return expectedLoanResult, nil

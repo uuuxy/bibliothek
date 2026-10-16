@@ -34,7 +34,7 @@ func (a *sachgruppeAnfrage) normalisiere() {
 }
 
 // pruefe verlangt beide Felder und schließt Leerzeichen im Kürzel aus.
-func (a sachgruppeAnfrage) pruefe() error {
+func (a *sachgruppeAnfrage) pruefe() error {
 	if a.Kuerzel == "" {
 		return apierrors.BadRequest("Bitte ein Kürzel angeben", nil)
 	}

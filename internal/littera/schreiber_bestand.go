@@ -393,11 +393,11 @@ type titelfelder struct {
 }
 
 func (l *bestandslauf) felder(t Titel) titelfelder {
-	k := func(feld, wert string, max int) string {
-		return uebernahme.Kuerze(uebernahme.Kuerzung{Protokoll: l.s.prot, QuellID: t.ID, Kennung: t.ISBN, Feld: feld, Wert: wert, Max: max})
+	k := func(feld, wert string, grenze int) string {
+		return uebernahme.Kuerze(uebernahme.Kuerzung{Protokoll: l.s.prot, QuellID: t.ID, Kennung: t.ISBN, Feld: feld, Wert: wert, Max: grenze})
 	}
-	kn := func(feld, wert string, max int) *string {
-		return uebernahme.KuerzeNullbar(uebernahme.Kuerzung{Protokoll: l.s.prot, QuellID: t.ID, Kennung: t.ISBN, Feld: feld, Wert: wert, Max: max})
+	kn := func(feld, wert string, grenze int) *string {
+		return uebernahme.KuerzeNullbar(uebernahme.Kuerzung{Protokoll: l.s.prot, QuellID: t.ID, Kennung: t.ISBN, Feld: feld, Wert: wert, Max: grenze})
 	}
 
 	f := titelfelder{

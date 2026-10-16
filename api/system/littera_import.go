@@ -261,7 +261,7 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 		t.SchreibeAdminProtokoll(r.Context(), claims.KontoID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
 	}
 
-	tuer.AntworteJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"new_titles_count":      neueTitel,
 		"imported_copies_count": importierteExemplare,
 		"message":               "Bestands-CSV erfolgreich importiert",

@@ -94,7 +94,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 
 		// Protokoll der Verwaltung
 		if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
-			details, merr := json.Marshal(map[string]interface{}{
+			details, merr := json.Marshal(map[string]any{
 				"smtp_host":        req.SMTPHost,
 				"smtp_port":        req.SMTPPort,
 				"smtp_user":        req.SMTPBenutzer,

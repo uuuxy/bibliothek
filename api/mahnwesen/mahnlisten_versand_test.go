@@ -166,7 +166,7 @@ func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T
 // werden soll genau sein Inhalt.
 type argFaenger struct{ ziel *string }
 
-func (a *argFaenger) Match(v interface{}) bool {
+func (a *argFaenger) Match(v any) bool {
 	s, ok := v.(string)
 	if ok {
 		*a.ziel = s

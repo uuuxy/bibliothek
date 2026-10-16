@@ -70,7 +70,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 		extensionDays  int
 		setupRoute     func(*http.ServeMux, *Tueren, repository.EinstellungsAbfragen)
 		expectedStatus int
-		verify         func(t *testing.T, resp map[string]interface{})
+		verify         func(t *testing.T, resp map[string]any)
 	}{
 		{
 			name:           "Happy Path - Extends Loan with configured interval",
@@ -78,7 +78,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			jetzt:          november,
 			extensionDays:  14,
 			expectedStatus: http.StatusOK,
-			verify: func(t *testing.T, resp map[string]interface{}) {
+			verify: func(t *testing.T, resp map[string]any) {
 				if success, ok := resp["success"].(bool); !ok || !success {
 					t.Errorf("Expected success=true, got %v", resp["success"])
 				}
@@ -97,7 +97,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			jetzt:          november,
 			extensionDays:  0, // ohne Einstellung gelten 28 Tage
 			expectedStatus: http.StatusOK,
-			verify: func(t *testing.T, resp map[string]interface{}) {
+			verify: func(t *testing.T, resp map[string]any) {
 				// Der vorige Fall hat die Frist bereits auf den 16.11. gesetzt. Die liegt
 				// in der Zukunft, also rechnet die Verlängerung ab ihr: 16.11. plus 28 Tage.
 				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.December, 14))
@@ -111,7 +111,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			jetzt:          time.Date(2026, time.September, 24, 10, 0, 0, 0, schulzeit.Zone()),
 			extensionDays:  21,
 			expectedStatus: http.StatusOK,
-			verify: func(t *testing.T, resp map[string]interface{}) {
+			verify: func(t *testing.T, resp map[string]any) {
 				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheFerien), testdaten.FristEnde(2026, time.October, 19))
 			},
 		},
@@ -120,7 +120,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			ausleiheID:     ausleiheGesperrt,
 			extensionDays:  28,
 			expectedStatus: http.StatusForbidden,
-			verify: func(t *testing.T, resp map[string]interface{}) {
+			verify: func(t *testing.T, resp map[string]any) {
 				if msg, ok := resp["error"].(string); !ok || msg == "" {
 					t.Errorf("Expected error message, got %v", resp)
 				}
@@ -135,21 +135,21 @@ func TestAusleiheVerlaengern(t *testing.T) {
 				// Direkt eingehängt, damit die Tür selbst die leere Kennung prüft.
 				mux.Handle("POST /extend/", s.AusleiheVerlaengern(settingsRepo))
 			},
-			verify: func(t *testing.T, resp map[string]interface{}) {},
+			verify: func(t *testing.T, resp map[string]any) {},
 		},
 		{
 			name:           "Error - Loan not found",
 			ausleiheID:     "99999999-9999-9999-9999-999999999999",
 			extensionDays:  28,
 			expectedStatus: http.StatusNotFound,
-			verify:         func(t *testing.T, resp map[string]interface{}) {},
+			verify:         func(t *testing.T, resp map[string]any) {},
 		},
 		{
 			name:           "Error - Loan already returned",
 			ausleiheID:     ausleiheReturned,
 			extensionDays:  28,
 			expectedStatus: http.StatusNotFound,
-			verify:         func(t *testing.T, resp map[string]interface{}) {},
+			verify:         func(t *testing.T, resp map[string]any) {},
 		},
 	}
 
@@ -188,14 +188,14 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			}
 
 			if tt.verify != nil && rec.Code == http.StatusOK {
-				var resp map[string]interface{}
+				var resp map[string]any
 				if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 					t.Fatalf("Failed to decode response: %v", err)
 				}
 				tt.verify(t, resp)
 			} else if tt.verify != nil && rec.Code != http.StatusOK {
 				// Auch eine Fehlerantwort wird gelesen.
-				var resp map[string]interface{}
+				var resp map[string]any
 				if rec.Body.Len() > 0 {
 					_ = json.NewDecoder(rec.Body).Decode(&resp) //nolint:errcheck // eine Fehlerantwort muss kein JSON sein
 				}
