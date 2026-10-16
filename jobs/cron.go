@@ -29,7 +29,11 @@ type Zeitplan struct {
 // leserLoeschung sind die zwei Wege, auf denen ein nächtlicher Lauf einen Leser endgültig löscht
 // (repository.LeserAbfragen).
 type leserLoeschung interface {
+	// LoescheLeserEndgueltig entfernt einen Leser aus dem Papierkorb; offene Ausleihen und
+	// unbezahlte Forderungen verhindern es.
 	LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
+	// LoescheAbgaengerEndgueltig entfernt einen Abgänger, den der Lauf ausgewählt hat; offene
+	// Vorgänge verhindern es, auch wenn sie nach der Auswahl entstanden sind.
 	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
 }
 

@@ -12,6 +12,31 @@ import (
 	"bibliothek/repository"
 )
 
+// kontoPflege sind die Abfragen, mit denen Anlegen und Ändern ein Konto prüfen und schreiben
+// (repository.KontoAbfragen). Die Tests der Rechtetrennung setzen eine Attrappe ein.
+type kontoPflege interface {
+	// IstEmailVergeben meldet, ob eine Adresse schon zu einem Konto gehört; ausserID nimmt das
+	// Konto aus, das gerade bearbeitet wird.
+	IstEmailVergeben(ctx context.Context, email string, ausserID string) (bool, error)
+	// IstAusweisnummerVergeben meldet, ob eine Ausweisnummer schon vergeben ist; die Leserzeile
+	// des Kontos ausserID zählt nicht mit.
+	IstAusweisnummerVergeben(ctx context.Context, ausweisnummer string, ausserID string) (bool, error)
+	// HatLeserzeileOhneKonto meldet, ob ein Kollege dieses Namens schon eine Leserzeile ohne
+	// Konto hat.
+	HatLeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error)
+	// LegeAn legt ein Konto samt Leserzeile an und liefert seine ID; ausweisnummer nil oder ""
+	// lässt die Zeile ohne Nummer.
+	LegeAn(ctx context.Context, ausweisnummer *string, vorname, nachname, email, rolle string) (string, error)
+	// Aendere ändert die genannten Felder eines Kontos und liefert seinen Stand danach;
+	// repository.ErrKontoNichtGefunden, wenn es das Konto nicht gibt.
+	Aendere(ctx context.Context, p repository.KontoAenderung) (repository.KontoStand, error)
+	// LadeRolle liefert die gespeicherte Rolle eines Kontos in Großschreibung; ohne Treffer ("",
+	// nil). Die Rolle aus dem Rumpf der Anfrage taugt dafür nicht: Wer das Konto eines Admins
+	// bearbeitet, schickt selbst mit, welche Rolle daraus werden soll. Ob das Ziel jetzt ein
+	// Admin ist und die Bearbeitung damit Admin-Rechte verlangt, steht nur in der Datenbank.
+	LadeRolle(ctx context.Context, id string) (string, error)
+}
+
 // kontoAnlegenAnfrage nennt die Angaben eines neuen Kontos.
 type kontoAnlegenAnfrage struct {
 	BarcodeID string `json:"barcode_id"`
@@ -33,14 +58,14 @@ type kontoAnlegenAnfrage struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer [post]
-func (t *Tueren) KontoAnlegen(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) KontoAnlegen(kontoAbfragen kontoPflege) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.legeKontoAn(w, r, kontoAbfragen)
 	}
 }
 
 // legeKontoAn prüft Rolle, Adresse und Ausweis, legt das Konto an und protokolliert es.
-func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen) {
+func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfragen kontoPflege) {
 	var req kontoAnlegenAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
@@ -118,7 +143,7 @@ type kontoAendernAnfrage struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer/{id} [put]
-func (t *Tueren) KontoAendern(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) KontoAendern(kontoAbfragen kontoPflege) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereKonto(w, r, kontoAbfragen)
 	}
@@ -126,7 +151,7 @@ func (t *Tueren) KontoAendern(kontoAbfragen repository.KontoAbfragen) http.Handl
 
 // aendereKonto prüft die Schutzregeln vor jedem Schreibzugriff, ändert das Konto und
 // protokolliert es.
-func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen) {
+func (t *Tueren) aendereKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen kontoPflege) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Kontos fehlt", nil)
@@ -207,7 +232,7 @@ func pruefeGenanntePflichtfelder(w http.ResponseWriter, req kontoAendernAnfrage)
 
 // antworteOhneKontoAenderung beantwortet einen Rumpf, der nichts nennt: nichts geschrieben,
 // kein Protokolleintrag. Ein unbekanntes Konto bleibt eine 404.
-func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, id string) {
+func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, kontoAbfragen kontoPflege, id string) {
 	rolle, err := kontoAbfragen.LadeRolle(ctx, id)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -223,7 +248,7 @@ func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, kont
 
 // kontoAenderungAus prüft die genannte E-Mail und Ausweisnummer auf Eindeutigkeit und baut die
 // Änderung für die Abfragen. Bei false ist die Ablehnung schon beantwortet.
-func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, id string, req kontoAendernAnfrage) (repository.KontoAenderung, bool) {
+func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen kontoPflege, id string, req kontoAendernAnfrage) (repository.KontoAenderung, bool) {
 	aenderung := repository.KontoAenderung{
 		ID: id, Vorname: req.Vorname, Nachname: req.Nachname, Email: req.Email, Aktiv: req.Aktiv,
 	}

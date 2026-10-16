@@ -38,7 +38,7 @@ func normalisiereRolle(rolle string) string {
 // Die Eindeutigkeit ist hier mehr als Datenhygiene: Die Anmeldung findet das Konto
 // über seine E-Mail (auth/anmelden.go). Zwei Datensätze mit derselben Adresse hießen,
 // dass nicht mehr feststeht, wessen Konto ein Login öffnet.
-func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, email, ausgenommeneID string) bool {
+func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen kontoPflege, email, ausgenommeneID string) bool {
 	vergeben, err := kontoAbfragen.IstEmailVergeben(ctx, email, ausgenommeneID)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -59,7 +59,7 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfra
 // Schul-E-Mail in der Akte (LegeKollegiumskontoAn); dorthin verweist die Antwort (409).
 //
 // Was zählt, entscheidet KontoAbfragen.HatLeserzeileOhneKonto.
-func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, vorname, nachname string) bool {
+func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, kontoAbfragen kontoPflege, vorname, nachname string) bool {
 	vorhanden, err := kontoAbfragen.HatLeserzeileOhneKonto(ctx, vorname, nachname)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -83,7 +83,7 @@ type ausweisPruefung struct {
 // pruefeAusweisnummerEindeutig liefert die Ausweisnummer als Zeiger, nil ohne Nummer, und prüft,
 // dass kein anderes Konto sie trägt. Bei einem Konflikt oder Fehler der Datenbank ist die
 // Antwort schon geschrieben (ok=false).
-func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen repository.KontoAbfragen, pruefung ausweisPruefung) (nummer *string, ok bool) {
+func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, kontoAbfragen kontoPflege, pruefung ausweisPruefung) (nummer *string, ok bool) {
 	if pruefung.nummer == "" {
 		return nil, true
 	}

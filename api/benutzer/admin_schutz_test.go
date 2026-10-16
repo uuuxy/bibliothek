@@ -12,12 +12,9 @@ import (
 	"bibliothek/repository"
 )
 
-// eskalationsAttrappe erfüllt KontoAbfragen und beantwortet nur die Fragen, die die Trennung der
-// Rechte braucht. Die eingebettete Schnittstelle hält die Attrappe klein: Jede Methode, die
-// sie nicht überschreibt, bricht beim Aufruf ab und zeigt so, dass die Tür mehr tut als hier
-// abgebildet.
+// eskalationsAttrappe erfüllt kontoPflege und beantwortet die Fragen so, wie die Trennung der
+// Rechte sie braucht.
 type eskalationsAttrappe struct {
-	repository.KontoAbfragen
 	rollen    map[string]string // Kennung des Kontos → aktuelle Rolle
 	geaendert bool
 	angelegt  bool

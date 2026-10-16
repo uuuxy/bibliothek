@@ -7,7 +7,6 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
-	"bibliothek/repository"
 )
 
 // Trennung von manage_users und Administrator.
@@ -55,7 +54,7 @@ func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle
 // pruefeAdminZiel verlangt Administratorrechte, wenn das Ziel heute ein Administrator ist,
 // gleich welches Feld geändert werden soll. Ein unbekanntes Ziel (kein Treffer) lässt die
 // Prüfung passieren; darüber entscheidet die Tür.
-func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen, id string) bool {
+func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, kontoAbfragen kontoPflege, id string) bool {
 	if istAufruferAdmin(r) {
 		return true
 	}

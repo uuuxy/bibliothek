@@ -28,7 +28,7 @@ import (
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer/{id} [delete]
-func (t *Tueren) KontoLoeschen(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) KontoLoeschen(kontoAbfragen *repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.loescheKonto(w, r, kontoAbfragen)
 	}
@@ -36,7 +36,7 @@ func (t *Tueren) KontoLoeschen(kontoAbfragen repository.KontoAbfragen) http.Hand
 
 // loescheKonto prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
 // Löschens ein.
-func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen repository.KontoAbfragen) {
+func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfragen *repository.KontoAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)

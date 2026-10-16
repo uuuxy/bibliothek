@@ -37,55 +37,21 @@ type Konto struct {
 
 // KontoAbfragen liest und schreibt die Konten: die Zugänge von Lehrkräften, Verwaltung und
 // Helfern zum Programm (Tabelle benutzer).
-type KontoAbfragen interface {
-	// LadeAlle lädt alle Konten, sortiert nach Nachname und Vorname.
-	LadeAlle(ctx context.Context) ([]Konto, error)
-
-	// IstEmailVergeben meldet, ob eine Adresse schon zu einem Konto gehört. ausserID nimmt
-	// das Konto aus, das gerade bearbeitet wird.
-	IstEmailVergeben(ctx context.Context, email string, ausserID string) (bool, error)
-
-	// IstAusweisnummerVergeben meldet, ob eine Ausweisnummer schon vergeben ist. ausserID ist
-	// die ID des Kontos, das gerade bearbeitet wird; ausgenommen ist seine Leserzeile.
-	IstAusweisnummerVergeben(ctx context.Context, ausweisnummer string, ausserID string) (bool, error)
-
-	// HatLeserzeileOhneKonto meldet, ob ein Kollege dieses Namens schon eine Leserzeile ohne
-	// Konto hat. Ein neues Konto bekäme vom Trigger eine zweite, leere Zeile; der Weg zur
-	// vorhandenen ist die Schul-E-Mail in der Akte.
-	HatLeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error)
-
-	// LegeAn legt ein Konto an und liefert seine ID. Die Leserzeile entsteht dabei von selbst
-	// (Trigger trg_benutzer_hat_leserzeile); ausweisnummer nil oder "" lässt sie ohne Nummer.
-	LegeAn(ctx context.Context, ausweisnummer *string, vorname, nachname, email, rolle string) (string, error)
-
-	// Aendere ändert die genannten Felder eines Kontos und liefert seinen Stand danach.
-	Aendere(ctx context.Context, p KontoAenderung) (KontoStand, error)
-
-	// LadeRolle liefert die gespeicherte Rolle eines Kontos in Großschreibung; ohne Treffer
-	// ("", nil). Die Rolle aus dem Rumpf der Anfrage taugt dafür nicht: Wer das Konto eines
-	// Admins bearbeitet, schickt selbst mit, welche Rolle daraus werden soll. Ob das Ziel
-	// jetzt ein Admin ist und die Bearbeitung damit Admin-Rechte verlangt, steht nur in der
-	// Datenbank.
-	LadeRolle(ctx context.Context, id string) (string, error)
-
-	// LoescheKonto löscht ein Konto und protokolliert es.
-	LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error
-}
-
-type pgKontoAbfragen struct {
+type KontoAbfragen struct {
 	pool db.Pool
 }
 
 // NewKontoAbfragen liefert die Abfragen der Konten an Postgres.
-func NewKontoAbfragen(pool db.Pool) KontoAbfragen {
-	return &pgKontoAbfragen{pool: pool}
+func NewKontoAbfragen(pool db.Pool) *KontoAbfragen {
+	return &KontoAbfragen{pool: pool}
 }
 
 // Wer ausleihen darf, entscheidet die Leserzeile und nicht das Konto: Die Theke sucht einen
 // aktiven Leser, kein Konto.
 
-// LadeAlle lädt alle Konten mit der Ausweisnummer ihrer Leserzeile.
-func (a *pgKontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
+// LadeAlle lädt alle Konten mit der Ausweisnummer ihrer Leserzeile, sortiert nach Nachname und
+// Vorname.
+func (a *KontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
 	query := `
 		SELECT b.id, coalesce(l.barcode_id, ''), b.vorname, b.nachname, b.email, b.rolle, b.aktiv,
 		       b.erstellt_am, b.zugang_beantragt_am, coalesce(b.leser_id::text, '')
@@ -115,12 +81,13 @@ func (a *pgKontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
 	return konten, nil
 }
 
-// IstEmailVergeben vergleicht in der Normalform der Anmeldung, ohne Rücksicht auf Groß- und
-// Kleinschreibung (LadeAnmeldeKonto). Bei einem genauen Vergleich gingen zwei Konten durch,
-// die sich nur in der Schreibweise unterscheiden, und welches die Anmeldung öffnet, entschiede
-// die Reihenfolge in der Tabelle. Der Index uniq_benutzer_email_lower hält dasselbe in der
-// Datenbank.
-func (a *pgKontoAbfragen) IstEmailVergeben(ctx context.Context, email string, ausserID string) (bool, error) {
+// IstEmailVergeben meldet, ob eine Adresse schon zu einem Konto gehört; ausserID nimmt das
+// Konto aus, das gerade bearbeitet wird. Verglichen wird in der Normalform der Anmeldung, ohne
+// Rücksicht auf Groß- und Kleinschreibung (LadeAnmeldeKonto). Bei einem genauen Vergleich
+// gingen zwei Konten durch, die sich nur in der Schreibweise unterscheiden, und welches die
+// Anmeldung öffnet, entschiede die Reihenfolge in der Tabelle. Der Index
+// uniq_benutzer_email_lower hält dasselbe in der Datenbank.
+func (a *KontoAbfragen) IstEmailVergeben(ctx context.Context, email string, ausserID string) (bool, error) {
 	var vergeben bool
 	var err error
 	if ausserID == "" {
@@ -137,7 +104,7 @@ func (a *pgKontoAbfragen) IstEmailVergeben(ctx context.Context, email string, au
 //
 // ausserID ist die ID des Kontos; ausgenommen wird seine Leserzeile. Der Rufer muss die ID
 // des Lesers dafür nicht kennen.
-func (a *pgKontoAbfragen) IstAusweisnummerVergeben(ctx context.Context, ausweisnummer string, ausserID string) (bool, error) {
+func (a *KontoAbfragen) IstAusweisnummerVergeben(ctx context.Context, ausweisnummer string, ausserID string) (bool, error) {
 	var vergeben bool
 	err := a.pool.QueryRow(ctx, `
 		SELECT EXISTS(
@@ -156,7 +123,7 @@ func (a *pgKontoAbfragen) IstAusweisnummerVergeben(ctx context.Context, ausweisn
 // Nur das Kollegium zählt (ein Schüler gleichen Namens ist eine andere Person) und nur Zeilen
 // ohne Konto: Hat der Namensvetter schon eines, ist der Neue ein zweiter Mensch. Verglichen
 // wird in suchnorm wie bei der Namensdublette beim Anlegen eines Lesers.
-func (a *pgKontoAbfragen) HatLeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error) {
+func (a *KontoAbfragen) HatLeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error) {
 	var vorhanden bool
 	err := a.pool.QueryRow(ctx, `
 		SELECT EXISTS (
@@ -168,11 +135,12 @@ func (a *pgKontoAbfragen) HatLeserzeileOhneKonto(ctx context.Context, vorname, n
 	return vorhanden, err
 }
 
-// LegeAn legt ein Konto an und trägt die Ausweisnummer in seine Leserzeile ein, beides in
-// einer Transaktion: Ein Konto ohne Leserzeile fände die Theke nicht, eine Leserzeile ohne
-// Konto stünde namenlos in der Lesertabelle. Die Zeile legt der Trigger an
-// (trg_benutzer_hat_leserzeile); die Ausweisnummer kennt er nicht.
-func (a *pgKontoAbfragen) LegeAn(ctx context.Context, ausweisnummer *string, vorname, nachname, email, rolle string) (string, error) {
+// LegeAn legt ein Konto an, trägt die Ausweisnummer in seine Leserzeile ein und liefert die ID
+// des Kontos. Beides geschieht in einer Transaktion: Ein Konto ohne Leserzeile fände die Theke
+// nicht, eine Leserzeile ohne Konto stünde namenlos in der Lesertabelle. Die Zeile legt der
+// Trigger an (trg_benutzer_hat_leserzeile); die Ausweisnummer kennt er nicht, und ausweisnummer
+// nil oder "" lässt die Zeile ohne Nummer.
+func (a *KontoAbfragen) LegeAn(ctx context.Context, ausweisnummer *string, vorname, nachname, email, rolle string) (string, error) {
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return "", err
@@ -232,12 +200,13 @@ type KontoStand struct {
 // die es nicht gab.
 var ErrKontoNichtGefunden = errors.New("benutzer nicht gefunden")
 
-// Aendere ändert ein Konto und führt die Leserzeile mit, in einer Transaktion.
+// Aendere ändert die genannten Felder eines Kontos und führt die Leserzeile mit, in einer
+// Transaktion; es liefert den Stand des Kontos danach.
 //
 // Name und Ausweis stehen für die Theke in der Leserzeile, für die Anmeldung am Konto. Liefen
 // sie auseinander, hieße dieselbe Person an der Theke anders als in der Verwaltung der Konten,
 // und der Ausweis, den jemand hier einträgt, bliebe wirkungslos.
-func (a *pgKontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoStand, error) {
+func (a *KontoAbfragen) Aendere(ctx context.Context, p KontoAenderung) (KontoStand, error) {
 	var stand KontoStand
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
@@ -297,9 +266,9 @@ func barcodeText(b *string) string {
 	return *b
 }
 
-// LadeRolle liest die gespeicherte Rolle eines Kontos. rolle::text, weil die Spalte die
-// Aufzählung benutzer_rolle ist.
-func (a *pgKontoAbfragen) LadeRolle(ctx context.Context, id string) (string, error) {
+// LadeRolle liefert die gespeicherte Rolle eines Kontos in Großschreibung; ohne Treffer ("",
+// nil). rolle::text, weil die Spalte die Aufzählung benutzer_rolle ist.
+func (a *KontoAbfragen) LadeRolle(ctx context.Context, id string) (string, error) {
 	var rolle string
 	err := a.pool.QueryRow(ctx, `SELECT UPPER(rolle::text) FROM benutzer WHERE id = $1`, id).Scan(&rolle)
 	if errors.Is(err, pgx.ErrNoRows) {

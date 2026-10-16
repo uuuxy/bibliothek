@@ -84,7 +84,6 @@ linters:
       - { linters: [ireturn], text: ^NewEinstellungsAbfragen returns }
       - { linters: [ireturn], text: ^NewGeraeteAbfragen returns }
       - { linters: [ireturn], text: ^NewKatalogAbfragen returns }
-      - { linters: [ireturn], text: ^NewKontoAbfragen returns }
       - { linters: [ireturn], text: ^NewLeserAbfragen returns }
       - { linters: [ireturn], text: ^NewProtokollAbfragen returns }
       - { linters: [ireturn], text: ^NewSchadensAbfragen returns }

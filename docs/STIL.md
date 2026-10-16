@@ -329,6 +329,13 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   should define it (not the package implementing the interface), ensuring it includes only the
   methods they actually use". Bekommt eine Tür eine Attrappe als Parameter, erklärt das Paket der
   Tür die Schnittstelle; tauschen die Tests eines Dienstes ein Feld aus, erklärt der Dienst sie.
+- Sie heißt nach dem Vorgang, für den der Nutzer sie braucht, und ist klein geschrieben, weil nur
+  ihr Paket sie nennt (`leserLoeschung` in `jobs`, `kontoPflege` in `api/benutzer`): „Focus on
+  the required behavior rather than just abstract named patterns like “service” or
+  “repository”" und „Keep interface types unexported if they are only used internally within a
+  package" (Decisions, „Interfaces"). Jede Methode trägt einen Kommentar mit dem, worauf sich der
+  Nutzer verlässt: „Multi-method interfaces: each individual method requires its own
+  documentation" (Best Practices, „Designing effective interfaces").
 - Ein Erzeuger liefert den Typ: „Functions should take interfaces as arguments but return
   concrete types". Eine Schnittstelle als Parameter steht dort, wo Verschiedenes hineinpasst
   (`repository.Datenbank`: Pool oder Transaktion).

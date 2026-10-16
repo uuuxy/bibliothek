@@ -20,7 +20,7 @@ func (e *KontoHatAusleihenFehler) Error() string {
 
 // LoescheKonto löscht ein Konto und schreibt den Eintrag dazu. Offene Ausleihen auf seiner
 // Leserzeile verhindern es; eine unberührte Leserzeile geht mit.
-func (a *pgKontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error {
+func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error {
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return err

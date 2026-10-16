@@ -42,7 +42,7 @@ type kontoAntwort struct {
 // @Success      200  {array}   kontoAntwort
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer [get]
-func (t *Tueren) Konten(kontoAbfragen repository.KontoAbfragen) http.HandlerFunc {
+func (t *Tueren) Konten(kontoAbfragen *repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
