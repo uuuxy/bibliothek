@@ -87,10 +87,10 @@
 				fehler = 'Schulbücher konnten nicht geladen werden.';
 				return;
 			}
-			const data = await res.json();
+			const daten = await res.json();
 			if (seq !== lauf) return;
-			faecher = data.faecher ?? [];
-			titel = data.titel ?? [];
+			faecher = daten.faecher ?? [];
+			titel = daten.titel ?? [];
 		} catch {
 			if (seq === lauf) fehler = 'Schulbücher konnten nicht geladen werden.';
 		} finally {

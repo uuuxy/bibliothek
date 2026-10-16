@@ -110,14 +110,14 @@
 								label: b.title
 							}))}
 							onchange={(/** @type {string} */ id) => {
-								const book = labelStore.classBooks.find(
+								const buch = labelStore.classBooks.find(
 									(/** @type {any} */ b) => String(b.id) === id
 								);
-								if (book) {
+								if (buch) {
 									labelStore.selectBookTitle({
-										id: String(book.id),
-										titel: book.title,
-										autor: book.author
+										id: String(buch.id),
+										titel: buch.title,
+										autor: buch.author
 									});
 								}
 							}}

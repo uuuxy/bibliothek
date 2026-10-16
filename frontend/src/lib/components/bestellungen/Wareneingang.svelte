@@ -25,12 +25,12 @@
 
 		laeuft = true;
 		try {
-			const data = await apiPost('/api/bestellungen/bulk-receive', {
+			const daten = await apiPost('/api/bestellungen/bulk-receive', {
 				exemplar_ids: selectedExemplarIds
 			});
-			snackbars.addToast(`${data.received_count} Exemplare erfolgreich eingebucht!`, 'success');
+			snackbars.addToast(`${daten.received_count} Exemplare erfolgreich eingebucht!`, 'success');
 			selectedExemplarIds = [];
-			onReceived(data.received_items ?? []);
+			onReceived(daten.received_items ?? []);
 		} catch {
 			// API handler shows error toast
 		} finally {

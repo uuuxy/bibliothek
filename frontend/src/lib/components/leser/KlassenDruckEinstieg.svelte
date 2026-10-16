@@ -25,8 +25,8 @@
 		try {
 			const res = await apiFetch('/api/klassen');
 			if (res.ok) {
-				const data = await res.json();
-				klassen = Array.isArray(data) ? data : [];
+				const daten = await res.json();
+				klassen = Array.isArray(daten) ? daten : [];
 			}
 		} catch {
 			/* Ohne Klassenliste bleibt der Weg über die Schülerdatei offen. */

@@ -36,9 +36,9 @@
 	}
 
 	/** @type {any[]} */
-	let books = $state.raw([]);
+	let buecher = $state.raw([]);
 	// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6).
-	let filteredBooks = $derived(buecherJeBuch(books, buecherSuchen(books, searchQuery)));
+	let filteredBooks = $derived(buecherJeBuch(buecher, buecherSuchen(buecher, searchQuery)));
 
 	let displayLimit = $state(50);
 	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));
@@ -55,7 +55,7 @@
 
 	async function ladeDaten() {
 		try {
-			books = await buecherLaden();
+			buecher = await buecherLaden();
 			appState.guestAuthenticated = true;
 		} catch {
 			appState.guestAuthenticated = false;

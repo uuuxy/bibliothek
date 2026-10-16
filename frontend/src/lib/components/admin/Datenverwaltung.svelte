@@ -44,9 +44,9 @@
 		syncCoversResult = null;
 		try {
 			const res = await apiFetch('/api/admin/sync-covers', { method: 'POST' });
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || 'Fehler beim Starten des Cover-Syncs');
-			syncCoversResult = { type: 'success', message: data.message || 'Job gestartet.' };
+			const daten = await res.json();
+			if (!res.ok) throw new Error(daten.error || 'Fehler beim Starten des Cover-Syncs');
+			syncCoversResult = { type: 'success', message: daten.message || 'Job gestartet.' };
 		} catch (err) {
 			syncCoversResult = {
 				type: 'error',

@@ -34,10 +34,10 @@
 				body: JSON.stringify({ faellig_am: neuesDatum })
 			});
 			if (response.ok) {
-				const data = await response.json();
-				book.rueckgabe_frist = data.faellig_am;
+				const daten = await response.json();
+				book.rueckgabe_frist = daten.faellig_am;
 				bearbeitet = false;
-				showToast(`Rückgabedatum auf ${datum(data.faellig_am)} gesetzt.`, 'success');
+				showToast(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt.`, 'success');
 			} else {
 				const fehler = await response.json().catch(() => ({}));
 				showToast(fehler.error ?? 'Datum konnte nicht gespeichert werden.', 'error');

@@ -82,8 +82,8 @@
 				return;
 			}
 			if (!res.ok) {
-				const data = await res.json().catch(() => null);
-				throw new Error(data?.error || 'Anliegen konnte nicht abgehakt werden.');
+				const daten = await res.json().catch(() => null);
+				throw new Error(daten?.error || 'Anliegen konnte nicht abgehakt werden.');
 			}
 			anliegen = anliegen.filter((a) => a.id !== id);
 			confirmingId = null;

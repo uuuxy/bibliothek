@@ -52,8 +52,8 @@
 		try {
 			const res = await apiFetch('/api/barcode/next');
 			if (res.ok) {
-				const data = await res.json();
-				editBarcodeValue = data.next_barcode;
+				const daten = await res.json();
+				editBarcodeValue = daten.next_barcode;
 			} else {
 				barcodeError = 'Fehler beim Generieren der ID';
 			}

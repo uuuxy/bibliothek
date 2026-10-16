@@ -123,8 +123,8 @@ class UIStore {
 		try {
 			const res = await apiFetch('/api/reservierungen/klassensatz/anzahl');
 			if (res.ok) {
-				const data = await res.json();
-				this.pendingReservierungen = data.anzahl ?? 0;
+				const daten = await res.json();
+				this.pendingReservierungen = daten.anzahl ?? 0;
 			}
 		} catch {
 			/* ignore */
@@ -135,8 +135,8 @@ class UIStore {
 		try {
 			const res = await apiFetch('/api/anliegen/anzahl');
 			if (res.ok) {
-				const data = await res.json();
-				this.offeneAnliegen = data.anzahl ?? 0;
+				const daten = await res.json();
+				this.offeneAnliegen = daten.anzahl ?? 0;
 			}
 		} catch {
 			/* ignore */
@@ -147,8 +147,8 @@ class UIStore {
 		try {
 			const res = await apiFetch('/api/exemplare/etiketten-offen/anzahl');
 			if (res.ok) {
-				const data = await res.json();
-				this.offeneEtiketten = data.anzahl ?? 0;
+				const daten = await res.json();
+				this.offeneEtiketten = daten.anzahl ?? 0;
 			}
 		} catch {
 			/* Ein fehlender Zaehler darf die Navigation nicht aufhalten. */

@@ -22,19 +22,19 @@
 				body: formData
 			});
 
-			const data = await res.json();
+			const daten = await res.json();
 
 			if (!res.ok) {
-				throw new Error(data.error || 'Upload fehlgeschlagen');
+				throw new Error(daten.error || 'Upload fehlgeschlagen');
 			}
 
 			let successMsg = '';
-			if (data.type === 'xml') {
-				successMsg = `XML-Import erfolgreich! ${data.updated_titles_count} bestehende Titel wurden aktualisiert.`;
-			} else if (data.type === 'xlsx') {
-				successMsg = `Excel-Import erfolgreich! ${data.new_titles_count} neue Titel und ${data.imported_copies_count} Exemplare wurden angelegt.`;
+			if (daten.type === 'xml') {
+				successMsg = `XML-Import erfolgreich! ${daten.updated_titles_count} bestehende Titel wurden aktualisiert.`;
+			} else if (daten.type === 'xlsx') {
+				successMsg = `Excel-Import erfolgreich! ${daten.new_titles_count} neue Titel und ${daten.imported_copies_count} Exemplare wurden angelegt.`;
 			} else {
-				successMsg = `CSV-Import erfolgreich! ${data.new_titles_count} neue Titel und ${data.imported_copies_count} Exemplare wurden angelegt.`;
+				successMsg = `CSV-Import erfolgreich! ${daten.new_titles_count} neue Titel und ${daten.imported_copies_count} Exemplare wurden angelegt.`;
 			}
 
 			importResult = {

@@ -64,8 +64,8 @@
 				return;
 			}
 			if (!res.ok) {
-				const data = await res.json().catch(() => null);
-				throw new Error(data?.error || 'Reservierung konnte nicht abgeschlossen werden.');
+				const daten = await res.json().catch(() => null);
+				throw new Error(daten?.error || 'Reservierung konnte nicht abgeschlossen werden.');
 			}
 			// Kein Reload: Die Zeile wandert lokal samt Notiz in „Zuletzt bereitgestellt".
 			// Vorher wurde sie entfernt — die Zusage war bis zum nächsten Laden unauffindbar.

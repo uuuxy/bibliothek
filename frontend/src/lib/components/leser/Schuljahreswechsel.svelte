@@ -14,7 +14,7 @@
 	/** @type {PromoteStudentsResponse | null} */
 	let preview = $state(null);
 	/** @type {PromoteStudentsResponse | null} */
-	let result = $state(null);
+	let ergebnis = $state(null);
 	/** @type {string | null} */
 	let fehler = $state(null);
 
@@ -53,7 +53,7 @@
 
 	function reset() {
 		preview = null;
-		result = null;
+		ergebnis = null;
 		awaitingConfirmation = false;
 		fehler = null;
 	}
@@ -66,8 +66,8 @@
 			body: JSON.stringify(body)
 		});
 		if (!res.ok) {
-			const data = await res.json().catch(() => null);
-			throw new Error(data?.error || 'Schuljahreswechsel fehlgeschlagen.');
+			const daten = await res.json().catch(() => null);
+			throw new Error(daten?.error || 'Schuljahreswechsel fehlgeschlagen.');
 		}
 		return res.json();
 	}
@@ -95,7 +95,7 @@
 		laedt = true;
 		fehler = null;
 		try {
-			result = await sendeWechsel({ confirm: true });
+			ergebnis = await sendeWechsel({ confirm: true });
 		} catch (err) {
 			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
@@ -139,14 +139,14 @@
 		</div>
 	{/if}
 
-	{#if result}
+	{#if ergebnis}
 		<div
 			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
 			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
 			<span>Schuljahreswechsel abgeschlossen.</span>
 		</div>
-		{@render summaryRows(result)}
+		{@render summaryRows(ergebnis)}
 		<Button onclick={reset}>Fertig</Button>
 	{:else if !preview}
 		<!-- Stufe 1: erst die unverbindliche Vorschau — der Server rechnet das

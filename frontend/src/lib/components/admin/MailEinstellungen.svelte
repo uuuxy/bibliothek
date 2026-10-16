@@ -34,12 +34,12 @@
 	async function laden() {
 		laedt = true;
 		try {
-			const data = await apiGet('/api/admin/settings/mail');
-			host = data.smtp_host || '';
-			port = data.smtp_port || '';
-			user = data.smtp_user || '';
-			sender = data.sender_email || '';
-			hasPassword = data.has_password || false;
+			const daten = await apiGet('/api/admin/settings/mail');
+			host = daten.smtp_host || '';
+			port = daten.smtp_port || '';
+			user = daten.smtp_user || '';
+			sender = daten.sender_email || '';
+			hasPassword = daten.has_password || false;
 			testEmail = sender; // default
 			ladeFehler = false;
 		} catch (e) {

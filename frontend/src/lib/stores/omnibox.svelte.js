@@ -13,12 +13,12 @@ import { fehlertext } from '../utils/fehlertext.js';
 import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
-function formatVorbesitzerName(data) {
-	if (data.vorbesitzer) {
-		return `${data.vorbesitzer.vorname} ${data.vorbesitzer.nachname}`;
+function formatVorbesitzerName(daten) {
+	if (daten.vorbesitzer) {
+		return `${daten.vorbesitzer.vorname} ${daten.vorbesitzer.nachname}`;
 	}
-	if (data.vorbesitzer_user) {
-		return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
+	if (daten.vorbesitzer_user) {
+		return `${daten.vorbesitzer_user.vorname} ${daten.vorbesitzer_user.nachname}`;
 	}
 	return 'unbekannt';
 }
@@ -278,12 +278,12 @@ export function createOmniboxStore() {
 					showToast('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
 					return;
 				}
-				const results = await res.json();
+				const ergebnisse = await res.json();
 				unifiedSearchResults = {
-					students: results.students || [],
-					books: results.books || [],
-					studentsTotal: results.students_total ?? (results.students || []).length,
-					booksTotal: results.books_total ?? (results.books || []).length
+					students: ergebnisse.students || [],
+					books: ergebnisse.books || [],
+					studentsTotal: ergebnisse.students_total ?? (ergebnisse.students || []).length,
+					booksTotal: ergebnisse.books_total ?? (ergebnisse.books || []).length
 				};
 				isDropdownOpen =
 					unifiedSearchResults.students.length > 0 || unifiedSearchResults.books.length > 0;
@@ -313,10 +313,10 @@ export function createOmniboxStore() {
 			isDropdownOpen = false;
 			submitAction(null, null); // Ohne Event
 		} else {
-			const book = books[index - students.length];
+			const buch = books[index - students.length];
 			queryVal = '';
 			isDropdownOpen = false;
-			if (onSelectBook) onSelectBook(book);
+			if (onSelectBook) onSelectBook(buch);
 		}
 	}
 
@@ -348,47 +348,47 @@ export function createOmniboxStore() {
 	// Fremdes Buch in aktiver Sitzung: NUR beim Vorbesitzer ausgebucht — bewusst kein
 	// automatisches Umbuchen. Info ohne Unterbrechung; erneuter Scan leiht es an die
 	// aktive Sitzung aus.
-	function verarbeiteFremdrueckgabe(data) {
+	function verarbeiteFremdrueckgabe(daten) {
 		triggerScreenFlash('warning');
 		playSoundError();
 		triggerFlash('orange');
-		const prevName = formatVorbesitzerName(data);
+		const prevName = formatVorbesitzerName(daten);
 		lastFremdrueckgabe = { vorbesitzerName: prevName };
 		const aktiv = activeStudent?.vorname;
 		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
 		showToast(
-			`„${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
+			`„${daten.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
 			'warning'
 		);
 	}
 
 	// Verarbeitet eine Rückgabe-Antwort (fremd/normal, Vormerkung, Session-Fortführung).
-	function verarbeiteRueckgabe(data, reloadProfileCb) {
-		if (data.fremdrueckgabe) {
-			verarbeiteFremdrueckgabe(data);
+	function verarbeiteRueckgabe(daten, reloadProfileCb) {
+		if (daten.fremdrueckgabe) {
+			verarbeiteFremdrueckgabe(daten);
 		} else {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-			const titel = data.book?.titel ?? data.geraet?.modellname;
+			const titel = daten.book?.titel ?? daten.geraet?.modellname;
 			// In der Schnellrückgabe erscheint kein Konto: Die Meldung nennt, bei wem das Buch war.
 			showToast(
-				schnellrueckgabe && data.student
-					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(data.student)}.`
+				schnellrueckgabe && daten.student
+					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(daten.student)}.`
 					: `„${titel}" erfolgreich zurückgegeben.`
 			);
 		}
-		if (data.has_vormerkung) {
+		if (daten.has_vormerkung) {
 			vormerkungAlert = {
-				titel: data.vormerkung_titel || data.book?.titel,
-				user: data.vormerkung_user
+				titel: daten.vormerkung_titel || daten.book?.titel,
+				user: daten.vormerkung_user
 			};
 		}
 		if (reloadProfileCb) reloadProfileCb();
 
-		if (data.student && !activeStudent && !schnellrueckgabe) {
-			activeStudent = data.student;
-			abholbereit = data.abholbereit ?? [];
+		if (daten.student && !activeStudent && !schnellrueckgabe) {
+			activeStudent = daten.student;
+			abholbereit = daten.abholbereit ?? [];
 		}
 	}
 
@@ -417,50 +417,50 @@ export function createOmniboxStore() {
 	// Mensch noch tun muss (der Bescheid liegt bei der Schulaufsicht — Warnung). Zwei
 	// Kanäle, weil es zwei Dinge sind: Eine offene Aufgabe in einer grünen Erfolgsmeldung
 	// wird überlesen.
-	function zeigeRueckkehrHinweise(data, { ohneMeldung = false } = {}) {
-		if (!ohneMeldung && data.message) showToast(data.message, 'success');
-		if (data.aufsicht_informieren) showToast(data.aufsicht_informieren, 'warning');
+	function zeigeRueckkehrHinweise(daten, { ohneMeldung = false } = {}) {
+		if (!ohneMeldung && daten.message) showToast(daten.message, 'success');
+		if (daten.aufsicht_informieren) showToast(daten.aufsicht_informieren, 'warning');
 	}
 
 	// Ein Leser ist geladen: Er steht jetzt an der Theke, sein Abholfach kommt mit.
-	function verarbeiteLeser(data) {
+	function verarbeiteLeser(daten) {
 		schnellrueckgabe = false;
-		activeStudent = data.student;
-		abholbereit = data.abholbereit ?? [];
+		activeStudent = daten.student;
+		abholbereit = daten.abholbereit ?? [];
 		triggerScreenFlash('success');
 		playSoundSuccess();
 		triggerFlash('green');
 		// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
 		// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
 		// Schüler mit fehlender Angabe.
-		if (data.student?.art && data.student.art !== 'schueler') {
-			showToast(`Geladen: ${data.student.vorname} ${data.student.nachname}`);
+		if (daten.student?.art && daten.student.art !== 'schueler') {
+			showToast(`Geladen: ${daten.student.vorname} ${daten.student.nachname}`);
 		}
 	}
 
-	function verarbeiteAusleihe(data, reloadProfileCb) {
+	function verarbeiteAusleihe(daten, reloadProfileCb) {
 		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer
 		// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
 		// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
-		lastAuflagenHinweis = data.auflagen_hinweis ?? null;
+		lastAuflagenHinweis = daten.auflagen_hinweis ?? null;
 		triggerScreenFlash(lastAuflagenHinweis ? 'warning' : 'success');
 		playSoundSuccess('ausleihe');
 		triggerFlash(lastAuflagenHinweis ? 'orange' : 'green');
 		showToast(
-			`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
+			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
 		);
 		// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
 		// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
-		if (data.regalfreigabe_barcode) {
+		if (daten.regalfreigabe_barcode) {
 			showToast(
-				`Hinweis: Reserviertes Exemplar ${data.regalfreigabe_barcode} zurück ins Regal räumen.`,
+				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen.`,
 				'warning'
 			);
 		}
 		// Das Exemplar war abgeschrieben und ist beim Scan zurückgeholt worden (die
 		// Ausleihe folgte im selben Zug): Was dabei mit der Forderung geschah, gehört
 		// gesagt — sonst sieht die Theke nur „ausgeliehen".
-		zeigeRueckkehrHinweise(data);
+		zeigeRueckkehrHinweise(daten);
 		if (reloadProfileCb) reloadProfileCb();
 	}
 
@@ -471,32 +471,32 @@ export function createOmniboxStore() {
 	// glatten Buchung. Eine Hinweiszeile über dem Konto (Fremdrückgabe, andere Auflage) steht
 	// bis zum nächsten Scan und verlangt einen Blick; der wartende Scan nähme sie gleich weg.
 	/** @returns {boolean} */
-	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '', overrideBlock = false) {
-		if (data.type === 'student') {
-			verarbeiteLeser(data);
+	function verarbeiteAktionsErgebnis(daten, reloadProfileCb, q = '', overrideBlock = false) {
+		if (daten.type === 'student') {
+			verarbeiteLeser(daten);
 			return true;
 		}
-		if (data.type === 'ausleihe') {
-			verarbeiteAusleihe(data, reloadProfileCb);
-			return !data.auflagen_hinweis;
+		if (daten.type === 'ausleihe') {
+			verarbeiteAusleihe(daten, reloadProfileCb);
+			return !daten.auflagen_hinweis;
 		}
-		if (data.type === 'rueckgabe') {
-			verarbeiteRueckgabe(data, reloadProfileCb);
-			return !data.fremdrueckgabe;
+		if (daten.type === 'rueckgabe') {
+			verarbeiteRueckgabe(daten, reloadProfileCb);
+			return !daten.fremdrueckgabe;
 		}
-		if (data.type === 'info') {
+		if (daten.type === 'info') {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-			showToast(data.message, 'success');
-			zeigeRueckkehrHinweise(data, { ohneMeldung: true });
+			showToast(daten.message, 'success');
+			zeigeRueckkehrHinweise(daten, { ohneMeldung: true });
 			if (reloadProfileCb) reloadProfileCb();
 			return true;
 		}
-		if (data.type === 'geraet_check') {
+		if (daten.type === 'geraet_check') {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
-			checklistAnfrage = { query: q, geraet: data.geraet, overrideBlock };
-		} else if (data.type === 'search_results') {
+			checklistAnfrage = { query: q, geraet: daten.geraet, overrideBlock };
+		} else if (daten.type === 'search_results') {
 			triggerShake();
 			showToast('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
 		}
@@ -923,8 +923,8 @@ export function createOmniboxStore() {
 			if (!res.ok) {
 				await handleActionHttpError(res, q); // wirft immer
 			}
-			const data = await res.json();
-			return verarbeiteAktionsErgebnis(data, reloadProfileCb, q, overrideBlock);
+			const daten = await res.json();
+			return verarbeiteAktionsErgebnis(daten, reloadProfileCb, q, overrideBlock);
 		} catch (e) {
 			triggerFlash('red');
 			verarbeiteAntwortfehler(e);

@@ -25,11 +25,11 @@
 		try {
 			const response = await apiFetch(`/api/ausleihen/${id}/verlaengern`, { method: 'POST' });
 			if (response.ok) {
-				const data = await response.json();
-				book.rueckgabe_frist = data.neues_rueckgabe_datum;
+				const daten = await response.json();
+				book.rueckgabe_frist = daten.neues_rueckgabe_datum;
 				// Die Meldung nennt das neue Datum: Wer auf den Knopf sieht, sähe sonst nichts
 				// passieren.
-				const neu = new Date(data.neues_rueckgabe_datum).toLocaleDateString('de-DE');
+				const neu = new Date(daten.neues_rueckgabe_datum).toLocaleDateString('de-DE');
 				showToast(`Verlängert bis ${neu}.`, 'success');
 			} else {
 				const fehler = await response.json().catch(() => ({}));

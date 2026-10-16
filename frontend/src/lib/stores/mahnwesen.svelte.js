@@ -39,7 +39,7 @@ function berechneMahnstufe(maxTage) {
  * Creates the central Mahnwesen store.
  */
 function createMahnwesenStore() {
-	let data = $state(/** @type {{ klassen: any[] } | null} */ (null));
+	let daten = $state(/** @type {{ klassen: any[] } | null} */ (null));
 	let laedt = $state(true);
 	let fehler = $state(/** @type {string|null} */ (null));
 
@@ -58,7 +58,7 @@ function createMahnwesenStore() {
 	const mailStore = useMahnwesenMail();
 
 	// Abgeleitete Werte
-	let klassen = $derived(data?.klassen ?? []);
+	let klassen = $derived(daten?.klassen ?? []);
 	// Die Gruppe der Ehemaligen ist keine Klasse; Versand und Klassendruck bieten sie nicht an.
 	let versandKlassen = $derived(klassen.filter((/** @type {any} */ k) => !k.ehemalige));
 	let totalOverdue = $derived(
@@ -122,7 +122,7 @@ function createMahnwesenStore() {
 			const res = await apiFetch('/api/mahnwesen');
 			if (!res.ok) throw new Error((await res.text()) || 'Fehler beim Laden');
 			const json = await res.json();
-			data = json;
+			daten = json;
 			heuteRetourniert = json.heute_retourniert || 0;
 			selectedIds.clear();
 		} catch (e) {
@@ -165,7 +165,7 @@ function createMahnwesenStore() {
 
 	return {
 		get data() {
-			return data;
+			return daten;
 		},
 		get loading() {
 			return laedt;

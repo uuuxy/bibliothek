@@ -24,11 +24,11 @@
 		formData.append('file', files[0]);
 		try {
 			const res = await apiFetch('/api/admin/import-bestand', { method: 'POST', body: formData });
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || 'Bestands-Import fehlgeschlagen');
+			const daten = await res.json();
+			if (!res.ok) throw new Error(daten.error || 'Bestands-Import fehlgeschlagen');
 			ergebnis = {
 				type: 'success',
-				message: `Kombi-Import erfolgreich! ${data.new_titles_count || 0} neue Titel und ${data.imported_copies_count || 0} Exemplare wurden verarbeitet.`
+				message: `Kombi-Import erfolgreich! ${daten.new_titles_count || 0} neue Titel und ${daten.imported_copies_count || 0} Exemplare wurden verarbeitet.`
 			};
 			files = null;
 		} catch (err) {

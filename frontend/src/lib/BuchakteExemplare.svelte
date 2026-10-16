@@ -94,7 +94,7 @@
 
 		let successCount = 0;
 
-		const results = await Promise.allSettled(
+		const ergebnisse = await Promise.allSettled(
 			Array.from(selectedExemplare).map(async (id) => {
 				const res = await apiFetch(`/api/buecher/exemplare/${id}`, {
 					method: 'DELETE',
@@ -105,13 +105,13 @@
 			})
 		);
 
-		for (const result of results) {
-			if (result.status === 'fulfilled') {
-				const id = result.value;
+		for (const ergebnis of ergebnisse) {
+			if (ergebnis.status === 'fulfilled') {
+				const id = ergebnis.value;
 				exemplare = exemplare.filter((e) => e.id !== id);
 				successCount++;
 			} else {
-				console.error('Fehler beim Löschen:', result.reason);
+				console.error('Fehler beim Löschen:', ergebnis.reason);
 			}
 		}
 		selectedExemplare.clear();

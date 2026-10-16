@@ -154,14 +154,14 @@ async function heileSchulstammdaten() {
 	try {
 		const res = await apiFetch('/api/einstellungen');
 		if (!res.ok) return;
-		const data = await res.json();
+		const daten = await res.json();
 		const adresse = [
-			data.schule_strasse,
-			[data.schule_plz, data.schule_ort].filter(Boolean).join(' ')
+			daten.schule_strasse,
+			[daten.schule_plz, daten.schule_ort].filter(Boolean).join(' ')
 		]
 			.filter(Boolean)
 			.join(', ');
-		wendeSchulstammdatenAn(data.schule_name ?? '', adresse);
+		wendeSchulstammdatenAn(daten.schule_name ?? '', adresse);
 	} catch {
 		/* Komfortfunktion — Platzhalter bleibt stehen */
 	}

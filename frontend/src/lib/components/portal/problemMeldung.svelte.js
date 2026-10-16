@@ -86,8 +86,8 @@ export function erzeugeProblemMeldung(nachSenden) {
 					})
 				});
 				if (!res.ok) {
-					const data = await res.json().catch(() => null);
-					throw new Error(data?.error || 'Die Meldung konnte nicht gesendet werden.');
+					const daten = await res.json().catch(() => null);
+					throw new Error(daten?.error || 'Die Meldung konnte nicht gesendet werden.');
 				}
 				snackbars.addToast('Meldung ist bei der Bibliothek.', 'success');
 				forms[key] = leer();

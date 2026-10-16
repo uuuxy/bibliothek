@@ -82,8 +82,8 @@
 
 		const res = await apiFetch(url, { method: 'POST', body: formData });
 		if (!res.ok) {
-			const data = await res.json().catch(() => null);
-			const err = new Error(data?.error || 'Fehler bei der Verarbeitung der LUSD-Datei.');
+			const daten = await res.json().catch(() => null);
+			const err = new Error(daten?.error || 'Fehler bei der Verarbeitung der LUSD-Datei.');
 			/** @type {any} */ (err).status = res.status;
 			throw err;
 		}

@@ -88,8 +88,8 @@
 				throw new Error((await res.text()) || 'Upload fehlgeschlagen');
 			}
 
-			const data = await res.json();
-			onCapture(data.url);
+			const daten = await res.json();
+			onCapture(daten.url);
 		} catch (err) {
 			const fehler = /** @type {any} */ (err);
 			errorMsg = 'Aufnahme fehlgeschlagen: ' + fehler.message;

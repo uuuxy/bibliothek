@@ -102,8 +102,8 @@ export async function createBarcodeDetector() {
 
 					try {
 						// showImage=false: kein Bild in den versteckten Knoten malen.
-						const result = await scanner.scanFileV2(file, false);
-						return [{ rawValue: result.decodedText }];
+						const ergebnis = await scanner.scanFileV2(file, false);
+						return [{ rawValue: ergebnis.decodedText }];
 					} catch (err) {
 						// „Kein Code in diesem Bild" ist der Normalfall, zehnmal in der Sekunde —
 						// alles andere ist ein Grund, warum die Erkennung NICHT arbeitet, und der

@@ -45,8 +45,8 @@
 			});
 
 			if (res.ok) {
-				const data = await res.json();
-				snackbars.addToast(`${data.updated_count} Ausleihen wurden verlängert.`, 'success');
+				const daten = await res.json();
+				snackbars.addToast(`${daten.updated_count} Ausleihen wurden verlängert.`, 'success');
 				klasse = '';
 				neuesDatum = '';
 			} else {

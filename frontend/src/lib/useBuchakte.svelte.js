@@ -43,7 +43,7 @@ async function holeKopf(id) {
 
 export function useBuchakte() {
 	/** @type {any} */
-	let book = $state(null);
+	let buch = $state(null);
 	/** @type {any[]} */
 	let borrowers = $state([]);
 	/** @type {any[]} */
@@ -93,7 +93,7 @@ export function useBuchakte() {
 		// Alles, was zum vorigen Titel gehört, geht mit ihm. Ein leerer Kopf ist die
 		// ehrliche Antwort auf „konnte nicht geladen werden" — der alte Kopf ist eine
 		// falsche.
-		book = null;
+		buch = null;
 		borrowers = [];
 		exemplare = [];
 		history = [];
@@ -118,7 +118,7 @@ export function useBuchakte() {
 			kopf = geholt.kopf;
 			kopfFehler = geholt.fehler;
 		}
-		book = kopf;
+		buch = kopf;
 
 		const candidates = coverKandidaten(kopf?.coverUrl, kopf?.isbn);
 		coverCandidates = candidates;
@@ -152,11 +152,11 @@ export function useBuchakte() {
 	}
 
 	async function deleteTitle(showToast, onBack) {
-		if (!book) return;
+		if (!buch) return;
 		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
 			return;
 		try {
-			const res = await apiFetch(`/api/buecher/titel/${book.id}`, {
+			const res = await apiFetch(`/api/buecher/titel/${buch.id}`, {
 				method: 'DELETE',
 				credentials: 'include'
 			});
@@ -177,8 +177,8 @@ export function useBuchakte() {
 	}
 
 	function editTitle() {
-		if (!book) return;
-		appState.bookToEdit = book;
+		if (!buch) return;
+		appState.bookToEdit = buch;
 		appState.requestAdminView = true;
 		uiStore.activeTab = 'media_catalog';
 		appState.activeBookId = null;
@@ -199,7 +199,7 @@ export function useBuchakte() {
 
 	return {
 		get book() {
-			return book;
+			return buch;
 		},
 		get borrowers() {
 			return borrowers;

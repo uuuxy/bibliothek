@@ -59,8 +59,8 @@ async function ensureCsrfToken() {
 	csrfBootstrap ??= fetch('/api/csrf-token', { credentials: 'include' })
 		.then(async (res) => {
 			if (!res.ok) return '';
-			const data = await res.json();
-			return data.csrf_token || '';
+			const daten = await res.json();
+			return daten.csrf_token || '';
 		})
 		.catch(() => '')
 		.finally(() => {
@@ -139,7 +139,7 @@ export const apiClient = {
 	get(url, options = {}) {
 		return apiFetch(url, { ...options, method: 'GET' });
 	},
-	post(url, data, options = {}) {
+	post(url, daten, options = {}) {
 		return apiFetch(url, {
 			...options,
 			method: 'POST',
@@ -147,10 +147,10 @@ export const apiClient = {
 				'Content-Type': 'application/json',
 				...options.headers
 			},
-			body: JSON.stringify(data)
+			body: JSON.stringify(daten)
 		});
 	},
-	put(url, data, options = {}) {
+	put(url, daten, options = {}) {
 		return apiFetch(url, {
 			...options,
 			method: 'PUT',
@@ -158,13 +158,13 @@ export const apiClient = {
 				'Content-Type': 'application/json',
 				...options.headers
 			},
-			body: JSON.stringify(data)
+			body: JSON.stringify(daten)
 		});
 	},
 	delete(url, options = {}) {
 		return apiFetch(url, { ...options, method: 'DELETE' });
 	},
-	patch(url, data, options = {}) {
+	patch(url, daten, options = {}) {
 		return apiFetch(url, {
 			...options,
 			method: 'PATCH',
@@ -172,7 +172,7 @@ export const apiClient = {
 				'Content-Type': 'application/json',
 				...options.headers
 			},
-			body: JSON.stringify(data)
+			body: JSON.stringify(daten)
 		});
 	}
 };
@@ -233,22 +233,22 @@ export async function apiGet(url, options = {}) {
 	return werteAntwortAus(res);
 }
 
-export async function apiPost(url, data, options = {}) {
+export async function apiPost(url, daten, options = {}) {
 	const res = await apiFetch(url, {
 		...options,
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', ...options.headers },
-		body: data ? JSON.stringify(data) : undefined
+		body: daten ? JSON.stringify(daten) : undefined
 	});
 	return werteAntwortAus(res);
 }
 
-export async function apiPut(url, data, options = {}) {
+export async function apiPut(url, daten, options = {}) {
 	const res = await apiFetch(url, {
 		...options,
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json', ...options.headers },
-		body: data ? JSON.stringify(data) : undefined
+		body: daten ? JSON.stringify(daten) : undefined
 	});
 	return werteAntwortAus(res);
 }

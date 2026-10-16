@@ -36,12 +36,12 @@
 					throw new Error('Zugriff verweigert: Das Recht „Benutzer & Rechte verwalten" fehlt.');
 				throw new Error((await res.text()) || 'Fehler beim Laden der Berechtigungen');
 			}
-			const data = await res.json();
+			const daten = await res.json();
 
 			/** @type {Record<string, Record<string, boolean>>} */
 			// Alle aktiven Rollen vorbelegen, damit ihre Spalte auch ohne Server-Zeile erscheint.
 			const newState = { admin: {}, leitung: {}, mitarbeiter: {}, kollegium: {}, helfer: {} };
-			data.forEach((/** @type {any} */ item) => {
+			daten.forEach((/** @type {any} */ item) => {
 				if (!newState[item.role]) newState[item.role] = {};
 				newState[item.role][item.permission] = item.allowed;
 			});
