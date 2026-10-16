@@ -123,3 +123,39 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		}, "TUER-ZU-SPAET")
 	})
 }
+
+// Ein Zeitraum umfasst höchstens ein Jahr, „bis" eingeschlossen. Geprüft an allen vier Türen, weil
+// jede den Zeitraum über bestandsbuchZeitraum liest: Ein Jahr genau geht durch, ein Tag mehr
+// nicht, auch nach einem 29. Februar.
+func TestBestandsbuecher_HoechstensEinJahr(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	_, rufe := routertest.MitAufruf(t, pool)
+
+	faelle := []struct {
+		zeitraum string
+		status   int
+	}{
+		{"von=2025-09-15&bis=2026-09-14", http.StatusOK},
+		{"von=2025-09-15&bis=2026-09-15", http.StatusBadRequest},
+		{"von=2024-02-29&bis=2025-02-28", http.StatusOK},
+		{"von=2024-02-29&bis=2025-03-01", http.StatusBadRequest},
+		{"von=2000-01-01&bis=2099-12-31", http.StatusBadRequest},
+	}
+	tueren := []string{
+		"/api/bestand/zugangsbuch", "/api/bestand/zugangsbuch/pdf",
+		"/api/bestand/abgangsbuch", "/api/bestand/abgangsbuch/pdf",
+	}
+	for _, tuerPfad := range tueren {
+		for _, f := range faelle {
+			rec := rufe(t, http.MethodGet, tuerPfad+"?"+f.zeitraum, "")
+			if rec.Code != f.status {
+				t.Errorf("%s?%s: Status %d, erwartet %d: %s", tuerPfad, f.zeitraum, rec.Code, f.status, rec.Body.String())
+				continue
+			}
+			if f.status == http.StatusBadRequest && !strings.Contains(rec.Body.String(), "Der Zeitraum darf höchstens ein Jahr umfassen") {
+				t.Errorf("%s?%s: Die Antwort nennt die Grenze nicht: %s", tuerPfad, f.zeitraum, rec.Body.String())
+			}
+		}
+	}
+}

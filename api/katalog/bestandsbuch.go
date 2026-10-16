@@ -61,12 +61,19 @@ func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []topfAbschnitt[T]
 	return aus
 }
 
+// meldungZeitraumUeberEinJahr lehnt einen Zeitraum ab, der länger ist als ein Jahr.
+const meldungZeitraumUeberEinJahr = "Der Zeitraum darf höchstens ein Jahr umfassen"
+
 // bestandsbuchZeitraum liest von und bis aus der Anfrage; fehlt eines, gilt das laufende
 // Schulhalbjahr (Stichtage 15.3. und 15.9., siehe schulzeit.Halbjahr).
 //
 // Eine Stelle für beide Bücher und für beide Türen jedes Buchs (Bildschirm und Blatt): Zwei
 // Auslegungen von „laufendes Halbjahr" ergäben einen Ausdruck, der einen anderen Zeitraum
 // abdeckt als die Liste, aus der er entstand.
+//
+// Ein Zeitraum umfasst höchstens ein Jahr, „bis" eingeschlossen: Jede Zeile steht in der Antwort,
+// weil jemand den Nachweis unterschreibt und eine fehlende Zeile seine Zahl änderte. Mehrere
+// Jahre gehen als mehrere Ausdrucke.
 func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 	von, bis = schulzeit.Halbjahr(schulzeit.Jetzt())
 	lies := func(schluessel string, ziel *time.Time) error {
@@ -92,6 +99,9 @@ func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 	}
 	if bis.Before(von) {
 		return von, bis, apierrors.BadRequest("Das Ende des Zeitraums liegt vor seinem Anfang", nil)
+	}
+	if !bis.Before(von.AddDate(1, 0, 0)) {
+		return von, bis, apierrors.BadRequest(meldungZeitraumUeberEinJahr, nil)
 	}
 	return von, bis, nil
 }

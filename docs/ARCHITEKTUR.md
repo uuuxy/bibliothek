@@ -4150,8 +4150,8 @@ Fenstern bekannt ist:
   actionable elements". Am unteren Rand stehen die Auswahlleisten der Listen
   (`ui/AuswahlLeiste`, `AuswahlAktionsleiste`); dort müssten die Meldungen ausweichen.
 - Das Zugangsbuch baut alle Zugänge des Zeitraums auf einmal auf
-  (`components/bestand/Bestandsbuch.svelte`; die Abfrage in `repository/zugangsbuch.go` hat
-  keine Grenze). Gemessen am 02.10.2026 an der lokalen Datenbank: 34.621 Zeilen im laufenden
+  (`components/bestand/Bestandsbuch.svelte`; die Abfrage in `repository/zugangsbuch.go` begrenzt
+  nur der Zeitraum, höchstens ein Jahr). Gemessen am 02.10.2026 an der lokalen Datenbank: 34.621 Zeilen im laufenden
   Halbjahr, 5,4 MB, Abruf 0,1 s, Aufbau im Browser 4,2 s. Die lokalen Zugangsdaten stammen aus
   Importen und Testläufen und sagen nichts über die Schule; ein neues Exemplar übernimmt sein
   Erwerbsdatum als Zugangsdatum (`stempel_zugang_am`). Anlass zum Bauen: ein Halbjahr mit

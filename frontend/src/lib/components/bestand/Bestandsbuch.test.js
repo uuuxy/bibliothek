@@ -144,3 +144,26 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${LAND}`]);
 	});
 });
+
+// Einen Zeitraum über ein Jahr lehnt der Server mit einem Satz ab. Die Seite zeigt ihn, und der
+// Ausdruck bleibt beim zuletzt geladenen Zeitraum.
+describe('Bestandsbuch: Zeitraum über ein Jahr', () => {
+	it('zeigt den Satz des Servers und druckt weiter den geladenen Zeitraum', async () => {
+		const screen = await zugangsbuch({ land: 1 });
+		const satz = 'Der Zeitraum darf höchstens ein Jahr umfassen';
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: false, json: async () => ({ error: satz }) })
+		);
+
+		await fireEvent.input(screen.getByLabelText('Von'), { target: { value: '2025-09-16' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Anzeigen' }));
+
+		expect(await screen.findByText(satz)).toBeTruthy();
+		expect(apiFetch).toHaveBeenLastCalledWith(
+			'/api/bestand/zugangsbuch?von=2025-09-16&bis=2027-03-15'
+		);
+		expect(screen.getByRole('link', { name: 'Ausdrucken' }).getAttribute('href')).toBe(
+			'/api/bestand/zugangsbuch/pdf?von=2026-09-16&bis=2027-03-15'
+		);
+	});
+});

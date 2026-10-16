@@ -198,9 +198,9 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Gates und Werkzeuge (5.10):** Zugangs- und Abgangsbuch haben keine Höchstspanne, der
-  erste Lauf von `release.yml` auf Ubuntu 26, die Excel-Bibliothek und gosec auf einem
-  unveröffentlichten Stand, drei falsche Warnungen des Linters im Sammel-Update der Oberfläche.
+- [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
+  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, drei falsche Warnungen des
+  Linters im Sammel-Update der Oberfläche.
 - [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
@@ -322,15 +322,6 @@ Vermerk.
 
 ### 5.10 Gates und Werkzeuge
 
-- **Zugangs- und Abgangsbuch ohne Höchstspanne.** Die Zeilen in den Abschnitten von
-  `GET /api/bestand/zugangsbuch` und `GET /api/bestand/abgangsbuch`, auch als PDF, begrenzt nur
-  der Zeitraum `?von`/`?bis` (`bestandsbuchZeitraum`, `api/katalog/bestandsbuch.go`); die
-  Oberfläche bietet zwei freie Datumsfelder. In der Datenbank des Entwicklungsrechners hat das
-  Zugangsbuch für das Halbjahr vom 15.03. bis 14.09.2026 18.379 Zeilen, über den ganzen
-  Zeitraum 82.066. Kappen geht nicht: Den Nachweis unterschreibt jemand, eine fehlende Zeile
-  änderte seine Zahl. Zu entscheiden ist eine Höchstspanne mit Satz an der Tür (etwa ein
-  Schuljahr) oder die volle Spanne mit Absicht. Das Gate `api/listen_grenze_pg_test.go` sieht
-  diese Zeilen nicht, sie stehen in den Zeilen einer Liste. Kategorie B.
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier
   Workflows laufen auf `ubuntu-26.04`; `ci.yml`, `security-scan.yml` und `docker-publish.yml`
   sind dort grün (zuletzt am Stand 9687c973). `release.yml` läuft erst mit dem nächsten v-Tag;

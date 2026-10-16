@@ -332,14 +332,13 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// Auflagen eines Schulbuchs: Stufe 0, Titel und Bestandszahlen. Der
 		// Titel der Kanarienwelt ist verliehen; wer ihn hat, darf hier nicht auftauchen.
 		"GET /api/buecher/titel/{id}/auflagen": {URL: "/api/buecher/titel/" + w.titelID + "/auflagen"},
-		// Das Abgangsbuch: Stufe 0. Es nennt Exemplare, keine Leser, auch nicht beim Grund
-		// „Verlust", obwohl dort ein Schüler dahintersteht. Genau das prüft der Test hier mit: Der
-		// Kanarienvogel darf auf diesem Blatt nicht auftauchen. Zeitraum weit genug, dass die
-		// Aussonderung der Kanarienwelt hineinfällt.
-		"GET /api/bestand/abgangsbuch":                       {URL: "/api/bestand/abgangsbuch?von=2000-01-01&bis=2099-12-31"},
-		"GET /api/bestand/abgangsbuch/pdf":                   {URL: "/api/bestand/abgangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
-		"GET /api/bestand/zugangsbuch":                       {URL: "/api/bestand/zugangsbuch?von=2000-01-01&bis=2099-12-31"},
-		"GET /api/bestand/zugangsbuch/pdf":                   {URL: "/api/bestand/zugangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
+		// Zugangs- und Abgangsbuch: Stufe 0. Sie nennen Exemplare, keine Leser, auch nicht beim
+		// Grund „Verlust", obwohl dort ein Schüler dahintersteht. Ohne Zeitraum gilt das laufende
+		// Halbjahr, in dem die Exemplare der Kanarienwelt angelegt werden.
+		"GET /api/bestand/abgangsbuch":                       {URL: "/api/bestand/abgangsbuch"},
+		"GET /api/bestand/abgangsbuch/pdf":                   {URL: "/api/bestand/abgangsbuch/pdf"},
+		"GET /api/bestand/zugangsbuch":                       {URL: "/api/bestand/zugangsbuch"},
+		"GET /api/bestand/zugangsbuch/pdf":                   {URL: "/api/bestand/zugangsbuch/pdf"},
 		"GET /api/exemplare/etiketten-offen":                 {URL: "/api/exemplare/etiketten-offen"},
 		"GET /api/exemplare/etiketten-offen/anzahl":          {URL: "/api/exemplare/etiketten-offen/anzahl"},
 		"GET /api/exemplare/standorte":                       {URL: "/api/exemplare/standorte"},
