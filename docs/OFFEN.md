@@ -210,6 +210,8 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
   Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
+- [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 448 Kommentarzeilen mit Datum;
+  eine Ratsche wie im Go-Code, dann Datei für Datei.
 - [x] **Meldungen in Satzschreibung und auf Deutsch (5.68):** erledigt am 16.10.2026. Der Text
   eines Fehlers ohne Meldung geht unter keinem Status mehr hinaus (`apierrors`), und die
   Meldungs-Ratsche prüft die festen Sätze jedes Fehlerstatus außer 500, auch 502 und 503.
@@ -479,6 +481,18 @@ halten; sie zu löschen hieße, Regeln zu lockern. Offen:
   Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
   wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket
   zusammen mit dem Umbau nach [STIL.md](STIL.md).
+
+### 5.70 Vorgeschichte in Kommentaren der Oberfläche
+
+Gezählt am 16.10.2026: 448 Kommentarzeilen mit Datum in 219 der 459 Svelte- und JS-Dateien
+unter `frontend/src` (ohne Tests; Zeilen in `//`, `/* */` und `<!-- -->`), etwa „Hier lag bis
+zum 16.09.2026 ein Vollbild …" in `App.svelte` oder „stand hier bis zum 24.08.2026" in
+`menue.js`. Die Regel steht in `CLAUDE.md`, Abschnitt 4: kein Datum, keine Vorgeschichte. Im Go-Code hält sie `stil_ratsche_test.go` mit
+leerem Bestand; für die Oberfläche fehlt eine Prüfung. Vorschlag: in
+`frontend/src/lib/frontend-hygiene-sprache.test.js` je Datei die Kommentarzeilen mit Datum als
+Bestand einfrieren, der nur sinken darf (das Datum einer Quelle ausgenommen, wie im Go-Code),
+dann Datei für Datei die Kommentare auf das Warum kürzen, nach jeder Datei `npx svelte-check`
+und `npx vitest run`.
 
 ---
 
