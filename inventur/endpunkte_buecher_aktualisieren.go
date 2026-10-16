@@ -129,7 +129,7 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		})
 		return
 	}
-	if errors.Is(fehler, ErrTitelNichtGefunden) {
+	if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
 		schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
 		return
 	}

@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"context"
 	"errors"
 	"strings"
@@ -69,8 +70,8 @@ func TestLadeTitel(t *testing.T) {
 			WillReturnError(pgx.ErrNoRows)
 
 		eintrag, err := abfragen.LadeTitel(ctx, "invalid-id")
-		if !errors.Is(err, ErrTitelNichtGefunden) {
-			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+		if !errors.Is(err, repository.ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet %v", err, repository.ErrTitelNichtGefunden)
 		}
 		if eintrag != nil {
 			t.Errorf("eintrag = %v, erwartet nil", eintrag)
@@ -96,8 +97,8 @@ func TestLadeTitel(t *testing.T) {
 		if !errors.Is(err, attrappenFehler) {
 			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet %v", err, attrappenFehler)
 		}
-		if errors.Is(err, ErrTitelNichtGefunden) {
-			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet einen anderen als %v", err, ErrTitelNichtGefunden)
+		if errors.Is(err, repository.ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.LadeTitel: Fehler %v, erwartet einen anderen als %v", err, repository.ErrTitelNichtGefunden)
 		}
 		if eintrag != nil {
 			t.Errorf("eintrag = %v, erwartet nil", eintrag)
@@ -140,8 +141,8 @@ func TestAendereTitelMetadaten(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
 		err = abfragen.AendereTitelMetadaten(ctx, "invalid-id", "New Title", "New Author", "http://new-cover")
-		if !errors.Is(err, ErrTitelNichtGefunden) {
-			t.Errorf("abfragen.AendereTitelMetadaten: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+		if !errors.Is(err, repository.ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.AendereTitelMetadaten: Fehler %v, erwartet %v", err, repository.ErrTitelNichtGefunden)
 		}
 	})
 

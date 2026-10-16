@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"context"
 	"errors"
 	"fmt"
@@ -155,8 +156,8 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err = abfragen.LoescheTitel(ctx, ids)
-		if !errors.Is(err, ErrTitelNichtGefunden) {
-			t.Errorf("abfragen.LoescheTitel: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+		if !errors.Is(err, repository.ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.LoescheTitel: Fehler %v, erwartet %v", err, repository.ErrTitelNichtGefunden)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)

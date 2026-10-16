@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"context"
 	"errors"
 	"fmt"
@@ -8,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LadeTitel liest einen Titel samt Metadaten. Fehlt er, kommt ErrTitelNichtGefunden zurück, ein
+// LadeTitel liest einen Titel samt Metadaten. Fehlt er, kommt repository.ErrTitelNichtGefunden zurück, ein
 // Bedienfehler, kein Fehler des Servers. Jeder andere Fehler (Verbindung, Scan einer Spalte mit
 // NULL in einen String) geht weiter: Hieße auch er „buch nicht gefunden", wäre ein
 // Auseinanderlaufen des Schemas als 404 verkleidet.
@@ -40,7 +41,7 @@ func (a *TitelAbfragen) LadeTitel(ctx context.Context, id string) (*Titel, error
 		&eintrag.Auflage,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrTitelNichtGefunden
+		return nil, repository.ErrTitelNichtGefunden
 	}
 	if err != nil {
 		return nil, fmt.Errorf("buch laden: %w", err)
@@ -67,7 +68,7 @@ func (a *TitelAbfragen) AendereTitelMetadaten(ctx context.Context, id string, ti
 		return fmt.Errorf("metadaten konnten nicht aktualisiert werden: %w", err)
 	}
 	if ergebnis.RowsAffected() == 0 {
-		return ErrTitelNichtGefunden
+		return repository.ErrTitelNichtGefunden
 	}
 	return nil
 }

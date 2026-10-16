@@ -82,8 +82,8 @@ func TestAendereTitel(t *testing.T) {
 		mock.ExpectRollback()
 
 		err := abfragen.AendereTitel(ctx, "book-123", eintrag, felder, &Bestandsangabe{Soll: eintrag.Bestand})
-		if !errors.Is(err, ErrTitelNichtGefunden) {
-			t.Errorf("abfragen.AendereTitel: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+		if !errors.Is(err, repository.ErrTitelNichtGefunden) {
+			t.Errorf("abfragen.AendereTitel: Fehler %v, erwartet %v", err, repository.ErrTitelNichtGefunden)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)

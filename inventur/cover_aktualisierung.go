@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bibliothek/pkg/logger"
+	"bibliothek/repository"
 )
 
 // CoverAktualisieren ist die Tür POST /api/books/{id}/refresh-cover: Sie lädt das Cover eines
@@ -18,7 +19,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 	}
 
 	eintrag, err := t.abfragen.LadeTitel(r.Context(), id)
-	if errors.Is(err, ErrTitelNichtGefunden) {
+	if errors.Is(err, repository.ErrTitelNichtGefunden) {
 		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
 		return
 	}

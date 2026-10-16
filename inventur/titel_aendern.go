@@ -98,7 +98,7 @@ func (a *TitelAbfragen) AendereTitel(ctx context.Context, id string, eintrag Tit
 	}
 
 	if ergebnis.RowsAffected() == 0 {
-		return ErrTitelNichtGefunden
+		return repository.ErrTitelNichtGefunden
 	}
 
 	// Schlagworte in derselben Transaktion. nil heißt „nicht
@@ -172,7 +172,7 @@ func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, ei
 		Scan(&isbn, &autor, &lernmittel, &mehrjahresband, &von, &bis)
 	switch {
 	case istKeineZeile(err):
-		return ErrTitelNichtGefunden
+		return repository.ErrTitelNichtGefunden
 	case err != nil:
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
 	case nennt("author") && eintrag.Autor == "" && autor != "":

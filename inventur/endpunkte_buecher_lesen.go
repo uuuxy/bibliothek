@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"bytes"
 	"context"
 	"errors"
@@ -149,7 +150,7 @@ func (t *Tueren) Titel(antwort http.ResponseWriter, anfrage *http.Request) {
 	// statt ohne sie: Die Maske öffnet dann gar nicht, statt mit einem leeren Feld, das beim
 	// Speichern als Aussage „keine Schlagworte" zurückkäme.
 	buch, fehler := t.ladeTitelVoll(anfrage.Context(), id)
-	if errors.Is(fehler, ErrTitelNichtGefunden) {
+	if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
 		schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
 		return
 	}
@@ -170,7 +171,7 @@ func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (Titel, error) {
 		return Titel{}, err
 	}
 	if len(buecher) == 0 {
-		return Titel{}, ErrTitelNichtGefunden
+		return Titel{}, repository.ErrTitelNichtGefunden
 	}
 	buch := buecher[0]
 	buch.Schlagworte, err = t.abfragen.LadeSchlagworteDesTitels(ctx, id)

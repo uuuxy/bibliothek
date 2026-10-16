@@ -19,7 +19,7 @@ func (e *TitelHatAusleihenFehler) Error() string {
 	return fmt.Sprintf("titel hat verliehene exemplare: %v", e.Barcodes)
 }
 
-// ErrTitelNichtGefunden meldet eine unbekannte ID beim Löschen eines Titels.
+// ErrTitelNichtGefunden meldet einen Titel, den es unter der genannten Kennung nicht gibt.
 var ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 
 // LoescheTitel löscht einen Titel mit seinen Exemplaren und schreibt die Einträge dazu. Ist ein

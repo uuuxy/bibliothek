@@ -534,9 +534,7 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   Aufzählungen und Typen in der Signatur eines genutzten Namens): 29 in `inventur` (etwa
   `TitelAbfragen.LadeKlassensatzGruppen`, das einen klein geschriebenen Typ liefert, und fünf
   `Err…`), 15 in `jobs` (die Läufe `Zeitplan.Fuehre…Aus`, `BackupLauf`), je 9 in `mailservice`
-  und `pdf`. Dazu stehen zwei Fehlerwerte gleichen Namens für dieselbe Sache:
-  `inventur.ErrTitelNichtGefunden` („kein buch mit dieser ID gefunden") und
-  `repository.ErrTitelNichtGefunden` („titel nicht gefunden"). Keine Prüfung hält die Regel;
+  und `pdf`. Keine Prüfung hält die Regel;
   `stil_ratsche_test.go` sagt das in seinem Kopf. Weg: die Messung als Ratsche einchecken
   (Bestand je Paket, der nur sinkt), dann klein schreiben. Eine Prüfung, die einen Namen als Text
   führt, zieht mit (`api/mail_routen_frist_test.go` nennt `VersendeUeberSMTP`).

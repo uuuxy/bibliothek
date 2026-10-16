@@ -144,7 +144,7 @@ func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Reques
 	}
 
 	if fehler := t.abfragen.LoescheTitel(anfrage.Context(), eingabe.IDs); fehler != nil {
-		if errors.Is(fehler, ErrTitelNichtGefunden) {
+		if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
 			schreibeFehler(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden")
 			return
 		}

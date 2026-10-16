@@ -89,7 +89,7 @@ func (a *TitelAbfragen) LoescheTitel(ctx context.Context, ids []string) error {
 		return fmt.Errorf("bücher konnten nicht gelöscht werden: %w", err)
 	}
 	if ergebnis.RowsAffected() == 0 {
-		return ErrTitelNichtGefunden
+		return repository.ErrTitelNichtGefunden
 	}
 	if err := repository.RaeumeWerkeAuf(ctx, tx, werke); err != nil {
 		return err

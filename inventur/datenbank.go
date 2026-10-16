@@ -17,11 +17,11 @@ type TitelAbfragen struct {
 	pool db.Pool
 }
 
-// Fachliche Fehler, die der Aufrufer unterscheiden können muss: Beide sind
-// Bedienfehler (HTTP 400/404), keine Störung; die Tür darf daraus keinen 500 machen.
+// Fachliche Fehler, die die Tür unterscheiden muss: Bedienfehler (HTTP 400 oder 409), keine
+// Störung; die Tür darf daraus keinen 500 machen. Einen unbekannten Titel meldet
+// repository.ErrTitelNichtGefunden.
 var (
-	ErrTitelNichtGefunden = errors.New("kein buch mit dieser ID gefunden")
-	ErrISBNDoppelt        = errors.New("ein buch mit dieser ISBN existiert bereits")
+	ErrISBNDoppelt = errors.New("ein buch mit dieser ISBN existiert bereits")
 	// ErrDubletteTitel: derselbe Titel desselben Autors steht ohne ISBN schon im
 	// Katalog — die Dublettenkontrolle ohne Nummer.
 	ErrDubletteTitel = errors.New("dieser titel steht ohne ISBN bereits im katalog")
