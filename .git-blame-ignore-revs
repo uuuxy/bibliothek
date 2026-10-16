@@ -1,0 +1,17 @@
+# Commits, die nur Namen ändern. `git blame` und GitHub überspringen sie und zeigen die Zeile,
+# die den Grund trägt. Am Arbeitsplatz einmal: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Aufgenommen wird nur, was am Bau belegt nichts als Namen ändert (docs/ARCHITEKTUR.md 8.14).
+
+# Oberfläche, Namen in den Dateien (docs/STIL.md 13, Stufe 2)
+0e5f6ff49eb03cbda4c5344e9660dba85d0dd1ef
+2e6eebe86c918fcd44b97ea4282f593e822a840b
+ddde4e2affc02867b48f44ff488e16e74d2a001f
+d58e623ed6060f5ce9c2741c71f27ddb85780ef0
+50f9951f9a56c4fb8cbef16f7e7c1f7329a0534c
+7d6f8682b40d183fb030a9beb701e649ae0c06e6
+591b764e3560f8ec321b13145fc3bc7bda073498
+b8ba207ec9f0cc8ab0977557b04ea717327667ce
+75778d561944b048083b37b8a0f8796c5530821c
+
+# Oberfläche, Props (Stufe 3)
+f2186fc679d29bbcb72a0023bf8070f1367da086
