@@ -198,10 +198,10 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Gates und Werkzeuge (5.10):** die Bestände zweier Ratschen sind nicht befragt (Schema:
-  was die Datenbank ablehnt; Listen: was sie begrenzt), der erste Lauf von `release.yml` auf
-  Ubuntu 26, die Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, drei falsche
-  Warnungen des Linters im Sammel-Update der Oberfläche.
+- [ ] **Gates und Werkzeuge (5.10):** der Bestand der Schema-Ratsche ist nicht befragt (was die
+  Datenbank ablehnt), Zugangs- und Abgangsbuch haben keine Höchstspanne, der erste Lauf von
+  `release.yml` auf Ubuntu 26, die Excel-Bibliothek und gosec auf einem unveröffentlichten
+  Stand, drei falsche Warnungen des Linters im Sammel-Update der Oberfläche.
 - [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
@@ -331,15 +331,15 @@ Vermerk.
   Nächster Schritt: je Eintrag den Schreiber suchen, der dagegen laufen kann, und nachstellen,
   was er bekommt; ohne eigene Behandlung ist es der neutrale Satz von `apierrors`. Zuerst die
   elf übrigen Löschsperren (Leser, Exemplar, Gerät, Klasse). Kategorie B.
-- **87 Listen ohne Antwort.** Seit dem 08.10.2026 ruft `api/listen_grenze_pg_test.go` jede
-  GET-Route auf und verlangt zu jeder Liste in der Antwort, was sie begrenzt; eine neue Liste
-  ohne Antwort macht den Test rot. Gefunden sind 92 Listen in 70 Routen. Fünf tragen ihre
-  Antwort (beide Protokolle und der Papierkorb mit je 1000 Zeilen, der Katalog mit der
-  Kappung bei 50000, die Regaladressen); 87 stehen als Bestand im Gate. Nächster Schritt: je
-  Liste die Grenze am Code nachlesen und eintragen, zuerst die Listen, deren Tabelle mit der
-  Zeit wächst (Bestellhistorie, Vormerkungen, Bescheide, Nachbuch-Meldungen, Inventuren,
-  Historie eines Titels). Fehlt eine Grenze: Obergrenze in der Abfrage, Index auf der
-  Sortierspalte, die Kappung in der Oberfläche ansagen. Kategorie B.
+- **Zugangs- und Abgangsbuch ohne Höchstspanne.** Die Zeilen in den Abschnitten von
+  `GET /api/bestand/zugangsbuch` und `GET /api/bestand/abgangsbuch`, auch als PDF, begrenzt nur
+  der Zeitraum `?von`/`?bis` (`bestandsbuchZeitraum`, `api/katalog/bestandsbuch.go`); die
+  Oberfläche bietet zwei freie Datumsfelder. In der Datenbank des Entwicklungsrechners hat das
+  Zugangsbuch für das Halbjahr vom 15.03. bis 14.09.2026 18.379 Zeilen, über den ganzen
+  Zeitraum 82.066. Kappen geht nicht: Den Nachweis unterschreibt jemand, eine fehlende Zeile
+  änderte seine Zahl. Zu entscheiden ist eine Höchstspanne mit Satz an der Tür (etwa ein
+  Schuljahr) oder die volle Spanne mit Absicht. Das Gate `api/listen_grenze_pg_test.go` sieht
+  diese Zeilen nicht, sie stehen in den Zeilen einer Liste. Kategorie B.
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier
   Workflows laufen auf `ubuntu-26.04`; `ci.yml`, `security-scan.yml` und `docker-publish.yml`
   sind dort grün (zuletzt am Stand 9687c973). `release.yml` läuft erst mit dem nächsten v-Tag;
