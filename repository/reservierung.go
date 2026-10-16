@@ -48,37 +48,17 @@ type OffeneReservierung struct {
 }
 
 // ReservierungsAbfragen liest und schreibt die Reservierungen von Klassensätzen.
-type ReservierungsAbfragen interface {
-	IstTitelVorhanden(ctx context.Context, titelID string) (bool, error)
-	// ZaehleTitelBestand zählt die vorhandenen (nicht ausgesonderten) Exemplare eines Titels:
-	// die Obergrenze einer Reservierung.
-	ZaehleTitelBestand(ctx context.Context, titelID string) (int, error)
-	LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (id string, neu bool, err error)
-	LadeAlle(ctx context.Context) ([]Reservierung, error)
-	// LadeOffene liefert die offenen Reservierungen in der Reihenfolge der Warteschlange (die
-	// älteste zuerst), für das Portal.
-	LadeOffene(ctx context.Context) ([]OffeneReservierung, error)
-	ZaehleOffene(ctx context.Context) (int, error)
-	// Erledige schließt eine offene Reservierung ab und liefert die Angaben für die Mail an die
-	// Lehrkraft; notiz ist die Antwort der Bibliothek. nil ohne Fehler heißt: war nicht mehr
-	// offen.
-	Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error)
-	// LadeEigene liefert die eigenen Reservierungen einer Lehrkraft für das Portal: offene und
-	// kürzlich abgeschlossene mit der Notiz der Bibliothek.
-	LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error)
-}
-
-type pgReservierungsAbfragen struct {
+type ReservierungsAbfragen struct {
 	db db.Pool
 }
 
 // NewReservierungsAbfragen liefert die Abfragen der Reservierungen an Postgres.
-func NewReservierungsAbfragen(pool db.Pool) ReservierungsAbfragen {
-	return &pgReservierungsAbfragen{db: pool}
+func NewReservierungsAbfragen(pool db.Pool) *ReservierungsAbfragen {
+	return &ReservierungsAbfragen{db: pool}
 }
 
 // IstTitelVorhanden meldet, ob es den Titel gibt.
-func (a *pgReservierungsAbfragen) IstTitelVorhanden(ctx context.Context, titelID string) (bool, error) {
+func (a *ReservierungsAbfragen) IstTitelVorhanden(ctx context.Context, titelID string) (bool, error) {
 	var vorhanden bool
 	err := a.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE id = $1)`, titelID).Scan(&vorhanden)
 	return vorhanden, err
@@ -87,7 +67,7 @@ func (a *pgReservierungsAbfragen) IstTitelVorhanden(ctx context.Context, titelID
 // ZaehleTitelBestand zählt die vorhandenen (nicht ausgesonderten) Exemplare eines Titels. Eine
 // Reservierung über diese Zahl hinaus ließe sich nie erfüllen und bliebe als Aufgabe in der
 // Liste stehen.
-func (a *pgReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelID string) (int, error) {
+func (a *ReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelID string) (int, error) {
 	var anzahl int
 	err := a.db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM buecher_exemplare
@@ -98,7 +78,7 @@ func (a *pgReservierungsAbfragen) ZaehleTitelBestand(ctx context.Context, titelI
 
 // LegeAn legt eine Reservierung an; der zweite Wert ist false, wenn dieselbe Anfrage schon
 // angelegt war.
-func (a *pgReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (string, bool, error) {
+func (a *ReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse string, anzahl int, notiz *string, angefordertVon string, idempotenzSchluessel *string) (string, bool, error) {
 	// Schutz vor dem Doppelklick: Mit demselben idempotenz_schluessel läuft das zweite INSERT
 	// auf den partiellen Unique-Index, DO NOTHING liefert keine Zeile, und zurück geht die
 	// schon angelegte Reservierung (keine zweite Mail). Ohne Schlüssel (NULL) kollidiert
@@ -126,7 +106,7 @@ func (a *pgReservierungsAbfragen) LegeAn(ctx context.Context, titelID, klasse st
 
 // LadeAlle liefert alle Reservierungen: die offenen in der Reihenfolge der Warteschlange (die
 // älteste zuerst), dahinter die erledigten, die neuesten zuerst.
-func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung, error) {
+func (a *ReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung, error) {
 	// Verfuegbar zählt wie der Katalog: ausleihbar, nicht ausgesondert, keine offene Ausleihe.
 	//
 	// Die Zählung steht als LATERAL-Join und nicht in der SELECT-Liste: So kann Postgres sie je
@@ -183,8 +163,9 @@ func (a *pgReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung,
 	return reservierungen, nil
 }
 
-// LadeOffene liefert die Warteschlange, wie die Lehrkräfte sie sehen.
-func (a *pgReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReservierung, error) {
+// LadeOffene liefert die offenen Reservierungen in der Reihenfolge der Warteschlange (die
+// älteste zuerst), wie die Lehrkräfte sie im Portal sehen.
+func (a *ReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReservierung, error) {
 	// Mit LEFT JOIN: Ein gelöschter Titel nimmt seine Reservierung nicht aus der Warteschlange
 	// der anderen; dort steht dann ein leerer Name.
 	rows, err := a.db.Query(ctx, `
@@ -231,7 +212,7 @@ type EigeneReservierung struct {
 // LadeEigene liefert die eigenen offenen Reservierungen und die in den letzten 60 Tagen
 // abgeschlossenen; das Portal ist kein Archiv. Alte Reservierungen ohne erledigt_am bleiben
 // draußen. Offene zuerst, dann die neuesten, höchstens 50.
-func (a *pgReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error) {
+func (a *ReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID string) ([]EigeneReservierung, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT k.id, k.titel_id, COALESCE(t.titel, ''), k.klasse, k.anzahl,
 		       COALESCE(k.notiz, ''), k.erledigt, k.erledigt_notiz, k.erledigt_am, k.erstellt_am
@@ -265,7 +246,7 @@ func (a *pgReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID str
 }
 
 // ZaehleOffene zählt die offenen Reservierungen.
-func (a *pgReservierungsAbfragen) ZaehleOffene(ctx context.Context) (int, error) {
+func (a *ReservierungsAbfragen) ZaehleOffene(ctx context.Context) (int, error) {
 	var anzahl int
 	err := a.db.QueryRow(ctx, `SELECT COUNT(*) FROM klassensatz_reservierungen WHERE erledigt = false`).Scan(&anzahl)
 	return anzahl, err
@@ -281,9 +262,10 @@ type ErledigteReservierung struct {
 	AnfragendeMail *string // nil: ohne Konto angefragt oder Konto gelöscht
 }
 
-// Erledige schließt eine offene Reservierung ab und liefert die Angaben für die Mail; nil ohne
-// Fehler heißt, sie war nicht mehr offen.
-func (a *pgReservierungsAbfragen) Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error) {
+// Erledige schließt eine offene Reservierung ab und liefert die Angaben für die Mail an die
+// Lehrkraft; notiz ist die Antwort der Bibliothek. nil ohne Fehler heißt, sie war nicht mehr
+// offen.
+func (a *ReservierungsAbfragen) Erledige(ctx context.Context, id, notiz string) (*ErledigteReservierung, error) {
 	// Die Bedingung erledigt = false: Ein zweiter Klick schließt nicht doppelt ab und löst
 	// keine zweite Mail aus.
 	row := a.db.QueryRow(ctx, `
