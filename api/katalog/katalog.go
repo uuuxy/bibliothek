@@ -23,7 +23,7 @@ const (
 	meldungExemplarNichtGefunden = "Exemplar nicht gefunden oder schon ausgebucht"
 )
 
-// Sätze, hinter die die Tür den Grund einer Ablehnung aus repository setzt (tuer.MitGrund).
+// Sätze, hinter die die Tür den Grund einer Ablehnung aus repository setzt (repository.MitGrund).
 const (
 	meldungEigentumNichtGeaendert      = "Eigentum nicht geändert"
 	meldungStandortNichtGeaendert      = "Standort nicht geändert"

@@ -14,7 +14,7 @@ type Tueren struct {
 }
 
 // meldungVerlustGebunden steht vor dem Exemplar, das noch an einem laufenden Vorgang hängt
-// (repository.ErrVerlustNochGebunden, tuer.MitGrund).
+// (repository.ErrVerlustNochGebunden, repository.MitGrund).
 const meldungVerlustGebunden = "Ein Exemplar hängt noch an einem laufenden Vorgang"
 
 // meldungLaufUeberlappt steht vor dem offenen Lauf, mit dem sich ein neuer überschneidet.

@@ -237,7 +237,7 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - Einen Fehler aus einer tieferen Schicht oder einer fremden Bibliothek gibt die Tür nicht als
   Meldung weiter, auch nicht mit `err.Error()`: Sein Text beginnt klein und ist oft englisch
   (`unexpected EOF`). Die Tür erkennt ihn am Wert und setzt ihren Satz; `tuer.LeseAnfrage` tut
-  das für den Rumpf jeder Anfrage (`tuer.MeldungAnfrageUnlesbar`, `tuer.Pruefmeldung`).
+  das für den Rumpf jeder Anfrage (`apierrors.MeldungAnfrageUnlesbar`, `tuer.Pruefmeldung`).
 - Braucht der Satz Einzelheiten aus einer tieferen Schicht, trägt der Fehler sie als Felder,
   und die Tür formuliert (`repository.KontoHatAusleihenFehler`, `lusd.MassenabgangFehler`): „If
   there is extra information in the error that the caller needs programmatically, it should
