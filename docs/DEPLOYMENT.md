@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-10-08
+> Zuletzt aktualisiert: 2026-10-16
 
 ---
 
@@ -23,9 +23,9 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `DATABASE_URL`                                                             | PostgreSQL-DSN                                                                                                                                                                                                                               | Pflicht                                                                                                                                                                                                                                    |
 | `JWT_SECRET`                                                               | HMAC-Signatur-Schlüssel                                                                                                                                                                                                                      | Pflicht, ≥ 32 Zeichen                                                                                                                                                                                                                      |
-| `APP_ENCRYPTION_KEY`                                                       | AES-256-Schlüssel für Schülerfotos **und** das gespeicherte SMTP-Passwort                                                                                                                                                                    | Pflicht, genau 32 Bytes (oder 64 Hex-Zeichen). **Der einzige gültige Name** — `ENCRYPTION_KEY` wurde bis zum 06.08.2026 vorrangig gelesen und umging dabei jede Startprüfung; der Server bricht jetzt ab, wenn er abweichend gesetzt ist   |
+| `APP_ENCRYPTION_KEY`                                                       | AES-256-Schlüssel für Schülerfotos **und** das gespeicherte SMTP-Passwort                                                                                                                                                                    | Pflicht, genau 32 Bytes (oder 64 Hex-Zeichen). **Der einzige gültige Name** — ist `ENCRYPTION_KEY` gesetzt und weicht ab, bricht der Server den Start ab                                                                       |
 | `APP_ENV`                                                                  | Umgebung. Auf einem Server bleibt `production`; `local` / `development` / `test` lassen die Beispiel-Geheimnisse und `IMAP_HOST=mock` (jedes Passwort) gelten, `local` / `development` öffnen zusätzlich Swagger                            | Standard: `production`                                                                                                                                                                                                                     |
-| `ENFORCE_PROD_SECRETS`                                                     | Harte Start-Verweigerung bei Default-Secrets                                                                                                                                                                                                 | **Vorgabe scharf** außerhalb von `local/development/test` (seit 05.09.2026); nur ausdrückliches `false` schaltet ab                                                                                                                       |
+| `ENFORCE_PROD_SECRETS`                                                     | Harte Start-Verweigerung bei Default-Secrets                                                                                                                                                                                                 | **Vorgabe scharf** außerhalb von `local/development/test`; nur ausdrückliches `false` schaltet ab                                                                                                                                          |
 | `COOKIE_SECURE`                                                            | `true` hinter TLS-Proxy (Caddy)                                                                                                                                                                                                              | Standard: **`true`**, außerhalb von `APP_ENV=local/development/test`. Nicht gesetzt → `true` mit Warnung im Log; unlesbarer Wert → harter Abbruch (`ermittleCookieSecure`). `docker-compose.yml` setzt zusätzlich `${COOKIE_SECURE:-true}` |
 | `PORT`                                                                     | HTTP-Port des Backends                                                                                                                                                                                                                       | Pflicht                                                                                                                                                                                                                                    |
 | `IMAP_HOST`                                                                | IMAP-Server der Schule — die Anmeldung prüft Zugangsdaten dagegen                                                                                                                                                                            | **Pflicht.** Ohne diese Variable bricht der Start ab (`FATAL: IMAP_HOST ist nicht gesetzt`); lokal `IMAP_HOST=mock` zusammen mit `APP_ENV=local`                                                                                           |
@@ -60,9 +60,7 @@ Hinter dem Reverse-Proxy sieht er nur seinen internen Namen.
 
 ## 2. Produktions-Deployment (Hetzner/Docker)
 
-**Wo der Stack liegt:** `/root/bibliothek`. Bis zum 16.09.2026 stand in dieser Anleitung an
-sieben Stellen `/opt/bibliothek` — dieses Verzeichnis gibt es auf dem Server nicht, jede
-kopierte Befehlsfolge scheiterte am ersten `cd`. Zieht der Stack einmal um, stehen die Pfade in
+**Wo der Stack liegt:** `/root/bibliothek`. Zieht der Stack einmal um, stehen die Pfade in
 DEPLOYMENT (vier), SECURITY, SCRIPTS und `scripts/pruefe_secrets.sh`.
 
 ### 2.1 `.env`-Datei anlegen
@@ -99,10 +97,10 @@ cd /root/bibliothek
 > failed to parse as URL (invalid port ":sGWO+wgLlTIj" after host)
 > ```
 >
-> Genau das ist am 06.08.2026 auf der Produktion passiert: Der Passwortwechsel lief
-> scheinbar sauber durch (`ALTER ROLE`, Container „Started", `pruefe_secrets.sh` meldete
-> **alles grün**) — und die Anwendung war trotzdem unten. Die Konfigurationsprüfung liest
-> die Datei, nicht die Verbindung; sie kann diesen Fehler nicht sehen.
+> Ein Passwortwechsel läuft dann scheinbar sauber durch (`ALTER ROLE`, Container „Started",
+> `pruefe_secrets.sh` meldet **alles grün**), und die Anwendung ist trotzdem unten: Die
+> Konfigurationsprüfung liest die Datei, nicht die Verbindung; sie kann diesen Fehler nicht
+> sehen.
 >
 > `-hex` liefert nur `0-9a-f` und ist in jeder URL unverändert gültig. Für die anderen
 > Werte wäre Base64 unschädlich, aber eine Regel ohne Ausnahme ist leichter zu befolgen
@@ -124,7 +122,7 @@ Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 ```bash
 # /root/bibliothek/.env
 APP_ENV=production
-# ENFORCE_PROD_SECRETS ist seit 05.09.2026 von selbst scharf — nichts zu setzen
+# ENFORCE_PROD_SECRETS ist von selbst scharf — nichts zu setzen
 COOKIE_SECURE=true
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
@@ -159,7 +157,7 @@ grep -c '^JWT_SECRET=' .env          # genau 1
 
 Der Server verweigert den Start mit bekannten Beispiel-Geheimnissen für `JWT_SECRET` oder
 `APP_ENCRYPTION_KEY` **von selbst**, sobald `APP_ENV` nicht `local`/`development`/`test`
-ist (Regel: `bereitschaft.IstGeheimnisSchutzScharf`, seit 05.09.2026). `docker-compose.yml`
+ist (Regel: `bereitschaft.IstGeheimnisSchutzScharf`). `docker-compose.yml`
 verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der Stack nicht.
 
 | Phase              | `ENFORCE_PROD_SECRETS`   | Verhalten                                                                                                        |
@@ -167,9 +165,8 @@ verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der St
 | Echter Betrieb     | nicht gesetzt (Standard) | Server **verweigert den Start**, wenn ein bekannter Default für `JWT_SECRET` oder `APP_ENCRYPTION_KEY` aktiv ist |
 | Testphase, bewusst | `false` (ausdrücklich)   | Stack startet auch mit Beispielwerten; Log warnt, Selbstprüfung gelb, `pruefe_secrets.sh` rot                    |
 
-> Bis zum 05.09.2026 war es umgekehrt (`false` als Standard, `true` musste gesetzt
-> werden). Eine vergessene Zeile reichte, um den Schulserver mit dem JWT-Schlüssel aus dem
-> Repository zu betreiben. `APP_ENV` ist daran gekoppelt: `local`/`development`/`test`
+> Mit `false` als Vorgabe reichte eine vergessene Zeile, um den Schulserver mit dem
+> JWT-Schlüssel aus dem Repository zu betreiben. `APP_ENV` ist daran gekoppelt: `local`/`development`/`test`
 > schalten den Guard ab, solange `ENFORCE_PROD_SECRETS` nicht gesetzt ist — und erlauben
 > zugleich `IMAP_HOST=mock`, also die Anmeldung mit jedem Passwort; `local` und
 > `development` schalten zusätzlich Swagger frei. Das Cookie-`Secure`-Flag fällt nur weg,
@@ -210,12 +207,11 @@ cd /pfad/zur/bibliothek
 docker compose --env-file .env up -d --build
 ```
 
-`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. Wer nach dem Pull vom 05.09.2026 diese Meldung sieht, ergänzt die `.env` mit denselben Befehlen wie in §2.1 — `openssl rand -hex 32` für den JWT-Schlüssel UND für den AES-Schlüssel (64 Hex-Zeichen = 32 Byte). Ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
+`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. Wer diese Meldung sieht, ergänzt die `.env` mit denselben Befehlen wie in §2.1 — `openssl rand -hex 32` für den JWT-Schlüssel UND für den AES-Schlüssel (64 Hex-Zeichen = 32 Byte). Ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
 
-> Hier standen bis zum 12.09.2026 zwei andere Befehle: einer in Base64 — was §2.1 für die
-> ganze Datei ausschließt, weil ein `POSTGRES_PASSWORD` mit `+` oder `/` die DSN zerlegt —
-> und einer mit `-hex 16`. Der liefert 32 Zeichen, die der Server als Schlüssel annimmt
-> (er akzeptiert 32 oder 64 Zeichen) — aber nur 128 statt 256 Bit Zufall.
+> Nicht `-hex 16`: Das liefert 32 Zeichen, die der Server als Schlüssel annimmt (er
+> akzeptiert 32 oder 64 Zeichen), aber nur 128 statt 256 Bit Zufall. Und nicht Base64: Ein
+> `POSTGRES_PASSWORD` mit `+` oder `/` zerlegt die DSN (§2.1).
 
 ### 2.4 Deployment-Skript
 
@@ -334,12 +330,12 @@ Migrationen laufen **automatisch beim Serverstart** (`db.Verbindung.FuehreMigrat
 1. Datei `migrations/NNN_beschreibung.sql` anlegen (NNN = nächste Nummer, kein Namenskonflikt)
 2. Dateinamen in `schema.sql` unter `schema_migrations` eintragen (geprüft von `TestMigrationslisteImSchemaGleichDenDateien` in `db/migrationen_drift_test.go`)
 
-### Major-Upgrade der Datenbank (z. B. 15 → 18, durchgeführt 31.08.2026)
+### Major-Upgrade der Datenbank (z. B. 15 → 18)
 
 Ein Major-Wechsel des Postgres-Images ist **kein** normales `docker compose pull` —
 das Datenverzeichnis einer alten Major-Version startet unter der neuen nicht. Der Weg
-ist Dump → frisches Volume → Restore. Seit dem 18er-Image liegt das Datenverzeichnis
-außerdem unter `/var/lib/postgresql` (vorher `/var/lib/postgresql/data`);
+ist Dump → frisches Volume → Restore. Ab dem 18er-Image liegt das Datenverzeichnis
+außerdem unter `/var/lib/postgresql`, davor unter `/var/lib/postgresql/data`;
 `docker-compose.yml` mountet bereits den neuen Pfad.
 
 Reihenfolge auf dem Server (Variablen an die eigene `.env` anpassen, keine Platzhalter in
@@ -402,7 +398,7 @@ Manuelles Backup:
 ./scripts/backup.sh
 ```
 
-Auch die beiden **Shell-Wege** verschlüsseln seit dem 23.08.2026 (Befund A5):
+Auch die beiden **Shell-Wege** verschlüsseln (Befund A5):
 `scripts/backup.sh` schreibt `.sql.gz.enc` direkt aus der Pipe — der Klartext berührt die
 Platte nie —, und `./update.sh` verschlüsselt seine Vorab-Sicherung in Schritt 5, sobald
 der neue Container gesund und aus dem richtigen Commit gebaut ist. Beide nutzen
@@ -416,7 +412,7 @@ gehört `backups/` zum schutzbedürftigen Bestand — sie enthält jeden Schüle
 Adresse und jede Ausleihe im Klartext. Details:
 [resilience_and_recovery.md](resilience_and_recovery.md).
 
-### Backup-Umfang: nur die Datenbank (bewusste Entscheidung, 11.07.2026)
+### Backup-Umfang: nur die Datenbank (entschieden am 11.07.2026)
 
 Das `uploads/`-Volume (Buchcover als lokale WebP-Dateien) wird **absichtlich nicht**
 mitgesichert:
@@ -432,8 +428,7 @@ mitgesichert:
   UPDATE buecher_titel SET cover_status = 'PENDING', cover_url = NULL
   WHERE cover_url LIKE '/uploads/%';
   ```
-  Bis zum 21.09.2026 setzte dieses Rezept nur den Status und blieb damit wirkungslos
-  (`TestCoverRezeptNachRestore_WirktAufDieAuswahl` führt es jetzt wörtlich aus).
+  `TestCoverRezeptNachRestore_WirktAufDieAuswahl` führt es wörtlich aus.
   **Von Hand hochgeladene Cover kommen so nicht zurück:** Die Datenbank unterscheidet sie
   nicht von geladenen, der Lauf ersetzt sie durch den Treffer der Katalogdienste — und ein
   Titel ohne ISBN bleibt ohne Cover. Wer Hand-Uploads hat, sichert das Volume (siehe unten).
@@ -455,8 +450,7 @@ externer Monitor (z. B. UptimeRobot, kostenloser Plan), der alle 5 Minuten
 `https://flasch3.herzog-dupont.de/health` abruft und bei Ausfall eine Mail schickt.
 Der Endpunkt ist öffentlich und gibt keine Interna preis (`{"status":"healthy"}`).
 
-Es gibt **zwei** Health Checks, und sie prüfen Verschiedenes. Hier stand bis zum
-06.08.2026 nur der Datenbank-Check, ausgegeben als wäre es der des Anwendungscontainers.
+Es gibt **zwei** Health Checks, und sie prüfen Verschiedenes.
 
 **Anwendung** — im `Dockerfile` (nicht in der Compose-Datei):
 
@@ -466,9 +460,9 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
 ```
 
 `--start-period=30s` ist nötig, weil beim ersten Start die Migrationen laufen; ohne sie
-galt der Container in dieser Zeit als krank. Die Sonde spricht bewusst `127.0.0.1`
+gälte der Container in dieser Zeit als krank. Die Sonde spricht bewusst `127.0.0.1`
 im Container an — über den öffentlichen Namen hätte sie die HTTPS-Umleitung getroffen
-und wäre an der 301 gescheitert (Commit `ea5bf6d`).
+und wäre an der 301 gescheitert.
 
 **Datenbank** — in `docker-compose.yml` beim Dienst `postgres-db`:
 
@@ -491,13 +485,11 @@ Container ohne Healthcheck liefert dort gar nichts.
 ### Gesund heißt nicht aktuell (Schritt 4b)
 
 Beide Prüfungen oben beantworten die Frage „läuft etwas?" — nicht die Frage „läuft der
-**neue** Stand?". Am 11.08.2026 stand auf dem Server `git pull` durch, `./update.sh`
-aber nicht: Das Arbeitsverzeichnis zeigte den neuen Commit, das laufende Image war zehn
-Stunden alt und lieferte den Stand von vorgestern aus. Die Gesundheitsprüfungen meldeten
-dabei völlig zu Recht „gesund". Aufgefallen ist es nur, weil jemand von Hand den Namen
-der ausgelieferten Bundle-Datei verglichen hat.
+**neue** Stand?". Ist `git pull` durch, `./update.sh` aber nicht, zeigt das
+Arbeitsverzeichnis den neuen Commit, während das laufende Image den alten Stand ausliefert;
+die Gesundheitsprüfungen melden dabei zu Recht „gesund".
 
-Seither legt `update.sh` den Commit als Build-Argument ins Image (`Dockerfile`:
+Deshalb legt `update.sh` den Commit als Build-Argument ins Image (`Dockerfile`:
 `ARG`/`ENV GIT_COMMIT`) und gleicht ihn in **Schritt 4b** gegen das Arbeitsverzeichnis
 ab:
 
@@ -533,7 +525,7 @@ Zwei Dinge laufen automatisch, ein drittes bewusst nicht:
 | Git-Tag `v1.2.3`      | Image `1.2.3` und `1.2` (**kein** `latest`, siehe unten) **und** GitHub-Release mit generierten Notes | `docker-publish.yml` + `release.yml` |
 | Deploy auf dem Server | **nicht** automatisch — `./update.sh` (git pull + lokaler Build), siehe §2                            | —                                    |
 
-**Welche Zahl steigt** (entschieden am 17.09.2026, weil die Frage beim Release nach v2.13.0 aufkam):
+**Welche Zahl steigt** (entschieden am 17.09.2026):
 
 Die mittlere Zahl ist ein ZÄHLER, kein Nachkommawert: Auf v2.13.0 folgt v2.14.0, nicht
 v2.5.0. Das klingt selbstverständlich, sieht im Verzeichnis aber falsch sortiert aus, wenn
@@ -563,19 +555,19 @@ git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
 ```
 
 Nur das Muster `v<major>.<minor>.<patch>` (mit führendem „v") löst beides aus — derselbe
-Filter in beiden Workflows, damit Release und Image nie auseinanderlaufen. Das alte
-Release „1.0" (ohne „v", von Hand angelegt am 21.08.2026) zeigt fest auf `dd8a31c6`
-und hat kein versioniertes Image; es bleibt als Historie stehen.
+Filter in beiden Workflows, damit Release und Image nie auseinanderlaufen. Das
+Release „1.0" (ohne „v", von Hand angelegt) zeigt fest auf `dd8a31c6` und hat kein
+versioniertes Image; es bleibt stehen.
 
-`latest` heißt „neuester main", nicht „neuestes Release" — seit 22.08.2026 auch technisch:
-der Tag-Lauf setzt `latest` nicht mehr (`flavor: latest=false`). Wer einen festen Stand
+`latest` heißt „neuester main", nicht „neuestes Release": Der Tag-Lauf setzt `latest` nicht
+(`flavor: latest=false`). Wer einen festen Stand
 will, nimmt den Versions-Tag. Beide Tag-Workflows prüfen vorher das strikte Muster
 `v<major>.<minor>.<patch>` und dass der Commit auf `main` liegt — ein Tag auf einem
 Feature-Branch erzeugt weder Release noch Image. Beide fragen außerdem die Prüfläufe des
 Commits ab, über dasselbe Skript (`scripts/tag-gate.sh`): Ein Tag auf rotem Stand erzeugt
 weder Release noch versioniertes Image.
 
-**Was das Tag-Gate prüft** (Stand 21.09.2026): Auf dem getaggten Commit müssen acht
+**Was das Tag-Gate prüft:** Auf dem getaggten Commit müssen acht
 Prüfläufe grün sein — die vier Jobs aus `ci.yml` (`actionlint`, `build-and-test`,
 `frontend-test`, `e2e`) und die vier aus `security-scan.yml`, unter dem Namen, den GitHub
 ihnen gibt: `Go – govulncheck`, `Go – gosec static analysis`, `npm – audit (frontend)` und
@@ -587,9 +579,8 @@ einem der beiden Workflows, der nicht in der Liste steht, macht sie rot — und 
 der Liste, den kein Workflow führt, ebenfalls. `TestTagWorkflowsRufenDasTagGate` hält fest,
 dass beide Workflows das Skript aufrufen und keine eigene Liste führen.
 
-Die Security-Jobs gehören seit dem 21.09.2026 dazu. Den Fall gab es: Am Commit `bbad2f39`
-(07.09.2026) waren alle vier CI-Jobs grün und der Trivy-Scan rot; ein Tag darauf hätte
-Release und Image erzeugt. Dass eine fremde Lücke ohne Fix ein Release sperrt, ist nicht zu
+Die Security-Jobs gehören dazu: Sind alle CI-Jobs grün und der Trivy-Scan rot, erzeugte ein
+Tag sonst Release und Image. Dass eine fremde Lücke ohne Fix ein Release sperrt, ist nicht zu
 befürchten — Trivy läuft mit `ignore-unfixed`, govulncheck mit der Ausnahmeliste samt
 Wiedervorlage. Nachstellen lässt sich das Gate an jedem Commit:
 
@@ -597,10 +588,7 @@ Wiedervorlage. Nachstellen lässt sich das Gate an jedem Commit:
 GITHUB_REPOSITORY=uuuxy/bibliothek GITHUB_SHA="$(git rev-parse origin/main)" ./scripts/tag-gate.sh
 ```
 
-Bis zum 12.09.2026 stand hier, das Gate verlange „nur den Check-Run `build-and-test`" und
-`e2e` gehöre nicht dazu, und `docker-scan` „existiert nicht mehr". Beides stimmte nicht
-mehr bzw. nie: Die Pflichtliste wurde am 06.09. auf alle CI-Jobs erweitert, und
-`docker-scan` gibt es — in `security-scan.yml`, nur eben nicht in `ci.yml`. Der Workflow legt die Notes als Docker-Zeile plus
+Der Workflow legt die Notes als Docker-Zeile plus
 Commit-Liste an; der Abschnitt „Worum es in diesem Stand geht" wird danach von Hand
 davor gesetzt (`gh release edit vX.Y.Z --notes-file …`). Für die Tag-Annotation lohnt
 ein sprechender Text (`-m "vX.Y.Z — drei Stichworte"`), er ist die einzige Beschreibung
