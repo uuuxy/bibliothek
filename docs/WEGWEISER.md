@@ -1,6 +1,6 @@
 # Wegweiser — wo steht was
 
-Stand: 14.10.2026
+Stand: 16.10.2026
 
 Eine Seite für den Einstieg in den Code: der Weg einer Anfrage, vom Menüpunkt zum Ordner und
 für häufige Änderungen die Stelle. Warum etwas so gebaut ist, steht in
@@ -75,27 +75,12 @@ Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bi
 Nach jeder Änderung laufen die Prüfungen aus dem Abschnitt „Qualitätssicherung" der
 [README](../README.md). Was offen ist, steht nur in [OFFEN.md](OFFEN.md).
 
-## Zwei Wörter für dieselbe Sache
+## Namen
 
-Ältere Dateien tragen englische Namen, neuere deutsche. Das deutsche Wort gilt
-([STIL.md](STIL.md), Abschnitt 2); umgestellt wird Paket für Paket. Bis dahin sucht nach beiden
-Wörtern, wer alles zu einer Sache sucht (gezählt am 14.10.2026 an den Namen von 1.051 Dateien
-in Go und in der Oberfläche, ohne Tests):
-
-| Sache                          | deutsch im Namen         | englisch im Namen     |
-| ------------------------------ | ------------------------ | --------------------- |
-| Schüler, Leser                 | `schueler`, `leser` (39) | `student` (39)        |
-| Buch, Titel                    | `buch`, `titel` (64)     | `book` (27)           |
-| Exemplar                       | `exemplar` (22)          | `copy` (3)            |
-| Ausleihe                       | `ausleih` (14)           | `loan`, `borrow` (10) |
-| Bestellung                     | `bestell` (48)           | `order` (15)          |
-| Etikett                        | `etikett` (19)           | `label` (8)           |
-| Einstellungen                  | `einstellung` (9)        | `setting` (6)         |
-| Benutzer (Konto des Personals) | `benutzer` (3)           | `user` (11)           |
-| Abgänger                       | `abgaeng` (7)            | `graduat` (3)         |
-| Schaden                        | `schaden` (7)            | `damage` (3)          |
-| Lieferant                      | `lieferant` (5)          | `supplier` (2)        |
-| Gerät                          | `geraet` (6)             | `device` (1)          |
-
-Die Tabellen der Datenbank heißen überwiegend deutsch (`leser`, `buecher_titel`,
-`buecher_exemplare`, `ausleihen`), einige ältere englisch (`class_books`, `role_permissions`).
+Dateien und Bezeichner heißen deutsch, je Sache ein Wort ([STIL.md](STIL.md), Abschnitte 2
+und 13); wer alles zu einer Sache sucht, sucht nach einem Wort. Einen neuen englischen Namen
+melden `stil_ratsche_test.go` und `frontend/src/lib/frontend-hygiene-sprache.test.js`.
+Adressen, Felder in JSON, Tabellen und Spalten behalten ihre Namen, auch englische
+([STIL.md](STIL.md), Abschnitt 9): Die Tabellen heißen überwiegend deutsch (`leser`,
+`buecher_titel`, `buecher_exemplare`, `ausleihen`), einige englisch (`class_books`,
+`role_permissions`).
