@@ -420,18 +420,22 @@ type leserAendernAnfrage struct {
 	Email *string `json:"email"`
 }
 
-// baueLeserAenderung prüft die Felder der Anfrage und nennt sie als Änderung der Leserzeile
-// (samt Ableitung des Abgängerjahrs aus der Klasse und dem gelesenen Geburtsdatum). Welche
-// Spalte ein Feld setzt, steht in repository.LeserAenderung. ok=false: Die Ablehnung ist
-// schon beantwortet.
-func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repository.LeserAenderung, bool) {
-	// Leerraum am Rand fällt weg wie beim Anlegen (LeserAnlegen): Sonst wäre „09H1 " aus der
-	// Akte eine andere Klasse als „09H1" aus Anlage und LUSD-Import.
+// kuerzeRand nimmt den Leerraum am Rand der Felder weg, die auch die Anlage kürzt (LeserAnlegen):
+// Sonst wäre „09H1 " aus der Akte eine andere Klasse als „09H1" aus Anlage und LUSD-Import.
+func (req *leserAendernAnfrage) kuerzeRand() {
 	for _, wert := range []*string{req.Vorname, req.Nachname, req.Klasse, req.BarcodeID} {
 		if wert != nil {
 			*wert = strings.TrimSpace(*wert)
 		}
 	}
+}
+
+// baueLeserAenderung prüft die Felder der Anfrage und nennt sie als Änderung der Leserzeile
+// (samt Ableitung des Abgängerjahrs aus der Klasse und dem gelesenen Geburtsdatum). Welche
+// Spalte ein Feld setzt, steht in repository.LeserAenderung. ok=false: Die Ablehnung ist
+// schon beantwortet.
+func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repository.LeserAenderung, bool) {
+	req.kuerzeRand()
 	// Die Sperre des Spezialwerts 'lehrer' gilt auch für die zweite Tür (PATCH) —
 	// siehe pruefeKlassenname und Migration 072.
 	if req.Klasse != nil {
