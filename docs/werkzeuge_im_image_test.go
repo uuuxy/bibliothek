@@ -16,12 +16,24 @@ import (
 //
 // Reparatur bei Rot: Entweder das Werkzeug ins Image bauen (RUN … go build + COPY --from)
 // oder die Anleitung auf den Weg ändern, den es wirklich gibt.
-var werkzeugAufruf = regexp.MustCompile(`(?:compose exec|exec)(?: -[a-zA-Z]+)* (?:backend|bibliothek-backend) \./([a-zA-Z0-9_-]+)`)
+//
+// Blindheit: Ein Aufruf in einer anderen Form als den beiden unten (etwa über eine andere
+// Variable für den Container) bleibt ungeprüft.
+//
+// werkzeugAufrufe sind die beiden Formen, in denen Anleitungen und Skripte ein Werkzeug im
+// Container starten: exec am laufenden Container, in den Skripten über ${BACKEND_CONTAINER},
+// und ein Wegwerf-Container mit eigenem Einstieg (compose run --entrypoint), den der
+// Totalverlust und die Meldungen der Skripte nennen.
+var werkzeugAufrufe = []*regexp.Regexp{
+	regexp.MustCompile(`(?:compose exec|exec)(?: -[a-zA-Z]+)* (?:backend|bibliothek-backend|"\$\{BACKEND_CONTAINER\}") \./([a-zA-Z0-9_-]+)`),
+	regexp.MustCompile(`--entrypoint \./([a-zA-Z0-9_-]+) backend`),
+}
 
 func TestWerkzeugeDerAnleitungenLiegenImImage(t *testing.T) {
 	dockerfile := lies(t, "../Dockerfile")
 
 	quellen := map[string]string{}
+	trefferJeForm := make([]int, len(werkzeugAufrufe))
 	for _, muster := range []string{"*.md", "../*.sh", "../scripts/*.sh"} {
 		treffer, err := filepath.Glob(muster)
 		if err != nil {
@@ -32,11 +44,20 @@ func TestWerkzeugeDerAnleitungenLiegenImImage(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%s lesen: %v", pfad, err)
 			}
-			for _, m := range werkzeugAufruf.FindAllStringSubmatch(string(inhalt), -1) {
-				if _, schon := quellen[m[1]]; !schon {
-					quellen[m[1]] = pfad
+			for i, form := range werkzeugAufrufe {
+				for _, m := range form.FindAllStringSubmatch(string(inhalt), -1) {
+					trefferJeForm[i]++
+					if _, schon := quellen[m[1]]; !schon {
+						quellen[m[1]] = pfad
+					}
 				}
 			}
+		}
+	}
+	for i, n := range trefferJeForm {
+		if n == 0 {
+			t.Fatalf("die Form %q findet keinen Aufruf — greift sie ins Leere, prüft dieses Gate einen Weg nicht mehr",
+				werkzeugAufrufe[i])
 		}
 	}
 	if len(quellen) < 3 {

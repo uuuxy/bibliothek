@@ -17,28 +17,18 @@ Der eingebaute Zeitplan (`jobs.BackupLauf`) läuft täglich um **02:30 UTC** und
 Die Dateien liegen im **Docker-Volume `bibliothek_backups`** (`/app/backups` im Container),
 **nicht** in `./backups` auf dem Host. Dort liegen nur die Vorab-Sicherungen von
 `update.sh` (`vordeploy_<ZEITSTEMPEL>…`) und die Ad-hoc-Sicherungen von
-`scripts/backup.sh`. Bis zum 10.09.2026 hießen die Vorab-Sicherungen ebenfalls `backup_…`,
-und die Restore-Anleitung unten wählte per Host-Glob die letzte Deploy-Sicherung statt des
-Nachtbackups.
+`scripts/backup.sh`.
 
 - Schlüssel: `BACKUP_ENCRYPTION_KEY` (≥ 32 Zeichen). Ableitung via **scrypt**
   (N=2¹⁵, r=8, p=1) mit einem 16-Byte-Salt pro Datei — speicherhart, damit eine
   entwendete Backup-Datei nicht mit hoher Rate offline durchprobiert werden kann.
-  Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext). Der frühere schwache
-  SHA-256-Weg ist **ganz entfernt**: Dateien ohne die `BKDF`-Kennung werden abgelehnt,
-  nicht mehr schwach entschlüsselt (`internal/backupkrypto`). Ein Wechsel des Schlüssels
+  Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext). Dateien ohne die
+  `BKDF`-Kennung werden abgelehnt (`internal/backupkrypto`); das sind Sicherungen von vor dem
+  21.08.2026. Ein Wechsel des Schlüssels
   schlüsselt vorhandene Sicherungen nicht um; sie öffnet weiter nur der alte
   ([SECURITY.md](SECURITY.md#backup_encryption_key-wechseln)).
-  **Folge für den Betrieb:** Backups von **vor dem 21.08.2026** (Deploy von 5265698c) sind
-  **nicht mehr entschlüsselbar** — lokal wie auf S3. Nach diesem Deploy gibt es bis zum
-  nächsten 02:30-UTC-Lauf **kein lesbares Backup**; deshalb direkt nach dem Deploy einen
-  manuellen Lauf anstoßen (`docker compose exec backend ./main` kennt keinen Schalter —
-  kürzester Weg: `docker compose exec postgres-db pg_dump -U postgres bibliothek | gzip >
-  backups/manuell_$(date +%F).sql.gz` und die Datei nach Eingang des ersten scrypt-Backups
-  löschen, sie ist unverschlüsselt). Alte `.enc`-Dateien und S3-Kopien entsorgen.
 - Rotation: die jüngsten **14** Nachtsicherungen bleiben, dazu von den älteren je Kalenderwoche
-  eine für **12** Wochen — zusammen etwa drei Monate (`jobs/backup_aufbewahrung.go`, seit dem
-  29.09.2026). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
+  eine für **12** Wochen — zusammen etwa drei Monate (`jobs/backup_aufbewahrung.go`). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
   von davor.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind.
 
@@ -46,14 +36,13 @@ Nachtbackups.
 > direkt — sie müssen zuerst mit dem `restore-backup`-Tool entschlüsselt werden (siehe Abschnitt 2a).
 > Ohne den originalen `BACKUP_ENCRYPTION_KEY` ist ein verschlüsseltes Backup **nicht** wiederherstellbar.
 
-### 1b. Die beiden Shell-Wege — seit 23.08.2026 ebenfalls verschlüsselt
+### 1b. Die beiden Shell-Wege — ebenfalls verschlüsselt
 
-Bis zum 23.08.2026 legten beide Skripte **unverschlüsselte** Dumps ab (7 bzw. 30 Tage) —
-jeder Schülername, jede Adresse, jede Ausleihe im Klartext, geschützt allein durch `0600`.
-Wer den Datenträger, ein Datei-Backup des Servers oder das Verzeichnis in die Hand bekam,
-las alles ohne Passphrase. Das war ein Befund der Datenschutz-Bewertung vom August 2026.
+Unverschlüsselt stünde jeder Schülername, jede Adresse, jede Ausleihe im Klartext, geschützt
+allein durch `0600`: Wer den Datenträger, ein Datei-Backup des Servers oder das Verzeichnis
+in die Hand bekäme, läse alles ohne Passphrase.
 
-Beide verschlüsseln jetzt über **dieselbe Ableitung wie der nächtliche Job** — Werkzeug
+Beide verschlüsseln über **dieselbe Ableitung wie der nächtliche Job** — Werkzeug
 `cmd/encrypt-backup` im Backend-Container, Helfer `scripts/backup_krypto.sh`. Der
 Schlüssel bleibt dabei im Container: `docker exec` reicht ihn nicht durch, das Werkzeug
 liest ihn aus der eigenen Umgebung. Auf dem Host taucht er weder in der Prozessliste noch
@@ -62,9 +51,9 @@ in einer Variablen auf.
 **`scripts/backup.sh`** — Ad-hoc-Sicherung, `backups/bibliothek_backup_<DATUM>.sql.gz.enc`,
 7-Tage-Rotation, `pg_dump` per `docker exec` im DB-Container. Die Verschlüsselung sitzt
 IN der Pipe (`pg_dump | gzip | encrypt-backup`), der Klartext berührt die Platte nie.
-Seit dem 06.08.2026 mit `pipefail`: Ohne ihn lieferte die Pipe den Status des letzten
-Glieds, und `gzip` gelingt auch dann, wenn `pg_dump` abgebrochen ist — das Skript meldete
-„Backup erfolgreich" und legte eine gzip-Datei mit einer Fehlermeldung darin ab.
+Mit `pipefail`: Ohne ihn lieferte die Pipe den Status des letzten Glieds; `gzip` gelingt
+auch, wenn `pg_dump` abgebrochen ist, und das Skript meldete „Backup erfolgreich" für eine
+gzip-Datei mit einer Fehlermeldung darin.
 
 **`./update.sh`** — legt vor **jedem** Deploy `backups/vordeploy_<ZEITSTEMPEL>.sql.gz` an und
 nennt diese Datei in seiner Rollback-Anleitung. Diese eine Datei entsteht **bewusst im
@@ -78,13 +67,10 @@ den Klartext. Offen liegt sie damit für die Dauer eines Deploys statt 30 Tage.
 (`pruefe_enc_rundweg`). Eine Formprüfung allein reichte nicht: Eine beim Schreiben
 abgeschnittene Datei trägt ihre `BKDF`-Kennung und sieht vollständig aus.
 
-**Fristen und Ausnahmefall.** `.enc` rotiert wie gehabt (7 bzw. 30 Tage), und jedes Skript
-löscht nur seine eigenen: Bis zum 28.09.2026 traf das Muster von `scripts/backup.sh`
-(`*.sql.gz.enc`) auch die `vordeploy_…` im selben Ordner, mit der Crontab unten hielten sie
-7 statt 30 Tage. Was als Klartext liegen bleibt — weil ein Deploy fehlschlug oder die
+**Fristen und Ausnahmefall.** `.enc` rotiert nach 7 bzw. 30 Tagen, und jedes Skript
+löscht nur seine eigenen. Was als Klartext liegen bleibt — weil ein Deploy fehlschlug oder die
 Verschlüsselung nicht möglich war — löscht jedes der beiden Skripte nach **2 Tagen**, gleich
-welches ihn anlegte, und beide sagen bei jedem Lauf, wie viele solcher Dateien noch da sind
-(`update.sh` zählte vom 10.09. bis 28.09.2026 nur `backup_…` und sah die `vordeploy_…` nicht).
+welches ihn anlegte, und beide sagen bei jedem Lauf, wie viele solcher Dateien noch da sind.
 Gelöscht wird nur, wenn ein Skript läuft: „nach 2 Tagen" heißt beim ersten Lauf danach.
 Gate: `docs/backup_ablage_test.go`. Ist die Verschlüsselung nicht möglich (Container aus, Schlüssel
 nicht gesetzt, altes Image), bricht `scripts/backup.sh` **nicht** ab: Ein lesbares Backup
@@ -109,9 +95,8 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 > **einmal** ein echtes Restore in eine Wegwerf-Datenbank durchgespielt werden (siehe 2e).
 
 > **Kein Platzhalter in den Befehlen.** Dateiname und Schlüssel stehen in Shell-Variablen.
-> Eine Anleitung mit spitzen Klammern wurde am 06.08.2026 wörtlich eingefügt und legte die
-> Produktion lahm ([SECURITY.md](SECURITY.md), Abschnitt „`APP_ENCRYPTION_KEY` wechseln").
-> Hier wöge derselbe Fehler schwerer: Wer `dropdb` ausführt und **erst danach** merkt, dass
+> Eine Anleitung mit spitzen Klammern lässt sich wörtlich einfügen. Hier wöge der Fehler
+> schwer: Wer `dropdb` ausführt und **erst danach** merkt, dass
 > der Restore-Befehl nicht läuft, steht vor einer leeren Datenbank.
 >
 > **Deshalb die Reihenfolge unten: erst entschlüsseln und prüfen, dann löschen.**
@@ -121,7 +106,7 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben.
 
 ```bash
-# 0. Restore-Tool: liegt seit 22.08.2026 im Image (`docker compose exec backend ./restore-backup …`).
+# 0. Restore-Tool: liegt im Image (`docker compose exec backend ./restore-backup …`).
 #    Außerhalb des Containers (Entwicklungsrechner mit Go) einmalig bauen:
 go build -o restore-backup ./cmd/restore-backup
 
@@ -147,9 +132,6 @@ ls -lh "$DUMP"
 head -5 "$DUMP"
 grep -c "CREATE TABLE" "$DUMP"     # muss deutlich > 0 sein
 
-# (Ein früherer Schritt 4b entfernte `SET transaction_timeout` aus pg_dump-17-Dumps von
-# vor dem 22.08.2026 — diese Dateien sind seit dem scrypt-Umstieg ohnehin nicht mehr
-# entschlüsselbar, der Schritt ist gegenstandslos. Neue Backups kommen von Client 18.)
 ```
 
 Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
@@ -159,7 +141,7 @@ Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
 pg_dump -U postgres bibliothek > vor-restore.sql
 ls -lh vor-restore.sql
 
-# 5b. Was von Hand endgültig gelöscht wurde, festhalten (seit 29.09.2026).
+# 5b. Was von Hand endgültig gelöscht wurde, festhalten.
 #     Eine Sicherung bringt jeden zurück, der NACH ihr gelöscht wurde: Leser aus dem
 #     Papierkorb, Zugangskonten, die Quelle einer Zusammenführung. Der Eintrag darüber steht
 #     nur im Protokoll dieser Datenbank und geht mit dem Einspielen verloren. Festgehalten
@@ -251,9 +233,9 @@ zcat "$GZ" | psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek; echo "psql-Exit:
 Vor dem `dropdb` Schritt 5b aus 2a; danach die Schritte 7 und 8 aus 2a, in Schritt 7 mit
 `zcat "$GZ"` an der Stelle von `"$DUMP"` im `awk`.
 
-> Die Gegenprobe mit `head` ist hier nicht Zierde: `scripts/backup.sh` legte vor dem
-> 06.08.2026 ohne `pipefail` auch dann eine gzip-Datei an, wenn `pg_dump` abgebrochen war —
-> darin steht dann eine Fehlermeldung statt eines Dumps (Abschnitt 1b).
+> Die Gegenprobe mit `head` zeigt, ob die Datei einen Dump enthält: Ohne `pipefail` entstünde
+> auch dann eine gzip-Datei, wenn `pg_dump` abbricht, mit einer Fehlermeldung darin
+> (Abschnitt 1b).
 
 > Nach getaner Arbeit **löschen** (`shred -u`). Die Skripte löschen solche Reste erst bei
 > einem späteren Lauf, frühestens nach 2 Tagen; bis dahin liegt der ganze Bestand lesbar da.
