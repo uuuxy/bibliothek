@@ -51,16 +51,14 @@ func findeISBNMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseR
 func TestLookup_NetzausfallIst502(t *testing.T) {
 	rec := findeISBNMit(t, kaputtesNetz{})
 	if rec.Code != http.StatusBadGateway {
-		t.Fatalf("Netzausfall: erwartet 502, bekam %d (%s) — Ausfall sieht aus wie „Buch existiert nicht»",
-			rec.Code, strings.TrimSpace(rec.Body.String()))
+		t.Fatalf("Netzausfall: Status = %d (%s), erwartet 502 — der Ausfall sieht aus wie „Buch existiert nicht“", rec.Code, strings.TrimSpace(rec.Body.String()))
 	}
 }
 
 func TestLookup_ErreichbarOhneTrefferBleibt404(t *testing.T) {
 	rec := findeISBNMit(t, leereQuellen{})
 	if rec.Code != http.StatusNotFound {
-		t.Fatalf("Kein Treffer bei erreichbaren Quellen: erwartet 404, bekam %d (%s)",
-			rec.Code, strings.TrimSpace(rec.Body.String()))
+		t.Fatalf("Kein Treffer bei erreichbaren Quellen: Status = %d (%s), erwartet 404", rec.Code, strings.TrimSpace(rec.Body.String()))
 	}
 }
 
@@ -71,12 +69,12 @@ func TestSucheNachISBN_KlassifiziertAusfallUndTreffer(t *testing.T) {
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: kaputtesNetz{}})
 	_, err := client.SucheNachISBN(t.Context(), "9783551551672")
 	if !errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
-		t.Fatalf("Netzausfall: erwartet ErrKatalogdiensteNichtErreichbar, bekam %v", err)
+		t.Fatalf("Netzausfall = %v, erwartet ErrKatalogdiensteNichtErreichbar", err)
 	}
 
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: leereQuellen{}})
 	_, err = client.SucheNachISBN(t.Context(), "9783551551672")
 	if err == nil || errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
-		t.Fatalf("erreichbar ohne Treffer: erwartet schlichten Nicht-Treffer, bekam %v", err)
+		t.Fatalf("erreichbar ohne Treffer = %v, erwartet schlichten Nicht-Treffer", err)
 	}
 }

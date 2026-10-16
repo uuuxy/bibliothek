@@ -68,7 +68,7 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 
 	k7a := klassen[0]
 	if k7a.Klasse != "7A" || len(k7a.Schueler) != 2 {
-		t.Fatalf("7A: erwartet 2 Schüler, bekam %+v", k7a)
+		t.Fatalf("7A = %+v, erwartet 2 Schüler", k7a)
 	}
 	if k7a.LehrerEmail != "lehrer7a@schule.de" {
 		t.Errorf("LehrerEmail nicht zugeordnet: %q", k7a.LehrerEmail)
@@ -77,10 +77,10 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	// s1 hat zwei Medien — das zweite kam nach dem Einschub von s2.
 	// Verliert die Gruppierung es, wird das Buch nie angemahnt.
 	if n := medienAnzahl(k7a.Schueler, "s1"); n != 2 {
-		t.Errorf("s1: erwartet 2 Medien, bekam %d (Medium bei Slice-Reallokation verloren?)", n)
+		t.Errorf("s1 = %d, erwartet 2 Medien (Medium bei Slice-Reallokation verloren?)", n)
 	}
 	if n := medienAnzahl(k7a.Schueler, "s2"); n != 1 {
-		t.Errorf("s2: erwartet 1 Medium, bekam %d", n)
+		t.Errorf("s2 = %d, erwartet 1 Medium", n)
 	}
 
 	k8b := klassen[1]

@@ -101,7 +101,7 @@ func TestLeseCSV_DublettenNachLUSDIDLetzteGewinnt(t *testing.T) {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if len(rows) != 1 {
-		t.Fatalf("Dedup nach LUSD-ID erwartet 1 Zeile, bekam %d", len(rows))
+		t.Fatalf("Dedup nach LUSD-ID = %d, erwartet 1 Zeile", len(rows))
 	}
 	if rows[0].Klasse != "6a" {
 		t.Errorf("spätere Zeile soll gewinnen (Klasse 6a), bekam %q", rows[0].Klasse)

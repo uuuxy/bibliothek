@@ -39,7 +39,7 @@ func TestAutorenJeTitel(t *testing.T) {
 	// Zwei Verfasser, in Erfassungsreihenfolge (Buchungsnummer 3 vor 4) — nicht
 	// alphabetisch: Bei einem Schulbuch ist der Erstgenannte der Hauptverfasser.
 	if autoren["17"] != "Kuhn; Linder" {
-		t.Errorf("Titel 17: erwartet \"Kuhn; Linder\", war %q", autoren["17"])
+		t.Errorf("Titel 17 = %q, erwartet \"Kuhn; Linder\"", autoren["17"])
 	}
 
 	// Ein Verfasser.
@@ -77,7 +77,7 @@ func TestAutorenReihenfolgeIstErfassungsreihenfolge(t *testing.T) {
 	}
 	autoren := zuordnungen.Autoren
 	if autoren["5"] != "Zweiter; Erster" {
-		t.Errorf("Erfassungsreihenfolge erwartet (\"Zweiter; Erster\"), war %q", autoren["5"])
+		t.Errorf("Erfassungsreihenfolge = %q, erwartet \"Zweiter; Erster\"", autoren["5"])
 	}
 }
 

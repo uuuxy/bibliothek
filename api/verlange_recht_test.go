@@ -77,7 +77,7 @@ func TestVerlangeRecht_OhneCookieIst401(t *testing.T) {
 	rr, reached := laufeDurch(s, "buch.loeschen", req)
 
 	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("ohne Cookie erwartet 401, bekam %d", rr.Code)
+		t.Errorf("ohne Cookie = %d, erwartet 401", rr.Code)
 	}
 	if reached {
 		t.Error("geschützter Handler darf ohne Auth nicht erreicht werden")
@@ -139,7 +139,7 @@ func TestVerlangeRecht_DeaktiviertesKontoIst401(t *testing.T) {
 	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("deaktiviertes Konto erwartet 401, bekam %d", rr.Code)
+		t.Errorf("deaktiviertes Konto = %d, erwartet 401", rr.Code)
 	}
 	if reached {
 		t.Error("deaktiviertes Konto darf den geschützten Handler nicht erreichen")
@@ -159,7 +159,7 @@ func TestVerlangeRecht_AusdruecklichVerweigertIst403(t *testing.T) {
 	rr, reached := laufeDurch(s, "buch.loeschen", req)
 
 	if rr.Code != http.StatusForbidden {
-		t.Errorf("explizit verweigert erwartet 403, bekam %d", rr.Code)
+		t.Errorf("explizit verweigert = %d, erwartet 403", rr.Code)
 	}
 	if reached {
 		t.Error("verweigerter Zugriff darf Handler nicht erreichen")
@@ -179,7 +179,7 @@ func TestVerlangeRecht_OhneZeileIst403(t *testing.T) {
 	rr, reached := laufeDurch(s, "unbekanntes.recht", req)
 
 	if rr.Code != http.StatusForbidden {
-		t.Errorf("fehlender Eintrag (kein Recht) erwartet 403, bekam %d", rr.Code)
+		t.Errorf("fehlender Eintrag (kein Recht) = %d, erwartet 403", rr.Code)
 	}
 	if reached {
 		t.Error("fehlendes Recht darf Handler nicht erreichen")
@@ -201,7 +201,7 @@ func TestVerlangeRecht_VoruebergehenderDatenbankfehlerIst500(t *testing.T) {
 	// Transiente DB-Fehler sind 500, nicht 403 — und dürfen nicht als Negativ-Entscheidung
 	// gecacht werden.
 	if rr.Code != http.StatusInternalServerError {
-		t.Errorf("transienter DB-Fehler erwartet 500, bekam %d", rr.Code)
+		t.Errorf("transienter DB-Fehler = %d, erwartet 500", rr.Code)
 	}
 	if reached {
 		t.Error("bei DB-Fehler darf Handler nicht erreicht werden")
@@ -225,7 +225,7 @@ func TestVerlangeRecht_AblehnungWirdZwischengespeichert(t *testing.T) {
 		req := anfrageMitToken(t, s, auth.RolleKollegium)
 		rr, reached := laufeDurch(s, "buch.loeschen", req)
 		if rr.Code != http.StatusForbidden || reached {
-			t.Errorf("Request %d: erwartet 403 ohne Handler-Zugriff, bekam %d reached=%v", i+1, rr.Code, reached)
+			t.Errorf("Anfrage %d: Status = %d, Handler erreicht = %v, erwartet 403 und nicht erreicht", i+1, rr.Code, reached)
 		}
 	}
 
@@ -252,7 +252,7 @@ func TestVerlangeRecht_SperrlisteOhneDatenbankIst503(t *testing.T) {
 	// 503, nicht 401: Eine 401 meldet den Arbeitsplatz in der Oberfläche ab (apiFetch →
 	// sitzungAbgelaufen). Ein Datenbank-Aussetzer ist keine abgelaufene Sitzung.
 	if rr.Code != http.StatusServiceUnavailable {
-		t.Errorf("fail-closed Blacklist erwartet 503, bekam %d", rr.Code)
+		t.Errorf("fail-closed Blacklist = %d, erwartet 503", rr.Code)
 	}
 	pruefeSitzungsfehlerRumpf(t, rr, "connection reset by peer")
 	if reached {
@@ -275,7 +275,7 @@ func TestVerlangeRecht_KontostatusOhneDatenbankIst503(t *testing.T) {
 	rr, reached := laufeDurch(s, "buch.ausleihen", req)
 
 	if rr.Code != http.StatusServiceUnavailable {
-		t.Errorf("Kontostatus nicht prüfbar: erwartet 503, bekam %d", rr.Code)
+		t.Errorf("Kontostatus nicht prüfbar = %d, erwartet 503", rr.Code)
 	}
 	pruefeSitzungsfehlerRumpf(t, rr, "context deadline exceeded")
 	if reached {

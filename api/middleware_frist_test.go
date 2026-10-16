@@ -82,13 +82,13 @@ func TestUUIDPruefungGreiftAmMux(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/dinge/kein-uuid", nil))
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("ungueltige UUID INNERHALB des Mux: erwartet 400, war %d", rec.Code)
+		t.Errorf("ungueltige UUID INNERHALB des Mux = %d, erwartet 400", rec.Code)
 	}
 
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/dinge/3f2504e0-4f89-11d3-9a0c-0305e82c3301", nil))
 	if rec.Code != http.StatusOK {
-		t.Errorf("gueltige UUID: erwartet 200, war %d", rec.Code)
+		t.Errorf("gueltige UUID = %d, erwartet 200", rec.Code)
 	}
 
 	// Und die Gegenprobe: Dieselbe Middleware von außen um einen Mux gelegt, der sie nicht

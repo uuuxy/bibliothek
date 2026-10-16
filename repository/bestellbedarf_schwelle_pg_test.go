@@ -88,7 +88,7 @@ func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 		t.Fatalf("LadeBestellbedarf error: %v", err)
 	}
 	if len(r) != 1 {
-		t.Errorf("Schwelle 5: erwartet 1 Treffer (gesamt 3 < 5), waren %d", len(r))
+		t.Errorf("Schwelle 5 = %d, erwartet 1 Treffer (gesamt 3 < 5)", len(r))
 	}
 
 	r2, err := repository.LadeBestellbedarf(ctx, pool, filter, 2)
@@ -96,7 +96,7 @@ func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 		t.Fatalf("LadeBestellbedarf error: %v", err)
 	}
 	if len(r2) != 0 {
-		t.Errorf("Schwelle 2: erwartet 0 Treffer (gesamt 3 ≥ 2) — Schwelle steuert, nicht Meldebestand 5, waren %d", len(r2))
+		t.Errorf("Schwelle 2 = %d, erwartet 0 Treffer (gesamt 3 ≥ 2) — Schwelle steuert, nicht Meldebestand 5", len(r2))
 	}
 }
 

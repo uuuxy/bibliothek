@@ -645,7 +645,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 		// wegen falsch übersetztem Recht, 500 wegen kaputter Vorgabe der Rechte).
 		if erwartet, ok := erwarteterFehlstatus[route]; ok {
 			if rec.Code != erwartet {
-				t.Errorf("%s: erwartet Status %d (siehe erwarteterFehlstatus), war %d", route, erwartet, rec.Code)
+				t.Errorf("%s = %d, erwartet Status %d (siehe erwarteterFehlstatus)", route, rec.Code, erwartet)
 			}
 		} else if rec.Code >= 400 {
 			t.Errorf("%s: Status %d — der Aufruf erreicht die Route nicht (Tippfehler im Verzeichnis, fehlendes Recht oder kaputter Seed); Antwort-Anfang: %.200s", route, rec.Code, text)

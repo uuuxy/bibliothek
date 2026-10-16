@@ -50,13 +50,12 @@ func TestSonderkontenKommenMitIhrerArt(t *testing.T) {
 	} {
 		if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = $1 AND art = $2`,
 			ausweis, soll.art); n != 1 {
-			t.Errorf("Ausweis %s: eine Leserzeile mit der Art %q erwartet, gefunden: %d", ausweis, soll.art, n)
+			t.Errorf("Ausweis %s: Leserzeilen mit der Art %q = %d, erwartet eine", ausweis, soll.art, n)
 		}
 		if n := zaehle(t, pool, `SELECT count(*) FROM benutzer b JOIN leser l ON l.id = b.leser_id
 			WHERE l.barcode_id = $1 AND b.rolle = 'kollegium' AND b.email LIKE '%.invalid'`,
 			ausweis); n != soll.konto {
-			t.Errorf("Ausweis %s (%s): %d Konten mit Platzhalter-Adresse erwartet, gefunden: %d",
-				ausweis, soll.art, soll.konto, n)
+			t.Errorf("Ausweis %s (%s): Konten mit Platzhalter-Adresse = %d, erwartet %d", ausweis, soll.art, n, soll.konto)
 		}
 	}
 	if text := protokoll(); strings.Contains(text, "Littera-Gruppe") {
@@ -144,7 +143,7 @@ func TestAbgaengerBekommenEinJahr(t *testing.T) {
 		t.Fatalf("Abfrage: %v", err)
 	}
 	if jahr != 2027 || !abgaenger {
-		t.Errorf("abgaenger_jahr=2027 und ist_abgaenger=true erwartet, gefunden: %d / %v", jahr, abgaenger)
+		t.Errorf("abgaenger_jahr, ist_abgaenger = %d, %v, erwartet 2027, true", jahr, abgaenger)
 	}
 }
 
@@ -173,10 +172,10 @@ func TestSchuelerOhneJahrgangBekommtDenRueckfall(t *testing.T) {
 		t.Fatalf("Abfrage: %v", err)
 	}
 	if soll := repository.AbgangsjahrOhneKlasse(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC)); jahr != soll || soll != 2031 {
-		t.Errorf("Abgangsjahr %d erwartet (Rückfall der Anwendung, 2026 + 5), gefunden: %d", soll, jahr)
+		t.Errorf("abgaenger_jahr = %d, erwartet %d (Rückfall der Anwendung, 2026 + 5)", jahr, soll)
 	}
 	if klasse != "AUS" || abgaenger {
-		t.Errorf("Klasse „AUS“ und kein Abgänger erwartet, gefunden: %q / %v", klasse, abgaenger)
+		t.Errorf("klasse, ist_abgaenger = %q, %v, erwartet AUS, false", klasse, abgaenger)
 	}
 	if text := protokoll(); !strings.Contains(text, "Klasse „AUS“ nennt keinen Jahrgang – Abgangsjahr 2031") {
 		t.Errorf("die Warnung muss Klasse und eingesetztes Jahr nennen:\n%s", text)
@@ -226,7 +225,7 @@ func TestLehrkraftOhneMailBekommtUnzustellbarenPlatzhalter(t *testing.T) {
 		t.Fatalf("Abfrage: %v", err)
 	}
 	if len(adressen) != 2 || adressen[0] == adressen[1] {
-		t.Errorf("zwei verschiedene Adressen erwartet, gefunden: %v", adressen)
+		t.Errorf("adressen = %v, erwartet zwei verschiedene Adressen", adressen)
 	}
 	if text := protokoll(); !strings.Contains(text, "keine E-Mail im Altbestand") {
 		t.Errorf("der Platzhalter muss protokolliert werden:\n%s", text)

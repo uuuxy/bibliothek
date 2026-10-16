@@ -50,7 +50,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		rec := httptest.NewRecorder()
 		statusTuer.ServeHTTP(rec, tuertest.AlsKonto(req, testdaten.LegeBearbeiterAn(t, pool)))
 		if rec.Code != http.StatusOK {
-			t.Fatalf("Status setzen (%s): erwartet 200, war %d: %s", koerper, rec.Code, rec.Body.String())
+			t.Fatalf("Status setzen (%s) = %d, erwartet 200: %s", koerper, rec.Code, rec.Body.String())
 		}
 		return rec
 	}
@@ -118,7 +118,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	leseRec := httptest.NewRecorder()
 	srv.TitelExemplare(repository.NewBescheidAbfragen(pool)).ServeHTTP(leseRec, leseReq)
 	if leseRec.Code != http.StatusOK {
-		t.Fatalf("Exemplare lesen: erwartet 200, war %d: %s", leseRec.Code, leseRec.Body.String())
+		t.Fatalf("Exemplare lesen = %d, erwartet 200: %s", leseRec.Code, leseRec.Body.String())
 	}
 	var gelesen []struct {
 		BarcodeID               string `json:"barcode_id"`
@@ -190,7 +190,7 @@ func TestTitelExemplare_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 	rec := httptest.NewRecorder()
 	srv.TitelExemplare(repository.NewBescheidAbfragen(pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Exemplare lesen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Exemplare lesen = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	var gelesen []struct {

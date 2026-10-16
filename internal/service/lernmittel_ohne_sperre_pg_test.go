@@ -82,6 +82,6 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 		t.Fatalf("Roman laden: %v", err)
 	}
 	if _, err := loanSvc.BucheAmLeser(ctx, roman, &kind, bearbeiter, false); !errors.Is(err, service.ErrGesperrt) {
-		t.Errorf("Schülerbücherei bei offener Forderung: erwartet ErrGesperrt, bekam %v", err)
+		t.Errorf("Schülerbücherei bei offener Forderung = %v, erwartet ErrGesperrt", err)
 	}
 }

@@ -49,7 +49,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 	// Mathebuch im Lauf für Deutsch: 409, nicht erfasst.
 	rec := inventurScan(t, srv, session.ID, barcodeMathe)
 	if rec.Code != http.StatusConflict {
-		t.Fatalf("Fremd-Scope-Scan: erwartet 409, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Fremd-Scope-Scan = %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 	if n := erfasstFuer(t, pool, session.ID, exMathe); n != 0 {
 		t.Errorf("Mathe-Exemplar wurde trotz Fremd-Scope in der Deutsch-Session verbucht (%d Erfassungen) "+
@@ -63,7 +63,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 		t.Fatalf("409-Body nicht als scanAntwort lesbar: %v (%s)", err, rec.Body.String())
 	}
 	if payload.Status != "ausser_scope" {
-		t.Errorf("Status: erwartet \"ausser_scope\", war %q", payload.Status)
+		t.Errorf("Status = %q, erwartet \"ausser_scope\"", payload.Status)
 	}
 	if payload.Titel == "" {
 		t.Error("409-Antwort trägt keinen Buchtitel — das Frontend würde \"Unbekanntes Buch\" zeigen")
@@ -75,7 +75,7 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 	// Deutschbuch im Lauf für Deutsch: 200, erfasst (Gegenprobe).
 	rec = inventurScan(t, srv, session.ID, barcodeDeutsch)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Scope-konformer Scan: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Scope-konformer Scan = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -196,7 +196,7 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 				var payload scanAntwort
 				if err := json.Unmarshal(rec.Body.Bytes(), &payload); err == nil {
 					if payload.Status != tt.wantStatus {
-						t.Errorf("Status: erwartet %q, war %q", tt.wantStatus, payload.Status)
+						t.Errorf("Status = %q, erwartet %q", payload.Status, tt.wantStatus)
 					}
 					if tt.name == "Ausgeliehenes Exemplar (Warnung aber OK)" && len(payload.Warnungen) == 0 {
 						t.Errorf("Scan eines ausgeliehenen Buchs ohne Warnung")

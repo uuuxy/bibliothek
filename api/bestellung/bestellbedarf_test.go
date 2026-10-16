@@ -47,14 +47,14 @@ func TestBestellbedarfAbfrage(t *testing.T) {
 
 	got := results[0]
 	if got.Titel != "LMF-Mathe 7" {
-		t.Errorf("Titel: erwartet 'LMF-Mathe 7', war %q", got.Titel)
+		t.Errorf("Titel = %q, erwartet 'LMF-Mathe 7'", got.Titel)
 	}
 	if got.VerfuegbarBestand != 1 {
-		t.Errorf("VerfuegbarBestand: erwartet 1, war %d", got.VerfuegbarBestand)
+		t.Errorf("VerfuegbarBestand = %d, erwartet 1", got.VerfuegbarBestand)
 	}
 	// Beide Bestandszahlen müssen ankommen — der Gesamtbestand ist die Nachbestell-Schwelle.
 	if got.GesamtBestand != 3 {
-		t.Errorf("GesamtBestand: erwartet 3, war %d", got.GesamtBestand)
+		t.Errorf("GesamtBestand = %d, erwartet 3", got.GesamtBestand)
 	}
 	// Das Lernmittel-Kennzeichen wird der Topf-Vorschlag im Warenkorb (Migration 109).
 	if !got.IstLernmittel {

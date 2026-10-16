@@ -158,7 +158,7 @@ func TestUebernimmUmbenennungen(t *testing.T) {
 	for _, w := range []UmbenennungWahl{{Zeile: 2, SchuelerID: "weg"}, {Zeile: 3, SchuelerID: "weg"}} {
 		err := uebernimmUmbenennungen(datei, []UmbenennungWahl{w}, paare, &z, res)
 		if _, ok := err.(*UmbenennungUngueltigFehler); !ok {
-			t.Errorf("Wahl %+v: erwartet UmbenennungUngueltigFehler, bekam %v", w, err)
+			t.Errorf("Wahl %+v = %v, erwartet UmbenennungUngueltigFehler", w, err)
 		}
 	}
 }
@@ -230,7 +230,7 @@ func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
 		z := Zuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
 		p := findeUmbenennungen(datei, reihenfolge, idx, z)
 		if len(p) != 1 || p[0].SchuelerID != "lena" {
-			t.Errorf("Reihenfolge %s/%s: erwartet genau Lena, bekam %+v", reihenfolge[0].ID, reihenfolge[1].ID, p)
+			t.Errorf("Reihenfolge %s/%s = %+v, erwartet genau Lena", reihenfolge[0].ID, reihenfolge[1].ID, p)
 		}
 	}
 }

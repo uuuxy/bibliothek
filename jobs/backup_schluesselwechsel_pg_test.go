@@ -103,7 +103,7 @@ func einzigeSicherung(t *testing.T, verzeichnis string) string {
 	t.Helper()
 	treffer, err := filepath.Glob(filepath.Join(verzeichnis, backupPraefix+"*"+backupEndung))
 	if err != nil || len(treffer) != 1 {
-		t.Fatalf("genau eine Sicherung erwartet, gefunden: %v (err=%v)", treffer, err)
+		t.Fatalf("filepath.Glob(…) = %v, erwartet genau eine Sicherung (err=%v)", treffer, err)
 	}
 	return treffer[0]
 }

@@ -50,7 +50,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 	}
 	meine := nurTitel(liste, titel)
 	if len(meine) != 2 || meine[0].Klasse != "8a" || meine[1].Klasse != "9b" {
-		t.Fatalf("Warteschlange: erwartet [8a, 9b], bekam %+v", meine)
+		t.Fatalf("Warteschlange = %+v, erwartet [8a, 9b]", meine)
 	}
 	if meine[0].Verfuegbar != 3 {
 		t.Errorf("verfügbar = %d, erwartet 3 (alle im Regal)", meine[0].Verfuegbar)
@@ -86,7 +86,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 		}
 	}
 	if len(offeneMeine) != 2 || offeneMeine[0].Klasse != "8a" || offeneMeine[1].Klasse != "9b" {
-		t.Fatalf("Portal-Warteschlange: erwartet [8a, 9b], bekam %+v", offeneMeine)
+		t.Fatalf("Portal-Warteschlange = %+v, erwartet [8a, 9b]", offeneMeine)
 	}
 	// Der Titel kommt mit: Auf der Startfläche des Portals steht die Warteschlange ohne ein
 	// Buch daneben, und „Klasse 8a · 3 Stück" allein sagt niemandem, worum es geht.
@@ -107,7 +107,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 	}
 	// Der zweite Klick schließt nichts erneut ab und löst keine zweite Mail aus.
 	if nochmal, err := repo.Erledige(ctx, ersteID, ""); err != nil || nochmal != nil {
-		t.Fatalf("Doppel-Erledigen: erwartet nil ohne Fehler, bekam %+v / %v", nochmal, err)
+		t.Fatalf("Doppel-Erledigen = %+v / %v, erwartet nil ohne Fehler", nochmal, err)
 	}
 	liste, err = repo.LadeAlle(ctx)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 	}
 	meine = nurTitel(liste, titel)
 	if len(meine) != 2 || meine[0].Klasse != "9b" || meine[0].Erledigt || !meine[1].Erledigt {
-		t.Fatalf("nach Erledigen: erwartet [9b offen, 8a erledigt], bekam %+v", meine)
+		t.Fatalf("Warteschlange nach Erledigen = %+v, erwartet [9b offen, 8a erledigt]", meine)
 	}
 }
 

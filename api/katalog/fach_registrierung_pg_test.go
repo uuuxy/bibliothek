@@ -145,7 +145,7 @@ func TestSachgruppeAendern_ZiehtOffeneInventurMit(t *testing.T) {
 	req.SetPathValue("id", id)
 	srv.SachgruppeAendern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Umbenennen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Umbenennen = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	var offenScope, zuScope string

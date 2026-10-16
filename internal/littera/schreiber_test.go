@@ -11,16 +11,16 @@ func TestOptionenVorgabe(t *testing.T) {
 	opt := OptionenVorgabe(jetzt)
 
 	if opt.Barcodes != BarcodeLittera {
-		t.Errorf("Barcodes: erwartet %q, bekommen %q", BarcodeLittera, opt.Barcodes)
+		t.Errorf("Barcodes = %q, erwartet %q", opt.Barcodes, BarcodeLittera)
 	}
 	if opt.BatchGroesse != 200 {
-		t.Errorf("BatchGroesse: erwartet 200, bekommen %d", opt.BatchGroesse)
+		t.Errorf("BatchGroesse = %d, erwartet 200", opt.BatchGroesse)
 	}
 	if opt.LehrkraefteInaktiv != false {
-		t.Errorf("LehrerInaktiv: erwartet false, bekommen %t", opt.LehrkraefteInaktiv)
+		t.Errorf("LehrerInaktiv = %t, erwartet false", opt.LehrkraefteInaktiv)
 	}
 	if !opt.Jetzt.Equal(jetzt) {
-		t.Errorf("Jetzt: erwartet %v, bekommen %v", jetzt, opt.Jetzt)
+		t.Errorf("Jetzt = %v, erwartet %v", opt.Jetzt, jetzt)
 	}
 }
 

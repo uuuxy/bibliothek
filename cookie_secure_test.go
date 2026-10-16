@@ -47,8 +47,7 @@ func TestErmittleCookieSecure(t *testing.T) {
 			}
 
 			if got := ermittleCookieSecure(); got != f.erwartet {
-				t.Errorf("APP_ENV=%q COOKIE_SECURE=%q (gesetzt=%v): erwartet %v, war %v",
-					f.appEnv, f.cookieSecure, f.setzen, f.erwartet, got)
+				t.Errorf("APP_ENV=%q COOKIE_SECURE=%q (gesetzt=%v) = %v, erwartet %v", f.appEnv, f.cookieSecure, f.setzen, got, f.erwartet)
 			}
 		})
 	}

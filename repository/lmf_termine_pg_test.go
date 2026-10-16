@@ -35,7 +35,7 @@ func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 		}
 	})
 	if _, err := repo.LadeNeuestenPlan(ctx, LMFTerminRueckgabe); !errors.Is(err, pgx.ErrNoRows) {
-		t.Fatalf("ohne Plan erwartet ErrNoRows, war %v", err)
+		t.Fatalf("ohne Plan = %v, erwartet ErrNoRows", err)
 	}
 
 	// Donnerstag 11.06.2026 ab 3. Stunde, 6 je Tag — wie der echte Plan der Schule.

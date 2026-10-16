@@ -38,7 +38,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 
 	aErfasst := erfassungsZahl(t, pool, sessA.ID)
 	if aErfasst != 3 {
-		t.Errorf("A's Fortschritt nach B's Start: erwartet 3, war %d", aErfasst)
+		t.Errorf("A's Fortschritt nach B's Start = %d, erwartet 3", aErfasst)
 	}
 
 	// A schließt ab: genau die 2 nicht gescannten Mathe-Exemplare gelten als Verlust.
@@ -47,7 +47,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 		t.Fatalf("Finish A: %v", err)
 	}
 	if verloren != 2 {
-		t.Errorf("Mathe-Verluste: erwartet 2, war %d", verloren)
+		t.Errorf("Mathe-Verluste = %d, erwartet 2", verloren)
 	}
 
 	// Der Bestand für Deutsch (der Bereich von B) bleibt unberührt.
@@ -76,7 +76,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 		t.Fatalf("ZaehleBereich: %v", err)
 	}
 	if scope != 2 {
-		t.Errorf("Scope mit 1 verliehenen: erwartet 2, war %d", scope)
+		t.Errorf("Scope mit 1 verliehenen = %d, erwartet 2", scope)
 	}
 
 	// Lauf starten, nichts scannen, abschließen: Nur die 2 im Regal fehlen. Das verliehene Buch
@@ -90,7 +90,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 		t.Fatalf("Finish: %v", err)
 	}
 	if verloren != 2 {
-		t.Errorf("Verluste: erwartet 2 (nur anwesende), war %d — das verliehene Buch wurde fälschlich mitgezählt", verloren)
+		t.Errorf("Verluste = %d, erwartet 2 (nur anwesende) — das verliehene Buch wurde fälschlich mitgezählt", verloren)
 	}
 	if ausgesondert := ausgesonderteZahl(t, pool, ex[:1]); ausgesondert != 0 {
 		t.Error("das verliehene Buch wurde als Verlust ausgesondert")
@@ -114,7 +114,7 @@ func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 
 	_, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &chemie}, "Chemie", "")
 	if !errors.Is(err, ErrInventurLaeuftBereits) {
-		t.Errorf("zweite Session im selben Scope: erwartet ErrInventurLaeuftBereits, war %v", err)
+		t.Errorf("zweite Session im selben Scope = %v, erwartet ErrInventurLaeuftBereits", err)
 	}
 
 	// Nach dem Verwerfen ist der Bereich wieder frei.
@@ -159,7 +159,7 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	if n, err := repo.ZaehleBereich(ctx, scope); err != nil {
 		t.Fatalf("ZaehleBereich: %v", err)
 	} else if n != 1 {
-		t.Errorf("Scope 'Mathe Kl.5': erwartet 1, war %d", n)
+		t.Errorf("Scope 'Mathe Kl.5' = %d, erwartet 1", n)
 	}
 
 	// Die Warnung beim Scan: Nur das Exemplar mit passendem Fach und Jahrgang gehört dazu.
@@ -191,7 +191,7 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 		t.Fatalf("Finish: %v", err)
 	}
 	if verloren != 1 {
-		t.Errorf("Verluste: erwartet 1 (nur Mathe Kl.5), war %d", verloren)
+		t.Errorf("Verluste = %d, erwartet 1 (nur Mathe Kl.5)", verloren)
 	}
 	if aus := ausgesonderteZahl(t, pool, []string{matheKl5}); aus != 1 {
 		t.Errorf("In-Scope Mathe Kl.5 nicht als Verlust ausgesondert: %d", aus)

@@ -43,17 +43,17 @@ func TestSicherheitskopfzeilen(t *testing.T) {
 			if ist == "" {
 				t.Errorf("Kopfzeile %s fehlt", kopf)
 			} else if ist != soll {
-				t.Errorf("Kopfzeile %s: erwartet %q, ist %q", kopf, soll, ist)
+				t.Errorf("Kopfzeile %s = %q, erwartet %q", kopf, ist, soll)
 			}
 		})
 	}
 
 	// Der Handler dahinter ist gelaufen.
 	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("Status: erwartet %v, ist %v", http.StatusOK, status)
+		t.Errorf("Status = %v, erwartet %v", status, http.StatusOK)
 	}
 	if inhalt := rr.Body.String(); inhalt != "OK" {
-		t.Errorf("Inhalt: erwartet %q, ist %q", "OK", inhalt)
+		t.Errorf("Inhalt = %q, erwartet %q", inhalt, "OK")
 	}
 }
 

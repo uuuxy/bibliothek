@@ -32,7 +32,7 @@ func TestKuerzeLaesstPassendeWerteUnberuehrt(t *testing.T) {
 		t.Error("ein Wert exakt auf Spaltenbreite darf nicht angetastet werden")
 	}
 	if p.Warnungen() != 0 {
-		t.Errorf("keine Warnung erwartet, gezählt: %d", p.Warnungen())
+		t.Errorf("p.Warnungen() = %d, erwartet keine Warnung", p.Warnungen())
 	}
 }
 
@@ -44,7 +44,7 @@ func TestKuerzeKurzerString(t *testing.T) {
 		t.Error("ein kurzer Wert darf nicht angetastet werden")
 	}
 	if p.Warnungen() != 0 {
-		t.Errorf("keine Warnung erwartet, gezählt: %d", p.Warnungen())
+		t.Errorf("p.Warnungen() = %d, erwartet keine Warnung", p.Warnungen())
 	}
 }
 
@@ -56,7 +56,7 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 			t.Errorf("KlaereISBN(…) = %q, erwartet leere ISBN", got)
 		}
 		if p.Warnungen() != 1 || p.FehlerAnzahl() != 0 {
-			t.Errorf("WARNUNG erwartet, gezählt: %d/%d", p.Warnungen(), p.FehlerAnzahl())
+			t.Errorf("Warnungen/Fehler = %d/%d, erwartet 1/0", p.Warnungen(), p.FehlerAnzahl())
 		}
 	})
 
@@ -87,7 +87,7 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 				t.Errorf("%s: der zweite Titel bekommt %q, erwartet keine ISBN", name, got)
 			}
 			if p.Warnungen() != 1 {
-				t.Errorf("%s: eine Warnung erwartet, gezählt: %d", name, p.Warnungen())
+				t.Errorf("%s: Warnungen = %d, erwartet eine", name, p.Warnungen())
 			}
 		}
 	})
@@ -102,7 +102,7 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 			t.Error("die ISBN muss für den laufenden Import reserviert werden")
 		}
 		if p.Warnungen() != 0 {
-			t.Errorf("keine Warnung erwartet, gezählt: %d", p.Warnungen())
+			t.Errorf("p.Warnungen() = %d, erwartet keine Warnung", p.Warnungen())
 		}
 	})
 }

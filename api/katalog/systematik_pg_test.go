@@ -73,14 +73,14 @@ func TestSachgruppeAnlegen(t *testing.T) {
 	// Doppeltes Kürzel: 409, nicht 500.
 	rec, _ = systematikAnlegen(t, srv, kuerzel, "Deutsch nochmal")
 	if rec.Code != http.StatusConflict {
-		t.Errorf("doppeltes Kuerzel: erwartet 409, war %d", rec.Code)
+		t.Errorf("doppeltes Kuerzel = %d, erwartet 409", rec.Code)
 	}
 
 	// Kürzel mit Leerzeichen: 400. Die Signatur wird am Leerzeichen in Regalbereiche
 	// geschnitten; ein Kürzel mit Leerzeichen zerlegte genau diese Grenze.
 	rec, _ = systematikAnlegen(t, srv, "Deu Neu", "Kaputt")
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("Kuerzel mit Leerzeichen: erwartet 400, war %d", rec.Code)
+		t.Errorf("Kuerzel mit Leerzeichen = %d, erwartet 400", rec.Code)
 	}
 }
 
@@ -121,7 +121,7 @@ func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 	}
 
 	if code := loeschen(); code != http.StatusConflict {
-		t.Errorf("Loeschen einer benutzten Sachgruppe: erwartet 409, war %d", code)
+		t.Errorf("Loeschen einer benutzten Sachgruppe = %d, erwartet 409", code)
 	}
 
 	var nochDa int
@@ -138,11 +138,11 @@ func TestSachgruppeLoeschenGeschuetzt(t *testing.T) {
 		t.Fatalf("Titel entfernen: %v", err)
 	}
 	if code := loeschen(); code != http.StatusNoContent {
-		t.Errorf("Loeschen einer freien Sachgruppe: erwartet 204, war %d", code)
+		t.Errorf("Loeschen einer freien Sachgruppe = %d, erwartet 204", code)
 	}
 	// Sie ist jetzt fort: Ein zweites Löschen findet sie nicht, und das ist keine Störung.
 	if code := loeschen(); code != http.StatusNotFound {
-		t.Errorf("Loeschen einer unbekannten Sachgruppe: erwartet 404, war %d", code)
+		t.Errorf("Loeschen einer unbekannten Sachgruppe = %d, erwartet 404", code)
 	}
 }
 
@@ -196,7 +196,7 @@ func TestSachgruppeAendern_ZiehtTitelMit(t *testing.T) {
 	req.SetPathValue("id", id)
 	srv.SachgruppeAendern().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Umbenennen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Umbenennen = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var antwort map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {

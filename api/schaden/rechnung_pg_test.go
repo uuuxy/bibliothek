@@ -54,13 +54,13 @@ func TestLadeRechnungPosten_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 			"aus der Rechnung, und bei „alle betroffen\" antwortet der Weg mit 404", len(items))
 	}
 	if items[0].Titel != "iPad 9. Gen." {
-		t.Errorf("Bezeichnung: erwartet den Modellnamen des Geräts, war %q", items[0].Titel)
+		t.Errorf("Bezeichnung = %q, erwartet den Modellnamen des Geräts", items[0].Titel)
 	}
 	if items[0].Barcode != "G-RECH-1" {
-		t.Errorf("Barcode: erwartet den Geräte-Barcode, war %q", items[0].Barcode)
+		t.Errorf("Barcode = %q, erwartet den Geräte-Barcode", items[0].Barcode)
 	}
 	if items[0].Ersatzpreis != 24.90 {
-		t.Errorf("Betrag: erwartet 24.90, war %v", items[0].Ersatzpreis)
+		t.Errorf("Betrag = %v, erwartet 24.90", items[0].Ersatzpreis)
 	}
 	if items[0].Ausleihdatum.IsZero() {
 		t.Error("Ausleihdatum leer — ersatzweise gilt das Datum der Forderung")
@@ -103,7 +103,7 @@ func TestLadeRechnungPosten_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 			"auf einem Bescheid stünde zusätzlich mit „bar in der Bibliothek\" auf der Ersatzforderung", len(items))
 	}
 	if items[0].Barcode != "RECH-BESCH-2" {
-		t.Errorf("Position: erwartet das Exemplar ohne Bescheid (RECH-BESCH-2), war %q", items[0].Barcode)
+		t.Errorf("Position = %q, erwartet das Exemplar ohne Bescheid (RECH-BESCH-2)", items[0].Barcode)
 	}
 }
 

@@ -248,7 +248,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 
 	for _, z := range zaehlungen {
 		if n := zfZaehle(t, pool, z.sql, ziel); n != 1 {
-			t.Errorf("%s: erwartet 1 Zeile am Ziel, gefunden %d", z.was, n)
+			t.Errorf("%s = %d, erwartet 1 Zeile am Ziel", z.was, n)
 		}
 	}
 	// Nichts hängt mehr an der Quelle — weder als FK noch als Protokollschlüssel.
@@ -412,7 +412,7 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 		t.Errorf("die abholbereite Vormerkung muss überleben: status=%q exemplar=%v (Ergebnis %+v)", status, exemplarID, erg)
 	}
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM vormerkungen WHERE titel_id = $1`, titelID); n != 1 {
-		t.Errorf("genau eine Vormerkung je Titel erwartet, gefunden %d", n)
+		t.Errorf("Vormerkungen des Titels = %d, erwartet genau eine", n)
 	}
 }
 
@@ -442,7 +442,7 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 		t.Errorf("das jüngere Foto der Quelle muss am Ziel hängen, gefunden %x", foto)
 	}
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler_fotos`); n != 1 {
-		t.Errorf("genau ein Foto erwartet, gefunden %d", n)
+		t.Errorf("Fotos = %d, erwartet genau eins", n)
 	}
 }
 

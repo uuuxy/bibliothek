@@ -68,7 +68,7 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 
 	vorher := erfassteLautBericht(t, pool, repo, sess.ID)
 	if vorher != 2 {
-		t.Fatalf("nach dem Abschluss erwartet 2 erfasste Exemplare, waren %d", vorher)
+		t.Fatalf("erfasste Exemplare nach dem Abschluss = %d, erwartet 2", vorher)
 	}
 
 	// Ein Exemplar fällt später aus dem Bestand; der CASCADE nimmt seine Erfassung mit.

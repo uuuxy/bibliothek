@@ -58,7 +58,7 @@ func TestLadeEtikettZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 	}
 	for i := range erwartet {
 		if folge[i] != erwartet[i] {
-			t.Fatalf("Reihenfolge falsch: erwartet %v, bekommen %v", erwartet, folge)
+			t.Fatalf("folge = %v, erwartet %v", folge, erwartet)
 		}
 	}
 }
@@ -96,7 +96,7 @@ func TestLadeEtikettZeilen_SortiertUndNurLebende(t *testing.T) {
 	}
 	for i := range erwartet {
 		if namen[i] != erwartet[i] {
-			t.Errorf("Platz %d: erwartet %q, bekommen %q (ganze Liste: %v)", i+1, erwartet[i], namen[i], namen)
+			t.Errorf("Platz %d = %q, erwartet %q (ganze Liste: %v)", i+1, namen[i], erwartet[i], namen)
 		}
 	}
 

@@ -105,7 +105,7 @@ func TestBatchUeberlebtEinzelnenZeilenfehler(t *testing.T) {
 	}
 
 	if fehlerprotokoll.FehlerAnzahl() != 1 || fehlerprotokoll.Warnungen() != 0 {
-		t.Errorf("genau 1 FEHLER und 0 WARNUNGEN erwartet, gezählt: %d/%d", fehlerprotokoll.FehlerAnzahl(), fehlerprotokoll.Warnungen())
+		t.Errorf("Fehler/Warnungen = %d/%d, erwartet 1/0", fehlerprotokoll.FehlerAnzahl(), fehlerprotokoll.Warnungen())
 	}
 
 	// Das Protokoll muss die Ursache benennen, nicht nur den Ausfall; dafür gibt es das

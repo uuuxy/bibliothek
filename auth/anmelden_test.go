@@ -44,14 +44,14 @@ func TestAnmelden_FehlendeZugangsdatenSind400(t *testing.T) {
 
 	rec := rufeAnmelden(t, a, mock, `{"password":"x"}`)
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("ohne email: erwartet 400, bekam %d", rec.Code)
+		t.Errorf("ohne email = %d, erwartet 400", rec.Code)
 	}
 	if got, want := fehlermeldungAus(t, rec), "Bitte die E-Mail-Adresse eingeben"; got != want {
 		t.Errorf("ohne email: Meldung %q, erwartet %q", got, want)
 	}
 	rec = rufeAnmelden(t, a, mock, `{"email":"a@b.de"}`)
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("ohne password: erwartet 400, bekam %d", rec.Code)
+		t.Errorf("ohne password = %d, erwartet 400", rec.Code)
 	}
 	if got, want := fehlermeldungAus(t, rec), "Bitte das Passwort eingeben"; got != want {
 		t.Errorf("ohne password: Meldung %q, erwartet %q", got, want)
@@ -173,7 +173,7 @@ func scheitereFuenfMal(t *testing.T, a *Anmeldung, mock pgxmock.PgxPoolIface, em
 			WithArgs(email).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 		if rec := rufeAnmelden(t, a, mock, rumpf); rec.Code != http.StatusUnauthorized {
-			t.Fatalf("Versuch %d: erwartet 401, bekam %d", i, rec.Code)
+			t.Fatalf("Versuch %d = %d, erwartet 401", i, rec.Code)
 		}
 	}
 }
@@ -308,7 +308,7 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	for i := 1; i <= 6; i++ {
 		rec := rufeAnmelden(t, a, mock, rumpf)
 		if rec.Code != http.StatusServiceUnavailable {
-			t.Fatalf("Versuch %d: erwartet 503 bei totem Mailserver, bekam %d: %s", i, rec.Code, rec.Body.String())
+			t.Fatalf("Versuch %d = %d, erwartet 503 bei totem Mailserver: %s", i, rec.Code, rec.Body.String())
 		}
 		const erwartet = "Der Mailserver ist nicht erreichbar. Die Anmeldung geht gerade nicht, bitte später erneut versuchen."
 		if got := fehlermeldungAus(t, rec); got != erwartet {
@@ -327,7 +327,7 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 
 	rec := rufeAnmelden(t, a, mock, rumpf)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("nach Server-Rückkehr: erwartet 200, bekam %d — die Ausfall-Versuche haben den Nutzer gesperrt: %s", rec.Code, rec.Body.String())
+		t.Fatalf("nach Server-Rückkehr: Status = %d, erwartet 200 — die Ausfall-Versuche haben den Nutzer gesperrt: %s", rec.Code, rec.Body.String())
 	}
 }
 

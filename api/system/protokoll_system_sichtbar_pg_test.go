@@ -83,7 +83,7 @@ func TestProtokollZeigtSystemEintraege(t *testing.T) {
 		t.Fatal("der SYSTEM-Eintrag fehlt in der Antwort — genau das war der Befund")
 	}
 	if system.Akteur != "SYSTEM" {
-		t.Errorf("Akteur des System-Eintrags: erwartet SYSTEM, war %q", system.Akteur)
+		t.Errorf("Akteur des System-Eintrags = %q, erwartet SYSTEM", system.Akteur)
 	}
 	if system.BearbeiterID != "" {
 		t.Errorf("System-Eintrag sollte keinen Bearbeiter tragen, war %q", system.BearbeiterID)

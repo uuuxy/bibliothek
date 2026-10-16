@@ -16,8 +16,9 @@ Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden
 Tests an Namen und Dateinamen, `sichtbarkeit_ratsche_test.go` jeden öffentlichen Namen ohne
 fremden Nutzer gegen Abschnitt 6, `fehlertext_ratsche_test.go` jeden Fehlertext und
 `meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
-Zustand der Paketebene, `leerimport_ratsche_test.go` jeden Leerimport und
-`kontext_ratsche_test.go` jeden selbst angelegten Kontext gegen Abschnitt 12. Für die Oberfläche
+Zustand der Paketebene, `testmeldung_ratsche_test.go` jede Meldung in Tests gegen Abschnitt 10,
+`leerimport_ratsche_test.go` jeden Leerimport und `kontext_ratsche_test.go` jeden selbst
+angelegten Kontext gegen Abschnitt 12. Für die Oberfläche
 gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
@@ -210,6 +211,8 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
 - Die Meldung nennt die Funktion, dann was sie lieferte, dann was erwartet war:
   `sichereCoverURL(%q) = %q, erwartet %q` (Decisions, „Identify the function", „Got before
   want"). Ein Unterschied aus `cmp.Diff` nennt seine Richtung: `(-erwartet +ist)`.
+  `testmeldung_ratsche_test.go` meldet englische Wörter für Ergebnis und Erwartetes, eine Meldung,
+  die mit „erwartet" beginnt, und das Erwartete vor dem Ergebnis.
 - Eine Abweichung meldet `t.Error`, damit ein Lauf alle zeigt; `t.Fatal` steht dort, wo die
   folgenden Prüfungen sinnlos würden, etwa nach einem unerwarteten Fehler (Decisions, „Keep
   going").

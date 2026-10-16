@@ -35,19 +35,19 @@ func TestTitelEingabe_LiestAlleFelder(t *testing.T) {
 	}
 
 	if eingabe.JahrgangVon != 11 {
-		t.Errorf("JahrgangVon: erwartet 11, bekam %d", eingabe.JahrgangVon)
+		t.Errorf("JahrgangVon = %d, erwartet 11", eingabe.JahrgangVon)
 	}
 	if eingabe.JahrgangBis != 13 {
-		t.Errorf("JahrgangBis: erwartet 13, bekam %d", eingabe.JahrgangBis)
+		t.Errorf("JahrgangBis = %d, erwartet 13", eingabe.JahrgangBis)
 	}
 	if eingabe.Untertitel != "Ein Untertitel" {
-		t.Errorf("Untertitel: erwartet 'Ein Untertitel', bekam %q", eingabe.Untertitel)
+		t.Errorf("Untertitel = %q, erwartet 'Ein Untertitel'", eingabe.Untertitel)
 	}
 	if eingabe.Verlag != "Testverlag" {
-		t.Errorf("Verlag: erwartet 'Testverlag', bekam %q", eingabe.Verlag)
+		t.Errorf("Verlag = %q, erwartet 'Testverlag'", eingabe.Verlag)
 	}
 	if eingabe.Erscheinungsjahr != 2024 {
-		t.Errorf("Erscheinungsjahr: erwartet 2024, bekam %d", eingabe.Erscheinungsjahr)
+		t.Errorf("Erscheinungsjahr = %d, erwartet 2024", eingabe.Erscheinungsjahr)
 	}
 }
 

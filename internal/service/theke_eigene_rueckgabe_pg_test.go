@@ -71,7 +71,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 		t.Fatalf("Exemplar neu laden: %v", err)
 	}
 	if _, err := loanSvc.BucheAmLeser(ctx, ex, &kind, bearbeiter, false); !errors.Is(err, service.ErrGesperrt) {
-		t.Errorf("neue Ausleihe an ein gesperrtes Kind: erwartet ErrGesperrt, bekam %v", err)
+		t.Errorf("neue Ausleihe an ein gesperrtes Kind = %v, erwartet ErrGesperrt", err)
 	}
 }
 

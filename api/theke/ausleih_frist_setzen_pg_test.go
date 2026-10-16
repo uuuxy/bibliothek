@@ -157,7 +157,7 @@ func TestAusleihFristSetzen_TagesendeInSchulzeitzone(t *testing.T) {
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
-		t.Fatalf("Override: erwartet 200, war %d: %s", w.Code, w.Body.String())
+		t.Fatalf("Override = %d, erwartet 200: %s", w.Code, w.Body.String())
 	}
 
 	var frist time.Time

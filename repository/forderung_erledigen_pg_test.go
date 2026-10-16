@@ -72,10 +72,10 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	// (2) Ein zweites Storno und das Bezahlen eines erledigten Falls liefern
 	// ErrSchadensfallErledigt.
 	if err := NewSchadensAbfragen(pool).StorniereForderung(ctx, storno, bearbeiter, "nochmal"); !errors.Is(err, ErrSchadensfallErledigt) {
-		t.Errorf("Doppel-Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
+		t.Errorf("Doppel-Storno = %v, erwartet ErrSchadensfallErledigt", err)
 	}
 	if err := NewSchadensAbfragen(pool).VerbucheZahlung(ctx, storno, bearbeiter); !errors.Is(err, ErrSchadensfallErledigt) {
-		t.Errorf("Bezahlen nach Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
+		t.Errorf("Bezahlen nach Storno = %v, erwartet ErrSchadensfallErledigt", err)
 	}
 
 	// (3) Bezahlt: setzt ist_bezahlt und lässt die Spalten des Stornos unberührt. Bezahlt und
@@ -98,7 +98,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	// (4) Eine unbekannte ID liefert ErrSchadensfallNichtGefunden und nicht den Konflikt.
 	err := NewSchadensAbfragen(pool).VerbucheZahlung(ctx, "00000000-0000-0000-0000-000000000000", bearbeiter)
 	if !errors.Is(err, ErrSchadensfallNichtGefunden) {
-		t.Errorf("unbekannte ID: erwartet ErrSchadensfallNichtGefunden, bekam %v", err)
+		t.Errorf("unbekannte ID = %v, erwartet ErrSchadensfallNichtGefunden", err)
 	}
 
 	// (5) Die Liste der Schülerakte führt beide Fälle, neueste zuerst.

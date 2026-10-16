@@ -339,7 +339,7 @@ func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
 		server.MahnlistenVersenden(repository.NewMahnwesenAbfragen(mock))(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("Body %s: erwartet 400, bekam %d: %s", body, rec.Code, rec.Body.String())
+			t.Fatalf("Rumpf %s: Status = %d, erwartet 400: %s", body, rec.Code, rec.Body.String())
 		}
 		// Keine einzige erwartete Query registriert → es gab keinen DB-Zugriff.
 		if err := mock.ExpectationsWereMet(); err != nil {

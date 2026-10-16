@@ -73,7 +73,7 @@ func TestLMFPlan_SignalNurNachDemSchreiben(t *testing.T) {
 		}
 	}
 	if e := naechstes(); e != "connected" {
-		t.Fatalf("Handshake fehlt: erwartet connected, war %q", e)
+		t.Fatalf("erstes Ereignis = %q, erwartet den Handshake connected", e)
 	}
 	// signaleSeitDerLetztenMarke zählt die Plan-Signale, die vor der nächsten Marke ankommen.
 	marken := 0

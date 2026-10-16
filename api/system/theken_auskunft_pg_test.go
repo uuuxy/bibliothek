@@ -188,7 +188,7 @@ func TestThekenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 		t.Fatalf("len(auskunft.Ereignisse) = %d, erwartet 1 Ereignis", len(auskunft.Ereignisse))
 	}
 	if e := auskunft.Ereignisse[0]; !e.PersonenbezugGetilgt || e.Entleiher != "" {
-		t.Errorf("nach Tilgung erwartet getilgt=true ohne Namen, war: %+v", e)
+		t.Errorf("Eintrag nach Tilgung = %+v, erwartet getilgt=true ohne Namen", e)
 	}
 }
 
@@ -265,6 +265,6 @@ func TestThekenAuskunftNenntDenKollegen(t *testing.T) {
 	}
 	e := auskunft.Ereignisse[0]
 	if e.PersonenbezugGetilgt || e.Entleiher != "Kim Kollegin" || e.Klasse != "LiV" {
-		t.Errorf("Kollege als Entleiher: erwartet Kim Kollegin / LiV ohne Tilgung, war: %+v", e)
+		t.Errorf("Kollege als Entleiher = %+v, erwartet Kim Kollegin / LiV ohne Tilgung", e)
 	}
 }

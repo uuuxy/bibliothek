@@ -49,7 +49,7 @@ func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 		t.Fatalf("ZaehleBereich: %v", err)
 	}
 	if anzahl != 2 {
-		t.Errorf("Scope %q: erwartet 2 Exemplare (genau + Unterfach), waren %d", basis, anzahl)
+		t.Errorf("Scope %q = %d, erwartet 2 Exemplare (genau + Unterfach)", basis, anzahl)
 	}
 
 	imScope := map[string]bool{exGenau: true, exUnter: true, exNachbar: false, exFremd: false}
@@ -59,7 +59,7 @@ func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 			t.Fatalf("IstExemplarImBereich %s: %v", exID, err)
 		}
 		if drin != erwartet {
-			t.Errorf("Exemplar %s im Scope %q: erwartet %v, war %v", exID, basis, erwartet, drin)
+			t.Errorf("Exemplar %s im Scope %q = %v, erwartet %v", exID, basis, drin, erwartet)
 		}
 	}
 }
@@ -96,7 +96,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 	}
 	for _, erwartet := range []string{basis, basis + " 7", basis + "X"} {
 		if gefunden[erwartet] != 1 {
-			t.Errorf("Signatur %q: erwartet 1 Exemplar in der Liste, war %d", erwartet, gefunden[erwartet])
+			t.Errorf("Signatur %q = %d, erwartet 1 Exemplar in der Liste", erwartet, gefunden[erwartet])
 		}
 	}
 
@@ -112,7 +112,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 		t.Fatalf("Regalansicht unlesbar: %v", err)
 	}
 	if len(regal.Titel) != 2 {
-		t.Fatalf("Regal %q: erwartet 2 Titel (Basis + Unterfach), waren %d", basis, len(regal.Titel))
+		t.Fatalf("Regal %q = %d, erwartet 2 Titel (Basis + Unterfach)", basis, len(regal.Titel))
 	}
 	for _, b := range regal.Titel {
 		if b.Signatur == basis+"X" {
@@ -129,7 +129,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 	srv.TitelUnterSignatur().ServeHTTP(rec,
 		httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur=%20", nil))
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("leere Signatur: erwartet 400, war %d", rec.Code)
+		t.Errorf("leere Signatur = %d, erwartet 400", rec.Code)
 	}
 }
 

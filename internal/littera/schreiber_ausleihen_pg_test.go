@@ -165,8 +165,7 @@ func TestAusleihenDesFachbereichsKommenAlsDauerleihe(t *testing.T) {
 		if n := zaehle(t, pool, `SELECT count(*) FROM ausleihen a JOIN leser l ON l.id = a.schueler_id
 			WHERE l.barcode_id = $1 AND a.ist_handapparat = $2 AND a.rueckgabe_am IS NULL`,
 			barcode, dauerleihe); n != 1 {
-			t.Errorf("Ausweis %s: eine offene Ausleihe mit ist_handapparat=%v erwartet, gefunden: %d",
-				barcode, dauerleihe, n)
+			t.Errorf("Ausweis %s: offene Ausleihen mit ist_handapparat=%v = %d, erwartet eine", barcode, dauerleihe, n)
 		}
 	}
 }

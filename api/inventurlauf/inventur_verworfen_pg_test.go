@@ -61,19 +61,19 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 		{geprueft.ID, barcodeGeprueft}, {verworfen.ID, barcodeGescannt},
 	} {
 		if rec := inventurScan(t, srv, scan.session, scan.barcode); rec.Code != http.StatusOK {
-			t.Fatalf("Scan %s: erwartet 200, war %d: %s", scan.barcode, rec.Code, rec.Body.String())
+			t.Fatalf("Scan %s = %d, erwartet 200: %s", scan.barcode, rec.Code, rec.Body.String())
 		}
 	}
 	if rec := inventurPost(t, srv.InventurAbschliessen(), "/api/inventur/finish", geprueft.ID, testdaten.LegeBearbeiterAn(t, pool)); rec.Code != http.StatusOK {
-		t.Fatalf("Abschluss: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Abschluss = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if rec := inventurPost(t, srv.InventurVerwerfen(), "/api/inventur/abort", verworfen.ID, ""); rec.Code != http.StatusOK {
-		t.Fatalf("Verwerfen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Verwerfen = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 
 	liste := abgeschlosseneInventuren(t, srv)
 	if len(liste) != 2 {
-		t.Fatalf("Liste früherer Inventuren: erwartet 2 Zeilen, waren %d: %+v", len(liste), liste)
+		t.Fatalf("Liste früherer Inventuren = %d, erwartet 2 Zeilen: %+v", len(liste), liste)
 	}
 	nachID := map[string]map[string]any{}
 	for _, zeile := range liste {
@@ -117,7 +117,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 	// Ein zweites Verwerfen der abgeschlossenen Inventur bleibt 200 (der Bereich ist frei),
 	// macht aus dem Abschluss aber kein Verwerfen.
 	if rec := inventurPost(t, srv.InventurVerwerfen(), "/api/inventur/abort", geprueft.ID, ""); rec.Code != http.StatusOK {
-		t.Fatalf("Verwerfen einer abgeschlossenen Inventur: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Verwerfen einer abgeschlossenen Inventur = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	for _, zeile := range abgeschlosseneInventuren(t, srv) {
 		if zeile["session_id"] == geprueft.ID && zeile["verworfen"] != false {
@@ -146,7 +146,7 @@ func TestInventurVerworfen_DatenbankHaeltDieRegel(t *testing.T) {
 	_, err = pool.Exec(ctx, `UPDATE inventur_sessions SET verworfen = true WHERE id = $1`, session.ID)
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) || pgErr.ConstraintName != "chk_inv_session_verworfen_beendet" {
-		t.Fatalf("Eine laufende Inventur als verworfen markieren: erwartet chk_inv_session_verworfen_beendet, war %v", err)
+		t.Fatalf("Eine laufende Inventur als verworfen markieren = %v, erwartet chk_inv_session_verworfen_beendet", err)
 	}
 }
 
@@ -164,7 +164,7 @@ func abgeschlosseneInventuren(t *testing.T, srv *Tueren) []map[string]any {
 	rec := httptest.NewRecorder()
 	srv.AbgeschlosseneInventuren().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/inventur/abgeschlossen", nil))
 	if rec.Code != http.StatusOK {
-		t.Fatalf("Liste früherer Inventuren: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Liste früherer Inventuren = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	var liste []map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {

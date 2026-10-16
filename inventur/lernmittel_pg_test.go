@@ -87,28 +87,28 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(jg7) != 1 || jg7[0].Titel != "Mathe 7" {
-		t.Errorf("Jahrgang 7: erwartet nur Mathe 7 (das Lesebuch trägt keinen Jahrgang), bekam %+v", jg7)
+		t.Errorf("Jahrgang 7 = %+v, erwartet nur Mathe 7 (das Lesebuch trägt keinen Jahrgang)", jg7)
 	}
 	ohneFilter, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(ohneFilter) != 3 || ohneFilter[2].Titel != "Lesebuch" || ohneFilter[2].JahrgangVon != 0 || ohneFilter[2].JahrgangBis != 0 {
-		t.Errorf("ohne Filter: erwartet drei Lernmittel, das Lesebuch mit 0 und 0 (unbekannt), bekam %+v", ohneFilter)
+		t.Errorf("ohne Filter = %+v, erwartet drei Lernmittel, das Lesebuch mit 0 und 0 (unbekannt)", ohneFilter)
 	}
 	f12, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{Jahrgang: 12})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(f12) != 0 {
-		t.Errorf("Jahrgang 12: erwartet keine Fächer, bekam %+v", f12)
+		t.Errorf("Jahrgang 12 = %+v, erwartet keine Fächer", f12)
 	}
 	jg8, err := abfragen.ladeLernmittelTitel(ctx, "Mathematik", false, lernmittelFilter{Jahrgang: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(jg8) != 2 || jg8[0].JahrgangVon != 5 || jg8[1].JahrgangVon != 8 {
-		t.Errorf("Jahrgang 8 in Mathematik: erwartet Mathe 7 (5–10) und Mathe 8 (8), bekam %+v", jg8)
+		t.Errorf("Jahrgang 8 in Mathematik = %+v, erwartet Mathe 7 (5–10) und Mathe 8 (8)", jg8)
 	}
 
 	// In der Liste eines Fachs steht ein Titel ohne Jahrgang hinter denen mit Jahrgang, nicht
@@ -121,7 +121,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(reihe) != 2 || reihe[0].Titel != "Mathe 8" || reihe[1].Titel != "Mathe 7" {
-		t.Errorf("Reihenfolge im Fach: erwartet Mathe 8 (Jahrgang 8) vor Mathe 7 (ohne Jahrgang), bekam %+v", reihe)
+		t.Errorf("Reihenfolge im Fach = %+v, erwartet Mathe 8 (Jahrgang 8) vor Mathe 7 (ohne Jahrgang)", reihe)
 	}
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10 WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
 		t.Fatal(err)
@@ -139,14 +139,14 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(gym) != 3 {
-		t.Errorf("Zweig Gymnasium: erwartet Mathe 8 plus die zweiglosen Titel, bekam %+v", gym)
+		t.Errorf("Zweig Gymnasium = %+v, erwartet Mathe 8 plus die zweiglosen Titel", gym)
 	}
 	ohne, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Zweig: zweigOhne})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(ohne) != 2 {
-		t.Errorf("Zweig ohne Angabe: erwartet 2 Titel, bekam %+v", ohne)
+		t.Errorf("Zweig ohne Angabe = %+v, erwartet 2 Titel", ohne)
 	}
 
 	// Suche greift über Titel, ISBN, Autor und Fach — „Mathematik" findet beide
@@ -156,7 +156,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(treffer) != 2 {
-		t.Errorf("Suche Mathematik: erwartet 2 Titel über das Fach, bekam %+v", treffer)
+		t.Errorf("Suche Mathematik = %+v, erwartet 2 Titel über das Fach", treffer)
 	}
 	fSuche, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{Suche: "Lesebuch"})
 	if err != nil {

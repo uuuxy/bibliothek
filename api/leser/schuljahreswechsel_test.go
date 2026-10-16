@@ -38,7 +38,7 @@ func TestSchuljahreswechsel_VerlangtBestaetigung(t *testing.T) {
 
 	rec := rufeSchuljahreswechsel(t, s, `{}`)
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("ohne confirm: erwartet 400, bekam %d", rec.Code)
+		t.Errorf("ohne confirm = %d, erwartet 400", rec.Code)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("DB darf ohne Bestätigung nicht berührt werden: %v", err)

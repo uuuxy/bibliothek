@@ -102,7 +102,7 @@ func TestNachbuchMeldungen_SSESignalBeiAenderung(t *testing.T) {
 		}
 	}
 	if e := naechstes("Handshake"); e != "connected" {
-		t.Fatalf("Handshake fehlt: erwartet connected, war %q", e)
+		t.Fatalf("erstes Ereignis = %q, erwartet den Handshake connected", e)
 	}
 
 	// Anna hat das Buch (online gebucht). Der Offline-Scan schreibt es Ben zu: Das ist die

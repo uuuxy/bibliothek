@@ -96,6 +96,6 @@ func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 		t.Fatalf("Betroffenen lesen: %v", err)
 	}
 	if betrifft != "Wanda Wartend" {
-		t.Errorf("Vormerkungs-Spur: erwartet den Schülernamen, war %q", betrifft)
+		t.Errorf("Vormerkungs-Spur = %q, erwartet den Schülernamen", betrifft)
 	}
 }

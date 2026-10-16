@@ -41,7 +41,7 @@ func TestVormerkungLegeAn_SperrtSelbstAusgeliehenenTitel_PG(t *testing.T) {
 
 	// (1) Solange die Eigen-Ausleihe offen ist, darf keine Vormerkung auf denselben Titel entstehen.
 	if _, err := repo.LegeAn(ctx, titelID, "", schueler); !errors.Is(err, ErrTitelBereitsAusgeliehen) {
-		t.Fatalf("aktive Eigen-Ausleihe: erwartet ErrTitelBereitsAusgeliehen, bekam %v", err)
+		t.Fatalf("aktive Eigen-Ausleihe = %v, erwartet ErrTitelBereitsAusgeliehen", err)
 	}
 
 	// (2) Derselbe Schüler merkt einen anderen Titel vor (prüft den Filter auf titel_id).
@@ -186,7 +186,7 @@ func TestVormerkungLegeAn_ZweiteIstKonflikt_PG(t *testing.T) {
 	}
 	_, err := repo.LegeAn(ctx, titelID, "", schueler)
 	if !errors.Is(err, ErrVormerkungBereitsVorhanden) {
-		t.Fatalf("zweite Vormerkung: erwartet ErrVormerkungBereitsVorhanden, bekam %v", err)
+		t.Fatalf("zweite Vormerkung = %v, erwartet ErrVormerkungBereitsVorhanden", err)
 	}
 
 	// Gegenprobe: Die Vormerkung ohne Schüler entsteht mehrfach; die Theke merkt damit „ein

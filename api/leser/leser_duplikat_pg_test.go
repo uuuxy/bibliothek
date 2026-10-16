@@ -29,7 +29,7 @@ func TestLeserAnlegen_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 	} {
 		code, resp := legeLeserUeberTuerAn(t, srv, body)
 		if code != http.StatusBadRequest {
-			t.Fatalf("ohne Geburtsdatum: erwartet 400, war %d: %s (Body %s)", code, resp, body)
+			t.Fatalf("ohne Geburtsdatum (Rumpf %s): Status = %d, erwartet 400: %s", body, code, resp)
 		}
 		if !strings.Contains(resp, "LUSD-Import") {
 			t.Errorf("Meldung muss den Grund (LUSD-Import) nennen: %s", resp)
@@ -53,10 +53,10 @@ func TestLeserAnlegen_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	if code, body := legeLeserUeberTuerAn(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":"2012-01-02"}`); code != http.StatusCreated {
-		t.Fatalf("erster Leon Müller: erwartet 201, war %d: %s", code, body)
+		t.Fatalf("erster Leon Müller = %d, erwartet 201: %s", code, body)
 	}
 	if code, body := legeLeserUeberTuerAn(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5b","geburtsdatum":"2013-03-04"}`); code != http.StatusCreated {
-		t.Fatalf("zweiter Leon Müller (anderes Geburtsdatum) blockiert: erwartet 201, war %d: %s", code, body)
+		t.Fatalf("zweiter Leon Müller (anderes Geburtsdatum) = %d, erwartet 201: %s", code, body)
 	}
 }
 
@@ -69,10 +69,10 @@ func TestLeserAnlegen_EchtesDuplikatMitGeburtsdatum(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	if code, body := legeLeserUeberTuerAn(t, srv, `{"vorname":"Anna","nachname":"Schmidt","klasse":"6a","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
-		t.Fatalf("erste Anna Schmidt: erwartet 201, war %d: %s", code, body)
+		t.Fatalf("erste Anna Schmidt = %d, erwartet 201: %s", code, body)
 	}
 	if code, body := legeLeserUeberTuerAn(t, srv, `{"vorname":"Anna","nachname":"Schmidt","klasse":"6b","geburtsdatum":"2012-03-04"}`); code != http.StatusConflict {
-		t.Fatalf("echtes Duplikat (gleicher Name + Geburtsdatum): erwartet 409, war %d: %s", code, body)
+		t.Fatalf("echtes Duplikat (gleicher Name + Geburtsdatum) = %d, erwartet 409: %s", code, body)
 	}
 }
 
@@ -95,14 +95,14 @@ func TestLeserAnlegen_SchreibvarianteIstDuplikat(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	if code, body := legeLeserUeberTuerAn(t, srv, `{"vorname":"Anna","nachname":"Müller","klasse":"06G1","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
-		t.Fatalf("erste Anna Müller: erwartet 201, war %d: %s", code, body)
+		t.Fatalf("erste Anna Müller = %d, erwartet 201: %s", code, body)
 	}
 	for _, variante := range []string{`"anna","MÜLLER"`, `"Anna","Mueller"`, `"Ánna","Muller"`} {
 		teile := strings.SplitN(variante, ",", 2)
 		body := `{"vorname":` + teile[0] + `,"nachname":` + teile[1] + `,"klasse":"06G2","geburtsdatum":"2012-03-04"}`
 		code, resp := legeLeserUeberTuerAn(t, srv, body)
 		if code != http.StatusConflict {
-			t.Fatalf("Schreibvariante %s: erwartet 409, war %d: %s", variante, code, resp)
+			t.Fatalf("Schreibvariante %s = %d, erwartet 409: %s", variante, code, resp)
 		}
 		if !strings.Contains(resp, "Schreibweise") {
 			t.Errorf("Meldung muss die Schreibweise nennen: %s", resp)

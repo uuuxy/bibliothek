@@ -79,7 +79,7 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 		t.Fatalf("quittieren: %v", err)
 	}
 	if err := QuittiereNachbuchMeldung(ctx, pool, meine.ID, bearbeiterID); !errors.Is(err, ErrNachbuchMeldungNichtOffen) {
-		t.Errorf("zweites Quittieren: erwartet ErrNachbuchMeldungNichtOffen, bekommen %v", err)
+		t.Errorf("zweites Quittieren = %v, erwartet ErrNachbuchMeldungNichtOffen", err)
 	}
 	if n, err := ZaehleOffeneNachbuchMeldungen(ctx, pool); err != nil || n != vorher {
 		t.Errorf("nach dem Quittieren offen %d, erwartet %d", n, vorher)

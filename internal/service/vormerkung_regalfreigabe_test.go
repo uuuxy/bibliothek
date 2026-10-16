@@ -36,7 +36,7 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 	entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", resp)
 
 	if resp.RegalfreigabeBarcode != "BC-A-123" {
-		t.Errorf("Regal-Hinweis erwartet 'BC-A-123', war %q", resp.RegalfreigabeBarcode)
+		t.Errorf("Regal-Hinweis = %q, erwartet 'BC-A-123'", resp.RegalfreigabeBarcode)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Mock-Erwartungen: %v", err)

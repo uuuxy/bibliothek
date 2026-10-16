@@ -517,14 +517,10 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
   Attrappe braucht, erklärt bei sich eine Schnittstelle mit den Methoden, die er ruft. In Stufen
   je Schnittstelle, umbenannt mit `gopls rename`, belegt mit der Liste der Tests vorher und
   nachher.
-- **Tests.** Decisions, „Identify the function": „your failure message should be
-  `YourFunc(%v) = %v, want %v` instead of just `got %v, want %v`", dazu „Got before want" und „Test
-  helpers" (`t.Helper`). [STIL.md](STIL.md) 10 hat die Regel, der Bestand nicht: Von 10.284
-  Meldungen in `t.Errorf` und `t.Fatalf` sind 710 englisch (got, want, expected), 73 nennen das
-  Erwartete vor dem Ergebnis, 395 beginnen mit „erwartet" ohne die Funktion; 26 Hilfsfunktionen
-  rufen kein `t.Helper()`. Lokale Namen in Tests zählt `stil_ratsche_test.go` nicht: 31 englische
-  Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in 11, `staffID`,
-  `activeLeserID`). Weg: je eine Ratsche, die den Bestand einfriert, dann Datei für Datei.
+- **Tests.** Decisions, „Test helpers": Eine Hilfsfunktion ruft `t.Helper()`, damit die Meldung
+  die Zeile des Tests nennt; 26 tun es nicht. Lokale Namen in Tests zählt `stil_ratsche_test.go`
+  nicht: 31 englische Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in
+  11, `staffID`, `activeLeserID`). Weg: je eine Prüfung, dann Datei für Datei.
 
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 

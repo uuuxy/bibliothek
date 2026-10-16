@@ -147,11 +147,11 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 
 	// Nur „von" geleert: 0 bis 9 ist keine Spanne.
 	if err := abfragen.AendereTitel(ctx, id, Titel{JahrgangVon: 0}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
-		t.Errorf("nur „von“ geleert: erwartet errJahrgangsSpanne, bekam %v", err)
+		t.Errorf("nur „von“ geleert = %v, erwartet errJahrgangsSpanne", err)
 	}
 	// „von" über das gespeicherte „bis" gehoben.
 	if err := abfragen.AendereTitel(ctx, id, Titel{JahrgangVon: 11}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
-		t.Errorf("„von“ über „bis“: erwartet errJahrgangsSpanne, bekam %v", err)
+		t.Errorf("„von“ über „bis“ = %v, erwartet errJahrgangsSpanne", err)
 	}
 	if von, bis := spanne(); von == nil || bis == nil || *von != 7 || *bis != 9 {
 		t.Errorf("nach den abgewiesenen Änderungen steht nicht mehr 7 bis 9 am Titel")
@@ -167,7 +167,7 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 
 	// An einem Titel ohne Spanne nur „von" gesetzt.
 	if err := abfragen.AendereTitel(ctx, id, Titel{JahrgangVon: 7}, []string{"jahrgangVon"}, nil); !errors.Is(err, errJahrgangsSpanne) {
-		t.Errorf("nur „von“ gesetzt: erwartet errJahrgangsSpanne, bekam %v", err)
+		t.Errorf("nur „von“ gesetzt = %v, erwartet errJahrgangsSpanne", err)
 	}
 	// Ein anderes Feld lässt sich weiter ändern, und die Spanne bleibt unbekannt.
 	if err := abfragen.AendereTitel(ctx, id, Titel{Untertitel: "Neu"}, []string{"untertitel"}, nil); err != nil {

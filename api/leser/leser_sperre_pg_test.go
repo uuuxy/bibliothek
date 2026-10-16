@@ -63,7 +63,7 @@ func TestLeserSperren_VerlangtGrundUndSetztSperrgrund(t *testing.T) {
 
 	// Sperren ohne Grund → 400, keine Änderung.
 	if rec := call(`{"is_locked":true}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("Sperre ohne Grund erwartet 400, war %d: %s", rec.Code, rec.Body.String())
+		t.Errorf("Sperre ohne Grund = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 	if blocked, _ := leseSperre(); blocked {
 		t.Error("Schüler wurde trotz fehlendem Grund gesperrt")
@@ -71,7 +71,7 @@ func TestLeserSperren_VerlangtGrundUndSetztSperrgrund(t *testing.T) {
 
 	// Sperren mit Grund → 200, block_reason gesetzt.
 	if rec := call(`{"is_locked":true,"reason":"Wiederholt nicht zurückgegeben"}`); rec.Code != http.StatusOK {
-		t.Fatalf("Sperre mit Grund erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Sperre mit Grund = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if blocked, reason := leseSperre(); !blocked || reason == nil || *reason != "Wiederholt nicht zurückgegeben" {
 		t.Errorf("Sperre nicht korrekt gesetzt: blocked=%v reason=%v", blocked, reason)
@@ -79,7 +79,7 @@ func TestLeserSperren_VerlangtGrundUndSetztSperrgrund(t *testing.T) {
 
 	// Entsperren → 200, block_reason geräumt (keine Systemsperre vorhanden).
 	if rec := call(`{"is_locked":false}`); rec.Code != http.StatusOK {
-		t.Fatalf("Entsperren erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Entsperren = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if blocked, reason := leseSperre(); blocked || reason != nil {
 		t.Errorf("Entsperren nicht korrekt: blocked=%v reason=%v", blocked, reason)

@@ -149,7 +149,7 @@ func TestStockEntsprichtDenExemplaren(t *testing.T) {
 		t.Fatalf("Abfrage: %v", err)
 	}
 	if exemplare != 5 {
-		t.Errorf("5 Exemplare erwartet, gefunden: %d", exemplare)
+		t.Errorf("exemplare = %d, erwartet 5", exemplare)
 	}
 }
 
@@ -489,7 +489,7 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 	// Bedingung greifen kann und nicht die Kopplung.
 	_, err = pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'stadt', eigentum_quelle = 'littera'`)
 	if err == nil || !strings.Contains(err.Error(), `"chk_exemplar_eigentum"`) {
-		t.Errorf("eigentum = 'stadt' — erwartet die Abweisung durch chk_exemplar_eigentum, war: %v", err)
+		t.Errorf("UPDATE mit eigentum = 'stadt': Fehler = %v, erwartet die Abweisung durch chk_exemplar_eigentum", err)
 	}
 }
 

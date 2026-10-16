@@ -342,10 +342,10 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 		t.Fatalf("Abgangsbuch vorher: %v", err)
 	}
 	if len(vorher.Zeilen) != 1 {
-		t.Fatalf("vor dem Löschen erwartet: eine Zeile, bekommen: %d", len(vorher.Zeilen))
+		t.Fatalf("Zeilen vor dem Löschen = %d, erwartet eine", len(vorher.Zeilen))
 	}
 	if vorher.AusKatalogGeloescht != 0 {
-		t.Fatalf("vor dem Löschen erwartet: 0 gelöschte, bekommen: %d", vorher.AusKatalogGeloescht)
+		t.Fatalf("AusKatalogGeloescht vor dem Löschen = %d, erwartet 0", vorher.AusKatalogGeloescht)
 	}
 
 	// Durch die echte Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal

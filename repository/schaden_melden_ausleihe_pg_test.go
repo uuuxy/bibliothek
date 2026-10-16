@@ -44,7 +44,7 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 		t.Fatal(err)
 	}
 	if aktiveLoans != 1 {
-		t.Errorf("B's aktive Ausleihe: erwartet 1, war %d", aktiveLoans)
+		t.Errorf("B's aktive Ausleihe = %d, erwartet 1", aktiveLoans)
 	}
 }
 

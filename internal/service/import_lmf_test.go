@@ -162,7 +162,7 @@ func TestKategorisiere_TitelheuristikNurBeiLernmitteln(t *testing.T) {
 		t.Errorf("Bibliotheksbuch: Fach aus dem Titel geraten (%q)", fach)
 	}
 	if fach, _, _ := kategorisiere(f, true); fach != lmf.FachChemie {
-		t.Errorf("Lernmittel: Titel-Heuristik erwartet %q, war %q", lmf.FachChemie, fach)
+		t.Errorf("Lernmittel: Titel-Heuristik = %q, erwartet %q", fach, lmf.FachChemie)
 	}
 }
 

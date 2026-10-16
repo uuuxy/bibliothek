@@ -123,7 +123,7 @@ func TestCoverUpload_GescheitertesUpdateLaesstAltesCoverStehen(t *testing.T) {
 	}
 	dateien := coverDateien(t, reihenfolgeBuchID)
 	if len(dateien) != 1 || filepath.Base(dateien[0]) != alt {
-		t.Errorf("nach gescheitertem UPDATE erwartet: nur das alte Cover %s, gefunden: %v", alt, dateien)
+		t.Errorf("Dateien nach gescheitertem UPDATE = %v, erwartet nur das alte Cover %s", dateien, alt)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Datenbank: %v", err)
@@ -152,7 +152,7 @@ func TestCoverUpload_ErfolgErsetztAltesCover(t *testing.T) {
 	}
 	dateien := coverDateien(t, reihenfolgeBuchID)
 	if len(dateien) != 1 || filepath.Base(dateien[0]) == alt {
-		t.Errorf("nach Erfolg erwartet: genau das neue Cover, gefunden: %v", dateien)
+		t.Errorf("Dateien nach Erfolg = %v, erwartet genau das neue Cover", dateien)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Datenbank: %v", err)

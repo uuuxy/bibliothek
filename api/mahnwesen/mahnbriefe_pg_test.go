@@ -54,7 +54,7 @@ func TestMahnbriefeDrucken_NurOffeneHochzaehlen(t *testing.T) {
 	// Offene Ausleihe: Mahnstufe hochgezählt, Mahndatum gesetzt.
 	stufe, datum := testdaten.LadeMahnstufe(t, pool, loanOffen)
 	if stufe != 1 {
-		t.Errorf("offene Ausleihe: Mahnstufe erwartet 1, war %d", stufe)
+		t.Errorf("offene Ausleihe: Mahnstufe = %d, erwartet 1", stufe)
 	}
 	if datum == nil {
 		t.Error("offene Ausleihe: letztes_mahndatum wurde nicht gesetzt")

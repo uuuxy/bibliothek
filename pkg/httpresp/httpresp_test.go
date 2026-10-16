@@ -77,7 +77,7 @@ func TestSchreibeJSON_NichtListenUnveraendert(t *testing.T) {
 			SchreibeJSON(&buf, f.payload)
 
 			if got := strings.TrimSpace(buf.String()); got != f.want {
-				t.Errorf("%s: erwartet %s, war %s", f.name, f.want, got)
+				t.Errorf("%s = %s, erwartet %s", f.name, got, f.want)
 			}
 		})
 	}

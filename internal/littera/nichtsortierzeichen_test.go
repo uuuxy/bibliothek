@@ -35,7 +35,7 @@ func TestLeseTitel_OhneNichtsortierzeichen(t *testing.T) {
 				t.Fatalf("len(titel) = %d, erwartet ein Titel", len(titel))
 			}
 			if titel[0].Haupttitel != f.titel {
-				t.Errorf("Haupttitel: erwartet %q, war %q", f.titel, titel[0].Haupttitel)
+				t.Errorf("Haupttitel = %q, erwartet %q", titel[0].Haupttitel, f.titel)
 			}
 			if titel[0].Untertitel != "Ein Untertitel" {
 				t.Errorf("Untertitel: %q", titel[0].Untertitel)
@@ -73,7 +73,7 @@ func TestLesePersonen_OhneNichtsortierzeichen(t *testing.T) {
 	erwartet := map[string]string{"1": "Grün, Max von der", "2": "Der Rechtsstaat", "3": "Gruber, Hans-Martin"}
 	for id, name := range erwartet {
 		if namen[id] != name {
-			t.Errorf("Person %s: erwartet %q, war %q", id, name, namen[id])
+			t.Errorf("Person %s = %q, erwartet %q", id, namen[id], name)
 		}
 	}
 	// Ein Name, der nur aus dem Zeichen besteht, ist leer und erzeugt keinen Verfasser.

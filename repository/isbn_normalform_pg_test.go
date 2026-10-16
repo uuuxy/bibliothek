@@ -59,7 +59,7 @@ func TestISBN_HatEineSchreibweiseInDerDatenbank(t *testing.T) {
 		if f.erwartet == "" {
 			var pgErr *pgconn.PgError
 			if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
-				t.Errorf("%s (%q): erwartet 23505 (unique), bekommen %v", f.titel, f.roh, err)
+				t.Errorf("%s (%q) = %v, erwartet 23505 (unique)", f.titel, f.roh, err)
 			}
 			continue
 		}

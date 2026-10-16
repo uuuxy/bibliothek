@@ -59,8 +59,7 @@ func TestLernmittelDerKlasseVerlaengern_SchreibvariantenRobust(t *testing.T) {
 	} {
 		frist := testdaten.LadeFrist(t, pool, tc.id)
 		if tc.verlängert && !frist.Equal(neu) {
-			t.Errorf("%s: Frist nicht verlängert — erwartet %s, war %s (LMF-Schreibvariante übersehen)",
-				tc.name, neu, frist)
+			t.Errorf("%s: Frist = %s, erwartet %s (LMF-Schreibvariante übersehen)", tc.name, frist, neu)
 		}
 		if !tc.verlängert && !frist.Equal(alteFrist) {
 			t.Errorf("%s: Freihand-Buch fälschlich verlängert — war %s", tc.name, frist)

@@ -334,7 +334,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 		t.Fatal(err)
 	}
 	if jahr != time.Now().Year() {
-		t.Errorf("abgaenger_jahr: erwartet %d (Abgangsjahr), war %d — Cronjob würde ihn nie erfassen", time.Now().Year(), jahr)
+		t.Errorf("abgaenger_jahr = %d, erwartet %d (Abgangsjahr) — Cronjob würde ihn nie erfassen", jahr, time.Now().Year())
 	}
 	if !gesperrt || vorname != "Alt" {
 		t.Errorf("Abgänger mit offenem Buch soll gesperrt sein, Name behalten: gesperrt=%v vorname=%q", gesperrt, vorname)

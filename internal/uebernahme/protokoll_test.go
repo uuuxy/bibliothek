@@ -25,7 +25,7 @@ func TestProtokollNenntDenQuellschluessel(t *testing.T) {
 		}
 	}
 	if p.Warnungen() != 1 || p.FehlerAnzahl() != 1 {
-		t.Errorf("1/1 erwartet, gezählt: %d/%d", p.Warnungen(), p.FehlerAnzahl())
+		t.Errorf("Warnungen/Fehler = %d/%d, erwartet 1/1", p.Warnungen(), p.FehlerAnzahl())
 	}
 }
 

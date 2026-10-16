@@ -73,7 +73,7 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 		}
 	}
 	if e := naechstes(); e.name != "connected" {
-		t.Fatalf("Handshake fehlt: erwartet connected, war %q", e.name)
+		t.Fatalf("erstes Ereignis = %q, erwartet den Handshake connected", e.name)
 	}
 
 	marken := 0

@@ -66,19 +66,19 @@ func TestLernmittelDerKlasseVerlaengern_SetztMahnstufeZurueck(t *testing.T) {
 	// (a) Zukunft -> Reset.
 	zukunft := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
 	if rec := verlaengereLernmittelDerKlasse(t, srv, "9z", zukunft); rec.Code != http.StatusOK {
-		t.Fatalf("Extend Zukunft: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Extend Zukunft = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if m := mahnstufeVon(t, pool, loanReset); m != 0 {
-		t.Errorf("Verlängerung in die Zukunft: Mahnstufe erwartet 0, war %d (Eskalations-Falle)", m)
+		t.Errorf("Verlängerung in die Zukunft: Mahnstufe = %d, erwartet 0 (Eskalations-Falle)", m)
 	}
 
 	// (b) Vergangenheit -> Mahnstufe bleibt erhalten.
 	vergangen := time.Now().AddDate(0, 0, -5).Format("2006-01-02")
 	if rec := verlaengereLernmittelDerKlasse(t, srv, "9y", vergangen); rec.Code != http.StatusOK {
-		t.Fatalf("Extend Vergangenheit: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Extend Vergangenheit = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if m := mahnstufeVon(t, pool, loanKeep); m != 2 {
-		t.Errorf("weiterhin überfällig: Mahnstufe erwartet 2 (unverändert), war %d", m)
+		t.Errorf("weiterhin überfällig: Mahnstufe = %d, erwartet 2 (unverändert)", m)
 	}
 }
 
@@ -115,11 +115,11 @@ func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 
 	// 150 Exemplare bei 5 im Bestand -> 400 (Überbuchung abgewiesen).
 	if rec := reservierung(t, srv, uid, tid, 150); rec.Code != http.StatusBadRequest {
-		t.Fatalf("Überbuchung (150 von 5): erwartet 400, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("Überbuchung (150 von 5) = %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 	// 5 Exemplare -> 201 (erfüllbar).
 	if rec := reservierung(t, srv, uid, tid, 5); rec.Code != http.StatusCreated {
-		t.Fatalf("gültige Reservierung (5 von 5): erwartet 201, war %d: %s", rec.Code, rec.Body.String())
+		t.Fatalf("gültige Reservierung (5 von 5) = %d, erwartet 201: %s", rec.Code, rec.Body.String())
 	}
 }
 

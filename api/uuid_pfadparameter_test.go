@@ -92,7 +92,7 @@ func TestUUIDPfadParameter_JederEintragWirdStrengGeprueft(t *testing.T) {
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/probe/"+wert, nil))
 			if rec.Code != erwartet {
-				t.Errorf("{%s} = %q: erwartet %d, war %d", name, wert, erwartet, rec.Code)
+				t.Errorf("{%s} = %q: Status = %d, erwartet %d", name, wert, rec.Code, erwartet)
 			}
 		}
 	}

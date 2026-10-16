@@ -71,7 +71,7 @@ func TestEinstellungenSchreiben_SitzungsfristenSendenSSESignal(t *testing.T) {
 		}
 	}
 	if e := naechstes(); e != "connected" {
-		t.Fatalf("Handshake fehlt: erwartet connected, war %q", e)
+		t.Fatalf("erstes Ereignis = %q, erwartet den Handshake connected", e)
 	}
 
 	s := &Tueren{Basis: &tuer.Basis{Broker: broker}}

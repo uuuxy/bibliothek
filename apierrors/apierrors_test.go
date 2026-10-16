@@ -37,10 +37,10 @@ func TestAntworteFehler_FehlerOhneMeldungGehtNichtHinaus(t *testing.T) {
 		AntworteFehler(rec, status, errors.New("benutzer hat noch aktive ausleihen"))
 
 		if rec.Code != status {
-			t.Errorf("Status: erwartet %d, war %d", status, rec.Code)
+			t.Errorf("Status = %d, erwartet %d", rec.Code, status)
 		}
 		if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
-			t.Errorf("%d: Content-Type erwartet application/json, war %q", status, ct)
+			t.Errorf("%d: Content-Type = %q, erwartet application/json", status, ct)
 		}
 		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != meldungOhneSatz {
 			t.Errorf("%d: Meldung %q, erwartet %q", status, meldung, meldungOhneSatz)
@@ -171,7 +171,7 @@ func TestAntworteFehlerMitMeldung_UrsacheBleibtImLog(t *testing.T) {
 		fmt.Errorf("%w: sperrliste: %v", gestoert, errors.New("connection reset by peer")))
 
 	if rec.Code != http.StatusServiceUnavailable {
-		t.Errorf("Status: erwartet 503, war %d", rec.Code)
+		t.Errorf("Status = %d, erwartet 503", rec.Code)
 	}
 	meldung := leseFehlermeldung(t, rec.Body.String())
 	if meldung != gestoert.Error() {

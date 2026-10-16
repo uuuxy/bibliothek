@@ -61,11 +61,10 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 			for _, uebergehen := range []bool{false, true} {
 				_, err := pruefeMitAttrappe(t, leser, false, uebergehen, keineAbfrage)
 				if !errors.Is(err, ErrGesperrt) {
-					t.Fatalf("uebergehen=%v: erwartet ErrGesperrt, bekam %v", uebergehen, err)
+					t.Fatalf("uebergehen=%v: Fehler = %v, erwartet ErrGesperrt", uebergehen, err)
 				}
 				if !IstSperreAmLeser(err) || IstUebergehbareSperre(err) {
-					t.Errorf("uebergehen=%v: erwartet Merkmal „leser“, bekam leser=%v uebergehbar=%v",
-						uebergehen, IstSperreAmLeser(err), IstUebergehbareSperre(err))
+					t.Errorf("uebergehen=%v: IstSperreAmLeser = %v, IstUebergehbareSperre = %v, erwartet true, false", uebergehen, IstSperreAmLeser(err), IstUebergehbareSperre(err))
 				}
 				var sg *SperrgrundFehler
 				if !errors.As(err, &sg) || sg.Grund != *leser.Sperrgrund {
@@ -98,7 +97,7 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 			s.IstVonHandGesperrt, s.Sperrgrund = true, strPtr("Hausverbot")
 		})
 		if _, err := pruefeMitAttrappe(t, leser, true, false, keineAbfrage); !IstSperreAmLeser(err) {
-			t.Errorf("Sperre von Hand beim Lernmittel: erwartet Sperre am Leser, bekam %v", err)
+			t.Errorf("Sperre von Hand beim Lernmittel = %v, erwartet Sperre am Leser", err)
 		}
 	})
 }
@@ -129,7 +128,7 @@ func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 	for _, lernmittel := range []bool{false, true} {
 		_, err := pruefeMitAttrappe(t, leser, lernmittel, true, keineAbfrage)
 		if !errors.Is(err, ErrGesperrt) || IstSperreAmLeser(err) || IstUebergehbareSperre(err) {
-			t.Errorf("lernmittel=%v: erwartet ErrGesperrt ohne Merkmal, bekam %v", lernmittel, err)
+			t.Errorf("lernmittel=%v: Fehler = %v, erwartet ErrGesperrt ohne Merkmal", lernmittel, err)
 		}
 	}
 }
@@ -201,6 +200,6 @@ func TestAusleihSperren_ProtokollJeHinweis(t *testing.T) {
 func TestAusleihSperren_GesperrtesGeraetOhneMerkmal(t *testing.T) {
 	err := pruefeGeraetAusleihbar(repository.Geraet{IstAusleihbar: false})
 	if !errors.Is(err, ErrGesperrt) || IstUebergehbareSperre(err) || IstSperreAmLeser(err) {
-		t.Errorf("Geräte-Sperre: erwartet ErrGesperrt ohne Merkmal, bekam %v", err)
+		t.Errorf("Geräte-Sperre = %v, erwartet ErrGesperrt ohne Merkmal", err)
 	}
 }

@@ -127,15 +127,14 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 
 	antwort := leseMonitorAntwort(t, pool)
 	if antwort.BuchDesMonats == nil || antwort.BuchDesMonats.Titel != "Tschick" {
-		t.Errorf("Buch des Monats: erwartet Tschick (zwei Leser, Cover), bekam %+v — zählt der Monitor Exemplare statt Leser?",
-			antwort.BuchDesMonats)
+		t.Errorf("Buch des Monats = %+v, erwartet Tschick (zwei Leser, Cover) — zählt der Monitor Exemplare statt Leser?", antwort.BuchDesMonats)
 	}
 	var beliebt []string
 	for _, b := range antwort.Beliebt {
 		beliebt = append(beliebt, b.Titel)
 	}
 	if erwartet := []string{"Roman ohne Cover", "Tschick", "Die Welle"}; fmt.Sprint(beliebt) != fmt.Sprint(erwartet) {
-		t.Errorf("Beliebt: erwartet %v (nach Lesern: 3, 2, 1), bekam %v", erwartet, beliebt)
+		t.Errorf("Beliebt = %v, erwartet %v (nach Lesern: 3, 2, 1)", beliebt, erwartet)
 	}
 }
 

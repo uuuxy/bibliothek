@@ -50,12 +50,12 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 		t.Fatalf("LadeAbgeschlosseneLaeufe: %v", err)
 	}
 	if len(sessions) != 3 {
-		t.Fatalf("Anzahl abgeschlossener Sessions: erwartet 3, war %d", len(sessions))
+		t.Fatalf("Anzahl abgeschlossener Sessions = %d, erwartet 3", len(sessions))
 	}
 
 	// Neueste zuerst: Chemie wurde zuletzt abgeschlossen.
 	if sessions[0].Bezeichnung != "Chemie" {
-		t.Errorf("Sortierung: erwartet Chemie zuerst (zuletzt abgeschlossen), war %q", sessions[0].Bezeichnung)
+		t.Errorf("erste Session = %q, erwartet Chemie (zuletzt abgeschlossen)", sessions[0].Bezeichnung)
 	}
 
 	erwartet := map[string]struct{ erfasst, verluste int }{
@@ -105,10 +105,9 @@ func TestLadeAbgeschlosseneLaeufe_Kappung(t *testing.T) {
 		t.Fatalf("LadeAbgeschlosseneLaeufe: %v", err)
 	}
 	if len(sessions) != 2 {
-		t.Fatalf("Kappung auf 2: erwartet 2 Sessions, war %d", len(sessions))
+		t.Fatalf("Kappung auf 2 = %d, erwartet 2 Sessions", len(sessions))
 	}
 	if sessions[0].Bezeichnung != "Delta" || sessions[1].Bezeichnung != "Gamma" {
-		t.Errorf("gekappt wurden die falschen: erwartet [Delta Gamma], war [%s %s]",
-			sessions[0].Bezeichnung, sessions[1].Bezeichnung)
+		t.Errorf("nach der Kappung = [%s %s], erwartet [Delta Gamma]", sessions[0].Bezeichnung, sessions[1].Bezeichnung)
 	}
 }

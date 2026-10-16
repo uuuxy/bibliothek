@@ -109,14 +109,14 @@ func TestInventurSignaturGegenFilterUeberlappungAmBestand(t *testing.T) {
 	deutsch := "Deutsch"
 	_, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Fach: &deutsch}, "Fach Deutsch", "")
 	if !errors.Is(err, ErrInventurUeberlappt) {
-		t.Fatalf("Filter Deutsch trifft den Signatur-Bestand, erwartet ErrInventurUeberlappt, war: %v", err)
+		t.Fatalf("LegeLaufAn(Fach Deutsch) = %v, erwartet ErrInventurUeberlappt", err)
 	}
 
 	// Auch der Jahrgang allein reicht: 5 liegt im Jahrgangsbereich 5–6.
 	kl5 := 5
 	_, err = repo.LegeLaufAn(ctx, "filter", InventurBereich{Jahrgang: &kl5}, "Klasse 5", "")
 	if !errors.Is(err, ErrInventurUeberlappt) {
-		t.Fatalf("Filter Klasse 5 trifft den Signatur-Bestand, erwartet ErrInventurUeberlappt, war: %v", err)
+		t.Fatalf("LegeLaufAn(Jahrgang 5) = %v, erwartet ErrInventurUeberlappt", err)
 	}
 
 	// Getrennt: Kein Titel trägt Mathematik, beide Läufe sind erlaubt.

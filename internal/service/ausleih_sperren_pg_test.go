@@ -148,13 +148,13 @@ func TestTheke_SperreVonHandLaesstNurRueckgabeZu(t *testing.T) {
 	th.legeGeraetAn(t, "G-SPERRWEG-1", "")
 
 	if err := th.buch(t, buecherei, kind, true); !istSperreAmLeser(err) {
-		t.Errorf("Buch der Bücherei mit override_block: erwartet Sperre am Leser, bekam %v", err)
+		t.Errorf("Buch der Bücherei mit override_block = %v, erwartet Sperre am Leser", err)
 	}
 	if err := th.buch(t, schulbuch, kind, true); !istSperreAmLeser(err) {
 		t.Errorf("Schulbuch: Die Sperre von Hand gilt auch dort, bekam %v", err)
 	}
 	if _, err := th.geraet(t, "G-SPERRWEG-1", kind, true, true); !istSperreAmLeser(err) {
-		t.Errorf("Gerät mit override_block: erwartet Sperre am Leser, bekam %v", err)
+		t.Errorf("Gerät mit override_block = %v, erwartet Sperre am Leser", err)
 	}
 	for _, b := range []string{buecherei, schulbuch, "G-SPERRWEG-1"} {
 		if n := th.offen(t, b); n != 0 {
@@ -189,10 +189,10 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 		t.Error("das Schulbuch steht nicht als Ausleihe da")
 	}
 	if err := th.buch(t, buecherei, kind, true); !istSperreAmLeser(err) {
-		t.Errorf("Buch der Bücherei mit override_block: erwartet Sperre am Leser, bekam %v", err)
+		t.Errorf("Buch der Bücherei mit override_block = %v, erwartet Sperre am Leser", err)
 	}
 	if _, err := th.geraet(t, "G-SPERRWEG-2", kind, true, true); !istSperreAmLeser(err) {
-		t.Errorf("Gerät mit override_block: erwartet Sperre am Leser, bekam %v", err)
+		t.Errorf("Gerät mit override_block = %v, erwartet Sperre am Leser", err)
 	}
 	if n := th.uebergangen(t, kind); n != 0 {
 		t.Errorf("nichts wurde übergangen, trotzdem %d Protokolleinträge", n)
@@ -285,7 +285,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 
 	// Buch der Bücherei: ohne override_block gesperrt, mit ihm durch und protokolliert.
 	if err := th.buch(t, buecherei, kind, false); !uebergehbar(err) {
-		t.Fatalf("Buch ohne override_block: erwartet übergehbare Sperre, bekam %v", err)
+		t.Fatalf("Buch ohne override_block = %v, erwartet übergehbare Sperre", err)
 	}
 	if err := th.buch(t, buecherei, kind, true); err != nil {
 		t.Fatalf("Buch mit override_block: %v", err)
@@ -296,11 +296,11 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 
 	// Gerät: dieselbe Regel.
 	if _, err := th.geraet(t, "G-SPERRWEG-4", kind, false, false); !uebergehbar(err) {
-		t.Fatalf("Gerät ohne override_block: erwartet übergehbare Sperre, bekam %v", err)
+		t.Fatalf("Gerät ohne override_block = %v, erwartet übergehbare Sperre", err)
 	}
 	res, err := th.geraet(t, "G-SPERRWEG-4", kind, false, true)
 	if err != nil || res.Art != "geraet_check" {
-		t.Fatalf("Gerät mit override_block, Zubehör offen: erwartet geraet_check, bekam %v / %v", res, err)
+		t.Fatalf("Gerät mit override_block, Zubehör offen = %v / %v, erwartet geraet_check", res, err)
 	}
 	if th.offen(t, "G-SPERRWEG-4") != 0 || th.uebergangen(t, kind) != 1 {
 		t.Errorf("die Zubehör-Liste hat gebucht oder protokolliert: offen %d, Protokoll %d",

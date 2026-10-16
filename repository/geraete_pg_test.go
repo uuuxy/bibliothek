@@ -23,7 +23,7 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 
 	// (1) Ein doppelter Barcode ergibt den benannten Fehler und nicht den rohen 23505.
 	if _, err := repo.LegeAn(ctx, "Zweitgerät", nil, "G-E2E-IPAD-1", "", ""); !errors.Is(err, ErrGeraetBarcodeVergeben) {
-		t.Fatalf("Duplikat: erwartet ErrGeraetBarcodeVergeben, bekam %v", err)
+		t.Fatalf("Duplikat = %v, erwartet ErrGeraetBarcodeVergeben", err)
 	}
 
 	// (2) Frisch angelegt: im Schrank (kein Ausleiher).
@@ -61,7 +61,7 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 	// (5) Unbekannte ID → pgx.ErrNoRows für das 404-Mapping.
 	ausleihbar := true
 	if err := repo.Aendere(ctx, "00000000-0000-0000-0000-000000000000", GeraetAenderung{IstAusleihbar: &ausleihbar}); !errors.Is(err, pgx.ErrNoRows) {
-		t.Fatalf("unbekannte ID: erwartet ErrNoRows, bekam %v", err)
+		t.Fatalf("unbekannte ID = %v, erwartet ErrNoRows", err)
 	}
 }
 

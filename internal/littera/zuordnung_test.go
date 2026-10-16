@@ -29,7 +29,7 @@ func TestOhneZuordnungNenntGruppeUndZahlen(t *testing.T) {
 
 	befund := OhneZuordnung(ab)
 	if len(befund) != 2 {
-		t.Fatalf("zwei Gruppen ohne Zuordnung erwartet, gefunden: %+v", befund)
+		t.Fatalf("OhneZuordnung(ab) = %+v, erwartet zwei Gruppen ohne Zuordnung", befund)
 	}
 	// Reihenfolge nach dem Schlüssel als Zahl: 9 vor 10 (als Text stünde 10 vorn).
 	erwartet := []string{
@@ -55,6 +55,6 @@ func TestOhneZuordnungLeerWennAlleZugeordnet(t *testing.T) {
 		{ID: "7", Art: ArtUPlus}, {ID: "8", Art: ArtFachbereich},
 	}}
 	if befund := OhneZuordnung(ab); len(befund) != 0 {
-		t.Errorf("kein Befund erwartet, gefunden: %+v", befund)
+		t.Errorf("OhneZuordnung(ab) = %+v, erwartet kein Befund", befund)
 	}
 }
