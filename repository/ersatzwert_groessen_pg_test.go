@@ -24,14 +24,7 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	// Der konkrete Typ, weil ein Untertest gegen zaehleSchuljahreMitAusleihe vergleicht, die
-	// nicht öffentliche Methode, die der Bescheid benutzt. Zweiwertig geprüft, damit ein Umbau
-	// des Erzeugers hier einen Satz ergibt und keinen Absturz.
-	repo, ok := NewBescheidAbfragen(pool).(*pgBescheidAbfragen)
-	if !ok {
-		t.Fatalf("NewBescheidAbfragen liefert %T, erwartet *pgBescheidAbfragen",
-			NewBescheidAbfragen(pool))
-	}
+	repo := NewBescheidAbfragen(pool)
 
 	schuljahrBeginn := SchuljahrBeginn(schulzeit.Jetzt())
 

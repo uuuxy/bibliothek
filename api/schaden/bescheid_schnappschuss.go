@@ -49,7 +49,7 @@ func bescheidSchuleAus(absender map[string]string) pdf.SchuleInfo {
 // minderjährigen Schülern geht der Brief an die Erziehungsberechtigten, bei volljährigen
 // an die Person selbst. Ohne bekanntes Geschlecht ist bei Volljährigen die neutrale
 // Anrede die richtige; den Namen trägt das Anschriftfeld.
-func bescheidSnapshotAus(ctx context.Context, abfragen repository.BescheidAbfragen, schuelerID string) (map[string]string, error) {
+func bescheidSnapshotAus(ctx context.Context, abfragen *repository.BescheidAbfragen, schuelerID string) (map[string]string, error) {
 	d, err := abfragen.LadeEmpfaenger(ctx, schuelerID)
 	if err != nil {
 		return nil, err

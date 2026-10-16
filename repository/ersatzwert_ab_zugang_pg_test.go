@@ -21,10 +21,7 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	repo, ok := NewBescheidAbfragen(pool).(*pgBescheidAbfragen)
-	if !ok {
-		t.Fatalf("NewBescheidAbfragen liefert %T", NewBescheidAbfragen(pool))
-	}
+	repo := NewBescheidAbfragen(pool)
 
 	// Der Bestelltag liegt im vorigen Schuljahr, der Zugang (heute) im laufenden.
 	bestelltAm := SchuljahrBeginn(schulzeit.Jetzt()).AddDate(0, 0, -20)

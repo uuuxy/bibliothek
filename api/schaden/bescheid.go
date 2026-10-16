@@ -62,6 +62,13 @@ func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen rep
 	}
 }
 
+// bescheidListe liefert die Bescheide, die mit abgelaufener Frist zuerst, danach die neuesten;
+// nurOffen beschränkt auf die, die weder übergeben noch erledigt sind
+// (repository.BescheidAbfragen).
+type bescheidListe interface {
+	LadeListe(ctx context.Context, nurOffen bool) ([]repository.Bescheid, error)
+}
+
 // Bescheide liefert die Bescheide — die Arbeitsliste des Sekretariats.
 //
 // @Summary      Bescheide
@@ -70,7 +77,7 @@ func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen rep
 // @Param        status query string false "offen = nur nicht übergebene"
 // @Success      200 {array} repository.Bescheid
 // @Router       /bescheide [get]
-func (t *Tueren) Bescheide(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) Bescheide(bescheidAbfragen bescheidListe) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := bescheidAbfragen.LadeListe(r.Context(), r.URL.Query().Get("status") == "offen")
 		if err != nil {
@@ -89,7 +96,7 @@ func (t *Tueren) Bescheide(bescheidAbfragen repository.BescheidAbfragen) http.Ha
 // @Param        id path string true "Kennung des Schülers"
 // @Success      200 {array} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [get]
-func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -115,7 +122,7 @@ func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen repository.BescheidAbfra
 // @Param        id path string true "Kennung des Bescheids"
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
-func (t *Tueren) BescheidUebergeben(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidUebergeben(bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

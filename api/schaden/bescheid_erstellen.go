@@ -44,7 +44,7 @@ type bescheidErstellenAnfrage struct {
 // @Param        body body bescheidErstellenAnfrage true "Topf, Frist und Positionen"
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
-func (t *Tueren) BescheidErstellen(bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidErstellen(bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.erstelleBescheid(w, r, bescheidAbfragen, protokollAbfragen)
 	})
@@ -52,7 +52,7 @@ func (t *Tueren) BescheidErstellen(bescheidAbfragen repository.BescheidAbfragen,
 
 // erstelleBescheid prüft die Anfrage und die Pflichtangaben, schreibt den Bescheid und
 // protokolliert ihn.
-func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) error {
+func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) error {
 	id := r.PathValue("id")
 	var req bescheidErstellenAnfrage
 	if id == "" {

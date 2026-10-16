@@ -21,7 +21,7 @@ import (
 // @Success      200 {object} service.ErsatzwertVorschlag
 // @Failure      404 {object} apierrors.Fehler
 // @Router       /buecher/exemplare/{id}/ersatzwert-vorschlag [get]
-func (t *Tueren) ErsatzwertVorschlag(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) ErsatzwertVorschlag(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

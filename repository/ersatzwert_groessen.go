@@ -42,7 +42,7 @@ type ErsatzwertGroessen struct {
 //
 // Ein unbekanntes Exemplar liefert pgx.ErrNoRows: Es kann zwischen Anzeige und Klick
 // ausgesondert oder gelöscht worden sein.
-func (a *pgBescheidAbfragen) LadeGroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error) {
+func (a *BescheidAbfragen) LadeGroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error) {
 	alle, err := a.ladeGroessen(ctx, "e.id = $1", exemplarID)
 	if err != nil {
 		return ErsatzwertGroessen{}, err
@@ -59,7 +59,7 @@ func (a *pgBescheidAbfragen) LadeGroessenFuerExemplar(ctx context.Context, exemp
 // LadeGroessenFuerTitel liest dieselben Größen für alle Exemplare eines Titels in einer
 // Abfrage: Die Buchakte zeigt den heutigen Buchwert an jedem Exemplar, und ein Aufruf je
 // Exemplar wären bei einem Klassensatz mit 30 Bänden 30 Abfragen für eine Seite.
-func (a *pgBescheidAbfragen) LadeGroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error) {
+func (a *BescheidAbfragen) LadeGroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error) {
 	return a.ladeGroessen(ctx, "e.titel_id = $1", titelID)
 }
 
@@ -67,7 +67,7 @@ func (a *pgBescheidAbfragen) LadeGroessenFuerTitel(ctx context.Context, titelID 
 // derselben Staffel, und die Zahl steht in einem Bescheid. coalesce auf den Listenpreis, weil
 // die Spalte leer sein kann und 0 für die Staffel dasselbe bedeutet (sie weicht dann auf den
 // Kaufpreis aus).
-func (a *pgBescheidAbfragen) ladeGroessen(ctx context.Context, bedingung string, wert any) (map[string]ErsatzwertGroessen, error) {
+func (a *BescheidAbfragen) ladeGroessen(ctx context.Context, bedingung string, wert any) (map[string]ErsatzwertGroessen, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT e.id,
 		       coalesce(e.einkaufspreis, 0)::float8,

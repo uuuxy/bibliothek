@@ -40,32 +40,7 @@ type Bescheid struct {
 
 // BescheidAbfragen liest und schreibt die Schadensersatz-Bescheide und liefert, was der Dialog
 // für einen neuen Bescheid vorschlägt.
-type BescheidAbfragen interface {
-	LegeAn(ctx context.Context, e BescheidEingabe) (*Bescheid, error)
-	LadeListe(ctx context.Context, nurOffen bool) ([]Bescheid, error)
-	LadeZuSchueler(ctx context.Context, schuelerID string) ([]Bescheid, error)
-	Lade(ctx context.Context, id string) (*Bescheid, error)
-	LadeEmpfaengerSnapshot(ctx context.Context, id string) (map[string]string, error)
-	LadeAbsenderSnapshot(ctx context.Context, id string) (map[string]string, error)
-	LadePositionen(ctx context.Context, id string) ([]BescheidBriefPosition, error)
-	VermerkeDruck(ctx context.Context, id string) error
-	Uebergebe(ctx context.Context, id string) error
-	LadeEmpfaenger(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error)
-	LadeOffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error)
-	// LadeForderungenOhneBescheid liefert je Kind die offenen Forderungen, die auf keinem Brief
-	// stehen.
-	LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error)
-	// LadeUeberfaelligeAusleihen liefert die überfälligen Bücher eines Kindes ohne Forderung,
-	// die Kandidaten für den Brief.
-	LadeUeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error)
-	// LadeGroessenFuerExemplar liefert die Zahlen des Staffel-Vorschlags für ein Exemplar, für
-	// den Dialog „Verlust/Schaden melden": Dort gibt es noch keine Forderung zu lesen.
-	LadeGroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error)
-
-	// LadeGroessenFuerTitel liefert dieselben Zahlen für alle Exemplare eines Titels in einer
-	// Abfrage: Die Buchakte zeigt den heutigen Buchwert an jedem Exemplar.
-	LadeGroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error)
-}
+type BescheidAbfragen struct{ db db.Pool }
 
 // BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck. Den Namen
 // des Schülers trägt der Druck aus dem Schnappschuss des Empfängers ein (LadePositionen).
@@ -76,11 +51,9 @@ type BescheidBriefPosition struct {
 	Betrag float64 `json:"betrag"`
 }
 
-type pgBescheidAbfragen struct{ db db.Pool }
-
 // NewBescheidAbfragen liefert die Abfragen der Bescheide an Postgres.
-func NewBescheidAbfragen(pool db.Pool) BescheidAbfragen {
-	return &pgBescheidAbfragen{db: pool}
+func NewBescheidAbfragen(pool db.Pool) *BescheidAbfragen {
+	return &BescheidAbfragen{db: pool}
 }
 
 // bescheidHatOffenePosition prüft, ob auf dem Brief b noch eine unbezahlte Forderung steht.
@@ -124,7 +97,7 @@ func leseBescheid(rows pgx.Rows) (Bescheid, error) {
 
 // LadeListe liefert die Bescheide, die mit abgelaufener Frist zuerst, danach die neuesten;
 // nurOffen beschränkt auf die, die weder übergeben noch erledigt sind.
-func (a *pgBescheidAbfragen) LadeListe(ctx context.Context, nurOffen bool) ([]Bescheid, error) {
+func (a *BescheidAbfragen) LadeListe(ctx context.Context, nurOffen bool) ([]Bescheid, error) {
 	bedingung := ""
 	if nurOffen {
 		bedingung = "WHERE b.status = 'offen' AND " + bescheidHatOffenePosition
@@ -145,7 +118,7 @@ func (a *pgBescheidAbfragen) LadeListe(ctx context.Context, nurOffen bool) ([]Be
 }
 
 // LadeZuSchueler liefert die Bescheide eines Schülers für die Akte.
-func (a *pgBescheidAbfragen) LadeZuSchueler(ctx context.Context, schuelerID string) ([]Bescheid, error) {
+func (a *BescheidAbfragen) LadeZuSchueler(ctx context.Context, schuelerID string) ([]Bescheid, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT `+bescheidSpalten+`
 		FROM schadensersatz_bescheide b
@@ -172,7 +145,7 @@ func sammleBescheide(rows pgx.Rows) ([]Bescheid, error) {
 }
 
 // Lade lädt einen Bescheid; pgx.ErrNoRows, wenn es ihn nicht gibt.
-func (a *pgBescheidAbfragen) Lade(ctx context.Context, id string) (*Bescheid, error) {
+func (a *BescheidAbfragen) Lade(ctx context.Context, id string) (*Bescheid, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT `+bescheidSpalten+`
 		FROM schadensersatz_bescheide b
@@ -194,7 +167,7 @@ func (a *pgBescheidAbfragen) Lade(ctx context.Context, id string) (*Bescheid, er
 // LadeEmpfaengerSnapshot liest die Angaben des Empfängers zum Datum des Briefs, die Grundlage
 // des Nachdrucks. Nach der Anonymisierung sind sie leer; der Nachdruck sagt dann, dass die
 // Anschrift getilgt ist, statt eine falsche zu drucken.
-func (a *pgBescheidAbfragen) LadeEmpfaengerSnapshot(ctx context.Context, id string) (map[string]string, error) {
+func (a *BescheidAbfragen) LadeEmpfaengerSnapshot(ctx context.Context, id string) (map[string]string, error) {
 	var roh []byte
 	if err := a.db.QueryRow(ctx,
 		`SELECT empfaenger_snapshot FROM schadensersatz_bescheide WHERE id = $1`, id).Scan(&roh); err != nil {
@@ -209,7 +182,7 @@ func (a *pgBescheidAbfragen) LadeEmpfaengerSnapshot(ctx context.Context, id stri
 
 // LadeAbsenderSnapshot liest die Angaben der Schule zum Datum des Briefs. Ältere Bescheide
 // haben keine; das Ergebnis ist dann leer, und der Nachdruck nimmt die Einstellungen von heute.
-func (a *pgBescheidAbfragen) LadeAbsenderSnapshot(ctx context.Context, id string) (map[string]string, error) {
+func (a *BescheidAbfragen) LadeAbsenderSnapshot(ctx context.Context, id string) (map[string]string, error) {
 	var roh []byte
 	if err := a.db.QueryRow(ctx,
 		`SELECT absender_snapshot FROM schadensersatz_bescheide WHERE id = $1`, id).Scan(&roh); err != nil {
@@ -228,7 +201,7 @@ func (a *pgBescheidAbfragen) LadeAbsenderSnapshot(ctx context.Context, id string
 // LadePositionen liest die Zeilen des Briefs. Den Namen des Schülers trägt der Rufer aus dem
 // Snapshot des Empfängers ein und nicht aus dem heutigen Datensatz, damit der Nachdruck
 // dasselbe Blatt ergibt.
-func (a *pgBescheidAbfragen) LadePositionen(ctx context.Context, id string) ([]BescheidBriefPosition, error) {
+func (a *BescheidAbfragen) LadePositionen(ctx context.Context, id string) ([]BescheidBriefPosition, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''), f.betrag
 		FROM schadensfaelle f
@@ -256,7 +229,7 @@ func (a *pgBescheidAbfragen) LadePositionen(ctx context.Context, id string) ([]B
 // Ein Nachdruck ist derselbe Bescheid. Trifft die Anweisung keine Zeile, liefert sie
 // pgx.ErrNoRows; der Rufer schickt den Brief trotzdem und protokolliert den Fehler, statt einen
 // Erfolg auf einer ID zu melden, die es nicht gibt.
-func (a *pgBescheidAbfragen) VermerkeDruck(ctx context.Context, id string) error {
+func (a *BescheidAbfragen) VermerkeDruck(ctx context.Context, id string) error {
 	tag, err := a.db.Exec(ctx,
 		`UPDATE schadensersatz_bescheide SET letzter_druck_am = NOW() WHERE id = $1`, id)
 	if err != nil {
@@ -272,7 +245,7 @@ func (a *pgBescheidAbfragen) VermerkeDruck(ctx context.Context, id string) error
 // der Frist und nur, solange noch etwas zu zahlen ist. Die Bedingung ist die Regel: Kein Brief
 // geht vor Fristablauf weiter, eine zweite Übergabe überschreibt den Zeitpunkt nicht, und ein
 // bezahlter Fall geht nicht zur Vollstreckung. pgx.ErrNoRows heißt, der Zustand passt nicht.
-func (a *pgBescheidAbfragen) Uebergebe(ctx context.Context, id string) error {
+func (a *BescheidAbfragen) Uebergebe(ctx context.Context, id string) error {
 	var gesetzt string
 	err := a.db.QueryRow(ctx, `
 		UPDATE schadensersatz_bescheide b

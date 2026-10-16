@@ -73,7 +73,7 @@ type bescheidVorschlagAntwort struct {
 // @Param        id path string true "Kennung des Schülers"
 // @Success      200 {object} bescheidVorschlagAntwort
 // @Router       /schueler/{id}/bescheid-vorschlag [get]
-func (t *Tueren) BescheidVorschlag(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidVorschlag(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.schlageBescheidVor(w, r, bescheidAbfragen)
 	})
@@ -81,7 +81,7 @@ func (t *Tueren) BescheidVorschlag(bescheidAbfragen repository.BescheidAbfragen)
 
 // schlageBescheidVor sammelt, was auf einen Bescheid kann: offene Forderungen und
 // überfällige Bücher, je mit Betragsvorschlag.
-func (t *Tueren) schlageBescheidVor(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen) error {
+func (t *Tueren) schlageBescheidVor(w http.ResponseWriter, r *http.Request, bescheidAbfragen *repository.BescheidAbfragen) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))

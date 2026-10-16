@@ -27,7 +27,7 @@ import (
 // @Param        id path string true "Kennung des Bescheids"
 // @Success      200 {file} file
 // @Router       /bescheide/{id}/pdf [get]
-func (t *Tueren) BescheidPDF(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidPDF(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -61,7 +61,7 @@ func (t *Tueren) BescheidPDF(bescheidAbfragen repository.BescheidAbfragen) http.
 }
 
 // bescheidBrief baut das Blatt aus Bescheid, Snapshot, Positionen und Einstellungen.
-func (t *Tueren) bescheidBrief(ctx context.Context, bescheidAbfragen repository.BescheidAbfragen, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
+func (t *Tueren) bescheidBrief(ctx context.Context, bescheidAbfragen *repository.BescheidAbfragen, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
 	bescheid, err := bescheidAbfragen.Lade(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

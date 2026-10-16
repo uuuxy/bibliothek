@@ -50,10 +50,11 @@ var (
 	ErrAusleiheFremd             = errors.New("ausleihe gehört nicht zu diesem schüler")
 )
 
-// LadeUeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene Forderung.
+// LadeUeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene Forderung,
+// die Kandidaten für den Brief.
 // Dieselbe Bedingung wie die Mahnliste (rueckgabe_frist < jetzt); was schon eine Forderung
 // trägt, steht bei LadeOffeneForderungen.
-func (a *pgBescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error) {
+func (a *BescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error) {
 	// Ein Zeitpunkt für beide Rechnungen dieser Funktion: Filterte die Abfrage mit der Uhr der
 	// Datenbank, während die Staffel das Schuljahr aus schulzeit.Jetzt() bestimmt, könnte am
 	// Schuljahreswechsel die eine schon im neuen Jahr sein und die andere noch im alten. Das

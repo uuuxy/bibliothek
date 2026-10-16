@@ -43,7 +43,7 @@ type exemplarStatusAnfrage struct {
 // @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/status [put]
-func (t *Tueren) ExemplarStatusAendern(katalogAbfragen repository.KatalogAbfragen, bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) ExemplarStatusAendern(katalogAbfragen repository.KatalogAbfragen, bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereExemplarStatus(w, r, katalogAbfragen, bescheidAbfragen)
 	}
@@ -51,7 +51,7 @@ func (t *Tueren) ExemplarStatusAendern(katalogAbfragen repository.KatalogAbfrage
 
 // aendereExemplarStatus speichert Status und Zustand eines Exemplars und nennt den neuen
 // Ersatzwert.
-func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, katalogAbfragen repository.KatalogAbfragen, bescheidAbfragen repository.BescheidAbfragen) {
+func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, katalogAbfragen repository.KatalogAbfragen, bescheidAbfragen *repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Exemplars fehlt", nil)

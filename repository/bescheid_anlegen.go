@@ -63,7 +63,7 @@ func (e *ForderungenNichtZugeordnet) Error() string {
 // auf keinem Bescheid steht; sonst stünde dieselbe Forderung auf zwei Briefen mit zwei Nummern.
 // Verluste werden nach dem Brief gebucht, damit ihre Forderung die Referenznummer trägt, und
 // vor den Positionen, damit dieselbe Prüfung sie einordnet.
-func (a *pgBescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Bescheid, error) {
+func (a *BescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Bescheid, error) {
 	if len(e.Positionen) == 0 && len(e.Verluste) == 0 {
 		return nil, fmt.Errorf("ein Bescheid ohne Positionen ist kein Bescheid")
 	}

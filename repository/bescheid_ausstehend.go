@@ -28,7 +28,7 @@ type ForderungOhneBescheid struct {
 //
 // Dieselbe Bedingung wie LadeOffeneForderungen und ordnePositionenZu: offen, nicht storniert,
 // auf keinem Brief. Leser im Papierkorb bleiben draußen, wie in der Mahnliste.
-func (a *pgBescheidAbfragen) LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error) {
+func (a *BescheidAbfragen) LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT s.id, s.vorname || ' ' || s.nachname, coalesce(s.klasse, ''),
 		       count(*)::int, coalesce(sum(f.betrag), 0)::float8, min(f.erstellt_am),

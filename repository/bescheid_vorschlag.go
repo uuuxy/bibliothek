@@ -51,7 +51,7 @@ type OffeneForderung struct {
 // entscheidet über die Anrede: Bei Minderjährigen geht der Brief an die Erziehungsberechtigten.
 // Ohne Geburtsdatum gilt minderjährig; das ist an einer Schule der Regelfall und der
 // schonendere Fehler.
-func (a *pgBescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error) {
+func (a *BescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error) {
 	var d BescheidEmpfaengerDaten
 	err := a.db.QueryRow(ctx, `
 		SELECT vorname, nachname, coalesce(klasse, ''), coalesce(strasse, ''),
@@ -67,7 +67,7 @@ func (a *pgBescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID stri
 }
 
 // LadeOffeneForderungen liest die Forderungen eines Schülers, die auf keinem Brief stehen.
-func (a *pgBescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error) {
+func (a *BescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error) {
 	// Die Abfrage liefert Datumswerte, keine Schuljahre: Wann das Schuljahr wechselt, steht in
 	// SchuljahrBeginn und nicht ein zweites Mal in einer Abfrage; eine abweichende Auslegung
 	// verschöbe jeden Betrag um eine Stufe der Staffel.
@@ -130,7 +130,7 @@ func (a *pgBescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schueler
 // Die Zeitpunkte kommen roh aus der Datenbank, gezählt wird in Go mit schuljahrVon, derselben
 // Grenze wie überall: Ein count(DISTINCT …) in der Abfrage müsste den 1. August ein zweites Mal
 // kennen.
-func (a *pgBescheidAbfragen) zaehleSchuljahreMitAusleihe(ctx context.Context, exemplarIDs []string) (map[string]int, error) {
+func (a *BescheidAbfragen) zaehleSchuljahreMitAusleihe(ctx context.Context, exemplarIDs []string) (map[string]int, error) {
 	je := map[string]int{}
 	gefragt := []string{}
 	gesehen := map[string]bool{}

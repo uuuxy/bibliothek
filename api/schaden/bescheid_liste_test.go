@@ -11,11 +11,9 @@ import (
 	"bibliothek/repository"
 )
 
-// bescheidListeAttrappe beantwortet nur LadeListe und merkt sich, ob nach den offenen Bescheiden
-// gefragt wurde. Die übrigen Methoden kommen aus der eingebetteten Schnittstelle; ruft die Tür
-// eine davon, bricht der Test ab.
+// bescheidListeAttrappe beantwortet LadeListe und merkt sich, ob nach den offenen Bescheiden
+// gefragt wurde.
 type bescheidListeAttrappe struct {
-	repository.BescheidAbfragen
 	nurOffen *bool
 	fehler   error
 }

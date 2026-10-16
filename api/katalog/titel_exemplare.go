@@ -22,14 +22,14 @@ import (
 // @Failure      400  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id}/exemplare [get]
-func (t *Tueren) TitelExemplare(bescheidAbfragen repository.BescheidAbfragen) http.HandlerFunc {
+func (t *Tueren) TitelExemplare(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.gibTitelExemplare(w, r, bescheidAbfragen)
 	}
 }
 
 // gibTitelExemplare liest die Exemplare eines Titels mit Eigentum und Ersatzwert.
-func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, bescheidAbfragen repository.BescheidAbfragen) {
+func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, bescheidAbfragen *repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
