@@ -1,12 +1,11 @@
 # Littera-Altbestand: Schema-Befund
 
-> Erhoben am 04.08.2026 direkt aus den vom Sekretariat kopierten Access-Dateien
-> (`~/Desktop/Neuer Ordner`) mit `mdbtools`. Alle Zahlen sind gemessen, nicht geschätzt.
-> Damit ist der Fahrplanpunkt „Migrations-Tool auf echtes Littera-Schema" nicht mehr blockiert.
+> Erhoben am 04.08.2026 aus den vom Sekretariat kopierten Access-Dateien mit `mdbtools`.
+> Alle Zahlen sind gemessen, nicht geschätzt.
 
 ## Was tatsächlich vorliegt
 
-Der Fahrplan sprach von einem **MySQL-Dump**. Geliefert wurde **MS Access**:
+Geliefert sind Dateien von **MS Access**, kein MySQL-Dump:
 
 | Datei | Inhalt |
 |---|---|
@@ -35,8 +34,7 @@ Löschen sagt, gilt für die Bibliothek.
 | `Leser` | 1.991 |
 | `Verleih` | 15.615 (davon 15.614 ohne Rückgabe gebucht) |
 
-**Der Bestand endet 2010** — und das ist inzwischen nicht mehr nur wahrscheinlich,
-sondern belegt:
+**Der Bestand endet 2010**, belegt:
 
 * Letzte Zugangsdaten: 2009 (4.029), 2010 (2.996), danach nichts.
 * Verleihdaten: 12.329 der 15.615 aus 2010, die Fristen laufen bis 2011 aus.
@@ -99,7 +97,7 @@ ist einer davon ein Personenname. Am meisten bewirkt der erste Wert: 11.160 Exem
 „Land Hessen" haben keine LMF-Signatur, die Faustregel ordnete sie dem Schulträger zu
 (`repository.ExemplarTopfSQL`, docs/OFFEN.md 4.24).
 
-### `Leser` → `schueler` — hier ist Vorsicht nötig
+### `Leser` → `leser` — hier ist Vorsicht nötig
 
 `Lesernummer` · `Vorname` · `Nachname` · `Geburtsdatum` · `Anmeldedatum` · Adressfelder
 (**DSGVO: nur übernehmen, was gebraucht wird**)
@@ -132,14 +130,13 @@ aber die Oberstufenklassen (11T1, 12T3, 13T5) sind selbstverständlich Schüler.
 `Im Ausland` kommt mit der Littera-Klasse `AUS`; die richtige Klasse trägt der LUSD-Import
 nach. Aus `AUS` lässt sich kein Abgangsjahr ablesen, es gilt das Jahr, das die Anwendung für
 jede Klasse ohne Jahrgang einsetzt (`repository.AbgangsjahrOhneKlasse`), mit einer Warnung im
-Protokoll. `U-plus` sind Vertretungskräfte. Die Littera-Gruppe steht seit Migration 153 als
-Art an der Leserzeile; bis dahin kamen die Sonderkonten als `lehrkraft` an, und ihre Gruppe
-stand nur im Protokoll des Laufs.
+Protokoll. `U-plus` sind Vertretungskräfte. Die Littera-Gruppe steht als Art an der Leserzeile
+(Migration 153).
 
 Gemessen am Altbestand: **1.734 Schüler (davon 14 im Ausland) · 158 Lehrkräfte · 71
 abgegangen · 23 Sonderkonten (9 Praktikum, 9 Fachbereich, 3 U-plus, 2 Sekretariat) · 5 ohne
 Zuordnung** — und jeder Schüler hat eine Klasse
-(`schueler.klasse` ist NOT NULL, ein Test sichert das ab). Eine Gruppe ohne Zuordnung wird
+(für einen Schüler ist `klasse` Pflicht, `chk_leser_schueler_pflichtfelder` an `leser`). Eine Gruppe ohne Zuordnung wird
 **nicht** geraten und nicht ausgelassen: Ausgelassen fehlten ihre Ausleihen, und die Bücher
 stünden als verfügbar im Regal. Der Lauf nennt Gruppe, Personen- und Ausleihzahl und hält
 an, im Trockenlauf wie im echten Lauf (`OhneZuordnung`, Entscheidung vom 28.09.2026);
@@ -185,9 +182,8 @@ Zwei Folgerungen:
 
 2. **Unser `buecher_titel.signatur` liegt am Titel — Littera am Exemplar.** Gemessen
    über den fertigen Lesepfad: Bei **72 von 10.422** Titeln mit Signatur (0,7 %)
-   unterscheiden sich die Exemplar-Signaturen untereinander. (Eine frühere Rohzählung
-   ergab 98 — sie zählte den Platzhalter `0` als eigenen Wert mit; `SignaturAus`
-   verwirft ihn.) Für 99,3 % ist die Titel-Ebene verlustfrei; für die übrigen nimmt
+   unterscheiden sich die Exemplar-Signaturen untereinander. (Den Platzhalter `0`
+   verwirft `SignaturAus`; als eigener Wert gezählt, wären es 98.) Für 99,3 % ist die Titel-Ebene verlustfrei; für die übrigen nimmt
    `signaturJeTitel` den häufigsten Wert und meldet den Titel als abweichend, statt
    still den ersten zu nehmen.
 
@@ -202,7 +198,7 @@ nur bei elf Exemplaren mit Signatur, bei den Büchern der Schülerbücherei so w
 Lernmitteln. An den 10.422 Titeln stehen nach der Übernahme 6.251 verschiedene Aufschriften mit
 732 verschiedenen Regaladressen; 4.840 Aufschriften gehören zu genau einem Titel.
 
-**Liste und Vorschläge nennen die Regaladresse** (entschieden und gebaut am 07.10.2026). Die
+**Liste und Vorschläge nennen die Regaladresse** (entschieden am 07.10.2026). Die
 Seite „Signaturen", die Vorschläge im Feld „Signatur" (Buchformular, Bestellkorb) und die
 Auswahl der Inventur lesen `GET /api/signaturen`; die Liste fasst nach dem Teil vor dem ersten
 „ / " zusammen (`repository.sqlSignaturRegaladresse`, der Trenner ist
@@ -241,39 +237,25 @@ Erhoben am 06.10.2026 an der Sicherung von 2010 und am Export der Titelliste vom
   ein Herausgeber. An der Stelle stehen außerdem 152 Verfasser in Katalogform; sie bleiben
   Verfasser.
 * Der Vermerk `LMF` steht im Juni 2026 an 91 Titeln ohne LMF-Signatur (2010: 210). Die
-  Übernahme erkannte Lernmittel bis zum 06.10.2026 nur an der Signatur.
+  Übernahme nimmt einen Titel mit diesem Vermerk als Lernmittel, auch ohne LMF-Signatur.
 * Beim Rundlauf einer Zeitschrift schreibt Littera Nummer und Namen des letzten Lesers in den
   Sonderstandort (Handbuch, „Exemplar bleibt beim letzten Leser des Rundlaufes"). 2010 trägt
   kein Wert diese Form.
 
 Umsetzung: `internal/littera/standort.go`, Bedienung in [SCRIPTS.md](SCRIPTS.md), Abschnitt 1.
 
-## Werkzeuglage — das alte Werkzeug ist nie gegen echte Daten gelaufen
+## Das Werkzeug: `internal/littera`
 
-`cmd/littera_migration` (inzwischen entfernt) fragte ab:
-
-```sql
-SELECT TitelID, Titel, Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL
-SELECT ExemplarID, TitelID, Barcode, ErworbenAm FROM EXEMPLARE
-```
-
-**Von diesen Spalten existierte einzig `ISBN`.** Der Kommentar im Werkzeug sagte es offen:
-„Wir nehmen hier Standardnamen an." Es war ein Gerüst, das nie angepasst wurde — gegen
-eine echte Littera-Datei brach es bei der ersten Abfrage ab. Dazu kam der ODBC-Zwang
-(Treiber nur unter Windows), der es auf dem Arbeitsrechner und im Container ohnehin
-unbrauchbar machte. Mit ihm ist die Abhängigkeit `alexbrainman/odbc` und der Build-Tag
-`odbc` entfallen.
-
-Ersetzt durch `internal/littera`: liest die `mdb-export`-CSVs (plattformunabhängig),
-bildet auf die echten Spaltennamen ab und ist ohne Datenbank testbar. Gegen den
+`internal/littera` liest die `mdb-export`-CSVs (plattformunabhängig),
+bildet auf die echten Spaltennamen ab und ist ohne Datenbank testbar. Einen Weg über ODBC gibt
+es nicht: Den Treiber gibt es nur unter Windows. Gegen den
 Altbestand belegt: **10.732 Titel, 61.520 Exemplare, 0 verwaiste Exemplare** — jedes
 Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
 `LITTERA_CSV_DIR` (wie die PG-Tests an `TEST_DATABASE_URL`).
 
 ### Spalten-Zuordnung für den vollständigen Import — alle geklärt
 
-Diese Liste hieß bis zum 23.08.2026 „Noch offen", obwohl darunter ausschließlich
-Erledigtes steht. Offen ist am Littera-Import nur noch EINES: ein **frisches Backup
+Offen ist am Littera-Import nur EINES: ein **frisches Backup
 aus dem laufenden Littera** (Dienstprogramme → Datensicherung, ~100 MB+) — für Leser,
 Ausweisnummern und laufende Ausleihen; der MAB-Export (`katalogisat.xml`, Juni 2026,
 13.708 Titel) deckt nur den Katalog. Die vorliegende `littera_sav.mdb` ist ein Stand
@@ -288,7 +270,7 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
   wobei **`Funktion = 0` den Verfasser** bezeichnet (1 = Illustrator, 2 = Herausgeber …
   stehen in `Personen_Funktionen`; die 0 fehlt dort, sie ist die Vorgabe). Damit steigt
   die Abdeckung auf **9.029 von 10.732 (84 %)** — gemessen, nach Abzug der
-  Bestandsvermerke (siehe unten; die frühere Angabe 10.002 zählte sie mit). Mehrfachverfasser sind der
+  Bestandsvermerke (siehe unten; mit ihnen wären es 10.002). Mehrfachverfasser sind der
   Normalfall (6.178 Titel haben genau zwei) und werden in Erfassungsreihenfolge mit
   `; ` verbunden, nicht alphabetisch: Der Erstgenannte ist der Hauptverfasser.
 * **Medienart — erledigt** (`leseMedienarten`, gleiche Bauart wie `Verlag`).
@@ -311,9 +293,8 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
 
 ## Der Schreibpfad — gemessen an einem echten Lauf
 
-Die Härtung aus `cmd/migrate/pg_writer.go` wurde nicht kopiert, sondern nach
-`internal/uebernahme` herausgelöst; beide Werkzeuge benutzen jetzt dieselbe. Bedienung:
-`docs/SCRIPTS.md`.
+Die Härtung steht in `internal/uebernahme`; `cmd/migrate` und die Übernahme aus Littera
+benutzen dieselbe. Bedienung: `docs/SCRIPTS.md`.
 
 Vollständiger Lauf in der Generalprobe vom 28.09.2026 (`scripts/generalprobe/`, frische
 Datenbank aus den Migrationen), 22 Sekunden:
@@ -332,8 +313,7 @@ ungültige Prüfziffer, 411 Frist vor Verleihdatum, 180 Platzhalter-Mail, 168 le
 Haupttitel, 23 Littera-Gruppe eines Kollegium-Kontos, 19 Klasse ohne Jahrgang, 8
 Ersatz-Barcode, 2 Etikett ungleich Rechnung, 1 Ersatz-Ausweis) und 3 Ausfälle (2
 Doppelbelegungen, 1 Ausleihe auf ein Exemplar, das es nicht gibt). Jede Zeile steht mit ihrem
-Littera-Schlüssel im Protokoll. Bis zum 28.09.2026 fehlten 42 Personen und mit ihnen 341
-Ausleihen.
+Littera-Schlüssel im Protokoll.
 
 ### Das Etikett ist entschlüsselt
 
@@ -343,22 +323,18 @@ Ausleihen.
 Prüfzeichen. Aufgelöst in `littera.barcodeInhalt`; gegen den Altbestand stimmen **61.520
 von 61.520** mit der Spalte `Exemplarnummer` überein.
 
-Damit steht fest, dass die vorhandenen Etiketten die Exemplarnummer tragen — der Import
-schreibt sie nach `buecher_exemplare.barcode_id`, und der Bestand bleibt ohne
-Neubeklebung scannbar. Ob die Lesegeräte den Zifferninhalt liefern, konnte nur ein echtes
-Buch beantworten: Zwei Scans in der Bibliothek am 18.08.2026 zeigten, dass der Strichcode
-eine EAN-13 liefert (Nummer rechts auf 8 Stellen genullt, Bibliotheksnummer, Stellenzahl,
-Prüfziffer). Die Theke rechnet sie auf die Nummer zurück, unter der das System das Exemplar
-führt (`84cbe12d`) — `-barcodes neu` ist nicht nötig. Ein neues Etikett brauchen nur Exemplare,
-deren Etikett schon ein anderes trägt (13 Exemplare teilen sich 5 Nummern, 8 bekommen eine neue;
-SCRIPTS.md, Abschnitt 1).
-
-Nachtrag 28.09.2026: Die Übernahme schreibt die EAN-13 des Etiketts nach `barcode_id`, nicht
-die Exemplarnummer. Die Spalte `Barcode` ist diese EAN-13 in der Setzform einer EAN-13-Schrift
-(Parität und Prüfziffer stimmen an allen 61.520 Exemplaren) und wird als Etikett übernommen
-(`littera.etikettZiffern`). `littera.EtikettBarcode` rechnete bis dahin für Nummern unter
-sechs Stellen links aufgefüllt und mit einer festen 6 an Stelle 12 — anders als die beiden
-Scans oben; getroffen hätte es jedes Exemplar dieser Sicherung. Siehe [SCRIPTS.md](SCRIPTS.md).
+Damit steht fest, dass die vorhandenen Etiketten die Exemplarnummer tragen, und der Bestand
+bleibt ohne Neubeklebung scannbar. Zwei Scans in der Bibliothek am 18.08.2026 zeigten, dass
+der Strichcode eine EAN-13 liefert (Nummer rechts auf 8 Stellen genullt,
+Bibliotheksnummer, Stellenzahl, Prüfziffer). Die Übernahme schreibt diese EAN-13 nach
+`buecher_exemplare.barcode_id`: Die Spalte `Barcode` ist dieselbe EAN-13 in der Setzform
+einer EAN-13-Schrift (Parität und Prüfziffer stimmen an allen 61.520 Exemplaren) und wird
+als Etikett übernommen (`littera.etikettZiffern`); aus Exemplar- und Bibliotheksnummer
+rechnet `littera.EtikettBarcode` sie nur, wenn sie fehlt. Steht ein Exemplar nur mit der
+kurzen Nummer im System, rechnet die Theke den Scan auf sie zurück
+(`dekodiereLitteraEtikett`). `-barcodes neu` ist nicht nötig. Ein neues Etikett brauchen nur
+Exemplare, deren Etikett schon ein anderes trägt (13 Exemplare teilen sich 5 Nummern, 8
+bekommen eine neue; [SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
 
 **Lernmittel mit „LMF" im Strichcode:** Manche Lernmittel tragen im Strichcode „LMF" und eine
 lange Nummer; an der Theke bestätigt am 01.10.2026: Sie buchen. In der Sicherung von 2010 steht
@@ -367,12 +343,11 @@ lange Nummer; an der Theke bestätigt am 01.10.2026: Sie buchen. In der Sicherun
 eine solche Nummer nach, wie sie gescannt wird, und `LMF-` ist eine Vorsilbe für Bücher wie
 `B-`: am Server (`internal/service/omnibox.go`) und ohne Netz (`BUCH_VORSILBEN` in
 `frontend/src/lib/scanEinordnen.js`); `internal/service/vorsilben_zwilling_test.go` hält beide
-gleich. Sie gehört nicht zu den Resten des früheren Titelzusatzes „LMF-" und bleibt.
+gleich. Sie ist kein Rest eines Titelzusatzes „LMF-" und bleibt.
 
-### Zwei Fehler, die der Schreibpfad aufgedeckt hat
+### Zwei Fallen im Schreibpfad
 
-**Das Autorenfeld war verschmutzt.** Die frühere Angabe „10.002 von 10.732 Titeln mit
-Autor (93 %)" stimmte der Zahl, nicht der Sache nach: In `Personen` stehen neben Namen
+**Im Autorenfeld stehen auch Standortvermerke.** In `Personen` stehen neben Namen
 auch Standortvermerke — `Buchbestand Bibliothek` (6.711 Titel), `Bibliothek` (760),
 `Klassensatz/Bibliothek` (584), `LMF` (363), `U plus` (202). Littera kann sie nicht
 unterscheiden; die Tabelle hat außer dem Namen kein Merkmal. Ohne Filter stünde bei 7.131
@@ -380,9 +355,10 @@ Titeln ein Regalvermerk mitten in der Autorenangabe („Shaw, George Bernard; Bu
 Bibliothek"). Nach der Bereinigung (`bestandsmarken`, wirkt auch auf den Freitext
 `Verfasserangabe`): **9.029 Titel mit einem echten Autor**, 84 %.
 
-**Geburtsdaten landeten in der Zukunft.** Go legt die Jahrhundertgrenze bei zweistelligen
-Jahren fest auf 69. Für Ausleihdaten stimmt das, für Geburtsdaten nicht: 69 Personen —
-Lehrkräfte der Jahrgänge 1946 bis 1968 — kamen als 2046 bis 2068 an. `geburtsdatumAus`
+**Zweistellige Geburtsjahre landen sonst in der Zukunft.** Go legt die Jahrhundertgrenze bei
+zweistelligen Jahren fest auf 69. Für Ausleihdaten stimmt das, für Geburtsdaten nicht: 69
+Personen der Sicherung von 2010 — Lehrkräfte der Jahrgänge 1946 bis 1968 — kämen als 2046 bis
+2068 an. `geburtsdatumAus`
 holt jedes Datum in der Zukunft um ein Jahrhundert zurück.
 
 ### Was NICHT übernommen wird
