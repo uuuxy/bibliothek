@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-08. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-16. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -31,8 +31,8 @@ _Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren. (§16)
 Jede Seite hat **eine** Suchleiste oben über der vollen Breite, Filter und Knöpfe stehen in
 der Zeile darunter. Sie sucht, worum es auf der Seite geht: der Medienkatalog Bücher,
 Leserdatei und Mahnwesen Menschen, die Inventur scannt. Eine seitenübergreifende
-Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Schülerakte springt, gibt es
-nicht mehr (zurückgebaut am 04.09.2026). Gebucht wird nur an der Theke.
+Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Leserakte springt, gibt es
+nicht. Gebucht wird nur an der Theke.
 
 ## Ausleihe (Theke)
 
@@ -57,12 +57,12 @@ Schritt).
 der Akte. Nur ein offenes Fenster (etwa „Gebühr wirklich stornieren?") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
-**Ein Scan beantwortet keine Rückfrage** (seit 07.10.2026): Steht „Ausleihe blockiert",
+**Ein Scan beantwortet keine Rückfrage:** Steht „Ausleihe blockiert",
 „Achtung! Vorgemerkt!" oder „Zubehör prüfen" offen, bleibt das Fenster bei einem Scan stehen.
 Der Scan wird nicht gebucht und meldet sich rot mit Fehlerton. Erst das Fenster mit Maus oder
 Tastatur beantworten, dann erneut scannen.
 
-**Schneller scannen, als das Programm antwortet** (seit 07.10.2026): Die Theke bucht die Scans
+**Schneller scannen, als das Programm antwortet:** Die Theke bucht die Scans
 der Reihe nach, auch wenn der nächste kommt, bevor der vorige beantwortet ist — erst der
 Ausweis, dann die Bücher an diesen Leser. Dieselbe Nummer noch einmal, bevor sie gebucht ist,
 zählt nicht. Geht ein Scan nicht glatt durch (er scheitert, eine Rückfrage geht auf oder ein
@@ -70,14 +70,14 @@ Hinweis erscheint über dem Konto), bucht die Theke nicht, was danach schon gesc
 Nummern stehen rot unter dem Scanfeld („Gescannt und NICHT gebucht: … — bitte erneut scannen"),
 mit Fehlerton, bis zum nächsten Scan.
 
-**Am Ton ist zu hören, was gebucht wurde** (seit 06.10.2026): Eine Ausleihe klingt mit zwei
+**Am Ton ist zu hören, was gebucht wurde:** Eine Ausleihe klingt mit zwei
 Tönen abwärts; eine Rückgabe und ein gescannter Ausweis klingen mit denselben zwei Tönen
 aufwärts. Klingt es beim Zurücknehmen abwärts, ist das Buch ausgeliehen worden: Erneut scannen
 nimmt es zurück. Ein Scan, der nichts gebucht hat (unbekannte Nummer, abgelehnte Buchung),
-meldet sich rot mit Fehlerton (seit 07.10.2026). Nach einem unbekannten Ausweis ist das Konto
+meldet sich rot mit Fehlerton. Nach einem unbekannten Ausweis ist das Konto
 davor noch geöffnet: Ein Buch, das jetzt gescannt wird, geht an dieses Konto.
 
-**Ein Stapel vom Rückgabetisch** geht über die **Schnellrückgabe** (seit 06.10.2026): den Knopf
+**Ein Stapel vom Rückgabetisch** geht über die **Schnellrückgabe**: den Knopf
 rechts neben dem Scanfeld anklicken, dann die Bücher scannen. Jedes verliehene Buch wird
 zurückgebucht, und die Meldung nennt, bei wem es war. Ein Konto erscheint nicht, ausgeliehen
 wird nichts; ein Buch, das nicht verliehen war, meldet sich rot mit Fehlerton. Ohne sie öffnet
@@ -88,8 +88,8 @@ nach der Frist, nach der sich die Theke von selbst leert.
 **Die Theke warnt von selbst:**
 
 - Bekommt ein Kind ein **Schulbuch in einer anderen Auflage**, als Kinder seiner Klasse sie
-  schon haben (seit 25.09.2026; nur bei Auflagen, die in der Titel-Verwaltung zusammengefasst
-  sind), blitzt die Theke orange, und über dem Konto steht zum Beispiel „Andere Auflage in der
+  schon haben (nur bei Auflagen, die in der Titel-Verwaltung zusammengefasst sind),
+  blitzt die Theke orange, und über dem Konto steht zum Beispiel „Andere Auflage in der
   07B: 12 Kinder haben 3. Aufl. · 2019 — dieses Exemplar ist 4. Aufl. · 2023." Die Ausleihe ist
   gebucht; wer die Klasse einheitlich haben will, nimmt das Buch zurück (erneut scannen) und
   gibt die andere Auflage aus. Andere Auflagen haben andere Seitenzahlen. (§13)
@@ -164,28 +164,27 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   Bestands an), bearbeiten, Cover tauschen,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Die Maske beginnt mit der ISBN
   und den Angaben zum Buch. Pflicht ist der Titel; die ISBN darf fehlen, etwa bei einer
-  Zeitschrift, einem Spiel oder einem alten Buch (seit 03.10.2026). Heißt beim Anlegen ohne
+  Zeitschrift, einem Spiel oder einem alten Buch. Heißt beim Anlegen ohne
   ISBN schon ein Titel mit demselben Autor gleich, fragt die Maske _Ist es dasselbe Medium?_:
   _Titel öffnen_ führt zum vorhandenen Titel, dort kommt das Exemplar dazu; _Anderes Medium_
   legt den Titel an (ein anderes Heft, ein anderer Band). Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
   Lernmittel_, die Signatur, Fach, Schulzweig, der Jahrgang („von" und „bis"), das
   Mehrjahresband und die anderen Auflagen. Bestand und Zähldatum stehen unter _Exemplare_,
   über der Liste; der Standort steht am Exemplar und wird in der Buchakte geändert. Wird der Bestand nach oben
-  korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
-  07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
-  Etiketten_. Wird er verringert, fragt die Maske mit beiden Zahlen nach; ausgesondert
+  korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an; sie
+  stehen danach im Druck-Center unter _Fehlende Etiketten_. Wird er verringert, fragt die Maske mit beiden Zahlen nach; ausgesondert
   werden zuerst nicht ausgeliehene Exemplare, bestellte nie. Das Feld zählt die Exemplare im
   Bestand ohne die bestellten und wird nur gespeichert, wenn es geändert wurde; leer
   gelassen, bleibt der Bestand. Hat inzwischen ein anderer Platz Exemplare angelegt oder
-  ausgesondert, lehnt das Speichern ab, und das Feld zeigt den neuen Stand (seit
-  01.10.2026). **Schlagworte aus der DNB** (seit 30.09.2026): Holt die ISBN Titel und Autor,
+  ausgesondert, lehnt das Speichern ab, und das Feld zeigt den neuen Stand.
+  **Schlagworte aus der DNB:** Holt die ISBN Titel und Autor,
   stehen unter _Schlagworte_ die Wörter, die die DNB zu dieser ISBN nennt, zum Anklicken — wie
   beim Bestellen als _Vorschläge aus der DNB_ und _Neue Schlagworte aus der DNB_. Bei einem
   Titel, den es schon gibt, holt sie der Knopf _Vorschläge aus der DNB holen_ unter dem Feld.
   Angeboten wird nur, was der Titel noch nicht trägt; eingetragen wird nur, was jemand anklickt,
   und erst mit dem Speichern. Kennt die DNB die ISBN nicht oder ist sie nicht erreichbar, steht
   das in einem Satz darunter. (§13)
-- **Auflagen** (seit 25.09.2026, bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
+- **Auflagen** (bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
   ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
   in der Gruppe _An der Schule_ die Angabe _Andere Auflagen_: _Andere Auflage zuordnen_ sucht unter den
   Lernmitteln — auch unter Titeln, von denen kein Exemplar mehr da ist — und fasst die
@@ -195,7 +194,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   so zusammengefasstes Buch eine Karte: oben die Auflage, die die Suche getroffen hat — nach
   einer gescannten ISBN genau diese, sonst die neueste —, als Bestand die Summe aller
   Auflagen und darunter „Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019
-  (42)". Die Titel-Verwaltung listet weiter jede Auflage einzeln. (§13)
+  (42)". Die Titel-Verwaltung listet jede Auflage einzeln. (§13)
 - **Mehrjahresband**: Bei einem Lernmittel heißt die Spanne „Im Unterricht von Jahrgang …
   bis". Bleibt das Buch über diese Spanne beim Kind, statt am Rückgabetermin der Klasse
   zurückzukommen, setzt man darunter den Haken bei „Mehrjahresband"; der Hinweis darunter rechnet
@@ -203,8 +202,8 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   Schuljahres, in dem das Kind diesen Jahrgang beendet — ein Kind der 7 gibt ein Buch „7 bis
   9" nach drei Schuljahren zurück. Der Haken geht nur mit einer Spanne über mehr als
   einen Jahrgang. (§2)
-- **Jahrgang**: Der Jahrgang eines Titels steht in zwei Feldern, „von" und „bis" (seit
-  08.10.2026; das Feld „Klasse" daneben gibt es nicht mehr). Die meisten Schulbücher gelten
+- **Jahrgang**: Der Jahrgang eines Titels steht in zwei Feldern, „von" und „bis". Die meisten
+  Schulbücher gelten
   für ein Jahr: Wer in „von" eine 7 tippt, hat dieselbe Zahl in „bis". „bis" geht mit, solange
   es leer ist oder dieselbe Zahl zeigt wie „von"; ein eigener Wert bleibt stehen (7, Tab, 10
   ergibt „7 bis 10"). Die Titel-Verwaltung nennt den Jahrgang in der Spalte „Jahrgang" („7",
@@ -214,12 +213,12 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   aus „Band 2" oder einer bloßen Zahl („Green Line 5") macht sie keinen. Eine Liste mit der
   Spalte „Klasse" trägt den Jahrgang als „von … bis" ein. (§2)
 - **Jahrgang ohne Eintrag**: Bleiben „von" und „bis" leer, ist der Jahrgang des Titels
-  unbekannt (seit 08.10.2026; vorher trug jeder neue Titel „5 bis 10"). Ein solcher Titel
+  unbekannt. Ein solcher Titel
   liegt in keiner Inventur nach Klasse und steht im Portal unter keinem Jahrgang; ohne
-  Filter erscheint er wie bisher. „von" und „bis" gehören zusammen: Nur eines von beiden
+  Filter erscheint er. „von" und „bis" gehören zusammen: Nur eines von beiden
   lässt sich nicht speichern. (§2)
 - **Titel ohne Exemplar** stehen in keinem Katalog und in keiner Trefferliste — weder im
-  Portal noch an der Theke (seit 22.09.2026; ein bestelltes Exemplar zählt schon). Sie sind
+  Portal noch an der Theke (ein bestelltes Exemplar zählt schon). Sie sind
   aber nicht weg: In der Titel-Verwaltung schaltet der Umschalter _Mit Exemplaren | Ohne
   Exemplare_ auf die Aufräumsicht. Dort bekommt so ein Titel Exemplare, oder er wird
   gelöscht. Auf der Bestellliste steht er ohnehin, sein Bestand liegt unter jeder Schwelle.
@@ -250,7 +249,7 @@ die Klassen, die schon eine Buchliste haben; eintippen lässt sich eine Klasse n
 Klassen kommen mit dem LUSD-Abgleich. Der Papierkorb an einer Klasse löscht nur ihre Buchliste. Reservierungen aus dem Kollegium stehen im Bestellwesen
 (→ _Klassensatz-Reservierungen_). (§4)
 
-Seit 05.09.2026 ergänzt sich die Liste von selbst: Hat mehr als die Hälfte einer Klasse
+Die Liste ergänzt sich von selbst: Hat mehr als die Hälfte einer Klasse
 (mindestens fünf Kinder) denselben Titel ausgeliehen, erscheint er bei der Klasse mit dem
 Abzeichen _aus Ausleihen · n Leser_ — Schulbuch wie Lektüre, live aus den Ausleihen
 gerechnet, nirgends gespeichert. Die von Hand gepflegte Liste bleibt unverändert; beim
@@ -258,15 +257,14 @@ _Bücher verwalten_ sind nur die handgepflegten Titel vorgewählt, ein abgeleite
 per Haken übernehmen. Gibt die Klasse die Bücher zurück, verschwindet das Abzeichen wieder.
 Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
 
-Auflagen desselben Buchs, die in der Titel-Verwaltung zusammengefasst sind, zählen zusammen
-(seit 25.09.2026): Haben 4 Kinder die 4. und 2 die 3. Auflage, ist das ein Buch mit 6 Lesern.
+Auflagen desselben Buchs, die in der Titel-Verwaltung zusammengefasst sind, zählen zusammen:
+Haben 4 Kinder die 4. und 2 die 3. Auflage, ist das ein Buch mit 6 Lesern.
 Die Kachel zeigt die Auflage, die die meisten Kinder haben. Haben Kinder der Klasse eine andere
 Auflage als die der Kachel, steht darunter in Orange _Auflagen in der Klasse_ mit jeder Auflage
 und der Zahl der Kinder — die der Kachel mit „diese Auflage". Andere Auflagen haben andere
 Seitenzahlen; die Theke warnt beim Ausleihen ebenfalls. (§13)
 
-**Die Klasse kommt von den Kindern, nicht vom Namen** (07.09.2026 aufgeschrieben, weil die
-Frage beim Büchertausch aufkam): Die abgeleiteten Einträge fragen bei jedem Aufruf, welche
+**Die Klasse kommt von den Kindern, nicht vom Namen:** Die abgeleiteten Einträge fragen bei jedem Aufruf, welche
 Klasse in der Schülerliste steht und was deren Kinder gerade ausgeliehen haben. Beim
 Büchertausch im Juni hat die 7R2 also schon die Bücher der 8 — sie stehen bis zu den Ferien
 unter _07R2_, weil die LUSD die Kinder erst danach hochschiebt. Ist die Versetzung gelaufen,
@@ -280,14 +278,13 @@ Handeintrag und der neue mit dem Abzeichen _aus Ausleihen_.
 
 ## Schuljahreswechsel (LMF-Plan)
 
-Menü _System → Schuljahreswechsel_ (seit 05.09.2026; der Plan wird ein- bis zweimal im
-Jahr gebraucht und steht deshalb nicht dauerhaft im Bibliotheks-Menü). Abgänger bleiben
+Menü _System → Schuljahreswechsel_ (der Plan wird ein- bis zweimal im Jahr gebraucht und
+steht deshalb nicht dauerhaft im Bibliotheks-Menü). Abgänger bleiben
 unter _Verwaltung_, der LUSD-Abgleich mit Versetzung unter _Einstellungen →
 LUSD & Versetzung_.
 
-Die frühere Excel-Liste der Schule als zwei Pläne (seit 06.09.2026 so benannt, weil
-„Rückgabe" und „Ausgabe" allein unklar waren — es sind zwei verschiedene Dinge zu
-verschiedenen Zeiten):
+Die frühere Excel-Liste der Schule als zwei Pläne, zwei verschiedene Dinge zu verschiedenen
+Zeiten:
 
 - **Büchertausch vor den Sommerferien:** Alle Klassen geben die alten Schulbücher ab und
   bekommen direkt die neuen. Abschlussklassen und Klassen, die zum neuen Schuljahr neu
@@ -309,22 +306,21 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   _Veröffentlichen_ (nur bei einem Entwurf), _Plan speichern_. Die Leiste bleibt beim
   Scrollen oben stehen; der Satz darunter sagt, was man sieht („Vorschlag aus dem
   Vorjahr, noch nicht gespeichert", „Entwurf vom …", „veröffentlicht am …").
-- **Entwurf und Veröffentlichen** (seit 06.09.2026): _Plan speichern_ legt einen
+- **Entwurf und Veröffentlichen:** _Plan speichern_ legt einen
   **Entwurf** an — zentral gespeichert, auf jedem PC gleich, aber für das Kollegium
   unsichtbar: nicht im Portal, nicht im PDF des Portals, und es werden keine Fristen
   gesetzt. _Als PDF_ im Planer enthält den Entwurf — das ist das Blatt für die Abnahme
   durch die Schulleitung. _Veröffentlichen_ speichert den aktuellen Stand und gibt ihn
   frei; ab dann sieht das Kollegium den Plan, beim Büchertausch werden die Termine die
-  Fristen der Klassen, und jede weitere Speicherung gilt sofort (die Korrektur-Mail von
-  früher). Einen zweiten Entwurf neben dem veröffentlichten Plan gibt es nicht — der Plan
+  Fristen der Klassen, und jede weitere Speicherung gilt sofort. Einen zweiten Entwurf neben dem veröffentlichten Plan gibt es nicht — der Plan
   des nächsten Schuljahres ist ein neuer Plan und beginnt wieder als Entwurf.
-- **Das PDF ist immer EIN Blatt** (seit 06.09.2026). Ein voller Plan bricht nicht mehr auf
-  eine zweite Seite um: Bis rund vierzig Terminen sieht das Blatt aus wie das gewohnte
+- **Das PDF ist immer EIN Blatt.** Ein voller Plan bricht nicht auf eine zweite Seite
+  um: Bis rund vierzig Terminen sieht das Blatt aus wie das gewohnte
   Excel; darüber rückt der Satz enger zusammen und stellt ab etwa sechzig Terminen
   Rückgabe und Ausgabe nebeneinander in zwei Spalten (dort steht der Wochentag abgekürzt).
   Reicht eine Spalte für einen Abschnitt nicht, geht er mit „(Fortsetzung)" und eigenem
   Tabellenkopf daneben weiter. Es wird nie etwas weggelassen.
-- **Zeitraum** (seit 06.09.2026 je Art verschieden): Der **Büchertausch endet am
+- **Zeitraum** (je Art verschieden): Der **Büchertausch endet am
   Donnerstag vor den Sommerferien in der 4. Stunde** — _Letzter Tag_ und _Ende am letzten
   Tag_ sind aus der Ferientabelle Hessen (KMK-Beschluss, bis 2030 hinterlegt) vorbelegt,
   die Reihenfolge läuft rückwärts davor, und der Satz darunter nennt Ferien und den
@@ -333,8 +329,8 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   _Erster Tag_ (vorbelegt: erster Schultag nach den Ferien), _Beginn am ersten Tag_
   (vorbelegt 2. Stunde, wie im Plan 2026: Montag 10.08., 2. Stunde). Dazu
   _Stunden je Tag_ (Vorgabe 6). Fehlt ein Jahr in der Ferientabelle, sagt der Satz das,
-  und der Tag wird von Hand eingetragen. **Die Sommerferien pflegt die Schule selbst**
-  (seit 06.09.2026): _Einstellungen → LUSD & Versetzung → Sommerferien_ zeigt die Jahre
+  und der Tag wird von Hand eingetragen. **Die Sommerferien pflegt die Schule selbst:**
+  _Einstellungen → LUSD & Versetzung → Sommerferien_ zeigt die Jahre
   des Programms und nimmt weitere auf (Beginn und Ende, Quelle
   kmk.org/service/ferienregelung); ein eigener Eintrag für ein Programmjahr gilt vor dem
   Programm. Zwei Jahre vor dem letzten bekannten Jahr warnt _Einstellungen →
@@ -360,7 +356,7 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   übrigen Zeilen fließen um sie herum und lassen die belegte Stunde aus. _Festen Platz
   lösen_ gibt die Zeile dem Fluss zurück. Feste Plätze gelten für diesen Plan; der
   Vorschlag fürs nächste Jahr bringt sie nicht mit.
-- **Noch nicht im Plan** (direkt über der Tabelle, seit 06.09.2026): die Klassen, die
+- **Noch nicht im Plan** (direkt über der Tabelle): die Klassen, die
   keine Zeile haben und für die keine Regel gilt — die neue Klasse nach dem LUSD-Import.
   _06F4 einplanen_ setzt sie **an ihren Platz**: hinter die letzte Klasse desselben
   Jahrgangs und Zweigs (06F4 hinter 06F3), sonst hinter den Jahrgang, sonst ans Ende;
@@ -402,8 +398,8 @@ Fristen und Ausgabe-Pläne. (§2.3)
 
 ## Leserdatei
 
-Bis zum 16.09.2026 hieß dieser Menüpunkt _Schülerdatei_ und führte nur Schüler. Er führt
-jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer Liste.
+Die Leserdatei führt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
+Liste.
 
 - **Wer steht hier drin?** Schüler kommen aus der LUSD. Das Kollegium entsteht entweder von
   selbst, sobald sich jemand über „Mein Portal" anmeldet, oder Sie legen es mit _Neuer
@@ -605,7 +601,7 @@ Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Be
 Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 
-**Kommt die Bestellmail nicht an** (seit 07.10.2026): Scheitert der Versand oder ist kein
+**Kommt die Bestellmail nicht an:** Scheitert der Versand oder ist kein
 Mailserver eingerichtet, ist die Bestellung trotzdem gespeichert. In der Bestellhistorie steht
 dann in der Spalte _Stand_ „Mail nicht versendet", in der Bestellung der Knopf _Erneut senden_.
 Hat der Händler die Bestellung auf anderem Weg bekommen (Telefon, eigene Mail), nimmt _Auf
@@ -613,7 +609,7 @@ anderem Weg bestellt_ den Hinweis nach einer Rückfrage weg, ohne zu senden; dan
 die Bestellung nicht mehr aus dem Programm senden. Diesen Knopf gibt es nur an Bestellungen ohne
 Bestätigungs-Link; mit Link wird stattdessen die Zusage des Händlers nachgetragen. (§7)
 
-**Auflagen im Bestellbedarf** (seit 25.09.2026): Sind Auflagen eines Schulbuchs in der
+**Auflagen im Bestellbedarf:** Sind Auflagen eines Schulbuchs in der
 Titel-Verwaltung zusammengefasst (siehe _Auflagen_ bei der Titel-Verwaltung), steht das Buch
 im Bestellbedarf einmal. Gezählt wird der Bestand aller Auflagen zusammen; die Zeile zeigt die
 neueste Auflage — sie kommt in den Warenkorb —, und darunter steht, woraus die Zahl besteht
@@ -636,22 +632,21 @@ dann nur den eigenen Bestand, und ein Titel, der darin fehlt, kann der DNB trotz
 Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der
 DNB-Satz nennt und die es unter _Einstellungen → Schlagworte_ schon gibt (auch über einen
 Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen wird nur, was
-jemand übernommen hat. Darunter stehen, seit dem 30.09.2026, die Schlagwörter der Normdatei der
+jemand übernommen hat. Darunter stehen die Schlagwörter der Normdatei der
 DNB, die es in der Liste noch nicht gibt, als _Neue Schlagworte aus der DNB_ — Personen in der
 Schreibweise der Liste („Kafka <Franz>"). Ein Klick übernimmt auch hier; mit dem Warenkorb kommt
 das Wort in die Liste. Stand der Titel schon im Katalog, holt der Knopf _Vorschläge aus der DNB
-holen_ unter den Schlagworten dieselben Vorschläge (seit 30.09.2026) — nur die Wörter, die der Titel
+holen_ unter den Schlagworten dieselben Vorschläge — nur die Wörter, die der Titel
 noch nicht trägt.
 
-**Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 03.10.2026): Auf dem Titelblatt älterer
+**Dieselbe ISBN, zehn- oder dreizehnstellig:** Auf dem Titelblatt älterer
 Bücher steht die zehnstellige ISBN, auf dem Buchrücken die dreizehnstellige. Für das Programm
 ist es dieselbe Nummer. Es speichert eine zehnstellige ISBN mit richtiger Prüfziffer
 dreizehnstellig und findet den Titel über beide Längen: in der Maske _Neues Buch_, bei _Titel
 suchen & hinzufügen_ und _Neue Auflage bestellen_, in den Importen und in den Suchfeldern. Steht
 das Buch schon im Katalog, wird kein zweiter Titel angelegt. Eine zehnstellige Nummer mit
 falscher Prüfziffer bleibt, wie sie eingegeben wurde, und gilt als eigene Nummer: Umgerechnet
-führte sie auf ein anderes Buch. Die Frage „Ist es dasselbe Buch?" zur anderen Länge gibt es
-nicht mehr.
+führte sie auf ein anderes Buch.
 
 ## Inventur
 
@@ -662,7 +657,7 @@ zurückholen. _Liste drucken_ im Bericht druckt die Exemplare, die noch fehlen, 
 Reihenfolge der Signaturen, mit ganzem Titel und einem Kästchen zum Abhaken; gefundene und
 endgültig gelöschte nennt das Blatt nur als Zahl. Laufende Inventuren können fortgesetzt oder
 verworfen werden. Verwerfen bucht nichts: Unter _Frühere Inventuren_ steht der Lauf dann als
-„verworfen", ohne Fehlbestand — der Bereich gilt nicht als geprüft (seit 29.09.2026). (§6)
+„verworfen", ohne Fehlbestand — der Bereich gilt nicht als geprüft. (§6)
 
 ---
 
@@ -702,7 +697,7 @@ des Schulträgers stehen im jeweiligen Abschnitt. (§13)
 Monatsbericht, Jahresbericht und Lieferantenabrechnung als PDF; in Blöcken je Topf mit
 eigener Summe und der Gesamtsumme darunter, über _Mittelherkunft_ auch für nur einen Topf.
 Ohne Preise im Bestellwesen zählen die Blätter Exemplare statt Euro und heißen
-entsprechend. Bis zum 17.09.2026 ein Reiter im Bestellwesen. (§7)
+entsprechend. (§7)
 
 ## System-Logs
 
@@ -756,7 +751,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                                                                                                                                                                                                                                                                                          |
 | Mail                    | Postausgang mit Verbindungstest, zwei Vorlagen: Elternbrief zur Mahnung (gedruckt) und Bestellmail an den Händler                                                                                                                                                                                                                                                                             |
 | LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                                                                                                                                                                                                                                                                                   |
-| Datenverwaltung         | Katalog-Import (Littera; bringt die Schlagworte an Titel, die noch keine tragen), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; der Knopf fehlte vom 21.06. bis 07.09.2026; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export (Bestandsliste als CSV, eine Zeile je Exemplar: Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum, Standort), Offline-Sicherungen einspielen |
+| Datenverwaltung         | Katalog-Import (Littera; bringt die Schlagworte an Titel, die noch keine tragen), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export (Bestandsliste als CSV, eine Zeile je Exemplar: Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum, Standort), Offline-Sicherungen einspielen |
 | LUSD & Versetzung       | LUSD-Abgleich, Versetzung zum Schuljahresende, Sommerferien für den LMF-Plan                                                                                                                                                                                                                                                                                                                  |
 | Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                                                                                                                                                                                                                                                                                     |
 
@@ -776,8 +771,8 @@ die Schlagworte, die die Bibliothek unter _Einstellungen → Schlagworte_ als Fi
 hat: Ein Klick zeigt alle Titel des Worts, zusammen mit einem Suchwort nur die, die beides
 treffen; ein zweiter Klick nimmt den Filter zurück. Gezeigt werden höchstens 50 Treffer — gibt
 es mehr, steht die Gesamtzahl darüber) · **Klassensätze** der
-eigenen Klassen · **LMF-Plan** (seit 05.09.2026: Rückgabe- und Ausgabetermine je Klasse,
-für alle gleich, als PDF; → _LMF-Plan_) · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: aufgebaut wie die
+eigenen Klassen · **LMF-Plan** (Rückgabe- und Ausgabetermine je Klasse,
+für alle gleich, als PDF; → _LMF-Plan_) · **Schulbücher** (für die Fachsprecher: aufgebaut wie die
 Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach) und die
 Filter Jahrgang und Schulzweig (der Filter Jahrgang zeigt nur Bücher, an denen ein Jahrgang
 eingetragen ist); darunter je Fach eine Zeile mit Exemplaren, Titeln und
@@ -788,7 +783,7 @@ Spalte **Gezählt** erscheint nur, wenn in der Auswahl überhaupt schon gezählt
 welcher Ausschnitt es ist — ein gefilterter Ausdruck ist sonst nicht von der vollen Liste
 zu unterscheiden. Gezählt wird nur, was am
 Titel als Lernmittel geführt ist. Ein Buch in mehreren Auflagen, die in der Titel-Verwaltung
-zusammengefasst sind, ist eine Kachel und eine PDF-Zeile (seit 25.09.2026): die Zahlen sind
+zusammengefasst sind, ist eine Kachel und eine PDF-Zeile: die Zahlen sind
 die Summe, darunter steht „Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019
 (42)", und die Fach-Zeile zählt es als einen Titel. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
 Buchmaske erscheint das Feld, sobald „Lernmittel" gewählt ist; leer heißt „gilt für
@@ -798,8 +793,6 @@ der Altbestand ist also zunächst ohne. Ein Buch, dessen Coverbild von außerhal
 (Deutsche Nationalbibliothek, Google Books), erscheint im PDF ohne Bild: gedruckt wird nur,
 was auf dem Server liegt. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
 stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`).
-Einen Reiter „Meine Anliegen" und einen Buchwunsch gibt es nicht mehr: Ein Buch für eine Klasse
-wird über die Suche reserviert, und was eine Lehrkraft geschickt hat, steht unter der Suche.
 (§12, Rolle Kollegium)
 
 ---
