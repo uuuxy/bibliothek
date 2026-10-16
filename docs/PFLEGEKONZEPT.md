@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 14.10.2026 (Entwurf)
+Stand: 16.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -60,7 +60,7 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
    eingespielte ist ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4 und §7). Ein automatisches Update gibt
    es nicht. `update.sh` fragt nicht ab, ob die Prüfläufe des Stands auf GitHub grün sind.
    **Entschieden am 28.09.2026:** Der Schulserver bekommt nur Releases, der Testserver folgt
-   `main` als Vorstufe. Heute holt `update.sh` mit `git pull` den neuesten Stand des Zweigs;
+   `main` als Vorstufe. `update.sh` holt mit `git pull` den neuesten Stand des Zweigs;
    der Weg über Releases ist nicht gebaut ([OFFEN.md](OFFEN.md) 5.31).
 5. **Die Datenbank** passt sich beim Start selbst an (Migrationen). Migrationen laufen nur
    vorwärts: Zurück geht es über die Vorab-Sicherung, nicht über den alten Code allein.
@@ -121,8 +121,8 @@ das Vorschläge selbst erzeugt — wird vor dem Übernehmen so geprüft:
 ### 3.2 Eine Sicherung zurückholen
 
 **Was es gibt:** Jede Nacht um 02:30 UTC eine verschlüsselte Sicherung der Datenbank; die
-jüngsten 14 bleiben, dazu seit dem 29.09.2026 von den älteren je Kalenderwoche eine für 12
-Wochen, damit ein Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
+jüngsten 14 bleiben, dazu von den älteren je Kalenderwoche eine für 12 Wochen, damit ein
+Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
 davor vorfindet. Ein älterer Stand bringt Personen zurück, die seitdem von Hand endgültig
 gelöscht wurden; wie sie nachgeholt werden, steht in
 [resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2a, Schritte 5b und 8. Dazu legt `update.sh` vor jedem Update eine
@@ -166,15 +166,15 @@ einmal allein, nur mit diesen Seiten.
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Abhängigkeiten               | wöchentlich, montags 06:00 Berliner Zeit                                                                                    | Dependabot öffnet Pull Requests; die CI prüft sie                                                                                                | einzeln nach Abschnitt 2 prüfen, dann übernehmen; grün in der CI allein genügt nicht. Kein automatisches Übernehmen; TypeScript 7 ist bewusst zurückgehalten (`.github/dependabot.yml`)                                                                                         |
 | Sicherheitsprüfung           | bei jedem Push und montags 07:00 UTC                                                                                        | `.github/workflows/security-scan.yml` wird rot                                                                                                   | Abhängigkeit heben. Gibt es keinen Fix und trifft die Lücke den Code nicht: Ausnahme nach den Regeln in `security/vuln-ausnahmen.json` — mit Nachweis als Test und Wiedervorlage                                                     |
-| Wiedervorlage einer Ausnahme | je Eintrag in `security/vuln-ausnahmen.json`; seit dem 25.09.2026 ist die Liste leer                                        | ab dem Tag nach der Wiedervorlage ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                               | nachsehen, ob es einen Fix gibt; dann die Abhängigkeit heben und die Ausnahme löschen                                                                                                                                                |
+| Wiedervorlage einer Ausnahme | je Eintrag in `security/vuln-ausnahmen.json`; zurzeit ist die Liste leer                                                    | ab dem Tag nach der Wiedervorlage ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                               | nachsehen, ob es einen Fix gibt; dann die Abhängigkeit heben und die Ausnahme löschen                                                                                                                                                |
 | Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot schlägt die neue Docker-Basis vor; ein Test verlangt dieselbe Version in `go.mod` und `Dockerfile` (`docs/umgebung_paritaet_test.go`) | `go.mod`, `go.work` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks; die feste Version von govulncheck in `.github/workflows/security-scan.yml` und die von gosec in `scripts/gosec-gate.sh` mitheben |
 | Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                                                          |
-| Runner-Abbild der Prüfläufe  | wenn GitHub ein neues Ubuntu-Abbild bereitstellt oder das eingesetzte abkündigt; seit dem 08.10.2026 `ubuntu-26.04` | Ankündigung von GitHub; alle vier Workflows nennen das Abbild fest, `ubuntu-latest` nimmt keiner | Probelauf mit `gh workflow run ci.yml -f runner=<Abbild>`, dann `runs-on` in allen vier Workflows umstellen und den Namen in `.github/actionlint.yaml` eintragen, solange actionlint ihn nicht kennt; den ersten Lauf je Workflow ansehen |
+| Runner-Abbild der Prüfläufe  | wenn GitHub ein neues Ubuntu-Abbild bereitstellt oder das eingesetzte abkündigt; eingesetzt ist `ubuntu-26.04` | Ankündigung von GitHub; alle vier Workflows nennen das Abbild fest, `ubuntu-latest` nimmt keiner | Probelauf mit `gh workflow run ci.yml -f runner=<Abbild>`, dann `runs-on` in allen vier Workflows umstellen und den Namen in `.github/actionlint.yaml` eintragen, solange actionlint ihn nicht kennt; den ersten Lauf je Workflow ansehen |
 | PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                                                             |
 | PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` holt das Datenbank-Image bei jedem Update neu; nicht gebaut ([OFFEN.md](OFFEN.md) 5.31)                                                                                                       |
-| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`. Seit dem 13.10.2026 leert `update.sh` den Build-Cache nach jedem Update, das folgende baut die Schicht mit `apk upgrade` neu; `--pull` für die Basis-Images steht aus ([OFFEN.md](OFFEN.md) 5.31)                        |
+| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`. Umgesetzt ist das über den Build-Cache: `update.sh` leert ihn nach jedem Update, das folgende baut die Schicht mit `apk upgrade` neu; `--pull` für die Basis-Images steht aus ([OFFEN.md](OFFEN.md) 5.31)                        |
 | Update einspielen            | mindestens einmal im Monat, auch ohne neue Funktionen (entschieden am 28.09.2026)                                           | —                                                                                                                                                | ein Update nach 3.1; sobald 5.31 gebaut ist, holt es dabei die Sicherheitskorrekturen von Datenbank und Paketen                                                                                                                      |
-| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/sommerferien.go`, `schulferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                    |
+| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/sommerferien.go`, `uebrige_ferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                 |
 | Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                                                                  |
 
 Feiertage rechnet das Programm selbst aus (`pkg/lmfplan/feiertage.go`); sie brauchen keine
@@ -203,193 +203,182 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   wenn ein Schreibpfad seine Form wechselt), in [ARCHITEKTUR.md](ARCHITEKTUR.md#9-architekturentscheidungen),
   Kapitel 9 (Entscheidungen), und in [OFFEN.md](OFFEN.md) (alles Offene).
 
-**Fälle, die vorkamen,** je mit dem Tag:
+**Fälle, die vorkamen:**
 
-- **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (npm, 06.10.2026).** Zu
-  einem Paket, das nur über ein anderes hereinkommt, wurde eine Schwachstelle veröffentlicht.
-  Im Ordner `frontend` nennt `npm ls <Paket>`, wer es hereinzieht. Geprüft wird ohne die
+- **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (npm).** Zu einem
+  Paket, das nur über ein anderes hereinkommt, ist eine Schwachstelle veröffentlicht. Im Ordner
+  `frontend` nennt `npm ls <Paket>`, wer es hereinzieht. Geprüft wird ohne die
   Entwicklungspakete (`npm audit --audit-level=high --omit=dev`); `@tailwindcss/vite` steht
   unter `dependencies`, sein Unterbaum zählt deshalb mit. Abhilfe: `npm update` mit genau den
   gemeldeten Paketnamen; das ändert nur `package-lock.json`. Die Sammel-PRs von Dependabot
-  heben direkte Pakete und enthielten die gemeldeten nicht.
-- **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (Go, 08.10.2026).** Der
-  Job „Docker – Trivy image scan" meldete sechs Schwachstellen in `xuri/excelize`; am Stand
-  davor war er anderthalb Stunden früher grün, die Meldungen waren am selben Tag veröffentlicht
-  worden. govulncheck blieb grün, Dependabot hatte nichts gemeldet. Eine veröffentlichte
-  Fassung mit den Korrekturen gab es nicht; jede Meldung nennt einen Entwicklungsstand der
-  Bibliothek. Abhilfe: auf den Stand heben, den die jüngste Meldung nennt
+  heben direkte Pakete; ein gemeldetes Paket aus dem Unterbaum ist darin nicht unbedingt
+  enthalten.
+- **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (Go-Bibliothek).** Der
+  Job „Docker – Trivy image scan" meldet Schwachstellen in einer Bibliothek, etwa
+  `xuri/excelize`; govulncheck und Dependabot melden dabei nicht unbedingt etwas. Gibt es keine
+  veröffentlichte Fassung mit den Korrekturen und nennt jede Meldung einen Entwicklungsstand
+  der Bibliothek: auf den Stand heben, den die jüngste Meldung nennt
   (`go get github.com/xuri/excelize/v2@<Commit>`, dann `go mod tidy`). Am Arbeitsplatz zeigt
   `trivy fs --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 <Ordner>`
-  an einem Ordner mit dem alten `go.mod` und `go.sum` dieselben Meldungen und am neuen keine.
-  Danach die Go-Suite und ein Lesevergleich an echten Excel-Dateien: ein kleines Programm,
-  einmal mit jedem Stand gebaut, das je Blatt die Zahl der Zeilen und Zellen und eine Prüfsumme
-  über die Werte ausgibt, roh und formatiert. Trifft eine Meldung einen Aufruf des Programms
-  (`OpenReader`, `GetRows`), kommt ein Test dazu, der am alten Stand rot ist
-  (`pkg/xlsxgrenze/`); den alten Stand nimmt
+  an einem Ordner mit dem alten `go.mod` und `go.sum` die Meldungen und am neuen keine.
+  Danach die Go-Suite, bei excelize auch ein Lesevergleich an echten Excel-Dateien: ein
+  kleines Programm, einmal mit jedem Stand gebaut, das je Blatt die Zahl der Zeilen und Zellen
+  und eine Prüfsumme über die Werte ausgibt, roh und formatiert. Trifft eine Meldung einen
+  Aufruf des Programms (`OpenReader`, `GetRows`), kommt ein Test dazu, der am alten Stand rot
+  ist (`pkg/xlsxgrenze/`); den alten Stand nimmt
   `GOWORK=off go test -modfile=<altes go.mod> ./pkg/xlsxgrenze/`. Was offen bleibt, steht in
   [OFFEN.md](OFFEN.md) 5.10.
 - **Der Push bricht an der Schwachstellen-Prüfung ab, am Stand hat sich nichts geändert
-  (Go-Standardbibliothek, 09.10.2026).** govulncheck meldete 13 Schwachstellen in der
-  Standardbibliothek von Go 1.27.1 (`net/http`, `crypto/tls`, `html/template`, `os`,
-  `net/textproto`), alle behoben in Go 1.27.2 vom selben Tag; eine halbe Stunde vorher war
-  derselbe Hook grün. Abhilfe: die Fassung an drei Stellen gemeinsam heben (`go.mod`,
-  `go.work`, `FROM golang:…` im `Dockerfile`; `docs/umgebung_paritaet_test.go` hält sie
-  gleich) und `golang.org/x/net` auf die Fassung, die die Meldung nennt
-  (`go get golang.org/x/net@v0.60.0`). Vorher nachsehen, dass es die Fassung gibt:
-  `GOTOOLCHAIN=go1.27.2 go version` und `docker manifest inspect golang:1.27.2-alpine`.
-  Mit Go 1.27.2 meldete golangci-lint 2.13.2 an jeder Datei „could not import … export data
-  version 5 is greater than maximum supported version 4": Es liest die Paketdaten der neuen
-  Go-Fassung nicht. Es braucht 2.14.0, am Arbeitsplatz (`brew upgrade golangci-lint`) und in
-  `.github/workflows/ci.yml` (`version:`); sonst scheitert schon der Hook vor dem Commit, und
-  in der CI fiele der Lint-Schritt vor den Tests. Dasselbe traf gosec: 2.29.0 (mit
-  `golang.org/x/tools` 0.49) beendete in der CI jedes Paket mit „has type errors" und den Job
-  mit Exit 1; es braucht einen Stand mit x/tools ab 0.50, den der Sicherheits-Prüflauf seitdem
-  festgeschrieben baut (`scripts/gosec-gate.sh`). govulncheck 1.8.0 läuft mit Go
-  1.27.2. Die Werkzeuge der CI vor dem Push am Arbeitsplatz nachstellen, mit
-  `GOBIN=<Ordner> go install …@<Fassung>` und dem Aufruf wörtlich aus dem Workflow: Mit dem
-  zusätzlichen Schalter `-quiet` endet gosec ohne Fund mit Exit 0, auch wenn es kein Paket
-  laden konnte, und der Fehler fiel so erst im Lauf auf GitHub auf. Danach die Go-Suite und
-  ein Bau des Images unter einem Probe-Namen (`docker build -t <Name> .`).
-- **gosec meldet eine Stelle, an der sich nur der Weg der Daten geändert hat (09.10.2026).**
-  Nach dem Umzug einer Abfrage aus einer Tür nach `repository/` meldete der Job „Go – gosec
-  static analysis" an der Tür eines Briefs in `api/schaden/` die Regel G705 (XSS über Taint-Analyse), am Schreiben des
-  PDFs in die Antwort. Vorher las die Tür die Zeile selbst (`QueryRow(…).Scan(…)`); seit dem
-  Umzug kommt sie als Rückgabe einer Funktion, die die Kennung aus der Anfrage als Argument
-  bekommt, und die Analyse wertet die Rückgabe als von der Anfrage abhängig. Am Verhalten
-  hatte sich nichts geändert: Der Körper ist das erzeugte PDF, ausgeliefert als
-  `application/pdf`, als Anhang und mit `nosniff`. Abhilfe: der Vermerk `#nosec G705` mit
-  Grund an der Stelle. Seitdem fährt der Hook vor dem Push gosec mit, über dasselbe Skript
-  wie der Prüflauf (`scripts/gosec-gate.sh`); nach einem solchen Umzug das Skript schon vor
-  dem Commit laufen lassen. Dieselbe Meldung kommt, wenn der Erzeuger eines PDFs aus `api/`
-  in ein anderes Paket zieht: Die Tür schreibt dann die Rückgabe einer fremden Funktion in
-  die Antwort (so am Bescheid, vor dem Commit gemeldet).
-- **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
-  ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
-  svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach
+  (Go-Standardbibliothek).** govulncheck meldet Schwachstellen in der Standardbibliothek, die
+  eine neue Nebenversion von Go behebt. Abhilfe: die Fassung an drei Stellen gemeinsam heben
+  (`go.mod`, `go.work`, `FROM golang:…` im `Dockerfile`; `docs/umgebung_paritaet_test.go`
+  hält sie gleich) und die Module aus `golang.org/x/…` auf die Fassung, die die Meldung nennt
+  (`go get golang.org/x/net@<Fassung>`). Vorher nachsehen, dass es die Fassung gibt:
+  `GOTOOLCHAIN=go<Fassung> go version` und `docker manifest inspect golang:<Fassung>-alpine`.
+  Liest ein Werkzeug die Paketdaten der neuen Go-Fassung nicht, meldet golangci-lint an jeder
+  Datei „could not import … export data version … is greater than maximum supported version
+  …", und gosec beendet jedes Paket mit „has type errors". Dann braucht das Werkzeug eine
+  neuere Fassung: golangci-lint am Arbeitsplatz (`brew upgrade golangci-lint`) und in
+  `.github/workflows/ci.yml` (`version:`), sonst scheitert schon der Hook vor dem Commit und
+  in der CI der Lint-Schritt vor den Tests; gosec in `scripts/gosec-gate.sh`, das der
+  Sicherheits-Prüflauf und der Hook vor dem Push nehmen. Die Werkzeuge der CI vor dem Push am
+  Arbeitsplatz nachstellen, mit `GOBIN=<Ordner> go install …@<Fassung>` und dem Aufruf
+  wörtlich aus dem Workflow: Mit dem zusätzlichen Schalter `-quiet` endet gosec ohne Fund mit
+  Exit 0, auch wenn es kein Paket laden konnte. Danach die Go-Suite und ein Bau des Images
+  unter einem Probe-Namen (`docker build -t <Name> .`).
+- **gosec meldet eine Stelle, an der sich nur der Weg der Daten geändert hat.** Zieht eine
+  Abfrage aus einer Tür nach `repository/`, kommt die Zeile als Rückgabe einer Funktion, die
+  die Kennung aus der Anfrage als Argument bekommt, und die Analyse wertet die Rückgabe als von
+  der Anfrage abhängig. Ebenso, wenn der Erzeuger eines PDFs aus `api/` in ein anderes Paket
+  zieht: Die Tür schreibt dann die Rückgabe einer fremden Funktion in die Antwort. Der Job
+  „Go – gosec static analysis" meldet dort die Regel G705 (XSS über Taint-Analyse), so am
+  Bescheid in `api/schaden/` beim Schreiben des PDFs in die Antwort. Ist der Körper wie dort
+  das erzeugte PDF, ausgeliefert als `application/pdf`, als Anhang und mit `nosniff`, kommt
+  der Vermerk `#nosec G705` mit Grund an die Stelle. Der Hook vor dem Push fährt gosec über
+  dasselbe Skript wie der Prüflauf (`scripts/gosec-gate.sh`); nach einem solchen Umzug das
+  Skript schon vor dem Commit laufen lassen.
+- **Nach einem Update der Pakete baut das Frontend nicht mehr.** Ein `npm update` ohne
+  Paketnamen hebt auch den Bundler; `npm run build` kann dann an gültigem Code brechen, während
+  svelte-check, ESLint und Vitest grün bleiben. Pakete deshalb einzeln heben und danach
   `npm run build` laufen lassen; der Hook vor dem Push baut das Frontend nicht.
-- **Go, eine Schwachstelle ohne genannten Fix (17.09.2026).** Die Meldung nannte alle
-  Fassungen als betroffen. Erst am Quelltext der benutzten Fassung nachsehen, welcher Zweig
-  ungeschützt ist und ob die eigenen Aufrufe ihn erreichen; die Antwort als Test ins
-  Repository, dann die Ausnahme nach Abschnitt 4. Der Fall steht in
-  [SECURITY.md](SECURITY.md) („Automatische Sicherheitsprüfungen").
-- **CodeQL meldet eine Stelle, die mit der Quelle nichts zu tun hat (17.09.2026).** Geht ein
-  Aufruf gegen eine Schnittstelle (`io.Writer`), nimmt CodeQL jede Methode dieser Form im
-  Programm als Ziel. Den gemeldeten Weg aus der Analyse lesen (`codeFlows` im SARIF, über
-  `gh api`), nicht raten.
-- **Eine verworfene CodeQL-Meldung ist wieder da (06.10.2026).** Zieht die Stelle im Code um,
-  schließt CodeQL die alte Meldung und legt eine mit neuer Nummer an. Vor der Bewertung die
-  verworfenen lesen (`gh api "repos/uuuxy/bibliothek/code-scanning/alerts?state=dismissed"`)
-  und die Anlagezeit der neuen gegen die Schließzeit der alten halten. Der Kommentar an einer
+- **Go, eine Schwachstelle ohne genannten Fix.** Nennt die Meldung alle Fassungen als
+  betroffen: erst am Quelltext der benutzten Fassung nachsehen, welcher Zweig ungeschützt ist
+  und ob die eigenen Aufrufe ihn erreichen; die Antwort als Test ins Repository, dann die
+  Ausnahme nach Abschnitt 4. Ein Beispiel ist GO-2026-6452 mit den Tests in
+  `pkg/xlsxgrenze/negativer_sharedstring_test.go` ([SECURITY.md](SECURITY.md), „Automatische
+  Sicherheitsprüfungen").
+- **CodeQL meldet eine Stelle, die mit der Quelle nichts zu tun hat.** Geht ein Aufruf gegen
+  eine Schnittstelle (`io.Writer`), nimmt CodeQL jede Methode dieser Form im Programm als
+  Ziel. Den gemeldeten Weg aus der Analyse lesen (`codeFlows` im SARIF, über `gh api`), nicht
+  raten.
+- **Eine verworfene CodeQL-Meldung ist wieder da.** Zieht die Stelle im Code um, schließt
+  CodeQL die alte Meldung und legt eine mit neuer Nummer an. Vor der Bewertung die verworfenen
+  lesen (`gh api "repos/uuuxy/bibliothek/code-scanning/alerts?state=dismissed"`) und die
+  Anlagezeit der neuen gegen die Schließzeit der alten halten. Der Kommentar an einer
   verworfenen Meldung fasst 280 Zeichen; die Begründung steht im Code neben der Stelle.
-- **Ein grüner Job trägt eine rote Markierung (17.09.2026).** `actions/setup-go` liest jede
-  Logzeile der Form `datei.go: Text` als Fehlermeldung des Compilers. Skripte, die in einem
-  Workflow laufen, nennen eine Datei deshalb als „Testname in pfad.go";
-  `docs/vuln_ausnahmen_form_test.go` hält diese Form für die Sicherheits-Ausnahmen fest.
-- **Die Browser-Tests (`e2e`) sind in der CI rot, am Arbeitsplatz war alles grün
-  (16.09.2026).** Die Hooks fahren die Browser-Tests nicht. Diese greifen über Beschriftungen
-  und Rollen zu. Wer ein sichtbares Wort umbenennt, eine Eingabe zur Pflicht macht oder eine
-  Antwort ändert, sucht vorher in `frontend/e2e/` (auch in `helpers.js`) nach dem Wort und dem
-  Endpunkt und lässt die Suite am neu gebauten Stack laufen ([SCRIPTS.md](SCRIPTS.md) §3).
+- **Ein grüner Job trägt eine rote Markierung.** `actions/setup-go` liest jede Logzeile der
+  Form `datei.go: Text` als Fehlermeldung des Compilers. Skripte, die in einem Workflow laufen,
+  nennen eine Datei deshalb als „Testname in pfad.go"; `docs/vuln_ausnahmen_form_test.go` hält
+  diese Form für die Sicherheits-Ausnahmen fest.
+- **Die Browser-Tests (`e2e`) sind in der CI rot, am Arbeitsplatz war alles grün.** Die Hooks
+  fahren die Browser-Tests nicht. Diese greifen über Beschriftungen und Rollen zu. Wer ein
+  sichtbares Wort umbenennt, eine Eingabe zur Pflicht macht oder eine Antwort ändert, sucht
+  vorher in `frontend/e2e/` (auch in `helpers.js`) nach dem Wort und dem Endpunkt und lässt die
+  Suite am neu gebauten Stack laufen ([SCRIPTS.md](SCRIPTS.md) §3).
 - **Am Arbeitsplatz scheitert jede Spec.** Zuerst die Umgebung: Läuft Docker (`docker info`)?
   Nach einem Update von Playwright fehlen die Browser der neuen Fassung
   (`npx playwright install chromium`). Läuft schon eine Suite? Solange ihr Merkzettel
   `frontend/.e2e-hauptlieferant` liegt, bricht der Aufbau jeder weiteren ab
   (`e2e/global-setup.js`), auch der einer einzelnen Spec.
-- **Ein Frontend-Test ist rot, und die Meldung zeigt auf die falsche Zeile (06.10.2026).** Gibt
-  ein Haken eine Funktion zurück, ruft Vitest sie nach dem Test als Aufräumer.
+- **Ein Frontend-Test ist rot, und die Meldung zeigt auf die falsche Zeile.** Gibt ein Haken
+  eine Funktion zurück, ruft Vitest sie nach dem Test als Aufräumer.
   `beforeEach(() => mock.mockReset())` gibt den Mock selbst zurück; lehnt er dann ab, kommt
   der Fehler aus dem Aufräumer. Den Rumpf des Hakens in geschweifte Klammern setzen.
-- **svelte-check meldet „Invalid character" in einem Kommentar (25.09.2026).** Steht in einer
-  JSDoc-Zeile direkt hinter dem Namen des Parameters ein deutsches Anführungszeichen („), liest
-  der Parser es als Teil des Namens. Ein Wort davor genügt.
+- **svelte-check meldet „Invalid character" in einem Kommentar.** Steht in einer JSDoc-Zeile
+  direkt hinter dem Namen des Parameters ein deutsches Anführungszeichen („), liest der Parser
+  es als Teil des Namens. Ein Wort davor genügt.
 - **Welche Prüfläufe zu einem Stand gehören,** zeigt `gh run list --commit <sha>` mit der
-  vollen Kennung des Commits (`git rev-parse <kurz>`); mit der gekürzten bleibt die Liste leer
-  (07.10.2026). Die Liste je Zweig zeigte am 05.10.2026 nach einem Push nur ältere Läufe.
-- **Ein Lauf steht als „cancelled" (23.08.2026).** Das heißt „nicht geprüft", nicht „nichts
-  gefunden". Auf einem Zweig bricht ein neuer Push den laufenden Lauf ab; auf `main` läuft
-  jeder zu Ende (`.github/workflows/ci.yml`, `cancel-in-progress` gilt nur außerhalb von
-  `main`). Vorher brach bei Pushes im Abstand weniger Minuten jeder Lauf den vorigen ab, und
-  `main` war in der Zeit ungeprüft. Der Bau des Images bricht weiter ab
+  vollen Kennung des Commits (`git rev-parse <kurz>`); mit der gekürzten bleibt die Liste
+  leer. Die Liste je Zweig kann direkt nach einem Push noch ohne den neuen Lauf sein.
+- **Ein Lauf steht als „cancelled".** Das heißt „nicht geprüft", nicht „nichts gefunden". Auf
+  einem Zweig bricht ein neuer Push den laufenden Lauf ab; auf `main` läuft jeder zu Ende
+  (`.github/workflows/ci.yml`, `cancel-in-progress` gilt nur außerhalb von `main`), sonst
+  bliebe `main` bei Pushes im Abstand weniger Minuten ungeprüft. Der Bau des Images bricht ab
   (`docker-publish.yml`): Dort zählt nur der neueste Stand.
-- **Der Job der Browser-Tests endet rot, bevor ein Test läuft (07.10.2026, zweimal).** Im
-  Schritt „Install Playwright" blieb das Lesen der Paketlisten an einer Paketquelle von GitHub
-  stehen und lief in die Frist von 600 s. Das `apt-get` dahinter läuft unter `sudo` und
-  überlebte den Abbruch; es hielt die Sperre der Paketlisten, und die zwei weiteren Versuche
-  scheiterten binnen Sekunden an ihr („Could not get lock /var/lib/apt/lists/lock").
-  Seit dem 07.10.2026 beendet der Schritt vor jedem neuen Versuch ein übrig gebliebenes
-  `apt-get` (`.github/workflows/ci.yml`, `beende_apt`). Am Code liegt ein solcher Lauf nicht;
-  die gescheiterten Jobs starten mit `gh run rerun <Nummer des Laufs> --failed` neu.
+- **Der Job der Browser-Tests endet rot, bevor ein Test läuft.** Im Schritt „Install
+  Playwright" kann das Lesen der Paketlisten an einer Paketquelle von GitHub stehen bleiben
+  und in die Frist von 600 s laufen. Das `apt-get` dahinter läuft unter `sudo` und überlebt
+  den Abbruch; es hält die Sperre der Paketlisten, an der jeder weitere Versuch binnen Sekunden
+  scheitern würde („Could not get lock /var/lib/apt/lists/lock"). Deshalb beendet der Schritt
+  vor jedem neuen Versuch ein übrig gebliebenes `apt-get` (`.github/workflows/ci.yml`,
+  `beende_apt`). Am Code liegt ein solcher Lauf nicht; die gescheiterten Jobs starten mit
+  `gh run rerun <Nummer des Laufs> --failed` neu.
 - **Der Linter der Oberfläche ist rot nach einem Sammel-Update, am Code hat sich nichts
-  geändert (12.10.2026).** ESLint meldete vier Eigenschaften von Bauteilen als unbenutzt. Drei
-  davon setzt ihr Bauteil nur, und der Wert geht über `bind:` an den Aufrufer (`$bindable()`);
-  die vierte war wirklich unbenutzt und ist entfernt. Welches Paket eine Meldung bringt, zeigt
-  ein eigenes Arbeitsverzeichnis mit dem Stand des Pull Requests: nach `npm ci` je ein
-  angehobenes Paket auf die alte Fassung zurücksetzen
-  (`npm install --no-save --ignore-scripts <Paket>@<Fassung>`) und den Linter fahren. Hier war
-  es typescript-eslint 8.71.1, bei den Herstellern als Fehler dieser Fassung gemeldet. Die
-  drei Stellen blieben unverändert, das Update wartet auf die korrigierte Fassung
-  ([OFFEN.md](OFFEN.md) 5.10).
-- **`actionlint` ist rot nach dem Wechsel des Runner-Abbilds (08.10.2026).** actionlint führt
-  die Namen der Abbilder von GitHub als feste Liste je Fassung; die jüngste kannte
-  `ubuntu-26.04` nicht und meldete jede Zeile `runs-on` damit („label … is unknown"). Der
-  Probelauf davor war grün, weil er den Namen als Eingabe übergibt und die Dateien noch den
-  alten trugen. Der Name steht seitdem in `.github/actionlint.yaml`; kennt ihn eine neue
-  Fassung von actionlint, fällt der Eintrag weg. Am Arbeitsplatz nachstellen: das Abbild aus
-  `ci.yml` (`docker run --rm -v "$PWD:/repo:ro" --workdir /repo rhysd/actionlint:…`).
+  geändert.** Welches Paket eine Meldung bringt, zeigt ein eigenes Arbeitsverzeichnis mit dem
+  Stand des Pull Requests: nach `npm ci` je ein angehobenes Paket auf die alte Fassung
+  zurücksetzen (`npm install --no-save --ignore-scripts <Paket>@<Fassung>`) und den Linter
+  fahren. Meldet ESLint eine Eigenschaft als unbenutzt, die ihr Bauteil nur setzt und über
+  `bind:` an den Aufrufer gibt (`$bindable()`), ist die Meldung falsch; sie kommt mit
+  typescript-eslint 8.71.1 und ist bei den Herstellern als Fehler dieser Fassung gemeldet. Das
+  Update wartet auf die korrigierte Fassung ([OFFEN.md](OFFEN.md) 5.10).
+- **`actionlint` ist rot nach dem Wechsel des Runner-Abbilds.** actionlint führt die Namen der
+  Abbilder von GitHub als feste Liste je Fassung; kennt die eingesetzte Fassung einen Namen
+  nicht, meldet sie jede Zeile `runs-on` damit („label … is unknown"). Ein Probelauf mit dem
+  Namen als Eingabe bleibt grün, solange die Dateien den alten tragen. Der Name kommt in
+  `.github/actionlint.yaml`; kennt ihn eine neue Fassung von actionlint, fällt der Eintrag weg.
+  Am Arbeitsplatz nachstellen: das Abbild aus `ci.yml`
+  (`docker run --rm -v "$PWD:/repo:ro" --workdir /repo rhysd/actionlint:…`).
 - **Ein Browser-Test scheitert an „no space left on device“, die Platte des Arbeitsplatzes
-  ist voll (13.10.2026).** Am Code lag es nicht: Von 460 GB waren 2,2 frei. 94 GB belegte
-  der Bauzwischenspeicher von Go, 159 GB der Build-Cache von Docker. Go legt je Pfad einer
-  Arbeitskopie eigene Einträge an und räumt sie erst nach Tagen; mehrere
-  Wegwerf-Arbeitskopien am Tag und Proben per Overlay füllen ihn schnell. Docker hält den
-  Build-Cache an der eingestellten Grenze (`builder.gc` in der Einstellungsdatei des
-  Dienstes, hier 20 GB), zählt dabei aber keine Schicht, die auf einem Basis-Image aufbaut,
-  das auch als Image im lokalen Speicher liegt. Nachgestellt: Nach
-  `docker pull golang:1.27.2-alpine` führte `docker buildx du` 5,7 GB mehr als „Shared“,
-  nach `docker rmi` wieder nicht. 138 GB solcher Schichten aus fünf Monaten lagen so
-  außerhalb der Grenze. Abhilfe: `go clean -cache` und `docker builder prune --all --force`;
-  danach waren 239 GB frei. Ein Zeitfilter (`--filter until=168h`) hilft nicht: Der Lauf
-  löscht je Kette nur die äußerste Schicht und führt ihre Eltern danach als eben benutzt
-  (33 von 159 GB, 336 von 337 Eltern trugen danach die neue Zeit). Volumes bleiben
-  unberührt, dort liegen Datenbanken. Vorbeugen: Eine Wegwerf-Arbeitskopie baut in einen
-  eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit ihr gelöscht wird; was Docker
-  belegt, zeigen `docker system df` und die letzten Zeilen von `docker buildx du`. Am
-  Server lief dieselbe Regel mit Zeitfilter in `update.sh`, der Build-Cache stand dort bei
-  12,8 GB von 38; seither leert Schritt 7 ihn nach jedem Update ganz.
+  ist voll.** Am Code liegt es nicht. Den Platz belegen vor allem der Bauzwischenspeicher von
+  Go und der Build-Cache von Docker. Go legt je Pfad einer Arbeitskopie eigene Einträge an und
+  räumt sie erst nach Tagen; mehrere Wegwerf-Arbeitskopien am Tag und Proben per Overlay
+  füllen ihn schnell. Docker hält den Build-Cache an der eingestellten Grenze (`builder.gc` in
+  der Einstellungsdatei des Dienstes), zählt dabei aber keine Schicht, die auf einem
+  Basis-Image aufbaut, das auch als Image im lokalen Speicher liegt. Nachgestellt: Nach
+  `docker pull golang:1.27.2-alpine` führte `docker buildx du` 5,7 GB mehr als „Shared“, nach
+  `docker rmi` wieder nicht. Abhilfe: `go clean -cache` und
+  `docker builder prune --all --force`. Ein Zeitfilter (`--filter until=168h`) hilft nicht: Der
+  Lauf löscht je Kette nur die äußerste Schicht und führt ihre Eltern danach als eben benutzt
+  (gemessen an `docker buildx du --verbose`: 33 von 159 GB gelöscht, 336 von 337 Eltern trugen
+  danach die neue Zeit). Volumes bleiben unberührt, dort liegen Datenbanken. Vorbeugen: Eine
+  Wegwerf-Arbeitskopie baut in einen eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit
+  ihr gelöscht wird; was Docker belegt, zeigen `docker system df` und die letzten Zeilen von
+  `docker buildx du`. Am Server leert `update.sh` den Build-Cache nach jedem Update ganz
+  (Schritt 7).
 
 ---
 
 ## 6. Kann jemand anderes das Programm weiterführen?
 
-Gemessen am 13.10.2026 am Go-Code ohne Tests: 566 Dateien, 2.616 Funktionen.
+Gemessen am 16.10.2026 am Go-Code ohne Tests und ohne die erzeugte `docs/docs.go`: 600
+Dateien, 2.618 Funktionen.
 
 **Was trägt:**
 
 - Die Stelle findet sich über den Menüpunkt. Die Türen stehen in zwölf Ordnern nach den
-  Menüpunkten der Oberfläche, je 6 bis 23 Dateien, und tragen kein SQL. Den Einstieg gibt
+  Menüpunkten der Oberfläche, je 6 bis 26 Dateien, und tragen kein SQL. Den Einstieg gibt
   [WEGWEISER.md](WEGWEISER.md) auf einer Seite.
-- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 117 Zeilen, neun von
-  zehn höchstens 294. 21 haben über 400, vier über 600.
-- Funktionen sind kurz: Die Hälfte hat höchstens 13 Zeilen, 22 haben über 80, die längste 154
+- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 111 Zeilen, neun von
+  zehn höchstens 270. 18 haben über 400, eine über 600.
+- Funktionen sind kurz: Die Hälfte hat höchstens 13 Zeilen, 18 haben über 80, die längste 148
   (eine Liste von Adressen).
+- Namen und Kommentare folgen einem Regelwerk ([STIL.md](STIL.md)): Fachwörter deutsch, je
+  Sache ein Wort; ein Datum steht in einem Kommentar nur zu einer Quelle.
+  `stil_ratsche_test.go` meldet jede Abweichung im Go-Code.
 - 25 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
   Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
   Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).
 
 **Was bremst:**
 
-- Namen in zwei Sprachen: Ältere Dateien heißen englisch, neuere deutsch. In Go und in der
-  Oberfläche tragen 43 Dateinamen `student`, 33 `schueler` oder `leser`. Die Paare stehen im
-  Wegweiser.
-- Kommentare mit Vorgeschichte: 560 Kommentarzeilen in 244 der 566 Dateien nennen ein Datum.
-  Namen und Kommentare werden Paket für Paket umgestellt ([STIL.md](STIL.md),
-  [OFFEN.md](OFFEN.md) 5.66).
-- Die Datenbankschicht ist ein Ordner mit 167 Dateien; gefunden wird dort über den Namen der
+- An der Grenze mischen sich die Sprachen: Adressen, Felder in JSON, Tabellen und Spalten
+  behalten ihre Namen, deutsche wie englische ([STIL.md](STIL.md), Abschnitt 9).
+- Die Datenbankschicht ist ein Ordner mit 168 Dateien; gefunden wird dort über den Namen der
   Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
-- Die größte Datei hat 629 Zeilen (`repository/leser_zusammenfuehren.go`, gemessen am
-  14.10.2026).
-- Um den Code: 3.294 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
+- Die größte Datei hat 629 Zeilen (`repository/leser_zusammenfuehren.go`).
+- Um den Code: 3.505 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
   [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)), ein Architektur-Dokument von
-  4.623 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).
+  4.449 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).
 
 ---
 
@@ -410,9 +399,8 @@ urheberrechtlich geschützt, die Sicherung enthält Personendaten. Ort auf dem B
 ### 7.2 Arbeitsnotizen der Entwicklung
 
 Entwickelt wird mit einem KI-Assistenten. Dessen Arbeitsnotizen zum Projekt — Entscheidungen,
-Fallen, Messungen, am 07.10.2026 257 Einträge — liegen außerhalb des Repositorys. Was davon
-für die Pflege zählt, steht seit dem 07.10.2026 im Repository, jede Aussage vor dem Eintragen
-am Stand des Tages geprüft:
+Fallen, Messungen — liegen außerhalb des Repositorys. Was davon für die Pflege zählt, steht im
+Repository, jede Aussage vor dem Eintragen am Stand des Tages geprüft:
 
 | Was | Wo |
 | --- | --- |
@@ -427,9 +415,9 @@ Draußen bleibt, was Zugänge, Orte oder Namen nennt (Abschnitt 7.3), was nur de
 der Entwicklung betrifft, und der Verlauf einzelner Sitzungen; der steht in den
 Commit-Nachrichten.
 
-Neue Notizen entstehen weiter. Damit sich nichts wieder ansammelt, gilt seit dem 07.10.2026:
-Was für die Pflege zählt, kommt mit dem Commit, der es hervorbringt, in eines der Dokumente
-oben (`CLAUDE.md`, Abschnitt 4).
+Neue Notizen entstehen weiter. Damit sich nichts ansammelt, gilt: Was für die Pflege zählt,
+kommt mit dem Commit, der es hervorbringt, in eines der Dokumente oben (`CLAUDE.md`,
+Abschnitt 4).
 
 ### 7.3 Das Blatt bei der Schule
 
