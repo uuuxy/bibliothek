@@ -33,37 +33,38 @@ type Nachricht struct {
 // eine Änderung in der Oberfläche ohne Neustart gilt. Der Server legt einen an und gibt ihn den
 // Türen; ein Test legt einen gegen seinen Testserver an.
 type Postausgang struct {
-	konfig func() (SMTPKonfig, error)
+	konfig func(context.Context) (SMTPKonfig, error)
 }
 
 // NewPostausgang verschickt mit der Konfiguration, die konfig vor jedem Versand liefert: im
 // Betrieb KonfigAusDatenbank, in einem Werkzeug ohne Datenbank die Umgebung.
-func NewPostausgang(konfig func() (SMTPKonfig, error)) *Postausgang {
+func NewPostausgang(konfig func(context.Context) (SMTPKonfig, error)) *Postausgang {
 	return &Postausgang{konfig: konfig}
 }
 
 // KonfigAusDatenbank liefert die in der Oberfläche gespeicherte Konfiguration (ladeSMTPKonfig),
 // damit der Test-Knopf und jeder echte Versand dieselbe Quelle nutzen.
-func KonfigAusDatenbank(pool db.Pool) func() (SMTPKonfig, error) {
-	return func() (SMTPKonfig, error) {
-		// Eigener Kontext mit kurzer Frist: Sende hat keinen, und ein hängendes Lesen der
-		// Konfiguration darf den Versand vieler Mails nicht aufhalten.
-		ctx, abbruch := context.WithTimeout(context.Background(), 5*time.Second)
+func KonfigAusDatenbank(pool db.Pool) func(context.Context) (SMTPKonfig, error) {
+	return func(ctx context.Context) (SMTPKonfig, error) {
+		// Kurze Frist: Ein hängendes Lesen der Konfiguration darf den Versand vieler Mails nicht
+		// aufhalten. Es erbt die Werte der Anfrage, nicht ihr Ende: Ein Sammelversand läuft zu
+		// Ende wie der Versand selbst, den SMTP mit eigenen Fristen begrenzt.
+		ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		defer abbruch()
 		return ladeSMTPKonfig(ctx, pool)
 	}
 }
 
 // Konfig liefert die Konfiguration, mit der der nächste Versand ginge.
-func (p *Postausgang) Konfig() (SMTPKonfig, error) {
-	return p.konfig()
+func (p *Postausgang) Konfig(ctx context.Context) (SMTPKonfig, error) {
+	return p.konfig(ctx)
 }
 
 // IstKonfiguriert meldet, ob ein Versand versucht werden kann. Die Türen fragen damit die
 // Konfiguration ab, die wirklich benutzt wird, statt os.Getenv("SMTP_HOST"); sonst meldeten sie
 // „SMTP nicht konfiguriert", während in der Oberfläche ein Server steht, und umgekehrt.
-func (p *Postausgang) IstKonfiguriert() bool {
-	konfig, err := p.konfig()
+func (p *Postausgang) IstKonfiguriert(ctx context.Context) bool {
+	konfig, err := p.konfig(ctx)
 	if err != nil {
 		// Der Fehler steht im Log: ladeSMTPKonfig erzeugt ihn, damit er auffällt („Ein
 		// unlesbares Passwort heißt, dass der APP_ENCRYPTION_KEY nicht mehr derselbe ist").
@@ -79,8 +80,8 @@ func (p *Postausgang) IstKonfiguriert() bool {
 
 // Sende verschickt eine Mail mit Text und Anhängen über SMTP, mit der Konfiguration des
 // Postausgangs.
-func (p *Postausgang) Sende(nachricht Nachricht) error {
-	konfig, err := p.konfig()
+func (p *Postausgang) Sende(ctx context.Context, nachricht Nachricht) error {
+	konfig, err := p.konfig(ctx)
 	if err != nil {
 		return err
 	}

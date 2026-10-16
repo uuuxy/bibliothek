@@ -1,6 +1,7 @@
 package bestellung_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -117,7 +118,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 // ihn nicht nehmen. Die neue Tür nimmt ihn.
 func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 	l := andersBestelltLage(t, "ohneserver")
-	l.srv.Mail = mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
+	l.srv.Mail = mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-OhneServer", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneServer", 0))

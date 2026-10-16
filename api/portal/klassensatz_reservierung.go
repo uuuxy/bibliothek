@@ -201,7 +201,7 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 		mailStatus := mailStatusKeineAdresse
 		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
 			mailStatus = mailStatusVersendet
-			if err := t.Post().Sende(mailservice.Nachricht{
+			if err := t.Post().Sende(r.Context(), mailservice.Nachricht{
 				An:      *erledigt.AnfragendeMail,
 				Betreff: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
 				Text:    klassensatzBereitText(erledigt),

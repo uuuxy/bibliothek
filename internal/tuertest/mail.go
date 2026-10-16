@@ -1,6 +1,7 @@
 package tuertest
 
 import (
+	"context"
 	"testing"
 
 	"bibliothek/internal/smtptest"
@@ -16,7 +17,7 @@ func FangeMailAb(t *testing.T) (*mailservice.Postausgang, <-chan smtptest.Sitzun
 	// sonst ab. Dass die Erzwingung wirkt, prüft mailservice.
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
-	post := mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) {
+	post := mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) {
 		return mailservice.SMTPKonfig{Host: host, Port: port, Absender: "bibliothek@schule.invalid"}, nil
 	})
 	return post, sitzungen

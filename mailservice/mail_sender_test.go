@@ -2,6 +2,7 @@ package mailservice
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"log/slog"
 	"strings"
@@ -46,7 +47,7 @@ func TestSende_UngueltigerEmpfaenger(t *testing.T) {
 				Betreff: "Test Subject",
 				Text:    "Test Body",
 			}
-			err := NewPostausgang(func() (SMTPKonfig, error) { return KonfigAusUmgebung(), nil }).Sende(req)
+			err := NewPostausgang(func(context.Context) (SMTPKonfig, error) { return KonfigAusUmgebung(), nil }).Sende(t.Context(), req)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("kein Fehler, erwartet einen")
@@ -86,10 +87,10 @@ func TestPostausgang_IstKonfiguriertLoggtUnlesbareKonfiguration(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
 	t.Cleanup(func() { slog.SetDefault(vorher) })
 
-	post := NewPostausgang(func() (SMTPKonfig, error) {
+	post := NewPostausgang(func(context.Context) (SMTPKonfig, error) {
 		return SMTPKonfig{}, errors.New("fehler beim Entschlüsseln des SMTP-Passworts")
 	})
-	if post.IstKonfiguriert() {
+	if post.IstKonfiguriert(t.Context()) {
 		t.Error("unlesbare Konfiguration gilt als konfiguriert")
 	}
 	if !strings.Contains(protokoll.String(), "nicht lesbar") {

@@ -53,7 +53,7 @@ func mailserverNichtErreichbar(t *testing.T, beimVersand func()) *mailservice.Po
 	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
 	port := toterPort(t)
 	aufrufe := 0
-	return mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) {
+	return mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) {
 		// Der erste Aufruf fragt nur, ob ein Mailserver eingerichtet ist; ab dem zweiten
 		// läuft der Versand.
 		aufrufe++
@@ -279,7 +279,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 // erneute Senden nennt den Grund, statt zu scheitern wie ein Serverfehler.
 func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "ohne")
-	l.srv.Mail = mailservice.NewPostausgang(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
+	l.srv.Mail = mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil })
 
 	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-Ohne", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-Ohne", 0))

@@ -50,7 +50,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 			return
 		}
 
-		if !t.Post().IstKonfiguriert() {
+		if !t.Post().IstKonfiguriert(r.Context()) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Der Versand ist nicht möglich, weil kein SMTP-Server eingerichtet ist", nil)
 			return
 		}
@@ -92,7 +92,9 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		audit.Phase = "start"
 		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, t.Post().Sende)
+		erg := versendeAbgaengerKontoauszuege(gewaehlt, erzeugeKontoauszugPDF, func(n mailservice.Nachricht) error {
+			return t.Post().Sende(r.Context(), n)
+		})
 
 		audit.Phase = "ende"
 		audit.Versendet, audit.Uebersprungen, audit.Fehlgeschlagen, audit.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen

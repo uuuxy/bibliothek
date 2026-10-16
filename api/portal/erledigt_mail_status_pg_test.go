@@ -30,11 +30,13 @@ type mailAttrappe struct {
 	sende func(mailservice.Nachricht) error
 }
 
-func (a mailAttrappe) Sende(m mailservice.Nachricht) error { return a.sende(m) }
+func (a mailAttrappe) Sende(_ context.Context, m mailservice.Nachricht) error { return a.sende(m) }
 
-func (mailAttrappe) IstKonfiguriert() bool { return true }
+func (mailAttrappe) IstKonfiguriert(context.Context) bool { return true }
 
-func (mailAttrappe) Konfig() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
+func (mailAttrappe) Konfig(context.Context) (mailservice.SMTPKonfig, error) {
+	return mailservice.SMTPKonfig{}, nil
+}
 
 // versandAntwortet lässt jeden Versand mit fehler antworten (nil heißt: verschickt).
 func versandAntwortet(fehler error) mailAttrappe {

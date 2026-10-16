@@ -2,6 +2,7 @@ package bestellung
 
 import (
 	"bytes"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"log"
@@ -58,7 +59,7 @@ type bestellMail struct {
 }
 
 // verschickeBestellmail erzeugt die Anlagen und verschickt die Bestellmail an den Lieferanten.
-func (t *Tueren) verschickeBestellmail(m bestellMail) error {
+func (t *Tueren) verschickeBestellmail(ctx context.Context, m bestellMail) error {
 	anhaenge, err := bestellAnhaenge(m)
 	if err != nil {
 		return err
@@ -71,7 +72,7 @@ func (t *Tueren) verschickeBestellmail(m bestellMail) error {
 		Anhaenge: anhaenge,
 	}
 
-	if err := t.Post().Sende(nachricht); err != nil {
+	if err := t.Post().Sende(ctx, nachricht); err != nil {
 		log.Printf("Failed to send order email to %s: %v", m.Empfaenger, err)
 		return err
 	}

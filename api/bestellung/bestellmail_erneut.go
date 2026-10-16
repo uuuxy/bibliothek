@@ -60,7 +60,7 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if !t.Post().IstKonfiguriert() {
+	if !t.Post().IstKonfiguriert(ctx) {
 		t.merkeBestellmailGescheitert(ctx, id)
 		// 400 statt 500: Eine 500-Meldung ersetzt der Sanitizer, und der Hinweis, was zu
 		// tun ist, erreichte den Bildschirm nicht.

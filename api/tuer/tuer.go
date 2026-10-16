@@ -6,6 +6,7 @@
 package tuer
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -36,9 +37,9 @@ type Basis struct {
 // Mailversand verschickt Mails für die Türen: im Betrieb ein *mailservice.Postausgang, in einem
 // Test einer gegen seinen Testserver oder eine Attrappe.
 type Mailversand interface {
-	Sende(mailservice.Nachricht) error
-	IstKonfiguriert() bool
-	Konfig() (mailservice.SMTPKonfig, error)
+	Sende(context.Context, mailservice.Nachricht) error
+	IstKonfiguriert(context.Context) bool
+	Konfig(context.Context) (mailservice.SMTPKonfig, error)
 }
 
 // Post liefert, worüber die Tür Mails verschickt. Ohne eingerichteten Versand lehnt er jede Mail
@@ -52,13 +53,15 @@ func (b *Basis) Post() Mailversand {
 
 type ohneMailversand struct{}
 
-func (ohneMailversand) Sende(mailservice.Nachricht) error {
+func (ohneMailversand) Sende(context.Context, mailservice.Nachricht) error {
 	return fmt.Errorf("%w: kein Versand eingerichtet", mailservice.ErrMailNichtKonfiguriert)
 }
 
-func (ohneMailversand) IstKonfiguriert() bool { return false }
+func (ohneMailversand) IstKonfiguriert(context.Context) bool { return false }
 
-func (ohneMailversand) Konfig() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
+func (ohneMailversand) Konfig(context.Context) (mailservice.SMTPKonfig, error) {
+	return mailservice.SMTPKonfig{}, nil
+}
 
 // Jetzt ist die Uhr des Servers: in Tests setzbar (Basis.Uhr), sonst die Schulzeit.
 func (b *Basis) Jetzt() time.Time {

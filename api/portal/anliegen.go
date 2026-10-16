@@ -1,6 +1,7 @@
 package portal
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -177,12 +178,12 @@ func (t *Tueren) erledigeAnliegen(w http.ResponseWriter, r *http.Request) {
 
 	// Das Abhaken gilt, auch wenn der Mailversand klemmt. Die Antwort trägt den
 	// Mail-Status, damit die Theke weiß, ob die Lehrkraft wirklich benachrichtigt wurde.
-	tuer.AntworteJSON(w, http.StatusOK, map[string]string{"mail": t.sendeAnliegenErledigtMail(erledigt)})
+	tuer.AntworteJSON(w, http.StatusOK, map[string]string{"mail": t.sendeAnliegenErledigtMail(r.Context(), erledigt)})
 }
 
 // sendeAnliegenErledigtMail benachrichtigt, wer das Anliegen gestellt hat, und nennt, was aus
 // dem Versand wurde. Ohne Adresse am Konto geht keine Mail.
-func (t *Tueren) sendeAnliegenErledigtMail(erledigt *repository.AnliegenErledigt) string {
+func (t *Tueren) sendeAnliegenErledigtMail(ctx context.Context, erledigt *repository.AnliegenErledigt) string {
 	if erledigt.AnfragendeMail == nil || *erledigt.AnfragendeMail == "" {
 		return mailStatusKeineAdresse
 	}
@@ -198,7 +199,7 @@ func (t *Tueren) sendeAnliegenErledigtMail(erledigt *repository.AnliegenErledigt
 		text += fmt.Sprintf("  Notiz:   %s\n", erledigt.ErledigtNotiz)
 	}
 	text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
-	if err := t.Post().Sende(mailservice.Nachricht{An: *erledigt.AnfragendeMail, Betreff: betreff, Text: text}); err != nil {
+	if err := t.Post().Sende(ctx, mailservice.Nachricht{An: *erledigt.AnfragendeMail, Betreff: betreff, Text: text}); err != nil {
 		log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
 		return mailStatusFehlgeschlagen
 	}

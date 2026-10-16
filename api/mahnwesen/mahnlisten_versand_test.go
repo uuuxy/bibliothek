@@ -22,8 +22,10 @@ import (
 
 // absenderKonfig liefert eine Konfiguration mit diesem Absender, wie ergaenzeSchulDomain sie
 // liest.
-func absenderKonfig(absender string) func() (mailservice.SMTPKonfig, error) {
-	return func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{Absender: absender}, nil }
+func absenderKonfig(absender string) func(context.Context) (mailservice.SMTPKonfig, error) {
+	return func(context.Context) (mailservice.SMTPKonfig, error) {
+		return mailservice.SMTPKonfig{Absender: absender}, nil
+	}
 }
 
 // Ohne eingerichteten Mailversand → 503, kein Versand. Der Check
@@ -398,7 +400,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 		{"", ""},
 	}
 	for _, tt := range tests {
-		if got := ergaenzeSchulDomain(tt.eingabe, konfig); got != tt.want {
+		if got := ergaenzeSchulDomain(t.Context(), tt.eingabe, konfig); got != tt.want {
 			t.Errorf("ergaenzeSchulDomain(%q) = %q, want %q", tt.eingabe, got, tt.want)
 		}
 	}
@@ -407,7 +409,7 @@ func TestErgaenzeSchulDomain(t *testing.T) {
 // Ohne konfigurierten Absender wird nicht geraten: Die Eingabe läuft unverändert in
 // die Adressprüfung und scheitert dort mit einer klaren Meldung.
 func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
-	if got := ergaenzeSchulDomain("mueller", absenderKonfig("")); got != "mueller" {
+	if got := ergaenzeSchulDomain(t.Context(), "mueller", absenderKonfig("")); got != "mueller" {
 		t.Fatalf("ergaenzeSchulDomain = %q, want unverändert %q", got, "mueller")
 	}
 }
