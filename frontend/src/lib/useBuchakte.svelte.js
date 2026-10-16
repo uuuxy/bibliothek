@@ -41,9 +41,91 @@ async function holeKopf(id) {
 	}
 }
 
-export function useBuchakte() {
-	/** @type {any} */
-	let buch = $state(null);
+function useBuchCover() {
+	/** @type {string[]} */
+	let coverCandidates = $state([]);
+	let currentCandidateIndex = $state(0);
+	let coverFehlt = $state(false);
+
+	/** @param {string[]} kandidaten */
+	function setzeKandidaten(kandidaten) {
+		coverCandidates = kandidaten;
+		currentCandidateIndex = 0;
+		coverFehlt = kandidaten.length === 0;
+	}
+
+	function naechsteQuelle() {
+		if (currentCandidateIndex < coverCandidates.length - 1) {
+			currentCandidateIndex++;
+		} else {
+			coverFehlt = true;
+		}
+	}
+
+	/** @param {Event} event */
+	function pruefeGeladenes(event) {
+		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
+		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
+	}
+
+	return {
+		get coverQuelle() {
+			return coverCandidates[currentCandidateIndex] || '';
+		},
+		get coverFehlt() {
+			return coverFehlt;
+		},
+		setzeKandidaten,
+		naechsteQuelle,
+		pruefeGeladenes
+	};
+}
+
+function useBuchAktionen() {
+	/**
+	 * @param {any} buch
+	 * @param {any[]} exemplare
+	 * @param {((msg: string, type: string) => void)=} melde
+	 * @param {(() => void)=} onBack
+	 */
+	async function loescheTitel(buch, exemplare, melde, onBack) {
+		if (!buch) return;
+		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
+			return;
+		try {
+			const res = await apiFetch(`/api/buecher/titel/${buch.id}`, {
+				method: 'DELETE',
+				credentials: 'include'
+			});
+			if (res.ok) {
+				if (melde) melde('Titel erfolgreich gelöscht', 'success');
+				if (onBack) onBack();
+			} else {
+				const err = await res.json().catch((e) => {
+					console.error('Fehler:', e);
+					return {};
+				});
+				if (melde) melde(err.error || 'Fehler beim Löschen des Titels.', 'error');
+			}
+		} catch (e) {
+			console.error('Titel löschen fehlgeschlagen:', e);
+			if (melde) melde('Netzwerkfehler beim Löschen des Titels.', 'error');
+		}
+	}
+
+	/** @param {any} buch */
+	function bearbeiteTitel(buch) {
+		if (!buch) return;
+		appState.bookToEdit = buch;
+		appState.requestAdminView = true;
+		uiStore.activeTab = 'media_catalog';
+		appState.activeBookId = null;
+	}
+
+	return { loescheTitel, bearbeiteTitel };
+}
+
+function useBuchListen() {
 	/** @type {any[]} */
 	let ausleiher = $state([]);
 	/** @type {any[]} */
@@ -52,17 +134,86 @@ export function useBuchakte() {
 	let verlauf = $state([]);
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
+	/** @type {string[]} */
+	let fehlendeListen = $state([]);
+
+	function zuruecksetzen() {
+		ausleiher = [];
+		exemplare = [];
+		verlauf = [];
+		vormerkungen = [];
+		fehlendeListen = [];
+	}
+
+	/**
+	 * @param {string} id
+	 * @param {() => boolean} istGueltig
+	 */
+	async function ladeListen(id, istGueltig) {
+		const [bRes, eRes, hRes, vRes] = await Promise.allSettled([
+			apiFetch(`/api/buecher/titel/${id}/ausleiher`, { credentials: 'include' }),
+			apiFetch(`/api/buecher/titel/${id}/exemplare`, { credentials: 'include' }),
+			apiFetch(`/api/buecher/titel/${id}/historie`, { credentials: 'include' }),
+			apiFetch(`/api/vormerkungen?titel_id=${id}`, { credentials: 'include' })
+		]);
+
+		if (!istGueltig()) return;
+
+		/** @type {[string, PromiseSettledResult<any>, (w: any[]) => void][]} */
+		const listen = [
+			['Ausleiher', bRes, (w) => (ausleiher = w)],
+			['Exemplare', eRes, (w) => (exemplare = w)],
+			['Historie', hRes, (w) => (verlauf = w)],
+			['Vormerkungen', vRes, (w) => (vormerkungen = w)]
+		];
+		/** @type {string[]} */
+		const fehlend = [];
+		for (const [name, antwort, setze] of listen) {
+			const daten = await jsonOderNull(antwort);
+			setze(daten ?? []);
+			if (daten === null) fehlend.push(name);
+		}
+		fehlendeListen = fehlend;
+	}
+
+	return {
+		get ausleiher() {
+			return ausleiher;
+		},
+		get exemplare() {
+			return exemplare;
+		},
+		set exemplare(v) {
+			exemplare = v;
+		},
+		get verlauf() {
+			return verlauf;
+		},
+		get vormerkungen() {
+			return vormerkungen;
+		},
+		set vormerkungen(v) {
+			vormerkungen = v;
+		},
+		get fehlendeListen() {
+			return fehlendeListen;
+		},
+		zuruecksetzen,
+		ladeListen
+	};
+}
+
+export function useBuchakte() {
+	/** @type {any} */
+	let buch = $state(null);
 	let aktiverReiter = $state('ausleiher');
 	let laedt = $state(true);
-
-	/** Listen, deren Abruf gescheitert ist — ihre Zahl ist keine Zahl, sondern ein Fragezeichen. */
-	let fehlendeListen = $state(/** @type {string[]} */ ([]));
 	/** Der Kopf des Titels kam nicht an — im Unterschied zu „den Titel gibt es nicht". */
 	let kopfFehler = $state('');
 
-	let coverCandidates = $state([]);
-	let currentCandidateIndex = $state(0);
-	let coverFehlt = $state(false);
+	const listen = useBuchListen();
+	const cover = useBuchCover();
+	const aktionen = useBuchAktionen();
 
 	// Sequenznummer wie in der Schülerakte (useLeserakte) und im bestellStore: Die
 	// Buch-Akte bleibt beim Wechsel MONTIERT — die Omnibox setzt nur appState.activeBookId,
@@ -89,17 +240,12 @@ export function useBuchakte() {
 	 */
 	async function ladeAlles(id) {
 		const meine = ++laufNr;
+		const istGueltig = () => meine === laufNr;
+
 		laedt = true;
-		// Alles, was zum vorigen Titel gehört, geht mit ihm. Ein leerer Kopf ist die
-		// ehrliche Antwort auf „konnte nicht geladen werden" — der alte Kopf ist eine
-		// falsche.
 		buch = null;
-		ausleiher = [];
-		exemplare = [];
-		verlauf = [];
-		vormerkungen = [];
-		fehlendeListen = [];
 		kopfFehler = '';
+		listen.zuruecksetzen();
 
 		// Der Kopf läuft durch eine LOKALE Variable, nie durch `buch` zurück: Dieser Lauf
 		// steht in einem $effect (Buchakte.svelte). Ein Effekt, der `buch` schreibt und im
@@ -114,87 +260,18 @@ export function useBuchakte() {
 			const geholt = await holeKopf(id);
 			// Erst prüfen, wenn der Kopf ganz gelesen ist: Zwischen der Antwort und ihrem Körper
 			// kann ein jüngerer Titel schon stehen, und dieser Kopf läge über dessen Listen.
-			if (meine !== laufNr) return;
+			if (!istGueltig()) return;
 			kopf = geholt.kopf;
 			kopfFehler = geholt.fehler;
 		}
 		buch = kopf;
 
-		const candidates = coverKandidaten(kopf?.coverUrl, kopf?.isbn);
-		coverCandidates = candidates;
-		currentCandidateIndex = 0;
-		coverFehlt = candidates.length === 0;
+		cover.setzeKandidaten(coverKandidaten(kopf?.coverUrl, kopf?.isbn));
 
-		const [bRes, eRes, hRes, vRes] = await Promise.allSettled([
-			apiFetch(`/api/buecher/titel/${id}/ausleiher`, { credentials: 'include' }),
-			apiFetch(`/api/buecher/titel/${id}/exemplare`, { credentials: 'include' }),
-			apiFetch(`/api/buecher/titel/${id}/historie`, { credentials: 'include' }),
-			apiFetch(`/api/vormerkungen?titel_id=${id}`, { credentials: 'include' })
-		]);
-		if (meine !== laufNr) return;
+		await listen.ladeListen(id, istGueltig);
 
-		/** @type {[string, PromiseSettledResult<any>, (w: any[]) => void][]} */
-		const listen = [
-			['Ausleiher', bRes, (w) => (ausleiher = w)],
-			['Exemplare', eRes, (w) => (exemplare = w)],
-			['Historie', hRes, (w) => (verlauf = w)],
-			['Vormerkungen', vRes, (w) => (vormerkungen = w)]
-		];
-		/** @type {string[]} */
-		const fehlend = [];
-		for (const [name, antwort, setze] of listen) {
-			const daten = await jsonOderNull(antwort);
-			setze(daten ?? []);
-			if (daten === null) fehlend.push(name);
-		}
-		fehlendeListen = fehlend;
+		if (!istGueltig()) return;
 		laedt = false;
-	}
-
-	async function loescheTitel(melde, onBack) {
-		if (!buch) return;
-		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
-			return;
-		try {
-			const res = await apiFetch(`/api/buecher/titel/${buch.id}`, {
-				method: 'DELETE',
-				credentials: 'include'
-			});
-			if (res.ok) {
-				if (melde) melde('Titel erfolgreich gelöscht', 'success');
-				if (onBack) onBack();
-			} else {
-				const err = await res.json().catch((e) => {
-					console.error('Fehler:', e);
-					return {};
-				});
-				if (melde) melde(err.error || 'Fehler beim Löschen des Titels.', 'error');
-			}
-		} catch (e) {
-			console.error('Titel löschen fehlgeschlagen:', e);
-			if (melde) melde('Netzwerkfehler beim Löschen des Titels.', 'error');
-		}
-	}
-
-	function bearbeiteTitel() {
-		if (!buch) return;
-		appState.bookToEdit = buch;
-		appState.requestAdminView = true;
-		uiStore.activeTab = 'media_catalog';
-		appState.activeBookId = null;
-	}
-
-	function naechsteQuelle() {
-		if (currentCandidateIndex < coverCandidates.length - 1) {
-			currentCandidateIndex++;
-		} else {
-			coverFehlt = true;
-		}
-	}
-
-	function pruefeGeladenes(event) {
-		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
 	}
 
 	return {
@@ -202,28 +279,28 @@ export function useBuchakte() {
 			return buch;
 		},
 		get ausleiher() {
-			return ausleiher;
+			return listen.ausleiher;
 		},
 		get kopfFehler() {
 			return kopfFehler;
 		},
 		get fehlendeListen() {
-			return fehlendeListen;
+			return listen.fehlendeListen;
 		},
 		get exemplare() {
-			return exemplare;
+			return listen.exemplare;
 		},
 		set exemplare(v) {
-			exemplare = v;
+			listen.exemplare = v;
 		},
 		get verlauf() {
-			return verlauf;
+			return listen.verlauf;
 		},
 		get vormerkungen() {
-			return vormerkungen;
+			return listen.vormerkungen;
 		},
 		set vormerkungen(v) {
-			vormerkungen = v;
+			listen.vormerkungen = v;
 		},
 		get aktiverReiter() {
 			return aktiverReiter;
@@ -235,15 +312,19 @@ export function useBuchakte() {
 			return laedt;
 		},
 		get coverQuelle() {
-			return coverCandidates[currentCandidateIndex] || '';
+			return cover.coverQuelle;
 		},
 		get coverFehlt() {
-			return coverFehlt;
+			return cover.coverFehlt;
 		},
 		ladeAlles,
-		loescheTitel,
-		bearbeiteTitel,
-		naechsteQuelle,
-		pruefeGeladenes
+		/**
+		 * @param {((msg: string, type: string) => void)=} melde
+		 * @param {(() => void)=} onBack
+		 */
+		loescheTitel: (melde, onBack) => aktionen.loescheTitel(buch, listen.exemplare, melde, onBack),
+		bearbeiteTitel: () => aktionen.bearbeiteTitel(buch),
+		naechsteQuelle: cover.naechsteQuelle,
+		pruefeGeladenes: cover.pruefeGeladenes
 	};
 }
