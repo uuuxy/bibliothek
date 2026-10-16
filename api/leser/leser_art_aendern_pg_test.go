@@ -31,7 +31,7 @@ import (
 //     und Ausweisnummer sind für einen Schüler Pflicht, und ein Kollege hat sie nicht.
 //
 // Beide Richtungen müssen als Auskunft zurückkommen (400), nicht als CHECK-Verletzung.
-// Eine 500 macht der Sanitizer zu „Ein interner Datenbankfehler ist aufgetreten"; der Satz
+// Eine 500 macht der Sanitizer zu „Ein interner Serverfehler ist aufgetreten"; der Satz
 // sagt niemandem, was zu tun ist (siehe api/leser/leser_aendern.go, Kommentar an den
 // Sperrfeldern).
 func TestLeserArtAendern(t *testing.T) {

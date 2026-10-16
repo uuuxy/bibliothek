@@ -22,7 +22,7 @@ import (
 //  1. Ein verliehenes Buch endet als 400 mit Auskunft. Erkennte die Tür den Fehler am Text
 //     der Meldung statt am Fehlerwert, träfe der Vergleich bei jeder anderen Schreibung nie,
 //     das Buch endete als 500, und die Bereinigung der Fehler ersetzte die Auskunft durch
-//     „Ein interner Datenbankfehler ist aufgetreten".
+//     „Ein interner Serverfehler ist aufgetreten".
 //  2. Eine unbekannte oder schon ausgesonderte Kennung ist 404. Prüfte niemand die Zahl der
 //     getroffenen Zeilen, antwortete die Tür 200 samt Eintrag im Protokoll über eine
 //     Aussonderung, die nie stattfand, und ein Doppelklick beschriebe zustand_notiz erneut.

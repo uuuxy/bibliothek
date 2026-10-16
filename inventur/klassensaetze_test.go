@@ -97,7 +97,7 @@ func TestKlassensaetze(t *testing.T) {
 					WillReturnError(errors.New("db error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `{"error":"Ein interner Datenbankfehler ist aufgetreten."}`,
+			expectedBody:   `{"error":"Ein interner Serverfehler ist aufgetreten"}`,
 		},
 	}
 
@@ -455,7 +455,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 				mock.ExpectBegin().WillReturnError(errTest)
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "Ein interner Datenbankfehler ist aufgetreten.",
+			expectedBody:   "Ein interner Serverfehler ist aufgetreten",
 		},
 		{
 			name:   "Success single className",

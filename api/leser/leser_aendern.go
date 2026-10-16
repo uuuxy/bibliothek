@@ -399,7 +399,7 @@ type leserAendernAnfrage struct {
 	//
 	//   - Der Sperr-Endpunkt verlangt einen Grund. Über diesen PATCH gesetzt, liefe eine
 	//     Sperre ohne Grund in chk_schueler_block_reason und käme als 500 „Ein interner
-	//     Datenbankfehler ist aufgetreten" zurück (der Sanitizer ersetzt jede 500-Meldung).
+	//     Serverfehler ist aufgetreten" zurück (der Sanitizer ersetzt jede 500-Meldung).
 	//     Derselbe Vorgang eine Tür weiter: 400 mit dem Satz, was zu tun ist.
 	//   - Beim Entsperren räumt der Sperr-Endpunkt den Grund nur weg, wenn keine
 	//     Systemsperre mehr besteht; dieser PATCH ließe ihn stehen.

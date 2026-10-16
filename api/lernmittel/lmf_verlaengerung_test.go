@@ -78,7 +78,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				mock.ExpectBegin().WillReturnError(errTest)
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `Ein interner Datenbankfehler ist aufgetreten`,
+			expectedBody:   `Ein interner Serverfehler ist aufgetreten`,
 		},
 		{
 			name: "Tx Exec Error",
@@ -94,7 +94,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `Ein interner Datenbankfehler ist aufgetreten`,
+			expectedBody:   `Ein interner Serverfehler ist aufgetreten`,
 		},
 		{
 			name: "Tx Commit Error",
@@ -111,7 +111,7 @@ func TestLernmittelDerKlasseVerlaengern(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `Ein interner Datenbankfehler ist aufgetreten`,
+			expectedBody:   `Ein interner Serverfehler ist aufgetreten`,
 		},
 	}
 

@@ -109,9 +109,9 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 }
 
 // wiederherstellungsKollision übersetzt die Eindeutigkeits-Verletzung beim Wiederherstellen
-// in einen Satz, mit dem die Bibliothek etwas anfangen kann. Ohne ihn stünde dort „Ein
-// interner Datenbankfehler ist aufgetreten", eine Sackgasse, die weder den Zwilling noch den
-// Weg heraus nennt.
+// in einen Satz, mit dem die Bibliothek etwas anfangen kann. Ohne ihn stünde dort „Ein Eintrag
+// mit denselben Angaben besteht bereits", eine Sackgasse, die weder den Zwilling noch den Weg
+// heraus nennt.
 //
 // Jeder der drei Indizes ist ein Teilindex auf deleted_at IS NULL; sie greifen also genau
 // in dem Moment, in dem die Zeile wieder aktiv würde.

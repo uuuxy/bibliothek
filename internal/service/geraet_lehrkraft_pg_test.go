@@ -3,7 +3,7 @@ package service
 // Wer ein Gerät bekommt: ein aktiver Leser — Schüler wie Kollegium.
 //
 // Eine unbekannte Kennung des Ausleihers wird abgewiesen, bevor sie als
-// Fremdschlüssel-Verletzung und damit als 500 „…da verknüpfte Daten existieren" endet. Wer als
+// Fremdschlüssel-Verletzung und damit als 500 „…weil verknüpfte Daten bestehen" endet. Wer als
 // Lehrkraft gilt, entscheidet die Art des Lesers, nicht die Personenart des Kontos: Auch ein
 // Admin ohne dieses Feld bekommt sein Gerät.
 //

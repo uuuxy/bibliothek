@@ -199,7 +199,7 @@ func TestTitelListe(t *testing.T) {
 					WillReturnError(errors.New("db fail"))
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `{"error":"Ein interner Datenbankfehler ist aufgetreten."}`,
+			expectedBody:   `{"error":"Ein interner Serverfehler ist aufgetreten"}`,
 		},
 	}
 

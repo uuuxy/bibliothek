@@ -60,6 +60,26 @@ func TestAntworteFehler_500IstNeutral(t *testing.T) {
 	}
 }
 
+// Ein 500 sagt auf beiden Wegen denselben Satz: über AntworteFehler, mit und ohne Ursache, und als
+// Vorgabe von Internal hinter MitFehlerantwort.
+func TestNeutraleMeldung_EinSatzAufAllenWegen(t *testing.T) {
+	mitUrsache := httptest.NewRecorder()
+	AntworteFehler(mitUrsache, http.StatusInternalServerError, errors.New("cover: datei nicht geschrieben"))
+	ohneUrsache := httptest.NewRecorder()
+	AntworteFehlerMitMeldung(ohneUrsache, http.StatusInternalServerError, "Tabelle fehlt", nil)
+	ueberTuer := httptest.NewRecorder()
+	MitFehlerantwort(func(http.ResponseWriter, *http.Request) error { return Internal("", errors.New("kaputt")) })(
+		ueberTuer, httptest.NewRequest(http.MethodGet, "/api/x", nil))
+
+	for weg, rec := range map[string]*httptest.ResponseRecorder{
+		"AntworteFehler mit Ursache": mitUrsache, "ohne Ursache": ohneUrsache, "Internal": ueberTuer,
+	} {
+		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Ein interner Serverfehler ist aufgetreten" {
+			t.Errorf("%s: Meldung %q, erwartet „Ein interner Serverfehler ist aufgetreten“", weg, meldung)
+		}
+	}
+}
+
 // Auch unter 500 geht ein Text aus der Datenbank (SQL, Bedingung) nicht hinaus, sonst läse die
 // Oberfläche den Aufbau der Tabellen.
 func TestAntworteFehler_DatenbanktextAuchUnter500Gefiltert(t *testing.T) {

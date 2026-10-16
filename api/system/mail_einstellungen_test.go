@@ -83,7 +83,7 @@ func TestTestmailSenden_VersendetUeberSMTPUndMeldetDann200(t *testing.T) {
 
 // Ein unerreichbarer Server ist der häufigste Fall (falscher Port, Tippfehler im
 // Host) — und der, an dem sich zeigt, ob die Diagnose beim Admin ankommt: Als 500
-// dampft apierrors sie auf "Ein interner Datenbankfehler ist aufgetreten" ein.
+// dampft apierrors sie auf "Ein interner Serverfehler ist aufgetreten" ein.
 func TestTestmailSenden_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 	host, port := smtptest.GeschlossenerPort(t)
 	s, mock := mailTestTueren(t)
@@ -233,8 +233,8 @@ func TestTestmailSenden_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 }
 
 // mailFehlerStatus ist die Weiche, an der die SMTP-Diagnose überlebt oder stirbt:
-// apierrors ersetzt bei 500 jede Meldung durch "Ein interner Datenbankfehler ist
-// aufgetreten" und reicht sie erst unterhalb von 500 durch.
+// apierrors ersetzt bei 500 jede Meldung durch „Ein interner Serverfehler ist aufgetreten" und
+// reicht sie bei jedem anderen Status durch.
 func TestMailFehlerStatus(t *testing.T) {
 	smtpFehler := mailservice.BeschreibeSMTPFehler("smtp.schule.de:587", errors.New("535 5.7.8 Zugangsdaten abgelehnt"))
 	if got := mailFehlerStatus(smtpFehler); got != http.StatusBadGateway {

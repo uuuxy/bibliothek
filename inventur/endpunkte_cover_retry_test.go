@@ -92,7 +92,7 @@ func testListExternalCoversDatabaseError(t *testing.T) {
 		t.Fatalf("Failed to parse error response: %v", err)
 	}
 
-	if antwort["error"] != "Ein interner Datenbankfehler ist aufgetreten." {
+	if antwort["error"] != "Ein interner Serverfehler ist aufgetreten" {
 		t.Errorf("Unexpected error message: %s", antwort["error"])
 	}
 

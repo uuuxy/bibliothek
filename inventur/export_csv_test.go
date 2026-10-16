@@ -273,8 +273,8 @@ func TestCSVExport(t *testing.T) {
 		if leseFehler != nil {
 			t.Fatalf("io.ReadAll: %v", leseFehler)
 		}
-		if !strings.Contains(string(rumpf), "Ein interner Datenbankfehler ist aufgetreten") {
-			t.Errorf("string(rumpf) = %q, erwartet darin %q", string(rumpf), "Ein interner Datenbankfehler ist aufgetreten")
+		if !strings.Contains(string(rumpf), "Ein interner Serverfehler ist aufgetreten") {
+			t.Errorf("string(rumpf) = %q, erwartet darin %q", string(rumpf), "Ein interner Serverfehler ist aufgetreten")
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {

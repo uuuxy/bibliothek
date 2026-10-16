@@ -22,7 +22,7 @@ import (
 // dieselben zwei Spalten, dann ohne jede Prüfung; gemessen, als es beide Türen gab:
 //
 //	Sperr-Endpunkt ohne Grund    -> 400  "Für eine manuelle Sperre ist ein Grund erforderlich"
-//	Allgemeiner PATCH ohne Grund -> 500  "Ein interner Datenbankfehler ist aufgetreten."
+//	Allgemeiner PATCH ohne Grund -> 500  "Ein interner Serverfehler ist aufgetreten"
 //
 // Der 500er kam von chk_schueler_block_reason, und der Sanitizer ersetzt jede
 // 500-Meldung; auf dem Bildschirm stand also nichts, was weiterhilft. Zwei Türen zu

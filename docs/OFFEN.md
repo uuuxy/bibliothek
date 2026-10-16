@@ -211,9 +211,9 @@ der Nummer nichts mehr dazu offen ist.
   Zeichen über drei Zeilen; messen, ob ein breiter Text eine vierte Zeile beginnt.
 - [ ] **Umfang senken (5.67):** Vorgeschichte in den Dokumenten mit Ratsche, SQL-Testdaten über
   `internal/testdaten`; mit deinem Ja: `cmd/migrate-fotos`, der Lasttest, Migration 164.
-- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** Feste Meldungen und Fehlertexte an
-  der Oberfläche sind erledigt; offen sind die neutrale Meldung eines 500 und die Wege, die
-  keine Ratsche prüft.
+- [ ] **Meldungen in Satzschreibung und auf Deutsch (5.68):** Feste Meldungen, Fehlertexte an
+  der Oberfläche und die Meldung eines 500 sind erledigt; offen sind die Wege, die keine Ratsche
+  prüft.
 - [x] **Tippfehler in TRUSTED_PROXIES (5.69):** erledigt am 15.10.2026. Ein Eintrag, der weder
   Netz noch Adresse ist, steht als Warnung im Log des Starts und auf der Seite
   „Betriebsbereitschaft" (Bereich „Vertraute Proxys").
@@ -573,15 +573,11 @@ ausdrückliches Ja.
 Die festen Meldungen der Türen sind erledigt, die der Inventur eingeschlossen:
 `meldung_ratsche_test.go` prüft jeden Aufruf von `apierrors` und von `inventur.schreibeFehler` mit
 Status unter 500 und festem Text, Konstanten eingeschlossen, ihr Bestand ist leer
-([STIL.md](STIL.md), Abschnitt 11). Ein 500 antwortet auch ohne Ursache mit der deutschen
-neutralen Meldung. Außer der Diagnose des Mailservers (502) gibt keine Tür mehr den Text eines
-Fehlers als Meldung weiter (gezählt am 16.10.2026: kein `err.Error()` als Meldung). Offen:
+([STIL.md](STIL.md), Abschnitt 11). Außer der Diagnose des Mailservers (502) gibt keine Tür
+mehr den Text eines Fehlers als Meldung weiter (gezählt am 16.10.2026: kein `err.Error()` als
+Meldung). Ein 500 sagt „Ein interner Serverfehler ist aufgetreten", auch ohne Ursache und gleich
+ob über `AntworteFehler` oder `apierrors.Internal`. Offen:
 
-- **Neutrale Meldung eines 500** (`apierrors.neutraleMeldung`): „Ein interner Datenbankfehler ist
-  aufgetreten." trägt als einzelner Satz einen Punkt und nennt die Datenbank auch bei Fehlern,
-  die nicht aus ihr kommen; ebenso die zwei Sätze zu verletzten Bedingungen. Rund 15 Tests nennen
-  den Wortlaut. Nächster Schritt: einen Satz ohne Punkt und ohne Ursache wählen, die Tests
-  nachziehen.
 - **Ungeprüfte Wege:** Die Türen geben keinen Fehlertext mehr als Meldung weiter; Prüfungen neben
   der Tür liefern `apierrors.BadRequest` mit Satz, und `AntworteFehler` schickt dessen Meldung.
   Dass eine solche Prüfung nie einen nackten Fehler liefert, hält keine Ratsche. Ebenso nicht

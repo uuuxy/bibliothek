@@ -81,9 +81,9 @@ func baueTextNachricht(absender, an, betreff, text string) ([]byte, error) {
 // einer Störung im Programm selbst.
 //
 // apierrors.AntworteFehler macht aus jedem 500 eine neutrale Meldung („Ein interner
-// Datenbankfehler ist aufgetreten"). Ein Testversand, der den Fehler als 500 zurückgäbe,
-// verwandelte die Diagnose von BeschreibeSMTPFehler in eine Meldung über die Datenbank. Am
-// Marker erkennt der Aufrufer den Fehler und antwortet mit 502 und der Meldung.
+// Serverfehler ist aufgetreten"). Ein Testversand, der den Fehler als 500 zurückgäbe,
+// verlöre die Diagnose von BeschreibeSMTPFehler. Am Marker erkennt der Aufrufer den Fehler und
+// antwortet mit 502 und der Meldung.
 var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
 
 // BeschreibeSMTPFehler übersetzt die Fehler von net/smtp in eine Meldung, die sagt, was zu tun

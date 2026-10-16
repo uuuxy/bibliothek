@@ -18,6 +18,10 @@ import (
 // die Einzelheit steht im Log. Sie steht hier, weil auth und die Türen unter api/ sie teilen.
 const MeldungAnfrageUnlesbar = "Die Anfrage ließ sich nicht lesen"
 
+// meldungInternerFehler ist die Meldung eines 500, der nichts aus dem Server nennt: Vorgabe von
+// Internal und Satz von AntworteFehler bei jedem 500.
+const meldungInternerFehler = "Ein interner Serverfehler ist aufgetreten"
+
 // Fehler ist die Antwort einer Tür, die scheitert: Status und Meldung gehen an die Oberfläche,
 // die Ursache bleibt im Server.
 type Fehler struct {
@@ -70,7 +74,7 @@ func BadRequest(meldung string, ursache error) *Fehler {
 // nicht durch eine neutrale. Die Meldung nennt deshalb nichts aus dem Server.
 func Internal(meldung string, ursache error) *Fehler {
 	if meldung == "" {
-		meldung = "Ein interner Serverfehler ist aufgetreten"
+		meldung = meldungInternerFehler
 	}
 	return New(http.StatusInternalServerError, meldung, ursache)
 }
@@ -238,10 +242,10 @@ func neutraleMeldung(ursache error) string {
 	}
 	switch {
 	case strings.Contains(text, "23505") || strings.Contains(text, "unique_violation") || strings.Contains(text, "duplicate key"):
-		return "Ein Eintrag mit diesen eindeutigen Eigenschaften existiert bereits."
+		return "Ein Eintrag mit denselben Angaben besteht bereits"
 	case strings.Contains(text, "23503") || strings.Contains(text, "foreign_key_violation"):
-		return "Diese Aktion kann nicht durchgeführt werden, da verknüpfte Daten existieren."
+		return "Das geht nicht, weil verknüpfte Daten bestehen"
 	default:
-		return "Ein interner Datenbankfehler ist aufgetreten."
+		return meldungInternerFehler
 	}
 }

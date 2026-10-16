@@ -155,7 +155,7 @@ func (t *Tueren) TestmailSenden() http.HandlerFunc {
 // mailFehlerStatus ordnet einem Versandfehler den HTTP-Status zu. Versagt der
 // Zielserver, ist das keine Störung dieser Anwendung — und nur unterhalb von 500
 // reicht apierrors die Meldung durch: Als 500 bekäme der Admin für jede
-// SMTP-Fehlkonfiguration "Ein interner Datenbankfehler ist aufgetreten" zu lesen.
+// SMTP-Fehlkonfiguration "Ein interner Serverfehler ist aufgetreten" zu lesen.
 func mailFehlerStatus(err error) int {
 	switch {
 	case errors.Is(err, mailservice.ErrSMTPVersand):
