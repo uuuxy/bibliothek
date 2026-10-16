@@ -4,7 +4,7 @@
 
 ## 0. Reihenfolge beim Umstieg: Littera, dann LUSD — und nie umgekehrt
 
-Die Importe hängen aneinander; die Reihenfolge steht sonst nur im Code (02.09.2026):
+Die Importe hängen aneinander; die Reihenfolge steht sonst nur im Code:
 
 1. **Littera-Bestand** (Katalogisat, Abschnitt 1a, oder Access-Altbestand, Abschnitt 1) —
    Titel und Exemplare mit Barcodes.
@@ -64,18 +64,16 @@ Litteras Spalte `Barcode` ist dieselbe EAN-13, gesetzt für eine EAN-13-Schrift
 und rechnet aus Exemplar- und Bibliotheksnummer (`littera.EtikettBarcode`) nur, wenn sie
 fehlt. Weichen beide ab, gilt das Etikett, mit Vermerk im Protokoll; in der Sicherung von
 2010 zweimal (Bibliotheksnummer 0 in der Spalte, 0395 auf dem Etikett). Der Bestand bleibt
-damit ohne Neubeklebung scannbar. Bis zum 28.09.2026 rechnete `EtikettBarcode` für Nummern
-unter sechs Stellen falsch (links aufgefüllt, an Stelle 12 fest eine 6); getroffen hätte es
-jedes Exemplar der Sicherung von 2010.
-**Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Mit dem Bestand kommen alle
+damit ohne Neubeklebung scannbar.
+**Schlagworte:** Mit dem Bestand kommen alle
 Schlagworte der Titel mit, aus den Tabellen `Schlagworte` und `Schlag_zuord`, geschrieben über
 den Pfad des Buchformulars (`repository.SetzeSchlagworte`): Leerraum wird zusammengezogen,
 dieselbe Schreibweise in anderer Groß- und Kleinschreibung ist dasselbe Wort, höchstens 300 je
 Titel. Ein leeres oder zu langes Wort fällt weg, eine längere Liste wird gekürzt — beides mit
 Vermerk im Protokoll; das Buch selbst kommt in jedem Fall an. Die Verweise
 (`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`) zählt der Lauf nur und nennt sie: In der
-Sicherung von 2010 sind beide leer, ihre Form ist an echten Daten noch nicht geprüft.
-**Interessenkreise (seit dem 30.09.2026):** Die Tabellen `Interessenskreis` und `IntZuMed` kommen
+Sicherung von 2010 sind beide leer, ihre Form ist an echten Daten noch nicht geprüft (docs/OFFEN.md 4.20).
+**Interessenkreise:** Die Tabellen `Interessenskreis` und `IntZuMed` kommen
 als Schlagworte mit, hinter den Schlagworten des Titels und über denselben Pfad; ein gleichlautendes
 Wort („U plus") zählt einmal. An dieser Schule sind es Zielgruppen — Sekundarstufe 1 und 2,
 Lehrer, Referendare, DAZ-Schüler; in der Sicherung von 2010 36 Werte an 8.902 Titeln. Die Stufe
@@ -89,12 +87,12 @@ Littera-Vermerk bekommen (Land, Schulträger), wie viele einen bekannten Vermerk
 tragen und wie viele einen, der nicht in der festen Liste steht. Die letzten stehen einzeln im
 Protokoll, mit Exemplarnummer und ohne Wortlaut; nachsehen in Littera
 ([littera_schema_befund.md](littera_schema_befund.md), Abschnitt `Exemplar`).
-**Standorte (seit dem 06.10.2026, docs/OFFEN.md 5.53):** Jedes Exemplar kommt mit seinem
+**Standorte:** Jedes Exemplar kommt mit seinem
 Standort an (`buecher_exemplare.standort`). Littera führt ihn an zwei Stellen: am Exemplar
 (`Sonderstandort`, etwa „Videoschrank") und am Titel, wo die Bibliothek ihn als dritten
 Verfasser eingetragen hat (etwa „Bibliothek Klassensatz Regal 11", „LMF", „Schulseelsorge").
 Der Vermerk am Titel gilt für jedes Exemplar des Titels ohne eigenen Sonderstandort und steht
-nicht mehr als Verfasser am Buch. Nennt er „LMF", kommt der Titel als Lernmittel an, auch ohne
+nicht als Verfasser am Buch. Nennt er „LMF", kommt der Titel als Lernmittel an, auch ohne
 LMF-Signatur. Der Trockenlauf listet jeden Wert beider Stellen mit seiner Zahl. Ein Vermerk
 ist jeder Eintrag der dritten Verfasserstelle ohne Komma; darunter fällt auch ein Verfasser in
 der Form „Vorname Nachname". Die Liste deshalb vor dem Lauf lesen und ausnehmen, was kein
@@ -118,7 +116,7 @@ ein neues Etikett bekommt.
 `-barcodes littera` jedes Exemplar, dessen Etikett schon ein anderes trägt („Barcode bereits
 vergeben" im Protokoll; in der Sicherung von 2010 teilen sich 13 Exemplare 5 Nummern, 8
 bekommen eine neue), aus dem sich kein Etikett bilden lässt oder dessen Nummer zu lang für
-die Spalte ist. Diese Exemplare legt der Lauf seit dem 28.09.2026 als ungedruckt an; sie
+die Spalte ist. Diese Exemplare legt der Lauf als ungedruckt an; sie
 stehen im Druck-Center unter „Fehlende Etiketten", mit `-barcodes neu` alle. Bis das neue
 Etikett klebt, liefert ein Buch mit doppeltem Etikett am Scanner die Nummer des Exemplars,
 das die Nummer behalten hat.
@@ -146,12 +144,11 @@ DELETE FROM schueler  WHERE lusd_id LIKE 'littera:%';
 DELETE FROM benutzer  WHERE rolle = 'kollegium' AND email LIKE '%@littera.invalid';
 ```
 
-> Hier stand bis zum 11.08.2026 `rolle = 'lehrer'`. Seit Migration 069 gibt es diesen
-> Enum-Wert nicht mehr, und Postgres bricht den **Vergleich** ab, nicht nur den Treffer:
-> `ERROR: invalid input value for enum benutzer_rolle: "lehrer"`. Die fünf Anweisungen
-> davor laufen durch — wer den Block einfügt, räumt also alles auf **außer** den
-> Littera-Lehrkraftkonten und sieht am Ende einen Fehler, der nach „nichts passiert"
-> aussieht.
+> Die Rolle heißt `kollegium` (Migration 069). Ein Vergleich mit einem Enum-Wert, den es
+> nicht gibt (`rolle = 'lehrer'`), bricht in Postgres die ganze Anweisung ab, nicht nur den
+> Treffer: `ERROR: invalid input value for enum benutzer_rolle: "lehrer"`. Die Anweisungen
+> davor laufen trotzdem durch; der Block räumte dann alles auf **außer** den
+> Littera-Lehrkraftkonten und endete mit einem Fehler, der nach „nichts passiert" aussieht.
 
 **Lehrkräfte räumt der Block nicht vollständig auf:** Er löscht ihre Konten, ihre Leserzeilen
 bleiben mit der Ausweisnummer stehen; eine Lehrkraft, die in Littera eine echte Adresse hat,
@@ -172,10 +169,9 @@ statt dessen die Adresse: Anmeldung geht ausschließlich über IMAP gegen den Sc
 server, und `littera-4908@littera.invalid` gibt es dort nicht. `-lehrer-inaktiv` kehrt das
 um, macht die Karten aber wertlos.
 
-**Jeder Leser kommt an** (seit 28.09.2026): Praktikanten, Sekretariat, U-plus und die
-Sammelkonten der Fachbereiche ins Kollegium (Ausleihen als Dauerleihe, keine Mahnung), seit
-dem 30.09.2026 jeweils mit ihrer eigenen Art — Praktikum, Sekretariat, U-plus, Fachbereich;
-vorher als Lehrkraft, die Littera-Gruppe nur als Warnung im Protokoll. Praktikum und
+**Jeder Leser kommt an:** Praktikanten, Sekretariat, U-plus und die
+Sammelkonten der Fachbereiche ins Kollegium (Ausleihen als Dauerleihe, keine Mahnung), jeweils
+mit ihrer eigenen Art — Praktikum, Sekretariat, U-plus, Fachbereich. Praktikum und
 Fachbereich bekommen kein Konto, nur die Leserzeile; Sekretariat und U-plus ein Konto mit
 Platzhalter-Adresse wie eine Lehrkraft. „Im Ausland" kommt als Schüler mit der
 Klasse `AUS`. Ein Schüler, dessen Klasse keinen Jahrgang nennt, bekommt das Abgangsjahr der
@@ -188,13 +184,9 @@ neue Gruppenbezeichnung, in `artAusUntergruppe` (`internal/littera/leser.go`).
 
 **Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
 
-> Das frühere `cmd/littera_migration` ist entfallen. Es fragte `SELECT TitelID, Titel,
-Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL` ab — von diesen Spalten existiert in
-> einer echten Littera-Datei einzig `ISBN`. Es ist nie gegen echte Daten gelaufen.
-
 ### 1a. Katalogisat aus dem MAB2-Export (`cmd/littera-import`)
 
-Der zweite Weg in denselben Bestand — und für den Titelkatalog inzwischen der bessere.
+Der zweite Weg in denselben Bestand — und für den Titelkatalog der bessere.
 Quelle ist kein Access-Backup, sondern ein **MAB2-Katalogisat (XML)**, das Littera selbst
 ausgibt. Der Unterschied ist die Aktualität: Die vorliegende `littera_sav.mdb` ist ein
 Stand von 2010, `katalogisat.xml` von Juni 2026 mit 13.708 Titeln.
@@ -214,8 +206,7 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   kommen Titeltext, Autor, Verlag, Jahr und Signatur aus dem Eintrag, der zuletzt passt — am
   Katalogisat vom Juni 2026 änderte der zweite Lauf 789 Titel (docs/ARCHITEKTUR.md 11.5).
 - Signaturen landen in `buecher_titel.signatur` (der echten Spalte) — **unverändert, wie
-  Littera sie liefert** („LMF Bio 7"). Bis Migration 093 (02.09.2026) schnitt der Import „LMF"
-  aus der Signatur und stellte es dem Titel voran („LMF-Biologie heute 7"); das ist vorbei.
+  Littera sie liefert** („LMF Bio 7").
 - **Lernmittel ist ein Feld** (`ist_lernmittel`): gesetzt, wenn die Signatur oder das
   Standortfeld MAB 108a die LMF-Kennung trägt. Der Import setzt es nur, löscht es nie.
 - **Fach und Jahrgang** kommen aus der Lernmittelsignatur („LMF Bio 7" → Biologie, 7;
@@ -223,7 +214,7 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   Fach nennen) und den Zielgruppen (MAB 070b, Litteras Interessenkreise, alle Werte eines
   Eintrags: Sek I → 5–10, Sek II → 11–13, beide → 5–13). Das Fach füllt nur eine
   Leerstelle; die Jahrgangsspanne folgt der Quelle, außer an einem Mehrjahresband.
-- **Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Die Wörter aus MAB 710 und dahinter
+- **Schlagworte:** Die Wörter aus MAB 710 und dahinter
   die Interessenkreise aus MAB 070b („Lehrer", „Referendare", „Sekundarstufe 2") kommen an
   Titel, die noch keine tragen, über den Pfad des Buchformulars (`repository.SetzeSchlagworte`)
   und aufbereitet wie in der Übernahme aus der Sicherung (`repository.SchlagworteAusFremddaten`):
@@ -289,9 +280,7 @@ Was die Probe tut, in dieser Reihenfolge:
 
 **Die Probe läuft in keinem Prüflauf der CI.** Sie spricht die Türen der Anwendung selbst an
 (`scripts/generalprobe/theke.py`); wer eine Route entfernt oder umbenennt, sucht sie auch dort.
-Vom 05.10. bis zum 07.10.2026 rief die Prüfung der Mahnbriefe eine entfernte Route ab und
-meldete „0 von 73 Klassen"; aufgefallen ist es erst beim nächsten Lauf (behoben mit
-`b1fd6cfd`). Die Probe deshalb laufen lassen, bevor ein Stand als Beleg für die Übernahme dient.
+Eine entfernte Route fällt dort erst beim nächsten Lauf der Probe auf. Die Probe deshalb laufen lassen, bevor ein Stand als Beleg für die Übernahme dient.
 
 **Ergebnis am 28.09.2026** mit der Sicherung von 2010 (Stand `0437fecc`): jede Prüfung
 bestanden. 10.732 Titel, 61.520 Exemplare, 1.991 Leser (1.810 Schüler, 181 im Kollegium),
@@ -309,17 +298,15 @@ Schlagwort zusammen), 2.767 Wörter, Abgleich stimmt. Das Fach bleibt bei 258 un
 
 ## 2. Datenbank-Backup (`jobs/backup.go` / `scripts/backup.sh`)
 
-Es gibt **drei Wege**, und seit dem 23.08.2026 verschlüsseln alle drei über dieselbe
-Ableitung (`internal/backupkrypto`, scrypt + AES-256-GCM). Hier stand bis zum 06.08.2026
-eine gemeinsame Zeile für alle — sie beschrieb den automatischen Weg und ließ die
-Shell-Wege sicherer aussehen, als sie waren.
+Es gibt **drei Wege**; alle drei verschlüsseln über dieselbe Ableitung
+(`internal/backupkrypto`, scrypt + AES-256-GCM).
 
 |               | Automatisch (`jobs/backup.go`)                            | Manuell (`scripts/backup.sh`)              | Vor jedem Deploy (`./update.sh`)               |
 | ------------- | --------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
 | Auslöser      | Täglich 02:30 via `jobs/cron.go`                          | `./scripts/backup.sh`                      | Schritt 1 von `./update.sh`                    |
 | Pipeline      | `pg_dump → gzip → AES-GCM`                                | `pg_dump → gzip → AES-GCM` (in EINER Pipe) | `pg_dump → gzip`, AES-GCM in Schritt 5         |
-| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`)                          | **ja** (seit 23.08.2026)                   | **ja, nach gesundem Deploy** (seit 23.08.2026) |
-| Dateirechte   | 0600                                                      | 0600 (seit 06.08.2026)                     | 0600 (seit 06.08.2026)                         |
+| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`)                          | **ja**                                     | **ja, nach gesundem Deploy**                   |
+| Dateirechte   | 0600                                                      | 0600                                       | 0600                                           |
 | Rotation      | letzte 14                                                 | 7 Tage (`.enc`) / 2 Tage (Klartext)        | 30 Tage (`.enc`) / 2 Tage (Klartext)           |
 | Dateiname     | `backup_<Zeitstempel>.sql.gz.enc`                         | `bibliothek_backup_<Datum>.sql.gz.enc`     | `vordeploy_<Zeitstempel>.sql.gz.enc`           |
 | Ablage        | Volume `bibliothek_backups` (`/app/backups` im Container) | `./backups` auf dem Host                   | `./backups` auf dem Host                       |
@@ -383,8 +370,7 @@ Baut den Entwicklungs-Stack (`docker-compose.local.yml`) neu und **belegt**, das
 Container danach den aktuellen Stand ausliefert. `docker compose up -d --build` bricht
 bei einem fehlgeschlagenen Build zwar ab, lässt aber den **alten** Container
 weiterlaufen — wer nur die letzte Ausgabezeile liest, sieht „Container Started" und
-misst anschließend eine Fassung, die es im Repo nicht mehr gibt (am 10.08.2026 war die
-e2e-Suite deshalb grün für einen Knopf, den es nicht mehr gab).
+misst anschließend eine Fassung, die es im Repo nicht mehr gibt.
 
 Der Beweis läuft über den Bundle-Hash: Vite hängt an jeden Bundle-Namen einen Hash über
 den Inhalt. Stimmt der Name des ausgelieferten Bundles mit dem des lokalen Builds
@@ -392,7 +378,7 @@ den Inhalt. Stimmt der Name des ausgelieferten Bundles mit dem des lokalen Build
 beantworten die Frage **nicht** — sie ändern sich auch ohne Inhaltsänderung und bleiben
 gleich, wenn ein Cache-Layer den alten Stand konserviert.
 
-Seit dem 07.09.2026 bricht das Skript mit Exit 2 ab, solange `frontend/.e2e-hauptlieferant`
+Das Skript bricht mit Exit 2 ab, solange `frontend/.e2e-hauptlieferant`
 liegt — der Merkzettel einer laufenden E2E-Suite (`e2e/global-setup.js`). Ein Neubau
 mittendrin zieht dem Lauf den Container unter den Füßen weg; die eine Hälfte der Specs
 misst den alten, die andere den neuen Stand. Meist ist es eine **zweite Sitzung**, nicht
@@ -439,9 +425,8 @@ Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. 
 
 ## 5. Übrige Skripte in `scripts/` (Kurzübersicht)
 
-Bis zum 05.08.2026 beschrieb dieses Dokument nur die großen Werkzeuge; die folgenden
-Skripte lagen undokumentiert im Verzeichnis. Sie sind bewusst kurz gehalten — der
-ausführliche Kommentar steht jeweils im Dateikopf. Die Generalprobe (`scripts/generalprobe/`)
+Die folgenden Skripte stehen hier kurz; der ausführliche Kommentar steht jeweils im
+Dateikopf. Die Generalprobe (`scripts/generalprobe/`)
 steht in Abschnitt 1b.
 
 ### Qualitäts-Gates (lokal, es gibt dafür keinen CI-Job)
@@ -450,10 +435,10 @@ steht in Abschnitt 1b.
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `api_inventar.sh`     | Erzeugt `docs/api_inventar.md`: alle registrierten Go-Routen, alle `/api/`-Aufrufer im Frontend und den Abgleich in beide Richtungen (tote Handler / Geister-Aufrufe).                                                                                                                                                                                                                                                                                                                    |
 | `deadcode_gate.sh`    | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen; nur von Tests erreichter Code zählt mit, begründete Ausnahmen stehen in `deadcode_baseline.txt`. Tote **Interface**-Methoden sieht das Werkzeug nicht — dafür läuft `tote_tueren_test.go` in jedem `go test`.                                                                                                                                                                         |
-| `govulncheck-gate.sh` | Bekannte Schwachstellen in Go-Abhängigkeiten, aufrufbezogen — mit einer Ausnahmeliste, die sich nicht totstellen kann (`security/vuln-ausnahmen.json`, seit 17.09.2026, läuft im pre-push). Eine Ausnahme braucht Nachweis als Test im Repo und eine Wiedervorlage; das Gate wird von allein rot, wenn eine Schwachstelle NICHT in der Liste steht, wenn eine Wiedervorlage abgelaufen ist oder wenn ein Eintrag gar nicht mehr gemeldet wird (dann gibt es einen Fix und die Ausnahme gehört gelöscht).                                                                              |
-| `gosec-gate.sh`       | Statische Sicherheitsanalyse des Go-Quelltexts mit gosec: trägt die feste Fassung, den Aufruf und die acht ausgenommenen Regeln samt Grund; `go run` baut das Werkzeug selbst. Der Sicherheits-Prüflauf und der pre-push-Hook rufen dasselbe Skript (seit 09.10.2026). Ein Lauf, der keine geprüfte Datei nennt, gilt als Fehler.                                                                                                                                                                                                                                                     |
-| `tag-gate.sh`         | Das Tag-Gate (seit 21.09.2026): prüft für einen Commit, ob ALLE Pflicht-Prüfläufe grün sind — die Jobs aus `ci.yml` und die vier Security-Jobs. Eine Liste für Release (`release.yml`) und versioniertes Image (`docker-publish.yml`); jeder Lauf eines Namens zählt, ein fehlender Name ist ein Fehler. Am echten Commit nachstellbar: `GITHUB_REPOSITORY=uuuxy/bibliothek GITHUB_SHA="$(git rev-parse origin/main)" ./scripts/tag-gate.sh`. Die Liste hält `docs/umgebung_paritaet_test.go` gegen beide Workflows.                                                                  |
-| `sonar_scan.sh`       | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; seit 23.08.2026 erzeugt Schritt 2 `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund die Hälfte.                     |
+| `govulncheck-gate.sh` | Bekannte Schwachstellen in Go-Abhängigkeiten, aufrufbezogen — mit einer Ausnahmeliste, die sich nicht totstellen kann (`security/vuln-ausnahmen.json`; läuft im pre-push). Eine Ausnahme braucht Nachweis als Test im Repo und eine Wiedervorlage; das Gate wird von allein rot, wenn eine Schwachstelle NICHT in der Liste steht, wenn eine Wiedervorlage abgelaufen ist oder wenn ein Eintrag gar nicht mehr gemeldet wird (dann gibt es einen Fix und die Ausnahme gehört gelöscht).                                                                              |
+| `gosec-gate.sh`       | Statische Sicherheitsanalyse des Go-Quelltexts mit gosec: trägt die feste Fassung, den Aufruf und die sieben ausgenommenen Regeln samt Grund; `go run` baut das Werkzeug selbst. Der Sicherheits-Prüflauf und der pre-push-Hook rufen dasselbe Skript. Ein Lauf, der keine geprüfte Datei nennt, gilt als Fehler.                                                                                                                                                                                                                                                     |
+| `tag-gate.sh`         | Das Tag-Gate: prüft für einen Commit, ob ALLE Pflicht-Prüfläufe grün sind — die Jobs aus `ci.yml` und die vier Security-Jobs. Eine Liste für Release (`release.yml`) und versioniertes Image (`docker-publish.yml`); jeder Lauf eines Namens zählt, ein fehlender Name ist ein Fehler. Am echten Commit nachstellbar: `GITHUB_REPOSITORY=uuuxy/bibliothek GITHUB_SHA="$(git rev-parse origin/main)" ./scripts/tag-gate.sh`. Die Liste hält `docs/umgebung_paritaet_test.go` gegen beide Workflows.                                                                  |
+| `sonar_scan.sh`       | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; Schritt 2 erzeugt `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund die Hälfte.                     |
 | `install-hooks.sh`    | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `backup_krypto.sh`    | Kein eigenständiges Skript, sondern der gemeinsame Verschlüsselungs-Helfer von `backup.sh` und `update.sh` (`source`). Prüft, ob verschlüsselt werden kann, reicht Daten durch `cmd/encrypt-backup` im Backend-Container und beweist am fertigen `.enc` den Rückweg über `restore-backup`, **bevor** ein Klartext-Dump gelöscht wird.                                                                                                                                                     |
 | `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json` des lokalen Stacks (Port 8084, Swagger gibt es nur dort). Der ZAP-Teil braucht den laufenden Stack und Docker; mit `ADMIN_TOKEN` (Wert des Cookies `session_token` nach der Anmeldung am lokalen Stack) geht das Token als Cookie `session_token` mit, ohne läuft er unangemeldet — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung. |
@@ -476,16 +461,16 @@ Drei Messfehler, kein Codefehler:
 2. **`frontend/node_modules/flatted/golang/pkg/flatted/flatted.go`** ist eine fremde
    Go-Datei in einem JS-Paket. `go list ./...` führt sie als Projektpaket — Go kennt
    `node_modules` nicht als Sonderfall. 115 ungedeckte Zeilen im Profil.
-   `sonar_scan.sh` filtert sie seit dem 06.08.2026 über `go list | grep -v node_modules`.
+   `sonar_scan.sh` filtert sie über `go list | grep -v node_modules`.
 3. **Ohne `-coverpkg` rechnet Go einem Paket nur die Tests an, die in ihm selbst liegen.** Die
    Tests der Türen liegen in `api/` und den Ordnern der Themen darunter und führen den Code
    in `repository/` über den Router aus;
    eine neue Abfrage zählte so als ungetestet, obwohl ihr Test sie ausführt. `sonar_scan.sh`
-   misst seit dem 04.10.2026 mit `-coverpkg` über alle Pakete. Im Profil steht ein Block
+   misst mit `-coverpkg` über alle Pakete. Im Profil steht ein Block
    dann je Testprogramm einmal; gedeckt ist er, sobald ein Eintrag ihn zählt.
 
 **100 % sind kein Ziel und wären kein gutes.** Der Rest verteilt sich so: `cmd/*`
-(bei dieser Messung sechs CLI-Werkzeuge, 0 %; am 13.09.2026 sind es neun) und `internal/smtptest` (Testserver, wird von Tests benutzt
+(sechs CLI-Werkzeuge, 0 %) und `internal/smtptest` (Testserver, wird von Tests benutzt
 statt getestet) sind strukturell ungedeckt und sollen es bleiben. Das Quality Gate misst
 deshalb **neuen** Code gegen 80 % — die richtige Frage ist nicht „wie hoch ist die Zahl",
 sondern „ist das, was ich gerade geändert habe, abgesichert".
@@ -516,7 +501,7 @@ desselben Projekts, und ein neues meldet OK, ohne etwas geprüft zu haben.
 | `repair_titel_ortssuffix.sql`     | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt).                                                                                                                                                                                                                                                                                                              | Vorher Backup.                                                                                                                                                                                                                                                                                |
 | `repair_fach_kategorie.sql`       | Einmalige Reparatur (03.09.2026) für Bestände aus dem CSV-/Excel-Import vor diesem Datum: Litteras Kategorie-Spalte („Buch Pg/Kaf 078829 1. Aufl.“) war ungeprüft als Fach übernommen worden — 1.677 Schein-Fächer in der Systematik. Behält nur kanonische Fächer, zieht Schreibvarianten („Mathe“) zusammen, löscht verwaiste Nicht-Fächer.                         | **Ändert Daten.** Ohne Schalter nur Vorschau (endet mit `ROLLBACK`); zum Schreiben `-v ausfuehren=ja` an den psql-Aufruf hängen (endet mit `COMMIT`). Die letzte Ausgabezeile sagt, was passiert ist. Löscht auch handgepflegte Fächer — die Ausgabe „wird gelöscht" führt die Titelzahl mit. |
 | `signatur_report.sql`             | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038).                                                                                                                                                                                                                                                                                               | Nur lesend.                                                                                                                                                                                                                                                                                   |
-| `e2e_altlasten.sql`               | Entfernt den Bestands-Bodensatz der E2E-Suite (Titel mit Präfix `E2E `, deren Exemplare und Ausleihen). Ohne Schalter nur Vorschau; zum Löschen `-v ausfuehren=ja`.                                                                                                                                                                                                   | **Löscht Daten.** Vorher Backup. Ohne Schalter nur Vorschau; zum Löschen `-v ausfuehren=ja` an den psql-Aufruf hängen. Die letzte Ausgabezeile sagt, was passiert ist — von Hand am COMMIT zu drehen ist nicht mehr nötig.                                                                    |
+| `e2e_altlasten.sql`               | Entfernt den Bestands-Bodensatz der E2E-Suite (Titel mit Präfix `E2E `, deren Exemplare und Ausleihen). Ohne Schalter nur Vorschau; zum Löschen `-v ausfuehren=ja`.                                                                                                                                                                                                   | **Löscht Daten.** Vorher Backup. Ohne Schalter nur Vorschau; zum Löschen `-v ausfuehren=ja` an den psql-Aufruf hängen. Die letzte Ausgabezeile sagt, was passiert ist.                                                                                                                        |
 
 **Warum der Bestand von Hand aufgeräumt wird, Lieferanten aber automatisch:** Der globale
 Teardown der E2E-Suite (`frontend/e2e/global-teardown.js`) räumt nach jedem Lauf
@@ -528,7 +513,7 @@ solche Kette automatisch nach jedem Lauf feuern zu lassen, ist das Aufgeräumtse
 wert — ein Fehler im Zuschnitt löscht dort echte Daten. Gemessen am 12.08.2026: Ein
 vollständiger Lauf hinterlässt rund 42 Titel, 75 Exemplare und 22 Ausleihen.
 
-Benutzerkonten der Suite räumt seit dem 12.08.2026 die erzeugende Spec selbst weg
+Benutzerkonten der Suite räumt die erzeugende Spec selbst weg
 (`admin-mail-config.spec.js`, `afterAll`) — dort ist das Muster eindeutig und die
 Fremdschlüssel stehen auf `SET NULL`.
 
