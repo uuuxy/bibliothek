@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
 )
@@ -27,12 +28,12 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 	}
 
 	if validierungsFehler := bereinigeTitelEingabe(&eingabe); validierungsFehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, validierungsFehler.Error())
+		apierrors.AntworteFehler(antwort, http.StatusBadRequest, validierungsFehler)
 		return
 	}
 	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
 	if fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler))
 		return
 	}
 
@@ -114,8 +115,8 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		schreibeDubletteISBN(antwort, fehler)
 		return
 	}
-	if errors.Is(fehler, errMehrjahresband) || errors.Is(fehler, errJahrgangsSpanne) {
-		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
+	if meldung, ok := meldungZurSpanne(fehler); ok {
+		schreibeFehler(antwort, http.StatusBadRequest, meldung)
 		return
 	}
 	var veraltet *BestandVeraltet
@@ -179,10 +180,10 @@ func bereinigeTitelEingabe(eingabe *TitelEingabe) error {
 	eingabe.Verlag = strings.TrimSpace(eingabe.Verlag)
 
 	if eingabe.Bestand != nil && *eingabe.Bestand < 0 {
-		return errors.New("stock muss >= 0 sein")
+		return apierrors.BadRequest("Der Bestand darf nicht negativ sein", nil)
 	}
 	if eingabe.BestandGesehen != nil && *eingabe.BestandGesehen < 0 {
-		return errors.New("stockGesehen muss >= 0 sein")
+		return apierrors.BadRequest("Der gesehene Bestand darf nicht negativ sein", nil)
 	}
 	return pruefeListenpreis(eingabe.Listenpreis)
 }
@@ -193,7 +194,7 @@ func bereinigeTitelEingabe(eingabe *TitelEingabe) error {
 // ist etwas anderes als 0.
 func pruefeListenpreis(preis *float64) error {
 	if preis != nil && *preis < 0 {
-		return errors.New("listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)")
+		return apierrors.BadRequest("Der Listenpreis darf nicht negativ sein. Leer lassen, wenn er unbekannt ist.", nil)
 	}
 	return nil
 }

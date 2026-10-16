@@ -130,7 +130,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 
 		var anfrage anmeldeAnfrage
 		if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
 
@@ -358,7 +358,7 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldung) (
 		return nil, false
 	}
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 		return nil, false
 	}
 
@@ -462,7 +462,7 @@ func SitzungVerlaengern(anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
 				apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, nil)
 				return
 			}
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
 

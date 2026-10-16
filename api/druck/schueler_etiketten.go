@@ -1,7 +1,6 @@
 package druck
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -76,7 +75,7 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen repository.LeserAbfragen) http.
 // Gleiche Regel wie bei den Buch-Etiketten (pdf.IstBekanntesEtikettFormat).
 func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
 	if !pdf.IstBekanntesEtikettFormat(req.FormatID) {
-		return fmt.Errorf("unbekanntes Etikettenformat %q", req.FormatID)
+		return apierrors.BadRequest(fmt.Sprintf("Das Etikettenformat „%s“ gibt es nicht", req.FormatID), nil)
 	}
 	format, _ := pdf.FindeEtikettFormat(req.FormatID)
 
@@ -100,10 +99,10 @@ func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen repository.Le
 
 	switch {
 	case len(req.SchuelerIDs) == 0:
-		return nil, http.StatusBadRequest, errors.New("keine Schüler markiert")
+		return nil, http.StatusBadRequest, apierrors.BadRequest("Keine Schüler markiert", nil)
 	case len(req.SchuelerIDs) > MaxSchuelerEtiketten:
-		return nil, http.StatusBadRequest,
-			fmt.Errorf("%d Schüler markiert — höchstens %d je Bogenauftrag", len(req.SchuelerIDs), MaxSchuelerEtiketten)
+		return nil, http.StatusBadRequest, apierrors.BadRequest(fmt.Sprintf("Höchstens %d Schüler je Bogenauftrag, markiert sind %d",
+			MaxSchuelerEtiketten, len(req.SchuelerIDs)), nil)
 	}
 
 	zeilen, err := leserAbfragen.LadeEtikettZeilen(r.Context(), req.SchuelerIDs)

@@ -57,7 +57,7 @@ func TestPruefeLMFPlan_FestUndFreieTage(t *testing.T) {
 
 	// Fester Termin ohne Datum, feste Stunde 0, freier Tag ohne Datum: jeweils 400.
 	req.Zeilen[1].Fest.Datum = ""
-	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "zeile 2") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "Zeile 2: Ein fester Termin braucht ein Datum") {
 		t.Errorf("fester Termin ohne Datum: %v", err)
 	}
 	req.Zeilen[1].Fest.Datum, req.Zeilen[1].Fest.Stunde = "2026-06-15", 0
@@ -66,7 +66,7 @@ func TestPruefeLMFPlan_FestUndFreieTage(t *testing.T) {
 	}
 	req.Zeilen[1].Fest.Stunde = 2
 	req.FreieTage[0].Datum = "Freitag"
-	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "freier Tag 1") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "Freier Tag 1: Das Datum") {
 		t.Errorf("freier Tag ohne Datum: %v", err)
 	}
 }
@@ -78,7 +78,7 @@ func TestPruefeLMFPlan_FestUndFreieTage(t *testing.T) {
 func TestPruefeLMFPlan_AnkerJeArt(t *testing.T) {
 	var req lmfPlanAnfrage
 	req.ErsterTag, req.Startstunde, req.StundenJeTag = "2026-06-11", 3, 6
-	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzter_tag") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "Der letzte Tag muss ein Datum") {
 		t.Errorf("Rückgabe ohne Ende: %v", err)
 	}
 	req.LetzterTag, req.LetzteStunde = " 2026-06-25 ", 4
@@ -90,7 +90,7 @@ func TestPruefeLMFPlan_AnkerJeArt(t *testing.T) {
 		t.Errorf("Rückgabe-Anker: %+v", e.Plan)
 	}
 	req.LetzteStunde = 7
-	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzte_stunde") {
+	if _, err := pruefeLMFPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "Die letzte Stunde muss") {
 		t.Errorf("letzte Stunde hinter dem Tagesende: %v", err)
 	}
 	req.LetzteStunde = 4
@@ -99,7 +99,7 @@ func TestPruefeLMFPlan_AnkerJeArt(t *testing.T) {
 		t.Errorf("Ausgabe-Anker: %+v (%v)", e.Plan, err)
 	}
 	req.ErsterTag = ""
-	if _, err := pruefeLMFPlan("ausgabe", req); err == nil || !strings.Contains(err.Error(), "erster_tag") {
+	if _, err := pruefeLMFPlan("ausgabe", req); err == nil || !strings.Contains(err.Error(), "Der erste Tag muss ein Datum") {
 		t.Errorf("Ausgabe ohne Beginn: %v", err)
 	}
 }

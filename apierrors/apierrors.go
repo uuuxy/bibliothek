@@ -13,6 +13,11 @@ import (
 	"strings"
 )
 
+// MeldungAnfrageUnlesbar ist die Meldung zu einem Rumpf oder Cookie, der sich nicht in die
+// erwartete Form lesen lässt. Die Oberfläche schickt so etwas nur mit einem Fehler im Programm;
+// die Einzelheit steht im Log. Sie steht hier, weil auth und die Türen unter api/ sie teilen.
+const MeldungAnfrageUnlesbar = "Die Anfrage ließ sich nicht lesen"
+
 // Fehler ist die Antwort einer Tür, die scheitert: Status und Meldung gehen an die Oberfläche,
 // die Ursache bleibt im Server.
 type Fehler struct {

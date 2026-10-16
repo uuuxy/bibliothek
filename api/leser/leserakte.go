@@ -112,7 +112,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		return apierrors.Internal("Fehler beim Laden des Lesers", err)
 	}
 	if leser == nil {
-		return apierrors.NotFound("Leser nicht gefunden", nil)
+		return apierrors.NotFound(meldungLeserNichtGefunden, nil)
 	}
 
 	// 2. Die Adresse des Fotos, falls ein verschlüsseltes Foto in der Datenbank liegt.

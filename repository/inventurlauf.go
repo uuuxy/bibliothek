@@ -73,7 +73,7 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 	if kollision, err := a.findeUeberlappendenLauf(ctx, tx, bereichArt, bereich); err != nil {
 		return nil, err
 	} else if kollision != "" {
-		return nil, fmt.Errorf("%w: %q läuft bereits", ErrInventurUeberlappt, kollision)
+		return nil, regelVerletzt(ErrInventurUeberlappt, "„%s“ läuft bereits", kollision)
 	}
 
 	var s Inventurlauf

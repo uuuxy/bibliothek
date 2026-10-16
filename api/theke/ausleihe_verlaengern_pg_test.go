@@ -241,7 +241,7 @@ func TestAusleiheVerlaengern_SperrgrundNurMitRechtSchuelerdateiAnzeigenUndMahnst
 	}
 
 	helfer := verlaengere(ausleiheGesperrt, auth.Rolle("helfer"))
-	if helfer.Code != http.StatusForbidden || !strings.Contains(helfer.Body.String(), "Ausleihe gesperrt") {
+	if helfer.Code != http.StatusForbidden || !strings.Contains(helfer.Body.String(), "Die Ausleihe ist gesperrt") {
 		t.Errorf("Helfer: Status %d, erwartet 403 mit dem Hinweis auf die Sperre: %s", helfer.Code, helfer.Body.String())
 	}
 	if strings.Contains(helfer.Body.String(), grund) {

@@ -14,11 +14,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// MeldungAnfrageUnlesbar ist die Meldung zu einem Rumpf, der sich nicht in die erwartete Form
-// lesen lässt. Die Oberfläche schickt so etwas nur mit einem Fehler im Programm; die Einzelheit
-// steht im Log.
-const MeldungAnfrageUnlesbar = "Die Anfrage ließ sich nicht lesen"
-
 // Pruefer prüft die Felder einer Anfrage nach ihren validate-Tags. Es gibt nur diesen einen:
 // validator.New() legt bei jedem Aufruf einen eigenen Cache der Regeln an.
 var Pruefer = newPruefer()
@@ -61,7 +56,7 @@ func newPruefer() *validator.Validate {
 func Pruefmeldung(err error) string {
 	var fehler validator.ValidationErrors
 	if !errors.As(err, &fehler) || len(fehler) == 0 {
-		return MeldungAnfrageUnlesbar
+		return apierrors.MeldungAnfrageUnlesbar
 	}
 	f := fehler[0]
 	// Der Pfad beginnt mit dem Namen des Typs im Go-Code; die Anfrage kennt ihn nicht.
@@ -121,7 +116,7 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(ziel); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, MeldungAnfrageUnlesbar, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {
@@ -136,7 +131,7 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 // nicht kennt, verwirft sie still; wo das nicht genügt, gilt LeseAnfrageStreng.
 func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	if err := json.NewDecoder(r.Body).Decode(ziel); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, MeldungAnfrageUnlesbar, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {

@@ -185,7 +185,7 @@ func TestTitelAendern_SpanneGanzOderGarNicht(t *testing.T) {
 func TestTitelTueren_JahrgangsSpanne(t *testing.T) {
 	p := newGenanntProbe(t)
 	ctx := context.Background()
-	const satz = "gehören zusammen"
+	const satz = "gehören „von“ und „bis“ zusammen"
 
 	titel := genanntVorsatz + "halbe Spanne"
 	rumpf, err := json.Marshal(map[string]any{"title": titel, "jahrgangVon": 7})

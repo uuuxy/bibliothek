@@ -167,7 +167,7 @@ func TestLeserArtAendern(t *testing.T) {
 	// in der Liste, und an ihr muss sich etwas nachtragen lassen. Der Rumpf hier ist genau
 	// der, den das Formular für einen Kollegen baut: ohne klasse, ohne
 	// abgaenger_jahr, ohne lusd_id, ohne eltern_email. Mit ihnen (leer) antwortete der
-	// Server „Klasse darf nicht leer sein."
+	// Server „Bitte das Feld „Klasse“ ausfüllen".
 	t.Run("Adresse eines Kollegen nachtragen", func(t *testing.T) {
 		id := legeKollegen(t, "Adresse", "lehrkraft")
 		rec := patch(t, id, `{"vorname":"Art","nachname":"Adresse","art":"lehrkraft",

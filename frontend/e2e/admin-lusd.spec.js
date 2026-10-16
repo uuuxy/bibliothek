@@ -85,7 +85,7 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 	// Fall 1: komplett falsche Header → verständliche deutsche Meldung
 	await uploadAndPreview('kaputt.csv', Buffer.from('foo;bar;baz\n1;2;3'));
 	await expect(
-		page.getByText(/Pflichtspalte '.*' fehlt in der CSV-Kopfzeile/).first()
+		page.getByText(/In der Kopfzeile fehlt die Pflichtspalte „.*“/).first()
 	).toBeVisible();
 	await expect(page.getByText('Neue Schüler')).toHaveCount(0);
 

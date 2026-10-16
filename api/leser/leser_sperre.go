@@ -83,7 +83,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	// über die Sicht antwortete sie mit „schüler nicht gefunden".
 	alt, err := repository.SperreLeserZeileMitStand(ctx, tx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return apierrors.NotFound("Leser nicht gefunden", err)
+		return apierrors.NotFound(meldungLeserNichtGefunden, err)
 	}
 	if err != nil {
 		return apierrors.Internal(meldungSperreFehler, err)

@@ -50,7 +50,7 @@ func Entsperren(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		r.Body = http.MaxBytesReader(w, r.Body, anmeldeRumpfMaxBytes)
 		var anfrage entsperrenAnfrage
 		if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
 		if anfrage.Passwort == "" {

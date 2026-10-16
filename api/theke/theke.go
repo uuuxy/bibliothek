@@ -17,3 +17,7 @@ type Tueren struct {
 	// demselben Schlüssel wartet (erlangeIdempotenz); 0 = 3 s. Nur Tests setzen es.
 	IdempotenzWartezeit time.Duration
 }
+
+// meldungVerlaengerungGesperrt antwortet auf die Verlängerung einer gesperrten Ausleihe; mit dem
+// Recht view_students steht der Grund der Sperre dahinter.
+const meldungVerlaengerungGesperrt = "Die Ausleihe ist gesperrt und lässt sich nicht verlängern"

@@ -106,7 +106,7 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 		{"mit dem gesehenen Stand verringert", map[string]any{"stock": 4, "stockGesehen": 6, "signatur": "Neu 1"},
 			http.StatusOK, "", stand{4, 2, "Neu 1"}},
 		{"eine negative gesehene Zahl", map[string]any{"stock": 4, "stockGesehen": -1, "signatur": "Abgelehnt"},
-			http.StatusBadRequest, "stockGesehen", stand{4, 2, "Neu 1"}},
+			http.StatusBadRequest, "Der gesehene Bestand darf nicht negativ sein", stand{4, 2, "Neu 1"}},
 	}
 	for _, s := range schritte {
 		rec := sende(http.MethodPut, id, s.extra)

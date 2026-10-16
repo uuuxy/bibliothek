@@ -197,7 +197,7 @@ func TestTitelAnlegen(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort ist kein JSON: %v — %s", err, rec.Body.String())
 		}
-		if antwort.Error != "listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)" {
+		if antwort.Error != "Der Listenpreis darf nicht negativ sein. Leer lassen, wenn er unbekannt ist." {
 			t.Errorf("Meldung nennt den erlaubten Bereich nicht: %q", antwort.Error)
 		}
 	})

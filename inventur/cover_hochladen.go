@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/apierrors"
 	"bibliothek/pkg/imageutil"
 	"bibliothek/pkg/logger"
 	"bytes"
@@ -31,19 +32,23 @@ const (
 // Störung am Server (500), kein unbrauchbares Bild (400).
 var errBildverarbeitung = errors.New("fehler bei der bildverarbeitung")
 
+// meldungBildUngueltig antwortet auf ein Bild, das sich nicht lesen lässt, zu groß ist oder ein
+// anderes Format hat.
+const meldungBildUngueltig = "Das Bild ließ sich nicht lesen oder ist zu groß. Möglich sind JPG, PNG oder WebP bis 50 Megapixel."
+
 func verarbeiteHochgeladenesBild(inhalt []byte, id string) ([]byte, string, error) {
 	// Decompression-Bomb-Schutz: Dimensionen anhand des Headers prüfen, bevor die
 	// vollständige Pixelmatrix alloziert wird (image.Decode würde sonst sofort
 	// width×height×4 Byte reservieren — bei manipulierten Bildern Gigabytes).
 	if err := imageutil.PruefeBildgroesse(inhalt); err != nil {
-		return nil, "", err
+		return nil, "", apierrors.BadRequest(meldungBildUngueltig, err)
 	}
 	bild, format, err := image.Decode(bytes.NewReader(inhalt))
 	if err != nil {
-		return nil, "", errors.New("ungültiges bildformat: muss jpg, png oder webp sein")
+		return nil, "", apierrors.BadRequest(meldungBildUngueltig, err)
 	}
 	if format != "jpeg" && format != "png" && format != "webp" {
-		return nil, "", errors.New("ungültiges bildformat: muss jpg, png oder webp sein")
+		return nil, "", apierrors.BadRequest(meldungBildUngueltig, nil)
 	}
 
 	rahmen := bild.Bounds()
@@ -125,7 +130,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, errBildverarbeitung) {
 			schreibeFehler(w, http.StatusInternalServerError, errBildverarbeitung.Error())
 		} else {
-			schreibeFehler(w, http.StatusBadRequest, err.Error())
+			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		}
 		return
 	}

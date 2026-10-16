@@ -39,13 +39,13 @@ type LitteraImportAntwort struct {
 func (t *Tueren) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (inhalt []byte, dateiname string, ok bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 	if err := r.ParseMultipartForm(maxBytes); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungHochladen(maxBytes), err)
 		return nil, "", false
 	}
 
 	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungKeineDatei, err)
 		return nil, "", false
 	}
 	defer closeutil.Schliesse(datei, litteraImportQuelle)
@@ -76,9 +76,9 @@ func leseTabellarischeDaten(dateiname string, inhalt []byte, inhaltText string) 
 		})
 		switch {
 		case xlsxgrenze.IstUnlesbar(err):
-			return nil, true, fmt.Errorf("failed to open excel file: %w", err)
+			return nil, true, apierrors.BadRequest("Die Excel-Datei ließ sich nicht öffnen. Bitte als .xlsx oder CSV neu speichern.", err)
 		case err != nil:
-			return nil, true, fmt.Errorf("failed to get excel rows: %w", err)
+			return nil, true, apierrors.BadRequest("Die Excel-Datei ließ sich nicht lesen", err)
 		}
 		return zeilen, true, nil
 	}
@@ -88,7 +88,7 @@ func leseTabellarischeDaten(dateiname string, inhalt []byte, inhaltText string) 
 	csvLeser.LazyQuotes = true
 	zeilen, err = csvLeser.ReadAll()
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to read csv content: %w", err)
+		return nil, false, apierrors.BadRequest(csvLesefehlerMeldung(err), err)
 	}
 	return zeilen, false, nil
 }
@@ -97,14 +97,14 @@ func leseTabellarischeDaten(dateiname string, inhalt []byte, inhaltText string) 
 // Pflichtspalten (Titel, Barcode).
 func importKopfMitPflichtspalten(zeilen [][]string) (map[string]int, error) {
 	if len(zeilen) < 1 {
-		return nil, fmt.Errorf("empty file")
+		return nil, apierrors.BadRequest("Die Datei ist leer", nil)
 	}
 	kopf := service.ImportKopfzeile(zeilen[0])
 	if _, ok := kopf["titel"]; !ok {
-		return nil, fmt.Errorf("missing required column: titel")
+		return nil, apierrors.BadRequest("In der Kopfzeile fehlt die Pflichtspalte „titel“", nil)
 	}
 	if _, ok := kopf["barcode"]; !ok {
-		return nil, fmt.Errorf("missing required column: barcode/exemplarnummer")
+		return nil, apierrors.BadRequest("In der Kopfzeile fehlt die Pflichtspalte „barcode“ oder „exemplarnummer“", nil)
 	}
 	return kopf, nil
 }
@@ -125,11 +125,12 @@ func (t *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, in
 	importDienst := service.NewImportDienst(repository.NewKatalogAbfragen(t.DB.Pool), t.DB.Pool)
 	geaenderteTitel, err := importDienst.ImportiereLitteraXML(r.Context(), bytes.NewReader(inhalt))
 	if err != nil {
-		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrKeinKatalogisat) {
-			status = http.StatusBadRequest
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Datei ist kein Katalogisat-Export aus "+
+				"Littera. Erwartet wird MAB2-XML mit der Wurzel <Katalogisate>.", err)
+			return
 		}
-		apierrors.AntworteFehler(w, status, err)
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -203,13 +204,13 @@ func (t *Tueren) LitteraImport() http.HandlerFunc {
 func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
 	if err := r.ParseMultipartForm(20 << 20); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungHochladen(20<<20), err)
 		return
 	}
 
 	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Datei hochgeladen", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungKeineDatei, err)
 		return
 	}
 	defer closeutil.Schliesse(datei, litteraImportQuelle)
@@ -239,13 +240,10 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kopf := service.ImportKopfzeile(zeilen[0])
-	if _, ok := kopf["titel"]; !ok {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Pflichtspalte Titel fehlt", nil)
-		return
-	}
-	if _, ok := kopf["barcode"]; !ok {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Pflichtspalte Barcode/Exemplarnummer fehlt", nil)
+	// Dieselbe Prüfung der Pflichtspalten wie beim Import aus Littera.
+	kopf, err := importKopfMitPflichtspalten(zeilen)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -268,6 +266,15 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 		"imported_copies_count": importierteExemplare,
 		"message":               "Bestands-CSV erfolgreich importiert",
 	})
+}
+
+// meldungKeineDatei antwortet auf ein Formular ohne Datei.
+const meldungKeineDatei = "Bitte eine Datei auswählen"
+
+// meldungHochladen antwortet auf ein Formular, das sich nicht lesen ließ, meist eine zu große
+// Datei; sie nennt die Grenze.
+func meldungHochladen(maxBytes int64) string {
+	return fmt.Sprintf("Die Datei ließ sich nicht hochladen. Möglich sind höchstens %d MB.", maxBytes>>20)
 }
 
 // csvLesefehlerMeldung nennt die Zeile, an der das Lesen der CSV-Datei scheiterte; der Text von

@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/apierrors"
 	"bibliothek/pkg/kennung"
+	"bibliothek/repository"
 )
 
 // pruefeTitelEingabe prüft Titel und ISBN. Pflicht ist der Titel;
@@ -169,20 +171,20 @@ func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request
 		return
 	}
 	if fehler := pruefeJahrgangsSpanne(eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, meldungJahrgangsSpanne)
 		return
 	}
 	if fehler := pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, meldungMehrjahresband)
 		return
 	}
 	if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
+		apierrors.AntworteFehler(antwort, http.StatusBadRequest, fehler)
 		return
 	}
 	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
 	if fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, fehler.Error())
+		schreibeFehler(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler))
 		return
 	}
 

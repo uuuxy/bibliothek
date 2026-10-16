@@ -2,8 +2,8 @@ package leser
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"bibliothek/api/tuer"
@@ -99,17 +99,15 @@ func leserSortierung(r *http.Request) (repository.LeserSortierung, *apierrors.Fe
 		for _, e := range repository.LeserSortierspalten {
 			erlaubt = append(erlaubt, string(e))
 		}
-		return repository.LeserSortierung{}, apierrors.BadRequest(
-			"Unbekannte Sortierung "+strconv.Quote(string(spalte))+" — erlaubt sind: "+
-				strings.Join(erlaubt, ", ")+" (oder leer für die Reihenfolge der Kartei).",
-			errors.New("unbekannte sortierspalte"))
+		return repository.LeserSortierung{}, apierrors.BadRequest(fmt.Sprintf(
+			"Die Sortierung „%s“ gibt es nicht. Möglich sind %s oder leer für die Reihenfolge der Kartei.",
+			spalte, strings.Join(erlaubt, ", ")), errors.New("unbekannte sortierspalte"))
 	}
 	// „ab" oder leer/„auf" — ein dritter Wert ist ein Tippfehler des Aufrufers und
 	// bekommt dieselbe Antwort wie eine unbekannte Spalte.
 	if richtung != "" && richtung != "auf" && richtung != "ab" {
-		return repository.LeserSortierung{}, apierrors.BadRequest(
-			"Unbekannte Richtung "+strconv.Quote(richtung)+" — erlaubt sind: auf, ab.",
-			errors.New("unbekannte sortierrichtung"))
+		return repository.LeserSortierung{}, apierrors.BadRequest(fmt.Sprintf(
+			"Die Richtung „%s“ gibt es nicht. Möglich sind auf und ab.", richtung), errors.New("unbekannte sortierrichtung"))
 	}
 	return s, nil
 }

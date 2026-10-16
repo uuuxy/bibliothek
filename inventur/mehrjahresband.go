@@ -19,6 +19,26 @@ var errMehrjahresband = errors.New("mehrjahresband: nur bei einem Lernmittel und
 // gibt es nicht. Dieselbe Regel steht als CHECK chk_jahrgang_spanne in der Datenbank.
 var errJahrgangsSpanne = errors.New("jahrgang: „von“ und „bis“ gehören zusammen (beide 1 bis 13, „von“ nicht über „bis“) oder bleiben beide leer")
 
+// Sätze zu den beiden Regeln für die Oberfläche; die Fehlerwerte oben stehen im Log.
+const (
+	meldungJahrgangsSpanne = "Beim Jahrgang gehören „von“ und „bis“ zusammen oder bleiben beide leer. Beide liegen " +
+		"zwischen 1 und 13, „von“ nicht über „bis“."
+	meldungMehrjahresband = "Mehrjahresband nur bei einem Lernmittel und nur über mehr als einen Jahrgang, mit „bis“ " +
+		"über „von“ und beiden zwischen 1 und 13"
+)
+
+// meldungZurSpanne nennt den Satz zu einem Verstoß gegen die Spanne oder den Mehrjahresband;
+// ok ist false für jeden anderen Fehler.
+func meldungZurSpanne(err error) (meldung string, ok bool) {
+	switch {
+	case errors.Is(err, errJahrgangsSpanne):
+		return meldungJahrgangsSpanne, true
+	case errors.Is(err, errMehrjahresband):
+		return meldungMehrjahresband, true
+	}
+	return "", false
+}
+
 // pruefeJahrgangsSpanne prüft die Spanne für Anlegen und Ändern.
 func pruefeJahrgangsSpanne(von, bis int) error {
 	if von == 0 && bis == 0 {

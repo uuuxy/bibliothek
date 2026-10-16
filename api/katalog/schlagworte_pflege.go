@@ -293,14 +293,14 @@ func schlagwortIDAusPfad(r *http.Request) (string, error) {
 func schlagwortPflegeFehler(err error) error {
 	switch {
 	case errors.Is(err, repository.ErrSchlagwortUngueltig):
-		return apierrors.BadRequest(tuer.MitGrund(meldungSchlagwortNichtGeaendert, err), err)
+		return apierrors.BadRequest(repository.MitGrund(meldungSchlagwortNichtGeaendert, err), err)
 	case errors.Is(err, repository.ErrSchlagwortNichtGefunden):
 		return apierrors.NotFound("Schlagwort nicht gefunden", err)
 	case errors.Is(err, repository.ErrSchlagwortGibtEs):
 		return apierrors.Conflict(fmt.Sprintf("Das Schlagwort %s gibt es schon. Zum Zusammenlegen „Zusammenführen“ wählen.",
-			tuer.GrundAus(err)), err)
+			repository.GrundAus(err)), err)
 	case errors.Is(err, repository.ErrSchlagwortRegel):
-		return apierrors.Conflict(tuer.MitGrund(meldungSchlagwortRegel, err), err)
+		return apierrors.Conflict(repository.MitGrund(meldungSchlagwortRegel, err), err)
 	default:
 		return apierrors.Internal("Schlagwort konnte nicht geändert werden", err)
 	}

@@ -2,7 +2,6 @@ package benutzer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -94,7 +93,7 @@ func pruefeAusweisnummerEindeutig(ctx context.Context, w http.ResponseWriter, ko
 		return nil, false
 	}
 	if vergeben {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, errors.New(pruefung.konfliktmeldung))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, pruefung.konfliktmeldung, nil)
 		return nil, false
 	}
 	return &pruefung.nummer, true

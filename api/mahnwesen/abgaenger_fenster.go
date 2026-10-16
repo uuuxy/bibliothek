@@ -43,7 +43,8 @@ func abgaengerFensterFuer(jetzt time.Time) AbgaengerFenster {
 	}
 }
 
-// abgaengerAusserhalbDerSaison ist die Meldung für Druck und Versand außerhalb des Fensters.
-func abgaengerAusserhalbDerSaison(f AbgaengerFenster) error {
-	return fmt.Errorf("die Abgängerliste zeigt die Abschlussklassen vom %s bis %s — außerhalb dieser Zeit gibt es keine Kontoauszüge", f.Von, f.Bis)
+// meldungAusserhalbDerSaison ist die Meldung für Druck und Versand außerhalb des Fensters.
+func meldungAusserhalbDerSaison(f AbgaengerFenster) string {
+	return fmt.Sprintf("Die Abgängerliste zeigt die Abschlussklassen vom %s bis %s. Außerhalb dieser Zeit gibt es "+
+		"keine Kontoauszüge.", f.Von, f.Bis)
 }

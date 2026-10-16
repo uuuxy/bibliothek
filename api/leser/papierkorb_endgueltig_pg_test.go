@@ -47,7 +47,7 @@ func TestLeserEndgueltigLoeschen_MeldungNenntDenGrund(t *testing.T) {
 	t.Run("nicht im Papierkorb", func(t *testing.T) {
 		leserID, _ := legeLeserAn(t, false)
 		status, meldung := loesche(t, leserID)
-		const erwartet = "Endgültiges Löschen blockiert: der Datensatz liegt nicht im Papierkorb — erst löschen, dann endgültig entfernen"
+		const erwartet = "Endgültiges Löschen blockiert: Der Datensatz liegt nicht im Papierkorb. Erst löschen, dann endgültig entfernen."
 		if status != http.StatusConflict || meldung != erwartet {
 			t.Errorf("LeserEndgueltigLoeschen = %d %q, erwartet 409 %q", status, meldung, erwartet)
 		}
@@ -56,7 +56,7 @@ func TestLeserEndgueltigLoeschen_MeldungNenntDenGrund(t *testing.T) {
 		leserID, exemplarID := legeLeserAn(t, true)
 		testdaten.LegeAusleiheVorZweiTagenAn(t, pool, exemplarID, leserID)
 		status, meldung := loesche(t, leserID)
-		const erwartet = "Endgültiges Löschen blockiert: 1 offene Ausleihe(n)"
+		const erwartet = "Endgültiges Löschen blockiert: 1 offene Ausleihe"
 		if status != http.StatusConflict || meldung != erwartet {
 			t.Errorf("LeserEndgueltigLoeschen = %d %q, erwartet 409 %q", status, meldung, erwartet)
 		}
@@ -69,7 +69,7 @@ func TestLeserEndgueltigLoeschen_MeldungNenntDenGrund(t *testing.T) {
 			t.Fatalf("Schadensfall anlegen: %v", err)
 		}
 		status, meldung := loesche(t, leserID)
-		const erwartet = "Endgültiges Löschen blockiert: 1 unbezahlte(r) Schadensfall/-fälle"
+		const erwartet = "Endgültiges Löschen blockiert: 1 unbezahlter Schadensfall"
 		if status != http.StatusConflict || meldung != erwartet {
 			t.Errorf("LeserEndgueltigLoeschen = %d %q, erwartet 409 %q", status, meldung, erwartet)
 		}

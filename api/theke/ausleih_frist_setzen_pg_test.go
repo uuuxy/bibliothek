@@ -230,7 +230,7 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 	}{
 		{"ohne Sitzung", ausleihe, `{"faellig_am":"` + zukunft + `"}`, false, http.StatusUnauthorized, "Nicht angemeldet. Bitte neu anmelden."},
 		{"ohne Datum", ausleihe, `{}`, true, http.StatusBadRequest, ""},
-		{"Datum unlesbar", ausleihe, `{"faellig_am":"morgen"}`, true, http.StatusBadRequest, "ungültiges Datumsformat"},
+		{"Datum unlesbar", ausleihe, `{"faellig_am":"morgen"}`, true, http.StatusBadRequest, "Das Fälligkeitsdatum muss ein Datum der Form JJJJ-MM-TT sein"},
 		{"unbekannte Ausleihe, Frist in der Zukunft", unbekannt, `{"faellig_am":"` + zukunft + `"}`, true, http.StatusNotFound, "nicht gefunden"},
 		{"unbekannte Ausleihe, vorgezogene Frist", unbekannt, `{"faellig_am":"2022-06-01"}`, true, http.StatusNotFound, "nicht gefunden"},
 		{"zurückgegeben, Frist in der Zukunft", zurueck, `{"faellig_am":"` + zukunft + `"}`, true, http.StatusNotFound, "nicht gefunden"},

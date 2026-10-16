@@ -177,7 +177,8 @@ func TestInventurStarten_BelegterBereichIst409(t *testing.T) {
 
 	faelle := []struct{ name, rumpf, meldung string }{
 		{"derselbe Bereich", `{"type":"global"}`, "läuft bereits eine Inventur"},
-		{"Regal im laufenden Gesamtbestand", `{"type":"signature","signatur":"BIB Deu"}`, `"Gesamtbestand" läuft bereits`},
+		{"Regal im laufenden Gesamtbestand", `{"type":"signature","signatur":"BIB Deu"}`,
+			"Der Bereich überschneidet sich mit einer laufenden Inventur: „Gesamtbestand“ läuft bereits"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

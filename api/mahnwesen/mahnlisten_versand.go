@@ -145,7 +145,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 func leseKlassenVersandAnfrage(r *http.Request, konfig func() (mailservice.SMTPKonfig, error)) (klassenVersandAnfrage, error) {
 	var req klassenVersandAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
-		return req, fmt.Errorf("ungültiger Request-Body: %w", err)
+		return req, apierrors.BadRequest(apierrors.MeldungAnfrageUnlesbar, err)
 	}
 
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
@@ -154,7 +154,7 @@ func leseKlassenVersandAnfrage(r *http.Request, konfig func() (mailservice.SMTPK
 	req.Umleitung = ergaenzeSchulDomain(strings.TrimSpace(req.Umleitung), konfig)
 	if req.Umleitung != "" {
 		if _, err := mail.ParseAddress(req.Umleitung); err != nil {
-			return req, fmt.Errorf("ungültige Empfänger-Adresse %q", req.Umleitung)
+			return req, apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine E-Mail-Adresse", req.Umleitung), err)
 		}
 	}
 
@@ -169,7 +169,7 @@ func leseKlassenVersandAnfrage(r *http.Request, konfig func() (mailservice.SMTPK
 		}
 	}
 	if len(gesaeubert) == 0 {
-		return req, errors.New("keine Klasse ausgewählt")
+		return req, apierrors.BadRequest("Keine Klasse ausgewählt", nil)
 	}
 	req.Klassen = &gesaeubert
 	return req, nil

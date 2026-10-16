@@ -39,6 +39,41 @@ type tabellenZeile struct {
 // liest. Die Tür sagt, wie daraus eine lesbare Datei wird.
 var ErrAltesExcel = errors.New("altes Excel-Binärformat (.xls)")
 
+// Benannte Fehler beim Lesen der Datei. Die Tür erkennt sie am Wert und setzt den Satz; die Zeile
+// eines Fehlers nennt ZeileFehler.
+var (
+	ErrDateiLeer         = errors.New("die Datei ist leer")
+	ErrKeinBlatt         = errors.New("die Excel-Datei enthält kein Blatt mit Daten")
+	ErrExcelUnlesbar     = errors.New("die Excel-Datei ist nicht lesbar")
+	ErrZeileUnlesbar     = errors.New("die Zeile ist nicht lesbar")
+	ErrPflichtfeldLeer   = errors.New("leeres Pflichtfeld (Vorname, Nachname oder Klasse)")
+	ErrGeburtsdatumFehlt = errors.New("geburtsdatum fehlt oder ist unlesbar")
+)
+
+// ZeileFehler nennt die Zeile der Datei, an der das Lesen scheiterte: Das Sekretariat muss sie in
+// seiner Datei finden. Art ist einer der benannten Fehler, Ursache der Fehler darunter oder nil.
+// Einen Namen trägt er nicht, weil der Fehler auch ins Log des Servers geht.
+type ZeileFehler struct {
+	Zeile   int
+	Art     error
+	Ursache error
+}
+
+func (e *ZeileFehler) Error() string {
+	if e.Ursache != nil {
+		return fmt.Sprintf("zeile %d: %v: %v", e.Zeile, e.Art, e.Ursache)
+	}
+	return fmt.Sprintf("zeile %d: %v", e.Zeile, e.Art)
+}
+
+// Unwrap gibt Art und Ursache frei, damit errors.Is beide findet.
+func (e *ZeileFehler) Unwrap() []error {
+	if e.Ursache == nil {
+		return []error{e.Art}
+	}
+	return []error{e.Art, e.Ursache}
+}
+
 // PflichtspalteFehler meldet eine Datei, deren Kopfzeile eine Pflichtspalte nicht nennt; meist ist
 // es nicht der Export aus LUSD. Spalte ist der Name der fehlenden Spalte.
 type PflichtspalteFehler struct{ Spalte string }
@@ -81,7 +116,7 @@ func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("zeile %d der CSV-Datei ist nicht lesbar: %w", gelesen, err)
+			return nil, &ZeileFehler{Zeile: gelesen, Art: ErrZeileUnlesbar, Ursache: err}
 		}
 		// FieldPos liefert die Dateizeile — der Reader überspringt Leerzeilen still,
 		// ein eigener Zähler läge danach daneben.
@@ -89,7 +124,7 @@ func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
 		tabelle = append(tabelle, tabellenZeile{nr: nr, zellen: zellen})
 	}
 	if len(tabelle) == 0 {
-		return nil, fmt.Errorf("fehler beim lesen der csv-kopfzeile: die Datei ist leer")
+		return nil, ErrDateiLeer
 	}
 	return tabelle, nil
 }
@@ -117,7 +152,7 @@ func leseXLSXZeilen(inhalt []byte) ([]tabellenZeile, error) {
 	})
 	if err != nil {
 		if xlsxgrenze.IstUnlesbar(err) {
-			return nil, fmt.Errorf("Excel-Datei konnte nicht geöffnet werden: %w", err)
+			return nil, fmt.Errorf("%w: %w", ErrExcelUnlesbar, err)
 		}
 		return nil, err
 	}
@@ -148,7 +183,7 @@ func fuegeBlaetterZusammen(blaetter [][]tabellenZeile) ([]tabellenZeile, error) 
 		return gesamt.zeilen, nil
 	}
 	if ersteZeilen == nil {
-		return nil, fmt.Errorf("fehler beim lesen der csv-kopfzeile: die Excel-Datei enthält kein Blatt mit Daten")
+		return nil, ErrKeinBlatt
 	}
 	return ersteZeilen, nil // die Kopfzeilen-Meldung formuliert findeKopfzeile am ersten Blatt
 }
@@ -157,7 +192,7 @@ func fuegeBlaetterZusammen(blaetter [][]tabellenZeile) ([]tabellenZeile, error) 
 func leseXLSXBlatt(f *excelize.File, blatt string) ([]tabellenZeile, error) {
 	roh, err := f.GetRows(blatt, excelize.Options{RawCellValue: true})
 	if err != nil {
-		return nil, fmt.Errorf("Excel-Blatt %q konnte nicht gelesen werden: %w", blatt, err)
+		return nil, fmt.Errorf("%w: blatt %q: %w", ErrExcelUnlesbar, blatt, err)
 	}
 	tabelle := make([]tabellenZeile, len(roh))
 	for i, zellen := range roh {

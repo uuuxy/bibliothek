@@ -31,7 +31,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 		return http.StatusInternalServerError, err
 	}
 	if !leserVorhanden {
-		return http.StatusNotFound, apierrors.NotFound("Leser nicht gefunden", nil)
+		return http.StatusNotFound, apierrors.NotFound(meldungLeserNichtGefunden, nil)
 	}
 
 	hatOffeneAusleihen, err := repository.HatLeserOffeneAusleihen(ctx, t.DB.Pool, id)
@@ -39,7 +39,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 		return http.StatusInternalServerError, err
 	}
 	if hatOffeneAusleihen {
-		return http.StatusBadRequest, errors.New("löschen nicht möglich: Dieser Leser hat noch entliehene Bücher")
+		return http.StatusBadRequest, apierrors.BadRequest("Der Leser hat noch entliehene Exemplare und lässt sich deshalb nicht löschen", nil)
 	}
 
 	hatOffeneSchaeden, err := repository.HatLeserUnbezahlteForderungen(ctx, t.DB.Pool, id)
@@ -47,7 +47,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 		return http.StatusInternalServerError, err
 	}
 	if hatOffeneSchaeden {
-		return http.StatusBadRequest, errors.New("löschen nicht möglich: Dieser Leser hat noch unbezahlte Schadensfälle/Gebühren")
+		return http.StatusBadRequest, apierrors.BadRequest("Der Leser hat noch unbezahlte Forderungen und lässt sich deshalb nicht löschen", nil)
 	}
 
 	return 0, nil
@@ -129,7 +129,7 @@ func leseGeburtsdatum(roh string) (*time.Time, error) {
 	}
 	t, err := time.Parse(tuer.DatumsformatISO, roh)
 	if err != nil {
-		return nil, fmt.Errorf("ungültiges Datumsformat für Geburtsdatum: %q — erwartet YYYY-MM-DD", roh)
+		return nil, apierrors.BadRequest("Das Geburtsdatum muss ein Datum der Form JJJJ-MM-TT sein", err)
 	}
 	return &t, nil
 }
@@ -355,7 +355,7 @@ func (t *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	aktuell, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
 			return false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -463,7 +463,7 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		{"Klasse", req.Klasse},
 	} {
 		if feld.wert != nil && strings.TrimSpace(*feld.wert) == "" {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, feld.bezeichnung+" darf nicht leer sein.", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Bitte das Feld „%s“ ausfüllen", feld.bezeichnung), nil)
 			return nil, false
 		}
 	}
@@ -532,7 +532,7 @@ func (t *Tueren) schreibeLeserAenderung(ctx context.Context, w http.ResponseWrit
 		return false
 	}
 	if !gefunden {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
 		return false
 	}
 	return true

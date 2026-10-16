@@ -145,13 +145,7 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 
 		lauf, err := abfragen.LegeLaufAn(ctx, req.Art, req.bereich(), bezeichnungFuer(req), benutzerID)
 		if err != nil {
-			// Derselbe Bereich läuft schon, oder der gewünschte überschneidet sich mit einem
-			// offenen Lauf: beides 409, kein Fehler des Servers.
-			if errors.Is(err, repository.ErrInventurLaeuftBereits) || errors.Is(err, repository.ErrInventurUeberlappt) {
-				apierrors.AntworteFehler(w, http.StatusConflict, err)
-				return
-			}
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			antworteAufLaufkollision(w, err)
 			return
 		}
 
@@ -167,5 +161,19 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 			Bezeichnung: lauf.Bezeichnung,
 			Erwartet:    erwartet.Erwartet,
 		})
+	}
+}
+
+// antworteAufLaufkollision antwortet auf das Scheitern von LegeLaufAn. Derselbe Bereich läuft
+// schon, oder der gewünschte überschneidet sich mit einem offenen Lauf, den die Meldung nennt:
+// beides 409, kein Fehler des Servers.
+func antworteAufLaufkollision(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, repository.ErrInventurLaeuftBereits):
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Für diesen Bereich läuft bereits eine Inventur", err)
+	case errors.Is(err, repository.ErrInventurUeberlappt):
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, repository.MitGrund(meldungLaufUeberlappt, err), err)
+	default:
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 	}
 }

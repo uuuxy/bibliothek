@@ -67,8 +67,8 @@ func TestExcelImport(t *testing.T) {
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
 		}
-		if antwort["error"] != "keine datei gefunden" {
-			t.Errorf("antwort[\"error\"] = %v, erwartet %v", antwort["error"], "keine datei gefunden")
+		if antwort["error"] != "Bitte eine Datei auswählen" {
+			t.Errorf("antwort[\"error\"] = %v, erwartet %v", antwort["error"], "Bitte eine Datei auswählen")
 		}
 	})
 

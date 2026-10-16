@@ -1,6 +1,7 @@
 package tuer
 
 import (
+	"bibliothek/apierrors"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -72,9 +73,9 @@ func TestLeseAnfrage_MeldungStattFehlertext(t *testing.T) {
 		streng  bool
 		meldung string
 	}{
-		{"kein JSON", `{"name":`, false, MeldungAnfrageUnlesbar},
-		{"falscher Typ", `{"name":1}`, false, MeldungAnfrageUnlesbar},
-		{"unbekanntes Feld, streng", `{"name":"x","gibtsnicht":1}`, true, MeldungAnfrageUnlesbar},
+		{"kein JSON", `{"name":`, false, apierrors.MeldungAnfrageUnlesbar},
+		{"falscher Typ", `{"name":1}`, false, apierrors.MeldungAnfrageUnlesbar},
+		{"unbekanntes Feld, streng", `{"name":"x","gibtsnicht":1}`, true, apierrors.MeldungAnfrageUnlesbar},
 		{"Feld fehlt", `{}`, false, "Bitte das Feld „name“ ausfüllen"},
 	}
 	for _, f := range faelle {

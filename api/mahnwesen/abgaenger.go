@@ -11,7 +11,6 @@ package mahnwesen
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -149,7 +148,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 		// Außerhalb der Saison gibt es keinen Ausdruck — dieselbe Regel wie die Liste,
 		// sonst druckte ein direkter Aufruf im Oktober, was der Bildschirm nicht zeigt.
 		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
-			apierrors.AntworteFehler(w, http.StatusNotFound, abgaengerAusserhalbDerSaison(fenster))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungAusserhalbDerSaison(fenster), nil)
 			return
 		}
 
@@ -218,12 +217,12 @@ func leseAbgaengerAuswahl(q url.Values) ([]string, error) {
 			continue
 		}
 		if !kennung.IstUUID(id) {
-			return nil, fmt.Errorf("ids: %q ist keine gültige Kennung", id)
+			return nil, apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine gültige Kennung", id), nil)
 		}
 		ids = append(ids, id)
 	}
 	if len(ids) == 0 {
-		return nil, errors.New("ids ist leer — es ist niemand ausgewählt")
+		return nil, apierrors.BadRequest("Niemand ausgewählt", nil)
 	}
 	return ids, nil
 }

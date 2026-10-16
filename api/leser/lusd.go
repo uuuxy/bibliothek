@@ -33,13 +33,13 @@ func (t *Tueren) abgaengerKarenzTage(ctx context.Context) int {
 func leseLUSDDatei(r *http.Request) (lusd.Datei, error) {
 	datei, _, err := r.FormFile("csvFile")
 	if err != nil {
-		return lusd.Datei{}, fmt.Errorf("CSV-Datei fehlt: %w", err)
+		return lusd.Datei{}, fmt.Errorf("csv-datei fehlt: %w", err)
 	}
 	defer closeutil.Schliesse(datei, "lusd upload")
 
 	inhalt, err := io.ReadAll(datei)
 	if err != nil {
-		return lusd.Datei{}, fmt.Errorf("CSV konnte nicht gelesen werden: %w", err)
+		return lusd.Datei{}, fmt.Errorf("csv nicht gelesen: %w", err)
 	}
 	return lusd.LeseDatei(inhalt)
 }
@@ -54,22 +54,18 @@ func (t *Tueren) lusdTuer(uebernehmen bool) http.HandlerFunc {
 func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, uebernehmen bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungLUSDHochladen, err)
 		return
 	}
 	datei, err := leseLUSDDatei(r)
 	if err != nil {
-		if meldung, ok := lusdDateiMeldung(err); ok {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, err)
-			return
-		}
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, lusdDateiMeldung(err), err)
 		return
 	}
 	lauf := lusd.Lauf{Anwenden: uebernehmen, MassenabgangBestaetigt: uebernehmen && r.FormValue("confirm_graduates") == "true"}
 	if uebernehmen {
 		if lauf.Umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Umbenennungs-Auswahl unlesbar: "+err.Error(), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungUmbenennungUnlesbar, err)
 			return
 		}
 	}
@@ -90,19 +86,50 @@ func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, ueb
 	tuer.AntworteJSON(w, http.StatusOK, res)
 }
 
+// Sätze zum Hochladen und Lesen der Datei aus der LUSD.
+const (
+	meldungLUSDHochladen       = "Die Datei ließ sich nicht hochladen. Möglich sind CSV und .xlsx bis 10 MB."
+	meldungLUSDDateiFehlt      = "Bitte die Exportdatei aus der LUSD auswählen"
+	meldungLUSDDateiUnlesbar   = "Die Datei ließ sich nicht lesen"
+	meldungUmbenennungUnlesbar = "Die Auswahl der Umbenennungen ließ sich nicht lesen. Bitte die Vorschau neu laden."
+)
+
 // lusdDateiMeldung nennt zu einer Datei, die sich nicht lesen lässt, einen Satz mit Anleitung:
-// altes Excel-Format oder fehlende Pflichtspalte. ok ist false für die übrigen Fehler beim Lesen;
-// deren Text nennt Zeile und Spalte selbst.
-func lusdDateiMeldung(err error) (meldung string, ok bool) {
+// fehlende Datei, altes Excel-Format, fehlende Pflichtspalte, leere Datei oder die Zeile, an der
+// das Lesen scheiterte.
+func lusdDateiMeldung(err error) string {
 	var spalte *lusd.PflichtspalteFehler
+	var zeile *lusd.ZeileFehler
 	switch {
+	case errors.Is(err, http.ErrMissingFile):
+		return meldungLUSDDateiFehlt
 	case errors.As(err, &spalte):
-		return fmt.Sprintf("Pflichtspalte '%s' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?", spalte.Spalte), true
+		return fmt.Sprintf("In der Kopfzeile fehlt die Pflichtspalte „%s“. Ist das die Exportdatei aus der LUSD?", spalte.Spalte)
 	case errors.Is(err, lusd.ErrAltesExcel):
 		return "Die Datei ist ein altes Excel-Binärformat (.xls). " +
-			"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen.", true
+			"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen."
+	case errors.As(err, &zeile):
+		return lusdZeilenMeldung(zeile)
+	case errors.Is(err, lusd.ErrDateiLeer):
+		return "Die Datei ist leer"
+	case errors.Is(err, lusd.ErrKeinBlatt):
+		return "Die Excel-Datei enthält kein Blatt mit Daten"
+	case errors.Is(err, lusd.ErrExcelUnlesbar):
+		return "Die Excel-Datei ließ sich nicht öffnen. Bitte als .xlsx oder CSV neu speichern."
 	}
-	return "", false
+	return meldungLUSDDateiUnlesbar
+}
+
+// lusdZeilenMeldung nennt die Zeile, an der das Lesen scheiterte, und was dort fehlt.
+func lusdZeilenMeldung(zeile *lusd.ZeileFehler) string {
+	switch {
+	case errors.Is(zeile, lusd.ErrPflichtfeldLeer):
+		return fmt.Sprintf("In Zeile %d ist Vorname, Nachname oder Klasse leer", zeile.Zeile)
+	case errors.Is(zeile, lusd.ErrGeburtsdatumFehlt):
+		return fmt.Sprintf("In Zeile %d fehlt das Geburtsdatum oder ist unlesbar. Ohne LUSD-ID ordnen Name und "+
+			"Geburtsdatum die Zeile zu, deshalb muss es in jeder Zeile stehen.", zeile.Zeile)
+	}
+	return fmt.Sprintf("Zeile %d der Datei ist nicht lesbar", zeile.Zeile)
 }
 
 // lusdLaufFehler ordnet den Fehler eines Laufs ein und nennt den Satz dazu: Der Massenabgang
@@ -114,10 +141,10 @@ func lusdLaufFehler(err error) (status int, meldung string) {
 	switch {
 	case errors.As(err, &massenabgang):
 		return http.StatusConflict, fmt.Sprintf("%d von %d aktiven Schülern würden zu Abgängern (Schwelle: %d%%). "+
-			"Datei prüfen — falls der Massenabgang beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.",
-			massenabgang.Abgaenger, massenabgang.Aktive, massenabgang.SchwelleProzent)
+			"Bitte die Datei prüfen. Ist der Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit "+
+			"Bestätigung wiederholen.", massenabgang.Abgaenger, massenabgang.Aktive, massenabgang.SchwelleProzent)
 	case errors.As(err, &wahl):
-		return http.StatusBadRequest, fmt.Sprintf("Zuordnung für Zeile %d ist nicht mehr gültig — Vorschau neu laden.", wahl.Zeile)
+		return http.StatusBadRequest, fmt.Sprintf("Die Zuordnung für Zeile %d ist nicht mehr gültig. Bitte die Vorschau neu laden.", wahl.Zeile)
 	}
 	return http.StatusInternalServerError, ""
 }

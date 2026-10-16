@@ -82,7 +82,7 @@ func (e SommerferienEintrag) pruefe() error {
 	// Ein Zahlendreher im Jahr (2131 statt 2031) machte die Selbstprüfung sonst hundert Jahre
 	// stumm.
 	if e.Jahr < 2000 || e.Jahr > 2100 {
-		return &SommerferienFehler{Jahr: e.Jahr, Grund: "das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?"}
+		return &SommerferienFehler{Jahr: e.Jahr, Grund: "das Jahr liegt außerhalb von 2000 bis 2100. Ein Zahlendreher?"}
 	}
 	if z.Von.Year() != e.Jahr || z.Bis.Year() != e.Jahr {
 		return &SommerferienFehler{Jahr: e.Jahr, Grund: fmt.Sprintf("Beginn und Ende müssen im Jahr %d liegen", e.Jahr)}

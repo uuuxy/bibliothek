@@ -58,7 +58,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
 		// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
 		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
-			apierrors.AntworteFehler(w, http.StatusConflict, abgaengerAusserhalbDerSaison(fenster))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungAusserhalbDerSaison(fenster), nil)
 			return
 		}
 

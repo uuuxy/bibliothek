@@ -54,13 +54,13 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		return
 	}
 	if gesperrt {
-		meldung := "Verlängerung nicht möglich: Ausleihe gesperrt"
+		meldung := meldungVerlaengerungGesperrt
 		// Der Sperr-Freitext ist Verwaltungsinformation (PII-Matrix Stufe 2) —
 		// dieselbe view_students-Grenze wie bei /api/action (ohneSperrgrund).
 		if grund != "" && t.HatRecht(r, "view_students") {
 			meldung += " (" + grund + ")"
 		}
-		apierrors.AntworteFehler(w, http.StatusForbidden, errors.New(meldung))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, meldung, nil)
 		return
 	}
 
@@ -201,7 +201,7 @@ func leseFaelligAm(text string) (time.Time, error) {
 	}
 	datum, err := time.Parse("2006-01-02", text)
 	if err != nil {
-		return time.Time{}, errors.New("ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)")
+		return time.Time{}, apierrors.BadRequest("Das Fälligkeitsdatum muss ein Datum der Form JJJJ-MM-TT sein", err)
 	}
 	return schulzeit.TagesEnde(datum), nil
 }

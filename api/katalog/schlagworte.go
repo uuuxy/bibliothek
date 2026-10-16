@@ -123,7 +123,7 @@ func (t *Tueren) TitelSchlagworteSetzen() http.HandlerFunc {
 func schlagwortFehler(err error) error {
 	switch {
 	case errors.Is(err, repository.ErrSchlagwortUngueltig):
-		return apierrors.BadRequest(tuer.MitGrund(meldungSchlagworteNichtGespeichert, err), err)
+		return apierrors.BadRequest(repository.MitGrund(meldungSchlagworteNichtGespeichert, err), err)
 	case errors.Is(err, repository.ErrTitelNichtGefunden):
 		return apierrors.NotFound(tuer.MeldungTitelNichtGefunden, err)
 	default:

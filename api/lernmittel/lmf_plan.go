@@ -96,7 +96,7 @@ type lmfPlanStandAntwort struct {
 func leseLMFPlanArt(r *http.Request) (string, error) {
 	art := r.PathValue("art")
 	if art != repository.LMFTerminRueckgabe && art != repository.LMFTerminAusgabe {
-		return "", errors.New("art muss 'rueckgabe' oder 'ausgabe' sein")
+		return "", apierrors.BadRequest(fmt.Sprintf("Die Art „%s“ gibt es nicht. Möglich sind rueckgabe und ausgabe.", art), nil)
 	}
 	return art, nil
 }
@@ -116,7 +116,7 @@ func (t *Tueren) LMFPlan() http.HandlerFunc {
 func (t *Tueren) ladeLMFPlanStand(w http.ResponseWriter, r *http.Request) error {
 	art, err := leseLMFPlanArt(r)
 	if err != nil {
-		return apierrors.BadRequest(err.Error(), err)
+		return err
 	}
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(r.Context())
@@ -232,18 +232,18 @@ const lmfPlanMaxZeilen = 400
 func pruefeLMFPlan(art string, req lmfPlanAnfrage) (service.LMFPlanEntwurf, error) {
 	e := service.LMFPlanEntwurf{Plan: repository.LMFPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LMFFreierTag{}}}
 	if e.Plan.StundenJeTag < 1 || e.Plan.StundenJeTag > 12 {
-		return e, errors.New("stunden_je_tag muss zwischen 1 und 12 liegen")
+		return e, apierrors.BadRequest("Die Stunden je Tag müssen zwischen 1 und 12 liegen", nil)
 	}
 	if err := pruefeLMFAnker(&e.Plan, req); err != nil {
 		return e, err
 	}
 	if len(req.Zeilen) > lmfPlanMaxZeilen || len(req.FreieTage) > lmfPlanMaxZeilen {
-		return e, errors.New("zu viele Zeilen")
+		return e, apierrors.BadRequest(fmt.Sprintf("Der Plan hat zu viele Zeilen, höchstens %d", lmfPlanMaxZeilen), nil)
 	}
 	for i, f := range req.FreieTage {
 		datum := strings.TrimSpace(f.Datum)
 		if _, err := time.Parse(tuer.DatumsformatISO, datum); err != nil {
-			return e, fmt.Errorf("freier Tag %d: Datum muss als JJJJ-MM-TT angegeben sein", i+1)
+			return e, apierrors.BadRequest(fmt.Sprintf("Freier Tag %d: Das Datum muss die Form JJJJ-MM-TT haben", i+1), err)
 		}
 		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LMFFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
 	}
@@ -283,17 +283,17 @@ func pruefeLMFPlanZeile(nr int, z lmfPlanAnfrageZeile) (repository.LMFPlanZeile,
 		}
 	}
 	if len(zeile.Klassen) == 0 && zeile.Vermerk == "" {
-		return zeile, nil, fmt.Errorf("zeile %d hat weder Klasse noch Vermerk", nr)
+		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d hat weder Klasse noch Vermerk", nr), nil)
 	}
 	if z.Fest == nil {
 		return zeile, nil, nil
 	}
 	tag, err := schulzeit.Kalendertag(strings.TrimSpace(z.Fest.Datum))
 	if err != nil {
-		return zeile, nil, fmt.Errorf("zeile %d: fester Termin braucht ein Datum (JJJJ-MM-TT)", nr)
+		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d: Ein fester Termin braucht ein Datum der Form JJJJ-MM-TT", nr), err)
 	}
 	if z.Fest.Stunde < 1 || z.Fest.Stunde > 12 {
-		return zeile, nil, fmt.Errorf("zeile %d: feste Stunde muss zwischen 1 und 12 liegen", nr)
+		return zeile, nil, apierrors.BadRequest(fmt.Sprintf("Zeile %d: Die feste Stunde muss zwischen 1 und 12 liegen", nr), nil)
 	}
 	return zeile, &lmfplan.Platz{Datum: tag, Stunde: z.Fest.Stunde}, nil
 }
@@ -306,20 +306,20 @@ func pruefeLMFAnker(p *repository.LMFPlan, req lmfPlanAnfrage) error {
 	if p.Art == repository.LMFTerminRueckgabe {
 		p.LetzterTag, p.LetzteStunde = strings.TrimSpace(req.LetzterTag), req.LetzteStunde
 		if _, err := time.Parse(tuer.DatumsformatISO, p.LetzterTag); err != nil {
-			return errors.New("letzter_tag muss als JJJJ-MM-TT angegeben sein")
+			return apierrors.BadRequest("Der letzte Tag muss ein Datum der Form JJJJ-MM-TT sein", err)
 		}
 		if p.LetzteStunde < 1 || p.LetzteStunde > p.StundenJeTag {
-			return errors.New("letzte_stunde muss zwischen 1 und stunden_je_tag liegen")
+			return apierrors.BadRequest("Die letzte Stunde muss zwischen 1 und der Zahl der Stunden je Tag liegen", nil)
 		}
 		p.ErsterTag, p.Startstunde = p.LetzterTag, p.LetzteStunde
 		return nil
 	}
 	p.ErsterTag, p.Startstunde = strings.TrimSpace(req.ErsterTag), req.Startstunde
 	if _, err := time.Parse(tuer.DatumsformatISO, p.ErsterTag); err != nil {
-		return errors.New("erster_tag muss als JJJJ-MM-TT angegeben sein")
+		return apierrors.BadRequest("Der erste Tag muss ein Datum der Form JJJJ-MM-TT sein", err)
 	}
 	if p.Startstunde < 1 || p.Startstunde > p.StundenJeTag {
-		return errors.New("startstunde muss zwischen 1 und stunden_je_tag liegen")
+		return apierrors.BadRequest("Die erste Stunde muss zwischen 1 und der Zahl der Stunden je Tag liegen", nil)
 	}
 	return nil
 }
@@ -353,7 +353,7 @@ func (t *Tueren) rechneOderSchreibeLMFPlan(w http.ResponseWriter, r *http.Reques
 	var keine lmfPlanSpeicherAntwort
 	art, err := leseLMFPlanArt(r)
 	if err != nil {
-		return keine, false, apierrors.BadRequest(err.Error(), err)
+		return keine, false, err
 	}
 	var req lmfPlanAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
@@ -361,7 +361,7 @@ func (t *Tueren) rechneOderSchreibeLMFPlan(w http.ResponseWriter, r *http.Reques
 	}
 	e, err := pruefeLMFPlan(art, req)
 	if err != nil {
-		return keine, false, apierrors.BadRequest(err.Error(), err)
+		return keine, false, err
 	}
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 	plaetze, ausgefallen, err := service.VerteileLMFPlan(&e)
@@ -454,7 +454,7 @@ func (t *Tueren) LMFPlanVerwerfen() http.HandlerFunc {
 func (t *Tueren) verwerfeLMFPlan(r *http.Request) (int64, error) {
 	art, err := leseLMFPlanArt(r)
 	if err != nil {
-		return 0, apierrors.BadRequest(err.Error(), err)
+		return 0, err
 	}
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)

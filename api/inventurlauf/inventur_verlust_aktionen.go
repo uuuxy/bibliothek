@@ -114,7 +114,7 @@ func (t *Tueren) loescheVerlusteEndgueltig(w http.ResponseWriter, r *http.Reques
 		// sagt der Bedienung, welches Exemplar warum im Weg steht; MitFehlerantwort gibt sie
 		// unverändert aus.
 		if errors.Is(err, repository.ErrVerlustNochGebunden) {
-			return apierrors.Conflict(err.Error(), err)
+			return apierrors.Conflict(repository.MitGrund(meldungVerlustGebunden, err), err)
 		}
 		return apierrors.Internal("Endgültiges Löschen fehlgeschlagen", err)
 	}

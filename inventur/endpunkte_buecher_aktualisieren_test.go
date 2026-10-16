@@ -93,7 +93,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 				Bestand: zeigerAuf(-1),
 			},
 			wantErr: true,
-			errMsg:  "stock muss >= 0 sein",
+			errMsg:  "Der Bestand darf nicht negativ sein",
 		},
 		// chk_listenpreis_nonneg lehnte ab, bevor die Tür prüfte: Beim Ändern
 		// kam eine 500 „buch konnte nicht aktualisiert werden", ohne zu sagen, was erlaubt ist.
@@ -104,7 +104,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 				Listenpreis: zeigerAufPreis(-0.01),
 			},
 			wantErr: true,
-			errMsg:  "listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)",
+			errMsg:  "Der Listenpreis darf nicht negativ sein. Leer lassen, wenn er unbekannt ist.",
 		},
 		{
 			name: "Listenpreis 0 ist erlaubt",

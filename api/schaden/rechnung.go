@@ -48,7 +48,7 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) 
 	idText := r.PathValue("schueler_id")
 	schuelerID, err := uuid.Parse(idText)
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, tuer.MeldungSchuelerKennungUngueltig, err)
 		return
 	}
 

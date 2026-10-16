@@ -45,8 +45,10 @@ type fehlertextBefund struct {
 
 func TestFehlertexte_KleinOhneSatzzeichen(t *testing.T) {
 	befund := pruefeFehlertexte(t, ".")
-	// Je Form eine Untergrenze: Liest der Durchlauf eine Form nicht mehr, prüft er sie nicht.
-	for form, mindestens := range map[string]int{"errors.New": 300, "fmt.Errorf": 600, "Error()": 15} {
+	// Je Form eine Untergrenze: Liest der Durchlauf eine Form nicht mehr, prüft er sie nicht. Die
+	// Prüfungen neben den Türen liefern ihren Satz als apierrors.BadRequest statt als errors.New;
+	// die Grenze dafür steht deshalb unter dem Bestand von damals.
+	for form, mindestens := range map[string]int{"errors.New": 250, "fmt.Errorf": 600, "Error()": 15} {
 		if befund.gelesen[form] < mindestens {
 			t.Errorf("nur %d Texte aus %s gelesen, erwartet mindestens %d — der Detektor läuft leer",
 				befund.gelesen[form], form, mindestens)

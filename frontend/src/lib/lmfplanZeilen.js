@@ -119,7 +119,7 @@ export function klasseRaus(zeilen, i, k) {
 export function festWechseln(zeilen, i, platz) {
 	// Ohne Platz wird NICHT festgelegt (Rasterdurchgang 06.09.2026): „fest ohne Datum"
 	// kannte nur das Frontend — der Server nimmt genau zwei Zustände (fließt, oder fester
-	// Platz mit Datum) und antwortet sonst mit 400 „fester Termin braucht ein Datum". Das
+	// Platz mit Datum) und antwortet sonst mit 400 „Ein fester Termin braucht ein Datum". Das
 	// Fenster ohne Plätze ist echt: nach jedem Laden, bis die erste Vorschau da ist.
 	if (!zeilen[i]?.fest && !platz?.datum) return zeilen;
 	return zeilen.map((z, n) => {

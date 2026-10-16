@@ -146,7 +146,7 @@ func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 		if err := abfragen.VerwerfeLauf(ctx, req.LaufID); err != nil {
 			if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Inventurlauf nicht gefunden", err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

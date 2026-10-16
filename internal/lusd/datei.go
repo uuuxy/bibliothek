@@ -1,7 +1,6 @@
 package lusd
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -184,7 +183,7 @@ func leseZeile(zellen []string, spalten map[string]int, nr int) (Zeile, error) {
 	klasse := spaltenWert(zellen, spalten, spalteKlasse)
 
 	if vorname == "" || nachname == "" || klasse == "" {
-		return Zeile{}, fmt.Errorf("zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", nr)
+		return Zeile{}, &ZeileFehler{Zeile: nr, Art: ErrPflichtfeldLeer}
 	}
 
 	geb := leseDatum(zellen, spalten, spalteGeburtsdatum)
@@ -262,9 +261,7 @@ func LeseDatei(inhalt []byte) (Datei, error) {
 func pruefeGeburtsdatumJeZeile(zeilen []Zeile) error {
 	for _, z := range zeilen {
 		if z.Geburtsdatum == nil {
-			// Nur die Zeilennummer, kein Name: Die Meldung geht über AntworteFehler auch ins
-			// Server-Log. Die Zeile findet das Sekretariat in der Datei.
-			return fmt.Errorf("zeile %d: Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.Nr)
+			return &ZeileFehler{Zeile: z.Nr, Art: ErrGeburtsdatumFehlt}
 		}
 	}
 	return nil

@@ -33,7 +33,7 @@ func TestEinstellungenSchreiben_MeldungJePruefung(t *testing.T) {
 		{"Sommerferien Datum unlesbar", sommerferienRumpf(`{"jahr":2027,"von":"2027-13-01","bis":"2027-08-06"}`),
 			"Sommerferien 2027: Datum nicht lesbar (JJJJ-MM-TT)"},
 		{"Sommerferien Zahlendreher", sommerferienRumpf(`{"jahr":2131,"von":"2131-06-28","bis":"2131-08-06"}`),
-			"Sommerferien 2131: das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?"},
+			"Sommerferien 2131: das Jahr liegt außerhalb von 2000 bis 2100. Ein Zahlendreher?"},
 		{"Sommerferien im falschen Jahr", sommerferienRumpf(`{"jahr":2027,"von":"2028-06-28","bis":"2028-08-06"}`),
 			"Sommerferien 2027: Beginn und Ende müssen im Jahr 2027 liegen"},
 		{"Sommerferien Ende vor Beginn", sommerferienRumpf(`{"jahr":2027,"von":"2027-08-06","bis":"2027-06-28"}`),

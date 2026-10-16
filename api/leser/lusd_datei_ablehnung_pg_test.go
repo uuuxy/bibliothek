@@ -107,7 +107,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 	})
 	t.Run("Formular ohne Datei", func(t *testing.T) {
 		erwarte(t, sende(t, "/api/lusd/import", false, map[string]string{"confirm_graduates": "true"}),
-			http.StatusBadRequest, "CSV-Datei fehlt")
+			http.StatusBadRequest, "Bitte die Exportdatei aus der LUSD auswählen")
 	})
 	t.Run("die Vorschau liest die Auswahl nicht", func(t *testing.T) {
 		erwarte(t, sende(t, "/api/lusd/preview", true, map[string]string{"umbenennungen": "{kaputt"}),
@@ -115,7 +115,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 	})
 	t.Run("Pflichtspalte fehlt", func(t *testing.T) {
 		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte("vorname,nachname,geburtsdatum\nKind,Nummer01,2012-01-01\n"), nil),
-			http.StatusBadRequest, "Pflichtspalte 'klasse' fehlt in der CSV-Kopfzeile — ist das die richtige LUSD-Exportdatei?")
+			http.StatusBadRequest, "In der Kopfzeile fehlt die Pflichtspalte „klasse“. Ist das die Exportdatei aus der LUSD?")
 	})
 	t.Run("altes Excel", func(t *testing.T) {
 		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, nil),
@@ -124,17 +124,17 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 	})
 	t.Run("Auswahl unlesbar", func(t *testing.T) {
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": "{kaputt"}),
-			http.StatusBadRequest, "Umbenennungs-Auswahl unlesbar: invalid character 'k' looking for beginning of object key string")
+			http.StatusBadRequest, "Die Auswahl der Umbenennungen ließ sich nicht lesen. Bitte die Vorschau neu laden.")
 	})
 	t.Run("Zuordnung nicht vorgeschlagen", func(t *testing.T) {
 		wahl := `[{"zeile":2,"schueler_id":"00000000-0000-0000-0000-000000000000"}]`
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": wahl}),
-			http.StatusBadRequest, "Zuordnung für Zeile 2 ist nicht mehr gültig — Vorschau neu laden.")
+			http.StatusBadRequest, "Die Zuordnung für Zeile 2 ist nicht mehr gültig. Bitte die Vorschau neu laden.")
 	})
 	t.Run("Massenabgang ohne Bestätigung", func(t *testing.T) {
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict,
-			"4 von 10 aktiven Schülern würden zu Abgängern (Schwelle: 30%). Datei prüfen — falls der Massenabgang "+
-				"beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.")
+			"4 von 10 aktiven Schülern würden zu Abgängern (Schwelle: 30%). Bitte die Datei prüfen. Ist der "+
+				"Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit Bestätigung wiederholen.")
 	})
 
 	if n := zaehle(t, pool, "ist_abgaenger"); n != 0 {

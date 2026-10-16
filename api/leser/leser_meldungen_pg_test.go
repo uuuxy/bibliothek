@@ -138,7 +138,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 		{"unbekannte Art", schueler, `{"art":"zauberer"}`, `Unbekannte Art "zauberer". Möglich sind: ` + moeglicheArten + "."},
 		{"Schüler wird Kollege", schueler, `{"art":"lehrkraft"}`,
 			"Aus einem Schüler wird kein Kollege und umgekehrt. Lege die Person neu an und lösche den falschen Eintrag."},
-		{"Vorname leer", schueler, `{"vorname":"  "}`, "Vorname darf nicht leer sein."},
+		{"Vorname leer", schueler, `{"vorname":"  "}`, "Bitte das Feld „Vorname“ ausfüllen"},
 		{"Geburtsdatum leer", schueler, `{"geburtsdatum":""}`,
 			"Das Geburtsdatum lässt sich nicht leeren. Es ist der Schlüssel für den LUSD-Abgleich."},
 		{"Klasse Lehrer", schueler, `{"klasse":"lehrer"}`, meldungLehrerKlasse},

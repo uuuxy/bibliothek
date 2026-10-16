@@ -11,3 +11,6 @@ import "bibliothek/api/tuer"
 type Tueren struct {
 	*tuer.Basis
 }
+
+// Sätze, die mehrere Türen dieses Pakets ausgeben.
+const meldungLeserNichtGefunden = "Leser nicht gefunden"

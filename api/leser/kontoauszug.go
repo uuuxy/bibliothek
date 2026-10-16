@@ -41,7 +41,7 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 		idText := r.PathValue("schueler_id")
 		schuelerID, err := uuid.Parse(idText)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, tuer.MeldungSchuelerKennungUngueltig, err)
 			return
 		}
 

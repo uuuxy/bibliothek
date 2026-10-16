@@ -243,10 +243,10 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   ideally be presented structurally" (Best Practices, „Error structure").
 - Erklärt eine Prüfung ihre Regel selbst, steht der Grund als Feld neben der Regel
   (`lmfplan.SommerferienFehler.Grund`); die Tür setzt den Namen der Einstellung davor. In
-  `repository/` baut `mitGrund` einen `RegelFehler` aus dem benannten Fehler und dem Grund in
-  Worten der Bibliothek („höchstens 60 Zeichen"); die Tür erkennt den Fehler mit `errors.Is` und
-  setzt den Grund mit `tuer.MitGrund` hinter ihren Satz („Standort nicht geändert: höchstens
-  60 Zeichen"). Die
+  `repository/` baut `regelVerletzt` einen `RegelFehler` aus dem benannten Fehler und dem Grund
+  in Worten der Bibliothek („höchstens 60 Zeichen"); die Tür erkennt den Fehler mit `errors.Is`
+  und setzt den Grund mit `repository.MitGrund` hinter ihren Satz („Standort nicht geändert:
+  höchstens 60 Zeichen"). Die
   Sätze der Theke entstehen im Dienst, weil mehrere Türen sie zeigen; der Fehler trägt den Satz
   als Feld neben seiner Art, `service.MeldungAus` liefert ihn, `Error()` beginnt mit der Art.
 

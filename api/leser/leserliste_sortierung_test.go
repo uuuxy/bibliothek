@@ -26,14 +26,14 @@ func TestLeserliste_UnbekannteSortierungIstEin400(t *testing.T) {
 		anfrage   string
 		imKoerper string
 	}{
-		{"unbekannte Spalte", "?sortierung=nachname", "erlaubt sind"},
+		{"unbekannte Spalte", "?sortierung=nachname", "Möglich sind name, klasse, ausgeliehen oder leer"},
 		// SQL im Spaltennamen. Kein Semikolon im Beispiel: Go verwirft seit 1.17 einen
 		// ganzen Query-Parameter, der ein Semikolon enthält (URL.Query ignoriert ihn
 		// still) — die Anfrage käme also als „keine Sortierung" an und wäre erlaubt.
 		// Das ist zufälliger Schutz; geprüft wird der, der hier gebaut ist.
-		{"SQL im Spaltennamen", "?sortierung=nachname+DESC+--", "Unbekannte Sortierung"},
-		{"Klammerausdruck", "?sortierung=%28SELECT+1%29", "Unbekannte Sortierung"},
-		{"unbekannte Richtung", "?sortierung=name&richtung=aufwaerts", "Unbekannte Richtung"},
+		{"SQL im Spaltennamen", "?sortierung=nachname+DESC+--", "Die Sortierung „"},
+		{"Klammerausdruck", "?sortierung=%28SELECT+1%29", "Die Sortierung „"},
+		{"unbekannte Richtung", "?sortierung=name&richtung=aufwaerts", "Die Richtung „aufwaerts“ gibt es nicht"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

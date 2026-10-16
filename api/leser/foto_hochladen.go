@@ -40,7 +40,7 @@ func (t *Tueren) FotoHochladen() http.HandlerFunc {
 		fotoURL, err := service.SchreibeLeserFoto(ctx, t.DB.Pool, id, req.FotoDaten)
 		if err != nil {
 			if errors.Is(err, service.ErrFotoLeserUnbekannt) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, err)
 				return
 			}
 			if errors.Is(err, service.ErrFotoUnlesbar) {

@@ -23,7 +23,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 				httpresp.Schreibe(w, []byte(`{"status":"ok"}`))
 				return
 			}
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
 

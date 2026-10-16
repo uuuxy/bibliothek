@@ -34,9 +34,9 @@ import (
 // wird also nichts geschrieben, gemailt oder importiert. Eine Positiv-Probe „mit Recht geht es
 // durch" wäre hier gefährlich (POST /api/mahnwesen/… verschickt Post), und sie ist auch nicht
 // nötig: Dass die Rechteprüfung überhaupt greift und nicht etwa CSRF oder die Sitzung das 403
-// auslöst, belegt der Grund in der Antwort, „Keine Berechtigung für diese Aktion" gegen
-// „CSRF-Validierung fehlgeschlagen". Ohne diese Unterscheidung wäre der Test grün aus dem
-// falschen Grund.
+// auslöst, belegt der Grund in der Antwort, „Keine Berechtigung für diese Aktion" gegen „Die
+// Sicherheitsprüfung der Anfrage ist fehlgeschlagen". Ohne diese Unterscheidung wäre der Test
+// grün aus dem falschen Grund.
 
 // Routen, die kein Fachrecht tragen (können) — mit Begründung, wie es sich für eine
 // Ausnahmeliste gehört.

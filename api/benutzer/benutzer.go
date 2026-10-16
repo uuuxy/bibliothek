@@ -11,3 +11,9 @@ import "bibliothek/api/tuer"
 type Tueren struct {
 	*tuer.Basis
 }
+
+// Sätze, die mehrere Türen dieses Pakets ausgeben.
+const (
+	meldungKontoNichtGefunden    = "Konto nicht gefunden"
+	meldungAusweisnummerVergeben = "Diese Ausweisnummer trägt bereits eine andere Person"
+)

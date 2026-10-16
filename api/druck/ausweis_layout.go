@@ -46,7 +46,7 @@ func (t *Tueren) AusweisLayoutSchreiben() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAusweisLayoutBytes+1))
 		if err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, tuer.MeldungAnfrageUnlesbar, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
 		if len(body) > MaxAusweisLayoutBytes {

@@ -127,7 +127,7 @@ func titelIDAusPfad(r *http.Request) (string, error) {
 func auflagenFehler(err error, handlung string) error {
 	switch {
 	case errors.Is(err, repository.ErrAuflageUngueltig):
-		return apierrors.BadRequest(tuer.MitGrund(meldungAuflagenNichtGeaendert, err), err)
+		return apierrors.BadRequest(repository.MitGrund(meldungAuflagenNichtGeaendert, err), err)
 	case errors.Is(err, repository.ErrTitelNichtGefunden):
 		return apierrors.NotFound(tuer.MeldungTitelNichtGefunden, err)
 	default:

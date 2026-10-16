@@ -114,7 +114,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	})
 
 	t.Run("nichts markiert: 400", func(t *testing.T) {
-		erwarte400(t, bogen(t, map[string]any{}), "keine Schüler markiert")
+		erwarte400(t, bogen(t, map[string]any{}), "Keine Schüler markiert")
 	})
 
 	t.Run("mehr als die Grenze je Auftrag: 400", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 			ids[i] = uuid.NewString()
 		}
 		erwarte400(t, bogen(t, map[string]any{"schuelerIds": ids}),
-			fmt.Sprintf("höchstens %d", druck.MaxSchuelerEtiketten))
+			fmt.Sprintf("Höchstens %d", druck.MaxSchuelerEtiketten))
 	})
 
 	t.Run("gelöschte Schüler: 400 mit Hinweis", func(t *testing.T) {

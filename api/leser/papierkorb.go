@@ -84,7 +84,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 			// kann ihn besetzen. Dann ist das Wiederherstellen keine Störung, sondern
 			// eine Lage, die jemand auflösen muss: 409 mit dem Grund und dem Weg heraus.
 			if meldung, ok := wiederherstellungsKollision(err); ok {
-				apierrors.AntworteFehler(w, http.StatusConflict, errors.New(meldung))
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldung, err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -163,7 +163,7 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 			// im Haus übliche und keine Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die
 			// if-Bedingung und die erste Anweisung des Rumpfs; einen switch darunter sieht er nicht.
 			if errors.Is(err, repository.ErrLeserNichtGefunden) {
-				apierrors.AntworteFehler(w, http.StatusNotFound, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, err)
 				return
 			}
 			var blockiert *repository.LoeschenBlockiertFehler
@@ -189,9 +189,13 @@ func (t *Tueren) LeserEndgueltigLoeschen(protokollAbfragen repository.ProtokollA
 func loeschenBlockiertMeldung(e *repository.LoeschenBlockiertFehler) string {
 	switch {
 	case e.NichtImPapierkorb:
-		return "Endgültiges Löschen blockiert: der Datensatz liegt nicht im Papierkorb — erst löschen, dann endgültig entfernen"
-	case e.OffeneAusleihen > 0:
-		return fmt.Sprintf("Endgültiges Löschen blockiert: %d offene Ausleihe(n)", e.OffeneAusleihen)
+		return "Endgültiges Löschen blockiert: Der Datensatz liegt nicht im Papierkorb. Erst löschen, dann endgültig entfernen."
+	case e.OffeneAusleihen == 1:
+		return "Endgültiges Löschen blockiert: 1 offene Ausleihe"
+	case e.OffeneAusleihen > 1:
+		return fmt.Sprintf("Endgültiges Löschen blockiert: %d offene Ausleihen", e.OffeneAusleihen)
+	case e.UnbezahlteSchadensfaelle == 1:
+		return "Endgültiges Löschen blockiert: 1 unbezahlter Schadensfall"
 	}
-	return fmt.Sprintf("Endgültiges Löschen blockiert: %d unbezahlte(r) Schadensfall/-fälle", e.UnbezahlteSchadensfaelle)
+	return fmt.Sprintf("Endgültiges Löschen blockiert: %d unbezahlte Schadensfälle", e.UnbezahlteSchadensfaelle)
 }

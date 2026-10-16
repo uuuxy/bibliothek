@@ -51,7 +51,7 @@ func (t *Tueren) ExemplarEigentumSetzen() http.HandlerFunc {
 		})
 		switch {
 		case errors.Is(err, repository.ErrEigentumUngueltig):
-			return apierrors.BadRequest(tuer.MitGrund(meldungEigentumNichtGeaendert, err), err)
+			return apierrors.BadRequest(repository.MitGrund(meldungEigentumNichtGeaendert, err), err)
 		case errors.Is(err, repository.ErrExemplarNichtGefunden):
 			// Alle oder keins: Der Satz sagt, dass auch die übrigen unverändert sind.
 			return apierrors.NotFound("Ein gewähltes Exemplar gibt es nicht mehr, geändert wurde nichts. Bitte die Seite neu laden.", err)

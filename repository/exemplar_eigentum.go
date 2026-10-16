@@ -146,15 +146,15 @@ func schreibeEigentum(ctx context.Context, tx pgx.Tx, s eigentumStand, a Eigentu
 func pruefeEigentumAenderung(a EigentumAenderung) error {
 	switch {
 	case len(a.ExemplarIDs) == 0:
-		return mitGrund(ErrEigentumUngueltig, "kein Exemplar gewählt")
+		return regelVerletzt(ErrEigentumUngueltig, "kein Exemplar gewählt")
 	case len(a.ExemplarIDs) > exemplarEigentumListeMax:
-		return mitGrund(ErrEigentumUngueltig, "höchstens %d Exemplare auf einmal", exemplarEigentumListeMax)
+		return regelVerletzt(ErrEigentumUngueltig, "höchstens %d Exemplare auf einmal", exemplarEigentumListeMax)
 	case a.Eigentum != "" && !mitteltopf.IstGueltig(a.Eigentum):
-		return mitGrund(ErrEigentumUngueltig, "unbekanntes Eigentum „%s“", a.Eigentum)
+		return regelVerletzt(ErrEigentumUngueltig, "unbekanntes Eigentum „%s“", a.Eigentum)
 	case strings.TrimSpace(a.Grund) == "":
-		return mitGrund(ErrEigentumUngueltig, "der Grund fehlt")
+		return regelVerletzt(ErrEigentumUngueltig, "der Grund fehlt")
 	case a.BearbeiterID == "":
-		return mitGrund(ErrEigentumUngueltig, "ohne Bearbeiter")
+		return regelVerletzt(ErrEigentumUngueltig, "ohne Bearbeiter")
 	}
 	return nil
 }

@@ -143,7 +143,7 @@ describe('useLeserakteFormular.save', () => {
 	// Bis zum 16.09.2026 baute save() die Nutzlast für JEDEN gleich: klasse, lusd_id,
 	// abgaenger_jahr und eltern_email standen immer drin. Bei einem Kollegen waren sie
 	// leer — und der leere String heisst bei den Pflichtfeldern "räum das weg", was der
-	// Server mit 400 „Klasse darf nicht leer sein." beantwortet. Der Befund war
+	// Server mit 400 „Bitte das Feld „Klasse“ ausfüllen" beantwortet. Der Befund war
 	// deshalb kein fehlendes Feld, sondern ein Formular, das gar nicht speichern KONNTE:
 	// „ich kann dort aber keine adressedaten etc nachtragen."
 	//

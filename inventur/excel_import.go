@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/apierrors"
 	"bibliothek/pkg/xlsxgrenze"
 	"context"
 	"encoding/csv"
@@ -22,12 +23,12 @@ import (
 func leseImportZeilen(w http.ResponseWriter, r *http.Request) ([][]string, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, 100<<20)
 	if err := r.ParseMultipartForm(100 << 20); err != nil { // 100 MB
-		return nil, errors.New("datei zu groß oder ungültig")
+		return nil, apierrors.BadRequest("Die Datei ließ sich nicht hochladen. Möglich sind höchstens 100 MB.", err)
 	}
 
 	datei, dateiKopf, err := r.FormFile("file")
 	if err != nil {
-		return nil, errors.New("keine datei gefunden")
+		return nil, apierrors.BadRequest("Bitte eine Datei auswählen", err)
 	}
 	defer func() { _ = datei.Close() }() //nolint:errcheck
 
@@ -41,7 +42,7 @@ func leseImportZeilen(w http.ResponseWriter, r *http.Request) ([][]string, error
 func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	inhalt, err := io.ReadAll(datei)
 	if err != nil {
-		return nil, errors.New("fehler beim lesen der csv-datei")
+		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}
 	inhaltText := string(inhalt)
 	trenner := ','
@@ -53,31 +54,32 @@ func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	leser.LazyQuotes = true
 	zeilen, err := leser.ReadAll()
 	if err != nil {
-		return nil, errors.New("ungültige csv-datei")
+		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}
 	if len(zeilen) == 0 {
-		return nil, errors.New("datei ist leer")
+		return nil, apierrors.BadRequest("Die Datei ist leer", nil)
 	}
 	return zeilen, nil
 }
 
 // leseExcelZeilen liest die erste Tabelle einer Excel-Datei, hinter der Schranke aus
-// xlsxgrenze: Eine kaputte oder verschlüsselte Datei wird eine „ungültige excel-datei",
-// kein Absturz.
+// xlsxgrenze: Eine kaputte oder verschlüsselte Datei wird ein Bedienfehler mit Meldung, kein
+// Absturz.
 func leseExcelZeilen(datei io.Reader) ([][]string, error) {
 	zeilen, err := xlsxgrenze.LeseMappe(datei, func(f *excelize.File) ([][]string, error) {
 		blaetter := f.GetSheetList()
 		if len(blaetter) == 0 {
-			return nil, errors.New("excel-datei ist leer")
+			return nil, apierrors.BadRequest("Die Excel-Datei ist leer", nil)
 		}
 		zeilen, err := f.GetRows(blaetter[0])
 		if err != nil || len(zeilen) < 1 {
-			return nil, errors.New("keine daten gefunden")
+			return nil, apierrors.BadRequest("Die Excel-Datei enthält keine Daten", nil)
 		}
 		return zeilen, nil
 	})
-	if xlsxgrenze.IstUnlesbar(err) {
-		return nil, errors.New("ungültige excel-datei")
+	var meldung *apierrors.Fehler
+	if err != nil && !errors.As(err, &meldung) {
+		return nil, apierrors.BadRequest("Die Excel-Datei ließ sich nicht lesen", err)
 	}
 	return zeilen, err
 }
@@ -183,7 +185,7 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 
 	zeilen, err := leseImportZeilen(w, r)
 	if err != nil {
-		schreibeFehler(w, http.StatusBadRequest, err.Error())
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return nil, nil, false
 	}
 

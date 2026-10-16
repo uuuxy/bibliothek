@@ -156,7 +156,7 @@ func (t *Tueren) sammleDSGVODaten(ctx context.Context, id string, darfKonto bool
 		return nil, apierrors.Internal("Fehler beim Laden der Stammdaten", err)
 	}
 	if stammdaten == nil {
-		return nil, apierrors.NotFound("Leser nicht gefunden", nil)
+		return nil, apierrors.NotFound(meldungLeserNichtGefunden, nil)
 	}
 
 	foto, err := t.dsgvoFoto(ctx, id)

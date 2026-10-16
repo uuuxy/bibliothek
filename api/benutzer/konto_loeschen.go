@@ -66,7 +66,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, protokollA
 	err := protokollAbfragen.LoescheKonto(ctx, id, claims.KontoID)
 	if err != nil {
 		if errors.Is(err, repository.ErrKontoNichtGefunden) {
-			apierrors.AntworteFehler(w, http.StatusNotFound, err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungKontoNichtGefunden, err)
 			return
 		}
 		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:

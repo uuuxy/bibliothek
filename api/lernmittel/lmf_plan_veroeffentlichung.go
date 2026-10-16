@@ -96,7 +96,7 @@ func (t *Tueren) veroeffentlicheLMFPlan(r *http.Request) (lmfPlanSpeicherAntwort
 	var keine lmfPlanSpeicherAntwort
 	art, err := leseLMFPlanArt(r)
 	if err != nil {
-		return keine, false, apierrors.BadRequest(err.Error(), err)
+		return keine, false, err
 	}
 	abfragen := repository.NewLMFAbfragen(t.DB.Pool)
 	stand, err := abfragen.LadeNeuestenPlan(r.Context(), art)

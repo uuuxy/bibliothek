@@ -49,7 +49,7 @@ func (t *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 	art, amKonto, err := repository.LadeLeserArtUndKontoEmail(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
 			return "", false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -119,7 +119,7 @@ func (t *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 	vorname, nachname, err := repository.LadeLeserName(ctx, t.DB.Pool, leserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
 			return "", false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -160,7 +160,7 @@ func (t *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 	art, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Leser nicht gefunden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
 			return false
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

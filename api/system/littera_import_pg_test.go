@@ -110,8 +110,8 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 		}
-		if !strings.Contains(rec.Body.String(), "barcode") {
-			t.Errorf("die Meldung nennt die fehlende Spalte nicht: %s", rec.Body.String())
+		if got, will := tuertest.Fehlermeldung(t, rec), "In der Kopfzeile fehlt die Pflichtspalte „barcode“ oder „exemplarnummer“"; got != will {
+			t.Errorf("Meldung %q, erwartet %q", got, will)
 		}
 		if titel, exemplare := zaehle(t); titel != vorherT || exemplare != vorherE {
 			t.Errorf("eine abgewiesene Datei hat geschrieben: Titel %d→%d, Exemplare %d→%d",
@@ -159,6 +159,8 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 			rec := ladeImport(t, rufeRoh, "/api/import/littera", "littera.xlsx", inhalt)
 			if rec.Code != http.StatusBadRequest {
 				t.Errorf("%s: Status %d, erwartet 400: %s", name, rec.Code, rec.Body.String())
+			} else if got := tuertest.Fehlermeldung(t, rec); !strings.HasPrefix(got, "Die Excel-Datei ließ sich nicht") {
+				t.Errorf("%s: Meldung %q, erwartet einen Satz zur Excel-Datei", name, got)
 			}
 		}
 		if titel, exemplare := zaehle(t); titel != vorherT || exemplare != vorherE {
@@ -175,8 +177,8 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 		}
-		if !strings.Contains(strings.ToLower(rec.Body.String()), "katalogisat") {
-			t.Errorf("die Meldung sagt nicht, was erwartet wird: %s", rec.Body.String())
+		if got := tuertest.Fehlermeldung(t, rec); !strings.HasPrefix(got, "Die Datei ist kein Katalogisat-Export aus Littera.") {
+			t.Errorf("die Meldung sagt nicht, was erwartet wird: %q", got)
 		}
 	})
 
@@ -184,6 +186,8 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 		rec := rufeRoh(t, http.MethodPost, "/api/import/littera", "", "multipart/form-data; boundary=xyz")
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		} else if got := tuertest.Fehlermeldung(t, rec); !strings.HasPrefix(got, "Die Datei ließ sich nicht hochladen.") {
+			t.Errorf("Meldung %q, erwartet den Satz zum Hochladen", got)
 		}
 	})
 }
@@ -251,8 +255,8 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 		}
-		if !strings.Contains(strings.ToLower(rec.Body.String()), "titel") {
-			t.Errorf("die Meldung nennt die fehlende Spalte nicht: %s", rec.Body.String())
+		if got, will := tuertest.Fehlermeldung(t, rec), "In der Kopfzeile fehlt die Pflichtspalte „titel“"; got != will {
+			t.Errorf("Meldung %q, erwartet %q", got, will)
 		}
 	})
 }

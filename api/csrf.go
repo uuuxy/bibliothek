@@ -127,6 +127,10 @@ func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfa
 	}
 }
 
+// meldungCSRF antwortet auf eine ändernde Anfrage ohne passendes Token; neu laden holt ein
+// frisches Cookie. Welches Stück fehlte, steht im Log.
+const meldungCSRF = "Die Sicherheitsprüfung der Anfrage ist fehlgeschlagen. Bitte die Seite neu laden."
+
 // pruefeCSRFToken vergleicht das csrf_token-Cookie mit dem X-CSRF-Token-
 // Header in konstanter Laufzeit und liefert bei Fehlschlag einen sprechenden Fehler.
 func pruefeCSRFToken(r *http.Request) error {
@@ -170,7 +174,7 @@ func (s *Server) csrfMiddleware(next http.Handler) http.Handler {
 
 		if aendert && !ausgenommen {
 			if err := pruefeCSRFToken(r); err != nil {
-				apierrors.AntworteFehler(w, http.StatusForbidden, err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, meldungCSRF, err)
 				return
 			}
 		}

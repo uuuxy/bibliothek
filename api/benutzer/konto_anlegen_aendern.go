@@ -68,7 +68,7 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 	nummer, ok := pruefeAusweisnummerEindeutig(ctx, w, kontoAbfragen, ausweisPruefung{
 		nummer:          req.BarcodeID,
 		ausgenommeneID:  "",
-		konfliktmeldung: "dieser Barcode wird bereits verwendet",
+		konfliktmeldung: meldungAusweisnummerVergeben,
 	})
 	if !ok {
 		return
@@ -214,7 +214,7 @@ func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, kont
 		return
 	}
 	if rolle == "" {
-		apierrors.AntworteFehler(w, http.StatusNotFound, repository.ErrKontoNichtGefunden)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungKontoNichtGefunden, nil)
 		return
 	}
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
@@ -234,7 +234,7 @@ func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen
 		nummer, ok := pruefeAusweisnummerEindeutig(ctx, w, kontoAbfragen, ausweisPruefung{
 			nummer:          *req.BarcodeID,
 			ausgenommeneID:  id,
-			konfliktmeldung: "dieser Barcode wird bereits von einem anderen Benutzer verwendet",
+			konfliktmeldung: meldungAusweisnummerVergeben,
 		})
 		if !ok {
 			return aenderung, false
@@ -252,7 +252,7 @@ func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, kontoAbfragen
 // Kennung 404, belegter Ausweis 409, alles andere 500.
 func antworteAufKontoAenderungsfehler(w http.ResponseWriter, err error) {
 	if errors.Is(err, repository.ErrKontoNichtGefunden) {
-		apierrors.AntworteFehler(w, http.StatusNotFound, err)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungKontoNichtGefunden, err)
 		return
 	}
 	if meldeAusweisKollision(w, err) {

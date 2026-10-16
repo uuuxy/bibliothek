@@ -115,7 +115,7 @@ func FasseAuflagenZusammen(ctx context.Context, q Datenbank, titelID, andereID s
 	// sieht darin denselben Titel, der Vergleich hier und die Schlüssel unten müssen es auch.
 	titelID, andereID = strings.ToLower(titelID), strings.ToLower(andereID)
 	if titelID == andereID {
-		return nil, mitGrund(ErrAuflageUngueltig, "ein Titel ist keine andere Auflage seiner selbst")
+		return nil, regelVerletzt(ErrAuflageUngueltig, "ein Titel ist keine andere Auflage seiner selbst")
 	}
 
 	tx, err := q.Begin(ctx)
@@ -131,7 +131,7 @@ func FasseAuflagenZusammen(ctx context.Context, q Datenbank, titelID, andereID s
 	ziel, quelle := koepfe[titelID], koepfe[andereID]
 	for _, k := range []auflagenKopf{ziel, quelle} {
 		if !k.istLernmittel {
-			return nil, mitGrund(ErrAuflageUngueltig, "„%s“ ist kein Lernmittel, zusammengefasst werden nur Auflagen eines Schulbuchs", k.titel)
+			return nil, regelVerletzt(ErrAuflageUngueltig, "„%s“ ist kein Lernmittel, zusammengefasst werden nur Auflagen eines Schulbuchs", k.titel)
 		}
 	}
 

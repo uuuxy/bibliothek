@@ -12,3 +12,10 @@ import "bibliothek/api/tuer"
 type Tueren struct {
 	*tuer.Basis
 }
+
+// meldungVerlustGebunden steht vor dem Exemplar, das noch an einem laufenden Vorgang hängt
+// (repository.ErrVerlustNochGebunden, tuer.MitGrund).
+const meldungVerlustGebunden = "Ein Exemplar hängt noch an einem laufenden Vorgang"
+
+// meldungLaufUeberlappt steht vor dem offenen Lauf, mit dem sich ein neuer überschneidet.
+const meldungLaufUeberlappt = "Der Bereich überschneidet sich mit einer laufenden Inventur"

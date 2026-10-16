@@ -11,8 +11,6 @@ import (
 	"bibliothek/auth"
 	"bibliothek/mailservice"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // klassensatzReservierungAnfrage ist die Reservierung eines Klassensatzes aus „Mein Portal".
@@ -192,7 +190,7 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 			return
 		}
 		if erledigt == nil {
-			apierrors.AntworteFehler(w, http.StatusNotFound, pgx.ErrNoRows)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Reservierung nicht gefunden oder schon erledigt", nil)
 			return
 		}
 
