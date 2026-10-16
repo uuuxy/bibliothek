@@ -20,8 +20,8 @@
 	let className = $state('');
 	/** @type {string[]} */
 	let existing = $state([]);
-	let saving = $state(false);
-	let error = $state('');
+	let speichert = $state(false);
+	let fehler = $state('');
 
 	// Auswählen statt tippen: Ein Tippfehler legte sonst eine Klasse an, die es an der Schule
 	// nicht gibt. Zur Wahl stehen die Klassen der Schüler und die Klassen, die schon eine
@@ -52,11 +52,11 @@
 	async function assign() {
 		const name = className.trim();
 		if (!name) {
-			error = 'Bitte eine Klasse wählen.';
+			fehler = 'Bitte eine Klasse wählen.';
 			return;
 		}
-		saving = true;
-		error = '';
+		speichert = true;
+		fehler = '';
 		try {
 			const res = await apiClient.post('/api/admin/class-books/add', {
 				classNames: [name],
@@ -68,9 +68,9 @@
 			}
 			onAssigned();
 		} catch (err) {
-			error = /** @type {any} */ (err).message;
+			fehler = /** @type {any} */ (err).message;
 		} finally {
-			saving = false;
+			speichert = false;
 		}
 	}
 </script>
@@ -98,14 +98,14 @@
 			{/if}
 		</div>
 
-		{#if error}
-			<div class="text-sm text-error">{error}</div>
+		{#if fehler}
+			<div class="text-sm text-error">{fehler}</div>
 		{/if}
 
 		<div class="flex justify-end gap-3">
 			<Button variant="ghost" onclick={onClose}>Abbrechen</Button>
-			<Button onclick={assign} disabled={saving}>
-				{saving ? 'Speichern...' : 'Zuweisen'}
+			<Button onclick={assign} disabled={speichert}>
+				{speichert ? 'Speichern...' : 'Zuweisen'}
 			</Button>
 		</div>
 	</div>

@@ -82,7 +82,7 @@ function nutzlast(daten, student, hatKonto) {
  * @returns {{ formData: any, saving: boolean, kontoVorhanden: boolean, syncData: () => void, save: () => Promise<void> }}
  */
 export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
-	let saving = $state(false);
+	let speichert = $state(false);
 
 	let formData = $state({
 		vorname: '',
@@ -164,7 +164,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 			onSave();
 			return;
 		}
-		saving = true;
+		speichert = true;
 		try {
 			const res = await apiClient.patch(`/api/schueler/${student.id}`, payload);
 			if (!res.ok) {
@@ -176,7 +176,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		} catch (e) {
 			showSnackbar(fehlertext(e), 'error');
 		} finally {
-			saving = false;
+			speichert = false;
 		}
 	}
 
@@ -188,7 +188,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 			return kontoVorhanden;
 		},
 		get saving() {
-			return saving;
+			return speichert;
 		},
 		syncData,
 		save

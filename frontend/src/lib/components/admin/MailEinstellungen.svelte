@@ -7,11 +7,11 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
-	let loading = $state(true);
+	let laedt = $state(true);
 	// Nach einem gescheiterten Laden steht kein Formular da: Leere Felder gingen sonst als
 	// leerer Server und Benutzer zurück (ui/LadeFehler).
 	let ladeFehler = $state(false);
-	let saving = $state(false);
+	let speichert = $state(false);
 	let testing = $state(false);
 
 	let host = $state('');
@@ -32,7 +32,7 @@
 	let testResult = $state(null);
 
 	async function laden() {
-		loading = true;
+		laedt = true;
 		try {
 			const data = await apiGet('/api/admin/settings/mail');
 			host = data.smtp_host || '';
@@ -46,14 +46,14 @@
 			console.error(e);
 			ladeFehler = true;
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
 	onMount(laden);
 
 	async function saveConfig() {
-		saving = true;
+		speichert = true;
 		try {
 			await apiPut('/api/admin/settings/mail', {
 				smtp_host: host,
@@ -71,7 +71,7 @@
 				snackbars.addToast('Fehler beim Speichern', 'error');
 			}
 		} finally {
-			saving = false;
+			speichert = false;
 		}
 	}
 
@@ -101,7 +101,7 @@
 	}
 </script>
 
-{#if loading}
+{#if laedt}
 	<div class="flex items-center justify-center py-20">
 		<Ladekreis size="lg" />
 	</div>
@@ -143,8 +143,8 @@
 			</div>
 
 			<div class="flex justify-end">
-				<Button onclick={saveConfig} disabled={saving}>
-					{saving ? 'Wird gespeichert …' : 'Postausgang speichern'}
+				<Button onclick={saveConfig} disabled={speichert}>
+					{speichert ? 'Wird gespeichert …' : 'Postausgang speichern'}
 				</Button>
 			</div>
 		</div>

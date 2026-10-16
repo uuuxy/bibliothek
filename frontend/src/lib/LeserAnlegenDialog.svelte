@@ -29,7 +29,7 @@
 	let newEmail = $state('');
 	let createError = $state('');
 	let duplicateConflict = $state('');
-	let isSaving = $state(false);
+	let speichert = $state(false);
 
 	const kollege = $derived(istKollegium({ art }));
 	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" und deshalb keine
@@ -76,7 +76,7 @@
 		duplicateConflict = '';
 		if (createError) return;
 
-		isSaving = true;
+		speichert = true;
 		try {
 			const res = await apiClient.post('/api/schueler', {
 				art,
@@ -110,7 +110,7 @@
 			createError = 'Netzwerkfehler beim Anlegen.';
 			console.error(err);
 		} finally {
-			isSaving = false;
+			speichert = false;
 		}
 	}
 </script>
@@ -120,7 +120,7 @@
 		<h3 class="text-base font-bold text-on-surface">Neuen Leser anlegen</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
-		<LeserArtWahl bind:art disabled={isSaving} />
+		<LeserArtWahl bind:art disabled={speichert} />
 
 		{#if duplicateConflict}
 			<div
@@ -158,9 +158,10 @@
 		{/if}
 
 		<div class="flex justify-end gap-3 pt-2 border-t border-outline-variant">
-			<Button variant="secondary" onclick={() => onclose?.()} disabled={isSaving}>Abbrechen</Button>
-			<Button onclick={legeAn} disabled={isSaving}>
-				{isSaving ? 'Speichern...' : 'Speichern'}
+			<Button variant="secondary" onclick={() => onclose?.()} disabled={speichert}>Abbrechen</Button
+			>
+			<Button onclick={legeAn} disabled={speichert}>
+				{speichert ? 'Speichern...' : 'Speichern'}
 			</Button>
 		</div>
 	</div>

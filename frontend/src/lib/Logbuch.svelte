@@ -28,12 +28,12 @@
 	/** @type {any[]} */
 	let logs = $state.raw([]);
 	/** @type {string|null} */
-	let error = $state(null);
-	let loading = $state(true);
+	let fehler = $state(null);
+	let laedt = $state(true);
 
 	async function fetchLogs() {
-		loading = true;
-		error = null;
+		laedt = true;
+		fehler = null;
 		try {
 			const res = await apiFetch('/api/audit');
 			if (!res.ok) {
@@ -45,9 +45,9 @@
 			}
 			logs = await res.json();
 		} catch (err) {
-			error = fehlertext(err);
+			fehler = fehlertext(err);
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -75,12 +75,12 @@
 		</Button>
 	</div>
 
-	{#if loading}
+	{#if laedt}
 		<div class="flex justify-center py-20">
 			<Ladekreis size="lg" label="Logbuch lädt" />
 		</div>
-	{:else if error}
-		<LadeFehler onerneut={fetchLogs} titel="Logbuch nicht geladen" text={error} />
+	{:else if fehler}
+		<LadeFehler onerneut={fetchLogs} titel="Logbuch nicht geladen" text={fehler} />
 	{:else if logs.length === 0}
 		<div class="py-16 text-center text-base text-on-surface-variant">
 			Keine Audit-Einträge vorhanden.

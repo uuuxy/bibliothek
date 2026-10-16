@@ -51,8 +51,8 @@
 				videoEl.srcObject = stream;
 			}
 		} catch (err) {
-			const error = /** @type {any} */ (err);
-			errorMsg = 'Kamera-Zugriff fehlgeschlagen: ' + error.message;
+			const fehler = /** @type {any} */ (err);
+			errorMsg = 'Kamera-Zugriff fehlgeschlagen: ' + fehler.message;
 		}
 	}
 
@@ -91,8 +91,8 @@
 			const data = await res.json();
 			onCapture(data.url);
 		} catch (err) {
-			const error = /** @type {any} */ (err);
-			errorMsg = 'Aufnahme fehlgeschlagen: ' + error.message;
+			const fehler = /** @type {any} */ (err);
+			errorMsg = 'Aufnahme fehlgeschlagen: ' + fehler.message;
 		} finally {
 			// Auch im Erfolgsfall zurücksetzen. Heute schließt der Aufrufer das Overlay
 			// direkt danach, die Komponente verschwindet also ohnehin — aber daran darf

@@ -21,14 +21,14 @@
 
 	// Der Grund, aus dem die Matrix nicht geladen werden konnte.
 	/** @type {string | null} */
-	let error = $state(null);
+	let fehler = $state(null);
 	/** @type {Record<string, boolean>} */
 	let updatingKeys = $state({});
 
 	// Load permissions
 	async function fetchPermissions() {
 		loadingPermissions = true;
-		error = null;
+		fehler = null;
 		try {
 			const res = await apiFetch('/api/admin/permissions');
 			if (!res.ok) {
@@ -47,7 +47,7 @@
 			});
 			permissionsState = newState;
 		} catch (err) {
-			error = fehlertext(err);
+			fehler = fehlertext(err);
 		} finally {
 			loadingPermissions = false;
 		}
@@ -121,9 +121,9 @@
 			</p>
 			{#if loadingPermissions}
 				<div class="flex justify-center p-12"><Ladekreis size="lg" label="Rechte laden" /></div>
-			{:else if error}
+			{:else if fehler}
 				<!-- Ohne geladene Matrix stünden alle Schalter auf „aus", als wären die Rechte entzogen. -->
-				<LadeFehler titel="Rechte nicht geladen" text={error} onerneut={fetchPermissions} />
+				<LadeFehler titel="Rechte nicht geladen" text={fehler} onerneut={fetchPermissions} />
 			{:else}
 				<RechteMatrix
 					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}

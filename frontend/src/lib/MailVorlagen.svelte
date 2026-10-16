@@ -14,8 +14,8 @@
 	/** @type {any[]} */
 	let templates = $state([]);
 	let selectedTemplateId = $state(null);
-	let isSaving = $state(false);
-	let errorMessage = $state('');
+	let speichert = $state(false);
+	let fehler = $state('');
 	let laedt = $state(true);
 
 	let selectedTemplate = $derived(templates.find((t) => t.id === selectedTemplateId) || null);
@@ -33,11 +33,11 @@
 					selectedTemplateId = templates[0].id;
 				}
 			} else {
-				errorMessage = 'Fehler beim Laden der Vorlagen.';
+				fehler = 'Fehler beim Laden der Vorlagen.';
 			}
 		} catch (error) {
 			console.error(error);
-			errorMessage = 'Netzwerkfehler beim Laden.';
+			fehler = 'Netzwerkfehler beim Laden.';
 		} finally {
 			laedt = false;
 		}
@@ -45,8 +45,8 @@
 
 	async function saveTemplate() {
 		if (!selectedTemplate) return;
-		isSaving = true;
-		errorMessage = '';
+		speichert = true;
+		fehler = '';
 
 		try {
 			const res = await apiClient.put(`/api/mail-templates/${selectedTemplate.id}`, {
@@ -57,13 +57,13 @@
 			if (res.ok) {
 				snackbars.addToast('Vorlage gespeichert.', 'success');
 			} else {
-				errorMessage = 'Fehler beim Speichern der Vorlage.';
+				fehler = 'Fehler beim Speichern der Vorlage.';
 			}
 		} catch (error) {
 			console.error(error);
-			errorMessage = 'Netzwerkfehler beim Speichern.';
+			fehler = 'Netzwerkfehler beim Speichern.';
 		} finally {
-			isSaving = false;
+			speichert = false;
 		}
 	}
 
@@ -83,12 +83,12 @@
 </script>
 
 <section class="space-y-6">
-	{#if errorMessage}
+	{#if fehler}
 		<div
 			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{fehler}</span>
 		</div>
 	{/if}
 
@@ -108,7 +108,7 @@
 							: 'text-on-surface-variant hover:bg-surface-container'}"
 						onclick={() => {
 							selectedTemplateId = t.id;
-							errorMessage = '';
+							fehler = '';
 						}}
 					>
 						<span class="truncate text-sm font-medium">{vorlagenName(t.typ)}</span>
@@ -143,8 +143,8 @@
 					<MailVorlagenPlatzhalter typ={selectedTemplate.typ} />
 
 					<div class="flex justify-end pt-2">
-						<Button size="lg" onclick={saveTemplate} disabled={isSaving} class="px-6">
-							{isSaving ? 'Speichern...' : 'Vorlage Speichern'}
+						<Button size="lg" onclick={saveTemplate} disabled={speichert} class="px-6">
+							{speichert ? 'Speichern...' : 'Vorlage Speichern'}
 						</Button>
 					</div>
 				</div>

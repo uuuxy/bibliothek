@@ -53,7 +53,7 @@ export function useBuchakte() {
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
 	let activeTab = $state('ausleiher');
-	let isLoading = $state(true);
+	let laedt = $state(true);
 
 	/** Listen, deren Abruf gescheitert ist — ihre Zahl ist keine Zahl, sondern ein Fragezeichen. */
 	let fehlendeListen = $state(/** @type {string[]} */ ([]));
@@ -89,7 +89,7 @@ export function useBuchakte() {
 	 */
 	async function loadAll(id) {
 		const meine = ++laufNr;
-		isLoading = true;
+		laedt = true;
 		// Alles, was zum vorigen Titel gehört, geht mit ihm. Ein leerer Kopf ist die
 		// ehrliche Antwort auf „konnte nicht geladen werden" — der alte Kopf ist eine
 		// falsche.
@@ -148,7 +148,7 @@ export function useBuchakte() {
 			if (daten === null) fehlend.push(name);
 		}
 		fehlendeListen = fehlend;
-		isLoading = false;
+		laedt = false;
 	}
 
 	async function deleteTitle(showToast, onBack) {
@@ -232,7 +232,7 @@ export function useBuchakte() {
 			activeTab = v;
 		},
 		get isLoading() {
-			return isLoading;
+			return laedt;
 		},
 		get coverSrc() {
 			return coverCandidates[currentCandidateIndex] || '';

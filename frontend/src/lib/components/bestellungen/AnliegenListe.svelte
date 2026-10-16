@@ -17,7 +17,7 @@
 
 	/** @type {Anliegen[]} */
 	let anliegen = $state([]);
-	let loading = $state(true);
+	let laedt = $state(true);
 	/** Leer heißt leer — ein Ladefehler heißt Ladefehler. */
 	let ladefehler = $state('');
 	/** @type {string | null} */
@@ -36,7 +36,7 @@
 	);
 
 	async function loadAnliegen() {
-		loading = true;
+		laedt = true;
 		try {
 			const res = await apiFetch('/api/anliegen/offen');
 			if (res.ok) {
@@ -50,7 +50,7 @@
 			anliegen = [];
 			ladefehler = 'Die Anliegen konnten nicht geladen werden (Netzwerkfehler).';
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -174,7 +174,7 @@
 		</p>
 	</div>
 
-	{#if loading}
+	{#if laedt}
 		<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
 			Lade Anliegen…
 		</div>

@@ -21,7 +21,7 @@
 	const mitZugang = $derived(kollege && !!profile?.email);
 
 	let deleteError = $state('');
-	let isDeleting = $state(false);
+	let laeuft = $state(false);
 	let confirmText = $state('');
 
 	let expectedConfirmText = $derived(profile ? `${profile.vorname} ${profile.nachname}` : '');
@@ -30,7 +30,7 @@
 	$effect(() => {
 		if (open) {
 			deleteError = '';
-			isDeleting = false;
+			laeuft = false;
 			confirmText = '';
 		}
 	});
@@ -41,7 +41,7 @@
 			return;
 		}
 		deleteError = '';
-		isDeleting = true;
+		laeuft = true;
 		try {
 			const res = await apiFetch(`/api/schueler/${profile.id}`, { method: 'DELETE' });
 			if (res.ok) {
@@ -59,7 +59,7 @@
 			deleteError = 'Netzwerkfehler beim Löschen des Schülers.';
 			console.error(err);
 		} finally {
-			isDeleting = false;
+			laeuft = false;
 		}
 	}
 
@@ -127,17 +127,17 @@
 						variant="secondary"
 						size="lg"
 						onclick={schliesse}
-						disabled={isDeleting}
+						disabled={laeuft}
 						class="w-full sm:w-auto">Abbrechen</Button
 					>
 					<Button
 						variant="danger-solid"
 						size="lg"
 						onclick={deleteStudent}
-						disabled={isDeleting || !isConfirmed}
+						disabled={laeuft || !isConfirmed}
 						class="w-full sm:w-auto"
 					>
-						{#if isDeleting}Wird verarbeitet...{:else}In den Papierkorb{/if}
+						{#if laeuft}Wird verarbeitet...{:else}In den Papierkorb{/if}
 					</Button>
 				</div>
 			{/if}

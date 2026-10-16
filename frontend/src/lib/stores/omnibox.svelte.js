@@ -67,7 +67,7 @@ export function createOmniboxStore() {
 	let lastAuflagenHinweis = $state(/** @type {any} */ (null));
 	let isShaking = $state(false);
 	let scanError = $state(false);
-	let errorMessage = $state('');
+	let fehler = $state('');
 	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
 	let errorMessageTimer = null;
 	let vormerkungAlert = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
@@ -203,7 +203,7 @@ export function createOmniboxStore() {
 	function zeichneBanner() {
 		const nummern = nichtGebucht.map((nummer) => `„${nummer}“`).join(', ');
 		const rest = nummern ? `Gescannt und NICHT gebucht: ${nummern} — bitte erneut scannen.` : '';
-		errorMessage = [bannerMeldung, rest].filter(Boolean).join(' · ');
+		fehler = [bannerMeldung, rest].filter(Boolean).join(' · ');
 	}
 
 	function stoppeBannerUhr() {
@@ -1085,10 +1085,10 @@ export function createOmniboxStore() {
 			scanError = v;
 		},
 		get errorMessage() {
-			return errorMessage;
+			return fehler;
 		},
 		set errorMessage(v) {
-			errorMessage = v;
+			fehler = v;
 		},
 		get vormerkungAlert() {
 			return vormerkungAlert;

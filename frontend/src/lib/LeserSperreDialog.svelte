@@ -13,8 +13,8 @@
 	/** @type {{ open: boolean, profile: any, onsuccess: (updatedProfile: any) => void }} */
 	let { open = $bindable(false), profile, onsuccess } = $props();
 
-	let isSubmitting = $state(false);
-	let errorMsg = $state('');
+	let laeuft = $state(false);
+	let fehler = $state('');
 	let reason = $state('');
 
 	// Aufheben, sobald eine Sperre am Leser besteht — von Hand oder die der Ehemaligen; die Tür
@@ -30,7 +30,7 @@
 	// Schüler — die alte Fehlermeldung und der alte Grund kurz auf.
 	$effect(() => {
 		if (!open) {
-			errorMsg = '';
+			fehler = '';
 			reason = '';
 		}
 	});
@@ -38,11 +38,11 @@
 	async function bestaetige() {
 		if (!profile) return;
 		if (willLock && reason.trim() === '') {
-			errorMsg = 'Bitte einen Grund für die Sperre angeben.';
+			fehler = 'Bitte einen Grund für die Sperre angeben.';
 			return;
 		}
-		isSubmitting = true;
-		errorMsg = '';
+		laeuft = true;
+		fehler = '';
 		try {
 			const res = await apiClient.patch(`/api/admin/students/${profile.id}/lock`, {
 				is_locked: !gesperrt,
@@ -56,12 +56,12 @@
 				open = false;
 			} else {
 				const err = await res.json().catch(() => ({}));
-				errorMsg = err.error || 'Fehler beim Aktualisieren der Sperre.';
+				fehler = err.error || 'Fehler beim Aktualisieren der Sperre.';
 			}
 		} catch {
-			errorMsg = 'Netzwerkfehler.';
+			fehler = 'Netzwerkfehler.';
 		} finally {
-			isSubmitting = false;
+			laeuft = false;
 		}
 	}
 </script>
@@ -103,34 +103,28 @@
 				<textarea
 					bind:value={reason}
 					rows="2"
-					disabled={isSubmitting}
+					disabled={laeuft}
 					placeholder="z. B. wiederholt Bücher nicht zurückgegeben"
 					class="w-full px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-error/30 disabled:opacity-50"
 				></textarea>
 			</label>
 		{/if}
 
-		{#if errorMsg}
+		{#if fehler}
 			<div
 				role="alert"
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
 				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-				<p class="text-xs font-bold leading-tight">{errorMsg}</p>
+				<p class="text-xs font-bold leading-tight">{fehler}</p>
 			</div>
 		{/if}
 	</div>
 
 	<div class="px-6 py-4 border-t border-outline-variant flex justify-end gap-3">
-		<Button variant="secondary" onclick={() => (open = false)} disabled={isSubmitting}>
-			Abbrechen
-		</Button>
-		<Button
-			variant={gesperrt ? 'success' : 'danger-solid'}
-			onclick={bestaetige}
-			disabled={isSubmitting}
-		>
-			{#if isSubmitting}
+		<Button variant="secondary" onclick={() => (open = false)} disabled={laeuft}>Abbrechen</Button>
+		<Button variant={gesperrt ? 'success' : 'danger-solid'} onclick={bestaetige} disabled={laeuft}>
+			{#if laeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
 				Wird verarbeitet...
 			{:else}

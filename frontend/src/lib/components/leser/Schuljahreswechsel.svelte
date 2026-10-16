@@ -10,13 +10,13 @@
 	/** @typedef {{ promoted_count: number, archived_count: number, dry_run: boolean, mapping_versetzt: number, mapping_entfernt: number, mapping_konflikte?: string[] }} PromoteStudentsResponse */
 
 	let awaitingConfirmation = $state(false);
-	let loading = $state(false);
+	let laedt = $state(false);
 	/** @type {PromoteStudentsResponse | null} */
 	let preview = $state(null);
 	/** @type {PromoteStudentsResponse | null} */
 	let result = $state(null);
 	/** @type {string | null} */
-	let errorMessage = $state(null);
+	let fehler = $state(null);
 
 	/** @param {PromoteStudentsResponse | null} r */
 	function rows(r) {
@@ -55,7 +55,7 @@
 		preview = null;
 		result = null;
 		awaitingConfirmation = false;
-		errorMessage = null;
+		fehler = null;
 	}
 
 	/** @param {{ dry_run?: boolean, confirm?: boolean }} body */
@@ -73,15 +73,15 @@
 	}
 
 	async function runPreview() {
-		if (loading) return;
-		loading = true;
-		errorMessage = null;
+		if (laedt) return;
+		laedt = true;
+		fehler = null;
 		try {
 			preview = await sendeWechsel({ dry_run: true });
 		} catch (err) {
-			errorMessage = /** @type {any} */ (err).message || String(err);
+			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -91,16 +91,16 @@
 	// bleibt bis „Fertig" stehen — ein Toast, der nach Sekunden verschwindet, kann für
 	// einen irreversiblen Massenvorgang ohnehin nicht der tragende Kanal sein.
 	async function executePromotion() {
-		if (loading) return;
-		loading = true;
-		errorMessage = null;
+		if (laedt) return;
+		laedt = true;
+		fehler = null;
 		try {
 			result = await sendeWechsel({ confirm: true });
 		} catch (err) {
-			errorMessage = /** @type {any} */ (err).message || String(err);
+			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
 			awaitingConfirmation = false;
-			loading = false;
+			laedt = false;
 		}
 	}
 </script>
@@ -131,11 +131,11 @@
 		</p>
 	</div>
 
-	{#if errorMessage}
+	{#if fehler}
 		<div
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{fehler}</span>
 		</div>
 	{/if}
 
@@ -152,8 +152,8 @@
 		<!-- Stufe 1: erst die unverbindliche Vorschau — der Server rechnet das
          identische SQL in einer Transaktion und rollt zurück. -->
 		<div class="flex justify-end">
-			<Button onclick={runPreview} disabled={loading}>
-				{#if loading}
+			<Button onclick={runPreview} disabled={laedt}>
+				{#if laedt}
 					<Ladekreis size="sm" farbe="aktuell" /> Vorschau wird berechnet…
 				{:else}
 					Vorschau berechnen
@@ -182,22 +182,18 @@
 
 		{#if !awaitingConfirmation}
 			<div class="flex justify-end gap-3">
-				<Button variant="secondary" onclick={reset} disabled={loading}>Abbrechen</Button>
-				<Button onclick={() => (awaitingConfirmation = true)} disabled={loading}>
+				<Button variant="secondary" onclick={reset} disabled={laedt}>Abbrechen</Button>
+				<Button onclick={() => (awaitingConfirmation = true)} disabled={laedt}>
 					Schuljahr wechseln
 				</Button>
 			</div>
 		{:else}
 			<div class="flex justify-end gap-3">
-				<Button
-					variant="secondary"
-					onclick={() => (awaitingConfirmation = false)}
-					disabled={loading}
-				>
+				<Button variant="secondary" onclick={() => (awaitingConfirmation = false)} disabled={laedt}>
 					Abbrechen
 				</Button>
-				<Button variant="danger-solid" onclick={executePromotion} disabled={loading}>
-					{#if loading}
+				<Button variant="danger-solid" onclick={executePromotion} disabled={laedt}>
+					{#if laedt}
 						<Ladekreis size="sm" farbe="aktuell" /> Wird ausgeführt…
 					{:else}
 						Ja, unwiderruflich ausführen

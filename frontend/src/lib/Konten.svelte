@@ -25,7 +25,7 @@
 	let userSearchQuery = $state('');
 
 	/** @type {string | null} */
-	let error = $state(null);
+	let fehler = $state(null);
 
 	let showUserModal = $state(false);
 	let isEditingUser = $state(false);
@@ -54,7 +54,7 @@
 
 	async function fetchUsers() {
 		loadingUsers = true;
-		error = null;
+		fehler = null;
 		try {
 			const res = await apiFetch('/api/benutzer');
 			if (!res.ok) {
@@ -64,7 +64,7 @@
 			}
 			users = await res.json();
 		} catch (err) {
-			error = fehlertext(err);
+			fehler = fehlertext(err);
 		} finally {
 			loadingUsers = false;
 		}
@@ -74,7 +74,7 @@
 	async function speichereKonto(e) {
 		e.preventDefault();
 		submittingUser = true;
-		error = null;
+		fehler = null;
 		try {
 			const url = isEditingUser ? `/api/benutzer/${userForm.id}` : '/api/benutzer';
 			const method = isEditingUser ? 'PUT' : 'POST';
@@ -92,7 +92,7 @@
 			);
 			fetchUsers();
 		} catch (err) {
-			error = fehlertext(err);
+			fehler = fehlertext(err);
 		} finally {
 			submittingUser = false;
 		}
@@ -101,7 +101,7 @@
 	async function confirmDeleteUser() {
 		if (!userToDelete) return;
 		deletingUser = true;
-		error = null;
+		fehler = null;
 		try {
 			const res = await apiFetch(`/api/benutzer/${userToDelete.id}`, { method: 'DELETE' });
 			if (!res.ok) {
@@ -116,7 +116,7 @@
 		} catch (err) {
 			// Der Dialog bleibt offen: Der Satz des Servers sagt, was zu tun ist, und steht
 			// deshalb dort, wo die Frage gestellt wurde.
-			error = fehlertext(err);
+			fehler = fehlertext(err);
 		} finally {
 			deletingUser = false;
 		}
@@ -125,7 +125,7 @@
 	function openNewUserModal() {
 		isEditingUser = false;
 		userForm = leeresBenutzerFormular();
-		error = null;
+		fehler = null;
 		showUserModal = true;
 	}
 
@@ -133,32 +133,32 @@
 	function openEditUserModal(user) {
 		isEditingUser = true;
 		userForm = benutzerFormularAus(user);
-		error = null;
+		fehler = null;
 		showUserModal = true;
 	}
 
 	/** @param {any} user */
 	function openDeleteConfirm(user) {
 		userToDelete = user;
-		error = null;
+		fehler = null;
 		showDeleteConfirm = true;
 	}
 
 	onMount(fetchUsers);
 </script>
 
-{#if error && !showUserModal && !showDeleteConfirm}
+{#if fehler && !showUserModal && !showDeleteConfirm}
 	<div
 		role="alert"
 		class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 	>
 		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
-		<span class="grow">{error}</span>
+		<span class="grow">{fehler}</span>
 		<button
 			type="button"
 			class="icon-btn"
 			aria-label="Meldung schließen"
-			onclick={() => (error = null)}
+			onclick={() => (fehler = null)}
 		>
 			<X class="h-4 w-4" aria-hidden="true" />
 		</button>
@@ -191,7 +191,7 @@
 	{isEditingUser}
 	bind:userForm
 	{submittingUser}
-	{error}
+	error={fehler}
 	{speichereKonto}
 />
 
@@ -199,10 +199,10 @@
 	open={showDeleteConfirm && !!userToDelete}
 	onclose={() => {
 		showDeleteConfirm = false;
-		error = null;
+		fehler = null;
 	}}
 	{userToDelete}
 	{deletingUser}
-	{error}
+	error={fehler}
 	{confirmDeleteUser}
 />

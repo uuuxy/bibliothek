@@ -10,7 +10,7 @@
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
-	let loading = $state(true);
+	let laedt = $state(true);
 	/** Leer heißt leer, ein Ladefehler heißt Ladefehler. */
 	let ladefehler = $state('');
 	// Nur die jüngste Anfrage schreibt die Liste: Nach zwei Filterwechseln entschiede sonst die
@@ -64,7 +64,7 @@
 			ladefehler =
 				/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden.';
 		} finally {
-			if (nr === ladeNr) loading = false;
+			if (nr === ladeNr) laedt = false;
 		}
 	}
 
@@ -151,7 +151,7 @@
 			onFilterWechsel={ladeBestellungen}
 		/>
 
-		{#if loading}
+		{#if laedt}
 			<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
 				Lade Bestellhistorie…
 			</div>

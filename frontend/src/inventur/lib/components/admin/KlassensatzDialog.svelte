@@ -30,7 +30,7 @@
 	let selectedClasses = $state(/** @type {string[]} */ ([]));
 	let selectedBookIds = $state(/** @type {Set<number>} */ (new Set()));
 	const buecher = erzeugeBuecherListe();
-	let isSaving = $state(false);
+	let speichert = $state(false);
 
 	$effect(() => {
 		if (selectedClasses.length === 0 && selectedBookIds.size > 0) {
@@ -94,7 +94,7 @@
 		if (selectedClasses.length === 0) return;
 		if (!initialGroup && selectedBookIds.size === 0) return;
 
-		isSaving = true;
+		speichert = true;
 		try {
 			const endpoint = initialGroup ? '/api/admin/class-books' : '/api/admin/class-books/add';
 			const payload = {
@@ -126,7 +126,7 @@
 			console.error('Netzwerkfehler', e);
 			snackbars.addToast('Fehler beim Speichern der Zuweisung.', 'error');
 		} finally {
-			isSaving = false;
+			speichert = false;
 		}
 	}
 </script>
@@ -185,7 +185,7 @@
 					{selectedClasses}
 					{selectedBookIds}
 					{selectedBooksList}
-					{isSaving}
+					isSaving={speichert}
 					isUpdate={!!initialGroup}
 					onToggleBook={toggleBook}
 					onsave={saveAssignments}

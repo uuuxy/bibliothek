@@ -25,7 +25,7 @@
 
 	let stornoFall = $state(/** @type {any} */ (null));
 	let stornoGrund = $state('');
-	let isSubmitting = $state(false);
+	let laeuft = $state(false);
 	let bescheidOffen = $state(false);
 
 	// Ein Brief braucht eine offene Forderung, die noch auf keinem Brief steht.
@@ -43,7 +43,7 @@
 	}
 
 	async function erledige(url, erfolgsMeldung) {
-		isSubmitting = true;
+		laeuft = true;
 		try {
 			const res = await apiClient.post(url, stornoFall ? { grund: stornoGrund.trim() } : {});
 			if (res.ok) {
@@ -60,7 +60,7 @@
 		} catch {
 			snackbars.addToast('Netzwerkfehler.', 'error');
 		} finally {
-			isSubmitting = false;
+			laeuft = false;
 		}
 	}
 </script>
@@ -124,12 +124,12 @@
 							<Button
 								variant="secondary"
 								onclick={() => erledige(`/api/schadensfaelle/${f.id}/bezahlt`, 'Zahlung verbucht.')}
-								disabled={isSubmitting}
+								disabled={laeuft}
 							>
 								<CircleCheck class="h-4 w-4" aria-hidden="true" />
 								Bezahlt
 							</Button>
-							<Button variant="danger" onclick={() => (stornoFall = f)} disabled={isSubmitting}>
+							<Button variant="danger" onclick={() => (stornoFall = f)} disabled={laeuft}>
 								<Ban class="h-4 w-4" aria-hidden="true" />
 								Stornieren
 							</Button>
@@ -177,14 +177,14 @@
 			/>
 
 			<div class="flex justify-end gap-2 mt-6">
-				<Button variant="secondary" onclick={schliesseStornoModal} disabled={isSubmitting}>
+				<Button variant="secondary" onclick={schliesseStornoModal} disabled={laeuft}>
 					Abbrechen
 				</Button>
 				<Button
 					variant="danger"
 					onclick={() =>
 						erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert.')}
-					disabled={isSubmitting || stornoGrund.trim() === ''}
+					disabled={laeuft || stornoGrund.trim() === ''}
 				>
 					<Receipt class="h-4 w-4" aria-hidden="true" />
 					Stornieren

@@ -17,7 +17,7 @@ export function useLeserakte() {
 	// in der Bibliothek, GET …/bescheide in 503 — und die Auskunft „bei uns liegt kein
 	// Bescheid vor" (Review 14.09.2026, OFFEN.md 1.5).
 	let fehlendeListen = $state(/** @type {string[]} */ ([]));
-	let loading = $state(true);
+	let laedt = $state(true);
 	let showWebcam = $state(false);
 	let timestamp = $state(Date.now());
 	let showDeleteConfirm = $state(false);
@@ -38,7 +38,7 @@ export function useLeserakte() {
 	async function fetchProfile(studentId) {
 		if (!studentId) return;
 		const meine = ++laufNr;
-		loading = true;
+		laedt = true;
 		try {
 			const [resProfile, resVormerkungen, resGebuehren, resBescheide] = await Promise.all([
 				apiFetch(`/api/schueler/${studentId}`),
@@ -80,7 +80,7 @@ export function useLeserakte() {
 			bescheide = [];
 			fehlendeListen = ['Vormerkungen', 'Gebühren', 'Bescheide'];
 		} finally {
-			if (meine === laufNr) loading = false;
+			if (meine === laufNr) laedt = false;
 		}
 	}
 
@@ -258,7 +258,7 @@ export function useLeserakte() {
 			return fehlendeListen;
 		},
 		get loading() {
-			return loading;
+			return laedt;
 		},
 		get showWebcam() {
 			return showWebcam;

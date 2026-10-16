@@ -479,14 +479,17 @@ Ordner des Pakets und für die Form `paket.Name`.
   Methoden der Stores (`addToast`, `loadClassGroups`), die Kennungen der Bildschirme in
   `routenTabelle.js` (`students_dir`, `settings`, `inventory`, `orders`, `graduates`, `stats`)
   und die Beschriftung „Admin-Audit-Log" im Reiter der System-Logs. Erledigt sind am
-  16.10.2026 zwei Bereiche, 56 Funktionen (`handle…` und lokale Funktionen); der Bestand steht
-  bei 426 Erklärungen in 120 Dateien. Beleg je Bereich: Das gebaute Bündel ist byte-gleich,
-  sobald die Namen zurückgesetzt sind, die als Schlüssel stehen bleiben (der Bau ist
-  deterministisch). Nächster Schritt: die Zustandsvariablen (`error`, `loading`, `selected`,
-  `data`) und die Methoden der Stores. Für sie trägt Ersetzen nach Wortgrenze nicht: Am
-  16.10.2026 traf es Klassen (`text-error`), das Attribut `loading="lazy"` und Schlüssel, das
-  Bündel zeigte es an. Dafür ein Werkzeug, das Bezeichner erkennt (Umbenennen über den
-  Language Server von Svelte), Beleg wie bisher am Bündel.
+  16.10.2026 drei Bereiche: 56 Funktionen (`handle…` und lokale Funktionen) und in 31 Dateien
+  die Zustandsnamen `error`, `errorMessage`, `errorMsg`, `loading`, `isLoading`, `saving`,
+  `isSaving`, `isSubmitting` und `isDeleting` (jetzt `fehler`, `laedt`, `speichert`, `laeuft`);
+  der Bestand steht bei 387 Erklärungen in 116 Dateien. Beleg je Bereich: Das gebaute Bündel ist
+  byte-gleich (der Bau ist deterministisch, eine geänderte Zeichenkette zeigt er an). Ersetzen
+  nach Wortgrenze trägt dafür nicht, es traf Klassen (`text-error`), das Attribut
+  `loading="lazy"` und Schlüssel. Umbenannt wird deshalb am Syntaxbaum (`svelte/compiler`,
+  `acorn`): jeder Bezeichner gleichen Namens in der Datei, ohne Eigenschaften, Schlüssel,
+  Importe und Exporte; Kurzformen werden ausgeschrieben (`{error}` wird `error={fehler}`).
+  Nächster Schritt: `selected…`, `data` und die übrigen Namen nach demselben Verfahren, danach
+  die Methoden der Stores und Props, die über Dateigrenzen gehen; die lässt das Verfahren aus.
 - Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
   der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
   Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und

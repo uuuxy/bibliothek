@@ -8,7 +8,7 @@
 
 	let { incomingShipments = [], onBack, onReceived } = $props();
 
-	let isSubmitting = $state(false);
+	let laeuft = $state(false);
 	/** @type {string[]} */
 	let selectedExemplarIds = $state([]);
 
@@ -23,7 +23,7 @@
 	async function bucheAlleEin() {
 		if (selectedExemplarIds.length === 0) return;
 
-		isSubmitting = true;
+		laeuft = true;
 		try {
 			const data = await apiPost('/api/bestellungen/bulk-receive', {
 				exemplar_ids: selectedExemplarIds
@@ -34,7 +34,7 @@
 		} catch {
 			// API handler shows error toast
 		} finally {
-			isSubmitting = false;
+			laeuft = false;
 		}
 	}
 </script>
@@ -84,8 +84,8 @@
 			beschriftung="Aktionen für die markierten Positionen"
 			onleeren={() => (selectedExemplarIds = [])}
 		>
-			<Button onclick={bucheAlleEin} disabled={isSubmitting}>
-				{#if isSubmitting}
+			<Button onclick={bucheAlleEin} disabled={laeuft}>
+				{#if laeuft}
 					<Ladekreis size="sm" farbe="aktuell" />
 				{/if}
 				Einbuchen

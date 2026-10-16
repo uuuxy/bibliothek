@@ -10,7 +10,7 @@
 
 	/** @type {any} */
 	let summary = $state(null);
-	let loading = $state(true);
+	let laedt = $state(true);
 	/** Abruf gescheitert — eine leere Kachel sähe aus wie „nichts überfällig". */
 	let fehler = $state(false);
 
@@ -44,7 +44,7 @@
 			fehler = true;
 			console.error(err);
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -53,7 +53,7 @@
 	});
 </script>
 
-{#if loading}
+{#if laedt}
 	<div class="flex-1 flex justify-center items-center py-8">
 		<Ladekreis size="md" />
 	</div>

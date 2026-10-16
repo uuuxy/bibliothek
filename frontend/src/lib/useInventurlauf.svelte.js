@@ -27,7 +27,7 @@ export function useInventurlauf(opts = {}) {
 	let offeneSessions = $state(/** @type {any[]} */ ([]));
 	let stats = $state({ erwartet: 0, erfasst: 0, label: '' });
 	let showStartModal = $state(false);
-	let errorMessage = $state('');
+	let fehler = $state('');
 
 	async function loadSignaturen() {
 		try {
@@ -52,17 +52,17 @@ export function useInventurlauf(opts = {}) {
 	}
 
 	async function startInventory() {
-		errorMessage = '';
+		fehler = '';
 		const payload = { type: scopeType };
 		if (scopeType === 'signature') {
 			if (!selectedSignatur.trim()) {
-				errorMessage = 'Bitte wähle eine Signatur aus.';
+				fehler = 'Bitte wähle eine Signatur aus.';
 				return;
 			}
 			payload.signatur = selectedSignatur.trim();
 		} else if (scopeType === 'filter') {
 			if (!selectedFach && !selectedGrade) {
-				errorMessage = 'Bitte wähle mindestens ein Fach oder eine Klasse.';
+				fehler = 'Bitte wähle mindestens ein Fach oder eine Klasse.';
 				return;
 			}
 			if (selectedFach) payload.subject = selectedFach;
@@ -81,27 +81,26 @@ export function useInventurlauf(opts = {}) {
 		if (r.status === 409) {
 			// Für diesen Bereich läuft bereits eine Inventur — statt sie zu überschreiben
 			// (der alte Datenverlust-Bug), die laufende anzeigen und zum Fortsetzen anbieten.
-			errorMessage =
-				'Für diesen Bereich läuft bereits eine Inventur. Unten fortsetzen oder verwerfen.';
+			fehler = 'Für diesen Bereich läuft bereits eine Inventur. Unten fortsetzen oder verwerfen.';
 			await loadOffeneSessions();
 			showStartModal = false;
 			return;
 		}
-		errorMessage = r.error || 'Fehler beim Starten der Inventur.';
+		fehler = r.error || 'Fehler beim Starten der Inventur.';
 	}
 
 	/** @param {any} session laufende Session aus offeneSessions */
 	function resumeSession(session) {
 		sessionId = session.session_id;
 		stats = { erwartet: session.erwartet, erfasst: session.erfasst, label: session.label };
-		errorMessage = '';
+		fehler = '';
 		status = 'active';
 		onActivate?.();
 	}
 
 	/** @param {any} session */
 	async function verwerfeSession(session) {
-		errorMessage = '';
+		fehler = '';
 		await brichAb(session.session_id);
 		await loadOffeneSessions();
 	}
@@ -110,7 +109,7 @@ export function useInventurlauf(opts = {}) {
 	// Reset blieb eine modal-lokale Meldung (z. B. „Bitte wähle eine Signatur aus.“) nach
 	// dem Abbrechen kontextlos als Banner auf dem Hauptschirm stehen.
 	function clearError() {
-		errorMessage = '';
+		fehler = '';
 	}
 
 	/** Aufrufer ist der Abschluss der Session (finishInventory in useInventur). */
@@ -170,7 +169,7 @@ export function useInventurlauf(opts = {}) {
 			showStartModal = v;
 		},
 		get errorMessage() {
-			return errorMessage;
+			return fehler;
 		},
 		clearError,
 		loadSignaturen,

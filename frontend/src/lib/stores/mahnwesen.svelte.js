@@ -40,8 +40,8 @@ function berechneMahnstufe(maxTage) {
  */
 function createMahnwesenStore() {
 	let data = $state(/** @type {{ klassen: any[] } | null} */ (null));
-	let loading = $state(true);
-	let error = $state(/** @type {string|null} */ (null));
+	let laedt = $state(true);
+	let fehler = $state(/** @type {string|null} */ (null));
 
 	let heuteRetourniert = $state(0);
 
@@ -116,8 +116,8 @@ function createMahnwesenStore() {
 	 * Fetches Mahnwesen data from API.
 	 */
 	async function fetchData() {
-		loading = true;
-		error = null;
+		laedt = true;
+		fehler = null;
 		try {
 			const res = await apiFetch('/api/mahnwesen');
 			if (!res.ok) throw new Error((await res.text()) || 'Fehler beim Laden');
@@ -126,9 +126,9 @@ function createMahnwesenStore() {
 			heuteRetourniert = json.heute_retourniert || 0;
 			selectedIds.clear();
 		} catch (e) {
-			error = String(e);
+			fehler = String(e);
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -168,10 +168,10 @@ function createMahnwesenStore() {
 			return data;
 		},
 		get loading() {
-			return loading;
+			return laedt;
 		},
 		get error() {
-			return error;
+			return fehler;
 		},
 		get expandedKlassen() {
 			return expandedKlassen;

@@ -9,7 +9,7 @@
 	let query = $state('');
 	/** @type {any[]} */
 	let results = $state.raw([]);
-	let loading = $state(false);
+	let laedt = $state(false);
 	let searched = $state(false);
 	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/portal/opac.go). */
 	let gesamt = $state(0);
@@ -23,7 +23,7 @@
 			searched = false;
 			return;
 		}
-		loading = true;
+		laedt = true;
 		searched = true;
 		try {
 			const url = `/api/public/opac/suche?q=${encodeURIComponent(q)}`;
@@ -35,7 +35,7 @@
 		} catch {
 			results = [];
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -146,7 +146,7 @@
 					</div>
 				{/each}
 			</div>
-		{:else if searched && !loading}
+		{:else if searched && !laedt}
 			<SuchZustand
 				symbol={Search}
 				titel="Keine Bücher gefunden"
@@ -164,7 +164,7 @@
 
 <!-- Der Ladepunkt sitzt IN der Pille — dieselbe Stelle wie im Kollegiums-Portal. -->
 {#snippet nachlaufend()}
-	{#if loading}
+	{#if laedt}
 		<Ladekreis size="sm" />
 	{/if}
 {/snippet}

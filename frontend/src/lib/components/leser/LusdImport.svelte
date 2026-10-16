@@ -33,7 +33,7 @@
 	let importLoading = $state(false);
 	let previewResult = $state(/** @type {LusdPreviewResult | null} */ (null));
 	let importResult = $state(/** @type {LusdPreviewResult | null} */ (null));
-	let errorMessage = $state(/** @type {string | null} */ (null));
+	let fehler = $state(/** @type {string | null} */ (null));
 	/** Vom Admin bestätigte Umbenennungs-Paare (Zeilennummern der Datei); wird in
 	 *  place geändert — SvelteSet ist selbst reaktiv, ein $state-Umschlag wäre doppelt. */
 	const gewaehltePaare = new SvelteSet();
@@ -66,7 +66,7 @@
 		selectedFile = null;
 		previewResult = null;
 		importResult = null;
-		errorMessage = null;
+		fehler = null;
 		needsGraduateConfirm = false;
 		gewaehltePaare.clear();
 		stage = 'upload';
@@ -93,7 +93,7 @@
 	async function runPreview() {
 		if (!selectedFile || previewLoading) return;
 		previewLoading = true;
-		errorMessage = null;
+		fehler = null;
 		needsGraduateConfirm = false;
 		try {
 			previewResult = await submitLusdFile('/api/lusd/preview');
@@ -103,7 +103,7 @@
 			stage = 'preview';
 		} catch (err) {
 			// Nur das Inline-Banner unten — kein zusätzlicher Toast mit identischem Text.
-			errorMessage = /** @type {any} */ (err).message || String(err);
+			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
 			previewLoading = false;
 		}
@@ -112,7 +112,7 @@
 	async function finalizeImport(confirmGraduates = false) {
 		if (!selectedFile || importLoading) return;
 		importLoading = true;
-		errorMessage = null;
+		fehler = null;
 		try {
 			importResult = await submitLusdFile('/api/lusd/import', confirmGraduates);
 			stage = 'done';
@@ -122,7 +122,7 @@
 		} catch (err) {
 			// 409 = serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten.
 			needsGraduateConfirm = /** @type {any} */ (err).status === 409;
-			errorMessage = /** @type {any} */ (err).message || String(err);
+			fehler = /** @type {any} */ (err).message || String(err);
 		} finally {
 			importLoading = false;
 		}
@@ -199,12 +199,12 @@
 		</p>
 	</div>
 
-	{#if errorMessage}
+	{#if fehler}
 		<div
 			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{fehler}</span>
 		</div>
 	{/if}
 

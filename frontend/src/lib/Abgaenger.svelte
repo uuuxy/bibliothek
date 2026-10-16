@@ -18,7 +18,7 @@
 	// State Runes
 	/** @type {any[]} */
 	let graduates = $state([]);
-	let loading = $state(true);
+	let laedt = $state(true);
 	// Saisonfenster vom Server: Von Mai bis Juli zeigt die Liste die Abschlussklassen;
 	// außerhalb ist sie leer, und die Tabelle erklärt warum, statt „alle entlastet" zu melden.
 	let fenster = $state({ offen: true, von: '', bis: '' });
@@ -124,12 +124,12 @@
 		} catch (err) {
 			ladefehler = `Die Abgängerliste konnte nicht geladen werden (${err}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
 	function erneutLaden() {
-		loading = true;
+		laedt = true;
 		ladeListe();
 	}
 
@@ -162,13 +162,13 @@
 		klassen={classes}
 		gesamt={graduates.length}
 		gefiltert={filteredGraduates.length}
-		laedt={loading}
+		{laedt}
 		druckLaeuft={loadingKontoauszuege}
 		onDrucken={printKontoauszuege}
 		onMailen={() => (versandOffen = true)}
 	/>
 
-	{#if loading}
+	{#if laedt}
 		<div class="py-12 flex justify-center items-center">
 			<Ladekreis size="lg" />
 		</div>

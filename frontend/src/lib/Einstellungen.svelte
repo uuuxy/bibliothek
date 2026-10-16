@@ -34,7 +34,7 @@
 	import { sichtbareKategorien } from './components/einstellungen/kategorien.js';
 	import { hatRecht } from './menue.js';
 
-	let loading = $state(true);
+	let laedt = $state(true);
 	/** @type {Record<string, any>} */
 	let daten = $state({});
 	// Leere Daten heißen „Vorgabewert" — bei einem Fehlschlag wird deshalb nichts
@@ -90,16 +90,16 @@
 	}
 
 	async function erneutLaden() {
-		loading = true;
+		laedt = true;
 		await loadSettings();
-		loading = false;
+		laedt = false;
 	}
 
 	onMount(erneutLaden);
 </script>
 
 <Seitenrahmen>
-	{#if loading}
+	{#if laedt}
 		<div class="flex items-center justify-center py-20">
 			<Ladekreis size="lg" />
 		</div>

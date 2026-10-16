@@ -33,7 +33,7 @@ const BESTAND = {
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 242,
 	'src/lib/components/leser/LusdImport.svelte': 311,
-	'src/lib/components/leser/Schuljahreswechsel.svelte': 209
+	'src/lib/components/leser/Schuljahreswechsel.svelte': 205
 };
 
 describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {

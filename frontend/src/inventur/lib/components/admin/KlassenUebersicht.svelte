@@ -33,8 +33,8 @@
 
 	/** @type {any[]} */
 	let classGroups = $state([]);
-	let loading = $state(true);
-	let error = $state(null);
+	let laedt = $state(true);
+	let fehler = $state(null);
 	let isManaging = $state(false);
 	let managingGroup = $state(null);
 
@@ -67,9 +67,9 @@
 	});
 
 	async function loadGroups() {
-		loading = true;
+		laedt = true;
 		// Ein neuer Versuch beginnt ohne den Fehler des letzten, sonst bliebe die Meldung stehen.
-		error = null;
+		fehler = null;
 		try {
 			const query = new URLSearchParams({
 				branch: filterBranch,
@@ -82,9 +82,9 @@
 			const json = await res.json();
 			classGroups = json.data || [];
 		} catch (err) {
-			error = /** @type {any} */ (err).message;
+			fehler = /** @type {any} */ (err).message;
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -152,9 +152,9 @@
 		</div>
 	</div>
 
-	{#if loading}
+	{#if laedt}
 		<div class="flex justify-center py-12"><Ladekreis size="lg" /></div>
-	{:else if error}
+	{:else if fehler}
 		<LadeFehler
 			titel="Klassensätze nicht geladen"
 			text="Die Klassensätze konnten nicht abgerufen werden."

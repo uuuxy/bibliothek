@@ -15,14 +15,14 @@ import { apiFetch } from '../../apiFetch.js';
 export function statistikAbruf() {
 	/** @type {any} */
 	let daten = $state(null);
-	let loading = $state(true);
+	let laedt = $state(true);
 	let fehler = $state(false);
 	let laufNr = 0;
 
 	/** @param {URLSearchParams | string} params */
 	async function laden(params) {
 		const meine = ++laufNr;
-		loading = true;
+		laedt = true;
 		fehler = false;
 		try {
 			const res = await apiFetch(`/api/statistiken?${params}`);
@@ -37,7 +37,7 @@ export function statistikAbruf() {
 			daten = null;
 			fehler = true;
 		} finally {
-			if (meine === laufNr) loading = false;
+			if (meine === laufNr) laedt = false;
 		}
 	}
 
@@ -46,7 +46,7 @@ export function statistikAbruf() {
 			return daten;
 		},
 		get loading() {
-			return loading;
+			return laedt;
 		},
 		get fehler() {
 			return fehler;

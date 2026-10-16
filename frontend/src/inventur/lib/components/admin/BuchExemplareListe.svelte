@@ -20,8 +20,8 @@
 	let exemplare = $state([]);
 	let ausgesondert = $state(0);
 	let bestellt = $state(0);
-	let loading = $state(true);
-	let error = $state('');
+	let laedt = $state(true);
+	let fehler = $state('');
 
 	const nichtImBestand = $derived(
 		[ausgesondert && `${ausgesondert} ausgesondert`, bestellt && `${bestellt} bestellt`]
@@ -35,8 +35,8 @@
 
 	async function ladeExemplare() {
 		if (!formular.id) return;
-		loading = true;
-		error = '';
+		laedt = true;
+		fehler = '';
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${formular.id}/exemplare`, {
 				credentials: 'include'
@@ -53,9 +53,9 @@
 			ausgesondert = alle.filter((e) => e.im_bestand === false && e.ist_ausgesondert).length;
 			bestellt = alle.length - exemplare.length - ausgesondert;
 		} catch (err) {
-			error = fehlertext(err);
+			fehler = fehlertext(err);
 		} finally {
-			loading = false;
+			laedt = false;
 		}
 	}
 
@@ -100,12 +100,12 @@
 
 	{#if formular.id}
 		<div class="mt-4">
-			{#if loading}
+			{#if laedt}
 				<div class="text-sm text-on-surface-variant py-4 flex items-center justify-center">
 					Lade Exemplare...
 				</div>
-			{:else if error}
-				<div class="text-sm text-error py-4">{error}</div>
+			{:else if fehler}
+				<div class="text-sm text-error py-4">{fehler}</div>
 			{:else if exemplare.length === 0}
 				<div class="text-sm text-on-surface-variant py-4 italic text-center">
 					Kein Exemplar im Bestand.
