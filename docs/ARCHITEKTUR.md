@@ -919,7 +919,7 @@ Basis des Servers.
 | -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `fuehreNaechtlicheDSGVOAus`      | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
 | `fuehreProtokollAufbewahrungAus` | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
-| `backupLauf.fuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
+| `BackupLauf.FuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
 | Idempotenz-TTL                   | `17 * * * *`                    | Schlüssel älter als 24 h entfernen (**stündlicher Takt**, 24 h ist die Aufbewahrung)                        |
 | Vormerkungs-Verfall              | `23 * * * *`                    | Abgelaufene „abholbereit"-Reservierungen abräumen                                                           |
 | Cover-Sync                       | `0 */6 * * *` + on demand       | Worker-Pool (8), Re-Entrancy-Guard, Retry für FAILED                                                        |

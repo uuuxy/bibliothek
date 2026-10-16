@@ -25,7 +25,7 @@ func TestProbeBeimStart_NurNachFehlschlag(t *testing.T) {
 	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "")
 
-	(&backupLauf{}).fuehreAus()
+	(&BackupLauf{}).FuehreAus()
 	sicherung := einzigeSicherung(t, verzeichnis)
 
 	pool, err := pgxpool.New(ctx, quellDSN)

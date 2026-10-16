@@ -73,7 +73,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 	}
 
 	// Täglich um 02:30 UTC die verschlüsselte Sicherung der Datenbank, in einer ruhigen Zeit.
-	backup := &backupLauf{}
+	backup := &BackupLauf{}
 
 	// Beim Start sagen, nicht erst um 02:30 in einer Logzeile, die niemand liest.
 	//
@@ -94,7 +94,7 @@ func (z *Zeitplan) Starte(coverAbgleich *service.CoverDienst) {
 
 	if _, err := z.cron.AddFunc(zeitSicherung, func() {
 		log.Println("Scheduler Backup: starting scheduled daily database backup...")
-		backup.fuehreAus()
+		backup.FuehreAus()
 	}); err != nil {
 		log.Printf("Scheduler: Failed to register backup job: %v", err)
 	}

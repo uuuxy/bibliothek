@@ -434,8 +434,10 @@ Eine Attrappe, die eine Schnittstelle nur in den Testdateien eines anderen Paket
 zieht das Werkzeug nicht mit (`tuertest.EinstellungenAttrappe`); `go vet ./...` baut auch die
 Tests und meldet die Stelle. Drei Stellen sieht auch `go vet ./...` nicht oder erst am Fehler:
 
-- Dateien hinter einem Build-Tag (`repository/raster_*_pg_test.go`): `go vet -tags raster
-  ./repository/` baut sie.
+- Dateien hinter einem Build-Tag (`repository/raster_*_pg_test.go`) und Skripte mit
+  `//go:build ignore` (`scripts/generalprobe/nachtsicherung.go`): `bedingte_dateien_test.go`
+  übersetzt sie in jedem Lauf der Suite, `sichtbarkeit_ratsche_test.go` zählt die Skripte als
+  Nutzer.
 - Wandelt ein Paket die Zeile eines anderen in seinen eigenen Typ um (`AbgaengerZeile(z)` in
   `api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), müssen die Felder beider Typen gleich
   heißen: Ein umbenanntes Feld zieht das Feld des Zwillings mit, das Feld in JSON bleibt.

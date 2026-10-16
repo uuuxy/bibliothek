@@ -17,7 +17,7 @@ import (
 // Groß geschrieben ist nur, was ein anderes Paket beim Namen nennt, auch in seinen Tests, und
 // der Typ in der Signatur eines solchen Namens (STIL.md 6, nach Best Practices: „Every exported
 // type increases the cognitive load for the reader."). Gemessen mit go/types über alle Pakete
-// samt Tests.
+// samt Tests und über die Skripte mit //go:build ignore.
 //
 // Ausgenommen sind Methoden, die eine Schnittstelle verlangt (auch die der Standardbibliothek),
 // Unwrap, Is, As und Meldung der Fehlertypen, die Türen (STIL.md 5), Konstanten eines Blocks, von
@@ -50,7 +50,8 @@ func TestSichtbarkeit_OeffentlichNurMitFremdemNutzer(t *testing.T) {
 }
 
 // ladePaketeMitTests lädt alle Pakete des Moduls mit Syntax und Typinformation, je auch in der
-// Fassung mit Tests.
+// Fassung mit Tests, dazu jedes Skript mit //go:build ignore als eigenes Programm: Es nennt
+// öffentliche Namen, gehört aber zu keinem Paket, das ./... findet.
 func ladePaketeMitTests(t *testing.T) []*packages.Package {
 	t.Helper()
 	konfig := &packages.Config{
@@ -58,24 +59,41 @@ func ladePaketeMitTests(t *testing.T) []*packages.Package {
 			packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
 		Tests: true,
 	}
-	pakete, err := packages.Load(konfig, "./...")
-	if err != nil {
-		t.Fatalf("Pakete laden: %v", err)
+	muster := [][]string{{"./..."}}
+	skripte, _ := bedingteDateien(t)
+	for _, skript := range skripte {
+		muster = append(muster, []string{"./" + skript})
 	}
-	if n := packages.PrintErrors(pakete); n > 0 {
-		t.Fatalf("%d Fehler beim Laden der Pakete: Die Messung wäre unvollständig", n)
+	var alle []*packages.Package
+	for _, m := range muster {
+		pakete, err := packages.Load(konfig, m...)
+		if err != nil {
+			t.Fatalf("Pakete laden (%v): %v", m, err)
+		}
+		if n := packages.PrintErrors(pakete); n > 0 {
+			t.Fatalf("%d Fehler beim Laden von %v: Die Messung wäre unvollständig", n, m)
+		}
+		alle = append(alle, pakete...)
 	}
-	return pakete
+	return alle
 }
 
-// besuche ruft je Paket, auch je Abhängigkeit, einmal auf.
+// istSkript erkennt ein Programm, das go/packages aus einer einzelnen Datei geladen hat.
+func istSkript(p *packages.Package) bool { return p.PkgPath == "command-line-arguments" }
+
+// besuche ruft je Paket, auch je Abhängigkeit, einmal auf. Skripte heißen alle
+// command-line-arguments und werden an ihrer Datei unterschieden.
 func besuche(pakete []*packages.Package, f func(*packages.Package)) {
 	gesehen := map[string]bool{}
 	packages.Visit(pakete, nil, func(p *packages.Package) {
-		if p.Types == nil || gesehen[p.ID] {
+		schluessel := p.ID
+		if istSkript(p) {
+			schluessel += strings.Join(p.GoFiles, ",")
+		}
+		if p.Types == nil || gesehen[schluessel] {
 			return
 		}
-		gesehen[p.ID] = true
+		gesehen[schluessel] = true
 		f(p)
 	})
 }
@@ -129,6 +147,9 @@ func (m *sichtbarkeitsMessung) sammle(p *packages.Package) {
 			}
 		}
 	}
+	if istSkript(p) {
+		m.sammleNutzer(p)
+	}
 	if !istModul(p) {
 		return
 	}
@@ -144,6 +165,11 @@ func (m *sichtbarkeitsMessung) sammle(p *packages.Package) {
 			m.definiert[name] = strings.TrimPrefix(filepath.ToSlash(stelle.Filename), m.wurzel+"/") + ":" + strconv.Itoa(stelle.Line)
 		}
 	}
+	m.sammleNutzer(p)
+}
+
+// sammleNutzer trägt jeden Namen ein, den p nennt, auch über eine Auswahl (x.Methode).
+func (m *sichtbarkeitsMessung) sammleNutzer(p *packages.Package) {
 	for _, objekt := range p.TypesInfo.Uses {
 		m.merkeNutzer(p, objekt)
 	}

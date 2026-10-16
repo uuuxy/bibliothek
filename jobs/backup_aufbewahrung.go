@@ -25,7 +25,7 @@ const (
 )
 
 // sicherungsStempel ist das Zeitformat im Namen der Nachtsicherung (UTC), geschrieben von
-// backupLauf.fuehreAus und gelesen von sicherungsZeit.
+// BackupLauf.FuehreAus und gelesen von sicherungsZeit.
 const sicherungsStempel = "2006-01-02T150405Z"
 
 // zuLoeschen liefert die Sicherungen, die die Aufbewahrung nicht hält. dateien ist nach Namen

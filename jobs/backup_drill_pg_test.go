@@ -56,7 +56,7 @@ func TestBackupRestoreDrill(t *testing.T) {
 	t.Setenv("BACKUP_DIR", verzeichnis)
 	t.Setenv("S3_ENDPOINT", "") // kein Offsite-Upload in der Probe
 
-	(&backupLauf{}).fuehreAus()
+	(&BackupLauf{}).FuehreAus()
 
 	rohBackup, err := os.ReadFile(einzigeSicherung(t, verzeichnis)) // #nosec G304 - Pfad aus t.TempDir()
 	if err != nil {

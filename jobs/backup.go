@@ -42,7 +42,7 @@ func IstSchluesselSchwach(schluessel string) bool {
 	return schluessel != "" && len(schluessel) < minBackupSchluesselLaenge
 }
 
-// backupLauf ist die tägliche verschlüsselte Sicherung der Datenbank. Er ruft pg_dump auf (muss
+// BackupLauf ist die tägliche verschlüsselte Sicherung der Datenbank. Er ruft pg_dump auf (muss
 // im PATH stehen), packt mit gzip und verschlüsselt mit AES-256-GCM, mit einem Schlüssel aus
 // BACKUP_ENCRYPTION_KEY.
 //
@@ -50,10 +50,10 @@ func IstSchluesselSchwach(schluessel string) bool {
 //   - DATABASE_URL          – DSN von PostgreSQL (im Betrieb schon gesetzt)
 //   - BACKUP_ENCRYPTION_KEY – Passphrase mit mindestens 32 Zeichen, aus der der Schlüssel entsteht
 //   - BACKUP_DIR            – Zielverzeichnis (Vorgabe: ./backups)
-type backupLauf struct{}
+type BackupLauf struct{}
 
-// fuehreAus führt die ganze Sicherung aus: Dump, gzip, Verschlüsselung mit AES-256-GCM.
-func (b *backupLauf) fuehreAus() {
+// FuehreAus führt die ganze Sicherung aus: Dump, gzip, Verschlüsselung mit AES-256-GCM.
+func (b *BackupLauf) FuehreAus() {
 	schluessel, dsn, verzeichnis, ok := leseBackupUmgebung()
 	if !ok {
 		return
