@@ -581,7 +581,7 @@ export function erzeugeOmniboxStore() {
 			});
 		} catch (e) {
 			// Keine Verbindung — der erwartete Fall, kein Fehler. Der Merker bleibt.
-			console.warn('Ausweis-Merker nicht aufloesbar, bleibt stehen:', e);
+			console.warn('Ausweis-Merker nicht auflösbar, bleibt stehen:', e);
 			return true;
 		}
 
@@ -598,7 +598,7 @@ export function erzeugeOmniboxStore() {
 		leuchteBildschirm('error');
 		spieleFehlerton();
 		zeigeFehlerBanner(
-			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c liess sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
+			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c ließ sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
 				`bitte den Ausweis erneut scannen.`
 		);
 		return false;
@@ -610,12 +610,12 @@ export function erzeugeOmniboxStore() {
 		const meldungen = {
 			// Geräte gehen ohne Netz nicht: Sie hängen an einer Checkliste, die es nur online gibt.
 			geraet:
-				`Geraete lassen sich ohne Netz nicht ausgeben oder zuruecknehmen — die Checkliste dazu gibt es nur online. ` +
+				`Geräte lassen sich ohne Netz nicht ausgeben oder zurücknehmen — die Checkliste dazu gibt es nur online. ` +
 				`\u201e${einordnung.nummer}\u201c wurde NICHT gebucht.`,
 			// Ohne Netz gibt es keine Namenssuche, weil auf dem Rechner der Theke keine
 			// Personendaten liegen sollen.
 			suche:
-				`Ohne Netz laesst sich nicht nach Namen suchen — auf diesem Rechner stehen keine Personendaten. ` +
+				`Ohne Netz lässt sich nicht nach Namen suchen — auf diesem Rechner stehen keine Personendaten. ` +
 				`Bitte den Ausweis scannen oder den Vorgang notieren.`,
 			// Die sichere Seite: Wer hier rät, schreibt das nächste Buch einer fremden Person zu.
 			unklar:
