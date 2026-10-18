@@ -126,8 +126,9 @@
 								{#if !zu}
 									<button
 										onclick={() => (systemOpen = !systemOpen)}
-										class="group/sys mb-2 flex w-full cursor-pointer items-center justify-between px-3 text-left"
+										class="group/sys mb-2 flex w-full cursor-pointer items-center justify-between rounded-sm px-3 text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
 										aria-expanded={systemOpen}
+										aria-controls="system-menu"
 									>
 										<span
 											class="text-on-surface-variant group-hover/sys:text-on-surface animate-fade-in text-sm font-medium transition-colors"
@@ -142,7 +143,7 @@
 									</button>
 								{/if}
 								{#if systemOpen || zu}
-									<div class="animate-fade-in space-y-1">
+									<div id="system-menu" class="animate-fade-in space-y-1">
 										{#each group.items as item (item.id)}
 											{#if darfSehen(item, authStore.currentUser)}
 												{@render navItem(item)}

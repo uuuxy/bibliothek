@@ -22,3 +22,6 @@
 ## 2026-09-05 - ARIA Labels on Icon-only Buttons
 **Learning:** When using components like `<Trash2>` inside a `<button>` without visible text, the `title` attribute alone is insufficient for screen readers. An explicit `aria-label` must be provided on the button element itself.
 **Action:** Always ensure icon-only buttons include an `aria-label` attribute describing their function, regardless of whether a `title` attribute (for tooltips) is present.
+## 2026-10-18 - Added focus-visible and aria-controls to custom accordion toggle
+**Learning:** Found that custom accordion toggle buttons (like the "System" menu in the sidebar) lacked keyboard focus indicators and `aria-controls` linking them to their content, hindering keyboard and screen reader users.
+**Action:** Always ensure custom interactive elements like accordion toggles include `focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none` for keyboard navigation and `aria-controls` mapping to the ID of the expanded content container.
