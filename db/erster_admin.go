@@ -21,13 +21,13 @@ const sqlErsterAdmin = `
 // Adresse aus INITIAL_ADMIN_EMAIL. Ein Passwort braucht es nicht; angemeldet wird über den
 // Mailserver der Schule (IMAP).
 func (v *Verbindung) LegeErstenAdminAn(ctx context.Context) error {
-	var anzahl int
-	err := v.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM benutzer").Scan(&anzahl)
+	var vorhanden bool
+	err := v.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer)").Scan(&vorhanden)
 	if err != nil {
 		return fmt.Errorf("failed to query benutzer count: %w", err)
 	}
 
-	if anzahl > 0 {
+	if vorhanden {
 		return nil // Es gibt schon Konten.
 	}
 
