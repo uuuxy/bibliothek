@@ -26,7 +26,7 @@ var ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 // Exemplar verliehen, lehnt es ab. Zurückgegebene Ausleihen und alle Schadensfälle des Titels
 // fallen mit, weil ihre Fremdschlüssel den Titel sonst hielten; unbezahlte Forderungen stehen
 // vorher im Protokoll (protokolliereOffeneForderungen).
-func (a *pgKatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error {
+func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err

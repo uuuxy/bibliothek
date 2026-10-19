@@ -11,7 +11,7 @@ import (
 )
 
 // TitelAbfragen ist der Datenbankzugang des Inventur-Moduls (Titel, Klassensätze,
-// Metadaten). Nicht zu verwechseln mit repository.KatalogAbfragen — jenes bedient den
+// Metadaten). Nicht zu verwechseln mit *repository.KatalogAbfragen — jenes bedient den
 // Ausleihbetrieb.
 type TitelAbfragen struct {
 	pool db.Pool

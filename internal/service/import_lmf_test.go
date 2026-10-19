@@ -69,10 +69,8 @@ func TestZerlegeLMFTeil(t *testing.T) {
 	}
 }
 
-// titelSchreiberAttrappe zeichnet Upserts auf; alle übrigen Interface-Methoden
-// stammen aus dem eingebetteten Nil-Interface und dürfen nicht aufgerufen werden.
+// titelSchreiberAttrappe zeichnet Upserts auf.
 type titelSchreiberAttrappe struct {
-	repository.KatalogAbfragen
 	titel []repository.Titel
 }
 

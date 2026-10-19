@@ -16,7 +16,6 @@ import (
 // einer doppelt vergebenen Nummer still entscheiden, wen die Theke lädt.
 
 type weicheKatalogAttrappe struct {
-	repository.KatalogAbfragen
 	exemplare map[string]*repository.Exemplar
 }
 

@@ -28,7 +28,7 @@ import (
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id} [delete]
-func (t *Tueren) TitelLoeschen(katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
+func (t *Tueren) TitelLoeschen(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {

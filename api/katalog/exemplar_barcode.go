@@ -51,14 +51,14 @@ type exemplarBarcodeAnfrage struct {
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/barcode [put]
-func (t *Tueren) ExemplarBarcodeSetzen(katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
+func (t *Tueren) ExemplarBarcodeSetzen(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.setzeExemplarBarcode(w, r, katalogAbfragen)
 	}
 }
 
 // setzeExemplarBarcode setzt den Barcode eines Exemplars und ordnet die Ablehnungen ein.
-func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, katalogAbfragen repository.KatalogAbfragen) {
+func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, katalogAbfragen *repository.KatalogAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Exemplars fehlt", nil)

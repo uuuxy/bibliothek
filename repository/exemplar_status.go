@@ -11,7 +11,7 @@ import (
 )
 
 // SetzeExemplarBarcode ändert die Barcode-Zuordnung eines Exemplars.
-func (a *pgKatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string, barcode string) error {
+func (a *KatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string, barcode string) error {
 	query := `
 		UPDATE buecher_exemplare
 		SET barcode_id = $1, aktualisiert_am = CURRENT_TIMESTAMP
@@ -47,10 +47,11 @@ func (a *pgKatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string,
 // und der Ersatzbetrag stiege wieder auf den vollen Zeitwert.
 //
 // Wird ein Exemplar dabei ausgesondert, steht es mit der Person im Protokoll
-// (ProtokolliereAussonderung), in derselben Transaktion wie der Wechsel. Wer ein schon
+// (ProtokolliereAussonderung), in derselben Transaktion wie der Wechsel; ohne bearbeiterID
+// lehnt es mit ErrAussonderungOhneBearbeiter ab. Wer ein schon
 // ausgesondertes Exemplar noch einmal speichert, etwa mit geänderter Notiz, schreibt keinen
 // zweiten Eintrag.
-func (a *pgKatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
+func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
 	if istAusgesondert && bearbeiterID == "" {
 		return ErrAussonderungOhneBearbeiter
 	}
@@ -111,9 +112,9 @@ func (a *pgKatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string
 }
 
 // IstExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt: weder ausgesondert noch
-// bestellt. Die Status-Tür nennt den Wert nach dem Speichern, damit die Oberfläche die Regel
+// bestellt (SQLExemplarImBestand). Die Status-Tür nennt den Wert nach dem Speichern, damit die Oberfläche die Regel
 // von AendereExemplarStatus nicht nachbaut.
-func (a *pgKatalogAbfragen) IstExemplarImBestand(ctx context.Context, id string) (bool, error) {
+func (a *KatalogAbfragen) IstExemplarImBestand(ctx context.Context, id string) (bool, error) {
 	var imBestand bool
 	err := a.db.QueryRow(ctx,
 		`SELECT (`+SQLExemplarImBestand+`) FROM buecher_exemplare e WHERE e.id = $1`, id).Scan(&imBestand)

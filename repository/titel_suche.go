@@ -4,10 +4,11 @@ import (
 	"context"
 )
 
-// FindeTitel führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch.
-// Der Teilstring-Vergleich daneben nimmt den Suchtext in der Form, in der Titeltexte
-// gespeichert sind (TiteltextNormalform).
-func (a *pgKatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Titel, error) {
+// FindeTitel führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch und
+// vergleicht daneben Teile des Texts und die ISBN; die Treffer stehen nach ihrem Rang, höchstens
+// 50, und nur Titel mit einem Exemplar (SQLTitelHatExemplar). Der Teilstring-Vergleich nimmt den
+// Suchtext in der Form, in der Titeltexte gespeichert sind (TiteltextNormalform).
+func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Titel, error) {
 	suchtext = TiteltextNormalform(suchtext)
 	query := `
 		SELECT 
@@ -46,15 +47,16 @@ func (a *pgKatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]
 	return treffer, nil
 }
 
-// FindeTitelUnscharf führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus
-// und liefert zusätzlich die Gesamtzahl der Treffer (nicht nur die des Limits).
+// FindeTitelUnscharf führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus,
+// über Titel, Autor, ISBN und Signatur, höchstens limit Treffer, und liefert zusätzlich die
+// Gesamtzahl der Treffer (nicht nur die des Limits).
 //
 // Wie bei der Schülersuche muss jedes Token irgendeine Spalte treffen, statt die
 // komplette Eingabe eine einzelne: "rowling harry" findet damit den Titel über
 // Autor + Titel, was der frühere Ganzstring-Vergleich nicht konnte. Die
 // ISBN-Gleichheit bleibt als eigener Zweig bestehen — dort wird die ganze,
 // bindestrichbereinigte Eingabe verglichen, nicht tokenweise.
-func (a *pgKatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error) {
+func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error) {
 	tokens := suchTokens(suchtext)
 	if len(tokens) == 0 {
 		return nil, 0, nil

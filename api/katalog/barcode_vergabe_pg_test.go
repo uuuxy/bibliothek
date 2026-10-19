@@ -52,7 +52,7 @@ func naechsteInterneNummer(t *testing.T, srv *Tueren) string {
 // Exemplare damit anlegen (BestellDienst.LegeAn). Schlägt der Insert
 // fehl, kippt in der Anwendung die komplette Bestellung — deshalb ist der Insert hier
 // Teil der Prüfung und nicht nur der gezogene Barcode.
-func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo repository.KatalogAbfragen, titelID string, menge int) []string {
+func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo *repository.KatalogAbfragen, titelID string, menge int) []string {
 	t.Helper()
 	ctx := context.Background()
 

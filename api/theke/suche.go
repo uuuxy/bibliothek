@@ -25,7 +25,7 @@ type suchErgebnis struct {
 
 // Suche sucht unscharf nach Lesern und Titeln, ohne Vorsilbe (GET /api/search), und erkennt
 // einen gescannten Barcode exakt, ohne zu buchen.
-func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
+func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))
 		if suchtext == "" {

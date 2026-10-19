@@ -20,7 +20,7 @@ type vormerkTheke struct {
 	pool        *pgxpool.Pool
 	suffix      string
 	mitarbeiter string
-	buecher     repository.KatalogAbfragen
+	buecher     *repository.KatalogAbfragen
 	dienst      AusleihDienst
 }
 

@@ -22,7 +22,7 @@ type titelSucheAntwort struct {
 // Titeln Schüler, die der Druck nicht zeigt; die Liste GET /api/books sucht ohne Signatur und
 // ohne Umlaut-Normalform. Diese Tür sucht deshalb mit der Abfrage der Theke,
 // KatalogAbfragen.FindeTitelUnscharf.
-func (t *Tueren) TitelSuche(katalogAbfragen repository.KatalogAbfragen) http.HandlerFunc {
+func (t *Tueren) TitelSuche(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))
 		if suchtext == "" {

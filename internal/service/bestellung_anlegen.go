@@ -22,12 +22,12 @@ import (
 // BestellDienst legt Bestellungen an.
 type BestellDienst struct {
 	datenbank           *db.Verbindung
-	katalogAbfragen     repository.KatalogAbfragen
+	katalogAbfragen     *repository.KatalogAbfragen
 	lieferantenAbfragen *repository.LieferantenAbfragen
 }
 
 // NewBestellDienst baut den Dienst für Bestellungen.
-func NewBestellDienst(datenbank *db.Verbindung, katalogAbfragen repository.KatalogAbfragen) *BestellDienst {
+func NewBestellDienst(datenbank *db.Verbindung, katalogAbfragen *repository.KatalogAbfragen) *BestellDienst {
 	return &BestellDienst{
 		datenbank:           datenbank,
 		katalogAbfragen:     katalogAbfragen,

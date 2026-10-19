@@ -24,7 +24,7 @@ import (
 //
 // Zurückgegeben wird die Zahl der verarbeiteten (eingefügten oder
 // aktualisierten) Titel.
-func (a *pgKatalogAbfragen) SchreibeTitel(ctx context.Context, titel []Titel) (int, error) {
+func (a *KatalogAbfragen) SchreibeTitel(ctx context.Context, titel []Titel) (int, error) {
 	if len(titel) == 0 {
 		return 0, nil
 	}

@@ -96,8 +96,9 @@ func leseExemplar(row scanner) (*Exemplar, error) {
 	return &bc, nil
 }
 
-// FindeExemplar löst einen Buch-Barcode auf.
-func (a *pgKatalogAbfragen) FindeExemplar(ctx context.Context, barcode string) (*Exemplar, error) {
+// FindeExemplar löst einen Buch-Barcode auf: das Exemplar mit den Angaben seines Titels; nil,
+// wenn keines die Nummer trägt.
+func (a *KatalogAbfragen) FindeExemplar(ctx context.Context, barcode string) (*Exemplar, error) {
 	query := `
 		SELECT 
 			e.id, e.titel_id, coalesce(e.barcode_id, ''), coalesce(e.zustand_notiz, ''), e.erworben_am, coalesce(e.ist_ausleihbar, false), coalesce(e.ist_ausgesondert, false), e.erstellt_am, e.aktualisiert_am,

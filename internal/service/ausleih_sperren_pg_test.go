@@ -20,7 +20,7 @@ import (
 // sperrTheke ist die Theke eines Tests: Buch- und Geräte-Pfad über echte Dienste.
 type sperrTheke struct {
 	pool       *pgxpool.Pool
-	katalog    repository.KatalogAbfragen
+	katalog    *repository.KatalogAbfragen
 	ausleihe   service.AusleihDienst
 	omnibox    *service.OmniboxDienst
 	bearbeiter string

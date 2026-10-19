@@ -86,8 +86,8 @@ func leseTitelMitZusatz(row scanner, zusatz ...any) (*Titel, error) {
 }
 
 // LadeTitel liest Titel, Autor, ISBN, Verlag und Signatur eines Titels in der Transaktion des
-// Rufers.
-func (a *pgKatalogAbfragen) LadeTitel(ctx context.Context, tx pgx.Tx, id string) (*Titel, error) {
+// Rufers; die übrigen Felder bleiben leer. Kein Treffer ist pgx.ErrNoRows.
+func (a *KatalogAbfragen) LadeTitel(ctx context.Context, tx pgx.Tx, id string) (*Titel, error) {
 	query := "SELECT id, coalesce(titel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(signatur, '') FROM buecher_titel WHERE id = $1"
 
 	var t Titel

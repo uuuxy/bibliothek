@@ -29,3 +29,25 @@ type leserErmittlung interface {
 	leserAbruf
 	ausweisErkennung
 }
+
+// exemplarErkennung liefert das Exemplar zu einem Barcode (repository.KatalogAbfragen).
+type exemplarErkennung interface {
+	// FindeExemplar liefert das Exemplar zu einem Barcode mit den Angaben seines Titels; nil,
+	// wenn keines die Nummer trägt.
+	FindeExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error)
+}
+
+// katalogErmittlung findet zu einer Eingabe der Theke das Exemplar oder die Titel.
+type katalogErmittlung interface {
+	exemplarErkennung
+	// FindeTitel sucht über Titel, Autor und ISBN und ordnet die Treffer nach ihrem Rang;
+	// höchstens 50, nur Titel mit einem Exemplar.
+	FindeTitel(ctx context.Context, suchtext string) ([]repository.Titel, error)
+}
+
+// titelImport legt die Titel eines Imports an oder ändert sie (repository.KatalogAbfragen).
+type titelImport interface {
+	// SchreibeTitel legt viele Titel in einem Sammelauftrag an oder ändert sie und liefert die
+	// Zahl der verarbeiteten; einen Titel ohne ISBN ordnet es über seinen Titel zu.
+	SchreibeTitel(ctx context.Context, titel []repository.Titel) (int, error)
+}

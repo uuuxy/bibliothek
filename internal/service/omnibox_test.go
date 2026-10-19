@@ -87,7 +87,7 @@ func TestNewOmniboxDienst(t *testing.T) {
 	// legt.
 	var pool db.Pool
 	var studentRepo leserErmittlung
-	var bookRepo repository.KatalogAbfragen
+	var bookRepo katalogErmittlung
 	var loanRepo repository.AusleihAbfragen
 	var loanSvc AusleihDienst
 	var deviceSvc *GeraeteDienst
@@ -125,9 +125,9 @@ func TestNewOmniboxDienst(t *testing.T) {
 	}
 }
 
-// katalogAttrappe erfüllt von repository.KatalogAbfragen nur FindeExemplar.
+// katalogAttrappe erfüllt von katalogErmittlung nur FindeExemplar.
 type katalogAttrappe struct {
-	repository.KatalogAbfragen
+	katalogErmittlung
 	findeExemplar func(ctx context.Context, barcode string) (*repository.Exemplar, error)
 }
 
@@ -280,7 +280,7 @@ func TestVerarbeiteExemplar(t *testing.T) {
 }
 
 type sucheKatalogAttrappe struct {
-	repository.KatalogAbfragen
+	katalogErmittlung
 	titel []repository.Titel
 	err   error
 }
