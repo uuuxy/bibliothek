@@ -7,7 +7,7 @@ import (
 	"bibliothek/internal/service"
 )
 
-func (s *Server) registriereThekenUndInventurRouten(mux *http.ServeMux, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, omniboxDienst service.OmniboxDienst, nachbuchDienst service.NachbuchDienst) {
+func (s *Server) registriereThekenUndInventurRouten(mux *http.ServeMux, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, omniboxDienst *service.OmniboxDienst, nachbuchDienst service.NachbuchDienst) {
 	// Die Eingabe der Omnibox: perform_actions, nicht view_students, weil das die Kernfunktion
 	// der Theke ist (Ausleihe, Rückgabe, Scan, Suche). So arbeitet die Rolle Helfer an der Theke
 	// ohne die breiten Rechte von view_students (Schülerlisten, Mahnwesen, Sammeldruck der

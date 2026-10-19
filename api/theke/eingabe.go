@@ -177,8 +177,16 @@ func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.Id
 	return true
 }
 
+// eingabeVerarbeitung erkennt, ob eine Eingabe der Theke einen Leser, ein Exemplar oder ein
+// Gerät meint oder eine Suche ist, und bucht, was zu buchen ist (service.OmniboxDienst). Ein
+// fachlicher Fehler trägt service.ErrNichtGefunden, ErrGesperrt, ErrUngueltigerZustand oder
+// ErrKonflikt; eine Sperre nennt ihren Grund als service.SperrgrundFehler.
+type eingabeVerarbeitung interface {
+	VerarbeiteEingabe(ctx context.Context, eingabe service.OmniboxEingabe) (*service.OmniboxErgebnis, error)
+}
+
 // EingabeVerarbeiten nimmt Scan und Suche der Omnibox an (POST /api/action).
-func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerFunc {
+func (t *Tueren) EingabeVerarbeiten(omnibox eingabeVerarbeitung) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.verarbeiteEingabe(w, r, omnibox)
 	}
@@ -186,7 +194,7 @@ func (t *Tueren) EingabeVerarbeiten(omnibox service.OmniboxDienst) http.HandlerF
 
 // verarbeiteEingabe nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die
 // Omnibox.
-func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox service.OmniboxDienst) {
+func (t *Tueren) verarbeiteEingabe(w http.ResponseWriter, r *http.Request, omnibox eingabeVerarbeitung) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)

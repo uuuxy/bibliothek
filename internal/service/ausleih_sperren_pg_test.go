@@ -22,7 +22,7 @@ type sperrTheke struct {
 	pool       *pgxpool.Pool
 	katalog    repository.KatalogAbfragen
 	ausleihe   service.AusleihDienst
-	omnibox    service.OmniboxDienst
+	omnibox    *service.OmniboxDienst
 	bearbeiter string
 }
 

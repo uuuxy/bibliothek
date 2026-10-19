@@ -41,7 +41,7 @@ func (r *weicheLeserAttrappe) FindeZuBarcode(_ context.Context, barcode string) 
 // nackte, längere Nummern ohne "S-"-Präfix müssen am Pult den Schüler öffnen,
 // ohne das bestehende Buch-Routing oder die Volltextsuche zu stören.
 func TestVerarbeiteEingabe_AusweisOhnePraefix(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"20240001737": {ID: "s1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster"},
@@ -60,7 +60,7 @@ func TestVerarbeiteEingabe_AusweisOhnePraefix(t *testing.T) {
 // TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche stellt sicher, dass Eingaben,
 // die weder Buch- noch Ausweis-Barcode sind, weiterhin in der Volltextsuche landen.
 func TestVerarbeiteEingabe_UnbekannteNummerFaelltAufSuche(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}
@@ -90,7 +90,7 @@ func (r *weicheLeserAttrappe) Finde(_ context.Context, id string) (*repository.L
 // Die Auswahl schickt deshalb die Kennung, nicht die Ausweisnummer: Bei einem Kollegen aus der
 // Selbstanmeldung ist die leer, und der Klick täte nichts.
 func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"ohne-ausweis": {ID: "l1", Vorname: "Hendrik", Nachname: "Wendlandt", Art: "liv"},
@@ -110,7 +110,7 @@ func TestVerarbeiteEingabe_LeserAusDerTrefferliste(t *testing.T) {
 // Fehler — sie darf nicht in die Buchtitel-Volltextsuche durchfallen. Dort stünde dann
 // „keine Treffer", und an der Theke sähe es aus, als sei der Klick ins Leere gegangen.
 func TestVerarbeiteEingabe_LeserIDUnbekannt(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}

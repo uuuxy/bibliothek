@@ -18,7 +18,7 @@ func TestAbholfachHinweis_FehlerLaesstIhnLeer(t *testing.T) {
 	defer mock.Close()
 	mock.ExpectQuery(`FROM vormerkungen v`).WithArgs("leser-1").WillReturnError(errors.New("datenbank nicht erreichbar"))
 
-	svc := &omniboxDienst{pool: mock}
+	svc := &OmniboxDienst{pool: mock}
 	if hinweis := svc.ladeAbholbereiteVormerkungen(context.Background(), "leser-1"); hinweis != nil {
 		t.Errorf("Hinweis %+v, erwartet keinen", hinweis)
 	}

@@ -15,7 +15,7 @@ import (
 // und „jeder Ausweis landet beim Buch" liegt genau ein Bindestrich.
 func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	const karte = "B97601826457"
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			karte: {ID: "s1", Vorname: "Nina", Nachname: "Berger"},
@@ -37,7 +37,7 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 // Antwort heißt darum für beide „student" und trägt die Art.
 func TestLehrerausweisOhnePraefix(t *testing.T) {
 	const karte = "B97601826458"
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			karte: {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
@@ -59,7 +59,7 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 // getippter Titel ist genau dieser Fall — er ist weder Buchbarcode noch Ausweis und muss in der
 // Volltextsuche landen.
 func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}
@@ -81,7 +81,7 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 // eindeutige Ausweisnummer „L-<Littera-Nummer>" (internal/littera, ausweis). „L-" sagt nur
 // „Ausweis", nicht „Lehrkraft": Der Schüler muss über den neu gedruckten Ausweis zu laden sein.
 func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"L-4711": {ID: "s1", BarcodeID: "L-4711", Vorname: "Ersatz", Nachname: "Nummer"},
@@ -100,7 +100,7 @@ func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 // die Vorsilben nicht, und auf dem Ausweis stehen sie auch nicht — eine Lehrkraft mit
 // S-Nummer muss laden.
 func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
 			"S-0815": {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
@@ -118,7 +118,7 @@ func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 // TestUnbekannterAusweisMeldetSichLaut: Eine S-/L-Nummer ohne Person bleibt ein Fehler —
 // sie verschwindet nicht leise in der Volltextsuche.
 func TestUnbekannterAusweisMeldetSichLaut(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}

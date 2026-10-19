@@ -35,7 +35,7 @@ import (
 type nachbuchWelt struct {
 	pool                         *pgxpool.Pool
 	srv                          *Tueren
-	online                       service.OmniboxDienst
+	online                       *service.OmniboxDienst
 	nachbuch                     service.NachbuchDienst
 	bearbeiter, anna, ben, carla string
 	code, exemplarID             string

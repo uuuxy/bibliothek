@@ -81,15 +81,9 @@ type OmniboxEingabe struct {
 	SperreUebergehen     bool
 }
 
-// OmniboxDienst beantwortet jede Eingabe der Omnibox, des einen Eingabefelds der Theke.
-type OmniboxDienst interface {
-	// VerarbeiteEingabe erkennt, ob die Eingabe einen Leser, ein Exemplar oder ein Gerät meint
-	// oder eine Suche ist, und bucht, was zu buchen ist.
-	VerarbeiteEingabe(ctx context.Context, eingabe OmniboxEingabe) (*OmniboxErgebnis, error)
-}
-
-// omniboxDienst erfüllt OmniboxDienst; Ausleihe und Gerät bucht es über deren Dienste.
-type omniboxDienst struct {
+// OmniboxDienst beantwortet jede Eingabe der Omnibox, des einen Eingabefelds der Theke;
+// Ausleihe und Gerät bucht er über deren Dienste.
+type OmniboxDienst struct {
 	pool            db.Pool
 	leserAbfragen   repository.LeserAbfragen
 	katalogAbfragen repository.KatalogAbfragen
@@ -106,8 +100,8 @@ func NewOmniboxDienst(
 	ausleihAbfragen repository.AusleihAbfragen,
 	ausleihe AusleihDienst,
 	geraete *GeraeteDienst,
-) OmniboxDienst {
-	return &omniboxDienst{
+) *OmniboxDienst {
+	return &OmniboxDienst{
 		pool:            pool,
 		leserAbfragen:   leserAbfragen,
 		katalogAbfragen: katalogAbfragen,
@@ -130,7 +124,7 @@ func NewOmniboxDienst(
 // Sie steht hier und nicht in den Zweigen, weil der alte Aufdruck jede Form haben kann:
 // „A-100037" geht über den Ausweis, „B-100016" über das Buch, eine nackte Littera-Nummer über
 // die Suche.
-func (d *omniboxDienst) VerarbeiteEingabe(ctx context.Context, eingabe OmniboxEingabe) (*OmniboxErgebnis, error) {
+func (d *OmniboxDienst) VerarbeiteEingabe(ctx context.Context, eingabe OmniboxEingabe) (*OmniboxErgebnis, error) {
 	erg, err := d.verarbeite(ctx, eingabe)
 	if !istOhneTreffer(erg, err) {
 		return erg, err
@@ -170,7 +164,7 @@ func istOhneTreffer(erg *OmniboxErgebnis, err error) bool {
 // verarbeite ordnet die Eingabe an ihrer Vorsilbe einem Zweig zu. vorsilben_zwilling_test.go
 // liest den Rumpf dieser Funktion und hält die Vorsilben gegen die Einordnung der Theke ohne
 // Netz; wer sie umbenennt, zieht den Namen dort nach.
-func (d *omniboxDienst) verarbeite(ctx context.Context, eingabe OmniboxEingabe) (*OmniboxErgebnis, error) {
+func (d *OmniboxDienst) verarbeite(ctx context.Context, eingabe OmniboxEingabe) (*OmniboxErgebnis, error) {
 	erg := &OmniboxErgebnis{}
 
 	// A- ist ein Ausweis; S- und L- sind ältere Vorsilben von Ausweisen, die weiter gelesen
@@ -211,7 +205,7 @@ func (d *omniboxDienst) verarbeite(ctx context.Context, eingabe OmniboxEingabe) 
 //
 // Die Suchen liefern ohne Treffer (nil, nil); ein Fehler ist deshalb einer der Datenbank und
 // geht weiter (500), statt als „nicht gefunden" zu verschwinden.
-func (d *omniboxDienst) verarbeiteOhneVorsilbe(ctx context.Context, eingabe OmniboxEingabe, erg *OmniboxErgebnis) error {
+func (d *OmniboxDienst) verarbeiteOhneVorsilbe(ctx context.Context, eingabe OmniboxEingabe, erg *OmniboxErgebnis) error {
 	exemplar, exemplarErr := d.katalogAbfragen.FindeExemplar(ctx, eingabe.Text)
 	if exemplarErr != nil {
 		return fmt.Errorf("datenbankfehler bei Barcode-Auflösung: %w", exemplarErr)
@@ -250,7 +244,7 @@ func (d *omniboxDienst) verarbeiteOhneVorsilbe(ctx context.Context, eingabe Omni
 }
 
 // uebernimmGeraeteErgebnis überträgt das Ergebnis des Geräts in die Antwort der Omnibox.
-func (d *omniboxDienst) uebernimmGeraeteErgebnis(geraeteErg *geraeteErgebnis, erg *OmniboxErgebnis) {
+func (d *OmniboxDienst) uebernimmGeraeteErgebnis(geraeteErg *geraeteErgebnis, erg *OmniboxErgebnis) {
 	if geraeteErg == nil {
 		return
 	}
@@ -267,7 +261,7 @@ func (d *omniboxDienst) uebernimmGeraeteErgebnis(geraeteErg *geraeteErgebnis, er
 // „Ausweis" und nicht die Art des Lesers: Die Übernahme aus Littera gibt auch einem Schüler
 // ohne eindeutige Nummer „L-<Littera-Nummer>". Eine unbekannte Nummer bleibt ein lauter Fehler
 // und verschwindet nicht in der Suche.
-func (d *omniboxDienst) verarbeiteAusweis(ctx context.Context, nummer string, erg *OmniboxErgebnis) error {
+func (d *OmniboxDienst) verarbeiteAusweis(ctx context.Context, nummer string, erg *OmniboxErgebnis) error {
 	leser, err := d.leserAbfragen.FindeZuBarcode(ctx, nummer)
 	if err != nil {
 		return err
@@ -290,7 +284,7 @@ const leserIDPraefix = "leser:"
 //
 // Eine unbekannte ID ist ein lauter Fehler und fällt nicht in die Volltextsuche: Dort
 // stünde „keine Treffer", und der Klick sähe aus, als sei nichts passiert.
-func (d *omniboxDienst) verarbeiteLeserID(ctx context.Context, id string, erg *OmniboxErgebnis) error {
+func (d *OmniboxDienst) verarbeiteLeserID(ctx context.Context, id string, erg *OmniboxErgebnis) error {
 	leser, err := d.leserAbfragen.Finde(ctx, id)
 	if err != nil {
 		return fmt.Errorf("datenbankfehler bei der Leser-Auflösung: %w", err)
@@ -306,7 +300,7 @@ func (d *omniboxDienst) verarbeiteLeserID(ctx context.Context, id string, erg *O
 //
 // Der Hinweis gilt Vormerkungen, und die legen nur Schüler an — für einen Kollegen ist
 // die Liste leer, ohne dass es hier einer Fallunterscheidung bedarf.
-func (d *omniboxDienst) zeigeLeser(ctx context.Context, leser *repository.Leser, erg *OmniboxErgebnis) {
+func (d *OmniboxDienst) zeigeLeser(ctx context.Context, leser *repository.Leser, erg *OmniboxErgebnis) {
 	erg.Art = "student"
 	erg.Leser = leser
 	erg.Abholbereit = d.ladeAbholbereiteVormerkungen(ctx, leser.ID)
@@ -315,7 +309,7 @@ func (d *omniboxDienst) zeigeLeser(ctx context.Context, leser *repository.Leser,
 // ladeAbholbereiteVormerkungen lädt für den Hinweis auf das Abholfach die Bücher, die für den
 // Leser bereitliegen. Ein Fehler bricht den Scan nicht ab und steht im Log: Die Theke soll
 // wegen eines Hinweises nicht stehen.
-func (d *omniboxDienst) ladeAbholbereiteVormerkungen(ctx context.Context, schuelerID string) []AbholbereiteVormerkung {
+func (d *OmniboxDienst) ladeAbholbereiteVormerkungen(ctx context.Context, schuelerID string) []AbholbereiteVormerkung {
 	// Die Tests der Weiche bauen den Dienst ohne Pool; dort gibt es nichts zu laden.
 	if d.pool == nil {
 		return nil
@@ -333,7 +327,7 @@ func (d *omniboxDienst) ladeAbholbereiteVormerkungen(ctx context.Context, schuel
 }
 
 // verarbeiteSuche sucht in Titel, Autor, ISBN und Systematik.
-func (d *omniboxDienst) verarbeiteSuche(ctx context.Context, text string, erg *OmniboxErgebnis) error {
+func (d *OmniboxDienst) verarbeiteSuche(ctx context.Context, text string, erg *OmniboxErgebnis) error {
 	titel, err := d.katalogAbfragen.FindeTitel(ctx, text)
 	if err != nil {
 		return err
@@ -347,7 +341,7 @@ func (d *omniboxDienst) verarbeiteSuche(ctx context.Context, text string, erg *O
 // offene Ausleihe vor, holt der Scan es zurück (Umlauf und Forderung in einer Transaktion) und
 // endet mit „info"; ausgeliehen wird erst mit dem nächsten Scan. fertig heißt, dass das
 // Ergebnis steht.
-func (d *omniboxDienst) versucheReaktivierung(ctx context.Context, nummer string, exemplar *repository.Exemplar, bearbeiterID string, erg *OmniboxErgebnis) (fertig bool, err error) {
+func (d *OmniboxDienst) versucheReaktivierung(ctx context.Context, nummer string, exemplar *repository.Exemplar, bearbeiterID string, erg *OmniboxErgebnis) (fertig bool, err error) {
 	offeneAusleihe, err := d.ausleihAbfragen.FindeOffene(ctx, exemplar.ID)
 	if err != nil {
 		return false, err
@@ -377,7 +371,7 @@ func (d *omniboxDienst) versucheReaktivierung(ctx context.Context, nummer string
 // holeExemplarZurueck ist der Scan am Netz über dem Baustein repository.HoleExemplarZurueck, in
 // eigener Transaktion, weil hier nichts weiter folgt. Das Nachbuchen legt den Baustein in die
 // Transaktion seiner Buchung.
-func (d *omniboxDienst) holeExemplarZurueck(ctx context.Context, exemplarID, bearbeiterID string) (repository.RueckkehrBefund, error) {
+func (d *OmniboxDienst) holeExemplarZurueck(ctx context.Context, exemplarID, bearbeiterID string) (repository.RueckkehrBefund, error) {
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return repository.RueckkehrBefund{}, err
@@ -413,7 +407,7 @@ func aufsichtHinweis(b repository.RueckkehrBefund) string {
 
 // verarbeiteExemplar bucht den Scan eines Buchs: ohne geöffneten Leser die Rückgabe, mit ihm
 // die Buchung am Leser.
-func (d *omniboxDienst) verarbeiteExemplar(ctx context.Context, eingabe OmniboxEingabe, erg *OmniboxErgebnis) error {
+func (d *OmniboxDienst) verarbeiteExemplar(ctx context.Context, eingabe OmniboxEingabe, erg *OmniboxErgebnis) error {
 	exemplar, err := d.katalogAbfragen.FindeExemplar(ctx, eingabe.Text)
 	if err != nil {
 		return err
@@ -451,7 +445,7 @@ func (d *omniboxDienst) verarbeiteExemplar(ctx context.Context, eingabe OmniboxE
 }
 
 // uebernimmAusleihErgebnis überträgt das Ergebnis der Ausleihe in die Antwort der Omnibox.
-func (d *omniboxDienst) uebernimmAusleihErgebnis(ausleihErg *AusleihErgebnis, erg *OmniboxErgebnis) {
+func (d *OmniboxDienst) uebernimmAusleihErgebnis(ausleihErg *AusleihErgebnis, erg *OmniboxErgebnis) {
 	if ausleihErg == nil {
 		return
 	}
@@ -474,6 +468,6 @@ func (d *omniboxDienst) uebernimmAusleihErgebnis(ausleihErg *AusleihErgebnis, er
 // dieselbe Gestalt hat.
 func OmniboxErgebnisAus(ausleihErg *AusleihErgebnis) *OmniboxErgebnis {
 	erg := &OmniboxErgebnis{}
-	(&omniboxDienst{}).uebernimmAusleihErgebnis(ausleihErg, erg)
+	(&OmniboxDienst{}).uebernimmAusleihErgebnis(ausleihErg, erg)
 	return erg
 }

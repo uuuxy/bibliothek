@@ -32,7 +32,7 @@ import (
 // zwischenzeitlich lässt nach dem Commit der ersten Anfrage die zweite starten, bevor die
 // erste ihre Antwort speichert.
 type zwischenzeitlich struct {
-	echt    service.OmniboxDienst
+	echt    *service.OmniboxDienst
 	einmal  sync.Once
 	zweite  func()
 	fertig  chan struct{}

@@ -127,7 +127,7 @@ func vorsilbenAusOmniboxSwitch(t *testing.T) map[string]string {
 	// Chance gibt, und enthält selbst keine Vorsilbe. Zieht der Switch um, meldet die
 	// Nicht-leer-Garantie am Ende dieser Funktion „nichts gemessen", statt still grün zu
 	// bleiben.
-	const switchFunktion = "func (d *omniboxDienst) verarbeite"
+	const switchFunktion = "func (d *OmniboxDienst) verarbeite"
 	start := strings.Index(quelle, switchFunktion)
 	if start < 0 {
 		t.Fatalf("%s nicht gefunden — der Detektor misst nichts. Wurde die Funktion "+

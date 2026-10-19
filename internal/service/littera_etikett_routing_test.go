@@ -27,7 +27,7 @@ func (l *etikettAusleihAttrappe) NimmZurueck(_ context.Context, exemplar *reposi
 func TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 	exemplar := &repository.Exemplar{ID: "ex1", BarcodeID: "58968", Titel: "Testbuch", IstAusleihbar: true}
 	loanSvc := &etikettAusleihAttrappe{}
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{"58968": exemplar}},
 		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 		ausleihe:        loanSvc,
@@ -46,7 +46,7 @@ func TestVerarbeiteEingabe_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 // Littera-EAN, deren Mediennummer nicht im Bestand ist, darf keine Aktion
 // auslösen — sie läuft in die Volltextsuche.
 func TestVerarbeiteEingabe_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
-	svc := &omniboxDienst{
+	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen:   &weicheLeserAttrappe{leser: map[string]*repository.Leser{}},
 	}

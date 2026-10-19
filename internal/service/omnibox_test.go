@@ -55,7 +55,7 @@ func TestVerarbeiteAusweis(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc := &omniboxDienst{
+			svc := &OmniboxDienst{
 				leserAbfragen: &festerLeserAttrappe{leser: tt.leser, err: tt.err},
 			}
 
@@ -104,27 +104,22 @@ func TestNewOmniboxDienst(t *testing.T) {
 		t.Fatalf("NewOmniboxDienst(…) = nil")
 	}
 
-	impl, ok := svc.(*omniboxDienst)
-	if !ok {
-		t.Fatalf("NewOmniboxDienst(…) = %T, erwartet *omniboxDienst", svc)
-	}
-
-	if impl.pool != pool {
+	if svc.pool != pool {
 		t.Errorf("NewOmniboxDienst(…).pool ist nicht der übergebene Pool")
 	}
-	if impl.leserAbfragen != studentRepo {
+	if svc.leserAbfragen != studentRepo {
 		t.Errorf("NewOmniboxDienst(…).leserAbfragen sind nicht die übergebenen")
 	}
-	if impl.katalogAbfragen != bookRepo {
+	if svc.katalogAbfragen != bookRepo {
 		t.Errorf("NewOmniboxDienst(…).katalogAbfragen sind nicht die übergebenen")
 	}
-	if impl.ausleihAbfragen != loanRepo {
+	if svc.ausleihAbfragen != loanRepo {
 		t.Errorf("NewOmniboxDienst(…).ausleihAbfragen sind nicht die übergebenen")
 	}
-	if impl.ausleihe != loanSvc {
+	if svc.ausleihe != loanSvc {
 		t.Errorf("NewOmniboxDienst(…).ausleihe ist nicht der übergebene Dienst")
 	}
-	if impl.geraete != deviceSvc {
+	if svc.geraete != deviceSvc {
 		t.Errorf("NewOmniboxDienst(…).geraete ist nicht der übergebene Dienst")
 	}
 }
@@ -174,7 +169,7 @@ func TestVerarbeiteExemplar(t *testing.T) {
 			},
 		}
 
-		svc := &omniboxDienst{
+		svc := &OmniboxDienst{
 			katalogAbfragen: bookRepo,
 		}
 
@@ -194,7 +189,7 @@ func TestVerarbeiteExemplar(t *testing.T) {
 			},
 		}
 
-		svc := &omniboxDienst{
+		svc := &OmniboxDienst{
 			katalogAbfragen: bookRepo,
 		}
 
@@ -229,7 +224,7 @@ func TestVerarbeiteExemplar(t *testing.T) {
 			},
 		}
 
-		svc := &omniboxDienst{
+		svc := &OmniboxDienst{
 			katalogAbfragen: bookRepo,
 			ausleihe:        loanSvc,
 		}
@@ -265,7 +260,7 @@ func TestVerarbeiteExemplar(t *testing.T) {
 			},
 		}
 
-		svc := &omniboxDienst{
+		svc := &OmniboxDienst{
 			katalogAbfragen: bookRepo,
 			ausleihe:        loanSvc,
 		}
@@ -334,7 +329,7 @@ func TestVerarbeiteSuche(t *testing.T) {
 				titel: tt.mockTitles,
 				err:   tt.mockErr,
 			}
-			svc := &omniboxDienst{
+			svc := &OmniboxDienst{
 				katalogAbfragen: repo,
 			}
 
@@ -374,7 +369,7 @@ func TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 
 	t.Run("beide Versuche leer: die Meldung nennt die gescannte Nummer", func(t *testing.T) {
 		var gefragt []string
-		svc := &omniboxDienst{katalogAbfragen: &katalogAttrappe{
+		svc := &OmniboxDienst{katalogAbfragen: &katalogAttrappe{
 			findeExemplar: func(_ context.Context, barcode string) (*repository.Exemplar, error) {
 				gefragt = append(gefragt, barcode)
 				return nil, nil
@@ -396,7 +391,7 @@ func TestVerarbeiteEingabe_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
 	t.Run("ein Fehler der Datenbank löst keinen zweiten Versuch aus", func(t *testing.T) {
 		dbFehler := errors.New("verbindung weg")
 		abfragen := 0
-		svc := &omniboxDienst{katalogAbfragen: &katalogAttrappe{
+		svc := &OmniboxDienst{katalogAbfragen: &katalogAttrappe{
 			findeExemplar: func(context.Context, string) (*repository.Exemplar, error) {
 				abfragen++
 				return nil, dbFehler
