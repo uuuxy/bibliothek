@@ -431,3 +431,49 @@ describe('Ein Scan bei offener Rückfrage', () => {
 		expect(theke.rueckfrageOffen(), 'ein Mensch beantwortet sie').toBe(true);
 	});
 });
+
+// Hält die Akte Ungespeichertes („Stammdaten bearbeiten" an der Theke), bucht die Theke nichts:
+// Ein Ausweis wechselte den Leser, und die Eingaben wären weg.
+describe('Bei Ungespeichertem in der Akte', () => {
+	afterEach(() => {
+		uiStore.verlassenSperre = null;
+	});
+
+	it('geht kein Scan hinaus, und das Banner sagt warum', async () => {
+		const theke = neueTheke();
+		theke.aktiverLeser = MIA;
+		uiStore.verlassenSperre = () => true;
+
+		await scanne(theke, 'S-2');
+		await scanne(theke, 'B-1');
+
+		expect(apiClient.post).not.toHaveBeenCalled();
+		expect(theke.aktiverLeser?.id, 'der Leser bleibt').toBe('leser-1');
+		expect(theke.eingabe).toBe('');
+		expect(theke.rueckmeldung.fehler).toBe(
+			'Nicht gebucht: Erst die Eingaben in der Maske speichern oder verwerfen, dann erneut scannen.'
+		);
+		expect(spieleFehlerton, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(2);
+		expect(theke.rueckmeldung.bildschirmLeuchten).toBe('error');
+
+		uiStore.verlassenSperre = () => false;
+		vi.mocked(apiClient.post).mockResolvedValue(AUSLEIHE);
+		await scanne(theke, 'B-1');
+		expect(gebuchteNummern(), 'ohne Ungespeichertes wie immer').toEqual(['B-1']);
+	});
+
+	it('hält die Reihe an, wenn es während einer Buchung entsteht', async () => {
+		const theke = neueTheke();
+		theke.aktiverLeser = MIA;
+		const buch = haltendeBuchung();
+
+		const laeuft = scanne(theke, 'B-1');
+		scanne(theke, 'S-2');
+		uiStore.verlassenSperre = () => true;
+		buch.beantworte(AUSLEIHE);
+		await laeuft;
+
+		expect(gebuchteNummern()).toEqual(['B-1']);
+		expect(theke.rueckmeldung.fehler).toContain('Gescannt und NICHT gebucht: „S-2“');
+	});
+});

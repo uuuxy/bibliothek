@@ -11,22 +11,26 @@ import { spieleFehlerton } from '../audio.js';
  * @param {{
  *   bucheScan: (auftrag: Auftrag) => Promise<boolean>,
  *   rueckfrageOffen: () => boolean,
+ *   ungespeichert: () => boolean,
  *   leereEingabe: () => void,
  *   verarbeiteAntwortfehler: (e: unknown) => void,
  *   scanfeldWiederScharfstellen: () => void,
  *   leuchteBildschirm: (type: string) => void,
  *   leuchteRand: (farbe: string) => void,
+ *   zeigeFehlerBanner: (meldung: string) => void,
  *   nenneNichtGebucht: (nummern: string[]) => void
  * }} theke
  */
 export function erzeugeOmniboxReihe({
 	bucheScan,
 	rueckfrageOffen,
+	ungespeichert,
 	leereEingabe,
 	verarbeiteAntwortfehler,
 	scanfeldWiederScharfstellen,
 	leuchteBildschirm,
 	leuchteRand,
+	zeigeFehlerBanner,
 	nenneNichtGebucht
 }) {
 	// Die Reihe der Scans. Ein Handscanner wartet nicht auf die Antwort: Ein Scan, der
@@ -43,6 +47,16 @@ export function erzeugeOmniboxReihe({
 	// Ein Scan kommt in die Reihe: Läuft keine Buchung, beginnt sie mit ihm, sonst wartet er.
 	/** @param {Auftrag} auftrag */
 	function reiheEin(auftrag) {
+		// Hält die Akte Ungespeichertes („Stammdaten bearbeiten"), bucht die Theke nichts: Ob ein
+		// Scan ein Ausweis ist, sagt erst der Server, und ein Ausweis verwürfe die Eingaben.
+		if (ungespeichert()) {
+			leuchteBildschirm('error');
+			spieleFehlerton();
+			zeigeFehlerBanner(
+				'Nicht gebucht: Erst die Eingaben in der Maske speichern oder verwerfen, dann erneut scannen.'
+			);
+			return reiheGebucht;
+		}
 		if (buchungLaeuft) {
 			// Dieselbe Nummer, bevor sie gebucht ist, ist der Doppelscan: Er fällt weg. Gebucht
 			// gäbe er das eben geliehene Buch gleich wieder zurück.
@@ -63,9 +77,11 @@ export function erzeugeOmniboxReihe({
 	//
 	// Weiter geht es nur nach einer glatten Buchung. Scheitert ein Scan, kann er ein Ausweis
 	// gewesen sein, und die folgenden Bücher gingen an den Leser davor; nach einer Rückfrage
-	// entscheidet ein Mensch, was gilt. Was dann noch wartet, wird nicht gebucht und genannt.
+	// oder bei Ungespeichertem entscheidet ein Mensch, was gilt. Was dann noch wartet, wird
+	// nicht gebucht und genannt.
 	/** @param {Auftrag} erster */
 	async function bucheReihe(erster) {
+		const haelt = () => rueckfrageOffen() || ungespeichert();
 		try {
 			/** @type {Auftrag | undefined} */
 			let auftrag = erster;
@@ -73,12 +89,12 @@ export function erzeugeOmniboxReihe({
 				laufendeNummer = auftrag.q;
 				const glatt = await bucheScan(auftrag);
 				laufendeNummer = '';
-				if (rueckfrageOffen()) {
+				if (haelt()) {
 					// Die Rückfrage hat jetzt die Tastatur. Was vom nächsten Scan schon im Feld
 					// steht, stünde sonst vor dem übernächsten.
 					leereEingabe();
 				}
-				if (!glatt || rueckfrageOffen()) break;
+				if (!glatt || haelt()) break;
 				auftrag = wartend.shift();
 			}
 		} catch (e) {

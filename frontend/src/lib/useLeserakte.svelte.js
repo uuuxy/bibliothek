@@ -1,3 +1,4 @@
+import { untrack } from 'svelte';
 import { apiFetch, apiClient, leseApiFehler } from './apiFetch.js';
 import { istKollegium } from './leserArt.js';
 import { snackbars } from './stores/snackbars.svelte.js';
@@ -12,10 +13,8 @@ export function useLeserakte() {
 	let gebuehren = $state([]);
 	/** @type {any[]} */
 	let bescheide = $state([]);
-	// Listen, deren Abruf gescheitert ist — wie fehlendeListen in der Buch-Akte (useBuchakte).
-	// Ihre Karte ist leer, weil nichts ankam, nicht weil nichts vorläge: Eltern mit dem Brief
-	// in der Bibliothek, GET …/bescheide in 503 — und die Auskunft „bei uns liegt kein
-	// Bescheid vor" (Review 14.09.2026, OFFEN.md 1.5).
+	// Listen, deren Abruf gescheitert ist, wie in der Buch-Akte (useBuchakte): Ihre Karte ist
+	// leer, weil nichts ankam, nicht weil nichts vorläge („bei uns liegt kein Bescheid vor").
 	let fehlendeListen = $state(/** @type {string[]} */ ([]));
 	let laedt = $state(true);
 	let kameraOffen = $state(false);
@@ -35,8 +34,19 @@ export function useLeserakte() {
 	// langsamere Antwort gewinnt. `laufNr` verwirft, was überholt wurde.
 	let laufNr = 0;
 
+	// Solange „Stammdaten bearbeiten" offen ist, lädt die Akte desselben Lesers nicht neu (Scan,
+	// Live-Leitung): Das Neuladen baute die Maske samt Eingaben ab. „Zurück" holt es nach.
+	// Gelesen ohne Abhängigkeit: Der $effect der Leserakte, der ladeAkte ruft, schlösse die Maske
+	// sonst bei jedem Öffnen wieder (schliesseAlleBlaetter).
+	let nachladen = false;
+
 	async function ladeAkte(studentId) {
 		if (!studentId) return;
+		if (untrack(() => bearbeitenOffen && studentId === akte?.id)) {
+			nachladen = true;
+			return;
+		}
+		nachladen = false;
 		const meine = ++laufNr;
 		laedt = true;
 		try {
@@ -47,18 +57,9 @@ export function useLeserakte() {
 				apiFetch(`/api/schueler/${studentId}/bescheide`)
 			]);
 			if (meine !== laufNr) return; // eine jüngere Akte ist schon unterwegs oder da
-			// Jede der vier Antworten wird ZUGEWIESEN, auch wenn sie scheitert. Bis zum
-			// Rasterdurchgang am 06.09.2026 stand hier dreimal `if (ok)` ohne `else`: Fiel
-			// genau eine Anfrage aus (500, oder 429 vom Rate-Limiter — es sind vier
-			// parallele Anfragen je Akte), behielt dieser Teil die Werte des VORHER
-			// geöffneten Schülers, während Kopf und Ausleihen schon zum neuen gehörten.
-			// Bei den Gebühren ist das nicht nur Anzeige: Die Karte schreibt auf die
-			// Fall-ID der ZEILE („Zahlung verbucht", „Storno") — ein Klick hätte die
-			// Zahlung einem fremden Schadensfall gutgeschrieben.
-			//
-			// Und seit dem 15.09.2026 wird der Ausfall VERMERKT: Eine leere Liste nach 503 sah
-			// bis dahin genauso aus wie „nichts offen". 403 (z. B. Kiosk-Rolle ohne
-			// view_students) heißt dagegen schlicht: keine Liste zeigen — kein Ausfall.
+			// Jede der vier Antworten wird zugewiesen, auch wenn sie scheitert: Sonst behielte ein
+			// Teil die Werte des vorher geöffneten Lesers, und „Zahlung verbucht" schriebe auf dessen
+			// Schadensfall. Ein Ausfall wird vermerkt; 403 heißt nur, keine Liste zu zeigen.
 			const fehlend = /** @type {string[]} */ ([]);
 			/** @param {Response} res @param {string} name @param {(json: any) => any[]} auspacken */
 			const listeOderVermerk = async (res, name, auspacken) => {
@@ -84,13 +85,9 @@ export function useLeserakte() {
 		}
 	}
 
-	// Alles, was über einem Schüler offen stehen kann, beim Wechsel schließen. Eine Liste
-	// statt fünf Zuweisungen im Aufrufer: Wer ein sechstes Blatt baut, trägt es hier ein.
-	//
-	// Bis zum Rasterdurchgang am 06.09.2026 setzte der Aufrufer beim Schülerwechsel nur
-	// den Reiter zurück: Das Bearbeiten-Blatt überlebte ihn. Wer bei Schüler A die Adresse
-	// tippte, ohne zu speichern, und dann B's Ausweis scannte, sah dasselbe Formular mit
-	// B's Daten, A's Eingabe war wortlos weg — und „Speichern" ging als PATCH auf B.
+	// Alles, was über einem Leser offen stehen kann, beim Wechsel schließen; wer ein weiteres
+	// Blatt baut, trägt es hier ein. Ein offenes Bearbeiten-Blatt schickte „Speichern" sonst an
+	// den neuen Leser.
 	function schliesseAlleBlaetter() {
 		bearbeitenOffen = false;
 		schadenOffen = false;
@@ -109,6 +106,11 @@ export function useLeserakte() {
 	function nachBearbeiten(studentId) {
 		bearbeitenOffen = false;
 		ladeAkte(studentId);
+	}
+
+	function schliesseBearbeiten() {
+		bearbeitenOffen = false;
+		if (nachladen) ladeAkte(akte?.id);
 	}
 
 	function nachFoto(studentId) {
@@ -221,16 +223,13 @@ export function useLeserakte() {
 	function nachSperre(updated) {
 		if (akte) {
 			// Sofortiges Feedback: die zwei Sperren so, wie der Server sie nach dem Umschalten
-			// meldet (seit dem 24.09.2026 nennt die Antwort beide — Aufheben nimmt auch die der
-			// Ehemaligen weg). Die frühere Formel (manuell || offene Schäden) erfand eine dritte
-			// Sperr-Definition (sperrStatus.js).
+			// meldet (Aufheben nimmt auch die der Ehemaligen weg), ohne eigene Formel (sperrStatus.js).
 			akte.is_manually_blocked = updated.is_manually_blocked;
 			akte.ist_gesperrt = updated.ist_gesperrt;
-			// Dann die EINE Wahrheit vom Server holen — wie nach Bearbeiten/Foto.
-			// Der Sperrgrund (Anzeige seit 01.09.2026) steckt bewusst NICHT in der
-			// Lock-Antwort (sie ist Stufe 1 hinter edit_students, der Grund Stufe 2
-			// hinter view_students, PII-Matrix); und die Behalten/Löschen-Logik des
-			// Servers clientseitig nachzubauen wäre eine doppelte Wahrheitsquelle.
+			// Dann die eine Wahrheit vom Server holen, wie nach Bearbeiten und Foto: Der Sperrgrund
+			// steht nicht in der Antwort auf das Sperren (Stufe 1 hinter edit_students, der Grund
+			// Stufe 2 hinter view_students), und die Behalten/Löschen-Logik des Servers hier
+			// nachzubauen wäre eine zweite Wahrheitsquelle.
 			ladeAkte(akte.id);
 		}
 	}
@@ -318,6 +317,7 @@ export function useLeserakte() {
 		schliesseAlleBlaetter,
 		nachLoeschen,
 		nachBearbeiten,
+		schliesseBearbeiten,
 		nachFoto,
 		ladeRechnungHerunter,
 		ladeKontoauszugHerunter,

@@ -8,11 +8,15 @@
 	import { Check, Undo2 } from '@lucide/svelte';
 	import Button from './ui/Button.svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
+	import { darfVerwerfen } from '../stores/verlassenSchutz.svelte.js';
 
 	const an = $derived(omniboxStore.schnellrueckgabe);
 
-	function schalte() {
-		omniboxStore.schalteSchnellrueckgabe(!an);
+	async function schalte() {
+		// Einschalten schließt die Akte; Ungespeichertes darin geht nur nach Rückfrage verloren.
+		const einschalten = !an;
+		if (einschalten && !(await darfVerwerfen())) return;
+		omniboxStore.schalteSchnellrueckgabe(einschalten);
 		// Der Klick nimmt dem Scanfeld den Fokus; der nächste Scan soll wieder dort landen.
 		omniboxStore.fokussiereScanfeld();
 	}

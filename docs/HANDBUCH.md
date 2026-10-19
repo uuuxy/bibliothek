@@ -66,6 +66,13 @@ ungespeicherte Stammdaten, fragt die Theke vorher (_Verwerfen und weiter_).
 Der Scan wird nicht gebucht und meldet sich rot mit Fehlerton. Erst das Fenster mit Maus oder
 Tastatur beantworten, dann erneut scannen.
 
+**Offene Stammdaten halten die Theke an:** Ist in der Akte _Stammdaten bearbeiten_ offen und
+etwas eingegeben, aber nicht gespeichert, bucht die Theke keinen Scan, auch keinen Ausweis. Sie
+meldet sich rot mit Fehlerton: „Nicht gebucht: Erst die Eingaben in der Maske speichern oder
+verwerfen, dann erneut scannen." Ein Scan in ein Feld der Maske, etwa eine neue Ausweisnummer,
+landet in diesem Feld. Bucht ein anderer Platz für denselben Leser, bleibt die Maske stehen; die
+Akte zeigt es nach dem Schließen. Die Schnellrückgabe fragt vorher (_Verwerfen und weiter_).
+
 **Schneller scannen, als das Programm antwortet:** Die Theke bucht die Scans
 der Reihe nach, auch wenn der nächste kommt, bevor der vorige beantwortet ist — erst der
 Ausweis, dann die Bücher an diesen Leser. Dieselbe Nummer noch einmal, bevor sie gebucht ist,

@@ -74,7 +74,6 @@ export function erzeugeOmniboxStore() {
 	// Eine Rückfrage, die ein Mensch beantwortet: Sperre, Vormerkung, Zubehör.
 	const rueckfrageOffen = () => !!(sperrHinweis || vormerkungHinweis || prueflisteAnfrage);
 
-	// Kamerascanner-Status
 	let kameraOffen = $state(false);
 	let kamera = $state(/** @type {any} */ (null));
 
@@ -137,11 +136,13 @@ export function erzeugeOmniboxStore() {
 	const { reiheEin, verwirfWartende } = erzeugeOmniboxReihe({
 		bucheScan,
 		rueckfrageOffen,
+		ungespeichert: () => !!uiStore.verlassenSperre?.(),
 		leereEingabe: () => (eingabe = ''),
 		verarbeiteAntwortfehler,
 		scanfeldWiederScharfstellen,
 		leuchteBildschirm,
 		leuchteRand,
+		zeigeFehlerBanner,
 		nenneNichtGebucht
 	});
 
@@ -402,7 +403,6 @@ export function erzeugeOmniboxStore() {
 		suche,
 		rueckmeldung,
 
-		// Exportierte Methoden
 		stoppeZeitgeber,
 		fokussiereScanfeld,
 		scanfeldBereit,

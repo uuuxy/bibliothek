@@ -169,7 +169,7 @@
 	{:else}
 		<LeserBearbeiten
 			leser={st.akte}
-			onClose={() => (st.bearbeitenOffen = false)}
+			onClose={st.schliesseBearbeiten}
 			onSave={() => st.nachBearbeiten(st.akte.id)}
 		/>
 	{/if}

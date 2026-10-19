@@ -371,14 +371,18 @@ veraltet ist. Die Bugklassen dazu stehen in [sweeps.md](sweeps.md).
   Verlassen-Schutz (`uiStore.verlassenSperre`, beim LMF-Planer, bei der Buchmaske und bei
   „Stammdaten bearbeiten") wird beim Wechsel des Menüpunkts und beim Schließen des Fensters
   gefragt, bei den beiden Masken auch an ihrem Schließen- oder Zurück-Knopf, bei der Buchmaske
-  beim Wechsel des Reiters im Medienkatalog, an der Theke bei Escape. Frage 8 fragt in der Frontend-Lesart
+  beim Wechsel des Reiters im Medienkatalog, an der Theke bei Escape und bei der
+  Schnellrückgabe. An der Theke bucht bei Ungespeichertem kein Scan, und die Akte lädt bei
+  offener Maske erst nach dem Schließen neu. Frage 8 fragt in der Frontend-Lesart
   das Gegenteil: was beim Verlassen zurück auf Anfang muss.
 - **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
   Ein Feld, in das gescannt wird, hat nach dem Öffnen den Fokus und hört auf Enter
   (`frontend/e2e/buch-anlegen-handscanner.spec.js`); das Enter eines Scans drückt in den
   Rückfragen der Theke keinen Knopf (`frontend/src/lib/scanOhneFokus.js`,
   `frontend/e2e/theke-scan-reihe.spec.js`), und im Passwortfeld gilt ein Scan nicht als
-  Passwort (`frontend/src/lib/scanErkennung.js`, `frontend/e2e/sperre-scan.spec.js`).
+  Passwort (`frontend/src/lib/scanErkennung.js`, `frontend/e2e/sperre-scan.spec.js`). Hält die
+  Akte ungespeicherte Stammdaten, bucht die Theke keinen Scan; ein Scan in ein Feld der Maske
+  bleibt dort (`frontend/e2e/theke-stammdaten-offen.spec.js`).
 - **17 · Ausfall.** Das Speichern eines Titels fragt keinen Katalogdienst
   (`inventur/speichern_ohne_katalogdienste_pg_test.go`). Ohne Netz wird nicht gesperrt, und ein
   Ausfall des Mailservers zählt nicht als Fehlversuch und sperrt niemanden aus (Migration 155).
