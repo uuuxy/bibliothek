@@ -25,9 +25,15 @@ type fristAnfrage struct {
 	FaelligAm string `json:"faellig_am" validate:"required"` // Zeitstempel nach RFC 3339 oder nur der Tag nach ISO 8601
 }
 
+// einstellungsAbruf liest die Einstellungen (repository.EinstellungsAbfragen); ohne Fehler ist
+// das Ergebnis nie nil.
+type einstellungsAbruf interface {
+	Lade(ctx context.Context) (*repository.SystemEinstellungen, error)
+}
+
 // AusleiheVerlaengern verlängert eine Ausleihe um die Frist für Bücher aus den Einstellungen
 // (ohne Einstellung 28 Tage).
-func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
+func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen einstellungsAbruf) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.verlaengereAusleihe(w, r, einstellungsAbfragen)
 	}
@@ -36,7 +42,7 @@ func (t *Tueren) AusleiheVerlaengern(einstellungsAbfragen repository.Einstellung
 // verlaengereAusleihe verlängert eine einzelne Ausleihe. Als eigene Methode ausgelagert,
 // damit die frühen Rücksprünge nicht zusätzlich als Verschachtelung in der Closure zählen
 // (Sonar S3776).
-func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) {
+func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, einstellungsAbfragen einstellungsAbruf) {
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Ausleihe fehlt", nil)
@@ -208,7 +214,7 @@ func leseFaelligAm(text string) (time.Time, error) {
 
 // verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den
 // Einstellungen. Sind sie nicht lesbar, gelten 28 Tage und die Ferientabelle des Programms.
-func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen repository.EinstellungsAbfragen) (tage int, sommerferien string) {
+func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsAbruf) (tage int, sommerferien string) {
 	einstellungen, err := einstellungsAbfragen.Lade(ctx)
 	if err != nil {
 		return 28, ""

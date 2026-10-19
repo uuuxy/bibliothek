@@ -33,7 +33,7 @@ type betriebsbereitschaftAntwort struct {
 // auseinanderlaufen: Der Alarm meldete dann „alles gut", während die Seite rot zeigt.
 func (t *Tueren) sammleLage(
 	ctx context.Context,
-	einstellungsAbfragen repository.EinstellungsAbfragen,
+	einstellungsAbfragen *repository.EinstellungsAbfragen,
 	mailAbfragen *repository.MailEinstellungsAbfragen,
 	zustandAbfragen *repository.BetriebszustandAbfragen,
 ) bereitschaft.Lage {
@@ -177,7 +177,7 @@ func sicherungUndFerienInDieLage(ctx context.Context, zustandAbfragen *repositor
 // Betriebsbereitschaft beantwortet: Was ist eingerichtet, aber nicht in Betrieb?
 // GET /api/admin/system/betriebsbereitschaft
 func (t *Tueren) Betriebsbereitschaft(
-	einstellungsAbfragen repository.EinstellungsAbfragen,
+	einstellungsAbfragen *repository.EinstellungsAbfragen,
 	mailAbfragen *repository.MailEinstellungsAbfragen,
 	zustandAbfragen *repository.BetriebszustandAbfragen,
 ) http.HandlerFunc {

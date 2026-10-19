@@ -38,7 +38,7 @@ type bestellKonfiguration struct {
 // @Produce      json
 // @Success      200  {object}  bestellKonfiguration
 // @Router       /bestellungen/konfiguration [get]
-func (t *Tueren) BestellKonfiguration(einstellungsAbfragen repository.EinstellungsAbfragen, lieferantenAbfragen *repository.LieferantenAbfragen) http.HandlerFunc {
+func (t *Tueren) BestellKonfiguration(einstellungsAbfragen *repository.EinstellungsAbfragen, lieferantenAbfragen *repository.LieferantenAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		einstellungen, err := einstellungsAbfragen.Lade(r.Context())
 		if err != nil {

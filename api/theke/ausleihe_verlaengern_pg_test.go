@@ -68,7 +68,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 		ausleiheID     string
 		jetzt          time.Time
 		extensionDays  int
-		setupRoute     func(*http.ServeMux, *Tueren, repository.EinstellungsAbfragen)
+		setupRoute     func(*http.ServeMux, *Tueren, einstellungsAbruf)
 		expectedStatus int
 		verify         func(t *testing.T, resp map[string]any)
 	}{
@@ -131,7 +131,7 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			ausleiheID:     "",
 			extensionDays:  28,
 			expectedStatus: http.StatusBadRequest, // der Mux trifft /extend/, die Tür antwortet 400
-			setupRoute: func(mux *http.ServeMux, s *Tueren, settingsRepo repository.EinstellungsAbfragen) {
+			setupRoute: func(mux *http.ServeMux, s *Tueren, settingsRepo einstellungsAbruf) {
 				// Direkt eingehängt, damit die Tür selbst die leere Kennung prüft.
 				mux.Handle("POST /extend/", s.AusleiheVerlaengern(settingsRepo))
 			},
@@ -280,7 +280,7 @@ func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-VF-1", "Ferien", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 
-	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen repository.EinstellungsAbfragen) {
+	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen einstellungsAbruf) {
 		t.Helper()
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
 		mux := http.NewServeMux()

@@ -80,7 +80,6 @@ linters:
       # Erzeuger, die noch eine Schnittstelle liefern (docs/STIL.md, Abschnitt 14). Die Liste wird
       # nur kürzer: Wer einen Erzeuger auf den Typ umstellt, streicht seine Zeile.
       - { linters: [ireturn], text: ^NewAusleihAbfragen returns }
-      - { linters: [ireturn], text: ^NewEinstellungsAbfragen returns }
       - { linters: [ireturn], text: ^NewKatalogAbfragen returns }
       - { linters: [ireturn], text: ^NewLeserAbfragen returns }
       - { linters: [ireturn], text: ^NewProtokollAbfragen returns }

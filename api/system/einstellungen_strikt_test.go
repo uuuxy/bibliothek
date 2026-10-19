@@ -68,10 +68,6 @@ type einstellungsAttrappe struct {
 	gespeichert bool
 }
 
-func (a *einstellungsAttrappe) Lade(ctx context.Context) (*repository.SystemEinstellungen, error) {
-	return &repository.SystemEinstellungen{}, nil
-}
-
 func (a *einstellungsAttrappe) Schreibe(ctx context.Context, p *repository.EinstellungenPatch) error {
 	a.gespeichert = true
 	return nil

@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,7 +25,7 @@ import (
 // @Success      200  {object}  repository.SystemEinstellungen
 // @Failure      500  {object}  map[string]string
 // @Router       /einstellungen [post]
-func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
+func (t *Tueren) Einstellungen(einstellungsAbfragen *repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 		einstellungen, err := einstellungsAbfragen.Lade(ctx)
@@ -34,6 +35,12 @@ func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfra
 		tuer.AntworteJSON(w, http.StatusOK, einstellungen)
 		return nil
 	})
+}
+
+// einstellungsAenderung schreibt die Felder eines Patches und nur diese
+// (repository.EinstellungsAbfragen); was der Patch nicht trägt, bleibt, wie es ist.
+type einstellungsAenderung interface {
+	Schreibe(ctx context.Context, patch *repository.EinstellungenPatch) error
 }
 
 // EinstellungenSchreiben speichert die Einstellungen einer Kategorie.
@@ -47,7 +54,7 @@ func (t *Tueren) Einstellungen(einstellungsAbfragen repository.EinstellungsAbfra
 // @Failure      400       {object}  map[string]string
 // @Failure      500       {object}  map[string]string
 // @Router       /einstellungen/speichern [post]
-func (t *Tueren) EinstellungenSchreiben(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
+func (t *Tueren) EinstellungenSchreiben(einstellungsAbfragen einstellungsAenderung) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.schreibeEinstellungen(w, r, einstellungsAbfragen)
 	})
@@ -55,7 +62,7 @@ func (t *Tueren) EinstellungenSchreiben(einstellungsAbfragen repository.Einstell
 
 // schreibeEinstellungen prüft den Patch, speichert ihn, protokolliert die Änderung und meldet neue
 // Sitzungsfristen an die offenen Arbeitsplätze.
-func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, einstellungsAbfragen repository.EinstellungsAbfragen) error {
+func (t *Tueren) schreibeEinstellungen(w http.ResponseWriter, r *http.Request, einstellungsAbfragen einstellungsAenderung) error {
 	// Patch statt vollem Objekt: Der Rumpf trägt nur die Felder einer Kategorie
 	// (repository/einstellungen_patch.go). Ein volles Objekt dekodierte hier zu lauter Nullwerten
 	// und setzte beim Speichern die übrigen Kategorien zurück.
@@ -172,7 +179,7 @@ type sitzungsEinstellungen struct {
 }
 
 // SitzungsEinstellungen liefert die Fristen der Sitzung an jede angemeldete Oberfläche.
-func (t *Tueren) SitzungsEinstellungen(einstellungsAbfragen repository.EinstellungsAbfragen) http.HandlerFunc {
+func (t *Tueren) SitzungsEinstellungen(einstellungsAbfragen *repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		einstellungen, err := einstellungsAbfragen.Lade(r.Context())
 		if err != nil {

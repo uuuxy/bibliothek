@@ -125,18 +125,13 @@ func (s *SystemEinstellungen) AdresseFuerLinks() string {
 const EigentumsvermerkVorgabe = "Eigentum des Landes Hessen"
 
 // EinstellungsAbfragen liest und schreibt die Einstellungen der Verwaltung.
-type EinstellungsAbfragen interface {
-	Lade(ctx context.Context) (*SystemEinstellungen, error)
-	Schreibe(ctx context.Context, patch *EinstellungenPatch) error
-}
-
-type pgEinstellungsAbfragen struct {
+type EinstellungsAbfragen struct {
 	db db.Pool
 }
 
 // NewEinstellungsAbfragen liefert die Abfragen der Einstellungen an Postgres.
-func NewEinstellungsAbfragen(pool db.Pool) EinstellungsAbfragen {
-	return &pgEinstellungsAbfragen{db: pool}
+func NewEinstellungsAbfragen(pool db.Pool) *EinstellungsAbfragen {
+	return &EinstellungsAbfragen{db: pool}
 }
 
 // einstellungenVorgabe liefert die Werte, die gelten, solange zu einem Schlüssel keine Zeile
@@ -257,7 +252,7 @@ func setzeEinstellung(e *SystemEinstellungen, schluessel string, wert *string) {
 // Lade liest die Einstellungen. Bei einem Lesefehler liefert es die Vorgaben des Programms
 // zusammen mit dem Fehler; der Rufer verweigert dann die Antwort oder wählt die Vorgabe
 // ausdrücklich.
-func (a *pgEinstellungsAbfragen) Lade(ctx context.Context) (*SystemEinstellungen, error) {
+func (a *EinstellungsAbfragen) Lade(ctx context.Context) (*SystemEinstellungen, error) {
 	return LadeEinstellungen(ctx, a.db)
 }
 
@@ -288,7 +283,7 @@ func LadeEinstellungen(ctx context.Context, q interface {
 
 // Schreibe schreibt die Felder eines Patches und nur diese. Was der Rufer nicht mitgeschickt
 // hat, bleibt in der Datenbank, wie es ist (einstellungen_patch.go).
-func (a *pgEinstellungsAbfragen) Schreibe(ctx context.Context, patch *EinstellungenPatch) error {
+func (a *EinstellungsAbfragen) Schreibe(ctx context.Context, patch *EinstellungenPatch) error {
 	paare := paareAusPatch(patch)
 	if len(paare) == 0 {
 		return nil
