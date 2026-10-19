@@ -3,8 +3,8 @@
 	import { erzeugeKlassenVorschlaege } from './components/leser/klassenVorschlaege.svelte.js';
 	import { onMount } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import Snackbar from './components/ui/Snackbar.svelte';
 	import Button from './components/ui/Button.svelte';
+	import { snackbars } from './stores/snackbars.svelte.js';
 	import { useLeserakteFormular } from './useLeserakteFormular.svelte.js';
 	import { leserArtText } from './leserArt.js';
 	import { Check, ChevronLeft } from '@lucide/svelte';
@@ -22,24 +22,6 @@
 	 */
 	let { leser, onClose, onSave } = $props();
 
-	/** @type {{ msg: string, type: 'success' | 'error' } | null} */
-	let snackbar = $state(null);
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let snackbarTimer = null;
-
-	/**
-	 * Show a self-dismissing snackbar.
-	 * @param {string} msg
-	 * @param {'success'|'error'} type
-	 */
-	function showSnackbar(msg, type = 'success') {
-		if (snackbarTimer) clearTimeout(snackbarTimer);
-		snackbar = { msg, type };
-		snackbarTimer = setTimeout(() => {
-			snackbar = null;
-		}, 3000);
-	}
-
 	// Getter statt Werte: So liest der Hook bei jedem Zugriff das aktuelle Prop. Direkt
 	// übergeben wären es Schnappschüsse vom Aufbau der Komponente — `speichere()` hätte das
 	// PATCH dann an den zuvor geöffneten Schüler geschickt. Siehe useLeserakteFormular.
@@ -50,10 +32,13 @@
 	// immer der Wert vom Aufbau der Komponente da (der Speichern-Knopf hätte nie
 	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `formular.`, dort wo sie
 	// gebraucht werden.
+	//
+	// Die Meldungen gehen an die gemeinsame Anzeige (SnackbarAnzeige.svelte): Die Maske schließt
+	// mit dem Speichern, eine eigene Meldung verschwände mit ihr.
 	const formular = useLeserakteFormular({
 		getStudent: () => leser,
 		onSave: () => onSave(),
-		showSnackbar
+		showSnackbar: (msg, type) => snackbars.addToast(msg, type)
 	});
 	const { eingaben, uebernimmLeser, speichere } = formular;
 
@@ -63,9 +48,6 @@
 		uebernimmLeser();
 	});
 </script>
-
-<!-- Snackbar -->
-<Snackbar {snackbar} />
 
 <!-- Full Page View (Replaces the side sheet) -->
 <div class="w-full h-full bg-surface-container-lowest flex flex-col animate-fade-in">

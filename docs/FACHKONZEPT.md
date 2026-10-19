@@ -969,8 +969,8 @@ der hat nicht stattgefunden.
   statt `outline-variant` (#c2c7cf, 1,7:1; WCAG 1.4.11 verlangt 3:1). Seitenleiste-Gruppentitel
   ohne 70 %-Deckung; Monitor-Folien und der inaktive Schritt im Druck-Center ohne die
   Theme-Töne `slate-400/500`, die dort Dunkelgrau sind.
-- Toasts pausieren unter Maus und Fokus (2.2.1), Fehler-Toasts, Snackbar-Fehler und
-  Ladefehler sind `role="alert"`; die Omnibox führt per `aria-activedescendant` durch die
+- Toasts pausieren unter Maus und Fokus (2.2.1), Fehler-Toasts und Ladefehler sind
+  `role="alert"`; die Omnibox führt per `aria-activedescendant` durch die
   Trefferliste.
 - Zeile und Kachel sind keine Knöpfe mehr: In Leserdatei und Signaturen-Regal öffnet der
   **Name bzw. Titel** die Akte, im Medienkatalog der Titel (die Kachelfläche bleibt ein
