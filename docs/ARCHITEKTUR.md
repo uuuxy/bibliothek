@@ -2147,6 +2147,21 @@ sieht.
     Rückbau-Probe;
   - zum Schluss `./scripts/gosec-gate.sh`: Die Taint-Analyse sieht nach einem Umzug Wege, die
     sie vorher nicht sah ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5).
+- **Ein Name im Go-Code wird umbenannt:** `gopls rename` zieht jede Nennung nach, die die
+  Typprüfung sieht. Nicht dazu gehören eine Attrappe, die eine Schnittstelle nur in den
+  Testdateien eines anderen Pakets erfüllt (`tuertest.EinstellungenAttrappe`; `go vet ./...`
+  baut auch die Tests und meldet sie), Dateien hinter einem Build-Tag und Skripte mit
+  `//go:build ignore` (`bedingte_dateien_test.go` übersetzt sie), das Feld des Zwillings, wenn
+  ein Paket die Zeile eines anderen in seinen eigenen Typ umwandelt (`AbgaengerZeile(z)` in
+  `api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), und Kommentare im Text einer Abfrage
+  (`-- …`); die folgen als eigener Commit, weil sich der Text der Abfrage ändert. Namen als Text
+  in Dokumenten, in Zeichenketten der Tests, in `scripts/deadcode_baseline.txt` und in der
+  Schnittstellenbeschreibung meldet der Compiler nicht: den alten Namen im Ordner des Pakets und
+  als `paket.Name` im ganzen Repository suchen und im selben Commit nachziehen, nach einem
+  Kommentar über dem Feld eines Anfrage- oder Antworttyps `swag init -g main.go -o docs`. Eine
+  Prüfung, die einen Aufruf an seinem Namen erkennt, bekommt vorher ein Merkmal, das den Namen
+  überlebt (`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des
+  Ergebnisses). `gopls rename` ergänzt nebenbei `go.work.sum`; das gehört nicht in den Commit.
 
   Was dabei nicht von selbst rot wird: `gofmt -r` schreibt Kommentare nicht um und verliert einen
   Kommentar am Ende einer umgeschriebenen Zeile; `goimports` setzt eine Einbindung aus dem Modul

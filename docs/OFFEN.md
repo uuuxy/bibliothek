@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 16.10.2026
+Stand: 19.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -34,44 +34,10 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
-- [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
-  `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
-  Datenbankschicht. ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2)
-- [x] Türen in Themenordner, dritte Freigabe: Stufe 4 ist seit dem 12.10.2026 freigegeben,
-  je Thema ein Schritt, zuerst die vier Themen mit dem wenigsten im Weg (Inventur, Benutzer,
-  Portal, System).
-- [x] `repository/` nach Themen teilen: nein, entschieden am 13.10.2026 nach der Messung.
-  Ohne Umbau ließen sich 48 der 151 Dateien einem Thema zuordnen; was mehrere Themen
-  brauchen (Protokoll, Einstellungen, Titel, Leser), bliebe ein gemeinsames Paket mit 72 %
-  der Zeilen, und 21 Tabellen bekämen Schreiber in zwei Paketen. Die Zahlen stehen in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 9 (A25). Gebaut ist dafür nichts; die Entscheidung lässt
-  sich ändern, ohne etwas zurückzunehmen.
 - [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
-- [x] Etiketten auf die Breite der Zelle kürzen: ja, entschieden am 13.10.2026 und gebaut.
-  Gekürzt wird nur, was über den Rand seiner Zelle lief; was passt, steht da wie vorher, der
-  Schulname auch am kleinen Bogen ganz. Die Obergrenze in Zeichen gilt weiter: Ein langer
-  Titel zeigt am breiten Bogen so viele Zeichen wie vorher. Soll er dort mehr zeigen,
-  entfällt die Obergrenze an einer Stelle (`kuerzeAufEtikett` in `pdf/etikett_buch.go`).
-- [x] Zwei zugelieferte Pull Requests vom 13.10.2026 (734 und 735): entschieden am
-  13.10.2026, nach dem Vorschlag. 734 ist übernommen; was am zusammengeführten Stand geprüft
-  ist, steht im Merge-Commit. 735 ist geschlossen; die Messung steht am Pull Request.
-- [x] Vier zugelieferte Pull Requests (726 bis 729): geschlossen am 12.10.2026, nach dem
-  Vorschlag. Die Begründung steht je am Pull Request. Soll es den Knopf zum Leeren der Suche
-  geben, entsteht er neu nach der Seite von Material 3.
-- [x] Drei Updates von Dependabot (731, 732, 733): übernommen am 12.10.2026, nach dem
-  Vorschlag; was am zusammengeführten Stand geprüft ist, steht in den drei Merge-Commits. Der
-  Schritt mit upload-artifact läuft nur nach einem roten Browser-Test und ist ungeprüft. Das
-  vierte Update (730, zehn Pakete der Oberfläche) ist übernommen, mit typescript-eslint
-  8.71.2; was geprüft ist, steht im Merge-Commit.
-- [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
-  wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
-  lässt es sich mit dem Rückbau dieses einen Commits.
-- [x] Ändern eines Lesers: `repository/` nennt seit dem 09.10.2026 die Spalten, die sich
-  ändern lassen (`repository.LeserAenderung`), die Tür reicht nur Werte. Gebaut nach dem
-  Vorschlag; die Anweisung ist dieselbe wie vorher.
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -148,6 +114,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 **Erledigen:**
 
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
+- [ ] Auf GitHub #751 schließen (die Messung steht am Pull Request) und zwei Zweige ohne Pull
+  Request löschen: `testing/bestellhistorie-handler-3638986931240989503` (von #745) und
+  `bolt-optimize-erster-admin-9258519918401332392` (von #748).
 - [ ] Am Testserver nachsehen, ob das Buch mit der Nummer 2424 („Mathematik heute", Band 6)
   fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
   den Status des Exemplars zurückstellen.
@@ -161,7 +130,8 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 ### Termine
 
-- [ ] 19. Oktober 2026: CodeQL wechselt bei GitHub das Abbild; den Lauf danach ansehen. (5.10)
+- [ ] CodeQL wechselt bei GitHub auf Ubuntu 26, angekündigt für den 19. Oktober 2026; am
+  Nachmittag des Tages lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
 - [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
@@ -169,45 +139,11 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lesen
 zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
-Kommentare stehen in [STIL.md](STIL.md). Umgestellt wird Paket für Paket, von unten nach oben,
-je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht unter 5.66.
+Kommentare stehen in [STIL.md](STIL.md), die Prüfungen, die sie halten, in seinem Vorspann.
 
-- [x] Die Regeln stehen auf einer Seite ([STIL.md](STIL.md)); eine Prüfung hält je Paket fest,
-  was ihnen noch nicht folgt, und lässt den Bestand nur sinken (`stil_ratsche_test.go`).
-- [x] Die Pakete unter `pkg/`.
-- [x] Unter `internal/` die neun Pakete, die `repository` nicht einbinden.
-- [x] `repository/`.
-- [x] Die übrigen acht Pakete unter `internal/` ohne `internal/service` (Reihenfolge in 5.66).
-- [x] `internal/service`.
-- [x] `api/tuer`.
-- [x] Die zwölf Themen unter `api/`.
-- [x] `api/`.
-- [x] Das Wurzelpaket.
-- [x] Die Testdateien: Namen und Kommentare; Vergleiche mit dem Paket `testing` statt testify.
-- [x] Fehlertexte: klein und ohne Satzzeichen; den Satz für die Oberfläche schreibt die Tür
-  ([STIL.md](STIL.md), Abschnitt 11).
-- [x] Zustand der Paketebene: Was sich ändert, legt der Rufer an ([STIL.md](STIL.md),
-  Abschnitt 12).
-- [x] Die Oberfläche, Stufe 1: Datei- und Ordnernamen deutsch ([STIL.md](STIL.md), Abschnitt 13;
-  `frontend-hygiene-sprache.test.js`), bis auf zwei geteilte Bauteile (5.66).
-- [x] Die Oberfläche, Stufe 2: Namen innerhalb der Dateien (5.66), bis auf `apiDelete`, das wie
-  die HTTP-Methode heißt.
-- [x] Die Oberfläche, Stufe 3: Props, die ein Bauteil vom Rufer bekommt (5.66).
-- [x] [ARCHITEKTUR.md](ARCHITEKTUR.md) kürzen.
-
-Was nach dem Abgleich vom 16.10.2026 noch von Googles Regelwerk abweicht, in der Reihenfolge des
-Gewichts:
-
-- [x] Schnittstellen beim Nutzer statt beim Hersteller: `New…` in `repository/` und
-  `internal/service` liefert den Typ; das Gate steht. (5.71)
-- [x] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
-- [x] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
-  (5.71)
-- [x] Hilfsfunktionen der Tests beginnen mit `t.Helper()`, mit Gate; lokale Namen in Tests
-  bleiben, wie sie sind ([STIL.md](STIL.md), Abschnitt 10). (5.71)
-- [x] Leerimporte nur in `main` und in Tests. (5.71)
 - [ ] Oberfläche: `stores/omnibox.svelte.js` (729 Zeilen) nach seinen Sachen teilen, in
   noch drei Stufen, je Stufe deine Freigabe. (5.72)
+- [ ] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -217,21 +153,9 @@ der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
-- [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
-  Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
-  Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
-  (Tür und Abfrage); die Größen misst der Anhang von Kapitel 5.
-- [x] **Auflagen-Zeile im Schulbuch-Export (5.63):** erledigt am 16.10.2026. Gemessen: In
-  Großbuchstaben wurde die Zeile vierzeilig; sie kürzt jetzt nach gezählten Zeilen.
 - [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
-- [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 448 Kommentarzeilen mit Datum;
+- [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 428 Kommentarzeilen mit Datum;
   eine Ratsche wie im Go-Code, dann Datei für Datei.
-- [x] **Meldungen in Satzschreibung und auf Deutsch (5.68):** erledigt am 16.10.2026. Der Text
-  eines Fehlers ohne Meldung geht unter keinem Status mehr hinaus (`apierrors`), und die
-  Meldungs-Ratsche prüft die festen Sätze jedes Fehlerstatus außer 500, auch 502 und 503.
-- [x] **Tippfehler in TRUSTED_PROXIES (5.69):** erledigt am 15.10.2026. Ein Eintrag, der weder
-  Netz noch Adresse ist, steht als Warnung im Log des Starts und auf der Seite
-  „Betriebsbereitschaft" (Bereich „Vertraute Proxys").
 - [ ] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
   Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
 
@@ -346,9 +270,9 @@ Vermerk.
   sind dort grün (zuletzt am Stand 9687c973). `release.yml` läuft erst mit dem nächsten v-Tag;
   den Lauf dann ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht
   darunter: CodeQL läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine
-  Workflow-Datei) auf `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf
-  steht an jedem CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der
-  CodeQL-Lauf rot.
+  Workflow-Datei) auf `ubuntu-latest`. GitHub kündigte den Wechsel auf Ubuntu 26 für den 19.
+  Oktober 2026 an; am Nachmittag des Tages lief CodeQL noch auf `ubuntu-24.04`. Bricht die
+  Analyse auf dem neuen Abbild, wird der CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist
   `v2.11.1-0.20261003002531-6258dcebc4e2`, der Entwicklungsstand der Bibliothek vom
   03.10.2026. Er enthält die Korrekturen zu den neun Meldungen vom 07.10.2026 (CVE-2026-107217
@@ -373,9 +297,8 @@ Vermerk.
   Push bauen gosec vom Entwicklungsstand des 05.10.2026
   (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51); die Fassung steht
   in `scripts/gosec-gate.sh`. Die jüngste
-  veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am Stand des
-  Tages meldet der neue Stand mit denselben Ausnahmen nichts (489 Dateien, 61 Vermerke
-  `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
+  veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am 19.10.2026
+  meldet er mit denselben Ausnahmen nichts (601 Dateien, 61 Vermerke `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
@@ -412,82 +335,31 @@ Schulserver feststeht.
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
 
-### 5.66 Lesbarkeit nach Googles Regelwerk für Go
+### 5.66 Lesbarkeit: zwei geteilte Bauteile heißen noch englisch
 
-**Fertig sind alle 79 Pakete und ihre Tests.** `stil_bestand_test.go` ist leer; ein neuer Fund
-im Programmcode oder ein neuer Name in einem Test macht `stil_ratsche_test.go` rot, testify und
-`reflect.DeepEqual` sperrt der Linter ([STIL.md](STIL.md), Abschnitt 10).
-
-**Ein Paket ist fertig, wenn:**
-
-1. jeder Name, den es erklärt, [STIL.md](STIL.md) folgt (Fachwort, Verb, Kürzel, keine
-   Wiederholung des Pakets) und jede Datei wie ihre Sache heißt;
-2. öffentlich nur ist, was ein anderes Paket beim Namen nennt oder was in der Signatur eines
-   solchen Namens steht;
-3. seine Kommentare in ein bis zwei Sätzen das Warum nennen, ohne Datum und Vorgeschichte;
-4. die Tests in seinem Ordner dieselben Namen und denselben Stil der Kommentare tragen;
-5. seine Zeile in `stil_bestand_test.go` entfernt ist.
-
-**Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
-Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der
-Linter, die Prüfung auf toten Code und gosec. Adressen, die Texte der Datenbankabfragen und die
-Feldnamen in JSON sind vor und nach dem Schritt dieselben (Vergleich aller Zeichenketten des
-Programmcodes). Ein Commit, der nur Kommentare ändert, wird am Code ohne Kommentare verglichen.
-Eine Attrappe, die eine Schnittstelle nur in den Testdateien eines anderen Pakets erfüllt,
-zieht das Werkzeug nicht mit (`tuertest.EinstellungenAttrappe`); `go vet ./...` baut auch die
-Tests und meldet die Stelle. Drei Stellen sieht auch `go vet ./...` nicht oder erst am Fehler:
-
-- Dateien hinter einem Build-Tag (`repository/raster_*_pg_test.go`) und Skripte mit
-  `//go:build ignore` (`scripts/generalprobe/nachtsicherung.go`): `bedingte_dateien_test.go`
-  übersetzt sie in jedem Lauf der Suite, `sichtbarkeit_ratsche_test.go` zählt die Skripte als
-  Nutzer.
-- Wandelt ein Paket die Zeile eines anderen in seinen eigenen Typ um (`AbgaengerZeile(z)` in
-  `api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), müssen die Felder beider Typen gleich
-  heißen: Ein umbenanntes Feld zieht das Feld des Zwillings mit, das Feld in JSON bleibt.
-- Kommentare im Text einer Abfrage (`-- …`) stehen in einer Zeichenkette. Sie werden von Hand
-  gesucht und als eigener Commit nachgezogen, weil sich dabei der Text der Abfrage ändert.
-
-**Namen als Text:** Dokumente nennen 405 Namen des Programmcodes, Testdateien 524 in
-Zeichenketten (Listen, an denen Prüfungen hängen, und Fehlermeldungen), die Liste des toten
-Codes 86, die Kommentare für die Schnittstellenbeschreibung rund 50 Typen. Dort meldet der
-Compiler nichts. Jeder umbenannte Name wird im ganzen Repository gesucht und im selben Commit
-nachgezogen; eine Prüfung, die ihn als Text führt, wird danach einmal rot gesehen. Die Suche
-nimmt auch den Go-Code mit: Kommentare anderer Pakete nennen den Namen, und das Werkzeug zieht
-nur das erste Wort über der Erklärung nach. Eine Prüfung, die einen Aufruf an seinem Namen
-erkennt, bekommt vor dem Umbenennen ein Merkmal, das den Namen überlebt
-(`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des Ergebnisses). Einen
-umbenannten Dateinamen in Dokumenten und Kommentaren meldet `go test ./docs/`. Steht der
-Kommentar über dem Feld eines Anfrage- oder Antworttyps, steht er auch in `docs/docs.go`:
-danach `swag init -g main.go -o docs`. Führt ein anderes Paket einen eigenen Bezeichner
-desselben Namens (einen Erzeuger oder ein Feld), bleibt er: Die Suche als Text gilt deshalb
-nur im Ordner des Pakets und für die Form `paket.Name`.
-
-**Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten
-([STIL.md](STIL.md), Abschnitt 9).
-
-**Danach, je als eigener Schritt:**
-
-- Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` heißen noch englisch: CLAUDE.md und
-  der Text eines Hooks in `.claude/settings.json` (nicht eingecheckt) zählen die Bauteile mit
-  Namen auf. Beide Stellen zusammen mit dem Umbenennen ändern, etwa `CoverVorschau` und
-  `TabelleSortierKopf`.
+`CoverPeek` und `TabelleSortKopf` in `frontend/src/lib/components/ui/` stehen als Bestand in
+`frontend-hygiene-sprache.test.js`. CLAUDE.md zählt die Bauteile mit Namen auf, und der Hinweis
+des Hooks in `.claude/settings.json` nennt `TabelleSortKopf`: beide Stellen zusammen mit dem
+Umbenennen ändern, etwa in `CoverVorschau` und `TabelleSortierKopf`, und den Bestand austragen.
+Umbenannt wird am Syntaxbaum ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 
 ### 5.67 Umfang senken: was sich löschen lässt
 
 Gemessen am 15.10.2026 an den eingecheckten Dateien (rund 362.000 Zeilen, davon 130.400 Go-Tests
-und 79.700 Go-Programm): Toten Code gibt es kaum. In Go hält ihn `scripts/deadcode_gate.sh` bei
-null, auf der Oberfläche ist jede Datei von `main.js` aus erreichbar. Die eine Route ohne Aufrufer,
-der Elternbrief je Schadensfall, ist entfernt. Der Zuwachs steckt in Tests, die je eine Zusage
-halten; sie zu löschen hieße, Regeln zu lockern. Offen:
+und 79.700 Go-Programm): Toten Code gibt es kaum. In Go meldet `scripts/deadcode_gate.sh` jeden
+Fund außerhalb seiner begründeten Ausnahmen (`scripts/deadcode_baseline.txt`, fast nur die
+Prüfhilfen, die allein Tests einbinden), auf der Oberfläche ist jede Datei von `main.js` aus
+erreichbar. Der Zuwachs steckt in Tests, die je eine Zusage halten; sie zu löschen hieße, Regeln
+zu lockern. Offen:
 
 - **SQL-Testdaten:** 730 Anweisungen mit 3.443 Zeilen legen Titel, Exemplare, Schüler, Leser,
   Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
-  wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket
-  zusammen mit dem Umbau nach [STIL.md](STIL.md).
+  wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket,
+  je mit der ganzen Suite an der Datenbank.
 
 ### 5.70 Vorgeschichte in Kommentaren der Oberfläche
 
-Gezählt am 16.10.2026: 448 Kommentarzeilen mit Datum in 219 der 459 Svelte- und JS-Dateien
+Gezählt am 19.10.2026: 428 Kommentarzeilen mit Datum in 218 der 462 Svelte- und JS-Dateien
 unter `frontend/src` (ohne Tests; Zeilen in `//`, `/* */` und `<!-- -->`), etwa „Hier lag bis
 zum 16.09.2026 ein Vollbild …" in `App.svelte` oder „stand hier bis zum 24.08.2026" in
 `menue.js`. Die Regel steht in `CLAUDE.md`, Abschnitt 4: kein Datum, keine Vorgeschichte. Im Go-Code hält sie `stil_ratsche_test.go` mit
@@ -674,7 +546,7 @@ von außen durchlässt, und Port 443 frei ist.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 08.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 19.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
