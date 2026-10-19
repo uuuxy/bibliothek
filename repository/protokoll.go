@@ -20,28 +20,13 @@ import (
 // Weg ändert oder löscht einen Eintrag, außer der Tilgung des Personenbezugs
 // (TilgeSchuelerSpuren, jobs/cron_dsgvo.go). Ein Trigger, der jede Änderung verbietet, stünde
 // der Löschpflicht entgegen (Art. 17 DSGVO) und ließe genau diese Tilgung scheitern.
-type ProtokollAbfragen interface {
-	// ProtokolliereAusleihe schreibt den Eintrag zur Ausleihe in die Transaktion der Ausleihe,
-	// vor deren Commit: Lässt sich die Spur nicht schreiben, gibt es die Ausleihe nicht.
-	ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
-	// ProtokolliereRueckgabe schreibt den Eintrag zur Rückgabe in die Transaktion der Rückgabe.
-	ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
-
-	// ProtokolliereSystemAktion schreibt einen Eintrag für einen Vorgang des Programms selbst,
-	// etwa eine automatische Sperre oder einen nächtlichen Lauf.
-	ProtokolliereSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error
-
-	// ProtokolliereAdminAktion schreibt einen Eintrag ins Protokoll der Verwaltung (audit_logs).
-	ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error
-}
-
-type pgProtokollAbfragen struct {
+type ProtokollAbfragen struct {
 	db db.Pool
 }
 
 // NewProtokollAbfragen liefert die Abfragen des Protokolls an Postgres.
-func NewProtokollAbfragen(db db.Pool) ProtokollAbfragen {
-	return &pgProtokollAbfragen{db: db}
+func NewProtokollAbfragen(db db.Pool) *ProtokollAbfragen {
+	return &ProtokollAbfragen{db: db}
 }
 
 // protokollEintrag bündelt die Felder eines Eintrags im Protokoll der Vorgänge (audit_log).
@@ -55,9 +40,9 @@ type protokollEintrag struct {
 	Details      map[string]any
 }
 
-// ProtokolliereAdminAktion schreibt einen Eintrag ins Protokoll der Verwaltung. Details, die
-// sich nicht als JSON schreiben lassen, stehen als leeres Objekt im Eintrag.
-func (a *pgProtokollAbfragen) ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
+// ProtokolliereAdminAktion schreibt einen Eintrag ins Protokoll der Verwaltung (audit_logs).
+// Details, die sich nicht als JSON schreiben lassen, stehen als leeres Objekt im Eintrag.
+func (a *ProtokollAbfragen) ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
 	var detailsJSON []byte
 	if details != nil {
 		var err error
@@ -85,7 +70,7 @@ func SchreibeAdminProtokoll(ctx context.Context, q Datenbank, adminID, aktion, i
 
 // ProtokolliereSystemAktion schreibt einen Eintrag ohne Bearbeiter, für die nächtlichen Läufe
 // und andere Vorgänge des Programms selbst.
-func (a *pgProtokollAbfragen) ProtokolliereSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error {
+func (a *ProtokollAbfragen) ProtokolliereSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -105,19 +90,20 @@ func (a *pgProtokollAbfragen) ProtokolliereSystemAktion(ctx context.Context, tab
 	return tx.Commit(ctx)
 }
 
-// ProtokolliereAusleihe schreibt den Eintrag CHECKOUT.
-func (a *pgProtokollAbfragen) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+// ProtokolliereAusleihe schreibt den Eintrag CHECKOUT in die Transaktion der Ausleihe, vor deren
+// Commit: Lässt sich die Spur nicht schreiben, gibt es die Ausleihe nicht.
+func (a *ProtokollAbfragen) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
 	return a.protokolliereLeihvorgang(ctx, tx, "CHECKOUT", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
-// ProtokolliereRueckgabe schreibt den Eintrag RETURN.
-func (a *pgProtokollAbfragen) ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+// ProtokolliereRueckgabe schreibt den Eintrag RETURN in die Transaktion der Rückgabe.
+func (a *ProtokollAbfragen) ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
 	return a.protokolliereLeihvorgang(ctx, tx, "RETURN", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
 // protokolliereLeihvorgang schreibt den Eintrag in die übergebene Transaktion und öffnet keine
 // eigene: Eintrag und Buchung stehen oder fallen zusammen.
-func (a *pgProtokollAbfragen) protokolliereLeihvorgang(ctx context.Context, tx pgx.Tx, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
+func (a *ProtokollAbfragen) protokolliereLeihvorgang(ctx context.Context, tx pgx.Tx, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
 		bearbeiterPtr = &bearbeiterID

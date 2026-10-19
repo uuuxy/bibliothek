@@ -15,7 +15,7 @@ func TestNewGeraeteDienst(t *testing.T) {
 	var pool db.Pool = nil
 	var studentRepo leserAbruf = nil
 	var loanRepo *repository.AusleihAbfragen = nil
-	var auditRepo repository.ProtokollAbfragen = nil
+	var auditRepo buchungsProtokoll = nil
 
 	ds := NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo)
 	if ds == nil {

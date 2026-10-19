@@ -19,7 +19,7 @@ import (
 // Zeitplan meldet die Läufe beim Cron an und führt sie aus.
 type Zeitplan struct {
 	pool              db.Pool
-	protokollAbfragen repository.ProtokollAbfragen
+	protokollAbfragen systemProtokoll
 	// leserLoeschung löscht einen Leser endgültig; die Vorgabe sind die Abfragen der Leser am
 	// Pool, ein Test setzt eine Attrappe ein.
 	leserLoeschung leserLoeschung
@@ -37,6 +37,13 @@ type leserLoeschung interface {
 	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
 }
 
+// systemProtokoll schreibt die Einträge der nächtlichen Läufe (repository.ProtokollAbfragen).
+type systemProtokoll interface {
+	// ProtokolliereSystemAktion schreibt einen Eintrag ohne Bearbeiter, für einen Vorgang des
+	// Programms selbst.
+	ProtokolliereSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error
+}
+
 // NewZeitplan baut den Zeitplan.
 //
 // Er rechnet fest in UTC (WithLocation), nicht in time.Local. Sonst hinge er an der Zeitzone
@@ -44,7 +51,7 @@ type leserLoeschung interface {
 // Logs), liefe die Sicherung "30 2 * * *" in der Nacht der Umstellung auf Sommerzeit ins Leere,
 // denn 02:30 Ortszeit gibt es dann nicht, und die Sicherung fiele unbemerkt aus. In UTC gibt es
 // keine Umstellung; die Kommentare unten rechnen deshalb in UTC.
-func NewZeitplan(pool db.Pool, protokollAbfragen repository.ProtokollAbfragen) *Zeitplan {
+func NewZeitplan(pool db.Pool, protokollAbfragen systemProtokoll) *Zeitplan {
 	return &Zeitplan{
 		pool:              pool,
 		protokollAbfragen: protokollAbfragen,

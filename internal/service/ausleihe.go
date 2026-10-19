@@ -62,7 +62,7 @@ type ausleihDienst struct {
 	leserAbfragen     leserErmittlung
 	katalogAbfragen   *repository.KatalogAbfragen
 	ausleihAbfragen   ausleihPflege
-	protokollAbfragen repository.ProtokollAbfragen
+	protokollAbfragen buchungsProtokoll
 	// jetzt ist die Uhr der Fristen; nil heißt time.Now. Tests setzen einen festen Tag, um die
 	// Frist am Tag vor, am und nach einem Rückgabetermin zu prüfen.
 	jetzt func() time.Time
@@ -77,7 +77,7 @@ func (d *ausleihDienst) heute() time.Time {
 }
 
 // NewAusleihDienst baut den Dienst für Ausleihe und Rückgabe.
-func NewAusleihDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen ausleihPflege, protokollAbfragen repository.ProtokollAbfragen) AusleihDienst {
+func NewAusleihDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen ausleihPflege, protokollAbfragen buchungsProtokoll) AusleihDienst {
 	return &ausleihDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,

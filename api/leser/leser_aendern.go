@@ -135,7 +135,7 @@ func leseGeburtsdatum(roh string) (*time.Time, error) {
 }
 
 // LeserAendern ändert die Stammdaten eines Lesers; ein fehlendes Feld bleibt, wie es ist.
-func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserAendern(protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereLeser(w, r, protokollAbfragen)
 	}
@@ -143,7 +143,7 @@ func (t *Tueren) LeserAendern(protokollAbfragen repository.ProtokollAbfragen) ht
 
 // aendereLeser prüft die Änderung, schreibt sie und trägt nach, was erst nach dem
 // Schreiben entstehen darf.
-func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
+func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen *repository.ProtokollAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
@@ -231,7 +231,7 @@ func (t *Tueren) pruefeLeserAenderung(ctx context.Context, w http.ResponseWriter
 // trageNachUndProtokolliere legt nach dem Schreiben das Konto zur Schul-E-Mail an und
 // schreibt die Protokolleinträge der Nachträge. false heißt: Die Ablehnung ist schon
 // beantwortet.
-func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen, claims *auth.Claims, id string, a leserAenderung) bool {
+func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Request, protokollAbfragen *repository.ProtokollAbfragen, claims *auth.Claims, id string, a leserAenderung) bool {
 	ctx := r.Context()
 	if a.kontoAdresse != "" {
 		// Das Konto entsteht immer, aktiv nur bei manage_users — dieselbe Paarung wie beim

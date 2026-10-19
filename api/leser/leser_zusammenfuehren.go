@@ -28,7 +28,7 @@ type leserZusammenfuehrenAnfrage struct {
 
 // LeserZusammenfuehren bedient POST /api/schueler/{id}/zusammenfuehren — {id}
 // bleibt, quelle_id geht darin auf.
-func (t *Tueren) LeserZusammenfuehren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserZusammenfuehren(protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zielID := r.PathValue("id")
 		var rumpf leserZusammenfuehrenAnfrage

@@ -146,7 +146,7 @@ const aktionUebergehen = "override-block"
 // Aufgerufen wird sie, wenn die Ausleihe entstanden ist, nicht schon bei der Prüfung: Am
 // Gerät unterbricht die Zubehör-Liste zwischen beidem, und beim Buch können danach noch
 // Ausleihlimit und Vormerkung abweisen — dann ist nichts übergangen worden.
-func protokolliereUebergangen(ctx context.Context, protokoll repository.ProtokollAbfragen, bearbeiterID, leserID string, uebergangen []string) {
+func protokolliereUebergangen(ctx context.Context, protokoll adminProtokoll, bearbeiterID, leserID string, uebergangen []string) {
 	for _, grund := range uebergangen {
 		meldeProtokollFehler(aktionUebergehen, protokoll.ProtokolliereAdminAktion(ctx, bearbeiterID, "OVERRIDE_BLOCK", "", map[string]any{
 			"schueler_id": leserID,

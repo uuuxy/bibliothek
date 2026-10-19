@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *repository.KatalogAbfragen, protokollAbfragen repository.ProtokollAbfragen) {
+func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *repository.KatalogAbfragen, protokollAbfragen *repository.ProtokollAbfragen) {
 	// ── Titel und Exemplare ──
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschen(katalogAbfragen)))
 	// Die Signatur aus dem Bestellkorb korrigieren: create_orders, nicht edit_books, dasselbe

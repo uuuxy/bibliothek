@@ -337,7 +337,7 @@ func TestGeraetRueckgabe_ZweiPlaetzeBuchenNurEinmal(t *testing.T) {
 }
 
 // protokollScheitert ist ein Protokoll, das Ausleihe und Rückgabe nicht schreiben kann.
-type protokollScheitert struct{ repository.ProtokollAbfragen }
+type protokollScheitert struct{ *repository.ProtokollAbfragen }
 
 var errProtokollProbe = errors.New("protokoll nicht schreibbar")
 

@@ -52,7 +52,7 @@ func bescheidAkteur(ctx context.Context) string {
 
 // protokolliereBescheid protokolliert einen Eingriff. Dasselbe Muster wie der LMF-Plan: ohne
 // Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
-func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen repository.ProtokollAbfragen, aktion string, details map[string]any, ip string) {
+func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen *repository.ProtokollAbfragen, aktion string, details map[string]any, ip string) {
 	claims, ok := auth.ClaimsAusKontext(ctx)
 	if !ok || t.DB == nil || t.DB.Pool == nil || protokollAbfragen == nil {
 		return
@@ -122,7 +122,7 @@ func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen *repository.BescheidAbfr
 // @Param        id path string true "Kennung des Bescheids"
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
-func (t *Tueren) BescheidUebergeben(bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) BescheidUebergeben(bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

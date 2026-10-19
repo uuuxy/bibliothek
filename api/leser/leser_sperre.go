@@ -36,7 +36,7 @@ const meldungSperreFehler = "Fehler beim Aktualisieren der Sperre"
 //
 // Jede Änderung steht im Protokoll (LESER_GESPERRT, LESER_ENTSPERRT), wie das Übergehen an
 // der Theke (OVERRIDE_BLOCK).
-func (t *Tueren) LeserSperren(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserSperren(protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.sperreLeser(w, r, protokollAbfragen)
 	})
@@ -44,7 +44,7 @@ func (t *Tueren) LeserSperren(protokollAbfragen repository.ProtokollAbfragen) ht
 
 // sperreLeser schaltet die Sperre in einer Transaktion um und schreibt den Eintrag ins
 // Protokoll.
-func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) error {
+func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAbfragen *repository.ProtokollAbfragen) error {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, nil)
@@ -127,7 +127,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 // protokolliereSperre schreibt das Sperren und das Aufheben ins Protokoll. Wie bei
 // FRIST_OVERRIDE gilt die Änderung auch, wenn das Protokoll klemmt; der Fehlversuch steht dann
 // im Log. Aufheben ohne bestehende Sperre ändert nichts und schreibt nichts.
-func protokolliereSperre(r *http.Request, protokollAbfragen repository.ProtokollAbfragen, bearbeiterID, id string, sperren bool, grund string, alt repository.LeserSperrStand) {
+func protokolliereSperre(r *http.Request, protokollAbfragen *repository.ProtokollAbfragen, bearbeiterID, id string, sperren bool, grund string, alt repository.LeserSperrStand) {
 	aktion, details := "LESER_GESPERRT", map[string]any{"schueler_id": id, "grund": grund}
 	if !sperren {
 		if !alt.VonHand && !alt.VomProgramm {

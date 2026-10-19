@@ -122,14 +122,14 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 
 // AusleihFristSetzen setzt die Frist einer laufenden Ausleihe von Hand
 // (PATCH /api/admin/ausleihen/{id}/faelligkeit).
-func (t *Tueren) AusleihFristSetzen(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) AusleihFristSetzen(protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.setzeAusleihFrist(w, r, protokollAbfragen)
 	}
 }
 
 // setzeAusleihFrist setzt die Frist einer laufenden Ausleihe von Hand.
-func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
+func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, protokollAbfragen *repository.ProtokollAbfragen) {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)

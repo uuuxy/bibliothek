@@ -70,3 +70,21 @@ type ausleihPflege interface {
 	// BucheRueckgabe beendet eine offene Ausleihe in der Transaktion, zum jetzigen Zeitpunkt.
 	BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error
 }
+
+// adminProtokoll schreibt eine Aktion eines Bearbeiters ins Protokoll der Verwaltung
+// (repository.ProtokollAbfragen).
+type adminProtokoll interface {
+	// ProtokolliereAdminAktion schreibt einen Eintrag ins Protokoll der Verwaltung (audit_logs).
+	ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error
+}
+
+// buchungsProtokoll schreibt die Spur einer Ausleihe oder Rückgabe, Bücher wie Geräte, und das
+// Übergehen eines Hinweises dabei.
+type buchungsProtokoll interface {
+	adminProtokoll
+	// ProtokolliereAusleihe schreibt den Eintrag zur Ausleihe in die Transaktion der Ausleihe;
+	// lässt er sich nicht schreiben, gibt es die Ausleihe nicht.
+	ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
+	// ProtokolliereRueckgabe schreibt den Eintrag zur Rückgabe in die Transaktion der Rückgabe.
+	ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
+}

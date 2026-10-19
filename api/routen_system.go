@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen repository.ProtokollAbfragen, kontoAbfragen *repository.KontoAbfragen, pool db.Pool) {
+func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *repository.ProtokollAbfragen, kontoAbfragen *repository.KontoAbfragen, pool db.Pool) {
 	// ── Benutzer und Rechte ──
 	mux.Handle("GET /api/benutzer", s.verlangeRecht("manage_users")(s.benutzer().Konten(kontoAbfragen)))
 	mux.Handle("POST /api/benutzer", s.verlangeRecht("manage_users")(s.benutzer().KontoAnlegen(kontoAbfragen)))

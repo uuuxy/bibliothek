@@ -79,5 +79,4 @@ linters:
           - contextcheck
       # Erzeuger, die noch eine Schnittstelle liefern (docs/STIL.md, Abschnitt 14). Die Liste wird
       # nur kürzer: Wer einen Erzeuger auf den Typ umstellt, streicht seine Zeile.
-      - { linters: [ireturn], text: ^NewProtokollAbfragen returns }
       - { linters: [ireturn], text: ^NewAusleihDienst returns }

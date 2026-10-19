@@ -40,11 +40,11 @@ type GeraeteDienst struct {
 	pool              db.Pool
 	leserAbfragen     leserAbruf
 	ausleihAbfragen   *repository.AusleihAbfragen
-	protokollAbfragen repository.ProtokollAbfragen
+	protokollAbfragen buchungsProtokoll
 }
 
 // NewGeraeteDienst baut den Dienst für Geräte.
-func NewGeraeteDienst(pool db.Pool, leserAbfragen leserAbruf, ausleihAbfragen *repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) *GeraeteDienst {
+func NewGeraeteDienst(pool db.Pool, leserAbfragen leserAbruf, ausleihAbfragen *repository.AusleihAbfragen, protokollAbfragen buchungsProtokoll) *GeraeteDienst {
 	return &GeraeteDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,

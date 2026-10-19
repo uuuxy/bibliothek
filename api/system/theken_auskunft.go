@@ -80,7 +80,7 @@ func deuteThekenEreignis(z repository.ThekenEreignisZeile) thekenEreignis {
 }
 
 // ThekenAuskunft beantwortet GET /api/audit/tresen-auskunft?barcode=…
-func (t *Tueren) ThekenAuskunft(protokollAbfragen repository.ProtokollAbfragen) http.HandlerFunc {
+func (t *Tueren) ThekenAuskunft(protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.gibThekenAuskunft(w, r, protokollAbfragen)
 	}
@@ -88,7 +88,7 @@ func (t *Tueren) ThekenAuskunft(protokollAbfragen repository.ProtokollAbfragen) 
 
 // gibThekenAuskunft sucht die Exemplare zum Barcode und ihre Vorgänge und protokolliert den
 // Blick, bevor er antwortet.
-func (t *Tueren) gibThekenAuskunft(w http.ResponseWriter, r *http.Request, protokollAbfragen repository.ProtokollAbfragen) {
+func (t *Tueren) gibThekenAuskunft(w http.ResponseWriter, r *http.Request, protokollAbfragen *repository.ProtokollAbfragen) {
 	barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
 	if barcode == "" || len(barcode) > 64 {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Barcode fehlt oder ist zu lang", nil)

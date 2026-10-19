@@ -7,13 +7,11 @@ import (
 
 	"bibliothek/repository"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// protokollAttrappe steht für repository.ProtokollAbfragen und für die Löschung der Leser
-// (leserLoeschung) und zählt die Aufrufe, nach denen die Tests fragen.
+// protokollAttrappe steht für das Protokoll der Läufe (systemProtokoll) und für die Löschung der
+// Leser (leserLoeschung) und zählt die Aufrufe, nach denen die Tests fragen.
 type protokollAttrappe struct {
 	abgaengerLoeschungen int
 	systemEintraege      int
@@ -25,18 +23,6 @@ func (p *protokollAttrappe) LoescheLeserEndgueltig(ctx context.Context, leserID 
 
 func (p *protokollAttrappe) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	p.abgaengerLoeschungen++
-	return nil
-}
-
-func (p *protokollAttrappe) ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
-	return nil
-}
-
-func (p *protokollAttrappe) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, kontoID string, bearbeiterID string) error {
-	return nil
-}
-
-func (p *protokollAttrappe) ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, kontoID string, bearbeiterID string) error {
 	return nil
 }
 

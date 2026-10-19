@@ -43,9 +43,6 @@ func (m *protokollAttrappe) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx
 func (m *protokollAttrappe) ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
 	return nil
 }
-func (m *protokollAttrappe) ProtokolliereSystemAktion(ctx context.Context, tabelle, aktion, kontext string, details map[string]any) error {
-	return nil
-}
 
 func strPtr(s string) *string { return &s }
 
