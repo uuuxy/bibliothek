@@ -863,10 +863,10 @@ Nach `theke_leeren_minuten` ohne Eingabe (Vorgabe 5) schließt sich die offene S
 nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendung ist dann nicht
 mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
 Datenschutz an einer Theke, an der Schüler mitlesen können (Kategorie Datenschutz & Sitzung).
-Das Abmelden leert die Theke ebenso. Kommt die Antwort auf einen Scan erst danach an, öffnet sie
-keine Akte und keine Rückfrage mehr; was der Server gebucht hat, bleibt gebucht, und ein Buch,
-das den Server nicht erreicht hat, geht mit dem Leser oder Ausweis vom Scan in die
-Warteschlange.
+Das Abmelden leert die Theke ebenso. Kommt die Antwort auf einen Scan oder eine Suche erst danach
+an, öffnet sie keine Akte, keine Rückfrage und keine Trefferliste mehr; was der Server gebucht
+hat, bleibt gebucht, und ein Buch, das den Server nicht erreicht hat, geht mit dem Leser oder
+Ausweis vom Scan in die Warteschlange.
 
 Der Server sperrt die Anmeldung mit: Neuladen oder ein neuer Tab zeigen wieder den
 Sperrbildschirm, und hinter ihm liefert der Server keine Daten. Alle Fenster eines Browsers

@@ -46,13 +46,9 @@ export function thekeLeeren() {
 	// gewöhnlichen Betrieb vor.
 	omniboxStore.schalteSchnellrueckgabe(false);
 	omniboxStore.eingabe = '';
-	omniboxStore.suche.trefferlisteOffen = false;
-	omniboxStore.suche.suchTreffer = {
-		students: [],
-		books: [],
-		studentsTotal: 0,
-		booksTotal: 0
-	};
+	// Derselbe Weg wie ein geleertes Suchfeld: Er zählt den Suchlauf hoch, sonst füllte eine
+	// Suche, die noch unterwegs ist, die Trefferliste danach wieder mit Namen.
+	omniboxStore.suche.verarbeiteEingabe();
 	// Die Meldungsliste nennt Namen und Klassen: Sie geht mit zu, wenn die Theke geleert
 	// wird — sonst stünde sie nach fünf Minuten Pause offen vor dem nächsten Bediener.
 	nachbuchMeldungen.schliesse();

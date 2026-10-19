@@ -27,7 +27,7 @@ vi.mock('./buchBarcodes.svelte.js', () => ({
 	}
 }));
 
-import { apiClient } from '../apiFetch.js';
+import { apiClient, apiFetch } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 import { thekeLeeren } from './thekeLeeren.js';
@@ -170,5 +170,24 @@ describe('Eine Antwort, die erst nach „Theke leeren" ankommt', () => {
 			(e) => `${e.barcode} ${e.art} ${e.ausweis_barcode}`
 		);
 		expect(abgelegt).toEqual(['B-1 ausleihe S-7']);
+	});
+});
+
+describe('Eine Suche, die erst nach „Theke leeren" antwortet', () => {
+	it('füllt die Trefferliste nicht wieder mit Namen', async () => {
+		/** @type {(a: any) => void} */
+		let antworte = () => {};
+		vi.mocked(apiFetch).mockImplementationOnce(() => new Promise((ja) => (antworte = ja)));
+		omniboxStore.eingabe = 'Mus';
+		omniboxStore.suche.verarbeiteEingabe();
+		// Die Entprellung (300 ms) läuft ab, die Suche ist unterwegs.
+		await vi.waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(1), { timeout: 1000 });
+
+		thekeLeeren();
+		antworte(antwort({ students: [MIA], books: [], students_total: 1 }));
+		await new Promise((fertig) => setTimeout(fertig, 20));
+
+		expect(omniboxStore.suche.trefferlisteOffen, 'der nächste Bediener sähe Mia').toBe(false);
+		expect(omniboxStore.suche.suchTreffer.students).toEqual([]);
 	});
 });
