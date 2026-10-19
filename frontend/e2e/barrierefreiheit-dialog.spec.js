@@ -23,7 +23,7 @@ test('Dialog: Fokus wandert hinein, kreist darin und kehrt zum Auslöser zurück
 }) => {
 	await uiLogin(page);
 	await gehZu(page, '/schuelerdatei');
-	const ausloeser = page.getByRole('button', { name: 'Neuen Leser anlegen' });
+	const ausloeser = page.getByRole('button', { name: 'Neuer Leser', exact: true });
 	await ausloeser.click();
 	await expect(page.getByRole('dialog')).toBeVisible();
 

@@ -43,13 +43,11 @@
 		{ wert: 'lmf', text: 'LMF' }
 	];
 
-	// Die beiden Sichten der „Bestands-Analysen"-Card. detailLabel ist der Name, unter dem
-	// die Detailseite firmiert — er trägt auch das aria-label des Drill-Down-Buttons.
+	// Die beiden Sichten der „Bestands-Analysen"-Card.
 	const ANALYSEN = [
-		{ wert: 'renner', text: 'Renner', detailLabel: 'Beliebteste Titel (Die Renner)' },
-		{ wert: 'ladenhueter', text: 'Ladenhüter', detailLabel: 'Ladenhüter' }
+		{ wert: 'renner', text: 'Renner' },
+		{ wert: 'ladenhueter', text: 'Ladenhüter' }
 	];
-	const aktiveAnalyse = $derived(ANALYSEN.find((a) => a.wert === analyse) ?? ANALYSEN[0]);
 
 	/** @param {number} v */
 
@@ -132,7 +130,6 @@
 		type="button"
 		onclick={() => openDetail(analyse)}
 		class="shrink-0 gap-1"
-		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
 		Alle anzeigen
 		<ChevronRight class="w-3 h-3" aria-hidden="true" />

@@ -58,7 +58,7 @@ describe('KlassenUebersicht', () => {
 		await screen.findByText('09z2');
 
 		expect(screen.queryByRole('button', { name: /Klasse hinzufügen/ })).toBeNull();
-		expect(screen.queryByRole('button', { name: 'Klasse bearbeiten' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Bücher verwalten' })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Buchliste löschen' })).toBeNull();
 	});
 
@@ -69,7 +69,7 @@ describe('KlassenUebersicht', () => {
 		await screen.findByText('09z1');
 
 		expect(screen.getByRole('button', { name: /Klasse hinzufügen/ })).toBeTruthy();
-		expect(screen.getAllByRole('button', { name: 'Klasse bearbeiten' })).toHaveLength(2);
+		expect(screen.getAllByRole('button', { name: 'Bücher verwalten' })).toHaveLength(2);
 		expect(screen.getAllByRole('button', { name: 'Buchliste löschen' })).toHaveLength(2);
 	});
 

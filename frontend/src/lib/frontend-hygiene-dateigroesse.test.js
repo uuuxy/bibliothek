@@ -13,9 +13,9 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
-	'src/lib/Bestellwesen.svelte': 232,
+	'src/lib/Bestellwesen.svelte': 231,
 	'src/lib/Omnibox.svelte': 215,
-	'src/lib/Statistik.svelte': 351,
+	'src/lib/Statistik.svelte': 348,
 	'src/lib/Leserakte.svelte': 221,
 	'src/lib/Inventur.svelte': 231,
 	'src/lib/Konten.svelte': 208,

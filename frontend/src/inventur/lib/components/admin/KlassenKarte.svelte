@@ -72,12 +72,7 @@
 		     es darum, niemandem einen Knopf anzubieten, der im 403 endet. -->
 		{#if darfPflegen}
 			<div class="flex shrink-0 gap-2">
-				<Button
-					variant="secondary"
-					onclick={onEdit}
-					title="Klasse bearbeiten"
-					aria-label="Klasse bearbeiten"
-				>
+				<Button variant="secondary" onclick={onEdit}>
 					<Pencil class="w-4 h-4" aria-hidden="true" />
 					Bücher verwalten
 				</Button>

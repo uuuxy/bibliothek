@@ -165,7 +165,7 @@ test.describe('Material 3: Bauform', () => {
 	// und genau dort sass der Befund, den die erste Messung übersehen hat.
 	const DIALOGE = [
 		{ name: 'Benutzer anlegen', pfad: '/berechtigungen', knopf: /Benutzer anlegen/ },
-		{ name: 'Leser anlegen', pfad: '/schuelerdatei', knopf: /Neuen Leser anlegen/ }
+		{ name: 'Leser anlegen', pfad: '/schuelerdatei', knopf: /Neuer Leser/ }
 	];
 
 	for (const d of DIALOGE) {

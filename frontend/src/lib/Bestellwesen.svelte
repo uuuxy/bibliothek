@@ -172,7 +172,6 @@
 							     überhaupt etwas drin ist. -->
 							<button
 								onclick={() => (railOffen = true)}
-								aria-label="Bestellspalte ausklappen"
 								aria-expanded="false"
 								aria-controls="bestellpanel"
 								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-xl border border-outline-variant bg-surface-container-lowest cursor-pointer"

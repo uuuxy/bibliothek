@@ -117,7 +117,6 @@
 			type="button"
 			onclick={() => (uiStore.activeTab = 'mahnwesen')}
 			class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-sm font-semibold text-primary cursor-pointer"
-			aria-label="Zum Mahnwesen — überfällige Ausleihen bearbeiten"
 		>
 			Im Mahnwesen bearbeiten
 			<ChevronRight class="w-3.5 h-3.5" aria-hidden="true" />

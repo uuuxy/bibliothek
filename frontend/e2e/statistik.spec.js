@@ -26,7 +26,7 @@ test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }
 	// „Bestands-Analysen" zeigt Renner UND Ladenhüter in EINER Card; das Segmented Control
 	// schaltet um, „Alle anzeigen" führt in die jeweils aktive Detailansicht.
 	await page.getByRole('button', { name: 'Ladenhüter', exact: true }).click();
-	await page.getByRole('button', { name: /Ladenhüter — Detailansicht öffnen/ }).click();
+	await page.getByRole('button', { name: 'Alle anzeigen', exact: true }).click();
 
 	const panel = page.getByRole('main');
 	await expect(panel.getByRole('heading', { name: 'Ladenhüter' })).toBeVisible();

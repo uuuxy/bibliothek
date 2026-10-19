@@ -56,7 +56,7 @@ test('Bestellspalte: einklappen gibt Breite frei und nimmt die Bestellung nicht 
 	// ── Einklappen ──────────────────────────────────────────────────────────────────────
 	await page.getByRole('button', { name: 'Bestellspalte einklappen' }).click();
 
-	const streifen = page.getByRole('button', { name: 'Bestellspalte ausklappen' });
+	const streifen = page.getByRole('button', { name: /Deine Bestellung/ });
 	await expect(streifen).toBeVisible();
 	await expect(panel).toBeHidden();
 

@@ -49,7 +49,6 @@
 		type="button"
 		aria-haspopup="dialog"
 		aria-expanded={offen}
-		aria-label="Design-Vorlage"
 		onclick={() => (offen = !offen)}
 		class="flex h-9 w-full cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:outline-none {offen
 			? 'border-primary ring-1 ring-primary'
