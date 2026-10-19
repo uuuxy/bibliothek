@@ -45,12 +45,12 @@ func (a *pgKatalogAbfragen) SondereExemplarAus(ctx context.Context, exemplarID s
 		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
 	}
 
-	var offeneAusleihen int
-	err = tx.QueryRow(ctx, "SELECT count(*) FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL", exemplarID).Scan(&offeneAusleihen)
+	var verliehen bool
+	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL)", exemplarID).Scan(&verliehen)
 	if err != nil {
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
-	if offeneAusleihen > 0 {
+	if verliehen {
 		return ErrExemplarNochVerliehen
 	}
 
