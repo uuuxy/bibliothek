@@ -431,6 +431,10 @@ Liste.
   Zugang.
   Die Art lässt sich innerhalb des Kollegiums umstellen, etwa von LiV auf Lehrkraft; über
   die Schüler-Grenze geht sie nicht — ein Schüler kommt aus der LUSD und bleibt Schüler.
+  **Bearbeiten:** Der Pfeil _Zurück_ oben links schließt die Maske. Ist etwas eingegeben und
+  nicht gespeichert, fragt sie vorher: _Bleiben_ lässt die Eingaben stehen, _Verwerfen_ schließt
+  ohne sie. Ebenso fragt sie, wenn man bei offener Maske einen anderen Menüpunkt wählt
+  (_Verwerfen und weiter_); beim Schließen oder Neuladen des Fensters fragt der Browser.
 - **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
   Schaden), DSGVO-Auskunft. Kontoauszug und Ersatzforderung gibt es nur beim Schüler, die
   DSGVO-Auskunft für jeden Leser; beim Kollegen nennt sie auch sein Zugangskonto, seine

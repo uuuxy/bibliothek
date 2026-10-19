@@ -79,7 +79,7 @@ function nutzlast(daten, leser, hatKonto) {
  * @param {() => any} props.getStudent - Liefert den aktuell bearbeiteten Schüler
  * @param {() => void} props.onSave - Callback when the save is successful
  * @param {(msg: string, type: 'success' | 'error') => void} props.showSnackbar - Callback to show notifications
- * @returns {{ eingaben: any, speichert: boolean, kontoVorhanden: boolean, uebernimmLeser: () => void, speichere: () => Promise<void> }}
+ * @returns {{ eingaben: any, speichert: boolean, kontoVorhanden: boolean, uebernimmLeser: () => void, speichere: () => Promise<void>, hatUngespeichertes: () => boolean }}
  */
 export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 	let speichert = $state(false);
@@ -146,6 +146,9 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		geladen = nutzlast(werte, leser, !!leser.email);
 	}
 
+	// Was „Speichern" schicken würde. Die Rückfrage vor dem Verwerfen fragt dasselbe.
+	const geaendert = () => nurGeaendertes(geladen, nutzlast(eingaben, getStudent(), kontoVorhanden));
+
 	/**
 	 * Speichert die Felder, die seit dem Laden der Akte geändert wurden. Der Server schreibt
 	 * jedes Feld, das der Rumpf nennt: Mit allen Feldern schriebe die Maske zurück, was ein
@@ -157,7 +160,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 			showSnackbar('Kein Schüler ausgewählt.', 'error');
 			return;
 		}
-		const payload = nurGeaendertes(geladen, nutzlast(eingaben, leser, kontoVorhanden));
+		const payload = geaendert();
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(payload).length === 0) {
 			showSnackbar('Änderungen gespeichert.', 'success');
@@ -191,6 +194,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 			return speichert;
 		},
 		uebernimmLeser,
-		speichere
+		speichere,
+		hatUngespeichertes: () => Object.keys(geaendert()).length > 0
 	});
 }

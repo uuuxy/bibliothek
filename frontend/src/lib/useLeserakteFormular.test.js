@@ -320,6 +320,18 @@ describe('useLeserakteFormular.save', () => {
 			expect(payload).toEqual({ plz: '63065' });
 		});
 
+		// Die Rückfrage vor dem Verwerfen hängt daran (LeserBearbeiten, docs/OFFEN.md 5.80).
+		it('meldet Ungespeichertes genau dann, wenn „Speichern" etwas schicken würde', () => {
+			const hook = baueFormular();
+			expect(hook.hatUngespeichertes(), 'frisch geladen').toBe(false);
+
+			hook.eingaben.ort = 'Offenbach';
+			expect(hook.hatUngespeichertes()).toBe(true);
+
+			hook.eingaben.ort = 'Frankfurt';
+			expect(hook.hatUngespeichertes(), 'zurückgestellt').toBe(false);
+		});
+
 		it('misst nach dem Neufüllen am neuen Stand', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			let leser = { ...schueler };

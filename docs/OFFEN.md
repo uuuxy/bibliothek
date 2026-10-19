@@ -43,7 +43,7 @@ Kategorie C; 5.79 kam beim Beheben von 5.75 dazu. Die der Kategorie A zuerst.
   verwirft. (5.75, A)
 - [x] Dasselbe beim Wechsel der Seite, des Reiters und beim Neuladen. (5.79, A)
 - [x] „Stammdaten bearbeiten": Die Meldung „Änderungen gespeichert." ist zu sehen. (5.76)
-- [ ] „Stammdaten bearbeiten": „Zurück", Seitenwechsel und Neuladen fragen vor dem Verwerfen.
+- [x] „Stammdaten bearbeiten": „Zurück", Seitenwechsel und Neuladen fragen vor dem Verwerfen.
   (5.80, A)
 - [ ] Drei Knöpfe sagen bei leerem Feld, was fehlt. (5.77)
 - [ ] Die Meldungen stehen unten, wie Material 3 es vorsieht. (5.78)
@@ -399,15 +399,6 @@ be placed at the bottom of a UI, in front of the main content. In some cases, sn
 nudged upwards to avoid overlapping with other UI elements near the bottom". Am unteren Rand
 stehen die Auswahlleisten der Listen (`ui/AuswahlLeiste`, `sticky bottom-4`); dort müssen die
 Meldungen ausweichen.
-
-### 5.80 „Stammdaten bearbeiten": Zurück verwirft ohne Rückfrage
-
-Kategorie A: verlorene Eingabe, dieselbe Lücke wie 5.75 und 5.79 an der zweiten Maske.
-„Zurück" in `LeserBearbeiten.svelte` ruft `onClose`, und `Leserakte.svelte` schließt die Maske
-samt allem Getippten (`bearbeitenOffen = false`); ein Wechsel der Seite baut sie ebenso ohne
-Frage ab. Was geändert ist, weiß der Hook schon (`nurGeaendertes` in
-`useLeserakteFormular.svelte.js`). Weg: wie an der Buchmaske, `verwerfenBestaetigen` am Knopf und
-`schuetzeUngespeichertes` für Seite und Fenster.
 
 ---
 

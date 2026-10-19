@@ -5,6 +5,8 @@
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { snackbars } from './stores/snackbars.svelte.js';
+	import { verwerfenBestaetigen } from './stores/bestaetigung.svelte.js';
+	import { schuetzeUngespeichertes } from './stores/verlassenSchutz.svelte.js';
 	import { useLeserakteFormular } from './useLeserakteFormular.svelte.js';
 	import { leserArtText } from './leserArt.js';
 	import { Check, ChevronLeft } from '@lucide/svelte';
@@ -40,13 +42,21 @@
 		onSave: () => onSave(),
 		showSnackbar: (msg, type) => snackbars.addToast(msg, type)
 	});
-	const { eingaben, uebernimmLeser, speichere } = formular;
+	const { eingaben, uebernimmLeser, speichere, hatUngespeichertes } = formular;
 
 	// Der Effekt verfolgt `student` über den Getter in uebernimmLeser — wechselt das Prop,
 	// wird das Formular neu befüllt statt die alten Werte zu behalten.
 	$effect(() => {
 		uebernimmLeser();
 	});
+
+	// Ungespeichertes geht nur nach Rückfrage verloren, wie an der Buchmaske: am Zurück-Knopf,
+	// beim Wechsel der Seite und beim Neuladen oder Schließen des Fensters.
+	schuetzeUngespeichertes(hatUngespeichertes);
+	async function zurueck() {
+		if (hatUngespeichertes() && !(await verwerfenBestaetigen())) return;
+		onClose();
+	}
 </script>
 
 <!-- Full Page View (Replaces the side sheet) -->
@@ -58,7 +68,7 @@
 		<div class="flex items-center gap-4 min-w-0">
 			<!-- Back Button -->
 			<button
-				onclick={onClose}
+				onclick={zurueck}
 				aria-label="Zurück"
 				class="icon-btn h-10 w-10 shrink-0 text-on-surface-variant"
 			>
