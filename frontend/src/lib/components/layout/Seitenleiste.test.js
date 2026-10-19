@@ -92,4 +92,19 @@ describe('Seitenleiste: eingeklappt nach Fensterbreite', () => {
 		await fenster.wird(false);
 		expect(screen.getByRole('button', { name: 'Navigation ausklappen' })).toBeTruthy();
 	});
+
+	// Der Knopf „System" nennt den Bereich, den er aufklappt, über dessen Kennung. Beide stehen
+	// an zwei Stellen der Datei; der Test hält sie als Paar, damit keine allein umbenannt wird.
+	it('nennt am Knopf „System" die Kennung des Bereichs, den er aufklappt', async () => {
+		authStore.currentUser = { ...authStore.currentUser, permissions: ['audit_logs'] };
+		const screen = render(Seitenleiste);
+		const knopf = screen.getByRole('button', { name: 'System' });
+		expect(screen.queryByText('System-Logs')).toBeNull();
+
+		await fireEvent.click(knopf);
+		expect(knopf.getAttribute('aria-expanded')).toBe('true');
+		const bereich = screen.getByText('System-Logs').closest('[id]');
+		expect(bereich?.id).toBeTruthy();
+		expect(knopf.getAttribute('aria-controls')).toBe(bereich?.id);
+	});
 });

@@ -128,6 +128,7 @@
 										onclick={() => (systemOpen = !systemOpen)}
 										class="group/sys mb-2 flex w-full cursor-pointer items-center justify-between px-3 text-left"
 										aria-expanded={systemOpen}
+										aria-controls="seitenleiste-system"
 									>
 										<span
 											class="text-on-surface-variant group-hover/sys:text-on-surface animate-fade-in text-sm font-medium transition-colors"
@@ -142,7 +143,7 @@
 									</button>
 								{/if}
 								{#if systemOpen || zu}
-									<div class="animate-fade-in space-y-1">
+									<div id="seitenleiste-system" class="animate-fade-in space-y-1">
 										{#each group.items as item (item.id)}
 											{#if darfSehen(item, authStore.currentUser)}
 												{@render navItem(item)}
