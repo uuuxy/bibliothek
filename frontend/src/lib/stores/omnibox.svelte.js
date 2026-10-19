@@ -409,7 +409,6 @@ export function erzeugeOmniboxStore() {
 		scanfeldBereit,
 		rueckfrageOffen,
 		scanBeiRueckfrage,
-		melde,
 		uebernimmZusammengefuehrt,
 		schalteSchnellrueckgabe,
 		escapeGedrueckt,
