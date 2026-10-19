@@ -89,7 +89,7 @@ func TestNewOmniboxDienst(t *testing.T) {
 	var studentRepo leserErmittlung
 	var bookRepo katalogErmittlung
 	var loanRepo *repository.AusleihAbfragen
-	var loanSvc AusleihDienst
+	var loanSvc ausleihBuchung
 	var deviceSvc *GeraeteDienst
 
 	svc := NewOmniboxDienst(
@@ -138,9 +138,8 @@ func (m *katalogAttrappe) FindeExemplar(ctx context.Context, barcode string) (*r
 	return nil, nil
 }
 
-// ausleihDienstAttrappe erfüllt AusleihDienst mit Funktionen, die jeder Test selbst setzt.
+// ausleihDienstAttrappe erfüllt ausleihBuchung mit Funktionen, die jeder Test selbst setzt.
 type ausleihDienstAttrappe struct {
-	AusleihDienst
 	bucheAmLeser func(ctx context.Context, exemplar *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*AusleihErgebnis, error)
 	nimmZurueck  func(ctx context.Context, exemplar *repository.Exemplar, staffID string) (*AusleihErgebnis, error)
 }

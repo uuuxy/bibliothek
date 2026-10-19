@@ -21,7 +21,7 @@ import (
 type sperrTheke struct {
 	pool       *pgxpool.Pool
 	katalog    *repository.KatalogAbfragen
-	ausleihe   service.AusleihDienst
+	ausleihe   *service.AusleihDienst
 	omnibox    *service.OmniboxDienst
 	bearbeiter string
 }

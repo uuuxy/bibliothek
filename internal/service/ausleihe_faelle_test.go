@@ -26,10 +26,7 @@ func TestVerarbeiteAusleihe_Schueler(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
-	svc, ok := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*ausleihDienst)
-	if !ok {
-		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
-	}
+	svc := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	tx := beginneTx(t, mock)
 
@@ -92,10 +89,7 @@ func TestVerarbeiteAusleihe_Lehrkraft(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
-	svc, ok := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*ausleihDienst)
-	if !ok {
-		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
-	}
+	svc := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	tx := beginneTx(t, mock)
 
@@ -153,10 +147,7 @@ func TestVerarbeiteAusleihe_AnlegeFehler(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
-	svc, ok := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*ausleihDienst)
-	if !ok {
-		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
-	}
+	svc := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	tx := beginneTx(t, mock)
 
@@ -201,10 +192,7 @@ func TestVerarbeiteAusleihe_CommitFehler(t *testing.T) {
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
-	svc, ok := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*ausleihDienst)
-	if !ok {
-		t.Fatal("NewAusleihDienst liefert keinen *ausleihDienst")
-	}
+	svc := NewAusleihDienst(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
 	tx := beginneTx(t, mock)
 

@@ -41,7 +41,7 @@ func TestVerarbeiteRueckgabe_RueckgabeFehler(t *testing.T) {
 	defer mockPool.Close()
 
 	expectedErr := errors.New("db error")
-	svc := &ausleihDienst{
+	svc := &AusleihDienst{
 		pool:            mockPool,
 		ausleihAbfragen: &rueckgabeAttrappe{rueckgabeFehler: expectedErr},
 		leserAbfragen:   &leserAttrappe{leser: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
@@ -79,7 +79,7 @@ func TestVerarbeiteRueckgabe_CommitFehler(t *testing.T) {
 	defer mockPool.Close()
 
 	audit := &protokollAttrappe{}
-	svc := &ausleihDienst{
+	svc := &AusleihDienst{
 		pool:              mockPool,
 		ausleihAbfragen:   &rueckgabeAttrappe{},
 		protokollAbfragen: audit,
@@ -125,7 +125,7 @@ func TestVerarbeiteRueckgabe_Gelingt(t *testing.T) {
 	defer mockPool.Close()
 
 	audit := &protokollAttrappe{}
-	svc := &ausleihDienst{
+	svc := &AusleihDienst{
 		pool:              mockPool,
 		ausleihAbfragen:   &rueckgabeAttrappe{},
 		protokollAbfragen: audit,
@@ -174,7 +174,7 @@ func TestVerarbeiteRueckgabe_VormerkungAktiviert(t *testing.T) {
 	defer mockPool.Close()
 
 	audit := &protokollAttrappe{}
-	svc := &ausleihDienst{
+	svc := &AusleihDienst{
 		pool:              mockPool,
 		ausleihAbfragen:   &rueckgabeAttrappe{},
 		protokollAbfragen: audit,
@@ -243,7 +243,7 @@ func TestNimmZurueck_ReichtFehlerWeiter(t *testing.T) {
 	exemplar := &repository.Exemplar{ID: "ex-1"}
 
 	t.Run("die Transaktion beginnt nicht", func(t *testing.T) {
-		svc := &ausleihDienst{ausleihAbfragen: &rueckgabeAttrappe{beginnFehler: dbFehler}}
+		svc := &AusleihDienst{ausleihAbfragen: &rueckgabeAttrappe{beginnFehler: dbFehler}}
 
 		ergebnis, err := svc.NimmZurueck(context.Background(), exemplar, "theke")
 		if !errors.Is(err, dbFehler) {
@@ -266,7 +266,7 @@ func TestNimmZurueck_ReichtFehlerWeiter(t *testing.T) {
 			t.Fatalf("Transaktion der Attrappe: %v", err)
 		}
 		pool.ExpectRollback()
-		svc := &ausleihDienst{ausleihAbfragen: &rueckgabeAttrappe{tx: tx, offeneFehler: dbFehler}}
+		svc := &AusleihDienst{ausleihAbfragen: &rueckgabeAttrappe{tx: tx, offeneFehler: dbFehler}}
 
 		ergebnis, err := svc.NimmZurueck(context.Background(), exemplar, "theke")
 		if !errors.Is(err, dbFehler) {

@@ -28,14 +28,14 @@ import (
 // Rückgabedatum, Frist und Bewegungsstempel.
 
 // NachbuchDienst bucht die Einträge nach, die eine Theke ohne Netz gesammelt hat. Er bucht über
-// ausleihDienst, damit das Nachbuchen dieselben Schranken und Schreiber hat wie der Scan am Netz.
+// AusleihDienst, damit das Nachbuchen dieselben Schranken und Schreiber hat wie der Scan am Netz.
 type NachbuchDienst struct {
-	ausleihe *ausleihDienst
+	ausleihe *AusleihDienst
 }
 
 // NewNachbuchDienst baut den Dienst des Nachbuchens.
 func NewNachbuchDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen ausleihPflege, protokollAbfragen buchungsProtokoll) *NachbuchDienst {
-	return &NachbuchDienst{ausleihe: &ausleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}}
+	return &NachbuchDienst{ausleihe: &AusleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}}
 }
 
 // Absichten eines Eintrags: was der Theken-Rechner beim Scan meinte.
@@ -98,7 +98,7 @@ func (d *NachbuchDienst) BucheNach(ctx context.Context, eintrag NachbuchEintrag)
 }
 
 // bucheNach bucht einen Eintrag in einer Transaktion (NachbuchDienst.BucheNach).
-func (d *ausleihDienst) bucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error) {
+func (d *AusleihDienst) bucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error) {
 	l, abweisung, err := d.loeseNachbuchEintrag(ctx, eintrag)
 	if abweisung != nil || err != nil {
 		return abweisung, err
@@ -150,7 +150,7 @@ func (d *ausleihDienst) bucheNach(ctx context.Context, eintrag NachbuchEintrag) 
 // loeseNachbuchEintrag prüft die Absicht, bestimmt den Scan-Zeitpunkt und löst Buch und Person
 // auf, noch ohne Sperre. Ist das Buch unbekannt oder fehlt zur Ausleihe die Person, ist der
 // Eintrag damit beantwortet: Die Abweisung steht als Meldung und kommt als zweiter Wert zurück.
-func (d *ausleihDienst) loeseNachbuchEintrag(ctx context.Context, eintrag NachbuchEintrag) (*nachbuchLage, *NachbuchErgebnis, error) {
+func (d *AusleihDienst) loeseNachbuchEintrag(ctx context.Context, eintrag NachbuchEintrag) (*nachbuchLage, *NachbuchErgebnis, error) {
 	if eintrag.Absicht != NachbuchAbsichtAusleihe && eintrag.Absicht != NachbuchAbsichtRueckgabe {
 		return nil, nil, meldung(ErrUngueltigerZustand, "Unbekannte Absicht %q", eintrag.Absicht)
 	}
@@ -225,7 +225,7 @@ func holeAbgeschriebenesZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage,
 
 // loeseExemplar findet das Exemplar zum gescannten Barcode — direkt oder über die
 // EAN-13 eines Littera-Etiketts (dieselben Formen wie der Online-Scan).
-func (d *ausleihDienst) loeseExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+func (d *AusleihDienst) loeseExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
 	exemplar, err := d.katalogAbfragen.FindeExemplar(ctx, barcode)
 	if err != nil || exemplar != nil {
 		return exemplar, err
@@ -238,7 +238,7 @@ func (d *ausleihDienst) loeseExemplar(ctx context.Context, barcode string) (*rep
 
 // loesePerson bestimmt, wer ausleiht: die schon aufgelöste Person des Eintrags, sonst der ohne
 // Netz gescannte Ausweis. Bleibt der Ausweis unbekannt, steht sein Text in der Meldung.
-func (d *ausleihDienst) loesePerson(ctx context.Context, l *nachbuchLage) error {
+func (d *AusleihDienst) loesePerson(ctx context.Context, l *nachbuchLage) error {
 	e := l.eintrag
 	if e.LeserID != nil && *e.LeserID != "" {
 		leser, err := d.leserAbfragen.Finde(ctx, *e.LeserID)
@@ -265,7 +265,7 @@ func (d *ausleihDienst) loesePerson(ctx context.Context, l *nachbuchLage) error 
 
 // meldeAbweisung schreibt nicht_gebucht/veraltet in eigener Transaktion — nach dem
 // Rollback der Buchung, damit die Meldung steht, obwohl nichts gebucht wurde.
-func (d *ausleihDienst) meldeAbweisung(ctx context.Context, l *nachbuchLage, ergebnis, grund string) (*NachbuchErgebnis, error) {
+func (d *AusleihDienst) meldeAbweisung(ctx context.Context, l *nachbuchLage, ergebnis, grund string) (*NachbuchErgebnis, error) {
 	if err := repository.SchreibeNachbuchMeldung(ctx, d.pool, d.baueMeldung(l, ergebnis, grund)); err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func (d *ausleihDienst) meldeAbweisung(ctx context.Context, l *nachbuchLage, erg
 }
 
 // baueMeldung baut die Meldung aus der Lage; Ausleiher ist die Person des Eintrags.
-func (d *ausleihDienst) baueMeldung(l *nachbuchLage, ergebnis, grund string) repository.NachbuchMeldungEingabe {
+func (d *AusleihDienst) baueMeldung(l *nachbuchLage, ergebnis, grund string) repository.NachbuchMeldungEingabe {
 	m := repository.NachbuchMeldungEingabe{
 		IdempotenzSchluessel: l.eintrag.Schluessel, Barcode: l.eintrag.Barcode, Ergebnis: ergebnis, Grund: grund,
 		AusweisText: l.ausweis, GescanntAm: l.gescannt,

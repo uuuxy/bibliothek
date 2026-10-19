@@ -24,7 +24,7 @@ func TestLMFFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)
 
-	svc := &ausleihDienst{pool: pool}
+	svc := &AusleihDienst{pool: pool}
 	schulbuch := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
@@ -114,7 +114,7 @@ func TestLMFFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	ctx := context.Background()
 	rueckgabePlanJuni2027(t, pool)
 
-	svc := &ausleihDienst{pool: pool}
+	svc := &AusleihDienst{pool: pool}
 	band := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 11}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
@@ -162,7 +162,7 @@ func TestLMFFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 	// Montag, der Tag vor dem Termin der 9H2.
 	heute := time.Date(2027, time.June, 28, 10, 0, 0, 0, schulzeit.Zone())
 	termin := schulzeit.TagesEnde(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
-	svc := &ausleihDienst{pool: pool, jetzt: func() time.Time { return heute }}
+	svc := &AusleihDienst{pool: pool, jetzt: func() time.Time { return heute }}
 
 	ohneKaestchen := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}
 	got, err := svc.bestimmeFrist(ctx, ohneKaestchen, "9H2")

@@ -156,13 +156,13 @@ func TestBerechneFrist_LMF_ZusatzJahre(t *testing.T) {
 
 // --- ladeEinstellungen: robustes Einlesen der Konfiguration inkl. Default-Fallbacks ---
 
-func newDienstMitAttrappe(t *testing.T) (*ausleihDienst, pgxmock.PgxPoolIface) {
+func newDienstMitAttrappe(t *testing.T) (*AusleihDienst, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock konnte nicht initialisiert werden: %v", err)
 	}
-	return &ausleihDienst{pool: mock}, mock
+	return &AusleihDienst{pool: mock}, mock
 }
 
 func TestLadeEinstellungen_LiestWerteUndUebergehtUngueltige(t *testing.T) {

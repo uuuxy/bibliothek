@@ -40,7 +40,7 @@ func TestLadeVorgang_LehrkraftOhneAusweis(t *testing.T) {
 		}
 	})
 
-	svc := &ausleihDienst{pool: pool, leserAbfragen: repository.NewLeserAbfragen(pool)}
+	svc := &AusleihDienst{pool: pool, leserAbfragen: repository.NewLeserAbfragen(pool)}
 	chk, err := svc.ladeVorgang(ctx, &repository.Exemplar{}, &leserID)
 	if err != nil {
 		t.Fatalf("eine aktive Lehrkraft ohne Ausweis muss ausleihen können, bekam: %v", err)

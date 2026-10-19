@@ -69,14 +69,14 @@ func erwarteFristEinstellungen(mock pgxmock.PgxPoolIface) {
 			AddRow("standard_ausleihfrist_tage", strPtr("14")))
 }
 
-func newVorgangDienst(t *testing.T, student *repository.Leser) (*ausleihDienst, *protokollAttrappe, pgxmock.PgxPoolIface) {
+func newVorgangDienst(t *testing.T, student *repository.Leser) (*AusleihDienst, *protokollAttrappe, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock init: %v", err)
 	}
 	audit := &protokollAttrappe{}
-	svc := &ausleihDienst{
+	svc := &AusleihDienst{
 		pool:              mock,
 		leserAbfragen:     &leserAttrappe{leser: student},
 		protokollAbfragen: audit,

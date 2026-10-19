@@ -21,7 +21,7 @@ type vormerkTheke struct {
 	suffix      string
 	mitarbeiter string
 	buecher     *repository.KatalogAbfragen
-	dienst      AusleihDienst
+	dienst      *AusleihDienst
 }
 
 func newVormerkTheke(t *testing.T) *vormerkTheke {

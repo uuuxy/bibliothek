@@ -20,7 +20,7 @@ import (
 // Ein Fehler kommt zurück, und der Aufrufer rollt die Rückgabe zurück: Meldete die Theke „ins
 // Abholfach legen", während die Vormerkung wartend bliebe, läge das Buch im Fach und wäre
 // zugleich frei ausleihbar. Die Theke wiederholt den Scan.
-func (d *ausleihDienst) bedieneVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, erg *AusleihErgebnis, rueckgeberID *string) error {
+func (d *AusleihDienst) bedieneVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, erg *AusleihErgebnis, rueckgeberID *string) error {
 	// Die älteste wartende Vormerkung eines Schülers, der abholen darf; die des Schülers, der
 	// gerade zurückgibt, ist ausgenommen.
 	wartende, da, err := repository.SperreNaechsteWartendeVormerkung(ctx, tx, exemplar.TitelID, rueckgeberID)
@@ -52,8 +52,10 @@ func (d *ausleihDienst) bedieneVormerkung(ctx context.Context, tx pgx.Tx, exempl
 	return nil
 }
 
-// NimmZurueck bucht die Rückgabe eines Exemplars, das ohne geöffneten Leser gescannt wurde.
-func (d *ausleihDienst) NimmZurueck(
+// NimmZurueck bucht die Rückgabe eines Exemplars, das ohne geöffneten Leser gescannt wurde. Ein
+// freies Exemplar ist hier ein Fehler: Ausgeliehen wird über den Ausweis, nicht dadurch, dass ein
+// angemeldetes Konto ein Buch scannt.
+func (d *AusleihDienst) NimmZurueck(
 	ctx context.Context,
 	exemplar *repository.Exemplar,
 	bearbeiterID string,
@@ -82,7 +84,7 @@ func (d *ausleihDienst) NimmZurueck(
 
 // verarbeiteRueckgabe bucht die Rückgabe eines verliehenen Buchs samt Vormerkung, gleich wer es
 // ausgeliehen hat.
-func (d *ausleihDienst) verarbeiteRueckgabe(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, offeneAusleihe *repository.Ausleihe, bearbeiterID string, erg *AusleihErgebnis) (*AusleihErgebnis, error) {
+func (d *AusleihDienst) verarbeiteRueckgabe(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, offeneAusleihe *repository.Ausleihe, bearbeiterID string, erg *AusleihErgebnis) (*AusleihErgebnis, error) {
 	var ausleiher *repository.Leser
 	if offeneAusleihe.SchuelerID != nil {
 		var err error

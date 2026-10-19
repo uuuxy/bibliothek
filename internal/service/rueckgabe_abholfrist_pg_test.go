@@ -57,7 +57,7 @@ func TestRueckgabe_AbholfristMitFesterUhr(t *testing.T) {
 				t.Fatalf("Vormerkung anlegen: %v", err)
 			}
 
-			svc := &ausleihDienst{pool: pool, jetzt: func() time.Time { return fall.jetzt }}
+			svc := &AusleihDienst{pool: pool, jetzt: func() time.Time { return fall.jetzt }}
 			resp := &AusleihErgebnis{}
 			buch := &repository.Exemplar{ID: exemplarID, TitelID: titelID, Titel: "Abholfrist-Testband"}
 			if err := svc.bedieneVormerkung(ctx, tx, buch, resp, nil); err != nil {

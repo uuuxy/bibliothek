@@ -14,7 +14,7 @@ import (
 // legeAusleiheAn schreibt die Ausleihe. Prallt sie am eindeutigen Index ab, weil zwischen
 // Prüfung und Schreiben ein anderer Vorgang das Exemplar gebucht hat, entscheidet
 // deuteAusleiheKonflikt, ob das ein Fehler ist.
-func (d *ausleihDienst) legeAusleiheAn(
+func (d *AusleihDienst) legeAusleiheAn(
 	ctx context.Context,
 	tx pgx.Tx,
 	exemplar *repository.Exemplar,
@@ -47,7 +47,7 @@ func (d *ausleihDienst) legeAusleiheAn(
 // das auf jemand anderem steht.
 //
 // Read Committed: Die fremde Transaktion ist committet, ein neues SELECT sieht sie.
-func (d *ausleihDienst) deuteAusleiheKonflikt(
+func (d *AusleihDienst) deuteAusleiheKonflikt(
 	ctx context.Context,
 	tx pgx.Tx,
 	exemplar *repository.Exemplar,
@@ -117,7 +117,7 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repos
 }
 
 // verarbeiteAusleihe bucht die Ausleihe eines freien Exemplars an den geöffneten Leser.
-func (d *ausleihDienst) verarbeiteAusleihe(
+func (d *AusleihDienst) verarbeiteAusleihe(
 	ctx context.Context,
 	tx pgx.Tx,
 	exemplar *repository.Exemplar,
@@ -158,7 +158,7 @@ func (d *ausleihDienst) verarbeiteAusleihe(
 // ladeAuflagenHinweis fragt nach der Buchung, ob die Klasse gemischte Auflagen bekommt
 // (repository.LadeAuflagenMischungInKlasse). Ein Fehler hier darf die gebuchte Ausleihe nicht
 // als gescheitert melden: Er landet im Log, und die Theke zeigt keinen Hinweis.
-func (d *ausleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
+func (d *AusleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
 	m, err := repository.LadeAuflagenMischungInKlasse(ctx, d.pool, titelID, schuelerID)
 	if err != nil {
 		log.Printf("auflagen-hinweis: %v", err)
@@ -169,7 +169,7 @@ func (d *ausleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuel
 
 // verarbeiteEigeneRueckgabe bucht die Rückgabe, wenn der geöffnete Leser sein eigenes Buch
 // scannt.
-func (d *ausleihDienst) verarbeiteEigeneRueckgabe(
+func (d *AusleihDienst) verarbeiteEigeneRueckgabe(
 	ctx context.Context,
 	tx pgx.Tx,
 	exemplar *repository.Exemplar,
@@ -207,7 +207,7 @@ func (d *ausleihDienst) verarbeiteEigeneRueckgabe(
 // auf jemand anderem steht. Es bucht nur die Rückgabe und nicht auf den geöffneten Leser um:
 // Bringt ein Kind das Buch eines Freundes zurück, landete es sonst still auf dem falschen
 // Konto. Soll der geöffnete Leser das Buch haben, leiht es der nächste Scan aus.
-func (d *ausleihDienst) verarbeiteFremdrueckgabe(
+func (d *AusleihDienst) verarbeiteFremdrueckgabe(
 	ctx context.Context,
 	tx pgx.Tx,
 	exemplar *repository.Exemplar,

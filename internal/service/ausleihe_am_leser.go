@@ -13,7 +13,7 @@ import (
 // zaehleAktiveSchuelerAusleihen sperrt die Zeile des Schülers (FOR UPDATE), damit zwei
 // gleichzeitige Ausleihen das Limit nicht gemeinsam überschreiten, und zählt seine Ausleihen
 // außer den Lernmitteln. Für alle anderen Leser ist das Ergebnis 0.
-func (d *ausleihDienst) zaehleAktiveSchuelerAusleihen(ctx context.Context, tx pgx.Tx, vorgang *ausleihVorgang) (int, error) {
+func (d *AusleihDienst) zaehleAktiveSchuelerAusleihen(ctx context.Context, tx pgx.Tx, vorgang *ausleihVorgang) (int, error) {
 	if !vorgang.istSchueler() {
 		return 0, nil
 	}
@@ -35,7 +35,7 @@ func istEigeneRueckgabe(vorgang *ausleihVorgang, offeneAusleihe *repository.Ausl
 
 // pruefeSchuelerAusleihlimit hält das Ausleihlimit eines Schülers. Lernmittel und jede Rückgabe
 // sind ausgenommen: Bei einer Rückgabe entsteht keine Ausleihe, die zählen könnte.
-func (d *ausleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang *ausleihVorgang, exemplar *repository.Exemplar, anzahlOffene int, neueAusleihe bool) error {
+func (d *AusleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang *ausleihVorgang, exemplar *repository.Exemplar, anzahlOffene int, neueAusleihe bool) error {
 	if !vorgang.istSchueler() {
 		return nil
 	}
@@ -55,7 +55,7 @@ func (d *ausleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang 
 // pruefeVormerkungKonflikt weist die Ausleihe ab, wenn das Exemplar für einen anderen Schüler
 // abholbereit liegt. Bei jeder Rückgabe entfällt die Prüfung, auch bei der Fremdrückgabe, die
 // das Exemplar nur zurücknimmt; die Vormerkung bedient danach bedieneVormerkung.
-func (d *ausleihDienst) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx, exemplarID string, vorgang *ausleihVorgang, neueAusleihe bool) error {
+func (d *AusleihDienst) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx, exemplarID string, vorgang *ausleihVorgang, neueAusleihe bool) error {
 	if !neueAusleihe {
 		return nil
 	}
@@ -71,8 +71,8 @@ func (d *ausleihDienst) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx,
 
 // BucheAmLeser leiht ein freies Exemplar dem geöffneten Leser aus. Ist es verliehen, ist der
 // Scan eine Rückgabe: beim Leser selbst eine gewöhnliche, bei jemand anderem eine
-// Fremdrückgabe.
-func (d *ausleihDienst) BucheAmLeser(
+// Fremdrückgabe; ausleihen kann es dann erst der nächste Scan.
+func (d *AusleihDienst) BucheAmLeser(
 	ctx context.Context,
 	exemplar *repository.Exemplar,
 	aktiverLeserID *string,

@@ -32,7 +32,7 @@ func (v *ausleihVorgang) istSchueler() bool {
 //
 // Die Sperren prüft BucheAmLeser erst, wenn feststeht, dass eine Ausleihe entsteht: Wer sein
 // Buch zurückgibt, darf gesperrt sein.
-func (d *ausleihDienst) ladeVorgang(ctx context.Context, exemplar *repository.Exemplar, leserID *string) (*ausleihVorgang, error) {
+func (d *AusleihDienst) ladeVorgang(ctx context.Context, exemplar *repository.Exemplar, leserID *string) (*ausleihVorgang, error) {
 	if leserID == nil || *leserID == "" {
 		return nil, meldung(ErrUngueltigerZustand, "Kein Leser aktiv")
 	}

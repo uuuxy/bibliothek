@@ -849,7 +849,8 @@ frontend/src
 
 | Datei                      | Aufgabe                                                                                                         |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `ausleihe.go`              | Der Dienst: Schnittstelle, Abhängigkeiten, Ergebnis                                                             |
+| `ausleihe.go`              | Der Dienst: Typ, Abhängigkeiten, Ergebnis                                                                       |
+| `abfragen.go`              | Die Abfragen, die die Dienste brauchen, je nach Vorgang geschnitten ([STIL.md](STIL.md) 14)                     |
 | `ausleihe_am_leser.go`     | Die Transaktionsklammer: Sperren in der Reihenfolge Schüler → Ausleihe → Exemplar, Limits, Vormerkungskonflikt  |
 | `ausleih_vorgang.go`       | Ausleiher und Leihfrist laden                                                                                   |
 | `ausleih_sperren.go`       | Die Sperren einer Ausleihe — ein Prüfweg für Buch, Gerät und Nachbuchen; Übergehen mit Protokoll                |

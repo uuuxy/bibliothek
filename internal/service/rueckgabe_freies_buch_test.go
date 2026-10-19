@@ -49,7 +49,7 @@ func TestFreiesBuchWirdNichtAufDenScannerGebucht(t *testing.T) {
 	mock.ExpectRollback()
 
 	repo := &selbstausleiheAttrappe{pool: mock}
-	svc := &ausleihDienst{ausleihAbfragen: repo}
+	svc := &AusleihDienst{ausleihAbfragen: repo}
 	exemplar := &repository.Exemplar{ID: "c1", TitelID: "t1", IstAusleihbar: true}
 
 	_, err = svc.NimmZurueck(context.Background(), exemplar, "staff1")

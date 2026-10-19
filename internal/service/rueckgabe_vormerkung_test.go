@@ -47,7 +47,7 @@ func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 			t.Fatalf("Begin: %v", err)
 		}
 		resp := &AusleihErgebnis{}
-		if err := (&ausleihDienst{}).bedieneVormerkung(ctx, tx, exemplar, resp, nil); err == nil {
+		if err := (&AusleihDienst{}).bedieneVormerkung(ctx, tx, exemplar, resp, nil); err == nil {
 			t.Error("UPDATE-Fehlschlag kam nicht als Fehler zurück — der Aufrufer committet und die Theke lügt")
 		}
 		if resp.HatVormerkung || resp.VorgemerktFuer != "" {
@@ -71,7 +71,7 @@ func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 			t.Fatalf("Begin: %v", err)
 		}
 		resp := &AusleihErgebnis{}
-		if err := (&ausleihDienst{}).bedieneVormerkung(ctx, tx, exemplar, resp, nil); err == nil {
+		if err := (&AusleihDienst{}).bedieneVormerkung(ctx, tx, exemplar, resp, nil); err == nil {
 			t.Error("SELECT-Transportfehler galt still als „keine Vormerkung“")
 		}
 	})
@@ -92,7 +92,7 @@ func TestBedieneVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 			t.Fatalf("Begin: %v", err)
 		}
 		resp := &AusleihErgebnis{}
-		if err := (&ausleihDienst{}).bedieneVormerkung(ctx, tx, exemplar, resp, nil); err != nil {
+		if err := (&AusleihDienst{}).bedieneVormerkung(ctx, tx, exemplar, resp, nil); err != nil {
 			t.Errorf("ErrNoRows ist der Normalfall (niemand wartet) und kein Fehler: %v", err)
 		}
 		if resp.HatVormerkung {

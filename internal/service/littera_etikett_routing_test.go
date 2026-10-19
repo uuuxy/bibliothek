@@ -10,7 +10,7 @@ import (
 // etikettAusleihAttrappe hält fest, mit welchem Exemplar die Ausleih-Logik angesteuert
 // wurde — mehr Loan-Verhalten braucht der Routing-Beweis nicht.
 type etikettAusleihAttrappe struct {
-	AusleihDienst
+	ausleihBuchung
 	zuletzt *repository.Exemplar
 }
 

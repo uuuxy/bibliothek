@@ -81,6 +81,17 @@ type OmniboxEingabe struct {
 	SperreUebergehen     bool
 }
 
+// ausleihBuchung bucht Ausleihe und Rückgabe eines gescannten Exemplars (AusleihDienst).
+type ausleihBuchung interface {
+	// BucheAmLeser bucht ein Exemplar, das bei geöffnetem Leser gescannt wurde: Ein freies
+	// leiht es ihm aus, sein eigenes nimmt es zurück. Steht das Exemplar auf jemand anderem,
+	// nimmt es das Exemplar nur dort zurück; ausleihen kann es erst der nächste Scan.
+	BucheAmLeser(ctx context.Context, exemplar *repository.Exemplar, aktiverLeserID *string, bearbeiterID string, uebergehen bool) (*AusleihErgebnis, error)
+	// NimmZurueck bucht die Rückgabe eines Exemplars, das ohne geöffneten Leser gescannt wurde;
+	// ein freies Exemplar ist ein Fehler.
+	NimmZurueck(ctx context.Context, exemplar *repository.Exemplar, bearbeiterID string) (*AusleihErgebnis, error)
+}
+
 // OmniboxDienst beantwortet jede Eingabe der Omnibox, des einen Eingabefelds der Theke;
 // Ausleihe und Gerät bucht er über deren Dienste.
 type OmniboxDienst struct {
@@ -88,7 +99,7 @@ type OmniboxDienst struct {
 	leserAbfragen   leserErmittlung
 	katalogAbfragen katalogErmittlung
 	ausleihAbfragen *repository.AusleihAbfragen
-	ausleihe        AusleihDienst
+	ausleihe        ausleihBuchung
 	geraete         *GeraeteDienst
 }
 
@@ -98,7 +109,7 @@ func NewOmniboxDienst(
 	leserAbfragen leserErmittlung,
 	katalogAbfragen katalogErmittlung,
 	ausleihAbfragen *repository.AusleihAbfragen,
-	ausleihe AusleihDienst,
+	ausleihe ausleihBuchung,
 	geraete *GeraeteDienst,
 ) *OmniboxDienst {
 	return &OmniboxDienst{

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"time"
 
 	"bibliothek/db"
@@ -42,22 +41,10 @@ type AusleihErgebnis struct {
 	AuflagenHinweis *repository.AuflagenMischung
 }
 
-// AusleihDienst bucht Ausleihe und Rückgabe eines Buchs an der Theke, je in einer Transaktion.
-type AusleihDienst interface {
-	// BucheAmLeser bucht ein Exemplar, das bei geöffnetem Leser gescannt wurde: Ein freies
-	// leiht es ihm aus, sein eigenes nimmt es zurück. Steht das Exemplar auf jemand anderem,
-	// nimmt es das Exemplar nur dort zurück; ausleihen kann es erst der nächste Scan.
-	BucheAmLeser(ctx context.Context, exemplar *repository.Exemplar, aktiverLeserID *string, bearbeiterID string, uebergehen bool) (*AusleihErgebnis, error)
-
-	// NimmZurueck bucht die Rückgabe eines Exemplars, das ohne geöffneten Leser gescannt wurde.
-	// Ein freies Exemplar ist hier ein Fehler: Ausgeliehen wird über den Ausweis, nicht
-	// dadurch, dass ein angemeldetes Konto ein Buch scannt.
-	NimmZurueck(ctx context.Context, exemplar *repository.Exemplar, bearbeiterID string) (*AusleihErgebnis, error)
-}
-
-// ausleihDienst erfüllt AusleihDienst und bucht für NachbuchDienst nach: Der Scan am Netz und
-// das Nachbuchen buchen mit denselben Schranken und Schreibern.
-type ausleihDienst struct {
+// AusleihDienst bucht Ausleihe und Rückgabe eines Buchs an der Theke, je in einer Transaktion,
+// und für NachbuchDienst nach: Der Scan am Netz und das Nachbuchen buchen mit denselben Schranken
+// und Schreibern.
+type AusleihDienst struct {
 	pool              db.Pool
 	leserAbfragen     leserErmittlung
 	katalogAbfragen   *repository.KatalogAbfragen
@@ -69,7 +56,7 @@ type ausleihDienst struct {
 }
 
 // heute liefert den Zeitpunkt der Uhr in der Schulzeitzone.
-func (d *ausleihDienst) heute() time.Time {
+func (d *AusleihDienst) heute() time.Time {
 	if d.jetzt != nil {
 		return d.jetzt().In(schulzeit.Zone())
 	}
@@ -77,8 +64,8 @@ func (d *ausleihDienst) heute() time.Time {
 }
 
 // NewAusleihDienst baut den Dienst für Ausleihe und Rückgabe.
-func NewAusleihDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen ausleihPflege, protokollAbfragen buchungsProtokoll) AusleihDienst {
-	return &ausleihDienst{
+func NewAusleihDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen ausleihPflege, protokollAbfragen buchungsProtokoll) *AusleihDienst {
+	return &AusleihDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,
 		katalogAbfragen:   katalogAbfragen,

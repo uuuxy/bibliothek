@@ -79,14 +79,14 @@ func leseJahrgang(klasse string) int {
 }
 
 // bestimmeFrist bestimmt die Frist einer neuen Ausleihe ab der Uhr des Dienstes.
-func (d *ausleihDienst) bestimmeFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string) (time.Time, error) {
+func (d *AusleihDienst) bestimmeFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string) (time.Time, error) {
 	return d.bestimmeFristAm(ctx, exemplar, klasse, d.heute())
 }
 
 // bestimmeFristAm bestimmt die Frist einer Ausleihe ab dem Tag heute: beim Nachbuchen ab dem
 // Scan, weil Frist, Mahnwesen und Lesehistorie ab dem Scan rechnen. Der LMF-Plan der Klasse und
 // der Ferien-Leseclub gehen der gewöhnlichen Frist vor.
-func (d *ausleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time) (time.Time, error) {
+func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time) (time.Time, error) {
 	einst, err := d.ladeEinstellungen(ctx)
 	heute = heute.In(schulzeit.Zone())
 	zusatzJahre := mehrjahresbandJahre(exemplar, klasse)
@@ -151,7 +151,7 @@ func mehrjahresbandJahre(exemplar *repository.Exemplar, klasse string) int {
 //     nach dem Termin im Juli, gibt ihn am Ende der Klasse 9 zurück.
 //
 // Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
-func (d *ausleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time, einst *ausleihEinstellungen, zusatzJahre int) (time.Time, bool) {
+func (d *AusleihDienst) ladeLMFPlanFrist(ctx context.Context, exemplar *repository.Exemplar, klasse string, heute time.Time, einst *ausleihEinstellungen, zusatzJahre int) (time.Time, bool) {
 	if exemplar.IstLernmittel && klasse != "" {
 		lage, lageErr := repository.NewLMFAbfragen(d.pool).LadeRueckgabeTerminLage(ctx, klasse, heute)
 		if lageErr == nil && lage.Vergangen {

@@ -35,7 +35,7 @@ type ausleihEinstellungen struct {
 }
 
 // ladeEinstellungen liest über den Pool, was die Ausleihe aus den Einstellungen braucht.
-func (d *ausleihDienst) ladeEinstellungen(ctx context.Context) (*ausleihEinstellungen, error) {
+func (d *AusleihDienst) ladeEinstellungen(ctx context.Context) (*ausleihEinstellungen, error) {
 	return ladeAusleihEinstellungen(ctx, d.pool)
 }
 
