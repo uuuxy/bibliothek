@@ -12,6 +12,7 @@ import { erzeugeOmniboxSuche } from './omniboxSuche.svelte.js';
 import { erzeugeOmniboxAntwort } from './omniboxAntwort.svelte.js';
 import { erzeugeOmniboxOhneNetz } from './omniboxOhneNetz.svelte.js';
 import { erzeugeOmniboxBuchung } from './omniboxBuchung.svelte.js';
+import { erzeugeOmniboxReihe } from './omniboxReihe.svelte.js';
 
 // Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte), damit die Theke keinen
 // zweiten Meldungsweg mit eigener Optik hat. Auf Modulebene, weil sie nichts aus dem Store
@@ -67,6 +68,8 @@ export function erzeugeOmniboxStore() {
 	 * @type {{message: string, query: string, art: 'uebergehbar' | 'leser'} | null}
 	 */
 	let sperrHinweis = $state(null);
+	// Eine Rückfrage, die ein Mensch beantwortet: Sperre, Vormerkung, Zubehör.
+	const rueckfrageOffen = () => !!(sperrHinweis || vormerkungHinweis || prueflisteAnfrage);
 
 	// Kamerascanner-Status
 	let kameraOffen = $state(false);
@@ -129,24 +132,23 @@ export function erzeugeOmniboxStore() {
 		clearFehlerBanner
 	});
 
+	const { reiheEin, verwirfWartende } = erzeugeOmniboxReihe({
+		bucheScan,
+		rueckfrageOffen,
+		leereEingabe: () => (eingabe = ''),
+		verarbeiteAntwortfehler,
+		scanfeldWiederScharfstellen,
+		leuchteBildschirm,
+		leuchteRand,
+		nenneNichtGebucht
+	});
+
 	let belegt = $derived(!!(aktiverLeser || suche.trefferlisteOffen));
 
 	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
 	// überlebt, feuert nach dem Abbau von jsdom ins Leere und reißt den ganzen Testlauf mit.
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let fokusTimer = null;
-
-	// Die Reihe der Scans. Ein Handscanner wartet nicht auf die Antwort: Ein Scan, der
-	// eintrifft, solange eine Buchung läuft, wartet hier und wird danach gebucht. Verworfen
-	// bliebe er unbemerkt, in der Schnellrückgabe bliebe das Buch verliehen.
-	/** @typedef {import('./omniboxBuchung.svelte.js').Auftrag} Auftrag */
-	let buchungLaeuft = false;
-	/** @type {Auftrag[]} */
-	const wartend = [];
-	// Die Nummer, die gerade gebucht wird.
-	let laufendeNummer = '';
-	// Löst sich auf, sobald kein Scan mehr unterwegs ist oder wartet.
-	let reiheGebucht = Promise.resolve();
 
 	// Stoppt jeden laufenden Zeitgeber dieses Stores, beim Verlassen der Seite (Omnibox.svelte)
 	// und beim Abräumen der Tests: Danach greift kein Rückruf auf eine Seite, die es nicht mehr gibt.
@@ -254,68 +256,7 @@ export function erzeugeOmniboxStore() {
 		eingabe = '';
 		suche.trefferlisteOffen = false;
 
-		/** @type {Auftrag} */
-		const auftrag = { q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht };
-		if (buchungLaeuft) {
-			// Dieselbe Nummer, bevor sie gebucht ist, ist der Doppelscan: Er fällt weg. Gebucht
-			// gäbe er das eben geliehene Buch gleich wieder zurück.
-			if (!istUnterwegs(q)) wartend.push(auftrag);
-			return reiheGebucht;
-		}
-		buchungLaeuft = true;
-		reiheGebucht = bucheReihe(auftrag);
-		return reiheGebucht;
-	}
-
-	/** Wird die Nummer gerade gebucht oder wartet sie? @param {string} q */
-	const istUnterwegs = (q) => q === laufendeNummer || wartend.some((w) => w.q === q);
-
-	// Bucht den Scan und danach, der Reihe nach, was inzwischen gescannt wurde. Jeder Scan
-	// findet vor, was der vorige hinterlassen hat: Nach einem Ausweis gehen die Bücher an
-	// diesen Leser.
-	//
-	// Weiter geht es nur nach einer glatten Buchung. Scheitert ein Scan, kann er ein Ausweis
-	// gewesen sein, und die folgenden Bücher gingen an den Leser davor; nach einer Rückfrage
-	// entscheidet ein Mensch, was gilt. Was dann noch wartet, wird nicht gebucht und genannt.
-	/** @param {Auftrag} erster */
-	async function bucheReihe(erster) {
-		try {
-			/** @type {Auftrag | undefined} */
-			let auftrag = erster;
-			while (auftrag) {
-				laufendeNummer = auftrag.q;
-				const glatt = await bucheScan(auftrag);
-				laufendeNummer = '';
-				if (rueckfrageOffen()) {
-					// Die Rückfrage hat jetzt die Tastatur. Was vom nächsten Scan schon im Feld
-					// steht, stünde sonst vor dem übernächsten.
-					eingabe = '';
-				}
-				if (!glatt || rueckfrageOffen()) break;
-				auftrag = wartend.shift();
-			}
-		} catch (e) {
-			// Unerwartet abgebrochen: Ob der laufende Scan gebucht ist, weiß hier niemand.
-			console.error('Buchung abgebrochen:', e);
-			leuchteRand('red');
-			verarbeiteAntwortfehler(e);
-		} finally {
-			laufendeNummer = '';
-			verwirfWartende();
-			buchungLaeuft = false;
-			scanfeldWiederScharfstellen();
-		}
-	}
-
-	// Die wartenden Scans werden nicht gebucht. Das Banner nennt sie, bis der nächste Scan
-	// kommt; der Ton sagt es dem, der nicht hinsieht.
-	function verwirfWartende() {
-		if (wartend.length === 0) return;
-		const nummern = wartend.splice(0).map((w) => w.q);
-		leuchteBildschirm('error');
-		spieleFehlerton();
-		leuchteRand('red');
-		nenneNichtGebucht(nummern);
+		return reiheEin({ q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht });
 	}
 
 	/**
@@ -330,9 +271,6 @@ export function erzeugeOmniboxStore() {
 		if (entscheidungOffen()) return;
 		fokussiereScanfeld();
 	}
-
-	// Eine Rückfrage, die ein Mensch beantwortet: Sperre, Vormerkung, Zubehör.
-	const rueckfrageOffen = () => !!(sperrHinweis || vormerkungHinweis || prueflisteAnfrage);
 
 	// Ein Scan bei offener Rückfrage ist nicht gebucht, und sie bleibt stehen (scanOhneFokus.js).
 	// Wer auf das Buch sieht, hört es.
