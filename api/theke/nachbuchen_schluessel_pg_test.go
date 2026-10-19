@@ -36,7 +36,7 @@ type nachbuchWelt struct {
 	pool                         *pgxpool.Pool
 	srv                          *Tueren
 	online                       *service.OmniboxDienst
-	nachbuch                     service.NachbuchDienst
+	nachbuch                     *service.NachbuchDienst
 	bearbeiter, anna, ben, carla string
 	code, exemplarID             string
 }
@@ -107,7 +107,7 @@ func (w *nachbuchWelt) eintrag(schluessel, absicht string, schueler *string, ges
 	return e
 }
 
-func (w *nachbuchWelt) nachbuchenMit(t *testing.T, svc service.NachbuchDienst, eintraege ...map[string]any) []nachbuchErgebnis {
+func (w *nachbuchWelt) nachbuchenMit(t *testing.T, svc nachbuchung, eintraege ...map[string]any) []nachbuchErgebnis {
 	t.Helper()
 	body, err := json.Marshal(map[string]any{"eintraege": eintraege, "gesendet_am": time.Now()})
 	if err != nil {

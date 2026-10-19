@@ -55,8 +55,8 @@ type AusleihDienst interface {
 	NimmZurueck(ctx context.Context, exemplar *repository.Exemplar, bearbeiterID string) (*AusleihErgebnis, error)
 }
 
-// ausleihDienst erfüllt AusleihDienst und NachbuchDienst: Der Scan am Netz und das Nachbuchen
-// buchen mit denselben Schranken und Schreibern.
+// ausleihDienst erfüllt AusleihDienst und bucht für NachbuchDienst nach: Der Scan am Netz und
+// das Nachbuchen buchen mit denselben Schranken und Schreibern.
 type ausleihDienst struct {
 	pool              db.Pool
 	leserAbfragen     repository.LeserAbfragen

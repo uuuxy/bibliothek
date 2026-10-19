@@ -27,15 +27,15 @@ import (
 // nicht_gebucht. Gerechnet wird ab dem Scan, höchstens ab der Zeit des Servers: Ausleih- und
 // Rückgabedatum, Frist und Bewegungsstempel.
 
-// NachbuchDienst bucht die Einträge nach, die eine Theke ohne Netz gesammelt hat.
-type NachbuchDienst interface {
-	BucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error)
+// NachbuchDienst bucht die Einträge nach, die eine Theke ohne Netz gesammelt hat. Er bucht über
+// ausleihDienst, damit das Nachbuchen dieselben Schranken und Schreiber hat wie der Scan am Netz.
+type NachbuchDienst struct {
+	ausleihe *ausleihDienst
 }
 
-// NewNachbuchDienst baut den Dienst auf ausleihDienst, damit das Nachbuchen dieselben Schranken
-// und Schreiber hat wie der Scan am Netz.
-func NewNachbuchDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) NachbuchDienst {
-	return &ausleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}
+// NewNachbuchDienst baut den Dienst des Nachbuchens.
+func NewNachbuchDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) *NachbuchDienst {
+	return &NachbuchDienst{ausleihe: &ausleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}}
 }
 
 // Absichten eines Eintrags: was der Theken-Rechner beim Scan meinte.
@@ -93,7 +93,12 @@ type nachbuchLage struct {
 
 // BucheNach bucht einen Eintrag. Fachliche Ausgänge kommen als Ergebnis zurück; ein
 // Fehler ist ein Serverfehler (Datenbank), und der Eintrag bleibt auf dem Rechner liegen.
-func (d *ausleihDienst) BucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error) {
+func (d *NachbuchDienst) BucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error) {
+	return d.ausleihe.bucheNach(ctx, eintrag)
+}
+
+// bucheNach bucht einen Eintrag in einer Transaktion (NachbuchDienst.BucheNach).
+func (d *ausleihDienst) bucheNach(ctx context.Context, eintrag NachbuchEintrag) (*NachbuchErgebnis, error) {
 	l, abweisung, err := d.loeseNachbuchEintrag(ctx, eintrag)
 	if abweisung != nil || err != nil {
 		return abweisung, err

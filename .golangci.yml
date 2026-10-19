@@ -85,4 +85,3 @@ linters:
       - { linters: [ireturn], text: ^NewLeserAbfragen returns }
       - { linters: [ireturn], text: ^NewProtokollAbfragen returns }
       - { linters: [ireturn], text: ^NewAusleihDienst returns }
-      - { linters: [ireturn], text: ^NewNachbuchDienst returns }

@@ -22,7 +22,7 @@ import (
 
 type nbWelt struct {
 	pool                      *pgxpool.Pool
-	dienst                    NachbuchDienst
+	dienst                    *NachbuchDienst
 	staff, anna, ben, carla   string
 	titelID, exemplarID, code string
 }

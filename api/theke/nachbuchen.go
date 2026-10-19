@@ -95,6 +95,13 @@ const nachbuchWiederholen = "wiederholen"
 // Daten trägt die online gebuchte Wirkung. Kein Wort der Meldungstabelle.
 const nachbuchBereitsGebucht = "bereits_gebucht"
 
+// nachbuchung bucht einen Eintrag der Warteschlange nach (service.NachbuchDienst). Fachliche
+// Ausgänge kommen als Ergebnis zurück; ein Fehler ist ein Serverfehler, und der Eintrag bleibt
+// auf dem Rechner liegen.
+type nachbuchung interface {
+	BucheNach(ctx context.Context, eintrag service.NachbuchEintrag) (*service.NachbuchErgebnis, error)
+}
+
 // WarteschlangeNachbuchen nimmt eine Portion der Warteschlange entgegen.
 // @Summary      Offline-Warteschlange nachbuchen
 // @Description  Bucht je Eintrag die Wirklichkeit (Umbuchung, Rückgabe, Rückholen) und meldet jede Abweichung vom Scan.
@@ -104,14 +111,14 @@ const nachbuchBereitsGebucht = "bereits_gebucht"
 // @Param        body body nachbuchAnfrage true "Einträge der Warteschlange"
 // @Success      200 {object} nachbuchAntwort
 // @Router       /action/nachbuchen [post]
-func (t *Tueren) WarteschlangeNachbuchen(nachbuchDienst service.NachbuchDienst) http.HandlerFunc {
+func (t *Tueren) WarteschlangeNachbuchen(nachbuchDienst nachbuchung) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.bucheWarteschlangeNach(w, r, nachbuchDienst)
 	})
 }
 
 // bucheWarteschlangeNach bucht eine Portion der Warteschlange, Eintrag für Eintrag.
-func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, nachbuchDienst service.NachbuchDienst) error {
+func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, nachbuchDienst nachbuchung) error {
 	// Die Empfangszeit wird vor dem Einlesen festgehalten. Der gemessene Versatz enthält die
 	// Laufzeit der Anfrage bis hierher: Umgerechnet liegt ein Scan um diese Laufzeit zu spät,
 	// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
@@ -170,7 +177,7 @@ type nachbuchAbsender struct {
 // Aufrufs: Die übrigen Einträge sollen durchlaufen, und der gescheiterte bleibt auf dem
 // Rechner liegen („wiederholen"). Schweigen wäre hier das Schlimmste — die Theke hielte
 // ihn für erledigt, und erledigt ist nur, was der Server gebucht hat.
-func (t *Tueren) bucheEintragNach(ctx context.Context, dienst service.NachbuchDienst, e nachbuchEintrag, absender nachbuchAbsender) nachbuchErgebnis {
+func (t *Tueren) bucheEintragNach(ctx context.Context, dienst nachbuchung, e nachbuchEintrag, absender nachbuchAbsender) nachbuchErgebnis {
 	lage, err := t.ergreifeNachbuchSchluessel(ctx, e)
 	if err != nil {
 		log.Printf("nachbuchen: Schlüssel %s nicht lesbar: %v", e.Schluessel, err)
