@@ -71,6 +71,7 @@ export function erzeugeOmniboxBuchung({
 	 * @param {(() => void) | null | undefined} reloadProfileCb
 	 * @param {() => boolean} ueberholt die Theke wurde seit dem Scan geleert
 	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgeführt
+	 * @throws wenn der Versand scheitert; bucheScan legt das Buch dann mit dem Merker ab
 	 */
 	async function merkerAufgeloest(q, reloadProfileCb, ueberholt) {
 		if (!leseMerker()) return true;
@@ -81,17 +82,10 @@ export function erzeugeOmniboxBuchung({
 		}
 
 		const gemerkt = leseMerker();
-		let res;
-		try {
-			res = await apiClient.post('/api/action', {
-				query: gemerkt,
-				idempotency_key: crypto.randomUUID()
-			});
-		} catch (e) {
-			// Keine Verbindung — der erwartete Fall, kein Fehler. Der Merker bleibt.
-			console.warn('Ausweis-Merker nicht auflösbar, bleibt stehen:', e);
-			return true;
-		}
+		const res = await apiClient.post('/api/action', {
+			query: gemerkt,
+			idempotency_key: crypto.randomUUID()
+		});
 		if (ueberholt()) return false;
 
 		try {
@@ -128,22 +122,32 @@ export function erzeugeOmniboxBuchung({
 		// Der Schnappschuss entsteht vor allem Weiteren, damit Escape oder „Theke leeren" die
 		// Absicht des Scans nicht mehr ändern.
 		let eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
-		// Nach dem Leeren zählt nur ein Buch: Es geht mit seinem Schnappschuss in die
-		// Warteschlange, ein Ausweis würde gemerkt und bekäme die nächsten Bücher. Die Reihe geht
-		// weiter (true), denn was dort noch wartet, wurde erst nach dem Leeren gescannt.
+
+		// Der Scan erreicht den Server nicht: Der Schnappschuss geht in die Warteschlange. Nach dem
+		// Leeren zählt dabei nur ein Buch, denn ein Ausweis würde gemerkt und bekäme die nächsten.
 		/** @param {unknown} grund */
-		const legeNachDemLeerenAb = (grund) =>
-			ordneScanEin(q, buchBarcodes.istBuch).art === 'buch'
-				? verarbeiteVersandfehler(grund, eintrag)
-				: true;
+		function legeAb(grund) {
+			if (!ueberholt()) {
+				leuchteRand('red');
+				return verarbeiteVersandfehler(grund, eintrag);
+			}
+			// Die Reihe geht weiter (true): Was dort noch wartet, wurde erst nach dem Leeren gescannt.
+			const buch = ordneScanEin(q, buchBarcodes.istBuch).art === 'buch';
+			return buch ? verarbeiteVersandfehler(grund, eintrag) : true;
+		}
 
 		// Steht ein ohne Netz gemerkter Ausweis, gehört ihm das nächste Buch: erst auflösen, dann
-		// buchen (merkerAufgeloest).
+		// buchen (merkerAufgeloest). Geht das nicht, trägt der Schnappschuss den Ausweis in die
+		// Warteschlange; online ginge das Buch ohne Leser hinaus und wäre am Server eine Rückgabe.
 		if (leseMerker()) {
-			const aufgeloest = await merkerAufgeloest(q, reloadProfileCb, ueberholt);
-			// Nach dem Leeren lädt die Auflösung niemanden mehr. Online ginge das Buch ohne Leser
-			// hinaus und wäre am Server eine Rückgabe; der Schnappschuss trägt den Ausweis.
-			if (ueberholt()) return legeNachDemLeerenAb(new Error('Theke geleert'));
+			/** @type {boolean} */
+			let aufgeloest;
+			try {
+				aufgeloest = await merkerAufgeloest(q, reloadProfileCb, ueberholt);
+			} catch (e) {
+				return legeAb(e);
+			}
+			if (ueberholt()) return legeAb(new Error('Theke geleert'));
 			if (!aufgeloest) return false;
 			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker
 			// nicht mehr. Trüge der Eintrag beides, entschiede beim Nachbuchen die Reihenfolge der
@@ -171,9 +175,7 @@ export function erzeugeOmniboxBuchung({
 				idempotency_key: eintrag.id
 			});
 		} catch (e) {
-			if (ueberholt()) return legeNachDemLeerenAb(e);
-			leuchteRand('red');
-			return verarbeiteVersandfehler(e, eintrag);
+			return legeAb(e);
 		}
 		if (ueberholt()) return true;
 

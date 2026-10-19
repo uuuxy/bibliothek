@@ -887,9 +887,12 @@ zurückgerechnet. Steht die Nummer nicht auf der Liste, gilt der Scan als **unkl
 nicht gebucht — wer hier riete, schriebe das nächste Buch einer fremden Person zu.
 
 **Personen.** Ein ohne Netz gescannter Ausweis wird als NUMMER gemerkt; die folgenden Bücher
-tragen sie, der Server löst sie beim Nachbuchen auf. Personendaten liegen bewusst nicht auf dem
-Rechner — eine Namenssuche gibt es ohne Netz deshalb nicht. Ein unklarer Scan lässt den Merker
-fallen: Ab dann wird nichts mehr zugeordnet, bis ein eindeutiger Ausweis kommt.
+tragen sie, der Server löst sie beim Nachbuchen auf. Vor jedem weiteren Buch fragt die Theke
+den Server nach dem gemerkten Ausweis; erreicht sie ihn nicht, geht das Buch mit der Nummer in
+die Warteschlange und nie ohne Person hinaus, denn der Server läse es als Rückgabe. Personendaten
+liegen bewusst nicht auf dem Rechner — eine Namenssuche gibt es ohne Netz deshalb nicht. Ein
+unklarer Scan lässt den Merker fallen: Ab dann wird nichts mehr zugeordnet, bis ein eindeutiger
+Ausweis kommt.
 
 **Warteschlange.** Die Scans liegen in einer lokalen IndexedDB (`offlineWarteschlange.js`) mit
 Scan-Zeitpunkt und Idempotenz-Schlüssel. Ein Band oben zeigt den Zustand; die Theke wird dabei

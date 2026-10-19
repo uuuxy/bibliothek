@@ -350,6 +350,31 @@ describe('Omnibox offline', () => {
 			expect(omniboxStore.offlineAusweis, 'der Merker steht weiter').toBe('S-10001');
 		});
 
+		// Scheitert die Auflösung, ist offen, wem das Buch gehört. Online ginge es ohne Person
+		// hinaus, und antwortet der Server inzwischen wieder, wäre es dort eine Rückgabe.
+		it('reiht das Buch ein, wenn die Auflösung scheitert und der Server danach antwortet', async () => {
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+			expect(omniboxStore.offlineAusweis).toBe('S-10001');
+
+			netz(true);
+			vi.mocked(apiClient.post)
+				.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+				.mockResolvedValue(antwort({ type: 'rueckgabe', book: { titel: 'Momo' } }));
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+
+			expect(
+				vi.mocked(apiClient.post).mock.calls.map((c) => c[1].query),
+				'das Buch geht nicht ohne Person hinaus'
+			).toEqual(['S-10001', 'S-10001']);
+			const q = await ladeWarteschlange();
+			expect(q, 'das Buch liegt mit dem Ausweis in der Warteschlange').toHaveLength(1);
+			expect(q[0].ausweis_barcode).toBe('S-10001');
+			expect(q[0].art).toBe('ausleihe');
+			expect(omniboxStore.offlineAusweis, 'der Merker steht weiter').toBe('S-10001');
+		});
+
 		// Der Server antwortet, laedt aber keine Person: Nummer unbekannt, gesperrt,
 		// Suchtreffer. Dann ist nicht sicher, WEM das Buch gehoert.
 		it('bucht nichts, wenn sich der gemerkte Ausweis nicht laden laesst', async () => {
