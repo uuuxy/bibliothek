@@ -12,24 +12,7 @@ import { fehlertext } from '../utils/fehlertext.js';
 import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
 import { erzeugeOmniboxRueckmeldung } from './omniboxRueckmeldung.svelte.js';
 import { erzeugeOmniboxSuche } from './omniboxSuche.svelte.js';
-
-// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
-function formatVorbesitzerName(daten) {
-	if (daten.vorbesitzer) {
-		return `${daten.vorbesitzer.vorname} ${daten.vorbesitzer.nachname}`;
-	}
-	if (daten.vorbesitzer_user) {
-		return `${daten.vorbesitzer_user.vorname} ${daten.vorbesitzer_user.nachname}`;
-	}
-	return 'unbekannt';
-}
-
-// Name und Klasse eines Lesers; das Kollegium hat keine Klasse.
-/** @param {{vorname: string, nachname: string, klasse?: string}} leser */
-function leserMitKlasse(leser) {
-	const name = `${leser.vorname} ${leser.nachname}`;
-	return leser.klasse ? `${name} (${leser.klasse})` : name;
-}
+import { erzeugeOmniboxAntwort } from './omniboxAntwort.svelte.js';
 
 // Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte), damit die Theke keinen
 // zweiten Meldungsweg mit eigener Optik hat. Auf Modulebene, weil sie nichts aus dem Store
@@ -101,6 +84,25 @@ export function erzeugeOmniboxStore() {
 	});
 	const { verarbeiteEingabe, waehleTreffer } = suche;
 
+	const { verarbeiteAktionsErgebnis } = erzeugeOmniboxAntwort({
+		leseLeser: () => aktiverLeser,
+		// Die Schnellrückgabe endet, weil sie und ein geladener Leser einander ausschließen.
+		ladeLeser: (leser, fach) => {
+			schnellrueckgabe = false;
+			aktiverLeser = leser;
+			abholbereit = fach ?? [];
+		},
+		leseSchnellrueckgabe: () => schnellrueckgabe,
+		setzeFremdrueckgabe: (hinweis) => (letzteFremdrueckgabe = hinweis),
+		setzeAuflagenHinweis: (hinweis) => (letzterAuflagenHinweis = hinweis),
+		setzeVormerkungHinweis: (hinweis) => (vormerkungHinweis = hinweis),
+		setzePrueflisteAnfrage: (anfrage) => (prueflisteAnfrage = anfrage),
+		leuchteBildschirm,
+		leuchteRand,
+		wackle,
+		melde
+	});
+
 	let belegt = $derived(!!(aktiverLeser || suche.trefferlisteOffen));
 
 	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
@@ -155,52 +157,6 @@ export function erzeugeOmniboxStore() {
 		throw new Error(errStr || 'Aktion fehlgeschlagen');
 	}
 
-	// Ein fremdes Buch bei geladenem Leser wird nur beim Vorbesitzer ausgebucht, bewusst ohne
-	// Umbuchen. Ein erneuter Scan leiht es dem geladenen Leser aus.
-	function verarbeiteFremdrueckgabe(daten) {
-		leuchteBildschirm('warning');
-		spieleFehlerton();
-		leuchteRand('orange');
-		const prevName = formatVorbesitzerName(daten);
-		letzteFremdrueckgabe = { vorbesitzerName: prevName };
-		const aktiv = aktiverLeser?.vorname;
-		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
-		melde(
-			`„${daten.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
-			'warning'
-		);
-	}
-
-	// Verarbeitet eine Rückgabe-Antwort (fremd/normal, Vormerkung, Session-Fortführung).
-	function verarbeiteRueckgabe(daten, reloadProfileCb) {
-		if (daten.fremdrueckgabe) {
-			verarbeiteFremdrueckgabe(daten);
-		} else {
-			leuchteBildschirm('success');
-			spieleErfolgston();
-			leuchteRand('green');
-			const titel = daten.book?.titel ?? daten.geraet?.modellname;
-			// In der Schnellrückgabe erscheint kein Konto: Die Meldung nennt, bei wem das Buch war.
-			melde(
-				schnellrueckgabe && daten.student
-					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(daten.student)}.`
-					: `„${titel}" erfolgreich zurückgegeben.`
-			);
-		}
-		if (daten.has_vormerkung) {
-			vormerkungHinweis = {
-				titel: daten.vormerkung_titel || daten.book?.titel,
-				user: daten.vormerkung_user
-			};
-		}
-		if (reloadProfileCb) reloadProfileCb();
-
-		if (daten.student && !aktiverLeser && !schnellrueckgabe) {
-			aktiverLeser = daten.student;
-			abholbereit = daten.abholbereit ?? [];
-		}
-	}
-
 	// Die Schnellrückgabe ein- oder ausschalten. Beim Einschalten weicht, wer geladen oder
 	// ohne Netz gemerkt ist: Sonst ginge das nächste freie Buch an ihn.
 	/** @param {boolean} an */
@@ -219,95 +175,6 @@ export function erzeugeOmniboxStore() {
 	// bleibt sie an: Der Stapel ist dann noch nicht durch.
 	function escapeGedrueckt() {
 		if (!escapeIstBelegt()) schalteSchnellrueckgabe(false);
-	}
-
-	// Die Rückkehr eines abgeschriebenen Buches: `message` sagt, was der Server erledigt hat
-	// (grün), `aufsicht_informieren`, was ein Mensch noch tun muss (Warnung). Eine offene Aufgabe
-	// in einer grünen Erfolgsmeldung würde überlesen.
-	function zeigeRueckkehrHinweise(daten, { ohneMeldung = false } = {}) {
-		if (!ohneMeldung && daten.message) melde(daten.message, 'success');
-		if (daten.aufsicht_informieren) melde(daten.aufsicht_informieren, 'warning');
-	}
-
-	// Ein Leser ist geladen: Er steht jetzt an der Theke, sein Abholfach kommt mit.
-	function verarbeiteLeser(daten) {
-		schnellrueckgabe = false;
-		aktiverLeser = daten.student;
-		abholbereit = daten.abholbereit ?? [];
-		leuchteBildschirm('success');
-		spieleErfolgston();
-		leuchteRand('green');
-		// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
-		// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
-		// Schüler mit fehlender Angabe.
-		if (daten.student?.art && daten.student.art !== 'schueler') {
-			melde(`Geladen: ${daten.student.vorname} ${daten.student.nachname}`);
-		}
-	}
-
-	function verarbeiteAusleihe(daten, reloadProfileCb) {
-		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer anderen
-		// Auflage als die der Klasse, blitzt es wie bei der Fremdrückgabe, und die Zeile über dem
-		// Konto sagt, welche.
-		letzterAuflagenHinweis = daten.auflagen_hinweis ?? null;
-		leuchteBildschirm(letzterAuflagenHinweis ? 'warning' : 'success');
-		spieleErfolgston('ausleihe');
-		leuchteRand(letzterAuflagenHinweis ? 'orange' : 'green');
-		melde(
-			`„${daten.book?.titel ?? daten.geraet?.modellname}" ausgeliehen an ${aktiverLeser?.vorname}.`
-		);
-		// Der Schüler hatte ein anderes Exemplar reserviert und eines aus dem Regal genommen: Das
-		// reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
-		if (daten.regalfreigabe_barcode) {
-			melde(
-				`Hinweis: Reserviertes Exemplar ${daten.regalfreigabe_barcode} zurück ins Regal räumen.`,
-				'warning'
-			);
-		}
-		// Das Exemplar war abgeschrieben und ist beim Scan zurückgeholt worden (die
-		// Ausleihe folgte im selben Zug): Was dabei mit der Forderung geschah, gehört
-		// gesagt — sonst sieht die Theke nur „ausgeliehen".
-		zeigeRueckkehrHinweise(daten);
-		if (reloadProfileCb) reloadProfileCb();
-	}
-
-	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type. overrideBlock ist das
-	// Übergehen, mit dem der Scan geschickt wurde — die Zubehör-Liste reicht es weiter.
-	//
-	// Das Ergebnis sagt, ob danach ein wartender Scan gebucht werden darf: nur nach einer
-	// glatten Buchung. Eine Hinweiszeile über dem Konto (Fremdrückgabe, andere Auflage) steht
-	// bis zum nächsten Scan und verlangt einen Blick; der wartende Scan nähme sie gleich weg.
-	/** @returns {boolean} */
-	function verarbeiteAktionsErgebnis(daten, reloadProfileCb, q = '', overrideBlock = false) {
-		if (daten.type === 'student') {
-			verarbeiteLeser(daten);
-			return true;
-		}
-		if (daten.type === 'ausleihe') {
-			verarbeiteAusleihe(daten, reloadProfileCb);
-			return !daten.auflagen_hinweis;
-		}
-		if (daten.type === 'rueckgabe') {
-			verarbeiteRueckgabe(daten, reloadProfileCb);
-			return !daten.fremdrueckgabe;
-		}
-		if (daten.type === 'info') {
-			leuchteBildschirm('success');
-			spieleErfolgston();
-			leuchteRand('green');
-			melde(daten.message, 'success');
-			zeigeRueckkehrHinweise(daten, { ohneMeldung: true });
-			if (reloadProfileCb) reloadProfileCb();
-			return true;
-		}
-		if (daten.type === 'geraet_check') {
-			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
-			prueflisteAnfrage = { query: q, geraet: daten.geraet, overrideBlock };
-		} else if (daten.type === 'search_results') {
-			wackle();
-			melde('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
-		}
-		return false;
 	}
 
 	// Der Schnappschuss des Scans, bevor die Anfrage hinausgeht: Escape oder „Theke leeren"
