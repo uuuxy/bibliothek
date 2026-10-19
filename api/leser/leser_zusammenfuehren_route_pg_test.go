@@ -100,6 +100,7 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 	ctx := context.Background()
 
 	schueler := func(t *testing.T, nachname, barcode string) string {
+		t.Helper()
 		return testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Zr", Nachname: nachname, Klasse: "07A", Barcode: barcode, Geburtsdatum: testdaten.Datum(2012, 5, 5)})
 	}
 	faelle := []struct {

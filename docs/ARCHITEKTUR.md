@@ -3402,14 +3402,13 @@ Gewicht.
   Untertitel; die Maske zeigt den Titel vor dem Speichern. Die Altersangabe der DNB wird gelesen
   und nicht gespeichert.
 - Tabellen-Inline-Felder mit 36 px: eine Variante `size="sm"` von `Feld` erst bei Bedienbefund.
-- **Abweichungen von Googles Regelwerk für Go ohne Schritt** (was einen Schritt hat, steht in
-  [OFFEN.md](OFFEN.md) 5.71): Hilfsfunktionen in `main.go` beenden das Programm an 15 Stellen
-  selbst (`log.Fatalf`, `os.Exit`); Best Practices, „Program initialization errors": „should be
-  propagated upward to main". Anlass: ein Test, der einen Abbruch beim Start prüfen soll. 48
-  Funktionen haben sechs oder sieben Parameter; Google nennt keine Zahl („Don't let the signature
-  of a function get too long"). An 17 Stellen hängt `fmt.Errorf` einen Fehler mit `%v` statt `%w`
-  an; Google lässt die Wahl je Stelle. Ausführbare Beispiele (`Example…`) gibt es keine, Nutzer
-  der Pakete außerhalb des Programms auch nicht.
+- **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
+  beenden das Programm an 15 Stellen selbst (`log.Fatalf`, `os.Exit`); Best Practices, „Program
+  initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen
+  Abbruch beim Start prüfen soll. 48 Funktionen haben sechs oder sieben Parameter; Google nennt
+  keine Zahl („Don't let the signature of a function get too long"). An 17 Stellen hängt
+  `fmt.Errorf` einen Fehler mit `%v` statt `%w` an; Google lässt die Wahl je Stelle. Ausführbare
+  Beispiele (`Example…`) gibt es keine, Nutzer der Pakete außerhalb des Programms auch nicht.
 
 #### Bewusst nicht entschieden
 

@@ -59,8 +59,8 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	// Zwei Leser mit derselben, ein Jahr alten Ausleihe — der Unterschied ist allein die
 	// Art und damit die Dauerleihe.
 	leihe := func(t *testing.T, art string, nachname string, dauerleihe bool) string {
-		exemplarID := neuesExemplar(t, "B-FRIST-"+nachname)
 		t.Helper()
+		exemplarID := neuesExemplar(t, "B-FRIST-"+nachname)
 		var leserID string
 		if art == "schueler" {
 			if err := pool.QueryRow(ctx, `

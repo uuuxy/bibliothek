@@ -209,6 +209,7 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 
 // stempelLeser liest letzte_bewegung_am; NULL bricht ab, weil jeder Fall hier schon bewegt ist.
 func stempelLeser(t *testing.T, pool *pgxpool.Pool, exemplarID string) func() time.Time {
+	t.Helper()
 	return func() time.Time {
 		t.Helper()
 		var s *time.Time

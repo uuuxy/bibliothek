@@ -155,6 +155,7 @@ func sammleStellenMit(t *testing.T, merkmal string) []leserkennungStelle {
 // dem Schlüssel merkmal. Schlüssel werden je Variable zusammengeführt: das Literal der
 // Zuweisung und jede spätere Index-Zuweisung.
 func stellenIn(t *testing.T, ort string, knoten ast.Node, merkmal string, jsonMitMerkmal *regexp.Regexp) []leserkennungStelle {
+	t.Helper()
 	schluesselJeVariable := map[string]map[string]bool{}
 	perIndex := map[string]bool{}
 	gebunden := map[*ast.CompositeLit]bool{}
@@ -249,6 +250,7 @@ func stellenIn(t *testing.T, ort string, knoten ast.Node, merkmal string, jsonMi
 }
 
 func literalSchluessel(t *testing.T, ort string, cl *ast.CompositeLit) []string {
+	t.Helper()
 	var ks []string
 	for _, e := range cl.Elts {
 		if kv, ok := e.(*ast.KeyValueExpr); ok {

@@ -221,6 +221,16 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   austauschen will, gehört einem Typ, den der Rufer anlegt und weiterreicht, wie die Basis der
   Türen mit Mailversand und Cache der Rechte (Best Practices, „Global state").
   `paketzustand_ratsche_test.go` hält es.
+- Eine Hilfsfunktion, die den Test führt (`*testing.T`, `*testing.B`, `*testing.F`,
+  `testing.TB`), beginnt mit `t.Helper()` und nimmt `t` vorn, vor ihm steht nur ein Kontext:
+  „call t.Helper to attribute failures in the test helper to the line where the helper is
+  called" (Decisions, „Test helpers"). Rückrufe wie der Rumpf von `t.Run` und die Funktionen in
+  einer Tabelle von Fällen rufen es nicht, denn ihre eigene Zeile nennt den Fall: „Do not use
+  this pattern when it obscures the connection between a test failure and the conditions that
+  led to it" (ebenda). `hilfsfunktion_ratsche_test.go` hält es.
+- Lokale Namen in Tests (Variablen, Parameter, Felder einer Tabelle von Fällen) werden nicht
+  übersetzt; ein englischer Name dort bleibt stehen. `stil_ratsche_test.go` zählt in Testdateien
+  nur die Namen der Paketebene und die Dateinamen.
 
 ## 11. Fehler und Meldungen
 

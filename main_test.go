@@ -68,6 +68,7 @@ func TestLeseKonfig_Gueltig(t *testing.T) {
 // pruefeAbbruch startet den Test als eigenen Prozess und verlangt, dass leseKonfig ihn beendet;
 // log.Fatalf ließe sich im selben Prozess nicht beobachten.
 func pruefeAbbruch(t *testing.T, testName string, richteEin func()) {
+	t.Helper()
 	if os.Getenv("BE_CRASHER") == "1" {
 		richteEin()
 		leseKonfig()

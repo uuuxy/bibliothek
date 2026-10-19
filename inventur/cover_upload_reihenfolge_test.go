@@ -57,6 +57,7 @@ func coverDateien(t *testing.T, id string) []string {
 }
 
 func raeumeCoverDateienAuf(t *testing.T, id string) {
+	t.Helper()
 	t.Cleanup(func() {
 		treffer, _ := filepath.Glob(filepath.Join(uploadsVerzeichnis, "cover_"+id+"_*")) //nolint:errcheck
 		for _, datei := range treffer {

@@ -200,6 +200,7 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 		return rec, resID
 	}
 	erledige := func(t *testing.T) *httptest.ResponseRecorder {
+		t.Helper()
 		rec, _ := erledigeMit(t, nil)
 		return rec
 	}

@@ -203,8 +203,8 @@ Gewichts:
 - [x] Der Kontext der Anfrage reist bis zur Abfrage mit; kein Kontext als Feld. (5.71)
 - [x] Öffentlich nur, was ein anderes Paket nennt (68 Namen), mit einer Prüfung, die das hält.
   (5.71)
-- [ ] Lokale Namen in Tests deutsch und `t.Helper()` in den Hilfsfunktionen, je mit Ratsche.
-  (5.71)
+- [x] Hilfsfunktionen der Tests beginnen mit `t.Helper()`, mit Gate; lokale Namen in Tests
+  bleiben, wie sie sind ([STIL.md](STIL.md), Abschnitt 10). (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
 - [ ] Oberfläche: `stores/omnibox.svelte.js` (729 Zeilen) nach seinen Sachen teilen, in
   noch drei Stufen, je Stufe deine Freigabe. (5.72)
@@ -498,22 +498,6 @@ dann Datei für Datei die Kommentare auf das Warum kürzen, nach jeder Datei `np
 und `npx vitest run`.
 
 ---
-
-### 5.71 Abgleich mit Googles Regelwerk für Go: was noch abweicht
-
-Gemessen am 16.10.2026 mit einem erweiterten Satz von golangci-lint (revive, errorlint,
-containedctx, contextcheck, thelper, ireturn und weitere; die Konfiguration ist nicht
-eingecheckt) und mit `go/types` über alle Pakete. Was schon gilt, steht mit seiner Prüfung in
-[STIL.md](STIL.md); hier steht der Rest, je mit der Stelle bei Google (gelesen am 16.10.2026).
-Funktions- und Dateilänge sind kein Punkt: Google setzt keine Höchstlänge für Funktionen, und für
-Dateien gilt „it is usually not a good idea to have a single file with many thousands of lines"
-(Best Practices, „Package size"); die größte Go-Datei hat 629 Zeilen, die Komplexität hält
-`komplexitaet_ratsche_test.go`.
-
-- **Tests.** Decisions, „Test helpers": Eine Hilfsfunktion ruft `t.Helper()`, damit die Meldung
-  die Zeile des Tests nennt; 26 tun es nicht. Lokale Namen in Tests zählt `stil_ratsche_test.go`
-  nicht: 31 englische Namen in 69 Testdateien (`bookRepo` in 19, `loanSvc` in 12, `studentRepo` in
-  11, `staffID`, `activeLeserID`). Weg: je eine Prüfung, dann Datei für Datei.
 
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
