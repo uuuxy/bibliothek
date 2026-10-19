@@ -207,8 +207,8 @@ Gewichts:
 - [ ] Lokale Namen in Tests deutsch und `t.Helper()` in den Hilfsfunktionen, je mit Ratsche.
   (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
-- [ ] Oberfläche: `stores/omnibox.svelte.js` (1.011 Zeilen) nach seinen Sachen teilen, in
-  noch sechs Stufen, je Stufe deine Freigabe. (5.72)
+- [ ] Oberfläche: `stores/omnibox.svelte.js` (932 Zeilen) nach seinen Sachen teilen, in
+  noch fünf Stufen, je Stufe deine Freigabe. (5.72)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -547,15 +547,14 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
 `frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
-JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 1.011. Googles Maßstab für
+JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 932. Googles Maßstab für
 Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
 tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösung, Warteschlange,
 Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Freigegeben
 ist ein Plan in Stufen, je Stufe ein Commit, ein Push und deine Freigabe für die nächste:
 
-- **Stufen 2 bis 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
-  `omniboxRueckmeldung.svelte.js` (Leuchten, Wackeln, Fehlerbanner samt nicht gebuchter Nummern,
-  ihre Zeitgeber), `omniboxSuche.svelte.js` (Entprellung, Suchlauf-Nummer, Trefferliste,
+- **Stufen 3 bis 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
+  `omniboxSuche.svelte.js` (Entprellung, Suchlauf-Nummer, Trefferliste,
   Auswahl, `/api/search`), `omniboxAntwort.svelte.js` (was eine Antwort des Servers am Zustand
   der Theke ändert), `omniboxOhneNetz.svelte.js` (Schnappschuss, Ablage in der Warteschlange,
   Ausweis-Merker), `omniboxReihe.svelte.js` (`fuehreAktionAus`, die Reihe der Scans, der einzige
@@ -571,12 +570,13 @@ Regeln für jeden Schnitt: Code wird verschoben, nicht umgeschrieben. Ein Zustan
 einem Teil; die anderen bekommen Funktionen, kein geteiltes Objekt. Der Ausweis-Merker schickt
 über dieselbe Funktion wie der Scan: Es bleibt ein Weg zu `/api/action`, und die Erlaubnisliste
 von `frontend-hygiene-action-endpunkt.test.js` tauscht die Datei, statt zu wachsen. Bauteile
-importieren nur `omnibox.svelte.js`; ein kleines Gate hält das, sonst entginge ein Import am Teil
-vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Jeder Teil liefert sein Objektliteral mit
-`@satisfies` ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3); dann meldet svelte-check jeden Zugriff auf
-einen Namen, den der Teil oder die Fassade nicht hat, auch in Bauteilen. Darauf baut Stufe 7.
+und Tests laden nur `omnibox.svelte.js` (`frontend-hygiene-omnibox-teile.test.js`), sonst
+entginge ein Import am Teil vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Jeder Teil
+liefert sein Objektliteral mit `@satisfies` ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3); dann
+meldet svelte-check jeden Zugriff auf einen Namen, den der Teil oder die Fassade nicht hat, auch
+in Bauteilen. Darauf baut Stufe 7.
 
-Nachweis je Stufe: die Store-Tests (13 Dateien, 91 Fälle) und `scanOhneFokus.test.js` ohne
+Nachweis je Stufe: die Store-Tests (13 Dateien, 94 Fälle) und `scanOhneFokus.test.js` ohne
 Änderung grün, svelte-check ohne Fehler und Warnung, vitest ganz, am frisch gebauten Stack
 (`scripts/stack-neu.sh`) die Browser-Tests der Theke: `theke-scan-reihe`,
 `theke-schnellrueckgabe`, `theke-suchleiste`, `theke-bestand-im-treffer`, `sperre-scan`,

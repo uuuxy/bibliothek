@@ -10,6 +10,7 @@ import { snackbars } from './snackbars.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
+import { erzeugeOmniboxRueckmeldung } from './omniboxRueckmeldung.svelte.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(daten) {
@@ -52,16 +53,20 @@ export function erzeugeOmniboxStore() {
 	let schnellrueckgabe = $state(false);
 	let eingabe = $state('');
 
-	let randLeuchten = $state('');
-	let bildschirmLeuchten = $state(''); // "success" | "error" | ""
+	const rueckmeldung = erzeugeOmniboxRueckmeldung();
+	const {
+		leuchteBildschirm,
+		wackle,
+		leuchteRand,
+		zeigeFehlerBanner,
+		clearFehlerBanner,
+		nenneNichtGebucht
+	} = rueckmeldung;
+
 	let letzteFremdrueckgabe = $state(/** @type {any} */ (null));
 	// Gehört das ausgeliehene Buch zu einer anderen Auflage als die der Klasse, steht der Hinweis
 	// bis zum nächsten Scan über dem Konto, wie die Fremdrückgabe (OmniboxThekeHinweise).
 	let letzterAuflagenHinweis = $state(/** @type {any} */ (null));
-	let wackelt = $state(false);
-	let fehler = $state('');
-	/** @type {any} Auto-Dismiss-Timer des Inline-Fehlerbanners */
-	let meldungsZeitgeber = null;
 	let vormerkungHinweis = $state(/** @type {{titel?: string, user?: string} | null} */ (null));
 	// Die abholbereiten Vormerkungen des geladenen Lesers, damit an der Theke ins Abholfach
 	// gegriffen wird, solange er davorsteht. Jeder Scan, der einen Leser lädt, überschreibt sie
@@ -99,12 +104,6 @@ export function erzeugeOmniboxStore() {
 	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
 	// überlebt, feuert nach dem Abbau von jsdom ins Leere und reißt den ganzen Testlauf mit.
 	/** @type {ReturnType<typeof setTimeout> | null} */
-	let bildschirmZeitgeber = null;
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let shakeTimer = null;
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let randZeitgeber = null;
-	/** @type {ReturnType<typeof setTimeout> | null} */
 	let fokusTimer = null;
 
 	// Die Reihe der Scans. Ein Handscanner wartet nicht auf die Antwort: Ein Scan, der
@@ -122,93 +121,15 @@ export function erzeugeOmniboxStore() {
 	// Löst sich auf, sobald kein Scan mehr unterwegs ist oder wartet.
 	let reiheGebucht = Promise.resolve();
 
-	function leuchteBildschirm(type) {
-		bildschirmLeuchten = type;
-		if (bildschirmZeitgeber) clearTimeout(bildschirmZeitgeber);
-		bildschirmZeitgeber = setTimeout(() => {
-			bildschirmZeitgeber = null;
-			bildschirmLeuchten = '';
-		}, 300);
-	}
-
-	function wackle() {
-		wackelt = true;
-		if (shakeTimer) clearTimeout(shakeTimer);
-		shakeTimer = setTimeout(() => {
-			shakeTimer = null;
-			wackelt = false;
-		}, 500);
-	}
-
-	function leuchteRand(color) {
-		randLeuchten = color;
-		if (randZeitgeber) clearTimeout(randZeitgeber);
-		randZeitgeber = setTimeout(() => {
-			randZeitgeber = null;
-			randLeuchten = '';
-		}, 1000);
-	}
-
 	// Stoppt jeden laufenden Zeitgeber dieses Stores, beim Verlassen der Seite (Omnibox.svelte)
 	// und beim Abräumen der Tests: Danach greift kein Rückruf auf eine Seite, die es nicht mehr gibt.
 	function stoppeZeitgeber() {
-		for (const t of [
-			bildschirmZeitgeber,
-			shakeTimer,
-			randZeitgeber,
-			fokusTimer,
-			meldungsZeitgeber,
-			suchVerzoegerung
-		]) {
+		rueckmeldung.stoppeZeitgeber();
+		for (const t of [fokusTimer, suchVerzoegerung]) {
 			if (t) clearTimeout(t);
 		}
-		bildschirmZeitgeber = null;
-		shakeTimer = null;
-		randZeitgeber = null;
 		fokusTimer = null;
-		meldungsZeitgeber = null;
 		suchVerzoegerung = null;
-	}
-
-	// Das Fehlerbanner hat zwei Teile. Was ein Scan meldet, verschwindet nach 6 s von selbst.
-	// Die Nummern der Scans, die eine Reihe nicht gebucht hat, bleiben stehen, bis der nächste
-	// Scan kommt: Die Rückfrage, vor der sie gescannt wurden, kann länger offen sein.
-	let bannerMeldung = '';
-	/** @type {string[]} */
-	let nichtGebucht = [];
-
-	function zeichneBanner() {
-		const nummern = nichtGebucht.map((nummer) => `„${nummer}“`).join(', ');
-		const rest = nummern ? `Gescannt und NICHT gebucht: ${nummern} — bitte erneut scannen.` : '';
-		fehler = [bannerMeldung, rest].filter(Boolean).join(' · ');
-	}
-
-	function stoppeBannerUhr() {
-		if (meldungsZeitgeber) {
-			clearTimeout(meldungsZeitgeber);
-			meldungsZeitgeber = null;
-		}
-	}
-
-	// Zeigt die Meldung im Fehlerbanner an der Omnibox. Eine laufende Uhr wird verworfen,
-	// damit ein neuer Fehler die volle Anzeigedauer bekommt.
-	function zeigeFehlerBanner(message) {
-		stoppeBannerUhr();
-		bannerMeldung = message;
-		meldungsZeitgeber = setTimeout(() => {
-			meldungsZeitgeber = null;
-			bannerMeldung = '';
-			zeichneBanner();
-		}, 6000);
-		zeichneBanner();
-	}
-
-	// Leert das Fehlerbanner ganz, auch die Nummern der nicht gebuchten Scans.
-	function clearFehlerBanner() {
-		stoppeBannerUhr();
-		bannerMeldung = '';
-		nichtGebucht = [];
-		zeichneBanner();
 	}
 
 	// Such-Logik. suchLauf zählt jeden gestarteten Abruf — nur die Antwort des zuletzt
@@ -745,11 +666,11 @@ export function erzeugeOmniboxStore() {
 	// kommt; der Ton sagt es dem, der nicht hinsieht.
 	function verwirfWartende() {
 		if (wartend.length === 0) return;
-		nichtGebucht = [...nichtGebucht, ...wartend.splice(0).map((w) => w.q)];
+		const nummern = wartend.splice(0).map((w) => w.q);
 		leuchteBildschirm('error');
 		spieleFehlerton();
 		leuchteRand('red');
-		zeichneBanner();
+		nenneNichtGebucht(nummern);
 	}
 
 	// Bucht einen Scan. Das Ergebnis sagt, ob er glatt durchging: Leser geladen, gebucht oder
@@ -913,10 +834,10 @@ export function erzeugeOmniboxStore() {
 			eingabe = v;
 		},
 		get randLeuchten() {
-			return randLeuchten;
+			return rueckmeldung.randLeuchten;
 		},
 		get bildschirmLeuchten() {
-			return bildschirmLeuchten;
+			return rueckmeldung.bildschirmLeuchten;
 		},
 		get letzteFremdrueckgabe() {
 			return letzteFremdrueckgabe;
@@ -928,10 +849,10 @@ export function erzeugeOmniboxStore() {
 			return letzterAuflagenHinweis;
 		},
 		get wackelt() {
-			return wackelt;
+			return rueckmeldung.wackelt;
 		},
 		get fehler() {
-			return fehler;
+			return rueckmeldung.fehler;
 		},
 		get vormerkungHinweis() {
 			return vormerkungHinweis;
