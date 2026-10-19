@@ -54,7 +54,7 @@
 								type="button"
 								onclick={() => onNachdruck(p)}
 								data-tip="{p.etiketten_offen} Exemplare dieses Titels haben kein Etikett — im Druck-Center nachdrucken"
-								aria-label="Etiketten für {p.titel_name} nachdrucken"
+								aria-label="{p.etiketten_offen} Etiketten für {p.titel_name} nachdrucken"
 								class="icon-btn gap-1 px-1.5 text-xs font-semibold text-primary"
 							>
 								<Printer class="h-4 w-4" aria-hidden="true" />

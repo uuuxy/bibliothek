@@ -153,7 +153,6 @@
 			class="flex cursor-pointer items-center gap-1.5 text-left font-mono transition-colors hover:text-primary"
 			onclick={copyIsbn}
 			title="{nummerArt} kopieren"
-			aria-label="{nummerArt} kopieren"
 		>
 			<span class="truncate" title={titel.isbn}>{nummerArt}: {titel.isbn || '–'}</span>
 			{#if copied}
