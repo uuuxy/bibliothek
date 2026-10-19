@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-16. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-19. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -186,7 +186,8 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   das in einem Satz darunter. (§13)
   **Schließen:** Das Kreuz oben links schließt die Maske. Ist etwas eingegeben und nicht
   gespeichert, fragt sie vorher: _Bleiben_ lässt die Eingaben stehen, _Verwerfen_ schließt ohne
-  sie.
+  sie. Ebenso fragt sie, wenn man bei offener Maske einen anderen Menüpunkt oder Reiter wählt
+  (_Verwerfen und weiter_); beim Schließen oder Neuladen des Fensters fragt der Browser.
 - **Auflagen** (bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
   ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
   in der Gruppe _An der Schule_ die Angabe _Andere Auflagen_: _Andere Auflage zuordnen_ sucht unter den

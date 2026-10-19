@@ -41,7 +41,7 @@ Kategorie C; 5.79 kam beim Beheben von 5.75 dazu. Die der Kategorie A zuerst.
   öffnet keine Rückfrage. (5.74, A)
 - [x] „Buch bearbeiten" und „Neues Buch": Das Schließen-Symbol fragt, bevor es Ungespeichertes
   verwirft. (5.75, A)
-- [ ] Dasselbe beim Wechsel der Seite, des Reiters und beim Neuladen. (5.79, A)
+- [x] Dasselbe beim Wechsel der Seite, des Reiters und beim Neuladen. (5.79, A)
 - [ ] „Stammdaten bearbeiten": Die Meldung „Änderungen gespeichert." ist zu sehen. (5.76)
 - [ ] Drei Knöpfe sagen bei leerem Feld, was fehlt. (5.77)
 - [ ] Die Meldungen stehen unten, wie Material 3 es vorsieht. (5.78)
@@ -403,17 +403,6 @@ be placed at the bottom of a UI, in front of the main content. In some cases, sn
 nudged upwards to avoid overlapping with other UI elements near the bottom". Am unteren Rand
 stehen die Auswahlleisten der Listen (`ui/AuswahlLeiste`, `sticky bottom-4`); dort müssen die
 Meldungen ausweichen.
-
-### 5.79 Buchmaske: Ungespeichertes geht beim Wechsel der Seite verloren
-
-Kategorie A: verlorene Eingabe, der zweite Weg zu 5.75. Bei offener Buchmaske verwerfen auch der
-Wechsel der Seite (Seitenleiste und Zurück-Taste, beide über den Setter `uiStore.activeTab`), der
-Wechsel des Reiters im Medienkatalog (`Medienkatalog.svelte` baut die Titel-Verwaltung mit
-`{#if}` ab) und das Neuladen oder Schließen des Fensters, was nicht gespeichert ist. Für den
-Seitenwechsel gibt es die Tür schon: `uiStore.verlassenSperre`, über die der LMF-Planer fragt,
-dazu `beforeunload` (`LmfPlan.svelte`). Weg: Die Titel-Verwaltung trägt dort
-`hatUngespeichertes` ein und fragt wie beim Schließen-Symbol; der Reiterwechsel fragt dieselbe
-Funktion.
 
 ---
 

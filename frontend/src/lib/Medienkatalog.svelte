@@ -5,6 +5,8 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
+	import { uiStore } from './stores/uiStore.svelte.js';
+	import { verwerfenBestaetigen } from './stores/bestaetigung.svelte.js';
 
 	// Wer mit einem Titel zum Bearbeiten kommt, beginnt in der Titel-Verwaltung: Der Katalog
 	// stünde sonst einen Takt lang da und lüde dabei seine ganze Liste.
@@ -16,13 +18,23 @@
 			appState.requestAdminView = false;
 		}
 	});
+
+	// Ein anderer Reiter baut die Titel-Verwaltung ab. Ungespeichertes ihrer Maske fragt vorher,
+	// über denselben Wächter wie der Wechsel der Seite (uiStore.verlassenSperre).
+	/** @param {string} id */
+	async function waehleReiter(id) {
+		if (id === aktiverReiter) return;
+		if (uiStore.verlassenSperre?.() && !(await verwerfenBestaetigen('Verwerfen und weiter')))
+			return;
+		aktiverReiter = id;
+	}
 </script>
 
 <Seitenrahmen>
 	<Reiter
 		etikett="Medienkatalog Navigation"
 		aktiv={aktiverReiter}
-		onwahl={(id) => (aktiverReiter = id)}
+		onwahl={waehleReiter}
 		reiter={[
 			{ id: 'catalog', label: 'Suche & Filter' },
 			{ id: 'admin', label: 'Titel-Verwaltung' },

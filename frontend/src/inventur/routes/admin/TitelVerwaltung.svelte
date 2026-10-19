@@ -1,7 +1,12 @@
 <!-- Titel-Verwaltung: lädt die Titelliste, öffnet die Maske und steuert die Unterkomponenten. -->
 <script>
 	import { onMount, untrack } from 'svelte';
-	import { bestaetigen, loeschenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
+	import {
+		bestaetigen,
+		loeschenBestaetigen,
+		verwerfenBestaetigen
+	} from '../../../lib/stores/bestaetigung.svelte.js';
+	import { schuetzeUngespeichertes } from '../../../lib/stores/verlassenSchutz.svelte.js';
 	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
 	import { appState, melde } from '$lib/store.svelte.js';
 	import Bestandstabelle from '$lib/components/admin/Bestandstabelle.svelte';
@@ -66,22 +71,16 @@
 		istBearbeitenModus = true;
 	}
 
-	// Das Schließen-Symbol fragt, bevor es Ungespeichertes verwirft (M3, Dialogs, „Dismissing").
-	// „Speichern" schließt die Maske selbst (AdminBuchAktionen) und kommt hier nicht vorbei.
+	// Schließen-Symbol, Wechsel der Seite und Neuladen fragen, bevor sie Ungespeichertes der Maske
+	// verwerfen (M3, Dialogs, „Dismissing"). „Speichern" schließt die Maske selbst
+	// (AdminBuchAktionen) und kommt hier nicht vorbei.
+	const ungespeichert = () =>
+		istBearbeitenModus && hatUngespeichertes(formular, leeresBuchFormular());
+	schuetzeUngespeichertes(ungespeichert);
 	async function schliesseMaske() {
-		if (hatUngespeichertes(formular, leeresBuchFormular()) && !(await verwerfenBestaetigt()))
-			return;
+		if (ungespeichert() && !(await verwerfenBestaetigen())) return;
 		istBearbeitenModus = false;
 	}
-
-	const verwerfenBestaetigt = () =>
-		bestaetigen({
-			titel: 'Ungespeicherte Änderungen',
-			text: 'Die Eingaben in der Maske sind nicht gespeichert. Wer sie schließt, verliert sie.',
-			aktion: 'Verwerfen',
-			abbruch: 'Bleiben',
-			gefaehrlich: true
-		});
 
 	/** Der Knopf „Scanner": dieselbe Maske wie „Neues Buch", die Kamera ist schon an. */
 	function neuesBuchScannen() {

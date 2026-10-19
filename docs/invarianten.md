@@ -368,8 +368,9 @@ veraltet ist. Die Bugklassen dazu stehen in [sweeps.md](sweeps.md).
 
 - **15 · Ungespeichertes.** Hinter dem Sperrbildschirm bleibt die Anwendung stehen,
   ausgeblendet und träge; eine offene Rückfrage ist dort nicht zu sehen. Der
-  Verlassen-Schutz des LMF-Planers (`uiStore.verlassenSperre`) wird nur beim Wechsel des
-  Menüpunkts und beim Schließen des Fensters gefragt. Frage 8 fragt in der Frontend-Lesart
+  Verlassen-Schutz (`uiStore.verlassenSperre`, beim LMF-Planer und bei der Buchmaske) wird nur
+  beim Wechsel des Menüpunkts und beim Schließen des Fensters gefragt, bei der Buchmaske auch
+  am Schließen-Symbol und beim Wechsel des Reiters im Medienkatalog. Frage 8 fragt in der Frontend-Lesart
   das Gegenteil: was beim Verlassen zurück auf Anfang muss.
 - **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
   Ein Feld, in das gescannt wird, hat nach dem Öffnen den Fokus und hört auf Enter

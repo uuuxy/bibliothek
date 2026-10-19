@@ -3293,8 +3293,8 @@ Gewicht.
   Meldung mit. Anlass: Die Theke reagiert bei hängendem Server spürbar verzögert.
 - **Ungespeichertes übersteht die Sperre, aber nicht, was ihr vorausgeht:** Nach fünf Minuten
   leert sich die Theke samt offenem Dialog; „Abmelden und als andere Person anmelden" verwirft
-  ohne Hinweis. Ob etwas ungespeichert ist, weiß die Anwendung nur beim LMF-Planer
-  (`uiStore.verlassenSperre`). Anlass: eine verlorene Eingabe an der Theke.
+  ohne Hinweis. Ob etwas ungespeichert ist, weiß die Anwendung nur beim LMF-Planer und bei der
+  Buchmaske (`uiStore.verlassenSperre`). Anlass: eine verlorene Eingabe an der Theke.
 - **Der LMF-Planer erfährt nur über die Live-Leitung,** dass ein anderer Platz den Plan geändert
   hat (`fremdesSignal`); war sie unterbrochen, überschreibt das nächste Speichern die fremde
   Änderung. Abhilfe mit Anlass: nach dem Wiederaufbau der Leitung und nach dem Aufschließen den

@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, gehZu, menuepunkt, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Das Schließen-Symbol der Buchmaske verwirft, was nicht gespeichert ist. Vorher fragt es, wie
 // Material 3 es für den Full-screen dialog verlangt („Dismissing"); an einer Maske, an der
-// niemand getippt hat, fragt es nicht (docs/OFFEN.md 5.75).
+// niemand getippt hat, fragt es nicht (docs/OFFEN.md 5.75). Dasselbe gilt für den Wechsel der
+// Seite und des Reiters und für das Schließen des Fensters (5.79).
 const s = uniqueSuffix().slice(0, 6);
 const TITEL = `Verwerfen ${s}`;
 
@@ -70,5 +71,51 @@ test.describe.serial('Buchmaske: Schließen mit Ungespeichertem', () => {
 		await schliessen(page).click();
 		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toHaveCount(0);
 		await expect(rueckfrage(page)).toHaveCount(0);
+	});
+
+	test('der Wechsel der Seite und des Reiters fragt ebenso', async ({ page }) => {
+		await oeffneTitel(page);
+		await page.getByLabel('Verlag').fill('Cornelsen');
+
+		await menuepunkt(page, 'Ausleihe').click();
+		await expect(rueckfrage(page)).toBeVisible();
+		await rueckfrage(page).getByRole('button', { name: 'Bleiben' }).click();
+		await expect(page).toHaveURL(/\/medienkatalog$/);
+		await expect(page.getByLabel('Verlag'), 'die Eingabe steht noch').toHaveValue('Cornelsen');
+
+		await page.getByRole('tab', { name: 'Geräte' }).click();
+		await expect(rueckfrage(page)).toBeVisible();
+		await rueckfrage(page).getByRole('button', { name: 'Bleiben' }).click();
+		await expect(page.getByLabel('Verlag')).toHaveValue('Cornelsen');
+
+		await page.getByRole('tab', { name: 'Geräte' }).click();
+		await rueckfrage(page).getByRole('button', { name: 'Verwerfen und weiter' }).click();
+		await expect(page.getByRole('tab', { name: 'Geräte' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toHaveCount(0);
+
+		await menuepunkt(page, 'Ausleihe').click();
+		await expect(page, 'ohne offene Maske fragt nichts').toHaveURL(/\/kiosk$/);
+		await expect(rueckfrage(page)).toHaveCount(0);
+		expect(querySQL(`SELECT verlag FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe(
+			'Thienemann'
+		);
+	});
+
+	test('das Schließen des Fensters fragt der Browser, solange etwas ungespeichert ist', async ({
+		page
+	}) => {
+		await oeffneTitel(page);
+		await page.getByLabel('Verlag').fill('Cornelsen');
+		/** @type {string[]} */
+		const dialoge = [];
+		page.on('dialog', (dialog) => {
+			dialoge.push(dialog.type());
+			void dialog.dismiss();
+		});
+		await page.close({ runBeforeUnload: true });
+		await expect.poll(() => dialoge).toEqual(['beforeunload']);
 	});
 });

@@ -78,3 +78,19 @@ export function bestaetigen(frage) {
 export function loeschenBestaetigen(titel, text = 'Das lässt sich nicht rückgängig machen.') {
 	return bestaetigen({ titel, text, aktion: 'Löschen', gefaehrlich: true });
 }
+
+/**
+ * Die Rückfrage, bevor ungespeicherte Eingaben einer Maske verloren gehen; der Fokus steht auf
+ * „Bleiben". M3, Dialogs, „Dismissing": Wer einen Full-screen dialog verlässt, wird gefragt.
+ * @param {string} [aktion] der bestätigende Knopf: beim Schließen „Verwerfen", beim Wechsel
+ *   „Verwerfen und weiter"
+ */
+export function verwerfenBestaetigen(aktion = 'Verwerfen') {
+	return bestaetigen({
+		titel: 'Ungespeicherte Änderungen',
+		text: 'Die Eingaben in der Maske sind nicht gespeichert und gehen dabei verloren.',
+		aktion,
+		abbruch: 'Bleiben',
+		gefaehrlich: true
+	});
+}
