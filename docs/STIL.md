@@ -71,7 +71,7 @@ Consistency).
 | was die Verwaltung nachlesen kann (Tabelle `audit_log`) | `Protokoll`                      | `Audit`                           |
 | nimmt eine Anfrage der Oberfläche an                | Tür, am Typ `Tueren` ihres Themas    | `Handler`                         |
 | was eine Tür liest und zurückgibt                   | `…Anfrage`, `…Antwort`               | `Request`, `Response`             |
-| liest und schreibt eine Sache in der Datenbank      | `…Abfragen`, an Postgres `pg…Abfragen` | `…Repository`, `…Repo`          |
+| liest und schreibt eine Sache in der Datenbank      | `…Abfragen`                          | `…Repository`, `…Repo`, `pg…Abfragen` |
 | führt einen Vorgang mit seinen Regeln aus (`internal/service`) | `…Dienst`                 | `…Service`, `…Svc`                |
 | der Arbeitsplatz mit Scanner an der Ausleihe        | `Theke`                              | `Tresen`, `Counter`               |
 | das eine Eingabefeld der Theke für Scan und Suche   | `Omnibox` (Glossar)                  | —                                 |
@@ -336,11 +336,19 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   package" (Decisions, „Interfaces"). Jede Methode trägt einen Kommentar mit dem, worauf sich der
   Nutzer verlässt: „Multi-method interfaces: each individual method requires its own
   documentation" (Best Practices, „Designing effective interfaces").
+- Brauchen mehrere Nutzer eines Pakets für denselben Vorgang dieselben Methoden, teilen sie sich
+  eine Schnittstelle (`kontoPflege` für Anlegen und Ändern). Eine größere setzt sich aus kleineren
+  zusammen (`leserErmittlung` aus `leserAbruf` und `ausweisErkennung`). Was die Dienste von
+  `repository` brauchen, steht in `internal/service/abfragen.go`.
+- Fehlt einer Attrappe eine Methode ihrer Schnittstelle, bettet sie diese kleine Schnittstelle
+  ein, nicht den Typ aus `repository`: Ein Aufruf der fehlenden Methode endet dann am nil der
+  eingebetteten Schnittstelle. Wer die echten Abfragen weiterreicht und nur einzelne Methoden
+  ändert, bettet den Zeiger auf den Typ ein (`protokollScheitert` in `internal/service`).
 - Ein Erzeuger liefert den Typ: „Functions should take interfaces as arguments but return
   concrete types". Eine Schnittstelle als Parameter steht dort, wo Verschiedenes hineinpasst
-  (`repository.Datenbank`: Pool oder Transaktion).
+  (`repository.Datenbank`, `KontoSchreiber` und `SpurenDatenbank`: Pool oder Transaktion).
 - `ireturn` im Linter meldet jede Funktion, die eine Schnittstelle dieses Projekts liefert
-  (`.golangci.yml`). Die Erzeuger, die das noch tun, stehen dort als Ausnahmen; wer einen auf den
-  Typ umstellt, streicht seine Zeile, und eine neue kommt nicht hinzu. Wer mit Grund eine
-  Schnittstelle liefert, schreibt den Grund an die Stelle (`tuer.Basis.Post`).
+  (`.golangci.yml`); eine Ausnahme in der Konfiguration gibt es nicht. Wer mit Grund eine
+  Schnittstelle liefert, schreibt den Grund an die Stelle (`//nolint:ireturn` an
+  `tuer.Basis.Post`).
 
