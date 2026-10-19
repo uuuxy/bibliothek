@@ -31,7 +31,8 @@
 		orange: 'bg-surface-container-lowest border-warning ring-1 ring-warning',
 		red: 'bg-surface-container-lowest border-error ring-1 ring-error'
 	};
-	const farbZustand = $derived(RUECKMELDUNG[omniboxStore.randLeuchten] ?? RUHE);
+	const farbZustand = $derived(RUECKMELDUNG[omniboxStore.rueckmeldung.randLeuchten] ?? RUHE);
+	const wackelKlasse = $derived(omniboxStore.rueckmeldung.wackelt ? 'animate-shake' : '');
 
 	$effect(() => {
 		if (appState.triggerStudentScan) {
@@ -62,7 +63,7 @@
 
 	// Fokussprung über den Store: EIN Zeitgeber mit Handle statt zweier gleicher Aufrufe.
 	$effect(() => {
-		if (!omniboxStore.belegt && !omniboxStore.trefferlisteOffen && !omniboxStore.kameraOffen)
+		if (!omniboxStore.belegt && !omniboxStore.suche.trefferlisteOffen && !omniboxStore.kameraOffen)
 			omniboxStore.fokussiereScanfeld();
 	});
 
@@ -74,7 +75,7 @@
 				omniboxStore.eingabe = '';
 				omniboxStore.aktiverLeser = null;
 				omniboxStore.letzteFremdrueckgabe = null;
-				omniboxStore.trefferlisteOffen = false;
+				omniboxStore.suche.trefferlisteOffen = false;
 				if (omniboxStore.kameraOffen) {
 					// Escape schliesst die Kamera. Das Abschalten selbst gehoert dem Bauteil
 					// (ThekenKamera → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
@@ -138,38 +139,36 @@
 			     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
 				onsubmit={(e) => omniboxStore.fuehreAktionAus(e, () => leserakte?.ladeNeu())}
-				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.wackelt
-					? 'animate-shake'
-					: ''} {farbZustand}"
+				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {wackelKlasse} {farbZustand}"
 			>
 				<OmniboxInput
 					bind:eingabe={omniboxStore.eingabe}
-					trefferlisteOffen={omniboxStore.trefferlisteOffen}
-					markierterTreffer={omniboxStore.markierterTreffer}
-					trefferAnzahl={omniboxStore.trefferAnzahl}
+					trefferlisteOffen={omniboxStore.suche.trefferlisteOffen}
+					markierterTreffer={omniboxStore.suche.markierterTreffer}
+					trefferAnzahl={omniboxStore.suche.trefferAnzahl}
 					belegt={omniboxStore.belegt}
 					schnellrueckgabe={omniboxStore.schnellrueckgabe}
 					kameraOffen={omniboxStore.kameraOffen}
-					onInput={omniboxStore.verarbeiteEingabe}
-					onSelect={(idx) => omniboxStore.waehleTreffer(idx, onSelectBook)}
-					onIndexChange={(idx) => (omniboxStore.markierterTreffer = idx)}
-					onEscape={() => (omniboxStore.trefferlisteOffen = false)}
+					onInput={omniboxStore.suche.verarbeiteEingabe}
+					onSelect={(idx) => omniboxStore.suche.waehleTreffer(idx, onSelectBook)}
+					onIndexChange={(idx) => (omniboxStore.suche.markierterTreffer = idx)}
+					onEscape={() => (omniboxStore.suche.trefferlisteOffen = false)}
 					onToggleCamera={omniboxStore.kameraOffen ? stoppeKamera : starteKamera}
 				/>
 
-				{#if omniboxStore.trefferlisteOffen && omniboxStore.trefferAnzahl > 0}
+				{#if omniboxStore.suche.trefferlisteOffen && omniboxStore.suche.trefferAnzahl > 0}
 					<OmniboxTreffer
-						suchTreffer={omniboxStore.suchTreffer}
-						markierterTreffer={omniboxStore.markierterTreffer}
-						onSelect={(idx) => omniboxStore.waehleTreffer(idx, onSelectBook)}
+						suchTreffer={omniboxStore.suche.suchTreffer}
+						markierterTreffer={omniboxStore.suche.markierterTreffer}
+						onSelect={(idx) => omniboxStore.suche.waehleTreffer(idx, onSelectBook)}
 					/>
 				{/if}
 			</form>
 			<OmniboxSchnellrueckgabe />
 
-			{#if omniboxStore.fehler}
+			{#if omniboxStore.rueckmeldung.fehler}
 				<div class="mt-1 w-full p-3 bg-error text-on-error text-center">
-					{omniboxStore.fehler}
+					{omniboxStore.rueckmeldung.fehler}
 				</div>
 			{/if}
 		</div>

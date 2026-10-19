@@ -44,6 +44,8 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [ ] Portal: „Problem melden" unter dem Suchfeld
 - [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
 - [ ] Die übrigen Proben mit dem Handscanner
+- [ ] Theke mit dem Handscanner nach der Teilung des Omnibox-Stores: Ausweis und Bücher ohne
+  Pause, ein fremdes Buch, die Schnellrückgabe (7.10)
 - [ ] Maske „Buch bearbeiten"
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken
@@ -141,8 +143,8 @@ Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lese
 zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
 Kommentare stehen in [STIL.md](STIL.md), die Prüfungen, die sie halten, in seinem Vorspann.
 
-- [ ] Oberfläche: `stores/omnibox.svelte.js` (453 Zeilen) nach seinen Sachen teilen, noch
-  Stufe 7, freigegeben. (5.72)
+- [x] Oberfläche: `stores/omnibox.svelte.js` nach seinen Sachen geteilt; der Zustand der Theke
+  und die Fassade stehen im Store, sechs Teile daneben ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3).
 - [ ] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
 
 ### Später: kleine Fehler und Aufräumarbeit
@@ -369,44 +371,6 @@ Bestand einfrieren, der nur sinken darf (das Datum einer Quelle ausgenommen, wie
 dann Datei für Datei die Kommentare auf das Warum kürzen, nach jeder Datei `npx svelte-check`
 und `npx vitest run`.
 
----
-
-### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
-
-`frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
-JS-Module über 200 Zeilen, darunter `stores/omnibox.svelte.js` mit 453. Googles Maßstab für
-Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
-tell which file contains something". Sechs Teile stehen in eigenen Dateien
-(`stores/omnibox<Teil>.svelte.js`): Rückmeldung, Suche, Antwort, ohne Netz, Buchung (der
-einzige Versand an `/api/action`) und Reihe. Im Store bleiben der Zustand der Theke,
-`fuehreAktionAus` (es entscheidet zwischen Trefferliste und Reihe), Rückfrage und Fokus
-(`frontend-hygiene-theken-fenster.test.js` liest dort `rueckfrageOffen`), die Auswertung einer
-Fehlerantwort (`verarbeiteAktionsFehler`, `verarbeiteAntwortfehler`; Buchung und Reihe rufen
-sie), Zusammenführen, `gibZurueck` und die Fassade. Freigegeben ist noch:
-
-- **Stufe 7:** Suche und Rückmeldung werden Unterobjekte der Fassade (`omniboxStore.suche.…`,
-  `omniboxStore.rueckmeldung.…`), damit der Aufruf die Datei nennt: 36 Stellen in 4 Dateien
-  und 54 in 9, Tests eingeschlossen. Danach die Zahl im Bestand der Größen-Ratsche nachziehen
-  und ARCHITEKTUR.md 5.3 nachziehen. Unter 200 Zeilen kommt der Store nach der Rechnung nicht:
-  Fassade, Zustand der Theke und das Verdrahten der Teile brauchen allein rund 200, dazu kommt,
-  was im Store bleibt.
-
-Regeln für jeden Schnitt: Code wird verschoben, nicht umgeschrieben. Ein Zustand lebt in genau
-einem Teil; die anderen bekommen Funktionen, kein geteiltes Objekt. Bauteile
-und Tests laden nur `omnibox.svelte.js` (`frontend-hygiene-omnibox-teile.test.js`), sonst
-entginge ein Import am Teil vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Jeder Teil
-liefert sein Objektliteral mit `@satisfies` ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3); dann
-meldet svelte-check jeden Zugriff auf einen Namen, den der Teil oder die Fassade nicht hat, auch
-in Bauteilen. Darauf baut Stufe 7.
-
-Nachweis je Stufe: die Store-Tests (13 Dateien, 94 Fälle) und `scanOhneFokus.test.js` ohne
-Änderung grün, svelte-check ohne Fehler und Warnung, vitest ganz, am frisch gebauten Stack
-(`scripts/stack-neu.sh`) die Browser-Tests der Theke: `theke-scan-reihe`,
-`theke-schnellrueckgabe`, `theke-suchleiste`, `theke-bestand-im-treffer`, `sperre-scan`,
-`scanner-fokus-menue`, `kiosk-scannerfokus` (tippt blind und zählt in der Datenbank),
-`escape-kurzbefehl`, `auflagen-theke`. Nach Stufe 7 eine Probe mit dem echten Handscanner an
-der Theke, durch dich.
-
 ### 5.73 Statistik: ein Lesefehler sieht aus wie ein leerer Bestand
 
 Scheitert das Lesen von Rennern, Ladenhütern oder Monatstrend, setzt `api/system/statistik.go`
@@ -598,6 +562,12 @@ einem offenen Fenster der Theke ist es am 07.10.2026 belegt: Der Scan wurde erka
   „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
   Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
+
+**Die Theke nach der Teilung des Omnibox-Stores.** Mit dem Handscanner einen Ausweis und
+gleich danach drei Bücher scannen, ohne Pause. Erwartet: Die drei Bücher stehen als Ausleihen
+in der Akte. Dann ein Buch scannen, das auf jemand anderen verbucht ist. Erwartet: Der Rand
+leuchtet orange, über dem Konto steht „Fremdrückgabe“. Dann die Schnellrückgabe einschalten
+und zwei verliehene Bücher scannen. Erwartet: Die Meldung nennt je Buch, bei wem es war.
 
 **Die Inventur mit dem Handscanner.** Eine Inventur für eine Signatur
 starten und fünf Bücher so schnell hintereinander scannen, wie es geht. Erwartet: Die Zahl

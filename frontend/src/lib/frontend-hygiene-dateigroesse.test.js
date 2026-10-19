@@ -14,7 +14,7 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
 	'src/lib/Bestellwesen.svelte': 231,
-	'src/lib/Omnibox.svelte': 215,
+	'src/lib/Omnibox.svelte': 214,
 	'src/lib/Statistik.svelte': 348,
 	'src/lib/Leserakte.svelte': 221,
 	'src/lib/Inventur.svelte': 231,
@@ -36,7 +36,7 @@ const BESTAND = {
 	'src/lib/stores/leerlaufSperre.svelte.js': 388,
 	'src/lib/stores/mahnwesen.svelte.js': 238,
 	'src/lib/stores/offlineSync.svelte.js': 426,
-	'src/lib/stores/omnibox.svelte.js': 453,
+	'src/lib/stores/omnibox.svelte.js': 421,
 	'src/lib/useBuchakte.svelte.js': 252,
 	'src/lib/useInventur.svelte.js': 234,
 	'src/lib/useLeserakte.svelte.js': 328

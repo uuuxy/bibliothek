@@ -43,8 +43,8 @@ export function thekeLeeren() {
 	// gewöhnlichen Betrieb vor.
 	omniboxStore.schalteSchnellrueckgabe(false);
 	omniboxStore.eingabe = '';
-	omniboxStore.trefferlisteOffen = false;
-	omniboxStore.suchTreffer = {
+	omniboxStore.suche.trefferlisteOffen = false;
+	omniboxStore.suche.suchTreffer = {
 		students: [],
 		books: [],
 		studentsTotal: 0,

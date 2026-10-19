@@ -42,20 +42,20 @@ describe('Omnibox-Suchlauf', () => {
 
 		// Erste Eingabe: Abruf startet und bleibt hängen.
 		store.eingabe = 'Mül';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
 
 		// Zweite Eingabe: neuer Abruf, Antwort kommt sofort.
 		store.eingabe = 'Schmidt';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
-		expect(/** @type {any} */ (store.suchTreffer.students[0]).id).toBe('Schmidt');
+		expect(/** @type {any} */ (store.suche.suchTreffer.students[0]).id).toBe('Schmidt');
 
 		// Jetzt trifft die ALTE Antwort ein — sie darf die Liste nicht mehr anfassen.
 		alteAntwort(treffer('Müller'));
 		await vi.advanceTimersByTimeAsync(0);
 		expect(
-			/** @type {any} */ (store.suchTreffer.students[0]).id,
+			/** @type {any} */ (store.suche.suchTreffer.students[0]).id,
 			'überholte Antwort hat die Trefferliste überschrieben — der nächste Klick bucht den falschen Schüler'
 		).toBe('Schmidt');
 	});
@@ -69,16 +69,16 @@ describe('Omnibox-Suchlauf', () => {
 		);
 
 		store.eingabe = 'Mül';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
 
 		store.eingabe = '';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		antwort(treffer('Müller'));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(store.suchTreffer.students).toHaveLength(0);
-		expect(store.trefferlisteOffen).toBe(false);
+		expect(store.suche.suchTreffer.students).toHaveLength(0);
+		expect(store.suche.trefferlisteOffen).toBe(false);
 	});
 
 	// Die zweite Tür zu derselben Gefahr (Sweep „verschluckte Fehlantwort", 06.09.2026):
@@ -89,36 +89,41 @@ describe('Omnibox-Suchlauf', () => {
 		const store = erzeugeOmniboxStore();
 		vi.mocked(apiFetch).mockImplementation(async () => treffer('Müller'));
 		store.eingabe = 'Mül';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
-		expect(store.trefferlisteOffen).toBe(true);
+		expect(store.suche.trefferlisteOffen).toBe(true);
 
 		vi.mocked(apiFetch).mockImplementation(
 			async () => /** @type {any} */ ({ ok: false, status: 500, json: async () => ({}) })
 		);
 		store.eingabe = 'Schmidt';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
 
-		expect(store.suchTreffer.students, 'Müller steht noch unter dem Suchtext Schmidt').toEqual([]);
-		expect(store.trefferlisteOffen, 'das Dropdown blieb mit fremden Treffern offen').toBe(false);
+		expect(
+			store.suche.suchTreffer.students,
+			'Müller steht noch unter dem Suchtext Schmidt'
+		).toEqual([]);
+		expect(store.suche.trefferlisteOffen, 'das Dropdown blieb mit fremden Treffern offen').toBe(
+			false
+		);
 	});
 
 	it('verwirft die Treffer auch bei einem Netzfehler', async () => {
 		const store = erzeugeOmniboxStore();
 		vi.mocked(apiFetch).mockImplementation(async () => treffer('Müller'));
 		store.eingabe = 'Mül';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
 
 		vi.mocked(apiFetch).mockImplementation(async () => {
 			throw new Error('offline');
 		});
 		store.eingabe = 'Schmidt';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
 
-		expect(store.suchTreffer.students).toEqual([]);
-		expect(store.trefferlisteOffen).toBe(false);
+		expect(store.suche.suchTreffer.students).toEqual([]);
+		expect(store.suche.trefferlisteOffen).toBe(false);
 	});
 });

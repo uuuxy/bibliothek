@@ -41,9 +41,9 @@ describe('Zeitgeber der Theke', () => {
 	});
 
 	it('stoppt jeden laufenden Zeitgeber auf einen Schlag', () => {
-		omniboxStore.leuchteBildschirm('success');
-		omniboxStore.wackle();
-		omniboxStore.leuchteRand('green');
+		omniboxStore.rueckmeldung.leuchteBildschirm('success');
+		omniboxStore.rueckmeldung.wackle();
+		omniboxStore.rueckmeldung.leuchteRand('green');
 		uiStore.beimWechselZurTheke?.();
 		expect(vi.getTimerCount(), 'die Probe misst nichts, wenn gar kein Timer läuft').toBeGreaterThan(
 			0

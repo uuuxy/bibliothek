@@ -177,8 +177,8 @@ describe('Schnellrückgabe', () => {
 		await scanne(theke, 'B-FREI');
 
 		expect(spieleFehlerton).toHaveBeenCalledTimes(1);
-		expect(theke.bildschirmLeuchten).toBe('error');
-		expect(theke.fehler).toContain('nicht ausgeliehen');
+		expect(theke.rueckmeldung.bildschirmLeuchten).toBe('error');
+		expect(theke.rueckmeldung.fehler).toContain('nicht ausgeliehen');
 		expect(theke.schnellrueckgabe).toBe(true);
 	});
 

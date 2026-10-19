@@ -50,11 +50,11 @@ describe('Omnibox: Auswahl aus der Trefferliste', () => {
 		vi.mocked(apiClient.post).mockImplementation(async () => geladen(leser));
 
 		store.eingabe = 'Wendlandt';
-		store.verarbeiteEingabe();
+		store.suche.verarbeiteEingabe();
 		await vi.advanceTimersByTimeAsync(300);
-		expect(store.trefferlisteOffen, 'die Trefferliste ist gar nicht aufgegangen').toBe(true);
+		expect(store.suche.trefferlisteOffen, 'die Trefferliste ist gar nicht aufgegangen').toBe(true);
 
-		store.waehleTreffer(0, null);
+		store.suche.waehleTreffer(0, null);
 		await vi.advanceTimersByTimeAsync(0);
 		return store;
 	}

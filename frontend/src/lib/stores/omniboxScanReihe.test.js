@@ -124,7 +124,7 @@ describe('Scan während der laufenden Buchung', () => {
 		);
 		expect(anfrage('B-2').active_leser_id).toBe('leser-1');
 		expect(anfrage('B-1').idempotency_key).not.toBe(anfrage('B-2').idempotency_key);
-		expect(theke.fehler).toBe('');
+		expect(theke.rueckmeldung.fehler).toBe('');
 	});
 
 	it('nimmt in der Schnellrückgabe jedes Buch des Stapels zurück', async () => {
@@ -156,7 +156,7 @@ describe('Scan während der laufenden Buchung', () => {
 		await laeuft;
 
 		expect(gebuchteNummern(), 'der Doppelscan gäbe das Buch gleich wieder zurück').toEqual(['B-1']);
-		expect(theke.fehler).toBe('');
+		expect(theke.rueckmeldung.fehler).toBe('');
 		expect(spieleFehlerton).not.toHaveBeenCalled();
 	});
 
@@ -231,12 +231,12 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		await laeuft;
 
 		expect(gebuchteNummern(), 'ein Buch ist an Tom gegangen').toEqual(['A-9']);
-		expect(theke.fehler).toBe(
+		expect(theke.rueckmeldung.fehler).toBe(
 			`Fehler: Ausweis A-9 ist nicht registriert · ${genannt(['B-1', 'B-2'])}`
 		);
 		expect(spieleFehlerton, 'wer nicht hinsieht, hört es').toHaveBeenCalled();
-		expect(theke.bildschirmLeuchten).toBe('error');
-		expect(theke.randLeuchten).toBe('red');
+		expect(theke.rueckmeldung.bildschirmLeuchten).toBe('error');
+		expect(theke.rueckmeldung.randLeuchten).toBe('red');
 	});
 
 	it('nach einer Sperre: Die Rückfrage entscheidet ein Mensch', async () => {
@@ -253,7 +253,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 
 		expect(theke.sperrHinweis?.query).toBe('B-1');
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 		expect(theke.eingabe, 'der Rest stünde vor dem übernächsten Scan').toBe('');
 		expect(theke.scanfeldBereit(), 'die Rückfrage behält die Tastatur').toBe(false);
 	});
@@ -270,7 +270,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 
 		expect(theke.vormerkungHinweis).not.toBeNull();
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('nach einer Fremdrückgabe: Ihre Hinweiszeile bleibt stehen', async () => {
@@ -289,7 +289,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 			vorbesitzerName: 'Tom Test'
 		});
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('nach einem Hinweis auf eine andere Auflage', async () => {
@@ -309,7 +309,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 
 		expect(theke.letzterAuflagenHinweis).toEqual(hinweis);
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('wenn der Leser von außen weggenommen wird (Escape, Akte schließen, Theke leeren)', async () => {
@@ -320,7 +320,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		const laeuft = scanne(theke, 'B-1');
 		scanne(theke, 'B-2');
 		theke.aktiverLeser = null;
-		expect(theke.fehler, 'sofort, nicht erst nach der Antwort').toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler, 'sofort, nicht erst nach der Antwort').toBe(genannt(['B-2']));
 
 		buch.beantworte(AUSLEIHE);
 		await laeuft;
@@ -328,7 +328,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		expect(anfrage('B-1').active_leser_id, 'der laufende Scan behält seine Absicht').toBe(
 			'leser-1'
 		);
-		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('wenn die Schnellrückgabe umgeschaltet wird', async () => {
@@ -343,7 +343,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		await laeuft;
 
 		expect(gebuchteNummern()).toEqual(['B-1']);
-		expect(theke.fehler).toBe(genannt(['B-2']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-2']));
 	});
 
 	it('nennt die Nummern, bis der nächste Scan kommt; der Grund verschwindet wie jede Meldung', async () => {
@@ -356,16 +356,18 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		scanne(theke, 'B-1');
 		ausweis.beantworte(ablehnung('Ausweis A-9 ist nicht registriert', 404));
 		await laeuft;
-		expect(theke.fehler).toContain('Fehler: Ausweis A-9 ist nicht registriert');
+		expect(theke.rueckmeldung.fehler).toContain('Fehler: Ausweis A-9 ist nicht registriert');
 
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(theke.fehler, 'die Rückfrage davor kann länger offen sein').toBe(genannt(['B-1']));
+		expect(theke.rueckmeldung.fehler, 'die Rückfrage davor kann länger offen sein').toBe(
+			genannt(['B-1'])
+		);
 		await vi.advanceTimersByTimeAsync(60_000);
-		expect(theke.fehler).toBe(genannt(['B-1']));
+		expect(theke.rueckmeldung.fehler).toBe(genannt(['B-1']));
 
 		vi.mocked(apiClient.post).mockResolvedValue(AUSLEIHE);
 		await scanne(theke, 'B-1');
-		expect(theke.fehler).toBe('');
+		expect(theke.rueckmeldung.fehler).toBe('');
 	});
 
 	it('nach einem unerwarteten Abbruch: Die Theke bucht danach wieder', async () => {
@@ -377,7 +379,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		});
 
 		await scanne(theke, 'B-1');
-		expect(theke.fehler).toBe('Fehler: kein Zufall');
+		expect(theke.rueckmeldung.fehler).toBe('Fehler: kein Zufall');
 		expect(gebuchteNummern()).toEqual([]);
 		fehler.mockRestore();
 
@@ -404,7 +406,7 @@ describe('Ohne Netz', () => {
 			(e) => `${e.barcode} ${e.art} ${e.ausweis_barcode}`
 		);
 		expect(abgelegt.toSorted()).toEqual(['B-1 ausleihe A-10001', 'B-2 ausleihe A-10001']);
-		expect(theke.fehler).toBe('');
+		expect(theke.rueckmeldung.fehler).toBe('');
 	});
 });
 
@@ -424,7 +426,7 @@ describe('Ein Scan bei offener Rückfrage', () => {
 		theke.scanBeiRueckfrage();
 
 		expect(spieleFehlerton, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(1);
-		expect(theke.bildschirmLeuchten).toBe('error');
+		expect(theke.rueckmeldung.bildschirmLeuchten).toBe('error');
 		expect(apiClient.post).not.toHaveBeenCalled();
 		expect(theke.rueckfrageOffen(), 'ein Mensch beantwortet sie').toBe(true);
 	});

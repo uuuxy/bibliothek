@@ -454,7 +454,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 16.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 19.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -786,7 +786,7 @@ frontend/src
 | `App.svelte`         | Rahmen, Navigation, SSE-Verbindung samt Reconnect-Guards, Leerlauf-Sperre                                         |
 | `Router.svelte`      | Pfad → Ansicht, **mit derselben Sichtbarkeitsfunktion wie das Menü**                                              |
 | `menue.js`            | `darfSehen()` — die einzige Stelle, an der Rolle/Recht über Sichtbarkeit entscheidet                              |
-| `stores/omnibox`     | Eingabe, Auflösung, Warteschlange, Sperrdialog, Leserauswahl, Zusammenführen                                        |
+| `stores/omnibox`     | Zustand der Theke und Fassade; Eingabe, Rückfrage, Fokus, Zusammenführen. Sechs Teile: `omnibox<Teil>.svelte.js`    |
 | `stores/offlineSync` | IndexedDB-Warteschlange; entfernt einen Eintrag **nur** bei einem endgültigen Serverurteil                         |
 | `stores/authStore`   | Sitzungszustand, Rechte-Map für die Blende, Abmeldung                                                              |
 | `stores/druckWarteschlange`  | Sammelt Etiketten/Ausweise für den Stapeldruck                                                                     |
@@ -798,6 +798,16 @@ frontend/src
   Zugriff: Jede Datenabfrage ist rechtegeschützt, eine erzwungene Ansicht endet in 403.
 - **≤ 200 Zeilen je neuer Komponente und je neuem JS-Modul**, Altbestand darüber darf nicht wachsen (Ratsche).
 - **Geteilter Zustand nur in `stores/*.svelte.js`**, Komponentenzustand lokal mit Runes.
+- **Ein Store in Teilen hat eine Fassade.** Der Omnibox-Store steht in sieben Dateien:
+  `stores/omnibox.svelte.js` mit dem Zustand der Theke und der Fassade, dazu die Teile
+  `omniboxRueckmeldung`, `omniboxSuche`, `omniboxAntwort`, `omniboxOhneNetz`, `omniboxBuchung`
+  und `omniboxReihe`. Bauteile und Tests laden nur die Fassade
+  (`frontend-hygiene-omnibox-teile.test.js`). Ein Zustand lebt in genau einem Teil; die anderen
+  bekommen Funktionen, kein geteiltes Objekt. Suche und Rückmeldung reicht die Fassade als
+  Unterobjekte weiter (`omniboxStore.suche.…`, `omniboxStore.rueckmeldung.…`), damit der Aufruf
+  den Teil nennt; den Ausweis-Merker ohne Netz über einen eigenen Setter, weil sein Setzen die
+  wartenden Scans verwirft. An `/api/action` schickt nur `omniboxBuchung`
+  (`frontend-hygiene-action-endpunkt.test.js`).
 - **Ein Objektliteral mit Gettern trägt `/** @satisfies {object} */`.** In JS hat es sonst einen
   offenen Typ: „object literals have an open-ended type (an index signature) that allows adding
   and looking up properties that were not defined originally" (TypeScript Handbook, „Type

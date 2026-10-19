@@ -119,7 +119,9 @@ describe('Omnibox offline', () => {
 			await ladeWarteschlange(),
 			'eine Antwort kam an — das ist kein Netzausfall'
 		).toHaveLength(0);
-		expect(omniboxStore.fehler, 'der Fehler wird gezeigt, nicht versteckt').toMatch(/Fehler/);
+		expect(omniboxStore.rueckmeldung.fehler, 'der Fehler wird gezeigt, nicht versteckt').toMatch(
+			/Fehler/
+		);
 	});
 
 	// „Buch zurückgeben" in der Akte ist eine RÜCKGABE — auch offline (OFFEN.md 2.2, Commit 3).
@@ -229,16 +231,16 @@ describe('Omnibox offline', () => {
 			omniboxStore.eingabe = 'Mueller';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await ladeWarteschlange()).toHaveLength(0);
-			expect(omniboxStore.fehler).toMatch(/nach Namen/);
+			expect(omniboxStore.rueckmeldung.fehler).toMatch(/nach Namen/);
 			// Ueber einen Namen von „der Buchliste" zu reden, half niemandem weiter.
-			expect(omniboxStore.fehler).not.toMatch(/Buchliste/);
+			expect(omniboxStore.rueckmeldung.fehler).not.toMatch(/Buchliste/);
 		});
 
 		it('nennt eine unbekannte Nummer unklar und bucht sie NICHT', async () => {
 			omniboxStore.eingabe = 'B97601826457';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await ladeWarteschlange()).toHaveLength(0);
-			expect(omniboxStore.fehler).toMatch(/nicht eindeutig|NICHT gebucht/);
+			expect(omniboxStore.rueckmeldung.fehler).toMatch(/nicht eindeutig|NICHT gebucht/);
 		});
 	});
 
@@ -362,8 +364,8 @@ describe('Omnibox offline', () => {
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(await ladeWarteschlange(), 'nicht gebucht und nicht eingereiht').toHaveLength(0);
-			expect(omniboxStore.fehler).toMatch(/NICHT gebucht/);
-			expect(omniboxStore.fehler).toContain('S-10001');
+			expect(omniboxStore.rueckmeldung.fehler).toMatch(/NICHT gebucht/);
+			expect(omniboxStore.rueckmeldung.fehler).toContain('S-10001');
 			expect(omniboxStore.offlineAusweis, 'der Merker ist verbraucht').toBe('');
 			expect(
 				vi.mocked(apiClient.post).mock.calls.map((c) => c[1].query),
@@ -380,7 +382,7 @@ describe('Omnibox offline', () => {
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			// Der Online-Weg uebernimmt (hier scheitert er im Test) — entscheidend ist,
 			// dass die Bitte um den Ausweis nicht den Ausweis selbst abweist.
-			expect(omniboxStore.fehler ?? '').not.toMatch(/noch einmal scannen/);
+			expect(omniboxStore.rueckmeldung.fehler ?? '').not.toMatch(/noch einmal scannen/);
 		});
 	});
 });

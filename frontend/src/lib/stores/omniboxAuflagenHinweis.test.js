@@ -59,14 +59,14 @@ describe('Theke: Hinweis bei gemischten Auflagen', () => {
 			auflagen_hinweis: HINWEIS
 		});
 		expect(store.letzterAuflagenHinweis).toEqual(HINWEIS);
-		expect(store.bildschirmLeuchten).toBe('warning');
+		expect(store.rueckmeldung.bildschirmLeuchten).toBe('warning');
 	});
 
 	it('bleibt bei einer gewöhnlichen Ausleihe leer und blitzt grün', async () => {
 		const store = neuerStore();
 		await scanne(store, { type: 'ausleihe', book: { titel: 'Mathe 7' } });
 		expect(store.letzterAuflagenHinweis).toBeNull();
-		expect(store.bildschirmLeuchten).toBe('success');
+		expect(store.rueckmeldung.bildschirmLeuchten).toBe('success');
 	});
 
 	// Der nächste Scan ist eine Rückgabe, keine Ausleihe: Eine Ausleihe setzt den Hinweis ohnehin

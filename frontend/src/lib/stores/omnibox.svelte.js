@@ -1,4 +1,7 @@
-// Zustand und Abläufe der Omnibox an der Theke: Eingabe, Suche, Scan und seine Antwort.
+// Die Omnibox an der Theke: der Zustand der Theke und die Fassade, über die Bauteile und Tests
+// gehen. Hier stehen außerdem die Eingabe (fuehreAktionAus), Rückfrage und Fokus, die Auswertung
+// einer Fehlerantwort, Zusammenführen und gibZurueck. Die übrigen Sachen stehen in den Teilen
+// omnibox<Teil>.svelte.js, die nur diese Datei lädt (frontend-hygiene-omnibox-teile.test.js).
 
 import { apiFetch } from '../apiFetch.js';
 import { spieleFehlerton } from '../audio.js';
@@ -81,7 +84,7 @@ export function erzeugeOmniboxStore() {
 		fuehreAktionAus,
 		melde
 	});
-	const { verarbeiteEingabe, waehleTreffer } = suche;
+	const { waehleTreffer } = suche;
 
 	const { verarbeiteAktionsErgebnis } = erzeugeOmniboxAntwort({
 		leseLeser: () => aktiverLeser,
@@ -354,12 +357,6 @@ export function erzeugeOmniboxStore() {
 		set eingabe(v) {
 			eingabe = v;
 		},
-		get randLeuchten() {
-			return rueckmeldung.randLeuchten;
-		},
-		get bildschirmLeuchten() {
-			return rueckmeldung.bildschirmLeuchten;
-		},
 		get letzteFremdrueckgabe() {
 			return letzteFremdrueckgabe;
 		},
@@ -368,12 +365,6 @@ export function erzeugeOmniboxStore() {
 		},
 		get letzterAuflagenHinweis() {
 			return letzterAuflagenHinweis;
-		},
-		get wackelt() {
-			return rueckmeldung.wackelt;
-		},
-		get fehler() {
-			return rueckmeldung.fehler;
 		},
 		get vormerkungHinweis() {
 			return vormerkungHinweis;
@@ -405,30 +396,12 @@ export function erzeugeOmniboxStore() {
 		set kamera(v) {
 			kamera = v;
 		},
-		get trefferlisteOffen() {
-			return suche.trefferlisteOffen;
-		},
-		set trefferlisteOffen(v) {
-			suche.trefferlisteOffen = v;
-		},
-		get suchTreffer() {
-			return suche.suchTreffer;
-		},
-		set suchTreffer(v) {
-			suche.suchTreffer = v;
-		},
-		get markierterTreffer() {
-			return suche.markierterTreffer;
-		},
-		set markierterTreffer(v) {
-			suche.markierterTreffer = v;
-		},
-		get trefferAnzahl() {
-			return suche.trefferAnzahl;
-		},
 		get belegt() {
 			return belegt;
 		},
+		// Suche und Rückmeldung sind eigene Teile; der Aufruf nennt den Teil.
+		suche,
+		rueckmeldung,
 
 		// Exportierte Methoden
 		stoppeZeitgeber,
@@ -436,16 +409,11 @@ export function erzeugeOmniboxStore() {
 		scanfeldBereit,
 		rueckfrageOffen,
 		scanBeiRueckfrage,
-		leuchteBildschirm,
-		wackle,
-		leuchteRand,
 		melde,
-		verarbeiteEingabe,
 		uebernimmZusammengefuehrt,
 		schalteSchnellrueckgabe,
 		escapeGedrueckt,
 		gibZurueck,
-		waehleTreffer,
 		fuehreAktionAus
 	});
 }

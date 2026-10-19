@@ -63,7 +63,7 @@ describe('Warteschlange nicht erreichbar', () => {
 	it('die Theke meldet „NICHT gespeichert" mit Fehlerton, kein Erfolg', async () => {
 		omniboxStore.eingabe = 'B-10234';
 		await omniboxStore.fuehreAktionAus(new Event('submit'));
-		expect(omniboxStore.fehler).toMatch(/NICHT gespeichert/);
+		expect(omniboxStore.rueckmeldung.fehler).toMatch(/NICHT gespeichert/);
 		expect(spieleFehlerton).toHaveBeenCalled();
 		expect(spieleErfolgston).not.toHaveBeenCalled();
 		const erfolgsToast = snackbars.toasts.find((t) => /gespeichert\.$/.test(t.message));

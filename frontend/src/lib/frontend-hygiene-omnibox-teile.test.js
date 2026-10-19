@@ -8,11 +8,11 @@ import {
 	sammleTestdateien
 } from './hygiene-quellen.js';
 
-// Der Omnibox-Store ist in Teile geschnitten (stores/omnibox<Teil>.svelte.js, docs/OFFEN.md 5.72),
-// und nur der Store selbst lädt sie. Bauteile und Tests gehen über seine Fassade: Lüde ein Test
-// einen Teil direkt, startete er dessen Zeitgeber an frontend-hygiene-thekenzeitgeber.test.js
-// vorbei, das nur Importe aus omnibox.svelte.js kennt; lüde ein Bauteil ihn, gäbe es zwei Wege
-// zum selben Zustand.
+// Der Omnibox-Store ist in Teile geschnitten (stores/omnibox<Teil>.svelte.js, Regel in
+// docs/ARCHITEKTUR.md 5.3), und nur der Store selbst lädt sie. Bauteile und Tests gehen über seine
+// Fassade: Lüde ein Test einen Teil direkt, startete er dessen Zeitgeber an
+// frontend-hygiene-thekenzeitgeber.test.js vorbei, das nur Importe aus omnibox.svelte.js kennt;
+// lüde ein Bauteil ihn, gäbe es zwei Wege zum selben Zustand.
 //
 // Sieht nicht: einen Pfad aus einer Variablen oder einer Verkettung, `vi.mock` eines Teils und
 // einen Teil, dessen Dateiname nicht mit `omnibox` und einem Großbuchstaben beginnt.
