@@ -10,7 +10,7 @@
 	import KlassensatzZuweisenDialog from '$lib/components/admin/KlassensatzZuweisenDialog.svelte';
 	import { leeresBuchFormular } from '$lib/components/admin/buchFormularRegeln.js';
 	import { loescheBuecher, holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
-	import { titelFuerMaske } from '$lib/buch_speichern.js';
+	import { hatUngespeichertes, titelFuerMaske } from '$lib/buch_speichern.js';
 	import { erstelleTitelListe } from '$lib/titelListe.svelte.js';
 
 	// Laden und Ändern der Liste: titelListe.svelte.js.
@@ -65,6 +65,23 @@
 		formular = leeresBuchFormular();
 		istBearbeitenModus = true;
 	}
+
+	// Das Schließen-Symbol fragt, bevor es Ungespeichertes verwirft (M3, Dialogs, „Dismissing").
+	// „Speichern" schließt die Maske selbst (AdminBuchAktionen) und kommt hier nicht vorbei.
+	async function schliesseMaske() {
+		if (hatUngespeichertes(formular, leeresBuchFormular()) && !(await verwerfenBestaetigt()))
+			return;
+		istBearbeitenModus = false;
+	}
+
+	const verwerfenBestaetigt = () =>
+		bestaetigen({
+			titel: 'Ungespeicherte Änderungen',
+			text: 'Die Eingaben in der Maske sind nicht gespeichert. Wer sie schließt, verliert sie.',
+			aktion: 'Verwerfen',
+			abbruch: 'Bleiben',
+			gefaehrlich: true
+		});
 
 	/** Der Knopf „Scanner": dieselbe Maske wie „Neues Buch", die Kamera ist schon an. */
 	function neuesBuchScannen() {
@@ -133,7 +150,7 @@
 		<BuchFormular
 			bind:formular
 			bind:wirdGescannt
-			onClose={() => (istBearbeitenModus = false)}
+			onClose={schliesseMaske}
 			onSave={() => buchAktionen.speichereAenderungen()}
 			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.ladeCoverHoch(ereignis)}
 			onCoverNeuHolen={() => buchAktionen.holeCoverNeu()}

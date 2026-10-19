@@ -184,6 +184,9 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   Angeboten wird nur, was der Titel noch nicht trägt; eingetragen wird nur, was jemand anklickt,
   und erst mit dem Speichern. Kennt die DNB die ISBN nicht oder ist sie nicht erreichbar, steht
   das in einem Satz darunter. (§13)
+  **Schließen:** Das Kreuz oben links schließt die Maske. Ist etwas eingegeben und nicht
+  gespeichert, fragt sie vorher: _Bleiben_ lässt die Eingaben stehen, _Verwerfen_ schließt ohne
+  sie.
 - **Auflagen** (bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
   ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
   in der Gruppe _An der Schule_ die Angabe _Andere Auflagen_: _Andere Auflage zuordnen_ sucht unter den

@@ -167,3 +167,20 @@ export async function titelFuerMaske(buch) {
 	if (formular.id) merkeStand(formular);
 	return formular;
 }
+
+/**
+ * Ob die Maske etwas trägt, das erst „Speichern" schreiben würde: bei einem vorhandenen Titel
+ * jedes Feld, das vom Stand vom Öffnen abweicht, samt Bestand, bei einem neuen jede Abweichung
+ * von der leeren Maske. Ohne Stand vom Öffnen lässt sich nichts ausschließen.
+ * @param {any} formular
+ * @param {any} leer die leere Maske (leeresBuchFormular)
+ * @returns {boolean}
+ */
+export function hatUngespeichertes(formular, leer) {
+	const geladen = formular.id ? formular.geladen : leer;
+	if (!geladen) return true;
+	if (Object.keys(geaenderteFelder({ ...formular, geladen })).length > 0) return true;
+	const zahl = (/** @type {any} */ w) =>
+		w === '' || w === null || w === undefined ? null : Number(w);
+	return zahl(formular.stock) !== zahl(formular.id ? formular.stockGesehen : leer.stock);
+}

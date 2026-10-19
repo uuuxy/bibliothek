@@ -11,7 +11,8 @@ vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchFormular from './BuchFormular.svelte';
 import { geaenderteFelder } from '../../buch_felder.js';
-import { titelFuerMaske } from '../../buch_speichern.js';
+import { hatUngespeichertes, titelFuerMaske } from '../../buch_speichern.js';
+import { leeresBuchFormular } from './buchFormularRegeln.js';
 
 /** @param {number} status @param {any} koerper */
 const antwort = (status, koerper) =>
@@ -114,5 +115,47 @@ describe('BuchFormular: eine geöffnete Maske ohne Eingabe', () => {
 		const { formular, screen } = await oeffne(GEPFLEGT);
 		await fireEvent.input(screen.getByLabelText('Verlag'), { target: { value: 'Cornelsen' } });
 		expect(geaenderteFelder(formular)).toEqual({ verlag: 'Cornelsen' });
+	});
+});
+
+// Vor dem Schließen fragt die Titel-Verwaltung, ob etwas ungespeichert ist. Belegte die Maske
+// beim Aufbau selbst ein Feld, fragte schon das Schließen einer Maske, an der niemand tippte.
+describe('BuchFormular: was vor dem Schließen als ungespeichert gilt', () => {
+	it.each([
+		['ein gepflegtes Lernmittel', GEPFLEGT],
+		['ein Titel aus dem Import', AUS_DEM_IMPORT]
+	])('%s ohne Eingabe: nichts', async (_name, titel) => {
+		const { formular } = await oeffne(titel);
+		expect(hatUngespeichertes(formular, leeresBuchFormular())).toBe(false);
+	});
+
+	it('eine Eingabe im Feld „Verlag"', async () => {
+		const { formular, screen } = await oeffne(GEPFLEGT);
+		await fireEvent.input(screen.getByLabelText('Verlag'), { target: { value: 'Cornelsen' } });
+		expect(hatUngespeichertes(formular, leeresBuchFormular())).toBe(true);
+	});
+
+	it('ein geänderter Bestand', async () => {
+		const { formular, screen } = await oeffne(GEPFLEGT);
+		await fireEvent.input(screen.getByLabelText('Aktueller Bestand'), { target: { value: '31' } });
+		expect(hatUngespeichertes(formular, leeresBuchFormular())).toBe(true);
+	});
+
+	it('„Neues Buch": leer nichts, mit einem Titel etwas', async () => {
+		vi.mocked(apiFetch).mockImplementation(async () => antwort(200, []));
+		const formular = $state(leeresBuchFormular());
+		const screen = render(BuchFormular, {
+			formular,
+			onClose: () => {},
+			onSave: () => {},
+			onCoverUpload: () => {},
+			onCoverNeuHolen: () => {},
+			onAssignClass: () => {}
+		});
+		await new Promise((r) => setTimeout(r, 50));
+		expect(hatUngespeichertes(formular, leeresBuchFormular()), 'die leere Maske').toBe(false);
+
+		await fireEvent.input(screen.getByLabelText(/^Titel/), { target: { value: 'Momo' } });
+		expect(hatUngespeichertes(formular, leeresBuchFormular())).toBe(true);
 	});
 });
