@@ -16,14 +16,14 @@ func (c *MetadatenClient) sucheOpenLibrary(kontext context.Context, isbn string)
 	}
 
 	var nutzlast map[string]struct {
-		Title    string `json:"title"`
-		Subtitle string `json:"subtitle"`
-		Authors  []struct {
+		Titel      string `json:"title"`
+		Untertitel string `json:"subtitle"`
+		Autoren    []struct {
 			Name string `json:"name"`
 		} `json:"authors"`
 		Cover struct {
-			Medium string `json:"medium"`
-			Large  string `json:"large"`
+			Mittel string `json:"medium"`
+			Gross  string `json:"large"`
 		} `json:"cover"`
 	}
 	if fehler := json.Unmarshal(koerper, &nutzlast); fehler != nil {
@@ -36,18 +36,18 @@ func (c *MetadatenClient) sucheOpenLibrary(kontext context.Context, isbn string)
 	}
 
 	autor := ""
-	if len(eintrag.Authors) > 0 {
-		autor = eintrag.Authors[0].Name
+	if len(eintrag.Autoren) > 0 {
+		autor = eintrag.Autoren[0].Name
 	}
-	coverBild := eintrag.Cover.Large
+	coverBild := eintrag.Cover.Gross
 	if coverBild == "" {
-		coverBild = eintrag.Cover.Medium
+		coverBild = eintrag.Cover.Mittel
 	}
 
 	return &MetadatenErgebnis{
 		ISBN:       isbn,
-		Titel:      eintrag.Title,
-		Untertitel: eintrag.Subtitle,
+		Titel:      eintrag.Titel,
+		Untertitel: eintrag.Untertitel,
 		Autor:      autor,
 		CoverURL:   coverBild,
 	}, nil
@@ -62,14 +62,14 @@ func (c *MetadatenClient) sucheBeiGoogle(kontext context.Context, isbn string) (
 	}
 
 	var nutzlast struct {
-		Items []struct {
-			VolumeInfo struct {
-				Title      string   `json:"title"`
-				Subtitle   string   `json:"subtitle"`
-				Authors    []string `json:"authors"`
-				ImageLinks struct {
-					Thumbnail      string `json:"thumbnail"`
-					SmallThumbnail string `json:"smallThumbnail"`
+		Eintraege []struct {
+			Angaben struct {
+				Titel      string   `json:"title"`
+				Untertitel string   `json:"subtitle"`
+				Autoren    []string `json:"authors"`
+				Bilder     struct {
+					Vorschau       string `json:"thumbnail"`
+					KleineVorschau string `json:"smallThumbnail"`
 				} `json:"imageLinks"`
 			} `json:"volumeInfo"`
 		} `json:"items"`
@@ -77,25 +77,25 @@ func (c *MetadatenClient) sucheBeiGoogle(kontext context.Context, isbn string) (
 	if fehler := json.Unmarshal(koerper, &nutzlast); fehler != nil {
 		return nil, fehler
 	}
-	if len(nutzlast.Items) == 0 {
+	if len(nutzlast.Eintraege) == 0 {
 		return nil, fmt.Errorf("nicht gefunden")
 	}
 
-	buchInfo := nutzlast.Items[0].VolumeInfo
+	angaben := nutzlast.Eintraege[0].Angaben
 	autor := ""
-	if len(buchInfo.Authors) > 0 {
-		autor = buchInfo.Authors[0]
+	if len(angaben.Autoren) > 0 {
+		autor = angaben.Autoren[0]
 	}
-	coverBild := buchInfo.ImageLinks.Thumbnail
+	coverBild := angaben.Bilder.Vorschau
 	if coverBild == "" {
-		coverBild = buchInfo.ImageLinks.SmallThumbnail
+		coverBild = angaben.Bilder.KleineVorschau
 	}
 	coverBild = strings.ReplaceAll(coverBild, "http://", "https://")
 
 	return &MetadatenErgebnis{
 		ISBN:       isbn,
-		Titel:      buchInfo.Title,
-		Untertitel: buchInfo.Subtitle,
+		Titel:      angaben.Titel,
+		Untertitel: angaben.Untertitel,
 		Autor:      autor,
 		CoverURL:   coverBild,
 	}, nil

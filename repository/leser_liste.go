@@ -158,7 +158,7 @@ func (a *LeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche s
 	if praefix != "" {
 		suchRang = leserSuchRang
 	}
-	orderBy := sortierung.sqlSortierung(art, suchRang)
+	sqlReihenfolge := sortierung.sqlSortierung(art, suchRang)
 
 	// coalesce auf Ausweis, Klasse und Abgängerjahr: Die drei sind nullbar (ein Kollege hat
 	// keine Klasse und oft keinen gedruckten Ausweis). Ohne das zerbricht der Scan an der
@@ -187,7 +187,7 @@ func (a *LeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche s
 			WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL
 		) l ON true
 		WHERE `+strings.Join(bedingungen, " AND ")+`
-		ORDER BY `+orderBy+limit, args...)
+		ORDER BY `+sqlReihenfolge+limit, args...)
 
 	if err != nil {
 		return nil, err

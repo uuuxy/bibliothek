@@ -155,7 +155,7 @@ func (a *BetriebszustandAbfragen) zaehleLesehistorie(ctx context.Context, tage i
 // Aufbewahrung der Protokolle (5 und 6).
 func (a *BetriebszustandAbfragen) zaehleRueckstandVorgaengeUndProtokoll(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
 	anliegenTage := TageOderVorgabe(einst.AnliegenTage, AnliegenTageVorgabe)
-	auditMonate := ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate)
+	protokollMonate := ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate)
 
 	stand := []LoeschRueckstand{}
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
@@ -188,15 +188,15 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandVorgaengeUndProtokoll(ctx cont
 	stand = append(stand, nachbuch)
 
 	// 6. Audit-Aufbewahrung, beide Protokolltabellen.
-	datensatz, err := a.zaehle(ctx, "audit_log", "", praedikatProtokoll(auditMonate, KulanzWaechter))
+	datensatz, err := a.zaehle(ctx, "audit_log", "", praedikatProtokoll(protokollMonate, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
-	admin, err := a.zaehle(ctx, "audit_logs", "", praedikatVerwaltungsProtokoll(auditMonate, KulanzWaechter))
+	admin, err := a.zaehle(ctx, "audit_logs", "", praedikatVerwaltungsProtokoll(protokollMonate, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
-	stand = append(stand, LoeschRueckstand{Routine: "Audit-Aufbewahrung", Frist: monateText(auditMonate), Zeilen: datensatz + admin})
+	stand = append(stand, LoeschRueckstand{Routine: "Audit-Aufbewahrung", Frist: monateText(protokollMonate), Zeilen: datensatz + admin})
 
 	return stand, nil
 }

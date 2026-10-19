@@ -31,7 +31,7 @@ type BerichtPosition struct {
 // LadeBerichtBestellungen liest die Bestellungen im Zeitraum (optional je Lieferant) und
 // liefert zusätzlich einen Index ID→Position für das Nachladen der Positionen.
 func LadeBerichtBestellungen(ctx context.Context, db Datenbank, von, bisExklusiv time.Time, lieferantID, mittel string) ([]BerichtBestellung, map[string]int, error) {
-	orderQuery := `
+	sqlBestellungen := `
 		SELECT id, lieferant_name, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare,
 		       coalesce(mittel, '')
 		FROM bestellungen_verlauf
@@ -39,34 +39,34 @@ func LadeBerichtBestellungen(ctx context.Context, db Datenbank, von, bisExklusiv
 	args := []any{von, bisExklusiv}
 	if lieferantID != "" {
 		args = append(args, lieferantID)
-		orderQuery += fmt.Sprintf(" AND lieferant_id = $%d", len(args))
+		sqlBestellungen += fmt.Sprintf(" AND lieferant_id = $%d", len(args))
 	}
 	if bedingung, arg := mittelBedingung(mittel, "mittel", len(args)+1); bedingung != "" {
-		orderQuery += bedingung
+		sqlBestellungen += bedingung
 		if arg != nil {
 			args = append(args, arg)
 		}
 	}
-	orderQuery += " ORDER BY bestelldatum ASC"
+	sqlBestellungen += " ORDER BY bestelldatum ASC"
 
-	orderRows, err := db.Query(ctx, orderQuery, args...)
+	zeilen, err := db.Query(ctx, sqlBestellungen, args...)
 	if err != nil {
 		return nil, nil, err
 	}
-	defer orderRows.Close()
+	defer zeilen.Close()
 
 	bestellungen := make([]BerichtBestellung, 0)
 	platzJeBestellung := map[string]int{}
-	for orderRows.Next() {
+	for zeilen.Next() {
 		var o BerichtBestellung
-		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.Kundennummer,
+		if err := zeilen.Scan(&o.ID, &o.LieferantName, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.Mittel); err != nil {
 			return nil, nil, err
 		}
 		platzJeBestellung[o.ID] = len(bestellungen)
 		bestellungen = append(bestellungen, o)
 	}
-	if err := orderRows.Err(); err != nil {
+	if err := zeilen.Err(); err != nil {
 		return nil, nil, err
 	}
 	return bestellungen, platzJeBestellung, nil

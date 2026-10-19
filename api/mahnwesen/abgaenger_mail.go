@@ -81,7 +81,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 			gewaehlt = lenkeAbgaengerUm(gewaehlt, req.Umleitung)
 		}
 
-		audit := klassenVersandProtokoll{
+		protokoll := klassenVersandProtokoll{
 			Klassen:     abgaengerKlassennamen(gewaehlt),
 			AlleKlassen: req.Klassen == nil,
 			Umleitung:   req.Umleitung,
@@ -89,14 +89,14 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		}
 
 		// Absicht vor dem Versand protokollieren, siehe protokolliereKlassenVersand.
-		audit.Phase = "start"
-		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
+		protokoll.Phase = "start"
+		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", protokoll)
 
 		erg := versendeAbgaengerKontoauszuege(r.Context(), gewaehlt, erzeugeKontoauszugPDF, t.Post().Sende)
 
-		audit.Phase = "ende"
-		audit.Versendet, audit.Uebersprungen, audit.Fehlgeschlagen, audit.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
-		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
+		protokoll.Phase = "ende"
+		protokoll.Versendet, protokoll.Uebersprungen, protokoll.Fehlgeschlagen, protokoll.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
+		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", protokoll)
 
 		tuer.AntworteJSON(w, http.StatusOK, klassenVersandAntwort{
 			Versendet:      erg.Versendet,

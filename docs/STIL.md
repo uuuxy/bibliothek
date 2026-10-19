@@ -12,14 +12,15 @@ wird sie durch „effective naming, helpful commentary, and efficient code organ
 etwas steht, sagt der [Wegweiser](WEGWEISER.md); was ein Fachwort bedeutet, das Glossar in
 [ARCHITEKTUR.md](ARCHITEKTUR.md), Kapitel 12.
 
-Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, in
-Tests an Namen und Dateinamen, `sichtbarkeit_ratsche_test.go` jeden öffentlichen Namen ohne
-fremden Nutzer gegen Abschnitt 6, `fehlertext_ratsche_test.go` jeden Fehlertext und
-`meldung_ratsche_test.go` jede Meldung gegen Abschnitt 11, `paketzustand_ratsche_test.go` jeden
-Zustand der Paketebene, `testmeldung_ratsche_test.go` jede Meldung in Tests gegen Abschnitt 10,
-`leerimport_ratsche_test.go` jeden Leerimport und `kontext_ratsche_test.go` jeden selbst
-angelegten Kontext gegen Abschnitt 12, `ireturn` im Linter jeden Erzeuger, der eine
-Schnittstelle liefert, gegen Abschnitt 14. Für die Oberfläche
+Programmcode und Tests folgen diesen Regeln; `stil_ratsche_test.go` meldet jeden neuen Fund, im
+Programmcode auch an lokalen Namen, in Tests an Namen der Paketebene und Dateinamen,
+`sichtbarkeit_ratsche_test.go` jeden öffentlichen Namen ohne fremden Nutzer gegen Abschnitt 6,
+`fehlertext_ratsche_test.go` jeden Fehlertext und `meldung_ratsche_test.go` jede Meldung gegen
+Abschnitt 11, `paketzustand_ratsche_test.go` jeden Zustand der Paketebene,
+`testmeldung_ratsche_test.go` jede Meldung in Tests und `hilfsfunktion_ratsche_test.go` jede
+Hilfsfunktion ohne `t.Helper()` gegen Abschnitt 10, `leerimport_ratsche_test.go` jeden Leerimport
+und `kontext_ratsche_test.go` jeden selbst angelegten Kontext gegen Abschnitt 12, `ireturn` im
+Linter jeden Erzeuger, der eine Schnittstelle liefert, gegen Abschnitt 14. Für die Oberfläche
 gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache

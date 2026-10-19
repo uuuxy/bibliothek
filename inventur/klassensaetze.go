@@ -61,10 +61,10 @@ func (t *Tueren) Klassensaetze(w http.ResponseWriter, r *http.Request) {
 // Klasse neu.
 func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 	var eingabe struct {
-		OldClassName string   `json:"oldClassName,omitempty"`
-		ClassName    string   `json:"className,omitempty"` // For backwards compatibility
-		ClassNames   []string `json:"classNames,omitempty"`
-		BookIDs      []string `json:"bookIds"`
+		AlteKlasse string   `json:"oldClassName,omitempty"`
+		Klasse     string   `json:"className,omitempty"` // die ältere Form des Rumpfs mit einer Klasse
+		Klassen    []string `json:"classNames,omitempty"`
+		TitelIDs   []string `json:"bookIds"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
@@ -74,15 +74,15 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 
 	// Der Rumpf nennt eine Klasse (className) oder mehrere (classNames).
 	var zielKlassen []string
-	if len(eingabe.ClassNames) > 0 {
-		for _, name := range eingabe.ClassNames {
+	if len(eingabe.Klassen) > 0 {
+		for _, name := range eingabe.Klassen {
 			bereinigt := strings.TrimSpace(name)
 			if bereinigt != "" {
 				zielKlassen = append(zielKlassen, normalisiereKlassenname(bereinigt))
 			}
 		}
-	} else if strings.TrimSpace(eingabe.ClassName) != "" {
-		zielKlassen = append(zielKlassen, normalisiereKlassenname(strings.TrimSpace(eingabe.ClassName)))
+	} else if strings.TrimSpace(eingabe.Klasse) != "" {
+		zielKlassen = append(zielKlassen, normalisiereKlassenname(strings.TrimSpace(eingabe.Klasse)))
 	}
 
 	if len(zielKlassen) == 0 {
@@ -99,13 +99,13 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Umbenennen lässt sich sicher nur eine einzelne Klasse.
-	alterName := strings.TrimSpace(eingabe.OldClassName)
+	alterName := strings.TrimSpace(eingabe.AlteKlasse)
 
-	if !alleUUIDs(eingabe.BookIDs) {
+	if !alleUUIDs(eingabe.TitelIDs) {
 		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
-	err := t.abfragen.aendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.BookIDs)
+	err := t.abfragen.aendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.TitelIDs)
 	if err != nil {
 		log.Printf("Fehler beim Aktualisieren der Klassenbücher: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden")
@@ -157,8 +157,8 @@ func normalisiereKlassenname(name string) string {
 // Klassen zu.
 func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 	var eingabe struct {
-		ClassNames []string `json:"classNames"`
-		BookIDs    []string `json:"bookIds"`
+		Klassen  []string `json:"classNames"`
+		TitelIDs []string `json:"bookIds"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
@@ -167,7 +167,7 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var zielKlassen []string
-	for _, name := range eingabe.ClassNames {
+	for _, name := range eingabe.Klassen {
 		bereinigt := strings.TrimSpace(name)
 		if bereinigt != "" {
 			zielKlassen = append(zielKlassen, normalisiereKlassenname(bereinigt))
@@ -186,11 +186,11 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if !alleUUIDs(eingabe.BookIDs) {
+	if !alleUUIDs(eingabe.TitelIDs) {
 		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
-	err := t.abfragen.ordneTitelKlassenZu(r.Context(), zielKlassen, eingabe.BookIDs)
+	err := t.abfragen.ordneTitelKlassenZu(r.Context(), zielKlassen, eingabe.TitelIDs)
 	if err != nil {
 		log.Printf("Fehler beim Hinzufügen der Bücher: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden")

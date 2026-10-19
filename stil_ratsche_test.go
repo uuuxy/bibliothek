@@ -61,12 +61,13 @@ var (
 // Der Bestand an Namen und Kommentaren, die docs/STIL.md noch nicht folgen, wächst nicht, und
 // ein Paket ohne Eintrag bleibt ohne Fund. Die Zahlen stehen in stil_bestand_test.go.
 //
-// Blindheit: Die Oberfläche liest die Prüfung nicht. In Testdateien zählt sie Namen und
-// Dateinamen, aber kein Datum: Dort ist ein Datum meist ein Testwert (eine feste Uhr, ein
-// Ferientag). Sie sieht nur Wörter der drei Listen oben; ob ein deutscher Name die richtige Sache
-// trifft und ob ein Kommentar das Warum nennt, liest ein Mensch, ob ein Name öffentlich sein
-// muss, prüft sichtbarkeit_ratsche_test.go. Lokale Variablen und
-// Parameter zählt sie nicht. Das Datum einer Quelle (stilQuelle) zählt sie nicht als Datum.
+// Blindheit: Die Oberfläche liest die Prüfung nicht. In Testdateien zählt sie die Namen der
+// Paketebene und die Dateinamen, aber keine lokalen Namen (docs/STIL.md, Abschnitt 10) und kein
+// Datum: Dort ist ein Datum meist ein Testwert (eine feste Uhr, ein Ferientag). Im Programmcode
+// zählt sie auch lokale Namen, nicht aber die in einem Funktionsliteral auf der Paketebene. Sie
+// sieht nur Wörter der drei Listen oben; ob ein deutscher Name die richtige Sache trifft und ob
+// ein Kommentar das Warum nennt, liest ein Mensch, ob ein Name öffentlich sein muss, prüft
+// sichtbarkeit_ratsche_test.go. Das Datum einer Quelle (stilQuelle) zählt sie nicht als Datum.
 func TestStil_BestandWaechstNicht(t *testing.T) {
 	ist, funde, namen, gelesen := stilMessen(t)
 	if namen < 5000 || gelesen < 60 {
@@ -97,6 +98,40 @@ func TestStil_BestandWaechstNicht(t *testing.T) {
 		}
 		t.Errorf("%s: mehr Funde als im Bestand (%+v, erlaubt %+v). Ein neuer Name folgt docs/STIL.md; "+
 			"gefunden sind:\n  %s", p, gezaehlt, soll, strings.Join(funde[p], "\n  "))
+	}
+}
+
+func TestStil_LokaleNamenSelbstprobe(t *testing.T) {
+	quelle := `package a
+
+func lade(orderID string, f func(item int) (ok bool)) (titel string) {
+	var bestellung = 1
+	loan, fehler := 2, 3
+	pruefe := func() {}
+	for nr, exemplar := range []int{} {
+		_, _ = nr, exemplar
+	}
+	type antwort struct{ Items []int }
+	var roh struct{ Book string }
+	_, _, _, _, _ = bestellung, loan, fehler, pruefe, roh
+	return ""
+}
+`
+	datei, err := parser.ParseFile(token.NewFileSet(), "a.go", quelle, parser.SkipObjectResolution)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var gesehen []string
+	for _, name := range lokaleNamen(datei) {
+		if name.funktion {
+			gesehen = append(gesehen, name.text+"()")
+		} else {
+			gesehen = append(gesehen, name.text)
+		}
+	}
+	erwartet := "orderID f titel item ok bestellung loan fehler pruefe() nr exemplar antwort Items roh Book"
+	if strings.Join(gesehen, " ") != erwartet {
+		t.Errorf("lokaleNamen = %q, erwartet %q", strings.Join(gesehen, " "), erwartet)
 	}
 }
 
@@ -148,7 +183,11 @@ func stilMessen(t *testing.T) (map[string]stilZahl, map[string][]string, int, in
 				}
 			}
 		}
-		for _, name := range erklaerteNamen(datei) {
+		erklaert := erklaerteNamen(datei)
+		if !test {
+			erklaert = append(erklaert, lokaleNamen(datei)...)
+		}
+		for _, name := range erklaert {
 			namen++
 			if stilFremdeNamen[name.text] {
 				continue
@@ -210,6 +249,78 @@ func erklaerteNamen(datei *ast.File) []erklaerterName {
 				}
 			}
 		}
+	}
+	return namen
+}
+
+// lokaleNamen liefert, was eine Datei innerhalb ihrer Funktionen benennt: Parameter und
+// Ergebnisse, Variablen und Konstanten, Typen und die Felder von Strukturen, auch ohne Namen des
+// Typs. Den Empfänger prüft empfaenger_ratsche_test.go.
+func lokaleNamen(datei *ast.File) []erklaerterName {
+	var namen []erklaerterName
+	merke := func(bezeichner *ast.Ident, funktion bool) {
+		if bezeichner != nil && bezeichner.Name != "_" {
+			namen = append(namen, erklaerterName{bezeichner.Name, funktion})
+		}
+	}
+	felder := func(liste *ast.FieldList) {
+		if liste == nil {
+			return
+		}
+		for _, feld := range liste.List {
+			for _, n := range feld.Names {
+				merke(n, false)
+			}
+		}
+	}
+	istLiteral := func(werte []ast.Expr, i int) bool {
+		if i >= len(werte) {
+			return false
+		}
+		_, ok := werte[i].(*ast.FuncLit)
+		return ok
+	}
+	for _, dekl := range datei.Decls {
+		f, ok := dekl.(*ast.FuncDecl)
+		if !ok || f.Body == nil {
+			continue
+		}
+		besuche := func(n ast.Node) bool {
+			switch x := n.(type) {
+			case *ast.FuncType:
+				felder(x.Params)
+				felder(x.Results)
+			case *ast.StructType:
+				felder(x.Fields)
+			case *ast.TypeSpec:
+				merke(x.Name, false)
+			case *ast.ValueSpec:
+				for i, name := range x.Names {
+					merke(name, istLiteral(x.Values, i))
+				}
+			case *ast.AssignStmt:
+				if x.Tok != token.DEFINE {
+					return true
+				}
+				for i, links := range x.Lhs {
+					if name, ok := links.(*ast.Ident); ok {
+						merke(name, istLiteral(x.Rhs, i))
+					}
+				}
+			case *ast.RangeStmt:
+				if x.Tok != token.DEFINE {
+					return true
+				}
+				for _, wert := range []ast.Expr{x.Key, x.Value} {
+					if name, ok := wert.(*ast.Ident); ok {
+						merke(name, false)
+					}
+				}
+			}
+			return true
+		}
+		ast.Inspect(f.Type, besuche)
+		ast.Inspect(f.Body, besuche)
 	}
 	return namen
 }

@@ -55,8 +55,8 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	}
 
 	var req struct {
-		IsLocked bool   `json:"is_locked"`
-		Reason   string `json:"reason"`
+		Gesperrt bool   `json:"is_locked"`
+		Grund    string `json:"reason"`
 	}
 	if !tuer.LeseAnfrage(w, r, &req) {
 		// LeseAnfrage hat schon geantwortet.
@@ -67,8 +67,8 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 	// DB-Constraint chk_schueler_block_reason verhindern soll: Das Personal sähe nur die
 	// rote Markierung ohne Kontext. Daher ist der Grund beim Sperren Pflicht (beim Entsperren
 	// irrelevant).
-	grund := strings.TrimSpace(req.Reason)
-	if req.IsLocked && grund == "" {
+	grund := strings.TrimSpace(req.Grund)
+	if req.Gesperrt && grund == "" {
 		return apierrors.BadRequest("Für eine manuelle Sperre ist ein Grund erforderlich", nil)
 	}
 
@@ -93,7 +93,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 		return apierrors.Conflict("Der Leser liegt im Papierkorb. Erst wiederherstellen.", nil)
 	case alt.Anonymisiert:
 		return apierrors.Conflict("Ein anonymisierter Datensatz bleibt gesperrt", nil)
-	case req.IsLocked && !leserart.IstSchueler(alt.Art):
+	case req.Gesperrt && !leserart.IstSchueler(alt.Art):
 		return apierrors.BadRequest("Kollegen werden nicht gesperrt", nil)
 	}
 
@@ -107,7 +107,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 		IsManuallyBlocked bool   `json:"is_manually_blocked"`
 		IstGesperrt       bool   `json:"ist_gesperrt"`
 	}
-	neu, err := repository.SetzeSperreVonHand(ctx, tx, id, req.IsLocked, grund)
+	neu, err := repository.SetzeSperreVonHand(ctx, tx, id, req.Gesperrt, grund)
 	if err != nil {
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
@@ -117,7 +117,7 @@ func (t *Tueren) sperreLeser(w http.ResponseWriter, r *http.Request, protokollAb
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
 
-	protokolliereSperre(r, protokollAbfragen, claims.KontoID, id, req.IsLocked, grund, alt)
+	protokolliereSperre(r, protokollAbfragen, claims.KontoID, id, req.Gesperrt, grund, alt)
 
 	w.Header().Set("Content-Type", "application/json")
 	httpresp.SchreibeJSON(w, leser)

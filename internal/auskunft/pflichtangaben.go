@@ -12,7 +12,7 @@ import (
 // Schüler. Jede Frist im Text ist ein Wert der Einstellungen, mit dem auch die Löschjobs
 // rechnen: Eine feste Zahl im Satz gäbe der betroffenen Person eine falsche Frist, sobald die
 // Schule die Einstellung ändert.
-func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, auditMonate int) Verarbeitungsangaben {
+func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, protokollMonate int) Verarbeitungsangaben {
 	karenz := "sofort nach dem letzten Vorgang"
 	if karenzTage > 0 {
 		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang (Abgang, letzte Rückgabe oder Schadensregulierung)", karenzTage)
@@ -33,7 +33,7 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO, § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", auditMonate) + " Monate. " + dsgvoSicherungen,
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", protokollMonate) + " Monate. " + dsgvoSicherungen,
 		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import), Übernahme aus dem bisherigen Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum) bzw. manuelle Erfassung durch das Bibliotheksteam",
 		Betroffenenrechte: dsgvoBetroffenenrechte,
 	}

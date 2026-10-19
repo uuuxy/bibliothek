@@ -75,28 +75,28 @@ func AbschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
 		return 11, 13, true // Einführungsphase: ET, E1, E2 — Jahrgang 11
 	}
 
-	gradeStr := ""
-	suffix := ""
+	ziffern := ""
+	zweig := ""
 	for i, c := range klasse {
 		if c >= '0' && c <= '9' {
-			gradeStr += string(c)
+			ziffern += string(c)
 		} else {
-			suffix = strings.TrimSpace(klasse[i:])
+			zweig = strings.TrimSpace(klasse[i:])
 			break
 		}
 	}
-	grade, err := strconv.Atoi(gradeStr)
-	if err != nil || grade < 1 {
+	zahl, err := strconv.Atoi(ziffern)
+	if err != nil || zahl < 1 {
 		return 0, 0, false
 	}
 
 	switch {
-	case strings.HasPrefix(suffix, "h"):
-		return grade, 9, true
-	case strings.HasPrefix(suffix, "r"):
-		return grade, 10, true
+	case strings.HasPrefix(zweig, "h"):
+		return zahl, 9, true
+	case strings.HasPrefix(zweig, "r"):
+		return zahl, 10, true
 	default:
-		return grade, 13, true
+		return zahl, 13, true
 	}
 }
 

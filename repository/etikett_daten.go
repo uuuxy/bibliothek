@@ -80,18 +80,18 @@ func LadeEtikettDatenDesTitels(ctx context.Context, db Datenbank, titelID string
 	}
 	defer rows.Close()
 
-	var items []EtikettDaten
+	var etiketten []EtikettDaten
 	for rows.Next() {
-		var item EtikettDaten
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur, &item.Topf); err != nil {
+		var etikett EtikettDaten
+		if err := rows.Scan(&etikett.BarcodeID, &etikett.Titel, &etikett.Autor, &etikett.AnschaffungsJahr, &etikett.Signatur, &etikett.Topf); err != nil {
 			return nil, zeileUnlesbar(err)
 		}
-		items = append(items, item)
+		etiketten = append(etiketten, etikett)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("datenbankfehler: %w", err)
 	}
-	return items, nil
+	return etiketten, nil
 }
 
 // EtikettServerfelder sind die Etikettenangaben, die der Server selbst kennt und deshalb nie

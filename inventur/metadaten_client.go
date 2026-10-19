@@ -105,11 +105,11 @@ var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
 // herunter, für einen Vorschlag unnötig, und das anonyme Kontingent von Google für den Tag teilt
 // das Programm mit allen.
 func (c *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
-	saubereIsbn := isbnutil.OhneTrenner(isbn)
-	if !validiereISBN(saubereIsbn) {
+	saubereISBN := isbnutil.OhneTrenner(isbn)
+	if !validiereISBN(saubereISBN) {
 		return nil, ErrUngueltigeISBN
 	}
-	ergebnis, fehler := c.sucheDNB(kontext, saubereIsbn)
+	ergebnis, fehler := c.sucheDNB(kontext, saubereISBN)
 	switch {
 	case errors.Is(fehler, errQuelleNichtErreichbar):
 		return nil, fmt.Errorf("%w: %v", ErrDNBNichtErreichbar, fehler)
@@ -127,12 +127,12 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	var fehler error
 
 	// ISBN von Strichen und Leerzeichen befreien
-	saubereIsbn := isbnutil.OhneTrenner(isbn)
+	saubereISBN := isbnutil.OhneTrenner(isbn)
 
 	// SSRF und Argument Injection Schutz: Nur gültige ISBN-Zeichenfolgen zulassen
 	// validiereISBN nimmt einen vorab übersetzten regulären Ausdruck, statt ihn bei jedem Aufruf
 	// neu zu übersetzen.
-	if !validiereISBN(saubereIsbn) {
+	if !validiereISBN(saubereISBN) {
 		return nil, fmt.Errorf("ungültiges ISBN format: sicherheitsabbruch")
 	}
 
@@ -147,9 +147,9 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	erreichbar := false
 	var letzterAusfall error
 	for _, quelle := range quellen {
-		ergebnis, fehler = quelle(kontext, saubereIsbn)
+		ergebnis, fehler = quelle(kontext, saubereISBN)
 		if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
-			return c.beendeSuche(kontext, ergebnis, saubereIsbn), nil
+			return c.beendeSuche(kontext, ergebnis, saubereISBN), nil
 		}
 		if errors.Is(fehler, errQuelleNichtErreichbar) {
 			letzterAusfall = fehler
