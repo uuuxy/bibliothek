@@ -49,6 +49,14 @@ export function erzeugeOmniboxBuchung({
 	zeigeFehlerBanner,
 	clearFehlerBanner
 }) {
+	// Zählt, wie oft die Theke geleert wurde (thekeLeeren.js). Die Antwort auf einen Scan von
+	// vorher lädt keinen Leser, öffnet keine Rückfrage und merkt keinen Ausweis mehr: Sonst
+	// arbeitete der nächste Bediener mit dem Konto des vorigen (docs/OFFEN.md 5.74).
+	let stand = 0;
+	function verwirfLaufendeAntworten() {
+		stand += 1;
+	}
+
 	/**
 	 * Löst einen ohne Netz gemerkten Ausweis auf, bevor das nächste Buch hinausgeht: Ohne
 	 * Leser-Kennung läse der Server den Scan als Rückgabe.
@@ -60,10 +68,11 @@ export function erzeugeOmniboxBuchung({
 	 * unklar, wem das Buch gehört: Es wird nicht gebucht, und der Merker fällt.
 	 *
 	 * @param {string} q der rohe Scan
-	 * @param {(() => void) | null} [reloadProfileCb]
+	 * @param {(() => void) | null | undefined} reloadProfileCb
+	 * @param {() => boolean} ueberholt die Theke wurde seit dem Scan geleert
 	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgeführt
 	 */
-	async function merkerAufgeloest(q, reloadProfileCb) {
+	async function merkerAufgeloest(q, reloadProfileCb, ueberholt) {
 		if (!leseMerker()) return true;
 		// Ein Ausweis selbst darf durch — er ist der Ausweg und ersetzt den Merker.
 		if (ordneScanEin(q, buchBarcodes.istBuch).art === 'ausweis') {
@@ -83,6 +92,7 @@ export function erzeugeOmniboxBuchung({
 			console.warn('Ausweis-Merker nicht auflösbar, bleibt stehen:', e);
 			return true;
 		}
+		if (ueberholt()) return false;
 
 		try {
 			if (!res.ok) await verarbeiteAktionsFehler(res, gemerkt); // wirft immer
@@ -103,24 +113,38 @@ export function erzeugeOmniboxBuchung({
 		return false;
 	}
 
-	// Bucht einen Scan. Das Ergebnis sagt, ob er glatt durchging: Leser geladen, gebucht oder
-	// für später abgelegt.
+	// Bucht einen Scan. Das Ergebnis sagt, ob er glatt durchging: Leser geladen, gebucht, für
+	// später abgelegt oder nach dem Leeren der Theke ohne Wirkung auf sie.
 	/**
 	 * @param {Auftrag} auftrag
 	 * @returns {Promise<boolean>}
 	 */
 	async function bucheScan({ q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht }) {
+		const standBeimScan = stand;
+		const ueberholt = () => stand !== standBeimScan;
 		leereHinweiszeilen();
 		clearFehlerBanner();
 
 		// Der Schnappschuss entsteht vor allem Weiteren, damit Escape oder „Theke leeren" die
 		// Absicht des Scans nicht mehr ändern.
 		let eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
+		// Nach dem Leeren zählt nur ein Buch: Es geht mit seinem Schnappschuss in die
+		// Warteschlange, ein Ausweis würde gemerkt und bekäme die nächsten Bücher. Die Reihe geht
+		// weiter (true), denn was dort noch wartet, wurde erst nach dem Leeren gescannt.
+		/** @param {unknown} grund */
+		const legeNachDemLeerenAb = (grund) =>
+			ordneScanEin(q, buchBarcodes.istBuch).art === 'buch'
+				? verarbeiteVersandfehler(grund, eintrag)
+				: true;
 
 		// Steht ein ohne Netz gemerkter Ausweis, gehört ihm das nächste Buch: erst auflösen, dann
 		// buchen (merkerAufgeloest).
 		if (leseMerker()) {
-			if (!(await merkerAufgeloest(q, reloadProfileCb))) return false;
+			const aufgeloest = await merkerAufgeloest(q, reloadProfileCb, ueberholt);
+			// Nach dem Leeren lädt die Auflösung niemanden mehr. Online ginge das Buch ohne Leser
+			// hinaus und wäre am Server eine Rückgabe; der Schnappschuss trägt den Ausweis.
+			if (ueberholt()) return legeNachDemLeerenAb(new Error('Theke geleert'));
+			if (!aufgeloest) return false;
 			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker
 			// nicht mehr. Trüge der Eintrag beides, entschiede beim Nachbuchen die Reihenfolge der
 			// Felder, wem das Buch gehört.
@@ -147,9 +171,11 @@ export function erzeugeOmniboxBuchung({
 				idempotency_key: eintrag.id
 			});
 		} catch (e) {
+			if (ueberholt()) return legeNachDemLeerenAb(e);
 			leuchteRand('red');
 			return verarbeiteVersandfehler(e, eintrag);
 		}
+		if (ueberholt()) return true;
 
 		try {
 			if (!res.ok) {
@@ -164,5 +190,5 @@ export function erzeugeOmniboxBuchung({
 		}
 	}
 
-	return /** @satisfies {object} */ ({ bucheScan });
+	return /** @satisfies {object} */ ({ bucheScan, verwirfLaufendeAntworten });
 }

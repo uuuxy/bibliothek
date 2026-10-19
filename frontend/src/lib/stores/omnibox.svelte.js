@@ -84,7 +84,6 @@ export function erzeugeOmniboxStore() {
 		fuehreAktionAus,
 		melde
 	});
-	const { waehleTreffer } = suche;
 
 	const { verarbeiteAktionsErgebnis } = erzeugeOmniboxAntwort({
 		leseLeser: () => aktiverLeser,
@@ -115,7 +114,7 @@ export function erzeugeOmniboxStore() {
 	});
 	const { schnappschuss, verarbeiteVersandfehler } = ohneNetz;
 
-	const { bucheScan } = erzeugeOmniboxBuchung({
+	const { bucheScan, verwirfLaufendeAntworten } = erzeugeOmniboxBuchung({
 		leseLeser: () => aktiverLeser,
 		leseMerker: () => ohneNetz.offlineAusweis,
 		vergissMerker: () => (ohneNetz.offlineAusweis = ''),
@@ -235,7 +234,7 @@ export function erzeugeOmniboxStore() {
 	) {
 		if (e) e.preventDefault();
 		if (suche.trefferlisteOffen && suche.markierterTreffer >= 0) {
-			waehleTreffer(suche.markierterTreffer, null);
+			suche.waehleTreffer(suche.markierterTreffer, null);
 			return;
 		}
 
@@ -247,7 +246,7 @@ export function erzeugeOmniboxStore() {
 			suche.suchTreffer.students.length === 1 &&
 			suche.suchTreffer.books.length === 0
 		) {
-			waehleTreffer(0, null);
+			suche.waehleTreffer(0, null);
 			return;
 		}
 
@@ -411,6 +410,7 @@ export function erzeugeOmniboxStore() {
 		scanBeiRueckfrage,
 		uebernimmZusammengefuehrt,
 		schalteSchnellrueckgabe,
+		verwirfLaufendeAntworten,
 		escapeGedrueckt,
 		gibZurueck,
 		fuehreAktionAus

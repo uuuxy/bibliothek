@@ -37,7 +37,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 Sie standen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5, sind aber nach der Tabelle am Ende keine
 Kategorie C. Die zwei der Kategorie A zuerst.
 
-- [ ] Theke: Eine Antwort, die erst nach „Theke leeren" ankommt, lädt keinen Leser mehr und
+- [x] Theke: Eine Antwort, die erst nach „Theke leeren" ankommt, lädt keinen Leser mehr und
   öffnet keine Rückfrage. (5.74, A)
 - [ ] „Buch bearbeiten" und „Neues Buch": Das Schließen-Symbol fragt, bevor es Ungespeichertes
   verwirft. (5.75, A)
@@ -381,19 +381,6 @@ den Ladenhütern steht in Grün „Keine Ladenhüter — der Bestand ist in Bewe
 anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Abschnitte, die
 nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
 zuständige Seite von M3 lesen.
-
-### 5.74 Theke: eine Antwort nach „Theke leeren"
-
-Kategorie A: Daten beim falschen Empfänger. `thekeLeeren` leert den Omnibox-Store beim Abmelden
-sofort, ohne auf einen laufenden Scan zu warten (`handleLogout`), und nach der Frist ohne
-Bedienung. Eine Antwort von `POST /api/action`, die danach ankommt, wertet die Theke aus wie jede
-andere (`verarbeiteAktionsErgebnis`): Die Antwort auf einen Ausweis lädt den Leser, eine Rückgabe
-ohne geladenen Leser lädt den, der das Buch hatte, eine Sperre öffnet die Rückfrage samt
-Sperrgrund, und scheitert der Versand eines Ausweises, merkt die Theke ihn. Nach der nächsten
-Anmeldung stünde das Konto des vorigen Lesers offen, und der nächste Scan buchte auf ihn. Weg:
-Die Buchung zählt jedes Leeren, eine Antwort auf einen Scan von vorher ändert die Theke nicht
-mehr. Ein Buch, dessen Versand scheitert, geht weiter mit seinem Schnappschuss in die
-Warteschlange, wie es der Schnappschuss verspricht (`omniboxOhneNetz.svelte.js`).
 
 ### 5.75 „Buch bearbeiten": Schließen verwirft ohne Rückfrage
 

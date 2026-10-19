@@ -24,6 +24,9 @@ import { uiStore } from './uiStore.svelte.js';
  * damit kein Decode-Callback mehr in fuehreAktionAus läuft.
  */
 export function thekeLeeren() {
+	// Zuerst: Eine Antwort auf einen Scan, der noch unterwegs ist, lüde sonst danach den Leser
+	// wieder, und der nächste Bediener arbeitete auf dessen Konto.
+	omniboxStore.verwirfLaufendeAntworten();
 	const scanner = omniboxStore.kamera;
 	omniboxStore.kamera = null;
 	omniboxStore.kameraOffen = false;
