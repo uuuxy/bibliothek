@@ -18,12 +18,7 @@ func TestNewAusleihAbfragen(t *testing.T) {
 		t.Fatal("NewAusleihAbfragen returned nil")
 	}
 
-	pgRepo, ok := repo.(*pgAusleihAbfragen)
-	if !ok {
-		t.Fatal("NewAusleihAbfragen did not return *pgAusleihAbfragen")
-	}
-
-	if pgRepo.db != mock {
+	if repo.db != mock {
 		t.Error("NewAusleihAbfragen did not properly set the db field")
 	}
 }

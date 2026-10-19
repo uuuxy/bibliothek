@@ -34,7 +34,7 @@ type NachbuchDienst struct {
 }
 
 // NewNachbuchDienst baut den Dienst des Nachbuchens.
-func NewNachbuchDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) *NachbuchDienst {
+func NewNachbuchDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen *repository.KatalogAbfragen, ausleihAbfragen ausleihPflege, protokollAbfragen repository.ProtokollAbfragen) *NachbuchDienst {
 	return &NachbuchDienst{ausleihe: &ausleihDienst{pool: pool, leserAbfragen: leserAbfragen, katalogAbfragen: katalogAbfragen, ausleihAbfragen: ausleihAbfragen, protokollAbfragen: protokollAbfragen}}
 }
 

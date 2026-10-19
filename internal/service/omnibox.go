@@ -87,7 +87,7 @@ type OmniboxDienst struct {
 	pool            db.Pool
 	leserAbfragen   leserErmittlung
 	katalogAbfragen katalogErmittlung
-	ausleihAbfragen repository.AusleihAbfragen
+	ausleihAbfragen *repository.AusleihAbfragen
 	ausleihe        AusleihDienst
 	geraete         *GeraeteDienst
 }
@@ -97,7 +97,7 @@ func NewOmniboxDienst(
 	pool db.Pool,
 	leserAbfragen leserErmittlung,
 	katalogAbfragen katalogErmittlung,
-	ausleihAbfragen repository.AusleihAbfragen,
+	ausleihAbfragen *repository.AusleihAbfragen,
 	ausleihe AusleihDienst,
 	geraete *GeraeteDienst,
 ) *OmniboxDienst {

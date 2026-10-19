@@ -11,8 +11,8 @@ import (
 )
 
 type rueckgabeFehlerAttrappe struct {
-	repository.AusleihAbfragen // embed to satisfy interface methods we don't mock
-	rueckgabeFehler            error
+	ausleihPflege   // eingebettet, damit die nicht nachgebildeten Methoden da sind
+	rueckgabeFehler error
 }
 
 func (m *rueckgabeFehlerAttrappe) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID string, bearbeiterID string, isFremdrueckgabe bool) error {

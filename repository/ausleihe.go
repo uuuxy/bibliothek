@@ -50,36 +50,13 @@ type Ausleihe struct {
 var ErrAusleiheKonflikt = errors.New("exemplar wurde zwischenzeitlich anderweitig verbucht")
 
 // AusleihAbfragen liest und schreibt die Ausleihen und Rückgaben der Exemplare.
-type AusleihAbfragen interface {
-	// FindeOffene liefert die offene Ausleihe eines Exemplars; nil, wenn es nicht verliehen
-	// ist.
-	FindeOffene(ctx context.Context, exemplarID string) (*Ausleihe, error)
-
-	// SperreOffene liefert die offene Ausleihe eines Exemplars und sperrt ihre Zeile bis zum
-	// Ende der Transaktion (FOR UPDATE): Zwei Scans desselben Exemplars zur selben Zeit laufen
-	// nacheinander.
-	SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*Ausleihe, error)
-
-	// BeginneTx beginnt eine Transaktion (Read Committed). Der Rufer rollt sie mit defer zurück
-	// und schreibt sie bei Erfolg fest.
-	BeginneTx(ctx context.Context) (pgx.Tx, error)
-
-	// LegeAn legt die Ausleihe eines Lesers in der Transaktion an, zum jetzigen Zeitpunkt.
-	// istDauerleihe kennzeichnet die Ausleihe für das Schuljahr (ist_handapparat); sie wird
-	// nicht überfällig.
-	LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Ausleihe, error)
-
-	// BucheRueckgabe beendet eine offene Ausleihe in der Transaktion, zum jetzigen Zeitpunkt.
-	BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error
-}
-
-type pgAusleihAbfragen struct {
+type AusleihAbfragen struct {
 	db db.Pool
 }
 
 // NewAusleihAbfragen liefert die Abfragen der Ausleihe an Postgres.
-func NewAusleihAbfragen(db db.Pool) AusleihAbfragen {
-	return &pgAusleihAbfragen{db: db}
+func NewAusleihAbfragen(db db.Pool) *AusleihAbfragen {
+	return &AusleihAbfragen{db: db}
 }
 
 // leseAusleihe liest eine Zeile der Tabelle ausleihen in eine Ausleihe.
@@ -95,16 +72,18 @@ func leseAusleihe(row scanner) (*Ausleihe, error) {
 }
 
 // BeginneTx beginnt eine Transaktion mit Read Committed: Sie sieht keine ungeschriebenen Daten
-// anderer, und Scans an mehreren Arbeitsplätzen halten einander nicht auf.
-func (a *pgAusleihAbfragen) BeginneTx(ctx context.Context) (pgx.Tx, error) {
+// anderer, und Scans an mehreren Arbeitsplätzen halten einander nicht auf. Der Rufer rollt sie
+// mit defer zurück und schreibt sie bei Erfolg fest.
+func (a *AusleihAbfragen) BeginneTx(ctx context.Context) (pgx.Tx, error) {
 	return a.db.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel:   pgx.ReadCommitted,
 		AccessMode: pgx.ReadWrite,
 	})
 }
 
-// FindeOffene liest die offene Ausleihe ohne Sperre.
-func (a *pgAusleihAbfragen) FindeOffene(ctx context.Context, exemplarID string) (*Ausleihe, error) {
+// FindeOffene liest die offene Ausleihe eines Exemplars ohne Sperre; nil, wenn es nicht verliehen
+// ist.
+func (a *AusleihAbfragen) FindeOffene(ctx context.Context, exemplarID string) (*Ausleihe, error) {
 	query := `
 		SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 		FROM ausleihen
@@ -121,9 +100,10 @@ func (a *pgAusleihAbfragen) FindeOffene(ctx context.Context, exemplarID string) 
 	return l, nil
 }
 
-// SperreOffene liest die offene Ausleihe mit FOR UPDATE: Zwei Scans desselben Exemplars im
-// selben Augenblick verarbeiten es nicht doppelt.
-func (a *pgAusleihAbfragen) SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*Ausleihe, error) {
+// SperreOffene liest die offene Ausleihe mit FOR UPDATE und sperrt ihre Zeile bis zum Ende der
+// Transaktion: Zwei Scans desselben Exemplars im selben Augenblick verarbeiten es nicht doppelt.
+// nil, wenn das Exemplar nicht verliehen ist.
+func (a *AusleihAbfragen) SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*Ausleihe, error) {
 	query := `
 		SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 		FROM ausleihen
@@ -165,8 +145,10 @@ type AusleiheNeu struct {
 	Zeitpunkt      *time.Time
 }
 
-// LegeAn legt die Ausleihe in der Transaktion an, zum jetzigen Zeitpunkt.
-func (a *pgAusleihAbfragen) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Ausleihe, error) {
+// LegeAn legt die Ausleihe eines Lesers in der Transaktion an, zum jetzigen Zeitpunkt.
+// istDauerleihe kennzeichnet die Ausleihe für das Schuljahr (ist_handapparat); sie wird nicht
+// überfällig.
+func (a *AusleihAbfragen) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Ausleihe, error) {
 	return LegeAusleiheAn(ctx, tx, AusleiheNeu{
 		ExemplarID:     exemplarID,
 		LeserID:        leserID,
@@ -201,7 +183,7 @@ func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpun
 }
 
 // BucheRueckgabe beendet die offene Ausleihe in der Transaktion, zum jetzigen Zeitpunkt.
-func (a *pgAusleihAbfragen) BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error {
+func (a *AusleihAbfragen) BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error {
 	return BucheRueckgabeZum(ctx, tx, ausleiheID, bearbeiterID, istFremdrueckgabe, nil)
 }
 

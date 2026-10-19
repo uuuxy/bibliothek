@@ -21,7 +21,7 @@ import (
 // merkte es erst, wenn die Mahnung käme oder die Inventur das Buch vermisste. Ausgeliehen wird
 // über den Ausweis. Dieser Test hält die Tür zu.
 type selbstausleiheAttrappe struct {
-	repository.AusleihAbfragen
+	ausleihPflege
 	pool      pgxmock.PgxPoolIface
 	geschrieb bool
 }

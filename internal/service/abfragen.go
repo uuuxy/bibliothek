@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Die Abfragen, die die Dienste dieses Pakets brauchen, je nach dem Vorgang geschnitten
@@ -50,4 +53,20 @@ type titelImport interface {
 	// SchreibeTitel legt viele Titel in einem Sammelauftrag an oder ändert sie und liefert die
 	// Zahl der verarbeiteten; einen Titel ohne ISBN ordnet es über seinen Titel zu.
 	SchreibeTitel(ctx context.Context, titel []repository.Titel) (int, error)
+}
+
+// ausleihPflege legt Ausleihen an und beendet sie, in einer Transaktion mit gesperrter Zeile
+// (repository.AusleihAbfragen).
+type ausleihPflege interface {
+	// BeginneTx beginnt eine Transaktion (Read Committed); der Rufer rollt sie mit defer zurück
+	// und schreibt sie bei Erfolg fest.
+	BeginneTx(ctx context.Context) (pgx.Tx, error)
+	// SperreOffene liefert die offene Ausleihe eines Exemplars und sperrt ihre Zeile bis zum
+	// Ende der Transaktion; nil, wenn das Exemplar nicht verliehen ist.
+	SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*repository.Ausleihe, error)
+	// LegeAn legt die Ausleihe eines Lesers in der Transaktion an, zum jetzigen Zeitpunkt;
+	// istDauerleihe kennzeichnet die Ausleihe für das Schuljahr, sie wird nicht überfällig.
+	LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Ausleihe, error)
+	// BucheRueckgabe beendet eine offene Ausleihe in der Transaktion, zum jetzigen Zeitpunkt.
+	BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error
 }
