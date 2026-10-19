@@ -12,6 +12,7 @@
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
 	import { thekenTasten } from './scanOhneFokus.js';
+	import { escapeAnDerTheke } from './thekeEscape.js';
 	import { abonniere } from './liveEvents.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 
@@ -69,20 +70,7 @@
 
 	$effect(() => {
 		/** @param {KeyboardEvent} e */
-		function beiTaste(e) {
-			if (e.key === 'Escape') {
-				omniboxStore.escapeGedrueckt();
-				omniboxStore.eingabe = '';
-				omniboxStore.aktiverLeser = null;
-				omniboxStore.letzteFremdrueckgabe = null;
-				omniboxStore.suche.trefferlisteOffen = false;
-				if (omniboxStore.kameraOffen) {
-					// Escape schliesst die Kamera. Das Abschalten selbst gehoert dem Bauteil
-					// (ThekenKamera → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
-					stoppeKamera();
-				}
-			}
-		}
+		const beiTaste = (e) => escapeAnDerTheke(e, stoppeKamera);
 		// Ein Scan landet im Scanfeld, auch wenn der Fokus auf einem Reiter, einem Knopf oder
 		// nirgends steht; bei offener Rückfrage drückt er dort keinen Knopf. In der
 		// Capture-Phase, damit Zeichen und Enter abgefangen sind, bevor ein Element sie bekommt.

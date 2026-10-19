@@ -57,6 +57,10 @@ Schritt).
 der Akte. Nur ein offenes Fenster (etwa „Gebühr wirklich stornieren?") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
+**Escape** schließt die Akte und leert das Scanfeld. Steht der Fokus in einem anderen Feld, ist
+eine Liste aufgeklappt oder ein Fenster offen, schließt Escape nur dieses. Hält die Akte
+ungespeicherte Stammdaten, fragt die Theke vorher (_Verwerfen und weiter_).
+
 **Ein Scan beantwortet keine Rückfrage:** Steht „Ausleihe blockiert",
 „Achtung! Vorgemerkt!" oder „Zubehör prüfen" offen, bleibt das Fenster bei einem Scan stehen.
 Der Scan wird nicht gebucht und meldet sich rot mit Fehlerton. Erst das Fenster mit Maus oder

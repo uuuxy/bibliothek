@@ -6,6 +6,15 @@ import { untrack } from 'svelte';
 import { uiStore } from './uiStore.svelte.js';
 import { verwerfenBestaetigen } from './bestaetigung.svelte.js';
 
+/**
+ * Für einen Wechsel, der nicht über uiStore.activeTab läuft (Reiter, Theke): Hält der Bildschirm
+ * Ungespeichertes, fragt er vor dem Verwerfen.
+ * @returns {Promise<boolean>} true: weiter, auch wenn dabei verworfen wird
+ */
+export async function darfVerwerfen() {
+	return !uiStore.verlassenSperre?.() || verwerfenBestaetigen('Verwerfen und weiter');
+}
+
 /** @param {() => boolean} ungespeichert */
 export function schuetzeUngespeichertes(ungespeichert) {
 	// Liest keinen Zustand, läuft also einmal nach dem Aufbau und räumt beim Abbau ab.

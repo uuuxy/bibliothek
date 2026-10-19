@@ -5,7 +5,7 @@ vi.mock('./bestaetigung.svelte.js', () => ({ verwerfenBestaetigen: vi.fn() }));
 
 import { verwerfenBestaetigen } from './bestaetigung.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
-import { schuetzeUngespeichertes } from './verlassenSchutz.svelte.js';
+import { schuetzeUngespeichertes, darfVerwerfen } from './verlassenSchutz.svelte.js';
 
 // Der Verlassen-Schutz einer Maske (docs/OFFEN.md 5.79): Ein Wechsel der Seite hält an und
 // fragt, das Fenster fragt der Browser, und nach dem Abbau der Maske ist der Wächter weg.
@@ -117,5 +117,25 @@ describe('Verlassen-Schutz einer Maske', () => {
 		const ereignis = new Event('beforeunload', { cancelable: true });
 		window.dispatchEvent(ereignis);
 		expect(ereignis.defaultPrevented).toBe(false);
+	});
+});
+
+// Für Wechsel, die nicht über uiStore.activeTab laufen: der Reiter im Medienkatalog, Escape und
+// die Schnellrückgabe an der Theke.
+describe('darfVerwerfen', () => {
+	it('ohne Ungespeichertes ja, ohne zu fragen', async () => {
+		expect(await darfVerwerfen()).toBe(true);
+		uiStore.verlassenSperre = () => false;
+		expect(await darfVerwerfen()).toBe(true);
+		expect(verwerfenBestaetigen).not.toHaveBeenCalled();
+	});
+
+	it('mit Ungespeichertem gilt die Antwort auf „Verwerfen und weiter"', async () => {
+		uiStore.verlassenSperre = () => true;
+		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(false);
+		expect(await darfVerwerfen(), 'Bleiben').toBe(false);
+		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(true);
+		expect(await darfVerwerfen()).toBe(true);
+		expect(verwerfenBestaetigen).toHaveBeenCalledWith('Verwerfen und weiter');
 	});
 });

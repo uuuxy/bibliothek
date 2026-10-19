@@ -105,12 +105,7 @@ const KEIN_DIALOG = [
 // ALLE Formen, nicht über die eine, die man gerade im Kopf hat.
 const ESCAPE_OHNE_ANSPRUCH = [
 	// Der globale Kurzbefehl selbst — er IST der Empfänger, er meldet nichts weiter.
-	'src/lib/Router.svelte',
-	// Die Omnibox lebt ausschließlich im Kiosk (Router.svelte rendert sie unter
-	// activeTab === 'kiosk'), und genau dort steigt der globale Kurzbefehl als Erstes aus
-	// („Escape an der Theke heißt Eingabe verwerfen, nicht Ansicht verlassen"). Es gibt
-	// also keinen zweiten Empfänger, dem sie etwas melden müsste.
-	'src/lib/Omnibox.svelte'
+	'src/lib/Router.svelte'
 ];
 
 describe('Escape-Hygiene: wer die Taste nimmt, meldet sie als verarbeitet', () => {

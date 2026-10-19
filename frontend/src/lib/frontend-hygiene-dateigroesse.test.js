@@ -14,7 +14,7 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
 	'src/lib/Bestellwesen.svelte': 231,
-	'src/lib/Omnibox.svelte': 214,
+	'src/lib/Omnibox.svelte': 202,
 	'src/lib/Statistik.svelte': 348,
 	'src/lib/Leserakte.svelte': 221,
 	'src/lib/Inventur.svelte': 231,

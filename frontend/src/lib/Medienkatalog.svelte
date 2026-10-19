@@ -5,8 +5,7 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
-	import { uiStore } from './stores/uiStore.svelte.js';
-	import { verwerfenBestaetigen } from './stores/bestaetigung.svelte.js';
+	import { darfVerwerfen } from './stores/verlassenSchutz.svelte.js';
 
 	// Wer mit einem Titel zum Bearbeiten kommt, beginnt in der Titel-Verwaltung: Der Katalog
 	// stünde sonst einen Takt lang da und lüde dabei seine ganze Liste.
@@ -23,9 +22,7 @@
 	// über denselben Wächter wie der Wechsel der Seite (uiStore.verlassenSperre).
 	/** @param {string} id */
 	async function waehleReiter(id) {
-		if (id === aktiverReiter) return;
-		if (uiStore.verlassenSperre?.() && !(await verwerfenBestaetigen('Verwerfen und weiter')))
-			return;
+		if (id === aktiverReiter || !(await darfVerwerfen())) return;
 		aktiverReiter = id;
 	}
 </script>

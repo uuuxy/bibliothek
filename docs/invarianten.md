@@ -371,7 +371,7 @@ veraltet ist. Die Bugklassen dazu stehen in [sweeps.md](sweeps.md).
   Verlassen-Schutz (`uiStore.verlassenSperre`, beim LMF-Planer, bei der Buchmaske und bei
   „Stammdaten bearbeiten") wird beim Wechsel des Menüpunkts und beim Schließen des Fensters
   gefragt, bei den beiden Masken auch an ihrem Schließen- oder Zurück-Knopf, bei der Buchmaske
-  beim Wechsel des Reiters im Medienkatalog. Frage 8 fragt in der Frontend-Lesart
+  beim Wechsel des Reiters im Medienkatalog, an der Theke bei Escape. Frage 8 fragt in der Frontend-Lesart
   das Gegenteil: was beim Verlassen zurück auf Anfang muss.
 - **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
   Ein Feld, in das gescannt wird, hat nach dem Öffnen den Fokus und hört auf Enter
