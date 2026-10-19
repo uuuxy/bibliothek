@@ -83,6 +83,9 @@ test('der Sperrbildschirm fragt vor dem Abmelden, wenn dahinter etwas ungespeich
 
 	await page.locator('#sperre-passwort').fill(ADMIN_PASSWORD);
 	await page.getByRole('button', { name: 'Entsperren' }).click();
+	// Erst wenn die Sperre weg ist, läuft ihre Uhr wieder (#schliesseAuf). Wer vorher vorspult,
+	// spult ins Leere: Die Antwort des Servers plant die 15 Minuten danach von vorn.
+	await expect(page.getByTestId('sperrbildschirm')).toHaveCount(0);
 	await expect(page.locator('#buch-titel'), 'die Eingabe steht noch').toHaveValue(TITEL);
 
 	await sperre(page);
