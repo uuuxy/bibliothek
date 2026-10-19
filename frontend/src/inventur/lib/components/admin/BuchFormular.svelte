@@ -61,8 +61,9 @@
 <div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
 	<!-- Der Kopf ist das einzige stehende Band der Maske: Schließen, Überschrift und die eine
 	     Aktion, die die ganze Seite betrifft. Alles Weitere steht in der rechten Spalte, damit
-	     die Höhe den Feldern bleibt. „Speichern" folgt auf die Überschrift und steht nicht am
-	     rechten Rand: Dort erscheinen die Meldungen (SnackbarAnzeige) und lägen über dem Knopf. -->
+	     die Höhe den Feldern bleibt. „Speichern" steht am rechten Rand (Material 3, Dialogs:
+	     „Buttons are aligned to the trailing edge of the dialog"); die Meldungen erscheinen
+	     unten und liegen nicht über ihm. -->
 	<div
 		class="h-14 px-4 border-b border-outline-variant flex items-center gap-2 bg-surface-container-lowest sticky top-0 z-10"
 	>
@@ -74,7 +75,7 @@
 		<h2 class="min-w-0 truncate text-xl font-bold text-on-surface">
 			{formular.id ? 'Buch bearbeiten' : 'Neues Buch'}
 		</h2>
-		<Button onclick={speichern} class="ml-4 shrink-0 px-5">Speichern</Button>
+		<Button onclick={speichern} class="ml-auto shrink-0 px-5">Speichern</Button>
 	</div>
 
 	<!-- Zwei Spalten wie eine Play-Store-Detailseite: Felder und Exemplare links, Cover und die

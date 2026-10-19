@@ -46,7 +46,7 @@ Kategorie C; 5.79 kam beim Beheben von 5.75 dazu. Die der Kategorie A zuerst.
 - [x] „Stammdaten bearbeiten": „Zurück", Seitenwechsel und Neuladen fragen vor dem Verwerfen.
   (5.80, A)
 - [x] Drei Knöpfe sagen bei leerem Feld, was fehlt. (5.77)
-- [ ] Die Meldungen stehen unten, wie Material 3 es vorsieht. (5.78)
+- [x] Die Meldungen stehen unten, wie Material 3 es vorsieht. (5.78)
 
 ### Bei dir
 
@@ -385,15 +385,6 @@ anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Ab
 nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
 zuständige Seite von M3 lesen.
 
-### 5.78 Die Meldungen stehen oben rechts
-
-`SnackbarAnzeige.svelte` setzt die Meldungen oben rechts (`fixed top-6 right-6`); dort verdecken
-sie 5 s lang, was darunter steht (mit Aktion 10 s). M3, Snackbar, „Placement": „Snackbars should
-be placed at the bottom of a UI, in front of the main content. In some cases, snackbars can be
-nudged upwards to avoid overlapping with other UI elements near the bottom". Am unteren Rand
-stehen die Auswahlleisten der Listen (`ui/AuswahlLeiste`, `sticky bottom-4`); dort müssen die
-Meldungen ausweichen.
-
 ---
 
 ## 7. Betrieb (liegt bei der Schulseite)
@@ -571,7 +562,8 @@ einem offenen Fenster der Theke ist es am 07.10.2026 belegt: Der Scan wurde erka
 - Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
   Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
   darunter bleiben im Bild. Dann ins Feld ISBN „12345" tippen und „Speichern" drücken.
-  Erwartet: Die Meldung oben rechts („Die ISBN ist ungültig") liegt nicht über dem Knopf.
+  Erwartet: Die Meldung („Die ISBN ist ungültig") erscheint unten und liegt nicht über dem
+  Knopf.
 - Druck-Center, Buch-Etiketten: einen Titel mit mehr als fünf Exemplaren wählen, den Haken
   „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.

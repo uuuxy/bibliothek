@@ -7,6 +7,7 @@
 	import { IdCard, X } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -38,6 +39,7 @@
 	>
 		<div
 			class="schema-dunkel flex max-w-3xl items-center gap-4 rounded-2xl bg-surface-container px-4 py-3 text-on-surface shadow-2xl"
+			use:meldungenWeichenAus
 		>
 			<span class="text-sm whitespace-nowrap">
 				<span class="font-semibold">{anzahl}</span>

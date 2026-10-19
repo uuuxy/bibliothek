@@ -15,10 +15,12 @@
      mittig unter ihre Liste. `fixed` zentrierte sie über dem Fenster; auf der Pflegeseite der
      Schlagworte lag sie dann über der Kategorienliste (gemessen am 23.09.2026).
 
-     Die Aktionen kommen als children; das X hebt die Markierung auf. -->
+     Die Aktionen kommen als children; das X hebt die Markierung auf. Die Meldungen der Anwendung
+     stehen über der Leiste, wenn sie unten ankommt (use:meldungenWeichenAus). -->
 <script>
 	import { X } from '@lucide/svelte';
 	import Button from './Button.svelte';
+	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
 	/** @type {{
 	 *   satz: string,
@@ -36,6 +38,7 @@
 >
 	<div
 		class="pointer-events-auto flex h-16 max-w-full items-center gap-2 rounded-full bg-surface-container pr-3 pl-6 text-on-surface shadow-xl"
+		use:meldungenWeichenAus
 	>
 		<span class="text-sm whitespace-nowrap" aria-live="polite">{satz}</span>
 		<div class="ml-4 flex items-center gap-2">

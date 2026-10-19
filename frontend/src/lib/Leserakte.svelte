@@ -16,7 +16,6 @@
 	import LeserakteAktionen from './LeserakteAktionen.svelte';
 	import AusleihQuittung from './AusleihQuittung.svelte';
 	import { useLeserakte } from './useLeserakte.svelte.js';
-	import { Info } from '@lucide/svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte, darfAuskunftUeber } from './schuelerRechte.js';
 	import { druckeAusweis } from './ausweisDruck.js';
@@ -78,15 +77,6 @@
 		<Ladekreis size="lg" />
 	</div>
 {:else if st.akte}
-	{#if st.fehlermeldung}
-		<div
-			class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-error text-on-error flex items-center gap-2"
-		>
-			<Info class="h-5 w-5" aria-hidden="true" />
-			{st.fehlermeldung}
-		</div>
-	{/if}
-
 	{#if !st.bearbeitenOffen}
 		<div
 			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-on-surface animate-fade-in no-print print:hidden font-sans"

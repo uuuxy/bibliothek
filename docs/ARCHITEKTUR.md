@@ -849,6 +849,13 @@ frontend/src
   welcher Spezifität: Tailwind legt seine Klassen in `@layer utilities`, die Stile der Bauteile
   stehen in keiner Schicht. Was der Aufrufer bestimmen soll, setzt das Bauteil deshalb nicht
   selbst (`ui/Tabelle` lässt die senkrechte Ausrichtung der Zellen offen).
+- **Meldungen gehen über `snackbars.addToast` und stehen unten,** mittig über der Fläche rechts
+  der Navigation (Material 3, Snackbar, „Placement": „Snackbars should be placed at the bottom
+  of a UI, in front of the main content"). Eine Leiste am unteren Rand trägt sich mit
+  `use:meldungenWeichenAus` ein; die Meldungen rücken dann über sie („can be nudged upwards to
+  avoid overlapping with other UI elements near the bottom"), wie `setAnchorView` bei Android.
+  Ein Bauteil zeigt keine eigene schwebende Meldung. Gemessen:
+  `frontend/e2e/meldungen-unten.spec.js`.
 - **Was jemand sieht, entscheidet das Recht der Route,** nicht die Rolle: `hatRecht` aus
   `menue.js` (Ratsche `frontend-hygiene-rechte.test.js`, [FACHKONZEPT.md §12.2](FACHKONZEPT.md)).
 - **Suchen, Sortieren und Filtern einer gekappten Liste geschehen am Server.** Im Browser

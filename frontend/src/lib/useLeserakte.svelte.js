@@ -26,7 +26,6 @@ export function useLeserakte() {
 	let sperreOffen = $state(false);
 	let schadenExemplar = $state(/** @type {any} */ (null));
 	let meldetSchaden = $state(false);
-	let fehlermeldung = $state(/** @type {string|null} */ (null));
 	let rechnungLaedt = $state(false);
 	let kontoauszugLaedt = $state(false);
 
@@ -95,7 +94,6 @@ export function useLeserakte() {
 		loeschfrageOffen = false;
 		kameraOffen = false;
 		schadenExemplar = null;
-		fehlermeldung = null;
 	}
 
 	function nachLoeschen(onDeselect) {
@@ -122,7 +120,6 @@ export function useLeserakte() {
 	async function ladeRechnungHerunter() {
 		if (!akte) return;
 		rechnungLaedt = true;
-		fehlermeldung = null;
 		try {
 			const res = await apiFetch(`/api/print/rechnung/${akte.id}`);
 			if (!res.ok) {
@@ -139,8 +136,7 @@ export function useLeserakte() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			fehlermeldung = fehlertext(e);
-			setTimeout(() => (fehlermeldung = null), 4000);
+			snackbars.addToast(fehlertext(e), 'error');
 		} finally {
 			rechnungLaedt = false;
 		}
@@ -149,7 +145,6 @@ export function useLeserakte() {
 	async function ladeKontoauszugHerunter() {
 		if (!akte) return;
 		kontoauszugLaedt = true;
-		fehlermeldung = null;
 		try {
 			const res = await apiFetch(`/api/print/kontoauszug/${akte.id}`);
 			if (!res.ok) {
@@ -163,8 +158,7 @@ export function useLeserakte() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			fehlermeldung = fehlertext(e);
-			setTimeout(() => (fehlermeldung = null), 4000);
+			snackbars.addToast(fehlertext(e), 'error');
 		} finally {
 			kontoauszugLaedt = false;
 		}
@@ -303,9 +297,6 @@ export function useLeserakte() {
 		},
 		get meldetSchaden() {
 			return meldetSchaden;
-		},
-		get fehlermeldung() {
-			return fehlermeldung;
 		},
 		get rechnungLaedt() {
 			return rechnungLaedt;

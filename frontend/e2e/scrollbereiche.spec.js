@@ -232,9 +232,9 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 			).toBeInViewport({ ratio: 1 });
 		}
 
-		// Die Meldungen der Anwendung erscheinen oben rechts. Eine Fehlermeldung nach „Speichern"
-		// darf nicht über dem Knopf liegen: Unter dem Mauszeiger hält sie ihre Standzeit an.
-		// Eine geänderte Nummer ohne ISBN-Form lehnt der Server ab, die Meldung kommt oben rechts.
+		// Eine Fehlermeldung nach „Speichern" darf nicht über dem Knopf liegen: Unter dem
+		// Mauszeiger hält sie ihre Standzeit an. Eine geänderte Nummer ohne ISBN-Form lehnt der
+		// Server ab.
 		const speichern = page.getByRole('button', { name: 'Speichern', exact: true });
 		await page.locator('#buch-isbn').fill('12345');
 		await page.getByText(`B-scm-${s}-20`).scrollIntoViewIfNeeded();
@@ -251,7 +251,7 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 				m.x + m.width <= k.x ||
 				k.y + k.height <= m.y ||
 				m.y + m.height <= k.y);
-		expect(getrennt, 'Die Meldung oben rechts liegt über „Speichern".').toBe(true);
+		expect(getrennt, 'Die Meldung liegt über „Speichern".').toBe(true);
 	} finally {
 		// Zwanzig Exemplare ohne gedrucktes Etikett stünden sonst nach jedem Lauf im Druck-Center.
 		seedSQL(`

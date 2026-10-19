@@ -1,5 +1,6 @@
 <script>
 	import { snackbars } from './stores/snackbars.svelte.js';
+	import { meldungsPlatz, RAND } from './meldungsPlatz.js';
 	import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from '@lucide/svelte';
 
 	const symbole = {
@@ -15,10 +16,61 @@
 		warning: 'bg-warning text-on-warning',
 		info: 'bg-inverse-surface text-inverse-on-surface'
 	};
+
+	let hoehe = $state(0);
+	let platz = $state({ links: 0, unten: RAND });
+
+	// Gemessen wird, solange eine Meldung steht: beim Erscheinen, beim Scrollen (eine
+	// Auswahlleiste klebt am unteren Rand ihrer Liste), wenn eine Leiste kommt, geht oder ihre
+	// Größe ändert, und beim Ein- und Ausklappen der Navigation. Höchstens einmal je Bild, wie
+	// use:resthoehe.
+	$effect(() => {
+		if (snackbars.toasts.length === 0) return;
+		const meiden = [...snackbars.ausweichen];
+		const stapel = hoehe;
+		/** @param {'unten' | 'links'} seite */
+		const kaesten = (seite) =>
+			meiden.filter(([, s]) => s === seite).map(([el]) => el.getBoundingClientRect());
+		const messen = () => {
+			platz = meldungsPlatz({
+				fensterHoehe: window.innerHeight,
+				hoehe: stapel,
+				navigation: kaesten('links'),
+				leisten: kaesten('unten')
+			});
+		};
+		let geplant = 0;
+		const planen = () => {
+			if (!geplant)
+				geplant = requestAnimationFrame(() => {
+					geplant = 0;
+					messen();
+				});
+		};
+		messen();
+		window.addEventListener('scroll', planen, true);
+		window.addEventListener('resize', planen);
+		const beobachter = new ResizeObserver(planen);
+		for (const [el] of meiden) beobachter.observe(el);
+		return () => {
+			window.removeEventListener('scroll', planen, true);
+			window.removeEventListener('resize', planen);
+			beobachter.disconnect();
+			cancelAnimationFrame(geplant);
+		};
+	});
 </script>
 
-<!-- z-9999: Toasts müssen über allen Modals (z-50/z-60) und Omnibox-Alerts (z-100) liegen -->
-<div class="fixed top-6 right-6 z-9999 flex flex-col gap-2 pointer-events-none items-end">
+<!-- Unten und mittig über der Fläche rechts der Navigation (Material 3, Snackbar, „Placement":
+     „Snackbars should be placed at the bottom of a UI, in front of the main content"); wo und
+     warum genau, steht in meldungsPlatz.js. z-9999: Toasts müssen über allen Modals (z-50/z-60)
+     und Omnibox-Alerts (z-100) liegen. -->
+<div
+	class="pointer-events-none fixed right-0 z-9999 flex flex-col items-center gap-2 px-4"
+	style:left="{platz.links}px"
+	style:bottom="{platz.unten}px"
+	bind:clientHeight={hoehe}
+>
 	{#each snackbars.toasts as toast (toast.id)}
 		{@const Symbol = symbole[toast.type] ?? Info}
 		<!-- Fehler sind alert (der Screenreader unterbricht), alles andere status (er

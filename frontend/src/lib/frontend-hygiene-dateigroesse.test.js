@@ -16,7 +16,7 @@ const BESTAND = {
 	'src/lib/Bestellwesen.svelte': 231,
 	'src/lib/Omnibox.svelte': 202,
 	'src/lib/Statistik.svelte': 348,
-	'src/lib/Leserakte.svelte': 221,
+	'src/lib/Leserakte.svelte': 211,
 	'src/lib/Inventur.svelte': 231,
 	'src/lib/Konten.svelte': 208,
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 364,
@@ -39,7 +39,7 @@ const BESTAND = {
 	'src/lib/stores/omnibox.svelte.js': 420,
 	'src/lib/useBuchakte.svelte.js': 252,
 	'src/lib/useInventur.svelte.js': 234,
-	'src/lib/useLeserakte.svelte.js': 328
+	'src/lib/useLeserakte.svelte.js': 319
 };
 
 describe('Dateigröße: höchstens 200 Zeilen je Komponente und JS-Modul', () => {

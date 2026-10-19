@@ -19,6 +19,14 @@ export const snackbars = new (class {
 	/** @type {{id: number, message: string, type: ToastTyp, aktion?: ToastAktion}[]} */
 	toasts = $state([]);
 
+	/**
+	 * Was die Meldungen nicht verdecken dürfen: Eine Leiste am unteren Rand hebt sie an, die
+	 * Navigation links rückt ihre Mitte nach rechts (SnackbarAnzeige, meldungsPlatz.js).
+	 * Eingetragen wird nur über `use:meldungenWeichenAus`.
+	 * @type {Map<HTMLElement, 'unten' | 'links'>}
+	 */
+	ausweichen = new SvelteMap();
+
 	#counter = 0;
 	/** @type {Map<number, ReturnType<typeof setTimeout>>} */
 	#timers = new SvelteMap();

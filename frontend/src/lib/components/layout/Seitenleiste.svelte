@@ -10,6 +10,7 @@
 	import SeitenleisteFuss from './SeitenleisteFuss.svelte';
 	import logoUrl from '../../../assets/logo.png';
 	import { MediaQuery } from 'svelte/reactivity';
+	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
 	let systemOpen = $state(false);
 
@@ -98,6 +99,7 @@
 <aside
 	class="border-outline-variant flex shrink-0 flex-col justify-between border-r bg-surface
 		no-print h-screen transition-all duration-300 {zu ? 'w-16' : 'w-64'}"
+	use:meldungenWeichenAus={'links'}
 >
 	<div class="flex h-full flex-col justify-between overflow-y-auto">
 		<div>

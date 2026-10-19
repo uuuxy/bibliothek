@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useLeserakte } from './useLeserakte.svelte.js';
 import { apiFetch } from './apiFetch.js';
+import { snackbars } from './stores/snackbars.svelte.js';
 
 // Die Akte lädt vier Dinge nebeneinander: Stammdaten, Vormerkungen, Gebühren, Bescheide.
 //
@@ -185,6 +186,7 @@ describe('useLeserakte.ladeAkte', () => {
 describe('useLeserakte: Fehlermeldungen', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
+		snackbars.toasts.forEach((t) => snackbars.removeToast(t.id));
 	});
 
 	it('zeigt den Satz des Servers statt seines JSON-Rumpfs', async () => {
@@ -204,8 +206,9 @@ describe('useLeserakte: Fehlermeldungen', () => {
 		await hook.ladeAkte('A');
 		await hook.ladeRechnungHerunter();
 
-		expect(hook.fehlermeldung).toBe('Keine offene Forderung ohne Bescheid.');
-		expect(hook.fehlermeldung).not.toContain('{');
-		expect(hook.fehlermeldung).not.toContain('Error:');
+		// Über die Meldungen der Anwendung, nicht über eine eigene Fläche der Akte.
+		const meldung = snackbars.toasts.at(-1);
+		expect(meldung?.type).toBe('error');
+		expect(meldung?.message).toBe('Keine offene Forderung ohne Bescheid.');
 	});
 });
