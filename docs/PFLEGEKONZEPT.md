@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 16.10.2026 (Entwurf)
+Stand: 19.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -261,6 +261,16 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Paketnamen hebt auch den Bundler; `npm run build` kann dann an gültigem Code brechen, während
   svelte-check, ESLint und Vitest grün bleiben. Pakete deshalb einzeln heben und danach
   `npm run build` laufen lassen; der Hook vor dem Push baut das Frontend nicht.
+- **Nach einem Update von axe-core ist der Browser-Test zur Barrierefreiheit rot.** Eine neue
+  Fassung kann eine Regel von sich aus einschalten, so axe-core 4.14.0 mit
+  `label-content-name-mismatch` (der sichtbare Text eines Knopfs steht in seinem Namen, WCAG
+  2.5.3). Gemeldet werden dann Verstöße, die schon im Code standen; behoben wird im Code, die
+  Regel bleibt an. Welche Regel neu ist, sagen die Versionshinweise
+  (`gh api repos/dequelabs/axe-core/releases/tags/v<Fassung>`). `e2e/barrierefreiheit-axe.spec.js`
+  sieht nur die Hauptansichten im Grundzustand und in der CI nur die Testdaten: Gegen die
+  Entwicklungsdatenbank (`E2E_BASE_URL`, siehe `playwright.config.js`) zeigte dieselbe Spec eine
+  Stelle mehr, die ISBN-Knöpfe im Katalog. Die Namensregel hält am Quelltext
+  `frontend-hygiene-namen.test.js`.
 - **Go, eine Schwachstelle ohne genannten Fix.** Nennt die Meldung alle Fassungen als
   betroffen: erst am Quelltext der benutzten Fassung nachsehen, welcher Zweig ungeschützt ist
   und ob die eigenen Aufrufe ihn erreichen; die Antwort als Test ins Repository, dann die
