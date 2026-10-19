@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen repository.LeserAbfragen, mahnAbfragen *repository.MahnwesenAbfragen, protokollAbfragen repository.ProtokollAbfragen) {
+func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen *repository.LeserAbfragen, mahnAbfragen *repository.MahnwesenAbfragen, protokollAbfragen repository.ProtokollAbfragen) {
 	// ── Leser ──
 	// Die Klassenliste hinter Jahrgangsfilter und Jahrgangs-Auswahlfeld.
 	lmfAbfragen := repository.NewLMFAbfragen(s.DB.Pool)

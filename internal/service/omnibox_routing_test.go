@@ -29,7 +29,6 @@ func (r *weicheKatalogAttrappe) FindeTitel(_ context.Context, _ string) ([]repos
 }
 
 type weicheLeserAttrappe struct {
-	repository.LeserAbfragen
 	leser map[string]*repository.Leser
 }
 

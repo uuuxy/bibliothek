@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"time"
 
 	"bibliothek/db"
@@ -75,74 +74,13 @@ type scanner interface {
 
 // LeserAbfragen liest die Leser: einzeln für Theke und Akte, als Suche und als Liste der
 // Leserdatei.
-type LeserAbfragen interface {
-	// FindeZuBarcode liefert den Leser zu einer Ausweisnummer, Schüler wie Kollegium; nil, wenn
-	// die Nummer zu niemandem gehört. Das ist die Abfrage der Theke: Dort steht ein Mensch mit
-	// einer Karte, und welcher Art er ist, entscheidet nichts über das Ausleihen.
-	FindeZuBarcode(ctx context.Context, barcode string) (*Leser, error)
-
-	// Finde liefert den Leser zu seiner Kennung, für den Leser, der schon an der Theke steht,
-	// und für die Akte; nil, wenn es ihn nicht gibt. Wer nur Schüler meint, grenzt an der Art
-	// ein, statt eine zweite Tür zu bauen.
-	Finde(ctx context.Context, id string) (*Leser, error)
-
-	// FindeUnscharf sucht Wort für Wort und ohne Rücksicht auf Akzente über Vorname, Nachname
-	// und Ausweisnummer. Der zweite Wert ist die Zahl aller Treffer vor dem Limit: Ohne sie
-	// kann die Oberfläche eine abgeschnittene Liste nicht als solche kennzeichnen.
-	FindeUnscharf(ctx context.Context, suchtext string, limit int) ([]Leser, int, error)
-
-	// HatFoto sagt, ob zu dem Leser ein verschlüsseltes Foto gespeichert ist.
-	HatFoto(ctx context.Context, leserID string) (bool, error)
-
-	// ZaehleOffeneSchaeden liefert Anzahl und Summe der unbezahlten Forderungen des Lesers.
-	ZaehleOffeneSchaeden(ctx context.Context, leserID string) (anzahl int, summe float64, err error)
-
-	// LadeLaufendeAusleihen liefert, was der Leser gerade ausgeliehen hat, die jüngste Ausleihe
-	// zuerst.
-	LadeLaufendeAusleihen(ctx context.Context, leserID string) ([]LaufendeAusleihe, error)
-
-	// LadeKlassen liefert die Klassen aller Schüler außerhalb des Papierkorbs, Abgänger
-	// eingeschlossen, nach Namen geordnet.
-	LadeKlassen(ctx context.Context) ([]string, error)
-
-	// LadeEtikettZeilen liefert zu den genannten Lesern die Angaben eines Klebeetiketts:
-	// Ausweisnummer, Name und Klasse. Das Kollegium steht vorn, danach ordnen Klasse, Nachname
-	// und Vorname.
-	LadeEtikettZeilen(ctx context.Context, ids []string) ([]LeserEtikettZeile, error)
-
-	// LadeSchuelerListe liefert die aktiven Schüler mit ihren Ausleihzahlen, auf Wunsch auf
-	// Klassen oder einen Suchtext eingegrenzt. Die Suche nutzt dieselben Bausteine wie
-	// FindeUnscharf und ist nicht gekappt.
-	LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
-	// LadeLeserListe liefert alle Leser, Schüler und Kollegium, für die Leserdatei: dieselben
-	// Zeilen und dieselbe Suche, gelesen aus der Tabelle `leser` statt aus der Sicht.
-	LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
-	// LadeEhemaligenListe liefert die Weggegangenen (ist_abgaenger = true) für den Reiter
-	// „Ehemalige / Archiv", mit denselben Zeilen und derselben Suche wie die Aktiven.
-	LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
-
-	// LegeLeserInPapierkorb legt einen Leser in den Papierkorb, aus dem er sich zurückholen
-	// lässt. Seine Daten bleiben; endgültig löscht LoescheLeserEndgueltig.
-	LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error
-
-	// LoescheLeserEndgueltig entfernt einen Leser aus dem Papierkorb: Die Ausleihen verlieren
-	// ihren Leser, die Einträge des Protokolls ihren Personenbezug, erledigte Schadensfälle
-	// und die Zeile des Lesers werden gelöscht. Eine offene Ausleihe oder eine unbezahlte
-	// Forderung verhindert es.
-	LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
-
-	// LoescheAbgaengerEndgueltig tut dasselbe für einen Abgänger, der nicht im Papierkorb
-	// liegt; der nächtliche Lauf ruft es. Offene Vorgänge verhindern es ebenso.
-	LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error
-}
-
-type pgLeserAbfragen struct {
+type LeserAbfragen struct {
 	db db.Pool
 }
 
 // NewLeserAbfragen liefert die Abfragen der Leser an Postgres.
-func NewLeserAbfragen(db db.Pool) LeserAbfragen {
-	return &pgLeserAbfragen{db: db}
+func NewLeserAbfragen(db db.Pool) *LeserAbfragen {
+	return &LeserAbfragen{db: db}
 }
 
 // leseLeserMitZusatz liest die feste Spaltenliste eines Lesers (spaltenLeser) und danach

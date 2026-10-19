@@ -15,9 +15,11 @@ type LeserEtikettZeile struct {
 	Klasse    string
 }
 
-// LadeEtikettZeilen liest die Angaben für die Etiketten der genannten Leser.
+// LadeEtikettZeilen liest die Angaben für die Etiketten der genannten Leser: Ausweisnummer, Name
+// und Klasse.
 //
-// Sortiert nach Klasse, Nachname, Vorname, nicht in der Reihenfolge der übergebenen Kennungen:
+// Das Kollegium steht vorn, danach ordnen Klasse, Nachname und Vorname, nicht die Reihenfolge der
+// übergebenen Kennungen:
 // Die Reihenfolge des Markierens in der Leserdatei ist zufällig (mal von oben durchgeklickt,
 // mal per Häkchen im Kopf), und ein Bogen Klebeetiketten wird in der Reihenfolge abgezogen, in
 // der man die Namen sucht.
@@ -37,7 +39,7 @@ type LeserEtikettZeile struct {
 // Gelöschte Leser bleiben außen vor, und ihre Kennungen fallen dabei weg. Das ist hier kein
 // Fehler: Ein gleichzeitig gelöschter Mensch soll den ganzen Bogen nicht verhindern. Es ist der
 // einzige Grund, aus dem eine Zeile fehlen kann.
-func (a *pgLeserAbfragen) LadeEtikettZeilen(ctx context.Context, ids []string) ([]LeserEtikettZeile, error) {
+func (a *LeserAbfragen) LadeEtikettZeilen(ctx context.Context, ids []string) ([]LeserEtikettZeile, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}

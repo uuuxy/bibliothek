@@ -12,9 +12,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// festerLeserAttrappe liefert einen festen Leser für die Ausweis-Stufe der Theke.
+// festerLeserAttrappe liefert einen festen Leser für die Ausweis-Stufe der Theke; Finde bleibt
+// ungenutzt (eingebettetes nil).
 type festerLeserAttrappe struct {
-	repository.LeserAbfragen
+	leserErmittlung
 	leser *repository.Leser
 	err   error
 }
@@ -85,7 +86,7 @@ func TestNewOmniboxDienst(t *testing.T) {
 	// Nullwerte genügen: Geprüft wird nur, dass der Erzeuger jede Abhängigkeit in ihr Feld
 	// legt.
 	var pool db.Pool
-	var studentRepo repository.LeserAbfragen
+	var studentRepo leserErmittlung
 	var bookRepo repository.KatalogAbfragen
 	var loanRepo repository.AusleihAbfragen
 	var loanSvc AusleihDienst

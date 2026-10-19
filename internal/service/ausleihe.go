@@ -59,7 +59,7 @@ type AusleihDienst interface {
 // das Nachbuchen buchen mit denselben Schranken und Schreibern.
 type ausleihDienst struct {
 	pool              db.Pool
-	leserAbfragen     repository.LeserAbfragen
+	leserAbfragen     leserErmittlung
 	katalogAbfragen   repository.KatalogAbfragen
 	ausleihAbfragen   repository.AusleihAbfragen
 	protokollAbfragen repository.ProtokollAbfragen
@@ -77,7 +77,7 @@ func (d *ausleihDienst) heute() time.Time {
 }
 
 // NewAusleihDienst baut den Dienst für Ausleihe und Rückgabe.
-func NewAusleihDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) AusleihDienst {
+func NewAusleihDienst(pool db.Pool, leserAbfragen leserErmittlung, katalogAbfragen repository.KatalogAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) AusleihDienst {
 	return &ausleihDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,

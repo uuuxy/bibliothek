@@ -31,7 +31,7 @@ import (
 // lmfAbfragen liefert die Klassen für den Jahrgangsfilter. Als Parameter, nicht über t.DB:
 // Die Türen dieses Pakets bekommen ihre Abfragen von außen, und ein Griff nach t.DB.Pool
 // sprengte jeden Test, der die Türen ohne Datenbank baut (TestLeserlisteLeereListeIstArray).
-func (t *Tueren) Leserliste(leserAbfragen repository.LeserAbfragen, lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
+func (t *Tueren) Leserliste(leserAbfragen *repository.LeserAbfragen, lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		// Klasse oder Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
 		// genauere Angabe). Die Übersetzung steht in schueler_jahrgang_filter.go.

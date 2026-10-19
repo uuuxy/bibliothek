@@ -138,7 +138,7 @@ func wiederherstellungsKollision(err error) (string, bool) {
 // LeserEndgueltigLoeschen entfernt einen Leser, der im Papierkorb liegt, endgültig
 // (repository.LoescheLeserEndgueltig); offene Ausleihen und unbezahlte Forderungen
 // verhindern es.
-func (t *Tueren) LeserEndgueltigLoeschen(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserEndgueltigLoeschen(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {

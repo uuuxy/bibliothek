@@ -85,7 +85,7 @@ type OmniboxEingabe struct {
 // Ausleihe und Gerät bucht er über deren Dienste.
 type OmniboxDienst struct {
 	pool            db.Pool
-	leserAbfragen   repository.LeserAbfragen
+	leserAbfragen   leserErmittlung
 	katalogAbfragen repository.KatalogAbfragen
 	ausleihAbfragen repository.AusleihAbfragen
 	ausleihe        AusleihDienst
@@ -95,7 +95,7 @@ type OmniboxDienst struct {
 // NewOmniboxDienst baut den Dienst der Omnibox.
 func NewOmniboxDienst(
 	pool db.Pool,
-	leserAbfragen repository.LeserAbfragen,
+	leserAbfragen leserErmittlung,
 	katalogAbfragen repository.KatalogAbfragen,
 	ausleihAbfragen repository.AusleihAbfragen,
 	ausleihe AusleihDienst,

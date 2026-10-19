@@ -28,38 +28,6 @@ func (m *leserAttrappe) Finde(ctx context.Context, id string) (*repository.Leser
 func (m *leserAttrappe) FindeZuBarcode(ctx context.Context, barcode string) (*repository.Leser, error) {
 	return nil, nil
 }
-func (m *leserAttrappe) FindeUnscharf(ctx context.Context, q string, limit int) ([]repository.Leser, int, error) {
-	return nil, 0, nil
-}
-func (m *leserAttrappe) HatFoto(ctx context.Context, id string) (bool, error) { return false, nil }
-func (m *leserAttrappe) ZaehleOffeneSchaeden(ctx context.Context, id string) (int, float64, error) {
-	return 0, 0, nil
-}
-func (m *leserAttrappe) LadeLaufendeAusleihen(ctx context.Context, id string) ([]repository.LaufendeAusleihe, error) {
-	return nil, nil
-}
-func (m *leserAttrappe) LadeKlassen(ctx context.Context) ([]string, error) { return nil, nil }
-func (m *leserAttrappe) LadeEtikettZeilen(ctx context.Context, ids []string) ([]repository.LeserEtikettZeile, error) {
-	return nil, nil
-}
-func (m *leserAttrappe) LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
-	return nil, nil
-}
-func (m *leserAttrappe) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
-	return nil, nil
-}
-func (m *leserAttrappe) LegeLeserInPapierkorb(ctx context.Context, leserID, bearbeiterID, grund string) error {
-	return nil
-}
-func (m *leserAttrappe) LoescheLeserEndgueltig(ctx context.Context, leserID, bearbeiterID string) error {
-	return nil
-}
-func (m *leserAttrappe) LoescheAbgaengerEndgueltig(ctx context.Context, leserID, bearbeiterID string) error {
-	return nil
-}
-func (m *leserAttrappe) LadeEhemaligenListe(ctx context.Context, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
-	return nil, nil
-}
 
 type protokollAttrappe struct {
 	adminAktionen int

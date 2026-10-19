@@ -18,7 +18,7 @@ import (
 //
 // Die Tür ruft es mit der ID des Bearbeiters, der nächtliche Lauf mit leerer ID; der Eintrag
 // nennt dann SYSTEM.
-func (a *pgLeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error {
+func (a *LeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -193,9 +193,10 @@ func (e *LoeschenBlockiertFehler) Error() string {
 	return fmt.Sprintf("endgültiges löschen blockiert: %d unbezahlte schadensfälle", e.UnbezahlteSchadensfaelle)
 }
 
-// LoescheLeserEndgueltig entfernt einen Leser, der im Papierkorb liegt, endgültig. Offene
-// Ausleihen und unbezahlte Forderungen verhindern es.
-func (a *pgLeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
+// LoescheLeserEndgueltig entfernt einen Leser, der im Papierkorb liegt, endgültig; was dabei
+// geschieht, steht an tilgeSpurenUndLoescheLeser. Offene Ausleihen und unbezahlte Forderungen
+// verhindern es.
+func (a *LeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -228,7 +229,7 @@ func (a *pgLeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID st
 // Abgänger liegt nicht im Papierkorb; wen es trifft (Karenz, Merkmal Abgänger), wählt der
 // Rufer. Offene Vorgänge prüft die Funktion trotzdem, weil zwischen Auswahl und Löschen ein
 // Buch ausgeliehen sein kann.
-func (a *pgLeserAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
+func (a *LeserAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err

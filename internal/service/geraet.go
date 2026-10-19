@@ -38,13 +38,13 @@ type geraeteErgebnis struct {
 // GeraeteDienst bucht den Scan eines Geräts (Laptop, Tablet).
 type GeraeteDienst struct {
 	pool              db.Pool
-	leserAbfragen     repository.LeserAbfragen
+	leserAbfragen     leserAbruf
 	ausleihAbfragen   repository.AusleihAbfragen
 	protokollAbfragen repository.ProtokollAbfragen
 }
 
 // NewGeraeteDienst baut den Dienst für Geräte.
-func NewGeraeteDienst(pool db.Pool, leserAbfragen repository.LeserAbfragen, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) *GeraeteDienst {
+func NewGeraeteDienst(pool db.Pool, leserAbfragen leserAbruf, ausleihAbfragen repository.AusleihAbfragen, protokollAbfragen repository.ProtokollAbfragen) *GeraeteDienst {
 	return &GeraeteDienst{
 		pool:              pool,
 		leserAbfragen:     leserAbfragen,

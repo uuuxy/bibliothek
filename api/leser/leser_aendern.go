@@ -67,7 +67,7 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /schueler/{id} [delete]
-func (t *Tueren) LeserLoeschen(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
+func (t *Tueren) LeserLoeschen(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())
 		if !ok {

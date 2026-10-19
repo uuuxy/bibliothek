@@ -36,7 +36,7 @@ type schuelerEtikettenAnfrage struct {
 
 // SchuelerEtiketten liefert den Klebebogen als PDF.
 // POST /api/print/schueler-etiketten
-func (t *Tueren) SchuelerEtiketten(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
+func (t *Tueren) SchuelerEtiketten(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req schuelerEtikettenAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {
@@ -92,7 +92,7 @@ func pruefeBogenParameter(req *schuelerEtikettenAnfrage) error {
 // etikettenDesBogens liefert den Inhalt: ein Muster oder die markierten Schüler.
 // Zweiter Rückgabewert ist der HTTP-Status zum Fehler — ein Datenbankausfall ist kein
 // Eingabefehler und darf nicht als 400 bei der Theke ankommen.
-func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen repository.LeserAbfragen, req schuelerEtikettenAnfrage) ([]pdf.SchuelerEtikett, int, error) {
+func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen *repository.LeserAbfragen, req schuelerEtikettenAnfrage) ([]pdf.SchuelerEtikett, int, error) {
 	if req.Muster {
 		return []pdf.SchuelerEtikett{pdf.MusterSchuelerEtikett}, 0, nil
 	}

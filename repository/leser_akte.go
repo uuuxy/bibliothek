@@ -34,7 +34,7 @@ type LaufendeAusleihe struct {
 }
 
 // HatFoto sagt, ob zu dem Leser ein verschlüsseltes Foto gespeichert ist.
-func (a *pgLeserAbfragen) HatFoto(ctx context.Context, leserID string) (bool, error) {
+func (a *LeserAbfragen) HatFoto(ctx context.Context, leserID string) (bool, error) {
 	var hatFoto bool
 	err := a.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", leserID).Scan(&hatFoto)
 	return hatFoto, err
@@ -51,13 +51,13 @@ func ZaehleOffeneSchaeden(ctx context.Context, q Datenbank, leserID string) (anz
 }
 
 // ZaehleOffeneSchaeden zählt die unbezahlten Forderungen des Lesers und nennt ihre Summe.
-func (a *pgLeserAbfragen) ZaehleOffeneSchaeden(ctx context.Context, leserID string) (int, float64, error) {
+func (a *LeserAbfragen) ZaehleOffeneSchaeden(ctx context.Context, leserID string) (int, float64, error) {
 	return ZaehleOffeneSchaeden(ctx, a.db, leserID)
 }
 
 // LadeLaufendeAusleihen liest die offenen Ausleihen des Lesers mit Exemplar und Titel, die
 // jüngste zuerst.
-func (a *pgLeserAbfragen) LadeLaufendeAusleihen(ctx context.Context, leserID string) ([]LaufendeAusleihe, error) {
+func (a *LeserAbfragen) LadeLaufendeAusleihen(ctx context.Context, leserID string) ([]LaufendeAusleihe, error) {
 	query := `
 		SELECT 
 			e.id, 

@@ -9,20 +9,24 @@ import (
 )
 
 // FindeZuBarcode liest einen Leser — Schüler oder Kollegium — über seine
-// Ausweisnummer. Die Abfrage geht an die Tabelle `leser` und nicht an die Sicht
-// `schueler`; nur so finden Theke und Suchleiste einen Kollegen.
-func (a *pgLeserAbfragen) FindeZuBarcode(ctx context.Context, barcode string) (*Leser, error) {
+// Ausweisnummer; nil, wenn die Nummer zu niemandem gehört. Das ist die Abfrage der Theke: Dort
+// steht ein Mensch mit einer Karte, und welcher Art er ist, entscheidet nichts über das
+// Ausleihen. Die Abfrage geht an die Tabelle `leser` und nicht an die Sicht `schueler`; nur so
+// finden Theke und Suchleiste einen Kollegen.
+func (a *LeserAbfragen) FindeZuBarcode(ctx context.Context, barcode string) (*Leser, error) {
 	return a.findeMit(ctx, `WHERE barcode_id = $1 AND deleted_at IS NULL`, barcode)
 }
 
-// Finde liest einen Leser über seine UUID.
-func (a *pgLeserAbfragen) Finde(ctx context.Context, id string) (*Leser, error) {
+// Finde liest einen Leser über seine UUID, für den Leser, der schon an der Theke steht, und für
+// die Akte; nil, wenn es ihn nicht gibt. Wer nur Schüler meint, grenzt an der Art ein, statt
+// eine zweite Tür zu bauen.
+func (a *LeserAbfragen) Finde(ctx context.Context, id string) (*Leser, error) {
 	return a.findeMit(ctx, `WHERE id = $1 AND deleted_at IS NULL`, id)
 }
 
 // findeMit führt die beiden Leser-Abfragen aus: dieselbe Spaltenliste, dieselbe Behandlung
 // des Nichttreffers (nil, nil), nur eine andere Bedingung.
-func (a *pgLeserAbfragen) findeMit(ctx context.Context, bedingung string, arg any) (*Leser, error) {
+func (a *LeserAbfragen) findeMit(ctx context.Context, bedingung string, arg any) (*Leser, error) {
 	row := a.db.QueryRow(ctx, `SELECT `+spaltenLeser+`, art FROM leser `+bedingung+` LIMIT 1`, arg)
 	var art string
 	s, err := leseLeserMitZusatz(row, &art)
@@ -117,7 +121,8 @@ const leserSuchRang = `
 		+ (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.vorname, ''))  LIKE tokens.norm || '%') DESC`
 
 // FindeUnscharf durchsucht die Leserschaft nach Namen oder Ausweisnummern und liefert
-// zusätzlich die Gesamtzahl der Treffer, nicht nur die des Limits.
+// zusätzlich die Gesamtzahl der Treffer, nicht nur die des Limits: Ohne sie kann die Oberfläche
+// eine abgeschnittene Liste nicht als solche kennzeichnen.
 //
 // Gelesen wird die Tabelle `leser`, nicht die Sicht `schueler`: Über die Sicht fände niemand
 // einen Kollegen an seinem Namen, und wer die Karte gerade nicht zur Hand hat, fände ihn an der
@@ -139,7 +144,7 @@ const leserSuchRang = `
 //     mal ist es umgekehrt.
 //
 // Die SQL-Bausteine stehen oben als Konstanten; dieselbe Suche bedient die Leserdatei.
-func (a *pgLeserAbfragen) FindeUnscharf(ctx context.Context, suchtext string, limit int) ([]Leser, int, error) {
+func (a *LeserAbfragen) FindeUnscharf(ctx context.Context, suchtext string, limit int) ([]Leser, int, error) {
 	tokens := suchTokens(suchtext)
 	if len(tokens) == 0 {
 		return nil, 0, nil

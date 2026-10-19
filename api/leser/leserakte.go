@@ -12,7 +12,7 @@ import (
 
 // leseFotoURL liefert die Foto-URL eines Schülers, falls ein (verschlüsseltes) Foto
 // hinterlegt ist, sonst einen leeren String.
-func leseFotoURL(ctx context.Context, leserAbfragen repository.LeserAbfragen, leser *repository.Leser) string {
+func leseFotoURL(ctx context.Context, leserAbfragen *repository.LeserAbfragen, leser *repository.Leser) string {
 	if leser.BarcodeID == "" {
 		return ""
 	}
@@ -85,7 +85,7 @@ type offeneForderungen struct {
 // @Failure      500  {object}  map[string]string
 // @Router       /schueler/{id} [get]
 func (t *Tueren) Leserakte(
-	leserAbfragen repository.LeserAbfragen,
+	leserAbfragen *repository.LeserAbfragen,
 ) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.gibLeserakte(w, r, leserAbfragen)
@@ -94,7 +94,7 @@ func (t *Tueren) Leserakte(
 
 // gibLeserakte stellt die Akte eines Lesers zusammen: Stammdaten, Foto, Ausleihen,
 // offene Forderungen und beim Kollegium die Schul-Adresse.
-func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfragen repository.LeserAbfragen) error {
+func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfragen *repository.LeserAbfragen) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return apierrors.BadRequest("Die Kennung des Lesers fehlt", nil)
@@ -183,7 +183,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 // @Success      200  {array}   string
 // @Failure      500  {object}  map[string]string
 // @Router       /klassen [get]
-func (t *Tueren) Klassen(leserAbfragen repository.LeserAbfragen) http.HandlerFunc {
+func (t *Tueren) Klassen(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		klassen, err := leserAbfragen.LadeKlassen(r.Context())
 		if err != nil {

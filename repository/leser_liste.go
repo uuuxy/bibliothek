@@ -31,9 +31,9 @@ type LeserListenZeile struct {
 	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
 }
 
-// LadeKlassen liest die Klassen der Sicht schueler außerhalb des Papierkorbs, nach Namen
-// geordnet.
-func (a *pgLeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
+// LadeKlassen liest die Klassen der Sicht schueler außerhalb des Papierkorbs, Abgänger
+// eingeschlossen, nach Namen geordnet.
+func (a *LeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
 	rows, err := a.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
 	if err != nil {
 		return nil, err
@@ -57,8 +57,8 @@ func (a *pgLeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
 // über suche — die Suche läuft auf dem Server und kennt keine Grenze bei 500.
 const leserListeMax = 500
 
-// LadeSchuelerListe liefert Schüler samt Ausleihzahlen, auf Wunsch auf Klassen eingegrenzt oder
-// auf einen Suchtext (Name oder Ausweisnummer).
+// LadeSchuelerListe liefert die aktiven Schüler samt Ausleihzahlen, auf Wunsch auf Klassen
+// eingegrenzt oder auf einen Suchtext (Name oder Ausweisnummer).
 //
 // Gesucht wird über dieselben SQL-Bausteine wie in der Omnibox an der Theke (leserSuchCTE,
 // leserSuchBedingung und leserSuchRang in leser_suche.go): Tokens in beliebiger Reihenfolge,
@@ -70,15 +70,16 @@ const leserListeMax = 500
 // Jahrgang genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht an einer Stelle
 // in der API; sie braucht das Klassenschema der Schule („ET" ist Jahrgang 11), und das kann SQL
 // nicht.
-func (a *pgLeserAbfragen) LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+func (a *LeserAbfragen) LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	return a.ladeListe(ctx, klassen, suche, listeAktiveSchueler, sortierung)
 }
 
 // LadeEhemaligenListe liefert die Schüler, die die Schule verlassen haben (ist_abgaenger =
 // true, nicht gelöscht), für den Reiter „Ehemalige / Archiv" der Schülerdatei. Die
 // Abgängerliste meint die Abschlussklassen, die noch an der Schule sind; die Weggegangenen
-// haben deshalb ihre eigene Liste. Jüngster Abgang zuerst, dann Name.
-func (a *pgLeserAbfragen) LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+// haben deshalb ihre eigene Liste, mit denselben Zeilen und derselben Suche wie die Aktiven
+// (ladeListe). Jüngster Abgang zuerst, dann Name.
+func (a *LeserAbfragen) LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	return a.ladeListe(ctx, nil, suche, listeEhemalige, sortierung)
 }
 
@@ -86,7 +87,7 @@ func (a *pgLeserAbfragen) LadeEhemaligenListe(ctx context.Context, suche string,
 // Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser` statt über die
 // Sicht `schueler`. Ohne sie stünde ein Kollege in keiner Liste; man sähe an der Theke, dass er
 // ein Buch bekommen hat, aber nirgends, welche er hat.
-func (a *pgLeserAbfragen) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+func (a *LeserAbfragen) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	return a.ladeListe(ctx, klassen, suche, listeAlleLeser, sortierung)
 }
 
@@ -105,7 +106,7 @@ const (
 	listeAlleLeser
 )
 
-func (a *pgLeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche string, art listenArt, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+func (a *LeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche string, art listenArt, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die Nummern der
 	// Platzhalter stehen fest ($1/$2 Suche, $3 Klasse), und die Argumente dazu werden nur
 	// angehängt, wenn ihre Bedingung im SQL steht: Postgres lehnt überzählige Parameter ab.

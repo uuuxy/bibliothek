@@ -13,7 +13,7 @@ import (
 
 func TestNewGeraeteDienst(t *testing.T) {
 	var pool db.Pool = nil
-	var studentRepo repository.LeserAbfragen = nil
+	var studentRepo leserAbruf = nil
 	var loanRepo repository.AusleihAbfragen = nil
 	var auditRepo repository.ProtokollAbfragen = nil
 
@@ -36,10 +36,8 @@ func TestNewGeraeteDienst(t *testing.T) {
 	}
 }
 
-// gesperrterLeserAttrappe liefert einen festen Leser — nur Finde wird von ladeAkteur
-// aufgerufen, die übrigen Interface-Methoden bleiben ungenutzt (eingebettetes nil).
+// gesperrterLeserAttrappe liefert einen festen Leser; ladeAkteur ruft nur Finde.
 type gesperrterLeserAttrappe struct {
-	repository.LeserAbfragen
 	leser *repository.Leser
 }
 

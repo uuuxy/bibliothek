@@ -11,7 +11,7 @@ import (
 func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := &pgLeserAbfragen{db: pool}
+	repo := &LeserAbfragen{db: pool}
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, deleted_at) VALUES
