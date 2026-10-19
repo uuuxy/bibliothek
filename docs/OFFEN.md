@@ -24,6 +24,8 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5). (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
+- [ ] Sicherung außer Haus: Das Programm löscht alte Sicherungen auch am Speicher außer Haus,
+  nach derselben Regel wie auf dem Server (`jobs.zuLoeschen`). (7.3, R8)
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
   Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
   Admin-Konten, Verbindung zur DNB (7.8).
@@ -34,10 +36,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
-- [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
-  Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
-  Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
-  einstellt, braucht es dann nicht. (7.3, R8)
+- [x] Sicherung außer Haus: Das Programm löscht am Speicher außer Haus nach derselben Regel wie
+  auf dem Server (die jüngsten 14 Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel
+  von Hand am Speicher braucht es dann nicht. Der Schritt steht in Etappe 1. (7.3, R8)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -116,9 +117,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 **Erledigen:**
 
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
-- [ ] Auf GitHub #751 schließen (die Messung steht am Pull Request) und zwei Zweige ohne Pull
-  Request löschen: `testing/bestellhistorie-handler-3638986931240989503` (von #745) und
-  `bolt-optimize-erster-admin-9258519918401332392` (von #748).
+- [x] Auf GitHub #751 geschlossen; die Zweige von #745, #748 und #751 sind gelöscht.
 - [ ] Am Testserver nachsehen, ob das Buch mit der Nummer 2424 („Mathematik heute", Band 6)
   fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
   den Status des Exemplars zurückstellen.
@@ -472,10 +471,11 @@ Sicherung von 2010 sind es 5 Sperren und 4 Salden ungleich 0. An der Sicherung v
 liegt auf einer Platte. Nur ein Speicher in der EU. Der Code ist fertig bis auf das Löschen
 (nachgesehen am 28.09.2026): `schreibeBackupNachS3` in `jobs/backup.go` lädt jede Nachtsicherung
 hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
-Sicherung mit allen Personen ihres Stands unbegrenzt liegen. Beim Einrichten eine Löschregel am
-Speicher setzen, die der Aufbewahrung der Nachtsicherung folgt (die jüngsten 14, dazu je
-Kalenderwoche eine für 12 Wochen; `jobs.AufbewahrteNaechte`, `jobs.AufbewahrteWochen`), oder die Rotation
-im Code auf den Speicher ausdehnen. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
+Sicherung mit allen Personen ihres Stands unbegrenzt liegen. **Entschieden am 19.10.2026:** Das
+Programm löscht am Speicher nach derselben Regel wie im lokalen Verzeichnis (die jüngsten 14,
+dazu je Kalenderwoche eine für 12 Wochen; `jobs.zuLoeschen` mit `jobs.AufbewahrteNaechte` und
+`jobs.AufbewahrteWochen`); eine Löschregel von Hand am Speicher braucht es dann nicht. Nicht
+gebaut. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
 Ein zweiter Rechner per Kopierbefehl oder eine getauschte Platte leisten dasselbe ohne
 Vertragsfrage, außerhalb des Programms; das ist eine Betriebsentscheidung.
 
