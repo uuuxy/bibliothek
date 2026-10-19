@@ -183,7 +183,7 @@ Kollegium“ grün. Eine Lehrkraft mit Schulpostfach, die **kein** Konto hat.
 **Ablauf:**
 
 1. [ ] Die Lehrkraft meldet sich mit Schul-E-Mail und Mailpasswort an. Sie kommt **nicht**
-       hinein, liest „Zugang beantragt — die Bibliothek muss ihn noch freischalten“, und die
+       hinein, liest „Zugang beantragt. Die Bibliothek muss ihn noch freischalten.“, und die
        Meldung bleibt stehen (verschwindet nicht nach Sekunden).
 2. [ ] System → Benutzer & Rechte: Über der Tabelle steht „1 Zugangsanfrage aus der
        Selbstanmeldung wartet auf Freischaltung: <Name>“; die Zeile trägt „Zugang beantragt“

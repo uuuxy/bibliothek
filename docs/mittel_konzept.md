@@ -273,8 +273,8 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
    Gebaut sind Anbindung, Liste, Rückgabe-Hook und die Übergabe als Status. Das Exemplar
    steht schon beim Erstellen des Briefs oder beim Melden auf `VERLUST` (`bucheVerluste`,
-   `SchadensAbfragen.Melde`), und ein „Buch doch gefunden" im Fehlbestandsbericht
-   (`MarkiereVerlustAlsGefunden`) storniert die Forderung über denselben Weg wie die Theke
+   `SchadensAbfragen.Melde`), und ein Exemplar, das im Fehlbestandsbericht als gefunden
+   markiert wird (`MarkiereVerlustAlsGefunden`), storniert die Forderung über denselben Weg wie die Theke
    (`verbucheRueckkehr`). Offen: das Übergabe-PDF.
 3. Schulträger-Rechnung + Betriebsbereitschaft-Warnung. **Bis dahin nimmt der Server nur
    `mittel = land` an, und jede Position muss ein Buch des Landes sein** (409 an der Tür,

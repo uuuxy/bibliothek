@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 16.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 19.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -172,13 +172,13 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 16.10.2026)
+### 1.4 Umfang in Zahlen (gemessen 19.10.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 78.997 Zeilen (ohne das generierte `docs/docs.go`) |
-| Go-Tests                          | 133.541 Zeilen in 928 Testdateien          |
-| Svelte/JavaScript (`frontend/src`) | 83.994 Zeilen in 748 Dateien, davon 309 `.svelte` |
+| Go-Produktivcode                  | 78.909 Zeilen (ohne das generierte `docs/docs.go`) |
+| Go-Tests                          | 134.673 Zeilen in 935 Testdateien          |
+| Svelte/JavaScript (`frontend/src`) | 84.307 Zeilen in 754 Dateien, davon 309 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 161 Dateien, davon 156 Specs               |
 | Registrierte HTTP-Routen          | 228; davon in Swagger beschrieben 88 Operationen auf 75 Pfaden |
 | Datenbank-Migrationen             | 167 Dateien, die höchste Nummer ist 164    |
@@ -942,7 +942,7 @@ Umgebung meldet sich noch am selben Vormittag, nicht erst am nächsten Tag.
 
 ### 5.5 Wichtige Datenstrukturen (Auszug)
 
-Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](invarianten.md).
+Vollständig: `schema.sql` und [invarianten.md](invarianten.md).
 
 | Tabelle / Sicht                | Bedeutung                                                                                                        |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |

@@ -627,7 +627,7 @@ der Liste.
 Über _Titel suchen & hinzufügen_ kommen auch Titel dazu, die es noch nicht gibt; vor dem
 Warenkorb steht ein Fenster mit Signatur, Schlagworten, der Frage „Lernmittel?" und der Menge.
 Die Suche fragt den eigenen Bestand und die DNB. Antwortet die DNB nicht, steht oben in der
-Trefferliste _Die DNB ist nicht erreichbar — bitte später erneut versuchen_; die Liste zeigt
+Trefferliste _Die DNB ist nicht erreichbar. Bitte später erneut versuchen._; die Liste zeigt
 dann nur den eigenen Bestand, und ein Titel, der darin fehlt, kann der DNB trotzdem bekannt sein.
 Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der
 DNB-Satz nennt und die es unter _Einstellungen → Schlagworte_ schon gibt (auch über einen
@@ -675,7 +675,9 @@ Zwei Reiter, beide mit einem Blatt zum Ausdrucken und Abheften: **Zugangsbuch** 
 Exemplare in einem Zeitraum in den Bestand gekommen sind — Eingangsdatum, Nummer, Titel,
 Lieferant) und **Abgangsbuch** (welche hinausgegangen sind — Datum, Nummer, Titel,
 Signatur, Grund). Vorbelegt ist das laufende Schulhalbjahr mit den Stichtagen 15.3. und
-15.9.; beide Datumsfelder lassen sich überschreiben. Land und Schulträger stehen getrennt,
+15.9.; beide Datumsfelder lassen sich überschreiben. Ein Zeitraum umfasst höchstens ein Jahr
+(sonst: _Der Zeitraum darf höchstens ein Jahr umfassen_): Ein Schuljahr vom 15.9. bis 14.9.
+geht, mehrere Jahre gehen als mehrere Ausdrucke. Land und Schulträger stehen getrennt,
 jeweils mit eigener Stückzahl.
 
 Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellungen →
@@ -836,7 +838,7 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
   - Muss der Rechner aus, bevor die Verbindung zurück ist: **„Sicherung speichern"** im Band, die
     Datei später unter _Datenverwaltung → Offline-Sicherungen einspielen_ übernehmen. Zweimal
     einspielen schadet nicht.
-- **Nach einem Netzausfall: „x Buchungen brauchen einen Blick"** → Der Server hat beim Nachbuchen
+- **Nach einem Netzausfall: „x Buchungen aus dem Nachbuchen brauchen einen Blick"** → Der Server hat beim Nachbuchen
   etwas anders gebucht, als es gescannt wurde — das Buch lag bei jemand anderem, oder eine
   Rückgabe kam zu spät. Öffne **Meldungen**, sieh die Zeilen durch und setze jede mit „Erledigt"
   ab, um die du dich gekümmert hast. Steht der Knopf nicht da, fehlt das Recht, Schülerdaten zu
