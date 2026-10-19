@@ -840,6 +840,15 @@ frontend/src
   Die Beschriftung nennt die Handlung („It describes the action that will occur").
 - **Ein Knopf steht bei dem Inhalt, den er betrifft** (Material 3, Spacing: „buttons should be
   close to the content they're affecting"), nicht am fernen Rand der Zeile.
+- **Ein leeres Pflichtfeld sperrt den Knopf nicht.** Der Klick nennt am Feld, was fehlt, und
+  führt dorthin; der Fehlertext steht ab dem ersten Klick und geht, sobald das Feld gefüllt ist
+  (`titelVerlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,
+  Text fields: „If only one error is possible, error text should describe how to avoid the
+  error".
+- **Ein Stil im `<style>` eines Bauteils schlägt jede Tailwind-Klasse des Aufrufers,** gleich
+  welcher Spezifität: Tailwind legt seine Klassen in `@layer utilities`, die Stile der Bauteile
+  stehen in keiner Schicht. Was der Aufrufer bestimmen soll, setzt das Bauteil deshalb nicht
+  selbst (`ui/Tabelle` lässt die senkrechte Ausrichtung der Zellen offen).
 - **Was jemand sieht, entscheidet das Recht der Route,** nicht die Rolle: `hatRecht` aus
   `menue.js` (Ratsche `frontend-hygiene-rechte.test.js`, [FACHKONZEPT.md §12.2](FACHKONZEPT.md)).
 - **Suchen, Sortieren und Filtern einer gekappten Liste geschehen am Server.** Im Browser

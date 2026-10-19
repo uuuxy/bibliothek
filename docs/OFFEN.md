@@ -45,7 +45,7 @@ Kategorie C; 5.79 kam beim Beheben von 5.75 dazu. Die der Kategorie A zuerst.
 - [x] „Stammdaten bearbeiten": Die Meldung „Änderungen gespeichert." ist zu sehen. (5.76)
 - [x] „Stammdaten bearbeiten": „Zurück", Seitenwechsel und Neuladen fragen vor dem Verwerfen.
   (5.80, A)
-- [ ] Drei Knöpfe sagen bei leerem Feld, was fehlt. (5.77)
+- [x] Drei Knöpfe sagen bei leerem Feld, was fehlt. (5.77)
 - [ ] Die Meldungen stehen unten, wie Material 3 es vorsieht. (5.78)
 
 ### Bei dir
@@ -384,12 +384,6 @@ den Ladenhütern steht in Grün „Keine Ladenhüter — der Bestand ist in Bewe
 anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Abschnitte, die
 nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
 zuständige Seite von M3 lesen.
-
-### 5.77 Drei Knöpfe tun bei leerem Feld nichts
-
-`speichereBarcode` in `ExemplarKarte.svelte`, `speichereBearbeitung` in
-`SystematikVerwaltung.svelte` und `authStore.handleLogin` kehren bei leerem Feld ohne Meldung
-zurück. Weg: am Feld sagen, was fehlt; vorher M3, Text fields, lesen.
 
 ### 5.78 Die Meldungen stehen oben rechts
 

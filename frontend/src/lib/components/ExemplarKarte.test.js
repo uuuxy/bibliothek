@@ -7,7 +7,7 @@ vi.mock('../apiFetch.js', async (original) => ({
 	apiClient: { put: vi.fn() }
 }));
 
-import { apiClient } from '../apiFetch.js';
+import { apiClient, apiFetch } from '../apiFetch.js';
 import ExemplarKarte from './ExemplarKarte.svelte';
 
 // Was nicht zum Bestand zählt, heißt nicht „Gesperrt". Ein ausgesondertes Exemplar hat keinen
@@ -97,5 +97,65 @@ describe('Exemplarkarte: abgelehnter Barcode', () => {
 		await waitFor(() => expect(k.queryByLabelText('Barcode des Exemplars')).toBeNull());
 		expect(k.container.textContent).toContain('B-0041873');
 		expect(k.container.textContent).not.toContain(grund);
+	});
+});
+
+// Ein Klick auf „Speichern" bei leerem Feld nennt am Feld, was fehlt, führt dorthin und schickt
+// nichts ab. Ein Fehler des Servers gilt nur für den Wert, den er abgelehnt hat.
+describe('Exemplarkarte: leerer Barcode', () => {
+	const karte = () =>
+		render(ExemplarKarte, {
+			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
+			gewaehlt: false,
+			darfBearbeiten: true,
+			onToggleSelect: () => {},
+			onDelete: () => {}
+		});
+
+	/** @param {HTMLElement} feld */
+	const beschreibung = (feld) =>
+		document.getElementById(feld.getAttribute('aria-describedby') ?? '')?.textContent;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('nennt am Feld, was fehlt, statt den Klick zu schlucken', async () => {
+		const k = karte();
+		await fireEvent.click(k.getByRole('button', { name: 'Barcode scannen' }));
+		const feld = k.getByLabelText('Barcode des Exemplars');
+		const speichern = k.getByRole('button', { name: 'Speichern' });
+		speichern.focus();
+		await fireEvent.click(speichern);
+
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		expect(beschreibung(feld)).toBe(
+			'Bitte einen Barcode scannen oder eintragen. Gespeichert wird erst mit ihm.'
+		);
+		expect(document.activeElement).toBe(feld);
+		expect(apiClient.put).not.toHaveBeenCalled();
+
+		await fireEvent.input(feld, { target: { value: 'B-0041873' } });
+		expect(feld.getAttribute('aria-invalid')).toBeNull();
+	});
+
+	it('nimmt den Grund des Servers weg, sobald eine interne ID im Feld steht', async () => {
+		vi.mocked(apiClient.put).mockResolvedValue(
+			/** @type {any} */ ({ ok: false, json: async () => ({ error: 'schon vergeben' }) })
+		);
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ next_barcode: 'B-0099999' }) })
+		);
+		const k = karte();
+		await fireEvent.click(k.getByRole('button', { name: 'Barcode scannen' }));
+		const feld = /** @type {HTMLInputElement} */ (k.getByLabelText('Barcode des Exemplars'));
+		await fireEvent.input(feld, { target: { value: 'B-0041873' } });
+		await fireEvent.click(k.getByRole('button', { name: 'Speichern' }));
+		await waitFor(() => expect(beschreibung(feld)).toBe('schon vergeben'));
+
+		await fireEvent.click(k.getByRole('button', { name: 'Interne ID generieren' }));
+
+		await waitFor(() => expect(feld.value).toBe('B-0099999'));
+		expect(feld.getAttribute('aria-invalid')).toBeNull();
 	});
 });

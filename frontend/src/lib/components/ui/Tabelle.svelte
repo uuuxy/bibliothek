@@ -19,8 +19,9 @@
          M3-Listen und wie die 21 Stellen, die es schon so machten.
        - Waagerechter Innenabstand 16 px; die erste und letzte Zelle bekommen ihn auch,
          damit Text und Kopf am Seitenrand auf einer Linie stehen.
-     Was die Zellen noch selbst bestimmen: Breite (w-*), Ausrichtung (text-right),
-     Umbruch (whitespace-nowrap, truncate), Zahlen (tabular-nums, font-mono).
+     Was die Zellen noch selbst bestimmen: Breite (w-*), Ausrichtung (text-right; senkrecht
+     align-top an Zeile oder Zelle, sonst mittig), Umbruch (whitespace-nowrap, truncate),
+     Zahlen (tabular-nums, font-mono).
 
      `sticky` hält den Kopf beim Scrollen oben (Etikettenliste, Statistik).
      Der Aufrufer schreibt <thead>/<tbody>/<tr>/<th>/<td> wie gehabt — nur ohne Optik.
@@ -89,10 +90,11 @@
 		z-index: 10;
 		background-color: var(--color-surface);
 	}
+	/* Ohne vertical-align: Mittig ist der Browser-Standard, und eine Regel hier schlüge jedes
+	   align-top des Aufrufers, weil Bauteil-Stile außerhalb der Tailwind-Schichten stehen. */
 	table :global(td) {
 		padding: 0.5rem 1rem;
 		border-bottom: 1px solid var(--color-outline-variant);
-		vertical-align: middle;
 	}
 	table :global(tbody tr) {
 		transition: background-color 100ms var(--default-transition-timing-function);

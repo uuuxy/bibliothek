@@ -1,10 +1,9 @@
 <script>
 	import { onMount } from 'svelte';
-	import Tabelle from '../ui/Tabelle.svelte';
-	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
-	// apiPost/apiPut/apiDelete werfen im Fehlerfall und haben die Meldung des Servers dann
-	// schon gezeigt. Ein zweiter Toast im catch verdeckte den Grund („Kürzel existiert bereits").
-	import { apiGet, apiPost, apiPut, apiDelete } from '../../apiFetch.js';
+	import SystematikTabelle from './SystematikTabelle.svelte';
+	// apiPost wirft im Fehlerfall und hat die Meldung des Servers dann schon gezeigt. Ein
+	// zweiter Toast im catch verdeckte den Grund („Kürzel existiert bereits").
+	import { apiGet, apiPost } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -18,13 +17,15 @@
 	let kuerzel = $state('');
 	let bezeichnung = $state('');
 	let speichert = $state(false);
-	/** Zeile, die gerade bearbeitet wird (null = keine). */
-	let bearbeiteId = $state(/** @type {string | null} */ (null));
-	let bearbeiteKuerzel = $state('');
-	let bearbeiteBezeichnung = $state('');
+	// „Anlegen" bleibt bei leerem Feld bedienbar: Der Klick nennt am Feld, was fehlt, und führt
+	// dorthin (wie titelVerlangt in BuchFormular).
+	let verlangt = $state(false);
+	const kuerzelFehlt = $derived(verlangt && !kuerzel.trim());
+	const bezeichnungFehlt = $derived(verlangt && !bezeichnung.trim());
 
+	// Der Ladekreis steht nur beim ersten Laden. Ersetzte er die Tabelle auch beim Nachladen nach
+	// einer Änderung, ginge eine offene Zeile samt Eingabe mit ihr.
 	async function laden() {
-		laedt = true;
 		try {
 			liste = (await apiGet('/api/systematics')) || [];
 		} catch {
@@ -37,13 +38,16 @@
 	onMount(laden);
 
 	async function anlegen() {
-		if (!kuerzel.trim() || !bezeichnung.trim()) return;
+		verlangt = true;
+		if (!kuerzel.trim()) return document.getElementById('sys-kuerzel')?.focus();
+		if (!bezeichnung.trim()) return document.getElementById('sys-bezeichnung')?.focus();
 		speichert = true;
 		try {
 			await apiPost('/api/systematics', {
 				kuerzel: kuerzel.trim(),
 				bezeichnung: bezeichnung.trim()
 			});
+			verlangt = false;
 			kuerzel = '';
 			bezeichnung = '';
 			await laden();
@@ -54,64 +58,6 @@
 		} finally {
 			speichert = false;
 		}
-	}
-
-	/** @param {any} eintrag */
-	function starteBearbeiten(eintrag) {
-		bearbeiteId = eintrag.id;
-		bearbeiteKuerzel = eintrag.kuerzel;
-		bearbeiteBezeichnung = eintrag.bezeichnung;
-	}
-
-	function brichBearbeitenAb() {
-		bearbeiteId = null;
-		bearbeiteKuerzel = '';
-		bearbeiteBezeichnung = '';
-	}
-
-	async function speichereBearbeitung() {
-		if (!bearbeiteKuerzel.trim() || !bearbeiteBezeichnung.trim()) return;
-		let daten;
-		try {
-			daten = await apiPut(`/api/systematics/${bearbeiteId}`, {
-				kuerzel: bearbeiteKuerzel.trim(),
-				bezeichnung: bearbeiteBezeichnung.trim()
-			});
-		} catch {
-			return; // Meldung kam bereits aus apiPut.
-		}
-		brichBearbeitenAb();
-		await laden();
-		onChanged?.();
-		// Die Bezeichnung wird jetzt auf die Bücher mitgezogen (buecher_titel.subject).
-		// Nur die Signatur am Buchrücken bleibt — die klebt physisch und folgt einem
-		// Umlabeln, nicht einem Klick.
-		if (daten?.titel_mitgezogen > 0) {
-			snackbars.addToast(
-				`Geändert. ${daten.titel_mitgezogen} Bücher auf das neue Fach umgestellt (Signatur am Buchrücken bleibt).`,
-				'success'
-			);
-		} else {
-			snackbars.addToast('Sachgruppe geändert.', 'success');
-		}
-	}
-
-	/** @param {any} eintrag */
-	async function loeschen(eintrag) {
-		if (
-			!(await loeschenBestaetigen(
-				`Sachgruppe „${eintrag.kuerzel} – ${eintrag.bezeichnung}“ löschen?`
-			))
-		)
-			return;
-		try {
-			await apiDelete(`/api/systematics/${eintrag.id}`);
-		} catch {
-			return; // Meldung kam bereits aus apiDelete (z. B. "hängt noch an Büchern").
-		}
-		await laden();
-		onChanged?.();
-		snackbars.addToast('Sachgruppe gelöscht.', 'success');
 	}
 </script>
 
@@ -127,24 +73,34 @@
 		</p>
 	</div>
 
+	<!-- Ein Raster statt einer Flex-Reihe: Die Felder legen Beschriftung, Eingabe und Fehlertext
+	     in seine drei Zeilen (Subgrid, ui/Feld), und der Knopf steht in der Zeile der Eingaben,
+	     auch wenn unter einem Feld ein Fehlertext steht. Der Zeilenabstand ist der des Felds;
+	     ein anderer verschöbe die Eingaben um die halbe Differenz gegen den Knopf. -->
 	<form
-		class="flex flex-wrap items-end gap-2"
+		class="grid grid-cols-[7rem_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5"
 		onsubmit={(e) => {
 			e.preventDefault();
 			anlegen();
 		}}
 	>
-		<Feld id="sys-kuerzel" etikett="Kürzel" bind:value={kuerzel} placeholder="Deu" class="w-28" />
+		<Feld
+			id="sys-kuerzel"
+			etikett="Kürzel"
+			bind:value={kuerzel}
+			placeholder="Deu"
+			ungueltig={kuerzelFehlt}
+			hint={kuerzelFehlt ? 'Bitte ein Kürzel eintragen.' : ''}
+		/>
 		<Feld
 			id="sys-bezeichnung"
 			etikett="Bezeichnung"
 			bind:value={bezeichnung}
 			placeholder="Deutsch"
-			class="grow min-w-48"
+			ungueltig={bezeichnungFehlt}
+			hint={bezeichnungFehlt ? 'Bitte eine Bezeichnung eintragen.' : ''}
 		/>
-		<Button type="submit" disabled={speichert || !kuerzel.trim() || !bezeichnung.trim()}>
-			Anlegen
-		</Button>
+		<Button type="submit" disabled={speichert} class="col-start-3 row-start-2">Anlegen</Button>
 	</form>
 
 	{#if laedt}
@@ -155,45 +111,12 @@
 			vor.
 		</p>
 	{:else}
-		<div class="overflow-x-auto">
-			<Tabelle beschriftung="Systematik">
-				<thead>
-					<tr>
-						<th>Kürzel</th>
-						<th>Bezeichnung</th>
-						<th class="text-right">Aktion</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each liste as eintrag (eintrag.id)}
-						<tr>
-							{#if bearbeiteId === eintrag.id}
-								<td>
-									<Feld bind:value={bearbeiteKuerzel} aria-label="Kürzel bearbeiten" feld="w-24" />
-								</td>
-								<td>
-									<Feld bind:value={bearbeiteBezeichnung} aria-label="Bezeichnung bearbeiten" />
-								</td>
-								<td class="text-right whitespace-nowrap">
-									<Button size="sm" onclick={speichereBearbeitung}>Sichern</Button>
-									<Button size="sm" variant="ghost" onclick={brichBearbeitenAb}>Abbrechen</Button>
-								</td>
-							{:else}
-								<td class="font-mono">{eintrag.kuerzel}</td>
-								<td>{eintrag.bezeichnung}</td>
-								<td class="text-right whitespace-nowrap">
-									<Button size="sm" variant="secondary" onclick={() => starteBearbeiten(eintrag)}>
-										Ändern
-									</Button>
-									<Button size="sm" variant="danger" onclick={() => loeschen(eintrag)}>
-										Löschen
-									</Button>
-								</td>
-							{/if}
-						</tr>
-					{/each}
-				</tbody>
-			</Tabelle>
-		</div>
+		<SystematikTabelle
+			{liste}
+			onGeaendert={async () => {
+				await laden();
+				onChanged?.();
+			}}
+		/>
 	{/if}
 </section>
