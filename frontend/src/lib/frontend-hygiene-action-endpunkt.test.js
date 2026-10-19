@@ -52,7 +52,7 @@ describe('Buchungs-Tür /api/action', () => {
 // GET /api/schueler?q= (view_students). Wer ein neues Suchfeld an die Theken-Route hängt,
 // wird hier rot — und entscheidet bewusst, ob es wirklich die Theke ist.
 const SUCH_MUSTER = /['"`]\/api\/search(\?|['"`])/;
-const SUCHE_ERLAUBT = new Set(['lib/stores/omnibox.svelte.js']);
+const SUCHE_ERLAUBT = new Set(['lib/stores/omniboxSuche.svelte.js']);
 
 describe('Theken-Suche /api/search', () => {
 	it('wird nur von der Theken-Omnibox aufgerufen — andere Suchfelder haben ihre eigene Tür', () => {

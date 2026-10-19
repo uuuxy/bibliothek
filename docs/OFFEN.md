@@ -207,8 +207,8 @@ Gewichts:
 - [ ] Lokale Namen in Tests deutsch und `t.Helper()` in den Hilfsfunktionen, je mit Ratsche.
   (5.71)
 - [x] Leerimporte nur in `main` und in Tests. (5.71)
-- [ ] Oberfläche: `stores/omnibox.svelte.js` (932 Zeilen) nach seinen Sachen teilen, in
-  noch fünf Stufen, je Stufe deine Freigabe. (5.72)
+- [ ] Oberfläche: `stores/omnibox.svelte.js` (862 Zeilen) nach seinen Sachen teilen, in
+  noch vier Stufen, je Stufe deine Freigabe. (5.72)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -547,20 +547,19 @@ Dateien gilt „it is usually not a good idea to have a single file with many th
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
 `frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
-JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 932. Googles Maßstab für
+JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 862. Googles Maßstab für
 Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
 tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösung, Warteschlange,
 Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Freigegeben
 ist ein Plan in Stufen, je Stufe ein Commit, ein Push und deine Freigabe für die nächste:
 
-- **Stufen 3 bis 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
-  `omniboxSuche.svelte.js` (Entprellung, Suchlauf-Nummer, Trefferliste,
-  Auswahl, `/api/search`), `omniboxAntwort.svelte.js` (was eine Antwort des Servers am Zustand
-  der Theke ändert), `omniboxOhneNetz.svelte.js` (Schnappschuss, Ablage in der Warteschlange,
-  Ausweis-Merker), `omniboxReihe.svelte.js` (`fuehreAktionAus`, die Reihe der Scans, der einzige
-  Versand an `/api/action`). In `omnibox.svelte.js` bleiben der Zustand der Theke, Rückfrage
-  und Fokus (`frontend-hygiene-theken-fenster.test.js` liest dort `rueckfrageOffen`),
-  Zusammenführen, `gibZurueck` und die Fassade.
+- **Stufen 4 bis 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
+  `omniboxAntwort.svelte.js` (was eine Antwort des Servers am Zustand der Theke ändert),
+  `omniboxOhneNetz.svelte.js` (Schnappschuss, Ablage in der Warteschlange, Ausweis-Merker),
+  `omniboxReihe.svelte.js` (`fuehreAktionAus`, die Reihe der Scans, der einzige Versand an
+  `/api/action`). In `omnibox.svelte.js` bleiben der Zustand der Theke, Rückfrage und Fokus
+  (`frontend-hygiene-theken-fenster.test.js` liest dort `rueckfrageOffen`), Zusammenführen,
+  `gibZurueck` und die Fassade.
 - **Stufe 7:** Suche und Rückmeldung werden Unterobjekte der Fassade (`omniboxStore.suche.…`,
   `omniboxStore.rueckmeldung.…`), damit der Aufruf die Datei nennt: 36 Stellen in 4 Dateien
   und 33 in 7, Tests eingeschlossen. Danach den Bestand der Größen-Ratsche austragen und

@@ -11,6 +11,7 @@ import { uiStore } from './uiStore.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
 import { erzeugeOmniboxRueckmeldung } from './omniboxRueckmeldung.svelte.js';
+import { erzeugeOmniboxSuche } from './omniboxSuche.svelte.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(daten) {
@@ -92,14 +93,15 @@ export function erzeugeOmniboxStore() {
 	let kameraOffen = $state(false);
 	let kamera = $state(/** @type {any} */ (null));
 
-	// Such-Status
-	let suchVerzoegerung = $state(/** @type {any} */ (null));
-	let trefferlisteOffen = $state(false);
-	let suchTreffer = $state({ students: [], books: [], studentsTotal: 0, booksTotal: 0 });
-	let markierterTreffer = $state(-1);
-	let trefferAnzahl = $derived(suchTreffer.students.length + suchTreffer.books.length);
+	const suche = erzeugeOmniboxSuche({
+		leseEingabe: () => eingabe,
+		setzeEingabe: (text) => (eingabe = text),
+		fuehreAktionAus,
+		melde
+	});
+	const { verarbeiteEingabe, waehleTreffer } = suche;
 
-	let belegt = $derived(!!(aktiverLeser || trefferlisteOffen));
+	let belegt = $derived(!!(aktiverLeser || suche.trefferlisteOffen));
 
 	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
 	// überlebt, feuert nach dem Abbau von jsdom ins Leere und reißt den ganzen Testlauf mit.
@@ -125,85 +127,9 @@ export function erzeugeOmniboxStore() {
 	// und beim Abräumen der Tests: Danach greift kein Rückruf auf eine Seite, die es nicht mehr gibt.
 	function stoppeZeitgeber() {
 		rueckmeldung.stoppeZeitgeber();
-		for (const t of [fokusTimer, suchVerzoegerung]) {
-			if (t) clearTimeout(t);
-		}
+		suche.stoppeZeitgeber();
+		if (fokusTimer) clearTimeout(fokusTimer);
 		fokusTimer = null;
-		suchVerzoegerung = null;
-	}
-
-	// Such-Logik. suchLauf zählt jeden gestarteten Abruf — nur die Antwort des zuletzt
-	// gestarteten darf die Trefferliste schreiben.
-	let suchLauf = 0;
-
-	/** Trefferliste und Dropdown leeren — eine Liste darf ihren Suchtext nie überleben. */
-	function verwirfTreffer() {
-		suchTreffer = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
-		trefferlisteOffen = false;
-		markierterTreffer = -1;
-	}
-
-	function verarbeiteEingabe() {
-		clearTimeout(suchVerzoegerung);
-		if (!eingabe.trim()) {
-			// Auch hier hochzählen: Ein noch laufender Abruf darf die eben geleerte
-			// Liste nicht wieder füllen.
-			suchLauf++;
-			trefferlisteOffen = false;
-			suchTreffer = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
-			return;
-		}
-		suchVerzoegerung = setTimeout(async () => {
-			if (!eingabe.trim()) return;
-			// Zwei laufende Abrufe beantwortet der Server in beliebiger Reihenfolge. Ohne die
-			// Nummer tauschte eine verspätete Antwort die Trefferliste unter dem Suchtext aus,
-			// und der nächste Klick buchte auf den falschen Schüler.
-			const seq = ++suchLauf;
-			try {
-				const res = await apiFetch(`/api/search?q=${encodeURIComponent(eingabe.trim())}`);
-				if (seq !== suchLauf) return;
-				if (!res.ok) {
-					// Dieselbe Gefahr beim Fehlschlag: Bliebe die Liste des vorigen Suchtextes stehen,
-					// buchte der nächste Klick auf einen Treffer, der zum Feld nicht mehr passt.
-					verwirfTreffer();
-					melde('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
-					return;
-				}
-				const ergebnisse = await res.json();
-				suchTreffer = {
-					students: ergebnisse.students || [],
-					books: ergebnisse.books || [],
-					studentsTotal: ergebnisse.students_total ?? (ergebnisse.students || []).length,
-					booksTotal: ergebnisse.books_total ?? (ergebnisse.books || []).length
-				};
-				trefferlisteOffen = suchTreffer.students.length > 0 || suchTreffer.books.length > 0;
-				markierterTreffer = -1;
-			} catch (err) {
-				if (seq !== suchLauf) return;
-				// Netzfehler: ebenfalls verwerfen, aber ohne Toast. Im WLAN-Loch käme bei jedem
-				// Tastendruck einer, und die Offline-Anzeige sagt es bereits.
-				verwirfTreffer();
-				console.error('Suche fehlgeschlagen:', err);
-			}
-		}, 300);
-	}
-
-	// Ein Leser aus der Trefferliste wird über seine ID geladen, weil ein Kollege aus der
-	// Selbstanmeldung keine Ausweisnummer hat; auf demselben Weg wie ein Scan (POST /api/action),
-	// damit Abholfach-Hinweis und Sperrprüfung an beiden Wegen gleich sind.
-	function waehleTreffer(index, onSelectBook) {
-		const { students, books } = suchTreffer;
-		if (index < students.length) {
-			const gewaehlterLeser = students[index];
-			eingabe = `leser:${gewaehlterLeser.id}`;
-			trefferlisteOffen = false;
-			fuehreAktionAus(null, null); // Ohne Event
-		} else {
-			const buch = books[index - students.length];
-			eingabe = '';
-			trefferlisteOffen = false;
-			if (onSelectBook) onSelectBook(buch);
-		}
 	}
 
 	// Liest die Fehlermeldung aus einer nicht-ok HTTP-Antwort. Bei einem
@@ -588,15 +514,19 @@ export function erzeugeOmniboxStore() {
 		absicht = null
 	) {
 		if (e) e.preventDefault();
-		if (trefferlisteOffen && markierterTreffer >= 0) {
-			waehleTreffer(markierterTreffer, null);
+		if (suche.trefferlisteOffen && suche.markierterTreffer >= 0) {
+			waehleTreffer(suche.markierterTreffer, null);
 			return;
 		}
 
 		// Enter ohne Auswahl nimmt den einen Schüler, wenn die Liste genau ihn zeigt: Der rohe Text
 		// liefe am Server in die Titelsuche, die nur Bücher kennt. Bei Namensgleichen rät Enter
 		// nicht, und ein Buch braucht den Rückruf onSelectBook, den es hier nicht gibt.
-		if (trefferlisteOffen && suchTreffer.students.length === 1 && suchTreffer.books.length === 0) {
+		if (
+			suche.trefferlisteOffen &&
+			suche.suchTreffer.students.length === 1 &&
+			suche.suchTreffer.books.length === 0
+		) {
 			waehleTreffer(0, null);
 			return;
 		}
@@ -607,7 +537,7 @@ export function erzeugeOmniboxStore() {
 		if (!q) return;
 
 		eingabe = '';
-		trefferlisteOffen = false;
+		suche.trefferlisteOffen = false;
 
 		/** @type {Auftrag} */
 		const auftrag = { q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht };
@@ -885,25 +815,25 @@ export function erzeugeOmniboxStore() {
 			kamera = v;
 		},
 		get trefferlisteOffen() {
-			return trefferlisteOffen;
+			return suche.trefferlisteOffen;
 		},
 		set trefferlisteOffen(v) {
-			trefferlisteOffen = v;
+			suche.trefferlisteOffen = v;
 		},
 		get suchTreffer() {
-			return suchTreffer;
+			return suche.suchTreffer;
 		},
 		set suchTreffer(v) {
-			suchTreffer = v;
+			suche.suchTreffer = v;
 		},
 		get markierterTreffer() {
-			return markierterTreffer;
+			return suche.markierterTreffer;
 		},
 		set markierterTreffer(v) {
-			markierterTreffer = v;
+			suche.markierterTreffer = v;
 		},
 		get trefferAnzahl() {
-			return trefferAnzahl;
+			return suche.trefferAnzahl;
 		},
 		get belegt() {
 			return belegt;
