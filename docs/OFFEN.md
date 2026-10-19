@@ -34,12 +34,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 ### Bei dir
 
-**Entscheiden:**
-
-- [x] Sicherung außer Haus: Das Programm löscht am Speicher außer Haus nach derselben Regel wie
-  auf dem Server (die jüngsten 14 Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel
-  von Hand am Speicher braucht es dann nicht. Der Schritt steht in Etappe 1. (7.3, R8)
-
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
 - [ ] Portal: „Problem melden" unter dem Suchfeld
@@ -115,7 +109,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 **Erledigen:**
 
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
-- [x] Auf GitHub #751 geschlossen; die Zweige von #745, #748 und #751 sind gelöscht.
 - [ ] Am Testserver nachsehen, ob das Buch mit der Nummer 2424 („Mathematik heute", Band 6)
   fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
   den Status des Exemplars zurückstellen.
@@ -140,8 +133,6 @@ Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lese
 zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
 Kommentare stehen in [STIL.md](STIL.md), die Prüfungen, die sie halten, in seinem Vorspann.
 
-- [x] Oberfläche: `stores/omnibox.svelte.js` nach seinen Sachen geteilt; der Zustand der Theke
-  und die Fassade stehen im Store, sechs Teile daneben ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3).
 - [ ] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
 
 ### Später: kleine Fehler und Aufräumarbeit

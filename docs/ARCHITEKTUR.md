@@ -2976,7 +2976,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 16.10.2026
+Stand: 19.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3103,9 +3103,9 @@ Der Job sagt es („S3 credentials not fully configured – skipping offsite upl
 Betriebsbereitschaft führt es unter „Auslagerung der Backups" als kritisch
 (`pruefeAuslagerung`); im echten Betrieb geht ein kritischer Befund täglich per Mail an die
 Admins. Ein Host-Verlust ohne Offsite ist trotzdem ein Datenverlust. Ist ein Speicher
-eingerichtet, löscht das Programm dort nichts: Die Aufbewahrung (`jobs.AufbewahrteNaechte`,
-`jobs.AufbewahrteWochen`) gilt nur dem lokalen Verzeichnis. Das Einrichten und die Frage des
-Löschens stehen in [OFFEN.md](OFFEN.md) 7.3.
+eingerichtet, löscht das Programm dort heute nichts: Die Aufbewahrung (`jobs.AufbewahrteNaechte`,
+`jobs.AufbewahrteWochen`) gilt nur dem lokalen Verzeichnis. Entschieden ist, dass es am Speicher
+nach derselben Regel löscht; der Bau und das Einrichten stehen in [OFFEN.md](OFFEN.md) 7.3.
 
 #### R9 — Kein externes Uptime-Signal
 
