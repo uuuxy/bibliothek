@@ -3292,10 +3292,10 @@ Gewicht.
   `apiFetch.js`), bevor er ohne Netz abgelegt wird; ein Neuladen nimmt die wartenden Scans ohne
   Meldung mit. Anlass: Die Theke reagiert bei hängendem Server spürbar verzögert.
 - **Ungespeichertes übersteht die Sperre, aber nicht, was ihr vorausgeht:** Nach fünf Minuten
-  leert sich die Theke samt offenem Dialog; „Abmelden und als andere Person anmelden" verwirft
-  ohne Hinweis. Ob etwas ungespeichert ist, weiß die Anwendung nur beim LMF-Planer, bei der
-  Buchmaske und bei „Stammdaten bearbeiten" (`uiStore.verlassenSperre`). Anlass: eine
-  verlorene Eingabe an der Theke.
+  leert sich die Theke samt offenem Dialog, und eine abgelaufene Sitzung meldet ab, ohne fragen
+  zu können. Wer selbst abmeldet, wird gefragt, auch am Sperrbildschirm. Ob etwas ungespeichert
+  ist, weiß die Anwendung nur beim LMF-Planer, bei der Buchmaske und bei „Stammdaten
+  bearbeiten" (`uiStore.verlassenSperre`). Anlass: eine verlorene Eingabe an der Theke.
 - **Der LMF-Planer erfährt nur über die Live-Leitung,** dass ein anderer Platz den Plan geändert
   hat (`fremdesSignal`); war sie unterbrochen, überschreibt das nächste Speichern die fremde
   Änderung. Abhilfe mit Anlass: nach dem Wiederaufbau der Leitung und nach dem Aufschließen den

@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import BestaetigungsDialog from './BestaetigungsDialog.svelte';
-import { bestaetigen, fragen } from '../../stores/bestaetigung.svelte.js';
+import {
+	bestaetigen,
+	fragen,
+	bestaetigungStore,
+	verwerfenFrage
+} from '../../stores/bestaetigung.svelte.js';
 
 // Bei „Ist es dasselbe Medium?" lösen beide Knöpfe etwas aus: der eine öffnet den vorhandenen
 // Titel, der andere legt einen weiteren an. Wer den Dialog nur schließt, hat nicht geantwortet
@@ -69,5 +74,32 @@ describe('BestaetigungsDialog: Antwort und Schließen', () => {
 		const { screen, antwort } = await oeffne(bestaetigen);
 		await fireEvent.click(screen.getByRole('button', { name: 'Titel öffnen' }));
 		expect(await antwort).toBe(true);
+	});
+});
+
+// Der Sperrbildschirm fragt selbst: Hinter ihm darf keine Frage der Anwendung erscheinen, auch
+// keine, die vor der Sperre offen war.
+describe('BestaetigungsDialog mit eigener Frage', () => {
+	it('zeigt sie, meldet die Antwort an onantwort und lässt den Store in Ruhe', async () => {
+		const onantwort = vi.fn();
+		const screen = render(BestaetigungsDialog, {
+			frage: verwerfenFrage('Verwerfen und abmelden'),
+			onantwort
+		});
+		const bleiben = screen.getByRole('button', { name: 'Bleiben' });
+		await waitFor(() =>
+			expect(document.activeElement, 'gefährlich: der Fokus steht auf Bleiben').toBe(bleiben)
+		);
+		await fireEvent.click(screen.getByRole('button', { name: 'Verwerfen und abmelden' }));
+		expect(onantwort).toHaveBeenCalledWith(true);
+		expect(bestaetigungStore.anfrage).toBeNull();
+	});
+
+	it('mit frage null zeigt er auch keine offene Frage des Stores', async () => {
+		const offen = fragen(FRAGE);
+		const screen = render(BestaetigungsDialog, { frage: null, onantwort: () => {} });
+		expect(screen.queryByRole('dialog')).toBeNull();
+		bestaetigungStore.antworten(null);
+		expect(await offen).toBeNull();
 	});
 });

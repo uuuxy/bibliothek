@@ -7,12 +7,17 @@ import { uiStore } from './uiStore.svelte.js';
 import { verwerfenBestaetigen } from './bestaetigung.svelte.js';
 
 /**
- * Für einen Wechsel, der nicht über uiStore.activeTab läuft (Reiter, Theke): Hält der Bildschirm
- * Ungespeichertes, fragt er vor dem Verwerfen.
+ * Für einen Wechsel, der nicht über uiStore.activeTab läuft (Reiter, Theke, Abmelden): Hält der
+ * Bildschirm Ungespeichertes, fragt er vor dem Verwerfen. Wer verwirft, gibt den Wächter frei
+ * wie erzwingeWechsel: Abmelden führt danach an die Theke, und das hielte sonst noch an.
+ * @param {string} [aktion] der bestätigende Knopf
  * @returns {Promise<boolean>} true: weiter, auch wenn dabei verworfen wird
  */
-export async function darfVerwerfen() {
-	return !uiStore.verlassenSperre?.() || verwerfenBestaetigen('Verwerfen und weiter');
+export async function darfVerwerfen(aktion = 'Verwerfen und weiter') {
+	if (!uiStore.verlassenSperre?.()) return true;
+	const verwerfen = await verwerfenBestaetigen(aktion);
+	if (verwerfen) uiStore.verlassenSperre = null;
+	return verwerfen;
 }
 
 /** @param {() => boolean} ungespeichert */

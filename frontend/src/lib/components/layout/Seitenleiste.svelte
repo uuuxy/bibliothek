@@ -1,6 +1,7 @@
 <script>
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import { darfVerwerfen } from '../../stores/verlassenSchutz.svelte.js';
 	import { menueGruppen, darfSehen, hatRecht } from '../../menue.js';
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
 	import { ChevronsLeft, ChevronDown } from '@lucide/svelte';
@@ -19,7 +20,9 @@
 	const schmalesFenster = new MediaQuery('(width < 80rem)');
 	const zu = $derived(uiStore.sidebarWahl ?? schmalesFenster.current);
 
-	function meldeAb() {
+	// Abmelden baut jeden Bildschirm ab; Ungespeichertes geht nur nach Rückfrage verloren.
+	async function meldeAb() {
+		if (!(await darfVerwerfen('Verwerfen und abmelden'))) return;
 		authStore.handleLogout(() => {
 			uiStore.activeTab = 'kiosk';
 		});

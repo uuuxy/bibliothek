@@ -8,13 +8,21 @@
      Aktion. Enter bestätigt damit nur, was man auch mit der Maus als Vorgabe nähme —
      confirm() bestätigte per Enter IMMER, auch das Löschen von 300 Büchern.
      Escape und Klick auf den Hintergrund schließen ohne Antwort (Dialog.svelte): Für
-     bestaetigen ist das „nein", fragen unterscheidet es vom zweiten Knopf. -->
+     bestaetigen ist das „nein", fragen unterscheidet es vom zweiten Knopf.
+
+     Mit `frage` zeigt er diese statt der des Stores, auch keine, solange sie null ist: Der
+     Sperrbildschirm fragt so selbst, und hinter ihm darf keine Frage der Anwendung erscheinen. -->
 <script>
 	import Dialog from '../../Dialog.svelte';
 	import Button from './Button.svelte';
 	import { bestaetigungStore } from '../../stores/bestaetigung.svelte.js';
 
-	const frage = $derived(bestaetigungStore.anfrage);
+	/** @type {{ frage?: import('../../stores/bestaetigung.svelte.js').Rueckfrage | null, onantwort?: (antwort: boolean | null) => void }} */
+	let { frage: eigeneFrage = undefined, onantwort = undefined } = $props();
+
+	const frage = $derived(eigeneFrage === undefined ? bestaetigungStore.anfrage : eigeneFrage);
+	/** @param {boolean | null} antwort */
+	const antworten = (antwort) => (onantwort ?? bestaetigungStore.antworten)(antwort);
 	/** @type {HTMLButtonElement | undefined} */
 	let abbruchKnopf = $state();
 	/** @type {HTMLButtonElement | undefined} */
@@ -31,7 +39,7 @@
 {#if frage}
 	<Dialog
 		open={true}
-		onclose={() => bestaetigungStore.antworten(null)}
+		onclose={() => antworten(null)}
 		size="sm"
 		ebene="oberst"
 		beschriftetDurch="rueckfrage-titel"
@@ -44,15 +52,13 @@
 				</p>
 			{/if}
 			<div class="flex justify-end gap-2 pt-2">
-				<Button
-					variant="ghost"
-					bind:element={abbruchKnopf}
-					onclick={() => bestaetigungStore.antworten(false)}>{frage.abbruch}</Button
+				<Button variant="ghost" bind:element={abbruchKnopf} onclick={() => antworten(false)}
+					>{frage.abbruch}</Button
 				>
 				<Button
 					variant={frage.gefaehrlich ? 'danger-solid' : 'primary'}
 					bind:element={aktionKnopf}
-					onclick={() => bestaetigungStore.antworten(true)}>{frage.aktion}</Button
+					onclick={() => antworten(true)}>{frage.aktion}</Button
 				>
 			</div>
 		</div>

@@ -6,6 +6,9 @@
 	import { leerlaufSperre } from '../../stores/leerlaufSperre.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import BestaetigungsDialog from '../ui/BestaetigungsDialog.svelte';
+	import { verwerfenFrage } from '../../stores/bestaetigung.svelte.js';
+	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { scanSchutz } from '../../scanErkennung.js';
 
 	// Sperrbildschirm nach Inaktivität. Die
@@ -40,7 +43,14 @@
 		if (!ok) setTimeout(() => document.getElementById('sperre-passwort')?.focus(), 50);
 	}
 
+	// Hält eine Maske hinter der Sperre Ungespeichertes, fragt der Bildschirm vor dem Abmelden
+	// selbst: Die Rückfragen der Anwendung sind hinter der Sperre nicht zu sehen (App.svelte).
+	let verwerfenOffen = $state(false);
 	function abmelden() {
+		if (uiStore.verlassenSperre?.()) verwerfenOffen = true;
+		else meldeAb();
+	}
+	function meldeAb() {
 		leerlaufSperre.stop();
 		authStore.handleLogout();
 	}
@@ -107,4 +117,11 @@
 			Abmelden und als andere Person anmelden
 		</button>
 	</form>
+	<BestaetigungsDialog
+		frage={verwerfenOffen ? verwerfenFrage('Verwerfen und abmelden') : null}
+		onantwort={(verwerfen) => {
+			verwerfenOffen = false;
+			if (verwerfen) meldeAb();
+		}}
+	/>
 </div>

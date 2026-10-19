@@ -130,6 +130,21 @@ describe('darfVerwerfen', () => {
 		expect(verwerfenBestaetigen).not.toHaveBeenCalled();
 	});
 
+	it('nennt die Aktion; wer verwirft, gibt den Wächter frei, wer bleibt, nicht', async () => {
+		uiStore.verlassenSperre = () => true;
+		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(false);
+		expect(await darfVerwerfen('Verwerfen und abmelden')).toBe(false);
+		expect(verwerfenBestaetigen).toHaveBeenCalledWith('Verwerfen und abmelden');
+		expect(uiStore.verlassenSperre, 'Bleiben').not.toBeNull();
+
+		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(true);
+		expect(await darfVerwerfen('Verwerfen und abmelden')).toBe(true);
+		// Abmelden führt danach an die Theke; der Wächter hielte das sonst an.
+		expect(uiStore.verlassenSperre).toBeNull();
+		uiStore.activeTab = 'kiosk';
+		expect(uiStore.activeTab).toBe('kiosk');
+	});
+
 	it('mit Ungespeichertem gilt die Antwort auf „Verwerfen und weiter"', async () => {
 		uiStore.verlassenSperre = () => true;
 		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(false);

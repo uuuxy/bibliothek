@@ -82,15 +82,22 @@ export function loeschenBestaetigen(titel, text = 'Das lässt sich nicht rückg�
 /**
  * Die Rückfrage, bevor ungespeicherte Eingaben einer Maske verloren gehen; der Fokus steht auf
  * „Bleiben". M3, Dialogs, „Dismissing": Wer einen Full-screen dialog verlässt, wird gefragt.
+ * Der Sperrbildschirm stellt sie selbst, weil hinter ihm keine Rückfrage der Anwendung steht.
  * @param {string} [aktion] der bestätigende Knopf: beim Schließen „Verwerfen", beim Wechsel
- *   „Verwerfen und weiter"
+ *   „Verwerfen und weiter", beim Abmelden „Verwerfen und abmelden"
+ * @returns {Rueckfrage}
  */
-export function verwerfenBestaetigen(aktion = 'Verwerfen') {
-	return bestaetigen({
+export function verwerfenFrage(aktion = 'Verwerfen') {
+	return {
 		titel: 'Ungespeicherte Änderungen',
 		text: 'Die Eingaben in der Maske sind nicht gespeichert und gehen dabei verloren.',
 		aktion,
 		abbruch: 'Bleiben',
 		gefaehrlich: true
-	});
+	};
+}
+
+/** @param {string} [aktion] wie bei verwerfenFrage */
+export function verwerfenBestaetigen(aktion = 'Verwerfen') {
+	return bestaetigen(verwerfenFrage(aktion));
 }
