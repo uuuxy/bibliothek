@@ -3291,8 +3291,6 @@ Gewicht.
 - **Antwortet der Server nicht,** wartet jeder eingereihte Scan seine eigene Frist ab (10 s,
   `apiFetch.js`), bevor er ohne Netz abgelegt wird; ein Neuladen nimmt die wartenden Scans ohne
   Meldung mit. Anlass: Die Theke reagiert bei hängendem Server spürbar verzögert.
-- **Kommt die Antwort auf einen Ausweis-Scan erst nach „Theke leeren",** lädt sie den Leser doch
-  (`verarbeiteLeser`, am Store nachgestellt); nach der nächsten Anmeldung stünde sein Konto offen.
 - **Ungespeichertes übersteht die Sperre, aber nicht, was ihr vorausgeht:** Nach fünf Minuten
   leert sich die Theke samt offenem Dialog; „Abmelden und als andere Person anmelden" verwirft
   ohne Hinweis. Ob etwas ungespeichert ist, weiß die Anwendung nur beim LMF-Planer
@@ -3349,28 +3347,17 @@ Gewicht.
   in ihm: Die Scrollleiste sitzt 32 px vom Fensterrand, und über und unter dem Inhalt bleiben
   beim Scrollen je 24 px stehen. Anlass: Bedienung an einem Tablet oder in Fenstern unter
   1280 px.
-- **Die Meldungen** (`SnackbarAnzeige.svelte`) erscheinen oben rechts und verdecken dort 5 s lang,
-  was darunter steht; M3, Snackbar: „Snackbars should be placed at the bottom of a UI". Am unteren
-  Rand stehen die Auswahlleisten der Listen, dort müssten die Meldungen ausweichen.
 - **Schmale Breiten:** Bei 390 px ist die Bestellspalte 68 px breit; die Leiste der markierten
   Exemplare in der Buchakte passt bis 768 px, `ui/AuswahlLeiste` hat kein Überlaufmenü (M3,
   Toolbars). Anlass: Bestellen oder die Buchakte am Telefon.
 - **Breite der Textfelder** nach M3 („Text fields shouldn't span the full width of a large
   screen") ist nur in „Buch bearbeiten" umgesetzt (bis 704 px, in `BuchFormular.svelte`); mit
   der zweiten Maske gehört der Wert an eine Stelle.
-- **Verwerfen ohne Rückfrage:** Das Schließen-Symbol von „Buch bearbeiten" und „Neues Buch"
-  verwirft Ungespeichertes (`TitelVerwaltung.svelte`); M3, Dialogs: „a basic dialog should appear
-  to confirm that they want to discard the unsaved changes."
 - **Elf Dialoge und sieben weitere Stellen sperren „Abbrechen", solange ihre Anfrage läuft**
   (etwa `LeserLoeschenDialog.svelte`). M3, Dialogs: „Dismissive actions are never disabled."
   Voraussetzung je Stelle: Erfolg und Ablehnung werden außerhalb des Dialogs gemeldet.
-- **Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht** (`speichereBarcode` in
-  `ExemplarKarte.svelte`, `speichereBearbeitung` in `SystematikVerwaltung.svelte`,
-  `authStore.handleLogin`).
 - **„Buch bearbeiten" speichert nur per Klick;** die Eingabetaste löst nichts aus, und in der
   Tab-Reihenfolge steht „Speichern" vor den Feldern.
-- **Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie:** Die
-  Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`LeserBearbeiten.svelte`).
 - **Symbolknöpfe:** 32 × 32 px ohne größere Trefferfläche (`.icon-btn`, Gate
   `e2e/icon-trefferflaechen.spec.js` mit 32 px); M3 verlangt 48 × 48 dp. In der Exemplarkarte der
   Buchakte sind sie 14 px groß und fehlen in den Gates der Symbolknöpfe; ein 32-px-Knopf bricht
