@@ -1,9 +1,8 @@
 // Zustand und Abläufe der Omnibox an der Theke: Eingabe, Suche, Scan und seine Antwort.
 
-import { apiFetch, apiClient } from '../apiFetch.js';
+import { apiFetch } from '../apiFetch.js';
 import { spieleFehlerton } from '../audio.js';
-import { buchBarcodes } from './buchBarcodes.svelte.js';
-import { normalisiereScan, ordneScanEin } from '../scanEinordnen.js';
+import { normalisiereScan } from '../scanEinordnen.js';
 import { snackbars } from './snackbars.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
@@ -12,6 +11,7 @@ import { erzeugeOmniboxRueckmeldung } from './omniboxRueckmeldung.svelte.js';
 import { erzeugeOmniboxSuche } from './omniboxSuche.svelte.js';
 import { erzeugeOmniboxAntwort } from './omniboxAntwort.svelte.js';
 import { erzeugeOmniboxOhneNetz } from './omniboxOhneNetz.svelte.js';
+import { erzeugeOmniboxBuchung } from './omniboxBuchung.svelte.js';
 
 // Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte), damit die Theke keinen
 // zweiten Meldungsweg mit eigener Optik hat. Auf Modulebene, weil sie nichts aus dem Store
@@ -109,6 +109,26 @@ export function erzeugeOmniboxStore() {
 	});
 	const { schnappschuss, verarbeiteVersandfehler } = ohneNetz;
 
+	const { bucheScan } = erzeugeOmniboxBuchung({
+		leseLeser: () => aktiverLeser,
+		leseMerker: () => ohneNetz.offlineAusweis,
+		vergissMerker: () => (ohneNetz.offlineAusweis = ''),
+		// Die Hinweiszeilen über dem Konto stehen bis zum nächsten Scan.
+		leereHinweiszeilen: () => {
+			letzteFremdrueckgabe = null;
+			letzterAuflagenHinweis = null;
+		},
+		schnappschuss,
+		verarbeiteVersandfehler,
+		verarbeiteAktionsFehler,
+		verarbeiteAktionsErgebnis,
+		verarbeiteAntwortfehler,
+		leuchteBildschirm,
+		leuchteRand,
+		zeigeFehlerBanner,
+		clearFehlerBanner
+	});
+
 	let belegt = $derived(!!(aktiverLeser || suche.trefferlisteOffen));
 
 	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
@@ -119,10 +139,7 @@ export function erzeugeOmniboxStore() {
 	// Die Reihe der Scans. Ein Handscanner wartet nicht auf die Antwort: Ein Scan, der
 	// eintrifft, solange eine Buchung läuft, wartet hier und wird danach gebucht. Verworfen
 	// bliebe er unbemerkt, in der Schnellrückgabe bliebe das Buch verliehen.
-	/**
-	 * @typedef {{ q: string, reloadProfileCb?: (() => void) | null, overrideBlock: boolean,
-	 *   confirmedChecklist: boolean, absicht: 'ausleihe' | 'rueckgabe' | null }} Auftrag
-	 */
+	/** @typedef {import('./omniboxBuchung.svelte.js').Auftrag} Auftrag */
 	let buchungLaeuft = false;
 	/** @type {Auftrag[]} */
 	const wartend = [];
@@ -181,60 +198,6 @@ export function erzeugeOmniboxStore() {
 	// bleibt sie an: Der Stapel ist dann noch nicht durch.
 	function escapeGedrueckt() {
 		if (!escapeIstBelegt()) schalteSchnellrueckgabe(false);
-	}
-
-	/**
-	 * Löst einen ohne Netz gemerkten Ausweis auf, bevor das nächste Buch hinausgeht: Ohne
-	 * Leser-Kennung läse der Server den Scan als Rückgabe.
-	 *
-	 * Entschieden wird an der Wirkung eines Ausweisscans, der nichts bucht, nicht an
-	 * `navigator.onLine`, das bei einem Ausfall des Servers weiter „online" meldet. Lädt er die
-	 * Person, geht das Buch normal hinaus. Scheitert der Versand, bleibt der Merker, und das Buch
-	 * geht mit `ausweis_barcode` in die Warteschlange. Antwortet der Server ohne Person, ist
-	 * unklar, wem das Buch gehört: Es wird nicht gebucht, und der Merker fällt.
-	 *
-	 * @param {string} q der rohe Scan
-	 * @param {(() => void) | null} [reloadProfileCb]
-	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgeführt
-	 */
-	async function merkerAufgeloest(q, reloadProfileCb) {
-		if (!ohneNetz.offlineAusweis) return true;
-		// Ein Ausweis selbst darf durch — er ist der Ausweg und ersetzt den Merker.
-		if (ordneScanEin(q, buchBarcodes.istBuch).art === 'ausweis') {
-			ohneNetz.offlineAusweis = '';
-			return true;
-		}
-
-		const gemerkt = ohneNetz.offlineAusweis;
-		let res;
-		try {
-			res = await apiClient.post('/api/action', {
-				query: gemerkt,
-				idempotency_key: crypto.randomUUID()
-			});
-		} catch (e) {
-			// Keine Verbindung — der erwartete Fall, kein Fehler. Der Merker bleibt.
-			console.warn('Ausweis-Merker nicht auflösbar, bleibt stehen:', e);
-			return true;
-		}
-
-		try {
-			if (!res.ok) await verarbeiteAktionsFehler(res, gemerkt); // wirft immer
-			verarbeiteAktionsErgebnis(await res.json(), reloadProfileCb, gemerkt);
-		} catch (e) {
-			verarbeiteAntwortfehler(e);
-		}
-
-		ohneNetz.offlineAusweis = '';
-		if (aktiverLeser?.id) return true;
-
-		leuchteBildschirm('error');
-		spieleFehlerton();
-		zeigeFehlerBanner(
-			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c ließ sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
-				`bitte den Ausweis erneut scannen.`
-		);
-		return false;
 	}
 
 	// Eine Antwort kam an — nichts ist offline. Was ihre Auswertung wirft, wird gezeigt.
@@ -353,68 +316,6 @@ export function erzeugeOmniboxStore() {
 		spieleFehlerton();
 		leuchteRand('red');
 		nenneNichtGebucht(nummern);
-	}
-
-	// Bucht einen Scan. Das Ergebnis sagt, ob er glatt durchging: Leser geladen, gebucht oder
-	// für später abgelegt.
-	/**
-	 * @param {Auftrag} auftrag
-	 * @returns {Promise<boolean>}
-	 */
-	async function bucheScan({ q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht }) {
-		letzteFremdrueckgabe = null;
-		letzterAuflagenHinweis = null;
-		clearFehlerBanner();
-
-		// Der Schnappschuss entsteht vor allem Weiteren, damit Escape oder „Theke leeren" die
-		// Absicht des Scans nicht mehr ändern.
-		let eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
-
-		// Steht ein ohne Netz gemerkter Ausweis, gehört ihm das nächste Buch: erst auflösen, dann
-		// buchen (merkerAufgeloest).
-		if (ohneNetz.offlineAusweis) {
-			if (!(await merkerAufgeloest(q, reloadProfileCb))) return false;
-			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker
-			// nicht mehr. Trüge der Eintrag beides, entschiede beim Nachbuchen die Reihenfolge der
-			// Felder, wem das Buch gehört.
-			if (eintrag.ausweis_barcode && aktiverLeser?.id) {
-				const ohneMerker = { ...eintrag };
-				delete ohneMerker.ausweis_barcode;
-				eintrag = { ...ohneMerker, leser_id: aktiverLeser.id, art: absicht ?? 'ausleihe' };
-			}
-		}
-
-		// Scheitert der Versand, hat der Server nichts gesehen: Der Schnappschuss geht in die
-		// Warteschlange. Kam eine Antwort an, wird ihr Fehler gezeigt und nicht eingereiht; nach
-		// Ablauf seines Idempotenz-Caches (24 h) buchte der Server sonst ein zweites Mal.
-		//
-		// Rot nur im Fehlerfall: Sonst überschriebe es das Grün des Erfolgs und das Orange der
-		// Fremdrückgabe, und niemand sähe mehr auf die Farbe.
-		let res;
-		try {
-			res = await apiClient.post('/api/action', {
-				query: q,
-				active_leser_id: eintrag.leser_id ?? undefined,
-				confirmed_checklist: confirmedChecklist,
-				override_block: overrideBlock,
-				idempotency_key: eintrag.id
-			});
-		} catch (e) {
-			leuchteRand('red');
-			return verarbeiteVersandfehler(e, eintrag);
-		}
-
-		try {
-			if (!res.ok) {
-				await verarbeiteAktionsFehler(res, q); // wirft immer
-			}
-			const daten = await res.json();
-			return verarbeiteAktionsErgebnis(daten, reloadProfileCb, q, overrideBlock);
-		} catch (e) {
-			leuchteRand('red');
-			verarbeiteAntwortfehler(e);
-			return false;
-		}
 	}
 
 	/**

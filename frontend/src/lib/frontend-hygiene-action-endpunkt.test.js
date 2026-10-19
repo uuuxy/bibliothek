@@ -8,7 +8,7 @@ import { join, relative } from 'node:path';
 // diese Tür und werteten nur `search_results` aus — ein Scan im Druck-Center hätte still
 // ein Buch zurückgebucht (Suche-Inventur 03.09.2026). Suchen gehen an eine Such-Tür —
 // welche, entscheidet der Bildschirm (zweite Ratsche unten).
-const ERLAUBT = new Set(['lib/stores/omnibox.svelte.js']);
+const ERLAUBT = new Set(['lib/stores/omniboxBuchung.svelte.js']);
 const WURZEL = join(import.meta.dirname, '..');
 
 function dateien(dir, out = []) {
