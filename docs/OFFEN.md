@@ -141,8 +141,8 @@ Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lese
 zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
 Kommentare stehen in [STIL.md](STIL.md), die Prüfungen, die sie halten, in seinem Vorspann.
 
-- [ ] Oberfläche: `stores/omnibox.svelte.js` (729 Zeilen) nach seinen Sachen teilen, in
-  noch drei Stufen, je Stufe deine Freigabe. (5.72)
+- [ ] Oberfläche: `stores/omnibox.svelte.js` (614 Zeilen) nach seinen Sachen teilen, noch
+  Stufe 6 und 7, beide freigegeben. (5.72)
 - [ ] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
 
 ### Später: kleine Fehler und Aufräumarbeit
@@ -374,28 +374,32 @@ und `npx vitest run`.
 ### 5.72 Dateigröße der Oberfläche: der Omnibox-Store
 
 `frontend-hygiene-dateigroesse.test.js` zählt Komponenten und JS-Module; im Bestand stehen 17
-JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 729. Googles Maßstab für
+JS-Module über 200 Zeilen, das größte `stores/omnibox.svelte.js` mit 614. Googles Maßstab für
 Dateien (Best Practices, „Package size"): „files should be focused enough that a maintainer can
 tell which file contains something". Der Omnibox-Store trägt Eingabe, Auflösung, Warteschlange,
 Sperrdialog, Leserauswahl und Zusammenführen ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Freigegeben
-ist ein Plan in Stufen, je Stufe ein Commit, ein Push und deine Freigabe für die nächste:
+ist ein Plan in Stufen bis einschließlich Stufe 7, je Stufe ein Commit und ein Push:
 
-- **Stufen 5 und 6:** Je ein Teil in eine eigene Datei, die lose gekoppelten zuerst:
-  `omniboxOhneNetz.svelte.js` (Schnappschuss, Ablage in der Warteschlange, Ausweis-Merker),
-  `omniboxReihe.svelte.js` (`fuehreAktionAus`, die Reihe der Scans, der einzige Versand an
-  `/api/action`). In `omnibox.svelte.js` bleiben der Zustand der Theke, Rückfrage und Fokus
-  (`frontend-hygiene-theken-fenster.test.js` liest dort `rueckfrageOffen`), die Auswertung
-  einer Fehlerantwort (`verarbeiteAktionsFehler`, `verarbeiteAntwortfehler`; sie setzt die
-  Rückfrage zur Sperre, Reihe und Ausweis-Merker rufen sie beide), Zusammenführen, `gibZurueck`
-  und die Fassade.
+- **Stufe 6:** Die Buchung eines Scans und die Reihe der Scans, je in einer eigenen Datei; in
+  einer kämen sie über 200 Zeilen. `omniboxBuchung.svelte.js` bucht einen Scan (`bucheScan`)
+  und löst vorher einen gemerkten Ausweis auf (`merkerAufgeloest`); er ist der einzige Ort, der
+  an `/api/action` schickt. `omniboxReihe.svelte.js` hält die wartenden Scans, den Doppelscan
+  und den Halt nach einer Rückfrage. `fuehreAktionAus` bleibt im Store: Es entscheidet zwischen
+  Trefferliste und Reihe, im Teil bräuchte es die Suche und die Suche ihn. Im Store bleiben
+  außerdem der Zustand der Theke, Rückfrage und Fokus (`frontend-hygiene-theken-fenster.test.js`
+  liest dort `rueckfrageOffen`), die Auswertung einer Fehlerantwort (`verarbeiteAktionsFehler`,
+  `verarbeiteAntwortfehler`; sie setzt die Rückfrage zur Sperre, Buchung und Reihe rufen sie
+  beide), Zusammenführen, `gibZurueck` und die Fassade.
 - **Stufe 7:** Suche und Rückmeldung werden Unterobjekte der Fassade (`omniboxStore.suche.…`,
   `omniboxStore.rueckmeldung.…`), damit der Aufruf die Datei nennt: 36 Stellen in 4 Dateien
-  und 33 in 7, Tests eingeschlossen. Danach den Bestand der Größen-Ratsche austragen und
-  ARCHITEKTUR.md 5.3 nachziehen.
+  und 33 in 7, Tests eingeschlossen. Danach die Zahl im Bestand der Größen-Ratsche nachziehen
+  und ARCHITEKTUR.md 5.3 nachziehen. Unter 200 Zeilen kommt der Store nach der Rechnung nicht:
+  Fassade, Zustand der Theke und das Verdrahten der Teile brauchen allein rund 200, dazu kommt,
+  was im Store bleibt.
 
 Regeln für jeden Schnitt: Code wird verschoben, nicht umgeschrieben. Ein Zustand lebt in genau
 einem Teil; die anderen bekommen Funktionen, kein geteiltes Objekt. Der Ausweis-Merker schickt
-über dieselbe Funktion wie der Scan: Es bleibt ein Weg zu `/api/action`, und die Erlaubnisliste
+aus derselben Datei wie der Scan: Es bleibt ein Ort für `/api/action`, und die Erlaubnisliste
 von `frontend-hygiene-action-endpunkt.test.js` tauscht die Datei, statt zu wachsen. Bauteile
 und Tests laden nur `omnibox.svelte.js` (`frontend-hygiene-omnibox-teile.test.js`), sonst
 entginge ein Import am Teil vorbei `frontend-hygiene-thekenzeitgeber.test.js`. Jeder Teil

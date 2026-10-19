@@ -1,9 +1,7 @@
 // Zustand und Abläufe der Omnibox an der Theke: Eingabe, Suche, Scan und seine Antwort.
 
 import { apiFetch, apiClient } from '../apiFetch.js';
-import { spieleErfolgston, spieleFehlerton } from '../audio.js';
-import { enqueueOfflineAction } from '../offlineWarteschlange.js';
-import { offlineSync } from './offlineSync.svelte.js';
+import { spieleFehlerton } from '../audio.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { normalisiereScan, ordneScanEin } from '../scanEinordnen.js';
 import { snackbars } from './snackbars.svelte.js';
@@ -13,6 +11,7 @@ import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
 import { erzeugeOmniboxRueckmeldung } from './omniboxRueckmeldung.svelte.js';
 import { erzeugeOmniboxSuche } from './omniboxSuche.svelte.js';
 import { erzeugeOmniboxAntwort } from './omniboxAntwort.svelte.js';
+import { erzeugeOmniboxOhneNetz } from './omniboxOhneNetz.svelte.js';
 
 // Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte), damit die Theke keinen
 // zweiten Meldungsweg mit eigener Optik hat. Auf Modulebene, weil sie nichts aus dem Store
@@ -29,9 +28,6 @@ export function erzeugeOmniboxStore() {
 	// Der Leser, der an der Theke steht, ob Schüler oder Kollege (unterscheidbar an `art`). Es
 	// gibt nur diesen einen Platz, damit keine Stelle zwischen zweien wählen muss.
 	let aktiverLeser = $state(/** @type {any} */ (null));
-	// Der ohne Netz gescannte Ausweis, nur seine Nummer: Auflösen kann ihn nur der Server, bis
-	// dahin tragen die folgenden Bücher sie mit (`ausweis_barcode` in der Warteschlange).
-	let offlineAusweis = $state('');
 	// Schnellrückgabe: Jeder Scan nimmt nur zurück. Sie und ein geladener Leser schließen
 	// einander aus; ohne Leser bekommt der Server keinen und leiht nie aus.
 	let schnellrueckgabe = $state(false);
@@ -103,6 +99,16 @@ export function erzeugeOmniboxStore() {
 		melde
 	});
 
+	const ohneNetz = erzeugeOmniboxOhneNetz({
+		leseLeser: () => aktiverLeser,
+		beendeSchnellrueckgabe: () => (schnellrueckgabe = false),
+		entferneLeser: () => (aktiverLeser = null),
+		leuchteBildschirm,
+		zeigeFehlerBanner,
+		melde
+	});
+	const { schnappschuss, verarbeiteVersandfehler } = ohneNetz;
+
 	let belegt = $derived(!!(aktiverLeser || suche.trefferlisteOffen));
 
 	// Jeder Zeitgeber hat einen Griff und wird vor dem Neuplanen verworfen: Einer, der die Seite
@@ -166,7 +172,7 @@ export function erzeugeOmniboxStore() {
 		if (!an) return;
 		aktiverLeser = null;
 		abholbereit = [];
-		offlineAusweis = '';
+		ohneNetz.offlineAusweis = '';
 		letzteFremdrueckgabe = null;
 		letzterAuflagenHinweis = null;
 	}
@@ -175,93 +181,6 @@ export function erzeugeOmniboxStore() {
 	// bleibt sie an: Der Stapel ist dann noch nicht durch.
 	function escapeGedrueckt() {
 		if (!escapeIstBelegt()) schalteSchnellrueckgabe(false);
-	}
-
-	// Der Schnappschuss des Scans, bevor die Anfrage hinausgeht: Escape oder „Theke leeren"
-	// während einer hängenden Anfrage ändern weder Person noch Absicht.
-	//
-	// Ohne Vorgabe ist der Scan eine Ausleihe, wenn ein Leser geladen oder ein Ausweis gemerkt
-	// ist, sonst eine Rückgabe; „Buch zurückgeben" in der Akte gibt die Rückgabe vor.
-	/**
-	 * @param {string} q
-	 * @param {string} idempotencyKey
-	 * @param {'ausleihe' | 'rueckgabe' | null} absicht
-	 * @returns {import('../offlineWarteschlange.js').OfflineEintrag}
-	 */
-	function schnappschuss(q, idempotencyKey, absicht) {
-		// Ohne geladenen Leser, aber mit gemerktem Ausweis geht das Buch an die Person dahinter.
-		const merker = !aktiverLeser?.id && offlineAusweis ? offlineAusweis : '';
-		return {
-			id: idempotencyKey,
-			art: absicht ?? (aktiverLeser?.id || merker ? 'ausleihe' : 'rueckgabe'),
-			barcode: q,
-			leser_id: aktiverLeser?.id ?? null,
-			...(merker ? { ausweis_barcode: merker } : {}),
-			gescannt_am: Date.now(),
-			// Die Wanduhr springt gern, wenn das Netz zurückkommt, performance.now() nicht. Daraus
-			// rechnet das Nachbuchen den Zeitpunkt des Scans neu (offlineWarteschlange.js).
-			mono: Math.round(performance.now()),
-			ursprung: Math.round(performance.timeOrigin ?? 0)
-		};
-	}
-
-	// Legt einen Scan ohne Netz ab. Eingeordnet wird wie am Server (scanEinordnen.js), mit der
-	// Buchliste dieses Rechners; abgelegt wird die Nummer aus der Einordnung, weil ein
-	// Littera-Etikett eine EAN-13 trägt und der Server nur die Nummer darin kennt.
-	/**
-	 * @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
-	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
-	 */
-	async function speichereOfflineAktion(eintrag) {
-		const einordnung = ordneScanEin(eintrag.barcode, buchBarcodes.istBuch);
-		if (einordnung.art === 'ausweis') {
-			merkeOfflineAusweis(einordnung.nummer);
-			return true;
-		}
-		if (einordnung.art !== 'buch') {
-			// Nach einem unklaren Scan fällt der Merker: Das nächste Buch soll keiner Person
-			// zugeschrieben werden, bei der niemand mehr sicher ist.
-			if (einordnung.art === 'unklar') offlineAusweis = '';
-			verwirfOfflineScan(einordnung);
-			return false;
-		}
-		eintrag = { ...eintrag, barcode: einordnung.nummer };
-		try {
-			await enqueueOfflineAction(eintrag);
-		} catch (err) {
-			// Laut, nicht „gespeichert": Ohne Warteschlange ist der Scan verloren, das Buch muss
-			// zurück ins Regal oder auf den Zettel.
-			console.error('Offline-Eintrag nicht gespeichert:', err);
-			leuchteBildschirm('error');
-			spieleFehlerton();
-			zeigeFehlerBanner(
-				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden — Buch zurücklegen und den Vorgang notieren.`
-			);
-			offlineSync.zaehleNeu();
-			return false;
-		}
-		offlineSync.zaehleNeu();
-		leuchteBildschirm('warning');
-		spieleErfolgston();
-		melde(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
-		return true;
-	}
-
-	// Ohne Netz merkt sich die Theke vom Ausweis nur die Nummer, weil auf dem Rechner keine
-	// Personendaten liegen sollen. Der Server löst sie beim Nachbuchen auf.
-	/** @param {string} nummer */
-	function merkeOfflineAusweis(nummer) {
-		schnellrueckgabe = false;
-		offlineAusweis = nummer;
-		// Die zuvor geladene Person weicht: Sonst zeigte die Theke einen Namen, während die
-		// folgenden Bücher an eine andere Person gingen.
-		aktiverLeser = null;
-		leuchteBildschirm('warning');
-		spieleErfolgston();
-		melde(
-			`Ohne Netz gemerkt: Ausweis „${nummer}". Die folgenden Bücher werden ihm zugeordnet.`,
-			'warning'
-		);
 	}
 
 	/**
@@ -279,14 +198,14 @@ export function erzeugeOmniboxStore() {
 	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgeführt
 	 */
 	async function merkerAufgeloest(q, reloadProfileCb) {
-		if (!offlineAusweis) return true;
+		if (!ohneNetz.offlineAusweis) return true;
 		// Ein Ausweis selbst darf durch — er ist der Ausweg und ersetzt den Merker.
 		if (ordneScanEin(q, buchBarcodes.istBuch).art === 'ausweis') {
-			offlineAusweis = '';
+			ohneNetz.offlineAusweis = '';
 			return true;
 		}
 
-		const gemerkt = offlineAusweis;
+		const gemerkt = ohneNetz.offlineAusweis;
 		let res;
 		try {
 			res = await apiClient.post('/api/action', {
@@ -306,7 +225,7 @@ export function erzeugeOmniboxStore() {
 			verarbeiteAntwortfehler(e);
 		}
 
-		offlineAusweis = '';
+		ohneNetz.offlineAusweis = '';
 		if (aktiverLeser?.id) return true;
 
 		leuchteBildschirm('error');
@@ -316,40 +235,6 @@ export function erzeugeOmniboxStore() {
 				`bitte den Ausweis erneut scannen.`
 		);
 		return false;
-	}
-
-	/** @param {import('../scanEinordnen.js').ScanEinordnung} einordnung */
-	function verwirfOfflineScan(einordnung) {
-		// Den Ausweis merkt speichereOfflineAktion vorher; hier kommt er nicht an.
-		const meldungen = {
-			// Geräte gehen ohne Netz nicht: Sie hängen an einer Checkliste, die es nur online gibt.
-			geraet:
-				`Geräte lassen sich ohne Netz nicht ausgeben oder zurücknehmen — die Checkliste dazu gibt es nur online. ` +
-				`\u201e${einordnung.nummer}\u201c wurde NICHT gebucht.`,
-			// Ohne Netz gibt es keine Namenssuche, weil auf dem Rechner der Theke keine
-			// Personendaten liegen sollen.
-			suche:
-				`Ohne Netz lässt sich nicht nach Namen suchen — auf diesem Rechner stehen keine Personendaten. ` +
-				`Bitte den Ausweis scannen oder den Vorgang notieren.`,
-			// Die sichere Seite: Wer hier rät, schreibt das nächste Buch einer fremden Person zu.
-			unklar:
-				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig — die Nummer steht nicht in der Buchliste dieses Rechners. ` +
-				`NICHT gebucht; bitte notieren.`
-		};
-		leuchteBildschirm('error');
-		spieleFehlerton();
-		zeigeFehlerBanner(meldungen[einordnung.art] ?? 'Dieser Scan wurde ohne Netz NICHT gebucht.');
-	}
-
-	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der
-	// Server hat den Scan nicht gesehen, der Schnappschuss geht in die Warteschlange.
-	/**
-	 * @param {unknown} e @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
-	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
-	 */
-	function verarbeiteVersandfehler(e, eintrag) {
-		console.warn('Scan nicht zugestellt, wird eingereiht:', e);
-		return speichereOfflineAktion(eintrag);
 	}
 
 	// Eine Antwort kam an — nichts ist offline. Was ihre Auswertung wirft, wird gezeigt.
@@ -487,7 +372,7 @@ export function erzeugeOmniboxStore() {
 
 		// Steht ein ohne Netz gemerkter Ausweis, gehört ihm das nächste Buch: erst auflösen, dann
 		// buchen (merkerAufgeloest).
-		if (offlineAusweis) {
+		if (ohneNetz.offlineAusweis) {
 			if (!(await merkerAufgeloest(q, reloadProfileCb))) return false;
 			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker
 			// nicht mehr. Trüge der Eintrag beides, entschiede beim Nachbuchen die Reihenfolge der
@@ -605,13 +490,13 @@ export function erzeugeOmniboxStore() {
 		},
 		/** Die ohne Netz gemerkte Ausweisnummer ("" = keine). Nur die Nummer, kein Name. */
 		get offlineAusweis() {
-			return offlineAusweis;
+			return ohneNetz.offlineAusweis;
 		},
 		// Von außen gesetzt (Escape, Akte schließen, Theke leeren): Was noch wartet, wurde für
 		// den Zustand davor gescannt und wird nicht gebucht.
 		set offlineAusweis(v) {
 			verwirfWartende();
-			offlineAusweis = v;
+			ohneNetz.offlineAusweis = v;
 		},
 		set aktiverLeser(v) {
 			verwirfWartende();
