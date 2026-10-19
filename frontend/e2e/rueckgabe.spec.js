@@ -66,7 +66,11 @@ test('Fremdrückgabe: Scan 1 bucht nur beim Vorbesitzer aus, Scan 2 leiht an die
 	// Scan 1: Buch von Schüler A in Bs Sitzung → reine Rückgabe + Info
 	await scanInput.fill(bookBarcode);
 	await scanInput.press('Enter');
+	// Wer auf das Buch sieht, merkt es am Rand des Scanfelds: Er leuchtet eine Sekunde orange.
+	// Der Hinweis über dem Konto bleibt bis zum nächsten Scan.
+	await expect(page.locator('form', { has: scanInput })).toHaveClass(/border-warning/);
 	await expect(page.getByText(/war auf E2E Leiher-.* verbucht/).first()).toBeVisible();
+	await expect(page.getByText(/Fremdrückgabe: Buch war auf E2E Leiher-.* verbucht/)).toBeVisible();
 	// NICHT auf B gebucht — die Sitzung läuft ungestört weiter
 	await expect(page.getByText('ENTLIEHENE BÜCHER (0)')).toBeVisible();
 

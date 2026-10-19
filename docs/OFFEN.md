@@ -45,8 +45,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [ ] Portal: „Problem melden" unter dem Suchfeld
 - [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
 - [ ] Die übrigen Proben mit dem Handscanner
-- [ ] Theke mit dem Handscanner nach der Teilung des Omnibox-Stores: Ausweis und Bücher ohne
-  Pause, ein fremdes Buch, die Schnellrückgabe (7.10)
 - [ ] Maske „Buch bearbeiten"
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken
@@ -562,12 +560,6 @@ einem offenen Fenster der Theke ist es am 07.10.2026 belegt: Der Scan wurde erka
   „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
   Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
-
-**Die Theke nach der Teilung des Omnibox-Stores.** Mit dem Handscanner einen Ausweis und
-gleich danach drei Bücher scannen, ohne Pause. Erwartet: Die drei Bücher stehen als Ausleihen
-in der Akte. Dann ein Buch scannen, das auf jemand anderen verbucht ist. Erwartet: Der Rand
-leuchtet orange, über dem Konto steht „Fremdrückgabe“. Dann die Schnellrückgabe einschalten
-und zwei verliehene Bücher scannen. Erwartet: Die Meldung nennt je Buch, bei wem es war.
 
 **Die Inventur mit dem Handscanner.** Eine Inventur für eine Signatur
 starten und fünf Bücher so schnell hintereinander scannen, wie es geht. Erwartet: Die Zahl
