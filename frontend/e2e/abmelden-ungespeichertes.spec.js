@@ -35,6 +35,14 @@ async function sperre(page) {
 	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
 }
 
+/** Die Sperre bei angehaltener Uhr: Ihre Zeitgeber laufen erst mit runFor oder resume.
+ * @param {import('@playwright/test').Page} page */
+async function sperreBeiAngehaltenerUhr(page) {
+	const jetzt = await page.evaluate(() => Date.now());
+	await page.clock.pauseAt(jetzt + (15 * 60 + 10) * 1000);
+	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
+}
+
 /** @param {import('@playwright/test').Page} page */
 const abmeldenAmSperrbildschirm = (page) =>
 	page.getByRole('button', { name: 'Abmelden und als andere Person anmelden' });
@@ -73,12 +81,19 @@ test('der Sperrbildschirm fragt vor dem Abmelden, wenn dahinter etwas ungespeich
 }) => {
 	await anmeldenMitUhr(page);
 	await neuesBuchMitEingabe(page);
-	await sperre(page);
+	await sperreBeiAngehaltenerUhr(page);
 
+	// Die Rückfrage steht offen, bevor ein Zeitgeber der Sperre gelaufen ist. Laufen sie danach,
+	// behält sie den Fokus (Material 3, Dialogs: „focus should automatically land on the first
+	// interactive element within the dialog").
 	await abmeldenAmSperrbildschirm(page).click();
 	await expect(rueckfrage(page)).toBeVisible();
-	await expect(rueckfrage(page).getByRole('button', { name: 'Bleiben' })).toBeFocused();
-	await rueckfrage(page).getByRole('button', { name: 'Bleiben' }).click();
+	const bleiben = rueckfrage(page).getByRole('button', { name: 'Bleiben' });
+	await expect(bleiben).toBeFocused();
+	await page.clock.runFor(1000);
+	await expect(bleiben).toBeFocused();
+	await page.clock.resume();
+	await bleiben.click();
 	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
 
 	await page.locator('#sperre-passwort').fill(ADMIN_PASSWORD);
@@ -92,6 +107,41 @@ test('der Sperrbildschirm fragt vor dem Abmelden, wenn dahinter etwas ungespeich
 	await abmeldenAmSperrbildschirm(page).click();
 	await rueckfrage(page).getByRole('button', { name: 'Verwerfen und abmelden' }).click();
 	await expect(page.locator('#login-email')).toBeVisible();
+});
+
+test('eine Ablehnung des Passworts nimmt der offenen Rückfrage den Fokus nicht', async ({
+	page
+}) => {
+	await anmeldenMitUhr(page);
+	await neuesBuchMitEingabe(page);
+	await sperreBeiAngehaltenerUhr(page);
+	// Die Antwort kommt erst, wenn die Rückfrage offen ist, und zählt am Server keinen Fehlversuch.
+	/** @type {(wert?: unknown) => void} */
+	let frei = () => {};
+	const freigabe = new Promise((fertig) => (frei = fertig));
+	await page.route('**/api/auth/entsperren', async (route) => {
+		await freigabe;
+		await route.fulfill({ status: 429 });
+	});
+	const passwort = page.locator('#sperre-passwort');
+
+	await passwort.fill('falsch');
+	await page.getByRole('button', { name: 'Entsperren' }).click();
+	await expect(passwort, 'die Prüfung läuft').toBeDisabled();
+	await abmeldenAmSperrbildschirm(page).click();
+	const bleiben = rueckfrage(page).getByRole('button', { name: 'Bleiben' });
+	await expect(bleiben).toBeFocused();
+	frei();
+	await expect(passwort, 'die Prüfung ist vorbei').toBeEnabled();
+	await page.clock.runFor(1000);
+	await expect(bleiben).toBeFocused();
+
+	// Ohne offene Rückfrage steht der Cursor nach der Ablehnung wieder im Feld.
+	await page.clock.resume();
+	await bleiben.click();
+	await passwort.fill('falsch');
+	await page.getByRole('button', { name: 'Entsperren' }).click();
+	await expect(passwort).toBeFocused();
 });
 
 test('ohne Ungespeichertes meldet der Sperrbildschirm ohne Frage ab', async ({ page }) => {

@@ -1,4 +1,5 @@
 <script>
+	import { tick } from 'svelte';
 	import { fokusFalle } from '../ui/fokusFalle.js';
 	import { Lock } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -29,10 +30,6 @@
 		scanErkannt = true;
 	}
 
-	$effect(() => {
-		setTimeout(() => document.getElementById('sperre-passwort')?.focus(), 50);
-	});
-
 	/** @param {SubmitEvent} e */
 	async function entsperren(e) {
 		e.preventDefault();
@@ -40,7 +37,11 @@
 		scanErkannt = false;
 		const ok = await leerlaufSperre.entsperren(passwort);
 		passwort = '';
-		if (!ok) setTimeout(() => document.getElementById('sperre-passwort')?.focus(), 50);
+		// Das Feld war während der Prüfung gesperrt und nimmt den Fokus zurück, sobald es wieder
+		// bedienbar ist; eine inzwischen offene Rückfrage behält ihn.
+		if (ok || verwerfenOffen) return;
+		await tick();
+		document.getElementById('sperre-passwort')?.focus();
 	}
 
 	// Hält eine Maske hinter der Sperre Ungespeichertes, fragt der Bildschirm vor dem Abmelden
