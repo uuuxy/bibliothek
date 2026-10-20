@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -21,9 +22,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		titel).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-ISBN-SUCHE-1')`, id); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeExemplarAn(t, pool, id, "B-ISBN-SUCHE-1", true, "")
 
 	for _, suchtext := range []string{"0306406152", "0-306-40615-2", "9780306406157", "978-0-306-40615-7"} {
 		volltext, err := repo.FindeTitel(ctx, suchtext)

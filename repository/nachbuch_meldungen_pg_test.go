@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/google/uuid"
 )
@@ -21,17 +22,8 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	var bearbeiterID, schuelerID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Nach', 'Bucher', $1, 'mitarbeiter', true) RETURNING id`,
-		"nachbuch-"+suffix+"@schule.invalid").Scan(&bearbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Anna', 'Gemeldet', '07B', 2031) RETURNING id`, "S-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	bearbeiterID = testdaten.LegeKontoAn(t, pool, "Nach", "Bucher", "nachbuch-"+suffix+"@schule.invalid", "mitarbeiter", true)
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-"+suffix, "Anna", "Gemeldet", "07B", 2031)
 	vorher, err := ZaehleOffeneNachbuchMeldungen(ctx, pool)
 	if err != nil {
 		t.Fatalf("zählen: %v", err)

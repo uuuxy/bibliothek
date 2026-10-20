@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 	"time"
@@ -174,11 +175,6 @@ func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 // Ein Kollege steht in derselben Tabelle wie ein Schüler, unterschieden nur durch `art`.
 func legeKollegenAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname string) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO leser (barcode_id, vorname, nachname, art)
-		 VALUES ($1, $2, 'Lehrkraft', 'lehrkraft') RETURNING id`, barcode, vorname).Scan(&id); err != nil {
-		t.Fatalf("Kollege %q anlegen: %v", barcode, err)
-	}
+	id := testdaten.LegeLeserAn(t, pool, barcode, vorname, "Lehrkraft", "lehrkraft")
 	return id
 }

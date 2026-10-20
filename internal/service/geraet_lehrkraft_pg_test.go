@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -46,23 +47,11 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 
 	legeSchuelerAn := func() string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, 'Geraete', 'Schueler', '05A', 2031) RETURNING id
-		`, "GL-S-"+suffix).Scan(&id); err != nil {
-			t.Fatalf("Schüler anlegen: %v", err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, "GL-S-"+suffix, "Geraete", "Schueler", "05A", 2031)
 		return id
 	}
 
-	var mitarbeiterID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Geraete', 'Theke', $1, 'mitarbeiter', true) RETURNING id
-	`, "geraete-theke-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
+	mitarbeiterID := testdaten.LegeKontoAn(t, pool, "Geraete", "Theke", "geraete-theke-"+suffix+"@schule.invalid", "mitarbeiter", true)
 
 	t.Cleanup(func() {
 		for _, sql := range []string{

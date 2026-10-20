@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Titel-Verwaltung und Lernmittel-Liste suchen am Server und vergleichen eine getippte ISBN
@@ -33,9 +34,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		titel, zehn).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, id, barcode); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeExemplarAn(t, pool, id, barcode, true, "")
 
 	for _, suchtext := range []string{zehn, "0-306-40615-2", dreizehn, "978-0-306-40615-7"} {
 		liste, err := abfragen.LadeTitelListe(ctx, "", suchtext, false)

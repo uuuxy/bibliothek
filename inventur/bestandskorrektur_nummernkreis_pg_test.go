@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -50,10 +51,7 @@ func TestBestandskorrekturUndImportZiehenAusBarcodeSeq(t *testing.T) {
 		t.Fatalf("barcode_seq lesen: %v", err)
 	}
 	vorweg := fmt.Sprintf("B-%05d", letzte+1)
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) VALUES ($1, $2, true)`,
-		titelKorrektur, vorweg); err != nil {
-		t.Fatalf("Handnummer %s: %v", vorweg, err)
-	}
+	testdaten.LegeExemplarAn(t, pool, titelKorrektur, vorweg, true, "")
 
 	abfragen := NewTitelAbfragen(pool)
 

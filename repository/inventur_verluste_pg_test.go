@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -122,17 +123,8 @@ func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	// Ein gewöhnliches, nicht ausgesondertes Exemplar dazwischen: Es wird nicht gelöscht, auch
 	// wenn seine ID mitgeschickt wird.
 	var titelID, normalID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel) VALUES ('Reguläres Buch') RETURNING id`,
-	).Scan(&titelID); err != nil {
-		t.Fatalf("Titel anlegen: %v", err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) VALUES ($1, 'LOE-NORMAL', true) RETURNING id`,
-		titelID,
-	).Scan(&normalID); err != nil {
-		t.Fatalf("normales Exemplar anlegen: %v", err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Reguläres Buch", 5)
+	normalID = testdaten.LegeExemplarAn(t, pool, titelID, "LOE-NORMAL", true, "")
 
 	geloescht, err := repo.LoescheVerlusteEndgueltig(ctx,
 		[]string{verloren1, verloren2, normalID, "00000000-0000-0000-0000-000000000000"}, bearbeiterID)

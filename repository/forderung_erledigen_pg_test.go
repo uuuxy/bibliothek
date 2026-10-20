@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"errors"
 	"testing"
@@ -35,12 +36,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	// Eigener Bearbeiter statt legeBearbeiterAn: Dessen fester Barcode gehört den Tests in
 	// schaden_melden_ausleihe_pg_test.go, und mit einem geteilten Konto hinge das Ergebnis an
 	// der Reihenfolge der Tests.
-	var bearbeiter string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		 VALUES ('Gebuehren', 'Kraft', 'geb@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&bearbeiter); err != nil {
-		t.Fatalf("Bearbeiter anlegen: %v", err)
-	}
+	bearbeiter := testdaten.LegeKontoAn(t, pool, "Gebuehren", "Kraft", "geb@example.org", "mitarbeiter", true)
 
 	// (1) Storno: setzt ist_bezahlt und die Spalten des Stornos, der Eintrag trägt den Betrag
 	// aus der Datenbank.

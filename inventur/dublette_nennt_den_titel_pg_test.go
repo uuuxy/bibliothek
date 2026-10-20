@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Ein neuer Titel ohne Bestandsangabe hat kein Exemplar und steht deshalb in keinem Katalog
@@ -114,10 +115,7 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 		t.Errorf("Meldung %q nennt weder den Titel noch die Sicht, in der er steht", ohne.Error)
 	}
 
-	if _, err := pool.Exec(context.Background(),
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, angelegt.Data.ID, "B-DUBLETTE-"+isbn); err != nil {
-		t.Fatalf("Exemplar anlegen: %v", err)
-	}
+	testdaten.LegeExemplarAn(t, pool, angelegt.Data.ID, "B-DUBLETTE-"+isbn, true, "")
 	mit := abgelehnt()
 	if mit.Vorhanden.OhneExemplar {
 		t.Error("ohneExemplar = true, der Titel hat inzwischen ein Exemplar")

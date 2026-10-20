@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"errors"
 	"testing"
@@ -117,23 +118,13 @@ func TestSchadenMelden_Idempotent(t *testing.T) {
 
 func legeSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		 VALUES ($1, $2, 'Test', $3, 2030) RETURNING id`, barcode, vorname, klasse).Scan(&id); err != nil {
-		t.Fatalf("Schüler %q anlegen: %v", barcode, err)
-	}
+	id := testdaten.LegeSchuelerAn(t, pool, barcode, vorname, klasse)
 	return id
 }
 
 func legeBearbeiterAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		 VALUES ('Bibliotheks', 'Kraft', 'dmg@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Bearbeiter anlegen: %v", err)
-	}
+	id := testdaten.LegeKontoAn(t, pool, "Bibliotheks", "Kraft", "dmg@example.org", "mitarbeiter", true)
 	return id
 }
 

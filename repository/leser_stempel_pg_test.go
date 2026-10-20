@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // leser.letzter_vorgang_am — die Uhr der Karenz, von Triggern gestempelt.
@@ -57,12 +58,7 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 	}
 	exemplar := func(name string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-			VALUES ($1, $2, true) RETURNING id`, titelID, "ST-EX-"+name+"-"+suffix).Scan(&id); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		id := testdaten.LegeExemplarAn(t, pool, titelID, "ST-EX-"+name+"-"+suffix, true, "")
 		return id
 	}
 	// dbZeit schneidet einen Zeitpunkt auf das zu, was timestamptz speichern kann:

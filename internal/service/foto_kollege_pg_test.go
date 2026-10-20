@@ -12,6 +12,7 @@ import (
 
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Das Passbild eines Kollegen: Die Akte ist eine Maske für jeden und zeigt auch ihm den
@@ -23,12 +24,7 @@ func TestSchreibeLeserFoto_AuchFuerKollegen(t *testing.T) {
 	ctx := context.Background()
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 
-	var kollegeID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('A-FOTO-K1', 'Kim', 'Fotoprobe', 'lehrkraft') RETURNING id`).Scan(&kollegeID); err != nil {
-		t.Fatalf("Kollege anlegen: %v", err)
-	}
+	kollegeID := testdaten.LegeLeserAn(t, pool, "A-FOTO-K1", "Kim", "Fotoprobe", "lehrkraft")
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id = $1`, kollegeID); err != nil {
 			t.Errorf("aufräumen: %v", err)
@@ -61,12 +57,7 @@ func TestSchreibeLeserFoto_ZweitesFotoErsetztDasErste(t *testing.T) {
 	ctx := context.Background()
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 
-	var leserID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('A-FOTO-K2', 'Kim', 'Zweitfoto', 'lehrkraft') RETURNING id`).Scan(&leserID); err != nil {
-		t.Fatalf("Leser anlegen: %v", err)
-	}
+	leserID := testdaten.LegeLeserAn(t, pool, "A-FOTO-K2", "Kim", "Zweitfoto", "lehrkraft")
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id = $1`, leserID); err != nil {
 			t.Errorf("aufräumen: %v", err)

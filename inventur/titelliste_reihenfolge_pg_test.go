@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Titelliste (GET /api/books, Titel-Verwaltung und Medienkatalog) steht nach dem Titel.
@@ -55,11 +56,7 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 			t.Fatalf("Titel anlegen: %v", err)
 		}
 		// Der Katalog zeigt nur Titel mit einem Exemplar im Bestand.
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) VALUES ($1, $2, true)`,
-			id, fmt.Sprintf("B-%s-%d", marke, i)); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		testdaten.LegeExemplarAn(t, pool, id, fmt.Sprintf("B-%s-%d", marke, i), true, "")
 	}
 
 	durch := func(h http.Handler) http.Handler { return h }

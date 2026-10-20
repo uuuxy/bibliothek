@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -31,18 +32,8 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 
 	// — Beteiligte —
 	var mitarbeiterID, schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Rueck', 'Kehr', $1, 'mitarbeiter', true) RETURNING id
-	`, "rueckkehr-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Wieder', 'Da', '07B', 2031) RETURNING id
-	`, "SCH-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	mitarbeiterID = testdaten.LegeKontoAn(t, pool, "Rueck", "Kehr", "rueckkehr-"+suffix+"@schule.invalid", "mitarbeiter", true)
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "SCH-"+suffix, "Wieder", "Da", "07B", 2031)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
 		VALUES ('Rueckkehr-Testband', 'Prüfer', 'Buch', true) RETURNING id

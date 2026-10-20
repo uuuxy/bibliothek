@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -16,11 +17,7 @@ func TestIstEmailVergeben_IgnoriertGrossKleinschreibung(t *testing.T) {
 	if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE email ILIKE 'erika.muster@%'`); err != nil {
 		t.Fatal(err)
 	}
-	var id string
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Erika', 'Muster', 'erika.muster@schule.example', 'kollegium', false) RETURNING id`).Scan(&id); err != nil {
-		t.Fatal(err)
-	}
+	id := testdaten.LegeKontoAn(t, pool, "Erika", "Muster", "erika.muster@schule.example", "kollegium", false)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM benutzer WHERE id = $1`, id); err != nil {
 			t.Logf("Aufräumen: %v", err)

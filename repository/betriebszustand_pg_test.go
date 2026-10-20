@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -20,11 +21,7 @@ func TestAktiveAdminMails_NurAktiveAdmins(t *testing.T) {
 		{"ADM-WEG", "admin-weg@example.org", "admin", false},
 		{"MIT-1", "mitarbeiter@example.org", "mitarbeiter", true},
 	} {
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-			VALUES ('T', 'T', $1, $2, $3)`, b.mail, b.rolle, b.aktiv); err != nil {
-			t.Fatalf("Seed %s: %v", b.barcode, err)
-		}
+		testdaten.LegeKontoAn(t, pool, "T", "T", b.mail, b.rolle, b.aktiv)
 	}
 
 	admins, err := NewBetriebszustandAbfragen(pool).LadeAktiveAdmins(ctx)

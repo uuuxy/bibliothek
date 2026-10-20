@@ -602,6 +602,10 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
   `internal/routertest`), steht er als Testpaket daneben (`package repository_test`), wie es
   Googles Regelwerk für diesen Fall vorsieht
   ([Test package](https://google.github.io/styleguide/go/decisions#test-package)).
+- Titel, Exemplare, Schüler, Leser und Konten legt ein Test an der Datenbank über
+  `internal/testdaten` an. Eigenes SQL schreibt er nur, wo kein Helfer genau dieselbe Zeile
+  anlegt: mehrere Tupel, `ON CONFLICT`, Ausdrücke wie `NOW()`, andere Spalten. `testdaten`
+  bindet kein Paket des Programms ein, jeder Test kann es nutzen.
 - In `api/` stehen die Tests an Router, Middleware, CSRF und Abmeldung, die Prüfungen über alle
   Routen (Schutz, Rechte, Personendaten, Grenzen der Listen), die Schichtung und jeder Test, der
   Türen zweier Themen prüft.

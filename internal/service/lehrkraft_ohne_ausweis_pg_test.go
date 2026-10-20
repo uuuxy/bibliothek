@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -28,12 +29,7 @@ func TestLadeVorgang_LehrkraftOhneAusweis(t *testing.T) {
 	// Ein aktives Konto bekommt eine Nummer und behält sie (Migrationen 136 und 145). Ohne
 	// Nummer ist eine Lehrkraft nur ohne aktives Konto — etwa ohne Schul-Adresse, solange die
 	// Akte keine nachgetragen hat. Der Ausleihpfad muss den Zustand tragen.
-	var leserID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (vorname, nachname, art) VALUES ('Ohne', $1, 'lehrkraft') RETURNING id
-	`, "Ausweis-"+suffix).Scan(&leserID); err != nil {
-		t.Fatalf("Lehrkraft ohne Ausweis anlegen: %v", err)
-	}
+	leserID := testdaten.LegeLeserAn(t, pool, "", "Ohne", "Ausweis-"+suffix, "lehrkraft")
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id = $1`, leserID); err != nil {
 			t.Errorf("Aufräumen (Leser): %v", err)

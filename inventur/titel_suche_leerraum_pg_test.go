@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Titel-Verwaltung und Lernmittel-Liste suchen am Server und vergleichen den Suchtext mit
@@ -41,9 +42,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, id, barcode); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeExemplarAn(t, pool, id, barcode, true, "")
 
 	// Die Lernmittel-Liste über ihre Tür: Liste, Fach-Zahlen und Ausdruck lesen den Suchtext
 	// an einer Stelle (lernmittelFilterParam).

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -27,12 +28,7 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 	bestelltAm := SchuljahrBeginn(schulzeit.Jetzt()).AddDate(0, 0, -20)
 
 	var schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Zugang', 'Staffel', '07B', 2032) RETURNING id
-	`, "SZS-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "SZS-"+suffix, "Zugang", "Staffel", "07B", 2032)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
 		VALUES ('Zugangs-Testband', 'Prüfer', 'Buch', true) RETURNING id

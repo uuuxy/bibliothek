@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Auskunft vorab (GET /api/books/vorhanden) und die Ablehnung beim Speichern (POST
@@ -151,10 +152,7 @@ func TestTitelVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 	if vorher == nil {
 		t.Fatal("der angelegte Titel fehlt in der Auskunft")
 	}
-	if _, err := pool.Exec(context.Background(),
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, vorher.ID, "B-VORAB-"+dreizehn); err != nil {
-		t.Fatalf("Exemplar anlegen: %v", err)
-	}
+	testdaten.LegeExemplarAn(t, pool, vorher.ID, "B-VORAB-"+dreizehn, true, "")
 	if mit, _ := vorab(dreizehn); mit == nil || mit.OhneExemplar {
 		t.Errorf("mit Exemplar: Auskunft = %+v, erwartet ohneExemplar=false", mit)
 	}

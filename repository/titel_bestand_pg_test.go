@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"fmt"
 	"strings"
@@ -73,12 +74,7 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 	exemplar(t, frei, "B-BST-F2"+suffix, true, false, nil)
 	exemplar(t, frei, "B-BST-F3"+suffix, false, true, nil)
 
-	var schuelerID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Bestand', 'Leser', '07A', 2031) RETURNING id`, "S-BST-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID := testdaten.LegeSchuelerMitNamenAn(t, pool, "S-BST-"+suffix, "Bestand", "Leser", "07A", 2031)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
 		VALUES ($1, $2, now(), now() + interval '14 days')`, exID, schuelerID); err != nil {

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Medienkatalog fasst die Auflagen eines Buchs zu einer Kachel zusammen. Dafür trägt jeder
@@ -48,10 +49,7 @@ func TestKatalog_TraegtBuchUndRangDerAuflage(t *testing.T) {
 		}
 	})
 	for i, id := range []string{neu, alt, einzeln} {
-		if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`,
-			id, "KATAUF-"+string(rune('1'+i))); err != nil {
-			t.Fatalf("Exemplar: %v", err)
-		}
+		testdaten.LegeExemplarAn(t, pool, id, "KATAUF-"+string(rune('1'+i)), true, "")
 	}
 
 	liste, err := abfragen.LadeTitelListe(ctx, "", "", false)

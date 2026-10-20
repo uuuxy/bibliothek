@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Abschluss einer Inventur zählt nicht nur, er hält fest, welche Exemplare fehlen: Mit
@@ -35,13 +36,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 
 	exemplar := func(barcode string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-			VALUES ($1, $2, true) RETURNING id
-		`, titelID, barcode).Scan(&id); err != nil {
-			t.Fatalf("Exemplar %s anlegen: %v", barcode, err)
-		}
+		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 		return id
 	}
 	gescannt := exemplar("INV-DA")
@@ -121,17 +116,8 @@ func TestInventurScanUndAbschlussAbgestimmt(t *testing.T) {
 	for runde := 0; runde < 8; runde++ {
 		resetInventurDaten(t, pool)
 		bearbeiter := legeBearbeiterAn(t, pool)
-		var titelID string
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO buecher_titel (titel) VALUES ('KoordTitel') RETURNING id`).Scan(&titelID); err != nil {
-			t.Fatalf("Titel: %v", err)
-		}
-		var exID string
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) VALUES ($1,'INV-KOORD',true) RETURNING id`,
-			titelID).Scan(&exID); err != nil {
-			t.Fatalf("Exemplar: %v", err)
-		}
+		titelID := testdaten.LegeTitelAn(t, pool, "KoordTitel", 5)
+		exID := testdaten.LegeExemplarAn(t, pool, titelID, "INV-KOORD", true, "")
 		var sessionID string
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO inventur_sessions (scope_type) VALUES ('global') RETURNING id`).Scan(&sessionID); err != nil {

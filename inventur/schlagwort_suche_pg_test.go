@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -29,9 +30,7 @@ func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 			t.Fatalf("Titel %q: %v", name, err)
 		}
 		// Ohne Exemplar steht ein Titel in keinem Katalog (repository.SQLTitelHatExemplar).
-		if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, id, barcode); err != nil {
-			t.Fatalf("Exemplar %q: %v", barcode, err)
-		}
+		testdaten.LegeExemplarAn(t, pool, id, barcode, true, "")
 		return id
 	}
 	mondflug := titel("Suchtest Mondflug", "SUCHTEST-1")

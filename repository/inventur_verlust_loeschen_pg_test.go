@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"errors"
 	"strings"
@@ -42,10 +43,7 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 
 	// Der Barcode ist wieder frei: buecher_exemplare.barcode_id ist ohne Teilindex eindeutig.
 	// Bliebe die Zeile stehen, wäre der Aufkleber für immer verbraucht.
-	var titelID string
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Erdkundebuch 7 (neu)') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
+	titelID := testdaten.LegeTitelAn(t, pool, "Erdkundebuch 7 (neu)", 5)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'VL-HIST')`, titelID); err != nil {
 		t.Errorf("Barcode wurde nicht freigegeben, Wiedereinpflegen unmöglich: %v", err)
@@ -119,12 +117,7 @@ func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 
 func legeSchuelerFuerVerlustAn(t *testing.T, ctx context.Context, pool *pgxpool.Pool, barcode string) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Vera', 'Lust', '7a', 2030) RETURNING id`, barcode).Scan(&id); err != nil {
-		t.Fatalf("Schüler: %v", err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, barcode, "Vera", "Lust", "7a", 2030)
 	return id
 }
 

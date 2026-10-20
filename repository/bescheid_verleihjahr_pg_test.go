@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/schulzeit"
 )
@@ -29,12 +30,7 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 	schuljahrBeginn := SchuljahrBeginn(schulzeit.Jetzt())
 
 	var schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Verleih', 'Jahr', '08A', 2031) RETURNING id
-	`, "SVJ-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "SVJ-"+suffix, "Verleih", "Jahr", "08A", 2031)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
 		VALUES ('Verleihjahr-Testband', 'Prüfer', 'Buch', true) RETURNING id

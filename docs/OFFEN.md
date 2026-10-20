@@ -156,7 +156,7 @@ der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
-- [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
+- [x] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
 - [x] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** Kommentare mit Datum auf das
   Warum kürzen und eine Prüfung, die jedes neue meldet.
 - [x] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
@@ -339,20 +339,6 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.67 Umfang senken: was sich löschen lässt
-
-Gemessen am 15.10.2026 an den eingecheckten Dateien (rund 362.000 Zeilen, davon 130.400 Go-Tests
-und 79.700 Go-Programm): Toten Code gibt es kaum. In Go meldet `scripts/deadcode_gate.sh` jeden
-Fund außerhalb seiner begründeten Ausnahmen (`scripts/deadcode_baseline.txt`, fast nur die
-Prüfhilfen, die allein Tests einbinden), auf der Oberfläche ist jede Datei von `main.js` aus
-erreichbar. Der Zuwachs steckt in Tests, die je eine Zusage halten; sie zu löschen hieße, Regeln
-zu lockern. Offen:
-
-- **SQL-Testdaten:** 730 Anweisungen mit 3.443 Zeilen legen Titel, Exemplare, Schüler, Leser,
-  Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
-  wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket,
-  je mit der ganzen Suite an der Datenbank.
 
 ---
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -96,17 +97,8 @@ func rueckholenAufbau(t *testing.T, pool *pgxpool.Pool) (exemplarID, schadensfal
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	var schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Rück', 'Holer', $1, 'mitarbeiter', true) RETURNING id`,
-		"rueckholen-"+suffix+"@schule.invalid").Scan(&bearbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Anna', 'Verlust', '07B', 2031) RETURNING id`, "S-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	bearbeiterID = testdaten.LegeKontoAn(t, pool, "Rück", "Holer", "rueckholen-"+suffix+"@schule.invalid", "mitarbeiter", true)
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-"+suffix, "Anna", "Verlust", "07B", 2031)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
 		VALUES ('Rückhol-Testband', 'Prüfer', 'Buch', true) RETURNING id`).Scan(&titelID); err != nil {

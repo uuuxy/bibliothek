@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -61,9 +62,7 @@ func (v *vormerkTheke) titel(t *testing.T, name string, exemplare ...string) (ti
 	nummern = map[string]string{}
 	for _, e := range exemplare {
 		nummer := "VT-" + name + e + "-" + v.suffix
-		if _, err := v.pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, titelID, nummer); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		testdaten.LegeExemplarAn(t, v.pool, titelID, nummer, true, "")
 		nummern[e] = nummer
 	}
 	return titelID, nummern

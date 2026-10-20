@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -23,12 +24,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	var mitarbeiterID, lehrkraftID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Geraete', 'Theke', $1, 'mitarbeiter', true) RETURNING id
-	`, "geraete-theke-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
+	mitarbeiterID = testdaten.LegeKontoAn(t, pool, "Geraete", "Theke", "geraete-theke-"+suffix+"@schule.invalid", "mitarbeiter", true)
 	// Die Lehrkraft ist ein Leser — das Gerät hängt an ihrer Leserzeile,
 	// nicht an ihrem Konto.
 	if err := pool.QueryRow(ctx, `
@@ -67,13 +63,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 	}
 	legeSchuelerAn := func(t *testing.T, name string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, 'Geraete', $2, '05A', 2031) RETURNING id
-		`, "GR-S-"+name+"-"+suffix, name).Scan(&id); err != nil {
-			t.Fatalf("Schüler anlegen: %v", err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, "GR-S-"+name+"-"+suffix, "Geraete", name, "05A", 2031)
 		return id
 	}
 	offeneAusleihen := func(t *testing.T, barcode string) int {

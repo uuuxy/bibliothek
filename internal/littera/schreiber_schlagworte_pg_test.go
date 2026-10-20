@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -283,11 +284,7 @@ func TestSchreibeSchlagworte_AbgleichZaehltNurDiesenLauf(t *testing.T) {
 	s, _ := testSchreiber(t, pool, nil)
 	ctx := context.Background()
 
-	var vorhanden string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel) VALUES ('Schon im Katalog') RETURNING id`).Scan(&vorhanden); err != nil {
-		t.Fatal(err)
-	}
+	vorhanden := testdaten.LegeTitelAn(t, pool, "Schon im Katalog", 5)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Geschichte", "Lehrer"}); err != nil {
 		t.Fatal(err)
 	}

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -22,12 +23,7 @@ func TestSchuelerScanTraegtAbholfachHinweis(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	var schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Abholtest', 'Fachgreifer', '05A', 2031) RETURNING id
-	`, "ABH-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "ABH-"+suffix, "Abholtest", "Fachgreifer", "05A", 2031)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp)
 		VALUES ('Abholfach-Testband', 'Prüfer', 'Buch') RETURNING id

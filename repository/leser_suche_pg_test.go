@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 
@@ -12,12 +13,7 @@ import (
 // Namenssuchtests deshalb nicht.
 func legeSuchSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname string) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		 VALUES ($1, $2, $3, '7a', 2030) RETURNING id`, barcode, vorname, nachname).Scan(&id); err != nil {
-		t.Fatalf("Schüler %q %q anlegen: %v", vorname, nachname, err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, barcode, vorname, nachname, "7a", 2030)
 	return id
 }
 

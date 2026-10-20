@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Datenbank kommt aus internal/pgtest. pgtest hält die Sperre der Datenbank bis zum Ende des
@@ -36,10 +37,7 @@ func TestLadeTitelListe_SchlankOhneSchwereFelder(t *testing.T) {
 			t.Errorf("Aufräumen: %v", err)
 		}
 	})
-	if _, err := pool.Exec(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'SCHLANK-1')`, id); err != nil {
-		t.Fatalf("Exemplar: %v", err)
-	}
+	testdaten.LegeExemplarAn(t, pool, id, "SCHLANK-1", true, "")
 
 	// Listenansicht: Titel da, aber das schwere Feld leer.
 	liste, err := abfragen.LadeTitelListe(ctx, "", "", false)

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 
@@ -18,11 +19,7 @@ func TestReservierungen_WarteschlangeUndVerfuegbarkeit(t *testing.T) {
 
 	// Ein Titel mit drei Exemplaren. legeSignaturMitExemplarenAn taugt hier nicht: Es legt je
 	// Exemplar einen eigenen Titel an, und die Verfügbarkeit wäre immer 1.
-	var titel string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel, signatur) VALUES ('KSQ-Klassensatz', 'KSQ') RETURNING id`).Scan(&titel); err != nil {
-		t.Fatalf("Titel anlegen: %v", err)
-	}
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "KSQ-Klassensatz", "KSQ", 5)
 	exemplare := make([]string, 3)
 	for i := range exemplare {
 		if err := pool.QueryRow(ctx,
@@ -136,13 +133,7 @@ func nurTitel(liste []Reservierung, titelID string) []Reservierung {
 // geteilten Konto hinge das Ergebnis an der Reihenfolge der Tests.
 func legeEigenenBearbeiterAn(t *testing.T, pool *pgxpool.Pool, barcode string) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		 VALUES ('Klassensatz', 'Kraft', $1, 'mitarbeiter', true) RETURNING id`,
-		barcode+"@example.org").Scan(&id); err != nil {
-		t.Fatalf("Bearbeiter anlegen: %v", err)
-	}
+	id := testdaten.LegeKontoAn(t, pool, "Klassensatz", "Kraft", barcode+"@example.org", "mitarbeiter", true)
 	return id
 }
 

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -22,9 +23,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 		"La  Peste", "Camus,"+geschuetzt+"Albert").Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-LEERRAUM-1')`, id); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeExemplarAn(t, pool, id, "B-LEERRAUM-1", true, "")
 
 	for _, suchtext := range []string{
 		"La Pes",                    // getippt, wie man tippt

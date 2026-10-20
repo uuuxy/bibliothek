@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -67,11 +68,7 @@ func (g *geraeteTheke) geraet(t *testing.T, name string) string {
 // schueler legt einen Schüler der Klasse 05A an und liefert seine Kennung.
 func (g *geraeteTheke) schueler(t *testing.T, nachname string) string {
 	t.Helper()
-	var id string
-	if err := g.pool.QueryRow(context.Background(), `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Geraetetheke', $2, '05A', 2031) RETURNING id`, "GT-"+nachname+"-"+g.suffix, nachname).Scan(&id); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, g.pool, "GT-"+nachname+"-"+g.suffix, "Geraetetheke", nachname, "05A", 2031)
 	return id
 }
 

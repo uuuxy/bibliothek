@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -22,15 +23,8 @@ func TestFindeOffene_NullBearbeiterKein500(t *testing.T) {
 	schuelerID := legeSchuelerAn(t, pool, "LOAN-NB", "Nulli", "7a")
 
 	var titelID, copyID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel) VALUES ('NB-Titel') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'NB-B-1') RETURNING id`,
-		titelID).Scan(&copyID); err != nil {
-		t.Fatalf("Exemplar: %v", err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "NB-Titel", 5)
+	copyID = testdaten.LegeExemplarAn(t, pool, titelID, "NB-B-1", true, "")
 
 	// Eine Ausleihe ohne bearbeiter_id (NULL).
 	if _, err := pool.Exec(ctx,

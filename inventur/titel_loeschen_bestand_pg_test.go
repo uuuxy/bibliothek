@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -27,15 +28,8 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 			t.Errorf("Titel aufräumen: %v", err)
 		}
 	})
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel) VALUES ('Bestand und Zulauf') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'DB-BESTAND') RETURNING id`,
-		titelID).Scan(&imBestand); err != nil {
-		t.Fatalf("Exemplar im Bestand: %v", err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Bestand und Zulauf", 5)
+	imBestand = testdaten.LegeExemplarAn(t, pool, titelID, "DB-BESTAND", true, "")
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
 		VALUES ($1, 'DB-ZULAUF', false, 'im_zulauf') RETURNING id`, titelID).Scan(&imZulauf); err != nil {

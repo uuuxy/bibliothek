@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -36,9 +37,7 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-MJB-1')`, id); err != nil {
-		t.Fatalf("Exemplar: %v", err)
-	}
+	testdaten.LegeExemplarAn(t, pool, id, "B-MJB-1", true, "")
 
 	lies := func(schritt string) (fristAn bool, fristBis int, maskeAn bool) {
 		t.Helper()

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -33,12 +34,7 @@ func TestLadeEtikettZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 		{"SORT-3", "Cara", "Cent", "7B"},
 		{"SORT-4", "Dora", "Dill", "7A"},
 	} {
-		var id string
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			 VALUES ($1, $2, $3, $4, 2031) RETURNING id`, f.barcode, f.vorname, f.nachname, f.klasse).Scan(&id); err != nil {
-			t.Fatalf("Schüler %s anlegen: %v", f.barcode, err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, f.barcode, f.vorname, f.nachname, f.klasse, 2031)
 		ids = append(ids, id)
 	}
 

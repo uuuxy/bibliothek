@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -28,11 +29,7 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 	leihe := func(titelID, schuelerID string, zurueck bool) {
 		t.Helper()
 		nr++
-		var exemplar string
-		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-			titelID, "B-5180"+string(rune('0'+nr/10))+string(rune('0'+nr%10))).Scan(&exemplar); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		exemplar := testdaten.LegeExemplarAn(t, pool, titelID, "B-5180"+string(rune('0'+nr/10))+string(rune('0'+nr%10)), true, "")
 		rueckgabe := "NULL"
 		if zurueck {
 			rueckgabe = "now()"

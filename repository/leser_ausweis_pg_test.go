@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 func TestFindeZuBarcode_FindetSchuelerUndKollegium(t *testing.T) {
@@ -28,10 +29,7 @@ func TestFindeZuBarcode_FindetSchuelerUndKollegium(t *testing.T) {
 		t.Helper()
 		klasse, jahr := "05F1", 2030
 		if art != "schueler" {
-			if _, err := pool.Exec(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art)
-				VALUES ($1, 'Probe', 'Ausweisprobe', $2)`, barcode, art); err != nil {
-				t.Fatalf("Leser %s anlegen: %v", barcode, err)
-			}
+			testdaten.LegeLeserAn(t, pool, barcode, "Probe", "Ausweisprobe", art)
 			return
 		}
 		if _, err := pool.Exec(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art, klasse, abgaenger_jahr)

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/code39"
 	"bibliothek/repository"
 )
@@ -31,21 +32,11 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	var mitarbeiterID, schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Alt', 'Etikett', $1, 'mitarbeiter', true) RETURNING id
-	`, "altetikett-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
+	mitarbeiterID = testdaten.LegeKontoAn(t, pool, "Alt", "Etikett", "altetikett-"+suffix+"@schule.invalid", "mitarbeiter", true)
 
 	// Der Ausweis trägt eine Nummer, wie sie gedruckt wurde — die Vorsilbe A-.
 	ausweis := "A-" + suffix[len(suffix)-6:]
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Alte', 'Karte', '08C', 2031) RETURNING id
-	`, ausweis).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, ausweis, "Alte", "Karte", "08C", 2031)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
 		VALUES ('Altetikett-Testband', 'Prüfer', 'Buch', false) RETURNING id

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"testing"
 )
@@ -45,22 +46,10 @@ func TestInventurLadeExemplar(t *testing.T) {
 
 	// 2. Exemplare anlegen
 	// Fall 1: Normales Exemplar (nicht ausgeliehen, nicht ausgesondert)
-	var normalExID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-		VALUES ($1, $2, true) RETURNING id
-	`, titelID, "SCAN-NORM").Scan(&normalExID); err != nil {
-		t.Fatalf("Normales Exemplar anlegen: %v", err)
-	}
+	normalExID := testdaten.LegeExemplarAn(t, pool, titelID, "SCAN-NORM", true, "")
 
 	// Fall 2: Ohne CoverURL
-	var ohneCoverExID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-		VALUES ($1, $2, true) RETURNING id
-	`, titelOhneCoverID, "SCAN-NOCOVER").Scan(&ohneCoverExID); err != nil {
-		t.Fatalf("Exemplar ohne Cover anlegen: %v", err)
-	}
+	ohneCoverExID := testdaten.LegeExemplarAn(t, pool, titelOhneCoverID, "SCAN-NOCOVER", true, "")
 
 	// Fall 3: Ausgesondert. chk_aussonderung_grund verlangt bei ist_ausgesondert = true einen
 	// Grund; ohne ihn scheitert schon das Anlegen mit SQLSTATE 23514.
@@ -73,23 +62,11 @@ func TestInventurLadeExemplar(t *testing.T) {
 	}
 
 	// Fall 4: Ausgeliehen
-	var verliehenExID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-		VALUES ($1, $2, true) RETURNING id
-	`, titelID, "SCAN-VERL").Scan(&verliehenExID); err != nil {
-		t.Fatalf("Verliehenes Exemplar anlegen: %v", err)
-	}
+	verliehenExID := testdaten.LegeExemplarAn(t, pool, titelID, "SCAN-VERL", true, "")
 
 	// Für das verliehene Exemplar eine laufende Ausleihe anlegen; dafür braucht es einen
 	// Schüler. klasse und abgaenger_jahr sind NOT NULL ohne Vorgabe.
-	var schuelerID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, barcode_id, klasse, abgaenger_jahr)
-		VALUES ('Max', 'Mustermann', 'S-1234', '5a', 2030) RETURNING id
-	`).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID := testdaten.LegeSchuelerMitNamenAn(t, pool, "S-1234", "Max", "Mustermann", "5a", 2030)
 
 	// Die Ausleihe hängt an schueler_id (nicht an einer benutzer_id) und braucht eine
 	// Rückgabefrist; ausgeliehen_am setzt die Tabelle selbst.

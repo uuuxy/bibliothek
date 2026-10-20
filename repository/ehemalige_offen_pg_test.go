@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // „Wie lange ist der weg?" — eine Frage, eine Formulierung.
@@ -73,12 +74,7 @@ func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 	}
 	offeneAusleihe := func(t *testing.T, schuelerID, barcode string) {
 		t.Helper()
-		var exemplarID string
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-			VALUES ($1, $2, true) RETURNING id`, titelID, barcode+"-"+suffix).Scan(&exemplarID); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, barcode+"-"+suffix, true, "")
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
 			VALUES ($1, $2, now() - interval '400 days', now() - interval '379 days')
@@ -157,11 +153,7 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	}
 	ausleihe := func(t *testing.T, schuelerID, barcode string, rueckgabe any) {
 		t.Helper()
-		var exemplarID string
-		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-			titelID, barcode+"-"+suffix).Scan(&exemplarID); err != nil {
-			t.Fatalf("Exemplar: %v", err)
-		}
+		exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, barcode+"-"+suffix, true, "")
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 			VALUES ($1, $2, now() - interval '400 days', now() - interval '379 days', $3)`,

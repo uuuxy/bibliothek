@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -53,12 +54,7 @@ func legeSignaturMitExemplarenAn(t *testing.T, pool *pgxpool.Pool, signatur stri
 			fmt.Sprintf("%s-Buch-%d", signatur, i), signatur).Scan(&titelID); err != nil {
 			t.Fatalf("Titel anlegen: %v", err)
 		}
-		var exID string
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-			titelID, fmt.Sprintf("BC-%s-%d", signatur, i)).Scan(&exID); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		exID := testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("BC-%s-%d", signatur, i), true, "")
 		ids = append(ids, exID)
 	}
 	return ids
@@ -94,12 +90,7 @@ func legeSignaturFachExemplarAn(t *testing.T, pool *pgxpool.Pool, signatur, subj
 		fmt.Sprintf("%s-%s-%s", signatur, subject, barcode), signatur, subject, jvon, jbis).Scan(&titelID); err != nil {
 		t.Fatalf("Signatur+Fach-Titel anlegen: %v", err)
 	}
-	var exID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-		titelID, barcode).Scan(&exID); err != nil {
-		t.Fatalf("Signatur+Fach-Exemplar anlegen: %v", err)
-	}
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 	return exID
 }
 
@@ -117,11 +108,6 @@ func legeFachExemplarAn(t *testing.T, pool *pgxpool.Pool, subject string, jvon, 
 		fmt.Sprintf("%s-Kl%d-%s", subject, jvon, barcode), subject, jvon, jbis).Scan(&titelID); err != nil {
 		t.Fatalf("Fach-Titel anlegen: %v", err)
 	}
-	var exID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-		titelID, barcode).Scan(&exID); err != nil {
-		t.Fatalf("Fach-Exemplar anlegen: %v", err)
-	}
+	exID := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 	return exID
 }

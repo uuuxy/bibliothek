@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bibliothek/internal/testdaten"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -68,11 +69,7 @@ func TestSelbstanmeldung_BestehendesKontoWirdKeineAnfrage(t *testing.T) {
 
 	const mail = "bestandskonto@test.invalid"
 	raeumeKontoAb(t, pool, mail)
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Bestands', 'Konto', $1, 'kollegium', true)`, mail); err != nil {
-		t.Fatalf("Bestandskonto anlegen: %v", err)
-	}
+	testdaten.LegeKontoAn(t, pool, "Bestands", "Konto", mail, "kollegium", true)
 
 	konto, err := legeZugangsanfrageAn(ctx, pool, mail)
 	if err != nil {
