@@ -39,14 +39,14 @@ beforeEach(() => {
 	);
 });
 
-/** @param {any} formular */
-function maske(formular) {
+/** @param {any} formular @param {boolean} [verlangt] */
+function maske(formular, verlangt = false) {
 	const dnbVorschlag = erzeugeDnbSchlagwortVorschlag();
 	const abfrage = erzeugeIsbnAbfrage(
 		() => formular,
 		() => dnbVorschlag
 	);
-	return render(BuchEingabefelder, { formular, dnbVorschlag, abfrage });
+	return render(BuchEingabefelder, { formular, dnbVorschlag, abfrage, verlangt });
 }
 
 /** Die Bedienelemente mit Kennung, wie sie im Dokument aufeinander folgen.
@@ -155,13 +155,24 @@ describe('BuchEingabefelder: Bibliothek oder Lernmittel', () => {
 });
 
 describe('BuchEingabefelder: Signatur', () => {
-	it('ist am neuen Bibliotheksbuch Pflicht: Stern an der Beschriftung, Fehler am leeren Feld', async () => {
+	// Wie der Titel: Beim Öffnen zeigt der Stern die Pflicht, den Fehler erst ein Klick auf
+	// „Speichern" (BuchFormular.speichern.svelte.test.js).
+	it('ist am neuen Bibliotheksbuch Pflicht: Stern an der Beschriftung, vor dem Speichern kein Fehler', () => {
 		const formular = $state(leeresBuchFormular());
 		const screen = maske(formular);
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Signatur (Buchrücken) *'));
 		expect(feld.id).toBe('buch-signatur');
 		expect(feld.required).toBe(true);
+		expect(feld.getAttribute('aria-invalid')).toBeNull();
+		expect(screen.getByText(/^Wird 1:1 auf das Rücken-Etikett gedruckt/)).toBeTruthy();
+	});
+
+	it('nach dem Klick auf „Speichern" zeigt das leere Feld den Fehler, bis es gefüllt ist', async () => {
+		const formular = $state(leeresBuchFormular());
+		const screen = maske(formular, true);
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Signatur (Buchrücken) *'));
 		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		expect(screen.getByText(/^Ohne Signatur kein Etikett/)).toBeTruthy();
 
 		await fireEvent.input(feld, { target: { value: 'Sk' } });
 		expect(feld.getAttribute('aria-invalid')).toBeNull();

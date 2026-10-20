@@ -1,14 +1,15 @@
 <!-- @component SignaturFeld — die Signatur steht auf dem Rückenetikett des Buchs und ist bei
      der Neuanlage eines Bibliotheksbuchs Pflicht; Lernmittel tragen kein Etikett. Vorgeschlagen
      werden die Signaturen, die im Bestand vorkommen: Ein erfundenes Wort stünde in keinem Regal.
-     Die Pflicht zeigt der Stern an der Beschriftung, das leere Feld der Fehlerzustand. -->
+     Die Pflicht zeigt der Stern an der Beschriftung; den Fehlerzustand bekommt das leere Feld
+     wie der Titel erst, wenn ein Klick auf „Speichern" es vermisst hat (BuchFormular). -->
 <script>
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import { ladeSignaturen } from '../../../../lib/utils/signaturen.js';
 	import { signaturFehlt, signaturPflicht } from './buchFormularRegeln.js';
 
-	/** @type {{ formular: any }} */
-	let { formular = $bindable() } = $props();
+	/** @type {{ formular: any, verlangt?: boolean }} */
+	let { formular = $bindable(), verlangt = false } = $props();
 
 	/** @type {{ signatur: string, titel: number }[]} */
 	let vorhandene = $state([]);
@@ -30,7 +31,7 @@
 			.join(', ')
 	);
 	const pflicht = $derived(signaturPflicht(formular));
-	const fehlt = $derived(signaturFehlt(formular));
+	const fehlt = $derived(verlangt && signaturFehlt(formular));
 </script>
 
 <Feld

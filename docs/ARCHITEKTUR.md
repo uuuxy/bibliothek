@@ -842,7 +842,7 @@ frontend/src
   close to the content they're affecting"), nicht am fernen Rand der Zeile.
 - **Ein leeres Pflichtfeld sperrt den Knopf nicht.** Der Klick nennt am Feld, was fehlt, und
   führt dorthin; der Fehlertext steht ab dem ersten Klick und geht, sobald das Feld gefüllt ist
-  (`titelVerlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,
+  (`verlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,
   Text fields: „If only one error is possible, error text should describe how to avoid the
   error".
 - **Den Fehlerzustand eines Felds setzt `ungueltig` an `ui/Feld`:** Rahmen, Beschriftung und

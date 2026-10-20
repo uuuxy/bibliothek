@@ -34,8 +34,9 @@ function server(vorhanden, dienste = async () => antwort(404, {})) {
 }
 
 /** Verlässt das ISBN-Feld und klickt „Speichern", wie ein Klick auf den Knopf es tut.
- * @param {any} formular @param {() => void} onSave */
-async function verlasseIsbnUndSpeichere(formular, onSave) {
+ * @param {any} formular @param {() => void} onSave
+ * @param {(screen: import('@testing-library/svelte').RenderResult<any>) => void} [vorDemKlick] */
+async function verlasseIsbnUndSpeichere(formular, onSave, vorDemKlick = () => {}) {
 	const screen = render(BuchFormular, {
 		formular,
 		onClose: () => {},
@@ -44,8 +45,10 @@ async function verlasseIsbnUndSpeichere(formular, onSave) {
 		onCoverNeuHolen: () => {},
 		onAssignClass: () => {}
 	});
+	vorDemKlick(screen);
 	await fireEvent.blur(screen.getByLabelText('ISBN'));
 	await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+	return screen;
 }
 const kurz = () => new Promise((r) => setTimeout(r, 20));
 
@@ -244,17 +247,25 @@ describe('BuchFormular: Speichern ohne Pflicht-Signatur', () => {
 		Element.prototype.scrollIntoView = vi.fn();
 	});
 
-	it('ein Bibliotheksbuch: der Klick speichert nicht und führt ins Feld Signatur', async () => {
+	it('ein Bibliotheksbuch: der Klick speichert nicht, führt ins Feld Signatur und zeigt dort den Fehler', async () => {
 		server({ vorhanden: null });
 		const formular = $state({ ...leeresBuchFormular(), title: 'Tintenherz', isbn: '' });
 		const onSave = vi.fn();
 
-		await verlasseIsbnUndSpeichere(formular, onSave);
+		const screen = await verlasseIsbnUndSpeichere(formular, onSave, (s) =>
+			expect(
+				s.getByLabelText('Signatur (Buchrücken) *').getAttribute('aria-invalid'),
+				'vor dem Klick steht kein Fehler am Feld'
+			).toBeNull()
+		);
 		await kurz();
 
 		expect(onSave).not.toHaveBeenCalled();
 		expect(document.activeElement?.id).toBe('buch-signatur');
 		expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
+		expect(screen.getByLabelText('Signatur (Buchrücken) *').getAttribute('aria-invalid')).toBe(
+			'true'
+		);
 	});
 
 	it('ein Lernmittel speichert ohne Signatur', async () => {

@@ -38,7 +38,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 - [x] Meldungen: Steht schon eine da, ersetzt eine neue sie, statt sich über ihr zu stapeln.
   (4.36)
-- [ ] „Neues Buch": Die Signatur zeigt ihren Fehler erst nach dem ersten Klick auf
+- [x] „Neues Buch": Die Signatur zeigt ihren Fehler erst nach dem ersten Klick auf
   „Speichern", wie der Titel. (4.35)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
@@ -263,19 +263,6 @@ den Schulträger, bei 90 Büchern ein seltener Fall.
 Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim Einrichten unter
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
-
-### 4.35 „Neues Buch": wann die Signatur ihren Fehler zeigt
-
-Beim Öffnen von „Neues Buch" steht das Feld „Signatur (Buchrücken) *" schon im Fehlerzustand
-(`signaturFehlt` in `SignaturFeld.svelte`, festgehalten in
-`BuchEingabefelder.gliederung.svelte.test.js`). Der Titel daneben zeigt seinen Fehler erst, wenn
-ein Klick auf „Speichern" ihn vermisst hat (`titelVerlangt` in `BuchFormular.svelte`), wie es
-[ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3 für jedes leere Pflichtfeld verlangt („der Fehlertext steht
-ab dem ersten Klick"). Mit dem Fehlersymbol öffnet die Maske mit roter Beschriftung, rotem
-Rahmen, Symbol und Fehlertext an der Signatur. Material 3, Text fields: „To show a field is
-required, display an asterisk (*) next to the label text"; wann ein Fehler erscheint, sagt die
-Seite nicht. Vorschlag: wie der Titel. Bis zum ersten Klick steht unter dem Feld der Hinweis
-„Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse."
 
 ---
 

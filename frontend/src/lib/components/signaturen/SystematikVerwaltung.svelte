@@ -18,7 +18,7 @@
 	let bezeichnung = $state('');
 	let speichert = $state(false);
 	// „Anlegen" bleibt bei leerem Feld bedienbar: Der Klick nennt am Feld, was fehlt, und führt
-	// dorthin (wie titelVerlangt in BuchFormular).
+	// dorthin (wie `verlangt` in BuchFormular).
 	let verlangt = $state(false);
 	const kuerzelFehlt = $derived(verlangt && !kuerzel.trim());
 	const bezeichnungFehlt = $derived(verlangt && !bezeichnung.trim());

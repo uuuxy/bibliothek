@@ -10,7 +10,7 @@
 	import SignaturFeld from './SignaturFeld.svelte';
 	import BuchAuflagen from './BuchAuflagen.svelte';
 
-	let { formular = $bindable(), systematikListe = [] } = $props();
+	let { formular = $bindable(), systematikListe = [], verlangt = false } = $props();
 
 	const ARTEN = [
 		{ wert: 'bibliothek', text: 'Bibliothek' },
@@ -69,7 +69,7 @@
 
 		<!-- Der Standort steht am Exemplar und wird in der Buchakte geändert, nicht hier. -->
 		<div class="grid grid-cols-2 gap-4">
-			<SignaturFeld bind:formular />
+			<SignaturFeld bind:formular {verlangt} />
 		</div>
 
 		<!-- Auswahlfelder wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die

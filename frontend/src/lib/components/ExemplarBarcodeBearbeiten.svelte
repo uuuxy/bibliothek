@@ -18,7 +18,7 @@
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
 	// „Speichern" bleibt bei leerem Feld bedienbar: Der Klick nennt am Feld, was fehlt, bis
-	// etwas darin steht (wie titelVerlangt in BuchFormular).
+	// etwas darin steht (wie `verlangt` in BuchFormular).
 	let verlangt = $state(false);
 	const hinweis = $derived(
 		verlangt && !neuerBarcode.trim()

@@ -32,10 +32,10 @@
 		() => dnbVorschlag
 	);
 
-	// Pflicht ist der Titel, die ISBN nicht: Zeitschriften, Spiele und alte Bücher tragen keine.
-	// Der Fehler steht am Feld, sobald ein Klick auf „Speichern" den Titel vermisst hat.
-	let titelVerlangt = $state(false);
-	const titelFehlt = $derived(titelVerlangt && !(formular.title ?? '').trim());
+	// Pflicht sind der Titel und am neuen Bibliotheksbuch die Signatur, die ISBN nicht:
+	// Zeitschriften, Spiele und alte Bücher tragen keine. Ein Pflichtfeld zeigt seinen Fehler
+	// erst, wenn ein Klick auf „Speichern" es leer vorgefunden hat.
+	let verlangt = $state(false);
 
 	/** Die Mitte des Fensters, weil der Kopf der Maske oben stehen bleibt. @param {string} id */
 	function fuehreZu(id) {
@@ -51,7 +51,7 @@
 		if (await abfrage.ruht()) return;
 		// Der Knopf bleibt bedienbar: Fehlt ein Pflichtfeld, führt der Klick zum Feld, das den
 		// Grund nennt.
-		titelVerlangt = true;
+		verlangt = true;
 		if (!(formular.title ?? '').trim()) return fuehreZu('buch-titel');
 		if (signaturFehlt(formular)) return fuehreZu('buch-signatur');
 		onSave();
@@ -86,7 +86,7 @@
 		<!-- Die Felder enden bei 44rem: In einem breiten Fenster laufen Textfelder sonst über die
 		     ganze Spalte. Die Exemplare darunter nutzen die Breite. -->
 		<div class="max-w-176 space-y-8 lg:col-start-1">
-			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} {titelFehlt} />
+			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} {verlangt} />
 		</div>
 		<aside
 			class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start"

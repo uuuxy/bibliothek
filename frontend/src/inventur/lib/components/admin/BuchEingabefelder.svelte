@@ -13,14 +13,15 @@
 
 	/** dnbVorschlag: der Schlagwort-Vorschlag der DNB (BuchFormular, erzeugeDnbSchlagwortVorschlag).
 	 *  abfrage: die ISBN-Abfrage der Maske (BuchFormular, erzeugeIsbnAbfrage).
-	 *  titelFehlt: Ein Klick auf „Speichern" hat den Titel vermisst (BuchFormular). */
+	 *  verlangt: Ein Klick auf „Speichern" hat die Pflichtfelder geprüft (BuchFormular). */
 	let {
 		formular = $bindable(),
 		wirdGescannt = $bindable(),
 		dnbVorschlag,
 		abfrage,
-		titelFehlt = false
+		verlangt = false
 	} = $props();
+	const titelFehlt = $derived(verlangt && !(formular.title ?? '').trim());
 
 	// Die Spalte medientyp ist offen (der Littera-Import bringt „Zeitschrift", „Spiel"). Der
 	// vorhandene Wert steht deshalb immer in der Liste: Sonst sähe er aus wie nicht gesetzt,
@@ -146,4 +147,4 @@
 	</div>
 </div>
 
-<BuchEingabefelderKategorisierung bind:formular {systematikListe} />
+<BuchEingabefelderKategorisierung bind:formular {systematikListe} {verlangt} />
