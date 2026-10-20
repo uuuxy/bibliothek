@@ -1,13 +1,8 @@
 #!/bin/bash
 #
-# Richtet die Git-Hooks ein — per core.hooksPath, NICHT durch Kopieren.
-#
-# Bis zum 10.08.2026 kopierte dieses Skript scripts/git-hooks/* nach .git/hooks/ und
-# meldete "✓ installiert". Ab dem Moment liefen zwei Fassungen nebeneinander: die im
-# Repo, die gepflegt wird, und die Kopie, die tatsächlich lief. Der Stand vom 04.08. lag
-# noch am 10.08. in .git/hooks — ohne den svelte-check-Schritt, der am 07.08. dazukam.
-# Dass er trotzdem lief, lag allein daran, dass jemand zwischendurch core.hooksPath
-# gesetzt hatte; die Kopie war schon tot und niemand wusste es.
+# Richtet die Git-Hooks ein — per core.hooksPath, nicht durch Kopieren: Eine Kopie in
+# .git/hooks ist eine zweite Fassung neben der im Repo, und die gepflegte ist dann nicht
+# die, die läuft.
 #
 # Mit core.hooksPath liest Git die Dateien im Repo direkt. Eine Änderung an einem Hook
 # ist damit sofort scharf, für alle, und es gibt keinen zweiten Stand mehr, der

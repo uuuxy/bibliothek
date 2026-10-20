@@ -1,27 +1,20 @@
 services:
   postgres-db:
-    # Ohne diese Zeile kommen die Container nach einem Neustart des Docker-Daemons NICHT
-    # von allein zurueck. Genau das ist am Prod-Server passiert: unattended-upgrades
-    # startete den Daemon neu, und der Dienst lag zwoelf Stunden still, bis es jemandem
-    # auffiel. Die Policy stand seither direkt auf dem Server in dieser Datei — als
-    # uncommitteter Hotfix, der jedes `git pull` blockierte ("Your local changes to the
-    # following files would be overwritten by merge"). Sie gehoert ins Repo.
+    # Ohne diese Zeile kommen die Container nach einem Neustart des Docker-Daemons (etwa durch
+    # unattended-upgrades) nicht von allein zurück. Sie steht im Repo: Eine Änderung von Hand
+    # in dieser Datei auf dem Server blockiert jedes `git pull`.
     restart: unless-stopped
-    # Log-Rotation (Wachstums-Sweep 21.08.2026): Der Docker-Default json-file kennt
-    # KEINE Groessengrenze — auf dem Prod-Host ist kein daemon.json konfiguriert,
-    # jede Request-Logzeile bleibt fuer immer liegen. Das faellt nicht in Wochen auf,
-    # sondern in dem Moment, in dem die Platte voll ist (und mit ihr die Datenbank
-    # desselben Hosts). 3 x 10 MB pro Container reichen fuer Tage Diagnose-Rueckblick.
+    # Log-Rotation: Der Docker-Default json-file kennt keine Größengrenze; ohne daemon.json
+    # bliebe jede Request-Logzeile liegen, bis die Platte voll ist — und mit ihr die Datenbank
+    # desselben Hosts. 3 x 10 MB pro Container reichen für Tage Diagnose-Rückblick.
     logging: &log_rotation
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-    # Upgrade 15 → 18 am 31.08.2026, VOR dem ersten Piloten — ein Major-Wechsel ist
-    # jetzt ein Dump/Restore ohne Nutzer, später ein Wartungsfenster mit Risiko.
-    # Lokaler Stack (docker-compose.local.yml) und CI fahren dieselbe Major-Version;
-    # der pg_dump-Client im Backend-Image (Dockerfile) MUSS bei jedem weiteren
-    # Server-Upgrade mitziehen, sonst schlägt die Restore-Probe sonntags Alarm.
+    # Lokaler Stack (docker-compose.local.yml) und CI fahren dieselbe Major-Version; der
+    # pg_dump-Client im Backend-Image (Dockerfile) zieht bei jedem Server-Upgrade mit, sonst
+    # schlägt die Restore-Probe sonntags Alarm. Ein Major-Wechsel geht nur per Dump/Restore.
     image: postgres:18-alpine
     container_name: bibliothek-db
     environment:
@@ -37,13 +30,12 @@ services:
       # (docs/DEPLOYMENT.md, Abschnitt Major-Upgrade).
       - postgres_data:/var/lib/postgresql
     ports:
-      # Nur an localhost binden — wie das Backend eine Zeile tiefer. "5434:5432"
-      # veröffentlichte den Port auf ALLEN Interfaces: Wer den Host im Netz
-      # erreichte, sprach mit dem DSN aus der .env direkt die Datenbank an, vorbei
-      # an jeder Rolle, jedem Audit-Log und jeder Anonymisierung — inklusive aller
-      # Schüler- und Ausleihdaten. Das Backend braucht diesen Port nicht (es geht
-      # über das Docker-Netz an postgres-db:5432); er existiert nur für Werkzeuge
-      # auf dem Server selbst. Von einem anderen Rechner aus: SSH-Tunnel.
+      # Nur an localhost binden — wie das Backend weiter unten. "5434:5432" allein
+      # veröffentlicht den Port auf allen Interfaces: Wer den Host im Netz erreicht, spräche
+      # mit dem DSN aus der .env direkt die Datenbank an, vorbei an jeder Rolle, jedem
+      # Audit-Log und jeder Anonymisierung. Das Backend braucht diesen Port nicht (es geht
+      # über das Docker-Netz an postgres-db:5432); er existiert nur für Werkzeuge auf dem
+      # Server selbst. Von einem anderen Rechner aus: SSH-Tunnel.
       - "127.0.0.1:5434:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bibliothek}"]
@@ -82,12 +74,10 @@ services:
       # Schulserver möglicherweise anders). Ein zu enger Wert fällt nicht als Fehler
       # auf — er lässt still jede Client-IP auf die Proxy-Adresse zusammenfallen.
       #
-      # Seit dem 05.09.2026 darf der Default so weit sein: pkg/clientip vertraut genau
-      # EINEM Hop und nimmt den rechtesten X-Forwarded-For-Eintrag, den Caddy angehängt
-      # hat. Vorher übersprang es rekursiv jeden Eintrag aus diesen Netzen — und weil die
-      # Schul-Clients selbst in 192.168.x/10.x liegen, wurden sie als „Proxy" übersprungen:
-      # Die ganze Schule zählte als EIN Client (Login-Sperre für alle nach 50 Fehlversuchen).
-      # Die Liste sagt nur noch, WER den Header setzen darf, nicht, wer Client ist.
+      # Der Default darf so weit sein: pkg/clientip vertraut genau einem Hop und nimmt den
+      # rechten X-Forwarded-For-Eintrag, den Caddy angehängt hat. Die Liste sagt nur, wer den
+      # Header setzen darf, nicht, wer Client ist; die Geräte der Schule liegen selbst in
+      # 192.168.x/10.x und zählen so jedes für sich.
       #
       # Enger fassen geht weiterhin; auf dem Zielhost ermitteln mit:
       #   docker network inspect caddy_global_net \
@@ -98,14 +88,11 @@ services:
       # außen kommt gar nicht erst an.
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       # ── Sicherheit / Secrets ────────────────────────────────────────────────
-      # JWT_SECRET und APP_ENCRYPTION_KEY haben KEINEN Default mehr (05.09.2026). Bis
-      # dahin standen hier zwei Werte, die öffentlich im Repository nachzulesen waren,
-      # und ENFORCE_PROD_SECRETS musste ausdrücklich auf true gesetzt werden, damit der
-      # Server sie ablehnt. Eine vergessene .env-Zeile reichte, um den Schulserver mit
-      # fälschbaren Admin-Sitzungen zu betreiben — ohne dass irgendetwas rot wurde.
-      # Jetzt startet der Stack ohne die beiden Werte gar nicht, und die Verweigerung
-      # bekannter Beispielwerte ist im Server die Vorgabe (bereitschaft.IstGeheimnisSchutzScharf);
-      # nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet sie für eine Testphase ab.
+      # JWT_SECRET und APP_ENCRYPTION_KEY haben keinen Default: Ein Wert, der im öffentlichen
+      # Repository steht, erlaubte fälschbare Admin-Sitzungen. Ohne die beiden Werte startet der
+      # Stack nicht, und die Verweigerung bekannter Beispielwerte ist im Server die Vorgabe
+      # (bereitschaft.IstGeheimnisSchutzScharf); nur ein ausdrückliches
+      # ENFORCE_PROD_SECRETS=false schaltet sie für eine Testphase ab.
       #   JWT_SECRET=<zufällig, >=32 Zeichen>        z. B. openssl rand -hex 32
       #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 32
       #   POSTGRES_PASSWORD=<eigenes Passwort>
@@ -121,12 +108,10 @@ services:
       # Nur überschreiben, wenn die Anwendung ausschließlich über HTTP im LAN läuft.
       - COOKIE_SECURE=${COOKIE_SECURE:-true}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (exakt 32 Byte - siehe .env.example)}
-      # KEIN Default: "mock" ließ pruefeIMAPAnmeldung jedes Passwort für jede in
-      # benutzer vorhandene E-Mail durchwinken (auth/imap.go). Als Compose-Default
-      # stand damit in diesem Prod-Stack die Anmeldung faktisch offen, sofern
-      # niemand die Variable bewusst überschrieb. Fehlt sie jetzt, startet der
-      # Stack gar nicht erst. Der Server verweigert den Start zusätzlich, wenn
-      # außerhalb von APP_ENV=local/development/test doch "mock" gesetzt wird.
+      # Kein Default: Die Attrappe "mock" (auth/imap.go) nimmt jedes Passwort für jede in
+      # benutzer vorhandene E-Mail an; als Vorgabe stünde die Anmeldung offen. Fehlt die
+      # Variable, startet der Stack nicht. Der Server verweigert den Start zusätzlich, wenn
+      # außerhalb von APP_ENV=local/development/test doch "mock" gesetzt ist.
       - IMAP_HOST=${IMAP_HOST:?IMAP_HOST muss gesetzt sein - der Wert mock akzeptiert JEDES Passwort und ist nur lokal erlaubt}
       # Leer = Selbstanmeldung aus. Muss hier stehen: Compose reicht ohne env_file
       # ausschliesslich die aufgefuehrten Variablen durch (siehe Backup-Block unten).
@@ -138,36 +123,34 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
-      # Backup-Variablen MÜSSEN hier stehen: Compose reicht ohne env_file ausschließlich
-      # die hier gelisteten Schlüssel durch. Sie fehlten — der nächtliche Backup-Job fand
-      # deshalb im Container nie einen Schlüssel und übersprang sich STILL (jobs/backup.go),
-      # obwohl BACKUP_ENCRYPTION_KEY in der .env stand. Ein Backup, das lautlos ausfällt,
-      # merkt man erst, wenn man es braucht.
+      # Backup-Variablen stehen hier, weil Compose ohne env_file nur die hier gelisteten
+      # Schlüssel durchreicht. Fehlte eine, fände der nächtliche Backup-Job im Container keinen
+      # Schlüssel und übersprünge sich still (jobs/backup.go), auch wenn sie in der .env steht.
+      # Ein Backup, das lautlos ausfällt, merkt man erst, wenn man es braucht.
       - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
       - BACKUP_DIR=${BACKUP_DIR:-/app/backups}
-      # Offsite-Ziel (optional): Ohne diese Zeilen kam S3_* aus der .env NIE im Container
-      # an — die Selbstprüfung riet „S3_* in der .env setzen", und das blieb wirkungslos
-      # (Prüfung 22.08.2026; gleiche Klasse wie BACKUP_ENCRYPTION_KEY oben). Leer = aus.
+      # Offsite-Ziel (optional), aus demselben Grund aufgeführt: Ohne diese Zeilen käme S3_*
+      # aus der .env nie im Container an, und der Rat der Selbstprüfung „S3_* in der .env
+      # setzen" bliebe wirkungslos. Leer = aus.
       - S3_ENDPOINT=${S3_ENDPOINT:-}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}
       - S3_BUCKET=${S3_BUCKET:-}
       - S3_USE_SSL=${S3_USE_SSL:-true}
       - SENTRY_DSN=${SENTRY_DSN:-}
-      # Fünf Variablen, die der Server liest und die bis zum 21.09.2026 nie im Container
-      # ankamen — dort galt immer die eingebaute Vorgabe, egal was in der .env stand. Leer
-      # ergibt bei allen fünf weiter die Vorgabe (RATE_LIMIT 50, IMAP_PORT 993,
-      # ALLOWED_ORIGIN = Host der Anfrage; die beiden SMTP_ALLOW_* wirken nur bei "true",
-      # und dann warnt System → Betriebsbereitschaft). Gate: docs/compose_variablen_test.go.
+      # Fünf Variablen, die der Server liest; ohne diese Zeilen gälte im Container immer die
+      # eingebaute Vorgabe, egal was in der .env steht. Leer ergibt bei allen fünf die Vorgabe
+      # (RATE_LIMIT 50, IMAP_PORT 993, ALLOWED_ORIGIN = Host der Anfrage; die beiden
+      # SMTP_ALLOW_* wirken nur bei "true", und dann warnt System → Betriebsbereitschaft).
+      # Gate: docs/compose_variablen_test.go.
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
       - RATE_LIMIT=${RATE_LIMIT:-}
       - IMAP_PORT=${IMAP_PORT:-}
       - SMTP_ALLOW_INSECURE_TLS=${SMTP_ALLOW_INSECURE_TLS:-}
       - SMTP_ALLOW_PLAINTEXT=${SMTP_ALLOW_PLAINTEXT:-}
       # Der frühere Zweitname des AES-Schlüssels. Gelesen wird er nicht mehr — main.go bricht
-      # aber den Start ab, wenn er gesetzt ist und von APP_ENCRYPTION_KEY abweicht. Ohne
-      # diese Zeile kam er nie im Container an, und die Prüfung konnte dort nie auslösen
-      # (gefunden am 21.09.2026 von der Ratsche in docs/compose_variablen_test.go).
+      # aber den Start ab, wenn er gesetzt ist und von APP_ENCRYPTION_KEY abweicht. Ohne diese
+      # Zeile käme er nie im Container an, und die Prüfung könnte dort nie auslösen.
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
     volumes:
       - bibliothek_uploads:/app/uploads

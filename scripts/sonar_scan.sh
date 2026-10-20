@@ -1,15 +1,13 @@
 #!/bin/sh
 # SonarQube-Analyse inklusive Coverage.
 #
-# Warum es dieses Skript gibt (04.08.2026): Der Scan laeuft von Hand — es gibt keinen
-# Sonar-Job in der CI. Ein blosser `sonar-scanner`-Aufruf laedt KEINE Coverage hoch, und
-# SonarQube wertet fehlende Daten nicht als "unbekannt", sondern als **0 %**. Das Quality
-# Gate (Schwelle 80 % auf neuem Code) stand deshalb auf ERROR, obwohl 26 Testpakete gruen
-# sind. Die Erzeugung des Reports muss an den Scan gebunden sein, sonst reisst die naechste
-# vergessene Zeile das Gate wieder ein.
+# Der Scan laeuft von Hand — es gibt keinen Sonar-Job in der CI —, und ein blosser
+# `sonar-scanner`-Aufruf laedt keine Coverage hoch: SonarQube wertet fehlende Daten nicht
+# als "unbekannt", sondern als 0 %, und das Quality Gate (Schwelle 80 % auf neuem Code)
+# stuende auf ERROR. Die Erzeugung des Reports ist deshalb an den Scan gebunden.
 #
 # Der Token kommt aus der Umgebung und wird als SONAR_TOKEN an den Scanner uebergeben,
-# NICHT als -Dsonar.token=. Sonst steht er in der Prozessliste und ist fuer jeden
+# nicht als -Dsonar.token=. Sonst steht er in der Prozessliste und ist fuer jeden
 # lesbar, der auf der Maschine `ps` aufrufen kann.
 #
 # Aufruf:  SONAR_TOKEN=sqp_... ./scripts/sonar_scan.sh   (vom Repo-Root)
@@ -78,14 +76,12 @@ echo "[2/3] Erzeuge Frontend-Coverage (vitest)."
 # Schritt 3: Analyse. sonar-project.properties liefert projectKey, Ausschluesse und die
 # Pfade zu beiden Coverage-Berichten — deshalb stehen hier nur Host und Quellen.
 #
-# sonar.projectVersion (Betreiber-Entscheidung 01.09.2026, Befund-Register): Die
-# New-Code-Periode des Servers steht auf PREVIOUS_VERSION — "neu" ist alles seit der
-# letzten VERSIONSAENDERUNG. Ohne gesetzte Version war jede Analyse "not provided",
-# die Basislinie rueckte also mit jedem Scan mit: Wer zweimal hintereinander scannte,
-# hatte beim zweiten Mal fast keinen "neuen" Code mehr, und das Quality Gate urteilte
-# ueber ein zufaelliges Fenster. Mit dem juengsten Release-Tag als Version heisst
-# "neu" jetzt: seit dem letzten Release — dem Rhythmus des Projekts (v-Tag = Release).
-# Die Basislinie springt nur noch, wenn ein neues v-Tag gesetzt wird.
+# sonar.projectVersion: Die New-Code-Periode des Servers steht auf PREVIOUS_VERSION — "neu"
+# ist alles seit der letzten Versionsaenderung. Ohne gesetzte Version rueckte die Basislinie
+# mit jedem Scan mit: Wer zweimal hintereinander scannte, hatte beim zweiten Mal fast keinen
+# "neuen" Code mehr, und das Quality Gate urteilte ueber ein zufaelliges Fenster. Mit dem
+# juengsten Release-Tag als Version heisst "neu": seit dem letzten Release (v-Tag =
+# Release); die Basislinie springt nur, wenn ein neues v-Tag gesetzt wird.
 #
 # Kein stiller Fallback bei fehlendem Tag — gleiche Begruendung wie oben beim
 # fehlenden sonar-scanner: Ein Scan mit falscher Gate-Semantik sieht gesund aus.

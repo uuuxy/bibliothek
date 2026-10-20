@@ -74,11 +74,10 @@ mindestlaenge() {
 # beendet dort den Host-Teil, ein "+" verschiebt den Rest, ein "@" trennt Anmeldedaten von
 # Host.
 #
-# Anlass (06.08.2026): Ein Passwortwechsel mit `openssl rand -base64 24` erzeugte "/" und
-# "+". ALTER ROLE lief durch, der Container meldete "Started", und DIESES Skript meldete
-# "Alles in Ordnung" — die Anwendung war trotzdem unten:
-#   failed to parse as URL (invalid port ":sGWO+wgLlTIj" after host)
-# Eine Konfigurationsprüfung, die nur Länge und Bekanntheit misst, sieht so etwas nicht.
+# Ein Passwort aus `openssl rand -base64 24` enthält "/" und "+": ALTER ROLE läuft durch,
+# der Container meldet "Started", und die Anwendung ist trotzdem unten ("failed to parse as
+# URL (invalid port … after host)"). Eine Konfigurationsprüfung, die nur Länge und
+# Bekanntheit misst, sieht so etwas nicht.
 zerlegt_die_dsn() {
 	case "$1" in
 	*/* | *+* | *@* | *\?* | *\#* | *%*) return 0 ;;
@@ -134,7 +133,7 @@ pruefe_schalter() {
 	fi
 }
 
-# Seit 05.09.2026 ist die Verweigerung bekannter Beispiel-Secrets die Vorgabe des Servers
+# Die Verweigerung bekannter Beispiel-Secrets ist die Vorgabe des Servers
 # (bereitschaft.IstGeheimnisSchutzScharf): nicht gesetzt oder true ist gut, nur ein ausdrückliches
 # false schaltet sie ab — und das gehört gemeldet, nicht übersehen.
 enforce="$(lies ENFORCE_PROD_SECRETS | tr '[:upper:]' '[:lower:]')"

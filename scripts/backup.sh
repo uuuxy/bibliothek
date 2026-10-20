@@ -5,10 +5,10 @@
 # ==========================================
 
 # -- Konfiguration --
-# Aus der .env im Repo-Root nur die zwei Werte, die dieses Skript braucht. Bis zum
-# 23.09.2026 stand hier `export $(grep -v '^#' .env | xargs)`: Das legte jedes Geheimnis
-# der Datei in die Umgebung des Skripts und aller Kindprozesse, und xargs zerlegte Werte
-# mit Leerzeichen (ein `*` darin wurde als Dateimuster aufgelöst). Den Backup-Schlüssel
+# Aus der .env im Repo-Root nur die zwei Werte, die dieses Skript braucht, kein
+# `export $(grep -v '^#' .env | xargs)`: Das legte jedes Geheimnis der Datei in die Umgebung
+# des Skripts und aller Kindprozesse, und xargs zerlegte Werte mit Leerzeichen (ein `*`
+# darin würde als Dateimuster aufgelöst). Den Backup-Schlüssel
 # liest der Container (backup_krypto.sh), nicht dieses Skript.
 ENV_FILE="$(dirname "$0")/../.env"
 # lies_env NAME: letzte Zuweisung gewinnt, ein Paar umschließender Anführungszeichen fällt
@@ -48,7 +48,7 @@ RETENTION_KLARTEXT_TAGE=2
 # Stelle sicher, dass das Backup-Verzeichnis existiert
 mkdir -p "$BACKUP_DIR"
 
-# Aktuelles Datum für den Dateinamen (z.B. 2026-06-11)
+# Aktuelles Datum für den Dateinamen (JJJJ-MM-TT)
 TIMESTAMP=$(date +"%Y-%m-%d")
 BACKUP_BASIS="$BACKUP_DIR/bibliothek_backup_$TIMESTAMP.sql.gz"
 

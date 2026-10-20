@@ -34,21 +34,19 @@ go_routen > "$TMP/go_routes.txt"
 
 # 2. Frontend-Aufrufe (Literale und Template-Strings)
 #
-# Zwei Ausschlüsse, beide aus falschen Alarmen am 06.08.2026 entstanden — der Abschnitt
-# "Geister-Aufrufe" meldete zwei Bugs, die keine waren:
+# Zwei Ausschlüsse gegen falsche Alarme im Abschnitt "Geister-Aufrufe":
 #
-#   --exclude=*.test.js/*.spec.js : `/api/test` stammte aus apiFetch.test.js, also aus
-#       einem erfundenen Pfad in einem Unit-Test. Testdateien rufen keine echten Routen.
+#   --exclude=*.test.js/*.spec.js : Testdateien erfinden Pfade (`/api/test` in
+#       apiFetch.test.js) und rufen keine echten Routen.
 #
-#   sed 's/[.,;:)]*$//' : `/api/bestellungen/konfiguration.` stammte aus einem KOMMENTAR
-#       ("geladen aus /api/bestellungen/konfiguration.") — der Satzpunkt wurde Teil des
-#       Pfades, weil '.' in der Zeichenklasse steht. Die Route existiert und ist geschützt.
+#   sed 's/[.,;:)]*$//' : Ein Pfad in einem Kommentar ("geladen aus
+#       /api/bestellungen/konfiguration.") nähme sonst den Satzpunkt mit, weil '.' in der
+#       Zeichenklasse steht.
 #
-# Klammern gehören seit dem 16.09.2026 in die Zeichenklasse: Ohne sie brach der Treffer
-# mitten im Ausdruck ab. `/api/buecher/exemplare/${encodeURIComponent(id)}/gefunden` endete
-# als `/api/buecher/exemplare/${encodeURIComponent`, das `/gefunden` fiel weg — und die
-# Route stand im Bericht unter "ohne Frontend-Aufrufer", obwohl inventurApi.js sie ruft.
-# Das schließende ')' entfernt der sed unten weiterhin, wenn es am Ende steht.
+# Klammern gehören in die Zeichenklasse: Ohne sie bräche der Treffer mitten im Ausdruck ab.
+# `/api/buecher/exemplare/${encodeURIComponent(id)}/gefunden` endete als
+# `/api/buecher/exemplare/${encodeURIComponent`, und die Route stünde unter "ohne
+# Frontend-Aufrufer". Das schließende ')' entfernt der sed unten, wenn es am Ende steht.
 #
 # Ein Register, das Fehlalarm schlägt, wird nach dem zweiten Mal nicht mehr gelesen.
 grep -rhoE '(/api/[A-Za-z0-9_/${}().?=&-]*)' frontend/src --include="*.js" --include="*.svelte" \

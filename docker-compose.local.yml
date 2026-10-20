@@ -1,10 +1,9 @@
 services:
   postgres-db:
-    # IMMER dieselbe Major-Version wie die Produktion (docker-compose.yml) — sonst wäre
-    # SQL, das erst in einer neueren Version existiert, hier und lokal grün und würde
-    # beim Prod-Deploy die Migration abbrechen; der Server startet dann gar nicht
-    # (db/migrationen.go kehrt beim ersten Fehler um). Gefunden im Komplett-Durchgang
-    # 31.08.2026 (damals: lokal 16, Prod 15). Seit 31.08.2026 beide auf 18.
+    # Dieselbe Major-Version wie die Produktion (docker-compose.yml) — sonst wäre SQL, das
+    # erst in einer neueren Version existiert, lokal grün und bräche beim Deploy die
+    # Migration ab; der Server startet dann gar nicht (db/migrationen.go kehrt beim ersten
+    # Fehler um).
     image: postgres:18-alpine
     container_name: bibliothek-db-local
     environment:
@@ -74,16 +73,14 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
-      # Diese Zeilen sind Pflicht, nicht Kür: Compose reicht ohne env_file AUSSCHLIESSLICH
-      # die hier gelisteten Schlüssel in den Container. Sie fehlten — der Backup-Job fand
-      # deshalb im Container nie einen Schlüssel und übersprang sich STILL, obwohl
-      # BACKUP_ENCRYPTION_KEY in der .env stand. Im Prod-Compose war genau das schon
-      # einmal derselbe Fehler.
+      # Diese Zeilen sind Pflicht: Compose reicht ohne env_file nur die hier gelisteten
+      # Schlüssel in den Container. Fehlte eine, fände der Backup-Job im Container keinen
+      # Schlüssel und übersprünge sich still, auch wenn sie in der .env steht.
       - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
       - BACKUP_DIR=${BACKUP_DIR:-/app/backups}
-      # Offsite-Ziel (optional): Ohne diese Zeilen kam S3_* aus der .env NIE im Container
-      # an — die Selbstprüfung riet „S3_* in der .env setzen", und das blieb wirkungslos
-      # (Prüfung 22.08.2026; gleiche Klasse wie BACKUP_ENCRYPTION_KEY oben). Leer = aus.
+      # Offsite-Ziel (optional), aus demselben Grund aufgeführt: Ohne diese Zeilen käme S3_*
+      # aus der .env nie im Container an, und der Rat der Selbstprüfung „S3_* in der .env
+      # setzen" bliebe wirkungslos. Leer = aus.
       - S3_ENDPOINT=${S3_ENDPOINT:-}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY:-}
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}

@@ -23,8 +23,8 @@ DELETE FROM buecher_exemplare WHERE barcode_id LIKE 'DEMO-B-%';
 DELETE FROM buecher_titel   WHERE titel LIKE 'DEMO-Titel %';
 DELETE FROM schueler        WHERE barcode_id LIKE 'DEMO-S-%';
 
--- 2) ~2000 Schüler, über die Klassen DIESER Schule verteilt (Absprache vom 06.09.2026: „es gibt
---    kein 10a" — Anzeigeform des Vokabulars, Migration 087): Förderstufe 5F/6F und
+-- 2) ~2000 Schüler, über die Klassen dieser Schule verteilt („es gibt kein 10a" —
+--    Anzeigeform des Vokabulars, Migration 087): Förderstufe 5F/6F und
 --    Gymnasialzweig 5G/6G, ab 7 die Zweige H (bis 9), R (bis 10) und G (bis 10), dann die
 --    Oberstufe als Tutorien ET/12T/13T — so, wie sie im LMF-Plan der Schule stehen.
 --    ~8 % Abgänger (NUR aus Abschlussklassen, s. u.), ~2 % gesperrt (mit Pflicht-Grund).

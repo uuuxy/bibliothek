@@ -23,22 +23,17 @@ set -euo pipefail
 # bash fuehrt Bruchstuecke aus oder bricht mit einem Syntaxfehler ab — mitten im Deploy,
 # nach dem Backup, vor dem Health-Check.
 #
-# Am 11.08.2026 nachgestellt: Ein flaches Skript, das sich waehrend des Laufs um drei
-# Zeilen verlaengert, stirbt mit "unexpected EOF while looking for matching quote" und
-# fuehrt seine letzten Schritte nicht mehr aus. Dieselbe Datei in { } gefasst laeuft
-# vollstaendig durch.
+# Nachgestellt: Ein flaches Skript, das sich waehrend des Laufs um drei Zeilen verlaengert,
+# stirbt mit "unexpected EOF while looking for matching quote" und fuehrt seine letzten
+# Schritte nicht mehr aus. Dieselbe Datei in { } gefasst laeuft vollstaendig durch.
 #
-# Der Grund: `{ ... }` ist EIN zusammengesetzter Befehl. Bash parst ihn komplett, bevor
-# es die erste Zeile darin ausfuehrt — ab da ist die Datei auf der Platte gleichgueltig.
-# Das `exit` steht bewusst INNERHALB der Klammer: Stuende es dahinter, kehrte bash nach
-# dem Block zum Lesen der (inzwischen veraenderten) Datei zurueck und straeuchelte
-# genau dort. Auch das nachgestellt.
+# Der Grund: `{ ... }` ist ein zusammengesetzter Befehl. Bash parst ihn komplett, bevor es
+# die erste Zeile darin ausfuehrt — ab da ist die Datei auf der Platte gleichgueltig. Das
+# `exit` steht innerhalb der Klammer: Stuende es dahinter, kehrte bash nach dem Block zum
+# Lesen der (inzwischen veraenderten) Datei zurueck und straeuchelte genau dort.
 #
-# Sichtbar wurde das Problem harmlos: Der Deploy vom 11.08. lief noch mit der ALTEN
-# Fassung dieses Skripts — die neue kam ja erst mit dem pull —, deshalb blieb
-# GIT_COMMIT im Image leer. Ein Deploy-Skript aendert sich immer erst fuer den
-# NAECHSTEN Lauf. Genau dafuer meldet Schritt 4b ein Image ohne Commit als Warnung und
-# nicht als Fehler.
+# Ein Deploy-Skript aendert sich immer erst fuer den naechsten Lauf: Der Lauf, der eine neue
+# Fassung zieht, fuehrt noch die alte aus.
 {
 
 # ── Konfiguration ─────────────────────────────────────────────────────────────
@@ -55,10 +50,9 @@ KLARTEXT_RETENTION_DAYS=2
 DB_CONTAINER="bibliothek-db"
 DB_USER="postgres"
 DB_NAME="bibliothek"
-# EIN Name für den Backend-Container. Er stand hier bis zum 23.08.2026 erst in Schritt 4
-# (APP_CONTAINER) — als Schritt 5 dazukam, hätte ein zweiter Platz für denselben Wert
-# schlicht darauf gewartet, auseinanderzulaufen. scripts/backup_krypto.sh liest ihn als
-# BACKEND_CONTAINER, deshalb wird er hier gesetzt, BEVOR der Helfer eingebunden wird.
+# Ein Name für den Backend-Container, für alle Schritte: Ein zweiter Platz für denselben
+# Wert liefe auseinander. scripts/backup_krypto.sh liest ihn als BACKEND_CONTAINER, deshalb
+# steht er hier, bevor der Helfer eingebunden wird.
 APP_CONTAINER="bibliothek-backend"
 BACKEND_CONTAINER="${APP_CONTAINER}"
 
@@ -77,11 +71,10 @@ else
 fi
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-# Eigenes Präfix, seit 10.09.2026: Das nächtliche Backup heißt backup_<Zeit>.sql.gz.enc
-# (jobs/backup.go, im Volume des Containers). Unter demselben Muster lag hier in ./backups
-# die Vorab-Sicherung — die Restore-Anleitung wählte per `ls -t backups/backup_*` die
-# letzte DEPLOY-Sicherung statt des Nachtbackups, und alles seit dem letzten Deploy war nach
-# dem Restore still weg (Bestands-Durchgang, „Zwei Ablagen, ein Dateiname").
+# Eigenes Präfix: Das nächtliche Backup heißt backup_<Zeit>.sql.gz.enc (jobs/backup.go, im
+# Volume des Containers). Trüge die Vorab-Sicherung dasselbe Muster, wählte die
+# Restore-Anleitung per `ls -t backups/backup_*` die letzte Deploy-Sicherung statt des
+# Nachtbackups, und alles seit dem letzten Deploy wäre nach dem Restore still weg.
 BACKUP_FILE="${BACKUP_DIR}/vordeploy_${TIMESTAMP}.sql.gz"
 # Der Stand VOR diesem Update — der Rückweg der Rollback-Anleitung. Gelesen in Schritt 0
 # aus dem laufenden Image; nur wenn das nicht geht, in Schritt 2 aus dem Arbeitsverzeichnis.
@@ -115,11 +108,10 @@ print_rollback_instructions() {
     echo ""
     echo -e "${YELLOW}Schritte zum manuellen Rollback:${NC}"
     echo ""
-    # Bis zum 10.09.2026 stand hier `git stash` (nach einem sauberen Pull wirkungslos —
-    # der neue Code blieb), der Dump lief ohne dropdb und ohne ON_ERROR_STOP in die schon
-    # migrierte Datenbank (Fehlerflut, psql endet trotzdem mit 0), und Schritt 4 baute
-    # wieder den neuen Code. Die Anleitung führte also weder zum alten Code noch zu den
-    # alten Daten (Bestands-Durchgang, Rasterfrage 10; Gate docs/rueckweg_anleitungen_test.go).
+    # Der Rückweg muss zum alten Code und zu den alten Daten führen: `git stash` wäre nach
+    # einem sauberen Pull wirkungslos, ein Dump ohne dropdb und ohne ON_ERROR_STOP liefe in
+    # die schon migrierte Datenbank (psql endet trotzdem mit 0). Das Gate ist
+    # docs/rueckweg_anleitungen_test.go.
     echo -e "  ${BOLD}1. Backend stoppen (die Datenbank läuft weiter):${NC}"
     echo "     docker compose stop backend"
     echo ""
@@ -185,13 +177,12 @@ else
     SKIP_BACKUP=false
 fi
 
-# Der Rückweg der Rollback-Anleitung ist der Commit, aus dem das LAUFENDE Image gebaut
-# wurde (GIT_COMMIT, dieselbe Quelle wie Schritt 4b). Bis zum 25.09.2026 stand hier nichts,
-# und Schritt 2 las `git rev-parse HEAD` vor seinem Pull — nach dem vorgezogenen `git pull`
-# aus DEPLOYMENT.md §2.4 schon der NEUE Stand. Die Anleitung druckte `git reset --hard` auf
-# den neuen Commit und baute danach wieder den neuen Code. ORIG_HEAD hilft nicht: Der Pull
-# in Schritt 2, der nichts mehr findet, setzt es auf den neuen Stand
-# (docs/rueckweg_anleitungen_test.go, TestRueckweg_RollbackNenntDenLaufendenStand).
+# Der Rückweg der Rollback-Anleitung ist der Commit, aus dem das laufende Image gebaut wurde
+# (GIT_COMMIT, dieselbe Quelle wie Schritt 4b). `git rev-parse HEAD` vor dem Pull in
+# Schritt 2 ist nach dem vorgezogenen `git pull` aus DEPLOYMENT.md §2.4 schon der neue
+# Stand, und ORIG_HEAD hilft nicht: Der Pull in Schritt 2, der nichts mehr findet, setzt es
+# auf den neuen Stand (docs/rueckweg_anleitungen_test.go,
+# TestRueckweg_RollbackNenntDenLaufendenStand).
 VORHER_COMMIT="$(docker exec "${APP_CONTAINER}" printenv GIT_COMMIT 2>/dev/null || echo '')"
 if [ -n "${VORHER_COMMIT}" ]; then
     VORHER_QUELLE="image"
@@ -292,13 +283,10 @@ HEALTH_TIMEOUT=120
 #  2. Die Anwendung selbst über /health. Sie beantwortet die Frage, auf die es ankommt:
 #     Kommt jemand rein?
 #
-# Am 06.08.2026 hat dieser Schritt zwei einwandfreie Updates hintereinander als
-# FEHLGESCHLAGEN gemeldet — samt Rollback-Anleitung —, während die Anwendung längst lief
-# und /health von aussen mit 200 antwortete. Die Prüfung hing allein an Quelle 1, und der
-# Hinweistext nannte obendrein einen Container ("bibliothek-web"), den es nicht gibt: Wer
-# der Anleitung folgte, bekam eine leere Ausgabe und stand vor einem Rollback, den niemand
-# brauchte. Ein Alarm, der bei jedem gesunden Lauf losgeht, erzieht nur dazu, ihn zu
-# überhören — und dann fehlt er, wenn er zählt.
+# Beide Quellen, nicht nur die erste: Hinge die Prüfung allein am Healthcheck, meldete sie
+# ein Update als fehlgeschlagen, während /health längst mit 200 antwortet. Ein Alarm, der bei
+# jedem gesunden Lauf losgeht, erzieht dazu, ihn zu überhören — und dann fehlt er, wenn er
+# zählt.
 docker_health() {
     local status
     status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}ohne-healthcheck{{end}}' \
@@ -346,15 +334,11 @@ done
 
 # ── Schritt 4b: Läuft auch WIRKLICH der neue Stand? ──────────────────────────
 #
-# Gesund heisst nicht aktuell. Am 11.08.2026 stand auf diesem Server `git pull` durch,
-# `./update.sh` aber nicht: Das Arbeitsverzeichnis zeigte den neuen Commit, das laufende
-# Image war zehn Stunden alt und lieferte den Stand von vorgestern aus. Beide Prüfungen
-# aus Schritt 4 meldeten dabei völlig zu Recht "gesund" — sie beantworten eine andere
-# Frage. Aufgefallen ist es nur, weil jemand von Hand den Namen der ausgelieferten
-# Bundle-Datei verglichen hat.
-#
-# Diese Prüfung stellt die richtige Frage: Läuft der Container, der aus DEM Commit
-# gebaut wurde, der gerade im Arbeitsverzeichnis liegt?
+# Gesund heisst nicht aktuell: Nach `git pull` ohne `./update.sh` zeigt das
+# Arbeitsverzeichnis den neuen Commit, während ein altes Image läuft, und beide Prüfungen
+# aus Schritt 4 melden zu Recht "gesund" — sie beantworten eine andere Frage. Diese Prüfung
+# fragt: Läuft der Container, der aus dem Commit gebaut wurde, der gerade im
+# Arbeitsverzeichnis liegt?
 log_step "Schritt 4b: Läuft der Container aus diesem Commit?"
 
 ERWARTET="$(git rev-parse HEAD 2>/dev/null || echo '')"
@@ -363,10 +347,9 @@ IM_IMAGE="$(docker exec "${APP_CONTAINER}" printenv GIT_COMMIT 2>/dev/null || ec
 if [ -z "${ERWARTET}" ]; then
     log_warn "Kein git-Arbeitsverzeichnis — Abgleich nicht möglich."
 elif [ -z "${IM_IMAGE}" ]; then
-    # Seit dem Deploy vom 11.08.2026 trägt jedes regulär gebaute Image seinen Commit.
-    # Ein leerer Wert heißt: von Hand ohne GIT_COMMIT gebaut (oder ein Stand von vor
-    # dem 11.08.) — genau der stille „alter Container"-Fall, den dieser Schritt fangen
-    # soll (Prüfung 22.08.2026). Früher nur eine Warnung, die das Skript grün beendete.
+    # Jedes über update.sh gebaute Image trägt seinen Commit. Ein leerer Wert heißt: von
+    # Hand ohne GIT_COMMIT gebaut — genau der stille „alter Container"-Fall, den dieser
+    # Schritt fangen soll; deshalb ein Fehler und keine Warnung.
     log_error "Das Image trägt keinen Commit (GIT_COMMIT leer) — es wurde nicht über update.sh gebaut."
     log_error "Erneut bauen mit:  GIT_COMMIT=\$(git rev-parse HEAD) docker compose -f \"${COMPOSE_FILE}\" build --no-cache && docker compose -f \"${COMPOSE_FILE}\" up -d"
     exit 1
@@ -422,8 +405,8 @@ log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION
 
 # Zwei Fristen, zwei Muster. `*.sql.gz` trifft NICHT die `.enc`-Dateien — deren Name
 # endet auf `.enc`, und `find -name` vergleicht den ganzen Namen.
-# Verschlüsselt: nur die eigenen (vordeploy_ seit 10.09.2026, backup_ für die Vorab-
-# Sicherungen davor); scripts/backup.sh legt im selben Ordner mit eigener Frist ab.
+# Verschlüsselt: nur die eigenen (vordeploy_, und backup_ für ältere Vorab-Sicherungen
+# unter dem früheren Namen); scripts/backup.sh legt im selben Ordner mit eigener Frist ab.
 # Klartext: jeder im Ordner, gleich von wem (Gate: docs/backup_ablage_test.go).
 DELETED=$(find "${BACKUP_DIR}" \( -name "vordeploy_*.sql.gz.enc" -o -name "backup_*.sql.gz.enc" \) -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
 DELETED_KLAR=$(find "${BACKUP_DIR}" -name "*.sql.gz" -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')

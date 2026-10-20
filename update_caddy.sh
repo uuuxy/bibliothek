@@ -63,18 +63,11 @@ flasch2.herzog-dupont.de {
 # =============================================================================
 # Bibliothek
 # =============================================================================
-# KEINE tls-Zeile. Caddy holt und erneuert das Zertifikat selbst (ACME/Let's Encrypt).
+# Keine tls-Zeile. Caddy holt und erneuert das Zertifikat selbst (ACME/Let's Encrypt).
 #
-# Hier stand bis zum 06.08.2026 `tls /etc/caddy/certs/flasch3.crt …` — ein am
-# 14.06.2026 von Hand abgelegtes Wildcard *.herzog-dupont.de. Das hat nicht nur
-# flasch3 betroffen: Ein manuell geladenes Zertifikat deckt per Wildcard AUCH
-# flasch und flasch2 ab, und Caddy erneuert dann die eigenen ACME-Zertifikate
-# dieser Namen nicht mehr — es sieht ja eine gültige Abdeckung.
-#
-# Die Folge stand am 06.08.2026 im Log: flasch2 war 15 Tage abgelaufen und wurde
-# aufgeräumt, das Erneuerungsfenster von flasch (25.–27.07.) war verstrichen.
-# Ein Wildcard mit Ablauf 15.08. war damit der EINZIGE Schutz für drei Dienste,
-# ohne Rückfall und ohne Erneuerung.
+# Ein von Hand geladenes Wildcard-Zertifikat deckt auch die anderen Namen dieses Hosts ab,
+# und Caddy erneuert dann deren eigene ACME-Zertifikate nicht mehr — es sieht ja eine
+# gültige Abdeckung. Läuft das Wildcard ab, stehen alle drei Dienste ohne Rückfall da.
 #
 # Wildcards brauchen eine DNS-01-Challenge, die Caddy ohne DNS-Plugin nicht kann —
 # ein solches Zertifikat muss also immer von Hand nachgelegt werden. Für drei feste

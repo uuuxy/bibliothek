@@ -116,15 +116,11 @@ SELECT s.barcode_id AS schueler, t.titel, e.barcode_id AS demo_exemplar
    AND v.schueler_id NOT IN (SELECT id FROM demo_s)
  ORDER BY s.barcode_id LIMIT 50;
 
--- SPERRE (17.09.2026): Ein Schadensfall eines ECHTEN Schülers auf einem Demo-Exemplar
--- wird NICHT mitgelöscht — das Skript bricht ab.
---
--- Punkt 3 der Vorschau zeigt diese Zeilen seit jeher an; gelöscht wurden sie trotzdem,
--- auch bezahlte und solche auf einem Bescheid. Das ist keine Aufräumarbeit mehr: Eine
--- bezahlte Forderung ist ein Kassenbeleg, eine auf einem Bescheid ist Teil eines
--- Verwaltungsakts, und eine offene ist Geld, das jemand schuldet. Auf dem Server war die
--- Vorschau am 13.09.2026 leer (0 Zeilen) — der Lauf blieb also folgenlos; beim nächsten
--- Mal muss es keiner sein.
+-- Sperre: Ein Schadensfall eines echten Schülers auf einem Demo-Exemplar wird nicht
+-- mitgelöscht — das Skript bricht ab; Punkt 3 der Vorschau zeigt diese Zeilen an. Löschen
+-- wäre keine Aufräumarbeit mehr: Eine bezahlte Forderung ist ein Kassenbeleg, eine auf
+-- einem Bescheid ist Teil eines Verwaltungsakts, und eine offene ist Geld, das jemand
+-- schuldet.
 --
 -- Wer solche Zeilen hat, entscheidet sie einzeln (stornieren, umbuchen) und lässt das
 -- Skript danach erneut laufen. Die Meldung nennt die Zahl, die Liste steht darüber.

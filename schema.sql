@@ -120,11 +120,10 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- verbindet beide per UPPER(), siehe api/permission_middleware.go).
 
 -- Table: role_permissions (Rechte je Rolle). Der Inhalt kommt aus dem Seed
--- (db.RechteVorgabe, ON CONFLICT DO NOTHING) — nur die Struktur steht hier. Bis zum
--- 07.09.2026 stand diese Tabelle in KEINER Zeile von schema.sql und keiner Migration:
--- Der Go-Prozess legte sie beim ersten Start an, und die Schema-Paritäts-Ratsche konnte
--- das nicht sehen, weil derselbe Boot auf beiden verglichenen Seiten läuft
--- (Migration 106; Gate an der Quelle: inventur/kein_ddl_im_schreibpfad_test.go).
+-- (db.RechteVorgabe, ON CONFLICT DO NOTHING) — nur die Struktur steht hier, und in
+-- Migration 106, nicht im Go-Prozess: Eine Tabelle, die erst der Start anlegt, sieht die
+-- Schema-Paritäts-Ratsche nicht, weil derselbe Start auf beiden verglichenen Seiten läuft
+-- (Gate an der Quelle: inventur/kein_ddl_im_schreibpfad_test.go).
 CREATE TABLE role_permissions (
     role VARCHAR(50) NOT NULL,
     permission VARCHAR(100) NOT NULL,
@@ -184,9 +183,9 @@ CREATE TABLE leser (
     is_manually_blocked BOOLEAN DEFAULT false,
     block_reason TEXT,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    -- Zeitpunkt der DSGVO-Anonymisierung (Migration 022). Fehlte bis 19.08.2026 in
-    -- dieser Baseline, obwohl der Seed 022 als angewendet markiert — der Anonymisierungs-
-    -- Cron (FuehreSchuelerAnonymisierungAus) lief deshalb auf frischen DBs ins Leere.
+    -- Zeitpunkt der DSGVO-Anonymisierung (Migration 022). Steht in dieser Baseline, weil der
+    -- Seed 022 als angewendet markiert; ohne die Spalte liefe der Anonymisierungs-Cron
+    -- (FuehreSchuelerAnonymisierungAus) auf frischen Datenbanken ins Leere.
     anonymized_at TIMESTAMP DEFAULT NULL,
     -- Ein gesperrter Schüler ohne Grund ist ein toter Zustand ("Zombie-Sperre"): das
     -- Personal sieht nur das rote Flag und muss die Historie durchwühlen. JEDE Sperrquelle
@@ -203,7 +202,7 @@ CREATE TABLE leser (
     -- Die Paarung: Was fuer einen Schueler Pflicht ist, bleibt Pflicht. Ohne sie waere aus
     -- drei Pflichtfeldern fuer alle ein "darf leer sein" fuer alle geworden — und ein
     -- Schueler ohne Klasse faellt in jeder Klassenliste und jeder Mahnung lautlos hinten
-    -- runter (dieselbe Bugklasse wie die LUSD-Klasse am 14.09.2026).
+    -- runter.
     CONSTRAINT chk_leser_schueler_pflichtfelder CHECK (
         art <> 'schueler'
         OR (klasse IS NOT NULL AND abgaenger_jahr IS NOT NULL AND barcode_id IS NOT NULL)
@@ -281,8 +280,8 @@ FOR EACH ROW EXECUTE FUNCTION leser_aktualisiert_am();
 -- oder im Mahnlauf. Mit dieser Sicht behalten alle 51 ihre Bedeutung, ohne
 -- angefasst zu werden, und koennen einen Kollegen weder sehen noch anlegen.
 --
--- Am 16.09.2026 an Postgres 18 nachgemessen: SELECT ... FOR UPDATE, INSERT ...
--- RETURNING, UPDATE und DELETE gehen durch diese Sicht; ein INSERT mit
+-- An Postgres 18 nachgemessen: SELECT ... FOR UPDATE, INSERT ... RETURNING, UPDATE und
+-- DELETE gehen durch diese Sicht; ein INSERT mit
 -- art='lehrkraft' wird von WITH CHECK OPTION abgewiesen; TRUNCATE geht nicht
 -- (drei Test-Helfer nennen deshalb `leser`).
 --
@@ -1005,9 +1004,8 @@ FOR EACH ROW EXECUTE FUNCTION aktives_konto_behaelt_ausweis();
 -- eines Exemplars, lüde sein Ausweis das Buch. Bis dahin prüfte das allein die
 -- Littera-Übernahme für ihren eigenen Lauf. Muster von Migration 118: ein Wächter an
 -- beiden Tabellen, CONSTRAINT-Name für den Code — ohne Advisory-Lock je Nummer, der bei
--- einem Massen-Import die Sperrtabelle füllt (65.000 Zeilen → out of shared memory,
--- gemessen 22.09.2026). Leser zählen
--- nur aktiv (deleted_at IS NULL, wie uniq_schueler_barcode_active; Wiederherstellen
+-- einem Massen-Import die Sperrtabelle füllt (65.000 Zeilen → out of shared memory). Leser
+-- zählen nur aktiv (deleted_at IS NULL, wie uniq_schueler_barcode_active; Wiederherstellen
 -- stößt an), Exemplare in jeder Zeile — auch ausgesondert tragen sie ihren Barcode.
 CREATE OR REPLACE FUNCTION nummer_ist_buch_oder_ausweis()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -1264,10 +1262,9 @@ FOR EACH ROW EXECUTE FUNCTION leser_stempel_schaden();
 --                         Schreiber: repository insertAuditLog/LogSystemAktion).
 --   audit_logs (mit s)  = ADMIN-Eingriffe mit IP-Adresse (admin_id/aktion/details,
 --                         Schreiber: LogAdminAktion, z. B. UPDATE_SETTINGS, USER_CREATE).
--- Entschieden 18.08.2026: KEINE Umbenennung — beide Namen stehen in zu vielen
--- Abfragen, Tests und der Aufbewahrungs-Routine (jobs/cron_protokoll_aufbewahrung.go
--- löscht BEIDE). Wer hier eine dritte Protokoll-Tabelle anlegt, wählt bitte
--- einen unverwechselbaren Namen.
+-- Keine Umbenennung: Beide Namen stehen in zu vielen Abfragen, Tests und der
+-- Aufbewahrungs-Routine (jobs/cron_protokoll_aufbewahrung.go löscht beide). Wer hier eine
+-- dritte Protokoll-Tabelle anlegt, wählt bitte einen unverwechselbaren Namen.
 CREATE TABLE audit_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tabelle VARCHAR(50) NOT NULL,
@@ -2002,13 +1999,11 @@ SELECT setval('barcode_seq', (
     WHERE barcode_id ~ '^B-[0-9]{1,15}$'
 ));
 
--- Es gibt KEINEN zweiten Nummernkreis. Bis zum 07.09.2026 prägten Bestandskorrektur
--- (Buchmaske) und Excel-Sammelimport „SYS-…"-Nummern aus einer eigenen Sequenz, die
--- nirgends deklariert war — der Go-Code legte sie per CREATE SEQUENCE in der laufenden
--- Transaktion an (Migration 104 hat sie deklariert, 105 abgeschafft; beide Pfade ziehen
--- seither aus barcode_seq). Vorhandene SYS-Exemplare behalten ihre Nummer — sie kann
--- physisch am Buch kleben; die Exemplarkarte zeigt sie als Platzhalter („Barcode
--- scannen"). Gate gegen DDL im Schreibpfad: inventur/kein_ddl_im_schreibpfad_test.go.
+-- Es gibt keinen zweiten Nummernkreis: Bestandskorrektur (Buchmaske) und
+-- Excel-Sammelimport ziehen aus barcode_seq; die eigene Sequenz der „SYS-…"-Nummern schafft
+-- Migration 105 ab. Vorhandene SYS-Exemplare behalten ihre Nummer — sie kann physisch am
+-- Buch kleben; die Exemplarkarte zeigt sie als Platzhalter („Barcode scannen"). Gate gegen
+-- DDL im Schreibpfad: inventur/kein_ddl_im_schreibpfad_test.go.
 
 CREATE TABLE IF NOT EXISTS idempotency_keys (
     idempotency_key UUID PRIMARY KEY,
@@ -2020,10 +2015,9 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 CREATE INDEX IF NOT EXISTS idx_idempotency_keys_created_at ON idempotency_keys(created_at);
 
 -- ─────────────────────────────────────────────────────────────────────────
--- Drift-Abgleich (10.07.2026): DDL aus oben bereits als angewendet
--- markierten Migrationen (008, 021, 022, 027), die in dieser Baseline
--- fehlte. Frische Datenbanken bekämen diese Objekte sonst nie — die
--- Migrationen laufen wegen des schema_migrations-Seeds nicht mehr.
+-- Drift-Abgleich: DDL aus Migrationen, die oben als angewendet markiert sind (008, 021,
+-- 022, 027). Frische Datenbanken bekämen diese Objekte sonst nie — die Migrationen laufen
+-- wegen des schema_migrations-Seeds nicht mehr.
 
 -- Migration 162: NULL in beiden Spalten heißt „unbekannt"; eine Vorgabe gibt es nicht. Beide
 -- gesetzt oder keine, 1 bis 13, „von" nicht über „bis".
@@ -2047,8 +2041,8 @@ COMMENT ON COLUMN buecher_titel.jahrgang_bis IS
 
 -- Migration 134: Ein Mehrjahresband ist ein Schalter am Werk; die Jahreszahl, bis zu der
 -- das Buch beim Kind bleibt, ist jahrgang_bis. Nur an einem Lernmittel und nur mit einer
--- Spanne über mehr als einen Jahrgang. Die frühere Spalte ziel_jahrgang (Migration 030) ist
--- damit weg — gemessen am 22.09.2026 ohne Wert.
+-- Spanne über mehr als einen Jahrgang. Die frühere Spalte ziel_jahrgang (Migration 030)
+-- fällt damit weg; sie trug keinen Wert.
 ALTER TABLE buecher_titel
     ADD COLUMN IF NOT EXISTS mehrjahresband BOOLEAN NOT NULL DEFAULT false;
 DO $$

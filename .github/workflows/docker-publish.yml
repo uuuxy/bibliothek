@@ -7,9 +7,8 @@ name: Docker Image veröffentlichen (ghcr.io)
 #
 # Bildname: ghcr.io/uuuxy/bibliothek
 #   - Push auf main        → Tag `latest` und `main-<kurz-sha>`
-#   - Git-Tag `v1.2.3`     → Tags `1.2.3` und `1.2` — NICHT latest (latest = neuester main;
-#                            bis 22.08.2026 schrieb auch der Tag latest, ein Hotfix-Tag auf
-#                            altem Stand setzte latest zurück — Prüfung 22.08.)
+#   - Git-Tag `v1.2.3`     → Tags `1.2.3` und `1.2`, nicht latest: latest ist der neueste
+#                            main, und ein Hotfix-Tag auf altem Stand setzte es zurück
 #   - manuell (Actions-UI) → Tag `latest`
 #
 # Das Package ist ÖFFENTLICH (anonym per `docker pull` ziehbar — praktisch für den
@@ -43,18 +42,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Versioniertes Image nur für ein striktes v-Tag auf main (siehe release.yml).
+      # Versioniertes Image nur für ein striktes v-Tag auf main, dessen CI grün ist (wie
+      # release.yml): Ein Image mit Versionsnummer sagt „geprüft" — dann soll es auch
+      # stimmen. Wer aus dem Image deployt, zöge sonst einen Stand, den kein Gate gesehen hat.
       #
-      # Seit dem 17.09.2026 wird zusätzlich die CI abgefragt — dieselbe Pflichtliste wie in
-      # release.yml. Vorher prüfte dieser Schritt nur Muster und main: Ein Tag auf rotem
-      # Stand erzeugte zwar kein Release, aber sehr wohl ein Image mit einer Versionsnummer.
-      # Solange die Produktion selbst baut (update.sh), war das folgenlos; wer je aus dem
-      # Image deployt, zöge sich einen Stand, den kein Gate gesehen hat. Ein Image mit
-      # Versionsnummer sagt „geprüft" — dann soll es auch stimmen.
-      #
-      # Liste und Auswertung stehen seit dem 21.09.2026 EINMAL in scripts/tag-gate.sh, für
-      # diesen Schritt und für release.yml; seitdem gehören auch die vier Security-Jobs
-      # dazu. docs/umgebung_paritaet_test.go hält die Liste gegen ci.yml und
+      # Liste und Auswertung stehen einmal in scripts/tag-gate.sh, für diesen Schritt und für
+      # release.yml. docs/umgebung_paritaet_test.go hält die Liste gegen ci.yml und
       # security-scan.yml und prüft, dass beide Workflows das Skript auch aufrufen.
       - name: Tag prüfen (Muster, auf main, CI grün)
         if: startsWith(github.ref, 'refs/tags/')

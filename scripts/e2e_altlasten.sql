@@ -1,6 +1,6 @@
 -- Räumt den Bodensatz weg, den die E2E-Suite in Bestand und Ausleihen hinterlässt.
 --
--- WARUM NICHT IM GLOBALEN TEARDOWN (12.08.2026):
+-- Warum nicht im globalen Teardown:
 -- Der Teardown (frontend/e2e/global-teardown.js) räumt Lieferanten, Testbestellungen und
 -- Klassensatz-Reservierungen ab — alles Tabellen, bei denen ein zu weites Muster wenig
 -- anrichten kann. Bestand und Ausleihen sind eine andere Klasse:
@@ -10,13 +10,12 @@
 --
 -- Ein Löschen der Titel scheitert also am Fremdschlüssel, solange Ausleihen daran hängen;
 -- es bräuchte eine Kette über vier Tabellen. Eine automatisch nach jedem Lauf feuernde
--- Kette, die `ausleihen` anfasst, ist mir das nicht wert: Ein Fehler im Zuschnitt löscht
--- dort echte Ausleihhistorie. Deshalb liegt das hier als bewusst zu startendes Werkzeug —
+-- Kette, die `ausleihen` anfasst, lohnt das nicht: Ein Fehler im Zuschnitt löscht dort
+-- echte Ausleihhistorie. Deshalb liegt das hier als bewusst zu startendes Werkzeug —
 -- dieselbe Entscheidung wie bei repair_*.sql und tabula_rasa.sql.
 --
--- GEMESSEN (12.08.2026, Entwicklungsdatenbank): Ein vollständiger e2e-Lauf hinterlässt
--- rund 42 Titel, 75 Exemplare und 22 Ausleihen. Über Monate summiert sich das — dieselbe
--- Mechanik hatte schon 224 Testlieferanten und einen Reservierungszähler von 223 erzeugt.
+-- Ein vollständiger e2e-Lauf hinterlässt einige Dutzend Titel, Exemplare und Ausleihen,
+-- und über Monate summiert sich das.
 --
 -- ZUSCHNITT: ausschließlich Titel mit dem Präfix 'E2E ' — dasselbe Muster, das der
 -- Teardown bereits für Reservierungen nutzt. Gegengeprüft: Es trifft null Titel aus dem
@@ -53,10 +52,8 @@ DELETE FROM ausleihen a
 DELETE FROM buecher_titel WHERE titel LIKE 'E2E %';
 
 -- Ohne -v ausfuehren=ja bleibt es bei der Vorschau; die letzte Ausgabezeile sagt, was
--- passiert ist. Bis zum 03.09.2026 stand hier ein unbedingtes COMMIT und in SCRIPTS.md
--- die Empfehlung, es für den Probelauf von Hand gegen ROLLBACK zu tauschen — genau die
--- Handarbeit, die an repair_fach_kategorie.sql einen ganzen Abend gekostet hat: Der Lauf
--- druckt seine Zahlen, meldet keinen Fehler und ändert trotzdem nichts (oder alles).
+-- passiert ist. Kein Tausch von COMMIT gegen ROLLBACK von Hand: Ein solcher Lauf druckt
+-- seine Zahlen, meldet keinen Fehler und ändert trotzdem nichts (oder alles).
 \if :{?ausfuehren}
 SELECT :'ausfuehren' = 'ja' AS schreiben \gset
 \else

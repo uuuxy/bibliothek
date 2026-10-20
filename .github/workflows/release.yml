@@ -32,10 +32,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Ein Tag ist ein Veröffentlichungskanal — bis 22.08.2026 ein ungeschützter: Jeder Push
-      # auf irgendeinen Commit (Feature-Branch, roter Stand) erzeugte sofort ein öffentliches
-      # Release (Prüfung 22.08.). Drei Wächter: striktes Muster (der Glob oben lässt
-      # v1.2.3.4 und vfoo.bar.baz durch), Commit MUSS auf main liegen, CI MUSS dort grün sein.
+      # Ein Tag ist ein Veröffentlichungskanal: Ohne Wächter erzeugte jeder Tag auf irgendeinen
+      # Commit (Feature-Branch, roter Stand) sofort ein öffentliches Release. Drei Wächter:
+      # striktes Muster (der Glob oben lässt v1.2.3.4 und vfoo.bar.baz durch), der Commit liegt
+      # auf main, und CI ist dort grün.
       - name: Voraussetzungen prüfen (Muster, auf main, CI grün)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,22 +49,15 @@ jobs:
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
             echo "::error::Commit $GITHUB_SHA liegt nicht auf main — Releases kommen nur von main."; exit 1
           fi
-          # Prüfläufe des getaggten Commits: JEDER Job aus ci.yml und aus security-scan.yml
-          # muss success sein. Liste und Auswertung stehen seit dem 21.09.2026 EINMAL in
-          # scripts/tag-gate.sh — dieselbe Tür für das Release hier und für das versionierte
-          # Image (docker-publish.yml).
+          # Prüfläufe des getaggten Commits: Jeder Job aus ci.yml und aus security-scan.yml
+          # muss success sein. Liste und Auswertung stehen einmal in scripts/tag-gate.sh —
+          # dieselbe Tür für das Release hier und für das versionierte Image
+          # (docker-publish.yml).
           #
-          # Bis zum 07.09.2026 stand hier `name=="build-and-test" or name=="docker-scan"`.
-          # Beides zusammen prüfte weniger, als es aussah:
-          #   * `docker-scan` gibt es nicht und gab es hier nie — der Name passte auf
-          #     keinen einzigen Check-Run. Ein Name, der ins Leere zeigt, verschwindet in
-          #     dieser jq-Zeile spurlos: `[…] | all(...)` ist für die leere Menge wahr.
-          #   * `e2e` fehlte. Am 06.09. war main vier Stunden lang rot, GENAU in diesem
-          #     Job — ein Tag hätte in dieser Zeit ein Release und ein Image erzeugt, und
-          #     das Gate hätte grün dazu genickt.
-          # Die Liste ist deshalb Pflicht statt Auswahl, und ein FEHLENDER Name ist ein
-          # Fehler, kein Freifahrtschein. docs/umgebung_paritaet_test.go hält sie gegen die
-          # Jobs beider Workflows — ein neuer Job muss im Skript mitwachsen.
+          # Die Liste ist Pflicht statt Auswahl, und ein fehlender Name ist ein Fehler, kein
+          # Freifahrtschein: Ein Name, der ins Leere zeigt, verschwände sonst spurlos
+          # (`[…] | all(...)` ist für die leere Menge wahr). docs/umgebung_paritaet_test.go
+          # hält sie gegen die Jobs beider Workflows — ein neuer Job wächst im Skript mit.
           ./scripts/tag-gate.sh
 
       # --verify-tag: Kein Release zu einem Tag, der (noch) nicht auf dem Server liegt.

@@ -11,10 +11,9 @@ uploads/
 /dev/null
 tmp
 .gemini
-# backups/ und .env gehören NICHT in den Build-Kontext: Auf der Produktion lagen
-# am 06.08.2026 82 Dateien mit 174 MB darin, und jeder ./update.sh reicht den
-# Kontext an den Docker-Daemon (BuildKit-Cache auf derselben Platte). .gitignore
-# führt beide längst — der Build-Pfad zog nach (Komplett-Durchgang 31.08.2026).
+# backups/ und .env gehören nicht in den Build-Kontext: Jeder ./update.sh reicht den
+# Kontext an den Docker-Daemon (BuildKit-Cache auf derselben Platte), und backups/ wächst
+# mit jedem Deploy. .gitignore führt beide aus demselben Grund.
 backups/
 .env
 .env.*

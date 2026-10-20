@@ -7,13 +7,10 @@ import path from 'node:path';
 
 // Wohin der Entwicklungs-Server durchreicht.
 //
-// Bis zum 12.08.2026 stand hier fest `8083`. Das ist der Port des PRODUKTIONS-Stacks
-// (docker-compose.yml); der lokale Stack läuft auf 8084 (docker-compose.local.yml) und
-// `.env.example` setzt für den Start von Hand sogar 8081. Wer der dokumentierten
-// Anleitung folgte, bekam auf http://localhost:5173 also eine Oberfläche, deren
-// API-Aufrufe alle ins Leere liefen — ohne Fehlermeldung, die auf den Port zeigt.
-//
-// Vorgabe ist jetzt der lokale Stack. Wer sein Backend woanders hat, überschreibt:
+// Vorgabe ist der lokale Stack auf 8084 (docker-compose.local.yml), nicht 8083, der Port
+// des Stacks auf dem Server (docker-compose.yml): Mit dem falschen Port liefen auf
+// http://localhost:5173 alle API-Aufrufe ins Leere, ohne Meldung, die auf den Port zeigt.
+// Wer sein Backend woanders hat, überschreibt:
 //   VITE_API_TARGET=http://127.0.0.1:8081 npm run dev
 const apiZiel = process.env.VITE_API_TARGET || 'http://127.0.0.1:8084';
 const durchreichen = { target: apiZiel, changeOrigin: true, secure: false };

@@ -2,16 +2,12 @@
 #
 # govulncheck mit einer Ausnahmeliste, die sich nicht totstellen kann.
 #
-# Warum es dieses Skript gibt (17.09.2026): `govulncheck ./...` kennt keine Ausnahme und
-# wird rot, sobald irgendeine Schwachstelle einen Aufruf unseres Codes trifft. Am
-# 16.09.2026 erschien GO-2026-6452 (excelize) — für ALLE Versionen ab 0, ohne eine mit
-# Fix. Damit war kein Push mehr möglich, und zwar für niemanden, obwohl am Programm nichts
-# faul war: Der verwundbare Weg ist bei uns nachweislich unerreichbar
-# (security/vuln-ausnahmen.json nennt den Nachweis).
-#
-# Die Alternative wäre gewesen, `--no-verify` zur Gewohnheit zu machen. Dann prüft
-# irgendwann niemand mehr etwas. Deshalb dieses Skript: EINE Ausnahme, benannt, begründet,
-# mit Nachweis und Wiedervorlage — und alles andere weiterhin rot.
+# `govulncheck ./...` kennt keine Ausnahme und wird rot, sobald irgendeine Schwachstelle
+# einen Aufruf unseres Codes trifft — auch eine ohne Fassung mit Fix, deren Weg hier
+# nachweislich unerreichbar ist (security/vuln-ausnahmen.json nennt den Nachweis). Dann ist
+# kein Push mehr möglich, und `--no-verify` würde zur Gewohnheit. Deshalb dieses Skript:
+# jede Ausnahme benannt, begründet, mit Nachweis und Wiedervorlage — und alles andere
+# weiterhin rot.
 #
 # Drei Arten, wie das Gate absichtlich rot wird:
 #   1. Eine Schwachstelle trifft unseren Code und steht NICHT in der Liste.
@@ -115,10 +111,9 @@ for id_, stellen in sorted(betroffen.items()):
         continue
     print("• %s — bekannt und begründet, Wiedervorlage %s" % (id_, a["wiedervorlage"]))
     print("  %s" % titel.get(id_, ""))
-    # Je Nachweis eine Zeile — und BEWUSST nicht im Format "datei.go: Text":
-    # actions/setup-go registriert in der CI einen Problem-Matcher für Go, der solche
-    # Zeilen für Compiler-Meldungen hält und daraus eine rote Markierung an einem
-    # grünen Job macht (17.09.2026 genau so passiert).
+    # Je Nachweis eine Zeile — und nicht im Format "datei.go: Text": actions/setup-go
+    # registriert in der CI einen Problem-Matcher für Go, der solche Zeilen für
+    # Compiler-Meldungen hält und daraus eine rote Markierung an einem grünen Job macht.
     for n in a["nachweis"]:
         print("  Nachweis: %s" % n)
 

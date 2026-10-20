@@ -8,17 +8,14 @@
  * ist am gebauten Bundle prüfbar und sonst nirgends — jsdom kennt keine Kaskade, und
  * `@media print` sieht man am Bildschirm ohnehin nicht.
  *
- * Anlass (24.08.2026): Damals gab es zusätzlich zwei A4-Sektionen (acht Kartenabbilder
- * auf einem Blatt), und der Rückseiten-Testdruck gab BEIDE Formen zugleich aus — die
- * Auswahl nach Betriebsart fehlte den Rückseiten, und `.print-rendered-output
- * { display: block !important }` holte die übrig gebliebene aktiv hervor. Der
- * Vorderseitendruck war nie betroffen, deshalb fiel es monatelang niemandem auf.
+ * Fehlt einer Sektion die Auswahl nach Betriebsart, druckt sie zusammen mit der richtigen
+ * aus, und `.print-rendered-output { display: block !important }` holt auch eine übrig
+ * gebliebene hervor; am Rückseiten-Testdruck, der selten läuft, fällt das lange niemandem
+ * auf. Je Seite gibt es eine Sektion (den Etikettenbogen erzeugt der Server als PDF). Das
+ * Gate bleibt: Sobald wieder eine zweite dazukommt, ist die Frage „welche druckt
+ * eigentlich?" sofort wieder da.
  *
- * Der A4-Bogen ist seitdem abgeschafft (an seiner Stelle steht der Etikettenbogen, der
- * serverseitig als PDF entsteht). Das Gate bleibt: Sobald wieder eine zweite Sektion
- * dazukommt, ist die Frage „welche druckt eigentlich?" sofort wieder da.
- *
- * Der Prüfaufbau baut das Markup NICHT nach, sondern liest die vier Klassenlisten aus
+ * Der Prüfaufbau baut das Markup nicht nach, sondern liest die vier Klassenlisten aus
  * Druckvorschau.svelte und die Svelte-Scope-Klasse aus dem gebauten CSS. Eine umbenannte
  * Sektion lässt das Gate deshalb abbrechen, statt weiter eine Aussage über Klassen zu
  * treffen, die es nicht mehr gibt.

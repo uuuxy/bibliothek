@@ -3,17 +3,11 @@
 # Das Tag-Gate: Ein v-Tag erzeugt ein Release und ein versioniertes Image nur, wenn ALLE
 # Pflicht-Prüfungen des getaggten Commits grün sind.
 #
-# Warum es dieses Skript gibt (21.09.2026): Die Pflichtliste stand zweimal wörtlich in den
-# Workflows — in release.yml und in docker-publish.yml —, samt derselben Auswertung. Zwei
-# Abschriften, die ein Test zusammenhielt. Beim Aufnehmen der Security-Jobs (entschieden am
-# 21.09.2026) hätten beide Kopien an drei Stellen zugleich anders werden müssen; stattdessen steht
-# die Liste jetzt EINMAL hier, und beide Workflows rufen dieses Skript. Nebenbei lässt sich
-# das Gate damit am echten Commit nachstellen, statt nur im nächsten Tag-Lauf.
+# Die Pflichtliste steht einmal, hier: release.yml und docker-publish.yml rufen beide dieses
+# Skript, statt je eine Abschrift samt Auswertung zu tragen. Nebenbei lässt sich das Gate so
+# am echten Commit nachstellen, statt nur im nächsten Tag-Lauf.
 #
-# Was sich gegenüber den eingebetteten Fassungen geändert hat:
-#
-#   1. Die vier Security-Jobs gehören dazu (govulncheck, gosec, npm audit, Trivy). Ein Tag
-#      auf einen Commit mit rotem Trivy erzeugte bis hierher trotzdem ein Release. Der
+#   1. Die vier Security-Jobs gehören dazu (govulncheck, gosec, npm audit, Trivy). Der
 #      übliche Einwand — eine fremde Lücke ohne Fix sperrt das Release — trifft hier nicht:
 #      Trivy läuft mit ignore-unfixed, govulncheck hat die Ausnahmeliste mit Wiedervorlage,
 #      npm audit läuft mit --omit=dev ab HIGH. Rot heißt bei allen: Es gibt einen Fix, der
@@ -21,11 +15,11 @@
 #   2. Eine Zeile je Name statt einer Liste mit Leerzeichen: GitHub führt einen Prüflauf
 #      unter dem Feld `name:` des Jobs („Go – govulncheck"), nicht unter dem Job-Schlüssel
 #      (`go-vuln-scan`) — und diese Namen tragen Leerzeichen.
-#   3. ALLE Läufe eines Namens müssen grün sein. Ein Commit kann denselben Namen zweimal
-#      tragen: einmal vom Push, einmal vom Wochenlauf (gesehen an 1bedaec7, 21.09.2026).
-#      Die alte Auswertung nahm den ersten Treffer — welcher das ist, legt niemand fest.
+#   3. Alle Läufe eines Namens müssen grün sein. Ein Commit kann denselben Namen zweimal
+#      tragen: einmal vom Push, einmal vom Wochenlauf. Welcher der erste Treffer ist, legt
+#      niemand fest.
 #   4. Die Abfrage blättert (--paginate, 100 je Seite). Die Vorgabe der Schnittstelle sind
-#      30 Einträge; ein Name auf Seite zwei hätte als „fehlt" gezählt.
+#      30 Einträge; ein Name auf Seite zwei zählte sonst als „fehlt".
 #
 # Die Liste wird von docs/umgebung_paritaet_test.go gegen ci.yml und security-scan.yml
 # gehalten, als MENGE in beide Richtungen: Ein neuer Job, den diese Liste nicht kennt, ist

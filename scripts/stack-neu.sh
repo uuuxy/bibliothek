@@ -1,19 +1,17 @@
 #!/bin/bash
 #
-# Baut den Entwicklungs-Stack neu und BELEGT, dass der Container danach wirklich den
+# Baut den Entwicklungs-Stack neu und belegt, dass der Container danach wirklich den
 # aktuellen Stand ausliefert.
 #
-# Warum das ein eigenes Skript ist (10.08.2026):
-# `docker compose up -d --build` bricht bei einem fehlgeschlagenen Build zwar ab, lässt
-# aber den ALTEN Container weiterlaufen. Wer die Ausgabe nur überfliegt — oder sie durch
-# `| tail -1` schickt —, sieht "Container Started" und hält den Stack für aktuell. Die
-# e2e-Suite misst dann eine Fassung, die es im Repo nicht mehr gibt: Sie war an dem Abend
-# grün für einen Knopf, den ich zwei Dateien vorher entfernt hatte.
+# Ein eigenes Skript, weil `docker compose up -d --build` bei einem fehlgeschlagenen Build
+# zwar abbricht, den alten Container aber weiterlaufen lässt. Wer die Ausgabe nur
+# überfliegt — oder sie durch `| tail -1` schickt —, sieht "Container Started" und hält den
+# Stack für aktuell; die e2e-Suite misst dann eine Fassung, die es im Repo nicht mehr gibt.
 #
 # Die Prüfung ist billig und eindeutig: Vite hängt an jeden Bundle-Namen einen Hash über
 # den Inhalt. Stimmt der Name des ausgelieferten Bundles mit dem des lokalen Builds
 # überein, hat der Container exakt diesen Stand. Ein Vergleich von Zeitstempeln oder
-# Image-IDs beantwortet die Frage NICHT — beide ändern sich auch, wenn sich am
+# Image-IDs beantwortet die Frage nicht — beide ändern sich auch, wenn sich am
 # ausgelieferten JavaScript nichts geändert hat, und ändern sich nicht, wenn ein
 # Cache-Layer den alten Stand konserviert.
 #
@@ -27,11 +25,10 @@ COMPOSE="docker-compose.local.yml"
 URL="http://localhost:8084"
 
 # Läuft gerade eine E2E-Suite gegen diesen Stack, liegt ihr Merkzettel (global-setup.js).
-# Ein Neubau JETZT zieht ihr den Container unter den Füßen weg: Die Hälfte der Specs misst
-# den alten Stand, die andere den neuen, und der Teardown findet eine andere Anlage vor
-# als das Setup. Am 07.09.2026 dreimal gespürt — meist war es eine ZWEITE Sitzung
-# (Antigravity/Claude parallel), nicht die eigene. Lieber hart abbrechen als eine halbe
-# Stunde der falschen Spur folgen.
+# Ein Neubau jetzt zieht ihr den Container unter den Füßen weg: Die Hälfte der Specs misst
+# den alten Stand, die andere den neuen, und der Teardown findet eine andere Anlage vor als
+# das Setup. Oft ist es eine zweite Sitzung, nicht die eigene. Lieber hart abbrechen als
+# eine halbe Stunde der falschen Spur folgen.
 MERKZETTEL="frontend/.e2e-hauptlieferant"
 if [ -f "$MERKZETTEL" ] && [ "${STACK_NEU_TROTZDEM:-}" != "1" ]; then
 	echo "✗ $MERKZETTEL liegt — es läuft eine E2E-Suite gegen diesen Stack (möglicherweise aus einer anderen Sitzung)." >&2
@@ -71,12 +68,11 @@ if [ -z "${IST:-}" ]; then
 	exit 1
 fi
 
-# Verglichen wird der INHALT, nicht der Dateiname. Vite rechnet die CSS-Prüfsumme in den
-# Namen des JS-Bundles ein, und das CSS weicht lokal ab: Tailwind scannt hier Dateien,
-# die es im Image nicht gibt (unversionierte Skripte, .env). Am 06./07.09.2026 schlug der
-# Namensvergleich deshalb zweimal Alarm — bei byte-identischem JavaScript. Die
-# Container-Fassung ist dabei die kanonische (so baut auch CI); wer lokal gegen den
-# Container misst, misst den richtigen Stand.
+# Verglichen wird der Inhalt, nicht der Dateiname. Vite rechnet die CSS-Prüfsumme in den
+# Namen des JS-Bundles ein, und das CSS weicht lokal ab: Tailwind scannt hier Dateien, die
+# es im Image nicht gibt (unversionierte Skripte, .env). Der Namensvergleich schlüge dann
+# Alarm bei byte-identischem JavaScript. Die Container-Fassung ist die kanonische (so baut
+# auch CI); wer lokal gegen den Container misst, misst den richtigen Stand.
 if [ "$IST" != "$SOLL" ]; then
 	IST_MD5=$(curl -sf "$URL/assets/$IST" | md5 -q 2>/dev/null || curl -sf "$URL/assets/$IST" | md5sum | cut -d' ' -f1)
 	SOLL_MD5=$(md5 -q "frontend/dist/assets/$SOLL" 2>/dev/null || md5sum "frontend/dist/assets/$SOLL" | cut -d' ' -f1)

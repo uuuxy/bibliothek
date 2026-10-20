@@ -14,17 +14,13 @@ echo "======================================================"
 echo "🛡️ PRE-PUSH HOOK: Starte Tests & Security-Scans..."
 echo "======================================================"
 
-# Die Datenbank der DB-Integrationstests: Steht der Entwicklungs-Stack, BENUTZEN wir ihn.
-#
-# Bis zum 06.09.2026 hat dieser Hook nur GEWARNT, dass die *_pg_test.go übersprungen
-# werden. Am selben Tag reichte das nicht: Eine Regeländerung (der Regel-Vorschlag des
-# LMF-Plans endet mit „Nachzügler"/„Aufräumen") zog den Mock-Test nach, den Postgres-Test
-# nicht — lokal grün, CI seit 14:40 rot, und der nächste Push hat das Rot geerbt. Die
-# Datenbank stand die ganze Zeit auf Port 5434 daneben.
+# Die Datenbank der DB-Integrationstests: Steht der Entwicklungs-Stack, benutzen wir ihn.
+# Ohne sie überspringen sich die *_pg_test.go, und eine Änderung, die nur der
+# Postgres-Test sieht, kommt lokal grün durch und macht erst CI rot.
 #
 # Gefunden wird sie über dieselbe Zeile, die die Warnung unten vorschlägt; scheitert das
-# (Stack aus, keine psql, Datenbank fehlt), bleibt es bei der Warnung. Der Hook zieht
-# NIE selbst ein Postgres hoch — das gehört nicht in einen Push.
+# (Stack aus, keine psql, Datenbank fehlt), bleibt es bei der Warnung. Der Hook zieht nie
+# selbst ein Postgres hoch — das gehört nicht in einen Push.
 [ -d /opt/homebrew/opt/libpq/bin ] && export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 if [ -z "${TEST_DATABASE_URL:-}" ] && [ -f .env ]; then
     PG_PASSWORT=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)
@@ -45,14 +41,9 @@ else
     exit 1
 fi
 
-# 1b. golangci-lint — das Gate, das in der CI VOR allem anderen steht.
-#
-# Am 12.09.2026 brach es an einem toten Typ in einer Testdatei ab (`rueckkehrAufbau`,
-# unused). Weil der Lint-Schritt in der CI vor den Tests kommt, hat er dabei auch die
-# Unit-Tests, das Deadcode-Gate und die Restore-Probe übersprungen: Ein ungenutzter Typ
-# hat die halbe Prüfung ausgeschaltet, und main stand knapp drei Stunden rot. Lokal war
-# davon nichts zu sehen — dieser Hook kannte den Linter nicht, und `go vet` meldet
-# ungenutzte TYPEN nicht (nur ungenutzte Variablen).
+# 1b. golangci-lint — das Gate, das in der CI vor allem anderen steht: Bricht es dort ab,
+# fallen Unit-Tests, Deadcode-Gate und Restore-Probe mit aus. `go vet` meldet ungenutzte
+# Typen nicht, nur ungenutzte Variablen.
 echo "[1b/6] Führe golangci-lint aus..."
 if command -v golangci-lint &> /dev/null; then
     if golangci-lint run --timeout=5m; then
@@ -70,15 +61,9 @@ fi
 # Wie viele Tests hat dieser Lauf gar nicht ausgeführt?
 #
 # Die DB-Integrationstests (*_pg_test.go) hängen an TEST_DATABASE_URL und überspringen
-# sich ohne sie — STILL, mit grünem "ok" daneben. Am 10.08.2026 stand deshalb acht
-# Stunden lang ein Test auf main, der genau das Gegenteil der geltenden Entscheidung
-# behauptete (KOLLEGIUM muss perform_actions behalten, während der Seed es bewusst
-# entzieht). Gemerkt hat es niemand: Lokal übersprang er sich, und in CI fiel er in
-# einen Lauf, in den keiner mehr geschaut hat.
-#
-# Der Hook fängt das nicht auf — dafür müsste er ein Postgres hochziehen, und das
-# gehört nicht in einen Push. Er sagt aber, was er NICHT geprüft hat. Ein Gate, das
-# seine eigene blinde Stelle verschweigt, ist schlimmer als keins.
+# sich ohne sie still, mit grünem "ok" daneben. Findet der Hook keine Datenbank, sagt er,
+# was er nicht geprüft hat. Ein Gate, das seine eigene blinde Stelle verschweigt, ist
+# schlimmer als keins.
 #
 # Gezählt werden die Dateien, nicht die Skips: Ohne -v druckt `go test` keine
 # Skip-Gründe, ein Zähler auf der Ausgabe stünde immer auf 0 — ein Wächter, der sich
@@ -88,17 +73,15 @@ if [ -z "${TEST_DATABASE_URL:-}" ] && [ "${PG_DATEIEN:-0}" -gt 0 ]; then
     echo -e "${YELLOW}⚠ ${PG_DATEIEN} Datei(en) mit DB-Integrationstests wurden NICHT ausgeführt — TEST_DATABASE_URL ist nicht gesetzt.${NC}"
     echo -e "${YELLOW}  Sie prüfen echtes SQL (Rechte-Seed, LUSD-Import, Backup-Restore). CI führt sie aus.${NC}"
     echo -e "${YELLOW}  Der Hook nimmt den Stack-Postgres von selbst, sobald er läuft und die Datenbank existiert.${NC}"
-    # Einmalig, danach existiert die Datenbank. Bewusst OHNE spitze Klammern: Ein
-    # Platzhalter in einer Copy-Paste-Zeile hat auf diesem Projekt schon einmal die
-    # Produktion umgelegt. Das Passwort holt sich der Befehl selbst aus der .env.
+    # Einmalig, danach existiert die Datenbank. Ohne spitze Klammern: Wer eine Zeile mit
+    # Platzhalter kopiert, führt den Platzhalter aus. Das Passwort holt sich der Befehl
+    # selbst aus der .env.
     echo -e "${YELLOW}    docker exec -i bibliothek-db-local psql -U postgres -c 'CREATE DATABASE bibliothek_test;'${NC}"
     echo '    TEST_DATABASE_URL="postgres://postgres:$(grep "^POSTGRES_PASSWORD=" .env | cut -d= -f2-)@127.0.0.1:5434/bibliothek_test?sslmode=disable" go test ./...'
 fi
 
-# 2. Typpruefung Frontend (svelte-check)
-# jsconfig.json setzt checkJs, und 200 von 256 Dateien tragen JSDoc-Typen — bis zum
-# 07.08.2026 hat die aber NIEMAND geprueft. Der erste Lauf fand 64 Meldungen, darunter
-# einen Typ, der seit Migration 066 falsch war (Supplier ohne ist_hauptlieferant).
+# 2. Typpruefung Frontend (svelte-check): jsconfig.json setzt checkJs, und die JSDoc-Typen
+# prüft vor dem Push sonst niemand.
 echo "[2/6] Führe svelte-check (Frontend-Typen) aus..."
 cd frontend || exit 1
 if npm run --silent check; then
@@ -109,10 +92,7 @@ else
 fi
 cd ..
 
-# 2b. Vitest — die Frontend-Unit-Tests. Bis 26.08.2026 liefen sie NUR in der CI:
-# Ein Push, der menu.test.js rot machte (Türliste am Menüpunkt „Einstellungen" hinkte
-# kategorien.js hinterher), kam durch alle lokalen Gates und stand zwei Läufe lang als
-# rotes main da. 14 Sekunden hier sparen den roten Haken dort.
+# 2b. Vitest — die Frontend-Unit-Tests: 14 Sekunden hier sparen einen roten Lauf auf main.
 echo "[2b/6] Führe Vitest (Frontend-Unit-Tests) aus..."
 cd frontend || exit 1
 if npx vitest run --silent >/dev/null 2>&1; then
@@ -137,9 +117,9 @@ cd ..
 #
 # Über das Gate-Skript statt direkt: Es kennt eine benannte Ausnahmeliste
 # (security/vuln-ausnahmen.json) und wird trotzdem rot bei allem, was nicht drinsteht,
-# bei einer abgelaufenen Wiedervorlage und bei einer Ausnahme, die niemand mehr braucht.
-# Anlass war GO-2026-6452 am 16.09.2026: eine Schwachstelle ohne heile Fassung, die jeden
-# Push blockierte, obwohl der verwundbare Weg hier nachweislich unerreichbar ist.
+# bei einer abgelaufenen Wiedervorlage und bei einer Ausnahme, die niemand mehr braucht. Eine
+# Schwachstelle ohne heile Fassung, deren Weg hier nachweislich unerreichbar ist, blockiert
+# so nicht jeden Push.
 echo "[4/6] Führe govulncheck (Backend) aus..."
 if ./scripts/govulncheck-gate.sh; then
     echo -e "${GREEN}✓ govulncheck bestanden.${NC}"
@@ -163,10 +143,9 @@ fi
 
 # 5. Trivy (Container Security)
 #
-# Mit Zeitlimit, seit der Scan am 07.09.2026 einen Push 50 Minuten lang festhielt:
-# `trivy config` holt vor der Prüfung sein Regelbündel aus einer Registry, und dieser
-# Abruf hing ohne Ausgabe und ohne Abbruch. Die Prüfung SELBST braucht Sekunden — sie
-# lief anschliessend mit dem Cache in unter zehn durch.
+# Mit Zeitlimit: `trivy config` holt vor der Prüfung sein Regelbündel aus einer Registry,
+# und dieser Abruf kann ohne Ausgabe und ohne Abbruch hängen. Die Prüfung selbst braucht mit
+# dem Cache Sekunden.
 #
 # Deshalb zwei Stufen statt eines unbegrenzten Wartens: erst der normale Lauf mit
 # Zeitlimit, und wenn der nicht rechtzeitig fertig wird, derselbe Scan mit dem
@@ -219,8 +198,8 @@ echo "[6/6] Führe deadcode (unerreichbarer Code) aus..."
 if ./scripts/deadcode_gate.sh; then
     echo -e "${GREEN}✓ deadcode: kein unerreichbarer Code.${NC}"
 else
-    # Das Skript nennt den Grund selbst (unerreichbarer Code ODER Werkzeug fehlt)
-    # und schreibt ihn nach stderr. Es überspringt sich bewusst NIE still.
+    # Das Skript nennt den Grund selbst (unerreichbarer Code oder Werkzeug fehlt) und
+    # schreibt ihn nach stderr. Es überspringt sich nie still.
     echo -e "${RED}✗ deadcode-Gate fehlgeschlagen! Push abgebrochen.${NC}"
     exit 1
 fi

@@ -26,26 +26,18 @@ frontend/dist-ssr/
 # User uploads & data
 uploads/
 
-# Editor-Sicherungen. docker-compose.yml.save und .env.save entstanden auf der
-# Produktion ungefragt und tragen denselben Inhalt wie das Original — im Fall von
-# .env.save hieß das: JWT_SECRET, SMTP_PASSWORD und POSTGRES_PASSWORD im Klartext.
+# Editor-Sicherungen wie docker-compose.yml.save und .env.save entstehen ungefragt und
+# tragen denselben Inhalt wie das Original — bei .env.save also JWT_SECRET, SMTP_PASSWORD
+# und POSTGRES_PASSWORD im Klartext.
 *.save
 *.save.[0-9]*
 
 # Environment configurations
 #
-# Erlaubnisliste statt Aufzählung: ALLES was .env heißt ist ignoriert, und nur
-# .env.example ist ausgenommen. Umgekehrt herum war es eine Aufzählung von
-# .env.bak*/.env.backup*/.env.*.bak — die deckte genau die Namen ab, an die jemand
-# gedacht hatte.
-#
-# Auf der Produktion lagen am 06.08.2026 drei Dateien, an die niemand gedacht hatte:
-# .env.save, .env.save.1 und .env.save.2 (angelegt von einem Editor), jede mit
-# JWT_SECRET, SMTP_PASSWORD und POSTGRES_PASSWORD im Klartext. `git status` führte
-# sie als untracked — ein `git add .` hätte sie in ein öffentliches Repository
-# geschoben.
-#
-# Eine Ausnahmeliste schützt nur vor dem, was man beim Schreiben schon kannte.
+# Erlaubnisliste statt Aufzählung: Alles, was .env heißt, ist ignoriert, und nur
+# .env.example ist ausgenommen. Eine Aufzählung (.env.bak*, .env.backup* …) deckte nur die
+# Namen ab, an die jemand gedacht hat; ein Editor legt .env.save, .env.save.1 … an, und
+# ein `git add .` schöbe sie mit allen Geheimnissen in ein öffentliches Repository.
 .env*
 !.env.example
 *.local
@@ -62,17 +54,12 @@ Thumbs.db
 
 # Database Backups & Archives
 #
-# Die *.sql-Regel gab es schon; sie greift aber NUR bei der Endung .sql. Die echten
-# Sicherungen heißen .sql.gz und .sql.gz.enc und waren damit von keiner Regel erfasst.
-#
-# Auf der Produktion lagen am 06.08.2026 **82 Dateien mit 174 MB** in backups/ —
-# unverschlüsselte pg_dumps, angelegt von update.sh vor jedem Deploy und von
-# scripts/backup.sh. (Beide verschlüsseln seit dem 23.08.2026; im Ausnahmefall entsteht
-# weiterhin Klartext, und die .enc-Dateien gehören ebenso wenig ins Repository.) Jede enthält die komplette schueler-Tabelle: Klarnamen, Adressen
+# Die *.sql-Regel greift nur bei der Endung .sql; die Sicherungen heißen .sql.gz und
+# .sql.gz.enc. update.sh und scripts/backup.sh legen sie in backups/ ab, im Ausnahmefall
+# auch im Klartext, und jede enthält die komplette schueler-Tabelle: Klarnamen, Adressen
 # und Ausleihhistorie von Minderjährigen (siehe die Warnung in
-# docs/resilience_and_recovery.md, Abschnitt 1b). `git status` führte backups/ als
-# untracked auf — ein `git add .` hätte diese Daten in ein öffentliches Repository
-# geschoben. Die Doku wusste, dass die Dateien schutzbedürftig sind; .gitignore nicht.
+# docs/resilience_and_recovery.md, Abschnitt 1b). Auch verschlüsselt gehören sie nicht
+# in ein öffentliches Repository.
 *.sql
 !schema.sql
 !migrations/

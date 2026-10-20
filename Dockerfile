@@ -15,11 +15,10 @@ RUN npm run build
 # ==============================================================================
 # Stage 2: Build the Go backend
 # ==============================================================================
-# Patch-genau gepinnt, nicht "1.27": go.mod verlangt exakt diese Toolchain, und
-# CVE-Fixes stecken in Stdlib-Patches — ein Build mit einem aelteren Tag kompiliert
-# die verwundbaren Pakete ins Binary (GOTOOLCHAIN=local laedt nichts nach). Beim
-# naechsten Go-Bump go.mod UND diese Zeile ziehen — seit 31.08.2026 erzwingt
-# docs/umgebung_paritaet_test.go die Paarung (Dependabot hebt nur diese Zeile!).
+# Patch-genau gepinnt, nicht "1.27": go.mod verlangt genau diese Toolchain, und CVE-Fixes
+# stecken in Stdlib-Patches — ein Build mit einem älteren Tag kompiliert die verwundbaren
+# Pakete ins Binary (GOTOOLCHAIN=local lädt nichts nach). Dependabot hebt nur diese Zeile;
+# docs/umgebung_paritaet_test.go hält sie gleich mit go.mod.
 FROM golang:1.27.2-alpine AS backend-builder
 WORKDIR /app
 
@@ -41,7 +40,6 @@ COPY jobs/ ./jobs/
 COPY migrations/ ./migrations/
 COPY repository/ ./repository/
 COPY sse/ ./sse/
-COPY docs/ ./docs/
 COPY mailservice/ ./mailservice/
 COPY pdf/ ./pdf/
 COPY internal/ ./internal/
@@ -54,31 +52,19 @@ RUN apk add --no-cache build-base
 # Compile static Go binary with CGO enabled
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o main main.go
 
-# Der Schlüsselwechsel gehört dorthin, wo die Daten sind.
-#
-# Ohne dieses Binary war das Werkzeug auf dem Server nicht ausführbar: Der Runner
-# enthält kein Go, und cmd/ lag nicht einmal im Build-Kontext. Ein Werkzeug, das man
-# genau dort nicht starten kann, wo man es braucht, ist keines — aufgefallen beim
-# ersten echten Einsatz auf dem Schulserver am 06.08.2026.
-#
-# Kein zusätzliches Risiko: Das Kommando liest APP_ENCRYPTION_KEY aus der Umgebung,
-# die im Container ohnehin gesetzt ist. Wer eine Shell im Container hat, hat den
-# Schlüssel bereits.
+# Der Schlüsselwechsel gehört dorthin, wo die Daten sind: Der Server hat kein Go, ein
+# Werkzeug außerhalb des Images ließe sich dort nicht starten. Kein zusätzliches Risiko: Das
+# Kommando liest APP_ENCRYPTION_KEY aus der Umgebung, die im Container ohnehin gesetzt ist.
+# Wer eine Shell im Container hat, hat den Schlüssel bereits.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o rotate-encryption-key ./cmd/rotate-encryption-key
-# Die beiden Backup-Werkzeuge. Beide gehören INS Image — im Ernstfall hat der Schulserver
-# kein Go, und docs/resilience_and_recovery.md behauptete bis 22.08.2026, restore-backup
-# läge dort bereits (Prüfung 22.08., B).
-#
-# CGO_ENABLED=0, seit die Krypto in internal/backupkrypto liegt (23.08.2026). Vorher stand
-# hier CGO_ENABLED=1: cmd/restore-backup importierte jobs, und jobs zieht über seine
-# übrigen Dateien die WebP-Bibliothek (cgo) mit — ohne cgo brach der Build. Die Krypto
-# selbst hängt nur an der Standardbibliothek und scrypt; ein zweiter cgo-Durchlauf je
-# Deploy war der Preis für eine Abhängigkeit, die das Werkzeug nie brauchte.
+# Die beiden Backup-Werkzeuge gehören aus demselben Grund ins Image. Sie bauen ohne cgo: Sie
+# binden nur internal/backupkrypto ein, das an der Standardbibliothek und scrypt hängt, nicht
+# jobs mit der WebP-Bibliothek.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/restore-backup
 # Gegenstück: verschlüsselt einen komprimierten Dump von stdin nach stdout. Die beiden
-# Shell-Wege (update.sh, scripts/backup.sh) dumpen am nächtlichen Job vorbei und legten
-# den Klartext offen ab (Befund A5); mit diesem Werkzeug im Container verschlüsseln sie
-# über dieselbe Ableitung wie der Job — ohne den Schlüssel je an den Host zu reichen.
+# Shell-Wege (update.sh, scripts/backup.sh) dumpen am nächtlichen Job vorbei; mit diesem
+# Werkzeug im Container verschlüsseln sie über dieselbe Ableitung wie der Job, ohne den
+# Schlüssel je an den Host zu reichen.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o encrypt-backup ./cmd/encrypt-backup
 
 # ==============================================================================
@@ -89,27 +75,14 @@ WORKDIR /app
 
 # ca-certificates: sichere ausgehende Verbindungen (Cover-/Metadaten-APIs).
 #
-# postgresql-client: liefert pg_dump, das jobs/backup.go per exec aufruft. Ohne das
-# Paket schlug JEDER nächtliche Backup-Lauf bereits beim Start des Prozesses fehl
-# ("executable file not found in $PATH") — auch mit korrekt gesetztem
-# BACKUP_ENCRYPTION_KEY. Das Backup war damit im Container-Betrieb nie möglich,
-# und der Wächter in api/system/backup_stand.go stand dauerhaft auf "critical", ohne dass
-# das Setzen des Schlüssels daran etwas geändert hätte.
+# postgresql-client: pg_dump für jobs/backup.go und psql für die Restore-Probe. Die
+# Hauptversion ist die des Servers (docker-compose.yml): Ein älterer Client verweigert einen
+# neueren Server, ein neuerer schreibt Einstellungen in den Dump (`SET transaction_timeout`
+# ab 17), die ein älterer Server unter ON_ERROR_STOP nicht einspielt. Beim Upgrade des
+# Servers diese Zeile mitziehen, sonst schlägt die Restore-Probe am ersten Sonntag Alarm.
 #
-# VERSIONIERT auf die Major-Version des Servers (docker-compose.yml), nicht "neuester
-# Client bedient beide" (so stand es hier bis zum 21.08.2026 — und das war nur die halbe
-# Wahrheit): pg_dump 17 DUMPT einen älteren Server zwar, schreibt aber
-# `SET transaction_timeout` (GUC ab PG 17) in den Dump — und der ließ sich damit unter
-# ON_ERROR_STOP nicht mehr in den damaligen postgres:15 einspielen. Die Backups der
-# Produktion waren monatelang mit dem dokumentierten Restore-Weg NICHT wiederherstellbar;
-# gefunden hat es die Restore-Probe (jobs/restore_probe.go) an ihrem ersten Testlauf.
-# Umgekehrt gilt: ein ÄLTERER Client verweigert einen neueren Server komplett.
-# Client-Major == Server-Major ist die einzige Kombination ohne beide Fallen.
-# Beim nächsten Server-Upgrade diese Zeile mitziehen — die Probe schlägt sonst am
-# ersten Sonntag Alarm. Seit 31.08.2026: Server 18 (docker-compose.yml) → Client 18.
-# apk upgrade zuerst: Das Basisimage trägt die Paketstände seines Release-Tags; Sicherheits-
-# Fixes (z. B. openssl 3.5.8, CVE-2026-14456) kommen nur über das Upgrade herein. Ohne diese
-# Zeile war der Trivy-Scan auf main rot, obwohl kein eigener Code betroffen war (26.08.2026).
+# apk upgrade zuerst: Das Basisimage trägt die Paketstände seines Release-Tags;
+# Sicherheits-Fixes kommen nur über das Upgrade herein.
 RUN apk --no-cache upgrade && apk --no-cache add ca-certificates tzdata postgresql18-client
 
 # Copy database schema file (for reference / first-run init)
@@ -124,8 +97,8 @@ COPY --from=backend-builder /app/main .
 # Wartungswerkzeug: Schlüsselwechsel ohne Datenverlust (docs/SECURITY.md).
 #   docker compose exec backend ./rotate-encryption-key -neu <neu> -pruefen
 COPY --from=backend-builder /app/rotate-encryption-key .
-# Wiederherstellung (docs/resilience_and_recovery.md 2a) — die Argumente sind POSITIONAL,
-# hier stand bis zum 23.08.2026 eine -in/-out-Form, die das Werkzeug nie kannte:
+# Wiederherstellung (docs/resilience_and_recovery.md 2a); die Argumente stehen an fester
+# Stelle, ohne Schalter:
 #   docker compose exec backend ./restore-backup backups/<datei>.sql.gz.enc /tmp/dump.sql
 COPY --from=backend-builder /app/restore-backup .
 # Verschlüsselung für die Shell-Wege (docs/resilience_and_recovery.md 1b):
@@ -137,20 +110,10 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Create non-privileged user, create the volume mount points, and give ownership.
 #
-# BEIDE Verzeichnisse müssen hier existieren — /app/uploads UND /app/backups. Docker
-# übernimmt beim ersten Mounten eines leeren Named Volume Inhalt UND Eigentümer aus dem
-# Image. Fehlt das Verzeichnis im Image, legt Docker es selbst an: als root. Der Container
-# läuft aber als appuser (uid 1000) und kann dann nie hineinschreiben.
-#
-# Genau das war auf der Produktion der Fall (gefunden am 06.08.2026): /app/backups fehlte
-# hier, das Volume gehörte root:root mit drwxr-xr-x, und der nächtliche Backup-Job scheiterte
-# seit Anlegen des Volumes am 04.08. an "permission denied". BACKUP_ENCRYPTION_KEY war
-# gesetzt, pg_dump lag im Image — es fehlte nur das Schreibrecht. Der Job protokolliert den
-# Fehler (jobs/backup.go: "writing backup file failed"), aber jeder Container-Neustart
-# verwischt die Logzeile, und niemand liest sie.
-#
-# /app/uploads funktionierte deshalb, weil es hier steht. Der Unterschied zwischen beiden
-# war eine vergessene Zeile, kein Konzept.
+# Beide Verzeichnisse müssen im Image existieren: Docker übernimmt beim ersten Mounten eines
+# leeren Named Volume Inhalt und Eigentümer aus dem Image. Fehlt das Verzeichnis, legt Docker
+# es als root an, und der Container, der als appuser (uid 1000) läuft, kann nie
+# hineinschreiben; der nächtliche Backup-Job scheitert dann an "permission denied".
 RUN adduser -D appuser && \
     mkdir -p /app/uploads /app/backups && \
     chown -R appuser:appuser /app
@@ -163,27 +126,17 @@ EXPOSE 8081
 
 # Environment variables defaults
 #
-# COOKIE_SECURE steht hier bewusst NICHT mehr: Ein im Image gebackenes "false" ist
-# ein gesetzter Wert, und ermittleCookieSecure() (main.go) greift seine sichere
-# Vorgabe nur bei NICHT gesetzter Variable. Wer das Image ohne Compose startete,
-# verlor damit still das Secure-Flag am Sitzungscookie. Ungesetzt gelassen liefert
-# APP_ENV=local/development/test weiterhin false, alles andere true.
+# COOKIE_SECURE steht hier nicht: Ein im Image gesetztes "false" ist ein gesetzter Wert, und
+# ermittleCookieSecure() (main.go) greift seine sichere Vorgabe nur bei ungesetzter
+# Variable. Ungesetzt liefert APP_ENV=local/development/test false, alles andere true.
 ENV PORT=8081
 ENV DATABASE_URL=""
 
-# Welcher Commit steckt in diesem Image?
-#
-# Am 11.08.2026 stand auf dem Produktivserver `git pull` durch, `./update.sh` aber nicht:
-# Das Arbeitsverzeichnis zeigte den neuen Commit, das laufende Image war zehn Stunden alt
-# und lieferte den Stand von vorgestern aus. Beide Gesundheitsprüfungen — Docker-Healthcheck
-# und /health von aussen — meldeten dabei völlig zu Recht "gesund". Gesund heisst nicht
-# aktuell, und keine der beiden Fragen war die richtige.
-#
-# Mit diesem Wert lässt sich die richtige Frage stellen: Läuft der Container, der aus DEM
-# Commit gebaut wurde, der gerade im Arbeitsverzeichnis liegt? update.sh vergleicht nach
-# dem Deploy `git rev-parse HEAD` damit. Ein Cache-Treffer beim Build ist dabei kein
-# Problem — das Build-Argument ändert sich mit jedem Commit und bricht den Cache genau
-# dieser Schicht.
+# Welcher Commit steckt in diesem Image? Gesund heißt nicht aktuell: Nach `git pull` ohne
+# `./update.sh` melden Healthcheck und /health "gesund", während ein altes Image läuft.
+# update.sh vergleicht nach dem Deploy `git rev-parse HEAD` mit diesem Wert. Ein
+# Cache-Treffer beim Build stört nicht — das Build-Argument ändert sich mit jedem Commit und
+# bricht den Cache genau dieser Schicht.
 #
 # Leer gelassen, wenn niemand es setzt: Ein lokaler `docker build` ohne Argument soll
 # weiterhin funktionieren, und update.sh sagt dann "unbekannt" statt zu behaupten, der
@@ -191,15 +144,11 @@ ENV DATABASE_URL=""
 ARG GIT_COMMIT=""
 ENV GIT_COMMIT=${GIT_COMMIT}
 
-# Zwei Änderungen gegenüber "--interval=30s ... http://localhost":
-#
-#  * 127.0.0.1 statt localhost. Busybox-wget nimmt die erste Adresse, die die Auflösung
-#    liefert — auf Hosts mit IPv6 im Container ist das ::1, und wenn dort niemand
-#    lauscht, gilt der Container als krank, obwohl die Anwendung über IPv4 tadellos
-#    antwortet. Die Adresse ist hier bekannt; sie muss nicht aufgelöst werden.
-#  * start-period + kürzeres Intervall. Ohne start-period beginnt die erste Prüfung
-#    erst nach einem vollen Intervall; bis dahin steht "starting", und ein Deploy-Skript,
-#    das 60 s wartet, sieht ein gesundes System nie grün werden.
+# 127.0.0.1 statt localhost: Busybox-wget nimmt die erste Adresse der Auflösung; auf Hosts
+# mit IPv6 im Container ist das ::1, und lauscht dort niemand, gälte der Container als krank,
+# obwohl die Anwendung über IPv4 antwortet. start-period und kurzes Intervall: Ohne
+# start-period beginnt die erste Prüfung erst nach einem vollen Intervall, und ein
+# Deploy-Skript, das 60 s wartet, sähe den Container nie gesund werden.
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:$PORT/health || exit 1
 

@@ -20,14 +20,13 @@ export default defineConfig({
 		// Lücken von jsdom, einmal gestopft — siehe vitest.setup.js.
 		setupFiles: ['./vitest.setup.js'],
 		globals: true,
-		// Coverage als lcov für SonarQube. Ohne diesen Bericht zählt dort JEDE Frontend-Zeile
-		// als ungedeckt — SonarQube wertet fehlende Coverage als 0 %, nicht als „unbekannt“
-		// (dieselbe Falle wie 2026-08-04 auf der Go-Seite). Seit die erste Analyse eine
-		// Vergleichsbasis liefert, ist das Quality Gate scharf und riss genau daran.
+		// Coverage als lcov für SonarQube. Ohne diesen Bericht zählt dort jede Frontend-Zeile
+		// als ungedeckt — SonarQube wertet fehlende Coverage als 0 %, nicht als „unbekannt“ —,
+		// und das Quality Gate reißt daran.
 		//
 		// Gemessen wird nur ausgelieferter Code. Ausgenommen sind Testdateien selbst, der
 		// Einstiegspunkt und die Hygiene-Ratschen (die lesen den Quelltext, statt Verhalten
-		// zu haben). .svelte steht bewusst NICHT im include: SonarQube kann Svelte ohnehin
+		// zu haben). .svelte steht nicht im include: SonarQube kann Svelte ohnehin
 		// nicht parsen, ein lcov-Eintrag dafür wäre eine Zahl ohne Gegenstück im Bericht.
 		coverage: {
 			provider: 'v8',

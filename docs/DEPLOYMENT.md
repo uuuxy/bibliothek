@@ -94,13 +94,12 @@ cd /root/bibliothek
 > Host-Teil, ein `+` verschiebt den Rest — der Server startet dann nicht mehr:
 >
 > ```
-> failed to parse as URL (invalid port ":sGWO+wgLlTIj" after host)
+> failed to parse as URL (invalid port "…" after host)
 > ```
 >
-> Ein Passwortwechsel läuft dann scheinbar sauber durch (`ALTER ROLE`, Container „Started",
-> `pruefe_secrets.sh` meldet **alles grün**), und die Anwendung ist trotzdem unten: Die
-> Konfigurationsprüfung liest die Datei, nicht die Verbindung; sie kann diesen Fehler nicht
-> sehen.
+> Ein Passwortwechsel läuft dann scheinbar sauber durch (`ALTER ROLE`, Container „Started"),
+> und die Anwendung ist trotzdem unten. `scripts/pruefe_secrets.sh` meldet ein solches
+> Zeichen in `POSTGRES_PASSWORD` als kritisch.
 >
 > `-hex` liefert nur `0-9a-f` und ist in jeder URL unverändert gültig. Für die anderen
 > Werte wäre Base64 unschädlich, aber eine Regel ohne Ausnahme ist leichter zu befolgen

@@ -1,15 +1,14 @@
 -- repair_fach_kategorie.sql
 --
--- Einmalige Datenreparatur für Bestände, die VOR dem 03.09.2026 über den CSV-/Excel-
--- Bestandsimport geladen wurden.
+-- Einmalige Datenreparatur für Bestände, die der CSV-/Excel-Bestandsimport geladen hat,
+-- bevor er die Kategorie nur noch als ganzes Fach übernahm (lmf.FachExakt).
 --
 -- Die Kategorie-Spalte der aus dem Littera-PDF gewonnenen Bestands-CSV enthält keine
 -- Fächer, sondern Standorttexte („Buch Pg/Kaf 078829 1. Aufl.", „Buch Deu 6/Cha 126
--- Exemplare 1. Auflage"). Der Import nahm die Spalte ungeprüft als Fach-Rückfall: Jeder
--- dieser Texte wurde eine eigene Zeile in systematik_kategorien und stand als „Fach" am
--- Titel — im Portal-Reiter Schulbücher eine Kachel je Titel, in der Fach-Auswahl der
--- Buchmaske 1.677 Einträge. Seit 03.09.2026 wird die Kategorie nur noch übernommen, wenn
--- sie als Ganzes ein Fach benennt (lmf.FachExakt); dieses Skript räumt den Altbestand ab.
+-- Exemplare 1. Auflage"). Nimmt ein Import die Spalte ungeprüft als Fach-Rückfall, wird
+-- jeder dieser Texte eine eigene Zeile in systematik_kategorien und ein „Fach" am Titel —
+-- im Portal-Reiter Schulbücher eine Kachel je Titel, in der Fach-Auswahl der Buchmaske
+-- über tausend Einträge. Dieses Skript räumt den Altbestand ab.
 --
 -- Regeln (bewusst konservativ):
 --   1. Fach am Titel bleibt nur, wenn es ein kanonisches Fach ist (Liste unten) oder eine
@@ -37,9 +36,8 @@
 --          < scripts/repair_fach_kategorie.sql
 --
 -- Die letzte Zeile der Ausgabe sagt, was passiert ist: „ROLLBACK" = Vorschau,
--- „COMMIT" = geschrieben. Bis zum 03.09.2026 stand hier stattdessen die Bitte, ROLLBACK
--- von Hand gegen COMMIT zu tauschen — der Lauf sah dann aus wie ein Erfolg, änderte aber
--- nichts, und die Oberfläche zeigte danach unverändert die alten Daten.
+-- „COMMIT" = geschrieben. Kein Tausch von Hand: Ein Lauf, der versehentlich mit ROLLBACK
+-- endet, sieht aus wie ein Erfolg und ändert nichts.
 --
 -- VORHER ein Backup ziehen: pg_dump -U postgres -d bibliothek | gzip > backup.sql.gz
 -- (Ein solches Backup lässt sich NICHT einfach über die laufende Datenbank zurückspielen:

@@ -19,7 +19,7 @@ on:
 permissions:
   contents: read
 
-# Festgeschrieben seit dem 28.09.2026, in allen vier Workflows:
+# In allen vier Workflows:
 # - Jede Action per Commit-SHA, die Version als Kommentar dahinter. Einen Tag wie `v7` kann
 #   der Eigentümer auf anderen Code umhängen (so im März 2025 bei tj-actions/changed-files),
 #   einen SHA nicht. Dependabot (github-actions) hebt SHA und Kommentar gemeinsam.
@@ -30,20 +30,10 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
-# Push-Serien: nur der jeweils neueste Lauf pro Branch zählt —
-# veraltete Läufe werden abgebrochen und verbrennen keine Minuten.
-# Laufende Läufe abbrechen — aber NICHT auf main.
-#
-# Auf einem Zweig ist das richtig: Wer dreimal hintereinander nachschiebt, will das
-# Ergebnis des letzten Standes, nicht drei halbe Läufe. Auf main kehrt sich das um.
-# Am 23.08.2026 arbeiteten mehrere Sitzungen gleichzeitig im selben Repo und pushten
-# etwa alle fünf Minuten; ein CI-Lauf braucht sechs. Jeder Lauf wurde vom nächsten Push
-# abgebrochen — drei hintereinander (e0ec7bca, 77ee14b9, …), und main war in dieser Zeit
-# faktisch ungeprüft. Aufgefallen ist es nur, weil davor drei Läufe ROT waren und der
-# Fix danach nie zu Ende lief.
-#
-# Ein Gate, das nie fertig wird, ist kein Gate — und "cancelled" liest sich in der Liste
-# wie "war halt nichts", nicht wie "wir wissen es nicht".
+# Auf einem Zweig bricht ein neuer Push den laufenden Lauf ab: Wer dreimal nachschiebt, will
+# das Ergebnis des letzten Standes. Auf main nicht: Pushen mehrere Sitzungen schneller nach,
+# als ein Lauf braucht, bräche jeder den vorigen ab, und main bliebe ungeprüft. Ein Gate, das
+# nie fertig wird, ist kein Gate, und "cancelled" liest sich wie "war nichts".
 #
 # Der Handstart hat eine eigene Gruppe. In der Gruppe von main wartete er hinter dem
 # laufenden Lauf, und von wartenden Läufen behält GitHub je Gruppe nur den jüngsten: Ein
@@ -53,8 +43,8 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  # Workflow-Syntax wird geprüft, BEVOR ein Tippfehler erst beim nächsten v-Tag auffällt
-  # (release.yml/docker-publish.yml laufen nur dort; Prüfung 22.08.2026).
+  # Prüft die Syntax aller Workflows bei jedem Push: release.yml läuft nur an einem v-Tag, ein
+  # Tippfehler darin fiele sonst erst dort auf.
   actionlint:
     runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
     steps:
@@ -75,10 +65,9 @@ jobs:
       # Ohne Passwort — siehe POSTGRES_HOST_AUTH_METHOD unten.
       TEST_DATABASE_URL: postgres://postgres@localhost:5432/bibliothek_test?sslmode=disable
 
-    # Postgres 18 = Produktionsversion (docker-compose.yml; Upgrade 15→18 am
-    # 31.08.2026). Die Constraint-Tests prüfen echtes Postgres-Verhalten (z. B. dass
-    # ein CHECK nur bei FALSE greift, nicht bei NULL) — das lässt sich mit pgxmock
-    # prinzipiell nicht nachbilden.
+    # Postgres 18 wie im Betrieb (docker-compose.yml). Die Constraint-Tests prüfen echtes
+    # Postgres-Verhalten (z. B. dass ein CHECK nur bei FALSE greift, nicht bei NULL) — das
+    # lässt sich mit pgxmock prinzipiell nicht nachbilden.
     services:
       postgres:
         image: postgres:18-alpine
@@ -110,10 +99,8 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
 
-    # Formatierung: Bis zum 17.09.2026 lief `gofmt -l` NUR im pre-commit-Hook. Ein Hook
-    # greift aber nur bei dem, der ihn installiert hat — bei einem Fremd-PR, nach
-    # `--no-verify` oder aus einem anderen Werkzeug heraus lief er nicht. Dieselbe
-    # Begründung wie bei ESLint (10.08.2026), nur für Go.
+    # Formatierung auch hier und nicht nur im pre-commit-Hook: Ein Hook greift nur bei dem,
+    # der ihn installiert hat, nicht bei einem fremden Pull Request oder nach `--no-verify`.
     - name: Formatierung (gofmt)
       run: |
         set -euo pipefail
@@ -133,9 +120,8 @@ jobs:
         version: v2.14.0
         args: --timeout=5m
 
-    # Erreichbarkeitsanalyse gegen toten Code (Anlass: UpsertBookTitle, 16.08.2026).
-    # Das Schwester-Gate für tote INTERFACE-Türen — die deadcode nicht sehen kann —
-    # ist tote_tueren_test.go und läuft im normalen Testschritt mit.
+    # Erreichbarkeitsanalyse gegen toten Code. Tote Methoden einer Schnittstelle sieht
+    # deadcode nicht; die findet tote_tueren_test.go im normalen Testschritt.
     - name: Deadcode-Gate
       run: ./scripts/deadcode_gate.sh
 
@@ -146,9 +132,8 @@ jobs:
     # eine bestandene Probe aussieht. Deshalb hier ausdrücklich installieren und die
     # Version prüfen: pg_dump verweigert die Arbeit an einem NEUEREN Server.
     - name: Install PostgreSQL client (Restore-Probe)
-      # timeout-minutes, weil dieser Schritt am 19.08.2026 ZWEIMAL an einem stillen
-      # Paketspiegel hing (>20 min statt Sekunden) — ohne Limit wartet der Job bis
-      # zum 6-Stunden-Abbruch und sieht dabei aus wie "läuft noch".
+      # Ohne Frist hielte ein stiller Paketspiegel den Job bis zum Abbruch nach sechs
+      # Stunden, und so lange sähe er aus wie "läuft noch".
       timeout-minutes: 5
       run: |
         # `command -v` allein reicht nicht: Ein Runner-Abbild kann einen älteren Client
@@ -183,28 +168,15 @@ jobs:
       shell: bash
       run: go test -v -race ./... 2>&1 | tee /tmp/gotest.log
 
-    # Ein übersprungener Prüfpunkt sieht aus wie ein bestandener.
+    # Was hat dieser Lauf nicht ausgeführt? Ein übersprungener Prüfpunkt sieht aus wie ein
+    # bestandener. Ob eine Prüfung laufen muss, entscheiden die Guards im Go-Code
+    # (db/pgtest_guard_test.go für die DB-Invarianten, jobs/restore_drill_guard_test.go für
+    # den Notfallplan); sie stehen neben dem, was sie bewachen.
     #
-    # Alle *_pg_test.go hängen an TEST_DATABASE_URL, die Restore-Probe zusätzlich an
-    # pg_dump/psql. Fehlt eines davon, überspringen sie sich SELBST — und der Job bliebe
-    # grün, obwohl Rechte-Seed, LUSD-Import und der Notfallplan gar nicht geprüft wurden.
-    # Genau so stand am 10.08.2026 ein Rechte-Test acht Stunden falschherum auf main:
-    # lokal übersprang er sich, weil der Pre-Push-Hook die Variable nicht setzt.
-    #
-    # Der Schritt bricht deshalb ab, wenn ein Test wegen fehlender Umgebung ausgefallen
-    # ist, und schreibt die Skip-Bilanz ins Log — damit sichtbar bleibt, wie viel dieser
-    # Lauf wirklich ausgeführt hat.
-    # Was hat dieser Lauf NICHT ausgeführt?
-    #
-    # Ein übersprungener Prüfpunkt sieht aus wie ein bestandener. Ob eine Prüfung laufen
-    # MUSS, entscheiden die Guards im Go-Code (db/pgtest_guard_test.go für die
-    # DB-Invarianten, jobs/restore_drill_guard_test.go für den Notfallplan) — sie stehen
-    # neben dem, was sie bewachen, und werden mit ihm zusammen gelesen.
-    #
-    # Dieser Schritt bricht deshalb nichts ab. Er schreibt die Bilanz ins Log, damit ein
-    # NEUER stiller Skip sichtbar wird, für den noch niemand einen Guard geschrieben hat.
-    # Legitime Skips gibt es: Die Littera-Läufe brauchen den echten Altbestand
-    # (LITTERA_CSV_DIR, leser.csv, verleih.csv …), der nicht im Repo liegt.
+    # Dieser Schritt bricht deshalb nichts ab. Er schreibt die Bilanz ins Log, damit ein neuer
+    # stiller Skip sichtbar wird, für den noch niemand einen Guard geschrieben hat. Legitime
+    # Skips gibt es: Die Littera-Läufe brauchen den echten Altbestand (LITTERA_CSV_DIR,
+    # leser.csv, verleih.csv …), der nicht im Repo liegt.
     - name: Skip-Bilanz
       shell: bash
       run: |
@@ -219,10 +191,9 @@ jobs:
     - name: Check out repository code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    # cache: npm — npm ci zieht die Tarballs aus dem Runner-Cache statt aus der
-    # Registry; das Netz wird nur noch gebraucht, wenn sich der Lockfile ändert.
-    # Hintergrund 19.08.2026: Installationsschritte hingen mehrfach an gestörten
-    # Spiegeln/Registries — die Abhängigkeit gehört weggecacht, nicht nur befristet.
+    # cache: npm — npm ci zieht die Tarballs aus dem Runner-Cache statt aus der Registry;
+    # das Netz braucht es nur, wenn sich der Lockfile ändert, und eine gestörte Registry hält
+    # den Lauf nicht auf.
     - name: Set up Node.js
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
@@ -238,30 +209,23 @@ jobs:
         cd frontend
         npm ci
 
-    # ESLint lief bis zum 10.08.2026 NUR im pre-commit-Hook und dort mit --quiet, also
-    # ohne Warnungen. In CI lief es gar nicht. Ergebnis: Ein Snippet verwarf seit dem
-    # 27.07. die übergebene Icon-Größe, ESLint meldete das durchgehend, und niemand
-    # konnte es sehen. Ein Hook greift außerdem nur bei dem, der ihn installiert hat —
-    # CI ist die Stelle, die für alle gilt.
+    # ESLint auch hier: Ein Hook greift nur bei dem, der ihn installiert hat; CI ist die
+    # Stelle, die für alle gilt.
     - name: Run ESLint
       run: |
         cd frontend
         npm run lint
 
-    # Prettier lief bis zum 17.09.2026 nur im pre-commit-Hook — siehe gofmt oben.
+    # Prettier aus demselben Grund wie gofmt oben.
     # `--check` ändert nichts, es meldet nur; die Reparatur steht in der Meldung.
     - name: Formatierung (Prettier)
       run: |
         cd frontend
         npx prettier --check src/ e2e/ --log-level warn
 
-    # svelte-check lief bis zum 06.09.2026 NUR im pre-push-Hook — dieselbe Lücke, die
-    # ESLint bis zum 10.08. hatte, und dieselbe Begründung: Ein Hook greift nur bei dem,
-    # der ihn installiert hat. jsconfig.json setzt checkJs, 200 Dateien tragen JSDoc-Typen;
-    # ein Pull Request (Jules, Dependabot, ein zweiter Rechner) oder ein --no-verify-Push
-    # brachte einen Typfehler nach main, ohne dass etwas rot wurde. Gefunden im
-    # Rasterdurchgang am selben Tag — und am selben Abend hat der Hook prompt einen
-    # Typfehler in einem frischen Test gefangen, den die CI nicht gesehen hätte.
+    # svelte-check auch hier und nicht nur im pre-push-Hook: jsconfig.json setzt checkJs, und
+    # ein Typfehler aus einem Pull Request oder nach --no-verify käme sonst nach main, ohne
+    # dass etwas rot wird.
     - name: Run svelte-check (Frontend-Typen)
       run: |
         cd frontend
@@ -316,8 +280,7 @@ jobs:
         done
         curl -sf http://localhost:8084/health
 
-    # Drei Schichten gegen die Störungsklasse vom 19.08.2026 (Installationen hingen
-    # mehrfach >9 min an apt-Spiegel/Registry/CDN, normal: Sekunden bis 3 min):
+    # Drei Schichten gegen hängende Installationen (apt-Spiegel, Registry, CDN):
     #   1. Cache (oben): npm-Tarballs + Browser-Binaries — das Netz ist im Normalfall
     #      kaum noch beteiligt. `install --with-deps` überspringt den Browser-Download bei
     #      Cache-Treffer und installiert nur die System-Abhängigkeiten via apt.
@@ -327,21 +290,15 @@ jobs:
     #   3. timeout-minutes als Reißleine, falls doch alles klemmt: roter Schritt zum
     #      Neustarten statt eines endlosen gelben.
     #
-    # NICHT nach cache-hit in `install-deps` aufspalten: `install-deps` ruft `apt-get`
-    # OHNE sudo auf und scheitert an "Unable to lock /var/lib/apt/lists/". Nur
-    # `--with-deps` regelt die apt-Rechte selbst. Der Cache greift trotzdem — der
-    # Browser-Download entfällt bei Treffer, die apt-Deps sind ohnehin nicht gecacht.
+    # Nicht nach cache-hit in `install-deps` aufspalten: `install-deps` ruft `apt-get` ohne
+    # sudo auf und scheitert an "Unable to lock /var/lib/apt/lists/". Nur `--with-deps`
+    # regelt die apt-Rechte selbst. Der Cache greift trotzdem — der Browser-Download entfällt
+    # bei Treffer, die apt-Deps sind ohnehin nicht gecacht.
     #
-    # ECHTE Wurzel der "Install hängt/scheitert"-Serie vom 19.08.2026: NICHT CDN-
-    # Flakiness, sondern apt-LOCK-KONKURRENZ. Der runnereigene apt-daily/unattended-
-    # upgrades-Prozess hält beim Job-Start die apt-Sperre; playwrights `--with-deps`
-    # (das intern apt aufruft) scheitert daran. Ein Vorab-Warten auf die Sperre ist
-    # gegen eine RACE machtlos — der Störer greift die Sperre WÄHREND playwrights
-    # mehrminütigem apt-Lauf erneut (im letzten Lauf belegt: Lock von Prozess 8136).
-    #
-    # Definitiv gelöst durch die apt-Option DPkg::Lock::Timeout: apt WARTET dann auf die
-    # Sperre, statt sofort zu scheitern. Global gesetzt wirkt es auch auf playwrights
-    # interne apt-Aufrufe — kein Race, keine Warteschleife, kein Prozess-Kill.
+    # Die apt-Sperre hält beim Start des Jobs der apt-daily-Dienst des Runners, und er greift
+    # sie während des mehrminütigen apt-Laufs von `--with-deps` erneut; ein Warten vorab hilft
+    # dagegen nicht. Mit DPkg::Lock::Timeout wartet apt auf die Sperre, statt zu scheitern,
+    # global gesetzt auch in den apt-Aufrufen von Playwright.
     - name: Install Playwright
       timeout-minutes: 15
       run: |
@@ -371,12 +328,11 @@ jobs:
         wiederhole npm ci
         wiederhole npx playwright install --with-deps chromium
 
-    # Kaskaden-Gate fuer die Druck-Sektionen: Welche der vier versteckten Sektionen des
-    # Ausweis-Designers auf dem Papier landet, entscheidet allein die CSS-Kaskade — das
-    # ist nur am GEBAUTEN CSS in einem echten Browser unter @media print pruefbar.
-    # Beides steht in diesem Job ohnehin bereit (Chromium ist installiert, der Build
-    # dauert Sekunden), deshalb haengt das Gate hier und nicht an einem eigenen Job.
-    # Begruendung und Vorgeschichte stehen im Skript selbst.
+    # Kaskaden-Gate für die Druck-Sektionen: Welche der vier versteckten Sektionen des
+    # Ausweis-Designers auf dem Papier landet, entscheidet allein die CSS-Kaskade — das ist
+    # nur am gebauten CSS in einem echten Browser unter @media print prüfbar. Beides steht in
+    # diesem Job ohnehin bereit (Chromium ist installiert, der Build dauert Sekunden), deshalb
+    # hängt das Gate hier und nicht an einem eigenen Job. Die Begründung steht im Skript.
     - name: Druck-Sektionen-Gate
       run: |
         cd frontend

@@ -3,14 +3,13 @@
 # des Frontend-Builds über den docker build in security-scan.yml) — ein Update, das
 # etwas bricht, wird rot und darf nicht gemergt werden.
 #
-# BEWUSST OHNE Auto-Merge (Stand 21.08.2026): Erst soll sich zeigen, dass die Gates die
-# Update-PRs zuverlässig prüfen — Anlass war ein Patch-Update, das den Build brach und nur
-# `npm run build` fing. Wenn das Vertrauen da ist, lässt sich Auto-Merge für patch/minor
-# über einen kleinen Workflow nachrüsten (siehe dependency-update-Notiz). Major-Updates
-# bleiben in jedem Fall manuell.
+# Ohne Auto-Merge: Erst soll sich zeigen, dass die Gates die Update-PRs zuverlässig prüfen
+# — ein Patch-Update kann den Build brechen, und das fängt nur `npm run build`. Wenn das
+# Vertrauen da ist, lässt sich Auto-Merge für patch/minor über einen kleinen Workflow
+# nachrüsten. Major-Updates bleiben in jedem Fall manuell.
 #
-# Dependabot aktualisiert gezielt die DIREKTEN Abhängigkeiten (kein pauschales
-# `npm update`), was den transitiven Bruch von oben vermeidet.
+# Dependabot aktualisiert gezielt die direkten Abhängigkeiten, kein pauschales
+# `npm update`, das jede transitive mit hebt.
 
 version: 2
 updates:
