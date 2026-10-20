@@ -329,6 +329,9 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   der Dateien gilt dieselbe Regel; der zweite Teil derselben Prüfung zählt je Datei die
   erklärten Namen (let, const, var, function, class) mit einem englischen Wort, auch dieser
   Bestand darf nur sinken.
+- Für Kommentare gilt Abschnitt 8. `frontend/src/lib/frontend-hygiene-vorgeschichte.test.js`
+  zählt je Datei die Kommentarzeilen mit einem Datum, das nicht zu einer Quelle gehört; ihr
+  Bestand darf nur sinken.
 
 ## 14. Schnittstellen
 

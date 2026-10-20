@@ -157,8 +157,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
-- [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 428 Kommentarzeilen mit Datum;
-  eine Ratsche wie im Go-Code, dann Datei für Datei.
+- [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 419 Kommentarzeilen mit Datum,
+  gehalten von einer Ratsche; Datei für Datei auf das Warum kürzen.
 - [x] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
   Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
 - [x] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
@@ -356,15 +356,12 @@ zu lockern. Offen:
 
 ### 5.70 Vorgeschichte in Kommentaren der Oberfläche
 
-Gezählt am 19.10.2026: 428 Kommentarzeilen mit Datum in 218 der 462 Svelte- und JS-Dateien
-unter `frontend/src` (ohne Tests; Zeilen in `//`, `/* */` und `<!-- -->`), etwa „Hier lag bis
-zum 16.09.2026 ein Vollbild …" in `App.svelte` oder „stand hier bis zum 24.08.2026" in
-`menue.js`. Die Regel steht in `CLAUDE.md`, Abschnitt 4: kein Datum, keine Vorgeschichte. Im Go-Code hält sie `stil_ratsche_test.go` mit
-leerem Bestand; für die Oberfläche fehlt eine Prüfung. Vorschlag: in
-`frontend/src/lib/frontend-hygiene-sprache.test.js` je Datei die Kommentarzeilen mit Datum als
-Bestand einfrieren, der nur sinken darf (das Datum einer Quelle ausgenommen, wie im Go-Code),
-dann Datei für Datei die Kommentare auf das Warum kürzen, nach jeder Datei `npx svelte-check`
-und `npx vitest run`.
+419 Kommentarzeilen mit Datum in 217 der 470 Svelte- und JS-Dateien unter `frontend/src` (ohne
+Tests), dazu gut 20 mit einem Datum ohne Jahr („Absprache vom 05.09."). Die Regel steht in
+`CLAUDE.md`, Abschnitt 4: kein Datum, keine Vorgeschichte. `frontend-hygiene-vorgeschichte.test.js`
+hält den Bestand je Datei, er kann nur sinken. Offen: Datei für Datei die Kommentare auf das
+Warum kürzen und den Bestand nachziehen, nach jedem Ordner `npx svelte-check` und
+`npx vitest run`.
 
 ---
 

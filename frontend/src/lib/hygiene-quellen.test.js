@@ -3,16 +3,12 @@
 // sanitization"): eine Regex-Ersetzung ließ aus `<!-- <!-- -->` wieder einen Kommentar
 // entstehen. Der Fall steht hier als Test, damit ein Rückbau auf `replace` rot wird.
 import { describe, expect, it } from 'vitest';
-import { ohneKommentare } from './hygiene-quellen.js';
+import { kommentarZeilen, ohneKommentare } from './hygiene-quellen.js';
 
 describe('ohneKommentare', () => {
-	// Rasterdurchgang 06.09.2026 (Frage 7), am Rückbau GEMESSEN: Diese drei Zeilen sind
-	// KEIN Beleg für den Scanner. Die verworfene Regex-Fassung
-	// (`/<!--[\s\S]*?-->/g` und Geschwister) besteht sie ebenfalls — non-greedy frisst bei
-	// `<!-- <!-- -->` die ganze Zeichenkette, es bleibt kein Kommentar stehen. Rot wird
-	// die Regex-Fassung an den beiden Tests darunter (Leerraum vor `//` bleibt erhalten;
-	// ein Zeilenkommentar frisst keinen Blockanfang der nächsten Zeile) — DIE halten den
-	// Scanner fest. Der Fall hier bleibt als Beschreibung stehen, nicht als Beweis.
+	// Dieser Fall beschreibt den Scanner, belegt ihn aber nicht: Eine Regex-Fassung
+	// (`/<!--[\s\S]*?-->/g` und Geschwister) besteht ihn auch. Rot wird sie an den beiden
+	// Tests darunter.
 	it('entfernt HTML-, Block- und ganze Zeilenkommentare, auch über Zeilen hinweg', () => {
 		const quelle = ['<!-- x\n y -->keep1', '/* a\n b */keep2', '  // nur Kommentar', 'keep3'].join(
 			'\n'
@@ -28,5 +24,17 @@ describe('ohneKommentare', () => {
 
 	it('ein Zeilenkommentar frisst keinen Blockkommentar-Anfang aus der nächsten Zeile', () => {
 		expect(ohneKommentare('// /*\ncode\n*/')).toBe('\ncode\n*/');
+	});
+});
+
+describe('kommentarZeilen', () => {
+	it('liefert die Zeilen jedes Kommentars, die erste mit seinem Zeichen', () => {
+		const quelle = [
+			'<!-- x\n y -->code',
+			'/* a */code',
+			'  // ganze Zeile',
+			"const u = 'https://x'; // hinter Code"
+		].join('\n');
+		expect(kommentarZeilen(quelle)).toEqual(['<!-- x', ' y -->', '/* a */', '// ganze Zeile']);
 	});
 });

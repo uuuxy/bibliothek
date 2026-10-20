@@ -58,40 +58,65 @@ export function vergleicheMitBestand(betroffen, bestand) {
 }
 
 /**
- * Quelltext ohne Kommentare — HTML-Kommentare, Blockkommentare, ganze Zeilenkommentare.
- *
- * Ein Detektor, der die Begründung für die Sache hält, meldet ewig „alles gut"
- * (Bugklasse „Lügende Ratsche", docs/sweeps.md). Bis 06.09.2026 stand dieselbe
- * Regex-Ersetzung in zwei Tests je einmal; CodeQL (#27, #28) meldete, dass EIN
- * `replace`-Durchlauf im Allgemeinen nicht reicht. (Das Beispiel `<!-- <!-- -->`, das
- * hier bis zum 06.09.2026 als Begründung stand, belegt es NICHT: non-greedy frisst die
- * ganze Zeichenkette. Nachgemessen im Rasterdurchgang desselben Tages — eine Begründung,
- * die man nicht nachrechnet, ist selbst eine lügende Ratsche.) Eine Schleife bis zum
- * Fixpunkt half auch nicht (#29) — CodeQL bewertet
- * jeden `replace`-Aufruf für sich und sieht die Schleife nicht. Deshalb kein `replace`
- * mehr: Ein Scanner läuft einmal von vorn nach hinten und ÜBERSPRINGT jeden Kommentar
- * vom Anfang bis zum ersten Ende. Was übersprungen ist, kann keinen neuen Anfang bilden.
- * Ein Kommentar ohne Ende bleibt stehen (wie bisher). Zeilenkommentare zählen nur, wenn
- * vor dem `//` nichts als Leerraum steht — `https://…` in einer Code-Zeile bleibt.
+ * Quelltext ohne Kommentare. Die Ratschen prüfen erst danach: Ein Detektor, der die Begründung
+ * für die Sache hält, meldet sonst „alles gut" (Bugklasse „Lügende Ratsche", docs/sweeps.md).
  * @param {string} quelle
  * @returns {string}
  */
 export function ohneKommentare(quelle) {
-	let out = '';
+	return zerlege(quelle)
+		.filter((t) => !t.kommentar)
+		.map((t) => t.text)
+		.join('');
+}
+
+/**
+ * Die Zeilen der Kommentare, je Zeile ein Eintrag; die erste Zeile eines Kommentars beginnt mit
+ * seinem Zeichen (`//`, `/*` oder `<!--`).
+ * @param {string} quelle
+ * @returns {string[]}
+ */
+export function kommentarZeilen(quelle) {
+	return zerlege(quelle)
+		.filter((t) => t.kommentar)
+		.flatMap((t) => t.text.split('\n'));
+}
+
+/**
+ * Zerlegt den Quelltext in Code und Kommentare (HTML-, Block- und ganze Zeilenkommentare), in
+ * der Reihenfolge des Textes.
+ *
+ * Ein Scanner statt `replace`: CodeQL bewertet jede Ersetzung für sich und meldet sie als
+ * unvollständig („Incomplete multi-character sanitization"); was der Scanner übersprungen hat,
+ * kann keinen neuen Kommentaranfang bilden. Ein Kommentar ohne Ende bleibt Code, und `//` zählt
+ * nur am Zeilenanfang, damit `https://…` in einer Code-Zeile stehen bleibt.
+ * @param {string} quelle
+ * @returns {{ kommentar: boolean, text: string }[]}
+ */
+function zerlege(quelle) {
+	/** @type {{ kommentar: boolean, text: string }[]} */
+	const teile = [];
+	let code = '';
 	let zeilenanfang = true;
 	let i = 0;
 	while (i < quelle.length) {
 		const sprung = kommentarEnde(quelle, i, zeilenanfang);
 		if (sprung > i) {
+			teile.push(
+				{ kommentar: false, text: code },
+				{ kommentar: true, text: quelle.slice(i, sprung) }
+			);
+			code = '';
 			i = sprung;
 			zeilenanfang = false;
 			continue;
 		}
 		const z = quelle[i++];
-		out += z;
+		code += z;
 		zeilenanfang = z === '\n' || (zeilenanfang && /\s/.test(z));
 	}
-	return out;
+	teile.push({ kommentar: false, text: code });
+	return teile;
 }
 
 /**
