@@ -1601,7 +1601,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 16.10.2026
+Stand: 20.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2232,6 +2232,13 @@ sieht.
 - **Scanfelder werden getippt, nicht gefüllt** (`page.keyboard.type`, Enter, Nachweis an der
   Datenbank; Vorlage `frontend/e2e/kiosk-scannerfokus.spec.js`): `locator.fill()` und
   `locator.click()` setzen den Fokus selbst und verdecken, dass er fehlt.
+- **Ein Rennen gegen einen Zeitgeber wird bei angehaltener Uhr geprüft, nicht über das Tempo
+  des Tests.** Nach `page.clock.install()` hält `page.clock.pauseAt(…)` die Zeitgeber der Seite
+  an; Klicks, Abrufe und Mikroaufgaben laufen weiter. Erst den Zustand herstellen (etwa eine
+  offene Rückfrage), dann mit `runFor` die Zeitgeber laufen lassen und erneut prüfen (Vorlage:
+  `frontend/e2e/abmelden-ungespeichertes.spec.js`). Eine Antwort des Servers, die erst nach
+  einem Zustand kommen soll, hält `page.route` bis zu einer Freigabe zurück
+  (`frontend/e2e/titel-oeffnen-rennen.spec.js`).
 - **Nach dem Speichern wartet ein Browser-Test auf den gespeicherten Stand, nicht auf die
   Meldung:** Eine Meldung steht fünf Sekunden, und die vom ersten Speichern erfüllt sonst die
   Erwartung an das zweite (Vorlage: `expect.poll` auf die Datenbank in
