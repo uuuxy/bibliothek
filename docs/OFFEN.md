@@ -209,7 +209,7 @@ Generalprobe mit der Sicherung von 2026 welche, an diesen Daten die Form ablesen
 andere nur aus dem Schulnetz. Lehrkräfte erreichen das Programm vorerst nicht von zu Hause
 (ebenfalls entschieden am 28.09.2026); der Katalog ohne Anmeldung (`/api/public/opac/…`) ist nur
 in der Schule durchsuchbar. Caddy holt das Zertifikat selbst bei Let's Encrypt wie am
-Testserver (`Caddyfile`: keine `tls`-Zeile). Ohne HTTPS ginge im Betrieb nicht einmal die
+Testserver (`update_caddy.sh`: keine `tls`-Zeile). Ohne HTTPS ginge im Betrieb nicht einmal die
 Anmeldung: Der Browser schickt das Sitzungs-Cookie in der Vorgabe nur über HTTPS mit
 (`ermittleCookieSecure` in `main.go`; ein ausdrückliches `COOKIE_SECURE=false` hebt das auf und
 warnt beim Start). Mit einem Zertifikat, dem die Browser nicht vertrauen, stünde an jedem Gerät eine
@@ -360,8 +360,9 @@ zu lockern. Offen:
 
 Geplante Zielumgebung ist der Schulserver; heute ist der Hetzner-Server die einzige Instanz. Beim
 Umzug gilt dieser Abschnitt dort erneut — ebenso das, was am Hetzner-Server schon erfüllt ist
-(Commit-Geschichte, 13.09.2026). Fest auf den Testserver eingetragen sind dabei die Adresse in
-der Schlussmeldung von `update.sh` und `DOMAIN` in `scripts/deploy.sh`.
+(Commit-Geschichte, 13.09.2026). Auf den Testserver zugeschnitten sind dabei die Adresse in der
+Schlussmeldung von `update.sh` und `update_caddy.sh`, das die Caddy-Konfiguration dieses Hosts
+mit allen drei Diensten schreibt.
 
 ### 7.2 Frisches Littera-Backup
 

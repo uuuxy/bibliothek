@@ -350,15 +350,12 @@ aufräumen. Bei Fehlschlag: Abbruch mit Rollback-Anleitung, die auf das eben erz
 Backup zeigt und auf den Commit des laufenden Images (`GIT_COMMIT`) — nicht auf HEAD, das
 nach dem vorgezogenen `git pull` schon der neue Stand ist.
 
-`scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
-`docker compose up -d --build` → prüft, ob der Domain-Block im Caddyfile steht, und
-hängt ihn ggf. an). Er macht **kein** Backup und **keine** Gesundheitsprüfung.
+Läuft die Datenbank noch nicht (Ersteinrichtung), überspringt `update.sh` das Backup und
+macht den Rest; einen zweiten Weg für die Einrichtung gibt es nicht.
 
 `./update_caddy.sh` schreibt die Caddy-Konfiguration des Servers neu
-(`/root/caddy/Caddyfile`, alle Dienste des Hosts) und lädt sie per `caddy reload`
-neu, ohne Caddy neu zu starten. Die Datei
-`Caddyfile` im Repo-Root ist nur eine Vorlage zum Nachschlagen — sie wird nirgends
-ausgeliefert.
+(`/root/caddy/Caddyfile`, alle Dienste des Hosts), prüft sie mit `caddy validate` und lädt
+sie per `caddy reload` neu, ohne Caddy neu zu starten.
 
 ### `scripts/stack-neu.sh` — dasselbe lokal, mit Beweis
 

@@ -119,11 +119,6 @@ func TestRueckweg_TotalverlustBautVorDemEinspielen(t *testing.T) {
 // Blindheit: nur Zeilen mit echo, printf oder log_ in update.sh und scripts/*.sh; ein Befehl,
 // der über eine Variable oder ein Here-Dokument gedruckt wird, bleibt unsichtbar.
 func TestSkripte_GedruckteBefehleOhnePlatzhalter(t *testing.T) {
-	// ausgenommen: Datei → Platzhalter, mit Grund.
-	ausgenommen := map[string]string{
-		// Den Namen des Caddy-Containers kennt das Skript nicht; er hängt am Server.
-		"../scripts/deploy.sh": "<caddy_container>",
-	}
 	dateien, err := filepath.Glob("../scripts/*.sh")
 	if err != nil {
 		t.Fatal(err)
@@ -132,7 +127,6 @@ func TestSkripte_GedruckteBefehleOhnePlatzhalter(t *testing.T) {
 	druckt := regexp.MustCompile(`\b(echo|printf|log_[a-z]+)\b`)
 	platzhalter := regexp.MustCompile(`<[A-Za-zäöüÄÖÜß_.-]+>`)
 	gedruckt, oeffnet := 0, 0
-	benutzt := map[string]bool{}
 	for _, datei := range dateien {
 		for i, zeile := range strings.Split(lies(t, datei), "\n") {
 			if strings.HasPrefix(strings.TrimSpace(zeile), "#") || !druckt.MatchString(zeile) {
@@ -140,10 +134,6 @@ func TestSkripte_GedruckteBefehleOhnePlatzhalter(t *testing.T) {
 			}
 			gedruckt++
 			for _, fund := range platzhalter.FindAllString(zeile, -1) {
-				if ausgenommen[datei] == fund {
-					benutzt[datei] = true
-					continue
-				}
 				t.Errorf("%s:%d druckt einen Befehl mit dem Platzhalter %s — den Wert einsetzen oder abfragen (read): %s",
 					datei, i+1, fund, strings.TrimSpace(zeile))
 			}
@@ -161,11 +151,6 @@ func TestSkripte_GedruckteBefehleOhnePlatzhalter(t *testing.T) {
 	}
 	if oeffnet < 3 {
 		t.Fatalf("nur %d gedruckte Hinweise auf restore-backup gefunden, erwartet mindestens 3 (update.sh zweimal, scripts/backup.sh)", oeffnet)
-	}
-	for datei := range ausgenommen {
-		if !benutzt[datei] {
-			t.Errorf("die Ausnahme für %s greift nicht mehr — austragen", datei)
-		}
 	}
 }
 

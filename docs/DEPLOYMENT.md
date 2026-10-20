@@ -230,9 +230,8 @@ eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus. Den Commit, auf
 zurückführt, liest es aus dem laufenden Image (`GIT_COMMIT`), nicht aus dem
 Arbeitsverzeichnis — nach dem vorgezogenen `git pull` stünde dort schon der neue Stand.
 
-`scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
-`docker compose up -d --build` → Caddy-Block prüfen/ergänzen) — **ohne** Backup und
-**ohne** Gesundheitsprüfung. Details zu beiden: [SCRIPTS.md](SCRIPTS.md).
+Läuft die Datenbank noch nicht (Ersteinrichtung), überspringt das Skript das Backup und
+macht den Rest. Einzelheiten: [SCRIPTS.md](SCRIPTS.md).
 
 ### 2.5 Selbstanmeldung des Kollegiums einschalten
 
@@ -276,13 +275,14 @@ Anträge bleiben in der Benutzerverwaltung sichtbar.
 
 Bibliothek läuft hinter Caddy als TLS-Proxy im Docker-Netzwerk `caddy_global_net`.
 
-### Caddyfile-Eintrag
+### Konfiguration
 
-```caddyfile
-flasch3.herzog-dupont.de {
-    reverse_proxy bibliothek-backend:8083
-}
-```
+Die Caddy-Konfiguration des Testservers schreibt `./update_caddy.sh`: alle Dienste des Hosts in
+`/root/caddy/Caddyfile`, erst `caddy validate`, dann `caddy reload`. Auf einem anderen Host
+gehört der Abschnitt „Bibliothek" daraus in dessen Caddyfile, samt den Fristen unter
+`transport http`: Sie müssen zur Anwendung passen, denn ein Import darf 5 Minuten dauern
+(`langLaufendeFrist` in `api/middleware.go`), und der SSE-Strom `/events` läuft dauerhaft. Eine
+`tls`-Zeile braucht es nicht, Caddy holt das Zertifikat selbst (ACME).
 
 ### Zero-Downtime Reload
 

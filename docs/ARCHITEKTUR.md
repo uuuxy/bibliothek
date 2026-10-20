@@ -213,7 +213,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T6 | **Ein Host, ein Prozess**                                                      | Der Prozess hält Zustand im Speicher: SSE-Abonnenten, Rechte-Cache, Rate-Limit-Zähler, Idempotenz-Warteschleife. Eine zweite Instanz hinter einem Load Balancer wäre **nicht** nur Konfiguration.         |
 | T7 | **Anmeldung gegen den Schul-Mailserver (IMAP)**                                | Die Anwendung speichert **kein** Benutzerpasswort; eine Passwortspalte gibt es seit Migration 012 nicht. Für die Dauer einer Anmeldung hält sie einen Prüfwert davon (Migration 155, A2). Folge: Die E-Mail **ist** die Identität, und `benutzer.email` schreiben zu dürfen heißt, ein Konto übernehmen zu können. |
 | T8 | **Barcodes des Altbestands dürfen nicht neu geklebt werden**                   | Ausweise und Etiketten aus Littera tragen nackte Nummern ohne Präfix. Deshalb löst die Omnibox **ohne** Präfix der Reihe nach auf, und deshalb gibt es die Prüfzeichen-Nachsicht (`pkg/code39`).           |
-| T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Schulserver** (`/root/caddy/Caddyfile`, geschrieben von `update_caddy.sh`); die `Caddyfile` im Repo ist Vorlage zum Nachschlagen. |
+| T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Schulserver** (`/root/caddy/Caddyfile`, geschrieben von `update_caddy.sh`). |
 | T10| **Der Betrieb läuft ggf. über HTTP im Schul-LAN**                              | Deshalb ist `COOKIE_SECURE` eine bewusst treffbare Betriebsentscheidung — Vorgabe `true` außerhalb lokaler Entwicklung, ein explizites `false` warnt laut, bricht aber nicht ab.                            |
 | T11| **Zeitzone Europe/Berlin fachlich, UTC technisch**                              | Fristen pinnen `Europe/Berlin` im Code (`schulzeit.TagesEnde`), der Cron-Zeitplan ist auf UTC genagelt (`cron.WithLocation(time.UTC)`) — sonst verschluckt die Zeitumstellung den 02:30-Backup-Job.  |
 | T12| **Lizenz EUPL-1.2**                                                             | Jede Go-Quelldatei trägt den Lizenzkopf; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen.                                                                                 |
@@ -1390,7 +1390,7 @@ keine Adresse.
 
 ```mermaid
 sequenceDiagram
-    participant OP as update.sh / deploy.sh
+    participant OP as update.sh
     participant P as Prozess
     participant SSE as Broker
     participant HTTP as http.Server
@@ -1460,7 +1460,6 @@ Stand: 16.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 | **Volume-Mount auf `/var/lib/postgresql`, nicht `…/data`**        | Seit dem 18er-Image liegt `PGDATA` unter `/var/lib/postgresql/18/docker`; der alte Mount landete in einem anonymen Volume, das ein Neuerstellen löscht.                            |
 | **`bibliothek_backups` als benanntes Volume**                     | Die verschlüsselten Dumps überleben einen Neubau des Containers.                                                                                                                  |
 | **Netz `caddy_global_net` extern**                                | Auf dem Host laufen mehrere Dienste hinter **einem** Caddy.                                                                                                                        |
-| **Die `Caddyfile` im Repo ist nicht maßgeblich**                   | Maßgeblich ist `/root/caddy/Caddyfile` auf dem Server, geschrieben von `update_caddy.sh`; die Repo-Datei sagt das in ihrer ersten Zeile (D8).                                     |
 
 #### Fristen müssen zueinander passen
 
@@ -1547,13 +1546,12 @@ liest, muss in Compose ankommen.
 | Weg                        | Was er tut                                                                                                                                                              | Wann                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | **`./update.sh`**          | 1. `pg_dump`-Vorabsicherung → 2. `git pull` → 3. `docker compose up -d --build` → 4. Gesundheitsprüfung **und** Commit-Abgleich (`GIT_COMMIT` im Image vs. `git rev-parse HEAD`) → 5. Vorabsicherung verschlüsseln, Klartext löschen → 6. Backups > 30 Tage aufräumen → 7. Build-Cache leeren (das nächste Update baut jede Schicht neu). Bei Fehler: Abbruch **mit ausgedrucktem Rückweg** auf den Stand, der vorher lief (Commit des laufenden Images; ohne lesbares Image der Commit des Arbeitsverzeichnisses, mit Warnung) | **Der gepflegte Weg** für Updates |
-| `scripts/deploy.sh`        | Stammt aus der Einrichtung (trägt den Caddy-Block nach). Baut und geht — **kein** Backup, **keine** Gesundheitsprüfung, **kein** Commit-Beweis                            | Ersteinrichtung                   |
 | `scripts/stack-neu.sh`     | Stack neu aufsetzen                                                                                                                                                      | Notfall/Neuaufbau                 |
 | `update_caddy.sh`          | Schreibt die maßgebliche Caddy-Konfiguration auf dem Server                                                                                                              | Proxy-Änderungen                  |
 
-> Beide Skripte kapseln ihren gesamten Rumpf in `{ … }` mit einem `exit` **innerhalb** der
-> Klammer. Grund: Sie ziehen per `git pull` neuen Code und überschreiben sich dabei
-> **selbst, während sie laufen**. Bash merkt sich eine Position in der Datei; wird sie
+> `update.sh` kapselt seinen gesamten Rumpf in `{ … }` mit einem `exit` **innerhalb** der
+> Klammer. Grund: Es zieht per `git pull` neuen Code und überschreibt sich dabei
+> **selbst, während es läuft**. Bash merkt sich eine Position in der Datei; wird sie
 > unterwegs länger, führt bash Bruchstücke aus. `{ … }` ist
 > **ein** zusammengesetzter Befehl, den bash vollständig parst, bevor er beginnt.
 >
@@ -3193,8 +3191,6 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | D5 | **Gemischte Sprache an der Grenze** (Adressen, JSON-Felder, Tabellen und Spalten: `idempotency_key` neben `idempotenz_schluessel`) | Wer den Vertrag liest, sieht zwei Sprachen                        | Der Vertrag mit Oberfläche und gespeicherten Daten wird nicht umbenannt ([STIL.md](STIL.md) 9); die Namen im Code folgen STIL.md, gehalten von `stil_ratsche_test.go` und `frontend-hygiene-sprache.test.js` |
 | D6 | **`docs/` ist Go-Paket und Dokumentverzeichnis in einem**                                                                | Verwirrend; Gates liegen bei den Dokumenten                      | Die Gates **wollen** neben ihren Dokumenten liegen (`stand_angaben`, `invarianten_fundstellen`) |
 | D7 | **PG-Tests lokal still übersprungen**                                                                                    | Ein Lauf kann grün aussehen, ohne Constraints geprüft zu haben    | Ein Postgres gehört nicht in einen Push; Gegenmittel ist die Skip-Bilanz                     |
-| D8 | **Die `Caddyfile` im Repo ist nicht maßgeblich**                                                                         | Zwei Orte, ein Zustand                                           | Der Host betreibt mehrere Dienste in einer Datei; die Repo-Datei sagt das in Zeile 1          |
-| D9 | **`scripts/deploy.sh` ist die zweite Tür zum selben Zustand**                                                            | Die falsche Tür geht irgendwann auf (kein Backup, keine Prüfung)  | Sie stammt aus der Einrichtung und trägt den Caddy-Block nach; sie warnt in ihrem Kopf        |
 | D11| **Cover/Uploads sind nicht im Backup**                                                                                   | Nach einem Restore müssen Cover neu geholt werden                | Bewusste Entscheidung: reproduzierbar aus ISBN und Quelle (A17)                              |
 | D12| **Ratschen sind lexikalisch**                                                                                            | Eine Umformulierung kann sie blind machen                        | Die Blindheit ist **aufgeschrieben** (Landkarte in [sweeps.md](sweeps.md)) statt behauptet weg |
 
