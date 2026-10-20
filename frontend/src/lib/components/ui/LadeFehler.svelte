@@ -16,7 +16,11 @@
 	 * „Erneut versuchen" und tat nichts. Ein Knopf, der nichts tut, ist schlimmer als
 	 * keiner: Wer ihn drückt, wartet auf etwas.
 	 *
-	 * @typedef {{ onerneut?: () => void, titel?: string, text?: string }} Props
+	 * `knapp` ist die Form für einen Abschnitt einer Seite, etwa eine Kachel: nur der Titel in
+	 * der Fehlerrolle, wo sonst der Leerzustand stünde (M3, Color roles: „Use error roles to
+	 * communicate error states").
+	 *
+	 * @typedef {{ onerneut?: () => void, titel?: string, text?: string, knapp?: boolean }} Props
 	 */
 	import Button from './Button.svelte';
 
@@ -24,15 +28,20 @@
 	let {
 		onerneut,
 		titel = 'Einstellungen nicht geladen',
-		text = 'Die gespeicherten Werte konnten nicht abgerufen werden. Die Formulare bleiben geschlossen — sonst würde ein Klick auf Speichern die echten Einstellungen mit Vorgabewerten überschreiben.'
+		text = 'Die gespeicherten Werte konnten nicht abgerufen werden. Die Formulare bleiben geschlossen — sonst würde ein Klick auf Speichern die echten Einstellungen mit Vorgabewerten überschreiben.',
+		knapp = false
 	} = $props();
 </script>
 
 <!-- role="alert": Ein Ladefehler soll vorgelesen werden, sobald er erscheint. -->
-<div role="alert" class="flex flex-col items-center gap-4 py-20 text-center">
-	<p class="text-base font-medium text-on-surface">{titel}</p>
-	<p class="max-w-md text-sm text-on-surface-variant">{text}</p>
-	{#if onerneut}
-		<Button variant="primary" onclick={onerneut}>Erneut versuchen</Button>
-	{/if}
-</div>
+{#if knapp}
+	<p role="alert" class="text-center text-sm text-error">{titel}</p>
+{:else}
+	<div role="alert" class="flex flex-col items-center gap-4 py-20 text-center">
+		<p class="text-base font-medium text-on-surface">{titel}</p>
+		<p class="max-w-md text-sm text-on-surface-variant">{text}</p>
+		{#if onerneut}
+			<Button variant="primary" onclick={onerneut}>Erneut versuchen</Button>
+		{/if}
+	</div>
+{/if}

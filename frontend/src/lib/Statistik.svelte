@@ -49,8 +49,6 @@
 		{ wert: 'ladenhueter', text: 'Ladenhüter' }
 	];
 
-	/** @param {number} v */
-
 	/** Ganzzahl mit deutscher Tausender-Trennung (33166 → „33.166"). @param {number} v */
 	const num = (v) => (v ?? 0).toLocaleString('de-DE');
 
@@ -59,20 +57,11 @@
 	const topRenner = $derived(kennzahlen?.popular_titles?.slice(0, 8) ?? []);
 	const topWarmers = $derived(kennzahlen?.shelf_warmers?.slice(0, 8) ?? []);
 	const aktiveListe = $derived(analyse === 'renner' ? topRenner : topWarmers);
+	const analyseName = $derived(ANALYSEN.find((a) => a.wert === analyse)?.text);
 
-	// Farbe folgt dem Wert: „Schaden"-Kennzahlen werden erst rot, wenn es wirklich etwas zu
-	// melden gibt. Bei 0 bleiben sie ruhig-grün — so behält Rot seine Signalwirkung und der
-	// Bestzustand sieht nicht wie eine Alarmtafel aus.
-	const verlusteFarbe = $derived(
-		(kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-error' : 'text-success'
-	);
-
-	// Zweiter, farbunabhängiger Kanal (WCAG 1.4.1): Bei Handlungsbedarf erscheint zusätzlich
-	// ein Warn-Icon. Im Bestzustand (0) bleibt es icon-frei — die Ampelfarbe steht dann nicht
-	// mehr allein für die Aussage; die Zahl selbst und das (fehlende) Icon tragen sie mit.
-	const verlusteStatus = $derived(
-		(kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null
-	);
+	// Verluste werden erst rot, wenn es etwas zu melden gibt, bei 0 bleiben sie grün: So behält
+	// Rot seine Signalwirkung. Das Warn-Dreieck trägt die Aussage ohne Farbe mit (WCAG 1.4.1).
+	const hatVerluste = $derived((kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0);
 
 	// limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
 	// dadurch keinen einzigen weiteren API-Call.
@@ -94,16 +83,6 @@
 	});
 </script>
 
-{#snippet warnIcon(klasse)}
-	<!-- Warn-Dreieck: farbunabhängiger Zweitkanal (WCAG 1.4.1), nur bei Handlungsbedarf.
-	     Die Größe kommt vom Aufrufer und wurde hier bis zum 10.08.2026 still verworfen:
-	     Der einzige Aufruf übergibt "w-6 h-6 shrink-0", gezeichnet wurde ein festes
-	     w-5 h-5. Nicht die zwei fehlenden Pixel waren das Problem, sondern das fehlende
-	     shrink-0 — daneben steht die KPI-Zahl mit truncate, und in einer Flex-Zeile
-	     drückt die das Dreieck zusammen, sobald der Wert lang wird. -->
-	<TriangleAlert class={klasse} aria-hidden="true" />
-{/snippet}
-
 <!-- KPI-Kachel: Zahl groß und dünn, Label fett (M3-Typografie); Fläche = „filled card" (Gate: e2e/m3-bauform.spec.js). -->
 {#snippet kpi(label, value, hint, valueClass, status = /** @type {'warn' | null} */ (null))}
 	<div class="{FLAECHE} p-5 flex flex-col justify-between gap-3 text-left">
@@ -111,7 +90,8 @@
 		<span
 			class="text-4xl font-light tracking-tight tabular-nums leading-none flex items-center gap-2 {valueClass}"
 		>
-			{#if status === 'warn'}{@render warnIcon('w-6 h-6 shrink-0')}{/if}
+			<!-- shrink-0: Die gekürzte Zahl daneben drückt das Dreieck sonst zusammen. -->
+			{#if status === 'warn'}<TriangleAlert class="w-6 h-6 shrink-0" aria-hidden="true" />{/if}
 			<span class="truncate">{value}</span>
 		</span>
 		<span class="text-sm text-on-surface-variant leading-snug">{hint}</span>
@@ -220,7 +200,7 @@
 {#snippet skeleton()}
 	<div class="flex-1 min-h-0 flex flex-col gap-4 animate-pulse" aria-hidden="true">
 		<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-			{#each [0, 1, 2, 3] as i (i)}<div class="h-28 {FLAECHE}"></div>{/each}
+			{#each [0, 1, 2, 3] as i (i)}<div class="h-40 {FLAECHE}"></div>{/each}
 		</div>
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<div class="lg:col-span-2 h-72 {FLAECHE}"></div>
@@ -271,41 +251,50 @@
 			/>
 		{:else if kennzahlen}
 			<!-- 1) KPI-Reihe: vier gleichwertige Kacheln in EINEM durchgehenden 4er-Grid. -->
-			<div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
-				{@render kpi(
-					'Gesamtbestand',
-					num(kennzahlen.loss_stats.gesamt_bestand),
-					'Physische Buchkopien im System',
-					'text-on-surface'
-				)}
-				{@render kpi(
-					'Aktuell verliehen',
-					num(kennzahlen.zirkulation?.aktuell_verliehen ?? 0),
-					`von ${num(kennzahlen.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
-					'text-primary'
-				)}
-				<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
-				     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
-				{@render kpi(
-					'Zirkulationsquote',
-					`${num(kennzahlen.zirkulationsquote ?? 0)}\u00a0%`,
-					'verliehen ÷ aktiver Bestand',
-					'text-on-surface'
-				)}
-				{@render kpi(
-					'Verluste & Schäden',
-					num(kennzahlen.loss_stats.verlorene_exemplare),
-					`${num(kennzahlen.loss_stats.verlust_quote ?? 0)}\u00a0% Quote · ${euro(kennzahlen.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
-					verlusteFarbe,
-					verlusteStatus
-				)}
-			</div>
+			{#if abruf.fehlt('kennzahlen')}
+				<div class="shrink-0 h-40 {FLAECHE} flex items-center justify-center">
+					<LadeFehler knapp titel="Kennzahlen nicht geladen" />
+				</div>
+			{:else}
+				<div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
+					{@render kpi(
+						'Gesamtbestand',
+						num(kennzahlen.loss_stats.gesamt_bestand),
+						'Physische Buchkopien im System',
+						'text-on-surface'
+					)}
+					{@render kpi(
+						'Aktuell verliehen',
+						num(kennzahlen.zirkulation?.aktuell_verliehen ?? 0),
+						`von ${num(kennzahlen.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
+						'text-primary'
+					)}
+					<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
+					     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
+					{@render kpi(
+						'Zirkulationsquote',
+						`${num(kennzahlen.zirkulationsquote ?? 0)}\u00a0%`,
+						'verliehen ÷ aktiver Bestand',
+						'text-on-surface'
+					)}
+					{@render kpi(
+						'Verluste & Schäden',
+						num(kennzahlen.loss_stats.verlorene_exemplare),
+						`${num(kennzahlen.loss_stats.verlust_quote ?? 0)}\u00a0% Quote · ${euro(kennzahlen.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
+						hatVerluste ? 'text-error' : 'text-success',
+						hatVerluste ? 'warn' : null
+					)}
+				</div>
+			{/if}
 
 			<!-- 2) Asymmetrische Reihe: Chart (2 Spalten) + Mahnungs-Widget (1 Spalte).
 			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
 			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
 				<div class="lg:col-span-2 {FLAECHE} p-5 h-72 flex flex-col">
-					<StatistikVerlauf daten={kennzahlen.monats_trend ?? []} />
+					<StatistikVerlauf
+						daten={kennzahlen.monats_trend ?? []}
+						nichtGelesen={abruf.fehlt('monats_trend')}
+					/>
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">
@@ -334,7 +323,11 @@
 				     Fenster darunter schrumpft, scrollt überhaupt die Seite. Feste Höhe statt max-h,
 				     damit beim Umschalten Renner ↔ Ladenhüter nichts springt. -->
 				<div class="flex-1 min-h-48 overflow-y-auto overflow-x-auto">
-					{#if aktiveListe.length === 0}
+					{#if abruf.fehlt(analyse)}
+						<div class="h-full flex items-center justify-center">
+							<LadeFehler knapp titel="{analyseName} nicht geladen" />
+						</div>
+					{:else if aktiveListe.length === 0}
 						{@render leerFlaeche(analyse === 'renner' ? keineAusleihen : keineLadenhueter)}
 					{:else if analyse === 'renner'}
 						{@render rennerTabelle()}

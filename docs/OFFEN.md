@@ -159,7 +159,7 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
 - [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 428 Kommentarzeilen mit Datum;
   eine Ratsche wie im Go-Code, dann Datei für Datei.
-- [ ] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
+- [x] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
   Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
 - [x] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
   500 offenen Forderungen werden lokal zwei Specs rot.
@@ -373,16 +373,6 @@ leerem Bestand; für die Oberfläche fehlt eine Prüfung. Vorschlag: in
 Bestand einfrieren, der nur sinken darf (das Datum einer Quelle ausgenommen, wie im Go-Code),
 dann Datei für Datei die Kommentare auf das Warum kürzen, nach jeder Datei `npx svelte-check`
 und `npx vitest run`.
-
-### 5.73 Statistik: ein Lesefehler sieht aus wie ein leerer Bestand
-
-Scheitert das Lesen von Rennern, Ladenhütern oder Monatstrend, setzt `api/system/statistik.go`
-den Abschnitt leer und schreibt den Fehler nur ins Log. Die Seite zeigt dann den Leerzustand; bei
-den Ladenhütern steht in Grün „Keine Ladenhüter — der Bestand ist in Bewegung"
-(`Statistik.svelte`, Snippet `keineLadenhueter`). Raster, Frage 5: Die Seite meldet Erfolg
-anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Abschnitte, die
-nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
-zuständige Seite von M3 lesen.
 
 ---
 

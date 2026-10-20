@@ -51,6 +51,14 @@ export function statistikAbruf() {
 		get fehler() {
 			return fehler;
 		},
+		/**
+		 * Ob der Server einen Abschnitt nicht lesen konnte (`nicht_gelesen`). Er steht dann leer
+		 * in der Antwort und ist kein leerer Bestand.
+		 * @param {'renner' | 'ladenhueter' | 'kennzahlen' | 'monats_trend'} abschnitt
+		 */
+		fehlt(abschnitt) {
+			return daten?.nicht_gelesen?.includes(abschnitt) ?? false;
+		},
 		laden
 	});
 }

@@ -24,4 +24,13 @@ describe('LadeFehler', () => {
 		screen.getByRole('button', { name: /erneut/i }).click();
 		expect(erneut).toHaveBeenCalledTimes(1);
 	});
+
+	// Die knappe Form steht in einer Kachel an der Stelle des Leerzustands: nur der Titel.
+	it('zeigt in der knappen Form nur den Titel', () => {
+		const screen = render(LadeFehler, {
+			props: { knapp: true, titel: 'Renner nicht geladen', text: 'Grund', onerneut: vi.fn() }
+		});
+		expect(screen.getByRole('alert').textContent?.trim()).toBe('Renner nicht geladen');
+		expect(screen.queryByRole('button')).toBeNull();
+	});
 });

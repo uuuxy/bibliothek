@@ -4,29 +4,19 @@
      (Blau/Orange, CVD-geprüft). Legende immer vorhanden, Hover-Tooltip je Monat, und
      eine visuell versteckte Tabelle als barrierefreier „Table-View". Keine Personendaten. -->
 <script>
+	import LadeFehler from '../ui/LadeFehler.svelte';
+
 	/** @typedef {{ monat: string, ausleihen: number, rueckgaben: number }} TrendPunkt */
-	/** @type {{ daten?: TrendPunkt[] }} */
-	let { daten = [] } = $props();
+	/** nichtGelesen: Der Server konnte den Verlauf nicht lesen; `daten` ist dann leer, aber kein
+	 *  Jahr ohne Ausleihen. @type {{ daten?: TrendPunkt[], nichtGelesen?: boolean }} */
+	let { daten = [], nichtGelesen = false } = $props();
 
 	// Zwei feste Reihenfarben, auf Unterscheidbarkeit bei Farbfehlsichtigkeit geprüft; die
 	// Rollen der Oberfläche führen kein solches Paar.
 	const FARBE_AUSLEIHEN = '#2a78d6';
 	const FARBE_RUECKGABEN = '#eb6834';
 
-	const MONATE_KURZ = [
-		'Jan',
-		'Feb',
-		'Mär',
-		'Apr',
-		'Mai',
-		'Jun',
-		'Jul',
-		'Aug',
-		'Sep',
-		'Okt',
-		'Nov',
-		'Dez'
-	];
+	const MONATE_KURZ = 'Jan Feb Mär Apr Mai Jun Jul Aug Sep Okt Nov Dez'.split(' ');
 	/** @param {string} ym  "2026-07" → "Jul" */
 	const monatKurz = (ym) => MONATE_KURZ[Number(ym.split('-')[1]) - 1] ?? ym;
 	/** @param {string} ym  "2026-07" → "2026" */
@@ -133,7 +123,11 @@
 	</div>
 	<p class="text-xs text-on-surface-variant">Letzte 12 Monate · nach Ausleih- bzw. Rückgabedatum</p>
 
-	{#if !hatDaten}
+	{#if nichtGelesen}
+		<div class="mt-2 flex-1 flex items-center justify-center">
+			<LadeFehler knapp titel="Aktivität nicht geladen" />
+		</div>
+	{:else if !hatDaten}
 		<div
 			class="mt-2 flex-1 flex flex-col items-center justify-center text-center text-xs text-on-surface-variant font-medium"
 		>

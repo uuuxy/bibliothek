@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { ChevronRight, CircleCheck } from '@lucide/svelte';
 
@@ -58,9 +59,10 @@
 		<Ladekreis size="md" />
 	</div>
 {:else if fehler}
-	<p class="py-8 text-center text-sm font-semibold text-error" role="alert">
-		Überfällige Ausleihen konnten nicht geladen werden.
-	</p>
+	<h3 class="text-base font-medium text-on-surface-variant">Überfällige Ausleihen</h3>
+	<div class="flex-1 flex justify-center items-center">
+		<LadeFehler knapp titel="Überfällige Ausleihen nicht geladen" />
+	</div>
 {:else if uebersicht}
 	<!-- NEUTRAL (kein Rot-Alarm): Überfälligkeit als reine Statistik. Zahl und Quote in den Textrollen,
 	     Verteilung in Grau (nur „>60 Tage" in der Warnrolle). Die operative

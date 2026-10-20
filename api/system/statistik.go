@@ -29,6 +29,9 @@ func leseListenGrenze(wert string) int {
 //   - ?type=lmf|freihand grenzt alle Kennzahlen und Listen auf den Bestand der Lernmittel
 //     (Titel mit dem Anfang „lmf-") oder die Schülerbücherei ein.
 //     Ohne Parameter: der ganze Bestand.
+//
+// nicht_gelesen nennt die Abschnitte, deren Abfrage scheiterte: renner, ladenhueter,
+// kennzahlen, monats_trend. Sie stehen leer in der Antwort und sind kein leerer Bestand.
 func (t *Tueren) Statistik() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -37,15 +40,17 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		bestandsFilter, bestandsName := repository.BestandsFilterBedingung(r.URL.Query().Get("type"))
 		listenGrenze := leseListenGrenze(r.URL.Query().Get("limit"))
 
-		// Jeder Abschnitt steht für sich: Scheitert einer, bleibt er leer und steht im Log, die
-		// übrigen erscheinen trotzdem. Eine Teilliste zeigt keiner, weil sie wie ein Ergebnis
-		// aussähe.
+		// Jeder Abschnitt steht für sich: Scheitert einer, bleibt er leer, steht im Log und in
+		// nicht_gelesen, die übrigen erscheinen trotzdem. Ohne die Liste sähe ein Lesefehler aus
+		// wie ein leerer Bestand; eine Teilliste zeigt keiner, weil sie wie ein Ergebnis aussähe.
+		nichtGelesen := []string{}
 
 		// 1. Beliebteste Titel (die Renner), mit den Feldern der Detailseite
 		renner, err := repository.LadeRenner(ctx, t.DB.Pool, ausleihenFilter, bestandsFilter, listenGrenze)
 		if err != nil {
 			log.Printf("stats: Renner konnten nicht ermittelt werden: %v", err)
 			renner = []repository.Renner{}
+			nichtGelesen = append(nichtGelesen, "renner")
 		}
 
 		// 2. Ladenhüter (seit zwei Jahren oder nie ausgeliehen), mit den Feldern der Detailseite
@@ -53,6 +58,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		if err != nil {
 			log.Printf("stats: Ladenhüter konnten nicht ermittelt werden: %v", err)
 			ladenhueter = []repository.Ladenhueter{}
+			nichtGelesen = append(nichtGelesen, "ladenhueter")
 		}
 
 		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (ein aggregierter Scan)
@@ -60,6 +66,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		if err != nil {
 			log.Printf("stats: Bestandskennzahlen konnten nicht ermittelt werden: %v", err)
 			kennzahlen = &repository.BestandKennzahlen{}
+			nichtGelesen = append(nichtGelesen, "kennzahlen")
 		}
 
 		// 4. Aktivitäts-Zeitreihe (Ausleihen/Rückgaben je Monat, letzte 12 Monate).
@@ -69,10 +76,12 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		if err != nil {
 			log.Printf("stats: Monatstrend konnte nicht ermittelt werden: %v", err)
 			monatsTrend = []repository.MonatsTrendPunkt{}
+			nichtGelesen = append(nichtGelesen, "monats_trend")
 		}
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"filter_type":    bestandsName,
+			"nicht_gelesen":  nichtGelesen,
 			"popular_titles": renner,
 			"shelf_warmers":  ladenhueter,
 			"monats_trend":   monatsTrend,

@@ -71,4 +71,18 @@ describe('statistikAbruf', () => {
 		expect(abruf.fehler).toBe(false);
 		expect(abruf.daten).toEqual({ ok: 1 });
 	});
+
+	it('nennt die Abschnitte, die der Server nicht lesen konnte', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, json: async () => ({ nicht_gelesen: ['ladenhueter'] }) })
+		);
+
+		const abruf = statistikAbruf();
+		expect(abruf.fehlt('ladenhueter'), 'vor der Antwort fehlt nichts').toBe(false);
+		await abruf.laden('limit=100');
+
+		expect(abruf.fehlt('ladenhueter')).toBe(true);
+		expect(abruf.fehlt('renner')).toBe(false);
+		expect(abruf.fehler, 'ein Abschnitt ist kein Fehler der ganzen Seite').toBe(false);
+	});
 });

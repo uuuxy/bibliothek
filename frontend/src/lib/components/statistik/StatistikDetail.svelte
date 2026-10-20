@@ -37,6 +37,8 @@
 		(kind === 'renner' ? abruf.daten?.popular_titles : abruf.daten?.shelf_warmers) ?? []
 	);
 	const fetchListe = () => abruf.laden('limit=100');
+	// Eine leere Liste, die der Server nicht lesen konnte, ist kein leerer Bestand.
+	const nichtGeladen = $derived(abruf.fehler || abruf.fehlt(kind));
 
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -106,7 +108,7 @@
 				aria-label="Nach Systematik filtern"
 			/>
 		</div>
-		{#if !abruf.loading}
+		{#if !abruf.loading && !nichtGeladen}
 			<p class="text-label-small text-on-surface-variant font-medium">
 				{gefiltert.length} von {items.length} Einträgen
 			</p>
@@ -117,7 +119,7 @@
 		<div class="py-20 flex justify-center">
 			<Ladekreis size="lg" />
 		</div>
-	{:else if abruf.fehler}
+	{:else if nichtGeladen}
 		<LadeFehler
 			onerneut={fetchListe}
 			titel="Statistik nicht geladen"

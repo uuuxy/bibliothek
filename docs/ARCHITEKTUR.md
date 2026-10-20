@@ -851,6 +851,13 @@ frontend/src
   state"). Wer `ungueltig` nutzt, gibt immer true oder false, nie undefined: Davon hängt ab, ob
   das Feld die Hülle der Symbole hat, und käme sie erst mit dem Fehler, baute Svelte das Feld
   neu und nähme ihm den Fokus. Gemessen: `frontend/e2e/feld-fehlersymbol.spec.js`.
+- **Ein Abschnitt, der nicht geladen wurde, zeigt keinen Leerzustand.** Nennt die Antwort ihn
+  in `nicht_gelesen` (`GET /api/statistiken`) oder scheitert der Abruf einer Kachel, steht an
+  der Stelle des Leerzustands `ui/LadeFehler` in der knappen Form: nur der Titel in der
+  Fehlerrolle, etwa „Ladenhüter nicht geladen". Eine leere Liste hieße sonst „nichts da", bei
+  den Ladenhütern sogar „gut". Material 3, Color roles: „Use error roles to communicate error
+  states"; Grammar and punctuation: „Avoid using periods to end single sentences". Gemessen:
+  `frontend/src/lib/Statistik.test.js`.
 - **Ein Stil im `<style>` eines Bauteils schlägt jede Tailwind-Klasse des Aufrufers,** gleich
   welcher Spezifität: Tailwind legt seine Klassen in `@layer utilities`, die Stile der Bauteile
   stehen in keiner Schicht. Was der Aufrufer bestimmen soll, setzt das Bauteil deshalb nicht

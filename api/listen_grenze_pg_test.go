@@ -54,6 +54,7 @@ var listenGrenze = map[string]string{
 	"GET /api/jahrgaenge $":                                               "keine Obergrenze in der Abfrage; je besetztem Jahrgang ein Eintrag, aus den Klassen mit Schülern (jahrgaengeMitSchuelern, api/leser/schueler_jahrgang_filter.go)",
 	"GET /api/dashboard/summary $.overdue_buckets":                        "vier feste Zeitspannen: 1–14, 15–30, 31–60 und über 60 Tage (api/system/mahn_uebersicht.go)",
 	"GET /api/statistiken $.monats_trend":                                 "zwölf Monate, die letzten elf und der laufende (generate_series in repository.LadeMonatsTrend)",
+	"GET /api/statistiken $.nicht_gelesen":                                "höchstens vier, je gescheiterter Abfrage ein Abschnitt (api/system/statistik.go)",
 	"GET /api/statistiken $.popular_titles":                               "LIMIT aus ?limit=, Vorgabe 5, höchstens 200 (leseListenGrenze, api/system/statistik.go; repository.LadeRenner)",
 	"GET /api/statistiken $.shelf_warmers":                                "LIMIT aus ?limit=, Vorgabe 5, höchstens 200 (leseListenGrenze, api/system/statistik.go; repository.LadeLadenhueter)",
 	"GET /api/monitor/slides $.beliebt":                                   "LIMIT 5 (monitorBeliebtAnzahl, repository/oeffentlich.go)",

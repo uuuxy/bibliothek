@@ -39,4 +39,18 @@ describe('Statistik-Detailseite', () => {
 		expect(zeile?.firstElementChild?.textContent?.trim()).toBe('B');
 		expect(screen.container.querySelector('li img[src*="momo"]')).toBeTruthy();
 	});
+
+	// Eine Liste, die der Server nicht lesen konnte, kommt leer an und ist kein leerer Bestand.
+	it('zeigt den Ladefehler, wenn der Server die Liste nicht lesen konnte', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({ popular_titles: [], nicht_gelesen: ['renner'] })
+			})
+		);
+		const screen = render(StatistikDetail);
+		expect(await screen.findByText('Statistik nicht geladen')).toBeTruthy();
+		expect(screen.queryByText('Noch keine Daten vorhanden.')).toBeNull();
+		expect(screen.queryByText('0 von 0 Einträgen')).toBeNull();
+	});
 });
