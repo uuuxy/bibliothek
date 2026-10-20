@@ -2486,7 +2486,8 @@ Gate gibt es nicht. Sie steht als Invariante im Katalog und in den Kommentaren d
 Funktionen. Der Rückgabe-Trigger aus Migration 137 (`trg_leser_stempel_rueckgabe`) hält sie
 nicht: Er sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an zwei Theken zugleich je
 das Buch des anderen ab, bricht Postgres eine der beiden Buchungen ab; erneutes Scannen bucht.
-Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird.
+Am 24.09.2026 entschieden, das so zu lassen; Abhilfe und Anlass stehen unter den bekannten
+Grenzen (11.5).
 
 **Fundstelle.** Die Folge der Aufrufe in `internal/service/ausleihe_am_leser.go` und
 `nachbuchen.go`; die Sperren in `repository/ausleihe_zeilensperren.go` und `repository/ausleihe.go`
@@ -3187,7 +3188,7 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | D1 | **Invarianten auf Ebene 🟡** (Sperren des Lesers, Überfällig-Automatik, Ausleihlimit, Sperrreihenfolge)                   | Ein zweiter Schreibpfad kann sie auslassen                        | Teils Ermessen enthalten (Override mit Audit), teils über Funktionsgrenzen verteilt          |
 | D2 | **Swagger beschreibt nur einen Teil der Routen** (1.4)                                                                   | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
 | D3 | **Doppelte Migrationsnummern** (003, 008, 021, 022)                                                                      | Style-Smell; sortiert deterministisch                            | Umnummerieren würde bereits gelaufene Migrationen betreffen — Risiko ohne Nutzen              |
-| D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (darf nicht wachsen); Umbau läuft nebenher                    |
+| D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (keine Datei wächst); kleiner wird eine Datei, wenn sie fachlich angefasst wird, nicht in einem Umbau nur der Größe wegen                    |
 | D5 | **Gemischte Sprache an der Grenze** (Adressen, JSON-Felder, Tabellen und Spalten: `idempotency_key` neben `idempotenz_schluessel`) | Wer den Vertrag liest, sieht zwei Sprachen                        | Der Vertrag mit Oberfläche und gespeicherten Daten wird nicht umbenannt ([STIL.md](STIL.md) 9); die Namen im Code folgen STIL.md, gehalten von `stil_ratsche_test.go` und `frontend-hygiene-sprache.test.js` |
 | D6 | **`docs/` ist Go-Paket und Dokumentverzeichnis in einem**                                                                | Verwirrend; Gates liegen bei den Dokumenten                      | Die Gates **wollen** neben ihren Dokumenten liegen (`stand_angaben`, `invarianten_fundstellen`) |
 | D7 | **PG-Tests lokal still übersprungen**                                                                                    | Ein Lauf kann grün aussehen, ohne Constraints geprüft zu haben    | Ein Postgres gehört nicht in einen Push; Gegenmittel ist die Skip-Bilanz                     |
@@ -3324,6 +3325,13 @@ Gewicht.
 
 #### Theke, Netz und Zwischenspeicher
 
+- **Zwei Rückgaben über Kreuz können sich verklemmen.** Der Rückgabe-Trigger
+  (`trg_leser_stempel_rueckgabe`, Migration 137) schreibt `leser.letzter_vorgang_am` nach dem
+  Update auf `ausleihen` und sperrt die Leserzeile damit gegen die Reihenfolge aus A7. Geben
+  zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, bricht Postgres eine der
+  beiden Buchungen ab (40P01); erneutes Scannen bucht, das Nachbuchen holt es in der nächsten
+  Runde nach, Daten gehen nicht verloren. Abhilfe: den Stempel in einer eigenen Tabelle führen,
+  die die Leserzeile nicht sperrt. Anlass: ein Umbau der Karenz-Uhr oder ein 40P01 im Betrieb.
 - **Ein Ausweis aus dem Altbestand ohne Vorsilbe** ist ohne Netz „unklar" und wird abgewiesen;
   das entscheidet sich mit dem frischen Littera-Backup ([OFFEN.md](OFFEN.md) 7.2).
 - **Schreibweise der Nummern** (entschieden am 23.09.2026: am Server nichts bauen). Der Server
