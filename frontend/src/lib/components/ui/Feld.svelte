@@ -26,29 +26,27 @@
 	 * Beschriftung über dem Feld statt schwebend: Ein schwebendes Label wandert beim
 	 * Tippen weg und ist im Ruhezustand vom Platzhalter nicht zu unterscheiden.
 	 *
-	 * Mit `label` liegen die drei Zeilen (Beschriftung, Feld, Hinweis) als Subgrid im
+	 * Mit `etikett` liegen die drei Zeilen (Beschriftung, Feld, Hinweis) als Subgrid im
 	 * Raster des Aufrufers — sonst rutscht ein Feld eine Zeile tiefer, sobald seine
 	 * Beschriftung umbricht. Wer ein Feld über mehrere Spalten zieht, gibt
 	 * `class="sm:col-span-2"` hier mit und packt es nicht in ein <div>.
 	 *
-	 * Ohne `label` (Tabellenzelle, Werkzeugleiste) ist das Bauteil nur das Feld — dann
+	 * Ohne `etikett` (Tabellenzelle, Werkzeugleiste) ist das Bauteil nur das Feld — dann
 	 * ist `aria-label` Pflicht, sonst hat der Screenreader einen namenlosen Kasten.
 	 *
 	 * Der Hilfetext hängt an aria-describedby und liegt außerhalb des <label>: Ein
 	 * Name benennt, eine Beschreibung erklärt.
 	 *
 	 * Zwei-Wege-Bindung erfordert eine Komponente (Snippets können `bind:` nicht
-	 * zurückpropagieren). Alles, was hier nicht benannt ist (placeholder, min, max,
-	 * step, maxlength, pattern, required, disabled, readonly, autocomplete, inputmode,
-	 * list, aria-label, oninput, onchange, onkeydown, onfocus, onblur …), landet
-	 * unverändert auf dem <input>.
+	 * zurückpropagieren). Alles hier nicht Benannte (placeholder, min, required, list,
+	 * aria-label, oninput, onkeydown …) landet unverändert auf dem <input>.
 	 *
 	 * @prop {string|number} [value] - Gebundener Wert (bindable).
 	 * @prop {string} [etikett] - Beschriftung über dem Feld.
 	 * @prop {'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url'} [type='text']
 	 * @prop {string} [hint=''] - Hilfetext unter dem Feld.
-	 * @prop {boolean} [ungueltig=false] - Fehlerzustand: Rahmen und Hinweis in `error`.
-	 * @prop {string} [class] - Rasterangaben des Aufrufers, z. B. "sm:col-span-2" (nur mit label).
+	 * @prop {boolean} [ungueltig] - Fehlerzustand; wer ihn nutzt, gibt true oder false, nie undefined.
+	 * @prop {string} [class] - Rasterangaben des Aufrufers, z. B. "sm:col-span-2" (nur mit etikett).
 	 * @prop {string} [feld] - Zusatzklassen nur fürs <input>, z. B. "w-20 text-center".
 	 * @prop {HTMLInputElement} [element] - bind:this-Ersatz (bindable).
 	 * @prop {Snippet} [vorlaufend] - Inhalt links im Feld (Symbol, Präfix-Text wie „Gültig bis 31.07.").
@@ -63,7 +61,13 @@
 	 * vor-/nachlaufend liegen als Überlagerung über dem Feld (wie in Suchfeld.svelte); das
 	 * Feld bleibt das gerahmte 36-px-Element und bekommt pl-10 bzw. pr-10. Wer breiteren
 	 * Inhalt legt, gibt die Innenabstände über `feld` mit (z. B. feld="pl-36").
+	 *
+	 * Im Fehlerzustand sind Rahmen, Beschriftung und Hinweis `error`, und rechts steht das
+	 * Fehlersymbol (M3, Text fields: „It's strongly recommended to show an error icon when the
+	 * text field is in the error state"), vor nachlaufendem Inhalt. Android blendet dort das
+	 * Symbol am Ende aus; hier bleiben die Knöpfe, denn sie führen oft aus dem Fehler heraus.
 	 */
+	import { CircleAlert } from '@lucide/svelte';
 
 	/** @type {{ value?: any, etikett?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
@@ -71,7 +75,7 @@
 		etikett = undefined,
 		type = 'text',
 		hint = '',
-		ungueltig = false,
+		ungueltig = undefined,
 		class: className = '',
 		feld = '',
 		element = $bindable(),
@@ -89,6 +93,16 @@
 	const feldId = $derived(id ?? `feld-${nummer}`);
 	const hinweisId = $derived(`${feldId}-hinweis`);
 
+	// Wer einen Fehler zeigen kann, steht immer in der Hülle der Symbole: Käme sie erst mit dem
+	// Fehler, baute Svelte das <input> neu, und wer gerade tippt, verlöre den Cursor. Bei fester
+	// Breite ist die Hülle so schmal wie das Feld, sonst stünden die Symbole daneben.
+	const huelle = $derived(!!vorlaufend || !!nachlaufend || ungueltig !== undefined);
+	const festeBreite = $derived(!mehrzeilig && /(^|[\s:])w-(?!full\b)/.test(feld));
+	// Im Fehler kommt rechts das Symbol dazu; der Innenabstand folgt der gemessenen Breite.
+	let rechts = $state(0);
+	const abstandRechts = $derived(ungueltig && rechts ? `calc(${rechts}px + 1.25rem)` : undefined);
+	const farbe = $derived(ungueltig ? 'text-error' : 'text-on-surface-variant');
+
 	const feldKlasse = $derived(
 		// Breite nur setzen, wenn `feld` keine mitbringt: w-full und w-64 sind gleich
 		// spezifisch, dann entschiede die Stylesheet-Reihenfolge statt des Aufrufs.
@@ -101,7 +115,7 @@
 				? 'border-error focus:border-error focus:ring-error '
 				: 'border-outline focus:border-primary focus:ring-primary ') +
 			(vorlaufend && !/\bpl-/.test(feld) ? 'pl-10 ' : '') +
-			(nachlaufend && !/\bpr-/.test(feld) ? 'pr-10 ' : '') +
+			((nachlaufend || ungueltig) && !/\bpr-/.test(feld) ? 'pr-10 ' : '') +
 			feld
 	);
 	const beschreibung = $derived(hint ? hinweisId : undefined);
@@ -119,23 +133,14 @@
 			id={feldId}
 			rows={zeilen}
 			style:min-height="calc({zeilen}lh + 1rem + 2px)"
+			style:padding-right={abstandRechts}
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value
 			class={feldKlasse}
 			{...restFuerTextarea}></textarea>
-	{:else if type === 'number'}
-		<input
-			bind:this={element}
-			id={feldId}
-			type="number"
-			aria-describedby={beschreibung}
-			aria-invalid={ungueltig || undefined}
-			bind:value
-			class={feldKlasse}
-			{...rest}
-		/>
 	{:else}
+		<!-- Ein Element für alle Arten: bind:value liest die Zahl am type des Elements. -->
 		<input
 			bind:this={element}
 			id={feldId}
@@ -144,14 +149,15 @@
 			aria-invalid={ungueltig || undefined}
 			bind:value
 			class={feldKlasse}
+			style:padding-right={abstandRechts}
 			{...rest}
 		/>
 	{/if}
 {/snippet}
 
 {#snippet eingabe()}
-	{#if vorlaufend || nachlaufend}
-		<div class="relative">
+	{#if huelle}
+		<div class="relative {festeBreite ? 'w-fit' : ''}">
 			{#if vorlaufend}
 				<div
 					class="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 items-center gap-2 text-sm whitespace-nowrap text-on-surface-variant"
@@ -160,11 +166,14 @@
 				</div>
 			{/if}
 			{@render roh()}
-			{#if nachlaufend}
+			{#if nachlaufend || ungueltig}
+				<!-- Klicks gehen durch das Symbol ins Feld, die Knöpfe des Aufrufers fangen sie selbst. -->
 				<div
-					class="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1 text-sm text-on-surface-variant"
+					bind:clientWidth={rechts}
+					class="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1 text-sm text-on-surface-variant"
 				>
-					{@render nachlaufend()}
+					{#if ungueltig}<CircleAlert class="h-5 w-5 shrink-0 text-error" aria-hidden="true" />{/if}
+					<span class="pointer-events-auto contents">{@render nachlaufend?.()}</span>
 				</div>
 			{/if}
 		</div>
@@ -175,12 +184,10 @@
 
 {#if etikett}
 	<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5 {className}">
-		<label for={feldId} class="text-sm font-medium text-on-surface-variant">{etikett}</label>
+		<label for={feldId} class="text-sm font-medium {farbe}">{etikett}</label>
 		{@render eingabe()}
 		{#if hint}
-			<span id={hinweisId} class="text-xs {ungueltig ? 'text-error' : 'text-on-surface-variant'}"
-				>{hint}</span
-			>
+			<span id={hinweisId} class="text-xs {farbe}">{hint}</span>
 		{/if}
 	</div>
 {:else}
@@ -188,10 +195,6 @@
 	{#if hint}
 		<!-- Als Block: Ein Zeilenelement nähme die Zeilenhöhe der Umgebung, und ein Hinweis über
 		     mehrere Zeilen stünde zu weit. Der Abstand entspricht dem im Raster darüber. -->
-		<span
-			id={hinweisId}
-			class="mt-1.5 block text-xs {ungueltig ? 'text-error' : 'text-on-surface-variant'}"
-			>{hint}</span
-		>
+		<span id={hinweisId} class="mt-1.5 block text-xs {farbe}">{hint}</span>
 	{/if}
 {/if}

@@ -59,7 +59,7 @@
 		feld="w-64 pl-36 font-semibold"
 	>
 		{#snippet vorlaufend()}
-			<CalendarClock class="h-4 w-4 shrink-0 {fehlt ? 'text-error' : ''}" aria-hidden="true" />
+			<CalendarClock class="h-4 w-4 shrink-0" aria-hidden="true" />
 			<span>Gültig bis 31.07.</span>
 		{/snippet}
 		{#snippet nachlaufend()}

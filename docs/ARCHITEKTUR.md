@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 19.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 20.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -454,7 +454,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 19.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 20.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -845,6 +845,12 @@ frontend/src
   (`titelVerlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,
   Text fields: „If only one error is possible, error text should describe how to avoid the
   error".
+- **Den Fehlerzustand eines Felds setzt `ungueltig` an `ui/Feld`:** Rahmen, Beschriftung und
+  Hinweis in `error`, rechts im Feld das Fehlersymbol, vor Knöpfen im Feld (Material 3, Text
+  fields: „It's strongly recommended to show an error icon when the text field is in the error
+  state"). Wer `ungueltig` nutzt, gibt immer true oder false, nie undefined: Davon hängt ab, ob
+  das Feld die Hülle der Symbole hat, und käme sie erst mit dem Fehler, baute Svelte das Feld
+  neu und nähme ihm den Fokus. Gemessen: `frontend/e2e/feld-fehlersymbol.spec.js`.
 - **Ein Stil im `<style>` eines Bauteils schlägt jede Tailwind-Klasse des Aufrufers,** gleich
   welcher Spezifität: Tailwind legt seine Klassen in `@layer utilities`, die Stile der Bauteile
   stehen in keiner Schicht. Was der Aufrufer bestimmen soll, setzt das Bauteil deshalb nicht
