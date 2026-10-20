@@ -24,8 +24,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5). (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
-- [x] Sicherung außer Haus: Das Programm löscht alte Sicherungen auch am Speicher außer Haus,
-  nach derselben Regel wie auf dem Server (`jobs.zuLoeschen`). (7.3, R8)
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
   Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
   Admin-Konten, Verbindung zur DNB (7.8).
@@ -33,13 +31,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 
 ### Bei dir
-
-**Entscheiden:**
-
-- [x] Meldungen: Steht schon eine da, ersetzt eine neue sie, statt sich über ihr zu stapeln.
-  (4.36)
-- [x] „Neues Buch": Die Signatur zeigt ihren Fehler erst nach dem ersten Klick auf
-  „Speichern", wie der Titel. (4.35)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -136,17 +127,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 ### Termine
 
 - [ ] CodeQL wechselt bei GitHub auf Ubuntu 26, angekündigt für den 19. Oktober 2026; am
-  Morgen danach lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
+  Abend des 20. Oktober lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
 - [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
-
-### Umbau: Lesbarkeit nach Googles Regelwerk für Go
-
-Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lesen
-zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
-Kommentare stehen in [STIL.md](STIL.md), die Prüfungen, die sie halten, in seinem Vorspann.
-
-- [x] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -156,13 +139,6 @@ der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
-- [x] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
-- [x] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** Kommentare mit Datum auf das
-  Warum kürzen und eine Prüfung, die jedes neue meldet.
-- [x] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
-  Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
-- [x] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
-  500 offenen Forderungen werden lokal zwei Specs rot.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -272,11 +248,11 @@ Vermerk.
 
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier
   Workflows laufen auf `ubuntu-26.04`; `ci.yml`, `security-scan.yml` und `docker-publish.yml`
-  sind dort grün (zuletzt am Stand 9687c973). `release.yml` läuft erst mit dem nächsten v-Tag;
+  sind dort grün (zuletzt am Stand c2f41ba0). `release.yml` läuft erst mit dem nächsten v-Tag;
   den Lauf dann ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht
   darunter: CodeQL läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine
   Workflow-Datei) auf `ubuntu-latest`. GitHub kündigte den Wechsel auf Ubuntu 26 für den 19.
-  Oktober 2026 an; am Morgen danach lief CodeQL noch auf `ubuntu-24.04`. Bricht die
+  Oktober 2026 an; am Abend des 20. Oktober lief CodeQL noch auf `ubuntu-24.04`. Bricht die
   Analyse auf dem neuen Abbild, wird der CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist
   `v2.11.1-0.20261003002531-6258dcebc4e2`, der Entwicklungsstand der Bibliothek vom
@@ -302,8 +278,8 @@ Vermerk.
   Push bauen gosec vom Entwicklungsstand des 05.10.2026
   (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51); die Fassung steht
   in `scripts/gosec-gate.sh`. Die jüngste
-  veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am 19.10.2026
-  meldet er mit denselben Ausnahmen nichts (601 Dateien, 61 Vermerke `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
+  veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am 20.10.2026
+  meldet er mit denselben Ausnahmen nichts (603 Dateien, 61 Vermerke `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
@@ -465,7 +441,7 @@ von außen durchlässt, und Port 443 frei ist.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 19.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 20.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
