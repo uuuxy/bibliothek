@@ -82,13 +82,13 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('ZB-S1', 'Hans', 'Castorp', '9a', 2030) RETURNING id`)
 
-	// Eine laufende Ausleihe (rueckgabe_am IS NULL) — das Buch ist bei ihm zu Hause.
-	if _, err := pool.Exec(ctx, `
+	// Eine laufende Ausleihe (rueckgabe_am IS NULL) — das Buch ist bei ihm zu Hause. Das Datum
+	// in der Form der Spur liest der Test hier mit, damit ein Lauf um Mitternacht nicht scheitert.
+	ausgeliehenAm := eins("laufende Ausleihe", `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
-		VALUES ($1, $2, now() - interval '5 days', now() + interval '9 days')`,
-		verliehen, schuelerID); err != nil {
-		t.Fatalf("laufende Ausleihe: %v", err)
-	}
+		VALUES ($1, $2, now() - interval '5 days', now() + interval '9 days')
+		RETURNING to_char(ausgeliehen_am, 'YYYY-MM-DD')`,
+		verliehen, schuelerID)
 	// Dazu eine abgeschlossene mit unbezahlter Gebühr am anderen Exemplar: Beim
 	// Titel-Löschen geht auch die mit — bewusste Entscheidung des Betreibers
 	// („ist das Buch wohl so alt, dass es egal ist").
@@ -96,11 +96,10 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 		VALUES ($1, $2, now() - interval '60 days', now() - interval '46 days', now() - interval '40 days')
 		RETURNING id`, imRegal, schuelerID)
-	if _, err := pool.Exec(ctx, `
+	forderungSeit := eins("Gebühr", `
 		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
-		VALUES ($1, $2, $3, 'Fleck', 3.00, false)`, imRegal, altAusleihe, schuelerID); err != nil {
-		t.Fatalf("Gebühr: %v", err)
-	}
+		VALUES ($1, $2, $3, 'Fleck', 3.00, false)
+		RETURNING to_char(erstellt_am, 'YYYY-MM-DD')`, imRegal, altAusleihe, schuelerID)
 
 	if err := abfragen.LoescheTitel(ctx, []string{titelID}); err != nil {
 		t.Fatalf("Titel mit verliehenem Exemplar muss löschbar sein: %v", err)
@@ -148,7 +147,8 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	if !strings.Contains(kontext, "verliehen") {
 		t.Errorf("Kontext sagt nicht, was los war: %q", kontext)
 	}
-	for _, muss := range []string{"ZB-DRAUSSEN", "Zauberberg", "Hans Castorp"} {
+	// Die Auskunft an den Leser druckt Titel, Buchnummer, Name und das Datum der Ausleihe.
+	for _, muss := range []string{"ZB-DRAUSSEN", "Zauberberg", "Hans Castorp", `"ausgeliehen_am": "` + ausgeliehenAm + `"`} {
 		if !strings.Contains(details, muss) {
 			t.Errorf("Protokollzeile ohne %q — nicht nachschlagbar: %s", muss, details)
 		}
@@ -176,7 +176,8 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	if !strings.Contains(schadenKontext, "Forderung") {
 		t.Errorf("Kontext sagt nicht, was los war: %q", schadenKontext)
 	}
-	for _, muss := range []string{"ZB-REGAL", "Hans Castorp", "3.00", "Fleck", `"schueler_id"`} {
+	for _, muss := range []string{"ZB-REGAL", `"titel": "Der Zauberberg"`, "Hans Castorp", "3.00", "Fleck",
+		`"erstellt_am": "` + forderungSeit + `"`, `"schueler_id"`} {
 		if !strings.Contains(schadenDetails, muss) {
 			t.Errorf("Forderungs-Protokoll ohne %q — nicht nachtragbar: %s", muss, schadenDetails)
 		}

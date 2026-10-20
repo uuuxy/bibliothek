@@ -11,6 +11,7 @@ import (
 	"bibliothek/internal/lusd"
 	"bibliothek/repository"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -127,5 +128,88 @@ func TestLUSDAenderungen_VorschauSchreibtNie(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Preview darf nie schreiben: %v", err)
+	}
+}
+
+// Die Vorschau gibt weiter, was das Lesen der Datei über ihre Zeilen weiß: wie viele es sind,
+// wie viele Dubletten zusammengelegt wurden und welche davon verschiedene Klassen trugen. Nur so
+// fällt vor dem Import auf, wenn zwei Schüler zu einem zusammenfielen.
+func TestLUSDVorschau_NenntZusammengelegteDubletten(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+
+	erwarteEinstellungen(mock)
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger`).
+		WillReturnRows(lusdSchuelerZeilen(2))
+	mock.ExpectRollback()
+
+	zusammengelegt := []lusd.VorschauSchueler{{ID: "L-a", Vorname: "Vora", Nachname: "Nacha", AlteKlasse: "7A", NeueKlasse: "8A"}}
+	datei := lusd.Datei{
+		Modus: lusd.ModusID,
+		Zeilen: []lusd.Zeile{
+			{LUSDID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"},
+			{LUSDID: "L-b", Vorname: "Vorb", Nachname: "Nachb", Klasse: "8B"},
+			{LUSDID: "L-c", Vorname: "Vorc", Nachname: "Nachc", Klasse: "5A"},
+		},
+		DublettenInDatei: 2,
+		Zusammengelegt:   zusammengelegt,
+	}
+	res, err := s.berechneLUSD(t.Context(), datei, false, false)
+	if err != nil {
+		t.Fatalf("s.berechneLUSD(…) = %v", err)
+	}
+	if res.ZeilenInDatei != 3 || res.DublettenInDatei != 2 {
+		t.Errorf("Vorschau: %d Zeilen, %d Dubletten — erwartet 3 und 2", res.ZeilenInDatei, res.DublettenInDatei)
+	}
+	if diff := cmp.Diff(zusammengelegt, res.DublettenAbweichend); diff != "" {
+		t.Errorf("Hinweis auf abweichende Dubletten (-erwartet +ist):\n%s", diff)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
+}
+
+// Ein Lesefehler im Bestand ist ein Fehler und keine kürzere Liste. Liefe die Vorschau mit dem
+// halben oder leeren Bestand weiter, stünden die Zeilen der Datei als Neuzugänge da und die
+// fehlenden Schüler nicht als Abgänger.
+func TestLUSDVorschau_LesefehlerDesBestandsIstFehler(t *testing.T) {
+	lesefehler := errors.New("verbindung weg")
+	for _, fall := range []struct {
+		name    string
+		antwort func(*pgxmock.ExpectedQuery)
+	}{
+		{"die Abfrage scheitert", func(q *pgxmock.ExpectedQuery) { q.WillReturnError(lesefehler) }},
+		{"das Lesen bricht nach zwei Zeilen ab", func(q *pgxmock.ExpectedQuery) {
+			q.WillReturnRows(lusdSchuelerZeilen(2).RowError(2, lesefehler))
+		}},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("pgxmock: %v", err)
+			}
+			defer mock.Close()
+			s := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
+
+			erwarteEinstellungen(mock)
+			mock.ExpectBegin()
+			fall.antwort(mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger`))
+			mock.ExpectRollback()
+
+			res, err := s.berechneLUSDAenderungen(t.Context(), []lusd.Zeile{
+				{LUSDID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"},
+			}, false, false)
+			if !errors.Is(err, lesefehler) {
+				t.Errorf("s.berechneLUSDAenderungen(…) = %+v, %v, erwartet den Lesefehler", res, err)
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("offene Erwartungen: %v", err)
+			}
+		})
 	}
 }

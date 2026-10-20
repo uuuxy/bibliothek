@@ -223,3 +223,53 @@ func TestSchreibeSchlagworte_NichtUebernommenerTitelWirdGezaehltNichtGeschrieben
 		t.Errorf("das Protokoll meldet einen gescheiterten Schreibversuch für einen Titel, den es nicht gibt:\n%s", log)
 	}
 }
+
+// Scheitert die Liste eines Titels, fehlen nur seine Schlagworte: Jeder Titel läuft im eigenen
+// Savepoint, die anderen Titel desselben Batches behalten ihre, und auch die Wörter des
+// gescheiterten Titels entstehen nicht. Der Bericht zählt ihn als übersprungen, das Protokoll
+// nennt ihn.
+func TestSchreibeSchlagworte_GescheiterterTitelKostetNurSeineWoerter(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	ab := bestand(titel("1", "Erster", ""), titel("2", "Scheitert", ""), titel("3", "Dritter", ""))
+	ab.Schlagworte = SchlagwortQuelle{JeTitel: map[string][]string{
+		"1": {"Geschichte"},
+		"2": {"Erdkunde", "Atlas"},
+		"3": {"Biologie"},
+	}}
+	bestandBericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatal(err)
+	}
+	erzwingeZeilenfehler(t, pool, "titel_schlagworte", "titel_id", bestandBericht.TitelIDs["2"])
+
+	b, err := s.SchreibeSchlagworte(ctx, ab, bestandBericht)
+	if err != nil {
+		t.Fatalf("SchreibeSchlagworte: %v", err)
+	}
+
+	for id, will := range map[string][]string{"1": {"Geschichte"}, "2": nil, "3": {"Biologie"}} {
+		if got := schlagworteAm(t, pool, bestandBericht.TitelIDs[id]); !slices.Equal(got, will) {
+			t.Errorf("Titel %s trägt %q, erwartet %q", id, got, will)
+		}
+	}
+	if b.Uebersprungen != 1 || b.Titel != 2 || b.Zuordnungen != 2 || !b.AbgleichOK {
+		t.Errorf("Bericht: %d gescheitert, %d Zuordnungen an %d Titeln, Abgleich %v — erwartet 1, 2 an 2, true",
+			b.Uebersprungen, b.Zuordnungen, b.Titel, b.AbgleichOK)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schlagworte`); n != 2 {
+		t.Errorf("%d Wörter angelegt, erwartet 2 — Erdkunde und Atlas fallen mit dem Savepoint", n)
+	}
+	gemeldet := false
+	for _, zeile := range strings.Split(protokoll(), "\n") {
+		if strings.Contains(zeile, "Schlagworte nicht übernommen") {
+			gemeldet = strings.Contains(zeile, "littera_id=2 ")
+		}
+	}
+	if !gemeldet {
+		t.Errorf("das Protokoll nennt den gescheiterten Titel 2 nicht:\n%s", protokoll())
+	}
+}
