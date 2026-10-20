@@ -1,7 +1,6 @@
 package mahnwesen
 
 import (
-	"log"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -21,14 +20,8 @@ func (t *Tueren) UeberfaelligeAusleihen(mahnAbfragen *repository.MahnwesenAbfrag
 			return
 		}
 
-		heuteRetourniert, err := mahnAbfragen.ZaehleRueckgabenHeute(ctx)
-		if err != nil {
-			log.Printf("mahnwesen: Anzahl heutiger Rückgaben konnte nicht ermittelt werden: %v", err)
-		}
-
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
-			"klassen":           klassen,
-			"heute_retourniert": heuteRetourniert,
+			"klassen": klassen,
 		})
 	}
 }

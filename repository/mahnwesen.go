@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"time"
 
 	"bibliothek/db"
@@ -79,19 +78,4 @@ type MahnwesenAbfragen struct {
 // NewMahnwesenAbfragen liefert die Abfragen des Mahnwesens an Postgres.
 func NewMahnwesenAbfragen(pool db.Pool) *MahnwesenAbfragen {
 	return &MahnwesenAbfragen{db: pool}
-}
-
-// ZaehleRueckgabenHeute zählt die heute zurückgegebenen Ausleihen; „heute" ist der Kalendertag
-// der Schule. In der Zeitzone der Sitzung (im Image UTC) zählte eine Rückgabe zwischen 0 und 2
-// Uhr Berliner Zeit zum Vortag. Die Zahl steht auf dem Dashboard der Bibliothek; eine Zahl, die
-// um zwei Stunden verrutscht, erklärt niemandem, warum die Rückgabe von eben nicht zu sehen
-// ist.
-func (a *MahnwesenAbfragen) ZaehleRueckgabenHeute(ctx context.Context) (int, error) {
-	var anzahl int
-	err := a.db.QueryRow(ctx, `
-		SELECT count(*) FROM ausleihen
-		WHERE rueckgabe_am IS NOT NULL
-		  AND (rueckgabe_am AT TIME ZONE '`+schulzeit.ZonenName+`')::date = `+schulzeit.SQLHeute+`
-	`).Scan(&anzahl)
-	return anzahl, err
 }

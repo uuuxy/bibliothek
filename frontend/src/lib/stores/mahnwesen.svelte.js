@@ -43,8 +43,6 @@ function erzeugeMahnwesen() {
 	let laedt = $state(true);
 	let fehler = $state(/** @type {string|null} */ (null));
 
-	let heuteRetourniert = $state(0);
-
 	// Filter und Auswahl
 	let offeneKlassen = /** @type {Set<string>} */ (new SvelteSet());
 	let gewaehlteKlasse = $state(''); // Klassenfilter (leer = alle)
@@ -124,7 +122,6 @@ function erzeugeMahnwesen() {
 			if (!res.ok) throw new Error((await res.text()) || 'Fehler beim Laden');
 			const json = await res.json();
 			daten = json;
-			heuteRetourniert = json.heute_retourniert || 0;
 			gewaehlteKennungen.clear();
 		} catch (e) {
 			fehler = String(e);
@@ -200,9 +197,6 @@ function erzeugeMahnwesen() {
 		},
 		get ueberfaelligGesamt() {
 			return ueberfaelligGesamt;
-		},
-		get heuteRetourniert() {
-			return heuteRetourniert;
 		},
 		get stufenFilter() {
 			return stufenFilter;

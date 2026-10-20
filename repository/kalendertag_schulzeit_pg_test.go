@@ -13,13 +13,9 @@ import (
 // Wo ein Tag gemeint ist, muss der Tag der Schule gelten — nicht der der Sitzung.
 //
 // Die Datenbank läuft im Image in UTC. Ein Zeitpunkt um 00:30 Berliner Zeit gehört dort
-// noch zum Vortag, und zwei Prädikate haben genau daran gehangen:
-//
-//   - Der Mahnlauf („höchstens einmal am Tag", api/mahnwesen/mahnbriefe.go): Der Tag wechselte
-//     um 2 Uhr Berliner Zeit statt um Mitternacht. Ein Lauf kurz nach Mitternacht galt als
-//     „heute schon gemahnt" und wurde übersprungen.
-//   - „Heute zurückgegeben" (ZaehleRueckgabenHeute): Eine Rückgabe zwischen 0 und 2 Uhr zählte
-//     zum Vortag.
+// noch zum Vortag. Daran hängt der Mahnlauf („höchstens einmal am Tag",
+// api/mahnwesen/mahnbriefe.go): In der Zone der Sitzung wechselte der Tag um 2 Uhr Berliner
+// Zeit statt um Mitternacht, und ein Lauf kurz nach Mitternacht galt als „heute schon gemahnt".
 //
 // Was dieser Test nicht kann: den Fehler zur Laufzeit auslösen. Er tritt nur zwischen
 // Mitternacht in Berlin und Mitternacht UTC ein, und `now()` lässt sich in Postgres nicht
@@ -35,7 +31,7 @@ import (
 //     Test nicht bloß seine eigene Kopie misst.
 
 // mitternachtNachtsBerlin: heute um 00:30 Uhr Berliner Zeit, als Zeitpunkt.
-// Genau die Stunde, in der die beiden Prädikate falsch lagen.
+// Genau die Stunde, in der die Form in der Zone der Sitzung falsch liegt.
 const mitternachtNachtsBerlin = `((((now() AT TIME ZONE 'Europe/Berlin')::date) + INTERVAL '30 minutes') AT TIME ZONE 'Europe/Berlin')`
 
 // tagInZonen wertet einen Datums-Ausdruck über `wert` in zwei weit auseinanderliegenden
@@ -99,9 +95,6 @@ func TestKalendertag_DieLebendenAbfragenBenutzenDenSchultag(t *testing.T) {
 		{"mahnbriefe.go",
 			"der Mahnlauf vergleicht nicht mehr gegen den Kalendertag der Schule — eine Ausleihe " +
 				"kann damit an einem Tag zweimal in der Mahnstufe steigen"},
-		{"mahnwesen.go",
-			"ZaehleRueckgabenHeute zählt nicht mehr am Kalendertag der Schule — Rückgaben nach " +
-				"Mitternacht fehlen dann auf dem Dashboard"},
 		{"bescheid.go",
 			"der Bescheid rechnet nicht mehr mit dem Kalendertag der Schule"},
 	}
