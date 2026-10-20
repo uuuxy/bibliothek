@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
@@ -96,7 +97,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
-	frist := testdaten.BucheAusleiheUeberDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
+	frist := testweg.BucheAusleiheUeberDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 	// Beide Seiten durch dieselbe Definition des Betriebs schicken
 	// (lmfplan.Ferientabelle.Tagesfrist), statt Kalendertage in der Zeitzone des Testrechners zu
 	// vergleichen: Die Frist entsteht in der Schul-Zeitzone (Europe/Berlin), time.Now() steht in
@@ -112,7 +113,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (%d Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"), tage)
 	}
-	testdaten.BucheAusleiheUeberDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
 
 	// 3. Überfällig werden lassen — und prüfen, wen die Abfrage findet.
 	inDieVergangenheit(t, pool, anna, 9)

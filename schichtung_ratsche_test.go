@@ -35,6 +35,7 @@ var datenbankschicht = map[string]string{
 	"internal/littera":   "Schreiber der einmaligen Übernahme aus Littera",
 	"internal/pgtest":    "Prüfhilfe, legt das Schema der Testdatenbank an",
 	"internal/testdaten": "Prüfhilfe, legt Zeilen in der Testdatenbank an und leert sie",
+	"internal/testweg":   "Prüfhilfe, legt Zeilen an und liest sie, wo sie Pakete des Programms braucht",
 	"scripts":            "Einmal-Skripte außerhalb des Programms",
 	"cmd/":               "Einmal-Werkzeuge mit eigener Verbindung",
 }

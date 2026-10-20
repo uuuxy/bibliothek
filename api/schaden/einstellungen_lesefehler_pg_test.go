@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 )
 
 // Die Ersatzforderung trägt den Kopf der Schule, die Zahlstelle und die Bankverbindung aus den
@@ -31,7 +32,7 @@ func TestErsatzforderung_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testweg.PoolMitLesefehler{Pool: pool, Muster: testweg.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Die Ersatzforderung entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}

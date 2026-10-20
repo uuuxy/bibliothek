@@ -7,6 +7,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 )
@@ -115,8 +116,8 @@ func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.
 	ctx := context.Background()
 	const name, freitext = "Doppelt Spurprobe", "FREITEXT-PROBE Einband abgerissen"
 
-	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Erst", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-1", Geburtsdatum: testdaten.Datum(2012, 5, 5)})
-	quelle := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Doppelt", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-2", Geburtsdatum: testdaten.Datum(2012, 5, 5)})
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Erst", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-1", Geburtsdatum: testdaten.Datum(2012, 5, 5)})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Doppelt", Nachname: "Spurprobe", Klasse: "07A", Barcode: "TLZ-2", Geburtsdatum: testdaten.Datum(2012, 5, 5)})
 
 	var titelID string
 	if err := pool.QueryRow(ctx,
@@ -136,7 +137,7 @@ func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.
 	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
-	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
 

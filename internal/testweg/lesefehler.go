@@ -1,4 +1,4 @@
-package testdaten
+package testweg
 
 import (
 	"context"

@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/internal/tuertest"
 )
 
@@ -35,7 +36,7 @@ func TestDSGVOAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE aktion = 'dsgvo_auskunft' AND datensatz_id = $1::uuid`, leserID)
 	})
 
-	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testweg.PoolMitLesefehler{Pool: pool, Muster: testweg.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Die Auskunft entsteht ohne die Angaben der Schule", rec.Code)
 	}

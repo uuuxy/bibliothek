@@ -27,7 +27,8 @@ var schreibpfadeGegenSicht = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"internal/testdaten/leser.go":            {4, "Prüfhilfe der Tests: legt Schüler an; kein Schreibpfad des Programms"},
+	"internal/testdaten/leser.go":            {3, "Prüfhilfe der Tests: legt Schüler an; kein Schreibpfad des Programms"},
+	"internal/testweg/lusd.go":               {1, "Prüfhilfe der Tests: legt einen Schüler an, wie der LUSD-Import ihn hinterlässt"},
 	"internal/littera/schreiber_personen.go": {1, "Littera-Schülerlauf; der Personenlauf des Kollegiums schreibt in benutzer"},
 	"repository/schuljahreswechsel.go":       {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/lusd_import.go":              {5, "LUSD-Abgleich: anlegen, ändern, Abgang buchen — die LUSD kennt nur Schüler"},

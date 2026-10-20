@@ -8,6 +8,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/repository"
 )
 
@@ -24,7 +25,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 	kind := testdaten.LegeSchuelerAn(t, pool, "S-SPERRE-1", "Gesperrt", "9H1")
 	testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Titel Sperre", 1), "B-SPERRE-1", true, "")
-	testdaten.BucheAusleiheUeberDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
 
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test: Sperre' WHERE id = $1`, kind); err != nil {
@@ -160,7 +161,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 
 	// 1. Das Kind an der Theke ist gesperrt — das Buch gehört einem anderen.
 	eigentuemer1 := testdaten.LegeSchuelerAn(t, pool, "S-FREMD-EIG1", "Eigentuemer", "9H2")
-	testdaten.BucheAusleiheUeberDienst(t, pool, "B-FREMD-1", eigentuemer1, bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, pool, "B-FREMD-1", eigentuemer1, bearbeiter)
 	gesperrt := testdaten.LegeSchuelerAn(t, pool, "S-FREMD-SPERRE", "Gesperrt", "9H2")
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test: Sperre' WHERE id = $1`, gesperrt); err != nil {
@@ -170,8 +171,8 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 
 	// 2. Das Kind an der Theke ist am Ausleihlimit — das Buch gehört einem anderen.
 	eigentuemer2 := testdaten.LegeSchuelerAn(t, pool, "S-FREMD-EIG2", "Eigentuemer2", "9H2")
-	testdaten.BucheAusleiheUeberDienst(t, pool, "B-FREMD-2", eigentuemer2, bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, pool, "B-FREMD-2", eigentuemer2, bearbeiter)
 	amLimit := testdaten.LegeSchuelerAn(t, pool, "S-FREMD-LIMIT", "AmLimit", "9H2")
-	testdaten.BucheAusleiheUeberDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
 	fremdrueckgabe(t, "B-FREMD-2", amLimit, eigentuemer2)
 }

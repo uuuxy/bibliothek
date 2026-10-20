@@ -14,6 +14,7 @@ import (
 // an und leeren Tabellen, bauen Attrappen und lesen erzeugte Blätter.
 var pruefhilfen = []string{
 	"bibliothek/internal/testdaten",
+	"bibliothek/internal/testweg",
 	"bibliothek/internal/tuertest",
 	"bibliothek/internal/routertest",
 	"bibliothek/internal/pgtest",

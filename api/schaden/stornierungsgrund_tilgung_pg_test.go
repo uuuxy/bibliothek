@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -158,12 +159,12 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Leserzeile vorher zusammengeführt", func(t *testing.T) {
 		const grund = "STORNO-PROBE-D Schwester von Dana Doppelt hat bezahlt"
-		ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Dana", Nachname: "Doppelt", Klasse: "07A", Barcode: "S-STORNO-D1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
-		quelle := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Dana", Nachname: "Doppelt-Alt", Klasse: "07A", Barcode: "S-STORNO-D2", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
+		ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Dana", Nachname: "Doppelt", Klasse: "07A", Barcode: "S-STORNO-D1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
+		quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Dana", Nachname: "Doppelt-Alt", Klasse: "07A", Barcode: "S-STORNO-D2", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
 		storniere(t, quelle, "D", grund)
 		stehtAnBeidenStellen(t, grund)
 
-		if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
 		anonymisiere(t, ziel)

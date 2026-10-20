@@ -108,12 +108,10 @@ internal/testdaten/leser.go: unreachable func: LegeSchuelerAn
 internal/testdaten/leser.go: unreachable func: LegeSchuelerMitNamenAn
 internal/testdaten/leser.go: unreachable func: LegeLeserAn
 internal/testdaten/leser.go: unreachable func: LegeAbgaengerAn
-internal/testdaten/leser.go: unreachable func: LegeLUSDSchuelerAn
 internal/testdaten/leser.go: unreachable func: LegeKontoAn
 internal/testdaten/leser.go: unreachable func: LegeKollegiumskontoAn
 internal/testdaten/leser.go: unreachable func: LegeBearbeiterAn
 internal/testdaten/leser.go: unreachable func: SetzeKlassenleitung
-internal/testdaten/leser.go: unreachable func: ZusammenfuehrenAuftrag
 internal/testdaten/leser.go: unreachable func: LegeAdminKontoAn
 internal/testdaten/leser.go: unreachable func: LadeSchuelerStatus
 internal/testdaten/rechte.go: unreachable func: SetzeGenauEinRecht
@@ -124,7 +122,8 @@ internal/testdaten/ausleihe.go: unreachable func: LadeFrist
 internal/testdaten/ausleihe.go: unreachable func: FristEnde
 internal/testdaten/ausleihe.go: unreachable func: LadeMahnstufe
 internal/testdaten/ausleihe.go: unreachable func: LegeSchuelerMitAusleiheAn
-internal/testdaten/dienst.go: unreachable func: BucheAusleiheUeberDienst
+internal/testweg/dienst.go: unreachable func: BucheAusleiheUeberDienst
+internal/testweg/lusd.go: unreachable func: LegeLUSDSchuelerAn
 internal/testdaten/bestellung.go: unreachable func: LegeLieferantAn
 internal/testdaten/bestellung.go: unreachable func: LegeBestellungAn
 internal/testdaten/bestellung.go: unreachable func: LadeBarcodesDerBestellung
@@ -139,7 +138,7 @@ internal/testdaten/schaden.go: unreachable func: LegeForderungAn
 internal/testdaten/schaden.go: unreachable func: BescheidRumpf
 internal/testdaten/schaden.go: unreachable func: In28Tagen
 internal/testdaten/schaden.go: unreachable func: LegeOffenenSchadenAn
-internal/testdaten/lesefehler.go: unreachable func: PoolMitLesefehler.Query
+internal/testweg/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 
 # Testinfrastruktur per Paket-Design: eine Anfrage an eine Tür stellen und ihre Antwort lesen,
 # dazu die Attrappe der DNB (vorher Helfer in Testdateien von api/, die Tests mehrerer Themen

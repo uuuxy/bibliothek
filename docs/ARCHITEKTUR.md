@@ -558,7 +558,7 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 | `internal/buchetikett/` | Die Eingabe der Buchetiketten, die Druck-Center und Bestellung drucken (8.9)                                                                                                    |
 | `internal/littera/`, `internal/uebernahme/` | Übernahme des Littera-Altbestands (5.2.4)                                                                                                                   |
 | `internal/crypto/`, `internal/backupkrypto/`, `internal/ausweis/`, `internal/middleware/` | AES-256-GCM; scrypt und Dateiformat der Backups; Gültigkeit eines Ausweises; Security-Header                                    |
-| `internal/pgtest/`, `smtptest/`, `pdftest/`, `xlsxtest/`, `testdaten/`, `tuertest/`, `routertest/` | Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden                                                                   |
+| `internal/pgtest/`, `smtptest/`, `pdftest/`, `xlsxtest/`, `testdaten/`, `testweg/`, `tuertest/`, `routertest/` | Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden                                                                   |
 | `pdf/`                  | Erzeugte Dokumente: Briefe, Listen, Bescheid, Rechnung, Etiketten mit ihren Bogenformaten, Bestandsbücher (8.9)                                                                 |
 | `mailservice/`          | Aufbau und Versand einer Mail, erzwungenes STARTTLS, Kopfzeilen-Härtung, die Konfiguration, mit der verschickt wird (8.10)                                                     |
 | `sse/`                  | Broker und Tür für Server-Sent Events (5.4.4)                                                                                                                                   |
@@ -598,7 +598,7 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
   `repository/`, auch wenn er sie über eine Tür oder einen Dienst erreicht; ein Test des
   Ausleih-Dienstes in `internal/service`; ein Paar aus Go und SQL bei der Go-Seite; der Lauf
   einer Migration in `db/`.
-- Braucht er eine Prüfhilfe, die sein Paket einbindet (`internal/testdaten`,
+- Braucht er eine Prüfhilfe, die sein Paket einbindet (`internal/testweg`,
   `internal/routertest`), steht er als Testpaket daneben (`package repository_test`), wie es
   Googles Regelwerk für diesen Fall vorsieht
   ([Test package](https://google.github.io/styleguide/go/decisions#test-package)).

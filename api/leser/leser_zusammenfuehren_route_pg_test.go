@@ -13,6 +13,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
@@ -55,8 +56,8 @@ func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
 
-	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geburtsdatum: testdaten.Datum(2012, 3, 3), IstAbgaenger: true})
-	quelle := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Neu", Nachname: "Route", Klasse: "08A", Barcode: "ZR-2", Geburtsdatum: testdaten.Datum(2012, 3, 3)})
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geburtsdatum: testdaten.Datum(2012, 3, 3), IstAbgaenger: true})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Neu", Nachname: "Route", Klasse: "08A", Barcode: "ZR-2", Geburtsdatum: testdaten.Datum(2012, 3, 3)})
 	testdaten.LegeOffeneAusleiheAn(t, pool, quelle, "ZRQ")
 
 	rec := zusammenfuehrenUeberRoute(t, srv, pool, admin, ziel, zrRumpf(quelle))
@@ -101,7 +102,7 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 
 	schueler := func(t *testing.T, nachname, barcode string) string {
 		t.Helper()
-		return testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Zr", Nachname: nachname, Klasse: "07A", Barcode: barcode, Geburtsdatum: testdaten.Datum(2012, 5, 5)})
+		return testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Zr", Nachname: nachname, Klasse: "07A", Barcode: barcode, Geburtsdatum: testdaten.Datum(2012, 5, 5)})
 	}
 	faelle := []struct {
 		name   string
@@ -171,7 +172,7 @@ func TestZusammenfuehrenRoute_UnbrauchbareAnfrage(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := testdaten.LegeBearbeiterAn(t, pool)
-	ziel := testdaten.LegeLUSDSchuelerAn(t, pool, testdaten.LUSDSchuelerNeu{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
 
 	for name, rumpf := range map[string]string{
 		"Quelle fehlt":      `{}`,

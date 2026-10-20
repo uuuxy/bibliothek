@@ -8,6 +8,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/repository"
 )
 
@@ -28,7 +29,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	// Die Forderung hängt an einem verlorenen Buch der Schülerbücherei.
 	buecherei := testdaten.LegeTitelAn(t, pool, "Roman ohne Kennung", 1)
 	verloren := testdaten.LegeExemplarAn(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
-	testdaten.BucheAusleiheUeberDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
 	if _, err := pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kind); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)

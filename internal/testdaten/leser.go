@@ -3,11 +3,8 @@ package testdaten
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"bibliothek/repository"
 )
 
 // LegeSchuelerAn legt einen Schüler mit dem Nachnamen „Test“ an und liefert seine Kennung.
@@ -59,32 +56,6 @@ func LegeAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse 
 		 VALUES ($1, $2, 'Test', $3, 2030, true) RETURNING id`,
 		barcode, vorname, klasse).Scan(&id); err != nil {
 		t.Fatalf("Abgänger %q anlegen: %v", vorname, err)
-	}
-	return id
-}
-
-// LUSDSchuelerNeu sind die Angaben für LegeLUSDSchuelerAn. Ein Abgänger entsteht gesperrt, mit
-// dem Sperrgrund der Abgänger und einer Karenz, die seit zehn Tagen läuft.
-type LUSDSchuelerNeu struct {
-	Vorname, Nachname, Klasse, Barcode string
-	Geburtsdatum, SchulEintrittAm      *time.Time
-	IstAbgaenger                       bool
-}
-
-// LegeLUSDSchuelerAn legt einen Schüler an, wie ihn der LUSD-Import hinterlässt: mit
-// Geburtsdatum und Schuleintritt, vor einem Jahr bestätigt.
-func LegeLUSDSchuelerAn(t *testing.T, pool *pgxpool.Pool, s LUSDSchuelerNeu) string {
-	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,
-		                      schul_eintritt_am, ist_abgaenger, lusd_bestaetigt_am, ist_gesperrt, block_reason, abgaenger_seit)
-		VALUES ($1,$2,$3,$4,2031,$5,$6,$7,NOW() - interval '1 year',$7,
-		        CASE WHEN $7 THEN '`+repository.AbgaengerSperrgrundKarenz+`' END,
-		        CASE WHEN $7 THEN NOW() - interval '10 days' END)
-		RETURNING id`,
-		s.Vorname, s.Nachname, s.Klasse, s.Barcode, s.Geburtsdatum, s.SchulEintrittAm, s.IstAbgaenger).Scan(&id); err != nil {
-		t.Fatalf("Schüler %s %s anlegen: %v", s.Vorname, s.Nachname, err)
 	}
 	return id
 }
@@ -141,12 +112,6 @@ func SetzeKlassenleitung(t *testing.T, pool *pgxpool.Pool, klasse, email string)
 	if err != nil {
 		t.Fatalf("Klassenleitung für %s eintragen: %v", klasse, err)
 	}
-}
-
-// ZusammenfuehrenAuftrag baut den Auftrag, die Quelle in das Ziel zusammenzuführen, ohne
-// Bearbeiter.
-func ZusammenfuehrenAuftrag(ziel, quelle string) repository.ZusammenfuehrenAuftrag {
-	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}
 }
 
 // LegeAdminKontoAn legt ein aktives Admin-Konto mit dieser Adresse an und liefert seine

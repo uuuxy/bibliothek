@@ -65,7 +65,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 		ziel := legeLeser(t, "Katrin", "Wendlandt", "liv", "ZF-K-1")
 		quelle := legeLeser(t, "Katrin", "Wendlandt", "lehrkraft", "")
 
-		erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
+		erg, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle})
 		if err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
@@ -99,7 +99,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			{"Kollege als Ziel", kollege, schueler},
 		} {
 			t.Run(f.name, func(t *testing.T) {
-				_, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(f.ziel, f.quelle))
+				_, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: f.ziel, QuelleID: f.quelle})
 				if !errors.Is(err, repository.ErrZusammenfuehrenVerschiedeneArten) {
 					t.Fatalf("Fehler war %v, erwartet ErrZusammenfuehrenVerschiedeneArten", err)
 				}
@@ -160,7 +160,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			RETURNING leser_id`).Scan(&quelle); err != nil {
 			t.Fatalf("Konto anlegen: %v", err)
 		}
-		if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
 		var nummer *string

@@ -12,6 +12,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -268,7 +269,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-4", "Forderung", "08B")
 
 	// Die Forderung hängt an einem verlorenen Schulbuch — Topf des Landes.
-	testdaten.BucheAusleiheUeberDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
+	testweg.BucheAusleiheUeberDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
 	var ex string
 	if err := th.pool.QueryRow(ctx, `SELECT id FROM buecher_exemplare WHERE barcode_id = $1`, schulbuch).Scan(&ex); err != nil {
 		t.Fatal(err)
@@ -347,7 +348,7 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 	kind := testdaten.LegeSchuelerAn(t, th.pool, "S-SPERRWEG-5", "Limit", "08B")
 	erstes := testdaten.LegeTitelAn(t, th.pool, "Erstes Buch LIM", 1)
 	testdaten.LegeExemplarAn(t, th.pool, erstes, "B-LIM-1", true, "")
-	testdaten.BucheAusleiheUeberDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
+	testweg.BucheAusleiheUeberDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
 	altes := testdaten.LegeTitelAn(t, th.pool, "Verlorenes Buch LIM", 1)
 	verloren := testdaten.LegeExemplarAn(t, th.pool, altes, "B-LIM-ALT", false, "")
 	if _, err := th.pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)

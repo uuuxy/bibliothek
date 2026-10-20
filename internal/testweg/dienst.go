@@ -1,4 +1,13 @@
-package testdaten
+// Package testweg hält die Prüfhilfen, die Pakete des Programms brauchen: eine Ausleihe über den
+// Dienst der Theke, einen Pool, an dem genau ein Lesen scheitert, und einen Schüler mit dem
+// Sperrgrund, den der LUSD-Import setzt. Sie stehen nicht in
+// internal/testdaten, damit dieses ohne Pakete des Projekts auskommt und auch die Tests von
+// repository, db, inventur und internal/service es einbinden können. Wer testweg braucht und
+// in einem dieser Pakete prüft, schreibt seinen Test als Testpaket daneben.
+//
+// Wie internal/pgtest ist es ein gewöhnliches Paket, das nur Tests einbinden; die Liste des
+// toten Codes (scripts/deadcode_baseline.txt) führt seine Funktionen deshalb mit Begründung.
+package testweg
 
 import (
 	"context"

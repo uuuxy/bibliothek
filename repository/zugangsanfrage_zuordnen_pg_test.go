@@ -66,7 +66,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		ziel := legeAltbestandAn(t, "Anna", "Bergér", "ZO-ALT-1", "ZO1")
 		konto, waise := legeZugangsanfrageAn(t, "Anna", "Berger", "anna.berger@schule.invalid")
 
-		erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise))
+		erg, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: waise})
 		if err != nil {
 			t.Fatalf("zuordnen: %v", err)
 		}
@@ -129,7 +129,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		_, waise := legeZugangsanfrageAn(t, "Jan", "Kuepper", "jan.kuepper@schule.invalid")
 
 		// Verkehrt herum: die Zeile des Wächters als Ziel.
-		if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(waise, alt)); err != nil {
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: waise, QuelleID: alt}); err != nil {
 			t.Fatalf("verkehrte Richtung: %v", err)
 		}
 		if n := zfZaehle(t, pool, `SELECT count(*) FROM leser WHERE id = $1`, alt); n != 0 {
@@ -186,7 +186,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 		t.Fatalf("Zugangsanfrage anlegen: %v", err)
 	}
 
-	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: waise}); err != nil {
 		t.Fatalf("zuordnen: %v", err)
 	}
 
@@ -246,7 +246,7 @@ func TestZugangsanfrageZuordnen_ZweiEchteKontenBrechenWeiterAb(t *testing.T) {
 		t.Fatalf("zweites Konto: %v", err)
 	}
 
-	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err == nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err == nil {
 		t.Fatal("zwei echte Konten wurden zusammengeführt — eine der beiden Anmeldungen ist verloren")
 	}
 	// Nichts darf angetastet sein.

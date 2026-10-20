@@ -14,6 +14,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/mitteltopf"
 )
@@ -34,7 +35,7 @@ func TestBestellbericht_EinstellungenUnlesbar_KeinBlatt(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testweg.PoolMitLesefehler{Pool: pool, Muster: testweg.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Bericht entsteht mit den Vorgaben statt mit den Angaben der Schule", rec.Code)
 	}
@@ -67,7 +68,7 @@ func TestBestellmail_EinstellungenUnlesbar_KeineMail(t *testing.T) {
 
 	t.Run("gestört", func(t *testing.T) {
 		post, sitzungen := tuertest.FangeMailAb(t)
-		gestoert := testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen}
+		gestoert := testweg.PoolMitLesefehler{Pool: pool, Muster: testweg.SQLEinstellungen}
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: gestoert}, Mail: post}}
 
 		_, err := srv.sendeBestellmail(context.Background(), daten)

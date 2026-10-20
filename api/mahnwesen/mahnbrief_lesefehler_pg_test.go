@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/testweg"
 )
 
 // Der Mahnbrief trägt die Absenderzeile der Schule aus den Einstellungen, und sein Druck zählt
@@ -36,7 +37,7 @@ func TestMahnbriefDruck_EinstellungenUnlesbar_KeinBriefKeineMahnstufe(t *testing
 		return rec
 	}
 
-	rec := rufe(testdaten.PoolMitLesefehler{Pool: pool, Muster: testdaten.SQLEinstellungen})
+	rec := rufe(testweg.PoolMitLesefehler{Pool: pool, Muster: testweg.SQLEinstellungen})
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: Der Brief entsteht ohne die Absenderzeile der Schule", rec.Code)
 	}
