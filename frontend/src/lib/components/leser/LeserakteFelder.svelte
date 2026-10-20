@@ -1,38 +1,20 @@
-<!-- @component LeserakteFelder — die Eingabefelder der Leserakte. EINE Maske für jeden.
+<!-- @component LeserakteFelder — die Eingabefelder der Leserakte, eine Maske für jeden.
 
-     Bis zum 16.09.2026 war dieses Formular ein Schüler-Formular: Klasse, Abgangsjahr,
-     LUSD-ID und Eltern-E-Mail standen fest darin. Ein Kollege kam gar nicht erst hierher
-     (seine Akte hatte keinen Bearbeiten-Knopf) — und hätte er es, wäre er an der leeren
-     Klasse gescheitert, die der Server als Pflichtfeld abweist. Absprache vom 16.09.2026:
-     „die Leute die bereits eine Rolle haben stehen zwar in der ausleihliste, ich kann
-     dort aber keine adressedaten etc nachtragen."
-
-     Mein erster Versuch blendete die Felder je nach Art ein und aus — zwei Masken. Absprache:
-     „warum eine andere maske als bei schülern? das ist doch schon wieder viel zu
-     kompliziert." Er hat recht: Zwingend ist nur EIN Unterschied, der Rest war Vorsicht.
-
-     Deshalb steht hier für jeden dasselbe an derselben Stelle. Abgeschaltet statt
-     versteckt ist nur, was wirklich nicht gehen darf:
+     Für jeden steht dasselbe an derselben Stelle. Abgeschaltet statt versteckt ist nur, was
+     wirklich nicht gehen darf:
 
        - LUSD-ID: Die Datenbank verbietet sie einem Kollegen
          (chk_leser_nur_schueler_werden_abgaenger). Durch die LUSD kommen nur Schüler.
-       - Klasse und Abgangsjahr: „eine klasse muss ja keinem lehrer/liv zugeordnet
-         werden" . Das Abgangsjahr hängt an der Klasse — der Server leitet es aus
-         ihr ab (repository.AbgaengerJahr), also gehören beide zusammen.
+       - Klasse und Abgangsjahr: Einer Lehrkraft oder LiV ist keine Klasse zugeordnet. Das
+         Abgangsjahr hängt an der Klasse, der Server leitet es aus ihr ab
+         (repository.AbgaengerJahr), also gehören beide zusammen.
        - Die Art über die Schüler-Grenze: Ein Schüler bleibt Schüler.
 
-     REIHENFOLGE (16.09.2026, nach der Blick auf die fertige Maske): Die Art steht
-     ZUERST, nicht am Ende der persönlichen Daten. An ihr hängt, welche Felder überhaupt
-     leben — vorher las man erst die graue LUSD-ID mit dem Hinweis „Durch die LUSD kommen
-     nur Schüler" und fand den Grund dafür eine Zeile darunter. Der Anlege-Dialog fragt
-     seit demselben Tag ebenfalls zuerst nach der Art (LeserAnlegenDialog.svelte), und
-     das Bearbeiten ist die Stelle, an der die Art tatsächlich Felder sperrt.
-
-     Die LUSD-ID ist dabei von den persönlichen Daten zu den SCHULDATEN gewandert: Sie ist
-     keine Angabe über die Person, sondern die Kennung der Schulverwaltung — und sie stand
-     auf dem prominentesten Platz der Seite, obwohl sie beim Kollegen immer tot ist. Die
-     Ausweisnummer steht jetzt als LETZTES im Abschnitt: Bei einem Kollegen ist sie das
-     einzige bediente Feld und stand vorher zwischen zwei gesperrten. -->
+     Die Art steht zuerst: An ihr hängt, welche Felder überhaupt leben, und der Anlege-Dialog
+     fragt ebenfalls zuerst nach ihr (LeserAnlegenDialog.svelte). Die LUSD-ID steht bei den
+     Schuldaten, nicht bei den persönlichen Daten: Sie ist keine Angabe über die Person,
+     sondern die Kennung der Schulverwaltung. Die Ausweisnummer steht als Letztes im
+     Abschnitt, denn bei einem Kollegen ist sie das einzige bediente Feld. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
@@ -57,9 +39,9 @@
 		kontoVorhanden = false
 	} = $props();
 
-	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
-	// Klasse an, die es an der Schule nicht gibt. Die eigene Klasse steht immer mit in der
-	// Liste — auch wenn sie dort fehlt (etwa bei einem Leser im Papierkorb).
+	// Auswählen statt tippen: Ein Tippfehler legte sonst eine Klasse an, die es an der Schule
+	// nicht gibt. Die eigene Klasse steht immer mit in der Liste, auch wenn sie dort fehlt
+	// (etwa bei einem Leser im Papierkorb).
 	const klassenOptionen = $derived(
 		[...new Set([...klassen, eingaben.klasse].filter(Boolean))].map((k) => ({
 			value: k,
@@ -85,10 +67,8 @@
 <section>
 	<Abschnitt titel="Persönliche Daten" />
 
-	<!-- Genau die Angabe, die in der Akte nirgends stand („hier steht nirgends ob jemand
-	     ein Schüler, LiV, oder lehrer ist", 16.09.2026) — bei Littera steht sie
-	     ebenfalls in den Stammdaten. Seit dem 30.09.2026 eine Auswahlliste (sieben Arten),
-	     im selben Raster wie die Felder darunter und so breit wie eines davon. -->
+	<!-- Die Art, wie bei Littera in den Stammdaten: eine Auswahlliste (sieben Arten), im
+	     selben Raster wie die Felder darunter und so breit wie eines davon. -->
 	<div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 		<LeserArtWahl
 			id="art"

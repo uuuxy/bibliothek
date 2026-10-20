@@ -1,11 +1,8 @@
 <!-- @component AbgaengerKopfzeile — oben die Suche der Seite, darunter links der
      Klassenfilter und rechts die zwei Wege für dasselbe Dokument: ausdrucken (Papier
      bleibt der Notweg, wenn keine Lehrer-Adresse hinterlegt ist) oder an die
-     Klassenleitungen mailen. Der Druck folgt Suche UND Filter — was auf dem Bildschirm
-     steht, steht auf dem Papier.
-
-     Die Suche kam am 04.09.2026 dazu: Die Seite listete 62 Namen ohne jede Suche, als
-     einzige Verwaltungsseite mit einer langen Liste. -->
+     Klassenleitungen mailen. Der Druck folgt Suche und Filter: Was auf dem Bildschirm
+     steht, steht auf dem Papier. -->
 <script>
 	import { Mail, Printer } from '@lucide/svelte';
 	import Ladekreis from './ui/Ladekreis.svelte';

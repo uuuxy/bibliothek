@@ -24,17 +24,12 @@
 	// Kann der Leser die Einstellungen selbst öffnen? Dasselbe Recht wie der Menüpunkt.
 	const istAdmin = $derived(hatRecht(authStore.currentUser, 'manage_settings'));
 
-	// Dritter Zustand neben „alles gut" und „Adresse fehlt": Die Frage liess sich gar
-	// nicht beantworten. Bis zum 08.08.2026 gab es ihn nicht — loadKonfiguration fing den
-	// Fehler still ab, das Feld blieb auf seinem Anfangswert false, und dieser Waechter
-	// verschwand. Ausgerechnet bei einer Stoerung behauptete das Bestellwesen also
-	// „alles in Ordnung", und wer dann bestellte, verschickte Mails ohne
-	// Bestaetigungs-Link.
-	//
-	// Aufgefallen ist es, weil der Server unter der Last der E2E-Suite mit 429 antwortete
-	// (Ratenbegrenzung, korrektes Verhalten) — im Testlauf sah das aus wie ein
-	// sprunghafter Test. Der Toast aus apiFetch meldet die Stoerung zwar, aber er
-	// verschwindet; wer danach auf den Bildschirm sieht, braucht die Auskunft dort.
+	// Dritter Zustand neben „alles gut" und „Adresse fehlt": Die Frage ließ sich gar nicht
+	// beantworten (etwa bei 429 der Ratenbegrenzung). Ohne ihn behauptete das Bestellwesen
+	// ausgerechnet bei einer Störung „alles in Ordnung", und wer dann bestellte,
+	// verschickte Mails ohne Bestätigungs-Link. Der Toast aus apiFetch meldet die Störung
+	// zwar, aber er verschwindet; wer danach auf den Bildschirm sieht, braucht die Auskunft
+	// dort.
 	const ungeprueft = $derived(!bestellStore.konfigurationGeladen);
 
 	function einstellungenOeffnen() {

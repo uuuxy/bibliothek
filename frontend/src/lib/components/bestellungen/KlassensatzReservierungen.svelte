@@ -1,13 +1,12 @@
 <!-- @component KlassensatzReservierungen — Admin-Arbeitsliste für Klassensatz-Reservierungen.
      Lehrkräfte legen die Anfrage über KollegiumPortal an; hier wird sie geprüft und über
-     PUT /api/reservierungen/klassensatz/{id}/erledigen abgeschlossen. Reservieren SPERRT
-     keinen Bestand (Warteschlangen-Modell, 16.08.2026): Die Liste ist die Reihenfolge,
+     PUT /api/reservierungen/klassensatz/{id}/erledigen abgeschlossen. Reservieren sperrt
+     keinen Bestand (Warteschlangen-Modell): Die Liste ist die Reihenfolge,
      „verfügbar" zeigt je Zeile, ob der Satz aktuell vollständig aus dem Regal zu holen
      ist. Flaches Edge-to-Edge-Listen-Design, kein Modal.
 
-     Seit 27.08.2026 kann die Theke beim Abschließen eine Notiz für die Bereit-Mail
-     schreiben — dasselbe Muster wie AnliegenListe. Vorher war die Mail ein fester Text,
-     und „24 von 30, Rest bei der 8a" ging nur mündlich im Flur. -->
+     Die Theke kann beim Abschließen eine Notiz für die Bereit-Mail schreiben, dasselbe
+     Muster wie AnliegenListe: „24 von 30, Rest bei der 8a" steht sonst in keiner Mail. -->
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';

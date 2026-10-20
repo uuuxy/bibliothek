@@ -55,7 +55,7 @@
 
 	function beiDateiwahl(/** @type {Event} */ e) {
 		const target = /** @type {HTMLInputElement} */ (e.target);
-		// Neue Datei = neuer Durchgang, auch für die Massenabgang-Bestätigung (10.09.2026).
+		// Neue Datei = neuer Durchgang, auch für die Massenabgang-Bestätigung.
 		if (target.files && target.files[0]) {
 			resetFlow();
 			gewaehlteDatei = target.files[0];

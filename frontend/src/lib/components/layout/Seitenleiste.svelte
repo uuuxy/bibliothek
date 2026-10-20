@@ -36,11 +36,8 @@
 	}
 
 	/**
-	 * Wartende Arbeit je Navigationsziel. In M3 ist genau DAS die Aufgabe eines Badges:
-	 * am Ziel anzeigen, dass dort etwas liegt. Die Etiketten standen bis zum 09.08.2026
-	 * stattdessen als Streifen ueber dem Bestellbedarf — auf einer Seite, die damit nichts
-	 * zu tun hat, und in einem Bauteil (Banner), das M3 gar nicht mehr kennt: M2 hatte es,
-	 * M3 hat es ersatzlos gestrichen.
+	 * Wartende Arbeit je Navigationsziel. In M3 ist genau das die Aufgabe eines Badges: am
+	 * Ziel anzeigen, dass dort etwas liegt. Ein Banner, wie M2 es hatte, kennt M3 nicht mehr.
 	 * @param {string} id
 	 */
 	function wartendeArbeit(id) {

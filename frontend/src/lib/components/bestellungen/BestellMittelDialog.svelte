@@ -1,9 +1,9 @@
 <!-- @component Der Rückweg für den Topf einer Bestellung — Dialog mit Auswahl und
      Pflicht-Grund.
 
-     Eine Bestellung im falschen Topf ließ sich bis zum 10.09.2026 nicht korrigieren; für
-     die Berichte, die nach Topf rechnen, stünde sie dauerhaft im falschen Block, und
-     Alt-Bestellungen „ohne Zuordnung" blieben es für immer. Der Dialog ändert NUR die
+     Ohne ihn stünde eine Bestellung im falschen Topf für die Berichte, die nach Topf
+     rechnen, dauerhaft im falschen Block, und Alt-Bestellungen „ohne Zuordnung" blieben es
+     für immer. Der Dialog ändert nur die
      eigene Zuordnung: Das Anschreiben, das der Händler bekommen hat, bleibt, wie es
      rausging. Deshalb ist der Grund Pflicht, und der Eingriff steht im Admin-Audit-Log.
 

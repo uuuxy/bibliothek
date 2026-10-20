@@ -3,27 +3,21 @@
      Eigene Datei, weil LeserakteFelder.svelte sonst über die 200-Zeilen-Grenze wächst
      (frontend-hygiene-dateigroesse.test.js).
 
-     Hier stehen ZWEI Adressen, und sie gehören verschiedenen Personen:
+     Hier stehen zwei Adressen, und sie gehören verschiedenen Personen:
 
        - Eltern E-Mail: die Adresse der Erziehungsberechtigten an der Leserzeile
          (leser.eltern_email). Ein Kollege hat keine Eltern — bei ihm ist das Feld
          verschlossen, wie Klasse und Abgangsjahr.
-       - Schul-E-Mail: die dienstliche Adresse AM KONTO (benutzer.email). Sie ist keine
+       - Schul-E-Mail: die dienstliche Adresse am Konto (benutzer.email). Sie ist keine
          Kontaktangabe, sondern der Schlüssel: An ihr erkennt die Anmeldung (IMAP) die
          Person, und an ihr hängt der Schutz vor dem Doppeleintrag.
 
-     Bis zum 16.09.2026 gab es hier nur die Eltern-Adresse — auch in der Akte einer
-     Lehrkraft, mit dem Platzhalter „eltern@schule.de". Die Adresse, an der seit demselben
-     Tag ihre Identität hängt, kam in der Maske nicht vor: Beim Anlegen Pflicht, beim
-     Bearbeiten weder sichtbar noch änderbar. Wer sie nachtragen wollte, trug sie ins
-     Eltern-Feld.
-
      Nachtragen, nicht ändern: Steht am Konto bereits eine Adresse, ist das Feld eine
      Anzeige (readonly, damit man sie lesen und kopieren kann). Geändert wird sie in der
-     Benutzerverwaltung — sie ist die Identität des Kontos, und zwei Türen zu demselben
+     Benutzerverwaltung: Sie ist die Identität des Kontos, und von zwei Türen zu demselben
      Zustand kennt nur eine die Regeln (api/leser/leser_schul_email.go).
 
-     Praktikum und Fachbereich bekommen keinen Zugang (30.09.2026, artMitKonto): Bei ihnen
+     Praktikum und Fachbereich bekommen keinen Zugang (artMitKonto): Bei ihnen
      ist das Feld verschlossen wie beim Schüler — außer ein Konto besteht schon, dann bleibt
      es die Anzeige. -->
 <script>

@@ -1,20 +1,14 @@
 <script>
 	/**
 	 * @component LadeFehler
-	 * Was eine Seite zeigt, wenn ihr Abruf gescheitert ist — und warum sie dann KEIN
-	 * Formular zeigt: Leere Daten heißen in jedem Formular „Vorgabewert", und gespeichert
-	 * wird immer der ganze Block. Ein Klick auf Speichern hätte die echten Werte mit
-	 * Vorgaben überschrieben — Schulname und Briefkopf leer, Fristen zurückgesetzt (Fund
-	 * 31.08.2026 an den Einstellungen; dieselbe Form am 05.09.2026 im LMF-Planer, wo ein
-	 * Speichern nach fehlgeschlagenem Laden den Plan des Schuljahres durch einen leeren
-	 * ersetzt und die Fristen der Klassen auf den Stichtag zurückgestellt hätte).
+	 * Was eine Seite zeigt, wenn ihr Abruf gescheitert ist, und warum sie dann kein Formular
+	 * zeigt: Leere Daten heißen in jedem Formular „Vorgabewert", und gespeichert wird immer
+	 * der ganze Block. Ein Klick auf Speichern überschriebe die echten Werte mit Vorgaben, in
+	 * den Einstellungen Schulname und Briefkopf, im LMF-Planer den Plan des Schuljahres samt
+	 * den Fristen der Klassen.
 	 *
-	 * Lag bis 05.09.2026 unter components/settings; allgemein, weil die Klasse es ist.
-	 *
-	 * `onerneut` ist OPTIONAL: Ohne Rückruf gibt es keinen Knopf. Bis zum 17.09.2026 reichte
-	 * ein Aufrufer `() => {}` durch, wenn er keinen hatte — der Knopf stand da, hiess
-	 * „Erneut versuchen" und tat nichts. Ein Knopf, der nichts tut, ist schlimmer als
-	 * keiner: Wer ihn drückt, wartet auf etwas.
+	 * `onerneut` ist optional: Ohne Rückruf gibt es keinen Knopf. Ein Knopf „Erneut
+	 * versuchen", der nichts tut, ist schlimmer als keiner: Wer ihn drückt, wartet auf etwas.
 	 *
 	 * `knapp` ist die Form für einen Abschnitt einer Seite, etwa eine Kachel: nur der Titel in
 	 * der Fehlerrolle, wo sonst der Leerzustand stünde (M3, Color roles: „Use error roles to

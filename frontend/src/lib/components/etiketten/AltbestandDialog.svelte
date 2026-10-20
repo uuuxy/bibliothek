@@ -1,11 +1,9 @@
 <!-- @component AltbestandDialog — der Stichtag, ab dem der Altbestand als beklebt gilt.
 
-     Warum ein Dialog und kein aufklappbarer Block mehr: Die Aktion ist unumkehrbar und
-     trifft bei einem gewachsenen Bestand fünfstellig viele Exemplare. Sie stand bis zum
-     04.09.2026 als <details> am FUSS der Liste — also hinter 300 Zeilen Scrollen. Genau
-     dort war sie am schlechtesten erreichbar, obwohl sie bei einem Altbestand ohne
-     Etikett-Vermerk die eigentliche Aufgabe der Seite ist: Von 30.674 offenen Etiketten
-     sind fast alle Altbestand und keines davon zu drucken.
+     Ein Dialog und kein aufklappbarer Block am Fuß der Liste: Die Aktion ist unumkehrbar
+     und trifft bei einem gewachsenen Bestand fünfstellig viele Exemplare, und bei einem
+     Altbestand ohne Etikett-Vermerk ist sie die eigentliche Aufgabe der Seite. Dann sind
+     fast alle offenen Etiketten Altbestand und keines davon zu drucken.
 
      M3 stellt unumkehrbare Aktionen hinter einen Dialog, der die Folge benennt, bevor er
      sie ausführt — hier die betroffene Anzahl, die vor dem Bestätigen geladen wird. -->

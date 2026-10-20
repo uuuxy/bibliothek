@@ -2,12 +2,8 @@
  *
  *  Warum eigene Datei: Ein nachgebautes Auswahlfeld muss ohne Maus dasselbe können
  *  wie ein natives (Pfeile, Pos1/Ende, Enter/Leertaste, Escape, Tippen springt).
- *  Diese Regeln sind der Teil, der leicht still kaputtgeht — in Select.svelte lagen
- *  sie als verschachtelte if-Kette zwischen Geometrie, Fokus und Markup und waren
- *  nur über das gerenderte Bauteil prüfbar.
- *
- *  Ausgelagert am 12.09.2026 (Paket 5, #593): Die Datei stand mit 207 Zeilen im
- *  Bestand der Größen-Ratsche und sollte vor dem nächsten Eingriff kleiner werden. */
+ *  Diese Regeln sind der Teil, der leicht still kaputtgeht; als reine Funktionen sind
+ *  sie ohne gerendertes Bauteil prüfbar, getrennt von Geometrie, Fokus und Markup. */
 
 /**
  * Der nächste wandernde Index — überspringt gesperrte Einträge und läuft um.
@@ -96,7 +92,7 @@ export function tastenBefehl(taste, offen) {
  *
  * Der Sammler hält den Timer und gibt ihn wieder her: `abbauen` gehört in die
  * Aufräumfunktion der Komponente. Ein Timer, den niemand räumt, läuft nach dem Abbau
- * weiter — die Bugklasse „Timer überlebt den Abbau" (docs/sweeps.md, 11.09.2026).
+ * weiter, die Bugklasse „Timer überlebt den Abbau" (docs/sweeps.md).
  *
  * @param {number} pauseMs Zeit bis der Puffer verfällt
  */

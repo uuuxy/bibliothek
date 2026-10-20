@@ -12,8 +12,8 @@
 	 * Gilt für Ausleihe UND Rückgabe. Fehlt ein Teil bei der Rückgabe, wird abgebrochen;
 	 * eine Forderung für ein Gerät legt das Programm noch nicht an (docs/ARCHITEKTUR.md 11.5).
 	 *
-	 * Seit 07.09.2026 auf Dialog.svelte, Ebene „oberst": Die Theke liegt selbst als
-	 * Overlay über allem, und diese Rückfrage muss über der Theke stehen.
+	 * Ebene „oberst": Die Theke liegt selbst als Overlay über allem, und diese Rückfrage muss
+	 * über der Theke stehen.
 	 * @type {{ onReload: () => void }}
 	 */
 	let { onReload } = $props();

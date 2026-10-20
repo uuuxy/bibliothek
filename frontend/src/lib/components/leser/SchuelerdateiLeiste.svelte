@@ -5,12 +5,9 @@
 	import Select from '../ui/Select.svelte';
 
 	/**
-	 * jahrgang: '' = alle. Das Auswahlfeld steht seit dem 17.09.2026 hier — das
-	 * Sichtungsprotokoll des Medienzentrums vom 16.09.2026 vermisste eine „Sortier- oder
-	 * Filteroption nach Klassen bzw. Jahrgängen" und präzisierte unter Anpassungswünschen:
-	 * „Gemeint ist jedoch eine Auswahl nach Jahrgängen."
+	 * jahrgang: '' = alle; eine Auswahl nach Jahrgängen, nicht nach Klassen.
 	 *
-	 * Gefiltert wird auf dem SERVER, wie gesucht: Die ungefilterte Liste ist bei 500 Zeilen
+	 * Gefiltert wird auf dem Server, wie gesucht: Die ungefilterte Liste ist bei 500 Zeilen
 	 * gekappt, und ein Filter im Browser säße hinter dieser Kappung — er zeigte dann einen
 	 * Teil des Jahrgangs und sähe dabei vollständig aus.
 	 *
@@ -74,14 +71,11 @@
 			</Button>
 		{/if}
 
-		<!-- Sagt, was tatsächlich zu sehen ist. Vorher stand hier "500 / 500", während die
-		     Schule 875 Schüler hatte — die Zahl bestätigte dem Benutzer eine Vollständigkeit,
-		     die es nicht gab, und machte das Fehlen einzelner Namen unerklärlich.
-
-		     Die Kappung steht ZUERST, seit dem 17.09.2026. Vorher gewann `suchend`, und ein
-		     Jahrgangsfilter zählt dazu: Eine bei 500 abgeschnittene Jahrgangsliste meldete
-		     „Treffer: 500" — dieselbe falsche Vollständigkeit wie damals, nur eine Ebene
-		     tiefer. Was gekappt ist, muss es sagen, egal warum die Liste eingegrenzt wurde. -->
+		<!-- Sagt, was tatsächlich zu sehen ist: „500 / 500" bei einer Schule mit 875 Schülern
+		     bestätigte eine Vollständigkeit, die es nicht gibt, und machte das Fehlen einzelner
+		     Namen unerklärlich. Die Kappung steht zuerst, vor `suchend`, denn auch eine
+		     Jahrgangsliste kann bei 500 abgeschnitten sein. Was gekappt ist, muss es sagen,
+		     egal warum die Liste eingegrenzt wurde. -->
 		<div class="ml-auto shrink-0 text-xs font-semibold text-on-surface-variant">
 			{#if gekuerzt}
 				Erste {trefferzahl} — zum Finden bitte suchen

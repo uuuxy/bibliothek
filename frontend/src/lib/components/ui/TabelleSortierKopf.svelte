@@ -1,18 +1,17 @@
 <!-- @component TabelleSortierKopf — eine sortierbare Kopfzelle für ui/Tabelle.
 
-     Der erste sortierbare Spaltenkopf der Anwendung (17.09.2026, Protokoll des
-     Medienzentrums Punkt 5). Als eigenes Bauteil, weil die Frage bei jeder weiteren
-     Liste wiederkommt und 24 Tabellen schon einmal 24 Rezepte hatten.
+     Ein eigenes Bauteil, weil die Frage bei jeder Liste wiederkommt und jede eigene Fassung
+     ein eigenes Rezept wäre.
 
-     Die Zelle selbst trägt nur Layout (Breite, Ausrichtung) — das Aussehen kommt aus
-     dem <style> von Tabelle.svelte, die Ratsche frontend-hygiene-tabellen prüft das.
-     Bedient wird über einen echten <button> IN der Zelle: Ein klickbares <th> ohne
-     Knopf erreicht die Tastatur nicht.
+     Die Zelle selbst trägt nur Layout (Breite, Ausrichtung); das Aussehen kommt aus dem
+     <style> von Tabelle.svelte, die Ratsche frontend-hygiene-tabellen prüft das. Bedient
+     wird über einen echten <button> in der Zelle: Ein klickbares <th> ohne Knopf erreicht
+     die Tastatur nicht.
 
      `aria-sort` sitzt an der Zelle, nicht am Knopf — so verlangt es ARIA, und nur so
      liest ein Screenreader „aufsteigend sortiert" beim Betreten der Spalte.
 
-     OHNE `onsortiere` ist das Bauteil ein gewöhnlicher Kopf. Dieselbe Liste steht auch
+     Ohne `onsortiere` ist das Bauteil ein gewöhnlicher Kopf. Dieselbe Liste steht auch
      dort, wo Sortieren nichts bewirkt (Kiosk, Abgänger, Schülersuche der Vormerkung) —
      ein Pfeil, der nichts tut, wäre dort schlimmer als keiner. -->
 <script>

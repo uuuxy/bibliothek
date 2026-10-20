@@ -142,7 +142,7 @@
 	});
 
 	// Der Tippsprung-Timer gehört geräumt: Ein Timer, den niemand abbaut, läuft nach dem
-	// Ende der Komponente weiter (Bugklasse „Timer überlebt den Abbau", 11.09.2026).
+	// Ende der Komponente weiter (Bugklasse „Timer überlebt den Abbau").
 	$effect(() => tippsprung.abbauen);
 </script>
 

@@ -9,12 +9,8 @@
      Kein zweiter Druckweg: Die Auswahl geht in dieselbe druckWarteschlange, die auch der
      Wareneingang benutzt, und wird vom Etikettendruck nebenan gesetzt.
 
-     Aufbau seit dem M3-Durchgang am 04.09.2026: EINE Aktionszeile unter der Suche, in der
-     der gefüllte Knopf immer die Aktion der gewählten Stufe trägt. Vorher gab es zwei
-     Orte für Aktionen — den gefüllten Knopf und einen Kasten, der bei Auswahl aufsprang.
-     In „Erledigt" war der gefüllte Knopf dabei grundsätzlich unerreichbar: Er hing an
-     `gewaehltOffen`, und in dieser Stufe gibt es davon keine. Gemessen mit 300 angehakten
-     Zeilen stand der auffälligste Knopf der Seite auf „Nichts ausgewählt". -->
+     Eine Aktionszeile unter der Suche, in der der gefüllte Knopf immer die Aktion der
+     gewählten Stufe trägt: ein Ort für Aktionen, in jeder Stufe erreichbar. -->
 <script>
 	import { onMount } from 'svelte';
 	import { apiGet, apiPost } from '../../apiFetch.js';
@@ -39,9 +35,9 @@
 	let altbestandOffen = $state(false);
 
 	/**
-	 * Wie viele Exemplare der Filter INSGESAMT trifft — die Liste ist bei 300 gedeckelt
-	 * (etikettenOffenLimit). Bis zum 04.09.2026 sagte das niemand: Am Reiter stand
-	 * „30674", darunter lagen 300 Zeilen, und nichts verband die beiden Zahlen.
+	 * Wie viele Exemplare der Filter insgesamt trifft: Die Liste ist bei 300 gedeckelt
+	 * (etikettenOffenLimit), und ohne die Gesamtzahl verbände nichts die Zahl am Reiter mit
+	 * den 300 Zeilen darunter.
 	 */
 	let gesamt = $state(0);
 

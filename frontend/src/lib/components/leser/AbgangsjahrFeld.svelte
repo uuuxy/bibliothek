@@ -2,10 +2,8 @@
   @component
   AbgangsjahrFeld — das Abgangsjahr eines Schülers, an Ort und Stelle änderbar.
 
-  Eigene Datei aus zwei Gründen: LeserakteKopf stand an der 200-Zeilen-Grenze, als
-  die Akte am 16.09.2026 auch Kollegium zeigen musste — und das Abgangsjahr ist genau das
-  Stück, das einem Kollegen NICHT gehört. Es steuert die DSGVO-Löschung nach dem Abgang
-  von der Schule; wer nie Schüler war, hat keinen.
+  Eigene Datei: Das Abgangsjahr ist das Stück der Akte, das einem Kollegen nicht gehört. Es
+  steuert die DSGVO-Löschung nach dem Abgang von der Schule; wer nie Schüler war, hat keinen.
 -->
 <script>
 	import { RotateCcw } from '@lucide/svelte';

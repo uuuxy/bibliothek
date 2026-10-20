@@ -1,9 +1,8 @@
 <!-- @component BestellHistorieKopf — Überschrift, Kennzahlen und der Topf-Filter der
      Bestellhistorie.
 
-     Herausgelöst am 12.09.2026 beim Einbau der Aufteilung nach Mittelherkunft (#596):
-     Mit ihr und dem Filter überschritt BestellHistorie.svelte die 200-Zeilen-Regel aus
-     docs/ARCHITEKTUR.md (5.3). Reine Verschiebung — dieselben Zeilen, dieselbe Reihenfolge. -->
+     Eigene Datei: Mit der Aufteilung nach Mittelherkunft und dem Filter läge
+     BestellHistorie.svelte über der 200-Zeilen-Regel aus docs/ARCHITEKTUR.md (5.3). -->
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Select from '../ui/Select.svelte';

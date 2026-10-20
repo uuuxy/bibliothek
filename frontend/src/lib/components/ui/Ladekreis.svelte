@@ -1,10 +1,8 @@
-<!-- @component Ladekreis — DER Ladeindikator der Anwendung (M3 circular progress, unbestimmt).
+<!-- @component Ladekreis — der Ladeindikator der Anwendung (M3 circular progress, unbestimmt).
 
-     Bis zum 08.09.2026 gab es 50 handgebaute Kreise in 45 Dateien: zehn Größen von
-     12 bis 48 px, Strichstärken 2 und 4, Farben von blue-600 über slate-800, rose-600,
-     emerald-600 bis zinc-950 — jede Datei hatte ihre eigene Meinung, wie „lädt"
-     aussieht. M3 kennt eine: ein Bogen in `primary` auf einer schwach getönten Spur,
-     auf gefüllten Flächen in der Farbe des Textes (`on-primary`).
+     M3 kennt eine Form für „lädt": ein Bogen in `primary` auf einer schwach getönten Spur,
+     auf gefüllten Flächen in der Farbe des Textes (`on-primary`). Ein Kreis von Hand bekäme
+     eigene Größen und Farben (Ratsche frontend-hygiene-ladekreis.test.js).
 
      Drei Größen, nach Ort:
        sm 16 px  im Knopf neben der Beschriftung (Strich 2)

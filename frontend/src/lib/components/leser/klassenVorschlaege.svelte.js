@@ -7,16 +7,12 @@ import { apiFetch, leseApiFehler } from '../../apiFetch.js';
  * Größen-Ratsche (200 Zeilen), und das Nachschlagen der Klassen hat mit dem Führen der
  * Liste nichts zu tun.
  *
- * Quelle ist GET /api/klassen (die Klassen der aktiven Schüler, also die aus der LUSD). Bis
- * zum 15.09.2026 las die Auswahl die Tabelle lesergruppen, die kein Schreibweg füllt. Seit
- * dem 30.09.2026 wird die Klasse an allen diesen Stellen nur noch gewählt, nicht getippt
- * (docs/OFFEN.md 5.18).
- *
- * Damit ist die Liste kein Vorschlag mehr, sondern die einzige Wahl. Bis zum 30.09.2026
- * schwieg ein gescheiterter Abruf, denn man tippte die Klasse dann von Hand; danach sagte
- * die leere Auswahl „Keine Klassen" und der Anlegen-Dialog „Die Klassen kommen mit dem
- * LUSD-Abgleich" — ein falscher Grund für eine gesperrte Eingabe. Leer heißt leer, ein
- * Ladefehler heißt Ladefehler (dieselbe Regel wie geraeteListe.svelte.js).
+ * Quelle ist GET /api/klassen, die Klassen der aktiven Schüler aus der LUSD. Die Klasse wird
+ * an allen diesen Stellen nur gewählt, nicht getippt; die Liste ist also kein Vorschlag,
+ * sondern die einzige Wahl. Ein gescheiterter Abruf sagt deshalb, dass er gescheitert ist:
+ * „Keine Klassen" oder „Die Klassen kommen mit dem LUSD-Abgleich" wären ein falscher Grund
+ * für eine gesperrte Eingabe. Leer heißt leer, ein Ladefehler heißt Ladefehler (dieselbe
+ * Regel wie geraeteListe.svelte.js).
  */
 export function erzeugeKlassenVorschlaege() {
 	/** @type {string[]} */

@@ -19,14 +19,12 @@ function kandidaten(node) {
 }
 
 /**
- * `use:fokusFalle` — ein Dialog nimmt den Fokus, hält ihn und gibt ihn zurück.
- *
- * Anlass (Prüfung 08.09.2026, gemessen im Browser): EIN Tab verließ jeden Dialog. Der
- * Fokus blieb auf dem Knopf, der den Dialog geöffnet hatte, und wanderte von dort
- * durch die Seite dahinter — für Tastatur- und Screenreader-Nutzung war der Dialog
- * damit nur ein Bild. 22 von 24 Dialogen hängen an Dialog.svelte; die Aktion steht dort
- * EINMAL und gilt für alle (WCAG 2.4.3 Fokus-Reihenfolge, 2.1.2 keine Tastaturfalle
- * — die hier ist die erlaubte: Escape führt heraus, siehe escapeSchliesst).
+ * `use:fokusFalle` — ein Dialog nimmt den Fokus, hält ihn und gibt ihn zurück. Sonst
+ * bliebe der Fokus auf dem Knopf, der den Dialog geöffnet hat, und ein Tab wanderte durch
+ * die Seite dahinter; für Tastatur- und Screenreader-Nutzung wäre der Dialog nur ein Bild.
+ * Die Aktion steht in Dialog.svelte und gilt für jeden Dialog daran (WCAG 2.4.3
+ * Fokus-Reihenfolge, 2.1.2 keine Tastaturfalle; die hier ist die erlaubte: Escape führt
+ * heraus, siehe escapeSchliesst).
  *
  * Drei Zusicherungen:
  *   1. Beim Öffnen wandert der Fokus auf das erste fokussierbare Element im Dialog —
@@ -36,8 +34,8 @@ function kandidaten(node) {
  *      inzwischen niemand anders genommen hat (nach „Schüler anlegen" springt die
  *      Anwendung ins Profil; dem Auslöser den Fokus aufzuzwingen wäre falsch).
  *
- * NUR DIE OBERSTE Falle reagiert (Stapel wie bei escapeSchliesst): Öffnet ein Dialog
- * eine Rückfrage (BestaetigungsDialog liegt im DOM AUSSERHALB des fragenden Dialogs),
+ * Nur die oberste Falle reagiert (Stapel wie bei escapeSchliesst): Öffnet ein Dialog eine
+ * Rückfrage (BestaetigungsDialog liegt im DOM außerhalb des fragenden Dialogs),
  * gehört der Fokus der Rückfrage; die äußere Falle hält still, bis die innere wieder
  * weg ist, und bekommt den Fokus dann von deren Rückgabe.
  *

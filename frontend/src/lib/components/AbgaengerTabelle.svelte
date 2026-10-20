@@ -3,8 +3,8 @@
      den Daten), in der Saison ohne Posten („alle entlastet"), in der Saison mit Zeilen
      (Tabelle). Welcher Zustand gilt, sagt der Server über `fenster` — die Oberfläche
      rechnet keinen eigenen Kalender. Der Ladefehler schlägt alle anderen: Eine leere
-     Liste nach gescheitertem Abruf ist nicht „alle entlastet" (Bestands-Durchgang
-     10.09.2026 — sonst entlässt die Bibliothek Schüler, ohne Bücher einzusammeln). -->
+     Liste nach gescheitertem Abruf ist nicht „alle entlastet", sonst entlässt die
+     Bibliothek Schüler, ohne Bücher einzusammeln. -->
 <script>
 	import { CalendarClock, Check } from '@lucide/svelte';
 	import Tabelle from './ui/Tabelle.svelte';

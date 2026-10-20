@@ -1,10 +1,8 @@
 <!-- @component EingabeDialog — der kleine Dialog für seltene Eingaben: eine Überschrift,
-     ein bis zwei Felder, Abbrechen und eine Aktion. Entstanden am 06.09.2026 im LMF-Planer
-     (freier Tag, eine Klasse, die das Vokabular noch nicht kennt); dort standen vorher zwei
-     leere Dauerformulare auf der Seite. M3 sieht für eine Eingabe, die ein- bis zweimal im
-     Jahr vorkommt, einen Dialog vor („Dialogs … ask for a decision", Formulare dagegen für
-     das, was man ständig ausfüllt). Seit dem 23.09.2026 in ui/, weil die Schlagwort-Pflege
-     dieselbe Form braucht (umbenennen, zusammenführen, Verweis anlegen).
+     ein bis zwei Felder, Abbrechen und eine Aktion, etwa ein freier Tag im LMF-Planer oder
+     das Umbenennen eines Schlagworts. M3 sieht für eine Eingabe, die ein- bis zweimal im Jahr
+     vorkommt, einen Dialog vor („Dialogs … ask for a decision", Formulare dagegen für das,
+     was man ständig ausfüllt).
      Ein Formular: Enter bestätigt, Escape und „Abbrechen" schließen (Dialog.svelte trägt
      escapeSchliesst). Der Fokus liegt beim Öffnen im ersten Feld. Die Aktion bleibt gesperrt,
      bis die Eingabe gültig ist (M3 Dialogs: „Disable confirming actions until a choice is

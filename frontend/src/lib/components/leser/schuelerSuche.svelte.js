@@ -26,12 +26,12 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	let ladefehler = $state('');
 	let sucheLaeuft = $state(false);
 	let suchtext = $state('');
-	/** Jahrgangsfilter, '' = alle (17.09.2026, OFFEN.md 9.5). Serverseitig wie die Suche:
+	/** Jahrgangsfilter, '' = alle. Serverseitig wie die Suche:
 	 *  Ein Filter im Browser säße hinter der Kappung bei 500 Zeilen und zeigte dann einen
 	 *  Teil des Jahrgangs, ohne das zu sagen. */
 	let jahrgang = $state('');
-	/** Sortierung, '' = Reihenfolge der Kartei (17.09.2026, OFFEN.md 9.5, zweite Hälfte).
-	 *  Serverseitig wie Suche und Filter: Im Browser sortiert säße die Sortierung HINTER
+	/** Sortierung, '' = Reihenfolge der Kartei.
+	 *  Serverseitig wie Suche und Filter: Im Browser sortiert säße die Sortierung hinter
 	 *  der Kappung bei 500 Zeilen — sie ordnete dann die ersten 500 der Kartei-Reihenfolge
 	 *  um, statt die ersten 500 der gewählten. Das sieht richtig aus und ist es nicht. */
 	let sortierSpalte = $state('');
@@ -71,11 +71,10 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
 			// Vormerkungs-Reiters), für die ein Kollege in der Liste falsch wäre.
 			const res = await apiFetch(`/api/schueler?art=alle${text}${jg}${so}`);
-			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
-			// 12.09.2026 hing am `nr === ladeNr` auch das `res.ok`: Scheiterte der Lauf,
-			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen, und
-			// an der Theke hat genau diese Form schon einmal auf den falschen Schüler
-			// gebucht (Sweep „verschluckte Fehlantwort", Register 10.09.2026).
+			// Nur die jüngste Anfrage schreibt, aber sie schreibt in jedem Fall: Sonst blieben
+			// nach einem gescheiterten Lauf die Treffer der vorigen Suche unter dem neuen
+			// Suchtext stehen, und an der Theke bucht genau diese Form auf den falschen
+			// Schüler.
 			if (nr !== ladeNr) return;
 			if (res.ok) {
 				schueler = (await res.json()) || [];
@@ -122,10 +121,9 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	 *
 	 *  Scheitert der Abruf, sagt das Auswahlfeld es und sperrt sich, statt eine leere
 	 *  Liste anzubieten: Ein Filter, der keine Jahrgänge kennt, sieht sonst aus wie
-	 *  einer, der nichts zu filtern findet. Dieselbe Entscheidung wie im
-	 *  Kollegiums-Portal am 17.09.2026 — ein gescheiterter erster Abruf sagt das auch,
-	 *  statt „nichts da" zu zeigen. Die Leserdatei selbst bleibt benutzbar; gesucht
-	 *  werden kann weiter. */
+	 *  einer, der nichts zu filtern findet; wie im Kollegiums-Portal, wo ein gescheiterter
+	 *  erster Abruf das auch sagt, statt „nichts da" zu zeigen. Die Leserdatei selbst
+	 *  bleibt benutzbar; gesucht werden kann weiter. */
 	async function ladeJahrgaenge() {
 		try {
 			const res = await apiFetch('/api/jahrgaenge');
@@ -192,15 +190,10 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			return suchtext.trim().length > 0 || jahrgang !== '';
 		},
 		get gekuerzt() {
-			// NUR der Suchtext hebt die Kappung auf, ein Filter NICHT.
-			//
-			// Hier stand bis zum 17.09.2026 zusätzlich `jahrgang === ''` — mit dem Kommentar,
-			// ein Jahrgangsfilter laufe „wie die Suche auf dem Server OHNE Kappung". Der Satz
-			// war falsch: Das LIMIT 500 hängt allein daran, ob ein SUCHTEXT da ist
-			// (repository/leser_liste.go), der Klassenfilter wird erst danach
-			// angehängt. Am echten Postgres nachgemessen: 520 Leser einer Klasse ergeben 500
-			// Zeilen. Ein Jahrgang dieser Schule bleibt darunter, aber das ist Glück und keine
-			// Zusicherung — und ein Schutz, den nur ein Kommentar behauptet, ist keiner.
+			// Nur der Suchtext hebt die Kappung auf, ein Filter nicht: Das LIMIT 500 hängt
+			// allein daran, ob ein Suchtext da ist (repository/leser_liste.go), der
+			// Klassenfilter wird erst danach angehängt. 520 Leser einer Klasse ergeben 500
+			// Zeilen.
 			return !suchtext.trim() && schueler.length >= LISTEN_GRENZE;
 		},
 		lade,

@@ -1,24 +1,22 @@
 <!-- @component KollegiumEingabeFelder — die Eingabefelder für jede Art im Kollegium.
 
-     Bewusst kurz. Was hier NICHT steht, steht auch nicht zufällig woanders:
+     Kurz mit Absicht. Was hier nicht steht, steht auch nicht zufällig woanders:
 
        - Keine Klasse und kein Abgangsjahr. Mit einer Klasse stünde die Lehrkraft in den
          Klassenlisten und im LUSD-Abgleich.
        - Kein Geburtsdatum. Es ist der Schlüssel des LUSD-Imports, und ein Kollege kommt
-         nie aus der LUSD — es zu erheben, hätte keinen Zweck.
+         nie aus der LUSD, es zu erheben, hätte keinen Zweck.
        - Keine Rolle. Eine Rolle vergibt der Administrator eigens; wer keine hat, ist
-         Kollegium — der Grundzustand jeder Lehrkraft.
+         Kollegium, der Grundzustand jeder Lehrkraft.
 
-     Die SCHUL-E-MAIL steht seit dem 16.09.2026 hier, und sie ist Pflicht . Sie ist
-     keine Kontaktangabe, sondern der Schlüssel: Aus ihr entsteht das Anmeldekonto, und
-     weil sie eindeutig ist, findet die spätere Selbstanmeldung über „Mein Portal" genau
-     diesen Eintrag wieder. Ohne sie stand die Person danach zweimal in der Leserdatei —
-     Ausweis und Ausleihen am ersten Eintrag, die Anmeldung am zweiten, und niemand merkte
-     es. Zwei Türen zu derselben Identität gibt es trotzdem nicht: Die Adresse wird an
-     EINER Stelle geführt, nämlich am Konto.
+     Die Schul-E-Mail ist Pflicht. Sie ist keine Kontaktangabe, sondern der Schlüssel: Aus
+     ihr entsteht das Anmeldekonto, und weil sie eindeutig ist, findet die spätere
+     Selbstanmeldung über „Mein Portal" genau diesen Eintrag wieder. Ohne sie stünde die
+     Person danach zweimal in der Leserdatei, Ausweis und Ausleihen am ersten Eintrag, die
+     Anmeldung am zweiten. Geführt wird die Adresse an einer Stelle, am Konto.
 
-     Praktikum und Fachbereich bekommen keinen Zugang (30.09.2026, artMitKonto): Das Feld ist
-     bei ihnen verschlossen, und es entsteht nur der Eintrag in der Leserdatei. -->
+     Praktikum und Fachbereich bekommen keinen Zugang (artMitKonto): Das Feld ist bei ihnen
+     verschlossen, und es entsteht nur der Eintrag in der Leserdatei. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import { Info } from '@lucide/svelte';

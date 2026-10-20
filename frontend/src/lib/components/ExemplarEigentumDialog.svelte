@@ -1,6 +1,5 @@
-<!-- @component ExemplarEigentumDialog — das Eigentum markierter Exemplare ändern
-     (docs/OFFEN.md 4.24, Stufe 3, freigegeben am 29.09.2026). Wie in Littera „Exemplardaten
-     anpassen": markieren, einen Wert für alle setzen.
+<!-- @component ExemplarEigentumDialog — das Eigentum markierter Exemplare ändern. Wie in
+     Littera „Exemplardaten anpassen": markieren, einen Wert für alle setzen.
 
      Bauform wie „Topf der Bestellung ändern" (bestellungen/BestellMittelDialog): Modal,
      Radio-Gruppe, Pflicht-Grund, die Aktion erst mit Auswahl und Grund frei. M3 Dialogs:

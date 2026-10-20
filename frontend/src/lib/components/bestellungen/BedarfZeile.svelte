@@ -1,8 +1,7 @@
-<!-- @component BedarfZeile — eine Zeile des Bestellbedarfs, aus Bestellbedarf.svelte
-     herausgezogen (Dateigrößen-Ratsche), als die Liste am 25.09.2026 am Buch zu zählen begann
-     (docs/OFFEN.md 4.18, Stufe 3). Gehört der Titel zu einem Buch mit mehreren Auflagen, ist
-     die Zeile das Buch: Titel und ISBN der neuesten Auflage — sie wird bestellt —, die Zahlen
-     sind die Summe, und die dritte Zeile nennt die Auflagen einzeln. Material 3, Lists:
+<!-- @component BedarfZeile — eine Zeile des Bestellbedarfs. Gehört der Titel zu einem Buch
+     mit mehreren Auflagen, ist die Zeile das Buch: Titel und ISBN der neuesten Auflage (sie
+     wird bestellt), die Zahlen sind die Summe, und die dritte Zeile nennt die Auflagen
+     einzeln. Material 3, Lists:
      „Limit supporting text to one to three lines". -->
 <script>
 	import { BookPlus, Plus } from '@lucide/svelte';

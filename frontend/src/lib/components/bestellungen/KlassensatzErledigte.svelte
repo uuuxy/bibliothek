@@ -1,11 +1,10 @@
 <script>
 	/**
 	 * @component KlassensatzErledigte
-	 * Die zuletzt bereitgestellten Klassensätze samt Antwort der Bibliothek — der
-	 * Rückweg der Abschluss-Notiz für die Theke. Bis zum 31.08.2026 filterte die
-	 * Liste Erledigte komplett aus, und die Notiz („24 von 30, Rest bei der 8a")
-	 * existierte nur in der Bereit-Mail: Scheiterte die oder fehlte die Adresse
-	 * (Reservierung ohne Konto), konnte niemand mehr nachschlagen, was zugesagt war.
+	 * Die zuletzt bereitgestellten Klassensätze samt Antwort der Bibliothek, der Rückweg der
+	 * Abschluss-Notiz für die Theke: Stünde die Notiz („24 von 30, Rest bei der 8a") nur in
+	 * der Bereit-Mail, könnte niemand nachschlagen, was zugesagt war, sobald die Mail
+	 * scheitert oder die Adresse fehlt (Reservierung ohne Konto).
 	 *
 	 * @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number,
 	 *   erledigt_notiz?: string, erledigt_am?: string }} Erledigte

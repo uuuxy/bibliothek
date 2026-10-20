@@ -1,17 +1,14 @@
-<!-- @component OfflineAnzeige — ein Band, kein Vollbild.
-     Stufe 3 des Offline-Baus, Punkt (a): An der Theke darf der Verbindungsverlust das
-     Scannen nicht anhalten. Bis zum 16.09.2026 stand hier ein `fixed`-Block mit
-     Riesenschrift und grossen Knoepfen; der Stufe-1-Nachweis am echten Chrome ergab:
-     "der balken ist so gross, dass ich nichts buchen kann".
+<!-- @component OfflineAnzeige — ein Band, kein Vollbild: An der Theke darf der
+     Verbindungsverlust das Scannen nicht anhalten, und ein großer Block ließe nichts mehr
+     buchen.
 
-     DREI Lautstaerken statt einer, weil die drei Lagen nicht gleich schlimm sind:
-       1. Warteschlange nicht lesbar — Offline-Scans gehen VERLOREN. Laut (Fehlerrolle).
-       2. Vorgaenge liegen auf diesem Rechner — sichtbar, mit Sicherung. Mittel.
-       3. Nur keine Verbindung, nichts offen — eine Zeile, leise. Bis zum 16.09.2026 rief
-          dieser Fall "bitte Sicherung speichern", obwohl es nichts zu sichern gab
-          ("0 Vorgaenge nur auf diesem Rechner").
+     Drei Lautstärken statt einer, weil die drei Lagen nicht gleich schlimm sind:
+       1. Warteschlange nicht lesbar: Offline-Scans gehen verloren. Laut (Fehlerrolle).
+       2. Vorgänge liegen auf diesem Rechner: sichtbar, mit Sicherung. Mittel.
+       3. Nur keine Verbindung, nichts offen: eine Zeile, leise, ohne Bitte um eine
+          Sicherung, denn es gibt nichts zu sichern.
 
-     Farben aus den M3-Rollen statt aus der Palette (Farb-Ratsche zaehlt die Summe). -->
+     Farben aus den M3-Rollen statt aus der Palette (Farb-Ratsche zählt die Summe). -->
 <script>
 	import { offlineSync } from '../stores/offlineSync.svelte.js';
 	import { nachbuchMeldungen } from '../stores/nachbuchMeldungen.svelte.js';
@@ -23,15 +20,15 @@
 	import NachbuchMeldungen from './NachbuchMeldungen.svelte';
 	import { fehlertext } from '../utils/fehlertext.js';
 
-	// Der Herzschlag kommt von aussen (App.svelte): Bis zum 16.09.2026 legte SEIN Ausfall
-	// ein eigenes Vollbild ueber die Seite. Dieselbe Lage, dieselbe Zeile — nicht zwei.
+	// Der Herzschlag kommt von außen (App.svelte), und sein Ausfall steht in derselben Zeile
+	// wie jeder andere Verbindungsverlust: dieselbe Lage, eine Anzeige.
 	/** @type {{ verbindungVerloren?: boolean }} */
 	let { verbindungVerloren = false } = $props();
 
 	let ohneNetz = $derived(offlineSync.ohneNetz || verbindungVerloren);
-	// Die Liste der Meldungen darf `view_students` sehen; die ZAHL gehört jeder
-	// Theken-Rolle. Ein Helfer sieht also, dass etwas offen ist, und holt jemanden —
-	// besser als eine Meldung, die niemandem auffällt (OFFEN.md 2, Entscheidung 13.09.).
+	// Die Liste der Meldungen darf `view_students` sehen; die Zahl gehört jeder Theken-Rolle.
+	// Ein Helfer sieht also, dass etwas offen ist, und holt jemanden; das ist besser als eine
+	// Meldung, die niemandem auffällt.
 	let darfMeldungenSehen = $derived(hatRecht(authStore.currentUser, 'view_students'));
 	let sichtbar = $derived(
 		offlineSync.wartendeAnzahl > 0 ||
@@ -124,10 +121,7 @@
 					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang lässt' : 'Vorgänge lassen'} sich nicht buchen —
 					der Server weist sie ab. Gespeichert bleibt alles; bitte die Bibliothek verständigen.
 				{:else if offlineSync.wartendeAnzahl > 0}
-					<!-- „Vorgänge", nicht „Vorgange": Die Mehrzahl wurde bis zum 16.09.2026 durch
-					     Anhaengen eines „e" an „Vorgang" gebildet, der Umlaut fiel weg. Auf dem
-					     Bildschirmfoto des Stufe-1-Nachweises steht „0 Vorgange nur auf diesem
-					     Rechner" — gefunden hat es der erste Test dieser Datei. -->
+					<!-- Die Mehrzahl ausgeschrieben: Ein angehängtes „e" ergäbe „Vorgange". -->
 					{offlineSync.wartendeAnzahl}
 					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang' : 'Vorgänge'} nur auf diesem Rechner — noch nicht
 					im System.

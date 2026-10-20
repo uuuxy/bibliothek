@@ -10,7 +10,7 @@
  *
  * dnb_vorschlag_da: Nur ein eben aus der DNB angelegter Titel (exists=false) bringt den
  * Schlagwort-Vorschlag mit. Stand er schon im Katalog, hat die Tür die DNB nicht gefragt; dann
- * zeigt das Fenster den Knopf dafür (entschieden am 30.09.2026).
+ * zeigt das Fenster den Knopf dafür.
  *
  * @param {any} antwort die Antwort von aus-isbn
  * @param {any} treffer der DNB-Treffer der Suche

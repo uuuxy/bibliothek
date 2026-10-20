@@ -10,8 +10,8 @@
 	import { Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
 
 	/**
-	 * Geräte-Verwaltung (Bereich im Medienkatalog, Betreiber-Entscheidung 16.08.2026:
-	 * kein eigener Menüpunkt — ausgebucht wird ohnehin über die Omnibox mit G--Barcode).
+	 * Geräte-Verwaltung, ein Bereich im Medienkatalog und kein eigener Menüpunkt: Ausgebucht
+	 * wird ohnehin über die Omnibox mit G--Barcode.
 	 * Anlegen, Liste mit aktuellem Ausleiher, Defekt-Schalter, Stammdaten-Pflege.
 	 */
 

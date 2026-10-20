@@ -35,8 +35,7 @@
 	$effect(() => onelement(el));
 
 	// Der aktive Eintrag muss sichtbar bleiben, sonst wandert die Auswahl blind. Das
-	// Scrollen gehört hierher: Diese Datei hält die Liste, Select hält nur den Index
-	// (verschoben am 12.09.2026).
+	// Scrollen gehört hierher: Diese Datei hält die Liste, Select hält nur den Index.
 	$effect(() => {
 		if (aktiv < 0) return;
 		el?.querySelector(`[data-i="${aktiv}"]`)?.scrollIntoView({ block: 'nearest' });

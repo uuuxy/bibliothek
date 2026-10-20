@@ -1,13 +1,11 @@
 <!-- @component SeitenleisteFuss — angemeldete Person, Abmelden und der DSGVO-Hinweis.
 
-     Eigene Datei, damit Seitenleiste.svelte unter der 200-Zeilen-Grenze bleibt: Die Navigation
-     ist eine Aufgabe, der Fuß eine zweite. Vorher standen beide in einer 476-Zeilen-Datei.
+     Eigene Datei: Die Navigation ist eine Aufgabe, der Fuß eine zweite.
 
-     Abmelden trug bis zum 07.08.2026 variant="danger" und war damit rot. Rot ist in
-     Material 3 die FEHLERrolle; Abmelden ist weder Fehler noch Datenverlust. Der
-     auffälligste Knopf der Navigation war so der unwichtigste — und stand in derselben
-     Farbe wie die echten Gefahrenbereiche der Anwendung, was den Unterschied zwischen
-     "du gehst nach Hause" und "hier gehen Daten verloren" einebnete. -->
+     Abmelden ist nicht rot: Rot ist in Material 3 die Fehlerrolle, und Abmelden ist weder
+     Fehler noch Datenverlust. In derselben Farbe wie die echten Gefahrenbereiche wäre der
+     unwichtigste Knopf der Navigation der auffälligste, und der Unterschied zwischen „du
+     gehst nach Hause" und „hier gehen Daten verloren" wäre eingeebnet. -->
 <script>
 	import { LogOut, ShieldCheck } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';

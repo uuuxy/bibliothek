@@ -5,15 +5,15 @@ import { apiFetch, leseApiFehler } from '../../apiFetch.js';
  * Der Dialog steht an der 200-Zeilen-Ratsche, und die Suche ist das Stück mit eigener
  * Zeitachse (Entprellung, Antwort-Reihenfolge, Fehler).
  *
- * Drei Regeln, alle am 02.09.2026 nachgeholt (Raster-Fund, Frontend-Prüfer):
+ * Drei Regeln:
  *
- *  1. Nur die JÜNGSTE Anfrage schreibt die Liste. Vorher überschrieb die langsame
- *     Antwort auf „Al“ die schnelle auf „Alt123“ — und aus dieser Liste wählt der Admin
- *     den Datensatz, der danach UNUMKEHRBAR gelöscht wird. Vorbild bestellStore.svelte.js.
- *  2. Ein Fehler heißt Fehler. 403/500 hießen vorher „Kein anderer Datensatz gefunden“,
- *     und ein Netzwerkfehler flog als unbehandelte Rejection aus dem Timer-Rückruf.
- *  3. Zurücksetzen stoppt auch den laufenden Timer und entwertet die laufende Antwort —
- *     sonst stand beim nächsten Öffnen (anderer Schüler an der Theke) die vorige Liste.
+ *  1. Nur die jüngste Anfrage schreibt die Liste: Sonst überschriebe die langsame Antwort
+ *     auf „Al“ die schnelle auf „Alt123“, und aus dieser Liste wählt der Admin den
+ *     Datensatz, der danach unumkehrbar gelöscht wird. Vorbild bestellStore.svelte.js.
+ *  2. Ein Fehler heißt Fehler: 403/500 hießen sonst „Kein anderer Datensatz gefunden“, und
+ *     ein Netzwerkfehler flöge als unbehandelte Rejection aus dem Timer-Rückruf.
+ *  3. Zurücksetzen stoppt auch den laufenden Timer und entwertet die laufende Antwort;
+ *     sonst stünde beim nächsten Öffnen (anderer Schüler an der Theke) die vorige Liste.
  *
  * @param {() => string} profilId — ID des Datensatzes, aus dessen Akte gesucht wird; er
  *   selbst ist kein Kandidat (der Server schließt ihn aus).

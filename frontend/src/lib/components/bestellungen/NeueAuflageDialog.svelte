@@ -1,7 +1,7 @@
-<!-- @component NeueAuflageDialog — „Neue Auflage bestellen" aus einer Zeile des Bestellbedarfs
-     (docs/OFFEN.md 4.18, Stufe 4). Entschieden am 23.09.2026: „Der Vorschlag entsteht
-     automatisch beim Nachbestellen, das Ja gibt der Besteller." Der Vorschlag geht von der
-     Zeile aus, also von einem konkreten Buch: Die ISBN der neuen Auflage holt den Titel über
+<!-- @component NeueAuflageDialog — „Neue Auflage bestellen" aus einer Zeile des
+     Bestellbedarfs. Der Vorschlag entsteht beim Nachbestellen, das Ja gibt der Besteller. Er
+     geht von der Zeile aus, also von einem konkreten Buch: Die ISBN der neuen Auflage holt den
+     Titel über
      dieselbe Tür wie die Titelsuche (POST /api/buecher/aus-isbn — aus dem Katalog oder neu aus
      der DNB), der Dialog zeigt ihn, und erst „Zuordnen und bestellen" fasst zusammen
      (POST …/neue-auflage, create_orders, repository/auflagen.go) und legt ihn in den Warenkorb.

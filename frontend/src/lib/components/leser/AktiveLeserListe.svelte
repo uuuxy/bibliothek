@@ -6,9 +6,8 @@
   Sie zeigt ein Profilbild, den Namen, die Art, die Klasse, die Anzahl der ausgeliehenen
   Bücher und den Status an.
 
-  Die Spalte „Art" kam am 16.09.2026 dazu: Seit Migration 125 steht das Kollegium in
-  derselben Liste, und ein Kollege hat keine Klasse. Ohne die Art stünde er da wie ein
-  Schüler, bei dem die Klasse fehlt.
+  Die Spalte „Art": Das Kollegium steht in derselben Liste, und ein Kollege hat keine
+  Klasse. Ohne die Art stünde er da wie ein Schüler, bei dem die Klasse fehlt.
 -->
 <script>
 	import { ChevronRight } from '@lucide/svelte';
@@ -123,11 +122,10 @@
 				</thead>
 				<tbody>
 					{#each leserListe as s, _i (_i)}
-						<!-- Die ZEILE ist kein Knopf mehr, der NAME ist es (wie im Mahnwesen). Eine Zeile
-						     mit role="button", in der ein Kästchen steckt, ist ein Bedienelement im
-						     Bedienelement — für Screenreader unlesbar, für axe 273 Verstöße
-						     (nested-interactive, 09.09.2026). Das Kästchen braucht damit auch kein
-						     stopPropagation mehr: Ankreuzen öffnet nichts. -->
+						<!-- Die Zeile ist kein Knopf, der Name ist es (wie im Mahnwesen): Eine Zeile mit
+						     role="button", in der ein Kästchen steckt, ist ein Bedienelement im
+						     Bedienelement, für Screenreader unlesbar (axe: nested-interactive). Das
+						     Kästchen braucht damit kein stopPropagation: Ankreuzen öffnet nichts. -->
 						<tr class="group">
 							{#if auswaehlbar}
 								<td>

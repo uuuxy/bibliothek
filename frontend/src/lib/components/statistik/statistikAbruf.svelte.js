@@ -4,13 +4,10 @@ import { apiFetch } from '../../apiFetch.js';
  * Der eine Abruf der Statistik (`/api/statistiken`) für Übersicht und Detailseite —
  * mit Reihenfolge-Schutz und Fehlerzustand.
  *
- * Bis zum 21.09.2026 holte jede der beiden Seiten selbst (OFFEN.md 5.8), und beiden
- * fehlte dasselbe: Eine langsame Antwort konnte eine schnellere überholen — Zeitraum
- * gewechselt, und unter der neuen Überschrift standen die Zahlen des alten. Und ein
- * Fehler ergab eine leere Seite: protokolliert im Server (api/system/statistik.go), im Browser
- * nur eine Konsolenzeile, für den Menschen „keine Daten". `laufNr` verwirft, was
- * überholt wurde (wie useLeserakte); `fehler` gibt der Seite den Zustand, den sie
- * mit LadeFehler zeigt.
+ * `laufNr` verwirft, was überholt wurde (wie useLeserakte): Sonst stünden nach einem
+ * Wechsel des Zeitraums unter der neuen Überschrift die Zahlen des alten. `fehler` gibt der
+ * Seite den Zustand, den sie mit LadeFehler zeigt, statt einer leeren Seite, die wie „keine
+ * Daten" aussieht.
  */
 export function statistikAbruf() {
 	/** @type {any} */

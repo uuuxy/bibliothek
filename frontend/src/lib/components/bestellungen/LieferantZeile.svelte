@@ -4,8 +4,8 @@
      109): Lieferanten mit beiden Zeilenformen lag über der 200-Zeilen-Marke.
 
      Drei Spalten mit je zwei Zeilen (M3-Listenzeile: Headline + Supporting) statt fünf
-     einzeiligen: Seit dem Umzug in die Einstellungen (25.08.2026) hat die Tabelle bei
-     1280 px nur 592 px — fünf Spalten brauchten gemessen 924. Name/E-Mail werden gekürzt
+     einzeiligen: In den Einstellungen hat die Tabelle bei 1280 px nur 592 px, fünf Spalten
+     brauchten gemessen 924. Name/E-Mail werden gekürzt
      (Block in der Zelle — max-width auf <td> ignoriert das Auto-Layout), der volle Text
      steht im title. -->
 <script>

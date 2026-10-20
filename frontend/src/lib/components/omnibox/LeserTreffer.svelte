@@ -42,8 +42,8 @@
 	<span class="text-sm truncate text-on-surface-variant {leser.barcode_id ? '' : 'italic'}"
 		>{ausweis}</span
 	>
-	<!-- Leere vierte Spalte: Sie gehört den Büchern (dort steht der Bestand, seit
-	     17.09.2026). Ohne sie wären die Spalten der beiden Gruppen um 10rem gegeneinander
-	     versetzt — das Raster ist der Grund, warum man hier untereinander lesen kann. -->
+	<!-- Leere vierte Spalte: Sie gehört den Büchern, dort steht der Bestand. Ohne sie wären
+	     die Spalten der beiden Gruppen um 10rem gegeneinander versetzt; das Raster ist der
+	     Grund, warum man hier untereinander lesen kann. -->
 	<span></span>
 </div>

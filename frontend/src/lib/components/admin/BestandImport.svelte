@@ -1,11 +1,9 @@
 <!--
   @component BestandImport
-  Finaler Bestands-Import (Kombi-CSV): ÜBERNIMMT vorhandene Exemplare samt ihrer Nummern.
+  Finaler Bestands-Import (Kombi-CSV): übernimmt vorhandene Exemplare samt ihrer Nummern.
 
-  Bis zum 07.09.2026 stand dieser Block in Datenverwaltung.svelte. Ausgelagert in derselben
-  Bauform wie das Littera-Widget, damit die Datenverwaltung unter die 200-Zeilen-Regel
-  fällt, als der Listenimport dazukam. apiFetch statt fetch: setzt den CSRF-Token selbst und
-  gibt Uploads fünf Minuten statt zehn Sekunden (frontend/src/lib/apiFetch.js).
+  apiFetch statt fetch: setzt den CSRF-Token selbst und gibt Uploads fünf Minuten statt zehn
+  Sekunden (frontend/src/lib/apiFetch.js).
 -->
 <script lang="ts">
 	import { apiFetch } from '../../apiFetch.js';

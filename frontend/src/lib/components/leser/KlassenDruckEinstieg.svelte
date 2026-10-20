@@ -1,15 +1,14 @@
 <script>
 	/**
 	 * @component KlassenDruckEinstieg
-	 * Sichtbarer Einstieg für den klassenweisen Ausweisdruck (24.08.2026, auf
-	 * Ansage): Der Weg über die Schülerdatei — Klasse suchen, Kopf-Kästchen anhaken,
-	 * Aktionsleiste — funktioniert, ist aber für neue Benutzer unauffindbar, weil die
-	 * Leiste erst mit der ersten Markierung erscheint.
+	 * Sichtbarer Einstieg für den klassenweisen Ausweisdruck: Der Weg über die Schülerdatei
+	 * (Klasse suchen, Kopf-Kästchen anhaken, Aktionsleiste) funktioniert, ist aber für neue
+	 * Benutzer unauffindbar, weil die Leiste erst mit der ersten Markierung erscheint.
 	 *
-	 * Dieser Block druckt bewusst NICHT selbst (keine zweite Tür zum selben Zustand):
-	 * Er springt in die Schülerdatei mit fertig markierter Klasse. Damit bleiben die
-	 * Kontrollen des EINEN Druckwegs davor — die Warnung bei fehlendem Ablaufdatum
-	 * und die Startposition des Etikettenbogens.
+	 * Dieser Block druckt nicht selbst (keine zweite Tür zum selben Zustand): Er springt in
+	 * die Schülerdatei mit fertig markierter Klasse. Damit bleiben die Kontrollen des einen
+	 * Druckwegs davor, die Warnung bei fehlendem Ablaufdatum und die Startposition des
+	 * Etikettenbogens.
 	 */
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';

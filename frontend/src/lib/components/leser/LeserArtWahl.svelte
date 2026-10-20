@@ -1,14 +1,13 @@
 <!-- @component LeserArtWahl — die erste Frage beim Anlegen: Wer ist das?
 
-     Zuerst die Art, dann die Felder (16.09.2026). Nicht aus Ordnungsliebe: An der
-     Art hängt, welche Angaben überhaupt Pflicht sind. Ein Schüler braucht Klasse und
+     Zuerst die Art, dann die Felder, nicht aus Ordnungsliebe: An der Art hängt, welche
+     Angaben überhaupt Pflicht sind. Ein Schüler braucht Klasse und
      Geburtsdatum (der LUSD-Import erkennt ihn nur daran wieder), ein Kollege hat beides
      nicht. Stünde die Frage am Ende, hätte man vorher Felder ausgefüllt, die verschwinden.
 
-     Die Arten sind dieselben sieben wie in der Datenbank (chk_leser_art, Migration 153).
-     Bis zum 30.09.2026 waren es drei, als Auswahlknöpfe nebeneinander. Mit den Sonderkonten
-     (Praktikum, Sekretariat, U-plus, Fachbereich) ist es eine Auswahlliste — Material 3,
-     Radio button, Guidelines: „Use radio buttons when there are five or fewer options."
+     Die Arten sind dieselben sieben wie in der Datenbank (chk_leser_art, Migration 153), als
+     Auswahlliste: Material 3, Radio button, Guidelines: „Use radio buttons when there are
+     five or fewer options."
      und „Consider using a drop-down menu instead of radio buttons when space is
      constrained". Das Bauteil ist ui/Select, wie die Klasse eine Zeile tiefer. -->
 <script>
@@ -16,13 +15,12 @@
 	import { LESER_ARTEN, leserArtText } from '../../leserArt.js';
 
 	/**
-	 * Alle Arten stehen IMMER in der Liste — die Maske hat für jeden dieselbe Form (Absprache
-	 * vom 16.09.2026: „bitte nicht verkomplizieren"). Was nicht gewählt werden darf, steht in
-	 * `gesperrt` und ist abgeschaltet statt versteckt.
+	 * Alle Arten stehen immer in der Liste, die Maske hat für jeden dieselbe Form. Was nicht
+	 * gewählt werden darf, steht in `gesperrt` und ist abgeschaltet statt versteckt.
 	 *
-	 * Beim ANLEGEN ist nichts gesperrt. Beim ÄNDERN einer bestehenden Akte ist es die
-	 * Grenze zum Schüler, und zwar in beide Richtungen: Ein Schüler kommt aus der LUSD und
-	 * bleibt Schüler („ein Schüler kann nie ein Lehrer werden!"), ein Kollege wird keiner.
+	 * Beim Anlegen ist nichts gesperrt. Beim Ändern einer bestehenden Akte ist es die Grenze
+	 * zum Schüler, und zwar in beide Richtungen: Ein Schüler kommt aus der LUSD und bleibt
+	 * Schüler, ein Kollege wird keiner.
 	 * Dieselbe Grenze hält der Server (pruefeUndSetzeArt) — hier steht sie, damit niemand
 	 * erst auf Speichern drücken muss, um es zu erfahren.
 	 * `id` wie bei ui/Feld: Die Akte gibt eine feste (ihre Felder heißen alle fest), der

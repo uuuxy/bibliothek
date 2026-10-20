@@ -9,11 +9,11 @@
 
      Die Leiste liegt unten über dem Inhalt statt oben in der Werkzeugleiste: Wer markiert,
      scrollt dabei durch die Liste, und ein Knopf oben wäre nach der dritten Zeile aus dem Bild
-     (derselbe Grund wie bei der Leiste des Ausweisdrucks, students/AuswahlAktionsleiste).
+     (derselbe Grund wie bei der Leiste des Ausweisdrucks, leser/AuswahlAktionsleiste).
      `sticky`, nicht `fixed`, und als letztes Kind der Spalte, die die Liste trägt: M3
-     „Floating toolbars shouldn't exceed the edge of the window or pane" — die Leiste gehört
-     mittig unter ihre Liste. `fixed` zentrierte sie über dem Fenster; auf der Pflegeseite der
-     Schlagworte lag sie dann über der Kategorienliste (gemessen am 23.09.2026).
+     „Floating toolbars shouldn't exceed the edge of the window or pane", die Leiste gehört
+     mittig unter ihre Liste. `fixed` zentrierte sie über dem Fenster, auf der Pflegeseite der
+     Schlagworte also über der Kategorienliste.
 
      Die Aktionen kommen als children; das X hebt die Markierung auf. Die Meldungen der Anwendung
      stehen über der Leiste, wenn sie unten ankommt (use:meldungenWeichenAus). -->

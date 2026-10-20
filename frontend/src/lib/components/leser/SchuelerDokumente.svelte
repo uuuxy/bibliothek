@@ -2,12 +2,10 @@
   @component
   SchuelerDokumente — Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
 
-  Die ersten beiden gehören einem KOLLEGEN nicht: Sie lesen die Sicht `schueler`
+  Die ersten beiden gehören einem Kollegen nicht: Sie lesen die Sicht `schueler`
   (api/leser/kontoauszug.go, api/schaden/rechnung.go) und beantworten seine ID mit „nicht
-  gefunden"; die Ersatzforderung ist
-  ohnehin ein Schreiben an die Eltern. Die DSGVO-Auskunft gibt es seit dem 24.09.2026 für
-  jeden Leser (docs/OFFEN.md 5.19). Beieinander statt dreimal dieselbe Bedingung — und
-  LeserakteAktionen bleibt unter der 200-Zeilen-Grenze.
+  gefunden"; die Ersatzforderung ist ohnehin ein Schreiben an die Eltern. Die DSGVO-Auskunft
+  gibt es für jeden Leser. Beieinander statt dreimal dieselbe Bedingung.
 -->
 <script>
 	import Button from '../ui/Button.svelte';

@@ -1,16 +1,13 @@
 <!-- @component Bestellberichte — Monat, Jahr und Lieferant als Blatt zum Abheften.
 
-     Eigener Bildschirm unter „Berichte" seit dem 17.09.2026, vorher ein Reiter im
-     Bestellwesen. Die Trennlinie: Unter „Berichte" steht, was ein Blatt für jemand
-     anderen erzeugt und dabei nichts ändert (Bestandsbücher, Statistiken, diese drei);
-     bei seinem Vorgang bleibt, was eine Folgeaktion hat — der Fehlbestandsbericht mit
-     „Gefunden" und Löschen in der Inventur, die Mahnungen im Mahnwesen.
+     Ein eigener Bildschirm unter „Berichte", kein Reiter im Bestellwesen. Die Trennlinie:
+     Unter „Berichte" steht, was ein Blatt für jemand anderen erzeugt und dabei nichts ändert
+     (Bestandsbücher, Statistiken, diese drei); bei seinem Vorgang bleibt, was eine
+     Folgeaktion hat, der Fehlbestandsbericht mit „Gefunden" und Löschen in der Inventur, die
+     Mahnungen im Mahnwesen. Recht view_orders wie die Route (/api/bestellhistorie/bericht).
 
-     Kein zweiter Weg: Der Reiter im Bestellwesen ist dabei ENTFALLEN, nicht verdoppelt
-     worden. Recht bleibt view_orders wie die Route (/api/bestellhistorie/bericht).
-
-     Die Ansicht lädt ihre beiden Angaben selbst, weil sie nicht mehr im Bestellwesen
-     hängt: die Lieferantenliste und den Schalter „Preise im Bestellwesen". Beides steht
+     Die Ansicht lädt ihre beiden Angaben selbst, weil sie nicht im Bestellwesen hängt: die
+     Lieferantenliste und den Schalter „Preise im Bestellwesen". Beides steht
      im geteilten bestellStore mit eigener Frist — dieselbe Stelle, aus der auch die
      Lieferanten-Kategorie der Einstellungen lädt, also kein zweiter Datenweg. -->
 <script>

@@ -1,8 +1,8 @@
 <!-- @component EhemaligeListe — der Reiter „Ehemalige / Archiv" der Schülerdatei: wer die
-     Schule verlassen hat (laut LUSD-Import oder Versetzung), noch nicht anonymisiert.
-     Bis zum 05.09.2026 bettete der Reiter die Abgängerliste ein; seit die wieder die
-     Abschlussklassen meint (noch an der Schule, Mai bis Juli), haben die Weggegangenen
-     diese eigene Liste: dieselbe Serversuche wie „Aktive Schüler", mit status=ehemalige. -->
+     Schule verlassen hat (laut LUSD-Import oder Versetzung), noch nicht anonymisiert. Die
+     Abgängerliste meint die Abschlussklassen (noch an der Schule, Mai bis Juli); die
+     Weggegangenen haben diese eigene Liste: dieselbe Serversuche wie „Aktive Schüler", mit
+     status=ehemalige. -->
 <script>
 	import { onMount } from 'svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
@@ -34,10 +34,9 @@
 			const res = await apiFetch(
 				`/api/schueler?status=ehemalige${q ? `&q=${encodeURIComponent(q)}` : ''}`
 			);
-			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
-			// 12.09.2026 stand hier `if (res.ok && nr === ladeNr)`: Scheiterte der Lauf,
-			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen
-			// (Register, Bestands-Durchgang 10.09.).
+			// Nur die jüngste Anfrage schreibt, aber sie schreibt in jedem Fall: Sonst blieben
+			// nach einem gescheiterten Lauf die Treffer der vorigen Suche unter dem neuen
+			// Suchtext stehen.
 			if (nr !== ladeNr) return;
 			if (res.ok) {
 				zeilen = (await res.json()) || [];

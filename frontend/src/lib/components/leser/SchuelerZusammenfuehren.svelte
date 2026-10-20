@@ -1,7 +1,8 @@
 <!-- @component SchuelerZusammenfuehren — der Abschnitt „Doppelter Datensatz?" am Ende des
      Reiters „Stammdaten & Adresse", über der Gefahrenzone: sichtbar nur mit dem Recht
-     merge_students (schuelerRechte.zusammenfuehren; eigenes Recht seit 03.09.2026). Trägt den Dialog gleich mit,
-     damit Leserakte.svelte (an der 200-Zeilen-Ratsche) nichts davon halten muss. -->
+     merge_students (schuelerRechte.zusammenfuehren, ein eigenes Recht). Trägt den Dialog
+     gleich mit, damit Leserakte.svelte (an der 200-Zeilen-Ratsche) nichts davon halten
+     muss. -->
 <script>
 	import { istKollegium } from '../../leserArt.js';
 	import { Merge } from '@lucide/svelte';

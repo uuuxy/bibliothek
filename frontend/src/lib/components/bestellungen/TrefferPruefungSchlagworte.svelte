@@ -21,10 +21,10 @@
 	 * eigenen Liste, die der DNB-Satz nennt. Angeboten zum Anklicken, nicht eingetragen: Der
 	 * Satz nennt etwa „Deutsch" für die Sprache, und ein gleichnamiges Schlagwort für das Fach
 	 * stünde sonst still am Titel.
-	 * angeboteNeu: Normdatei-Wörter des Satzes, die die Liste noch nicht kennt (docs/OFFEN.md
-	 * 4.25, entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
-	 * mitDnbKnopf: Der Titel stand schon im Katalog, die DNB wurde also nicht gefragt — dann holt
-	 * der Knopf unter dem Feld den Vorschlag zur isbn (entschieden am 30.09.2026).
+	 * angeboteNeu: Normdatei-Wörter des Satzes, die die Liste noch nicht kennt, angeboten mit
+	 * dem Zusatz „neu", nie vorbelegt.
+	 * mitDnbKnopf: Der Titel stand schon im Katalog, die DNB wurde also nicht gefragt; dann holt
+	 * der Knopf unter dem Feld den Vorschlag zur isbn.
 	 * @type {{ titelId: string, angebote?: string[], angeboteNeu?: string[], isbn?: string, mitDnbKnopf?: boolean }}
 	 */
 	let { titelId, angebote = [], angeboteNeu = [], isbn = '', mitDnbKnopf = false } = $props();

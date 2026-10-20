@@ -15,7 +15,7 @@
 	// Sperrbildschirm nach Inaktivität. Die
 	// Anwendung dahinter bleibt stehen, damit Ungespeichertes die Sperre überlebt, ist aber
 	// ausgeblendet und träge (App.svelte): Die Druckvorschau zeigt sie nicht, Tab erreicht
-	// sie nicht, Screenreader lesen sie nicht (Prüfung 22.08.2026, A6). Tasten und Zeiger
+	// sie nicht, Screenreader lesen sie nicht. Tasten und Zeiger
 	// hält sperrSchild.js von ihr fern; data-sperrbildschirm ist sein Kennzeichen. Weiter
 	// geht es nur mit dem Passwort der angemeldeten Person oder per Abmelden. Der Server
 	// hält die Anmeldung so lange gesperrt (stores/leerlaufSperre).

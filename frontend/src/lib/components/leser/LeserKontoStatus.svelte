@@ -1,17 +1,9 @@
-<!-- @component Der Konto-Status eines Schülers samt dem Knopf, der ihn umschaltet.
+<!-- @component Der Konto-Status eines Schülers samt dem Knopf, der ihn umschaltet: Zustand
+     und seine Umschaltung, nicht „noch ein Abschnitt in der Profilkarte".
 
-     Eigene Datei, seit die Sperre hier eingezogen ist: Sonst wäre LeserakteKopf
-     um dreissig Zeilen weiter über die 200-Zeilen-Marke gewachsen, die in diesem
-     Projekt gilt. Der Block hat damit auch einen Namen für das, was er ist — Zustand
-     UND seine Umschaltung, nicht „noch ein Abschnitt in der Profilkarte".
-
-     Die Sperre stand bis zum 08.08.2026 im Kasten „Dokumente & Aktionen", zwischen
-     vier Knöpfen, die nur ein PDF erzeugen. Ihre Position kam dort aus einem ml-auto
-     in einem flex-wrap-Container — und das schiebt nur innerhalb der aktuellen ZEILE
-     nach rechts. Bei breitem Fenster stand die folgenreichste Aktion des Bildschirms
-     also unabgesetzt am Zeilenende, bei schmalem rutschte sie allein nach unten
-     rechts, genau dorthin, wo ein Dialog seinen Bestätigen-Knopf hat. Ihre Prominenz
-     hing an der Fensterbreite. Jetzt steht sie bei dem Zustand, den sie umschaltet.
+     Die Sperre steht bei dem Zustand, den sie umschaltet, nicht zwischen Knöpfen, die nur
+     ein PDF erzeugen: Dort hinge ihre Stelle an der Fensterbreite, und bei schmalem Fenster
+     rutschte sie dorthin, wo ein Dialog seinen Bestätigen-Knopf hat.
 
      Nicht zu verwechseln mit der „Gefahrenzone" im Stammdaten-Reiter: Dort steht das
      unumkehrbare Löschen. Eine Sperre ist umkehrbar und gehört deshalb hierher. -->
@@ -42,11 +34,9 @@
 		{/if}
 	</div>
 
-	<!-- Der GRUND der Sperre. Er wird beim Sperren erfasst (LeserSperreDialog, Pflicht
-	     per DB-Constraint) und kam bis zum 01.09.2026 in jeder Profil-Antwort mit,
-	     wurde aber NIRGENDS angezeigt — wer entsperren wollte, musste raten, warum
-	     gesperrt wurde (nur die DSGVO-Auskunft druckte ihn). Sichtbar nur im
-	     gesperrten Zustand; das Profil steht ohnehin hinter view_students
+	<!-- Der Grund der Sperre, erfasst beim Sperren (LeserSperreDialog, Pflicht per
+	     DB-Constraint): Wer entsperren will, soll nicht raten müssen, warum gesperrt wurde.
+	     Sichtbar nur im gesperrten Zustand; das Profil steht ohnehin hinter view_students
 	     (PII-Matrix: Sperrgrund = Stufe 2 hinter genau diesem Recht). -->
 	{#if gesperrt && leser.block_reason}
 		<p class="text-sm text-on-surface-variant">
@@ -67,12 +57,10 @@
 	</div>
 
 	{#if onLock}
-		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Seit dem 24.09.2026 hebt der
-		     Knopf JEDE Sperre am Leser auf, auch die der Ehemaligen (api/leser/leser_sperre.go). Bis
-		     dahin löste er nur die Sperre von Hand und stand bei einem gesperrten Ehemaligen auf
-		     „Schüler sperren".
-		     Ein Kollege wird nie gesperrt: Der Knopf bleibt an seiner Stelle, verschlossen, mit
-		     dem Satz warum (eine Maske für jeden, 16.09.2026). -->
+		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Der Knopf hebt jede Sperre am
+		     Leser auf, auch die der Ehemaligen (api/leser/leser_sperre.go). Ein Kollege wird nie
+		     gesperrt: Der Knopf bleibt an seiner Stelle, verschlossen, mit dem Satz warum (eine
+		     Maske für jeden). -->
 		<Button
 			variant={gesperrt ? 'success' : 'danger'}
 			class="w-full"

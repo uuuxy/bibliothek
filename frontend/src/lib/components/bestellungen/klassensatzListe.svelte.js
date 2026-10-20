@@ -5,10 +5,9 @@ import { apiFetch, leseApiFehler } from '../../apiFetch.js';
  * Größen-Ratsche steht (200 Zeilen) und das Laden mit den Dialogen daneben nichts zu tun
  * hat. Dieselbe Auslagerung wie schuelerSuche, klassenVorschlaege und geraeteListe.
  *
- * „Keine offenen Klassensatz-Reservierungen" heißt: niemand wartet. Bis zum 12.09.2026
- * stand derselbe Satz da, wenn der Abruf gescheitert war (`reservierungen = res.ok ?
- * await res.json() : []`) — und wer auf Bücher für eine Unterrichtsstunde mit Termin
- * wartet, wartete weiter (Register, Bestands-Durchgang 10.09.2026).
+ * „Keine offenen Klassensatz-Reservierungen" heißt: niemand wartet. Nach einem
+ * gescheiterten Abruf stünde derselbe Satz da, und wer auf Bücher für eine
+ * Unterrichtsstunde mit Termin wartet, wartete weiter; deshalb ein eigener Fehlerzustand.
  */
 export function erzeugeKlassensatzListe() {
 	/** @type {any[]} */

@@ -1,14 +1,8 @@
-<!-- @component Tabelle — DIE Datentabelle der Anwendung (Material 3 Data Table, dicht).
+<!-- @component Tabelle — die Datentabelle der Anwendung (Material 3 Data Table, dicht).
 
-     Bis zum 08.09.2026 hatten 24 Tabellen 24 Rezepte: Das Aussehen hing mal am <thead>,
-     mal an der Kopfzeile, mal an jedem <th>; sechs Innenabstände (px-4 py-2, p-4, p-4.5,
-     py-3 px-4, px-3 py-2, py-2 pr-3), zwei Schriftgrößen, Zeilen-Hover in drei Farben
-     (slate-50, blue-50, surface-container), gewählte Zeile in zwei. Nebeneinander auf
-     einer Seite (Schülerdatei ↔ Mahnwesen ↔ Etiketten) las sich das als drei Programme.
-
-     Ein Rezept, hier in <style> festgeschrieben, damit die Zellen NICHTS mehr über ihr
-     Aussehen sagen müssen und es auch nicht können sollen (Ratsche
-     frontend-hygiene-tabellen.test.js):
+     Ein Rezept, hier in <style> festgeschrieben, damit die Zellen nichts über ihr Aussehen
+     sagen müssen und es auch nicht können sollen (Ratsche frontend-hygiene-tabellen.test.js):
+     Tabellen mit eigenen Abständen und Farben lesen sich nebeneinander als drei Programme.
        - Kopfzelle: 40 px hoch, label 12 px medium in `on-surface-variant`, Trennlinie
          `outline-variant` (typo-rollen.spec.js: th 12, td 14).
        - Zelle: 14 px in `on-surface`, py-2 → Zeilen von 36–40 px, unsere Dichte.
@@ -16,7 +10,7 @@
          Zebrastreifen, kein Rahmen um die Tabelle (edge-to-edge, siehe MahnwesenTabelle).
        - Hover: State-Layer 8 % `on-surface` — dieselbe Regel wie bei den Knöpfen.
        - Gewählt: `aria-selected="true"` an der Zeile → `secondary-container`, wie in
-         M3-Listen und wie die 21 Stellen, die es schon so machten.
+         M3-Listen.
        - Waagerechter Innenabstand 16 px; die erste und letzte Zelle bekommen ihn auch,
          damit Text und Kopf am Seitenrand auf einer Linie stehen.
      Was die Zellen noch selbst bestimmen: Breite (w-*), Ausrichtung (text-right; senkrecht
@@ -26,10 +20,10 @@
      `sticky` hält den Kopf beim Scrollen oben (Etikettenliste, Statistik).
      Der Aufrufer schreibt <thead>/<tbody>/<tr>/<th>/<td> wie gehabt — nur ohne Optik.
 
-     Barrierefreiheit (09.09.2026, Gate e2e/barrierefreiheit-dialog.spec.js):
+     Barrierefreiheit (Gate e2e/barrierefreiheit-dialog.spec.js):
        - `beschriftung` ist Pflicht (Ratsche frontend-hygiene-tabellen.test.js) und wird
-         als unsichtbare <caption> gesetzt — ein Screenreader nennt beim Betreten der
-         Tabelle, WAS hier steht; sehende Nutzer brauchen den Titel nicht, die Seite sagt es.
+         als unsichtbare <caption> gesetzt: Ein Screenreader nennt beim Betreten der
+         Tabelle, was hier steht; sehende Nutzer brauchen den Titel nicht, die Seite sagt es.
        - Jede <th> bekommt ihren `scope` (col im Kopf, row im Rumpf) von der Aktion
          unten, damit 147 Kopfzellen ihn nicht einzeln tragen müssen; ein selbst
          gesetzter scope bleibt stehen. Ein MutationObserver hält das auch für Zeilen,

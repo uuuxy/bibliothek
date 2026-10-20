@@ -1,25 +1,21 @@
 <script>
 	/**
 	 * @component OmniboxThekeHinweise
-	 * Die Hinweis-Banner über dem aktiven Schülerkonto an der Theke — aus
-	 * Omnibox.svelte extrahiert (200-Zeilen-Regel), gerendert nur mit aktivem Schüler.
+	 * Die Hinweis-Banner über dem aktiven Schülerkonto an der Theke, gerendert nur mit
+	 * aktivem Schüler.
 	 *
 	 * 1. Fremdrückgabe: Das gescannte Buch war auf jemand anderen verbucht.
-	 * 2. Abholfach (Betreiber-Entscheidung 01.09.2026): Schüler scannen nicht
-	 *    selbst — der Hinweis sagt der MITARBEITERIN, dass für den gerade
-	 *    gescannten Schüler ein vorgemerktes Buch im Abholfach liegt. Ohne ihn
-	 *    stünde der Schüler an der Theke, während sein Buch im Fach auf den
-	 *    Ablauf der Abholfrist wartet (repository.BestimmeAbholfrist).
-	 * 3. Kollegium (16.09.2026): Seit die Akte auch einen Kollegen zeigt, sieht die
-	 *    Theke dieselbe Ansicht wie bei einem Schüler — nur ohne Klasse. Der
-	 *    Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr
-	 *    (ladeVorgang). Vorher stand dafür eine eigene schmale
-	 *    Karte da, weil es die Akte noch nicht gab.
-	 * 4. Gemischte Auflagen (25.09.2026, docs/OFFEN.md 4.18, Stufe 5): Das eben
-	 *    ausgeliehene Schulbuch ist eine andere Auflage als die, die Kinder derselben
-	 *    Klasse schon haben — verschiedene Auflagen heißen verschiedene Seitenzahlen.
-	 *    Entschieden: eine Zeile wie bei der Fremdrückgabe, kein Dialog; die Ausleihe
-	 *    ist gebucht, wer will, legt das Buch zurück und holt die andere Auflage.
+	 * 2. Abholfach: Schüler scannen nicht selbst, der Hinweis sagt der Mitarbeiterin, dass
+	 *    für den gerade gescannten Schüler ein vorgemerktes Buch im Abholfach liegt. Ohne
+	 *    ihn stünde der Schüler an der Theke, während sein Buch im Fach auf den Ablauf der
+	 *    Abholfrist wartet (repository.BestimmeAbholfrist).
+	 * 3. Kollegium: Die Theke zeigt einem Kollegen dieselbe Akte wie einem Schüler, nur ohne
+	 *    Klasse. Der Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr
+	 *    (ladeVorgang).
+	 * 4. Gemischte Auflagen: Das eben ausgeliehene Schulbuch ist eine andere Auflage als
+	 *    die, die Kinder derselben Klasse schon haben, und verschiedene Auflagen heißen
+	 *    verschiedene Seitenzahlen. Eine Zeile wie bei der Fremdrückgabe, kein Dialog: Die
+	 *    Ausleihe ist gebucht, wer will, legt das Buch zurück und holt die andere Auflage.
 	 */
 	import { TriangleAlert, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';

@@ -1,12 +1,10 @@
-<!-- @component Das Staging-Fenster der Bestellsuche: ein Treffer wird geprüft, bevor er
-     in den Warenkorb kommt — Signatur, Menge, Barcodes und seit dem 10.09.2026 die Frage
-     „Lernmittel?".
+<!-- @component Das Staging-Fenster der Bestellsuche: Ein Treffer wird geprüft, bevor er in
+     den Warenkorb kommt; Signatur, Menge, Barcodes und die Frage „Lernmittel?".
 
-     Warum die Frage hier steht: Ein über die DNB neu angelegter Titel entstand bis dahin
-     OHNE Lernmittel-Kennzeichen und blieb so — ein neues Schulbuch war damit ein
-     Bücherei-Titel: falsche Frist, falscher Katalog, unsichtbar im Bestellbedarf, und mit
-     Migration 109 im falschen Topf der Bestellung. Das Fenster ist der Moment, in dem
-     jemand den Titel ohnehin ansieht.
+     Warum die Frage hier steht: Ein über die DNB neu angelegter Titel trägt von sich aus kein
+     Lernmittel-Kennzeichen, und ein neues Schulbuch wäre damit ein Bücherei-Titel: falsche
+     Frist, falscher Katalog, unsichtbar im Bestellbedarf, und im falschen Topf der
+     Bestellung. Das Fenster ist der Moment, in dem jemand den Titel ohnehin ansieht.
 
      Eigene Datei, seit BestellSuche mit dem Fenster über der 200-Zeilen-Marke lag. -->
 <script>
@@ -41,8 +39,8 @@
 	const signaturBeiStart = untrack(() => treffer.signatur ?? '');
 
 	// Die Signaturen der Schülerbücherei sind die Littera-Codes am Regal. Sie kommen aus
-	// dem BESTAND (GET /api/signaturen) — bis zum 22.09.2026 schlug die DNB-Kategorie hier
-	// „BIB Jugendbuch" vor, ein Wort, das in keinem Regal steht.
+	// dem Bestand (GET /api/signaturen), nicht aus der DNB-Kategorie: Die schlüge „BIB
+	// Jugendbuch" vor, ein Wort, das in keinem Regal steht.
 	/** @type {{ signatur: string, titel: number }[]} */
 	let vorhandene = $state([]);
 	$effect(() => {
@@ -116,7 +114,7 @@
 			Signatur
 			{#if !signaturBeiStart}
 				<!-- primary: M3 „High-emphasis … texts … against surface". Eine Warnfarbe gibt es
-				     in den Rollen nicht; bis zum 23.09.2026 stand hier amber. -->
+				     in den Rollen nicht. -->
 				<span class="text-primary font-normal">(bitte eintragen)</span>
 			{/if}
 		</label>

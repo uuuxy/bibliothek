@@ -4,13 +4,12 @@
      ist ein gleichförmiger Datensatz mit festen Spalten, also eine Tabelle. Als Karten
      brauchte dieselbe Information rund das Dreifache an Höhe.
 
-     Die Zeile klappte bis zum 08.08.2026 auf und zeigte dann dieselben Angaben noch
-     einmal untereinander — ohne Cover, ohne Exemplarnummern, also ohne Zugewinn. Sie
-     FÜHRT jetzt in die Detailansicht: role="button" samt Tastaturbedienung bleibt, das
-     Chevron zeigt nach rechts statt nach unten.
+     Die Zeile führt in die Detailansicht, statt aufzuklappen und dieselben Angaben noch
+     einmal untereinander zu zeigen: role="button" samt Tastaturbedienung, das Chevron zeigt
+     nach rechts.
 
-     Eigene Datei, seit die Historie den Detail-Zweig traegt: Beides zusammen lag ueber
-     der 200-Zeilen-Marke, die in diesem Projekt gilt. -->
+     Eigene Datei, weil die Historie den Detail-Zweig trägt: Beides zusammen läge über der
+     200-Zeilen-Marke, die in diesem Projekt gilt. -->
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';

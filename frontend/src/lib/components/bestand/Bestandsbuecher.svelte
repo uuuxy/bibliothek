@@ -1,17 +1,14 @@
 <!-- @component Bestandsbücher — Zugangsbuch und Abgangsbuch unter einem Menüpunkt.
 
-     Beide standen bis zum 17.09.2026 als Reiter im Medienkatalog. Sie gehören dorthin
-     fachlich durchaus — es ist der Bestand —, nur sind sie etwas anderes als die tägliche
-     Arbeit am Katalog: ein Nachweis, den jemand ein- bis zweimal im Jahr zum Stichtag
-     (15.3./15.9.) ausdruckt und abheftet. Dieselbe Begründung, mit der der
-     Schuljahreswechsel unter „System" liegt und nicht im Bibliotheks-Menü: Was selten
-     gebraucht wird, lenkt im täglichen Weg nur ab (Betreiber-Entscheidung 17.09.2026).
+     Nicht im Medienkatalog: Fachlich ist es der Bestand, aber etwas anderes als die tägliche
+     Arbeit am Katalog, ein Nachweis, den jemand ein- bis zweimal im Jahr zum Stichtag
+     (15.3./15.9.) ausdruckt und abheftet. Was selten gebraucht wird, lenkt im täglichen Weg
+     nur ab, wie der Schuljahreswechsel unter „System".
 
-     EIN Menüpunkt und nicht zwei: Die beiden Bücher sind derselbe Nachweis in zwei
-     Richtungen — was kam, was ging. Zwei Punkte nebeneinander im Menü behaupteten zwei
-     Aufgaben, wo es eine ist.
+     Ein Menüpunkt und nicht zwei: Die beiden Bücher sind derselbe Nachweis in zwei
+     Richtungen, was kam und was ging.
 
-     Die Spaltenbeschreibungen stehen hier, weil sie zum BUCH gehören und nicht zum
+     Die Spaltenbeschreibungen stehen hier, weil sie zum Buch gehören und nicht zum
      Bauteil: Bestandsbuch.svelte zeichnet, was es bekommt. -->
 <script>
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';

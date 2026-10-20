@@ -5,10 +5,9 @@ import { apiFetch, leseApiFehler } from '../apiFetch.js';
  * Größen-Ratsche steht (200 Zeilen) und das Laden mit dem Formular daneben nichts zu tun
  * hat. Dieselbe Auslagerung wie schuelerSuche, klassenVorschlaege und eigeneAnliegen.
  *
- * „Noch keine Geräte erfasst" ist eine Aussage über den Schrank. Bis zum 12.09.2026 stand
- * derselbe Satz da, wenn der Abruf gescheitert war (`const data = res.ok ? await
- * res.json() : null`) — mit der Einladung, Geräte ein zweites Mal anzulegen, die längst
- * im Bestand stehen (Register, Bestands-Durchgang 10.09.2026).
+ * „Noch keine Geräte erfasst" ist eine Aussage über den Schrank. Nach einem gescheiterten
+ * Abruf stünde derselbe Satz da, mit der Einladung, Geräte ein zweites Mal anzulegen, die
+ * längst im Bestand stehen; deshalb hat die Liste einen eigenen Fehlerzustand.
  */
 export function erzeugeGeraeteListe() {
 	/** @type {any[]} */

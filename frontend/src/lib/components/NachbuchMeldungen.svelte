@@ -1,13 +1,10 @@
-<!-- @component NachbuchMeldungen — was beim Nachbuchen anders lief als beim Scan.
+<!-- @component NachbuchMeldungen — was beim Nachbuchen anders lief als beim Scan. Der
+     Server hält jede Abweichung fest (Migration 117).
 
-     Schritt C des Offline-Baus (OFFEN.md 2.2, Commit 16). Der Server hält jede Abweichung
-     fest (Migration 117); bis zum 16.09.2026 hatte diese Ablage im Browser keinen
-     Aufrufer — er schrieb Meldungen, die niemand zu sehen bekam.
-
-     Eine Meldung ist KEIN Fehler des Systems, sondern eine Arbeit für einen Menschen: Das
+     Eine Meldung ist kein Fehler des Systems, sondern eine Arbeit für einen Menschen: Das
      Buch lag bei jemand anderem, die Rückgabe kam nach einer neueren Ausleihe, der Ausweis
-     liess sich nicht auflösen. Deshalb steht bei jeder Zeile, was der Server getan hat und
-     warum — und der Knopf heisst „Erledigt", nicht „Löschen": Quittiert wird, was jemand
+     ließ sich nicht auflösen. Deshalb steht bei jeder Zeile, was der Server getan hat und
+     warum, und der Knopf heißt „Erledigt", nicht „Löschen": Quittiert wird, was jemand
      angesehen hat.
 
      Liegt über dem Band (Ebene „darueber"), weil die Liste aus ihm heraus öffnet. -->

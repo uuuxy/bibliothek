@@ -35,10 +35,10 @@
 	}
 </script>
 
-<!-- Formular und Tabelle UNTEREINANDER: Seit dem Umzug in die Einstellungen (25.08.2026)
-     steht die Maske in der Detail-Spalte neben der Kategorienliste, max-w-4xl. Drei
-     Spalten nebeneinander quetschten dort die Tabelle: Spaltenköpfe stießen zusammen,
-     „Hauptlieferant" wurde abgeschnitten, ein Scrollbalken erschien. -->
+<!-- Formular und Tabelle untereinander: Die Maske steht in den Einstellungen in der
+     Detail-Spalte neben der Kategorienliste, max-w-4xl. Drei Spalten nebeneinander
+     quetschten dort die Tabelle: Spaltenköpfe stießen zusammen, „Hauptlieferant" wurde
+     abgeschnitten, ein Scrollbalken erschien. -->
 <div class="flex flex-col gap-10">
 	<div class="space-y-4 max-w-md">
 		<h2 class="text-base font-bold text-on-surface border-b border-outline-variant pb-3">

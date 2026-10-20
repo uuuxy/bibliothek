@@ -1,12 +1,12 @@
 <!-- @component SchuelerEingabeFelder — die Eingabefelder für einen neuen Schüler.
 
-     Die Klasse wird aus den Klassen der Schule gewählt (GET /api/klassen), nicht getippt
-     (docs/OFFEN.md 5.18, 30.09.2026): „Manuell eingeben…" legte bei einem Tippfehler eine
-     Klasse an, die es an der Schule nicht gibt. Eine ganz neue Klasse kommt mit dem
+     Die Klasse wird aus den Klassen der Schule gewählt (GET /api/klassen), nicht getippt:
+     Ein Tippfehler legte sonst eine Klasse an, die es an der Schule nicht gibt. Eine ganz
+     neue Klasse kommt mit dem
      LUSD-Abgleich. Ließen sich die Klassen nicht laden, sagt das der Fehlertext statt des
      Hinweises auf den LUSD-Abgleich (klassenVorschlaege.svelte.js).
 
-     Das Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
+     Das Geburtsdatum ist Pflicht, nicht als Stammdatum, sondern als Schlüssel: Der
      LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt einen von Hand
      angelegten Schüler nur über Name + Geburtsdatum wieder. Ohne Datum entstünde beim
      nächsten Import ein Duplikat. Das Backend lehnt es ebenfalls ab (zwei Türen). -->

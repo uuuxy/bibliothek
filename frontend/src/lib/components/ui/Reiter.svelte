@@ -1,43 +1,30 @@
 <script>
 	/**
-	 * @component Reiter — die Reiterleiste der Anwendung (Material 3, Primary Tabs).
+	 * @component Reiter — die Reiterleiste der Anwendung (Material 3, Primary Tabs), der eine
+	 * Ort für Reiter: Von Hand gebaute Leisten laufen auseinander
+	 * (`frontend-hygiene-reiter.test.js`).
 	 *
-	 * Reiter waren bis zum 23.08.2026 vier Mal von Hand gebaut (Medienkatalog,
-	 * Bestellwesen, Buch-Akte, Inventur-Startseite) und dabei auseinandergelaufen —
-	 * dieselbe Geschichte wie bei den Suchfeldern, die in zehn Kopien an sieben Werten
-	 * differierten. Diese Komponente ist der eine Ort; die vier Bestandsfälle stehen in
-	 * `frontend-hygiene-reiter.test.js` als eingefrorener Rest und werden bei ihrem
-	 * nächsten fachlichen Anfassen nachgezogen.
+	 * M3 kennt Reiter für drei bis fünf gleichrangige Bereiche. Mehr Bereiche oder
+	 * ungleichgewichtige gehören in eine Liste (siehe KategorieListe der Einstellungen).
 	 *
-	 * M3 kennt Reiter für DREI BIS FÜNF gleichrangige Bereiche. Mehr Bereiche oder
-	 * ungleichgewichtige gehören in eine Liste (siehe KategorieListe der Einstellungen,
-	 * wo sechs Reiter mit einem überfüllten „Allgemein" genau daran scheiterten).
+	 * `anzahl` ist der Zähler am Reiter: Er sagt vor dem Klick, ob dort etwas wartet. Er wird
+	 * von ui/Zaehlerpille gezeichnet, derselben Pille wie in der Seitenleiste, damit dieselbe
+	 * Zahl nicht zwei Aussagen macht.
 	 *
-	 * `anzahl` ist der Zähler am Reiter — er sagt VOR dem Klick, ob dort etwas wartet. Er
-	 * wird von ui/Zaehlerpille gezeichnet, derselben Pille wie in der Seitenleiste: Bis zum
-	 * 04.09.2026 waren es zwei Fassungen, und im Druck-Center stand links „999+" neben
-	 * rechts „30674" — dieselbe Zahl, zwei Aussagen.
+	 * Zwei M3-Maße, im Browser gemessen und nicht aus dem Klassennamen gelesen:
 	 *
-	 * Zwei M3-Masse, die hier am 04.09.2026 nachgezogen wurden, beide im Browser
-	 * gemessen und nicht aus dem Klassennamen gelesen:
-	 *
-	 *   Label-Gewicht: M3 gibt dem Reiter `title-small`, dessen Gewicht ist
-	 *   `weight-medium` = 500. Die Klasse `font-medium` zeigt in diesem Haus aber auf
-	 *   400 — theme-mass.css biegt die Skala um (medium→400, semibold/bold→500). Wer
-	 *   hier 500 will, schreibt `font-semibold`. Gemessen rendete diese Komponente
-	 *   400, die noch handgebaute Leiste im Katalog 500: Das gemeinsame Bauteil war
-	 *   leichter als die Kopien, die es ersetzen soll.
+	 *   Label-Gewicht: M3 gibt dem Reiter `title-small`, dessen Gewicht ist `weight-medium`
+	 *   = 500. Die Klasse `font-medium` zeigt in diesem Haus aber auf 400, theme-mass.css
+	 *   biegt die Skala um (medium→400, semibold/bold→500). Wer hier 500 will, schreibt
+	 *   `font-semibold`.
 	 *
 	 *   Indikator: primary-navigation-tab hat 3 px und `shape (3px 3px 0 0)`,
-	 *   secondary-navigation-tab 2 px ohne shape. Vorher trugen beide Ränge 2 px,
-	 *   und der primäre war voll gerundet — eine Form, die die Spezifikation für
-	 *   keinen von beiden kennt.
+	 *   secondary-navigation-tab 2 px ohne shape.
 	 *
 	 * Zwei Ränge, wie M3 sie kennt: `primaer` (Bereiche einer Seite, Indikator in
-	 * Primärfarbe) und `sekundaer` (Unteransichten DESSELBEN Inhalts, unter einer
-	 * Primärleiste). Bis 24.08.2026 trug der Medienkatalog zwei Leisten im selben
-	 * Stil übereinander — die Rangfolge war unsichtbar. Sekundär: gewählter Text in
-	 * on-surface statt primary, Indikator ohne Rundung.
+	 * Primärfarbe) und `sekundaer` (Unteransichten desselben Inhalts, unter einer
+	 * Primärleiste; gewählter Text in on-surface statt primary, Indikator ohne Rundung).
+	 * Zwei Leisten im selben Stil übereinander ließen die Rangfolge unsichtbar.
 	 *
 	 * @prop {{ id: string, label: string, anzahl?: number, steuert?: string }[]} reiter
 	 *   `steuert` = aria-controls (ids der Inhaltsflächen); der Reiter selbst heißt tab-<id>.

@@ -2,10 +2,8 @@
   @component ListenImport
   Listenimport: CSV oder Excel mit ISBN und Stückzahl → neue Titel samt Exemplaren.
 
-  Der Weg existierte seit dem 21.06.2026 nur noch als Backend-Route (POST /api/books/import):
-  Sein Knopf saß in der Titel-Verwaltung und ging beim Entschlacken der Toolbar verloren,
-  ohne Ersatz (Befund-Register, 07.09.2026). Jetzt hier, neben den anderen Importen.
-  Anders als Katalog- und Bestands-Import ERZEUGT er Exemplare mit frischen B-Nummern aus
+  Steht neben den anderen Importen (Route POST /api/books/import). Anders als Katalog- und
+  Bestands-Import erzeugt er Exemplare mit frischen B-Nummern aus
   barcode_seq — für Sammelkäufe und Spenden, die nicht durchs Bestellwesen laufen. Die
   Exemplare stehen danach im Druck-Center unter „Fehlende Etiketten".
 -->

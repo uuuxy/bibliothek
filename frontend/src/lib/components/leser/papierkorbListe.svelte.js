@@ -1,22 +1,12 @@
 // papierkorbListe.svelte.js — der Zustand des Papierkorbs: laden, wiederherstellen,
-// endgültig löschen.
+// endgültig löschen. Jeder dieser Wege meldet seinen Fehlausgang:
 //
-// Eigene Datei seit dem Rasterdurchgang am 06.09.2026 (Frage 5, stille Fehler): Die
-// Ansicht verschluckte JEDEN Fehlausgang dieser drei Wege, und der Platz für die
-// Behandlung hätte die Komponente über die 200-Zeilen-Regel gehoben. Die Ratsche
-// lockert man dafür nicht.
-//
-// Die zwei Funde, die hier zusammenkommen:
-//
-//  1. `restoreStudent` hatte kein `else`. Nach 180 Tagen im Papierkorb anonymisiert der
-//     nächtliche DSGVO-Lauf die Zeile; LeserWiederherstellen weist die Wiederherstellung
-//     dann mit 409 ab — richtig so, ein Pseudonym ist kein Schüler mehr. Die Oberfläche
-//     zeigte den Knopf trotzdem an jeder Zeile, und ein Klick tat NICHTS: keine Meldung,
-//     keine Änderung, kein Nachladen. Eine Tür, die sich nicht öffnet und nicht sagt,
-//     warum.
-//  2. `ladeGeloeschte` hatte ebenfalls kein `else` — ein gescheiterter Abruf ließ
-//     die Liste leer und die Ansicht schrieb „Der Papierkorb ist leer." Das ist keine
-//     fehlende Meldung, das ist eine falsche Auskunft über gelöschte Schülerdaten.
+//  1. Wiederherstellen: Nach 180 Tagen im Papierkorb anonymisiert der nächtliche DSGVO-Lauf
+//     die Zeile, und LeserWiederherstellen weist die Wiederherstellung mit 409 ab, denn ein
+//     Pseudonym ist kein Schüler mehr. Ohne Meldung täte ein Klick nichts: eine Tür, die
+//     sich nicht öffnet und nicht sagt, warum.
+//  2. Laden: Ein gescheiterter Abruf ließe die Liste leer, und die Ansicht schriebe „Der
+//     Papierkorb ist leer.", eine falsche Auskunft über gelöschte Schülerdaten.
 
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -24,7 +14,7 @@ import { snackbars } from '../../stores/snackbars.svelte.js';
 /**
  * Anonymisiert? Dann ist die Zeile kein Schüler mehr, sondern ein Pseudonym: Name,
  * Adresse, Geburtsdatum und Barcode sind getilgt (DSGVO), zurückholen lässt sich das
- * nicht. Das Feld kommt seit dem 06.09.2026 aus GET /api/schueler/deleted mit.
+ * nicht. Das Feld kommt aus GET /api/schueler/deleted mit.
  * @param {{ anonymized_at?: string | null }} s
  */
 export function istAnonymisiert(s) {

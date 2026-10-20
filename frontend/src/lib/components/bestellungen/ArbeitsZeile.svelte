@@ -1,18 +1,15 @@
 <script>
 	/**
 	 * @component ArbeitsZeile
-	 * EINE Listenzeile für die Arbeitslisten des Bestell-Workspace (Klassensatz-
-	 * Reservierungen, Meldungen) — nach der Material-3-„list item" mit
-	 * führendem Element (entschieden am 26.08.2026).
+	 * Eine Listenzeile für die Arbeitslisten des Bestell-Workspace (Klassensatz-
+	 * Reservierungen, Meldungen), nach dem Material-3-„list item" mit führendem Element.
 	 *
 	 * Die Frage, die die Bibliothek an diese Listen stellt, lautet in dieser Reihenfolge:
-	 * WELCHE KLASSE will WELCHES BUCH, und WIE VIELE? Also:
+	 * Welche Klasse will welches Buch, und wie viele? Also:
 	 *  - links der Kreis mit der Klasse (leading avatar: das, wonach man überfliegt),
 	 *  - Headline = Titel (body-large 16), Supporting = Person · Datum (+ Chip),
 	 *  - rechts die Anzahl groß (title-large 22) mit Beschriftung darunter,
-	 *  - ganz rechts die Aktion als Snippet — die Liste entscheidet, was dort steht.
-	 * Vorher stand die Klasse fett im Fließtext der zweiten Zeile, die Anzahl zwischen
-	 * Punkten mittendrin, das Datum in einer eigenen Spalte.
+	 *  - ganz rechts die Aktion als Snippet; die Liste entscheidet, was dort steht.
 	 *
 	 * @prop {string} klasse
 	 * @prop {string} titel

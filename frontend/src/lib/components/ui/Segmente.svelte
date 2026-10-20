@@ -4,20 +4,18 @@
 	/**
 	 * @component Segmente — der Segmented Button aus Material 3 (einfachauswahl).
 	 *
-	 * Wofür: ZWEI BIS FÜNF Ansichten desselben Inhalts, die einander ausschließen und
-	 * zusammen alles abdecken — „Offen | Erledigt | Alle". Nicht zu verwechseln mit
-	 * den Nachbarn:
-	 *   - Reiter (ui/Reiter) trennen BEREICHE einer Seite, nicht Filter eines Inhalts.
+	 * Wofür: zwei bis fünf Ansichten desselben Inhalts, die einander ausschließen und
+	 * zusammen alles abdecken, etwa „Offen | Erledigt | Alle". Nicht zu verwechseln mit den
+	 * Nachbarn:
+	 *   - Reiter (ui/Reiter) trennen Bereiche einer Seite, nicht Filter eines Inhalts.
 	 *   - Filter-Chips sind einzeln an- und abwählbar und dürfen alle aus sein.
 	 *
-	 * Vorher stand im Druck-Center ein handgebauter Umschalter, der aus einer anderen
-	 * Designsprache stammte: 38 px hoch statt 40, Ecken 12 px statt voll gerundet, ohne
-	 * Trennstriche, und das gewählte Segment lag auf `inverse-surface` (fast schwarz).
-	 * Das verstieß gegen die Regel, die seit dem 04.08.2026 in styles/rollen.css steht:
-	 * „In M3 markiert NICHT die Primärfarbe eine Auswahl, sondern der secondary-container."
+	 * Das gewählte Segment liegt auf `secondary-container`, wie styles/rollen.css es für jede
+	 * Auswahl festlegt: In M3 markiert der secondary-container eine Auswahl, nicht die
+	 * Primärfarbe.
 	 *
-	 * Das Häkchen ist Teil der Bauform, kein Schmuck — es sagt bei getönten Flächen,
-	 * WELCHES Segment gewählt ist, auch wenn die Tönung schwach wiedergegeben wird.
+	 * Das Häkchen ist Teil der Bauform, kein Schmuck: Es sagt bei getönten Flächen, welches
+	 * Segment gewählt ist, auch wenn die Tönung schwach wiedergegeben wird.
 	 * Sein Platz bleibt in jedem Segment reserviert: Sonst rücken beim Umschalten alle
 	 * Beschriftungen, und der Umschalter zappelt unter dem Finger.
 	 *
