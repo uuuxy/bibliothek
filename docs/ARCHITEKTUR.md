@@ -2232,6 +2232,11 @@ sieht.
 - **Scanfelder werden getippt, nicht gefüllt** (`page.keyboard.type`, Enter, Nachweis an der
   Datenbank; Vorlage `frontend/e2e/kiosk-scannerfokus.spec.js`): `locator.fill()` und
   `locator.click()` setzen den Fokus selbst und verdecken, dass er fehlt.
+- **Eine Spec räumt ab, was sie anlegt.** Leser (Kennung) und Titel (genauer Titel) trägt jeder
+  Fall in den Merkzettel von `raeumtNachJedemFallAuf` (`frontend/e2e/helpers.js`) ein; danach
+  gehen sie samt Forderungen, Ausleihen und Exemplaren. Die CI beginnt mit einer leeren
+  Datenbank, der Arbeitsplatz nicht: Reste füllen dort gekappte Listen, etwa die 500
+  Forderungen ohne Bescheid, und eine Spec ist nur am Arbeitsplatz rot.
 - **Ein Rennen gegen einen Zeitgeber wird bei angehaltener Uhr geprüft, nicht über das Tempo
   des Tests.** Nach `page.clock.install()` hält `page.clock.pauseAt(…)` die Zeitgeber der Seite
   an; Klicks, Abrufe und Mikroaufgaben laufen weiter. Erst den Zustand herstellen (etwa eine

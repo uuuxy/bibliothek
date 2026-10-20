@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, apiPatch, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	apiPatch,
+	seedSQL,
+	uniqueSuffix,
+	menuepunkt,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
+
+const angelegt = raeumtNachJedemFallAuf(test);
 
 /**
  * Legt einen Schüler samt ausleihbarem Buch an, sperrt ihn auf die gewünschte Art und
@@ -28,6 +38,7 @@ async function openBlockedStudent(page, suffix, art) {
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 	const { id: studentId } = await created.json();
+	angelegt.leser.push(studentId);
 
 	if (art === 'von-hand') {
 		// Grund ist beim Sperren Pflicht (Backend-Check + DB-Constraint chk_schueler_block_reason,
@@ -39,6 +50,7 @@ async function openBlockedStudent(page, suffix, art) {
 		expect(locked.ok(), `Sperren: ${locked.status()}`).toBeTruthy();
 	} else {
 		// Eine offene Forderung aus einem verlorenen Buch — kein API-Weg ohne Ausleihe davor.
+		angelegt.titel.push(`E2E-Verloren-${suffix}`);
 		seedSQL(`
 			WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Verloren-${suffix}') RETURNING id),
 			     e AS (INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
@@ -49,6 +61,7 @@ async function openBlockedStudent(page, suffix, art) {
 	}
 
 	// Ausleihbares Buch-Exemplar seeden (kein einfacher API-Weg vorhanden)
+	angelegt.titel.push(bookTitle);
 	seedSQL(`
         WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('${bookTitle}') RETURNING id)
         INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)

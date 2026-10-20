@@ -126,6 +126,48 @@ export function querySQL(sql) {
 }
 
 /**
+ * Ein Merkzettel für die Fälle einer Spec: Was ein Fall an Lesern (Kennung) und Titeln (genauer
+ * Titel) anlegt, trägt er ein; nach dem Fall wird es entfernt, samt Forderungen und Ausleihen.
+ * Liegen gebliebene Forderungen füllen in der lokalen Datenbank die auf 500 gekappte Liste der
+ * Forderungen ohne Bescheid.
+ * @param {typeof import('@playwright/test').test} test
+ * @returns {{ leser: string[], titel: string[] }}
+ */
+export function raeumtNachJedemFallAuf(test) {
+	/** @type {{ leser: string[], titel: string[] }} */
+	const angelegt = { leser: [], titel: [] };
+	test.afterEach(() => {
+		entferne(angelegt);
+		angelegt.leser.length = 0;
+		angelegt.titel.length = 0;
+	});
+	return angelegt;
+}
+
+/**
+ * Von innen nach außen, weil Forderung und Ausleihe mit RESTRICT an Leser und Exemplar hängen
+ * (schema.sql); die Exemplare gehen mit ihrem Titel.
+ * @param {{ leser: string[], titel: string[] }} angelegt
+ */
+function entferne({ leser, titel }) {
+	/** @param {string[]} werte */
+	const liste = (werte) => werte.map((w) => `'${w.replaceAll("'", "''")}'`).join(', ') || 'NULL';
+	seedSQL(`
+		BEGIN;
+		CREATE TEMP TABLE weg_exemplar ON COMMIT DROP AS
+			SELECT e.id FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+			WHERE t.titel IN (${liste(titel)});
+		DELETE FROM schadensfaelle
+			WHERE schueler_id IN (${liste(leser)}) OR exemplar_id IN (SELECT id FROM weg_exemplar);
+		DELETE FROM ausleihen
+			WHERE schueler_id IN (${liste(leser)}) OR exemplar_id IN (SELECT id FROM weg_exemplar);
+		DELETE FROM leser WHERE id IN (${liste(leser)});
+		DELETE FROM buecher_titel WHERE titel IN (${liste(titel)});
+		COMMIT;
+	`);
+}
+
+/**
  * Stellt her, dass die Bestellbedarfs-Liste gefüllt ist — Voraussetzung für jeden
  * Test, der im Bestell-Bildschirm auf „+ zur Bestellung hinzufügen" klickt.
  *

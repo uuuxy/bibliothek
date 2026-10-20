@@ -161,7 +161,7 @@ der Nummer nichts mehr dazu offen ist.
   eine Ratsche wie im Go-Code, dann Datei für Datei.
 - [ ] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
   Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
-- [ ] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
+- [x] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
   500 offenen Forderungen werden lokal zwei Specs rot.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
@@ -383,21 +383,6 @@ den Ladenhütern steht in Grün „Keine Ladenhüter — der Bestand ist in Bewe
 anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Abschnitte, die
 nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
 zuständige Seite von M3 lesen.
-
-### 5.81 Browser-Tests lassen Schadensfälle in der Datenbank
-
-Vier Specs legen Schüler mit offenen Schadensfällen an und räumen sie nicht ab:
-`e2e/papierkorb.spec.js` (Nachname „Korb-…"), `e2e/sperre.spec.js` („Gesperrt-…"),
-`e2e/kiosk-scannerfokus.spec.js` („Reiter-…") und `e2e/schadensfall.spec.js` („E2E-Schaden").
-In der lokalen Datenbank standen am 20.10.2026 501 offene Forderungen ohne Bescheid, 194, 119,
-107 und 88 davon aus diesen vier. `LadeForderungenOhneBescheid` (`repository/bescheid_ausstehend.go`)
-zeigt die ältesten 500; den Fall, den `e2e/schadensersatz-bescheid.spec.js` anlegt, zeigt die
-Liste dann nicht, und der Test ist lokal rot. Verdacht, nicht nachgestellt: dieselbe Datenmenge
-macht `e2e/icon-tooltips.spec.js` auf der Seite Mahnwesen rot. Dort erschien die Blase am Knopf
-der Navigation nach 1,06 s, auf der Bestellseite nach 0,3 s; der Test wartet 2 s. Beide sind
-auch am Stand vor dem Fehlersymbol rot; in der CI beginnt die Datenbank leer. Nächster Schritt:
-die vier Specs räumen ab, was sie anlegen (wie `raeumeAuf` in `e2e/theke-scan-reihe.spec.js`),
-danach die Reste in der lokalen Datenbank löschen.
 
 ---
 

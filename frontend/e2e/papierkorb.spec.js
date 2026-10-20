@@ -6,8 +6,11 @@ import {
 	seedSQL,
 	querySQL,
 	uniqueSuffix,
-	menuepunkt
+	menuepunkt,
+	raeumtNachJedemFallAuf
 } from './helpers.js';
+
+const angelegt = raeumtNachJedemFallAuf(test);
 
 // DSGVO-Löschkette: Schüler über die UI archivieren (Tipp-Bestätigung),
 // im Papierkorb wiederfinden, wiederherstellen — plus die Schutzregel,
@@ -27,6 +30,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 	const { id: studentId } = await created.json();
+	angelegt.leser.push(studentId);
 
 	// Konto öffnen → Stammdaten-Tab → Gefahrenzone
 	await menuepunkt(page, 'Ausleihe').click();
@@ -58,6 +62,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 
 	// DSGVO-Schutzregel: unbezahlter Schadensfall blockiert die Löschung (400).
 	// check_damage_item verlangt einen Exemplar-/Geräte-Bezug.
+	angelegt.titel.push(`E2E-Korbschaden-${suffix}`);
 	seedSQL(`
         WITH t AS (
             INSERT INTO buecher_titel (titel) VALUES ('E2E-Korbschaden-${suffix}') RETURNING id
@@ -95,6 +100,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 	const { id: studentId } = await created.json();
+	angelegt.leser.push(studentId);
 
 	// In den Papierkorb (Soft-Delete) per API — der UI-Weg dorthin ist oben getestet.
 	const token = await csrfToken(page);
@@ -105,6 +111,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
 
 	// Blockade zuerst: unbezahlter Schaden entsteht NACH dem Archivieren (vorher
 	// hätte er schon den Soft-Delete verhindert, siehe Test oben).
+	angelegt.titel.push(`E2E-Purgeschaden-${suffix}`);
 	seedSQL(`
         WITH t AS (
             INSERT INTO buecher_titel (titel) VALUES ('E2E-Purgeschaden-${suffix}') RETURNING id

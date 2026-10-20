@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu, menuepunkt } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	seedSQL,
+	uniqueSuffix,
+	gehZu,
+	menuepunkt,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
+
+const angelegt = raeumtNachJedemFallAuf(test);
 
 // Schadensfall: Verlust melden beendet die Ausleihe und macht die offene Forderung im
 // Profil sichtbar — samt „Bescheid erstellen" an der Gebühren-Karte (seit 15.09.2026) und
@@ -19,6 +29,8 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 	const { id: studentId } = await created.json();
+	angelegt.leser.push(studentId);
+	angelegt.titel.push(`E2E-Schadenbuch-${suffix}`);
 
 	seedSQL(`
         WITH t AS (
@@ -124,6 +136,8 @@ test('Schadensfall: der offene Betrag steht auch, wenn die Liste der Forderungen
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 	const { id } = await created.json();
+	angelegt.leser.push(id);
+	angelegt.titel.push(`E2E-Ausfallbuch-${suffix}`);
 	seedSQL(`
 		WITH t AS (
 			INSERT INTO buecher_titel (titel) VALUES ('E2E-Ausfallbuch-${suffix}') RETURNING id

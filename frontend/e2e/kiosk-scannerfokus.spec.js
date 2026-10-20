@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
+
+const angelegt = raeumtNachJedemFallAuf(test);
 
 /**
  * Das Scanfeld hat nach jeder Aktion den Fokus.
@@ -28,6 +37,8 @@ test('Handscanner: Buchscans landen ohne Klick ins Feld', async ({ page }) => {
 		barcode_id: `S-${suffix}`
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
+	angelegt.leser.push((await created.json()).id);
+	angelegt.titel.push(`E2E-Fokus1-${suffix}`, `E2E-Fokus2-${suffix}`);
 
 	seedSQL(`
         WITH t AS (
@@ -112,6 +123,11 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 		});
 		expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 		const { id } = await created.json();
+		angelegt.leser.push(id);
+		angelegt.titel.push(
+			...[1, 2, 3].map((n) => `E2E-Reiter${n}-${suffix}`),
+			`E2E-Reiter-Schaden-${suffix}`
+		);
 		seedSQL(`
 			WITH t AS (
 				INSERT INTO buecher_titel (titel, ist_lernmittel)
