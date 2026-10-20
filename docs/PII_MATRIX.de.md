@@ -296,8 +296,6 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/import/littera`       | manage_inventory | 0     | Import-Zähler                                                                                                             |
 | `POST /api/admin/import-bestand` | manage_inventory | 0     | Import-Zähler                                                                                                             |
 | `POST /api/admin/sync-covers`    | manage_inventory | 0     | Job-Startmeldung                                                                                                          |
-| `GET /swagger/`                  | öffentlich       | 0     | API-Doku (nur local/development)                                                                                          |
-| `GET /swagger`                   | öffentlich       | 0     | Redirect (nur local/development)                                                                                          |
 | `/favicon.ico`                   | öffentlich       | 0     | 204                                                                                                                       |
 | `/`                              | öffentlich       | 0     | SPA-Auslieferung                                                                                                          |
 

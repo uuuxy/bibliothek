@@ -66,13 +66,6 @@ type bescheidVorschlagAntwort struct {
 
 // BescheidVorschlag liefert die offenen Forderungen eines Schülers mit
 // Betragsvorschlag.
-//
-// @Summary      Vorschlag für einen neuen Bescheid
-// @Tags         schadensersatz
-// @Produce      json
-// @Param        id path string true "Kennung des Schülers"
-// @Success      200 {object} bescheidVorschlagAntwort
-// @Router       /schueler/{id}/bescheid-vorschlag [get]
 func (t *Tueren) BescheidVorschlag(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.schlageBescheidVor(w, r, bescheidAbfragen)

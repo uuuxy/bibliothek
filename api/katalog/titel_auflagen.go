@@ -28,15 +28,6 @@ type auflageZuordnenAnfrage struct {
 }
 
 // TitelAuflagen liefert die Auflagen des Buchs, zu dem ein Titel gehört, mit ihrem Bestand.
-//
-// @Summary      Auflagen des Buchs, zu dem ein Titel gehört
-// @Tags         books
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Titels"
-// @Success      200  {object}  titelAuflagenAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /buecher/titel/{id}/auflagen [get]
 func (t *Tueren) TitelAuflagen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)
@@ -56,18 +47,6 @@ func (t *Tueren) TitelAuflagen() http.HandlerFunc {
 // zusammen. Gehört einer der beiden schon zu einem Buch mit weiteren Auflagen, kommen alle
 // zusammen. Zwei Routen, eine Tür: die Titelmaske (…/auflagen, edit_books) und der
 // Bestellbedarf (…/neue-auflage, create_orders), denn wer bestellt, legt das Werk an.
-//
-// @Summary      Andere Auflage zum Buch eines Titels zuordnen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string                  true  "Kennung des Titels"
-// @Param        body  body      auflageZuordnenAnfrage  true  "Die andere Auflage"
-// @Success      200   {object}  titelAuflagenAntwort
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /buecher/titel/{id}/auflagen [post]
-// @Router       /buecher/titel/{id}/neue-auflage [post]
 func (t *Tueren) AuflagenZusammenfassen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)
@@ -89,15 +68,6 @@ func (t *Tueren) AuflagenZusammenfassen() http.HandlerFunc {
 
 // AuflageLoesen nimmt einen Titel aus seinem Buch; die anderen Auflagen bleiben zusammen,
 // solange es mindestens zwei sind.
-//
-// @Summary      Titel aus den Auflagen seines Buchs lösen
-// @Tags         books
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Titels"
-// @Success      200  {object}  titelAuflagenAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /buecher/titel/{id}/auflagen [delete]
 func (t *Tueren) AuflageLoesen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)

@@ -32,14 +32,6 @@ type signaturGruppe struct {
 // innerhalb des Regals (Vorgabe: die ersten drei Buchstaben des Verfassers) und gehört meist
 // zu einem einzigen Titel; als Vorschlag für ein neues Buch und als Bereich einer Inventur
 // taugt nur das Regal.
-//
-// @Summary      Regaladressen im Bestand
-// @Description  Liefert die Regaladressen (der Teil einer Signatur vor „ / "), die an Titeln vorkommen, mit der Zahl der Titel und der Exemplare.
-// @Tags         books
-// @Produce      json
-// @Success      200  {array}   signaturGruppe
-// @Failure      500  {object}  map[string]string
-// @Router       /signaturen [get]
 func (t *Tueren) Signaturen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zeilen, err := repository.LadeSignaturGruppen(r.Context(), t.DB.Pool)
@@ -85,16 +77,6 @@ type titelUnterSignaturAntwort struct {
 // derselben Funktion, aus der der Bereich einer Inventur entsteht; zwei Kopien liefen
 // auseinander, und der Unterschied fiele erst auf, wenn eine Inventur andere Bücher bucht, als
 // die Regalansicht zeigt.
-//
-// @Summary      Titel unter einer Signatur
-// @Description  Liefert die Titel, deren Signatur mit dem angegebenen Anfang beginnt, in der Reihenfolge des Regals.
-// @Tags         books
-// @Produce      json
-// @Param        signatur  query     string  true  "Anfang der Signatur"
-// @Success      200       {object}  titelUnterSignaturAntwort
-// @Failure      400       {object}  map[string]string
-// @Failure      500       {object}  map[string]string
-// @Router       /signaturen/buecher [get]
 func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		signatur := strings.TrimSpace(r.URL.Query().Get("signatur"))

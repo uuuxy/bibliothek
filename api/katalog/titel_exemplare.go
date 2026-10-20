@@ -11,17 +11,6 @@ import (
 
 // TitelExemplare liefert die Exemplare eines Titels mit Zustand, Eigentum, Standort und dem
 // heutigen Ersatzwert.
-//
-// @Summary      Exemplare eines Titels
-// @Description  Liefert alle Exemplare eines Titels mit Verfügbarkeit, Zustand, Eigentum, Standort und dem heutigen Ersatzwert.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Titels (UUID)"
-// @Success      200  {array}   object
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /buecher/titel/{id}/exemplare [get]
 func (t *Tueren) TitelExemplare(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.gibTitelExemplare(w, r, bescheidAbfragen)

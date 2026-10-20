@@ -16,7 +16,6 @@ import (
 
 // FundMelden bucht ein als Verlust gebuchtes Exemplar als beim Nachsuchen wiedergefunden und
 // bringt es zurück in den Umlauf.
-// @Router /buecher/exemplare/{id}/gefunden [post]
 func (t *Tueren) FundMelden() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
@@ -81,7 +80,6 @@ type verlusteLoeschenAnfrage struct {
 // VerlusteEndgueltigLoeschen löscht als Verlust gebuchte Exemplare endgültig. Der allgemeine
 // Weg zum Löschen sondert nur aus (KatalogAbfragen.SondereExemplarAus); diese Tür rührt nur
 // Exemplare an, die schon als Verlust gelten.
-// @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
 func (t *Tueren) VerlusteEndgueltigLoeschen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(t.loescheVerlusteEndgueltig)
 }

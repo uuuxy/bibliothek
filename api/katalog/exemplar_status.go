@@ -29,20 +29,6 @@ type exemplarStatusAnfrage struct {
 // ExemplarStatusAendern ändert Ausleihbarkeit, Aussonderung, Zustandsnotiz und
 // Beschädigungsgrad eines Exemplars. Die Antwort nennt den neuen Ersatzwert und ob das Exemplar
 // zum Bestand zählt.
-//
-// @Summary      Status eines Exemplars ändern
-// @Description  Ändert ist_ausleihbar, ist_ausgesondert, die Zustandsnotiz und den Beschädigungsgrad eines Exemplars. Die Antwort nennt den neuen Ersatzwert und ob das Exemplar zum Bestand zählt. Ein verliehenes Exemplar lässt sich nicht aussondern (400).
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string                true  "Kennung des Exemplars (UUID)"
-// @Param        body  body      exemplarStatusAnfrage   true  "Der neue Status"
-// @Success      200   {object}  map[string]any
-// @Failure      400   {object}  map[string]string
-// @Failure      401   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /buecher/exemplare/{id}/status [put]
 func (t *Tueren) ExemplarStatusAendern(katalogAbfragen *repository.KatalogAbfragen, bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereExemplarStatus(w, r, katalogAbfragen, bescheidAbfragen)

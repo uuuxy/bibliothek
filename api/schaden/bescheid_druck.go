@@ -20,13 +20,6 @@ import (
 
 // BescheidPDF liefert den Brief — beim ersten Mal und bei jedem Nachdruck
 // derselbe, aus dem Snapshot.
-//
-// @Summary      Bescheid drucken oder nachdrucken
-// @Tags         schadensersatz
-// @Produce      application/pdf
-// @Param        id path string true "Kennung des Bescheids"
-// @Success      200 {file} file
-// @Router       /bescheide/{id}/pdf [get]
 func (t *Tueren) BescheidPDF(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

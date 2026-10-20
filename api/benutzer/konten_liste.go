@@ -34,14 +34,6 @@ type kontoAntwort struct {
 }
 
 // Konten liefert alle Konten mit den Rechten ihrer Rolle.
-// @Summary      Konten
-// @Description  Liefert alle Konten des Personals mit den Rechten ihrer Rolle.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Success      200  {array}   kontoAntwort
-// @Failure      500  {object}  map[string]string
-// @Router       /benutzer [get]
 func (t *Tueren) Konten(kontoAbfragen *repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

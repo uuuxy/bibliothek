@@ -33,14 +33,6 @@ type protokollEintrag struct {
 const protokollMaxZeilen = 1000
 
 // Protokoll liefert die jüngsten 1000 Einträge des Protokolls der Vorgänge.
-// @Summary      Protokoll
-// @Description  Die jüngsten 1000 Einträge des Protokolls der Vorgänge, die neuesten zuerst.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Success      200  {array}   protokollEintrag
-// @Failure      500  {object}  map[string]string
-// @Router       /audit [get]
 func (t *Tueren) Protokoll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

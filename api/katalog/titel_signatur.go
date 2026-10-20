@@ -25,17 +25,6 @@ type titelSignaturAnfrage struct {
 // Bestellkorb eingetragen, mit der Vorschlagsliste aus dem Bestand (Signaturen). Ein
 // vorhandener Titel behält seine Signatur: Der Bestellkorb ruft die Tür nur, wenn dort jemand
 // die Signatur ändert.
-//
-// @Summary      Signatur eines Titels setzen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string                      true  "Kennung des Titels"
-// @Param        body  body      titelSignaturAnfrage  true  "Die neue Signatur"
-// @Success      200   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /buecher/titel/{id}/signatur [put]
 func (t *Tueren) TitelSignaturSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

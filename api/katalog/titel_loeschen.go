@@ -15,19 +15,6 @@ import (
 // TitelLoeschen löscht einen Titel mit seinen Exemplaren und schreibt den Vorgang ins
 // Protokoll (KatalogAbfragen.LoescheTitel). Ist ein Exemplar verliehen, lehnt die Tür mit
 // 400 ab.
-//
-// @Summary      Titel löschen
-// @Description  Löscht einen Titel mit allen Exemplaren und schreibt den Vorgang ins Protokoll. Ist ein Exemplar verliehen, ist das 400.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Titels (UUID)"
-// @Success      200  {object}  map[string]string
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /buecher/titel/{id} [delete]
 func (t *Tueren) TitelLoeschen(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())

@@ -35,16 +35,6 @@ type dnbSchlagwortVorschlagAntwort struct {
 
 // DNBSchlagwortVorschlag liefert den Schlagwort-Vorschlag der DNB zu einer ISBN
 // (GET /api/schlagworte/dnb-vorschlag?isbn=).
-//
-// @Summary      Schlagwort-Vorschlag der DNB zu einer ISBN
-// @Description  Fragt nur die Deutsche Nationalbibliothek (kein Google Books, keine OpenLibrary, kein Cover) und gleicht ihre Gattungsbegriffe, Verlagswörter und Schlagwörter der Normdatei mit der eigenen Liste ab, nach derselben Regel wie POST /buecher/aus-isbn. Geschrieben wird nichts.
-// @Tags         books
-// @Produce      json
-// @Param        isbn  query     string  true  "ISBN-10 oder ISBN-13"
-// @Success      200   {object}  dnbSchlagwortVorschlagAntwort
-// @Failure      400   {object}  map[string]string
-// @Failure      502   {object}  map[string]string
-// @Router       /schlagworte/dnb-vorschlag [get]
 func (t *Tueren) DNBSchlagwortVorschlag() http.HandlerFunc {
 	return t.dnbSchlagwortVorschlagTuer(inventur.NewMetadatenClient())
 }

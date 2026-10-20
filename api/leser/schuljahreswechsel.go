@@ -47,18 +47,6 @@ type schuljahreswechselAnfrage struct {
 }
 
 // Schuljahreswechsel führt den automatischen Schuljahreswechsel durch.
-// @Summary      Automatische Versetzung (Schuljahreswechsel)
-// @Description  Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { "confirm": true } im Rumpf der Anfrage; { "dry_run": true } liefert eine exakte Vorschau ohne Änderungen.
-// @Tags         schueler
-// @Accept       json
-// @Produce      json
-// @Param        body body schuljahreswechselAnfrage true "Bestätigung"
-// @Success      200  {object}  schuljahreswechselAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /students/promote [post]
 func (t *Tueren) Schuljahreswechsel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

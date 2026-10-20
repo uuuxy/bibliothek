@@ -102,11 +102,6 @@ func leseLMFPlanArt(r *http.Request) (string, error) {
 }
 
 // LMFPlan liefert den neuesten Plan der Art und ggf. den Vorschlag.
-// @Summary      LMF-Plan (Reihenfolge) lesen
-// @Tags         lernmittel
-// @Produce      json
-// @Success      200  {object}  lmfPlanStandAntwort
-// @Router       /lmf-plan/{art} [get]
 func (t *Tueren) LMFPlan() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(t.ladeLMFPlanStand)
 }
@@ -325,12 +320,6 @@ func pruefeLMFAnker(p *repository.LMFPlan, req lmfPlanAnfrage) error {
 }
 
 // LMFPlanSchreiben rechnet die Verteilung und speichert den Plan (oder zeigt sie nur).
-// @Summary      LMF-Plan (Reihenfolge) speichern oder als Vorschau rechnen
-// @Tags         lernmittel
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  lmfPlanSpeicherAntwort
-// @Router       /lmf-plan/{art} [put]
 func (t *Tueren) LMFPlanSchreiben() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		antwort, ok, err := t.rechneOderSchreibeLMFPlan(w, r)
@@ -432,11 +421,6 @@ func lmfPlanVorschauAntwort(e service.LMFPlanEntwurf, plaetze []lmfplan.Platz, a
 
 // LMFPlanVerwerfen verwirft den neuesten Plan der Art; die Fristen seiner Klassen
 // gehen an den Stichtag zurück (nur die, die auf den Terminen lagen).
-// @Summary      LMF-Plan (Reihenfolge) verwerfen
-// @Tags         lernmittel
-// @Produce      json
-// @Success      200  {object}  map[string]int64
-// @Router       /lmf-plan/{art} [delete]
 func (t *Tueren) LMFPlanVerwerfen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		angepasst, err := t.verwerfeLMFPlan(r)

@@ -73,17 +73,6 @@ type offeneForderungen struct {
 
 // Leserakte liefert die Akte eines Lesers: Stammdaten, die Adresse des Ausweisfotos, falls
 // eines hochgeladen ist, und die laufenden Ausleihen mit Ausleih- und Rückgabedatum.
-// @Summary      Akte eines Lesers
-// @Description  Die ganze Akte eines Lesers nach seiner Kennung, mit laufenden Ausleihen und der Adresse des Fotos.
-// @Tags         students
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
-// @Success      200  {object}  leserakteAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /schueler/{id} [get]
 func (t *Tueren) Leserakte(
 	leserAbfragen *repository.LeserAbfragen,
 ) http.HandlerFunc {
@@ -175,14 +164,6 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 }
 
 // Klassen liefert alle Klassen, die einem Schüler zugeordnet sind, ohne Doppelte.
-// @Summary      Klassen
-// @Description  Alle Klassennamen, die gerade einem Schüler zugeordnet sind, ohne Doppelte.
-// @Tags         students
-// @Accept       json
-// @Produce      json
-// @Success      200  {array}   string
-// @Failure      500  {object}  map[string]string
-// @Router       /klassen [get]
 func (t *Tueren) Klassen(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		klassen, err := leserAbfragen.LadeKlassen(r.Context())

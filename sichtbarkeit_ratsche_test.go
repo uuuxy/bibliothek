@@ -21,8 +21,7 @@ import (
 //
 // Ausgenommen sind Methoden, die eine Schnittstelle verlangt (auch die der Standardbibliothek),
 // Unwrap, Is, As und Meldung der Fehlertypen, die Türen (STIL.md 5), Konstanten eines Blocks, von
-// dem ein Glied draußen genutzt wird (eine Aufzählung ist als Ganzes öffentlich), und das
-// erzeugte docs/docs.go. Blindheit: Aufrufe über Vorlagen und Reflexion und Schnittstellen, die
+// dem ein Glied draußen genutzt wird (eine Aufzählung ist als Ganzes öffentlich). Blindheit: Aufrufe über Vorlagen und Reflexion und Schnittstellen, die
 // erst in einer Funktion erklärt sind.
 func TestSichtbarkeit_OeffentlichNurMitFremdemNutzer(t *testing.T) {
 	pakete := ladePaketeMitTests(t)
@@ -158,7 +157,7 @@ func (m *sichtbarkeitsMessung) sammle(p *packages.Package) {
 			continue
 		}
 		stelle := p.Fset.Position(bezeichner.Pos())
-		if strings.HasSuffix(stelle.Filename, "_test.go") || strings.HasSuffix(stelle.Filename, "docs/docs.go") {
+		if strings.HasSuffix(stelle.Filename, "_test.go") {
 			continue
 		}
 		if name := vollerName(objekt); name != "" {

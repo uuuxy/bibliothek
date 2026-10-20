@@ -25,16 +25,6 @@ type exemplarEigentumAnfrage struct {
 //
 // Recht edit_books wie Barcode und Status desselben Exemplars. Der Grund ist Pflicht; jede
 // Änderung steht mit altem und neuem Wert im Protokoll (repository.SetzeExemplarEigentum).
-//
-// @Summary      Eigentum markierter Exemplare setzen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        body  body      exemplarEigentumAnfrage  true  "Exemplare, Eigentum, Grund"
-// @Success      200   {object}  map[string]int
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /exemplare/eigentum [put]
 func (t *Tueren) ExemplarEigentumSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req exemplarEigentumAnfrage

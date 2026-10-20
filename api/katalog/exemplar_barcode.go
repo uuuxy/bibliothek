@@ -37,20 +37,6 @@ type exemplarBarcodeAnfrage struct {
 }
 
 // ExemplarBarcodeSetzen setzt den Barcode eines Exemplars, etwa statt eines Platzhalters.
-//
-// @Summary      Barcode eines Exemplars setzen
-// @Description  Setzt den Barcode eines Exemplars, etwa statt eines Platzhalters wie AUTO-. Eine Nummer, die schon ein anderes Exemplar oder ein Ausweis trägt, ist ein Konflikt (409).
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string                true  "Kennung des Exemplars (UUID)"
-// @Param        body  body      exemplarBarcodeAnfrage  true  "Der neue Barcode"
-// @Success      200   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Failure      409   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /buecher/exemplare/{id}/barcode [put]
 func (t *Tueren) ExemplarBarcodeSetzen(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.setzeExemplarBarcode(w, r, katalogAbfragen)

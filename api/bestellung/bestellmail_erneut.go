@@ -21,17 +21,6 @@ const aktionBestellmailErneutGesendet = "BESTELLMAIL_ERNEUT_GESENDET"
 // BestellmailErneutSenden schickt die Mail einer Bestellung noch einmal, deren Versand
 // gescheitert ist. Die Mail entsteht aus der gespeicherten Bestellung über denselben Weg wie
 // die erste (sendeBestellmail) und geht an die heutige Adresse des Lieferanten.
-//
-// @Summary      Bestellmail nach gescheitertem Versand erneut senden
-// @Tags         orders
-// @Produce      json
-// @Param        id   path      string  true  "Kennung der Bestellung"
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Failure      502  {object}  map[string]string
-// @Router       /bestellungen/{id}/mail [post]
 func (t *Tueren) BestellmailErneutSenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.sendeBestellmailErneut(w, r)
@@ -97,16 +86,6 @@ const aktionBestellmailVermerkEntfernt = "BESTELLMAIL_VERMERK_ENTFERNT"
 // BestellmailVermerkNehmen entfernt den Vermerk über den gescheiterten Versand, ohne zu
 // senden: Die Bibliothek hat den Händler auf anderem Weg erreicht, etwa am Telefon. „Erneut
 // senden" brächte die Bestellung sonst ein zweites Mal zu ihm.
-//
-// @Summary      Vermerk über den gescheiterten Versand entfernen, ohne zu senden
-// @Tags         orders
-// @Produce      json
-// @Param        id   path      string  true  "Kennung der Bestellung"
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Router       /bestellungen/{id}/mail [delete]
 func (t *Tueren) BestellmailVermerkNehmen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

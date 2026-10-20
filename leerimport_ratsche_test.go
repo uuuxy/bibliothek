@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/swaggo/swag"
 )
 
 // Ein Paket, das nur für seine Nebenwirkung eingebunden wird (import _), gehört in ein Programm
@@ -83,17 +81,5 @@ func TestServer_LiestDieBildformate(t *testing.T) {
 		if gelesen != format || bild.Bounds().Dx() != 1 {
 			t.Errorf("image.Decode(%s-Probe) = Format %q mit %d Pixel Breite, erwartet %q mit 1", format, gelesen, bild.Bounds().Dx(), format)
 		}
-	}
-}
-
-// Die Swagger-Seite (nur lokal und in der Entwicklung) liefert die Beschreibung, die
-// bibliothek/docs beim Start anmeldet; ohne den Import in main.go bliebe sie leer.
-func TestServer_KenntDieAPIBeschreibung(t *testing.T) {
-	beschreibung, err := swag.ReadDoc()
-	if err != nil {
-		t.Fatalf("swag.ReadDoc() = %v, erwartet die Beschreibung: main.go bindet bibliothek/docs nicht ein", err)
-	}
-	if !strings.Contains(beschreibung, `"paths"`) {
-		t.Errorf("swag.ReadDoc() liefert %d Zeichen ohne \"paths\", erwartet die Beschreibung der Adressen", len(beschreibung))
 	}
 }

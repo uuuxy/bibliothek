@@ -19,17 +19,32 @@ trivy fs --scanners vuln,config .
 # 3. Dynamischer API-Scan mit OWASP ZAP (DAST) über Docker
 echo -e "\n---> 3. Führe OWASP ZAP API-Scan aus..."
 
-# Ziel ist der lokale Stack (docker-compose.local.yml, Port 8084): Swagger gibt es nur
-# bei APP_ENV=local/development. Die Spezifikation nennt bewusst keinen Host (kein
-# @host in main.go), ZAP nimmt dann den Host dieser URL. Kein -O: Mit "http://host:port"
-# scheitert der Import im OpenAPI-Add-on („http: Name or service not known"), mit
-# "host:port" zerlegt zap-api-scan.py den Wert per urlparse als Schema und scannt ein
-# Ziel ohne http:// (beides am 13.09.2026 ausprobiert).
-ZIEL="host.docker.internal:8084"
+# Ziel ist der lokale Stack (docker-compose.local.yml, Port 8084). Die Eingabe für ZAP ist
+# eine OpenAPI-Datei aus allen registrierten Routen (scripts/api_inventar.sh --routen): Pfade
+# und Methoden, Pfadparameter als Text, keine Rümpfe. Geschriebene Anfragen scheitern im Scan
+# ohnehin an CSRF (siehe unten). Teilbaum-Einhängungen ohne Methode gehen nicht mit. Der Host
+# steht unter servers in der Datei.
+ZIEL="http://host.docker.internal:8084"
+./scripts/api_inventar.sh --routen | python3 -I -c '
+import json, re, sys
+pfade = {}
+for zeile in sys.stdin:
+    methode, _, pfad = zeile.strip().partition(" ")
+    if not pfad.startswith("/"):
+        continue
+    operation = {"responses": {"default": {"description": "Antwort"}}}
+    namen = re.findall(r"\{([^}]+)\}", pfad)
+    if namen:
+        operation["parameters"] = [
+            {"name": n, "in": "path", "required": True, "schema": {"type": "string"}} for n in namen
+        ]
+    pfade.setdefault(pfad, {})[methode.lower()] = operation
+json.dump({"openapi": "3.0.3", "info": {"title": "Bibliothek", "version": "1"},
+           "servers": [{"url": sys.argv[1]}], "paths": pfade}, sys.stdout, indent=1)
+' "$ZIEL" > zap_openapi.json
 
 # Die Anwendung liest die Sitzung aus dem Cookie session_token, einen Authorization-
-# Header wertet sie nicht aus (bis 13.09.2026 schickte dieses Skript einen Bearer-Header —
-# jede Anfrage lief unangemeldet). ADMIN_TOKEN = Wert des Cookies session_token nach der
+# Header wertet sie nicht aus. ADMIN_TOKEN = Wert des Cookies session_token nach der
 # Anmeldung am lokalen Stack. Die geschriebenen Anfragen des Scans scheitern trotzdem an
 # CSRF (die Regel ersetzt den ganzen Cookie-Header, csrf_token fehlt) — angemeldet liest
 # er also nur. Ohne ADMIN_TOKEN läuft der Scan unangemeldet.
@@ -46,15 +61,15 @@ else
 fi
 
 docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
-  -t "http://$ZIEL/swagger/doc.json" \
+  -t /zap/wrk/zap_openapi.json \
   -f openapi \
   -r zap_api_report.html \
   ${AUTH_KONFIG:+-z "$AUTH_KONFIG"}
 ZAP_EXIT=$?
 
 # zap-api-scan.py: 0 = nichts gefunden, 1 = FAIL, 2 = WARN, 3 = Lauf abgebrochen (z. B.
-# „Failed to import any URLs"). Bis 13.09.2026 stand hier unbedingt „Scan komplett" —
-# auch nach einem Lauf, der keine einzige URL importiert hatte.
+# „Failed to import any URLs"); ohne diese Prüfung stünde „Scan komplett" auch nach einem
+# Lauf, der keine einzige URL importiert hat.
 if [ "$ZAP_EXIT" -ge 3 ]; then
   echo -e "\n❌ ZAP-Scan abgebrochen (Exit $ZAP_EXIT) — Ausgabe oben lesen, es gibt keinen Report." >&2
   exit "$ZAP_EXIT"

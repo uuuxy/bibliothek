@@ -88,9 +88,6 @@ type Vormerkung struct {
 }
 
 // ProtokollEintrag ist ein Eintrag der Datensatz-Historie (audit_log), der den Leser nennt.
-// Details trägt den Hinweis swaggertype, weil swag json.RawMessage ohne --parseDependency nicht
-// auflöst: Die Beschreibung des Endpunkts bräche still ab, und er fehlte in der Swagger-Datei.
-// Was über einem Feld steht, übernimmt swag als dessen Beschreibung.
 type ProtokollEintrag struct {
 	// Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der
 	// Aktion ergibt sie den Vorgang, den das Blatt in Worten nennt.
@@ -105,7 +102,7 @@ type ProtokollEintrag struct {
 	Gegenstand string `json:"gegenstand"`
 	Barcode    string `json:"barcode"`
 	// Details sind die Angaben des Eintrags, wie der Schreiber sie abgelegt hat.
-	Details json.RawMessage `json:"details" swaggertype:"object"`
+	Details json.RawMessage `json:"details"`
 }
 
 // VerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs), der den Leser
@@ -114,7 +111,7 @@ type ProtokollEintrag struct {
 type VerwaltungsEintrag struct {
 	Aktion    string          `json:"aktion"`
 	Zeitpunkt time.Time       `json:"zeitpunkt"`
-	Details   json.RawMessage `json:"details" swaggertype:"object"`
+	Details   json.RawMessage `json:"details"`
 }
 
 // Bescheid ist ein Schadensersatz-Bescheid an diese Person: der Brief mit Nummer, Datum,

@@ -61,14 +61,6 @@ type schlagwortPflegeAntwort struct {
 // SchlagworteZurPflege liefert die Schlagworte, die zu ?suche= passen (leer = alle), mit
 // Titelzahl, Verweisziel, den Verweisen darauf und der Filter-Markierung, höchstens 200
 // Zeilen, dazu die Zahlen der ganzen Tabelle (repository.LadeSchlagworteZurPflege).
-//
-// @Summary      Schlagworte für die Pflege
-// @Tags         books
-// @Produce      json
-// @Param        suche  query  string  false  "Teil eines Worts oder eines Verweises darauf"
-// @Success      200  {object}  repository.SchlagwortPflegeListe
-// @Failure      500  {object}  map[string]string
-// @Router       /schlagworte/pflege [get]
 func (t *Tueren) SchlagworteZurPflege() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := repository.LadeSchlagworteZurPflege(r.Context(), t.DB.Pool, r.URL.Query().Get("suche"))
@@ -81,18 +73,6 @@ func (t *Tueren) SchlagworteZurPflege() http.HandlerFunc {
 }
 
 // SchlagwortUmbenennen gibt einem Schlagwort eine neue Schreibweise.
-//
-// @Summary      Schlagwort umbenennen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path  string                 true  "Kennung des Schlagworts"
-// @Param        body  body  schlagwortWortAnfrage  true  "Die neue Schreibweise"
-// @Success      200  {object}  schlagwortPflegeAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Router       /schlagworte/{id}/wort [put]
 func (t *Tueren) SchlagwortUmbenennen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := schlagwortIDAusPfad(r)
@@ -120,18 +100,6 @@ func (t *Tueren) SchlagwortUmbenennen() http.HandlerFunc {
 }
 
 // SchlagwortFilterSetzen setzt oder nimmt die Markierung als Filter im Portal.
-//
-// @Summary      Schlagwort als Filter im Portal markieren
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path  string                   true  "Kennung des Schlagworts"
-// @Param        body  body  schlagwortFilterAnfrage  true  "Filter ja oder nein"
-// @Success      204
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Router       /schlagworte/{id}/filter [put]
 func (t *Tueren) SchlagwortFilterSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := schlagwortIDAusPfad(r)
@@ -155,18 +123,6 @@ func (t *Tueren) SchlagwortFilterSetzen() http.HandlerFunc {
 
 // SchlagworteZusammenfuehren hängt die Titel des Wortes an das Ziel und macht
 // das Wort zum Verweis darauf oder löscht es (alte_als_verweis).
-//
-// @Summary      Schlagwort mit einem anderen zusammenführen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path  string                 true  "Kennung des Schlagworts"
-// @Param        body  body  schlagwortZielAnfrage  true  "Das Ziel"
-// @Success      200  {object}  schlagwortPflegeAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Router       /schlagworte/{id}/zusammenfuehren [post]
 func (t *Tueren) SchlagworteZusammenfuehren() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := schlagwortIDAusPfad(r)
@@ -193,17 +149,6 @@ func (t *Tueren) SchlagworteZusammenfuehren() http.HandlerFunc {
 }
 
 // SchlagwortVerweisSetzen leitet eine Schreibweise auf ein Schlagwort.
-//
-// @Summary      Verweis auf ein Schlagwort anlegen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        body  body  schlagwortVerweisAnfrage  true  "Schreibweise und Ziel"
-// @Success      204
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Router       /schlagworte/verweise [post]
 func (t *Tueren) SchlagwortVerweisSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req schlagwortVerweisAnfrage
@@ -227,16 +172,6 @@ func (t *Tueren) SchlagwortVerweisSetzen() http.HandlerFunc {
 // verlieren sie, Verweise darauf fallen mit. Eine Tür für ein Wort und für viele
 // (repository.LoescheSchlagworte). Die Antwort nennt, wie viele Wörter, Titel und Verweise
 // es waren.
-//
-// @Summary      Schlagworte löschen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        body  body  schlagworteLoeschenAnfrage  true  "Kennungen der Schlagworte"
-// @Success      200  {object}  schlagwortPflegeAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /schlagworte/loeschen [post]
 func (t *Tueren) SchlagworteLoeschen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req schlagworteLoeschenAnfrage

@@ -13,19 +13,6 @@ import (
 // ExemplarAussondern sondert ein Exemplar aus: Die Zeile bleibt und gilt als ausgesondert, weil
 // Ausleihen und Schadensfälle an ihr hängen (KatalogAbfragen.SondereExemplarAus). Ein
 // verliehenes Exemplar lehnt die Tür mit 400 ab.
-//
-// @Summary      Exemplar aussondern
-// @Description  Sondert ein Exemplar aus (die Zeile bleibt, das Exemplar gilt als ausgesondert) und schreibt den Vorgang ins Protokoll. Ein verliehenes Exemplar ist 400.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Exemplars (UUID)"
-// @Success      200  {object}  map[string]string
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /buecher/exemplare/{id} [delete]
 func (t *Tueren) ExemplarAussondern(katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())

@@ -70,13 +70,6 @@ type bescheidListe interface {
 }
 
 // Bescheide liefert die Bescheide — die Arbeitsliste des Sekretariats.
-//
-// @Summary      Bescheide
-// @Tags         schadensersatz
-// @Produce      json
-// @Param        status query string false "offen = nur nicht übergebene"
-// @Success      200 {array} repository.Bescheid
-// @Router       /bescheide [get]
 func (t *Tueren) Bescheide(bescheidAbfragen bescheidListe) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := bescheidAbfragen.LadeListe(r.Context(), r.URL.Query().Get("status") == "offen")
@@ -89,13 +82,6 @@ func (t *Tueren) Bescheide(bescheidAbfragen bescheidListe) http.HandlerFunc {
 }
 
 // BescheideDesSchuelers liefert die Bescheide eines Schülers für die Akte.
-//
-// @Summary      Bescheide eines Schülers
-// @Tags         schadensersatz
-// @Produce      json
-// @Param        id path string true "Kennung des Schülers"
-// @Success      200 {array} repository.Bescheid
-// @Router       /schueler/{id}/bescheide [get]
 func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
@@ -115,13 +101,6 @@ func (t *Tueren) BescheideDesSchuelers(bescheidAbfragen *repository.BescheidAbfr
 //
 // Kein Cron: Die Übergabe ist eine Handlung des Sekretariats (Original und Buchungsbeleg
 // gehen aus dem Haus). Eine Automatik über Nacht wäre eine stille Zustandsänderung.
-//
-// @Summary      Bescheid nach Fristablauf übergeben
-// @Tags         schadensersatz
-// @Produce      json
-// @Param        id path string true "Kennung des Bescheids"
-// @Success      200 {object} map[string]any
-// @Router       /bescheide/{id}/uebergeben [post]
 func (t *Tueren) BescheidUebergeben(bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

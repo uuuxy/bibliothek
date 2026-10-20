@@ -17,17 +17,6 @@ import (
 // Adminrechte, und aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Fehler.
 
 // KontoLoeschen löscht ein Konto und vermerkt es im Protokoll.
-// @Summary      Konto löschen
-// @Description  Löscht ein Konto über seine Kennung und vermerkt es im Protokoll.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Kontos (UUID)"
-// @Success      200  {object}  map[string]string
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /benutzer/{id} [delete]
 func (t *Tueren) KontoLoeschen(kontoAbfragen *repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.loescheKonto(w, r, kontoAbfragen)

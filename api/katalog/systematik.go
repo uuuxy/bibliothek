@@ -75,16 +75,6 @@ func meldungDoppelteSachgruppe(err error) string {
 
 // SachgruppeAnlegen legt eine Sachgruppe an. Die Systematik ist das Vokabular, aus dem das
 // Buchformular die Signatur vorschlägt („BIB Deu").
-//
-// @Summary      Sachgruppe anlegen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        body  body      sachgruppeAnfrage  true  "Die Sachgruppe"
-// @Success      201   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      409   {object}  map[string]string
-// @Router       /systematics [post]
 func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req sachgruppeAnfrage
@@ -119,18 +109,6 @@ func (t *Tueren) SachgruppeAnlegen() http.HandlerFunc {
 // die Auswahl der Fächer nicht still auseinanderläuft. Die Signatur mit dem Kürzel bleibt
 // unangetastet: Sie klebt als Etikett am Buch. Die Antwort meldet, wie viele Titel mitgezogen
 // wurden (titel_mitgezogen).
-//
-// @Summary      Sachgruppe ändern
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string             true  "Kennung der Sachgruppe"
-// @Param        body  body      sachgruppeAnfrage  true  "Die Sachgruppe"
-// @Success      200   {object}  map[string]any
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Failure      409   {object}  map[string]string
-// @Router       /systematics/{id} [put]
 func (t *Tueren) SachgruppeAendern() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(t.aendereSachgruppe)
 }
@@ -221,15 +199,6 @@ func ladeSachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (stri
 // (fk_titel_subject_systematik, ON DELETE RESTRICT). Die Tür zählt vorher und antwortet mit 409
 // und einem Satz, der den Grund nennt; schlägt die Sperre trotzdem zu, weil sich zwischen
 // Zählung und Löschen ein Titel angehängt hat, ist das derselbe Konflikt.
-//
-// @Summary      Sachgruppe löschen
-// @Tags         books
-// @Produce      json
-// @Param        id  path  string  true  "Kennung der Sachgruppe"
-// @Success      204
-// @Failure      404  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Router       /systematics/{id} [delete]
 func (t *Tueren) SachgruppeLoeschen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

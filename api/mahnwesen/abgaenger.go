@@ -62,13 +62,6 @@ func (t *Tueren) ladeAbgaengerZeilen(ctx context.Context) ([]AbgaengerZeile, err
 }
 
 // Abgaenger liefert die Abgängerliste samt Saisonfenster.
-// @Summary      Abgängerliste
-// @Description  Abschlussklassen (9H/10H, 10R, 13) mit noch offenen Büchern, in der Saison vom 01.05. bis 31.07.; außerhalb leer mit offen=false.
-// @Tags         admin
-// @Produce      json
-// @Success      200  {object}  AbgaengerAntwort
-// @Failure      500  {object}  map[string]string
-// @Router       /abgaenger [get]
 func (t *Tueren) Abgaenger() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		antwort := AbgaengerAntwort{
@@ -134,13 +127,6 @@ func (t *Tueren) ladeAbgaengerKontoauszuege(ctx context.Context, klasse string, 
 
 // AbgaengerKontoauszuegePDF erzeugt die Kontoauszüge der Abgänger als PDF, eine Seite je
 // Schüler mit Freigabezeile.
-// @Summary      Kontoauszüge der Abgänger als PDF
-// @Description  Je Abgänger eine Seite mit den noch nicht zurückgegebenen Büchern, in der Saison vom 01.05. bis 31.07.
-// @Tags         admin
-// @Produce      application/pdf
-// @Param        klasse  query  string  false  "nur diese Klasse"
-// @Param        ids     query  string  false  "nur diese Schüler (Kennungen, mit Komma getrennt) — der Schnitt mit der Abgängerliste"
-// @Router       /abgaenger/pdf [get]
 func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

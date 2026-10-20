@@ -47,15 +47,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-
-	// Die API-Doku unter /swagger liest die Beschreibung, die dieses Paket beim Start anmeldet.
-	_ "bibliothek/docs"
 )
-
-// @title           Schulbibliothek API
-// @version         1.0
-// @description     Backend-API fuer das Schulbibliothek-Verwaltungssystem.
-// @BasePath        /api
 
 // starteServer startet den HTTP-Server im Hintergrund und liefert ihn für das Herunterfahren.
 func starteServer(port string, server *api.Server) *http.Server {

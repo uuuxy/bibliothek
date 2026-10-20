@@ -168,7 +168,6 @@ Bewusst öffentlich sind:
 | `GET /api/csrf-token`, `/api/auth/*`, `POST /login`                                           | Bootstrap bzw. selbst-authentifizierend.                                                                                                                                                                                                |
 | `GET /api/public/bestellung/{token}` + `/etiketten/{groesse}?format=…` + `POST …/bestaetigen` | Bestätigungs-Link an den Lieferanten — siehe unten. `format` wählt das Bogenraster der kleinen Etiketten und wird gegen die Allowlist in `pdf/etikett_formate.go` geprüft: Unbekanntes ergibt **400**, nicht stillschweigend die Vorgabe. |
 | `GET /health`                                                                                 | Betriebszustand: antwortet nur `healthy` oder `unhealthy` (Datenbank erreichbar oder nicht), keine Daten.                                                                                                                               |
-| `GET /swagger`, `GET /swagger/`                                                               | API-Beschreibung; nur registriert bei `APP_ENV=local` oder `development`.                                                                                                                                                               |
 | `/`, `/favicon.ico`                                                                           | Die Oberfläche selbst: statische Dateien aus `frontend/dist`, über `os.OpenRoot` an das Verzeichnis gebunden. `/favicon.ico` antwortet 204.                                                                                             |
 
 **Der Bestätigungs-Link ist der einzige schreibende Zugang ohne Anmeldung.** Sein
@@ -368,8 +367,7 @@ entscheiden. Gates: `internal/bereitschaft/geheimnisse_test.go`,
 `TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT`.
 
 Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
-`IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort, und Swagger öffentlich
-freischalten. Das Cookie-`Secure`-Flag fiele nur weg, wenn `COOKIE_SECURE` nicht gesetzt
+`IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort. Das Cookie-`Secure`-Flag fiele nur weg, wenn `COOKIE_SECURE` nicht gesetzt
 ist; `docker-compose.yml` setzt es immer. Wer auf einem production-Server ohne eigene
 Geheimnisse testen will, schreibt `ENFORCE_PROD_SECRETS=false` — sichtbar, und
 `scripts/pruefe_secrets.sh` meldet es als kritisch, ebenso `APP_ENV` auf `local`,

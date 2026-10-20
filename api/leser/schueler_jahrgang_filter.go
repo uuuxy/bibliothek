@@ -97,12 +97,6 @@ func jahrgaengeMitSchuelern(ctx context.Context, lmfAbfragen *repository.LMFAbfr
 }
 
 // Jahrgaenge liefert die besetzten Jahrgänge für das Filter-Auswahlfeld.
-//
-// @Summary      Besetzte Jahrgänge
-// @Tags         students
-// @Produce      json
-// @Success      200 {array} int
-// @Router       /jahrgaenge [get]
 func (t *Tueren) Jahrgaenge(lmfAbfragen *repository.LMFAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		jahrgaenge, err := jahrgaengeMitSchuelern(r.Context(), lmfAbfragen)

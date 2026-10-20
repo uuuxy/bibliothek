@@ -53,7 +53,6 @@ import (
 	"bibliothek/sse"
 
 	sentryhttp "github.com/getsentry/sentry-go/http"
-	httpswagger "github.com/swaggo/http-swagger"
 )
 
 // Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), ob der
@@ -202,7 +201,6 @@ func (s *Server) Routes() http.Handler {
 	s.registriereBestellRouten(mux, bestellDienst)
 
 	s.registriereImportRouten(mux)
-	s.registriereSwaggerRouten(mux)
 	s.registriereOberflaechenRouten(mux)
 
 	return s.baueKette(mux)
@@ -273,18 +271,6 @@ func (s *Server) registriereImportRouten(mux *http.ServeMux) {
 	mux.Handle("POST /api/import/littera", s.verlangeRecht("manage_inventory")(s.system().LitteraImport()))
 	mux.Handle("POST /api/admin/import-bestand", s.verlangeRecht("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
 	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen(s.coverAbgleich)))
-}
-
-func (s *Server) registriereSwaggerRouten(mux *http.ServeMux) {
-	// Die Swagger-Seite gibt es nur im lokalen Betrieb und in der Entwicklung.
-	if os.Getenv("APP_ENV") == "local" || os.Getenv("APP_ENV") == "development" {
-		mux.Handle("GET /swagger/", httpswagger.Handler(
-			httpswagger.URL("/swagger/doc.json"),
-		))
-		mux.HandleFunc("GET /swagger", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/swagger/", http.StatusMovedPermanently)
-		})
-	}
 }
 
 func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {

@@ -17,14 +17,6 @@ import (
 )
 
 // Einstellungen liefert alle Einstellungen.
-// @Summary      Einstellungen
-// @Description  Alle Einstellungen, etwa die Grenzen der Ausleihe, Fristen und Schalter.
-// @Tags         system
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  repository.SystemEinstellungen
-// @Failure      500  {object}  map[string]string
-// @Router       /einstellungen [post]
 func (t *Tueren) Einstellungen(einstellungsAbfragen *repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
@@ -44,16 +36,6 @@ type einstellungsAenderung interface {
 }
 
 // EinstellungenSchreiben speichert die Einstellungen einer Kategorie.
-// @Summary      Einstellungen speichern
-// @Description  Speichert nur die mitgeschickten Felder; fehlende bleiben unverändert. Verlangt das Recht manage_settings.
-// @Tags         system
-// @Accept       json
-// @Produce      json
-// @Param        settings  body      repository.EinstellungenPatch  true  "Nur die Felder der gespeicherten Kategorie"
-// @Success      200       {object}  map[string]string
-// @Failure      400       {object}  map[string]string
-// @Failure      500       {object}  map[string]string
-// @Router       /einstellungen/speichern [post]
 func (t *Tueren) EinstellungenSchreiben(einstellungsAbfragen einstellungsAenderung) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.schreibeEinstellungen(w, r, einstellungsAbfragen)

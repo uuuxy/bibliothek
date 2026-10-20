@@ -70,11 +70,6 @@ func (t *Tueren) lmfPlanNurRueckgabe(ctx context.Context, abfragen *repository.L
 // und lässt bei einem Rückgabe-Plan die Fristen der Klassen dem Plan folgen. Idempotent:
 // ein schon veröffentlichter Plan behält seinen Stempel, Fristen werden dann nicht
 // erneut angefasst (das tut jede Speicherung eines veröffentlichten Plans selbst).
-// @Summary      LMF-Plan veröffentlichen
-// @Tags         lernmittel
-// @Produce      json
-// @Success      200  {object}  lmfPlanSpeicherAntwort
-// @Router       /lmf-plan/{art}/veroeffentlichen [post]
 func (t *Tueren) LMFPlanVeroeffentlichen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		antwort, gestempelt, err := t.veroeffentlicheLMFPlan(r)

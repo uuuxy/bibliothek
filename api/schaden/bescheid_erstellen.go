@@ -35,15 +35,6 @@ type bescheidErstellenAnfrage struct {
 }
 
 // BescheidErstellen schreibt den Bescheid und liefert ihn zurück.
-//
-// @Summary      Bescheid für einen Schüler erstellen
-// @Tags         schadensersatz
-// @Accept       json
-// @Produce      json
-// @Param        id path string true "Kennung des Schülers"
-// @Param        body body bescheidErstellenAnfrage true "Topf, Frist und Positionen"
-// @Success      201 {object} repository.Bescheid
-// @Router       /schueler/{id}/bescheide [post]
 func (t *Tueren) BescheidErstellen(bescheidAbfragen *repository.BescheidAbfragen, protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.erstelleBescheid(w, r, bescheidAbfragen, protokollAbfragen)

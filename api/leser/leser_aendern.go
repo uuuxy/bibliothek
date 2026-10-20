@@ -55,18 +55,6 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 
 // LeserLoeschen legt einen Leser in den Papierkorb, wenn er keine offenen Ausleihen und keine
 // offenen Schäden hat, und schreibt den Vorgang ins Protokoll.
-// @Summary      Leser in den Papierkorb legen
-// @Description  Legt den Leser in den Papierkorb (gelöscht und gesperrt, die Daten bleiben), wenn er keine offenen Ausleihen und keine offenen Schäden hat, und schreibt den Vorgang ins Protokoll. Endgültig löscht LeserEndgueltigLoeschen.
-// @Tags         students
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
-// @Success      200  {object}  map[string]string
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /schueler/{id} [delete]
 func (t *Tueren) LeserLoeschen(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.ClaimsAusKontext(r.Context())

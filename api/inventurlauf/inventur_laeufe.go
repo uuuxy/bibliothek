@@ -37,13 +37,6 @@ type abgeschlossenerLauf struct {
 // der laufenden Inventuren nennt eine fertige nicht mehr, und ohne Kennung bliebe der
 // Fehlbestand nach einem Neuladen oder an einem zweiten Arbeitsplatz unerreichbar, obwohl er
 // in inventur_verluste gespeichert ist.
-//
-// @Summary      Abgeschlossene Inventuren
-// @Tags         inventory
-// @Produce      json
-// @Success      200   {array}   abgeschlossenerLauf
-// @Failure      500   {object}  map[string]string
-// @Router       /inventur/abgeschlossen [get]
 func (t *Tueren) AbgeschlosseneInventuren() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
@@ -76,13 +69,6 @@ func (t *Tueren) AbgeschlosseneInventuren() http.HandlerFunc {
 // LaufendeInventuren liefert alle offenen Läufe. Die Oberfläche zeigt sie, damit eine
 // Lehrkraft eine laufende Inventur fortsetzt, statt vergeblich eine zweite im selben Bereich
 // zu starten.
-//
-// @Summary      Laufende Inventuren
-// @Tags         inventory
-// @Produce      json
-// @Success      200   {array}   offenerLauf
-// @Failure      500   {object}  map[string]string
-// @Router       /inventur/sessions [get]
 func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -121,16 +107,6 @@ type verwerfenAnfrage struct {
 
 // InventurVerwerfen verwirft einen Lauf, ohne Verluste zu buchen, etwa eine abgebrochene oder
 // hängen gebliebene Inventur. Danach ist der Bereich für einen neuen Lauf frei.
-//
-// @Summary      Inventur verwerfen
-// @Tags         inventory
-// @Accept       json
-// @Produce      json
-// @Param        body  body      verwerfenAnfrage   true  "Lauf"
-// @Success      200   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /inventur/abort [post]
 func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req verwerfenAnfrage

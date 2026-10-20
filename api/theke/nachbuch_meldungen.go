@@ -16,12 +16,6 @@ import (
 // und gehört jeder Theken-Rolle (perform_actions). Die SQL liegt in repository/.
 
 // NachbuchMeldungen liefert die offenen Meldungen (?alle=1: auch quittierte).
-// @Summary      Nachbuch-Meldungen
-// @Tags         theke
-// @Produce      json
-// @Param        alle query bool false "auch quittierte"
-// @Success      200 {array} repository.NachbuchMeldung
-// @Router       /action/nachbuch-meldungen [get]
 func (t *Tueren) NachbuchMeldungen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		nurOffen := r.URL.Query().Get("alle") != "1"
@@ -35,11 +29,6 @@ func (t *Tueren) NachbuchMeldungen() http.HandlerFunc {
 }
 
 // NachbuchMeldungenAnzahl ist der Zähler fürs Band an der Theke.
-// @Summary      Anzahl offener Nachbuch-Meldungen
-// @Tags         theke
-// @Produce      json
-// @Success      200 {object} map[string]int
-// @Router       /action/nachbuch-meldungen/anzahl [get]
 func (t *Tueren) NachbuchMeldungenAnzahl() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		n, err := repository.ZaehleOffeneNachbuchMeldungen(r.Context(), t.DB.Pool)
@@ -53,12 +42,6 @@ func (t *Tueren) NachbuchMeldungenAnzahl() http.HandlerFunc {
 
 // NachbuchMeldungQuittieren quittiert eine offene Meldung — nur eine offene: Eine
 // schon quittierte oder unbekannte ist 404, kein stiller Erfolg.
-// @Summary      Nachbuch-Meldung quittieren
-// @Tags         theke
-// @Produce      json
-// @Param        id path string true "Meldungs-ID"
-// @Success      200 {object} map[string]string
-// @Router       /action/nachbuch-meldungen/{id}/quittieren [post]
 func (t *Tueren) NachbuchMeldungQuittieren() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.ClaimsAusKontext(r.Context())

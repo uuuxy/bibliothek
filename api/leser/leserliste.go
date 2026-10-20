@@ -13,21 +13,6 @@ import (
 
 // Leserliste liefert die Leser, wahlweise gefiltert nach Klasse, Jahrgang, Suchbegriff, Status
 // und Art.
-// @Summary      Leserliste
-// @Description  Die Leser mit der Zahl ihrer Ausleihen, wahlweise gefiltert nach Klasse oder Suchbegriff.
-// @Tags         students
-// @Accept       json
-// @Produce      json
-// @Param        klasse    query   string  false  "Klasse, nach der gefiltert wird"
-// @Param        jahrgang  query   string  false  "Jahrgang (1–13); filtert über alle Klassen dieses Jahrgangs, Oberstufe eingeschlossen"
-// @Param        q       query     string  false  "Suchbegriff (Name oder Ausweisnummer); sucht auf dem Server über alle Schüler"
-// @Param        status  query     string  false  "Leer = aktive Schüler; 'ehemalige' = wer die Schule verlassen hat (ist_abgaenger)"
-// @Param        art     query     string  false  "Leer = nur Schüler; 'alle' = die Leserdatei (Schüler und Kollegium)"
-// @Param        sortierung query  string  false  "Spalte: name | klasse | ausgeliehen; leer = Reihenfolge der Kartei"
-// @Param        richtung   query  string  false  "auf | ab (Vorgabe: auf)"
-// @Success      200     {array}   repository.LeserListenZeile
-// @Failure      500     {object}  map[string]string
-// @Router       /schueler [get]
 // lmfAbfragen liefert die Klassen für den Jahrgangsfilter. Als Parameter, nicht über t.DB:
 // Die Türen dieses Pakets bekommen ihre Abfragen von außen, und ein Griff nach t.DB.Pool
 // sprengte jeden Test, der die Türen ohne Datenbank baut (TestLeserlisteLeereListeIstArray).

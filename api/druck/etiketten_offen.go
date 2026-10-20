@@ -45,14 +45,6 @@ func etikettenSuchtext(r *http.Request) string {
 // kamen, etwa weil der Hinweis nach dem Wareneingang weggeklickt wurde. Mit status=erledigt
 // oder status=alle zeigt sie auch vermerkte Exemplare: Nach einem Papierstau oder einem zu
 // späten Stichtag tragen sie den Vermerk, aber kein Etikett.
-//
-// @Summary      Exemplare ohne gedrucktes Etikett
-// @Tags         books
-// @Produce      json
-// @Param        q       query   string  false  "Filter über Titel oder Barcode"
-// @Param        status  query   string  false  "offen (Vorgabe) | erledigt | alle"
-// @Success      200  {array}  ExemplarOhneEtikett
-// @Router       /exemplare/etiketten-offen [get]
 func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zeilen, err := repository.LadeEtikettenExemplare(r.Context(), t.DB.Pool,
@@ -82,15 +74,6 @@ func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 // Eine eigene Tür, weil der Hinweis im Bestellwesen die Zahl bei jedem Öffnen lädt und die
 // Liste ab 300 eine falsche Zahl nennte. Die Fußzeile der Liste sagt mit ihr, wie viele
 // Exemplare es über die gezeigten hinaus gibt.
-//
-// @Summary      Anzahl der Exemplare ohne gedrucktes Etikett
-// @Tags         books
-// @Produce      json
-// @Param        q       query   string  false  "Filter über Titel oder Barcode"
-// @Param        status  query   string  false  "offen (Vorgabe) | erledigt | alle"
-// @Param        bis     query   string  false  "Stichtag JJJJ-MM-TT (nur mit status=offen sinnvoll)"
-// @Success      200  {object}  map[string]int
-// @Router       /exemplare/etiketten-offen/anzahl [get]
 func (t *Tueren) EtikettenOffenAnzahl() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		// Mit Stichtag nennt dieselbe Tür, wie viele Exemplare das Aufräumen des Altbestands
@@ -128,12 +111,6 @@ type etikettenAltbestandAnfrage struct {
 // wann sein Regal beklebt ist; eine Migration träfe auch die Lieferung, die wirklich kein
 // Etikett hat. Die Oberfläche nennt vorher die Zahl und verlangt eine Bestätigung;
 // zurücknehmen lässt sich der Vermerk mit EtikettenZuruecksetzen.
-//
-// @Summary      Etiketten des Altbestands als gedruckt vermerken
-// @Tags         books
-// @Accept       json
-// @Success      200  {object}  map[string]int
-// @Router       /exemplare/etiketten-altbestand [post]
 func (t *Tueren) EtikettenAltbestandVermerken() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenAltbestandAnfrage
@@ -163,12 +140,6 @@ type etikettenVermerkAnfrage struct {
 
 // EtikettenGedrucktVermerken bucht den Druck gegen. Ohne den Vermerk bliebe jedes Exemplar in
 // der Nachdruck-Liste, und ihr Haken „erledigt" bedeutete nichts.
-//
-// @Summary      Etiketten als gedruckt markieren
-// @Tags         books
-// @Accept       json
-// @Success      200  {object}  map[string]int
-// @Router       /exemplare/etiketten-gedruckt [post]
 func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenVermerkAnfrage
@@ -196,12 +167,6 @@ func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 // und ein zu später Stichtag beim Altbestand trifft auch die frische Lieferung. Nach einem
 // Papierstau oder einem solchen Stichtag holt diese Tür die Exemplare in die Liste zurück; erst
 // damit ist auch das Vermerken von Hand unbedenklich.
-//
-// @Summary      Etiketten wieder als offen markieren
-// @Tags         books
-// @Accept       json
-// @Success      200  {object}  map[string]int
-// @Router       /exemplare/etiketten-zuruecksetzen [post]
 func (t *Tueren) EtikettenZuruecksetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenVermerkAnfrage

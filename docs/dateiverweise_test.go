@@ -125,9 +125,8 @@ var dateiverweisQuellen = []dateiverweisQuelle{
 		links: true, ab: []string{"", "frontend/"}, mindestens: 1000,
 	},
 	{
-		name: "Kommentare im Go-Code",
-		// docs/docs.go erzeugt swag aus den Kommentaren der Türen.
-		gehoert:       func(d string) bool { return strings.HasSuffix(d, ".go") && d != "docs/docs.go" },
+		name:          "Kommentare im Go-Code",
+		gehoert:       func(d string) bool { return strings.HasSuffix(d, ".go") },
 		nurKommentare: true, ab: []string{"", "frontend/"}, mindestens: 400,
 	},
 	{

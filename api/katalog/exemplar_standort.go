@@ -24,16 +24,6 @@ type exemplarStandortAnfrage struct {
 //
 // Recht edit_books wie Barcode, Status und Eigentum desselben Exemplars. Jede Änderung steht
 // mit altem und neuem Wert im Protokoll (repository.SetzeExemplarStandort).
-//
-// @Summary      Standort markierter Exemplare setzen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        body  body      exemplarStandortAnfrage  true  "Exemplare, Standort"
-// @Success      200   {object}  map[string]int
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /exemplare/standort [put]
 func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req exemplarStandortAnfrage
@@ -65,13 +55,6 @@ func (t *Tueren) ExemplarStandortSetzen() http.HandlerFunc {
 // ExemplarStandorte liefert die Standorte, die an Exemplaren im Bestand vorkommen, mit ihrer
 // Zahl: die Vorschläge des Dialogs „Standort ändern". Wer aus ihnen wählt, schreibt keinen
 // zweiten Namen für dasselbe Regal.
-//
-// @Summary      Standorte der Exemplare im Bestand
-// @Tags         books
-// @Produce      json
-// @Success      200  {array}   repository.StandortZahl
-// @Failure      500  {object}  map[string]string
-// @Router       /exemplare/standorte [get]
 func (t *Tueren) ExemplarStandorte() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := repository.LadeExemplarStandorte(r.Context(), t.DB.Pool)

@@ -41,12 +41,6 @@ func (t *Tueren) lmfPlanAb(r *http.Request) time.Time {
 }
 
 // LMFTermine listet den Plan.
-// @Summary      LMF-Plan
-// @Description  Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle).
-// @Tags         lernmittel
-// @Produce      json
-// @Success      200  {object}  lmfTermineAntwort
-// @Router       /lmf-termine [get]
 func (t *Tueren) LMFTermine() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
@@ -138,10 +132,6 @@ func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LMF
 // LMFPlanPDF liefert den Plan als PDF in der Form der früheren Excel-Liste.
 // mitEntwuerfen = true ist die Planer-Route (edit_books): auch der unveröffentlichte
 // Entwurf, damit er zur Abnahme an die Schulleitung gehen kann.
-// @Summary      LMF-Plan als PDF
-// @Tags         lernmittel
-// @Produce      application/pdf
-// @Router       /lmf-termine/pdf [get]
 func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		abfragen := repository.NewLMFAbfragen(t.DB.Pool)

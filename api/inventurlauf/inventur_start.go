@@ -113,18 +113,6 @@ func filterBezeichnung(req startAnfrage) string {
 // Jeder Lauf zählt seinen eigenen Fortschritt. Ist der Bereich schon von einem offenen Lauf
 // belegt, antwortet die Tür mit 409, statt etwas zurückzusetzen: Dort könnte gerade jemand
 // scannen.
-//
-// @Summary      Inventur beginnen
-// @Description  Beginnt einen Lauf für den gewählten Bereich: den ganzen Bestand, eine Signatur oder Fach und Klasse.
-// @Tags         inventory
-// @Accept       json
-// @Produce      json
-// @Param        body  body      startAnfrage   true  "Bereich"
-// @Success      200   {object}  startAntwort
-// @Failure      400   {object}  map[string]string
-// @Failure      409   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /inventur/start [post]
 func (t *Tueren) InventurStarten() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req startAnfrage

@@ -30,18 +30,6 @@ type abschlussAntwort struct {
 // InventurAbschliessen schließt einen Lauf ab: Jedes Exemplar, das der Bereich erwartet, das
 // dieser Lauf nicht erfasst hat und das nicht verliehen ist, wird als Verlust gebucht. Andere
 // offene Läufe bleiben unberührt.
-//
-// @Summary      Inventur abschließen
-// @Description  Bucht, was der Bereich erwartet und der Lauf nicht erfasst hat, als Verlust und schließt den Lauf.
-// @Tags         inventory
-// @Accept       json
-// @Produce      json
-// @Param        body  body      abschlussAnfrage   true  "Lauf"
-// @Success      200   {object}  abschlussAntwort
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /inventur/finish [post]
 func (t *Tueren) InventurAbschliessen() http.HandlerFunc {
 	return t.schliesseInventurAb
 }
@@ -121,13 +109,6 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 // Scanner im Regal und will sie nicht am Bildschirm lesen. Ohne diesen Weg wäre sie nach
 // dem Schließen der Ansicht verloren, und nachrechnen kann man sie nicht, weil die
 // Exemplare durch die Aussonderung aus dem Bereich fallen.
-//
-// @Summary      Fehlbestand einer abgeschlossenen Inventur
-// @Tags         inventur
-// @Produce      json
-// @Param        session_id  query  string  true  "Lauf"
-// @Success      200  {array}  repository.InventurVerlust
-// @Router       /inventur/fehlbestand [get]
 func (t *Tueren) Fehlbestand() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		laufID, err := tuer.LeseUUIDParameter(r, "session_id")

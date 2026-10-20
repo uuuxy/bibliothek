@@ -17,12 +17,6 @@ import (
 // Quelle), nur menschenlesbar aufbereitet — gedacht zur Aushändigung an die Person bzw.
 // die Erziehungsberechtigten (JSON ist für diesen Zweck ungeeignet). Die Erteilung wird
 // wie bei der JSON-Auskunft im Protokoll festgehalten (Rechenschaftspflicht).
-// @Summary      DSGVO-Betroffenenauskunft (Art. 15) als PDF
-// @Tags         students
-// @Produce      application/pdf
-// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
-// @Success      200  {file}    binary
-// @Router       /schueler/{id}/dsgvo-auskunft/pdf [get]
 func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

@@ -315,9 +315,8 @@ func wegTreffer(t *testing.T, datei, muster string) [][]string {
 	return regexp.MustCompile(muster).FindAllStringSubmatch(string(quelle), -1)
 }
 
-// wegOhneGoCode: Ordner, deren Go-Dateien keine Texte des Programms tragen. docs/docs.go
-// entsteht aus Kommentaren.
-var wegOhneGoCode = []string{"frontend", "node_modules", "tmp", "docs"}
+// wegOhneGoCode: Ordner, deren Go-Dateien keine Texte des Programms tragen.
+var wegOhneGoCode = []string{"frontend", "node_modules", "tmp"}
 
 // wegTexteAusGo liest die Zeichenketten mit Pfeil aus dem Go-Code unter der Wurzel, ohne Tests.
 func wegTexteAusGo(t *testing.T, wurzel string) []wegText {

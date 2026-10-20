@@ -46,8 +46,6 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/auth/entsperren": "Auth-Endpunkt (validiert das Token selbst, prüft das Passwort; Rate-Limit-Middleware)",
 		"/login":               "Login (Rate-Limit-Middleware, es existiert noch kein Token)",
 		"/health":              "Health-Check",
-		"/swagger/":            "API-Doku (nur bei APP_ENV=local/development registriert)",
-		"/swagger":             "API-Doku (nur bei APP_ENV=local/development registriert)",
 		"/favicon.ico":         "statisches Asset",
 		"/":                    "SPA-Fallback (statisches Frontend)",
 	}

@@ -48,16 +48,6 @@ type kontoAnlegenAnfrage struct {
 
 // KontoAnlegen legt ein Konto an. Ein Passwort gibt es nicht: Angemeldet wird über den
 // Schul-Mailserver (IMAP) oder mit Barcode und PIN.
-// @Summary      Konto anlegen
-// @Description  Legt ein Konto des Personals mit seiner Rolle an. Angemeldet wird über IMAP oder Barcode, nicht über ein Passwort.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        body  body      kontoAnlegenAnfrage  true  "Angaben des Kontos"
-// @Success      200   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /benutzer [post]
 func (t *Tueren) KontoAnlegen(kontoAbfragen kontoPflege) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.legeKontoAn(w, r, kontoAbfragen)
@@ -132,17 +122,6 @@ type kontoAendernAnfrage struct {
 }
 
 // KontoAendern ändert Name, E-Mail, Ausweisnummer, Rolle oder „aktiv" eines Kontos.
-// @Summary      Konto ändern
-// @Description  Ändert an einem Konto die Felder, die der Rumpf nennt; ein fehlendes Feld bleibt, wie es ist.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string             true  "Kennung des Kontos (UUID)"
-// @Param        body  body      kontoAendernAnfrage  true  "Geänderte Felder"
-// @Success      200   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /benutzer/{id} [put]
 func (t *Tueren) KontoAendern(kontoAbfragen kontoPflege) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereKonto(w, r, kontoAbfragen)

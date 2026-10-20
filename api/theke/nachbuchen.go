@@ -103,14 +103,6 @@ type nachbuchung interface {
 }
 
 // WarteschlangeNachbuchen nimmt eine Portion der Warteschlange entgegen.
-// @Summary      Offline-Warteschlange nachbuchen
-// @Description  Bucht je Eintrag die Wirklichkeit (Umbuchung, Rückgabe, Rückholen) und meldet jede Abweichung vom Scan.
-// @Tags         theke
-// @Accept       json
-// @Produce      json
-// @Param        body body nachbuchAnfrage true "Einträge der Warteschlange"
-// @Success      200 {object} nachbuchAntwort
-// @Router       /action/nachbuchen [post]
 func (t *Tueren) WarteschlangeNachbuchen(nachbuchDienst nachbuchung) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		return t.bucheWarteschlangeNach(w, r, nachbuchDienst)

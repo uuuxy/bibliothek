@@ -41,13 +41,7 @@ export default defineConfig({
 				//
 				// Der Unterschied war von aussen kaum zu sehen, weil dieselbe URL per fetch
 				// weiterhin das PDF lieferte — nur die Navigation nicht.
-				navigateFallbackDenylist: [
-					/^\/api\//,
-					/^\/uploads\//,
-					/^\/events$/,
-					/^\/health$/,
-					/^\/swagger/
-				]
+				navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//, /^\/events$/, /^\/health$/]
 			},
 			manifest: {
 				name: 'Schulbibliothek-Verwaltungssystem',

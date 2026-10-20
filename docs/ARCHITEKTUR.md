@@ -83,7 +83,7 @@ Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
 
 ## 1. Einführung und Ziele
 
-Stand: 16.10.2026
+Stand: 20.10.2026
 
 ---
 
@@ -132,7 +132,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | Q2   | **Datenschutz-Konformität**            | Schülerdaten werden fristgerecht getilgt, Fotos verschlüsselt, öffentliche Seiten tragen keine Personendaten, jede Route ist nach PII-Stufe eingeordnet.          | `api/pii_matrix_test.go` hält [PII_MATRIX.de.md](PII_MATRIX.de.md) deckungsgleich mit dem Code; DSGVO-Cronjobs mit PG-Tests |
 | Q3   | **Betriebstransparenz**                | Eine eingerichtete, aber nicht in Betrieb befindliche Funktion muss sich melden — nicht schweigen.                                                                 | Selbstprüfung der Betriebsbereitschaft + Bereitschafts-Wächter (täglich per Mail), `/health`                 |
 | Q4   | **Bedienbarkeit an der Theke**            | Ein Scan, eine Reaktion, ohne Maus. Der Ausfall des Netzes darf den Betrieb nicht anhalten.                                                                        | Offline-Warteschlange (IndexedDB) + Nachbuch-Tür, Tastaturbedienung, WCAG 2.1 AA mit axe-Gate                |
-| Q5   | **Änderbarkeit ohne Rückfall**         | Ein behobener Fehler bleibt behoben. Jede Bugklasse bekommt einen Detektor (eine „Ratsche"), nicht nur einen Fix.                                                  | [sweeps.md](sweeps.md), Drift-Gates (Swagger, Migrationen, Compose-Variablen), Deadcode-Gate              |
+| Q5   | **Änderbarkeit ohne Rückfall**         | Ein behobener Fehler bleibt behoben. Jede Bugklasse bekommt einen Detektor (eine „Ratsche"), nicht nur einen Fix.                                                  | [sweeps.md](sweeps.md), Drift-Gates (Migrationen, Compose-Variablen), Deadcode-Gate                       |
 
 > **Die Gate-Regel des Projekts:** Der Anspruch ist nicht „es gibt Tests", sondern *jedes
 > Gate muss man einmal rot gesehen haben*. Ein Gate, das seine Aussage nicht verlieren kann,
@@ -172,15 +172,15 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 19.10.2026)
+### 1.4 Umfang in Zahlen (gemessen 20.10.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 78.909 Zeilen (ohne das generierte `docs/docs.go`) |
-| Go-Tests                          | 134.673 Zeilen in 935 Testdateien          |
-| Svelte/JavaScript (`frontend/src`) | 84.307 Zeilen in 754 Dateien, davon 309 `.svelte` |
-| e2e (Playwright, `frontend/e2e`)  | 161 Dateien, davon 156 Specs               |
-| Registrierte HTTP-Routen          | 228; davon in Swagger beschrieben 88 Operationen auf 75 Pfaden |
+| Go-Produktivcode                  | 78.183 Zeilen                              |
+| Go-Tests                          | 135.487 Zeilen in 939 Testdateien          |
+| Svelte/JavaScript (`frontend/src`) | 85.684 Zeilen in 774 Dateien, davon 310 `.svelte` |
+| e2e (Playwright, `frontend/e2e`)  | 168 Dateien, davon 163 Specs               |
+| Registrierte HTTP-Routen          | 226                                        |
 | Datenbank-Migrationen             | 167 Dateien, die höchste Nummer ist 164    |
 | Tabellen / Sichten in `schema.sql`| 43 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
@@ -344,7 +344,7 @@ graph TB
         │  backend (Go, alpine, non-root »appuser«)                 │
         │  :8083 (Produktion) / :8084 (lokaler Stack)               │
         │  /api  JSON · /events SSE · /uploads Cover · /login       │
-        │  /health · /swagger (nur local|development)               │
+        │  /health                                                  │
         └───┬───────────┬────────────┬───────────┬──────────────────┘
             │ pgx/v5    │ IMAP 993   │ SMTP      │ HTTPS (Allowlist)
             ▼           ▼            ▼           ▼
@@ -567,7 +567,7 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 | `pkg/`                  | Regeln und Hilfen ohne Abhängigkeit zu den Schichten darüber (Tabelle unten)                                                                                                    |
 | `cmd/`                  | Sechs Kommandos neben dem Server (5.2.4)                                                                                                                                        |
 | `migrations/`           | Nummerierte, idempotente Schritte des Schemas; laufen beim Start                                                                                                                |
-| `docs/` (Go-Anteil)     | Swagger-Spezifikation (generiert, ausgeliefert **nur** bei `APP_ENV=local`/`development`) und die Gates der Dokumente                                                         |
+| `docs/` (Go-Anteil)     | Die Gates der Dokumente, nur Testdateien                                                                                                                                         |
 
 ##### Themen unter `api/`
 
@@ -752,7 +752,6 @@ gemessen über die Importe des Produktivcodes:
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
 | `google/uuid`                                                  | `api`, `repository`                                              | Kennungen erzeugen                                                                      |
 | `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
-| `swaggo/swag`, `swaggo/http-swagger`                           | `docs`, `api`                                                    | Swagger, nur lokal (A23)                                                                |
 | `golang.org/x/crypto`                                          | `internal/backupkrypto`                                          | scrypt-Schlüsselableitung des Backups                                                   |
 | `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `pkg/imageutil`, `inventur`, `internal/service`, `repository`    | Bildformate; Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) |
 | `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
@@ -1020,10 +1019,9 @@ Vollständig: `schema.sql` und [invarianten.md](invarianten.md).
 # Migrationen
 ls migrations/*.sql | wc -l
 
-# Go-Produktivcode (ohne das generierte Swagger-Dokument; unter frontend/node_modules
-# liegt eine fremde Go-Datei, deshalb jedes node_modules ausschließen)
-find . -name '*.go' -not -name '*_test.go' -not -path '*/node_modules/*' \
-     -not -path './docs/docs.go' | xargs cat | wc -l
+# Go-Produktivcode (unter frontend/node_modules liegt eine fremde Go-Datei, deshalb jedes
+# node_modules ausschließen)
+find . -name '*.go' -not -name '*_test.go' -not -path '*/node_modules/*' | xargs cat | wc -l
 
 # Go-Tests
 find . -name '*_test.go' -not -path '*/node_modules/*' | wc -l
@@ -1041,9 +1039,6 @@ grep -rhoE '\.(Handle|HandleFunc)\(' api inventur --include='*.go' --exclude='*_
 
 # Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
 grep -c '^CREATE TABLE' schema.sql
-
-# Swagger: Pfade und Operationen der Schnittstellenbeschreibung
-python3 -c "import json; p=json.load(open('docs/swagger.json'))['paths']; print(len(p), sum(1 for v in p.values() for k in v if k in ('get','post','put','patch','delete')))"
 ```
 
 Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufrufer in
@@ -2124,7 +2119,7 @@ und liefe beim nächsten neuen Recht auseinander, ohne dass es jemand merkt.
 | `svelte-check`            | Typfehler ohne TypeScript (JSDoc + `checkJs`)                                | Nur so gut wie die JSDoc-Abdeckung                                    |
 | Playwright e2e            | Den **gebauten Container**: was ausgeliefert wird                            | Langsam; braucht den ganzen Stack                                     |
 | Ratschen/Gates            | Dass ein behobener Fehler behoben **bleibt**                                 | Müssen einmal rot gesehen worden sein, sonst prüfen sie nichts        |
-| Drift-Gates               | Dass zwei Wahrheiten nicht auseinanderlaufen (Swagger, Migrationen, Compose-Variablen, Dokumentzahlen, Fundstellen, Dateiverweise, Stand-Angaben) | Erkennen nur die Drift, die sie kennen |
+| Drift-Gates               | Dass zwei Wahrheiten nicht auseinanderlaufen (Migrationen, Compose-Variablen, Dokumentzahlen, Fundstellen, Dateiverweise, Stand-Angaben) | Erkennen nur die Drift, die sie kennen |
 
 **Die Skip-Bilanz ist Teil der Strategie.** Ein Test, der sich lokal überspringt, kann auf
 `main` das Gegenteil der geltenden Entscheidung behaupten, solange niemand den Lauf in der CI
@@ -2166,7 +2161,7 @@ sieht.
   (`db/migrationen_drift_test.go`); in `repository/schema_gegenrichtung_pg_test.go` und
   `repository/schema_gegenrichtung_sperren_pg_test.go` jede neue Lösch-Folge, Bedingung,
   Fremdschlüssel und Eindeutigkeit mit der Antwort, wer sie behandelt; in `listenGrenze` je Liste
-  einer GET-Route, was sie begrenzt (`api/listen_grenze_pg_test.go`). Dazu Swagger,
+  einer GET-Route, was sie begrenzt (`api/listen_grenze_pg_test.go`). Dazu
   [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag ist
   eine Antwort, keine hochgesetzte Zahl.
 - **Code zieht um** (eine Anweisung in eine andere Schicht, ein Name oder eine Datei in ein
@@ -2196,10 +2191,9 @@ sieht.
   ein Paket die Zeile eines anderen in seinen eigenen Typ umwandelt (`AbgaengerZeile(z)` in
   `api/mahnwesen`, `auskunft.Stammdaten(*zeile)`), und Kommentare im Text einer Abfrage
   (`-- …`); die folgen als eigener Commit, weil sich der Text der Abfrage ändert. Namen als Text
-  in Dokumenten, in Zeichenketten der Tests, in `scripts/deadcode_baseline.txt` und in der
-  Schnittstellenbeschreibung meldet der Compiler nicht: den alten Namen im Ordner des Pakets und
-  als `paket.Name` im ganzen Repository suchen und im selben Commit nachziehen, nach einem
-  Kommentar über dem Feld eines Anfrage- oder Antworttyps `swag init -g main.go -o docs`. Eine
+  in Dokumenten, in Zeichenketten der Tests und in `scripts/deadcode_baseline.txt` meldet der
+  Compiler nicht: den alten Namen im Ordner des Pakets und
+  als `paket.Name` im ganzen Repository suchen und im selben Commit nachziehen. Eine
   Prüfung, die einen Aufruf an seinem Namen erkennt, bekommt vorher ein Merkmal, das den Namen
   überlebt (`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des
   Ergebnisses). `gopls rename` ergänzt nebenbei `go.work.sum`; das gehört nicht in den Commit.
@@ -2304,7 +2298,7 @@ sieht.
 
 ## 9. Architekturentscheidungen
 
-Stand: 16.10.2026
+Stand: 20.10.2026
 
 Sechsundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -2343,10 +2337,10 @@ veralten.
 | A20 | Schülerfotos verschlüsselt in der Datenbank, kein öffentliches Verzeichnis     | 08.08.2026    | gültig   |
 | A21 | Offline-Sync über die Nachbuch-Tür statt über die Stapel-Tür                    | 16.09.2026    | gültig   |
 | A22 | Kein TypeScript; JSDoc + `svelte-check`                                        | von Anfang an | gültig   |
-| A23 | Swagger nur lokal; `api_inventar.md` ist das vollständige Verzeichnis           | —             | gültig   |
 | A24 | Keine Changelog-Datei; `OFFEN.md` ist die einzige Liste                        | 15.09.2026    | gültig   |
 | A25 | `repository/` bleibt ein Paket                                                 | 13.10.2026    | gültig   |
 | A26 | Die Türen stehen je Menüpunkt in einem Paket unter `api/`                      | 12.10.2026    | gültig   |
+| A27 | Keine Swagger-Beschreibung; die Routenliste ist das Verzeichnis                | 20.10.2026    | gültig   |
 
 ---
 
@@ -2806,24 +2800,6 @@ CI und im pre-push-Hook.
 
 ---
 
-### A23 — Swagger nur lokal; `api_inventar.md` ist das vollständige Verzeichnis
-
-**Entscheidung.** Die interaktive API-Doku wird **nur** bei `APP_ENV=local`/`development`
-gemountet. Das vollständige Routenverzeichnis ist ein generiertes Dokument.
-
-**Anlass.** Swagger deckt nur die **annotierten** Endpunkte ab (Zahlen in 1.4). Eine
-unvollständige Liste, die vollständig aussieht,
-ist schlechter als keine.
-
-**Folge.** `./scripts/api_inventar.sh` erzeugt [api_inventar.md](api_inventar.md) und
-gleicht Go-Routen gegen Frontend-Aufrufer in **beide** Richtungen ab.
-`docs/swagger_drift_test.go` wird rot, sobald `docs.go` von den `@Router`-Annotationen
-abweicht.
-
-**Fundstelle.** `api/router.go` (`registriereSwaggerRouten`), `docs/swagger_drift_test.go`.
-
----
-
 ### A24 — Keine Changelog-Datei; `OFFEN.md` ist die einzige Liste
 
 **Entscheidung.** Es gibt keine gepflegte Änderungshistorie als Datei. Offenes steht an
@@ -2879,6 +2855,27 @@ bindet ein anderes ein (`api/themen_ratsche_test.go`). Was zwei Themen brauchen,
 `api/tuer` oder einer Schicht darunter.
 
 **Fundstelle.** `api/router.go` (die Zugänge), `api/<Thema>/<Thema>.go`, 5.2.2.
+
+---
+
+### A27 — Keine Swagger-Beschreibung; die Routenliste ist das Verzeichnis
+
+**Entscheidung.** Die Schnittstelle trägt keine Swagger-Beschreibung, weder Anmerkungen noch eine
+Seite `/swagger`. Das Verzeichnis der Routen ist [api_inventar.md](api_inventar.md), erzeugt von
+`scripts/api_inventar.sh`; der ZAP-Scan in `security-scan.sh` bekommt seine Eingabe aus derselben
+Liste (`api_inventar.sh --routen`).
+
+**Anlass.** Swagger beschrieb 88 Operationen von 228 Routen, aus 696 Zeilen Anmerkungen in 52
+Dateien, mit rund 18.000 erzeugten Zeilen und einem eigenen Drift-Gate. Eine unvollständige Liste,
+die vollständig aussieht, ist schlechter als keine; vollständig wäre sie bei jeder neuen Route
+Handarbeit. Die einzige Oberfläche liegt in diesem Repository und liest keine Beschreibung.
+
+**Folge.** `swaggo/swag` und `swaggo/http-swagger` fallen mit ihren indirekten Abhängigkeiten weg.
+Der ZAP-Scan sieht jede registrierte Route statt der annotierten: Pfade und Methoden, keine
+Rümpfe; geschriebene Anfragen scheitern im Scan ohnehin an CSRF. Im sicheren Modus (`-S`)
+importierte er 235 Adressen.
+
+**Fundstelle.** `scripts/api_inventar.sh` (`--routen`), `security-scan.sh` (Schritt 3).
 
 ---
 
@@ -2970,7 +2967,7 @@ vermerkt.
 | ID  | Auslöser / Situation                                                                              | Erwartete Reaktion                                                                                     | Nachweis                                                                    |
 | --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | S16 | Eine bereits behobene Bugklasse kehrt in neuem Code zurück                                         | Die zuständige Ratsche wird rot — **und** ihre bekannte Blindheit steht in der Landkarte                | [sweeps.md](sweeps.md) samt „Landkarte der Ratschen"                     |
-| S17 | Zwei Orte behaupten dasselbe (Swagger vs. Annotation, Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `docs/swagger_drift_test.go`, `db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
+| S17 | Zwei Orte behaupten dasselbe (Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
 | S18 | Ein Deploy während laufender Kiosk-Verbindungen                                                    | Geordnetes Herunterfahren innerhalb von 10 s, **kein** `os.Exit(1)`; Migrationen laufen beim Start des neuen Containers | `sse/sse_test.go`, `main_test.go`                                           |
 | S23 | Toter Code bleibt liegen (eine geschriebene, getestete und nie gerufene Funktion)                   | Deadcode-Gate wird rot                                                                                 | `scripts/deadcode_gate.sh` + Baseline                                       |
 
@@ -3013,8 +3010,6 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 - **Barrierefreiheit ist im Anfangszustand gemessen.** Zustände nach mehreren
   Interaktionsschritten sind nur teilweise abgedeckt; Umfang und bekannte Lücken stehen in
   [FACHKONZEPT.md §19](FACHKONZEPT.md).
-- **Swagger beschreibt nur einen Teil der Routen** (Zahlen in 1.4). Das vollständige Verzeichnis ist
-  [api_inventar.md](api_inventar.md), generiert, nicht gepflegt.
 
 ---
 
@@ -3186,7 +3181,6 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | #  | Schuld                                                                                                                  | Kosten heute                                                     | Warum sie (noch) steht                                                                      |
 | -- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | D1 | **Invarianten auf Ebene 🟡** (Sperren des Lesers, Überfällig-Automatik, Ausleihlimit, Sperrreihenfolge)                   | Ein zweiter Schreibpfad kann sie auslassen                        | Teils Ermessen enthalten (Override mit Audit), teils über Funktionsgrenzen verteilt          |
-| D2 | **Swagger beschreibt nur einen Teil der Routen** (1.4)                                                                   | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
 | D3 | **Doppelte Migrationsnummern** (003, 008, 021, 022)                                                                      | Style-Smell; sortiert deterministisch                            | Umnummerieren würde bereits gelaufene Migrationen betreffen — Risiko ohne Nutzen              |
 | D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (keine Datei wächst); kleiner wird eine Datei, wenn sie fachlich angefasst wird, nicht in einem Umbau nur der Größe wegen                    |
 | D5 | **Gemischte Sprache an der Grenze** (Adressen, JSON-Felder, Tabellen und Spalten: `idempotency_key` neben `idempotenz_schluessel`) | Wer den Vertrag liest, sieht zwei Sprachen                        | Der Vertrag mit Oberfläche und gespeicherten Daten wird nicht umbenannt ([STIL.md](STIL.md) 9); die Namen im Code folgen STIL.md, gehalten von `stil_ratsche_test.go` und `frontend-hygiene-sprache.test.js` |
@@ -3565,7 +3559,7 @@ Einstieg.
 | **Phantom-Erfolg**           | Eine Antwort „erfolgreich", obwohl nichts geschrieben wurde (verworfene `RowsAffected`, null getroffene Zeilen)                                                |
 | **Fehler-Kollaps**           | Mehrere unterschiedliche Fehler, die in **einer** unbrauchbaren Meldung zusammenfallen                                                                        |
 | **Skip-Bilanz**              | Die Angabe eines Testlaufs darüber, was er **nicht** geprüft hat                                                                                              |
-| **Drift**                    | Zwei Orte, die dasselbe behaupten und auseinandergelaufen sind (Doku vs. Code, Swagger vs. Annotation, Migrationsliste vs. `schema.sql`)                       |
+| **Drift**                    | Zwei Orte, die dasselbe behaupten und auseinandergelaufen sind (Doku vs. Code, Migrationsliste vs. `schema.sql`)                       |
 | **Lügende Ratsche**          | Ein Detektor, der grün bleibt, obwohl seine Aussage nicht mehr gilt — die schlimmste Sorte, weil sie Sicherheit vorspiegelt                                   |
 | **Rot-Beweis**               | Der Nachweis, dass ein Gate im echten Fehlerfall wirklich rot wird                                                                                            |
 | **Blindheit** (einer Ratsche)| Was ein Detektor aus seiner Mechanik heraus **nicht** sehen kann. Steht je Ratsche in der Landkarte in [sweeps.md](sweeps.md)                               |

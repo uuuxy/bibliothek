@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 19.10.2026 (Entwurf)
+Stand: 20.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -360,23 +360,22 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 
 ## 6. Kann jemand anderes das Programm weiterführen?
 
-Gemessen am 16.10.2026 am Go-Code ohne Tests und ohne die erzeugte `docs/docs.go`: 600
-Dateien, 2.618 Funktionen.
+Gemessen am 20.10.2026 am Go-Code ohne Tests: 602 Dateien, 2.617 Funktionen.
 
 **Was trägt:**
 
 - Die Stelle findet sich über den Menüpunkt. Die Türen stehen in zwölf Ordnern nach den
   Menüpunkten der Oberfläche, je 6 bis 26 Dateien, und tragen kein SQL. Den Einstieg gibt
   [WEGWEISER.md](WEGWEISER.md) auf einer Seite.
-- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 111 Zeilen, neun von
-  zehn höchstens 270. 18 haben über 400, eine über 600.
+- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 107 Zeilen, neun von
+  zehn höchstens 267. 17 haben über 400, eine über 600.
 - Funktionen sind kurz: Die Hälfte hat höchstens 13 Zeilen, 18 haben über 80, die längste 148
   (eine Liste von Adressen).
 - Namen und Kommentare folgen einem Regelwerk ([STIL.md](STIL.md)): Fachwörter deutsch, je
   Sache ein Wort; ein Datum steht in einem Kommentar nur zu einer Quelle.
   `stil_ratsche_test.go` meldet jede Abweichung im Go-Code,
   `frontend-hygiene-vorgeschichte.test.js` jedes Datum in einem Kommentar der Oberfläche.
-- 25 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
+- 24 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
   Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
   Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).
 

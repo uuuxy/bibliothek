@@ -142,11 +142,10 @@ coverage.out
 # Frontend-Coverage (lcov fuer SonarQube, erzeugt von scripts/sonar_scan.sh)
 frontend/coverage/
 
-# Swagger: nur docs.go wird ausgeliefert (der Server bettet es ein). swagger.json/yaml
-# sind Nebenprodukte derselben Generierung und würden bei jedem Lauf Diff-Rauschen erzeugen.
-docs/swagger.json
-docs/swagger.yaml
-
 # Playwright-Ausgabe, wenn aus dem Repo-Root gestartet (frontend/.gitignore greift dort nicht)
 test-results/
 scripts/demo-video/
+
+# Ausgaben von security-scan.sh im Wurzelverzeichnis.
+zap_openapi.json
+zap_api_report.html

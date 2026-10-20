@@ -34,15 +34,6 @@ type titelSchlagworteAntwort struct {
 // Wörter (höchstens 50; repository.FindeSchlagwortVorschlaege). Es ist die Vorschlagsliste der
 // Eingabefelder, wie GET /api/signaturen für die Signatur; das Feld fragt beim Tippen nach
 // (utils/schlagwortVorschlaege.svelte.js).
-//
-// @Summary      Schlagworte als Vorschläge
-// @Description  Schlagworte, die mindestens ein Titel trägt. Ohne suche die häufigsten zuerst (höchstens 500), mit suche die Wörter, die den Text enthalten, Treffer am Wortanfang zuerst (höchstens 50).
-// @Tags         books
-// @Produce      json
-// @Param        suche  query  string  false  "Teil eines Worts"
-// @Success      200  {array}   repository.SchlagwortZahl
-// @Failure      500  {object}  map[string]string
-// @Router       /schlagworte [get]
 func (t *Tueren) SchlagwortVorschlaege() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		vorschlaege, err := repository.FindeSchlagwortVorschlaege(r.Context(), t.DB.Pool, r.URL.Query().Get("suche"))
@@ -57,15 +48,6 @@ func (t *Tueren) SchlagwortVorschlaege() http.HandlerFunc {
 // TitelSchlagworte liefert die Schlagworte eines Titels. Der Bestellkorb
 // braucht sie, bevor er ändert: Er setzt die Menge als Ganzes, und wer die vorhandenen
 // nicht kennt, würde sie mit seinem ersten Wort überschreiben.
-//
-// @Summary      Schlagworte eines Titels
-// @Tags         books
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Titels"
-// @Success      200  {object}  titelSchlagworteAntwort
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /buecher/titel/{id}/schlagworte [get]
 func (t *Tueren) TitelSchlagworte() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
@@ -84,17 +66,6 @@ func (t *Tueren) TitelSchlagworte() http.HandlerFunc {
 // TitelSchlagworteSetzen ersetzt die Schlagworte eines Titels; die schlanke Tür
 // des Bestellkorbs, Schwester von TitelSignaturSetzen. Eine leere Liste entfernt
 // alle; ein Wort, das es in anderer Schreibweise schon gibt, wird nicht neu angelegt.
-//
-// @Summary      Schlagworte eines Titels ersetzen
-// @Tags         books
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string                   true  "Kennung des Titels"
-// @Param        body  body      titelSchlagworteAnfrage  true  "Die ganze Liste der Schlagworte"
-// @Success      200   {object}  titelSchlagworteAntwort
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /buecher/titel/{id}/schlagworte [put]
 func (t *Tueren) TitelSchlagworteSetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

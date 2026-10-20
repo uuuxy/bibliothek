@@ -155,7 +155,7 @@ func stilMessen(t *testing.T) (map[string]stilZahl, map[string][]string, int, in
 			}
 			return nil
 		}
-		if !strings.HasSuffix(pfad, ".go") || filepath.ToSlash(pfad) == "docs/docs.go" {
+		if !strings.HasSuffix(pfad, ".go") {
 			return nil
 		}
 		test := strings.HasSuffix(pfad, "_test.go")

@@ -59,7 +59,7 @@ type DSGVOAnfrage struct {
 type DSGVOKontoEreignis struct {
 	Aktion    string          `json:"aktion"`
 	Zeitpunkt time.Time       `json:"zeitpunkt"`
-	Details   json.RawMessage `json:"details" swaggertype:"object"`
+	Details   json.RawMessage `json:"details"`
 }
 
 // dsgvoKontoSQL ist die eine Spaltenliste des Kontos in der Auskunft. Das Spalten-Gate

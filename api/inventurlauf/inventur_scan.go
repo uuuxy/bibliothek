@@ -58,19 +58,6 @@ type scanAntwort struct {
 }
 
 // ScanVerbuchen verbucht den Scan eines Exemplars in einem offenen Lauf.
-//
-// @Summary      Exemplar in der Inventur scannen
-// @Description  Vermerkt im genannten Lauf, dass das Exemplar im Regal steht.
-// @Tags         inventory
-// @Accept       json
-// @Produce      json
-// @Param        body  body      scanAnfrage   true  "Lauf und Barcode"
-// @Success      200   {object}  scanAntwort
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Failure      409   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /inventur/scan [post]
 func (t *Tueren) ScanVerbuchen() http.HandlerFunc {
 	return t.verbucheScan
 }

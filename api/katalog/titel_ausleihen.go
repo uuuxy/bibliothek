@@ -26,8 +26,6 @@ type ausleiherZeile struct {
 }
 
 // TitelAusleiher liefert die Leser, die gerade ein Exemplar des Titels ausgeliehen haben.
-//
-// @Router       /buecher/titel/{id}/ausleiher [get]
 func (t *Tueren) TitelAusleiher() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -76,8 +74,6 @@ type historieZeile struct {
 }
 
 // TitelHistorie liefert die letzten 200 Ausleihen eines Titels (gibTitelHistorie).
-//
-// @Router       /buecher/titel/{id}/historie [get]
 func (t *Tueren) TitelHistorie() http.HandlerFunc {
 	return t.gibTitelHistorie
 }

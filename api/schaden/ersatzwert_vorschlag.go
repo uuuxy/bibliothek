@@ -13,14 +13,6 @@ import (
 )
 
 // ErsatzwertVorschlag liefert den Betragsvorschlag für ein Exemplar.
-//
-// @Summary      Betragsvorschlag für ein Exemplar
-// @Tags         schadensersatz
-// @Produce      json
-// @Param        id path string true "Kennung des Exemplars"
-// @Success      200 {object} service.ErsatzwertVorschlag
-// @Failure      404 {object} apierrors.Fehler
-// @Router       /buecher/exemplare/{id}/ersatzwert-vorschlag [get]
 func (t *Tueren) ErsatzwertVorschlag(bescheidAbfragen *repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

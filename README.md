@@ -61,9 +61,9 @@ für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
 | Betrieb | Docker Compose hinter Caddy |
 | Lizenz | [EUPL-1.2](LICENSE) |
 
-Umfang, gemessen am 16.10.2026: rund 79.000 Zeilen Go im Produktivcode, dazu 133.500
-Zeilen in 928 Testdateien; etwa 84.000 Zeilen Svelte/JavaScript, davon 32.500 in
-Vitest-Dateien, und 161 e2e-Dateien. Die genauen Zahlen und alle Messbefehle stehen in
+Umfang, gemessen am 20.10.2026: rund 78.000 Zeilen Go im Produktivcode, dazu 135.500
+Zeilen in 939 Testdateien; etwa 85.700 Zeilen Svelte/JavaScript, davon 34.200 in
+Vitest-Dateien, und 168 e2e-Dateien. Die genauen Zahlen und alle Messbefehle stehen in
 [Architektur, Kapitel 1.4](docs/ARCHITEKTUR.md#1-einführung-und-ziele).
 
 Diese Zahlen altern; deshalb steht hier das Messdatum und darunter der Befehl, mit dem man
@@ -71,8 +71,7 @@ sie in zehn Sekunden neu erhebt, statt einer gepflegten Behauptung:
 
 ```bash
 ls migrations/*.sql | wc -l
-find . -name '*.go' -not -name '*_test.go' -not -path '*/node_modules/*' \
-     -not -path './docs/docs.go' | xargs cat | wc -l
+find . -name '*.go' -not -name '*_test.go' -not -path '*/node_modules/*' | xargs cat | wc -l
 find . -name '*_test.go' -not -path '*/node_modules/*' | wc -l
 ```
 
@@ -189,7 +188,6 @@ Alles Weitere liegt in `docs/`.
 | [OFFEN.md](docs/OFFEN.md)                   | **Die eine Liste** alles Offenen — Fahrplan, Fehler, Entscheidungen, Betrieb; neue Funde kommen nur hierher                                                                                                                                                                                                                                                                                     |
 | [mittel_konzept.md](docs/mittel_konzept.md) | Landes- und Kreismittel: Schadensersatz-Bescheide (Teil A) und getrennte Töpfe in der Beschaffung (Teil B), beide im ersten Schnitt gebaut; was offen bleibt, nennt der Kopf des Dokuments                                                                                                                                                                                                                                                           |
 | [api_inventar.md](docs/api_inventar.md)     | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh`                                                                                                                                                                                                                                                             |
-| `docs.go` (Swagger)                    | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (am 16.10.2026 88 Operationen auf 75 Pfaden von 228 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 
 > Die Commit-Historie ist Teil der Dokumentation. Sie erklärt bei den meisten
 > Entscheidungen das *Warum* ausführlicher als jede gepflegte Liste — und sie kann nicht

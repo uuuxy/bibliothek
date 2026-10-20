@@ -32,12 +32,6 @@ type bestellKonfiguration struct {
 // Zugeschnitten auf das Bestellwesen und auch so benannt: Braucht später eine andere
 // Ansicht eine Anzeige-Regel, gehört sie nicht hierher, sondern an ihre eigene Domäne —
 // sonst wächst hier still ein zweiter Einstellungs-Endpunkt heran.
-//
-// @Summary      Anzeige-Regeln des Bestellwesens
-// @Tags         orders
-// @Produce      json
-// @Success      200  {object}  bestellKonfiguration
-// @Router       /bestellungen/konfiguration [get]
 func (t *Tueren) BestellKonfiguration(einstellungsAbfragen *repository.EinstellungsAbfragen, lieferantenAbfragen *repository.LieferantenAbfragen) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		einstellungen, err := einstellungsAbfragen.Lade(r.Context())

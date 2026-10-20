@@ -19,14 +19,6 @@ type rollenRecht struct {
 }
 
 // RechteMatrix liefert für jede Rolle und jedes Recht, ob es erlaubt ist.
-// @Summary      Rechte-Matrix
-// @Description  Liefert je Rolle und Recht, ob es erlaubt ist.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Success      200  {array}   rollenRecht
-// @Failure      500  {object}  map[string]string
-// @Router       /admin/permissions [get]
 func (t *Tueren) RechteMatrix() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -56,16 +48,6 @@ type rollenRechtAnfrage struct {
 
 // RollenRechtSetzen schaltet ein Recht für eine Rolle an oder ab; das darf nur ein
 // Administrator.
-// @Summary      Recht einer Rolle setzen
-// @Description  Schaltet ein Recht für eine Rolle an oder ab.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Param        body  body      rollenRechtAnfrage  true  "Rolle, Recht und ob es erlaubt ist"
-// @Success      200   {object}  map[string]string
-// @Failure      400   {object}  map[string]string
-// @Failure      500   {object}  map[string]string
-// @Router       /admin/permissions [put]
 func (t *Tueren) RollenRechtSetzen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req rollenRechtAnfrage

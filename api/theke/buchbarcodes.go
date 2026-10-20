@@ -55,13 +55,6 @@ type buchbarcodesAntwort struct {
 }
 
 // Buchbarcodes liefert die Barcodes aller Exemplare, auch der ausgesonderten.
-// @Summary      Buch-Barcodes für die Theke
-// @Description  Alle Barcodes aller Exemplare (auch ausgesonderter), damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Littera-Etiketten rechnet die Theke selbst auf die Nummer zurück. Mit ETag; unverändert antwortet 304.
-// @Tags         theke
-// @Produce      json
-// @Success      200 {object} buchbarcodesAntwort
-// @Success      304 "unverändert"
-// @Router       /action/buchbarcodes [get]
 func (t *Tueren) Buchbarcodes() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()

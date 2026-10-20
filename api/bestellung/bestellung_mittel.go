@@ -38,17 +38,6 @@ type mittelKorrigierenAnfrage struct {
 const aktionBestellungMittelKorrigiert = "BESTELLUNG_MITTEL_KORRIGIERT"
 
 // BestellungMittelKorrigieren setzt den Topf einer bestehenden Bestellung neu.
-//
-// @Summary      Topf einer bestehenden Bestellung korrigieren
-// @Tags         orders
-// @Accept       json
-// @Produce      json
-// @Param        id    path      string                  true  "Kennung der Bestellung"
-// @Param        body  body      mittelKorrigierenAnfrage  true  "Neuer Topf und Grund"
-// @Success      200   {object}  map[string]any
-// @Failure      400   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /bestellungen/{id}/mittel [put]
 func (t *Tueren) BestellungMittelKorrigieren() http.HandlerFunc {
 	return t.korrigiereBestellungMittel
 }

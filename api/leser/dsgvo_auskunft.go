@@ -240,16 +240,6 @@ func (t *Tueren) protokolliereDSGVOAuskunft(ctx context.Context, id string) {
 // DSGVOAuskunft stellt die vollständige Betroffenenauskunft nach
 // Art. 15 DSGVO für einen Leser zusammen, gleich welcher Art (pkg/leserart). Die Erteilung
 // selbst steht im Protokoll (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
-//
-// Die Anmerkungen stehen direkt über der Tür: swag ordnet sie der folgenden Erklärung
-// zu und übergeht sie an anderer Stelle still.
-// @Summary      DSGVO-Betroffenenauskunft (Art. 15) für einen Leser
-// @Tags         students
-// @Produce      json
-// @Param        id   path      string  true  "Kennung des Lesers (UUID)"
-// @Success      200  {object}  auskunft.Antwort
-// @Failure      404  {object}  map[string]string
-// @Router       /schueler/{id}/dsgvo-auskunft [get]
 func (t *Tueren) DSGVOAuskunft() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")

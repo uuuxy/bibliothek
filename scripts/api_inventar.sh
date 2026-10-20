@@ -3,21 +3,34 @@
 # alle /api/-Aufrufer im Frontend und den Abgleich in beide Richtungen
 # (tote Handler / Geister-Aufrufe).
 #
-# Aufruf: ./scripts/api_inventar.sh   (vom Repo-Root)
+# Aufruf: ./scripts/api_inventar.sh            (vom Repo-Root)
+#         ./scripts/api_inventar.sh --routen   nur die Go-Routen, eine je Zeile
 set -eu
+
+# Die Go-Routen: alle Registrierungsorte, inkl. Subtree-Mounts ohne Methode.
+#
+# --exclude=*_test.go: Tests bauen sich eigene Muxe mit erfundenen Pfaden
+# (`GET /api/dinge/{id}`, `POST /extend/`), die keine Routen sind. Dieselbe Regel wie beim
+# Frontend unten.
+go_routen() {
+  grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" --exclude="*_test.go" \
+    | grep -oE '"(GET |POST |PUT |PATCH |DELETE )?/[^"]*"' \
+    | tr -d '"' | sed 's/^ *//' | sort -u
+}
+
+# security-scan.sh baut aus dieser Liste die Eingabe für den ZAP-Scan: ein Leser der
+# Registrierungen, nicht zwei.
+if [ "${1:-}" = "--routen" ]; then
+  go_routen
+  exit 0
+fi
 
 OUT=docs/api_inventar.md
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-# 1. Go-Routen (alle Registrierungsorte, inkl. Subtree-Mounts ohne Methode)
-#
-# --exclude=*_test.go: Tests bauen sich eigene Muxe mit erfundenen Pfaden
-# (`GET /api/dinge/{id}`, `POST /extend/`); die standen bis 13.09.2026 als Routen im
-# Inventar. Dieselbe Regel wie beim Frontend unten.
-grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" --exclude="*_test.go" \
-  | grep -oE '"(GET |POST |PUT |PATCH |DELETE )?/[^"]*"' \
-  | tr -d '"' | sed 's/^ *//' | sort -u > "$TMP/go_routes.txt"
+# 1. Go-Routen
+go_routen > "$TMP/go_routes.txt"
 
 # 2. Frontend-Aufrufe (Literale und Template-Strings)
 #
@@ -71,7 +84,7 @@ def matches(gsegs, fsegs, prefix):
     return all(g == '*' or f == '*' or g == f for g, f in zip(gcmp, fcmp))
 
 print("## Go-Routen ohne Frontend-Aufrufer\n")
-print("(SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)\n")
+print("(SSE `/events`, Dashboards und Public-Endpoints können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)\n")
 for method, path, gsegs, _ in go:
     if not path.startswith('/api/'): continue
     if not any(matches(gsegs, fsegs, False) for _, fsegs in fe):

@@ -151,17 +151,6 @@ func meldungUnbekannteArt(art string) string {
 const meldungGeburtsdatumPflicht = "Geburtsdatum fehlt. Es ist der einzige Schlüssel, über den der LUSD-Import diesen Schüler später wiedererkennt. Ohne Geburtsdatum würde er beim nächsten Import doppelt angelegt."
 
 // LeserAnlegen legt einen Leser an, mit Konto, wo seine Art eines hat.
-// @Summary      Leser anlegen
-// @Description  Legt einen Leser an; bei Lehrkraft, LiV, Sekretariat und U-plus mit Konto zur Schul-E-Mail.
-// @Tags         students
-// @Accept       json
-// @Produce      json
-// @Param        student  body      leserAnlegenAnfrage  true  "Der neue Leser"
-// @Success      200      {object}  map[string]any
-// @Failure      400      {object}  map[string]string
-// @Failure      401      {object}  map[string]string
-// @Failure      500      {object}  map[string]string
-// @Router       /schueler [post]
 func (t *Tueren) LeserAnlegen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req leserAnlegenAnfrage
