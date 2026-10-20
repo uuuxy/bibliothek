@@ -34,6 +34,13 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 ### Bei dir
 
+**Entscheiden:**
+
+- [ ] Meldungen: Steht schon eine da, ersetzt eine neue sie, statt sich über ihr zu stapeln.
+  (4.36)
+- [ ] „Neues Buch": Die Signatur zeigt ihren Fehler erst nach dem ersten Klick auf
+  „Speichern", wie der Titel. (4.35)
+
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
 - [ ] Portal: „Problem melden" unter dem Suchfeld
@@ -105,6 +112,12 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   „Fortsetzung: Name, Klasse"
 - [ ] Bestellwesen, Anschreiben im Anhang der Bestellmail: Der Name der Schule steht am selben
   linken Rand wie der Brief; ab der zweiten Seite stehen die Spaltenköpfe über den Positionen
+- [ ] Fehler an einem Feld: In „Neues Buch" ohne Titel auf „Speichern" drücken. Rechts im Feld
+  steht ein rotes Ausrufezeichen im Kreis, die Beschriftung „Titel" ist rot. Ins Feld ISBN
+  „12345" tippen und es verlassen: Das Zeichen steht vor den beiden Knöpfen im Feld, die an
+  ihrem Platz bleiben. In der Leserakte eines Schülers das Ablaufjahr des Ausweises ändern:
+  Der Knopf zum Zurücksetzen steht im Feld, nicht rechts daneben
+- [ ] „Buch bearbeiten" bei einem Titel ohne Erscheinungsjahr: Das Feld steht leer, nicht mit 0
 
 **Erledigen:**
 
@@ -148,6 +161,8 @@ der Nummer nichts mehr dazu offen ist.
   eine Ratsche wie im Go-Code, dann Datei für Datei.
 - [ ] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
   Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
+- [ ] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
+  500 offenen Forderungen werden lokal zwei Specs rot.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -248,6 +263,37 @@ den Schulträger, bei 90 Büchern ein seltener Fall.
 Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim Einrichten unter
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
+
+### 4.35 „Neues Buch": wann die Signatur ihren Fehler zeigt
+
+Beim Öffnen von „Neues Buch" steht das Feld „Signatur (Buchrücken) *" schon im Fehlerzustand
+(`signaturFehlt` in `SignaturFeld.svelte`, festgehalten in
+`BuchEingabefelder.gliederung.svelte.test.js`). Der Titel daneben zeigt seinen Fehler erst, wenn
+ein Klick auf „Speichern" ihn vermisst hat (`titelVerlangt` in `BuchFormular.svelte`), wie es
+[ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3 für jedes leere Pflichtfeld verlangt („der Fehlertext steht
+ab dem ersten Klick"). Mit dem Fehlersymbol öffnet die Maske mit roter Beschriftung, rotem
+Rahmen, Symbol und Fehlertext an der Signatur. Material 3, Text fields: „To show a field is
+required, display an asterisk (*) next to the label text"; wann ein Fehler erscheint, sagt die
+Seite nicht. Vorschlag: wie der Titel. Bis zum ersten Klick steht unter dem Feld der Hinweis
+„Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse."
+
+### 4.36 Meldungen: eine zur Zeit
+
+An der Theke meldet sich jeder Scan unten mit einer Meldung („„Titel" ausgeliehen an Name."),
+5 s lang; eine Meldung mit Folgehandlung („Etiketten drucken", „Brief öffnen") steht 10 s
+(`snackbars.svelte.js`). Gemessen am lokalen Stack, Fenster 1280 × 800 px: Ein Ausweis und sechs
+Bücher im Abstand von rund 0,8 s ergeben sechs Meldungen übereinander, zusammen 448 px hoch,
+mehr als die Hälfte des Fensters. Rücken sie unter den ruhenden Mauszeiger, halten sie an (WCAG
+2.2.1); die letzte ging 9 s nach dem letzten Scan. Material 3, Snackbar: „Only one snackbar may
+be displayed at a time.", „Don't stack snackbars on top of one another", „Consecutive snackbars
+must appear one at a time." und „However, a snackbar with updated information can immediately
+replace an outdated snackbar." Eine nach der anderen hieße an der Theke: Die Meldung zum
+sechsten Buch erschiene 25 s nach seinem Scan. Googles Snackbar für Android schließt die
+stehende, sobald eine neue kommt (SnackbarManager.show in material-components-android).
+Vorschlag: überall so, eine neue Meldung ersetzt die stehende. Eine Meldung mit Folgehandlung
+ginge dann mit der nächsten Meldung; M3 will sie stehen lassen („Snackbars with actions should
+remain on the screen until the user takes an action on the snackbar, or dismisses it"), heute
+geht sie nach 10 s.
 
 ---
 
@@ -368,6 +414,21 @@ den Ladenhütern steht in Grün „Keine Ladenhüter — der Bestand ist in Bewe
 anhand der leeren Liste, nicht anhand der Wirkung. Weg: Die Antwort nennt die Abschnitte, die
 nicht gelesen wurden, und die Seite zeigt dort statt des Leerzustands einen Hinweis; vorher die
 zuständige Seite von M3 lesen.
+
+### 5.81 Browser-Tests lassen Schadensfälle in der Datenbank
+
+Vier Specs legen Schüler mit offenen Schadensfällen an und räumen sie nicht ab:
+`e2e/papierkorb.spec.js` (Nachname „Korb-…"), `e2e/sperre.spec.js` („Gesperrt-…"),
+`e2e/kiosk-scannerfokus.spec.js` („Reiter-…") und `e2e/schadensfall.spec.js` („E2E-Schaden").
+In der lokalen Datenbank standen am 20.10.2026 501 offene Forderungen ohne Bescheid, 194, 119,
+107 und 88 davon aus diesen vier. `LadeForderungenOhneBescheid` (`repository/bescheid_ausstehend.go`)
+zeigt die ältesten 500; den Fall, den `e2e/schadensersatz-bescheid.spec.js` anlegt, zeigt die
+Liste dann nicht, und der Test ist lokal rot. Verdacht, nicht nachgestellt: dieselbe Datenmenge
+macht `e2e/icon-tooltips.spec.js` auf der Seite Mahnwesen rot. Dort erschien die Blase am Knopf
+der Navigation nach 1,06 s, auf der Bestellseite nach 0,3 s; der Test wartet 2 s. Beide sind
+auch am Stand vor dem Fehlersymbol rot; in der CI beginnt die Datenbank leer. Nächster Schritt:
+die vier Specs räumen ab, was sie anlegen (wie `raeumeAuf` in `e2e/theke-scan-reihe.spec.js`),
+danach die Reste in der lokalen Datenbank löschen.
 
 ---
 
