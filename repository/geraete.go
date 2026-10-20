@@ -94,7 +94,7 @@ func NewGeraeteAbfragen(pool db.Pool) *GeraeteAbfragen {
 }
 
 // LadeAlle liefert alle Geräte, die nicht ausgesondert sind, das neueste zuerst, mit dem
-// Namen dessen, der das Gerät gerade hat; check_loan_borrower lässt höchstens einen zu.
+// Namen dessen, der das Gerät gerade hat; uniq_ausleihen_aktiv_geraet lässt höchstens einen zu.
 func (a *GeraeteAbfragen) LadeAlle(ctx context.Context) ([]GeraetMitStatus, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT g.id, g.modellname, g.seriennummer, g.barcode_id, g.zubehoer,

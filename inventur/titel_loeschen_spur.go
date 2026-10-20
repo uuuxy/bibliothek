@@ -29,7 +29,7 @@ type offeneAusleihe struct {
 	Barcode    string
 	Titel      string
 	Entleiher  string
-	SchuelerID *string // nil bei Kollegiums-Ausleihen (Handapparat)
+	SchuelerID *string // nil, wenn die Ausleihe keinem Leser mehr zugeordnet ist
 	Seit       string
 }
 
@@ -44,10 +44,10 @@ type offeneAusleihe struct {
 // (docs/invarianten.md, Abschnitt 1; die Rückgabe hält erst die Ausleihe, dann stempelt sie das
 // Exemplar).
 //
-// Schüler und Kollegium (Handapparat): Beide Spalten des Entleihers sind polymorph, und ein Buch
-// aus dem Handapparat ist genauso weg wie ein Schülerbuch. „(unbekannt)" statt eines leeren
-// Feldes, damit die Zeile im Protokoll auch dann etwas aussagt, wenn die Befristung der
-// Lesehistorie die Zuordnung schon getrennt hat.
+// Schüler und Kollegium (Handapparat) stehen beide in leser, und ein Buch aus dem Handapparat ist
+// genauso weg wie ein Schülerbuch. „(unbekannt)" statt eines leeren Feldes, damit die Zeile im
+// Protokoll auch dann etwas aussagt, wenn die Befristung der Lesehistorie die Zuordnung schon
+// getrennt hat.
 func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offeneAusleihe, error) {
 	// Die schreibende CTE sieht sich selbst nicht; die äußere Abfrage liest nur Tabellen,
 	// die dieser Befehl nicht anfasst (Exemplare fallen erst mit dem Titel).

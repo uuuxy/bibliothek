@@ -29,9 +29,9 @@ func ausleihe(id, exemplar, leserID string, tage int) Ausleihe {
 		AusgeliehenAm: start.AddDate(0, 0, tage), Frist: start.AddDate(1, 0, tage)}
 }
 
-// TestAusleiheTrifftDieRichtigeSpalte: ausleihen trägt den Entleiher polymorph, und
-// check_loan_borrower lässt genau eine der beiden Spalten zu. Eine Lehrkraft in
-// schueler_id wäre nicht nur falsch, sie käme gar nicht erst durch.
+// TestAusleiheTrifftDieRichtigeSpalte: Die Ausleihe einer Lehrkraft kommt an ihrer eigenen
+// Leserzeile an und bleibt als Dauerleihe gekennzeichnet, die eines Schülers als gewöhnliche
+// Ausleihe.
 func TestAusleiheTrifftDieRichtigeSpalte(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
