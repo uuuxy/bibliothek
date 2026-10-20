@@ -56,21 +56,25 @@ func TestZuLoeschen_OhneStempelZaehltDieAenderungszeit(t *testing.T) {
 }
 
 // Die Auskunft nennt AufbewahrteNaechte und AufbewahrteWochen (internal/auskunft,
-// dsgvoSicherungen). Rotierte die Nachtsicherung mit anderen Zahlen, stimmte sie nicht mehr;
-// deshalb steht der Aufruf hier fest. Gelesen am Syntaxbaum von backup.go, nicht am Text: Ein
-// Kommentar zählt nicht.
+// dsgvoSicherungen). Rotierte die Nachtsicherung im Verzeichnis oder am Speicher außer Haus mit
+// anderen Zahlen, stimmte sie nicht mehr; deshalb stehen beide Aufrufe hier fest. Gelesen am
+// Syntaxbaum von backup.go, nicht am Text: Ein Kommentar zählt nicht.
 func TestBackupLauf_RotiertMitDenKonstanten(t *testing.T) {
 	datei, err := parser.ParseFile(token.NewFileSet(), "backup.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var aufrufe []string
+	soll := map[string]string{
+		"rotiereBackups":     "verzeichnis, AufbewahrteNaechte, AufbewahrteWochen",
+		"rotiereBackupsInS3": "ctx, ziel, AufbewahrteNaechte, AufbewahrteWochen",
+	}
+	aufrufe := map[string][]string{}
 	ast.Inspect(datei, func(n ast.Node) bool {
 		aufruf, ok := n.(*ast.CallExpr)
 		if !ok {
 			return true
 		}
-		if name, ok := aufruf.Fun.(*ast.Ident); ok && name.Name == "rotiereBackups" {
+		if name, ok := aufruf.Fun.(*ast.Ident); ok && soll[name.Name] != "" {
 			var argumente []string
 			for _, a := range aufruf.Args {
 				if bezeichner, ok := a.(*ast.Ident); ok {
@@ -79,12 +83,14 @@ func TestBackupLauf_RotiertMitDenKonstanten(t *testing.T) {
 					argumente = append(argumente, "?")
 				}
 			}
-			aufrufe = append(aufrufe, strings.Join(argumente, ", "))
+			aufrufe[name.Name] = append(aufrufe[name.Name], strings.Join(argumente, ", "))
 		}
 		return true
 	})
-	if len(aufrufe) != 1 || aufrufe[0] != "verzeichnis, AufbewahrteNaechte, AufbewahrteWochen" {
-		t.Errorf("rotiereBackups in backup.go: %q, erwartet genau einmal (verzeichnis, AufbewahrteNaechte, AufbewahrteWochen)", aufrufe)
+	for name, argumente := range soll {
+		if got := aufrufe[name]; len(got) != 1 || got[0] != argumente {
+			t.Errorf("%s in backup.go: %q, erwartet genau einmal (%s)", name, got, argumente)
+		}
 	}
 }
 

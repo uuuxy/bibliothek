@@ -131,8 +131,9 @@ Sicherung an, die beim ersten Update nach 30 Tagen gelöscht wird; eine Sicherun
 Container, diese beiden in `backups/` im Programmverzeichnis
 ([SCRIPTS.md](SCRIPTS.md) §2). Alle Sicherungen liegen auf demselben Server —
 eine Kopie außer Haus ist vorbereitet, aber nicht eingerichtet ([OFFEN.md](OFFEN.md) 7.3).
-Wird sie als S3-Speicher eingerichtet, braucht der Speicher eine eigene Löschregel: Das
-Programm lädt dorthin nur hoch und löscht nie. Sonntags um 03:30 UTC spielt das Programm
+Wird sie als S3-Speicher eingerichtet, löscht das Programm dort nach derselben Regel wie bei den
+Nachtsicherungen auf dem Server; die Versionierung am Speicher bleibt aus, sonst behielte er
+jede gelöschte Sicherung als ältere Fassung. Sonntags um 03:30 UTC spielt das Programm
 die jüngste Sicherung probeweise in eine Wegwerf-Datenbank ein; misslingt das, meldet es die
 Betriebsbereitschaft als kritisch, und die tägliche Alarm-Mail geht hinaus.
 

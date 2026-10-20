@@ -548,7 +548,7 @@ Was nach dem Wechsel am alten Schlüssel hängt:
 | Nachtsicherung `backup_…`      | Volume des Containers, `/app/backups` | nach 92 Tagen, wenn jede Nacht eine neue entsteht (`jobs/backup_aufbewahrung.go`)                      |
 | vor einem Update `vordeploy_…` | `backups/` im Programmverzeichnis     | beim ersten Update nach 30 Tagen                                                                       |
 | von Hand `bibliothek_backup_…` | `backups/` im Programmverzeichnis     | beim ersten Lauf von `scripts/backup.sh` nach 7 Tagen                                                  |
-| Kopie außer Haus               | S3-Speicher, falls eingerichtet       | nach der Löschregel des Speichers; das Programm löscht dort nie ([OFFEN.md](OFFEN.md) 7.3)             |
+| Kopie außer Haus               | S3-Speicher, falls eingerichtet       | wie die Nachtsicherung: Das Programm löscht dort nach derselben Regel (`jobs/backup_auslagerung.go`)   |
 
 **Auf dem Server,** im Programmverzeichnis, alles in **derselben** Shell-Sitzung:
 

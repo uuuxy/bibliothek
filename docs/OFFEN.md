@@ -24,7 +24,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5). (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
-- [ ] Sicherung außer Haus: Das Programm löscht alte Sicherungen auch am Speicher außer Haus,
+- [x] Sicherung außer Haus: Das Programm löscht alte Sicherungen auch am Speicher außer Haus,
   nach derselben Regel wie auf dem Server (`jobs.zuLoeschen`). (7.3, R8)
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
   Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
@@ -472,14 +472,12 @@ Sicherung von 2010 sind es 5 Sperren und 4 Salden ungleich 0. An der Sicherung v
 ### 7.3 S3-Auslagerung der Backups
 
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` und `S3_BUCKET` sind leer (13.09.2026); alles
-liegt auf einer Platte. Nur ein Speicher in der EU. Der Code ist fertig bis auf das Löschen
-(nachgesehen am 28.09.2026): `schreibeBackupNachS3` in `jobs/backup.go` lädt jede Nachtsicherung
-hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
-Sicherung mit allen Personen ihres Stands unbegrenzt liegen. **Entschieden am 19.10.2026:** Das
-Programm löscht am Speicher nach derselben Regel wie im lokalen Verzeichnis (die jüngsten 14,
-dazu je Kalenderwoche eine für 12 Wochen; `jobs.zuLoeschen` mit `jobs.AufbewahrteNaechte` und
-`jobs.AufbewahrteWochen`); eine Löschregel von Hand am Speicher braucht es dann nicht. Nicht
-gebaut. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
+liegt auf einer Platte. Nur ein Speicher in der EU. Das Programm lädt jede Nachtsicherung hoch und
+löscht am Speicher nach derselben Regel wie im lokalen Verzeichnis (`jobs/backup_auslagerung.go`);
+eine Löschregel von Hand am Speicher braucht es nicht. Beim Einrichten: je Server ein eigener
+Bucket, denn die Aufbewahrung zählt alle Sicherungen darin; die Versionierung am Bucket bleibt
+aus, sonst behält der Speicher jede gelöschte Sicherung als ältere Fassung. Einen
+anderen Kopierweg als S3 gibt es im Programm nicht.
 Ein zweiter Rechner per Kopierbefehl oder eine getauschte Platte leisten dasselbe ohne
 Vertragsfrage, außerhalb des Programms; das ist eine Betriebsentscheidung.
 

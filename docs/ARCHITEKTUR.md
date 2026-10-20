@@ -962,7 +962,7 @@ Basis des Servers.
 | -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `fuehreNaechtlicheDSGVOAus`      | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
 | `fuehreProtokollAufbewahrungAus` | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
-| `BackupLauf.FuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
+| `BackupLauf.FuehreAus`           | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload; Aufbewahrung an beiden Orten |
 | Idempotenz-TTL                   | `17 * * * *`                    | Schlüssel älter als 24 h entfernen (**stündlicher Takt**, 24 h ist die Aufbewahrung)                        |
 | Vormerkungs-Verfall              | `23 * * * *`                    | Abgelaufene „abholbereit"-Reservierungen abräumen                                                           |
 | Cover-Sync                       | `0 */6 * * *` + on demand       | Worker-Pool (8), Re-Entrancy-Guard, Retry für FAILED                                                        |
@@ -3141,9 +3141,10 @@ Der Job sagt es („S3 credentials not fully configured – skipping offsite upl
 Betriebsbereitschaft führt es unter „Auslagerung der Backups" als kritisch
 (`pruefeAuslagerung`); im echten Betrieb geht ein kritischer Befund täglich per Mail an die
 Admins. Ein Host-Verlust ohne Offsite ist trotzdem ein Datenverlust. Ist ein Speicher
-eingerichtet, löscht das Programm dort heute nichts: Die Aufbewahrung (`jobs.AufbewahrteNaechte`,
-`jobs.AufbewahrteWochen`) gilt nur dem lokalen Verzeichnis. Entschieden ist, dass es am Speicher
-nach derselben Regel löscht; der Bau und das Einrichten stehen in [OFFEN.md](OFFEN.md) 7.3.
+eingerichtet, gilt dort dieselbe Aufbewahrung wie im Volume (`jobs.AufbewahrteNaechte`,
+`jobs.AufbewahrteWochen`, `jobs/backup_auslagerung.go`): gelöscht wird nach jedem gelungenen
+Hochladen und nur aus einer vollständig gelesenen Liste. Das Einrichten steht in
+[OFFEN.md](OFFEN.md) 7.3.
 
 #### R9 — Kein externes Uptime-Signal
 

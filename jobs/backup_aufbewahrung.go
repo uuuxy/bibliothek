@@ -13,10 +13,10 @@ import (
 // allein in jeder vorhandenen Sicherung. Die Folge: Gelöschte Personen stehen bis zu etwa drei
 // Monate in den Sicherungen; die Auskunft nennt das (internal/auskunft, dsgvoSicherungen).
 //
-// Das gilt nur für die Nachtsicherung im Backup-Verzeichnis des Containers. Die Sicherung vor
-// einem Update (update.sh, vordeploy_…) und die von Hand (scripts/backup.sh, bibliothek_backup_…)
-// liegen in ./backups auf dem Host und haben eigene Fristen; für die Kopie außer Haus gibt es
-// noch keine Regel.
+// Das gilt für die Nachtsicherung im Backup-Verzeichnis des Containers und für ihre Kopie außer
+// Haus (backup_auslagerung.go). Die Sicherung vor einem Update (update.sh, vordeploy_…) und die
+// von Hand (scripts/backup.sh, bibliothek_backup_…) liegen in ./backups auf dem Host und haben
+// eigene Fristen.
 const (
 	// AufbewahrteNaechte: So viele jüngste Nachtsicherungen bleiben.
 	AufbewahrteNaechte = 14

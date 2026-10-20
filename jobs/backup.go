@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -12,9 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	"github.com/jackc/pgx/v5/pgconn"
 
@@ -95,8 +91,10 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 	// #nosec G706
 	log.Printf("Backup: completed successfully → %s (%.2f MB)", zieldatei, groesseMB)
 
-	// Kopie außer Haus nach S3.
-	schreibeBackupNachS3(ctx, zieldatei, verschluesselt)
+	// Kopie außer Haus nach S3, dort mit derselben Aufbewahrung (backup_auslagerung.go).
+	if ziel, ok := leseS3Ziel(); ok && schreibeBackupNachS3(ctx, ziel, filepath.Base(zieldatei), verschluesselt) {
+		rotiereBackupsInS3(ctx, ziel, AufbewahrteNaechte, AufbewahrteWochen)
+	}
 
 	// Aufbewahrung: die jüngsten Nächte und je Woche ein älterer Stand (backup_aufbewahrung.go).
 	rotiereBackups(verzeichnis, AufbewahrteNaechte, AufbewahrteWochen)
@@ -253,50 +251,6 @@ func erzeugeGepacktenDump(ctx context.Context, dsn string) (gepackt []byte, ok b
 	}
 
 	return inhalt, true
-}
-
-// schreibeBackupNachS3 legt die verschlüsselte Sicherung außer Haus in S3 ab, sofern die
-// Zugangsdaten für S3 vollständig eingestellt sind. Ein Fehler steht im Log und geht nicht
-// weiter: Die Sicherung im Haus gilt schon als gelungen.
-func schreibeBackupNachS3(ctx context.Context, zieldatei string, verschluesselt []byte) {
-	s3Endpunkt := os.Getenv("S3_ENDPOINT")
-	s3Zugang := os.Getenv("S3_ACCESS_KEY")
-	s3Geheimnis := os.Getenv("S3_SECRET_KEY")
-	s3Bucket := os.Getenv("S3_BUCKET")
-	s3MitSSL := os.Getenv("S3_USE_SSL") != "false" // Vorgabe: mit SSL
-
-	if s3Endpunkt == "" || s3Zugang == "" || s3Geheimnis == "" || s3Bucket == "" {
-		log.Println("Backup: S3 credentials not fully configured – skipping offsite upload")
-		return
-	}
-
-	client, err := minio.New(s3Endpunkt, &minio.Options{
-		Creds:  credentials.NewStaticV4(s3Zugang, s3Geheimnis, ""),
-		Secure: s3MitSSL,
-	})
-	if err != nil {
-		log.Printf("Backup: Failed to initialize S3 client: %v", err)
-		return
-	}
-
-	objektname := filepath.Base(zieldatei)
-	leser := bytes.NewReader(verschluesselt)
-
-	// Fehlt der Bucket, wird er angelegt.
-	vorhanden, bucketFehler := client.BucketExists(ctx, s3Bucket)
-	if bucketFehler == nil && !vorhanden {
-		if err := client.MakeBucket(ctx, s3Bucket, minio.MakeBucketOptions{}); err != nil {
-			log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", s3Bucket, err)
-		}
-	}
-
-	if _, err := client.PutObject(ctx, s3Bucket, objektname, leser, int64(len(verschluesselt)), minio.PutObjectOptions{
-		ContentType: "application/octet-stream",
-	}); err != nil {
-		log.Printf("Backup: S3 upload failed for %s: %v", objektname, err)
-		return
-	}
-	log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objektname)
 }
 
 // rotiereBackups löscht, was die Aufbewahrung nicht hält: Die naechte jüngsten Sicherungen

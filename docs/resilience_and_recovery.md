@@ -30,7 +30,7 @@ Die Dateien liegen im **Docker-Volume `bibliothek_backups`** (`/app/backups` im 
 - Rotation: die jüngsten **14** Nachtsicherungen bleiben, dazu von den älteren je Kalenderwoche
   eine für **12** Wochen — zusammen etwa drei Monate (`jobs/backup_aufbewahrung.go`). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
   von davor.
-- Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind.
+- Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind; dort gilt dieselbe Rotation.
 
 > ⚠️ **Wichtig:** Diese Dateien sind verschlüsselt. `zcat`/`gunzip`/`psql` funktionieren darauf **nicht**
 > direkt — sie müssen zuerst mit dem `restore-backup`-Tool entschlüsselt werden (siehe Abschnitt 2a).
