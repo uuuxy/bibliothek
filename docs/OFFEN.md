@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 19.10.2026
+Stand: 20.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -31,22 +31,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
-
-### Jetzt: Fehler aus den bekannten Grenzen
-
-Sie standen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5, sind aber nach der Tabelle am Ende keine
-Kategorie C; 5.79 kam beim Beheben von 5.75 dazu. Die der Kategorie A zuerst.
-
-- [x] Theke: Eine Antwort, die erst nach „Theke leeren" ankommt, lädt keinen Leser mehr und
-  öffnet keine Rückfrage. (5.74, A)
-- [x] „Buch bearbeiten" und „Neues Buch": Das Schließen-Symbol fragt, bevor es Ungespeichertes
-  verwirft. (5.75, A)
-- [x] Dasselbe beim Wechsel der Seite, des Reiters und beim Neuladen. (5.79, A)
-- [x] „Stammdaten bearbeiten": Die Meldung „Änderungen gespeichert." ist zu sehen. (5.76)
-- [x] „Stammdaten bearbeiten": „Zurück", Seitenwechsel und Neuladen fragen vor dem Verwerfen.
-  (5.80, A)
-- [x] Drei Knöpfe sagen bei leerem Feld, was fehlt. (5.77)
-- [x] Die Meldungen stehen unten, wie Material 3 es vorsieht. (5.78)
 
 ### Bei dir
 
@@ -139,7 +123,7 @@ Kategorie C; 5.79 kam beim Beheben von 5.75 dazu. Die der Kategorie A zuerst.
 ### Termine
 
 - [ ] CodeQL wechselt bei GitHub auf Ubuntu 26, angekündigt für den 19. Oktober 2026; am
-  Nachmittag des Tages lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
+  Morgen danach lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
 - [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
@@ -277,7 +261,7 @@ Vermerk.
   den Lauf dann ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht
   darunter: CodeQL läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine
   Workflow-Datei) auf `ubuntu-latest`. GitHub kündigte den Wechsel auf Ubuntu 26 für den 19.
-  Oktober 2026 an; am Nachmittag des Tages lief CodeQL noch auf `ubuntu-24.04`. Bricht die
+  Oktober 2026 an; am Morgen danach lief CodeQL noch auf `ubuntu-24.04`. Bricht die
   Analyse auf dem neuen Abbild, wird der CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist
   `v2.11.1-0.20261003002531-6258dcebc4e2`, der Entwicklungsstand der Bibliothek vom
