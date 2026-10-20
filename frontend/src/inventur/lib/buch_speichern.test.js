@@ -103,8 +103,9 @@ describe('buch_speichern: stehtInSicht', () => {
 	});
 });
 
-// Ohne Angabe liefert der Server 0 und 0 (Migration 162). In der Maske stehen die zwei Felder
-// dann leer, und der Stand vom Öffnen trägt dasselbe: Ein unberührter Titel schickt nichts.
+// Ohne Angabe liefert der Server für den Jahrgang 0 und 0 (Migration 162), für das
+// Erscheinungsjahr 0 (COALESCE in inventur/datenbank_buecher_leser.go). In der Maske stehen die
+// Felder dann leer, und der Stand vom Öffnen trägt dasselbe: Ein unberührter Titel schickt nichts.
 describe('buch_speichern: titelFuerMaske', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
@@ -117,6 +118,15 @@ describe('buch_speichern: titelFuerMaske', () => {
 		const formular = await titelFuerMaske({ id: 't-1' });
 		expect(formular.jahrgangVon).toBeNull();
 		expect(formular.jahrgangBis).toBeNull();
+		expect(geaenderteFelder(formular)).toEqual({});
+	});
+
+	it('ein unbekanntes Erscheinungsjahr steht als leeres Feld da und gilt als unverändert', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort(200, { id: 't-3', title: 'Atlas', stock: 2, erscheinungsjahr: 0 })
+		);
+		const formular = await titelFuerMaske({ id: 't-3' });
+		expect(formular.erscheinungsjahr).toBeNull();
 		expect(geaenderteFelder(formular)).toEqual({});
 	});
 
