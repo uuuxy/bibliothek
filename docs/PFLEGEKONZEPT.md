@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 20.10.2026 (Entwurf)
+Stand: 21.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -360,7 +360,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 
 ## 6. Kann jemand anderes das Programm weiterführen?
 
-Gemessen am 20.10.2026 am Go-Code ohne Tests: 602 Dateien, 2.617 Funktionen.
+Gemessen am 21.10.2026 am Go-Code ohne Tests: 603 Dateien, 2.619 Funktionen.
 
 **Was trägt:**
 

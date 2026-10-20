@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 20.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 21.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -83,7 +83,7 @@ Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
 
 ## 1. Einführung und Ziele
 
-Stand: 20.10.2026
+Stand: 21.10.2026
 
 ---
 
@@ -172,12 +172,12 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 20.10.2026)
+### 1.4 Umfang in Zahlen (gemessen 21.10.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 78.183 Zeilen                              |
-| Go-Tests                          | 135.487 Zeilen in 939 Testdateien          |
+| Go-Produktivcode                  | 78.235 Zeilen                              |
+| Go-Tests                          | 134.822 Zeilen in 939 Testdateien          |
 | Svelte/JavaScript (`frontend/src`) | 85.684 Zeilen in 774 Dateien, davon 310 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 168 Dateien, davon 163 Specs               |
 | Registrierte HTTP-Routen          | 226                                        |
@@ -192,7 +192,7 @@ Messbefehl nicht.
 
 ## 2. Randbedingungen
 
-Stand: 16.10.2026
+Stand: 21.10.2026
 
 Randbedingungen sind das, was **nicht zur Diskussion stand**. Sie erklären mehr von dieser
 Architektur als jede Entwurfsvorliebe: Der Grund für die Omnibox, für IMAP als
@@ -216,7 +216,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Schulserver** (`/root/caddy/Caddyfile`, geschrieben von `update_caddy.sh`). |
 | T10| **Der Betrieb läuft ggf. über HTTP im Schul-LAN**                              | Deshalb ist `COOKIE_SECURE` eine bewusst treffbare Betriebsentscheidung — Vorgabe `true` außerhalb lokaler Entwicklung, ein explizites `false` warnt laut, bricht aber nicht ab.                            |
 | T11| **Zeitzone Europe/Berlin fachlich, UTC technisch**                              | Fristen pinnen `Europe/Berlin` im Code (`schulzeit.TagesEnde`), der Cron-Zeitplan ist auf UTC genagelt (`cron.WithLocation(time.UTC)`) — sonst verschluckt die Zeitumstellung den 02:30-Backup-Job.  |
-| T12| **Lizenz EUPL-1.2**                                                             | Jede Go-Quelldatei trägt den Lizenzkopf; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen.                                                                                 |
+| T12| **Lizenz EUPL-1.2**                                                             | Der Lizenztext steht in `LICENSE`, der Hinweis im Kopf von `main.go`; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen.                                                                                 |
 
 ---
 
@@ -454,7 +454,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 20.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 21.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -748,18 +748,18 @@ gemessen über die Importe des Produktivcodes:
 | `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
 | `getsentry/sentry-go`                                          | `main.go`, `api`                                                 | Fehlerweitergabe, nur mit `SENTRY_DSN`                                                  |
-| `chai2010/webp`                                                | `api`, `pkg/imageutil`                                           | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
-| `jung-kurt/gofpdf`, `phpdave11/gofpdf`, `johnfercher/maroto/v2` | `pdf`, `api`, `inventur`                                        | Erzeugte Dokumente (8.9)                                                                |
+| `chai2010/webp`                                                | `main.go`, `api`, `pkg/imageutil`                                | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
+| `jung-kurt/gofpdf`, `phpdave11/gofpdf`, `johnfercher/maroto/v2` | `pdf`, `api`, `inventur`, `internal/auskunft`, `pkg/coverdatei`  | Erzeugte Dokumente (8.9)                                                                |
 | `boombuler/barcode`                                            | `pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `pkg/code39`              |
-| `xuri/excelize/v2`                                             | `api`, `inventur`, `pkg/xlsxgrenze`                              | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
+| `xuri/excelize/v2`                                             | `api`, `inventur`, `internal/lusd`, `pkg/xlsxgrenze`             | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
 | `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
 | `google/uuid`                                                  | `api`, `repository`                                              | Kennungen erzeugen                                                                      |
 | `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
-| `golang.org/x/crypto`                                          | `internal/backupkrypto`                                          | scrypt-Schlüsselableitung des Backups                                                   |
-| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `pkg/imageutil`, `inventur`, `internal/service`, `repository`    | Bildformate; Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) |
+| `golang.org/x/crypto`                                          | `auth`, `internal/backupkrypto`                                  | Argon2id für den Prüfwert der Sperre (`auth/pruefwert.go`), scrypt-Schlüsselableitung des Backups |
+| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `inventur`, `internal/service`, `repository`                     | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
 | `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
-| `pashagolub/pgxmock/v5`, `google/go-cmp`, `uudashr/gocognit`  | nur `*_test.go`                                                  | Prüfhilfen; cmp vergleicht zusammengesetzte Werte, gocognit misst für `komplexitaet_ratsche_test.go` |
+| `pashagolub/pgxmock/v5`, `google/go-cmp`, `uudashr/gocognit`, `golang.org/x/tools` | nur `*_test.go`                     | Prüfhilfen; cmp vergleicht zusammengesetzte Werte, gocognit misst für `komplexitaet_ratsche_test.go`, x/tools lädt die Pakete mit Typen für `sichtbarkeit_ratsche_test.go` |
 
 Nachmessen: `awk '/^require \(/{f=1;next} /^\)/{f=0} f&&!/indirect/{print $1}' go.mod` und je
 Modul `grep -rl '"<modul>' --include='*.go' . | grep -v _test.go`.
@@ -772,8 +772,8 @@ Modul `grep -rl '"<modul>' --include='*.go' . | grep -v _test.go`.
 frontend/src
 ├─ main.js               Einstiegspunkt, Service-Worker-Registrierung
 ├─ App.svelte            App-Shell: Layout, Menü, SSE-Abonnement, Sperrbildschirm
-├─ lib/                  237 Einträge — Ansichten, Komponenten, Stores, Metadaten
-│   ├─ Router.svelte     Client-Routing; fragt darfSehen() aus menue.js
+├─ lib/                  Ansichten, Komponenten, Stores, Metadaten
+│   ├─ Router.svelte     Client-Routing; fragt erlaubteBildschirme() aus menue.js
 │   ├─ menue.js           EINZIGE Wahrheitsquelle: welche Rolle erreicht welche Seite
 │   ├─ Omnibox.svelte    Das Eingabefeld der Theke
 │   ├─ stores/*.svelte.js Geteilter Zustand (Runes-Singletons): authStore, uiStore,
@@ -1052,7 +1052,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 16.10.2026
+Stand: 21.10.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1221,7 +1221,7 @@ Welcher Pfad welche Zeile sperrt:
 | Rückgabe mit Vormerkung, Nachrücken | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt: Sie könnte sich mit der Ausleih-Logik verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe, dessen Zeile eine Ausleihe gerade hält. Dass eine Sperre über einen Verbund ihre Tabelle nennt, hält `zeilensperre_verbund_ratsche_test.go` | `SperreNaechsteWartendeVormerkung` (`repository/vormerkung_theke.go`), `bedieneNaechstenWartenden` (`repository/vormerkung_nachruecken.go`) |
 | Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `SperreOffeneGeraeteAusleihe` (`repository/geraete_ausleihe.go`) |
 | Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `SperreLeserzeile`, `SperreExemplarzeile` (`repository/ausleihe_zeilensperren.go`); die Folge bestimmt `internal/service/nachbuchen.go` |
-| Schaden erfassen           | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
+| Verlust oder Schaden melden | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
 | Verlängerung                   | die **Ausleihe**-Zeile; die neue Frist rechnet Go                      | `verlaengereAusleihe` (`api/theke/ausleihe.go`)                      |
 | Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`api/leser/leser_sperre.go`)                         |
@@ -1229,11 +1229,11 @@ Welcher Pfad welche Zeile sperrt:
 | Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
 | Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventurlauf_abschluss.go`, `leser_zusammenfuehren.go`, `bestellung_mittel.go`, `forderung_erledigen.go` |
 
-> **Warum hier die Ausleihe-Zeile steht:** „Schaden erfassen" sperrt die **Ausleihe**-Zeile,
-> nicht das Exemplar (`FOR UPDATE OF a` an `ausleihen` in `repository/schaden_melden.go`) —
-> und zwar mit Absicht: Zwei parallele
-> „Schaden melden"-Klicks würden sonst beide den Prüfschritt passieren und je einen
-> Schadensfall anlegen; der Schüler würde für dasselbe Buch doppelt belastet.
+> **Warum hier die Ausleihe-Zeile steht:** „Verlust oder Schaden melden" sperrt die
+> **Ausleihe**-Zeile, nicht das Exemplar (`FOR UPDATE OF a` an `ausleihen` in
+> `repository/schaden_melden.go`) — und zwar mit Absicht: Zwei Klicks zugleich würden sonst
+> beide den Prüfschritt passieren und je einen Schadensfall anlegen; der Schüler würde für
+> dasselbe Buch doppelt belastet.
 
 ---
 
@@ -2302,9 +2302,10 @@ sieht.
 
 ## 9. Architekturentscheidungen
 
-Stand: 20.10.2026
+Stand: 21.10.2026
 
-Sechsundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
+Sechsundzwanzig Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre
+Nummer wird nicht neu vergeben. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
 Geschichte hat, steht sie knapp; ausführlicher ist die Commit-Historie, und die kann nicht
 veralten.
@@ -3019,7 +3020,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 19.10.2026
+Stand: 21.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3444,9 +3445,10 @@ Gewicht.
 - **gosec nimmt sieben Regeln global aus** (G706, G704, G703, G120, G124, G115, G101; der Grund je
   Regel steht in `scripts/gosec-gate.sh`). Eine neue Stelle dieser Regeln meldet gosec nicht.
   Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen.
-- **`github.com/jung-kurt/gofpdf` ist archiviert** und steckt in 17 Dateien; gepflegt wird der
-  Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt. Neue PDFs nicht mehr auf dem
-  archivierten, die übrigen beim fachlichen Anfassen umstellen.
+- **`github.com/jung-kurt/gofpdf` ist archiviert** und steckt in 19 Dateien außerhalb der
+  Tests; gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt und
+  `pdf/lmfplan_satz.go` schon nutzt. Neue PDFs nicht mehr auf dem archivierten, die übrigen beim
+  fachlichen Anfassen umstellen.
 - **Zwei Normalformen für Namen** (`repository.suchnorm`, `normierterName` in
   `internal/lusd/paarung.go`); beim Anfassen der Paarung zusammenführen.
 - `auth.Claims.Ausweisnummer` (JSON `barcode_id`) liest niemand; sie wird nur beim Erneuern des
@@ -3466,10 +3468,11 @@ Gewicht.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
   beenden das Programm an 15 Stellen selbst (`log.Fatalf`, `os.Exit`); Best Practices, „Program
   initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen
-  Abbruch beim Start prüfen soll. 48 Funktionen haben sechs oder sieben Parameter; Google nennt
-  keine Zahl („Don't let the signature of a function get too long"). An 17 Stellen hängt
-  `fmt.Errorf` einen Fehler mit `%v` statt `%w` an; Google lässt die Wahl je Stelle. Ausführbare
-  Beispiele (`Example…`) gibt es keine, Nutzer der Pakete außerhalb des Programms auch nicht.
+  Abbruch beim Start prüfen soll. 47 Funktionen des Programms (ohne `cmd/` und Prüfhilfen) haben
+  sechs oder sieben Parameter; Google nennt keine Zahl („Don't let the signature of a function
+  get too long"). An 17 Stellen hängt `fmt.Errorf` einen Fehler mit `%v` statt `%w` an; Google
+  lässt die Wahl je Stelle. Ausführbare Beispiele (`Example…`) gibt es keine, Nutzer der Pakete
+  außerhalb des Programms auch nicht.
 
 #### Bewusst nicht entschieden
 
