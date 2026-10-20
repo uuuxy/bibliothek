@@ -31,11 +31,11 @@ import {
 import { hatRecht } from '../../menue.js';
 
 /**
- * `rechte`: EINES der genannten Rechte genügt — das der Routen, die die Kategorie
+ * `rechte`: Eines der genannten Rechte genügt, das der Routen, die die Kategorie
  * tatsächlich aufruft. Ohne Eintrag gilt manage_settings (GET/PUT /api/einstellungen).
- * Bis 24.08.2026 stand hier `nurAdmin`, ein Rollenvergleich, den die Berechtigungsseite
- * nicht erreichte. Der Menüpunkt „Einstellungen" (menue.js) öffnet sich mit der
- * Vereinigung aller Rechte hier — sonst gäbe es Rechte ohne Tür.
+ * Rechte statt eines Rollenvergleichs, denn den erreicht die Berechtigungsseite nicht. Der
+ * Menüpunkt „Einstellungen" (menue.js) öffnet sich mit der Vereinigung aller Rechte hier,
+ * sonst gäbe es Rechte ohne Tür.
  * @typedef {{ id: string, titel: string, kurz: string, icon: unknown, rechte?: string[] }} Kategorie
  */
 
@@ -57,9 +57,8 @@ export const KATEGORIEN = [
 		icon: ShoppingCart
 	},
 	{
-		// Bis 25.08.2026 ein Reiter im Bestellungs-Workspace (entschieden: das
-		// ist Konfiguration, keine Tagesarbeit). Rechte wie die Lieferanten-Routen in
-		// routen_bestellung.go: Schreiben verlangt create_orders.
+		// Konfiguration, keine Tagesarbeit, deshalb hier und nicht im Bestellwesen. Rechte wie
+		// die Lieferanten-Routen in routen_bestellung.go: Schreiben verlangt create_orders.
 		id: 'lieferanten',
 		titel: 'Lieferanten',
 		kurz: 'Händler, Kundennummern, Hauptlieferant',
@@ -99,10 +98,8 @@ export const KATEGORIEN = [
 	},
 	{ id: 'mail', titel: 'Mail', kurz: 'Postausgang und Vorlagen', icon: Mail },
 	{
-		// Bis 24.08.2026 ein eigener Menüpunkt unter „System" (davor „Verwaltung") —
-		// zweimal verschoben, weil das Werkzeug "fast nie" gebraucht wird. Jetzt wohnt
-		// es bei den anderen seltenen Eingriffen; die alte Adresse /lmf-aktionen
-		// leitet hierher (Router.svelte).
+		// Bei den anderen seltenen Eingriffen, kein eigener Menüpunkt: Das Werkzeug wird fast
+		// nie gebraucht. Die ältere Adresse /lmf-aktionen leitet hierher (routenAnwenden.js).
 		id: 'lmf',
 		titel: 'LMF-Aktionen',
 		kurz: 'Massenverlängerung je Klasse',
@@ -121,13 +118,10 @@ export const KATEGORIEN = [
 		rechte: ['manage_inventory', 'edit_books']
 	},
 	{
-		// Eigene Kategorie (entschieden am 24.08.2026): gehört ins System-Menü unter
-		// Einstellungen — aber nicht in der Datenverwaltung zwischen Littera-Import und
-		// Cover-Abgleich vergraben, wo es bis dahin stand. Am 05.09.2026 abends war die
-		// Kategorie kurz als Reiter einer Sammelseite unter Verwaltung; Absprache: „der LUSD-
-		// Import gehört unter Einstellungen, da war er ja auch vorher". Hieß bis 06.09.
-		// „Schuljahreswechsel" — derselbe Name wie der LMF-Plan im System-Menü (Absprache:
-		// „dringend umbenennen"). Die id bleibt, die Route /einstellungen kennt sie.
+		// Eine eigene Kategorie der Einstellungen, nicht in der Datenverwaltung zwischen
+		// Littera-Import und Cover-Abgleich vergraben. Der Titel ist ein anderer als der des
+		// LMF-Plans („Schuljahreswechsel" im System-Menü), die id bleibt: Die Route
+		// /einstellungen kennt sie.
 		id: 'schuljahr',
 		titel: 'LUSD & Versetzung',
 		kurz: 'LUSD-Abgleich, Versetzung, Sommerferien',

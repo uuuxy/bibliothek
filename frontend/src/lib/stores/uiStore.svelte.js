@@ -3,9 +3,9 @@ import { apiFetch } from '../apiFetch.js';
 class UIStore {
 	#activeTab = $state('kiosk');
 	/**
-	 * Verlassen-Schutz (07.09.2026, Register B): Ein Bildschirm mit ungespeicherter Arbeit
-	 * (der LMF-Planer) trägt hier eine Funktion ein, die sagt, ob gerade etwas verloren
-	 * ginge. Der Setter von activeTab fragt sie — an EINER Stelle, statt an den ~40
+	 * Verlassen-Schutz: Ein Bildschirm mit ungespeicherter Arbeit (der LMF-Planer) trägt
+	 * hier eine Funktion ein, die sagt, ob gerade etwas verloren ginge. Der Setter von
+	 * activeTab fragt sie an einer Stelle, statt an den ~40
 	 * Stellen, die den Tab setzen (Seitenleiste, Router, Deep-Links, Escape-Regel).
 	 * Blockiert der Wächter, bleibt das Ziel in blockierterWechsel stehen; der Bildschirm
 	 * zeigt seinen Dialog und ruft bleibe() oder erzwingeWechsel().
@@ -16,9 +16,9 @@ class UIStore {
 	blockierterWechsel = $state(/** @type {string | null} */ (null));
 	/**
 	 * Läuft bei jedem Wechsel zur Ausleihe, auch wenn sie schon offen ist. Die Omnibox trägt
-	 * hier ein, was dem Scanfeld den Fokus zurückgibt (14.09.2026): Ein Klick auf „Ausleihe"
-	 * ließ den Fokus auf dem Knopf der Seitenleiste, und der nächste Scan lief ohne Meldung
-	 * ins Leere. Hier und nicht in der Seitenleiste, weil auch Escape, Router und „Zur
+	 * hier ein, was dem Scanfeld den Fokus zurückgibt: Sonst bliebe nach einem Klick auf
+	 * „Ausleihe" der Fokus auf dem Knopf der Seitenleiste, und der nächste Scan liefe ohne
+	 * Meldung ins Leere. Hier und nicht in der Seitenleiste, weil auch Escape, Router und „Zur
 	 * Startseite" zur Ausleihe führen.
 	 * @type {(() => void) | null}
 	 */
@@ -91,11 +91,10 @@ class UIStore {
 		this.activeTab = 'students_dir';
 	}
 	/**
-	 * Aus einem System-Alert angeforderte KATEGORIE der Einstellungen (ihre id, z. B.
-	 * 'erreichbarkeit'). Gleiche Mechanik wie requestedStudentId: Einstellungen greift
-	 * den Wert auf und setzt ihn zurück. Damit verweist ein Alert direkt dorthin, wo
-	 * sich das Problem beheben lässt, statt den Nutzer auf der ersten Kategorie
-	 * abzusetzen. Bis zum 23.08.2026 stand hier ein Reiter-NAME ("Allgemein").
+	 * Aus einem System-Alert angeforderte Kategorie der Einstellungen (ihre id, z. B.
+	 * 'erreichbarkeit'). Gleiche Mechanik wie requestedStudentId: Einstellungen greift den
+	 * Wert auf und setzt ihn zurück. Damit verweist ein Alert direkt dorthin, wo sich das
+	 * Problem beheben lässt, statt den Nutzer auf der ersten Kategorie abzusetzen.
 	 */
 	requestedSettingsTab = $state(/** @type {string | null} */ (null));
 	/**

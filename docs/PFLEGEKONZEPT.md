@@ -375,7 +375,7 @@ Dateien, 2.618 Funktionen.
 - Namen und Kommentare folgen einem Regelwerk ([STIL.md](STIL.md)): Fachwörter deutsch, je
   Sache ein Wort; ein Datum steht in einem Kommentar nur zu einer Quelle.
   `stil_ratsche_test.go` meldet jede Abweichung im Go-Code,
-  `frontend-hygiene-vorgeschichte.test.js` jedes neue Datum in einem Kommentar der Oberfläche.
+  `frontend-hygiene-vorgeschichte.test.js` jedes Datum in einem Kommentar der Oberfläche.
 - 25 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
   Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
   Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).

@@ -56,8 +56,8 @@ export function erzeugePortalSuche() {
 			const res = await apiFetch(`/api/reservierungen/klassensatz/katalog?${teile.join('&')}`);
 			if (!res.ok) {
 				// Keine Treffer statt der alten: Sonst stünden die Treffer des vorigen
-				// Suchtextes unter der neuen Eingabe (Sweep „verschluckte Fehlantwort",
-				// 06.09.2026). Die Meldung sagt, dass nicht gesucht werden konnte.
+				// Suchtextes unter der neuen Eingabe. Die Meldung sagt, dass nicht gesucht
+				// werden konnte.
 				if (dieser !== lauf) return;
 				treffer = [];
 				gesamt = 0;

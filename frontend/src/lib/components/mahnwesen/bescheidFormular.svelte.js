@@ -4,8 +4,8 @@
 // Eigene Datei, damit BescheidDialog.svelte unter der 200-Zeilen-Marke bleibt und die
 // Zusammenführung von Forderungen und überfälligen Büchern ohne Browser prüfbar ist.
 //
-// Seit Stufe 2 des Mahnverfahrens (15.09.2026) kennt der Vorschlag zwei Quellen: offene
-// FORDERUNGEN (Verlust oder Schaden schon gemeldet) und überfällige BÜCHER ohne Forderung.
+// Der Vorschlag kennt zwei Quellen: offene Forderungen (Verlust oder Schaden schon gemeldet)
+// und überfällige Bücher ohne Forderung.
 // Der Dialog zeigt beide in einer Liste; beim Erstellen bucht der Server die Bücher als
 // Verlust und schreibt den Brief in einer Transaktion. Der Rumpf trennt die Quellen
 // wieder, wie der Server sie kennt.

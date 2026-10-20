@@ -44,8 +44,8 @@ async function sendeMahnmails(auswahl) {
 		});
 		const json = await res.json();
 		if (res.ok) {
-			// failed_count > 0: Teil des Laufs ist NICHT zugestellt — als Warnung, nicht
-			// als Erfolg (vorher hieß jeder 200er „versendet"; Prüfung 22.08.2026, A8).
+			// failed_count > 0: Ein Teil des Laufs ist nicht zugestellt, als Warnung, nicht als
+			// Erfolg.
 			melde(
 				json.message ?? mahnlistenVersendet(json.sent_count ?? 0),
 				(json.failed_count ?? 0) > 0 ? 'warning' : 'success'
@@ -59,11 +59,9 @@ async function sendeMahnmails(auswahl) {
 }
 
 /**
- * Der Mail-Teil des Mahnwesens. Seit dem 18.09.2026 nur noch der Massenversand: Der
- * Einzelversand je Klasse (Dialog „Mahnliste per E-Mail senden" mit eigener Route „senden")
- * hatte seit dem 21.06.2026 keinen Knopf mehr und konnte nichts, was der Massenversand
- * mit Klassenauswahl und abweichender Adresse nicht auch kann. Weg mit Dialog, Route und
- * Handler — nicht zwei Wege zum selben Versand.
+ * Der Mail-Teil des Mahnwesens: nur der Massenversand, mit Klassenauswahl und
+ * abweichender Adresse. Ein Einzelversand je Klasse wäre ein zweiter Weg zum selben
+ * Versand.
  */
 export function useMahnwesenMail() {
 	return { sendeMahnmails };

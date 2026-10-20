@@ -2,11 +2,10 @@
      weiß (Brückentag, pädagogischer Tag): ein Chip-Set — Input-Chips je Tag (M3: das
      Entfernen-Symbol „is required and must be used to remove the chip") und dahinter
      der Assist-Chip „Tag freihalten", der das kleine Dialogfenster mit Datum und Grund
-     öffnet (ui/EingabeDialog). Bis 06.09.2026 stand hier ein leeres Dauerformular
-     mit drei Spalten für eine Eingabe, die ein- bis zweimal im Jahr vorkommt. Darunter
-     die Zeile „Übersprungen", die jeden ausgefallenen Werktag des Plan-Zeitraums mit
-     Grund nennt — Feiertage eingeschlossen, damit ein fehlender Donnerstag in der
-     Tabelle erklärt ist (05.09.2026). Kein eigener Abschnitt: Das Bauteil ist
+     öffnet (ui/EingabeDialog), kein Dauerformular für eine Eingabe, die ein- bis zweimal
+     im Jahr vorkommt. Darunter die Zeile „Übersprungen", die jeden ausgefallenen Werktag
+     des Plan-Zeitraums mit Grund nennt, Feiertage eingeschlossen, damit ein fehlender
+     Donnerstag in der Tabelle erklärt ist. Kein eigener Abschnitt: Das Bauteil ist
      die vierte Spalte des Zeitraum-Rasters in LmfPlanRahmen (Subgrid-Zeilen wie
      Feld.svelte), „Übersprungen" liegt darunter über die volle Breite. -->
 <script>

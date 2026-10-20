@@ -2,12 +2,12 @@
 // Der Reiter „Schadensersatz": Forderungen ohne Brief, geschriebene Briefe, Übergabe.
 //
 // Eigener Store und keine Erweiterung des Mahnwesen-Stores: Dort geht es um überfällige
-// AUSLEIHEN, hier um GELD. Die beiden teilen nur den Bildschirm.
+// Ausleihen, hier um Geld. Die beiden teilen nur den Bildschirm.
 //
-// Die Zahl am Reiter zählt, was bei der Schule liegt (liegtBeiDerSchule): Forderungen
-// ohne Brief, laufende und abgelaufene Fristen, Rückgaben nach der Übergabe. Bis zum
-// 15.09.2026 zählte sie nur die abgelaufenen Fristen — ein frischer Bescheid stand dann
-// mit „0" am Reiter, obwohl eine Zeile darin wartete.
+// Die Zahl am Reiter zählt, was bei der Schule liegt (liegtBeiDerSchule): Forderungen ohne
+// Brief, laufende und abgelaufene Fristen, Rückgaben nach der Übergabe. Mit den
+// abgelaufenen Fristen allein stünde ein frischer Bescheid mit „0" am Reiter, obwohl eine
+// Zeile darin wartet.
 
 import { apiGet, apiPost } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';

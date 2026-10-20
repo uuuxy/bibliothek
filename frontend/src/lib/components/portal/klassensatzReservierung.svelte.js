@@ -16,16 +16,14 @@ async function ladeListe(pfad, setze) {
 }
 
 /**
- * Die beiden Reservierungs-Listen des Portals — Zustand IN der Fabrik, kein
+ * Die beiden Reservierungs-Listen des Portals, Zustand in der Fabrik, kein
  * Modul-Singleton: Auf einem geteilten Rechner dürfen die eigenen Reservierungen
  * des vorigen Bedieners nicht in die nächste Sitzung hinüberstehen.
  *
- *  - offene: die Warteschlange ALLER Lehrkräfte (Titel, Klasse, Menge — ohne
+ *  - offene: die Warteschlange aller Lehrkräfte (Titel, Klasse, Menge, ohne
  *    Personen); speist den Chip „hinter wem stehe ich" an den Suchtreffern.
- *  - eigene: NUR meine — offene plus kürzlich bereitgestellte samt
- *    Bibliotheks-Notiz. Bis zum 31.08.2026 verschwand ein Vorgang mit dem
- *    Abschluss aus dem Portal, und die Antwort der Bibliothek existierte nur in
- *    der Bereit-Mail (Rückweg-Fund, gezielter Raster-Durchgang).
+ *  - eigene: nur meine, offene plus kürzlich bereitgestellte samt Bibliotheks-Notiz.
+ *    Die Antwort der Bibliothek stünde sonst nur in der Bereit-Mail.
  */
 export function erzeugeReservierungsListen() {
 	let offene = $state(/** @type {any[]} */ ([]));

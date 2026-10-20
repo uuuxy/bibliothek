@@ -7,11 +7,10 @@ import { apiGet } from '../../apiFetch.js';
  * (SchlagworteKategorie) und von der Wortsuche im Zusammenführen-Dialog
  * (SchlagwortPflegeDialog) — eine Suche, eine Regel.
  *
- * Bis zum 30.09.2026 lud die Seite die ersten 5.000 Wörter in alphabetischer Folge und suchte
- * im Browser nur darunter. Littera bringt 13.207 Wörter mit (docs/OFFEN.md 4.20); zwei
- * Drittel davon wären weder zu finden noch als Filter zu markieren gewesen. Dasselbe Muster
- * wie die Leserdatei (leser/schuelerSuche.svelte.js): Tippen wird entprellt, und nur die
- * jüngste Anfrage schreibt die Liste.
+ * Am Server, nicht im Browser: Littera bringt 13.207 Wörter mit, und eine Suche nur in den
+ * ersten Tausend fände die übrigen weder, noch ließen sie sich als Filter markieren.
+ * Dasselbe Muster wie die Leserdatei (leser/schuelerSuche.svelte.js): Tippen wird
+ * entprellt, und nur die jüngste Anfrage schreibt die Liste.
  */
 export function erzeugeSchlagwortPflegeListe() {
 	/** @type {{ zeilen: import('./schlagwortPflege.js').SchlagwortZeile[], gesamt: number, verweise: number, filter: number, treffer: number } | null} */

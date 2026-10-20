@@ -1,12 +1,11 @@
 <!-- @component LmfPlanPlatzZellen — die drei gerechneten Zellen einer Planer-Zeile:
-     Wochentag, Datum, Stunde. Seit dem 06.09.2026 (Absprache: „einfach anklicken, um es zu
-     ändern … statt immer über die drei Punkte rechts") sind sie selbst der Weg zum
-     festen Platz: Ein Klick auf eine Zelle legt die Zeile fest — vorbelegt mit dem Platz,
-     den sie gerade hat, damit der Klick nichts verschiebt — und setzt den Fokus in das
+     Wochentag, Datum, Stunde. Sie sind selbst der kurze Weg zum festen Platz, ohne das
+     Zeilenmenü: Ein Klick auf eine Zelle legt die Zeile fest, vorbelegt mit dem Platz, den
+     sie gerade hat, damit der Klick nichts verschiebt, und setzt den Fokus in das
      Feld, das man angeklickt hat (Wochentag und Datum → Datumsfeld, Stunde → Auswahl).
      Der Rest der Reihenfolge fließt um den festen Platz herum; die Nummer der Zeile
-     bleibt (Entscheidung 06.09.: die Reihenfolge ist die Wahrheit, der feste Platz die
-     Ausnahme wie im Excel). Die Stecknadel vor dem Wochentag zeigt „festgelegt" und
+     bleibt (die Reihenfolge ist die Wahrheit, der feste Platz die Ausnahme, wie im Excel).
+     Die Stecknadel vor dem Wochentag zeigt „festgelegt" und
      löst den Platz mit einem Klick; „Festen Platz lösen" bleibt auch im Zeilenmenü.
      Ohne ersten Tag (kein Platz) gibt es nichts anzuklicken — die Zellen bleiben leer. -->
 <script>

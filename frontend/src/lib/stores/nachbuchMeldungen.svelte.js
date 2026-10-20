@@ -2,18 +2,17 @@ import { apiFetch, apiClient } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
 
 /**
- * Die Meldungen aus dem Nachbuchen (Schritt C des Offline-Baus, Migration 117).
+ * Die Meldungen aus dem Nachbuchen (Migration 117).
  *
  * Wozu: Beim Nachbuchen der Offline-Warteschlange weicht die Wirklichkeit manchmal vom
- * Scan ab — das Buch lag bei jemand anderem, die Rückgabe kam nach einer neueren
- * Ausleihe, der Ausweis liess sich nicht auflösen. Der Server hält jede Abweichung fest,
- * bis ein Mensch sie quittiert. Bis zum 16.09.2026 hatte diese Ablage im Browser keinen
- * einzigen Aufrufer: Der Server schrieb Meldungen, die niemand zu sehen bekam.
+ * Scan ab: Das Buch lag bei jemand anderem, die Rückgabe kam nach einer neueren Ausleihe,
+ * der Ausweis ließ sich nicht auflösen. Der Server hält jede Abweichung fest, bis ein
+ * Mensch sie quittiert.
  *
- * Zwei Rechte, zwei Türen — nicht aus Vorsicht, sondern weil die Zeilen verschieden viel
- * verraten: Der ZÄHLER ist eine Zahl ohne Personenbezug und gehört jeder Theken-Rolle
- * (`perform_actions`), die LISTE nennt Ausleiher, Klasse und Vorbesitzer und verlangt
- * `view_students`. Ein Helfer sieht also, DASS etwas offen ist, und holt jemanden.
+ * Zwei Rechte, zwei Türen, nicht aus Vorsicht, sondern weil die Zeilen verschieden viel
+ * verraten: Der Zähler ist eine Zahl ohne Personenbezug und gehört jeder Theken-Rolle
+ * (`perform_actions`), die Liste nennt Ausleiher, Klasse und Vorbesitzer und verlangt
+ * `view_students`. Ein Helfer sieht also, dass etwas offen ist, und holt jemanden.
  *
  * Aktuell gehalten wird der Zähler über die geteilte SSE-Leitung: Der Server meldet eine
  * Änderung (ohne Inhalt — die Leitung geht an jede Sitzung), und jeder Arbeitsplatz holt

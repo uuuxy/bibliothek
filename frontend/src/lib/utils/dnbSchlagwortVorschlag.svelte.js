@@ -2,7 +2,7 @@ import { ladeDnbSchlagwortVorschlag } from './schlagworte.js';
 import { normalisiereIsbn as normiere } from './isbnFormen.js';
 
 /**
- * Der Schlagwort-Vorschlag aus der DNB für EIN Schlagwort-Feld (entschieden am 30.09.2026): im
+ * Der Schlagwort-Vorschlag aus der DNB für ein Schlagwort-Feld: im
  * Buchformular und beim Nachbestellen eines Titels, den es schon gibt. Ein neuer Titel aus der
  * Bestellsuche bringt seinen Vorschlag schon mit (POST /api/buecher/aus-isbn).
  *

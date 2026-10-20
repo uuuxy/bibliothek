@@ -8,12 +8,12 @@
 	 * (datalist wie im ChipFeld am Titel); die Aktion bleibt gesperrt, bis die Eingabe ein
 	 * vorhandenes anderes Wort trifft — ein neues Wort anzulegen ist Umbenennen, nicht
 	 * Zusammenführen. Die Vorschläge sucht der Dialog selbst am Server, mit derselben Suche
-	 * wie die Pflegeseite (schlagwortPflegeListe.svelte.js); bis zum 30.09.2026 bekam er die
-	 * Zeilen der Seite und fand ein Ziel jenseits der ersten 5.000 Wörter nicht. Fehler des Servers (409 „gibt es schon", Regel verletzt) zeigt apiFetch als
-	 * Meldung mit seinem Satz; der Dialog bleibt dann offen.
+	 * wie die Pflegeseite (schlagwortPflegeListe.svelte.js), damit er auch ein Ziel jenseits
+	 * der Zeilen der Seite findet. Fehler des Servers (409 „gibt es schon", Regel verletzt)
+	 * zeigt apiFetch als Meldung mit seinem Satz; der Dialog bleibt dann offen.
 	 *
 	 * Umbenennen und Zusammenführen fragen mit einem Kästchen, ob die alte Schreibweise als
-	 * Verweis stehen bleibt (docs/OFFEN.md 4.20, entschieden am 23.09.2026), vorbelegt mit ja:
+	 * Verweis stehen bleibt, vorbelegt mit ja:
 	 * Das hält eine Maske richtig, die dabei offen war, und wer das alte Wort gewohnt ist,
 	 * landet weiter richtig. Abgewählt verschwindet es ganz, wie in Littera. Wann das Kästchen
 	 * erscheint und was der Hinweis sagt, steht in schlagwortPflege.js.

@@ -1,19 +1,15 @@
 /**
  * Rückfrage-Dienst: ersetzt window.confirm() durch den M3-Dialog der Anwendung.
- *
- * Bis zum 08.09.2026 stellten 19 Stellen ihre Rückfrage über `confirm()` und 15 ihre
- * Meldung über `alert()` — Browser-Dialoge, die auf jedem Rechner anders aussehen,
- * sich nicht an Farben, Schrift und Dichte der Anwendung halten und per Enter
- * unbeabsichtigt bestätigt werden. Zwei Stellen hatten sich schon einen eigenen
- * M3-Dialog gebaut (VerlustLoeschenDialog, PapierkorbLoeschenDialog); der Rest fiel
- * zurück, weil es keinen billigen Weg gab. Das hier ist der billige Weg:
+ * Browser-Dialoge sehen auf jedem Rechner anders aus, halten sich nicht an Farben, Schrift
+ * und Dichte der Anwendung und werden per Enter unbeabsichtigt bestätigt. Das hier ist der
+ * billige Weg zum eigenen Dialog:
  *
  *     if (!(await bestaetigen({ titel: 'Klasse 05A löschen?', aktion: 'Löschen',
  *                               gefaehrlich: true }))) return;
  *
- * Der Dialog selbst (ui/BestaetigungsDialog.svelte) hängt EINMAL in App.svelte neben
- * dem SnackbarAnzeige und liest diesen Store. Meldungen ohne Entscheidung (`alert`)
- * gehen an den snackbars — eine Meldung braucht keinen Klick.
+ * Der Dialog selbst (ui/BestaetigungsDialog.svelte) hängt einmal in App.svelte neben dem
+ * SnackbarAnzeige und liest diesen Store. Meldungen ohne Entscheidung (`alert`) gehen an
+ * den snackbars, denn eine Meldung braucht keinen Klick.
  *
  * Eine zweite Rückfrage, während eine offen ist, beantwortet die erste mit „nein":
  * Zwei Dialoge übereinander wären genau die Unordnung, die confirm() hatte.

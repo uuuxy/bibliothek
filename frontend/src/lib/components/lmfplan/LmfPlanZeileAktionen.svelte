@@ -4,8 +4,8 @@
      (die weiten Wege, wie im Zeilenmenü einer YouTube-Playlist), zusammenlegen oder
      trennen, davor einfügen, festlegen oder lösen, Klasse herausnehmen, entfernen —
      liegt im Überlaufmenü (M3 Menus: „Use menus in situations that need extra actions,
-     like: Overflow menus"). Bis 06.09.2026 standen hier sechs Icon-Buttons je Zeile,
-     rund dreihundert auf der Seite. -->
+     like: Overflow menus"). Sechs Icon-Buttons je Zeile wären rund dreihundert auf der
+     Seite. -->
 <script>
 	import {
 		ArrowDown,

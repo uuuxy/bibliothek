@@ -5,12 +5,12 @@
 	 *
 	 * Zwei Lesehistorie-Fristen, weil es zwei Verarbeitungstätigkeiten sind:
 	 * Schülerbücherei kurz (HBDI-Muster: löschen, sobald nicht mehr notwendig),
-	 * Lernmittel lang (die Bestandskartei muss Ausleihe UND Rücklauf nachweisen,
+	 * Lernmittel lang (die Bestandskartei muss Ausleihe und Rücklauf nachweisen,
 	 * Schadensersatz läuft über die Schulaufsicht).
 	 *
-	 * Die 0 ist hier ein echter Wert und heißt „aus". Ein LEER geräumtes Feld ist
-	 * dagegen keine Angabe und wird gemeldet, statt still als 0 durchzugehen — genau
-	 * dieser stille Weg schaltete am 22.08.2026 die Befristung ab (Prüfung A4).
+	 * Die 0 ist hier ein echter Wert und heißt „aus". Ein leer geräumtes Feld ist dagegen
+	 * keine Angabe und wird gemeldet, statt still als 0 durchzugehen und die Befristung
+	 * abzuschalten.
 	 */
 	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
@@ -85,7 +85,7 @@
 				},
 				{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre, min: 0 },
 				{
-					// 0 = sofort anonymisieren (Verhalten bis 02.09.2026): ein echter Wert.
+					// 0 = sofort anonymisieren: ein echter Wert.
 					schluessel: 'abgaenger_karenz_tage',
 					label: 'Abgänger-Karenzzeit',
 					wert: abgaengerKarenz,

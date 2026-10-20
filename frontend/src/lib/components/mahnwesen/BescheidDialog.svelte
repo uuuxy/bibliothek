@@ -2,11 +2,11 @@
 
      Alles am Bescheid ist Vorgabe oder Einstellung: Nummer, Frist, Konto, Anschrift,
      Texte. Nur zwei Dinge entscheidet die Schule, und genau die zeigt dieser Dialog:
-     WELCHE Bücher auf den Brief kommen und mit WELCHEM Betrag. Die Staffel schlägt vor
+     welche Bücher auf den Brief kommen und mit welchem Betrag. Die Staffel schlägt vor
      und nennt ihre Herleitung; wer sie überschreibt, tut es im Ermessen der Schule.
 
-     Seit Stufe 2 (15.09.2026) stehen auch die überfälligen Bücher ohne Forderung in der
-     Liste: Mit dem Brief bucht der Server ihren Verlust (Ausleihe endet, Exemplar gilt
+     Auch die überfälligen Bücher ohne Forderung stehen in der Liste: Mit dem Brief bucht
+     der Server ihren Verlust (Ausleihe endet, Exemplar gilt
      als verloren). Es braucht keine Verlustmeldung je Buch mehr, und der Betrag wird
      nur einmal gefragt. Kommt ein Buch zurück, storniert der Theke-Scan die Forderung.
 

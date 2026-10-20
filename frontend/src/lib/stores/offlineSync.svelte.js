@@ -9,26 +9,21 @@ import { spieleErfolgston } from '../audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
 
-// Baut die Portion fuer die Nachbuch-Tuer (POST /api/action/nachbuchen).
+// Baut die Portion für die Nachbuch-Tür (POST /api/action/nachbuchen). Sie kann den
+// Scan-Zeitpunkt buchen, einen Schlüssel genau einmal buchen, einen offline gescannten
+// Ausweis auflösen und jede Abweichung als Meldung festhalten.
 //
-// Bis zum 16.09.2026 ging der Sync an die Stapel-Tuer (POST …/action/batch); sie blieb eine
-// Version laenger (v3.0.0) fuer Theken-Tabs mit altem Stand und ist seit v3.1.0 weg. Die
-// Nachbuch-Tuer war gebaut, geroutet und getestet, und niemand rief sie auf.
-// Sie ist die richtige, weil sie Dinge kann, die der Stapel nicht kann: den
-// Scan-Zeitpunkt buchen, einen Schluessel genau einmal buchen, einen offline gescannten
-// Ausweis aufloesen und jede Abweichung als Meldung festhalten.
+// Die Uhr: `gescannt_am` und `gesendet_am` müssen von derselben Uhr kommen, sonst rechnet
+// der Server den Versatz falsch. Das ist hier kein Randfall: Die Uhr eines Theken-Rechners
+// wird oft in dem Moment korrigiert, in dem das Netz zurückkommt, also zwischen Scan und
+// Versand.
 //
-// DIE UHR (Vorgabe aus dem Plan, Stufe 3 Commit 14): `gescannt_am` und `gesendet_am`
-// muessen von DERSELBEN Uhr kommen, sonst rechnet der Server den Versatz falsch. Genau das
-// ist hier kein Randfall: Die Uhr eines Theken-Rechners wird oft in dem Moment korrigiert,
-// in dem das Netz zurueckkommt — also zwischen Scan und Versand.
-//
-// Deshalb wird der Scan-Zeitpunkt neu bestimmt, wenn der Eintrag aus DIESEM Seitenaufruf
-// stammt: `performance.now()` laeuft gleichmaessig weiter und springt nicht. Aus dem
-// Abstand seit dem Scan und der Wanduhr von JETZT ergibt sich ein Scan-Zeitpunkt, der zu
+// Deshalb wird der Scan-Zeitpunkt neu bestimmt, wenn der Eintrag aus diesem Seitenaufruf
+// stammt: `performance.now()` läuft gleichmäßig weiter und springt nicht. Aus dem Abstand
+// seit dem Scan und der Wanduhr von jetzt ergibt sich ein Scan-Zeitpunkt, der zu
 // `gesendet_am` passt, auch wenn die Wanduhr dazwischen gesprungen ist. Stammt der Eintrag
-// aus einem frueheren Seitenaufruf (Neuladen, eingespielte Sicherung), gilt der
-// gespeicherte Wert — dort gibt es nichts Besseres.
+// aus einem früheren Seitenaufruf (Neuladen, eingespielte Sicherung), gilt der gespeicherte
+// Wert; dort gibt es nichts Besseres.
 /**
  * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
  * @returns {{ gesendet_am: string, eintraege: any[] }}
@@ -85,7 +80,7 @@ const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 // Gemeldet wird, was ein Mensch wissen muss:
 //   - `nicht_gebucht` und `veraltet` tragen ihren Grund; ohne die Meldung erfaehrt niemand,
 //     dass vier von achtzehn Rueckgaben abgelehnt wurden, und die Ausleihen laufen ins
-//     Mahnwesen bis zur Rechnung an die Eltern (Rasterdurchgang 06.09.2026).
+//     Mahnwesen bis zur Rechnung an die Eltern.
 //   - `umgebucht` heisst: Das Buch lag bei jemand anderem, wurde dort zurueckgenommen und
 //     neu ausgeliehen. Ein Buch hat die Person gewechselt — das gehoert gesagt, auch wenn
 //     der Server es zusaetzlich in seiner Meldungsliste festhaelt.
@@ -139,8 +134,8 @@ function zuPruefendeFuer(posten, erg) {
 // erreichbar, oder derselbe Schluessel wird gerade gebucht. Dann bleibt der Eintrag liegen
 // und die Runde endet, statt gegen dieselbe Wand zu laufen.
 //
-// Ein Schluessel, den der Server GAR NICHT beantwortet hat, bleibt ebenfalls liegen.
-// Schweigen ist kein Erfolg — bis zum 15.09.2026 galt es als erledigt.
+// Ein Schlüssel, den der Server gar nicht beantwortet hat, bleibt ebenfalls liegen:
+// Schweigen ist kein Erfolg.
 /**
  * @param {any} antwort
  * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
@@ -228,13 +223,12 @@ function erzeugeOfflineSync() {
 	// Verschickt einen Batch und verarbeitet dessen Ergebnisse. Liefert false, wenn der
 	// Sync abbrechen soll (kompletter Batch-Fehler wie 502, oder Netzwerkfehler).
 	//
-	// Dabei wird unterschieden, ob WARTEN HILFT (Rasterdurchgang 16.09.2026, OFFEN.md 5.19):
-	// Ein 502/503 heißt „der Server kommt gleich wieder" — die Runde endet still, in einer
-	// Minute läuft die nächste. Eine Antwort, die sich von selbst nicht ändert (403, weil
-	// der gerade angemeldete Mensch nicht buchen darf; 400 bei einem Rumpf, den der Server
-	// nicht annimmt), lief bis hierher genauso still jede Minute ins Leere. Sichtbar war
-	// nur der Zähler im Band, und der sagt „noch nicht im System", nicht „geht so nicht
-	// mehr". Deshalb merkt sich der Store solche Antworten und das Band sagt sie an.
+	// Dabei wird unterschieden, ob Warten hilft: Ein 502/503 heißt „der Server kommt gleich
+	// wieder", die Runde endet still, in einer Minute läuft die nächste. Eine Antwort, die
+	// sich von selbst nicht ändert (403, weil der gerade angemeldete Mensch nicht buchen darf;
+	// 400 bei einem Rumpf, den der Server nicht annimmt), liefe sonst genauso still jede
+	// Minute ins Leere, und der Zähler im Band sagt nur „noch nicht im System", nicht „geht
+	// so nicht mehr". Deshalb merkt sich der Store solche Antworten, und das Band sagt sie an.
 	async function sendeBatch(payload, batchItems, queueLength) {
 		try {
 			const res = await apiClient.post('/api/action/nachbuchen', payload);
@@ -325,15 +319,15 @@ function erzeugeOfflineSync() {
 	 * Spielt eine Notfall-Sicherung zurück in die lokale Warteschlange; der Auto-Sync
 	 * schiebt sie danach zum Server.
 	 *
-	 * item.id MUSS mitwandern: Diese ID ist der Idempotenz-Schlüssel, den der Server
-	 * kennt (siehe baueNachbuchPayload und api/theke/nachbuchen_schluessel.go). Ohne sie
-	 * vergibt normalisiereEintrag eine frische UUID — und dieselbe Datei zweimal
-	 * eingespielt würde jede Aktion ZWEIMAL ausführen. Bei zehn Kiosk-Rechnern mit
+	 * item.id muss mitwandern: Diese ID ist der Idempotenz-Schlüssel, den der Server kennt
+	 * (siehe baueNachbuchPayload und api/theke/nachbuchen_schluessel.go). Ohne sie vergibt
+	 * normalisiereEintrag eine frische UUID, und dieselbe Datei zweimal eingespielt würde
+	 * jede Aktion zweimal ausführen. Bei zehn Kiosk-Rechnern mit
 	 * einem gemeinsamen Sicherungsordner ist doppeltes Einspielen der Normalfall,
 	 * nicht der Ausnahmefall: Zwei Admins, oder einer, der unsicher ist, ob er es
 	 * schon getan hat. Mit dem Schlüssel ist der zweite Durchlauf wirkungslos.
 	 *
-	 * Sicherungen in Format 1 (vor dem 15.09.2026, `action_type`/`barcode_id`) und
+	 * Sicherungen in Format 1 (`action_type`/`barcode_id`) und
 	 * Format 2 (`art`/`barcode`, mit Scan-Zeitpunkt) werden gleich behandelt.
 	 * @param {File} file
 	 */

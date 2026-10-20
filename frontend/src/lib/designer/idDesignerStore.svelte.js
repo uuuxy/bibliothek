@@ -252,12 +252,9 @@ export const idStore = $state({
 	/** @type {"code39" | "qr"} */
 	barcodeType: 'code39',
 	/**
-	 * Womit gedruckt wird — die Einstellung, der auch der Stapeldruck der Schülerdatei
-	 * folgt (Schuelerdatei.svelte). Der Designer legt fest WIE, die Schülerdatei WER.
-	 *
-	 * 'a4' gab es bis zum 24.08.2026: acht Kartenabbilder auf einem A4-Blatt zum
-	 * Ausschneiden. Als Notbehelf gedacht, im Alltag nutzlos — an seine Stelle ist der
-	 * Etikettenbogen getreten (Name, Klasse, Barcode auf Klebeetiketten).
+	 * Womit gedruckt wird, die Einstellung, der auch der Stapeldruck der Schülerdatei folgt
+	 * (Schuelerdatei.svelte): Karte oder Etikettenbogen (Name, Klasse, Barcode auf
+	 * Klebeetiketten). Der Designer legt fest, wie, die Schülerdatei, wer.
 	 *
 	 * @type {"card" | "etikett"}
 	 */

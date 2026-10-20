@@ -18,17 +18,15 @@
 
 	/**
 	 * `platzhalter` zeichnet leere Bild-, Logo- und Passbildfelder als gestrichelten
-	 * Rahmen statt sie wegzulassen. NUR fuer den Testdruck des Ausweis-Designers.
+	 * Rahmen statt sie wegzulassen, nur für den Testdruck des Ausweis-Designers.
 	 *
-	 * Der Testdruck ist da, um das Layout auf dem echten Kartendrucker zu pruefen — und
-	 * liess bis zum 24.08.2026 ausgerechnet die zwei flaechenkritischen Felder weg: Der
-	 * Platzhalter-Schueler hat kein Foto, und solange kein Logo hochgeladen ist, hat auch
-	 * das Logofeld keinen Inhalt. Auf der Leinwand standen dort gestrichelte Rahmen, auf
-	 * dem Papier nichts. Beim echten Schueler stimmte es, weil der ein Foto hat — genau
-	 * der gemeldete Unterschied "Testdruck falsch, Schuelerprofil tadellos".
+	 * Der Testdruck ist da, um das Layout auf dem echten Kartendrucker zu prüfen, und darf
+	 * die zwei flächenkritischen Felder nicht weglassen: Der Platzhalter-Schüler hat kein
+	 * Foto, und solange kein Logo hochgeladen ist, hat auch das Logofeld keinen Inhalt. Auf
+	 * der Leinwand stehen dort gestrichelte Rahmen; ohne sie stünde auf dem Papier nichts.
 	 *
-	 * Vorgabe false: Ein ECHTER Ausweis darf niemals einen Rahmen mit der Aufschrift
-	 * "PASSBILD" tragen, nur weil beim Schueler kein Foto hinterlegt ist.
+	 * Vorgabe false: Ein echter Ausweis darf niemals einen Rahmen mit der Aufschrift
+	 * "PASSBILD" tragen, nur weil beim Schüler kein Foto hinterlegt ist.
 	 *
 	 * @type {{ side: 'front'|'back', leser: any, barcodeType: 'code39'|'qr', timestamp?: number, platzhalter?: boolean }}
 	 */
@@ -129,9 +127,8 @@
 			class="absolute flex flex-col items-center justify-center"
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
-			<!-- Größe aus dem Element, wie auf der Leinwand (CanvasElement): Bis zum 22.09.2026
-			     stand hier eine feste Höhe (8 mm, QR 11 mm), und der Designer log — höher
-			     gezogen war auf dem Papier nichts höher (OFFEN.md 5.5). -->
+			<!-- Größe aus dem Element, wie auf der Leinwand (CanvasElement): Mit einer festen
+			     Höhe wäre ein im Designer höher gezogener Strichcode auf dem Papier nicht höher. -->
 			<img
 				src={strichcodeBildUrl(
 					leser.barcode_id,

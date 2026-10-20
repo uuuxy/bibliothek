@@ -157,8 +157,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** Der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Umfang senken (5.67):** SQL-Testdaten über `internal/testdaten`.
-- [ ] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** 419 Kommentarzeilen mit Datum,
-  gehalten von einer Ratsche; Datei für Datei auf das Warum kürzen.
+- [x] **Vorgeschichte in Kommentaren der Oberfläche (5.70):** Kommentare mit Datum auf das
+  Warum kürzen und eine Prüfung, die jedes neue meldet.
 - [x] **Statistik bei Lesefehler (5.73):** Ein gescheitertes Lesen sieht aus wie ein leerer
   Bestand, bei den Ladenhütern sogar wie eine gute Nachricht.
 - [x] **Reste der Browser-Tests (5.81):** Vier Specs räumen ihre Schadensfälle nicht ab; ab
@@ -353,15 +353,6 @@ zu lockern. Offen:
   Konten und Ausleihen selbst an, obwohl `internal/testdaten` dafür Helfer hat. Wo einer passt,
   wird aus im Schnitt 4,6 Zeilen eine; zusammen 2.000 bis 2.700 Zeilen weniger. Paket für Paket,
   je mit der ganzen Suite an der Datenbank.
-
-### 5.70 Vorgeschichte in Kommentaren der Oberfläche
-
-419 Kommentarzeilen mit Datum in 217 der 470 Svelte- und JS-Dateien unter `frontend/src` (ohne
-Tests), dazu gut 20 mit einem Datum ohne Jahr („Absprache vom 05.09."). Die Regel steht in
-`CLAUDE.md`, Abschnitt 4: kein Datum, keine Vorgeschichte. `frontend-hygiene-vorgeschichte.test.js`
-hält den Bestand je Datei, er kann nur sinken. Offen: Datei für Datei die Kommentare auf das
-Warum kürzen und den Bestand nachziehen, nach jedem Ordner `npx svelte-check` und
-`npx vitest run`.
 
 ---
 

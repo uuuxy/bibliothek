@@ -11,7 +11,7 @@ import { snackbars } from './snackbars.svelte.js';
 const RESTORE_VERSUCHE = 3;
 const RESTORE_WARTEZEIT_MS = 2000;
 
-// Eine Abmeldung, die den Server nicht erreicht hat (14.09.2026). Das Löschcookie setzt nur die
+// Eine Abmeldung, die den Server nicht erreicht hat. Das Löschcookie setzt nur die
 // Antwort des Servers (api/abmeldung.go, bei 200 und bei 503). Ohne Netz, oder bei 502/504
 // vom Proxy, kommt keine an: Das HttpOnly-Cookie bleibt im Browser, und JavaScript kann es nicht
 // löschen. Ohne diesen Merker meldete das nächste Neuladen mit Netz die vorige Person wieder an —
@@ -70,9 +70,9 @@ class AuthStore {
 	isLoggingIn = $state(false);
 	/**
 	 * Steht nach einer Abmeldung, deren Widerruf der Server nicht bestätigt hat (503,
-	 * api/abmeldung.go): Das Löschcookie kam an, dieser Browser ist abgemeldet — die
-	 * Sitzung selbst gilt bis zu ihrem Ablauf weiter. Entschieden am 13.09.2026 (OFFEN.md
-	 * 3.4): abmelden wie bisher, dazu dieser Hinweis auf der Anmeldemaske.
+	 * api/abmeldung.go): Das Löschcookie kam an, dieser Browser ist abgemeldet, die Sitzung
+	 * selbst gilt bis zu ihrem Ablauf weiter. Abgemeldet wird trotzdem, dazu steht dieser
+	 * Hinweis auf der Anmeldemaske.
 	 */
 	abmeldeHinweis = $state(/** @type {string | null} */ (null));
 
@@ -186,19 +186,15 @@ class AuthStore {
 		this.connectSSE();
 		this.startSessionRefresh();
 
-		// Portal oder Verwaltung — entschieden am RECHT, nicht am Rollennamen.
+		// Portal oder Verwaltung, entschieden am Recht, nicht am Rollennamen: Eine Aufzählung
+		// von Rollen wäre bei jeder weiteren Rolle nachzupflegen, und wer sie vergisst, schickt
+		// die neue Rolle still ins Portal; der Fehler zeigt sich als „die Leitung sieht
+		// nichts", nicht als Meldung.
 		//
-		// Bis zum 16.09.2026 stand hier `rolle === 'admin' || rolle === 'mitarbeiter'`.
-		// Diese Aufzählung ist beim Bau JEDER weiteren Rolle nachzupflegen, und wer sie
-		// vergisst, schickt die neue Rolle still ins Portal — der Fehler zeigt sich als
-		// „die Leitung sieht nichts", nicht als Meldung. Mit der Rolle Leitung war es
-		// genau diese Stelle, die sonst zweimal zu ändern gewesen wäre.
-		//
-		// perform_actions ist das Recht, an der Theke und im Bestand zu arbeiten
-		// (/api/action, /scan, /search). Wer es hat, gehört in die Verwaltung; das
-		// Kollegium hat es bewusst nicht (db/rechte_vorgabe.go) und sieht sein Portal. Entschieden
-		// wird damit nichts Neues: Welchen Bildschirm jemand öffnen darf, liest der
-		// Router ohnehin aus denselben Rechten (Router.svelte, erlaubteBildschirme).
+		// perform_actions ist das Recht, an der Theke und im Bestand zu arbeiten (/api/action,
+		// /scan, /search). Wer es hat, gehört in die Verwaltung; das Kollegium hat es nicht
+		// (db/rechte_vorgabe.go) und sieht sein Portal. Welchen Bildschirm jemand öffnen darf,
+		// liest der Router ohnehin aus denselben Rechten (menue.js, erlaubteBildschirme).
 		const arbeitetInDerBibliothek = hatRecht(konto, 'perform_actions');
 		appState.guestAuthenticated = true;
 		appState.adminAuthenticated = arbeitetInDerBibliothek;
@@ -211,12 +207,12 @@ class AuthStore {
 	 * obwohl die Session serverseitig noch 12h gültig war.
 	 *
 	 * Ein 5xx beantwortet die Frage „gilt diese Sitzung?" nicht — er sagt, dass der Server
-	 * sie gerade nicht prüfen kann. Seit dem 11.09.2026 antwortet er bei einem
-	 * Datenbank-Aussetzer mit 503 statt 401, damit ein Arbeitsplatz nicht abgemeldet wird
-	 * (auth/anmelden.go). Hier hieß „nicht ok" trotzdem Login-Bildschirm: Wer während des
-	 * Aussetzers neu lud — F5, Kiosk-Neustart, Bildschirm morgens an — musste sich neu
-	 * anmelden, obwohl sein Cookie noch galt. Deshalb kurz warten und erneut fragen; der
-	 * Boot zeigt so lange den Ladekreis (App.svelte). Ein 401 wartet NICHT: Er ist die
+	 * sie gerade nicht prüfen kann. Bei einem Datenbank-Aussetzer antwortet er mit 503
+	 * statt 401, damit ein Arbeitsplatz nicht abgemeldet wird (auth/anmelden.go). Hieße
+	 * „nicht ok" hier Login-Bildschirm, müsste sich, wer während des Aussetzers neu lädt (F5,
+	 * Kiosk-Neustart, Bildschirm morgens an), neu anmelden, obwohl sein Cookie noch gilt.
+	 * Deshalb kurz warten und erneut fragen; der Boot zeigt so lange den Ladekreis
+	 * (App.svelte). Ein 401 wartet nicht: Er ist die
 	 * reguläre Antwort für „kein Cookie", und jeder frische Browser käme sonst erst nach
 	 * Sekunden an den Login.
 	 */
@@ -260,15 +256,15 @@ class AuthStore {
 		this.isLoggingIn = true;
 
 		try {
-			// apiFetch statt fetch: POST /login unterliegt seit dem 04.08.2026 der
-			// CSRF-Prüfung (api/csrf.go) und braucht den X-CSRF-Token-Header. apiFetch
-			// holt das Token notfalls selbst per Bootstrap (/api/csrf-token), es geht also
-			// auch beim allerersten Seitenaufruf ohne vorheriges Cookie.
+			// apiFetch statt fetch: POST /login unterliegt der CSRF-Prüfung (api/csrf.go) und
+			// braucht den X-CSRF-Token-Header. apiFetch holt das Token notfalls selbst per
+			// Bootstrap (/api/csrf-token), es geht also auch beim allerersten Seitenaufruf ohne
+			// vorheriges Cookie.
 			//
-			// timeoutMs bewusst über dem Standard von 10 s für Mutationen: Die Anmeldung
-			// wartet auf den IMAP-Server der Schule, und pruefeIMAPAnmeldung räumt dem
-			// selbst 15 s ein. Mit dem Standardwert hätte apiFetch eine langsame, aber
-			// erfolgreiche Anmeldung als "Netzwerk-Timeout" abgebrochen.
+			// timeoutMs über dem Standard von 10 s für Mutationen: Die Anmeldung wartet auf den
+			// IMAP-Server der Schule, und pruefeIMAPAnmeldung räumt dem selbst 15 s ein. Mit dem
+			// Standardwert bräche apiFetch eine langsame, aber erfolgreiche Anmeldung als
+			// "Netzwerk-Timeout" ab.
 			const res = await apiFetch('/login', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -325,10 +321,9 @@ class AuthStore {
 		// der Boot-Restore die Session beim nächsten Reload wiederbeleben.
 		// Fire-and-forget: der lokale Zustand wird unabhängig vom Netz geleert.
 		//
-		// keepalive: Ohne ihn bricht der Browser die Anfrage ab, sobald die Seite
-		// verschwindet — Reload oder Tab zu direkt nach dem Klick, und der Server hat die
-		// Sitzung nie gesperrt. Nach dem nächsten Öffnen war man wieder angemeldet
-		// (CI 13.09.2026: Reload drei Millisekunden nach dem Klick). Nachgestellt in
+		// keepalive: Ohne ihn bricht der Browser die Anfrage ab, sobald die Seite verschwindet;
+		// nach einem Reload oder Tab zu direkt nach dem Klick hätte der Server die Sitzung nie
+		// gesperrt, und nach dem nächsten Öffnen wäre man wieder angemeldet. Nachgestellt in
 		// e2e/abmelden-tab-zu.spec.js.
 		//
 		// Bis der Server antwortet, steht die Abmeldung als ausstehend im Browser
@@ -346,10 +341,10 @@ class AuthStore {
 		appState.adminAuthenticated = false;
 		appState.guestAuthenticated = false;
 		this.stopSessionRefresh();
-		// Theke leeren: Die Omnibox-Stores sind Modul-Singletons und überleben das
-		// Abmelden. Ohne diese Zeile sah der NÄCHSTE Bediener nach seiner Anmeldung
-		// weiter das Schülerprofil des vorigen — Ausleihen, Sperren, Mahnstufen
-		// (Fund 31.08.2026). Dieselbe Liste wie beim Inaktivitäts-Wächter.
+		// Theke leeren: Die Omnibox-Stores sind Modul-Singletons und überleben das Abmelden.
+		// Ohne diese Zeile sähe der nächste Bediener nach seiner Anmeldung weiter das
+		// Schülerprofil des vorigen, mit Ausleihen, Sperren und Mahnstufen. Dieselbe Liste wie
+		// beim Inaktivitäts-Wächter.
 		thekeLeeren();
 		// Verbindung UND jeden geplanten Wiederaufbau beenden: Nach der Abmeldung
 		// antwortet /events nur noch mit 401, und ein weiterlaufender Wiederaufbau

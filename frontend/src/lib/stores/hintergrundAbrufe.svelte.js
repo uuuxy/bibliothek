@@ -1,9 +1,9 @@
 // Hintergrund-Abrufe einer angemeldeten Sitzung: Badges (Reservierungen, offene
 // Etiketten) und die Offline-Warteschlange des Kiosks.
 //
-// Jeder Abruf hängt am Recht SEINER Route — nicht an der Rolle. Bis zum 24.08.2026
-// liefen alle drei nur für admin/mitarbeiter: Ein Helfer mit view_orders bekam kein
-// Reservierungs-Badge, und ein Helfer ohne das Recht hätte alle 30 s einen 403 gesammelt.
+// Jeder Abruf hängt am Recht seiner Route, nicht an der Rolle: So bekommt ein Helfer mit
+// view_orders sein Reservierungs-Badge, und ein Helfer ohne das Recht sammelt nicht alle
+// 30 s einen 403.
 import { hatRecht } from '../menue.js';
 import { uiStore } from './uiStore.svelte.js';
 import { offlineSync } from './offlineSync.svelte.js';

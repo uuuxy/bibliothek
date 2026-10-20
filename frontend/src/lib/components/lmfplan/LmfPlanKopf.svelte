@@ -1,9 +1,9 @@
 <!-- @component LmfPlanKopf — die Kopfzeile des Planers: Art des Plans, die Aktionen und
      der eine Satz, der sagt, woran man gerade arbeitet (Vorschlag aus dem Vorjahr oder
-     nach der Regel, Entwurf, veröffentlichter Plan). Gespeichert wird ein ENTWURF;
+     nach der Regel, Entwurf, veröffentlichter Plan). Gespeichert wird ein Entwurf;
      „Veröffentlichen" (Migration 100) macht ihn für Portal und PDF des Kollegiums
-     sichtbar und setzt beim Büchertausch die Fristen — vorher nimmt die Schulleitung
-     ihn ab, dafür das PDF (06.09.2026). Die Aktionen erscheinen nur, wenn ein
+     sichtbar und setzt beim Büchertausch die Fristen. Vorher nimmt die Schulleitung
+     ihn ab, dafür das PDF. Die Aktionen erscheinen nur, wenn ein
      Stand geladen ist — „Plan speichern" auf einem gescheiterten Laden würde den echten
      Plan durch den Entwurf ersetzen (ui/LadeFehler.svelte).
 
@@ -45,10 +45,9 @@
 			wert={art}
 			onwahl={onart}
 		/>
-		<!-- Während des Ladens KEINE Aktionen: Bis zum 06.09.2026 stand die Leiste schon,
-		     während der Stand des neuen Plans noch unterwegs war — „Plan verwerfen" schickte
-		     dann das DELETE an die neue Art, entschied seine Sperre aber am alten Plan und
-		     nannte im Bestätigungsdialog dessen Datum. -->
+		<!-- Während des Ladens keine Aktionen: Sonst schickte „Plan verwerfen" das DELETE an die
+		     neue Art, entschiede seine Sperre aber am alten Plan, und der Bestätigungsdialog
+		     zeigte dessen Datum. -->
 		{#if !ladeFehler && !laedt}
 			<div class="flex items-center gap-2">
 				<Button variant="secondary" onclick={onpdf}>
@@ -71,10 +70,9 @@
 	</div>
 
 	{#if !laedt && !ladeFehler}
-		<!-- EIN Satz Stand, keine Regelerklärung (Absprache vom 06.09.2026: „diese seltsamen
-		     Erklärungstexte müssen weg") — die Regeln stehen im Handbuch. Der Satz
+		<!-- Ein Satz Stand, keine Regelerklärung; die Regeln stehen im Handbuch. Der Satz
 		     beschreibt, was auf dem Bildschirm steht: „Noch kein Plan" über einer vollen
-		     Tabelle beschrieb die Datenbank, nicht die Seite. -->
+		     Tabelle beschriebe die Datenbank, nicht die Seite. -->
 		<p class="mt-3 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
 			{#if veroeffentlicht}
 				Plan vom {datumKurz(stand.plan.erster_tag)}, veröffentlicht am {datumKurz(

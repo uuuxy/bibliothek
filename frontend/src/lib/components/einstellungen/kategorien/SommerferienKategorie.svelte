@@ -4,9 +4,8 @@
 	 * Die Sommerferien, an denen der LMF-Planer hängt (Donnerstag davor: Ende des
 	 * Büchertauschs; erster Schultag danach: Beginn der Bücherausgabe). Das Programm
 	 * bringt die Jahre des aktuellen KMK-Beschlusses mit; was danach kommt, trägt die
-	 * Schule hier selbst ein — die Warnung unter Betriebsbereitschaft zeigt hierher,
-	 * nicht auf ein Programm-Update (Absprache vom 06.09.2026: „das muss doch dann irgendwo
-	 * eingestellt werden"). Ein eigener Eintrag für ein Programmjahr gilt vor dem
+	 * Schule hier selbst ein; die Warnung unter Betriebsbereitschaft zeigt hierher, nicht
+	 * auf ein Programm-Update. Ein eigener Eintrag für ein Programmjahr gilt vor dem
 	 * Programm (der Landesbeschluss kann sich ändern). Gespeichert wird eine JSON-Liste
 	 * unter „sommerferien"; geprüft wird sie im Server (pkg/lmfplan/ferien_einstellung.go).
 	 * Teil der Kategorie „LUSD & Versetzung" (SchuljahreswechselBereich).

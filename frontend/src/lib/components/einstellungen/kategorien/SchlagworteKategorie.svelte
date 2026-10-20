@@ -29,7 +29,7 @@
 
 	/** @typedef {import('../schlagwortPflege.js').SchlagwortZeile} Zeile */
 
-	// Gesucht wird am Server über alle Wörter (schlagwortPflegeListe.svelte.js, 30.09.2026); die
+	// Gesucht wird am Server über alle Wörter (schlagwortPflegeListe.svelte.js); die
 	// Antwort bringt höchstens 200 Zeilen und sagt, wie viele zur Suche passen.
 	const pflege = erzeugeSchlagwortPflegeListe();
 	const liste = $derived(pflege.liste);

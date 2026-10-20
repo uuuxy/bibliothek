@@ -1,8 +1,8 @@
 <!-- @component LmfPlanKlassenZelle — die Klassen einer Planer-Zeile. Eine Klasse steht
      als Text (M3: „Don't display a single chip by itself"), ab zwei Klassen (geteilte
      Stunde) als Input-Chips mit × je Chip; ein Status-Chip „ohne Schüler" hängt an der
-     Klasse. Seit dem 06.09.2026 lässt sich jede Klasse anklicken und tauschen — die
-     Zelle überschreiben wie im Excel: Der Klick zeigt an ihrer Stelle das Auswahlfeld
+     Klasse. Jede Klasse lässt sich anklicken und tauschen, die Zelle überschreiben wie im
+     Excel: Der Klick zeigt an ihrer Stelle das Auswahlfeld
      mit der Klasse selbst und allen aus „Noch nicht im Plan" (offen und eingeklappt),
      schon geöffnet. Wählen tauscht (die alte Klasse geht zurück in den Vorrat, die
      Zeile behält Platz und Vermerk); Escape oder Fokus woandershin lässt alles, wie
@@ -57,8 +57,8 @@
 	}
 
 	/** Fokus wandert per Tab aus der Zelle: Tausch abbrechen. Ohne Ziel (relatedTarget
-	 *  null) nicht — so meldet Chrome auch den Knopf, den der Klick gerade ersetzt hat;
-	 *  das brach den Tausch ab, bevor das Feld stand (E2E 06.09.2026). Klicks woandershin
+	 *  null) nicht: So meldet Chrome auch den Knopf, den der Klick gerade ersetzt hat, und
+	 *  das bräche den Tausch ab, bevor das Feld steht. Klicks woandershin
 	 *  fängt der pointerdown am Fenster.
 	 *  @param {FocusEvent} e */
 	function fokusWeg(e) {

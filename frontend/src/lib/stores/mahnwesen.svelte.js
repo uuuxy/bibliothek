@@ -218,8 +218,7 @@ function erzeugeMahnwesen() {
 		waehleAlle,
 		waehleKeine,
 
-		// Mail: nur noch der Massenversand (Einzelversand je Klasse entfernt am 18.09.2026,
-		// siehe mahnwesenMail.svelte.js).
+		// Mail: nur der Massenversand (siehe mahnwesenMail.svelte.js).
 		sendeMahnmails: mailStore.sendeMahnmails,
 
 		get drucktPdf() {

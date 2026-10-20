@@ -2,9 +2,9 @@
      Klassensatz-Karte (KlassenKarte): Zeile mit Zähler-Chip und Namen, Klick klappt die
      Bücher als Cover-Raster auf.
 
-     Absprache vom 03.09.2026: „Englisch möchte nur die Englisch-Bücher … im Grunde ähnlich wie
-     bei Klassensätzen." Genau dieselbe Frage wie dort — „was hat MEINE Klasse / MEIN Fach,
-     und stimmt der Bestand?" —, also dieselbe Bauform statt einer dritten. Die Zeile
+     Ein Fach sieht seine Bücher; das ist dieselbe Frage wie bei den Klassensätzen („was hat
+     meine Klasse / mein Fach, und stimmt der Bestand?"), also dieselbe Bauform statt einer
+     dritten. Die Zeile
      beantwortet „wie viel?" schon eingeklappt; das Raster beantwortet „was genau?" für das
      eine Fach, das man gerade ansieht. Der Druck-Knopf sitzt am Fach, nicht an der Seite:
      Der Fachsprecher exportiert sein Fach, nicht die ganze Schule. -->
@@ -66,8 +66,8 @@
 	</div>
 
 	{#if offen}
-		<!-- Umbrechendes Raster, kein Karussell — dieselbe Entscheidung wie bei den
-		     Klassensätzen (08.08.2026): Pfeile auf :hover gibt es am Tablet nicht. -->
+		<!-- Umbrechendes Raster, kein Karussell, wie bei den Klassensätzen: Pfeile auf :hover
+		     gibt es am Tablet nicht. -->
 		<div
 			id={rasterID}
 			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-4 pt-1 pb-6"

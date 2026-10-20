@@ -58,16 +58,15 @@ class BestellStore {
 	);
 	submitting = $state(false);
 	/**
-	 * Idempotenz-Schlüssel des laufenden Absende-Vorgangs (Doppelklick-Schutz) — EINER JE
-	 * TOPF: Ein gemischter Warenkorb schickt zwei Bestellungen, und ein wiederholter
+	 * Idempotenz-Schlüssel des laufenden Absende-Vorgangs (Doppelklick-Schutz), einer je
+	 * Topf: Ein gemischter Warenkorb schickt zwei Bestellungen, und ein wiederholter
 	 * Versuch nach einem Netzfehler darf die schon durchgelaufene nicht verdoppeln, die
 	 * gescheiterte aber nachholen.
 	 *
-	 * Gemerkt wird der Schlüssel MIT dem Inhalt, für den er gilt (`signatur`). Bis zum
-	 * 16.09.2026 stand hier nur der Schlüssel: Ging die Antwort verloren und änderte
-	 * jemand danach den Warenkorb, ging derselbe Schlüssel mit ANDEREM Inhalt raus — der
-	 * Server erkannte die Wiederholung und antwortete mit der alten Bestellung. Der
-	 * geänderte Warenkorb war damit still verschwunden, und die Oberfläche meldete Erfolg.
+	 * Gemerkt wird der Schlüssel mit dem Inhalt, für den er gilt (`signatur`): Ginge nach
+	 * einer verlorenen Antwort und einem geänderten Warenkorb derselbe Schlüssel mit anderem
+	 * Inhalt hinaus, antwortete der Server mit der alten Bestellung, und der geänderte
+	 * Warenkorb wäre still verschwunden, während die Oberfläche Erfolg meldet.
 	 * @type {Partial<Record<Mittel, { signatur: string, key: string }>>}
 	 */
 	pendingIdempotencyKeys = {};
@@ -196,24 +195,16 @@ class BestellStore {
 	/**
 	 * Anzeige-Regeln des Bestellwesens laden.
 	 *
-	 * DIE ZUWEISUNGEN STEHEN IM try, ABER DIE WERTE BLEIBEN BEI EINEM FEHLER STEHEN —
-	 * das ist der Unterschied zur vorherigen Fassung und er ist wichtig:
-	 * bestelllinkOhneAdresse steuert den Wächter über dem Bestellwesen
-	 * (BestelllinkHinweis). Scheiterte der Aufruf, blieb das Feld auf seinem
-	 * Anfangswert `false`, und der Hinweis verschwand — genau in dem Moment, in dem
-	 * das System eine Frage nicht beantworten kann, behauptete es „alles in Ordnung".
-	 * Wer dann bestellt, verschickt Mails ohne Bestätigungs-Link, und die
-	 * Bestellhistorie wartet auf eine Bestätigung, die niemand geben kann.
+	 * Die Zuweisungen stehen im try, aber die Werte bleiben bei einem Fehler stehen:
+	 * bestelllinkOhneAdresse steuert den Wächter über dem Bestellwesen (BestelllinkHinweis).
+	 * Fiele das Feld bei einem Fehler auf seinen Anfangswert `false`, verschwände der
+	 * Hinweis genau in dem Moment, in dem das System eine Frage nicht beantworten kann, etwa
+	 * bei einem 429 der Ratenbegrenzung. Wer dann bestellt, verschickt Mails ohne
+	 * Bestätigungs-Link, und die Bestellhistorie wartet auf eine Bestätigung, die niemand
+	 * geben kann.
 	 *
-	 * Gefunden hat das die E2E-Suite am 08.08.2026: Der Server antwortete unter Last
-	 * mit 429 (Ratenbegrenzung, 50 Anfragen/s je IP — korrektes Verhalten), der
-	 * catch-Block schluckte es, der Wächter blieb unsichtbar. Im Testlauf sah das aus
-	 * wie ein sprunghafter Test; in der Anwendung ist es eine Warnung, die ausgerechnet
-	 * bei einer Störung ausfällt. Dieselbe Klasse wie der Bestelllink selbst, der
-	 * einmal still ausfiel, weil eine Einstellung fehlte.
-	 *
-	 * apiGet meldet den Fehler bereits als Toast — der Benutzer sieht also, dass etwas
-	 * nicht geladen wurde, statt eine stille Falschaussage zu bekommen.
+	 * apiGet meldet den Fehler bereits als Toast: Der Benutzer sieht also, dass etwas nicht
+	 * geladen wurde, statt eine stille Falschaussage zu bekommen.
 	 */
 	async loadKonfiguration() {
 		try {

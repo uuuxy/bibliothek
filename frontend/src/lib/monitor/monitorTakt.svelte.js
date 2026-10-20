@@ -2,10 +2,9 @@
 // Nachladen und Neuversuch. Getrennt von der Anzeige (Monitor.svelte), damit er mit
 // gestellter Uhr prüfbar ist.
 //
-// Ein Bildschirm ohne Tastatur, der wochenlang läuft. Bis zum 30.08.2026 lud die Seite
-// ihre Daten genau EINMAL beim Start. Nach einem Stromausfall bootet der Monitor-PC
-// schneller als der Server: Der erste Abruf scheiterte, und „Lade Daten …" stand für
-// immer. Wer durchkam, zeigte für den Rest der Woche den Stand vom Einschalttag.
+// Ein Bildschirm ohne Tastatur, der wochenlang läuft. Nach einem Stromausfall bootet der
+// Monitor-PC schneller als der Server; lüde die Seite ihre Daten nur einmal beim Start,
+// stünde „Lade Daten …" für immer, oder für den Rest der Woche der Stand vom Einschalttag.
 //
 // Regeln:
 //   * Folienwechsel alle FOLIE_MS; Cover-Lauf alle COVER_MS, nur auf „Neu eingetroffen".

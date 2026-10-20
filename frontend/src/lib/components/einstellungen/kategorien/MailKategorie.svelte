@@ -1,14 +1,12 @@
 <script>
 	/**
 	 * @component MailKategorie
-	 * Alles zum Mailversand an einem Ort: der Server, über den verschickt wird, und
-	 * die Vorlagen, die verschickt werden. Vorher lagen sie in zwei Reitern („Mail-
-	 * Server" und „System"), von denen der zweite genau diesen einen Inhalt hatte.
+	 * Alles zum Mailversand an einem Ort: der Server, über den verschickt wird, und die
+	 * Vorlagen, die verschickt werden.
 	 *
-	 * Beide Teile speichern selbst — deshalb trägt die Kategorie keinen eigenen
-	 * Knopf. Die Zugangsdaten des Servers sieht nur ein Admin; die Vorlagen darf
-	 * bearbeiten, wer die Einstellungen überhaupt öffnen kann (bis zum 23.08.2026 lag
-	 * das genauso, nur über zwei getrennte Reiter verteilt).
+	 * Beide Teile speichern selbst, deshalb trägt die Kategorie keinen eigenen Knopf. Die
+	 * Zugangsdaten des Servers sieht nur ein Admin; die Vorlagen darf bearbeiten, wer die
+	 * Einstellungen überhaupt öffnen kann.
 	 */
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import MailEinstellungen from '../../admin/MailEinstellungen.svelte';

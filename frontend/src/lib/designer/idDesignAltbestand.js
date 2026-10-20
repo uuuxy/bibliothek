@@ -1,21 +1,19 @@
 /**
  * @file idDesignAltbestand.js
  * Heilung des zentral gespeicherten Designs beim Laden: Bänder, die eine frühere
- * Vorlagen-Fassung als SVG-BILD gespeichert hat, werden in Farbflächen ('box')
- * übersetzt, und ein fest eingetippter Titel „Schülerausweis" wird zum
- * Dokumenttyp-Feld, das die Art des Lesers liest.
+ * Vorlagen-Fassung als SVG-Bild gespeichert hat, werden in Farbflächen ('box') übersetzt,
+ * und ein fest eingetippter Titel „Schülerausweis" wird zum Dokumenttyp-Feld, das die Art
+ * des Lesers liest.
  *
  * Warum beim Laden und nicht nur in den Vorlagen: Das Design liegt zentral in der
- * Datenbank; applyDesign() lädt es und überschreibt jede Vorgabe. Eine Installation,
- * die „Schwarz-Grün" zwischen dem 01.09.2026 (Vorlagen eingeführt) und dem Umbau auf
- * Farbflächen angewendet hat, trüge die Bild-Bänder sonst für immer weiter — mit
- * genau den weißen Randstreifen und der nicht editierbaren Farbe, die der Umbau
- * beseitigt. Derselbe Weg, auf dem schon der Musterstadt-Kopf und die Klassenzeile
- * hängenblieben (applySeite in idDesignerStore.svelte.js).
+ * Datenbank; applyDesign() lädt es und überschreibt jede Vorgabe. Ein gespeichertes Design
+ * mit Bild-Bändern trüge sonst für immer die weißen Randstreifen und die nicht editierbare
+ * Farbe weiter. Derselbe Weg wie für den Musterstadt-Kopf und die Klassenzeile (applySeite
+ * in idDesignerStore.svelte.js).
  *
- * Die Farben sind die der ALTEN Vorlagen (eingefroren — sie beschreiben, was damals
- * gezeichnet wurde, nicht was heute gilt). Ein Bild mit einer dieser IDs, das KEIN
- * eingebettetes SVG ist (jemand hat eine eigene Datei hochgeladen), bleibt unangetastet.
+ * Die Farben sind die der alten Vorlagen, eingefroren: Sie beschreiben, was gespeichert
+ * wurde, nicht was heute gilt. Ein Bild mit einer dieser IDs, das kein eingebettetes SVG
+ * ist (jemand hat eine eigene Datei hochgeladen), bleibt unangetastet.
  */
 
 const SVG_ANFANG = 'data:image/svg+xml';
@@ -71,10 +69,9 @@ function kopfbandMitLinie(alt, bandId, linieId, anteilBand) {
 /**
  * Ein fest eingetippter Titel „Schülerausweis" wird zum Dokumenttyp-Feld.
  *
- * Bis zum 16.09.2026 war der Titel ein gewöhnliches Textelement. Auf dem Ausweis einer
- * Lehrkraft stand deshalb „Schülerausweis" — der Text kannte die Art des Lesers nicht.
- * Das gespeicherte Design der Schule trägt diesen Text weiter, bis er hier ersetzt wird;
- * derselbe Weg wie bei den Bild-Bändern.
+ * Als gewöhnliches Textelement stünde auf dem Ausweis einer Lehrkraft „Schülerausweis",
+ * denn der Text kennt die Art des Lesers nicht. Ein gespeichertes Design trägt diesen Text
+ * weiter, bis er hier ersetzt wird; derselbe Weg wie bei den Bild-Bändern.
  *
  * Die Vorlagen schreiben den Titel in Großbuchstaben. Weil der Inhalt jetzt aus der Art
  * kommt, wird aus dieser Schreibweise eine Angabe am Stil — sonst stünde auf einer

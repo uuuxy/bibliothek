@@ -8,10 +8,8 @@
 	 *   print-section-card      → Kartendrucker, Vorderseite
 	 *   print-section-back-card → Kartendrucker, Rückseite
 	 *
-	 * Bis zum 24.08.2026 gab es zwei weitere Sektionen für einen A4-Bogen mit acht
-	 * Kartenabbildern zum Ausschneiden. Er ist abgeschafft; an seiner Stelle steht der
-	 * Etikettenbogen, und der entsteht serverseitig als PDF (schuelerEtiketten.js) und
-	 * nicht über die Druck-CSS des Browsers. Deshalb bleiben hier nur die zwei Karten.
+	 * Nur die zwei Karten: Der Etikettenbogen entsteht serverseitig als PDF
+	 * (schuelerEtiketten.js) und nicht über die Druck-CSS des Browsers.
 	 *
 	 * Jede Sektion rendert pro Schüler eine Karte über Kartenseite — dieselbe Render-Quelle
 	 * wie der profilseitige Einzeldruck (Ausweiskarte).

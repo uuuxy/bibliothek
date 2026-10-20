@@ -1,30 +1,19 @@
-<!-- @component MahnwesenSuchleiste — die EINE Suche dieser Seite, darunter Filter und Knöpfe.
+<!-- @component MahnwesenSuchleiste — die eine Suche dieser Seite, darunter Filter und Knöpfe.
 
-     Absprache vom 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich aussehen." Bis dahin
-     stand über jeder Verwaltungsseite zusätzlich eine globale Suchleiste, und die eigene
-     Suche saß als 36-px-Feld daneben im Werkzeugbalken. Jetzt trägt jede Seite genau eine
-     Suche, und zwar in derselben Gestalt wie Medienkatalog, Portal und Theke: die
-     48-px-Suchpille über die volle Breite. Filter und Knöpfe stehen DARUNTER in einer
-     eigenen Zeile — nebeneinander säße die Pille 12 px höher als jedes Auswahlfeld und
-     risse die Control-Grundlinie aus styles/basis.css auf.
+     Jede Seite trägt genau eine Suche, in derselben Gestalt wie Medienkatalog, Portal und
+     Theke: die 48-px-Suchpille über die volle Breite. Filter und Knöpfe stehen darunter in
+     einer eigenen Zeile; nebeneinander säße die Pille 12 px höher als jedes Auswahlfeld und
+     risse die Control-Grundlinie aus styles/basis.css auf. Die Knöpfe stehen neben dem
+     Klassenfilter, so wie „Neuer Schüler" in SchuelerdateiLeiste, und nicht über den
+     Reitern: In M3 ist die Suchleiste „a persistent and prominent search field at the top
+     of the screen" und nimmt den Platz der App-Leiste ein; Reiter sitzen „at the top of the
+     content pane under an app bar". Eine Knopfzeile darüber gibt es in dieser Reihenfolge
+     nicht.
 
-     Am selben Tag, abends: Die Knopfzeile des Mahnwesens stand bis dahin ÜBER den Reitern
-     im `aktionen`-Slot von Seitenrahmen — als einzige Seite von sechzehn. Die Pille begann
-     dadurch 84 px tiefer als auf Schülerdatei, Katalog, Abgängern und allen anderen; die Rückmeldung
-     an zwei Bildschirmfotos: „hier ist die Suchleiste immer an anderen Positionen … ich
-     empfinde es als Stilbruch". Der Slot war ein Überbleibsel: Er hielt die Knöpfe „neben
-     dem Seitentitel", und den Seitentitel hat 68c4810 am 08.08.2026 abgeschafft. Die
-     Knöpfe stehen jetzt hier unten neben dem Klassenfilter, so wie „Neuer Schüler" in
-     SchuelerdateiLeiste. In M3 ist die Suchleiste „a persistent and prominent search
-     field at the top of the screen" und nimmt den Platz der App-Leiste ein; Reiter sitzen
-     „at the top of the content pane under an app bar". Eine Knopfzeile darüber gibt es in
-     dieser Reihenfolge nicht.
-
-     Warum die Zeile NICHT an `daten` hängt (die Reiter schon): Schlägt das Laden fehl,
-     bleibt `daten` null — die Reiter würden dann „Alle 0" behaupten, was der Fehlermeldung
+     Warum die Zeile nicht an `daten` hängt (die Reiter schon): Schlägt das Laden fehl,
+     bleibt `daten` null; die Reiter würden dann „Alle 0" behaupten, was der Fehlermeldung
      darunter widerspricht. Der Knopf „Neu laden" ist in genau diesem Moment aber der
-     einzige Rückweg und muss stehen bleiben. Vorher trug ihn Seitenrahmen und er überlebte
-     jeden Fehler; das darf der Umzug nicht kosten. -->
+     einzige Rückweg und muss stehen bleiben. -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Select from '../ui/Select.svelte';

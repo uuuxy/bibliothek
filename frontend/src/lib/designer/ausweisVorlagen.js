@@ -12,19 +12,18 @@ import {
  *
  * Flächen (Kopfband, Fußband, Seitenband, Streifen) sind 'box'-Elemente: ein Rechteck
  * mit Füllfarbe und optionalen runden Ecken, das Kartenseite/CanvasElement als schlichtes
- * div rendern. Bis zum 01.09.2026 waren sie eingebettete SVG-Bilder — deren Farbe war
- * nicht editierbar, und object-contain ließ am Kartenrand weiße Streifen stehen.
- * Einzig das Wellen-Motiv (Reis-Welle) bleibt ein SVG-Bild: 40 Balken sind kein
- * Rechteck.
+ * div rendern. Als eingebettete SVG-Bilder wäre ihre Farbe nicht editierbar, und
+ * object-contain ließe am Kartenrand weiße Streifen stehen. Einzig das Wellen-Motiv
+ * (Reis-Welle) bleibt ein SVG-Bild: 40 Balken sind kein Rechteck.
  *
- * Bewusste Regeln, die alle Vorlagen einhalten:
- *   - Schulname/Adresse tragen die IDs 'header'/'address' mit den PLATZHALTER-Texten,
+ * Regeln, die alle Vorlagen einhalten:
+ *   - Schulname/Adresse tragen die IDs 'header'/'address' mit den Platzhalter-Texten,
  *     damit wendeSchulstammdatenAn() sie wie beim Standard-Design ersetzt.
- *   - Das Logofeld bleibt LEER (die Schule lädt ihre echte Logodatei hoch); leere
+ *   - Das Logofeld bleibt leer (die Schule lädt ihre echte Logodatei hoch); leere
  *     Logofelder lässt der Druck einfach weg.
- *   - Keine Klassen-/Schuljahreszeile — der Ausweis gilt die ganze Schulzeit
+ *   - Keine Klassen-/Schuljahreszeile, der Ausweis gilt die ganze Schulzeit
  *     (Begründung am details-Filter in idDesignerStore.applySeite).
- *   - Der Barcode liegt IMMER auf heller Fläche: Kartenseite rendert die Nummer dunkel,
+ *   - Der Barcode liegt immer auf heller Fläche: Kartenseite rendert die Nummer dunkel,
  *     auf dunklem Grund wäre sie unlesbar.
  */
 
@@ -470,7 +469,6 @@ export function wendeVorlageAn(kennung) {
 	// Ein bereits hochgeladenes Schullogo überlebt den Vorlagenwechsel: Das leere
 	// Logofeld der Vorlage bedeutet „noch kein Logo", nicht „Logo entfernen" — sonst
 	// müsste die Schule ihre Logodatei nach jedem Vorlagenklick erneut hochladen.
-	// (Raster-Fund 01.09.2026, Frage 8 Lebenszyklus: Was überlebt den Ersetzen-Pfad?)
 	const bisherigesLogo = idStore.front.elements.find((e) => e.type === 'logo' && e.content);
 	if (bisherigesLogo) {
 		const logoNeu = v.front.elements.find((e) => e.type === 'logo');

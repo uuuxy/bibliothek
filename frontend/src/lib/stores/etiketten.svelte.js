@@ -53,10 +53,10 @@ function erzeugeEtikettenStore() {
 	let startFeld = $state(1); // 1 to 21
 
 	// Vorgabe = die des Servers (pdf/etikett_formate.go EtikettFormatVorgabe): das Papier des
-	// Lieferantenwegs. Bis 24.08.2026 stand hier avery_3475 — zwei Vorgaben für ein Raster.
+	// Lieferantenwegs, eine Vorgabe für beide.
 	let formatId = $state('zweckform_l4760');
-	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette: Die drei
-	// Zahlen standen hier als dritte Kopie derselben Raster (24.08.2026).
+	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette, die eine weitere
+	// Kopie derselben Raster wäre.
 	let felderJeBogen = $derived(felderProBogen(formatId));
 	let modus = $state('existing');
 	// Tief reaktiv, nicht $state.raw: Das Kästchen in Schritt 2 schreibt `checked` an das
@@ -210,11 +210,11 @@ function erzeugeEtikettenStore() {
 		sucht = true;
 		suchVerzoegerung = setTimeout(async () => {
 			try {
-				// Titel-Tür (view_books) — nie POST /api/action (dort löst ein gescannter
-				// B-Barcode ohne aktiven Schüler eine Rückgabe aus, Inventur 03.09.2026) und seit
-				// 05.09.2026 auch nicht mehr die Theken-Suche /api/search: Die lieferte
-				// Schüler-Kiosk-Daten mit, die dieser Bildschirm nie zeigt, und hing am
-				// Theken-Recht perform_actions, das ein Druckbildschirm nicht braucht.
+				// Titel-Tür (view_books), nie POST /api/action (dort löst ein gescannter
+				// B-Barcode ohne aktiven Schüler eine Rückgabe aus) und nicht die Theken-Suche
+				// /api/search: Die liefert Schüler-Kiosk-Daten mit, die dieser Bildschirm nie
+				// zeigt, und hängt am Theken-Recht perform_actions, das ein Druckbildschirm nicht
+				// braucht.
 				const res = await apiFetch(
 					`/api/buecher/titel/suche?q=${encodeURIComponent(suche.trim())}`
 				);
@@ -223,9 +223,8 @@ function erzeugeEtikettenStore() {
 					if (lauf !== suchLauf) return;
 					treffer = body.books || [];
 				} else if (lauf === suchLauf) {
-					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieben die
-					// Treffer des VORIGEN Suchtextes stehen — man klickt auf eine Zeile,
-					// die zu einer anderen Eingabe gehört, und druckt deren Etikett.
+					// Sonst blieben die Treffer des vorigen Suchtextes stehen: Man klickte auf
+					// eine Zeile, die zu einer anderen Eingabe gehört, und druckte deren Etikett.
 					treffer = [];
 					snackbars.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
 				}

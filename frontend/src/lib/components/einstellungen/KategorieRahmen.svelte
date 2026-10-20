@@ -1,17 +1,14 @@
 <script>
 	/**
 	 * @component KategorieRahmen
-	 * Die Hülle EINER Einstellungs-Kategorie: Überschrift, ein Satz, der Inhalt und
-	 * — falls die Kategorie etwas zu speichern hat — ihr eigener Speichern-Knopf.
+	 * Die Hülle einer Einstellungs-Kategorie: Überschrift, ein Satz, der Inhalt und, falls
+	 * die Kategorie etwas zu speichern hat, ihr eigener Speichern-Knopf.
 	 *
-	 * Warum je Kategorie gespeichert wird (Betreiber-Entscheidung 23.08.2026):
-	 * Vorher lag EIN Knopf am Seitenende unter sieben fremden Abschnitten. Wer die
-	 * Preiserfassung umlegte, speicherte Schuladresse, Fristen und Löschfristen mit.
-	 * Und weil dabei immer alles auf einmal ging, trug das Formular drei verschiedene
-	 * Leer-Regeln, die man nur aus dem Hinweistext erfuhr (Schule: leer = unverändert,
-	 * Öffentliche Adresse: leer = abschalten, Datenschutz: 0 = aus, leer = unverändert).
-	 * Jetzt schickt jede Kategorie ausschließlich ihre eigenen Felder — und damit gilt
-	 * überall dieselbe Regel: Was im Feld steht, wird gespeichert.
+	 * Warum je Kategorie gespeichert wird: Ein Knopf für alles speicherte Schuladresse,
+	 * Fristen und Löschfristen mit, wenn jemand nur die Preiserfassung umlegt, und jede
+	 * Sektion bräuchte eine eigene Leer-Regel als Notbremse. So schickt jede Kategorie
+	 * ausschließlich ihre eigenen Felder, und überall gilt dieselbe Regel: Was im Feld
+	 * steht, wird gespeichert.
 	 *
 	 * Ein Satz Erklärtext, nicht sechs Zeilen. Was darüber hinausgeht, steht im
 	 * „Mehr"-Aufklapper — ein natives <details>, damit es ohne JavaScript, mit

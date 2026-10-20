@@ -5,9 +5,8 @@
      zwanzig. Die Zählungen wohnen bei den Registern, weil sie sonst nirgends
      gebraucht werden.
 
-     Die Leiste selbst kommt seit 27.08.2026 aus ui/Reiter.svelte (Anlass: PR #517
-     wollte ihr ARIA-Rollen von Hand geben — genau das, was das gemeinsame Bauteil
-     schon mitbringt, samt Farben aus der M3-Skala statt slate/blue). -->
+     Die Leiste selbst kommt aus ui/Reiter.svelte, das die ARIA-Rollen und die Farben aus
+     den M3-Rollen mitbringt. -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { bescheideStore } from '../../stores/bescheide.svelte.js';

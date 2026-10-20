@@ -35,9 +35,9 @@ export async function ladeSchlagwortVorschlaege(suche = '') {
 }
 
 /**
- * Der Schlagwort-Vorschlag der DNB zu einer ISBN (GET /api/schlagworte/dnb-vorschlag, entschieden
- * am 30.09.2026): die Wörter der eigenen Liste, die der DNB-Satz nennt, und die Normdatei-Wörter,
- * die die Liste noch nicht kennt — dieselbe Regel wie beim Anlegen über die Bestellsuche. Nur
+ * Der Schlagwort-Vorschlag der DNB zu einer ISBN (GET /api/schlagworte/dnb-vorschlag): die
+ * Wörter der eigenen Liste, die der DNB-Satz nennt, und die Normdatei-Wörter, die die Liste
+ * noch nicht kennt, dieselbe Regel wie beim Anlegen über die Bestellsuche. Nur
  * angeboten, eingetragen wird über das Feld.
  *
  * Ein Fehler wirft: Der Aufrufer sagt „nicht erreichbar" an. Käme hier eine leere Antwort, sähe

@@ -1,18 +1,14 @@
 <!--
   @component MahnwesenAktionen
-  Die Knopfzeile des Mahnwesens. Sie steht in der Werkzeugzeile UNTER der Suchpille
-  (MahnwesenSuchleiste), rechts neben dem Klassenfilter — so wie „Neuer Schueler" in
-  SchuelerdateiLeiste.
-
-  Bis zum 04.09.2026 stand sie GANZ OBEN im `aktionen`-Slot von Seitenrahmen, weil sie dort
-  einmal neben dem Seitentitel gestanden hatte. Den Seitentitel hat 68c4810 am 08.08.2026
-  abgeschafft, die Knopfzeile blieb — als einzige von sechzehn Routen — allein oben stehen
-  und schob die Suchpille um 84 px nach unten. Den Slot gibt es seitdem nicht mehr.
+  Die Knopfzeile des Mahnwesens. Sie steht in der Werkzeugzeile unter der Suchpille
+  (MahnwesenSuchleiste), rechts neben dem Klassenfilter, so wie „Neuer Schüler" in
+  SchuelerdateiLeiste: Über den Reitern schöbe sie die Suchpille als einzige Seite nach
+  unten.
 
   Bei einer Auswahl uebernimmt sie den Auswahl-Modus (wie Gmail/Drive): Nur noch die auf
   die Markierung bezogenen Aktionen sind sichtbar.
 
-  Den Mahnlauf-Dialog rendert NICHT diese Komponente, sondern Mahnwesen.svelte auf
+  Den Mahnlauf-Dialog rendert nicht diese Komponente, sondern Mahnwesen.svelte auf
   oberster Ebene: Ein Overlay hat in einem Flex-Container mit `print:hidden` nichts
   verloren.
 -->

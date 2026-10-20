@@ -94,7 +94,7 @@
 									{#if !schueler.eltern_email}
 										<!-- Dezentes „keine Eltern-E-Mail"-Icon statt lautem Dauer-Label auf jeder Zeile.
 										     role="img": Auf einem nackten <span> ist aria-label verboten
-										     (aria-prohibited-attr, 174 Treffer am 09.09.2026) — als Bild mit
+										     (aria-prohibited-attr); als Bild mit
 										     Namen liest der Screenreader es vor, statt es zu ignorieren. -->
 										<span
 											role="img"

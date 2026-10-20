@@ -2,13 +2,13 @@ import { ladeSchlagwortVorschlaege } from './schlagworte.js';
 
 /**
  * Die Vorschläge eines Schlagwort-Felds (ui/ChipFeld): beim Öffnen die häufigsten, beim Tippen
- * die Treffer über alle Wörter (GET /api/schlagworte?suche=). EIN Baustein für beide Felder,
- * die Schlagworte entgegennehmen — Buchformular und Bestellkorb.
+ * die Treffer über alle Wörter (GET /api/schlagworte?suche=). Ein Baustein für beide Felder,
+ * die Schlagworte entgegennehmen, Buchformular und Bestellkorb.
  *
- * Bis zum 30.09.2026 luden beide Felder nur die 500 häufigsten Wörter. Mit den Littera-Wörtern
- * (Katalogisat vom Juni 2026: 13.224) deckten sie 56 % der Zuordnungen ab; 12.724 Wörter wurden
- * nie angeboten, und wer „Pilz" tippte, sah das vorhandene „Pilze" nicht und legte ein zweites
- * Wort an (Rasterdurchgang vom 30.09.2026). Dasselbe Muster wie die Suche der Pflegeseite
+ * Über alle Wörter, nicht nur die häufigsten: Mit den rund 13.000 Littera-Wörtern deckten
+ * die 500 häufigsten nur gut die Hälfte der Zuordnungen ab, und wer „Pilz" tippt, sähe das
+ * vorhandene „Pilze" nicht und legte ein zweites Wort an. Dasselbe Muster wie die Suche der
+ * Pflegeseite
  * (einstellungen/schlagwortPflegeListe.svelte.js): 300 ms nach dem Tippen, nur die jüngste Antwort
  * schreibt. Ein leeres Feld holt wieder die häufigsten.
  *

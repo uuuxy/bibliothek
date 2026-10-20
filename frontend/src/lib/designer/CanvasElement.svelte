@@ -2,12 +2,10 @@
 	import { strichcodeBildUrl, strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
 	/**
 	 * @file CanvasElement.svelte
-	 * EIN Element auf dem Reißbrett des Ausweis-Designers: Darstellung je Elementart
-	 * plus Auswahl-Ring und Skalier-Griffe. Aus CanvasFlaeche.svelte herausgelöst
-	 * (01.09.2026), als das Flächen-Element ('box') dazukam — CanvasFlaeche stand im
-	 * eingefrorenen Größen-Bestand, und die Element-Darstellung ist der Teil, der mit
-	 * jeder Elementart weiterwächst. Drag-/Resize-MECHANIK bleibt drüben: Die
-	 * Fensterlistener und ihr Aufräumen gehören an eine Stelle.
+	 * Ein Element auf dem Reißbrett des Ausweis-Designers: Darstellung je Elementart plus
+	 * Auswahl-Ring und Skalier-Griffe, der Teil, der mit jeder Elementart wächst. Die
+	 * Drag-/Resize-Mechanik bleibt in CanvasFlaeche.svelte: Die Fensterlistener und ihr
+	 * Aufräumen gehören an eine Stelle.
 	 */
 	import { User } from '@lucide/svelte';
 	import { ausweisTitel } from '../leserArt.js';

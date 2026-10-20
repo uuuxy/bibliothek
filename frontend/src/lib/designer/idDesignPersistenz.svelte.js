@@ -4,16 +4,12 @@ import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerSt
 import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
 
 /**
- * Laden, Speichern und Zurücksetzen des zentral abgelegten Ausweis-Designs.
+ * Laden, Speichern und Zurücksetzen des zentral abgelegten Ausweis-Designs, getrennt von
+ * AusweisDesigner.svelte: Der Bildschirm macht zwei Dinge, und die Ablage ist das, was
+ * nichts mit der Leinwand zu tun hat.
  *
- * Aus AusweisDesigner.svelte herausgelöst (24.08.2026): Die Komponente lag an der
- * 200-Zeilen-Marke und hat zweimal hintereinander die Größen-Ratsche gerissen, als
- * etwas an ihr gebaut wurde. Kommentare zu kürzen, um einen Zähler zu bedienen, ist die
- * falsche Antwort darauf — der Bildschirm macht schlicht zwei Dinge, und die Ablage ist
- * das Ding, das nichts mit der Leinwand zu tun hat.
- *
- * Der Auto-Save-Effekt bleibt bewusst in der Komponente: Ein $effect gehört an den
- * Lebenszyklus, der ihn wieder abräumt.
+ * Der Auto-Save-Effekt bleibt in der Komponente: Ein $effect gehört an den Lebenszyklus,
+ * der ihn wieder abräumt.
  */
 
 /** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladefehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
@@ -23,16 +19,11 @@ export function erzeugeDesignAblage() {
 	// Erst nach dem initialen Laden auto-speichern, sonst überschrieben die
 	// Store-Vorgabewerte den geladenen Stand.
 	//
-	// Genau das geschah bis zum Sweep am 06.09.2026 bei einem FEHLGESCHLAGENEN Laden:
-	// `geladen` wurde im finally gesetzt, egal wie der Abruf ausging. Die Leinwand zeigte
-	// dann die Vorgabewerte, der Auto-Save-Effekt war scharf — und die anschließende
-	// Heilung der Schulstammdaten fasst den Store an. Das allein genügte: 800 ms später
-	// ging ein PUT mit dem VORGABE-Design an den Server und ersetzte das Design der
-	// Schule auf ALLEN Arbeitsplätzen. Ohne einen Klick, nur weil jemand den Bildschirm
-	// öffnete, während der GET scheiterte.
-	//
-	// Deshalb: `geladen` nur bei einer echten Antwort. Ein leeres {} beim Erststart ist
-	// eine (200er) Antwort und darf weiterhin auto-speichern.
+	// `geladen` gilt nur bei einer echten Antwort, nicht nach einem gescheiterten Laden: Dann
+	// zeigt die Leinwand Vorgabewerte, die Heilung der Schulstammdaten fasst den Store an, und
+	// 800 ms später ersetzte ein PUT mit dem Vorgabe-Design das Design der Schule auf allen
+	// Arbeitsplätzen, ohne einen Klick. Ein leeres {} beim Erststart ist eine (200er) Antwort
+	// und darf auto-speichern.
 	let geladen = $state(false);
 	// Nicht leer = die Leinwand zeigt NICHT den zentralen Stand. Der Bildschirm sagt es,
 	// statt still mit Vorgabewerten weiterzuarbeiten.

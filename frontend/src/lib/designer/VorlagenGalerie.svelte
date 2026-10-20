@@ -1,13 +1,12 @@
 <!-- @component VorlagenGalerie — Auswahl der Design-Vorlage als Bildergalerie.
 
-     Bis zum 01.09.2026 war das ein Dropdown mit sieben Namen. „Marine (Seitenband)"
-     sagt aber nichts darüber, wie die Karte aussieht — und jede Wahl fragt nach, weil
-     sie das zentrale Design aller Arbeitsplätze ersetzt. Wer erst nach dem Anwenden
-     sieht, was er gewählt hat, klickt sich siebenmal durch die Rückfrage. Die Galerie
-     zeigt jede Vorlage als Miniatur VOR der Wahl.
+     Ein Name wie „Marine (Seitenband)" sagt nichts darüber, wie die Karte aussieht, und
+     jede Wahl fragt nach, weil sie das zentrale Design aller Arbeitsplätze ersetzt. Wer erst
+     nach dem Anwenden sieht, was er gewählt hat, klickt sich siebenmal durch die Rückfrage.
+     Die Galerie zeigt jede Vorlage deshalb als Miniatur vor der Wahl.
 
-     Wie das Dropdown davor ist sie eine AKTION, kein Zustand: Es gibt keine „aktive"
-     Vorlage — nach dem Anwenden ist sie nur noch Ausgangspunkt fürs freie Editieren. -->
+     Sie ist eine Aktion, kein Zustand: Es gibt keine „aktive" Vorlage, nach dem Anwenden
+     ist sie nur noch Ausgangspunkt fürs freie Editieren. -->
 <script>
 	import { ChevronDown } from '@lucide/svelte';
 	import { AUSWEIS_VORLAGEN } from './ausweisVorlagen.js';
@@ -34,10 +33,9 @@
 	onkeydown={(e) => {
 		if (e.key !== 'Escape' || !offen) return;
 		offen = false;
-		// Als verarbeitet markieren: Sonst schließt derselbe Tastendruck zusätzlich die
-		// ganze Ansicht (globaler Escape-Kurzbefehl in Router.svelte) — die Galerie ging zu
-		// UND der Designer sprang an die Theke. Gefunden im Rasterdurchgang 06.09.2026;
-		// CoverVorschau.svelte macht es seit jeher richtig, die Ratsche sah diese Form nicht.
+		// Als verarbeitet markieren: Sonst schließt derselbe Tastendruck zusätzlich die ganze
+		// Ansicht (globaler Escape-Kurzbefehl in Router.svelte), die Galerie ginge zu, und der
+		// Designer spränge an die Theke. Wie in CoverVorschau.svelte.
 		e.preventDefault();
 	}}
 />

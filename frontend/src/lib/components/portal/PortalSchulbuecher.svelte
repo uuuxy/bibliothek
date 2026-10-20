@@ -1,16 +1,13 @@
 <script>
 	/**
 	 * @component PortalSchulbuecher
-	 * Schulbücher für die Fachsprecher (03.09.2026): „Englisch möchte nur die
-	 * Englisch-Bücher … im Grunde ähnlich wie bei Klassensätzen. Wir brauchen alle
-	 * Fachbereiche, eine Suchfunktion und Filterfunktionen."
+	 * Schulbücher für die Fachsprecher: alle Fachbereiche, mit Suche und Filtern, und jedes
+	 * Fach sieht seine Bücher. Dieselbe Bauform wie unter Bibliothek → Klassensätze: oben
+	 * Suche und Filter, darunter eine aufklappbare Karte je Fach mit den Cover-Kacheln
+	 * (FachKarte). Eine Kachelwand je Fach oder eine Chip-Leiste zeigte dem Fachsprecher
+	 * immer die ganze Schule.
 	 *
-	 * Also dieselbe Bauform wie unter Bibliothek → Klassensätze: oben Suche und Filter,
-	 * darunter eine aufklappbare Karte je Fach mit den Cover-Kacheln (FachKarte). Zwei
-	 * verworfene Fassungen desselben Tages stehen im git log: eine Kachelwand je Fach und
-	 * eine Chip-Leiste — beide zeigten dem Fachsprecher immer die ganze Schule.
-	 *
-	 * Gefiltert wird SERVERSEITIG (Jahrgang, Schulzweig, Suchtext): Sonst zeigten die
+	 * Gefiltert wird serverseitig (Jahrgang, Schulzweig, Suchtext): Sonst zeigten die
 	 * Zahlen am Fach und die PDF-Datei etwas anderes als die Liste darunter.
 	 * Grundlage ist allein die Angabe „Lernmittel" am Titel; Daten über die Portal-Tür
 	 * /api/portal/lernmittel (Anmeldung genügt, kein view_books).
@@ -70,8 +67,8 @@
 			)
 		).toString()
 	);
-	// Der Export ist ein PDF mit Coverbildern (Absprache vom 03.09.2026: „es rechnet niemand,
-	// also können wir Excel löschen") und trägt dieselbe Filterung wie die Ansicht.
+	// Der Export ist ein PDF mit Coverbildern, keine Tabelle zum Rechnen, und trägt dieselbe
+	// Filterung wie die Ansicht.
 	/** @param {string} fach */
 	const exportUrl = (fach) =>
 		`/api/portal/lernmittel/export?fach=${encodeURIComponent(fach)}${parameter ? `&${parameter}` : ''}`;

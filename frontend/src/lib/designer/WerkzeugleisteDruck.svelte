@@ -1,13 +1,11 @@
 <!-- @component WerkzeugleisteDruck — die oberste Zeile des Ausweis-Designers: womit gedruckt
      wird, und der Testdruck dazu.
 
-     „A4-Bogen" stand hier bis zum 24.08.2026 und meinte acht Kartenabbilder auf einem
-     Blatt zum Ausschneiden. Als Notbehelf gedacht, im Alltag nutzlos. An seiner Stelle
-     steht der Etikettenbogen: Name, Klasse und Barcode auf Klebeetiketten, vom Server
-     erzeugt wie die Buch-Etiketten.
+     Neben der Karte steht der Etikettenbogen: Name, Klasse und Barcode auf Klebeetiketten,
+     vom Server erzeugt wie die Buch-Etiketten.
 
-     Die Wahl gilt nicht nur hier — der Stapeldruck der Schülerdatei folgt ihr ebenfalls
-     (idStore.printMode). Der Designer legt fest WIE gedruckt wird, die Schülerdatei WER.
+     Die Wahl gilt nicht nur hier, der Stapeldruck der Schülerdatei folgt ihr ebenfalls
+     (idStore.printMode). Der Designer legt fest, wie gedruckt wird, die Schülerdatei, wer.
 
      Eigene Datei, weil Werkzeugleiste.svelte mit dieser Zeile über die 200 gelaufen wäre. -->
 <script>

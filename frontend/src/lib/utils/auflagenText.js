@@ -40,7 +40,7 @@ export function auflagenAufschluesselung(auflagen) {
  * Der Zusatz an der Auflage, um die es gerade geht — in der Titelmaske der bearbeitete Titel,
  * auf der Klassensatz-Kachel die Auflage der Kachel. Das Leerzeichen vorn gehört zum Wert:
  * Leerraum am Anfang eines Elements nimmt Svelte weg, und Prettier bricht die Zeile genau dort
- * um — am 25.09.2026 stand „2019— diese Auflage".
+ * um; dann stünde „2019— diese Auflage" da.
  */
 export const DIESE_AUFLAGE = ' — diese Auflage';
 

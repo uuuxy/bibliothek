@@ -1,19 +1,16 @@
 <script>
 	/**
 	 * @component ErreichbarkeitKategorie
-	 * Zwei Adressen, die nach AUSSEN zeigen — und die beide dieselbe Regel tragen:
-	 * leer heißt aus.
+	 * Zwei Adressen, die nach außen zeigen, und die beide dieselbe Regel tragen: leer heißt
+	 * aus.
 	 *
-	 * Sie stehen deshalb zusammen und nicht bei den Schul-Stammdaten, wo genau diese
-	 * Regel der Nachbarschaft widerspräche (dort heißt leer schlicht leer). Drei
-	 * Leer-Regeln in einem Formular waren der eigentliche Überladungs-Befund vom
-	 * 23.08.2026; eine Kategorie hat jetzt genau eine.
+	 * Sie stehen deshalb zusammen und nicht bei den Schul-Stammdaten, wo genau diese Regel
+	 * der Nachbarschaft widerspräche (dort heißt leer schlicht leer): eine Kategorie, eine
+	 * Leer-Regel.
 	 *
-	 * Die öffentliche Adresse ist keine Kosmetik: Aus ihr entsteht der
-	 * Bestätigungs-Link in der Bestellmail. Der Server kann sie nicht erraten — hinter
-	 * dem Reverse-Proxy sieht er nur seinen internen Namen, und ein Link auf
-	 * „localhost" wäre beim Lieferanten wertlos (Fund vom 17.08.2026: Die Mails gingen
-	 * monatelang ohne den Link raus, um dessentwillen es sie gibt).
+	 * Die öffentliche Adresse ist keine Kosmetik: Aus ihr entsteht der Bestätigungs-Link in
+	 * der Bestellmail. Der Server kann sie nicht erraten; hinter dem Reverse-Proxy sieht er
+	 * nur seinen internen Namen, und ein Link auf „localhost" wäre beim Lieferanten wertlos.
 	 */
 	import Feld from '../../ui/Feld.svelte';
 	import { Copy, Check } from '@lucide/svelte';
@@ -41,7 +38,7 @@
 	let alarmEmpfaenger = $state(geladen.alarm_empfaenger);
 
 	// Die beiden öffentlichen Seiten (Katalog, Flur-Monitor) haben keinen Menüpunkt — wer
-	// ihre Adresse nicht kennt, findet sie nicht (Befund 30.08.2026). Hier stehen sie,
+	// ihre Adresse nicht kennt, findet sie nicht. Hier stehen sie,
 	// abgeleitet aus der öffentlichen Adresse, zum Kopieren.
 	const basis = $derived(adresse.trim().replace(/\/+$/, ''));
 	const oeffentlicheSeiten = $derived([

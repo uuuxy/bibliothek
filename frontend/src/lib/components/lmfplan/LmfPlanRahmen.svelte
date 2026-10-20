@@ -1,22 +1,20 @@
 <!-- @component LmfPlanRahmen — Abschnitt „Zeitraum": der Anker des Plans und die freien
-     Tage der Schule (LmfPlanFreieTage). Der Anker hängt an der Art (Absprache vom 06.09.2026:
-     „es endet immer am gleichen Tag — Donnerstags vor den Ferien zur vierten Stunde"):
-     Der Büchertausch vor den Sommerferien ENDET (letzter Tag, Ende am letzten Tag), die
-     Reihenfolge fließt rückwärts davor, und der Server sagt, wo sie beginnt; die
-     Bücherausgabe nach den Ferien BEGINNT (erster Tag, Beginn am ersten Tag). Beide Tage
+     Tage der Schule (LmfPlanFreieTage). Der Anker hängt an der Art: Der Büchertausch vor
+     den Sommerferien endet (letzter Tag, Ende am letzten Tag), die Reihenfolge fließt
+     rückwärts davor, und der Server sagt, wo sie beginnt; die Bücherausgabe nach den
+     Ferien beginnt (erster Tag, Beginn am ersten Tag). Beide Tage
      sind aus den Sommerferien Hessen vorbelegt; fehlt das Jahr in der Tabelle, steht es
      hier und der Tag wird von Hand eingetragen. Alles Weitere — Wochentage, Feiertage,
      Folgetage — rechnet der Server; hier steht nichts, was er auch weiß.
 
-     M3-Aufbau eines Abschnitts (Typografie-Rollen): Title-Medium, darunter EIN Satz
+     M3-Aufbau eines Abschnitts (Typografie-Rollen): Title-Medium, darunter ein Satz
      Supporting Text in On-Surface-Variant (hier der gerechnete: Ferien und Beginn),
-     dann der Inhalt auf EINEM Raster mit vier Spalten: drei Felder und die freien
-     Tage als Chip-Spalte — eine Zeile statt zwei (06.09.2026).
+     dann der Inhalt auf einem Raster mit vier Spalten: drei Felder und die freien Tage
+     als Chip-Spalte, in einer Zeile.
 
      Das Auswahlfeld hat keine eigene Beschriftung; damit es neben dem Datumsfeld auf
      derselben Zeile steht, bekommt es dieselben drei Subgrid-Zeilen wie Feld.svelte
-     (Beschriftung, Feld, Hinweis) — sonst rutscht das Datumsfeld eine Zeile tiefer
-     (flasch3, 23.08. und 05.09.2026). -->
+     (Beschriftung, Feld, Hinweis), sonst rutscht das Datumsfeld eine Zeile tiefer. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
@@ -46,10 +44,8 @@
 	const ferienText = $derived.by(() => {
 		if (!sommerferien) return '';
 		if (!sommerferien.bekannt)
-			// Zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update (Absprache vom 06.09.2026:
-			// „das muss doch dann irgendwo eingestellt werden"). Die Selbstprüfung sagt
-			// seit 47c1d461 dasselbe; hier stand bis zum Rasterdurchgang noch die alte,
-			// für den Betreiber nutzlose Antwort.
+			// Zeigt auf die Einstellung, nicht auf ein Programm-Update; die Selbstprüfung sagt
+			// dasselbe.
 			return `Die Sommerferien ${sommerferien.jahr} sind noch nicht hinterlegt — unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, oder den ${ende ? 'letzten' : 'ersten'} Tag hier von Hand setzen.`;
 		return `Sommerferien ${sommerferien.jahr}: ${datumKurz(sommerferien.von)} bis ${datumKurz(sommerferien.bis)}.`;
 	});
@@ -57,10 +53,9 @@
 
 <section aria-labelledby="lmf-zeitraum-titel">
 	<h2 id="lmf-zeitraum-titel" class="text-base font-medium text-on-surface">Zeitraum</h2>
-	<!-- Der EINE Satz unter dem Titel ist der dynamische (Ferien, gerechneter Beginn);
-	     die Regel selbst („endet am Donnerstag vor den Ferien") steht als Hinweis unter
-	     dem Datumsfeld und im Handbuch — als eigener Satz kostete sie eine Zeile (Absprache vom
-	     06.09.2026: „verschenken wir im oberen Bereich nicht viel Platz?"). -->
+	<!-- Der eine Satz unter dem Titel ist der dynamische (Ferien, gerechneter Beginn); die
+	     Regel selbst („endet am Donnerstag vor den Ferien") steht als Hinweis unter dem
+	     Datumsfeld und im Handbuch, denn als eigener Satz kostete sie eine Zeile. -->
 	{#if ferienText || beginnText}
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-zeitraum-hinweis">
 			{[ferienText, beginnText].filter(Boolean).join(' ')}

@@ -114,19 +114,17 @@ class BuchBarcodes {
 	}
 
 	/**
-	 * Stuendlich nachfassen, solange Netz da ist (entschieden am 16.09.2026, OFFEN.md 5.19).
+	 * Stündlich nachfassen, solange Netz da ist: Geholt wird die Liste beim Anmelden, und
+	 * ein Kiosk-Tab steht zwölf Stunden offen. Was am Vormittag neu inventarisiert wird,
+	 * wäre am Nachmittag ohne Netz eine „unklare" Nummer, und niemand könnte das wissen. Der
+	 * Abgleich kostet fast nichts: Der Server antwortet im Normalfall 304, weil sich der
+	 * Bestand selten ändert.
 	 *
-	 * Geholt wird die Liste beim Anmelden — und ein Kiosk-Tab steht zwoelf Stunden offen.
-	 * Was am Vormittag neu inventarisiert wurde, war am Nachmittag ohne Netz eine
-	 * „unklare" Nummer, und niemand konnte das wissen. Der Abgleich kostet fast nichts:
-	 * Der Server antwortet im Normalfall 304, weil sich der Bestand selten aendert.
-	 *
-	 * Ohne Netz wird gar nicht erst gefragt — das waere ein Fehler pro Stunde im Protokoll
-	 * fuer nichts. Ob Netz da ist, misst netzLage: Ein Browser kann „offline" melden, obwohl
-	 * der Server antwortet, und die Liste bliebe dann den ganzen Tag alt.
-	 * Das Handle liegt am Store, damit der Aufrufer ihn wegraeumen kann; ein
-	 * ueberlebender Zeitgeber faerbt sonst einen ganzen Testlauf rot
-	 * (frontend-hygiene-thekenzeitgeber.test.js).
+	 * Ohne Netz wird gar nicht erst gefragt; das wäre ein Fehler pro Stunde im Protokoll für
+	 * nichts. Ob Netz da ist, misst netzLage: Ein Browser kann „offline" melden, obwohl der
+	 * Server antwortet, und die Liste bliebe dann den ganzen Tag alt. Das Handle liegt am
+	 * Store, damit der Aufrufer ihn wegräumen kann; ein überlebender Zeitgeber färbt sonst
+	 * einen ganzen Testlauf rot (frontend-hygiene-thekenzeitgeber.test.js).
 	 *
 	 * @param {number} intervallMs Abstand zweier Abgleiche; die Vorgabe ist eine Stunde.
 	 */

@@ -50,8 +50,8 @@ function verweisFolge(anzahl) {
 }
 
 /**
- * Die Zählzeile über der Liste: Wörter und Verweise getrennt. Bis zum 23.09.2026 zählte
- * „N Schlagworte" die Verweise mit (gesamt ist jede Zeile der Tabelle schlagworte).
+ * Die Zählzeile über der Liste: Wörter und Verweise getrennt, denn gesamt ist jede Zeile
+ * der Tabelle schlagworte, auch ein Verweis.
  * @param {{ gesamt: number, verweise: number }} liste
  * @param {number} filter - wie viele Wörter als Filter markiert sind
  */

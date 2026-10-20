@@ -1,20 +1,16 @@
 <script>
 	/**
 	 * @component SchuleKategorie
-	 * Die Stammdaten der Schule. Sie stehen auf jedem Buchetikett, auf dem
-	 * Schülerausweis und im Briefkopf von Mahnung, Bestellung und allen Berichten —
-	 * bis zum 04.08.2026 ließen sie sich nirgends eintragen, und auf dem Etikett
-	 * stand ersatzweise fest „Schulbibliothek".
+	 * Die Stammdaten der Schule. Sie stehen auf jedem Buchetikett, auf dem Schülerausweis
+	 * und im Briefkopf von Mahnung, Bestellung und allen Berichten.
 	 *
-	 * Die Platzhalter sind MUSTERDATEN, nicht die echten Schuldaten. Bis zum
-	 * 06.08.2026 stand hier die richtige Adresse als Platzhalter; zusammen mit dem
-	 * Hinweis „leer lassen ändert nichts" las sich das Formular wie ausgefüllt, und
-	 * niemand trug etwas ein. In der Datenbank standen derweil leere Strings.
+	 * Die Platzhalter sind Musterdaten, nicht die echten Schuldaten: Mit der richtigen
+	 * Adresse als Platzhalter läse sich das Formular wie ausgefüllt, und niemand trüge etwas
+	 * ein.
 	 *
-	 * Neu seit dem Speichern je Kategorie: Ein geleertes Feld wird auch geleert.
-	 * Vorher hieß leer „nicht anfassen" — eine Notbremse dagegen, dass das Speichern
-	 * einer fremden Sektion den Briefkopf löscht. Diese Gefahr besteht nicht mehr,
-	 * und ein falscher Eigentumsvermerk ließ sich damit nie wieder entfernen.
+	 * Ein geleertes Feld wird auch geleert: Mit dem Speichern je Kategorie löscht keine
+	 * fremde Sektion den Briefkopf, und „leer heißt nicht anfassen" ließe einen falschen
+	 * Eigentumsvermerk nie wieder entfernen.
 	 */
 	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
@@ -115,9 +111,9 @@
 				class="col-span-2"
 			/>
 		</div>
-		<!-- md:col-start-1: Die zwei Vermerke gehören zusammen und stehen in EINER Zeile. Ohne den
-		     Zeilenanfang rutschte der erste neben PLZ/Ort und der zweite stand allein darunter
-		     (am 21.09.2026 am gerenderten Raster gemessen). -->
+		<!-- md:col-start-1: Die zwei Vermerke gehören zusammen und stehen in einer Zeile. Ohne
+		     den Zeilenanfang rutschte der erste neben PLZ/Ort, und der zweite stünde allein
+		     darunter. -->
 		<Feld
 			bind:value={eigentumsvermerk}
 			etikett="Eigentumsvermerk"

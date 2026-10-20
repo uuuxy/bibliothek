@@ -9,10 +9,9 @@
  */
 
 /**
- * Der markierte Index gehört dem Aufrufer, nicht dieser Aktion. Bis zum 10.09.2026 führte
- * sie einen eigenen und setzte ihn nur beim Schließen zurück: Kamen neue Treffer, stand der
- * Store auf -1 (nichts markiert), die Aktion aber auf dem alten Index — Enter öffnete an der
- * Theke einen Schüler, der nicht markiert war (Bestands-Durchgang).
+ * Der markierte Index gehört dem Aufrufer, nicht dieser Aktion: Mit einem eigenen Index
+ * stünde nach neuen Treffern der Store auf -1 (nichts markiert), die Aktion aber auf dem
+ * alten, und Enter öffnete an der Theke einen Schüler, der nicht markiert ist.
  *
  * @param {HTMLElement} node
  * @param {KeyboardNavParams} params

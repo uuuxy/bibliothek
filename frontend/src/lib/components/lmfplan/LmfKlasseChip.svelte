@@ -3,13 +3,13 @@
      appear in a set"). Mit `onentfernen` ist er ein Input-Chip mit dem Pflicht-× zum
      Entfernen (Klasse aus einer geteilten Stunde, freier Tag); mit `onklick` ein
      Assist-Chip, und der beginnt nach M3 mit einem Verb („Write assist chips like
-     buttons: start with a verb") — „12T3 einplanen", „Tag freihalten". Eine EINZELNE
+     buttons: start with a verb") — „12T3 einplanen", „Tag freihalten". Eine einzelne
      Klasse in einer Zeile ist deshalb kein Chip, sondern Text (LmfPlanZeile). `hinweis`
      hängt eine leise Einordnung an („ohne Schüler"), ohne einen zweiten Chip zu bauen.
      Mit `ziehbar` lässt sich der Assist-Chip in die Tabelle ziehen (Drop auf eine
      Zeile = davor einplanen); der Name reist im dataTransfer als `text/lmf-klasse`.
-     Mit `onentfernen` UND `onklick` ist der Name des Input-Chips selbst ein Knopf: Klick
-     tauscht die Klasse (LmfPlanKlassenZelle, 06.09.2026), das × nimmt sie heraus. -->
+     Mit `onentfernen` und `onklick` ist der Name des Input-Chips selbst ein Knopf: Klick
+     tauscht die Klasse (LmfPlanKlassenZelle), das × nimmt sie heraus. -->
 <script>
 	import { Plus, X } from '@lucide/svelte';
 

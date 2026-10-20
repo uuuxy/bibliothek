@@ -4,11 +4,11 @@
      Pfeilen schieben, zwei Zeilen zu einer Stunde zusammenlegen („10R1/10R2"), eine
      Zeile ohne Klasse davor einfügen („Bücher setzen"), festlegen, Klasse aus dem Plan
      nehmen. Die Umformungen rechnet lmfplanZeilen.js, die Zeile selbst ist
-     LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen. Seit dem 06.09.2026 sind die
-     Zellen selbst der kurze Weg: Klick auf Wochentag, Datum oder Stunde legt die Zeile
-     fest, Klick auf die Klasse tauscht sie gegen eine aus „Noch nicht im Plan".
+     LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen. Die Zellen sind selbst der kurze
+     Weg: Klick auf Wochentag, Datum oder Stunde legt die Zeile fest, Klick auf die Klasse
+     tauscht sie gegen eine aus „Noch nicht im Plan".
 
-     Über der Tabelle liegt seit dem 06.09.2026 LmfPlanVorrat („Noch nicht im Plan"):
+     Über der Tabelle liegt LmfPlanVorrat („Noch nicht im Plan"):
      Ein Klick plant die Klasse an ihren Platz (Nachbar-Regel), ein Chip lässt sich auf
      eine Zeile ziehen und landet davor; die neue Zeile wird angescrollt und leuchtet
      kurz. Nach M3 Lists ohne Trennlinie je Zeile („Limit dividers … only when a
@@ -86,9 +86,8 @@
 
 <section aria-labelledby="lmf-reihenfolge-titel">
 	<h2 id="lmf-reihenfolge-titel" class="text-base font-medium text-on-surface">Reihenfolge</h2>
-	<!-- Kein Bedienungssatz mehr (06.09.2026, Absprache: Erklärungstexte kosten Zeilen).
-	     Der Satz erscheint nur, wenn er etwas zu sagen hat: der fehlende erste Tag oder
-	     Klassen ohne Schüler. -->
+	<!-- Kein Bedienungssatz, denn Erklärungstexte kosten Zeilen. Der Satz erscheint nur, wenn
+	     er etwas zu sagen hat: der fehlende erste Tag oder Klassen ohne Schüler. -->
 	{#if !bereit || ohneSchueler.length > 0}
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-reihenfolge-hinweis">
 			{#if !bereit}
@@ -108,9 +107,9 @@
 	<div class="mt-4 overflow-x-auto" ondragleave={() => (ziel = null)} role="presentation">
 		<Tabelle beschriftung="Reihenfolge der Klassen" data-testid="lmf-reihenfolge">
 			<thead>
-				<!-- Spaltenbreiten (06.09.2026): Die gerechneten Spalten und die Aktionen sind so
-				     schmal wie ihr Inhalt, Klassen bekommen festen Platz für zwei Chips, und die
-				     Besonderheiten füllen den Rest — vorher lagen 300 px Leere rechts vom Feld. -->
+				<!-- Spaltenbreiten: Die gerechneten Spalten und die Aktionen sind so schmal wie ihr
+				     Inhalt, Klassen bekommen festen Platz für zwei Chips, und die Besonderheiten
+				     füllen den Rest, damit rechts vom Feld keine Leere liegt. -->
 				<tr>
 					<th class="w-10 text-right">#</th>
 					<th class="w-px whitespace-nowrap">Wochentag</th>

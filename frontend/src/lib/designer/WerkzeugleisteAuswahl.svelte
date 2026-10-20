@@ -1,11 +1,9 @@
 <!-- @component WerkzeugleisteAuswahl — die drei Einstellungen der Ausweis-Werkstatt:
      welcher Barcode, welcher Kartenhintergrund, welche Vergrößerung.
-     Eigene Datei, damit die Werkzeugleiste selbst nur noch die drei Reihen
-     zusammensetzt.
+     Eigene Datei, damit die Werkzeugleiste selbst nur die drei Reihen zusammensetzt.
 
-     Bis zum 06.08.2026 stand hier zusätzlich eine Klassenauswahl. Sie gehörte nie
-     hierher: Dieser Bildschirm gestaltet das Ausweis-Design, und das gilt zentral für
-     ALLE Arbeitsplätze. WER gedruckt wird, entscheidet seitdem die Schülerdatei
+     Keine Klassenauswahl: Dieser Bildschirm gestaltet das Ausweis-Design, und das gilt
+     zentral für alle Arbeitsplätze. Wer gedruckt wird, entscheidet die Schülerdatei
      (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler sichtbar ist. -->
 <script>
 	import Select from '../components/ui/Select.svelte';

@@ -1,15 +1,13 @@
 // thekeLeeren.js — die Theken-Ansicht in einen Zustand ohne Personendaten bringen.
 //
-// Eigene Datei, weil ZWEI Anlässe dasselbe brauchen: der Inaktivitäts-Wächter
+// Eigene Datei, weil zwei Anlässe dasselbe brauchen: der Inaktivitäts-Wächter
 // (leerlaufSperre: Theke leeren nach der kurzen Frist, Sperrbildschirm nach der langen) und
-// das ausdrückliche Abmelden. Bis zum 31.08.2026 konnte es nur der Wächter: Ein
-// Bediener scannte einen Schüler, meldete sich ab, der nächste meldete sich an — und
-// sah weiterhin dessen Profil samt Ausleihen, Sperren und Mahnstufen, weil die
-// Omnibox-Stores Modul-Singletons sind und die Abmeldung nur den authStore leerte.
-// Genau der Handover-Fall, gegen den der Timer gebaut wurde, nur schneller.
+// das ausdrückliche Abmelden. Die Omnibox-Stores sind Modul-Singletons; leerte die Abmeldung
+// nur den authStore, sähe der nächste Bediener nach seiner Anmeldung das Profil des vorigen
+// samt Ausleihen, Sperren und Mahnstufen.
 //
-// Zwei Kopien dieser Liste wären die schlechtere Lösung — dann räumt die eine Stelle
-// künftig ein Feld ab, das die andere stehen lässt.
+// Zwei Kopien dieser Liste wären die schlechtere Lösung: Dann räumt die eine Stelle künftig
+// ein Feld ab, das die andere stehen lässt.
 
 import { nachbuchMeldungen } from './nachbuchMeldungen.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
@@ -18,9 +16,9 @@ import { uiStore } from './uiStore.svelte.js';
 /**
  * Leert die Theke: kein geladener Schüler/Lehrer, keine Suchreste, keine Kamera.
  *
- * Der Kamera-Scanner dekodiert den Stream unabhängig von der Sichtbarkeit — lief er
- * weiter, buchte ein vor die Kamera gehaltener Barcode hinter der Sperre (Prüfung
- * 22.08.2026, A6). Stop ist fire-and-forget; der Store-Zeiger wird sofort genullt,
+ * Der Kamera-Scanner dekodiert den Stream unabhängig von der Sichtbarkeit; liefe er
+ * weiter, buchte ein vor die Kamera gehaltener Barcode hinter der Sperre. Stop ist
+ * fire-and-forget; der Store-Zeiger wird sofort genullt,
  * damit kein Decode-Callback mehr in fuehreAktionAus läuft.
  */
 export function thekeLeeren() {

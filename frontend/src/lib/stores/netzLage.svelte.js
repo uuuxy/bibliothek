@@ -1,12 +1,11 @@
-// EINE Auskunft darüber, ob der Server erreichbar ist — gemessen, nicht geglaubt.
+// Eine Auskunft darüber, ob der Server erreichbar ist, gemessen, nicht geglaubt.
 //
-// Bis zum 21.09.2026 galt `navigator.onLine === false` als Tatsache. Der Wert ist aber eine
-// Auskunft des Betriebssystems über seine Netzwerkschnittstellen, keine Messung: Ein Browser
-// kann „offline" melden und den Server trotzdem erreichen. Beobachtet am Testserver: Das
-// Band „Keine Verbindung" stand dauerhaft, schon am Anmeldebildschirm und nach jedem
-// Neuladen, während die Seite darunter ihre Daten lud. Am Band hing dabei das Wenigste —
-// die Warteschlange übertrug in so einem Browser nie (starteAbgleich fragte navigator.onLine),
-// und die Leerlauf-Sperre griff nie (sie wartet ohne Netz).
+// `navigator.onLine === false` ist eine Auskunft des Betriebssystems über seine
+// Netzwerkschnittstellen, keine Messung: Ein Browser kann „offline" melden und den Server
+// trotzdem erreichen. Als Tatsache genommen, stünde das Band „Keine Verbindung" dauerhaft,
+// schon am Anmeldebildschirm, während die Seite darunter ihre Daten lädt; die Warteschlange
+// übertrüge in so einem Browser nie, und die Leerlauf-Sperre griffe nie (sie wartet ohne
+// Netz).
 //
 // Deshalb: „offline" ist eine Behauptung des Browsers, und /health entscheidet. „online"
 // bleibt ungeprüft — ob der Server dann wirklich antwortet, merkt der Herzschlag der
