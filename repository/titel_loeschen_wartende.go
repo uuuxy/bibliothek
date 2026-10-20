@@ -143,7 +143,7 @@ func ProtokolliereWartendeBezuege(ctx context.Context, tx pgx.Tx, bezuege []Wart
 			"titel":       b.Titel,
 			"betrifft":    b.Wer,
 			"erstellt_am": b.Seit,
-			"action":      "titel_geloescht_mit_offenem_bezug",
+			"action":      ProtokollAktionTitelMitBezug,
 			"tabelle":     b.Tabelle,
 		}
 		if b.Status != "" {

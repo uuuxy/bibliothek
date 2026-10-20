@@ -15,9 +15,9 @@ import (
 // view_books (wie /api/portal/klassensaetze): Sie liefern nur Buch- und Zähldaten, keine Daten
 // zu Ausleihen oder Personen.
 
-// PortalLernmittel ist die Tür GET /api/portal/lernmittel[?fach=…]: immer die Zahlen je Fach und
-// die Titel; ohne ?fach alle Schulbücher (die erste Ansicht des Reiters ist eine Liste), mit
-// ?fach= die des Fachs ("" = ohne Fach).
+// PortalLernmittel ist die Tür GET /api/portal/lernmittel: die Zahlen je Fach und alle
+// Schulbücher, beide unter den Filtern der Ansicht. Ein Fach wählt nur der Export; die Ansicht
+// ordnet die Titel selbst den Karten der Fächer zu.
 func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	filter := lernmittelFilterParam(r)
@@ -27,12 +27,7 @@ func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
 		return
 	}
-	fach, gewaehlt := r.URL.Query()["fach"]
-	fachName := ""
-	if gewaehlt {
-		fachName = strings.TrimSpace(fach[0])
-	}
-	titel, err := t.abfragen.ladeLernmittelTitel(ctx, fachName, !gewaehlt, filter)
+	titel, err := t.abfragen.ladeLernmittelTitel(ctx, "", true, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Titel: %v", err)
 		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")

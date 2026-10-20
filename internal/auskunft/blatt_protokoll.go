@@ -26,17 +26,17 @@ type dsgvoVorgangsArt struct{ tabelle, aktion, merker string }
 
 // dsgvoVorgaenge nennt je Vorgang der Datensatz-Historie (audit_log) die Worte des Blatts.
 var dsgvoVorgaenge = map[dsgvoVorgangsArt]string{
-	{"ausleihen", "CHECKOUT", ""}:                                         "Ausleihe",
-	{"ausleihen", "RETURN", ""}:                                           "Rückgabe",
-	{"ausleihen", "DELETE", "titel_geloescht_mit_offener_ausleihe"}:       "Titel gelöscht, während das Buch ausgeliehen war",
-	{"schueler", "UPDATE", "soft_delete"}:                                 "Leserdatensatz in den Papierkorb gelegt",
-	{"schueler", "DELETE", "purge"}:                                       "Leserdatensatz endgültig gelöscht",
-	{"schueler", "ZUSAMMENGEFUEHRT", "zusammenfuehren"}:                   "Mit einem zweiten Datensatz derselben Person zusammengeführt",
-	{"schueler", "dsgvo_auskunft", ""}:                                    "Auskunft nach Art. 15 DSGVO erteilt",
-	{"schadensfaelle", "STORNIERUNG", ""}:                                 "Forderung storniert",
-	{"schadensfaelle", "STORNIERUNG", "rueckgabe"}:                        "Forderung storniert, weil das Buch zurück ist",
-	{"schadensfaelle", "DELETE", "titel_geloescht_mit_offener_forderung"}: "Titel gelöscht, während eine Forderung offen war",
-	{"vormerkungen", "DELETE", "titel_geloescht_mit_offenem_bezug"}:       "Titel gelöscht, während eine Vormerkung offen war",
+	{"ausleihen", "CHECKOUT", ""}:                                             "Ausleihe",
+	{"ausleihen", "RETURN", ""}:                                               "Rückgabe",
+	{"ausleihen", "DELETE", repository.ProtokollAktionTitelMitAusleihe}:       "Titel gelöscht, während das Buch ausgeliehen war",
+	{"schueler", "UPDATE", "soft_delete"}:                                     "Leserdatensatz in den Papierkorb gelegt",
+	{"schueler", "DELETE", "purge"}:                                           "Leserdatensatz endgültig gelöscht",
+	{"schueler", "ZUSAMMENGEFUEHRT", "zusammenfuehren"}:                       "Mit einem zweiten Datensatz derselben Person zusammengeführt",
+	{"schueler", "dsgvo_auskunft", ""}:                                        "Auskunft nach Art. 15 DSGVO erteilt",
+	{"schadensfaelle", "STORNIERUNG", ""}:                                     "Forderung storniert",
+	{"schadensfaelle", "STORNIERUNG", "rueckgabe"}:                            "Forderung storniert, weil das Buch zurück ist",
+	{"schadensfaelle", "DELETE", repository.ProtokollAktionTitelMitForderung}: "Titel gelöscht, während eine Forderung offen war",
+	{"vormerkungen", "DELETE", repository.ProtokollAktionTitelMitBezug}:       "Titel gelöscht, während eine Vormerkung offen war",
 }
 
 // dsgvoProgrammSaetze sind die Sätze, die das Programm als kontext an einen dieser Vorgänge

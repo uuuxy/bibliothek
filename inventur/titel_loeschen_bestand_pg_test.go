@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -41,8 +42,25 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		t.Fatalf("Exemplar im Zulauf: %v", err)
 	}
 
+	// Das Abgangsbuch zählt gelöschte Exemplare nur über ihre Spur. Gemessen wird der Zuwachs, weil
+	// andere Tests auch Spuren hinterlassen, über drei Tage, damit Mitternacht nicht dazwischenfällt.
+	jetzt := schulzeit.Jetzt()
+	abgaenge := func() int {
+		t.Helper()
+		buch, err := repository.LadeAbgangsbuch(ctx, pool, jetzt.AddDate(0, 0, -1), jetzt.AddDate(0, 0, 1))
+		if err != nil {
+			t.Fatalf("Abgangsbuch: %v", err)
+		}
+		return buch.AusKatalogGeloescht
+	}
+	vorher := abgaenge()
+
 	if err := NewTitelAbfragen(pool).LoescheTitel(ctx, []string{titelID}); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
+	}
+
+	if zuwachs := abgaenge() - vorher; zuwachs != 1 {
+		t.Errorf("Das Abgangsbuch zählt %d gelöschte Exemplare mehr, erwartet 1: das im Bestand, nicht das im Zulauf", zuwachs)
 	}
 
 	for _, fall := range []struct {

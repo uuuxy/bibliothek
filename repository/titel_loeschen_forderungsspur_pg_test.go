@@ -88,6 +88,13 @@ func TestLoescheTitel_NurOffeneForderungHinterlaesstSpur(t *testing.T) {
 		if n := spuren(weg.ex.offen); n != 1 {
 			t.Errorf("%s: %d Forderungsspuren für die offene Forderung, erwartet 1", weg.name, n)
 		}
+		// Am Merker erkennt das Auskunftsblatt den Vorgang; ohne ihn stünde dort „DELETE (schadensfaelle)".
+		if n := pgtest.ZaehleZeilen(t, pool, `
+			SELECT count(*) FROM audit_log
+			WHERE tabelle = 'schadensfaelle' AND aktion = 'DELETE' AND datensatz_id = $1
+			  AND details->>'action' = $2`, weg.ex.offen, repository.ProtokollAktionTitelMitForderung); n != 1 {
+			t.Errorf("%s: Die Forderungsspur trägt den Merker %q nicht", weg.name, repository.ProtokollAktionTitelMitForderung)
+		}
 		if n := spuren(weg.ex.bezahlt); n != 0 {
 			t.Errorf("%s: %d Forderungsspuren für eine bezahlte Forderung, erwartet 0", weg.name, n)
 		}

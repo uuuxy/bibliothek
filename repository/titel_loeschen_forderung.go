@@ -65,7 +65,7 @@ func protokolliereOffeneForderungen(ctx context.Context, tx pgx.Tx, titelID stri
 			"betrag":          f.betrag,
 			"beschreibung":    f.grund,
 			"erstellt_am":     f.seit,
-			"action":          "titel_geloescht_mit_offener_forderung",
+			"action":          ProtokollAktionTitelMitForderung,
 		}
 		if f.schuelerID != nil {
 			inhalt["schueler_id"] = *f.schuelerID

@@ -273,3 +273,41 @@ func TestSchreibeSchlagworte_GescheiterterTitelKostetNurSeineWoerter(t *testing.
 		t.Errorf("das Protokoll nennt den gescheiterten Titel 2 nicht:\n%s", protokoll())
 	}
 }
+
+// Trägt der Bestand schon Schlagworte (Katalogisat-Import, Buchformular), zählt der Abgleich nur,
+// was dieser Lauf schrieb. Sonst meldete der Bericht „ABGLEICH FEHLGESCHLAGEN", obwohl jede
+// Zuordnung angekommen ist.
+func TestSchreibeSchlagworte_AbgleichZaehltNurDiesenLauf(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	var vorhanden string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_titel (titel) VALUES ('Schon im Katalog') RETURNING id`).Scan(&vorhanden); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Geschichte", "Lehrer"}); err != nil {
+		t.Fatal(err)
+	}
+
+	ab := bestand(titel("1", "Die Republik von Weimar", ""))
+	ab.Schlagworte = SchlagwortQuelle{JeTitel: map[string][]string{"1": {"Geschichte", "Weimarer Republik"}}}
+	bestandBericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := s.SchreibeSchlagworte(ctx, ab, bestandBericht)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !b.AbgleichOK || b.Zuordnungen != 2 || b.IstZuordnungen != 2 {
+		t.Errorf("Bericht: Abgleich %v, %d gemeldet / %d gezählt — erwartet 2 und 2, die Zuordnungen von vorher zählen nicht mit",
+			b.AbgleichOK, b.Zuordnungen, b.IstZuordnungen)
+	}
+	if b.IstWoerter != 1 {
+		t.Errorf("%d Wörter neu gezählt, erwartet 1: Weimarer Republik, Geschichte gab es schon", b.IstWoerter)
+	}
+}

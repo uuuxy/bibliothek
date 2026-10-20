@@ -418,7 +418,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/books/vorhanden":          {URL: "/api/books/vorhanden?isbn=9780306406157"},
 		"GET /api/class-books":              {URL: "/api/class-books"},
 		"GET /api/portal/klassensaetze":     {URL: "/api/portal/klassensaetze"},
-		"GET /api/portal/lernmittel":        {URL: "/api/portal/lernmittel?fach="},
+		"GET /api/portal/lernmittel":        {URL: "/api/portal/lernmittel"},
 		"GET /api/portal/lernmittel/export": {URL: "/api/portal/lernmittel/export"},
 		"GET /api/admin/":                   {URL: "/api/admin/"},
 	}

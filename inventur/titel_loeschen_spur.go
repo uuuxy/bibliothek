@@ -101,7 +101,7 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 			"entleiher":      o.Entleiher,
 			"ausgeliehen_am": o.Seit,
 			"ausleihe_id":    o.AusleiheID,
-			"action":         "titel_geloescht_mit_offener_ausleihe",
+			"action":         repository.ProtokollAktionTitelMitAusleihe,
 		}
 		// schueler_id ist nicht nur Information, sondern der Schlüssel, an dem die
 		// Lesehistorie-Befristung diese Zeile überhaupt findet: Ihr Prädikat verlangt
@@ -272,7 +272,7 @@ func protokolliereOffeneSchaeden(ctx context.Context, tx pgx.Tx, offene []offene
 			"betrag":          o.Betrag,
 			"beschreibung":    o.Grund,
 			"erstellt_am":     o.Seit,
-			"action":          "titel_geloescht_mit_offener_forderung",
+			"action":          repository.ProtokollAktionTitelMitForderung,
 		}
 		if o.SchuelerID != nil {
 			inhalt["schueler_id"] = *o.SchuelerID

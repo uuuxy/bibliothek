@@ -238,3 +238,16 @@ const (
 	// trug. Ein bestelltes, nie eingetroffenes Exemplar zählt das Abgangsbuch damit nicht.
 	ProtokollDetailWarImBestand = "war_im_bestand"
 )
+
+// Die Merker der Spuren, die eine Titel-Löschung zu einer Person hinterlässt. Konstanten aus
+// demselben Grund: Das Auskunftsblatt nennt den Vorgang über sie in Worten
+// (internal/auskunft/blatt_protokoll.go), bei einem anderen Text stünde dort „DELETE (ausleihen)".
+const (
+	// ProtokollAktionTitelMitAusleihe: Der Titel ging, während ein Exemplar verliehen war.
+	ProtokollAktionTitelMitAusleihe = "titel_geloescht_mit_offener_ausleihe"
+	// ProtokollAktionTitelMitForderung: Der Titel ging, während eine Forderung offen stand.
+	ProtokollAktionTitelMitForderung = "titel_geloescht_mit_offener_forderung"
+	// ProtokollAktionTitelMitBezug: Der Titel ging, während eine Vormerkung oder Reservierung
+	// wartete oder ein Klassensatz ihn führte (ProtokolliereWartendeBezuege).
+	ProtokollAktionTitelMitBezug = "titel_geloescht_mit_offenem_bezug"
+)

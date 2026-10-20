@@ -12,6 +12,7 @@ import (
 	"bibliothek/internal/pgtest"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Der Listenimport legt je Zeile Exemplare an — additiv. Zweimal dieselbe Liste mit
@@ -34,36 +35,11 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
 	schluessel := uuid.NewString()
 	sende := func(idempotenzSchluessel string) *httptest.ResponseRecorder {
-		rumpf := new(bytes.Buffer)
-		w := multipart.NewWriter(rumpf)
-		teil, err := w.CreateFormFile("file", "liste.csv")
-		if err != nil {
-			t.Fatalf("Formularteil: %v", err)
-		}
-		if _, err := teil.Write([]byte("isbn,titel,autor,bestand\n" + isbn + ",Idempotenz-Titel,Autor,3\n")); err != nil {
-			t.Fatalf("CSV schreiben: %v", err)
-		}
-		if err := w.Close(); err != nil {
-			t.Fatalf("Formular schließen: %v", err)
-		}
-		anfrage := httptest.NewRequest(http.MethodPost, "/api/books/import", rumpf)
-		anfrage.Header.Set("Content-Type", w.FormDataContentType())
-		if idempotenzSchluessel != "" {
-			anfrage.Header.Set(importSchluesselKopf, idempotenzSchluessel)
-		}
 		rec := httptest.NewRecorder()
-		tueren.ExcelImport(rec, anfrage)
+		tueren.ExcelImport(rec, listenAnfrage(t, "isbn,titel,autor,bestand\n"+isbn+",Idempotenz-Titel,Autor,3\n", idempotenzSchluessel))
 		return rec
 	}
-	zaehleExemplare := func() int {
-		var n int
-		if err := pool.QueryRow(ctx, `
-			SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
-			 WHERE t.isbn = $1`, isbn).Scan(&n); err != nil {
-			t.Fatalf("zählen: %v", err)
-		}
-		return n
-	}
+	zaehleExemplare := func() int { return zaehleExemplareZurISBN(t, pool, isbn) }
 
 	erster := sende(schluessel)
 	if erster.Code != http.StatusOK {
@@ -114,4 +90,82 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 	if kaputt := sende("kein-uuid"); kaputt.Code != http.StatusBadRequest {
 		t.Errorf("ungültiger Schlüssel: %d, erwartet 400", kaputt.Code)
 	}
+}
+
+// Bricht die Verbindung ab, während der Server noch nachschlägt, scheitert das Schreiben, und
+// nichts ist importiert. Derselbe Klick danach muss echt importieren: Der Lauf gibt den Schlüssel
+// frei, auch mit abgebrochener Anfrage. Sonst antwortete der Schlüssel bis zum Aufräumen nach
+// 24 Stunden mit „läuft noch" oder mit der Fehlmeldung des abgebrochenen Laufs.
+func TestListenimport_AbgebrochenerLaufGibtDenSchluesselFrei(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	const isbn = "9780306406157"
+	raeume := func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn = $1`, isbn); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	}
+	raeume()
+	t.Cleanup(raeume)
+	schluessel := uuid.NewString()
+	liste := "isbn,titel,autor,bestand\n" + isbn + ",Abbruch-Titel,Autor,2\n"
+
+	// Der Browser geht, während der Server auf das Nachschlagen der ISBN wartet.
+	abgebrochen, abbrechen := context.WithCancel(ctx)
+	defer abbrechen()
+	brichtAb := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
+		Transport: &mockTransportCover{roundTripFunc: func(*http.Request) (*http.Response, error) {
+			abbrechen()
+			return nil, context.Canceled
+		}},
+	}}}
+	erster := httptest.NewRecorder()
+	brichtAb.ExcelImport(erster, listenAnfrage(t, liste, schluessel).WithContext(abgebrochen))
+	if erster.Code != http.StatusBadRequest {
+		t.Fatalf("abgebrochener Lauf: %d %s, erwartet 400 (nichts geschrieben)", erster.Code, erster.Body.String())
+	}
+	if n := zaehleExemplareZurISBN(t, pool, isbn); n != 0 {
+		t.Fatalf("der abgebrochene Lauf hat %d Exemplare geschrieben, erwartet 0", n)
+	}
+
+	zweiter := httptest.NewRecorder()
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren.ExcelImport(zweiter, listenAnfrage(t, liste, schluessel))
+	if zweiter.Code != http.StatusOK {
+		t.Fatalf("derselbe Klick danach: %d %s, erwartet 200 — der Schlüssel blieb belegt", zweiter.Code, zweiter.Body.String())
+	}
+	if n := zaehleExemplareZurISBN(t, pool, isbn); n != 2 {
+		t.Errorf("nach dem zweiten Klick %d Exemplare, erwartet 2", n)
+	}
+}
+
+// listenAnfrage baut den Aufruf der Tür POST /api/books/import mit einer CSV-Liste; ohne
+// Schlüssel fehlt die Kopfzeile.
+func listenAnfrage(t *testing.T, csv, schluessel string) *http.Request {
+	t.Helper()
+	rumpf := new(bytes.Buffer)
+	w := multipart.NewWriter(rumpf)
+	teil, err := w.CreateFormFile("file", "liste.csv")
+	if err != nil {
+		t.Fatalf("Formularteil: %v", err)
+	}
+	if _, err := teil.Write([]byte(csv)); err != nil {
+		t.Fatalf("CSV schreiben: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Formular schließen: %v", err)
+	}
+	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/import", rumpf)
+	anfrage.Header.Set("Content-Type", w.FormDataContentType())
+	if schluessel != "" {
+		anfrage.Header.Set(importSchluesselKopf, schluessel)
+	}
+	return anfrage
+}
+
+func zaehleExemplareZurISBN(t *testing.T, pool *pgxpool.Pool, isbn string) int {
+	t.Helper()
+	return pgtest.ZaehleZeilen(t, pool, `
+		SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+		 WHERE t.isbn = $1`, isbn)
 }

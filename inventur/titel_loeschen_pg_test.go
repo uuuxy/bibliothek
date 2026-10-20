@@ -160,6 +160,10 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	if !strings.Contains(details, `"schueler_id"`) {
 		t.Errorf("Protokollzeile ohne schueler_id — die Befristung erreicht den Klarnamen nie: %s", details)
 	}
+	// Am Merker erkennt das Auskunftsblatt den Vorgang; ohne ihn stünde dort „DELETE (ausleihen)".
+	if merker := `"action": "` + repository.ProtokollAktionTitelMitAusleihe + `"`; !strings.Contains(details, merker) {
+		t.Errorf("Protokollzeile ohne %s — das Auskunftsblatt nennt den Vorgang nicht: %s", merker, details)
+	}
 
 	// 2b. Die Spur der offenen Forderung. Die Gebühr fällt
 	//     mit dem Titel — sie ist aber Geld, das ein Schüler der Schule schuldet, und sie
