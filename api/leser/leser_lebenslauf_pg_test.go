@@ -162,13 +162,8 @@ func TestLeserEndgueltigLoeschen_AnonymisiertUndLoescht(t *testing.T) {
 		 VALUES ('P-1', 'Paul', 'Weg', '9a', 2030, now()) RETURNING id`).Scan(&sid); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('X') RETURNING id`).Scan(&tid); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'PB-1') RETURNING id`, tid).Scan(&eid); err != nil {
-		t.Fatal(err)
-	}
+	tid = testdaten.LegeTitelAn(t, pool, "X", 5)
+	eid = testdaten.LegeExemplarAn(t, pool, tid, "PB-1", true, "")
 	var loanID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)
@@ -254,13 +249,8 @@ func TestLeserEndgueltigLoeschen_OffeneAusleiheBlockiert(t *testing.T) {
 		 VALUES ('P-2', 'Offen', 'Leihe', '9b', 2030, now()) RETURNING id`).Scan(&sid); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Y') RETURNING id`).Scan(&tid); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'PB-2') RETURNING id`, tid).Scan(&eid); err != nil {
-		t.Fatal(err)
-	}
+	tid = testdaten.LegeTitelAn(t, pool, "Y", 5)
+	eid = testdaten.LegeExemplarAn(t, pool, tid, "PB-2", true, "")
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, CURRENT_DATE)`, eid, sid); err != nil {
 		t.Fatal(err)
@@ -298,13 +288,8 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 		 VALUES ('A-1', 'Alt', 'Schüler', '10a', $1, 'LUSD-99') RETURNING id`, zukunft).Scan(&sid); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Z') RETURNING id`).Scan(&tid); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'AB-1') RETURNING id`, tid).Scan(&eid); err != nil {
-		t.Fatal(err)
-	}
+	tid = testdaten.LegeTitelAn(t, pool, "Z", 5)
+	eid = testdaten.LegeExemplarAn(t, pool, tid, "AB-1", true, "")
 	var loanID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, CURRENT_DATE) RETURNING id`,

@@ -51,15 +51,8 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 			VALUES ($1, 'Offen', 'Vorgang', '9b', 2020, true, `+papierkorb+`) RETURNING id`, marke).Scan(&sid); err != nil {
 			t.Fatalf("Schüler: %v", err)
 		}
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO buecher_titel (titel) VALUES ('Sperrbuch') RETURNING id`).Scan(&tid); err != nil {
-			t.Fatalf("Titel: %v", err)
-		}
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-			tid, "EX-"+marke).Scan(&eid); err != nil {
-			t.Fatalf("Exemplar: %v", err)
-		}
+		tid = testdaten.LegeTitelAn(t, pool, "Sperrbuch", 5)
+		eid = testdaten.LegeExemplarAn(t, pool, tid, "EX-"+marke, true, "")
 
 		switch vorgang {
 		case "ausleihe":
@@ -155,13 +148,8 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 		VALUES ('SP-STORNO', 'Stor', 'No', '9b', 2020, true) RETURNING id`).Scan(&sid); err != nil {
 		t.Fatalf("Schüler: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Stornobuch') RETURNING id`).Scan(&tid); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'EX-STORNO') RETURNING id`, tid).Scan(&eid); err != nil {
-		t.Fatalf("Exemplar: %v", err)
-	}
+	tid = testdaten.LegeTitelAn(t, pool, "Stornobuch", 5)
+	eid = testdaten.LegeExemplarAn(t, pool, tid, "EX-STORNO", true, "")
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)
 		VALUES ($1, $2, CURRENT_DATE, now()) RETURNING id`, eid, sid).Scan(&aid); err != nil {
@@ -193,11 +181,6 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 // adminFuerStorno legt den Bearbeiter an, den der Storno protokollieren muss.
 func adminFuerStorno(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Ada', 'Admin', 'storno@example.org', 'admin', true) RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Bearbeiter: %v", err)
-	}
+	id := testdaten.LegeKontoAn(t, pool, "Ada", "Admin", "storno@example.org", "admin", true)
 	return id
 }

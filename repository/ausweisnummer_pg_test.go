@@ -236,9 +236,7 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 	// feuert nach diesem Trigger): Trägt ein Buch die nächste Nummer, scheitert das Leeren
 	// laut, statt dem Kollegen die Nummer eines Buchs zu geben.
 	naechste := repository.AusweisNummer(naechsteAusweisnummer(t, pool))
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Leeren: Nummernprobe')`); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeTitelAn(t, pool, "Leeren: Nummernprobe", 5)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id)
 		VALUES ((SELECT id FROM buecher_titel WHERE titel = 'Leeren: Nummernprobe'), $1)`, naechste); err != nil {

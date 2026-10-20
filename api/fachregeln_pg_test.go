@@ -98,18 +98,12 @@ func verlaengereLernmittelDerKlasse(t *testing.T, srv *Server, klasse, datum str
 func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	ctx := context.Background()
 
 	tid := testdaten.LegeTitelAn(t, pool, "Klassenlektuere", 0)
 	for i := 0; i < 5; i++ {
 		testdaten.LegeExemplarAn(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
 	}
-	var uid string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		 VALUES ('Res', 'Kraft', 'res@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&uid); err != nil {
-		t.Fatalf("Bearbeiter anlegen: %v", err)
-	}
+	uid := testdaten.LegeKontoAn(t, pool, "Res", "Kraft", "res@example.org", "mitarbeiter", true)
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 

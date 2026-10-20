@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -32,12 +33,7 @@ func TestProtokollAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	// Ein Bearbeiter für die Spalten mit Fremdschlüssel, dazu je Tabelle ein alter und ein junger Eintrag.
-	var benutzerID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Retention', 'Kraft', 'ret@example.org', 'admin', true) RETURNING id`).Scan(&benutzerID); err != nil {
-		t.Fatalf("Benutzer: %v", err)
-	}
+	benutzerID := testdaten.LegeKontoAn(t, pool, "Retention", "Kraft", "ret@example.org", "admin", true)
 	legeAn := func(abfrage string, alterMonate int) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, abfrage, benutzerID, alterMonate); err != nil {

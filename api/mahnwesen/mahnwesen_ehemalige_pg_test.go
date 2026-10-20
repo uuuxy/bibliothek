@@ -35,13 +35,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Mara', 'Mahnliste', 'mahnwesen-ehemalige@example.org', 'admin', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Mara", "Mahnliste", "mahnwesen-ehemalige@example.org", "admin", true)
 	sitzung, err := authenticator.ErzeugeToken(kontoID, "EHM-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

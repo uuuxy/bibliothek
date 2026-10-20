@@ -180,12 +180,7 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	var adminID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Tür', 'Admin', 'frist-tuer@test.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
-		t.Fatalf("Test-Admin: %v", err)
-	}
+	adminID := testdaten.LegeKontoAn(t, pool, "Tür", "Admin", "frist-tuer@test.invalid", "admin", true)
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-FT-1", "Tuer", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch Tuer", alteFrist)

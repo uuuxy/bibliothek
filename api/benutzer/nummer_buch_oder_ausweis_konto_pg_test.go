@@ -35,10 +35,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	}
 	buch := func(t *testing.T, barcode string) {
 		t.Helper()
-		if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-			VALUES ($1, $2, true)`, titelID, barcode); err != nil {
-			t.Fatalf("Exemplar anlegen: %v", err)
-		}
+		testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 	}
 	t.Cleanup(func() {
 		auf := context.Background()
@@ -60,11 +57,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	// Ein Konto samt Leserzeile (Trigger trg_benutzer_hat_leserzeile, Migration 125).
 	konto := func(t *testing.T, email string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-			VALUES ('Leh', 'Rer', $1, 'kollegium', true) RETURNING id`, email).Scan(&id); err != nil {
-			t.Fatalf("Konto anlegen: %v", err)
-		}
+		id := testdaten.LegeKontoAn(t, pool, "Leh", "Rer", email, "kollegium", true)
 		return id
 	}
 	fahre := func(h http.Handler, methode, pfad, id, body string) *httptest.ResponseRecorder {

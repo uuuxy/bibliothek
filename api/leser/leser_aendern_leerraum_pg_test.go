@@ -25,13 +25,7 @@ func TestLeserAendern_KuerztLeerraumWieDieAnlage(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-		VALUES ('Rand', 'Test', '07a', 'RAND-1', 2030)
-		RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerAn(t, pool, "RAND-1", "Rand", "07a")
 
 	// Das Formular schickt, was im Feld steht; hier mit Leerzeichen und geschütztem Leerzeichen
 	// am Rand.

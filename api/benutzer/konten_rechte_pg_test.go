@@ -12,6 +12,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -32,12 +33,7 @@ func TestKonten_LiefernEchteRechte(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, email)
 	})
 
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Rechte', 'Pruefer', $1, 'mitarbeiter', true)
-	`, email); err != nil {
-		t.Fatalf("Benutzer anlegen: %v", err)
-	}
+	testdaten.LegeKontoAn(t, pool, "Rechte", "Pruefer", email, "mitarbeiter", true)
 
 	// Ein Recht, von dem wir wissen, dass es echt ist und der Rolle gehört.
 	if _, err := pool.Exec(ctx, `

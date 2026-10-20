@@ -29,10 +29,7 @@ func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 		t.Fatal(err)
 	}
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	var id string
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Woodwalkers') RETURNING id`).Scan(&id); err != nil {
-		t.Fatal(err)
-	}
+	id := testdaten.LegeTitelAn(t, pool, "Woodwalkers", 5)
 
 	aufruf := func(methode, titelID, koerper string) (int, titelSchlagworteAntwort, string) {
 		t.Helper()

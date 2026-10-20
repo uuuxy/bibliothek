@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"database/sql"
 	"strings"
@@ -39,11 +40,7 @@ func legeTitelAn(t *testing.T, pool *pgxpool.Pool, titel, isbn string) string {
 
 func legeExemplarAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) {
 	t.Helper()
-	if _, err := pool.Exec(context.Background(),
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`,
-		titelID, barcode); err != nil {
-		t.Fatalf("Vorbedingung: Exemplar %q konnte nicht angelegt werden: %v", barcode, err)
-	}
+	testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 }
 
 func zaehleTitel(t *testing.T, pool *pgxpool.Pool, bedingung string, args ...any) int {

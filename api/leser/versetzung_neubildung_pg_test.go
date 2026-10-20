@@ -22,11 +22,7 @@ func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
 		t.Fatalf("Mapping leeren: %v", err)
 	}
 	// Ein Schüler, damit der Lauf etwas zu versetzen hat.
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('NB-S-1', 'Nora', 'Neubildung', '05F1', 2034)`); err != nil {
-		t.Fatalf("Schüler: %v", err)
-	}
+	testdaten.LegeSchuelerMitNamenAn(t, pool, "NB-S-1", "Nora", "Neubildung", "05F1", 2034)
 	for klasse, mail := range map[string]string{
 		"05F1": "a@schule.example", // 5 → 6: rückt hoch
 		"06F1": "b@schule.example", // Förderstufe → Zweige: entfällt

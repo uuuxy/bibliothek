@@ -29,12 +29,7 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 	ctx := context.Background()
 	const name, freitext = "Spurprobe Klarname", "FREITEXT-PROBE Buch im Bus liegen gelassen"
 
-	var schuelerID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		 VALUES ('TLS-1', 'Spurprobe', 'Klarname', '10R', 2026) RETURNING id`).Scan(&schuelerID); err != nil {
-		t.Fatalf("Leser anlegen: %v", err)
-	}
+	schuelerID := testdaten.LegeSchuelerMitNamenAn(t, pool, "TLS-1", "Spurprobe", "Klarname", "10R", 2026)
 
 	// Je Löschweg ein Titel mit einer offenen Forderung und einer Vormerkung desselben Lesers.
 	titelMitSpur := func(titel, barcode string) string {

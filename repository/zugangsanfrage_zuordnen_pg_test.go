@@ -35,12 +35,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 	// legeAltbestandAn ist der Kollege, der schon dasteht: Ausweis, ein Buch, kein Konto.
 	legeAltbestandAn := func(t *testing.T, vorname, nachname, barcode, praefix string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO leser (vorname, nachname, art, barcode_id) VALUES ($1,$2,'lehrkraft',$3) RETURNING id`,
-			vorname, nachname, barcode).Scan(&id); err != nil {
-			t.Fatalf("Altbestand anlegen: %v", err)
-		}
+		id := testdaten.LegeLeserAn(t, pool, barcode, vorname, nachname, "lehrkraft")
 		testdaten.LegeOffeneAusleiheAn(t, pool, id, praefix)
 		return id
 	}

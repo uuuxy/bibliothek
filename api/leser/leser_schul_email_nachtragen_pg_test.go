@@ -327,12 +327,7 @@ func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	var adminID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Nach', 'Trag', 'nachtrag-admin@test.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	adminID := testdaten.LegeKontoAn(t, pool, "Nach", "Trag", "nachtrag-admin@test.invalid", "admin", true)
 	patch := func(t *testing.T, id, body string) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
@@ -360,11 +355,7 @@ func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 		INSERT INTO leser (vorname, nachname, art) VALUES ('Kurt', 'Kollege', 'lehrkraft') RETURNING id::text`).Scan(&kollegeID); err != nil {
 		t.Fatalf("Kollegen anlegen: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-		VALUES ('Susi', 'Schueler', '5a', 'NT-1', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "NT-1", "Susi", "Schueler", "5a", 2030)
 
 	for range 2 {
 		patch(t, kollegeID, `{"nachname":"Kollege","email":"kurt.kollege@schule.invalid"}`)

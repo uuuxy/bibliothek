@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -51,13 +52,8 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`).Scan(&schuelerID); err != nil {
 		t.Fatalf("Probeschüler: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Hanna', 'Lehr', 'lehr@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
-		t.Fatalf("Lehrer: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`).Scan(&freihandTitel); err != nil {
-		t.Fatalf("Freihand-Titel: %v", err)
-	}
+	lehrerID = testdaten.LegeKontoAn(t, pool, "Hanna", "Lehr", "lehr@example.org", "kollegium", true)
+	freihandTitel = testdaten.LegeTitelMitSignaturAn(t, pool, "Der Roman", "Ro Mus", 5)
 	// Lernmittel über ist_lernmittel am Titel: Ohne Eigentum am Exemplar und ohne Bestellung gilt
 	// diese Faustregel (repository.ExemplarTopfSQL).
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`).Scan(&lmfTitel); err != nil {
@@ -69,10 +65,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 
 	exemplar := func(titel, barcode string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`, titel, barcode).Scan(&id); err != nil {
-			t.Fatalf("Exemplar %s: %v", barcode, err)
-		}
+		id := testdaten.LegeExemplarAn(t, pool, titel, barcode, true, "")
 		return id
 	}
 	// leihe legt eine Schüler-Ausleihe an; tageZurueck < 0 = noch offen.

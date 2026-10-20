@@ -131,11 +131,7 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 			return ziel, quelle
 		}, http.StatusConflict, "anonymisiert"},
 		{"Schüler mit Kollege", func(t *testing.T) (string, string) {
-			var kollege string
-			if err := pool.QueryRow(ctx,
-				`INSERT INTO leser (vorname, nachname, art, barcode_id) VALUES ('Zr', 'Kollege', 'lehrkraft', 'ZR-A8') RETURNING id`).Scan(&kollege); err != nil {
-				t.Fatalf("Kollege anlegen: %v", err)
-			}
+			kollege := testdaten.LegeLeserAn(t, pool, "ZR-A8", "Zr", "Kollege", "lehrkraft")
 			return schueler(t, "Kind", "ZR-A7"), kollege
 		}, http.StatusConflict, "Kolleg"},
 		{"beide mit Zugangskonto", func(t *testing.T) (string, string) {

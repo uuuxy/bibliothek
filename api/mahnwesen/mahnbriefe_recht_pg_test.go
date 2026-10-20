@@ -42,13 +42,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})
 	router := srv.Routes()
 
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Mara', 'Mahnrecht', 'mara@mahnbrief-recht.invalid', 'mitarbeiter', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Mara", "Mahnrecht", "mara@mahnbrief-recht.invalid", "mitarbeiter", true)
 	token, err := authenticator.ErzeugeToken(kontoID, "MAHNRECHT-1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

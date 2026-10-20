@@ -30,12 +30,7 @@ func TestAnonymisierung_TilgtDenSperrgrundImProtokoll(t *testing.T) {
 	akteur := testdaten.LegeBearbeiterAn(t, pool)
 	const grund = "SPERRGRUND-PROBE Mutter von Max Muster zahlt nicht"
 
-	var id string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		 VALUES ('SGT-1', 'Max', 'Muster', '10R', 2026) RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, "SGT-1", "Max", "Muster", "10R", 2026)
 	for _, body := range []string{
 		`{"is_locked":true,"reason":"` + grund + `"}`,
 		`{"is_locked":false}`,

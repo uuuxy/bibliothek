@@ -33,12 +33,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-		VALUES ('Tür','Test','07a','TUER-1', 2030) RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerAn(t, pool, "TUER-1", "Tür", "07a")
 
 	fahre := func(body string, h http.HandlerFunc) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))

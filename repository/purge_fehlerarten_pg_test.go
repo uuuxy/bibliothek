@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -64,11 +65,7 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 		RETURNING id`).Scan(&titel); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-		VALUES ($1, 'B-PURGE-ART', false) RETURNING id`, titel).Scan(&exemplar); err != nil {
-		t.Fatalf("Exemplar anlegen: %v", err)
-	}
+	exemplar = testdaten.LegeExemplarAn(t, pool, titel, "B-PURGE-ART", false, "")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		VALUES ($1, $2, NOW() + INTERVAL '7 days')`, exemplar, schueler); err != nil {

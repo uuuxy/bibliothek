@@ -12,6 +12,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // TestProtokollZeigtSystemEintraege: /api/audit zeigt auch Einträge des Systems. Sie
@@ -36,13 +37,7 @@ func TestProtokollZeigtSystemEintraege(t *testing.T) {
 	})
 
 	// Ein Eintrag mit Bearbeiter ...
-	var bearbeiterID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Auda', 'Pruefer', $1, 'mitarbeiter', true) RETURNING id
-	`, "audit-"+suffix+"@example.org").Scan(&bearbeiterID); err != nil {
-		t.Fatalf("Bearbeiter anlegen: %v", err)
-	}
+	bearbeiterID := testdaten.LegeKontoAn(t, pool, "Auda", "Pruefer", "audit-"+suffix+"@example.org", "mitarbeiter", true)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
 		VALUES ($1, 'UPDATE', gen_random_uuid(), $2, 'USER')

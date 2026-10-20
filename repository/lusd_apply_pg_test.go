@@ -215,9 +215,7 @@ func TestAnonymisiereAbgaenger_SetztMarkerUndTilgtSpuren(t *testing.T) {
 		 VALUES ('F-2', 'Lena', 'Spur', '9a', 2025, 'L-SPUR-42') RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Spur-Titel') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatal(err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Spur-Titel", 5)
 	seed := func(sql string, args ...any) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, sql, args...); err != nil {

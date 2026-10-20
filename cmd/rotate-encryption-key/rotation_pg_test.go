@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -69,11 +70,7 @@ func rotationsProbe(t *testing.T) (*pgxpool.Pool, string) {
 	if _, err := pool.Exec(ctx, `UPDATE mail_settings_config SET smtp_password_encrypted = NULL WHERE id = 1`); err != nil {
 		t.Fatalf("Passwort leeren: %v", err)
 	}
-	var leserID string
-	if err := pool.QueryRow(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('ROT-1', 'Probe', 'Schlüsselwechsel', 'lehrkraft') RETURNING id`).Scan(&leserID); err != nil {
-		t.Fatalf("Probe-Leser anlegen: %v", err)
-	}
+	leserID := testdaten.LegeLeserAn(t, pool, "ROT-1", "Probe", "Schlüsselwechsel", "lehrkraft")
 	return pool, leserID
 }
 

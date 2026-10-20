@@ -153,13 +153,7 @@ func legeZurueckgegebeneAusleiheAn(t *testing.T, pool *pgxpool.Pool, exemplarID,
 // legeLehrkraftAn legt ein Kollegiums-Konto an, an das Klassensätze ausgeliehen werden.
 func legeLehrkraftAn(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Lehr', 'Kraft', 'lehrkraft-monitor@test.invalid', 'kollegium', true)
-		RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Lehrkraft anlegen: %v", err)
-	}
+	id := testdaten.LegeKontoAn(t, pool, "Lehr", "Kraft", "lehrkraft-monitor@test.invalid", "kollegium", true)
 	return id
 }
 

@@ -28,18 +28,7 @@ import (
 func leserZeile(t *testing.T, art, vorname, nachname string) string {
 	t.Helper()
 	pool := pgtest.Pool(t)
-	var id string
-	// In die Tabelle, nicht durch die Sicht: `schueler` zeigt seit Migration 124 nur
-	// Schüler und weist einen Kollegen mit WITH CHECK OPTION ab. Genau das ist der Zweck
-	// der Sicht — dieser Test legt die Zeile deshalb dort an, wo sie hingehört.
-	//
-	// Klasse, Abgängerjahr und Ausweis bleiben leer — für einen Kollegen ist das der
-	// Normalfall, und chk_leser_schueler_pflichtfelder erlaubt es nur für ihn.
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO leser (vorname, nachname, art) VALUES ($1, $2, $3) RETURNING id`,
-		vorname, nachname, art).Scan(&id); err != nil {
-		t.Fatalf("Leserzeile (%s) anlegen: %v", art, err)
-	}
+	id := testdaten.LegeLeserAn(t, pool, "", vorname, nachname, art)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM leser WHERE id = $1`, id); err != nil {
 			t.Logf("Aufräumen der Leserzeile %s: %v", id, err)

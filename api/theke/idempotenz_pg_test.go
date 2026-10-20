@@ -59,18 +59,8 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	var mitarbeiterID, schuelerID, titelID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Idem', 'Potenz', $1, 'mitarbeiter', true) RETURNING id
-	`, "idempotenz-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, 'Anna', 'Doppelt', '07B', 2031) RETURNING id
-	`, "S-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	mitarbeiterID = testdaten.LegeKontoAn(t, pool, "Idem", "Potenz", "idempotenz-"+suffix+"@schule.invalid", "mitarbeiter", true)
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-"+suffix, "Anna", "Doppelt", "07B", 2031)
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
 		VALUES ('Idempotenz-Testband', 'Prüfer', 'Buch', false) RETURNING id

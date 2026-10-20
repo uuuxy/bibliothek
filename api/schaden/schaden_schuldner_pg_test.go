@@ -28,13 +28,7 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Sina', 'Schaden', 'schaden-schuldner@example.org', 'admin', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Sina", "Schaden", "schaden-schuldner@example.org", "admin", true)
 	sitzung, err := authenticator.ErzeugeToken(kontoID, "SCHULD-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
@@ -83,13 +77,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Zora', 'Zurueck', 'schaden-zurueck@example.org', 'admin', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Zora", "Zurueck", "schaden-zurueck@example.org", "admin", true)
 	sitzung, err := authenticator.ErzeugeToken(kontoID, "ZURUECK-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

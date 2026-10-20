@@ -23,19 +23,11 @@ func TestSuche_ErkenntScansOhneZuBuchen(t *testing.T) {
 	ctx := context.Background()
 	titelID := testdaten.LegeTitelAn(t, pool, "Sprungbuch", 1)
 	exID := testdaten.LegeExemplarAn(t, pool, titelID, "B-SPRUNG-1", true, "")
-	var schuelerID string
-	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('S-SPRUNG-1', 'Greta', 'Sprung', '07A', 2031) RETURNING id`).Scan(&schuelerID); err != nil {
-		t.Fatal(err)
-	}
+	schuelerID := testdaten.LegeSchuelerMitNamenAn(t, pool, "S-SPRUNG-1", "Greta", "Sprung", "07A", 2031)
 	if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE barcode_id = 'A-KOLL-77'`); err != nil {
 		t.Fatal(err)
 	}
-	var kollegeID string
-	if err := pool.QueryRow(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('A-KOLL-77', 'Kim', 'Kollegin', 'lehrkraft') RETURNING id`).Scan(&kollegeID); err != nil {
-		t.Fatal(err)
-	}
+	kollegeID := testdaten.LegeLeserAn(t, pool, "A-KOLL-77", "Kim", "Kollegin", "lehrkraft")
 	s := &Tueren{Basis: &tuer.Basis{}}
 	h := s.Suche(repository.NewLeserAbfragen(pool), repository.NewKatalogAbfragen(pool))
 	suche := func(q string) suchErgebnis {

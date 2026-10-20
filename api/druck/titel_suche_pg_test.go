@@ -1,7 +1,6 @@
 package druck
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -22,15 +21,11 @@ import (
 func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
-	ctx := context.Background()
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Türsuche Testband", "TUER 7", 1)
 	testdaten.LegeExemplarAn(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel
 	// Ein Schüler mit demselben Suchwort — er darf in der Antwort nicht auftauchen.
-	if _, err := pool.Exec(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('S-TUER-1', 'Tilda', 'Türsuche', '07A', 2031)`); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeSchuelerMitNamenAn(t, pool, "S-TUER-1", "Tilda", "Türsuche", "07A", 2031)
 
 	s := &Tueren{Basis: &tuer.Basis{}}
 	h := s.TitelSuche(repository.NewKatalogAbfragen(pool))

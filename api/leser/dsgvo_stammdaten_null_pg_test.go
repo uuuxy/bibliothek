@@ -23,13 +23,7 @@ func TestStammdaten_OhneAdresseKein500(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('DSGVO-NULLADDR', 'Ohne', 'Adresse', '7z', 2030)
-		RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Schüler ohne Adresse anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, "DSGVO-NULLADDR", "Ohne", "Adresse", "7z", 2030)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	st, err := srv.dsgvoStammdaten(ctx, id)

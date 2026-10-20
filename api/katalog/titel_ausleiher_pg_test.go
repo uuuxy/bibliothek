@@ -27,31 +27,14 @@ func TestTitelAusleiher_AusleiheEinerLehrkraftStehtDrin(t *testing.T) {
 	ctx := context.Background()
 
 	var titelID, ex1, ex2, ex3, schuelerID, lehrerID, fachbereichID string
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Ausleiher-Titel') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-AUSL-1') RETURNING id`, titelID).Scan(&ex1); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-AUSL-2') RETURNING id`, titelID).Scan(&ex2); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-AUSL-3') RETURNING id`, titelID).Scan(&ex3); err != nil {
-		t.Fatal(err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Ausleiher-Titel", 5)
+	ex1 = testdaten.LegeExemplarAn(t, pool, titelID, "B-AUSL-1", true, "")
+	ex2 = testdaten.LegeExemplarAn(t, pool, titelID, "B-AUSL-2", true, "")
+	ex3 = testdaten.LegeExemplarAn(t, pool, titelID, "B-AUSL-3", true, "")
 	// Ein Fachbereich hat kein Konto, nur die Leserzeile (leserart.HatKonto).
-	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art, barcode_id)
-		VALUES ('Fachbereich', 'Erdkunde', 'fachbereich', 'L-AUSL-FB') RETURNING id`).Scan(&fachbereichID); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('S-AUSL', 'Mia', 'Muster', '7a', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Lena', 'Lehr', 'lehr-ausl@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
-		t.Fatal(err)
-	}
+	fachbereichID = testdaten.LegeLeserAn(t, pool, "L-AUSL-FB", "Fachbereich", "Erdkunde", "fachbereich")
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-AUSL", "Mia", "Muster", "7a", 2030)
+	lehrerID = testdaten.LegeKontoAn(t, pool, "Lena", "Lehr", "lehr-ausl@example.org", "kollegium", true)
 	// Der Ausweis steht an der Leserzeile (Migration 125) — der Reiter zeigt ihn von dort.
 	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'L-AUSL'
 		WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)`, lehrerID); err != nil {

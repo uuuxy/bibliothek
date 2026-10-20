@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"bibliothek/internal/testdaten"
 	"context"
 	"os"
 	"testing"
@@ -44,12 +45,7 @@ func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
 		RETURNING id`).Scan(&anonID); err != nil {
 		t.Fatalf("anonymisierten Schüler anlegen: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-		VALUES ('Aktiv', 'Bleibt', '05A', 'S-SPUR-AKTIV', 2030)
-		RETURNING id`).Scan(&aktivID); err != nil {
-		t.Fatalf("aktiven Schüler anlegen: %v", err)
-	}
+	aktivID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-SPUR-AKTIV", "Aktiv", "Bleibt", "05A", 2030)
 
 	// Je eine Zeile der Lesehistorie, wie sie die Ausleihe schreibt (repository/protokoll.go:
 	// tabelle='ausleihen', der Schüler nur in details), dazu je eine Vormerkung und je eine Zeile

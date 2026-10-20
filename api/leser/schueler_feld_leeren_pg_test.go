@@ -94,12 +94,7 @@ func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
-		VALUES ('Echt','Name','07a','PFLICHT-1', 2030) RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, "PFLICHT-1", "Echt", "Name", "07a", 2030)
 
 	for _, rumpf := range []string{
 		`{"vorname":""}`, `{"nachname":""}`, `{"barcode_id":""}`, `{"klasse":""}`,

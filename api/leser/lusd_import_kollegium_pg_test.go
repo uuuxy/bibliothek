@@ -68,12 +68,7 @@ func TestLUSDImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 	// Eine Lehrkraft ohne Konto — so entsteht sie über „Neuen Leser anlegen".
-	var lehrkraftID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('L-IMP-1', 'Petra', 'Kollegin', 'lehrkraft') RETURNING id`).Scan(&lehrkraftID); err != nil {
-		t.Fatalf("Lehrkraft anlegen: %v", err)
-	}
+	lehrkraftID := testdaten.LegeLeserAn(t, pool, "L-IMP-1", "Petra", "Kollegin", "lehrkraft")
 	// Und ein Kollegiumskonto — seine Leserzeile legt der Trigger an (Migration 125).
 	var kontoLeserID string
 	if err := pool.QueryRow(ctx, `

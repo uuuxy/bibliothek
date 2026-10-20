@@ -47,13 +47,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string, *tuer.Rechte
 	srv := api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})
 	router := srv.Routes()
 
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Karla', 'Katalog', 'katalog-ma@example.org', 'mitarbeiter', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Karla", "Katalog", "katalog-ma@example.org", "mitarbeiter", true)
 	token, err := authenticator.ErzeugeToken(kontoID, "KATALOG-MA-1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

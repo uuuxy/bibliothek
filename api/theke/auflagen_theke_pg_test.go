@@ -31,18 +31,10 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var mitarbeiter string
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Theke', 'Auflage', 'theke-auflage@schule.invalid', 'mitarbeiter', true) RETURNING id`).Scan(&mitarbeiter); err != nil {
-		t.Fatalf("Mitarbeiter anlegen: %v", err)
-	}
+	mitarbeiter := testdaten.LegeKontoAn(t, pool, "Theke", "Auflage", "theke-auflage@schule.invalid", "mitarbeiter", true)
 	kind := func(barcode, klasse string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, 'Kind', $1, $2, 2031) RETURNING id`, barcode, klasse).Scan(&id); err != nil {
-			t.Fatalf("Schüler %s anlegen: %v", barcode, err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, barcode, "Kind", barcode, klasse, 2031)
 		return id
 	}
 	titel := func(auflage string, jahr int) string {

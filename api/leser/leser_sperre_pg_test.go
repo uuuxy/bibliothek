@@ -42,12 +42,7 @@ func TestLeserSperren_VerlangtGrundUndSetztSperrgrund(t *testing.T) {
 	ctx := context.Background()
 	akteur := testdaten.LegeBearbeiterAn(t, pool)
 
-	var id string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		 VALUES ('LK-1', 'Max', 'Muster', '7a', 2030) RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Schüler anlegen: %v", err)
-	}
+	id := testdaten.LegeSchuelerMitNamenAn(t, pool, "LK-1", "Max", "Muster", "7a", 2030)
 
 	call := func(body string) *httptest.ResponseRecorder { return sperrTuerAufruf(t, pool, akteur, id, body) }
 	leseSperre := func() (bool, *string) {

@@ -23,6 +23,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -242,13 +243,7 @@ func TestThekenAuskunftNenntDenKollegen(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	w := baueThekenWelt(t, pool)
 
-	var kollegeID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ($1, 'Kim', 'Kollegin', 'liv') RETURNING id
-	`, "TRSK-"+w.barcode).Scan(&kollegeID); err != nil {
-		t.Fatalf("Kollege anlegen: %v", err)
-	}
+	kollegeID := testdaten.LegeLeserAn(t, pool, "TRSK-"+w.barcode, "Kim", "Kollegin", "liv")
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, kollegeID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)

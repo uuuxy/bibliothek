@@ -25,20 +25,10 @@ func TestTitelHistorie_GetrennteAusleiheIstAnonymNichtLehrkraft(t *testing.T) {
 	ctx := context.Background()
 
 	var titelID, exemplarID, schuelerID, lehrerID string
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Historie-Titel') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-HIST-1') RETURNING id`, titelID).Scan(&exemplarID); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('S-HIST', 'Mia', 'Muster', '7a', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
-		t.Fatal(err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Lena', 'Lehr', 'lehr-hist@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
-		t.Fatal(err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Historie-Titel", 5)
+	exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "B-HIST-1", true, "")
+	schuelerID = testdaten.LegeSchuelerMitNamenAn(t, pool, "S-HIST", "Mia", "Muster", "7a", 2030)
+	lehrerID = testdaten.LegeKontoAn(t, pool, "Lena", "Lehr", "lehr-hist@example.org", "kollegium", true)
 	// Drei abgeschlossene Vorgänge desselben Exemplars, in dieser Reihenfolge (neueste zuerst
 	// in der Antwort): zugeordnet (vor 3 Tagen), getrennt (vor 200 Tagen), Lehrer (vor 400).
 	for _, v := range []struct {

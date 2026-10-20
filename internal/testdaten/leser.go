@@ -23,6 +23,33 @@ func LegeSchuelerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse s
 	return id
 }
 
+// LegeSchuelerMitNamenAn legt einen Schüler mit Nachnamen und Abgangsjahr an und liefert
+// seine Kennung.
+func LegeSchuelerMitNamenAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, klasse string, abgaengerJahr int) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		barcode, vorname, nachname, klasse, abgaengerJahr).Scan(&id); err != nil {
+		t.Fatalf("Schüler %s %s anlegen: %v", vorname, nachname, err)
+	}
+	return id
+}
+
+// LegeLeserAn legt einen Leser der Art an und liefert seine Kennung. Ein leerer Barcode steht als
+// NULL in der Tabelle, wie bei einem Kollegen, dem noch keine Ausweisnummer vergeben ist.
+func LegeLeserAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, art string) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO leser (barcode_id, vorname, nachname, art) VALUES (NULLIF($1, ''), $2, $3, $4) RETURNING id`,
+		barcode, vorname, nachname, art).Scan(&id); err != nil {
+		t.Fatalf("Leser %s %s anlegen: %v", vorname, nachname, err)
+	}
+	return id
+}
+
 // LegeAbgaengerAn legt einen Schüler an, der als Abgänger markiert ist.
 func LegeAbgaengerAn(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
 	t.Helper()
@@ -58,6 +85,18 @@ func LegeLUSDSchuelerAn(t *testing.T, pool *pgxpool.Pool, s LUSDSchuelerNeu) str
 		RETURNING id`,
 		s.Vorname, s.Nachname, s.Klasse, s.Barcode, s.Geburtsdatum, s.SchulEintrittAm, s.IstAbgaenger).Scan(&id); err != nil {
 		t.Fatalf("Schüler %s %s anlegen: %v", s.Vorname, s.Nachname, err)
+	}
+	return id
+}
+
+// LegeKontoAn legt ein Konto mit Rolle und Zustand an und liefert seine Kennung.
+func LegeKontoAn(t *testing.T, pool *pgxpool.Pool, vorname, nachname, email, rolle string, aktiv bool) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		vorname, nachname, email, rolle, aktiv).Scan(&id); err != nil {
+		t.Fatalf("Konto %s anlegen: %v", email, err)
 	}
 	return id
 }

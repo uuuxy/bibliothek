@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,19 +35,9 @@ func TestAbgaengerLoeschung_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 
 	// Bearbeiter (Ziel der Fremdschlüssel von Ausleihe und Protokoll), Titel und Exemplar.
 	var bearbeiterID, titelID, exemplarID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Del', 'Kraft', 'del@example.org', 'admin', true) RETURNING id`).Scan(&bearbeiterID); err != nil {
-		t.Fatalf("Benutzer: %v", err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel) VALUES ('DSGVO-Buch') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'DEL-EX-1') RETURNING id`, titelID).Scan(&exemplarID); err != nil {
-		t.Fatalf("Exemplar: %v", err)
-	}
+	bearbeiterID = testdaten.LegeKontoAn(t, pool, "Del", "Kraft", "del@example.org", "admin", true)
+	titelID = testdaten.LegeTitelAn(t, pool, "DSGVO-Buch", 5)
+	exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "DEL-EX-1", true, "")
 
 	// Fälliger Abgänger: ist_abgaenger, altes Abgangsjahr, nicht im Papierkorb und schon
 	// anonymisiert, denn der Lauf löscht nur, was die Karenz durchlaufen hat
@@ -141,22 +132,10 @@ func TestBearbeiterAnonymisierung_GegenEchtesPostgres(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	var bearbeiterID, titelID, exemplarID, sid string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Anon', 'Kraft', 'anl@example.org', 'admin', true) RETURNING id`).Scan(&bearbeiterID); err != nil {
-		t.Fatalf("Benutzer: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Anon-Buch') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'ANL-EX') RETURNING id`, titelID).Scan(&exemplarID); err != nil {
-		t.Fatalf("Exemplar: %v", err)
-	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('ANL-S', 'A', 'B', '7a', 2030) RETURNING id`).Scan(&sid); err != nil {
-		t.Fatalf("Schüler: %v", err)
-	}
+	bearbeiterID = testdaten.LegeKontoAn(t, pool, "Anon", "Kraft", "anl@example.org", "admin", true)
+	titelID = testdaten.LegeTitelAn(t, pool, "Anon-Buch", 5)
+	exemplarID = testdaten.LegeExemplarAn(t, pool, titelID, "ANL-EX", true, "")
+	sid = testdaten.LegeSchuelerMitNamenAn(t, pool, "ANL-S", "A", "B", "7a", 2030)
 	// Abgeschlossene Ausleihe, vor 20 Tagen zurückgegeben, mit gesetzten Bearbeitern.
 	var ausleiheID string
 	if err := pool.QueryRow(ctx, `
@@ -171,10 +150,7 @@ func TestBearbeiterAnonymisierung_GegenEchtesPostgres(t *testing.T) {
 	leihe := func(was, barcode, ausgabe, rueckgabe, werte string) string {
 		t.Helper()
 		var exemplar, id string
-		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
-			titelID, barcode).Scan(&exemplar); err != nil {
-			t.Fatalf("Exemplar %s: %v", barcode, err)
-		}
+		exemplar = testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 		if err := pool.QueryRow(ctx, `
 			INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, rueckgabe_bearbeiter_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 			VALUES ($1, $2, `+ausgabe+`, `+rueckgabe+`, `+werte+`) RETURNING id`,

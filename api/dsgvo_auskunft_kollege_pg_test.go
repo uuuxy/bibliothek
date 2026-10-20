@@ -178,11 +178,7 @@ func TestKontoAnlage_ProtokollTraegtZielID(t *testing.T) {
 	})
 
 	// Ein echtes Administratorkonto: audit_logs.admin_id verweist auf benutzer.
-	var adminID string
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Ada', 'Admin', 'ada@zielid.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
-		t.Fatalf("Admin anlegen: %v", err)
-	}
+	adminID := testdaten.LegeKontoAn(t, pool, "Ada", "Admin", "ada@zielid.invalid", "admin", true)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/benutzer", strings.NewReader(
 		`{"vorname":"Neu","nachname":"Konto","email":"neu@zielid.invalid","rolle":"kollegium"}`))

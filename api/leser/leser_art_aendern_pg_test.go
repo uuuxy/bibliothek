@@ -62,14 +62,7 @@ func TestLeserArtAendern(t *testing.T) {
 
 	legeKollegen := func(t *testing.T, name, art string) string {
 		t.Helper()
-		var id string
-		// In die Tabelle, nicht in die Sicht: `schueler` ist auf art='schueler'
-		// eingeschränkt und weist einen Kollegen mit "check option for view" ab.
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO leser (vorname, nachname, art) VALUES ('Art', $1, $2) RETURNING id`,
-			name, art).Scan(&id); err != nil {
-			t.Fatalf("Kollegen anlegen: %v", err)
-		}
+		id := testdaten.LegeLeserAn(t, pool, "", "Art", name, art)
 		return id
 	}
 

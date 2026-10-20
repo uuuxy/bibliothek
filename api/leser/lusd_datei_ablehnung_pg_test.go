@@ -27,12 +27,7 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	var adminID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Ada', 'Admin', 'ada@upload.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	adminID := testdaten.LegeKontoAn(t, pool, "Ada", "Admin", "ada@upload.invalid", "admin", true)
 	admin := &auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}
 
 	// Zehn bestätigte Schüler, der Export nennt sechs: Vier Abgänger sind 40 % und liegen über

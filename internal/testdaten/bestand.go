@@ -68,13 +68,14 @@ func LegeExemplarMitSignaturAn(t *testing.T, pool *pgxpool.Pool, signatur, barco
 	return LegeExemplarAn(t, pool, titelID, barcode, true, "")
 }
 
-// LegeExemplarAn legt ein Exemplar mit Barcode, Verleihstatus und Notiz an.
+// LegeExemplarAn legt ein Exemplar mit Barcode, Verleihstatus und Notiz an. Eine leere Notiz
+// steht als NULL in der Tabelle, wie bei einem Exemplar, das ohne Notiz angelegt wurde.
 func LegeExemplarAn(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, ausleihbar bool, notiz string) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-		 VALUES ($1, $2, $3, $4) RETURNING id`,
+		 VALUES ($1, $2, $3, NULLIF($4, '')) RETURNING id`,
 		titelID, barcode, ausleihbar, notiz).Scan(&id); err != nil {
 		t.Fatalf("Exemplar %q anlegen: %v", barcode, err)
 	}

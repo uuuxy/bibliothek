@@ -21,12 +21,7 @@ func TestLoescheTitel_NurOffeneForderungHinterlaesstSpur(t *testing.T) {
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 	schaeden := repository.NewSchadensAbfragen(pool)
 
-	var schuelerID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		 VALUES ('TFS-L', 'Forderung', 'Spurprobe', '08B', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
-		t.Fatalf("Leser anlegen: %v", err)
-	}
+	schuelerID := testdaten.LegeSchuelerMitNamenAn(t, pool, "TFS-L", "Forderung", "Spurprobe", "08B", 2030)
 
 	// Je Löschweg ein Titel mit drei Exemplaren und je einer Forderung: offen, bezahlt und
 	// storniert. Erledigt werden sie über die Türen des Schadensersatzes, damit die Zeilen so

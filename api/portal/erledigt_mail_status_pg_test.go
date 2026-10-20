@@ -174,10 +174,7 @@ func TestKlassensatzReservierungErledigen_MailAusfallStehtInDerAntwort(t *testin
 		RETURNING id`).Scan(&lehrerID); err != nil {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_titel (titel) VALUES ('Der Besuch der alten Dame') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel anlegen: %v", err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Der Besuch der alten Dame", 5)
 
 	// body nil: ein Browser mit altem Stand der Oberfläche schickt keinen Rumpf und muss
 	// weiter abschließen können.

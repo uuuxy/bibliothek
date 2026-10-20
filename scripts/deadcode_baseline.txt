@@ -105,8 +105,11 @@ internal/testdaten/bestand.go: unreachable func: LegeExemplarAn
 internal/testdaten/bestand.go: unreachable func: LegeExemplarImZulaufAn
 internal/testdaten/bestand.go: unreachable func: LegeAusleihbaresExemplarAn
 internal/testdaten/leser.go: unreachable func: LegeSchuelerAn
+internal/testdaten/leser.go: unreachable func: LegeSchuelerMitNamenAn
+internal/testdaten/leser.go: unreachable func: LegeLeserAn
 internal/testdaten/leser.go: unreachable func: LegeAbgaengerAn
 internal/testdaten/leser.go: unreachable func: LegeLUSDSchuelerAn
+internal/testdaten/leser.go: unreachable func: LegeKontoAn
 internal/testdaten/leser.go: unreachable func: LegeKollegiumskontoAn
 internal/testdaten/leser.go: unreachable func: LegeBearbeiterAn
 internal/testdaten/leser.go: unreachable func: SetzeKlassenleitung

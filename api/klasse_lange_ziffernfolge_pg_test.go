@@ -28,13 +28,7 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Zita', 'Ziffer', 'klasse-ziffernfolge@example.org', 'admin', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Zita", "Ziffer", "klasse-ziffernfolge@example.org", "admin", true)
 	sitzung, err := authenticator.ErzeugeToken(kontoID, "KLZ-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

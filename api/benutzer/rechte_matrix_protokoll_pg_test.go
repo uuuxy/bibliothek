@@ -30,13 +30,7 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	var adminID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Rita', 'Rechte', 'rechte-protokoll@example.org', 'admin', true)
-		RETURNING id`).Scan(&adminID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	adminID := testdaten.LegeKontoAn(t, pool, "Rita", "Rechte", "rechte-protokoll@example.org", "admin", true)
 	sitzung, err := authenticator.ErzeugeToken(adminID, "RECHTE-1", auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)

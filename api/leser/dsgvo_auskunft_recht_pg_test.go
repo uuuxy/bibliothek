@@ -98,11 +98,7 @@ func TestDSGVOAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		VALUES ($1, 'USER_UPDATE', '{}', '10.1.2.3')`, rita); err != nil {
 		t.Fatalf("Verwaltungseingriff anlegen: %v", err)
 	}
-	var ottoLeser string
-	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art)
-		VALUES ('Otto', 'Ohnekonto', 'lehrkraft') RETURNING id`).Scan(&ottoLeser); err != nil {
-		t.Fatalf("Kollege ohne Konto anlegen: %v", err)
-	}
+	ottoLeser := testdaten.LegeLeserAn(t, pool, "", "Otto", "Ohnekonto", "lehrkraft")
 
 	rufe := func(h http.HandlerFunc, leserID, kontoID string, rolle auth.Rolle) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)

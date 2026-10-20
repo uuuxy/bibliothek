@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -31,13 +32,7 @@ func TestJahrgangFilterFindetAuchDieOberstufe(t *testing.T) {
 	klassen := map[string]string{"05F1": "Fuenf", "05G2": "Fuenfb", "10H1": "Zehn", "ET": "Elf", "13T": "Dreizehn"}
 	angelegt := []string{}
 	for klasse, name := range klassen {
-		var id string
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, $2, 'Jahrgangstest', $3, 2035) RETURNING id
-		`, fmt.Sprintf("SJG-%s-%s", suffix, klasse), name, klasse).Scan(&id); err != nil {
-			t.Fatalf("Schüler in %s anlegen: %v", klasse, err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, fmt.Sprintf("SJG-%s-%s", suffix, klasse), name, "Jahrgangstest", klasse, 2035)
 		angelegt = append(angelegt, id)
 	}
 	t.Cleanup(func() {

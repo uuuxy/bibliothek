@@ -170,12 +170,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 	// Zweites Exemplar als offenes Buch des Abgängers — die Abgängerliste joint
 	// auf rueckgabe_am IS NULL; ohne offenes Buch bliebe sie leer und ihre
 	// Stufe-2-Zeile trivial grün.
-	var abgaengerExemplarID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-		VALUES ($1, 'BUCHBC-GATE-2', false) RETURNING id`, w.titelID).Scan(&abgaengerExemplarID); err != nil {
-		t.Fatalf("Abgänger-Exemplar anlegen: %v", err)
-	}
+	abgaengerExemplarID := testdaten.LegeExemplarAn(t, pool, w.titelID, "BUCHBC-GATE-2", false, "")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, bearbeiter_id)
 		VALUES ($1, $2, now() - interval '200 days', now() - interval '100 days', $3)`,

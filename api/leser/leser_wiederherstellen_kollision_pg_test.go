@@ -91,12 +91,7 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 	})
 
 	t.Run("ohne Zwilling gelingt die Wiederherstellung", func(t *testing.T) {
-		var id string
-		if err := pool.QueryRow(ctx,
-			`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			 VALUES ('S-ZW-FREI', 'Cem', 'Cord', '7a', 2030) RETURNING id`).Scan(&id); err != nil {
-			t.Fatalf("Schüler anlegen: %v", err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, "S-ZW-FREI", "Cem", "Cord", "7a", 2030)
 		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}

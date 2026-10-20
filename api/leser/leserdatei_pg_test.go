@@ -12,6 +12,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -34,12 +35,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 		}
 	})
 
-	var lehrkraftID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (vorname, nachname, art) VALUES ('Katrin', 'Leserdateitest', 'lehrkraft')
-		RETURNING id`).Scan(&lehrkraftID); err != nil {
-		t.Fatalf("Lehrkraft anlegen: %v", err)
-	}
+	lehrkraftID := testdaten.LegeLeserAn(t, pool, "", "Katrin", "Leserdateitest", "lehrkraft")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO leser (barcode_id, vorname, nachname, klasse, abgaenger_jahr, art)
 		VALUES ('LDT-1', 'Lena', 'Leserdateitest', '7a', 2030, 'schueler')`); err != nil {
@@ -121,12 +117,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 		}
 	})
 
-	var lehrkraftID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('AKTE-1', 'Katrin', 'Aktetest', 'lehrkraft') RETURNING id`).Scan(&lehrkraftID); err != nil {
-		t.Fatalf("Lehrkraft anlegen: %v", err)
-	}
+	lehrkraftID := testdaten.LegeLeserAn(t, pool, "AKTE-1", "Katrin", "Aktetest", "lehrkraft")
 
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+lehrkraftID, nil)
 	req.SetPathValue("id", lehrkraftID)
@@ -202,12 +193,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 		}
 	})
 
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO leser (barcode_id, vorname, nachname, art)
-		VALUES ('SPERR-1', 'Katrin', 'Sperrtest', 'lehrkraft') RETURNING id`).Scan(&id); err != nil {
-		t.Fatalf("Lehrkraft anlegen: %v", err)
-	}
+	id := testdaten.LegeLeserAn(t, pool, "SPERR-1", "Katrin", "Sperrtest", "lehrkraft")
 
 	sperrTuer := func(body string) *httptest.ResponseRecorder {
 		t.Helper()

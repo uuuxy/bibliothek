@@ -61,11 +61,7 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 	}
 
 	// Ein Schüler, damit der Lauf etwas zu versetzen hat.
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('F3-S-1', 'Vera', 'Versetzt', '05A', 2033)`); err != nil {
-		t.Fatalf("Schüler: %v", err)
-	}
+	testdaten.LegeSchuelerMitNamenAn(t, pool, "F3-S-1", "Vera", "Versetzt", "05A", 2033)
 	// Kette 7a→8a→9a beweist die absteigende Reihenfolge; 9h ist Abschluss.
 	for klasse, mail := range map[string]string{
 		"05A": "a@schule.example", "07A": "b@schule.example",

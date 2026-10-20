@@ -56,11 +56,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	}
 	schueler := func(t *testing.T, barcode string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, 'Sch', 'Ueler', '7a', 2030) RETURNING id`, barcode).Scan(&id); err != nil {
-			t.Fatalf("Schüler anlegen: %v", err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, barcode, "Sch", "Ueler", "7a", 2030)
 		return id
 	}
 	fahre := func(h http.Handler, methode, pfad, id, body string) *httptest.ResponseRecorder {

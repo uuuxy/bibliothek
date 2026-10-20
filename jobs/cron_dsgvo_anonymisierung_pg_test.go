@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -215,11 +216,7 @@ func TestSchuelerAnonymisierung_TilgtPersonendatenInAnderenTabellen(t *testing.T
 		t.Fatalf("audit_logs-Seed: %v", err)
 	}
 	// Vormerkung mit einer Notiz, die auf die Person schließen lässt.
-	var titelID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO buecher_titel (titel) VALUES ('Neben-Titel') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel: %v", err)
-	}
+	titelID := testdaten.LegeTitelAn(t, pool, "Neben-Titel", 5)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO vormerkungen (titel_id, schueler_id, notiz) VALUES ($1, $2, $3)`,
 		titelID, id, notizMarke); err != nil {

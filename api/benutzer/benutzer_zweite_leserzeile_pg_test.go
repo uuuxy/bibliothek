@@ -11,6 +11,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -59,9 +60,7 @@ func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 
 	// Die Leserzeile eines Kollegen ohne Konto — so sieht sie nach dem Löschen des Kontos
 	// aus, und so kommt sie aus der Littera-Übernahme.
-	if _, err := pool.Exec(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art) VALUES ('A-517', 'Kim', 'Zweitezeile', 'lehrkraft')`); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeLeserAn(t, pool, "A-517", "Kim", "Zweitezeile", "lehrkraft")
 
 	rec := anlegen(`{"vorname":"Kim","nachname":"Zweitezeile","email":"kim@zweitezeile.invalid","rolle":"kollegium"}`)
 	if rec.Code != http.StatusConflict {
@@ -75,10 +74,7 @@ func TestKontoAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	}
 
 	// Gegenprobe 1: Ein Schüler gleichen Namens ist eine andere Person — das Konto entsteht.
-	if _, err := pool.Exec(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ('S-517', 'Lea', 'Zweitezeile-Kind', '7a', 2030)`); err != nil {
-		t.Fatal(err)
-	}
+	testdaten.LegeSchuelerMitNamenAn(t, pool, "S-517", "Lea", "Zweitezeile-Kind", "7a", 2030)
 	if rec := anlegen(`{"vorname":"Lea","nachname":"Zweitezeile-Kind","email":"lea@zweitezeile.invalid","rolle":"kollegium"}`); rec.Code != http.StatusOK {
 		t.Errorf("Namensvetter unter den Schülern darf nicht bremsen: Status %d: %s", rec.Code, rec.Body.String())
 	}

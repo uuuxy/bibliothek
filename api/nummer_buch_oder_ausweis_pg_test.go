@@ -27,25 +27,15 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	srv := &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	admin := &auth.Claims{KontoID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RolleAdmin}
 
-	var titelID string
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Nummernprobe 131') RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatal(err)
-	}
+	titelID := testdaten.LegeTitelAn(t, pool, "Nummernprobe 131", 5)
 	exemplar := func(t *testing.T, barcode string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`, titelID, barcode).Scan(&id); err != nil {
-			t.Fatalf("Exemplar %s anlegen: %v", barcode, err)
-		}
+		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
 		return id
 	}
 	schueler := func(t *testing.T, barcode string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ($1, 'Num', 'Merprobe', '7a', 2030) RETURNING id`, barcode).Scan(&id); err != nil {
-			t.Fatalf("Schüler anlegen: %v", err)
-		}
+		id := testdaten.LegeSchuelerMitNamenAn(t, pool, barcode, "Num", "Merprobe", "7a", 2030)
 		return id
 	}
 	fahre := func(h http.Handler, methode, pfad, id, body string) *httptest.ResponseRecorder {
@@ -99,11 +89,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	t.Run("Wiederherstellen, während ein Buch die Nummer trägt", func(t *testing.T) {
 		id := schueler(t, "N131-D")
 		// Der Papierkorb protokolliert den Bearbeiter — ein echtes Konto, kein Platzhalter.
-		var bearbeiter string
-		if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-			VALUES ('Bea', 'Rbeiter', 'bearbeiter@nummer131.invalid', 'kollegium', true) RETURNING id`).Scan(&bearbeiter); err != nil {
-			t.Fatalf("Bearbeiter anlegen: %v", err)
-		}
+		bearbeiter := testdaten.LegeKontoAn(t, pool, "Bea", "Rbeiter", "bearbeiter@nummer131.invalid", "kollegium", true)
 		t.Cleanup(func() {
 			if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)`, bearbeiter); err != nil {
 				t.Errorf("Leserzeile des Bearbeiters aufräumen: %v", err)

@@ -56,11 +56,7 @@ func TestDSGVOAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	})
 
 	sid := testdaten.LegeSchuelerAn(t, pool, "S-FRISTEN-PROBE", "Fristenkind", "5F1")
-	var kollege string
-	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art)
-		VALUES ('Frieda', 'Fristenkollegin', 'lehrkraft') RETURNING id`).Scan(&kollege); err != nil {
-		t.Fatalf("Kollegin anlegen: %v", err)
-	}
+	kollege := testdaten.LegeLeserAn(t, pool, "", "Frieda", "Fristenkollegin", "lehrkraft")
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	speicherdauer := func(leserID string) string {

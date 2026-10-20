@@ -13,6 +13,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
 )
 
@@ -35,11 +36,7 @@ func TestAnliegenAnlegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 		RETURNING id`).Scan(&lehrkraftID); err != nil {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO buecher_titel (titel) VALUES ('Anliegen-Tür: vorhandener Titel')
-		RETURNING id`).Scan(&titelID); err != nil {
-		t.Fatalf("Titel anlegen: %v", err)
-	}
+	titelID = testdaten.LegeTitelAn(t, pool, "Anliegen-Tür: vorhandener Titel", 5)
 	t.Cleanup(func() {
 		aufraeumen := context.Background()
 		if _, err := pool.Exec(aufraeumen, `DELETE FROM lehrer_anliegen WHERE angefordert_von = $1`, lehrkraftID); err != nil {

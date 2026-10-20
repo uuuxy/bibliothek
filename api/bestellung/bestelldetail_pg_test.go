@@ -103,11 +103,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 	exemplarAusBestellung(t, pool, mitAngaben, bestellung, "DETAIL-0002", false)
 	// … und eines desselben Titels ohne Bestellbezug (Altbestand). Es darf nicht
 	// auftauchen: Sonst zeigte der Beleg Bücher, die nie in diesem Karton lagen.
-	if _, err := pool.Exec(ctx,
-		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'ALTBESTAND-1')`,
-		mitAngaben); err != nil {
-		t.Fatalf("Altbestand anlegen: %v", err)
-	}
+	testdaten.LegeExemplarAn(t, pool, mitAngaben, "ALTBESTAND-1", true, "")
 
 	detail := holeDetail(t, srv, pool, bestellung)
 

@@ -14,6 +14,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -137,13 +138,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
-	var kontoID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Gerda', 'Geraet', 'geraet-seriennummer@example.org', 'admin', true)
-		RETURNING id`).Scan(&kontoID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
+	kontoID := testdaten.LegeKontoAn(t, pool, "Gerda", "Geraet", "geraet-seriennummer@example.org", "admin", true)
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`)
 	})
