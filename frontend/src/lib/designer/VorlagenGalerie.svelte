@@ -37,7 +37,7 @@
 		// Als verarbeitet markieren: Sonst schließt derselbe Tastendruck zusätzlich die
 		// ganze Ansicht (globaler Escape-Kurzbefehl in Router.svelte) — die Galerie ging zu
 		// UND der Designer sprang an die Theke. Gefunden im Rasterdurchgang 06.09.2026;
-		// CoverPeek.svelte macht es seit jeher richtig, die Ratsche sah diese Form nicht.
+		// CoverVorschau.svelte macht es seit jeher richtig, die Ratsche sah diese Form nicht.
 		e.preventDefault();
 	}}
 />

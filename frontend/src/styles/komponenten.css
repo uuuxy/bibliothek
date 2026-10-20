@@ -69,7 +69,7 @@
 	   wie bei den Feldern würde die Detailzeilen der Bestellhistorie strecken).
 
 	   Warum eine Komponenten-Klasse und KEINE base-Regel auf button:has(> svg):
-	   Eine base-Regel verliert gegen jede Utility — CoverPeek trägt ein
+	   Eine base-Regel verliert gegen jede Utility — CoverVorschau trägt ein
 	   explizites w-5 h-5 und wäre stillschweigend kleiner geblieben, also genau
 	   die Fundstelle, die am weitesten daneben lag. Und sie hätte Buttons
 	   getroffen, die ich nie angesehen habe. Die Klasse steht sichtbar an der

@@ -14,7 +14,7 @@ type LaufendeAusleihe struct {
 	Titel      string `json:"titel"`
 	Autor      string `json:"autor"`
 	// ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein
-	// Cover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den
+	// Cover nachladen, wenn keins am Titel gespeichert ist (CoverVorschau fragt darüber den
 	// Cover-Proxy) — und das ist bei importierten Beständen der Normalfall.
 	ISBN     string `json:"isbn,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`

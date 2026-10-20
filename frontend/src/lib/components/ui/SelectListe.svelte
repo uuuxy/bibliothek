@@ -7,7 +7,7 @@
      POSITION FIXED, nicht absolute: Die Liste öffnet sich regelmäßig in einem
      Container mit overflow-y-auto (Formularspalten, Tabellen, Dialoge).
      Absolut positioniert würde sie dort abgeschnitten — dieselbe Falle, die in
-     CoverPeek schon dokumentiert ist. -->
+     CoverVorschau schon dokumentiert ist. -->
 <script>
 	import { Check } from '@lucide/svelte';
 

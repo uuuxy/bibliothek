@@ -5894,7 +5894,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "isbn": {
-                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
+                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverVorschau fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
                     "type": "string"
                 },
                 "ist_dauerleihe": {

@@ -1,4 +1,4 @@
-<!-- @component TabelleSortKopf — eine sortierbare Kopfzelle für ui/Tabelle.
+<!-- @component TabelleSortierKopf — eine sortierbare Kopfzelle für ui/Tabelle.
 
      Der erste sortierbare Spaltenkopf der Anwendung (17.09.2026, Protokoll des
      Medienzentrums Punkt 5). Als eigenes Bauteil, weil die Frage bei jeder weiteren

@@ -878,7 +878,7 @@ frontend/src
 - **Suchen, Sortieren und Filtern einer gekappten Liste geschehen am Server.** Im Browser
   sortiert, ordnete die Liste nur die Zeilen um, die die Kappung durchgelassen hat
   ([sweeps.md](sweeps.md), „Sortierung hinter der Kappung"; sortierbare Spaltenköpfe:
-  `ui/TabelleSortKopf.svelte`).
+  `ui/TabelleSortierKopf.svelte`).
 - **Gekürzter Text braucht einen Weg zum Rest.** Material 3 („Text truncation"): „Don't cut
   off text without providing a way for users to view it." Wo es keinen gibt, läuft der Text
   um — auf Papier immer. Die Sprechblase des Hauses (`data-tip`, `actions/tooltip.js`)

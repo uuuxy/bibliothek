@@ -17,7 +17,7 @@
 	 * 1. `loading="lazy"`. Eine Bestellbedarfs-Liste hat auf dem Zielsystem 247 Zeilen;
 	 *    ohne lazy wären das 247 Anfragen beim Laden. Der Browser holt nur, was sichtbar
 	 *    ist. Genau diese Last war 2026 der Grund, das Cover dort ganz wegzulassen und
-	 *    nur `CoverPeek` anzubieten — mit lazy entfällt der Grund.
+	 *    nur `CoverVorschau` anzubieten — mit lazy entfällt der Grund.
 	 * 2. Die `naturalWidth`-Prüfung. Der Cover-Proxy antwortet auf eine Adresse, die er
 	 *    nicht bedienen darf, mit einem transparenten 1×1-GIF und Status 200 (bewusst,
 	 *    gegen Konsolen-Spam). Ein `onerror` feuert dafür NIE. Ohne diese Prüfung stünde
@@ -39,7 +39,7 @@
 	 *   („Cover von Emil … Emil …"), WCAG-Technik H2.
 	 * @prop {boolean} [nurGespeichert] Zeigt nur das Cover, das am Titel gespeichert ist, und
 	 *   fragt weder Google Books noch OpenLibrary. Für Listen über Bücher im Bestand: Dort
-	 *   zeigt `CoverPeek` daneben ebenfalls nur das gespeicherte Bild.
+	 *   zeigt `CoverVorschau` daneben ebenfalls nur das gespeicherte Bild.
 	 */
 	import { coverKandidaten, coverSrc } from '../../utils/coverSrc.js';
 

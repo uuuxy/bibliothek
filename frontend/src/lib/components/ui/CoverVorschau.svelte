@@ -1,4 +1,4 @@
-<!-- @component CoverPeek — zeigt das Coverbild eines Titels auf Anforderung in einem
+<!-- @component CoverVorschau — zeigt das Coverbild eines Titels auf Anforderung in einem
      schwebenden Feld. Gedacht für dichte Arbeitslisten, in denen ein dauerhaftes Cover
      zu teuer wäre: In der Bestellliste kostete es 53 px je Zeile (71 % der Zeilenhöhe)
      und einen Proxy-Request je Titel, war aber fast immer leer.

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import TabelleSortKopf from './components/ui/TabelleSortKopf.svelte';
+import TabelleSortierKopf from './components/ui/TabelleSortierKopf.svelte';
 
 /**
  * Der sortierbare Spaltenkopf (Protokoll des Medienzentrums, Punkt 5).
@@ -10,9 +10,9 @@ import TabelleSortKopf from './components/ui/TabelleSortKopf.svelte';
  */
 const AUS = { spalte: '', absteigend: false };
 
-describe('TabelleSortKopf', () => {
+describe('TabelleSortierKopf', () => {
 	it('trägt aria-sort an der ZELLE, nicht am Knopf', () => {
-		const screen = render(TabelleSortKopf, {
+		const screen = render(TabelleSortierKopf, {
 			props: { spalte: 'name', text: 'Name', sortierung: AUS, onsortiere: () => {} }
 		});
 		const zelle = screen.container.querySelector('th');
@@ -21,7 +21,7 @@ describe('TabelleSortKopf', () => {
 	});
 
 	it('meldet die Richtung der aktiven Spalte', () => {
-		const auf = render(TabelleSortKopf, {
+		const auf = render(TabelleSortierKopf, {
 			props: {
 				spalte: 'name',
 				text: 'Name',
@@ -31,7 +31,7 @@ describe('TabelleSortKopf', () => {
 		});
 		expect(auf.container.querySelector('th')?.getAttribute('aria-sort')).toBe('ascending');
 
-		const ab = render(TabelleSortKopf, {
+		const ab = render(TabelleSortierKopf, {
 			props: {
 				spalte: 'name',
 				text: 'Name',
@@ -43,7 +43,7 @@ describe('TabelleSortKopf', () => {
 	});
 
 	it('nennt im Titel, was der nächste Klick TUT — nicht was gilt', () => {
-		const screen = render(TabelleSortKopf, {
+		const screen = render(TabelleSortierKopf, {
 			props: {
 				spalte: 'klasse',
 				text: 'Klasse',
@@ -59,7 +59,7 @@ describe('TabelleSortKopf', () => {
 
 	it('meldet den Klick mit der Spalte', async () => {
 		const onsortiere = vi.fn();
-		const screen = render(TabelleSortKopf, {
+		const screen = render(TabelleSortierKopf, {
 			props: { spalte: 'ausgeliehen', text: 'Geliehene Bücher', sortierung: AUS, onsortiere }
 		});
 		await fireEvent.click(screen.getByRole('button'));
@@ -67,7 +67,7 @@ describe('TabelleSortKopf', () => {
 	});
 
 	it('ist ohne onsortiere ein gewöhnlicher Kopf — kein Knopf, kein Pfeil', () => {
-		const screen = render(TabelleSortKopf, {
+		const screen = render(TabelleSortierKopf, {
 			props: { spalte: 'name', text: 'Name', sortierung: AUS }
 		});
 		expect(screen.queryByRole('button')).toBeNull();

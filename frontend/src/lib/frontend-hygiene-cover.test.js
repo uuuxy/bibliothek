@@ -42,10 +42,10 @@ const BESTAND = [
 ];
 
 // Die beiden Bauteile selbst greifen zu Recht auf die Helfer zu: BuchCover zeichnet das
-// Bild, CoverPeek die Großansicht. Sie sind die Quelle, nicht ein Verstoß.
+// Bild, CoverVorschau die Großansicht. Sie sind die Quelle, nicht ein Verstoß.
 const QUELLEN = [
 	'src/lib/components/ui/BuchCover.svelte',
-	'src/lib/components/ui/CoverPeek.svelte',
+	'src/lib/components/ui/CoverVorschau.svelte',
 	'src/lib/utils/coverSrc.js'
 ];
 

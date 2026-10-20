@@ -144,7 +144,7 @@ describe('Escape-Hygiene: wer die Taste nimmt, meldet sie als verarbeitet', () =
 			neu,
 			'Dieses Bauteil nimmt Escape, meldet es aber nicht als verarbeitet — der globale ' +
 				'Kurzbefehl feuert zusätzlich und die Ansicht springt an die Theke. ' +
-				'`e.preventDefault()` nach dem Schließen (Vorbild: ui/CoverPeek.svelte).\n' +
+				'`e.preventDefault()` nach dem Schließen (Vorbild: ui/CoverVorschau.svelte).\n' +
 				neu.join('\n')
 		).toEqual([]);
 

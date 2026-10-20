@@ -146,7 +146,7 @@ Entschieden am 13.10.2026: Wer neu in den Code kommt, soll sich ohne langes Lese
 zurechtfinden; die Zeit dafür spielt keine Rolle. Die Regeln für Namen, Sichtbarkeit und
 Kommentare stehen in [STIL.md](STIL.md), die Prüfungen, die sie halten, in seinem Vorspann.
 
-- [ ] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
+- [x] Die geteilten Bauteile `CoverPeek` und `TabelleSortKopf` deutsch benennen. (5.66)
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -339,14 +339,6 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.66 Lesbarkeit: zwei geteilte Bauteile heißen noch englisch
-
-`CoverPeek` und `TabelleSortKopf` in `frontend/src/lib/components/ui/` stehen als Bestand in
-`frontend-hygiene-sprache.test.js`. CLAUDE.md zählt die Bauteile mit Namen auf, und der Hinweis
-des Hooks in `.claude/settings.json` nennt `TabelleSortKopf`: beide Stellen zusammen mit dem
-Umbenennen ändern, etwa in `CoverVorschau` und `TabelleSortierKopf`, und den Bestand austragen.
-Umbenannt wird am Syntaxbaum ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 
 ### 5.67 Umfang senken: was sich löschen lässt
 

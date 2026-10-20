@@ -6,7 +6,7 @@
      „Limit supporting text to one to three lines". -->
 <script>
 	import { BookPlus, Plus } from '@lucide/svelte';
-	import CoverPeek from '../ui/CoverPeek.svelte';
+	import CoverVorschau from '../ui/CoverVorschau.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import Menue from '../ui/Menue.svelte';
 	import { auflagenAufschluesselung } from '../../utils/auflagenText.js';
@@ -22,12 +22,12 @@
 <div
 	class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-on-surface/8 transition-colors"
 >
-	<!-- Cover IN der Zeile, zugleich Auslöser der Großansicht (so sieht CoverPeek es
+	<!-- Cover IN der Zeile, zugleich Auslöser der Großansicht (so sieht CoverVorschau es
 	     über `children` vor). Frühere Gegengründe gemessen widerlegt: `loading="lazy"`
 	     erspart die 247 Requests, 5.724 von 8.706 Titeln ohne Exemplar haben ein Cover. -->
-	<CoverPeek isbn={r.isbn || ''} coverUrl={r.cover_url || ''} titel={r.titel}>
+	<CoverVorschau isbn={r.isbn || ''} coverUrl={r.cover_url || ''} titel={r.titel}>
 		<BuchCover coverUrl={r.cover_url || ''} isbn={r.isbn || ''} titel={r.titel} />
-	</CoverPeek>
+	</CoverVorschau>
 
 	<div class="min-w-0 flex-1">
 		<h4 class="font-semibold text-on-surface text-sm truncate leading-snug">{r.titel}</h4>

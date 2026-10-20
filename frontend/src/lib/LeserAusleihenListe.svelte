@@ -6,7 +6,7 @@
 	import { TriangleAlert, CalendarPlus, Undo2 } from '@lucide/svelte';
 	import AusleiheRueckgabe from './AusleiheRueckgabe.svelte';
 	import BuchCover from './components/ui/BuchCover.svelte';
-	import CoverPeek from './components/ui/CoverPeek.svelte';
+	import CoverVorschau from './components/ui/CoverVorschau.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import StatusChip from './components/ui/StatusChip.svelte';
 	import { istUeberfaellig } from './utils/ueberfaellig.js';
@@ -73,7 +73,7 @@
 						<div class="flex items-center gap-3">
 							<!-- Das Miniaturbild lässt die Zeile wiedererkennen und öffnet die Großansicht. -->
 							<div class="shrink-0">
-								<CoverPeek
+								<CoverVorschau
 									isbn={book.isbn || ''}
 									coverUrl={book.cover_url || ''}
 									titel={book.titel}
@@ -86,7 +86,7 @@
 										dekorativ
 										nurGespeichert
 									/>
-								</CoverPeek>
+								</CoverVorschau>
 							</div>
 							<!-- Abgeschnitten statt überlappend: Reicht die Breite nicht einmal für das
 							     Kennzeichen, ragt es nicht in die Spalte daneben. -->

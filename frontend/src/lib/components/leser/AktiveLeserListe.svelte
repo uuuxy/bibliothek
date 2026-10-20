@@ -13,7 +13,7 @@
 <script>
 	import { ChevronRight } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
-	import TabelleSortKopf from '../ui/TabelleSortKopf.svelte';
+	import TabelleSortierKopf from '../ui/TabelleSortierKopf.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -101,10 +101,16 @@
 							</th>
 						{/if}
 						<th class="w-16">Foto</th>
-						<TabelleSortKopf {sortierung} {onsortiere} spalte="name" text="Name" />
+						<TabelleSortierKopf {sortierung} {onsortiere} spalte="name" text="Name" />
 						<th class="w-28">Art</th>
-						<TabelleSortKopf {sortierung} {onsortiere} spalte="klasse" text="Klasse" class="w-24" />
-						<TabelleSortKopf
+						<TabelleSortierKopf
+							{sortierung}
+							{onsortiere}
+							spalte="klasse"
+							text="Klasse"
+							class="w-24"
+						/>
+						<TabelleSortierKopf
 							{sortierung}
 							{onsortiere}
 							spalte="ausgeliehen"

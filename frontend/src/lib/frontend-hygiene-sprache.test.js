@@ -131,11 +131,8 @@ const ENGLISCH = new Set([
 	'workspace'
 ]);
 
-const BESTAND = {
-	'src/lib/TabelleSortKopf.test.js': ['sort'],
-	'src/lib/components/ui/CoverPeek.svelte': ['peek'],
-	'src/lib/components/ui/TabelleSortKopf.svelte': ['sort']
-};
+/** @type {Record<string, string[]>} */
+const BESTAND = {};
 
 /** @param {string} name */
 const stamm = (name) => name.replace(/\.(test|spec)\.js$|\.svelte\.js$|\.svelte$|\.js$/, '');
@@ -180,7 +177,7 @@ describe('Datei- und Ordnernamen der Oberfläche sind deutsch', () => {
 		/** @type {string[]} */
 		const neu = [];
 		for (const [pfad, woerter] of aktuell) {
-			const erlaubt = BESTAND[/** @type {keyof typeof BESTAND} */ (pfad)] ?? [];
+			const erlaubt = BESTAND[pfad] ?? [];
 			const zuviel = woerter.filter((w) => !erlaubt.includes(w));
 			if (zuviel.length > 0) neu.push(`${pfad}: ${zuviel.join(', ')}`);
 		}
