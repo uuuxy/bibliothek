@@ -53,12 +53,12 @@ describe('meldungsPlatz', () => {
 		expect(meldungsPlatz({ ...lage, leisten }).unten).toBe(24 + 96 + ABSTAND);
 	});
 
-	it('rechnet mit der Höhe der Meldungen: mehrere übereinander reichen höher hinauf', () => {
-		// Die Leiste steht 120 px über dem Rand. Eine Meldung (48 px) reicht nicht hin, drei
-		// (160 px) schon.
-		const leisten = [kasten(800 - 120 - 40, 40)];
+	it('rechnet mit der Höhe der Meldung: eine umbrochene reicht höher hinauf', () => {
+		// Die Leiste steht 80 px über dem Rand. Eine Zeile (48 px) reicht nicht hin, drei
+		// (88 px) schon.
+		const leisten = [kasten(800 - 80 - 40, 40)];
 		expect(meldungsPlatz({ ...lage, leisten }).unten).toBe(RAND);
-		expect(meldungsPlatz({ ...lage, hoehe: 160, leisten }).unten).toBe(120 + 40 + ABSTAND);
+		expect(meldungsPlatz({ ...lage, hoehe: 88, leisten }).unten).toBe(80 + 40 + ABSTAND);
 	});
 
 	it('steigt über zwei Leisten, wenn die erste sie in die zweite schiebt', () => {

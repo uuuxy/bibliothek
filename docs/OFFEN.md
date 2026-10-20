@@ -36,7 +36,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
-- [ ] Meldungen: Steht schon eine da, ersetzt eine neue sie, statt sich über ihr zu stapeln.
+- [x] Meldungen: Steht schon eine da, ersetzt eine neue sie, statt sich über ihr zu stapeln.
   (4.36)
 - [ ] „Neues Buch": Die Signatur zeigt ihren Fehler erst nach dem ersten Klick auf
   „Speichern", wie der Titel. (4.35)
@@ -276,24 +276,6 @@ Rahmen, Symbol und Fehlertext an der Signatur. Material 3, Text fields: „To sh
 required, display an asterisk (*) next to the label text"; wann ein Fehler erscheint, sagt die
 Seite nicht. Vorschlag: wie der Titel. Bis zum ersten Klick steht unter dem Feld der Hinweis
 „Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse."
-
-### 4.36 Meldungen: eine zur Zeit
-
-An der Theke meldet sich jeder Scan unten mit einer Meldung („„Titel" ausgeliehen an Name."),
-5 s lang; eine Meldung mit Folgehandlung („Etiketten drucken", „Brief öffnen") steht 10 s
-(`snackbars.svelte.js`). Gemessen am lokalen Stack, Fenster 1280 × 800 px: Ein Ausweis und sechs
-Bücher im Abstand von rund 0,8 s ergeben sechs Meldungen übereinander, zusammen 448 px hoch,
-mehr als die Hälfte des Fensters. Rücken sie unter den ruhenden Mauszeiger, halten sie an (WCAG
-2.2.1); die letzte ging 9 s nach dem letzten Scan. Material 3, Snackbar: „Only one snackbar may
-be displayed at a time.", „Don't stack snackbars on top of one another", „Consecutive snackbars
-must appear one at a time." und „However, a snackbar with updated information can immediately
-replace an outdated snackbar." Eine nach der anderen hieße an der Theke: Die Meldung zum
-sechsten Buch erschiene 25 s nach seinem Scan. Googles Snackbar für Android schließt die
-stehende, sobald eine neue kommt (SnackbarManager.show in material-components-android).
-Vorschlag: überall so, eine neue Meldung ersetzt die stehende. Eine Meldung mit Folgehandlung
-ginge dann mit der nächsten Meldung; M3 will sie stehen lassen („Snackbars with actions should
-remain on the screen until the user takes an action on the snackbar, or dismisses it"), heute
-geht sie nach 10 s.
 
 ---
 

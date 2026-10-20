@@ -16,7 +16,11 @@ import { SvelteMap } from 'svelte/reactivity';
  */
 
 export const snackbars = new (class {
-	/** @type {{id: number, message: string, type: ToastTyp, aktion?: ToastAktion}[]} */
+	/**
+	 * Höchstens eine Meldung (Material 3, Snackbar: „Only one snackbar may be displayed at a
+	 * time"); siehe addToast.
+	 * @type {{id: number, message: string, type: ToastTyp, aktion?: ToastAktion}[]}
+	 */
 	toasts = $state([]);
 
 	/**
@@ -32,14 +36,19 @@ export const snackbars = new (class {
 	#timers = new SvelteMap();
 
 	/**
+	 * Die neue Meldung ersetzt die stehende, auch eine mit Folgehandlung. So macht es Googles
+	 * Snackbar für Android (SnackbarManager.show, DISMISS_EVENT_CONSECUTIVE). In einer
+	 * Warteschlange erschiene an der Theke die Meldung zum sechsten Buch erst 25 s nach dem Scan.
 	 * @param {string} message
 	 * @param {ToastTyp} [type='info']
 	 * @param {ToastAktion} [aktion] Folgehandlung; verlängert die Standzeit auf 10 s,
 	 *   weil eine Meldung, die man BEDIENEN soll, nicht nach fünf Sekunden wegfliegen darf.
 	 */
 	addToast(message, type = 'info', aktion = undefined) {
+		for (const timer of this.#timers.values()) clearTimeout(timer);
+		this.#timers.clear();
 		const id = this.#counter++;
-		this.toasts.push({ id, message, type, aktion });
+		this.toasts = [{ id, message, type, aktion }];
 		this.#starte(id);
 	}
 

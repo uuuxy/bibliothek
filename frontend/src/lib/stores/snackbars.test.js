@@ -13,14 +13,14 @@ describe('snackbars', () => {
 		vi.useRealTimers();
 	});
 
-	it('stapelt mehrere schnelle Meldungen statt sie zu überschreiben', () => {
-		snackbars.addToast('Fehler 1', 'error');
-		snackbars.addToast('Fehler 2', 'error');
-		snackbars.addToast('Fehler 3', 'error');
+	// Material 3, Snackbar: „Only one snackbar may be displayed at a time." und „a snackbar
+	// with updated information can immediately replace an outdated snackbar."
+	it('eine neue Meldung ersetzt die stehende, auch eine mit Folgehandlung', () => {
+		snackbars.addToast('Eingebucht.', 'success', { label: 'Etiketten drucken', onClick: () => {} });
+		snackbars.addToast('„Tintenherz" ausgeliehen.', 'success');
+		snackbars.addToast('Das Buch ist vorgemerkt.', 'warning');
 
-		expect(snackbars.toasts).toHaveLength(3);
-		expect(snackbars.toasts.map((t) => t.message)).toEqual(['Fehler 1', 'Fehler 2', 'Fehler 3']);
-		expect(new Set(snackbars.toasts.map((t) => t.id)).size).toBe(3);
+		expect(snackbars.toasts.map((t) => t.message)).toEqual(['Das Buch ist vorgemerkt.']);
 	});
 
 	it('entfernt jede Meldung nach 5 Sekunden von selbst', () => {
@@ -32,13 +32,17 @@ describe('snackbars', () => {
 		expect(snackbars.toasts).toHaveLength(0);
 	});
 
-	it('lässt jüngere Meldungen stehen, wenn eine ältere abläuft', () => {
+	it('die neue steht ihre volle Zeit, der Timer der ersetzten nimmt sie nicht mit', () => {
 		snackbars.addToast('alt', 'error');
 		vi.advanceTimersByTime(3000);
 		snackbars.addToast('neu', 'error');
 
-		vi.advanceTimersByTime(2000); // 'alt' läuft ab, 'neu' ist erst 2s alt
+		vi.advanceTimersByTime(2000); // hier liefe 'alt' ab
 		expect(snackbars.toasts.map((t) => t.message)).toEqual(['neu']);
+		vi.advanceTimersByTime(2999);
+		expect(snackbars.toasts.map((t) => t.message)).toEqual(['neu']);
+		vi.advanceTimersByTime(1);
+		expect(snackbars.toasts).toHaveLength(0);
 	});
 
 	it('removeToast schließt manuell und der abgelaufene Timer räumt keine fremde Meldung ab', () => {

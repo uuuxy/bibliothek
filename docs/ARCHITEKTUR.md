@@ -860,8 +860,12 @@ frontend/src
   of a UI, in front of the main content"). Eine Leiste am unteren Rand trägt sich mit
   `use:meldungenWeichenAus` ein; die Meldungen rücken dann über sie („can be nudged upwards to
   avoid overlapping with other UI elements near the bottom"), wie `setAnchorView` bei Android.
+  Es steht eine Meldung zur Zeit: Eine neue ersetzt die stehende, auch eine mit Folgehandlung
+  („Only one snackbar may be displayed at a time", „a snackbar with updated information can
+  immediately replace an outdated snackbar"), wie `SnackbarManager.show` bei Android. Ohne
+  Folgehandlung steht sie 5 s, mit 10 s; Maus oder Fokus auf ihr halten die Zeit an.
   Ein Bauteil zeigt keine eigene schwebende Meldung. Gemessen:
-  `frontend/e2e/meldungen-unten.spec.js`.
+  `frontend/e2e/meldungen-unten.spec.js`, die Regel in `snackbars.test.js`.
 - **Was jemand sieht, entscheidet das Recht der Route,** nicht die Rolle: `hatRecht` aus
   `menue.js` (Ratsche `frontend-hygiene-rechte.test.js`, [FACHKONZEPT.md §12.2](FACHKONZEPT.md)).
 - **Suchen, Sortieren und Filtern einer gekappten Liste geschehen am Server.** Im Browser
