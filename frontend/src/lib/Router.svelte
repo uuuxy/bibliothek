@@ -29,13 +29,11 @@
 	import RouteFallback from './components/layout/RouteFallback.svelte';
 	import { applyPathToState, currentTargetPath } from './routenAnwenden.js';
 
-	// ── Wer darf welchen Bildschirm? EINE Regel, nicht zwei ────────────────────
-	// Bis zum 08.08.2026 stand hier eine handgepflegte Helfer-Liste ('kiosk',
-	// 'media_catalog') neben darfSehen im Menü — zwei Definitionen, die auseinanderliefen:
-	// Als „Schulklassen" von manage_users auf view_books wechselte, sah der Helfer den
-	// Menüpunkt und wurde beim Klick wortlos an die Theke geworfen. Ein Menüpunkt, der
-	// nichts tut, sieht aus wie ein Defekt der Seite dahinter. Jetzt liest der Router
-	// dieselbe Regel (erlaubteBildschirme/bildschirmGesperrt bei darfSehen in menue.js) nur ab.
+	// ── Wer darf welchen Bildschirm? Eine Regel, nicht zwei ────────────────────
+	// Der Router liest dieselbe Regel wie das Menü nur ab (erlaubteBildschirme und
+	// bildschirmGesperrt bei darfSehen in menue.js): Eine zweite Liste liefe auseinander, und
+	// ein Menüpunkt, der beim Klick wortlos an die Theke wirft, sieht aus wie ein Defekt der
+	// Seite dahinter.
 
 	function oeffneTitel(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
@@ -107,8 +105,6 @@
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
 			<Omnibox onSelectBook={oeffneTitel} />
 		</div>
-		<!-- Der Zweig 'books' ist entfallen (nie gesetzt, unerreichbar; Audit 01.08.2026) —
-		     die Buchansicht läuft über 'book_detail' und appState.activeBookId. -->
 	{:else if uiStore.activeTab === 'orders'}
 		<div class="w-full animate-fade-in"><Bestellwesen /></div>
 	{:else if uiStore.activeTab === 'stats'}

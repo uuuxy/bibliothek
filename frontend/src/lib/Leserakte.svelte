@@ -148,7 +148,7 @@
 							onMerged={(id) => (st.ladeAkte(id), onMerged?.(id))}
 						/>
 
-						<!-- Gefahrenzone am unteren Ende des Stammdaten-Reiters, seit 16.09.2026 auch beim Kollegium -->
+						<!-- Gefahrenzone am unteren Ende des Stammdaten-Reiters, auch beim Kollegium -->
 						{#if rechte.loeschen}
 							<LeserGefahrenzone leser={st.akte} onDelete={() => (st.loeschfrageOffen = true)} />
 						{/if}

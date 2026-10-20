@@ -1,11 +1,6 @@
 <!-- @component KlassenBuchKachel — ein Titel im Klassensatz, gebaut wie die Katalog-Kachel
-     (BuchKarte, 02.09.2026): Cover ohne Rahmen, darunter Titel und Bestand. Der Bestand
-     („82 von 82 verfügbar") stand bis dahin nirgends auf der Kachel, obwohl der
-     Klassensatz-Endpunkt ihn je Titel liefert — beim Zeigen sollte er zu sehen sein; er
-     steht jetzt immer da, denn am Tablet gibt es kein Zeigen.
-
-     Vorher: weiße Karte mit Rahmen, Schatten und Hochheben, blaues Overlay „Bearbeiten"
-     erst bei :hover, Zweig-Abzeichen auf dem Cover, Autor auf der Attrappe. -->
+     (BuchKarte): Cover ohne Rahmen, darunter Titel und Bestand („82 von 82 verfügbar"). Der
+     Bestand steht immer da, nicht erst beim Zeigen, denn am Tablet gibt es kein Zeigen. -->
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
 	import { bestandSatz } from '../../../../lib/utils/format.js';
@@ -34,7 +29,7 @@
 	 *   onEdit?: (book: any) => void,
 	 *   bearbeitbar?: boolean
 	 * }}
-	 * bearbeitbar=false: reine Ansicht (Kollegiums-Portal, 25.08.2026). Ohne den Schalter
+	 * bearbeitbar=false: reine Ansicht (Kollegiums-Portal). Ohne den Schalter
 	 * wäre jede Kachel dort ein Knopf, hinter dem für die Rolle ein 403 liegt.
 	 */
 	let { titel, onEdit = undefined, bearbeitbar = true } = $props();
@@ -90,9 +85,8 @@
 		{/if}
 	</div>
 	<div class="flex flex-col gap-0.5 text-sm">
-		<!-- text-base ausdrücklich am Titel: Er ERBTE die 14 px vom Container darüber, und
-		     eine geerbte Größe sieht kein Grep — nur die Messung im Browser (04.09.2026,
-		     in der CI rot geworden, weil dort eine Klasse aufgeklappt war). -->
+		<!-- text-base ausdrücklich am Titel: Sonst erbt er die 14 px vom Container darüber,
+		     und eine geerbte Größe sieht kein Grep, nur die Messung im Browser. -->
 		<h3
 			class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
 			title={titel.title}
@@ -111,8 +105,8 @@
 			>
 		{/if}
 		{#if titel.quelle === 'ausleihe'}
-			<!-- Live aus den Ausleihen abgeleitet, nicht gespeichert (05.09.2026): mehr als die
-			     Hälfte der Klasse hat den Titel. Die Handliste bleibt unangetastet. -->
+			<!-- Live aus den Ausleihen abgeleitet, nicht gespeichert: Mehr als die Hälfte der
+			     Klasse hat den Titel. Die Handliste bleibt unangetastet. -->
 			<span class="text-xs text-on-surface-variant" data-testid="klassensatz-aus-ausleihen">
 				aus Ausleihen · {titel.leser} Leser
 			</span>

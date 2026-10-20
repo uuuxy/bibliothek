@@ -87,8 +87,8 @@
 	<!-- Results / empty states -->
 	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10 relative z-10">
 		{#if ergebnisse.length > 0}
-			<!-- Bis zum 23.09.2026 stand hier bei jeder breiten Suche „50 Treffer" — die Kappung
-			     des Servers, nicht die Zahl der Bücher. Derselbe Satz wie in „Mein Portal". -->
+			<!-- Ist die Antwort gekappt, nennt die Zeile beide Zahlen: Sonst stünde die Kappung
+			     des Servers da wie die Zahl der Bücher. Derselbe Satz wie in „Mein Portal". -->
 			<p class="text-xs text-on-surface-variant font-medium mb-4">
 				{#if gesamt > ergebnisse.length}
 					Gezeigt werden {ergebnisse.length} von {gesamt} Treffern — ein Suchwort grenzt ein.
@@ -96,9 +96,8 @@
 					{ergebnisse.length} Treffer
 				{/if}
 			</p>
-			<!-- Dieselbe Kachel wie im internen Katalog (02.09.2026): das Cover IST die Kachel,
-			     2:3 wie ein Buch, keine Karte, kein Rahmen. Vorher lag das Hochformat-Cover in
-			     einer festen Querformat-Fläche und wurde oben und unten abgeschnitten. -->
+			<!-- Dieselbe Kachel wie im internen Katalog: Das Cover ist die Kachel, 2:3 wie ein
+			     Buch, keine Karte, kein Rahmen; so wird es nicht beschnitten. -->
 			<div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-x-3 gap-y-4">
 				{#each ergebnisse as book (book.id)}
 					<div class="flex flex-col gap-3 p-3">

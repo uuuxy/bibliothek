@@ -1,17 +1,15 @@
-<!-- @component LmfPlan — der Planer: eine REIHENFOLGE von Klassen, die der Server auf
-     Schultage × Stunden gießt (05.09.2026): Rahmen, Reihenfolge mit Vorschau der
-     Plätze und, darüber, „Noch nicht im Plan". Gespeichert wird ein ENTWURF (Migration
-     100), für Portal und Kollegiums-PDF unsichtbar; erst „Veröffentlichen" macht ihn
-     gültig und setzt beim Büchertausch die Fristen (die Schulleitung nimmt ihn vorher
-     ab). System → „Schuljahreswechsel".
+<!-- @component LmfPlan — der Planer: eine Reihenfolge von Klassen, die der Server auf
+     Schultage × Stunden gießt. Rahmen, Reihenfolge mit Vorschau der Plätze und, darüber,
+     „Noch nicht im Plan". Gespeichert wird ein Entwurf (Migration 100), für Portal und
+     Kollegiums-PDF unsichtbar; erst „Veröffentlichen" macht ihn gültig und setzt beim
+     Büchertausch die Fristen (die Schulleitung nimmt ihn vorher ab). System →
+     „Schuljahreswechsel".
 
-     Aufbau seit 06.09.2026 nach Arbeitsablauf, nicht nach Datenmodell (Absprache: „es steht
-     oben was und unten was"): Kopf haftet oben, freie Tage als Chips, fehlende Klassen
-     direkt über der Reihenfolge; einplanen setzt an den Platz (lmfplanZeilen.js).
-
-     Hier steht nur noch der Bildschirm. Zustand und die Wege, die ihn bewegen (laden,
-     Vorschau, speichern, veröffentlichen, verwerfen), liegen seit dem Rasterdurchgang am
-     06.09.2026 in lmfplanPlaner.svelte.js. -->
+     Aufgebaut nach Arbeitsablauf, nicht nach Datenmodell: Kopf haftet oben, freie Tage als
+     Chips, fehlende Klassen direkt über der Reihenfolge; einplanen setzt an den Platz
+     (lmfplanZeilen.js). Hier steht nur der Bildschirm; Zustand und die Wege, die ihn
+     bewegen (laden, Vorschau, speichern, veröffentlichen, verwerfen), liegen in
+     lmfplanPlaner.svelte.js. -->
 <script>
 	import { onMount, untrack } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
@@ -68,10 +66,10 @@
 		return abonniere('lmf-plan', () => planer.fremdesSignal());
 	});
 
-	// Verlassen-Schutz (Register B, 07.09.2026): Bis dahin ging eine umgeordnete
-	// Reihenfolge beim Klick auf einen anderen Menüpunkt wortlos verloren. Zwei Türen,
-	// eine Wahrheit: Der Tab-Wechsel fragt den Wächter im uiStore, das Schließen des
-	// Fensters den Browser-Dialog — beide über hatUngespeichertes(), kein zweites Flag.
+	// Verlassen-Schutz: Eine umgeordnete Reihenfolge ginge beim Klick auf einen anderen
+	// Menüpunkt sonst wortlos verloren. Der Tab-Wechsel fragt den Wächter im uiStore, das
+	// Schließen des Fensters den Browser-Dialog, beide über hatUngespeichertes(), kein
+	// zweites Flag.
 	onMount(() => {
 		uiStore.verlassenSperre = () => planer.hatUngespeichertes();
 		/** @param {BeforeUnloadEvent} e */

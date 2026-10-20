@@ -1,6 +1,4 @@
-<!-- @component StartseitenFilter — der Kopf der Buch-Suche: eine Suchpille, sonst nichts.
-     Bis 02.09.2026 standen hier zwei Reiter („Buch-Suche" / „Jahrgänge") mit eigenen
-     Zweig-/Jahrgangs-Selects; der Jahrgangs-Reiter ist weg (siehe routes/KatalogSuche.svelte). -->
+<!-- @component StartseitenFilter — der Kopf der Buch-Suche: eine Suchpille, sonst nichts. -->
 <script>
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 
@@ -8,12 +6,10 @@
 	let { suche = $bindable('') } = $props();
 </script>
 
-<!-- Volle Breite und DIESELBE linke Kante wie das Kartenraster darunter (04.09.2026):
-     Die Pille war auf 48 rem zentriert (x=494) und stand danach mit eigenem Innenabstand
-     32 px weiter rechts als das Raster — gemessen im Browser, nicht geschätzt. -->
-<!-- `pt-4`, nicht `pt-6`: Ueber der Pille steht das Reiterband des Katalogs, und der
-     Abstand Reiter→Pille ist im Haus 24 px (Huelle) + 16 px. Mit pt-6 begann die Pille
-     hier bei 81 px statt bei 73 — im Browser gemessen am 04.09.2026. -->
+<!-- Volle Breite und dieselbe linke Kante wie das Kartenraster darunter, ohne eigenen
+     Innenabstand: Zentriert oder eingerückt stünde die Pille gegen das Raster versetzt. -->
+<!-- `pt-4`, nicht `pt-6`: Über der Pille steht das Reiterband des Katalogs, und der
+     Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. -->
 <header class="pt-4 pb-6">
 	<div class="w-full">
 		<Suchpille

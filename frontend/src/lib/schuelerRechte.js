@@ -1,9 +1,8 @@
 // Welche Aktionen die Schüler-Ansichten anbieten, entscheidet das Recht — dasselbe,
 // das der Server an der jeweiligen Route verlangt (api/routen_leser.go).
 //
-// Bis zum 24.08.2026 fragten Schuelerdatei, Leserakte und ihre Bauteile
-// `role === 'admin'`; ein Schalter auf der Berechtigungsseite blieb dort wirkungslos,
-// weil die Oberfläche ihn nie las. Die Zuordnung steht EINMAL hier, damit Profil und
+// Ein Schalter auf der Berechtigungsseite wirkt nur, wenn die Oberfläche ihn liest, statt
+// `role === 'admin'` zu fragen. Die Zuordnung steht einmal hier, damit Profil und
 // Verzeichnis nicht auseinanderlaufen (Ratsche: frontend-hygiene-rechte.test.js).
 import { hatRecht } from './menue.js';
 
@@ -29,13 +28,13 @@ export function schuelerRechte(user) {
 		auskunft: hatRecht(user, 'manage_students_admin'),
 		// Zeigt auf den Leser ein Zugangskonto, verlangt der Server zusätzlich manage_users: Die
 		// Auskunft nennt dann Konto, Kontoereignisse und selbst bearbeitete Vorgänge mit
-		// IP-Adresse (api/leser/dsgvo_auskunft.go, dsgvoKontoRecht; seit 28.09.2026).
+		// IP-Adresse (api/leser/dsgvo_auskunft.go, dsgvoKontoRecht).
 		auskunftMitKonto: hatRecht(user, 'manage_users'),
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
 		// POST /api/schueler/{id}/zusammenfuehren — zwei Datensätze, ein Mensch (Umbenennung
-		// ohne Schüler-ID, Dublette). Unumkehrbar; seit 03.09.2026 ein eigenes Recht, das der
-		// Admin einzeln delegieren kann (vorher an manage_students_admin gebunden).
+		// ohne Schüler-ID, Dublette). Unumkehrbar, deshalb ein eigenes Recht, das der Admin
+		// einzeln delegieren kann.
 		zusammenfuehren: hatRecht(user, 'merge_students')
 	};
 }

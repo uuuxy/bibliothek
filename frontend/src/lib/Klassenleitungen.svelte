@@ -19,8 +19,8 @@
 	let newMappingKlasse = $state('');
 	let newMappingEmail = $state('');
 	let zuordnungSpeichert = $state(false);
-	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
-	// Klasse an, die es an der Schule nicht gibt, und ihre Mahnliste ging an niemanden.
+	// Auswählen statt tippen: Ein Tippfehler legte sonst eine Klasse an, die es an der Schule
+	// nicht gibt, und ihre Mahnliste ginge an niemanden.
 	const klassenListe = erzeugeKlassenVorschlaege();
 
 	async function fetchMapping() {

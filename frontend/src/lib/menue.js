@@ -39,22 +39,14 @@ export function darfSehen(item, currentUser) {
 
 	const r = (currentUser.rolle || '').toLowerCase();
 
-	// Admin hat implizit alle Rechte — und zwar VOR allen Sonderregeln.
-	//
-	// Diese Zeile stand bis zum 09.08.2026 unter der Portal-Ausnahme darunter. Damit galt
-	// die Ausnahme auch für Admins: Sie durften die Reservierungs-Endpunkte aufrufen (das
-	// Backend hat den Admin-Vorrang eingebaut), sahen den Menüpunkt aber nicht — und
-	// fanden die Klassensatz-Reservierung deshalb schlicht nicht. Ein Widerspruch
-	// zwischen Oberfläche und Rechtelage, kein gewollter Schutz.
+	// Admin hat implizit alle Rechte, und zwar vor allen Sonderregeln: Sonst gälte die
+	// Portal-Ausnahme darunter auch für Admins, und sie fänden die Klassensatz-Reservierung
+	// nicht, obwohl das Backend sie hineinlässt.
 	if (r === 'admin') return true;
 
-	// Eine roles-Liste schränkt EIN, sie ist keine Alternative zur Rechteprüfung.
-	//
-	// Diese Prüfung stand bis zum 10.08.2026 im Zweig darunter und galt deshalb nur für
-	// Punkte OHNE permission. „Einstellungen" hat beides — roles: ['admin'] und
-	// permission: 'manage_users' —, also sprang die Funktion direkt zu hatRecht() und die
-	// Rollenliste war toter Code. Jede Rolle, der ein Admin manage_users erteilt, sah
-	// damit die Systemeinstellungen; auf dem Schulserver traf das die Rolle 'kollegium'.
+	// Eine roles-Liste schränkt ein, sie ist keine Alternative zur Rechteprüfung, und sie gilt
+	// auch für Punkte mit permission: Sonst sähe jede Rolle, der ein Admin das Recht eines
+	// Punkts erteilt, auch einen Punkt, den roles auf Admins begrenzt.
 	if (item.roles && !item.roles.includes(r)) return false;
 
 	// Sammelpunkt: sichtbar, sobald EINE der genannten Türen dahinter offen ist.
@@ -72,14 +64,10 @@ export function darfSehen(item, currentUser) {
 	return hatRecht(currentUser, item.permission);
 }
 
-// Unteransichten ohne eigenen Menüpunkt erben die Regel ihrer Elternansicht.
-//
-// Der Router nahm sie bis zum 10.08.2026 ganz von der Prüfung aus, weil ein Sprung in die
-// Buchakte sonst als Rauswurf geendet hätte. Nur galt die Ausnahme auch für die URL-Zeile:
-// /medienkatalog/buch/{id} und /statistiken/renner öffneten sich JEDEM angemeldeten
-// Benutzer. Daten flossen dabei keine — die Endpunkte dahinter hängen an view_books bzw.
-// view_students und antworten mit 403 —, aber eine Lehrkraft landete auf einer leeren,
-// defekt wirkenden Seite statt in ihrem Portal.
+// Unteransichten ohne eigenen Menüpunkt erben die Regel ihrer Elternansicht. Ganz ohne
+// Prüfung öffneten sich /medienkatalog/buch/{id} und /statistiken/renner über die URL-Zeile
+// jedem angemeldeten Benutzer; Daten flössen keine (die Endpunkte antworten mit 403), aber
+// eine Lehrkraft landete auf einer leeren, defekt wirkenden Seite statt in ihrem Portal.
 /** @type {Record<string, string>} */
 const unteransichtBrauchtBildschirm = {
 	book_detail: 'media_catalog',
@@ -142,16 +130,12 @@ export const menueGruppen = [
 			{ id: 'signaturen', label: 'Signaturen', icon: 'book', permission: 'view_books' },
 			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permission: 'view_students' },
 			{
-				// view_books, nicht manage_users: Bis zum 08.08.2026 gab es dieselbe Übersicht
-				// ein zweites Mal als Reiter im Medienkatalog, und der stand jedem mit
-				// view_books offen. Dieser Punkt hat den Reiter abgelöst — mit manage_users
-				// (faktisch Administrator, siehe 940d7d8) hätte die Zusammenlegung den
-				// Bibliotheks-Helfern den Blick auf die Klassensätze genommen. Die
-				// Verwaltungsaktionen darin hängen an edit_books, geprüft in KlassenUebersicht.
+				// view_books, nicht manage_users: Wer den Bestand sehen darf, sieht auch die
+				// Klassensätze, auch die Bibliotheks-Helfer. Die Verwaltungsaktionen darin
+				// hängen an edit_books, geprüft in KlassenUebersicht.
 				id: 'schulklassen',
-				// „Klassensätze“ statt „Schulklassen“ (24.08.2026): Die Seite zeigt Bücher je
-				// Klasse, keine Klassen — und „Klasse 5“ stand damit zweimal in der Oberfläche
-				// (Medienkatalog → Jahrgänge). Route und id bleiben.
+				// „Klassensätze“ statt „Schulklassen“: Die Seite zeigt Bücher je Klasse, keine
+				// Klassen. Route und id bleiben.
 				label: 'Klassensätze',
 				icon: 'identification',
 				permission: 'view_books'
@@ -166,13 +150,10 @@ export const menueGruppen = [
 			// view_students — es ist dasselbe Verzeichnis, nur vollständig.
 			{ id: 'students_dir', label: 'Leserdatei', icon: 'users', permission: 'view_students' },
 			{
-				// Seit 24.08.2026 unter Verwaltung (vorher Kiosk): Mahnen ist Schülerarbeit,
-				// keine Thekenarbeit.
-				// view_students, nicht manage_users: Die Mahnliste (/api/mahnwesen) verlangt
-				// view_students. Bis zum 24.08.2026 forderte
-				// der Menüpunkt manage_users — wer mahnen durfte, sah den Punkt nicht, und wer
-				// ihn sah, brauchte das Recht dafür gar nicht. Dieselbe Klasse wie view_stats
-				// (23.08.), geprüft in api/rechte_paritaet_test.go.
+				// Unter Verwaltung, nicht an der Theke: Mahnen ist Schülerarbeit, keine
+				// Thekenarbeit. view_students wie die Mahnliste (/api/mahnwesen): Mit einem
+				// anderen Recht als seine Route sähe, wer mahnen darf, den Punkt nicht. Geprüft
+				// in api/rechte_paritaet_test.go.
 				id: 'mahnwesen',
 				label: 'Mahnwesen',
 				icon: 'bell',
@@ -184,32 +165,28 @@ export const menueGruppen = [
 		]
 	},
 	{
-		// Eigene Sektion statt zweier Punkte im Sammeltopf „System" (17.09.2026). Beide
-		// standen dort — und „System" ist beim Laden zugeklappt (Seitenleiste.svelte): Wer einen
-		// Nachweis oder eine Zahl suchte, sah gar nichts und musste erst eine Gruppe
-		// aufklappen, deren Name nichts davon ankündigt.
+		// Eine eigene Sektion: Im Sammeltopf „System", der beim Laden zugeklappt ist
+		// (Seitenleiste.svelte), sähe niemand einen Nachweis oder eine Zahl, ohne erst eine
+		// Gruppe aufzuklappen, deren Name nichts davon ankündigt. M3 nennt genau dieses
+		// Mittel: „Short subhead section labels can help group related destinations in the
+		// navigation drawer" (Navigation drawer, Guidelines).
 		//
-		// M3 nennt genau dieses Mittel: „Short subhead section labels can help group related
-		// destinations in the navigation drawer" (Navigation drawer, Guidelines). Gruppiert
-		// wird nach VERWANDTSCHAFT, nicht nach Gattung — deshalb bleiben die Bestellberichte
-		// im Bestellwesen, wo ihr Gegenstand liegt, und heißen dort auch so.
-		//
-		// „Berichte" ist in der Oberfläche seither nur EINMAL vergeben: Der Reiter im
-		// Bestellwesen heißt „Bestellberichte". Zwei gleich benannte Orte waren der Grund,
-		// warum man die Bestandsbücher bei den Bestellberichten vermutete.
+		// Unter „Berichte" steht, was ein Blatt für jemand anderen erzeugt und dabei nichts
+		// ändert. Bei seinem Vorgang bleibt, was eine Folgeaktion hat: der
+		// Fehlbestandsbericht (Knöpfe „Gefunden" und Löschen) in der Inventur, die Mahnungen
+		// im Mahnwesen.
 		name: 'Berichte',
 		items: [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
 			{
-				// Zugangs- und Abgangsbuch, ein Punkt (Betreiber-Entscheidung 17.09.2026). Sie
-				// standen bis dahin als zwei weitere Reiter im Medienkatalog — fachlich am
-				// richtigen Ort, im Weg der täglichen Arbeit aber zwei zu viel. Es ist ein
-				// Nachweis zum Stichtag (15.3./15.9.), den jemand ausdruckt und abheftet.
+				// Zugangs- und Abgangsbuch, ein Punkt: ein Nachweis zum Stichtag (15.3./15.9.),
+				// den jemand ausdruckt und abheftet. Als Reiter im Medienkatalog stünden sie der
+				// täglichen Arbeit im Weg.
 				//
 				// Recht: view_books wie der übrige Blick auf den Bestand — die vier Türen
 				// dahinter verlangen dasselbe (api/routen_katalog.go), und ein Menüpunkt, der
 				// enger ist als seine Route, schützt nichts: Die Adresse bleibt offen. Wer den
-				// Nachweis wirklich auf das Sekretariat begrenzen will, hängt BEIDE Seiten auf
+				// Nachweis wirklich auf das Sekretariat begrenzen will, hängt beide Seiten auf
 				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, db/rechte_vorgabe.go).
 				id: 'bestandsbuecher',
 				label: 'Bestandsbücher',
@@ -217,17 +194,8 @@ export const menueGruppen = [
 				permission: 'view_books'
 			},
 			{
-				// Monats-, Jahresbericht und Lieferantenabrechnung — bis zum 17.09.2026 ein
-				// Reiter im Bestellwesen. Eine Sektion „Berichte" ohne das, was wörtlich
-				// Bericht heißt, hätte dieselbe Suche ins Leere laufen lassen, die dieser
-				// Umbau beenden soll.
-				//
-				// Die Linie: Unter „Berichte" steht, was ein Blatt für jemand anderen
-				// erzeugt und dabei nichts ändert. Bei seinem Vorgang bleibt, was eine
-				// Folgeaktion hat — der Fehlbestandsbericht (Knöpfe „Gefunden" und Löschen)
-				// in der Inventur, die Mahnungen im Mahnwesen.
-				//
-				// view_orders wie die Route dahinter (/api/bestellhistorie/bericht): Wer
+				// Monats-, Jahresbericht und Lieferantenabrechnung. view_orders wie die Route
+				// dahinter (/api/bestellhistorie/bericht): Wer
 				// keine Bestellungen sehen darf, sieht hier zwei Einträge statt drei.
 				id: 'bestellberichte',
 				label: 'Bestellberichte',
@@ -241,32 +209,24 @@ export const menueGruppen = [
 		items: [
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
 			{
-				// „Schuljahreswechsel" = der LMF-Plan (Absprache vom 05.09.2026 abends): Rückgabe- und
-				// Ausgabetermine je Klasse, ein- bis zweimal im Jahr gebraucht — deshalb unter
-				// System und nicht dauerhaft im Bibliotheks-Menü („lenkt nur ab"). Am selben
-				// Abend stand er kurz als Sammelseite unter Verwaltung, mit Abgängern und
-				// LUSD/Versetzung als Reitern; Absprache: Abgänger bleibt unter Verwaltung, der
-				// LUSD-Import in den Einstellungen, der Plan hierher. edit_books wie die übrige
-				// Lernmittel-Pflege; das Kollegium liest den Plan im Portal.
+				// „Schuljahreswechsel" = der LMF-Plan: Rückgabe- und Ausgabetermine je Klasse, ein-
+				// bis zweimal im Jahr gebraucht, deshalb unter System und nicht dauerhaft im
+				// Bibliotheks-Menü. Abgänger stehen unter Verwaltung, der LUSD-Import in den
+				// Einstellungen. edit_books wie die übrige Lernmittel-Pflege; das Kollegium liest
+				// den Plan im Portal.
 				id: 'schuljahr',
 				label: 'Schuljahreswechsel',
 				icon: 'calendar',
 				permission: 'edit_books'
 			},
-			// „LMF-Aktionen" stand hier bis zum 24.08.2026 als eigener Punkt (zuvor in
-			// „Verwaltung"). Auf Ansage in die Einstellungen gewandert — die
-			// Massenverlaengerung wird "fast nie" gebraucht, weil der LUSD-Import
-			// massgebend ist. Damit sieht sie nur noch, wer die Einstellungen sieht.
+			// Die LMF-Aktionen sind kein eigener Punkt, sondern eine Kategorie der Einstellungen:
+			// Die Massenverlängerung wird fast nie gebraucht, weil der LUSD-Import maßgebend ist.
 			{
-				// Aus den Einstellungen herausgezogen (Betreiber-Entscheidung 16.08.2026):
-				// Die Rechte-Verwaltung ist der Ort, auf den die Drift-Warnung der
-				// Betriebsbereitschaft zeigt — als Tab in einer sechsteiligen
-				// Einstellungsseite war sie dafür zu tief vergraben.
-				// Kein roles: ['admin'] mehr (seit 24.08.2026): Ein Rollen-Pin neben dem Recht
-				// machte das Recht zum Schalter ohne Wirkung — wer manage_users bekam, sah den
-				// Punkt trotzdem nicht. Die Sorge dahinter (10.08.: Kollegium sah die
-				// Einstellungen) war ein zu grobes Recht; das ist seit der Aufteilung in
-				// manage_users / manage_settings / manage_students_admin gelöst.
+				// Ein eigener Punkt, nicht ein Reiter der Einstellungen: Die Rechte-Verwaltung
+				// ist der Ort, auf den die Drift-Warnung der Betriebsbereitschaft zeigt. Kein
+				// roles: ['admin']: Ein Rollen-Pin neben dem Recht machte das Recht zum Schalter
+				// ohne Wirkung. Die Rechte sind fein genug geteilt (manage_users /
+				// manage_settings / manage_students_admin).
 				id: 'berechtigungen',
 				label: 'Benutzer & Rechte',
 				icon: 'key',
@@ -276,10 +236,9 @@ export const menueGruppen = [
 				// Ein Sammelpunkt: Die Kategorien dahinter hängen an verschiedenen Rechten
 				// (kategorien.js) — Schule/Fristen/Mail an manage_settings, LMF-Aktionen an
 				// edit_books, Datenverwaltung an manage_inventory, LUSD & Versetzung (LUSD,
-				// Versetzung) an import_students/manage_students_admin. Bis 24.08.2026 abends öffnete nur
-				// manage_settings die Tür: Ein Mitarbeiter hatte ab Werk import_students und
-				// manage_inventory, kam aber nie an LUSD-Import oder Littera-Import heran —
-				// Rechte ohne Tür. Die Liste hier MUSS die Rechte aus kategorien.js spiegeln
+				// Versetzung) an import_students/manage_students_admin. Öffnete nur manage_settings
+				// die Tür, hätte ein Mitarbeiter mit import_students oder manage_inventory Rechte
+				// ohne Tür. Die Liste hier spiegelt deshalb die Rechte aus kategorien.js
 				// (Gate: menue.test.js).
 				id: 'settings',
 				label: 'Einstellungen',
@@ -290,7 +249,7 @@ export const menueGruppen = [
 					'manage_inventory',
 					'import_students',
 					'manage_students_admin',
-					// Lieferanten-Kategorie (25.08.2026) — Schreiben verlangt create_orders.
+					// Lieferanten-Kategorie; Schreiben verlangt create_orders.
 					'create_orders'
 				]
 			}
@@ -298,11 +257,9 @@ export const menueGruppen = [
 	},
 	{
 		name: 'Kollegium',
-		// Am RECHT, nicht an der Rolle (26.08.2026): Bis dahin stand hier
-		// roles: ['kollegium'] — eine Lehrkraft, die in Bibliothek/LMF mitarbeitet und
-		// deshalb als Mitarbeiter angelegt ist, fand das Portal nicht, obwohl der Server
-		// sie (create_reservations) überall hineinließ. Zwei Wahrheitsquellen, die nur
-		// zufällig einig waren. Wer reservieren darf, sieht die Tür.
+		// Am Recht, nicht an der Rolle: Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet
+		// und deshalb als Mitarbeiter angelegt ist, soll das Portal finden, in das der Server
+		// sie (create_reservations) hineinlässt. Wer reservieren darf, sieht die Tür.
 		items: [
 			{
 				id: 'kollegium_portal',

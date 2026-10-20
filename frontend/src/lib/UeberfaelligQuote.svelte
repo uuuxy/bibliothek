@@ -36,9 +36,9 @@
 				uebersicht = await res.json();
 				fehler = false;
 			} else {
-				// Sweep „verschluckte Fehlantwort" (06.09.2026): Ohne uebersicht rendert unten
-				// GAR NICHTS — eine leere Kachel in der Bento-Reihe, die wie „nichts
-				// überfällig" aussieht. Eine Zahl, die fehlt, muss sich als fehlend zeigen.
+				// Ohne uebersicht rendert unten gar nichts, eine leere Kachel in der Bento-Reihe,
+				// die wie „nichts überfällig" aussieht. Eine Zahl, die fehlt, muss sich als
+				// fehlend zeigen.
 				fehler = true;
 			}
 		} catch (err) {

@@ -1,10 +1,9 @@
 /** Serverwege des LMF-Plans — Lesen, Vorschau, Speichern, Verwerfen, PDF — und die
  *  kleinen Darstellungsregeln, die Planer und Portal-Reiter teilen.
  *
- *  Der Plan ist eine REIHENFOLGE von Klassen, die der Server auf Schultage × Stunden
- *  gießt (Absprache vom 05.09.2026, am echten Plan der Schule): Rahmen + Zeilen hin, Plätze
- *  zurück — auch die Vorschau rechnet der Server, damit es keinen JavaScript-Zwilling
- *  der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
+ *  Der Plan ist eine Reihenfolge von Klassen, die der Server auf Schultage × Stunden
+ *  gießt: Rahmen + Zeilen hin, Plätze zurück. Auch die Vorschau rechnet der Server, damit
+ *  es keinen JavaScript-Zwilling der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch } from './apiFetch.js';
 import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js';
 
@@ -27,9 +26,9 @@ import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js'
  *  Schülern; eingangsjahrgaenge aus der Einstellung. */
 /** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], ausgelassen_regel?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
 
-/** Die zwei Pläne — mit den Worten, die sagen, was passiert (Absprache vom 06.09.2026: „Rückgabe"
- *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
- *  Zeiten). Dieselben Titel schreibt das PDF (api/lernmittel/lmf_termine.go, lmfArtTitel). */
+/** Die zwei Pläne, mit den Worten, die sagen, was passiert: „Rückgabe" und „Ausgabe" allein
+ *  sind unklar, es sind zwei verschiedene Dinge zu verschiedenen Zeiten. Dieselben Titel
+ *  schreibt das PDF (api/lernmittel/lmf_termine.go, lmfArtTitel). */
 export const ARTEN = /** @type {const} */ ([
 	{ wert: 'rueckgabe', label: 'Büchertausch vor den Sommerferien' },
 	{ wert: 'ausgabe', label: 'Bücherausgabe nach den Sommerferien' }
@@ -123,8 +122,6 @@ export const VORSCHAU_ENTPRELLUNG_MS = 250;
  *  stehen hier ein zweites Mal, weil der Planer einen Zustand vor dem ersten Laden
  *  braucht — deshalb hält ein Gate sie zusammen
  *  (internal/service/lmf_plan_vorgabe_paritaet_test.go).
- *  Bis zum 12.09.2026 stand die Startstunde hier auf 1; verdeckt, solange der Vorschlag
- *  des Servers eintrifft und gewinnt.
  *  @returns {PlanEntwurf} */
 export function leererEntwurf() {
 	return {
@@ -177,12 +174,12 @@ export function entwurfAus(stand) {
 	};
 }
 
-/** Eine Frage an jede Klasse im Planer (Absprache vom 06.09.2026: Klassen wechseln mit dem
- *  Schuljahr — mal 3, mal 4, mal 6 je Stufe und Zweig): Hat sie schon Schüler? Ein
- *  „07G6" aus dem Vorjahr oder ein vor dem August-Import getipptes „07G1" hat keine —
- *  es kommt mit dem LUSD-Import oder gehört aus dem Plan. Der Server beantwortet sie,
- *  hier wird nur nachgeschlagen — über den Normschlüssel. („Nur Rückgabe" ist kein
- *  Marker mehr, sondern Text im Vermerk, den der Vorschlag vorbelegt.)
+/** Eine Frage an jede Klasse im Planer, denn Klassen wechseln mit dem Schuljahr (mal 3,
+ *  mal 4, mal 6 je Stufe und Zweig): Hat sie schon Schüler? Ein „07G6" aus dem Vorjahr
+ *  oder ein vor dem August-Import getipptes „07G1" hat keine; es kommt mit dem LUSD-Import
+ *  oder gehört aus dem Plan. Der Server beantwortet sie, hier wird nur nachgeschlagen,
+ *  über den Normschlüssel. „Nur Rückgabe" ist kein Marker, sondern Text im Vermerk, den
+ *  der Vorschlag vorbelegt.
  *  @param {PlanStand | null} stand */
 export function klassenMarker(stand) {
 	const mitSchuelern = new Set((stand?.klassen ?? []).map(normKey));
@@ -327,10 +324,10 @@ export async function ladePdf(alle = false, entwurf = false) {
 
 /** Welche Klassen im Planer eingeklappt unter „bleiben draußen" stehen: die, die der
  *  gespeicherte Plan (laufend) oder der Vorschlag (Vorjahr, Regel) bewusst auslässt,
- *  UND die, die die Regel der Art auslässt (Server: ausgelassen_regel — die Oberstufe,
+ *  und die, die die Regel der Art auslässt (Server: ausgelassen_regel, also die Oberstufe,
  *  beim Ausgabe-Plan alles außer den Eingangsjahrgängen). Letzteres auch bei einem
- *  laufenden Plan, der die Klassen nie kannte: Ein Plan mit alten Klassennamen bot
- *  sonst 60 Chips offen an (06.09.2026). Was übrig bleibt, hat keine Regel und steht
+ *  laufenden Plan, der die Klassen nie kannte: Ein Plan mit alten Klassennamen böte
+ *  sonst 60 Chips offen an. Was übrig bleibt, hat keine Regel und steht
  *  offen unter „Noch nicht im Plan": die neue Klasse nach dem LUSD-Import.
  *  @param {PlanStand | null} stand @returns {(klasse: string) => boolean} */
 export function bewusstDraussen(stand) {
@@ -358,11 +355,10 @@ export function klasseHinein(e, k, vor) {
  *  @param {PlanEntwurf} e @param {string} k @returns {PlanEntwurf} */
 export function klasseRaus(e, k) {
 	if (e.ausgelassen.some((x) => normKey(x) === normKey(k))) return e;
-	// Steht die Klasse noch in einer anderen Zeile, ist sie NICHT draußen: Sie stünde
-	// sonst gleichzeitig im Plan und unter „Noch nicht im Plan" und ginge beim Speichern
-	// in beide Listen (Rasterdurchgang 06.09.2026). Erreichbar seit dem Tausch per Klick:
-	// Eine Klasse darf mehrfach im Plan stehen (Nachzügler-Termin), und getauscht wird
-	// immer nur die eine Zeile.
+	// Steht die Klasse noch in einer anderen Zeile, ist sie nicht draußen: Sie stünde sonst
+	// gleichzeitig im Plan und unter „Noch nicht im Plan" und ginge beim Speichern in beide
+	// Listen. Das kommt vor, denn eine Klasse darf mehrfach im Plan stehen
+	// (Nachzügler-Termin), und getauscht wird immer nur die eine Zeile.
 	if (e.zeilen.some((z) => z.klassen.some((x) => normKey(x) === normKey(k)))) return e;
 	return {
 		...e,
@@ -370,8 +366,8 @@ export function klasseRaus(e, k) {
 	};
 }
 
-/** Tauscht in Zeile i die Klasse `alt` gegen `neu` aus „Nicht im Plan" — ein Klick auf
- *  die Klasse in der Tabelle (06.09.2026, Absprache: „einfach anklicken um es zu ändern").
+/** Tauscht in Zeile i die Klasse `alt` gegen `neu` aus „Nicht im Plan", nach einem Klick
+ *  auf die Klasse in der Tabelle.
  *  `neu` verlässt die Auslassungen, `alt` kommt dorthin; die Zeile behält Platz und Vermerk.
  *  @param {PlanEntwurf} e @param {number} i @param {string} alt @param {string} neu
  *  @returns {PlanEntwurf} */

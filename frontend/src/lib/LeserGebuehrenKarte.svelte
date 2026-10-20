@@ -14,11 +14,10 @@
 	 * Buttons nur für Rollen, die Schülerdaten bearbeiten — das Backend erzwingt
 	 * edit_students unabhängig davon.
 	 *
-	 * „Bescheid erstellen" steht hier, weil die Forderung hier entsteht („Verlust/Schaden
-	 * melden" beendet die Ausleihe — das Kind fällt damit aus der Mahnliste). Bis zum
-	 * 15.09.2026 gab es den Bescheid nur in der Mahnliste, wo dieses Kind nicht mehr stand.
-	 * Derselbe Dialog wie im Mahnwesen; er entscheidet selbst, welche Forderung auf den
-	 * Brief des Landes darf.
+	 * „Bescheid erstellen" steht hier, weil die Forderung hier entsteht: „Verlust/Schaden
+	 * melden" beendet die Ausleihe, und das Kind fällt damit aus der Mahnliste. Derselbe
+	 * Dialog wie im Mahnwesen; er entscheidet selbst, welche Forderung auf den Brief des
+	 * Landes darf.
 	 * @type {{ schuelerId?: string, gebuehren: any[], darfBearbeiten: boolean, onChanged: () => void }}
 	 */
 	let { schuelerId = '', gebuehren = [], darfBearbeiten = false, onChanged } = $props();
@@ -151,8 +150,7 @@
 {/if}
 
 {#if stornoFall}
-	<!-- Ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist. Seit
-	     07.09.2026 auf Dialog.svelte (Register 05.09.). -->
+	<!-- Ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist. -->
 	<Dialog open={true} onclose={schliesseStorno} ebene="darueber" beschriftetDurch="storno-titel">
 		<div class="p-6">
 			<h3 id="storno-titel" class="text-xl font-bold text-on-surface mb-2">

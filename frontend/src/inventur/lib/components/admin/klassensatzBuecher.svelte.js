@@ -1,10 +1,7 @@
 // klassensatzBuecher.svelte.js — die Bücherliste des Zuweisungs-Dialogs.
 //
-// Eigene Datei seit dem Sweep „verschluckte Fehlantwort" (06.09.2026): Der Abruf stand
-// mit `if (res.ok) { … }` ohne else im Dialog. Scheiterte er, blieb das Gitter leer —
-// nicht zu unterscheiden von „kein Buch im Bestand", und der Dialog war unbenutzbar,
-// ohne zu sagen, warum. Der Fehlerzustand hätte den Dialog über seine eingefrorene
-// Größe gehoben; die Ratsche lockert man dafür nicht. Jetzt ist er KLEINER als vorher.
+// Ein gescheiterter Abruf setzt `fehler`: Ein leeres Gitter sähe sonst aus wie „kein Buch im
+// Bestand", und der Dialog wäre unbenutzbar, ohne zu sagen, warum.
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 

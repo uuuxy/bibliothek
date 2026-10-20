@@ -36,7 +36,7 @@
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,
 		     switch views, or sort elements"): der Katalog und die Aufräumsicht mit den Titeln,
-		     die er nicht zeigt — Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.4. -->
+		     die er nicht zeigt. -->
 		<Segmente
 			klasse="mr-auto"
 			etikett="Sicht der Titelliste"

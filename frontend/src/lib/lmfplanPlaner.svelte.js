@@ -1,15 +1,10 @@
-// lmfplanPlaner.svelte.js — der Zustand des LMF-Planers und die vier Wege, die ihn
-// bewegen: laden, Vorschau rechnen, speichern, veröffentlichen, verwerfen.
+// lmfplanPlaner.svelte.js — der Zustand des LMF-Planers und die Wege, die ihn bewegen:
+// laden, Vorschau rechnen, speichern, veröffentlichen, verwerfen. Der Bildschirm steht in
+// LmfPlan.svelte, die Zeilen-Umformungen in lmfplanZeilen.js.
 //
-// Eigene Datei seit dem Rasterdurchgang am 06.09.2026: Die Fixe des Durchgangs
-// (Sequenznummer im Ladepfad, Zustands-Rückstellung, `catch` in den Schreibwegen) haben
-// LmfPlan.svelte über die 200-Zeilen-Regel gehoben. Die Ratsche lockert man dafür nicht —
-// hier liegt jetzt das Verhalten, dort nur noch der Bildschirm. Dieselbe Aufteilung wie
-// bei den Zeilen-Umformungen (lmfplanZeilen.js) und dem Mahnwesen-Store.
-//
-// `erzeugePlaner()` gibt EINEN Planer je Bildschirm zurück, kein Modul-Singleton: Der
+// `erzeugePlaner()` gibt einen Planer je Bildschirm zurück, kein Modul-Singleton: Der
 // Zustand darf den Bildschirm nicht überleben, sonst zeigte ein erneutes Öffnen für
-// einen Moment den Plan von vorhin (Rasterfrage 8, Ansichtswechsel).
+// einen Moment den Plan von vorhin.
 
 import { melde } from '../inventur/lib/store.svelte.js';
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
@@ -55,13 +50,11 @@ export function erzeugePlaner() {
 		fremdeAenderung: false
 	});
 
-	// `ladeNr` ist dieselbe Sequenznummer wie in der Vorschau (Rasterfrage 6) — der
-	// Ladepfad hatte sie bis zum 06.09.2026 NICHT. Beim Umschalten der Art laufen zwei
-	// GETs; kam die ältere Antwort zuletzt, stand am Ende die Art des einen Plans über
-	// den Zeilen des anderen, und „Plan speichern" schickte die Büchertausch-Reihenfolge
-	// an PUT /api/lmf-plan/ausgabe — wo sie den weiter veröffentlichten Ausgabe-Plan
-	// überschrieb. Der Zustand heilte nicht: Die Vorschau rechnete die fremde Reihenfolge
-	// anstandslos durch, die Tabelle sah stimmig aus.
+	// `ladeNr` ist dieselbe Sequenznummer wie in der Vorschau: Beim Umschalten der Art laufen
+	// zwei GETs. Käme die ältere Antwort zuletzt, stünde die Art des einen Plans über den
+	// Zeilen des anderen, und „Plan speichern" schickte die Büchertausch-Reihenfolge an PUT
+	// /api/lmf-plan/ausgabe, wo sie den veröffentlichten Ausgabe-Plan überschriebe. Von selbst
+	// heilt das nicht: Die Vorschau rechnet die fremde Reihenfolge anstandslos durch.
 	let ladeNr = 0;
 	/**
 	 * Steht hier Arbeit, die der Server nicht kennt? Verglichen wird der Entwurf gegen

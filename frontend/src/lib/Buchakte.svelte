@@ -28,9 +28,8 @@
 	// „Gesamten Titel löschen", auch wer beides nicht durfte (Knopf → 403).
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
-	// Eine Zahl, die niemand kennt, ist ein Fragezeichen — kein „(0)". Der Abruf einer
-	// Liste kann scheitern (Sweep „verschluckte Fehlantwort", 06.09.2026), und „Ausleiher
-	// (0)" wäre dann eine Aussage über den Bestand, die niemand geprüft hat.
+	// Eine Zahl, die niemand kennt, ist ein Fragezeichen, kein „(0)": Scheitert der Abruf einer
+	// Liste, wäre „Ausleiher (0)" eine Aussage über den Bestand, die niemand geprüft hat.
 	/** @param {string} name @param {number} anzahl */
 	const zaehler = (name, anzahl) =>
 		`${name} (${akte.fehlendeListen.includes(name) ? '?' : anzahl})`;
@@ -45,10 +44,10 @@
 		{ id: 'historie', label: 'Historie' }
 	]);
 
-	// Der Effekt hängt an GENAU einer Sache: der Titel-ID. untrack sorgt dafür, dass
-	// nichts, was ladeAlles unterwegs liest (appState.selectedBook, sein eigener Zustand),
-	// je wieder zum Auslöser dieses Effekts wird — am 06.09.2026 tat es das, und die
-	// Akte lief in einer Endlosschleife, bis Svelte sie abbrach (siehe useBuchakte).
+	// Der Effekt hängt an genau einer Sache, der Titel-ID. untrack sorgt dafür, dass nichts,
+	// was ladeAlles unterwegs liest (appState.selectedBook, sein eigener Zustand), zum Auslöser
+	// dieses Effekts wird; sonst läuft die Akte in einer Endlosschleife, bis Svelte sie
+	// abbricht (siehe useBuchakte).
 	$effect(() => {
 		const id = titelId;
 		if (id) untrack(() => akte.ladeAlles(id));

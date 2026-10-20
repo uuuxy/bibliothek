@@ -1,25 +1,13 @@
 <script>
 	/**
-	 * Die Einstellungen als Material-3-Liste mit Detailfläche (Betreiber-Entscheidung
-	 * 23.08.2026).
+	 * Die Einstellungen als Material-3-Liste mit Detailfläche, gespeichert je Kategorie: Jede
+	 * schickt nur ihre eigenen Felder (repository/einstellungen_patch.go), und überall gilt
+	 * dieselbe Regel. Mit einem Knopf für alles bräuchte jede Sektion eine eigene Notbremse
+	 * gegen das Überschreiben der anderen.
 	 *
-	 * Vorher: sechs Reiter. Einer davon, „Allgemein", trug SIEBEN fremde Themen in
-	 * einer Scroll-Seite (Schule, Ferien-Leseclub, Fristen, Sperr-Automatik,
-	 * Bestellbedarf, Datenschutz, Preise) und darunter EINEN Speichern-Knopf für
-	 * alles; ein anderer, „System", hatte genau einen Inhalt. Reiter sind für drei bis
-	 * fünf gleichgewichtige Bereiche gedacht, nicht für „einer voll, einer leer".
-	 *
-	 * Der Knopf war nicht nur unordentlich, er war die Ursache der drei Leer-Regeln:
-	 * Weil immer alles auf einmal ging, brauchte jede Sektion eine eigene Notbremse
-	 * gegen das Überschreiben der anderen. Mit dem Speichern je Kategorie schickt jede
-	 * nur ihre eigenen Felder (repository/einstellungen_patch.go), und es gilt
-	 * überall dieselbe Regel.
-	 *
-	 * Die Betriebsbereitschaft bleibt hier drin und bekommt bewusst KEINE eigene
-	 * Route: 45951c62 hat den früheren URL-Schleichweg abgeschafft, weil
-	 * /betriebsbereitschaft ohne Menüeintrag für jeden Angemeldeten offen gewesen
-	 * wäre. Die Berechtigungen bleiben umgekehrt draußen — sie sind seit 66a58b06 ein
-	 * eigener Menüpunkt, auf den die Drift-Warnung der Selbstprüfung zeigt.
+	 * Die Betriebsbereitschaft bleibt hier drin und bekommt keine eigene Route: Ohne
+	 * Menüeintrag wäre /betriebsbereitschaft für jeden Angemeldeten offen. Die Berechtigungen
+	 * sind ein eigener Menüpunkt, auf den die Drift-Warnung der Selbstprüfung zeigt.
 	 */
 	import { apiGet } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';

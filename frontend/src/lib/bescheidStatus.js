@@ -17,15 +17,14 @@ export function liegtBeiDerSchule(b) {
 /**
  * Der Zustand eines Schadensersatz-Bescheids als Angaben für einen StatusChip.
  *
- * EINE Stelle für beide Anzeigen: die Arbeitsliste im Mahnwesen (BescheideTabelle) und
- * die Schülerakte (LeserBescheideKarte). Zwei Abschriften derselben fünf Fälle wären
- * genau die Art Doppelung, an der die Liste später „übergeben" sagt und die Akte noch
- * „offen" — bei einem Brief, der Geld fordert.
+ * Eine Stelle für beide Anzeigen: die Arbeitsliste im Mahnwesen (BescheideTabelle) und
+ * die Schülerakte (LeserBescheideKarte). Bei zwei Abschriften derselben fünf Fälle sagte
+ * die Liste irgendwann „übergeben" und die Akte noch „offen", bei einem Brief, der Geld
+ * fordert.
  *
  * Die Reihenfolge ist Absicht: Die Rückgabe nach der Übergabe schlägt alles, weil sie eine
  * Handlung verlangt (die Aufsicht ist zu informieren). Jeder Zustand nennt im Tipp den
- * nächsten Schritt — bis zum 15.09.2026 stand bei einem frischen Brief nur „offen", und
- * was danach kommt, stand nirgends auf dem Bildschirm.
+ * nächsten Schritt; ein bloßes „offen" sagt nicht, was danach kommt.
  *
  * @param {any} b Bescheid, wie ihn die API liefert
  * @param {(iso: string) => string} datum Formatierer für das Übergabedatum

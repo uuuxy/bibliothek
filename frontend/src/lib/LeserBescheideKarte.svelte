@@ -1,10 +1,9 @@
 <!-- @component LeserBescheideKarte — die Schadensersatz-Bescheide eines Schülers in
-     seiner Akte (#597, Etappe 1).
+     seiner Akte.
 
-     Bis zum 12.09.2026 stand der Bescheid nur in der Arbeitsliste des Mahnwesens. Wer die
-     Akte öffnete, weil Eltern in der Bibliothek nachfragen („wir haben da einen Brief
-     bekommen"), sah die Forderung als Gebühr — aber weder ihre Referenznummer noch die
-     Frist noch, ob der Fall schon bei der Aufsicht liegt. Genau danach wird gefragt.
+     Fragen Eltern in der Bibliothek nach („wir haben da einen Brief bekommen"), braucht die
+     Akte mehr als die Gebühr: die Referenznummer, die Frist und ob der Fall schon bei der
+     Aufsicht liegt.
 
      Der Zustand kommt aus bescheidStatus.js, derselben Stelle wie in der Arbeitsliste.
      Nachdruck öffnet dasselbe PDF mit derselben Nummer (nie eine neue). -->

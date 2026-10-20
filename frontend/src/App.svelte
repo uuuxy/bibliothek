@@ -106,9 +106,8 @@
 		     Lieferant hat kein Konto und darf keinen Anmeldebildschirm sehen. -->
 		<BestellBestaetigung />
 	{:else}
-		<!-- Hier lag bis zum 16.09.2026 ein Vollbild, das 25 s nach dem letzten Herzschlag
-		     kam und die Theke anhielt. Der Verbindungsverlust steht jetzt im Offline-Band
-		     (unten durchgereicht): eine Lage, eine Zeile. -->
+		<!-- Ein Verbindungsverlust hält die Theke nicht mit einem Vollbild an, er steht im
+		     Offline-Band (unten durchgereicht): eine Lage, eine Zeile. -->
 		{#if !authStore.sessionChecked}
 			<!-- Boot-Restore läuft — kurzer neutraler Zustand statt Login-Flackern -->
 			<div class="fixed inset-0 flex items-center justify-center">
@@ -122,8 +121,8 @@
 			{/if}
 			<!-- Gesperrt bleibt die Anwendung stehen, aber ausgeblendet und träge: Was getippt
 			     und nicht gespeichert ist, überlebt die Sperre. Die Druckvorschau (Strg+P)
-			     zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht (Prüfung
-			     22.08.2026, A6). Nach einem Start in die Sperre steht nichts dahinter. -->
+			     zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht. Nach einem
+			     Start in die Sperre steht nichts dahinter. -->
 			{#if !leerlaufSperre.gesperrt || leerlaufSperre.anwendungSteht}
 				<Anwendungsrahmen verdeckt={leerlaufSperre.gesperrt} />
 			{/if}

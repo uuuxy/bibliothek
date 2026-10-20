@@ -1,11 +1,10 @@
 /**
- * Das Prüfzeichen, das bis zum 17.09.2026 auf jedem Ausweis und Buchetikett stand — der
- * Zwilling von pkg/code39/pruefzeichen.go für die Theke OHNE NETZ.
+ * Das Prüfzeichen der älteren Ausweise und Buchetiketten in Code 39: der Zwilling von
+ * pkg/code39/pruefzeichen.go für die Theke ohne Netz.
  *
- * Die Geschichte steht ausführlich im Go-Paket. Kurz: Der Drucker hängte ein Mod-43-
- * Prüfzeichen an, das IN den Strichcode-Daten steht. Unter der Karte steht „A-10003", das
- * Lesegerät liefert „A-100037". Gedruckt wird seither Code 128 ohne Prüfzeichen; die
- * Karten von vorher sind im Umlauf und sollen weiter funktionieren.
+ * Das Mod-43-Prüfzeichen steht in den Strichcode-Daten: Unter der Karte steht „A-10003",
+ * das Lesegerät liefert „A-100037". Gedruckt wird heute Code 128 ohne Prüfzeichen; die
+ * älteren Karten sind im Umlauf und sollen weiter funktionieren.
  *
  * Beide Seiten lesen dieselben Prüffälle (code39.faelle.json) — rechnen sie verschieden,
  * wird der Go- oder der Vitest rot. Dasselbe Muster wie bei litteraEtikett.

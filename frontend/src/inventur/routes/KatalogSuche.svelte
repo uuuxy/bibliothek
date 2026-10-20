@@ -1,10 +1,8 @@
 <!--
 	KatalogSuche.svelte (Medienkatalog → Suche & Filter)
 
-	Suchfeld und Cover-Raster der Buch-Suche. Der Reiter „Jahrgänge" (Gruppierung nach der
-	gepflegten Jahrgangsspanne) ist am 02.09.2026 weg: 13.055 von 13.060 Titeln trugen den
-	unangetasteten Import-Default 5–10 und lagen in EINER Gruppe „Ohne genaue Zuordnung" —
-	der Reiter hätte erst nach dem Nachpflegen von 13.000 Titeln etwas gezeigt. Welche
+	Suchfeld und Cover-Raster der Buch-Suche. Nach der Jahrgangsspanne gruppiert sie nicht:
+	Fast jeder Titel trägt die Vorgabe des Imports (5–10), alle lägen in einer Gruppe. Welche
 	Klasse welche Bücher hat, steht unter Bibliothek → Klassensätze.
 -->
 <script>
@@ -79,12 +77,10 @@
 	<StartseitenFilter bind:suche />
 
 	<div class="relative">
-		<!-- „Nichts gefunden" muss zu sehen sein. Das Raster zeigte bei null Treffern eine
-		     leere Fläche — und damit sah eine Suche ohne Ergebnis genauso aus wie eine, die
-		     gar nicht stattgefunden hat. Beim Scannen ist das der Unterschied zwischen
-		     „dieses Buch haben wir nicht" und „die Kamera hat nichts gelesen" (Rückmeldung
-		     18.09.2026). Der Hinweis wiederholt den Suchtext: Bei einem Scan steht dort der
-		     gelesene Code. Form und Wortlaut wie im OPAC und im Kollegiums-Portal
+		<!-- „Nichts gefunden" muss zu sehen sein: Eine leere Fläche sieht aus wie eine Suche,
+		     die gar nicht stattgefunden hat, beim Scannen also „die Kamera hat nichts gelesen"
+		     statt „dieses Buch haben wir nicht". Der Hinweis wiederholt den Suchtext, bei einem
+		     Scan den gelesenen Code. Form und Wortlaut wie im OPAC und im Kollegiums-Portal
 		     (ui/SuchZustand); die M3-Seite zur Suche trifft dazu keine Aussage. -->
 		{#if suche.trim() !== '' && gefilterteTitel.length === 0}
 			<SuchZustand

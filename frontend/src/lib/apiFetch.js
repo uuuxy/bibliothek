@@ -260,13 +260,12 @@ export async function apiDelete(url, options = {}) {
 
 // ── Zentraler Sitzungsverlust-Haken ─────────────────────────────────────────
 //
-// Ohne ihn scheiterte nach Ablauf der 12h-Sitzung jeder Baustein einzeln: Das
-// Reservierungs-Badge pollte im 30-Sekunden-Takt in ein 401, die Konsole lief
-// voll, und die Seite wirkte kaputt statt abgemeldet (Betreiber-Befund
-// 16.08.2026 abends). Der Haken ist eine REGISTRIERUNG, kein Import: authStore
-// importiert apiFetch — die Gegenrichtung wäre ein Zyklus.
+// Ohne ihn scheitert nach Ablauf der 12h-Sitzung jeder Baustein einzeln: Ein Badge, das
+// im 30-Sekunden-Takt fragt, läuft in ein 401, die Konsole läuft voll, und die Seite
+// wirkt kaputt statt abgemeldet. Der Haken ist eine Registrierung, kein Import:
+// authStore importiert apiFetch, die Gegenrichtung wäre ein Zyklus.
 //
-// Ausgenommen sind die Pfade, deren 401 KEIN Sitzungsverlust ist: die
+// Ausgenommen sind die Pfade, deren 401 kein Sitzungsverlust ist: die
 // Auth-Endpunkte selbst (dort ist 401 die reguläre Antwort auf "nicht/nicht
 // mehr angemeldet") und alles Öffentliche.
 

@@ -11,7 +11,7 @@
 	import { leserArtText } from './leserArt.js';
 	import { Check, ChevronLeft } from '@lucide/svelte';
 
-	// Die Klasse wird gewählt, nicht getippt (docs/OFFEN.md 5.18, 30.09.2026).
+	// Die Klasse wird gewählt, nicht getippt, damit kein Tippfehler eine Klasse anlegt.
 	const klassenListe = erzeugeKlassenVorschlaege();
 	onMount(klassenListe.lade);
 
@@ -76,9 +76,8 @@
 			</button>
 
 			<div class="min-w-0">
-				<!-- Der Titel nennt die Art statt fest „Schüler": In dieser Datei steht seit
-				     dem 16.09.2026 jeder Leser, und „Schüler bearbeiten" über der Akte einer
-				     Lehrkraft ist schlicht eine falsche Auskunft. -->
+				<!-- Der Titel nennt die Art statt fest „Schüler": Hier wird jeder Leser bearbeitet,
+				     auch eine Lehrkraft. -->
 				<h2 class="text-xl font-black text-on-surface leading-tight">
 					{leserArtText(leser?.art)} bearbeiten
 				</h2>

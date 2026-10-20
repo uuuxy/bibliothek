@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
 
-// Der Dialog speichert überschreibend (UpdateClassBooks löscht und schreibt neu). Wäre
+// Der Dialog speichert überschreibend (aendereKlassensaetze löscht und schreibt neu). Wäre
 // ein aus den Ausleihen abgeleiteter Titel vorgewählt, machte der erste Klick auf
 // Speichern ihn dauerhaft — ohne dass jemand ihn der Klasse zugeordnet hätte.
 describe('Vorauswahl im Dialog „Bücher verwalten"', () => {

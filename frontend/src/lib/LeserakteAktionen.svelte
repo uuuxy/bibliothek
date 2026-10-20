@@ -37,12 +37,11 @@
 	// Toolbar mit einem Dauer-Umschalter zuzustellen.
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
-	// Zwei der Dokumente gibt es für einen Kollegen NICHT: Kontoauszug und
-	// Ersatzforderung lesen die Sicht `schueler` (api/leser/kontoauszug.go,
-	// api/schaden/rechnung.go) und beantworten seine ID
-	// mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist schlechter als keiner —
-	// und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern eines Schülers. Die
-	// DSGVO-Auskunft gibt es seit dem 24.09.2026 für jeden Leser (SchuelerDokumente).
+	// Zwei der Dokumente gibt es für einen Kollegen nicht: Kontoauszug und Ersatzforderung
+	// lesen die Sicht `schueler` (api/leser/kontoauszug.go, api/schaden/rechnung.go) und
+	// beantworten seine ID mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist
+	// schlechter als keiner, und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern
+	// eines Schülers. Die DSGVO-Auskunft gibt es für jeden Leser (SchuelerDokumente).
 	const kollege = $derived(istKollegium(leser));
 
 	// Ohne Ausweisnummer gibt es keinen Ausweis zu drucken: Die Karte trüge ein leeres
@@ -50,9 +49,9 @@
 	// „Benutzer & Rechte" (Kollegium) bzw. beim Anlegen (Schüler).
 	const ohneAusweis = $derived(!leser.barcode_id);
 
-	// Seit 07.09.2026 das eine Menü des Hauses (ui/Menue.svelte) mit dem Split-Button als
-	// Auslöser. Die Hinweiszeilen der Einträge („Foto & Ausweisdaten") sind weg: M3-Menüs
-	// tragen eine Zeile je Aktion, und die drei Beschriftungen erklären sich selbst.
+	// Das eine Menü des Hauses (ui/Menue.svelte) mit dem Split-Button als Auslöser. Die
+	// Einträge tragen keine Hinweiszeile: M3-Menüs haben eine Zeile je Aktion, und die drei
+	// Beschriftungen erklären sich selbst.
 	/** @type {import('./components/ui/menueGeometrie.js').Eintrag[]} */
 	const seiten = [
 		{ id: 'both', text: 'Beides', icon: Layers },

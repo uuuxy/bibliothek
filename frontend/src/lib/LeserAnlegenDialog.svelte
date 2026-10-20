@@ -1,9 +1,9 @@
 <!-- @component LeserAnlegenDialog — „Neuen Leser anlegen".
 
-     Fragt ZUERST nach der Art (16.09.2026): An ihr hängt, welche Angaben Pflicht
-     sind. Ein Schüler braucht Klasse und Geburtsdatum — der LUSD-Import erkennt ihn nur
-     daran wieder —, ein Kollege hat beides nicht und bekommt statt Stammdaten den
-     Hinweis, dass hier KEIN Zugang entsteht.
+     Fragt zuerst nach der Art: An ihr hängt, welche Angaben Pflicht sind. Ein Schüler
+     braucht Klasse und Geburtsdatum, denn der LUSD-Import erkennt ihn nur daran wieder; ein
+     Kollege hat beides nicht und bekommt statt Stammdaten den Hinweis, dass hier kein
+     Zugang entsteht.
 
      Die Regeln stehen doppelt: hier als verständliche Meldung vor dem Absenden, im
      Backend als Bedingung (pruefeLeserAngaben). Das Backend ist die Wahrheit; diese
@@ -33,7 +33,7 @@
 
 	const kollege = $derived(istKollegium({ art }));
 	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" und deshalb keine
-	// Schul-E-Mail (30.09.2026) — dieselbe Regel wie im Server (leserart.HatKonto).
+	// Schul-E-Mail, dieselbe Regel wie im Server (leserart.HatKonto).
 	const mitKonto = $derived(artMitKonto(art));
 
 	// Formular zurücksetzen, sobald der Dialog aufgeht — samt Art: Wer zuletzt eine
@@ -100,10 +100,9 @@
 			} catch {
 				meldung = rohtext;
 			}
-			// Der Server erklärt den Doppeleintrag — seine Meldung nennt den Fall
-			// (Namensgleichheit beim Kollegium, Name + Geburtsdatum beim Schüler). Bis zum
-			// 16.09.2026 stand hier ein fester Satz über Schüler; bei einer Lehrkraft war
-			// er schlicht falsch.
+			// Der Server erklärt den Doppeleintrag, seine Meldung nennt den Fall
+			// (Namensgleichheit beim Kollegium, Name + Geburtsdatum beim Schüler): Ein fester
+			// Satz träfe nur eine der Arten.
 			if (res.status === 409) duplicateConflict = meldung || 'Diese Person gibt es bereits.';
 			else fehler = meldung || `Fehler beim Anlegen (${leserArtText(art)}).`;
 		} catch (err) {

@@ -12,12 +12,9 @@
  */
 
 import { mount } from 'svelte';
-// Die Schrift wird in app.css eingebunden (Roboto, nur Latein 400 und 500).
-// Hier standen bis zum 04.08.2026 SIEBEN Inter-Schnitte (300–900), und jede
-// dieser CSS-Dateien zieht ALLE Zeichensätze mit — Latein, Latein erweitert,
-// Kyrillisch, Griechisch, Vietnamesisch. Gemessen im Build: 51 Schriftdateien,
-// 776 KB, die bei jedem Aufruf mit ausgeliefert wurden, obwohl die Anwendung
-// deutschsprachig ist und Material 3 nur zwei Stärken benutzt.
+// Die Schrift wird in app.css eingebunden, nur Latein und nur die zwei Stärken, die Material 3
+// benutzt (Roboto 400 und 500): Die CSS-Datei eines ganzen Schnitts zieht alle Zeichensätze
+// mit, von Kyrillisch bis Vietnamesisch.
 import './app.css';
 import App from './App.svelte';
 // @ts-expect-error  virtual:pwa-register wird erst von vite-plugin-pwa zur Bauzeit erzeugt

@@ -1,20 +1,14 @@
-<!-- @component BuchKarte — eine Kachel des Medienkatalogs, gebaut wie Google Play Books
-     (entschieden am 02.09.2026): Das COVER ist die Kachel, der Text steht darunter
-     auf der Fläche. Kein Kartenrahmen, kein Schatten, kein Trennstrich, kein Kasten um
-     das Prüfdatum — beim Zeigen nur die M3-Zustandsschicht (m3-state) als weiche
-     Tonfläche um Bild und Text.
+<!-- @component BuchKarte — eine Kachel des Medienkatalogs, gebaut wie Google Play Books: Das
+     Cover ist die Kachel, der Text steht darunter auf der Fläche. Kein Kartenrahmen, kein
+     Schatten, kein Trennstrich, kein Kasten um das Prüfdatum; beim Zeigen nur die
+     M3-Zustandsschicht (m3-state) als weiche Tonfläche um Bild und Text.
 
      Fünf Informationen, in dieser Reihenfolge, und keine weiteren: Titel, ISBN mit
      Kopieren (die Nummer liest man gegen das Buch in der Hand ab), Signatur (die
      Regaladresse), Bestand als Satz statt Ampelpunkt, Prüfdatum nur wenn es eines gibt.
-     Fach-, Klassen- und Zweig-Chips sind bewusst weg: Das Suchfeld findet sie, der
-     Reiter „Jahrgänge" gruppiert danach. Der Autor interessiert im Schulkatalog nicht.
-     Ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6) zählt die Summe; eine Zeile
-     darunter sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch).
-
-     Vorher (bis 02.09.2026): weiße Karte mit Rahmen UND Schatten, sechs
-     Informationsschichten, Stift in einem weißen Kästchen auf dem Cover, Ampelpunkt
-     mit Leuchtschein — die Buchakte in klein, 455 px hoch, vier je Reihe. -->
+     Fach-, Klassen- und Zweig-Chips fehlen mit Absicht, das Suchfeld findet sie. Der Autor
+     interessiert im Schulkatalog nicht. Ein Buch in mehreren Auflagen zählt die Summe; eine
+     Zeile darunter sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch). -->
 <script>
 	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
@@ -58,10 +52,9 @@
 	);
 
 	/** Bestand als Satz: „27 von 28 verfügbar", „Keine Exemplare" bei einem Titel ohne
-	 *  Exemplare — der frühere rote Punkt sah für beides gleich aus. Bewusst OHNE Rot bei
-	 *  0: Im Schuljahr ist fast jedes Lernmittel komplett verliehen; ein Katalog, der
-	 *  überall rot ist, sagt nichts mehr. Der Wortlaut kommt aus format.js, weil ihn
-	 *  seit dem 17.09.2026 auch die Theke braucht. */
+	 *  Exemplare; ein Farbpunkt sähe für beides gleich aus. Kein Rot bei 0: Im Schuljahr ist
+	 *  fast jedes Lernmittel komplett verliehen, und ein Katalog, der überall rot ist, sagt
+	 *  nichts mehr. Der Wortlaut kommt aus format.js, weil ihn auch die Theke braucht. */
 	const zahlen = $derived(titel.buch ?? titel);
 	const bestand = $derived(bestandSatz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
 
@@ -92,7 +85,7 @@
 
 	// Lokale Liste statt Lesen des eigenen $state im selben Effekt: Der Effekt hinge sonst
 	// von coverCandidates ab, das er gerade schreibt — Endlosschleife, Svelte bricht mit
-	// effect_update_depth_exceeded ab und die ganze Seite reagiert nicht mehr (E2E 02.09.).
+	// effect_update_depth_exceeded ab und die ganze Seite reagiert nicht mehr.
 	$effect(() => {
 		const kandidaten = coverKandidaten(titel?.coverUrl, titel?.isbn);
 		coverCandidates = kandidaten;
@@ -101,17 +94,12 @@
 	});
 </script>
 
-<!-- Die Kachel ist für Hilfstechnik KEIN Knopf mehr: Bis zum 09.09.2026 trug sie
-     role="button" — mit Kopieren-Knopf und Stift darin, Bedienelemente im Bedienelement
-     (nested-interactive, 50 Verstöße je Katalogseite). Jetzt ist der TITEL der Knopf
-     (echter <button> in der Überschrift, per Tastatur und Screenreader erreichbar). Der
-     Klick auf die ganze Fläche bleibt für Maus und Finger erhalten — als reiner
-     Maus-Komfort ohne Rolle, deshalb die beiden Ausnahmen darunter; die Tastatur hat
-     den Titel. Die inneren Knöpfe stoppen die Weitergabe, und das wirkt: Der Stift
-     öffnet NUR die Bearbeitung, nicht auch die Akte (BuchKarte.test.js misst es am
-     gebauten Bauteil; im Kompilat ist auch dieser Flächen-Handler delegiert, kein
-     direkter Listener). Bis zum 21.09.2026 behauptete dieser Kommentar das Gegenteil
-     und berief sich auf e2e/cover-aendern.spec.js — der sagt das Richtige. -->
+<!-- Die Kachel ist für Hilfstechnik kein Knopf: Mit Kopieren-Knopf und Stift darin wäre sie
+     ein Bedienelement im Bedienelement (axe: nested-interactive). Der Knopf ist der Titel,
+     ein echter <button> in der Überschrift. Der Klick auf die ganze Fläche bleibt als Komfort
+     für Maus und Finger, ohne Rolle, deshalb die beiden Ausnahmen darunter. Die inneren
+     Knöpfe stoppen die Weitergabe: Der Stift öffnet nur die Bearbeitung, nicht auch die Akte
+     (BuchKarte.test.js). -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3" {onclick}>

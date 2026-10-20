@@ -1,16 +1,11 @@
 /**
- * Die Etikettenbögen, die das Programm bedrucken kann — EINE Liste für das ganze
- * Frontend.
+ * Die Etikettenbögen, die das Programm bedrucken kann: eine Liste für das ganze Frontend.
  *
  * Maßgeblich bleibt `pdf/etikett_formate.go`; `etikettformate-konsistenz.test.js` hält
- * diese Datei dagegen. Es gibt sie, weil mit den Schüler-Etiketten (24.08.2026) eine
- * zweite Oberfläche dieselben Bögen anbietet: Vorher stand die Liste hartkodiert in
- * `EtikettLayoutOptionen.svelte`, und die Stückzahlen ein zweites Mal in
- * `stores/etiketten.svelte.js`. Eine dritte Kopie in der Ausweis-Werkzeugleiste wäre genau
- * die Bauform, die in diesem Projekt schon mehrfach auseinandergelaufen ist.
+ * diese Datei dagegen. Mehrere Oberflächen bieten dieselben Bögen an (Buch- und
+ * Schüler-Etiketten, Ausweis-Werkzeugleiste), und jede eigene Kopie liefe auseinander.
  *
- * KEIN Abruf vom Server: Am 31.08.2026 geprüft und ENTSCHIEDEN so gelassen (Register,
- * Kategorie C) — ein Server-Umbau bräuchte einen neuen Endpunkt plus Ladezustand in
+ * Kein Abruf vom Server: Dafür bräuchte es einen neuen Endpunkt und einen Ladezustand in
  * drei Verbrauchern des täglich benutzten Druck-Bildschirms. Diese Datei ist die eine
  * Kopie, die der Test gegen pdf/etikett_formate.go hält.
  */

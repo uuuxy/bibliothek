@@ -20,9 +20,8 @@
 	let aktiverReiter = $state('bestellungen');
 
 	/**
-	 * Exemplare im Zulauf — speist das Badge am Wareneingang-Reiter. Bis zum 09.08.2026
-	 * stand dieselbe Zahl als Streifen ueber dem Bestellbedarf; M3 kennt dafuer das Badge
-	 * am Ziel, die Banner-Komponente wurde mit M2 gestrichen.
+	 * Exemplare im Zulauf; speist das Badge am Wareneingang-Reiter. M3 zeigt eine solche Zahl
+	 * als Badge am Ziel, ein Banner kennt es nicht mehr.
 	 */
 	const zulaufExemplare = $derived(
 		bestellStore.incomingShipments.reduce(
@@ -94,24 +93,10 @@
 	     Bestellen (Mail ohne Link) UND die Historie (Bestätigung, die nie kommt). -->
 	<BestelllinkHinweis />
 
-	<!-- Reiterzeile: reine Navigation, keine Aktionen. Genau deshalb steht „Nachdrucken"
-	     NICHT hier — in M3 wechseln Reiter gleichrangige Ansichten EINES Ziels, sie fuehren
-	     keine Aktionen aus und springen nicht zu anderen Zielen. Das Nachdrucken liegt im
-	     Druck-Center und traegt sein Badge dort (Seitenleiste.svelte).
-
-	     Seit 04.09.2026 aus ui/Reiter.svelte statt von Hand — der letzte der vier
-	     Bestandsfaelle aus der Reiter-Hygiene, „bei ihrem naechsten fachlichen Anfassen
-	     nachgezogen". Anlass war die Hoehe: Im Browser gemessen waren diese Reiter 34 px
-	     hoch, alle uebrigen 32 (damals sechs Stueck; „Bestellberichte" ist am 17.09.2026
-	     ein eigener Bildschirm unter „Berichte" geworden). Die zwei Pixel kamen vom
-	     `border-b-2`, das den Indikator IM TEXTFLUSS zeichnete und die Hoehe damit
-	     vergroesserte; das Bauteil legt ihn absolut darueber. 34 px liegt auf keiner Stufe
-	     der M3-Dichteskala (Reiter: 48 / 44 / 40 / 36 / 32 / 28) — es war schlicht ein Rechenfehler der
-	     Bauform, kein gewaehltes Mass.
-
-	     Der Zaehler faellt damit ebenfalls an seinen Platz: Hier stand eine zweite,
-	     handgebaute Fassung der Zaehlerpille — dieselbe Doppelung, die am 04.09. im
-	     Druck-Center „999+" neben „30674" stellte. -->
+	<!-- Reiterzeile: reine Navigation, keine Aktionen. Deshalb steht „Nachdrucken" nicht hier:
+	     In M3 wechseln Reiter gleichrangige Ansichten eines Ziels, sie führen keine Aktionen
+	     aus und springen nicht zu anderen Zielen. Das Nachdrucken liegt im Druck-Center und
+	     trägt sein Badge dort (Seitenleiste.svelte). -->
 	<Reiter
 		etikett="Bereiche des Bestellwesens"
 		aktiv={aktiverReiter}

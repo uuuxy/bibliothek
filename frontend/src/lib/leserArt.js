@@ -55,9 +55,9 @@ export function istKollegium(leser) {
 
 /**
  * Gehört zu dieser Art ein Zugang zu „Mein Portal" — und damit die Schul-E-Mail, aus der er
- * entsteht? Lehrkraft, LiV, Sekretariat und U-plus ja; Praktikum und Fachbereich nicht
- * (Entscheidung vom 30.09.2026: Ein Fachbereich ist ein Sammelkonto der Kollegen des Fachs,
- * ein Praktikant leiht aus, braucht aber keinen Zugang). Ein Schüler hat nie ein Konto.
+ * entsteht? Lehrkraft, LiV, Sekretariat und U-plus ja; Praktikum und Fachbereich nicht: Ein
+ * Fachbereich ist ein Sammelkonto der Kollegen des Fachs, ein Praktikant leiht aus, braucht
+ * aber keinen Zugang. Ein Schüler hat nie ein Konto.
  * @param {string | null | undefined} art
  * @returns {boolean}
  */
@@ -66,15 +66,13 @@ export function artMitKonto(art) {
 }
 
 /**
- * Die Aufschrift des Ausweises. Sie steht auf der Karte und sagt, WAS das Dokument ist —
- * nicht, wer jemand ist. Ein Kollege bekam bis zum 16.09.2026 einen Ausweis mit der
- * Aufschrift „Schülerausweis": Der Titel war ein fester Text im Design und kannte die
- * Art nicht.
+ * Die Aufschrift des Ausweises. Sie sagt, was das Dokument ist, nicht, wer jemand ist;
+ * ein fester Text im Design kennte die Art nicht.
  *
- * LiV und Lehrkraft bekommen dieselbe Aufschrift. Der Ausweis weist jemanden als
- * Lehrkraft der Schule aus; die Ausbildungsstufe gehört nicht auf die Karte. Die
- * Sonderkonten sind keine Lehrkräfte: Ihre Karte heißt „Leserausweis", das Wort, das
- * Littera für jeden Ausweis führt (30.09.2026).
+ * LiV und Lehrkraft bekommen dieselbe Aufschrift: Der Ausweis weist jemanden als Lehrkraft
+ * der Schule aus, die Ausbildungsstufe gehört nicht auf die Karte. Die Sonderkonten sind
+ * keine Lehrkräfte: Ihre Karte heißt „Leserausweis", das Wort, das Littera für jeden
+ * Ausweis führt.
  * @param {string | null | undefined} art
  * @returns {string}
  */

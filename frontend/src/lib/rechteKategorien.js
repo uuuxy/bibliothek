@@ -1,13 +1,11 @@
-// Kategorien und ihre zugeordneten Berechtigungen für den BenutzerUndRechte.
-// Aus der Komponente ausgelagert (Daten statt Markup) — hält BenutzerUndRechte schlank.
+// Kategorien und ihre zugeordneten Berechtigungen für BenutzerUndRechte, als Daten statt
+// Markup.
 //
-// Jede Beschreibung nennt, was der Server unter diesem Recht tatsächlich freigibt —
-// abgelesen an den verlangeRecht-Aufrufen in api/routen_*.go, nicht aus der
-// Erinnerung. Bis zum 24.08.2026 beschrieb z. B. edit_books nur „Schadensnotizen",
-// öffnete aber auch Barcode, Status, Aussonderung, Verlängerung, Geräte und
-// Systematik. Wer ein Recht anhand seines Textes erteilt, muss dem Text trauen können.
-// Die NAMEN hält api/rechte_paritaet_test.go deckungsgleich mit den Routen; die Texte
-// bleiben Handarbeit — wer eine Route umhängt, zieht die Zeile hier nach.
+// Jede Beschreibung nennt, was der Server unter diesem Recht tatsächlich freigibt, abgelesen
+// an den verlangeRecht-Aufrufen in api/routen_*.go: Wer ein Recht anhand seines Textes
+// erteilt, muss dem Text trauen können. Die Namen hält api/rechte_paritaet_test.go
+// deckungsgleich mit den Routen; die Texte bleiben Handarbeit, wer eine Route umhängt, zieht
+// die Zeile hier nach.
 import { BookOpen, Settings, ShoppingCart, Users } from '@lucide/svelte';
 
 export const rechteBeschreibungen = [

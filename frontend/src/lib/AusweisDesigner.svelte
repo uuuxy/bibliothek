@@ -23,19 +23,13 @@
 	/** @type {any} */
 	let speicherZeitgeber = null;
 
-	// Dieser Bildschirm lädt KEINE echten Schüler mehr.
+	// Dieser Bildschirm lädt keine echten Schüler: Hier entsteht das Design, das zentral für
+	// alle Arbeitsplätze gilt. Wer wessen Karte druckt, entscheidet die Schülerdatei
+	// (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler steht.
 	//
-	// Bis zum 06.08.2026 hing hier eine Klassenauswahl, die per /api/schueler die Schüler
-	// der gewählten Klasse holte und daraus den Druckstapel baute. Das vermischte zwei
-	// Dinge: Hier entsteht das Design, und das gilt zentral für ALLE Arbeitsplätze — wer
-	// wessen Karte druckt, ist eine ganz andere Frage. Sie wird jetzt in der Schülerdatei
-	// beantwortet (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler
-	// sichtbar und überschreibbar ist.
-	//
-	// Die Leinwand zeigt deshalb immer denselben Platzhalter. Das Gültigkeitsdatum ist
-	// hier ein Musterwert und wird NICHT aus einer Klasse gerechnet: Der Bildschirm zeigt,
-	// wie die Karte AUSSIEHT, nicht was auf einer bestimmten Karte steht. Das echte Datum
-	// kommt beim Drucken vom Server (schueler.ausweis_gueltig_bis, Regel in
+	// Die Leinwand zeigt deshalb immer denselben Platzhalter, und das Gültigkeitsdatum ist ein
+	// Musterwert: Der Bildschirm zeigt, wie die Karte aussieht, nicht was auf einer bestimmten
+	// Karte steht. Das echte Datum kommt beim Drucken vom Server (ausweis_gueltig_bis, Regel in
 	// internal/ausweis).
 	const PLATZHALTER_LESER = {
 		id: 'placeholder',
@@ -51,14 +45,11 @@
 		ablage.laden();
 	});
 
-	// Auto-Save (entprellt): jede Design-Änderung wird zentral gespeichert, damit der
-	// Druck-Arbeitsplatz beim nächsten Öffnen exakt denselben Stand lädt.
-	// `ausstehend` hält den letzten noch nicht gespeicherten Stand. Nötig, weil der
-	// Effekt-Abbau den Timer LÖSCHT — beim Tippen ist genau das die Entprellung, beim
-	// Verlassen des Bildschirms verwarf es aber die letzte Änderung: Wer etwas umstellte
-	// und innerhalb der 800 ms weiterklickte, sah noch „Speichert…" — gespeichert wurde
-	// nie, und der nächste Ladevorgang holte den alten Stand zurück (Raster-Fund
-	// 24.08.2026). onDestroy schickt den ausstehenden Stand deshalb sofort ab.
+	// Auto-Save (entprellt): Jede Design-Änderung wird zentral gespeichert, damit der
+	// Druck-Arbeitsplatz beim nächsten Öffnen denselben Stand lädt. `ausstehend` hält den
+	// letzten noch nicht gespeicherten Stand, denn der Abbau des Effekts löscht den Timer: Wer
+	// innerhalb der 800 ms weiterklickt, verlöre sonst die letzte Änderung. onDestroy schickt
+	// den ausstehenden Stand deshalb sofort ab.
 	/** @type {string | null} */
 	let ausstehend = null;
 	$effect(() => {
@@ -107,10 +98,9 @@
 
 <div class="w-full space-y-5 no-print text-on-surface animate-fade-in font-sans">
 	{#if ablage.ladefehler}
-		<!-- Die Leinwand zeigt hier NICHT den zentralen Stand, sondern Vorgabewerte. Bis
-		     zum Sweep am 06.09.2026 stand das nirgends — und die Auto-Speicherung schob
-		     diese Vorgabewerte 800 ms später an alle Arbeitsplätze. Jetzt ist sie aus,
-		     und der Bildschirm sagt beides. -->
+		<!-- Ohne den zentralen Stand zeigt die Leinwand Vorgabewerte, und die Auto-Speicherung
+		     ist aus: Sie schöbe diese Vorgabewerte sonst an alle Arbeitsplätze. Der Bildschirm
+		     sagt beides. -->
 		<div
 			class="rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container"
 			role="alert"

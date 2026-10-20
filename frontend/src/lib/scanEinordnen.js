@@ -1,30 +1,30 @@
 /**
- * Einordnung eines Scans OHNE NETZ — der Zwilling von internal/service/omnibox.go.
+ * Einordnung eines Scans ohne Netz: der Zwilling von internal/service/omnibox.go.
  *
  * Mit Netz entscheidet der Server, was ein Scan ist: Vorsilbe, sonst der Reihe nach Buch,
  * Schüler-, Lehrerausweis, Volltextsuche. Ohne Netz gibt es niemanden zu fragen, und die
- * Theke muss es selbst wissen — sonst laufen die folgenden Bücher auf die falsche Person,
- * und das faellt erst beim Nachbuchen auf (entschieden am 13.09.2026).
+ * Theke muss es selbst wissen; sonst laufen die folgenden Bücher auf die falsche Person,
+ * und das fällt erst beim Nachbuchen auf.
  *
  * Die Regeln, und warum sie so sind:
  *
- *  - `A-` / `S-` / `L-` sind Ausweise. Vergeben wird seit dem 16.09.2026 nur noch `A-`;
- *    gelesen werden alle drei, weil es Nummern von frueher gibt und Nummern nie recycelt
- *    werden. Dieselbe Liste wie im Server-Switch.
- *  - `B-` ist ein Buch, `LMF-` ebenfalls. Beide gelten AUCH OHNE geladene Barcode-Liste
- *    (Entscheidung vom 13.09.2026): Die Vorsilbe ist eindeutig, und eine fehlende Liste
- *    darf nicht dazu fuehren, dass ein klar erkennbares Buch verworfen wird.
- *  - `G-` ist ein Geraet. Geraete offline stehen ausdruecklich NICHT im Umfang
- *    (OFFEN.md 2.4) — sie haengen an einer Checkliste, die es ohne Netz nicht gibt.
- *    Deshalb eine eigene Art mit eigener Meldung statt eines stillen „unklar".
+ *  - `A-` / `S-` / `L-` sind Ausweise. Vergeben wird nur `A-`; gelesen werden alle drei,
+ *    weil es ältere Nummern gibt und Nummern nie recycelt werden. Dieselbe Liste wie im
+ *    Server-Switch.
+ *  - `B-` ist ein Buch, `LMF-` ebenfalls. Beide gelten auch ohne geladene Barcode-Liste:
+ *    Die Vorsilbe ist eindeutig, und eine fehlende Liste darf nicht dazu führen, dass ein
+ *    klar erkennbares Buch verworfen wird.
+ *  - `G-` ist ein Gerät. Geräte gehören nicht zum Betrieb ohne Netz, sie hängen an einer
+ *    Checkliste, die es ohne Netz nicht gibt. Deshalb eine eigene Art mit eigener Meldung
+ *    statt eines stillen „unklar".
  *  - Alles andere ist eine nackte Nummer, und die entscheidet die Barcode-Liste. Erst
- *    roh nachschlagen, dann ueber die Littera-Rueckrechnung: Littera druckt die
+ *    roh nachschlagen, dann über die Littera-Rückrechnung: Littera druckt die
  *    Mediennummer im Klartext und codiert im Strichcode eine EAN-13 (litteraEtikett.js).
  *    Steht sie drauf, ist es ein Buch; sonst „unklar".
  *
- * Warum „unklar" und nicht „dann eben Ausweis": Ein Schuelerausweis des Altbestands
- * liefert gemessen `B97601826457`, ein Buchetikett eine 13-stellige EAN. Wer hier raet,
- * schreibt die naechsten Buecher einem fremden Kind zu. Ein unklarer Scan sperrt deshalb
+ * Warum „unklar" und nicht „dann eben Ausweis": Ein Schülerausweis des Altbestands
+ * liefert gemessen `B97601826457`, ein Buchetikett eine 13-stellige EAN. Wer hier rät,
+ * schreibt die nächsten Bücher einem fremden Kind zu. Ein unklarer Scan sperrt deshalb
  * die Zuordnung, bis ein eindeutiger Ausweis kommt.
  */
 import { dekodiereLitteraEtikett } from './litteraEtikett.js';
@@ -84,10 +84,10 @@ export function ordneScanEin(roh, istBuch) {
 	if (BUCH_VORSILBEN.some((v) => scan.startsWith(v))) return { art: 'buch', nummer: scan };
 	if (scan.startsWith('G-')) return { art: 'geraet', nummer: scan };
 
-	// Eine EINGABE ist kein Scan: Wer einen Namen tippt, sucht eine Person, und die Suche
-	// braucht den Server — auf dem Theken-Rechner liegen keine Personendaten (Entscheidung
-	// vom 13.09.2026). Das verdient eine eigene Auskunft: „steht nicht in der Buchliste"
-	// waere ueber einen Namen schlicht falsch und half niemandem weiter.
+	// Eine Eingabe ist kein Scan: Wer einen Namen tippt, sucht eine Person, und die Suche
+	// braucht den Server, denn auf dem Theken-Rechner liegen keine Personendaten. Das
+	// verdient eine eigene Auskunft: „steht nicht in der Buchliste" wäre über einen Namen
+	// schlicht falsch und hülfe niemandem weiter.
 	//
 	// Erkannt am Fehlen von Ziffern oder an einem Leerzeichen — beides kommt aus keinem
 	// Strichcode. Eine Nummer wie B97601826457 bleibt damit „unklar", ein „Mueller" oder
@@ -103,16 +103,15 @@ export function ordneScanEin(roh, istBuch) {
 	const ausEtikett = dekodiereLitteraEtikett(scan);
 	if (ausEtikett !== null && istBuch(ausEtikett)) return { art: 'buch', nummer: ausEtikett };
 
-	// Zuletzt ein Aufdruck von FRUEHER: Bis zum 17.09.2026 druckte die Anwendung Code 39
-	// MIT Pruefzeichen, und das Lesegeraet gibt es als Teil der Nummer zurueck (aus
-	// „58968" wird „58968-"). Die Karten und Etiketten von damals sind im Umlauf und
-	// sollen weiter funktionieren; der Server macht online dasselbe
+	// Zuletzt ein älterer Aufdruck: Code 39 mit Prüfzeichen, das das Lesegerät als Teil der
+	// Nummer zurückgibt (aus „58968" wird „58968-"). Diese Karten und Etiketten sind im
+	// Umlauf und sollen weiter funktionieren; der Server macht online dasselbe
 	// (internal/service/omnibox.go).
 	//
-	// ZULETZT und nur mit Treffer in der Liste: Bei 43 moeglichen Zeichen sieht im Schnitt
-	// jeder 43. gueltige Code zufaellig so aus, als haenge ein Pruefzeichen dran. Erst
-	// hier unten, nachdem roh und Littera nichts ergeben haben, ist ein falscher Treffer
-	// nur dort moeglich, wo die gekuerzte Nummer existiert und die volle nicht.
+	// Zuletzt und nur mit Treffer in der Liste: Bei 43 möglichen Zeichen sieht im Schnitt
+	// jeder 43. gültige Code zufällig so aus, als hänge ein Prüfzeichen dran. Erst hier
+	// unten, nachdem roh und Littera nichts ergeben haben, ist ein falscher Treffer nur dort
+	// möglich, wo die gekürzte Nummer existiert und die volle nicht.
 	const ohneZeichen = ohnePruefzeichen(scan);
 	if (ohneZeichen !== null && istBuch(ohneZeichen)) return { art: 'buch', nummer: ohneZeichen };
 

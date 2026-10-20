@@ -1,7 +1,5 @@
 <!-- @component LeserSperreDialog — Ausleihe eines Schülers sperren oder freigeben.
-
-     Seit 07.09.2026 auf Dialog.svelte (Register 05.09.); Kopfzeile und Schließen-Knopf
-     stellt das Bauteil. -->
+     Kopfzeile und Schließen-Knopf stellt Dialog.svelte. -->
 <script>
 	import { apiClient } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
@@ -18,7 +16,7 @@
 	let reason = $state('');
 
 	// Aufheben, sobald eine Sperre am Leser besteht — von Hand oder die der Ehemaligen; die Tür
-	// nimmt beide weg (api/leser/leser_sperre.go, seit dem 24.09.2026). Dasselbe Prädikat wie der
+	// nimmt beide weg (api/leser/leser_sperre.go). Dasselbe Prädikat wie der
 	// Knopf, der dieses Fenster öffnet (LeserKontoStatus).
 	let gesperrt = $derived(ausleiheGesperrt(leser));
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem

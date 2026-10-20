@@ -7,10 +7,9 @@ import { coverKandidaten } from './utils/coverSrc.js';
 /**
  * Das geparste JSON eines erfüllten, erfolgreichen Ergebnisses — sonst `null`.
  *
- * Bewusst NICHT „sonst ein leeres Array" (Sweep „verschluckte Fehlantwort", 06.09.2026):
- * Ein leeres Array ist eine Aussage über den Bestand, und der Reiter schrieb sie hin —
- * „Ausleiher (0)" für einen Titel, der Ausleiher hat. `null` heißt „nicht geladen", und
- * das ist etwas anderes als „keine da".
+ * Nicht „sonst ein leeres Array": Ein leeres Array ist eine Aussage über den Bestand, und
+ * der Reiter schriebe sie hin („Ausleiher (0)" für einen Titel, der Ausleiher hat). `null`
+ * heißt „nicht geladen", und das ist etwas anderes als „keine da".
  *
  * @param {PromiseSettledResult<any>} settled
  * @returns {Promise<any[] | null>}
@@ -73,17 +72,11 @@ export function useBuchakte() {
 	/**
 	 * Lädt Kopf und alle vier Listen eines Titels.
 	 *
-	 * Rasterdurchgang 06.09.2026 (Fragen 5 und 11), Zwilling des Akten-Fundes von heute
-	 * (529def4d): Bis hierher stand `if (res.ok) book = await res.json();` ohne `else`,
-	 * und nichts wurde beim Wechsel zurückgesetzt. Scheiterte genau diese eine Anfrage
-	 * (500, oder 429 vom Rate-Limiter — es sind fünf parallele Anfragen je Titel), blieb
-	 * der Kopf des VORHER geöffneten Titels stehen, während die Reiter darunter schon zum
-	 * neuen gehörten. Das ist hier nicht nur Anzeige:
-	 *
-	 *   - „Gesamten Titel löschen" schickt `buch.id` — also den ALTEN Titel, samt allen
-	 *     Exemplaren, Ausleihen und offenen Forderungen. Die Rückfrage nannte dabei die
-	 *     Exemplarzahl des NEUEN („ALLE 12 zugehörigen Exemplare").
-	 *   - „Titel bearbeiten" öffnet den Editor auf dem alten Titel.
+	 * Beim Wechsel wird alles zurückgesetzt, und eine gescheiterte Anfrage (500, oder 429 vom
+	 * Rate-Limiter bei fünf parallelen Anfragen je Titel) lässt keinen alten Kopf stehen. Das
+	 * ist nicht nur Anzeige: Unter dem Kopf des vorigen Titels schickte „Gesamten Titel
+	 * löschen" dessen `buch.id`, samt allen Exemplaren, Ausleihen und offenen Forderungen,
+	 * und „Titel bearbeiten" öffnete den Editor auf dem falschen Titel.
 	 *
 	 * @param {string} id
 	 */

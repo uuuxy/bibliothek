@@ -55,8 +55,8 @@ export function useFehlbestand() {
 		fehlbestand = fehlbestand.map((e) =>
 			e.exemplar_id === exemplarId ? { ...e, gefunden_am: Date.now() } : e
 		);
-		// Der Fund beendet auch die Forderung, die das Buch abgerechnet hatte (seit
-		// 15.09.2026, dieselbe Regel wie an der Theke). Liegt der Bescheid dazu schon bei
+		// Der Fund beendet auch die Forderung, die das Buch abgerechnet hatte (dieselbe Regel
+		// wie an der Theke). Liegt der Bescheid dazu schon bei
 		// der Aufsicht, bleibt sie offen — dann sagt der Server, wer zu informieren ist.
 		const storniert = Number(r.data?.stornierte_forderungen) || 0;
 		snackbars.addToast(

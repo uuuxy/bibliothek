@@ -5,8 +5,8 @@
  * Littera druckt die Mediennummer als Klartext, codiert im Strichcode aber eine EAN-13:
  * [Mediennummer, rechts mit Nullen auf 8 Stellen][Bibliotheksnummer, 3 Stellen]
  * [Stellenzahl der Mediennummer][Prüfziffer]. Ohne Netz muss die Theke das Etikett selbst
- * zurückrechnen und die Nummer in der Barcode-Liste nachschlagen; die Liste führt nur Nummern
- * (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
+ * zurückrechnen und die Nummer in der Barcode-Liste nachschlagen; die Liste führt nur
+ * Nummern.
  *
  * Die Bibliotheksnummer wird wie am Server nicht geprüft. Beide Seiten lesen dieselben Prüffälle
  * (litteraEtikett.faelle.json); rechnen sie verschieden, wird der Go- oder der Vitest rot.

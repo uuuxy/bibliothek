@@ -7,7 +7,7 @@
  */
 export function schuelerdateiReiter(rechte) {
 	const liste = [
-		// „Aktive Leser": Der Reiter zeigt seit dem 16.09.2026 Schüler UND Kollegium.
+		// „Aktive Leser": Der Reiter zeigt Schüler und Kollegium.
 		{ id: 'active', label: 'Aktive Leser' },
 		// „Ehemalige", nicht „Abgänger": Abgänger sind die Abschlussklassen, die noch da sind
 		// (eigene Ansicht /abgaenger); hier stehen die, die laut LUSD schon weg sind.

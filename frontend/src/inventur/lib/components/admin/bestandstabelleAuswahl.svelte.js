@@ -1,15 +1,9 @@
 // bestandstabelleAuswahl.svelte.js — die Auswahl der Bestandstabelle für Massenaktionen.
 //
-// Eigene Datei seit dem Rasterdurchgang am 06.09.2026: Die Tabelle steht mit gut 240
-// Zeilen ohnehin über der 200-Zeilen-Regel, und der Fix des Durchgangs hätte sie weiter
-// wachsen lassen. Die Ratsche lockert man dafür nicht — hier liegt jetzt die Auswahl,
-// dort die Tabelle.
-//
-// Der Fund: Die Auswahl überlebte jeden Such- und Filterwechsel. „Alle auswählen" bei 312
-// Titeln, dann „Mathe" tippen — vier Zeilen sichtbar, keine angehakt, und die
-// Werkzeugleiste sagte weiter „Löschen (312)". Die Rückfrage nannte dieselbe Zahl,
-// gefallen wären die 312 unsichtbaren Titel; derselbe Weg führt über „Zum Klassensatz
-// hinzufügen". Deshalb hält `angleichen()` die Auswahl auf dem, was in der Liste steht.
+// `angleichen()` hält die Auswahl auf dem, was in der Liste steht: Überlebte sie einen Such-
+// oder Filterwechsel, sagte die Werkzeugleiste nach „Alle auswählen" und „Mathe" weiter
+// „Löschen (312)", und gelöscht oder einem Klassensatz zugefügt würden Titel, die niemand
+// mehr sieht.
 
 /** @typedef {{ id: string }} Zeile */
 

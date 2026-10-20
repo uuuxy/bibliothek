@@ -2,8 +2,8 @@
  *  neue zurück, nichts wird an Ort und Stelle verändert. LmfPlanReihenfolge ruft sie,
  *  die Tests belegen sie ohne Browser.
  *
- *  Die eine Regel, die den Planer vom Excel unterscheidet (06.09.2026, nach Google
- *  Forms und Slides: Neues kommt nie ans Ende, sondern dorthin, wo man gerade ist):
+ *  Die eine Regel, die den Planer vom Excel unterscheidet (wie in Google Forms und
+ *  Slides: Neues kommt nie ans Ende, sondern dorthin, wo man gerade ist):
  *  `einordnen` setzt eine Klasse hinter die letzte Klasse desselben Jahrgangs und
  *  Zweigs — 06F4 hinter 06F3 —, sonst hinter die letzte des Jahrgangs, sonst ans Ende.
  *  Niemand muss eine neue Klasse durch 60 Zeilen ziehen. */
@@ -117,10 +117,9 @@ export function klasseRaus(zeilen, i, k) {
  *  zunächst nichts verschiebt. Lösen: sie fließt wieder mit.
  *  @param {PlanZeile[]} zeilen @param {number} i @param {{ datum: string, stunde: number } | undefined} platz */
 export function festWechseln(zeilen, i, platz) {
-	// Ohne Platz wird NICHT festgelegt (Rasterdurchgang 06.09.2026): „fest ohne Datum"
-	// kannte nur das Frontend — der Server nimmt genau zwei Zustände (fließt, oder fester
-	// Platz mit Datum) und antwortet sonst mit 400 „Ein fester Termin braucht ein Datum". Das
-	// Fenster ohne Plätze ist echt: nach jedem Laden, bis die erste Vorschau da ist.
+	// Ohne Platz wird nicht festgelegt: Der Server kennt genau zwei Zustände (fließt, oder
+	// fester Platz mit Datum) und antwortet sonst mit 400 „Ein fester Termin braucht ein
+	// Datum". Das Fenster ohne Plätze ist echt: nach jedem Laden, bis die erste Vorschau da ist.
 	if (!zeilen[i]?.fest && !platz?.datum) return zeilen;
 	return zeilen.map((z, n) => {
 		if (n !== i) return z;
@@ -129,8 +128,8 @@ export function festWechseln(zeilen, i, platz) {
 	});
 }
 
-/** Klasse `alt` in Zeile i gegen `neu` tauschen — die Zelle überschreiben wie im Excel
- *  (06.09.2026). Steht `neu` schon in der Zeile oder `alt` nicht, bleibt alles.
+/** Klasse `alt` in Zeile i gegen `neu` tauschen, die Zelle überschreiben wie im Excel.
+ *  Steht `neu` schon in der Zeile oder `alt` nicht, bleibt alles.
  *  @param {PlanZeile[]} zeilen @param {number} i @param {string} alt @param {string} neu */
 export function klasseTauschen(zeilen, i, alt, neu) {
 	const z = zeilen[i];

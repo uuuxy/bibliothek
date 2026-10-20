@@ -1,8 +1,7 @@
 <!-- @component SchadenMeldenDialog — Verlust oder Schaden an einem entliehenen Buch melden.
 
-     Seit 07.09.2026 auf Dialog.svelte (Register 05.09.: elf Overlays bauten ihr Markup
-     selbst). Ebene „darueber": Der Dialog öffnet aus der Schülerakte heraus, die selbst
-     ein Overlay ist — auf der Grundebene läge er unsichtbar dahinter. -->
+     Ebene „darueber": Der Dialog öffnet aus der Schülerakte heraus, die selbst ein Overlay
+     ist; auf der Grundebene läge er unsichtbar dahinter. -->
 <script>
 	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
@@ -11,23 +10,21 @@
 	import { apiFetch } from './apiFetch.js';
 
 	// `book.ohneForderung` = der Entleiher ist ein Kollege. Gesetzt wird es beim Öffnen
-	// (useLeserakte: oeffneSchaden), damit die Entscheidung an EINER Stelle steht. Dann entsteht keine Forderung
-	// (entschieden am 16.09.2026): Der Bescheid ist ein Schreiben an Erziehungsberechtigte
-	// und braucht Klasse und Anschrift, die von einer Lehrkraft nirgends stehen; gehaftet
-	// wird gegenüber dem Dienstherrn und nur bei Vorsatz oder grober Fahrlässigkeit — das
-	// stellt die Schulleitung fest, nicht die Bücherei. Gebucht wird trotzdem, was den
-	// Bestand angeht. Entschieden wird es am Server (repository/schaden_melden.go); hier
-	// steht nur, was der Dialog zeigt und fragt.
+	// (useLeserakte: oeffneSchaden), damit die Entscheidung an einer Stelle steht. Dann
+	// entsteht keine Forderung: Der Bescheid ist ein Schreiben an Erziehungsberechtigte und
+	// braucht Klasse und Anschrift, die von einer Lehrkraft nirgends stehen; gehaftet wird
+	// gegenüber dem Dienstherrn und nur bei Vorsatz oder grober Fahrlässigkeit, und das stellt
+	// die Schulleitung fest, nicht die Bücherei. Gebucht wird trotzdem, was den Bestand
+	// angeht. Entschieden wird es am Server (repository/schaden_melden.go); hier steht nur,
+	// was der Dialog zeigt und fragt.
 	/** @type {{ ausleihe: any, onCancel: () => void, onSubmit: (grund: string, betrag: number, art: string) => void, isSubmitting?: boolean }} */
 	let { ausleihe, onCancel, onSubmit, isSubmitting } = $props();
 	const ohneForderung = $derived(!!ausleihe?.ohneForderung);
 
 	let grund = $state('Verloren');
-	// Startwert 0, nicht 15: Bis zum 17.09.2026 stand hier eine feste 15,00 € ohne jeden
-	// Bezug zum Buch — das Protokoll des Medienzentrums vom 16.09.2026 nennt genau das
-	// („fehlende Restwertberechnung z.Zt. Handeingabe"). Der Server rechnet den Vorschlag
-	// und sagt dazu, WIE er entstanden ist; bis seine Antwort da ist, steht hier lieber 0
-	// als eine Zahl, die gleich wegspringt.
+	// Startwert 0, kein fester Betrag: Der Server rechnet den Vorschlag am Buch und sagt dazu,
+	// wie er entstanden ist. Bis seine Antwort da ist, steht hier lieber 0 als eine Zahl, die
+	// gleich wegspringt.
 	let schadensbetrag = $state(0);
 	// Hat jemand den Betrag selbst eingetragen? Dann bleibt er stehen, auch wenn der Vorschlag
 	// erst danach eintrifft — sonst entstünde die Forderung über den Vorschlag statt den Betrag.

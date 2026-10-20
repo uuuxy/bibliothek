@@ -8,13 +8,9 @@
 	 * Admin-only "Gefahrenzone" zum Archivieren/Löschen eines Leser-Profils.
 	 * Wird ausschließlich am unteren Ende des Reiters "Stammdaten & Adresse" gerendert.
 	 *
-	 * Seit dem 16.09.2026 steht sie auch beim Kollegium. Vorher war sie dort ausgeblendet,
-	 * weil der ganze Löschweg gegen die Sicht `schueler` schrieb und bei einem Kollegen
-	 * „nicht gefunden" antwortete. Mit ihm fällt jetzt sein ZUGANG (entschieden am
-	 * 16.09.2026: „wenn ein kollege gelöscht wird dann wird alles gelöscht"). Das muss
-	 * hier stehen, bevor jemand
-	 * klickt: Nach dem Wiederherstellen ist der Zugang nicht von allein zurück, er wird
-	 * über die Schul-E-Mail in der Akte neu angelegt.
+	 * Sie steht auch beim Kollegium, und mit einem Kollegen fällt sein Zugang. Das muss hier
+	 * stehen, bevor jemand klickt: Nach dem Wiederherstellen ist der Zugang nicht von allein
+	 * zurück, er wird über die Schul-E-Mail in der Akte neu angelegt.
 	 *
 	 * Vom Zugang spricht sie nur, wenn es einen gibt: Praktikum und Fachbereich haben nie
 	 * einen (Migration 153), und eine Lehrkraft verliert ihn, wenn die Benutzerverwaltung das

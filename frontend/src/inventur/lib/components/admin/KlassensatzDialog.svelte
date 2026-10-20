@@ -52,7 +52,7 @@
 		buecher.liste.filter((/** @type {any} */ b) => gewaehlteKennungen.has(b.id))
 	);
 
-	// Der Speicherpfad ersetzt: UpdateClassBooks löscht die Zuweisungen aller Zielklassen und
+	// Der Speicherpfad ersetzt: aendereKlassensaetze löscht die Zuweisungen aller Zielklassen und
 	// schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Wer zu 05F1 noch 06A2
 	// dazunimmt, löscht deren Satz; die Warnung unten nennt die betroffenen Klassen.
 	const ueberschriebeneKlassen = $derived(

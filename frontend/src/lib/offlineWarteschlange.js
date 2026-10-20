@@ -27,16 +27,16 @@ async function getDB() {
 }
 
 /**
- * Ein Eintrag der Warteschlange (Format 2, seit dem 15.09.2026): der Schnappschuss vom Scan.
+ * Ein Eintrag der Warteschlange (Format 2): der Schnappschuss vom Scan.
  *
  * `id` ist der Idempotenz-Schlüssel, den der Server kennt (api/theke/eingabe.go); `art` die Absicht
  * beim Scan; `leser_id` die Person, die in diesem Moment geladen war; `gescannt_am` der
- * Scan-Zeitpunkt (ms). Format 1 (`{action_type, barcode_id, schueler_id, timestamp}`, bis
- * 15.09.2026, auch in alten Sicherungsdateien) wird beim Lesen übersetzt.
+ * Scan-Zeitpunkt (ms). Format 1 (`{action_type, barcode_id, schueler_id, timestamp}`, auch
+ * in alten Sicherungsdateien) wird beim Lesen übersetzt.
  *
- * Seit Migration 125 gibt es EIN Personenfeld. Das alte `schueler_id` trug schon dieselbe
+ * Seit Migration 125 gibt es ein Personenfeld. Das alte `schueler_id` trug schon dieselbe
  * Kennung wie `leser_id` und wird übersetzt; ein altes `lehrer_id` dagegen zeigte auf ein
- * KONTO und nicht auf einen Leser — es wird verworfen, statt die Buchung einer falschen
+ * Konto und nicht auf einen Leser. Es wird verworfen, statt die Buchung einer falschen
  * Person zuzuschreiben. Der Eintrag bleibt als Rückgabe bzw. als „Ausweis unbekannt"
  * stehen und meldet sich, statt still danebenzugreifen.
  *
@@ -86,14 +86,13 @@ export function normalisiereEintrag(roh) {
 	const barcode = roh.barcode ?? roh.barcode_id;
 	const art = roh.art ?? artAusActionType(roh.action_type);
 	if (!barcode || (art !== 'ausleihe' && art !== 'rueckgabe')) return null;
-	// Ein unlesbarer Zeitpunkt wird zu JETZT, nicht zu NaN. `Number('2026-09-16T10:00:00Z')`
-	// ist NaN, und aus NaN baut der Sync `new Date(NaN).toISOString()` — das WIRFT. Der Wurf
-	// kam aus dem Bauen der Portion, also ausserhalb jedes Fangnetzes: Die Runde brach ab,
-	// `gleichtAb` blieb auf „läuft", und danach lief kein Sync mehr, bis die Seite neu geladen
-	// wurde. Ein einziger Eintrag einer fremden oder von Hand gebauten Sicherungsdatei legte
-	// so die ganze Warteschlange still (Rasterdurchgang 16.09.2026).
+	// Ein unlesbarer Zeitpunkt wird zu jetzt, nicht zu NaN (`Number()` auf einem ISO-Text ist
+	// NaN): Aus NaN baut der Sync `new Date(NaN).toISOString()`, und das wirft beim Bauen der
+	// Portion, außerhalb jedes Fangnetzes. Die Runde bräche ab, `gleichtAb` bliebe auf
+	// „läuft", und bis zum Neuladen liefe kein Sync mehr; ein einziger Eintrag einer fremden
+	// oder von Hand gebauten Sicherungsdatei legte so die ganze Warteschlange still.
 	//
-	// Verworfen wird deshalb NICHT: Der Scan ist eine echte Buchung, und der Server begrenzt
+	// Verworfen wird deshalb nicht: Der Scan ist eine echte Buchung, und der Server begrenzt
 	// den Zeitpunkt ohnehin auf seine eigene Uhr. Lieber eine Buchung mit dem Zeitpunkt des
 	// Einspielens als eine verlorene.
 	const zeit = Number(roh.gescannt_am ?? roh.timestamp ?? Date.now());
@@ -130,8 +129,8 @@ export async function ladeWarteschlange() {
 			.filter((e) => e !== null)
 			.sort((a, b) => a.gescannt_am - b.gescannt_am);
 	} catch (err) {
-		// Weiterwerfen, nicht [] (Commit 5, 15.09.2026): Ein leeres Ergebnis hieße „nichts
-		// offen" — das Band zeigte 0, und niemand hätte gewusst, dass die Einträge unlesbar sind.
+		// Weiterwerfen, nicht []: Ein leeres Ergebnis hieße „nichts offen", das Band zeigte 0,
+		// und niemand wüsste, dass die Einträge unlesbar sind.
 		console.error('Offline-Warteschlange nicht lesbar:', err);
 		throw err;
 	}
@@ -148,9 +147,9 @@ export async function enqueueOfflineAction(eintrag) {
 		const db = await getDB();
 		await db.add(STORE_NAME, { ...eintrag, timestamp: eintrag.gescannt_am });
 	} catch (err) {
-		// Weiterwerfen (Commit 5): Bis zum 15.09.2026 wurde jeder IndexedDB-Fehler geschluckt —
-		// privates Fenster, gesperrte Website-Daten, voller Speicher — und die Theke meldete
-		// „gespeichert" mit Erfolgston. Der Scan war weg.
+		// Weiterwerfen: Mit einem geschluckten IndexedDB-Fehler (privates Fenster, gesperrte
+		// Website-Daten, voller Speicher) meldete die Theke „gespeichert" mit Erfolgston, und
+		// der Scan wäre weg.
 		console.error('Offline-Eintrag nicht gespeichert:', err);
 		throw err;
 	}

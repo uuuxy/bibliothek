@@ -1,36 +1,30 @@
 <script>
 	/**
 	 * @component Zugangsanfragen
-	 * Offene Zugangsanfragen aus der Selbstanmeldung (Migration 086), als Zeile ÜBER
-	 * der Benutzertabelle. Ohne sie lag ein Antrag als grauer Punkt „Inaktiv" zwischen
-	 * 160 Kollegiumszeilen — niemand schaltet frei, was niemand sieht.
+	 * Offene Zugangsanfragen aus der Selbstanmeldung (Migration 086), als Zeile über der
+	 * Benutzertabelle: Als grauer Punkt „Inaktiv" zwischen 160 Kollegiumszeilen sähe niemand
+	 * den Antrag, und niemand schaltet frei, was niemand sieht. Eigene Datei, weil
+	 * Konten.svelte an der Dateigrößen-Ratsche steht.
 	 *
-	 * Eigene Datei, weil Konten.svelte an der Dateigrößen-Ratsche steht.
+	 * Die Zeile warnt vor demselben Fehler aus zwei Quellen: Beide Male steht die Person schon
+	 * in der Leserdatei, und die Freischaltung würde einen zweiten Eintrag festschreiben
+	 * (Ausweis und Ausleihen am ersten, die Anmeldung am zweiten):
 	 *
-	 * Die Zeile warnt vor DEMSELBEN Fehler aus zwei Quellen — beide Male steht die Person
-	 * schon in der Leserdatei, und beide Male würde die Freischaltung einen zweiten
-	 * Eintrag festschreiben (Ausweis und Ausleihen am ersten, die Anmeldung am zweiten):
-	 *
-	 *  1. Littera-Treffer (16.09.2026): Eine aus Littera übernommene Lehrkraft hat nur eine
+	 *  1. Littera-Treffer: Eine aus Littera übernommene Lehrkraft hat nur eine
 	 *     Platzhalter-Adresse (internal/littera/schreiber_personen.go: …@littera.invalid).
-	 *     Der Server verbindet bewusst nicht über den Namen
+	 *     Der Server verbindet mit Absicht nicht über den Namen
 	 *     (auth/selbstanmeldung_littera_pg_test.go).
-	 *  2. Leserzeile OHNE Konto (16.09.2026, abends): Der Altbestand — ein Kollege, der vor
-	 *     der Schul-E-Mail-Pflicht von Hand eingetragen wurde. Er steht in der Leserdatei,
-	 *     hat aber kein Konto, also findet ihn die Selbstanmeldung nicht. In `konten` steht
-	 *     er ebenfalls nicht — die Warnung oben konnte ihn gar nicht sehen. Gesucht wird
-	 *     er deshalb dort, wo er steht: über die Kandidatensuche des Zusammenführens, von
-	 *     der Leserzeile des Antrags aus (die der Wächter trg_benutzer_hat_leserzeile als
-	 *     Kollegen anlegt — die Suche hält die Seite und liefert nur Kollegium).
+	 *  2. Leserzeile ohne Konto: ein Kollege, der vor der Schul-E-Mail-Pflicht von Hand
+	 *     eingetragen wurde. Ihn findet die Selbstanmeldung nicht, und in `konten` steht er
+	 *     auch nicht. Gesucht wird er deshalb dort, wo er steht: über die Kandidatensuche des
+	 *     Zusammenführens, von der Leserzeile des Antrags aus (die der Wächter
+	 *     trg_benutzer_hat_leserzeile als Kollegen anlegt; die Suche liefert nur Kollegium).
 	 *
-	 * ZUGEORDNET statt gelöscht (16.09.2026, abends): Bis hierher riet die Zeile, die
-	 * Anfrage zu löschen und die Adresse am vorhandenen Eintrag nachzutragen. Der Rat war
-	 * erzwungen — benutzer_email_unique gibt die Adresse nicht frei, solange das
-	 * Anfrage-Konto sie hält — und er hinterließ die Leserzeile des Wächters als Waise:
-	 * ohne Konto, ohne Ausweis, mit dem aus der Adresse geratenen Namen. Also genau den
-	 * Doppeleintrag, vor dem die Zeile warnt. Der Knopf macht daraus einen Schritt: Das
-	 * Konto zieht auf den vorhandenen Eintrag um, die Zeile des Wächters geht darin auf
-	 * (repository/zugangsanfrage_zuordnen_pg_test.go).
+	 * Zuordnen statt löschen: Das Konto zieht auf den vorhandenen Eintrag um, die Zeile des
+	 * Wächters geht darin auf (repository/zugangsanfrage_zuordnen_pg_test.go). Die Anfrage zu
+	 * löschen und die Adresse am vorhandenen Eintrag nachzutragen, hinterließe die Leserzeile
+	 * des Wächters als Waise, ohne Konto und ohne Ausweis: genau den Doppeleintrag, vor dem
+	 * die Zeile warnt.
 	 *
 	 * @prop {any[]} konten - die geladene Benutzerliste (/api/benutzer)
 	 * @prop {() => any} onZugeordnet - Liste neu laden, nachdem zwei Einträge einer wurden

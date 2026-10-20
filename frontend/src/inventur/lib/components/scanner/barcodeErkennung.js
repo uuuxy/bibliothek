@@ -1,19 +1,17 @@
 import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 
 /**
- * Die Strichcode-Arten, die an dieser Schule vorkommen — EINE Liste für beide Kameras und
- * für das Gate, das sie gegen den Druck hält (e2e/barcode-lesbar.spec.js).
+ * Die Strichcode-Arten, die an dieser Schule vorkommen: eine Liste für beide Kameras und für
+ * das Gate, das sie gegen den Druck hält (e2e/barcode-lesbar.spec.js).
  *
  * `code_128` ist, was die Anwendung selbst druckt (Ausweise, Buchetiketten, Mahnbriefe).
- * `code_39` stand bis zum 17.09.2026 auf unseren eigenen Etiketten und bleibt lesbar —
- * gedruckte Karten aus dieser Zeit sollen weiter funktionieren. Die EAN/UPC-Arten sind
- * die Littera-Altetiketten und die aufgedruckten Verlags-Barcodes. `qr_code` steht drauf,
- * weil Ausweis-Designer und Etikettendruck den QR als Alternative anbieten — die Theke
- * konnte ihn immer lesen, und das soll so bleiben.
+ * `code_39` steht auf älteren eigenen Etiketten und Ausweisen, die weiter funktionieren
+ * sollen. Die EAN/UPC-Arten sind die Littera-Altetiketten und die aufgedruckten
+ * Verlags-Barcodes. `qr_code` steht drauf, weil Ausweis-Designer und Etikettendruck den QR
+ * als Alternative anbieten.
  *
- * Die Liste kannte bis zum 17.09.2026 `code_39` NICHT — also genau die Art, die wir selbst
- * druckten. Die Kamera im Inventur-Bereich konnte einen Schülerausweis deshalb nie lesen,
- * und weil ein nicht erkannter Code keine Meldung erzeugt, sah es aus wie „nichts passiert".
+ * Fehlt eine Art, meldet die Kamera nichts: Es sieht dann aus, als läge kein Code vor der
+ * Linse.
  */
 export const GELESENE_FORMATE = [
 	'code_128',
@@ -105,11 +103,10 @@ export async function erzeugeBarcodeErkenner() {
 						const ergebnis = await scanner.scanFileV2(file, false);
 						return [{ rawValue: ergebnis.decodedText }];
 					} catch (err) {
-						// „Kein Code in diesem Bild" ist der Normalfall, zehnmal in der Sekunde —
-						// alles andere ist ein Grund, warum die Erkennung NICHT arbeitet, und der
-						// gehoert nach oben. Bis zum 17.09.2026 fiel beides in dasselbe leere
-						// catch: Ein Browser, der `File` nicht kennt oder kein Bild liefert, sah
-						// danach genauso aus wie eine Kamera, die nur nichts vor der Linse hat.
+						// „Kein Code in diesem Bild" ist der Normalfall, zehnmal in der Sekunde;
+						// alles andere ist ein Grund, warum die Erkennung nicht arbeitet, und gehört
+						// nach oben. Ein Browser, der `File` nicht kennt oder kein Bild liefert, sähe
+						// sonst aus wie eine Kamera, die nur nichts vor der Linse hat.
 						if (istNichtsGefunden(err)) return [];
 						throw err instanceof Error ? err : new Error(String(err));
 					}

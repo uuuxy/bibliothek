@@ -1,17 +1,10 @@
 // Zahlenfelder der Einstellungen.
 //
-// Ein geleertes <input type="number"> liefert über bind:value null oder '' — und die
-// Frage, was das bedeuten soll, hat dieses Formular zweimal falsch beantwortet:
-//
-//  * `Number(null) || 0` machte daraus still eine 0. Wer die 90 der Lesehistorie-
-//    Befristung löschen wollte, um sie neu zu tippen, und zwischendurch speicherte,
-//    hatte die Befristung abgeschaltet, ohne es zu merken (Prüfung 22.08.2026, A4).
-//  * Danach hieß leer „nicht mitschicken" — richtig, solange EIN Knopf alles auf
-//    einmal speicherte, aber es war die dritte Leer-Regel des Formulars.
-//
-// Seit dem Speichern je Kategorie (23.08.2026) gibt es nur noch eine Regel: Was im
-// Feld steht, wird gespeichert. Ein leeres Zahlenfeld ist damit kein stiller
-// Sonderfall mehr, sondern schlicht unvollständig — und wird gemeldet, statt geraten.
+// Ein geleertes <input type="number"> liefert über bind:value null oder ''. Es gilt eine
+// Regel: Was im Feld steht, wird gespeichert, und ein leeres Zahlenfeld ist unvollständig
+// und wird gemeldet, statt geraten. Mit `Number(null) || 0` würde daraus still eine 0: Wer
+// die 90 der Lesehistorie-Befristung löscht, um sie neu zu tippen, und zwischendurch
+// speichert, hätte die Befristung abgeschaltet, ohne es zu merken.
 
 /**
  * Liest ein Zahlenfeld aus. `null` heißt LEER oder unbrauchbar.
@@ -20,10 +13,10 @@
  */
 export function zahlOderLeer(v) {
 	// Nur die zwei Typen, die ein <input type="number"> über bind:value liefern kann: eine
-	// Zahl, oder eine Zeichenkette (leer bei geleertem Feld). Bewusst KEIN String(v) über
-	// alles: Ein Objekt würde dort still zu '[object Object]' und über NaN zu null — das
-	// richtige Ergebnis aus dem falschen Grund. Der Typ-Zweig sagt stattdessen aus, was hier
-	// überhaupt ankommen darf (SonarQube javascript:S6551, 22.08.2026).
+	// Zahl, oder eine Zeichenkette (leer bei geleertem Feld). Kein String(v) über alles: Ein
+	// Objekt würde dort still zu '[object Object]' und über NaN zu null, das richtige
+	// Ergebnis aus dem falschen Grund. Der Typ-Zweig sagt stattdessen aus, was hier
+	// überhaupt ankommen darf (SonarQube javascript:S6551).
 	let n;
 	if (typeof v === 'number') {
 		n = v;

@@ -12,7 +12,7 @@
 	import { statistikAbruf } from './components/statistik/statistikAbruf.svelte.js';
 	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
-	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau (Absprache vom 06.09.2026: „wieder grau?").
+	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau.
 	const FLAECHE = 'bg-surface rounded-xl border border-outline-variant';
 
 	// State Runes (Svelte 5). Abruf, Reihenfolge-Schutz und Fehlerzustand: statistikAbruf.

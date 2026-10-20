@@ -34,7 +34,7 @@ export function mahnungenJeKind(medien) {
 }
 
 /**
- * Der Satz dazu: „noch nicht gemahnt", „2× gemahnt, zuletzt 26.09.2026". Ohne Datum steht
+ * Der Satz dazu: „noch nicht gemahnt", „2× gemahnt, zuletzt TT.MM.JJJJ". Ohne Datum steht
  * nur die Zahl: Eine aus Littera übernommene Ausleihe bringt die Zahl mit, den Tag nicht.
  * @param {number | null | undefined} anzahl
  * @param {string | null | undefined} [zuletzt] Kalendertag der Schule (JJJJ-MM-TT)

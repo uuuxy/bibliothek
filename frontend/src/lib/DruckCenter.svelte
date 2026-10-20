@@ -38,9 +38,8 @@
 			// führt erst zum Ziel, dann zum Reiter darin.
 			{ id: 'nachdruck', label: 'Fehlende Etiketten', anzahl: uiStore.offeneEtiketten },
 			{ id: 'ids', label: 'Schülerausweise' },
-			// Eigener Reiter (entschieden am 24.08.2026): Als Block über dem Designer
-			// wirkte der Einstieg „hingeklatscht" — er ist eine eigene Aufgabe, kein Teil
-			// des Ausweis-Designs.
+			// Eigener Reiter: Der Druck nach Klassen ist eine eigene Aufgabe, kein Teil des
+			// Ausweis-Designs.
 			{ id: 'klassen', label: 'Klassenweise drucken' }
 		]}
 	/>

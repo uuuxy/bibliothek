@@ -12,15 +12,10 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
 
-	// „Alle anmahnen" lief frueher gegen ein window.confirm: alles oder nichts, immer an
-	// die hinterlegten Klassenleitungen. Der Dialog steht jetzt als Tuersteher davor —
-	// und auf OBERSTER Ebene, nicht in der Aktionszeile: Ein Overlay hat in einem
-	// Flex-Container mit print:hidden nichts verloren.
-	//
-	// Die Knopfzeile selbst sass bis zum 04.09.2026 im `aktionen`-Slot von Seitenrahmen und
-	// damit UEBER den Reitern — als einzige Seite von sechzehn, mit der Folge, dass die
-	// Suchpille hier 84 px tiefer begann als ueberall sonst. Sie steht jetzt unter der
-	// Pille, siehe MahnwesenSuchleiste. Den Slot gibt es seitdem nicht mehr.
+	// Vor „Alle anmahnen" steht ein Dialog statt eines window.confirm, das nur alles oder
+	// nichts kennt. Er liegt auf oberster Ebene, nicht in der Aktionszeile: Ein Overlay hat in
+	// einem Flex-Container mit print:hidden nichts verloren. Die Knopfzeile steht unter der
+	// Suchpille (MahnwesenSuchleiste), damit die Pille beginnt wie auf jeder anderen Seite.
 	let mahnlaufOffen = $state(false);
 	// Der Bescheid-Dialog trägt die ID des einen markierten Schülers; leer = zu.
 	let bescheidFuer = $state('');

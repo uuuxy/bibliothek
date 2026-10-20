@@ -1,18 +1,14 @@
 // fehlerausgangScanner.js — findet verschluckte Fehlantworten am AST.
 //
-// Die Bugklasse (Sweep 06.09.2026, docs/sweeps.md): `if (res.ok) { … }` ohne `else`,
-// und der Zweig endet nicht mit return/throw. Scheitert der Abruf, läuft der Code
-// weiter, als wäre nichts gewesen — der Zustand bleibt auf dem Stand VOR dem Abruf.
+// Die Bugklasse (docs/sweeps.md): `if (res.ok) { … }` ohne `else`, und der Zweig endet
+// nicht mit return/throw. Scheitert der Abruf, läuft der Code weiter, als wäre nichts
+// gewesen, und der Zustand bleibt auf dem Stand vor dem Abruf: eine Trefferliste der
+// Theke, die unter dem neuen Suchtext die Schüler des alten zeigt, oder „Der Papierkorb
+// ist leer" für einen Papierkorb, der nur nicht geladen werden konnte.
 //
-// Was daraus wurde, ist keine Theorie: die Trefferliste der Theke, die unter dem neuen
-// Suchtext die Schüler des alten zeigte; der Ausweis-Designer, dessen Auto-Speicherung
-// nach einem fehlgeschlagenen Laden das Vorgabe-Design an alle Arbeitsplätze schrieb;
-// „Der Papierkorb ist leer" für einen Papierkorb, der nur nicht geladen werden konnte.
-//
-// Warum am AST und nicht per Grep: Der erste Grep fand 65 Stellen, davon rund 28
-// Kandidaten — der AST fand 26, und zwar die richtigen. Die harmlose Frühe-Rückkehr-Form
-// (`if (res.ok) { …; return; }` mit Fehlerbehandlung danach) fällt hier korrekt heraus,
-// weil sie sicher endet (sweeps.md, Regel 4: „Grep ist Hypothese, AST ist Befund").
+// Am AST und nicht per Grep: Die harmlose Frühe-Rückkehr-Form (`if (res.ok) { …; return; }`
+// mit Fehlerbehandlung danach) fällt hier heraus, weil sie sicher endet (sweeps.md,
+// Regel 4: „Grep ist Hypothese, AST ist Befund").
 
 import { readFileSync } from 'node:fs';
 import { parse as svelteParse } from 'svelte/compiler';
@@ -53,14 +49,9 @@ function istOkZugriff(node) {
 }
 
 /**
- * Fragt die Bedingung nach `.ok` — auch als ein Glied einer UND-Kette?
- *
- * Nachtrag 12.09.2026 (Register, Bestands-Durchgang 10.09.): Der Detektor verlangte, dass
- * die Bedingung GENAU `res.ok` ist. Die Wettlauf-Form der Suchfelder — `if (res.ok && nr
- * === ladeNr)` — rutschte damit durch, und das ist ausgerechnet die Stelle, an der der
- * Sweep angefangen hat: die Trefferliste der Theke, die unter dem neuen Suchtext die
- * Schüler des alten zeigte. Dieselbe Lehre wie bei der e2e-Wächter-Regex (Regel 6): Eine
- * Ratsche muss über alle FORMEN prüfen, nicht über das Beispiel, das damals vorkam.
+ * Fragt die Bedingung nach `.ok`, auch als ein Glied einer UND-Kette? Die Wettlauf-Form der
+ * Suchfelder (`if (res.ok && nr === ladeNr)`) gehört zur selben Bugklasse, und eine Ratsche
+ * prüft über alle Formen, nicht über das eine Beispiel (sweeps.md, Regel 6).
  */
 function fragtNachOk(node) {
 	if (!node) return false;

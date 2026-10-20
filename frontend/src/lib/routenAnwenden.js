@@ -1,15 +1,10 @@
 /**
  * @file routenAnwenden.js
- * Adresse → Bildschirm und zurück. Die beiden Richtungen derselben Zuordnung.
+ * Adresse → Bildschirm und zurück, die beiden Richtungen derselben Zuordnung. Das ist keine
+ * Darstellung, sondern Zuordnung: Es liest und setzt Stores und zeichnet nichts.
  *
- * Herausgelöst aus Router.svelte am 17.09.2026, aus demselben Grund wie die Tabelle
- * selbst (routenTabelle.js): Router.svelte ist eine geduldete Datei an ihrer Obergrenze,
- * und eine geduldete Datei darf nicht weiter wachsen. Was hier steht, ist ohnehin keine
- * Darstellung, sondern Zuordnung — es liest und setzt Stores, es zeichnet nichts.
- *
- * Beide Funktionen sind die EINZIGE Quelle für Initial-Match UND popstate. Vorher lag
- * die book_detail-Logik in beiden Zweigen doppelt, und neue Routen wurden leicht in
- * einer der Kopien vergessen.
+ * Beide Funktionen sind die einzige Quelle für Initial-Match und popstate, damit eine neue
+ * Route nicht in einer von zwei Kopien fehlt.
  */
 import { uiStore } from './stores/uiStore.svelte.js';
 import { appState } from '../inventur/lib/store.svelte.js';
@@ -21,12 +16,12 @@ import { pfadJeBildschirm } from './routenTabelle.js';
  */
 export function applyPathToState(path) {
 	if (path === '/lmf-plan') {
-		// Alte Adresse (Menüpunkt am 05.09.2026): jetzt System → Schuljahreswechsel.
+		// Ältere Adresse, damit Lesezeichen weiter führen: System → Schuljahreswechsel.
 		uiStore.activeTab = 'schuljahr';
 		return;
 	}
 	if (path === '/lmf-aktionen') {
-		// Alte Adresse (Menüpunkt bis 24.08.2026): jetzt Einstellungs-Kategorie.
+		// Ältere Adresse, damit Lesezeichen weiter führen: die Kategorie der Einstellungen.
 		uiStore.activeTab = 'settings';
 		uiStore.requestedSettingsTab = 'lmf';
 		return;

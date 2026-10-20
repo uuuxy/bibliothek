@@ -1,18 +1,13 @@
 import { escapeIstBelegt } from './components/ui/escapeSchliesst.js';
 
 /**
- * Escape bringt von überall zurück an die Theke — aber nur, wenn die Taste nicht
- * schon jemandem gehört.
+ * Escape bringt von überall zurück an die Theke, aber nur, wenn die Taste nicht schon
+ * jemandem gehört. In den Berichten etwa schließt Escape ein aufgeklapptes Auswahlfenster
+ * für Monat, Jahr oder Datum; ginge der Tastendruck weiter, schlösse sich die ganze
+ * Ansicht, und das Programm spränge grundlos in die Ausleihe.
  *
- * Vorher galt sie bedingungslos, und das machte ausgerechnet die Berichte unbenutzbar:
- * Die Ansicht besteht aus Monats-, Jahres- und Datumsfeldern, und Escape ist dort die
- * normale Art, ein aufgeklapptes Auswahlfenster wieder zuzumachen. Der Tastendruck kam
- * beim Fenster an, blubberte weiter — und statt des Auswahlfensters schloss sich die
- * ganze Ansicht. Für den Benutzer sprang das Programm grundlos in die Ausleihe.
- *
- * Zwei Ausnahmen, beide am Ereignis selbst ablesbar und damit auch für Bauteile
- * gültig, die es noch gar nicht gibt (bis 05.09.2026 im Router selbst; ausgelagert,
- * weil die Datei nicht weiter wachsen darf und die Regel rein ist):
+ * Zwei Ausnahmen, beide am Ereignis selbst ablesbar und damit auch für Bauteile gültig,
+ * die es noch gar nicht gibt:
  * @param {KeyboardEvent} e
  * @returns {boolean}
  */
@@ -20,9 +15,9 @@ export function escapeGehoertJemandAnderem(e) {
 	// 1. Jemand hat die Taste bereits verarbeitet (Dialog, Menü, Overlay).
 	if (e.defaultPrevented) return true;
 	// 1b. Ein Overlay ist offen, das Escape schließt (escapeSchliesst). Sein Lauscher
-	//     kommt NACH dem Router dran — das Ereignis kann es also noch nicht verraten,
-	//     der Stapel schon. Ohne diese Frage sprang der Bildschirm zur Theke und der
-	//     Dialog ging zu, mit einem Tastendruck (06.09.2026).
+	//     kommt nach dem Router dran; das Ereignis kann es also noch nicht verraten, der
+	//     Stapel schon. Ohne diese Frage spränge der Bildschirm zur Theke, und der Dialog
+	//     ginge zu, mit einem Tastendruck.
 	if (escapeIstBelegt()) return true;
 	// 2. Der Fokus steht in einem Eingabefeld. Dort heisst Escape "Auswahl schließen"
 	//    oder "Eingabe verwerfen" — nie "Ansicht verlassen".

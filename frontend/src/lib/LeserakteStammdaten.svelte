@@ -34,19 +34,11 @@
 	}
 </script>
 
-<!-- EINE Ansicht für jeden Leser — dieselbe Regel wie im Formular (Absprache vom 16.09.2026:
-     „bitte nicht verkomplizieren").
+<!-- Eine Ansicht für jeden Leser, dieselbe Regel wie im Formular: Ein Feld, das man füllen,
+     aber nicht lesen kann, ist schlechter als eines, das leer dasteht.
 
-     Bis zum 16.09.2026 stand hier eine Weiche: Ein Kollege bekam eine eigene Ansicht ohne
-     Geburtsdatum, LUSD-Kennung und Elternadresse, mit der Begründung, „Keine Angabe"
-     behaupte, sie FEHLTEN. Seit das Formular jedem alle Felder anbietet, ist das nicht
-     mehr haltbar: Ein Kollege konnte ein Geburtsdatum eintragen, das seine Akte danach
-     nicht zeigte — ein Feld, das man füllen, aber nicht lesen kann, ist schlechter als
-     eines, das leer dasteht.
-
-     Die Ausweisnummer steht bewusst NICHT hier: Sie steht schon auf der Karte links
-     (LeserakteKopf.svelte), samt Hinweis, wenn noch keine vergeben ist. Zweimal
-     dieselbe Zahl ist keine Gründlichkeit. -->
+     Die Ausweisnummer steht nicht hier: Sie steht schon auf der Karte links
+     (LeserakteKopf.svelte), samt Hinweis, wenn noch keine vergeben ist. -->
 <div class="w-full pt-2 animate-fade-in space-y-8">
 	<div class="flex justify-between items-center border-b border-outline-variant pb-4">
 		<h3 class="text-xl font-bold text-on-surface flex items-center gap-2">
@@ -68,10 +60,8 @@
 
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 		<div class="space-y-6">
-			<!-- Die Art stand bis zum 16.09.2026 NUR in der Akte eines Kollegen. In der
-			     Schülerakte fehlte sie ganz — „hier steht nirgends ob jemand ein Schüler,
-			     LiV, oder lehrer ist" . Seit die Leserdatei alle in einer Tabelle
-			     führt, ist sie bei jedem die erste Auskunft, nicht nur bei den anderen. -->
+			<!-- Die Art ist bei jedem die erste Auskunft: Die Leserdatei führt Schüler, LiV und
+			     Lehrkräfte in einer Tabelle. -->
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Art</p>
 				<p class="text-on-surface font-semibold">{leserArtText(leser.art)}</p>
@@ -125,13 +115,10 @@
 		</div>
 	{/if}
 
-	<!-- Zusammenführen: Admin-Recht, unumkehrbar — deshalb hier unten bei den Stammdaten,
-	     nicht zwischen den Dokument-Knöpfen. Dialog und Suche bringt der Abschnitt mit.
-
-	     Seit dem 16.09.2026 auch beim Kollegium: Ein Kollege, der von Hand eingetragen wurde
-	     und sich später selbst anmeldet, steht zweimal da — und war bis dahin von NIEMANDEM
-	     zu reparieren, weil das Zusammenführen gegen die Sicht `schueler` schrieb. Das Recht
-	     bleibt, wie es war (merge_students: Admin und Leitung ab Werk). -->
+	<!-- Zusammenführen: Admin-Recht, unumkehrbar, deshalb hier unten bei den Stammdaten,
+	     nicht zwischen den Dokument-Knöpfen. Dialog und Suche bringt der Abschnitt mit. Auch
+	     beim Kollegium: Ein Kollege, der von Hand eingetragen wurde und sich später selbst
+	     anmeldet, steht sonst zweimal da (Recht merge_students, ab Werk Admin und Leitung). -->
 	{#if darfZusammenfuehren}
 		<SchuelerZusammenfuehren {leser} {onMerged} />
 	{/if}

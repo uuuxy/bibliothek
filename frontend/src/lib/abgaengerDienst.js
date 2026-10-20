@@ -22,9 +22,9 @@ export async function ladeAbgaenger() {
  *  Papier.
  *
  *  Ohne Suche gilt der Klassenfilter allein (`ids` fehlt). Bei aktiver Suche gehen die
- *  Kennungen der SICHTBAREN Zeilen mit; der Server schneidet sie mit seiner eigenen
- *  Abgänger-Abfrage, die Suche wird dort nicht ein zweites Mal formuliert. Bis zum
- *  21.09.2026 ging nur die Klasse mit — wer „Müller" suchte und druckte, bekam alle.
+ *  Kennungen der sichtbaren Zeilen mit, sonst bekäme, wer „Müller" sucht und druckt, alle;
+ *  der Server schneidet sie mit seiner eigenen Abgänger-Abfrage, die Suche wird dort nicht
+ *  ein zweites Mal formuliert.
  *
  *  Eine Suche ohne Treffer ist ein Fehler und keine leere Liste: `ids=` hieße für einen
  *  nachlässigen Empfänger „keine Einengung", also alle Kontoauszüge. Der Server weist es

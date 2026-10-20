@@ -164,8 +164,8 @@ export function useLeserakte() {
 		}
 	}
 
-	// Der Dialog bekommt die Daten der Ausleihe UND die Auskunft, ob eine Forderung
-	// entsteht: Bei einem Kollegen entsteht keine (entschieden am 16.09.2026, Begründung in
+	// Der Dialog bekommt die Daten der Ausleihe und die Auskunft, ob eine Forderung
+	// entsteht: Bei einem Kollegen entsteht keine (Begründung in
 	// repository/schaden_melden.go). Der Server entscheidet das selbst; hier steht es, damit
 	// der Dialog nicht nach einem Betrag fragt, den niemand fordern wird.
 	function oeffneSchaden(book) {

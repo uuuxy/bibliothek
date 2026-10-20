@@ -17,8 +17,8 @@
 	let neuesDatum = $state('');
 	/** @type {boolean} */
 	let isExtending = $state(false);
-	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): die Klassen, in denen Schüler
-	// sind. Ein Tippfehler legte hier keine Klasse an, verlängerte aber still nichts.
+	// Auswählen statt tippen, aus den Klassen, in denen Schüler sind: Ein Tippfehler
+	// verlängerte sonst still nichts.
 	const klassenListe = erzeugeKlassenVorschlaege();
 	const klassen = $derived(klassenListe.liste);
 	onMount(klassenListe.lade);

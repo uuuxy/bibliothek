@@ -26,7 +26,7 @@
 
 	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Ausdruck.
 	let gewaehlteKlasse = $state('');
-	// Suche über Name und Klasse (04.09.2026) — greift zusammen mit dem Klassenfilter und
+	// Suche über Name und Klasse. Sie greift zusammen mit dem Klassenfilter und
 	// gilt genauso für den Ausdruck: Was auf dem Bildschirm steht, steht auf dem Papier.
 	let suche = $state('');
 	let classes = $derived(

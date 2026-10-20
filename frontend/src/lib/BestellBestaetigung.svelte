@@ -21,10 +21,8 @@
 	// Welche Größe der Lieferant geöffnet hat. Reine Notiz für die Historie der Schule —
 	// gebraucht wird sie dort nicht, weggeworfen wäre sie aber schade.
 	let geoeffneteGroesse = $state('');
-	// Das Bogenraster für die KLEINEN Etiketten. Der Lieferant druckt auf sein eigenes
-	// Material, und davon gibt es verschiedene Rastergrößen — bis 06.08.2026 kam der
-	// Bogen immer im Zweckform-Raster, und wer andere Bögen im Drucker hatte, bekam
-	// einen Ausdruck, der danebenliegt.
+	// Das Bogenraster für die kleinen Etiketten: Der Lieferant druckt auf sein eigenes
+	// Material, und davon gibt es verschiedene Rastergrößen.
 	//
 	// Die Auswahl kommt aus der Antwort des Servers (etiketten_formate), nicht aus einer
 	// Liste hier: Zwei Listen über dieselben Etikettenbögen laufen auseinander, sobald

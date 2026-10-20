@@ -44,8 +44,8 @@
 				}}
 			/>
 		{:else if formular.id}
-			<!-- Vor dem ersten Speichern steht unten schon „Erst speichern, dann Bild
-			     hochladen" — zwei Texte übereinander (Absprache vom 25.08.2026: am Live-Bildschirm). -->
+			<!-- Erst nach dem ersten Speichern: Davor steht unten schon „Erst speichern, dann
+			     Bild hochladen", und zwei Texte übereinander wären einer zu viel. -->
 			<div class="w-full h-full flex items-center justify-center text-on-surface-variant">
 				Kein Bild
 			</div>

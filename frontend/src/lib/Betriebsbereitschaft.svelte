@@ -47,11 +47,10 @@
 	onMount(laden);
 </script>
 
-<!-- Seit 16.08.2026 ein Tab der Einstellungen (Betreiber-Entscheidung: schlankeres
-     Menue), kein eigener Bildschirm mehr — deshalb KEIN Seitenrahmen; die Huelle stellt
-     Einstellungen. Der Einleitungssatz erklaert, was diese Ansicht NICHT ist — keine
-     Fehlerliste. Sie zeigt, was eingerichtet, aber nicht in Betrieb ist; solche
-     Luecken melden sich nie von selbst. -->
+<!-- Ein Reiter der Einstellungen, kein eigener Bildschirm, deshalb kein Seitenrahmen; die
+     Hülle stellt Einstellungen. Der Einleitungssatz sagt, was diese Ansicht nicht ist, keine
+     Fehlerliste: Sie zeigt, was eingerichtet, aber nicht in Betrieb ist, und solche Lücken
+     melden sich nie von selbst. -->
 <div class="space-y-6">
 	<div class="flex items-start justify-between gap-4">
 		<p class="max-w-2xl text-sm text-on-surface-variant">
