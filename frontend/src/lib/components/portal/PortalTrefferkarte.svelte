@@ -16,11 +16,10 @@
 	 * @prop {() => void} onmeldungabbrechen
 	 */
 	import { tick } from 'svelte';
-	import { BookOpen } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import KlassensatzFormular from './KlassensatzFormular.svelte';
 	import ProblemFormular from './ProblemFormular.svelte';
-	import { coverSrc } from '../../utils/coverSrc.js';
+	import BuchCover from '../ui/BuchCover.svelte';
 	import { bestandSatz, zulaufSatz } from '../../utils/format.js';
 
 	/** @type {{ treffer: any, formular: any, meldung: import('./problemMeldung.svelte.js').MeldeFormular, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void, onmelden: () => void, onmeldungsenden: () => Promise<boolean>, onmeldungabbrechen: () => void }} */
@@ -51,8 +50,6 @@
 		meldeKnopf?.focus();
 	}
 
-	const bild = $derived(coverSrc(treffer.cover_url, treffer.isbn));
-
 	// Reservieren bucht nichts — das Abzeichen „60 von 60 verfügbar" sinkt erst, wenn die
 	// Bibliothek den Satz ausleiht. Die Vormerkungen werden hier abgezogen: eine Zahl, die
 	// sagt, ob es jetzt reicht, statt „40 reserviert für 8a" daneben zum Selbstrechnen.
@@ -78,15 +75,13 @@
 	<!-- Mit Umbruch: Reicht die Breite nicht für Titel und Aktionen nebeneinander, rücken die
 	     Aktionen unter den Text, statt den Titel auf null zu drücken. -->
 	<div class="flex flex-wrap gap-4 p-4">
-		<div
-			class="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
-		>
-			{#if bild}
-				<img src={bild} alt="Cover" class="h-full w-full object-cover" loading="lazy" />
-			{:else}
-				<BookOpen class="h-7 w-7 text-outline" aria-hidden="true" />
-			{/if}
-		</div>
+		<BuchCover
+			coverUrl={treffer.cover_url}
+			isbn={treffer.isbn}
+			titel={treffer.titel || treffer.title}
+			groesse="gross"
+			nurGespeichert
+		/>
 
 		<div class="min-w-0 flex-1 basis-48">
 			<h3 class="truncate text-base leading-tight font-medium text-on-surface">

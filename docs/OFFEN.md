@@ -22,7 +22,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
 - [x] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 dort, wo die Oberfläche noch davon abweicht. (5.86)
-- [ ] Kleinigkeiten an der Oberfläche. (5.87)
+- [x] Kleinigkeiten an der Oberfläche. (5.87)
 - [x] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
 - [x] Aufräumen im Code. (5.89)
 
@@ -125,15 +125,6 @@ Bild. Offen ist die Breite der Suchleisten.
   Min: 360dp, max: 720dp". Nicht entschieden; das Gate `e2e/feldbreite.spec.js` lässt sie aus.
 - **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen), nicht nach
   Material 3.
-
-### 5.87 Kleinigkeiten an der Oberfläche
-
-Entschieden am 21.10.2026: Alle Teile werden gebaut.
-
-- **Neun Stellen bauen ihr Cover selbst** statt über `ui/BuchCover` (Liste in
-  `frontend/src/lib/frontend-hygiene-cover.test.js`). `BuchCover` kennt vier Höhen von 28 bis
-  80 px; die Monitor-Folien, die Kachel des Katalogs und die Buchakte zeigen größere Cover mit
-  eigenem Zuschnitt. Umgestellt sähen sie anders aus, oder `BuchCover` braucht weitere Maße.
 
 ### 7.2 Frisches Littera-Backup
 

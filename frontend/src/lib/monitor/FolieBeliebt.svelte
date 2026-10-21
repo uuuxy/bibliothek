@@ -1,6 +1,6 @@
 <script>
 	import { Flame } from '@lucide/svelte';
-	import { coverSrc } from '../utils/coverSrc.js';
+	import BuchCover from '../components/ui/BuchCover.svelte';
 
 	/** @type {{ titel: import('./monitorTakt.svelte.js').MonitorTitel[] }} */
 	let { titel } = $props();
@@ -15,19 +15,13 @@
 			{#each titel as book, i (i)}
 				<li class="flex items-center gap-4 bg-surface-container rounded-2xl p-3 shadow-md">
 					<span class="text-2xl font-black w-8 text-center text-on-surface-variant">#{i + 1}</span>
-					{#if coverSrc(book.cover_url, book.isbn)}
-						<img
-							src={coverSrc(book.cover_url, book.isbn)}
-							alt="Cover"
-							class="w-12 h-16 object-cover rounded-xl shadow"
-						/>
-					{:else}
-						<div class="w-12 h-16 rounded-xl bg-surface-variant flex items-center justify-center">
-							<span class="text-lg font-extrabold text-on-surface-variant"
-								>{book.titel.charAt(0)}</span
-							>
-						</div>
-					{/if}
+					<BuchCover
+						coverUrl={book.cover_url}
+						isbn={book.isbn}
+						titel={book.titel}
+						groesse="liste"
+						nurGespeichert
+					/>
 					<div class="flex-1 min-w-0">
 						<p class="font-bold truncate">{book.titel}</p>
 						{#if book.autor}

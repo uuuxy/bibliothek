@@ -1,5 +1,5 @@
 <script>
-	import { coverSrc } from './utils/coverSrc.js';
+	import BuchCover from './components/ui/BuchCover.svelte';
 	import { istUeberfaellig } from './utils/ueberfaellig.js';
 
 	/**
@@ -56,19 +56,12 @@
 					{#each leser.entliehene_buecher as book, _i (_i)}
 						<tr>
 							<td class="py-3 px-2">
-								{#if coverSrc(book.cover_url, book.isbn)}
-									<img
-										src={coverSrc(book.cover_url, book.isbn)}
-										alt="Cover"
-										class="w-8 h-12 object-cover rounded shadow-sm"
-									/>
-								{:else}
-									<div
-										class="w-8 h-12 bg-surface-container rounded flex items-center justify-center text-xs text-on-surface-variant"
-									>
-										📖
-									</div>
-								{/if}
+								<BuchCover
+									coverUrl={book.cover_url}
+									isbn={book.isbn}
+									titel={book.titel}
+									nurGespeichert
+								/>
 							</td>
 							<td class="py-3 px-2">
 								<div class="font-bold">{book.titel}</div>

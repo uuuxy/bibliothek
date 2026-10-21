@@ -87,11 +87,12 @@ test('Monitor: Folien wechseln alle 15 Sekunden von selbst, leere werden übersp
 	await page.goto('/monitor');
 	const folie = page.getByTestId('monitor-folie');
 	await expect(folie).toHaveText('Buch des Monats');
-	await expect(page.getByText('Stand Monatsbuch')).toBeVisible();
+	// Ohne Cover nennt auch der Platzhalter den Titel; geprüft wird die Überschrift der Folie.
+	await expect(page.getByRole('heading', { name: 'Stand Monatsbuch' })).toBeVisible();
 
 	await page.clock.fastForward('00:15');
 	await expect(folie).toHaveText('Neu eingetroffen');
-	await expect(page.getByText('Stand Neuzugang')).toBeVisible();
+	await expect(page.getByText('Stand Neuzugang').last()).toBeVisible();
 
 	// „Beliebt" ist leer (Ferien) — der Takt überspringt sie und fängt vorne an.
 	await page.clock.fastForward('00:15');

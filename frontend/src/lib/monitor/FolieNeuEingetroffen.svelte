@@ -1,6 +1,6 @@
 <script>
 	import { Sparkles } from '@lucide/svelte';
-	import { coverSrc } from '../utils/coverSrc.js';
+	import BuchCover from '../components/ui/BuchCover.svelte';
 
 	/** @type {{ titel: import('./monitorTakt.svelte.js').MonitorTitel[], coverIndex: number }} */
 	let { titel, coverIndex } = $props();
@@ -15,32 +15,23 @@
 	{#if titel.length > 0}
 		<div class="flex gap-4 items-end justify-center flex-wrap">
 			{#each titel as book, i (i)}
+				<!-- 60 % Deckkraft: Ohne Cover steht der Titel auf dem Platzhalter, und abgeblendet
+				     braucht er noch 4,5:1 (WCAG 1.4.3, Gate barrierefreiheit-axe). -->
 				<div
 					class="flex flex-col items-center gap-2 transition-all duration-500"
 					class:scale-110={i === coverIndex}
-					class:opacity-50={i !== coverIndex}
+					class:opacity-60={i !== coverIndex}
 				>
-					{#if coverSrc(book.cover_url, book.isbn)}
-						<img
-							src={coverSrc(book.cover_url, book.isbn)}
-							alt="Cover"
-							class="rounded-xl shadow-lg object-cover transition-all duration-500
-                           {i === coverIndex ? 'w-32 h-44' : 'w-20 h-28'}"
+					<div class="transition-all duration-500 {i === coverIndex ? 'w-32' : 'w-20'}">
+						<BuchCover
+							coverUrl={book.cover_url}
+							isbn={book.isbn}
+							titel={book.titel}
+							groesse="kachel"
+							nurGespeichert
+							klasse="shadow-lg"
 						/>
-					{:else}
-						<div
-							class="rounded-xl bg-surface-variant flex items-center justify-center transition-all duration-500
-                              {i === coverIndex ? 'w-32 h-44' : 'w-20 h-28'}"
-						>
-							<span
-								class="{i === coverIndex
-									? 'text-2xl'
-									: 'text-base'} text-on-surface-variant font-extrabold"
-							>
-								{book.titel.charAt(0)}
-							</span>
-						</div>
-					{/if}
+					</div>
 					{#if i === coverIndex}
 						<div class="text-center max-w-32">
 							<p class="text-sm font-bold leading-tight text-on-surface truncate">{book.titel}</p>

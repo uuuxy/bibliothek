@@ -1,6 +1,6 @@
 <script>
 	import { Star } from '@lucide/svelte';
-	import { coverSrc } from '../utils/coverSrc.js';
+	import BuchCover from '../components/ui/BuchCover.svelte';
 
 	/** @type {{ titel: import('./monitorTakt.svelte.js').MonitorTitel | null }} */
 	let { titel } = $props();
@@ -11,19 +11,16 @@
 		><Star class="h-4 w-4" aria-hidden="true" /> Buch des Monats</span
 	>
 	{#if titel}
-		{#if coverSrc(titel.cover_url, titel.isbn)}
-			<img
-				src={coverSrc(titel.cover_url, titel.isbn)}
-				alt="Cover"
-				class="w-48 h-64 object-cover rounded-2xl shadow-2xl ring-4 ring-primary/30"
+		<div class="w-48">
+			<BuchCover
+				coverUrl={titel.cover_url}
+				isbn={titel.isbn}
+				titel={titel.titel}
+				groesse="kachel"
+				nurGespeichert
+				klasse="shadow-2xl ring-4 ring-primary/30"
 			/>
-		{:else}
-			<div
-				class="w-48 h-64 rounded-2xl bg-surface-variant flex items-center justify-center shadow-2xl"
-			>
-				<span class="text-6xl font-extrabold text-on-surface-variant">{titel.titel.charAt(0)}</span>
-			</div>
-		{/if}
+		</div>
 		<div>
 			<h2 class="text-3xl font-extrabold leading-tight">{titel.titel}</h2>
 			{#if titel.autor}

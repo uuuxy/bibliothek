@@ -8,33 +8,21 @@ import {
 	ohneKommentare
 } from './hygiene-quellen.js';
 
-// Buchcover kommen aus components/ui/BuchCover.svelte — dieselbe Invariante wie bei
-// Suchfeldern, Reitern und Symbolen.
-//
-// Anlass (04.09.2026): Es kam die Frage, warum der Bestellbedarf keine Cover zeigt. Beim
-// Nachsehen fanden sich FÜNF Größen im Haus (w-7, w-8, w-10, w-12, w-16) und VIER
-// Kopien derselben Ausweich-Logik — BuchKarte, KlassenBuchKachel, BestandstabelleZeile und
-// IsbnLookupDialog liefen jede für sich durch dieselbe Kandidatenliste, mit eigener
-// Fehlerbehandlung und eigenem Platzhalter. Genau die Ausgangslage der Suchfelder,
-// die in zehn Fassungen mit sieben Maßen endeten.
+// Buchcover kommen aus components/ui/BuchCover.svelte: ein Zuschnitt, eine Ausweich-Logik
+// über den eigenen Proxy, ein Platzhalter. Ein eigenes Cover erkennt die Ratsche an den
+// Helfern aus utils/coverSrc.js und an einem <img>, dessen Quelle ein Cover nennt.
 //
 // Warum eine Komponente und kein Snippet: Ein Cover trägt Zustand JE VORKOMMEN (Index
 // in der Kandidatenliste, „alle Quellen gescheitert"). Snippets sind Markup-Vorlagen
 // ohne eigenen Zustand.
-//
-// Der Bestand ist bewusst NICHT in einem Rutsch umgestellt: Es sind siebzehn Dateien,
-// darunter täglich benutzte Bildschirme, und ein Massen-Refactoring an einem Tag hat
-// in diesem Projekt schon zweimal eine Regression erzeugt. Sie stehen hier eingefroren
-// und werden bei ihrem nächsten fachlichen Anfassen nachgezogen — so wie es
-// Bestellbedarf am 04.09. als erster Verwender vorgemacht hat.
-const EIGENES_COVER = /coverKandidaten|coverSrc\(/;
+const EIGENES_COVER = /coverKandidaten|coverSrc\(|<img\b[^>]*\bsrc=\{[^}]*cover/i;
 
+// Zwei Stellen mit eigenem Aufbau um das Bild: Die Maske „Buch bearbeiten" legt den Hinweis
+// zum Hochladen darüber, die Auswahlkarte des Klassensatz-Dialogs die Markierung der Wahl.
+// Beide schneiden schon 2:3 und ziehen nach, wenn ihr Aufbau ohnehin geändert wird.
 const BESTAND = [
-	'src/lib/AusleihQuittung.svelte',
-	'src/lib/components/portal/PortalTrefferkarte.svelte',
-	'src/lib/monitor/FolieBeliebt.svelte',
-	'src/lib/monitor/FolieBuchDesMonats.svelte',
-	'src/lib/monitor/FolieNeuEingetroffen.svelte'
+	'src/inventur/lib/components/admin/BuchCoverUpload.svelte',
+	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte'
 ];
 
 // Die beiden Bauteile selbst greifen zu Recht auf die Helfer zu: BuchCover zeichnet das
