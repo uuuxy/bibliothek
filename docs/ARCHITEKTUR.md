@@ -858,6 +858,14 @@ frontend/src
   Fehler über die Snackbar (`ui/dialogAnfrage.svelte.js`). Eine späte Antwort trifft nur das,
   wofür sie abgeschickt wurde, nicht den inzwischen geöffneten Leser oder die nächste Zeile.
   Gemessen: `frontend-hygiene-abbrechen.test.js`, `LeserSperreDialog.test.js`.
+- **Enter speichert eine Maske ohne `<form>` über `use:enterSpeichert`** (`scanErkennung.js`):
+  aus jedem einzeiligen Feld, wie ein Formular des Browsers (HTML, „Implicit submission"). Ein
+  Feld, das Enter selbst nutzt, ruft `preventDefault` (ISBN-Abfrage, `ui/ChipFeld`), und das
+  Enter am Ende eines Scans speichert nie. Ein Lauscher am Container, der auf die Tasten der
+  Felder darin wartet, hängt mit `on` aus `svelte/events` und nicht mit `addEventListener`:
+  Svelte führt die `onkeydown` der Felder an der Wurzel der Seite aus, ein `addEventListener`
+  am Container liefe davor und sähe ihr `preventDefault` nicht. Gemessen:
+  `scanErkennung.test.js`, `BuchFormular.enter.svelte.test.js`.
 - **Den Fehlerzustand eines Felds setzt `ungueltig` an `ui/Feld`:** Rahmen, Beschriftung und
   Hinweis in `error`, rechts im Feld das Fehlersymbol, vor Knöpfen im Feld (Material 3, Text
   fields: „It's strongly recommended to show an error icon when the text field is in the error

@@ -7,6 +7,7 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
+	import { enterSpeichert } from '../../../../lib/scanErkennung.js';
 	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
 
 	/**
@@ -58,7 +59,13 @@
 	}
 </script>
 
-<div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
+<!-- Enter speichert wie „Speichern", außer im ISBN-Feld, im Feld der Schlagworte und am Ende
+     eines Scans (enterSpeichert). -->
+<div
+	class="flex flex-col w-full my-4"
+	transition:fade={{ duration: 200 }}
+	use:enterSpeichert={speichern}
+>
 	<!-- Der Kopf ist das einzige stehende Band der Maske: Schließen, Überschrift und die eine
 	     Aktion, die die ganze Seite betrifft. Alles Weitere steht in der rechten Spalte, damit
 	     die Höhe den Feldern bleibt. „Speichern" steht am rechten Rand (Material 3, Dialogs:

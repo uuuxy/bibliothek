@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import {
+	enterSpeichert,
 	erzeugeScanErkennung,
 	scanSchutz,
 	SCAN_HOECHSTABSTAND_MS,
@@ -109,15 +110,15 @@ describe('scanErkennung: Scanner oder Mensch', () => {
 	});
 });
 
-describe('scanSchutz: das Enter eines Scans gilt nicht', () => {
-	/** @param {HTMLElement} ziel @param {string} key @param {number} zeit */
-	function druecke(ziel, key, zeit) {
-		const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-		Object.defineProperty(e, 'timeStamp', { value: zeit });
-		ziel.dispatchEvent(e);
-		return e;
-	}
+/** @param {Element} ziel @param {string} key @param {number} zeit */
+function druecke(ziel, key, zeit) {
+	const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+	Object.defineProperty(e, 'timeStamp', { value: zeit });
+	ziel.dispatchEvent(e);
+	return e;
+}
 
+describe('scanSchutz: das Enter eines Scans gilt nicht', () => {
 	it('hält das Enter an, bevor Feld und Formular es bekommen, und ruft beiScan', () => {
 		const form = document.createElement('form');
 		const feld = document.createElement('input');
@@ -164,5 +165,75 @@ describe('scanSchutz: das Enter eines Scans gilt nicht', () => {
 
 		aktion.destroy();
 		form.remove();
+	});
+});
+
+// „Buch bearbeiten" hat kein <form>: Ohne diese Aktion speicherte dort nur der Klick
+// (docs/OFFEN.md 5.87).
+describe('enterSpeichert: Enter in einem einzeiligen Feld speichert die Maske', () => {
+	/** @param {string} html @param {HTMLElement} [huelle] */
+	function maske(html, huelle = document.body) {
+		const node = document.createElement('div');
+		node.innerHTML = html;
+		huelle.append(node);
+		const speichern = vi.fn();
+		const aktion = enterSpeichert(node, speichern);
+		/** @param {string} wahl */
+		const feld = (wahl) => /** @type {HTMLElement} */ (node.querySelector(wahl));
+		return { node, speichern, feld, aktion };
+	}
+	afterEach(() => document.body.replaceChildren());
+
+	it('aus Text-, Zahl- und Datumsfeld; nach destroy nicht mehr', () => {
+		const { speichern, feld, aktion } = maske(
+			'<input id="t"><input id="z" type="number"><input id="d" type="date">'
+		);
+		const enter = druecke(feld('#t'), 'Enter', 1000);
+		druecke(feld('#z'), 'Enter', 2000);
+		druecke(feld('#d'), 'Enter', 3000);
+		expect(speichern).toHaveBeenCalledTimes(3);
+		expect(enter.defaultPrevented).toBe(true);
+
+		aktion.destroy();
+		druecke(feld('#t'), 'Enter', 4000);
+		expect(speichern).toHaveBeenCalledTimes(3);
+	});
+
+	it('das Enter am Ende eines Scans speichert nicht, ein getipptes danach schon', () => {
+		const { speichern, feld } = maske('<input id="t">');
+		[...'B-00123'].forEach((key, i) => druecke(feld('#t'), key, 1000 + i * 5));
+		druecke(feld('#t'), 'Enter', 1040);
+		expect(speichern).not.toHaveBeenCalled();
+
+		druecke(feld('#t'), 'Enter', 5000);
+		expect(speichern).toHaveBeenCalledTimes(1);
+	});
+
+	it('nimmt ein Feld Enter selbst, bleibt es dabei', () => {
+		const { speichern, feld } = maske('<input id="t">');
+		feld('#t').addEventListener('keydown', (e) => e.preventDefault());
+		druecke(feld('#t'), 'Enter', 1000);
+		expect(speichern).not.toHaveBeenCalled();
+	});
+
+	it('mehrzeiliges Feld, Kästchen und Knopf speichern nicht', () => {
+		const { speichern, feld } = maske(
+			'<textarea></textarea><input type="checkbox"><button type="button">Wahl</button>'
+		);
+		for (const wahl of ['textarea', 'input', 'button']) druecke(feld(wahl), 'Enter', 1000);
+		expect(speichern).not.toHaveBeenCalled();
+	});
+
+	it('ein Dialog über der Maske behält Enter; liegt die Maske selbst im Dialog, speichert sie', () => {
+		const ueber = maske('<div role="dialog"><input></div>');
+		druecke(ueber.feld('input'), 'Enter', 1000);
+		expect(ueber.speichern).not.toHaveBeenCalled();
+
+		const dialog = document.createElement('div');
+		dialog.setAttribute('role', 'dialog');
+		document.body.append(dialog);
+		const darin = maske('<input>', dialog);
+		druecke(darin.feld('input'), 'Enter', 1000);
+		expect(darin.speichern).toHaveBeenCalledTimes(1);
 	});
 });

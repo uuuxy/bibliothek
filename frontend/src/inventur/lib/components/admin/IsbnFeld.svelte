@@ -47,11 +47,13 @@
 	}
 
 	/** Die Eingabetaste beendet einen Scan: Sie fragt wie das Verlassen des Feldes. Die ISBN
-	 * ist danach markiert, der nächste Scan ersetzt sie.
+	 * ist danach markiert, der nächste Scan ersetzt sie. Auch im leeren Feld gehört Enter der
+	 * Abfrage und speichert die Maske nicht (enterSpeichert).
 	 * @param {KeyboardEvent} ereignis */
 	function beiTaste(ereignis) {
-		if (ereignis.key !== 'Enter' || !formular.isbn) return;
+		if (ereignis.key !== 'Enter') return;
 		ereignis.preventDefault();
+		if (!formular.isbn) return;
 		mitEingabetasteGefragt = formular.isbn;
 		eingabe?.select();
 		return abfrage.nachschlagen(false);

@@ -3,6 +3,8 @@
 // dort als Fehlversuch; nach fünf Scans wäre das Konto an diesem Rechner 15 Minuten gesperrt
 // (auth/anmelden.go, anmeldeBremse). Erkannt wird der Scan an den Abständen der Tasten.
 
+import { on } from 'svelte/events';
+
 /** Ab so vielen Zeichen in Folge gilt eine schnelle Eingabe als Scan. */
 export const SCAN_MINDESTZEICHEN = 6;
 
@@ -108,5 +110,54 @@ export function scanSchutz(node, beiScan) {
 		destroy() {
 			node.removeEventListener('keydown', beiTaste, true);
 		}
+	};
+}
+
+// Die einzeiligen Felder, aus denen Enter ein Formular abschickt (HTML Standard, 4.10.22.2
+// „Implicit submission"). Mehrzeilige Felder, Kästchen und Knöpfe nutzen Enter selbst.
+const EINZEILIG = new Set([
+	'text',
+	'search',
+	'tel',
+	'url',
+	'email',
+	'password',
+	'date',
+	'month',
+	'week',
+	'time',
+	'datetime-local',
+	'number'
+]);
+
+/**
+ * `use:enterSpeichert={speichern}` an einer Maske ohne <form>: Enter in einem einzeiligen Feld
+ * speichert, wie ein Formular des Browsers es abschickte. Nimmt ein Feld Enter selbst
+ * (preventDefault, etwa die ISBN-Abfrage oder ui/ChipFeld), bleibt es dabei, ebenso in einem
+ * Dialog über der Maske. Das Enter am Ende eines Scans speichert nie.
+ *
+ * `on` statt addEventListener: Svelte hängt die onkeydown der Felder an die Wurzel der Seite.
+ * Mit `on` laufen sie vor diesem Lauscher, und ihr preventDefault ist hier schon zu sehen.
+ * @param {HTMLElement} node
+ * @param {() => void} speichern
+ */
+export function enterSpeichert(node, speichern) {
+	const erkennung = erzeugeScanErkennung();
+	const loese = on(node, 'keydown', (e) => {
+		const scan = erkennung.taste(e);
+		const ziel = e.target;
+		if (e.key !== 'Enter' || scan || e.defaultPrevented) return;
+		if (!(ziel instanceof HTMLInputElement) || !EINZEILIG.has(ziel.type)) return;
+		const dialog = ziel.closest('[role="dialog"]');
+		if (dialog && node.contains(dialog)) return;
+		e.preventDefault();
+		speichern();
+	});
+	return {
+		/** @param {() => void} neu */
+		update(neu) {
+			speichern = neu;
+		},
+		destroy: loese
 	};
 }
