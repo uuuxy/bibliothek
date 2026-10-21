@@ -1282,6 +1282,11 @@ Server es zurück wie `BucheAmLeser` am Netz. Was erst im Besuch ausgeliehen wur
 zweiter Scan nicht um (`bereits_ausgeliehen`); dasselbe gilt, wenn das Nachbuchen den
 verwaisten Schlüssel einer Buchung übernimmt, die schon steht.
 
+**Ein 502, 503 oder 504 ist kein Fehler des Scans.** Startet das Server-Programm neu, antwortet
+der Proxy davor mit 502, und das Band sagt „Scannen geht weiter". Die Theke legt den Scan dann
+ab wie bei einem Netzausfall (`nichtErreicht` in `omniboxBuchung.svelte.js`); ein 500 kommt vom
+Server selbst und wird gezeigt, nicht abgelegt.
+
 **Die neun Urteile.** Endgültig sind `ausgeliehen`, `umgebucht`, `bereits_ausgeliehen`,
 `zurueckgegeben`, `nur_reaktiviert`, `nicht_gebucht`, `veraltet`, `bereits_gebucht` — in
 allen acht Fällen hat der Server den Fall abschließend behandelt. Das neunte,

@@ -1,14 +1,16 @@
-// Die Buchung eines Scans über POST /api/action: der Schnappschuss, vorher die Auflösung eines
-// ohne Netz gemerkten Ausweises, der Versand und die Auswertung der Antwort. Der Versand an
-// /api/action steht nur hier (frontend-hygiene-action-endpunkt.test.js). Geladen wird die Datei
-// nur vom Omnibox-Store (frontend-hygiene-omnibox-teile.test.js); er reicht Zustand, Merker und
-// Rückmeldung als Funktionen herein.
+// Die Buchung eines Scans über POST /api/action: Schnappschuss, vorher die Auflösung eines ohne
+// Netz gemerkten Ausweises, Versand und Auswertung der Antwort. Der Versand an /api/action steht
+// nur hier (frontend-hygiene-action-endpunkt.test.js); geladen wird die Datei nur vom Omnibox-Store
+// (frontend-hygiene-omnibox-teile.test.js), der Zustand, Merker und Rückmeldung hereinreicht.
 
 import { apiClient } from '../apiFetch.js';
 import { spieleFehlerton } from '../audio.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { ordneScanEin } from '../scanEinordnen.js';
 import { leserFuerVersand } from '../offlineWarteschlange.js';
+
+// 502 bis 504: Der Server hat nicht gearbeitet (Neustart, Absturz, Sitzung nicht lesbar).
+const nichtErreicht = (/** @type {Response} */ res) => res.status >= 502 && res.status <= 504;
 
 /**
  * Ein Scan und was der Aufrufer dazu vorgibt.
@@ -50,9 +52,8 @@ export function erzeugeOmniboxBuchung({
 	zeigeFehlerBanner,
 	clearFehlerBanner
 }) {
-	// Zählt, wie oft die Theke geleert wurde (thekeLeeren.js). Die Antwort auf einen Scan von
-	// vorher lädt keinen Leser, öffnet keine Rückfrage und merkt keinen Ausweis mehr: Sonst
-	// arbeitete der nächste Bediener mit dem Konto des vorigen (docs/OFFEN.md 5.74).
+	// Zählt, wie oft die Theke geleert wurde (thekeLeeren.js): Eine Antwort von vorher lädt keinen
+	// Leser, öffnet keine Rückfrage und merkt keinen Ausweis mehr (docs/OFFEN.md 5.74).
 	let stand = 0;
 	function verwirfLaufendeAntworten() {
 		stand += 1;
@@ -65,11 +66,10 @@ export function erzeugeOmniboxBuchung({
 	 * Löst einen ohne Netz gemerkten Ausweis auf, bevor das nächste Buch hinausgeht: Ohne
 	 * Leser-Kennung läse der Server den Scan als Rückgabe.
 	 *
-	 * Entschieden wird an der Wirkung eines Ausweisscans, der nichts bucht, nicht an
-	 * `navigator.onLine`, das bei einem Ausfall des Servers weiter „online" meldet. Lädt er die
-	 * Person, geht das Buch normal hinaus. Scheitert der Versand, bleibt der Merker, und das Buch
-	 * geht mit `ausweis_barcode` in die Warteschlange. Antwortet der Server ohne Person, ist
-	 * unklar, wem das Buch gehört: Es wird nicht gebucht, und der Merker fällt.
+	 * Entschieden wird an der Wirkung eines Ausweisscans, der nichts bucht, nicht an `navigator.onLine`.
+	 * Lädt er die Person, geht das Buch normal hinaus. Scheitert der Versand (auch 502 bis 504),
+	 * bleibt der Merker, und das Buch geht mit `ausweis_barcode` in die Warteschlange. Antwortet der
+	 * Server ohne Person, ist unklar, wem das Buch gehört: Es wird nicht gebucht, der Merker fällt.
 	 *
 	 * @param {string} q der rohe Scan
 	 * @param {(() => void) | null | undefined} reloadProfileCb
@@ -90,6 +90,7 @@ export function erzeugeOmniboxBuchung({
 			query: gemerkt,
 			idempotency_key: crypto.randomUUID()
 		});
+		if (nichtErreicht(res)) throw new Error('Server antwortet nicht');
 
 		try {
 			const rumpf = await leseRumpf(res);
@@ -155,9 +156,8 @@ export function erzeugeOmniboxBuchung({
 			}
 			if (ueberholt()) return legeAb(new Error('Theke geleert'));
 			if (!aufgeloest) return false;
-			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker
-			// nicht mehr. Trüge der Eintrag beides, entschiede beim Nachbuchen die Reihenfolge der
-			// Felder, wem das Buch gehört.
+			// Die Auflösung hat die Person geladen: Sie gehört in den Schnappschuss, der Merker nicht
+			// mehr; trüge er beides, entschiede beim Nachbuchen die Reihenfolge der Felder.
 			if (eintrag.ausweis_barcode && leseLeser()?.id) {
 				const ohneMerker = { ...eintrag };
 				delete ohneMerker.ausweis_barcode;
@@ -165,11 +165,10 @@ export function erzeugeOmniboxBuchung({
 			}
 		}
 
-		// Scheitert der Versand, hat der Server nichts gesehen: Der Schnappschuss geht in die
-		// Warteschlange. Kam eine Antwort an, wird ihr Fehler gezeigt und nicht eingereiht; nach
-		// Ablauf seines Idempotenz-Caches (24 h) buchte der Server sonst ein zweites Mal. Rot
-		// nur im Fehlerfall: Sonst überschriebe es das Grün des Erfolgs und das Orange der
-		// Fremdrückgabe, und niemand sähe mehr auf die Farbe.
+		// Scheitert der Versand oder arbeitet der Server nicht (nichtErreicht), geht der Schnappschuss
+		// in die Warteschlange. Eine Antwort des Servers zeigt ihren Fehler und reiht nicht ein: Nach
+		// Ablauf des Idempotenz-Caches (24 h) buchte er sonst zweimal. Rot nur im Fehlerfall, sonst
+		// überschriebe es das Grün des Erfolgs und das Orange der Fremdrückgabe.
 		let res;
 		try {
 			res = await apiClient.post('/api/action', {
@@ -179,6 +178,7 @@ export function erzeugeOmniboxBuchung({
 				override_block: overrideBlock,
 				idempotency_key: eintrag.id
 			});
+			if (nichtErreicht(res)) throw new Error('Server antwortet nicht');
 		} catch (e) {
 			return legeAb(e);
 		}

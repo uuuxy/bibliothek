@@ -55,6 +55,14 @@ function antwort(daten) {
 	return /** @type {any} */ ({ ok: true, status: 200, json: async () => daten });
 }
 
+/**
+ * Eine Fehlantwort ohne Rumpf, wie ein Proxy sie gibt, dessen Backend fehlt.
+ * @param {number} status
+ */
+function proxyFehler(status) {
+	return /** @type {any} */ ({ ok: false, status, headers: new Headers(), text: async () => '' });
+}
+
 async function leere() {
 	for (const item of await ladeWarteschlange()) await dequeueOfflineAction(item.id);
 }
@@ -380,6 +388,57 @@ describe('Omnibox offline', () => {
 			expect(q[0].ausweis_barcode).toBe('S-10001');
 			expect(q[0].art).toBe('ausleihe');
 			expect(omniboxStore.offlineAusweis, 'der Merker steht weiter').toBe('S-10001');
+		});
+
+		// Ist das Backend weg, antwortet der Proxy davor mit 502 (Caddy, update_caddy.sh); 503
+		// kommt, wenn der Server die Sitzung nicht lesen kann, 504 bei einer Frist des Proxys.
+		// Gearbeitet hat der Server dann nicht: ein gescheiterter Versand wie ein Netzfehler, und das
+		// Band sagt „Scannen geht weiter". Beim Nachbuchen sagt der Schlüssel, falls doch gebucht.
+		it.each([502, 503, 504])(
+			'reiht ein Buch ein, wenn der Proxy mit %i antwortet',
+			async (status) => {
+				netz(true);
+				vi.mocked(apiClient.post).mockResolvedValue(proxyFehler(status));
+				omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
+				omniboxStore.eingabe = 'LMF-2025-0007';
+				await omniboxStore.fuehreAktionAus(new Event('submit'));
+
+				const q = await ladeWarteschlange();
+				expect(q, 'das Buch liegt in der Warteschlange').toHaveLength(1);
+				expect(q[0].leser_id).toBe('schueler-7');
+				expect(q[0].art).toBe('ausleihe');
+				expect(omniboxStore.rueckmeldung.fehler).toBe('');
+			}
+		);
+
+		it('behält den gemerkten Ausweis, wenn seine Nachfrage eine 502 bekommt', async () => {
+			omniboxStore.eingabe = 'S-10001';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+
+			netz(true);
+			vi.mocked(apiClient.post).mockResolvedValue(proxyFehler(502));
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+
+			const q = await ladeWarteschlange();
+			expect(q, 'das Buch liegt mit dem Ausweis in der Warteschlange').toHaveLength(1);
+			expect(q[0].ausweis_barcode).toBe('S-10001');
+			expect(omniboxStore.offlineAusweis, 'ohne Merker wäre das nächste Buch eine Rückgabe').toBe(
+				'S-10001'
+			);
+		});
+
+		// Gegenprobe: Ein 500 kommt vom Server selbst. Er hat die Anfrage gesehen; der Fehler wird
+		// gezeigt, und eingereiht wird nichts.
+		it('zeigt einen 500 des Servers und reiht nichts ein', async () => {
+			netz(true);
+			vi.mocked(apiClient.post).mockResolvedValue(proxyFehler(500));
+			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+
+			expect(await ladeWarteschlange()).toHaveLength(0);
+			expect(omniboxStore.rueckmeldung.fehler).not.toBe('');
 		});
 
 		// Scheitert die Auflösung, ist offen, wem das Buch gehört. Online ginge es ohne Person
