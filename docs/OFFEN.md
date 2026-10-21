@@ -127,7 +127,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 ### Termine
 
 - [ ] CodeQL wechselt bei GitHub auf Ubuntu 26, angekündigt für den 19. Oktober 2026; am
-  Abend des 20. Oktober lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
+  Morgen des 21. Oktober lief es noch auf Ubuntu 24. Den ersten Lauf danach ansehen. (5.10)
 - [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
@@ -252,7 +252,7 @@ Vermerk.
   den Lauf dann ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht
   darunter: CodeQL läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine
   Workflow-Datei) auf `ubuntu-latest`. GitHub kündigte den Wechsel auf Ubuntu 26 für den 19.
-  Oktober 2026 an; am Abend des 20. Oktober lief CodeQL noch auf `ubuntu-24.04`. Bricht die
+  Oktober 2026 an; am Morgen des 21. Oktober lief CodeQL noch auf `ubuntu-24.04`. Bricht die
   Analyse auf dem neuen Abbild, wird der CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist
   `v2.11.1-0.20261003002531-6258dcebc4e2`, der Entwicklungsstand der Bibliothek vom

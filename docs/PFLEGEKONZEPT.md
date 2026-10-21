@@ -246,7 +246,13 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Arbeitsplatz nachstellen, mit `GOBIN=<Ordner> go install …@<Fassung>` und dem Aufruf
   wörtlich aus dem Workflow: Mit dem zusätzlichen Schalter `-quiet` endet gosec ohne Fund mit
   Exit 0, auch wenn es kein Paket laden konnte. Danach die Go-Suite und ein Bau des Images
-  unter einem Probe-Namen (`docker build -t <Name> .`).
+  unter einem Probe-Namen (`docker build -t <Name> .`). Weist die neue Fassung Zertifikate ab
+  (die Liste `distrustedSPKIHashes` im Paket `crypto/x509`, so seit Go 1.27.3), vorher
+  die Kette des Mailservers der Schule dagegen halten, vom Server aus:
+  `openssl s_client -showcerts` gegen `IMAP_HOST` auf Port 993, je Zertifikat
+  `openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | sha256sum`. Steht ein
+  Schlüssel in der Liste, sperrte das Update die Anmeldung aus. Vom Arbeitsplatz aus verfälscht
+  ein Virenschutz, der TLS aufbricht, die Probe.
 - **gosec meldet eine Stelle, an der sich nur der Weg der Daten geändert hat.** Zieht eine
   Abfrage aus einer Tür nach `repository/`, kommt die Zeile als Rückgabe einer Funktion, die
   die Kennung aus der Anfrage als Argument bekommt, und die Analyse wertet die Rückgabe als von
