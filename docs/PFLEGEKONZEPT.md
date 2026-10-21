@@ -227,8 +227,8 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   und eine Prüfsumme über die Werte ausgibt, roh und formatiert. Trifft eine Meldung einen
   Aufruf des Programms (`OpenReader`, `GetRows`), kommt ein Test dazu, der am alten Stand rot
   ist (`pkg/xlsxgrenze/`); den alten Stand nimmt
-  `GOWORK=off go test -modfile=<altes go.mod> ./pkg/xlsxgrenze/`. Was offen bleibt, steht in
-  [OFFEN.md](OFFEN.md) 5.10.
+  `GOWORK=off go test -modfile=<altes go.mod> ./pkg/xlsxgrenze/`. Auf die veröffentlichte
+  Fassung hebt der Vorschlag von Dependabot, sobald es sie gibt.
 - **Der Push bricht an der Schwachstellen-Prüfung ab, am Stand hat sich nichts geändert
   (Go-Standardbibliothek).** govulncheck meldet Schwachstellen in der Standardbibliothek, die
   eine neue Nebenversion von Go behebt. Abhilfe: die Fassung an drei Stellen gemeinsam heben

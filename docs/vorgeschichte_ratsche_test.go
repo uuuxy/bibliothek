@@ -35,7 +35,7 @@ var bestandVorgeschichte = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"docs/ARCHITEKTUR.md":             {49, "Entscheidungen der ADR, Messungen mit Tag, der Stand einzelner Abschnitte"},
+	"docs/ARCHITEKTUR.md":             {48, "Entscheidungen der ADR, Messungen mit Tag, der Stand einzelner Abschnitte"},
 	"docs/FACHKONZEPT.md":             {45, "Entscheidungen, darunter die verworfenen Vorschläge in §20, und Messungen"},
 	"docs/littera_schema_befund.md":   {20, "Zählungen an den Sicherungen und Exporten von Littera, Entscheidungen"},
 	"docs/sweeps.md":                  {14, "Durchsichten über den Bestand und Messungen mit Tag"},

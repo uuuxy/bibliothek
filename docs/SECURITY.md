@@ -2,7 +2,7 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-15
+> Zuletzt aktualisiert: 2026-10-21
 
 ---
 
@@ -813,7 +813,8 @@ Datei zum Fehler „ungültige Datei" macht, statt den Prozess zu reißen — ex
 Abstürze nicht ab. Eingesetzt ist der Entwicklungsstand der Bibliothek vom 03.10.2026
 (`v2.11.1-0.20261003002531-6258dcebc4e2`) mit den Korrekturen zu fünfzehn gemeldeten
 Schwachstellen dieser Art (Dependabot Nr. 21 bis 29, CVE-2026-107211 bis CVE-2026-107216);
-eine veröffentlichte Fassung mit ihnen gab es am 08.10.2026 nicht (OFFEN.md 5.10). Wer eine
+eine veröffentlichte Fassung mit ihnen gab es am 21.10.2026 nicht; Dependabot schlägt sie vor,
+sobald es sie gibt. Wer eine
 vierte Lesestelle baut, geht durch `LeseMappe`, nicht an ihr vorbei.
 
 Die Schranke fängt einen Absturz, keine Schleife. Eine der Meldungen

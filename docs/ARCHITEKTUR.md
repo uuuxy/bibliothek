@@ -3233,35 +3233,16 @@ nur, damit niemand die Architekturdokumentation liest und das größte Risiko da
 Die Punkte hier sind keine geplante Arbeit. Jeder beschreibt eine Stelle, an der das Programm
 eine Grenze hat, mit Beleg am Code oder Messwert, und nennt, wo es einen gibt, den Anlass, bei
 dem gebaut würde. Tritt ein Anlass ein, kommt der Schritt in den Fahrplan von
-[OFFEN.md](OFFEN.md), und der Punkt fällt hier weg. Die Reihenfolge sagt nichts über das
-Gewicht.
+[OFFEN.md](OFFEN.md), und der Punkt fällt hier weg. Ein Fehler, der sich lösen lässt, steht
+nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Daten und Abläufe
 
-- **Leserakte und Titel verwerfen unbekannte Felder still.** Die Türen für Benutzer, Gerät,
-  Lieferant und Einstellungen lehnen ein Feld ab, das sie nicht kennen (`LeseAnfrageStreng`);
-  `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es: Steht ein vertippter Name
-  neben einem richtigen, fällt er ohne Meldung. Der Titel nimmt das ganze Objekt entgegen, samt
-  der Felder, die nur der Server füllt. Einzige Aufrufer sind die Masken, und Browser-Tests
-  prüfen sie am gespeicherten Wert. Anlass: ein zweiter Aufrufer oder ein Feld, das nicht
-  ankommt.
-- **Der Vermerk „Mail nicht versendet" fällt mit der Lieferung nicht weg.** Ihn nehmen „Erneut
-  senden", die Bestätigung des Händlers und „Auf anderem Weg bestellt"; der Wareneingang nicht
-  (`repository.sqlBestellmailOffen` fragt nur die Bestätigung). Anlass: gelieferte Bestellungen
-  mit dem Hinweis in der Bestellhistorie.
 - **Eine Forderung für ein Gerät lässt sich nicht anlegen.** Die Datenbank sieht sie vor
   (`check_damage_item`), die Rechnung an die Eltern könnte sie drucken, aber der einzige
   Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar. Beim Bau
   mitnehmen: Der Bescheid-Dialog zeigt eine Forderung ohne Exemplar mit dem Satz für Bücher der
   Schülerbücherei und „kein Preis hinterlegt" (`BescheidPositionen.svelte`).
-- **Versetzung und eine Klasse, deren Zahl kein Jahrgang ist.** Die Versetzung liest die Zahl am
-  Anfang der Klasse (`sqlVersetzeSchueler`, `LadeKlassenleitungVersetzungen`). Ist sie größer als
-  2.147.483.647 (eine Buchnummer im Feld Klasse), antwortet die Versetzung mit 500 und versetzt
-  niemanden, ohne Klasse oder Schüler zu nennen; jede Zahl ab 13 gilt als Abschlussklasse
-  (`repository.AbschlussklasseSQL`). Die lesenden Türen antworten auch dann
-  (`api/klasse_lange_ziffernfolge_pg_test.go`); die Klassen der Schule lösen keinen der Fälle
-  aus. Nächster Schritt mit Anlass: Klassen außerhalb von 1 bis 13 ausnehmen und in der Vorschau
-  nennen.
 - **Klassensätze aus den Ausleihen.** Für ET1 bis ET3 entsteht keiner: Die Übersicht zählt nur
   Klassen, deren Name mit einer Ziffer beginnt (`ladeKlassensatzGruppen`), und nur Ausleihen auf
   die Ausweise der Kinder. Die Theke warnt bei einer anderen Auflage als der Klasse und bei einem
@@ -3284,10 +3265,6 @@ Gewicht.
   SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
   SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
   ```
-- **Listenimport gegen den Nummern-Wächter.** Trägt eine Zeile die Ausweisnummer eines Lesers als
-  Buch-Barcode, lehnt der Wächter ab, und der ganze Import bricht mit der rohen Datenbankmeldung
-  ab (`ON CONFLICT DO NOTHING` fängt nur den Index). Laut, also richtig; nur nennt die Meldung
-  weder Zeile noch Weg. Anlass: Es kommt einmal vor.
 - **Das Feld „Auflage" trägt aus Littera auch Heftnummern und eigene Nummern** („34 / 2010",
   „D-Ga-066"; im Katalog-Export vom Juni 2026 neben 5.033 Auflagen 955 Heftnummern, 69 eigene
   Nummern und 96 andere Angaben). Keine Suche vergleicht das Feld (`repository/titel_suche.go`, `inventur/datenbank_buecher_leser.go`). Anlass: Die
@@ -3298,13 +3275,6 @@ Gewicht.
   Taschenbuch und DVD ein Titel. Der Import aus CSV und Excel gleicht ebenso ab; die Übernahme
   aus der Sicherung (`internal/littera`), mit der der Echtbetrieb beginnt, tut es nicht. Anlass:
   Das Katalogisat wird wieder ein Weg in den Echtbetrieb.
-- **Die Datenbank ordnet Text nach Codepunkt** („Mathe 10 < Mathe 5 < apfel < Ägypten"). Die
-  Titelliste ordnet deshalb in Go; 30 Abfragen ordnen in der Datenbank nach Titel oder Nachname,
-  und ob die Oberfläche ihre Antwort neu ordnet, ist je Liste nicht durchgesehen (die Mahnliste
-  tut es). Anlass: ein Name, der in einer Liste nicht an seinem Platz steht.
-- **Skripte, die Titel löschen, lassen Werke zurück** (`e2e_altlasten.sql`,
-  `entferne_demo_daten.sql`, `seed_demo.sql`); die Ratsche `auflagen_schreibpfad_ratsche_test.go`
-  liest keine Skripte. Kein Schaden.
 - **Der Stand-Merker der Barcode-Liste** (Anzahl und `max(aktualisiert_am)`) rechnet mit dem
   Beginn der Transaktion: Committet eine lange Transaktion nach einem kürzeren Schreiber, bleibt
   es bei 304 (nachgestellt hinter dem Build-Tag `raster`). Heute ändert nur
@@ -3338,33 +3308,21 @@ Gewicht.
   nur die Vorschau beim Tippen (`/api/search`). Anlass: ein zweiter Aufrufer mit rohen Nummern;
   dann am Server vereinheitlichen, mit einer gemeinsamen Fall-Tabelle für Go und JS.
 - **Antwortet der Server nicht,** wartet jeder eingereihte Scan seine eigene Frist ab (10 s,
-  `apiFetch.js`), bevor er ohne Netz abgelegt wird; ein Neuladen nimmt die wartenden Scans ohne
-  Meldung mit. Anlass: Die Theke reagiert bei hängendem Server spürbar verzögert.
+  `apiFetch.js`), bevor er ohne Netz abgelegt wird. Anlass: Die Theke reagiert bei hängendem
+  Server spürbar verzögert.
 - **Ungespeichertes übersteht die Sperre, aber nicht, was ihr vorausgeht:** Nach fünf Minuten
   leert sich die Theke samt offenem Dialog, und eine abgelaufene Sitzung meldet ab, ohne fragen
   zu können. Wer selbst abmeldet, wird gefragt, auch am Sperrbildschirm. Ob etwas ungespeichert
   ist, weiß die Anwendung nur beim LMF-Planer, bei der Buchmaske und bei „Stammdaten
   bearbeiten" (`uiStore.verlassenSperre`). Anlass: eine verlorene Eingabe an der Theke.
-- **Der LMF-Planer erfährt nur über die Live-Leitung,** dass ein anderer Platz den Plan geändert
-  hat (`fremdesSignal`); war sie unterbrochen, überschreibt das nächste Speichern die fremde
-  Änderung. Abhilfe mit Anlass: nach dem Wiederaufbau der Leitung und nach dem Aufschließen den
-  Stand am Server vergleichen.
 - **Das Band „Keine Verbindung"** (`App.svelte`, 25 s ohne `ping`) unterscheidet nicht zwischen
   fehlendem Ping und einem eingefrorenen Tab; beim Aufwachen stünde es höchstens 15 s. Nicht
   nachgestellt.
-- **Nach einem Rückbau auf einen älteren Stand** behält ein Browser die neuere Startseite: Sie
-  geht mit `Last-Modified` und ohne `Cache-Control` hinaus (`http.ServeFileFS` in
-  `api/router.go`), und der ältere Stand antwortet auf das jüngere Datum mit 304. Abhilfe mit
-  Anlass: `Cache-Control: no-cache` und ein ETag aus dem Namen des Bundles.
 - **Die Sperrprüfung liest aus dem Pool,** während die Transaktion der Ausleihe mit `FOR UPDATE`
   offen ist (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim
   Nachbuchen vieler Ausleihen beobachten.
 - **Die Rate-Limiter** räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
   CPU-Thema.
-- **Die Prüfung der UUID-Pfadparameter** (`uuidPfadMiddleware`) sitzt in `verlangeRecht`. Eine
-  Route mit UUID-Platzhalter unter `VerlangeAnmeldung` liefe an ihr vorbei; heute gibt es keine
-  (alle 65 antworteten am 04.10.2026 am echten Router auf eine Nicht-UUID mit 400), und kein Gate
-  hält das. Anlass: die erste solche Route.
 - **Katalogdienste in einer Anfrage, die die Oberfläche nach 10 s aufgibt:**
   `POST /api/buecher/aus-isbn` und „Cover erneut lokalisieren" (`FremdeCoverNeuLaden`). Anlass:
   ein Abbruch, nach dem unklar ist, was gespeichert wurde.
@@ -3390,9 +3348,7 @@ Gewicht.
   der Seite (`e2e/scrollbereiche.spec.js`). In „Buch bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
   Ausleihliste ab 1066 px mindestens 140 px, darunter bis 1024 px weniger; dort ist auch die
-  Reiterzeile 12 px zu schmal. Die eingeklappte Navigation zeigt bis zu 18 Symbole ohne Namen
-  (M3, Navigation rail: „All navigation items require a one word label text"). Autor und Nummer
-  eines Exemplars stehen in der Akte nur in einer Sprechblase, an einem Tablet ohne Maus also
+  Reiterzeile 12 px zu schmal. Autor und Nummer eines Exemplars stehen in der Akte nur in einer Sprechblase, an einem Tablet ohne Maus also
   nicht. Der Abstand des Rahmens (`Anwendungsrahmen.svelte`) liegt um den Scrollbereich, nicht
   in ihm: Die Scrollleiste sitzt 32 px vom Fensterrand, und über und unter dem Inhalt bleiben
   beim Scrollen je 24 px stehen. Anlass: Bedienung an einem Tablet oder in Fenstern unter
@@ -3400,63 +3356,19 @@ Gewicht.
 - **Schmale Breiten:** Bei 390 px ist die Bestellspalte 68 px breit; die Leiste der markierten
   Exemplare in der Buchakte passt bis 768 px, `ui/AuswahlLeiste` hat kein Überlaufmenü (M3,
   Toolbars). Anlass: Bestellen oder die Buchakte am Telefon.
-- **Breite der Textfelder** nach M3 („Text fields shouldn't span the full width of a large
-  screen") ist nur in „Buch bearbeiten" umgesetzt (bis 704 px, in `BuchFormular.svelte`); mit
-  der zweiten Maske gehört der Wert an eine Stelle.
-- **Elf Dialoge und sieben weitere Stellen sperren „Abbrechen", solange ihre Anfrage läuft**
-  (etwa `LeserLoeschenDialog.svelte`). M3, Dialogs: „Dismissive actions are never disabled."
-  Voraussetzung je Stelle: Erfolg und Ablehnung werden außerhalb des Dialogs gemeldet.
-- **„Buch bearbeiten" speichert nur per Klick;** die Eingabetaste löst nichts aus, und in der
-  Tab-Reihenfolge steht „Speichern" vor den Feldern.
-- **Symbolknöpfe:** 32 × 32 px ohne größere Trefferfläche (`.icon-btn`, Gate
-  `e2e/icon-trefferflaechen.spec.js` mit 32 px); M3 verlangt 48 × 48 dp. In der Exemplarkarte der
-  Buchakte sind sie 14 px groß und fehlen in den Gates der Symbolknöpfe; ein 32-px-Knopf bricht
-  dort die Kopfzeile um. Vier Symbolknöpfe erklären sich mit `title` statt `data-tip`. Anlass:
-  Fehlklicks an der Theke oder Bedienung am Tablet.
-- **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen); sie folgen
-  nicht Material 3.
-- **Die Inventur meldet einen Scan nur auf dem Bildschirm,** ohne Ton wie an der Theke.
-- **Das Druck-Center hängt im Menü an `view_students`,** seine Buch-Etiketten brauchen nur
-  `view_books` und `edit_books`; ebenso verlangt `GET /api/klassen` `view_students`, gewählt wird
-  die Klasse aber auch mit `edit_books` und `manage_settings`. Ab Werk hat jede dieser Rollen
-  auch `view_students`; wer die Rechte anders verteilt, erreicht die Etiketten nicht oder sieht
-  „Klassen nicht geladen".
 - **Die Ausleih-Quittung der Leserakte** (`AusleihQuittung.svelte`) hat keinen Knopf und erscheint
   nur beim Druck der Akte über den Browser; für einen Kollegen ist sie der einzige Ausdruck
   seiner Ausleihen. Anlass: Jemand braucht ihn an der Theke.
-- **Reste des Worts „Schülerdatei"** nach der Umbenennung in „Leserdatei": das Recht „Schülerdatei
-  anzeigen" (`rechteKategorien.js`), `Schuelerdatei.svelte`, `KlassenDruckEinstieg.svelte`,
-  „Schülerakte" in drei Erklärtexten und „Gelöschte Schüler (Papierkorb)" (`Papierkorb.svelte`).
-  Beim Umbenennen die E2E-Specs mitziehen.
-- Mahnwesen: „Neu laden" ist ein Symbolknopf ohne Wort (`MahnwesenAktionen.svelte`), sonst heißt
-  der Knopf „Aktualisieren". `ui/Menue` kann einen Kopf und Gruppen-Überschriften; beides nutzt
-  kein Aufrufer. Die Akte eines Kollegen ohne Ausweisnummer verweist auf „Benutzer & Rechte", wo
-  er ohne Konto keinen Eintrag hat. Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
-  Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste „Forderungen".
 - **Browser-Gates:** Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
   Anfangszustand, es gibt keinen Screenreader-Durchgang, und der Ausweis-Designer geht nur per
   Maus. Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs braucht, ist
   nicht geklärt ([FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19).
-- 9 Stellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`); umstellen beim
-  fachlichen Anfassen.
 
 #### Code und Werkzeuge
 
 - **gosec nimmt sieben Regeln global aus** (G706, G704, G703, G120, G124, G115, G101; der Grund je
   Regel steht in `scripts/gosec-gate.sh`). Eine neue Stelle dieser Regeln meldet gosec nicht.
   Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen.
-- **`github.com/jung-kurt/gofpdf` ist archiviert** und steckt in 19 Dateien außerhalb der
-  Tests; gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt und
-  `pdf/lmfplan_satz.go` schon nutzt. Neue PDFs nicht mehr auf dem archivierten, die übrigen beim
-  fachlichen Anfassen umstellen.
-- **Zwei Normalformen für Namen** (`repository.suchnorm`, `normierterName` in
-  `internal/lusd/paarung.go`); beim Anfassen der Paarung zusammenführen.
-- `auth.Claims.Ausweisnummer` (JSON `barcode_id`) liest niemand; sie wird nur beim Erneuern des
-  Tokens weitergereicht. `abgaenger_jahr` in der Antwort der Aktivliste hat keinen Konsumenten.
-- Die Grenze `format.Hoehe >= 30` steht zweimal (`pdf/etikett_buch.go`, `pdf/etikett_schueler.go`).
-- `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
-  Testprozesses; unter einer Zone westlich von UTC ist das der Vortag. Beim nächsten Anfassen auf
-  `schulzeit.Zone()` umstellen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds. Erbe der Pull Requests von außen:
   Go-Testdateien über 200 Zeilen, ein schwacher Test des CSV-Exports.
 - 3.000 Titel ohne ISBN: Die Textsuche der DNB (`SucheTextDNB`, heute nur in der Bestellsuche)

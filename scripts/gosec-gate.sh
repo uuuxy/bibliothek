@@ -9,9 +9,10 @@ cd "$(dirname "$0")/.."
 
 # Eine feste Fassung: Ein neues gosec bringt neue Regeln mit, und die sollen sich mit einem
 # eigenen Commit melden. Es ist ein Entwicklungsstand, weil die veröffentlichte v2.29.0
-# (golang.org/x/tools 0.49) die Paketdaten von Go 1.27.2 nicht liest; auf die nächste
-# veröffentlichte Fassung heben, sobald sie erscheint (docs/OFFEN.md 5.10). `go run` besorgt
-# das Werkzeug selbst, ein fehlendes Werkzeug überspringt die Prüfung deshalb nicht.
+# (golang.org/x/tools 0.49) die Paketdaten von Go 1.27.2 nicht liest. Auf die nächste
+# veröffentlichte Fassung heben, sobald sie erscheint, spätestens wenn dieser Stand eine neue
+# Go-Fassung nicht liest: Dann scheitert das Skript unten. `go run` besorgt das Werkzeug
+# selbst, ein fehlendes Werkzeug überspringt die Prüfung deshalb nicht.
 GOSEC_FASSUNG="v2.29.1-0.20261005092323-d2b649ec0182"
 
 # Ausgenommen sind nur Regeln, die Stellen melden; die Zahl je Regel steht in
