@@ -3,12 +3,12 @@ import { apiFetch } from '../apiFetch.js';
 class UIStore {
 	#activeTab = $state('kiosk');
 	/**
-	 * Verlassen-Schutz: Ein Bildschirm mit ungespeicherter Arbeit (der LMF-Planer) trägt
-	 * hier eine Funktion ein, die sagt, ob gerade etwas verloren ginge. Der Setter von
-	 * activeTab fragt sie an einer Stelle, statt an den ~40
-	 * Stellen, die den Tab setzen (Seitenleiste, Router, Deep-Links, Escape-Regel).
-	 * Blockiert der Wächter, bleibt das Ziel in blockierterWechsel stehen; der Bildschirm
-	 * zeigt seinen Dialog und ruft bleibe() oder erzwingeWechsel().
+	 * Verlassen-Schutz: Ein Bildschirm mit ungespeicherter Arbeit trägt hier über
+	 * schuetzeUngespeichertes (stores/verlassenSchutz.svelte.js) eine Funktion ein, die sagt,
+	 * ob gerade etwas verloren ginge. Der Setter von activeTab fragt sie an einer Stelle, statt
+	 * an den ~40 Stellen, die den Tab setzen (Seitenleiste, Router, Deep-Links, Escape-Regel).
+	 * Blockiert der Wächter, bleibt das Ziel in blockierterWechsel stehen; die gemeinsame
+	 * Rückfrage ruft danach bleibe() oder erzwingeWechsel().
 	 * @type {(() => boolean) | null}
 	 */
 	verlassenSperre = null;
