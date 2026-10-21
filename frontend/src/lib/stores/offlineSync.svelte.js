@@ -2,7 +2,8 @@ import {
 	ladeWarteschlange,
 	dequeueOfflineAction,
 	enqueueOfflineAction,
-	normalisiereEintrag
+	normalisiereEintrag,
+	leserFuerVersand
 } from '../offlineWarteschlange.js';
 import { apiClient } from '../apiFetch.js';
 import { spieleErfolgston } from '../audio.js';
@@ -48,10 +49,9 @@ function baueNachbuchPayload(batchItems) {
 				barcode: posten.barcode,
 				gescannt_am: new Date(gescannt).toISOString()
 			};
-			// Eine Ausleihe traegt ihre Person, eine Rueckgabe nicht — der Server findet
-			// den Vorbesitzer selbst. Ein ohne Netz gescannter Ausweis steht in
-			// `ausweis_barcode`, die Dauer des Besuchs in `besuch_seit_ms`.
-			if (posten.art === 'ausleihe' && posten.leser_id) e.leser_id = posten.leser_id;
+			// Die Person nur bei einer Ausleihe (leserFuerVersand); ein ohne Netz gescannter
+			// Ausweis steht in `ausweis_barcode`, die Dauer des Besuchs in `besuch_seit_ms`.
+			if (leserFuerVersand(posten)) e.leser_id = leserFuerVersand(posten);
 			if (posten.ausweis_barcode) e.ausweis_barcode = posten.ausweis_barcode;
 			if (posten.art === 'ausleihe' && typeof posten.besuch_seit_ms === 'number') {
 				e.besuch_seit_ms = posten.besuch_seit_ms;

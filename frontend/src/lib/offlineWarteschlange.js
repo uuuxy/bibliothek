@@ -125,6 +125,17 @@ export function normalisiereEintrag(roh) {
 }
 
 /**
+ * Die Person, mit der ein Scan zum Server geht: nur bei einer Ausleihe. Eine Rückgabe trägt keine,
+ * am Netz wie beim Nachbuchen: Mit Person läse der Server ein inzwischen freies Buch als Ausleihe
+ * an sie (zweiter Klick auf „Buch zurückgeben", eine Akte, die nicht nachgeladen ist).
+ * @param {Pick<OfflineEintrag, 'art' | 'leser_id'>} eintrag
+ * @returns {string | undefined}
+ */
+export function leserFuerVersand(eintrag) {
+	return eintrag.art === 'ausleihe' && eintrag.leser_id ? eintrag.leser_id : undefined;
+}
+
+/**
  * Lädt die Warteschlange aus IndexedDB, in Format 2, nach Scan-Zeitpunkt geordnet.
  * @returns {Promise<OfflineEintrag[]>}
  */

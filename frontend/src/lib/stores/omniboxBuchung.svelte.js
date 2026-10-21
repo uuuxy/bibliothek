@@ -8,6 +8,7 @@ import { apiClient } from '../apiFetch.js';
 import { spieleFehlerton } from '../audio.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { ordneScanEin } from '../scanEinordnen.js';
+import { leserFuerVersand } from '../offlineWarteschlange.js';
 
 /**
  * Ein Scan und was der Aufrufer dazu vorgibt.
@@ -166,15 +167,14 @@ export function erzeugeOmniboxBuchung({
 
 		// Scheitert der Versand, hat der Server nichts gesehen: Der Schnappschuss geht in die
 		// Warteschlange. Kam eine Antwort an, wird ihr Fehler gezeigt und nicht eingereiht; nach
-		// Ablauf seines Idempotenz-Caches (24 h) buchte der Server sonst ein zweites Mal.
-		//
-		// Rot nur im Fehlerfall: Sonst überschriebe es das Grün des Erfolgs und das Orange der
+		// Ablauf seines Idempotenz-Caches (24 h) buchte der Server sonst ein zweites Mal. Rot
+		// nur im Fehlerfall: Sonst überschriebe es das Grün des Erfolgs und das Orange der
 		// Fremdrückgabe, und niemand sähe mehr auf die Farbe.
 		let res;
 		try {
 			res = await apiClient.post('/api/action', {
 				query: q,
-				active_leser_id: eintrag.leser_id ?? undefined,
+				active_leser_id: leserFuerVersand(eintrag),
 				confirmed_checklist: confirmedChecklist,
 				override_block: overrideBlock,
 				idempotency_key: eintrag.id

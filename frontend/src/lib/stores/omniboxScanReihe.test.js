@@ -475,3 +475,27 @@ describe('Bei Ungespeichertem in der Akte', () => {
 		expect(theke.rueckmeldung.fehler).toContain('Gescannt und NICHT gebucht: „S-2“');
 	});
 });
+
+// „Buch zurückgeben" aus der Akte trägt keine Person, wie beim Nachbuchen (leserFuerVersand):
+// Mit Person läse der Server ein inzwischen freies Buch als Ausleihe an sie. So ging es beim
+// Doppelklick, wenn der erste Klick schon gebucht war, und bei einer Akte, die nicht nachgeladen
+// war, nachdem ein anderer Platz das Buch zurückgenommen hatte.
+describe('„Buch zurückgeben" aus der Akte', () => {
+	it('schickt den geladenen Leser nicht mit, auch beim zweiten Klick', async () => {
+		const theke = neueTheke();
+		theke.aktiverLeser = MIA;
+		vi.mocked(apiClient.post).mockResolvedValue(RUECKGABE);
+
+		await theke.gibZurueck('B-1');
+		await theke.gibZurueck('B-1');
+
+		const leser = vi
+			.mocked(apiClient.post)
+			.mock.calls.map((c) => /** @type {any} */ (c[1]).active_leser_id);
+		expect(leser, 'mit Mia liehe der Server ihr das freie Buch aus').toEqual([
+			undefined,
+			undefined
+		]);
+		expect(theke.aktiverLeser?.id, 'Mia bleibt an der Theke').toBe('leser-1');
+	});
+});
