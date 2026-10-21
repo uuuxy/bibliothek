@@ -205,10 +205,10 @@ das ist eine Betriebsentscheidung.
 ### 7.4 Wiederherstellung an einem fremden Ziel
 
 Die Wochenprobe im Container ersetzt sie nicht. Anleitung:
-[resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2e; dabei die Befehle aus
-2a erproben, die bisher nur am Text geprüft sind. Sie setzen `pg_dump`, `dropdb`, `createdb`,
-`psql` und ein gebautes `restore-backup` an dem Rechner voraus, an dem sie laufen; die Form über
-die Container ist in 2f erprobt. Machen soll die Probe die Vertretung allein mit dem
+[resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2e. Die Befehle aus 2a und 2e
+sind an einem frischen Ziel wörtlich gelaufen (Postgres 18, frischer Klon, Sicherung im Format des
+Nachtlaufs); sie setzen `pg_dump`, `dropdb`, `createdb`, `psql` und ein gebautes `restore-backup`
+an dem Rechner voraus, an dem sie laufen. Die Form über die Container ist in 2f erprobt. Machen soll die Probe die Vertretung allein mit dem
 Pflegekonzept (9.9); sie wartet auf den Schulserver und die benannte Vertretung.
 
 ### 7.5 Externes Uptime-Signal

@@ -103,7 +103,11 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 
 ### 2a. Verschlüsseltes `.sql.gz.enc`-Backup (Abschnitt 1a)
 
-Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben.
+Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben. Die beiden Blöcke
+sind an einem frischen Ziel wörtlich gelaufen (Postgres 18, frischer Klon, Sicherung im Format des
+Nachtlaufs; Schritt 1 ohne Backend-Container von Hand): `psql` endete mit 0, Schritt 7 zählte in
+Sicherung und Datenbank gleich, und Schritt 8 nannte den Leser, der nach der Sicherung gelöscht
+worden war.
 
 ```bash
 # 0. Restore-Tool: liegt im Image (`docker compose exec backend ./restore-backup …`).
