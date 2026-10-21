@@ -116,7 +116,9 @@ services:
       # Leer = Selbstanmeldung aus. Muss hier stehen: Compose reicht ohne env_file
       # ausschliesslich die aufgefuehrten Variablen durch (siehe Backup-Block unten).
       - SELBSTANMELDUNG_DOMAIN=${SELBSTANMELDUNG_DOMAIN:-}
-      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
+      # Keine Vorgabe: Die Adresse des ersten Admins gehört in die .env des Servers. Gelesen wird
+      # sie nur bei leerer Tabelle benutzer, und dann bricht der Start ohne sie ab.
+      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER}

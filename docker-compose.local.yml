@@ -63,7 +63,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:-local-dev-jwt-secret-min-32-characters}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
       - COOKIE_SECURE=false
-      - INITIAL_ADMIN_EMAIL=pflasch@philipp-reis-schule.de
+      # Mit dieser Adresse melden sich die Browser-Tests an (ADMIN_EMAIL in frontend/e2e/helpers.js).
+      - INITIAL_ADMIN_EMAIL=admin@schule.example
       - IMAP_HOST=mock
       # E2E: e2e/selbstanmeldung.spec.js meldet ein @test.local-Postfach ohne Konto an.
       - SELBSTANMELDUNG_DOMAIN=test.local

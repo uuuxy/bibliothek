@@ -90,7 +90,7 @@ test('Abgänger: hinterlegte Klassenleitung erscheint im Dialog', async ({ page 
 
 	await apiPost(page, '/api/klassen-mapping', {
 		klasse: ` ${String(klasse).toUpperCase()} `,
-		lehrer_email: 'pflasch@philipp-reis-schule.de'
+		lehrer_email: 'klassenleitung@schule.example'
 	});
 
 	await page.goto('/abgaenger');

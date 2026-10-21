@@ -2,7 +2,8 @@
 
 import { execSync } from 'node:child_process';
 
-export const ADMIN_EMAIL = 'pflasch@philipp-reis-schule.de';
+// Legt docker-compose.local.yml beim ersten Start an (INITIAL_ADMIN_EMAIL).
+export const ADMIN_EMAIL = 'admin@schule.example';
 // Mock-IMAP (IMAP_HOST=mock im lokalen Stack) akzeptiert jedes Passwort.
 export const ADMIN_PASSWORD = 'e2e-egal';
 

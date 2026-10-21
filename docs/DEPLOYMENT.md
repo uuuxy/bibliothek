@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-10-16
+> Zuletzt aktualisiert: 2026-10-21
 
 ---
 
@@ -43,7 +43,7 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `SMTP_FROM`                                                                | Absender-Adresse                                                                                                                                                                                                                             | Optional                                                                                                                                                                                                                                   |
 | `SMTP_ALLOW_INSECURE_TLS`                                                  | TLS-Zertifikatsprüfung deaktivieren (TLS bleibt)                                                                                                                                                                                             | Nur für Legacy-SMTP-Server.                                                                                                                                                                                                                |
 | `SMTP_ALLOW_PLAINTEXT`                                                     | Versand **ganz ohne** TLS erlauben, wenn der Server kein STARTTLS anbietet                                                                                                                                                                   | Nur für ein Legacy-Relay. Ohne diese Variable bricht der Versand in dem Fall ab, statt Mahntexte im Klartext zu schicken.                                                                                                                  |
-| `INITIAL_ADMIN_EMAIL`                                                      | E-Mail des initialen Admins — **nur** wenn die Tabelle `benutzer` leer ist                                                                                                                                                                   | Standard aus `docker-compose.yml`: pflasch@philipp-reis-schule.de. Ein Passwort gibt es dazu nicht (Anmeldung per IMAP); die Adresse muss auf dem Schulserver existieren, sonst kommt der so angelegte Admin nicht hinein. Ein Wert, der keine Adresse ist, bricht den ersten Start ab. Eine falsche Adresse lässt sich danach nicht über die Variable berichtigen (die Tabelle ist nicht mehr leer), nur am Konto in der Datenbank |
+| `INITIAL_ADMIN_EMAIL`                                                      | E-Mail des initialen Admins — gelesen **nur**, wenn die Tabelle `benutzer` leer ist                                                                                                                                                          | **Pflicht beim ersten Start**, keine Vorgabe. Fehlt sie oder ist der Wert keine Adresse, bricht der erste Start ab, und die Tabelle bleibt leer; ein System mit Konten startet ohne sie. Ein Passwort gibt es dazu nicht (Anmeldung per IMAP); die Adresse muss auf dem Mailserver der Schule existieren, sonst kommt der so angelegte Admin nicht hinein. Eine falsche Adresse lässt sich danach nicht über die Variable berichtigen (die Tabelle ist nicht mehr leer), nur am Konto in der Datenbank |
 | `RATE_LIMIT`                                                               | Globales Limit in Requests/s/IP                                                                                                                                                                                                              | Vorgabe **50** (der Produktionswert). Ein unlesbarer Wert wird protokolliert und ignoriert, es gilt dann die Vorgabe.                                                                                                                      |
 | `SMTP_PASS`                                                                | Historischer Zweitname für `SMTP_PASSWORD`                                                                                                                                                                                                   | Wird nur gelesen, wenn `SMTP_PASSWORD` leer ist. `docker-compose.yml` setzt beide Namen — beim Suchen nach „warum nimmt er das alte Passwort" ist das die Stelle                                                                           |
 | `SENTRY_DSN`                                                               | Sentry Error Tracking                                                                                                                                                                                                                        | Optional; leer = aus. In Produktion nur leer oder mit EU-Instanz (Datenschutz A6)                                                                                                                    |
@@ -123,6 +123,8 @@ Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 APP_ENV=production
 # ENFORCE_PROD_SECRETS ist von selbst scharf — nichts zu setzen
 COOKIE_SECURE=true
+# Das eigene Postfach am Mailserver der Schule; ohne Eintrag bricht der erste Start ab
+INITIAL_ADMIN_EMAIL=
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
 SMTP_FROM=bibliothek@schule.de
@@ -184,7 +186,7 @@ Default-Secrets (auch die Beispielwerte aus `.env.example`), fehlender Backup-Sc
 `IMAP_HOST=mock`, `APP_ENV` auf `local`/`development`/`test`, offene Produktionsschalter.
 Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen lässt.
 
-**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `APP_ENV` bleibt `production`; `COOKIE_SECURE=true` (hinter Caddy-HTTPS); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`. Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
+**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `INITIAL_ADMIN_EMAIL` ist ein Postfach dort; `APP_ENV` bleibt `production`; `COOKIE_SECURE=true` (hinter Caddy-HTTPS); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`. Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
 
 > **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
 > überschreiben — Schülerfotos und das gespeicherte SMTP-Passwort sind damit
@@ -206,7 +208,7 @@ cd /pfad/zur/bibliothek
 docker compose --env-file .env up -d --build
 ```
 
-`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. Wer diese Meldung sieht, ergänzt die `.env` mit denselben Befehlen wie in §2.1 — `openssl rand -hex 32` für den JWT-Schlüssel UND für den AES-Schlüssel (64 Hex-Zeichen = 32 Byte). Ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
+`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. `INITIAL_ADMIN_EMAIL` hat keine: Fehlt sie beim ersten Start, bricht der Server ab, und `update.sh` zeigt die Meldung in den letzten Zeilen des Logs. Wer diese Meldung sieht, ergänzt die `.env` mit denselben Befehlen wie in §2.1 — `openssl rand -hex 32` für den JWT-Schlüssel UND für den AES-Schlüssel (64 Hex-Zeichen = 32 Byte). Ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
 
 > Nicht `-hex 16`: Das liefert 32 Zeichen, die der Server als Schlüssel annimmt (er
 > akzeptiert 32 oder 64 Zeichen), aber nur 128 statt 256 Bit Zufall. Und nicht Base64: Ein

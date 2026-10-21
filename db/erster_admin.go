@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/mail"
@@ -35,9 +36,10 @@ func (v *Verbindung) LegeErstenAdminAn(ctx context.Context) error {
 	// Konto anlegen (repository.LegeKollegiumskontoAn): klein und ohne Leerraum.
 	email := strings.ToLower(strings.TrimSpace(os.Getenv("INITIAL_ADMIN_EMAIL")))
 
+	// Ohne Admin füllte die erste Selbstanmeldung die Tabelle mit einem inaktiven Konto, das
+	// niemand freischalten kann, und die Variable wirkte danach nicht mehr.
 	if email == "" {
-		log.Println("Warnung: Keine Benutzer in der Datenbank und INITIAL_ADMIN_EMAIL nicht gesetzt. System startet ohne Admin-Zugang.")
-		return nil
+		return errors.New("INITIAL_ADMIN_EMAIL ist nicht gesetzt — der erste Start braucht die Adresse des ersten Admins in der .env")
 	}
 	// Ein Wert ohne die Form einer Adresse ergäbe ein Konto, in das niemand kommt, und nach
 	// diesem Start wirkt die Variable nicht mehr. Der Abbruch lässt die Tabelle leer.

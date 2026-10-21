@@ -85,8 +85,9 @@ func TestLegeErstenAdminAn_ErsterStartLegtDasEineAdminKontoAn(t *testing.T) {
 			t.Errorf("das Admin-Konto trägt keine Ausweisnummer der Form A-…: %v", nummer)
 		}
 
-		// Jeder weitere Start findet Konten vor und legt nichts an, auch mit anderer Adresse.
-		for _, adresse := range []string{"erste.leitung@schule.example", "zweite@schule.example"} {
+		// Jeder weitere Start findet Konten vor und legt nichts an, auch mit anderer Adresse oder
+		// ohne eine: Ein System mit Konten braucht die Variable nicht mehr.
+		for _, adresse := range []string{"erste.leitung@schule.example", "zweite@schule.example", ""} {
 			t.Setenv("INITIAL_ADMIN_EMAIL", adresse)
 			if err := d.LegeErstenAdminAn(ctx); err != nil {
 				t.Fatalf("zweiter Start (%s): %v", adresse, err)
@@ -122,26 +123,11 @@ func TestLegeErstenAdminAn_AdresseInDerFormDerAnmeldung(t *testing.T) {
 	})
 }
 
-func TestLegeErstenAdminAn_OhneAdresseEntstehtKeinKonto(t *testing.T) {
-	pool := pgTestPool(t)
-	for _, adresse := range []string{"", "   "} {
-		inTx(t, pool, func(tx pgx.Tx) {
-			d := ersterStart(t, tx, adresse)
-			if err := d.LegeErstenAdminAn(context.Background()); err != nil {
-				t.Fatalf("Adresse %q: LegeErstenAdminAn: %v", adresse, err)
-			}
-			if n := zaehleKonten(t, tx, `true`); n != 0 {
-				t.Errorf("Adresse %q: %d Konten angelegt, erwartet 0", adresse, n)
-			}
-		})
-	}
-}
-
-// Ein Wert ohne die Form einer Adresse bricht den Start ab und legt nichts an: Die Tabelle
-// bleibt leer, die berichtigte Variable wirkt beim nächsten Start.
+// Fehlt die Adresse oder hat der Wert nicht ihre Form, bricht der erste Start ab und legt
+// nichts an: Die Tabelle bleibt leer, die berichtigte Variable wirkt beim nächsten Start.
 func TestLegeErstenAdminAn_KeineAdresseBrichtDenStartAb(t *testing.T) {
 	pool := pgTestPool(t)
-	for _, adresse := range []string{"admin", "admin@", "@schule.example", "erika muster@schule.example", "Erika <erika@schule.example>"} {
+	for _, adresse := range []string{"", "   ", "admin", "admin@", "@schule.example", "erika muster@schule.example", "Erika <erika@schule.example>"} {
 		inTx(t, pool, func(tx pgx.Tx) {
 			d := ersterStart(t, tx, adresse)
 			err := d.LegeErstenAdminAn(context.Background())
