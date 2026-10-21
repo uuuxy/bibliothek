@@ -15,9 +15,9 @@ import (
 // Die Anweisungen des LUSD-Imports. Jede läuft in der Transaktion des Laufs; Reihenfolge und
 // Regeln (wer adoptiert, angelegt, aktualisiert oder zum Abgänger wird) stehen beim Aufrufer.
 
-// lusdImportSperre ist der Schlüssel der Sperre, die gleichzeitige Importe einreiht. Kein
-// anderer Advisory-Schlüssel im Projekt nutzt diesen Nummernkreis.
-const lusdImportSperre int64 = 750_2026
+// lusdImportSperre ist der Schlüssel der Sperre, die gleichzeitige Importe einreiht. Ein
+// beliebiger, aber im Projekt eindeutiger Wert (advisory_sperren_ratsche_test.go).
+const lusdImportSperre int64 = 752_2026
 
 // SperreLUSDImport reiht den Lauf hinter einem laufenden Import ein, bis die Transaktion
 // endet. Zwei Importe zugleich arbeiteten auf sich überholenden Ständen: Kollidierende
