@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // Umbenennung ohne Schüler-ID.
@@ -330,13 +332,12 @@ func datumText(d *time.Time) string {
 	return d.Format(datumsformatISO)
 }
 
-// normierterName ebnet ein, was eine Umbenennung typischerweise ändert: Groß/Klein, Umlaut-
-// Schreibung, Bindestrich, Leerzeichen. „Al-Sayed" und „Al Sayed", „Müller" und
-// „Mueller" gelten als gleich.
+// normierterName ist der Namensteil in der Normalform des Imports, dazu ohne Bindestrich,
+// Leerzeichen und Punkt: „Al-Sayed" und „Al Sayed", „Müller", „Mueller" und „Muller", „García"
+// und „Garcia" gelten als gleich. Auf der Normalform des Imports, damit die Paarung nie enger
+// ist als der Schlüssel, dessen Lücken sie füllt.
 func normierterName(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
-	s = strings.NewReplacer("ä", "ae", "ö", "oe", "ü", "ue", "ß", "ss", "-", "", " ", "", ".", "").Replace(s)
-	return s
+	return strings.NewReplacer("-", "", " ", "", ".", "").Replace(repository.NamensteilNorm(s))
 }
 
 // istNamensteilGleich: gleich nach Normierung, oder der eine ist Anfang des anderen (ein

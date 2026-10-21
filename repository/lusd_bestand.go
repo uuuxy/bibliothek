@@ -29,24 +29,24 @@ func LUSDSchluessel(vorname, nachname string, geb *time.Time) string {
 	if geb == nil {
 		return ""
 	}
-	return namensteilNorm(vorname) + "\x1f" + namensteilNorm(nachname) + "\x1f" + geb.Format("2006-01-02")
+	return NamensteilNorm(vorname) + "\x1f" + NamensteilNorm(nachname) + "\x1f" + geb.Format("2006-01-02")
 }
 
 // LUSDNamensSchluessel ist der Nur-Name-Schlüssel (Vorname + Nachname in der Normalform
 // suchnorm) — die letzte Stufe, wenn der Export weder ID noch Geburtsdatum trägt.
 func LUSDNamensSchluessel(vorname, nachname string) string {
-	return namensteilNorm(vorname) + "\x1f" + namensteilNorm(nachname)
+	return NamensteilNorm(vorname) + "\x1f" + NamensteilNorm(nachname)
 }
 
-// namensteilNorm ist die eine Regel hinter beiden Schlüsseln: Ränder und mehrfache Leerzeichen
+// NamensteilNorm ist die eine Regel hinter beiden Schlüsseln: Ränder und mehrfache Leerzeichen
 // weg, dann die Normalform suchnorm. Mit lower und trim allein fände der Export „Anna Mueller"
 // die von Hand angelegte „Anna Müller" nie: Neuanlage plus „nicht im Export" statt Zuordnung.
 // Gefahrlos ist die weitere Regel, weil der Import einen doppelt belegten Schlüssel als
 // mehrdeutig markiert und dann niemanden anfasst (internal/lusd/bestand.go, trageEin): Ein
 // Schlüssel, der zwei Menschen zusammenwirft, führt nie in eine falsche Zuordnung. Bindestriche
 // bleiben stehen: „Anna-Lena" und „Anna" sind verschiedene Vornamen; die Umbenennungs-Paarung
-// (internal/lusd/paarung.go) hat dafür ihre eigene, weitere Regel mit menschlicher Bestätigung.
-func namensteilNorm(s string) string {
+// (internal/lusd/paarung.go) baut darauf ihre weitere Regel mit menschlicher Bestätigung.
+func NamensteilNorm(s string) string {
 	return suchnorm(strings.Join(strings.Fields(s), " "))
 }
 

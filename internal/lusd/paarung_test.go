@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // Die Paarungsregeln ohne Datenbank: Welche Signale ein Paar tragen, welche nicht, und
@@ -49,6 +51,27 @@ func TestIstNamensteilGleich(t *testing.T) {
 	}
 }
 
+// Die Paarung füllt die Lücken des Schlüssels und darf nirgends enger sein als er: Was der
+// Import für denselben Namensteil hält, muss auch hier gleich sein. Sonst fällt gerade das Paar
+// weg, das nach einer zweiten Änderung (Datum korrigiert, Vorname gekürzt) ein Mensch bestätigen
+// sollte.
+func TestIstNamensteilGleich_WeiterAlsDerSchluessel(t *testing.T) {
+	paare := [][2]string{
+		{"García", "Garcia"}, {"José", "Jose"}, {"Müller", "Muller"}, {"Müller", "Mueller"},
+		{"Yılmaz", "Yilmaz"}, {"İlknur", "Ilknur"}, {"Şahin", "Sahin"}, {"Łukasz", "Lukasz"},
+		{"Kovačević", "Kovacevic"}, {"Nguyễn", "Nguyen"}, {"Strauß", "Strauss"}, {"Ånström", "Anstrom"},
+	}
+	for _, p := range paare {
+		a, b := repository.NamensteilNorm(p[0]), repository.NamensteilNorm(p[1])
+		if a != b {
+			t.Fatalf("Vorbedingung: NamensteilNorm(%q) = %q, NamensteilNorm(%q) = %q", p[0], a, p[1], b)
+		}
+		if !istNamensteilGleich(p[0], p[1]) {
+			t.Errorf("istNamensteilGleich(%q, %q) = false, der Schlüssel des Imports hält beide für gleich", p[0], p[1])
+		}
+	}
+}
+
 // Die Signal-Matrix: sicher nur mit Schuleintritt; vermutlich mit Geburtsdatum + einem
 // weiteren Signal oder Name + Klasse; ohne tragendes Signal kein Paar.
 func TestBewertePaar_Signale(t *testing.T) {
@@ -62,6 +85,7 @@ func TestBewertePaar_Signale(t *testing.T) {
 	}{
 		{"Umbenennung mit Eintritt", Zeile{Vorname: "Anna", Nachname: "Mueller-Schmidt", Klasse: "06F1", Geburtsdatum: geb, EintrittAm: eintritt}, true, true, "gleicher Schuleintritt"},
 		{"Datumskorrektur mit Eintritt", Zeile{Vorname: "Anna", Nachname: "Müller", Klasse: "09A", Geburtsdatum: tag(2013, 5, 14), EintrittAm: eintritt}, true, true, "gleicher Name"},
+		{"Umlaut ohne Punkte, Datumskorrektur mit Eintritt", Zeile{Vorname: "Anna", Nachname: "Muller", Klasse: "09A", Geburtsdatum: tag(2013, 5, 14), EintrittAm: eintritt}, true, true, "gleicher Name"},
 		{"Nachname neu, gleiche Klasse", Zeile{Vorname: "Anna", Nachname: "Schulz", Klasse: "05F1", Geburtsdatum: geb}, true, false, "gleicher Vorname"},
 		{"Datumskorrektur ohne Eintritt", Zeile{Vorname: "Anna", Nachname: "Müller", Klasse: "06F1", Geburtsdatum: tag(2013, 5, 14)}, true, false, "Korrektur"},
 		{"nur Geburtsdatum", Zeile{Vorname: "Ben", Nachname: "Schulz", Klasse: "09A", Geburtsdatum: geb}, false, false, ""},

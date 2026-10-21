@@ -1,6 +1,6 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-10-16. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-10-21. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `api/leser/lusd.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
@@ -92,7 +92,8 @@ allem, was der Export sonst hergibt, dieselbe Person sind
 1. **Schuleintritt** (`Schueler_Eintritt_AktuelleSchule` → `schueler.schul_eintritt_am`,
    Migration 094) — übersteht jede Umbenennung. Ein „Neuzugang", dessen Eintritt Jahre
    zurückliegt, ist fast sicher keiner.
-2. Geburtsdatum, Name (Vor- oder Nachname, normiert: Umlaut, Bindestrich, zweiter Vorname),
+2. Geburtsdatum, Name (Vor- oder Nachname in der Normalform des Schlüssels, dazu ohne
+   Bindestrich, Leerzeichen und Punkt; ein zweiter Vorname darf fehlen),
    Klasse (gleich oder Nachbarjahrgang: „05F1" ↔ „06F1"), Anschrift (Straße + PLZ).
 
 | Einstufung     | Bedingung                                                                                                 | Vorschau                    |
