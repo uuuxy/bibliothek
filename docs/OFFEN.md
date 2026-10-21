@@ -16,7 +16,7 @@ Diese Punkte standen als bekannte Grenzen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11
 sich lösen. Die zwei der Kategorie A kommen zuerst.
 
 - [x] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
-- [ ] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
+- [x] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
   verloren. (5.83)
 - [ ] Fünf Fehler an Türen und Abfragen. (5.84)
 - [ ] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
@@ -141,15 +141,6 @@ Nicht entschieden: Alte Sicherungen löschen nur die Läufe von `update.sh` und
 `scripts/backup.sh`. Kommt kein Update mehr, bleibt die letzte Vorab-Sicherung liegen, ein
 Klartext-Rest nach einem misslungenen Update bis zum nächsten Lauf; die Meldungen der Skripte
 sagen das.
-
-### 5.83 (A) Theke: wartende Scans beim Neuladen
-
-Antwortet der Server nicht, wartet jeder eingereihte Scan seine Frist ab (10 s, `apiFetch.js`),
-bevor er ohne Netz abgelegt wird. Die Reihe liegt nur im Speicher
-(`frontend/src/lib/stores/omniboxReihe.svelte.js`); ein Neuladen oder Schließen in dieser Zeit
-verwirft sie ohne Meldung, und das Buch geht ungebucht hinaus oder bleibt verliehen. Gewarnt
-wird beim Verlassen nur für die Warteschlange ohne Netz (`warneVorDemSchliessen` in
-`frontend/src/lib/stores/offlineSync.svelte.js`).
 
 ### 5.84 Fünf Fehler an Türen und Abfragen
 

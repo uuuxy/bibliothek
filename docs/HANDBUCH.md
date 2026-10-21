@@ -79,7 +79,8 @@ Ausweis, dann die Bücher an diesen Leser. Dieselbe Nummer noch einmal, bevor si
 zählt nicht. Geht ein Scan nicht glatt durch (er scheitert, eine Rückfrage geht auf oder ein
 Hinweis erscheint über dem Konto), bucht die Theke nicht, was danach schon gescannt war: Die
 Nummern stehen rot unter dem Scanfeld („Gescannt und NICHT gebucht: … — bitte erneut scannen"),
-mit Fehlerton, bis zum nächsten Scan.
+mit Fehlerton, bis zum nächsten Scan. Wird das Fenster neu geladen oder geschlossen, solange
+noch ein Scan auf die Antwort wartet, fragt der Browser vorher.
 
 **Am Ton ist zu hören, was gebucht wurde:** Eine Ausleihe klingt mit zwei
 Tönen abwärts; eine Rückgabe und ein gescannter Ausweis klingen mit denselben zwei Tönen

@@ -44,6 +44,15 @@ export function erzeugeOmniboxReihe({
 	// Löst sich auf, sobald kein Scan mehr unterwegs ist oder wartet.
 	let reiheGebucht = Promise.resolve();
 
+	// Die Reihe liegt nur im Speicher. Ein Neuladen oder Schließen, solange sie bucht (ein Scan
+	// wartet nur, solange ein anderer gebucht wird), verwürfe die Scans ohne Meldung; der Browser
+	// fragt deshalb vorher, wie bei der Warteschlange ohne Netz (offlineSync.svelte.js).
+	if (typeof window !== 'undefined') {
+		window.addEventListener('beforeunload', (e) => {
+			if (buchungLaeuft) e.preventDefault();
+		});
+	}
+
 	// Ein Scan kommt in die Reihe: Läuft keine Buchung, beginnt sie mit ihm, sonst wartet er.
 	/** @param {Auftrag} auftrag */
 	function reiheEin(auftrag) {
