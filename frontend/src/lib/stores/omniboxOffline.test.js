@@ -19,9 +19,7 @@ vi.mock('../apiFetch.js', () => ({
 }));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
-	spieleFehlerton: vi.fn(),
-	spieleErfolgspiep: vi.fn(),
-	spieleFehlerpiep: vi.fn()
+	spieleFehlerton: vi.fn()
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 // Die Barcode-Liste wird gestellt: Hier geht es um das EINREIHEN, nicht um das Holen.

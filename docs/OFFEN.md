@@ -129,16 +129,13 @@ eine Uhr sie auch ohne Lauf löschen soll; `update.sh` tut es bewusst nicht.
 
 ### 5.87 Kleinigkeiten an der Oberfläche
 
-Die drei übrigen Teile ändern, was man sieht oder hört; sie werden erst nach einer Antwort
-gebaut.
+Entschieden am 21.10.2026: Alle Teile werden gebaut.
 
 - **„Buch bearbeiten" speichert nur per Klick:** Die Eingabetaste löst nichts aus, und in der
   Tab-Reihenfolge steht „Speichern" vor den Feldern. Die Maske ist wie ein Vollbild-Dialog
   gebaut (Schließen, Titel, „Speichern" im Kopf, `BuchFormular.svelte`), dort steht die Aktion
   vorn. Die Eingabetaste ist im ISBN-Feld belegt: Der Scanner schickt ISBN und Enter, und das
   stößt die Abfrage an; ein Enter, das speichert, müsste dieses Feld ausnehmen.
-- **Die Inventur meldet einen Scan nur auf dem Bildschirm,** ohne Ton wie an der Theke. In
-  `audio.js` stehen `spieleErfolgspiep` und `spieleFehlerpiep`, die niemand ruft.
 - **Neun Stellen bauen ihr Cover selbst** statt über `ui/BuchCover` (Liste in
   `frontend/src/lib/frontend-hygiene-cover.test.js`). `BuchCover` kennt vier Höhen von 28 bis
   80 px; die Monitor-Folien, die Kachel des Katalogs und die Buchakte zeigen größere Cover mit

@@ -3,6 +3,7 @@ import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import { scanne, schliesseAb, deuteScanErgebnis } from './inventurApi.js';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
 import { useInventurlauf } from './useInventurlauf.svelte.js';
+import { spieleErfolgston, spieleFehlerton } from './audio.js';
 
 /**
  * Was die Rückfrage vor dem Abschluss sagt: wie viele Bücher als verloren gebucht werden.
@@ -46,8 +47,12 @@ export function useInventur() {
 			const ergebnis = deuteScanErgebnis(r, barcode);
 			if (ergebnis.zaehlen) lauf.stand.erfasst++;
 			letzterScan = ergebnis.lastScan;
+			// Der Ton folgt wie an der Theke der Buchung: Gezählt klingt nach Erfolg, auch mit
+			// Hinweis; was nicht zählt, gibt den Fehlerton, damit man auf den Bildschirm sieht.
+			(ergebnis.zaehlen ? spieleErfolgston : spieleFehlerton)();
 		} catch (e) {
 			console.error('Scan fehlgeschlagen:', e);
+			spieleFehlerton();
 			letzterScan = {
 				success: false,
 				barcode,
@@ -88,15 +93,10 @@ export function useInventur() {
 				`Inventur abgeschlossen! ${r.data.verloren_gemeldet} Bücher wurden als verloren markiert.`,
 				'success'
 			);
-			// Den Fehlbestand VOR dem Zuruecksetzen sichern.
-			//
-			// Vorher endete der Abschluss mit einer Zahl im Toast, und die Liste war weg —
-			// mit „47 Bücher verloren" kann niemand ins Regal gehen und nachsehen, ob eines
-			// davon nur falsch einsortiert war. Rekonstruieren liess sie sich danach auch
-			// nicht: Durch die Aussonderung fallen die Exemplare aus dem Scope.
+			// Die Liste vor dem Zurücksetzen sichern: Mit der Zahl allein geht niemand ins Regal, und
+			// nach der Aussonderung fallen die Exemplare aus dem Bereich der Inventur.
 			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label);
-			// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den
-			// Abschluss ueberleben, sonst waere er im selben Moment wieder verschwunden.
+			// Lässt den Fehlbestand stehen: Der Bericht soll den Abschluss überleben.
 			lauf.setzeZurueck();
 			letzterScan = null;
 			await lauf.ladeOffeneLaeufe();

@@ -11,9 +11,7 @@ vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
-	spieleFehlerton: vi.fn(),
-	spieleErfolgspiep: vi.fn(),
-	spieleFehlerpiep: vi.fn()
+	spieleFehlerton: vi.fn()
 }));
 vi.mock('./buchBarcodes.svelte.js', () => ({
 	buchBarcodes: {

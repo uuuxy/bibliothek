@@ -9,9 +9,7 @@ const apiFetch = vi.hoisted(() => vi.fn());
 vi.mock('../apiFetch.js', () => ({ apiFetch, apiClient: { post: vi.fn() } }));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
-	spieleFehlerton: vi.fn(),
-	spieleErfolgspiep: vi.fn(),
-	spieleFehlerpiep: vi.fn()
+	spieleFehlerton: vi.fn()
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 

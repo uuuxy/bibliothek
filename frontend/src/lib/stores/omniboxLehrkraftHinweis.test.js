@@ -17,9 +17,7 @@ vi.mock('../apiFetch.js', () => ({
 }));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
-	spieleFehlerton: vi.fn(),
-	spieleErfolgspiep: vi.fn(),
-	spieleFehlerpiep: vi.fn()
+	spieleFehlerton: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';

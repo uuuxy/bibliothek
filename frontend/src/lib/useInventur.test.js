@@ -8,10 +8,12 @@ vi.mock('./inventurApi.js');
 vi.mock('./apiFetch.js', () => ({
 	apiFetch: vi.fn(async () => ({ ok: false, json: async () => ({}) }))
 }));
+vi.mock('./audio.js', () => ({ spieleErfolgston: vi.fn(), spieleFehlerton: vi.fn() }));
 
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import { schliesseAb, ladeOffeneSessions, scanne, deuteScanErgebnis } from './inventurApi.js';
 import { useInventur, abschlussText } from './useInventur.svelte.js';
+import { spieleErfolgston, spieleFehlerton } from './audio.js';
 
 const frage = vi.mocked(bestaetigen);
 const abschluss = vi.mocked(schliesseAb);
@@ -119,5 +121,55 @@ describe('Scan während der Anfrage', () => {
 		ersterFertig(treffer('B-1'));
 		await Promise.all([laufend, abschlussFrage]);
 		expect(frage).toHaveBeenCalledTimes(1);
+	});
+});
+
+// Die Inventur gibt wie die Theke einen Ton: Wer ins Regal sieht, hört, ob das Buch gezählt ist.
+describe('Ton beim Scan', () => {
+	const scan = vi.mocked(scanne);
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		vi.mocked(ladeOffeneSessions).mockResolvedValue([]);
+		const echt = /** @type {any} */ (await vi.importActual('./inventurApi.js'));
+		vi.mocked(deuteScanErgebnis).mockImplementation(echt.deuteScanErgebnis);
+	});
+
+	it('gibt den Erfolgston für ein gezähltes Buch, auch mit Hinweis', async () => {
+		scan.mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				status: 200,
+				data: { barcode_id: 'B-1', titel: 'Buch', warnungen: ['Ist ausgeliehen'] }
+			})
+		);
+		await useInventur().verarbeiteScan('B-1');
+
+		expect(spieleErfolgston).toHaveBeenCalledTimes(1);
+		expect(spieleFehlerton).not.toHaveBeenCalled();
+	});
+
+	it('gibt den Fehlerton, wenn das Buch nicht zum Bereich gehört', async () => {
+		scan.mockResolvedValue(
+			/** @type {any} */ ({
+				ok: false,
+				status: 409,
+				data: { status: 'ausser_scope', barcode_id: 'B-1', titel: 'Buch' }
+			})
+		);
+		await useInventur().verarbeiteScan('B-1');
+
+		expect(spieleFehlerton).toHaveBeenCalledTimes(1);
+		expect(spieleErfolgston).not.toHaveBeenCalled();
+	});
+
+	it('gibt den Fehlerton für ein unbekanntes Buch und ohne Netz', async () => {
+		scan.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 404, error: 'Unbekannt' }));
+		scan.mockRejectedValueOnce(new Error('Netz weg'));
+		const inventur = useInventur();
+		await Promise.all([inventur.verarbeiteScan('B-1'), inventur.verarbeiteScan('B-2')]);
+
+		expect(spieleFehlerton).toHaveBeenCalledTimes(2);
+		expect(spieleErfolgston).not.toHaveBeenCalled();
 	});
 });
