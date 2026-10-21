@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 20.10.2026
+Stand: 21.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -117,7 +117,7 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
   den Status des Exemplars zurückstellen.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
-- [ ] Am Testserver einmal den Build-Cache leeren: `docker builder prune -af`. Dort liegen
+- [x] Am Testserver einmal den Build-Cache leeren: `docker builder prune -af`. Dort liegen
   12,8 GB, die Platte ist zu 82 % belegt (gelesen am 13.10.2026). Images, Container und
   Volumes fasst der Befehl nicht an; das Update danach baut jede Schicht neu. Ab dem
   übernächsten Update leert `update.sh` den Build-Cache selbst (Schritt 7).
