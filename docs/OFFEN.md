@@ -123,6 +123,8 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   übernächsten Update leert `update.sh` den Build-Cache selbst (Schritt 7).
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome (Stufe 1 und 3), zurückgestellt
   am 24.09.2026. Stufe 2 über die Tür ist seit dem 08.10.2026 belegt. (2.3)
+- [ ] Entscheiden: Der LMF-Planer fragt beim Verlassen mit eigenem Dialog, beim Abmelden mit dem
+  gemeinsamen. Auf den gemeinsamen umstellen? (4.37)
 
 ### Termine
 
@@ -170,6 +172,17 @@ die Theke ohne Verbindung verhält, steht in [FACHKONZEPT.md](FACHKONZEPT.md) 18
 ## 4. Entscheidungen
 
 Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt sind.
+
+### 4.37 Rückfrage beim Verlassen des LMF-Planers
+
+Der LMF-Planer hängt an derselben Tür wie Buchmaske und Stammdaten (`uiStore.verlassenSperre`).
+Beim Wechsel der Seite zeigt er aber einen eigenen Dialog (`LmfPlanUngespeichert.svelte`: „Der
+Plan wurde geändert, aber nicht gespeichert. Wer jetzt geht, verliert die Änderungen —
+gespeichert bleibt der letzte Stand."), beim Abmelden den gemeinsamen (`verwerfenBestaetigen`:
+„Die Eingaben in der Maske sind nicht gespeichert und gehen dabei verloren."). Vorschlag:
+`schuetzeUngespeichertes` wie die beiden anderen Masken; der eigene Dialog entfällt und mit ihm
+der Satz „gespeichert bleibt der letzte Stand". Gefunden im Rasterdurchgang (Protokoll in
+9a7bfbc0).
 
 ### 4.20 Littera-Schlagworte übernehmen — die Verweise
 
