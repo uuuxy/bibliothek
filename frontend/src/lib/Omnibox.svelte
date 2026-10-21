@@ -114,11 +114,11 @@
 	<div
 		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-4 justify-start"
 	>
-		<!-- Die Fläche der Leiste hat die Farbe der Seite: In Ruhe ist hinter ihr nichts zu
-		     sehen, beim Scrollen verdeckt sie den Inhalt, der unter ihr durchläuft. Der Umschalter
-		     steht neben dem Feld; fehlt die Breite, rutscht er darunter. -->
+		<!-- Die Fläche der Leiste hat die Farbe der Seite: Beim Scrollen verdeckt sie den Inhalt
+		     darunter. Das Feld ist wie jede Suchleiste höchstens 720 px breit, der Umschalter steht
+		     direkt daneben; fehlt die Breite, rutscht er darunter. -->
 		<div
-			class="w-full sticky top-0 z-30 bg-surface-container-lowest pb-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
+			class="w-full sticky top-0 z-30 bg-surface-container-lowest pb-2 flex flex-wrap items-center gap-x-3 gap-y-2"
 		>
 			<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus, bewusst rounded-full und
 			     48 px statt der 36-px-Control-Höhe: Das Scanfeld ist das Werkzeug des Kiosks. Der
@@ -127,7 +127,7 @@
 			     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
 				onsubmit={(e) => omniboxStore.fuehreAktionAus(e, () => leserakte?.ladeNeu())}
-				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {wackelKlasse} {farbZustand}"
+				class="group relative flex flex-1 min-w-64 max-w-suche items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {wackelKlasse} {farbZustand}"
 			>
 				<OmniboxInput
 					bind:eingabe={omniboxStore.eingabe}

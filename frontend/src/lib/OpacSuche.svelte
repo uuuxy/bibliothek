@@ -67,8 +67,8 @@
 		</div>
 	</header>
 
-	<!-- Search bar -->
-	<div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6 space-y-4 relative z-10">
+	<!-- Search bar: mittig wie die ganze Seite; die Pille selbst ist höchstens 720 px breit. -->
+	<div class="w-full max-w-4xl mx-auto px-6 pt-10 pb-6 flex flex-col items-center relative z-10">
 		<!-- Der OPAC steht als Katalog-Terminal im Raum, und dieses Feld ist der einzige
 		     Zweck der Seite — deshalb Fokus beim Betreten. Ohne ihn tippt der erste
 		     Anschlag ins Leere, und beim Barcode-Scanner geht der Scan verloren, ohne dass

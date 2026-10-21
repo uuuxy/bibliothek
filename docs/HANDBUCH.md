@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-19. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-21. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -28,8 +28,8 @@ _Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren. (§16)
 
 ## Suchen
 
-Jede Seite hat **eine** Suchleiste oben über der vollen Breite, Filter und Knöpfe stehen in
-der Zeile darunter. Sie sucht, worum es auf der Seite geht: der Medienkatalog Bücher,
+Jede Seite hat **eine** Suchleiste oben links, Filter und Knöpfe stehen in der Zeile darunter.
+Sie sucht, worum es auf der Seite geht: der Medienkatalog Bücher,
 Leserdatei und Mahnwesen Menschen, die Inventur scannt. Eine seitenübergreifende
 Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Leserakte springt, gibt es
 nicht. Gebucht wird nur an der Theke.

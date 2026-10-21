@@ -10,7 +10,9 @@
 	import Select from '../ui/Select.svelte';
 </script>
 
-<div class="lg:col-span-7 space-y-6 text-left">
+<!-- Die drei Schritte sind eine Maske: höchstens 44rem breit (max-w-maske), damit Suchfeld und
+     Auswahlfelder auch im breiten Fenster eine Kante behalten. -->
+<div class="lg:col-span-7 max-w-maske space-y-6 text-left">
 	{#if (druckWarteschlange.copies?.length ?? 0) > 0}
 		{@const anzahl = druckWarteschlange.copies?.length ?? 0}
 		<div

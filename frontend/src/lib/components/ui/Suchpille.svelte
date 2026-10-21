@@ -35,9 +35,9 @@
 	 * element: bind:this-Ersatz für Aufrufer, die den Fokus selbst setzen (Inventur-Scan
 	 * nach jedem Treffer). disabled: während ein Scan verarbeitet wird.
 	 *
-	 * Wo sie hingehört: Jede Seite hat genau eine Suche, und die ist diese Pille — über die
-	 * volle Breite, ganz oben im Inhalt. Filter, Auswahlfelder und Knöpfe stehen in einer
-	 * eigenen Zeile darunter und bleiben auf der 36-px-Grundlinie (ui/Suchfeld.svelte);
+	 * Wo sie hingehört: Jede Seite hat genau eine Suche, und die ist diese Pille — ganz oben im
+	 * Inhalt, höchstens 720 px breit (max-w-suche). Filter, Auswahlfelder und Knöpfe stehen in
+	 * einer eigenen Zeile darunter und bleiben auf der 36-px-Grundlinie (ui/Suchfeld.svelte);
 	 * nebeneinander säße die Pille 12 px höher als alles daneben. Der Gegenstand ist der der
 	 * Seite: Der Katalog sucht Bücher, die Inventur scannt, das Mahnwesen sucht Schüler.
 	 */
@@ -90,7 +90,7 @@
 </script>
 
 <div
-	class="group flex items-center w-full h-12 px-5 bg-surface-container-high rounded-full border border-transparent ring-inset transition-all duration-200 focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
+	class="group flex items-center w-full max-w-suche h-12 px-5 bg-surface-container-high rounded-full border border-transparent ring-inset transition-all duration-200 focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
 >
 	<Search
 		class="h-5 w-5 shrink-0 text-on-surface group-focus-within:text-primary transition-colors duration-200"

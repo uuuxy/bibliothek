@@ -183,4 +183,9 @@
 	   jede Maske dieselbe nimmt (max-w-maske). Seiten und Listen bleiben breit.
 	   Gate: e2e/feldbreite.spec.js. */
 	--container-maske: 44rem;
+
+	/* Breite der Suchleisten (max-w-suche): Material 3, Search, Specs: „Container | Width |
+	   Min: 360dp, max: 720dp". Sie steht am Anfang des Inhalts, die Liste darunter bleibt breit.
+	   Gate: e2e/feldbreite.spec.js. */
+	--container-suche: 45rem;
 }

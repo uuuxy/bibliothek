@@ -12,8 +12,7 @@ geführt wird, steht am Ende.
 
 ### Jetzt
 
-- [ ] Vorschläge an sechs Textfeldern als eigene Liste nach Material 3 statt `datalist`. (5.86)
-- [ ] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
+- [x] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -30,6 +29,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
+
+### Zurückgestellt
+
+- [ ] Vorschläge an sechs Textfeldern als eigene Liste nach Material 3 statt `datalist`. (5.86)
 
 ### Bei dir
 
@@ -90,10 +93,8 @@ trägt ein neues Etikett keinen Vermerk.
 ### 5.86 Material 3, wo die Oberfläche noch abweicht
 
 - **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen). Entschieden am
-  21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten.
-- **Die Suchleisten** laufen auf den Listenseiten über die ganze Breite des Inhalts, ebenso das
-  Scanfeld der Theke. Material 3, Search, Specs: „Container | Width | Min: 360dp, max: 720dp".
-  Nicht entschieden; das Gate `e2e/feldbreite.spec.js` lässt sie aus.
+  21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
+  selben Tag zurückgestellt.
 
 ### 7.2 Frisches Littera-Backup
 
