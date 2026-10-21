@@ -500,6 +500,8 @@ Stand: 21.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-na
 ```
 HTTP-Anfrage
    │
+   ├─ Log ────────────────────── jede Anfrage: Methode und Pfad, Token maskiert, ohne IP
+   ├─ 0 Adresse ──────────────── Client-IP hinter dem Proxy (pkg/clientip), gelesen von Bremse und Türen
    ├─ 1 PanicRecovery ────────── fängt Panics, 500 statt Prozess-Ende
    ├─ 2 Sentry (Repanic: true) ─ Fehlerweitergabe, optional
    ├─ 3 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
