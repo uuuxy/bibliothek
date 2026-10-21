@@ -1887,6 +1887,7 @@ höchstens Serverzeit).
 | **Eine Unique-Verletzung wird 409, nicht 500**                  | Ein Doppelscan ist ein Fachfall, keine Störung. `deuteAnlegeFehler` bildet SQLSTATE 23505 ab                                                     |
 | **DB-Aussetzer bei der Sitzungsprüfung wird 503, nicht 401**    | Eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist                                                                               |
 | **Ein unbekannter `/api/`-Pfad wird 404, nicht die App-Shell**  | Mit der App-Shell (200 text/html) scheiterte der Aufrufer erst beim JSON-Parsen, mit einer Meldung ohne Bezug zur Ursache                       |
+| **Die App-Shell geht mit `no-cache` und ohne Datum hinaus**    | Nach einem Rückbau ist `index.html` älter als die im Browser; ein Vergleich nach Datum antwortete 304, und der Browser lüde den verworfenen Bau |
 | **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg**: Die Liste wäre still unvollständig                                  |
 | **Schweigen ist kein Erfolg**                                   | Ein Nachbuch-Schlüssel ohne Antwort bleibt in der Warteschlange liegen                                                                          |
 | **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei, auch wenn zusätzlich gefiltert wurde                                                  |

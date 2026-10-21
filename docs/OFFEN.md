@@ -18,7 +18,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
 - [x] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
   verloren. (5.83)
-- [ ] Vier Fehler an Türen und Abfragen. (5.84)
+- [ ] Drei Fehler an Türen und Abfragen. (5.84)
 - [ ] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
 - [ ] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
@@ -142,11 +142,8 @@ Nicht entschieden: Alte Sicherungen löschen nur die Läufe von `update.sh` und
 Klartext-Rest nach einem misslungenen Update bis zum nächsten Lauf; die Meldungen der Skripte
 sagen das.
 
-### 5.84 Vier Fehler an Türen und Abfragen
+### 5.84 Drei Fehler an Türen und Abfragen
 
-- **Die Startseite geht ohne `Cache-Control` hinaus** (`http.ServeFileFS` in `api/router.go`).
-  Nach einem Rückbau auf einen älteren Stand antwortet der Server auf das jüngere Datum des
-  Browsers mit 304, und der Browser behält die neuere Seite.
 - **Zwei Türen verwerfen ein unbekanntes Feld still:** `PATCH /api/schueler/{id}`
   (`api/leser/leser_aendern.go`) und `PUT /api/books/{id}` (`TitelAendern` in `inventur/`); ein
   vertippter Name neben einem richtigen fällt ohne Meldung. Die übrigen Türen lehnen es ab

@@ -20,12 +20,16 @@ package api
 // middleware.go, jede Route mit ihrem Recht in routen_*.go.
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"bibliothek/api/benutzer"
 	"bibliothek/api/bestellung"
@@ -387,6 +391,23 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 		}
 
 		// Alle übrigen Pfade bekommen die App-Shell.
-		http.ServeFileFS(w, r, oberflaeche.FS(), "index.html")
+		liefereAppShell(w, r, oberflaeche)
 	}
+}
+
+// liefereAppShell liefert index.html. Sie nennt die Dateien ihres Baus und wird deshalb bei
+// jedem Aufruf neu geholt, ohne Vergleich nach Datum: Nach einem Rückbau ist die Datei älter als
+// die im Browser, und If-Modified-Since bekäme 304.
+func liefereAppShell(w http.ResponseWriter, r *http.Request, oberflaeche *os.Root) {
+	shell, err := fs.ReadFile(oberflaeche.FS(), "index.html")
+	if errors.Is(err, fs.ErrNotExist) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return
+	}
+	w.Header().Set(tuer.HeaderCacheControl, "no-cache")
+	http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(shell))
 }
