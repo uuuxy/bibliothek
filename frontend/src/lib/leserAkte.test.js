@@ -34,7 +34,7 @@ describe('Akte eines Lesers', () => {
 		eltern_email: ''
 	});
 
-	it('zeigt einem Kollegen persönliche Daten statt Stammdaten & Adresse', () => {
+	it('zeigt einem Kollegen Postanschrift und den Hinweis auf sein Konto', () => {
 		const screen = render(LeserakteStammdaten, {
 			leser: akte('lehrkraft'),
 			darfBearbeiten: true,
@@ -43,7 +43,6 @@ describe('Akte eines Lesers', () => {
 		});
 		const text = screen.container.textContent ?? '';
 
-		expect(text).toContain('Stammdaten & Adresse');
 		expect(text).toContain('Lehrkraft');
 		expect(text, 'ohne Postanschrift geht kein Bescheid und keine Mahnung raus').toContain(
 			'Postanschrift'
@@ -166,7 +165,7 @@ describe('Akte eines Lesers', () => {
 		});
 		const text = screen.container.textContent ?? '';
 
-		expect(text).toContain('Stammdaten & Adresse');
+		expect(text, 'der Reiter darüber trägt den Namen schon').not.toContain('Stammdaten & Adresse');
 		expect(text).toContain('Postanschrift');
 		expect(text).toContain('Eltern E-Mail');
 		expect(text).toContain('LUSD');

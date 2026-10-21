@@ -89,15 +89,10 @@
 		</Button>
 	{/if}
 {:else}
-	<Button
-		variant="secondary"
-		onclick={mahnwesenStore.lade}
-		aria-label="Daten neu laden"
-		data-tip="Daten neu laden"
-		title="Neu laden"
-		class="px-2 text-on-surface-variant"
-	>
+	<!-- Wie in Verwaltungsprotokoll und Logbuch: Symbol und Wort. -->
+	<Button variant="secondary" onclick={mahnwesenStore.lade}>
 		<RefreshCw class="h-4 w-4" aria-hidden="true" />
+		Aktualisieren
 	</Button>
 
 	<Button

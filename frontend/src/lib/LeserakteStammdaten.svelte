@@ -19,7 +19,7 @@
 	import Button from './components/ui/Button.svelte';
 	import SchuelerZusammenfuehren from './components/leser/SchuelerZusammenfuehren.svelte';
 	import { istKollegium, leserArtText } from './leserArt.js';
-	import { Folder, Info, SquarePen } from '@lucide/svelte';
+	import { Info, SquarePen } from '@lucide/svelte';
 
 	const kollege = $derived(istKollegium(leser));
 
@@ -40,23 +40,18 @@
      Die Ausweisnummer steht nicht hier: Sie steht schon auf der Karte links
      (LeserakteKopf.svelte), samt Hinweis, wenn noch keine vergeben ist. -->
 <div class="w-full pt-2 animate-fade-in space-y-8">
-	<div class="flex justify-between items-center border-b border-outline-variant pb-4">
-		<h3 class="text-xl font-bold text-on-surface flex items-center gap-2">
-			<Folder class="w-6 h-6 text-primary" aria-hidden="true" />
-			Stammdaten & Adresse
-		</h3>
-		<div class="flex items-center gap-2">
-			{#if darfBearbeiten}
-				<!-- Keine Palette-Übersteuerung: Das M3-Bauteil trägt seine Farben selbst
-				     (styles/rollen.css). Die vier Tailwind-Klassen hier waren eine zweite
-				     Farbquelle neben den Rollen — genau das, was die Farb-Ratsche abbaut. -->
-				<Button variant="secondary" size="lg" onclick={onEdit} class="px-5">
-					<SquarePen class="w-4 h-4" aria-hidden="true" />
-					Bearbeiten
-				</Button>
-			{/if}
+	<!-- Keine eigene Überschrift: Der Reiter darüber heißt schon „Stammdaten & Adresse“. -->
+	{#if darfBearbeiten}
+		<div class="flex justify-end border-b border-outline-variant pb-4">
+			<!-- Keine Palette-Übersteuerung: Das M3-Bauteil trägt seine Farben selbst
+			     (styles/rollen.css). Die vier Tailwind-Klassen hier waren eine zweite
+			     Farbquelle neben den Rollen — genau das, was die Farb-Ratsche abbaut. -->
+			<Button variant="secondary" size="lg" onclick={onEdit} class="px-5">
+				<SquarePen class="w-4 h-4" aria-hidden="true" />
+				Bearbeiten
+			</Button>
 		</div>
-	</div>
+	{/if}
 
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 		<div class="space-y-6">

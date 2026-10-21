@@ -67,9 +67,9 @@ describe('MahnwesenAktionen', () => {
 
 		const ohne = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: false });
 		expect(ohne.queryByRole('button', { name: /Alle anmahnen/ })).toBeNull();
-		// Die Seite bleibt bedienbar: Neu laden und „Liste drucken" hängen an view_students,
+		// Die Seite bleibt bedienbar: „Aktualisieren" und „Liste drucken" hängen an view_students,
 		// also am Recht, mit dem sie überhaupt offen ist. Die Liste zählt keine Mahnung.
-		expect(ohne.queryByRole('button', { name: 'Daten neu laden' })).toBeTruthy();
+		expect(ohne.queryByRole('button', { name: 'Aktualisieren' })).toBeTruthy();
 		expect(ohne.queryByRole('button', { name: 'Liste drucken' })).toBeTruthy();
 	});
 
@@ -171,6 +171,6 @@ describe('MahnwesenAktionen', () => {
 
 		const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: true });
 		expect(zeile.queryByRole('button', { name: /Alle anmahnen/ })).toBeNull();
-		expect(zeile.queryByRole('button', { name: 'Daten neu laden' })).toBeTruthy();
+		expect(zeile.queryByRole('button', { name: 'Aktualisieren' })).toBeTruthy();
 	});
 });
