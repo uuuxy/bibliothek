@@ -280,7 +280,7 @@ func TestSperre_TokenOhneZeileWirdNichtGesperrtUndNichtErneuert(t *testing.T) {
 	kurz := sperreAnmeldung(t, pool, time.Hour)
 	a := sperreAnmeldung(t, pool, 12*time.Hour)
 
-	token, err := kurz.ErzeugeToken(kontoID, "", RolleAdmin, "")
+	token, err := kurz.ErzeugeToken(kontoID, RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}

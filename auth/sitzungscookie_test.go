@@ -53,8 +53,8 @@ func TestAnmelden_CookieFolgtDerKonfiguration(t *testing.T) {
 			a, mock := newTestAnmeldung(t, 12*time.Hour)
 			mock.ExpectQuery(benutzerSelect).
 				WithArgs("nberger@schule.de").
-				WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-					AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
+				WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+					AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false))
 			erwarteSitzungAngelegt(mock, "u-admin")
 
 			anfrage := httptest.NewRequest(http.MethodPost, "/login",
@@ -80,7 +80,7 @@ func TestSitzungVerlaengern_CookieFolgtDerKonfiguration(t *testing.T) {
 			// Eine Stunde übrig bei zwölf Stunden Laufzeit: Die Tür verlängert und stellt ein neues
 			// Cookie aus.
 			aussteller, _ := newTestAnmeldung(t, 1*time.Hour)
-			token, err := aussteller.ErzeugeToken("user-1", "B-1", RolleMitarbeiter, testSitzungID)
+			token, err := aussteller.ErzeugeToken("user-1", RolleMitarbeiter, testSitzungID)
 			if err != nil {
 				t.Fatalf("ErzeugeToken: %v", err)
 			}

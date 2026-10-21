@@ -20,7 +20,7 @@ const sperreSitzungID = "5b0f6a2e-8a0c-4a51-9d1c-3f2f6b7c9e10"
 
 func anfrageMitSitzung(t *testing.T, s *Server, role auth.Rolle) *http.Request {
 	t.Helper()
-	token, err := s.Auth.ErzeugeToken("u1", "BC1", role, sperreSitzungID)
+	token, err := s.Auth.ErzeugeToken("u1", role, sperreSitzungID)
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestAbmeldung_AusDerSperre_LoeschtDieZeile(t *testing.T) {
 		WithArgs(sperreSitzungID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 
-	token, err := s.Auth.ErzeugeToken("u1", "BC1", auth.RolleMitarbeiter, sperreSitzungID)
+	token, err := s.Auth.ErzeugeToken("u1", auth.RolleMitarbeiter, sperreSitzungID)
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}

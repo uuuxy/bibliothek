@@ -142,7 +142,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	t.Cleanup(func() {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`)
 	})
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "GERAET-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

@@ -33,7 +33,7 @@ func TestAngemeldetesKonto_OhneCookieIst401(t *testing.T) {
 
 func TestAngemeldetesKonto_AktiverAdminBekommtDieAntwortDerAnmeldung(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+	token, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestAngemeldetesKonto_AktiverAdminBekommtDieAntwortDerAnmeldung(t *testing.
 
 func TestAngemeldetesKonto_OhneAdminRechteAusDerMatrix(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-2", "B-2", RolleMitarbeiter, "")
+	token, err := a.ErzeugeToken("user-2", RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestAngemeldetesKonto_DeaktiviertesKontoIst401(t *testing.T) {
 	// Rolle und Status kommen aus der Datenbank, nicht aus den Claims: Ein inzwischen deaktiviertes
 	// Konto darf seine Sitzung nicht wiederherstellen.
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-3", "B-3", RolleMitarbeiter, "")
+	token, err := a.ErzeugeToken("user-3", RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestAngemeldetesKonto_KontoAbfrageScheitert(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			a, mock := newTestAnmeldung(t, 12*time.Hour)
-			token, err := a.ErzeugeToken("user-4", "B-4", RolleMitarbeiter, "")
+			token, err := a.ErzeugeToken("user-4", RolleMitarbeiter, "")
 			if err != nil {
 				t.Fatalf("ErzeugeToken: %v", err)
 			}

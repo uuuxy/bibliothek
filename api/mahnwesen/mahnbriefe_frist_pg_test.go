@@ -38,7 +38,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	kontoID := testdaten.LegeKontoAn(t, pool, "Mara", "Mahnbrief", "mahnbrief-frist@example.org", "admin", true)
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "MBF-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

@@ -48,7 +48,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string, *tuer.Rechte
 	router := srv.Routes()
 
 	kontoID := testdaten.LegeKontoAn(t, pool, "Karla", "Katalog", "katalog-ma@example.org", "mitarbeiter", true)
-	token, err := authenticator.ErzeugeToken(kontoID, "KATALOG-MA-1", auth.RolleMitarbeiter, "")
+	token, err := authenticator.ErzeugeToken(kontoID, auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

@@ -105,7 +105,7 @@ func TestSitzungVerlaengern_FrischesTokenBleibtOhneNeuesCookie(t *testing.T) {
 	// Frisch ausgestelltes Token: Es bleibt mehr als die halbe Laufzeit, also keine
 	// Erneuerung.
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+	token, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestSitzungVerlaengern_FrischesTokenBleibtOhneNeuesCookie(t *testing.T) {
 // Laufzeit als „skipped" zurück, weil sich ohne Zeile nichts verlängern lässt.
 func TestSitzungVerlaengern_FrischesTokenMitSitzungFasstDieZeileNichtAn(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, testSitzungID)
+	token, err := a.ErzeugeToken("user-1", RolleAdmin, testSitzungID)
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -157,7 +157,7 @@ func TestSitzungVerlaengern_AltesTokenWirdMitNeuemCookieErneuert(t *testing.T) {
 	// Das Token wurde mit kurzer Laufzeit ausgestellt (eine Stunde übrig). Die Tür läuft mit
 	// zwölf Stunden: Eine Stunde ist weniger als die Hälfte, also gibt es ein neues Cookie.
 	aussteller, _ := newTestAnmeldung(t, 1*time.Hour)
-	token, err := aussteller.ErzeugeToken("user-1", "B-1", RolleMitarbeiter, testSitzungID)
+	token, err := aussteller.ErzeugeToken("user-1", RolleMitarbeiter, testSitzungID)
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -207,7 +207,7 @@ func TestSitzungVerlaengern_AltesTokenWirdMitNeuemCookieErneuert(t *testing.T) {
 func TestSitzungVerlaengern_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 	// Das Token wurde für ADMIN ausgestellt, eine Stunde übrig: Es wird erneuert.
 	aussteller, _ := newTestAnmeldung(t, 1*time.Hour)
-	token, err := aussteller.ErzeugeToken("user-1", "B-1", RolleAdmin, testSitzungID)
+	token, err := aussteller.ErzeugeToken("user-1", RolleAdmin, testSitzungID)
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestSitzungVerlaengern_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 // der nächsten Anmeldung.
 func TestPruefeToken_RolleKommtAusDerDatenbank(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+	token, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}
@@ -266,7 +266,7 @@ func TestSitzungVerlaengern_WiderrufenesTokenIst401(t *testing.T) {
 	// Die Abmeldung setzt das Token auf die Sperrliste; danach darf die Verlängerung es nicht
 	// wiederbeleben.
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
-	token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+	token, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken: %v", err)
 	}

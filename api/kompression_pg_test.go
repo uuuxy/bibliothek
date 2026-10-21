@@ -68,7 +68,7 @@ func TestKompression_AmRouterDesBetriebs(t *testing.T) {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	kontoID := testdaten.LegeKontoAn(t, pool, "Kira", "Katalog", "kompression@example.org", "admin", true)
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "KOMP-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

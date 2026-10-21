@@ -48,7 +48,7 @@ func erwarteSperrlisteFrei(mock pgxmock.PgxPoolIface, rolle auth.Rolle) {
 
 func anfrageMitToken(t *testing.T, s *Server, role auth.Rolle) *http.Request {
 	t.Helper()
-	token, err := s.Auth.ErzeugeToken("u1", "BC1", role, "")
+	token, err := s.Auth.ErzeugeToken("u1", role, "")
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}

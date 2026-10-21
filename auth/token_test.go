@@ -14,11 +14,11 @@ import (
 func TestErzeugeToken_JedesTokenIstEinmalig(t *testing.T) {
 	a, _ := newTestAnmeldung(t, 12*time.Hour)
 
-	t1, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+	t1, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken 1: %v", err)
 	}
-	t2, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+	t2, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("ErzeugeToken 2: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestErzeugeToken_JedesTokenIstEinmalig(t *testing.T) {
 func TestPruefeToken_WiderrufWirktSofort(t *testing.T) {
 	newToken := func(t *testing.T, a *Anmeldung) string {
 		t.Helper()
-		tok, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+		tok, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 		if err != nil {
 			t.Fatalf("ErzeugeToken: %v", err)
 		}

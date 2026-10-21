@@ -87,7 +87,7 @@ func adresseDerAnfrage(r *http.Request) string {
 //
 // Eine Kennung, die der Browser behauptet, gehört nicht hierher: Ein signiertes Token mit einer
 // solchen Kennung wäre eine Falle für den Nächsten, der ihr glaubt, weil signiert nach geprüft
-// aussieht. Die Ausweisnummer kommt aus der Tabelle benutzer.
+// aussieht. Das Token trägt nur Konto, Rolle und Sitzung.
 type anmeldeAnfrage struct {
 	Email    string `json:"email,omitempty"`
 	Passwort string `json:"password,omitempty"`
@@ -161,7 +161,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert, errAnmeldedienstGestoert)
 			return
 		}
-		token, err := anmeldung.ErzeugeToken(konto.id, konto.ausweisnummer, rolle, sitzungID)
+		token, err := anmeldung.ErzeugeToken(konto.id, rolle, sitzungID)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -197,14 +197,12 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 
 // anmeldeKonto sind die Angaben aus der Tabelle benutzer, die die Anmeldung braucht.
 type anmeldeKonto struct {
-	id    string
-	email string
-	// ausweisnummer kommt aus der Tabelle benutzer, nicht aus der Anfrage (AnmeldeAnfrage).
-	ausweisnummer string
-	rolle         string
-	vorname       string
-	nachname      string
-	aktiv         bool
+	id       string
+	email    string
+	rolle    string
+	vorname  string
+	nachname string
+	aktiv    bool
 	// neuAngelegt: Die Zeile ist gerade durch die Selbstanmeldung entstanden (selbstanmeldung.go)
 	// und deshalb inaktiv. Die Person liest „Zugang beantragt" statt „Konto deaktiviert" und
 	// probiert nicht immer wieder.
@@ -327,14 +325,13 @@ func (a *Anmeldung) pruefeIMAPZugang(ctx context.Context, pool db.Pool, email, p
 // die Anmeldung und für die Selbstanmeldung, die auf ein vorhandenes Konto trifft.
 func anmeldeKontoAus(k repository.AnmeldeKonto) anmeldeKonto {
 	return anmeldeKonto{
-		id:            k.ID,
-		email:         k.Email,
-		ausweisnummer: k.Ausweisnummer,
-		rolle:         k.Rolle,
-		vorname:       k.Vorname,
-		nachname:      k.Nachname,
-		aktiv:         k.Aktiv,
-		beantragt:     k.ZugangBeantragt,
+		id:        k.ID,
+		email:     k.Email,
+		rolle:     k.Rolle,
+		vorname:   k.Vorname,
+		nachname:  k.Nachname,
+		aktiv:     k.Aktiv,
+		beantragt: k.ZugangBeantragt,
 	}
 }
 
@@ -512,7 +509,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldun
 		return
 	}
 
-	neuesToken, err := anmeldung.ErzeugeToken(claims.KontoID, claims.Ausweisnummer, claims.Rolle, claims.SitzungID)
+	neuesToken, err := anmeldung.ErzeugeToken(claims.KontoID, claims.Rolle, claims.SitzungID)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return

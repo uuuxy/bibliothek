@@ -8,32 +8,29 @@ import "context"
 
 // AnmeldeKonto ist das Konto, wie die Anmeldung es zu einer Adresse findet.
 type AnmeldeKonto struct {
-	ID            string
-	Ausweisnummer string
-	Rolle         string
-	Vorname       string
-	Nachname      string
-	Aktiv         bool
-	Email         string
+	ID       string
+	Rolle    string
+	Vorname  string
+	Nachname string
+	Aktiv    bool
+	Email    string
 	// ZugangBeantragt: Das Konto stammt aus der Selbstanmeldung und wartet auf die
 	// Freischaltung, oder es wurde nach ihr freigeschaltet.
 	ZugangBeantragt bool
 }
 
 // LadeAnmeldeKonto liest das Konto zu einer Adresse, ohne Rücksicht auf Groß- und
-// Kleinschreibung. Die Ausweisnummer steht an der Leserzeile des Kontos; ein Konto ohne
-// Leserzeile wird trotzdem gefunden und trägt dann keine.
+// Kleinschreibung.
 func LadeAnmeldeKonto(ctx context.Context, db Datenbank, email string) (AnmeldeKonto, error) {
 	var k AnmeldeKonto
 	query := `
-		SELECT b.id, coalesce(l.barcode_id, ''), b.rolle, b.vorname, b.nachname, b.aktiv, b.email,
+		SELECT b.id, b.rolle, b.vorname, b.nachname, b.aktiv, b.email,
 		       b.zugang_beantragt_am IS NOT NULL
 		FROM benutzer b
-		LEFT JOIN leser l ON l.id = b.leser_id
 		WHERE LOWER(b.email) = LOWER($1)
 		LIMIT 1
 	`
-	err := db.QueryRow(ctx, query, email).Scan(&k.ID, &k.Ausweisnummer, &k.Rolle, &k.Vorname, &k.Nachname, &k.Aktiv, &k.Email, &k.ZugangBeantragt)
+	err := db.QueryRow(ctx, query, email).Scan(&k.ID, &k.Rolle, &k.Vorname, &k.Nachname, &k.Aktiv, &k.Email, &k.ZugangBeantragt)
 	return k, err
 }
 

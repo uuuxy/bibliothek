@@ -29,7 +29,7 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	kontoID := testdaten.LegeKontoAn(t, pool, "Sina", "Schaden", "schaden-schuldner@example.org", "admin", true)
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "SCHULD-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	kontoID := testdaten.LegeKontoAn(t, pool, "Zora", "Zurueck", "schaden-zurueck@example.org", "admin", true)
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "ZURUECK-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

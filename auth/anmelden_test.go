@@ -66,7 +66,7 @@ func TestAnmelden_UnbekanntesKontoIst401(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("unbekannt@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
@@ -86,8 +86,8 @@ func TestAnmelden_DeaktiviertesKontoIst403(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("inaktiv@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-1", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org", false))
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
@@ -117,8 +117,8 @@ func TestAnmelden_ErfolgSetztCookieUndAntwortet(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("nberger@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
 	rec := rufeAnmelden(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
@@ -171,7 +171,7 @@ func scheitereFuenfMal(t *testing.T, a *Anmeldung, mock pgxmock.PgxPoolIface, em
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
 			WithArgs(email).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 		if rec := rufeAnmelden(t, a, mock, rumpf); rec.Code != http.StatusUnauthorized {
 			t.Fatalf("Versuch %d = %d, erwartet 401", i, rec.Code)
 		}
@@ -212,28 +212,29 @@ func TestAnmelden_BremseGehoertDerAnmeldung(t *testing.T) {
 	zweite, zweiterMock := newTestAnmeldung(t, 12*time.Hour)
 	zweiterMock.ExpectQuery(benutzerSelect).
 		WithArgs(email).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 	rec := rufeAnmelden(t, zweite, zweiterMock, fmt.Sprintf(`{"email":%q,"password":"falsch"}`, email))
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("Anmelden an der zweiten Anmeldung: Status %d, erwartet 401; die Fehlversuche der ersten zählen dort nicht", rec.Code)
 	}
 }
 
-// Die Ausweisnummer im Token der Sitzung kommt aus der Datenbank, nicht aus der Anmeldung.
+// Das Token der Sitzung trägt Konto, Rolle und Sitzung, keine Ausweisnummer.
 //
 // Eine Kennung, die der Browser mitschickt, darf nicht in die Claims wandern: Sonst bestimmte,
-// wer sich anmeldet, selbst, welche Ausweisnummer sein signiertes Token behauptet, und der
-// nächste Aufrufer verließe sich darauf, ohne nachzusehen.
+// wer sich anmeldet, selbst, was sein signiertes Token behauptet, und der nächste Aufrufer
+// verließe sich darauf, ohne nachzusehen. Die Nummer aus der Datenbank braucht im Token
+// niemand; sie stünde nur im Cookie jeder Anfrage.
 //
 // Der Test schickt die Kennung eines anderen mit und liest die Claims aus dem Cookie.
-func TestAnmelden_AusweisnummerImTokenKommtAusDerDatenbank(t *testing.T) {
+func TestAnmelden_TokenTraegtKeineAusweisnummer(t *testing.T) {
 	aktiviereIMAPAttrappe(t)
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("nberger@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "BC-ECHT", "admin", "Nina", "Berger", true, "nina@example.org", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-admin", "admin", "Nina", "Berger", true, "nina@example.org", false))
 	erwarteSitzungAngelegt(mock, "u-admin")
 
 	rec := rufeAnmelden(t, a, mock,
@@ -257,18 +258,18 @@ func TestAnmelden_AusweisnummerImTokenKommtAusDerDatenbank(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Nutzlast nicht dekodierbar: %v", err)
 	}
-	var claims struct {
-		BarcodeID string `json:"barcode_id"`
-	}
+	var claims map[string]any
 	if err := json.Unmarshal(roh, &claims); err != nil {
 		t.Fatalf("Nutzlast nicht lesbar: %v", err)
 	}
-	if claims.BarcodeID == "BC-FREMD" {
-		t.Fatal("die vom Client behauptete Ausweisnummer steht im signierten Token — " +
-			"der Barcode gehört aus der benutzer-Tabelle geladen, nicht aus der Anfrage")
+	if wert, ok := claims["barcode_id"]; ok {
+		t.Errorf("barcode_id = %v im signierten Token, erwartet keine Ausweisnummer", wert)
 	}
-	if claims.BarcodeID != "BC-ECHT" {
-		t.Errorf("Barcode im Token = %q, erwartet den aus der Datenbank (BC-ECHT)", claims.BarcodeID)
+	if strings.Contains(string(roh), "BC-FREMD") {
+		t.Errorf("die vom Client behauptete Kennung steht im Token: %s", roh)
+	}
+	if claims["user_id"] != "u-admin" {
+		t.Errorf("user_id = %v, erwartet u-admin: liest der Test noch das Token der Sitzung?", claims["user_id"])
 	}
 }
 
@@ -321,8 +322,8 @@ func TestAnmelden_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	aktiviereIMAPAttrappe(t)
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs(email).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-1", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false))
 	erwarteSitzungAngelegt(mock, "u-1")
 
 	rec := rufeAnmelden(t, a, mock, rumpf)

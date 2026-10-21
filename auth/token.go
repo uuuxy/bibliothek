@@ -64,9 +64,8 @@ func (r *Rolle) UnmarshalJSON(data []byte) error {
 
 // Claims ist der Inhalt des Tokens einer Sitzung.
 type Claims struct {
-	KontoID       string `json:"user_id"`
-	Ausweisnummer string `json:"barcode_id"`
-	Rolle         Rolle  `json:"rolle"`
+	KontoID string `json:"user_id"`
+	Rolle   Rolle  `json:"rolle"`
 	// SitzungID ist die Kennung der Anmeldung in der Tabelle sitzungen. Sie bleibt über jede
 	// Erneuerung des Tokens dieselbe; an ihr hängt die Sperre nach Inaktivität.
 	SitzungID string `json:"sid,omitempty"`
@@ -122,7 +121,7 @@ func (a *Anmeldung) RaeumeAuf(ctx context.Context) {
 
 // ErzeugeToken stellt ein signiertes Token mit Konto und Rolle aus. sitzungID ist die Kennung
 // aus Sitzungen.Beginne; ein Token ohne sie lässt sich nicht sperren.
-func (a *Anmeldung) ErzeugeToken(kontoID, ausweisnummer string, rolle Rolle, sitzungID string) (string, error) {
+func (a *Anmeldung) ErzeugeToken(kontoID string, rolle Rolle, sitzungID string) (string, error) {
 	// jti macht jedes Token einmalig. Ohne sie wären zwei Anmeldungen desselben Kontos in
 	// derselben Sekunde Byte für Byte gleich (iat und exp zählen Sekunden), und das Abmelden der
 	// einen widerriefe über den Hash in der Sperrliste auch die andere.
@@ -132,10 +131,9 @@ func (a *Anmeldung) ErzeugeToken(kontoID, ausweisnummer string, rolle Rolle, sit
 	}
 
 	claims := Claims{
-		KontoID:       kontoID,
-		Ausweisnummer: ausweisnummer,
-		Rolle:         rolle,
-		SitzungID:     sitzungID,
+		KontoID:   kontoID,
+		Rolle:     rolle,
+		SitzungID: sitzungID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        hex.EncodeToString(kennung),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.laufzeit)),

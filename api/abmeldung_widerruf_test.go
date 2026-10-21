@@ -38,7 +38,7 @@ func abmeldeServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 
 func abmeldenMitToken(t *testing.T, s *Server) *httptest.ResponseRecorder {
 	t.Helper()
-	token, err := s.Auth.ErzeugeToken("u1", "BC1", auth.RolleMitarbeiter, "")
+	token, err := s.Auth.ErzeugeToken("u1", auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}

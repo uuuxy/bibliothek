@@ -29,7 +29,7 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	kontoID := testdaten.LegeKontoAn(t, pool, "Zita", "Ziffer", "klasse-ziffernfolge@example.org", "admin", true)
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "KLZ-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

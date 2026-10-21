@@ -43,7 +43,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	router := srv.Routes()
 
 	kontoID := testdaten.LegeKontoAn(t, pool, "Mara", "Mahnrecht", "mara@mahnbrief-recht.invalid", "mitarbeiter", true)
-	token, err := authenticator.ErzeugeToken(kontoID, "MAHNRECHT-1", auth.RolleMitarbeiter, "")
+	token, err := authenticator.ErzeugeToken(kontoID, auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

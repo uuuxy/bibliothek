@@ -32,7 +32,7 @@ func TestLeserAendern_NameUndGeburtsdatumSchonVergeben(t *testing.T) {
 		t.Fatalf("NewAnmeldung: %v", err)
 	}
 	kontoID := testdaten.LegeKontoAn(t, pool, "Dora", "Dublette", "leser-dublette@example.org", "admin", true)
-	sitzung, err := authenticator.ErzeugeToken(kontoID, "DUBL-1", auth.RolleAdmin, "")
+	sitzung, err := authenticator.ErzeugeToken(kontoID, auth.RolleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}

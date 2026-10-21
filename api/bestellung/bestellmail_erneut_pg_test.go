@@ -89,7 +89,7 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 		"bestellmail-"+kennung+"@example.org").Scan(&l.adminID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	if l.sitzung, err = authenticator.ErzeugeToken(l.adminID, "BMAIL-"+kennung, auth.RolleAdmin, ""); err != nil {
+	if l.sitzung, err = authenticator.ErzeugeToken(l.adminID, auth.RolleAdmin, ""); err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
 	l.srv = api.NewServer(&db.Verbindung{Pool: pool}, authenticator, sse.NewBroker(), api.ServerKonfig{})

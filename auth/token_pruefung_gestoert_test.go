@@ -35,7 +35,7 @@ func TestTokenPruefungGestoert_Ist503(t *testing.T) {
 	for _, f := range faelle {
 		t.Run("Me/"+f.name, func(t *testing.T) {
 			a, mock := newTestAnmeldung(t, 12*time.Hour)
-			token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+			token, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -48,7 +48,7 @@ func TestTokenPruefungGestoert_Ist503(t *testing.T) {
 		})
 		t.Run("Refresh/"+f.name, func(t *testing.T) {
 			a, mock := newTestAnmeldung(t, 12*time.Hour)
-			token, err := a.ErzeugeToken("user-1", "B-1", RolleAdmin, "")
+			token, err := a.ErzeugeToken("user-1", RolleAdmin, "")
 			if err != nil {
 				t.Fatal(err)
 			}

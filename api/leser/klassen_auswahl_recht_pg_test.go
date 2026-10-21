@@ -38,7 +38,7 @@ func TestKlassen_JedeRolleMitKlassenauswahlBekommtDieListe(t *testing.T) {
 	router := srv.Routes()
 
 	kontoID := testdaten.LegeKontoAn(t, pool, "Kim", "Klassenwahl", "kim@klassen-auswahl.invalid", "mitarbeiter", true)
-	token, err := authenticator.ErzeugeToken(kontoID, "KLASSENWAHL-1", auth.RolleMitarbeiter, "")
+	token, err := authenticator.ErzeugeToken(kontoID, auth.RolleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
