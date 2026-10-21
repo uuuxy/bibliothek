@@ -22,7 +22,6 @@ const BESTAND = {
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 360,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 236,
 	'src/lib/components/leser/LusdImport.svelte': 311,
-	'src/lib/components/leser/Schuljahreswechsel.svelte': 205,
 	'src/lib/apiFetch.js': 300,
 	'src/lib/components/leser/schuelerSuche.svelte.js': 209,
 	'src/lib/designer/ausweisVorlagen.js': 482,

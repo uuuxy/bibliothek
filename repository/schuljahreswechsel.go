@@ -35,7 +35,8 @@ func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, e
 }
 
 // sqlVersetzeSchueler zählt Klassenbezeichnungen um eine Stufe hoch und markiert
-// Abschlussklassen als Abgänger. Wer Abschlussklasse ist, sagt allein AbschlussklasseSQL,
+// Abschlussklassen als Abgänger. Gelesen werden nur Klassen mit einem Jahrgang von 1 bis 13
+// (jahrgangImBereichSQL); die übrigen nennt LadeKlassenAusserhalbDerVersetzung. Wer Abschlussklasse ist, sagt allein AbschlussklasseSQL,
 // dieselbe Regel, nach der die Abgängerliste (api/mahnwesen/abgaenger.go) diese Klassen von Mai
 // bis Juli zum Einsammeln zeigt.
 //
@@ -55,7 +56,7 @@ var sqlVersetzeSchueler = `
 		FROM schueler
 		WHERE ist_abgaenger = false
 		  AND deleted_at IS NULL
-		  AND klasse ~ '^\d+'
+		  AND ` + jahrgangImBereichSQL("klasse") + `
 	),
 	calculated AS (
 		SELECT id,
@@ -92,10 +93,27 @@ var sqlVersetzeSchueler = `
 	FROM updated;
 `
 
-// VersetzeSchueler zählt die Klasse jedes aktiven Schülers, deren Name mit einer Zahl beginnt,
-// um eine Stufe hoch, macht die Abschlussklassen zu Abgängern und liefert beide Zahlen. zone
+// VersetzeSchueler zählt die Klasse jedes aktiven Schülers, deren Name mit einem Jahrgang von 1
+// bis 13 beginnt, um eine Stufe hoch, macht die Abschlussklassen zu Abgängern und liefert beide Zahlen. zone
 // ist die Zeitzone der Schule; in ihr wird das Abgangsjahr bestimmt.
 func VersetzeSchueler(ctx context.Context, db Datenbank, zone string) (versetzt, abgaenger int, err error) {
 	err = db.QueryRow(ctx, sqlVersetzeSchueler, zone).Scan(&versetzt, &abgaenger)
 	return versetzt, abgaenger, err
+}
+
+// LadeKlassenAusserhalbDerVersetzung nennt die Klassen aktiver Schüler, die mit einer Zahl
+// beginnen, aber mit keinem Jahrgang von 1 bis 13. Die Versetzung lässt sie stehen; die
+// Vorschau nennt sie, damit sie vorher berichtigt werden. Eine Zeile je Klasse.
+func LadeKlassenAusserhalbDerVersetzung(ctx context.Context, db Datenbank) ([]string, error) {
+	rows, err := db.Query(ctx, `
+		SELECT DISTINCT klasse FROM schueler
+		WHERE ist_abgaenger = false
+		  AND deleted_at IS NULL
+		  AND klasse ~ '^\d'
+		  AND NOT `+jahrgangImBereichSQL("klasse")+`
+		ORDER BY klasse`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
 }

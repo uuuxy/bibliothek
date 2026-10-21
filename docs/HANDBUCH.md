@@ -584,7 +584,9 @@ unverzüglich zu informieren ist, und die Forderung bleibt offen.
 
 Abgänger sind die Abschlussklassen des laufenden Schuljahres — 9H (und das freiwillige 10. Hauptschuljahr), 10R und 13 —, also die Kinder, die zum Schuljahresende gehen. Sie
 sind noch an der Schule und leihen bis zuletzt aus. Die Regel ist dieselbe wie bei der
-Versetzung; eingestellt wird nichts, die Klasse weiß es.
+Versetzung; eingestellt wird nichts, die Klasse weiß es. Eine Klasse, die mit keinem Jahrgang von
+1 bis 13 beginnt (etwa 14A oder eine Buchnummer im Feld Klasse), versetzt der Schuljahreswechsel
+nicht; seine Vorschau nennt sie, damit man sie vorher berichtigt.
 
 Die Liste zeigt **vom 1. Mai bis 31. Juli** die Abgänger, die **noch Bücher haben** — zum
 Einsammeln vor der Entlassung. Kontoauszüge drucken oder an die Klassenleitungen mailen;

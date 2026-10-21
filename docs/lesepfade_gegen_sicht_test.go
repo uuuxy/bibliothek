@@ -38,7 +38,7 @@ var lesepfadeGeprueft = map[string]struct {
 	grund  string
 }{
 	"repository/lusd_import.go":        {2, "LUSD-Abgleich sucht über lusd_id — die LUSD kennt nur Schüler"},
-	"repository/schuljahreswechsel.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
+	"repository/schuljahreswechsel.go": {2, "Versetzung zum Schuljahresende und die Klassen, die sie nicht versetzt — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/nachtlauf.go":          {3, "Nachtläufe: Fotos und Kennungen der anonymisierten Schüler, löschreife Abgänger; das Kollegium hat keine Abgangslogik und wird nicht anonymisiert"},
 	// Theke, Mahnwesen und Bescheide.
 	"repository/ausleihe_schranken.go":      {1, "Abholfach-Prüfung vor einer Ausleihe liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungsAbfragen.LegeAn, TestVormerkungLegeAn_NurFuerSchueler)"},

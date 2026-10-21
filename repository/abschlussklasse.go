@@ -26,6 +26,14 @@ func klassenZahlSQL(spalte string) string {
 	return fmt.Sprintf(`(substring(%s from '^\d{1,9}')::int)`, spalte)
 }
 
+// jahrgangImBereichSQL ist das Prädikat „diese Klasse beginnt mit einem Jahrgang von 1 bis 13“,
+// führende Nullen erlaubt („05F1“, „13“). Was mit einer anderen Zahl beginnt („14a“, eine
+// Buchnummer im Feld Klasse), ist kein Jahrgang der Schule: Die Versetzung lässt es stehen und
+// nennt es, keine Abfrage liest daraus eine Abschlussklasse.
+func jahrgangImBereichSQL(spalte string) string {
+	return fmt.Sprintf(`(%s ~ '^0*([1-9]|1[0-3])(\D|$)')`, spalte)
+}
+
 // leerraumKlasseSQL sind die 25 Zeichen mit der Unicode-Eigenschaft White_Space für eine
 // Klasse in einem regulären Ausdruck von PostgreSQL, dieselben wie in titeltext_normalform
 // (Migration 160). Go zählt sie alle zum Leerraum (unicode.IsSpace).
@@ -42,7 +50,8 @@ const leerraumKlasseSQL = `\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2
 //
 // Der Zweig ist der erste Buchstabe hinter dem Jahrgang (Klassen-Vokabular: „05F1", „09H2").
 // Eine Klasse ohne führende Ziffer (E1, Q4, ABG) ist nie Abschlussklasse: Die Schule führt ihre
-// Oberstufe als „13", nicht als Q4.
+// Oberstufe als „13", nicht als Q4. Ebenso eine, die mit keinem Jahrgang von 1 bis 13 beginnt
+// (jahrgangImBereichSQL).
 //
 // Verbraucher: die Versetzung (markiert sie als Abgänger, entfernt ihre Zuordnung zur
 // Klassenleitung) und die Abgängerliste (zeigt sie in der Saison mit offenen Büchern). Beide
@@ -56,10 +65,10 @@ func AbschlussklasseSQL(spalte string) string {
 	// Zwischen Jahrgang und Zweig gilt jeder Leerraum, den AbschlussJahrgang wegnimmt; `\s` träfe in
 	// PostgreSQL das geschützte Leerzeichen nicht.
 	zweig := fmt.Sprintf(`coalesce(lower(substring(%s from '^\d+[`+leerraumKlasseSQL+`]*([A-Za-z])')), '')`, spalte)
-	return fmt.Sprintf(`(%[1]s ~ '^\d+' AND (
+	return fmt.Sprintf(`(%[1]s AND (
 		   (%[2]s >= 9  AND %[3]s = 'h')
 		OR (%[2]s >= 10 AND %[3]s = 'r')
-		OR  %[2]s >= 13))`, spalte, jahrgang, zweig)
+		OR  %[2]s >= 13))`, jahrgangImBereichSQL(spalte), jahrgang, zweig)
 }
 
 // AbschlussJahrgang liest aus einer Klasse ihren Jahrgang und den Jahrgang, mit dem ihr
@@ -67,8 +76,8 @@ func AbschlussklasseSQL(spalte string) string {
 // Einführungsphase, Jahrgang 11. Es ist der Go-Zwilling von AbschlussklasseSQL; das Paar-Gate
 // repository/abgaenger_jahr_paar_pg_test.go vergleicht beide über den ganzen Formenraum.
 //
-// ok=false heißt: keine lesbare Jahrgangszahl (ABG, Q4, leer). Der Aufrufer nimmt dann einen
-// Rückfallwert.
+// ok=false heißt: kein Jahrgang von 1 bis 13 (ABG, Q4, leer, 14a). Der Aufrufer nimmt dann
+// einen Rückfallwert.
 func AbschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
 	klasse = strings.ToLower(strings.TrimSpace(klasse))
 	if strings.HasPrefix(klasse, "e") {
@@ -85,8 +94,9 @@ func AbschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
 			break
 		}
 	}
+	// Jahrgänge 1 bis 13 wie jahrgangImBereichSQL; „14a“ oder eine Buchnummer ist keiner.
 	zahl, err := strconv.Atoi(ziffern)
-	if err != nil || zahl < 1 {
+	if err != nil || zahl < 1 || zahl > 13 {
 		return 0, 0, false
 	}
 

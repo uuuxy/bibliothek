@@ -48,9 +48,11 @@ func TestSchuljahreswechsel_VerlangtBestaetigung(t *testing.T) {
 func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testing.T) {
 	s, mock := schuljahreswechselTueren(t)
 
-	// Probelauf: nur Begin → CTE → Rollback. Keine Sperre gegen den Doppellauf, kein
+	// Probelauf: nur Begin → Lesen → CTE → Rollback. Keine Sperre gegen den Doppellauf, kein
 	// Protokolleintrag, kein Commit; sonst wäre die „Vorschau" keine.
 	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT DISTINCT klasse FROM schueler`).
+		WillReturnRows(pgxmock.NewRows([]string{"klasse"}).AddRow("14A"))
 	mock.ExpectQuery(`WITH parsed AS`).
 		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit)
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(120, 25))
@@ -65,7 +67,8 @@ func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testi
 		t.Fatalf("rec.Code = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, `"promoted_count":120`) || !strings.Contains(body, `"dry_run":true`) {
+	if !strings.Contains(body, `"promoted_count":120`) || !strings.Contains(body, `"dry_run":true`) ||
+		!strings.Contains(body, `"klassen_ausserhalb":["14A"]`) {
 		t.Errorf("Dry-Run-Antwort falsch: %s", body)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -99,6 +102,8 @@ func TestSchuljahreswechsel_EchterLaufSchreibtProtokoll(t *testing.T) {
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery(`SELECT DISTINCT klasse FROM schueler`).
+		WillReturnRows(pgxmock.NewRows([]string{"klasse"}))
 	mock.ExpectQuery(`WITH parsed AS`).
 		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit)
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(300, 42))

@@ -99,7 +99,7 @@ func LadeKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]Klasse
 		       (`+AbschlussklasseSQL("klasse")+`
 		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
 		FROM klassen_lehrer_mapping
-		WHERE klasse ~ '^\d+'
+		WHERE `+jahrgangImBereichSQL("klasse")+`
 		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
 	if err != nil {
 		return nil, err

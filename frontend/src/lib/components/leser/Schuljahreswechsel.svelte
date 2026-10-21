@@ -6,8 +6,9 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
+	import { zeilen } from './schuljahreswechselZeilen.js';
 
-	/** @typedef {{ promoted_count: number, archived_count: number, dry_run: boolean, mapping_versetzt: number, mapping_entfernt: number, mapping_konflikte?: string[] }} PromoteStudentsResponse */
+	/** @typedef {import('./schuljahreswechselZeilen.js').PromoteStudentsResponse} PromoteStudentsResponse */
 
 	let awaitingConfirmation = $state(false);
 	let laedt = $state(false);
@@ -17,39 +18,6 @@
 	let ergebnis = $state(null);
 	/** @type {string | null} */
 	let fehler = $state(null);
-
-	/** @param {PromoteStudentsResponse | null} r */
-	function rows(r) {
-		return r
-			? [
-					{
-						key: 'promoted',
-						label: 'Versetzte Schüler',
-						hint: 'Klasse wird um eine Stufe hochgezählt',
-						value: r.promoted_count,
-						valueClass: 'text-success'
-					},
-					{
-						key: 'archived',
-						label: 'Neue Abgänger',
-						hint: 'Abschlussklassen werden archiviert',
-						value: r.archived_count,
-						valueClass: 'text-error'
-					},
-					{
-						key: 'mapping',
-						label: 'Klassenlehrer-Zuordnungen',
-						hint:
-							'rücken mit hoch, außer bei Abschluss, vor Klasse 7 und vor der Oberstufe' +
-							(r.mapping_konflikte?.length
-								? ' — Namenskonflikte: ' + r.mapping_konflikte.join(', ')
-								: ''),
-						value: r.mapping_versetzt + r.mapping_entfernt,
-						valueClass: 'text-on-surface-variant'
-					}
-				]
-			: [];
-	}
 
 	function reset() {
 		probe = null;
@@ -107,7 +75,7 @@
 
 {#snippet summaryRows(r)}
 	<ul class="divide-y divide-outline-variant">
-		{#each rows(r) as row (row.key)}
+		{#each zeilen(r) as row (row.key)}
 			<li class="flex items-center justify-between py-3">
 				<div class="min-w-0">
 					<p class="text-sm font-bold text-on-surface">{row.label}</p>

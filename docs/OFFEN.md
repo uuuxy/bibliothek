@@ -18,7 +18,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
 - [x] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
   verloren. (5.83)
-- [ ] Zwei Fehler an Türen und Abfragen. (5.84)
+- [ ] Ein Fehler beim Listenimport. (5.84)
 - [ ] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
 - [ ] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
@@ -142,15 +142,8 @@ Nicht entschieden: Alte Sicherungen löschen nur die Läufe von `update.sh` und
 Klartext-Rest nach einem misslungenen Update bis zum nächsten Lauf; die Meldungen der Skripte
 sagen das.
 
-### 5.84 Zwei Fehler an Türen und Abfragen
+### 5.84 Ein Fehler beim Listenimport
 
-- **Versetzung:** Steht am Anfang einer Klasse eine Zahl über 2.147.483.647 (eine Buchnummer im
-  Feld Klasse), antwortet die Versetzung mit 500 und versetzt niemanden, ohne Klasse oder
-  Schüler zu nennen (`sqlVersetzeSchueler`, `LadeKlassenleitungVersetzungen`); jede Zahl ab 13
-  gilt als Abschlussklasse (`repository.AbschlussklasseSQL`). Die lesenden Türen antworten auch
-  dann (`api/klasse_lange_ziffernfolge_pg_test.go`), und die Klassen der Schule lösen keinen der
-  Fälle aus. Nächster Schritt: Klassen außerhalb von 1 bis 13 ausnehmen und in der Vorschau
-  nennen.
 - **Listenimport:** Trägt eine Zeile die Ausweisnummer eines Lesers als Buchnummer, lehnt der
   Nummern-Wächter ab, und der ganze Import bricht mit der rohen Datenbankmeldung ab, ohne Zeile
   und Weg zu nennen (`ON CONFLICT DO NOTHING` fängt nur den Index).

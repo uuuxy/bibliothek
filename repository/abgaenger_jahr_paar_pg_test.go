@@ -25,6 +25,10 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 	for jg := 1; jg <= 13; jg++ {
 		for _, zweig := range []string{"", "F", "G", "H", "R", "T", "f", "h", " H", "\u00a0H", "\u202fR", "\u3000h"} {
 			for _, zug := range []string{"", "1", "2"} {
+				// Ohne Zweig wüchse der Zug in die Zahl hinein: „051" ist Jahrgang 51, keine 5.
+				if zweig == "" && zug != "" {
+					continue
+				}
 				formen = append(formen, fmt.Sprintf("%02d%s%s", jg, zweig, zug), fmt.Sprintf("%d%s%s", jg, zweig, zug))
 			}
 		}
@@ -52,6 +56,21 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 	}
 	if gesehen < 200 {
 		t.Fatalf("nur %d Formen verglichen — die Probe läuft ins Leere", gesehen)
+	}
+
+	// Was mit keinem Jahrgang von 1 bis 13 beginnt, ist in beiden Welten keine Abschlussklasse,
+	// auch eine Zahl, die in keine ganze Zahl der Datenbank passt.
+	for _, klasse := range []string{"0", "00a", "14", "14a", "20H1", "4711000123", "99999999999999999999"} {
+		if _, _, ok := repository.AbschlussJahrgang(klasse); ok {
+			t.Errorf("%q: Go liest einen Jahrgang", klasse)
+		}
+		var sqlAbschluss bool
+		if err := pool.QueryRow(ctx, "SELECT "+repository.AbschlussklasseSQL("$1::text"), klasse).Scan(&sqlAbschluss); err != nil {
+			t.Fatalf("%q: SQL: %v", klasse, err)
+		}
+		if sqlAbschluss {
+			t.Errorf("%q: SQL sagt Abschlussklasse", klasse)
+		}
 	}
 }
 

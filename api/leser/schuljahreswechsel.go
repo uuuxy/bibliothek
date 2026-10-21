@@ -34,6 +34,9 @@ type schuljahreswechselAntwort struct {
 	// beide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,
 	// statt den ganzen Lauf scheitern zu lassen.
 	Zuordnungskonflikte []string `json:"mapping_konflikte,omitempty"`
+	// Klassen, die mit keinem Jahrgang von 1 bis 13 beginnen („14a", eine Buchnummer): Ihre
+	// Schüler bleiben, wo sie sind, und die Vorschau nennt sie.
+	KlassenAusserhalb []string `json:"klassen_ausserhalb,omitempty"`
 }
 
 // schuljahreswechselAnfrage verlangt eine ausdrückliche Bestätigung im Rumpf: eine Sicherung
@@ -100,6 +103,10 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		}
 	}
 
+	if antwort.KlassenAusserhalb, err = repository.LadeKlassenAusserhalbDerVersetzung(ctx, tx); err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return antwort, false
+	}
 	if antwort.Versetzt, antwort.Archiviert, err = repository.VersetzeSchueler(ctx, tx, schulzeit.Zone().String()); err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return antwort, false

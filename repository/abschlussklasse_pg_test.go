@@ -34,6 +34,8 @@ func TestAbschlussklasseSQL_Regel(t *testing.T) {
 		{"E1", false, "Einführungsphase ohne Jahrgangsziffer — die Schule führt die Oberstufe als 13"},
 		{"Q4", false, "Q-Phase ohne Jahrgangsziffer"},
 		{"ABG", false, "die Konvention der schon Abgegangenen"},
+		{"14A", false, "kein Jahrgang von 1 bis 13 — die Versetzung lässt die Klasse stehen"},
+		{"4711000123", false, "eine Buchnummer im Feld Klasse"},
 		{"", false, "leer"},
 	}
 	for _, f := range faelle {
