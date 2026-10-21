@@ -370,12 +370,8 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Die Oberfläche ist auf dem Server nicht vorhanden", nil)
 			return
 		}
-		relativ := strings.TrimPrefix(r.URL.Path, "/")
-		if relativ != "" {
-			if angabe, err := oberflaeche.Stat(relativ); err == nil && !angabe.IsDir() {
-				http.ServeFileFS(w, r, oberflaeche.FS(), relativ)
-				return
-			}
+		if liefereVorhandeneDatei(w, r, oberflaeche, strings.TrimPrefix(r.URL.Path, "/")) {
+			return
 		}
 
 		// Ein unbekannter /api/-Pfad ist ein Fehler, keine Seite: Bekäme er die App-Shell,
@@ -391,15 +387,34 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 		}
 
 		// Alle übrigen Pfade bekommen die App-Shell.
-		liefereAppShell(w, r, oberflaeche)
+		liefereOhneDatum(w, r, oberflaeche, "index.html")
 	}
 }
 
-// liefereAppShell liefert index.html. Sie nennt die Dateien ihres Baus und wird deshalb bei
-// jedem Aufruf neu geholt, ohne Vergleich nach Datum: Nach einem Rückbau ist die Datei älter als
-// die im Browser, und If-Modified-Since bekäme 304.
-func liefereAppShell(w http.ResponseWriter, r *http.Request, oberflaeche *os.Root) {
-	shell, err := fs.ReadFile(oberflaeche.FS(), "index.html")
+// liefereVorhandeneDatei liefert die Datei der Oberfläche unter relativ; false, wenn es keine
+// gibt. Unter assets/ trägt jeder Name einen Prüfwert: Ein anderer Bau nennt andere Dateien, der
+// Vergleich nach Datum ist dort harmlos.
+func liefereVorhandeneDatei(w http.ResponseWriter, r *http.Request, oberflaeche *os.Root, relativ string) bool {
+	if relativ == "" {
+		return false
+	}
+	if angabe, err := oberflaeche.Stat(relativ); err != nil || angabe.IsDir() {
+		return false
+	}
+	if strings.HasPrefix(relativ, "assets/") {
+		http.ServeFileFS(w, r, oberflaeche.FS(), relativ)
+		return true
+	}
+	liefereOhneDatum(w, r, oberflaeche, relativ)
+	return true
+}
+
+// liefereOhneDatum liefert eine Datei ohne Prüfwert im Namen (index.html, sw.js, das Manifest)
+// bei jedem Aufruf neu, ohne Vergleich nach Datum: Nach einem Rückbau ist sie älter als die im
+// Browser, und If-Modified-Since bekäme 304. Mit Service Worker erkennt der Browser einen
+// anderen Bau nur an sw.js; die App-Shell nimmt er dann aus dessen Speicher.
+func liefereOhneDatum(w http.ResponseWriter, r *http.Request, oberflaeche *os.Root, name string) {
+	inhalt, err := fs.ReadFile(oberflaeche.FS(), name)
 	if errors.Is(err, fs.ErrNotExist) {
 		http.NotFound(w, r)
 		return
@@ -409,5 +424,5 @@ func liefereAppShell(w http.ResponseWriter, r *http.Request, oberflaeche *os.Roo
 		return
 	}
 	w.Header().Set(tuer.HeaderCacheControl, "no-cache")
-	http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(shell))
+	http.ServeContent(w, r, name, time.Time{}, bytes.NewReader(inhalt))
 }
