@@ -14,6 +14,7 @@ import { sammleQuelldateien, srcRoot, relPfad } from './hygiene-quellen.js';
 // in einer aufgerufenen Funktion. Eine Prüfung über eine Funktion (`if (ueberholt()) return`)
 // sieht das Gate nicht.
 
+/** @type {import('espree').Options} */
 const ESPREE = { ecmaVersion: 2024, sourceType: 'module', loc: true };
 const FUNKTIONEN = new Set([
 	'FunctionExpression',
@@ -72,7 +73,7 @@ export function findeSpaetePruefungen(datei, quelle) {
 	const zeilen = new Set();
 	let anzahlWaechter = 0;
 	for (const prog of programme(datei, inhalt)) {
-		walk(prog, {
+		walk(/** @type {any} */ (prog), {
 			enter(/** @type {any} */ block) {
 				if (block.type !== 'BlockStatement') return;
 				const anw = block.body;
