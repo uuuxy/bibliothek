@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { erzeugeAusweisdruck } from './ausweisdruck.svelte.js';
+import { erzeugeAusweisdruck, mitAusweisnummer } from './ausweisdruck.svelte.js';
 import { idStore, vergissDesignLadezustand } from '../../designer/idDesignerStore.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -100,7 +100,7 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 		const druck = erzeugeAusweisdruck();
 		await stillhalten();
 
-		await druck.drucke([{ id: 's1' }]);
+		await druck.drucke([{ id: 's1', barcode_id: 'A-00001' }]);
 
 		expect(gesehen).toEqual([{ modus: 'card', seite: 'front', seitenregel: true }]);
 		// Bliebe etwas stehen, druckte die nächste Seite dieses Tabs im Kartenformat.
@@ -119,7 +119,7 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 		await stillhalten();
 		vi.mocked(snackbars.addToast).mockClear();
 
-		await druck.drucke([{ id: 's1' }]);
+		await druck.drucke([{ id: 's1', barcode_id: 'A-00001' }]);
 
 		expect(drucken).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledWith(
@@ -138,9 +138,75 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 		const druck = erzeugeAusweisdruck();
 		await stillhalten();
 
-		await druck.drucke([{ id: 's1' }]);
+		await druck.drucke([{ id: 's1', barcode_id: 'A-00001' }]);
 
 		expect(apiFetch).toHaveBeenCalledTimes(2);
 		expect(drucken).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('erzeugeAusweisdruck: Leser ohne Ausweisnummer', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
+	const anna = { id: 's1', vorname: 'Anna', nachname: 'Berg', barcode_id: 'A-00001' };
+	const katrin = { id: 'l2', vorname: 'Katrin', nachname: 'Wendlandt', barcode_id: null };
+
+	it('liefert für den Kartendruck nur Leser mit Nummer', () => {
+		expect(mitAusweisnummer([anna, katrin])).toEqual([anna]);
+	});
+
+	it('druckt die Karten der anderen und nennt, wer ohne Nummer ist', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'card' }) })
+		);
+		const drucken = vi.fn();
+		vi.stubGlobal('print', drucken);
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+
+		await druck.drucke([anna, katrin]);
+
+		expect(drucken).toHaveBeenCalledTimes(1);
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			'Ohne Ausweisnummer kein Ausweis für Katrin Wendlandt. Die Nummer wird in der Akte unter „Stammdaten & Adresse“ eingetragen.',
+			'warning'
+		);
+	});
+
+	it('schickt dem Etikettenbogen nur Leser mit Nummer', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'etikett' }) })
+		);
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+		vi.mocked(apiFetch).mockClear();
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: false, json: async () => ({}) })
+		);
+
+		await druck.drucke([anna, katrin]);
+
+		const bogen = vi
+			.mocked(apiFetch)
+			.mock.calls.find(([url]) => url === '/api/print/schueler-etiketten');
+		expect(JSON.parse(String(bogen?.[1]?.body)).schuelerIds).toEqual(['s1']);
+	});
+
+	it('druckt nichts, wenn keiner eine Nummer hat', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'card' }) })
+		);
+		const drucken = vi.fn();
+		vi.stubGlobal('print', drucken);
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+
+		await druck.drucke([katrin]);
+
+		expect(drucken).not.toHaveBeenCalled();
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			expect.stringContaining('Katrin Wendlandt'),
+			'warning'
+		);
 	});
 });

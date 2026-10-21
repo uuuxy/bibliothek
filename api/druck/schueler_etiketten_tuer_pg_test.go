@@ -130,4 +130,20 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 		erwarte400(t, bogen(t, map[string]any{"schuelerIds": []string{uuid.NewString()}}),
 			"inzwischen gelöscht")
 	})
+
+	// Ohne Nummer gäbe es kein Strichcodebild; das Etikett trüge nur Name und Klasse.
+	t.Run("ein Leser ohne Ausweisnummer: 400 mit seinem Namen", func(t *testing.T) {
+		var ohneNummer string
+		if err := pool.QueryRow(t.Context(), `
+			INSERT INTO leser (art, vorname, nachname) VALUES ('lehrkraft', 'Katrin', 'Ohnenummer')
+			RETURNING id`).Scan(&ohneNummer); err != nil {
+			t.Fatal(err)
+		}
+		rec := bogen(t, map[string]any{"schuelerIds": []string{schueler, ohneNummer}})
+		erwarte400(t, rec, "Katrin Ohnenummer")
+		if got, erwartet := tuertest.Fehlermeldung(t, rec), "Ohne Ausweisnummer gibt es kein Etikett: Katrin Ohnenummer. "+
+			"Die Nummer wird in der Akte unter „Stammdaten & Adresse“ eingetragen."; got != erwartet {
+			t.Errorf("SchuelerEtiketten: Meldung %q, erwartet %q", got, erwartet)
+		}
+	})
 }

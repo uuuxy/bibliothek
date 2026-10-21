@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -112,6 +113,17 @@ func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen *repository.L
 	if len(zeilen) == 0 {
 		return nil, http.StatusBadRequest, apierrors.BadRequest("Zu den markierten Schülern gibt es keine Daten mehr. Wurden sie inzwischen gelöscht?", nil)
 	}
+	// Ohne Nummer gibt es kein Strichcodebild, und das Etikett trüge nur Name und Klasse. Die
+	// Leserdatei lässt solche Leser vor dem Druck aus; ein Fenster mit älterem Stand nicht.
+	var ohneNummer []string
+	for _, z := range zeilen {
+		if z.BarcodeID == "" {
+			ohneNummer = append(ohneNummer, strings.TrimSpace(z.Vorname+" "+z.Nachname))
+		}
+	}
+	if len(ohneNummer) > 0 {
+		return nil, http.StatusBadRequest, apierrors.BadRequest(meldungOhneAusweisnummer(ohneNummer), nil)
+	}
 
 	etiketten := make([]pdf.SchuelerEtikett, 0, len(zeilen))
 	for _, z := range zeilen {
@@ -123,4 +135,11 @@ func (t *Tueren) etikettenDesBogens(r *http.Request, leserAbfragen *repository.L
 		})
 	}
 	return etiketten, 0, nil
+}
+
+// meldungOhneAusweisnummer nennt die Leser, für die es kein Etikett gibt, und wo ihre Nummer
+// eingetragen wird.
+func meldungOhneAusweisnummer(namen []string) string {
+	return fmt.Sprintf("Ohne Ausweisnummer gibt es kein Etikett: %s. Die Nummer wird in der Akte unter „Stammdaten & Adresse“ eingetragen.",
+		strings.Join(namen, ", "))
 }

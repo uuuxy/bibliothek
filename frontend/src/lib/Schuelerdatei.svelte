@@ -10,7 +10,7 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import AuswahlAktionsleiste from './components/leser/AuswahlAktionsleiste.svelte';
 	import AusweisStapeldruck from './components/leser/AusweisStapeldruck.svelte';
-	import { erzeugeAusweisdruck } from './components/leser/ausweisdruck.svelte.js';
+	import { erzeugeAusweisdruck, mitAusweisnummer } from './components/leser/ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './components/leser/schuelerSuche.svelte.js';
 	import { erzeugeKlassenVorschlaege } from './components/leser/klassenVorschlaege.svelte.js';
 	import { erzeugeLeserAuswahl } from './components/leser/leserAuswahl.svelte.js';
@@ -180,5 +180,5 @@
      PDF vom Server, und jede Karte hier zöge ein Barcode-Bild über die Leitung, das
      niemand zu sehen bekommt. -->
 {#if gewaehlt.markierte.length > 0 && !druck.etikettModus}
-	<AusweisStapeldruck leserListe={gewaehlt.markierte} />
+	<AusweisStapeldruck leserListe={mitAusweisnummer(gewaehlt.markierte)} />
 {/if}
