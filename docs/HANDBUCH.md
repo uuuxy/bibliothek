@@ -329,7 +329,10 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   durch die Schulleitung. _Veröffentlichen_ speichert den aktuellen Stand und gibt ihn
   frei; ab dann sieht das Kollegium den Plan, beim Büchertausch werden die Termine die
   Fristen der Klassen, und jede weitere Speicherung gilt sofort. Einen zweiten Entwurf neben dem veröffentlichten Plan gibt es nicht — der Plan
-  des nächsten Schuljahres ist ein neuer Plan und beginnt wieder als Entwurf.
+  des nächsten Schuljahres ist ein neuer Plan und beginnt wieder als Entwurf. Arbeiten zwei
+  Plätze zugleich am Plan, speichert nur, wer den neuesten Stand vor sich hat: Hat ein anderer
+  Platz inzwischen gespeichert, lehnt _Plan speichern_ ab, die eigenen Änderungen bleiben
+  stehen, und der Hinweis darüber bietet _Neu laden und verwerfen_ an.
 - **Das PDF ist immer EIN Blatt.** Ein voller Plan bricht nicht auf eine zweite Seite
   um: Bis rund vierzig Terminen sieht das Blatt aus wie das gewohnte
   Excel; darüber rückt der Satz enger zusammen und stellt ab etwa sechzig Terminen

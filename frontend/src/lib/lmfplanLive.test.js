@@ -14,6 +14,7 @@ import { apiFetch } from './apiFetch.js';
 // hinweisen.
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
+vi.mock('./stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn(async () => true) }));
 
 const STAND = {
 	plan: null,
@@ -72,5 +73,77 @@ describe('LMF-Planer: fremdes Live-Signal', () => {
 			zeilenVorher
 		);
 		expect(planer.zustand.fremdeAenderung, 'niemand erfährt von der fremden Änderung').toBe(true);
+	});
+});
+
+// Ohne Live-Leitung kommt das Signal nicht an. Dann entscheidet der Server: Der Planer
+// schickt den Stempel des geladenen Plans mit, und ist der Plan inzwischen ein anderer,
+// lehnt der Server das Speichern ab (409). Die Arbeit bleibt stehen, der Hinweis erscheint.
+describe('LMF-Planer: Speichern auf einem überholten Stand', () => {
+	const MIT_PLAN = {
+		...STAND,
+		plan: {
+			id: 'p1',
+			art: 'rueckgabe',
+			erster_tag: '2027-06-14',
+			startstunde: 2,
+			letzter_tag: '2027-06-24',
+			letzte_stunde: 4,
+			stunden_je_tag: 6,
+			freie_tage: [],
+			veroeffentlicht_am: null,
+			aktualisiert_am: '2027-01-11T09:30:00.123456Z'
+		}
+	};
+	/** @type {any} */
+	let gesendet;
+	beforeEach(() => {
+		gesendet = null;
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url, /** @type {any} */ o) => {
+			if (o?.method !== 'PUT') return ok(MIT_PLAN);
+			gesendet = JSON.parse(o.body);
+			if (gesendet.vorschau) return ok({ zeilen: [], ausfaelle: [] });
+			return /** @type {any} */ ({
+				ok: false,
+				status: 409,
+				json: async () => ({ error: 'Der Plan wurde inzwischen an einem anderen Platz geändert.' })
+			});
+		});
+	});
+
+	it('schickt den Stempel mit, behält die Arbeit und weist hin', async () => {
+		const planer = erzeugePlaner();
+		await planer.lade();
+		planer.zustand.entwurf.zeilen.push({ klassen: ['10R2'], vermerk: '', fest: null });
+		const zeilenVorher = JSON.stringify(planer.zustand.entwurf.zeilen);
+
+		await planer.speichern();
+
+		expect(gesendet?.aktualisiert_am, 'der Stempel des geladenen Plans').toBe(
+			MIT_PLAN.plan.aktualisiert_am
+		);
+		expect(planer.zustand.fremdeAenderung, 'kein Hinweis auf den anderen Platz').toBe(true);
+		expect(JSON.stringify(planer.zustand.entwurf.zeilen), 'die offene Arbeit ist weg').toBe(
+			zeilenVorher
+		);
+	});
+
+	it('Veröffentlichen speichert zuerst und weist ebenso hin', async () => {
+		const planer = erzeugePlaner();
+		await planer.lade();
+		await planer.veroeffentlichen();
+		expect(planer.zustand.fremdeAenderung, 'kein Hinweis auf den anderen Platz').toBe(true);
+	});
+
+	it('ohne Plan geht ein leerer Stempel mit', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url, /** @type {any} */ o) => {
+			if (o?.method === 'PUT') gesendet = JSON.parse(o.body);
+			return ok(o?.method === 'PUT' ? { plan: { veroeffentlicht_am: null } } : STAND);
+		});
+		const planer = erzeugePlaner();
+		await planer.lade();
+		await planer.speichern();
+		expect(gesendet?.aktualisiert_am).toBe('');
 	});
 });

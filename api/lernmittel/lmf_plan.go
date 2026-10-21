@@ -191,6 +191,8 @@ type lmfPlanAnfrage struct {
 	Ausgelassen []string              `json:"ausgelassen"`
 	// Vorschau: nur rechnen, nichts schreiben — die Verteilung für den Planer.
 	Vorschau bool `json:"vorschau"`
+	// AktualisiertAm ist der Stempel des Plans, den der Planer geladen hat, leer ohne Plan.
+	AktualisiertAm string `json:"aktualisiert_am"`
 }
 
 // lmfPlanAnfrageZeile ist eine Zeile der Anfrage.
@@ -375,6 +377,16 @@ func (t *Tueren) rechneOderSchreibeLMFPlan(w http.ResponseWriter, r *http.Reques
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
 	defer db.Verwerfe(r.Context(), tx)
+	// Von einer Änderung an einem anderen Platz erfährt der Planer nur über die Live-Leitung.
+	// War sie unterbrochen, überschriebe das Speichern die Änderung still; es gilt deshalb nur
+	// auf dem Stand, den der Planer geladen hat.
+	stempel, err := abfragen.SperreNeuestenPlan(r.Context(), tx, art)
+	if err != nil {
+		return keine, false, apierrors.Internal("LMF-Plan lesen", err)
+	}
+	if stempel != req.AktualisiertAm {
+		return keine, false, apierrors.Conflict("Der Plan wurde inzwischen an einem anderen Platz geändert. Nichts gespeichert.", nil)
+	}
 	stand, err := abfragen.SchreibePlan(r.Context(), tx, e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
 	if err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan speichern", err)

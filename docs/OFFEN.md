@@ -15,7 +15,7 @@ gibt es nicht; wie die Liste geführt wird, steht am Ende.
 Diese Punkte standen als bekannte Grenzen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5; sie lassen
 sich lösen. Die zwei der Kategorie A kommen zuerst.
 
-- [ ] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
+- [x] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
 - [ ] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
   verloren. (5.83)
 - [ ] Fünf Fehler an Türen und Abfragen. (5.84)
@@ -141,16 +141,6 @@ Nicht entschieden: Alte Sicherungen löschen nur die Läufe von `update.sh` und
 `scripts/backup.sh`. Kommt kein Update mehr, bleibt die letzte Vorab-Sicherung liegen, ein
 Klartext-Rest nach einem misslungenen Update bis zum nächsten Lauf; die Meldungen der Skripte
 sagen das.
-
-### 5.82 (A) LMF-Planer: Speichern überschreibt eine fremde Änderung
-
-Der Planer erfährt nur über die Live-Leitung, dass ein anderer Platz den Plan geändert hat
-(`fremdesSignal` in `frontend/src/lib/lmfplanPlaner.svelte.js`). War sie unterbrochen,
-überschreibt das nächste Speichern die fremde Änderung ohne Meldung: Die Tür schreibt, ohne den
-Stand zu vergleichen, auf dem das Speichern beruht (`api/lernmittel/lmf_plan.go`,
-`SchreibePlan`). Nächster Schritt: wie die Buchmaske eine Änderung ablehnen, die einen
-inzwischen überholten Stand überschreibt (`frontend/e2e/buchmaske-bestand.spec.js`, „inzwischen
-geändert").
 
 ### 5.83 (A) Theke: wartende Scans beim Neuladen
 

@@ -1,6 +1,7 @@
 package lernmittel_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -70,5 +71,87 @@ func TestLMFPlan_UeberDenRouter_StehtAufDerBasisDesServers(t *testing.T) {
 	}
 	if antwort.Ab != "2000-08-01" {
 		t.Errorf("Liste ab %q, erwartet 2000-08-01: Die Türen rechnen nicht mit der Uhr des Servers", antwort.Ab)
+	}
+}
+
+// Ein Speichern gilt nur auf dem Stand, den der Planer geladen hat. Von einer Änderung an einem
+// anderen Platz erfährt er sonst nur über die Live-Leitung; war sie unterbrochen, überschriebe
+// er die Änderung still. Die Tür antwortet dann mit 409 und lässt den Plan, wie er ist.
+func TestLMFPlan_SpeichernAufUeberholtemStand_WirdAbgelehnt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	raeumePlaene := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM lmf_plaene`) }
+	raeumePlaene()
+	t.Cleanup(raeumePlaene)
+
+	_, sitzung, anmeldung := tuertest.AdminSitzung(t, pool, "lmf-plan-stand@example.org", "Lena", "Stand")
+	router := api.NewServer(&db.Verbindung{Pool: pool}, anmeldung, sse.NewBroker(), api.ServerKonfig{}).Routes()
+	rufe := func(methode, rumpf string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(methode, "/api/lmf-plan/ausgabe", strings.NewReader(rumpf))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
+		return rec
+	}
+	// geladenerStand ist der Stempel, den der Planer beim Laden bekommt.
+	geladenerStand := func() string {
+		t.Helper()
+		rec := rufe(http.MethodGet, "")
+		var antwort struct {
+			Plan *struct {
+				AktualisiertAm string `json:"aktualisiert_am"`
+			} `json:"plan"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil || antwort.Plan == nil {
+			t.Fatalf("GET /api/lmf-plan/ausgabe: %d %s", rec.Code, rec.Body.String())
+		}
+		return antwort.Plan.AktualisiertAm
+	}
+	speichere := func(stand, vermerk string) *httptest.ResponseRecorder {
+		t.Helper()
+		return rufe(http.MethodPut, `{"erster_tag":"2027-08-10","startstunde":2,"stunden_je_tag":6,`+
+			`"zeilen":[{"vermerk":"`+vermerk+`"}],"aktualisiert_am":"`+stand+`"}`)
+	}
+	vermerk := func() string {
+		t.Helper()
+		var v string
+		if err := pool.QueryRow(context.Background(), `SELECT string_agg(t.vermerk, ',')
+			FROM lmf_termine t JOIN lmf_plaene p ON p.id = t.plan_id WHERE p.art = 'ausgabe'`).Scan(&v); err != nil {
+			t.Fatalf("Zeilen lesen: %v", err)
+		}
+		return v
+	}
+	abgelehnt := func(rec *httptest.ResponseRecorder, fall string) {
+		t.Helper()
+		if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "an einem anderen Platz geändert") {
+			t.Errorf("%s: %d %s, erwartet 409 mit dem Hinweis auf den anderen Platz", fall, rec.Code, rec.Body.String())
+		}
+	}
+
+	// Zwei Plätze öffnen den Planer, als es noch keinen Plan gibt; der erste speichert.
+	if rec := speichere("", "erster Platz"); rec.Code != http.StatusOK {
+		t.Fatalf("erstes Speichern: %d %s", rec.Code, rec.Body.String())
+	}
+	abgelehnt(speichere("", "zweiter Platz"), "zweiter Platz ohne Plan geladen")
+
+	// Der erste speichert auf seinem neuen Stand weiter; mit dem Stand davor wird abgelehnt.
+	vorher := geladenerStand()
+	if rec := speichere(vorher, "erster Platz, zweites Mal"); rec.Code != http.StatusOK {
+		t.Fatalf("Speichern auf dem geladenen Stand: %d %s", rec.Code, rec.Body.String())
+	}
+	if geladenerStand() == vorher {
+		t.Fatal("Der Stempel ist nach dem Speichern derselbe; der Vergleich unterschiede nichts")
+	}
+	abgelehnt(speichere(vorher, "überholt"), "Speichern auf einem überholten Stand")
+	if v := vermerk(); v != "erster Platz, zweites Mal" {
+		t.Errorf("Der Plan trägt %q, erwartet den Stand des letzten erlaubten Speicherns", v)
+	}
+
+	// Die Vorschau schreibt nichts und rechnet auf jedem Stand.
+	if rec := rufe(http.MethodPut, `{"erster_tag":"2027-08-10","startstunde":2,"stunden_je_tag":6,`+
+		`"zeilen":[{"vermerk":"Vorschau"}],"vorschau":true,"aktualisiert_am":"`+vorher+`"}`); rec.Code != http.StatusOK {
+		t.Errorf("Vorschau auf einem überholten Stand: %d %s", rec.Code, rec.Body.String())
 	}
 }

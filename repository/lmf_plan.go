@@ -43,6 +43,10 @@ type LMFPlan struct {
 	// Ferientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche
 	// Feiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).
 	FreieTage []LMFFreierTag `json:"freie_tage"`
+	// AktualisiertAm ist der Stempel der letzten Änderung, auf die Mikrosekunde. Der Planer
+	// schickt ihn beim Speichern zurück; ist der Plan inzwischen ein anderer, speichert die Tür
+	// nicht (SperreNeuestenPlan).
+	AktualisiertAm string `json:"aktualisiert_am"`
 }
 
 // LMFFreierTag ist ein freier Tag des Plans mit Grund.
@@ -74,7 +78,12 @@ type LMFPlanStand struct {
 // Veröffentlichen dieselbe, damit kein Weg ein Feld vergisst (leseLMFPlan liest sie).
 const lmfPlanSpalten = `id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_char(erster_tag, 'YYYY-MM-DD'),
 		       startstunde, stunden_je_tag, veroeffentlicht_am,
-		       COALESCE(to_char(letzter_tag, 'YYYY-MM-DD'), ''), COALESCE(letzte_stunde, 0)`
+		       COALESCE(to_char(letzter_tag, 'YYYY-MM-DD'), ''), COALESCE(letzte_stunde, 0), ` + sqlLMFPlanStempel
+
+// sqlLMFPlanStempel ist aktualisiert_am als Text, auf die Mikrosekunde; den Wert setzt der
+// Trigger trg_lmf_plaene_aktualisiert_am bei jeder Änderung des Plans. Verglichen wird Text
+// mit Text, ohne Umweg über eine Zeitzone oder eine kürzere Genauigkeit.
+const sqlLMFPlanStempel = `to_char(aktualisiert_am AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
 
 // leseLMFPlan liest lmfPlanSpalten in den Rahmen; der Stempel kommt als RFC 3339 in der
 // Schulzeitzone, weil die Oberfläche ihn nur anzeigt. Das Ende ist beim Ausgabe-Plan
@@ -82,7 +91,7 @@ const lmfPlanSpalten = `id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_cha
 func leseLMFPlan(row pgx.Row, p *LMFPlan) error {
 	var veroeffentlicht *time.Time
 	if err := row.Scan(&p.ID, &p.Art, &p.SchuljahrBeginn, &p.ErsterTag, &p.Startstunde, &p.StundenJeTag, &veroeffentlicht,
-		&p.LetzterTag, &p.LetzteStunde); err != nil {
+		&p.LetzterTag, &p.LetzteStunde, &p.AktualisiertAm); err != nil {
 		return err
 	}
 	p.VeroeffentlichtAm = nil
@@ -106,6 +115,20 @@ func (a *LMFAbfragen) LadeNeuestenPlan(ctx context.Context, art string) (LMFPlan
 		return st, err
 	}
 	return a.ladePlanTeile(ctx, st)
+}
+
+// SperreNeuestenPlan liest den Stempel des Plans, den der Planer zeigt (LadeNeuestenPlan),
+// und sperrt dessen Zeile bis zum Ende der Transaktion; leer, wenn es noch keinen Plan der Art
+// gibt. Ein zweites Speichern wartet so, bis das erste fertig ist, und sieht dessen Stempel.
+func (a *LMFAbfragen) SperreNeuestenPlan(ctx context.Context, tx pgx.Tx, art string) (string, error) {
+	var stempel string
+	err := tx.QueryRow(ctx, `
+		SELECT `+sqlLMFPlanStempel+` FROM lmf_plaene WHERE art = $1
+		ORDER BY erster_tag DESC LIMIT 1 FOR UPDATE`, art).Scan(&stempel)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return stempel, err
 }
 
 // ladePlanTeile ergänzt einen gelesenen Rahmen um Zeilen, freie Tage und Auslassungen.

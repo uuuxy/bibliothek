@@ -15,8 +15,9 @@ import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js'
 /** Der Rahmen hängt an der Art (Migration 101): der Büchertausch ENDET (letzter_tag,
  *  letzte_stunde — Donnerstag vor den Sommerferien, 4. Stunde), die Bücherausgabe BEGINNT
  *  (erster_tag, startstunde). Der Entwurf trägt beide Paare; gesendet wird, was die Art
- *  braucht, der Server verwirft den Rest.
- *  @typedef {{ erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], zeilen: PlanZeile[], ausgelassen: string[] }} PlanEntwurf */
+ *  braucht, der Server verwirft den Rest. aktualisiert_am ist der Stempel des geladenen Plans:
+ *  Ist der Plan beim Speichern ein anderer, speichert der Server nicht (409).
+ *  @typedef {{ erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], zeilen: PlanZeile[], ausgelassen: string[], aktualisiert_am?: string }} PlanEntwurf */
 /** @typedef {{ erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number }} RahmenVorgabe */
 /** @typedef {{ jahr: number, von: string, bis: string, bekannt: boolean }} Sommerferien */
 /** @typedef {{ position: number, datum: string, stunde: number, fest: boolean, klassen: string[], vermerk: string }} PlanPlatz */
@@ -24,7 +25,7 @@ import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js'
 /** @typedef {{ datum: string, grund: string }} Ausfall */
 /** veroeffentlicht_am: null = Entwurf (nur im Planer), sonst der Stempel (Migration 100). klassen = Klassen mit
  *  Schülern; eingangsjahrgaenge aus der Einstellung. */
-/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], ausgelassen_regel?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
+/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null, aktualisiert_am: string } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], ausgelassen_regel?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
 
 /** Die zwei Pläne, mit den Worten, die sagen, was passiert: „Rückgabe" und „Ausgabe" allein
  *  sind unklar, es sind zwei verschiedene Dinge zu verschiedenen Zeiten. Dieselben Titel
@@ -108,11 +109,9 @@ export async function ladeStand(art) {
 	return await res.json();
 }
 
-/** Die Entprellung der Vorschau: So lange wartet der Planer nach der letzten Änderung,
- *  bevor er den Server rechnen lässt. Exportiert, weil der Test sie kennen muss — er
- *  prüft, dass OHNE Anker gar nicht gerechnet wird, und muss dafür sicher über die
- *  Wartezeit hinaus. Stand die Zahl dort ein zweites Mal, hielte der Test nach einer
- *  Änderung hier nur noch zufällig, was er zu prüfen behauptet. */
+/** Die Entprellung der Vorschau: So lange wartet der Planer nach der letzten Änderung. Der
+ *  Test, dass ohne Anker nicht gerechnet wird, wartet über diese Zahl hinaus; eine zweite Zahl
+ *  dort hielte nach einer Änderung hier nur noch zufällig. */
 export const VORSCHAU_ENTPRELLUNG_MS = 250;
 
 /** Der leere Entwurf — der Zustand des Planers vor dem ersten Laden.
@@ -170,7 +169,8 @@ export function entwurfAus(stand) {
 		stunden_je_tag: rahmen.stunden_je_tag,
 		freie_tage: laufend && stand.plan ? [...(stand.plan.freie_tage ?? [])] : [],
 		zeilen,
-		ausgelassen
+		ausgelassen,
+		aktualisiert_am: stand.plan?.aktualisiert_am ?? ''
 	};
 }
 
@@ -258,13 +258,13 @@ export function festePlaetzeVollstaendig(zeilen) {
 
 /** Speichert den Plan. Gibt die Server-Meldung zurück — nur der Server kennt den Grund
  *  einer Ablehnung und die Zahl der Ausleihen, deren Frist dem Plan gefolgt ist. Ein
- *  unveröffentlichter Plan bleibt Entwurf (Migration 100); die Meldung sagt es.
+ *  Entwurf bleibt Entwurf (Migration 100). konflikt: Der Plan wurde inzwischen geändert.
  *  @param {string} art @param {PlanEntwurf} entwurf
- *  @returns {Promise<{ ok: boolean, meldung: string }>} */
+ *  @returns {Promise<{ ok: boolean, konflikt?: boolean, meldung: string }>} */
 export async function speicherePlan(art, entwurf) {
 	const { res, json } = await sende(art, entwurf, false);
-	if (!res.ok)
-		return { ok: false, meldung: json.error ?? json.message ?? 'Speichern fehlgeschlagen.' };
+	const meldung = json.error ?? json.message ?? 'Speichern fehlgeschlagen.';
+	if (!res.ok) return { ok: false, konflikt: res.status === 409, meldung };
 	if (!json.plan?.veroeffentlicht_am) return { ok: true, meldung: 'Entwurf gespeichert.' };
 	const n = Number(json.fristen_angepasst ?? 0);
 	return {

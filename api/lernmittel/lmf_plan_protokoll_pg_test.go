@@ -64,6 +64,9 @@ func TestLMFPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 	// kein Audit, und der Test wäre grün, ohne etwas zu belegen.
 	ruf := func(methode, art, body string) *httptest.ResponseRecorder {
 		t.Helper()
+		if methode == http.MethodPut {
+			body = mitGeladenemStand(t, pool, art, body)
+		}
 		req := httptest.NewRequest(methode, "/api/lmf-plan/"+art, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("art", art)

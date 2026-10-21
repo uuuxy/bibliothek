@@ -3,6 +3,7 @@ package lernmittel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Die Kopplung Plan → Frist am echten Postgres, über die Türen des Plans: Ein Rückgabe-Plan
@@ -457,9 +460,13 @@ func TestLMFPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	}
 }
 
-// lmfPlanAufruf ruft die Plan-Handler wie der Router: {art} im Pfad.
+// lmfPlanAufruf ruft die Plan-Handler wie der Router: {art} im Pfad. Ein Speichern trägt den
+// Stand, den der Planer jetzt laden würde (mitGeladenemStand).
 func lmfPlanAufruf(t *testing.T, srv *Tueren, methode, art, body string) *httptest.ResponseRecorder {
 	t.Helper()
+	if methode == http.MethodPut {
+		body = mitGeladenemStand(t, srv.DB.Pool, art, body)
+	}
 	req := httptest.NewRequest(methode, "/api/lmf-plan/"+art, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.SetPathValue("art", art)
@@ -475,4 +482,31 @@ func lmfPlanAufruf(t *testing.T, srv *Tueren, methode, art, body string) *httpte
 		srv.LMFPlanVerwerfen()(rec, req)
 	}
 	return rec
+}
+
+// mitGeladenemStand trägt in den Rumpf eines Speicherns den Stempel des Plans ein, den der
+// Planer jetzt laden würde, wie es die Oberfläche tut. Ein Rumpf, der den Stempel selbst nennt,
+// bleibt, wie er ist.
+func mitGeladenemStand(t *testing.T, pool db.Pool, art, body string) string {
+	t.Helper()
+	var rumpf map[string]any
+	if err := json.Unmarshal([]byte(body), &rumpf); err != nil {
+		t.Fatalf("Rumpf %q ist kein JSON-Objekt: %v", body, err)
+	}
+	if _, genannt := rumpf["aktualisiert_am"]; genannt {
+		return body
+	}
+	rumpf["aktualisiert_am"] = ""
+	stand, err := repository.NewLMFAbfragen(pool).LadeNeuestenPlan(context.Background(), art)
+	switch {
+	case err == nil:
+		rumpf["aktualisiert_am"] = stand.Plan.AktualisiertAm
+	case !errors.Is(err, pgx.ErrNoRows):
+		t.Fatalf("Plan %s lesen: %v", art, err)
+	}
+	roh, err := json.Marshal(rumpf)
+	if err != nil {
+		t.Fatalf("Rumpf schreiben: %v", err)
+	}
+	return string(roh)
 }

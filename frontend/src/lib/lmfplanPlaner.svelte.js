@@ -14,9 +14,8 @@ import { fehlertext } from './utils/fehlertext.js';
 /** @typedef {import('./lmfplanDienst.js').PlanStand} PlanStand */
 /** @typedef {import('./lmfplanDienst.js').PlanEntwurf} PlanEntwurf */
 
-// Der Dienst wirft bei Netzfehler und beim Zeitlimit von apiFetch. Ohne Meldung würde für
-// den Bediener nur der Knopf wieder aktiv; ein im Browser abgebrochenes PUT kann am Server
-// trotzdem gelaufen sein.
+// Der Dienst wirft bei Netzfehler und Zeitlimit (apiFetch). Ohne Meldung würde nur der Knopf
+// wieder aktiv; ein im Browser abgebrochenes PUT kann am Server trotzdem gelaufen sein.
 /** @param {unknown} e @param {string} was */
 function schreibfehler(e, was) {
 	melde(`${was} fehlgeschlagen: ${fehlertext(e)}`, 'error');
@@ -44,9 +43,8 @@ export function erzeugePlaner() {
 		// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan (ui/LadeFehler.svelte):
 		// sonst ersetzte „Plan speichern" den echten Plan durch die Regel-Reihenfolge.
 		ladeFehler: false,
-		// An einem ANDEREN Platz wurde der Plan geändert, während hier ungespeicherte
-		// Arbeit steht. Dann wird NICHT nachgeladen (das würfe sie weg), sondern
-		// hingewiesen — siehe fremdesSignal().
+		// An einem anderen Platz wurde der Plan geändert, während hier ungespeicherte Arbeit
+		// steht (fremdesSignal, oder der Server lehnt das Speichern ab): hinweisen, nicht laden.
 		fremdeAenderung: false
 	});
 
@@ -149,6 +147,7 @@ export function erzeugePlaner() {
 		try {
 			const erg = await dienst.speicherePlan(zustand.art, zustand.entwurf);
 			melde(erg.meldung, erg.ok ? 'success' : 'error');
+			if (erg.konflikt) zustand.fremdeAenderung = true;
 			if (erg.ok) await lade();
 		} catch (e) {
 			schreibfehler(e, 'Speichern');
@@ -175,6 +174,7 @@ export function erzeugePlaner() {
 			const gespeichert = await dienst.speicherePlan(zustand.art, zustand.entwurf);
 			if (!gespeichert.ok) {
 				melde(gespeichert.meldung, 'error');
+				if (gespeichert.konflikt) zustand.fremdeAenderung = true;
 				return;
 			}
 			const erg = await dienst.veroeffentlichePlan(zustand.art);
