@@ -72,6 +72,9 @@ löscht nur seine eigenen. Was als Klartext liegen bleibt — weil ein Deploy fe
 Verschlüsselung nicht möglich war — löscht jedes der beiden Skripte nach **2 Tagen**, gleich
 welches ihn anlegte, und beide sagen bei jedem Lauf, wie viele solcher Dateien noch da sind.
 Gelöscht wird nur, wenn ein Skript läuft: „nach 2 Tagen" heißt beim ersten Lauf danach.
+Damit dieser Lauf auch ohne Sicherung und Update kommt, ruft eine Uhr am Server täglich
+`scripts/backup.sh --nur-aufraeumen` auf; einrichten: [DEPLOYMENT.md](DEPLOYMENT.md),
+Abschnitt 6.
 Gate: `docs/backup_ablage_test.go`. Ist die Verschlüsselung nicht möglich (Container aus, Schlüssel
 nicht gesetzt, altes Image), bricht `scripts/backup.sh` **nicht** ab: Ein lesbares Backup
 ist besser als keines. Es benennt den Zustand und setzt die kurze Frist.

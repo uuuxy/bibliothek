@@ -34,11 +34,12 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt.
   (7.2, 4.20)
-- [ ] Alte Sicherungen, wenn kein Update mehr kommt: entscheiden, ob eine Uhr sie löscht. (5.31)
+- [x] Alte Sicherungen, wenn kein Update mehr kommt: entscheiden, ob eine Uhr sie löscht.
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
-  Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
-  Admin-Konten, Verbindung zur DNB (7.8).
+  Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9), Uhr für den
+  Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach nachsehen: Admin-Konten,
+  Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 
@@ -105,13 +106,6 @@ Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etike
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk. Wie die Übernahme die Vermerke an den Exemplaren
 zuordnet, steht in [littera_schema_befund.md](littera_schema_befund.md).
-
-### 5.31 Alte Sicherungen ohne weiteres Update
-
-Alte Sicherungen löschen nur die Läufe von `update.sh` und `scripts/backup.sh`. Kommt kein
-Update mehr, bleibt die letzte Vorab-Sicherung liegen, ein Klartext-Rest nach einem misslungenen
-Update bis zum nächsten Lauf; die Meldungen der Skripte sagen das. Nicht entschieden ist, ob
-eine Uhr sie auch ohne Lauf löschen soll; `update.sh` tut es bewusst nicht.
 
 ### 5.86 Material 3, wo die Oberfläche noch abweicht
 

@@ -311,6 +311,9 @@ Es gibt **drei Wege**; alle drei verschlüsseln über dieselbe Ableitung
 | Dateiname     | `backup_<Zeitstempel>.sql.gz.enc`                         | `bibliothek_backup_<Datum>.sql.gz.enc`     | `vordeploy_<Zeitstempel>.sql.gz.enc`           |
 | Ablage        | Volume `bibliothek_backups` (`/app/backups` im Container) | `./backups` auf dem Host                   | `./backups` auf dem Host                       |
 
+`./scripts/backup.sh --nur-aufraeumen` räumt nur auf, nach denselben Fristen, und legt keine
+Sicherung an. So ruft es die Uhr am Server ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6).
+
 **Warum `update.sh` erst in Schritt 5 verschlüsselt.** Seine Vorab-Sicherung ist der
 Rückweg für genau das Zeitfenster, in dem der neue Container nicht hochkommt — und in dem
 damit auch das Verschlüsselungswerkzeug nicht erreichbar wäre. Sie bleibt deshalb im

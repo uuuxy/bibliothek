@@ -43,10 +43,32 @@ BACKUP_DIR="$(dirname "$0")/../backups"
 RETENTION_ENC_TAGE=7
 RETENTION_KLARTEXT_TAGE=2
 
+# Aufräumen nach Frist, am Ende jeder Sicherung und allein für die Uhr am Server.
+# Verschlüsselt nur die eigenen: Im selben Ordner liegen die Vorab-Sicherungen von update.sh
+# mit 30 Tagen Frist. Klartext dagegen jeder (Gate: docs/backup_ablage_test.go).
+raeume_auf() {
+  echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage)..."
+  find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
+  find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime "+${RETENTION_KLARTEXT_TAGE}" -exec rm -f {} \;
+
+  KLARTEXT_UEBRIG=$(find "$BACKUP_DIR" -type f -name "*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$KLARTEXT_UEBRIG" -gt 0 ]; then
+    echo "WARNUNG: ${KLARTEXT_UEBRIG} unverschlüsselte/r Dump/s liegt/liegen noch in ${BACKUP_DIR}/ (Klarnamen im Klartext)."
+  fi
+}
+
 # ==========================================
 
 # Stelle sicher, dass das Backup-Verzeichnis existiert
 mkdir -p "$BACKUP_DIR"
+
+# --nur-aufraeumen ist die Uhr am Server (docs/DEPLOYMENT.md §6): Ohne sie bliebe ein
+# Klartext-Rest liegen, bis wieder eine Sicherung oder ein Update läuft.
+case "${1:-}" in
+  "") ;;
+  --nur-aufraeumen) raeume_auf; exit 0 ;;
+  *) echo "Unbekannte Angabe: $1 (erlaubt: --nur-aufraeumen)" >&2; exit 2 ;;
+esac
 
 # Aktuelles Datum für den Dateinamen (JJJJ-MM-TT)
 TIMESTAMP=$(date +"%Y-%m-%d")
@@ -99,16 +121,6 @@ else
   fi
 fi
 
-# -- Aufräum-Logik (Retention Policy) --
-echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage)..."
-# Verschlüsselt nur die eigenen: Im selben Ordner liegen die Vorab-Sicherungen von update.sh
-# mit 30 Tagen Frist. Klartext dagegen jeder (Gate: docs/backup_ablage_test.go).
-find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
-find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime "+${RETENTION_KLARTEXT_TAGE}" -exec rm -f {} \;
-
-KLARTEXT_UEBRIG=$(find "$BACKUP_DIR" -type f -name "*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
-if [ "$KLARTEXT_UEBRIG" -gt 0 ]; then
-  echo "WARNUNG: ${KLARTEXT_UEBRIG} unverschlüsselte/r Dump/s liegt/liegen noch in ${BACKUP_DIR}/ (Klarnamen im Klartext)."
-fi
+raeume_auf
 
 echo "Backup-Prozess abgeschlossen."

@@ -424,6 +424,18 @@ gehört `backups/` zum schutzbedürftigen Bestand — sie enthält jeden Schüle
 Adresse und jede Ausleihe im Klartext. Details:
 [resilience_and_recovery.md](resilience_and_recovery.md).
 
+**Die Uhr für den Klartext-Rest.** Gelöscht wird nur, wenn eines der Skripte läuft. Damit ein
+Klartext-Rest auch dann nach zwei Tagen geht, wenn lange keine Sicherung und kein Update kommt,
+ruft eine Uhr am Server täglich `scripts/backup.sh --nur-aufraeumen` auf. Es räumt nach
+denselben Fristen auf und legt keine Sicherung an. Einmal einrichten, im Programmverzeichnis
+als der Benutzer, dem es gehört; ein zweiter Aufruf ersetzt die Zeile, statt sie zu
+verdoppeln. Die zweite Zeile zeigt, was eingetragen ist:
+
+```bash
+( crontab -l 2>/dev/null | grep -v -- '--nur-aufraeumen'; echo "0 4 * * * '$PWD/scripts/backup.sh' --nur-aufraeumen >> '$PWD/backups/backup.log' 2>&1" ) | crontab -
+crontab -l | grep -- '--nur-aufraeumen'
+```
+
 ### Backup-Umfang: nur die Datenbank (entschieden am 11.07.2026)
 
 Das `uploads/`-Volume (Buchcover als lokale WebP-Dateien) wird **absichtlich nicht**

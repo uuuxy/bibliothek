@@ -1,10 +1,14 @@
 package docs
 
 import (
+	"errors"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Ein Ordner, zwei Skripte. In ./backups auf dem Host legen update.sh (vordeploy_…, 30 Tage)
@@ -142,5 +146,86 @@ func TestBackupAblage_KeineLoeschUhrVersprochen(t *testing.T) {
 					pfad, i+1, strings.TrimSpace(zeile))
 			}
 		}
+	}
+}
+
+// Die Uhr am Server ruft scripts/backup.sh --nur-aufraeumen (DEPLOYMENT.md §6). Sie räumt nach
+// denselben Fristen auf wie ein Lauf und legt keine Sicherung an: docker ruft sie nie.
+func TestBackupAblage_UhrRaeumtNurAuf(t *testing.T) {
+	wurzel := t.TempDir()
+	skripte := filepath.Join(wurzel, "scripts")
+	ablage := filepath.Join(wurzel, "backups")
+	bin := filepath.Join(wurzel, "bin")
+	for _, ordner := range []string{skripte, ablage, bin} {
+		if err := os.Mkdir(ordner, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, name := range []string{"backup.sh", "backup_krypto.sh"} {
+		inhalt := lies(t, "../scripts/"+name)
+		if err := os.WriteFile(filepath.Join(skripte, name), []byte(inhalt), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	protokoll := filepath.Join(wurzel, "docker.log")
+	stellvertreter := "#!/bin/sh\necho \"$*\" >> \"" + protokoll + "\"\nexit 1\n"
+	if err := os.WriteFile(filepath.Join(bin, "docker"), []byte(stellvertreter), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	alt := time.Now().Add(-10 * 24 * time.Hour)
+	dateien := []struct {
+		name        string
+		alt, bleibt bool
+	}{
+		{"bibliothek_backup_2026-09-01.sql.gz.enc", true, false},
+		{"vordeploy_20260901_000000.sql.gz.enc", true, true}, // update.sh hält sie 30 Tage
+		{"vordeploy_20260901_000000.sql.gz", true, false},    // Klartext-Rest eines Updates
+		{"bibliothek_backup_2026-10-21.sql.gz", false, true},
+	}
+	for _, d := range dateien {
+		pfad := filepath.Join(ablage, d.name)
+		if err := os.WriteFile(pfad, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if d.alt {
+			if err := os.Chtimes(pfad, alt, alt); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	lauf := func(angabe string) (string, error) {
+		befehl := exec.Command("bash", filepath.Join(skripte, "backup.sh"), angabe)
+		befehl.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+		ausgabe, err := befehl.CombinedOutput()
+		return string(ausgabe), err
+	}
+	ausgabe, err := lauf("--nur-aufraeumen")
+	if err != nil {
+		t.Fatalf("--nur-aufraeumen: %v\n%s", err, ausgabe)
+	}
+	for _, d := range dateien {
+		_, fehler := os.Stat(filepath.Join(ablage, d.name))
+		if da := fehler == nil; da != d.bleibt {
+			t.Errorf("%s: nach dem Aufräumen da = %v, erwartet %v", d.name, da, d.bleibt)
+		}
+	}
+	if !strings.Contains(ausgabe, "WARNUNG: 1 unverschlüsselte") {
+		t.Errorf("der frische Klartext wird nicht gemeldet:\n%s", ausgabe)
+	}
+
+	ausgabe, err = lauf("--nur-aufraumen")
+	var ende *exec.ExitError
+	if !errors.As(err, &ende) || ende.ExitCode() != 2 {
+		t.Errorf("eine unbekannte Angabe endet nicht mit 2: %v\n%s", err, ausgabe)
+	}
+	// Ohne Aufruf legt der Stellvertreter kein Protokoll an.
+	aufrufe, err := os.ReadFile(protokoll)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		t.Fatal(err)
+	}
+	if len(aufrufe) > 0 {
+		t.Errorf("die Uhr oder die unbekannte Angabe rief docker:\n%s", aufrufe)
 	}
 }
