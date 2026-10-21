@@ -1,3 +1,5 @@
+import { DRUCK_RECHTE } from './druckCenterReiter.js';
+
 /**
  * @typedef {Object} MenuItem
  * @property {string} id
@@ -28,8 +30,7 @@ export function hatRecht(currentUser, permission) {
 }
 
 /**
- * Determines whether a menu item should be visible for the given user.
- *
+ * Ob der Menüpunkt für diesen Benutzer sichtbar ist.
  * @param {MenuItem} item
  * @param {any} currentUser
  * @returns {boolean}
@@ -76,7 +77,6 @@ const unteransichtBrauchtBildschirm = {
 
 /**
  * Die Tab-IDs, die dieser Benutzer laut Navigation öffnen darf.
- *
  * @param {any} currentUser
  * @returns {Set<string>}
  */
@@ -128,7 +128,7 @@ export const menueGruppen = [
 		items: [
 			{ id: 'media_catalog', label: 'Medienkatalog', icon: 'catalog', permission: 'view_books' },
 			{ id: 'signaturen', label: 'Signaturen', icon: 'book', permission: 'view_books' },
-			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permission: 'view_students' },
+			{ id: 'druck-center', label: 'Druck-Center', icon: 'printer', permissions: DRUCK_RECHTE },
 			{
 				// view_books, nicht manage_users: Wer den Bestand sehen darf, sieht auch die
 				// Klassensätze, auch die Bibliotheks-Helfer. Die Verwaltungsaktionen darin

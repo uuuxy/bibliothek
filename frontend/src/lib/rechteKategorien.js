@@ -16,7 +16,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'view_students',
 				label: 'Leserdatei anzeigen',
-				desc: 'Leserdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen einsehen und die Mahnliste drucken; Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken; Druck-Center'
+				desc: 'Leserdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen einsehen und die Mahnliste drucken; Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken, im Druck-Center auch klassenweise'
 			},
 			{
 				key: 'create_students',
@@ -52,7 +52,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'view_books',
 				label: 'Medienkatalog anzeigen',
-				desc: 'Titel, Exemplare, Signaturen, Systematik, Fächer und Geräte einsehen; Buch-Etiketten drucken; Schulklassen-Übersicht'
+				desc: 'Titel, Exemplare, Signaturen, Systematik, Fächer und Geräte einsehen; Buch-Etiketten drucken, im Druck-Center zusammen mit „Bücher bearbeiten“; Schulklassen-Übersicht'
 			},
 			{
 				key: 'edit_books',

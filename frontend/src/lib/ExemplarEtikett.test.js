@@ -9,8 +9,8 @@ vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 /**
  * Das Etikett eines Exemplars entsteht im Druck-Center, auf dem Bogen nach der Vorlage
  * (OFFEN.md 5.5). Die Buchakte übergibt nur — über dieselbe druckWarteschlange wie Wareneingang und
- * Nachdruck. Den Knopf bekommt nur, wer das Druck-Center öffnen darf: Sonst stellte der
- * Router den gesperrten Reiter zurück, und der Klick endete auf dem ersten erlaubten.
+ * Nachdruck. Den Knopf bekommt nur, wer im Druck-Center den Reiter „Buch-Etiketten" öffnen
+ * darf (view_books, POST /api/print/labels): Sonst endete der Klick auf einem anderen Reiter.
  */
 
 const book = { id: 't-1', title: 'Seydlitz Geographie', author: 'Anna Autorin' };
@@ -32,7 +32,7 @@ beforeEach(() => {
 
 describe('Etikett aus der Buchakte', () => {
 	it('übergibt das Exemplar mit Titel und Autor an das Druck-Center', async () => {
-		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books', 'view_students'] };
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books', 'view_books'] };
 
 		await fireEvent.click(/** @type {HTMLElement} */ (etikettKnopf()));
 
@@ -41,16 +41,19 @@ describe('Etikett aus der Buchakte', () => {
 		]);
 	});
 
-	it('bietet den Knopf nicht an, wer das Druck-Center nicht öffnen darf', () => {
-		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books'] };
-
-		expect(etikettKnopf()).toBeNull();
+	it('bietet den Knopf nicht an, wer die Buch-Etiketten nicht öffnen darf', () => {
+		// edit_books öffnet das Druck-Center (Reiter „Fehlende Etiketten"), view_students die
+		// Ausweise; gedruckt wird das Etikett aber im Reiter „Buch-Etiketten".
+		for (const rechte of [['edit_books'], ['edit_books', 'view_students']]) {
+			authStore.currentUser = { rolle: 'mitarbeiter', permissions: rechte };
+			expect(etikettKnopf(), rechte.join(', ')).toBeNull();
+		}
 	});
 
 	// Ein Buch aus Littera trägt die 13 Ziffern seines alten Etiketts als Nummer. Bis zum
 	// 30.09.2026 gab es den Knopf nur bei „B-", also für keines dieser Bücher.
 	it('bietet den Knopf auch bei einem Buch aus Littera an', () => {
-		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books', 'view_students'] };
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books', 'view_books'] };
 
 		expect(etikettKnopf('5896800039556')).not.toBeNull();
 	});
@@ -60,7 +63,7 @@ describe('Etikett aus der Buchakte', () => {
 		(nummer) => {
 			authStore.currentUser = {
 				rolle: 'mitarbeiter',
-				permissions: ['edit_books', 'view_students']
+				permissions: ['edit_books', 'view_books']
 			};
 
 			expect(etikettKnopf(nummer)).toBeNull();

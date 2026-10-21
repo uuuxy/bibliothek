@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ALLE_KATEGORIE_RECHTE } from './components/einstellungen/kategorien.js';
+import { DRUCK_CENTER_REITER } from './druckCenterReiter.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { darfSehen, erlaubteBildschirme, menueGruppen, bildschirmGesperrt } from './menue.js';
@@ -133,6 +134,27 @@ describe('Menü-Sichtbarkeit', () => {
 		const settings = allePunkte.find((i) => i.id === 'settings');
 		if (!settings) throw new Error('Menüpunkt settings fehlt — Test läuft ins Leere');
 		expect([...(settings.permissions ?? [])].sort()).toEqual([...ALLE_KATEGORIE_RECHTE].sort());
+	});
+	it('zeigt das Druck-Center genau dann, wenn einer seiner Reiter aufgeht', () => {
+		// Hing der Punkt an view_students, erreichte wer nur Bücher pflegt die Buch-Etiketten
+		// nicht. Ein Reiter braucht jedes seiner Rechte, der Punkt ist sichtbar, sobald einer
+		// aufgeht: über alle Verteilungen der beteiligten Rechte geprüft.
+		const druck = allePunkte.find((i) => i.id === 'druck-center');
+		if (!druck) throw new Error('Menüpunkt druck-center fehlt — Test läuft ins Leere');
+		const beteiligt = [...new Set(DRUCK_CENTER_REITER.flatMap((r) => r.rechte))];
+		expect(beteiligt.length, 'die Reiter nennen kaum Rechte').toBeGreaterThan(2);
+		/** @type {string[][]} */
+		const verteilungen = beteiligt.reduce(
+			(alle, recht) => [...alle, ...alle.map((m) => [...m, recht])],
+			/** @type {string[][]} */ ([[]])
+		);
+		for (const rechte of verteilungen) {
+			const reiterAuf = DRUCK_CENTER_REITER.some((r) => r.rechte.every((x) => rechte.includes(x)));
+			const nutzer = { rolle: 'mitarbeiter', permissions: rechte };
+			expect(darfSehen(druck, nutzer), rechte.join(', ') || 'ohne Recht').toBe(reiterAuf);
+		}
+		// Der Helfer ab Werk hat view_books, aber keinen Reiter: Er sieht den Punkt nicht.
+		expect(darfSehen(druck, helfer)).toBe(false);
 	});
 	it('öffnet das Portal für jede Rolle mit create_reservations — und nur für die', () => {
 		// Bis 26.08.2026 hing „Mein Portal" an der Rolle kollegium. Eine Lehrkraft, die

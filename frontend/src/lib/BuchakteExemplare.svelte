@@ -2,7 +2,8 @@
 	import { melde } from '../inventur/lib/store.svelte.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { erlaubteBildschirme, hatRecht } from './menue.js';
+	import { hatRecht } from './menue.js';
+	import { rechteDesReiters } from './druckCenterReiter.js';
 	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
@@ -27,11 +28,10 @@
 	let eigentumOffen = $state(false);
 	// Standort markierter Exemplare (5.53): derselbe Weg, eigener Dialog.
 	let standortOffen = $state(false);
-	// Das Etikett entsteht im Druck-Center, auf dem Bogen nach der Vorlage (OFFEN.md 5.5). Wer
-	// den Bildschirm nicht öffnen darf, bekäme statt des Bogens den ersten erlaubten: Der
-	// Router stellt einen gesperrten Reiter zurück.
+	// Das Etikett entsteht im Druck-Center, im Reiter „Buch-Etiketten" (OFFEN.md 5.5). Wer ihn
+	// nicht öffnen darf, bekäme statt des Bogens einen anderen Reiter.
 	const darfEtikett = $derived(
-		darfBearbeiten && erlaubteBildschirme(authStore.currentUser).has('druck-center')
+		rechteDesReiters('labels').every((recht) => hatRecht(authStore.currentUser, recht))
 	);
 
 	/** Dieselbe Übergabe wie Wareneingang und Nachdruck — das Druck-Center öffnet sich selbst. */
