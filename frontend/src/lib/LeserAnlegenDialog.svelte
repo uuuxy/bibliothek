@@ -17,6 +17,7 @@
 	import KollegiumEingabeFelder from './components/leser/KollegiumEingabeFelder.svelte';
 	import { leserArtText, istKollegium, artMitKonto } from './leserArt.js';
 	import { TriangleAlert } from '@lucide/svelte';
+	import { erzeugeDialogAnfrage } from './components/ui/dialogAnfrage.svelte.js';
 
 	let { open = false, klassen = [], klassenFehler = false, onclose, onsuccess } = $props();
 
@@ -71,12 +72,17 @@
 		return '';
 	}
 
+	const anfrage = erzeugeDialogAnfrage(() => open);
+
 	async function legeAn() {
 		fehler = fehlendeAngabe();
 		duplicateConflict = '';
 		if (fehler) return;
 
+		const name = `${newVorname.trim()} ${newNachname.trim()}`;
+		const artText = leserArtText(art);
 		speichert = true;
+		const lauf = anfrage.beginne();
 		try {
 			const res = await apiClient.post('/api/schueler', {
 				art,
@@ -90,6 +96,7 @@
 				email: mitKonto ? newEmail.trim() : ''
 			});
 			if (res.ok) {
+				lauf.erfolg(`${name} ist angelegt.`);
 				onsuccess?.();
 				return;
 			}
@@ -103,10 +110,11 @@
 			// Der Server erklärt den Doppeleintrag, seine Meldung nennt den Fall
 			// (Namensgleichheit beim Kollegium, Name + Geburtsdatum beim Schüler): Ein fester
 			// Satz träfe nur eine der Arten.
-			if (res.status === 409) duplicateConflict = meldung || 'Diese Person gibt es bereits.';
-			else fehler = meldung || `Fehler beim Anlegen (${leserArtText(art)}).`;
+			if (res.status === 409)
+				lauf.fehler(meldung || 'Diese Person gibt es bereits.', (t) => (duplicateConflict = t));
+			else lauf.fehler(meldung || `Fehler beim Anlegen (${artText}).`, (t) => (fehler = t));
 		} catch (err) {
-			fehler = 'Netzwerkfehler beim Anlegen.';
+			lauf.fehler('Netzwerkfehler beim Anlegen.', (t) => (fehler = t));
 			console.error(err);
 		} finally {
 			speichert = false;
@@ -157,8 +165,7 @@
 		{/if}
 
 		<div class="flex justify-end gap-3 pt-2 border-t border-outline-variant">
-			<Button variant="secondary" onclick={() => onclose?.()} disabled={speichert}>Abbrechen</Button
-			>
+			<Button variant="secondary" onclick={() => onclose?.()}>Abbrechen</Button>
 			<Button onclick={legeAn} disabled={speichert}>
 				{speichert ? 'Speichern...' : 'Speichern'}
 			</Button>

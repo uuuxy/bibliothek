@@ -76,7 +76,7 @@
 			if (res.status === 404) {
 				// Bereits von einem anderen Arbeitsplatz abgehakt — keine zweite Mail.
 				anliegen = anliegen.filter((a) => a.id !== id);
-				confirmingId = null;
+				if (confirmingId === id) confirmingId = null;
 				uiStore.fetchOffeneAnliegen();
 				snackbars.addToast('Anliegen war bereits erledigt.', 'success');
 				return;
@@ -86,7 +86,7 @@
 				throw new Error(daten?.error || 'Anliegen konnte nicht abgehakt werden.');
 			}
 			anliegen = anliegen.filter((a) => a.id !== id);
-			confirmingId = null;
+			if (confirmingId === id) confirmingId = null;
 			uiStore.fetchOffeneAnliegen();
 			// Der Server meldet, ob die Benachrichtigung wirklich raus ist — ein
 			// Mail-Ausfall war vorher nur eine Server-Logzeile, und hier stand
@@ -140,19 +140,12 @@
 				aria-label="Notiz für die Mail an die Lehrkraft"
 				feld="flex-1"
 			/>
-			<Button
-				variant="secondary"
-				size="sm"
-				onclick={() => (confirmingId = null)}
-				disabled={completingId === a.id}
-			>
-				Abbrechen
-			</Button>
+			<Button variant="secondary" size="sm" onclick={() => (confirmingId = null)}>Abbrechen</Button>
 			<Button
 				variant="primary"
 				size="sm"
 				onclick={() => erledigen(a.id)}
-				disabled={completingId === a.id}
+				disabled={completingId !== null}
 			>
 				{#if completingId === a.id}
 					<Ladekreis size="sm" farbe="aktuell" />

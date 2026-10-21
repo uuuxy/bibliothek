@@ -96,9 +96,10 @@ export function useLeserakte() {
 		schadenExemplar = null;
 	}
 
-	function nachLoeschen(onDeselect) {
+	function nachLoeschen(onDeselect, id) {
+		if (akte?.id !== id) return;
 		loeschfrageOffen = false;
-		if (onDeselect) onDeselect();
+		onDeselect?.();
 	}
 
 	function nachBearbeiten(studentId) {
@@ -123,9 +124,8 @@ export function useLeserakte() {
 		try {
 			const res = await apiFetch(`/api/print/rechnung/${akte.id}`);
 			if (!res.ok) {
-				// leseApiFehler statt res.text(): Der Server antwortet mit JSON
-				// ({"error": "…"}), und `String(e)` machte daraus „Error: {"error":…}" im
-				// Toast — der Mensch an der Theke las die Klammern mit (OFFEN.md 5.12).
+				// leseApiFehler packt die Meldung aus dem JSON des Servers; roh stünden die
+				// Klammern im Toast.
 				throw new Error((await leseApiFehler(res)) || 'Keine ausstehenden Rechnungen gefunden');
 			}
 			const blob = await res.blob();
@@ -174,31 +174,31 @@ export function useLeserakte() {
 	}
 
 	async function meldeSchaden(studentId, reason, amount, art) {
-		if (!schadenExemplar) return;
+		// Festgehalten: Schließt der Dialog vor der Antwort, steht hier ein anderes Buch oder keins.
+		const exemplar = schadenExemplar;
+		if (!exemplar) return;
 		meldetSchaden = true;
 		try {
 			const res = await apiClient.post(`/api/damage/report`, {
-				loan_id: schadenExemplar.ausleihe_id,
+				loan_id: exemplar.ausleihe_id,
 				schueler_id: studentId,
 				// LaufendeAusleihe liefert die Exemplar-ID als `id` — ein
 				// `exemplar_id`-Feld gibt es dort nicht (500: leere UUID).
-				copy_id: schadenExemplar.id,
+				copy_id: exemplar.id,
 				beschreibung: reason,
 				art,
 				betrag: amount
 			});
 			if (res.ok) {
-				// Kein Brief-Fenster mehr: Der frühere Elternbrief verlangte Barzahlung in der
-				// Bibliothek und widersprach dem Bescheid des Landes (OFFEN.md 5.2). Der Brief
-				// ist ein eigener Schritt — „Bescheid erstellen" an der Gebühren-Karte.
+				// Der Bescheid ist ein eigener Schritt: „Bescheid erstellen" an der Gebühren-Karte.
 				snackbars.addToast(
-					schadenExemplar.ohneForderung
+					exemplar.ohneForderung
 						? 'Verlust/Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
 						: 'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
 					'success'
 				);
-				schadenOffen = false;
-				ladeAkte(studentId);
+				if (schadenExemplar === exemplar) schadenOffen = false;
+				if (akte?.id === studentId) ladeAkte(studentId);
 			} else {
 				const err = await res.json().catch((e) => {
 					console.error('Fehler:', e);
@@ -215,7 +215,7 @@ export function useLeserakte() {
 	}
 
 	function nachSperre(updated) {
-		if (akte) {
+		if (akte?.id === updated.id) {
 			// Sofortiges Feedback: die zwei Sperren so, wie der Server sie nach dem Umschalten
 			// meldet (Aufheben nimmt auch die der Ehemaligen weg), ohne eigene Formel (sperrStatus.js).
 			akte.is_manually_blocked = updated.is_manually_blocked;

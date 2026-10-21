@@ -7,6 +7,7 @@
 	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
+	import { erzeugeDialogAnfrage } from './components/ui/dialogAnfrage.svelte.js';
 
 	/** @type {{ open: boolean, leser: any, onsuccess: (updatedProfile: any) => void }} */
 	let { open = $bindable(false), leser, onsuccess } = $props();
@@ -33,31 +34,37 @@
 		}
 	});
 
+	const anfrage = erzeugeDialogAnfrage(() => open);
+	const zeigeFehler = (/** @type {string} */ text) => (fehler = text);
+
 	async function bestaetige() {
 		if (!leser) return;
 		if (wirdGesperrt && reason.trim() === '') {
 			fehler = 'Bitte einen Grund für die Sperre angeben.';
 			return;
 		}
+		const name = `${leser.vorname} ${leser.nachname}`;
+		const sperren = !gesperrt;
 		laeuft = true;
 		fehler = '';
+		const lauf = anfrage.beginne();
 		try {
 			const res = await apiClient.patch(`/api/admin/students/${leser.id}/lock`, {
-				is_locked: !gesperrt,
+				is_locked: sperren,
 				reason: reason.trim()
 			});
 
 			if (res.ok) {
 				const updated = await res.json();
+				lauf.erfolg(sperren ? `Ausleihe für ${name} gesperrt.` : `Sperre für ${name} aufgehoben.`);
 				onsuccess(updated);
-				reason = '';
-				open = false;
+				if (lauf.nochOffen()) open = false;
 			} else {
 				const err = await res.json().catch(() => ({}));
-				fehler = err.error || 'Fehler beim Aktualisieren der Sperre.';
+				lauf.fehler(err.error || 'Fehler beim Aktualisieren der Sperre.', zeigeFehler);
 			}
 		} catch {
-			fehler = 'Netzwerkfehler.';
+			lauf.fehler('Netzwerkfehler beim Aktualisieren der Sperre.', zeigeFehler);
 		} finally {
 			laeuft = false;
 		}
@@ -120,7 +127,7 @@
 	</div>
 
 	<div class="px-6 py-4 border-t border-outline-variant flex justify-end gap-3">
-		<Button variant="secondary" onclick={() => (open = false)} disabled={laeuft}>Abbrechen</Button>
+		<Button variant="secondary" onclick={() => (open = false)}>Abbrechen</Button>
 		<Button variant={gesperrt ? 'success' : 'danger-solid'} onclick={bestaetige} disabled={laeuft}>
 			{#if laeuft}
 				<Ladekreis size="sm" farbe="aktuell" />

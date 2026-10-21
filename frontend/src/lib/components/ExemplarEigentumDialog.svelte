@@ -97,7 +97,7 @@
 		/>
 
 		<div class="flex justify-end gap-2 pt-2">
-			<Button variant="ghost" onclick={onclose} disabled={sendet}>Abbrechen</Button>
+			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
 			<Button onclick={speichern} disabled={!bereit}>
 				{sendet ? 'Wird gespeichert …' : 'Eigentum ändern'}
 			</Button>

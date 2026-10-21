@@ -117,7 +117,7 @@
 		{/if}
 
 		<div class="flex justify-end gap-2 pt-2">
-			<Button variant="ghost" onclick={onclose} disabled={formular.sendet}>Abbrechen</Button>
+			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
 			<Button onclick={erstellen} disabled={!formular.bereit}>
 				{#if formular.sendet}<Ladekreis size="sm" farbe="aktuell" />{/if}
 				Bescheid erstellen

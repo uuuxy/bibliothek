@@ -852,6 +852,12 @@ frontend/src
   (`verlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,
   Text fields: „If only one error is possible, error text should describe how to avoid the
   error".
+- **„Abbrechen" ist nie gesperrt,** auch nicht, während eine Anfrage läuft (Material 3,
+  Dialogs: „Dismissive actions are never disabled."). Was beim Schließen schon abgeschickt ist,
+  läuft zu Ende. Ein Dialog, der Fehler bei sich zeigt, meldet nach dem Schließen Erfolg und
+  Fehler über die Snackbar (`ui/dialogAnfrage.svelte.js`). Eine späte Antwort trifft nur das,
+  wofür sie abgeschickt wurde, nicht den inzwischen geöffneten Leser oder die nächste Zeile.
+  Gemessen: `frontend-hygiene-abbrechen.test.js`, `LeserSperreDialog.test.js`.
 - **Den Fehlerzustand eines Felds setzt `ungueltig` an `ui/Feld`:** Rahmen, Beschriftung und
   Hinweis in `error`, rechts im Feld das Fehlersymbol, vor Knöpfen im Feld (Material 3, Text
   fields: „It's strongly recommended to show an error icon when the text field is in the error

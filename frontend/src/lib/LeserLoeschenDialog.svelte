@@ -13,6 +13,7 @@
 	import Feld from './components/ui/Feld.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
 	import { istKollegium } from './leserArt.js';
+	import { erzeugeDialogAnfrage } from './components/ui/dialogAnfrage.svelte.js';
 
 	let { open = false, leser, onclose, onsuccess } = $props();
 
@@ -35,28 +36,35 @@
 		}
 	});
 
+	const anfrage = erzeugeDialogAnfrage(() => open);
+	const zeigeFehler = (/** @type {string} */ text) => (fehler = text);
+
 	async function loescheLeser() {
 		if (leser?.entliehene_buecher && leser.entliehene_buecher.length > 0) {
 			fehler = 'Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher';
 			return;
 		}
+		const { id, vorname, nachname } = leser;
 		fehler = '';
 		laeuft = true;
+		const lauf = anfrage.beginne();
 		try {
-			const res = await apiFetch(`/api/schueler/${leser.id}`, { method: 'DELETE' });
+			const res = await apiFetch(`/api/schueler/${id}`, { method: 'DELETE' });
 			if (res.ok) {
-				onsuccess?.();
+				lauf.erfolg(`${vorname} ${nachname} liegt im Papierkorb.`);
+				onsuccess?.(id);
 			} else {
 				const errText = await res.text();
+				let meldung = errText;
 				try {
-					const errObj = JSON.parse(errText);
-					fehler = errObj.error || 'Fehler beim Löschen des Schülers.';
+					meldung = JSON.parse(errText).error;
 				} catch {
-					fehler = errText || 'Fehler beim Löschen des Schülers.';
+					// kein JSON: der Rohtext ist die Meldung
 				}
+				lauf.fehler(meldung || 'Fehler beim Löschen des Schülers.', zeigeFehler);
 			}
 		} catch (err) {
-			fehler = 'Netzwerkfehler beim Löschen des Schülers.';
+			lauf.fehler('Netzwerkfehler beim Löschen des Schülers.', zeigeFehler);
 			console.error(err);
 		} finally {
 			laeuft = false;
@@ -124,12 +132,8 @@
 					</div>
 				{/if}
 				<div class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
-					<Button
-						variant="secondary"
-						size="lg"
-						onclick={schliesse}
-						disabled={laeuft}
-						class="w-full sm:w-auto">Abbrechen</Button
+					<Button variant="secondary" size="lg" onclick={schliesse} class="w-full sm:w-auto"
+						>Abbrechen</Button
 					>
 					<Button
 						variant="danger-solid"

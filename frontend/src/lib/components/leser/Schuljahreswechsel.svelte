@@ -150,16 +150,15 @@
 
 		{#if !awaitingConfirmation}
 			<div class="flex justify-end gap-3">
-				<Button variant="secondary" onclick={reset} disabled={laedt}>Abbrechen</Button>
+				<Button variant="secondary" onclick={reset}>Abbrechen</Button>
 				<Button onclick={() => (awaitingConfirmation = true)} disabled={laedt}>
 					Schuljahr wechseln
 				</Button>
 			</div>
 		{:else}
 			<div class="flex justify-end gap-3">
-				<Button variant="secondary" onclick={() => (awaitingConfirmation = false)} disabled={laedt}>
-					Abbrechen
-				</Button>
+				<Button variant="secondary" onclick={() => (awaitingConfirmation = false)}>Abbrechen</Button
+				>
 				<Button variant="danger-solid" onclick={executePromotion} disabled={laedt}>
 					{#if laedt}
 						<Ladekreis size="sm" farbe="aktuell" /> Wird ausgeführt…

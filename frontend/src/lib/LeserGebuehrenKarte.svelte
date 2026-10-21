@@ -170,7 +170,7 @@
 			/>
 
 			<div class="flex justify-end gap-2 mt-6">
-				<Button variant="secondary" onclick={schliesseStorno} disabled={laeuft}>Abbrechen</Button>
+				<Button variant="secondary" onclick={schliesseStorno}>Abbrechen</Button>
 				<Button
 					variant="danger"
 					onclick={() =>

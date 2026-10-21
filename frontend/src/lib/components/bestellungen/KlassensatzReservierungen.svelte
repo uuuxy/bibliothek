@@ -47,6 +47,7 @@
 	async function completeReservierung(id) {
 		if (completingId) return;
 		completingId = id;
+		const notizText = notiz.trim();
 		try {
 			const res = await apiFetch(`/api/reservierungen/klassensatz/${id}/erledigen`, {
 				method: 'PUT',
@@ -58,7 +59,7 @@
 			if (res.status === 404) {
 				// Bereits anderweitig erledigt (z. B. zweiter Admin) — lokal genauso entfernen
 				reservierungen.entferne(id);
-				confirmingId = null;
+				if (confirmingId === id) confirmingId = null;
 				snackbars.addToast('Reservierung war bereits abgeschlossen.', 'success');
 				return;
 			}
@@ -71,10 +72,10 @@
 			const heute = new Date().toLocaleDateString('de-DE', { dateStyle: 'medium' });
 			reservierungen.aendere(id, {
 				erledigt: true,
-				erledigt_notiz: notiz.trim(),
+				erledigt_notiz: notizText,
 				erledigt_am: heute
 			});
-			confirmingId = null;
+			if (confirmingId === id) confirmingId = null;
 			// Der Server meldet, ob die Bereit-Mail wirklich raus ist — ein Mail-Ausfall
 			// war vorher nur eine Server-Logzeile, die Lehrkraft wartete vergeblich.
 			const mail = (await res.json().catch(() => null))?.mail;
@@ -137,19 +138,12 @@
 				aria-label="Notiz für die Bereit-Mail an die Lehrkraft"
 				feld="flex-1"
 			/>
-			<Button
-				variant="secondary"
-				size="sm"
-				onclick={cancelConfirm}
-				disabled={completingId === r.id}
-			>
-				Abbrechen
-			</Button>
+			<Button variant="secondary" size="sm" onclick={cancelConfirm}>Abbrechen</Button>
 			<Button
 				variant="primary"
 				size="sm"
 				onclick={() => completeReservierung(r.id)}
-				disabled={completingId === r.id}
+				disabled={completingId !== null}
 			>
 				{#if completingId === r.id}
 					<Ladekreis size="sm" farbe="aktuell" />

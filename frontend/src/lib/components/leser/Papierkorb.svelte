@@ -33,7 +33,8 @@
 		if (!loeschKandidat) return;
 		const id = loeschKandidat.id;
 		await papierkorb.endgueltigLoeschen(id);
-		loeschKandidat = null;
+		// Nach „Abbrechen" kann schon die Rückfrage zu einem anderen Leser offen stehen.
+		if (loeschKandidat?.id === id) loeschKandidat = null;
 	}
 
 	onMount(() => {

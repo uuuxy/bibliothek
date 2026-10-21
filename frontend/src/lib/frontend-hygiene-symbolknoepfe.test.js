@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-quellen.js';
+import {
+	srcRoot,
+	sammleQuelldateien,
+	relPfad,
+	ohneKommentare,
+	elemente
+} from './hygiene-quellen.js';
 
 // Ratsche: Jeder Knopf, der nur ein Symbol trägt, hat Trefferfläche, Namen und Sprechblase.
 //
@@ -19,37 +25,6 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // Sieht nicht: ein Symbol aus einem anderen Bauteil oder über {@render …}, Attribute, die
 // über {...rest} kommen, und ob Name und Sprechblase passen. Ob Größe und Abstand im Browser
 // stimmen, misst e2e/icon-trefferflaechen.spec.js.
-
-/**
- * Alle Elemente eines Tags mit Kopf und Inhalt. Der Kopf endet am ersten „>" außerhalb von
- * Klammern und Anführungszeichen: In onclick={() => …} steht selbst eines.
- * @param {string} quelle
- * @param {'button' | 'Button'} tag
- */
-function elemente(quelle, tag) {
-	/** @type {{ start: number, kopf: string, inhalt: string }[]} */
-	const gefunden = [];
-	for (let start = quelle.indexOf(`<${tag}`); start !== -1;) {
-		let i = start + tag.length + 1;
-		const istTag = !/[A-Za-z0-9_]/.test(quelle[i] ?? '');
-		let tiefe = 0;
-		let zitat = '';
-		for (; istTag && i < quelle.length; i++) {
-			const z = quelle[i];
-			if (zitat) zitat = z === zitat ? '' : zitat;
-			else if (z === '"' || z === "'" || z === '`') zitat = z;
-			else if (z === '{') tiefe++;
-			else if (z === '}') tiefe--;
-			else if (z === '>' && tiefe === 0) break;
-		}
-		const ende = quelle.indexOf(`</${tag}>`, i);
-		if (istTag && ende !== -1 && quelle[i - 1] !== '/') {
-			gefunden.push({ start, kopf: quelle.slice(start, i), inhalt: quelle.slice(i + 1, ende) });
-		}
-		start = quelle.indexOf(`<${tag}`, i);
-	}
-	return gefunden;
-}
 
 /**
  * Die Namen, unter denen eine Datei Symbole einbindet, und der Ladekreis, der ein Symbol

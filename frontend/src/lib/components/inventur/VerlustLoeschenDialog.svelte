@@ -23,7 +23,7 @@
 			lässt sich nicht rückgängig machen.
 		</p>
 		<div class="flex justify-end gap-3 pt-2 border-t border-outline-variant">
-			<Button variant="secondary" onclick={onClose} disabled={laeuft}>Abbrechen</Button>
+			<Button variant="secondary" onclick={onClose}>Abbrechen</Button>
 			<Button variant="danger-solid" onclick={onConfirm} disabled={laeuft}>
 				{laeuft ? 'Wird gelöscht…' : `${anzahl} endgültig löschen`}
 			</Button>

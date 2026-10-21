@@ -65,7 +65,7 @@
 		placeholder="z. B. falsche Auflage bekommen, Seiten fehlen"
 	/>
 	<div class="flex justify-end gap-2">
-		<Button variant="secondary" onclick={onabbrechen} disabled={formular.sending}>Abbrechen</Button>
+		<Button variant="secondary" onclick={onabbrechen}>Abbrechen</Button>
 		<Button onclick={onsenden} disabled={formular.sending || !vollstaendig}>
 			{formular.sending ? 'Wird gesendet …' : 'Absenden'}
 		</Button>

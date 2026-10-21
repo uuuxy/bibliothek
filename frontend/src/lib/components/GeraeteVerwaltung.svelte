@@ -45,15 +45,17 @@
 	}
 
 	async function speichere() {
+		// Nach „Abbrechen" kann schon ein anderes Formular offen stehen; die Antwort schließt nur ihres.
+		const [id, gesendet] = [bearbeiteId, formular];
 		speichert = true;
 		try {
 			// Ein vorhandenes Gerät schickt nur das Geänderte (geraetFormular.js).
-			const res = bearbeiteId
-				? await apiClient.put(`/api/geraete/${bearbeiteId}`, geraetNutzlast(formular, true))
-				: await apiClient.post('/api/geraete', geraetNutzlast(formular, false));
+			const res = id
+				? await apiClient.put(`/api/geraete/${id}`, geraetNutzlast(gesendet, true))
+				: await apiClient.post('/api/geraete', geraetNutzlast(gesendet, false));
 			if (res.ok) {
-				snackbars.addToast(bearbeiteId ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
-				schliesseFormular();
+				snackbars.addToast(id ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
+				if (formular === gesendet) schliesseFormular();
 				geraete.lade();
 			} else {
 				const err = await res.json().catch(() => ({}));
@@ -126,9 +128,7 @@
 				<Feld etikett="Zustandsnotiz" bind:value={formular.zustand_notiz} class="sm:col-span-2" />
 			</div>
 			<div class="mt-4 flex justify-end gap-2">
-				<Button variant="secondary" onclick={schliesseFormular} disabled={speichert}
-					>Abbrechen</Button
-				>
+				<Button variant="secondary" onclick={schliesseFormular}>Abbrechen</Button>
 				<Button variant="primary" onclick={speichere} disabled={speichert}>
 					{bearbeiteId ? 'Speichern' : 'Anlegen'}
 				</Button>

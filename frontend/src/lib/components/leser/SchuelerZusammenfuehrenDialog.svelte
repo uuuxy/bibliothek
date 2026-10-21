@@ -12,6 +12,7 @@
 	import ZusammenfuehrenKandidat from './ZusammenfuehrenKandidat.svelte';
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
 	import Dialog from '../../Dialog.svelte';
+	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
 	/** @type {{ open: boolean, leser: any, onMerged: (zielId: string) => void }} */
 	let { open = $bindable(false), leser, onMerged } = $props();
@@ -41,19 +42,24 @@
 		fehler = '';
 	}
 
+	const anfrage = erzeugeDialogAnfrage(() => open);
+	const zeigeFehler = (/** @type {string} */ text) => (fehler = text);
+
 	async function bestaetigen() {
 		if (!anderer || laeuft) return;
 		laeuft = true;
 		fehler = '';
+		const von = leser.id;
 		const ziel = bleibt === 'dieser' ? leser.id : anderer.id;
 		const quelle = bleibt === 'dieser' ? anderer.id : leser.id;
+		const lauf = anfrage.beginne();
 		try {
 			// apiClient.post liefert die Response (apiPost packt sie aus und verschluckt res.ok).
 			const res = await apiClient.post(`/api/schueler/${ziel}/zusammenfuehren`, {
 				quelle_id: quelle
 			});
 			if (!res.ok) {
-				fehler = await leseApiFehler(res);
+				lauf.fehler(await leseApiFehler(res), zeigeFehler);
 				return;
 			}
 			const erg = await res.json();
@@ -61,10 +67,11 @@
 				`Zusammengeführt: ${erg.vorname} ${erg.nachname} (${erg.klasse}) — ${erg.ausleihen} Ausleihen, ${erg.schaeden} Gebühren, ${erg.vormerkungen} Vormerkungen übernommen.`,
 				'success'
 			);
-			open = false;
-			onMerged(erg.ziel_id);
+			if (lauf.nochOffen()) open = false;
+			// Wer inzwischen einen anderen Leser geöffnet hat, bleibt dort.
+			if (leser?.id === von) onMerged(erg.ziel_id);
 		} catch {
-			fehler = 'Netzwerkfehler.';
+			lauf.fehler('Netzwerkfehler beim Zusammenführen.', zeigeFehler);
 		} finally {
 			laeuft = false;
 		}
@@ -155,7 +162,7 @@
 	<div
 		class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex justify-end gap-3"
 	>
-		<Button variant="secondary" onclick={() => (open = false)} disabled={laeuft}>Abbrechen</Button>
+		<Button variant="secondary" onclick={() => (open = false)}>Abbrechen</Button>
 		<Button variant="danger-solid" onclick={bestaetigen} disabled={!anderer || laeuft}>
 			{laeuft ? 'Wird zusammengeführt …' : 'Zusammenführen'}
 		</Button>

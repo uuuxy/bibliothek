@@ -192,7 +192,7 @@
 	open={st.loeschfrageOffen}
 	leser={st.akte}
 	onclose={() => (st.loeschfrageOffen = false)}
-	onsuccess={() => st.nachLoeschen(onDeselect)}
+	onsuccess={(id) => st.nachLoeschen(onDeselect, id)}
 />
 
 {#if st.schadenOffen && st.schadenExemplar}

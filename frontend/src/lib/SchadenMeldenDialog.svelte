@@ -125,7 +125,7 @@
 					</Feld>
 				{/if}
 				<div class="flex gap-3 justify-end pt-4">
-					<Button variant="ghost" onclick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
+					<Button variant="ghost" onclick={onCancel}>Abbrechen</Button>
 					<Button
 						variant="danger-solid"
 						onclick={melde}
