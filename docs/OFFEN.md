@@ -167,8 +167,6 @@ gebaut.
 - `github.com/jung-kurt/gofpdf` ist archiviert und steckt in 19 Dateien außerhalb der Tests;
   gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt und
   `pdf/lmfplan_satz.go` schon nutzt.
-- Drei Skripte löschen Titel und lassen ihre Werke zurück (`scripts/e2e_altlasten.sql`,
-  `scripts/entferne_demo_daten.sql`, `scripts/seed_demo.sql`).
 - Ungelesene Felder: `auth.Claims.Ausweisnummer` (JSON `barcode_id`) wird nur beim Erneuern des
   Tokens weitergereicht, `abgaenger_jahr` in der Antwort der Aktivliste hat keinen Leser, und
   `ui/Menue` kann einen Kopf und Gruppen-Überschriften, die kein Aufrufer nutzt.

@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -24,9 +25,9 @@ import (
 //  2. Jede Funktion mit DELETE FROM buecher_titel ruft LadeWerkeDerTitel und RaeumeWerkeAuf.
 //
 // Blindheit: Liest Zeichenketten-Literale einzeln; SQL, das erst aus Variablen oder
-// Sprintf-Teilen entsteht, sieht sie nur, soweit das Merkmal in einem Literal steht. Skripte
-// (scripts/*.sql) und Migrationen liest sie nicht. Ob RaeumeWerkeAuf nach dem DELETE und in
-// derselben Transaktion läuft, prüft sie nicht; das messen repository/ und
+// Sprintf-Teilen entsteht, sieht sie nur, soweit das Merkmal in einem Literal steht. Migrationen
+// liest sie nicht; die Skripte hält TestAuflagen_SkripteHaltenDieWerke. Ob RaeumeWerkeAuf nach
+// dem DELETE und in derselben Transaktion läuft, prüft sie nicht; das messen repository/ und
 // inventur/auflagen_loeschen_pg_test.go.
 func TestAuflagen_EinSchreibpfad(t *testing.T) {
 	const tuer = "repository/auflagen.go"
@@ -178,4 +179,89 @@ func ruft(n ast.Node, name string) bool {
 		return true
 	})
 	return gefunden
+}
+
+// Skripte, die Titel löschen, halten dieselbe Regel: unter der Sperre der Auflagen die Werke der
+// gelöschten Titel merken und danach jedes Werk mit weniger als zwei Titeln fallen lassen. Ein
+// Skript läuft als psql < datei im Container und kann keinen gemeinsamen Baustein einbinden;
+// deshalb steht der Block in jedem Skript, und hier wird er gehalten.
+//
+// Blindheit: prüft den Text (die Sperre mit dem Schlüssel aus repository/auflagen.go, die beiden
+// Anweisungen und ihre Reihenfolge zum letzten Löschen), nicht die Wirkung. Ein Skript, das Titel
+// über dynamisches SQL löscht, sieht sie nicht.
+func TestAuflagen_SkripteHaltenDieWerke(t *testing.T) {
+	sperre := regexp.MustCompile(`pg_advisory_xact_lock\(\s*` + auflagenSperrschluessel(t) + `\s*\)`)
+	werkLoesen := regexp.MustCompile(`(?i)\bUPDATE\s+buecher_titel\s+SET\s+werk_id\s*=\s*NULL\b`)
+	sqlKommentar := regexp.MustCompile(`(?m)--.*$`)
+	loeschende := 0
+	err := filepath.WalkDir("scripts", func(pfad string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(pfad, ".sql") {
+			return err
+		}
+		roh, err := os.ReadFile(pfad) //nolint:gosec // Testlauf über den eigenen Quellbaum
+		if err != nil {
+			return err
+		}
+		sql := sqlKommentar.ReplaceAllString(string(roh), "")
+		titel := titelLoeschen.FindAllStringIndex(sql, -1)
+		if titel == nil {
+			return nil
+		}
+		loeschende++
+		erstes, letztes := titel[0][0], titel[len(titel)-1][1]
+		if s := sperre.FindStringIndex(sql); s == nil || s[0] > erstes {
+			t.Errorf("%s: löscht Titel ohne vorher die Sperre der Auflagen zu nehmen (pg_advisory_xact_lock wie repository/auflagen.go)", pfad)
+		}
+		loesen, loeschen := letzterTreffer(werkLoesen, sql), letzterTreffer(werkeAendern, sql)
+		if loesen < letztes || loeschen < letztes {
+			t.Errorf("%s: räumt nach dem letzten Löschen der Titel die Werke nicht auf "+
+				"(UPDATE buecher_titel SET werk_id = NULL, DELETE FROM werke), wie RaeumeWerkeAuf", pfad)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Nicht-leer-Garantie: e2e_altlasten, entferne_demo_daten, seed_demo.
+	if loeschende < 3 {
+		t.Errorf("nur %d Skripte mit DELETE FROM buecher_titel gefunden, erwartet mindestens 3: liest der Test noch scripts/?", loeschende)
+	}
+}
+
+// letzterTreffer ist der Anfang des letzten Treffers, -1 ohne Treffer.
+func letzterTreffer(muster *regexp.Regexp, text string) int {
+	treffer := muster.FindAllStringIndex(text, -1)
+	if treffer == nil {
+		return -1
+	}
+	return treffer[len(treffer)-1][0]
+}
+
+// auflagenSperrschluessel liest den Schlüssel der Sperre aus repository/auflagen.go, damit Skripte
+// und Programm dieselbe Sperre nehmen.
+func auflagenSperrschluessel(t *testing.T) string {
+	t.Helper()
+	datei, err := parser.ParseFile(token.NewFileSet(), "repository/auflagen.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, decl := range datei.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.CONST {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			wert, ok := spec.(*ast.ValueSpec)
+			if !ok || len(wert.Names) != 1 || wert.Names[0].Name != "auflagenSperre" || len(wert.Values) != 1 {
+				continue
+			}
+			if lit, ok := wert.Values[0].(*ast.BasicLit); ok {
+				if n, err := strconv.ParseInt(lit.Value, 0, 64); err == nil {
+					return strconv.FormatInt(n, 10)
+				}
+			}
+		}
+	}
+	t.Fatal("repository/auflagen.go: Konstante auflagenSperre nicht gefunden")
+	return ""
 }

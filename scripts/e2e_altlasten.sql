@@ -47,9 +47,24 @@ DELETE FROM ausleihen a
  USING buecher_exemplare e, buecher_titel t
  WHERE a.exemplar_id = e.id AND e.titel_id = t.id AND t.titel LIKE 'E2E %';
 
+-- Regel der Auflagen wie im Programm (repository.LadeWerkeDerTitel, RaeumeWerkeAuf): unter
+-- der Sperre der Auflagen die Werke der Titel merken, die gleich fallen.
+DO $$ BEGIN PERFORM pg_advisory_xact_lock(7502026); END $$;
+CREATE TEMP TABLE werke_der_geloeschten ON COMMIT DROP AS
+    SELECT DISTINCT werk_id FROM buecher_titel WHERE titel LIKE 'E2E %' AND werk_id IS NOT NULL;
+
 -- Exemplare gehen per ON DELETE CASCADE mit dem Titel; ebenso Vormerkungen,
 -- Klassensatz-Reservierungen, class_books und inventur_erfassungen.
 DELETE FROM buecher_titel WHERE titel LIKE 'E2E %';
+
+-- Ein Werk mit weniger als zwei Titeln fällt; ein übriger Titel steht danach für sich.
+UPDATE buecher_titel SET werk_id = NULL
+ WHERE werk_id IN (SELECT werk_id FROM werke_der_geloeschten)
+   AND werk_id IN (SELECT werk_id FROM buecher_titel WHERE werk_id IS NOT NULL
+                   GROUP BY werk_id HAVING count(*) < 2);
+DELETE FROM werke
+ WHERE id IN (SELECT werk_id FROM werke_der_geloeschten)
+   AND NOT EXISTS (SELECT 1 FROM buecher_titel t WHERE t.werk_id = werke.id);
 
 -- Ohne -v ausfuehren=ja bleibt es bei der Vorschau; die letzte Ausgabezeile sagt, was
 -- passiert ist. Kein Tausch von COMMIT gegen ROLLBACK von Hand: Ein solcher Lauf druckt

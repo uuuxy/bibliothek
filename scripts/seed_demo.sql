@@ -20,7 +20,20 @@ BEGIN;
 -- 1) Idempotenz / Cleanup: Reste eines früheren DEMO-Laufs entfernen.
 DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id LIKE 'DEMO-B-%');
 DELETE FROM buecher_exemplare WHERE barcode_id LIKE 'DEMO-B-%';
+-- Regel der Auflagen wie im Programm (repository.LadeWerkeDerTitel, RaeumeWerkeAuf): unter
+-- der Sperre der Auflagen die Werke der Titel merken, die gleich fallen.
+DO $$ BEGIN PERFORM pg_advisory_xact_lock(7502026); END $$;
+CREATE TEMP TABLE werke_der_geloeschten ON COMMIT DROP AS
+    SELECT DISTINCT werk_id FROM buecher_titel WHERE titel LIKE 'DEMO-Titel %' AND werk_id IS NOT NULL;
 DELETE FROM buecher_titel   WHERE titel LIKE 'DEMO-Titel %';
+-- Ein Werk mit weniger als zwei Titeln fällt; ein übriger Titel steht danach für sich.
+UPDATE buecher_titel SET werk_id = NULL
+ WHERE werk_id IN (SELECT werk_id FROM werke_der_geloeschten)
+   AND werk_id IN (SELECT werk_id FROM buecher_titel WHERE werk_id IS NOT NULL
+                   GROUP BY werk_id HAVING count(*) < 2);
+DELETE FROM werke
+ WHERE id IN (SELECT werk_id FROM werke_der_geloeschten)
+   AND NOT EXISTS (SELECT 1 FROM buecher_titel t WHERE t.werk_id = werke.id);
 DELETE FROM schueler        WHERE barcode_id LIKE 'DEMO-S-%';
 
 -- 2) ~2000 Schüler, über die Klassen dieser Schule verteilt („es gibt kein 10a" —
