@@ -45,8 +45,8 @@
 	const kollege = $derived(istKollegium(leser));
 
 	// Ohne Ausweisnummer gibt es keinen Ausweis zu drucken: Die Karte trüge ein leeres
-	// Strichcodefeld und wäre an der Theke nicht scanbar. Eingetragen wird die Nummer in
-	// „Benutzer & Rechte" (Kollegium) bzw. beim Anlegen (Schüler).
+	// Strichcodefeld und wäre an der Theke nicht scanbar. Eingetragen wird die Nummer in dieser
+	// Akte unter „Stammdaten & Adresse"; ein Kollege ohne Konto steht in „Benutzer & Rechte" nicht.
 	const ohneAusweis = $derived(!leser.barcode_id);
 
 	// Das eine Menü des Hauses (ui/Menue.svelte) mit dem Split-Button als Auslöser. Die
@@ -69,9 +69,10 @@
      sichtbare Überschrift auf der Fläche: Jeder Knopf nennt sein Dokument, und eine Karte
      gehört um Inhalt, nicht um Knöpfe. Den Namen der Gruppe hören Vorleseprogramme. -->
 <div class="flex flex-wrap gap-3 items-center" role="group" aria-label="Dokumente">
-	<!-- Primäraktion: Ausweis drucken. Mit Rückseite → Split-Button mit Seitenwahl. -->
+	<!-- Primäraktion: Ausweis drucken. Mit Rückseite → Split-Button mit Seitenwahl. Ohne
+	     Ausweisnummer gibt es nichts zu drucken und deshalb auch keine Seiten zu wählen. -->
 	<div class="relative">
-		{#if hasBack}
+		{#if hasBack && !ohneAusweis}
 			<Menue
 				etikett="Ausweisseiten wählen"
 				eintraege={seiten}
@@ -101,7 +102,7 @@
 			<span
 				class="inline-flex"
 				data-tip={ohneAusweis
-					? 'Ohne Ausweisnummer lässt sich keine Karte drucken — die Nummer steht in „Benutzer & Rechte"'
+					? 'Ohne Ausweisnummer lässt sich keine Karte drucken — eingetragen wird sie unter „Stammdaten & Adresse“'
 					: undefined}
 			>
 				<Button variant="primary" onclick={() => druckeAusweis('both')} disabled={ohneAusweis}>
