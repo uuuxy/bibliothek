@@ -10,8 +10,7 @@
      interessiert im Schulkatalog nicht. Ein Buch in mehreren Auflagen zählt die Summe; eine
      Zeile darunter sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch). -->
 <script>
-	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
-	import BuchKarteCover from './BuchKarteCover.svelte';
+	import BuchCover from '../../../lib/components/ui/BuchCover.svelte';
 	import { bestandSatz, formatDatum } from '../../../lib/utils/format.js';
 	import { auflagenAufschluesselung } from '../../../lib/utils/auflagenText.js';
 	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
@@ -40,11 +39,6 @@
 	 */
 	let { titel, onclick, onEditClick } = $props();
 
-	/** @type {string[]} */
-	let coverCandidates = $state([]);
-	let currentCandidateIndex = $state(0);
-	let coverSrc = $derived(coverCandidates[currentCandidateIndex] || '');
-	let coverFailed = $state(false);
 	let copied = $state(false);
 
 	const nummerArt = $derived(
@@ -68,30 +62,6 @@
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}
-
-	function naechsteQuelle() {
-		if (currentCandidateIndex < coverCandidates.length - 1) {
-			currentCandidateIndex++;
-		} else {
-			coverFailed = true;
-		}
-	}
-
-	/** @param {Event} event */
-	function pruefeGeladenes(event) {
-		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
-	}
-
-	// Lokale Liste statt Lesen des eigenen $state im selben Effekt: Der Effekt hinge sonst
-	// von coverCandidates ab, das er gerade schreibt — Endlosschleife, Svelte bricht mit
-	// effect_update_depth_exceeded ab und die ganze Seite reagiert nicht mehr.
-	$effect(() => {
-		const kandidaten = coverKandidaten(titel?.coverUrl, titel?.isbn);
-		coverCandidates = kandidaten;
-		currentCandidateIndex = 0;
-		coverFailed = kandidaten.length === 0;
-	});
 </script>
 
 <!-- Die Kachel ist für Hilfstechnik kein Knopf: Mit Kopieren-Knopf und Stift darin wäre sie
@@ -103,20 +73,13 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3" {onclick}>
-	<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low">
-		{#if coverSrc && !coverFailed}
-			<img
-				src={coverSrc}
-				alt={`Cover von ${titel.title}`}
-				loading="lazy"
-				class="h-full w-full object-cover"
-				onerror={naechsteQuelle}
-				onload={pruefeGeladenes}
-			/>
-		{:else}
-			<BuchKarteCover subject={titel.subject} title={titel.title} />
-		{/if}
-	</div>
+	<BuchCover
+		coverUrl={titel.coverUrl}
+		isbn={titel.isbn}
+		titel={titel.title}
+		fach={titel.subject}
+		groesse="kachel"
+	/>
 
 	<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
 		<h2 class="text-base leading-snug font-semibold text-on-surface" title={titel.title}>

@@ -2,7 +2,6 @@ import { appState } from '../inventur/lib/store.svelte.js';
 import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 import { uiStore } from './stores/uiStore.svelte.js';
 import { apiFetch, leseApiFehler } from './apiFetch.js';
-import { coverKandidaten } from './utils/coverSrc.js';
 
 /**
  * Das geparste JSON eines erfüllten, erfolgreichen Ergebnisses — sonst `null`.
@@ -59,10 +58,6 @@ export function useBuchakte() {
 	/** Der Kopf des Titels kam nicht an — im Unterschied zu „den Titel gibt es nicht". */
 	let kopfFehler = $state('');
 
-	let coverCandidates = $state([]);
-	let currentCandidateIndex = $state(0);
-	let coverFehlt = $state(false);
-
 	// Sequenznummer wie in der Schülerakte (useLeserakte) und im bestellStore: Die
 	// Buch-Akte bleibt beim Wechsel MONTIERT — die Omnibox setzt nur appState.activeBookId,
 	// der Router hält `book_detail`. Zwei Titel kurz hintereinander geöffnet, und die
@@ -112,11 +107,6 @@ export function useBuchakte() {
 			kopfFehler = geholt.fehler;
 		}
 		buch = kopf;
-
-		const candidates = coverKandidaten(kopf?.coverUrl, kopf?.isbn);
-		coverCandidates = candidates;
-		currentCandidateIndex = 0;
-		coverFehlt = candidates.length === 0;
 
 		const [bRes, eRes, hRes, vRes] = await Promise.allSettled([
 			apiFetch(`/api/buecher/titel/${id}/ausleiher`, { credentials: 'include' }),
@@ -180,19 +170,6 @@ export function useBuchakte() {
 		appState.activeBookId = null;
 	}
 
-	function naechsteQuelle() {
-		if (currentCandidateIndex < coverCandidates.length - 1) {
-			currentCandidateIndex++;
-		} else {
-			coverFehlt = true;
-		}
-	}
-
-	function pruefeGeladenes(event) {
-		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
-	}
-
 	return /** @satisfies {object} */ ({
 		get buch() {
 			return buch;
@@ -230,16 +207,8 @@ export function useBuchakte() {
 		get laedt() {
 			return laedt;
 		},
-		get coverQuelle() {
-			return coverCandidates[currentCandidateIndex] || '';
-		},
-		get coverFehlt() {
-			return coverFehlt;
-		},
 		ladeAlles,
 		loescheTitel,
-		bearbeiteTitel,
-		naechsteQuelle,
-		pruefeGeladenes
+		bearbeiteTitel
 	});
 }

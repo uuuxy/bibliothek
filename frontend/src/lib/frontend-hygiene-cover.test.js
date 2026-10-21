@@ -30,12 +30,8 @@ import {
 const EIGENES_COVER = /coverKandidaten|coverSrc\(/;
 
 const BESTAND = [
-	'src/lib/OpacSuche.svelte',
 	'src/lib/AusleihQuittung.svelte',
 	'src/lib/components/portal/PortalTrefferkarte.svelte',
-	'src/inventur/lib/components/BuchKarte.svelte',
-	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte',
-	'src/lib/useBuchakte.svelte.js',
 	'src/lib/monitor/FolieBeliebt.svelte',
 	'src/lib/monitor/FolieBuchDesMonats.svelte',
 	'src/lib/monitor/FolieNeuEingetroffen.svelte'

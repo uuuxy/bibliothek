@@ -4,7 +4,7 @@
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
-	import { coverSrc } from './utils/coverSrc.js';
+	import BuchCover from './components/ui/BuchCover.svelte';
 
 	let suche = $state('');
 	/** @type {any[]} */
@@ -101,23 +101,14 @@
 			<div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-x-3 gap-y-4">
 				{#each ergebnisse as book (book.id)}
 					<div class="flex flex-col gap-3 p-3">
-						<div
-							class="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low"
-						>
-							{#if coverSrc(book.cover_url, book.isbn)}
-								<img
-									src={coverSrc(book.cover_url, book.isbn)}
-									alt={`Cover von ${book.titel}`}
-									loading="lazy"
-									class="h-full w-full object-cover"
-								/>
-							{:else}
-								<div class="flex h-full w-full items-center justify-center">
-									<span class="text-5xl font-extrabold text-on-surface-variant/50 select-none">
-										{book.titel.charAt(0).toUpperCase()}
-									</span>
-								</div>
-							{/if}
+						<div class="relative">
+							<BuchCover
+								coverUrl={book.cover_url}
+								isbn={book.isbn}
+								titel={book.titel}
+								groesse="kachel"
+								nurGespeichert
+							/>
 							<div class="absolute top-2 right-2">
 								{#if book.verfuegbar > 0}
 									<span class="px-2 py-1 rounded-lg bg-success text-on-success text-xs font-bold">

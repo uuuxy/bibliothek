@@ -9,7 +9,7 @@
 <script>
 	import { Copy, MapPin, SquarePen, Trash } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
-	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
+	import BuchCover from './components/ui/BuchCover.svelte';
 	import { standorteAusExemplaren, standortZeile } from './utils/standorte.js';
 	import { exemplarZahlen } from './components/exemplarStatus.js';
 	import { jahrgangSpanne } from './utils/format.js';
@@ -19,26 +19,12 @@
 	 * @property {any} titel
 	 * @property {any[]} ausleiher
 	 * @property {any[]} exemplare
-	 * @property {string} coverSrc
-	 * @property {boolean} coverFailed
-	 * @property {(e: Event) => void} onCoverError
-	 * @property {(e: Event) => void} onCoverLoad
 	 * @property {(() => void) | undefined} [onEdit] nur mit edit_books
 	 * @property {(() => void) | undefined} [onDelete] nur mit delete_books
 	 */
 
 	/** @type {Props} */
-	let {
-		titel,
-		ausleiher,
-		exemplare,
-		coverSrc,
-		coverFailed,
-		onCoverError,
-		onCoverLoad,
-		onEdit = undefined,
-		onDelete = undefined
-	} = $props();
+	let { titel, ausleiher, exemplare, onEdit = undefined, onDelete = undefined } = $props();
 
 	let copied = $state(false);
 
@@ -154,18 +140,13 @@
 		<!-- Der Schatten hebt das Cover als Gegenstand von der weißen Fläche ab — wie auf der
 		     Play-Store-Detailseite. Nur hier am großen Einzel-Cover; die
 		     Kacheln im Raster bleiben flach, zwölf Schatten nebeneinander wären Rauschen. -->
-		<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low shadow-2xl">
-			{#if coverSrc && !coverFailed}
-				<img
-					src={coverSrc}
-					alt={`Cover ${titel.title}`}
-					class="h-full w-full object-cover"
-					onerror={onCoverError}
-					onload={onCoverLoad}
-				/>
-			{:else}
-				<BuchKarteCover subject={titel.subject} title={titel.title} />
-			{/if}
-		</div>
+		<BuchCover
+			coverUrl={titel.coverUrl}
+			isbn={titel.isbn}
+			titel={titel.title}
+			fach={titel.subject}
+			groesse="kachel"
+			klasse="shadow-2xl"
+		/>
 	</div>
 </div>

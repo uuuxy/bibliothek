@@ -81,10 +81,6 @@
 			titel={akte.buch}
 			ausleiher={akte.ausleiher}
 			exemplare={akte.exemplare}
-			coverSrc={akte.coverQuelle}
-			coverFailed={akte.coverFehlt}
-			onCoverError={akte.naechsteQuelle}
-			onCoverLoad={akte.pruefeGeladenes}
 			onEdit={darfBearbeiten ? akte.bearbeiteTitel : undefined}
 			onDelete={darfLoeschen ? () => akte.loescheTitel(melde, onBack) : undefined}
 		/>

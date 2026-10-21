@@ -4,15 +4,10 @@ import BuchakteKopf from './BuchakteKopf.svelte';
 
 /** @param {Record<string, any>} zusatz */
 function einordnung(zusatz) {
-	const nichts = () => {};
 	const { container } = render(BuchakteKopf, {
 		titel: { id: 't-1', title: 'Natura', author: 'Beyer', subject: 'Biologie', ...zusatz },
 		ausleiher: [],
-		exemplare: [],
-		coverSrc: '',
-		coverFailed: true,
-		onCoverError: nichts,
-		onCoverLoad: nichts
+		exemplare: []
 	});
 	return container.textContent ?? '';
 }

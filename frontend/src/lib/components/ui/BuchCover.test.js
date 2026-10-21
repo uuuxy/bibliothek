@@ -45,3 +45,20 @@ describe('BuchCover: Quellen', () => {
 		expect(quelle).not.toContain('books.google.com');
 	});
 });
+
+// Auf der Fläche einer Kachel ginge eine Initiale verloren; dort stehen Fach und Titel.
+describe('BuchCover: Platzhalter', () => {
+	it('die Kachel zeigt ohne Bild Fach und Titel, die Zeile die Initiale', () => {
+		const kachel = render(BuchCover, {
+			titel: 'Krabat',
+			fach: 'Deutsch',
+			groesse: 'kachel',
+			nurGespeichert: true
+		});
+		expect(kachel.container.textContent).toContain('Deutsch');
+		expect(kachel.container.textContent).toContain('Krabat');
+
+		const zeile = render(BuchCover, { titel: 'Krabat', nurGespeichert: true });
+		expect(zeile.container.textContent?.trim()).toBe('K');
+	});
+});

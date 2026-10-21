@@ -2,13 +2,12 @@
      (BuchKarte): Cover ohne Rahmen, darunter Titel und Bestand („82 von 82 verfügbar"). Der
      Bestand steht immer da, nicht erst beim Zeigen, denn am Tablet gibt es kein Zeigen. -->
 <script>
-	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import { bestandSatz } from '../../../../lib/utils/format.js';
 	import {
 		auflagenDerKlasse,
 		auflagenAufschluesselung
 	} from '../../../../lib/utils/auflagenText.js';
-	import BuchKarteCover from '../BuchKarteCover.svelte';
 
 	/**
 	 * @type {{
@@ -34,56 +33,21 @@
 	 */
 	let { titel, onEdit = undefined, bearbeitbar = true } = $props();
 
-	/** @type {string[]} */
-	let coverCandidates = $state([]);
-	let currentCandidateIndex = $state(0);
-	let coverSrc = $derived(coverCandidates[currentCandidateIndex] || '');
-	let coverFailed = $state(false);
-
 	/** Bestand als Satz wie auf der Katalog-Kachel; ohne Zahlen im Payload bleibt die Zeile leer. */
 	const bestand = $derived(bestandSatz(titel.gesamt, titel.verfuegbar, titel.imZulauf));
-
-	// Lokale Liste statt Lesen des eigenen $state im selben Effekt (sonst Endlosschleife,
-	// siehe BuchKarte.svelte).
-	$effect(() => {
-		const kandidaten = coverKandidaten(titel?.coverUrl, titel?.isbn);
-		coverCandidates = kandidaten;
-		currentCandidateIndex = 0;
-		coverFailed = kandidaten.length === 0;
-	});
-
-	function naechsteQuelle() {
-		if (currentCandidateIndex < coverCandidates.length - 1) {
-			currentCandidateIndex++;
-		} else {
-			coverFailed = true;
-		}
-	}
-
-	/** @param {Event} event */
-	function pruefeGeladenes(event) {
-		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) naechsteQuelle();
-	}
 </script>
 
 <!-- Zwei Hüllen, ein Inhalt: Die Rolle „button" muss für svelte-check STATISCH am Element
      stehen (a11y_no_noninteractive_tabindex). Der Inhalt liegt einmal im Snippet. -->
 {#snippet inhalt()}
-	<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low">
-		{#if coverSrc && !coverFailed}
-			<img
-				src={coverSrc}
-				alt=""
-				loading="lazy"
-				class="h-full w-full object-cover"
-				onerror={naechsteQuelle}
-				onload={pruefeGeladenes}
-			/>
-		{:else}
-			<BuchKarteCover subject={titel.subject} title={titel.title} />
-		{/if}
-	</div>
+	<BuchCover
+		coverUrl={titel.coverUrl}
+		isbn={titel.isbn}
+		titel={titel.title}
+		fach={titel.subject}
+		groesse="kachel"
+		dekorativ
+	/>
 	<div class="flex flex-col gap-0.5 text-sm">
 		<!-- text-base ausdrücklich am Titel: Sonst erbt er die 14 px vom Container darüber,
 		     und eine geerbte Größe sieht kein Grep, nur die Messung im Browser. -->

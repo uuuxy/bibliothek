@@ -27,12 +27,18 @@
 	 *
 	 * Maß: M3 gibt der Listenzeile `list-item-leading-image` mit 56 px. Diese Anwendung
 	 * fährt kompaktere Dichte (siehe e2e/control-hoehen.spec.js), deshalb ist `zeile`
-	 * mit 40 px die Vorgabe für Arbeitslisten; `liste` trägt das volle M3-Maß.
+	 * mit 40 px die Vorgabe für Arbeitslisten; `liste` trägt das volle M3-Maß. `kachel`
+	 * füllt die Breite seines Platzes (Kachel, Buchakte, Folie) und zeigt ohne Bild Fach und
+	 * Titel, weil eine Initiale auf dieser Fläche verloren wäre.
+	 *
+	 * Zuschnitt 2:3 in jedem Maß, wie ein Buch: In einem breiteren Rahmen verlöre ein Cover
+	 * mit object-cover oben und unten einen Teil.
 	 *
 	 * @prop {string} [coverUrl] Wert aus `buecher_titel.cover_url`
 	 * @prop {string} [isbn] Schlüssel für den Proxy und die Ausweichquellen
 	 * @prop {string} [titel] Liefert die Initiale des Platzhalters und den Alternativtext
-	 * @prop {'klein'|'zeile'|'liste'|'gross'} [groesse]
+	 * @prop {string} [fach] Steht mit dem Titel auf dem Platzhalter der Kachel
+	 * @prop {'klein'|'zeile'|'liste'|'gross'|'kachel'} [groesse]
 	 * @prop {string} [klasse]
 	 * @prop {boolean} [dekorativ] Leerer Alternativtext — für ein Cover INNERHALB eines Knopfs,
 	 *   der den Titel selbst als Text trägt. Sonst sagte ein Screenreader ihn zweimal an
@@ -43,11 +49,12 @@
 	 */
 	import { coverKandidaten, coverSrc } from '../../utils/coverSrc.js';
 
-	/** @type {{ coverUrl?: string, isbn?: string, titel?: string, groesse?: 'klein'|'zeile'|'liste'|'gross', klasse?: string, dekorativ?: boolean, nurGespeichert?: boolean }} */
+	/** @type {{ coverUrl?: string, isbn?: string, titel?: string, fach?: string, groesse?: 'klein'|'zeile'|'liste'|'gross'|'kachel', klasse?: string, dekorativ?: boolean, nurGespeichert?: boolean }} */
 	let {
 		coverUrl = '',
 		isbn = '',
 		titel = '',
+		fach = '',
 		groesse = 'zeile',
 		klasse = '',
 		dekorativ = false,
@@ -55,10 +62,11 @@
 	} = $props();
 
 	const MASSE = {
-		klein: 'h-7', // 28 px — einzeilige Zeilen, in denen das Cover nur wiedererkennen lässt
-		zeile: 'h-10', // 40 px — Arbeitslisten in kompakter Dichte
-		liste: 'h-14', // 56 px — M3 list-item-leading-image
-		gross: 'h-20' // 80 px — Karten und Detailflächen
+		klein: 'h-7 rounded-sm', // 28 px — einzeilige Zeilen, in denen das Cover nur wiedererkennen lässt
+		zeile: 'h-10 rounded-sm', // 40 px — Arbeitslisten in kompakter Dichte
+		liste: 'h-14 rounded-sm', // 56 px — M3 list-item-leading-image
+		gross: 'h-20 rounded-sm', // 80 px — Karten und Detailflächen
+		kachel: 'w-full rounded-lg' // Breite des Platzes, 12 px Radius wie eine Karte (M3 medium)
 	};
 
 	/** Reihenfolge: gespeichertes Cover, dann Google Books, dann OpenLibrary — alle über
@@ -105,13 +113,21 @@
 		decoding="async"
 		onerror={naechsteQuelle}
 		onload={pruefeGeladenes}
-		class="{MASSE[groesse]} aspect-3/4 shrink-0 rounded-sm object-cover {klasse}"
+		class="{MASSE[groesse]} aspect-2/3 shrink-0 bg-surface-container-low object-cover {klasse}"
 	/>
+{:else if groesse === 'kachel'}
+	<div
+		class="{MASSE.kachel} aspect-2/3 shrink-0 overflow-hidden bg-surface-container-highest p-5 text-left {klasse}"
+		aria-hidden="true"
+	>
+		<p class="text-xs font-extrabold text-on-surface-variant">{fach}</p>
+		<p class="mt-1.5 line-clamp-3 text-sm leading-snug font-extrabold text-on-surface">{titel}</p>
+	</div>
 {:else}
 	<div
 		class="{MASSE[
 			groesse
-		]} bg-surface-container-highest text-on-surface-variant flex aspect-3/4 shrink-0 items-center justify-center rounded-sm text-sm font-semibold uppercase {klasse}"
+		]} bg-surface-container-highest text-on-surface-variant flex aspect-2/3 shrink-0 items-center justify-center text-sm font-semibold uppercase {klasse}"
 		aria-hidden="true"
 	>
 		{(titel || '?').charAt(0)}

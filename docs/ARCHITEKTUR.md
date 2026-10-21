@@ -866,6 +866,11 @@ frontend/src
   Svelte führt die `onkeydown` der Felder an der Wurzel der Seite aus, ein `addEventListener`
   am Container liefe davor und sähe ihr `preventDefault` nicht. Gemessen:
   `scanErkennung.test.js`, `BuchFormular.enter.svelte.test.js`.
+- **Ein Cover kommt aus `ui/BuchCover`, in jedem Maß im Format 2:3 wie ein Buch:** In einem
+  breiteren Rahmen schnitte `object-cover` es oben und unten ab. Kleine Maße haben eine feste
+  Höhe und zeigen ohne Bild die Initiale; `kachel` füllt die Breite seines Platzes (Kachel,
+  Buchakte, Folie) und zeigt ohne Bild Fach und Titel. Gemessen:
+  `frontend-hygiene-cover.test.js`, `BuchCover.test.js`.
 - **Den Fehlerzustand eines Felds setzt `ungueltig` an `ui/Feld`:** Rahmen, Beschriftung und
   Hinweis in `error`, rechts im Feld das Fehlersymbol, vor Knöpfen im Feld (Material 3, Text
   fields: „It's strongly recommended to show an error icon when the text field is in the error
