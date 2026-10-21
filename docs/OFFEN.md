@@ -2,39 +2,27 @@
 
 Stand: 21.10.2026
 
-**Der Fahrplan** steht oben: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit.
-Die Nummer in Klammern führt zu den Einzelheiten weiter unten. Einen zweiten Ort für Offenes
-gibt es nicht; wie die Liste geführt wird, steht am Ende.
+Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
+in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
+geführt wird, steht am Ende.
 
 ---
 
 ## Fahrplan
 
-### Jetzt: Fehler und Lücken
+### Jetzt
 
-Diese Punkte standen als bekannte Grenzen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5; sie lassen
-sich lösen. Die zwei der Kategorie A kommen zuerst.
-
-- [x] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
-- [x] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
-  verloren. (5.83)
-- [x] Fünf Fehler an Türen und Abfragen. (5.84)
-- [x] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
-- [x] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
-- [ ] Material 3 dort, wo die Oberfläche noch davon abweicht. (5.86)
-- [x] Kleinigkeiten an der Oberfläche. (5.87)
-- [x] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
-- [x] Aufräumen im Code. (5.89)
+- [ ] Vorschläge an sechs Textfeldern als eigene Liste nach Material 3 statt `datalist`. (5.86)
+- [ ] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
 
 ### Etappe 1: vor dem Echtstart
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
-(entschieden am 28.09.2026). R7, R8 und R9 sind die Risiken aus [ARCHITEKTUR.md](ARCHITEKTUR.md)
-11.1, die ein Schritt verkleinert.
+(entschieden am 28.09.2026). R7, R8 und R9 sind Risiken aus [ARCHITEKTUR.md](ARCHITEKTUR.md)
+11.1.
 
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt.
   (7.2, 4.20)
-- [x] Alte Sicherungen, wenn kein Update mehr kommt: entscheiden, ob eine Uhr sie löscht.
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
   Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9), Uhr für den
@@ -45,7 +33,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 ### Bei dir
 
-Nur, was kein Test leisten kann; warum, steht jeweils in den Einzelheiten.
+Nur, was kein Test leisten kann.
 
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -65,129 +53,106 @@ Nur, was kein Test leisten kann; warum, steht jeweils in den Einzelheiten.
 
 ## Einzelheiten
 
-Beleg und nächster Schritt je Punkt. Die Nummern bleiben fest und werden nicht neu vergeben;
-Kommentare im Code nennen sie als Herkunft.
+Beleg und nächster Schritt je Punkt. Die Nummern bleiben fest; Kommentare im Code nennen sie als
+Herkunft.
 
 ### 4.20 Littera-Schlagworte: die Verweise
 
-Die Übernahme aus der Sicherung zählt die Verweise zwischen Schlagworten
-(`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`), übernimmt sie aber nicht
-(`internal/littera/schlagworte.go`); in der Sicherung von 2010 sind beide leer. Nennt die
-Generalprobe mit der Sicherung von 2026 welche, an diesen Daten die Form ablesen und die
-Übernahme bauen.
+Die Übernahme zählt die Verweise zwischen Schlagworten (`Verweise_Schlagworte`,
+`Verweis_Zu_Schlagworte`), übernimmt sie aber nicht (`internal/littera/schlagworte.go`); in der
+Sicherung von 2010 sind beide leer. Hat die Sicherung von 2026 welche: an ihnen die Form ablesen
+und die Übernahme bauen.
 
 ### 4.23 Erreichbarkeit von außen
 
-**Entschieden am 28.09.2026:** Von außen ist nur die Seite für die Lieferanten erreichbar, alles
-andere nur aus dem Schulnetz. Lehrkräfte erreichen das Programm vorerst nicht von zu Hause, und
-der Katalog ohne Anmeldung ist nur in der Schule durchsuchbar. Caddy holt das Zertifikat bei
-Let's Encrypt wie am Testserver; ohne HTTPS ginge die Anmeldung nicht, weil der Browser das
-Sitzungs-Cookie nur über HTTPS mitschickt (`ermittleCookieSecure` in `main.go`).
+Entschieden am 28.09.2026: Von außen ist nur die Seite der Lieferanten erreichbar, alles andere
+nur aus dem Schulnetz, also auch nicht für Lehrkräfte von zu Hause.
 
-**Zu bauen:** Der Eingang (Caddy) lässt von außen nur den Pfad `/bestellung/<token>` mit den
-Dateien der Oberfläche, `/api/public/bestellung/…` und für das Uptime-Signal (7.5) `/health`
-durch; alles andere bleibt zu. Mehr braucht die Seite nicht: Das CSRF-Cookie setzt der erste
-Abruf (`erneuereCSRFCookie` in `api/csrf.go`), und `/api/auth/me` darf beim Laden scheitern. In
-den Einstellungen die öffentliche Adresse setzen, danach [ARCHITEKTUR.md](ARCHITEKTUR.md) 7 und 9
-nachziehen.
+**Zu bauen:** Caddy lässt von außen nur `/bestellung/<token>` mit den Dateien der Oberfläche,
+`/api/public/bestellung/…` und `/health` (7.5) durch. Mehr braucht die Seite nicht: Das
+CSRF-Cookie setzt der erste Abruf (`erneuereCSRFCookie` in `api/csrf.go`), und `/api/auth/me`
+darf beim Laden scheitern. Das Zertifikat kommt von Let's Encrypt; ohne HTTPS schickt der Browser
+das Sitzungs-Cookie nicht (`ermittleCookieSecure` in `main.go`). Danach in den Einstellungen die
+öffentliche Adresse setzen und [ARCHITEKTUR.md](ARCHITEKTUR.md) 7 und 9 nachziehen.
 
-**Vor dem Bau muss feststehen:** der Name des Servers im Internet (die Geräte der Schule
-erreichen ihn unter demselben Namen, denn das Zertifikat gilt für den Namen), die Freigabe von
-Port 443 und der Netzabschnitt, in dem der Server steht, und die Absenderadresse, mit der
-Anfragen aus dem Schulnetz ankommen; an ihr erkennt der Eingang das Schulnetz.
-
-Nach außen braucht der Server auch im Schulnetz den Mailserver der Schule (die Anmeldung,
-`auth/imap.go`), DNB, Google Books und OpenLibrary (`pkg/coverquelle`) und für Updates GitHub,
-Docker Hub und die Paketquellen.
+**Vorher muss feststehen:** der Name des Servers im Internet (auch die Geräte der Schule nutzen
+ihn, das Zertifikat gilt für den Namen), die Freigabe von Port 443, der Netzabschnitt des Servers
+und die Absenderadresse, an der der Eingang das Schulnetz erkennt. Ausgehend braucht der Server
+den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
+(`pkg/coverquelle`) und für Updates GitHub, Docker Hub und die Paketquellen.
 
 ### 4.24 Eigentumsvermerk auf neuen Etiketten
 
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
-trägt ein neues Etikett keinen Vermerk. Wie die Übernahme die Vermerke an den Exemplaren
-zuordnet, steht in [littera_schema_befund.md](littera_schema_befund.md).
+trägt ein neues Etikett keinen Vermerk.
 
 ### 5.86 Material 3, wo die Oberfläche noch abweicht
 
-Entschieden am 21.10.2026: Navigation und Vorschläge werden gebaut, die Navigation nach einem
-Bild. Offen ist die Breite der Suchleisten.
-
-- **Die eingeklappte Navigation** zeigt bis zu 18 Symbole ohne Namen. Material 3, Navigation
-  rail: „All navigation items require a one word label text".
-- **Die Suchleisten** laufen auf den Listenseiten über die ganze Breite (im Fenster von 1710 px
-  bis 1328 px, ebenso das Scanfeld der Theke). Material 3, Search, Specs: „Container | Width |
-  Min: 360dp, max: 720dp". Nicht entschieden; das Gate `e2e/feldbreite.spec.js` lässt sie aus.
-- **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen), nicht nach
-  Material 3.
+- **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen). Entschieden am
+  21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten.
+- **Die Suchleisten** laufen auf den Listenseiten über die ganze Breite des Inhalts, ebenso das
+  Scanfeld der Theke. Material 3, Search, Specs: „Container | Width | Min: 360dp, max: 720dp".
+  Nicht entschieden; das Gate `e2e/feldbreite.spec.js` lässt sie aus.
 
 ### 7.2 Frisches Littera-Backup
 
-`littera_sav.mdb` ist ein Stand von 2010: Ohne die Sicherung von 2026 fehlen die offenen
-Ausleihen und alle Ausweisnummern und Exemplare nach 2010, rund 1.350 Titel haben keine
-Signatur. Wie die Übernahme läuft, steht in [SCRIPTS.md](SCRIPTS.md) (Abschnitte 0, 1 und 1b),
-was Littera speichert, in [littera_schema_befund.md](littera_schema_befund.md). Die teuerste
-offene Position vor dem Echtstart.
+`littera_sav.mdb` ist ein Stand von 2010: Es fehlen die offenen Ausleihen und alle Ausweisnummern
+und Exemplare nach 2010, rund 1.350 Titel haben keine Signatur. Die Übernahme beschreibt
+[SCRIPTS.md](SCRIPTS.md) (Abschnitte 0, 1 und 1b), was Littera speichert,
+[littera_schema_befund.md](littera_schema_befund.md).
 
-**Die Sicherung öffnen.** Die zwei Sicherungen vom 01. und 02.09.2026 sind verschlüsselte `.7z`
-mit je einer `.bak`. Nach dem Littera-Handbuch („Datensicherung mit SQL Server-Datenbank") ist
-das die Sicherung der SQL-Server-Fassung, keine Access-Datei; `mdb-export` liest sie nicht, und
-zum Zurückspielen braucht es „das Kennwort welches bei der Installation des Servers erfasst
-wurde". Mit Kennwort: die `.bak` lokal in einen SQL Server einspielen, die Tabellen aus
-SCRIPTS.md Abschnitt 1 als CSV ausgeben und Spaltennamen und Datumsformate gegen den Importer
-prüfen, der bisher nur `mdb-export` kennt. Ohne Kennwort blieben die Auswertungen von Littera
-(Leserliste, Medienliste, verliehene Medien); ob sie die nötigen Nummern tragen, ist nicht
-geprüft, und sie hießen einen neuen Importer.
+**Die Sicherung öffnen.** Die Sicherungen vom 01. und 02.09.2026 sind verschlüsselte `.7z` mit je
+einer `.bak` der SQL-Server-Fassung (Littera-Handbuch, „Datensicherung mit SQL Server-Datenbank");
+`mdb-export` liest sie nicht. Zum Zurückspielen braucht es „das Kennwort welches bei der
+Installation des Servers erfasst wurde". Mit Kennwort: die `.bak` lokal in einen SQL Server
+einspielen, die Tabellen aus SCRIPTS.md Abschnitt 1 als CSV ausgeben, Spaltennamen und
+Datumsformate gegen den Importer prüfen. Ohne Kennwort blieben die Auswertungen von Littera; ob
+sie die nötigen Nummern tragen, ist nicht geprüft, und sie bräuchten einen neuen Importer.
 
-**Was die Generalprobe beantworten muss** (lokal und nur lesend, über das CSV-Verzeichnis,
-SCRIPTS.md Abschnitt 1b; mit der Sicherung von 2010 bestanden):
+**Was die Generalprobe beantworten muss** (SCRIPTS.md Abschnitt 1b; mit der Sicherung von 2010
+bestanden):
 
-1. Ist `FremdLeserNummer` gefüllt? Sie trägt die Nummern, die die Ausweise beim Scannen liefern.
-   Ist sie leer, muss jeder Ausweis neu gedruckt werden; der Lauf trägt dann die Lesernummer als
-   Ausweisnummer ein.
-2. Die offenen Ausleihen, die Ausweisnummern nach 2010 und das Geburtsdatum, die Brücke zum
-   späteren LUSD-Abgleich.
-3. Die Etiketten: `LITTERA_CSV_DIR=… go test ./internal/littera/` vergleicht den EAN-13 jedes
+1. Ist `FremdLeserNummer` gefüllt? Sonst muss jeder Ausweis neu gedruckt werden; der Lauf trägt
+   dann die Lesernummer als Ausweisnummer ein.
+2. Kommen die offenen Ausleihen, die Ausweisnummern nach 2010 und das Geburtsdatum mit, die
+   Brücke zum LUSD-Abgleich?
+3. Etiketten: `LITTERA_CSV_DIR=… go test ./internal/littera/` vergleicht den EAN-13 jedes
    Etiketts mit der Rechnung (`pruefeEtiketten`).
-4. Lesergruppen ohne Zuordnung halten den Lauf an (2010: „Undefinierte Untergruppe"). Die
-   Bücherei ordnet diese Personen in Littera zu, bevor die Sicherung für den Umstieg gezogen
-   wird.
-5. Standorte: Die Zahl der Vermerke liegt in der Größe der Titelliste vom Juni 2026 (678
-   Einträge); bei null hat `Personen_Zuordnung.Flags` in der SQL-Server-Fassung eine andere
-   Form. Verfasser ohne Komma und Leser aus einem Zeitschriften-Rundlauf mit `-kein-standort`
-   ausnehmen. Entscheiden, ob „Buchbestand Bibliothek" und „Bibliothek" als Standort mitkommen.
-6. Sperren und Salden (`Leser.GesperrtAm`, `Leser.Saldo`) übernimmt der Lauf nicht; zählen,
-   dann entscheiden, ob Nachtragen von Hand genügt.
+4. Lesergruppen ohne Zuordnung halten den Lauf an; die Bücherei ordnet sie in Littera zu, bevor
+   die Sicherung für den Umstieg gezogen wird.
+5. Standorte: Die Zahl der Vermerke liegt in der Größe der Titelliste vom Juni 2026 (678); bei
+   null hat `Personen_Zuordnung.Flags` eine andere Form. Verfasser ohne Komma und Leser aus einem
+   Zeitschriften-Rundlauf mit `-kein-standort` ausnehmen. Entscheiden, ob „Buchbestand
+   Bibliothek" und „Bibliothek" als Standort mitkommen.
+6. Sperren und Salden (`Leser.GesperrtAm`, `Leser.Saldo`) übernimmt der Lauf nicht: zählen, dann
+   entscheiden, ob Nachtragen von Hand genügt.
 7. Die Verweise der Schlagworte (4.20), und ob die Theke die kurze Nummer der Littera-Etiketten
    annehmen muss ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
 
-**Am Umstiegstag:** Littera-Personen und -Ausleihen im selben Lauf übernehmen, bevor ein echter
-LUSD-Import läuft, sonst legt der Lauf Schüler aus der LUSD ein zweites Mal an (SCRIPTS.md
-Abschnitt 0). Die Übernahme läuft auf einer neu angelegten Datenbank (entschieden am
-28.09.2026). Vorher das Löschkonzept gegenüber Littera
+**Am Umstiegstag:** in der Reihenfolge aus SCRIPTS.md Abschnitt 0, auf einer neu angelegten
+Datenbank (entschieden am 28.09.2026); vorher das Löschkonzept gegenüber Littera
 ([datenschutz/nachweis.md](datenschutz/nachweis.md), Abschnitt 10, B7).
 
 ### 7.3 Sicherung außer Haus
 
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` und `S3_BUCKET` sind leer; alle Sicherungen
-liegen auf einer Platte. Einzutragen ist ein Speicher in der EU; die Regeln dafür (je Server ein
-Bucket, keine Versionierung) stehen in [DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 1. Ein zweiter
-Rechner per Kopierbefehl oder eine getauschte Platte leisten dasselbe außerhalb des Programms;
-das ist eine Betriebsentscheidung.
+liegen auf einer Platte. Einzutragen ist ein Speicher in der EU, Regeln in
+[DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 1. Ein zweiter Rechner per Kopierbefehl oder eine
+getauschte Platte leisten dasselbe außerhalb des Programms.
 
 ### 7.4 Wiederherstellung an einem fremden Ziel
 
-Die Wochenprobe im Container ersetzt sie nicht. Anleitung:
-[resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2e. Die Befehle aus 2a und 2e
-sind an einem frischen Ziel wörtlich gelaufen (Postgres 18, frischer Klon, Sicherung im Format des
-Nachtlaufs); sie setzen `pg_dump`, `dropdb`, `createdb`, `psql` und ein gebautes `restore-backup`
-an dem Rechner voraus, an dem sie laufen. Die Form über die Container ist in 2f erprobt. Machen soll die Probe die Vertretung allein mit dem
-Pflegekonzept (9.9); sie wartet auf den Schulserver und die benannte Vertretung.
+Die Anleitung ([resilience_and_recovery.md](resilience_and_recovery.md), 2a, 2e und 2f) ist
+erprobt. Offen ist die Probe durch die Vertretung allein mit dem Pflegekonzept (9.9); die
+Wochenprobe im Container ersetzt sie nicht. Sie wartet auf den Schulserver und die benannte
+Vertretung.
 
 ### 7.5 Externes Uptime-Signal
 
 Fällt der Server ganz aus, meldet es niemand. Ein externer Monitor ruft alle 5 Minuten `/health`
-ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0). Am Schulserver geht das erst, wenn der
-Eingang aus 4.23 `/health` von außen durchlässt.
+ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0); am Schulserver erst, wenn der Eingang aus 4.23
+`/health` durchlässt.
 
 ### 7.6 Regelwerk für `main`
 
@@ -197,100 +162,78 @@ den Admin-Bypass.
 
 ### 7.7 Abnahmen
 
-Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup. Die Abnahme prüft
-echte Daten, die gehören nur auf den Schulserver, und der LUSD-Import kommt erst nach der
-Littera-Übernahme (7.2).
+Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md). Sie prüft echte Daten, also nur am
+Schulserver, und erst nach der Littera-Übernahme (7.2).
 
 - Flows 1–3 mit dem Sekretariat: LUSD-Import, Versetzung (vor dem Schuljahreswechsel),
   Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten.
-- Flow 4 (Altbestand-Etiketten) entfällt mit dem Neuaufbau: Die Littera-Übernahme setzt den
-  Etikett-Vermerk selbst (`internal/littera/schreiber_bestand.go`).
+- Flow 4 entfällt: Die Littera-Übernahme setzt den Etikett-Vermerk selbst
+  (`internal/littera/schreiber_bestand.go`).
 - Flow 5: Selbstanmeldung einer Lehrkraft.
-- Danach: Ergebnis hier eintragen; bei Auffälligkeiten des Parsers die echte LUSD-Datei
-  anonymisiert als Testfixture sichern.
 
-### 7.8 Am Server nachsehen (lesend)
+### 7.8 Am Server nachsehen
 
-- Liegen im Volume noch Fotos aus der Zeit vor dem 13.06.2026? Sie wären unverschlüsselt; das
-  betrifft nur ein Volume aus dieser Zeit, also den Testserver.
-  `docker compose exec backend ls -la uploads/fotos`; liegen dort Dateien:
+- Fotos aus der Zeit vor dem 13.06.2026 lägen unverschlüsselt im Volume; das betrifft nur den
+  Testserver. `docker compose exec backend ls -la uploads/fotos`; liegen dort Dateien:
   `docker compose exec backend sh -c 'rm -f uploads/fotos/*.jpg'`.
 - Sind die Admin-Konten deaktiviert?
 - Erreicht der Server die DNB? Ohne sie bringt die ISBN-Abfrage keine Angaben und der
-  Cover-Abgleich kein Cover; gespeichert wird trotzdem:
+  Cover-Abgleich kein Cover:
   `docker exec bibliothek-backend sh -c 'wget -q -T 8 -O /dev/null "https://services.dnb.de/sru/dnb?version=1.1&operation=explain" && echo erreichbar || echo nicht erreichbar'`
 
 ### 7.10 Was nur ein Mensch am Gerät sieht
 
-Was hier sonst als Probe am Testserver stand, halten Tests: Browser-Tests tippen wie ein
-Scanner, und dass der Handscanner der Schule schnell genug tippt, ist am 07.10.2026 an der Theke
-belegt.
+**Ausweise am Kartendrucker.** In der Leserdatei zwei Leser ankreuzen, „Ausweise drucken";
+dasselbe mit „Testdruck Vorderseite" im Druck-Center, Reiter „Schülerausweise". Erwartet: Jede
+Karte trägt nur den Ausweis, oben steht keine Reiterzeile, die Nummer unter dem Strichcode steht
+auf der Karte. Die Druckansicht misst `frontend/e2e/ausweis-druckseite.spec.js`, den Drucker
+nicht.
 
-**Ausweise am Kartendrucker.** In der Leserdatei zwei Leser ankreuzen, „Ausweise drucken".
-Erwartet: Jede Karte trägt nur den Ausweis, oben steht keine Reiterzeile, und die Nummer unter
-dem Strichcode steht auf der Karte. Dasselbe mit „Testdruck Vorderseite" im Druck-Center,
-Reiter „Schülerausweise". Die Druckansicht des Browsers misst
-`frontend/e2e/ausweis-druckseite.spec.js`; was der Kartendrucker daraus macht, zeigt nur er.
-
-**Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`pdf/orte_test.go` und
-die Tests je Blatt); was der Drucker an Rand und Maßstab daraus macht, zeigt nur das Papier. Je
-einmal drucken: einen Mahnbrief für einen Schüler mit mindestens neun Büchern über der Frist
-(Anschrift im Fenster des Kuverts, Folgeseite mit „Fortsetzung: …"), die Mahnliste an die
-Klassenleitung (Versand an eine eigene Adresse), die Ersatzforderung aus der Leserakte, das
-Anschreiben im Anhang der Bestellmail und die DSGVO-Auskunft.
+**Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`pdf/orte_test.go`),
+Rand und Maßstab des Druckers nicht. Je einmal drucken: einen Mahnbrief für einen Schüler mit
+mindestens neun Büchern über der Frist (Anschrift im Fenster des Kuverts, Folgeseite mit
+„Fortsetzung: …"), die Mahnliste an die Klassenleitung (Versand an eine eigene Adresse), die
+Ersatzforderung aus der Leserakte, das Anschreiben im Anhang der Bestellmail und die
+DSGVO-Auskunft.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
 Beide Entwürfe stehen ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
-[datenschutz/nachweis.md](datenschutz/nachweis.md)); den Nachweis beschließt die Schule.
+[datenschutz/nachweis.md](datenschutz/nachweis.md)).
 
-- **Das Blatt bei der Schule** (PFLEGEKONZEPT.md 7.3, Vorlage im Anhang) ausfüllen. Vorschlag:
-  die zwei Schlüssel in einem Passwortmanager und als Papier im verschlossenen Umschlag im
-  Tresor der Schule, nie per E-Mail.
-- **Die Frist bis zum Sperrbildschirm:** Gewünscht sind an der Schule 8 Stunden ohne Bedienung
-  (01.10.2026). Am Schulserver unter Einstellungen → Datenschutz & Sitzung 480 Minuten
-  eintragen; das Feld nimmt 0 bis 1440, die Vorgabe bleibt 15. Der Nachweis nennt dann die Zahl
-  der Schule (Abschnitt 5, „Zugang"; Beschluss B4). Für den unbeaufsichtigten Platz bleibt das
-  Leeren der Theke nach 5 Minuten.
-- **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
-  mit dem Pflegekonzept.
+- **Das Blatt bei der Schule** (PFLEGEKONZEPT.md 7.3, Vorlage im Anhang): die zwei Schlüssel in
+  einem Passwortmanager und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per
+  E-Mail.
+- **Die Frist bis zum Sperrbildschirm:** Gewünscht sind 8 Stunden ohne Bedienung (01.10.2026).
+  Am Schulserver unter Einstellungen → Datenschutz & Sitzung 480 Minuten eintragen (Vorgabe 15);
+  der Nachweis nennt dann die Zahl der Schule (Abschnitt 5, „Zugang"; Beschluss B4). Die Theke
+  leert sich weiter nach 5 Minuten.
+- **Die Probe** der Vertretung: 7.4.
 
 ---
 
 ## So wird die Liste geführt
 
-**Kästchen stehen nur im Fahrplan.** Abgehakt wird im selben Commit, der den Schritt erledigt.
-Abgehakte Zeilen fallen bei der nächsten Durchsicht der Liste weg, eine fertige Etappe als
-Ganzes. In den Einzelheiten wird Erledigtes gelöscht.
-
-**Hier steht nur Arbeit, die einer von uns beiden tun kann:** am Programm, an den Servern, auf
-GitHub. Fragen an Dritte und das Warten auf ihre Antworten stehen hier nicht, auch nicht das
-Warten auf eine neue Fassung einer Bibliothek: Die schlägt Dependabot vor, und ein Prüflauf, der
-an ihr scheitert, wird rot.
-
-**Auf die Liste „Bei dir" kommt nur, was kein Test leisten kann,** mit dem Satz, warum. Was ein
-Test prüfen kann, wird als Test gebaut.
-
-Vor jedem Fund steht dieselbe Frage — nicht „ist das hässlich?", sondern **„kann das still
-jemandem schaden?"**
-
-|       | Kategorie                                                                                                                                                                                            | Umgang                                                               |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **A** | Kann **stillschweigend** ein falsches Ergebnis für einen echten Menschen erzeugen: doppelte Mahnung an Eltern, Daten beim falschen Empfänger, verlorene Eingabe, ein Gate, das nicht rot werden kann | **Sofort**, eigener Commit, eigener Test, eigene Deploy-Entscheidung |
-| **B** | Fehler, der sich **laut** meldet, oder Unordnung ohne Wirkung nach außen: totes Codestück, wackeliger Test, Doppelung                                                                                | Hier notieren, gebündelt abarbeiten                                  |
-| **C** | „Wenn ich schon mal hier bin" — Umbenennungen, Stilfragen, Refactorings ohne Anlass                                                                                                                  | Nur mit Anlass und Zeit; steht in ARCHITEKTUR.md 11.5, nicht hier    |
-
-1. **Ein Fund = ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher, nicht in
-   denselben Commit.
-2. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
-   Fund nachgestellt ist, heißt er „Verdacht".
-3. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte: als Zeile im Fahrplan,
-   wenn es ein Schritt ist, und mit Beleg unter einer Nummer in den Einzelheiten. Kein Issue,
-   kein anderes Dokument. Eine Frage steht hier, bevor die Antwort kommt. In
-   [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 steht nur, was eine Entscheidung trägt oder erst mit
+1. **Kästchen stehen nur im Fahrplan,** abgehakt im Commit, der den Schritt erledigt; abgehakte
+   Zeilen fallen bei der nächsten Durchsicht weg. In den Einzelheiten wird Erledigtes gelöscht.
+   Datum und Begründung stehen in der Commit-Nachricht, ein Archiv gibt es nicht. Die Nummer
+   eines gelöschten Punkts wird nicht wieder vergeben. Die Reihenfolge im Fahrplan wird bei jeder
+   Änderung mitgepflegt.
+2. **Hier steht nur Arbeit, die einer von uns beiden tun kann:** am Programm, an den Servern, auf
+   GitHub. Keine Fragen an Dritte und kein Warten auf ihre Antworten oder auf eine neue Fassung
+   einer Bibliothek (die schlägt Dependabot vor). „Bei dir" nur, was kein Test leisten kann.
+3. **Neues kommt nur hierher:** als Zeile im Fahrplan und mit Beleg unter einer Nummer, kein
+   Issue, kein anderes Dokument. Eine Frage steht hier, bevor die Antwort kommt; die Antwort
+   bekommt „Entschieden am …" und fällt weg, sobald sie umgesetzt ist.
+   [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 nimmt nur, was eine Entscheidung trägt oder erst mit
    einem Anlass zum Fehler wird; ein Fehler, der sich lösen lässt, steht hier.
-4. **Erledigt heißt:** im Fahrplan abhaken, in den Einzelheiten löschen — Datum und Begründung
-   stehen in der Commit-Nachricht, ein Archiv gibt es nicht. Eine Antwort bekommt „Entschieden
-   am …" und fällt weg, sobald sie umgesetzt ist. Die Nummer eines gelöschten Punkts wird nicht
-   wieder vergeben — Kommentare im Code nennen sie als Herkunft.
-5. **Die Reihenfolge** im Fahrplan wird bei jeder Änderung mitgepflegt.
+4. **Vor jedem Fund die Frage: „Kann das still jemandem schaden?"**
+   - **A:** Kann still ein falsches Ergebnis für einen echten Menschen erzeugen (doppelte
+     Mahnung, Daten beim falschen Empfänger, verlorene Eingabe, ein Gate, das nicht rot werden
+     kann). Sofort, mit eigenem Commit und einem Test, der am alten Code rot wird; bis dahin
+     heißt der Fund „Verdacht".
+   - **B:** Meldet sich laut oder ist Unordnung ohne Wirkung nach außen. Hier notieren, gebündelt
+     abarbeiten.
+   - **C:** Umbenennungen, Stilfragen, Umbauten ohne Anlass. Nur mit Anlass; steht in
+     ARCHITEKTUR.md 11.5.
+5. **Ein Fund, ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher.

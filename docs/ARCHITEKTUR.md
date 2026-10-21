@@ -3257,9 +3257,7 @@ Sicherung von 2026 lässt sich noch nicht öffnen. Ob die vorhandenen Ausweise w
 welche Ausleihen offen sind und was an Standorten, Verweisen, Sperren und Salden mitkommt,
 zeigt erst die Generalprobe mit ihr.
 
-Die zwölf Punkte des Anforderungsprotokolls vom 16.09.2026 sind bearbeitet (Randbedingung O5
-in Kapitel 2). Daneben stehen der Datenschutz-Nachweis und das Pflegekonzept als Entwürfe
-([OFFEN.md](OFFEN.md) 9.9).
+Der Datenschutz-Nachweis und das Pflegekonzept stehen als Entwürfe ([OFFEN.md](OFFEN.md) 9.9).
 
 Schritte und Reihenfolge: [OFFEN.md](OFFEN.md), Etappe 1 „vor dem Echtstart". Hier steht das
 nur, damit niemand die Architekturdokumentation liest und das größte Risiko darin nicht findet.
@@ -3382,6 +3380,11 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Oberfläche
 
+- **Die eingeklappte Navigation bleibt 64 px breit** und zeigt ihre 18 Ziele als Symbole ohne
+  Namen; den Namen zeigt der Browser beim Zeigen auf das Symbol (`title` in
+  `Seitenleiste.svelte`). Material 3, Navigation rail: „All navigation items require a one word
+  label text". Entschieden gegen die Regel, weil der Platz für den Inhalt gebraucht wird; Namen
+  unter den Symbolen brauchen eine breitere Leiste.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
   der Seite (`e2e/scrollbereiche.spec.js`). In „Buch bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
