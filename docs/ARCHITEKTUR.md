@@ -3382,10 +3382,14 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 #### Oberfläche
 
 - **Die eingeklappte Navigation bleibt 64 px breit** und zeigt ihre 18 Ziele als Symbole ohne
-  Namen; den Namen zeigt der Browser beim Zeigen auf das Symbol (`title` in
-  `Seitenleiste.svelte`). Material 3, Navigation rail: „All navigation items require a one word
-  label text". Entschieden gegen die Regel, weil der Platz für den Inhalt gebraucht wird; Namen
-  unter den Symbolen brauchen eine breitere Leiste.
+  Namen. Material 3, Navigation rail: „All navigation items require a one word label text".
+  Entschieden gegen die Regel, weil der Platz für den Inhalt gebraucht wird; Namen unter den
+  Symbolen brauchen eine breitere Leiste. Die Namen zeigt sie wie Gmail: Steht die Maus 200 ms
+  über ihr, klappt sie über dem Inhalt auf, ohne dass ein Symbol seinen Platz wechselt oder der
+  Inhalt rückt (`Seitenleiste.svelte`, `e2e/navigation-aufklappen.spec.js`). Material 3 öffnet
+  die ausgeklappte Leiste nur über das Menüsymbol („should always open from a menu icon");
+  über dem Inhalt trägt sie dessen Werte für die überlagernde Leiste (nav-rail-expanded,
+  modal-container-*). Ohne Maus, am Tablet, bleibt es bei den Symbolen und dem `title`.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
   der Seite (`e2e/scrollbereiche.spec.js`). In „Buch bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
