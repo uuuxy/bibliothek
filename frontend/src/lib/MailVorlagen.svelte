@@ -112,8 +112,10 @@
 						}}
 					>
 						<span class="truncate text-sm font-medium">{vorlagenName(t.typ)}</span>
-						<span class="truncate text-sm {gewaehlt ? 'opacity-80' : 'text-on-surface-variant'}"
-							>{t.betreff}</span
+						<span
+							class="truncate text-sm {gewaehlt
+								? 'text-on-secondary-container'
+								: 'text-on-surface-variant'}">{t.betreff}</span
 						>
 					</button>
 				{/each}

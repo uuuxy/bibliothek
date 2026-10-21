@@ -58,11 +58,11 @@
 				title="{name} gegen eine andere Klasse tauschen"
 			>
 				{name}
-				{#if hinweis}<span class="font-normal opacity-80">· {hinweis}</span>{/if}
+				{#if hinweis}<span class="font-normal">· {hinweis}</span>{/if}
 			</button>
 		{:else}
 			{name}
-			{#if hinweis}<span class="font-normal opacity-80">· {hinweis}</span>{/if}
+			{#if hinweis}<span class="font-normal">· {hinweis}</span>{/if}
 		{/if}
 		{#if onentfernen}
 			<!-- 32 × 32 px: die ganze Chip-Höhe als Zielfläche (Gate icon-trefferflaechen,

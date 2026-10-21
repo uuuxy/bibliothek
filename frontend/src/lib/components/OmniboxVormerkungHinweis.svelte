@@ -9,7 +9,7 @@
 	<!-- Der rote Schleier gehört zum Alarm: der dunkelste Ton der Fehlerfarbe statt des
 	     schwarzen scrim. -->
 	<div
-		class="fixed inset-0 bg-on-error-container/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
+		class="fixed inset-0 bg-scrim-alarm/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
 	>
 		<!-- alertdialog + Fokusfalle: Der Alarm unterbricht die Theke — der
 		     Screenreader liest ihn sofort, Tab bleibt drin, Escape gibt den Fokus ans
