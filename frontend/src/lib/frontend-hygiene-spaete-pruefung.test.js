@@ -10,9 +10,10 @@ import { sammleQuelldateien, srcRoot, relPfad } from './hygiene-quellen.js';
 // etwa auf `res.json()`, kann in diesem Warten ein neuer Lauf beginnen oder die Theke geleert
 // werden. Dann muss nach dem letzten `await` noch einmal geprüft werden.
 //
-// Blindheit: nur Prüfungen der Form `if (a !== b) return` und nur Warten im selben Block, nicht
-// in einer aufgerufenen Funktion. Eine Prüfung über eine Funktion (`if (ueberholt()) return`)
-// sieht das Gate nicht.
+// Blindheit: nur Prüfungen der Form `if (a !== b) return`, auch als Teil von `||` und mit `?.`
+// (`if (!res.ok || leser?.id !== id) return`), und nur Warten im selben Block, nicht in einer
+// aufgerufenen Funktion. Eine Prüfung über eine Funktion (`if (ueberholt()) return`) sieht das
+// Gate nicht.
 
 /** @type {import('espree').Options} */
 const ESPREE = { ecmaVersion: 2024, sourceType: 'module', loc: true };
@@ -31,16 +32,29 @@ function programme(datei, quelle) {
 	return [espreeParse(quelle, ESPREE)];
 }
 
+/** @param {any} n */
+const einfach = (n) =>
+	n.type === 'Identifier' ||
+	n.type === 'MemberExpression' ||
+	(n.type === 'ChainExpression' && n.expression.type === 'MemberExpression');
+
+/** Der Vergleich `a !== b` einer Prüfung, auch als Teil von `x || a !== b`, sonst null.
+ * @param {any} test @returns {any} */
+function vergleich(test) {
+	if (test.type === 'LogicalExpression' && test.operator === '||')
+		return vergleich(test.left) ?? vergleich(test.right);
+	if (test.type !== 'BinaryExpression' || (test.operator !== '!==' && test.operator !== '!='))
+		return null;
+	return einfach(test.left) && einfach(test.right) ? test : null;
+}
+
 /** Der Schlüssel einer Laufnummer-Prüfung (`if (a !== b) return`), sonst null.
  * @param {any} anw @param {string} quelle */
 function waechter(anw, quelle) {
 	if (anw?.type !== 'IfStatement' || anw.alternate) return null;
-	const { test, consequent } = anw;
-	if (test.type !== 'BinaryExpression' || (test.operator !== '!==' && test.operator !== '!='))
-		return null;
-	const einfach = (/** @type {any} */ n) =>
-		n.type === 'Identifier' || n.type === 'MemberExpression';
-	if (!einfach(test.left) || !einfach(test.right)) return null;
+	const { consequent } = anw;
+	const test = vergleich(anw.test);
+	if (!test) return null;
 	const gibtZurueck =
 		consequent.type === 'ReturnStatement' ||
 		(consequent.type === 'BlockStatement' &&
@@ -112,8 +126,15 @@ describe('Gate: Laufnummer nach dem letzten Warten prüfen', () => {
 			if (nr !== ladeNr) return;
 			liste = daten;
 		}`;
+		const mitOder = `async function uebernimm(id) {
+			aktiver = { id };
+			const res = await apiFetch('/x');
+			if (!res.ok || aktiver?.id !== id) return;
+			aktiver = await res.json();
+		}`;
 		expect(findeSpaetePruefungen('probe.js', spaet).zeilen).toEqual([5]);
 		expect(findeSpaetePruefungen('probe.js', richtig).zeilen).toEqual([]);
+		expect(findeSpaetePruefungen('probe.js', mitOder).zeilen).toEqual([5]);
 		const inSvelte = `<script>\n\tlet liste = [];\n\tlet ladeNr = 0;\n${spaet}\n</script>`;
 		expect(findeSpaetePruefungen('probe.svelte', inSvelte).zeilen).toHaveLength(1);
 	});

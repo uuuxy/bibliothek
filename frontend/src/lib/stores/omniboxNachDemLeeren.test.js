@@ -310,3 +310,20 @@ describe('Eine Suche, die erst nach „Theke leeren" antwortet', () => {
 		expect(omniboxStore.suche.suchTreffer.students).toEqual([]);
 	});
 });
+
+describe('Das Zusammenführen an der Theke, wenn sie geleert wird', () => {
+	it('lädt den Leser nicht, wenn erst sein Rumpf nach dem Leeren gelesen ist', async () => {
+		/** @type {(daten: unknown) => void} */
+		let gib = () => {};
+		const lies = vi.fn(() => new Promise((ja) => (gib = ja)));
+		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ ({ ok: true, json: lies }));
+		const laeuft = omniboxStore.uebernimmZusammengefuehrt('ziel-1');
+		await vi.waitFor(() => expect(lies).toHaveBeenCalled(), { timeout: 1000 });
+
+		thekeLeeren();
+		gib({ ...MIA, id: 'ziel-1' });
+		await laeuft;
+
+		expect(omniboxStore.aktiverLeser, 'der nächste Bediener sähe Mias Konto').toBeNull();
+	});
+});

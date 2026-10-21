@@ -17,9 +17,8 @@ import { erzeugeOmniboxOhneNetz } from './omniboxOhneNetz.svelte.js';
 import { erzeugeOmniboxBuchung } from './omniboxBuchung.svelte.js';
 import { erzeugeOmniboxReihe } from './omniboxReihe.svelte.js';
 
-// Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte), damit die Theke keinen
-// zweiten Meldungsweg mit eigener Optik hat. Auf Modulebene, weil sie nichts aus dem Store
-// einfängt (sonarjs S7721).
+// Meldungen gehen an die gemeinsamen snackbars (SnackbarAnzeige.svelte): kein zweiter Meldungsweg.
+// Auf Modulebene, weil sie nichts aus dem Store einfängt (sonarjs S7721).
 /**
  * @param {string} message
  * @param {import('./snackbars.svelte.js').ToastTyp} [type='success']
@@ -306,16 +305,17 @@ export function erzeugeOmniboxStore() {
 	// der Seitenleiste, und der nächste Scan liefe ins Leere (e2e/scanner-fokus-menue.spec.js).
 	uiStore.beimWechselZurTheke = scanfeldWiederScharfstellen;
 
-	// Nach dem Zusammenführen zweier Datensätze (Leserakte → onMerged) hängt die Theke auf das
-	// Ziel um. Die Kennung steht sofort, damit kein Scan dazwischen die gelöschte erwischt; Name
-	// und Sperren kommen nach.
+	// Nach dem Zusammenführen (Leserakte → onMerged) hängt die Theke auf das Ziel um. Die Kennung
+	// steht sofort, damit kein Scan die gelöschte erwischt; Name und Sperren kommen nach.
 	/** @param {string} zielId */
 	async function uebernimmZusammengefuehrt(zielId) {
 		aktiverLeser = { id: zielId };
 		const res = await apiFetch(`/api/schueler/${zielId}`);
-		// Inzwischen ein anderer Ausweis? Dann gehört das Nachgeladene niemandem mehr.
-		if (!res.ok || aktiverLeser?.id !== zielId) return;
-		aktiverLeser = await res.json();
+		if (!res.ok) return;
+		const leser = await res.json();
+		// Erst nach dem Lesen: Ein anderer Ausweis oder das Leeren der Theke macht es herrenlos.
+		if (aktiverLeser?.id !== zielId) return;
+		aktiverLeser = leser;
 	}
 
 	// „Buch zurückgeben" aus der Akte: derselbe Weg wie ein Scan, aber mit bekannter Absicht.
