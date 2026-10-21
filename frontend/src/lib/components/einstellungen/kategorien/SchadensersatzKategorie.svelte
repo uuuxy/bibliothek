@@ -119,53 +119,56 @@
 		<Switch bind:checked={immerKaufpreis} etikett="Berechnungsgrundlage umschalten" />
 	</div>
 
-	<div class="grid gap-5 sm:grid-cols-2">
+	<!-- Die Felder des Bescheids enden an der Breite der Masken. -->
+	<div class="flex max-w-maske flex-col gap-8">
+		<div class="grid gap-5 sm:grid-cols-2">
+			<Feld
+				id="bescheid-bereich"
+				etikett="Nummer des Schulamtsbereichs"
+				bind:value={bereichNr}
+				placeholder="z. B. 5830"
+			/>
+			<Feld
+				id="bescheid-schulnummer"
+				etikett="Schulnummer"
+				bind:value={schulnummer}
+				placeholder="z. B. 1234"
+			/>
+		</div>
+
 		<Feld
-			id="bescheid-bereich"
-			etikett="Nummer des Schulamtsbereichs"
-			bind:value={bereichNr}
-			placeholder="z. B. 5830"
+			id="bescheid-aufsicht"
+			etikett="Aufsichtsbehörde (Name und Anschrift)"
+			bind:value={aufsicht}
+			placeholder="Name, Straße, PLZ Ort"
 		/>
 		<Feld
-			id="bescheid-schulnummer"
-			etikett="Schulnummer"
-			bind:value={schulnummer}
-			placeholder="z. B. 1234"
+			id="bescheid-schulleitung"
+			etikett="Name der Schulleitung (Unterschriftszeile)"
+			bind:value={schulleitung}
+		/>
+
+		<div class="grid gap-5 sm:grid-cols-3">
+			<Feld id="bescheid-gz" etikett="Geschäftszeichen" bind:value={geschaeftszeichen} />
+			<Feld id="bescheid-bearbeiter" etikett="Bearbeiter" bind:value={bearbeiter} />
+			<Feld id="bescheid-durchwahl" etikett="Durchwahl" bind:value={durchwahl} />
+		</div>
+
+		<Feld id="bescheid-zahlstelle" etikett="Zahlstelle" bind:value={zahlstelle} />
+		<Feld
+			id="bescheid-bank"
+			etikett="Bankverbindung (eine Angabe je Zeile)"
+			bind:value={bankverbindung}
+			mehrzeilig
+			zeilen={4}
+		/>
+		<Feld
+			id="bescheid-frist"
+			etikett="Zahlungsfrist (Tage ab Briefdatum)"
+			type="number"
+			min="1"
+			bind:value={fristTage}
+			feld="w-32"
 		/>
 	</div>
-
-	<Feld
-		id="bescheid-aufsicht"
-		etikett="Aufsichtsbehörde (Name und Anschrift)"
-		bind:value={aufsicht}
-		placeholder="Name, Straße, PLZ Ort"
-	/>
-	<Feld
-		id="bescheid-schulleitung"
-		etikett="Name der Schulleitung (Unterschriftszeile)"
-		bind:value={schulleitung}
-	/>
-
-	<div class="grid gap-5 sm:grid-cols-3">
-		<Feld id="bescheid-gz" etikett="Geschäftszeichen" bind:value={geschaeftszeichen} />
-		<Feld id="bescheid-bearbeiter" etikett="Bearbeiter" bind:value={bearbeiter} />
-		<Feld id="bescheid-durchwahl" etikett="Durchwahl" bind:value={durchwahl} />
-	</div>
-
-	<Feld id="bescheid-zahlstelle" etikett="Zahlstelle" bind:value={zahlstelle} />
-	<Feld
-		id="bescheid-bank"
-		etikett="Bankverbindung (eine Angabe je Zeile)"
-		bind:value={bankverbindung}
-		mehrzeilig
-		zeilen={4}
-	/>
-	<Feld
-		id="bescheid-frist"
-		etikett="Zahlungsfrist (Tage ab Briefdatum)"
-		type="number"
-		min="1"
-		bind:value={fristTage}
-		feld="w-32"
-	/>
 </KategorieRahmen>

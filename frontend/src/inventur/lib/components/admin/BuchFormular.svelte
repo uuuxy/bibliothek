@@ -88,9 +88,9 @@
 	     den Exemplaren: In einem schmalen Fenster folgt sie so auf die Felder und nicht erst
 	     auf das letzte Exemplar. -->
 	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-10">
-		<!-- Die Felder enden bei 44rem: In einem breiten Fenster laufen Textfelder sonst über die
-		     ganze Spalte. Die Exemplare darunter nutzen die Breite. -->
-		<div class="max-w-176 space-y-8 lg:col-start-1">
+		<!-- Die Felder enden an der Breite der Masken (max-w-maske): In einem breiten Fenster
+		     laufen Textfelder sonst über die ganze Spalte. Die Exemplare darunter nutzen die Breite. -->
+		<div class="max-w-maske space-y-8 lg:col-start-1">
 			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} {verlangt} />
 		</div>
 		<aside

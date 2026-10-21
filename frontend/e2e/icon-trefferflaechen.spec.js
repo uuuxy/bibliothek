@@ -24,6 +24,7 @@ import {
 } from './helpers.js';
 import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
 import { SYMBOLKNOEPFE } from './trefferflaeche.js';
+import { SEITEN } from './seiten.js';
 
 const MIN_FLAECHE = 32; // px — Material 3 Icon-Button „extra small"
 const ZIEL = 48; // px — Trefferfläche nach Material 3
@@ -58,29 +59,6 @@ test.afterEach(() => {
 		DELETE FROM buecher_titel WHERE titel = 'E2E-Treffer ${s}';
 	`);
 });
-
-// Jede Seite der Navigation (routenTabelle.js) außer den Bestandsbüchern: Dort steht kein
-// Symbolknopf außer denen des Rahmens, und ihre Liste ist am Entwicklungsrechner 67.000 Zeilen
-// lang; schon das erste Messen dauert dort länger als das Warten auf Ruhe.
-const SEITEN = [
-	['Ausleihe', '/kiosk'],
-	['Medienkatalog', '/medienkatalog'],
-	['Signaturen', '/signaturen'],
-	['Druck-Center', '/druck-center'],
-	['Klassensätze', '/schulklassen'],
-	['Leserdatei', '/schuelerdatei'],
-	['Mahnwesen', '/mahnwesen'],
-	['Abgänger', '/abgaenger'],
-	['Bestellungen', '/bestellungen'],
-	['Inventur', '/inventur'],
-	['Statistiken', '/statistiken'],
-	['Bestellberichte', '/bestellberichte'],
-	['System-Logs', '/system-logs'],
-	['Schuljahreswechsel', '/schuljahr'],
-	['Benutzer & Rechte', '/berechtigungen'],
-	['Einstellungen', '/einstellungen'],
-	['Mein Portal', '/kollegium-portal']
-];
 
 test('Symbolknöpfe: 32 px, rund, 48 px Trefferfläche', async ({ page }) => {
 	test.setTimeout(300_000);

@@ -115,15 +115,18 @@ eine Uhr sie auch ohne Lauf löschen soll; `update.sh` tut es bewusst nicht.
 
 ### 5.86 Material 3, wo die Oberfläche noch abweicht
 
+Entschieden am 21.10.2026: „Abbrechen", Navigation und Vorschläge werden gebaut, die Navigation
+nach einem Bild. Offen ist die Breite der Suchleisten.
+
 - **„Abbrechen" ist gesperrt, solange die Anfrage läuft,** in elf Dialogen und an sieben
   weiteren Stellen (etwa `LeserLoeschenDialog.svelte`). Material 3, Dialogs: „Dismissive actions
   are never disabled." Voraussetzung je Stelle: Erfolg und Ablehnung werden außerhalb des
   Dialogs gemeldet.
 - **Die eingeklappte Navigation** zeigt bis zu 18 Symbole ohne Namen. Material 3, Navigation
   rail: „All navigation items require a one word label text".
-- **Die Breite der Textfelder** („Text fields shouldn't span the full width of a large
-  screen") gilt nur in „Buch bearbeiten" (bis 704 px, `BuchFormular.svelte`); der Wert gehört an
-  eine Stelle, die jede Maske nimmt.
+- **Die Suchleisten** laufen auf den Listenseiten über die ganze Breite (im Fenster von 1710 px
+  bis 1328 px, ebenso das Scanfeld der Theke). Material 3, Search, Specs: „Container | Width |
+  Min: 360dp, max: 720dp". Nicht entschieden; das Gate `e2e/feldbreite.spec.js` lässt sie aus.
 - **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen), nicht nach
   Material 3.
 

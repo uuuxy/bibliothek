@@ -105,7 +105,7 @@
 		</section>
 
 		<!-- Parameter -->
-		<section class="space-y-4">
+		<section class="max-w-maske space-y-4">
 			<p class="text-sm font-medium text-on-surface">Parameter</p>
 
 			<div class="space-y-1.5">

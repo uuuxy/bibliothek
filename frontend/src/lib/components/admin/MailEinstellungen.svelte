@@ -108,7 +108,7 @@
 {:else if ladeFehler}
 	<LadeFehler onerneut={laden} />
 {:else}
-	<div class="animate-fade-in flex w-full max-w-3xl flex-col gap-10">
+	<div class="animate-fade-in flex w-full max-w-maske flex-col gap-10">
 		<div class="flex flex-col gap-6">
 			<div class="flex flex-col gap-1">
 				<h3 class="text-base font-medium text-on-surface">Postausgang (SMTP)</h3>

@@ -78,7 +78,7 @@
 	     auch wenn unter einem Feld ein Fehlertext steht. Der Zeilenabstand ist der des Felds;
 	     ein anderer verschöbe die Eingaben um die halbe Differenz gegen den Knopf. -->
 	<form
-		class="grid grid-cols-[7rem_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5"
+		class="grid max-w-maske grid-cols-[7rem_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5"
 		onsubmit={(e) => {
 			e.preventDefault();
 			anlegen();

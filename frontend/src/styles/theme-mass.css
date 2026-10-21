@@ -175,4 +175,12 @@
 	   `transition-*`-Utility im Haus. */
 	--default-transition-duration: 200ms;
 	--default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
+	/* ── Breite der Masken ────────────────────────────────────────────────────
+	   Material 3, Text fields, Guidelines: „For medium and expanded breakpoints, text fields
+	   should be bound by flexible margins or other containers." und „Text fields shouldn't
+	   span the full width of a large screen." Eine Zahl nennt M3 nicht; sie steht hier, damit
+	   jede Maske dieselbe nimmt (max-w-maske). Seiten und Listen bleiben breit.
+	   Gate: e2e/feldbreite.spec.js. */
+	--container-maske: 44rem;
 }
