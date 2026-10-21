@@ -172,8 +172,6 @@ gebaut.
 - Ungelesene Felder: `auth.Claims.Ausweisnummer` (JSON `barcode_id`) wird nur beim Erneuern des
   Tokens weitergereicht, `abgaenger_jahr` in der Antwort der Aktivliste hat keinen Leser, und
   `ui/Menue` kann einen Kopf und Gruppen-Überschriften, die kein Aufrufer nutzt.
-- Die Grenze `format.Hoehe >= 30` steht zweimal (`pdf/etikett_buch.go`,
-  `pdf/etikett_schueler.go`).
 
 ### 7.2 Frisches Littera-Backup
 

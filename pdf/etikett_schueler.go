@@ -75,7 +75,7 @@ func ErzeugeSchuelerEtiketten(formatID string, startPosition int, etiketten []Sc
 // (Standard 52, 21,2 mm) ist für eine eigene Zeile der Klasse kein Platz, dort rückt sie hinter
 // den Namen.
 func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFormat, e SchuelerEtikett, pos etikettPosition) {
-	gross := format.Hoehe >= 30
+	gross := format.istGross()
 	linkerRand := pos.X + 3
 	textbreite := format.Breite - 6
 

@@ -14,6 +14,10 @@ type EtikettFormat struct {
 	AbstandY  float64 // zwischen zwei Etiketten untereinander
 }
 
+// istGross: Ab 30 mm Höhe ist Platz für alle Zeilen und den großen Code, auf dem kleinen Format
+// (Standard 52, 21,2 mm) nicht. Buch- und Leseretikett entscheiden an derselben Grenze.
+func (f EtikettFormat) istGross() bool { return f.Hoehe >= 30 }
+
 var etikettFormate = map[string]EtikettFormat{
 	"zweckform_l4760": {
 		ID:        "zweckform_l4760",

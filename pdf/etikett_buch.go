@@ -54,12 +54,12 @@ func zeichneQREtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFo
 		bildLeser := bytes.NewReader(bild)
 		pdf.RegisterImageOptionsReader(etikett.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, bildLeser)
 		qrGroesse := 16.0
-		if format.Hoehe < 30 {
+		if !format.istGross() {
 			qrGroesse = 12.0 // niedrige Etiketten wie standard_52 fassen den großen Code nicht
 		}
 		qrX := pos.X + (format.Breite-qrGroesse)/2
 		qrY := pos.Y + 11.0
-		if format.Hoehe < 30 {
+		if !format.istGross() {
 			qrY = pos.Y + 8.0
 		}
 		pdf.Image(etikett.BarcodeID, qrX, qrY, qrGroesse, qrGroesse, false, "", 0, "")
@@ -67,7 +67,7 @@ func zeichneQREtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFo
 
 	pdf.SetFont("Arial", "B", 8)
 	textY := pos.Y + 28
-	if format.Hoehe < 30 {
+	if !format.istGross() {
 		textY = pos.Y + 21
 	}
 	pdf.SetXY(pos.X+2, textY)
@@ -106,7 +106,7 @@ func zweiteZeile(jahr, signatur string) string {
 // für sechs Zeilen kein Platz: Dort entfallen Anschaffungsjahr mit Signatur und der
 // Eigentumsvermerk, sonst stünden Zeilen übereinander.
 func zeichneBarcodeEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFormat, etikett BuchEtikett, pos etikettPosition) {
-	grossesEtikett := format.Hoehe >= 30
+	grossesEtikett := format.istGross()
 
 	y := pos.Y + 2.5
 	pdf.SetFont("Arial", "B", 8)
