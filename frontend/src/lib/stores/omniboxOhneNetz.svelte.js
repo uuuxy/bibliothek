@@ -31,6 +31,23 @@ export function erzeugeOmniboxOhneNetz({
 	// dahin tragen die folgenden Bücher sie mit (`ausweis_barcode` in der Warteschlange).
 	let offlineAusweis = $state('');
 
+	// Der Besuch: seit wann die Person an der Theke steht, nach performance.now(), das nicht mit
+	// der Wanduhr springt. Er beginnt mit jedem Ausweis und mit jeder anderen Person. Das
+	// Nachbuchen nimmt damit zurück, was schon vor dem Besuch auf ihrem Konto lag, wie am Netz; was
+	// erst im Besuch ausgeliehen wurde, kehrt ein zweiter Scan nicht um (nachbuchen_buchen.go).
+	let besuch = { person: '', seit: 0 };
+
+	/**
+	 * Millisekunden seit Beginn des Besuchs.
+	 * @param {string} q @param {string} person @param {number} mono
+	 */
+	function besuchSeit(q, person, mono) {
+		if (person !== besuch.person || ordneScanEin(q, buchBarcodes.istBuch).art === 'ausweis') {
+			besuch = { person, seit: mono };
+		}
+		return mono - besuch.seit;
+	}
+
 	// Der Schnappschuss des Scans, bevor die Anfrage hinausgeht: Escape oder „Theke leeren"
 	// während einer hängenden Anfrage ändern weder Person noch Absicht.
 	//
@@ -46,16 +63,20 @@ export function erzeugeOmniboxOhneNetz({
 		const aktiverLeser = leseLeser();
 		// Ohne geladenen Leser, aber mit gemerktem Ausweis geht das Buch an die Person dahinter.
 		const merker = !aktiverLeser?.id && offlineAusweis ? offlineAusweis : '';
+		const person = aktiverLeser?.id || merker;
+		// Die Wanduhr springt gern, wenn das Netz zurückkommt, performance.now() nicht. Daraus
+		// rechnet das Nachbuchen den Zeitpunkt des Scans neu (offlineWarteschlange.js).
+		const mono = Math.round(performance.now());
+		const seit = besuchSeit(q, person, mono);
 		return {
 			id: idempotencyKey,
-			art: absicht ?? (aktiverLeser?.id || merker ? 'ausleihe' : 'rueckgabe'),
+			art: absicht ?? (person ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
 			leser_id: aktiverLeser?.id ?? null,
 			...(merker ? { ausweis_barcode: merker } : {}),
+			...(person ? { besuch_seit_ms: seit } : {}),
 			gescannt_am: Date.now(),
-			// Die Wanduhr springt gern, wenn das Netz zurückkommt, performance.now() nicht. Daraus
-			// rechnet das Nachbuchen den Zeitpunkt des Scans neu (offlineWarteschlange.js).
-			mono: Math.round(performance.now()),
+			mono,
 			ursprung: Math.round(performance.timeOrigin ?? 0)
 		};
 	}

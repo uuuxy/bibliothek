@@ -905,8 +905,9 @@ dann.
 
 **Nachbuchen.** Kommt die Verbindung zurück, schickt der Rechner die Warteschlange in Portionen
 an `POST /api/action/nachbuchen`. Der Server bucht die Wirklichkeit: Lag das Buch bei jemand
-anderem, nimmt er es dort zurück und leiht es neu aus; eine Rückgabe hinter einer neueren
-Buchung weist er ab. Gebucht wird mit dem Scan-Zeitpunkt (höchstens der Serverzeit), und jeder
+anderem, nimmt er es dort zurück und leiht es neu aus; lag es schon vor dem Besuch bei der
+Person selbst, nimmt er es zurück wie am Netz (der Rechner schickt mit, wie lange sie schon an
+der Theke stand); eine Rückgabe hinter einer neueren Buchung weist er ab. Gebucht wird mit dem Scan-Zeitpunkt (höchstens der Serverzeit), und jeder
 Schlüssel genau einmal.
 
 **Meldungen.** Jede Abweichung vom Scan hält der Server fest (Migration 117). An der Theke steht

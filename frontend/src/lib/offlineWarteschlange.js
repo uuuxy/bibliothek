@@ -47,15 +47,20 @@ async function getDB() {
  *   leser_id: string | null,
  *   gescannt_am: number,
  *   ausweis_barcode?: string,
+ *   besuch_seit_ms?: number,
  *   mono?: number,
  *   ursprung?: number
  * }} OfflineEintrag
  *
- * Die drei optionalen Felder, und warum sie optional BLEIBEN muessen:
+ * Die vier optionalen Felder, und warum sie optional BLEIBEN muessen:
  *
  * `ausweis_barcode` traegt einen ohne Netz gescannten Ausweis, den erst der Server
  * aufloesen kann (die Nachbuch-Tuer kennt das Feld). Ein Eintrag ohne ihn ist der
  * Normalfall: Die Person war beim Scan schon geladen und steht in `leser_id`.
+ *
+ * `besuch_seit_ms` sagt bei einem Scan mit Person, wie lange sie schon an der Theke stand.
+ * Daran nimmt der Server ein Buch zurück, das schon vor dem Besuch auf ihrem Konto lag, wie am
+ * Netz. Fehlt es (Rückgabe, ältere Sicherung), bleibt ein Buch, das sie schon hat, bei ihr.
  *
  * `mono` und `ursprung` sind der Uhr-Anker: `performance.now()` beim Scan und der
  * Zeitursprung des Seitenaufrufs. Aus ihnen bestimmt der Sync den Scan-Zeitpunkt neu,
@@ -108,6 +113,9 @@ export function normalisiereEintrag(roh) {
 	// das es gibt und das nichts bedeutet.
 	if (typeof roh.ausweis_barcode === 'string' && roh.ausweis_barcode !== '') {
 		eintrag.ausweis_barcode = roh.ausweis_barcode;
+	}
+	if (Number.isFinite(roh.besuch_seit_ms) && roh.besuch_seit_ms >= 0) {
+		eintrag.besuch_seit_ms = Number(roh.besuch_seit_ms);
 	}
 	if (Number.isFinite(roh.mono) && Number.isFinite(roh.ursprung)) {
 		eintrag.mono = Number(roh.mono);

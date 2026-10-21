@@ -64,7 +64,11 @@ type NachbuchEintrag struct {
 	// hat; gebucht wird frühestens ab der Rückgabe. Nach einer vollständigen Ausleihe gilt es
 	// nicht: Das Nachbuchen liehe ein inzwischen zurückgegebenes Buch sonst erneut aus.
 	NachFremdrueckgabeVon *string
-	BearbeiterID          string
+	// BesuchSeit sagt, wie lange die Person beim Scan schon an der Theke stand (seit ihrem
+	// Ausweis oder seit sie geladen wurde), gemessen am Rechner ohne die Sprünge der Wanduhr.
+	// nil bei einem Rechner, der es nicht schickt (bucheAusleiheNach).
+	BesuchSeit   *time.Duration
+	BearbeiterID string
 }
 
 // NachbuchErgebnis ist die Antwort je Eintrag.
@@ -89,6 +93,7 @@ type nachbuchLage struct {
 	offeneAusleihe *repository.Ausleihe
 	befund         repository.RueckkehrBefund
 	reaktiviert    bool
+	besuchBeginn   *time.Time // wann die Person an die Theke trat; nil, wenn unbekannt
 }
 
 // BucheNach bucht einen Eintrag. Fachliche Ausgänge kommen als Ergebnis zurück; ein
@@ -160,6 +165,10 @@ func (d *AusleihDienst) loeseNachbuchEintrag(ctx context.Context, eintrag Nachbu
 		gescannt = jetzt // höchstens Serverzeit — auch nach der Umrechnung datiert nichts vor
 	}
 	l := &nachbuchLage{eintrag: eintrag, gescannt: gescannt}
+	if eintrag.BesuchSeit != nil {
+		beginn := gescannt.Add(-*eintrag.BesuchSeit)
+		l.besuchBeginn = &beginn
+	}
 
 	exemplar, err := d.loeseExemplar(ctx, eintrag.Barcode)
 	if err != nil {

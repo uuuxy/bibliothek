@@ -1275,6 +1275,13 @@ Server den Versatz falsch. Deshalb wird der Scan-Zeitpunkt aus `performance.now(
 (springt nicht) und der Wanduhr von *jetzt* neu bestimmt, solange der Eintrag aus demselben
 Seitenaufruf stammt.
 
+**Ein Scan mit Person bucht wie am Netz.** Ohne Netz trägt ein Buch-Scan mit geladener oder
+gemerkter Person die Absicht `ausleihe` und die Dauer des Besuchs (`besuch_seit_ms`, ebenfalls
+aus `performance.now()`). Lag das Buch schon vor dem Besuch auf dem Konto der Person, nimmt der
+Server es zurück wie `BucheAmLeser` am Netz. Was erst im Besuch ausgeliehen wurde, kehrt ein
+zweiter Scan nicht um (`bereits_ausgeliehen`); dasselbe gilt, wenn das Nachbuchen den
+verwaisten Schlüssel einer Buchung übernimmt, die schon steht.
+
 **Die neun Urteile.** Endgültig sind `ausgeliehen`, `umgebucht`, `bereits_ausgeliehen`,
 `zurueckgegeben`, `nur_reaktiviert`, `nicht_gebucht`, `veraltet`, `bereits_gebucht` — in
 allen acht Fällen hat der Server den Fall abschließend behandelt. Das neunte,

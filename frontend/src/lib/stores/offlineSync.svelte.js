@@ -49,10 +49,13 @@ function baueNachbuchPayload(batchItems) {
 				gescannt_am: new Date(gescannt).toISOString()
 			};
 			// Eine Ausleihe traegt ihre Person, eine Rueckgabe nicht — der Server findet
-			// den Vorbesitzer selbst. `ausweis_barcode` kennt die Tuer bereits; gefuellt
-			// wird es, sobald die Theke Ausweise offline annimmt.
+			// den Vorbesitzer selbst. Ein ohne Netz gescannter Ausweis steht in
+			// `ausweis_barcode`, die Dauer des Besuchs in `besuch_seit_ms`.
 			if (posten.art === 'ausleihe' && posten.leser_id) e.leser_id = posten.leser_id;
 			if (posten.ausweis_barcode) e.ausweis_barcode = posten.ausweis_barcode;
+			if (posten.art === 'ausleihe' && typeof posten.besuch_seit_ms === 'number') {
+				e.besuch_seit_ms = posten.besuch_seit_ms;
+			}
 			return e;
 		})
 	};
@@ -84,10 +87,11 @@ const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 //   - `umgebucht` heisst: Das Buch lag bei jemand anderem, wurde dort zurueckgenommen und
 //     neu ausgeliehen. Ein Buch hat die Person gewechselt — das gehoert gesagt, auch wenn
 //     der Server es zusaetzlich in seiner Meldungsliste festhaelt.
-//   - Weicht die gebuchte Wirkung von der Absicht des Scans ab (als Ausleihe gescannt,
-//     als Rueckgabe gebucht), wird das gemeldet. Derselbe Typvergleich wie bisher, und er
-//     gilt auch fuer `bereits_gebucht`: Das ist die Wirkung des Online-Versands, der
-//     damals durchkam, ohne dass die Theke die Antwort noch sah.
+//   - Weicht die gebuchte Wirkung von der Absicht des Scans ab, wird das gemeldet. Derselbe
+//     Typvergleich gilt auch fuer `bereits_gebucht`: Das ist die Wirkung des Online-Versands,
+//     der damals durchkam, ohne dass die Theke die Antwort noch sah. Keine Abweichung ist
+//     die Rueckgabe eines Scans mit Person: Das Buch lag schon auf ihrem Konto, und am Netz
+//     haette derselbe Scan es ebenso zurueckgenommen.
 //   - `aufsicht_informieren` ist keine Meldung, sondern eine Aufgabe: Das Buch stand auf
 //     einem Bescheid, der schon bei der Schulaufsicht liegt.
 /**
@@ -110,7 +114,9 @@ function zuPruefendeFuer(posten, erg) {
 		});
 	} else {
 		const gebucht = erg.daten?.type;
-		if (gebucht && gebucht !== posten.art) {
+		const mitPerson = Boolean(posten.leser_id || posten.ausweis_barcode);
+		const wieAmNetz = posten.art === 'ausleihe' && gebucht === 'rueckgabe' && mitPerson;
+		if (gebucht && gebucht !== posten.art && !wieAmNetz) {
 			pruefen.push({
 				barcode: posten.barcode,
 				meldung: `als ${nenne(posten.art)} gescannt, der Server buchte ${nenne(gebucht)}`
@@ -125,17 +131,11 @@ function zuPruefendeFuer(posten, erg) {
 	return pruefen;
 }
 
-// Erledigt ist nur, was der Server wirklich entschieden hat.
-//
-// Die Nachbuch-Tuer antwortet je Schluessel mit einem von neun Woertern. Acht davon sind
-// endgueltig — gebucht, umgebucht, schon dagewesen, abgelehnt: In allen Faellen hat der
-// Server den Fall abschliessend behandelt, und der Eintrag gehoert aus der Warteschlange.
-// Das neunte, „wiederholen", heisst ausdruecklich das Gegenteil: Der Server war nicht
-// erreichbar, oder derselbe Schluessel wird gerade gebucht. Dann bleibt der Eintrag liegen
-// und die Runde endet, statt gegen dieselbe Wand zu laufen.
-//
-// Ein Schlüssel, den der Server gar nicht beantwortet hat, bleibt ebenfalls liegen:
-// Schweigen ist kein Erfolg.
+// Erledigt ist nur, was der Server entschieden hat. Acht der neun Antworten der Nachbuch-Tür
+// sind endgültig (gebucht, umgebucht, schon dagewesen, abgelehnt): Der Eintrag gehört aus der
+// Warteschlange. „wiederholen" heißt das Gegenteil (Server nicht erreichbar, oder derselbe
+// Schlüssel wird gerade gebucht): Der Eintrag bleibt liegen, und die Runde endet. Ein Schlüssel
+// ohne Antwort bleibt ebenfalls liegen: Schweigen ist kein Erfolg.
 /**
  * @param {any} antwort
  * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems

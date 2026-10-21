@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
@@ -71,17 +72,13 @@ func (d *AusleihDienst) verarbeiteRueckgabeOhneAusleihe(ctx context.Context, tx 
 	return &NachbuchErgebnis{Ergebnis: repository.NachbuchNurReaktiviert, Grund: grund, AufsichtHinweis: hinweis}, nil
 }
 
-// bucheAusleiheNach bucht die Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
-// (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen, vor dem
-// Savepoint, damit die Rücknahme bleibt, wenn die neue Ausleihe an Sperre, Limit oder
-// Vormerkung scheitert.
+// bucheAusleiheNach bucht die Absicht „Ausleihe", die ein Scan mit Person ohne Netz trägt. Liegt
+// das Buch schon bei dieser Person, entscheidet bucheEigeneAusleiheNach. Lag es bei jemand
+// anderem, wird dort zurückgenommen, vor dem Savepoint, damit die Rücknahme bleibt, wenn die neue
+// Ausleihe an Sperre, Limit oder Vormerkung scheitert.
 func (d *AusleihDienst) bucheAusleiheNach(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if l.offeneAusleihe != nil && istEigeneAusleihe(l) {
-		verwerfeStill(ctx, tx)
-		erg := &AusleihErgebnis{Art: "ausleihe", Exemplar: l.exemplar, Leser: l.leser, AusleiheID: &l.offeneAusleihe.ID}
-		frist := l.offeneAusleihe.RueckgabeFrist
-		erg.Frist = &frist
-		return &NachbuchErgebnis{Ergebnis: repository.NachbuchBereitsAusgeliehen, Gebucht: erg}, nil
+		return d.bucheEigeneAusleiheNach(ctx, tx, l)
 	}
 
 	erg := &AusleihErgebnis{}
@@ -126,6 +123,33 @@ func (d *AusleihDienst) bucheAusleiheNach(ctx context.Context, tx pgx.Tx, l *nac
 		erg.AusleiheID = &ausleihe.ID
 	}
 	return &NachbuchErgebnis{Ergebnis: ergebnis, Gebucht: erg, AufsichtHinweis: l.befund.AufsichtHinweis()}, nil
+}
+
+// bucheEigeneAusleiheNach: Das Buch liegt schon bei der Person des Eintrags. Lag es schon vor dem
+// Besuch dort, ist der Scan eine Rückgabe, wie am Netz (BucheAmLeser). Entstand ihre Ausleihe
+// erst in diesem Besuch, wird nichts umgekehrt (bereits_ausgeliehen): Das ist der Doppelscan, oder
+// das Nachbuchen hat den verwaisten Schlüssel einer Buchung übernommen, die schon steht.
+func (d *AusleihDienst) bucheEigeneAusleiheNach(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
+	if l.ausleiheVorDemBesuch() {
+		return d.bucheRueckgabeNach(ctx, tx, l)
+	}
+	verwerfeStill(ctx, tx)
+	erg := &AusleihErgebnis{Art: "ausleihe", Exemplar: l.exemplar, Leser: l.leser, AusleiheID: &l.offeneAusleihe.ID}
+	frist := l.offeneAusleihe.RueckgabeFrist
+	erg.Frist = &frist
+	return &NachbuchErgebnis{Ergebnis: repository.NachbuchBereitsAusgeliehen, Gebucht: erg}, nil
+}
+
+// besuchsToleranz trennt eine Ausleihe von vor dem Besuch von der aus seinem ersten Scan:
+// Besuchsbeginn und Scan-Zeitpunkt kommen aus zwei Uhren des Rechners, auf Millisekunden
+// gerundet.
+const besuchsToleranz = 2 * time.Second
+
+// ausleiheVorDemBesuch sagt, ob die offene Ausleihe der Person schon bestand, bevor sie an die
+// Theke trat. Ohne Besuchsbeginn (ein Rechner, der ihn nicht schickt) heißt das nein.
+func (l *nachbuchLage) ausleiheVorDemBesuch() bool {
+	return l.besuchBeginn != nil &&
+		l.offeneAusleihe.AusgeliehenAm.Before(l.besuchBeginn.Add(-besuchsToleranz))
 }
 
 // leiheImSavepointAus prüft die Schranken und legt die Ausleihe an, beides im Savepoint.

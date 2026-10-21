@@ -167,6 +167,7 @@ describe('Omnibox offline', () => {
 		expect(q, 'der Scan wurde offline gespeichert').toHaveLength(1);
 		expect(q[0].art, 'mit Schüler an der Theke ist der Scan eine Ausleihe').toBe('ausleihe');
 		expect(q[0].leser_id).toBe('schueler-7');
+		expect(typeof q[0].besuch_seit_ms, 'die Dauer des Besuchs geht mit').toBe('number');
 
 		// Gegenprobe: ohne Schüler bleibt es eine Rückgabe.
 		await leere();
@@ -177,6 +178,7 @@ describe('Omnibox offline', () => {
 		expect(q).toHaveLength(1);
 		expect(q[0].art).toBe('rueckgabe');
 		expect(q[0].leser_id).toBeNull();
+		expect(q[0].besuch_seit_ms, 'ohne Person kein Besuch').toBeUndefined();
 	});
 
 	// Jede FORM, die an der Theke wirklich ueber den Tisch geht — nicht fuenfmal `B-10234`.
@@ -279,6 +281,38 @@ describe('Omnibox offline', () => {
 			// Ohne Person UND ohne Merker waere es eine Rueckgabe — mit Merker ist es eine
 			// Ausleihe an die Person hinter der Karte.
 			expect(q[0].art).toBe('ausleihe');
+		});
+
+		// Mit jedem Buch geht die Dauer des Besuchs mit: Daran nimmt das Nachbuchen zurück, was
+		// schon vor dem Besuch auf dem Konto lag, wie am Netz (nachbuchen_buchen.go). Gemessen
+		// wird mit performance.now(), das nicht mit der Wanduhr springt.
+		it('misst den Besuch ab dem ersten Scan der Person, neu mit jedem Ausweis', async () => {
+			let uhr = 0;
+			const jetzt = vi.spyOn(performance, 'now').mockImplementation(() => uhr);
+			/** @param {string} code @param {number} ms */
+			const scanne = async (code, ms) => {
+				uhr = ms;
+				omniboxStore.eingabe = code;
+				await omniboxStore.fuehreAktionAus(new Event('submit'));
+			};
+			try {
+				await scanne('S-10001', 1000);
+				await scanne('LMF-2025-0007', 5000);
+				await scanne('LMF-2025-0008', 25000);
+				// Dieselbe Person zeigt ihren Ausweis noch einmal: ein neuer Besuch.
+				await scanne('S-10001', 40000);
+				await scanne('LMF-2025-0009', 41000);
+			} finally {
+				jetzt.mockRestore();
+			}
+
+			// Nach Barcode geordnet: Die Warteschlange ordnet nach der Wanduhr, und die steht im Test.
+			const q = (await ladeWarteschlange()).sort((a, b) => a.barcode.localeCompare(b.barcode));
+			expect(q.map((e) => [e.barcode, e.besuch_seit_ms])).toEqual([
+				['LMF-2025-0007', 0],
+				['LMF-2025-0008', 20000],
+				['LMF-2025-0009', 1000]
+			]);
 		});
 
 		it('ein unklarer Scan sperrt die Zuordnung: der Merker faellt', async () => {

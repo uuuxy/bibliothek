@@ -59,6 +59,9 @@ type nachbuchEintrag struct {
 	LeserID *string `json:"leser_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	// … sonst der offline gescannte Ausweis, den der Server auflöst.
 	AusweisBarcode *string `json:"ausweis_barcode,omitempty"`
+	// BesuchSeitMs: wie lange die Person beim Scan schon an der Theke stand, in Millisekunden,
+	// gemessen am Rechner. Daran erkennt der Server ein Buch, das sie zurückgibt.
+	BesuchSeitMs *int64 `json:"besuch_seit_ms,omitempty" validate:"omitempty,min=0"`
 }
 
 // nachbuchErgebnis ist die Antwort zu einem Eintrag.
@@ -183,7 +186,7 @@ func (t *Tueren) bucheEintragNach(ctx context.Context, dienst nachbuchung, e nac
 	erg, err := dienst.BucheNach(ctx, service.NachbuchEintrag{
 		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode,
 		GescanntAm: e.GescanntAm, UhrVersatz: absender.uhrVersatz,
-		LeserID: e.LeserID, AusweisBarcode: e.AusweisBarcode,
+		LeserID: e.LeserID, AusweisBarcode: e.AusweisBarcode, BesuchSeit: besuchSeit(e.BesuchSeitMs),
 		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, BearbeiterID: absender.bearbeiterID,
 	})
 	if err != nil {
@@ -232,4 +235,13 @@ func (t *Tueren) meldeMeldungsstand() {
 	if t.Broker != nil {
 		t.Broker.Verteile("nachbuch-meldungen", "{}")
 	}
+}
+
+// besuchSeit übersetzt die Dauer des Besuchs aus Millisekunden; nil bleibt nil.
+func besuchSeit(ms *int64) *time.Duration {
+	if ms == nil {
+		return nil
+	}
+	d := time.Duration(*ms) * time.Millisecond
+	return &d
 }

@@ -293,6 +293,17 @@ describe('offlineSync: die Ausleihe trägt ihren Leser mit', () => {
 		const e = await sendeAusleiheMit(null);
 		expect(e.leser_id).toBeUndefined();
 	});
+
+	// Daran nimmt der Server ein Buch zurück, das schon vor dem Besuch auf dem Konto lag, wie am
+	// Netz (nachbuchen_buchen.go). Die Warteschlange liest jeden Eintrag beim Laden neu ein
+	// (normalisiereEintrag) und darf das Feld dabei nicht verlieren.
+	it('schickt mit einer Ausleihe die Dauer des Besuchs', async () => {
+		await enqueueOfflineAction({ ...ausleihe('B-10237', 'leser-3'), besuch_seit_ms: 20000 });
+		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
+		await offlineSync.starteAbgleich();
+		const e = vi.mocked(apiClient.post).mock.calls[0][1].eintraege[0];
+		expect(e.besuch_seit_ms, 'ohne sie bliebe ein abgegebenes Buch auf dem Konto').toBe(20000);
+	});
 });
 
 // Erledigt ist nur, was der Server WIE GESCANNT gebucht hat (OFFEN.md 2.2, Commit 6). Bis
@@ -318,10 +329,10 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 		expect(apiClient.post, 'keine Endlosschleife: die Runde endet').toHaveBeenCalledTimes(1);
 	});
 
-	it('Ausleihe gescannt, Rückgabe gebucht: ausgebucht UND gemeldet, mit Barcode und beiden Typen', async () => {
-		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
+	it('Rückgabe gescannt, Ausleihe gebucht: ausgebucht UND gemeldet, mit Barcode und beiden Typen', async () => {
+		await enqueueOfflineAction(rueckgabe('B-10234'));
 		vi.mocked(apiClient.post).mockImplementation(
-			antworte(() => ({ ergebnis: 'zurueckgegeben', daten: { type: 'rueckgabe' } }))
+			antworte(() => ({ ergebnis: 'bereits_gebucht', daten: { type: 'ausleihe' } }))
 		);
 		await offlineSync.starteAbgleich();
 		expect(await ladeWarteschlange(), 'endgueltig entschieden, also ausgebucht').toHaveLength(0);
@@ -332,6 +343,18 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 		expect(meldungen).toContain('B-10234');
 		expect(meldungen).toMatch(/Ausleihe/);
 		expect(meldungen).toMatch(/Rückgabe/);
+	});
+
+	// Ein Scan mit Person nimmt zurück, was schon auf ihrem Konto lag: Am Netz hätte derselbe
+	// Scan es ebenso getan, eine Abweichung ist das nicht.
+	it('Ausleihe mit Person gescannt, Rückgabe gebucht: still ausgebucht', async () => {
+		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
+		vi.mocked(apiClient.post).mockImplementation(
+			antworte(() => ({ ergebnis: 'zurueckgegeben', daten: { type: 'rueckgabe' } }))
+		);
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange()).toHaveLength(0);
+		expect(melde).not.toHaveBeenCalled();
 	});
 
 	it('wie gescannt gebucht: still ausgebucht', async () => {
@@ -508,13 +531,13 @@ describe('offlineSync: der Wortlaut der Meldung', () => {
 	});
 
 	it('nennt erst die Absicht des Scans, dann die Wirkung am Server', async () => {
-		const meldungen = await meldungenNach(ausleihe('B-10234', 'schueler-7'), {
-			ergebnis: 'zurueckgegeben',
-			daten: { type: 'rueckgabe' }
+		const meldungen = await meldungenNach(rueckgabe('B-10234'), {
+			ergebnis: 'bereits_gebucht',
+			daten: { type: 'ausleihe' }
 		});
 
 		expect(meldungen).toEqual([
-			[`Offline-Scan „B-10234“: als Ausleihe gescannt, der Server buchte Rückgabe ${HAND}`, 'error']
+			[`Offline-Scan „B-10234“: als Rückgabe gescannt, der Server buchte Ausleihe ${HAND}`, 'error']
 		]);
 	});
 
