@@ -15,8 +15,8 @@ export const rechteBeschreibungen = [
 		items: [
 			{
 				key: 'view_students',
-				label: 'Schülerdatei anzeigen',
-				desc: 'Schülerdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen einsehen und die Mahnliste drucken; Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken; Druck-Center'
+				label: 'Leserdatei anzeigen',
+				desc: 'Leserdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen einsehen und die Mahnliste drucken; Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken; Druck-Center'
 			},
 			{
 				key: 'create_students',
@@ -93,7 +93,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'manage_vormerkungen',
 				label: 'Vormerkungen verwalten (Warteliste)',
-				desc: 'Warteliste eines Titels einsehen, Schüler vormerken und Vormerkungen löschen. Zeigt nur Name und Klasse — als enges Theken-Recht für Helfer zuschaltbar, ohne die Schülerdatei zu öffnen.'
+				desc: 'Warteliste eines Titels einsehen, Schüler vormerken und Vormerkungen löschen. Zeigt nur Name und Klasse — als enges Theken-Recht für Helfer zuschaltbar, ohne die Leserdatei zu öffnen.'
 			},
 			{
 				key: 'view_orders',
@@ -144,7 +144,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'merge_students',
 				label: 'Schüler zusammenführen',
-				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Schülerakte, Reiter Stammdaten & Adresse) — unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar'
+				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Leserakte, Reiter Stammdaten & Adresse) — unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar'
 			},
 			{
 				key: 'manage_users',

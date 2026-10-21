@@ -229,7 +229,7 @@ Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
 
 ### 4.5 Oberfläche
 
-- **Schülerakte → Gebühren & Schäden:** Forderungen tragen Topf und Art; Knopf
+- **Leserakte → Gebühren & Schäden:** Forderungen tragen Topf und Art; Knopf
   „Bescheid erstellen (Land)" / „Rechnung erstellen (Schulträger)" nur mit Recht; darunter
   die Briefe mit Nummer, Frist, Status, „Nachdruck", „An die Schulaufsicht übergeben".
 - **Mahnwesen:** Auswahl-Modus bekommt neben „Mahnbriefe drucken" den Knopf
@@ -264,7 +264,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    (Migration 110, `pkg/ersatzwert`, `pdf/bescheid.go`, `repository/bescheid.go`,
    `api/schaden/bescheid.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
    Abweichungen vom Plan oben, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
-   statt in der Schülerakte (dort steht, wer überfällig ist); `schadensfaelle.art` hat
+   statt in der Leserakte (dort steht, wer überfällig ist); `schadensfaelle.art` hat
    **zwei** Werte statt drei (genau die zwei Kästchen des Formulars — „Verlust" IST die
    erste Gruppe); `schueler_id` ist **SET NULL** statt RESTRICT (der Brief überlebt die
    DSGVO-Löschung als Beleg ohne Person, RESTRICT hätte die berechtigte Löschung

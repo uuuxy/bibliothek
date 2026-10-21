@@ -355,7 +355,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 - **Handanlage:** Das Geburtsdatum ist beim manuellen Anlegen Pflicht (UI + API) — es ist die einzige Brücke zum späteren Import; ohne Datum entstünde zwangsläufig ein Duplikat.
 - **Neue Kontaktdaten:** Es werden Anschriften und Eltern-E-Mails importiert, jedoch _ausschließlich_ zum Zweck der Rechnungs- und Mahnungsstellung. **LUSD bleibt führend** (Entscheidung 02.09.2026): Ein gefüllter Exportwert überschreibt den Bestand, ein leerer lässt ihn stehen; Handkorrekturen überleben den nächsten Import nicht.
 - **Umbenennung ohne Schüler-ID (`internal/lusd/paarung.go`, Migration 094):** Eine Namensänderung oder Datumskorrektur in der LUSD findet der Schlüssel Name + Geburtsdatum nicht; ohne Paarung würde daraus ein Abgang und eine Neuanlage. Die Vorschau bildet aus Abgängern und Neuzugängen **Paare** („Vermutlich dieselbe Person"): sicher bei gleichem **Schuleintritt** (`Schueler_Eintritt_AktuelleSchule` → `schueler.schul_eintritt_am`, zweiter Schlüssel, der jede Umbenennung übersteht) plus Name oder plus Geburtsdatum + Vorname; vermutlich bei Geburtsdatum + Name/Klasse/Anschrift oder Name + Klasse/Anschrift bei abweichendem Datum. Ein abweichender Vorname bei gleichem Geburtsdatum (Zwillinge) ist Gegen-Signal, bei Gleichstand zweier Kandidaten wird kein Paar gebildet. Der Admin kreuzt an; bestätigt behält der Datensatz UUID, Barcode, Ausleihen und Historie und bekommt Name bzw. Datum aus dem Export. Der Server nimmt nur selbst vorgeschlagene Paare an. Alles Weitere: [LUSD.md](LUSD.md) §3.
-- **Zusammenführen von Hand (`POST /api/schueler/{id}/zusammenfuehren`, eigenes Recht `merge_students`):** Das Sicherheitsnetz, wenn eine Dublette erst später auffällt. Ziel behält UUID und Barcode, die Quelle geht auf (Ausleihen, Schäden, Vormerkungen, Foto, Protokollspuren wandern; Zeile wird endgültig gelöscht), Stammdaten vom zuletzt LUSD-bestätigten Datensatz (ein aktiver schlägt einen Abgänger), Abgänger-Status und automatische Sperre werden bereinigt, eine manuelle Sperre der Quelle geht auf das Ziel über. Rückweg: ein `audit_log`-Eintrag in der Transaktion trägt Stammdaten der Quelle und die Kennungen der gewanderten Zeilen. Schülerakte → Stammdaten → „Doppelter Datensatz?". [LUSD.md](LUSD.md) §5.
+- **Zusammenführen von Hand (`POST /api/schueler/{id}/zusammenfuehren`, eigenes Recht `merge_students`):** Das Sicherheitsnetz, wenn eine Dublette erst später auffällt. Ziel behält UUID und Barcode, die Quelle geht auf (Ausleihen, Schäden, Vormerkungen, Foto, Protokollspuren wandern; Zeile wird endgültig gelöscht), Stammdaten vom zuletzt LUSD-bestätigten Datensatz (ein aktiver schlägt einen Abgänger), Abgänger-Status und automatische Sperre werden bereinigt, eine manuelle Sperre der Quelle geht auf das Ziel über. Rückweg: ein `audit_log`-Eintrag in der Transaktion trägt Stammdaten der Quelle und die Kennungen der gewanderten Zeilen. Leserakte → Stammdaten & Adresse → „Doppelter Datensatz?". [LUSD.md](LUSD.md) §5.
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 
@@ -663,7 +663,7 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   eine offene Frage an den Träger. Trägt eine Rechnung beides, stehen beide Wege mit ihrer
   Teilsumme da. Bar in der Bibliothek zu zahlen ist für Landeseigentum die Ausnahme mit
   Quittung, nicht der Weg, den die Rechnung vorsieht.
-- **Erledigt wird eine Gebühr in der Schülerakte** auf genau zwei Wegen:
+- **Erledigt wird eine Gebühr in der Leserakte** auf genau zwei Wegen:
   **„Bezahlt“** (Barzahlung an der Theke) oder **„Stornieren“** mit Pflicht-Begründung
   (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —
   bewusst nicht die Kiosk-/Helfer-Rolle. Der Betrag im revisionssicheren Audit-Eintrag
@@ -861,7 +861,7 @@ ausgeliefert wird es nur mit `view_students`.
 
 ### 18.3 Theke leeren und Sperrbildschirm
 
-Nach `theke_leeren_minuten` ohne Eingabe (Vorgabe 5) schließt sich die offene Schülerakte,
+Nach `theke_leeren_minuten` ohne Eingabe (Vorgabe 5) schließt sich die offene Leserakte,
 nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendung ist dann nicht
 mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
 Datenschutz an einer Theke, an der Schüler mitlesen können (Kategorie Datenschutz & Sitzung).

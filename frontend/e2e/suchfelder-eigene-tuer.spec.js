@@ -44,7 +44,7 @@ test('Etiketten-Titelsuche im Druck-Center fragt die Titel-Tür, nicht die Theke
 	).toEqual([]);
 });
 
-test('Vormerkungs-Schülersuche in der Buchakte fragt die Schülerdatei, nicht die Theken-Suche', async ({
+test('Vormerkungs-Schülersuche in der Buchakte fragt die Leserdatei, nicht die Theken-Suche', async ({
 	page
 }) => {
 	const s = uniqueSuffix();

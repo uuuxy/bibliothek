@@ -147,7 +147,7 @@ Hand). Ein anonymisierter Datensatz ist dafür verloren.
 
 Fällt eine Dublette erst später auf — das Kind steht mit dem alten Ausweis an der Theke und
 gilt als gesperrter Abgänger — führt ein Admin (Recht `merge_students`, „Schüler zusammenführen" — einzeln delegierbar) beide
-Datensätze zusammen: **Schülerakte → Stammdaten & Adresse → „Doppelter Datensatz?"**.
+Datensätze zusammen: **Leserakte → Stammdaten & Adresse → „Doppelter Datensatz?"**.
 
 Regeln (`repository/leser_zusammenfuehren.go`):
 

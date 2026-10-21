@@ -10,7 +10,7 @@ import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 //
 // Der Test legt einen Schüler in einer Klasse an, die garantiert hinter der Kappungsgrenze
 // sortiert, und sucht ihn. Ohne Serversuche kann er nicht gefunden werden.
-test('Schülerdatei findet auch Schüler hinter der 500er-Grenze', async ({ page }) => {
+test('Leserdatei findet auch Schüler hinter der 500er-Grenze', async ({ page }) => {
 	const s = uniqueSuffix();
 	const nachname = `Zzunsichtbar${s}`;
 
@@ -66,7 +66,7 @@ test('Schülersuche: Reihenfolge und Schreibweise des Namens sind egal', async (
 // Die Schülerdatei konnte immer schon nach der Klasse suchen. Beim Umzug der Suche auf
 // den Server wäre das beinahe stillschweigend verschwunden — die Suche an der Theke
 // kennt nur Namen und Barcodes, und beide teilen sich dasselbe Prädikat.
-test('Schülerdatei sucht auch nach Klasse — allein und zusammen mit einem Namen', async ({
+test('Leserdatei sucht auch nach Klasse — allein und zusammen mit einem Namen', async ({
 	page
 }) => {
 	const s = uniqueSuffix();

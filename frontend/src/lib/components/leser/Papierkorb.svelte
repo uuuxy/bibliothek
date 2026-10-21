@@ -45,7 +45,7 @@
 	<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
 		<h3 class="text-base font-bold text-error flex items-center gap-2">
 			<Trash class="h-5 w-5" aria-hidden="true" />
-			Gelöschte Schüler (Papierkorb)
+			Gelöschte Leser (Papierkorb)
 		</h3>
 	</div>
 

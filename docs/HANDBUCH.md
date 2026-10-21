@@ -10,7 +10,7 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
   (E-Mail + Mail-Passwort). Wer kein Konto hat, kann sich damit selbst anmelden und wird von
   der Bibliothek freigeschaltet (→ Benutzer & Rechte).
 - **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
-  Theke ohne Schülerakten, Mitarbeitende den Thekenbetrieb, Admins alles.
+  Theke ohne Leserakten, Mitarbeitende den Thekenbetrieb, Admins alles.
 
 ---
 
@@ -535,7 +535,7 @@ entsteht nur für ein Buch, dessen Frist abgelaufen ist; wurde ein Buch zwischen
 Liste und dem Druck verlängert, steht es nicht auf dem Brief.
 
 _Mahnbriefe drucken_ und den Mahnlauf bietet die Seite nur an, wenn die Rolle _Bestellungen
-verwalten_ darf (→ Benutzer & Rechte). Mit _Schülerdatei anzeigen_ allein lässt sich die Liste
+verwalten_ darf (→ Benutzer & Rechte). Mit _Leserdatei anzeigen_ allein lässt sich die Liste
 ansehen und drucken.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, dann

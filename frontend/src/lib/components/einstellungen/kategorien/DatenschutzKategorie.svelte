@@ -120,7 +120,7 @@
 			oder Schadensregulierung), die ein Abgänger ohne offene Vorgänge nur gesperrt bleibt, bevor er
 			anonymisiert wird. In dieser Zeit lässt sich eine falsche Zuordnung noch reparieren — etwa ein
 			umbenannter Schüler, den der Export ohne Schüler-ID nicht wiedererkannt hat (Zusammenführen in
-			der Schülerakte). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur
+			der Leserakte). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur
 			Datensätze, die die Karenz durchlaufen haben.
 		</p>
 		<p>Eine getippte 0 schaltet die jeweilige Frist ab bzw. anonymisiert sofort.</p>

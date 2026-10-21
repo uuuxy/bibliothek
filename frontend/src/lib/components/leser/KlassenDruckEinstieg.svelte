@@ -1,12 +1,12 @@
 <script>
 	/**
 	 * @component KlassenDruckEinstieg
-	 * Sichtbarer Einstieg für den klassenweisen Ausweisdruck: Der Weg über die Schülerdatei
+	 * Sichtbarer Einstieg für den klassenweisen Ausweisdruck: Der Weg über die Leserdatei
 	 * (Klasse suchen, Kopf-Kästchen anhaken, Aktionsleiste) funktioniert, ist aber für neue
 	 * Benutzer unauffindbar, weil die Leiste erst mit der ersten Markierung erscheint.
 	 *
 	 * Dieser Block druckt nicht selbst (keine zweite Tür zum selben Zustand): Er springt in
-	 * die Schülerdatei mit fertig markierter Klasse. Damit bleiben die Kontrollen des einen
+	 * die Leserdatei mit fertig markierter Klasse. Damit bleiben die Kontrollen des einen
 	 * Druckwegs davor, die Warnung bei fehlendem Ablaufdatum und die Startposition des
 	 * Etikettenbogens.
 	 */
@@ -28,7 +28,7 @@
 				klassen = Array.isArray(daten) ? daten : [];
 			}
 		} catch {
-			/* Ohne Klassenliste bleibt der Weg über die Schülerdatei offen. */
+			/* Ohne Klassenliste bleibt der Weg über die Leserdatei offen. */
 		}
 	});
 
@@ -41,7 +41,7 @@
 
 <div class="flex flex-col gap-4">
 	<p class="max-w-2xl text-sm text-on-surface-variant">
-		Öffnet die Schülerdatei mit fertig markierter Klasse — dort startet der Druck über die
+		Öffnet die Leserdatei mit fertig markierter Klasse — dort startet der Druck über die
 		Aktionsleiste (Ausweiskarten oder Etikettenbogen, je nach Betriebsart im Reiter
 		„Schülerausweise“).
 	</p>

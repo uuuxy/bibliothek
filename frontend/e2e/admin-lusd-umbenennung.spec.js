@@ -65,7 +65,7 @@ test('LUSD-Import: umbenannter Schüler wird als Paar erkannt und behält seinen
 // Zusammenführen von Hand: zwei Datensätze derselben Testperson, die Akte des einen
 // öffnen, den anderen suchen (auch als Abgänger auffindbar), zusammenführen. Danach ein
 // Datensatz mit dem Barcode des behaltenen und dem Namen des LUSD-frischeren.
-test('Schülerakte: zwei Datensätze zusammenführen', async ({ page }) => {
+test('Leserakte: zwei Datensätze zusammenführen', async ({ page }) => {
 	const s = uniqueSuffix();
 	seedSQL(`
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,

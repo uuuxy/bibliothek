@@ -95,7 +95,7 @@
 	{:else}
 		<Seitenrahmen>
 			<Reiter
-				etikett="Schülerdatei"
+				etikett="Leserdatei"
 				reiter={reiterListe}
 				aktiv={aktiverReiter}
 				onwahl={(id) => (aktiverReiter = id)}

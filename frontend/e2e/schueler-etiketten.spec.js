@@ -36,7 +36,7 @@ test.describe('Schüler-Etiketten', () => {
 		`);
 	});
 
-	test('Umschalter im Designer steuert den Stapeldruck der Schülerdatei', async ({ page }) => {
+	test('Umschalter im Designer steuert den Stapeldruck der Leserdatei', async ({ page }) => {
 		await uiLogin(page);
 
 		// ── Ausweis-Designer: der Schalter, wo früher „A4-Bogen" stand ──
@@ -128,7 +128,7 @@ test.describe('Schüler-Etiketten', () => {
 	// Kopf-Kästchen funktioniert, ist aber für neue Benutzer unauffindbar. Der Block
 	// im Druck-Center druckt bewusst nicht selbst — er landet VOR der Aktionsleiste,
 	// damit deren Warnungen auch auf diesem Weg vor dem Stapel stehen.
-	test('Druck-Center: „Klassenweise drucken" springt mit fertig markierter Klasse in die Schülerdatei', async ({
+	test('Druck-Center: „Klassenweise drucken" springt mit fertig markierter Klasse in die Leserdatei', async ({
 		page
 	}) => {
 		await uiLogin(page);
