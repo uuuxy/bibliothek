@@ -37,14 +37,14 @@
 			// Nur die jüngste Anfrage schreibt, aber sie schreibt in jedem Fall: Sonst blieben
 			// nach einem gescheiterten Lauf die Treffer der vorigen Suche unter dem neuen
 			// Suchtext stehen.
+			// Erst gelesen, dann verglichen: Auch das Lesen des Rumpfs dauert.
+			let liste = [];
+			let fehler = '';
+			if (res.ok) liste = (await res.json()) || [];
+			else fehler = await leseApiFehler(res);
 			if (nr !== ladeNr) return;
-			if (res.ok) {
-				zeilen = (await res.json()) || [];
-				ladefehler = '';
-			} else {
-				zeilen = [];
-				ladefehler = await leseApiFehler(res);
-			}
+			zeilen = liste;
+			ladefehler = fehler;
 		} catch (err) {
 			if (nr === ladeNr) {
 				zeilen = [];

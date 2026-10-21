@@ -97,4 +97,28 @@ describe('EhemaligeListe', () => {
 		expect(await findByText('Datenbank nicht erreichbar')).toBeTruthy();
 		expect(document.body.textContent).not.toContain('Wera Weggegangen');
 	});
+
+	// Auch das Lesen des Rumpfs dauert: Die erste Antwort kann schon da sein, während ihr Rumpf
+	// erst nach der Antwort auf die Suche gelesen ist.
+	it('zeigt nicht die Liste einer überholten Antwort, deren Rumpf zuletzt gelesen ist', async () => {
+		/** @type {(daten: unknown) => void} */
+		let gibErste = () => {};
+		const liesErste = vi.fn(() => new Promise((ja) => (gibErste = ja)));
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: true, json: liesErste }))
+			.mockResolvedValue(antwort([{ ...ehemalige[0], id: 'e2', vorname: 'Xaver' }]));
+		const { getByRole, findByRole } = render(EhemaligeListe, { onSelect: () => {} });
+		await vi.waitFor(() => expect(liesErste).toHaveBeenCalled());
+
+		await fireEvent.input(getByRole('searchbox', { name: 'Ehemalige suchen' }), {
+			target: { value: 'Xaver' }
+		});
+		await findByRole('button', { name: /Xaver Weggegangen/ });
+		gibErste(ehemalige);
+		await new Promise((fertig) => setTimeout(fertig, 20));
+
+		expect(document.body.textContent, 'die Liste der überholten Antwort steht da').not.toContain(
+			'Wera Weggegangen'
+		);
+	});
 });

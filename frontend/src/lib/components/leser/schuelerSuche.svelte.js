@@ -75,14 +75,14 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			// nach einem gescheiterten Lauf die Treffer der vorigen Suche unter dem neuen
 			// Suchtext stehen, und an der Theke bucht genau diese Form auf den falschen
 			// Schüler.
+			// Erst gelesen, dann verglichen: Auch das Lesen des Rumpfs dauert.
+			let liste = [];
+			let fehler = '';
+			if (res.ok) liste = (await res.json()) || [];
+			else fehler = await leseApiFehler(res);
 			if (nr !== ladeNr) return;
-			if (res.ok) {
-				schueler = (await res.json()) || [];
-				ladefehler = '';
-			} else {
-				schueler = [];
-				ladefehler = await leseApiFehler(res);
-			}
+			schueler = liste;
+			ladefehler = fehler;
 		} catch (err) {
 			if (nr === ladeNr) {
 				schueler = [];

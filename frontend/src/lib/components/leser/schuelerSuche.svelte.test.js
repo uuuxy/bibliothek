@@ -61,6 +61,42 @@ describe('Leserdatei-Suche', () => {
 		}
 	});
 
+	// Auch das Lesen des Rumpfs dauert: Die Antwort der älteren Suche kann schon da sein, während
+	// ihr Rumpf erst nach der neueren gelesen ist.
+	it('lässt eine überholte Antwort nicht gewinnen, deren Rumpf zuletzt gelesen ist', async () => {
+		/** @type {(daten: unknown) => void} */
+		let gibAlt = () => {};
+		const liesAlt = vi.fn(() => new Promise((ja) => (gibAlt = ja)));
+		// Nach der Adresse, denn der Store holt beim Erzeugen auch die Jahrgänge.
+		let ersteListe = true;
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			if (!String(url).startsWith('/api/schueler')) return ok([]);
+			if (!ersteListe) return ok([{ id: 's2', vorname: 'Xaver', nachname: 'Neu', klasse: '08B' }]);
+			ersteListe = false;
+			return /** @type {any} */ ({ ok: true, json: liesAlt });
+		});
+		/** @type {any} */
+		let suche;
+		const stopp = $effect.root(() => {
+			suche = erzeugeSchuelerSuche(() => {});
+		});
+		try {
+			// Der Lauf beim Erzeugen ist der alte: Er liest seinen Rumpf, wenn die neue Suche beginnt.
+			await vi.waitFor(() => expect(liesAlt).toHaveBeenCalled());
+			suche.suchtext = 'Xaver';
+			await suche.lade();
+			gibAlt(treffer);
+			await new Promise((fertig) => setTimeout(fertig, 20));
+
+			expect(
+				suche.schueler.map((/** @type {any} */ s) => s.id),
+				'unter dem neuen Suchtext stehen die Treffer der älteren Suche'
+			).toEqual(['s2']);
+		} finally {
+			stopp();
+		}
+	});
+
 	// Die Leserdatei zeigt Schüler UND Kollegium. Dass sie das tut, hängt an einem
 	// Zusatz an der Adresse: GET /api/schueler liefert ohne `art=alle` nur Schüler —
 	// die Vorgabe gilt den anderen Aufrufern derselben Tür (Reiter „Ehemalige",

@@ -160,6 +160,37 @@ describe('useLeserakte.ladeAkte', () => {
 		expect(st.laedt).toBe(false);
 	});
 
+	// Auch das Lesen eines Rumpfs dauert: Die Antworten zu A können schon da sein, während der
+	// Rumpf ihrer Schadensfälle erst nach der ganzen Akte von B gelesen ist.
+	it('mischt keine Schadensfälle des vorigen Lesers in die Akte, deren Rumpf zuletzt gelesen ist', async () => {
+		/** @type {(daten: unknown) => void} */
+		let gibFaelleA = () => {};
+		const faelleA = vi.fn(() => new Promise((ja) => (gibFaelleA = ja)));
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			const u = String(url);
+			const istA = u.includes('/A');
+			if (u.includes('schadensfaelle'))
+				return /** @type {any} */ (
+					istA ? { ok: true, json: faelleA } : ok({ data: [{ id: 'fall-B' }] })
+				);
+			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
+			if (u.includes('bescheide')) return /** @type {any} */ (ok({ data: [] }));
+			return /** @type {any} */ (ok({ id: istA ? 'A' : 'B' }));
+		});
+		const st = useLeserakte();
+		const langsam = st.ladeAkte('A');
+		await vi.waitFor(() => expect(faelleA).toHaveBeenCalled());
+		await st.ladeAkte('B');
+		gibFaelleA({ data: [{ id: 'fall-A' }] });
+		await langsam;
+
+		expect(st.akte?.id).toBe('B');
+		expect(
+			st.gebuehren.map((/** @type {any} */ f) => f.id),
+			'„Zahlung verbucht" schriebe auf den Schadensfall von A'
+		).toEqual(['fall-B']);
+	});
+
 	it('schließt beim Schülerwechsel jedes offene Blatt', () => {
 		const st = useLeserakte();
 		st.bearbeitenOffen = true;

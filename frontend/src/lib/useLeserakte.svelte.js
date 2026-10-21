@@ -55,10 +55,9 @@ export function useLeserakte() {
 				apiFetch(`/api/schueler/${studentId}/schadensfaelle`),
 				apiFetch(`/api/schueler/${studentId}/bescheide`)
 			]);
-			if (meine !== laufNr) return; // eine jüngere Akte ist schon unterwegs oder da
-			// Jede der vier Antworten wird zugewiesen, auch wenn sie scheitert: Sonst behielte ein
-			// Teil die Werte des vorher geöffneten Lesers, und „Zahlung verbucht" schriebe auf dessen
-			// Schadensfall. Ein Ausfall wird vermerkt; 403 heißt nur, keine Liste zu zeigen.
+			// Jede der vier Antworten wird zugewiesen, auch wenn sie scheitert, und erst nach dem Lesen
+			// aller Körper (wie useBuchakte): Sonst stünden Teile des vorher geöffneten Lesers da, und
+			// „Zahlung verbucht" schriebe auf dessen Schadensfall. 403 heißt nur, keine Liste zu zeigen.
 			const fehlend = /** @type {string[]} */ ([]);
 			/** @param {Response} res @param {string} name @param {(json: any) => any[]} auspacken */
 			const listeOderVermerk = async (res, name, auspacken) => {
@@ -66,18 +65,19 @@ export function useLeserakte() {
 				if (res.status !== 403) fehlend.push(name);
 				return [];
 			};
-			akte = resProfile.ok ? await resProfile.json() : null;
-			vormerkungen = await listeOderVermerk(resVormerkungen, 'Vormerkungen', (j) => j);
-			gebuehren = await listeOderVermerk(resGebuehren, 'Gebühren', (j) => j.data);
-			bescheide = await listeOderVermerk(resBescheide, 'Bescheide', (j) => j.data);
+			const neu = await Promise.all([
+				resProfile.ok ? resProfile.json() : null,
+				listeOderVermerk(resVormerkungen, 'Vormerkungen', (j) => j),
+				listeOderVermerk(resGebuehren, 'Gebühren', (j) => j.data),
+				listeOderVermerk(resBescheide, 'Bescheide', (j) => j.data)
+			]);
+			if (meine !== laufNr) return;
+			[akte, vormerkungen, gebuehren, bescheide] = neu;
 			fehlendeListen = fehlend;
 		} catch (err) {
 			if (meine !== laufNr) return;
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
-			akte = null;
-			vormerkungen = [];
-			gebuehren = [];
-			bescheide = [];
+			[akte, vormerkungen, gebuehren, bescheide] = [null, [], [], []];
 			fehlendeListen = ['Vormerkungen', 'Gebühren', 'Bescheide'];
 		} finally {
 			if (meine === laufNr) laedt = false;
