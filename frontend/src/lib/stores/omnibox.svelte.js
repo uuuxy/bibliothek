@@ -162,11 +162,11 @@ export function erzeugeOmniboxStore() {
 		fokusTimer = null;
 	}
 
-	// Liest die Fehlermeldung aus einer nicht-ok HTTP-Antwort. Bei einem
-	// Sperr-/Überfälligkeits-403 wird sperrHinweis gesetzt und BLOCK_ALERT geworfen,
-	// sonst ein generischer Fehler. Wirft in jedem Fall.
-	async function verarbeiteAktionsFehler(res, q) {
-		let errStr = await res.text();
+	// Wertet den Rumpf einer nicht-ok Antwort aus und wirft immer: bei einer Sperre BLOCK_ALERT samt
+	// sperrHinweis, sonst die Meldung. Gelesen hat ihn die Buchung, vor dem Dialog wartet nichts mehr.
+	/** @param {Response} res @param {string} rumpf @param {string} q @returns {never} */
+	function verarbeiteAktionsFehler(res, rumpf, q) {
+		let errStr = rumpf;
 		try {
 			const fehlerAntwort = JSON.parse(errStr);
 			if (fehlerAntwort.error) errStr = fehlerAntwort.error;

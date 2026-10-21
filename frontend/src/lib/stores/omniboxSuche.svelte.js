@@ -64,6 +64,9 @@ export function erzeugeOmniboxSuche({ leseEingabe, setzeEingabe, fuehreAktionAus
 					return;
 				}
 				const ergebnisse = await res.json();
+				// Auch das Lesen dauert: Inzwischen kann ein neuer Lauf begonnen oder die Theke
+				// geleert sein.
+				if (seq !== suchLauf) return;
 				suchTreffer = {
 					students: ergebnisse.students || [],
 					books: ergebnisse.books || [],

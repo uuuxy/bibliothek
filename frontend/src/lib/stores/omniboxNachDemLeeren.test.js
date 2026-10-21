@@ -173,6 +173,110 @@ describe('Eine Antwort, die erst nach „Theke leeren" ankommt', () => {
 	});
 });
 
+/**
+ * Die Antwort steht schon, ihr Rumpf kommt erst, wenn der Test ihn freigibt: Auch das Lesen
+ * ist ein eigener Schritt, in dem die Theke geleert werden kann.
+ * @param {Record<string, unknown>} kopf @param {'json' | 'text'} [art]
+ */
+function halteRumpf(kopf, art = 'json') {
+	/** @type {(inhalt: unknown) => void} */
+	let gib = () => {};
+	/** @type {(grund: Error) => void} */
+	let verwirf = () => {};
+	const lies = vi.fn(
+		() =>
+			new Promise((ja, nein) => {
+				gib = ja;
+				verwirf = nein;
+			})
+	);
+	vi.mocked(apiClient.post).mockResolvedValueOnce(/** @type {any} */ ({ ...kopf, [art]: lies }));
+	return {
+		gelesen: () => expect(lies).toHaveBeenCalled(),
+		/** @param {unknown} inhalt */
+		gib: (inhalt) => gib(inhalt),
+		/** @param {Error} grund */
+		verwirf: (grund) => verwirf(grund)
+	};
+}
+
+/**
+ * Scannt, wartet, bis die Theke den Rumpf liest, und leert sie dann. Die Buchung kommt in einem
+ * Objekt zurück: Als Rückgabewert der async-Funktion würde auf sie gewartet.
+ * @param {string} code @param {{ gelesen: () => void }} rumpf
+ */
+async function scanneUndLeereBeimLesen(code, rumpf) {
+	omniboxStore.eingabe = code;
+	const laeuft = omniboxStore.fuehreAktionAus(null, null);
+	await vi.waitFor(rumpf.gelesen);
+	thekeLeeren();
+	return { laeuft };
+}
+
+describe('Eine Antwort, deren Rumpf erst nach „Theke leeren" gelesen ist', () => {
+	it('lädt keinen Leser mehr', async () => {
+		const ausweis = halteRumpf({ ok: true, status: 200 });
+		const { laeuft } = await scanneUndLeereBeimLesen('S-7', ausweis);
+		ausweis.gib({ type: 'student', student: MIA, abholbereit: [{ titel: 'Natura 2' }] });
+		await laeuft;
+
+		expect(omniboxStore.aktiverLeser, 'der nächste Bediener sähe Mias Konto').toBeNull();
+		expect(omniboxStore.abholbereit).toEqual([]);
+	});
+
+	it('öffnet keine Rückfrage zur Sperre', async () => {
+		omniboxStore.aktiverLeser = MIA;
+		const buch = halteRumpf(
+			{ ok: false, status: 403, headers: new Headers({ 'X-Sperre': 'leser' }) },
+			'text'
+		);
+		const { laeuft } = await scanneUndLeereBeimLesen('B-1', buch);
+		buch.gib(JSON.stringify({ error: 'Mia Muster ist gesperrt.' }));
+		await laeuft;
+
+		expect(omniboxStore.sperrHinweis, 'der Sperrgrund gehört zum vorigen Leser').toBeNull();
+		expect(omniboxStore.rueckmeldung.fehler).toBe('');
+	});
+
+	it('lädt nach einem gemerkten Ausweis keinen Leser und legt das Buch mit dem Ausweis ab', async () => {
+		omniboxStore.offlineAusweis = 'S-7';
+		const aufloesung = halteRumpf({ ok: true, status: 200 });
+		const { laeuft } = await scanneUndLeereBeimLesen('B-1', aufloesung);
+		aufloesung.gib({ type: 'student', student: MIA });
+		await laeuft;
+
+		expect(omniboxStore.aktiverLeser, 'der nächste Bediener sähe Mias Konto').toBeNull();
+		expect(gesendet(), 'ohne Leser wäre das Buch am Server eine Rückgabe').toEqual(['S-7']);
+		const abgelegt = (await ladeWarteschlange()).map(
+			(e) => `${e.barcode} ${e.art} ${e.ausweis_barcode}`
+		);
+		expect(abgelegt).toEqual(['B-1 ausleihe S-7']);
+	});
+
+	it('meldet keinen Fehler, wenn das Lesen nach dem Leeren scheitert', async () => {
+		const ausweis = halteRumpf({ ok: true, status: 200 });
+		const { laeuft } = await scanneUndLeereBeimLesen('S-7', ausweis);
+		ausweis.verwirf(new SyntaxError('Unexpected end of JSON input'));
+		await laeuft;
+
+		expect(omniboxStore.rueckmeldung.fehler, 'der nächste Bediener läse einen fremden Fehler').toBe(
+			''
+		);
+	});
+
+	it('nennt den gemerkten Ausweis nicht, wenn das Lesen seiner Auflösung nach dem Leeren scheitert', async () => {
+		omniboxStore.offlineAusweis = 'S-7';
+		const aufloesung = halteRumpf({ ok: true, status: 200 });
+		const { laeuft } = await scanneUndLeereBeimLesen('B-1', aufloesung);
+		aufloesung.verwirf(new SyntaxError('Unexpected end of JSON input'));
+		await laeuft;
+
+		expect(omniboxStore.rueckmeldung.fehler, 'das Banner nennt die Nummer des vorigen Lesers').toBe(
+			''
+		);
+	});
+});
+
 describe('Eine Suche, die erst nach „Theke leeren" antwortet', () => {
 	it('füllt die Trefferliste nicht wieder mit Namen', async () => {
 		/** @type {(a: any) => void} */
@@ -185,6 +289,23 @@ describe('Eine Suche, die erst nach „Theke leeren" antwortet', () => {
 
 		thekeLeeren();
 		antworte(antwort({ students: [MIA], books: [], students_total: 1 }));
+		await new Promise((fertig) => setTimeout(fertig, 20));
+
+		expect(omniboxStore.suche.trefferlisteOffen, 'der nächste Bediener sähe Mia').toBe(false);
+		expect(omniboxStore.suche.suchTreffer.students).toEqual([]);
+	});
+
+	it('füllt die Trefferliste nicht wieder, wenn erst ihr Rumpf nach dem Leeren gelesen ist', async () => {
+		/** @type {(daten: unknown) => void} */
+		let gib = () => {};
+		const lies = vi.fn(() => new Promise((ja) => (gib = ja)));
+		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ ({ ok: true, json: lies }));
+		omniboxStore.eingabe = 'Mus';
+		omniboxStore.suche.verarbeiteEingabe();
+		await vi.waitFor(() => expect(lies).toHaveBeenCalled(), { timeout: 1000 });
+
+		thekeLeeren();
+		gib({ students: [MIA], books: [], students_total: 1 });
 		await new Promise((fertig) => setTimeout(fertig, 20));
 
 		expect(omniboxStore.suche.trefferlisteOffen, 'der nächste Bediener sähe Mia').toBe(false);

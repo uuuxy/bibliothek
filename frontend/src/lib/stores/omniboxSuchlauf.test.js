@@ -60,6 +60,36 @@ describe('Omnibox-Suchlauf', () => {
 		).toBe('Schmidt');
 	});
 
+	// Auch das Lesen des Rumpfs dauert: Die Antwort des alten Laufs kann schon da sein, während
+	// ihr Rumpf erst nach dem neuen fertig ist.
+	it('verwirft auch eine überholte Antwort, deren Rumpf zuletzt gelesen ist', async () => {
+		const store = erzeugeOmniboxStore();
+		/** @type {(daten: unknown) => void} */
+		let alterRumpf = () => {};
+		vi.mocked(apiFetch)
+			.mockImplementationOnce(
+				async () =>
+					/** @type {any} */ ({ ok: true, json: () => new Promise((ja) => (alterRumpf = ja)) })
+			)
+			.mockImplementation(async () => treffer('Schmidt'));
+
+		store.eingabe = 'Mül';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+
+		store.eingabe = 'Schmidt';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(/** @type {any} */ (store.suche.suchTreffer.students[0]).id).toBe('Schmidt');
+
+		alterRumpf({ students: [{ id: 'Müller', vorname: 'Müller', nachname: 'Test' }], books: [] });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(
+			/** @type {any} */ (store.suche.suchTreffer.students[0]).id,
+			'der Rumpf des überholten Laufs hat die Trefferliste überschrieben'
+		).toBe('Schmidt');
+	});
+
 	it('füllt eine geleerte Liste nicht nachträglich wieder', async () => {
 		const store = erzeugeOmniboxStore();
 		/** @type {(r: Response) => void} */

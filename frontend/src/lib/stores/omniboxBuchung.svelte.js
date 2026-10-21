@@ -24,7 +24,7 @@ import { ordneScanEin } from '../scanEinordnen.js';
  *   leereHinweiszeilen: () => void,
  *   schnappschuss: (q: string, schluessel: string, absicht: Auftrag['absicht']) => OfflineEintrag,
  *   verarbeiteVersandfehler: (e: unknown, eintrag: OfflineEintrag) => Promise<boolean>,
- *   verarbeiteAktionsFehler: (res: Response, q: string) => Promise<void>,
+ *   verarbeiteAktionsFehler: (res: Response, rumpf: string, q: string) => never,
  *   verarbeiteAktionsErgebnis: (daten: any, reloadProfileCb: any, q?: string,
  *     overrideBlock?: boolean) => boolean,
  *   verarbeiteAntwortfehler: (e: unknown) => void,
@@ -57,6 +57,9 @@ export function erzeugeOmniboxBuchung({
 		stand += 1;
 	}
 
+	// Erst nach dem Lesen fragt die Buchung, ob die Theke geleert wurde: Auch das Lesen dauert.
+	const leseRumpf = (/** @type {Response} */ res) => (res.ok ? res.json() : res.text());
+
 	/**
 	 * Löst einen ohne Netz gemerkten Ausweis auf, bevor das nächste Buch hinausgeht: Ohne
 	 * Leser-Kennung läse der Server den Scan als Rückgabe.
@@ -86,12 +89,14 @@ export function erzeugeOmniboxBuchung({
 			query: gemerkt,
 			idempotency_key: crypto.randomUUID()
 		});
-		if (ueberholt()) return false;
 
 		try {
-			if (!res.ok) await verarbeiteAktionsFehler(res, gemerkt); // wirft immer
-			verarbeiteAktionsErgebnis(await res.json(), reloadProfileCb, gemerkt);
+			const rumpf = await leseRumpf(res);
+			if (ueberholt()) return false;
+			if (!res.ok) verarbeiteAktionsFehler(res, rumpf, gemerkt); // wirft immer
+			verarbeiteAktionsErgebnis(rumpf, reloadProfileCb, gemerkt);
 		} catch (e) {
+			if (ueberholt()) return false;
 			verarbeiteAntwortfehler(e);
 		}
 
@@ -177,15 +182,14 @@ export function erzeugeOmniboxBuchung({
 		} catch (e) {
 			return legeAb(e);
 		}
-		if (ueberholt()) return true;
 
 		try {
-			if (!res.ok) {
-				await verarbeiteAktionsFehler(res, q); // wirft immer
-			}
-			const daten = await res.json();
-			return verarbeiteAktionsErgebnis(daten, reloadProfileCb, q, overrideBlock);
+			const rumpf = await leseRumpf(res);
+			if (ueberholt()) return true;
+			if (!res.ok) verarbeiteAktionsFehler(res, rumpf, q); // wirft immer
+			return verarbeiteAktionsErgebnis(rumpf, reloadProfileCb, q, overrideBlock);
 		} catch (e) {
+			if (ueberholt()) return true;
 			leuchteRand('red');
 			verarbeiteAntwortfehler(e);
 			return false;
