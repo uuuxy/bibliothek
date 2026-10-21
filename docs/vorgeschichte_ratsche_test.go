@@ -39,7 +39,7 @@ var bestandVorgeschichte = map[string]struct {
 	"docs/FACHKONZEPT.md":             {45, "Entscheidungen, darunter die verworfenen Vorschläge in §20, und Messungen"},
 	"docs/littera_schema_befund.md":   {20, "Zählungen an den Sicherungen und Exporten von Littera, Entscheidungen"},
 	"docs/sweeps.md":                  {14, "Durchsichten über den Bestand und Messungen mit Tag"},
-	"docs/PFLEGEKONZEPT.md":           {14, "Entscheidungen der Schule, die Messungen in Abschnitt 6"},
+	"docs/PFLEGEKONZEPT.md":           {11, "Entscheidungen der Schule, die Messungen in Abschnitt 6"},
 	"docs/invarianten.md":             {11, "Entscheidungen und Messungen zu einzelnen Invarianten"},
 	"docs/mittel_konzept.md":          {10, "Entscheidungen der Schule, Antworten der Servicestelle"},
 	"docs/SECURITY.md":                {8, "Entscheidungen, Proben am Mailserver, Fassung der Excel-Bibliothek"},

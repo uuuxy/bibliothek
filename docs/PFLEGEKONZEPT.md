@@ -58,10 +58,10 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 4. **Auf den Server** kommt ein Stand nur von Hand, mit `update.sh`: Vorab-Sicherung der
    Datenbank → Bau des neuen Stands → Gesundheitsprüfung → Abgleich, ob der laufende Stand der
    eingespielte ist ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4 und §7). Ein automatisches Update gibt
-   es nicht. `update.sh` fragt nicht ab, ob die Prüfläufe des Stands auf GitHub grün sind.
-   **Entschieden am 28.09.2026:** Der Schulserver bekommt nur Releases, der Testserver folgt
-   `main` als Vorstufe. `update.sh` holt mit `git pull` den neuesten Stand des Zweigs;
-   der Weg über Releases ist nicht gebaut ([OFFEN.md](OFFEN.md) 5.31).
+   es nicht. **Entschieden am 28.09.2026:** Der Schulserver bekommt nur Releases, der
+   Testserver folgt `main` als Vorstufe. Welchen Stand `update.sh` holt, sagt `UPDATE_STAND` in
+   der `.env`: `release` das neueste Release, `main` (oder kein Eintrag) den Zweig, ohne zu
+   fragen, ob seine Prüfläufe grün sind.
 5. **Die Datenbank** passt sich beim Start selbst an (Migrationen). Migrationen laufen nur
    vorwärts: Zurück geht es über die Vorab-Sicherung, nicht über den alten Code allein.
 
@@ -105,11 +105,11 @@ das Vorschläge selbst erzeugt — wird vor dem Übernehmen so geprüft:
 ### 3.1 Ein Update einspielen
 
 1. Auf GitHub nachsehen, ob die Prüfläufe des neuesten Stands grün sind, und die Hinweise
-   zum Einspielen lesen (Release-Notiz). Am Schulserver wird nur ein Release eingespielt; der
-   Weg dafür ist noch nicht gebaut (Abschnitt 2).
-2. Am Server im Programmverzeichnis erst `git pull`, dann `./update.sh` — zwei getrennte
-   Befehle, weil sonst die alte Fassung des Skripts das Update fährt
-   ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
+   zum Einspielen lesen (Release-Notiz). Am Schulserver wird nur ein Release eingespielt
+   (Abschnitt 2).
+2. Am Schulserver im Programmverzeichnis `./update.sh`; es wechselt selbst auf das neueste
+   Release. Am Testserver erst `git pull`, dann `./update.sh` — zwei getrennte Befehle, weil
+   sonst die alte Fassung des Skripts das Update fährt ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
 3. **Erfolg** heißt: Das Skript endet mit „UPDATE ERFOLGREICH ABGESCHLOSSEN", und unter
    System → Einstellungen → Betriebsbereitschaft steht kein kritischer Befund.
 4. **Misserfolg:** Das Skript bricht ab und gibt eine Anleitung zum Zurückgehen aus: den
@@ -172,9 +172,9 @@ einmal allein, nur mit diesen Seiten.
 | Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                                                          |
 | Runner-Abbild der Prüfläufe  | wenn GitHub ein neues Ubuntu-Abbild bereitstellt oder das eingesetzte abkündigt; eingesetzt ist `ubuntu-26.04` | Ankündigung von GitHub; alle vier Workflows nennen das Abbild fest, `ubuntu-latest` nimmt keiner | Probelauf mit `gh workflow run ci.yml -f runner=<Abbild>`, dann `runs-on` in allen vier Workflows umstellen und den Namen in `.github/actionlint.yaml` eintragen, solange actionlint ihn nicht kennt; den ersten Lauf je Workflow ansehen |
 | PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                                                             |
-| PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | bringt das Image eine neue ICU-Fassung, steht im Log der Datenbank `collation "deutsch" has version mismatch`                                    | entschieden am 28.09.2026: `update.sh` holt das Datenbank-Image bei jedem Update neu; nicht gebaut ([OFFEN.md](OFFEN.md) 5.31). Nach der Warnung einmal `ALTER COLLATION deutsch REFRESH VERSION`; kein Index benutzt die Kollation, neu aufzubauen ist nichts (Migration 165) |
-| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`. Umgesetzt ist das über den Build-Cache: `update.sh` leert ihn nach jedem Update, das folgende baut die Schicht mit `apk upgrade` neu; `--pull` für die Basis-Images steht aus ([OFFEN.md](OFFEN.md) 5.31)                        |
-| Update einspielen            | mindestens einmal im Monat, auch ohne neue Funktionen (entschieden am 28.09.2026)                                           | —                                                                                                                                                | ein Update nach 3.1; sobald 5.31 gebaut ist, holt es dabei die Sicherheitskorrekturen von Datenbank und Paketen                                                                                                                      |
+| PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | bringt das Image eine neue ICU-Fassung, steht im Log der Datenbank `collation "deutsch" has version mismatch`                                    | `update.sh` holt das Datenbank-Image bei jedem Update neu (Schritt 3); eine Nebenversion braucht weder Sicherung noch Neuaufbau, und die Datenbank sortiert ohne Sprachregeln (`datlocprovider` = c), ein neues Alpine ändert also keine Indizes. Nach der Warnung einmal `ALTER COLLATION deutsch REFRESH VERSION`; kein Index benutzt die Kollation, neu aufzubauen ist nichts (Migration 165) |
+| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | `update.sh` baut mit `--pull` und leert danach den Build-Cache: Das nächste Update holt die Basis-Images neu und baut die Schicht mit `apk upgrade` neu                        |
+| Update einspielen            | mindestens einmal im Monat, auch ohne neue Funktionen (entschieden am 28.09.2026)                                           | —                                                                                                                                                | ein Update nach 3.1; es holt dabei die Sicherheitskorrekturen von Datenbank und Paketen                                                                                                                      |
 | Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/sommerferien.go`, `uebrige_ferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                 |
 | Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                                                                  |
 
@@ -485,14 +485,12 @@ Dokuments.
 1. **Betriebssystem und Docker auf dem Server:** vorgesehen ist die IT des Schulträgers, mit
    automatischen Sicherheitsupdates in der Nacht (entschieden am 28.09.2026); die Zusage des
    Schulträgers steht aus.
-2. **`update.sh` für den Schulserver:** nur Releases einspielen und die Images bei jedem Update
-   frisch holen — entschieden am 28.09.2026, nicht gebaut ([OFFEN.md](OFFEN.md) 5.31).
-3. **Erreichbarkeit von außen:** entschieden am 28.09.2026 — von außen nur die Seite für die
+2. **Erreichbarkeit von außen:** entschieden am 28.09.2026 — von außen nur die Seite für die
    Lieferanten, alles andere nur aus dem Schulnetz. Offen sind die Sperre am Eingang und die
    Angaben des Schulträgers dazu: Name im Internet, Freigabe von Port 443, Absenderadresse der
    Schulgeräte ([OFFEN.md](OFFEN.md) 4.23).
-4. **Vertretung:** noch nicht benannt.
-5. **Betrieb:** Sicherung außer Haus (entschieden am 28.09.2026: zuerst beim Schulträger nach
+3. **Vertretung:** noch nicht benannt.
+4. **Betrieb:** Sicherung außer Haus (entschieden am 28.09.2026: zuerst beim Schulträger nach
    einem Speicher fragen), externes Signal bei Ausfall, Probe der Wiederherstellung an einem
    fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
 

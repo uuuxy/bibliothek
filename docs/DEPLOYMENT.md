@@ -216,17 +216,28 @@ docker compose --env-file .env up -d --build
 
 ### 2.4 Deployment-Skript
 
-Der übliche Weg auf dem Server ist `./update.sh`:
+Der übliche Weg auf dem Server ist `./update.sh`. Welchen Stand es einspielt, sagt
+`UPDATE_STAND` in der `.env`.
+
+**Testserver** (`main` oder kein Eintrag): erst den Zweig holen, dann das Skript, getrennt,
+weil das Skript sich sonst in der gerade laufenden Fassung selbst aktualisiert.
 
 ```bash
 git pull && ./update.sh
 ```
 
-`git pull` zuerst und getrennt, weil das Skript sich sonst in der gerade laufenden
-Fassung selbst aktualisiert.
+**Schulserver** (`UPDATE_STAND=release`): nur das Skript. Es holt die Tags und wechselt auf das
+neueste Release `vX.Y.Z`. Gibt es keines oder liegt es vor dem Stand am Server, bricht es vor der
+Sicherung ab: Migrationen laufen nur vorwärts, zurück geht es nur über eine Sicherung (§6). Eine
+neue Fassung des Skripts wirkt dort erst beim nächsten Lauf.
 
-Führt aus: **Backup** → `git pull` → `docker compose up -d --build` →
-**Gesundheitsprüfung** → alte Backups aufräumen. Bei Fehlschlag bricht es ab und gibt
+```bash
+./update.sh
+```
+
+Führt aus: **Backup** → Code (das neueste Release oder `git pull`) → Datenbank-Image holen,
+Backend mit frischen Basis-Images bauen (`--pull`), starten → **Gesundheitsprüfung** → alte
+Backups aufräumen. Bei Fehlschlag bricht es ab und gibt
 eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus. Den Commit, auf den sie
 zurückführt, liest es aus dem laufenden Image (`GIT_COMMIT`), nicht aus dem
 Arbeitsverzeichnis — nach dem vorgezogenen `git pull` stünde dort schon der neue Stand.
@@ -251,8 +262,8 @@ cd /root/bibliothek
 grep -q '^SELBSTANMELDUNG_DOMAIN=' .env || echo 'SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de' >> .env
 grep '^SELBSTANMELDUNG_DOMAIN=' .env
 
-# Stack neu starten (liest die .env neu ein)
-git pull && ./update.sh
+# Stack neu starten (liest die .env neu ein); am Testserver vorher git pull
+./update.sh
 ```
 
 **Kontrolle** (eines von beiden genügt):
@@ -524,7 +535,7 @@ Zwei Dinge laufen automatisch, ein drittes bewusst nicht:
 | --------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | Push auf `main`       | Image `ghcr.io/uuuxy/bibliothek:latest` + `main-<kurz-sha>`                                           | `docker-publish.yml`                 |
 | Git-Tag `v1.2.3`      | Image `1.2.3` und `1.2` (**kein** `latest`, siehe unten) **und** GitHub-Release mit generierten Notes | `docker-publish.yml` + `release.yml` |
-| Deploy auf dem Server | **nicht** automatisch — `./update.sh` (git pull + lokaler Build), siehe §2                            | —                                    |
+| Deploy auf dem Server | **nicht** automatisch — `./update.sh` (Release oder git pull, lokaler Build), siehe §2                          | —                                    |
 
 **Welche Zahl steigt** (entschieden am 17.09.2026):
 
@@ -595,6 +606,7 @@ davor gesetzt (`gh release edit vX.Y.Z --notes-file …`). Für die Tag-Annotati
 ein sprechender Text (`-m "vX.Y.Z — drei Stichworte"`), er ist die einzige Beschreibung
 in `git tag -n`.
 
-**Deploy-Weg bleibt `git pull` + lokaler Build** (`update.sh`); die ghcr-Images sind
+**Deploy-Weg bleibt `update.sh` mit lokalem Build** (am Schulserver das Release-Tag, am
+Testserver `git pull`); die ghcr-Images sind
 Nachweis und Artefakt, kein zweiter Deploy-Pfad. Rollback = Backup zurückspielen
 (Abschnitt 6); Migrationen laufen nur vorwärts.

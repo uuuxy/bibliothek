@@ -4,8 +4,9 @@
 # ==============================================================================
 # Ablauf:
 #   1. pg_dump Backup mit Zeitstempel → ./backups/
-#   2. git pull (neuesten Code holen)
-#   3. docker compose up -d --build (rebuild & restart)
+#   2. Code holen: am Schulserver das neueste Release (UPDATE_STAND=release), am Testserver
+#      git pull (main, auch ohne Eintrag)
+#   3. Frische Images: Datenbank-Image holen, Backend mit --pull bauen, dann starten
 #   4. Bei Fehler: Abbruch + Rollback-Anleitung
 #   5. Nach erfolgreichem Deploy: Vorab-Sicherung verschlüsseln, Klartext löschen
 #   6. Alte Backups aufräumen: vordeploy_ älter als 30 Tage, Klartext älter als 2 Tage.
@@ -46,6 +47,14 @@ BACKUP_RETENTION_DAYS=30
 # gebraucht worden oder war nie nötig, aber in keinem Fall soll sie einen Monat lang
 # jeden Schülernamen im Klartext auf der Platte halten.
 KLARTEXT_RETENTION_DAYS=2
+
+# Welcher Stand eingespielt wird, steht als UPDATE_STAND in der .env: release am Schulserver, das
+# neueste Release-Tag vX.Y.Z (ein Release entsteht nur mit grünen Pflichtprüfungen,
+# scripts/tag-gate.sh); main am Testserver, der Zweig, wie er ist. Ohne Eintrag gilt main, so
+# läuft eine .env ohne die Zeile weiter wie bisher.
+UPDATE_STAND="$(sed -n "s/^UPDATE_STAND=[\"']*\([^\"' #]*\).*/\1/p" "$(cd "$(dirname "$0")" && pwd)/.env" 2>/dev/null | tail -1 || true)"
+UPDATE_STAND="${UPDATE_STAND:-main}"
+ZIEL_TAG=""
 
 DB_CONTAINER="bibliothek-db"
 DB_USER="postgres"
@@ -170,6 +179,37 @@ if ! docker info &>/dev/null; then
     exit 1
 fi
 
+# Das Release wird vor der Sicherung bestimmt: Gibt es keines, bricht das Update ab, bevor es
+# etwas getan hat.
+case "${UPDATE_STAND}" in
+    main)
+        log_info "Stand: main, der Zweig, wie er ist."
+        ;;
+    release)
+        if ! git -C "$(dirname "$0")" fetch --quiet --tags --force origin; then
+            log_error "Die Releases ließen sich nicht holen (git fetch --tags)."
+            exit 1
+        fi
+        ZIEL_TAG="$(git -C "$(dirname "$0")" tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)"
+        if [ -z "${ZIEL_TAG}" ]; then
+            log_error "Kein Release gefunden (Tag vX.Y.Z). Ein Release entsteht mit scripts/tag-gate.sh."
+            exit 1
+        fi
+        # Nur vorwärts: Migrationen laufen nie zurück, und alter Code träfe auf ein neueres Schema.
+        # Liegt das Release vor dem Arbeitsverzeichnis, geht es zurück nur über die Vorab-Sicherung.
+        if ! git -C "$(dirname "$0")" merge-base --is-ancestor HEAD "${ZIEL_TAG}"; then
+            log_error "Das Release ${ZIEL_TAG} liegt nicht nach dem Stand im Arbeitsverzeichnis ($(git -C "$(dirname "$0")" rev-parse --short HEAD))."
+            log_error "Zurück geht es nur über eine Sicherung (DEPLOYMENT.md §6); dieses Update tut nichts."
+            exit 1
+        fi
+        log_info "Stand: Release ${ZIEL_TAG}."
+        ;;
+    *)
+        log_error "UPDATE_STAND=${UPDATE_STAND} in der .env ist unbekannt; erlaubt sind release und main."
+        exit 1
+        ;;
+esac
+
 if ! docker ps --filter "name=${DB_CONTAINER}" --filter "status=running" --format '{{.Names}}' | grep -q "${DB_CONTAINER}"; then
     log_warn "DB-Container '${DB_CONTAINER}' läuft nicht. Backup wird übersprungen."
     SKIP_BACKUP=true
@@ -230,7 +270,7 @@ else
 fi
 
 # ── Schritt 2: Neuesten Code holen ────────────────────────────────────────────
-log_step "Schritt 2: Code aktualisieren (git pull)"
+log_step "Schritt 2: Code aktualisieren"
 
 if [ -d "$(dirname "$0")/.git" ]; then
     cd "$(dirname "$0")"
@@ -240,11 +280,20 @@ if [ -d "$(dirname "$0")/.git" ]; then
         VORHER_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
         VORHER_QUELLE="arbeitsverzeichnis"
     fi
-    log_info "Führe git pull aus... (Stand vor dem Update: ${VORHER_COMMIT}, aus: ${VORHER_QUELLE})"
-    if ! git pull; then
-        log_error "git pull fehlgeschlagen!"
-        print_rollback_instructions
-        exit 1
+    if [ "${UPDATE_STAND}" = "release" ]; then
+        log_info "Wechsle auf ${ZIEL_TAG}... (Stand vor dem Update: ${VORHER_COMMIT}, aus: ${VORHER_QUELLE})"
+        if ! git checkout --quiet --detach "${ZIEL_TAG}"; then
+            log_error "git checkout ${ZIEL_TAG} fehlgeschlagen!"
+            print_rollback_instructions
+            exit 1
+        fi
+    else
+        log_info "Führe git pull aus... (Stand vor dem Update: ${VORHER_COMMIT}, aus: ${VORHER_QUELLE})"
+        if ! git pull; then
+            log_error "git pull fehlgeschlagen!"
+            print_rollback_instructions
+            exit 1
+        fi
     fi
     log_ok "Code aktualisiert."
 else
@@ -255,7 +304,7 @@ fi
 # ── Schritt 3: Container neu bauen und starten ────────────────────────────────
 log_step "Schritt 3: Docker-Container neu bauen und starten"
 
-log_info "Führe docker compose up -d --build aus..."
+log_info "Hole das Datenbank-Image, baue das Backend mit frischen Basis-Images und starte..."
 
 # Der Commit wandert als Build-Argument ins Image (Dockerfile: ARG/ENV GIT_COMMIT) und
 # wird in Schritt 4b dagegen geprüft. Ohne .git bleibt er leer — dann sagt die Prüfung
@@ -263,10 +312,15 @@ log_info "Führe docker compose up -d --build aus..."
 GIT_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
 export GIT_COMMIT
 
-if docker compose -f "${COMPOSE_FILE}" up -d --build; then
+# Frisch in beiden Fällen: Das Datenbank-Image kommt in der neuesten Nebenversion (sie braucht
+# weder Sicherung noch Neuaufbau, PFLEGEKONZEPT.md 4), der Bau holt die Basis-Images neu
+# (--pull). Sonst blieben beide auf dem Stand, der beim ersten Aufbau vorlag.
+if docker compose -f "${COMPOSE_FILE}" pull postgres-db \
+    && docker compose -f "${COMPOSE_FILE}" build --pull \
+    && docker compose -f "${COMPOSE_FILE}" up -d; then
     log_ok "Container erfolgreich neu gestartet."
 else
-    log_error "docker compose up ist fehlgeschlagen!"
+    log_error "Holen, Bauen oder Starten ist fehlgeschlagen (docker compose pull, build, up)!"
     print_rollback_instructions
     exit 1
 fi
@@ -458,7 +512,7 @@ log_ok "════════════════════════
 log_ok "  UPDATE ERFOLGREICH ABGESCHLOSSEN"
 log_ok "══════════════════════════════════════════════════"
 echo ""
-log_info "Anwendung läuft lokal auf Port 8083 und ist erreichbar unter: https://flasch3.herzog-dupont.de"
+log_info "Anwendung läuft lokal auf Port 8083 (Stand: ${ZIEL_TAG:-main $(git rev-parse --short HEAD 2>/dev/null || echo unbekannt)})."
 echo ""
 
 exit 0

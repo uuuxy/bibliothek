@@ -335,16 +335,13 @@ Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ## 3. Deployment (`./update.sh`)
 
-**Der Weg, der benutzt wird.** Auf dem Server:
+**Der Weg, der benutzt wird.** Am Testserver `git pull && ./update.sh` — `git pull` zuerst und
+getrennt, weil `update.sh` sich sonst in der gerade laufenden Fassung selbst aktualisiert. Am
+Schulserver (`UPDATE_STAND=release` in der `.env`) nur `./update.sh`: Es wechselt selbst auf das
+neueste Release ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
 
-```bash
-git pull && ./update.sh
-```
-
-`git pull` zuerst und getrennt, weil `update.sh` sich sonst in der gerade laufenden
-Fassung selbst aktualisiert.
-
-Führt aus: Backup (siehe oben) → `git pull` → `docker compose up -d --build` →
+Führt aus: Backup (siehe oben) → Code (Release oder `git pull`) → Datenbank-Image holen,
+`docker compose build --pull`, `up -d` →
 Gesundheitsprüfung (Docker-Status **und** `/health` im Container) → alte Backups
 aufräumen. Bei Fehlschlag: Abbruch mit Rollback-Anleitung, die auf das eben erzeugte
 Backup zeigt und auf den Commit des laufenden Images (`GIT_COMMIT`) — nicht auf HEAD, das

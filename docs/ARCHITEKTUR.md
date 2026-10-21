@@ -1548,12 +1548,12 @@ liest, muss in Compose ankommen.
 
 | Weg                        | Was er tut                                                                                                                                                              | Wann                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| **`./update.sh`**          | 1. `pg_dump`-Vorabsicherung → 2. `git pull` → 3. `docker compose up -d --build` → 4. Gesundheitsprüfung **und** Commit-Abgleich (`GIT_COMMIT` im Image vs. `git rev-parse HEAD`) → 5. Vorabsicherung verschlüsseln, Klartext löschen → 6. Backups > 30 Tage aufräumen → 7. Build-Cache leeren (das nächste Update baut jede Schicht neu). Bei Fehler: Abbruch **mit ausgedrucktem Rückweg** auf den Stand, der vorher lief (Commit des laufenden Images; ohne lesbares Image der Commit des Arbeitsverzeichnisses, mit Warnung) | **Der gepflegte Weg** für Updates |
+| **`./update.sh`**          | 1. `pg_dump`-Vorabsicherung → 2. Code: das neueste Release (`UPDATE_STAND=release`) oder `git pull` → 3. Datenbank-Image holen, `docker compose build --pull`, `up -d` → 4. Gesundheitsprüfung **und** Commit-Abgleich (`GIT_COMMIT` im Image vs. `git rev-parse HEAD`) → 5. Vorabsicherung verschlüsseln, Klartext löschen → 6. Backups > 30 Tage aufräumen → 7. Build-Cache leeren (das nächste Update baut jede Schicht neu). Bei Fehler: Abbruch **mit ausgedrucktem Rückweg** auf den Stand, der vorher lief (Commit des laufenden Images; ohne lesbares Image der Commit des Arbeitsverzeichnisses, mit Warnung) | **Der gepflegte Weg** für Updates |
 | `scripts/stack-neu.sh`     | Stack neu aufsetzen                                                                                                                                                      | Notfall/Neuaufbau                 |
 | `update_caddy.sh`          | Schreibt die maßgebliche Caddy-Konfiguration auf dem Server                                                                                                              | Proxy-Änderungen                  |
 
 > `update.sh` kapselt seinen gesamten Rumpf in `{ … }` mit einem `exit` **innerhalb** der
-> Klammer. Grund: Es zieht per `git pull` neuen Code und überschreibt sich dabei
+> Klammer. Grund: Es zieht per `git pull` oder `git checkout` neuen Code und überschreibt sich dabei
 > **selbst, während es läuft**. Bash merkt sich eine Position in der Datei; wird sie
 > unterwegs länger, führt bash Bruchstücke aus. `{ … }` ist
 > **ein** zusammengesetzter Befehl, den bash vollständig parst, bevor er beginnt.
