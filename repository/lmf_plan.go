@@ -117,10 +117,19 @@ func (a *LMFAbfragen) LadeNeuestenPlan(ctx context.Context, art string) (LMFPlan
 	return a.ladePlanTeile(ctx, st)
 }
 
-// SperreNeuestenPlan liest den Stempel des Plans, den der Planer zeigt (LadeNeuestenPlan),
-// und sperrt dessen Zeile bis zum Ende der Transaktion; leer, wenn es noch keinen Plan der Art
-// gibt. Ein zweites Speichern wartet so, bis das erste fertig ist, und sieht dessen Stempel.
+// lmfPlanSperre reiht die Speichern eines LMF-Plans hintereinander (SperreNeuestenPlan). Ein
+// beliebiger, aber im Projekt eindeutiger Wert.
+const lmfPlanSperre int64 = 751_2026
+
+// SperreNeuestenPlan liest den Stempel des Plans, den der Planer zeigt (LadeNeuestenPlan); leer,
+// wenn es noch keinen Plan der Art gibt. Ein zweites Speichern wartet, bis das erste fertig ist,
+// und sieht dessen Stempel. Die Sperre der Zeile allein hielte es nicht auf, solange es keinen
+// Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt; deshalb zuerst lmfPlanSperre.
+// Die Zeile bleibt gesperrt, damit Veröffentlichen und Verwerfen auf das Speichern warten.
 func (a *LMFAbfragen) SperreNeuestenPlan(ctx context.Context, tx pgx.Tx, art string) (string, error) {
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lmfPlanSperre); err != nil {
+		return "", err
+	}
 	var stempel string
 	err := tx.QueryRow(ctx, `
 		SELECT `+sqlLMFPlanStempel+` FROM lmf_plaene WHERE art = $1

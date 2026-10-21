@@ -1249,6 +1249,7 @@ Welcher Pfad welche Zeile sperrt:
 | Verlängerung                   | die **Ausleihe**-Zeile; die neue Frist rechnet Go                      | `verlaengereAusleihe` (`api/theke/ausleihe.go`)                      |
 | Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`api/leser/leser_sperre.go`)                         |
 | Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`repository/auflagen.go`)   |
+| LMF-Plan speichern         | erst die Advisory-Sperre der Pläne, dann die Zeile des neuesten **Plans** der Art. Die Zeile allein hielte ein zweites Speichern nicht auf, solange es keinen Plan gibt oder das erste den Plan eines neuen Schuljahrs anlegt | `SperreNeuestenPlan` (`repository/lmf_plan.go`) |
 | Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
 | Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventurlauf_abschluss.go`, `leser_zusammenfuehren.go`, `bestellung_mittel.go`, `forderung_erledigen.go` |
 

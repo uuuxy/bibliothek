@@ -116,8 +116,10 @@ var phantomBestand = map[string]int{
 	"repository/betriebszustand.go:SchreibeEinstellungswert": 1,
 	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null gelöschte
 	// Zeilen sind der Normalfall beim Anlegen; RowsAffected sagt hier nichts. SchreibePlan läuft in
-	// der Transaktion des Aufrufers.
-	"repository/lmf_plan.go:SchreibePlan": 3,
+	// der Transaktion des Aufrufers. SperreNeuestenPlan nimmt davor nur die Sperre
+	// (pg_advisory_xact_lock), kein Schreibvorgang.
+	"repository/lmf_plan.go:SchreibePlan":       3,
+	"repository/lmf_plan.go:SperreNeuestenPlan": 1,
 	// Schlagworte eines Titels, dieselbe Bauart: Wörter anlegen mit
 	// ON CONFLICT DO NOTHING (0 heißt „gibt es schon in anderer Schreibweise"), dann die
 	// Verbindungen ersetzen (DELETE + INSERT, 0 ist der Normalfall). Dass es den Titel gibt,
