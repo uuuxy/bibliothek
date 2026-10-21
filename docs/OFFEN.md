@@ -20,7 +20,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
   verloren. (5.83)
 - [x] Fünf Fehler an Türen und Abfragen. (5.84)
 - [x] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
-- [ ] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
+- [x] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
 - [ ] Kleinigkeiten an der Oberfläche. (5.87)
 - [ ] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
@@ -66,22 +66,6 @@ Nur, was kein Test leisten kann; warum, steht jeweils in den Einzelheiten.
 
 Beleg und nächster Schritt je Punkt. Die Nummern bleiben fest und werden nicht neu vergeben;
 Kommentare im Code nennen sie als Herkunft.
-
-### 2.3 Theke ohne Netz: der Nachweis als Browser-Test
-
-Stufe 2, die Nachbuch-Tür (`POST /api/action/nachbuchen`), halten Tests an der Datenbank. Für
-Stufe 1 und 3 gibt es keinen Browser-Test; ohne Netz prüft `frontend/e2e` nur das Band
-(`band-browser-meldet-offline.spec.js`). Zu bauen, mit `context.setOffline` und angehaltener
-Uhr. Wie sich die Theke ohne Verbindung verhält, steht in [FACHKONZEPT.md](FACHKONZEPT.md) 18.4.
-
-- Stufe 1: Antwort des Servers um 20 s verzögert, Schüler laden, Buch, Escape → IndexedDB trägt
-  den Schüler. Ohne Netz „zurückgeben" im Profil → Rückgabe. Lehrkraft laden, Buch scannen →
-  Ausleihe auf die Lehrkraft. IndexedDB blockiert → „NICHT gespeichert". Zwei Sicherungen
-  einspielen → ein Stapel. Zwei parallele Anfragen mit einem Schlüssel gegen `/api/action` →
-  eine Ausleihe.
-- Stufe 3: Netz aus, Bücher aller Formen und zwei Ausweise scannen → ein Band, kein Vollbild;
-  20 Minuten ohne Sperre, Netz an → Sperre; anmelden → nachgebucht, die Meldungen stehen an
-  einem zweiten Browser; die Sicherung im Format 1 eines anderen Rechners einspielen.
 
 ### 4.20 Littera-Schlagworte: die Verweise
 
@@ -206,6 +190,9 @@ tut es). Nächster Schritt: eine Regel für alle Listen, an einer Stelle.
   `pdf/etikett_schueler.go`).
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=` in der Zone des
   Testprozesses; westlich von UTC ist das der Vortag. Auf `schulzeit.Zone()` umstellen.
+- `frontend/e2e/icon-tooltips.spec.js` wackelt: In der ganzen Suite kam die Blase an
+  „Navigation einklappen" im Mahnwesen einmal nicht binnen 2 s (21.10.2026, 359 von 364
+  grün); einzeln dreimal grün. Die Ursache am Ablauf suchen, nicht die Frist strecken.
 
 ### 7.2 Frisches Littera-Backup
 

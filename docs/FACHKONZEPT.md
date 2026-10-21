@@ -923,8 +923,14 @@ bucht nichts doppelt.
 
 Nicht im Umfang: Anmelden ohne Server, Schülerdaten auf dem Rechner, Geräteausgabe ohne Netz,
 Umbuchen im Online-Weg und die scannende Person im Protokoll (nachgebucht wird unter dem Konto,
-das beim Übertragen angemeldet ist). Offen ist der Nachweis von Hand: [OFFEN.md](OFFEN.md),
-Abschnitt 2.
+das beim Übertragen angemeldet ist).
+
+Was hier steht, halten Browser-Tests am Stack mit abgeschaltetem Netz und gestellter Uhr:
+`frontend/e2e/theke-ohne-netz-scan.spec.js` (Schnappschuss beim Scan, Rückgabe aus der Akte,
+Lehrkraft, nicht ablegbare Scans), `theke-ohne-netz-band.spec.js` (alle Buchformen und Ausweise,
+das Band, keine Sperre, Nachbuchen vor der Sperre, Meldung am zweiten Platz),
+`theke-ohne-netz-sicherung.spec.js` (Sicherungen beider Formate, zweimal eingespielt) und
+`theke-gleicher-schluessel.spec.js` (gleichzeitige Anfragen mit einem Schlüssel).
 
 ### 18.5 Selbstanmeldung fürs Kollegium
 
