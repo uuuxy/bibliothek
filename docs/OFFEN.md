@@ -178,9 +178,6 @@ gebaut.
   `pdf/etikett_schueler.go`).
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=` in der Zone des
   Testprozesses; westlich von UTC ist das der Vortag. Auf `schulzeit.Zone()` umstellen.
-- `frontend/e2e/icon-tooltips.spec.js` wackelt: In der ganzen Suite kam die Blase an
-  „Navigation einklappen" im Mahnwesen einmal nicht binnen 2 s (21.10.2026, 359 von 364
-  grün); einzeln dreimal grün. Die Ursache am Ablauf suchen, nicht die Frist strecken.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -69,7 +69,9 @@ async function pruefeBildschirm(page, name, fehler) {
 		await b.hover();
 		const blase = page.locator('[data-tooltip-blase]');
 		try {
-			await expect(blase).toBeVisible({ timeout: 2000 });
+			// Die Vorgabe von Playwright, nicht 2 s: Mit Trace kostet jede Aktion einen Schnappschuss
+			// des ganzen DOM, und das Mahnwesen eines lange benutzten Stacks hat über 50 000 Knoten.
+			await expect(blase).toBeVisible({ timeout: 5000 });
 			await expect(blase).toHaveText(tip, { timeout: 2000 });
 		} catch {
 			fehler.push(`${name}: "${aria}" zeigt beim Überfahren keine Blase mit "${tip}"`);
