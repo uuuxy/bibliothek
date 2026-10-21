@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // etikettPosition ist die linke obere Ecke eines Etiketts auf der Seite.

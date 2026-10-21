@@ -7,7 +7,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // dsgvoKontoAbschnitt druckt das Zugangskonto samt Klassenleitungen, Anfragen und den

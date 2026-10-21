@@ -14,7 +14,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/johnfercher/maroto/v2 v2.4.3
-	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/klauspost/compress v1.20.3
 	github.com/minio/minio-go/v7 v7.4.1
 	github.com/pashagolub/pgxmock/v5 v5.2.0

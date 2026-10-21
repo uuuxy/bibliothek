@@ -10,7 +10,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/pkg/strichcode"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // MahnbriefVorlage ist, was auf allen Briefen eines Drucks gleich steht. Betreff und Text

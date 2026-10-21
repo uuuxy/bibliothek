@@ -9,7 +9,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/pkg/strichcode"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // MahnlisteMedium ist eine Zeile der Mahnliste: ein Buch über der Frist.

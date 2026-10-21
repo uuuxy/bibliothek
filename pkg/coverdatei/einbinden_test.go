@@ -14,7 +14,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // bildPlatz trifft die Platzierung eines Bilds im Inhaltsstrom, in Punkt und von unten

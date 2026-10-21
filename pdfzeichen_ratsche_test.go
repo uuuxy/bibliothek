@@ -198,7 +198,7 @@ func TestPDFDruck_JederTextGehtDurchDenUebersetzer(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if !strings.Contains(string(inhalt), `"github.com/jung-kurt/gofpdf"`) {
+		if !strings.Contains(string(inhalt), `"github.com/phpdave11/gofpdf"`) {
 			return nil
 		}
 		gefunden, anzahl := druckaufrufeOhneUebersetzer(t, pfad, inhalt)

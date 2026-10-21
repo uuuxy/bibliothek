@@ -33,8 +33,7 @@ var ersatz = strings.NewReplacer(
 // UnicodeTranslatorFromDescriptor). Durch das Ergebnis läuft jede Zeichenkette, bevor sie aufs
 // Papier geht.
 //
-// Die Funktion nimmt den Übersetzer und nicht das Dokument, weil im Haus zwei Fassungen von
-// gofpdf im Einsatz sind (jung-kurt und phpdave11) und beide denselben Typ liefern.
+// Die Funktion nimmt den Übersetzer und nicht das Dokument; so kommt das Paket ohne gofpdf aus.
 func Uebersetzer(cp1252 func(string) string) func(string) string {
 	return func(text string) string { return cp1252(ersatz.Replace(text)) }
 }

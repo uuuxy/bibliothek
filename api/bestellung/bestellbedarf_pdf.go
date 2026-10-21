@@ -12,7 +12,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // BestellbedarfPDF exportiert den Bestellbedarf als PDF — dieselbe Auswahl und

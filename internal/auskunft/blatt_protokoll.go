@@ -11,7 +11,7 @@ import (
 	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Die Protokolleinträge auf dem Blatt der Auskunft: der Vorgang in Worten, darunter die Angaben

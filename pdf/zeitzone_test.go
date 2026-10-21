@@ -71,7 +71,7 @@ func pdfErzeuger(t *testing.T) []string {
 		if err != nil {
 			return err
 		}
-		if bytes.Contains(roh, []byte("jung-kurt/gofpdf")) || bytes.Contains(roh, []byte("johnfercher/maroto")) {
+		if bytes.Contains(roh, []byte("phpdave11/gofpdf")) || bytes.Contains(roh, []byte("johnfercher/maroto")) {
 			treffer = append(treffer, pfad)
 		}
 		return nil

@@ -24,7 +24,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
 - [ ] Kleinigkeiten an der Oberfläche. (5.87)
 - [x] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
-- [ ] Aufräumen im Code. (5.89)
+- [x] Aufräumen im Code. (5.89)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -161,12 +161,6 @@ gebaut.
   `frontend/src/lib/frontend-hygiene-cover.test.js`). `BuchCover` kennt vier Höhen von 28 bis
   80 px; die Monitor-Folien, die Kachel des Katalogs und die Buchakte zeigen größere Cover mit
   eigenem Zuschnitt. Umgestellt sähen sie anders aus, oder `BuchCover` braucht weitere Maße.
-
-### 5.89 Aufräumen im Code
-
-- `github.com/jung-kurt/gofpdf` ist archiviert und steckt in 19 Dateien außerhalb der Tests;
-  gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt und
-  `pdf/lmfplan_satz.go` schon nutzt.
 
 ### 7.2 Frisches Littera-Backup
 

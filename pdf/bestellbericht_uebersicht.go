@@ -12,7 +12,7 @@ import (
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 var berichtMonatsnamen = [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni",

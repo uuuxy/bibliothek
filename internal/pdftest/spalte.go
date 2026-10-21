@@ -7,7 +7,7 @@ import (
 
 	"bibliothek/pkg/pdfzeichen"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // InSpalte hält einen gedruckten Text gegen seine Quelle: Er steht ganz da oder so weit

@@ -15,7 +15,7 @@ import (
 	"bibliothek/pkg/coverablage"
 	"bibliothek/pkg/imageutil"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Wurzel ist das Verzeichnis aller lokal gespeicherten Bilder, relativ zum Arbeitsverzeichnis

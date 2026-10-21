@@ -17,7 +17,7 @@ import (
 	"bibliothek/internal/pdftest"
 	"bibliothek/pkg/pdfzeichen"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Bildplatzierungen im Inhaltsstrom: `q 10.00 0 0 15.00 17.00 260.00 cm /I1 Do Q`.

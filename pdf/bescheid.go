@@ -9,7 +9,7 @@ import (
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/pdfzeichen"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Der Schadensersatz-Bescheid als PDF, nachgebaut nach dem Musteranschreiben, das die

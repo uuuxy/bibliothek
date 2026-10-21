@@ -6,7 +6,7 @@ import (
 
 	"bibliothek/pkg/schulzeit"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // bestandsbuchKopf zeichnet den Briefkopf beider Bücher: Schule, Datum, Titel, Zeitraum.

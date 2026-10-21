@@ -11,7 +11,7 @@ import (
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Der Export der Schulbücher ist ein PDF, kein Excel („es rechnet niemand"). Entscheidend ist

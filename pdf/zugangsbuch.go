@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 
 	"bibliothek/pkg/pdfzeichen"
 )

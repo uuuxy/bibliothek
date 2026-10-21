@@ -7,7 +7,7 @@ import (
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // EtikettenWeg sagt, wie der Lieferant an die Aufkleber kommt. Daran hängt ein Satz im

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // lernmittelTabellenSpalten sind die vier Spalten der Ausleihhistorie mit ihren Breiten in

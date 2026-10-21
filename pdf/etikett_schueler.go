@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Etiketten für Schüler: ein Klebeetikett mit Name, Klasse und Barcode.

@@ -9,7 +9,7 @@ import (
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/phpdave11/gofpdf"
 )
 
 // Bestellbericht ist die Eingabe des Berichts über die Bestellungen eines Zeitraums. Der

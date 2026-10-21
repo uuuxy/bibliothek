@@ -117,10 +117,9 @@ type lmfBaustein struct {
 // lmfMesser misst Textbreiten so, wie maroto sie später umbricht: gofpdf mit derselben
 // Kernschrift und derselben Umsetzung nach Latin-1.
 //
-// Bewusst phpdave11/gofpdf und nicht das jung-kurt/gofpdf der übrigen Schriftstücke: Es
-// ist die Bibliothek, die maroto selbst benutzt. Weil Go je Modul genau eine Fassung baut,
-// misst dieser Messer damit immer mit denselben Schriftmaßen, mit denen maroto setzt —
-// auch nach einem Versionssprung.
+// gofpdf ist dieselbe Bibliothek, die maroto benutzt. Weil Go je Modul genau eine Fassung baut,
+// misst dieser Messer immer mit den Schriftmaßen, mit denen maroto setzt, auch nach einem
+// Versionssprung.
 type lmfMesser struct {
 	pdf *gofpdf.Fpdf
 	tr  func(string) string
