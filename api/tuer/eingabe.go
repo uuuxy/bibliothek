@@ -106,11 +106,11 @@ func LeseUUIDParameter(r *http.Request, name string) (string, error) {
 // LeseAnfrageStreng liest wie LeseAnfrage, lehnt aber ein Feld, das das Ziel nicht kennt, mit
 // 400 ab, statt es still zu verwerfen.
 //
-// Nicht jede Tür liest streng: Mehrere nehmen das ganze Objekt zurück, das sie ausgeliefert
-// haben, samt der Felder, die nur der Server füllt (`id`, `verfuegbar`, `gesamt`, `sortOrder`
-// am Titel); dort brächte Strenge nur ein 400. Entsteht der Rumpf dagegen aus einer
-// geschlossenen Liste benannter Schlüssel, wie bei den Kategorien der Einstellungen, ist ein
-// unbekanntes Feld immer ein Fehler. Ohne Strenge verschwände es still, und die Oberfläche
+// Nicht jede Tür liest streng: Das Anlegen eines Titels etwa bekommt die ganze Maske samt
+// `id`, die nur der Server vergibt; dort brächte Strenge nur ein 400. Schreibt eine Tür dagegen
+// nur die genannten Felder (Leser, Titel) oder entsteht der Rumpf aus einer geschlossenen Liste
+// benannter Schlüssel, wie bei den Kategorien der Einstellungen, ist ein unbekanntes Feld
+// immer ein Fehler. Ohne Strenge verschwände es still, und die Oberfläche
 // meldete „gespeichert“: 200 trotz Datenverlust, die teuerste Klasse von Fehlern im Projekt.
 func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
 	dec := json.NewDecoder(r.Body)

@@ -152,3 +152,32 @@ func TestLeserAendern_UnbekannteKennungIstNichtGefunden(t *testing.T) {
 		t.Errorf("die Meldung nennt den Grund nicht: %s", rec.Body.String())
 	}
 }
+
+// Ein vertippter Name neben einem richtigen ist ein Fehler: Die Tür schreibt nur die genannten
+// Felder, und das vertippte verschwände sonst, während die Akte „gespeichert" meldete.
+func TestLeserAendern_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	var id string
+	if err := pool.QueryRow(context.Background(), `
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+		VALUES ('Alt', 'Stand', '05a', 'FELD-TIPP', 2031)
+		RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Leser anlegen: %v", err)
+	}
+
+	rec := aendereLeserUeberTuer(t, srv, id, `{"vorname":"Neu","nachnmae":"Vertippt"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("PATCH mit vertipptem Feld gab %d statt 400: %s", rec.Code, rec.Body.String())
+	}
+	var vorname, nachname string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT vorname, nachname FROM leser WHERE id = $1`, id).Scan(&vorname, &nachname); err != nil {
+		t.Fatalf("zurücklesen: %v", err)
+	}
+	if vorname != "Alt" || nachname != "Stand" {
+		t.Errorf("nach der Ablehnung steht %q %q, erwartet unverändert Alt Stand", vorname, nachname)
+	}
+}

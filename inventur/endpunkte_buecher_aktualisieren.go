@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"log"
@@ -23,7 +24,7 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 
 	eingabe, felder, fehler := leseAenderung(anfrage)
 	if fehler != nil {
-		schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, fehler)
 		return
 	}
 
@@ -80,8 +81,9 @@ func (t *Tueren) TitelAendern(antwort http.ResponseWriter, anfrage *http.Request
 }
 
 // leseAenderung liest den Rumpf einer Änderung: die Werte und die Namen der Felder, die er
-// nennt. Ein Feld, das fehlt, bleibt am Titel, wie es ist. Groß- und Kleinschreibung der
-// Namen zählt nicht, wie beim Dekodieren in titelEingabe.
+// nennt. Ein Feld, das fehlt, bleibt am Titel, wie es ist; eines, das titelEingabe nicht kennt,
+// ist ein Fehler, sonst hielte der Aufrufer ein vertipptes Feld für gespeichert. Groß- und
+// Kleinschreibung der Namen zählt nicht, wie beim Dekodieren in titelEingabe.
 func leseAenderung(anfrage *http.Request) (titelEingabe, []string, error) {
 	var eingabe titelEingabe
 	var roh json.RawMessage
@@ -89,7 +91,9 @@ func leseAenderung(anfrage *http.Request) (titelEingabe, []string, error) {
 	if fehler := json.NewDecoder(anfrage.Body).Decode(&roh); fehler != nil {
 		return eingabe, nil, fehler
 	}
-	if fehler := json.Unmarshal(roh, &eingabe); fehler != nil {
+	streng := json.NewDecoder(bytes.NewReader(roh))
+	streng.DisallowUnknownFields()
+	if fehler := streng.Decode(&eingabe); fehler != nil {
 		return eingabe, nil, fehler
 	}
 	if fehler := json.Unmarshal(roh, &genannt); fehler != nil {

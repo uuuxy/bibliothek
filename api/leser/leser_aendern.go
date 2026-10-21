@@ -122,7 +122,9 @@ func leseGeburtsdatum(roh string) (*time.Time, error) {
 	return &t, nil
 }
 
-// LeserAendern ändert die Stammdaten eines Lesers; ein fehlendes Feld bleibt, wie es ist.
+// LeserAendern ändert die Stammdaten eines Lesers; ein fehlendes Feld bleibt, wie es ist. Ein
+// unbekanntes lehnt sie ab: Ein vertippter Name verschwände sonst neben den übrigen, und die
+// Akte meldete „gespeichert".
 func (t *Tueren) LeserAendern(protokollAbfragen *repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.aendereLeser(w, r, protokollAbfragen)
@@ -145,7 +147,7 @@ func (t *Tueren) aendereLeser(w http.ResponseWriter, r *http.Request, protokollA
 	}
 
 	var req leserAendernAnfrage
-	if !tuer.LeseAnfrage(w, r, &req) {
+	if !tuer.LeseAnfrageStreng(w, r, &req) {
 		return
 	}
 

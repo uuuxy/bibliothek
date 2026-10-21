@@ -209,20 +209,28 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 	}
 }
 
-// „gradeLevel" schickt nur noch ein Browser-Fenster, das vor dem Wegfall der Klasse geladen
-// wurde. Die Tür kennt das Feld nicht mehr: Sie ändert dafür nichts, scheitert nicht daran und
-// speichert, was der Rumpf daneben nennt (docs/ARCHITEKTUR.md 11.5).
-func TestTitelAendern_FruehereKlasseWirdNichtGelesen(t *testing.T) {
+// Ein Name, den die Tür nicht kennt, ist ein Fehler, auch neben einem richtigen: ein vertipptes
+// Feld, eines, das nur der Server füllt, oder die frühere Klasse. Sonst hielte der Aufrufer es
+// für gespeichert. Geschrieben wird dann nichts.
+func TestTitelAendern_UnbekanntesFeldWirdAbgelehnt(t *testing.T) {
 	p := newGenanntProbe(t)
-	id := p.lege()
-	vorher := p.zeile(id)
+	for name, rumpf := range map[string]map[string]any{
+		"vertippt":       {"verlg": "Vertippt", "verlag": "Neuer Verlag"},
+		"vom Server":     {"verfuegbar": 3, "verlag": "Neuer Verlag"},
+		"frühere Klasse": {"gradeLevel": 8, "verlag": "Neuer Verlag"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id := p.lege()
+			vorher := p.zeile(id)
 
-	status, antwort := p.aendere(id, map[string]any{"gradeLevel": 8, "verlag": "Neuer Verlag"})
-	if status != http.StatusOK {
-		t.Fatalf("Status %d, erwartet 200: %s", status, antwort)
-	}
-	if spalten := geaenderteSpalten(vorher, p.zeile(id)); len(spalten) != 1 || spalten[0] != "verlag" {
-		t.Errorf("geändert wurden %v, erwartet nur verlag", spalten)
+			status, antwort := p.aendere(id, rumpf)
+			if status != http.StatusBadRequest {
+				t.Fatalf("Status %d, erwartet 400: %s", status, antwort)
+			}
+			if spalten := geaenderteSpalten(vorher, p.zeile(id)); len(spalten) != 0 {
+				t.Errorf("geändert wurden %v, erwartet nichts", spalten)
+			}
+		})
 	}
 }
 
