@@ -78,7 +78,7 @@ func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]Katalog
 		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		WHERE %s
 		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url
-		ORDER BY bt.titel
+		ORDER BY bt.titel COLLATE deutsch
 		LIMIT %d`,
 		SQLExemplarImBestand, SQLFilterImZulauf, strings.Join(bedingungen, " AND "), s.Grenze), args...)
 	if err != nil {
@@ -124,7 +124,7 @@ func LadeSchlagwortFilterImKatalog(ctx context.Context, q Datenbank, sichtbar st
 		      SELECT sw.id FROM `+sqlWortZumTitel+`
 		      JOIN buecher_titel bt ON bt.id = tsw.titel_id
 		      WHERE sw.ist_filter AND `+sichtbar+`)
-		ORDER BY lower(f.wort)`)
+		ORDER BY lower(f.wort) COLLATE deutsch`)
 	if err != nil {
 		return nil, fmt.Errorf("schlagwort-filter lesen: %w", err)
 	}

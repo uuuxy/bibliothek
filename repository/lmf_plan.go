@@ -166,7 +166,7 @@ func (a *LMFAbfragen) ladeFreieTage(ctx context.Context, planID string) ([]LMFFr
 func (a *LMFAbfragen) ladePlanZeilen(ctx context.Context, planID string) ([]LMFPlanZeile, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT t.position, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.fest, t.vermerk,
-		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
+		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse) COLLATE deutsch)
 		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
 		FROM lmf_termine t WHERE t.plan_id = $1
 		ORDER BY t.position, t.datum, t.stunde`, planID)
@@ -188,7 +188,7 @@ func (a *LMFAbfragen) ladePlanZeilen(ctx context.Context, planID string) ([]LMFP
 func (a *LMFAbfragen) ladeAusgelassene(ctx context.Context, planID string) ([]string, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT klasse FROM lmf_plan_ausgelassen WHERE plan_id = $1
-		ORDER BY klassen_normkey(klasse)`, planID)
+		ORDER BY klassen_normkey(klasse) COLLATE deutsch`, planID)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (a *LMFAbfragen) LadeKlassenMitSchuelern(ctx context.Context) ([]KlasseImPl
 		FROM schueler s
 		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = false AND btrim(s.klasse) <> ''
 		GROUP BY s.klasse
-		ORDER BY abschluss DESC, jahrgang DESC, s.klasse`)
+		ORDER BY abschluss DESC, jahrgang DESC, s.klasse COLLATE deutsch`)
 	if err != nil {
 		return nil, err
 	}

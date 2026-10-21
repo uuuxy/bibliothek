@@ -208,7 +208,7 @@ func (a *BescheidAbfragen) LadePositionen(ctx context.Context, id string) ([]Bes
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE f.bescheid_id = $1
-		ORDER BY f.art, coalesce(t.titel, f.beschreibung)`, id)
+		ORDER BY f.art, coalesce(t.titel, f.beschreibung) COLLATE deutsch`, id)
 	if err != nil {
 		return nil, err
 	}

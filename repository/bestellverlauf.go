@@ -143,7 +143,7 @@ func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, bestellunge
 			GROUP BY titel_id
 		) e_counts ON e_counts.titel_id = p.titel_id
 		WHERE p.bestellung_id = ANY($1)
-		ORDER BY p.bestellung_id, p.titel_name
+		ORDER BY p.bestellung_id, p.titel_name COLLATE deutsch
 	`, geladeneIDs(platzJeBestellung))
 	if err != nil {
 		return err

@@ -114,7 +114,7 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 		WHERE `+sqlIstAbgang+`
 		  AND e.ausgesondert_am >= $1 AND e.ausgesondert_am < $2
 		-- Spalte 6 ist der Topf: 'land' vor 'schultraeger', die Reihenfolge des Ausdrucks.
-		ORDER BY 6, e.ausgesondert_am, t.titel, e.barcode_id
+		ORDER BY 6, e.ausgesondert_am, t.titel COLLATE deutsch, e.barcode_id
 	`, abVon, bisAusschliesslich)
 	if err != nil {
 		return buch, err

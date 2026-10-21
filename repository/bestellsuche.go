@@ -36,7 +36,7 @@ func FindeTitelZumBestellen(ctx context.Context, db Datenbank, suchtext string) 
 				OR regexp_replace(coalesce(t.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1, '[- ]', '', 'g') || '%'
 				OR replace(t.isbn, '-', '') = replace($1, '-', '')
 				OR `+SQLSuchtextIstISBN("t", "$1")+`
-			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
+			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel COLLATE deutsch ASC
 			LIMIT 50
 		)
 		SELECT mt.id, mt.titel, coalesce(mt.autor, ''), coalesce(mt.isbn, ''), coalesce(mt.verlag, ''),
@@ -49,7 +49,7 @@ func FindeTitelZumBestellen(ctx context.Context, db Datenbank, suchtext string) 
 			FROM buecher_exemplare
 			WHERE titel_id = mt.id AND ist_ausgesondert = false
 		) e ON true
-		ORDER BY ts_rank(mt.search_vector, plainto_tsquery('german', $1)) DESC, mt.titel ASC
+		ORDER BY ts_rank(mt.search_vector, plainto_tsquery('german', $1)) DESC, mt.titel COLLATE deutsch ASC
 	`, TiteltextNormalform(suchtext))
 	if err != nil {
 		return nil, err

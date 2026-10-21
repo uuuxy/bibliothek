@@ -111,7 +111,7 @@ type OeffentlichePosition struct {
 func LadeOeffentlichePositionen(ctx context.Context, db Datenbank, bestellungID string) ([]OeffentlichePosition, error) {
 	rows, err := db.Query(ctx, `
 		SELECT titel_name, isbn, menge FROM bestellungen_positionen
-		WHERE bestellung_id = $1 ORDER BY titel_name
+		WHERE bestellung_id = $1 ORDER BY titel_name COLLATE deutsch
 	`, bestellungID)
 	if err != nil {
 		return nil, err

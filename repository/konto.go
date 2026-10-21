@@ -57,7 +57,7 @@ func (a *KontoAbfragen) LadeAlle(ctx context.Context) ([]Konto, error) {
 		       b.erstellt_am, b.zugang_beantragt_am, coalesce(b.leser_id::text, '')
 		FROM benutzer b
 		LEFT JOIN leser l ON l.id = b.leser_id
-		ORDER BY b.nachname, b.vorname
+		ORDER BY b.nachname COLLATE deutsch, b.vorname COLLATE deutsch
 	`
 	rows, err := a.pool.Query(ctx, query)
 	if err != nil {

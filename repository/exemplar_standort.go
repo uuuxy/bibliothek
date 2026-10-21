@@ -216,7 +216,7 @@ func LadeExemplarStandorte(ctx context.Context, q Datenbank) ([]StandortZahl, er
 		FROM buecher_exemplare e
 		WHERE e.standort IS NOT NULL AND `+SQLExemplarImBestand+`
 		GROUP BY e.standort
-		ORDER BY count(*) DESC, e.standort
+		ORDER BY count(*) DESC, e.standort COLLATE deutsch
 		LIMIT $1`, exemplarStandorteMax)
 	if err != nil {
 		return nil, fmt.Errorf("standorte lesen: %w", err)
@@ -250,7 +250,7 @@ func LadeStandorteDerTitel(ctx context.Context, q Datenbank, titelIDs []string) 
 		FROM buecher_exemplare e
 		WHERE e.titel_id = ANY($1::uuid[]) AND e.standort IS NOT NULL AND `+SQLExemplarImBestand+`
 		GROUP BY e.titel_id, e.standort
-		ORDER BY e.titel_id, count(*) DESC, e.standort`, titelIDs)
+		ORDER BY e.titel_id, count(*) DESC, e.standort COLLATE deutsch`, titelIDs)
 	if err != nil {
 		return nil, fmt.Errorf("standorte der titel lesen: %w", err)
 	}

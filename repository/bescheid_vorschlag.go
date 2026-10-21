@@ -87,7 +87,7 @@ func (a *BescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID
 		  AND f.bescheid_id IS NULL
 		  AND f.ist_bezahlt = false
 		  AND f.storniert_am IS NULL
-		ORDER BY f.art, coalesce(t.titel, f.beschreibung)`, schuelerID)
+		ORDER BY f.art, coalesce(t.titel, f.beschreibung) COLLATE deutsch`, schuelerID)
 	if err != nil {
 		return nil, err
 	}

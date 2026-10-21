@@ -118,7 +118,7 @@ func LadeDSGVOZugangskonto(ctx context.Context, q Datenbank, leserID string) (*D
 	if k.Klassenleitungen, err = sammle(ctx, q, `
 		SELECT klasse FROM klassen_lehrer_mapping
 		WHERE lower(lehrer_email) = lower($1)
-		ORDER BY klasse`, func(r pgx.Rows) (string, error) {
+		ORDER BY klasse COLLATE deutsch`, func(r pgx.Rows) (string, error) {
 		var klasse string
 		return klasse, r.Scan(&klasse)
 	}, k.Email); err != nil {

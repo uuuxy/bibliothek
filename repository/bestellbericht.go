@@ -86,7 +86,7 @@ func LadeBerichtPositionen(ctx context.Context, db Datenbank, bestellungen []Ber
 		SELECT bestellung_id, titel_name, isbn, menge, einzelpreis
 		FROM bestellungen_positionen
 		WHERE bestellung_id = ANY($1::uuid[])
-		ORDER BY bestellung_id, titel_name`, ids)
+		ORDER BY bestellung_id, titel_name COLLATE deutsch`, ids)
 	if err != nil {
 		return err
 	}

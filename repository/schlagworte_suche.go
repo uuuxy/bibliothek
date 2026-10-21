@@ -72,7 +72,7 @@ func LadeSuchwoerterDerTitel(ctx context.Context, q Datenbank, titelIDs []string
 		return woerter, nil
 	}
 	rows, err := q.Query(ctx, `
-		SELECT tsw.titel_id::text, array_agg(sw.wort ORDER BY lower(sw.wort))
+		SELECT tsw.titel_id::text, array_agg(sw.wort ORDER BY lower(sw.wort) COLLATE deutsch)
 		FROM `+sqlWortZumTitel+`
 		WHERE tsw.titel_id = ANY($1::uuid[])
 		GROUP BY tsw.titel_id`, titelIDs)

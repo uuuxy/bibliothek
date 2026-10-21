@@ -23,7 +23,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
 - [ ] Kleinigkeiten an der Oberfläche. (5.87)
-- [ ] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
+- [x] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
 - [ ] Aufräumen im Code. (5.89)
 
 ### Etappe 1: vor dem Echtstart
@@ -117,7 +117,8 @@ Entschieden am 28.09.2026, nicht gebaut:
   Nebenversion von `postgres:18-alpine`, die beim Anlegen vorlag. Eine Nebenversion braucht
   weder Sicherung noch Neuaufbau, und die Datenbank sortiert ohne Sprachregeln
   (`datlocprovider` = c); ein neues Alpine im Image ändert die Reihenfolge der Indizes also
-  nicht.
+  nicht. Die Kollation `deutsch` (ICU, Migration 165) ordnet nur Ausgaben, kein Index benutzt
+  sie; was eine neue ICU-Fassung verlangt, steht in [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 4.
 - **`--pull` für die Basis-Images des Backends.** Die Schicht mit `apk upgrade` baut schon jedes
   Update neu, weil `update.sh` danach den Build-Cache leert (Schritt 7).
 
@@ -160,13 +161,6 @@ gebaut.
   `frontend/src/lib/frontend-hygiene-cover.test.js`). `BuchCover` kennt vier Höhen von 28 bis
   80 px; die Monitor-Folien, die Kachel des Katalogs und die Buchakte zeigen größere Cover mit
   eigenem Zuschnitt. Umgestellt sähen sie anders aus, oder `BuchCover` braucht weitere Maße.
-
-### 5.88 Listen ordnen nach deutscher Regel
-
-Die Datenbank ordnet Text nach Codepunkt („Mathe 10 < Mathe 5 < apfel < Ägypten"). Die
-Titelliste ordnet deshalb in Go; 30 Abfragen ordnen in der Datenbank nach Titel oder Nachname,
-und ob die Oberfläche ihre Antwort neu ordnet, ist je Liste nicht durchgesehen (die Mahnliste
-tut es). Nächster Schritt: eine Regel für alle Listen, an einer Stelle.
 
 ### 5.89 Aufräumen im Code
 

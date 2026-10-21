@@ -48,7 +48,7 @@ func (a *LeserAbfragen) LadeEtikettZeilen(ctx context.Context, ids []string) ([]
 		SELECT coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, '')
 		FROM leser
 		WHERE id = ANY($1) AND deleted_at IS NULL
-		ORDER BY (art = 'schueler'), klasse, nachname, vorname
+		ORDER BY (art = 'schueler'), klasse COLLATE deutsch, nachname COLLATE deutsch, vorname COLLATE deutsch
 	`, ids)
 	if err != nil {
 		return nil, err

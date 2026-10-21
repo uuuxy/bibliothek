@@ -93,13 +93,13 @@ func LadeSchlagworteZurPflege(ctx context.Context, q Datenbank, suche string) (S
 		SELECT s.id::text, s.wort,
 		       (SELECT count(*)::int FROM titel_schlagworte ts WHERE ts.schlagwort_id = s.id),
 		       coalesce(z.id::text, ''), coalesce(z.wort, ''),
-		       coalesce((SELECT array_agg(v.wort ORDER BY lower(v.wort))
+		       coalesce((SELECT array_agg(v.wort ORDER BY lower(v.wort) COLLATE deutsch)
 		                 FROM schlagworte v WHERE v.verweis_auf = s.id), '{}'),
 		       s.ist_filter
 		FROM schlagworte s
 		LEFT JOIN schlagworte z ON z.id = s.verweis_auf
 		WHERE `+sqlPflegeSuchePasst+`
-		ORDER BY lower(s.wort)
+		ORDER BY lower(s.wort) COLLATE deutsch
 		LIMIT $2`, suche, schlagwortPflegeTrefferMax)
 	if err != nil {
 		return liste, fmt.Errorf("schlagworte zur pflege lesen: %w", err)
@@ -405,7 +405,7 @@ func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (Schlagw
 	// zwei Löschende mit überlappender Auswahl verklemmen sich nicht.
 	var namen []string
 	if err := tx.QueryRow(ctx, `
-		SELECT count(*)::int, coalesce(array_agg(g.wort ORDER BY lower(g.wort), g.wort), '{}') FROM (
+		SELECT count(*)::int, coalesce(array_agg(g.wort ORDER BY lower(g.wort) COLLATE deutsch, g.wort COLLATE deutsch), '{}') FROM (
 			SELECT id, wort FROM schlagworte WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
 		) g`, ids).Scan(&gesperrt, &namen); err != nil {
 		return ergebnis, fmt.Errorf("löschen: sperren: %w", err)

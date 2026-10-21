@@ -73,7 +73,7 @@ func (a *BetriebszustandAbfragen) LadeBeispielLieferanten(ctx context.Context) (
 	rows, err := a.pool.Query(ctx,
 		`SELECT name FROM lieferanten
 		  WHERE lower(email) = ANY($1) OR kundennummer = ANY($2)
-		  ORDER BY name`, beispielLieferantenEmails, beispielKundennummern)
+		  ORDER BY name COLLATE deutsch`, beispielLieferantenEmails, beispielKundennummern)
 	if err != nil {
 		return nil, err
 	}
@@ -176,15 +176,16 @@ func (a *BetriebszustandAbfragen) LadeKlassenBestand(ctx context.Context) (schue
 	}
 
 	if schueler, err = lies(`
-		SELECT DISTINCT klasse FROM schueler
+		SELECT klasse FROM schueler
 		WHERE deleted_at IS NULL AND ist_abgaenger = false AND btrim(klasse) <> ''
-		ORDER BY klasse`); err != nil {
+		GROUP BY klasse
+		ORDER BY klasse COLLATE deutsch`); err != nil {
 		return nil, nil, nil, err
 	}
-	if zuordnungen, err = lies(`SELECT klasse FROM klassen_lehrer_mapping ORDER BY klasse`); err != nil {
+	if zuordnungen, err = lies(`SELECT klasse FROM klassen_lehrer_mapping ORDER BY klasse COLLATE deutsch`); err != nil {
 		return nil, nil, nil, err
 	}
-	if buecherlisten, err = lies(`SELECT DISTINCT class_name FROM class_books ORDER BY class_name`); err != nil {
+	if buecherlisten, err = lies(`SELECT class_name FROM class_books GROUP BY class_name ORDER BY class_name COLLATE deutsch`); err != nil {
 		return nil, nil, nil, err
 	}
 	return schueler, zuordnungen, buecherlisten, nil

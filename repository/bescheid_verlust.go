@@ -80,7 +80,7 @@ func (a *BescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schue
 		  -- ist eine Betriebsfrage und keine Nebenwirkung der Frist.
 		  AND a.ist_handapparat = false
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL)
-		ORDER BY a.rueckgabe_frist, t.titel`, schuelerID, jetzt)
+		ORDER BY a.rueckgabe_frist, t.titel COLLATE deutsch`, schuelerID, jetzt)
 	if err != nil {
 		return nil, fmt.Errorf("überfällige ausleihen lesen: %w", err)
 	}

@@ -15,7 +15,7 @@ type Klassenleitung struct {
 // LadeKlassenleitungen liefert alle Zuordnungen nach Klasse geordnet.
 func LadeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung, error) {
 	rows, err := db.Query(ctx,
-		`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse`)
+		`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse COLLATE deutsch`)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func LadeKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]Klasse
 		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
 		FROM klassen_lehrer_mapping
 		WHERE `+jahrgangImBereichSQL("klasse")+`
-		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
+		ORDER BY substring(klasse from '^\d+')::int DESC, klasse COLLATE deutsch DESC`)
 	if err != nil {
 		return nil, err
 	}

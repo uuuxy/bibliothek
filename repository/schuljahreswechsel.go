@@ -106,12 +106,13 @@ func VersetzeSchueler(ctx context.Context, db Datenbank, zone string) (versetzt,
 // Vorschau nennt sie, damit sie vorher berichtigt werden. Eine Zeile je Klasse.
 func LadeKlassenAusserhalbDerVersetzung(ctx context.Context, db Datenbank) ([]string, error) {
 	rows, err := db.Query(ctx, `
-		SELECT DISTINCT klasse FROM schueler
+		SELECT klasse FROM schueler
 		WHERE ist_abgaenger = false
 		  AND deleted_at IS NULL
 		  AND klasse ~ '^\d'
 		  AND NOT `+jahrgangImBereichSQL("klasse")+`
-		ORDER BY klasse`)
+		GROUP BY klasse
+		ORDER BY klasse COLLATE deutsch`)
 	if err != nil {
 		return nil, err
 	}

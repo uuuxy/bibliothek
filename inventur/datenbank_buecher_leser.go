@@ -164,7 +164,7 @@ func (a *TitelAbfragen) LadeTitelListe(ctx context.Context, fach string, suchanf
 		       OR ` + repository.SQLSuchtextIstISBN("bt", "$2") + `
 		       OR ` + repository.SQLTitelUeberSchlagwort("bt", "$2") + `)
 	` + buchListenGroupBySchlank + `
-		ORDER BY bt.titel ASC, bt.id ASC
+		ORDER BY bt.titel COLLATE deutsch ASC, bt.id ASC
 		LIMIT $3`
 
 	zeilen, err := a.pool.Query(ctx, abfrage, fach, suchanfrage, titelListeGrenze)

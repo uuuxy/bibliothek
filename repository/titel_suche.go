@@ -23,7 +23,7 @@ func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Ti
 			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
 			OR ` + SQLSuchtextIstISBN("b", "$1::text") + `
 		) AND ` + SQLTitelHatExemplar("b") + `
-		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel ASC
+		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel COLLATE deutsch ASC
 		LIMIT 50
 	`
 	rows, err := a.db.Query(ctx, query, suchtext)
@@ -99,7 +99,7 @@ func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext strin
 		  AND ` + SQLTitelHatExemplar("b") + `
 		ORDER BY
 			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE tokens.norm || '%') DESC,
-			b.titel ASC
+			b.titel COLLATE deutsch ASC
 		LIMIT $3
 	`
 	rows, err := a.db.Query(ctx, query, tokens, suchtext, limit, tokens[0])

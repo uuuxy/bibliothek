@@ -34,7 +34,7 @@ type LeserListenZeile struct {
 // LadeKlassen liest die Klassen der Sicht schueler außerhalb des Papierkorbs, Abgänger
 // eingeschlossen, nach Namen geordnet.
 func (a *LeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
-	rows, err := a.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
+	rows, err := a.db.Query(ctx, "SELECT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL GROUP BY klasse ORDER BY klasse COLLATE deutsch")
 	if err != nil {
 		return nil, err
 	}

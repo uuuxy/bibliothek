@@ -35,7 +35,7 @@ func LadeEtikettDatenDerBestellung(ctx context.Context, db Datenbank, bestellung
 		               WHERE p.bestellung_id = e.bestellung_id
 		                 AND p.titel_id = e.titel_id
 		                 AND p.mit_vorab_barcode)
-		ORDER BY t.titel, e.barcode_id
+		ORDER BY t.titel COLLATE deutsch, e.barcode_id
 	`, bestellungID)
 	if err != nil {
 		return nil, err

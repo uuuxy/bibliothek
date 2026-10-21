@@ -9,7 +9,7 @@ type SystematikKategorie struct {
 
 // LadeSystematikKategorien liefert alle Sachgruppen nach ihrer Bezeichnung geordnet.
 func LadeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikKategorie, error) {
-	rows, err := db.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM systematik_kategorien ORDER BY bezeichnung ASC")
+	rows, err := db.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM systematik_kategorien ORDER BY bezeichnung COLLATE deutsch ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -30,10 +30,11 @@ func LadeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikKa
 // am Rand: die Auswahl für eine Inventur nach Fach.
 func LadeFaecher(ctx context.Context, db Datenbank) ([]string, error) {
 	rows, err := db.Query(ctx, `
-			SELECT DISTINCT btrim(subject)
+			SELECT btrim(subject)
 			FROM buecher_titel
 			WHERE subject IS NOT NULL AND btrim(subject) <> ''
-			ORDER BY 1
+			GROUP BY btrim(subject)
+			ORDER BY btrim(subject) COLLATE deutsch
 		`)
 	if err != nil {
 		return nil, err

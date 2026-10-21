@@ -143,7 +143,7 @@ func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl in
 		  AND `+cover+`
 		  AND `+OeffentlichSichtbar("bt")+`
 		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn
-		ORDER BY COUNT(DISTINCT a.schueler_id) DESC, bt.titel ASC
+		ORDER BY COUNT(DISTINCT a.schueler_id) DESC, bt.titel COLLATE deutsch ASC
 		LIMIT $2::int`, tage, anzahl)
 }
 
@@ -154,7 +154,7 @@ func (a *MonitorAbfragen) ladeNeuEingetroffene(ctx context.Context, anzahl int) 
 		FROM buecher_titel bt
 		WHERE `+monitorMitCover+`
 		  AND `+OeffentlichSichtbar("bt")+`
-		ORDER BY bt.erstellt_am DESC, bt.titel ASC
+		ORDER BY bt.erstellt_am DESC, bt.titel COLLATE deutsch ASC
 		LIMIT $1::int`, anzahl)
 }
 

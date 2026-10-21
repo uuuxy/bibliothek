@@ -87,12 +87,12 @@ func (a *TitelAbfragen) ladeTitelFuerCSVExport(ctx context.Context, kopf func() 
 		LEFT JOIN buecher_exemplare e ON t.id = e.titel_id AND e.ist_ausgesondert = false
 		` + repository.ExemplarTopfJoin + `
 		LEFT JOIN (
-			SELECT ts.titel_id, string_agg(s.wort, $1 ORDER BY lower(s.wort)) AS woerter
+			SELECT ts.titel_id, string_agg(s.wort, $1 ORDER BY lower(s.wort) COLLATE deutsch) AS woerter
 			FROM titel_schlagworte ts
 			JOIN schlagworte s ON s.id = ts.schlagwort_id
 			GROUP BY ts.titel_id
 		) sw ON sw.titel_id = t.id
-		ORDER BY t.titel, e.barcode_id;
+		ORDER BY t.titel COLLATE deutsch, e.barcode_id;
 	`
 
 	pgZeilen, err := a.pool.Query(ctx, abfrage, exportSchlagwortTrenner)

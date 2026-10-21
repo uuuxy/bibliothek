@@ -72,7 +72,7 @@ func LadeZugangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Zuga
 		JOIN buecher_titel t ON t.id = e.titel_id
 		`+ExemplarTopfJoin+`
 		WHERE e.zugang_am >= $1::date AND e.zugang_am <= $2::date
-		ORDER BY e.zugang_am, t.titel, e.barcode_id
+		ORDER BY e.zugang_am, t.titel COLLATE deutsch, e.barcode_id
 	`, abVon, bisTag)
 	if err != nil {
 		return buch, err

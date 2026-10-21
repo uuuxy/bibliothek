@@ -74,7 +74,7 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 			return err
 		}},
 		{"Klassen der Leserdatei", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
-			mock.ExpectQuery(`SELECT DISTINCT klasse FROM schueler`).WillReturnRows(
+			mock.ExpectQuery(`SELECT klasse FROM schueler`).WillReturnRows(
 				pgxmock.NewRows([]string{"klasse"}).AddRow(nil))
 			_, err := NewLeserAbfragen(mock).LadeKlassen(ctx)
 			return err

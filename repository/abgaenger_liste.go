@@ -45,7 +45,7 @@ func LadeAbgaengerMitOffenenAusleihen(ctx context.Context, db Datenbank) ([]Abga
 		WHERE ` + abgaengerBedingung + `
 		  AND a.rueckgabe_am IS NULL
 		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt, m.lehrer_email
-		ORDER BY s.klasse, s.nachname
+		ORDER BY s.klasse COLLATE deutsch, s.nachname COLLATE deutsch
 	`
 	rows, err := db.Query(ctx, query)
 	if err != nil {
@@ -95,7 +95,7 @@ func LadeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nu
 		WHERE ` + abgaengerBedingung + `
 		  AND ($1 = '' OR s.klasse = $1)
 		  AND ($2::uuid[] IS NULL OR s.id = ANY($2::uuid[]))
-		ORDER BY s.klasse, s.nachname, t.titel
+		ORDER BY s.klasse COLLATE deutsch, s.nachname COLLATE deutsch, t.titel COLLATE deutsch
 	`
 	rows, err := db.Query(ctx, detailQuery, klasse, nurIDs)
 	if err != nil {

@@ -49,7 +49,7 @@ func LadeLieferanten(ctx context.Context, db Datenbank) ([]LieferantenZeile, err
 	rows, err := db.Query(ctx, `
 			SELECT id, name, email, kundennummer, erstellt_am, ist_hauptlieferant, kundennummer_schultraeger
 			FROM lieferanten
-			ORDER BY ist_hauptlieferant DESC, name ASC
+			ORDER BY ist_hauptlieferant DESC, name COLLATE deutsch ASC
 		`)
 	if err != nil {
 		return nil, err

@@ -127,7 +127,7 @@ func ladeBestellmailPositionen(ctx context.Context, pool db.Pool, bestellungID s
 		  FROM bestellungen_positionen p
 		  LEFT JOIN buecher_titel t ON t.id = p.titel_id
 		 WHERE p.bestellung_id = $1
-		 ORDER BY p.titel_name`, bestellungID)
+		 ORDER BY p.titel_name COLLATE deutsch`, bestellungID)
 	if err != nil {
 		return nil, err
 	}

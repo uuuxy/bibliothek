@@ -33,7 +33,7 @@ func (a *InventurAbfragen) LadeVerluste(ctx context.Context, laufID string) ([]I
 		       coalesce(to_char(gefunden_am, 'YYYY-MM-DD"T"HH24:MI:SSOF'), '')
 		FROM inventur_verluste
 		WHERE session_id = $1
-		ORDER BY signatur, titel, barcode_id
+		ORDER BY signatur COLLATE deutsch, titel COLLATE deutsch, barcode_id
 	`, laufID)
 	if err != nil {
 		return nil, fmt.Errorf("fehlbestand laden fehlgeschlagen: %w", err)

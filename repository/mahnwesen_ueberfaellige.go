@@ -81,8 +81,8 @@ func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, kla
 		q += " AND s.klasse = $1 AND s.ist_abgaenger = false"
 		args = append(args, klassenFilter)
 	}
-	q += ` ORDER BY s.ist_abgaenger, CASE WHEN s.ist_abgaenger THEN '' ELSE s.klasse END,
-		s.nachname, s.vorname, a.rueckgabe_frist`
+	q += ` ORDER BY s.ist_abgaenger, CASE WHEN s.ist_abgaenger THEN '' ELSE s.klasse END COLLATE deutsch,
+		s.nachname COLLATE deutsch, s.vorname COLLATE deutsch, a.rueckgabe_frist`
 
 	rows, err := a.db.Query(ctx, q, args...)
 	if err != nil {

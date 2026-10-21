@@ -161,7 +161,7 @@ func (a *BestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID
 		FROM bestellungen_positionen p
 		LEFT JOIN buecher_titel t ON t.id = p.titel_id
 		WHERE p.bestellung_id = $1
-		ORDER BY p.titel_name
+		ORDER BY p.titel_name COLLATE deutsch
 	`, bestellungID)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (a *BestelldetailAbfragen) ladeExemplare(ctx context.Context, bestellungID 
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.bestellung_id = $1
-		ORDER BY t.titel, e.barcode_id
+		ORDER BY t.titel COLLATE deutsch, e.barcode_id
 	`, bestellungID)
 	if err != nil {
 		return nil, err

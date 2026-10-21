@@ -10,6 +10,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "unaccent";
 
+-- deutsch ist die Reihenfolge aller Listen nach Text: deutsch, Zahlen nach ihrer Größe, wie
+-- Intl.Collator('de', {numeric: true}) im Browser (Migration 165). Kein Index benutzt sie.
+CREATE COLLATION IF NOT EXISTS deutsch (provider = icu, locale = 'de-u-kn');
+
 -- suchnorm() ist die Normalform aller Namens- und Titelvergleiche: erst Diakritika
 -- weg (Öztürk → ozturk, Straße → strasse), dann die deutschen Ersatzschreibungen auf
 -- denselben Nenner (ss→s, ue→u, oe→o, ae→a), damit "Mueller" und "Müller" beide auf
@@ -1949,7 +1953,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('161_bestellung_mail_gescheitert.sql'),
 ('162_jahrgang_unbekannt.sql'),
 ('163_klasse_entfaellt.sql'),
-('164_elternbrief_vermerk_und_subjects_entfallen.sql')
+('164_elternbrief_vermerk_und_subjects_entfallen.sql'),
+('165_deutsche_sortierung.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

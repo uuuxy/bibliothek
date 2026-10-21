@@ -74,7 +74,7 @@ func LadeTitelUnterSignatur(ctx context.Context, db Datenbank, signatur string, 
 			LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
 			WHERE %s
 			GROUP BY t.id, t.signatur, t.titel, t.autor, t.isbn
-			ORDER BY btrim(t.signatur), t.titel
+			ORDER BY btrim(t.signatur) COLLATE deutsch, t.titel COLLATE deutsch
 			LIMIT $2
 		`, signaturPraefixBedingung("t.signatur", 1)), signatur, limit)
 	if err != nil {

@@ -150,7 +150,7 @@ func (a *TitelAbfragen) ladeLernmittelFaecher(ctx context.Context, f lernmittelF
 		SELECT subject, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
 		FROM (`+lernmittelJeBuchSQL()+`) zeilen
 		GROUP BY subject
-		ORDER BY (subject = ''), subject`, f.Jahrgang, f.Zweig, f.Suche)
+		ORDER BY (subject = ''), subject COLLATE deutsch`, f.Jahrgang, f.Zweig, f.Suche)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
@@ -171,7 +171,7 @@ func (a *TitelAbfragen) ladeLernmittelFaecher(ctx context.Context, f lernmittelF
 func (a *TitelAbfragen) ladeLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f lernmittelFilter) ([]LernmittelTitel, error) {
 	zeilen, err := a.pool.Query(ctx, lernmittelJeBuchSQL()+`
 		WHERE ($4 OR v.subject = $5)
-		ORDER BY (v.subject = ''), v.subject, NULLIF(v.jahrgang_von, 0) NULLS LAST, v.titel`,
+		ORDER BY (v.subject = ''), v.subject COLLATE deutsch, NULLIF(v.jahrgang_von, 0) NULLS LAST, v.titel COLLATE deutsch`,
 		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)

@@ -107,7 +107,7 @@ func LadeBestellbedarf(ctx context.Context, db Datenbank, topfBedingung string, 
 		       CASE WHEN b.anzahl > 1 THEN b.auflagen END
 		FROM buch b
 		JOIN neueste n ON n.buch = b.buch
-		ORDER BY ($1 - b.gesamt) DESC, n.titel ASC
+		ORDER BY ($1 - b.gesamt) DESC, n.titel COLLATE deutsch ASC
 	`, topfBedingung, neueste, neueste, sqlCoverOderDNB("n"))
 
 	rows, err := db.Query(ctx, query, schwelle)

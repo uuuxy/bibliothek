@@ -51,7 +51,7 @@ func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testi
 	// Probelauf: nur Begin → Lesen → CTE → Rollback. Keine Sperre gegen den Doppellauf, kein
 	// Protokolleintrag, kein Commit; sonst wäre die „Vorschau" keine.
 	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT DISTINCT klasse FROM schueler`).
+	mock.ExpectQuery(`SELECT klasse FROM schueler`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse"}).AddRow("14A"))
 	mock.ExpectQuery(`WITH parsed AS`).
 		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit)
@@ -102,7 +102,7 @@ func TestSchuljahreswechsel_EchterLaufSchreibtProtokoll(t *testing.T) {
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
-	mock.ExpectQuery(`SELECT DISTINCT klasse FROM schueler`).
+	mock.ExpectQuery(`SELECT klasse FROM schueler`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse"}))
 	mock.ExpectQuery(`WITH parsed AS`).
 		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit)

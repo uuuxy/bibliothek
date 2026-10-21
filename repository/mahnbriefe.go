@@ -47,7 +47,7 @@ const sqlMahnbriefe = `
 	WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
 	  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
 	  AND s.deleted_at IS NULL
-	ORDER BY s.ist_abgaenger, s.klasse, s.nachname, s.vorname, s.id, a.rueckgabe_frist
+	ORDER BY s.ist_abgaenger, s.klasse COLLATE deutsch, s.nachname COLLATE deutsch, s.vorname COLLATE deutsch, s.id, a.rueckgabe_frist
 `
 
 // ErhoeheMahnstufe erhöht die Mahnstufe der genannten Ausleihen und liefert, wie viele es traf.

@@ -208,7 +208,7 @@ func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []st
 func LadeSchlagworteDesTitels(ctx context.Context, q Datenbank, titelID string) ([]string, error) {
 	var woerter []string
 	err := q.QueryRow(ctx, `
-		SELECT coalesce(array_agg(s.wort ORDER BY lower(s.wort)) FILTER (WHERE s.id IS NOT NULL), '{}')
+		SELECT coalesce(array_agg(s.wort ORDER BY lower(s.wort) COLLATE deutsch) FILTER (WHERE s.id IS NOT NULL), '{}')
 		FROM buecher_titel t
 		LEFT JOIN titel_schlagworte ts ON ts.titel_id = t.id
 		LEFT JOIN schlagworte s ON s.id = ts.schlagwort_id
@@ -251,7 +251,7 @@ func FindeSchlagwortVorschlaege(ctx context.Context, q Datenbank, suche string) 
 		JOIN titel_schlagworte ts ON ts.schlagwort_id = s.id
 		WHERE $1 = '' OR strpos(lower(s.wort), lower($1)) > 0
 		GROUP BY s.id, s.wort
-		ORDER BY strpos(lower(s.wort), lower($1)) = 1 DESC, count(*) DESC, lower(s.wort)
+		ORDER BY strpos(lower(s.wort), lower($1)) = 1 DESC, count(*) DESC, lower(s.wort) COLLATE deutsch
 		LIMIT $2`, suche, grenze)
 	if err != nil {
 		return nil, fmt.Errorf("schlagwort-vorschläge lesen: %w", err)

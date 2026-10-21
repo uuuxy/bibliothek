@@ -43,7 +43,7 @@ func (a *BescheidAbfragen) LadeForderungenOhneBescheid(ctx context.Context) ([]F
 		  AND f.storniert_am IS NULL
 		  AND s.deleted_at IS NULL
 		GROUP BY s.id, s.vorname, s.nachname, s.klasse
-		ORDER BY min(f.erstellt_am), s.nachname, s.vorname
+		ORDER BY min(f.erstellt_am), s.nachname COLLATE deutsch, s.vorname COLLATE deutsch
 		LIMIT 500`)
 	if err != nil {
 		return nil, err

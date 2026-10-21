@@ -75,7 +75,7 @@ func NewLMFAbfragen(pool db.Pool) *LMFAbfragen {
 func (a *LMFAbfragen) LadeTermine(ctx context.Context, ab time.Time, f LMFListenFilter) ([]LMFTermin, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
-		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
+		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse) COLLATE deutsch)
 		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
 		FROM lmf_termine t
 		JOIN lmf_plaene p ON p.id = t.plan_id
