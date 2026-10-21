@@ -5,8 +5,9 @@ package theke
 // die nach dem Commit der ersten und vor dem Speichern ihrer Antwort eintrifft, nichts in der
 // Ablage und liefe neu: Das Buch läge schon beim Kind und würde zurückgenommen. Zwei
 // Theken-Tabs, ein Scanner-Doppelklick oder ein Nachbuchen, das den abgebrochenen
-// Online-Versand wiederholt, und die Ausleihe wäre weg. (Die gleichzeitige Form fängt der
-// Unique-Index; dieser Test prüft die Form „nach dem Commit".)
+// Online-Versand wiederholt, und die Ausleihe wäre weg. Dieser Test prüft die Form „nach dem
+// Commit"; gleichzeitige Anfragen, bei denen die späteren auf die Reservierung der ersten
+// warten, prüft frontend/e2e/theke-gleicher-schluessel.spec.js am Stack.
 
 import (
 	"context"
