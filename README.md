@@ -9,6 +9,9 @@ unterliegen.
 Das ist kein Produkt und keine generische Bibliothekssoftware. Es ist für **einen**
 konkreten Betrieb gebaut, und die Entscheidungen darin sind entsprechend konkret.
 
+**Neu im Code?** Der Einstieg steht auf einer Seite: [WEGWEISER.md](docs/WEGWEISER.md) führt vom
+Menüpunkt zum Ordner und nennt die Stelle für häufige Änderungen.
+
 ---
 
 ## Was es kann
@@ -144,7 +147,7 @@ Alles Weitere liegt in `docs/`.
 | etwas abnehmen (LUSD, Versetzung, Klassensatz)                                                                                  | [abnahme_checkliste.md](docs/abnahme_checkliste.md)                                                                                   |
 | Datenschutz beurteilen (welche Daten, welche Fristen, welche Rechte)                                                            | [datenschutz/nachweis.md](docs/datenschutz/nachweis.md) zum Weitergeben; im Einzelnen [SECURITY.md](docs/SECURITY.md), [PII_MATRIX.de.md](docs/PII_MATRIX.de.md), [datenschutz/](docs/datenschutz/) |
 | Barrierefreiheit beurteilen (was die Gates prüfen, was offen ist)                                                               | [FACHKONZEPT.md §19](docs/FACHKONZEPT.md), [HANDBUCH.md](docs/HANDBUCH.md) „Bedienung ohne Maus"                                           |
-| am Code arbeiten                                                                                                                | [ARCHITEKTUR.md, Kapitel 5](docs/ARCHITEKTUR.md#5-bausteinsicht), [invarianten.md](docs/invarianten.md), [api_inventar.md](docs/api_inventar.md), [sweeps.md](docs/sweeps.md) |
+| am Code arbeiten                                                                                                                | [WEGWEISER.md](docs/WEGWEISER.md), [ARCHITEKTUR.md, Kapitel 5](docs/ARCHITEKTUR.md#5-bausteinsicht), [invarianten.md](docs/invarianten.md), [api_inventar.md](docs/api_inventar.md), [sweeps.md](docs/sweeps.md) |
 | die **Architektur** verstehen oder beurteilen — Ziele, Kontext, Bausteine, Laufzeit, Verteilung, Entscheidungen, Risiken        | [ARCHITEKTUR.md](docs/ARCHITEKTUR.md) — die vollständige Architekturdokumentation in zwölf Kapiteln                                          |
 
 ### Bedienen und fachlich verstehen
