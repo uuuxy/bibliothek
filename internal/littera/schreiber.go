@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/internal/uebernahme"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -42,8 +43,9 @@ type Optionen struct {
 // OptionenVorgabe liefert die Vorgaben für einen Lauf zum Zeitpunkt jetzt.
 //
 // Das Schuljahr endet im Sommer: Ab August zählt bereits das nächste Kalenderjahr.
-// Dieselbe Auslegung wie im Versetzungslauf.
+// Dieselbe Auslegung wie im Versetzungslauf, am Kalendertag der Schule.
 func OptionenVorgabe(jetzt time.Time) Optionen {
+	jetzt = jetzt.In(schulzeit.Zone())
 	schuljahrEnde := jetzt.Year()
 	if jetzt.Month() >= time.August {
 		schuljahrEnde++
@@ -79,7 +81,7 @@ func NewSchreiber(pool *pgxpool.Pool, prot *uebernahme.Protokoll, opt Optionen) 
 		opt.Barcodes = BarcodeLittera
 	}
 	if opt.Jetzt.IsZero() {
-		opt.Jetzt = time.Now()
+		opt.Jetzt = schulzeit.Jetzt()
 	}
 	return &Schreiber{pool: pool, prot: prot, opt: opt}
 }

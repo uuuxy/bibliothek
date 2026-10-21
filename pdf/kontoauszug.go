@@ -109,8 +109,8 @@ func kontoauszugSeite(schueler KontoauszugSchueler, buecher []KontoauszugBuch, m
 			row.New(8).Add(
 				col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),
 				col.New(3).Add(text.New(buch.Barcode, props.Text{Size: 10, Align: align.Center})),
-				col.New(2).Add(text.New(buch.Ausleihdatum.Format(datumsformat), props.Text{Size: 10})),
-				col.New(2).Add(text.New(buch.Rueckgabedatum.Format(datumsformat), props.Text{Size: 10})),
+				col.New(2).Add(text.New(buch.Ausleihdatum.In(schulzeit.Zone()).Format(datumsformat), props.Text{Size: 10})),
+				col.New(2).Add(text.New(buch.Rueckgabedatum.In(schulzeit.Zone()).Format(datumsformat), props.Text{Size: 10})),
 			),
 		)
 	}

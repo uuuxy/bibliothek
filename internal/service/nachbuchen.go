@@ -134,7 +134,7 @@ func (d *AusleihDienst) bucheNach(ctx context.Context, eintrag NachbuchEintrag) 
 		db.Verwerfe(ctx, tx)
 		return d.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
 			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",
-				l.gescannt.Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schulzeit.Zone()).Format("02.01.2006 15:04")))
+				l.gescannt.In(schulzeit.Zone()).Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schulzeit.Zone()).Format("02.01.2006 15:04")))
 	}
 
 	if err := holeAbgeschriebenesZurueck(ctx, tx, l, stand.Ausleihbar, stand.Ausgesondert); err != nil {

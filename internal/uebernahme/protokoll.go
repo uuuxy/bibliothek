@@ -11,7 +11,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // schweregrad einer Zeile im Protokoll.
@@ -68,7 +69,7 @@ func (p *Protokoll) schreibe(grad schweregrad, quellID, kennung, grund string) {
 	case schweregradFehler:
 		p.fehler++
 	}
-	zeit := time.Now().Format("2006-01-02 15:04:05")
+	zeit := schulzeit.Jetzt().Format("2006-01-02 15:04:05")
 	//nolint:errcheck // ein fehlgeschlagener Protokollschreib darf die Übernahme nicht abbrechen
 	_, _ = fmt.Fprintf(p.schreiber, "[%s] %s %s=%s kennung=%q grund=%s\n", zeit, grad, p.idFeld, quellID, kennung, grund)
 }

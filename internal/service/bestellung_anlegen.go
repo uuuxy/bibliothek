@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -348,10 +349,10 @@ func (d *BestellDienst) verarbeitePosition(ctx context.Context, tx pgx.Tx, posit
 				Autor:     titel.Autor,
 				ISBN:      titel.ISBN,
 				Signatur:  titel.Signatur,
-				// Die Exemplare entstehen in dieser Transaktion mit erworben_am = heute. Das
-				// Jahr ist also bekannt und stimmt mit dem überein, was die Seite des
-				// Lieferanten später aus der Datenbank liest.
-				AnschaffungsJahr: strconv.Itoa(time.Now().Year()),
+				// Die Exemplare entstehen in dieser Transaktion mit erworben_am = heute in der Zone
+				// der Schule (Vorgabe der Spalte). Das Jahr dieses Tages liest später auch die Seite
+				// des Lieferanten aus der Datenbank.
+				AnschaffungsJahr: strconv.Itoa(schulzeit.Jetzt().Year()),
 			})
 		}
 	}

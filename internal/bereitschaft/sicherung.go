@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bibliothek/jobs"
+	"bibliothek/pkg/schulzeit"
 )
 
 func pruefeAuslagerung(l Lage) Befund {
@@ -53,7 +54,7 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 	default:
 		b.Stufe = StufeOK
 		b.Befund = fmt.Sprintf("Backup %s erfolgreich wiederhergestellt (%d Tabellen, Probe vom %s).",
-			l.RestoreProbe.BackupDatei, l.RestoreProbe.Tabellen, l.RestoreProbe.Zeitpunkt.Format("02.01.2006"))
+			l.RestoreProbe.BackupDatei, l.RestoreProbe.Tabellen, l.RestoreProbe.Zeitpunkt.In(schulzeit.Zone()).Format("02.01.2006"))
 	}
 	return b
 }

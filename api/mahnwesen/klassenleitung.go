@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -31,7 +32,7 @@ func (t *Tueren) Klassenleitungen() http.HandlerFunc {
 		liste := []klassenleitung{}
 		for _, z := range zeilen {
 			liste = append(liste, klassenleitung{
-				Klasse: z.Klasse, LehrerEmail: z.LehrerEmail, ErstelltAm: z.ErstelltAm.Format("2006-01-02"),
+				Klasse: z.Klasse, LehrerEmail: z.LehrerEmail, ErstelltAm: z.ErstelltAm.In(schulzeit.Zone()).Format("2006-01-02"),
 			})
 		}
 

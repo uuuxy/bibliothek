@@ -1,6 +1,8 @@
 package docs
 
 import (
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,6 +32,9 @@ import (
 // aus der ersten Stunde eines Monats in den Monat davor. schulzeit.Kalendertag liest denselben
 // Text als Tag der Schule.
 //
+// Wo time.Now() oder ein Parameter jetzt zum Kalenderwert wird, misst der Syntaxbaum
+// (kalendertag_uhr_test.go), auch über AddDate hinweg und für Monat und Tag.
+//
 // Was die Ratsche nicht verbietet: Zeitpunkt-Vergleiche. „Überfällig" ist
 // `rueckgabe_frist < CURRENT_TIMESTAMP` und bleibt es, denn ein Zeitpunkt ist in jeder Zone
 // derselbe. Verboten ist nur der Kalendertag aus einer fremden Zone.
@@ -45,10 +50,8 @@ var bestandKalendertag = map[string]struct {
 	// Einmal-Werkzeug der Alt-Übernahme: Anschaffungsdatum eines importierten Exemplars.
 	// Ein um zwei Stunden verschobenes Kaufdatum ändert keine Entscheidung über einen
 	// Menschen, und es läuft ohnehin von Hand und tagsüber.
-	"cmd/migrate/pg_writer.go":               {1, "erworben_am beim Alt-Import"},
-	"repository/statistik.go":                {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
-	"internal/uebernahme/protokoll.go":       {1, "Zeitstempel einer Protokollzeile"},
-	"internal/service/bestellung_anlegen.go": {1, "Anschaffungsjahr eines Exemplars"},
+	"cmd/migrate/pg_writer.go": {1, "erworben_am beim Alt-Import"},
+	"repository/statistik.go":  {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
 	// Ein Datum aus einer Eingabe, als Tag in UTC gelesen: geduldet, wo danach kein Zeitpunkt
 	// in UTC verglichen wird.
 	"internal/service/frist.go":           {1, "Ferien-Leseclub: nimmt Jahr, Monat und Tag und baut daraus das Tagesende der Schule"},
@@ -64,7 +67,6 @@ var bestandKalendertag = map[string]struct {
 
 var (
 	musterCurrentDate = regexp.MustCompile(`\bCURRENT_DATE\b`)
-	musterRoheUhr     = regexp.MustCompile(`time\.Now\(\)\.(Format|Year)\(`)
 	musterDatumInUTC  = regexp.MustCompile(`time\.Parse\((tuer\.DatumsformatISO|"2006-01-02"|time\.DateOnly),`)
 	musterZeilenKomm  = regexp.MustCompile(`(?m)^\s*//.*$`)
 	musterSQLKomm     = regexp.MustCompile(`(?m)^\s*--.*$`)
@@ -94,7 +96,11 @@ func TestKalendertag_BestandWaechstNicht(t *testing.T) {
 		// Kommentare zuerst weg: Ein Fund, der nur eine Erklärung ist, wäre ein Fehlalarm —
 		// und ein Register mit Fehlalarmen wird nach dem zweiten Mal nicht mehr gelesen.
 		quelle := musterSQLKomm.ReplaceAllString(musterZeilenKomm.ReplaceAllString(string(roh), ""), "")
-		n := len(musterCurrentDate.FindAllString(quelle, -1)) + len(musterRoheUhr.FindAllString(quelle, -1)) +
+		datei, err := parser.ParseFile(token.NewFileSet(), pfad, roh, 0)
+		if err != nil {
+			return err
+		}
+		n := len(musterCurrentDate.FindAllString(quelle, -1)) + uhrFunde(datei) +
 			len(musterDatumInUTC.FindAllString(quelle, -1))
 		if n > 0 {
 			rel := strings.TrimPrefix(filepath.ToSlash(strings.TrimPrefix(pfad, wurzel)), "/")
@@ -132,7 +138,7 @@ func TestKalendertag_BestandWaechstNicht(t *testing.T) {
 
 	for _, p := range neu {
 		t.Errorf("%s rechnet neu mit dem Kalendertag der Sitzung (CURRENT_DATE) oder der "+
-			"Container-Uhr (time.Now().Format/Year), oder liest ein Datum mit time.Parse als "+
+			"Container-Uhr (time.Now() als Tag, Jahr oder Text; ein jetzt ohne .In(…)), oder liest ein Datum mit time.Parse als "+
 			"Tag in UTC. Zwischen Mitternacht in Berlin und Mitternacht UTC ist das der VORTAG. "+
 			"Entweder schulzeit.SQLHeute, schulzeit.Jetzt() bzw. schulzeit.Kalendertag "+
 			"benutzen — oder die Stelle mit Begründung in bestandKalendertag eintragen.", p)

@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
+
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -88,7 +89,7 @@ func BescheidRumpf(frist string, betraege map[string]float64) string {
 }
 
 // In28Tagen ist der Kalendertag in 28 Tagen, als Frist eines Bescheids.
-func In28Tagen() string { return time.Now().AddDate(0, 0, 28).Format("2006-01-02") }
+func In28Tagen() string { return schulzeit.Jetzt().AddDate(0, 0, 28).Format("2006-01-02") }
 
 // LegeOffenenSchadenAn hängt dem Schüler einen unbezahlten Schadensfall an.
 func LegeOffenenSchadenAn(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {

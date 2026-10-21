@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // AbgangsjahrOhneKlasse ist das Abgangsjahr eines Schülers, dessen Klasse keinen Jahrgang
@@ -16,7 +18,7 @@ import (
 // Verbraucher: die Handanlage und der LUSD-Import (AbgaengerJahrAm) und die
 // Littera-Übernahme für die Gruppe „Im Ausland" — eine Antwort auf dieselbe Frage.
 func AbgangsjahrOhneKlasse(jetzt time.Time) int {
-	return jetzt.Year() + 5
+	return jetzt.In(schulzeit.Zone()).Year() + 5
 }
 
 // klassenZahlSQL liest die Zahl am Anfang einer Klasse (NULL ohne führende Ziffer), höchstens
@@ -120,6 +122,7 @@ func AbgaengerJahr(klasse string) int {
 // AbgaengerJahrAm rechnet wie AbgaengerJahr zu einem genannten Zeitpunkt. Das Schuljahr endet
 // im Juli; ab August zählt das folgende Kalenderjahr als Basis.
 func AbgaengerJahrAm(klasse string, jetzt time.Time) int {
+	jetzt = jetzt.In(schulzeit.Zone())
 	jahrgang, abschluss, ok := AbschlussJahrgang(klasse)
 	if !ok {
 		return AbgangsjahrOhneKlasse(jetzt)

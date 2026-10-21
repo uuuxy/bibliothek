@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
-	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
@@ -16,6 +15,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -76,7 +76,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	// „Ansch.J." steht auf der physischen Etikettenvorlage der Schule (Foto vom
 	// Lernmittel-Etikett: Schulname / Titel / Ansch.J. / Barcode / Exemplar-Nr. /
 	// Eigentumsvermerk / Ausleihtabelle). Beide Wege, Etikettenseite und Mailanhang, tragen es.
-	jahr := strconv.Itoa(time.Now().Year())
+	jahr := strconv.Itoa(schulzeit.Jetzt().Year())
 	for _, e := range etiketten {
 		if e.AnschaffungsJahr != jahr {
 			t.Fatalf("Etikett der Seite trägt Anschaffungsjahr %q, erwartet %q", e.AnschaffungsJahr, jahr)

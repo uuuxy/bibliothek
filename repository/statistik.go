@@ -216,7 +216,7 @@ func LadeLadenhueter(ctx context.Context, db Datenbank, typFilter string, limit 
 		}
 		l.LetzteAusleihe = "Nie ausgeliehen"
 		if letzteAusleihe != nil {
-			l.LetzteAusleihe = letzteAusleihe.Format(datumsformat)
+			l.LetzteAusleihe = letzteAusleihe.In(schulzeit.Zone()).Format(datumsformat)
 		}
 		ladenhueter = append(ladenhueter, l)
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -151,9 +152,9 @@ func (a *ReservierungsAbfragen) LadeAlle(ctx context.Context) ([]Reservierung, e
 		); err != nil {
 			return nil, zeileUnlesbar(err)
 		}
-		r.ErstelltAm = t.Format(datumsformat)
+		r.ErstelltAm = t.In(schulzeit.Zone()).Format(datumsformat)
 		if erledigtAm != nil {
-			r.ErledigtAm = erledigtAm.Format(datumsformat)
+			r.ErledigtAm = erledigtAm.In(schulzeit.Zone()).Format(datumsformat)
 		}
 		reservierungen = append(reservierungen, r)
 	}
@@ -187,7 +188,7 @@ func (a *ReservierungsAbfragen) LadeOffene(ctx context.Context) ([]OffeneReservi
 		if err := rows.Scan(&o.TitelID, &o.Titel, &o.Klasse, &o.Anzahl, &t); err != nil {
 			return nil, err
 		}
-		o.ErstelltAm = t.Format(datumsformat)
+		o.ErstelltAm = t.In(schulzeit.Zone()).Format(datumsformat)
 		offene = append(offene, o)
 	}
 	return offene, rows.Err()
@@ -236,9 +237,9 @@ func (a *ReservierungsAbfragen) LadeEigene(ctx context.Context, benutzerID strin
 			&m.Notiz, &m.Erledigt, &m.ErledigtNotiz, &erledigtAm, &erstellt); err != nil {
 			return nil, err
 		}
-		m.ErstelltAm = erstellt.Format(datumsformat)
+		m.ErstelltAm = erstellt.In(schulzeit.Zone()).Format(datumsformat)
 		if erledigtAm != nil {
-			m.ErledigtAm = erledigtAm.Format(datumsformat)
+			m.ErledigtAm = erledigtAm.In(schulzeit.Zone()).Format(datumsformat)
 		}
 		meine = append(meine, m)
 	}

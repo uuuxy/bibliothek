@@ -212,7 +212,7 @@ func positionsZeilen(position RechnungsPosition) []core.Row {
 		row.New(12).Add(
 			col.New(5).Add(text.New(position.Titel, props.Text{Size: 10})),
 			code.NewBarCol(3, position.Barcode, props.Barcode{Center: true, Percent: 90}),
-			col.New(2).Add(text.New(position.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
+			col.New(2).Add(text.New(position.Ausleihdatum.In(schulzeit.Zone()).Format("02.01.2006"), props.Text{Size: 10})),
 			col.New(2).Add(text.New(betrag.Text(position.Ersatzpreis)+" EUR", props.Text{Size: 10, Align: align.Right})),
 		),
 		row.New(5).Add(

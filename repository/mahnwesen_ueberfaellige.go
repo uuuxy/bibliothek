@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // klassenGruppen sammelt Zeilen zu Klassen→Schüler→Medien. Bewusst index-basiert:
@@ -112,7 +114,7 @@ func (a *MahnwesenAbfragen) LadeUeberfaelligeNachKlasse(ctx context.Context, kla
 			ISBN:             isbn,
 			Barcode:          exBarcode,
 			CoverURL:         coverURL,
-			FaelligAm:        frist.Format(datumsformat),
+			FaelligAm:        frist.In(schulzeit.Zone()).Format(datumsformat),
 			TageUeberfaellig: tage,
 			Mahnstufe:        mahnstufe,
 			LetztesMahndatum: mahndatumText(mahndatum),

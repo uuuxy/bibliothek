@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // SchuljahrEnde liefert das Jahr, in dem das laufende Schuljahr endet (Schuljahr 2026/27:
@@ -26,7 +28,9 @@ import (
 //
 // Die Grenze liegt im August wie im Versetzungslauf und im Import aus Littera. Eine zweite
 // Auslegung verschöbe jeden Ausweis um ein Jahr, und zwar nur zwischen August und Dezember.
+// Gerechnet wird am Kalendertag der Schule, gleich in welcher Zone jetzt ankommt.
 func SchuljahrEnde(jetzt time.Time) int {
+	jetzt = jetzt.In(schulzeit.Zone())
 	jahr := jetzt.Year()
 	if jetzt.Month() >= time.August {
 		jahr++

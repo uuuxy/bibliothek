@@ -174,8 +174,6 @@ gebaut.
   `ui/Menue` kann einen Kopf und Gruppen-Überschriften, die kein Aufrufer nutzt.
 - Die Grenze `format.Hoehe >= 30` steht zweimal (`pdf/etikett_buch.go`,
   `pdf/etikett_schueler.go`).
-- `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=` in der Zone des
-  Testprozesses; westlich von UTC ist das der Vortag. Auf `schulzeit.Zone()` umstellen.
 
 ### 7.2 Frisches Littera-Backup
 

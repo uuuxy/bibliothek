@@ -2680,14 +2680,15 @@ während der Server aus demselben Grund den Start verweigert.
 **Anlass.** Mit `TZ=Europe/Berlin` hätte die Nacht der Sommerzeit-Umstellung den Backup-Job
 `30 2 * * *` verschluckt: 02:30 existiert dann nicht.
 
-**Folge.** `TZ` ist gefahrlos setzbar und hält Logs und Zeitstempel konsistent. Die
-**fachliche** Zeitrechnung bleibt getrennt davon bei `Europe/Berlin` im Code
-(`pkg/schulzeit`, `ZonenName`). Für SQL heißt das: Der Kalendertag der Schule ist
+**Folge.** Der Container läuft in UTC; `docker-compose.yml` reicht kein `TZ` durch. Die
+**fachliche** Zeitrechnung steht bei `Europe/Berlin` im Code (`pkg/schulzeit`, `ZonenName`),
+und ein Zeitpunkt aus der Datenbank wird erst an der Ausgabe in diese Zone umgerechnet: pgx
+liest ihn in `time.Local`. Für SQL heißt das: Der Kalendertag der Schule ist
 `schulzeit.SQLHeute`, nie `CURRENT_DATE` — die Datenbank-Sitzung läuft in UTC, und zwischen
 Mitternacht in Berlin und Mitternacht UTC wäre es der Vortag. Den Bestand hält die Ratsche
 `docs/kalendertag_bestand_test.go` ([sweeps.md](sweeps.md), „Tag in der falschen Zeitzone").
 
-**Fundstelle.** `jobs/cron.go`, `.env.example` (Abschnitt `TZ`), `pkg/schulzeit/schulzeit.go`.
+**Fundstelle.** `jobs/cron.go`, `pkg/schulzeit/schulzeit.go`.
 
 ---
 

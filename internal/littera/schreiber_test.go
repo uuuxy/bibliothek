@@ -3,6 +3,8 @@ package littera
 import (
 	"testing"
 	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // TestOptionenVorgabe prüft die Vorgabewerte für einen Lauf.
@@ -26,14 +28,16 @@ func TestOptionenVorgabe(t *testing.T) {
 
 // TestOptionenVorgabeSchuljahr: das Schuljahr endet im Sommer. Ab August zählt bereits
 // das nächste Kalenderjahr — dieselbe Auslegung wie im Versetzungslauf. Läge die Grenze
-// falsch, bekämen alle importierten Schüler ein um ein Jahr verschobenes Abgangsjahr.
+// falsch, bekämen alle importierten Schüler ein um ein Jahr verschobenes Abgangsjahr. Die Grenze
+// liegt am Kalendertag der Schule: 23:30 Uhr UTC am 31. Juli ist in Berlin schon der 1. August.
 func TestOptionenVorgabeSchuljahr(t *testing.T) {
 	faelle := []struct {
 		jetzt time.Time
 		ende  int
 	}{
-		{time.Date(2026, 7, 31, 23, 59, 59, 0, time.UTC), 2026},
-		{time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC), 2027},
+		{time.Date(2026, 7, 31, 23, 59, 59, 0, schulzeit.Zone()), 2026},
+		{time.Date(2026, 8, 1, 0, 0, 0, 0, schulzeit.Zone()), 2027},
+		{time.Date(2026, 7, 31, 23, 30, 0, 0, time.UTC), 2027},
 		{time.Date(2027, 1, 15, 0, 0, 0, 0, time.UTC), 2027},
 	}
 	for _, f := range faelle {

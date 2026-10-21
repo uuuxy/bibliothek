@@ -18,6 +18,7 @@ import (
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -303,8 +304,10 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	var mitStichtag struct {
 		Anzahl int `json:"anzahl"`
 	}
+	// Der Stichtag ist ein Tag der Schule: Westlich von UTC ist das Heute des Testprozesses zu
+	// manchen Stunden der Vortag, und die heute angelegten Exemplare zählten nicht mit.
 	jsonHolen(t, srv.druck().EtikettenOffenAnzahl(),
-		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(tuer.DatumsformatISO), &mitStichtag)
+		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().In(schulzeit.Zone()).Format(tuer.DatumsformatISO), &mitStichtag)
 	if mitStichtag.Anzahl != 4 {
 		t.Errorf("Stichtag-Zaehler nennt %d, erwartet 4 (drei markierte + ein fremdes offenes)",
 			mitStichtag.Anzahl)

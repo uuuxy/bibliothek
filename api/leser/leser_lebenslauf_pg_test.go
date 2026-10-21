@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -318,8 +319,10 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 		Scan(&jahr, &gesperrt, &vorname); err != nil {
 		t.Fatal(err)
 	}
-	if jahr != time.Now().Year() {
-		t.Errorf("abgaenger_jahr = %d, erwartet %d (Abgangsjahr) — Cronjob würde ihn nie erfassen", jahr, time.Now().Year())
+	// SperreAbgaenger rechnet das Jahr in der Zone der Schule; in UTC wäre es in der ersten
+	// Stunde des Jahres noch das alte.
+	if soll := schulzeit.Jetzt().Year(); jahr != soll {
+		t.Errorf("abgaenger_jahr = %d, erwartet %d (Abgangsjahr) — Cronjob würde ihn nie erfassen", jahr, soll)
 	}
 	if !gesperrt || vorname != "Alt" {
 		t.Errorf("Abgänger mit offenem Buch soll gesperrt sein, Name behalten: gesperrt=%v vorname=%q", gesperrt, vorname)
