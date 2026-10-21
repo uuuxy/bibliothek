@@ -19,7 +19,7 @@ RUN npm run build
 # stecken in Stdlib-Patches — ein Build mit einem älteren Tag kompiliert die verwundbaren
 # Pakete ins Binary (GOTOOLCHAIN=local lädt nichts nach). Dependabot hebt nur diese Zeile;
 # docs/umgebung_paritaet_test.go hält sie gleich mit go.mod.
-FROM golang:1.27.2-alpine AS backend-builder
+FROM golang:1.27.3-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly
