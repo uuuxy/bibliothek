@@ -628,6 +628,7 @@ Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 **Kommt die Bestellmail nicht an:** Scheitert der Versand oder ist kein
 Mailserver eingerichtet, ist die Bestellung trotzdem gespeichert. In der Bestellhistorie steht
 dann in der Spalte _Stand_ „Mail nicht versendet", in der Bestellung der Knopf _Erneut senden_.
+Ist ein Exemplar aus der Bestellung eingebucht, entfällt der Hinweis von selbst.
 Hat der Händler die Bestellung auf anderem Weg bekommen (Telefon, eigene Mail), nimmt _Auf
 anderem Weg bestellt_ den Hinweis nach einer Rückfrage weg, ohne zu senden; danach lässt sich
 die Bestellung nicht mehr aus dem Programm senden. Diesen Knopf gibt es nur an Bestellungen ohne

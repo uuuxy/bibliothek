@@ -65,7 +65,7 @@ type BestellVerlaufEintrag struct {
 	// bestätigen und Etiketten drucken kann.
 	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
 	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
-	// solange die Bestellung nicht bestätigt ist (sqlBestellmailOffen). nil =
+	// solange die Bestellung weder bestätigt noch geliefert ist (sqlBestellmailOffen). nil =
 	// kein offener gescheiterter Versand.
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }

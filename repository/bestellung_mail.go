@@ -13,11 +13,19 @@ import (
 // des letzten gescheiterten Versuchs; NULL heißt, dass kein gescheiterter Versand vermerkt ist.
 
 // sqlBestellmailOffen ist der Vermerk, wie Liste, Detail und der erneute Versand ihn lesen:
-// der Zeitpunkt des gescheiterten Versands, solange die Bestellung nicht bestätigt ist. Hat
-// der Händler über den Link bestätigt oder die Bibliothek seine Zusage nachgetragen, hat er
-// die Bestellung; „Mail nicht versendet" wäre dann falsch, und ein erneuter Versand brächte
+// der Zeitpunkt des gescheiterten Versands, solange die Bestellung nicht bestätigt und kein
+// Exemplar aus ihr eingetroffen ist (zugang_am stempelt nur das Eintreffen). Dann hat der
+// Händler die Bestellung; „Mail nicht versendet" wäre falsch, und ein erneuter Versand brächte
 // sie ein zweites Mal zu ihm. Die Bestellung muss als `b` gebunden sein.
-const sqlBestellmailOffen = `CASE WHEN b.bestaetigt_am IS NULL THEN b.mail_gescheitert_am END`
+const sqlBestellmailOffen = `CASE WHEN b.bestaetigt_am IS NULL AND NOT EXISTS (
+	SELECT 1 FROM buecher_exemplare e WHERE e.bestellung_id = b.id AND e.zugang_am IS NOT NULL)
+	THEN b.mail_gescheitert_am END`
+
+// sqlBestelllinkNichtErhalten sagt, ob der Bestätigungs-Link in einer Mail stand, die nicht
+// rausging. Anders als der Vermerk bleibt das nach dem Wareneingang wahr: Geliefert hat der
+// Händler dann auf einem anderen Weg, den Link hat er trotzdem nicht. Die Bestellung muss als
+// `b` gebunden sein.
+const sqlBestelllinkNichtErhalten = `(` + sqlBestellungMitBestaetigung + ` AND b.mail_gescheitert_am IS NOT NULL)`
 
 // sqlBestellungMitBestaetigung sagt, ob die Bestellung mit einem Bestätigungs-Link rausging.
 // Für sie zeigt die Oberfläche den Bestätigungsblock, in dem sich die Zusage des Händlers

@@ -27,7 +27,8 @@ const gescheitert = {
 	gesamtbetrag: 0,
 	mit_bestaetigung: true,
 	link_aktiv: true,
-	mail_gescheitert_am: '2026-10-07T08:00:05Z'
+	mail_gescheitert_am: '2026-10-07T08:00:05Z',
+	link_nicht_erhalten: true
 };
 
 // Scheitert die Mail an den Lieferanten, steht es an der Bestellung, und sie lässt sich von
@@ -163,6 +164,15 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 	// sei mit der Bestellmail rausgegangen.
 	it('der Block der Bestätigung behauptet nicht, der Link sei mit der Mail rausgegangen', () => {
 		const screen = render(BestellStatusBlock, { b: gescheitert, onAktualisieren: async () => {} });
+
+		expect(screen.queryByText(/ging mit der Bestellmail raus/)).toBeNull();
+		expect(screen.getByText(/Der Händler hat den Bestätigungs-Link nicht erhalten/)).toBeTruthy();
+	});
+
+	// Nach dem Wareneingang fehlt der Hinweis zur Mail; den Link hat der Händler trotzdem nicht.
+	it('nach der Lieferung auf anderem Weg nennt der Block den Link weiter als nicht erhalten', () => {
+		const geliefert = { ...gescheitert, mail_gescheitert_am: undefined };
+		const screen = render(BestellStatusBlock, { b: geliefert, onAktualisieren: async () => {} });
 
 		expect(screen.queryByText(/ging mit der Bestellmail raus/)).toBeNull();
 		expect(screen.getByText(/Der Händler hat den Bestätigungs-Link nicht erhalten/)).toBeTruthy();

@@ -36,9 +36,10 @@
 			.join(' · ')
 	);
 
-	// Ist die Bestellmail nicht rausgegangen, hat der Händler auch den Link darin nicht.
+	// Ist die Bestellmail nicht rausgegangen, hat der Händler auch den Link darin nicht, auch
+	// wenn er auf anderem Weg geliefert hat und der Hinweis zur Mail deshalb fehlt.
 	let linkSatz = $derived.by(() => {
-		if (b.mail_gescheitert_am) {
+		if (b.link_nicht_erhalten) {
 			return 'Der Händler hat den Bestätigungs-Link nicht erhalten: Die Bestellmail ist nicht rausgegangen.';
 		}
 		if (!b.link_aktiv) return 'Für diese Bestellung ist kein gültiger Link unterwegs.';

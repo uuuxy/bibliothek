@@ -42,9 +42,13 @@ type BestellungKopf struct {
 	Mittel string `json:"mittel"`
 
 	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
-	// solange die Bestellung nicht bestätigt ist (sqlBestellmailOffen). nil = kein offener
-	// gescheiterter Versand.
+	// solange die Bestellung weder bestätigt noch geliefert ist (sqlBestellmailOffen). nil =
+	// kein offener gescheiterter Versand.
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
+
+	// LinkNichtErhalten: Der Bestätigungs-Link stand in einer Mail, die nicht rausging
+	// (sqlBestelllinkNichtErhalten). Der Bestätigungsblock sagt dann nicht, er sei unterwegs.
+	LinkNichtErhalten bool `json:"link_nicht_erhalten"`
 }
 
 // BestellPositionDetail ist eine bestellte Zeile mit den Angaben aus dem Titel. Autor, Verlag
@@ -131,13 +135,13 @@ func (a *BestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID strin
 		       bestaetigt_am, bestaetigt_durch, etiketten_groesse,
 		       (bestaetigungs_token_hash IS NOT NULL
 		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())),
-		       coalesce(mittel, ''), `+sqlBestellmailOffen+`
+		       coalesce(mittel, ''), `+sqlBestellmailOffen+`, `+sqlBestelllinkNichtErhalten+`
 		FROM bestellungen_verlauf b
 		WHERE id = $1
 	`, bestellungID).Scan(&k.ID, &k.LieferantName, &k.LieferantEmail, &k.Kundennummer,
 		&k.Bestelldatum, &k.Gesamtbetrag, &k.AnzahlExemplare, &k.MitBestaetigung,
 		&k.BestaetigtAm, &k.BestaetigtDurch, &k.EtikettenGroesse, &k.LinkAktiv, &k.Mittel,
-		&k.MailGescheitertAm)
+		&k.MailGescheitertAm, &k.LinkNichtErhalten)
 	if err != nil {
 		return nil, err
 	}
