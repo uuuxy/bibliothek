@@ -8,7 +8,7 @@
 /**
  * Ein Eintrag des Menüs. Hier und nicht im Bauteil, weil ein .svelte seine JSDoc-Typen
  * nicht exportiert — Aufrufer (Mahnwesen, Ausweis) holen ihn von hier.
- * @typedef {{ id: string, text: string, icon?: any, disabled?: boolean, trennerDavor?: boolean, ueberschriftDavor?: string }} Eintrag
+ * @typedef {{ id: string, text: string, icon?: any, disabled?: boolean, trennerDavor?: boolean }} Eintrag
  */
 
 const RAND = 8;

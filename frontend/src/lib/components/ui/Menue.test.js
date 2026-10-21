@@ -85,33 +85,21 @@ describe('Menue', () => {
 		expect(document.activeElement, 'Fokus gehört dem Chevron, nicht der Hauptaktion').toBe(chevron);
 	});
 
-	it('trägt einen Kopf mit Bedienelement: Tab wandert hinein, Pfeile bleiben dem Feld', async () => {
-		const kopf = createRawSnippet(() => ({
-			render: () => `<div><label>Klasse <input aria-label="Klasse" /></label></div>`
-		}));
-		const wahl = vi.fn();
-		const { getByRole, getAllByRole, queryByRole, getByLabelText } = render(Menue, {
+	it('schließt, wenn der Fokus das Menü verlässt, nicht beim Wechsel zwischen Einträgen', async () => {
+		const { getByRole, getAllByRole, queryByRole } = render(Menue, {
 			etikett: 'Aktionen',
-			eintraege: [{ id: 'a', text: 'Erster Eintrag', ueberschriftDavor: 'Weitere' }],
-			onwahl: wahl,
-			kopf
+			eintraege: [
+				{ id: 'a', text: 'Erster Eintrag' },
+				{ id: 'b', text: 'Zweiter Eintrag' }
+			],
+			onwahl: vi.fn()
 		});
 		await fireEvent.click(getByRole('button', { name: 'Aktionen' }));
 		const menu = getByRole('menu');
-		expect(getByLabelText('Klasse')).toBeTruthy();
-		expect(menu.textContent).toContain('Weitere');
+		const [, zweiter] = getAllByRole('menuitem');
+		await fireEvent.focusOut(menu, { relatedTarget: zweiter });
+		expect(queryByRole('menu'), 'ein Wechsel zwischen Einträgen schließt nicht').toBeTruthy();
 
-		// Fokus ins Feld im Kopf: Das Menü bleibt offen …
-		const feld = getByLabelText('Klasse');
-		feld.focus();
-		await fireEvent.focusOut(menu, { relatedTarget: feld });
-		expect(queryByRole('menu'), 'Fokus im Kopf darf das Menü nicht schließen').toBeTruthy();
-		// … und ArrowDown im Feld springt NICHT auf einen Eintrag.
-		await fireEvent.keyDown(feld, { key: 'ArrowDown' });
-		expect(document.activeElement).toBe(feld);
-		expect(getAllByRole('menuitem')).toHaveLength(1);
-
-		// Fokus ganz hinaus: zu.
 		const draussen = document.createElement('button');
 		document.body.appendChild(draussen);
 		await fireEvent.focusOut(menu, { relatedTarget: draussen });

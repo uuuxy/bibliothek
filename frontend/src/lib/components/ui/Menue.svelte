@@ -19,13 +19,10 @@
      „Disabled menu items can receive focus but aren't selectable") — deshalb
      aria-disabled wie in SelectListe; ein <button disabled> nimmt im Browser keinen Fokus.
 
-     Zweierlei über die Einträge hinaus: ein eigener Auslöser (`ausloeser`-Snippet — der
-     Split-Button „Ausweis drucken ▾"; der Knopf mit aria-haspopup bekommt den Fokus
-     zurück) und ein Kopf über den Einträgen (`kopf`-Snippet). Mit Kopf steht die Höhe
-     erst nach dem Rendern fest, deshalb wird gemessen statt gerechnet
-     (menueGeometrie.js), und Tab wandert in den Kopf, statt das Menü zu schließen —
-     geschlossen wird, wenn der Fokus das Menü verlässt. Gruppen-Überschriften:
-     `ueberschriftDavor` am Eintrag. -->
+     Über die Einträge hinaus kann der Aufrufer den Auslöser selbst stellen (`ausloeser`-Snippet —
+     der Split-Button „Ausweis drucken ▾"; der Knopf mit aria-haspopup bekommt den Fokus
+     zurück). Die Höhe wird nach dem Rendern gemessen (menueGeometrie.js); geschlossen wird,
+     wenn der Fokus das Menü verlässt. -->
 <script>
 	import { tick } from 'svelte';
 	import { EllipsisVertical } from '@lucide/svelte';
@@ -36,16 +33,8 @@
 	/** @typedef {import('./menueGeometrie.js').Eintrag} Eintrag */
 	/** @type {{ etikett: string, eintraege: Eintrag[], onwahl: (id: string) => void,
 	 *   ausloeser?: import('svelte').Snippet<[{ offen: boolean, umschalten: () => void }]>,
-	 *   kopf?: import('svelte').Snippet, ausrichtung?: 'rechts' | 'links', breite?: number }} */
-	let {
-		etikett,
-		eintraege,
-		onwahl,
-		ausloeser,
-		kopf,
-		ausrichtung = 'rechts',
-		breite = 256
-	} = $props();
+	 *   ausrichtung?: 'rechts' | 'links', breite?: number }} */
+	let { etikett, eintraege, onwahl, ausloeser, ausrichtung = 'rechts', breite = 256 } = $props();
 
 	/** Breite in px — innerhalb der M3-Spanne 112–280 dp. */
 	const BREITE = $derived(Math.max(112, Math.min(280, breite)));
@@ -68,7 +57,7 @@
 		box = null;
 		offen = true;
 		await tick();
-		// Gemessen, nicht gerechnet: Der Kopf hat keine feste Zeilenhöhe.
+		// Gemessen, nicht gerechnet: Trenner und Rand geben keine feste Höhe je Eintrag vor.
 		const hoehe = flaeche?.getBoundingClientRect().height ?? 0;
 		box = berechneMenueBox(anker.getBoundingClientRect(), hoehe, BREITE, ausrichtung, {
 			breite: window.innerWidth,
@@ -104,10 +93,6 @@
 
 	/** @param {KeyboardEvent} e */
 	function taste(e) {
-		// Nur die Einträge wandern mit den Pfeilen — im Kopf gehören die Tasten dem
-		// Auswahlfeld, das dort steht.
-		const ziel = /** @type {HTMLElement} */ (e.target);
-		if (ziel !== flaeche && !ziel.matches('[role="menuitem"]')) return;
 		const n = eintraege.length;
 		if (e.key === 'ArrowDown') aktiv = (aktiv + 1) % n;
 		else if (e.key === 'ArrowUp') aktiv = (aktiv - 1 + n) % n;
@@ -163,17 +148,9 @@
 			0}px; width:{BREITE}px; z-index:60; visibility:{box ? 'visible' : 'hidden'};"
 		class="rounded-sm bg-surface-container py-2 shadow-xl"
 	>
-		{#if kopf}
-			<div class="px-3 pb-2">{@render kopf()}</div>
-		{/if}
 		{#each eintraege as e, i (e.id)}
 			{#if e.trennerDavor}
 				<div class="my-2 border-t border-outline-variant" role="separator"></div>
-			{/if}
-			{#if e.ueberschriftDavor}
-				<div class="px-3 pt-1 pb-1 text-label-small font-medium text-on-surface-variant">
-					{e.ueberschriftDavor}
-				</div>
 			{/if}
 			<button
 				type="button"
