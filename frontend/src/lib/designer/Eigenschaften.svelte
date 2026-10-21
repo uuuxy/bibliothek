@@ -137,14 +137,14 @@
 			<span class="text-xs font-medium text-on-surface-variant flex-1">Ebene (z={el.zIndex})</span>
 			<button
 				onclick={() => bringForward(side, el.id)}
-				class="px-2 py-1 text-label-small bg-surface-container text-on-surface rounded-lg font-bold"
-				title="Nach vorne"
+				class="icon-btn text-label-small bg-surface-container text-on-surface font-bold"
+				data-tip="Nach vorne"
 				aria-label="Ebene nach vorne verschieben">▲</button
 			>
 			<button
 				onclick={() => sendBackward(side, el.id)}
-				class="px-2 py-1 text-label-small bg-surface-container text-on-surface rounded-lg font-bold"
-				title="Nach hinten"
+				class="icon-btn text-label-small bg-surface-container text-on-surface font-bold"
+				data-tip="Nach hinten"
 				aria-label="Ebene nach hinten verschieben">▼</button
 			>
 		</div>

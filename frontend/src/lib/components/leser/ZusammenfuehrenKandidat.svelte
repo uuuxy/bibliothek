@@ -51,7 +51,8 @@
 			type="button"
 			onclick={onAbwaehlen}
 			aria-label="Auswahl aufheben"
-			class="p-1 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors shrink-0"
+			data-tip="Auswahl aufheben"
+			class="icon-btn shrink-0 text-on-surface-variant hover:text-on-surface"
 		>
 			<X class="w-4 h-4" aria-hidden="true" />
 		</button>

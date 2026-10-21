@@ -55,36 +55,22 @@
 	}
 
 	/* ── Icon-Buttons ─────────────────────────────────────────────────────────
-	   Dieselbe Geschichte wie bei den Feldhöhen, eine Stufe kleiner: Buttons, die
-	   nur ein Symbol tragen, hatten kein gemeinsames Maß. Im Browser gemessen
-	   ergab die Inventur vier verschiedene — 20×20 (Cover-Vorschau, ganz ohne
-	   Polsterung), 22×22 (Titelsatz in der Bestellhistorie), 30×30 (Navigation
-	   einklappen) und 38×28 (Banner schließen). Der beschriftete Nachbar daneben
-	   stand längst auf 36 px, und in der Bestellhistorie saß ein 14-px-Symbol in
-	   einer 22-px-Fläche — sichtbar zu klein und kaum zu treffen.
+	   Ein Knopf, der nur ein Symbol trägt, ist mindestens 32 px groß (Material 3, Icon buttons:
+	   Container „extra small" 32 dp) und hat eine Trefferfläche von 48 × 48 px: „Extra small and
+	   small icon buttons must have a target size of 48x48dp or larger to be accessible."
 
-	   Material 3 nennt für den Icon-Button „extra small" einen Container von
-	   32 dp. Das ist hier auch das praktische Maß: groß genug als Trefferfläche,
-	   klein genug, um eine dichte Tabellenzeile nicht auseinanderzuziehen (36 px
-	   wie bei den Feldern würde die Detailzeilen der Bestellhistorie strecken).
-
-	   Warum eine Komponenten-Klasse und KEINE base-Regel auf button:has(> svg):
-	   Eine base-Regel verliert gegen jede Utility — CoverVorschau trägt ein
-	   explizites w-5 h-5 und wäre stillschweigend kleiner geblieben, also genau
-	   die Fundstelle, die am weitesten daneben lag. Und sie hätte Buttons
-	   getroffen, die ich nie angesehen habe. Die Klasse steht sichtbar an der
-	   Fundstelle, die Wirkung ist auf sie begrenzt.
-
-	   Verankert im E2E-Gate e2e/icon-trefferflaechen.spec.js (misst im Browser). */
+	   Eine Klasse statt einer Regel auf button:has(> svg): Eine solche Regel verlöre gegen jede
+	   Größen-Utility an der Fundstelle und träfe Knöpfe, die niemand angesehen hat.
+	   Gate: e2e/icon-trefferflaechen.spec.js misst Größe und Trefferfläche im Browser. */
 	.icon-btn {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		min-width: 2rem; /* 32 px */
 		min-height: 2rem;
-		/* Rund, wie der M3-Icon-Button: Er trägt genau ein Symbol, seine Trefferfläche
-		   ist ein Kreis um dieses Symbol. Als fester Wert, weil Tailwind 4 keine Variable
-		   --radius-full führt; mit ihr blieb der Knopf eckig. */
+		/* Rund, wie der M3-Icon-Button (Shape „Round (default)"). Als fester Wert, weil
+		   Tailwind 4 keine Variable --radius-full führt; mit ihr blieb der Knopf eckig. */
 		border-radius: 9999px;
 		cursor: pointer;
 		transition-property: color, background-color, border-color;
@@ -93,6 +79,18 @@
 		   Icon-Button die letzte Stelle im Haus mit eigener Bewegungssprache. */
 		transition-duration: var(--default-transition-duration);
 		transition-timing-function: var(--default-transition-timing-function);
+	}
+	/* Die Trefferfläche liegt wie in Googles material-web (`.touch`) unsichtbar über den Rand
+	   hinaus und verschiebt nichts. Zwei Symbolknöpfe brauchen deshalb 16 px Abstand, sonst
+	   nimmt der spätere dem früheren einen Streifen seiner Fläche. */
+	.icon-btn::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: max(3rem, 100%);
+		height: max(3rem, 100%);
+		transform: translate(-50%, -50%);
 	}
 }
 

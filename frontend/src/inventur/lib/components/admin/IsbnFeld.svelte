@@ -79,32 +79,36 @@
 	oninput={abfrage.vergissAusgang}
 	hint={abfrage.ausgang?.text ?? ''}
 	ungueltig={!!abfrage.ausgang?.fehler}
-	feld="pr-20"
+	feld="pr-26"
 >
+	<!-- Zwei Symbolknöpfe mit 16 px Abstand, damit sich ihre Trefferflächen nicht berühren; der
+	     Text endet vor der Fläche des ersten (pr-26). -->
 	{#snippet nachlaufend()}
-		<button
-			type="button"
-			onclick={aufKnopf}
-			disabled={abfrage.aktiv}
-			class="rounded-full p-0.5 text-on-surface-variant transition-colors hover:text-primary disabled:opacity-50"
-			title="Daten aus dem Internet aktualisieren"
-			aria-label="Daten aus dem Internet aktualisieren"
-		>
-			{#if abfrage.aktiv}
-				<Ladekreis size="md" />
-			{:else}
-				<RefreshCw class="h-5 w-5" aria-hidden="true" />
-			{/if}
-		</button>
-		<button
-			type="button"
-			onclick={() => (wirdGescannt = true)}
-			aria-pressed={wirdGescannt}
-			class="rounded-full p-0.5 text-on-surface-variant transition-colors hover:text-primary"
-			title="Scan ISBN"
-			aria-label="Scan ISBN"
-		>
-			<Camera class="h-5 w-5" aria-hidden="true" />
-		</button>
+		<span class="flex items-center gap-4">
+			<button
+				type="button"
+				onclick={aufKnopf}
+				disabled={abfrage.aktiv}
+				class="icon-btn text-on-surface-variant hover:text-primary disabled:opacity-50"
+				data-tip="Daten aus dem Internet aktualisieren"
+				aria-label="Daten aus dem Internet aktualisieren"
+			>
+				{#if abfrage.aktiv}
+					<Ladekreis size="md" />
+				{:else}
+					<RefreshCw class="h-5 w-5" aria-hidden="true" />
+				{/if}
+			</button>
+			<button
+				type="button"
+				onclick={() => (wirdGescannt = true)}
+				aria-pressed={wirdGescannt}
+				class="icon-btn text-on-surface-variant hover:text-primary"
+				data-tip="Scan ISBN"
+				aria-label="Scan ISBN"
+			>
+				<Camera class="h-5 w-5" aria-hidden="true" />
+			</button>
+		</span>
 	{/snippet}
 </Feld>

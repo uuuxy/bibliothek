@@ -1,170 +1,191 @@
-// Gate gegen den fünften Icon-Button.
+// Gate: Jeder Symbolknopf ist mindestens 32 px groß und rund, und die 48 × 48 px um seine Mitte
+// gehören ihm.
 //
-// Vor der Normierung hatten Buttons, die nur ein Symbol tragen, kein gemeinsames
-// Maß: 20×20 (Cover-Vorschau, ganz ohne Polsterung), 22×22 (Titelsatz in der
-// Bestellhistorie, darin ein 14-px-Symbol), 30×30 (Navigation ein-/ausklappen)
-// und 38×28 (Banner schließen) — während der beschriftete Nachbar daneben längst
-// auf 36 px stand. Material 3 nennt für den Icon-Button „extra small" 32 dp;
-// das ist die Untergrenze, die hier gilt (siehe .icon-btn in app.css).
+// Material 3, Icon buttons, Specs: Container „extra small" 32 dp, Shape „Round (default)" und
+// „Extra small and small icon buttons must have a target size of 48x48dp or larger to be
+// accessible." Größe, Rundung und Trefferfläche stehen in .icon-btn (styles/komponenten.css);
+// was der Fläche ein Nachbar oder ein Container nimmt, misst e2e/trefferflaeche.js.
 //
-// Warum ein E2E-Test und kein Klassen-Grep: Die Fläche entsteht erst im Browser
-// aus Symbolgröße + Polsterung, und die statische Inventur war nachweislich
-// falsch — sie zählte dekorative Symbole und Symbole in beschrifteten Buttons
-// mit und kam auf 29 Fundstellen, wo es real fünf waren. Gemessen wird deshalb
-// die Bounding-Box an der laufenden Anwendung.
-//
-// Zwei Zustände, die man leicht übersieht und die dieser Test deshalb ausdrücklich
-// herstellt: die geöffnete BESTELLUNG (die Symbole stehen in der Detailansicht, die
-// nur ein Zeilenklick erreicht) und die EINGEKLAPPTE Navigation (ihr Umschalter ist
-// ein anderer Button als der zum Einklappen — er war beim ersten Messen unsichtbar
-// und dadurch übersehen).
+// Gemessen wird im Browser, weil die Fläche erst dort aus Symbol, Polsterung und Umgebung
+// entsteht. Drei Zustände stellt der Test ausdrücklich her, weil man sie leicht übersieht: die
+// geöffnete Bestellung (ihre Symbole stehen in der Detailansicht), die Exemplarkarten der
+// Buchakte und die eingeklappte Navigation (ihr Umschalter ist ein anderer Knopf als der zum
+// Einklappen).
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu, seedBestellung, oeffneBestellungsDetail } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	seedBestellung,
+	oeffneBestellungsDetail,
+	oeffneSchuelerProfil
+} from './helpers.js';
 import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
+import { SYMBOLKNOEPFE } from './trefferflaeche.js';
 
 const MIN_FLAECHE = 32; // px — Material 3 Icon-Button „extra small"
+const ZIEL = 48; // px — Trefferfläche nach Material 3
 
-// Die Bestellung, deren Detailansicht gemessen wird, legt der Test selbst an: Er läuft
-// damit auch allein und auf einer leeren Bestellhistorie.
+// Bestellung, Buch und Leser legt der Test selbst an: Er läuft damit auch auf einer leeren
+// Datenbank, und die Exemplarkarte zeigt ihre Symbole für ein Etikett und einen Platzhalter.
 let marke = '';
+let s = '';
 /** @type {(() => void) | undefined} */
 let aufraeumen;
 test.beforeEach(() => {
 	({ marke, aufraeumen } = seedBestellung());
+	s = uniqueSuffix();
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Treffer ${s}', 'E2E') RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id)
+		SELECT t.id, b FROM t, unnest(ARRAY['B-TF${s.slice(0, 6)}', 'AUTO-TF${s.slice(0, 6)}']) b;
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('E2E-TF-${s}', 'Treffer${s}', 'Fläche', '08a',
+		        EXTRACT(YEAR FROM CURRENT_DATE)::int + 3);
+	`);
 });
 test.afterEach(() => {
 	aufraeumen?.();
 	aufraeumen = undefined;
+	seedSQL(`
+		DELETE FROM schueler WHERE barcode_id = 'E2E-TF-${s}';
+		DELETE FROM buecher_exemplare
+		WHERE titel_id IN (SELECT id FROM buecher_titel WHERE titel = 'E2E-Treffer ${s}');
+		DELETE FROM buecher_titel WHERE titel = 'E2E-Treffer ${s}';
+	`);
 });
 
-const SCREENS = [
-	['Bestellungen', '/bestellungen'],
-	['Mahnwesen', '/mahnwesen'],
-	['Leserdatei', '/schuelerdatei'],
-	['Katalog', '/medienkatalog'],
+// Jede Seite der Navigation (routenTabelle.js) außer den Bestandsbüchern: Dort steht kein
+// Symbolknopf außer denen des Rahmens, und ihre Liste ist am Entwicklungsrechner 67.000 Zeilen
+// lang; schon das erste Messen dauert dort länger als das Warten auf Ruhe.
+const SEITEN = [
+	['Ausleihe', '/kiosk'],
+	['Medienkatalog', '/medienkatalog'],
+	['Signaturen', '/signaturen'],
 	['Druck-Center', '/druck-center'],
-	['Inventur', '/inventur'],
-	['Abgänger', '/abgaenger'],
-	['Schuljahreswechsel', '/schuljahr'],
 	['Klassensätze', '/schulklassen'],
-	['Mein Portal', '/kollegium-portal'],
-	['Einstellungen', '/einstellungen']
+	['Leserdatei', '/schuelerdatei'],
+	['Mahnwesen', '/mahnwesen'],
+	['Abgänger', '/abgaenger'],
+	['Bestellungen', '/bestellungen'],
+	['Inventur', '/inventur'],
+	['Statistiken', '/statistiken'],
+	['Bestellberichte', '/bestellberichte'],
+	['System-Logs', '/system-logs'],
+	['Schuljahreswechsel', '/schuljahr'],
+	['Benutzer & Rechte', '/berechtigungen'],
+	['Einstellungen', '/einstellungen'],
+	['Mein Portal', '/kollegium-portal']
 ];
 
-/**
- * Sammelt jeden sichtbaren Button, dessen Inhalt praktisch nur ein Symbol ist —
- * kein Text oder höchstens eine kurze Zahl daneben (der Nachdruck-Button trägt
- * die Anzahl offener Etiketten). Beschriftete Buttons sind ausgenommen: Ihre
- * Höhe regelt die Control-Höhe, nicht diese Regel.
- *
- * Läuft im Browser, wird als Funktionsrumpf übertragen — deshalb ohne Import.
- */
-const MESSEN = () => {
-	const alle = [];
-	for (const b of document.querySelectorAll('button, [role="button"]')) {
-		if (!b.querySelector('svg')) continue;
-		const r = b.getBoundingClientRect();
-		if (r.width === 0 || r.height === 0) continue; // unsichtbar
-		if ((b.textContent || '').trim().length > 3) continue; // beschriftet
-		alle.push({
-			breite: Math.round(r.width),
-			hoehe: Math.round(r.height),
-			label: b.getAttribute('aria-label') || b.getAttribute('title') || '(ohne Label)',
-			klassen: b.getAttribute('class') || '',
-			radius: Number.parseFloat(getComputedStyle(b).borderTopLeftRadius) || 0
-		});
-	}
-	return alle;
-};
-
-/**
- * Die zu kleinen unter ihnen.
- * @param {import('@playwright/test').Page} page
- */
-async function zuKleine(page) {
-	const alle = await page.evaluate(MESSEN);
-	return alle.filter((t) => t.breite < MIN_FLAECHE || t.hoehe < MIN_FLAECHE);
-}
-
-test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
-	test.setTimeout(180_000);
+test('Symbolknöpfe: 32 px, rund, 48 px Trefferfläche', async ({ page }) => {
+	test.setTimeout(300_000);
 	const anfragen = beobachteDatenanfragen(page);
-	const zaehle = async () => (await page.evaluate(MESSEN)).length;
-	await uiLogin(page);
-
-	/** @type {string[]} */
-	const zuKlein = [];
+	const zaehle = async () =>
+		(await page.evaluate(SYMBOLKNOEPFE, { ziel: ZIEL, messen: false })).length;
+	/** @type {{ zuKlein: string[], eckig: string[], flaeche: string[] }} */
+	const befunde = { zuKlein: [], eckig: [], flaeche: [] };
 	let untersucht = 0;
-	/** @type {string[]} */
-	const eckig = [];
-	let symbolknoepfe = 0;
+	let runde = 0;
 
-	for (const [name, pfad] of SCREENS) {
+	/**
+	 * Misst die Symbolknöpfe der Seite und trägt jeden Verstoß unter ihrem Namen ein.
+	 * @param {string} seite
+	 */
+	const pruefe = async (seite) => {
+		// Eine Sprechblase über den Messpunkten wäre ein Fund, den es ohne Maus nicht gibt.
+		await page.mouse.move(0, 0);
+		for (const k of await page.evaluate(SYMBOLKNOEPFE, { ziel: ZIEL, messen: true })) {
+			untersucht++;
+			const wer = `${seite}: "${k.label}"`;
+			if (k.breite < MIN_FLAECHE || k.hoehe < MIN_FLAECHE) {
+				befunde.zuKlein.push(`${wer} ist ${k.breite}×${k.hoehe} px [${k.klassen}]`);
+			}
+			if (/(^|\s)icon-btn(\s|$)/.test(k.klassen)) {
+				runde++;
+				if (k.radius < Math.min(k.breite, k.hoehe) / 2) {
+					befunde.eckig.push(`${wer} hat ${k.radius} px Rundung bei ${k.breite}×${k.hoehe} px`);
+				}
+			}
+			if (k.fremd.length > 0) befunde.flaeche.push(`${wer}: ${k.fremd.join('; ')}`);
+			if (k.ueberdeckt.length > 0) {
+				befunde.flaeche.push(`${wer} überdeckt ${k.ueberdeckt.join('; ')}`);
+			}
+		}
+	};
+
+	await uiLogin(page);
+	for (const [seite, pfad] of SEITEN) {
 		await gehZu(page, pfad);
-		let gemessen = await warteAufInhalt(anfragen, zaehle);
-
-		// Die Symbole der Bestellhistorie (Nachdruck, Titelsatz) stehen in der Detailansicht
-		// einer Bestellung. Der Helfer wartet hart auf beide: Ein übersprungener Messpunkt
-		// sähe aus wie ein bestandener.
+		let gemessen = await warteAufInhalt(anfragen, zaehle).catch((err) => {
+			throw new Error(`${seite}: ${err.message}`, { cause: err });
+		});
+		// Ein übersprungener Messpunkt sähe aus wie ein bestandener: Der Helfer wartet hart auf
+		// beide Symbole der Bestellung.
 		if (pfad === '/bestellungen') {
 			await oeffneBestellungsDetail(page, marke);
 			gemessen = await warteAufInhalt(anfragen, zaehle);
 		}
-
-		const gefunden = await page.evaluate(MESSEN);
-		await pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemessen, name);
-		untersucht += gefunden.length;
-		for (const t of gefunden.filter((t) => t.breite < MIN_FLAECHE || t.hoehe < MIN_FLAECHE)) {
-			zuKlein.push(`${name}: "${t.label}" ist ${t.breite}×${t.hoehe} px [${t.klassen}]`);
-		}
-		for (const t of gefunden.filter((t) => /(^|\s)icon-btn(\s|$)/.test(t.klassen))) {
-			symbolknoepfe++;
-			if (t.radius < Math.min(t.breite, t.hoehe) / 2) {
-				eckig.push(
-					`${name}: "${t.label}" hat ${t.radius} px Rundung bei ${t.breite}×${t.hoehe} px`
-				);
-			}
-		}
+		await pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemessen, seite);
+		await pruefe(seite);
 	}
 
-	// Eingeklappte Navigation: Der Ausklapp-Umschalter existiert nur in diesem
-	// Zustand und ist ein anderer Button als der zum Einklappen — beim ersten
-	// Messen war er unsichtbar und dadurch übersehen.
-	await page.goto('/bestellungen');
+	const titelID = querySQL(`SELECT id FROM buecher_titel WHERE titel = 'E2E-Treffer ${s}'`);
+	await gehZu(page, `/medienkatalog/buch/${titelID}`);
+	await page.getByRole('tab', { name: /^Exemplare/ }).click();
+	for (const nummer of [`B-TF${s.slice(0, 6)}`, `AUTO-TF${s.slice(0, 6)}`]) {
+		await page.getByRole('checkbox', { name: `Exemplar ${nummer} auswählen` }).waitFor();
+	}
+	await page.getByRole('button', { name: 'Exemplar löschen' }).first().waitFor();
+	await pruefe('Buchakte, Exemplare');
+
+	await oeffneSchuelerProfil(page, `Treffer${s}`);
+	await pruefe('Leserakte');
+
+	// Eingeklappte Navigation: Ihr Umschalter existiert nur in diesem Zustand.
+	await gehZu(page, '/bestellungen');
 	await warteAufInhalt(anfragen, zaehle);
 	await page.getByRole('button', { name: 'Navigation einklappen' }).click();
 	await page.getByRole('button', { name: 'Navigation ausklappen' }).waitFor();
-	for (const t of await zuKleine(page)) {
-		zuKlein.push(
-			`Navigation eingeklappt: "${t.label}" ist ${t.breite}×${t.hoehe} px [${t.klassen}]`
-		);
-	}
+	await pruefe('Navigation eingeklappt');
 
-	// Selbstschutz: Bricht eine Navigation oder ein Selektor, misst der Test still
-	// nichts mehr und wäre für immer grün. Die Untergrenze ist bewusst grob — sie
-	// soll den Totalausfall fangen, nicht eine Zahl festschreiben.
+	// Selbstschutz: Bricht eine Navigation oder ein Selektor, misst der Test still nichts mehr.
+	// Die Untergrenze ist grob; sie fängt den Totalausfall und schreibt keine Zahl fest.
 	expect(
 		untersucht,
-		'Der Test hat fast keine Icon-Buttons gefunden — vermutlich bricht eine Navigation, ' +
-			'und er misst in Wahrheit nichts mehr.'
-	).toBeGreaterThan(20);
+		'Der Test hat fast keine Symbolknöpfe gefunden: Vermutlich bricht eine Navigation, und er ' +
+			'misst nichts mehr.'
+	).toBeGreaterThan(40);
+	expect(runde, 'Der Test hat keinen Knopf mit .icon-btn gefunden.').toBeGreaterThan(0);
 
-	expect(
-		zuKlein,
-		`Icon-Buttons unter ${MIN_FLAECHE}×${MIN_FLAECHE} px.\n` +
-			`Behebung: die Klasse .icon-btn setzen (app.css, @layer components) statt eigener Polsterung.\n` +
-			`Eine bewusste Ausnahme braucht ein explizites min-w-*/min-h-* an der Fundstelle UND eine\n` +
-			`Begründung im Code — nicht hier im Test.\n\n` +
-			zuKlein.join('\n')
-	).toEqual([]);
-
-	// Rund ist die Form des Symbolknopfs (M3, Icon buttons, Specs: Shape „Round (default)"). An
-	// ihr hängt auch die Schicht beim Zeigen: Sie erbt den Radius des Knopfs.
-	expect(symbolknoepfe, 'Der Test hat keinen Knopf mit .icon-btn gefunden.').toBeGreaterThan(0);
-	expect(
-		eckig,
-		`Symbolknöpfe mit .icon-btn, die nicht rund sind (${symbolknoepfe} gemessen).\n` +
-			`Behebung: Die Rundung steht in .icon-btn (styles/komponenten.css).\n\n` +
-			eckig.join('\n')
-	).toEqual([]);
+	// Weich, damit ein Lauf alle drei Arten von Funden nennt.
+	expect
+		.soft(
+			befunde.zuKlein,
+			`Symbolknöpfe unter ${MIN_FLAECHE}×${MIN_FLAECHE} px.\n` +
+				`Behebung: die Klasse .icon-btn (styles/komponenten.css) statt eigener Polsterung.\n\n` +
+				befunde.zuKlein.join('\n')
+		)
+		.toEqual([]);
+	expect
+		.soft(
+			befunde.eckig,
+			`Symbolknöpfe mit .icon-btn, die nicht rund sind (${runde} gemessen).\n` +
+				`Behebung: Die Rundung steht in .icon-btn (styles/komponenten.css).\n\n` +
+				befunde.eckig.join('\n')
+		)
+		.toEqual([]);
+	expect
+		.soft(
+			befunde.flaeche,
+			`Symbolknöpfe, denen die ${ZIEL}×${ZIEL} px um ihre Mitte nicht gehören.\n` +
+				`Behebung: .icon-btn setzen; zu Nachbarn 16 px Abstand, zum Rand eines Containers, der\n` +
+				`abschneidet, 8 px.\n\n` +
+				befunde.flaeche.join('\n')
+		)
+		.toEqual([]);
 });

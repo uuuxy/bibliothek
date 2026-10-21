@@ -66,7 +66,7 @@
 		onclick={() => onAddToCart(r)}
 		aria-label="{r.titel} zur Bestellung hinzufügen"
 		data-tip="Zur Bestellung hinzufügen"
-		class="shrink-0 w-9 h-9 rounded-full border border-outline-variant text-on-surface-variant flex items-center justify-center active:scale-90 transition-all cursor-pointer"
+		class="icon-btn shrink-0 w-9 h-9 border border-outline-variant text-on-surface-variant active:scale-90"
 	>
 		<Plus class="w-4 h-4" aria-hidden="true" />
 	</button>

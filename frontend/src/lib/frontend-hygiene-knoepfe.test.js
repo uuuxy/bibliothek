@@ -11,15 +11,10 @@ import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-
 // variant"). Vertauscht stünde ein Menü-Symbol in Blau da, oder ein Wort in der Farbe der
 // Beschriftungen daneben, das niemand als Knopf erkennt.
 //
-// Ein Symbolknopf nennt außerdem, was er tut (Material 3, Icon buttons, Accessibility): „The
-// accessibility label for icon buttons describes the action the button is executing" und „On
-// web, icon buttons should display a tooltip with an accessibility label." Ein Zeichen wie „✕"
-// sagt dem Screenreader nichts, und der Maus fehlt ohne Hinweis die Erklärung.
-//
 // Sieht nicht: eine Variante aus einem Ausdruck (variant={…}), einen von Hand gebauten
 // <button> mit denselben Klassen und Inhalt, der über {@render …} in den Knopf kommt. Ob die
-// Farbe am Bildschirm ankommt und ob der Hinweis erscheint, misst sie nicht; den Hinweis misst
-// e2e/icon-tooltips.spec.js an Knöpfen mit Bild.
+// Farbe am Bildschirm ankommt, misst sie nicht. Trefferfläche, Namen und Sprechblase jedes
+// Symbolknopfs hält frontend-hygiene-symbolknoepfe.test.js.
 
 /**
  * Alle <Button> einer Quelle mit Kopf und Inhalt. Der Kopf endet am ersten „>"
@@ -62,17 +57,9 @@ function hatWort(inhalt) {
 	return /\{/.test(rest) || /[\p{L}\p{N}]/u.test(rest);
 }
 
-/**
- * Trägt der Kopf eines Knopfs einen Namen für den Screenreader und einen Hinweis für die Maus?
- * @param {string} kopf
- */
-function nenntSichSelbst(kopf) {
-	return /\saria-label=/.test(kopf) && /\s(?:data-tip|title)=/.test(kopf);
-}
-
 /** @param {'ghost' | 'symbol'} variante */
 function fundstellen(variante) {
-	/** @type {{ ort: string, wort: boolean, kopf: string }[]} */
+	/** @type {{ ort: string, wort: boolean }[]} */
 	const treffer = [];
 	for (const datei of sammleQuelldateien(srcRoot)) {
 		if (!datei.endsWith('.svelte')) continue;
@@ -84,7 +71,7 @@ function fundstellen(variante) {
 			if (stelle !== -1) ab = stelle + 1;
 			if (!k.kopf.includes(`variant="${variante}"`)) continue;
 			const zeile = stelle === -1 ? '?' : quelle.slice(0, stelle).split('\n').length;
-			treffer.push({ ort: `${relPfad(datei)}:${zeile}`, wort: hatWort(k.inhalt), kopf: k.kopf });
+			treffer.push({ ort: `${relPfad(datei)}:${zeile}`, wort: hatWort(k.inhalt) });
 		}
 	}
 	return treffer;
@@ -134,31 +121,5 @@ describe('Textknopf und Symbolknopf sind zwei Varianten', () => {
 		// Hieße eine Variante eines Tages anders, bliebe die Ratsche sonst still grün.
 		expect(fundstellen('ghost').length).toBeGreaterThan(0);
 		expect(fundstellen('symbol').length).toBeGreaterThan(0);
-	});
-
-	it('der Detektor erkennt Namen und Hinweis in jeder Form', () => {
-		const mit = [
-			'<Button variant="symbol" aria-label="Abbrechen" data-tip="Abbrechen"',
-			'<Button\n\tvariant="symbol"\n\taria-label={etikett}\n\tdata-tip={etikett}',
-			'<Button variant="symbol" title="Nach oben" aria-label="Zeile {nummer} nach oben"'
-		];
-		const ohne = [
-			'<Button variant="symbol" size="sm" onclick={() => (bearbeiten = false)}',
-			'<Button variant="symbol" title="Abbrechen"',
-			'<Button variant="symbol" aria-label="Abbrechen"',
-			'<Button variant="symbol" data-aria-label="x" data-tip="x"'
-		];
-		expect(mit.map(nenntSichSelbst)).toEqual([true, true, true]);
-		expect(ohne.map(nenntSichSelbst)).toEqual([false, false, false, false]);
-	});
-
-	it('jeder Symbolknopf nennt, was er tut', () => {
-		expect(
-			fundstellen('symbol')
-				.filter((f) => !nenntSichSelbst(f.kopf))
-				.map((f) => f.ort),
-			'Ein Symbolknopf braucht aria-label für den Screenreader und data-tip, die Sprechblase ' +
-				'für die Maus (M3 Icon buttons: „display a tooltip with an accessibility label").'
-		).toEqual([]);
 	});
 });

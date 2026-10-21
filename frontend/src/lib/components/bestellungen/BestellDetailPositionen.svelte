@@ -44,11 +44,12 @@
 					</p>
 					<p class="mt-0.5 font-mono text-xs text-on-surface-variant">{p.isbn || 'ohne ISBN'}</p>
 
-					<div class="mt-2 flex flex-wrap items-center gap-1">
+					<div class="mt-2 flex flex-wrap items-center gap-4">
 						<!-- Beide Verweise nur, wenn sie auch irgendwohin führen: der Titelsatz nur bei
 						     vorhandener titel_id (die Bestellung überlebt den Titel, ON DELETE SET NULL),
 						     der Nachdruck nur bei offenen Etiketten. Ein Verweis ins Leere entwertet alle
-						     anderen gleich mit. -->
+						     anderen gleich mit. 16 px Abstand, damit sich die Trefferflächen nicht
+						     berühren. -->
 						{#if p.etiketten_offen > 0}
 							<button
 								type="button"

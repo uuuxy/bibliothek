@@ -129,7 +129,7 @@
 								variant="symbol"
 								size="sm"
 								onclick={() => entfernen(z.jahr)}
-								title="Sommerferien {z.jahr} entfernen"
+								data-tip="Sommerferien {z.jahr} entfernen"
 								aria-label="Sommerferien {z.jahr} entfernen"
 							>
 								<X class="h-4 w-4" aria-hidden="true" />

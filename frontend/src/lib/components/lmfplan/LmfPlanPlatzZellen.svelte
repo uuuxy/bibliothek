@@ -38,7 +38,7 @@
 				variant="symbol"
 				size="sm"
 				onclick={onfest}
-				title="Festen Platz lösen"
+				data-tip="Festen Platz lösen"
 				aria-label="Festen Platz Zeile {i + 1} lösen"
 				class="-ml-2.5"
 			>

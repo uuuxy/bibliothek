@@ -140,14 +140,14 @@
 					</div>
 
 					<!-- Die Bestellspalte klebt beim Scrollen und reicht bis zum unteren Rand der Seite
-					     (actions/resthoehe.js); ein voller Warenkorb scrollt in ihr, der Knopf zum
-					     Absenden bleibt erreichbar. Die feste Höhe braucht die Titelsuche: In einer
-					     Spalte, die mit einem leeren Korb früher endet, läge ihre Trefferliste zum
-					     Teil unter dem Rand. Gate: e2e/bestellung-erreichbar.spec.js. -->
+					     (actions/resthoehe.js): Ein voller Warenkorb scrollt in ihr, Absenden bleibt
+					     erreichbar, und die Trefferliste der Titelsuche läge bei leerem Korb sonst unter
+					     dem Rand (Gate: e2e/bestellung-erreichbar.spec.js). Oben und rechts reicht sie
+					     8 px über den Inhalt, so weit wie die Trefferfläche der Symbolknöpfe am Rand. -->
 					<div
 						use:resthoehe={{ haftet: true }}
 						id="bestellspalte"
-						class="space-y-3 lg:sticky lg:top-2 lg:h-(--resthoehe) lg:overflow-y-auto {railOffen
+						class="space-y-3 lg:sticky lg:top-0 lg:-mt-2 lg:-mr-2 lg:pt-2 lg:pr-2 lg:h-(--resthoehe) lg:overflow-y-auto {railOffen
 							? 'lg:col-span-5 xl:col-span-4 lg:border-l lg:border-outline-variant lg:pl-6'
 							: 'lg:col-span-1 xl:col-span-1'}"
 					>

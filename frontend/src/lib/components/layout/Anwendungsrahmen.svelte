@@ -29,7 +29,7 @@
 	<Seitenleiste />
 	<!-- Die Arbeitsfläche ist weiß, nicht getönt: Auf getöntem Grund treten die Karten hervor,
 	     und die Anwendung wirkt in Kacheln gezwängt. Getrennt wird durch Linien, über die volle
-	     Breite. -->
+	     Breite. Hauptbereich.svelte reicht mit denselben Maßen in den seitlichen Rand. -->
 	<div
 		class="print-flow bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
 	>

@@ -3356,10 +3356,9 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
   Ausleihliste ab 1066 px mindestens 140 px, darunter bis 1024 px weniger; dort ist auch die
   Reiterzeile 12 px zu schmal. Autor und Nummer eines Exemplars stehen in der Akte nur in einer Sprechblase, an einem Tablet ohne Maus also
-  nicht. Der Abstand des Rahmens (`Anwendungsrahmen.svelte`) liegt um den Scrollbereich, nicht
-  in ihm: Die Scrollleiste sitzt 32 px vom Fensterrand, und über und unter dem Inhalt bleiben
-  beim Scrollen je 24 px stehen. Anlass: Bedienung an einem Tablet oder in Fenstern unter
-  1280 px.
+  nicht. Oben und unten liegt der Abstand des Rahmens (`Anwendungsrahmen.svelte`) um den
+  Scrollbereich, nicht in ihm: Über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen.
+  Anlass: Bedienung an einem Tablet oder in Fenstern unter 1280 px.
 - **Schmale Breiten:** Bei 390 px ist die Bestellspalte 68 px breit; die Leiste der markierten
   Exemplare in der Buchakte passt bis 768 px, `ui/AuswahlLeiste` hat kein Überlaufmenü (M3,
   Toolbars). Anlass: Bestellen oder die Buchakte am Telefon.

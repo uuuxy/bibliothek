@@ -30,7 +30,8 @@
 	// ghost steht in der Hauptfarbe, weil er keine Fläche hat (M3 Buttons, Guidelines): „the
 	// label text color must always be recognizable from non-button text and elements". symbol
 	// ist der Knopf, der nur ein Symbol trägt (M3 Icon buttons, Specs: „Standard icon: On
-	// surface variant"); Button.test.js hält die beiden auseinander.
+	// surface variant"); Button.test.js hält die beiden auseinander. Mit .icon-btn bekommt er
+	// die Trefferfläche von 48 px wie jeder Symbolknopf.
 	const variants = {
 		primary: 'bg-primary text-on-primary border-transparent',
 		secondary: 'bg-surface-container-lowest border-outline-variant text-on-surface-variant',
@@ -38,7 +39,7 @@
 		'danger-solid': 'bg-error text-on-error border-transparent',
 		success: 'bg-success-container text-on-success-container border-transparent',
 		ghost: 'bg-transparent border-transparent text-primary',
-		symbol: 'bg-transparent border-transparent text-on-surface-variant'
+		symbol: 'icon-btn bg-transparent border-transparent text-on-surface-variant'
 	};
 
 	// Feste Höhen statt reinem Padding: Nur so stehen Buttons neben Eingabefeldern und in

@@ -116,11 +116,11 @@ describe('LmfPlanReihenfolge', () => {
 
 	it('nimmt eine Klasse aus einer geteilten Stunde und meldet sie zurück', async () => {
 		const zurueck = vi.fn();
-		const { container, getByTitle } = zeige(
+		const { container, getByRole } = zeige(
 			[{ klassen: ['10R1', '10R2'], vermerk: 'zusammen' }],
 			zurueck
 		);
-		await fireEvent.click(getByTitle('10R2 aus dem Plan nehmen'));
+		await fireEvent.click(getByRole('button', { name: '10R2 aus dem Plan nehmen' }));
 		expect(zurueck).toHaveBeenCalledWith('10R2');
 		expect(klassenJeZeile(container)).toEqual(['10R1']);
 	});

@@ -43,9 +43,10 @@
 		<button
 			onclick={() => bestellStore.removeFromCart(position)}
 			aria-label="Entfernen"
-			class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-surface-variant transition-colors hover:text-error"
+			data-tip="Entfernen"
+			class="icon-btn shrink-0 text-on-surface-variant hover:text-error"
 		>
-			<X class="w-3.5 h-3.5" aria-hidden="true" />
+			<X class="h-4 w-4" aria-hidden="true" />
 		</button>
 	</div>
 

@@ -11,7 +11,12 @@
 
      id + tabindex: Ziel des Skip-Links (SkipLink.svelte); tabindex="-1" macht das
      Element programmatisch fokussierbar, ohne es in die Tab-Reihenfolge zu nehmen.
-     Gate: e2e/barrierefreiheit-axe.spec.js (Gerüst). -->
+     Gate: e2e/barrierefreiheit-axe.spec.js (Gerüst).
+
+     Der Hauptbereich rollt und reicht seitlich in den Rand des Anwendungsrahmens (dieselben
+     Maße, -mx und px heben sich auf): Ein rollender Bereich schneidet ab, und ein Symbolknopf
+     am Rand des Inhalts verlöre sonst den Teil seiner Trefferfläche, der über ihn hinausragt
+     (e2e/icon-trefferflaechen.spec.js). -->
 <script>
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { bildschirmTitel } from '../../menue.js';
@@ -20,7 +25,11 @@
 	let { children } = $props();
 </script>
 
-<main id="hauptinhalt" tabindex="-1" class="flex min-h-0 w-full flex-1 flex-col outline-none">
+<main
+	id="hauptinhalt"
+	tabindex="-1"
+	class="print-flow -mx-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-4 outline-none md:-mx-8 md:px-8"
+>
 	<h1 class="sr-only">{bildschirmTitel(uiStore.activeTab)}</h1>
 	{@render children()}
 </main>

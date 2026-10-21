@@ -29,6 +29,7 @@
 				onclick={() => (isScanning = false)}
 				class="icon-btn absolute top-4 right-4 text-on-surface-variant"
 				aria-label="Scanner schließen"
+				data-tip="Scanner schließen"
 			>
 				<X class="w-6 h-6" aria-hidden="true" />
 			</button>

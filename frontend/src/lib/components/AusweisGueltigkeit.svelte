@@ -69,9 +69,9 @@
 					onclick={() => onWert(vorschlag)}
 					aria-label="Auf den vorgeschlagenen Wert {vorschlag} zurücksetzen"
 					data-tip="Zurück auf {vorschlag} (aus der Klasse gerechnet)"
-					class="rounded p-1 text-on-surface-variant"
+					class="icon-btn text-on-surface-variant"
 				>
-					<RotateCcw class="h-3.5 w-3.5" />
+					<RotateCcw class="h-4 w-4" aria-hidden="true" />
 				</button>
 			{/if}
 		{/snippet}

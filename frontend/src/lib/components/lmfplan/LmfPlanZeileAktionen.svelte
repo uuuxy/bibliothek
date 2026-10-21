@@ -76,28 +76,31 @@
 	};
 </script>
 
-<Button
-	variant="symbol"
-	size="sm"
-	onclick={onhoch}
-	disabled={nummer === 1}
-	title="Nach oben"
-	aria-label="Zeile {nummer} nach oben"
->
-	<ArrowUp class="h-4 w-4" aria-hidden="true" />
-</Button>
-<Button
-	variant="symbol"
-	size="sm"
-	onclick={onrunter}
-	disabled={nummer === anzahl}
-	title="Nach unten"
-	aria-label="Zeile {nummer} nach unten"
->
-	<ArrowDown class="h-4 w-4" aria-hidden="true" />
-</Button>
-<Menue
-	etikett="Aktionen Zeile {nummer}"
-	{eintraege}
-	onwahl={(id) => aktionen[/** @type {keyof typeof aktionen} */ (id)]?.()}
-/>
+<!-- 16 px Abstand, damit sich die Trefferflächen der drei Symbolknöpfe nicht berühren. -->
+<div class="inline-flex items-center gap-4">
+	<Button
+		variant="symbol"
+		size="sm"
+		onclick={onhoch}
+		disabled={nummer === 1}
+		data-tip="Nach oben"
+		aria-label="Zeile {nummer} nach oben"
+	>
+		<ArrowUp class="h-4 w-4" aria-hidden="true" />
+	</Button>
+	<Button
+		variant="symbol"
+		size="sm"
+		onclick={onrunter}
+		disabled={nummer === anzahl}
+		data-tip="Nach unten"
+		aria-label="Zeile {nummer} nach unten"
+	>
+		<ArrowDown class="h-4 w-4" aria-hidden="true" />
+	</Button>
+	<Menue
+		etikett="Aktionen Zeile {nummer}"
+		{eintraege}
+		onwahl={(id) => aktionen[/** @type {keyof typeof aktionen} */ (id)]?.()}
+	/>
+</div>

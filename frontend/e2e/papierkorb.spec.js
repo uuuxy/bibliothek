@@ -51,7 +51,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	await page.getByRole('tab', { name: 'Papierkorb' }).click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Korb-${suffix}`) });
 	await expect(zeile).toBeVisible();
-	await zeile.getByTitle('Wiederherstellen').click();
+	await zeile.getByRole('button', { name: 'Wiederherstellen' }).click();
 	await expect(zeile).not.toBeVisible();
 
 	// Wiederhergestellt: Konto per Scan wieder erreichbar
@@ -128,7 +128,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
 	const zeile = page.getByRole('row', { name: new RegExp(`Purge-${suffix}`) });
 	await expect(zeile).toBeVisible();
 
-	await zeile.getByTitle('Endgültig löschen').click();
+	await zeile.getByRole('button', { name: 'Endgültig löschen' }).click();
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByText(`E2E Purge-${suffix}`)).toBeVisible();
 	await dialog.getByRole('button', { name: 'Endgültig löschen' }).click();
@@ -139,7 +139,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
 
 	// Blockade auflösen, dann der echte Löschweg.
 	seedSQL(`UPDATE schadensfaelle SET ist_bezahlt = true WHERE schueler_id = '${studentId}';`);
-	await zeile.getByTitle('Endgültig löschen').click();
+	await zeile.getByRole('button', { name: 'Endgültig löschen' }).click();
 	await page.getByRole('dialog').getByRole('button', { name: 'Endgültig löschen' }).click();
 
 	await expect(page.getByText('Schüler endgültig gelöscht.')).toBeVisible();

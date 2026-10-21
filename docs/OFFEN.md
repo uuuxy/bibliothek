@@ -21,7 +21,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] Fünf Fehler an Türen und Abfragen. (5.84)
 - [x] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
 - [x] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
-- [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
+- [ ] Material 3 dort, wo die Oberfläche noch davon abweicht. (5.86)
 - [ ] Kleinigkeiten an der Oberfläche. (5.87)
 - [x] Listen ordnen Text nach deutscher Regel, nicht nach Codepunkt. (5.88)
 - [x] Aufräumen im Code. (5.89)
@@ -113,12 +113,8 @@ Update mehr, bleibt die letzte Vorab-Sicherung liegen, ein Klartext-Rest nach ei
 Update bis zum nächsten Lauf; die Meldungen der Skripte sagen das. Nicht entschieden ist, ob
 eine Uhr sie auch ohne Lauf löschen soll; `update.sh` tut es bewusst nicht.
 
-### 5.86 Material 3 an fünf Stellen
+### 5.86 Material 3, wo die Oberfläche noch abweicht
 
-- **Trefferfläche der Symbolknöpfe:** 32 × 32 px ohne größere Trefferfläche (`.icon-btn`). Das
-  Gate `frontend/e2e/icon-trefferflaechen.spec.js` prüft 32 px, CLAUDE.md nennt 48. In der
-  Exemplarkarte der Buchakte sind die Knöpfe 14 px groß und fehlen im Gate; ein 32-px-Knopf
-  bricht dort die Kopfzeile um. Vier Symbolknöpfe erklären sich mit `title` statt `data-tip`.
 - **„Abbrechen" ist gesperrt, solange die Anfrage läuft,** in elf Dialogen und an sieben
   weiteren Stellen (etwa `LeserLoeschenDialog.svelte`). Material 3, Dialogs: „Dismissive actions
   are never disabled." Voraussetzung je Stelle: Erfolg und Ablehnung werden außerhalb des

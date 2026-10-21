@@ -135,7 +135,7 @@
 								{/if}
 							</div>
 							<button
-								title="Exemplar löschen"
+								data-tip="Exemplar löschen"
 								aria-label="Exemplar löschen"
 								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
 								onclick={() => loescheExemplar(ex)}

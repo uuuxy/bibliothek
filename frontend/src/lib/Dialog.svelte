@@ -97,6 +97,7 @@
 							onclick={onclose}
 							class="icon-btn text-on-surface-variant"
 							aria-label="Schließen"
+							data-tip="Schließen"
 						>
 							<X class="h-4 w-4" aria-hidden="true" />
 						</button>

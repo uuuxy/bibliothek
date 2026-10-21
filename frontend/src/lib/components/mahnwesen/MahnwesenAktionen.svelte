@@ -61,8 +61,8 @@
 		variant="secondary"
 		onclick={mahnwesenStore.waehleKeine}
 		aria-label="Auswahl aufheben"
-		title="Auswahl aufheben"
-		class="px-2 text-on-surface-variant"
+		data-tip="Auswahl aufheben"
+		class="icon-btn px-2 text-on-surface-variant"
 	>
 		<X class="h-4 w-4" aria-hidden="true" />
 	</Button>

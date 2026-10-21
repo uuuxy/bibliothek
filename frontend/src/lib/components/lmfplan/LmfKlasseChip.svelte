@@ -65,13 +65,11 @@
 			{#if hinweis}<span class="font-normal">· {hinweis}</span>{/if}
 		{/if}
 		{#if onentfernen}
-			<!-- 32 × 32 px: die ganze Chip-Höhe als Zielfläche (Gate icon-trefferflaechen,
-			     M3 Icon-Button „extra small"); vorher 24 px und damit zu klein. -->
 			<button
 				type="button"
 				onclick={onentfernen}
-				class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-on-secondary-container/10"
-				title="{name} aus dem Plan nehmen"
+				class="icon-btn h-8 w-8 hover:bg-on-secondary-container/10"
+				data-tip="{name} aus dem Plan nehmen"
 				aria-label="{name} aus dem Plan nehmen"
 			>
 				<X class="h-4 w-4" aria-hidden="true" />

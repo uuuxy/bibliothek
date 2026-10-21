@@ -58,9 +58,9 @@
 <button
 	type="button"
 	onclick={onToggleCamera}
-	title="Kamera-Scanner (Mobilgerät)"
+	data-tip="Kamera-Scanner (Mobilgerät)"
 	aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
-	class="shrink-0 -mr-2 p-1.5 rounded-full transition-colors {kameraOffen
+	class="icon-btn shrink-0 ml-2 -mr-2 {kameraOffen
 		? 'bg-secondary-container text-on-secondary-container'
 		: 'text-on-surface-variant hover:text-primary'}"
 >

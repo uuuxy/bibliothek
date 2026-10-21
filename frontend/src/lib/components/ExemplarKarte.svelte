@@ -30,9 +30,12 @@
 		? 'border-primary bg-primary-container/30 ring-1 ring-primary'
 		: 'border-outline-variant hover:border-outline'}"
 >
-	<div class="flex items-start justify-between mb-3">
+	<!-- Zwei Aktionsbereiche, der Barcode und der Status, je mit seinen Symbolknöpfen. Ist die
+	     Karte zu schmal für beide, steht der Status darunter. Abstand 16 px, auch zwischen den
+	     Zeilen: So berühren sich die Trefferflächen von 48 px nicht. -->
+	<div class="mb-3 flex flex-wrap items-center justify-between gap-4">
 		{#if barcodeBearbeiten}
-			<div class="flex-1 mr-2">
+			<div class="min-w-0 flex-1">
 				<!-- Ein Platzhalter (AUTO-, SYS-) öffnet das Feld leer für den Scanner. -->
 				<ExemplarBarcodeBearbeiten
 					{ex}
@@ -60,16 +63,6 @@
 						{ex.barcode_id}
 					</span>
 					{#if darfBearbeiten}
-						{#if onEtikett && !platzhalter}
-							<button
-								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-								aria-label="Etikett für {ex.barcode_id} im Druck-Center drucken"
-								data-tip="Etikett im Druck-Center drucken"
-								onclick={onEtikett}
-							>
-								<Printer class="w-3.5 h-3.5" aria-hidden="true" />
-							</button>
-						{/if}
 						{#if platzhalter}
 							<button
 								class="text-xs px-2 py-1 bg-warning-container text-on-warning-container font-semibold rounded-lg cursor-pointer flex items-center gap-1 whitespace-nowrap"
@@ -79,14 +72,26 @@
 								Barcode scannen
 							</button>
 						{:else}
-							<button
-								title="Barcode zuweisen/ändern"
-								aria-label="Barcode zuweisen oder ändern"
-								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
-								onclick={() => (barcodeBearbeiten = true)}
-							>
-								<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
-							</button>
+							<div class="flex items-center gap-4">
+								{#if onEtikett}
+									<button
+										class="icon-btn text-on-surface-variant hover:text-primary"
+										aria-label="Etikett für {ex.barcode_id} im Druck-Center drucken"
+										data-tip="Etikett im Druck-Center drucken"
+										onclick={onEtikett}
+									>
+										<Printer class="h-4 w-4" aria-hidden="true" />
+									</button>
+								{/if}
+								<button
+									class="icon-btn text-on-surface-variant hover:text-primary"
+									aria-label="Barcode zuweisen oder ändern"
+									data-tip="Barcode zuweisen oder ändern"
+									onclick={() => (barcodeBearbeiten = true)}
+								>
+									<Pencil class="h-4 w-4" aria-hidden="true" />
+								</button>
+							</div>
 						{/if}
 					{/if}
 				</div>
@@ -95,27 +100,29 @@
 		<div class="flex items-center gap-2">
 			<StatusChip {...status} />
 			{#if !zustandBearbeiten}
-				<button
-					title="Status ändern"
-					aria-label="Status ändern"
-					class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-					onclick={() => {
-						zustandBearbeiten = true;
-					}}
-				>
-					<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
-				</button>
-				<!-- Ein ausgesondertes Exemplar ist schon ausgebucht; zurück kommt es über den Status. -->
-				{#if !ex.ist_ausgesondert}
+				<div class="flex items-center gap-4">
 					<button
-						title="Exemplar löschen"
-						aria-label="Exemplar löschen"
-						class="text-on-surface-variant hover:text-error transition-colors cursor-pointer"
-						onclick={onDelete}
+						aria-label="Status ändern"
+						data-tip="Status ändern"
+						class="icon-btn text-on-surface-variant hover:text-primary"
+						onclick={() => {
+							zustandBearbeiten = true;
+						}}
 					>
-						<Trash class="w-3.5 h-3.5" aria-hidden="true" />
+						<Pencil class="h-4 w-4" aria-hidden="true" />
 					</button>
-				{/if}
+					<!-- Ein ausgesondertes Exemplar ist schon ausgebucht; zurück kommt es über den Status. -->
+					{#if !ex.ist_ausgesondert}
+						<button
+							aria-label="Exemplar löschen"
+							data-tip="Exemplar löschen"
+							class="icon-btn text-on-surface-variant hover:text-error"
+							onclick={onDelete}
+						>
+							<Trash class="h-4 w-4" aria-hidden="true" />
+						</button>
+					{/if}
+				</div>
 			{/if}
 		</div>
 	</div>

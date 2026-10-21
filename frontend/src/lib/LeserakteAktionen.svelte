@@ -85,12 +85,17 @@
 							<IdCard class="w-4 h-4" />
 							Ausweis drucken
 						</Button>
+						<!-- data-split-pfeil: Die rechte Hälfte ist Teil eines Knopfs mit Beschriftung,
+						     kein Symbolknopf (M3, Split button: „The trailing button should always have a
+						     menu icon"); die Gates für Symbolknöpfe lassen sie aus. -->
 						<Button
 							type="button"
 							onclick={umschalten}
 							aria-haspopup="menu"
 							aria-expanded={offen}
 							aria-label="Ausweisseiten wählen"
+							data-tip="Ausweisseiten wählen"
+							data-split-pfeil
 							class="rounded-l-none border-l-on-primary/25 px-2.5"
 						>
 							<ChevronDown class="w-4 h-4 transition-transform {offen ? 'rotate-180' : ''}" />

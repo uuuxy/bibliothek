@@ -186,7 +186,7 @@
 							<button
 								onclick={() => loescheVormerkung(v.id)}
 								class="icon-btn text-error"
-								title="Vormerkung löschen"
+								data-tip="Vormerkung löschen"
 								aria-label="Vormerkung löschen"
 							>
 								<Trash class="w-4 h-4" aria-hidden="true" />

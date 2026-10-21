@@ -104,8 +104,9 @@
 			{/if}
 			<button
 				onclick={() => snackbars.removeToast(toast.id)}
-				class="ml-2 shrink-0 opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
+				class="icon-btn ml-2 shrink-0 opacity-70 hover:opacity-100"
 				aria-label="Schließen"
+				data-tip="Schließen"
 			>
 				<X class="h-4 w-4" aria-hidden="true" />
 			</button>

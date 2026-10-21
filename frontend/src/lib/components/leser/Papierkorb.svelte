@@ -102,7 +102,7 @@
 								})}
 							</td>
 							<td class="text-right">
-								<div class="inline-flex items-center gap-2">
+								<div class="inline-flex items-center gap-4">
 									{#if istAnonymisiert(s)}
 										<!-- Kein Wiederherstellen-Knopf: Der Server antwortet hier mit 409,
 										     und ein Knopf, der nur scheitern kann, ist keine Aktion,
@@ -117,9 +117,9 @@
 									{:else}
 										<button
 											onclick={() => papierkorb.wiederherstellen(s.id)}
-											title="Wiederherstellen"
+											data-tip="Wiederherstellen"
 											aria-label="Wiederherstellen"
-											class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-success-container text-on-success-container hover:opacity-80 transition-opacity shadow-sm cursor-pointer"
+											class="icon-btn bg-success-container text-on-success-container hover:opacity-80 shadow-sm"
 										>
 											<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
 										</button>
@@ -127,9 +127,9 @@
 									{#if darfEndgueltigLoeschen}
 										<button
 											onclick={() => (loeschKandidat = s)}
-											title="Endgültig löschen"
+											data-tip="Endgültig löschen"
 											aria-label="Endgültig löschen"
-											class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-error-container text-on-error-container hover:opacity-80 transition-opacity shadow-sm cursor-pointer"
+											class="icon-btn bg-error-container text-on-error-container hover:opacity-80 shadow-sm"
 										>
 											<Trash class="h-4.5 w-4.5" aria-hidden="true" />
 										</button>

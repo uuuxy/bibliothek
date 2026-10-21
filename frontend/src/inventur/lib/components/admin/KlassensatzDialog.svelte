@@ -193,9 +193,9 @@
 				/>
 			</aside>
 
-			<!-- Close Button (Absolute Top Right) -->
 			<button
 				aria-label="Schließen"
+				data-tip="Schließen"
 				onclick={onClose}
 				class="icon-btn absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-on-surface-variant"
 			>

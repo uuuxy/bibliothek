@@ -155,9 +155,9 @@
 		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span class="grow">{fehler}</span>
 		<button
-			type="button"
 			class="icon-btn"
 			aria-label="Meldung schließen"
+			data-tip="Meldung schließen"
 			onclick={() => (fehler = null)}
 		>
 			<X class="h-4 w-4" aria-hidden="true" />

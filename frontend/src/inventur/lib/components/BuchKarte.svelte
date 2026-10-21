@@ -157,17 +157,19 @@
 			</div>
 		{/if}
 
-		<div class="flex items-center justify-between gap-2">
+		<!-- mt-2: Die Trefferfläche des Stifts ragt 8 px über ihn hinaus und berührt so die
+		     Zeile darüber nicht. -->
+		<div class="mt-2 flex items-center justify-between gap-2">
 			<span>{bestand}</span>
 			{#if onEditClick}
-				<!-- 32×32 Trefferfläche, ruhig grau; sitzt im Text statt auf dem Cover. -->
+				<!-- Ruhig grau; sitzt im Text statt auf dem Cover. -->
 				<button
-					class="m3-state -my-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
+					class="icon-btn -my-1 shrink-0"
 					onclick={(e) => {
 						e.stopPropagation();
 						onEditClick();
 					}}
-					title="Schnell bearbeiten"
+					data-tip="Schnell bearbeiten"
 					aria-label="Buch schnell bearbeiten"
 				>
 					<SquarePen class="h-4 w-4" aria-hidden="true" />

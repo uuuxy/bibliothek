@@ -50,9 +50,9 @@
 				{selectedClass}
 				<button
 					onclick={() => entferneKlasse(selectedClass)}
-					class="hover:opacity-70 rounded-full transition-opacity ml-1"
+					class="icon-btn -my-1.5 -mr-3 hover:opacity-70"
 					aria-label="Klasse {selectedClass} entfernen"
-					title="Klasse entfernen"
+					data-tip="Klasse entfernen"
 				>
 					<X class="w-4 h-4" aria-hidden="true" />
 				</button>

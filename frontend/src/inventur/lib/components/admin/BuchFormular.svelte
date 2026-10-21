@@ -69,7 +69,12 @@
 	>
 		<!-- M3 Icon button, Standard: Symbol in on-surface-variant, die Rückmeldung beim
 		     Zeigen kommt aus dem State-Layer aller Knöpfe (komponenten.css). -->
-		<button onclick={onClose} class="icon-btn p-2 text-on-surface-variant" aria-label="Schließen">
+		<button
+			onclick={onClose}
+			class="icon-btn p-2 text-on-surface-variant"
+			aria-label="Schließen"
+			data-tip="Schließen"
+		>
 			<X class="w-6 h-6" aria-hidden="true" />
 		</button>
 		<h2 class="min-w-0 truncate text-xl font-bold text-on-surface">

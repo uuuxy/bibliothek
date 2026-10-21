@@ -95,7 +95,7 @@
 		placeholder={platzhalter}
 		class="h-9 w-full rounded-xl border border-outline bg-surface-container-lowest pl-9 {nachlaufend ||
 		kamera
-			? 'pr-10'
+			? 'pr-12'
 			: 'pr-3'} text-sm text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 	/>
 	<div class="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1">
@@ -109,10 +109,9 @@
 			<button
 				type="button"
 				onclick={() => (kameraOffen = !kameraOffen)}
-				title="Kamera-Scanner (Mobilgerät)"
 				data-tip="Kamera-Scanner (Mobilgerät)"
 				aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
-				class="h-9 w-9 shrink-0 flex items-center justify-center rounded-full transition-colors {kameraOffen
+				class="icon-btn h-9 w-9 shrink-0 {kameraOffen
 					? 'bg-secondary-container text-on-secondary-container'
 					: 'text-on-surface-variant hover:text-primary'}"
 			>

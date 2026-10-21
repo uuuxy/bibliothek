@@ -100,7 +100,9 @@
 	});
 </script>
 
-<div class="print-flow flex-1 overflow-y-auto flex flex-col w-full">
+<!-- min-h-0: Die Hülle ist so hoch wie der Hauptbereich, der rollt; darin kann die Statistik
+     ihre Fläche auf die Höhe des Fensters begrenzen. -->
+<div class="print-flow flex min-h-0 flex-1 flex-col">
 	{#if uiStore.activeTab === 'kiosk'}
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
 			<Omnibox onSelectBook={oeffneTitel} />

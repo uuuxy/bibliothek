@@ -31,8 +31,8 @@
 		</div>
 		<button
 			onclick={onLogout}
-			class="bg-surface-container text-on-surface-variant hover:bg-surface-container-high flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors"
-			title="Abmelden"
+			class="icon-btn bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+			data-tip="Abmelden"
 			aria-label="Abmelden"
 		>
 			<LogOut class="h-4 w-4" aria-hidden="true" />
