@@ -18,7 +18,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] (A) LMF-Planer: Das Speichern überschreibt still die Änderung eines anderen Platzes. (5.82)
 - [x] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
   verloren. (5.83)
-- [ ] Ein Fehler beim Listenimport. (5.84)
+- [x] Fünf Fehler an Türen und Abfragen. (5.84)
 - [ ] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
 - [ ] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
@@ -141,12 +141,6 @@ Nicht entschieden: Alte Sicherungen löschen nur die Läufe von `update.sh` und
 `scripts/backup.sh`. Kommt kein Update mehr, bleibt die letzte Vorab-Sicherung liegen, ein
 Klartext-Rest nach einem misslungenen Update bis zum nächsten Lauf; die Meldungen der Skripte
 sagen das.
-
-### 5.84 Ein Fehler beim Listenimport
-
-- **Listenimport:** Trägt eine Zeile die Ausweisnummer eines Lesers als Buchnummer, lehnt der
-  Nummern-Wächter ab, und der ganze Import bricht mit der rohen Datenbankmeldung ab, ohne Zeile
-  und Weg zu nennen (`ON CONFLICT DO NOTHING` fängt nur den Index).
 
 ### 5.85 Gate: UUID-Prüfung an jeder Route
 

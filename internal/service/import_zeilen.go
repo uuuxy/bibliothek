@@ -238,6 +238,7 @@ func sammleExemplare(zeilen [][]string, spalten map[string]int, bestand reposito
 				Barcode:       barcode,
 				IstAusleihbar: istAusleihbar,
 				ZustandNotiz:  zustand,
+				Zeile:         i + 2,
 			})
 		}
 	}

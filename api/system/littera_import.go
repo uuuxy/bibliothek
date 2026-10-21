@@ -176,7 +176,7 @@ func (t *Tueren) LitteraImport() http.HandlerFunc {
 		importDienst := service.NewImportDienst(repository.NewKatalogAbfragen(t.DB.Pool), t.DB.Pool)
 		neueTitel, importierteExemplare, err := importDienst.ImportiereZeilen(r.Context(), zeilen, kopf)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+			antworteImportFehler(w, err)
 			return
 		}
 
@@ -252,7 +252,7 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 
 	neueTitel, importierteExemplare, err := importDienst.ImportiereZeilen(r.Context(), zeilen, kopf)
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		antworteImportFehler(w, err)
 		return
 	}
 
@@ -266,6 +266,42 @@ func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
 		"imported_copies_count": importierteExemplare,
 		"message":               "Bestands-CSV erfolgreich importiert",
 	})
+}
+
+// antworteImportFehler beantwortet einen gescheiterten Import. Trägt eine Zeile als Buchnummer
+// einen Leserausweis, liegt es an der Datei: 400 mit den Zeilen. Alles andere ist ein Fehler des
+// Servers.
+func antworteImportFehler(w http.ResponseWriter, err error) {
+	var ausweis *repository.ImportNummerIstAusweisFehler
+	if errors.As(err, &ausweis) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungImportNummerIstAusweis(ausweis.Exemplare), err)
+		return
+	}
+	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+}
+
+// importAusweisZeilenGrenze ist die Zahl der Zeilen, die meldungImportNummerIstAusweis einzeln
+// nennt; die übrigen zählt sie. Bei einer falsch zugeordneten Spalte trägt jede Zeile einen
+// Ausweis.
+const importAusweisZeilenGrenze = 10
+
+// meldungImportNummerIstAusweis nennt die Zeilen, deren Buchnummer ein Leserausweis ist, und
+// was zu tun ist.
+func meldungImportNummerIstAusweis(exemplare []repository.ImportExemplar) string {
+	const weg = " Eine Nummer ist entweder ein Buch oder ein Ausweis. Bitte die Buchnummer in der Datei berichtigen und die Datei erneut hochladen."
+	if len(exemplare) == 1 {
+		return fmt.Sprintf("Nichts importiert: Zeile %d trägt als Buchnummer %s, die Nummer eines Leserausweises.",
+			exemplare[0].Zeile, exemplare[0].Barcode) + weg
+	}
+	genannt := make([]string, 0, importAusweisZeilenGrenze)
+	for _, e := range exemplare[:min(len(exemplare), importAusweisZeilenGrenze)] {
+		genannt = append(genannt, fmt.Sprintf("%d (%s)", e.Zeile, e.Barcode))
+	}
+	zeilen := strings.Join(genannt, ", ")
+	if rest := len(exemplare) - len(genannt); rest > 0 {
+		zeilen += fmt.Sprintf(" und %d weitere", rest)
+	}
+	return "Nichts importiert: Die Zeilen " + zeilen + " tragen als Buchnummer die Nummer eines Leserausweises." + weg
 }
 
 // meldungKeineDatei antwortet auf ein Formular ohne Datei.

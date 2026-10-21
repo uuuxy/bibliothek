@@ -249,6 +249,34 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 		}
 	})
 
+	// Eine Nummer ist entweder ein Buch oder ein Ausweis. Trägt eine Zeile den Ausweis eines
+	// Lesers als Buchnummer, nennt die Antwort die Zeile, und geschrieben ist nichts, auch nicht
+	// die Zeile davor.
+	t.Run("Buchnummer ist ein Leserausweis: 400 mit der Zeile, nichts geschrieben", func(t *testing.T) {
+		testdaten.LegeSchuelerAn(t, pool, "IMP-AUSWEIS-1", "Ida", "07R1")
+		csv := "Titel,Verfasser,Exemplarnummer\n" +
+			"E2E-Imp-Ausweis Bio,Musterfrau,IMP-F1\n" +
+			"E2E-Imp-Ausweis Bio,Musterfrau,IMP-AUSWEIS-1\n"
+		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.csv", []byte(csv))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
+		}
+		const will = "Nichts importiert: Zeile 3 trägt als Buchnummer IMP-AUSWEIS-1, die Nummer eines " +
+			"Leserausweises. Eine Nummer ist entweder ein Buch oder ein Ausweis. Bitte die Buchnummer " +
+			"in der Datei berichtigen und die Datei erneut hochladen."
+		if got := tuertest.Fehlermeldung(t, rec); got != will {
+			t.Errorf("Meldung %q, erwartet %q", got, will)
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id IN ('IMP-F1', 'IMP-AUSWEIS-1')`); n != 0 {
+			t.Errorf("der abgewiesene Import hat %d Exemplare geschrieben", n)
+		}
+		if n := pgtest.ZaehleZeilen(t, pool,
+			`SELECT count(*) FROM buecher_titel WHERE titel = 'E2E-Imp-Ausweis Bio'`); n != 0 {
+			t.Errorf("der abgewiesene Import hat %d Titel geschrieben", n)
+		}
+	})
+
 	t.Run("CSV ohne Pflichtspalte Titel: 400", func(t *testing.T) {
 		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.csv",
 			[]byte("Verfasser,Exemplarnummer\nMusterfrau,IMP-E1\n"))

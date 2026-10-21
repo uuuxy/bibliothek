@@ -92,16 +92,66 @@ type ImportExemplar struct {
 	Barcode       string
 	IstAusleihbar bool
 	ZustandNotiz  string
+	// Zeile ist die Zeile der Datei, für Meldungen.
+	Zeile int
+}
+
+// ImportNummerIstAusweisFehler meldet die Exemplare, deren Buchnummer der Ausweis eines aktiven
+// Lesers ist. Eine Nummer ist entweder ein Buch oder ein Ausweis (nummer_ist_buch_oder_ausweis);
+// importiert wird dann nichts. Die Tür nennt die Zeilen, damit die Datei in einem Gang berichtigt
+// werden kann.
+type ImportNummerIstAusweisFehler struct {
+	Exemplare []ImportExemplar
+}
+
+func (f *ImportNummerIstAusweisFehler) Error() string {
+	return fmt.Sprintf("%d buchnummern der datei sind leserausweise", len(f.Exemplare))
+}
+
+// pruefeImportNummernGegenAusweise lehnt die Exemplare ab, deren Nummer der Ausweis eines aktiven
+// Lesers ist. Der Wächter der Datenbank wiese das erste von ihnen sonst mitten im Lauf ab, ohne
+// Zeile.
+func pruefeImportNummernGegenAusweise(ctx context.Context, tx pgx.Tx, exemplare []ImportExemplar) error {
+	nummern := make([]string, 0, len(exemplare))
+	for _, e := range exemplare {
+		nummern = append(nummern, e.Barcode)
+	}
+	rows, err := tx.Query(ctx, `SELECT barcode_id FROM leser WHERE barcode_id = ANY($1) AND deleted_at IS NULL`, nummern)
+	if err != nil {
+		return fmt.Errorf("ausweisnummern prüfen: %w", err)
+	}
+	vergeben, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return fmt.Errorf("ausweisnummern prüfen: %w", err)
+	}
+	if len(vergeben) == 0 {
+		return nil
+	}
+	ausweis := make(map[string]bool, len(vergeben))
+	for _, nummer := range vergeben {
+		ausweis[nummer] = true
+	}
+	fehler := &ImportNummerIstAusweisFehler{}
+	for _, e := range exemplare {
+		if ausweis[e.Barcode] {
+			fehler.Exemplare = append(fehler.Exemplare, e)
+		}
+	}
+	return fehler
 }
 
 // LegeImportExemplareAn hängt die Exemplare an ihre Titel und zählt, wie viele neu sind und
-// wie viele es unter ihrer Nummer schon gab; die bleiben, wie sie sind. Die neuen gelten als
+// wie viele es unter ihrer Nummer schon gab; die bleiben, wie sie sind. Ist eine Nummer der
+// Ausweis eines Lesers, legt es nichts an (ImportNummerIstAusweisFehler). Die neuen gelten als
 // etikettiert: Der Import übernimmt Bestand, der sein Etikett trägt, und ohne das stünde jedes
 // im Druck-Center als offen. Das Zugangsdatum kommt aus der Vorgabe der Spalte, dem Kalendertag
 // der Schule; den Standort erbt ein Exemplar von den Exemplaren seines Titels.
 func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExemplar) (angelegt, vorhanden int, err error) {
 	if len(exemplare) == 0 {
 		return 0, 0, nil
+	}
+	if err := pruefeImportNummernGegenAusweise(ctx, tx, exemplare); err != nil {
+		return 0, 0, err
 	}
 
 	anlegen := `
