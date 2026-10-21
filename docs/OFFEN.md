@@ -19,7 +19,7 @@ sich lösen. Die zwei der Kategorie A kommen zuerst.
 - [x] (A) Theke: Scans, die auf die Antwort des Servers warten, gehen beim Neuladen ohne Meldung
   verloren. (5.83)
 - [x] Fünf Fehler an Türen und Abfragen. (5.84)
-- [ ] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
+- [x] Ein Gate hält die Prüfung der UUID-Pfadparameter an jeder Route. (5.85)
 - [ ] Theke ohne Netz: Stufe 1 und 3 des Nachweises als Browser-Test. (2.3)
 - [ ] Material 3 an fünf Stellen, an denen die Oberfläche davon abweicht. (5.86)
 - [ ] Kleinigkeiten an der Oberfläche. (5.87)
@@ -141,12 +141,6 @@ Nicht entschieden: Alte Sicherungen löschen nur die Läufe von `update.sh` und
 `scripts/backup.sh`. Kommt kein Update mehr, bleibt die letzte Vorab-Sicherung liegen, ein
 Klartext-Rest nach einem misslungenen Update bis zum nächsten Lauf; die Meldungen der Skripte
 sagen das.
-
-### 5.85 Gate: UUID-Prüfung an jeder Route
-
-`uuidPfadMiddleware` sitzt in `verlangeRecht` (`api/middleware.go`). Eine Route mit
-UUID-Platzhalter unter `VerlangeAnmeldung` liefe an ihr vorbei; heute gibt es keine, aber kein
-Gate hält das.
 
 ### 5.86 Material 3 an fünf Stellen
 

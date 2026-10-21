@@ -515,9 +515,11 @@ HTTP-Anfrage
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │
-   ├─ verlangeRecht("…") / VerlangeAnmeldung()
-   │     └─ Cookie → JWT prüfen → Kontostatus in der DB → Recht (Cache 60 s, Epoche)
-   │        → UUID-Pfadparameter prüfen  ← hier, weil r.PathValue erst nach dem Routing gefüllt ist
+   ├─ verlangeRecht("…")
+   │     └─ UUID-Pfadparameter prüfen  ← hier, weil r.PathValue erst nach dem Routing gefüllt ist
+   │        → Cookie → JWT prüfen → Kontostatus in der DB → Recht (Cache 60 s, Epoche)
+   ├─ VerlangeAnmeldung() — nur Routen ohne UUID im Pfad (api/uuid_pfadparameter_test.go)
+   │     └─ Cookie → JWT prüfen → Kontostatus in der DB
    ▼
   Handler (api/<Thema>/, inventur/, auth/)
    ▼
@@ -2427,7 +2429,8 @@ prüft genau die Schreibweise, die Postgres annimmt — **nicht** `uuid.Parse`, 
 `urn:uuid:…` akzeptiert, was Postgres abweist).
 
 **Fundstelle.** `api/middleware.go` (Kommentar an `uuidPfadMiddleware`),
-`pkg/kennung`.
+`pkg/kennung`. Dass jede Route mit UUID im Pfad durch die Prüfung geht, hält
+`api/uuid_pfadparameter_test.go` am ganzen Router.
 
 ---
 

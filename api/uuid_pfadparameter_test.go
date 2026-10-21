@@ -6,7 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"strings"
 	"testing"
+
+	"bibliothek/db"
+	"bibliothek/internal/tuertest"
+	"bibliothek/sse"
 )
 
 // uuidPfadParameter ist eine Liste von Hand. Zwei Dinge können dort still falsch werden: Ein
@@ -95,5 +101,72 @@ func TestUUIDPfadParameter_JederEintragWirdStrengGeprueft(t *testing.T) {
 				t.Errorf("{%s} = %q: Status = %d, erwartet %d", name, wert, rec.Code, erwartet)
 			}
 		}
+	}
+}
+
+// Die Prüfung sitzt in verlangeRecht und nicht um den Mux. Eine Route, die den Zugriff anders
+// prüft, etwa mit VerlangeAnmeldung, reichte eine falsche Kennung an Postgres weiter (22P02,
+// 500). Deshalb geht an jede angemeldete Route mit einem Platzhalter aus der Liste eine Anfrage
+// durch den ganzen Router, ohne Sitzung und mit „kein-uuid" an dieser Stelle; sie muss so
+// antworten wie uuidPfadMiddleware selbst.
+func TestUUIDPfadParameter_JedeRoutePrueftDieKennung(t *testing.T) {
+	routen := registrierteRouten(t)
+
+	soll := httptest.NewRecorder()
+	probe := http.NewServeMux()
+	probe.Handle("GET /probe/{id}", uuidPfadMiddleware(http.NotFoundHandler()))
+	probe.ServeHTTP(soll, httptest.NewRequest(http.MethodGet, "/probe/kein-uuid", nil))
+	if soll.Code != http.StatusBadRequest {
+		t.Fatalf("uuidPfadMiddleware mit kein-uuid: Status %d, erwartet 400", soll.Code)
+	}
+	sollMeldung := tuertest.Fehlermeldung(t, soll)
+
+	// Alle Anfragen kommen von derselben Adresse; die Bremse zählt hier nicht mit.
+	t.Setenv("RATE_LIMIT", "100000")
+	// Routes legt das Verzeichnis uploads an. Die Routendateien sind da schon gelesen.
+	t.Chdir(t.TempDir())
+	router := NewServer(&db.Verbindung{}, nil, sse.NewBroker(), ServerKonfig{}).Routes()
+
+	const gueltig = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+	geprueft := 0
+	for muster := range routen {
+		methode, pfad, mitMethode := strings.Cut(muster, " ")
+		if !mitMethode {
+			methode, pfad = http.MethodGet, muster
+		}
+		for _, name := range uuidPfadParameter {
+			if !strings.Contains(pfad, "{"+name+"}") {
+				continue
+			}
+			adresse := pfadPlatzhalter.ReplaceAllStringFunc(pfad, func(platzhalter string) string {
+				anderer := strings.Trim(platzhalter, "{}")
+				if anderer == name {
+					return "kein-uuid"
+				}
+				if slices.Contains(uuidPfadParameter, anderer) {
+					return gueltig
+				}
+				return "x"
+			})
+			if strings.ContainsAny(adresse, "{}") {
+				t.Errorf("%s: Platzhalter in einer Form, die der Test nicht einsetzt (%s)", muster, adresse)
+				continue
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, tuertest.MitCSRF(httptest.NewRequest(methode, adresse, nil)))
+			geprueft++
+			if rec.Code != soll.Code {
+				t.Errorf("%s %s: Status %d, erwartet %d wie uuidPfadMiddleware.\n"+
+					"→ Die Route reicht die Kennung ungeprüft an die Tür weiter. Mit verlangeRecht anmelden; "+
+					"genügt ihr die Sitzung: uuidPfadMiddleware(s.VerlangeAnmeldung()(…)).", methode, adresse, rec.Code, soll.Code)
+				continue
+			}
+			if got := tuertest.Fehlermeldung(t, rec); got != sollMeldung {
+				t.Errorf("%s %s: Meldung %q, erwartet %q wie uuidPfadMiddleware", methode, adresse, got, sollMeldung)
+			}
+		}
+	}
+	if geprueft < 50 {
+		t.Fatalf("nur %d Routen mit Kennung im Pfad geprüft, erwartet über 60 — registrierteRouten oder das Einsetzen greift nicht mehr", geprueft)
 	}
 }

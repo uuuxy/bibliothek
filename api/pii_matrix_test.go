@@ -2,9 +2,13 @@ package api
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -96,6 +100,59 @@ func registrierteRouten(t *testing.T) map[string]string {
 		t.Fatalf("nur %d Routen erkannt — Scanner greift nicht mehr", len(routen))
 	}
 	return routen
+}
+
+// registrierteRouten liest Zeilen eines Musters in einer festen Liste von Dateien. Eine Anmeldung
+// in einer anderen Datei, mit einem Pfad aus einer Variablen oder über zwei Zeilen fehlte dort
+// still, und mit ihr in jedem Gate, das die Liste liest; der Syntaxbaum sieht jede.
+func TestRegistrierteRouten_SiehtJedeAnmeldung(t *testing.T) {
+	gelesen := registrierteRouten(t)
+
+	imBaum := map[string]string{}
+	for _, wurzel := range []string{".", filepath.Join("..", "inventur")} {
+		for _, rel := range produktivDateien(t, wurzel) {
+			datei := filepath.Join(wurzel, rel)
+			fset := token.NewFileSet()
+			baum, err := parser.ParseFile(fset, datei, nil, 0)
+			if err != nil {
+				t.Fatalf("%s: %v", datei, err)
+			}
+			ast.Inspect(baum, func(n ast.Node) bool {
+				aufruf, ok := n.(*ast.CallExpr)
+				if !ok || len(aufruf.Args) != 2 {
+					return true
+				}
+				methode, ok := aufruf.Fun.(*ast.SelectorExpr)
+				if !ok || (methode.Sel.Name != "Handle" && methode.Sel.Name != "HandleFunc") {
+					return true
+				}
+				ort := fset.Position(aufruf.Pos()).String()
+				pfad, ok := aufruf.Args[0].(*ast.BasicLit)
+				if !ok || pfad.Kind != token.STRING {
+					t.Errorf("%s: Anmeldung mit einem Pfad, der kein fester Text ist; registrierteRouten liest nur feste Pfade", ort)
+					return true
+				}
+				muster, err := strconv.Unquote(pfad.Value)
+				if err != nil {
+					t.Fatalf("%s: %v", ort, err)
+				}
+				imBaum[strings.TrimSpace(muster)] = ort
+				return true
+			})
+		}
+	}
+
+	for muster, ort := range imBaum {
+		if _, ok := gelesen[muster]; !ok {
+			t.Errorf("%s: Route %q fehlt in registrierteRouten.\n"+
+				"→ Es liest routen_*.go, router.go und inventur/api_routen.go, je Anmeldung eine Zeile mit mux.Handle(\"…\".", ort, muster)
+		}
+	}
+	for muster, zeile := range gelesen {
+		if _, ok := imBaum[muster]; !ok {
+			t.Errorf("registrierteRouten nennt %q aus der Zeile %q, der Syntaxbaum kennt dort keine Anmeldung", muster, strings.TrimSpace(zeile))
+		}
+	}
 }
 
 func TestPIIMatrixDecktJedeRoute(t *testing.T) {

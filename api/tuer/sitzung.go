@@ -63,7 +63,8 @@ func erlaubeZugriff(w http.ResponseWriter, r *http.Request, next http.Handler, c
 
 // VerlangeAnmeldung verlangt eine gültige Sitzung und kein bestimmtes Recht: für Endpunkte, die
 // jede angemeldete Rolle öffnet. Welche das sind, hält api/nur_sitzung_liste_test.go fest;
-// keiner davon darf Schülerdaten führen.
+// keiner davon darf Schülerdaten führen. Eine UUID im Pfad prüft sie nicht; eine Route mit
+// Kennung im Pfad steht deshalb hinter verlangeRecht (api/uuid_pfadparameter_test.go).
 //
 // Der erste Fall war der SSE-Stream /events, den die Oberfläche direkt nach der Anmeldung
 // aufbaut. Hinge er an einem Fachrecht, bekäme eine Rolle ohne dieses Recht keine Absage,
