@@ -14,6 +14,7 @@
 	import { untrack } from 'svelte';
 	import { lieferantStand } from '../../lieferantFormular.js';
 	import { nurGeaendertes } from '../../utils/geaendert.js';
+	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
 	/**
 	 * @type {{
@@ -43,6 +44,15 @@
 	let neueKundennummer = $state(geladen.customerNumber);
 	let neueKundennummerSchultraeger = $state(geladen.kundennummer_schultraeger);
 	let istHauptlieferant = $state(geladen.ist_hauptlieferant);
+	const aenderung = () =>
+		nurGeaendertes(geladen, {
+			name: neuerName,
+			email: neueEmail,
+			customerNumber: neueKundennummer,
+			ist_hauptlieferant: istHauptlieferant,
+			kundennummer_schultraeger: neueKundennummerSchultraeger
+		});
+	meldeFormular(() => bearbeiten && Object.keys(aenderung()).length > 0);
 </script>
 
 {#if bearbeiten}
@@ -62,16 +72,7 @@
 		</td>
 		<td class="text-right whitespace-nowrap">
 			<button
-				onclick={() =>
-					onSave(
-						nurGeaendertes(geladen, {
-							name: neuerName,
-							email: neueEmail,
-							customerNumber: neueKundennummer,
-							ist_hauptlieferant: istHauptlieferant,
-							kundennummer_schultraeger: neueKundennummerSchultraeger
-						})
-					)}
+				onclick={() => onSave(aenderung())}
 				aria-label="Änderungen für Lieferant {s.name} speichern"
 				class="text-primary font-bold cursor-pointer text-sm mr-3">Speichern</button
 			>

@@ -15,7 +15,6 @@
 	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -46,60 +45,59 @@
 	let sperre = $state(geladen.sperre_minuten);
 	let abgaengerKarenz = $state(geladen.abgaenger_karenz_tage);
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			zahlen: [
-				{
-					schluessel: 'lesehistorie_tage',
-					label: 'Lesehistorie Schülerbücherei',
-					wert: lesehistorie,
-					min: 0
-				},
-				{
-					schluessel: 'lesehistorie_lernmittel_tage',
-					label: 'Lesehistorie Lernmittel',
-					wert: lesehistorieLmf,
-					min: 0
-				},
-				{
-					schluessel: 'anliegen_tage',
-					label: 'Erledigte Anliegen aufbewahren',
-					wert: anliegen,
-					min: 0
-				},
-				{
-					// Untergrenze 6, nicht 0: Ein abgeschaltetes Prüfprotokoll nimmt dem
-					// System die Revisionsfähigkeit. Die Meldung kommt aus
-					// einstellungenSpeichern.js, bevor etwas rausgeht.
-					schluessel: 'audit_aufbewahrung_monate',
-					label: 'Prüfprotokoll aufbewahren',
-					wert: protokollMonate,
-					min: 6
-				},
-				{
-					schluessel: 'theke_leeren_minuten',
-					label: 'Theke leeren nach',
-					wert: thekeLeeren,
-					min: 0
-				},
-				{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre, min: 0 },
-				{
-					// 0 = sofort anonymisieren: ein echter Wert.
-					schluessel: 'abgaenger_karenz_tage',
-					label: 'Abgänger-Karenzzeit',
-					wert: abgaengerKarenz,
-					min: 0
-				}
-			],
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		zahlen: [
+			{
+				schluessel: 'lesehistorie_tage',
+				label: 'Lesehistorie Schülerbücherei',
+				wert: lesehistorie,
+				min: 0
+			},
+			{
+				schluessel: 'lesehistorie_lernmittel_tage',
+				label: 'Lesehistorie Lernmittel',
+				wert: lesehistorieLmf,
+				min: 0
+			},
+			{
+				schluessel: 'anliegen_tage',
+				label: 'Erledigte Anliegen aufbewahren',
+				wert: anliegen,
+				min: 0
+			},
+			{
+				// Untergrenze 6, nicht 0: Ein abgeschaltetes Prüfprotokoll nimmt dem
+				// System die Revisionsfähigkeit. Die Meldung kommt aus
+				// einstellungenSpeichern.js, bevor etwas rausgeht.
+				schluessel: 'audit_aufbewahrung_monate',
+				label: 'Prüfprotokoll aufbewahren',
+				wert: protokollMonate,
+				min: 6
+			},
+			{
+				schluessel: 'theke_leeren_minuten',
+				label: 'Theke leeren nach',
+				wert: thekeLeeren,
+				min: 0
+			},
+			{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre, min: 0 },
+			{
+				// 0 = sofort anonymisieren: ein echter Wert.
+				schluessel: 'abgaenger_karenz_tage',
+				label: 'Abgänger-Karenzzeit',
+				wert: abgaengerKarenz,
+				min: 0
+			}
+		]
+	});
 </script>
 
 <KategorieRahmen
 	titel="Datenschutz & Sitzung"
 	kurz="Wann eine Ausleihe ihren Namen verliert und wann der Arbeitsplatz sich selbst schließt."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

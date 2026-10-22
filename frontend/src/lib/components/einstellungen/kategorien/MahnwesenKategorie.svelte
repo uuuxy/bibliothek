@@ -10,7 +10,6 @@
 	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -31,22 +30,21 @@
 	let tageBisSperre = $state(geladen.max_overdue_days);
 	let abMedien = $state(geladen.max_overdue_items);
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			zahlen: [
-				// min: 0 — „sofort sperren" ist hier ein Wert, kein leeres Feld.
-				{ schluessel: 'max_overdue_days', label: 'Tage bis Sperre', wert: tageBisSperre, min: 0 },
-				{ schluessel: 'max_overdue_items', label: 'Ab x Medien sperren', wert: abMedien, min: 1 }
-			],
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		zahlen: [
+			// min: 0 — „sofort sperren" ist hier ein Wert, kein leeres Feld.
+			{ schluessel: 'max_overdue_days', label: 'Tage bis Sperre', wert: tageBisSperre, min: 0 },
+			{ schluessel: 'max_overdue_items', label: 'Ab x Medien sperren', wert: abMedien, min: 1 }
+		]
+	});
 </script>
 
 <KategorieRahmen
 	titel="Mahnwesen"
 	kurz="Ab wann überfällige Medien die Ausleihe am Kiosk sperren."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

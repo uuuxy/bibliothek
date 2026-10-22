@@ -6,6 +6,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
 	let laedt = $state(true);
 	// Nach einem gescheiterten Laden steht kein Formular da: Leere Felder gingen sonst als
@@ -31,6 +32,12 @@
 	 */
 	let testErgebnis = $state(null);
 
+	// Der Stand nach Laden und Speichern. Die Testadresse ist keine Einstellung; ein getipptes
+	// Passwort ist immer ungespeichert, denn das gespeicherte kommt nie zurück.
+	const stand = () => [host, port, benutzername, sender].map(String).join('\n');
+	let gespeichert = stand();
+	meldeFormular(() => password !== '' || stand() !== gespeichert);
+
 	async function laden() {
 		laedt = true;
 		try {
@@ -41,6 +48,7 @@
 			sender = daten.sender_email || '';
 			hasPassword = daten.has_password || false;
 			testEmail = sender; // default
+			gespeichert = stand();
 			ladeFehler = false;
 		} catch (e) {
 			console.error(e);
@@ -65,6 +73,7 @@
 			snackbars.addToast('Mail-Konfiguration gespeichert', 'success');
 			if (password !== '') hasPassword = true;
 			password = '';
+			gespeichert = stand();
 		} catch (e) {
 			// Servermeldung wurde von apiFetch bereits als Toast gezeigt — nicht überdecken.
 			if (!(/** @type {any} */ (e)?.handled)) {

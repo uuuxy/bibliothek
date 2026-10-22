@@ -18,21 +18,36 @@
 	 * @prop {string} titel
 	 * @prop {string} kurz - Supporting Text, EIN Satz.
 	 * @prop {import('svelte').Snippet} [mehr] - Ausführliche Erläuterung im Aufklapper.
-	 * @prop {() => Promise<void>} [speichern] - Ohne diese Funktion trägt die Kategorie
-	 *   keinen Knopf (Prüf- und Werkzeugseiten wie die Betriebsbereitschaft).
+	 * @prop {() => import('../../einstellungenSpeichern.js').KategorieEingabe} [eingabe] - Die Felder
+	 *   der Kategorie mit dem Stand beim Öffnen. Ohne sie trägt die Kategorie keinen Knopf
+	 *   (Prüf- und Werkzeugseiten wie die Betriebsbereitschaft).
+	 * @prop {() => void | Promise<void>} [onSaved] - Neu laden nach dem Speichern.
 	 * @prop {import('svelte').Snippet} children
 	 */
 	import Button from '../ui/Button.svelte';
+	import { speichereKategorie, hatAenderungen } from '../../einstellungenSpeichern.js';
+	import { schuetzeFormulare } from '../../stores/verlassenSchutz.svelte.js';
 
-	let { titel, kurz, mehr = undefined, speichern = undefined, children } = $props();
+	let {
+		titel,
+		kurz,
+		mehr = undefined,
+		eingabe = undefined,
+		onSaved = undefined,
+		children
+	} = $props();
+
+	// Ein Wechsel der Kategorie oder der Seite baut die Kategorie ab. Hält sie oder ein Formular
+	// darin (meldeFormular) Ungespeichertes, fragt der Verlassen-Schutz vorher.
+	schuetzeFormulare(() => (eingabe ? hatAenderungen(eingabe()) : false));
 
 	let laeuft = $state(false);
 
 	async function speichernKlick() {
-		if (!speichern) return;
+		if (!eingabe) return;
 		laeuft = true;
 		try {
-			await speichern();
+			await speichereKategorie({ ...eingabe(), onSaved });
 		} finally {
 			laeuft = false;
 		}
@@ -60,7 +75,7 @@
 
 	{@render children()}
 
-	{#if speichern}
+	{#if eingabe}
 		<div class="flex justify-end border-t border-outline-variant pt-6">
 			<Button onclick={speichernKlick} disabled={laeuft}>
 				{laeuft ? 'Wird gespeichert …' : `${titel} speichern`}

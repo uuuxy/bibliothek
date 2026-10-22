@@ -12,6 +12,7 @@
 		klassenPlatzhalter
 	} from './components/leser/klassenVorschlaege.svelte.js';
 	import { Trash } from '@lucide/svelte';
+	import { meldeFormular } from './stores/verlassenSchutz.svelte.js';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
 	let mappingRows = $state([]);
@@ -19,6 +20,7 @@
 	let newMappingKlasse = $state('');
 	let newMappingEmail = $state('');
 	let zuordnungSpeichert = $state(false);
+	meldeFormular(() => newMappingKlasse.trim() !== '' || newMappingEmail.trim() !== '');
 	// Auswählen statt tippen: Ein Tippfehler legte sonst eine Klasse an, die es an der Schule
 	// nicht gibt, und ihre Mahnliste ginge an niemanden.
 	const klassenListe = erzeugeKlassenVorschlaege();

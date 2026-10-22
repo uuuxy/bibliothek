@@ -16,7 +16,7 @@
 // die keiner von beiden angefasst hat.
 import { apiPut } from './apiFetch.js';
 import { snackbars } from './stores/snackbars.svelte.js';
-import { sammleZahlen } from './einstellungsWerte.js';
+import { sammleZahlen, zahlOderLeer } from './einstellungsWerte.js';
 import { nurGeaendertes } from './utils/geaendert.js';
 
 /**
@@ -48,4 +48,23 @@ export async function speichereKategorie({ geladen, felder = {}, zahlen = [], on
 		// Die Fehlermeldung kommt bereits aus apiPut.
 		return false;
 	}
+}
+
+/**
+ * Die Felder einer Kategorie mit ihrem Stand beim Öffnen, unter den Namen der Anfrage.
+ * @typedef {object} KategorieEingabe
+ * @property {Record<string, string|number|boolean|null>} geladen
+ * @property {Record<string, string|boolean|null>} [felder] Text- und Schalterfelder.
+ * @property {{ schluessel: string, label: string, wert: unknown, min?: number }[]} [zahlen]
+ */
+
+/**
+ * Ob eine Kategorie seit dem Öffnen etwas geändert hat, unter denselben Namen wie beim Speichern.
+ * Ein Zahlenfeld zählt mit dem Wert, den es ergibt; ein geleertes Feld ist eine Änderung.
+ * @param {KategorieEingabe} eingabe
+ * @returns {boolean}
+ */
+export function hatAenderungen({ geladen, felder = {}, zahlen = [] }) {
+	const zahlenwerte = Object.fromEntries(zahlen.map((z) => [z.schluessel, zahlOderLeer(z.wert)]));
+	return Object.keys(nurGeaendertes(geladen, { ...felder, ...zahlenwerte })).length > 0;
 }

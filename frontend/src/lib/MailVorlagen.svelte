@@ -10,6 +10,7 @@
 	import Feld from './components/ui/Feld.svelte';
 	import MailVorlagenPlatzhalter from './MailVorlagenPlatzhalter.svelte';
 	import { vorlagenName } from './mailVorlagenInfo.js';
+	import { meldeFormular } from './stores/verlassenSchutz.svelte.js';
 
 	/** @type {any[]} */
 	let vorlagen = $state([]);
@@ -20,6 +21,19 @@
 
 	let gewaehlteVorlage = $derived(vorlagen.find((t) => t.id === gewaehlteKennung) || null);
 
+	// Betreff und Text jeder Vorlage, wie sie gespeichert sind; nach dem Laden und je Vorlage nach
+	// ihrem Speichern. Eine andere Vorlage wählen behält die Eingabe, die Kategorie verlassen nicht.
+	/** @type {Record<string, { betreff: string, text_body: string }>} */
+	let gespeichert = {};
+	/** @param {any} t */
+	const merke = (t) => (gespeichert[t.id] = { betreff: t.betreff, text_body: t.text_body });
+	meldeFormular(() =>
+		vorlagen.some((t) => {
+			const g = gespeichert[t.id];
+			return !!g && (t.betreff !== g.betreff || t.text_body !== g.text_body);
+		})
+	);
+
 	$effect(() => {
 		ladeVorlagen();
 	});
@@ -29,6 +43,7 @@
 			const res = await apiClient.get('/api/mail-templates');
 			if (res.ok) {
 				vorlagen = (await res.json()) || [];
+				vorlagen.forEach(merke);
 				if (vorlagen.length > 0 && !gewaehlteKennung) {
 					gewaehlteKennung = vorlagen[0].id;
 				}
@@ -44,17 +59,20 @@
 	}
 
 	async function speichereVorlage() {
-		if (!gewaehlteVorlage) return;
+		// Festgehalten vor dem Warten: Bis die Antwort kommt, kann eine andere Vorlage gewählt sein.
+		const vorlage = gewaehlteVorlage;
+		if (!vorlage) return;
 		speichert = true;
 		fehler = '';
 
 		try {
-			const res = await apiClient.put(`/api/mail-templates/${gewaehlteVorlage.id}`, {
-				betreff: gewaehlteVorlage.betreff,
-				text_body: gewaehlteVorlage.text_body
+			const res = await apiClient.put(`/api/mail-templates/${vorlage.id}`, {
+				betreff: vorlage.betreff,
+				text_body: vorlage.text_body
 			});
 
 			if (res.ok) {
+				merke(vorlage);
 				snackbars.addToast('Vorlage gespeichert.', 'success');
 			} else {
 				fehler = 'Fehler beim Speichern der Vorlage.';

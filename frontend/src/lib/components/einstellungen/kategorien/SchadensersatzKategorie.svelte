@@ -12,7 +12,6 @@
 	import Switch from '../../ui/Switch.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -52,37 +51,36 @@
 	// heutigen Listenpreis, so wie es der Erlass verlangt.
 	let immerKaufpreis = $state(geladen.ersatzwert_immer_kaufpreis);
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			felder: {
-				ersatzwert_immer_kaufpreis: immerKaufpreis,
-				bescheid_bereich_nr: bereichNr,
-				bescheid_schulnummer: schulnummer,
-				bescheid_aufsicht: aufsicht,
-				bescheid_schulleitung: schulleitung,
-				bescheid_geschaeftszeichen: geschaeftszeichen,
-				bescheid_bearbeiter: bearbeiter,
-				bescheid_durchwahl: durchwahl,
-				bescheid_zahlstelle: zahlstelle,
-				bescheid_bankverbindung: bankverbindung
-			},
-			zahlen: [
-				{
-					schluessel: 'bescheid_frist_tage',
-					label: 'Zahlungsfrist (Tage)',
-					wert: fristTage,
-					min: 1
-				}
-			],
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		felder: {
+			ersatzwert_immer_kaufpreis: immerKaufpreis,
+			bescheid_bereich_nr: bereichNr,
+			bescheid_schulnummer: schulnummer,
+			bescheid_aufsicht: aufsicht,
+			bescheid_schulleitung: schulleitung,
+			bescheid_geschaeftszeichen: geschaeftszeichen,
+			bescheid_bearbeiter: bearbeiter,
+			bescheid_durchwahl: durchwahl,
+			bescheid_zahlstelle: zahlstelle,
+			bescheid_bankverbindung: bankverbindung
+		},
+		zahlen: [
+			{
+				schluessel: 'bescheid_frist_tage',
+				label: 'Zahlungsfrist (Tage)',
+				wert: fristTage,
+				min: 1
+			}
+		]
+	});
 </script>
 
 <KategorieRahmen
 	titel="Schadensersatz"
 	kurz="Grundlage der Berechnung und die Angaben für den Bescheid."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

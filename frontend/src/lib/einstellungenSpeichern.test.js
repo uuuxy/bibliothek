@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { speichereKategorie } from './einstellungenSpeichern.js';
+import { speichereKategorie, hatAenderungen } from './einstellungenSpeichern.js';
 import { apiPut } from './apiFetch.js';
 import { snackbars } from './stores/snackbars.svelte.js';
 
@@ -73,5 +73,25 @@ describe('speichereKategorie', () => {
 		expect(await speichereKategorie({ ...maske({ frist_buch_tage: 28 }), onSaved })).toBe(false);
 		expect(snackbars.addToast).not.toHaveBeenCalled();
 		expect(onSaved).not.toHaveBeenCalled();
+	});
+});
+
+// Dieselbe Regel sagt dem Verlassen-Schutz, ob die Kategorie Ungespeichertes hält: Was das
+// Speichern schicken würde oder was es als unvollständig ablehnte, ginge beim Verlassen verloren.
+describe('hatAenderungen', () => {
+	it('sieht keine Änderung, solange jedes Feld seinen Stand vom Öffnen trägt', () => {
+		expect(hatAenderungen(maske())).toBe(false);
+		// Ein Zahlenfeld liefert Text, sobald jemand darin getippt hat.
+		expect(hatAenderungen(maske({ frist_buch_tage: '21' }))).toBe(false);
+	});
+
+	it('sieht einen geänderten Text, Schalter und eine geänderte Zahl', () => {
+		expect(hatAenderungen(maske({ lmf_stichtag: '08-31' }))).toBe(true);
+		expect(hatAenderungen(maske({ ferien_leseclub_aktiv: true }))).toBe(true);
+		expect(hatAenderungen(maske({ frist_buch_tage: 28 }))).toBe(true);
+	});
+
+	it('zählt ein geleertes Zahlenfeld als Änderung', () => {
+		expect(hatAenderungen(maske({ frist_buch_tage: '' }))).toBe(true);
 	});
 });

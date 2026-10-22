@@ -8,7 +8,6 @@
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import Switch from '../../ui/Switch.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -33,39 +32,38 @@
 	let preiseErfassen = $state(geladen.preise_erfassen);
 	let linkTage = $state(geladen.bestelllink_gueltigkeit_tage);
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			felder: {
-				bestellbedarf_warnung_aktiv: warnungAktiv,
-				preise_erfassen: preiseErfassen
-			},
-			zahlen: [
-				...(warnungAktiv
-					? [
-							{
-								schluessel: 'bestellbedarf_schwelle',
-								label: 'Warnen unter x Exemplaren',
-								wert: schwelle,
-								min: 1
-							}
-						]
-					: []),
-				{
-					schluessel: 'bestelllink_gueltigkeit_tage',
-					label: 'Bestätigungs-Link gültig (Tage)',
-					wert: linkTage,
-					min: 1
-				}
-			],
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		felder: {
+			bestellbedarf_warnung_aktiv: warnungAktiv,
+			preise_erfassen: preiseErfassen
+		},
+		zahlen: [
+			...(warnungAktiv
+				? [
+						{
+							schluessel: 'bestellbedarf_schwelle',
+							label: 'Warnen unter x Exemplaren',
+							wert: schwelle,
+							min: 1
+						}
+					]
+				: []),
+			{
+				schluessel: 'bestelllink_gueltigkeit_tage',
+				label: 'Bestätigungs-Link gültig (Tage)',
+				wert: linkTage,
+				min: 1
+			}
+		]
+	});
 </script>
 
 <KategorieRahmen
 	titel="Bestellwesen"
 	kurz="Ob fehlende Lernmittel gemeldet werden und ob mit Preisen gearbeitet wird."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

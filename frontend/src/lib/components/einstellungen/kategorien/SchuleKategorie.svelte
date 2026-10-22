@@ -15,7 +15,6 @@
 	import Feld from '../../ui/Feld.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -47,25 +46,24 @@
 		geladen.etikett_eigentumsvermerk_schuelerbuecherei
 	);
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			felder: {
-				schule_name: name,
-				schule_strasse: strasse,
-				schule_plz: plz,
-				schule_ort: ort,
-				etikett_eigentumsvermerk: eigentumsvermerk,
-				etikett_eigentumsvermerk_schuelerbuecherei: eigentumsvermerkSchuelerbuecherei
-			},
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		felder: {
+			schule_name: name,
+			schule_strasse: strasse,
+			schule_plz: plz,
+			schule_ort: ort,
+			etikett_eigentumsvermerk: eigentumsvermerk,
+			etikett_eigentumsvermerk_schuelerbuecherei: eigentumsvermerkSchuelerbuecherei
+		}
+	});
 </script>
 
 <KategorieRahmen
 	titel="Schule"
 	kurz="Name und Anschrift der Schule — sie erscheinen auf jedem Etikett, Ausweis und Briefkopf."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

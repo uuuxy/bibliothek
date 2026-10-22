@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-21. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-22. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -783,6 +783,12 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Datenverwaltung         | Katalog-Import (Littera; bringt die Schlagworte an Titel, die noch keine tragen), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export (Bestandsliste als CSV, eine Zeile je Exemplar: Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum, Standort), Offline-Sicherungen einspielen |
 | LUSD & Versetzung       | LUSD-Abgleich, Versetzung zum Schuljahresende, Sommerferien für den LMF-Plan                                                                                                                                                                                                                                                                                                                  |
 | Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                                                                                                                                                                                                                                                                                     |
+
+Ist in der offenen Kategorie etwas eingegeben und nicht gespeichert, auch in einem ihrer
+Formulare (Postausgang, Vorlagen, Lieferanten, Klassenleitungen, Sommerferien), fragt die Seite,
+bevor man eine andere Kategorie oder einen anderen Menüpunkt wählt: _Bleiben_ lässt die
+Eingaben stehen, _Verwerfen und weiter_ wechselt ohne sie. Beim Schließen oder Neuladen des
+Fensters fragt der Browser.
 
 ## Mein Portal (Kollegium)
 

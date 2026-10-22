@@ -10,7 +10,6 @@
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import Switch from '../../ui/Switch.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -41,33 +40,32 @@
 	let leseclubAktiv = $state(geladen.ferien_leseclub_aktiv);
 	let leseclubZieldatum = $state(geladen.ferien_leseclub_zieldatum);
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			felder: {
-				lmf_stichtag: lmfStichtag,
-				lmf_eingangsjahrgaenge: lmfEingang,
-				ferien_leseclub_aktiv: leseclubAktiv,
-				ferien_leseclub_zieldatum: leseclubZieldatum
-			},
-			zahlen: [
-				{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: fristBuch, min: 1 },
-				{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: fristMedien, min: 1 },
-				{
-					schluessel: 'max_ausleihen_schueler',
-					label: 'Max. Ausleihen',
-					wert: maxAusleihen,
-					min: 1
-				}
-			],
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		felder: {
+			lmf_stichtag: lmfStichtag,
+			lmf_eingangsjahrgaenge: lmfEingang,
+			ferien_leseclub_aktiv: leseclubAktiv,
+			ferien_leseclub_zieldatum: leseclubZieldatum
+		},
+		zahlen: [
+			{ schluessel: 'frist_buch_tage', label: 'Tage / Buch', wert: fristBuch, min: 1 },
+			{ schluessel: 'frist_medien_tage', label: 'Tage / Medien', wert: fristMedien, min: 1 },
+			{
+				schluessel: 'max_ausleihen_schueler',
+				label: 'Max. Ausleihen',
+				wert: maxAusleihen,
+				min: 1
+			}
+		]
+	});
 </script>
 
 <KategorieRahmen
 	titel="Ausleihe & Fristen"
 	kurz="Rückgabefristen, Ausleih-Obergrenze, Stichtag und Eingangsjahrgänge der Lernmittelfreiheit."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

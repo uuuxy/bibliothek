@@ -16,7 +16,6 @@
 	import { Copy, Check } from '@lucide/svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -65,18 +64,17 @@
 		}
 	}
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			felder: { oeffentliche_adresse: adresse, alarm_empfaenger: alarmEmpfaenger },
-			onSaved
-		});
+	const eingabe = () => ({
+		geladen,
+		felder: { oeffentliche_adresse: adresse, alarm_empfaenger: alarmEmpfaenger }
+	});
 </script>
 
 <KategorieRahmen
 	titel="Erreichbarkeit & Alarme"
 	kurz="Unter welcher Adresse Dritte das System erreichen und wer die Alarm-Mails bekommt — leer schaltet beides ab."
-	{speichern}
+	{eingabe}
+	{onSaved}
 >
 	{#snippet mehr()}
 		<p>

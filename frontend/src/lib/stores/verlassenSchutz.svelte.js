@@ -2,9 +2,11 @@
 // (verlassenSperre): Der Wechsel der Seite hält an und fragt, Neuladen und Schließen des
 // Fensters fragt der Browser. Aufzurufen beim Aufbau des Bauteils, das die Eingaben hält.
 
-import { untrack } from 'svelte';
+import { untrack, getContext, setContext } from 'svelte';
 import { uiStore } from './uiStore.svelte.js';
 import { verwerfenBestaetigen } from './bestaetigung.svelte.js';
+
+const FORMULARE = Symbol('formulare');
 
 /**
  * Für einen Wechsel, der nicht über uiStore.activeTab läuft (Reiter, Theke, Abmelden): Hält der
@@ -48,5 +50,38 @@ export function schuetzeUngespeichertes(ungespeichert) {
 			if (verwerfen) uiStore.erzwingeWechsel();
 			else uiStore.bleibe();
 		});
+	});
+}
+
+/**
+ * Der Schutz einer Fläche, in der mehrere Formulare stehen (eine Kategorie der Einstellungen):
+ * Er fragt, wenn das eigene Formular oder eines darin Ungespeichertes hält. Der Wächter im
+ * uiStore hat nur einen Platz; zwei Formulare, die sich je selbst anmeldeten, überschrieben sich.
+ * @param {() => boolean} eigenes
+ */
+export function schuetzeFormulare(eigenes) {
+	// Eine Liste statt eines Set: In einer `.svelte.js` ist ein gewöhnliches Set verboten
+	// (svelte/prefer-svelte-reactivity), und beobachtet wird die Liste nie.
+	/** @type {Array<() => boolean>} */
+	const formulare = [];
+	setContext(FORMULARE, formulare);
+	schuetzeUngespeichertes(() => eigenes() || formulare.some((f) => f()));
+}
+
+/**
+ * Ein Formular in einer Fläche mit schuetzeFormulare meldet dort, ob es Ungespeichertes hält.
+ * Außerhalb einer solchen Fläche tut es nichts.
+ * @param {() => boolean} ungespeichert
+ */
+export function meldeFormular(ungespeichert) {
+	/** @type {Array<() => boolean> | undefined} */
+	const formulare = getContext(FORMULARE);
+	if (!formulare) return;
+	$effect(() => {
+		formulare.push(ungespeichert);
+		return () => {
+			const stelle = formulare.indexOf(ungespeichert);
+			if (stelle !== -1) formulare.splice(stelle, 1);
+		};
 	});
 }

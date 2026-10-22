@@ -4,6 +4,7 @@
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import LieferantZeile from './LieferantZeile.svelte';
+	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
 	let { suppliers, onAddSupplier, onEditSupplier, onRemoveSupplier } = $props();
 
@@ -12,6 +13,9 @@
 	let newCustNum = $state('');
 	let newCustNumSchultraeger = $state('');
 	let newIstHaupt = $state(false);
+	meldeFormular(() =>
+		[newName, newEmail, newCustNum, newCustNumSchultraeger].some((f) => f !== '')
+	);
 
 	/** @type {string|null} */
 	let bearbeiteteKennung = $state(null);

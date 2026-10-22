@@ -15,7 +15,8 @@
 	import { X } from '@lucide/svelte';
 	import Button from '../../ui/Button.svelte';
 	import Feld from '../../ui/Feld.svelte';
-	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
+	import { speichereKategorie, hatAenderungen } from '../../../einstellungenSpeichern.js';
+	import { meldeFormular } from '../../../stores/verlassenSchutz.svelte.js';
 
 	/** @typedef {{ jahr: number, von: string, bis: string }} Eintrag */
 
@@ -77,12 +78,10 @@
 	/** @param {number} j */
 	const entfernen = (j) => (eigene = eigene.filter((e) => e.jahr !== j));
 
-	const speichern = () =>
-		speichereKategorie({
-			geladen,
-			felder: { sommerferien: alsText(eigene) },
-			onSaved
-		});
+	const eingabe = () => ({ geladen, felder: { sommerferien: alsText(eigene) } });
+	const speichern = () => speichereKategorie({ ...eingabe(), onSaved });
+	// Eine eingetippte, noch nicht aufgenommene Zeile ginge beim Verlassen ebenso verloren.
+	meldeFormular(() => hatAenderungen(eingabe()) || von !== '' || bis !== '');
 
 	const datumFormat = new Intl.DateTimeFormat('de-DE', {
 		day: '2-digit',

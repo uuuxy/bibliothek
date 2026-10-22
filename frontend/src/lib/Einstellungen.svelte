@@ -11,7 +11,7 @@
 	 */
 	import { apiGet } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import KategorieListe from './components/einstellungen/KategorieListe.svelte';
@@ -21,6 +21,7 @@
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 	import { sichtbareKategorien } from './components/einstellungen/kategorien.js';
 	import { hatRecht } from './menue.js';
+	import { darfVerwerfen } from './stores/verlassenSchutz.svelte.js';
 
 	let laedt = $state(true);
 	/** @type {Record<string, any>} */
@@ -48,10 +49,7 @@
 	$effect(() => {
 		const wanted = uiStore.requestedSettingsTab;
 		if (!wanted) return;
-		if (kategorien.some((k) => k.id === wanted)) {
-			aktiv = wanted;
-			detailOffen = true;
-		}
+		if (kategorien.some((k) => k.id === wanted)) untrack(() => waehle(wanted));
 		uiStore.requestedSettingsTab = null;
 	});
 
@@ -71,8 +69,10 @@
 		}
 	}
 
+	// Eine andere Kategorie baut die offene ab; was darin ungespeichert ist, ginge still verloren.
 	/** @param {string} id */
-	function waehle(id) {
+	async function waehle(id) {
+		if (id !== aktiv && !(await darfVerwerfen())) return;
 		aktiv = id;
 		detailOffen = true;
 	}

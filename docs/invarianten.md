@@ -369,10 +369,12 @@ veraltet ist. Die Bugklassen dazu stehen in [sweeps.md](sweeps.md).
 
 - **15 · Ungespeichertes.** Hinter dem Sperrbildschirm bleibt die Anwendung stehen,
   ausgeblendet und träge; eine offene Rückfrage ist dort nicht zu sehen. Der
-  Verlassen-Schutz (`uiStore.verlassenSperre`, beim LMF-Planer, bei der Buchmaske und bei
-  „Stammdaten bearbeiten") wird beim Wechsel des Menüpunkts und beim Schließen des Fensters
-  gefragt, bei den beiden Masken auch an ihrem Schließen- oder Zurück-Knopf, bei der Buchmaske
-  beim Wechsel des Reiters im Medienkatalog, an der Theke bei Escape und bei der
+  Verlassen-Schutz (`uiStore.verlassenSperre`, beim LMF-Planer, bei der Buchmaske, bei
+  „Stammdaten bearbeiten" und in den Einstellungen) wird beim Wechsel des Menüpunkts und beim
+  Schließen des Fensters gefragt, bei den beiden Masken auch an ihrem Schließen- oder
+  Zurück-Knopf, bei der Buchmaske beim Wechsel des Reiters im Medienkatalog, in den
+  Einstellungen beim Wechsel der Kategorie (`frontend/e2e/einstellungen-verwerfen.spec.js`), an
+  der Theke bei Escape und bei der
   Schnellrückgabe, und beim Abmelden, auch am Sperrbildschirm. An der Theke bucht bei Ungespeichertem kein Scan, und die Akte lädt bei
   offener Maske erst nach dem Schließen neu. Frage 8 fragt in der Frontend-Lesart
   das Gegenteil: was beim Verlassen zurück auf Anfang muss.

@@ -45,7 +45,9 @@ if (ALLE_SCHLUESSEL.length < 20) {
 }
 
 /**
- * Der Aufruf `speichereKategorie({ … })` einer Kategorie — und nur er.
+ * Die Eingabe `const eingabe = () => ({ … })` einer Kategorie, und nur sie: Was sie nennt,
+ * schickt KategorieRahmen über speichereKategorie, und daran misst der Verlassen-Schutz, was
+ * ungespeichert ist.
  *
  * Nicht die ganze Datei durchsuchen: Jede Kategorie LIEST ihre Felder auch
  * (`start.theke_leeren_minuten`), und ein Detektor, der beides in einen Topf wirft,
@@ -55,14 +57,14 @@ if (ALLE_SCHLUESSEL.length < 20) {
  * schlimmer als keins.
  *
  * @param {string} datei
- * @returns {string} der Text zwischen den Klammern des Aufrufs (leer, wenn es keinen gibt)
+ * @returns {string} der Text der Eingabe (leer, wenn es keine gibt)
  */
-function speicherAufruf(datei) {
+function eingabeText(datei) {
 	const quelle = readFileSync(join(KATEGORIE_DIR, datei), 'utf8');
-	const start = quelle.indexOf('speichereKategorie(');
+	const start = quelle.indexOf('const eingabe = () => (');
 	if (start === -1) return '';
 	let tiefe = 0;
-	for (let i = start; i < quelle.length; i++) {
+	for (let i = start + 'const eingabe = () => '.length; i < quelle.length; i++) {
 		if (quelle[i] === '(') tiefe++;
 		else if (quelle[i] === ')' && --tiefe === 0) return quelle.slice(start, i);
 	}
@@ -71,8 +73,8 @@ function speicherAufruf(datei) {
 
 /** @param {string} datei @returns {string[]} die Schlüssel, die diese Kategorie SCHREIBT */
 function schluesselIn(datei) {
-	const aufruf = speicherAufruf(datei);
-	return ALLE_SCHLUESSEL.filter((k) => new RegExp(`\\b${k}\\b`).test(aufruf));
+	const eingabe = eingabeText(datei);
+	return ALLE_SCHLUESSEL.filter((k) => new RegExp(`\\b${k}\\b`).test(eingabe));
 }
 
 /**
@@ -95,7 +97,7 @@ function geladenerStand(datei) {
 
 describe('Einstellungs-Kategorien', () => {
 	// Gespeichert wird nur, was vom Stand beim Öffnen abweicht (einstellungenSpeichern.js).
-	// Ein Feld, das im Aufruf steht und im Stand fehlt, weicht immer ab: Es ginge bei jedem
+	// Ein Feld, das in der Eingabe steht und im Stand fehlt, weicht immer ab: Es ginge bei jedem
 	// Speichern mit und überschriebe, was ein anderer Platz inzwischen gespeichert hat.
 	it('gibt für jedes Feld, das eine Kategorie speichert, den Stand beim Öffnen mit', () => {
 		const dateien = readdirSync(KATEGORIE_DIR).filter(
@@ -104,15 +106,15 @@ describe('Einstellungs-Kategorien', () => {
 		expect(dateien.length, 'der Detektor findet keine speichernde Kategorie').toBeGreaterThan(5);
 		const ohneStand = dateien.flatMap((datei) => {
 			const stand = geladenerStand(datei);
-			const imAufruf = /\bgeladen\b/.test(speicherAufruf(datei));
+			const inEingabe = /\bgeladen\b/.test(eingabeText(datei));
 			return schluesselIn(datei)
-				.filter((k) => !imAufruf || !new RegExp(`\\b${k}:`).test(stand))
+				.filter((k) => !inEingabe || !new RegExp(`\\b${k}:`).test(stand))
 				.map((k) => `${datei}: ${k}`);
 		});
 		expect(
 			ohneStand,
 			'Diese Felder gehen bei jedem Speichern mit, auch unverändert — im Objekt „geladen" ' +
-				'der Kategorie eintragen und „geladen" an speichereKategorie geben'
+				'der Kategorie eintragen und „geladen" in ihre Eingabe geben'
 		).toEqual([]);
 	});
 

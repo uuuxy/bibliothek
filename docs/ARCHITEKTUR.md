@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 21.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 22.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -3059,7 +3059,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 21.10.2026
+Stand: 22.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3350,8 +3350,9 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 - **Ungespeichertes übersteht die Sperre, aber nicht, was ihr vorausgeht:** Nach fünf Minuten
   leert sich die Theke samt offenem Dialog, und eine abgelaufene Sitzung meldet ab, ohne fragen
   zu können. Wer selbst abmeldet, wird gefragt, auch am Sperrbildschirm. Ob etwas ungespeichert
-  ist, weiß die Anwendung nur beim LMF-Planer, bei der Buchmaske und bei „Stammdaten
-  bearbeiten" (`uiStore.verlassenSperre`). Anlass: eine verlorene Eingabe an der Theke.
+  ist, weiß die Anwendung nur beim LMF-Planer, bei der Buchmaske, bei „Stammdaten
+  bearbeiten" und in den Einstellungen (`uiStore.verlassenSperre`). Anlass: eine verlorene
+  Eingabe an der Theke.
 - **Das Band „Keine Verbindung"** (`App.svelte`, 25 s ohne `ping`) unterscheidet nicht zwischen
   fehlendem Ping und einem eingefrorenen Tab; beim Aufwachen stünde es höchstens 15 s. Nicht
   nachgestellt.
