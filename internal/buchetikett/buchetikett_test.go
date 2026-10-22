@@ -47,7 +47,7 @@ func TestPDFEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 	}
 }
 
-// Der Vermerk folgt dem Topf des Exemplars. Ohne Topf (Vorab-Druck, Exemplar unbekannt) gilt
+// Der Vermerk folgt dem Topf des Exemplars. Ohne Topf (Exemplar unbekannt) gilt
 // der allgemeine Vermerk; ein Buch der Schülerbücherei trägt ohne eigenen Vermerk keinen.
 func TestPDFEtiketten_VermerkFolgtDemTopf(t *testing.T) {
 	kopf := Kopf{Eigentumsvermerk: "Vermerk Land", EigentumsvermerkSchuelerbuecherei: "Vermerk Bücherei"}

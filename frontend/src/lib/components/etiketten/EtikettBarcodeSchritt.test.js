@@ -16,12 +16,11 @@ import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
 const apiFetchMock = vi.mocked(apiFetch);
 const KEIN_EXEMPLAR = 'Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.';
 
-// Schritt 2 unterscheidet „nicht geladen“ von „kein Exemplar“: Der zweite Satz legt nahe, neue
-// Barcodes zu erzeugen, und darf nach einem gescheiterten Abruf nicht dastehen.
+// Schritt 2 unterscheidet „nicht geladen“ von „kein Exemplar“: Der zweite Satz sagt, der Titel
+// habe nichts zu drucken, und darf nach einem gescheiterten Abruf nicht dastehen.
 describe('Druck-Center, Schritt 2: Exemplare nicht geladen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		etikettenStore.modus = 'existing';
 	});
 
 	it('zeigt den Ladefehler mit „Erneut versuchen“ und lädt darauf die Liste', async () => {
@@ -56,7 +55,6 @@ describe('Druck-Center, Schritt 2: Exemplare nicht geladen', () => {
 describe('Druck-Center, Schritt 2: Angabe hinter der Nummer', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		etikettenStore.modus = 'existing';
 	});
 
 	it('nennt ein bestelltes Exemplar ohne Notiz „Bestellt“', async () => {
@@ -81,5 +79,26 @@ describe('Druck-Center, Schritt 2: Angabe hinter der Nummer', () => {
 		expect(zeile('B-0000002')).toContain('(Bestellt)');
 		expect(zeile('B-0000003')).toContain('(Im Zulauf - Buchhandlung)');
 		expect(zeile('B-0000004')).toContain('(Einband lose)');
+	});
+});
+
+// Gedruckt wird nur die Nummer eines Exemplars, das es gibt: Eine Nummer, die der Browser
+// abzählt, steht in keiner Zählung, und eine Bestellung könnte sie ein zweites Mal vergeben.
+describe('Druck-Center, Schritt 2: nur vorhandene Exemplare', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('bietet keine Art an, Nummern ohne Exemplar zu drucken', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, json: async () => [{ barcode_id: 'B-0041874' }] })
+		);
+		await etikettenStore.waehleTitel({ id: 't5', titel: 'Titel', autor: '' });
+		const k = render(EtikettBarcodeSchritt);
+
+		await waitFor(() => expect(k.getByText('B-0041874')).toBeTruthy());
+		expect(k.queryByRole('button', { name: 'Neue Barcodes' })).toBeNull();
+		expect(k.queryByLabelText(/Start-Ziffer/)).toBeNull();
+		expect(k.getByRole('heading', { name: '2. Exemplare wählen' })).toBeTruthy();
 	});
 });

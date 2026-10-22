@@ -27,15 +27,14 @@ type Etikett struct {
 	Autor     string
 	ISBN      string
 	// AnschaffungsJahr ist das Jahr des Zugangs (zugang_am, sonst erworben_am) und steht als
-	// „Ansch.J. 2016" auf dem Etikett. Leer entfällt die Zeile, etwa auf Vorab-Etiketten für
-	// eine Bestellung, deren Exemplare es noch nicht gibt.
+	// „Ansch.J. 2016" auf dem Etikett. Leer entfällt die Zeile.
 	AnschaffungsJahr string
 	// Signatur ist buecher_titel.signatur (etwa „LMF-Deutsch 5"). Leer entfällt die Zeile.
 	Signatur string
 	// Topf ist der Topf des Exemplars (repository.ExemplarTopfSQL) und entscheidet, welcher
 	// Eigentumsvermerk auf dem Etikett steht (Kopf.vermerkFuer). Er kommt nur vom Server,
 	// deshalb json:"-": Kein Druckauftrag aus dem Browser kann ihn mitbringen. Leer heißt
-	// Exemplar unbekannt (Vorab-Druck), dann gilt der allgemeine Vermerk.
+	// Exemplar unbekannt, dann gilt der allgemeine Vermerk.
 	Topf string `json:"-"`
 }
 

@@ -30,7 +30,6 @@ function erzeugeEtikettenStore() {
 	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette, die eine weitere
 	// Kopie derselben Raster wäre.
 	let felderJeBogen = $derived(felderProBogen(formatId));
-	let modus = $state('existing');
 	// Tief reaktiv, nicht $state.raw: Das Kästchen in Schritt 2 schreibt `checked` an das
 	// Exemplar selbst, und der Bogen (bogen) muss das sehen.
 	let vorhandeneExemplare = $state(/** @type {any[]} */ ([]));
@@ -38,8 +37,8 @@ function erzeugeEtikettenStore() {
 	// Zahl steht als Hinweis darunter. Dieselbe Regel wie repository.EtikettOffenBedingung.
 	let ausgesondertAnzahl = $state(0);
 	let laedtExemplare = $state(false);
-	// Ein gescheiterter Abruf ist ein eigener Zustand: Eine leere Liste hieße „kein Exemplar"
-	// und legte nahe, neue Barcodes zu erzeugen.
+	// Ein gescheiterter Abruf ist ein eigener Zustand: Eine leere Liste hieße „kein Exemplar",
+	// und der Bogen bliebe leer, ohne dass jemand den Grund sieht.
 	let exemplareNichtGeladen = $state(false);
 	// Zählt die Abrufe der Exemplare: Nur die Antwort des jüngsten zählt. Die langsamere
 	// Antwort eines früher gewählten Titels stellte sonst dessen Nummern unter den neuen Titel.
@@ -61,8 +60,6 @@ function erzeugeEtikettenStore() {
 		if (gewaehlt === 0) return 'keine';
 		return gewaehlt === sichtbareExemplare.length ? 'alle' : 'teil';
 	});
-	let neueAnzahl = $state(9);
-	let neueStartnummer = $state(20060);
 
 	let suchVerzoegerung = /** @type {any} */ (null);
 	// Zählt die Titelsuchen wie exemplarLauf die Abrufe der Exemplare.
@@ -84,22 +81,13 @@ function erzeugeEtikettenStore() {
 
 		if (!gewaehlterTitel) return [];
 
-		let etikettenListe = [];
-		if (modus === 'existing') {
-			etikettenListe = vorhandeneExemplare
-				.filter((c) => c.checked)
-				.map((c) => ({
-					barcode_id: c.barcode_id,
-					titel: gewaehlterTitel.titel,
-					autor: gewaehlterTitel.autor || ''
-				}));
-		} else {
-			etikettenListe = Array.from({ length: Math.max(1, neueAnzahl) }, (_, i) => ({
-				barcode_id: `B-${neueStartnummer + i}`,
+		const etikettenListe = vorhandeneExemplare
+			.filter((c) => c.checked)
+			.map((c) => ({
+				barcode_id: c.barcode_id,
 				titel: gewaehlterTitel.titel,
 				autor: gewaehlterTitel.autor || ''
 			}));
-		}
 
 		const offsetCount = Math.max(0, startFeld - 1);
 		const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
@@ -328,12 +316,6 @@ function erzeugeEtikettenStore() {
 			startFeld = v;
 		},
 
-		get modus() {
-			return modus;
-		},
-		set modus(v) {
-			modus = v;
-		},
 		get vorhandeneExemplare() {
 			return vorhandeneExemplare;
 		},
@@ -363,18 +345,6 @@ function erzeugeEtikettenStore() {
 		},
 		get auswahlSichtbar() {
 			return auswahlSichtbar;
-		},
-		get neueAnzahl() {
-			return neueAnzahl;
-		},
-		set neueAnzahl(v) {
-			neueAnzahl = v;
-		},
-		get neueStartnummer() {
-			return neueStartnummer;
-		},
-		set neueStartnummer(v) {
-			neueStartnummer = v;
 		},
 
 		get bogen() {

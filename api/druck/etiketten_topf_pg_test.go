@@ -109,7 +109,7 @@ func TestEigentumsvermerkFolgtDemTopf_DruckCenter(t *testing.T) {
 }
 
 // Der Topf kommt vom Server (json:"-" an buchetikett.Etikett.Topf). Bei einem Barcode, den die
-// Datenbank nicht kennt (Vorab-Druck), trägt buchetikett.ErgaenzeServerfelder nichts nach; ein
+// Datenbank nicht kennt, trägt buchetikett.ErgaenzeServerfelder nichts nach; ein
 // vom Browser mitgeschicktes „Topf" bliebe dann stehen und wählte den Vermerk.
 func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)

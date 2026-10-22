@@ -17,8 +17,10 @@ geführt wird, steht am Ende.
   Ladefehler der Klassenleitungen, doppelter Scan im Barcode-Editor.
 - [x] Entscheiden: Ein Exemplar mit langer LMF-Nummer, das ein neues Etikett braucht, bekommt eine
   kurze `B-`-Nummer, statt den langen Code nachzudrucken.
-- [ ] Entscheiden: Ziehen „Neue Barcodes" im Druck-Center ihre Nummern aus derselben Zählung wie
-  alle anderen Nummern, oder entfällt diese Art? (5.92)
+- [x] Entscheiden: „Neue Barcodes" im Druck-Center entfällt, entschieden am 22.10.2026
+  ([FACHKONZEPT.md](FACHKONZEPT.md) §20).
+- [ ] Entscheiden: Lehnt der Server einen Etikettendruck mit einer Nummer ohne Exemplar ab, wie
+  einen mit einer LMF-Nummer? (5.93)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -104,16 +106,15 @@ trägt ein neues Etikett keinen Vermerk.
   21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
   selben Tag zurückgestellt.
 
-### 5.92 „Neue Barcodes" im Druck-Center
+### 5.93 Etikett für eine Nummer ohne Exemplar
 
-Im Reiter „Buch-Etiketten" erzeugt die Art „Neue Barcodes" eine Reihe `B-`-Nummern im Browser, ab
-einer Start-Ziffer (Vorgabe 20060, `neueStartnummer` in `frontend/src/lib/stores/etiketten.svelte.js`),
-und druckt sie. Danach steht keine dieser Nummern an einem Exemplar oder in `barcode_seq`: Eine
-Bestellung oder die kurze Nummer eines LMF-Exemplars kann dieselbe Nummer später noch einmal
-vergeben (`repository.ZieheFreieExemplarBarcodes` prüft nur die Exemplare), und dann kleben zwei
-Etiketten mit ihr. Wer das zweite einem Exemplar zuordnet, bekommt „Diesen Barcode trägt bereits
-ein anderes Exemplar". Nächster Schritt nach der Entscheidung: die Nummern aus `barcode_seq` ziehen
-wie „Interne ID generieren", oder die Art entfällt.
+`POST /api/print/labels` druckt jede Nummer, die ein Auftrag nennt; `buchetikett.ErgaenzeServerfelder`
+lässt eine unbekannte ohne Jahr, Signatur und Topf. Die Oberfläche schickt nur Exemplare aus der
+Datenbank. Eine Nummer ohne Exemplar kommt aus einem Browserfenster, das noch „Neue Barcodes"
+zeigt, oder von einem Exemplar, das zwischen Laden und Druck gelöscht oder umnummeriert wurde;
+`api/druck/etiketten_topf_pg_test.go` druckt eine solche Nummer mit Absicht. Nächster Schritt nach
+der Entscheidung: solche Aufträge mit 409 ablehnen und die Nummern nennen wie bei LMF-Nummern
+(`buchetikett.NichtDruckbare`), oder es bleibt so.
 
 ### 7.2 Frisches Littera-Backup
 

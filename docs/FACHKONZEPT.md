@@ -1034,6 +1034,7 @@ Technische Alternativen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 4.3.
 | **Feld „Beschreibung / Klappentext" am Titel, Klappentext aus der DNB** | 22.09.2026 (keine Übernahme); Feld entfernt am 03.10.2026 (`bed921ce`, Migration 156) | Ein Klappentext gehört dem Verlag; frei nutzbar sind die Titeldaten und die Normdaten der DNB. Das Feld zeigte nur die Maske „Buch bearbeiten", und es war leer |
 | **Google Books als Quelle für Titeldaten streichen** | 24.09.2026 | Die Reihenfolge bleibt DNB, Google Books, OpenLibrary (`inventur/metadaten_client.go`). Für Schlagworte wird nur die DNB gefragt (§13) |
 | **Nachbau des Littera-Etiketts beim Nachdruck** | 30.09.2026 (`bb5e3104`) | Der Scanwert ist derselbe, und Bildschirm und Mahnliste zeigen die 13 Ziffern. Nachgedruckt wird das Etikett dieses Programms (§9) |
+| **Reihe neuer Nummern ohne Exemplar im Druck-Center** („Neue Barcodes" ab einer Start-Ziffer, auch aus `barcode_seq` gezogen) | 22.10.2026 | Jede Nummer entsteht mit ihrem Exemplar: bei der Bestellung (§7), in der Maske des Titels und bei der Übernahme aus Littera. Eine Nummer, die nur auf Papier steht, gehört keinem Exemplar, und eine Bestellung könnte sie ein zweites Mal vergeben |
 
 An anderer Stelle beschrieben, weil die Entscheidung dort zum Ablauf gehört: keine
 seitenübergreifende Suchleiste ([HANDBUCH.md](HANDBUCH.md), „Suchen"), kein Buchwunsch und kein

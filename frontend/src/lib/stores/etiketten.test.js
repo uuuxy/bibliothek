@@ -33,7 +33,6 @@ describe('etikettenStore: vorhandene Exemplare abwählen', () => {
 	beforeEach(async () => {
 		vi.clearAllMocks();
 		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1', 'B-2', 'B-3']));
-		etikettenStore.modus = 'existing';
 		await etikettenStore.waehleTitel({ id: 't1', titel: 'Titel', autor: 'Autorin' });
 	});
 
@@ -86,7 +85,6 @@ describe('etikettenStore: ausgesonderte Exemplare', () => {
 				]
 			})
 		);
-		etikettenStore.modus = 'existing';
 		await etikettenStore.waehleTitel({ id: 't2', titel: 'Titel', autor: '' });
 
 		expect(etikettenStore.vorhandeneExemplare.map((c) => c.barcode_id)).toEqual(['B-1', 'B-3']);
@@ -96,13 +94,12 @@ describe('etikettenStore: ausgesonderte Exemplare', () => {
 });
 
 // Scheitert der Abruf der Exemplare, sagt der Store das eigens. Eine leere Liste hieße „kein
-// Exemplar“ und legte nahe, neue Barcodes zu erzeugen.
+// Exemplar“, und der Bogen bliebe leer, ohne dass jemand den Grund sieht.
 describe('etikettenStore: Exemplare nicht geladen', () => {
 	const titel = { id: 't9', titel: 'Titel', autor: '' };
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		etikettenStore.modus = 'existing';
 	});
 
 	it('meldet eine Fehlantwort als Ladefehler', async () => {
@@ -148,7 +145,6 @@ describe('etikettenStore: Exemplare nicht geladen', () => {
 describe('etikettenStore: zwei Titel kurz nacheinander', () => {
 	it('zeigt die Exemplare des zuletzt gewählten Titels', async () => {
 		vi.clearAllMocks();
-		etikettenStore.modus = 'existing';
 		/** @type {(antwort: any) => void} */
 		let liefereErsten = () => {};
 		apiFetchMock.mockReturnValueOnce(new Promise((fertig) => (liefereErsten = fertig)));
@@ -166,7 +162,6 @@ describe('etikettenStore: zwei Titel kurz nacheinander', () => {
 	// Dieselbe Lage nach dem Wechsel der Klasse: Die späte Antwort füllt keine geleerte Liste.
 	it('lässt die Liste nach dem Wechsel der Klasse leer', async () => {
 		vi.clearAllMocks();
-		etikettenStore.modus = 'existing';
 		/** @type {(antwort: any) => void} */
 		let liefere = () => {};
 		apiFetchMock.mockReturnValueOnce(new Promise((fertig) => (liefere = fertig)));
@@ -241,7 +236,6 @@ describe('etikettenStore: alle, keine und einzelne Exemplare wählen', () => {
 	beforeEach(async () => {
 		vi.clearAllMocks();
 		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1', 'B-2', 'B-10001', '58968']));
-		etikettenStore.modus = 'existing';
 		etikettenStore.exemplarSuche = '';
 		await etikettenStore.waehleTitel({ id: 't3', titel: 'Titel', autor: '' });
 	});
@@ -361,7 +355,6 @@ describe('etikettenStore: neue Nummer beim Druck', () => {
 
 	it('trägt sie in die Exemplare des gewählten Titels ein', async () => {
 		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1', LMF]));
-		etikettenStore.modus = 'existing';
 		await etikettenStore.waehleTitel({ id: 't3', titel: 'Titel', autor: '' });
 		druckMitNeuerNummer();
 

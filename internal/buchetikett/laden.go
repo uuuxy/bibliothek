@@ -25,9 +25,7 @@ func LadeDerBestellung(ctx context.Context, datenbank repository.Datenbank, best
 // ein Feld, das die Oberfläche mitschicken muss, wird irgendwann vergessen.
 //
 // Wer hier ein Feld ergänzt, ergänzt es auch in LadeDerBestellung;
-// TestEtikettenDatenSindAufBeidenWegenGleich hält die beiden Wege zusammen. Unbekannte
-// Barcodes bleiben unangetastet, weil es beim Vorab-Druck für eine Bestellung die Exemplare
-// noch nicht gibt.
+// TestEtikettenDatenSindAufBeidenWegenGleich hält die beiden Wege zusammen.
 func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, etiketten []Etikett) {
 	barcodes := make([]string, 0, len(etiketten))
 	for i := range etiketten {

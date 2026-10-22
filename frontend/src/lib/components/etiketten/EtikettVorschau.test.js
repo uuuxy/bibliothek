@@ -25,7 +25,6 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 				json: async () => [{ barcode_id: 'B-0041873' }, { barcode_id: 'B-0041874' }]
 			})
 		);
-		etikettenStore.modus = 'existing';
 		etikettenStore.startFeld = 1;
 		await etikettenStore.waehleTitel({ id: 't1', titel: 'Titel', autor: 'Autorin' });
 	});
@@ -74,7 +73,6 @@ describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		etikettenStore.formatId = 'zweckform_l4760';
-		etikettenStore.modus = 'existing';
 		etikettenStore.startFeld = 1;
 	});
 
