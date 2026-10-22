@@ -15,7 +15,8 @@ import (
 // Die Schlüssel der Einstellungen: Oberfläche gegen Patch.
 //
 // Die Seite der Einstellungen baut ihren Patch aus benannten Schlüsseln: Jede Kategorie nennt
-// in `speichereKategorie({...})` die Felder, die sie schickt. Auf der anderen Seite steht
+// in ihrer Eingabe `const eingabe = () => ({...})` die Felder, die KategorieRahmen über
+// speichereKategorie schickt. Auf der anderen Seite steht
 // `repository.EinstellungenPatch` mit seinen JSON-Namen. Ohne diese Prüfung verbindet beide
 // nur die Aufmerksamkeit dessen, der ein Feld hinzufügt: Die Kategorie Mail schickte ihre
 // Felder in einer Schreibweise, die der Typ nicht kannte, der Decoder verwarf sie, und die
@@ -45,9 +46,9 @@ func TestEinstellungsSchluesselDeckenSichMitDemPatchStruct(t *testing.T) {
 	}
 }
 
-// schluesselAusKategorien liest nur die Aufrufe von speichereKategorie. Die Kategorien lesen
-// ihre Felder auch (`start.theke_leeren_minuten`); ein Detektor, der beides zusammenwirft,
-// meldet ein Feld weiter als versorgt, nachdem der Schreibweg entfernt wurde.
+// schluesselAusKategorien liest nur die Eingaben der Kategorien. Die Kategorien lesen ihre
+// Felder auch (`start.theke_leeren_minuten`); ein Detektor, der beides zusammenwirft, meldet
+// ein Feld weiter als versorgt, nachdem der Schreibweg entfernt wurde.
 func schluesselAusKategorien(t *testing.T) map[string]bool {
 	t.Helper()
 	dir := filepath.Join("..", "frontend", "src", "lib", "components", "einstellungen", "kategorien")
@@ -73,17 +74,17 @@ func schluesselAusKategorien(t *testing.T) map[string]bool {
 		if err != nil {
 			t.Fatalf("%s lesen: %v", e.Name(), err)
 		}
-		start := strings.Index(string(roh), "speichereKategorie(")
+		start := strings.Index(string(roh), eingabeMarke)
 		if start == -1 {
 			continue
 		}
 		dateien++
-		aufruf := speicherAufrufText(string(roh)[start:])
+		eingabe := eingabeText(string(roh)[start+len(eingabeMarke)-1:])
 
-		for _, m := range ausZahlen.FindAllStringSubmatch(aufruf, -1) {
+		for _, m := range ausZahlen.FindAllStringSubmatch(eingabe, -1) {
 			menge[m[1]] = true
 		}
-		for _, block := range ausFeldern.FindAllStringSubmatch(aufruf, -1) {
+		for _, block := range ausFeldern.FindAllStringSubmatch(eingabe, -1) {
 			for _, m := range feldName.FindAllStringSubmatch(block[1], -1) {
 				menge[m[1]] = true
 			}
@@ -96,10 +97,12 @@ func schluesselAusKategorien(t *testing.T) map[string]bool {
 	return menge
 }
 
-// speicherAufrufText schneidet den Aufruf `speichereKategorie( … )` bis zur schließenden
-// Klammer aus. Die ganze Datei zu durchsuchen wäre falsch, aus dem Grund, der über
-// schluesselAusKategorien steht.
-func speicherAufrufText(ab string) string {
+// eingabeMarke leitet die Eingabe einer Kategorie ein; ihre letzte Klammer öffnet das Objekt.
+const eingabeMarke = "const eingabe = () => ("
+
+// eingabeText schneidet die Eingabe ab ihrer öffnenden Klammer bis zur schließenden aus. Die
+// ganze Datei zu durchsuchen wäre falsch, aus dem Grund, der über schluesselAusKategorien steht.
+func eingabeText(ab string) string {
 	tiefe := 0
 	for i, c := range ab {
 		switch c {
