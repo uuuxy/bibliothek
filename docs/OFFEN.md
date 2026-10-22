@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 21.10.2026
+Stand: 22.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -13,6 +13,8 @@ geführt wird, steht am Ende.
 ### Jetzt
 
 - [x] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
+- [ ] Drei kleine Funde aus dem Durchgang über den Bestand: die Domain der Schule an einer Stelle,
+  Ladefehler der Klassenleitungen, doppelter Scan im Barcode-Editor. (5.90)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -95,6 +97,26 @@ trägt ein neues Etikett keinen Vermerk.
 - **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen). Entschieden am
   21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
   selben Tag zurückgestellt.
+
+### 5.90 Kleine Funde aus dem Durchgang über den Bestand
+
+Klasse B: Jeder meldet sich laut oder schadet nicht still.
+
+- **Die Domain der Schule steht an vier Stellen.** Ein Anmeldename ohne „@" bekommt eine fest
+  eingetragene Domain (`auth/imap.go`), das Feld der Anmeldung zeigt sie als festen Platzhalter
+  (`Anmeldung.svelte`), die Selbstanmeldung liest `SELBSTANMELDUNG_DOMAIN`, und der Sammelversand
+  ergänzt sie aus der Absenderadresse (`ergaenzeSchulDomain`). Ändert sich die Domain, scheitert
+  die Anmeldung mit dem Kurznamen. Nächster Schritt: eine Quelle festlegen, die übrigen lesen von
+  ihr.
+- **Klassenleitungen nach einem Ladefehler.** `fetchMapping` (`Klassenleitungen.svelte`)
+  verschluckt den Fehler, die Liste steht leer da statt mit `LadeFehler`. Gespeichert wird je
+  Klasse, verloren geht dabei nichts. Nächster Schritt: `LadeFehler` wie in den übrigen
+  Kategorien.
+- **Doppelter Scan im Barcode-Editor.** Enter speichert (`ExemplarBarcodeBearbeiten.svelte`). Ein
+  zweiter Scan, bevor die Antwort da ist, hängt sich an den Feldinhalt und speichert den
+  zusammengesetzten Wert, den die Tür annimmt; auffallen würde er erst an der Theke, wenn das
+  Etikett nicht gefunden wird. Nächster Schritt: das Speichern sperren, solange es läuft, wie im
+  Formular der Lieferanten.
 
 ### 7.2 Frisches Littera-Backup
 
