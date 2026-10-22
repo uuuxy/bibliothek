@@ -33,6 +33,9 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 	// dieselbe Suche wie GET /api/search, aber nur Titel und hinter view_books statt
 	// perform_actions.
 	mux.Handle("GET /api/buecher/titel/suche", s.verlangeRecht("view_books")(s.druck().TitelSuche(katalogAbfragen)))
+	// Das Exemplar zu einer Nummer für die Suche im Medienkatalog: dieselbe Erkennung wie an der
+	// Theke, auch über das Etikett von Littera, ohne Buchung und ohne Ausweise.
+	mux.Handle("GET /api/buecher/exemplare/erkennen", s.verlangeRecht("view_books")(s.katalog().ExemplarErkennen(katalogAbfragen)))
 	// Die Exemplarliste trägt den heutigen Ersatzwert je Exemplar. Das Recht bleibt view_books:
 	// Was ein Ersatz kostet, ist eine Angabe über das Buch, kein Datum eines Schülers. Gerechnet
 	// wird mit derselben Funktion wie im Dialog zum Melden eines Schadens, gelesen über die

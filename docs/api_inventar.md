@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-20. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-22. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (226)
+## Alle registrierten Routen (227)
 
 - `/`
 - `/api/admin`
@@ -79,6 +79,7 @@
 - `GET /api/books`
 - `GET /api/books/vorhanden`
 - `GET /api/books/{id}`
+- `GET /api/buecher/exemplare/erkennen`
 - `GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag`
 - `GET /api/buecher/titel/suche`
 - `GET /api/buecher/titel/{id}/auflagen`

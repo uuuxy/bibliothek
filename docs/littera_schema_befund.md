@@ -334,19 +334,23 @@ Bibliotheksnummer, Stellenzahl, Prüfziffer). Die Übernahme schreibt diese EAN-
 einer EAN-13-Schrift (Parität und Prüfziffer stimmen an allen 61.520 Exemplaren) und wird
 als Etikett übernommen (`littera.etikettZiffern`); aus Exemplar- und Bibliotheksnummer
 rechnet `littera.EtikettBarcode` sie nur, wenn sie fehlt. Steht ein Exemplar nur mit der
-kurzen Nummer im System, rechnet die Theke den Scan auf sie zurück
-(`dekodiereLitteraEtikett`). `-barcodes neu` ist nicht nötig. Ein neues Etikett brauchen nur
+kurzen Nummer im System, rechnen die Theke und die Suche im Medienkatalog den Scan auf sie
+zurück (`dekodiereLitteraEtikett`, für den Katalog über `service.ErkenneExemplar`).
+`-barcodes neu` ist nicht nötig. Ein neues Etikett brauchen nur
 Exemplare, deren Etikett schon ein anderes trägt (13 Exemplare teilen sich 5 Nummern, 8
 bekommen eine neue; [SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
 
 **Lernmittel mit „LMF" im Strichcode:** Manche Lernmittel tragen im Strichcode „LMF" und eine
 lange Nummer; an der Theke bestätigt am 01.10.2026: Sie buchen. In der Sicherung von 2010 steht
 „LMF" in keiner Zeichenkette der Spalte `Barcode` und in keiner `Exemplarnummer`, nur in `Sig1`
-(gezählt am 07.10.2026); woher diese Etiketten stammen, ist nicht belegt. Die Theke schlägt
-eine solche Nummer nach, wie sie gescannt wird, und `LMF-` ist eine Vorsilbe für Bücher wie
-`B-`: am Server (`internal/service/omnibox.go`) und ohne Netz (`BUCH_VORSILBEN` in
-`frontend/src/lib/scanEinordnen.js`); `internal/service/vorsilben_zwilling_test.go` hält beide
-gleich. Sie ist kein Rest eines Titelzusatzes „LMF-" und bleibt.
+(gezählt am 07.10.2026); woher diese Etiketten stammen, ist nicht belegt. Am Testserver
+haben sie die Form „LMF-", ISBN-13, dreistellige laufende Nummer (`LMF-9783060158423-001`);
+das Programm vergibt diese Form nirgends, neue Exemplare bekommen `B-`. Die Theke und die Suche
+im Medienkatalog schlagen eine solche Nummer nach, wie sie gescannt wird, und `LMF-` ist eine
+Vorsilbe für Bücher wie `B-`: am Server (`internal/service/omnibox.go`) und ohne Netz
+(`BUCH_VORSILBEN` in `frontend/src/lib/scanEinordnen.js`);
+`internal/service/vorsilben_zwilling_test.go` hält beide gleich. Sie ist kein Rest eines
+Titelzusatzes „LMF-" und bleibt.
 
 ### Zwei Fallen im Schreibpfad
 

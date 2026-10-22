@@ -17,7 +17,7 @@
 			autofokus
 			id="katalog-suchfeld"
 			bind:wert={suche}
-			platzhalter="Titel, Fach oder Klasse eingeben …"
+			platzhalter="Titel, Fach, Klasse oder Exemplarnummer …"
 			etikett="Suchen nach Titel, Fach, Klasse oder Autor"
 		/>
 	</div>

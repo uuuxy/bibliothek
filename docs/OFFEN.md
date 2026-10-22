@@ -15,6 +15,8 @@ geführt wird, steht am Ende.
 - [x] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
 - [x] Drei kleine Funde aus dem Durchgang über den Bestand: die Domain der Schule an einer Stelle,
   Ladefehler der Klassenleitungen, doppelter Scan im Barcode-Editor.
+- [ ] Entscheiden: Ein Exemplar mit langer LMF-Nummer, das ein neues Etikett braucht, bekommt eine
+  kurze `B-`-Nummer, statt den langen Code nachzudrucken. (5.91)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -48,6 +50,8 @@ Nur, was kein Test leisten kann.
   zurückstellen.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
+- [ ] Am Testserver lesen, an welchem Titel das Exemplar 101634 und die LMF-Exemplare derselben
+  ISBN hängen. (5.91)
 
 ### Termin
 
@@ -97,6 +101,40 @@ trägt ein neues Etikett keinen Vermerk.
 - **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen). Entschieden am
   21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
   selben Tag zurückgestellt.
+
+### 5.91 Lange LMF-Nummern
+
+Manche Lernmittel tragen ein Etikett der Form „LMF-", ISBN-13, laufende Nummer
+(`LMF-9783060158423-001`, 21 Zeichen); das Programm vergibt diese Form nicht.
+
+- **Etikett:** Das Buchetikett setzt den Strichcode in ein Feld von 40 mm (Standard 52: 35 mm,
+  `pdf/etikett_buch.go`). Bei 222 Modulen ist ein Modul 0,16 mm (0,14 mm) breit, bei `B-00001`
+  0,32 mm, bei 101634 0,48 mm. Die Zeile „Exemplar-Nr.: …" (Courier 9 pt) ist dann 66,7 mm
+  breit, das Etikett Zweckform L4760 63,5 mm. `TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle`
+  prüft diese Zeile nicht und nur eine 13-stellige Nummer. Nächster Schritt nach der
+  Entscheidung im Fahrplan: der Nachdruck eines solchen Exemplars vergibt die neue Nummer, und
+  ein Gate hält die Zeile der Nummer in ihrer Zelle.
+- **Daten am Testserver:** Die ISBN-Suche zeigte zum Buch mit dem Littera-Etikett 101634 ein
+  anderes Exemplar (`LMF-9783060158423-001`). Ob 101634 an einem zweiten Titel desselben Buchs
+  hängt, sagt diese Abfrage (nur lesend):
+
+```bash
+ssh 46.62.140.190 'docker exec -i bibliothek-db psql -U postgres -d bibliothek -P pager=off' <<'SQL'
+BEGIN READ ONLY;
+SELECT e.barcode_id, e.erstellt_am::date AS ex_angelegt, e.etikett_gedruckt, t.id AS titel_id, left(t.titel, 40) AS titel, t.isbn, t.ist_lernmittel, t.werk_id
+FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+WHERE e.barcode_id IN ('101634', 'LMF-9783060158423-001');
+SELECT t.id, left(t.titel, 40) AS titel, t.isbn, t.werk_id, count(e.id) AS exemplare,
+       count(e.id) FILTER (WHERE e.barcode_id LIKE 'LMF%') AS lmf, min(e.barcode_id), max(e.barcode_id), max(e.erstellt_am)::date AS juengstes
+FROM buecher_titel t LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
+WHERE regexp_replace(coalesce(t.isbn, ''), '[^0-9Xx]', '', 'g') LIKE '%306015842%'
+GROUP BY t.id;
+SELECT CASE WHEN barcode_id LIKE 'LMF%' THEN 'LMF' WHEN barcode_id LIKE 'B-%' THEN 'B-' WHEN barcode_id ~ '^[0-9]+$' THEN 'Ziffern' ELSE 'andere' END AS form,
+       count(*), max(length(barcode_id)) AS laengste, count(*) FILTER (WHERE NOT etikett_gedruckt) AS ohne_etikett
+FROM buecher_exemplare GROUP BY 1 ORDER BY 2 DESC;
+ROLLBACK;
+SQL
+```
 
 ### 7.2 Frisches Littera-Backup
 

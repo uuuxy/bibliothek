@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import Katalogseite from './KatalogSuche.svelte';
+import { apiFetch } from '../../lib/apiFetch.js';
 
 /**
  * Der ganze Weg eines Kamera-Scans im Medienkatalog, an einem Stück: KameraScanner →
@@ -23,6 +24,13 @@ vi.mock('$lib/components/scanner/barcodeErkennung.js', async (importOriginal) =>
 		name: 'test',
 		detector: { detect: async () => [{ rawValue: '9783060130764' }] }
 	})
+}));
+
+// Die Frage nach einem Exemplar (GET /api/buecher/exemplare/erkennen); ohne eigene Antwort
+// trägt keine Nummer ein Exemplar.
+vi.mock('../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn(async () => ({ ok: true, json: async () => ({ treffer: null }) }))
 }));
 
 vi.mock('$lib/startseiten_api.js', async (importOriginal) => ({
@@ -76,5 +84,90 @@ describe('Kamera-Scan im Medienkatalog', () => {
 		expect(await screen.findByText('Keine Bücher gefunden')).toBeTruthy();
 		expect(screen.getByText(/9781234567897/)).toBeTruthy();
 		expect(screen.queryByText('Green Line 3')).toBeNull();
+	});
+});
+
+// Eine Exemplarnummer steht in keiner Angabe eines Titels. Gescannt liefert ein Littera-Etikett
+// nicht die aufgedruckte Nummer, sondern einen EAN-13 (101634 → 1016340039562); die Theke fand
+// das Buch, der Katalog nicht. Jetzt fragt die Suche den Server und zeigt den Titel des Exemplars.
+describe('Exemplarnummer im Medienkatalog', () => {
+	/** @param {string} wert */
+	async function sucheNach(wert) {
+		render(Katalogseite);
+		const feld = /** @type {HTMLInputElement} */ (
+			await screen.findByLabelText(/Suchen nach Titel/)
+		);
+		await fireEvent.input(feld, { target: { value: wert } });
+	}
+
+	it('zeigt den Titel des Exemplars zum gescannten Littera-Etikett', async () => {
+		vi.mocked(apiFetch).mockImplementation(
+			async (/** @type {any} */ url) =>
+				/** @type {any} */ ({
+					ok: true,
+					json: async () => ({
+						treffer: String(url).includes('code=1016340039562')
+							? { typ: 'exemplar', id: 'ex-1', titel_id: 'b2', barcode: '101634' }
+							: null
+					})
+				})
+		);
+		await sucheNach('1016340039562');
+
+		expect(await screen.findByText('Exemplar 101634 gehört zu „Ganz anderes Buch“.')).toBeTruthy();
+		expect(screen.getByText('Ganz anderes Buch')).toBeTruthy();
+		expect(screen.queryByText('Green Line 3')).toBeNull();
+		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+	});
+
+	it('sagt, wenn sich die Nummer nicht prüfen ließ, statt „kein Exemplar“', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: false, status: 500, json: async () => ({ error: 'weg' }) })
+		);
+		await sucheNach('101634');
+
+		expect(await screen.findByText(/ließ sich nicht prüfen/)).toBeTruthy();
+	});
+
+	// Der Katalog führt nur Titel mit einem Exemplar im Bestand. Ein ausgesondertes Exemplar,
+	// dessen Titel sonst keins hat, ist gefunden und heißt nicht „kein Exemplar".
+	it('nennt ein ausgesondertes Exemplar, dessen Titel nicht in der Liste steht', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					treffer: {
+						typ: 'exemplar',
+						id: 'ex-9',
+						titel_id: 'nicht-in-der-liste',
+						barcode: 'B-00042',
+						ausgesondert: true
+					}
+				})
+			})
+		);
+		await sucheNach('B-00042');
+
+		expect(await screen.findByText(/Exemplar B-00042 ist ausgesondert/)).toBeTruthy();
+		expect(screen.getByText(/unter „Ohne Exemplare“/)).toBeTruthy();
+		expect(screen.queryByText(/Weder ein Titel noch ein Exemplar/)).toBeNull();
+	});
+
+	// „Nichts gefunden" vor der Antwort hieße für das Buch in der Hand: nicht im Bestand.
+	it('sagt nicht „nichts gefunden“, solange die Frage nach dem Exemplar läuft', async () => {
+		vi.mocked(apiFetch).mockReturnValue(new Promise(() => {}));
+		await sucheNach('101634');
+
+		await new Promise((r) => setTimeout(r, 400));
+		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+	});
+
+	it('fragt bei einem Wort ohne Ziffer nicht nach einem Exemplar', async () => {
+		vi.mocked(apiFetch).mockClear();
+		await sucheNach('Green');
+
+		expect(screen.getByText('Green Line 3')).toBeTruthy();
+		await new Promise((r) => setTimeout(r, 400));
+		expect(vi.mocked(apiFetch)).not.toHaveBeenCalled();
 	});
 });
