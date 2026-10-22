@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Gelöschte Kollegen fallen nach 180 Tagen im Papierkorb endgültig, über denselben Weg wie
-// „Endgültig löschen" von Hand (LoescheLeserEndgueltig).
+// Gelöschte Kollegen fallen nach 180 Tagen im Papierkorb endgültig, mit derselben Tilgung wie
+// „Endgültig löschen" von Hand (LoescheKollegenAusDemPapierkorb).
 //
 // Erwartung nach dem Lauf:
 //

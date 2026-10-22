@@ -263,6 +263,20 @@ func (t *Tueren) schreibeLieferant(ctx context.Context, id string, req lieferant
 	return alt, neu, tx.Commit(ctx)
 }
 
+// meldungHauptlieferantLoeschen ist die Antwort, wenn das Löschen den Hauptlieferanten träfe.
+const meldungHauptlieferantLoeschen = "Dieser Händler ist der Hauptlieferant, über ihn läuft die Bestellung. " +
+	"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."
+
+// antworteLieferantNichtGeloescht erklärt ein Löschen, das keine Zeile traf: Inzwischen ist der
+// Händler Hauptlieferant oder nicht mehr da. Die Frage wählt nur die Meldung, gelöscht ist nichts.
+func (t *Tueren) antworteLieferantNichtGeloescht(ctx context.Context, w http.ResponseWriter, id string) {
+	if istHaupt, _, err := repository.LadeLieferantHauptUndName(ctx, t.DB.Pool, id); err == nil && istHaupt {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungHauptlieferantLoeschen, nil)
+		return
+	}
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
+}
+
 // LieferantLoeschen löscht einen Lieferanten, den Hauptlieferanten nicht.
 func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -299,9 +313,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 			return
 		}
 		if istHaupt {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict,
-				"Dieser Händler ist der Hauptlieferant, über ihn läuft die Bestellung. "+
-					"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen.", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungHauptlieferantLoeschen, nil)
 			return
 		}
 
@@ -312,7 +324,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 		}
 
 		if geloescht == 0 {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
+			t.antworteLieferantNichtGeloescht(ctx, w, id)
 			return
 		}
 		t.ProtokolliereVerwaltung(ctx, tuer.AktionLieferantGeloescht,

@@ -203,9 +203,10 @@ func (a *LeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID stri
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	// Endgültig gelöscht wird nur aus dem Papierkorb.
+	// Endgültig gelöscht wird nur aus dem Papierkorb. Die Frage sperrt die Zeile bis zum Löschen:
+	// Ein Wiederherstellen dazwischen sähe sie sonst nicht, und gelöscht würde der aktive Leser.
 	var imPapierkorb bool
-	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM leser WHERE id = $1`, leserID).Scan(&imPapierkorb)
+	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM leser WHERE id = $1 FOR UPDATE`, leserID).Scan(&imPapierkorb)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("%w: %s", ErrLeserNichtGefunden, leserID)
 	}
@@ -223,6 +224,35 @@ func (a *LeserAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID stri
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// LoescheKollegenAusDemPapierkorb entfernt für den nächtlichen Lauf einen Kollegen, wenn er beim
+// Löschen noch löschreif ist (praedikatKollegenPapierkorb, dieselbe Bedingung wie die Liste des
+// Laufs). Der Lauf liest seine Liste vorher; wer dazwischen wiederhergestellt und neu gelöscht
+// wurde, verlöre sonst seine 180 Tage. Die Zeile bleibt bis zum Löschen gesperrt. false heißt:
+// nicht mehr löschreif, nichts geändert.
+func (a *LeserAbfragen) LoescheKollegenAusDemPapierkorb(ctx context.Context, leserID string) (bool, error) {
+	tx, err := a.db.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer db.Verwerfe(ctx, tx)
+
+	bedingung := praedikatKollegenPapierkorb(KulanzJob)
+	argumente := append(bedingung.Args, leserID)
+	var loeschreif int
+	err = tx.QueryRow(ctx, fmt.Sprintf(`SELECT 1 FROM leser WHERE id = $%d AND %s FOR UPDATE`,
+		len(argumente), bedingung.Where), argumente...).Scan(&loeschreif)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if err = tilgeSpurenUndLoescheLeser(ctx, tx, leserID, "", "DSGVO-Löschung (Purge)"); err != nil {
+		return false, err
+	}
+	return true, tx.Commit(ctx)
 }
 
 // LoescheAbgaengerEndgueltig entfernt einen Abgänger endgültig, für den nächtlichen Lauf. Der

@@ -116,9 +116,11 @@ func LadeLieferantHauptUndName(ctx context.Context, db Datenbank, id string) (is
 	return istHaupt, name, err
 }
 
-// LoescheLieferant löscht einen Lieferanten und liefert die Zahl der gelöschten Zeilen.
+// LoescheLieferant löscht einen Lieferanten, der nicht Hauptlieferant ist, und liefert die Zahl
+// der gelöschten Zeilen. Die Bedingung steht in der Anweisung: Wird er zwischen der Frage der Tür
+// und dem Löschen zum Hauptlieferanten, bleibt er stehen.
 func LoescheLieferant(ctx context.Context, db Datenbank, id string) (int64, error) {
-	tag, err := db.Exec(ctx, "DELETE FROM lieferanten WHERE id = $1", id)
+	tag, err := db.Exec(ctx, "DELETE FROM lieferanten WHERE id = $1 AND NOT ist_hauptlieferant", id)
 	if err != nil {
 		return 0, err
 	}

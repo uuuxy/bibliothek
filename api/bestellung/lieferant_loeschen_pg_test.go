@@ -12,6 +12,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
+	"bibliothek/repository"
 )
 
 // Der Hauptlieferant lässt sich nicht nebenbei wegklicken.
@@ -81,6 +82,24 @@ func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
 	}
 	if !nochDa {
 		t.Error("der Hauptlieferant ist trotz 409 aus der Tabelle verschwunden")
+	}
+
+	// 1b. Die Anweisung selbst löscht keinen Hauptlieferanten: Wird ein Händler zwischen der
+	//     Frage der Tür und dem Löschen zum Hauptlieferanten, bleibt er stehen.
+	if geloescht, err := repository.LoescheLieferant(t.Context(), pool, haupt); err != nil || geloescht != 0 {
+		t.Errorf("LoescheLieferant(Hauptlieferant) = %d, %v, erwartet 0 ohne Fehler", geloescht, err)
+	}
+	//     Die Tür sagt dann, warum: Hauptlieferant (409) oder nicht mehr da (404).
+	nichtGeloescht := func(id string) int {
+		rec := httptest.NewRecorder()
+		srv.antworteLieferantNichtGeloescht(t.Context(), rec, id)
+		return rec.Code
+	}
+	if code := nichtGeloescht(haupt); code != http.StatusConflict {
+		t.Errorf("antworteLieferantNichtGeloescht(Hauptlieferant) = %d, erwartet %d", code, http.StatusConflict)
+	}
+	if code := nichtGeloescht("00000000-0000-0000-0000-000000000000"); code != http.StatusNotFound {
+		t.Errorf("antworteLieferantNichtGeloescht(unbekannt) = %d, erwartet %d", code, http.StatusNotFound)
 	}
 
 	// 2. Gegenprobe: Ein gewöhnlicher Händler lässt sich weiterhin löschen. Ohne diese

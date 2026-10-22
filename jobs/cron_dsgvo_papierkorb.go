@@ -17,8 +17,8 @@ import (
 // beim Löschen gegangen (LegeLeserInPapierkorb).
 
 // fuehrePapierkorbLoeschungAus löscht Kollegen endgültig, die seit 180 Tagen im Papierkorb
-// liegen. Derselbe Weg wie „Endgültig löschen" von Hand: LoescheLeserEndgueltig prüft Papierkorb
-// und offene Vorgänge ein zweites Mal, in der Transaktion der Löschung.
+// liegen. LoescheKollegenAusDemPapierkorb stellt dieselbe Frage wie die Liste ein zweites Mal, in
+// der Transaktion der Löschung; wer dazwischen nicht mehr löschreif ist, bleibt.
 func (z *Zeitplan) fuehrePapierkorbLoeschungAus(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
@@ -37,10 +37,15 @@ func (z *Zeitplan) fuehrePapierkorbLoeschungAus(ctx context.Context) {
 	geloescht := 0
 	var fehlschlaege []string
 	for _, id := range ids {
-		// Leerer Bearbeiter: Das Protokoll nennt SYSTEM als Akteur statt einer Person.
-		if err := z.leserLoeschung.LoescheLeserEndgueltig(ctx, id, ""); err != nil {
+		// Das Protokoll nennt SYSTEM als Akteur statt einer Person.
+		weg, err := z.leserLoeschung.LoescheKollegenAusDemPapierkorb(ctx, id)
+		if err != nil {
 			log.Printf("Scheduler Papierkorb: Leser %s nicht gelöscht: %v", logger.OhneUmbruch(id), err)
 			fehlschlaege = append(fehlschlaege, id)
+			continue
+		}
+		if !weg {
+			log.Printf("Scheduler Papierkorb: Leser %s ist nicht mehr löschreif, bleibt", logger.OhneUmbruch(id))
 			continue
 		}
 		geloescht++

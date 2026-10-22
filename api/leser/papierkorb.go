@@ -1,6 +1,7 @@
 package leser
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"bibliothek/pkg/clientip"
 	"bibliothek/repository"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -52,6 +54,21 @@ func (t *Tueren) Papierkorb() http.HandlerFunc {
 	}
 }
 
+// antworteNichtWiederhergestellt erklärt ein Wiederherstellen, das keine Zeile traf: Der Leser
+// ist anonymisiert oder liegt nicht im Papierkorb. Die Frage wählt nur die Meldung, geschrieben
+// ist nichts.
+func (t *Tueren) antworteNichtWiederhergestellt(ctx context.Context, w http.ResponseWriter, id string) {
+	anonymisiert, err := repository.IstPapierkorbLeserAnonymisiert(ctx, t.DB.Pool, id)
+	switch {
+	case err == nil && anonymisiert:
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Dieser Datensatz ist bereits anonymisiert (DSGVO) und lässt sich nicht wiederherstellen", nil)
+	case err == nil || errors.Is(err, pgx.ErrNoRows):
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Schüler nicht im Papierkorb gefunden", nil)
+	default:
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+	}
+}
+
 // LeserWiederherstellen holt einen Leser aus dem Papierkorb zurück.
 func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -63,19 +80,13 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		// Anonymisierte Papierkorb-Zeilen (anonymized_at gesetzt) sind kein Schüler mehr,
-		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
-		// „Anonym"-Datensatz in der aktiven Liste. 409 statt Wiederherstellen.
-		if anonymisiert, err := repository.IstPapierkorbLeserAnonymisiert(ctx, t.DB.Pool, id); err == nil && anonymisiert {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Dieser Datensatz ist bereits anonymisiert (DSGVO) und lässt sich nicht wiederherstellen", nil)
-			return
-		}
-
 		// Wiederherstellen: deleted_at zurücknehmen und die Lösch-Sperre aufheben.
 		// LegeLeserInPapierkorb setzt ist_gesperrt=true mit block_reason='Systematisch gelöscht';
 		// ohne das Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt
 		// (Zombie-Sperre) und könnte nichts ausleihen. Eine Sperre aus anderem Grund bleibt
-		// bestehen.
+		// bestehen. Eine anonymisierte Zeile holt StelleLeserWiederHer nicht zurück, die Bedingung
+		// steht in der Anweisung: Sie ist ein Pseudonym ohne Namen und landete als gesperrter
+		// „Anonym" in der aktiven Liste.
 		wiederhergestellt, err := repository.StelleLeserWiederHer(ctx, t.DB.Pool, id)
 		if err != nil {
 			// Drei Teilindizes gelten nur für aktive Zeilen: Namensindex (Migration 108,
@@ -92,7 +103,7 @@ func (t *Tueren) LeserWiederherstellen() http.HandlerFunc {
 		}
 
 		if wiederhergestellt == 0 {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Schüler nicht im Papierkorb gefunden", nil)
+			t.antworteNichtWiederhergestellt(ctx, w, id)
 			return
 		}
 

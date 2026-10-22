@@ -17,8 +17,8 @@ type protokollAttrappe struct {
 	systemEintraege      int
 }
 
-func (p *protokollAttrappe) LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
-	return nil
+func (p *protokollAttrappe) LoescheKollegenAusDemPapierkorb(ctx context.Context, leserID string) (bool, error) {
+	return true, nil
 }
 
 func (p *protokollAttrappe) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {

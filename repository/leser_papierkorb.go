@@ -59,8 +59,11 @@ func IstPapierkorbLeserAnonymisiert(ctx context.Context, db Datenbank, id string
 
 // StelleLeserWiederHer holt einen Leser aus dem Papierkorb und hebt die Sperre auf, die das
 // Löschen gesetzt hat; eine Sperre aus anderem Grund bleibt. Liefert die Zahl der Zeilen: null
-// heißt, er lag nicht im Papierkorb. Ein Zwilling, der inzwischen seinen Platz besetzt, kommt
-// als Verletzung eines der Teilindizes der aktiven Leser zurück.
+// heißt, er lag nicht im Papierkorb oder ist anonymisiert (IstPapierkorbLeserAnonymisiert sagt,
+// welches). Die Bedingung steht in der Anweisung, nicht in einer Frage davor: Eine
+// Anonymisierung dazwischen holte sonst einen „Anonym" in die aktive Liste. Ein Zwilling, der
+// inzwischen seinen Platz besetzt, kommt als Verletzung eines der Teilindizes der aktiven Leser
+// zurück.
 func StelleLeserWiederHer(ctx context.Context, db Datenbank, id string) (int64, error) {
 	tag, err := db.Exec(ctx, `
 			UPDATE leser SET
@@ -68,7 +71,7 @@ func StelleLeserWiederHer(ctx context.Context, db Datenbank, id string) (int64, 
 				ist_gesperrt = CASE WHEN block_reason = 'Systematisch gelöscht' THEN false ELSE ist_gesperrt END,
 				block_reason = CASE WHEN block_reason = 'Systematisch gelöscht' THEN NULL ELSE block_reason END,
 				aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $1 AND deleted_at IS NOT NULL`, id)
+			WHERE id = $1 AND deleted_at IS NOT NULL AND anonymized_at IS NULL`, id)
 	if err != nil {
 		return 0, err
 	}
