@@ -9,8 +9,8 @@ import (
 
 // Eine Nummer ist entweder ein Buch oder ein Ausweis, nie beides.
 //
-// Die Theke löst einen Scan ohne Vorsilbe zuerst als Buch auf (verarbeiteOhneVorsilbe,
-// ErkenneScan): Trägt ein Leser die Nummer eines Exemplars, lädt sein Ausweis das Buch, und
+// Die Theke löst einen Scan ohne Vorsilbe zuerst als Buch auf (verarbeiteOhneVorsilbe):
+// Trägt ein Leser die Nummer eines Exemplars, lädt sein Ausweis das Buch, und
 // niemand sieht warum. Die Littera-Übernahme prüft das für ihren Lauf auch selbst
 // (internal/littera/schreiber_personen.go); die Regel an beiden Tabellen bremst auch, wer von
 // Hand eine Ausweisnummer einträgt oder ein Buch umetikettiert.

@@ -6,7 +6,6 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
-	"bibliothek/internal/service"
 	"bibliothek/repository"
 )
 
@@ -18,13 +17,10 @@ type suchErgebnis struct {
 	Titel       []repository.Titel `json:"books"`
 	LeserGesamt int                `json:"students_total"`
 	TitelGesamt int                `json:"books_total"`
-	// Treffer: exakte Auflösung eines Scans (Exemplar-Barcode, Littera-EAN, Ausweis); die
-	// globale Suchleiste springt damit direkt zur Akte. nil = kein Scan.
-	Treffer *service.ScanTreffer `json:"treffer,omitempty"`
 }
 
-// Suche sucht unscharf nach Lesern und Titeln, ohne Vorsilbe (GET /api/search), und erkennt
-// einen gescannten Barcode exakt, ohne zu buchen.
+// Suche sucht unscharf nach Lesern und Titeln, ohne Vorsilbe (GET /api/search). Einen Scan
+// bucht die Theke über POST /api/action; diese Suche bucht nie.
 func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen *repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		suchtext := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -37,7 +33,7 @@ func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen 
 
 		grenze := 10
 
-		// Die drei Abfragen laufen nacheinander: Mit der Grenze ist das gegen die Datenbank
+		// Die zwei Abfragen laufen nacheinander: Mit der Grenze ist das gegen die Datenbank
 		// des Servers schnell genug und einfacher als Nebenläufigkeit.
 		leser, leserGesamt, err := leserAbfragen.FindeUnscharf(ctx, suchtext, grenze)
 		if err != nil {
@@ -50,12 +46,6 @@ func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen 
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-		treffer, err := service.ErkenneScan(ctx, katalogAbfragen, leserAbfragen, suchtext)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-			return
-		}
-
 		if titel == nil {
 			titel = []repository.Titel{}
 		}
@@ -69,7 +59,6 @@ func (t *Tueren) Suche(leserAbfragen *repository.LeserAbfragen, katalogAbfragen 
 			Titel:       titel,
 			LeserGesamt: leserGesamt,
 			TitelGesamt: titelGesamt,
-			Treffer:     treffer,
 		}
 
 		tuer.AntworteJSON(w, http.StatusOK, ergebnis)

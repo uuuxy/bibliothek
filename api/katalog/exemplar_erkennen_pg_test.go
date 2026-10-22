@@ -64,7 +64,7 @@ func TestExemplarErkennen_FindetExemplarUeberBarcodeUndEtikett(t *testing.T) {
 			t.Errorf("%s: HTTP %d, Antwort %s", f.name, code, body)
 			continue
 		}
-		if antwort.Treffer.ID != f.exemplar || antwort.Treffer.TitelID != f.titel || antwort.Treffer.Typ != "exemplar" {
+		if antwort.Treffer.ID != f.exemplar || antwort.Treffer.TitelID != f.titel {
 			t.Errorf("%s: Treffer %+v, erwartet Exemplar %s am Titel %s", f.name, *antwort.Treffer, f.exemplar, f.titel)
 		}
 	}

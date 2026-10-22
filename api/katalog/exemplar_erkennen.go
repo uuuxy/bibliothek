@@ -13,7 +13,7 @@ import (
 // exemplarErkennenAntwort ist die Antwort von GET /api/buecher/exemplare/erkennen: das Exemplar
 // zur Nummer, oder null, wenn keines sie trägt.
 type exemplarErkennenAntwort struct {
-	Treffer *service.ScanTreffer `json:"treffer"`
+	Treffer *service.ExemplarTreffer `json:"treffer"`
 }
 
 // ExemplarErkennen löst eine gescannte oder getippte Nummer zu einem Exemplar auf, ohne Wirkung:

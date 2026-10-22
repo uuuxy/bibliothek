@@ -10,15 +10,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// TestErkenneScan: Die globale Suche fragt „was ist das?" und springt hin. Sie löst einen Wert
-// in der Reihenfolge der Theke auf: Exemplar, Littera-Etikett (EAN-13 → Mediennummer), dann
-// Ausweis. Ein Fehler der Datenbank kommt als Fehler an; verschluckt sähe er aus wie eine
-// unbekannte Nummer, und die Volltextsuche liefe los.
-func TestErkenneScan(t *testing.T) {
+// TestErkenneExemplar: Die Suche im Medienkatalog fragt „welches Exemplar ist das?" in der
+// Reihenfolge der Theke: erst der Barcode, dann das Etikett von Littera (EAN-13 →
+// Mediennummer). Ein Fehler der Datenbank kommt als Fehler an; verschluckt sähe er aus wie eine
+// unbekannte Nummer.
+func TestErkenneExemplar(t *testing.T) {
 	dbFehler := errors.New("verbindung weg")
 	exemplar := &repository.Exemplar{ID: "ex-1", TitelID: "titel-1", BarcodeID: "B-12345"}
 	altesEtikett := &repository.Exemplar{ID: "ex-2", TitelID: "titel-2", BarcodeID: "58968"}
-	leser := &repository.Leser{ID: "leser-1", BarcodeID: "S-7"}
+	ausgesondert := &repository.Exemplar{ID: "ex-3", TitelID: "titel-3", BarcodeID: "B-99", IstAusgesondert: true}
 
 	// nurUnter liefert das Exemplar genau für diesen Barcode.
 	nurUnter := func(barcode string, ex *repository.Exemplar) func(context.Context, string) (*repository.Exemplar, error) {
@@ -34,42 +34,32 @@ func TestErkenneScan(t *testing.T) {
 		name       string
 		wert       string
 		exemplare  func(context.Context, string) (*repository.Exemplar, error)
-		leser      *repository.Leser
-		leserErr   error
-		soll       *ScanTreffer
+		soll       *ExemplarTreffer
 		sollFehler error
 	}{
 		{
 			name: "Barcode eines Exemplars", wert: "B-12345", exemplare: nurUnter("B-12345", exemplar),
-			soll: &ScanTreffer{Typ: "exemplar", ID: "ex-1", TitelID: "titel-1", Barcode: "B-12345"},
+			soll: &ExemplarTreffer{ID: "ex-1", TitelID: "titel-1", Barcode: "B-12345"},
 		},
 		{
 			name: "Littera-Etikett: die EAN-13 führt zur Mediennummer", wert: "5896800039556",
 			exemplare: nurUnter("58968", altesEtikett),
-			soll:      &ScanTreffer{Typ: "exemplar", ID: "ex-2", TitelID: "titel-2", Barcode: "58968"},
+			soll:      &ExemplarTreffer{ID: "ex-2", TitelID: "titel-2", Barcode: "58968"},
 		},
 		{
-			name: "das Exemplar geht vor dem Ausweis", wert: "B-12345",
-			exemplare: nurUnter("B-12345", exemplar), leser: leser,
-			soll: &ScanTreffer{Typ: "exemplar", ID: "ex-1", TitelID: "titel-1", Barcode: "B-12345"},
+			name: "ausgesondertes Exemplar", wert: "B-99", exemplare: nurUnter("B-99", ausgesondert),
+			soll: &ExemplarTreffer{ID: "ex-3", TitelID: "titel-3", Barcode: "B-99", Ausgesondert: true},
 		},
+		{name: "kein Exemplar", wert: "unbekannt", exemplare: nurUnter("B-12345", exemplar)},
 		{
-			name: "kein Exemplar, aber ein Ausweis", wert: "S-7", leser: leser,
-			soll: &ScanTreffer{Typ: "schueler", ID: "leser-1", Barcode: "S-7"},
-		},
-		{name: "weder Exemplar noch Ausweis", wert: "unbekannt"},
-		{
-			name: "Fehler beim Exemplar", wert: "B-12345",
+			name: "Fehler der Datenbank", wert: "B-12345",
 			exemplare:  func(context.Context, string) (*repository.Exemplar, error) { return nil, dbFehler },
 			sollFehler: dbFehler,
 		},
-		{name: "Fehler beim Ausweis", wert: "S-7", leserErr: dbFehler, sollFehler: dbFehler},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			treffer, err := ErkenneScan(context.Background(),
-				&katalogAttrappe{findeExemplar: f.exemplare},
-				&festerLeserAttrappe{leser: f.leser, err: f.leserErr}, f.wert)
+			treffer, err := ErkenneExemplar(context.Background(), &katalogAttrappe{findeExemplar: f.exemplare}, f.wert)
 			if !errors.Is(err, f.sollFehler) {
 				t.Fatalf("Fehler %v, erwartet %v", err, f.sollFehler)
 			}

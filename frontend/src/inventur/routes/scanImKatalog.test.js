@@ -107,7 +107,7 @@ describe('Exemplarnummer im Medienkatalog', () => {
 					ok: true,
 					json: async () => ({
 						treffer: String(url).includes('code=1016340039562')
-							? { typ: 'exemplar', id: 'ex-1', titel_id: 'b2', barcode: '101634' }
+							? { id: 'ex-1', titel_id: 'b2', barcode: '101634' }
 							: null
 					})
 				})
@@ -137,7 +137,6 @@ describe('Exemplarnummer im Medienkatalog', () => {
 				ok: true,
 				json: async () => ({
 					treffer: {
-						typ: 'exemplar',
 						id: 'ex-9',
 						titel_id: 'nicht-in-der-liste',
 						barcode: 'B-00042',
