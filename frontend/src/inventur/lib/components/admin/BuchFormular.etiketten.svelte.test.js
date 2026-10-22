@@ -6,8 +6,13 @@ vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
+vi.mock('../../../../lib/stores/bestaetigung.svelte.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	verwerfenBestaetigen: vi.fn()
+}));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
+import { verwerfenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 import { uiStore } from '../../../../lib/stores/uiStore.svelte.js';
 import { etikettenStore } from '../../../../lib/stores/etiketten.svelte.js';
@@ -47,6 +52,9 @@ beforeEach(() => {
 					String(url).endsWith('/exemplare') ? [{ barcode_id: 'B-1' }, { barcode_id: 'B-2' }] : []
 			})
 	);
+	vi.mocked(verwerfenBestaetigen).mockReset();
+	uiStore.verlassenSperre = null;
+	uiStore.blockierterWechsel = null;
 	uiStore.activeTab = 'medienkatalog';
 	uiStore.requestedDruckCenterTab = null;
 });
@@ -59,7 +67,7 @@ describe('Barcodes drucken in der Maske eines Titels', () => {
 
 		await fireEvent.click(/** @type {HTMLElement} */ (knopf()));
 
-		expect(uiStore.activeTab).toBe('druck-center');
+		await vi.waitFor(() => expect(uiStore.activeTab).toBe('druck-center'));
 		expect(uiStore.requestedDruckCenterTab).toBe('labels');
 		expect(druckWarteschlange.copies).toBeNull();
 		expect(etikettenStore.gewaehlterTitel).toMatchObject({
@@ -70,6 +78,33 @@ describe('Barcodes drucken in der Maske eines Titels', () => {
 		await waitFor(() =>
 			expect(etikettenStore.bogen.map((l) => l.barcode_id)).toEqual(['B-1', 'B-2'])
 		);
+	});
+
+	// Hält die Maske Ungespeichertes, fragt der Knopf zuerst. Wer bleibt, findet das Druck-Center,
+	// wie es war; wer verwirft, kommt mit dem Titel hinein.
+	it('fragt vor dem Wechsel und ändert nach „Bleiben" nichts im Druck-Center', async () => {
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books', 'view_books'] };
+		const wartend = [{ barcode_id: 'B-ALT', titel: 'Anderes Buch' }];
+		druckWarteschlange.copies = wartend;
+		uiStore.verlassenSperre = () => true;
+		const bleiben = /** @type {HTMLElement} */ (knopf());
+
+		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(false);
+		await fireEvent.click(bleiben);
+		await new Promise((fertig) => setTimeout(fertig, 0));
+
+		expect(druckWarteschlange.copies).toEqual(wartend);
+		expect(uiStore.requestedDruckCenterTab).toBeNull();
+		expect(uiStore.activeTab).toBe('medienkatalog');
+		expect(verwerfenBestaetigen).toHaveBeenCalledTimes(1);
+
+		vi.mocked(verwerfenBestaetigen).mockResolvedValueOnce(true);
+		await fireEvent.click(bleiben);
+
+		await vi.waitFor(() => expect(uiStore.activeTab).toBe('druck-center'));
+		expect(uiStore.requestedDruckCenterTab).toBe('labels');
+		expect(druckWarteschlange.copies).toBeNull();
+		expect(etikettenStore.gewaehlterTitel).toMatchObject({ id: 't-1' });
 	});
 
 	it('bietet den Knopf nicht an, wer die Buch-Etiketten nicht öffnen darf', () => {

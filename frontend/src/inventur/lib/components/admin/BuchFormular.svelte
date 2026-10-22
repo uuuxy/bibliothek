@@ -12,6 +12,7 @@
 	import { enterSpeichert } from '../../../../lib/scanErkennung.js';
 	import { etikettenStore } from '../../../../lib/stores/etiketten.svelte.js';
 	import { uiStore } from '../../../../lib/stores/uiStore.svelte.js';
+	import { darfVerwerfen } from '../../../../lib/stores/verlassenSchutz.svelte.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menue.js';
 	import { rechteDesReiters } from '../../../../lib/druckCenterReiter.js';
@@ -48,8 +49,12 @@
 		rechteDesReiters('labels').every((recht) => hatRecht(authStore.currentUser, recht))
 	);
 
-	/** Öffnet das Druck-Center mit diesem Titel; seine Exemplare sind dort angehakt. */
-	function etikettenDrucken() {
+	/**
+	 * Öffnet das Druck-Center mit diesem Titel; seine Exemplare sind dort angehakt. Erst fragt der
+	 * Verlassen-Schutz nach Ungespeichertem: Wer bleibt, findet das Druck-Center, wie es war.
+	 */
+	async function etikettenDrucken() {
+		if (!(await darfVerwerfen())) return;
 		etikettenStore.leereDruckauftrag();
 		etikettenStore.waehleTitel({ id: formular.id, titel: formular.title, autor: formular.author });
 		uiStore.requestedDruckCenterTab = 'labels';
