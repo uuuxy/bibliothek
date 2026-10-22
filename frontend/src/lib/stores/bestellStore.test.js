@@ -12,7 +12,7 @@ vi.mock('./snackbars.svelte.js', () => ({
 	snackbars: { addToast: vi.fn() }
 }));
 
-import { apiClient, apiGet, apiPost, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
+import { apiClient, apiGet, apiPost, apiPut, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
 import { bestellStore } from './bestellStore.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
 
@@ -571,5 +571,33 @@ describe('bestellStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 		expect(payloads).toHaveLength(3);
 		expect(payloads[2].items[0].menge).toBe(5);
 		expect(payloads[2].idempotency_key).not.toBe(ersterSchluessel);
+	});
+});
+
+// Lehnt der Server einen Lieferanten ab, behält das Formular die Eingabe und die bearbeitete
+// Zeile bleibt offen (Lieferanten.svelte). Dafür muss der Fehler beim Aufrufer ankommen; die
+// Meldung zeigt apiFetch.
+describe('bestellStore: Lieferant anlegen und ändern', () => {
+	beforeEach(() => {
+		resetStore();
+		vi.mocked(snackbars.addToast).mockClear();
+		vi.mocked(apiGet).mockReset();
+		vi.mocked(apiGet).mockImplementation(async () => []);
+	});
+
+	it('gibt einen abgelehnten Lieferanten an den Aufrufer weiter', async () => {
+		apiPostMock.mockRejectedValueOnce(new Error('abgelehnt'));
+		await expect(bestellStore.addSupplier('Neu', 'neu@example.org', 'K-1')).rejects.toThrow(
+			'abgelehnt'
+		);
+		vi.mocked(apiPut).mockRejectedValueOnce(new Error('abgelehnt'));
+		await expect(bestellStore.editSupplier('s1', { name: 'Neu' })).rejects.toThrow('abgelehnt');
+		expect(snackbars.addToast).not.toHaveBeenCalledWith('Lieferant aktualisiert.', 'success');
+	});
+
+	it('lädt nach dem Anlegen die Liste neu', async () => {
+		apiPostMock.mockResolvedValueOnce({});
+		await bestellStore.addSupplier('Neu', 'neu@example.org', 'K-1');
+		expect(apiGet).toHaveBeenCalledWith('/api/lieferanten');
 	});
 });

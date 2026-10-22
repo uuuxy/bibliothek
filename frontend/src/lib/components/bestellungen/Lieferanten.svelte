@@ -19,11 +19,23 @@
 
 	/** @type {string|null} */
 	let bearbeiteteKennung = $state(null);
+	let legtAn = $state(false);
 
+	// Geleert wird erst nach dem Anlegen: Weist der Server ab, bleibt die Eingabe zum Berichtigen
+	// stehen (die Meldung zeigt apiFetch). Ein zweiter Klick in der Zeit legte denselben
+	// Lieferanten noch einmal an.
 	/** @param {SubmitEvent} e */
-	function speichere(e) {
+	async function speichere(e) {
 		e.preventDefault();
-		onAddSupplier(newName, newEmail, newCustNum, newIstHaupt, newCustNumSchultraeger);
+		if (legtAn) return;
+		legtAn = true;
+		try {
+			await onAddSupplier(newName, newEmail, newCustNum, newIstHaupt, newCustNumSchultraeger);
+		} catch {
+			return;
+		} finally {
+			legtAn = false;
+		}
 		newName = '';
 		newEmail = '';
 		newCustNum = '';
@@ -31,10 +43,15 @@
 		newIstHaupt = false;
 	}
 
+	// Die Zeile schließt erst, wenn gespeichert ist; sonst gingen die Änderungen mit ihr.
 	/** @param {Record<string, any>} aenderung die seit dem Öffnen geänderten Felder */
 	async function speichereAenderung(aenderung) {
 		if (!bearbeiteteKennung) return;
-		await onEditSupplier(bearbeiteteKennung, aenderung);
+		try {
+			await onEditSupplier(bearbeiteteKennung, aenderung);
+		} catch {
+			return;
+		}
 		bearbeiteteKennung = null;
 	}
 </script>
@@ -85,7 +102,9 @@
 			<p class="text-xs text-on-surface-variant">
 				Alle anderen Lieferanten bekommen einfach nur die Bestellmail.
 			</p>
-			<Button type="submit" size="lg" class="w-full">Lieferanten speichern</Button>
+			<Button type="submit" size="lg" class="w-full" disabled={legtAn}>
+				{legtAn ? 'Wird gespeichert …' : 'Lieferanten speichern'}
+			</Button>
 		</form>
 	</div>
 
