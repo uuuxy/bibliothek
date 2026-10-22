@@ -21,6 +21,7 @@
 	 *   gefiltert: number,
 	 *   laedt: boolean,
 	 *   druckLaeuft: boolean,
+	 *   mailLaeuft?: boolean,
 	 *   onDrucken: () => void,
 	 *   onMailen: () => void
 	 * }}
@@ -33,6 +34,7 @@
 		gefiltert,
 		laedt,
 		druckLaeuft,
+		mailLaeuft = false,
 		onDrucken,
 		onMailen
 	} = $props();
@@ -90,13 +92,18 @@
 				{/if}
 			</Button>
 			{#if darfMailen}
+				<!-- Solange ein Versand läuft, startet kein zweiter (sammelversand.svelte.js). -->
 				<Button
 					onclick={onMailen}
-					disabled={gesamt === 0}
+					disabled={mailLaeuft || gesamt === 0}
 					class="no-print"
 					title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
 				>
-					<Mail class="h-4 w-4" />
+					{#if mailLaeuft}
+						<Ladekreis size="sm" farbe="aktuell" etikett="Versand läuft" />
+					{:else}
+						<Mail class="h-4 w-4" />
+					{/if}
 					An Klassenleitungen mailen
 				</Button>
 			{/if}

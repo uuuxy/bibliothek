@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"bibliothek/api/tuer"
@@ -68,6 +69,9 @@ type klassenVersandAntwort struct {
 // Eskalation. Siehe docs/invarianten.md §1.
 // POST /api/mail/send-bulk-overdue
 func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen) http.HandlerFunc {
+	// Ein Lauf zur Zeit, für alle Plätze: Er dauert je Klasse eine Mail lang, und ein zweiter
+	// Start in dieser Zeit verschickte jede Mahnliste noch einmal.
+	var laeuft atomic.Bool
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -79,11 +83,17 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 			return
 		}
 
-		// 2. Ohne konfigurierten Mailserver kein Massenversand.
+		// 2. Ohne konfigurierten Mailserver kein Massenversand, und keiner neben einem
+		//    laufenden.
 		if !t.Post().IstKonfiguriert(r.Context()) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Der Massenversand ist nicht möglich, weil kein SMTP-Server eingerichtet ist", nil)
 			return
 		}
+		if !laeuft.CompareAndSwap(false, true) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Es läuft bereits ein Mahnlauf. Bitte warten, bis er fertig ist.", nil)
+			return
+		}
+		defer laeuft.Store(false)
 
 		// 3. Alle überfälligen Klassen laden (leerer Filter = alle Klassen) und die
 		//    Auswahl des Aufrufers darauf anwenden.

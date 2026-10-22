@@ -73,28 +73,16 @@ export async function ladeKontoauszuege(klasse, suche = '', sichtbar = []) {
 	a.remove();
 }
 
-/** Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger.
- *
- *  Gibt die SERVER-Meldung zurück, statt selbst eine zu formulieren: nur der Server
- *  weiß, an wen die Auszüge tatsächlich gingen.
- *  @param {{ klassen: string[], overrideEmail?: string }} auswahl
- *  @returns {Promise<{ ok: boolean, meldung: string }>} */
-export async function sendeKontoauszuege(auswahl) {
-	const res = await apiFetch('/api/abgaenger/mail', {
+/** Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger. Gibt die
+ *  Antwort zurück; Sperre und Meldung macht der Sammelversand (stores/sammelversand.svelte.js).
+ *  @param {import('./stores/sammelversand.svelte.js').VersandRumpf} rumpf
+ *  @returns {Promise<Response>} */
+export function sendeKontoauszuege(rumpf) {
+	return apiFetch('/api/abgaenger/mail', {
 		method: 'POST',
 		// Je Klasse eine Mail mit den Auszügen: länger als die Vorgabe für Anfragen.
 		timeoutMs: FRIST_SAMMELVERSAND_MS,
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			klassen: auswahl.klassen,
-			override_email: auswahl.overrideEmail ?? ''
-		})
+		body: JSON.stringify(rumpf)
 	});
-	const json = await res.json();
-	return {
-		ok: res.ok,
-		meldung: res.ok
-			? (json.message ?? 'Kontoauszüge versendet')
-			: (json.error ?? json.message ?? 'Versand fehlgeschlagen.')
-	};
 }

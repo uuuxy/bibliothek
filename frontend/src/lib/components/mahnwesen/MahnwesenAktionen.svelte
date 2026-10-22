@@ -106,15 +106,21 @@
 
 	<!-- „Alle anmahnen" ist die einzige E-Mail-Aktion, nur hier steht das Umschlag-Symbol.
 	     Nur mit dem Recht der Route dahinter (create_orders, entschieden in Mahnwesen.svelte).
-	     „Liste drucken" bleibt: Das Blatt entsteht im Browser und zählt keine Mahnung. -->
+	     „Liste drucken" bleibt: Das Blatt entsteht im Browser und zählt keine Mahnung. Solange
+	     ein Mahnlauf läuft, startet kein zweiter (sammelversand.svelte.js). -->
 	{#if darfMahnen && countAlle > 0}
 		<Button
 			variant="danger"
 			onclick={() => onMahnlauf()}
+			disabled={mahnwesenStore.mahnlauf.laeuft}
 			aria-label="Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden"
 			class="shrink-0"
 		>
-			<Mail class="h-4 w-4" aria-hidden="true" />
+			{#if mahnwesenStore.mahnlauf.laeuft}
+				<Ladekreis size="sm" farbe="aktuell" etikett="Mahnlauf läuft" />
+			{:else}
+				<Mail class="h-4 w-4" aria-hidden="true" />
+			{/if}
 			Alle anmahnen
 		</Button>
 	{/if}

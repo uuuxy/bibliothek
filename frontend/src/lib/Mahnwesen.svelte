@@ -106,6 +106,6 @@
 	onclose={() => (mahnlaufOffen = false)}
 	onconfirm={(auswahl) => {
 		mahnlaufOffen = false;
-		mahnwesenStore.sendeMahnmails(auswahl);
+		mahnwesenStore.mahnlauf.sende(auswahl);
 	}}
 />

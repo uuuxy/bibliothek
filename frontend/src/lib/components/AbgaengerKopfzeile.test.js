@@ -63,4 +63,22 @@ describe('AbgaengerKopfzeile', () => {
 			false
 		);
 	});
+
+	// Ein laufender Versand dauert je Klasse eine Mail lang; ein zweiter Start verschickte jede
+	// Mail noch einmal (stores/sammelversand.svelte.js). M3, Progress indicators: „A circular
+	// indicator can be placed in a button to show that the button's action is currently in
+	// progress."
+	it('sperrt den Mail-Knopf und zeigt den Lauf, solange ein Versand läuft', () => {
+		alsBenutzerMit(['view_graduates', 'create_orders']);
+		const laeuft = render(AbgaengerKopfzeile, { ...PROPS, mailLaeuft: true });
+		const knopf = laeuft.getByRole('button', { name: /An Klassenleitungen mailen/ });
+		expect(knopf.hasAttribute('disabled')).toBe(true);
+		expect(knopf.querySelector('[role="progressbar"]')).not.toBeNull();
+		laeuft.unmount();
+
+		const ruhe = render(AbgaengerKopfzeile, { ...PROPS, mailLaeuft: false });
+		const frei = ruhe.getByRole('button', { name: /An Klassenleitungen mailen/ });
+		expect(frei.hasAttribute('disabled')).toBe(false);
+		expect(frei.querySelector('[role="progressbar"]')).toBeNull();
+	});
 });

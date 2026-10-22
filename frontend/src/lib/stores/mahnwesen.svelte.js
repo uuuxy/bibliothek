@@ -218,8 +218,8 @@ function erzeugeMahnwesen() {
 		waehleAlle,
 		waehleKeine,
 
-		// Mail: nur der Massenversand (siehe mahnwesenMail.svelte.js).
-		sendeMahnmails: mailStore.sendeMahnmails,
+		// Mail: nur der Mahnlauf, mit seinem Laufzustand (mahnwesenMail.svelte.js).
+		mahnlauf: mailStore,
 
 		get drucktPdf() {
 			return pdfStore.drucktPdf;

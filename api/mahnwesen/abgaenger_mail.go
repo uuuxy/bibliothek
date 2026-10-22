@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync/atomic"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -41,6 +42,8 @@ type abgaengerKlasse struct {
 //
 // POST /api/abgaenger/mail
 func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
+	// Ein Lauf zur Zeit wie beim Mahnlauf; neben ihm darf er laufen, beide schicken anderes.
+	var laeuft atomic.Bool
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -61,6 +64,11 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungAusserhalbDerSaison(fenster), nil)
 			return
 		}
+		if !laeuft.CompareAndSwap(false, true) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Es läuft bereits ein Versand der Kontoauszüge. Bitte warten, bis er fertig ist.", nil)
+			return
+		}
+		defer laeuft.Store(false)
 
 		// Dieselbe Abfrage, die auch der Druck benutzt (leerer Filter = alle Klassen).
 		// Papier und Mail zeigen damit garantiert denselben Stand.

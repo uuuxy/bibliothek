@@ -1,3 +1,12 @@
+<script module>
+	import * as dienst from './abgaengerDienst.js';
+	import { erzeugeSammelversand } from './stores/sammelversand.svelte.js';
+
+	// Einmal je Modul, nicht je Seite: Nach einem Wechsel der Seite zeigt der Knopf weiter, dass
+	// der Versand läuft, und ein zweiter Start wartet.
+	const versand = erzeugeSammelversand(dienst.sendeKontoauszuege, () => 'Kontoauszüge versendet');
+</script>
+
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
@@ -6,7 +15,6 @@
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
 	import AbgaengerTabelle from './components/AbgaengerTabelle.svelte';
 	import AbgaengerKopfzeile from './components/AbgaengerKopfzeile.svelte';
-	import * as dienst from './abgaengerDienst.js';
 	import { abonniere } from './liveEvents.js';
 	import Seitenrahmen from './components/layout/Seitenrahmen.svelte';
 
@@ -97,23 +105,6 @@
 		})
 	);
 
-	/** @param {{ klassen: string[], overrideEmail: string }} auswahl */
-	async function sendeKontoauszuege(auswahl) {
-		versandOffen = false;
-		// Ohne Auswahl gar nicht erst losschicken: Ein fehlendes klassen-Feld bedeutet
-		// serverseitig ALLE Klassen — genau der Rundumschlag, den der Dialog verhindert.
-		if (!auswahl.klassen.length) {
-			melde('Keine Klasse ausgewählt.', 'error');
-			return;
-		}
-		try {
-			const { ok, meldung } = await dienst.sendeKontoauszuege(auswahl);
-			melde(meldung, ok ? 'success' : 'error');
-		} catch (e) {
-			melde(`Netzwerkfehler beim Versand: ${e}`, 'error');
-		}
-	}
-
 	// Fetch graduates list from backend api
 	async function ladeListe() {
 		try {
@@ -164,6 +155,7 @@
 		gefiltert={gefilterteAbgaenger.length}
 		{laedt}
 		druckLaeuft={drucktKontoauszuege}
+		mailLaeuft={versand.laeuft}
 		onDrucken={druckeKontoauszuege}
 		onMailen={() => (versandOffen = true)}
 	/>
@@ -195,5 +187,8 @@
 	hinweis="Leer lassen = jede Klasse an ihre eigene Klassenleitung. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
 	klassen={klassenFuerVersand}
 	onclose={() => (versandOffen = false)}
-	onconfirm={sendeKontoauszuege}
+	onconfirm={(auswahl) => {
+		versandOffen = false;
+		versand.sende(auswahl);
+	}}
 />

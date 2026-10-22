@@ -539,7 +539,9 @@ verwalten_ darf (→ Benutzer & Rechte). Mit _Leserdatei anzeigen_ allein lässt
 ansehen und drucken.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, dann
-senden): Jede Klassenleitung bekommt ein Blatt je Kind zum Austeilen. **Liste drucken** druckt
+senden): Jede Klassenleitung bekommt ein Blatt je Kind zum Austeilen. Solange der Lauf
+versendet, ist _Alle anmahnen_ gesperrt und zeigt einen Ladekreis; einen zweiten Lauf, auch
+von einem anderen Platz, weist das Programm ab, bis der erste fertig ist. **Liste drucken** druckt
 die Mahnliste als Tabelle, je Buch eine Zeile mit Klasse, Kind, Buch, Frist und Zahl der
 Mahnungen — so, wie Reiter, Klassenfilter und Suche sie gerade zeigen, geordnet nach Klasse und
 Name. Mail und Liste zählen nicht. Lehrkräfte werden nie angemahnt. Wer die Schule verlassen hat,
@@ -595,7 +597,8 @@ Hinweis mit den Daten.
 
 **Gedruckt wird, was die Liste zeigt:** mit gewählter Klasse nur diese, mit einer Suche nur
 die Gefundenen. So lässt sich auch ein einzelner Kontoauszug mit Freigabezeile nachdrucken —
-Namen suchen, drucken. Der Versand per Mail bleibt klassenweise.
+Namen suchen, drucken. Der Versand per Mail bleibt klassenweise, und wie beim Mahnlauf läuft
+er nur einmal zur Zeit.
 
 Wer die Schule dann **verlassen** hat (Versetzung: Abschlussklasse; LUSD-Import: fehlt im
 neuen Export), steht nicht mehr hier, sondern in der Leserdatei unter _Ehemalige /

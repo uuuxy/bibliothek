@@ -4,27 +4,31 @@ vi.mock('./apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),
 	apiFetch: vi.fn()
 }));
+vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 import { apiFetch, FRIST_SAMMELVERSAND_MS } from './apiFetch.js';
+import { melde } from '../inventur/lib/store.svelte.js';
 import { sendeKontoauszuege, kontoauszugAdresse, ladeKontoauszuege } from './abgaengerDienst.js';
+import { erzeugeSammelversand } from './stores/sammelversand.svelte.js';
 
 // Der Versand der Kontoauszüge an die Klassenleitungen hat im Browser nur ein Saisonfenster:
 // Die beiden e2e-Specs (abgaenger-versand, schueler-profil-klick) überspringen sich vom
 // 01.08. bis 30.04., weil der Server das Fenster aus seiner Uhr rechnet. Ein Bruch in der
 // Nutzlast fiele sonst erst im Mai auf — mitten in der Saison (Bestands-Durchgang
-// 10.09.2026, „Kalender-Gate"). Dieser Test hält die Nutzlast das ganze Jahr.
+// 10.09.2026, „Kalender-Gate"). Dieser Test hält die Nutzlast das ganze Jahr, über denselben
+// Sammelversand, den Abgaenger.svelte baut.
 describe('abgaengerDienst.sendeKontoauszuege', () => {
+	const versand = erzeugeSammelversand(sendeKontoauszuege, () => 'Kontoauszüge versendet');
+
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
+		vi.mocked(melde).mockReset();
 	});
 
 	it('schickt genau die gewählten Klassen und die Ausnahme-Adresse', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(
 			/** @type {any} */ ({ ok: true, json: async () => ({ message: '2 Mails versendet.' }) })
 		);
-		const erg = await sendeKontoauszuege({
-			klassen: ['09H1', '10R2'],
-			overrideEmail: 'test@schule.example'
-		});
+		await versand.sende({ klassen: ['09H1', '10R2'], overrideEmail: 'test@schule.example' });
 
 		const [url, opts] = vi.mocked(apiFetch).mock.calls[0];
 		expect(url).toBe('/api/abgaenger/mail');
@@ -35,16 +39,17 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 			klassen: ['09H1', '10R2'],
 			override_email: 'test@schule.example'
 		});
-		expect(erg).toEqual({ ok: true, meldung: '2 Mails versendet.' });
+		expect(melde).toHaveBeenCalledWith('2 Mails versendet.', 'success');
 	});
 
 	it('ohne Ausnahme-Adresse ein leerer String, nie ein fehlendes Feld', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(
 			/** @type {any} */ ({ ok: true, json: async () => ({}) })
 		);
-		await sendeKontoauszuege({ klassen: ['09H1'] });
+		await versand.sende({ klassen: ['09H1'] });
 		const body = JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 		expect(body).toEqual({ klassen: ['09H1'], override_email: '' });
+		expect(melde).toHaveBeenCalledWith('Kontoauszüge versendet', 'success');
 	});
 
 	it('meldet den Fehler des Servers, nicht eine eigene Formulierung', async () => {
@@ -54,8 +59,8 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 				json: async () => ({ error: 'Mailserver nicht erreichbar' })
 			})
 		);
-		const erg = await sendeKontoauszuege({ klassen: ['09H1'] });
-		expect(erg).toEqual({ ok: false, meldung: 'Mailserver nicht erreichbar' });
+		await versand.sende({ klassen: ['09H1'] });
+		expect(melde).toHaveBeenCalledWith('Mailserver nicht erreichbar', 'error');
 	});
 });
 

@@ -15,7 +15,7 @@ import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 const apiFetchMock = vi.mocked(apiFetch);
 const showToastMock = vi.mocked(melde);
 
-describe('useMahnwesenMail.sendeMahnmails', () => {
+describe('useMahnwesenMail.sende', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -28,7 +28,7 @@ describe('useMahnwesenMail.sendeMahnmails', () => {
 		);
 		const store = useMahnwesenMail();
 
-		await store.sendeMahnmails(auswahl);
+		await store.sende(auswahl);
 
 		expect(apiFetch).toHaveBeenCalledWith('/api/mail/send-bulk-overdue', {
 			method: 'POST',
@@ -50,7 +50,7 @@ describe('useMahnwesenMail.sendeMahnmails', () => {
 		);
 		const store = useMahnwesenMail();
 
-		await store.sendeMahnmails({ ...auswahl, overrideEmail: 'sek@schule.de' });
+		await store.sende({ ...auswahl, overrideEmail: 'sek@schule.de' });
 
 		const body = JSON.parse(/** @type {any} */ (apiFetchMock.mock.calls[0][1]).body);
 		expect(body.override_email).toBe('sek@schule.de');
@@ -61,7 +61,7 @@ describe('useMahnwesenMail.sendeMahnmails', () => {
 	it('schickt ohne Auswahl gar nicht erst los (leeres Feld hiesse serverseitig ALLE Klassen)', async () => {
 		const store = useMahnwesenMail();
 
-		await store.sendeMahnmails({ klassen: [] });
+		await store.sende({ klassen: [] });
 
 		expect(apiFetch).not.toHaveBeenCalled();
 		expect(showToastMock.mock.calls[0][1]).toBe('error');
@@ -76,7 +76,7 @@ describe('useMahnwesenMail.sendeMahnmails', () => {
 		);
 		const store = useMahnwesenMail();
 
-		await store.sendeMahnmails({ klassen: ['5a'] });
+		await store.sende({ klassen: ['5a'] });
 
 		expect(melde).toHaveBeenCalledWith('Mahnwesen ist derzeit pausiert (Ferien)', 'error');
 	});
@@ -85,7 +85,7 @@ describe('useMahnwesenMail.sendeMahnmails', () => {
 		apiFetchMock.mockRejectedValueOnce(new Error('boom'));
 		const store = useMahnwesenMail();
 
-		await store.sendeMahnmails({ klassen: ['5a'] });
+		await store.sende({ klassen: ['5a'] });
 
 		expect(showToastMock).toHaveBeenCalledTimes(1);
 		expect(showToastMock.mock.calls[0][1]).toBe('error');

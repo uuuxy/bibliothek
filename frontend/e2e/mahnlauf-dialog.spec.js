@@ -107,3 +107,45 @@ test('Mahnlauf: Abbrechen schickt nichts und vergisst die Eingaben', async ({ pa
 	await expect(dialog.getByRole('button', { name: /anmahnen$/ })).toContainText(`${anzahl}`);
 	await expect(dialog.getByLabel(/Alternative Empfänger/)).toHaveValue('');
 });
+
+// Ein Mahnlauf dauert je Klasse eine Mail lang. Solange er läuft, ist „Alle anmahnen" gesperrt
+// und zeigt den Lauf; ein zweiter Start verschickte jede Mahnliste noch einmal. Die Antwort
+// hält der Test zurück, bis er den gesperrten Knopf gesehen hat.
+test('Mahnlauf: Solange er läuft, ist „Alle anmahnen" gesperrt', async ({ page }) => {
+	await uiLogin(page);
+
+	let anfragen = 0;
+	/** @type {(wert?: unknown) => void} */
+	let freigeben = () => {};
+	const freigegeben = new Promise((fertig) => (freigeben = fertig));
+	await page.route('**/api/mail/send-bulk-overdue', async (route) => {
+		anfragen++;
+		await freigegeben;
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ sent_count: 1, message: 'Mahnlisten von 1 Klasse versendet' })
+		});
+	});
+
+	await page.goto('/mahnwesen');
+	const knopf = page
+		.getByRole('button', {
+			name: /Alle anmahnen – Mahnlauf konfigurieren und per E-Mail versenden/
+		})
+		.first();
+	await knopf.click();
+	await page
+		.getByRole('dialog')
+		.getByRole('button', { name: /anmahnen$/ })
+		.click();
+
+	await expect(knopf).toBeDisabled();
+	await expect(knopf.getByRole('progressbar')).toBeVisible();
+
+	freigeben();
+	await expect(page.getByText('Mahnlisten von 1 Klasse versendet')).toBeVisible();
+	await expect(knopf).toBeEnabled();
+	await expect(knopf.getByRole('progressbar')).toHaveCount(0);
+	expect(anfragen).toBe(1);
+});

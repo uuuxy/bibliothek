@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import MahnwesenAktionen from './MahnwesenAktionen.svelte';
@@ -128,6 +129,29 @@ describe('MahnwesenAktionen', () => {
 			mahnwesenStore.suche = '';
 			oeffnen.mockRestore();
 		}
+	});
+
+	// Ein Mahnlauf dauert je Klasse eine Mail lang; ein zweiter Start verschickte jede Mahnliste
+	// noch einmal (stores/sammelversand.svelte.js). M3, Progress indicators: „A circular
+	// indicator can be placed in a button to show that the button's action is currently in
+	// progress."
+	it('sperrt „Alle anmahnen" und zeigt den Lauf, solange ein Mahnlauf läuft', async () => {
+		/** @type {(wert: any) => void} */
+		let antworte = () => {};
+		/** @type {any} */ (apiFetch).mockImplementationOnce(
+			() => new Promise((fertig) => (antworte = fertig))
+		);
+		const lauf = mahnwesenStore.mahnlauf.sende({ klassen: ['5a'] });
+		const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: true });
+		const knopf = zeile.getByRole('button', { name: /Alle anmahnen/ });
+		expect(knopf).toHaveProperty('disabled', true);
+		expect(knopf.querySelector('[role="progressbar"]')).not.toBeNull();
+
+		antworte({ ok: true, json: async () => ({ sent_count: 1 }) });
+		await lauf;
+		await tick();
+		expect(knopf).toHaveProperty('disabled', false);
+		expect(knopf.querySelector('[role="progressbar"]')).toBeNull();
 	});
 
 	it('bindet beide Knöpfe in Mahnwesen.svelte an create_orders — das Recht der Routen', () => {
