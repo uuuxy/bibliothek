@@ -53,6 +53,8 @@ var listenGrenze = map[string]string{
 	"GET /api/admin/permissions $":                                        "keine Obergrenze in der Abfrage; die ganze Matrix aus role_permissions, Rollen mal Rechte des Katalogs (repository.LadeRollenRechte)",
 	"GET /api/jahrgaenge $":                                               "keine Obergrenze in der Abfrage; je besetztem Jahrgang ein Eintrag, aus den Klassen mit Schülern (jahrgaengeMitSchuelern, api/leser/schueler_jahrgang_filter.go)",
 	"GET /api/dashboard/summary $.overdue_buckets":                        "vier feste Zeitspannen: 1–14, 15–30, 31–60 und über 60 Tage (api/system/mahn_uebersicht.go)",
+	"GET /api/buecher/titel/{id}/zusammenfuehren $.uebernommen":           "höchstens zwölf feste Felder eines Titels, die die Quelle auffüllt (repository.auffuellbar, Jahrgang und Cover)",
+	"GET /api/buecher/titel/{id}/zusammenfuehren $.abweichend":            "höchstens fünfzehn feste Felder eines Titels (repository.fuegeTitelZusammen)",
 	"GET /api/statistiken $.monats_trend":                                 "zwölf Monate, die letzten elf und der laufende (generate_series in repository.LadeMonatsTrend)",
 	"GET /api/statistiken $.nicht_gelesen":                                "höchstens vier, je gescheiterter Abfrage ein Abschnitt (api/system/statistik.go)",
 	"GET /api/statistiken $.popular_titles":                               "LIMIT aus ?limit=, Vorgabe 5, höchstens 200 (leseListenGrenze, api/system/statistik.go; repository.LadeRenner)",

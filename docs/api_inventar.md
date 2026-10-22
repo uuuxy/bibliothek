@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (227)
+## Alle registrierten Routen (229)
 
 - `/`
 - `/api/admin`
@@ -87,6 +87,7 @@
 - `GET /api/buecher/titel/{id}/exemplare`
 - `GET /api/buecher/titel/{id}/historie`
 - `GET /api/buecher/titel/{id}/schlagworte`
+- `GET /api/buecher/titel/{id}/zusammenfuehren`
 - `GET /api/class-books`
 - `GET /api/csrf-token`
 - `GET /api/dashboard/summary`
@@ -183,6 +184,7 @@
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/titel/{id}/auflagen`
 - `POST /api/buecher/titel/{id}/neue-auflage`
+- `POST /api/buecher/titel/{id}/zusammenfuehren`
 - `POST /api/damage/report`
 - `POST /api/exemplare/etiketten-altbestand`
 - `POST /api/exemplare/etiketten-gedruckt`

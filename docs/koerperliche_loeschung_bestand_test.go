@@ -35,6 +35,9 @@ var koerperlicheLoeschungBestand = map[string]struct {
 		"ON DELETE CASCADE. Spur je Exemplar in titel_loeschen_spur.go, ebenfalls ProtokollAktionTitelGeloescht."},
 	"repository/inventur_verluste.go": {1, "Verlust endgültig löschen (Inventur). " +
 		"Spur je Exemplar mit ProtokollAktionVerlustEndgueltigGeloescht."},
+	"repository/titel_zusammenfuehren.go": {1, "Titel zusammenführen: gelöscht wird nur der Titel, " +
+		"nachdem seine Exemplare zum anderen gewandert sind; kein Exemplar verlässt den Bestand. Spur am " +
+		"bleibenden Titel mit den Kennungen der gewanderten Exemplare (protokollAktionTitelZusammengefuehrt)."},
 }
 
 var musterKoerperlicheLoeschung = regexp.MustCompile(`(?i)DELETE\s+FROM\s+buecher_(exemplare|titel)\b`)

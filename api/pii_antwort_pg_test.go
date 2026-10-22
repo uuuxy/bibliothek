@@ -88,6 +88,7 @@ type kanarienWelt struct {
 	mitarbeiterID, anmeldeToken string
 	schuelerID, abgaengerID     string
 	titelID, exemplarID         string
+	zweitTitelID                string
 	buchBarcode                 string
 	schadensfallID              string
 	bescheidID                  string
@@ -210,6 +211,16 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 		w.titelID, w.schuelerID); err != nil {
 		t.Fatalf("Vormerkung anlegen: %v", err)
 	}
+	// Ein zweiter Titel desselben Buchs, ebenfalls vom Schüler vorgemerkt: Die Vorschau des
+	// Zusammenführens zählt die Vormerkungen und darf die Person nicht nennen.
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Antwortgate Zweitband') RETURNING id`).
+		Scan(&w.zweitTitelID); err != nil {
+		t.Fatalf("zweiten Titel anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`,
+		w.zweitTitelID, w.schuelerID); err != nil {
+		t.Fatalf("Vormerkung am zweiten Titel anlegen: %v", err)
+	}
 
 	// Eintrag im Protokoll über den echten Schreiber: /api/audit darf ihn nicht ausbreiten,
 	// die Theken-Auskunft muss ihn (Stufe 2) zeigen.
@@ -222,7 +233,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Anmeldung) kanar
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
-		pgtest.RaeumeAuf(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM vormerkungen WHERE titel_id IN ($1, $2)`, w.titelID, w.zweitTitelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.zweitTitelID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
@@ -323,6 +335,9 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/buecher/exemplare/erkennen":   {URL: "/api/buecher/exemplare/erkennen?code=" + w.buchBarcode, Positiv: []string{w.exemplarID}},
 		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
 		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
+		// Vorschau des Zusammenführens: zählt die Vormerkung des Schülers, nennt ihn nicht.
+		"GET /api/buecher/titel/{id}/zusammenfuehren": {URL: "/api/buecher/titel/" + w.titelID + "/zusammenfuehren?quelle_id=" + w.zweitTitelID,
+			Positiv: []string{"Antwortgate Zweitband"}},
 		// Schlagworte: Stufe 0, Wörter über den Titel, keine Person.
 		"GET /api/buecher/titel/{id}/schlagworte": {URL: "/api/buecher/titel/" + w.titelID + "/schlagworte"},
 		// Auflagen eines Schulbuchs: Stufe 0, Titel und Bestandszahlen. Der

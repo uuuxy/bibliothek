@@ -8,6 +8,10 @@ import (
 func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *repository.KatalogAbfragen, protokollAbfragen *repository.ProtokollAbfragen) {
 	// ── Titel und Exemplare ──
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschen(katalogAbfragen)))
+	// Zwei Titel desselben Buchs zu einem: delete_books wie das Löschen, denn danach gibt es einen
+	// der beiden nicht mehr. Die Vorschau läuft durch denselben Weg und nimmt ihn am Ende zurück.
+	mux.Handle("GET /api/buecher/titel/{id}/zusammenfuehren", s.verlangeRecht("delete_books")(s.katalog().TitelZusammenfuehrungVorschau()))
+	mux.Handle("POST /api/buecher/titel/{id}/zusammenfuehren", s.verlangeRecht("delete_books")(s.katalog().FuehreTitelZusammen(protokollAbfragen)))
 	// Die Signatur aus dem Bestellkorb korrigieren: create_orders, nicht edit_books, dasselbe
 	// Recht wie das Anlegen des Titels über /aus-isbn (api/katalog/isbn_zu_titel.go).
 	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.verlangeRecht("create_orders")(s.katalog().TitelSignaturSetzen()))
