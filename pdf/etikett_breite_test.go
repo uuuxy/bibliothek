@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -149,5 +150,73 @@ func TestBuchEtikett_WasPasstBleibtWieEsIst(t *testing.T) {
 		if ist := gedruckteZeilen(t, roh, "Mathematik"); len(ist) != 1 || ist[0] != f.titel {
 			t.Errorf("%s: gedruckter Titel %q, erwartet %q", f.format, ist, f.titel)
 		}
+	}
+}
+
+// etikettNummern sind die Formen von Nummern im Bestand: vom Programm, vom Littera-Etikett, die
+// lange LMF-Nummer und eine von Hand eingetragene so lang, wie barcode_id sie fasst (100 Zeichen).
+var etikettNummern = []string{"B-10001", "1000000000001", "LMF-9783060158423-001", strings.Repeat("8", 100)}
+
+// nummernZelle ist, wie ein Etikett seine Nummer setzt: mit welcher Beschriftung davor, in
+// welcher Schrift und Größe und in eine wie breite Zelle.
+type nummernZelle struct {
+	beschriftung, schrift, schnitt string
+	groesse, breite                float64
+}
+
+// pruefeNummer hält die gedruckte Nummer gegen ihre Zelle: ganz und nicht breiter als die Zelle,
+// ohne Beschriftung oder kleiner nur, wenn sie sonst nicht passte.
+func pruefeNummer(t *testing.T, roh []byte, nummer string, z nummernZelle) {
+	t.Helper()
+	gedruckt := gedruckteZeilen(t, roh, nummer)
+	if len(gedruckt) != 1 {
+		t.Fatalf("%d gedruckte Zeilen mit der Nummer, erwartet eine: %q", len(gedruckt), gedruckt)
+	}
+	zeile, voll := gedruckt[0], z.beschriftung+nummer
+	if zeile != voll && zeile != nummer {
+		t.Fatalf("gedruckt %q, erwartet %q oder die Nummer allein", zeile, voll)
+	}
+	groesse := pdftest.Schriftgroesse(t, roh, zeile)
+	if breite := pdftest.Breite(zeile, z.schrift, z.schnitt, groesse); breite > z.breite {
+		t.Errorf("%q ist in %.1f pt %.1f mm breit, die Zelle %.1f mm", zeile, groesse, breite, z.breite)
+	}
+	if groesse > z.groesse {
+		t.Errorf("%q in %.1f pt, größer als %.1f pt", zeile, groesse, z.groesse)
+	}
+	if zeile != voll && pdftest.Breite(voll, z.schrift, z.schnitt, z.groesse) <= z.breite {
+		t.Errorf("gedruckt %q, dabei passte %q", zeile, voll)
+	}
+	if groesse < z.groesse && pdftest.Breite(zeile, z.schrift, z.schnitt, z.groesse) <= z.breite {
+		t.Errorf("%q in %.1f pt, dabei passte sie in %.1f pt", zeile, groesse, z.groesse)
+	}
+}
+
+// Die Nummer steht auf jedem Etikett ganz in ihrer Zelle, auch die längste, die ein Exemplar
+// tragen kann. Gekürzt führte sie beim Ablesen zu keinem Buch, und was übersteht, steht auf dem
+// Nachbaretikett.
+func TestEtikett_NummerStehtGanzInIhrerZelle(t *testing.T) {
+	for _, nummer := range etikettNummern {
+		e := BuchEtikett{Schulname: "Schule", BarcodeID: nummer, Titel: "Titel"}
+		laenge := fmt.Sprintf("%d Zeichen", len(nummer))
+		for _, id := range etikettFormatReihenfolge {
+			f := etikettFormate[id]
+			beschriftung := ""
+			if f.istGross() {
+				beschriftung = "Exemplar-Nr.: "
+			}
+			t.Run(id+"/Strichcode/"+laenge, func(t *testing.T) {
+				pruefeNummer(t, buchBogen(t, id, false, e), nummer, nummernZelle{beschriftung, "Courier", "B", 9, f.Breite})
+			})
+			t.Run(id+"/QR-Code/"+laenge, func(t *testing.T) {
+				pruefeNummer(t, buchBogen(t, id, true, e), nummer, nummernZelle{"", "Arial", "B", 8, f.Breite - 4})
+			})
+		}
+		t.Run("Lernmittel/"+laenge, func(t *testing.T) {
+			roh, err := ErzeugeLernmittelEtiketten([]BuchEtikett{e})
+			if err != nil {
+				t.Fatalf("Lernmittel-Etikett: %v", err)
+			}
+			pruefeNummer(t, roh, nummer, nummernZelle{"Exemplar-Nr.: ", "Courier", "B", 11, lernmittelInhalt})
+		})
 	}
 }

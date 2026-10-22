@@ -121,7 +121,7 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, etikett 
 
 	pdf.SetFont("Courier", "B", 11)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 5, tr("Exemplar-Nr.: "+etikett.BarcodeID), "", 0, "C", false, 0, "")
+	zeichneNummer(pdf, tr, "Exemplar-Nr.: ", etikett.BarcodeID, breite, 5)
 
 	y += 7
 	if vermerk := etikett.Eigentumsvermerk; vermerk != "" {

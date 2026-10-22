@@ -5,6 +5,7 @@ import (
 	"bibliothek/pkg/strichcode"
 	"bytes"
 	"fmt"
+	"math"
 
 	"github.com/phpdave11/gofpdf"
 )
@@ -36,6 +37,23 @@ type BuchEtikett struct {
 // Überlanges über den Rand der Zelle, am Buchetikett also auf das Nachbaretikett.
 func kuerzeAufEtikett(pdf *gofpdf.Fpdf, tr func(string) string, text string, zeichen int, breite float64) string {
 	return pdfzeichen.KuerzeAufBreite(pdf, tr, pdfzeichen.KuerzeAufZeichen(text, zeichen), breite)
+}
+
+// zeichneNummer setzt die Nummer des Strichcodes in die Zelle, zentriert und in der gerade
+// gesetzten Schrift. Sie steht immer ganz da, weil eine gekürzte Nummer beim Ablesen zu keinem
+// Buch führt: Passt sie mit der Beschriftung nicht, steht sie allein da, passt sie auch so nicht,
+// wird die Schrift kleiner.
+func zeichneNummer(pdf *gofpdf.Fpdf, tr func(string) string, beschriftung, nummer string, breite, hoehe float64) {
+	text := beschriftung + nummer
+	if beschriftung != "" && pdf.GetStringWidth(tr(text)) > breite {
+		text = nummer
+	}
+	if gemessen := pdf.GetStringWidth(tr(text)); gemessen > breite {
+		groesse, _ := pdf.GetFontSize()
+		// Abgerundet auf ein Zehntel Punkt, weil gofpdf die Größe gerundet ins PDF schreibt.
+		pdf.SetFontSize(math.Floor(groesse*breite/gemessen*10) / 10)
+	}
+	pdf.CellFormat(breite, hoehe, tr(text), "", 0, "C", false, 0, "")
 }
 
 // zeichneQREtikett setzt ein Etikett mit QR-Code: Titel, Autor, Code und darunter die Nummer.
@@ -71,7 +89,7 @@ func zeichneQREtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFo
 		textY = pos.Y + 21
 	}
 	pdf.SetXY(pos.X+2, textY)
-	pdf.CellFormat(format.Breite-4, 4, tr(etikett.BarcodeID), "", 0, "C", false, 0, "")
+	zeichneNummer(pdf, tr, "", etikett.BarcodeID, format.Breite-4, 4)
 }
 
 // zweiteZeile setzt Anschaffungsjahr und Signatur in eine Zeile ("Ansch.J. 2016 ·
@@ -151,11 +169,11 @@ func zeichneBarcodeEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Etik
 	// damit sie ohne Scanner ablesbar ist (etwa für die Mahnliste).
 	pdf.SetFont("Courier", "B", 9)
 	pdf.SetXY(pos.X, y)
-	beschriftung := etikett.BarcodeID
+	beschriftung := ""
 	if grossesEtikett {
-		beschriftung = "Exemplar-Nr.: " + etikett.BarcodeID
+		beschriftung = "Exemplar-Nr.: "
 	}
-	pdf.CellFormat(format.Breite, 3.5, tr(beschriftung), "", 0, "C", false, 0, "")
+	zeichneNummer(pdf, tr, beschriftung, etikett.BarcodeID, format.Breite, 3.5)
 
 	if vermerk := etikett.Eigentumsvermerk; grossesEtikett && vermerk != "" {
 		y += 4.5
