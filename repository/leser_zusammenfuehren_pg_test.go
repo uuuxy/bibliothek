@@ -417,6 +417,49 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 	}
 }
 
+// Lag für beide Datensätze schon je ein Exemplar desselben Titels im Abholfach, bleibt die
+// ältere Vormerkung. Das Exemplar der anderen ist danach frei und geht an den Nächsten in der
+// Warteschlange wie beim Löschen einer Vormerkung; sonst stünde es im Regal, während er wartet.
+func TestZusammenfuehren_FreiesAbholfachGehtAnDenNaechsten(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Abholfach", Klasse: "07A", Barcode: "ZF-A1", Geburtsdatum: testdaten.Datum(2012, 9, 9)})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Abholfach", Klasse: "07A", Barcode: "ZF-A2", Geburtsdatum: testdaten.Datum(2012, 9, 9)})
+	dritte := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Dritte", Nachname: "Wartet", Klasse: "07B", Barcode: "ZF-A3", Geburtsdatum: testdaten.Datum(2012, 8, 8)})
+	titelID := testdaten.LegeTitelAn(t, pool, "Abholfach-ZFA", 1)
+	exZiel := testdaten.LegeExemplarAn(t, pool, titelID, "EX-ZFA-1", true, "")
+	exQuelle := testdaten.LegeExemplarAn(t, pool, titelID, "EX-ZFA-2", true, "")
+	for _, v := range []struct{ leser, status, exemplar, alter string }{
+		{ziel, "abholbereit", exZiel, "2 days"},
+		{quelle, "abholbereit", exQuelle, "1 day"},
+		{dritte, "wartend", "", "1 hour"},
+	} {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)
+			VALUES ($1, $2, $3::text, NULLIF($4, '')::uuid,
+			        CASE WHEN $3::text = 'abholbereit' THEN now() + interval '3 days' END, now() - $5::interval)`,
+			titelID, v.leser, v.status, v.exemplar, v.alter); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+		t.Fatal(err)
+	}
+	for _, w := range []struct{ name, leser, exemplar string }{{"Ziel", ziel, exZiel}, {"Dritte", dritte, exQuelle}} {
+		var status string
+		var exemplar *string
+		if err := pool.QueryRow(ctx, `SELECT status, bereitgestellt_exemplar_id::text FROM vormerkungen WHERE schueler_id = $1`,
+			w.leser).Scan(&status, &exemplar); err != nil {
+			t.Fatalf("Vormerkung von %s lesen: %v", w.name, err)
+		}
+		if status != "abholbereit" || exemplar == nil || *exemplar != w.exemplar {
+			t.Errorf("%s: %s mit Exemplar %v, erwartet abholbereit mit %s", w.name, status, exemplar, w.exemplar)
+		}
+	}
+}
+
 // Foto: kommt nie aus der LUSD — das jüngere gewinnt, egal auf welcher Seite. Bliebe
 // immer das Foto des Ziels, stürbe das jüngere der Quelle im CASCADE.
 func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {

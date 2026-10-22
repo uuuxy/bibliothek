@@ -279,11 +279,13 @@ type gewanderteVorgaenge struct {
 // denselben Titel bleibt die fortgeschrittenere (UNIQUE titel_id, schueler_id).
 func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, erg *ZusammenfuehrenErgebnis) (*gewanderteVorgaenge, error) {
 	g := &gewanderteVorgaenge{}
+	var freigaben []freigewordenesExemplar
 	var err error
 	// Dublette auf denselben Titel: Es bleibt die weiter fortgeschrittene Vormerkung
 	// (abholbereit vor wartend), bei Gleichstand die ältere, dann die des Ziels — egal,
-	// auf welcher Seite sie steht. Sonst verlöre das Kind den bereitgestellten Platz.
-	if g.VormerkungenDoppelt, err = ladeIDs(ctx, tx, `
+	// auf welcher Seite sie steht. Sonst verlöre das Kind den bereitgestellten Platz. Lag auch
+	// für die andere ein Exemplar bereit, bekommt es der Nächste in der Warteschlange.
+	if g.VormerkungenDoppelt, freigaben, err = loescheDoppelteVormerkungen(ctx, tx, `
 		WITH paar AS (
 			SELECT v.id, v.schueler_id, v.titel_id, v.erstellt_am,
 			       CASE WHEN v.status = 'abholbereit' THEN 2 ELSE 1 END AS rang
@@ -294,7 +296,8 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		  AND (v.rang < w.rang
 		       OR (v.rang = w.rang AND v.erstellt_am > w.erstellt_am)
 		       OR (v.rang = w.rang AND v.erstellt_am = w.erstellt_am AND v.schueler_id = $2))
-		RETURNING d.id`, ziel, quelle); err != nil {
+		RETURNING d.id, CASE WHEN d.status = 'abholbereit' THEN d.bereitgestellt_exemplar_id::text END,
+		          d.titel_id::text`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("doppelte vormerkungen: %w", err)
 	}
 	erg.DoppelteVormerkungen = int64(len(g.VormerkungenDoppelt))
@@ -306,6 +309,9 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	}
 	if g.Vormerkungen, err = ladeIDs(ctx, tx, `UPDATE vormerkungen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("vormerkungen verschieben: %w", err)
+	}
+	if err = rueckeNach(ctx, tx, freigaben, time.Now()); err != nil {
+		return nil, fmt.Errorf("zusammenführen: %w", err)
 	}
 	// Der Bescheid hängt per SET NULL: Bliebe er stehen, machte der DELETE der Quelle ihn
 	// still personenlos — weg aus der Akte und der Auskunft des Ziels, und die Tilgung

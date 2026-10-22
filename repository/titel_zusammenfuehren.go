@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"bibliothek/db"
 
@@ -202,11 +203,13 @@ func loescheQuelle(ctx context.Context, tx pgx.Tx, zielID, quelleID string) erro
 // verschiebeTitelZeilen hängt alles, was an der Quelle hängt, an das Ziel. Von zwei
 // Vormerkungen desselben Lesers bleibt die weiter fortgeschrittene (abholbereit vor wartend),
 // bei Gleichstand die ältere, dann die des Ziels (UNIQUE titel_id, schueler_id), wie beim
-// Zusammenführen zweier Leser.
+// Zusammenführen zweier Leser. Lag auch für die andere schon ein Exemplar im Abholfach, geht es
+// an den Nächsten in der Warteschlange des Ziels, wie beim Löschen einer Vormerkung.
 func verschiebeTitelZeilen(ctx context.Context, tx pgx.Tx, ziel, quelle string) (*gewanderteZeilen, error) {
 	g := &gewanderteZeilen{}
+	var freigaben []freigewordenesExemplar
 	var err error
-	if g.VormerkungenDoppelt, err = ladeIDs(ctx, tx, `
+	if g.VormerkungenDoppelt, freigaben, err = loescheDoppelteVormerkungen(ctx, tx, `
 		WITH paar AS (
 			SELECT v.id, v.titel_id, v.schueler_id, v.erstellt_am,
 			       CASE WHEN v.status = 'abholbereit' THEN 2 ELSE 1 END AS rang
@@ -217,7 +220,8 @@ func verschiebeTitelZeilen(ctx context.Context, tx pgx.Tx, ziel, quelle string) 
 		  AND (v.rang < w.rang
 		       OR (v.rang = w.rang AND v.erstellt_am > w.erstellt_am)
 		       OR (v.rang = w.rang AND v.erstellt_am = w.erstellt_am AND v.titel_id = $2))
-		RETURNING d.id::text`, ziel, quelle); err != nil {
+		RETURNING d.id::text, CASE WHEN d.status = 'abholbereit' THEN d.bereitgestellt_exemplar_id::text END,
+		          d.titel_id::text`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("doppelte vormerkungen: %w", err)
 	}
 	schritte := []struct {
@@ -242,6 +246,13 @@ func verschiebeTitelZeilen(ctx context.Context, tx pgx.Tx, ziel, quelle string) 
 		if *s.ids, err = ladeIDs(ctx, tx, s.sql, ziel, quelle); err != nil {
 			return nil, fmt.Errorf("%s verschieben: %w", s.was, err)
 		}
+	}
+	// Jetzt stehen die Wartenden beider Titel in der Schlange des Ziels.
+	for i := range freigaben {
+		freigaben[i].titelID = &ziel
+	}
+	if err := rueckeNach(ctx, tx, freigaben, time.Now()); err != nil {
+		return nil, fmt.Errorf("titel zusammenführen: %w", err)
 	}
 	return g, nil
 }

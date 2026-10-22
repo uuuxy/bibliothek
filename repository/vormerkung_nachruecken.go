@@ -73,15 +73,46 @@ func loescheVormerkungenUndRueckeNach(ctx context.Context, db SpurenDatenbank, s
 	}
 	// Erst nach dem Schließen von rows weiterschreiben; solange es offen ist, ist die
 	// Verbindung belegt.
+	return int64(len(freigaben)), rueckeNach(ctx, db, freigaben, time.Now())
+}
+
+// rueckeNach teilt jedes frei gewordene Exemplar dem Nächsten in der Warteschlange seines Titels
+// zu (bedieneNaechstenWartenden). Eine Freigabe ohne Exemplar hatte nichts im Abholfach.
+func rueckeNach(ctx context.Context, db SpurenDatenbank, freigaben []freigewordenesExemplar, jetzt time.Time) error {
 	for _, f := range freigaben {
 		if f.exemplarID == nil || f.titelID == nil {
 			continue
 		}
-		if _, err := bedieneNaechstenWartenden(ctx, db, *f.exemplarID, *f.titelID, time.Now()); err != nil {
-			return int64(len(freigaben)), fmt.Errorf("nächsten wartenden bedienen: %w", err)
+		if _, err := bedieneNaechstenWartenden(ctx, db, *f.exemplarID, *f.titelID, jetzt); err != nil {
+			return fmt.Errorf("nächsten wartenden bedienen: %w", err)
 		}
 	}
-	return int64(len(freigaben)), nil
+	return nil
+}
+
+// loescheDoppelteVormerkungen sortiert beim Zusammenführen die doppelten Vormerkungen aus: sql
+// ist ein DELETE … RETURNING mit Kennung, dem Exemplar im Abholfach und dem Titel. Geliefert
+// werden die Kennungen für den Eintrag im Protokoll und die Freigaben; für sie rückt der Nächste
+// nach (rueckeNach), sobald alle Vormerkungen umgehängt sind und jeder Wartende in der Schlange
+// steht.
+func loescheDoppelteVormerkungen(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, []freigewordenesExemplar, error) {
+	rows, err := tx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	ids := []string{}
+	var freigaben []freigewordenesExemplar
+	for rows.Next() {
+		var id string
+		var f freigewordenesExemplar
+		if err := rows.Scan(&id, &f.exemplarID, &f.titelID); err != nil {
+			return nil, nil, err
+		}
+		ids = append(ids, id)
+		freigaben = append(freigaben, f)
+	}
+	return ids, freigaben, rows.Err()
 }
 
 // freigewordenesExemplar ist eine Vormerkung, die gerade verschwunden ist, samt dem

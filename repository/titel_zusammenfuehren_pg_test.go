@@ -228,6 +228,45 @@ func TestFuehreTitelZusammen_MehrjahresbandKommtMitDemJahrgang(t *testing.T) {
 	}
 }
 
+// Liegt für denselben Leser an beiden Titeln schon ein Buch im Abholfach, bleibt die ältere
+// Vormerkung. Das Exemplar der anderen ist danach frei und geht an den Nächsten in der
+// Warteschlange wie beim Löschen einer Vormerkung; sonst stünde es im Regal, während er wartet.
+func TestFuehreTitelZusammen_FreiesAbholfachGehtAnDenNaechsten(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	p := legeZusammenfuehrenProbeAn(t, pool)
+	ada := testdaten.LegeSchuelerAn(t, pool, "S-ZF-A", "Ada", "07A")
+	ben := testdaten.LegeSchuelerAn(t, pool, "S-ZF-B", "Ben", "07A")
+	for _, v := range []struct{ titel, leser, status, exemplar, alter string }{
+		{p.gross, ada, "abholbereit", p.exemplarGross, "2 days"},
+		{p.klein, ada, "abholbereit", p.exemplarKlein, "1 day"},
+		{p.gross, ben, "wartend", "", "1 hour"},
+	} {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)
+			VALUES ($1, $2, $3::text, NULLIF($4, '')::uuid,
+			        CASE WHEN $3::text = 'abholbereit' THEN now() + interval '3 days' END, now() - $5::interval)`,
+			v.titel, v.leser, v.status, v.exemplar, v.alter); err != nil {
+			t.Fatalf("Vormerkung: %v", err)
+		}
+	}
+
+	if _, err := FuehreTitelZusammen(ctx, pool, TitelZusammenfuehrenAuftrag{ZielID: p.gross, QuelleID: p.klein, BearbeiterID: p.bearbeiter}); err != nil {
+		t.Fatalf("FuehreTitelZusammen: %v", err)
+	}
+	for _, w := range []struct{ name, leser, exemplar string }{{"Ada", ada, p.exemplarGross}, {"Ben", ben, p.exemplarKlein}} {
+		var status string
+		var exemplar *string
+		if err := pool.QueryRow(ctx, `SELECT status, bereitgestellt_exemplar_id::text FROM vormerkungen WHERE schueler_id = $1`,
+			w.leser).Scan(&status, &exemplar); err != nil {
+			t.Fatalf("Vormerkung von %s lesen: %v", w.name, err)
+		}
+		if status != "abholbereit" || wert(exemplar) != w.exemplar {
+			t.Errorf("%s: %s mit Exemplar %q, erwartet abholbereit mit %s", w.name, status, wert(exemplar), w.exemplar)
+		}
+	}
+}
+
 // Tragen beide Titel eine ISBN, sind es zwei Ausgaben: Das Zusammenführen lehnt ab und ändert
 // nichts.
 func TestFuehreTitelZusammen_ZweiISBNSindZweiAusgaben(t *testing.T) {
