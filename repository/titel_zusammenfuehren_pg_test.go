@@ -44,7 +44,7 @@ func legeZusammenfuehrenProbeAn(t *testing.T, pool *pgxpool.Pool) zusammenfuehre
 		t.Fatalf("kleiner Titel: %v", err)
 	}
 	p.exemplarGross = testdaten.LegeExemplarAn(t, pool, p.gross, "101602", true, "")
-	p.exemplarKlein = testdaten.LegeExemplarAn(t, pool, p.klein, "LMF-9783060158423-001", true, "")
+	p.exemplarKlein = testdaten.LegeExemplarAn(t, pool, p.klein, "B-30001", true, "")
 	p.exemplarBestellt = testdaten.LegeExemplarImZulaufAn(t, pool, p.klein, "B-10950")
 	return p
 }

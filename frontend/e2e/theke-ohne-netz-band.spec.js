@@ -93,11 +93,11 @@ test('Ohne Netz: alle Buchformen und zwei Ausweise im Band, keine Sperre, danach
 	const nackt = nackteNummer();
 	const littera = nackteNummer();
 	const code39 = code39MitPruefzeichen();
-	const buch = { b: `B-OB${s}`, lmf: `LMF-OB${s}`, alt: `B-OL${s}`, z: `B-OZ${s}` };
+	const buch = { b: `B-OB${s}`, alt: `B-OL${s}`, z: `B-OZ${s}` };
 	// Das Exemplar alt trägt eine kurze Nummer und klebt noch mit seinem alten LMF-Etikett.
 	const altesEtikett = `LMF-OL${s}`;
 	// Die nackten Nummern stehen nur auf der Buchliste, und die holt der Rechner bei der Anmeldung.
-	legeBuecherAn(s, [buch.b, buch.lmf, buch.alt, nackt, littera, code39.nummer, buch.z]);
+	legeBuecherAn(s, [buch.b, buch.alt, nackt, littera, code39.nummer, buch.z]);
 	seedSQL(
 		`UPDATE buecher_exemplare SET lmf_barcode = '${altesEtikett}' WHERE barcode_id = '${buch.alt}';`
 	);
@@ -128,7 +128,6 @@ test('Ohne Netz: alle Buchformen und zwei Ausweise im Band, keine Sperre, danach
 		const reihe = [
 			[anna.nummer, ''],
 			[buch.b, buch.b],
-			[buch.lmf, buch.lmf],
 			[altesEtikett, altesEtikett],
 			[nackt, nackt],
 			[lena.nummer, ''],
@@ -156,7 +155,6 @@ test('Ohne Netz: alle Buchformen und zwei Ausweise im Band, keine Sperre, danach
 			});
 		expect(await warteschlange(page)).toEqual([
 			ausleihe(buch.b, anna.nummer),
-			ausleihe(buch.lmf, anna.nummer),
 			ausleihe(altesEtikett, anna.nummer),
 			ausleihe(nackt, anna.nummer),
 			ausleihe(littera, lena.nummer),
@@ -165,13 +163,13 @@ test('Ohne Netz: alle Buchformen und zwei Ausweise im Band, keine Sperre, danach
 		]);
 
 		// Ein Band, kein Vollbild: Das Scanfeld liegt frei und nimmt den nächsten Klick an.
-		await expect(page.getByText(/7\s+Vorgänge nur auf diesem Rechner/)).toBeVisible();
+		await expect(page.getByText(/6\s+Vorgänge nur auf diesem Rechner/)).toBeVisible();
 		await expect(page.getByRole('dialog')).toHaveCount(0);
 		await page.locator('#omnibox-input').click({ trial: true, timeout: 5000 });
 
 		// Weit über die Frist der Sperre (Vorgabe 15 Minuten): ohne Netz keine Sperre.
 		await page.clock.fastForward('20:00');
-		await expect(page.getByText(/7\s+Vorgänge nur auf diesem Rechner/)).toBeVisible();
+		await expect(page.getByText(/6\s+Vorgänge nur auf diesem Rechner/)).toBeVisible();
 		await expect(page.getByTestId('sperrbildschirm')).toHaveCount(0);
 
 		// Die Verbindung kommt zurück: erst nachbuchen, dann die fällige Sperre. Hinter der Sperre
@@ -183,7 +181,7 @@ test('Ohne Netz: alle Buchformen und zwei Ausweise im Band, keine Sperre, danach
 		});
 		await context.setOffline(false);
 		await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
-		for (const nummer of [buch.b, buch.lmf, buch.alt, nackt]) {
+		for (const nummer of [buch.b, buch.alt, nackt]) {
 			await expect.poll(() => verliehenAn(nummer), { timeout: 10_000 }).toBe(anna.id);
 		}
 		for (const nummer of [littera, code39.nummer, buch.z]) {

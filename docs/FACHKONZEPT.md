@@ -415,13 +415,11 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
 - **Lernmittel mit LMF-Nummer** (entschieden am 22.10.2026): Jedes Exemplar trägt eine kurze
   Nummer wie in Littera, auch ein Lernmittel mit LMF-Nummer (`LMF-`, ISBN-13, laufende Nummer).
   Die LMF-Nummer bleibt als altes Etikett am Exemplar (`lmf_barcode`): Das Etikett scannt weiter,
-  an der Theke, im Medienkatalog, in der Inventur und in der Theken-Auskunft; ein neues Etikett
-  trägt die kurze Nummer aus `barcode_seq`. Den Bestand stellt Migration 167 um, der
-  Bestands-Import legt solche Exemplare gleich so an (§13). Enthält ein Druckauftrag doch eine
-  LMF-Nummer, lehnt der Server ihn ab und nennt die Nummern; das Druck-Center fragt, ob die
-  Exemplare kurze Nummern bekommen (`POST /api/exemplare/neue-nummern`), und druckt dann mit ihnen.
-  Bis das neue Etikett gedruckt ist, steht das Exemplar unter „Fehlende Etiketten"; das Protokoll
-  nennt alte und neue Nummer und die Person.
+  an der Theke, im Medienkatalog, in der Inventur und in der Theken-Auskunft. Das Druck-Center
+  zeigt und druckt die kurze Nummer aus `barcode_seq` ohne Rückfrage; ist ein Etikett kaputt, wird
+  es neu gedruckt und überklebt. Den Bestand stellt Migration 167 um, der Bestands-Import legt
+  solche Exemplare gleich so an (§13). Als Nummer eines Exemplars nimmt die Datenbank keine
+  LMF-Nummer an (Migration 168); der Barcode-Editor nennt die Ablehnung.
 - **Ausweise:** Der Reiter _Schülerausweise_ ist der Designer — Vorlagen, Vorder- und
   Rückseite, Elemente wie Name, Gültigkeit, Logo, Passbild, Strichcode und Farbfläche. Das
   Design gilt für alle Arbeitsplätze: Es liegt am Server (`/api/ausweis-layout`), speichern

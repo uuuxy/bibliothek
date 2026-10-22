@@ -52,19 +52,16 @@ function legeTitelMitExemplarAn(titel, barcode, altesEtikett) {
 	return id;
 }
 
-test('Medienkatalog: ein gescanntes Littera-Etikett, eine LMF-Nummer und ein altes LMF-Etikett zeigen ihren Titel', async ({
+test('Medienkatalog: ein gescanntes Littera-Etikett und ein altes LMF-Etikett zeigen ihren Titel', async ({
 	page
 }) => {
 	const marke = uniqueSuffix();
 	const nummer = String(9000000 + Math.floor(Math.random() * 999999));
-	const lmf = `LMF-978${String(Date.now()).slice(-10)}-001`;
-	const altesEtikett = `LMF-978${String(Date.now()).slice(-10)}-002`;
+	const altesEtikett = `LMF-978${String(Date.now()).slice(-10)}-001`;
 	const kurz = `B-KE${marke}`;
 	const litteraTitel = `E2E Etikettscan ${marke}`;
-	const lmfTitel = `E2E LMF-Scan ${marke}`;
 	const altTitel = `E2E LMF-Etikett ${marke}`;
 	legeTitelMitExemplarAn(litteraTitel, nummer);
-	legeTitelMitExemplarAn(lmfTitel, lmf);
 	legeTitelMitExemplarAn(altTitel, kurz, altesEtikett);
 
 	await uiLogin(page);
@@ -77,11 +74,6 @@ test('Medienkatalog: ein gescanntes Littera-Etikett, eine LMF-Nummer und ein alt
 	await expect(page.getByText(`Exemplar ${nummer} gehört zu „${litteraTitel}“.`)).toBeVisible();
 	await expect(page.getByRole('button', { name: litteraTitel, exact: true })).toBeVisible();
 	await expect(page.getByText('Keine Bücher gefunden')).toHaveCount(0);
-
-	await feld.fill('');
-	await scanneWieScanner(page, lmf);
-	await expect(page.getByText(`Exemplar ${lmf} gehört zu „${lmfTitel}“.`)).toBeVisible();
-	await expect(page.getByRole('button', { name: lmfTitel, exact: true })).toBeVisible();
 
 	// Das alte Etikett führt zum Exemplar, genannt wird die Nummer, die es jetzt trägt.
 	await feld.fill('');

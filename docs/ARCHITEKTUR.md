@@ -2054,10 +2054,10 @@ Endpunkt für die Etiketten eines Titels oder eines Exemplars gibt es nicht. Die
 `buchetikett.PDFEtiketten` füllt die Eingabe der Erzeuger (`pdf.BuchEtikett`) für beide. Ein
 neues Feld gehört an beide Wege; `buchetikett.TestEtikettenDatenSindAufBeidenWegenGleich`
 vergleicht sie, und `api/druck/etikettenbogen_serverfelder_pg_test.go` prüft den gedruckten Text
-des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben. Einen
-Auftrag mit einer LMF-Nummer lehnt `POST /api/print/labels` mit 409 ab und nennt die Nummern
-(`buchetikett.IstDruckbar`); das Druck-Center fragt dann nach kurzen Nummern und druckt mit ihnen
-(`frontend/src/lib/etikettenDruck.js`, `POST /api/exemplare/neue-nummern`).
+des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben. Eine
+LMF-Nummer kommt auf kein Etikett: Als Nummer eines Exemplars lehnt die Datenbank sie ab
+(`chk_exemplar_barcode_keine_lmf_nummer`, Migration 168), die Nummer eines alten LMF-Etiketts
+steht in `lmf_barcode`.
 
 ---
 
@@ -2200,6 +2200,10 @@ sieht.
   Laufzeit lesen, sehen das Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren.
   Reicht eine Tür mehrere Werte gleichen Typs weiter, gehört je Wert eine Probe mit dem
   Nachbarwert dazu ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
+- **Eine Migration, die Daten ändert, wird mit ihrer echten Datei geprüft:** aus `migrations/`
+  lesen, an der Testdatenbank ausführen, ein zweites Mal ausführen (ändert nichts). Verbietet eine
+  spätere Regel die Daten, die sie umstellt, läuft der Test in einer Transaktion, die die Regel
+  herausnimmt und am Ende zurückrollt (`db/lmf_kurze_nummer_migration_pg_test.go`).
 - **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle Pakete
   des Moduls. Eine Datei unter 50 % (ohne `cmd/`, `main.go` und sehr kleine Dateien) bekommt
   einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung.

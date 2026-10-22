@@ -8,11 +8,7 @@ vi.mock('../apiFetch.js', () => ({
 	apiFetch: vi.fn()
 }));
 
-vi.mock('./bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
-
 import { apiFetch } from '../apiFetch.js';
-import { bestaetigen } from './bestaetigung.svelte.js';
-import { druckWarteschlange } from './druckWarteschlange.svelte.js';
 import { etikettenStore } from './etiketten.svelte.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
@@ -333,69 +329,5 @@ describe('etikettenStore: alle, keine und einzelne Exemplare wählen', () => {
 		await etikettenStore.waehleTitel({ id: 't4', titel: 'Anderer Titel', autor: '' });
 		expect(etikettenStore.exemplarSuche).toBe('');
 		expect(etikettenStore.sichtbareExemplare.map((c) => c.barcode_id)).toEqual(['B-7']);
-	});
-});
-
-// Bekommt ein Exemplar beim Druck eine kurze Nummer statt seiner LMF-Nummer, zeigen Auswahl,
-// Bogen und Warteschlange danach die neue; angehakt bleibt es.
-describe('etikettenStore: neue Nummer beim Druck', () => {
-	const LMF = 'LMF-9783060158423-001';
-
-	/** Antwortet auf den Druck mit der Ablehnung, dann mit der neuen Nummer, dem PDF und dem Vermerk. */
-	function druckMitNeuerNummer() {
-		vi.mocked(bestaetigen).mockResolvedValueOnce(true);
-		vi.stubGlobal('open', vi.fn());
-		URL.createObjectURL = vi.fn(() => 'blob:probe');
-		apiFetchMock
-			.mockResolvedValueOnce(
-				/** @type {any} */ ({
-					ok: false,
-					status: 409,
-					json: async () => ({ lange_nummern: [LMF] })
-				})
-			)
-			.mockResolvedValueOnce(
-				/** @type {any} */ ({
-					ok: true,
-					status: 200,
-					json: async () => ({ nummern: { [LMF]: 'B-10023' } })
-				})
-			)
-			.mockResolvedValueOnce(
-				/** @type {any} */ ({ ok: true, status: 200, blob: async () => new Blob(['%PDF']) })
-			)
-			.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
-	}
-
-	beforeEach(() => {
-		vi.clearAllMocks();
-		etikettenStore.leereDruckauftrag();
-	});
-
-	it('trägt sie in die Exemplare des gewählten Titels ein', async () => {
-		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1', LMF]));
-		await etikettenStore.waehleTitel({ id: 't3', titel: 'Titel', autor: '' });
-		druckMitNeuerNummer();
-
-		await etikettenStore.drucke();
-
-		expect(etikettenStore.vorhandeneExemplare.map((c) => [c.barcode_id, c.checked])).toEqual([
-			['B-1', true],
-			['B-10023', true]
-		]);
-		expect(aufDemBogen()).toEqual(['B-1', 'B-10023']);
-		vi.unstubAllGlobals();
-	});
-
-	it('trägt sie in einen Auftrag aus der Warteschlange ein', async () => {
-		druckWarteschlange.copies = [{ barcode_id: LMF, titel: 'Titel' }];
-		druckMitNeuerNummer();
-
-		await etikettenStore.drucke();
-
-		expect(druckWarteschlange.copies?.map((c) => c.barcode_id)).toEqual(['B-10023']);
-		expect(aufDemBogen()).toEqual(['B-10023']);
-		etikettenStore.leereDruckauftrag();
-		vi.unstubAllGlobals();
 	});
 });

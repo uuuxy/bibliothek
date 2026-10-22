@@ -31,6 +31,10 @@ func (t *Tueren) ExemplarBarcodeZiehen() http.HandlerFunc {
 	}
 }
 
+// meldungLMFNummerAlsBarcode lehnt eine LMF-Nummer als Barcode ab: Ein Buch trägt eine kurze
+// Nummer, die LMF-Nummer seines alten Etiketts scannt über lmf_barcode weiter.
+const meldungLMFNummerAlsBarcode = "Eine LMF-Nummer kann kein Barcode eines Buchs mehr sein; „Interne ID generieren“ vergibt eine kurze Nummer"
+
 // exemplarBarcodeAnfrage ist der neue Barcode eines Exemplars.
 type exemplarBarcodeAnfrage struct {
 	Barcode string `json:"barcode"`
@@ -76,6 +80,10 @@ func (t *Tueren) setzeExemplarBarcode(w http.ResponseWriter, r *http.Request, ka
 		}
 		if repository.IstExemplarBarcodeVergeben(err) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Diesen Barcode trägt bereits ein anderes Exemplar", nil)
+			return
+		}
+		if repository.IstLMFNummerAlsBarcode(err) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungLMFNummerAlsBarcode, nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

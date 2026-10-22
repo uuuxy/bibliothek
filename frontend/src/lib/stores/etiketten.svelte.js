@@ -242,23 +242,13 @@ function erzeugeEtikettenStore() {
 		}
 	}
 
-	/** Druckt den Bogen; bekommen Exemplare dabei kurze Nummern, stehen sie auch hier. */
+	/** Druckt den Bogen. */
 	function drucke() {
 		const bogenDaten = { formatId, startFeld, alsQR: barcodeArt === 'qr' };
 		return druckeBogen(
 			bogenDaten,
-			bogen.filter((l) => !l.isBlank),
-			ersetzeNummern
+			bogen.filter((l) => !l.isBlank)
 		);
-	}
-
-	/** @param {Record<string, string>} zuordnung alte Nummer → neue */
-	function ersetzeNummern(zuordnung) {
-		const neu = (/** @type {any} */ e) =>
-			zuordnung[e.barcode_id] ? { ...e, barcode_id: zuordnung[e.barcode_id] } : e;
-		if (druckWarteschlange.copies) druckWarteschlange.copies = druckWarteschlange.copies.map(neu);
-		for (const ex of vorhandeneExemplare)
-			if (zuordnung[ex.barcode_id]) ex.barcode_id = zuordnung[ex.barcode_id];
 	}
 
 	return /** @satisfies {object} */ ({

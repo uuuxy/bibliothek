@@ -259,12 +259,20 @@ var checkBedingungenBestand = []string{
 	// eines nicht leeren Werts zu; jeder Schreiber trimmt selbst. NULL heißt „steht nach der
 	// Signatur" und ist der Normalfall.
 	"chk_exemplar_standort",
-	// Migration 166: Ein altes Etikett in lmf_barcode ist eine LMF-Nummer. Kein Weg der
-	// Anwendung schreibt die Spalte; die Leser (FindeExemplar, LadeExemplar der Inventur,
-	// FindeThekenExemplare, LadeExemplareDesTitels) vergleichen nur mit dem Scan. Gegenfrage: Die
-	// Regel prüft die Vorsilbe, nicht ISBN und laufende Nummer dahinter; gesucht wird die Nummer,
-	// wie das Etikett sie liefert (exemplar_lmf_barcode_pg_test.go).
+	// Migration 166: Ein altes Etikett in lmf_barcode ist eine LMF-Nummer. Geschrieben wird die
+	// Spalte von den Migrationen 167 und 168 und vom Bestands-Import (LegeImportExemplareAn); alle
+	// drei schreiben die Vorsilbe groß, wie der Scanner sie liefert. Die Leser (FindeExemplar,
+	// LadeExemplar der Inventur, FindeThekenExemplare, LadeExemplareDesTitels) vergleichen nur mit
+	// dem Scan. Gegenfrage: Die Regel prüft die Vorsilbe, nicht ISBN und laufende Nummer dahinter;
+	// gesucht wird die Nummer, wie das Etikett sie liefert (exemplar_lmf_barcode_pg_test.go).
 	"chk_exemplar_lmf_barcode",
+	// Migration 168: Eine LMF-Nummer ist nie die Nummer eines Exemplars, in keiner Schreibweise.
+	// Bestellung, Titelmaske, Listenimport, Littera-Übernahme und cmd/migrate ziehen B-Nummern;
+	// der Bestands-Import legt eine LMF-Nummer nach lmf_barcode (LegeImportExemplareAn). Nur der
+	// Barcode-Editor nimmt eine Nummer von Hand; seine Tür nennt die Ablehnung mit 400 und Satz
+	// (IstLMFNummerAlsBarcode, exemplar_barcode_tuer_pg_test.go). Gegenfrage: barcode_id und
+	// lmf_barcode haben damit getrennte Werte, ein Scan trifft höchstens ein Exemplar.
+	"chk_exemplar_barcode_keine_lmf_nummer",
 	// Migration 111: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/portal/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.

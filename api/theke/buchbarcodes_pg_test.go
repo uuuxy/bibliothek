@@ -24,7 +24,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	ctx := t.Context()
 
 	titelID := testdaten.LegeTitelMitCoverUndAlterAn(t, pool, "Barcode-Titel", "Aut Or", false, 0)
-	da := []string{"B-BC-0001", "1234567890123", "LMF-BC-0003"}
+	da := []string{"B-BC-0001", "1234567890123", "101603"}
 	for _, b := range da {
 		testdaten.LegeExemplarAn(t, pool, titelID, b, true, "")
 	}

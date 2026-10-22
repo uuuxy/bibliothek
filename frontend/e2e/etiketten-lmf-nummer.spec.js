@@ -1,23 +1,24 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
 
-// Ein Lernmittel mit LMF-Nummer bekommt für ein neues Etikett eine kurze Nummer: Der Druck fragt
-// nach, vergibt die Nummer aus barcode_seq und druckt mit ihr. Danach trägt das Exemplar sie,
-// sein Etikett ist als gedruckt vermerkt, und das Protokoll nennt beide Nummern.
+// Ein Lernmittel trägt eine kurze Nummer, die Nummer seines alten LMF-Etiketts steht daneben
+// (lmf_barcode). Das Druck-Center zeigt die kurze Nummer und druckt sie ohne Rückfrage; danach ist
+// das Etikett als gedruckt vermerkt.
 
-test('Etikett für ein Exemplar mit LMF-Nummer: Rückfrage, kurze Nummer, Druck', async ({
+test('Etikett für ein Lernmittel mit altem LMF-Etikett: kurze Nummer, ohne Rückfrage gedruckt', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
-	const lmf = `LMF-978${s}-001`;
+	const kurz = `B-LE${s}`;
+	const altesEtikett = `LMF-978${s}-001`;
 	seedSQL(`
         WITH t AS (
             INSERT INTO buecher_titel (isbn, titel, autor)
             VALUES ('978l${s}', 'E2E Lernmittel ${s}', 'LMF Autor')
             RETURNING id
         )
-        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, etikett_gedruckt)
-        SELECT id, '${lmf}', true, true FROM t;
+        INSERT INTO buecher_exemplare (titel_id, barcode_id, lmf_barcode, ist_ausleihbar, etikett_gedruckt)
+        SELECT id, '${kurz}', '${altesEtikett}', true, false FROM t;
     `);
 
 	await uiLogin(page);
@@ -27,37 +28,19 @@ test('Etikett für ein Exemplar mit LMF-Nummer: Rückfrage, kurze Nummer, Druck'
 	await page.getByText(`E2E Lernmittel ${s}`).first().click();
 	await page.getByRole('button', { name: 'Barcodes drucken', exact: true }).click();
 	await expect(page.getByText('Exemplare auswählen: 1 von 1')).toBeVisible();
-
-	await page.getByRole('button', { name: 'A4-Bogen drucken' }).click();
-	const frage = page.getByRole('dialog', { name: 'Neue Nummer vergeben?' });
-	await expect(frage).toContainText(lmf);
-	await expect(frage).toContainText('nicht mehr scannen');
+	await expect(page.getByText(kurz).first()).toBeVisible();
+	await expect(page.getByText(altesEtikett)).toHaveCount(0);
 
 	const [druck] = await Promise.all([
-		page.waitForRequest(
-			(r) =>
-				r.url().endsWith('/api/print/labels') &&
-				r.method() === 'POST' &&
-				!String(r.postData()).includes('LMF-')
-		),
-		frage.getByRole('button', { name: 'Neue Nummer vergeben' }).click()
+		page.waitForRequest((r) => r.url().endsWith('/api/print/labels') && r.method() === 'POST'),
+		page.getByRole('button', { name: 'A4-Bogen drucken' }).click()
 	]);
-	const neu = druck.postDataJSON().items[0].BarcodeID;
-	expect(neu).toMatch(/^B-\d+$/);
+	expect(druck.postDataJSON().items.map((/** @type {any} */ i) => i.BarcodeID)).toEqual([kurz]);
 	expect((await druck.response())?.status()).toBe(200);
-	await expect(frage).toBeHidden();
-
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect
 		.poll(() =>
-			querySQL(`
-                SELECT e.barcode_id || '|' || e.etikett_gedruckt
-                FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
-                WHERE t.isbn = '978l${s}'`)
+			querySQL(`SELECT etikett_gedruckt::text FROM buecher_exemplare WHERE barcode_id = '${kurz}'`)
 		)
-		.toBe(`${neu}|true`);
-	expect(
-		querySQL(`
-            SELECT details->>'neue_nummer' FROM audit_log
-            WHERE details->>'action' = 'neue_nummer' AND details->>'barcode_id' = '${lmf}'`)
-	).toBe(neu);
+		.toBe('true');
 });

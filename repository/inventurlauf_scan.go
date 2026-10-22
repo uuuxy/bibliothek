@@ -33,7 +33,6 @@ func (a *InventurAbfragen) LadeExemplar(ctx context.Context, barcodeID string) (
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.barcode_id = $1 OR e.lmf_barcode = $1
-		ORDER BY e.barcode_id = $1 DESC
 		LIMIT 1
 	`
 	err := a.db.QueryRow(ctx, query, barcodeID).Scan(&exemplar.ExemplarID, &exemplar.BarcodeID, &exemplar.Titel, &exemplar.CoverURL, &exemplar.IstAusgesondert, &exemplar.IstVerliehen)

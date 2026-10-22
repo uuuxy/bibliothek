@@ -45,3 +45,12 @@ func IstExemplarBarcodeVergeben(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23505" &&
 		pgErr.ConstraintName == "buecher_exemplare_barcode_id_key"
 }
+
+// IstLMFNummerAlsBarcode sagt, ob err meldet, dass ein Exemplar eine LMF-Nummer als eigene Nummer
+// bekommen sollte (chk_exemplar_barcode_keine_lmf_nummer, Migration 168). Eine LMF-Nummer steht
+// nur als altes Etikett in lmf_barcode; für den Aufrufer ist das eine Auskunft, kein 500.
+func IstLMFNummerAlsBarcode(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23514" &&
+		pgErr.ConstraintName == "chk_exemplar_barcode_keine_lmf_nummer"
+}

@@ -61,9 +61,6 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 	// Der Weg zurück nach Papierstau oder zu weitem Altbestands-Stichtag.
 	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.verlangeRecht("edit_books")(s.druck().EtikettenZuruecksetzen()))
 	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.verlangeRecht("edit_books")(s.druck().EtikettenAltbestandVermerken()))
-	// Eine kurze Nummer statt der LMF-Nummer, die kein Etikett trägt: edit_books wie Barcode und
-	// Status, jede Änderung im Protokoll.
-	mux.Handle("POST /api/exemplare/neue-nummern", s.verlangeRecht("edit_books")(s.druck().VergebeNeueNummern()))
 	// Eigentum markierter Exemplare: edit_books wie Barcode und Status, Grund
 	// Pflicht, jede Änderung im Protokoll.
 	mux.Handle("PUT /api/exemplare/eigentum", s.verlangeRecht("edit_books")(s.katalog().ExemplarEigentumSetzen()))

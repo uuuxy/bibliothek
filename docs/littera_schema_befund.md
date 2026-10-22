@@ -354,7 +354,8 @@ Titelzusatzes „LMF-" und bleibt. Ein Exemplar mit LMF-Nummer trägt eine kurze
 LMF-Nummer steht in `buecher_exemplare.lmf_barcode` (Migrationen 166 und 167; der Bestands-Import
 legt es so an): Theke, Nachbuchen, Medienkatalog, Inventur, Theken-Auskunft (auch nach dem
 Löschen), die Suche unter „Fehlende Etiketten" und das Nummernfeld des Druck-Centers finden das
-Exemplar über das alte Etikett (`repository.FindeExemplar`), die eigene Nummer geht vor.
+Exemplar über das alte Etikett (`repository.FindeExemplar`). Als Nummer eines Exemplars nimmt
+die Datenbank keine LMF-Nummer an (Migration 168).
 
 ### Zwei Fallen im Schreibpfad
 

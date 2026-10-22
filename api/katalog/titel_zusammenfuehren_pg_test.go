@@ -40,7 +40,7 @@ func TestTitelZusammenfuehren_Tuer(t *testing.T) {
 	klein := titel("Natur und Technik - Biologie 7/10", "9783060158423")
 	fremd := titel("Lambacher Schweizer 7", "9783127331592")
 	testdaten.LegeExemplarAn(t, pool, gross, "101602", true, "")
-	testdaten.LegeExemplarAn(t, pool, klein, "LMF-9783060158423-001", true, "")
+	testdaten.LegeExemplarAn(t, pool, klein, "B-30001", true, "")
 
 	aufruf := func(methode, zielID, quelleID string, angemeldet bool) (int, string) {
 		t.Helper()

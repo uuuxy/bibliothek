@@ -768,6 +768,9 @@ CREATE TABLE buecher_exemplare (
     lmf_barcode TEXT
         CONSTRAINT buecher_exemplare_lmf_barcode_key UNIQUE
         CONSTRAINT chk_exemplar_lmf_barcode CHECK (lmf_barcode IS NULL OR lmf_barcode LIKE 'LMF-%'),
+    -- Migration 168: Eine LMF-Nummer ist nie die Nummer eines Exemplars; sie steht nur als altes
+    -- Etikett in lmf_barcode und kommt so auf kein neues Etikett.
+    CONSTRAINT chk_exemplar_barcode_keine_lmf_nummer CHECK (barcode_id NOT ILIKE 'LMF-%'),
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -1962,7 +1965,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('164_elternbrief_vermerk_und_subjects_entfallen.sql'),
 ('165_deutsche_sortierung.sql'),
 ('166_lmf_barcode.sql'),
-('167_lmf_kurze_nummer.sql')
+('167_lmf_kurze_nummer.sql'),
+('168_barcode_keine_lmf_nummer.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

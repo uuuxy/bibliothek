@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (229)
+## Alle registrierten Routen (228)
 
 - `/`
 - `/api/admin`
@@ -189,7 +189,6 @@
 - `POST /api/exemplare/etiketten-altbestand`
 - `POST /api/exemplare/etiketten-gedruckt`
 - `POST /api/exemplare/etiketten-zuruecksetzen`
-- `POST /api/exemplare/neue-nummern`
 - `POST /api/geraete`
 - `POST /api/import/littera`
 - `POST /api/inventur/abort`

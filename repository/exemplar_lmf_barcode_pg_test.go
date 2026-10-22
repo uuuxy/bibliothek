@@ -64,15 +64,27 @@ func TestAltesLMFEtikett_FuehrtZumExemplar(t *testing.T) {
 	if len(akte) != 1 || akte[0].LMFBarcode != "LMF-9783060158423-801" {
 		t.Errorf("Exemplarliste = %+v, erwartet das alte Etikett am Exemplar", akte)
 	}
+}
 
-	// Trägt ein anderes Exemplar dieselbe LMF-Nummer noch als eigene Nummer, gilt die eigene.
-	anderesID := testdaten.LegeExemplarAn(t, pool, titelID, "LMF-9783060158423-801", true, "")
-	gefunden, err = NewKatalogAbfragen(pool).FindeExemplar(ctx, "LMF-9783060158423-801")
-	if err != nil {
-		t.Fatalf("FindeExemplar: %v", err)
-	}
-	if gefunden == nil || gefunden.ID != anderesID {
-		t.Errorf("FindeExemplar = %+v, erwartet das Exemplar %s, das die Nummer selbst trägt", gefunden, anderesID)
+// Eine LMF-Nummer ist nie die Nummer eines Exemplars, in keiner Schreibweise, weder beim Anlegen
+// noch im Barcode-Editor (chk_exemplar_barcode_keine_lmf_nummer, Migration 168); der Editor
+// erkennt die Ablehnung (IstLMFNummerAlsBarcode).
+func TestLMFNummer_NieDieNummerEinesExemplars(t *testing.T) {
+	pool := pgTestPool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	titelID := testdaten.LegeTitelAn(t, pool, "LMF-Regel-Titel", 0)
+	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-LMFR-21", true, "")
+	for _, nummer := range []string{"LMF-9783060158423-821", "lmf-9783060158423-822", "Lmf-9783060158423-823"} {
+		_, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2)`, titelID, nummer)
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.ConstraintName != "chk_exemplar_barcode_keine_lmf_nummer" {
+			t.Errorf("neues Exemplar mit %s: %v, erwartet die Ablehnung durch chk_exemplar_barcode_keine_lmf_nummer", nummer, err)
+		}
+		if err := NewKatalogAbfragen(pool).SetzeExemplarBarcode(ctx, exemplarID, nummer); !IstLMFNummerAlsBarcode(err) {
+			t.Errorf("Barcode-Editor mit %s: %v, erwartet IstLMFNummerAlsBarcode", nummer, err)
+		}
 	}
 }
 

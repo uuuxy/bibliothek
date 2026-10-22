@@ -20,12 +20,12 @@ geführt wird, steht am Ende.
 - [x] Entscheiden: „Neue Barcodes" im Druck-Center entfällt, entschieden am 22.10.2026
   ([FACHKONZEPT.md](FACHKONZEPT.md) §20).
 - [x] Entscheiden: Jedes Exemplar trägt eine kurze Nummer wie in Littera, auch ein Lernmittel mit
-  LMF-Nummer; sein altes Etikett scannt weiter. Entschieden am 22.10.2026. (5.94)
+  LMF-Nummer; sein altes Etikett scannt weiter. Entschieden am 22.10.2026.
 - [x] Stufe 1: Ein altes LMF-Etikett führt an der Theke (auch ohne Netz), im Medienkatalog, in der
-  Inventur und im Druck-Center zu seinem Exemplar. (5.94)
-- [x] Stufe 2: Die Exemplare mit LMF-Nummer bekommen eine kurze Nummer, auch beim Import. (5.94)
-- [ ] Stufe 3: Die Rückfrage „Neue Nummer vergeben?" beim Drucken entfällt, und eine LMF-Nummer ist
-  nie mehr die Nummer eines Exemplars. (5.94)
+  Inventur und im Druck-Center zu seinem Exemplar.
+- [x] Stufe 2: Die Exemplare mit LMF-Nummer bekommen eine kurze Nummer, auch beim Import.
+- [x] Stufe 3: Die Rückfrage „Neue Nummer vergeben?" beim Drucken entfällt, und eine LMF-Nummer ist
+  nie mehr die Nummer eines Exemplars.
 
 ### Etappe 1: vor dem Echtstart
 
@@ -111,17 +111,6 @@ trägt ein neues Etikett keinen Vermerk.
   21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
   selben Tag zurückgestellt.
 
-### 5.94 Kurze Nummern für LMF-Bücher
-
-Die alte LMF-Nummer steht in `buecher_exemplare.lmf_barcode` (Migration 166) und führt über
-`repository.FindeExemplar`, die Inventur und die Theken-Auskunft zum Exemplar. Migration 167 gibt
-jedem Exemplar mit LMF-Nummer eine kurze aus `barcode_seq`, der Bestands-Import tut es beim
-Anlegen (`repository.LegeImportExemplareAn`). Nächster Schritt, Stufe 3: Eine Regel der Datenbank
-verbietet eine LMF-Nummer in `barcode_id`, und der Barcode-Editor nennt die Ablehnung. Danach
-entfallen die Rückfrage beim Drucken (`buchetikett.IstDruckbar`, `POST /api/exemplare/neue-nummern`,
-`frontend/src/lib/etikettenDruck.js`) und der Vorrang der eigenen Nummer in `FindeExemplar`;
-FACHKONZEPT §9 wird neu geschrieben.
-
 ### 7.2 Frisches Littera-Backup
 
 `littera_sav.mdb` ist ein Stand von 2010: Es fehlen die offenen Ausleihen und alle Ausweisnummern
@@ -159,9 +148,12 @@ bestanden):
 8. Lernmittel mit LMF-Etikett: Hängt der Bestands-Import (Kombi-CSV) ihre Exemplare an den Titel
    aus Littera, oder entsteht ein zweiter Titel desselben Buchs? Am Testserver stehen
    „Natur und Technik - Biologie 7 - 10 Berl…" (Liste vom Juni, ohne ISBN, mit 101634) und
-   „Natur und Technik - Biologie 7/10" (ISBN 9783060158423, nur `LMF-9783060158423-001`)
-   nebeneinander; die ISBN-Suche findet nur den zweiten. Die 4.065 LMF-Exemplare kamen dort in
-   einem einzigen Lauf an 130 Titel.
+   „Natur und Technik - Biologie 7/10" (ISBN 9783060158423, nur das Exemplar mit dem Etikett
+   `LMF-9783060158423-001`) nebeneinander; die ISBN-Suche findet nur den zweiten. Die 4.065
+   LMF-Exemplare kamen dort in einem einzigen Lauf an 130 Titel. Zeilen, deren Zustand
+   „Sammelbestand, kein Einzeletikett" nennt (dort bei „Red line"), legt der Bestands-Import als
+   etikettiert an; solche Bücher fehlen dann unter „Fehlende Etiketten". Klären, ob sie über den
+   Listenimport kommen, der sie ohne Etikett anlegt.
 
 **Am Umstiegstag:** in der Reihenfolge aus SCRIPTS.md Abschnitt 0, auf einer neu angelegten
 Datenbank (entschieden am 28.09.2026); vorher das Löschkonzept gegenüber Littera

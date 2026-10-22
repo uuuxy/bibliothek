@@ -14,9 +14,9 @@ import (
 	"bibliothek/repository"
 )
 
-// Den Barcode eines Exemplars ändern, über die Tür: Ein leerer oder schon vergebener Barcode
-// und ein unbekanntes Exemplar werden abgelehnt und ändern nichts; danach ersetzt die Nummer
-// vom Etikett den Platzhalter.
+// Den Barcode eines Exemplars ändern, über die Tür: Ein leerer oder schon vergebener Barcode,
+// eine LMF-Nummer in jeder Schreibweise und ein unbekanntes Exemplar werden abgelehnt und ändern
+// nichts; danach ersetzt die Nummer vom Etikett den Platzhalter.
 func TestExemplarBarcodeSetzen_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -51,6 +51,8 @@ func TestExemplarBarcodeSetzen_UeberDieTuer(t *testing.T) {
 	}{
 		{"leerer Barcode", platzhalter, `{"barcode":""}`, http.StatusBadRequest, "Der Barcode darf nicht leer sein"},
 		{"vergebener Barcode", platzhalter, `{"barcode":"TUER-BELEGT"}`, http.StatusConflict, "Diesen Barcode trägt bereits ein anderes Exemplar"},
+		{"LMF-Nummer", platzhalter, `{"barcode":"LMF-9783060158423-001"}`, http.StatusBadRequest, "Eine LMF-Nummer kann kein Barcode eines Buchs mehr sein"},
+		{"LMF-Nummer klein", platzhalter, `{"barcode":"lmf-9783060158423-001"}`, http.StatusBadRequest, "Interne ID generieren"},
 		{"unbekanntes Exemplar", "00000000-0000-0000-0000-00000000dead", `{"barcode":"TUER-NEU"}`, http.StatusNotFound, "error"},
 	} {
 		rec := setze(f.id, f.rumpf)
