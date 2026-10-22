@@ -159,3 +159,73 @@ describe('Exemplarkarte: leerer Barcode', () => {
 		expect(feld.getAttribute('aria-invalid')).toBeNull();
 	});
 });
+
+// Ein zweiter Scan, bevor der Server geantwortet hat, hängt sich an den Feldinhalt. Sein Enter
+// schickt nichts ab: Gespeichert würde sonst „B-0041873B-0041873", und das Etikett fände an der
+// Theke niemand.
+describe('Exemplarkarte: zweiter Scan während des Speicherns', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('schickt den Barcode einmal und nimmt bis zur Antwort keinen zweiten an', async () => {
+		/** @type {(antwort: any) => void} */
+		let antworte = () => {};
+		vi.mocked(apiClient.put).mockReturnValue(
+			/** @type {any} */ (new Promise((r) => (antworte = r)))
+		);
+		const k = render(ExemplarKarte, {
+			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
+			gewaehlt: false,
+			darfBearbeiten: true,
+			onToggleSelect: () => {},
+			onDelete: () => {}
+		});
+		await fireEvent.click(k.getByRole('button', { name: 'Barcode scannen' }));
+		const feld = k.getByLabelText('Barcode des Exemplars');
+		await fireEvent.input(feld, { target: { value: 'B-0041873' } });
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+
+		await fireEvent.input(feld, { target: { value: 'B-0041873B-0041873' } });
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+		await fireEvent.click(k.getByRole('button', { name: 'Speichern' }));
+
+		expect(apiClient.put).toHaveBeenCalledTimes(1);
+		expect(apiClient.put).toHaveBeenCalledWith('/api/buecher/exemplare/e1/barcode', {
+			barcode: 'B-0041873'
+		});
+		expect(k.getByRole('button', { name: 'Speichern' }).hasAttribute('disabled')).toBe(true);
+
+		antworte({ ok: true });
+		await waitFor(() => expect(k.queryByLabelText('Barcode des Exemplars')).toBeNull());
+		expect(k.container.textContent).toContain('B-0041873');
+		expect(k.container.textContent).not.toContain('B-0041873B-0041873');
+	});
+
+	// Lehnt der Server ab, ist der Knopf wieder frei: Die Sperre gilt nur, solange gespeichert wird.
+	it('gibt das Speichern nach einer Ablehnung wieder frei', async () => {
+		vi.mocked(apiClient.put).mockResolvedValue(
+			/** @type {any} */ ({ ok: false, json: async () => ({ error: 'schon vergeben' }) })
+		);
+		const k = render(ExemplarKarte, {
+			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
+			gewaehlt: false,
+			darfBearbeiten: true,
+			onToggleSelect: () => {},
+			onDelete: () => {}
+		});
+		await fireEvent.click(k.getByRole('button', { name: 'Barcode scannen' }));
+		const feld = k.getByLabelText('Barcode des Exemplars');
+		await fireEvent.input(feld, { target: { value: 'B-0041873' } });
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+		await waitFor(() => expect(feld.getAttribute('aria-invalid')).toBe('true'));
+
+		await fireEvent.input(feld, { target: { value: 'B-0041874' } });
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+
+		expect(apiClient.put).toHaveBeenCalledTimes(2);
+		expect(apiClient.put).toHaveBeenLastCalledWith('/api/buecher/exemplare/e1/barcode', {
+			barcode: 'B-0041874'
+		});
+	});
+});

@@ -20,6 +20,9 @@
 	// „Speichern" bleibt bei leerem Feld bedienbar: Der Klick nennt am Feld, was fehlt, bis
 	// etwas darin steht (wie `verlangt` in BuchFormular).
 	let verlangt = $state(false);
+	// Solange gespeichert wird, nimmt der Editor keinen zweiten Auftrag an: Ein zweiter Scan hängt
+	// sich an den Feldinhalt, und sein Enter speicherte beide Barcodes als einen.
+	let speichert = $state(false);
 	const hinweis = $derived(
 		verlangt && !neuerBarcode.trim()
 			? 'Bitte einen Barcode scannen oder eintragen. Gespeichert wird erst mit ihm.'
@@ -27,11 +30,13 @@
 	);
 
 	async function speichereBarcode() {
+		if (speichert) return;
 		const barcode = neuerBarcode.trim();
 		verlangt = true;
 		if (!barcode) return feld?.focus();
 		if (barcode === ex.barcode_id) return onDone();
 		barcodeFehler = '';
+		speichert = true;
 		try {
 			const res = await apiClient.put(`/api/buecher/exemplare/${ex.id}/barcode`, { barcode });
 			if (res.ok) {
@@ -43,6 +48,8 @@
 			}
 		} catch {
 			barcodeFehler = 'Netzwerkfehler';
+		} finally {
+			speichert = false;
 		}
 	}
 
@@ -82,5 +89,7 @@
 	<Button variant="secondary" size="sm" onclick={generateInternalId} class="text-label-small">
 		Interne ID generieren
 	</Button>
-	<Button size="sm" onclick={speichereBarcode} class="text-label-small">Speichern</Button>
+	<Button size="sm" onclick={speichereBarcode} disabled={speichert} class="text-label-small"
+		>Speichern</Button
+	>
 </div>
