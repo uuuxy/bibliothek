@@ -50,8 +50,8 @@ Nur, was kein Test leisten kann.
   zurückstellen.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
-- [ ] Am Testserver lesen, an welchem Titel das Exemplar 101634 und die LMF-Exemplare derselben
-  ISBN hängen. (5.91)
+- [x] Am Testserver lesen, an welchem Titel das Exemplar 101634 und die LMF-Exemplare derselben
+  ISBN hängen.
 
 ### Termin
 
@@ -111,30 +111,11 @@ Manche Lernmittel tragen ein Etikett der Form „LMF-", ISBN-13, laufende Nummer
   `pdf/etikett_buch.go`). Bei 222 Modulen ist ein Modul 0,16 mm (0,14 mm) breit, bei `B-00001`
   0,32 mm, bei 101634 0,48 mm. Die Zeile „Exemplar-Nr.: …" (Courier 9 pt) ist dann 66,7 mm
   breit, das Etikett Zweckform L4760 63,5 mm. `TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle`
-  prüft diese Zeile nicht und nur eine 13-stellige Nummer. Nächster Schritt nach der
+  prüft diese Zeile nicht und nur eine 13-stellige Nummer. Auf der Liste „Fehlende Etiketten"
+  stehen diese Exemplare nicht: Der Bestands-Import hat sie als gedruckt übernommen. Gedruckt
+  würde ein solches Etikett nur über den Etikett-Knopf eines Exemplars. Nächster Schritt nach der
   Entscheidung im Fahrplan: der Nachdruck eines solchen Exemplars vergibt die neue Nummer, und
   ein Gate hält die Zeile der Nummer in ihrer Zelle.
-- **Daten am Testserver:** Die ISBN-Suche zeigte zum Buch mit dem Littera-Etikett 101634 ein
-  anderes Exemplar (`LMF-9783060158423-001`). Ob 101634 an einem zweiten Titel desselben Buchs
-  hängt, sagt diese Abfrage (nur lesend):
-
-```bash
-ssh 46.62.140.190 'docker exec -i bibliothek-db psql -U postgres -d bibliothek -P pager=off' <<'SQL'
-BEGIN READ ONLY;
-SELECT e.barcode_id, e.erstellt_am::date AS ex_angelegt, e.etikett_gedruckt, t.id AS titel_id, left(t.titel, 40) AS titel, t.isbn, t.ist_lernmittel, t.werk_id
-FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
-WHERE e.barcode_id IN ('101634', 'LMF-9783060158423-001');
-SELECT t.id, left(t.titel, 40) AS titel, t.isbn, t.werk_id, count(e.id) AS exemplare,
-       count(e.id) FILTER (WHERE e.barcode_id LIKE 'LMF%') AS lmf, min(e.barcode_id), max(e.barcode_id), max(e.erstellt_am)::date AS juengstes
-FROM buecher_titel t LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
-WHERE regexp_replace(coalesce(t.isbn, ''), '[^0-9Xx]', '', 'g') LIKE '%306015842%'
-GROUP BY t.id;
-SELECT CASE WHEN barcode_id LIKE 'LMF%' THEN 'LMF' WHEN barcode_id LIKE 'B-%' THEN 'B-' WHEN barcode_id ~ '^[0-9]+$' THEN 'Ziffern' ELSE 'andere' END AS form,
-       count(*), max(length(barcode_id)) AS laengste, count(*) FILTER (WHERE NOT etikett_gedruckt) AS ohne_etikett
-FROM buecher_exemplare GROUP BY 1 ORDER BY 2 DESC;
-ROLLBACK;
-SQL
-```
 
 ### 7.2 Frisches Littera-Backup
 
@@ -170,6 +151,12 @@ bestanden):
    entscheiden, ob Nachtragen von Hand genügt.
 7. Die Verweise der Schlagworte (4.20), und ob die Theke die kurze Nummer der Littera-Etiketten
    annehmen muss ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
+8. Lernmittel mit LMF-Etikett: Hängt der Bestands-Import (Kombi-CSV) ihre Exemplare an den Titel
+   aus Littera, oder entsteht ein zweiter Titel desselben Buchs? Am Testserver stehen
+   „Natur und Technik - Biologie 7 - 10 Berl…" (Liste vom Juni, ohne ISBN, mit 101634) und
+   „Natur und Technik - Biologie 7/10" (ISBN 9783060158423, nur `LMF-9783060158423-001`)
+   nebeneinander; die ISBN-Suche findet nur den zweiten. Die 4.065 LMF-Exemplare kamen dort in
+   einem einzigen Lauf an 130 Titel.
 
 **Am Umstiegstag:** in der Reihenfolge aus SCRIPTS.md Abschnitt 0, auf einer neu angelegten
 Datenbank (entschieden am 28.09.2026); vorher das Löschkonzept gegenüber Littera
