@@ -200,6 +200,34 @@ func TestFuehreTitelZusammen_AllesWandertUndDieQuelleFaellt(t *testing.T) {
 	}
 }
 
+// Bleibt der kleine Titel, der keinen Jahrgang trägt, bekommt er den Jahrgang des großen samt
+// dessen Mehrjahresband: Ohne ihn liefe die Frist der Ausleihe nur bis zum Ende des Schuljahres.
+func TestFuehreTitelZusammen_MehrjahresbandKommtMitDemJahrgang(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	p := legeZusammenfuehrenProbeAn(t, pool)
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET mehrjahresband = true WHERE id = $1`, p.gross); err != nil {
+		t.Fatalf("Mehrjahresband setzen: %v", err)
+	}
+
+	erg, err := FuehreTitelZusammen(ctx, pool, TitelZusammenfuehrenAuftrag{ZielID: p.klein, QuelleID: p.gross, BearbeiterID: p.bearbeiter})
+	if err != nil {
+		t.Fatalf("FuehreTitelZusammen: %v", err)
+	}
+	if !slices.Contains(erg.Uebernommen, TitelFeld{"Mehrjahresband", "ja"}) {
+		t.Errorf("übernommen %+v, erwartet den Mehrjahresband", erg.Uebernommen)
+	}
+	var von, bis int
+	var mehrjahresband bool
+	if err := pool.QueryRow(ctx, `SELECT jahrgang_von, jahrgang_bis, mehrjahresband FROM buecher_titel WHERE id = $1`,
+		p.klein).Scan(&von, &bis, &mehrjahresband); err != nil {
+		t.Fatalf("kleinen Titel lesen: %v", err)
+	}
+	if von != 7 || bis != 10 || !mehrjahresband {
+		t.Errorf("Jahrgang %d–%d, Mehrjahresband %v; erwartet 7–10 mit Mehrjahresband", von, bis, mehrjahresband)
+	}
+}
+
 // Tragen beide Titel eine ISBN, sind es zwei Ausgaben: Das Zusammenführen lehnt ab und ändert
 // nichts.
 func TestFuehreTitelZusammen_ZweiISBNSindZweiAusgaben(t *testing.T) {

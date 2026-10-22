@@ -69,6 +69,57 @@ func TestFuegeTitelZusammen_NenntAbweichungenVorn(t *testing.T) {
 	}
 }
 
+// Der Mehrjahresband gehört zum Jahrgang: Er sagt, dass das Buch bis zum Ende der Spanne beim
+// Kind bleibt, und rechnet so die Frist der Ausleihe. Ein Ziel ohne Jahrgang bekommt beides von
+// der Quelle; eines mit Jahrgang behält beides, und ein Unterschied steht unter den Abweichungen.
+func TestFuegeTitelZusammen_MehrjahresbandKommtMitDemJahrgang(t *testing.T) {
+	quelle := titelStand{titel: "Natur und Technik", medientyp: "Buch", istLernmittel: true,
+		jahrgangVon: text("7"), jahrgangBis: text("10"), mehrjahresband: true}
+
+	ohneJahrgang := titelStand{titel: "Natur und Technik", medientyp: "Buch", istLernmittel: true}
+	nachher, uebernommen, abweichend, err := fuegeTitelZusammen(ohneJahrgang, quelle)
+	if err != nil {
+		t.Fatalf("fuegeTitelZusammen: %v", err)
+	}
+	if !nachher.mehrjahresband || wert(nachher.jahrgangBis) != "10" {
+		t.Errorf("ohne eigenen Jahrgang: Mehrjahresband %v, Jahrgang bis %q; erwartet beides von der Quelle",
+			nachher.mehrjahresband, wert(nachher.jahrgangBis))
+	}
+	if want := []TitelFeld{{"Jahrgang", "7–10"}, {"Mehrjahresband", "ja"}}; !slices.Equal(uebernommen, want) {
+		t.Errorf("übernommen %+v, erwartet %+v", uebernommen, want)
+	}
+	if len(abweichend) != 0 {
+		t.Errorf("abweichend %+v, erwartet nichts", abweichend)
+	}
+
+	mitJahrgang := titelStand{titel: "Natur und Technik", medientyp: "Buch", istLernmittel: true,
+		jahrgangVon: text("7"), jahrgangBis: text("10")}
+	nachher, uebernommen, abweichend, err = fuegeTitelZusammen(mitJahrgang, quelle)
+	if err != nil {
+		t.Fatalf("fuegeTitelZusammen: %v", err)
+	}
+	if nachher.mehrjahresband || len(uebernommen) != 0 {
+		t.Errorf("mit eigenem Jahrgang: Mehrjahresband %v, übernommen %+v; erwartet den eigenen Stand", nachher.mehrjahresband, uebernommen)
+	}
+	if want := []TitelAbweichung{{"Mehrjahresband", "nein", "ja"}}; !slices.Equal(abweichend, want) {
+		t.Errorf("abweichend %+v, erwartet %+v", abweichend, want)
+	}
+
+	// Ein Buch der Schülerbücherei trägt keinen Mehrjahresband (chk_mehrjahresband_spanne): Der
+	// Jahrgang kommt, der Haken nicht, und beides steht als Unterschied da.
+	buecherei := titelStand{titel: "Natur und Technik", medientyp: "Buch"}
+	nachher, _, abweichend, err = fuegeTitelZusammen(buecherei, quelle)
+	if err != nil {
+		t.Fatalf("fuegeTitelZusammen: %v", err)
+	}
+	if nachher.mehrjahresband {
+		t.Error("ein Buch der Schülerbücherei bekam den Mehrjahresband")
+	}
+	if want := []TitelAbweichung{{"Lernmittel", "nein", "ja"}, {"Mehrjahresband", "nein", "ja"}}; !slices.Equal(abweichend, want) {
+		t.Errorf("abweichend %+v, erwartet %+v", abweichend, want)
+	}
+}
+
 // Zwei ISBN sind zwei Ausgaben.
 func TestFuegeTitelZusammen_ZweiISBN(t *testing.T) {
 	_, _, _, err := fuegeTitelZusammen(titelStand{isbn: text("9783060158423")}, titelStand{isbn: text("9783060130764")})

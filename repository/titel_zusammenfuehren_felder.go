@@ -29,7 +29,7 @@ type TitelAbweichung struct {
 // titelStand sind die Felder eines Titels, die beim Zusammenführen zählen, als Text gelesen.
 type titelStand struct {
 	id, titel, medientyp, erweitert                                         string
-	istLernmittel                                                           bool
+	istLernmittel, mehrjahresband                                           bool
 	isbn, untertitel, autor, verlag, erscheinungsjahr, auflage, listenpreis *string
 	signatur, fach, zweig, coverURL, coverStatus, zaehldatum                *string
 	jahrgangVon, jahrgangBis                                                *string
@@ -80,14 +80,8 @@ func fuegeTitelZusammen(ziel, quelle titelStand) (titelStand, []TitelFeld, []Tit
 			abweichend = append(abweichend, TitelAbweichung{f.bezeichnung, anzeige(f.bezeichnung, *hier), anzeige(f.bezeichnung, *dort)})
 		}
 	}
-	// Die Jahrgänge kommen nur zusammen (chk_jahrgang_spanne).
-	switch hier, dort := jahrgang(ziel), jahrgang(quelle); {
-	case hier == "" && dort != "":
-		nachher.jahrgangVon, nachher.jahrgangBis = quelle.jahrgangVon, quelle.jahrgangBis
-		uebernommen = append(uebernommen, TitelFeld{"Jahrgang", dort})
-	case hier != "" && dort != "" && hier != dort:
-		abweichend = append(abweichend, TitelAbweichung{"Jahrgang", hier, dort})
-	}
+	jahrUebernommen, jahrAbweichend := fuegeJahrgangZusammen(&nachher, quelle)
+	uebernommen, abweichend = append(uebernommen, jahrUebernommen...), append(abweichend, jahrAbweichend...)
 	if leer(ziel.coverURL) && !leer(quelle.coverURL) {
 		nachher.coverURL, nachher.coverStatus = quelle.coverURL, quelle.coverStatus
 		uebernommen = append(uebernommen, TitelFeld{"Cover", ""})
@@ -110,6 +104,30 @@ func fuegeTitelZusammen(ziel, quelle titelStand) (titelStand, []TitelFeld, []Tit
 		}
 	}
 	return nachher, uebernommen, append(kopf, abweichend...), nil
+}
+
+// fuegeJahrgangZusammen gibt dem Ziel ohne Jahrgang den der Quelle, beide Grenzen zusammen
+// (chk_jahrgang_spanne), und mit ihm den Mehrjahresband: Er hängt an der Spanne und rechnet die
+// Frist der Ausleihe bis zu ihrem Ende. Ein Buch der Schülerbücherei trägt ihn nicht
+// (chk_mehrjahresband_spanne).
+func fuegeJahrgangZusammen(nachher *titelStand, quelle titelStand) ([]TitelFeld, []TitelAbweichung) {
+	var uebernommen []TitelFeld
+	var abweichend []TitelAbweichung
+	switch hier, dort := jahrgang(*nachher), jahrgang(quelle); {
+	case hier == "" && dort != "":
+		nachher.jahrgangVon, nachher.jahrgangBis = quelle.jahrgangVon, quelle.jahrgangBis
+		uebernommen = append(uebernommen, TitelFeld{"Jahrgang", dort})
+		if quelle.mehrjahresband && nachher.istLernmittel {
+			nachher.mehrjahresband = true
+			uebernommen = append(uebernommen, TitelFeld{"Mehrjahresband", "ja"})
+		}
+	case hier != "" && dort != "" && hier != dort:
+		abweichend = append(abweichend, TitelAbweichung{"Jahrgang", hier, dort})
+	}
+	if nachher.mehrjahresband != quelle.mehrjahresband {
+		abweichend = append(abweichend, TitelAbweichung{"Mehrjahresband", jaNein(nachher.mehrjahresband), jaNein(quelle.mehrjahresband)})
+	}
+	return uebernommen, abweichend
 }
 
 // anzeige bringt einen gelesenen Wert in die Form, die die Maske zeigt.
@@ -149,7 +167,8 @@ func jaNein(b bool) string {
 
 // alsProtokoll hält die Felder eines Titels für den Eintrag im Protokoll fest, nur die belegten.
 func (t titelStand) alsProtokoll() map[string]any {
-	felder := map[string]any{"titel": t.titel, "medientyp": t.medientyp, "ist_lernmittel": t.istLernmittel}
+	felder := map[string]any{"titel": t.titel, "medientyp": t.medientyp, "ist_lernmittel": t.istLernmittel,
+		"mehrjahresband": t.mehrjahresband}
 	for _, f := range []struct {
 		schluessel string
 		wert       *string
@@ -170,12 +189,12 @@ func (t titelStand) alsProtokoll() map[string]any {
 func ladeTitelStand(ctx context.Context, tx pgx.Tx, id string) (titelStand, error) {
 	t := titelStand{id: id}
 	err := tx.QueryRow(ctx, `
-		SELECT titel, medientyp, erweiterte_eigenschaften::text, ist_lernmittel,
+		SELECT titel, medientyp, erweiterte_eigenschaften::text, ist_lernmittel, mehrjahresband,
 		       isbn, untertitel, autor, verlag, erscheinungsjahr::text, auflage, listenpreis::text,
 		       signatur, subject, track, cover_url, cover_status, last_counted::text,
 		       jahrgang_von::text, jahrgang_bis::text
 		FROM buecher_titel WHERE id = $1`, id).Scan(
-		&t.titel, &t.medientyp, &t.erweitert, &t.istLernmittel,
+		&t.titel, &t.medientyp, &t.erweitert, &t.istLernmittel, &t.mehrjahresband,
 		&t.isbn, &t.untertitel, &t.autor, &t.verlag, &t.erscheinungsjahr, &t.auflage, &t.listenpreis,
 		&t.signatur, &t.fach, &t.zweig, &t.coverURL, &t.coverStatus, &t.zaehldatum,
 		&t.jahrgangVon, &t.jahrgangBis)
@@ -197,13 +216,13 @@ func schreibeTitelStand(ctx context.Context, tx pgx.Tx, t titelStand) error {
 			isbn = $2, untertitel = $3, autor = $4, verlag = $5, erscheinungsjahr = $6::integer,
 			auflage = $7, listenpreis = $8::numeric, signatur = $9, subject = $10,
 			cover_url = $11, cover_status = $12, last_counted = $13::date,
-			jahrgang_von = $14::integer, jahrgang_bis = $15::integer,
+			jahrgang_von = $14::integer, jahrgang_bis = $15::integer, mehrjahresband = $17,
 			erweiterte_eigenschaften = $16::jsonb || erweiterte_eigenschaften
 		WHERE id = $1`,
 		t.id, t.isbn, t.untertitel, t.autor, t.verlag, t.erscheinungsjahr,
 		t.auflage, t.listenpreis, t.signatur, t.fach,
 		t.coverURL, t.coverStatus, t.zaehldatum,
-		t.jahrgangVon, t.jahrgangBis, t.erweitert)
+		t.jahrgangVon, t.jahrgangBis, t.erweitert, t.mehrjahresband)
 	if err != nil {
 		return fmt.Errorf("titel zusammenführen: ziel schreiben: %w", err)
 	}
