@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin, gehZu, einstellungsKategorie } from './helpers.js';
 
 // Ein gescheiterter Abruf darf kein ausgefülltes Formular zeigen.
 //
@@ -36,4 +36,31 @@ test('Einstellungen: Ladefehler zeigt Hinweis statt Vorgabewerten zum Überspeic
 	await page.unroute('**/api/einstellungen');
 	await page.getByRole('button', { name: 'Erneut versuchen' }).click();
 	await expect(page.getByRole('navigation', { name: 'Einstellungs-Kategorien' })).toBeVisible();
+});
+
+// Die Klassenleitungen laden ihre Liste selbst. Scheitert der Abruf, steht der Fehler da statt
+// „Noch keine Zuordnungen", und das Formular nicht: Hinzufügen ersetzte die Zuordnung derselben
+// Klasse, ohne dass sie zu sehen war.
+test('Mahnwesen-Routing: Ladefehler zeigt den Fehler statt einer leeren Liste', async ({
+	page
+}) => {
+	await uiLogin(page);
+	await page.route('**/api/klassen-mapping', async (route) => {
+		if (route.request().method() === 'GET') {
+			await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+			return;
+		}
+		await route.continue();
+	});
+
+	await gehZu(page, '/einstellungen');
+	await einstellungsKategorie(page, 'Mahnwesen-Routing').click();
+
+	await expect(page.getByText('Zuordnungen nicht geladen')).toBeVisible();
+	await expect(page.getByText('Noch keine Zuordnungen vorhanden.')).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Hinzufügen' })).toHaveCount(0);
+
+	await page.unroute('**/api/klassen-mapping');
+	await page.getByRole('button', { name: 'Erneut versuchen' }).click();
+	await expect(page.getByRole('button', { name: 'Hinzufügen' })).toBeVisible();
 });

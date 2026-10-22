@@ -2,6 +2,7 @@
 	import { apiGet, apiPost, apiDelete } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { onMount } from 'svelte';
 	import { snackbars } from './stores/snackbars.svelte.js';
 	import Feld from './components/ui/Feld.svelte';
@@ -17,6 +18,9 @@
 	/** @type {{klasse: string, lehrer_email: string}[]} */
 	let mappingRows = $state([]);
 	let zuordnungLaedt = $state(false);
+	// Nach einem gescheiterten Laden steht weder Liste noch Formular da: Hinzufügen ersetzt die
+	// Zuordnung derselben Klasse, und die wäre gerade nicht zu sehen.
+	let ladeFehler = $state(false);
 	let newMappingKlasse = $state('');
 	let newMappingEmail = $state('');
 	let zuordnungSpeichert = $state(false);
@@ -29,8 +33,9 @@
 		zuordnungLaedt = true;
 		try {
 			mappingRows = (await apiGet('/api/klassen-mapping')) || [];
+			ladeFehler = false;
 		} catch {
-			/* ignore */
+			ladeFehler = true;
 		} finally {
 			zuordnungLaedt = false;
 		}
@@ -85,6 +90,12 @@
 		<div class="py-8 flex justify-center">
 			<Ladekreis size="lg" />
 		</div>
+	{:else if ladeFehler}
+		<LadeFehler
+			onerneut={fetchMapping}
+			titel="Zuordnungen nicht geladen"
+			text="Die Klassenleitungen konnten nicht abgerufen werden. Das Formular bleibt geschlossen — ein neuer Eintrag ersetzte sonst die Zuordnung derselben Klasse, ohne dass sie zu sehen war."
+		/>
 	{:else if mappingRows.length === 0}
 		<p class="text-sm text-on-surface-variant py-4">Noch keine Zuordnungen vorhanden.</p>
 	{:else}
@@ -118,34 +129,36 @@
 	{/if}
 
 	<!-- Neuen Eintrag hinzufügen: flacher Eingabeblock ohne Box -->
-	<div class="flex flex-col md:flex-row items-end gap-4">
-		<div class="w-full md:w-32">
-			<div class="grid gap-y-1.5">
-				<label for="routing-klasse" class="text-sm font-medium text-on-surface-variant"
-					>Klasse</label
-				>
-				<Select
-					id="routing-klasse"
-					bind:value={newMappingKlasse}
-					options={klassenListe.liste.map((k) => ({ value: k, label: k }))}
-					placeholder={klassenPlatzhalter(klassenListe.liste.length, klassenListe.ladefehler)}
+	{#if !ladeFehler}
+		<div class="flex flex-col md:flex-row items-end gap-4">
+			<div class="w-full md:w-32">
+				<div class="grid gap-y-1.5">
+					<label for="routing-klasse" class="text-sm font-medium text-on-surface-variant"
+						>Klasse</label
+					>
+					<Select
+						id="routing-klasse"
+						bind:value={newMappingKlasse}
+						options={klassenListe.liste.map((k) => ({ value: k, label: k }))}
+						placeholder={klassenPlatzhalter(klassenListe.liste.length, klassenListe.ladefehler)}
+					/>
+				</div>
+			</div>
+			<div class="flex-1 w-full">
+				<Feld
+					bind:value={newMappingEmail}
+					etikett="E-Mail"
+					type="email"
+					placeholder="lehrkraft@schule.de"
 				/>
 			</div>
+			<Button
+				onclick={upsertMapping}
+				disabled={zuordnungSpeichert || !newMappingKlasse.trim() || !newMappingEmail.trim()}
+				class="w-full md:w-auto whitespace-nowrap"
+			>
+				{zuordnungSpeichert ? 'Lädt…' : 'Hinzufügen'}
+			</Button>
 		</div>
-		<div class="flex-1 w-full">
-			<Feld
-				bind:value={newMappingEmail}
-				etikett="E-Mail"
-				type="email"
-				placeholder="lehrkraft@schule.de"
-			/>
-		</div>
-		<Button
-			onclick={upsertMapping}
-			disabled={zuordnungSpeichert || !newMappingKlasse.trim() || !newMappingEmail.trim()}
-			class="w-full md:w-auto whitespace-nowrap"
-		>
-			{zuordnungSpeichert ? 'Lädt…' : 'Hinzufügen'}
-		</Button>
-	</div>
+	{/if}
 </div>
