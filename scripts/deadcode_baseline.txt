@@ -37,6 +37,10 @@ internal/pdftest/seiten.go: unreachable func: Seiten
 internal/pdftest/spalte.go: unreachable func: InSpalte
 internal/pdftest/spalte.go: unreachable func: InSpalteFett
 internal/pdftest/spalte.go: unreachable func: inSpalte
+internal/pdftest/spalte.go: unreachable func: Breite
+# Dazu die Schriftgröße, in der ein Text gedruckt ist: für Zeilen, die ihre Schrift verkleinern,
+# statt gekürzt zu werden (Tests in pdf/).
+internal/pdftest/schrift.go: unreachable func: Schriftgroesse
 # Dazu das PDF als durchsuchbarer Text und der Anfang einer Antwort für eine Fehlermeldung
 # (vorher Helfer in Testdateien von api/).
 internal/pdftest/suchtext.go: unreachable func: Suchtext
