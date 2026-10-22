@@ -47,7 +47,6 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 	// Verfügbarkeit bleiben view_books.
 	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.verlangeRecht("view_students")(s.katalog().TitelAusleiher()))
 	mux.Handle("GET /api/buecher/titel/{id}/historie", s.verlangeRecht("view_students")(s.katalog().TitelHistorie()))
-	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.verlangeRecht("view_books")(s.druck().TitelEtiketten()))
 	mux.Handle("POST /api/print/labels", s.verlangeRecht("view_books")(s.druck().Etikettenbogen()))
 
 	// Nachdruck: Welche Exemplare haben noch kein Etikett, und Gegenbuchung nach dem Druck.

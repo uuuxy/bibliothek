@@ -2046,15 +2046,15 @@ Design: Jeder Druckweg fragt vor dem Druckdialog `designFuerDruck`
 gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem Drucker, die richtig aussieht und
 es nicht ist. Einen weiteren Abrufer des Designs hält `designer/ausweisDesignLaden.test.js` auf.
 
-**Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes drucken" am
-Titel, über das Druck-Center und für den Händler (Seite und Mailanhang). Die Daten lädt
-`internal/buchetikett` auf jedem Weg (`LadeDesTitels`, `ErgaenzeServerfelder`,
-`LadeDerBestellung`), und `buchetikett.PDFEtiketten` füllt die Eingabe der Erzeuger
-(`pdf.BuchEtikett`) für alle. Ein neues Feld gehört an alle drei Wege; einen eigenen Endpunkt
-für ein einzelnes Etikett gibt es nicht, der Knopf an der Exemplarkarte übergibt an das
-Druck-Center.
-`api/druck/etiketten_pdf_paritaet_pg_test.go` vergleicht den gedruckten Text der Wege;
-Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben.
+**Etiketten: zwei Wege zum selben Blatt.** Ein Buch-Etikett entsteht im Druck-Center und für den
+Händler (Seite und Mailanhang). Ins Druck-Center führen der Etikett-Knopf der Exemplarkarte,
+„Barcodes drucken" in der Maske eines Titels und die Liste „Fehlende Etiketten"; einen eigenen
+Endpunkt für die Etiketten eines Titels oder eines Exemplars gibt es nicht. Die Daten lädt
+`internal/buchetikett` (`ErgaenzeServerfelder`, `LadeDerBestellung`), und
+`buchetikett.PDFEtiketten` füllt die Eingabe der Erzeuger (`pdf.BuchEtikett`) für beide. Ein
+neues Feld gehört an beide Wege; `buchetikett.TestEtikettenDatenSindAufBeidenWegenGleich`
+vergleicht sie, und `api/druck/etikettenbogen_serverfelder_pg_test.go` prüft den gedruckten Text
+des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben.
 
 ---
 

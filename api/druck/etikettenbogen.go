@@ -4,70 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/buchetikett"
 	"bibliothek/pdf"
 )
-
-// leseEtikettParameter liest Format, Startposition und QR-Schalter aus den Parametern der
-// Adresse; ohne Angabe gilt das Format avery_3475 ab Position 1.
-func leseEtikettParameter(r *http.Request) (formatID string, start int, alsQR bool) {
-	formatID = r.URL.Query().Get("format")
-	if formatID == "" {
-		formatID = "avery_3475"
-	}
-
-	start = 1
-	if startText := r.URL.Query().Get("start"); startText != "" {
-		if zahl, err := strconv.Atoi(startText); err == nil && zahl > 0 {
-			start = zahl
-		}
-	}
-
-	alsQR = r.URL.Query().Get("qr") == "true"
-	return formatID, start, alsQR
-}
-
-// TitelEtiketten liefert die Etiketten aller Exemplare eines Titels als Bogen im PDF; die
-// Angaben liest der Server selbst (buchetikett.LadeDesTitels).
-func (t *Tueren) TitelEtiketten() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Titels fehlt", nil)
-			return
-		}
-
-		ctx := r.Context()
-		formatID, start, alsQR := leseEtikettParameter(r)
-
-		etiketten, err := buchetikett.LadeDesTitels(ctx, t.DB.Pool, id)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-			return
-		}
-		if len(etiketten) == 0 {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Zu diesem Titel gibt es keine Exemplare", nil)
-			return
-		}
-
-		bogen, err := pdf.ErzeugeBuchEtiketten(formatID, start, alsQR, buchetikett.PDFEtiketten(etiketten, buchetikett.LadeKopf(ctx, t.DB.Pool)))
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
-			return
-		}
-
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", id))
-
-		if err := bogen.Output(w); err != nil {
-			log.Printf("Fehler beim Senden des PDFs: %v", err)
-		}
-	}
-}
 
 // etikettenbogenAnfrage ist ein Druckauftrag aus dem Druck-Center: Format, Startposition und
 // die Etiketten.

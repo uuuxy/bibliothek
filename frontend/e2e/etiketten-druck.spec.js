@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, csrfToken, uniqueSuffix, menuepunkt } from './helpers.js';
+import { uiLogin, seedSQL, csrfToken, uniqueSuffix, menuepunkt, gehZu } from './helpers.js';
 
 // Etikettendruck — die Brücke zur physischen Welt: ohne funktionierende
 // Barcode-Bögen kann das Sekretariat keine neuen Bücher auszeichnen.
-// Beide Server-Pfade als PDF-Smoke: der Titel-Bogen aus dem Buchformular
-// ("Barcodes drucken") und der freie Druck über /api/print/labels.
+// „Barcodes drucken" in der Maske eines Titels führt ins Druck-Center; gedruckt wird dort wie
+// jedes Etikett über /api/print/labels, und der Bogen ist ein echtes PDF.
 
-test('Etiketten: Titel-Bogen und freier Labeldruck liefern echte PDFs', async ({ page }) => {
+test('Etiketten: „Barcodes drucken" druckt im Druck-Center ein echtes PDF', async ({ page }) => {
 	const s = uniqueSuffix();
 
 	seedSQL(`
@@ -18,15 +18,31 @@ test('Etiketten: Titel-Bogen und freier Labeldruck liefern echte PDFs', async ({
         INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
         SELECT id, b, true FROM t, unnest(ARRAY['B-eti1-${s}', 'B-eti2-${s}']) AS b;
     `);
-	const titelId = querySQL(`SELECT id FROM buecher_titel WHERE isbn = '978e${s}'`);
 
 	await uiLogin(page);
 
-	// 1. Titel-Etikettenbogen (Button "Barcodes drucken" im Buchformular)
-	const bogen = await page.request.get(`/api/buecher/titel/${titelId}/etiketten`);
-	expect(bogen.status()).toBe(200);
-	expect(bogen.headers()['content-type']).toContain('application/pdf');
-	expect((await bogen.body()).length).toBeGreaterThan(1000);
+	// 1. „Barcodes drucken" in der Maske: Das Druck-Center öffnet sich mit dem Titel, beide
+	// Exemplare sind angehakt, und der Druck schickt genau sie.
+	await gehZu(page, '/medienkatalog');
+	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`E2E Etikettenbuch ${s}`);
+	await page.getByText(`E2E Etikettenbuch ${s}`).first().click();
+	await page.getByRole('button', { name: 'Barcodes drucken', exact: true }).click();
+	await expect(page.getByText('Exemplare auswählen: 2 von 2')).toBeVisible();
+
+	const [druck] = await Promise.all([
+		page.waitForRequest((r) => r.url().endsWith('/api/print/labels') && r.method() === 'POST'),
+		page.getByRole('button', { name: 'A4-Bogen drucken' }).click()
+	]);
+	expect(
+		druck
+			.postDataJSON()
+			.items.map((/** @type {{ BarcodeID: string }} */ i) => i.BarcodeID)
+			.sort()
+	).toEqual([`B-eti1-${s}`, `B-eti2-${s}`]);
+	const bogen = await druck.response();
+	expect(bogen?.status()).toBe(200);
+	expect(bogen?.headers()['content-type']).toContain('application/pdf');
 
 	// 2. Freier Labeldruck (A4 Zweckform, wie ihn die Etiketten-Verwaltung nutzt)
 	const token = await csrfToken(page);

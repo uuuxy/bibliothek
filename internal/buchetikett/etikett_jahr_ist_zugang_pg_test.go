@@ -53,13 +53,12 @@ func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 		t.Fatalf("Altbestand anlegen: %v", err)
 	}
 
-	zeilen, err := LadeDesTitels(ctx, pool, titelID)
-	if err != nil {
-		t.Fatalf("LadeDesTitels: %v", err)
-	}
+	// Wie ein Druckauftrag des Druck-Centers: nur die Nummern, das Jahr trägt der Server nach.
+	auftrag := []Etikett{{BarcodeID: "EJ-BESTELLT"}, {BarcodeID: "EJ-ALT"}}
+	ErgaenzeServerfelder(ctx, pool, auftrag)
 	jahr := map[string]string{}
-	for _, z := range zeilen {
-		jahr[z.BarcodeID] = z.AnschaffungsJahr
+	for _, e := range auftrag {
+		jahr[e.BarcodeID] = e.AnschaffungsJahr
 	}
 	if got, want := jahr["EJ-BESTELLT"], strconv.Itoa(heute.Year()); got != want {
 		t.Errorf("Ansch.J. des gelieferten Exemplars = %q, erwartet %q (Jahr des Zugangs, nicht des Bestelltags)", got, want)

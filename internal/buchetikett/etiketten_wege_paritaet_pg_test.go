@@ -12,13 +12,13 @@ import (
 	"bibliothek/repository"
 )
 
-// Dieselben Daten auf beiden Wegen zum Etikett. LadeDesTitels (Druck-Center) und
-// LadeDerBestellung (Lieferanten-Link) sind zwei Abfragen für dieselbe Frage; wer eine
-// erweitert und die andere vergisst, bekommt zwei verschiedene Aufkleber für dasselbe Buch,
-// und jeder Weg für sich funktioniert.
+// Dieselben Daten auf beiden Wegen zum Etikett. Das Druck-Center bekommt Anschaffungsjahr,
+// Signatur und Topf von ErgaenzeServerfelder, der Lieferanten-Link von LadeDerBestellung: zwei
+// Abfragen für dieselbe Frage. Wer eine erweitert und die andere vergisst, bekommt zwei
+// verschiedene Aufkleber für dasselbe Buch, und jeder Weg für sich funktioniert.
 //
-// Verglichen wird, was auf dem Etikett steht: Barcode, Titel, Autor, Anschaffungsjahr,
-// Signatur. Die ISBN zeichnet keiner der Erzeuger.
+// Verglichen wird, was der Server auf das Etikett bringt; Titel und Autor schickt im
+// Druck-Center der Browser mit. Die ISBN zeichnet keiner der Erzeuger.
 func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -27,12 +27,9 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	svc := service.NewBestellDienst(&db.Verbindung{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher-Paritaet", true)
-	// Signatur und Autor sind gesetzt: Zwei leere Felder wären auf beiden Wegen gleich, auch
-	// wenn eine der Abfragen das Feld nicht läse.
+	// Die Signatur ist gesetzt: Zwei leere Felder wären auf beiden Wegen gleich, auch wenn eine
+	// der Abfragen das Feld nicht läse.
 	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "LMF-Paritaet", "LMF-Deutsch 5", 0)
-	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = 'Autorin der Probe' WHERE id = $1`, titel); err != nil {
-		t.Fatalf("Autor setzen: %v", err)
-	}
 
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
@@ -43,45 +40,36 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 		t.Fatalf("Bestellung: %v", err)
 	}
 
-	// Weg 1: Druck-Center (Selbstdruck aus dem Bestand)
-	selbstdruck, err := LadeDesTitels(ctx, pool, titel)
-	if err != nil {
-		t.Fatalf("Selbstdruck-Etiketten laden: %v", err)
-	}
-	// Weg 2: Lieferantenseite hinter dem Bestätigungs-Link
+	// Weg 1: Lieferantenseite hinter dem Bestätigungs-Link
 	lieferantenweg, err := LadeDerBestellung(ctx, pool, res.BestellungID)
 	if err != nil {
 		t.Fatalf("Lieferanten-Etiketten laden: %v", err)
 	}
-
-	if len(selbstdruck) != len(lieferantenweg) || len(selbstdruck) != 3 {
-		t.Fatalf("Selbstdruck %d, Lieferantenweg %d Etiketten — erwartet je 3",
-			len(selbstdruck), len(lieferantenweg))
+	if len(lieferantenweg) != 3 {
+		t.Fatalf("Lieferantenweg %d Etiketten, erwartet 3", len(lieferantenweg))
 	}
 
-	nachBarcode := map[string]Etikett{}
+	// Weg 2: ein Druckauftrag des Druck-Centers mit denselben Nummern, wie der Browser ihn schickt
+	druckcenter := make([]Etikett, 0, len(lieferantenweg))
 	for _, e := range lieferantenweg {
-		nachBarcode[e.BarcodeID] = e
+		druckcenter = append(druckcenter, Etikett{BarcodeID: e.BarcodeID, Titel: e.Titel, Autor: e.Autor})
 	}
+	ErgaenzeServerfelder(ctx, pool, druckcenter)
 
-	for _, eigen := range selbstdruck {
-		fremd, ok := nachBarcode[eigen.BarcodeID]
-		if !ok {
-			t.Fatalf("Exemplar %s fehlt auf dem Lieferantenweg", eigen.BarcodeID)
-		}
+	for i, eigen := range druckcenter {
+		fremd := lieferantenweg[i]
 		felder := []struct{ name, a, b string }{
-			{"Titel", eigen.Titel, fremd.Titel},
-			{"Autor", eigen.Autor, fremd.Autor},
 			{"Anschaffungsjahr", eigen.AnschaffungsJahr, fremd.AnschaffungsJahr},
 			{"Signatur", eigen.Signatur, fremd.Signatur},
+			{"Topf", eigen.Topf, fremd.Topf},
 		}
 		for _, f := range felder {
 			if f.a == "" {
-				t.Errorf("Exemplar %s: %s ist im Selbstdruck leer, der Vergleich prüft an diesem Feld nichts",
+				t.Errorf("Exemplar %s: %s ist im Druck-Center leer, der Vergleich prüft an diesem Feld nichts",
 					eigen.BarcodeID, f.name)
 			}
 			if f.a != f.b {
-				t.Errorf("Exemplar %s: %s unterscheidet sich — Selbstdruck %q, Lieferantenweg %q.\n"+
+				t.Errorf("Exemplar %s: %s unterscheidet sich — Druck-Center %q, Lieferantenweg %q.\n"+
 					"→ Beide Abfragen müssen dieselben Felder liefern, sonst trägt dasselbe Buch "+
 					"je nach Druckweg einen anderen Aufkleber.", eigen.BarcodeID, f.name, f.a, f.b)
 			}

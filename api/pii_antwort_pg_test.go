@@ -323,7 +323,6 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/buecher/exemplare/erkennen":   {URL: "/api/buecher/exemplare/erkennen?code=" + w.buchBarcode, Positiv: []string{w.exemplarID}},
 		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
 		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
-		"GET /api/buecher/titel/{id}/etiketten": {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},
 		// Schlagworte: Stufe 0, Wörter über den Titel, keine Person.
 		"GET /api/buecher/titel/{id}/schlagworte": {URL: "/api/buecher/titel/" + w.titelID + "/schlagworte"},
 		// Auflagen eines Schulbuchs: Stufe 0, Titel und Bestandszahlen. Der

@@ -94,7 +94,7 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 }
 
 // Die Etiketten im Lieferanten-Mailanhang entstehen aus BestellDienst.LegeAn, nicht aus dem
-// Druck-Center-Pfad (buchetikett.LadeDesTitels) — die Signatur muss deshalb hier ankommen, über
+// Druck-Center-Pfad (buchetikett.ErgaenzeServerfelder) — die Signatur muss deshalb hier ankommen, über
 // die echte Kette KatalogAbfragen.LadeTitel → buchetikett.Etikett. Ein Unit-Test, der Signatur
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
 func TestLegeBestellungAn_EtikettenTragenSignatur(t *testing.T) {

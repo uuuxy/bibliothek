@@ -60,13 +60,6 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 			_, err := LadeMonatsTrend(ctx, mock, "")
 			return err
 		}},
-		{"Etiketten eines Titels", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
-			mock.ExpectQuery(`e.ist_ausgesondert = false`).WithArgs(pgxmock.AnyArg()).WillReturnRows(
-				pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "jahr", "signatur", "topf"}).
-					AddRow(nil, "Momo", "", "2024", "", "land"))
-			_, err := LadeEtikettDatenDesTitels(ctx, mock, uuid.NewString())
-			return err
-		}},
 		{"Felder der Etiketten je Barcode", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
 			mock.ExpectQuery(`barcode_id = ANY`).WithArgs(pgxmock.AnyArg()).WillReturnRows(
 				pgxmock.NewRows([]string{"barcode_id", "jahr", "signatur", "topf"}).AddRow(nil, "2024", "", "land"))

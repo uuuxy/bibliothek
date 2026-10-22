@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (227)
+## Alle registrierten Routen (226)
 
 - `/`
 - `/api/admin`
@@ -84,7 +84,6 @@
 - `GET /api/buecher/titel/suche`
 - `GET /api/buecher/titel/{id}/auflagen`
 - `GET /api/buecher/titel/{id}/ausleiher`
-- `GET /api/buecher/titel/{id}/etiketten`
 - `GET /api/buecher/titel/{id}/exemplare`
 - `GET /api/buecher/titel/{id}/historie`
 - `GET /api/buecher/titel/{id}/schlagworte`

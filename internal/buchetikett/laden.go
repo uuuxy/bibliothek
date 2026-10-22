@@ -8,15 +8,6 @@ import (
 	"bibliothek/repository"
 )
 
-// LadeDesTitels lädt die Etiketten aller Exemplare eines Titels, die nicht ausgesondert sind.
-func LadeDesTitels(ctx context.Context, datenbank repository.Datenbank, titelID string) ([]Etikett, error) {
-	zeilen, err := repository.LadeEtikettDatenDesTitels(ctx, datenbank, titelID)
-	if err != nil {
-		return nil, err
-	}
-	return etikettenAus(zeilen), nil
-}
-
 // LadeDerBestellung lädt die Etiketten der Exemplare einer Bestellung, beschränkt auf die
 // Positionen, die auch auf dem Barcodebogen der Bestellmail standen. Exemplare ohne
 // Vorab-Barcode beklebt die Bibliothek selbst; bekäme der Lieferant auch ihre Etiketten,
@@ -33,8 +24,8 @@ func LadeDerBestellung(ctx context.Context, datenbank repository.Datenbank, best
 // Anschaffungsjahr, Signatur und Topf. Das Druck-Center schickt nur Barcode, Titel und Autor;
 // ein Feld, das die Oberfläche mitschicken muss, wird irgendwann vergessen.
 //
-// Wer hier ein Feld ergänzt, ergänzt es auch in LadeDesTitels und LadeDerBestellung;
-// TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF zusammen. Unbekannte
+// Wer hier ein Feld ergänzt, ergänzt es auch in LadeDerBestellung;
+// TestEtikettenDatenSindAufBeidenWegenGleich hält die beiden Wege zusammen. Unbekannte
 // Barcodes bleiben unangetastet, weil es beim Vorab-Druck für eine Bestellung die Exemplare
 // noch nicht gibt.
 func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, etiketten []Etikett) {

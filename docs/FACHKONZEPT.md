@@ -398,8 +398,8 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
 
 - **Buch-Etiketten:** PDF-Bögen mit Strichcode (Code 128) oder QR-Code für vorgestanzte
   Etikettenbögen, in den drei Rastern aus §7, mit Startposition für einen angebrochenen
-  Bogen (`POST /api/print/labels`). Am Titel druckt „Barcodes drucken" dieselben Etiketten
-  (`GET /api/buecher/titel/{id}/etiketten`).
+  Bogen (`POST /api/print/labels`). „Barcodes drucken" in der Maske eines Titels öffnet
+  diesen Reiter mit dem Titel und seinen Exemplaren, wie der Etikett-Knopf der Exemplarkarte.
 - **Fehlende Etiketten:** die Exemplare, deren Etikett noch nicht gedruckt ist
   (`etikett_gedruckt = false`, §13); ihre Zahl steht am Menüpunkt und am Reiter.
 - **Das große Lernmittel-Etikett** mit Ausleihtabelle entsteht mit der Bestellung, als

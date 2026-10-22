@@ -2,13 +2,13 @@ package repository
 
 import (
 	"context"
-	"fmt"
 )
 
 // EtikettDaten sind die Angaben eines Exemplars für sein Etikett. AnschaffungsJahr ist das
-// Jahr des Zugangs, Topf entscheidet über den Eigentumsvermerk (ExemplarTopfSQL). Drei
-// Abfragen füllen sie: je Bestellung, je Titel und je Barcode. Wer einer ein Feld gibt, gibt
-// es allen; api.TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF zusammen.
+// Jahr des Zugangs, Topf entscheidet über den Eigentumsvermerk (ExemplarTopfSQL). Zwei
+// Abfragen füllen sie: je Bestellung (LadeEtikettDatenDerBestellung) und je Barcode
+// (LadeEtikettServerfelderZuBarcodes). Wer einer ein Feld gibt, gibt es beiden;
+// buchetikett.TestEtikettenDatenSindAufBeidenWegenGleich hält sie zusammen.
 type EtikettDaten struct {
 	BarcodeID        string
 	Titel            string
@@ -53,47 +53,6 @@ func LadeEtikettDatenDerBestellung(ctx context.Context, db Datenbank, bestellung
 	return etiketten, rows.Err()
 }
 
-// LadeEtikettDatenDesTitels liefert die Exemplare eines Titels, die nicht ausgesondert sind.
-func LadeEtikettDatenDesTitels(ctx context.Context, db Datenbank, titelID string) ([]EtikettDaten, error) {
-	// Das Jahr ist das des Zugangs (zugang_am): Im Bestellweg ist erworben_am der Bestelltag,
-	// und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs Etikett und mit
-	// dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL, Vorgabe der Schultag)
-	// deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer vier Ziffern und nie NULL.
-	//
-	// Ausgesonderte Exemplare bleiben draußen: Wer die Etiketten eines Titels druckt, klebt sie
-	// auf Bücher, die im Regal stehen. Das Etikett eines ausgesonderten Exemplars ist ein Blatt
-	// Papier für ein Buch, das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen
-	// verschiebt es alle folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie
-	// nicht.
-	query := `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
-		       ` + ExemplarTopfSQL + `
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON e.titel_id = t.id
-		` + ExemplarTopfJoin + `
-		WHERE e.titel_id = $1 AND e.ist_ausgesondert = false
-		ORDER BY e.barcode_id
-	`
-	rows, err := db.Query(ctx, query, titelID)
-	if err != nil {
-		return nil, fmt.Errorf("fehler beim laden der exemplare: %w", err)
-	}
-	defer rows.Close()
-
-	var etiketten []EtikettDaten
-	for rows.Next() {
-		var etikett EtikettDaten
-		if err := rows.Scan(&etikett.BarcodeID, &etikett.Titel, &etikett.Autor, &etikett.AnschaffungsJahr, &etikett.Signatur, &etikett.Topf); err != nil {
-			return nil, zeileUnlesbar(err)
-		}
-		etiketten = append(etiketten, etikett)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("datenbankfehler: %w", err)
-	}
-	return etiketten, nil
-}
-
 // EtikettServerfelder sind die Etikettenangaben, die der Server selbst kennt und deshalb nie
 // aus einer Anfrage übernimmt.
 type EtikettServerfelder struct {
@@ -105,6 +64,11 @@ type EtikettServerfelder struct {
 // LadeEtikettServerfelderZuBarcodes liefert Jahr, Signatur und Topf je bekanntem Barcode in einer
 // Abfrage. Ein unbekannter Barcode fehlt in der Karte: Beim Vorab-Druck gibt es das Exemplar
 // noch nicht. Bricht das Lesen der Zeilen ab, trägt der Fehler ErrZeileUnlesbar.
+//
+// Das Jahr ist das des Zugangs (zugang_am): Im Bestellweg ist erworben_am der Bestelltag, und
+// ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs Etikett und mit dem neuen
+// ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL, Vorgabe der Schultag) deckt Zeilen
+// ohne Zugangsdatum; to_char liefert damit immer vier Ziffern und nie NULL.
 func LadeEtikettServerfelderZuBarcodes(ctx context.Context, db Datenbank, barcodes []string) (map[string]EtikettServerfelder, error) {
 	rows, err := db.Query(ctx, `
 		SELECT e.barcode_id, to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),

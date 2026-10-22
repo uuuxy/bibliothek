@@ -8,6 +8,11 @@
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 	import { enterSpeichert } from '../../../../lib/scanErkennung.js';
+	import { etikettenStore } from '../../../../lib/stores/etiketten.svelte.js';
+	import { uiStore } from '../../../../lib/stores/uiStore.svelte.js';
+	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
+	import { hatRecht } from '../../../../lib/menue.js';
+	import { rechteDesReiters } from '../../../../lib/druckCenterReiter.js';
 	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
 
 	/**
@@ -32,6 +37,20 @@
 		() => formular,
 		() => dnbVorschlag
 	);
+
+	// Die Etiketten des Titels entstehen im Druck-Center wie die eines Exemplars in der Buchakte.
+	// Wer den Reiter „Buch-Etiketten" nicht öffnen darf, landete auf einem anderen.
+	const darfEtiketten = $derived(
+		rechteDesReiters('labels').every((recht) => hatRecht(authStore.currentUser, recht))
+	);
+
+	/** Öffnet das Druck-Center mit diesem Titel; seine Exemplare sind dort angehakt. */
+	function etikettenDrucken() {
+		etikettenStore.leereDruckauftrag();
+		etikettenStore.waehleTitel({ id: formular.id, titel: formular.title, autor: formular.author });
+		uiStore.requestedDruckCenterTab = 'labels';
+		uiStore.activeTab = 'druck-center';
+	}
 
 	// Pflicht sind der Titel und am neuen Bibliotheksbuch die Signatur, die ISBN nicht:
 	// Zeitschriften, Spiele und alte Bücher tragen keine. Ein Pflichtfeld zeigt seinen Fehler
@@ -106,15 +125,17 @@
 			<BuchCoverUpload bind:formular {onCoverUpload} {onCoverNeuHolen} />
 			{#if formular.id}
 				<div class="mt-4 flex flex-col gap-2 border-t border-outline-variant pt-4">
-					<Button
-						variant="secondary"
-						onclick={() => window.open(`/api/buecher/titel/${formular.id}/etiketten`, '_blank')}
-						class="w-full"
-						title="A4 Zweckform Etikettenbogen für dieses Buch generieren"
-					>
-						<Printer class="w-4 h-4" aria-hidden="true" />
-						Barcodes drucken
-					</Button>
+					{#if darfEtiketten}
+						<Button
+							variant="secondary"
+							onclick={etikettenDrucken}
+							class="w-full"
+							title="Etiketten dieses Titels im Druck-Center drucken"
+						>
+							<Printer class="w-4 h-4" aria-hidden="true" />
+							Barcodes drucken
+						</Button>
+					{/if}
 					<Button
 						variant="secondary"
 						onclick={onAssignClass}
