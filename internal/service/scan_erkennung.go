@@ -16,9 +16,9 @@ type ExemplarTreffer struct {
 	Ausgesondert bool `json:"ausgesondert,omitempty"`
 }
 
-// ErkenneExemplar löst einen Wert zu einem Exemplar auf, über den Barcode selbst und über das
-// Etikett von Littera (EAN-13 → Mediennummer), in der Reihenfolge der Theke
-// (verarbeiteOhneVorsilbe); nil, wenn keines ihn trägt.
+// ErkenneExemplar löst einen Wert zu einem Exemplar auf, über den Barcode selbst, ein altes
+// LMF-Etikett (FindeExemplar) und das Etikett von Littera (EAN-13 → Mediennummer), in der
+// Reihenfolge der Theke (verarbeiteOhneVorsilbe); nil, wenn keines ihn trägt.
 func ErkenneExemplar(ctx context.Context, katalogAbfragen exemplarErkennung, text string) (*ExemplarTreffer, error) {
 	for _, kandidat := range exemplarKandidaten(text) {
 		exemplar, err := katalogAbfragen.FindeExemplar(ctx, kandidat)

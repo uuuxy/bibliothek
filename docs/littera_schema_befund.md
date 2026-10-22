@@ -350,7 +350,10 @@ im Medienkatalog schlagen eine solche Nummer nach, wie sie gescannt wird, und `L
 Vorsilbe für Bücher wie `B-`: am Server (`internal/service/omnibox.go`) und ohne Netz
 (`BUCH_VORSILBEN` in `frontend/src/lib/scanEinordnen.js`);
 `internal/service/vorsilben_zwilling_test.go` hält beide gleich. Sie ist kein Rest eines
-Titelzusatzes „LMF-" und bleibt.
+Titelzusatzes „LMF-" und bleibt. Trägt ein Exemplar eine kurze Nummer und die LMF-Nummer nur
+noch auf seinem alten Etikett, steht sie in `buecher_exemplare.lmf_barcode` (Migration 166):
+Theke, Nachbuchen, Medienkatalog, Inventur, Theken-Auskunft und das Nummernfeld des
+Druck-Centers finden das Exemplar darüber (`repository.FindeExemplar`), die eigene Nummer geht vor.
 
 ### Zwei Fallen im Schreibpfad
 

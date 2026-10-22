@@ -10,29 +10,33 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// InventurExemplar ist, was ein Scan der Inventur vom Exemplar braucht.
+// InventurExemplar ist, was ein Scan der Inventur vom Exemplar braucht. BarcodeID ist die
+// Nummer, die das Exemplar jetzt trägt, auch wenn ein altes Etikett gescannt wurde.
 type InventurExemplar struct {
 	ExemplarID      string
+	BarcodeID       string
 	Titel           string
 	CoverURL        string
 	IstAusgesondert bool
 	IstVerliehen    bool
 }
 
-// LadeExemplar lädt das Exemplar zu einem Barcode für den Scan der Inventur.
+// LadeExemplar lädt das Exemplar zu einem Barcode für den Scan der Inventur, auch über ein altes
+// LMF-Etikett wie FindeExemplar.
 func (a *InventurAbfragen) LadeExemplar(ctx context.Context, barcodeID string) (*InventurExemplar, error) {
 	var exemplar InventurExemplar
 	query := `
-		SELECT e.id, t.titel, coalesce(t.cover_url, ''), e.ist_ausgesondert, EXISTS (
+		SELECT e.id, e.barcode_id, t.titel, coalesce(t.cover_url, ''), e.ist_ausgesondert, EXISTS (
 			SELECT 1 FROM ausleihen a
 			WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		) AS is_lent
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE e.barcode_id = $1
+		WHERE e.barcode_id = $1 OR e.lmf_barcode = $1
+		ORDER BY e.barcode_id = $1 DESC
 		LIMIT 1
 	`
-	err := a.db.QueryRow(ctx, query, barcodeID).Scan(&exemplar.ExemplarID, &exemplar.Titel, &exemplar.CoverURL, &exemplar.IstAusgesondert, &exemplar.IstVerliehen)
+	err := a.db.QueryRow(ctx, query, barcodeID).Scan(&exemplar.ExemplarID, &exemplar.BarcodeID, &exemplar.Titel, &exemplar.CoverURL, &exemplar.IstAusgesondert, &exemplar.IstVerliehen)
 	if err != nil {
 		return nil, fmt.Errorf("exemplar für inventur-scan nicht ladbar: %w", err)
 	}

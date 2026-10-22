@@ -259,6 +259,12 @@ var checkBedingungenBestand = []string{
 	// eines nicht leeren Werts zu; jeder Schreiber trimmt selbst. NULL heißt „steht nach der
 	// Signatur" und ist der Normalfall.
 	"chk_exemplar_standort",
+	// Migration 166: Ein altes Etikett in lmf_barcode ist eine LMF-Nummer. Kein Weg der
+	// Anwendung schreibt die Spalte; die Leser (FindeExemplar, LadeExemplar der Inventur,
+	// FindeThekenExemplare, LadeExemplareDesTitels) vergleichen nur mit dem Scan. Gegenfrage: Die
+	// Regel prüft die Vorsilbe, nicht ISBN und laufende Nummer dahinter; gesucht wird die Nummer,
+	// wie das Etikett sie liefert (exemplar_lmf_barcode_pg_test.go).
+	"chk_exemplar_lmf_barcode",
 	// Migration 111: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/portal/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.

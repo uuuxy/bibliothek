@@ -232,8 +232,8 @@ func holeAbgeschriebenesZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage,
 	return nil
 }
 
-// loeseExemplar findet das Exemplar zum gescannten Barcode — direkt oder über die
-// EAN-13 eines Littera-Etiketts (dieselben Formen wie der Online-Scan).
+// loeseExemplar findet das Exemplar zum gescannten Barcode — direkt, über ein altes
+// LMF-Etikett oder über die EAN-13 eines Littera-Etiketts (dieselben Formen wie der Online-Scan).
 func (d *AusleihDienst) loeseExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
 	exemplar, err := d.katalogAbfragen.FindeExemplar(ctx, barcode)
 	if err != nil || exemplar != nil {

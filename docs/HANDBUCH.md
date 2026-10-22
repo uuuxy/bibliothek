@@ -139,7 +139,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
 
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur und Schlagwort;
   Kartenansicht mit Cover und Signatur. Eine Exemplarnummer, gescannt oder getippt, zeigt den
-  Titel des Exemplars, auch über das alte Littera-Etikett und eine lange LMF-Nummer; über den
+  Titel des Exemplars, auch über das alte Littera-Etikett und ein Etikett mit langer LMF-Nummer; über den
   Karten steht dann, zu welchem Titel das Exemplar gehört. Ein Verweis findet sein Schlagwort: „Tierfantasy"
   findet die Bücher mit „Fantasy", wenn es unter _Einstellungen → Schlagworte_ so
   eingetragen ist. Dasselbe gilt für die Suche der Titel-Verwaltung, den öffentlichen

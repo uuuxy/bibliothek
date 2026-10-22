@@ -35,8 +35,11 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 
 	// exemplarZeile ist ein Exemplar in der Antwort.
 	type exemplarZeile struct {
-		ID           string `json:"id"`
-		BarcodeID    string `json:"barcode_id"`
+		ID        string `json:"id"`
+		BarcodeID string `json:"barcode_id"`
+		// LMFBarcode ist die Nummer eines alten LMF-Etiketts, leer ohne. Das Nummernfeld des
+		// Druck-Centers findet das Exemplar auch über sie.
+		LMFBarcode   string `json:"lmf_barcode"`
 		ZustandNotiz string `json:"zustand_notiz"`
 		// ZustandAbwertungProzent ist der erfasste Beschädigungsgrad. Er steht hier, weil die
 		// Buchakte ihn anzeigt und ihr Status-Editor ihn zurückschickt; ohne den gelesenen Wert
@@ -74,6 +77,7 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		exemplare = append(exemplare, exemplarZeile{
 			ID:                      z.ID,
 			BarcodeID:               z.BarcodeID,
+			LMFBarcode:              z.LMFBarcode,
 			ZustandNotiz:            z.ZustandNotiz,
 			ZustandAbwertungProzent: z.ZustandAbwertungProzent,
 			IstAusleihbar:           z.IstAusleihbar,

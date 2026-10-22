@@ -30,17 +30,20 @@ test.afterEach(() => {
 });
 
 /**
- * Ein Titel mit einem Exemplar; liefert die Kennung des Titels.
+ * Ein Titel mit einem Exemplar, auf Wunsch mit einem alten LMF-Etikett; liefert die Kennung des
+ * Titels.
  * @param {string} titel
  * @param {string} barcode
+ * @param {string} [altesEtikett]
  */
-function legeTitelMitExemplarAn(titel, barcode) {
+function legeTitelMitExemplarAn(titel, barcode, altesEtikett) {
+	const lmf = altesEtikett ? `'${altesEtikett}'` : 'NULL';
 	const id = querySQL(`
 		WITH t AS (
 			INSERT INTO buecher_titel (titel, autor, medientyp) VALUES ('${titel}', 'E2E', 'Buch')
 			RETURNING id
 		)
-		INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, '${barcode}' FROM t
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, lmf_barcode) SELECT id, '${barcode}', ${lmf} FROM t
 		RETURNING titel_id;
 	`)
 		.split('\n')[0]
@@ -49,16 +52,20 @@ function legeTitelMitExemplarAn(titel, barcode) {
 	return id;
 }
 
-test('Medienkatalog: ein gescanntes Littera-Etikett und eine LMF-Nummer zeigen ihren Titel', async ({
+test('Medienkatalog: ein gescanntes Littera-Etikett, eine LMF-Nummer und ein altes LMF-Etikett zeigen ihren Titel', async ({
 	page
 }) => {
 	const marke = uniqueSuffix();
 	const nummer = String(9000000 + Math.floor(Math.random() * 999999));
 	const lmf = `LMF-978${String(Date.now()).slice(-10)}-001`;
+	const altesEtikett = `LMF-978${String(Date.now()).slice(-10)}-002`;
+	const kurz = `B-KE${marke}`;
 	const litteraTitel = `E2E Etikettscan ${marke}`;
 	const lmfTitel = `E2E LMF-Scan ${marke}`;
+	const altTitel = `E2E LMF-Etikett ${marke}`;
 	legeTitelMitExemplarAn(litteraTitel, nummer);
 	legeTitelMitExemplarAn(lmfTitel, lmf);
+	legeTitelMitExemplarAn(altTitel, kurz, altesEtikett);
 
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
@@ -75,4 +82,10 @@ test('Medienkatalog: ein gescanntes Littera-Etikett und eine LMF-Nummer zeigen i
 	await scanneWieScanner(page, lmf);
 	await expect(page.getByText(`Exemplar ${lmf} gehört zu „${lmfTitel}“.`)).toBeVisible();
 	await expect(page.getByRole('button', { name: lmfTitel, exact: true })).toBeVisible();
+
+	// Das alte Etikett führt zum Exemplar, genannt wird die Nummer, die es jetzt trägt.
+	await feld.fill('');
+	await scanneWieScanner(page, altesEtikett);
+	await expect(page.getByText(`Exemplar ${kurz} gehört zu „${altTitel}“.`)).toBeVisible();
+	await expect(page.getByRole('button', { name: altTitel, exact: true })).toBeVisible();
 });

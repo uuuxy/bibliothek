@@ -37,7 +37,8 @@ type ThekenEreignisZeile struct {
 }
 
 // FindeThekenExemplare nennt die Exemplare zu einem Barcode: zuerst den Bestand (auch ein
-// ausgesondertes Exemplar trägt seinen Barcode noch), dann aus dem Protokoll die Exemplare,
+// ausgesondertes Exemplar trägt seinen Barcode noch, und ein altes LMF-Etikett führt zu seinem
+// Exemplar wie bei FindeExemplar), dann aus dem Protokoll die Exemplare,
 // deren Zeile es nicht mehr gibt; der jüngste Eintrag nennt den Titel. Ein Barcode kann
 // mehrfach treffen: Nach dem endgültigen Löschen ist die Nummer frei und kann an einem neuen
 // Exemplar kleben.
@@ -47,7 +48,7 @@ func FindeThekenExemplare(ctx context.Context, db Datenbank, barcode string) ([]
 		       CASE WHEN e.ist_ausgesondert THEN 'ausgesondert' ELSE 'im_bestand' END
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.barcode_id = $1
+		WHERE e.barcode_id = $1 OR e.lmf_barcode = $1
 		UNION ALL
 		SELECT * FROM (
 			SELECT DISTINCT ON (l.datensatz_id)

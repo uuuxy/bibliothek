@@ -97,7 +97,9 @@ func leseExemplar(row scanner) (*Exemplar, error) {
 }
 
 // FindeExemplar löst einen Buch-Barcode auf: das Exemplar mit den Angaben seines Titels; nil,
-// wenn keines die Nummer trägt.
+// wenn keines die Nummer trägt. Ein altes LMF-Etikett (lmf_barcode) führt zum selben Exemplar,
+// die Nummer, die ein Exemplar jetzt trägt, geht vor. Wer weiterarbeitet, nimmt BarcodeID des
+// Treffers, nicht den gescannten Text.
 func (a *KatalogAbfragen) FindeExemplar(ctx context.Context, barcode string) (*Exemplar, error) {
 	query := `
 		SELECT 
@@ -105,7 +107,8 @@ func (a *KatalogAbfragen) FindeExemplar(ctx context.Context, barcode string) (*E
 			coalesce(t.titel, ''), coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), coalesce(t.medientyp, ''), coalesce(t.signatur, ''), t.mehrjahresband, coalesce(t.jahrgang_bis, 0), t.ist_lernmittel, coalesce(t.erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE e.barcode_id = $1
+		WHERE e.barcode_id = $1 OR e.lmf_barcode = $1
+		ORDER BY e.barcode_id = $1 DESC
 		LIMIT 1
 	`
 	bc, err := leseExemplar(a.db.QueryRow(ctx, query, barcode))

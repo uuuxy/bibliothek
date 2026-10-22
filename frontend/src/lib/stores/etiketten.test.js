@@ -298,6 +298,25 @@ describe('etikettenStore: alle, keine und einzelne Exemplare wählen', () => {
 		expect(aufDemBogen()).toEqual(['B-10001', '58968']);
 	});
 
+	// Ein Lernmittel mit kurzer Nummer kann noch sein altes LMF-Etikett tragen; der Scan davon
+	// setzt es mit seiner Nummer auf den Bogen, auch wenn der Scanner die Vorsilbe klein schickt.
+	it('nimmt ein Exemplar über sein altes LMF-Etikett', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{ barcode_id: 'B-20001', lmf_barcode: 'LMF-9783060158423-001' },
+					{ barcode_id: 'B-20002', lmf_barcode: '' }
+				]
+			})
+		);
+		await etikettenStore.waehleTitel({ id: 't6', titel: 'Titel', autor: '' });
+		etikettenStore.setzeSichtbare(false);
+		etikettenStore.exemplarSuche = 'lmf-9783060158423-001';
+		expect(etikettenStore.uebernimmNummer()).toBe(true);
+		expect(aufDemBogen()).toEqual(['B-20001']);
+	});
+
 	it('nimmt nichts, wenn die Nummer nicht zu diesem Titel gehört oder nur ein Teil getippt ist', () => {
 		etikettenStore.setzeSichtbare(false);
 		for (const eingabe of ['B-9', 'B-', '1', 'A-1', '']) {

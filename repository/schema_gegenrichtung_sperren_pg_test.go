@@ -108,6 +108,12 @@ var eindeutigkeitBestand = []string{
 	// sie (ON CONFLICT DO NOTHING), die Übernahme aus Littera gibt doppelten Nummern vorher eine
 	// neue (klaereBarcodes).
 	"buecher_exemplare_barcode_id_key @ buecher_exemplare (barcode_id)",
+	// Befragt: Ein altes LMF-Etikett führt zu genau einem Exemplar; zwei mit derselben Nummer
+	// machten den Scan mehrdeutig. Kein Weg der Anwendung schreibt lmf_barcode, ein zweiter
+	// gleicher Wert bräche mit 23505 ab. Gegen barcode_id prüft die Regel nicht: Trägt ein
+	// Exemplar die LMF-Nummer noch als eigene Nummer, geht die eigene vor (ORDER BY in
+	// FindeExemplar und LadeExemplar der Inventur, exemplar_lmf_barcode_pg_test.go).
+	"buecher_exemplare_lmf_barcode_key @ buecher_exemplare (lmf_barcode)",
 	// Befragt: Das Anlegen über die ISBN schreibt mit ON CONFLICT (isbn) DO UPDATE
 	// (repository/titel_isbn.go). Anlegen und Ändern in der Bestandstabelle übersetzen die
 	// Verletzung in ErrISBNDoppelt, die Türen antworten mit 409 und Satz

@@ -94,7 +94,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exemplar.IstAusgesondert {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Das Exemplar %s ist bereits ausgesondert", req.BarcodeID), nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf("Das Exemplar %s ist bereits ausgesondert", exemplar.BarcodeID), nil)
 		return
 	}
 
@@ -112,7 +112,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 	// Buch mit der Warnung zeigt statt "Unbekanntes Buch" und den Scan nicht mitzählt.
 	if !imBereich {
 		tuer.AntworteJSON(w, http.StatusConflict, scanAntwort{
-			BarcodeID: req.BarcodeID,
+			BarcodeID: exemplar.BarcodeID,
 			Titel:     exemplar.Titel,
 			CoverURL:  exemplar.CoverURL,
 			Status:    "ausser_scope",
@@ -133,7 +133,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, scanAntwort{
-		BarcodeID: req.BarcodeID,
+		BarcodeID: exemplar.BarcodeID,
 		Titel:     exemplar.Titel,
 		CoverURL:  exemplar.CoverURL,
 		Status:    "erfasst",

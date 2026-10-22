@@ -8,10 +8,12 @@ import (
 // TitelExemplar ist ein Exemplar in der Akte seines Titels. ImBestand heißt weder ausgesondert
 // noch bestellt (SQLExemplarImBestand), IstVerfuegbar heißt nicht verliehen. Eigentum und
 // seine Herkunft folgen der einen Regel (ExemplarTopfSQL, exemplarTopfHerkunftSQL);
-// LitteraEigentumsvermerk ist der Wortlaut aus Littera, wenn es einen gab.
+// LitteraEigentumsvermerk ist der Wortlaut aus Littera, wenn es einen gab. LMFBarcode ist die
+// Nummer eines alten LMF-Etiketts, leer ohne.
 type TitelExemplar struct {
 	ID                      string
 	BarcodeID               string
+	LMFBarcode              string
 	ZustandNotiz            string
 	IstAusleihbar           bool
 	IstAusgesondert         bool
@@ -29,7 +31,7 @@ type TitelExemplar struct {
 // Akte verschwindet.
 func LadeExemplareDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelExemplar, error) {
 	query := `
-		SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
+		SELECT e.id, e.barcode_id, coalesce(e.lmf_barcode, ''), coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
 		       (` + SQLExemplarImBestand + `) AS im_bestand,
 		       coalesce(e.zustand_abwertung_prozent, 0),
 		       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar,
@@ -51,7 +53,7 @@ func LadeExemplareDesTitels(ctx context.Context, db Datenbank, titelID string) (
 	exemplare := []TitelExemplar{}
 	for rows.Next() {
 		var e TitelExemplar
-		if err := rows.Scan(&e.ID, &e.BarcodeID, &e.ZustandNotiz, &e.IstAusleihbar,
+		if err := rows.Scan(&e.ID, &e.BarcodeID, &e.LMFBarcode, &e.ZustandNotiz, &e.IstAusleihbar,
 			&e.IstAusgesondert, &e.ImBestand, &e.ZustandAbwertungProzent, &e.IstVerfuegbar,
 			&e.Eigentum, &e.EigentumHerkunft, &e.LitteraEigentumsvermerk, &e.Standort); err != nil {
 			return nil, err

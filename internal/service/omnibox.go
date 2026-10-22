@@ -429,7 +429,7 @@ func (d *OmniboxDienst) verarbeiteExemplar(ctx context.Context, eingabe OmniboxE
 
 	// Ein gesperrtes oder ausgesondertes Exemplar holt der Scan zurück.
 	if !exemplar.IstAusleihbar || exemplar.IstAusgesondert {
-		fertig, err := d.versucheReaktivierung(ctx, eingabe.Text, exemplar, eingabe.BearbeiterID, erg)
+		fertig, err := d.versucheReaktivierung(ctx, exemplar.BarcodeID, exemplar, eingabe.BearbeiterID, erg)
 		if err != nil {
 			return err
 		}

@@ -136,16 +136,16 @@ function erzeugeEtikettenStore() {
 
 	/**
 	 * Die Eingabetaste im Nummernfeld, wie sie ein Handscanner schickt: setzt das Exemplar mit
-	 * genau dieser Nummer auf den Bogen und leert das Feld. Gelesen wird wie an der Theke
-	 * (scanEinordnen.js): die Nummer selbst, dann das Littera-Etikett, zuletzt ein Etikett mit
-	 * Prüfzeichen. Ein Teil einer Nummer wählt nichts; er zeigt nur die passenden Zeilen.
-	 * Groß und klein zählen nicht: Das Feld sucht nur Nummern dieses Titels, kein Wort.
+	 * genau dieser Nummer auf den Bogen und leert das Feld. Gelesen wird wie an der Theke: die
+	 * Nummer, ein altes LMF-Etikett, das Littera-Etikett, ein Etikett mit Prüfzeichen. Ein Teil
+	 * wählt nichts. Groß und klein zählen nicht: Das Feld sucht nur Nummern dieses Titels.
 	 * @returns {boolean} ob ein Exemplar dieses Titels gefunden wurde
 	 */
 	function uebernimmNummer() {
 		const scan = normalisiereScan(exemplarSuche);
 		if (!scan) return false;
-		for (const nummer of [scan, dekodiereLitteraEtikett(scan), ohnePruefzeichen(scan)]) {
+		const ueberLMF = vorhandeneExemplare.find((c) => c.lmf_barcode === scan)?.barcode_id;
+		for (const nummer of [scan, ueberLMF, dekodiereLitteraEtikett(scan), ohnePruefzeichen(scan)]) {
 			const gesucht = nummer?.toLowerCase();
 			const exemplar = gesucht
 				? vorhandeneExemplare.find((c) => String(c.barcode_id).toLowerCase() === gesucht)

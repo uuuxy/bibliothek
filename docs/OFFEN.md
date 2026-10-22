@@ -19,8 +19,12 @@ geführt wird, steht am Ende.
   kurze `B-`-Nummer, statt den langen Code nachzudrucken.
 - [x] Entscheiden: „Neue Barcodes" im Druck-Center entfällt, entschieden am 22.10.2026
   ([FACHKONZEPT.md](FACHKONZEPT.md) §20).
-- [ ] Entscheiden: Lehnt der Server einen Etikettendruck mit einer Nummer ohne Exemplar ab, wie
-  einen mit einer LMF-Nummer? (5.93)
+- [x] Entscheiden: Jedes Exemplar trägt eine kurze Nummer wie in Littera, auch ein Lernmittel mit
+  LMF-Nummer; sein altes Etikett scannt weiter. Entschieden am 22.10.2026. (5.94)
+- [x] Stufe 1: Ein altes LMF-Etikett führt an der Theke (auch ohne Netz), im Medienkatalog, in der
+  Inventur und im Druck-Center zu seinem Exemplar. (5.94)
+- [ ] Stufe 2: Die Exemplare mit LMF-Nummer bekommen eine kurze Nummer, auch beim Import. (5.94)
+- [ ] Stufe 3: Die Rückfrage „Neue Nummer vergeben?" beim Drucken entfällt. (5.94)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -106,15 +110,16 @@ trägt ein neues Etikett keinen Vermerk.
   21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
   selben Tag zurückgestellt.
 
-### 5.93 Etikett für eine Nummer ohne Exemplar
+### 5.94 Kurze Nummern für LMF-Bücher
 
-`POST /api/print/labels` druckt jede Nummer, die ein Auftrag nennt; `buchetikett.ErgaenzeServerfelder`
-lässt eine unbekannte ohne Jahr, Signatur und Topf. Die Oberfläche schickt nur Exemplare aus der
-Datenbank. Eine Nummer ohne Exemplar kommt aus einem Browserfenster, das noch „Neue Barcodes"
-zeigt, oder von einem Exemplar, das zwischen Laden und Druck gelöscht oder umnummeriert wurde;
-`api/druck/etiketten_topf_pg_test.go` druckt eine solche Nummer mit Absicht. Nächster Schritt nach
-der Entscheidung: solche Aufträge mit 409 ablehnen und die Nummern nennen wie bei LMF-Nummern
-(`buchetikett.NichtDruckbare`), oder es bleibt so.
+Die alte LMF-Nummer steht in `buecher_exemplare.lmf_barcode` (Migration 166) und führt über
+`repository.FindeExemplar`, die Inventur und die Theken-Auskunft zum Exemplar. Am Testserver tragen
+4.065 Exemplare noch eine LMF-Nummer als eigene Nummer (7.2, Punkt 8). Nächste Schritte:
+Stufe 2 gibt ihnen Nummern aus `barcode_seq` und legt die LMF-Nummer nach `lmf_barcode`, für den
+Bestand per Migration, beim Bestands-Import schon beim Anlegen; danach nimmt `barcode_id` keine
+LMF-Nummer mehr an. Stufe 3 nimmt die Rückfrage beim Drucken heraus (`buchetikett.IstDruckbar`,
+`POST /api/exemplare/neue-nummern`, `frontend/src/lib/etikettenDruck.js`) und schreibt FACHKONZEPT
+§9 neu.
 
 ### 7.2 Frisches Littera-Backup
 

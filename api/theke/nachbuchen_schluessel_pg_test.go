@@ -86,7 +86,15 @@ func (w *nachbuchWelt) sitzung(req *http.Request) *http.Request {
 // onlineScan scannt das Buch an der Online-Theke; schueler "" heißt: niemand geladen.
 func (w *nachbuchWelt) onlineScan(t *testing.T, schluessel, schueler string) (int, eingabeAntwort) {
 	t.Helper()
-	body := fmt.Sprintf(`{"query":%q,"idempotency_key":%q`, w.code, schluessel)
+	code, resp, _ := w.scanne(t, w.code, schluessel, schueler)
+	return code, resp
+}
+
+// scanne scannt nummer an der Online-Theke; schueler "" heißt: niemand geladen. Neben der
+// gelesenen Antwort kommt der Rumpf, denn eine Ablehnung steht dort unter "error".
+func (w *nachbuchWelt) scanne(t *testing.T, nummer, schluessel, schueler string) (int, eingabeAntwort, string) {
+	t.Helper()
+	body := fmt.Sprintf(`{"query":%q,"idempotency_key":%q`, nummer, schluessel)
 	if schueler != "" {
 		body += fmt.Sprintf(`,"active_leser_id":%q`, schueler)
 	}
@@ -96,7 +104,7 @@ func (w *nachbuchWelt) onlineScan(t *testing.T, schluessel, schueler string) (in
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Online-Scan: Status %d, keine JSON-Antwort: %v (%s)", rec.Code, err, rec.Body.String())
 	}
-	return rec.Code, resp
+	return rec.Code, resp, rec.Body.String()
 }
 
 func (w *nachbuchWelt) eintrag(schluessel, absicht string, schueler *string, gescannt time.Time) map[string]any {

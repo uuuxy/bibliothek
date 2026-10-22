@@ -762,6 +762,12 @@ CREATE TABLE buecher_exemplare (
     -- besonderer Standort.
     standort TEXT
         CONSTRAINT chk_exemplar_standort CHECK (standort IS NULL OR (btrim(standort) <> '' AND char_length(standort) <= 255)),
+    -- Altes LMF-Etikett (Migration 166): Über diese Nummer finden Theke, Nachbuchen,
+    -- Medienkatalog, Inventur und Theken-Auskunft das Exemplar wie über barcode_id. NULL = kein
+    -- altes LMF-Etikett.
+    lmf_barcode TEXT
+        CONSTRAINT buecher_exemplare_lmf_barcode_key UNIQUE
+        CONSTRAINT chk_exemplar_lmf_barcode CHECK (lmf_barcode IS NULL OR lmf_barcode LIKE 'LMF-%'),
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -1954,7 +1960,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('162_jahrgang_unbekannt.sql'),
 ('163_klasse_entfaellt.sql'),
 ('164_elternbrief_vermerk_und_subjects_entfallen.sql'),
-('165_deutsche_sortierung.sql')
+('165_deutsche_sortierung.sql'),
+('166_lmf_barcode.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
