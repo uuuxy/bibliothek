@@ -20,14 +20,6 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// absenderKonfig liefert eine Konfiguration mit diesem Absender, wie ergaenzeSchulDomain sie
-// liest.
-func absenderKonfig(absender string) func(context.Context) (mailservice.SMTPKonfig, error) {
-	return func(context.Context) (mailservice.SMTPKonfig, error) {
-		return mailservice.SMTPKonfig{Absender: absender}, nil
-	}
-}
-
 // Ohne eingerichteten Mailversand → 503, kein Versand. Der Check
 // greift vor jeder Klassen-Query — pgxmock erwartet keine einzige.
 func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
@@ -181,6 +173,7 @@ func (a *argFaenger) Match(v any) bool {
 // werden. Würden beide gleich behandelt, löste eine leere Auswahl den größten
 // denkbaren Fehlversand aus.
 func TestLeseKlassenVersandAnfrage(t *testing.T) {
+	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
 	tests := []struct {
 		name        string
 		body        string
@@ -214,7 +207,7 @@ func TestLeseKlassenVersandAnfrage(t *testing.T) {
 			}
 			req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", body)
 
-			got, err := leseKlassenVersandAnfrage(req, absenderKonfig(""))
+			got, err := leseKlassenVersandAnfrage(req)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("leseKlassenVersandAnfrage(…) = keinen (%+v), erwartet Fehler", got)
@@ -327,6 +320,7 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 // Eine leere Auswahl darf nicht erst in der DB auffallen: Die Tür weist sie ab,
 // bevor er auch nur eine Query absetzt.
 func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
+	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
 	for _, body := range []string{`{"klassen":[]}`, `{"klassen":["5a"],"override_email":"kein-mail"}`} {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
@@ -390,43 +384,46 @@ func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testi
 	}
 }
 
-// Alle Dienstadressen der Schule liegen auf derselben Domäne. Sie jedes Mal
-// mitzutippen ist Fehlerquelle — „mueller" muss reichen. Vollständige Adressen
-// bleiben unangetastet, damit der Versand an externe Stellen möglich bleibt.
+// Alle Dienstadressen der Schule liegen auf derselben Domain. Sie jedes Mal
+// mitzutippen ist Fehlerquelle — „mueller" muss reichen. Die Domain kommt aus ihrer einen
+// Quelle, SELBSTANMELDUNG_DOMAIN. Vollständige Adressen bleiben unangetastet, damit der
+// Versand an externe Stellen möglich bleibt.
 func TestErgaenzeSchulDomain(t *testing.T) {
-	konfig := absenderKonfig("bibliothek@philipp-reis-schule.de")
+	t.Setenv("SELBSTANMELDUNG_DOMAIN", "schule.example")
 
 	tests := []struct{ eingabe, want string }{
-		{"mueller", "mueller@philipp-reis-schule.de"},
-		{"m.mueller", "m.mueller@philipp-reis-schule.de"},
+		{"mueller", "mueller@schule.example"},
+		{"m.mueller", "m.mueller@schule.example"},
 		{"extern@schulamt.hessen.de", "extern@schulamt.hessen.de"}, // vollständig → unverändert
 		{"", ""},
 	}
 	for _, tt := range tests {
-		if got := ergaenzeSchulDomain(t.Context(), tt.eingabe, konfig); got != tt.want {
+		if got := ergaenzeSchulDomain(tt.eingabe); got != tt.want {
 			t.Errorf("ergaenzeSchulDomain(%q) = %q, erwartet %q", tt.eingabe, got, tt.want)
 		}
 	}
 }
 
-// Ohne konfigurierten Absender wird nicht geraten: Die Eingabe läuft unverändert in
+// Ohne eingetragene Domain wird nicht geraten: Die Eingabe läuft unverändert in
 // die Adressprüfung und scheitert dort mit einer klaren Meldung.
-func TestErgaenzeSchulDomain_OhneAbsenderKeineRaterei(t *testing.T) {
-	if got := ergaenzeSchulDomain(t.Context(), "mueller", absenderKonfig("")); got != "mueller" {
+func TestErgaenzeSchulDomain_OhneDomainKeineRaterei(t *testing.T) {
+	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
+	if got := ergaenzeSchulDomain("mueller"); got != "mueller" {
 		t.Fatalf("ergaenzeSchulDomain = %q, erwartet unverändert %q", got, "mueller")
 	}
 }
 
 // Der Weg über den echten Rumpf: „mueller" kommt als vollständige Adresse heraus.
 func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
+	t.Setenv("SELBSTANMELDUNG_DOMAIN", "schule.example")
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail",
 		strings.NewReader(`{"klassen":["9h"],"override_email":" mueller "}`))
 
-	got, err := leseKlassenVersandAnfrage(req, absenderKonfig("bibliothek@philipp-reis-schule.de"))
+	got, err := leseKlassenVersandAnfrage(req)
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.Umleitung != "mueller@philipp-reis-schule.de" {
-		t.Fatalf("Umleitung = %q, erwartet mueller@philipp-reis-schule.de", got.Umleitung)
+	if got.Umleitung != "mueller@schule.example" {
+		t.Fatalf("Umleitung = %q, erwartet mueller@schule.example", got.Umleitung)
 	}
 }

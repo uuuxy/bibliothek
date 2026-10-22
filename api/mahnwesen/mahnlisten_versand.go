@@ -77,7 +77,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 
 		// 1. Auswahl aus dem Rumpf lesen. Fehlt der Rumpf ganz, bleibt es beim alten
 		//    Vertrag „alle überfälligen Klassen an ihre Klassenleitungen".
-		req, err := leseKlassenVersandAnfrage(r, t.Post().Konfig)
+		req, err := leseKlassenVersandAnfrage(r)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
@@ -152,7 +152,7 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 // leseKlassenVersandAnfrage liest die freiwillige Auswahl aus dem Rumpf und weist alles
 // zurück, was einen Massenversand an den falschen Empfänger schicken würde. Ein fehlender Rumpf
 // ist gültig (alle Klassen), ein kaputter nicht.
-func leseKlassenVersandAnfrage(r *http.Request, konfig func(context.Context) (mailservice.SMTPKonfig, error)) (klassenVersandAnfrage, error) {
+func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
 	var req klassenVersandAnfrage
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
 		return req, apierrors.BadRequest(apierrors.MeldungAnfrageUnlesbar, err)
@@ -161,7 +161,7 @@ func leseKlassenVersandAnfrage(r *http.Request, konfig func(context.Context) (ma
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
 	// nicht in einen „erfolgreichen" Lauf ins Leere münden, deshalb dieselbe
 	// Prüfung, die auch der Versand selbst anlegt (mailservice/mail_sender.go).
-	req.Umleitung = ergaenzeSchulDomain(r.Context(), strings.TrimSpace(req.Umleitung), konfig)
+	req.Umleitung = ergaenzeSchulDomain(strings.TrimSpace(req.Umleitung))
 	if req.Umleitung != "" {
 		if _, err := mail.ParseAddress(req.Umleitung); err != nil {
 			return req, apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine E-Mail-Adresse", req.Umleitung), err)
@@ -186,39 +186,28 @@ func leseKlassenVersandAnfrage(r *http.Request, konfig func(context.Context) (ma
 }
 
 // ergaenzeSchulDomain vervollständigt eine von Hand eingetippte Adresse ohne „@"
-// um die Domäne der Schule: „mueller" wird zu „mueller@philipp-reis-schule.de".
+// um die Domain der Schule: „mueller" wird zu „mueller@schule.example".
 //
-// Alle Dienstadressen der Schule liegen auf derselben Domäne — sie jedes Mal
+// Alle Dienstadressen der Schule liegen auf derselben Domain — sie jedes Mal
 // mitzutippen ist reine Fehlerquelle, und ein Vertipper darin fällt niemandem auf
 // (der Lauf meldet Erfolg, die Post kommt nie an).
 //
-// Die Domäne wird nicht im Code festgeschrieben, sondern aus der Absenderadresse
-// des Systems abgeleitet — derselben, mit der auch verschickt wird. Damit folgt sie
-// automatisch der Konfiguration in der Oberfläche und stimmt auch nach einem
-// Domänenwechsel noch. Ist keine konfiguriert, bleibt die Eingabe unverändert und
-// läuft in die normale Adressprüfung — lieber eine klare Fehlermeldung als eine
-// geratene Domäne.
+// Die Domain kommt aus ihrer einen Quelle, SELBSTANMELDUNG_DOMAIN: Das ist die Domain der
+// Postfächer des Kollegiums, und an sie geht der Versand. Ist keine eingetragen, bleibt die
+// Eingabe unverändert und läuft in die normale Adressprüfung — lieber eine klare
+// Fehlermeldung als eine geratene Domain.
 //
 // Eine vollständige Adresse (mit „@") bleibt unangetastet: Der Versand an eine
 // externe Stelle — Schulamt, Vertretung, private Adresse — muss möglich bleiben.
-func ergaenzeSchulDomain(ctx context.Context, eingabe string, konfig func(context.Context) (mailservice.SMTPKonfig, error)) string {
+func ergaenzeSchulDomain(eingabe string) string {
 	if eingabe == "" || strings.Contains(eingabe, "@") {
 		return eingabe
 	}
-
-	k, err := konfig(ctx)
-	if err != nil {
+	domain := auth.SelbstanmeldeDomain()
+	if domain == "" {
 		return eingabe
 	}
-	absender := k.Absender
-	if absender == "" {
-		absender = k.Benutzer
-	}
-	at := strings.LastIndex(absender, "@")
-	if at < 0 {
-		return eingabe
-	}
-	return eingabe + absender[at:]
+	return eingabe + "@" + domain
 }
 
 // nurKlassen lässt die Gruppe der Ehemaligen fallen. Sie ist keine Klasse: Ihre Liste geht

@@ -42,10 +42,6 @@ func (p *angehaltenePost) Sende(ctx context.Context, _ mailservice.Nachricht) er
 
 func (p *angehaltenePost) IstKonfiguriert(context.Context) bool { return true }
 
-func (p *angehaltenePost) Konfig(context.Context) (mailservice.SMTPKonfig, error) {
-	return mailservice.SMTPKonfig{Absender: "bibliothek@schule.invalid"}, nil
-}
-
 func TestSammelversand_EinZweiterStartWartetAufDenErsten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)

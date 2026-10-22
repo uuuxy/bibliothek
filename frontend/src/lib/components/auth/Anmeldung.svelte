@@ -54,7 +54,7 @@
 					autocomplete="email"
 					aria-label="E-Mail"
 					bind:value={authStore.loginEmail}
-					placeholder="name@philipp-reis-schule.de"
+					placeholder="Schul-E-Mail"
 					ungueltig={emailFehlt}
 					hint={emailFehlt ? 'Bitte deine Schul-E-Mail eintragen.' : ''}
 				/>

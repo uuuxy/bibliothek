@@ -2089,6 +2089,11 @@ Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben.
   (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409. Hat der Händler auf
   anderem Weg bestellt, nimmt `DELETE /api/bestellungen/{id}/mail` den Vermerk ohne Versand, nur
   bei Bestellungen ohne Bestätigungs-Link.
+- **Die Domain der Schule hat eine Quelle:** `SELBSTANMELDUNG_DOMAIN`
+  (`auth.SelbstanmeldeDomain`). Selbstanmeldung, Prüfung der Kollegiums-Adresse und Sammelversand
+  lesen sie; der Sammelversand hängt sie an einen Namen ohne „@". Die Anmeldung nimmt die volle
+  Adresse und ergänzt nichts, denn das Konto wird mit der Eingabe gesucht. Die Oberfläche nennt
+  keine Domain.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.

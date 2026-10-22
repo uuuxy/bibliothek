@@ -37,7 +37,8 @@ import (
 const selbstanmeldeDomainVariable = "SELBSTANMELDUNG_DOMAIN"
 
 // SelbstanmeldeDomain liefert die freigegebene Domain in Kleinschreibung, oder "", wenn die
-// Selbstanmeldung abgeschaltet ist.
+// Selbstanmeldung abgeschaltet ist. Sie ist die eine Quelle für die Domain der Schule: Auch die
+// Prüfung der Kollegiums-Adresse und der Sammelversand an die Klassenleitungen lesen sie.
 func SelbstanmeldeDomain() string {
 	return strings.ToLower(strings.TrimSpace(strings.TrimPrefix(
 		os.Getenv(selbstanmeldeDomainVariable), "@")))

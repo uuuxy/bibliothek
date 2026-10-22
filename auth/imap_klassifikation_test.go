@@ -24,9 +24,11 @@ import (
 // Logik.
 
 // miniIMAP startet einen Mailserver über TLS, der seine Begrüßung schickt und auf LOGIN mit
-// `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort.
-func miniIMAP(t *testing.T, antwort string) (host, port string) {
+// `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort. logins erhält
+// jede LOGIN-Zeile, wie sie ankam.
+func miniIMAP(t *testing.T, antwort string) (host, port string, logins <-chan string) {
 	t.Helper()
+	eingegangen := make(chan string, 8)
 	schluessel, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatal(err)
@@ -74,6 +76,10 @@ func miniIMAP(t *testing.T, antwort string) (host, port string) {
 					tag := strings.Fields(eingang)[0]
 					switch {
 					case strings.Contains(strings.ToUpper(eingang), "LOGIN"):
+						select {
+						case eingegangen <- eingang:
+						default:
+						}
 						if antwort == "CLOSE" {
 							return
 						}
@@ -96,17 +102,18 @@ func miniIMAP(t *testing.T, antwort string) (host, port string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return host, port
+	return host, port, eingegangen
 }
 
 // mitMiniIMAP stellt den Testserver ein und lässt a sein Wegwerf-Zertifikat zu.
-func mitMiniIMAP(t *testing.T, a *Anmeldung, antwort string) {
+func mitMiniIMAP(t *testing.T, a *Anmeldung, antwort string) <-chan string {
 	t.Helper()
-	host, port := miniIMAP(t, antwort)
+	host, port, logins := miniIMAP(t, antwort)
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
 	a.imapTLS = func(c *tls.Config) { c.InsecureSkipVerify = true } //nolint:gosec // Testserver mit Wegwerf-Zertifikat
+	return logins
 }
 
 func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
@@ -138,6 +145,21 @@ func TestPruefeIMAPAnmeldung_OKMeldetErfolg(t *testing.T) {
 	mitMiniIMAP(t, a, "OK LOGIN completed")
 	if err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "richtig"); err != nil {
 		t.Fatalf("OK vom Server muss Erfolg sein: %v", err)
+	}
+}
+
+// Ein Name ohne „@" geht so an den Mailserver, wie er eingegeben wurde. Die Domain der Schule
+// steht nicht im Code: Ihre eine Quelle ist SELBSTANMELDUNG_DOMAIN, und eine hier angehängte
+// Domain fände danach ohnehin kein Konto, weil die Kontosuche die Eingabe nimmt.
+func TestPruefeIMAPAnmeldung_HaengtKeineDomainAn(t *testing.T) {
+	a := &Anmeldung{}
+	logins := mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
+	if err := a.pruefeIMAPAnmeldung(context.Background(), "nberger", "egal"); !errors.Is(err, errAnmeldungAbgelehnt) {
+		t.Fatalf("a.pruefeIMAPAnmeldung(…) = %v, erwartet errAnmeldungAbgelehnt", err)
+	}
+	zeile := <-logins
+	if felder := strings.Fields(zeile); len(felder) < 3 || felder[2] != "nberger" && felder[2] != `"nberger"` {
+		t.Fatalf("LOGIN-Zeile = %q, erwartet den Namen „nberger“ ohne Domain", zeile)
 	}
 }
 

@@ -39,7 +39,6 @@ type Basis struct {
 type Mailversand interface {
 	Sende(context.Context, mailservice.Nachricht) error
 	IstKonfiguriert(context.Context) bool
-	Konfig(context.Context) (mailservice.SMTPKonfig, error)
 }
 
 // Post liefert, worüber die Tür Mails verschickt. Ohne eingerichteten Versand lehnt er jede Mail
@@ -58,10 +57,6 @@ func (ohneMailversand) Sende(context.Context, mailservice.Nachricht) error {
 }
 
 func (ohneMailversand) IstKonfiguriert(context.Context) bool { return false }
-
-func (ohneMailversand) Konfig(context.Context) (mailservice.SMTPKonfig, error) {
-	return mailservice.SMTPKonfig{}, nil
-}
 
 // Jetzt ist die Uhr des Servers: in Tests setzbar (Basis.Uhr), sonst die Schulzeit.
 func (b *Basis) Jetzt() time.Time {

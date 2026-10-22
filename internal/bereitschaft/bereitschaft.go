@@ -67,8 +67,8 @@ type Lage struct {
 
 	// Anmeldung
 	IMAPHost string
-	// SelbstanmeldeDomain ist SELBSTANMELDUNG_DOMAIN. Leer heißt, das Kollegium muss von Hand
-	// angelegt werden (auth/selbstanmeldung.go).
+	// SelbstanmeldeDomain ist SELBSTANMELDUNG_DOMAIN, die Domain der Schule. Leer heißt, das
+	// Kollegium muss von Hand angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
 	// VertrauteProxys sind die Einträge aus TRUSTED_PROXIES, wie der Server sie bekommen hat;
 	// einen unlesbaren übergeht er (clientip.NewErmittler).

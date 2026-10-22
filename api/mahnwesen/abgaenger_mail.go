@@ -47,7 +47,7 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		req, err := leseKlassenVersandAnfrage(r, t.Post().Konfig)
+		req, err := leseKlassenVersandAnfrage(r)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return

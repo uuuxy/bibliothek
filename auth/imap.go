@@ -225,16 +225,15 @@ func (a *Anmeldung) imapVerbindungsdaten(host string) (string, *tls.Config) {
 // pruefeIMAPAnmeldung prüft E-Mail-Adresse und Passwort am Mailserver der Schule, über TLS ab
 // der ersten Zeile (Port 993, sofern IMAP_PORT nichts anderes sagt). ctx kommt von der Tür der
 // Anmeldung; die eigene Frist imapFrist liegt darunter.
+//
+// Die Adresse geht unverändert an den Mailserver. Eine hier ergänzte Domain hülfe nicht: Das Konto
+// wird danach mit der Eingabe gesucht, und jedes Konto trägt eine vollständige Adresse.
 func (a *Anmeldung) pruefeIMAPAnmeldung(ctx context.Context, email, passwort string) error {
 	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
 	if entschieden, err := imapOhneServer(host); entschieden {
 		return err
 	}
 
-	// Ein Name ohne @ ist der Benutzername an der Schule und bekommt ihre Domain.
-	if !strings.Contains(email, "@") {
-		email = fmt.Sprintf("%s@philipp-reis-schule.de", email)
-	}
 	adresse, tlsKonfig := a.imapVerbindungsdaten(host)
 
 	ctx, cancel := context.WithTimeout(ctx, imapFrist)

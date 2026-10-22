@@ -26,14 +26,15 @@ func pruefeAnmeldung(l Lage, echt bool) Befund {
 // pruefeSelbstanmeldung meldet eine leere SELBSTANMELDUNG_DOMAIN. Ohne sie wird eine
 // Lehrkraft ohne Konto auch mit richtigem Passwort abgewiesen und nach fünf Versuchen
 // gesperrt, was wie ein Tippfehler aussieht; der Start schreibt es nur ins Log
-// (auth.SelbstanmeldungStatus). Eine Warnung, weil die Schule die Konten auch von Hand
-// anlegen kann und es nur wissen soll.
+// (auth.SelbstanmeldungStatus). Sie ist auch die Domain, die der Sammelversand an einen Namen
+// ohne „@" hängt. Eine Warnung, weil die Schule die Konten auch von Hand anlegen und volle
+// Adressen tippen kann und es nur wissen soll.
 func pruefeSelbstanmeldung(l Lage) Befund {
 	b := Befund{Bereich: "Selbstanmeldung Kollegium"}
 	if l.SelbstanmeldeDomain == "" {
 		b.Stufe = StufeWarnung
 		b.Befund = "SELBSTANMELDUNG_DOMAIN ist leer — Lehrkräfte können sich nicht selbst anmelden."
-		b.Folge = "Eine Lehrkraft ohne Konto bekommt trotz richtigem Passwort „Anmeldung fehlgeschlagen“; jedes Kollegiums-Konto muss unter Benutzer & Rechte von Hand angelegt werden."
+		b.Folge = "Eine Lehrkraft ohne Konto bekommt trotz richtigem Passwort „Anmeldung fehlgeschlagen“; jedes Kollegiums-Konto muss unter Benutzer & Rechte von Hand angelegt werden. Im Sammelversand an die Klassenleitungen braucht eine abweichende Adresse die volle Domain."
 		b.Abhilfe = "Die Schul-Maildomain eintragen (z. B. SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de). Neue Konten entstehen dann inaktiv und werden unter Benutzer & Rechte freigeschaltet."
 		return b
 	}

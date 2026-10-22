@@ -55,11 +55,6 @@ func KonfigAusDatenbank(pool db.Pool) func(context.Context) (SMTPKonfig, error) 
 	}
 }
 
-// Konfig liefert die Konfiguration, mit der der nächste Versand ginge.
-func (p *Postausgang) Konfig(ctx context.Context) (SMTPKonfig, error) {
-	return p.konfig(ctx)
-}
-
 // IstKonfiguriert meldet, ob ein Versand versucht werden kann. Die Türen fragen damit die
 // Konfiguration ab, die wirklich benutzt wird, statt os.Getenv("SMTP_HOST"); sonst meldeten sie
 // „SMTP nicht konfiguriert", während in der Oberfläche ein Server steht, und umgekehrt.

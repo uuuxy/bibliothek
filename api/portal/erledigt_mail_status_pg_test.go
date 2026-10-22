@@ -34,10 +34,6 @@ func (a mailAttrappe) Sende(_ context.Context, m mailservice.Nachricht) error { 
 
 func (mailAttrappe) IstKonfiguriert(context.Context) bool { return true }
 
-func (mailAttrappe) Konfig(context.Context) (mailservice.SMTPKonfig, error) {
-	return mailservice.SMTPKonfig{}, nil
-}
-
 // versandAntwortet lässt jeden Versand mit fehler antworten (nil heißt: verschickt).
 func versandAntwortet(fehler error) mailAttrappe {
 	return mailAttrappe{sende: func(mailservice.Nachricht) error { return fehler }}

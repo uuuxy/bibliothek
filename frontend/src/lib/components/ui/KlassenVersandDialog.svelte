@@ -76,8 +76,8 @@
 	// Erlaubt sind ZWEI Formen: der blosse Namensteil („mueller") und die vollständige
 	// Adresse („extern@schulamt.hessen.de"). Alle Dienstadressen der Schule liegen auf
 	// derselben Domäne; sie jedes Mal mitzutippen ist nur Fehlerquelle. Ergänzt wird
-	// serverseitig aus der Absenderadresse des Systems — die Domäne steht bewusst
-	// nirgends im Frontend, sonst wäre sie beim nächsten Domänenwechsel falsch.
+	// serverseitig aus SELBSTANMELDUNG_DOMAIN — die Domäne steht bewusst nirgends im
+	// Frontend, sonst wäre sie beim nächsten Domänenwechsel falsch.
 	const emailGetrimmt = $derived(overrideEmail.trim());
 	const emailOk = $derived(
 		emailGetrimmt === '' ||
