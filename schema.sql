@@ -1961,7 +1961,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('163_klasse_entfaellt.sql'),
 ('164_elternbrief_vermerk_und_subjects_entfallen.sql'),
 ('165_deutsche_sortierung.sql'),
-('166_lmf_barcode.sql')
+('166_lmf_barcode.sql'),
+('167_lmf_kurze_nummer.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

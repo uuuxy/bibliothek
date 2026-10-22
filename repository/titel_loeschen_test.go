@@ -79,8 +79,8 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	// Exemplare nur über diese Spur.
 	mock.ExpectQuery("FROM buecher_exemplare e WHERE e.titel_id").
 		WithArgs(titelID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "war_im_bestand"}).
-			AddRow("ex-1", "B-00001", true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "lmf_barcode", "war_im_bestand"}).
+			AddRow("ex-1", "B-00001", "", true))
 	// Offene Forderungen vor dem Löschen ins Protokoll: Ein unbezahlter Schadensfall ist Geld,
 	// das ein Leser schuldet, und verschwände sonst mit dem Titel.
 	mock.ExpectQuery("FROM schadensfaelle sf").

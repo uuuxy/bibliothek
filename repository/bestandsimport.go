@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -146,11 +147,18 @@ func pruefeImportNummernGegenAusweise(ctx context.Context, tx pgx.Tx, exemplare 
 // etikettiert: Der Import übernimmt Bestand, der sein Etikett trägt, und ohne das stünde jedes
 // im Druck-Center als offen. Das Zugangsdatum kommt aus der Vorgabe der Spalte, dem Kalendertag
 // der Schule; den Standort erbt ein Exemplar von den Exemplaren seines Titels.
+//
+// Ein Exemplar mit LMF-Nummer bekommt eine kurze Nummer (kurzeNummernFuerLMF), die LMF-Nummer
+// steht in lmf_barcode: Sein Etikett scannt weiter, ein neues trägt die kurze Nummer.
 func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExemplar) (angelegt, vorhanden int, err error) {
 	if len(exemplare) == 0 {
 		return 0, 0, nil
 	}
 	if err := pruefeImportNummernGegenAusweise(ctx, tx, exemplare); err != nil {
+		return 0, 0, err
+	}
+	kurz, err := kurzeNummernFuerLMF(ctx, tx, exemplare)
+	if err != nil {
 		return 0, 0, err
 	}
 
@@ -159,13 +167,33 @@ func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExe
 		VALUES ($1, $2, $3, NULLIF($4, ''), true, ` + SQLGeerbterStandort("$1::uuid") + `)
 		ON CONFLICT (barcode_id) DO NOTHING
 	`
+	anlegenMitLMF := `
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, lmf_barcode, ist_ausleihbar, zustand_notiz, etikett_gedruckt, standort)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), true, ` + SQLGeerbterStandort("$1::uuid") + `)
+		ON CONFLICT (lmf_barcode) DO NOTHING
+	`
 	batch := &pgx.Batch{}
+	var eingereiht []ImportExemplar
 	for _, e := range exemplare {
-		batch.Queue(anlegen, e.TitelID, e.Barcode, e.IstAusleihbar, e.ZustandNotiz)
+		lmf, istLMF := lmfNummer(e.Barcode)
+		switch {
+		case !istLMF:
+			batch.Queue(anlegen, e.TitelID, e.Barcode, e.IstAusleihbar, e.ZustandNotiz)
+		case kurz[lmf] != "":
+			// Nennt die Datei dieselbe LMF-Nummer noch einmal, greift ON CONFLICT (lmf_barcode).
+			batch.Queue(anlegenMitLMF, e.TitelID, kurz[lmf], lmf, e.IstAusleihbar, e.ZustandNotiz)
+		default:
+			vorhanden++
+			continue
+		}
+		eingereiht = append(eingereiht, e)
+	}
+	if len(eingereiht) == 0 {
+		return 0, vorhanden, nil
 	}
 
 	br := tx.SendBatch(ctx, batch)
-	for _, e := range exemplare {
+	for _, e := range eingereiht {
 		tag, fehler := br.Exec()
 		if fehler != nil {
 			closeutil.Schliesse(br, "copy insert batch")
@@ -181,4 +209,64 @@ func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExe
 		return 0, 0, fmt.Errorf("failed to close copy insert batch: %w", err)
 	}
 	return angelegt, vorhanden, nil
+}
+
+// lmfVorsilbe beginnt die Nummer eines LMF-Etiketts (LMF-, ISBN-13, laufende Nummer).
+const lmfVorsilbe = "LMF-"
+
+// lmfNummer erkennt die Nummer eines LMF-Etiketts und schreibt die Vorsilbe groß, wie der Scan
+// sie liefert (normalisiereScan in frontend/src/lib/scanEinordnen.js).
+func lmfNummer(nummer string) (string, bool) {
+	if len(nummer) <= len(lmfVorsilbe) || !strings.EqualFold(nummer[:len(lmfVorsilbe)], lmfVorsilbe) {
+		return "", false
+	}
+	return lmfVorsilbe + nummer[len(lmfVorsilbe):], true
+}
+
+// kurzeNummernFuerLMF gibt jeder LMF-Nummer der Datei, die noch kein Exemplar trägt, eine kurze
+// Nummer aus barcode_seq (ZieheFreieExemplarBarcodes). Gezogen wird nur für diese: Ein zweiter
+// Lauf derselben Datei verbraucht keine Nummern.
+func kurzeNummernFuerLMF(ctx context.Context, tx pgx.Tx, exemplare []ImportExemplar) (map[string]string, error) {
+	var lmf []string
+	gesehen := map[string]bool{}
+	for _, e := range exemplare {
+		if n, ok := lmfNummer(e.Barcode); ok && !gesehen[n] {
+			gesehen[n] = true
+			lmf = append(lmf, n)
+		}
+	}
+	if len(lmf) == 0 {
+		return nil, nil
+	}
+
+	rows, err := tx.Query(ctx, `
+		SELECT lmf_barcode FROM buecher_exemplare WHERE lmf_barcode = ANY($1)
+		UNION
+		SELECT barcode_id FROM buecher_exemplare WHERE barcode_id = ANY($1)`, lmf)
+	if err != nil {
+		return nil, fmt.Errorf("lmf-nummern prüfen: %w", err)
+	}
+	getragen, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("lmf-nummern prüfen: %w", err)
+	}
+	for _, n := range getragen {
+		delete(gesehen, n)
+	}
+	var neu []string
+	for _, n := range lmf {
+		if gesehen[n] {
+			neu = append(neu, n)
+		}
+	}
+
+	nummern, err := ZieheFreieExemplarBarcodes(ctx, tx, len(neu))
+	if err != nil {
+		return nil, fmt.Errorf("kurze nummern für lmf-exemplare: %w", err)
+	}
+	kurz := make(map[string]string, len(neu))
+	for i, n := range neu {
+		kurz[n] = nummern[i]
+	}
+	return kurz, nil
 }

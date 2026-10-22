@@ -98,8 +98,8 @@ type titelVorDemLoeschen struct {
 }
 
 type titelExemplar struct {
-	id, barcode  string
-	warImBestand bool
+	id, barcode, lmfBarcode string
+	warImBestand            bool
 }
 
 // leseTitelVorDemLoeschen liest die Angaben fürs Protokoll und lehnt ab, solange ein Exemplar
@@ -153,20 +153,20 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string)
 	return nil
 }
 
-// leseTitelExemplare liest Kennung und Barcode jedes Exemplars vor dem Löschen. Die
-// Theken-Auskunft findet gelöschte Exemplare nur über Protokollzeilen mit
+// leseTitelExemplare liest Kennung, Barcode und altes LMF-Etikett jedes Exemplars vor dem
+// Löschen. Die Theken-Auskunft findet gelöschte Exemplare nur über Protokollzeilen mit
 // tabelle='buecher_exemplare' und details->>'barcode_id' (FindeThekenExemplare); ohne sie
 // hieße ein später gescanntes Buch „nie gesehen" statt „gelöscht am …".
 func leseTitelExemplare(ctx context.Context, tx pgx.Tx, titelID string) ([]titelExemplar, error) {
 	var exemplare []titelExemplar
 	rows, err := tx.Query(ctx,
-		`SELECT e.id::text, e.barcode_id, `+SQLWarImBestand+` FROM buecher_exemplare e WHERE e.titel_id = $1`, titelID)
+		`SELECT e.id::text, e.barcode_id, coalesce(e.lmf_barcode, ''), `+SQLWarImBestand+` FROM buecher_exemplare e WHERE e.titel_id = $1`, titelID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
 	}
 	for rows.Next() {
 		var s titelExemplar
-		if err := rows.Scan(&s.id, &s.barcode, &s.warImBestand); err != nil {
+		if err := rows.Scan(&s.id, &s.barcode, &s.lmfBarcode, &s.warImBestand); err != nil {
 			rows.Close()
 			return nil, fmt.Errorf("failed to scan copy snapshot: %w", err)
 		}
@@ -208,13 +208,15 @@ func protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVor
 	}
 	kontext := "Titel gelöscht — Exemplar mit entfernt"
 	for _, ex := range vorher.exemplare {
+		details := map[string]any{
+			"barcode_id": ex.barcode, "titel": vorher.titel, "titel_id": vorher.id,
+			"action": ProtokollAktionTitelGeloescht, ProtokollDetailWarImBestand: ex.warImBestand,
+		}
+		MerkeLMFBarcode(details, ex.lmfBarcode)
 		if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: ex.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
-			Details: map[string]any{
-				"barcode_id": ex.barcode, "titel": vorher.titel, "titel_id": vorher.id,
-				"action": ProtokollAktionTitelGeloescht, ProtokollDetailWarImBestand: ex.warImBestand,
-			},
+			Details: details,
 		}); err != nil {
 			return err
 		}
@@ -237,7 +239,18 @@ const (
 	// ProtokollDetailWarImBestand steht an jeder dieser Spuren: ob das Exemplar ein Zugangsdatum
 	// trug. Ein bestelltes, nie eingetroffenes Exemplar zählt das Abgangsbuch damit nicht.
 	ProtokollDetailWarImBestand = "war_im_bestand"
+	// ProtokollDetailLMFBarcode nennt das alte LMF-Etikett des Exemplars (lmf_barcode), wenn es
+	// eins hatte; die Theken-Auskunft findet das gelöschte Exemplar auch darüber.
+	ProtokollDetailLMFBarcode = "lmf_barcode"
 )
+
+// MerkeLMFBarcode trägt das alte LMF-Etikett in die Spur eines gelöschten Exemplars ein, wenn es
+// eins hatte (ProtokollDetailLMFBarcode).
+func MerkeLMFBarcode(details map[string]any, lmfBarcode string) {
+	if lmfBarcode != "" {
+		details[ProtokollDetailLMFBarcode] = lmfBarcode
+	}
+}
 
 // Die Merker der Spuren, die eine Titel-Löschung zu einer Person hinterlässt. Konstanten aus
 // demselben Grund: Das Auskunftsblatt nennt den Vorgang über sie in Worten

@@ -28,8 +28,8 @@ func TestLoescheTitel(t *testing.T) {
 		// gelöschte Exemplare nur über diese Spur.
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}).
-				AddRow("ex-1", "BC-1", "Titel Eins", true))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "lmf_barcode", "titel", "war_im_bestand"}).
+				AddRow("ex-1", "BC-1", "", "Titel Eins", true))
 		// Die drei Kinder des Titels über CASCADE: Vormerkungen, Reservierungen und Zuordnungen von
 		// Klassensätzen.
 		mock.ExpectQuery(`FROM vormerkungen v`).

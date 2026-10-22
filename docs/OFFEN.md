@@ -23,8 +23,9 @@ geführt wird, steht am Ende.
   LMF-Nummer; sein altes Etikett scannt weiter. Entschieden am 22.10.2026. (5.94)
 - [x] Stufe 1: Ein altes LMF-Etikett führt an der Theke (auch ohne Netz), im Medienkatalog, in der
   Inventur und im Druck-Center zu seinem Exemplar. (5.94)
-- [ ] Stufe 2: Die Exemplare mit LMF-Nummer bekommen eine kurze Nummer, auch beim Import. (5.94)
-- [ ] Stufe 3: Die Rückfrage „Neue Nummer vergeben?" beim Drucken entfällt. (5.94)
+- [x] Stufe 2: Die Exemplare mit LMF-Nummer bekommen eine kurze Nummer, auch beim Import. (5.94)
+- [ ] Stufe 3: Die Rückfrage „Neue Nummer vergeben?" beim Drucken entfällt, und eine LMF-Nummer ist
+  nie mehr die Nummer eines Exemplars. (5.94)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -113,13 +114,13 @@ trägt ein neues Etikett keinen Vermerk.
 ### 5.94 Kurze Nummern für LMF-Bücher
 
 Die alte LMF-Nummer steht in `buecher_exemplare.lmf_barcode` (Migration 166) und führt über
-`repository.FindeExemplar`, die Inventur und die Theken-Auskunft zum Exemplar. Am Testserver tragen
-4.065 Exemplare noch eine LMF-Nummer als eigene Nummer (7.2, Punkt 8). Nächste Schritte:
-Stufe 2 gibt ihnen Nummern aus `barcode_seq` und legt die LMF-Nummer nach `lmf_barcode`, für den
-Bestand per Migration, beim Bestands-Import schon beim Anlegen; danach nimmt `barcode_id` keine
-LMF-Nummer mehr an. Stufe 3 nimmt die Rückfrage beim Drucken heraus (`buchetikett.IstDruckbar`,
-`POST /api/exemplare/neue-nummern`, `frontend/src/lib/etikettenDruck.js`) und schreibt FACHKONZEPT
-§9 neu.
+`repository.FindeExemplar`, die Inventur und die Theken-Auskunft zum Exemplar. Migration 167 gibt
+jedem Exemplar mit LMF-Nummer eine kurze aus `barcode_seq`, der Bestands-Import tut es beim
+Anlegen (`repository.LegeImportExemplareAn`). Nächster Schritt, Stufe 3: Eine Regel der Datenbank
+verbietet eine LMF-Nummer in `barcode_id`, und der Barcode-Editor nennt die Ablehnung. Danach
+entfallen die Rückfrage beim Drucken (`buchetikett.IstDruckbar`, `POST /api/exemplare/neue-nummern`,
+`frontend/src/lib/etikettenDruck.js`) und der Vorrang der eigenen Nummer in `FindeExemplar`;
+FACHKONZEPT §9 wird neu geschrieben.
 
 ### 7.2 Frisches Littera-Backup
 

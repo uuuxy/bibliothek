@@ -31,8 +31,8 @@ type EtikettExemplar struct {
 }
 
 // LadeEtikettenExemplare liefert die Exemplare eines Status (offen, erledigt, alle), die
-// neuesten zuerst und höchstens limit Zeilen; suche filtert über Titel und Barcode. Scheitert
-// das Lesen der Zeilen, trägt der Fehler ErrZeileUnlesbar.
+// neuesten zuerst und höchstens limit Zeilen; suche filtert über Titel, Barcode und ein altes
+// LMF-Etikett. Scheitert das Lesen der Zeilen, trägt der Fehler ErrZeileUnlesbar.
 func LadeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche string, limit int) ([]EtikettExemplar, error) {
 	statusBedingung := etikettenStatusBedingung(status)
 	rows, err := db.Query(ctx, `
@@ -41,7 +41,8 @@ func LadeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche str
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE `+statusBedingung+`
-			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%')
+			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%'
+			       OR e.lmf_barcode ILIKE '%' || $1 || '%')
 			ORDER BY COALESCE(e.zugang_am, e.erworben_am) DESC, e.erstellt_am DESC, e.barcode_id
 			LIMIT $2
 		`, suche, limit)
@@ -75,7 +76,8 @@ func ZaehleEtikettenExemplare(ctx context.Context, db Datenbank, status string, 
 			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE `+etikettenStatusBedingung(status)+`
 			  AND ($1::date IS NULL OR COALESCE(e.zugang_am, e.erworben_am) <= $1)
-			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%')`,
+			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%'
+			       OR e.lmf_barcode ILIKE '%' || $2 || '%')`,
 		bis, suche,
 	).Scan(&anzahl)
 	return anzahl, err

@@ -118,7 +118,7 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 	}
 
 	rows, err := a.db.Query(ctx, `
-		SELECT e.id, e.barcode_id, t.titel, `+SQLWarImBestand+`
+		SELECT e.id, e.barcode_id, coalesce(e.lmf_barcode, ''), t.titel, `+SQLWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.id = ANY($1) AND e.ist_ausgesondert = true AND e.aussonderung_grund = 'VERLUST'
@@ -127,13 +127,13 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 		return nil, fmt.Errorf("zu löschende Verlust-Exemplare lesen fehlgeschlagen: %w", err)
 	}
 	type snapshot struct {
-		id, barcode, titel string
-		warImBestand       bool
+		id, barcode, lmfBarcode, titel string
+		warImBestand                   bool
 	}
 	var treffer []snapshot
 	for rows.Next() {
 		var s snapshot
-		if err := rows.Scan(&s.id, &s.barcode, &s.titel, &s.warImBestand); err != nil {
+		if err := rows.Scan(&s.id, &s.barcode, &s.lmfBarcode, &s.titel, &s.warImBestand); err != nil {
 			rows.Close()
 			return nil, fmt.Errorf("verlust-exemplar lesen fehlgeschlagen: %w", err)
 		}
@@ -182,14 +182,16 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 	}
 
 	for _, s := range treffer {
+		details := map[string]any{
+			"barcode_id": s.barcode, "titel": s.titel,
+			"action": ProtokollAktionVerlustEndgueltigGeloescht, ProtokollDetailWarImBestand: s.warImBestand,
+		}
+		MerkeLMFBarcode(details, s.lmfBarcode)
 		if err := schreibeProtokollEintrag(ctx, a.db, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: s.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER",
 			Kontext: zeigerAuf("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
-			Details: map[string]any{
-				"barcode_id": s.barcode, "titel": s.titel,
-				"action": ProtokollAktionVerlustEndgueltigGeloescht, ProtokollDetailWarImBestand: s.warImBestand,
-			},
+			Details: details,
 		}); err != nil {
 			return nil, err
 		}

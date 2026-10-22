@@ -128,11 +128,12 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 }
 
 // exemplarSnapshot ist das, was die Theken-Auskunft nach dem Löschen noch braucht:
-// die Exemplar-ID als datensatz_id, der Barcode als Suchschlüssel, der Titel als
-// Anzeige der Trefferzeile.
+// die Exemplar-ID als datensatz_id, Barcode und altes LMF-Etikett als Suchschlüssel, der Titel
+// als Anzeige der Trefferzeile.
 type exemplarSnapshot struct {
 	ID           string
 	Barcode      string
+	LMFBarcode   string
 	Titel        string
 	WarImBestand bool
 }
@@ -145,7 +146,7 @@ type exemplarSnapshot struct {
 // Scannen „nie gesehen" statt „gelöscht am …".
 func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
 	zeilen, err := tx.Query(ctx, `
-		SELECT e.id, e.barcode_id, t.titel, `+repository.SQLWarImBestand+`
+		SELECT e.id, e.barcode_id, coalesce(e.lmf_barcode, ''), t.titel, `+repository.SQLWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.titel_id = ANY($1::uuid[])
@@ -158,7 +159,7 @@ func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exem
 	var schnappschuesse []exemplarSnapshot
 	for zeilen.Next() {
 		var s exemplarSnapshot
-		if err := zeilen.Scan(&s.ID, &s.Barcode, &s.Titel, &s.WarImBestand); err != nil {
+		if err := zeilen.Scan(&s.ID, &s.Barcode, &s.LMFBarcode, &s.Titel, &s.WarImBestand); err != nil {
 			return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
 		}
 		schnappschuesse = append(schnappschuesse, s)
@@ -174,13 +175,15 @@ func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exem
 // alle drei Wege gleich findet. Läuft in der Transaktion der Löschung.
 func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, schnappschuesse []exemplarSnapshot) error {
 	for _, s := range schnappschuesse {
-		details, err := json.Marshal(map[string]any{
+		spur := map[string]any{
 			"barcode_id": s.Barcode,
 			"titel":      s.Titel,
 			"action":     repository.ProtokollAktionTitelGeloescht,
 
 			repository.ProtokollDetailWarImBestand: s.WarImBestand,
-		})
+		}
+		repository.MerkeLMFBarcode(spur, s.LMFBarcode)
+		details, err := json.Marshal(spur)
 		if err != nil {
 			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)
 		}
