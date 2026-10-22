@@ -30,8 +30,9 @@ type gesperrteNummer struct{ id, nummer string }
 //
 // Das Etikett steht danach aus (etikett_gedruckt = false), weil die neue Nummer noch an keinem
 // Buch klebt; bricht der Druck ab, führt die Liste „Fehlende Etiketten" zu dem Exemplar. Je
-// Exemplar steht ein Eintrag mit beiden Nummern und der Person im Protokoll, damit sich ein altes
-// Etikett, das noch auftaucht, seinem Exemplar zuordnen lässt.
+// Exemplar steht ein Eintrag mit beiden Nummern und der Person im Protokoll. Die Theken-Auskunft
+// liest ihn nicht, sie sucht dort nur gelöschte Exemplare (FindeThekenExemplare): Ein altes
+// Etikett, das noch auftaucht, führt nur über eine Abfrage an audit_log zu seinem Exemplar.
 func VergebeNeueNummern(ctx context.Context, q Datenbank, nummern []string, bearbeiterID string) (map[string]string, error) {
 	if bearbeiterID == "" {
 		return nil, errNeueNummerOhneBearbeiter
