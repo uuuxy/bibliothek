@@ -2054,7 +2054,10 @@ Endpunkt für die Etiketten eines Titels oder eines Exemplars gibt es nicht. Die
 `buchetikett.PDFEtiketten` füllt die Eingabe der Erzeuger (`pdf.BuchEtikett`) für beide. Ein
 neues Feld gehört an beide Wege; `buchetikett.TestEtikettenDatenSindAufBeidenWegenGleich`
 vergleicht sie, und `api/druck/etikettenbogen_serverfelder_pg_test.go` prüft den gedruckten Text
-des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben.
+des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden Feld dieselben. Einen
+Auftrag mit einer LMF-Nummer lehnt `POST /api/print/labels` mit 409 ab und nennt die Nummern
+(`buchetikett.IstDruckbar`); das Druck-Center fragt dann nach kurzen Nummern und druckt mit ihnen
+(`frontend/src/lib/etikettenDruck.js`, `POST /api/exemplare/neue-nummern`).
 
 ---
 

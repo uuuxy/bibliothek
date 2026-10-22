@@ -412,6 +412,14 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
   Programms, Code 128 mit den 13 Ziffern der Nummer darunter. Ein Nachbau des alten Etiketts
   ist es nicht; der Scanwert ist derselbe. Der Etikett-Knopf der Exemplarkarte steht bei jeder
   Nummer außer den Platzhaltern `AUTO-…` und `SYS-…` und übergibt an das Druck-Center.
+- **Nachdruck für ein Lernmittel mit LMF-Nummer** (entschieden am 22.10.2026): Eine LMF-Nummer
+  (`LMF-`, ISBN-13, laufende Nummer) kommt auf kein neues Etikett, weil ihr Strichcode dort Striche
+  von 0,16 mm hätte. Enthält ein Druckauftrag eine, lehnt der Server ihn ab und nennt die Nummern;
+  das Druck-Center fragt, ob die Exemplare kurze Nummern aus `barcode_seq` bekommen
+  (`POST /api/exemplare/neue-nummern`), und druckt dann mit ihnen. Das alte Etikett lässt sich
+  danach nicht mehr scannen und wird überklebt. Bis das neue gedruckt ist, steht das Exemplar
+  unter „Fehlende Etiketten"; das Protokoll nennt alte und neue Nummer und die Person. Alle
+  anderen LMF-Exemplare behalten ihre Nummer und bleiben scannbar.
 - **Ausweise:** Der Reiter _Schülerausweise_ ist der Designer — Vorlagen, Vorder- und
   Rückseite, Elemente wie Name, Gültigkeit, Logo, Passbild, Strichcode und Farbfläche. Das
   Design gilt für alle Arbeitsplätze: Es liegt am Server (`/api/ausweis-layout`), speichern

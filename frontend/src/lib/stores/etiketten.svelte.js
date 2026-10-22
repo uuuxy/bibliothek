@@ -8,35 +8,7 @@ import { snackbars } from './snackbars.svelte.js';
 import { normalisiereScan } from '../scanEinordnen.js';
 import { dekodiereLitteraEtikett } from '../litteraEtikett.js';
 import { ohnePruefzeichen } from '../code39Pruefzeichen.js';
-
-// Bewusst im Modul-Scope und nicht im Store: Die Funktion greift auf nichts aus
-// dem Store zu — nur auf apiFetch und ihr Argument. Innen definiert wurde sie bei
-// jedem erzeugeEtikettenStore() neu angelegt (sonarjs S7721).
-/**
- * Bucht den Druck gegen, damit die Nachdruck-Liste die Exemplare loswird.
- *
- * Gemessen wird am erzeugten PDF, nicht am Papier — mehr weiss der Browser nicht. Wer
- * den Ausdruck abbricht, findet das Exemplar über die Suche im Nachdruck wieder.
- *
- * Scheitert der Vermerk, bleibt der Druck trotzdem gültig: Das PDF ist bereits offen,
- * und ein Fehler an dieser Stelle darf ihn nicht als fehlgeschlagen erscheinen lassen.
- * Der Preis ist ein Exemplar, das erneut auf der Liste steht — harmlos gegenüber einem
- * Etikett, das niemand mehr nachdruckt.
- * @param {Array<{barcode_id?: string}>} gedruckt
- */
-async function vermerkeGedruckt(gedruckt) {
-	const barcodes = gedruckt.map((l) => l.barcode_id).filter(Boolean);
-	if (barcodes.length === 0) return;
-	try {
-		await apiFetch('/api/exemplare/etiketten-gedruckt', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ barcode_ids: barcodes })
-		});
-	} catch (err) {
-		console.error('Etiketten konnten nicht als gedruckt vermerkt werden', err);
-	}
-}
+import { druckeBogen } from '../etikettenDruck.js';
 
 function erzeugeEtikettenStore() {
 	let suche = $state('');
@@ -282,39 +254,23 @@ function erzeugeEtikettenStore() {
 		}
 	}
 
-	async function drucke() {
-		const zuDrucken = bogen.filter((l) => !l.isBlank);
-		if (zuDrucken.length === 0) return;
+	/** Druckt den Bogen; bekommen Exemplare dabei kurze Nummern, stehen sie auch hier. */
+	function drucke() {
+		const bogenDaten = { formatId, startFeld, alsQR: barcodeArt === 'qr' };
+		return druckeBogen(
+			bogenDaten,
+			bogen.filter((l) => !l.isBlank),
+			ersetzeNummern
+		);
+	}
 
-		try {
-			const res = await apiFetch('/api/print/labels', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					formatId: formatId,
-					startPosition: startFeld,
-					isQR: barcodeArt === 'qr',
-					items: zuDrucken.map((l) => ({
-						BarcodeID: l.barcode_id,
-						Titel: l.titel,
-						Autor: l.autor
-					}))
-				})
-			});
-
-			if (res.ok) {
-				const blob = await res.blob();
-				const url = window.URL.createObjectURL(blob);
-				window.open(url, '_blank');
-				await vermerkeGedruckt(zuDrucken);
-			} else {
-				console.error('Fehler beim Erstellen des PDFs');
-				snackbars.addToast('Fehler beim Erstellen des PDFs', 'error');
-			}
-		} catch (err) {
-			console.error('Netzwerkfehler beim Drucken', err);
-			snackbars.addToast('Fehler beim Senden der Daten', 'error');
-		}
+	/** @param {Record<string, string>} zuordnung alte Nummer → neue */
+	function ersetzeNummern(zuordnung) {
+		const neu = (/** @type {any} */ e) =>
+			zuordnung[e.barcode_id] ? { ...e, barcode_id: zuordnung[e.barcode_id] } : e;
+		if (druckWarteschlange.copies) druckWarteschlange.copies = druckWarteschlange.copies.map(neu);
+		for (const ex of vorhandeneExemplare)
+			if (zuordnung[ex.barcode_id]) ex.barcode_id = zuordnung[ex.barcode_id];
 	}
 
 	return /** @satisfies {object} */ ({

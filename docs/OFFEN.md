@@ -15,8 +15,10 @@ geführt wird, steht am Ende.
 - [x] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
 - [x] Drei kleine Funde aus dem Durchgang über den Bestand: die Domain der Schule an einer Stelle,
   Ladefehler der Klassenleitungen, doppelter Scan im Barcode-Editor.
-- [ ] Entscheiden: Ein Exemplar mit langer LMF-Nummer, das ein neues Etikett braucht, bekommt eine
-  kurze `B-`-Nummer, statt den langen Code nachzudrucken. (5.91)
+- [x] Entscheiden: Ein Exemplar mit langer LMF-Nummer, das ein neues Etikett braucht, bekommt eine
+  kurze `B-`-Nummer, statt den langen Code nachzudrucken.
+- [ ] Entscheiden: Ziehen „Neue Barcodes" im Druck-Center ihre Nummern aus derselben Zählung wie
+  alle anderen Nummern, oder entfällt diese Art? (5.92)
 
 ### Etappe 1: vor dem Echtstart
 
@@ -102,20 +104,16 @@ trägt ein neues Etikett keinen Vermerk.
   21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
   selben Tag zurückgestellt.
 
-### 5.91 Lange LMF-Nummern
+### 5.92 „Neue Barcodes" im Druck-Center
 
-Manche Lernmittel tragen ein Etikett der Form „LMF-", ISBN-13, laufende Nummer
-(`LMF-9783060158423-001`, 21 Zeichen); das Programm vergibt diese Form nicht.
-
-- **Etikett:** Das Buchetikett setzt den Strichcode in ein Feld von 40 mm (Standard 52: 35 mm,
-  `pdf/etikett_buch.go`). Bei 222 Modulen ist ein Modul 0,16 mm (0,14 mm) breit, bei `B-00001`
-  0,32 mm, bei 101634 0,48 mm. Die Zeile „Exemplar-Nr.: …" (Courier 9 pt) ist dann 66,7 mm
-  breit, das Etikett Zweckform L4760 63,5 mm. `TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle`
-  prüft diese Zeile nicht und nur eine 13-stellige Nummer. Auf der Liste „Fehlende Etiketten"
-  stehen diese Exemplare nicht: Der Bestands-Import hat sie als gedruckt übernommen. Gedruckt
-  würde ein solches Etikett nur über den Etikett-Knopf eines Exemplars. Nächster Schritt nach der
-  Entscheidung im Fahrplan: der Nachdruck eines solchen Exemplars vergibt die neue Nummer, und
-  ein Gate hält die Zeile der Nummer in ihrer Zelle.
+Im Reiter „Buch-Etiketten" erzeugt die Art „Neue Barcodes" eine Reihe `B-`-Nummern im Browser, ab
+einer Start-Ziffer (Vorgabe 20060, `neueStartnummer` in `frontend/src/lib/stores/etiketten.svelte.js`),
+und druckt sie. Danach steht keine dieser Nummern an einem Exemplar oder in `barcode_seq`: Eine
+Bestellung oder die kurze Nummer eines LMF-Exemplars kann dieselbe Nummer später noch einmal
+vergeben (`repository.ZieheFreieExemplarBarcodes` prüft nur die Exemplare), und dann kleben zwei
+Etiketten mit ihr. Wer das zweite einem Exemplar zuordnet, bekommt „Diesen Barcode trägt bereits
+ein anderes Exemplar". Nächster Schritt nach der Entscheidung: die Nummern aus `barcode_seq` ziehen
+wie „Interne ID generieren", oder die Art entfällt.
 
 ### 7.2 Frisches Littera-Backup
 

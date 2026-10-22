@@ -22,7 +22,9 @@ type etikettenbogenAnfrage struct {
 
 // Etikettenbogen liefert die Etiketten eines Druckauftrags als Bogen im PDF. Signatur,
 // Anschaffungsjahr und Topf trägt der Server nach (buchetikett.ErgaenzeServerfelder), weil der
-// Browser nur Barcode, Titel und Autor schickt.
+// Browser nur Barcode, Titel und Autor schickt. Einen Auftrag mit einer LMF-Nummer lehnt er ab und
+// nennt die Nummern (409, langeNummernAntwort): Für ein neues Etikett bekommt ein solches
+// Exemplar erst eine kurze Nummer (VergebeNeueNummern).
 func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req etikettenbogenAnfrage
@@ -32,6 +34,14 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 
 		if len(req.Etiketten) == 0 {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Exemplare angegeben", nil)
+			return
+		}
+		nummern := make([]string, 0, len(req.Etiketten))
+		for _, e := range req.Etiketten {
+			nummern = append(nummern, e.BarcodeID)
+		}
+		if lang := buchetikett.NichtDruckbare(nummern); len(lang) > 0 {
+			tuer.AntworteJSON(w, http.StatusConflict, langeNummernAntwort{Error: meldungLangeNummern, Nummern: lang})
 			return
 		}
 

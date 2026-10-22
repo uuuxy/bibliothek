@@ -31,7 +31,7 @@ const BESTAND = {
 	'src/lib/menue.js': 272,
 	'src/lib/stores/authStore.svelte.js': 363,
 	'src/lib/stores/bestellStore.svelte.js': 532,
-	'src/lib/stores/etiketten.svelte.js': 446,
+	'src/lib/stores/etiketten.svelte.js': 402,
 	'src/lib/stores/leerlaufSperre.svelte.js': 388,
 	'src/lib/stores/mahnwesen.svelte.js': 231,
 	'src/lib/stores/offlineSync.svelte.js': 420,
