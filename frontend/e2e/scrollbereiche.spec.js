@@ -224,6 +224,7 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 			'Speichern',
 			'Barcodes drucken',
 			'Zum Klassensatz hinzufügen',
+			'Mit anderem Titel zusammenführen',
 			'Titel löschen'
 		]) {
 			await expect(

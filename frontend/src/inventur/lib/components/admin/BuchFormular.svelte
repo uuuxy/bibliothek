@@ -3,6 +3,8 @@
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
+	import TitelZusammenfuehren from './TitelZusammenfuehren.svelte';
+	import TitelZusammenfuehrenDialog from './TitelZusammenfuehrenDialog.svelte';
 	import { signaturFehlt } from './buchFormularRegeln.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
@@ -16,7 +18,8 @@
 	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
 
 	/**
-	 * onDelete kommt nur mit dem Recht delete_books (TitelVerwaltung) — ohne Recht gibt es den Knopf nicht.
+	 * onDelete und onZusammengefuehrt kommen nur mit dem Recht delete_books (TitelVerwaltung) —
+	 * ohne Recht gibt es die Knöpfe nicht.
 	 * wirdGescannt: Die Kamera der Maske; der Knopf „Scanner" der Titelliste öffnet sie eingeschaltet.
 	 */
 	let {
@@ -27,7 +30,8 @@
 		onCoverUpload,
 		onCoverNeuHolen,
 		onAssignClass,
-		onDelete = undefined
+		onDelete = undefined,
+		onZusammengefuehrt = undefined
 	} = $props();
 
 	// Der Schlagwort-Vorschlag der DNB: Die ISBN-Abfrage holt ihn nach einem Treffer dazu; bei
@@ -51,6 +55,8 @@
 		uiStore.requestedDruckCenterTab = 'labels';
 		uiStore.activeTab = 'druck-center';
 	}
+
+	let zusammenfuehrenOffen = $state(false);
 
 	// Pflicht sind der Titel und am neuen Bibliotheksbuch die Signatur, die ISBN nicht:
 	// Zeitschriften, Spiele und alte Bücher tragen keine. Ein Pflichtfeld zeigt seinen Fehler
@@ -113,56 +119,70 @@
 	     Aktionen zum Titel rechts und beim Scrollen stehend. Die Spalte steht im Quelltext vor
 	     den Exemplaren: In einem schmalen Fenster folgt sie so auf die Felder und nicht erst
 	     auf das letzte Exemplar. -->
-	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-10">
-		<!-- Die Felder enden an der Breite der Masken (max-w-maske): In einem breiten Fenster
+	<!-- Ein anderer Titel in derselben Maske (nach dem Zusammenführen) baut den Inhalt neu auf:
+	     Felder, Auflagen und Exemplare laden beim Aufbau. -->
+	{#key formular}
+		<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-10">
+			<!-- Die Felder enden an der Breite der Masken (max-w-maske): In einem breiten Fenster
 		     laufen Textfelder sonst über die ganze Spalte. Die Exemplare darunter nutzen die Breite. -->
-		<div class="max-w-maske space-y-8 lg:col-start-1">
-			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} {verlangt} />
-		</div>
-		<aside
-			class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start"
-		>
-			<BuchCoverUpload bind:formular {onCoverUpload} {onCoverNeuHolen} />
-			{#if formular.id}
-				<div class="mt-4 flex flex-col gap-2 border-t border-outline-variant pt-4">
-					{#if darfEtiketten}
+			<div class="max-w-maske space-y-8 lg:col-start-1">
+				<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} {verlangt} />
+			</div>
+			<aside
+				class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start"
+			>
+				<BuchCoverUpload bind:formular {onCoverUpload} {onCoverNeuHolen} />
+				{#if formular.id}
+					<div class="mt-4 flex flex-col gap-2 border-t border-outline-variant pt-4">
+						{#if darfEtiketten}
+							<Button
+								variant="secondary"
+								onclick={etikettenDrucken}
+								class="w-full"
+								title="Etiketten dieses Titels im Druck-Center drucken"
+							>
+								<Printer class="w-4 h-4" aria-hidden="true" />
+								Barcodes drucken
+							</Button>
+						{/if}
 						<Button
 							variant="secondary"
-							onclick={etikettenDrucken}
+							onclick={onAssignClass}
 							class="w-full"
-							title="Etiketten dieses Titels im Druck-Center drucken"
+							title="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
 						>
-							<Printer class="w-4 h-4" aria-hidden="true" />
-							Barcodes drucken
+							<BookOpen class="w-4 h-4" aria-hidden="true" />
+							Zum Klassensatz hinzufügen
 						</Button>
-					{/if}
-					<Button
-						variant="secondary"
-						onclick={onAssignClass}
-						class="w-full"
-						title="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
-					>
-						<BookOpen class="w-4 h-4" aria-hidden="true" />
-						Zum Klassensatz hinzufügen
-					</Button>
-					{#if onDelete}
-						<!-- Der Server verweigert das Löschen bei verliehenen Exemplaren. -->
-						<Button
-							variant="ghost"
-							onclick={onDelete}
-							class="w-full text-error"
-							title="Diesen Titel mit allen Exemplaren löschen"
-						>
-							<Trash class="w-4 h-4" aria-hidden="true" />
-							Titel löschen
-						</Button>
-					{/if}
-				</div>
-			{/if}
-		</aside>
-		<!-- Auch am neuen Titel: Unter „Exemplare" steht die Zahl, mit der er angelegt wird. -->
-		<div class="lg:col-start-1">
-			<BuchExemplareListe bind:formular />
+						{#if onZusammengefuehrt}
+							<TitelZusammenfuehren bind:offen={zusammenfuehrenOffen} />
+						{/if}
+						{#if onDelete}
+							<!-- Der Server verweigert das Löschen bei verliehenen Exemplaren. -->
+							<Button
+								variant="ghost"
+								onclick={onDelete}
+								class="w-full text-error"
+								title="Diesen Titel mit allen Exemplaren löschen"
+							>
+								<Trash class="w-4 h-4" aria-hidden="true" />
+								Titel löschen
+							</Button>
+						{/if}
+					</div>
+				{/if}
+			</aside>
+			<!-- Auch am neuen Titel: Unter „Exemplare" steht die Zahl, mit der er angelegt wird. -->
+			<div class="lg:col-start-1">
+				<BuchExemplareListe bind:formular />
+			</div>
 		</div>
-	</div>
+	{/key}
+	{#if onZusammengefuehrt}
+		<TitelZusammenfuehrenDialog
+			bind:open={zusammenfuehrenOffen}
+			titel={formular}
+			{onZusammengefuehrt}
+		/>
+	{/if}
 </div>

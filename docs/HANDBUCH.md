@@ -214,6 +214,15 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   einer gescannten ISBN genau diese, sonst die neueste —, als Bestand die Summe aller
   Auflagen und darunter „Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019
   (42)". Die Titel-Verwaltung listet jede Auflage einzeln. (§13)
+- **Dasselbe Buch zweimal:** Steht ein Buch zweimal im Katalog, etwa einmal aus einer Liste ohne
+  ISBN und einmal aus dem Bestands-Import mit ISBN, macht _Mit anderem Titel zusammenführen_ in
+  der Maske einen Titel daraus. Gesucht wird unter allen Titeln, auch unter denen ohne Exemplar;
+  dann legt man fest, welcher bleibt. Die Vorschau sagt vorher, was zu ihm kommt — die Exemplare
+  mit Nummer, Etikett und Ausleihen, Vormerkungen, Klassensatz-Reservierungen und die Angaben,
+  die ihm fehlen, auch die ISBN — und wo er seine eigenen behält. Der andere Titel ist danach
+  gelöscht; das lässt sich nicht rückgängig machen. Tragen beide eine ISBN, sind es zwei
+  Ausgaben, und dafür gibt es _Andere Auflage zuordnen_. Den Knopf hat, wer Titel löschen darf.
+  (§13)
 - **Mehrjahresband**: Bei einem Lernmittel heißt die Spanne „Im Unterricht von Jahrgang …
   bis". Bleibt das Buch über diese Spanne beim Kind, statt am Rückgabetermin der Klasse
   zurückzukommen, setzt man darunter den Haken bei „Mehrjahresband"; der Hinweis darunter rechnet

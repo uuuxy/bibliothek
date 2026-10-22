@@ -155,6 +155,9 @@
 			onCoverNeuHolen={() => buchAktionen.holeCoverNeu()}
 			onAssignClass={() => (klassenZuweisenIds = formular.id ? [formular.id] : [])}
 			onDelete={buchAktionen?.darfLoeschen() ? () => buchAktionen.titelLoeschen() : undefined}
+			onZusammengefuehrt={buchAktionen?.darfLoeschen()
+				? (/** @type {string} */ id) => oeffneDetails({ id }).then(aktualisiereBuecher)
+				: undefined}
 		/>
 	{:else if titelKommt}
 		<!-- Unter 200 ms zeigt Material 3 keine Ladeanzeige; sie blendet erst danach ein. -->
