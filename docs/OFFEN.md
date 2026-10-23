@@ -24,6 +24,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Sperrbildschirm nach dem Passwort. (5.96)
 - [x] Eine gelungene Anmeldung leert den Zähler der Fehlversuche je Adresse nicht mehr. (5.97)
 - [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
+- [ ] Die Live-Leitung endet mit der Anmeldung: abgemeldet, gesperrt oder nach der Höchstdauer.
+  (5.99)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -41,6 +43,8 @@ Nur, was kein Test leisten kann.
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
+- [ ] Vor dem nächsten Update am Testserver nachsehen, ob außer dem Backend ein Container die
+  Datenbank der Bibliothek anspricht. (7.8)
 - [x] Am Testserver nachsehen, gegen welchen Mailserver die Anmeldung prüft (`IMAP_HOST` in der
   `.env`) und ob dort echte Daten von Schülern liegen. (7.12)
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
@@ -95,6 +99,23 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.99 Die Live-Leitung prüft die Anmeldung nur beim Aufbau
+
+`GET /events` prüft die Anmeldung beim Aufbau (`VerlangeAnmeldung` in `api/tuer/sitzung.go`) und
+läuft danach ohne Frist (`hebeFristenAuf` in `sse/sse.go`). Ob die Anmeldung inzwischen
+abgemeldet, gesperrt oder über der Höchstdauer ist, fragt sie nicht mehr. Die Oberfläche schließt
+ihre eigene Leitung beim Sperren und Abmelden (`haltLiveAn`, `trenne`); eine Leitung, die jemand
+mit einem kopierten Token geöffnet hat, läuft weiter. Sie trägt bei jeder Ausleihe und Rückgabe
+die Kennung des Lesers mit Zeitpunkt (`thekenEreignis` in `api/theke/eingabe_anfrage_antwort.go`),
+also wer wann ausleiht, ohne das Buch.
+
+**Vorschlag:** Bei jedem Herzschlag (15 Sekunden) prüft die Leitung das Token wie jede Tür und
+endet bei 401 oder 423; ein Aussetzer der Datenbank (503) beendet sie nicht. Die Oberfläche baut
+eine beendete Leitung neu auf und zeigt nach 25 Sekunden ohne Herzschlag „Verbindung verloren"
+(`liveEvents.js`, `App.svelte`). Scheitert der Aufbau, fragt sie deshalb erst `/api/auth/me` und
+zeigt bei 423 den Sperrbildschirm, bei 401 die Anmeldung; sonst sähe eine gesperrte Theke wie
+eine ohne Netz aus.
 
 ### 7.2 Frisches Littera-Backup
 
@@ -186,6 +207,11 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
 - Fotos aus der Zeit vor dem 13.06.2026 lägen unverschlüsselt im Volume; das betrifft nur den
   Testserver. `docker compose exec backend ls -la uploads/fotos`; liegen dort Dateien:
   `docker compose exec backend sh -c 'rm -f uploads/fotos/*.jpg'`.
+- Die Datenbank hängt nur am eigenen Netz des Stacks (`intern` in `docker-compose.yml`). Spricht
+  ein anderer Container sie über `caddy_global_net` an, verliert er beim nächsten `./update.sh`
+  die Verbindung. Der Befehl nennt nur Namen, keine Werte; erwartet ist allein
+  `bibliothek-backend`:
+  `for c in $(docker ps --format '{{.Names}}'); do docker inspect "$c" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -q -E '@(postgres-db|bibliothek-db)' && echo "$c"; done`
 - Sind die Admin-Konten deaktiviert?
 - Erreicht der Server die DNB? Ohne sie bringt die ISBN-Abfrage keine Angaben und der
   Cover-Abgleich kein Cover:
