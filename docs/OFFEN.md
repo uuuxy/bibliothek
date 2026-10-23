@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 22.10.2026
+Stand: 23.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -154,6 +154,12 @@ bestanden):
    „Sammelbestand, kein Einzeletikett" nennt (dort bei „Red line"), legt der Bestands-Import als
    etikettiert an; solche Bücher fehlen dann unter „Fehlende Etiketten". Klären, ob sie über den
    Listenimport kommen, der sie ohne Etikett anlegt.
+9. Etiketten mit `B-`-Nummern aus der Zeit am Testserver: Die neue Datenbank vergibt ab `B-10001`
+   neu. Klebt ein solches Etikett an einem Buch, das am Schulserver nicht mit dieser Nummer
+   hereinkommt, bekäme ein anderes Buch dieselbe Nummer. Am Testserver zählen:
+   `SELECT count(*), max(substr(barcode_id, 3)::bigint) FROM buecher_exemplare WHERE barcode_id ~ '^B-[0-9]{1,15}$' AND etikett_gedruckt;`
+   Gibt es welche, kommen diese Bücher vor jeder neuen Nummer mit ihrer Nummer herein, oder
+   `barcode_seq` beginnt über der höchsten.
 
 **Am Umstiegstag:** in der Reihenfolge aus SCRIPTS.md Abschnitt 0, auf einer neu angelegten
 Datenbank (entschieden am 28.09.2026); vorher das Löschkonzept gegenüber Littera
