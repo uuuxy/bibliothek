@@ -20,6 +20,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (7.2, 4.20)
 - [ ] Eingang und Ausgang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar,
   nach außen nur die Dienste, die das Programm braucht. (4.23)
+- [ ] Eine Anmeldung gilt höchstens 12 Stunden nach der Passworteingabe. (5.96)
+- [ ] Eine gelungene Anmeldung löscht nur die eigenen Fehlversuche. (5.97)
+- [ ] Betriebs-Compose: Proxy-Netz eng fassen, Datenbank aus dem gemeinsamen Netz. (5.98)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -89,6 +92,44 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.96 Eine Sitzung hat keine Höchstdauer
+
+Ein Token gilt 12 Stunden. Jedes offene Fenster erneuert es ab der halben Laufzeit
+(`erneuereSitzung` in `auth/anmelden.go`), und die Zeile in `sitzungen` verlängert sich ohne
+Grenze (`VerlaengereSitzung` in `repository/sitzungen.go`). Wann das Passwort eingegeben wurde,
+prüft niemand: Wer ein Token in die Hand bekommt, hält die Sitzung ohne Passwort offen, solange
+er sie nutzt. Die Sperre nach Inaktivität hilft dagegen nicht, denn sie löst der Browser aus.
+
+**Entschieden am 01.10.2026: Eine Anmeldung gilt höchstens 12 Stunden nach der
+Passworteingabe.**
+
+### 5.97 Eine gelungene Anmeldung löscht den Zähler der Fehlversuche je Adresse
+
+Die Bremse je Adresse (`api/anmelde_bremse.go`) hält das Raten von Passwörtern über viele Konten
+auf. Jede gelungene Anmeldung von derselben Adresse setzt ihren Zähler auf null (`verzeichne`,
+Fall `http.StatusOK`). Wer selbst ein Konto hat, rät knapp bis zur Grenze, meldet sich einmal an
+und rät weiter, ohne gesperrt zu werden.
+
+**Entschieden am 01.10.2026: Ein Erfolg löscht nur die eigenen Fehlversuche.** Hinter einer
+gemeinsamen Adresse zählen dann die Vertipper aller Arbeitsplätze zusammen.
+
+### 5.98 Betriebs-Compose: Proxy-Vertrauen, gemeinsames Netz, `APP_ENV`
+
+Drei Stellen in `docker-compose.yml`:
+
+- **`TRUSTED_PROXIES`** steht in der Vorgabe auf allen privaten Netzen. Das Backend lauscht im
+  Container auf allen Schnittstellen: Ein anderer Container im selben Docker-Netz erreicht es
+  direkt und gilt als Proxy, dessen `X-Forwarded-For` geglaubt wird. An dieser Adresse hängen
+  die Bremse der Anmeldung und das Protokoll.
+- **Die Datenbank hängt am gemeinsamen Netz** `caddy_global_net`. Ein anderer Container an
+  diesem Netz erreicht ihren Port; ihn hält dann nur das Passwort auf.
+- **`APP_ENV`** kommt aus der `.env`. Eine Zeile `APP_ENV=local` schaltet die Prüfung der
+  Beispiel-Geheimnisse ab und lässt `IMAP_HOST=mock` zu.
+
+**Entschieden am 01.10.2026: Proxy-Netz eng fassen, Datenbank aus dem gemeinsamen Netz
+nehmen.** Noch nicht entschieden: `APP_ENV` im Betriebs-Compose fest auf `production`, der
+lokale Stack setzt `local` in seiner eigenen Datei.
 
 ### 7.2 Frisches Littera-Backup
 
