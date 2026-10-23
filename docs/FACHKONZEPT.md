@@ -431,9 +431,10 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
   und DS2) drucken bis an den Rand, lassen dort aber einen schmalen weißen Streifen frei; für
   Strichcodes verlangt Datacard 6,3 mm Abstand zum Rand. Der Designer zeigt 3 mm innen eine
   gestrichelte Linie, die nicht mitdruckt (`designer/kartenRand.js`); verschieben lässt sich
-  weiter bis an den Rand. Standard-Design und Vorlagen halten die Linie, ihre Strichcodes enden
-  6,3 mm über der Kante (`designer/kartenRand.test.js`). **Der Designer legt fest, wie gedruckt
-  wird, die Leserdatei, wer.** Die
+  weiter bis an den Rand. Was in Standard-Design und Vorlagen außen steht, steht bündig an der
+  Linie, damit alle denselben Rand haben; ein Strichcode unten steht 0,3 mm darüber, so enden
+  seine Striche 6,3 mm über der Kante (`designer/kartenRand.test.js`). **Der Designer legt fest,
+  wie gedruckt wird, die Leserdatei, wer.** Die
   Betriebsart ist _Karte_ (Kartendrucker, Druck aus dem Browser) oder _Etikett_
   (Klebeetiketten mit Name, Klasse und Strichcode als PDF vom Server,
   `POST /api/print/schueler-etiketten`; die Anfrage trägt nur Kennungen, die Namen holt der
