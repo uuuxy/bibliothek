@@ -21,7 +21,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Eingang und Ausgang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar,
   nach außen nur die Dienste, die das Programm braucht. (4.23)
 - [ ] Eine Anmeldung gilt höchstens 12 Stunden nach der Passworteingabe. (5.96)
-- [ ] Eine gelungene Anmeldung löscht nur die eigenen Fehlversuche. (5.97)
+- [x] Eine gelungene Anmeldung leert den Zähler der Fehlversuche je Adresse nicht mehr. (5.97)
 - [ ] Betriebs-Compose: Proxy-Netz eng fassen, Datenbank aus dem gemeinsamen Netz. (5.98)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
@@ -103,16 +103,6 @@ er sie nutzt. Die Sperre nach Inaktivität hilft dagegen nicht, denn sie löst d
 
 **Entschieden am 01.10.2026: Eine Anmeldung gilt höchstens 12 Stunden nach der
 Passworteingabe.**
-
-### 5.97 Eine gelungene Anmeldung löscht den Zähler der Fehlversuche je Adresse
-
-Die Bremse je Adresse (`api/anmelde_bremse.go`) hält das Raten von Passwörtern über viele Konten
-auf. Jede gelungene Anmeldung von derselben Adresse setzt ihren Zähler auf null (`verzeichne`,
-Fall `http.StatusOK`). Wer selbst ein Konto hat, rät knapp bis zur Grenze, meldet sich einmal an
-und rät weiter, ohne gesperrt zu werden.
-
-**Entschieden am 01.10.2026: Ein Erfolg löscht nur die eigenen Fehlversuche.** Hinter einer
-gemeinsamen Adresse zählen dann die Vertipper aller Arbeitsplätze zusammen.
 
 ### 5.98 Betriebs-Compose: Proxy-Vertrauen, gemeinsames Netz, `APP_ENV`
 

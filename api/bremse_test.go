@@ -142,7 +142,10 @@ func TestAnmeldeBremse_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testi
 	}
 }
 
-func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
+// Wer selbst ein Konto hat, leert den Zähler der Adresse nicht mit einer eigenen Anmeldung: Sonst
+// riete er knapp unter der Grenze die Passwörter anderer, meldete sich an und riete weiter
+// (OFFEN 5.97).
+func TestAnmeldeBremse_ErfolgLeertDenZaehlerNicht(t *testing.T) {
 	var b anmeldeBremse
 
 	handler := b.schuetze(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -165,14 +168,16 @@ func TestAnmeldeBremse_ErfolgSetztZaehlerZurueck(t *testing.T) {
 		return rec.Code
 	}
 
-	do("")   // 1 Fehlversuch
-	do("")   // 2
-	do("ok") // Erfolg setzt den Zähler zurück
-	for i := 0; i < maxAnmeldeFehlversucheJeAdresse; i++ {
-		do("") // das volle Kontingent ist wieder nötig
+	for i := 0; i < maxAnmeldeFehlversucheJeAdresse-1; i++ {
+		do("") // fremde Passwörter raten, knapp unter der Grenze
 	}
+	if got := do("ok"); got != http.StatusOK {
+		t.Fatalf("die eigene Anmeldung unter der Grenze: Status %d; erwartet 200", got)
+	}
+	do("") // der letzte Fehlversuch bis zur Grenze
 	if got := do(""); got != http.StatusTooManyRequests {
-		t.Fatalf("nach Reset + vollem Kontingent an Fehlversuchen: Status %d; erwartet 429", got)
+		t.Fatalf("nach %d Fehlversuchen mit einer eigenen Anmeldung dazwischen: Status %d; erwartet 429",
+			maxAnmeldeFehlversucheJeAdresse, got)
 	}
 }
 

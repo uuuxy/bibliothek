@@ -84,7 +84,9 @@ func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *f
 }
 
 // verzeichne zählt nach dem Status der Antwort, unter der Sperre: Nur 401 zählt als
-// Fehlversuch, 200 setzt den Zähler zurück.
+// Fehlversuch. Eine gelungene Anmeldung leert den Zähler nicht, er läuft mit seinem Fenster ab:
+// Sonst riete, wer selbst ein Konto hat, knapp unter der Grenze die Passwörter anderer, meldete
+// sich an und riete weiter (OFFEN 5.97).
 //
 // 403 zählt nicht: Bei „Zugang beantragt" (Selbstanmeldung) und „Konto deaktiviert" war das
 // Passwort richtig. Die Tür zählt deshalb nicht (auth/anmelden.go), und diese Schicht darf
@@ -92,21 +94,13 @@ func (b *anmeldeBremse) reserviere(adresse string, jetzt time.Time) (versuche *f
 // der Selbstanmeldung hinter der einen NAT-Adresse der Schule die Anmeldung für alle, auch für
 // die Bibliothekskraft, die die Freischaltungen vornimmt. Für Credential-Stuffing, den Zweck
 // dieser Bremse, ist 401 das Signal, nicht 403.
-func (b *anmeldeBremse) verzeichne(versuche *fehlversuche, status int, jetzt time.Time) {
-	switch status {
-	case http.StatusUnauthorized:
-		b.mu.Lock()
-		versuche.anzahl++
-		b.mu.Unlock()
-	case http.StatusOK:
-		// Eine erfolgreiche Anmeldung setzt den Zähler zurück.
-		b.mu.Lock()
-		if versuche.anzahl > 0 {
-			versuche.anzahl = 0
-			versuche.erster = jetzt
-		}
-		b.mu.Unlock()
+func (b *anmeldeBremse) verzeichne(versuche *fehlversuche, status int) {
+	if status != http.StatusUnauthorized {
+		return
 	}
+	b.mu.Lock()
+	versuche.anzahl++
+	b.mu.Unlock()
 }
 
 // schuetze lässt je Adresse höchstens maxAnmeldeFehlversucheJeAdresse gescheiterte Anmeldungen
@@ -138,7 +132,6 @@ func (b *anmeldeBremse) schuetze(next http.Handler) http.Handler {
 
 		next.ServeHTTP(merker, r)
 
-		// Nach dem Ergebnis der Anmeldung zählen oder zurücksetzen.
-		b.verzeichne(versuche, merker.status, jetzt)
+		b.verzeichne(versuche, merker.status)
 	})
 }
