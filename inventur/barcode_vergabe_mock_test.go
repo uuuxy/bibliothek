@@ -12,10 +12,10 @@ import (
 // barcode_seq.
 func erwarteBarcodeVergabe(mock pgxmock.PgxPoolIface, anzahl int) []string {
 	codes := make([]string, anzahl)
-	zeilen := pgxmock.NewRows([]string{"code"})
+	zeilen := pgxmock.NewRows([]string{"nextval"})
 	for i := range codes {
 		codes[i] = fmt.Sprintf("B-%05d", 10001+i)
-		zeilen.AddRow(codes[i])
+		zeilen.AddRow(int64(10001 + i))
 	}
 	mock.ExpectQuery(`nextval\('barcode_seq'\)`).WithArgs(anzahl).WillReturnRows(zeilen)
 	mock.ExpectQuery(`SELECT barcode_id FROM buecher_exemplare WHERE barcode_id = ANY`).

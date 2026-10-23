@@ -24,15 +24,17 @@ SELECT setval('barcode_seq', GREATEST(
 DO $$
 DECLARE
     exemplar RECORD;
+    nummer bigint;
 BEGIN
     FOR exemplar IN
         SELECT id, barcode_id FROM buecher_exemplare
         WHERE barcode_id ILIKE 'LMF-%'
         ORDER BY barcode_id
     LOOP
+        nummer := nextval('barcode_seq');
         UPDATE buecher_exemplare
         SET lmf_barcode = 'LMF-' || substr(exemplar.barcode_id, 5),
-            barcode_id = 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0')
+            barcode_id = 'B-' || CASE WHEN length(nummer::text) < 5 THEN lpad(nummer::text, 5, '0') ELSE nummer::text END
         WHERE id = exemplar.id;
     END LOOP;
 

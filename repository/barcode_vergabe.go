@@ -57,7 +57,7 @@ func ZieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) (
 
 	frei := make([]string, 0, anzahl)
 	for versuch := 0; versuch < barcodeZiehVersuche; versuch++ {
-		kandidaten, err := zieheAusSequenz(ctx, db, anzahl-len(frei))
+		kandidaten, err := ZieheExemplarNummern(ctx, db, anzahl-len(frei))
 		if err != nil {
 			return nil, err
 		}
@@ -80,12 +80,16 @@ func ZieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) (
 	return nil, fmt.Errorf("barcode_seq liefert nur bereits vergebene Nummern – Sequenzstand prüfen")
 }
 
-// zieheAusSequenz holt anzahl Nummern aus barcode_seq. LPAD auf fünf Stellen hält das
-// gewohnte Format B-10001; jenseits von 99999 wächst die Nummer einfach mit.
-func zieheAusSequenz(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
-	rows, err := db.Query(ctx,
-		`SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)`,
-		anzahl)
+// exemplarNummer setzt eine Zahl aus barcode_seq in die gedruckte Form: „B-" und mindestens fünf
+// Ziffern, wie AusweisNummer. Gesetzt wird in Go, weil LPAD eine längere Zahl abschneidet: Aus
+// 100000 würde B-10000, die Nummer eines anderen Buchs.
+func exemplarNummer(n int64) string { return fmt.Sprintf("B-%05d", n) }
+
+// ZieheExemplarNummern holt anzahl Nummern aus barcode_seq, ohne den Bestand anzusehen. Wer sie
+// vergibt, prüft, ob eine schon an einem Exemplar hängt: ZieheFreieExemplarBarcodes und die
+// Littera-Übernahme mit ihrer Liste belegter Nummern.
+func ZieheExemplarNummern(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
+	rows, err := db.Query(ctx, `SELECT nextval('barcode_seq') FROM generate_series(1, $1)`, anzahl)
 	if err != nil {
 		return nil, fmt.Errorf("konnte keine Nummern aus barcode_seq ziehen: %w", err)
 	}
@@ -93,11 +97,11 @@ func zieheAusSequenz(ctx context.Context, db Datenbank, anzahl int) ([]string, e
 
 	codes := make([]string, 0, anzahl)
 	for rows.Next() {
-		var bc string
-		if err := rows.Scan(&bc); err != nil {
+		var n int64
+		if err := rows.Scan(&n); err != nil {
 			return nil, fmt.Errorf("konnte keine Nummern aus barcode_seq ziehen: %w", err)
 		}
-		codes = append(codes, bc)
+		codes = append(codes, exemplarNummer(n))
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("konnte keine Nummern aus barcode_seq ziehen: %w", err)

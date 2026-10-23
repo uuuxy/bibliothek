@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bibliothek/internal/uebernahme"
+	"bibliothek/repository"
 )
 
 // klaereBarcodes bestimmt für jedes Exemplar den Barcode, mit dem es geschrieben wird.
@@ -139,15 +140,16 @@ func (s *Schreiber) ladeVorhandeneBarcodes(ctx context.Context) (map[string]bool
 // vergebeNeueBarcodes zieht die fehlenden Nummern aus barcode_seq.
 //
 // Bewusst aus der Postgres-Sequenz und nicht aus einem Zähler in Go: Aus derselben
-// Sequenz bedient sich die laufende Anwendung (repository/barcode_vergabe.go). Ein
-// eigener Zähler im Werkzeug wäre am Tag nach dem Import wieder eingeholt worden.
+// Sequenz und in derselben Form bedient sich die laufende Anwendung
+// (repository.ZieheExemplarNummern). Ein eigener Zähler im Werkzeug wäre am Tag nach dem
+// Import wieder eingeholt worden.
 func (s *Schreiber) vergebeNeueBarcodes(
 	ctx context.Context, exemplare []Exemplar, belegt map[string]bool, zuweisung map[string]string,
 ) error {
 	if len(exemplare) == 0 {
 		return nil
 	}
-	vorrat, err := s.zieheBarcodes(ctx, len(exemplare))
+	vorrat, err := repository.ZieheExemplarNummern(ctx, s.pool, len(exemplare))
 	if err != nil {
 		return err
 	}
@@ -180,7 +182,7 @@ func (s *Schreiber) zieheNaechstenFreien(
 				return bc, vorrat[i+1:], nil
 			}
 		}
-		nachschlag, err := s.zieheBarcodes(ctx, barcodeNachschlag)
+		nachschlag, err := repository.ZieheExemplarNummern(ctx, s.pool, barcodeNachschlag)
 		if err != nil {
 			return "", nil, err
 		}
@@ -190,28 +192,6 @@ func (s *Schreiber) zieheNaechstenFreien(
 }
 
 const barcodeNachschlag = 256
-
-func (s *Schreiber) zieheBarcodes(ctx context.Context, anzahl int) ([]string, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)`, anzahl)
-	if err != nil {
-		return nil, fmt.Errorf("konnte keine neuen Barcodes aus barcode_seq ziehen: %w", err)
-	}
-	defer rows.Close()
-
-	codes := make([]string, 0, anzahl)
-	for rows.Next() {
-		var bc string
-		if err := rows.Scan(&bc); err != nil {
-			return nil, fmt.Errorf("konnte keine neuen Barcodes aus barcode_seq ziehen: %w", err)
-		}
-		codes = append(codes, bc)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("konnte keine neuen Barcodes aus barcode_seq ziehen: %w", err)
-	}
-	return codes, nil
-}
 
 // ladeVorhandeneISBNs füllt die Dublettenerkennung mit dem, was schon in der Datenbank steht.
 //

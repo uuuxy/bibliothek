@@ -187,3 +187,33 @@ func TestBarcodeVergabe_UeberspringtVonHandVergebeneNummern(t *testing.T) {
 		}
 	}
 }
+
+// TestBarcodeVergabe_SechsstelligeNummerBleibtGanz: Über 99999 wächst die Nummer um eine Stelle.
+// Auf fünf Zeichen gekürzt, hießen 100000 und 100001 beide B-10000: Die Vergabe gäbe dieselbe
+// Nummer zweimal aus oder die eines alten Buchs. Geprüft an der Bestellung und am Knopf
+// „Interne ID generieren".
+func TestBarcodeVergabe_SechsstelligeNummerBleibtGanz(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	bookRepo := repository.NewKatalogAbfragen(pool)
+
+	titel := testdaten.LegeTitelAn(t, pool, "Barcode-Sechsstellig", 0)
+	var stand int64
+	if err := pool.QueryRow(ctx, `SELECT setval('barcode_seq', GREATEST(last_value, 99998)) FROM barcode_seq`).
+		Scan(&stand); err != nil {
+		t.Fatalf("Sequenz an die Grenze stellen: %v", err)
+	}
+
+	pruefe := func(weg string, i int64, nummer string) {
+		t.Helper()
+		if want := fmt.Sprintf("B-%05d", stand+i); nummer != want {
+			t.Errorf("%s: Nummer %d ist %s, erwartet %s", weg, i, nummer, want)
+		}
+	}
+	for i, nummer := range bestelleExemplare(t, pool, bookRepo, titel, 2) {
+		pruefe("Bestellung", int64(i)+1, nummer)
+	}
+	pruefe("Interne ID generieren", 3, naechsteInterneNummer(t, srv))
+}

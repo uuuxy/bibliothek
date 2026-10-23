@@ -209,3 +209,37 @@ func TestMigration168_RegelNachDerUmstellung(t *testing.T) {
 		t.Errorf("zweiter Lauf änderte das Exemplar: %+v, vorher %+v", s, nachher[nachgekommen])
 	}
 }
+
+// Über 99999 wächst die kurze Nummer um eine Stelle wie in der laufenden Anwendung
+// (repository.ZieheExemplarNummern). Mit lpad allein hießen 100000 und 100001 beide B-10000; die
+// Migration bräche an der Eindeutigkeit ab. Geprüft an 167 und an 168.
+func TestMigration167und168_SechsstelligeNummerBleibtGanz(t *testing.T) {
+	ctx, tx := vorDerRegel(t)
+
+	// Die Migration hebt die Sequenz vorher über die höchste B-Nummer im Bestand.
+	var stand int64
+	if err := tx.QueryRow(ctx, `
+		SELECT GREATEST(setval('barcode_seq', GREATEST(last_value, 99998)),
+		       (SELECT coalesce(max(substr(barcode_id, 3)::bigint), 0) FROM buecher_exemplare
+		         WHERE barcode_id ~ '^B-[0-9]{1,15}$'))
+		FROM barcode_seq`).Scan(&stand); err != nil {
+		t.Fatalf("Sequenz an die Grenze stellen: %v", err)
+	}
+	titelID := legeTitelAn(t, ctx, tx, "LMF-Grenze")
+	ids := []string{
+		legeAn(t, ctx, tx, titelID, "LMF-9783060158423-101", true),
+		legeAn(t, ctx, tx, titelID, "LMF-9783060158423-102", true),
+	}
+	fuehreAus(t, ctx, tx, "167_lmf_kurze_nummer.sql")
+	ids = append(ids,
+		legeAn(t, ctx, tx, titelID, "LMF-9783060158423-103", true),
+		legeAn(t, ctx, tx, titelID, "LMF-9783060158423-104", true))
+	fuehreAus(t, ctx, tx, "168_barcode_keine_lmf_nummer.sql")
+
+	nachher := leseStand(t, ctx, tx, titelID)
+	for i, id := range ids {
+		if want := fmt.Sprintf("B-%05d", stand+int64(i)+1); nachher[id].nummer != want {
+			t.Errorf("Exemplar %d trägt %s, erwartet %s", i+1, nachher[id].nummer, want)
+		}
+	}
+}

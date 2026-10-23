@@ -245,13 +245,42 @@ func TestBarcodeNeuZiehtAusDerSequenz(t *testing.T) {
 		t.Fatalf("B-XXXXX aus der Sequenz erwartet, gespeichert: %q", barcode)
 	}
 	// Und die eigentliche Zusicherung: die Anwendung darf danach keine belegte Nummer ziehen.
-	var naechster string
-	if err := pool.QueryRow(context.Background(),
-		`SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0')`).Scan(&naechster); err != nil {
+	naechste, err := repository.ZieheExemplarNummern(context.Background(), pool, 1)
+	if err != nil {
 		t.Fatalf("Sequenz: %v", err)
 	}
-	if naechster == barcode {
+	if naechste[0] == barcode {
 		t.Error("die Sequenz gibt dieselbe Nummer erneut aus — sie wurde nicht mitgeführt")
+	}
+}
+
+// TestBarcodeNeuSechsstellig: Über 99999 wächst die Nummer um eine Stelle, in derselben Form wie
+// in der laufenden Anwendung (repository.ZieheExemplarNummern). Auf fünf Zeichen gekürzt,
+// bekämen die Exemplare Nummern alter Bücher (B-10000, B-10001).
+func TestBarcodeNeuSechsstellig(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	ctx := context.Background()
+	s, _ := testSchreiber(t, pool, func(o *Optionen) { o.Barcodes = BarcodeNeu })
+	var stand int64
+	if err := pool.QueryRow(ctx, `SELECT setval('barcode_seq', GREATEST(last_value, 99998)) FROM barcode_seq`).
+		Scan(&stand); err != nil {
+		t.Fatalf("Sequenz an die Grenze stellen: %v", err)
+	}
+
+	namen := []string{"Erstes Buch", "Zweites Buch", "Drittes Buch"}
+	if _, err := s.SchreibeBestand(ctx, bestand(titel("1", namen[0], ""), titel("2", namen[1], ""), titel("3", namen[2], ""))); err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+	for i, name := range namen {
+		var nummer string
+		if err := pool.QueryRow(ctx, `SELECT e.barcode_id FROM buecher_exemplare e
+			JOIN buecher_titel t ON t.id = e.titel_id WHERE t.titel = $1`, name).Scan(&nummer); err != nil {
+			t.Fatalf("Exemplar von %q: %v", name, err)
+		}
+		if want := fmt.Sprintf("B-%05d", stand+int64(i)+1); nummer != want {
+			t.Errorf("%q trägt %s, erwartet %s", name, nummer, want)
+		}
 	}
 }
 
