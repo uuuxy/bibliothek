@@ -21,22 +21,8 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
-	var formen []string
-	for jg := 1; jg <= 13; jg++ {
-		for _, zweig := range []string{"", "F", "G", "H", "R", "T", "f", "h", " H", "\u00a0H", "\u202fR", "\u3000h"} {
-			for _, zug := range []string{"", "1", "2"} {
-				// Ohne Zweig wüchse der Zug in die Zahl hinein: „051" ist Jahrgang 51, keine 5.
-				if zweig == "" && zug != "" {
-					continue
-				}
-				formen = append(formen, fmt.Sprintf("%02d%s%s", jg, zweig, zug), fmt.Sprintf("%d%s%s", jg, zweig, zug))
-			}
-		}
-	}
-	formen = append(formen, "ET", "E1", "12T", "13T")
-
 	gesehen := 0
-	for _, klasse := range formen {
+	for _, klasse := range klassenFormen() {
 		jahrgang, abschluss, ok := repository.AbschlussJahrgang(klasse)
 		if !ok {
 			t.Errorf("%q: Go liest keinen Jahrgang", klasse)
@@ -70,6 +56,53 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 		}
 		if sqlAbschluss {
 			t.Errorf("%q: SQL sagt Abschlussklasse", klasse)
+		}
+	}
+}
+
+// klassenFormen ist der Formenraum der Paar-Gates: Jahrgang 1–13 × Zweig × Zug, dazu die
+// Oberstufe in der Schreibweise der Schule.
+func klassenFormen() []string {
+	var formen []string
+	for jg := 1; jg <= 13; jg++ {
+		for _, zweig := range []string{"", "F", "G", "H", "R", "T", "f", "h", " H", "\u00a0H", "\u202fR", "\u3000h"} {
+			for _, zug := range []string{"", "1", "2"} {
+				// Ohne Zweig wüchse der Zug in die Zahl hinein: „051" ist Jahrgang 51, keine 5.
+				if zweig == "" && zug != "" {
+					continue
+				}
+				formen = append(formen, fmt.Sprintf("%02d%s%s", jg, zweig, zug), fmt.Sprintf("%d%s%s", jg, zweig, zug))
+			}
+		}
+	}
+	return append(formen, "ET", "E1", "12T", "13T")
+}
+
+// Paar-Gate zu repository.JahrgangSQL: Der Jahrgang aus SQL ist der aus AbschlussJahrgang, über
+// den Formenraum, die Einführungsphase in mehreren Schreibweisen und Klassen ohne Jahrgang, die
+// in SQL NULL ergeben.
+func TestJahrgang_GoUndSQLSindEineRegel(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+
+	formen := append(klassenFormen(), "ET1", "ET10", "et2", "E2",
+		"", "ABG", "AUS", "Q1", "Q4", "0", "00a", "14", "14a", "20H1", "4711000123", "99999999999999999999")
+	if len(formen) < 200 {
+		t.Fatalf("nur %d Formen — die Probe läuft ins Leere", len(formen))
+	}
+	for _, klasse := range formen {
+		jahrgang, _, ok := repository.AbschlussJahrgang(klasse)
+		var sqlJahrgang *int
+		if err := pool.QueryRow(ctx, "SELECT "+repository.JahrgangSQL("$1::text"), klasse).Scan(&sqlJahrgang); err != nil {
+			t.Fatalf("%q: SQL: %v", klasse, err)
+		}
+		switch {
+		case !ok && sqlJahrgang != nil:
+			t.Errorf("%q: Go liest keinen Jahrgang, SQL liest %d", klasse, *sqlJahrgang)
+		case ok && sqlJahrgang == nil:
+			t.Errorf("%q: Go liest Jahrgang %d, SQL keinen", klasse, jahrgang)
+		case ok && *sqlJahrgang != jahrgang:
+			t.Errorf("%q: Go liest Jahrgang %d, SQL %d", klasse, jahrgang, *sqlJahrgang)
 		}
 	}
 }

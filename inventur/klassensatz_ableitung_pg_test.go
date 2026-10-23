@@ -2,6 +2,8 @@ package inventur
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"testing"
 
 	"bibliothek/internal/pgtest"
@@ -100,6 +102,54 @@ func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 	}
 	if _, da := je["05F2"]; da {
 		t.Error("vier Kinder sind unter der Mindestzahl — 05F2 darf keine abgeleitete Gruppe bilden")
+	}
+}
+
+// Die Oberstufe bildet Klassensätze aus Ausleihen wie die Mittelstufe, auch die Einführungsphase,
+// deren Klasse nicht mit einer Zahl beginnt („ET1"). Sie steht als Jahrgang 11 vor 12T.
+func TestLadeKlassensatzGruppen_Oberstufe(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	sqls := []string{`DELETE FROM ausleihen`, `DELETE FROM class_books`, `DELETE FROM buecher_exemplare`,
+		`DELETE FROM buecher_titel`, `DELETE FROM schueler WHERE barcode_id LIKE 'OS-%'`}
+	for i, klasse := range []string{"12T1", "ET1"} {
+		// Sechs Kinder, fünf mit demselben Buch: mehr als die Hälfte und die Mindestzahl.
+		sqls = append(sqls,
+			fmt.Sprintf(`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			 SELECT 'OS-%d-' || g, 'Kind' || g, 'Oberstufe', '%s', 2029 FROM generate_series(1, 6) g`, i, klasse),
+			fmt.Sprintf(`INSERT INTO buecher_titel (id, titel, isbn)
+			 VALUES ('00000000-0000-0000-0000-00000000c00%d', 'Buch der %s', '978-os%d')`, i, klasse, i),
+			fmt.Sprintf(`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+			 SELECT '00000000-0000-0000-0000-00000000c00%d', 'OS-B%d-' || g, true FROM generate_series(1, 5) g`, i, i),
+			fmt.Sprintf(`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+			 SELECT e.id, s.id, now() + interval '30 days'
+			 FROM (SELECT id, row_number() OVER (ORDER BY barcode_id) AS r FROM buecher_exemplare WHERE barcode_id LIKE 'OS-B%d-%%') e
+			 JOIN (SELECT id, row_number() OVER (ORDER BY barcode_id) AS r FROM schueler WHERE barcode_id LIKE 'OS-%d-%%') s ON s.r = e.r`, i, i))
+	}
+	for _, sql := range sqls {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatalf("%.40s: %v", sql, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, sql := range sqls[:5] {
+			if _, err := pool.Exec(ctx, sql); err != nil {
+				t.Logf("Aufräumen: %v", err)
+			}
+		}
+	})
+
+	gruppen, err := NewTitelAbfragen(pool).ladeKlassensatzGruppen(ctx, "", "asc")
+	if err != nil {
+		t.Fatalf("ladeKlassensatzGruppen: %v", err)
+	}
+	if got := gruppenNamen(gruppen); !slices.Equal(got, []string{"ET1", "12T1"}) {
+		t.Fatalf("Gruppen %v, erwartet [ET1 12T1]", got)
+	}
+	for _, g := range gruppen {
+		if len(g.Titel) != 1 || g.Titel[0].Quelle != "ausleihe" || g.Titel[0].Leser != 5 {
+			t.Errorf("%s: %+v, erwartet ein Buch aus Ausleihen mit fünf Lesern", g.Klasse, g.Titel)
+		}
 	}
 }
 

@@ -46,9 +46,10 @@ const klassensatzMindestLeser = 5
 // unangetastet, nichts wird geschrieben oder gelöscht) und den laufenden Ausleihen (Quelle
 // „ausleihe", jedes Mal gerechnet, nie gespeichert): Halten mehr als die Hälfte der aktiven
 // Kinder einer Klasse, mindestens klassensatzMindestLeser, denselben Titel, ist das ihr
-// Klassensatz, Schulbuch oder Lektüre. Ein Titel, der schon von Hand zugeordnet ist, erscheint
-// nur einmal (hand). Beide Quellen laufen durch dieselbe Sortierung; zweig filtert auf den
-// Bildungsgang, reihenfolge bestimmt die Reihenfolge der Klassen.
+// Klassensatz, Schulbuch oder Lektüre. Gezählt werden die Klassen mit einem Jahrgang
+// (repository.JahrgangSQL), auch die Einführungsphase ohne Zahl am Anfang. Ein Titel, der schon
+// von Hand zugeordnet ist, erscheint nur einmal (hand). Beide Quellen laufen durch dieselbe
+// Sortierung; zweig filtert auf den Bildungsgang, reihenfolge bestimmt die Reihenfolge der Klassen.
 //
 // Auflagen: Gezählt wird am Buch, nicht an der Auflage, mit COALESCE(werk_id, id) wie im
 // Bestellbedarf. Je Auflage gezählt, verschwände ein Klassensatz, sobald er auf zwei Auflagen
@@ -64,7 +65,7 @@ func (a *TitelAbfragen) ladeKlassensatzGruppen(ctx context.Context, zweig string
 		WITH klassen_groesse AS (
 			SELECT klassen_normkey(klasse) AS k, min(klasse) AS klasse, count(*) AS n
 			FROM schueler
-			WHERE deleted_at IS NULL AND ist_abgaenger = false AND klasse ~ '^\d'
+			WHERE deleted_at IS NULL AND ist_abgaenger = false AND ` + repository.JahrgangSQL("klasse") + ` IS NOT NULL
 			GROUP BY klassen_normkey(klasse)
 		),
 		offen AS (
@@ -166,7 +167,8 @@ func (a *TitelAbfragen) ladeKlassensatzGruppen(ctx context.Context, zweig string
 }
 
 // klassenSortierung ist das ORDER BY der Klassenübersicht: ohne Bildungsgang zuerst in der
-// Reihenfolge F, G, R, H, dann nach Jahrgang, Klasse und Titel.
+// Reihenfolge F, G, R, H, dann nach Jahrgang, Klasse und Titel. Die Einführungsphase steht als
+// Jahrgang 11 vor 12T und 13T.
 func klassenSortierung(zweig, reihenfolge string) string {
 	sortierung := ""
 	if zweig == "" {
@@ -181,7 +183,7 @@ func klassenSortierung(zweig, reihenfolge string) string {
 			END, `
 	}
 
-	stufeZahl := `CAST(SUBSTRING(cb.class_name FROM '^[0-9]+') AS INTEGER)`
+	stufeZahl := repository.JahrgangSQL("cb.class_name")
 	if reihenfolge == "desc" {
 		return sortierung + stufeZahl + ` DESC, cb.class_name DESC, b.titel ASC`
 	}

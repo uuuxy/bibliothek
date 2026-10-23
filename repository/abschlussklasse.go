@@ -28,12 +28,24 @@ func klassenZahlSQL(spalte string) string {
 	return fmt.Sprintf(`(substring(%s from '^\d{1,9}')::int)`, spalte)
 }
 
+// jahrgangAmAnfang trifft einen Jahrgang von 1 bis 13 am Anfang einer Klasse; die erste Gruppe
+// ist der Jahrgang ohne führende Nullen.
+const jahrgangAmAnfang = `^0*([1-9]|1[0-3])(?:\D|$)`
+
 // jahrgangImBereichSQL ist das Prädikat „diese Klasse beginnt mit einem Jahrgang von 1 bis 13“,
 // führende Nullen erlaubt („05F1“, „13“). Was mit einer anderen Zahl beginnt („14a“, eine
 // Buchnummer im Feld Klasse), ist kein Jahrgang der Schule: Die Versetzung lässt es stehen und
 // nennt es, keine Abfrage liest daraus eine Abschlussklasse.
 func jahrgangImBereichSQL(spalte string) string {
-	return fmt.Sprintf(`(%s ~ '^0*([1-9]|1[0-3])(\D|$)')`, spalte)
+	return fmt.Sprintf(`(%s ~ '%s')`, spalte, jahrgangAmAnfang)
+}
+
+// JahrgangSQL liest den Jahrgang einer Klasse als Zahl: 1 bis 13 aus der Zahl am Anfang, 11 für
+// die Einführungsphase („ET1“, „E2“), sonst NULL. Es ist der SQL-Zwilling des Jahrgangs aus
+// AbschlussJahrgang; wer nur die Zahl am Anfang liest, verliert die Einführungsphase lautlos.
+func JahrgangSQL(spalte string) string {
+	return fmt.Sprintf(`(CASE WHEN %[1]s ILIKE 'e%%' THEN 11 ELSE substring(%[1]s from '%[2]s')::int END)`,
+		spalte, jahrgangAmAnfang)
 }
 
 // leerraumKlasseSQL sind die 25 Zeichen mit der Unicode-Eigenschaft White_Space für eine

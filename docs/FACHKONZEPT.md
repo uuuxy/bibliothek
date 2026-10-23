@@ -230,7 +230,9 @@ mitten im Jahr dazukommen. Sie speist sich aus zwei Quellen, die verschieden alt
 - **Aus Ausleihen (Quelle `ausleihe`)** hängt an den **Kindern**: bei jedem Aufruf neu
   gerechnet über `klassen_normkey(schueler.klasse)`, nie gespeichert. Halten mehr als die
   Hälfte der aktiven Kinder einer Klasse und mindestens `klassensatzMindestLeser` (5)
-  denselben Titel, ist er ihr Klassensatz.
+  denselben Titel, ist er ihr Klassensatz. Gezählt werden die Klassen mit einem Jahrgang von 1
+  bis 13 (`repository.JahrgangSQL`), auch die Einführungsphase, deren Name nicht mit einer Zahl
+  beginnt: ET1 ist Jahrgang 11 und steht vor 12T1.
 
 Aus dem Unterschied folgt das Verhalten am Büchertausch: Die 7R2 gibt im Juni ihre Bücher ab und bekommt die der 8,
 steht in der LUSD aber bis nach den Ferien weiter als 07R2. Die abgeleitete Liste zeigt die

@@ -3293,11 +3293,11 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar. Beim Bau
   mitnehmen: Der Bescheid-Dialog zeigt eine Forderung ohne Exemplar mit dem Satz für Bücher der
   Schülerbücherei und „kein Preis hinterlegt" (`BescheidPositionen.svelte`).
-- **Klassensätze aus den Ausleihen.** Für ET1 bis ET3 entsteht keiner: Die Übersicht zählt nur
-  Klassen, deren Name mit einer Ziffer beginnt (`ladeKlassensatzGruppen`), und nur Ausleihen auf
-  die Ausweise der Kinder. Die Theke warnt bei einer anderen Auflage als der Klasse und bei einem
-  Buch, das auf ein anderes Kind verbucht ist, nicht aber bei einem Buch eines anderen Jahrgangs
-  oder einem zweiten Exemplar desselben Titels.
+- **Klassensätze aus den Ausleihen.** Die Übersicht zählt nur Ausleihen auf die Ausweise der
+  Kinder (`ladeKlassensatzGruppen`); ein Stapel auf dem Ausweis der Lehrkraft erscheint nicht bei
+  der Klasse. Die Theke warnt bei einer anderen Auflage als der Klasse und bei einem Buch, das auf
+  ein anderes Kind verbucht ist, nicht aber bei einem Buch eines anderen Jahrgangs oder einem
+  zweiten Exemplar desselben Titels.
 - **Die kurze Nummer der alten Littera-Etiketten.** Nach der Übernahme ist die Nummer eines
   Exemplars der EAN-13 seines Etiketts; lesbar steht darauf nur „Exemplar-Nr.: 58968". Die
   getippte kurze Nummer findet die Theke nicht (`verarbeiteOhneVorsilbe` in

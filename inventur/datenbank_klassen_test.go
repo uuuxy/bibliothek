@@ -310,7 +310,7 @@ func TestLadeKlassensatzGruppen(t *testing.T) {
 				}).
 					AddRow("10F", "550e8400-e29b-41d4-a716-446655440003", "Buch 3", "Englisch", "F", "url3", "789", 1, 1, 0, "hand", 0, nil)
 
-				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CAST.*DESC, cb\.class_name DESC, b\.titel ASC`).
+				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY \(CASE WHEN cb\.class_name ILIKE 'e%' THEN 11.*\) DESC, cb\.class_name DESC, b\.titel ASC`).
 					WithArgs("F", klassensatzMindestLeser).
 					WillReturnRows(zeilen)
 			},
