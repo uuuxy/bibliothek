@@ -40,7 +40,7 @@ Nur, was kein Test leisten kann.
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
-- [ ] Am Testserver nachsehen, gegen welchen Mailserver die Anmeldung prüft (`IMAP_HOST` in der
+- [x] Am Testserver nachsehen, gegen welchen Mailserver die Anmeldung prüft (`IMAP_HOST` in der
   `.env`) und ob dort echte Daten von Schülern liegen. (7.12)
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
   17.09.2026 als Verlust ausgebucht. Liegt es dort: in der Buchakte den Status des Exemplars
@@ -217,16 +217,6 @@ mindestens neun Büchern über der Frist (Anschrift im Fenster des Kuverts, Folg
 „Fortsetzung: …"), die Mahnliste an die Klassenleitung (Versand an eine eigene Adresse), die
 Ersatzforderung aus der Leserakte, das Anschreiben im Anhang der Bestellmail und die
 DSGVO-Auskunft.
-
-### 7.12 Testserver von außen
-
-Der Testserver ist ganz aus dem Internet erreichbar, mit Anmeldung und Schnittstelle
-(`update_caddy.sh`; `/health` und die Anmeldeseite antworten von außen). Prüft die Anmeldung dort
-gegen den Mailserver der Schule, kann jeder aus dem Netz Passwörter der Lehrkräfte durchprobieren,
-gebremst je Konto und Adresse (5) und je Adresse (50 in 15 Minuten); mit vielen Adressen ist das
-keine Grenze. Am Server nachsehen: `IMAP_HOST` in der `.env`, und ob dort echte Daten von Schülern
-liegen. Ist eins davon so, bekommt der Testserver einen Eingang wie in 4.23 oder eine Sperre nach
-Adresse im Caddy.
 
 ### 7.13 Verschlüsselte Platte am Schulserver
 
