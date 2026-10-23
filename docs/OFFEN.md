@@ -82,7 +82,9 @@ das Sitzungs-Cookie nicht (`ermittleCookieSecure` in `main.go`). Danach in den E
 **Vorher muss feststehen:** der Name des Servers im Internet (auch die Geräte der Schule nutzen
 ihn, das Zertifikat gilt für den Namen), die Freigabe von Port 443, der Netzabschnitt des Servers
 und die Absenderadresse, an der der Eingang das Schulnetz erkennt. Ausgehend braucht der Server
-den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
+den Mailserver der Schule zum Anmelden (IMAP, Port 993, `auth/imap.go`) und den Server für den
+Mailversand (SMTP, eingetragen unter Einstellungen → Mail; der Mailserver der Schule nimmt Port
+587 und 25 an, [SECURITY.md](SECURITY.md)), DNB, Google Books und OpenLibrary
 (`pkg/coverquelle`), Let's Encrypt für das Zertifikat, den Speicher der Sicherung außer Haus
 (7.3) und für Updates GitHub, Docker Hub und die Paketquellen. Alles andere sperrt die Firewall
 nach außen: Dann schickt auch Code, der mit einem Update hereinkommt, keine Daten an ein
