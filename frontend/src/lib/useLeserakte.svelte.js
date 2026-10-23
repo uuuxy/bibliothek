@@ -200,11 +200,7 @@ export function useLeserakte() {
 				if (schadenExemplar === exemplar) schadenOffen = false;
 				if (akte?.id === studentId) ladeAkte(studentId);
 			} else {
-				const err = await res.json().catch((e) => {
-					console.error('Fehler:', e);
-					return {};
-				});
-				snackbars.addToast(err.error || 'Fehler beim Melden.', 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Fehler beim Melden.'), 'error');
 			}
 		} catch (e) {
 			console.error('Schaden melden fehlgeschlagen:', e);

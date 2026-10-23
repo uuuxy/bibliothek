@@ -11,6 +11,7 @@ vi.mock('../../inventur/lib/store.svelte.js', () => ({
 import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../apiFetch.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
+import { serverAntwort } from '../serverAntwort.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 const showToastMock = vi.mocked(melde);
@@ -69,10 +70,7 @@ describe('useMahnwesenMail.sende', () => {
 
 	it('zeigt bei einer Fehlerantwort (res.ok=false) die Server-Meldung als Fehler-Toast', async () => {
 		apiFetchMock.mockResolvedValueOnce(
-			/** @type {any} */ ({
-				ok: false,
-				json: async () => ({ error: 'Mahnwesen ist derzeit pausiert (Ferien)' })
-			})
+			serverAntwort(409, { error: 'Mahnwesen ist derzeit pausiert (Ferien)' })
 		);
 		const store = useMahnwesenMail();
 

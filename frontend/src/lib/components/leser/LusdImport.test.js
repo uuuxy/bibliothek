@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 import { apiFetch } from '../../apiFetch.js';
 import LusdImport from './LusdImport.svelte';
 
@@ -25,7 +28,12 @@ const vorschau = {
 	umbenennungen: []
 };
 /** @param {boolean} ok @param {number} status @param {any} body */
-const antwort = (ok, status, body) => ({ ok, status, json: async () => body });
+const antwort = (ok, status, body) => ({
+	ok,
+	status,
+	json: async () => body,
+	text: async () => JSON.stringify(body)
+});
 
 /** @param {HTMLElement} container @param {string} name */
 async function waehleDatei(container, name) {

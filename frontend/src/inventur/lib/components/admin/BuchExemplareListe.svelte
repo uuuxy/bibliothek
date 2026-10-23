@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { melde } from '$lib/store.svelte.js';
 	import { ladeBestandNach } from '../../buch_speichern.js';
@@ -41,10 +41,7 @@
 			const res = await apiFetch(`/api/buecher/titel/${formular.id}/exemplare`, {
 				credentials: 'include'
 			});
-			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
-				throw new Error(err.error || 'Fehler beim Laden der Exemplare');
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Laden der Exemplare'));
 			// Die Antwort ist das nackte Array (AntworteJSON), wie Buchakte und Druck-Center
 			// sie lesen. Ob ein Exemplar zum Bestand zählt, sagt der Server (im_bestand).
 			/** @type {any[]} */
@@ -75,8 +72,7 @@
 				await ladeBestandNach(formular);
 				melde('Exemplar erfolgreich gelöscht', 'success');
 			} else {
-				const err = await res.json().catch(() => ({}));
-				melde(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
+				melde(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'), 'error');
 			}
 		} catch {
 			melde('Netzwerkfehler beim Löschen.', 'error');

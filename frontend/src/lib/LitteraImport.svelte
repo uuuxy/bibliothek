@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Button from './components/ui/Button.svelte';
 
@@ -22,11 +22,8 @@
 				body: formulardaten
 			});
 
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Upload fehlgeschlagen'));
 			const daten = await res.json();
-
-			if (!res.ok) {
-				throw new Error(daten.error || 'Upload fehlgeschlagen');
-			}
 
 			let successMsg = '';
 			if (daten.type === 'xml') {

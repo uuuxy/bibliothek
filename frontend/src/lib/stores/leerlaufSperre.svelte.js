@@ -18,7 +18,7 @@
 // ist, sagt dabei allein der Server; die Fenster geben sich nur Bescheid (fensterSignale.js).
 
 import { tick, untrack } from 'svelte';
-import { apiFetch, registriereSitzungGesperrtHandler } from '../apiFetch.js';
+import { apiFetch, registriereSitzungGesperrtHandler, leseApiFehler } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
 import { authStore, registriereGesperrterStartHandler } from './authStore.svelte.js';
 import { beobachteAndereFenster, meldeAktivitaet, meldeSperre } from './fensterSignale.js';
@@ -370,13 +370,7 @@ async function fehlertext(res) {
 	if (res.status === 401) return 'Passwort falsch.';
 	if (res.status === 429) return 'Zu viele Versuche — bitte kurz warten.';
 	if (res.status === 503) return 'Anmeldedienst (Mailserver) nicht erreichbar.';
-	try {
-		const d = await res.json();
-		if (d?.error) return String(d.error);
-	} catch {
-		/* kein JSON */
-	}
-	return `Wiederanmeldung fehlgeschlagen (${res.status}).`;
+	return leseApiFehler(res, `Wiederanmeldung fehlgeschlagen (${res.status}).`);
 }
 
 export const leerlaufSperre = new LeerlaufSperre();

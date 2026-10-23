@@ -8,6 +8,7 @@
 // Klick auf, bevor seine Anfrage hinausgeht; einen anderen Platz weist der Server ab (409).
 
 import { melde } from '../../inventur/lib/store.svelte.js';
+import { leseApiFehler } from '../apiFetch.js';
 
 /** @typedef {{ klassen: string[], override_email: string }} VersandRumpf */
 
@@ -34,8 +35,8 @@ export function erzeugeSammelversand(schicke, ersatzMeldung) {
 				klassen: auswahl.klassen,
 				override_email: auswahl.overrideEmail ?? ''
 			});
-			const json = await res.json();
 			if (res.ok) {
+				const json = await res.json();
 				// Die Meldung des Servers nennt, an wen die Mails gingen. failed_count > 0: Ein Teil
 				// des Laufs ist nicht zugestellt, als Warnung, nicht als Erfolg.
 				melde(
@@ -43,7 +44,7 @@ export function erzeugeSammelversand(schicke, ersatzMeldung) {
 					(json.failed_count ?? 0) > 0 ? 'warning' : 'success'
 				);
 			} else {
-				melde(json.error ?? json.message ?? 'Versand fehlgeschlagen.', 'error');
+				melde(await leseApiFehler(res, 'Versand fehlgeschlagen.'), 'error');
 			}
 		} catch (e) {
 			melde(`Netzwerkfehler beim Versand: ${e}`, 'error');

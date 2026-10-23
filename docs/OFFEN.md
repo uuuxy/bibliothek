@@ -10,11 +10,6 @@ geführt wird, steht am Ende.
 
 ## Fahrplan
 
-### Jetzt
-
-- [ ] Fehlermeldungen: Die übrigen Stellen, die die Antwort des Servers selbst auspacken, lesen
-  über `leseApiFehler`. (5.95)
-
 ### Etappe 1: vor dem Echtstart
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
@@ -86,15 +81,6 @@ den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.95 Fehlermeldung auf einem zweiten Weg gelesen
-
-Rund 40 Stellen in gut 30 Dateien lesen bei einem Fehler `res.json()` und dann `.error`, neben
-`leseApiFehler` in `apiFetch.js`. Mit dem Rumpf des Servers geht das. Ohne Rumpf, etwa bei 502
-vom Proxy während eines Neustarts, scheitert `res.json()`: Der Bestands-Import und der
-Cover-Abgleich (`BestandImport.svelte`, `Datenverwaltung.svelte`) zeigen dann „Unexpected end of
-JSON input". Nächster Schritt: alle über `leseApiFehler(res, vorgabe)`, und das Gate in
-`frontend-hygiene-helfer.test.js` lernt diese Form.
 
 ### 7.2 Frisches Littera-Backup
 

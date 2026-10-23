@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { erzeugePlaner } from './lmfplanPlaner.svelte.js';
 import { apiFetch } from './apiFetch.js';
+import { serverAntwort } from './serverAntwort.js';
 
 // Der LMF-Plan meldet seine Änderungen über die SSE-Leitung (api/lernmittel/lmf_plan_live.go), damit
 // das Kollegium im Portal und die zweite Bibliothekskraft am anderen PC den neuen Stand
@@ -12,7 +13,10 @@ import { apiFetch } from './apiFetch.js';
 // speichert — ohne ein Wort, mitten in der Arbeit. Deshalb entscheidet `fremdesSignal`:
 // still nachladen, solange hier nichts Ungespeichertes steht, sonst stehen lassen und
 // hinweisen.
-vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('./apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 vi.mock('./stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn(async () => true) }));
 
@@ -104,10 +108,8 @@ describe('LMF-Planer: Speichern auf einem überholten Stand', () => {
 			if (o?.method !== 'PUT') return ok(MIT_PLAN);
 			gesendet = JSON.parse(o.body);
 			if (gesendet.vorschau) return ok({ zeilen: [], ausfaelle: [] });
-			return /** @type {any} */ ({
-				ok: false,
-				status: 409,
-				json: async () => ({ error: 'Der Plan wurde inzwischen an einem anderen Platz geändert.' })
+			return serverAntwort(409, {
+				error: 'Der Plan wurde inzwischen an einem anderen Platz geändert.'
 			});
 		});
 	});

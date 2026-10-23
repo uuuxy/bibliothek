@@ -10,7 +10,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { apiFetch, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
+	import { apiFetch, FRIST_MAILVERSAND_MS, leseApiFehler } from '../../apiFetch.js';
 	import { erzeugeKlassensatzListe } from './klassensatzListe.svelte.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -63,10 +63,10 @@
 				snackbars.addToast('Reservierung war bereits abgeschlossen.', 'success');
 				return;
 			}
-			if (!res.ok) {
-				const daten = await res.json().catch(() => null);
-				throw new Error(daten?.error || 'Reservierung konnte nicht abgeschlossen werden.');
-			}
+			if (!res.ok)
+				throw new Error(
+					await leseApiFehler(res, 'Reservierung konnte nicht abgeschlossen werden.')
+				);
 			// Kein Reload: Die Zeile wandert lokal samt Notiz in „Zuletzt bereitgestellt".
 			// Vorher wurde sie entfernt — die Zusage war bis zum nächsten Laden unauffindbar.
 			const heute = new Date().toLocaleDateString('de-DE', { dateStyle: 'medium' });

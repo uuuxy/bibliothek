@@ -1,4 +1,4 @@
-import { apiFetch } from '../../lib/apiFetch.js';
+import { apiFetch, leseApiFehlerMitDaten } from '../../lib/apiFetch.js';
 import { holeBuchDetail } from './admin_api.js';
 import { alsRumpf, geaenderteFelder, merkeStand } from './buch_felder.js';
 
@@ -124,8 +124,7 @@ export async function speichereBuch(formular, antwort = {}) {
 		body: JSON.stringify(rumpf)
 	});
 	if (!res.ok) {
-		const fehler = await res.json().catch(() => null);
-		const meldung = fehler?.error || fehler?.message || 'Speichern fehlgeschlagen';
+		const { meldung, daten: fehler } = await leseApiFehlerMitDaten(res, 'Speichern fehlgeschlagen');
 		if (res.status === 409 && fehler?.vorhanden?.id) {
 			throw new DubletteFehler(meldung, fehler.vorhanden, fehler.gleicherTitel === true);
 		}

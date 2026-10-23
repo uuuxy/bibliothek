@@ -1,6 +1,6 @@
 <script>
 	import { melde } from '../../inventur/lib/store.svelte.js';
-	import { apiClient } from '../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../apiFetch.js';
 	import Select from './ui/Select.svelte';
 	import Feld from './ui/Feld.svelte';
 	import Button from './ui/Button.svelte';
@@ -91,8 +91,7 @@
 				onDone();
 				melde('Status erfolgreich gespeichert', 'success');
 			} else {
-				const fehlerAntwort = await res.json().catch(() => ({}));
-				fehler = fehlerAntwort.error || 'Fehler beim Speichern';
+				fehler = await leseApiFehler(res, 'Fehler beim Speichern');
 			}
 		} catch {
 			fehler = 'Netzwerkfehler';

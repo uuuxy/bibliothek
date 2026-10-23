@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { melde } from '../inventur/lib/store.svelte.js';
 	import { Trash } from '@lucide/svelte';
@@ -15,8 +15,7 @@
 				vormerkungen = vormerkungen.filter((v) => v.id !== id);
 				melde('Vormerkung gelöscht', 'success');
 			} else {
-				const err = await res.json().catch(() => ({}));
-				melde(err.error || 'Fehler beim Löschen', 'error');
+				melde(await leseApiFehler(res, 'Fehler beim Löschen'), 'error');
 			}
 		} catch {
 			melde('Netzwerkfehler', 'error');

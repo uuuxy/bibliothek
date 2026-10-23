@@ -9,6 +9,7 @@ import { apiFetch, FRIST_SAMMELVERSAND_MS } from './apiFetch.js';
 import { melde } from '../inventur/lib/store.svelte.js';
 import { sendeKontoauszuege, kontoauszugAdresse, ladeKontoauszuege } from './abgaengerDienst.js';
 import { erzeugeSammelversand } from './stores/sammelversand.svelte.js';
+import { serverAntwort } from './serverAntwort.js';
 
 // Der Versand der Kontoauszüge an die Klassenleitungen hat im Browser nur ein Saisonfenster:
 // Die beiden e2e-Specs (abgaenger-versand, schueler-profil-klick) überspringen sich vom
@@ -54,13 +55,18 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 
 	it('meldet den Fehler des Servers, nicht eine eigene Formulierung', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(
-			/** @type {any} */ ({
-				ok: false,
-				json: async () => ({ error: 'Mailserver nicht erreichbar' })
-			})
+			serverAntwort(502, { error: 'Mailserver nicht erreichbar' })
 		);
 		await versand.sende({ klassen: ['09H1'] });
 		expect(melde).toHaveBeenCalledWith('Mailserver nicht erreichbar', 'error');
+	});
+
+	// Ohne Rumpf, etwa bei 502 vom Proxy während eines Neustarts, las der Versand die Antwort als
+	// JSON, bevor er nach res.ok fragte, und meldete einen Satz des Browsers.
+	it('nennt ohne Rumpf die Vorgabe, keinen Satz des Browsers', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(502));
+		await versand.sende({ klassen: ['09H1'] });
+		expect(melde).toHaveBeenCalledWith('Versand fehlgeschlagen.', 'error');
 	});
 });
 

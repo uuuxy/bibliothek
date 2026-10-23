@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
-vi.mock('./apiFetch.js', () => ({ apiClient: { patch: vi.fn() } }));
+vi.mock('./apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiClient: { patch: vi.fn() }
+}));
 vi.mock('./stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 import { apiClient } from './apiFetch.js';
 import { snackbars } from './stores/snackbars.svelte.js';
 import LeserSperreDialog from './LeserSperreDialog.svelte';
+import { serverAntwort } from './serverAntwort.js';
 
 // „Abbrechen" bleibt frei, während die Anfrage läuft (M3 Dialogs: „Dismissive actions are never
 // disabled."). Die Antwort geht dann nicht verloren: Ist der Dialog zu, meldet die Snackbar
@@ -22,9 +26,9 @@ function spaeteAntwort() {
 	return (/** @type {any} */ antwort) => schicke(antwort);
 }
 
-const stillhalten = async () => {
-	for (let i = 0; i < 5; i++) await Promise.resolve();
-};
+// Ein ganzer Takt: Danach ist jeder anstehende Mikroschritt gelaufen, wie viele der Dialog auch
+// braucht, um die Antwort zu lesen.
+const stillhalten = () => new Promise((fertig) => setTimeout(fertig, 0));
 
 async function sperreMitGrund() {
 	const onsuccess = vi.fn();
@@ -49,7 +53,7 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		await fireEvent.click(abbrechen);
 		expect(screen.queryByRole('dialog')).toBeNull();
 
-		schicke({ ok: false, json: async () => ({ error: 'Der Leser liegt im Papierkorb.' }) });
+		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb.' }));
 		await stillhalten();
 		expect(snackbars.addToast).toHaveBeenCalledWith('Der Leser liegt im Papierkorb.', 'error');
 	});
@@ -72,7 +76,7 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
 		await screen.rerender({ open: true });
 
-		schicke({ ok: false, json: async () => ({ error: 'Der Leser liegt im Papierkorb.' }) });
+		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb.' }));
 		await stillhalten();
 		expect(screen.queryByRole('alert')).toBeNull();
 		expect(snackbars.addToast).toHaveBeenCalledWith('Der Leser liegt im Papierkorb.', 'error');
@@ -82,7 +86,7 @@ describe('Leser sperren: Abbrechen während der Anfrage', () => {
 		const schicke = spaeteAntwort();
 		const { screen } = await sperreMitGrund();
 
-		schicke({ ok: false, json: async () => ({ error: 'Der Leser liegt im Papierkorb.' }) });
+		schicke(serverAntwort(409, { error: 'Der Leser liegt im Papierkorb.' }));
 		await stillhalten();
 		expect(screen.getByRole('alert').textContent).toContain('Der Leser liegt im Papierkorb.');
 		expect(snackbars.addToast).not.toHaveBeenCalled();

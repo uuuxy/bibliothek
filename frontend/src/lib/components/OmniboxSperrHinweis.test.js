@@ -9,7 +9,8 @@ import { render, fireEvent } from '@testing-library/svelte';
 // Seit dem 24.09.2026 entscheidet das Merkmal des Servers, welcher der beiden Knöpfe steht:
 // Eine Sperre am Leser (X-Sperre: leser) lässt sich nur aufheben, ein Hinweis
 // (X-Sperre: uebergehbar) nur einmalig übergehen.
-vi.mock('../apiFetch.js', () => ({
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn(), patch: vi.fn() },
 	registriereSitzungAbgelaufenHandler: vi.fn()
@@ -32,6 +33,7 @@ afterEach(() => omniboxStore.stoppeZeitgeber());
 
 import { authStore } from '../stores/authStore.svelte.js';
 import OmniboxSperrHinweis from './OmniboxSperrHinweis.svelte';
+import { serverAntwort } from '../serverAntwort.js';
 
 /** @param {'leser' | 'uebergehbar'} art */
 function sperre(art) {
@@ -132,10 +134,7 @@ describe('OmniboxSperrHinweis', () => {
 		mitRecht();
 		sperre('leser');
 		vi.mocked(apiClient.patch).mockResolvedValue(
-			/** @type {any} */ ({
-				ok: false,
-				json: async () => ({ error: 'Ein anonymisierter Datensatz bleibt gesperrt.' })
-			})
+			serverAntwort(409, { error: 'Ein anonymisierter Datensatz bleibt gesperrt.' })
 		);
 		const screen = render(OmniboxSperrHinweis, { onReload: () => {} });
 		await fireEvent.click(screen.getByRole('button', { name: 'Sperre aufheben' }));

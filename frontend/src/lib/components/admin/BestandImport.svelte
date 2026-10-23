@@ -6,7 +6,7 @@
   Sekunden (frontend/src/lib/apiFetch.js).
 -->
 <script lang="ts">
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 
@@ -25,8 +25,8 @@
 				method: 'POST',
 				body: formulardaten
 			});
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Bestands-Import fehlgeschlagen'));
 			const daten = await res.json();
-			if (!res.ok) throw new Error(daten.error || 'Bestands-Import fehlgeschlagen');
 			ergebnis = {
 				type: 'success',
 				message: `Kombi-Import erfolgreich! ${daten.new_titles_count || 0} neue Titel und ${daten.imported_copies_count || 0} Exemplare wurden verarbeitet.`

@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, melde } from '$lib/store.svelte.js';
 	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
@@ -168,20 +168,7 @@
 				headers: {},
 				body: fd
 			});
-			if (!res.ok) {
-				let message = 'Upload fehlgeschlagen';
-				try {
-					const fehlerAntwort = await res.json();
-					if (fehlerAntwort?.message) {
-						message = fehlerAntwort.message;
-					} else if (fehlerAntwort?.error) {
-						message = fehlerAntwort.error;
-					}
-				} catch {
-					// fallback to default message
-				}
-				throw new Error(message);
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Upload fehlgeschlagen'));
 			const json = await res.json();
 			uebernimmGespeichert(formular, 'coverUrl', json.data.coverUrl);
 			titelListe = titelListe.map((/** @type {any} */ b) =>

@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { apiClient } from '../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../apiFetch.js';
 	import { erzeugeGeraeteListe } from './geraeteListe.svelte.js';
 	import { snackbars } from '../stores/snackbars.svelte.js';
 	import { leeresGeraetFormular, geraetFormularAus, geraetNutzlast } from '../geraetFormular.js';
@@ -58,8 +58,7 @@
 				if (formular === gesendet) schliesseFormular();
 				geraete.lade();
 			} else {
-				const err = await res.json().catch(() => ({}));
-				snackbars.addToast(err.error || 'Speichern fehlgeschlagen.', 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Speichern fehlgeschlagen.'), 'error');
 			}
 		} catch {
 			snackbars.addToast('Netzwerkfehler.', 'error');
@@ -78,8 +77,7 @@
 			if (res.ok) {
 				geraete.lade();
 			} else {
-				const err = await res.json().catch(() => ({}));
-				snackbars.addToast(err.error || 'Statuswechsel fehlgeschlagen.', 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Statuswechsel fehlgeschlagen.'), 'error');
 			}
 		} catch {
 			snackbars.addToast('Netzwerkfehler.', 'error');

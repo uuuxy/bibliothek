@@ -1,4 +1,4 @@
-import { apiClient } from './apiFetch.js';
+import { apiClient, leseApiFehler } from './apiFetch.js';
 import { istKollegium, artMitKonto } from './leserArt.js';
 import { fehlertext } from './utils/fehlertext.js';
 import { nurGeaendertes } from './utils/geaendert.js';
@@ -170,10 +170,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 		speichert = true;
 		try {
 			const res = await apiClient.patch(`/api/schueler/${leser.id}`, payload);
-			if (!res.ok) {
-				const antwort = await res.json().catch(() => ({}));
-				throw new Error(antwort.error || 'Speichern fehlgeschlagen');
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Speichern fehlgeschlagen'));
 			showSnackbar('Änderungen gespeichert.', 'success');
 			onSave();
 		} catch (e) {

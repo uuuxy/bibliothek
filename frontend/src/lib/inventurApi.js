@@ -1,4 +1,4 @@
-import { apiFetch } from './apiFetch.js';
+import { apiFetch, leseApiFehlerMitDaten } from './apiFetch.js';
 
 // Reine API-Aufrufe der Inventur, getrennt von der Zustandslogik im Hook.
 // Jede Funktion liefert ein { ok, data?, status, error? }-Objekt, damit der Hook
@@ -9,15 +9,11 @@ async function auswerten(res) {
 	if (res.ok) {
 		return { ok: true, status: res.status, data: await res.json().catch(() => ({})) };
 	}
-	const body = await res.json().catch(() => ({}));
 	// `data` wird auch im Fehlerfall durchgereicht, damit der Hook strukturierte 409-Antworten
 	// (z. B. "ausser_scope" mit Titel + Warntext) auswerten kann, ohne HTTP-Details zu kennen.
-	return {
-		ok: false,
-		status: res.status,
-		error: body.error || body.message || 'Unbekannter Fehler',
-		data: body
-	};
+	// Ohne Meldung des Servers bleibt error leer: Den Satz dafür kennt der Aufrufer.
+	const { meldung, daten } = await leseApiFehlerMitDaten(res, '');
+	return { ok: false, status: res.status, error: meldung, data: daten ?? {} };
 }
 
 /** Laufende Sessions laden (für die "bereits laufend"-Anzeige). */
@@ -89,7 +85,12 @@ export function deuteScanErgebnis(r, barcode) {
 	}
 	return {
 		zaehlen: false,
-		lastScan: { success: false, barcode, title: 'Unbekanntes Buch', warnings: [r.error] }
+		lastScan: {
+			success: false,
+			barcode,
+			title: 'Unbekanntes Buch',
+			warnings: [r.error || 'Unbekannter Fehler']
+		}
 	};
 }
 

@@ -3,7 +3,7 @@
 	// Schulklasse zu. Genutzt an zwei Stellen — Mehrfachauswahl in der Bücher-Liste und
 	// „Klasse zuweisen" in der Buch-Bearbeitungsmaske. Additiv über
 	// POST /api/admin/class-books/add (klassenname wird serverseitig normalisiert).
-	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
+	import { apiFetch, apiClient, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
 	import Dialog from '../../../../lib/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
@@ -62,10 +62,7 @@
 				classNames: [name],
 				bookIds: titelIds
 			});
-			if (!res.ok) {
-				const body = await res.json().catch(() => ({}));
-				throw new Error(body.error || 'Zuweisung fehlgeschlagen.');
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Zuweisung fehlgeschlagen.'));
 			onAssigned();
 		} catch (err) {
 			fehler = /** @type {any} */ (err).message;

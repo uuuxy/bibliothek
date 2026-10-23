@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from '../apiFetch.js';
+	import { apiFetch, apiClient, leseApiFehler } from '../apiFetch.js';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
 
@@ -43,8 +43,7 @@
 				ex.barcode_id = barcode;
 				onDone();
 			} else {
-				const fehlerAntwort = await res.json().catch(() => ({}));
-				barcodeFehler = fehlerAntwort.error || 'Fehler beim Speichern';
+				barcodeFehler = await leseApiFehler(res, 'Fehler beim Speichern');
 			}
 		} catch {
 			barcodeFehler = 'Netzwerkfehler';

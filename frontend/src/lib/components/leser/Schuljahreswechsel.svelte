@@ -4,7 +4,7 @@
 <script>
 	import { TriangleAlert, CircleCheck, Info } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 	import { zeilen } from './schuljahreswechselZeilen.js';
 
@@ -33,10 +33,7 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
 		});
-		if (!res.ok) {
-			const daten = await res.json().catch(() => null);
-			throw new Error(daten?.error || 'Schuljahreswechsel fehlgeschlagen.');
-		}
+		if (!res.ok) throw new Error(await leseApiFehler(res, 'Schuljahreswechsel fehlgeschlagen.'));
 		return res.json();
 	}
 

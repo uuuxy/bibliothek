@@ -1,5 +1,5 @@
 <script>
-	import { apiClient } from './apiFetch.js';
+	import { apiClient, leseApiFehler } from './apiFetch.js';
 	import { snackbars } from './stores/snackbars.svelte.js';
 	import { Receipt, CircleCheck, Ban, FileText } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
@@ -48,8 +48,7 @@
 			if (res.ok) {
 				snackbars.addToast(erfolgsMeldung, 'success');
 			} else {
-				const err = await res.json().catch(() => ({}));
-				snackbars.addToast(err.error || 'Aktion fehlgeschlagen.', 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Aktion fehlgeschlagen.'), 'error');
 			}
 			// Auch nach einem Fehler-STATUS neu laden (nur bei Netzwerkfehler nicht):
 			// 409 heisst am Mehrplatz-System "eine Kollegin war schneller" — die Akte

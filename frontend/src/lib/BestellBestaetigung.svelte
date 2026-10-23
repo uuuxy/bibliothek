@@ -5,7 +5,7 @@
 	// und sie zeigt deshalb bewusst wenig: eine Bestellung, ihre Etiketten, ein Knopf.
 	// Der Token steht in der Adresse; einen Login gibt es hier nicht und soll es nicht
 	// geben, sonst müsste der Lieferant ein Geheimnis verwalten.
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import Button from './components/ui/Button.svelte';
 	import BestaetigungEtiketten from './components/bestellungen/BestaetigungEtiketten.svelte';
@@ -73,8 +73,7 @@
 				await laden();
 				return;
 			}
-			const daten = await res.json().catch(() => ({}));
-			fehler = daten.error || 'Die Bestätigung konnte nicht gespeichert werden.';
+			fehler = await leseApiFehler(res, 'Die Bestätigung konnte nicht gespeichert werden.');
 		} catch {
 			fehler = 'Die Bestätigung konnte nicht gespeichert werden.';
 		} finally {

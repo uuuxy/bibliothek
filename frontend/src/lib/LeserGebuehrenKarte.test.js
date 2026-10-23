@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import LeserGebuehrenKarte from './LeserGebuehrenKarte.svelte';
 import { apiClient } from './apiFetch.js';
+import { serverAntwort } from './serverAntwort.js';
 
 // apiGet/apiPost: der Bescheid-Dialog importiert sie; er öffnet in diesen Tests nie.
-vi.mock('./apiFetch.js', () => ({
+vi.mock('./apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiClient: { post: vi.fn() },
 	apiGet: vi.fn(),
 	apiPost: vi.fn()
@@ -106,17 +108,14 @@ describe('LeserGebuehrenKarte', () => {
 		// Konflikt, und onChanged synchronisiert die Liste, damit der veraltete
 		// Aktionsknopf verschwindet. Nur bei Netzwerkfehlern wird NICHT neu geladen.
 		vi.mocked(apiClient.post).mockResolvedValue(
-			/** @type {any} */ ({
-				ok: false,
-				json: async () => ({ error: 'Schadensfall wurde bereits bezahlt oder storniert' })
-			})
+			serverAntwort(409, { error: 'Schadensfall wurde bereits bezahlt oder storniert' })
 		);
 		const onChanged = vi.fn();
 		const screen = render(LeserGebuehrenKarte, {
 			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
 		});
 		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
-		expect(onChanged).toHaveBeenCalled();
+		await vi.waitFor(() => expect(onChanged).toHaveBeenCalled());
 	});
 
 	it('lädt bei Netzwerkfehler NICHT neu — es gibt keinen neuen Zustand zu holen', async () => {

@@ -9,6 +9,7 @@ vi.mock('../apiFetch.js', async (original) => ({
 
 import { apiClient, apiFetch } from '../apiFetch.js';
 import ExemplarKarte from './ExemplarKarte.svelte';
+import { serverAntwort } from '../serverAntwort.js';
 
 // Was nicht zum Bestand zählt, heißt nicht „Gesperrt". Ein ausgesondertes Exemplar hat keinen
 // Papierkorb: Die Tür weist es als schon ausgebucht ab.
@@ -75,9 +76,7 @@ describe('Exemplarkarte: abgelehnter Barcode', () => {
 	});
 
 	it('nennt den Grund des Servers als Beschreibung des Felds', async () => {
-		vi.mocked(apiClient.put).mockResolvedValue(
-			/** @type {any} */ ({ ok: false, json: async () => ({ error: grund }) })
-		);
+		vi.mocked(apiClient.put).mockResolvedValue(serverAntwort(409, { error: grund }));
 		const feld = await trageEin(karte());
 
 		await waitFor(() => expect(feld.getAttribute('aria-invalid')).toBe('true'));
@@ -140,9 +139,7 @@ describe('Exemplarkarte: leerer Barcode', () => {
 	});
 
 	it('nimmt den Grund des Servers weg, sobald eine interne ID im Feld steht', async () => {
-		vi.mocked(apiClient.put).mockResolvedValue(
-			/** @type {any} */ ({ ok: false, json: async () => ({ error: 'schon vergeben' }) })
-		);
+		vi.mocked(apiClient.put).mockResolvedValue(serverAntwort(409, { error: 'schon vergeben' }));
 		vi.mocked(apiFetch).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ next_barcode: 'B-0099999' }) })
 		);
@@ -204,9 +201,7 @@ describe('Exemplarkarte: zweiter Scan während des Speicherns', () => {
 
 	// Lehnt der Server ab, ist der Knopf wieder frei: Die Sperre gilt nur, solange gespeichert wird.
 	it('gibt das Speichern nach einer Ablehnung wieder frei', async () => {
-		vi.mocked(apiClient.put).mockResolvedValue(
-			/** @type {any} */ ({ ok: false, json: async () => ({ error: 'schon vergeben' }) })
-		);
+		vi.mocked(apiClient.put).mockResolvedValue(serverAntwort(409, { error: 'schon vergeben' }));
 		const k = render(ExemplarKarte, {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
 			gewaehlt: false,

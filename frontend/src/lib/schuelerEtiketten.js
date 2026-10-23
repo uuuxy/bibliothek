@@ -1,4 +1,4 @@
-import { apiFetch } from './apiFetch.js';
+import { apiFetch, leseApiFehler } from './apiFetch.js';
 import { snackbars } from './stores/snackbars.svelte.js';
 
 /**
@@ -34,8 +34,8 @@ export async function oeffneEtikettenbogen({
 			// Die Meldung des Servers durchreichen statt sie durch ein allgemeines
 			// „Fehler beim Drucken" zu ersetzen: Sie nennt den Grund, den die Theke
 			// beheben kann (Startposition außerhalb des Bogens, zu viele Markierte).
-			const daten = await res.json().catch(() => null);
-			snackbars.addToast(daten?.error || 'Etikettenbogen konnte nicht erzeugt werden.', 'error');
+			const meldung = await leseApiFehler(res, 'Etikettenbogen konnte nicht erzeugt werden.');
+			snackbars.addToast(meldung, 'error');
 			return false;
 		}
 

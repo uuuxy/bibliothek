@@ -11,6 +11,7 @@ import { apiFetch, apiClient } from './apiFetch.js';
 import { authStore } from './stores/authStore.svelte.js';
 import { snackbars } from './stores/snackbars.svelte.js';
 import BenutzerUndRechte from './BenutzerUndRechte.svelte';
+import { serverAntwort } from './serverAntwort.js';
 
 // Die Rechte-Matrix zeigt nur, was der Server geliefert hat: Ohne geladene Matrix stünden
 // alle Schalter auf „aus", als wären die Rechte entzogen, und ein Klick schriebe gegen einen
@@ -67,10 +68,7 @@ describe('Rechte-Matrix', () => {
 	it('meldet den Grund des Servers, wenn ein Recht nicht gespeichert wird', async () => {
 		serverMit(matrixOk);
 		vi.mocked(apiClient.put).mockResolvedValue(
-			/** @type {any} */ ({
-				ok: false,
-				json: async () => ({ error: 'Die Rechte-Matrix ändert nur ein Administrator.' })
-			})
+			serverAntwort(403, { error: 'Die Rechte-Matrix ändert nur ein Administrator.' })
 		);
 		const screen = await oeffneRechte();
 		const schalter = await screen.findAllByRole('switch', { name: 'HELFER Rechte umschalten' });

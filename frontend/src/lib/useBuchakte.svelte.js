@@ -149,12 +149,8 @@ export function useBuchakte() {
 			if (res.ok) {
 				if (melde) melde('Titel erfolgreich gelöscht', 'success');
 				if (onBack) onBack();
-			} else {
-				const err = await res.json().catch((e) => {
-					console.error('Fehler:', e);
-					return {};
-				});
-				if (melde) melde(err.error || 'Fehler beim Löschen des Titels.', 'error');
+			} else if (melde) {
+				melde(await leseApiFehler(res, 'Fehler beim Löschen des Titels.'), 'error');
 			}
 		} catch (e) {
 			console.error('Titel löschen fehlgeschlagen:', e);

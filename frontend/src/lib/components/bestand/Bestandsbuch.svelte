@@ -9,7 +9,7 @@
      die Felder zeigen danach, was er gelesen hat. -->
 <script>
 	import { onMount } from 'svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -77,8 +77,7 @@
 					: `/api/bestand/${pfad}`;
 			const res = await apiFetch(adresse);
 			if (!res.ok) {
-				const daten = await res.json().catch(() => ({}));
-				fehler = daten.error || `Das ${buchname} konnte nicht geladen werden.`;
+				fehler = await leseApiFehler(res, `Das ${buchname} konnte nicht geladen werden.`);
 				return;
 			}
 			buch = await res.json();

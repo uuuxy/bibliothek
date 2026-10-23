@@ -21,12 +21,24 @@ const FEHLERTEXT =
 const GEAENDERT = 'src/lib/utils/geaendert.js';
 const VERGLEICH_MIT_GELADEN = /!==\s*(?:[\w$]+\.)*geladen\[/;
 
-// Die Meldung einer fehlgeschlagenen Antwort liest leseApiFehler (apiFetch.js). Der Server
-// antwortet mit {"error": "…"}; wer den Rumpf selbst als Text las, zeigte die Klammern mit an
-// oder packte ihn nach eigener Regel aus. Sieht nicht: einen Rumpf unter anderem Namen als res,
-// response oder antwort, und res.json() mit anschließendem .error.
+// Die Meldung einer fehlgeschlagenen Antwort liest leseApiFehler (apiFetch.js), samt den übrigen
+// Angaben leseApiFehlerMitDaten. Der Server antwortet mit {"error": "…"}; wer den Rumpf selbst
+// las, zeigte die Klammern mit an, packte ihn nach eigener Regel aus oder las res.json() vor der
+// Prüfung auf res.ok, und ein leerer Rumpf hieß „Unexpected end of JSON input". Sieht nicht:
+// einen Rumpf unter anderem Namen als res, response oder antwort, und einen JSON-Rumpf, der über
+// einen Helfer oder ein Objekt weitergereicht wird, bevor jemand error liest.
 const API_FETCH = 'src/lib/apiFetch.js';
 const RUMPF_ALS_TEXT = /\b(?:res|response|antwort)\s*\.\s*text\(\)/;
+const JSON_NAME = /(?:const|let)\s+([\w$]+)\s*=\s*await\s+[\w$.]+\.json\(/g;
+const ERROR_IM_AUSDRUCK =
+	/\.json\(\)[^;]*?\)\s*\??\.error\b|\.json\(\)\s*\.then\(\s*\(?\s*([\w$]+)\s*\)?\s*=>\s*\1\??\.error\b/;
+/** @param {string} quelle */
+function liestErrorAusJson(quelle) {
+	if (ERROR_IM_AUSDRUCK.test(quelle)) return true;
+	return [...quelle.matchAll(JSON_NAME)].some(([, name]) =>
+		new RegExp(`(?<![\\w$.])${name.replaceAll('$', '\\$')}\\s*\\??\\.error\\b`).test(quelle)
+	);
+}
 
 describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 	const dateien = sammleQuelldateien(srcRoot);
@@ -89,6 +101,33 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 		}
 		expect(RUMPF_ALS_TEXT.test('const inhalt = await file.text();')).toBe(false);
 		expect(RUMPF_ALS_TEXT.test('throw new Error(await leseApiFehler(res));')).toBe(false);
+	});
+
+	it('keine Quelldatei außer apiFetch.js liest error aus einer JSON-Antwort', () => {
+		expect(
+			dateien
+				.filter((f) => liestErrorAusJson(ohneKommentare(readFileSync(f, 'utf8'))))
+				.map(relPfad)
+				.filter((f) => f !== API_FETCH),
+			'error aus der Antwort gelesen — leseApiFehler oder leseApiFehlerMitDaten aus apiFetch.js'
+		).toEqual([]);
+		for (const form of [
+			"const err = await res.json().catch(() => ({}));\nmelde(err.error || 'Fehler', 'error');",
+			"const daten = await res.json();\nif (!res.ok) throw new Error(daten.error || 'Fehler');",
+			'const d = await response.json();\nif (d?.error) return String(d.error);',
+			"melde((await res.json().catch(() => ({}))).error || 'Fehler beim Löschen', 'error');",
+			'const grund = await res\n\t.json()\n\t.then(( d) => d?.error)\n\t.catch(() => null);'
+		]) {
+			expect(liestErrorAusJson(form), form).toBe(true);
+		}
+		for (const form of [
+			"const daten = await res.json();\nmelde(daten.message, 'success');",
+			"const { meldung, daten } = await leseApiFehlerMitDaten(res, 'Fehler');",
+			"f.error = await leseApiFehler(res, 'Fehler beim Senden.');",
+			"const json = await res.json();\nformular.error = 'Pflichtfeld';"
+		]) {
+			expect(liestErrorAusJson(form), form).toBe(false);
+		}
 	});
 
 	it('Selbstprobe: die Detektoren fassen die Formen', () => {

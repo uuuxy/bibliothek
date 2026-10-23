@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { melde } from '../inventur/lib/store.svelte.js';
@@ -32,9 +32,8 @@
 				const neu = new Date(daten.neues_rueckgabe_datum).toLocaleDateString('de-DE');
 				melde(`Verlängert bis ${neu}.`, 'success');
 			} else {
-				const fehler = await response.json().catch(() => ({}));
 				// Die Begründung des Servers („Ausleihe gesperrt (Grund)") sagt, was zu tun ist.
-				melde(fehler.error ?? 'Verlängerung nicht möglich.', 'error');
+				melde(await leseApiFehler(response, 'Verlängerung nicht möglich.'), 'error');
 			}
 		} catch (e) {
 			console.error(e);

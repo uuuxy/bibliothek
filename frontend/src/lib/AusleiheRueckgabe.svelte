@@ -7,7 +7,7 @@
      Überfällig trägt Farbe und Zeichen; „in Frist" ist der Normalfall und braucht keins. Das
      Ausleihdatum steht beim Zeigen auf dem Datum. Eine Dauerleihe hat keine Frist. -->
 <script>
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import { melde } from '../inventur/lib/store.svelte.js';
 	import { Check, Pencil, X } from '@lucide/svelte';
 	import Feld from './components/ui/Feld.svelte';
@@ -39,8 +39,7 @@
 				bearbeitet = false;
 				melde(`Rückgabedatum auf ${datum(daten.faellig_am)} gesetzt.`, 'success');
 			} else {
-				const fehler = await response.json().catch(() => ({}));
-				melde(fehler.error ?? 'Datum konnte nicht gespeichert werden.', 'error');
+				melde(await leseApiFehler(response, 'Datum konnte nicht gespeichert werden.'), 'error');
 			}
 		} catch (e) {
 			console.error(e);

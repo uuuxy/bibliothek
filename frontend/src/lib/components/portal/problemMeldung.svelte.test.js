@@ -2,8 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { erzeugeProblemMeldung, OHNE_BUCH } from './problemMeldung.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 /** Der Rumpf der letzten Anfrage an die Tür für Anliegen. */
@@ -81,9 +85,7 @@ describe('Problem melden', () => {
 
 	// Lehnt die Bibliothek die Meldung ab, bleibt die Eingabe stehen und das Formular offen.
 	it('behält die Eingabe, wenn die Meldung nicht angenommen wird', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(
-			/** @type {any} */ ({ ok: false, json: async () => ({ error: 'gerade nicht möglich' }) })
-		);
+		vi.mocked(apiFetch).mockResolvedValue(serverAntwort(503, { error: 'gerade nicht möglich' }));
 		const nachSenden = vi.fn();
 		const meldung = erzeugeProblemMeldung(nachSenden);
 		meldung.oeffne('titel-1');

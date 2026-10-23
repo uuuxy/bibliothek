@@ -1,13 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 import { apiFetch } from '../../lib/apiFetch.js';
 import { speichereBuch, stehtInSicht, titelFuerMaske, DubletteFehler } from './buch_speichern.js';
 import { geaenderteFelder } from './buch_felder.js';
 
 /** @param {number} status @param {any} koerper */
 const antwort = (status, koerper) =>
-	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
+	/** @type {any} */ ({
+		ok: status < 400,
+		status,
+		json: async () => koerper,
+		text: async () => JSON.stringify(koerper)
+	});
 
 /** Die Maske eines vorhandenen Titels trägt den Stand vom Öffnen (titelFuerMaske).
  * @param {any} formular */

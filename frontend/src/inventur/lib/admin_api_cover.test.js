@@ -1,15 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('./store.svelte.js', () => ({ appState: {} }));
 import { apiFetch } from '../../lib/apiFetch.js';
 import { coverNeuHolen } from './admin_api.js';
+import { serverAntwort } from '../../lib/serverAntwort.js';
 
 // „Cover neu holen" (OFFEN.md 4.16, 22.09.2026): Die Auskunft des Servers — kein Cover
 // bei den Katalogdiensten (404), Dienste nicht erreichbar (502) — muss den Menschen
 // erreichen, nicht eine Vorgabe-Meldung. Und der Erfolg liefert den neuen Pfad.
 /** @param {boolean} ok @param {number} status @param {any} body */
-const antwort = (ok, status, body) => ({ ok, status, json: async () => body });
+const antwort = (ok, status, body) => ({
+	ok,
+	status,
+	json: async () => body,
+	text: async () => JSON.stringify(body)
+});
 
 describe('admin_api: coverNeuHolen', () => {
 	beforeEach(() => {
@@ -37,15 +46,7 @@ describe('admin_api: coverNeuHolen', () => {
 	});
 
 	it('hat eine Vorgabe, wenn der Server keine Auskunft gibt', async () => {
-		vi.mocked(apiFetch).mockResolvedValueOnce(
-			/** @type {any} */ ({
-				ok: false,
-				status: 502,
-				json: async () => {
-					throw new Error('kein JSON');
-				}
-			})
-		);
+		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(502));
 		await expect(coverNeuHolen('abc')).rejects.toThrow('Cover konnte nicht neu geholt werden');
 	});
 });

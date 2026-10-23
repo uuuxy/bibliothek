@@ -4,7 +4,7 @@
  *  Der Plan ist eine Reihenfolge von Klassen, die der Server auf Schultage × Stunden
  *  gießt: Rahmen + Zeilen hin, Plätze zurück. Auch die Vorschau rechnet der Server, damit
  *  es keinen JavaScript-Zwilling der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
-import { apiFetch } from './apiFetch.js';
+import { apiFetch, leseApiFehler } from './apiFetch.js';
 import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js';
 
 /** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
@@ -198,15 +198,15 @@ function normKey(k) {
 		.replace(/^0+(\d)/, '$1');
 }
 
-/** @param {string} art @param {PlanEntwurf} entwurf @param {boolean} vorschau */
-async function sende(art, entwurf, vorschau) {
+/** @param {string} art @param {PlanEntwurf} entwurf @param {boolean} vorschau @param {string} vorgabe */
+async function sende(art, entwurf, vorschau, vorgabe) {
 	const res = await apiFetch(`/api/lmf-plan/${art}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ ...entwurf, vorschau })
 	});
-	const json = await res.json().catch(() => ({}));
-	return { res, json };
+	if (!res.ok) return { res, json: {}, meldung: await leseApiFehler(res, vorgabe) };
+	return { res, json: await res.json().catch(() => ({})), meldung: '' };
 }
 
 /** Hat der Entwurf den Anker seiner Art — das Ende beim Büchertausch, den Beginn bei
@@ -223,8 +223,8 @@ export function ankerGesetzt(art, e) {
  *  @returns {Promise<{ plaetze: PlanPlatz[], ausfaelle: Ausfall[], beginn: { datum: string, stunde: number } | null }>} */
 export async function rechneVorschau(art, entwurf) {
 	if (!ankerGesetzt(art, entwurf)) return { plaetze: [], ausfaelle: [], beginn: null };
-	const { res, json } = await sende(art, entwurf, true);
-	if (!res.ok) throw new Error(json.error ?? json.message ?? 'Vorschau fehlgeschlagen');
+	const { res, json, meldung } = await sende(art, entwurf, true, 'Vorschau fehlgeschlagen');
+	if (!res.ok) throw new Error(meldung);
 	const beginn = json.plan?.erster_tag
 		? { datum: json.plan.erster_tag, stunde: json.plan.startstunde }
 		: null;
@@ -262,8 +262,7 @@ export function festePlaetzeVollstaendig(zeilen) {
  *  @param {string} art @param {PlanEntwurf} entwurf
  *  @returns {Promise<{ ok: boolean, konflikt?: boolean, meldung: string }>} */
 export async function speicherePlan(art, entwurf) {
-	const { res, json } = await sende(art, entwurf, false);
-	const meldung = json.error ?? json.message ?? 'Speichern fehlgeschlagen.';
+	const { res, json, meldung } = await sende(art, entwurf, false, 'Speichern fehlgeschlagen.');
 	if (!res.ok) return { ok: false, konflikt: res.status === 409, meldung };
 	if (!json.plan?.veroeffentlicht_am) return { ok: true, meldung: 'Entwurf gespeichert.' };
 	const n = Number(json.fristen_angepasst ?? 0);
@@ -278,8 +277,9 @@ export async function speicherePlan(art, entwurf) {
  *  @param {string} art @returns {Promise<{ ok: boolean, meldung: string }>} */
 export async function veroeffentlichePlan(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}/veroeffentlichen`, { method: 'POST' });
+	if (!res.ok)
+		return { ok: false, meldung: await leseApiFehler(res, 'Veröffentlichen fehlgeschlagen.') };
 	const json = await res.json().catch(() => ({}));
-	if (!res.ok) return { ok: false, meldung: json.error ?? 'Veröffentlichen fehlgeschlagen.' };
 	const n = Number(json.fristen_angepasst ?? 0);
 	return {
 		ok: true,
@@ -291,8 +291,8 @@ export async function veroeffentlichePlan(art) {
 /** @param {string} art @returns {Promise<{ ok: boolean, meldung: string }>} */
 export async function verwerfePlan(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}`, { method: 'DELETE' });
+	if (!res.ok) return { ok: false, meldung: await leseApiFehler(res, 'Verwerfen fehlgeschlagen.') };
 	const json = await res.json().catch(() => ({}));
-	if (!res.ok) return { ok: false, meldung: json.error ?? 'Verwerfen fehlgeschlagen.' };
 	const n = Number(json.fristen_angepasst ?? 0);
 	return {
 		ok: true,

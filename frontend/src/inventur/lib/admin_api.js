@@ -1,4 +1,4 @@
-import { apiFetch } from '../../lib/apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
 import { appState } from './store.svelte.js';
 
 export async function holeBuecherListe() {
@@ -61,10 +61,7 @@ export async function importiereListe(datei, schluessel) {
 		headers: { 'X-Idempotency-Key': schluessel },
 		body: formulardaten
 	});
-	if (!res.ok) {
-		const errJson = await res.json().catch(() => ({}));
-		throw new Error(errJson.error || errJson.message || 'Import fehlgeschlagen');
-	}
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Import fehlgeschlagen'));
 	return await res.json();
 }
 
@@ -78,10 +75,7 @@ export async function loescheBuecher(ids) {
 		},
 		body: JSON.stringify({ ids })
 	});
-	if (!res.ok) {
-		const errJson = await res.json().catch(() => ({}));
-		throw new Error(errJson.error || 'Löschen fehlgeschlagen');
-	}
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Löschen fehlgeschlagen'));
 	return true;
 }
 
@@ -139,10 +133,7 @@ export async function loescheTitel(id) {
 		method: 'DELETE',
 		credentials: 'include'
 	});
-	if (!res.ok) {
-		const json = await res.json().catch(() => ({}));
-		throw new Error(json.error || 'Titel konnte nicht gelöscht werden.');
-	}
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Titel konnte nicht gelöscht werden.'));
 }
 
 /**
@@ -158,16 +149,7 @@ export async function coverNeuHolen(id) {
 		method: 'POST',
 		credentials: 'include'
 	});
-	if (!res.ok) {
-		let meldung = 'Cover konnte nicht neu geholt werden';
-		try {
-			const json = await res.json();
-			meldung = json?.error || json?.message || meldung;
-		} catch {
-			// keine JSON-Antwort: die Vorgabe bleibt
-		}
-		throw new Error(meldung);
-	}
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Cover konnte nicht neu geholt werden'));
 	const json = await res.json();
 	return json.data.coverUrl;
 }

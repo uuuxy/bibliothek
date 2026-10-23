@@ -22,7 +22,7 @@ const BESTAND = {
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 360,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 236,
 	'src/lib/components/leser/LusdImport.svelte': 311,
-	'src/lib/apiFetch.js': 300,
+	'src/lib/apiFetch.js': 291,
 	'src/lib/components/leser/schuelerSuche.svelte.js': 209,
 	'src/lib/designer/ausweisVorlagen.js': 482,
 	'src/lib/designer/idDesignerStore.svelte.js': 543,
@@ -32,13 +32,13 @@ const BESTAND = {
 	'src/lib/stores/authStore.svelte.js': 354,
 	'src/lib/stores/bestellStore.svelte.js': 532,
 	'src/lib/stores/etiketten.svelte.js': 362,
-	'src/lib/stores/leerlaufSperre.svelte.js': 388,
+	'src/lib/stores/leerlaufSperre.svelte.js': 382,
 	'src/lib/stores/mahnwesen.svelte.js': 231,
 	'src/lib/stores/offlineSync.svelte.js': 420,
 	'src/lib/stores/omnibox.svelte.js': 412,
-	'src/lib/useBuchakte.svelte.js': 214,
+	'src/lib/useBuchakte.svelte.js': 210,
 	'src/lib/useInventur.svelte.js': 234,
-	'src/lib/useLeserakte.svelte.js': 319
+	'src/lib/useLeserakte.svelte.js': 315
 };
 
 describe('Dateigröße: höchstens 200 Zeilen je Komponente und JS-Modul', () => {

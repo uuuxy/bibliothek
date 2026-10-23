@@ -75,13 +75,8 @@
 
 			// Die Begründung des Servers durchreichen statt eines Einheitssatzes: Sie nennt, wer
 			// die Matrix ändern darf, und ein 400 die unbekannte Rolle oder das unbekannte Recht.
-			if (!res.ok) {
-				const grund = await res
-					.json()
-					.then((/** @type {any} */ d) => d?.error)
-					.catch(() => null);
-				throw new Error(grund || 'Fehler beim Speichern der Berechtigung.');
-			}
+			if (!res.ok)
+				throw new Error(await leseApiFehler(res, 'Fehler beim Speichern der Berechtigung.'));
 			rechteJeRolle[role][permission] = newVal;
 
 			snackbars.addToast('Rechte erfolgreich aktualisiert.', 'success');

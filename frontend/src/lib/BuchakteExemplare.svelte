@@ -6,7 +6,7 @@
 	import { rechteDesReiters } from './druckCenterReiter.js';
 	import { druckWarteschlange } from './stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import ExemplarKarte from './components/ExemplarKarte.svelte';
 	import { exemplarZahlen } from './components/exemplarStatus.js';
 	import ExemplarEigentumDialog from './components/ExemplarEigentumDialog.svelte';
@@ -80,8 +80,7 @@
 				}
 				melde('Exemplar erfolgreich gelöscht', 'success');
 			} else {
-				const err = await res.json().catch(() => ({}));
-				melde(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
+				melde(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'), 'error');
 			}
 		} catch {
 			melde('Netzwerkfehler beim Löschen.', 'error');

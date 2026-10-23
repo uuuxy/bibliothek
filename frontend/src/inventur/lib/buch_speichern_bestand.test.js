@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
 vi.mock('./store.svelte.js', () => ({ appState: { bookToEdit: null }, melde: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
@@ -14,7 +17,12 @@ import {
 
 /** @param {number} status @param {any} koerper */
 const antwort = (status, koerper) =>
-	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
+	/** @type {any} */ ({
+		ok: status < 400,
+		status,
+		json: async () => koerper,
+		text: async () => JSON.stringify(koerper)
+	});
 
 /** Die Maske eines vorhandenen Titels trägt den Stand vom Öffnen (titelFuerMaske).
  * @param {any} formular */

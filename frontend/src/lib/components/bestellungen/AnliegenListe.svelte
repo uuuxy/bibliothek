@@ -81,10 +81,8 @@
 				snackbars.addToast('Anliegen war bereits erledigt.', 'success');
 				return;
 			}
-			if (!res.ok) {
-				const daten = await res.json().catch(() => null);
-				throw new Error(daten?.error || 'Anliegen konnte nicht abgehakt werden.');
-			}
+			if (!res.ok)
+				throw new Error(await leseApiFehler(res, 'Anliegen konnte nicht abgehakt werden.'));
 			anliegen = anliegen.filter((a) => a.id !== id);
 			if (confirmingId === id) confirmingId = null;
 			uiStore.fetchOffeneAnliegen();

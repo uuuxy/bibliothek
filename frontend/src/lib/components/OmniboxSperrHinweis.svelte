@@ -2,7 +2,7 @@
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import { authStore } from '../stores/authStore.svelte.js';
 	import { schuelerRechte } from '../schuelerRechte.js';
-	import { apiClient } from '../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../apiFetch.js';
 	import Button from './ui/Button.svelte';
 	import { escapeSchliesst } from './ui/escapeSchliesst.js';
 	import { fokusFalle } from './ui/fokusFalle.js';
@@ -64,8 +64,7 @@
 				is_locked: false
 			});
 			if (!res.ok) {
-				const daten = await res.json().catch(() => ({}));
-				fehler = daten.error || 'Die Sperre ließ sich nicht aufheben.';
+				fehler = await leseApiFehler(res, 'Die Sperre ließ sich nicht aufheben.');
 				return;
 			}
 			const neu = await res.json();

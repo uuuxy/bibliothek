@@ -1,20 +1,6 @@
-/**
- * apiFetch.js — Centralized fetch wrapper for the Bibliothek main API.
- *
- * Responsibilities:
- *   1. Always sends `credentials: "include"` so cookies are attached.
- *   2. On mutating methods (POST/PUT/PATCH/DELETE), automatically reads the
- *      `csrf_token` cookie and sends it as the `X-CSRF-Token` header.
- *   3. Provides a consistent API surface across all components.
- *
- * Usage:
- *   import { apiFetch, apiClient } from "$lib/../lib/apiFetch.js";
- *   const res = await apiFetch("/api/benutzer", {
- *     method: "POST",
- *     headers: { "Content-Type": "application/json" },
- *     body: JSON.stringify(payload),
- *   });
- */
+// apiFetch.js — der Weg jeder Anfrage an das Backend: Die Cookies gehen immer mit, schreibende
+// Anfragen (POST, PUT, PATCH, DELETE) tragen das Token aus dem Cookie csrf_token als
+// X-CSRF-Token, und die Meldung einer abgelehnten Anfrage liest leseApiFehler.
 
 /**
  * Reads the global CSRF token from the `csrf_token` cookie.
@@ -180,30 +166,35 @@ export const apiClient = {
 import { snackbars } from './stores/snackbars.svelte.js';
 
 /**
- * Die Meldung einer fehlgeschlagenen Response. Das Backend antwortet mit `{"error": "..."}`
- * (apierrors.schreibeFehlerJSON); hier wird es ausgepackt, damit kein roher JSON-Text in einem
- * Toast landet. Den Rumpf liest außer hier niemand als Text (frontend-hygiene-helfer.test.js).
+ * Die Meldung einer abgelehnten Anfrage samt den übrigen Angaben ihrer Antwort (ein 409 nennt
+ * etwa den vorhandenen Titel). Das Backend antwortet mit `{"error": "..."}`
+ * (apierrors.schreibeFehlerJSON); nur hier wird das ausgepackt, damit kein roher JSON-Text in
+ * einem Toast landet und keine Stelle eine eigene Regel hat (frontend-hygiene-helfer.test.js).
  * Ein Rumpf ohne solches JSON ist selbst die Meldung, ein leerer ergibt die Vorgabe.
  * @param {Response} res
  * @param {string} [vorgabe] ohne Angabe „Fehler <Status>"
- * @returns {Promise<string>}
+ * @returns {Promise<{ meldung: string, daten: any }>} daten: der Rumpf als JSON, sonst null
  */
-export async function leseApiFehler(res, vorgabe = `Fehler ${res.status}`) {
+export async function leseApiFehlerMitDaten(res, vorgabe = `Fehler ${res.status}`) {
 	let body = '';
 	try {
 		body = await res.text();
 	} catch {
-		return vorgabe;
+		return { meldung: vorgabe, daten: null };
 	}
-	if (!body) return vorgabe;
+	if (!body) return { meldung: vorgabe, daten: null };
 	try {
-		const parsed = JSON.parse(body);
-		const msg = parsed?.error ?? parsed?.message;
-		if (typeof msg === 'string' && msg.trim()) return msg;
+		const daten = JSON.parse(body);
+		const msg = daten?.error ?? daten?.message;
+		return { meldung: typeof msg === 'string' && msg.trim() ? msg : body, daten };
 	} catch {
-		// kein JSON — Rohtext unten verwenden
+		return { meldung: body, daten: null };
 	}
-	return body;
+}
+
+/** Nur die Meldung (leseApiFehlerMitDaten). @param {Response} res @param {string} [vorgabe] */
+export async function leseApiFehler(res, vorgabe) {
+	return (await leseApiFehlerMitDaten(res, vorgabe)).meldung;
 }
 
 async function werteAntwortAus(res) {

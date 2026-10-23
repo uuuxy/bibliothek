@@ -12,7 +12,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import BestandImport from './BestandImport.svelte';
 	import ListenImport from './ListenImport.svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
@@ -44,8 +44,8 @@
 		coverAbgleichErgebnis = null;
 		try {
 			const res = await apiFetch('/api/admin/sync-covers', { method: 'POST' });
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Starten des Cover-Syncs'));
 			const daten = await res.json();
-			if (!res.ok) throw new Error(daten.error || 'Fehler beim Starten des Cover-Syncs');
 			coverAbgleichErgebnis = { type: 'success', message: daten.message || 'Job gestartet.' };
 		} catch (err) {
 			coverAbgleichErgebnis = {

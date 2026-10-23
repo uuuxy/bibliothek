@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch, apiClient, leseApiFehler } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { melde } from '../inventur/lib/store.svelte.js';
@@ -30,7 +30,7 @@
 				vormerkungen = vormerkungen.filter((v) => v.id !== id);
 				melde('Vormerkung gelöscht', 'success');
 			} else {
-				melde((await res.json().catch(() => ({}))).error || 'Fehler beim Löschen', 'error');
+				melde(await leseApiFehler(res, 'Fehler beim Löschen'), 'error');
 			}
 		} catch {
 			melde('Netzwerkfehler', 'error');
@@ -70,8 +70,7 @@
 				if (listenAntwort.ok) vormerkungen = await listenAntwort.json();
 				else melde('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
 			} else {
-				const err = await res.json().catch(() => ({}));
-				melde(err.error || 'Fehler beim Hinzufügen', 'error');
+				melde(await leseApiFehler(res, 'Fehler beim Hinzufügen'), 'error');
 			}
 		} catch {
 			melde('Netzwerkfehler', 'error');

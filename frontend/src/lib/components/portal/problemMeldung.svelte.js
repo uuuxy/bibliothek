@@ -1,4 +1,4 @@
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
 /** Schlüssel des Formulars, das zu keinem Treffer gehört. */
@@ -85,10 +85,8 @@ export function erzeugeProblemMeldung(nachSenden) {
 						kommentar: f.text.trim()
 					})
 				});
-				if (!res.ok) {
-					const daten = await res.json().catch(() => null);
-					throw new Error(daten?.error || 'Die Meldung konnte nicht gesendet werden.');
-				}
+				if (!res.ok)
+					throw new Error(await leseApiFehler(res, 'Die Meldung konnte nicht gesendet werden.'));
 				snackbars.addToast('Meldung ist bei der Bibliothek.', 'success');
 				forms[key] = leer();
 				await nachSenden();

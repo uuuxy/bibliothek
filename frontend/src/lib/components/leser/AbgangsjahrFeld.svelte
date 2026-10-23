@@ -7,7 +7,7 @@
 -->
 <script>
 	import { RotateCcw } from '@lucide/svelte';
-	import { apiClient } from '../../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
@@ -53,8 +53,7 @@
 				leser.abgaenger_jahr = jahr;
 				bearbeiten = false;
 			} else {
-				const d = await res.json().catch(() => ({}));
-				fehler = d.error || 'Fehler beim Speichern';
+				fehler = await leseApiFehler(res, 'Fehler beim Speichern');
 			}
 		} catch {
 			fehler = 'Netzwerkfehler';

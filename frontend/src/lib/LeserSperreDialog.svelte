@@ -1,7 +1,7 @@
 <!-- @component LeserSperreDialog — Ausleihe eines Schülers sperren oder freigeben.
      Kopfzeile und Schließen-Knopf stellt Dialog.svelte. -->
 <script>
-	import { apiClient } from './apiFetch.js';
+	import { apiClient, leseApiFehler } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { LockOpen, Lock, CircleAlert } from '@lucide/svelte';
 	import Dialog from './Dialog.svelte';
@@ -60,8 +60,7 @@
 				onsuccess(updated);
 				if (lauf.nochOffen()) open = false;
 			} else {
-				const err = await res.json().catch(() => ({}));
-				lauf.fehler(err.error || 'Fehler beim Aktualisieren der Sperre.', zeigeFehler);
+				lauf.fehler(await leseApiFehler(res, 'Fehler beim Aktualisieren der Sperre.'), zeigeFehler);
 			}
 		} catch {
 			lauf.fehler('Netzwerkfehler beim Aktualisieren der Sperre.', zeigeFehler);
