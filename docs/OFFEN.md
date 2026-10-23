@@ -10,23 +10,6 @@ geführt wird, steht am Ende.
 
 ## Fahrplan
 
-### Jetzt
-
-- [x] Entscheiden: Breite der Suchleisten auf den Listenseiten. (5.86)
-- [x] Drei kleine Funde aus dem Durchgang über den Bestand: die Domain der Schule an einer Stelle,
-  Ladefehler der Klassenleitungen, doppelter Scan im Barcode-Editor.
-- [x] Entscheiden: Ein Exemplar mit langer LMF-Nummer, das ein neues Etikett braucht, bekommt eine
-  kurze `B-`-Nummer, statt den langen Code nachzudrucken.
-- [x] Entscheiden: „Neue Barcodes" im Druck-Center entfällt, entschieden am 22.10.2026
-  ([FACHKONZEPT.md](FACHKONZEPT.md) §20).
-- [x] Entscheiden: Jedes Exemplar trägt eine kurze Nummer wie in Littera, auch ein Lernmittel mit
-  LMF-Nummer; sein altes Etikett scannt weiter. Entschieden am 22.10.2026.
-- [x] Stufe 1: Ein altes LMF-Etikett führt an der Theke (auch ohne Netz), im Medienkatalog, in der
-  Inventur und im Druck-Center zu seinem Exemplar.
-- [x] Stufe 2: Die Exemplare mit LMF-Nummer bekommen eine kurze Nummer, auch beim Import.
-- [x] Stufe 3: Die Rückfrage „Neue Nummer vergeben?" beim Drucken entfällt, und eine LMF-Nummer ist
-  nie mehr die Nummer eines Exemplars.
-
 ### Etappe 1: vor dem Echtstart
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
@@ -43,10 +26,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 
-### Zurückgestellt
-
-- [ ] Vorschläge an sechs Textfeldern als eigene Liste nach Material 3 statt `datalist`. (5.86)
-
 ### Bei dir
 
 Nur, was kein Test leisten kann.
@@ -59,8 +38,6 @@ Nur, was kein Test leisten kann.
   zurückstellen.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
-- [x] Am Testserver lesen, an welchem Titel das Exemplar 101634 und die LMF-Exemplare derselben
-  ISBN hängen.
 
 ### Termin
 
@@ -104,12 +81,6 @@ den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.86 Material 3, wo die Oberfläche noch abweicht
-
-- **Vorschläge an Textfeldern** zeichnet der Browser (`datalist`, sechs Stellen). Entschieden am
-  21.10.2026: eine eigene Vorschlagsliste, mit der Tastatur bedienbar wie die Auswahllisten; am
-  selben Tag zurückgestellt.
 
 ### 7.2 Frisches Littera-Backup
 

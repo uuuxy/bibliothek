@@ -3404,6 +3404,19 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   die ausgeklappte Leiste nur über das Menüsymbol („should always open from a menu icon");
   über dem Inhalt trägt sie dessen Werte für die überlagernde Leiste (nav-rail-expanded,
   modal-container-*). Ohne Maus, am Tablet, bleibt es bei den Symbolen und dem `title`.
+- **Die Vorschläge an sechs Textfeldern zeichnet der Browser** (`<datalist>`): die Signatur in
+  `SignaturFeld`, `InventurStartDialog` und `TrefferPruefung`, der Standort in
+  `ExemplarStandortDialog`, die Schlagworte in `ui/ChipFeld` und das Ziel beim Zusammenführen in
+  `SchlagwortPflegeDialog`. Material 3, Menus: „A menu can include a text field to filter
+  options. This pattern is also known as autocomplete." Entschieden, es so zu lassen: An allen
+  sechs Feldern leistet die Liste des Browsers, was gebraucht wird (freie Eingabe, die Werte aus
+  dem Bestand mit ihrer Zahl, ein angeklicktes Schlagwort wird sofort übernommen). Eine eigene
+  Liste änderte nur das Aussehen, und einheitlich würde es auch damit nicht: Die Datumsfelder
+  öffnen ebenfalls den Kalender des Browsers. Beim Bau mitnehmen: `ChipFeld` übernimmt beim
+  Verlassen des Felds, ein Klick in die Liste darf es also nicht verlassen; Enter ohne markierten
+  Vorschlag sendet weiter das Formular ab oder übernimmt das getippte Wort; Escape schließt zuerst
+  nur die Liste (`escapeSchliesst` übergeht eine Taste mit `defaultPrevented`); das Standortfeld
+  bleibt in `scanSchutz`. Anlass: ein Fehler der Liste des Browsers an einem der sechs Felder.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
   der Seite (`e2e/scrollbereiche.spec.js`). In „Buch bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
