@@ -1301,7 +1301,10 @@ verwaisten Schlüssel einer Buchung übernimmt, die schon steht.
 **Ein 502, 503 oder 504 ist kein Fehler des Scans.** Startet das Server-Programm neu, antwortet
 der Proxy davor mit 502, und das Band sagt „Scannen geht weiter". Die Theke legt den Scan dann
 ab wie bei einem Netzausfall (`nichtErreicht` in `omniboxBuchung.svelte.js`); ein 500 kommt vom
-Server selbst und wird gezeigt, nicht abgelegt.
+Server selbst und wird gezeigt, nicht abgelegt. Ebenso abgelegt wird ein Scan, der auf die
+Sperre der Anmeldung trifft (423, etwa 10 Stunden nach der Passworteingabe): Die Tür hat vor der
+Buchung abgelehnt, und nach dem Aufschließen bucht die Warteschlange nach. Die Sperre leert die
+Theke, während die Antwort unterwegs ist; ohne das Ablegen verschwände der Scan ohne Meldung.
 
 **Die neun Urteile.** Endgültig sind `ausgeliehen`, `umgebucht`, `bereits_ausgeliehen`,
 `zurueckgegeben`, `nur_reaktiviert`, `nicht_gebucht`, `veraltet`, `bereits_gebucht` — in

@@ -9,8 +9,8 @@ import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { ordneScanEin } from '../scanEinordnen.js';
 import { leserFuerVersand } from '../offlineWarteschlange.js';
 
-// 502 bis 504: Der Server hat nicht gearbeitet (Neustart, Absturz, Sitzung nicht lesbar).
-const nichtErreicht = (/** @type {Response} */ res) => res.status >= 502 && res.status <= 504;
+// 502 bis 504 und 423: Gebucht hat der Server nicht (Neustart, Sitzung nicht lesbar, gesperrt).
+const nichtErreicht = (/** @type {Response} */ res) => [423, 502, 503, 504].includes(res.status);
 
 /**
  * Ein Scan und was der Aufrufer dazu vorgibt.
@@ -67,7 +67,7 @@ export function erzeugeOmniboxBuchung({
 	 * Leser-Kennung läse der Server den Scan als Rückgabe.
 	 *
 	 * Entschieden wird an der Wirkung eines Ausweisscans, der nichts bucht, nicht an `navigator.onLine`.
-	 * Lädt er die Person, geht das Buch normal hinaus. Scheitert der Versand (auch 502 bis 504),
+	 * Lädt er die Person, geht das Buch normal hinaus. Scheitert der Versand (auch 502 bis 504, 423),
 	 * bleibt der Merker, und das Buch geht mit `ausweis_barcode` in die Warteschlange. Antwortet der
 	 * Server ohne Person, ist unklar, wem das Buch gehört: Es wird nicht gebucht, der Merker fällt.
 	 *

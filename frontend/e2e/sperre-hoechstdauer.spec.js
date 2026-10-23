@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix, ADMIN_PASSWORD, menuepunkt } from './helpers.js';
+import {
+	legeBuecherAn,
+	legeSchuelerAn,
+	neuerTeil,
+	oeffneTheke,
+	raeumeAuf,
+	scanne,
+	verliehenAn,
+	warteschlange
+} from './ohne-netz.js';
 
 // Zehn Stunden nach der letzten Passworteingabe sperrt der Server die Anmeldung (OFFEN 5.96). Wer
 // in dem Moment eine Maske offen hat, verliert nichts: Statt abzumelden, kommt der
@@ -61,4 +71,42 @@ test('zehn Stunden nach der Passworteingabe kommt der Sperrbildschirm; die Einga
 	await page.getByRole('button', { name: 'Speichern' }).click();
 	await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
 	expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe('1');
+});
+
+// An der Theke trifft die Grenze einen Scan: Die Sperre leert die Theke, während die Antwort
+// unterwegs ist. Das Buch geht mit der Person vom Scan in die Warteschlange und wird nach dem
+// Aufschließen nachgebucht (omniboxBuchung.svelte.js, nichtErreicht); sonst verließe es die
+// Bücherei ungebucht.
+test('ein Scan, der auf die Grenze trifft, wird nach dem Aufschließen gebucht', async ({
+	page
+}) => {
+	test.setTimeout(60_000);
+	const teil = neuerTeil();
+	const buch = `B-HD${teil}`;
+	legeBuecherAn(teil, [buch]);
+	try {
+		await page.clock.install();
+		await oeffneTheke(page);
+		const anna = await legeSchuelerAn(page, 'Anna', teil);
+		await scanne(page, anna.nummer);
+		await expect(page.getByRole('heading', { name: /Anna/ }).first()).toBeVisible();
+
+		const sid = await sitzungsKennung(page);
+		seedSQL(
+			`UPDATE sitzungen SET passwort_geprueft_am = NOW() - INTERVAL '10 hours 1 minute' WHERE id = '${sid}'`
+		);
+		await scanne(page, buch);
+		await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
+		await expect.poll(() => warteschlange(page).then((q) => q.length)).toBe(1);
+		expect(await verliehenAn(buch)).toBe('');
+
+		await page.locator('#sperre-passwort').fill(ADMIN_PASSWORD);
+		await page.getByRole('button', { name: 'Entsperren' }).click();
+		await expect(page.getByTestId('sperrbildschirm')).toHaveCount(0);
+		await page.clock.fastForward('01:05');
+		await expect.poll(() => verliehenAn(buch), { timeout: 15_000 }).toBe(anna.id);
+		await expect.poll(() => warteschlange(page)).toEqual([]);
+	} finally {
+		raeumeAuf(teil);
+	}
 });

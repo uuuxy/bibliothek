@@ -37,6 +37,7 @@ vi.mock('./buchBarcodes.svelte.js', () => ({
 
 import { apiClient } from '../apiFetch.js';
 import { omniboxStore } from './omnibox.svelte.js';
+import { thekeLeeren } from './thekeLeeren.js';
 
 // Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
 // einen Fokussprung über 50 ms, der `document` anfasst — endet die Datei vorher, baut
@@ -410,6 +411,27 @@ describe('Omnibox offline', () => {
 				expect(omniboxStore.rueckmeldung.fehler).toBe('');
 			}
 		);
+
+		// Trifft der Scan auf die Sperre der Anmeldung (423, auch zehn Stunden nach der
+		// Passworteingabe), hat die Tür vor der Buchung abgelehnt. Der Haken in apiFetch zeigt den
+		// Sperrbildschirm und leert dabei die Theke, bevor die Antwort hier ankommt. Das Buch geht
+		// trotzdem mit der Person vom Scan in die Warteschlange und wird nach dem Aufschließen
+		// nachgebucht; bis dahin verschwand es ohne Meldung.
+		it('reiht ein Buch ein, wenn die Sperre beim Scan die Theke leert (423)', async () => {
+			netz(true);
+			vi.mocked(apiClient.post).mockImplementation(async () => {
+				thekeLeeren();
+				return proxyFehler(423);
+			});
+			omniboxStore.aktiverLeser = { id: 'schueler-7', vorname: 'Anna' };
+			omniboxStore.eingabe = 'LMF-2025-0007';
+			await omniboxStore.fuehreAktionAus(new Event('submit'));
+
+			const q = await ladeWarteschlange();
+			expect(q, 'das Buch liegt in der Warteschlange').toHaveLength(1);
+			expect(q[0].leser_id).toBe('schueler-7');
+			expect(q[0].art).toBe('ausleihe');
+		});
 
 		it('behält den gemerkten Ausweis, wenn seine Nachfrage eine 502 bekommt', async () => {
 			omniboxStore.eingabe = 'S-10001';
