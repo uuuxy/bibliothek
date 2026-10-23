@@ -47,7 +47,13 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 
 ## 2. Wie eine Änderung zur Schule kommt
 
-1. **Code:** öffentlich auf GitHub (`uuuxy/bibliothek`), Lizenz EUPL 1.2 (`LICENSE`).
+1. **Code:** öffentlich auf GitHub (`uuuxy/bibliothek`), Lizenz EUPL 1.2 (`LICENSE`). Nach
+   `main` kommt ein Pull Request nur mit der Freigabe des Eigentümers des Repositorys
+   (`.github/CODEOWNERS`) und mit allen acht Prüfläufen aus Schritt 3 grün. Ein neuer Push hebt
+   die Freigabe auf, und es zählen nur Läufe von GitHub Actions, kein über die Schnittstelle
+   gesetzter Status. Die Kollaborateure haben Schreibrecht, kommen aber nur so nach `main`;
+   ausgenommen sind die Admins, die direkt auf `main` arbeiten. `main` lässt sich weder löschen
+   noch umschreiben, Release-Tags setzen nur Admins (Regelwerke des Repositorys auf GitHub).
 2. **Prüfung vor dem Hochladen:** Auf dem Arbeitsplatz der Entwicklung laufen vor jedem Commit
    Formatierung und Lint, vor jedem Push die Tests und die Sicherheitsprüfungen
    (`scripts/install-hooks.sh`, [SCRIPTS.md](SCRIPTS.md) §5).

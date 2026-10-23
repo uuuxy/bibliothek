@@ -885,6 +885,10 @@ diesen Schutz auf.
   `docs/npm_ohne_installationsskripte_test.go`.
 - **Wartezeit für neue Fassungen:** Dependabot schlägt eine neue Fassung erst nach sieben Tagen
   vor (`cooldown` in `.github/dependabot.yml`); Sicherheits-Updates kommen ohne Wartezeit.
+- **Wer Code nach `main` bringt:** ein Pull Request mit der Freigabe des Eigentümers und allen
+  Prüfläufen grün, oder ein Admin direkt ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 2).
+  Der Testserver folgt `main`; ein übernommenes Konto eines Kollaborateurs bringt allein keinen
+  Code dorthin.
 
 ### Prüfungen vor dem Push (lokal)
 

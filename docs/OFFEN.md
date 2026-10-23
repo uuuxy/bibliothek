@@ -30,7 +30,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [ ] Die Datei anlegen, die Vorschläge der Kollaborateure an deine Freigabe bindet, oder ihr
+- [x] Die Datei anlegen, die Vorschläge der Kollaborateure an deine Freigabe bindet, oder ihr
   Anlegen ausdrücklich freigeben. (7.11)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
@@ -199,20 +199,6 @@ mindestens neun Büchern über der Frist (Anschrift im Fenster des Kuverts, Folg
 „Fortsetzung: …"), die Mahnliste an die Klassenleitung (Versand an eine eigene Adresse), die
 Ersatzforderung aus der Leserakte, das Anschreiben im Anhang der Bestellmail und die
 DSGVO-Auskunft.
-
-### 7.11 Freigabe für Vorschläge der Kollaborateure
-
-Entschieden am 23.10.2026: Ein Pull Request nach `main` braucht die Freigabe des Eigentümers des
-Repositorys. Dazu nennt `.github/CODEOWNERS` den Eigentümer für alle Dateien, und das Regelwerk
-für `main` verlangt eine Freigabe, die des Code-Eigentümers, aufgehoben bei neuem Push. Die Datei
-wird von Hand angelegt, oder ihr Anlegen wird ausdrücklich freigegeben; danach das Regelwerk
-umstellen und [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) Abschnitt 2 nachziehen.
-
-Heute verlangt das Regelwerk für `main` einen Pull Request, aber keine Freigabe
-(`required_approving_review_count: 0`) und keinen bestandenen Lauf der CI; vier Kollaborateure
-haben Schreibrecht. Wer eines dieser Konten übernimmt, bringt Code ohne Freigabe nach `main`, und
-der Testserver übernimmt ihn beim nächsten Update. Mit der Freigabe zugleich die Läufe der CI als
-Pflicht für Pull Requests eintragen.
 
 ### 7.12 Testserver von außen
 
