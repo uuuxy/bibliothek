@@ -15,7 +15,7 @@ import (
 )
 
 // exportSpalten sind die Spalten der Export-Abfrage in ihrer Reihenfolge.
-var exportSpalten = []string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand", "signatur", "schlagworte", "topf", "standort"}
+var exportSpalten = []string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand", "signatur", "schlagworte", "topf", "standort", "lmf_barcode"}
 
 func TestLadeTitelFuerCSVExport(t *testing.T) {
 	t.Run("successful stream", func(t *testing.T) {
@@ -29,8 +29,8 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 		ctx := context.Background()
 
 		zeilen := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "land", "Regal 3B").
-			AddRow("Buch 2", "", "", "", 0, "", "", "", "", "", "", "")
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "land", "Regal 3B", "LMF-9783060158423-001").
+			AddRow("Buch 2", "", "", "", 0, "", "", "", "", "", "", "", "")
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -58,10 +58,10 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 		if len(ergebnisZeilen) != 2 {
 			t.Fatalf("len(ergebnisZeilen) = %d, erwartet %d", len(ergebnisZeilen), 2)
 		}
-		if diff := cmp.Diff([]string{"Buch 1", "Autor 1", "Verlag 1", "'1234567890", "2021", "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "Land", "Regal 3B"}, ergebnisZeilen[0]); diff != "" {
+		if diff := cmp.Diff([]string{"Buch 1", "Autor 1", "Verlag 1", "'1234567890", "2021", "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "Land", "Regal 3B", "LMF-9783060158423-001"}, ergebnisZeilen[0]); diff != "" {
 			t.Errorf("ergebnisZeilen[0] weicht ab (-erwartet +ist):\n%s", diff)
 		}
-		if diff := cmp.Diff([]string{"Buch 2", "", "", "", "", "", "", "", "", "", "", ""}, ergebnisZeilen[1]); diff != "" {
+		if diff := cmp.Diff([]string{"Buch 2", "", "", "", "", "", "", "", "", "", "", "", ""}, ergebnisZeilen[1]); diff != "" {
 			t.Errorf("ergebnisZeilen[1] weicht ab (-erwartet +ist):\n%s", diff)
 		}
 
@@ -151,7 +151,7 @@ func TestLadeTitelFuerCSVExport(t *testing.T) {
 		ctx := context.Background()
 
 		zeilen := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "schultraeger", "")
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "schultraeger", "", "")
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -188,8 +188,8 @@ func TestCSVExport(t *testing.T) {
 		tueren := &Tueren{abfragen: abfragen}
 
 		zeilen := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "schultraeger", "Bibliothek, Regal 3B").
-			AddRow("=Buch 2", "", "", "", 0, "", "", "", "", "", "", "-Keller") // Formelschutz: Titel und Standort
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "schultraeger", "Bibliothek, Regal 3B", "LMF-9783060158423-001").
+			AddRow("=Buch 2", "", "", "", 0, "", "", "", "", "", "", "-Keller", "") // Formelschutz: Titel und Standort
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -228,14 +228,14 @@ func TestCSVExport(t *testing.T) {
 		if len(textZeilen) != 3 {
 			t.Fatalf("len(strings.Split(strings.TrimSpace(rumpfText), \"\\n\")) = %d, erwartet %d", len(textZeilen), 3)
 		}
-		if textZeilen[0] != "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort" {
-			t.Errorf("textZeilen[0] = %q, erwartet %q", textZeilen[0], "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort")
+		if textZeilen[0] != "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort;LMF-Nummer" {
+			t.Errorf("textZeilen[0] = %q, erwartet %q", textZeilen[0], "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort;LMF-Nummer")
 		}
-		if textZeilen[1] != "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger;Bibliothek, Regal 3B" {
-			t.Errorf("textZeilen[1] = %q, erwartet %q", textZeilen[1], "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger;Bibliothek, Regal 3B")
+		if textZeilen[1] != "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger;Bibliothek, Regal 3B;LMF-9783060158423-001" {
+			t.Errorf("textZeilen[1] = %q, erwartet %q", textZeilen[1], "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger;Bibliothek, Regal 3B;LMF-9783060158423-001")
 		}
-		if textZeilen[2] != "'=Buch 2;;;;;;;;;;;'-Keller" {
-			t.Errorf("textZeilen[2] = %q, erwartet %q", textZeilen[2], "'=Buch 2;;;;;;;;;;;'-Keller")
+		if textZeilen[2] != "'=Buch 2;;;;;;;;;;;'-Keller;" {
+			t.Errorf("textZeilen[2] = %q, erwartet %q", textZeilen[2], "'=Buch 2;;;;;;;;;;;'-Keller;")
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -293,7 +293,7 @@ func TestCSVExport(t *testing.T) {
 		tueren := &Tueren{abfragen: abfragen}
 
 		zeilen := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "land", "").
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "land", "", "").
 			RowError(0, errors.New("connection lost"))
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
@@ -328,7 +328,7 @@ func TestCSVExport(t *testing.T) {
 		// Die Abfrage scheitert an der ersten Zeile des Bestands; die Kopfzeile der Datei steht
 		// dann schon in der Antwort.
 		kopfzeile, _, _ := strings.Cut(string(bytes.TrimPrefix(rumpf, []byte{0xEF, 0xBB, 0xBF})), "\n")
-		if want := "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort"; kopfzeile != want {
+		if want := "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort;LMF-Nummer"; kopfzeile != want {
 			t.Errorf("erste Zeile = %q, erwartet die Kopfzeile %q", kopfzeile, want)
 		}
 

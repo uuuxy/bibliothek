@@ -415,7 +415,9 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
 - **Lernmittel mit LMF-Nummer** (entschieden am 22.10.2026): Jedes Exemplar trägt eine kurze
   Nummer wie in Littera, auch ein Lernmittel mit LMF-Nummer (`LMF-`, ISBN-13, laufende Nummer).
   Die LMF-Nummer bleibt als altes Etikett am Exemplar (`lmf_barcode`): Das Etikett scannt weiter,
-  an der Theke, im Medienkatalog, in der Inventur und in der Theken-Auskunft. Das Druck-Center
+  an der Theke, im Medienkatalog, in der Inventur und in der Theken-Auskunft. Die Bestandsliste
+  als CSV nennt sie in der Spalte „LMF-Nummer": Bis zum Überkleben fände ein anderes Programm
+  das Buch nur über sie. Das Druck-Center
   zeigt und druckt die kurze Nummer aus `barcode_seq` ohne Rückfrage; ist ein Etikett kaputt, wird
   es neu gedruckt und überklebt. Den Bestand stellt Migration 167 um, der Bestands-Import legt
   solche Exemplare gleich so an (§13). Als Nummer eines Exemplars nimmt die Datenbank keine

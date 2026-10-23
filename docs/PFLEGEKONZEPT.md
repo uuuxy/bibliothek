@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 21.10.2026 (Entwurf)
+Stand: 23.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -466,12 +466,14 @@ Dokuments.
    kommen aus der nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm. Was es
    dafür gibt: die Sicherung selbst, eine vollständige PostgreSQL-Datenbank, und die
    Bestandsliste als CSV (Einstellungen → Datenverwaltung). Sie trägt je Exemplar Titel,
-   Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum
-   und Standort — den Teil des Bestands, der sich nicht neu erfassen lässt. Mehrere
+   Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum,
+   Standort und LMF-Nummer — den Teil des Bestands, der sich nicht neu erfassen lässt. Mehrere
    Schlagworte stehen in einer Zelle, getrennt durch „ | "; das Eigentum ist „Land" oder
    „Schulträger", wie auf dem Etikett; der Standort ist der des Exemplars, ohne Eintrag bleibt
-   die Zelle leer. Die Liste führt auch bestellte, noch nicht eingetroffene Exemplare (Zustand
-   „Im Zulauf …") und Titel ohne Exemplar (Zeile ohne Barcode). Leser und Ausleihen gibt das
+   die Zelle leer. Die LMF-Nummer ist die des alten Etiketts eines Lernmittels: Bis es
+   überklebt ist, findet ein anderes Programm das Buch nur über sie. Die Liste führt auch
+   bestellte, noch nicht eingetroffene Exemplare (Zustand „Im Zulauf …") und Titel ohne
+   Exemplar (Zeile ohne Barcode). Leser und Ausleihen gibt das
    Programm nicht in einer Form aus, die ein anderes Programm einliest (entschieden am
    01.10.2026): Schüler kommen in jedem Programm aus der LUSD, das Kollegium meldet sich neu
    an, und gewechselt wird zum Schuljahresende, wenn die Lernmittel zurück sind.

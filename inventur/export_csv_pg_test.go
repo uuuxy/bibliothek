@@ -13,12 +13,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Bestandsliste nennt je Exemplar Signatur, Schlagworte, Eigentum und Standort
-// (PFLEGEKONZEPT.md 8): der Teil des Bestands, der sich bei einem Wechsel auf ein anderes
-// Programm nicht neu erfassen lässt. An der echten Datenbank geprüft, weil die Spalten aus
-// drei Tabellen kommen und das Eigentum der Regel mit drei Stufen folgt
-// (repository.ExemplarTopfSQL). Der Standort steht am Exemplar, nicht am Titel.
-func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) {
+// Die Bestandsliste nennt je Exemplar Signatur, Schlagworte, Eigentum, Standort und die
+// LMF-Nummer (PFLEGEKONZEPT.md 8): der Teil des Bestands, der sich bei einem Wechsel auf ein
+// anderes Programm nicht neu erfassen lässt. An der echten Datenbank geprüft, weil die Spalten
+// aus drei Tabellen kommen und das Eigentum der Regel mit drei Stufen folgt
+// (repository.ExemplarTopfSQL). Standort und LMF-Nummer stehen am Exemplar, nicht am Titel.
+func TestBestandslisteNenntSignaturSchlagworteEigentumStandortUndLMFNummer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	abfragen := NewTitelAbfragen(pool)
@@ -81,6 +81,12 @@ func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) 
 	exemplar(roman, "B2", "", "", "", false)
 	titel("C ohne Exemplar", "R 11", false)
 
+	// A1 trägt noch das alte LMF-Etikett; seine Nummer bleibt neben der kurzen am Exemplar.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET lmf_barcode = $1 WHERE barcode_id = $2`,
+		"LMF-"+marke, "B-A1-"+marke); err != nil {
+		t.Fatalf("LMF-Nummer setzen: %v", err)
+	}
+
 	// Die Wörter tragen die Marke vorn, damit sie niemandem sonst gehören; gespeichert in
 	// dieser Reihenfolge, erwartet alphabetisch ohne Rücksicht auf Groß- und Kleinschreibung.
 	wortG, wortA := marke+" Geometrie", marke+" algebra"
@@ -100,25 +106,26 @@ func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) 
 		t.Fatalf("Export: %v", err)
 	}
 
-	// Spalten: Titel, Barcode, Signatur, Schlagworte, Eigentum, Standort.
+	// Spalten: Titel, Barcode, Signatur, Schlagworte, Eigentum, Standort, LMF-Nummer.
 	var ist []string
 	for _, z := range zeilen {
-		if len(z) != 12 {
-			t.Fatalf("Zeile hat %d Spalten, erwartet 12: %q", len(z), z)
+		if len(z) != 13 {
+			t.Fatalf("Zeile hat %d Spalten, erwartet 13: %q", len(z), z)
 		}
-		ist = append(ist, strings.Join([]string{z[0], z[6], z[8], z[9], z[10], z[11]}, " ; "))
+		ist = append(ist, strings.Join([]string{z[0], z[6], z[8], z[9], z[10], z[11], z[12]}, " ; "))
 	}
 	woerter := wortA + " | " + wortG
 	soll := []string{
 		// Ohne Vermerk und ohne Bestellung entscheidet der Titel: Lernmittel gehört dem Land.
-		marke + " A Schulbuch ; B-A1-" + marke + " ; LMF Ma 8 ; " + woerter + " ; Land ; LMF",
+		// Neben der kurzen Nummer steht die des alten Etiketts, das noch am Buch klebt.
+		marke + " A Schulbuch ; B-A1-" + marke + " ; LMF Ma 8 ; " + woerter + " ; Land ; LMF ; LMF-" + marke,
 		// Was am Exemplar steht, geht dem Titel vor. Das ausgesonderte dritte Exemplar fehlt.
-		marke + " A Schulbuch ; B-A2-" + marke + " ; LMF Ma 8 ; " + woerter + " ; Schulträger ; Bibliothek, Regal 3B",
+		marke + " A Schulbuch ; B-A2-" + marke + " ; LMF Ma 8 ; " + woerter + " ; Schulträger ; Bibliothek, Regal 3B ; ",
 		// Der Topf der Bestellung geht dem Titel vor. Ein Exemplar ohne Standort hat keinen.
-		marke + " B Roman ; B-B1-" + marke + " ;  ;  ; Land ; ",
-		marke + " B Roman ; B-B2-" + marke + " ;  ;  ; Schulträger ; ",
-		// Ein Titel ohne Exemplar hat seine Zeile, kein Eigentum und keinen Standort.
-		marke + " C ohne Exemplar ;  ; R 11 ;  ;  ; ",
+		marke + " B Roman ; B-B1-" + marke + " ;  ;  ; Land ;  ; ",
+		marke + " B Roman ; B-B2-" + marke + " ;  ;  ; Schulträger ;  ; ",
+		// Ein Titel ohne Exemplar hat seine Zeile, kein Eigentum, keinen Standort und keine LMF-Nummer.
+		marke + " C ohne Exemplar ;  ; R 11 ;  ;  ;  ; ",
 	}
 	if !slices.Equal(ist, soll) {
 		t.Errorf("Bestandsliste:\n ist:\n  %s\n soll:\n  %s", strings.Join(ist, "\n  "), strings.Join(soll, "\n  "))

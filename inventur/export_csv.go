@@ -38,7 +38,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 		// Das BOM für UTF-8, damit Excel die Datei richtig öffnet.
 		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 		kopfGesendet = true
-		return csvSchreiber.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum", "Standort"})
+		return csvSchreiber.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum", "Standort", "LMF-Nummer"})
 	}
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
@@ -67,7 +67,8 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 // teilen sich eine Zelle (exportSchlagwortTrenner), alphabetisch wie in der Buchmaske. Das
 // Eigentum ist das des Exemplars nach repository.ExemplarTopfSQL, dieselbe Regel wie am
 // Etikett. Der Standort steht am Exemplar. Eine Zeile ohne Exemplar hat weder Eigentum noch
-// Standort.
+// Standort. Die LMF-Nummer ist das alte Etikett eines Lernmittels (lmf_barcode): Bis es
+// überklebt ist, trägt das Buch nur sie, und nur über sie fände ein anderes Programm es.
 func (a *TitelAbfragen) ladeTitelFuerCSVExport(ctx context.Context, kopf func() error, schreibe func(zeile []string) error) error {
 	abfrage := `
 		SELECT
@@ -82,7 +83,8 @@ func (a *TitelAbfragen) ladeTitelFuerCSVExport(ctx context.Context, kopf func() 
 			coalesce(t.signatur, ''),
 			coalesce(sw.woerter, ''),
 			CASE WHEN e.id IS NULL THEN '' ELSE ` + repository.ExemplarTopfSQL + ` END,
-			coalesce(e.standort, '')
+			coalesce(e.standort, ''),
+			coalesce(e.lmf_barcode, '')
 		FROM buecher_titel t
 		LEFT JOIN buecher_exemplare e ON t.id = e.titel_id AND e.ist_ausgesondert = false
 		` + repository.ExemplarTopfJoin + `
@@ -106,10 +108,10 @@ func (a *TitelAbfragen) ladeTitelFuerCSVExport(ctx context.Context, kopf func() 
 	}
 
 	for pgZeilen.Next() {
-		var titel, autor, verlag, isbn, fach, barcode, zustand, signatur, schlagworte, topf, standort string
+		var titel, autor, verlag, isbn, fach, barcode, zustand, signatur, schlagworte, topf, standort, lmfNummer string
 		var jahr int
 
-		if err := pgZeilen.Scan(&titel, &autor, &verlag, &isbn, &jahr, &fach, &barcode, &zustand, &signatur, &schlagworte, &topf, &standort); err != nil {
+		if err := pgZeilen.Scan(&titel, &autor, &verlag, &isbn, &jahr, &fach, &barcode, &zustand, &signatur, &schlagworte, &topf, &standort, &lmfNummer); err != nil {
 			return err
 		}
 
@@ -123,7 +125,7 @@ func (a *TitelAbfragen) ladeTitelFuerCSVExport(ctx context.Context, kopf func() 
 			isbn = "'" + isbn
 		}
 
-		zeile := []string{titel, autor, verlag, isbn, jahrStr, fach, barcode, zustand, signatur, schlagworte, mitteltopf.Traeger(topf), standort}
+		zeile := []string{titel, autor, verlag, isbn, jahrStr, fach, barcode, zustand, signatur, schlagworte, mitteltopf.Traeger(topf), standort, lmfNummer}
 		if err := schreibe(zeile); err != nil {
 			return err
 		}
