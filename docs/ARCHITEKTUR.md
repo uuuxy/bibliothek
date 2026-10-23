@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 22.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 23.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -3072,7 +3072,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 22.10.2026
+Stand: 23.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3449,6 +3449,15 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   Untertitel; die Maske zeigt den Titel vor dem Speichern. Die Altersangabe der DNB wird gelesen
   und nicht gespeichert.
 - Tabellen-Inline-Felder mit 36 px: eine Variante `size="sm"` von `Feld` erst bei Bedienbefund.
+- **Dieselbe Regel von Hand an mehreren Stellen, ohne bekannten Fehler:** Rund zehn Suchfelder
+  bauen Entprellung und „nur die jüngste Antwort zählt" je selbst (`zusammenfuehrenSuche`,
+  `auflagenSuche`, `schuelerSuche`, `portalSuche` und andere); die Prüfung danach hält
+  `frontend-hygiene-spaete-pruefung.test.js`, einen gemeinsamen Baustein gibt es nicht. Rund
+  fünfzehn Türen setzen die Kopfzeilen eines PDF je selbst; Zugangs- und Abgangsbuch
+  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich. Ein
+  Cover holen `api/katalog/cover.go` und `inventur/cover_downloader.go` je selbst, mit derselben
+  Liste erlaubter Server und derselben Grenze für die Bildgröße. Anlass: ein Fehler in einer der
+  Kopien.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
   beenden das Programm an 15 Stellen selbst (`log.Fatalf`, `os.Exit`); Best Practices, „Program
   initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen
