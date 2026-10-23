@@ -19,10 +19,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt.
   (7.2, 4.20)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
-- [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
-  Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9), Uhr für den
-  Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach nachsehen: Admin-Konten,
-  Verbindung zur DNB (7.8).
+- [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
+  Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
+  (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
+  nachsehen: Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 
@@ -209,6 +209,14 @@ gebremst je Konto und Adresse (5) und je Adresse (50 in 15 Minuten); mit vielen 
 keine Grenze. Am Server nachsehen: `IMAP_HOST` in der `.env`, und ob dort echte Daten von Schülern
 liegen. Ist eins davon so, bekommt der Testserver einen Eingang wie in 4.23 oder eine Sperre nach
 Adresse im Caddy.
+
+### 7.13 Verschlüsselte Platte am Schulserver
+
+Die Datenbank liegt auf der Platte des Servers im Klartext; verschlüsselt sind nur Fotos, das
+Passwort des Mailversands und die Sicherungen ([datenschutz/nachweis.md](datenschutz/nachweis.md),
+„Verschlüsselung"). Wer die Platte bekommt, bei Diebstahl, Austausch oder Entsorgung, liest alle
+Daten der Schüler. Beim Einrichten des Schulservers die Platte verschlüsseln, danach den Nachweis
+um den Satz ergänzen.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
