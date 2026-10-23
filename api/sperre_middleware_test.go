@@ -116,8 +116,12 @@ func TestSperrzustandNichtLesbar_Lehnt503Ab(t *testing.T) {
 func TestAbmeldung_AusDerSperre_LoeschtDieZeile(t *testing.T) {
 	s, mock := abmeldeServer(t)
 
-	// Keine Abfrage des Sperrzustands: Der Abmelde-Weg prüft ohne sie.
+	// Der Abmelde-Weg liest die Zeile, damit ein schon abgemeldetes Token nicht mehr gilt; die
+	// Sperre hält ihn nicht auf.
 	erwarteSperrlisteFrei(mock, auth.RolleMitarbeiter)
+	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL FROM sitzungen").
+		WithArgs(sperreSitzungID).
+		WillReturnRows(pgxmock.NewRows([]string{"gesperrt"}).AddRow(true))
 	mock.ExpectExec("INSERT INTO revoked_tokens").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

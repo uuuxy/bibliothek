@@ -136,6 +136,7 @@ func TestSitzungVerlaengern_FrischesTokenMitSitzungFasstDieZeileNichtAn(t *testi
 	}
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoAktiv(mock, true)
+	erwarteSperrzustand(mock, false)
 
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
 
@@ -165,6 +166,7 @@ func TestSitzungVerlaengern_AltesTokenWirdMitNeuemCookieErneuert(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoStatus(mock, true, RolleMitarbeiter)
+	erwarteSperrzustand(mock, false)
 	erwarteSitzungVerlaengert(mock, 1)
 
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})
@@ -216,6 +218,7 @@ func TestSitzungVerlaengern_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 	a, mock := newTestAnmeldung(t, 12*time.Hour)
 	erwarteNichtWiderrufen(mock)
 	erwarteKontoStatus(mock, true, RolleHelfer)
+	erwarteSperrzustand(mock, false)
 	erwarteSitzungVerlaengert(mock, 1)
 
 	rec := rufeSitzungVerlaengern(t, a, &http.Cookie{Name: "session_token", Value: token})

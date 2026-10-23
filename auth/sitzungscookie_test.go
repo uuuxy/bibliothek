@@ -87,6 +87,7 @@ func TestSitzungVerlaengern_CookieFolgtDerKonfiguration(t *testing.T) {
 			a, mock := newTestAnmeldung(t, 12*time.Hour)
 			erwarteNichtWiderrufen(mock)
 			erwarteKontoStatus(mock, true, RolleMitarbeiter)
+			erwarteSperrzustand(mock, false)
 			erwarteSitzungVerlaengert(mock, 1)
 
 			anfrage := httptest.NewRequest(http.MethodPost, "/api/auth/refresh", nil)

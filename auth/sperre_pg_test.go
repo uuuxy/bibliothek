@@ -343,10 +343,13 @@ func TestSperre_ZeileEndetMitDerAnmeldung(t *testing.T) {
 	if n := zeilen(); n != 0 {
 		t.Fatalf("nach Beende: %d Zeilen, erwartet 0", n)
 	}
-	// Das Token trägt noch die Kennung, die Zeile ist weg: Sperren meldet, dass nichts gesperrt
-	// wurde. Die Oberfläche darf sich nicht auf eine Sperre verlassen, die es nicht gibt.
-	if sperreSperren(t, a, cookie) {
-		t.Fatal("Sperren meldet gesperrt=true für eine Anmeldung ohne Zeile")
+	// Das Token trägt noch die Kennung, die Zeile ist weg: Die Anmeldung ist beendet, das Token
+	// gilt nicht mehr, auch nicht zum Sperren.
+	if _, err := a.PruefeTokenTrotzSperre(ctx, cookie.Value); err == nil {
+		t.Fatal("ein Token gilt weiter, obwohl die Zeile seiner Anmeldung gelöscht ist")
+	}
+	if rec := sperreAnfrage(Sperren(a), "/api/auth/sperren", "", cookie); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("Sperren nach dem Ende der Anmeldung: Status %d, erwartet 401: %s", rec.Code, rec.Body.String())
 	}
 
 	// Ablauf: Nur die abgelaufene Zeile geht.

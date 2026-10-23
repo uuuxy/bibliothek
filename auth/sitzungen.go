@@ -41,20 +41,27 @@ func (s *Sitzungen) beginne(ctx context.Context, kontoID, passwort string, laeuf
 // istGesperrt meldet, ob die Anmeldung gesperrt ist. Ohne Kennung und ohne Zeile ist sie es
 // nicht: Sperren lässt sich nur, was sich auch wieder aufschließen lässt.
 func (s *Sitzungen) istGesperrt(ctx context.Context, sitzungID string) (bool, error) {
+	gesperrt, _, err := s.zustand(ctx, sitzungID)
+	return gesperrt, err
+}
+
+// zustand meldet, ob die Anmeldung gesperrt ist und ob ihre Zeile noch besteht. Ein Token ohne
+// Kennung hat keine Zeile und keine Sperre; es läuft aus, weil die Erneuerung es nicht verlängert.
+func (s *Sitzungen) zustand(ctx context.Context, sitzungID string) (gesperrt, besteht bool, err error) {
 	if sitzungID == "" {
-		return false, nil
+		return false, true, nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	gesperrt, err := repository.IstSitzungGesperrt(ctx, s.pool, sitzungID)
+	gesperrt, err = repository.IstSitzungGesperrt(ctx, s.pool, sitzungID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
+		return false, false, nil
 	}
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	return gesperrt, nil
+	return gesperrt, true, nil
 }
 
 // sperre sperrt die Anmeldung und meldet, ob es eine Zeile dafür gab. Eine schon gesperrte

@@ -156,13 +156,9 @@ func (a *Anmeldung) ErzeugeToken(kontoID string, rolle Rolle, sitzungID string) 
 // Anmeldung gesperrt ist (ErrSitzungGesperrt). Das ist die Prüfung für jede Anfrage, die Daten
 // liefert oder ändert.
 func (a *Anmeldung) PruefeToken(ctx context.Context, token string) (*Claims, error) {
-	claims, err := a.PruefeTokenTrotzSperre(ctx, token)
+	claims, gesperrt, err := a.pruefeToken(ctx, token)
 	if err != nil {
 		return nil, err
-	}
-	gesperrt, err := a.Sitzungen.istGesperrt(ctx, claims.SitzungID)
-	if err != nil {
-		return nil, fmt.Errorf("%w: sitzung: %v", ErrPruefungGestoert, err)
 	}
 	if gesperrt {
 		return nil, ErrSitzungGesperrt
@@ -170,17 +166,29 @@ func (a *Anmeldung) PruefeToken(ctx context.Context, token string) (*Claims, err
 	return claims, nil
 }
 
-// PruefeTokenTrotzSperre prüft Signatur, Widerruf in der Sperrliste und den aktuellen Stand des
-// Kontos und liefert die Claims. Die Sperre nach Inaktivität prüft sie nicht; sie ist für die
-// Wege, die eine gesperrte Anmeldung braucht: aufschließen, abmelden, den eigenen Zustand lesen,
-// das Token erneuern.
+// PruefeTokenTrotzSperre prüft Signatur, Widerruf in der Sperrliste, den aktuellen Stand des
+// Kontos und ob die Anmeldung noch besteht, und liefert die Claims. Die Sperre nach Inaktivität
+// prüft sie nicht; sie ist für die Wege, die eine gesperrte Anmeldung braucht: aufschließen,
+// abmelden, den eigenen Zustand lesen, das Token erneuern.
 func (a *Anmeldung) PruefeTokenTrotzSperre(ctx context.Context, token string) (*Claims, error) {
+	claims, _, err := a.pruefeToken(ctx, token)
+	return claims, err
+}
+
+// pruefeToken ist die Prüfung hinter PruefeToken und PruefeTokenTrotzSperre und meldet dazu, ob
+// die Anmeldung gesperrt ist.
+//
+// Ein Token mit der Kennung einer Anmeldung, deren Zeile fehlt, gilt nicht: Die Zeile verschwindet
+// nur mit dem Abmelden, dem Ablauf aller Tokens der Anmeldung oder dem Konto. Die Erneuerung lässt
+// das vorige Token gelten, und das Abmelden widerruft nur das letzte; ohne diese Prüfung bliebe
+// das vorige nach dem Abmelden bis zu seinem Ablauf ein voller Zugang.
+func (a *Anmeldung) pruefeToken(ctx context.Context, token string) (*Claims, bool, error) {
 	widerrufen, err := a.Sperrliste.istWiderrufen(ctx, token)
 	if err != nil {
-		return nil, fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)
+		return nil, false, fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)
 	}
 	if widerrufen {
-		return nil, errors.New("token has been revoked (logged out)")
+		return nil, false, errors.New("token has been revoked (logged out)")
 	}
 
 	gelesen, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
@@ -191,12 +199,12 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(ctx context.Context, token string) (*
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse token: %w", err)
+		return nil, false, fmt.Errorf("failed to parse token: %w", err)
 	}
 
 	claims, ok := gelesen.Claims.(*Claims)
 	if !ok || !gelesen.Valid {
-		return nil, errors.New("invalid token claims")
+		return nil, false, errors.New("invalid token claims")
 	}
 
 	// Signatur und Sperrliste allein reichen nicht: Ein deaktiviertes oder gelöschtes Konto hat
@@ -204,7 +212,7 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(ctx context.Context, token string) (*
 	// (12 Stunden) vollen Zugriff. Deshalb gilt bei jeder Prüfung der Stand in der Datenbank.
 	rolle, err := a.ladeKontoStatus(ctx, claims.KontoID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Die Rolle aus der Datenbank ersetzt die im Token signierte. Sonst wirkte eine
@@ -212,7 +220,14 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(ctx context.Context, token string) (*
 	// jedes erneuerte Token schriebe die alte Rolle fort. Die Abfrage läuft für den Status ohnehin.
 	claims.Rolle = rolle
 
-	return claims, nil
+	gesperrt, besteht, err := a.Sitzungen.zustand(ctx, claims.SitzungID)
+	if err != nil {
+		return nil, false, fmt.Errorf("%w: sitzung: %v", ErrPruefungGestoert, err)
+	}
+	if !besteht {
+		return nil, false, errors.New("session has ended (logged out)")
+	}
+	return claims, gesperrt, nil
 }
 
 // ladeKontoStatus stellt sicher, dass das Konto noch besteht und aktiv ist, und liefert seine

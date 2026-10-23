@@ -25,7 +25,10 @@ ist — sonst sperrte sein Ausfall die Theke zu. Der Wert ist Argon2id über das
 eigenem Salz; davor steht ein HMAC mit einem Schlüssel, der aus `JWT_SECRET` abgeleitet ist und
 nicht in der Datenbank liegt (`auth/pruefwert.go`). Mit der Datenbank oder einer Sicherung
 allein lässt sich deshalb kein Passwort durchprobieren. Abmelden löscht die Zeile, abgelaufene
-räumt der Server alle 15 Minuten ab, und ein gelöschtes Konto nimmt seine Zeilen mit. Eine neue
+räumt der Server alle 15 Minuten ab, und ein gelöschtes Konto nimmt seine Zeilen mit. Mit der
+Zeile endet jedes Token der Anmeldung, auch eines von vor der letzten Erneuerung: Die Erneuerung
+lässt das vorige gelten, und das Abmelden widerruft nur das letzte (`pruefeToken` in
+`auth/token.go`, Gate `api/abmeldung_ganze_sitzung_pg_test.go`). Eine neue
 Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niemand neu anmelden
 (entschieden am 05.10.2026).
 
