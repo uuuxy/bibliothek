@@ -1,6 +1,6 @@
 # Wegweiser — wo steht was
 
-Stand: 16.10.2026
+Stand: 23.10.2026
 
 Eine Seite für den Einstieg in den Code: der Weg einer Anfrage, vom Menüpunkt zum Ordner und
 für häufige Änderungen die Stelle. Warum etwas so gebaut ist, steht in
@@ -50,7 +50,8 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSuche.svelte`                                            | `api/portal/portal.go`             |
 
 Der Medienkatalog ist ein eigenes Untermodul: Titelliste, Buchmaske und Import haben ihre
-Türen und ihre Abfragen in `inventur/`. Was jede Tür braucht (Eingabe lesen, Recht prüfen,
+Türen und ihre Abfragen in `inventur/`; seine Beschreibung steht am Kopf von
+`inventur/datenbank.go`. Was jede Tür braucht (Eingabe lesen, Recht prüfen,
 Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bildschirm
 öffnet, steht in `frontend/src/lib/menue.js` und `frontend/src/lib/Router.svelte`.
 
@@ -77,7 +78,7 @@ Nach jeder Änderung laufen die Prüfungen aus dem Abschnitt „Qualitätssicher
 
 ## Namen
 
-Dateien und Bezeichner heißen deutsch, je Sache ein Wort ([STIL.md](STIL.md), Abschnitte 2
+Dateien und Bezeichner heißen deutsch, je Sache ein Wort ([STIL.md](STIL.md), Abschnitte 1, 2
 und 13); wer alles zu einer Sache sucht, sucht nach einem Wort. Einen neuen englischen Namen
 melden `stil_ratsche_test.go` und `frontend/src/lib/frontend-hygiene-sprache.test.js`.
 Adressen, Felder in JSON, Tabellen und Spalten behalten ihre Namen, auch englische
