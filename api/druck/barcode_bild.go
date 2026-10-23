@@ -1,6 +1,7 @@
 package druck
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -24,6 +25,10 @@ func (t *Tueren) BarcodeBild() http.HandlerFunc {
 		breite, hoehe := leseBarcodeGroesse(r, alsQR)
 
 		bild, err := strichcode.PNG(inhalt, alsQR, breite, hoehe)
+		if errors.Is(err, strichcode.ErrZuGross) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Barcode wäre zu groß", err)
+			return
+		}
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

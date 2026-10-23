@@ -56,7 +56,10 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
   Ausgenommen sind `/api/images/cover`, `/uploads/`, `/api/barcode` und `/events` — ein
   Seitenaufruf lädt dutzende Bilder gleichzeitig, und SSE ist eine Dauerverbindung. Die
   Ausnahme gilt der **Auslieferung**; der teure Zweig des Cover-Proxys (fremder Download)
-  hat eine eigene Bremse, siehe „Cover-Proxy" weiter unten.
+  hat eine eigene Bremse, siehe „Cover-Proxy" weiter unten. Ein Strichcode-Bild ist höchstens
+  2000 × 2000 Pixel groß und trägt höchstens 80 Zeichen (`pkg/strichcode`, Gate
+  `api/druck/barcode_bild_grenze_pg_test.go`); ohne die Grenze legte eine Anfrage ein Bild in
+  der verlangten Größe an, bei 100000 × 100000 Pixeln 40 GB, und der Prozess endete.
 - **Anmelde-Rumpf begrenzt** (`anmeldeRumpfMaxBytes` = 16 KB): `/login` ist der
   eine unangemeldete Endpunkt, der JSON liest, und die serverweite 100-MB-Grenze gilt den
   Importen. `json.Decoder` puffert einen Zeichenkettenwert vollständig — fünfzig parallele
