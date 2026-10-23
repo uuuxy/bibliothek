@@ -36,7 +36,6 @@ Nur, was kein Test leisten kann.
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
   17.09.2026 als Verlust ausgebucht. Liegt es dort: in der Buchakte den Status des Exemplars
   zurückstellen.
-- [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 
 ### Termin
@@ -155,12 +154,6 @@ Vertretung.
 Fällt der Server ganz aus, meldet es niemand. Ein externer Monitor ruft alle 5 Minuten `/health`
 ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0); am Schulserver erst, wenn der Eingang aus 4.23
 `/health` durchlässt.
-
-### 7.6 Regelwerk für `main`
-
-Die PR-Pflicht entfernen (Solo-Entscheidung vom 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 21.10.2026 trägt das Regelwerk noch `pull_request`; Pushes gehen über
-den Admin-Bypass.
 
 ### 7.7 Abnahmen
 
