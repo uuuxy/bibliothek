@@ -102,6 +102,7 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 	}
 
 	buch := &repository.Exemplar{ID: "c1", BarcodeID: "B-1", Titel: "Rundruf-Band"}
+	leser := &repository.Leser{ID: "l1"}
 	for _, f := range []struct {
 		typ      string
 		fremd    bool
@@ -111,9 +112,17 @@ func TestEingabeVerarbeiten_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 		{"rueckgabe", false, "rueckgabe"},
 		{"rueckgabe", true, "fremdrueckgabe"},
 	} {
-		rundrufe := rundrufeNach(&service.OmniboxErgebnis{Art: f.typ, Exemplar: buch, Fremdrueckgabe: f.fremd})
-		if len(rundrufe) != 1 || !strings.Contains(rundrufe[0], `"event":"`+f.ereignis+`"`) || !strings.Contains(rundrufe[0], `"barcode_id":"B-1"`) {
-			t.Errorf("nach %s (fremd %v): Rundrufe %q — erwartet genau einen mit event %q und dem Barcode", f.typ, f.fremd, rundrufe, f.ereignis)
+		rundrufe := rundrufeNach(&service.OmniboxErgebnis{Art: f.typ, Exemplar: buch, Leser: leser, Fremdrueckgabe: f.fremd})
+		if len(rundrufe) != 1 || !strings.Contains(rundrufe[0], `"event":"`+f.ereignis+`"`) || !strings.Contains(rundrufe[0], `"student_id":"l1"`) {
+			t.Errorf("nach %s (fremd %v): Rundrufe %q — erwartet genau einen mit event %q und der Kennung des Lesers", f.typ, f.fremd, rundrufe, f.ereignis)
+			continue
+		}
+		// Den Rundruf bekommt jede Sitzung, auch das Kollegium. Welches Buch, steht nicht darin:
+		// Mit der Kennung des Lesers ergäbe es eine Lesehistorie neben der befristeten.
+		for _, buchangabe := range []string{"Rundruf-Band", "B-1", `"c1"`} {
+			if strings.Contains(rundrufe[0], buchangabe) {
+				t.Errorf("nach %s (fremd %v): Rundruf %s nennt das Buch (%s)", f.typ, f.fremd, rundrufe[0], buchangabe)
+			}
 		}
 	}
 	if rundrufe := rundrufeNach(&service.OmniboxErgebnis{Art: "student"}); len(rundrufe) != 0 {

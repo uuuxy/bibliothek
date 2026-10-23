@@ -62,15 +62,14 @@ type abholbereiteVormerkung struct {
 }
 
 // thekenEreignis ist die Meldung „action" der Live-Leitung nach einer Ausleihe oder Rückgabe.
-// Jedes angemeldete Konto bekommt sie; einen Namen trägt sie deshalb nicht (PII-Matrix,
-// Stufe 0).
+// Jedes angemeldete Konto bekommt sie, auch das Kollegium; sie trägt deshalb keinen Namen und
+// kein Buch. Die Oberfläche braucht nur Art und Leser (Omnibox.svelte lädt die offene Akte neu,
+// Abgaenger.svelte die Liste); mit Titel oder Nummer des Buchs ergäbe die Kennung des Lesers eine
+// Lesehistorie neben der befristeten.
 type thekenEreignis struct {
-	Art        string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
-	LeserID    string `json:"student_id,omitempty"`
-	ExemplarID string `json:"copy_id,omitempty"`
-	BarcodeID  string `json:"barcode_id"`
-	Titel      string `json:"titel"`
-	Zeitpunkt  int64  `json:"timestamp"`
+	Art       string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
+	LeserID   string `json:"student_id,omitempty"`
+	Zeitpunkt int64  `json:"timestamp"`
 }
 
 // sendeThekenEreignis schickt das Ereignis über die Live-Leitung; ohne Exemplar (Gerät)
@@ -84,12 +83,9 @@ func (t *Tueren) sendeThekenEreignis(antwort eingabeAntwort) {
 		leserID = antwort.Leser.ID
 	}
 	ereignis := thekenEreignis{
-		Art:        antwort.Art,
-		LeserID:    leserID,
-		ExemplarID: antwort.Exemplar.ID,
-		BarcodeID:  antwort.Exemplar.BarcodeID,
-		Titel:      antwort.Exemplar.Titel,
-		Zeitpunkt:  time.Now().Unix(),
+		Art:       antwort.Art,
+		LeserID:   leserID,
+		Zeitpunkt: time.Now().Unix(),
 	}
 	if antwort.Fremdrueckgabe {
 		ereignis.Art = "fremdrueckgabe"

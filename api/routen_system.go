@@ -112,8 +112,8 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	// (authStore und die Omnibox der Theke), und an ihm hängt der Herzschlag für die Anzeige
 	// „offline". Hinge er an einem Fachrecht, liefe jede Rolle ohne dieses Recht in eine Schleife
 	// aus 403 und neuem Verbindungsaufbau. Der Strom trägt nur Ereignisse der Abläufe (Typ,
-	// Kennungen, Buchtitel, Zeitstempel), keine personenbezogenen Daten von Schülern
-	// (VerlangeAnmeldung in api/tuer/sitzung.go).
+	// Kennungen, Zeitstempel), keinen Namen und kein Buch (thekenEreignis in
+	// api/theke/eingabe_anfrage_antwort.go, VerlangeAnmeldung in api/tuer/sitzung.go).
 	liveLeitung := s.Broker.Tuer()
 	mux.Handle("GET /events", s.VerlangeAnmeldung()(liveLeitung))
 }

@@ -272,7 +272,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/schlagworte/{id}/zusammenfuehren` | edit_books      | 0     | Schlagworte zusammenführen (Antwort: Zahl der Titel)                                                                                                                                                                                          |
 | `POST /api/schlagworte/verweise`             | edit_books      | 0     | Verweis auf ein Schlagwort anlegen                                                                                                                                                                                                            |
 | `POST /api/schlagworte/loeschen`             | edit_books      | 0     | Schlagworte löschen, eins oder mehrere (Antwort: Zahl der Wörter, Titel und Verweise)                                                                                                                                                         |
-| `GET /events`                                | Sitzung         | 0     | SSE: UUIDs + Buchdaten, keine Namen                                                                                                                                                                                                           |
+| `GET /events`                                | Sitzung         | 0     | SSE: Art des Vorgangs, Kennung des Lesers, Zeit; kein Name, kein Buch                                                                                                                                                                         |
 
 ## router.go
 

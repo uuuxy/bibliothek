@@ -69,8 +69,8 @@ func erlaubeZugriff(w http.ResponseWriter, r *http.Request, next http.Handler, c
 // Der erste Fall war der SSE-Stream /events, den die Oberfläche direkt nach der Anmeldung
 // aufbaut. Hinge er an einem Fachrecht, bekäme eine Rolle ohne dieses Recht keine Absage,
 // sondern eine Schleife neuer Verbindungen und nach 25 s ohne Herzschlag das Offline-Overlay
-// aus App.svelte. Der Stream trägt nur Ereignisse der Theke (Art, Kennungen, Titel, Zeit) und
-// keine Schülerdaten; deshalb genügt hier die Sitzung.
+// aus App.svelte. Der Stream trägt nur Ereignisse der Theke (Art, Kennung des Lesers, Zeit),
+// keinen Namen und kein Buch; deshalb genügt hier die Sitzung.
 func (b *Basis) VerlangeAnmeldung() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
