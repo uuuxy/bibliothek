@@ -68,6 +68,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG existiert bereits — nichts zu tun."
             exit 0
@@ -80,13 +81,22 @@ jobs:
           # Ohne vorigen v-Tag (allererstes Release) wäre BEREICH die ganze Historie —
           # dann auf die letzten 100 Commits begrenzen, statt 2.000 Zeilen Notes zu erzeugen.
           if [ -n "$VORHER" ]; then BEREICH="${VORHER}..${TAG}"; DECKEL=""; else BEREICH="$TAG"; DECKEL="--max-count=100"; fi
+          if [ -n "$VORHER" ]; then ALLE="https://github.com/${GITHUB_REPOSITORY}/compare/${VORHER}...${TAG}"; else ALLE="https://github.com/${GITHUB_REPOSITORY}/commits/${TAG}"; fi
           {
             echo "Docker-Image: \`ghcr.io/uuuxy/bibliothek:${TAG#v}\` (Build im Workflow 'Docker Image veröffentlichen (ghcr.io)' zum selben Tag)."
             echo
             echo "## Commits${VORHER:+ seit $VORHER}"
+            # GitHub nimmt für den Text eines Releases höchstens 125.000 Zeichen an und lehnt einen
+            # längeren ab; ein Stand mit vielen Commits käme darüber. Die Liste endet deshalb nach
+            # 60.000 Zeichen mit dem Verweis auf alle Commits; der Rest bleibt für die Notes von
+            # GitHub und den Text, der von Hand davor kommt.
             # DECKEL ist leer oder genau ein Argument (--max-count=100)
             # shellcheck disable=SC2086
-            git log --no-merges --format='* %s (%h)' $DECKEL "$BEREICH"
+            git log --no-merges --format='* %s (%h)' $DECKEL "$BEREICH" \
+              | awk -v grenze=60000 -v alle="$ALLE" '
+                  laenge + length($0) + 1 > grenze { weitere++; next }
+                  { laenge += length($0) + 1; print }
+                  END { if (weitere) print "* … und " weitere " weitere: " alle }'
             echo
           } > /tmp/notes.md
           gh release create "$TAG" \
