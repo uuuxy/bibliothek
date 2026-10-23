@@ -31,8 +31,9 @@
 	const v = erzeugeZusammenfuehrenVorschau();
 	const anfrage = erzeugeDialogAnfrage(() => open);
 	// Der Titel mit ISBN bleibt: Er trägt meist die vollständigen Angaben, der andere füllt nur
-	// Lücken. Hat der andere keine ISBN, bleibt dieser, der offene.
-	const andererBleibt = $derived(Boolean(anderer?.isbn) && !titel.isbn);
+	// Lücken. Hat der andere keine ISBN, bleibt dieser, der offene. Es zählt die gespeicherte ISBN
+	// (geladen): Eine nur eingetippte verwirft „Verwerfen und weiter".
+	const andererBleibt = $derived(Boolean(anderer?.isbn) && !(titel.geladen ?? titel).isbn);
 	const ziel = $derived(andererBleibt ? anderer?.id : titel.id);
 	const quelle = $derived(andererBleibt ? titel.id : anderer?.id);
 

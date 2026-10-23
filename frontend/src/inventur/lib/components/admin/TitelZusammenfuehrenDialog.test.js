@@ -135,6 +135,24 @@ describe('TitelZusammenfuehrenDialog', () => {
 		expect(vorschauen().at(-1)).toBe('/api/buecher/titel/gross/zusammenfuehren?quelle_id=liste');
 	});
 
+	// Wer am Titel ohne ISBN die ISBN eintippt, scheitert beim Speichern, weil der andere sie trägt,
+	// und führt dann zusammen. Die eingetippte ISBN ist verworfen; es bleibt der Titel mit ISBN.
+	it('entscheidet nach der gespeicherten ISBN, nicht nach einer eingetippten', async () => {
+		server();
+		const getippt = { ...dieser, isbn: '9783060158423', geladen: { ...dieser } };
+		const screen = render(TitelZusammenfuehrenDialog, {
+			props: { open: true, titel: getippt, onZusammengefuehrt: vi.fn() }
+		});
+		await fireEvent.input(screen.getByLabelText('Anderen Titel suchen'), {
+			target: { value: 'Natur' }
+		});
+		await vi.advanceTimersByTimeAsync(250);
+		await fireEvent.click(screen.getByRole('button', { name: /9783060158423/ }));
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(vorschauen()).toEqual(['/api/buecher/titel/klein/zusammenfuehren?quelle_id=gross']);
+	});
+
 	it('führt zusammen und meldet den bleibenden Titel mit seiner Zahl', async () => {
 		server();
 		vi.mocked(apiClient.post).mockResolvedValueOnce(antwort(200, vorschau));
