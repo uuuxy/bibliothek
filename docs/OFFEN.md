@@ -18,7 +18,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt.
   (7.2, 4.20)
-- [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
+- [ ] Eingang und Ausgang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar,
+  nach außen nur die Dienste, die das Programm braucht. (4.23)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -78,7 +79,10 @@ das Sitzungs-Cookie nicht (`ermittleCookieSecure` in `main.go`). Danach in den E
 ihn, das Zertifikat gilt für den Namen), die Freigabe von Port 443, der Netzabschnitt des Servers
 und die Absenderadresse, an der der Eingang das Schulnetz erkennt. Ausgehend braucht der Server
 den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
-(`pkg/coverquelle`) und für Updates GitHub, Docker Hub und die Paketquellen.
+(`pkg/coverquelle`), Let's Encrypt für das Zertifikat, den Speicher der Sicherung außer Haus
+(7.3) und für Updates GitHub, Docker Hub und die Paketquellen. Alles andere sperrt die Firewall
+nach außen: Dann schickt auch Code, der mit einem Update hereinkommt, keine Daten an ein
+beliebiges Ziel.
 
 ### 4.24 Eigentumsvermerk auf neuen Etiketten
 
