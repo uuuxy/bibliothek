@@ -875,6 +875,17 @@ Zeile. Der Kommentar an `slog.SetDefault` in `main.go` hält das fest: Wer diese
 entfernt oder ein `log.SetOutput` dahinter setzt, hebt die strukturierte Ausgabe **und**
 diesen Schutz auf.
 
+### Lieferkette
+
+- **Keine Installationsskripte:** npm führt beim Installieren keine Skripte der Abhängigkeiten
+  aus (`frontend/.npmrc`, `ignore-scripts=true`). Das gilt auf dem Entwicklungsrechner, in der
+  CI und beim Bau des Images; das Dockerfile kopiert die Datei vor `npm ci`. Ein kompromittiertes
+  Update bringt sein Schadprogramm meist in einem solchen Skript mit, und auf dem
+  Entwicklungsrechner liefe es mit Zugang zu GitHub, den Servern und der `.env`. Gate:
+  `docs/npm_ohne_installationsskripte_test.go`.
+- **Wartezeit für neue Fassungen:** Dependabot schlägt eine neue Fassung erst nach sieben Tagen
+  vor (`cooldown` in `.github/dependabot.yml`); Sicherheits-Updates kommen ohne Wartezeit.
+
 ### Prüfungen vor dem Push (lokal)
 
 - `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): neun Gates

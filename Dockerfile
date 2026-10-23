@@ -4,8 +4,9 @@
 FROM node:24-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-# Copy dependencies first for Docker caching
-COPY frontend/package*.json ./
+# Copy dependencies first for Docker caching. .npmrc gehört dazu: Es schaltet die
+# Installationsskripte der Abhängigkeiten ab und wirkt nur, wenn es vor npm ci im Image liegt.
+COPY frontend/package*.json frontend/.npmrc ./
 RUN npm ci
 
 # Copy the rest of the frontend files and build

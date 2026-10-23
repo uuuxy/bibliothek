@@ -10,6 +10,11 @@
 #
 # Dependabot aktualisiert gezielt die direkten Abhängigkeiten, kein pauschales
 # `npm update`, das jede transitive mit hebt.
+#
+# cooldown: Eine neue Fassung wird erst nach sieben Tagen vorgeschlagen. Ein kompromittiertes
+# Release fällt meist in dieser Zeit auf und wird zurückgezogen. Sicherheits-Updates betrifft
+# das nicht: „The cooldown option is only available for version updates, not security updates."
+# (GitHub Docs, Dependabot options reference).
 
 version: 2
 updates:
@@ -22,6 +27,8 @@ updates:
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -38,6 +45,8 @@ updates:
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -60,6 +69,8 @@ updates:
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
 
@@ -72,6 +83,8 @@ updates:
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore(ci)"
     groups:
