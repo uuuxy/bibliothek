@@ -231,6 +231,37 @@ func TestFuehreTitelZusammen_MehrjahresbandKommtMitDemJahrgang(t *testing.T) {
 // Liegt für denselben Leser an beiden Titeln schon ein Buch im Abholfach, bleibt die ältere
 // Vormerkung. Das Exemplar der anderen ist danach frei und geht an den Nächsten in der
 // Warteschlange wie beim Löschen einer Vormerkung; sonst stünde es im Regal, während er wartet.
+// Bleibt ein Titel der Bücherei und kommt ein Lernmittel dazu, ist er danach ein Lernmittel, mit
+// Jahrgang und Mehrjahresband des anderen. Beides schreibt eine Anweisung: chk_mehrjahresband_spanne
+// lässt den Mehrjahresband nur an einem Lernmittel zu.
+func TestFuehreTitelZusammen_LernmittelGehtNichtVerloren(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	p := legeZusammenfuehrenProbeAn(t, pool)
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET mehrjahresband = true WHERE id = $1`, p.gross); err != nil {
+		t.Fatalf("Mehrjahresband setzen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = false WHERE id = $1`, p.klein); err != nil {
+		t.Fatalf("kleinen Titel zum Buch der Bücherei machen: %v", err)
+	}
+
+	erg, err := FuehreTitelZusammen(ctx, pool, TitelZusammenfuehrenAuftrag{ZielID: p.klein, QuelleID: p.gross, BearbeiterID: p.bearbeiter})
+	if err != nil {
+		t.Fatalf("FuehreTitelZusammen: %v", err)
+	}
+	if !slices.Contains(erg.Uebernommen, TitelFeld{"Lernmittel", "ja"}) {
+		t.Errorf("übernommen %+v, erwartet Lernmittel", erg.Uebernommen)
+	}
+	var lernmittel, mehrjahresband bool
+	if err := pool.QueryRow(ctx, `SELECT ist_lernmittel, mehrjahresband FROM buecher_titel WHERE id = $1`,
+		p.klein).Scan(&lernmittel, &mehrjahresband); err != nil {
+		t.Fatalf("kleinen Titel lesen: %v", err)
+	}
+	if !lernmittel || !mehrjahresband {
+		t.Errorf("Lernmittel %v, Mehrjahresband %v; erwartet beides", lernmittel, mehrjahresband)
+	}
+}
+
 func TestFuehreTitelZusammen_FreiesAbholfachGehtAnDenNaechsten(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()

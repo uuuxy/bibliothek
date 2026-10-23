@@ -21,7 +21,8 @@ import (
 //   - Das Ziel bleibt mit seiner Kennung. Die Exemplare der Quelle wandern mit Nummer, Etikett
 //     und Ausleihen, dazu Vormerkungen, Klassensatz-Reservierungen, Bestellpositionen,
 //     Anliegen, Schlagworte und die Zuordnung zu Klassen; danach wird die Quelle gelöscht.
-//   - Was am Ziel steht, bleibt; leere Felder füllt die Quelle auf (titel_zusammenfuehren_felder.go).
+//   - Was am Ziel steht, bleibt; leere Felder füllt die Quelle auf, und ist einer der beiden ein
+//     Lernmittel, ist es das Ziel danach auch (titel_zusammenfuehren_felder.go).
 //   - Tragen beide eine ISBN, sind es zwei Ausgaben, und das Zusammenführen wird abgelehnt.
 //   - Ein Eintrag im Protokoll hält die Quelle und alle gewanderten Zeilen fest, damit sich ein
 //     falsches Paar von Hand trennen lässt.

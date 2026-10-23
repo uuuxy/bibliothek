@@ -218,10 +218,11 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   ISBN und einmal aus dem Bestands-Import mit ISBN, macht _Mit anderem Titel zusammenführen_ in
   der Maske einen Titel daraus: anderen Titel suchen, antippen, _Zusammenführen_. Der Titel mit
   ISBN bleibt; hat der andere keine, bleibt der offene. Er bekommt alle Exemplare und die
-  Angaben, die ihm fehlen. Eine Zeile sagt vorher, wie er danach aussieht, mit der Zahl der
-  Exemplare: Verdoppelt sie sich, standen dieselben Bücher an beiden Titeln. Der andere Titel ist
-  danach gelöscht. Tragen beide eine ISBN, sind es zwei Ausgaben, und dafür gibt es _Andere
-  Auflage zuordnen_. Den Knopf hat, wer Titel löschen darf.
+  Angaben, die ihm fehlen; ist einer der beiden ein Lernmittel, ist er es danach auch. Eine
+  Zeile sagt vorher, wie er danach aussieht, mit der Zahl der Exemplare: Verdoppelt sie sich,
+  standen dieselben Bücher an beiden Titeln. Der andere Titel ist danach gelöscht. Tragen beide
+  eine ISBN, sind es zwei Ausgaben, und dafür gibt es _Andere Auflage zuordnen_. Den Knopf hat,
+  wer Titel löschen darf.
   (§13)
 - **Mehrjahresband**: Bei einem Lernmittel heißt die Spanne „Im Unterricht von Jahrgang …
   bis". Bleibt das Buch über diese Spanne beim Kind, statt am Rückgabetermin der Klasse

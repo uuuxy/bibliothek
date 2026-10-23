@@ -105,17 +105,55 @@ func TestFuegeTitelZusammen_MehrjahresbandKommtMitDemJahrgang(t *testing.T) {
 		t.Errorf("abweichend %+v, erwartet %+v", abweichend, want)
 	}
 
-	// Ein Buch der Schülerbücherei trägt keinen Mehrjahresband (chk_mehrjahresband_spanne): Der
-	// Jahrgang kommt, der Haken nicht, und beides steht als Unterschied da.
+	// Ein Buch der Schülerbücherei macht die Quelle zum Lernmittel, und erst damit darf es den
+	// Mehrjahresband tragen (chk_mehrjahresband_spanne): Er kommt mit dem Jahrgang.
 	buecherei := titelStand{titel: "Natur und Technik", medientyp: "Buch"}
-	nachher, _, abweichend, err = fuegeTitelZusammen(buecherei, quelle)
+	nachher, uebernommen, abweichend, err = fuegeTitelZusammen(buecherei, quelle)
 	if err != nil {
 		t.Fatalf("fuegeTitelZusammen: %v", err)
 	}
-	if nachher.mehrjahresband {
-		t.Error("ein Buch der Schülerbücherei bekam den Mehrjahresband")
+	if !nachher.istLernmittel || !nachher.mehrjahresband {
+		t.Errorf("Buch der Schülerbücherei: Lernmittel %v, Mehrjahresband %v; erwartet beides von der Quelle",
+			nachher.istLernmittel, nachher.mehrjahresband)
 	}
-	if want := []TitelAbweichung{{"Lernmittel", "nein", "ja"}, {"Mehrjahresband", "nein", "ja"}}; !slices.Equal(abweichend, want) {
+	if want := []TitelFeld{{"Lernmittel", "ja"}, {"Jahrgang", "7–10"}, {"Mehrjahresband", "ja"}}; !slices.Equal(uebernommen, want) {
+		t.Errorf("übernommen %+v, erwartet %+v", uebernommen, want)
+	}
+	if len(abweichend) != 0 {
+		t.Errorf("abweichend %+v, erwartet nichts", abweichend)
+	}
+}
+
+// Lernmittel geht nie verloren, wie beim Listenimport: Ist einer der beiden Titel ein Lernmittel,
+// ist es das Ziel danach auch. Sonst bekämen die Schulbücher der Quelle Frist und Ausleihlimit
+// der Bücherei.
+func TestFuegeTitelZusammen_LernmittelGehtNichtVerloren(t *testing.T) {
+	buecherei := titelStand{titel: "Natur und Technik", medientyp: "Buch"}
+	lernmittel := titelStand{titel: "Natur und Technik", medientyp: "Buch", istLernmittel: true}
+
+	nachher, uebernommen, abweichend, err := fuegeTitelZusammen(buecherei, lernmittel)
+	if err != nil {
+		t.Fatalf("fuegeTitelZusammen: %v", err)
+	}
+	if !nachher.istLernmittel {
+		t.Error("Ziel aus der Bücherei, Quelle Lernmittel: Das Ziel ist danach kein Lernmittel")
+	}
+	if want := []TitelFeld{{"Lernmittel", "ja"}}; !slices.Equal(uebernommen, want) {
+		t.Errorf("übernommen %+v, erwartet %+v", uebernommen, want)
+	}
+	if len(abweichend) != 0 {
+		t.Errorf("abweichend %+v, erwartet nichts", abweichend)
+	}
+
+	// Umgekehrt behält das Ziel sein Ja, und der Unterschied steht unter den Abweichungen.
+	nachher, uebernommen, abweichend, err = fuegeTitelZusammen(lernmittel, buecherei)
+	if err != nil {
+		t.Fatalf("fuegeTitelZusammen: %v", err)
+	}
+	if !nachher.istLernmittel || len(uebernommen) != 0 {
+		t.Errorf("Ziel Lernmittel: Lernmittel %v, übernommen %+v; erwartet den eigenen Stand", nachher.istLernmittel, uebernommen)
+	}
+	if want := []TitelAbweichung{{"Lernmittel", "ja", "nein"}}; !slices.Equal(abweichend, want) {
 		t.Errorf("abweichend %+v, erwartet %+v", abweichend, want)
 	}
 }

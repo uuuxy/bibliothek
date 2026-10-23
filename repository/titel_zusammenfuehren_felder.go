@@ -11,7 +11,9 @@ import (
 
 // Die Felder beim Zusammenführen zweier Titel: Was am Ziel steht, bleibt; was dort leer ist,
 // kommt von der Quelle. Leer heißt hier „unbekannt". Ein Feld, in dem leer etwas bedeutet,
-// füllt die Quelle nicht auf: Ein Titel ohne Schulzweig gilt für alle Zweige.
+// füllt die Quelle nicht auf: Ein Titel ohne Schulzweig gilt für alle Zweige. Lernmittel geht
+// nie verloren, wie beim Listenimport (inventur/titel_anlegen.go): Ist einer der beiden ein
+// Lernmittel, ist es das Ziel danach auch.
 
 // TitelFeld ist ein Feld, das das Ziel von der Quelle übernimmt, mit der Bezeichnung der Maske.
 type TitelFeld struct {
@@ -80,6 +82,11 @@ func fuegeTitelZusammen(ziel, quelle titelStand) (titelStand, []TitelFeld, []Tit
 			abweichend = append(abweichend, TitelAbweichung{f.bezeichnung, anzeige(f.bezeichnung, *hier), anzeige(f.bezeichnung, *dort)})
 		}
 	}
+	// Vor dem Jahrgang: Nur ein Lernmittel trägt den Mehrjahresband, der mit ihm kommt.
+	if quelle.istLernmittel && !nachher.istLernmittel {
+		nachher.istLernmittel = true
+		uebernommen = append(uebernommen, TitelFeld{"Lernmittel", "ja"})
+	}
 	jahrUebernommen, jahrAbweichend := fuegeJahrgangZusammen(&nachher, quelle)
 	uebernommen, abweichend = append(uebernommen, jahrUebernommen...), append(abweichend, jahrAbweichend...)
 	if leer(ziel.coverURL) && !leer(quelle.coverURL) {
@@ -90,14 +97,14 @@ func fuegeTitelZusammen(ziel, quelle titelStand) (titelStand, []TitelFeld, []Tit
 	// (schreibeTitelStand: quelle || ziel).
 	nachher.erweitert = quelle.erweitert
 
-	// Felder, die die Quelle nie auffüllt, stehen vorn: Titel und Art bestimmen, was das Ziel
-	// danach ist.
+	// Titel, Art, Schulzweig und Lernmittel stehen vorn, wo das Ziel seinen Wert behält: Sie
+	// bestimmen, was das Ziel danach ist.
 	kopf := []TitelAbweichung{}
 	for _, a := range []TitelAbweichung{
 		{"Titel", ziel.titel, quelle.titel},
 		{"Art des Mediums", ziel.medientyp, quelle.medientyp},
 		{"Schulzweig", leerAlsAlle(ziel.zweig), leerAlsAlle(quelle.zweig)},
-		{"Lernmittel", jaNein(ziel.istLernmittel), jaNein(quelle.istLernmittel)},
+		{"Lernmittel", jaNein(nachher.istLernmittel), jaNein(quelle.istLernmittel)},
 	} {
 		if strings.TrimSpace(a.Hier) != strings.TrimSpace(a.Dort) {
 			kopf = append(kopf, a)
@@ -217,12 +224,13 @@ func schreibeTitelStand(ctx context.Context, tx pgx.Tx, t titelStand) error {
 			auflage = $7, listenpreis = $8::numeric, signatur = $9, subject = $10,
 			cover_url = $11, cover_status = $12, last_counted = $13::date,
 			jahrgang_von = $14::integer, jahrgang_bis = $15::integer, mehrjahresband = $17,
+			ist_lernmittel = $18,
 			erweiterte_eigenschaften = $16::jsonb || erweiterte_eigenschaften
 		WHERE id = $1`,
 		t.id, t.isbn, t.untertitel, t.autor, t.verlag, t.erscheinungsjahr,
 		t.auflage, t.listenpreis, t.signatur, t.fach,
 		t.coverURL, t.coverStatus, t.zaehldatum,
-		t.jahrgangVon, t.jahrgangBis, t.erweitert, t.mehrjahresband)
+		t.jahrgangVon, t.jahrgangBis, t.erweitert, t.mehrjahresband, t.istLernmittel)
 	if err != nil {
 		return fmt.Errorf("titel zusammenführen: ziel schreiben: %w", err)
 	}
