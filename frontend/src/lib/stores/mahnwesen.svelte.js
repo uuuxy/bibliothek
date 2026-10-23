@@ -1,7 +1,8 @@
 // stores/mahnwesen.svelte.js
 // Status- und Logikverwaltung für das Mahnwesen (Svelte 5 Runes)
 
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../apiFetch.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 import { mahnungenJeKind } from '../mahnungen.js';
@@ -119,12 +120,11 @@ function erzeugeMahnwesen() {
 		fehler = null;
 		try {
 			const res = await apiFetch('/api/mahnwesen');
-			if (!res.ok) throw new Error((await res.text()) || 'Fehler beim Laden');
-			const json = await res.json();
-			daten = json;
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Laden'));
+			daten = await res.json();
 			gewaehlteKennungen.clear();
 		} catch (e) {
-			fehler = String(e);
+			fehler = fehlertext(e);
 		} finally {
 			laedt = false;
 		}

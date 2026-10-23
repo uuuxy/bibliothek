@@ -1,4 +1,4 @@
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 /** @param {string} pfad @param {(daten: any[]) => void} setze */
 async function ladeListe(pfad, setze) {
@@ -137,14 +137,7 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 				} else {
 					// Die Antwort ist apierrors-JSON ({"error": "nur 2 Exemplare im Bestand …"}) —
 					// roh angezeigt las die Lehrkraft Klammern statt der Meldung.
-					const txt = await res.text();
-					let meldung = txt;
-					try {
-						meldung = JSON.parse(txt).error || txt;
-					} catch {
-						/* Rohtext behalten */
-					}
-					f.error = meldung || 'Fehler beim Senden.';
+					f.error = await leseApiFehler(res, 'Fehler beim Senden.');
 				}
 			} catch (e) {
 				f.error = String(e);

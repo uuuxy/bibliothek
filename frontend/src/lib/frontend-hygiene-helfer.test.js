@@ -21,6 +21,13 @@ const FEHLERTEXT =
 const GEAENDERT = 'src/lib/utils/geaendert.js';
 const VERGLEICH_MIT_GELADEN = /!==\s*(?:[\w$]+\.)*geladen\[/;
 
+// Die Meldung einer fehlgeschlagenen Antwort liest leseApiFehler (apiFetch.js). Der Server
+// antwortet mit {"error": "…"}; wer den Rumpf selbst als Text las, zeigte die Klammern mit an
+// oder packte ihn nach eigener Regel aus. Sieht nicht: einen Rumpf unter anderem Namen als res,
+// response oder antwort, und res.json() mit anschließendem .error.
+const API_FETCH = 'src/lib/apiFetch.js';
+const RUMPF_ALS_TEXT = /\b(?:res|response|antwort)\s*\.\s*text\(\)/;
+
 describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 	const dateien = sammleQuelldateien(srcRoot);
 	/** @param {RegExp} muster */
@@ -63,6 +70,25 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 			expect(VERGLEICH_MIT_GELADEN.test(form), form).toBe(true);
 		}
 		expect(VERGLEICH_MIT_GELADEN.test('return nurGeaendertes(form.geladen, felder);')).toBe(false);
+	});
+
+	it('keine Quelldatei außer apiFetch.js liest den Rumpf einer Antwort als Text', () => {
+		const von_hand = treffer(RUMPF_ALS_TEXT);
+		expect(von_hand, 'der Detektor findet leseApiFehler nicht').toContain(API_FETCH);
+		expect(
+			von_hand.filter((f) => f !== API_FETCH),
+			'Rumpf als Text gelesen — die Meldung liest leseApiFehler aus apiFetch.js'
+		).toEqual([]);
+		for (const form of [
+			"throw new Error((await res.text()) || 'Fehler beim Laden');",
+			'const errText = await response.text();',
+			'const leseRumpf = (res) => (res.ok ? res.json() : res.text());',
+			'const text = await antwort . text();'
+		]) {
+			expect(RUMPF_ALS_TEXT.test(form), form).toBe(true);
+		}
+		expect(RUMPF_ALS_TEXT.test('const inhalt = await file.text();')).toBe(false);
+		expect(RUMPF_ALS_TEXT.test('throw new Error(await leseApiFehler(res));')).toBe(false);
 	});
 
 	it('Selbstprobe: die Detektoren fassen die Formen', () => {

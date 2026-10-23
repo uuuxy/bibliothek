@@ -264,7 +264,7 @@ describe('authStore Login-Meldung', () => {
 			ok: false,
 			status,
 			json: async () => ({ error }),
-			text: async () => ''
+			text: async () => JSON.stringify({ error })
 		}));
 		authStore.loginEmail = 'lehrkraft@schule.de';
 		authStore.loginPassword = 'pw';

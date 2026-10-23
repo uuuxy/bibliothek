@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
@@ -40,8 +40,7 @@
 				if (res.status === 403) {
 					throw new Error('Zugriff verweigert: Nur für System-Administratoren.');
 				}
-				const text = await res.text();
-				throw new Error(text || 'Fehler beim Laden des Logbuchs');
+				throw new Error(await leseApiFehler(res, 'Fehler beim Laden des Logbuchs'));
 			}
 			logs = await res.json();
 		} catch (err) {

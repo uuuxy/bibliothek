@@ -7,7 +7,7 @@
      nicht zurück. Der Satz steht nur, wenn es einen Zugang gibt — Praktikum und Fachbereich
      haben keinen (Migration 153). -->
 <script>
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
@@ -54,14 +54,7 @@
 				lauf.erfolg(`${vorname} ${nachname} liegt im Papierkorb.`);
 				onsuccess?.(id);
 			} else {
-				const errText = await res.text();
-				let meldung = errText;
-				try {
-					meldung = JSON.parse(errText).error;
-				} catch {
-					// kein JSON: der Rohtext ist die Meldung
-				}
-				lauf.fehler(meldung || 'Fehler beim Löschen des Schülers.', zeigeFehler);
+				lauf.fehler(await leseApiFehler(res, 'Fehler beim Löschen des Schülers.'), zeigeFehler);
 			}
 		} catch (err) {
 			lauf.fehler('Netzwerkfehler beim Löschen des Schülers.', zeigeFehler);

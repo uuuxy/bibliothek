@@ -1,4 +1,5 @@
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../apiFetch.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { snackbars } from './snackbars.svelte.js';
 import { SvelteDate } from 'svelte/reactivity';
 
@@ -42,9 +43,7 @@ export function useMahnwesenPdf() {
 			});
 
 			if (!res.ok)
-				throw new Error(
-					'Bulk-PDF-Erzeugung fehlgeschlagen: ' + ((await res.text()) || res.statusText)
-				);
+				throw new Error(await leseApiFehler(res, 'Die Mahnbriefe ließen sich nicht erzeugen.'));
 
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
@@ -57,7 +56,7 @@ export function useMahnwesenPdf() {
 			gewaehlteKennungen.clear();
 			await refreshData();
 		} catch (e) {
-			snackbars.addToast('Fehler: ' + String(e), 'error');
+			snackbars.addToast(fehlertext(e), 'error');
 		} finally {
 			drucktPdf = false;
 		}

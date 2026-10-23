@@ -10,7 +10,7 @@
      Seite erspart nur den Umweg über eine Fehlermeldung vom Server. -->
 <script>
 	import Dialog from './Dialog.svelte';
-	import { apiClient } from './apiFetch.js';
+	import { apiClient, leseApiFehler } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 	import SchuelerEingabeFelder from './components/leser/SchuelerEingabeFelder.svelte';
 	import LeserArtWahl from './components/leser/LeserArtWahl.svelte';
@@ -100,19 +100,16 @@
 				onsuccess?.();
 				return;
 			}
-			const rohtext = await res.text();
-			let meldung = '';
-			try {
-				meldung = JSON.parse(rohtext).error || '';
-			} catch {
-				meldung = rohtext;
-			}
 			// Der Server erklärt den Doppeleintrag, seine Meldung nennt den Fall
 			// (Namensgleichheit beim Kollegium, Name + Geburtsdatum beim Schüler): Ein fester
 			// Satz träfe nur eine der Arten.
-			if (res.status === 409)
-				lauf.fehler(meldung || 'Diese Person gibt es bereits.', (t) => (duplicateConflict = t));
-			else lauf.fehler(meldung || `Fehler beim Anlegen (${artText}).`, (t) => (fehler = t));
+			const doppelt = res.status === 409;
+			const meldung = await leseApiFehler(
+				res,
+				doppelt ? 'Diese Person gibt es bereits.' : `Fehler beim Anlegen (${artText}).`
+			);
+			if (doppelt) lauf.fehler(meldung, (t) => (duplicateConflict = t));
+			else lauf.fehler(meldung, (t) => (fehler = t));
 		} catch (err) {
 			lauf.fehler('Netzwerkfehler beim Anlegen.', (t) => (fehler = t));
 			console.error(err);

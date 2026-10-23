@@ -3,7 +3,7 @@
 // nur hier (frontend-hygiene-action-endpunkt.test.js); geladen wird die Datei nur vom Omnibox-Store
 // (frontend-hygiene-omnibox-teile.test.js), der Zustand, Merker und Rückmeldung hereinreicht.
 
-import { apiClient } from '../apiFetch.js';
+import { apiClient, leseApiFehler } from '../apiFetch.js';
 import { spieleFehlerton } from '../audio.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { ordneScanEin } from '../scanEinordnen.js';
@@ -27,7 +27,7 @@ const nichtErreicht = (/** @type {Response} */ res) => res.status >= 502 && res.
  *   leereHinweiszeilen: () => void,
  *   schnappschuss: (q: string, schluessel: string, absicht: Auftrag['absicht']) => OfflineEintrag,
  *   verarbeiteVersandfehler: (e: unknown, eintrag: OfflineEintrag) => Promise<boolean>,
- *   verarbeiteAktionsFehler: (res: Response, rumpf: string, q: string) => never,
+ *   verarbeiteAktionsFehler: (res: Response, meldung: string, q: string) => never,
  *   verarbeiteAktionsErgebnis: (daten: any, reloadProfileCb: any, q?: string,
  *     overrideBlock?: boolean) => boolean,
  *   verarbeiteAntwortfehler: (e: unknown) => void,
@@ -60,7 +60,7 @@ export function erzeugeOmniboxBuchung({
 	}
 
 	// Erst nach dem Lesen fragt die Buchung, ob die Theke geleert wurde: Auch das Lesen dauert.
-	const leseRumpf = (/** @type {Response} */ res) => (res.ok ? res.json() : res.text());
+	const leseRumpf = (/** @type {Response} */ res) => (res.ok ? res.json() : leseApiFehler(res));
 
 	/**
 	 * Löst einen ohne Netz gemerkten Ausweis auf, bevor das nächste Buch hinausgeht: Ohne

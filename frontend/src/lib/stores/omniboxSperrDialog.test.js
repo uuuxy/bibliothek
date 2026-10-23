@@ -11,7 +11,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // entschied der Sperrgrund: „Abgänger-Sperre" enthält das Wort, eine Helferin ohne
 // view_students bekommt den Grund aber nicht zu sehen.
 const post = vi.hoisted(() => vi.fn());
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post } }));
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn(),
+	apiClient: { post }
+}));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()

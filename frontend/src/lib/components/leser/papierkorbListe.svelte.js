@@ -8,7 +8,9 @@
 //  2. Laden: Ein gescheiterter Abruf ließe die Liste leer, und die Ansicht schriebe „Der
 //     Papierkorb ist leer.", eine falsche Auskunft über gelöschte Schülerdaten.
 
-import { apiFetch } from '../../apiFetch.js';
+// Gezeigt wird die Meldung des Servers, nicht unsere Vermutung: Er begründet 409 und 400 im
+// Klartext („offene Ausleihen", „bereits anonymisiert").
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
 /**
@@ -19,27 +21,6 @@ import { snackbars } from '../../stores/snackbars.svelte.js';
  */
 export function istAnonymisiert(s) {
 	return Boolean(s?.anonymized_at);
-}
-
-/**
- * Die Meldung des Servers, nicht unsere Vermutung: Das Backend begründet 409 und 400
- * im Klartext („offene Ausleihen", „bereits anonymisiert") — genau das gehört dem
- * Menschen vor dem Bildschirm gesagt.
- * @param {Response} res
- * @param {string} vorgabe
- */
-async function meldungAus(res, vorgabe) {
-	try {
-		const text = await res.text();
-		if (!text) return vorgabe;
-		try {
-			return JSON.parse(text).error || vorgabe;
-		} catch {
-			return text;
-		}
-	} catch {
-		return vorgabe;
-	}
 }
 
 /** @param {() => void} onRestoreSuccess */
@@ -74,7 +55,7 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 					ladefehler = '';
 				} else {
 					liste = [];
-					ladefehler = await meldungAus(res, 'Der Papierkorb konnte nicht geladen werden.');
+					ladefehler = await leseApiFehler(res, 'Der Papierkorb konnte nicht geladen werden.');
 				}
 			} catch (err) {
 				liste = [];
@@ -94,7 +75,7 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 					onRestoreSuccess();
 					return;
 				}
-				snackbars.addToast(await meldungAus(res, 'Wiederherstellen fehlgeschlagen.'), 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Wiederherstellen fehlgeschlagen.'), 'error');
 				// Der Grund kann in der Zwischenzeit entstanden sein (der nächtliche Lauf
 				// hat anonymisiert) — nachladen, damit die Liste die Wahrheit zeigt.
 				await this.laden();
@@ -113,7 +94,10 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 					snackbars.addToast('Schüler endgültig gelöscht.', 'success');
 					await this.laden();
 				} else {
-					snackbars.addToast(await meldungAus(res, 'Endgültiges Löschen fehlgeschlagen.'), 'error');
+					snackbars.addToast(
+						await leseApiFehler(res, 'Endgültiges Löschen fehlgeschlagen.'),
+						'error'
+					);
 				}
 			} catch (err) {
 				snackbars.addToast('Netzwerkfehler beim endgültigen Löschen.', 'error');

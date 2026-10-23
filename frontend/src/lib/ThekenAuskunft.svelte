@@ -4,7 +4,7 @@
 	// Barcode in Bestand und Audit-Snapshots und protokolliert jeden Abruf selbst, deshalb
 	// steht der Hinweis dazu sichtbar über dem Feld, nicht im Kleingedruckten. Recht:
 	// audit_details, ab Werk nur Admin.
-	import { apiFetch } from './apiFetch.js';
+	import { apiFetch, leseApiFehler } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Button from './components/ui/Button.svelte';
@@ -36,10 +36,7 @@
 		auskunft = null;
 		try {
 			const res = await apiFetch(`/api/audit/tresen-auskunft?barcode=${encodeURIComponent(wert)}`);
-			if (!res.ok) {
-				const text = await res.text();
-				throw new Error(text || 'Auskunft fehlgeschlagen');
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Auskunft fehlgeschlagen'));
 			auskunft = await res.json();
 		} catch (err) {
 			fehler = fehlertext(err);

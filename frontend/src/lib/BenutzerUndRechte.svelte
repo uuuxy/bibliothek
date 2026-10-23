@@ -1,6 +1,6 @@
 <script>
 	import { authStore } from './stores/authStore.svelte.js';
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiFetch, apiClient, leseApiFehler } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Konten from './Konten.svelte';
 	import RechteMatrix from './RechteMatrix.svelte';
@@ -34,7 +34,7 @@
 			if (!res.ok) {
 				if (res.status === 403)
 					throw new Error('Zugriff verweigert: Das Recht „Benutzer & Rechte verwalten" fehlt.');
-				throw new Error((await res.text()) || 'Fehler beim Laden der Berechtigungen');
+				throw new Error(await leseApiFehler(res, 'Fehler beim Laden der Berechtigungen'));
 			}
 			const daten = await res.json();
 

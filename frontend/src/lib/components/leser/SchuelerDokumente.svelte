@@ -11,7 +11,7 @@
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { Printer, TriangleAlert, ShieldCheck } from '@lucide/svelte';
 
 	/**
@@ -49,9 +49,10 @@
 				document.body.removeChild(a);
 				URL.revokeObjectURL(url);
 			} else {
-				const text = await res.text();
-				console.error('Auskunft Error:', text);
-				snackbars.addToast('Fehler beim Herunterladen der Auskunft.', 'error');
+				snackbars.addToast(
+					await leseApiFehler(res, 'Fehler beim Herunterladen der Auskunft.'),
+					'error'
+				);
 			}
 		} catch (e) {
 			console.error(e);

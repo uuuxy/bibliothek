@@ -3,7 +3,10 @@ import { render, fireEvent } from '@testing-library/svelte';
 import KollegiumPortal from './KollegiumPortal.svelte';
 import { apiFetch } from './apiFetch.js';
 
-vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('./apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 /**
  * Eine Lehrkraft bestellt einen Klassensatz für 8a — und danach denselben Titel für 8b.

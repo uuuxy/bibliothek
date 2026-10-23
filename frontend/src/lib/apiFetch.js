@@ -180,22 +180,22 @@ export const apiClient = {
 import { snackbars } from './stores/snackbars.svelte.js';
 
 /**
- * Zieht die menschenlesbare Fehlermeldung aus einer fehlgeschlagenen Response.
- * Das Backend antwortet einheitlich mit JSON `{"error": "..."}` (siehe
- * apierrors.schreibeFehlerJSON) — diese eine Stelle kapselt das Auspacken, damit nirgends mehr
- * roher `{"error":...}`-JSON in einem Toast oder Banner landet. Fällt sauber auf Rohtext
- * bzw. den HTTP-Status zurück, falls der Body kein solches JSON ist.
+ * Die Meldung einer fehlgeschlagenen Response. Das Backend antwortet mit `{"error": "..."}`
+ * (apierrors.schreibeFehlerJSON); hier wird es ausgepackt, damit kein roher JSON-Text in einem
+ * Toast landet. Den Rumpf liest außer hier niemand als Text (frontend-hygiene-helfer.test.js).
+ * Ein Rumpf ohne solches JSON ist selbst die Meldung, ein leerer ergibt die Vorgabe.
  * @param {Response} res
+ * @param {string} [vorgabe] ohne Angabe „Fehler <Status>"
  * @returns {Promise<string>}
  */
-export async function leseApiFehler(res) {
+export async function leseApiFehler(res, vorgabe = `Fehler ${res.status}`) {
 	let body = '';
 	try {
 		body = await res.text();
 	} catch {
-		return `Fehler ${res.status}`;
+		return vorgabe;
 	}
-	if (!body) return `Fehler ${res.status}`;
+	if (!body) return vorgabe;
 	try {
 		const parsed = JSON.parse(body);
 		const msg = parsed?.error ?? parsed?.message;

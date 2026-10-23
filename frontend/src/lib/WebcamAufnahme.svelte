@@ -7,7 +7,7 @@
      endet mit Enter, das nähme sonst ein Foto auf und ersetzte das vorhandene. -->
 <script>
 	import { TriangleAlert, Camera } from '@lucide/svelte';
-	import { apiClient } from './apiFetch.js';
+	import { apiClient, leseApiFehler } from './apiFetch.js';
 	import Dialog from './Dialog.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
@@ -85,7 +85,7 @@
 			});
 
 			if (!res.ok) {
-				throw new Error((await res.text()) || 'Upload fehlgeschlagen');
+				throw new Error(await leseApiFehler(res, 'Upload fehlgeschlagen'));
 			}
 
 			const daten = await res.json();

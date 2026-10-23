@@ -43,6 +43,14 @@ describe('leseApiFehler', () => {
 		});
 		expect(await leseApiFehler(res)).toBe('Fehler 500');
 	});
+
+	it('nimmt die Vorgabe des Aufrufers, wo die Antwort keine Meldung trägt', async () => {
+		const vorgabe = 'Der Papierkorb konnte nicht geladen werden.';
+		expect(await leseApiFehler(fakeResponse('', 502), vorgabe)).toBe(vorgabe);
+		expect(await leseApiFehler(fakeResponse('{"error":"Kein Recht"}', 403), vorgabe)).toBe(
+			'Kein Recht'
+		);
+	});
 });
 
 // Regressionstests für den CSRF-Bootstrap: Die erste Mutation direkt nach dem

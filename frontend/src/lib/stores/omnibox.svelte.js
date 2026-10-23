@@ -161,27 +161,19 @@ export function erzeugeOmniboxStore() {
 		fokusTimer = null;
 	}
 
-	// Wertet den Rumpf einer nicht-ok Antwort aus und wirft immer: bei einer Sperre BLOCK_ALERT samt
-	// sperrHinweis, sonst die Meldung. Gelesen hat ihn die Buchung, vor dem Dialog wartet nichts mehr.
-	/** @param {Response} res @param {string} rumpf @param {string} q @returns {never} */
-	function verarbeiteAktionsFehler(res, rumpf, q) {
-		let errStr = rumpf;
-		try {
-			const fehlerAntwort = JSON.parse(errStr);
-			if (fehlerAntwort.error) errStr = fehlerAntwort.error;
-		} catch (e) {
-			console.debug('Fehlerantwort war kein JSON, nutze Rohtext:', e);
-		}
-
+	// Wirft für eine nicht-ok Antwort immer: bei einer Sperre BLOCK_ALERT samt sperrHinweis, sonst
+	// die Meldung. Gelesen hat sie die Buchung (leseApiFehler), vor dem Dialog wartet nichts mehr.
+	/** @param {Response} res @param {string} meldung @param {string} q @returns {never} */
+	function verarbeiteAktionsFehler(res, meldung, q) {
 		// Der Dialog hängt am Merkmal des Servers, nicht am Wortlaut der Meldung, der je Sperre
 		// anders lautet (omniboxSperrDialog.test.js).
 		const art = res.headers.get('X-Sperre');
 		if (res.status === 403 && (art === 'uebergehbar' || art === 'leser')) {
-			sperrHinweis = { message: errStr, query: q, art };
+			sperrHinweis = { message: meldung, query: q, art };
 			throw new Error('BLOCK_ALERT');
 		}
 
-		throw new Error(errStr || 'Aktion fehlgeschlagen');
+		throw new Error(meldung);
 	}
 
 	// Die Schnellrückgabe ein- oder ausschalten. Beim Einschalten weicht, wer geladen oder

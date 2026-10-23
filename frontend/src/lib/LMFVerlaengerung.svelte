@@ -1,5 +1,5 @@
 <script>
-	import { apiClient } from './apiFetch.js';
+	import { apiClient, leseApiFehler } from './apiFetch.js';
 	import { bestaetigen } from './stores/bestaetigung.svelte.js';
 	import { snackbars } from './stores/snackbars.svelte.js';
 	import { onMount } from 'svelte';
@@ -50,8 +50,7 @@
 				klasse = '';
 				neuesDatum = '';
 			} else {
-				const errText = await res.text();
-				snackbars.addToast(`Fehler: ${errText}`, 'error');
+				snackbars.addToast(await leseApiFehler(res), 'error');
 			}
 		} catch (e) {
 			console.error(e);

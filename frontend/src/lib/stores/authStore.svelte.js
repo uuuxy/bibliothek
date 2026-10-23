@@ -1,5 +1,5 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
-import { apiFetch, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
+import { apiFetch, leseApiFehler, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
 import { abonniere, trenne, verbinde } from '../liveEvents.js';
 import { hatRecht } from '../menue.js';
 import { thekeLeeren } from './thekeLeeren.js';
@@ -272,16 +272,7 @@ class AuthStore {
 				timeoutMs: 20000
 			});
 			if (!res.ok) {
-				let msg = 'Login fehlgeschlagen';
-				try {
-					const d = await res.json();
-					msg = d.error || msg;
-				} catch {
-					try {
-						msg = (await res.text()) || msg;
-					} catch {}
-				}
-				const fehler = new Error(msg);
+				const fehler = new Error(await leseApiFehler(res, 'Login fehlgeschlagen'));
 				// 403 = Zugangsdaten richtig, Zugang trotzdem nicht („Zugang beantragt",
 				// „Konto deaktiviert"). Diese Meldung muss STEHEN bleiben: Sie sagt der
 				// Lehrkraft, dass Wiederholen nichts bringt — nach vier Sekunden weg, liest

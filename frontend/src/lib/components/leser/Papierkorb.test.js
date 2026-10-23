@@ -4,7 +4,10 @@ import Papierkorb from './Papierkorb.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../../stores/snackbars.svelte.js', () => ({
 	snackbars: { addToast: vi.fn() }
 }));

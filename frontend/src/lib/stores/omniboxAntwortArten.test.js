@@ -5,7 +5,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // omniboxRueckkehr.test.js, die gemischten Auflagen in omniboxAuflagenHinweis.test.js.
 
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn(),
+	apiClient: { post: vi.fn() }
+}));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()

@@ -8,7 +8,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Anfrage, dass im Modus keiner mitgeht, und am Zustand, dass keiner geladen wird.
 
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn(),
+	apiClient: { post: vi.fn() }
+}));
 vi.mock('../audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()

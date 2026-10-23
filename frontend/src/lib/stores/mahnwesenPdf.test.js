@@ -4,7 +4,8 @@ vi.mock('./snackbars.svelte.js', () => ({
 	snackbars: { addToast: vi.fn() }
 }));
 
-vi.mock('../apiFetch.js', () => ({
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn()
 }));
 
@@ -23,11 +24,12 @@ function mockPdfResponse() {
 }
 
 /**
- * @param {string} text
+ * Ein Fehler, wie ihn apierrors schickt: {"error": "…"}.
+ * @param {string} meldung
  * @returns {any}
  */
-function mockErrorResponse(text) {
-	return { ok: false, statusText: 'Internal Server Error', text: async () => text };
+function mockErrorResponse(meldung) {
+	return { ok: false, status: 500, text: async () => JSON.stringify({ error: meldung }) };
 }
 
 /** @type {{ href: string, download: string }[]} */
@@ -129,8 +131,9 @@ describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 
 		await store.druckeGewaehlteMahnungen(gewaehlteKennungen, () => schuelerListe, refreshData);
 
+		// Die Meldung des Servers als Satz, ohne Klammern und ohne „Fehler: Error:" davor.
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
-		expect(String(vi.mocked(snackbars.addToast).mock.calls[0][0])).toContain('Drucker brennt');
+		expect(snackbars.addToast).toHaveBeenCalledWith('Drucker brennt', 'error');
 		expect(gewaehlteKennungen.size).toBe(1); // Auswahl bleibt für einen zweiten Versuch
 		expect(refreshData).not.toHaveBeenCalled();
 		expect(store.drucktPdf).toBe(false);
