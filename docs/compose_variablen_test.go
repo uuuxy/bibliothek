@@ -221,3 +221,23 @@ func TestGelesenesReichtComposeDurch(t *testing.T) {
 		}
 	}
 }
+
+// Im Betriebs-Compose hängt die Datenbank nur am Netz intern: Am gemeinsamen Netz
+// caddy_global_net erreichte jeder andere Container ihren Port. APP_ENV steht dort fest auf
+// production, denn local, development und test aus der .env ließen die Beispiel-Geheimnisse und
+// IMAP_HOST=mock zu.
+func TestCompose_DatenbankImEigenenNetzAppEnvFest(t *testing.T) {
+	inhalt := lies(t, "../docker-compose.yml")
+	if !strings.Contains(backendBlock(t, inhalt), "\n      - APP_ENV=production\n") {
+		t.Error("docker-compose.yml setzt APP_ENV im backend-Block nicht fest auf production")
+	}
+	start := strings.Index(inhalt, "\n  postgres-db:\n")
+	ende := strings.Index(inhalt, "\n  backend:")
+	if start < 0 || ende < start {
+		t.Fatal("kein postgres-db-Dienst vor dem backend-Dienst — dieses Gate wäre still grün")
+	}
+	datenbank := inhalt[start:ende]
+	if !strings.Contains(datenbank, "\n    networks:\n      - intern\n") || strings.Contains(datenbank, "      - default") {
+		t.Error("Die Datenbank hängt nicht allein am Netz intern; am gemeinsamen Netz erreichte sie jeder Container")
+	}
+}

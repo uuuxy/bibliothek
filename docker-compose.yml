@@ -17,6 +17,10 @@ services:
     # schlägt die Restore-Probe sonntags Alarm. Ein Major-Wechsel geht nur per Dump/Restore.
     image: postgres:18-alpine
     container_name: bibliothek-db
+    # Nur im eigenen Netz: Am gemeinsamen Netz caddy_global_net erreichte jeder andere Container
+    # den Port der Datenbank, und ihn hielte allein das Passwort auf.
+    networks:
+      - intern
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env / .env.example)}
@@ -83,9 +87,10 @@ services:
       #   docker network inspect caddy_global_net \
       #     --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
       #
-      # Das Backend lauscht nur auf 127.0.0.1 (siehe oben), erreichbar ist es also
-      # ausschließlich über Caddy im Docker-Netz. Ein gefälschter X-Forwarded-For von
-      # außen kommt gar nicht erst an.
+      # Enger zu fassen bringt dagegen nichts: Nur der Host-Port hängt an 127.0.0.1. Im Netz
+      # caddy_global_net erreicht jeder Container das Backend direkt und liegt im selben
+      # Subnetz wie Caddy, gälte also auch bei engster Liste als Proxy. Deshalb hängen dort nur
+      # Caddy und Dienste, denen der Server vertraut; die Datenbank hat ihr eigenes Netz.
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       # ── Sicherheit / Secrets ────────────────────────────────────────────────
       # JWT_SECRET und APP_ENCRYPTION_KEY haben keinen Default: Ein Wert, der im öffentlichen
@@ -97,7 +102,10 @@ services:
       #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 32
       #   POSTGRES_PASSWORD=<eigenes Passwort>
       #   COOKIE_SECURE=true   # hinter Caddy-HTTPS
-      - APP_ENV=${APP_ENV:-production}
+      # Fest, nicht aus der .env: local, development und test schalten die Prüfung der
+      # Beispiel-Geheimnisse ab und lassen IMAP_HOST=mock zu, das jedes Passwort annimmt. Den
+      # lokalen Stack setzt docker-compose.local.yml.
+      - APP_ENV=production
       - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-}
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET muss gesetzt sein (>=32 Zeichen, zufaellig - siehe .env.example)}
@@ -160,6 +168,10 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
+    # caddy_global_net für Caddy, intern für die Datenbank.
+    networks:
+      - default
+      - intern
 
 
 volumes:
@@ -172,3 +184,5 @@ networks:
   default:
     name: caddy_global_net
     external: true
+  # Backend und Datenbank, sonst nichts.
+  intern:

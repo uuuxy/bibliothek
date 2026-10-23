@@ -160,10 +160,10 @@ appenv="$(lies APP_ENV | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
 case "$appenv" in
 local | development | test)
 	kritisch "APP_ENV=$appenv" \
-		"Damit gelten die Beispiel-Geheimnisse aus dem Repository und IMAP_HOST=mock (jedes Passwort); bei local und development steht zusätzlich die API-Dokumentation offen. Auf einem Server bleibt APP_ENV=production."
+		"Damit gälten die Beispiel-Geheimnisse aus dem Repository und IMAP_HOST=mock (jedes Passwort). docker-compose.yml setzt fest production; wirken kann die Zeile nur, wenn der Server mit einer anderen Compose-Datei läuft. Auf einem Server streichen."
 	;;
 *)
-	gut "APP_ENV=${appenv:-production (Compose-Default)}"
+	gut "APP_ENV=${appenv:-production (fest in docker-compose.yml)}"
 	;;
 esac
 

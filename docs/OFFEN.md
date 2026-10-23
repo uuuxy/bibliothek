@@ -22,7 +22,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   nach außen nur die Dienste, die das Programm braucht. (4.23)
 - [ ] Eine Anmeldung gilt höchstens 12 Stunden nach der Passworteingabe. (5.96)
 - [x] Eine gelungene Anmeldung leert den Zähler der Fehlversuche je Adresse nicht mehr. (5.97)
-- [ ] Betriebs-Compose: Proxy-Netz eng fassen, Datenbank aus dem gemeinsamen Netz. (5.98)
+- [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -103,23 +103,6 @@ er sie nutzt. Die Sperre nach Inaktivität hilft dagegen nicht, denn sie löst d
 
 **Entschieden am 01.10.2026: Eine Anmeldung gilt höchstens 12 Stunden nach der
 Passworteingabe.**
-
-### 5.98 Betriebs-Compose: Proxy-Vertrauen, gemeinsames Netz, `APP_ENV`
-
-Drei Stellen in `docker-compose.yml`:
-
-- **`TRUSTED_PROXIES`** steht in der Vorgabe auf allen privaten Netzen. Das Backend lauscht im
-  Container auf allen Schnittstellen: Ein anderer Container im selben Docker-Netz erreicht es
-  direkt und gilt als Proxy, dessen `X-Forwarded-For` geglaubt wird. An dieser Adresse hängen
-  die Bremse der Anmeldung und das Protokoll.
-- **Die Datenbank hängt am gemeinsamen Netz** `caddy_global_net`. Ein anderer Container an
-  diesem Netz erreicht ihren Port; ihn hält dann nur das Passwort auf.
-- **`APP_ENV`** kommt aus der `.env`. Eine Zeile `APP_ENV=local` schaltet die Prüfung der
-  Beispiel-Geheimnisse ab und lässt `IMAP_HOST=mock` zu.
-
-**Entschieden am 01.10.2026: Proxy-Netz eng fassen, Datenbank aus dem gemeinsamen Netz
-nehmen.** Noch nicht entschieden: `APP_ENV` im Betriebs-Compose fest auf `production`, der
-lokale Stack setzt `local` in seiner eigenen Datei.
 
 ### 7.2 Frisches Littera-Backup
 
