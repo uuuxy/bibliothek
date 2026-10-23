@@ -30,6 +30,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
+- [ ] Klassensätze: entscheiden, ob die Auswahl „Nur Oberstufe" bekommt und die Sortierung
+  „5 bis 13" heißt. (4.38)
+- [ ] Die Datei anlegen, die Vorschläge der Kollaborateure an deine Freigabe bindet, oder ihr
+  Anlegen ausdrücklich freigeben. (7.11)
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
@@ -80,6 +84,15 @@ den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 4.38 Klassensätze: Auswahl und Sortierung mit der Oberstufe
+
+ET, 12T und 13T erscheinen in der Übersicht als Jahrgang 11 bis 13, hinter den Zweigen F, G, R
+und H. Die Auswahl bietet nur „Nur G-Klassen" bis „Nur F-Klassen" (`ZWEIGE` in
+`KlassenUebersicht.svelte`), die Sortierung heißt „Aufsteigend 5-10" und „Absteigend 10-5".
+Vorschlag: ein Eintrag „Nur Oberstufe" (Jahrgang 11 bis 13 über `repository.JahrgangSQL`); einen
+einzelnen Jahrgang zeigt schon das Suchfeld („ET", „12T"). Die Sortierung heißt „Aufsteigend
+5–13" und „Absteigend 13–5". Vor dem Bau die M3-Seite zu Menüs lesen.
 
 ### 7.2 Frisches Littera-Backup
 
@@ -190,6 +203,14 @@ mindestens neun Büchern über der Frist (Anschrift im Fenster des Kuverts, Folg
 „Fortsetzung: …"), die Mahnliste an die Klassenleitung (Versand an eine eigene Adresse), die
 Ersatzforderung aus der Leserakte, das Anschreiben im Anhang der Bestellmail und die
 DSGVO-Auskunft.
+
+### 7.11 Freigabe für Vorschläge der Kollaborateure
+
+Entschieden am 23.10.2026: Ein Pull Request nach `main` braucht die Freigabe des Eigentümers des
+Repositorys. Dazu nennt `.github/CODEOWNERS` den Eigentümer für alle Dateien, und das Regelwerk
+für `main` verlangt eine Freigabe, die des Code-Eigentümers, aufgehoben bei neuem Push. Die Datei
+wird von Hand angelegt, oder ihr Anlegen wird ausdrücklich freigegeben; danach das Regelwerk
+umstellen und [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) Abschnitt 2 nachziehen.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
