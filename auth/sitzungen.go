@@ -12,9 +12,26 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Sitzungen führt je Anmeldung eine Zeile in der Tabelle sitzungen. An ihr hängt die Sperre
-// nach Inaktivität: Sie gilt am Server und für jedes Token der Anmeldung, auch für ein
-// erneuertes. Ein Token ohne Kennung oder ohne Zeile lässt sich nicht sperren.
+// hoechstdauerNachPasswort: So lange gilt eine Anmeldung nach der letzten Passworteingabe, danach
+// ist sie gesperrt. Zehn Stunden decken den längsten Schultag mit einer Stunde Puffer, ein
+// kopiertes Token gilt so höchstens bis zum Abend; MeldungHoechstdauerErreicht und der
+// Sperrbildschirm nennen dieselbe Zahl.
+const hoechstdauerNachPasswort = 10 * time.Hour
+
+// sperrGrund sagt, warum eine Anmeldung gesperrt ist; die Oberfläche nennt ihn am
+// Sperrbildschirm. Der leere Grund heißt: nicht gesperrt.
+type sperrGrund string
+
+const (
+	sperrGrundKeiner       sperrGrund = ""
+	sperrGrundInaktivitaet sperrGrund = "inaktivitaet"
+	sperrGrundHoechstdauer sperrGrund = "hoechstdauer"
+)
+
+// Sitzungen führt je Anmeldung eine Zeile in der Tabelle sitzungen. An ihr hängen die Sperre
+// nach Inaktivität und die Höchstdauer nach der Passworteingabe: Beide gelten am Server und für
+// jedes Token der Anmeldung, auch für ein erneuertes. Ein Token ohne Kennung oder ohne Zeile
+// lässt sich nicht sperren.
 type Sitzungen struct {
 	pool       Datenbank
 	schluessel []byte
@@ -38,30 +55,37 @@ func (s *Sitzungen) beginne(ctx context.Context, kontoID, passwort string, laeuf
 	return id, nil
 }
 
-// istGesperrt meldet, ob die Anmeldung gesperrt ist. Ohne Kennung und ohne Zeile ist sie es
-// nicht: Sperren lässt sich nur, was sich auch wieder aufschließen lässt.
-func (s *Sitzungen) istGesperrt(ctx context.Context, sitzungID string) (bool, error) {
-	gesperrt, _, err := s.zustand(ctx, sitzungID)
-	return gesperrt, err
+// grundDerSperre nennt, warum die Anmeldung gesperrt ist, leer für offen. Ohne Kennung und ohne
+// Zeile ist sie es nicht: Sperren lässt sich nur, was sich auch wieder aufschließen lässt.
+func (s *Sitzungen) grundDerSperre(ctx context.Context, sitzungID string) (sperrGrund, error) {
+	grund, _, err := s.zustand(ctx, sitzungID)
+	return grund, err
 }
 
-// zustand meldet, ob die Anmeldung gesperrt ist und ob ihre Zeile noch besteht. Ein Token ohne
-// Kennung hat keine Zeile und keine Sperre; es läuft aus, weil die Erneuerung es nicht verlängert.
-func (s *Sitzungen) zustand(ctx context.Context, sitzungID string) (gesperrt, besteht bool, err error) {
+// zustand meldet, warum die Anmeldung gesperrt ist, und ob ihre Zeile noch besteht. Ein Token
+// ohne Kennung hat keine Zeile und keine Sperre; es läuft aus, weil die Erneuerung es nicht
+// verlängert.
+func (s *Sitzungen) zustand(ctx context.Context, sitzungID string) (grund sperrGrund, besteht bool, err error) {
 	if sitzungID == "" {
-		return false, true, nil
+		return sperrGrundKeiner, true, nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	gesperrt, err = repository.IstSitzungGesperrt(ctx, s.pool, sitzungID)
+	gesperrt, passwortGeprueftAm, err := repository.LadeSitzungsZustand(ctx, s.pool, sitzungID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, false, nil
+		return sperrGrundKeiner, false, nil
 	}
 	if err != nil {
-		return false, false, err
+		return sperrGrundKeiner, false, err
 	}
-	return gesperrt, true, nil
+	switch {
+	case gesperrt:
+		return sperrGrundInaktivitaet, true, nil
+	case time.Since(passwortGeprueftAm) >= hoechstdauerNachPasswort:
+		return sperrGrundHoechstdauer, true, nil
+	}
+	return sperrGrundKeiner, true, nil
 }
 
 // sperre sperrt die Anmeldung und meldet, ob es eine Zeile dafür gab. Eine schon gesperrte
@@ -77,7 +101,8 @@ func (s *Sitzungen) sperre(ctx context.Context, sitzungID string) (bool, error) 
 	return zeilen == 1, nil
 }
 
-// entsperre hebt die Sperre auf. Keine Zeile ist kein Fehler: Dann war nichts gesperrt.
+// entsperre hebt die Sperre auf, nachdem das Passwort geprüft ist; die Höchstdauer beginnt damit
+// neu. Keine Zeile ist kein Fehler: Dann war nichts gesperrt.
 func (s *Sitzungen) entsperre(ctx context.Context, sitzungID string) error {
 	if sitzungID == "" {
 		return nil

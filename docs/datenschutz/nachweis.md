@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 16.10.2026 (Entwurf)
+Stand: 23.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -97,7 +97,8 @@ Kurzfassung; vollständig im Anhang des [Verzeichnisses](vvt_entwurf.md) und im
 [Sicherheitskonzept](../SECURITY.md).
 
 - **Zugang:** Anmeldung über das Schul-Postfach; nach fünf Fehlversuchen ist die Anmeldung eines
-  Kontos von derselben Netzadresse aus 15 Minuten gesperrt. Eine Sitzung gilt 12 Stunden. Die
+  Kontos von derselben Netzadresse aus 15 Minuten gesperrt. Eine Anmeldung gilt höchstens 10
+  Stunden nach der letzten Passworteingabe, danach fragt der Sperrbildschirm wieder danach. Die
   Theke leert sich nach 5 Minuten ohne Bedienung, nach 15 Minuten kommt der Sperrbildschirm
   (beides einstellbar); er sperrt die Anmeldung am Server, Neuladen öffnet sie nicht. Ein deaktiviertes oder herabgestuftes Konto verliert seine Rechte bei der
   nächsten Anfrage, nicht erst mit dem Ablauf der Sitzung.

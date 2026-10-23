@@ -432,7 +432,8 @@ CREATE TABLE sitzungen (
     passwort_pruefwert TEXT NOT NULL,
     gesperrt_seit TIMESTAMP WITH TIME ZONE,
     laeuft_ab TIMESTAMP WITH TIME ZONE NOT NULL,
-    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    passwort_geprueft_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_sitzungen_laeuft_ab ON sitzungen(laeuft_ab);
@@ -1966,7 +1967,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('165_deutsche_sortierung.sql'),
 ('166_lmf_barcode.sql'),
 ('167_lmf_kurze_nummer.sql'),
-('168_barcode_keine_lmf_nummer.sql')
+('168_barcode_keine_lmf_nummer.sql'),
+('169_passwort_geprueft_am.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

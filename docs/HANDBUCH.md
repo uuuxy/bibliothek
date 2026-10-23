@@ -126,7 +126,9 @@ Zubehör-Checkliste beim Scan (§5) · Kamera als Ersatz für den Handscanner (K
 Feld) · Passbild per Webcam · Ausweis drucken, Kontoauszug, DSGVO-Auskunft als PDF (§18).
 
 Nach 5 Minuten ohne Eingabe schließt sich die Akte, nach 15 Minuten der Sperrbildschirm —
-beides einstellbar (_Datenschutz & Sitzung_). Weiter geht es mit dem eigenen Passwort, auch
+beides einstellbar (_Datenschutz & Sitzung_). Außerdem fragt der Sperrbildschirm 10 Stunden nach
+der letzten Passworteingabe wieder nach dem Passwort, auch mitten in der Arbeit („Gesperrt nach
+10 Stunden"); nicht einstellbar. Weiter geht es mit dem eigenen Passwort, auch
 nach dem Neuladen der Seite und auch dann, wenn der Mailserver der Schule gerade nicht
 erreichbar ist. Was getippt und noch nicht gespeichert war, steht nach dem Aufschließen noch
 da, an derselben Stelle. _Abmelden und als andere Person anmelden_ fragt vorher, wenn dabei

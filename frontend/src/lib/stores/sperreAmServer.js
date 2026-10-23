@@ -1,4 +1,4 @@
-// Die drei Wege der Sperre nach Inaktivität zum Server (auth/sperre.go).
+// Die drei Wege der Sperre zum Server (auth/sperre.go): sperren, aufschließen, den Zustand lesen.
 // Alle laufen unter /api/auth/: Ein 401 dort meldet den Arbeitsplatz nicht ab (apiFetch).
 
 import { apiFetch } from '../apiFetch.js';
@@ -37,17 +37,34 @@ export function entsperreAmServer(passwort) {
 }
 
 /**
- * Fragt den Server, wie es um die Anmeldung steht.
- * @returns {Promise<{ zustand: 'offen', konto: any } | { zustand: 'gesperrt' | 'beendet' | 'unbekannt' }>}
+ * Fragt den Server, wie es um die Anmeldung steht. Gesperrt nennt er den Grund: nach
+ * Inaktivität oder zehn Stunden nach der letzten Passworteingabe (auth/sitzungen.go).
+ * @returns {Promise<{ zustand: 'offen', konto: any } | { zustand: 'gesperrt', grund: SperrGrund } | { zustand: 'beendet' | 'unbekannt' }>}
  */
 export async function leseSperrzustand() {
 	try {
 		const res = await apiFetch('/api/auth/me');
 		if (res.ok) return { zustand: 'offen', konto: await res.json() };
-		if (res.status === 423) return { zustand: 'gesperrt' };
+		if (res.status === 423) return { zustand: 'gesperrt', grund: await leseSperrGrund(res) };
 		if (res.status === 401) return { zustand: 'beendet' };
 	} catch {
 		/* kein Netz */
 	}
 	return { zustand: 'unbekannt' };
+}
+
+/** @typedef {'inaktivitaet' | 'hoechstdauer'} SperrGrund */
+
+/**
+ * Ohne lesbaren Grund gilt die Inaktivität, der häufige Fall.
+ * @param {Response} res
+ * @returns {Promise<SperrGrund>}
+ */
+async function leseSperrGrund(res) {
+	try {
+		const antwort = await res.json();
+		return antwort?.grund === 'hoechstdauer' ? 'hoechstdauer' : 'inaktivitaet';
+	} catch {
+		return 'inaktivitaet';
+	}
 }

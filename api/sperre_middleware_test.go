@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"bibliothek/auth"
 
@@ -29,10 +30,17 @@ func anfrageMitSitzung(t *testing.T, s *Server, role auth.Rolle) *http.Request {
 	return req
 }
 
+// erwarteSperrzustand erwartet die Abfrage der Sperre; das Passwort ist eben geprüft.
 func erwarteSperrzustand(mock pgxmock.PgxPoolIface, gesperrt bool) {
-	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL FROM sitzungen").
+	erwarteSperrzustandMitPasswort(mock, gesperrt, time.Now())
+}
+
+// erwarteSperrzustandMitPasswort erwartet die Abfrage der Sperre mit dem Zeitpunkt, zu dem das
+// Passwort zuletzt geprüft wurde.
+func erwarteSperrzustandMitPasswort(mock pgxmock.PgxPoolIface, gesperrt bool, passwortGeprueftAm time.Time) {
+	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL, passwort_geprueft_am FROM sitzungen").
 		WithArgs(sperreSitzungID).
-		WillReturnRows(pgxmock.NewRows([]string{"gesperrt"}).AddRow(gesperrt))
+		WillReturnRows(pgxmock.NewRows([]string{"gesperrt", "passwort_geprueft_am"}).AddRow(gesperrt, passwortGeprueftAm))
 }
 
 func TestGesperrteSitzung_Antwortet423UndErreichtKeineTuer(t *testing.T) {
@@ -92,6 +100,52 @@ func TestNichtGesperrteSitzung_WirdDurchgelassen(t *testing.T) {
 	}
 }
 
+// Zehn Stunden nach der letzten Passworteingabe antwortet jede Tür mit 423 wie nach Inaktivität,
+// aber mit eigener Meldung: Wer eben noch gearbeitet hat, liest nicht „wegen Inaktivität". Eine
+// Minute davor kommt die Anfrage durch.
+func TestHoechstdauer_Antwortet423MitEigenerMeldung(t *testing.T) {
+	for _, fall := range []struct {
+		name     string
+		her      time.Duration
+		gesperrt bool
+	}{
+		{"zehn Stunden und eine Minute", 10*time.Hour + time.Minute, true},
+		{"neun Stunden und 59 Minuten", 10*time.Hour - time.Minute, false},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			s, mock := baueRechteServer(t)
+			defer mock.Close()
+
+			erwarteSperrlisteFrei(mock, auth.RolleAdmin)
+			erwarteSperrzustandMitPasswort(mock, false, time.Now().Add(-fall.her))
+
+			rr, reached := laufeDurch(s, "buch.loeschen", anfrageMitSitzung(t, s, auth.RolleAdmin))
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unerfüllte Erwartungen: %v", err)
+			}
+			if !fall.gesperrt {
+				if rr.Code != http.StatusOK || !reached {
+					t.Errorf("code %d, reached %v — erwartet 200 und erreicht", rr.Code, reached)
+				}
+				return
+			}
+			if rr.Code != http.StatusLocked {
+				t.Errorf("Status %d, erwartet 423 — 401 meldete den Arbeitsplatz ab, 200 lieferte Daten ohne Passwort", rr.Code)
+			}
+			if reached {
+				t.Error("der geschützte Handler wurde nach der Höchstdauer erreicht")
+			}
+			var body map[string]string
+			if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+				t.Fatalf("Body ist kein JSON: %q (%v)", rr.Body.String(), err)
+			}
+			if body["error"] != auth.MeldungHoechstdauerErreicht {
+				t.Errorf("Meldung %q, erwartet %q", body["error"], auth.MeldungHoechstdauerErreicht)
+			}
+		})
+	}
+}
+
 // Lässt sich der Sperrzustand nicht lesen, wird abgelehnt — als 503, nicht als abgelaufene
 // Sitzung (401 meldete den Arbeitsplatz ab).
 func TestSperrzustandNichtLesbar_Lehnt503Ab(t *testing.T) {
@@ -99,7 +153,7 @@ func TestSperrzustandNichtLesbar_Lehnt503Ab(t *testing.T) {
 	defer mock.Close()
 
 	erwarteSperrlisteFrei(mock, auth.RolleAdmin)
-	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL FROM sitzungen").
+	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL, passwort_geprueft_am FROM sitzungen").
 		WithArgs(sperreSitzungID).
 		WillReturnError(errors.New("connection reset by peer"))
 
@@ -119,9 +173,7 @@ func TestAbmeldung_AusDerSperre_LoeschtDieZeile(t *testing.T) {
 	// Der Abmelde-Weg liest die Zeile, damit ein schon abgemeldetes Token nicht mehr gilt; die
 	// Sperre hält ihn nicht auf.
 	erwarteSperrlisteFrei(mock, auth.RolleMitarbeiter)
-	mock.ExpectQuery("SELECT gesperrt_seit IS NOT NULL FROM sitzungen").
-		WithArgs(sperreSitzungID).
-		WillReturnRows(pgxmock.NewRows([]string{"gesperrt"}).AddRow(true))
+	erwarteSperrzustand(mock, true)
 	mock.ExpectExec("INSERT INTO revoked_tokens").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

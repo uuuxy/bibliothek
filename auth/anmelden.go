@@ -413,8 +413,8 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, pool db.Pool, kont
 // Antwort wie die Anmeldung. Die Oberfläche stellt damit beim Laden eine bestehende Sitzung
 // wieder her, statt jedes Mal die Anmeldung zu zeigen.
 //
-// Eine gesperrte Anmeldung beantwortet sie mit 423 und nur der E-Mail-Adresse: Der
-// Sperrbildschirm zeigt, wer angemeldet ist, mehr nicht.
+// Eine gesperrte Anmeldung beantwortet sie mit 423, der E-Mail-Adresse und dem Grund der Sperre:
+// Der Sperrbildschirm zeigt, wer angemeldet ist und warum er fragt, mehr nicht.
 func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := leseSitzung(w, r, anmeldung)
@@ -422,7 +422,7 @@ func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			return
 		}
 
-		gesperrt, err := anmeldung.Sitzungen.istGesperrt(r.Context(), claims.SitzungID)
+		grund, err := anmeldung.Sitzungen.grundDerSperre(r.Context(), claims.SitzungID)
 		if err != nil {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, MeldungPruefungGestoert, err)
 			return
@@ -434,9 +434,13 @@ func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 		}
 
 		w.Header().Set(headerContentType, contentTypeJSON)
-		if gesperrt {
+		if grund != sperrGrundKeiner {
+			meldung := MeldungSitzungGesperrt
+			if grund == sperrGrundHoechstdauer {
+				meldung = MeldungHoechstdauerErreicht
+			}
 			w.WriteHeader(http.StatusLocked)
-			httpresp.SchreibeJSON(w, map[string]string{"error": MeldungSitzungGesperrt, "email": antwort.Email})
+			httpresp.SchreibeJSON(w, map[string]string{"error": meldung, "email": antwort.Email, "grund": string(grund)})
 			return
 		}
 		httpresp.SchreibeJSON(w, antwort)

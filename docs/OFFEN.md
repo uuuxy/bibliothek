@@ -20,7 +20,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (7.2, 4.20)
 - [ ] Eingang und Ausgang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar,
   nach außen nur die Dienste, die das Programm braucht. (4.23)
-- [ ] Eine Anmeldung gilt höchstens 12 Stunden nach der Passworteingabe. (5.96)
+- [x] Eine Anmeldung gilt höchstens 10 Stunden nach der Passworteingabe, danach fragt der
+  Sperrbildschirm nach dem Passwort. (5.96)
 - [x] Eine gelungene Anmeldung leert den Zähler der Fehlversuche je Adresse nicht mehr. (5.97)
 - [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
@@ -92,17 +93,6 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.96 Eine Sitzung hat keine Höchstdauer
-
-Ein Token gilt 12 Stunden. Jedes offene Fenster erneuert es ab der halben Laufzeit
-(`erneuereSitzung` in `auth/anmelden.go`), und die Zeile in `sitzungen` verlängert sich ohne
-Grenze (`VerlaengereSitzung` in `repository/sitzungen.go`). Wann das Passwort eingegeben wurde,
-prüft niemand: Wer ein Token in die Hand bekommt, hält die Sitzung ohne Passwort offen, solange
-er sie nutzt. Die Sperre nach Inaktivität hilft dagegen nicht, denn sie löst der Browser aus.
-
-**Entschieden am 01.10.2026: Eine Anmeldung gilt höchstens 12 Stunden nach der
-Passworteingabe.**
 
 ### 7.2 Frisches Littera-Backup
 

@@ -270,8 +270,8 @@ export function registriereSitzungAbgelaufenHandler(handler) {
 
 const SITZUNG_AUSNAHMEN = ['/api/auth/', '/api/csrf-token', '/api/public/'];
 
-// 423 heißt: Die Anmeldung gilt, ist aber nach Inaktivität gesperrt — ein anderes Fenster
-// desselben Browsers hat gesperrt. Dann kommt der Sperrbildschirm, keine Abmeldung.
+// 423 heißt: Die Anmeldung gilt, ist aber gesperrt, nach Inaktivität in einem anderen Fenster
+// oder 10 Stunden nach der Passworteingabe. Dann kommt der Sperrbildschirm, keine Abmeldung.
 /** @type {(() => void) | null} */
 let sitzungGesperrtHandler = null;
 

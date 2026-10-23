@@ -1,6 +1,9 @@
 package auth
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // errAnmeldedienstGestoert heißt: Die Anmeldung selbst ist gestört (Datenbank nicht erreichbar,
 // Pool erschöpft, Frist abgelaufen), im Unterschied zum falschen Passwort (401) und zum Ausfall
@@ -22,6 +25,11 @@ var ErrPruefungGestoert = errors.New("sitzung konnte nicht geprüft werden, bitt
 // das nicht erfährt, hält eine Sitzung für beendet, die es nicht ist.
 var ErrWiderrufGestoert = errors.New("abmeldung unvollständig: die sitzung ließ sich nicht widerrufen, bitte erneut versuchen")
 
-// ErrSitzungGesperrt heißt: Die Anmeldung gilt, ist aber nach Inaktivität gesperrt. Der Server
-// antwortet mit 423; die Oberfläche zeigt den Sperrbildschirm und meldet nicht ab.
-var ErrSitzungGesperrt = errors.New("gesperrt wegen Inaktivität — bitte Passwort eingeben")
+// ErrSitzungGesperrt heißt: Die Anmeldung gilt, ist aber gesperrt, bis das Passwort eingegeben
+// ist. Der Server antwortet mit 423; die Oberfläche zeigt den Sperrbildschirm und meldet nicht ab.
+var ErrSitzungGesperrt = errors.New("anmeldung gesperrt, bitte passwort eingeben")
+
+// ErrHoechstdauerErreicht heißt: Seit der letzten Passworteingabe ist die Höchstdauer vergangen
+// (hoechstdauerNachPasswort). Die Anmeldung ist gesperrt wie nach Inaktivität, errors.Is mit
+// ErrSitzungGesperrt trifft auch sie; nur die Meldung nennt den anderen Grund.
+var ErrHoechstdauerErreicht = fmt.Errorf("%w: höchstdauer nach der passworteingabe erreicht", ErrSitzungGesperrt)

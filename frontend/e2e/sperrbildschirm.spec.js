@@ -85,14 +85,16 @@ test('Theke leert sich nach 5 Minuten, Sperrbildschirm nach 15, Passwort entsper
 	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
 
 	// Hinter der Sperre liefert der Server nichts: 423 statt der Leserliste, und über die
-	// Anmeldung selbst nur, wer angemeldet ist. Die Sperre geht nach dem Verdecken an den
-	// Server, deshalb gepollt.
+	// Anmeldung selbst nur, wer angemeldet ist und warum gesperrt ist. Die Sperre geht nach dem
+	// Verdecken an den Server, deshalb gepollt.
 	await expect
 		.poll(async () => (await page.request.get('/api/schueler')).status(), { timeout: 5000 })
 		.toBe(423);
 	const zustand = await page.request.get('/api/auth/me');
 	expect(zustand.status()).toBe(423);
-	expect(Object.keys(await zustand.json()).sort()).toEqual(['email', 'error']);
+	const gesperrt = await zustand.json();
+	expect(Object.keys(gesperrt).sort()).toEqual(['email', 'error', 'grund']);
+	expect(gesperrt.grund).toBe('inaktivitaet');
 
 	// Neuladen öffnet die Anwendung nicht — und fragt den Server nur nach dem Zustand der
 	// Anmeldung und den Fristen, nicht nach Daten.

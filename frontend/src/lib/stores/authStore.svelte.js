@@ -144,8 +144,8 @@ class AuthStore {
 	}
 
 	/**
-	 * Boot-Restore einer Anmeldung, die nach Inaktivität gesperrt ist: Der Server nennt nur
-	 * die E-Mail-Adresse. Es gibt weder Rechte noch Live-Leitung, bis das Passwort
+	 * Boot-Restore einer gesperrten Anmeldung (Inaktivität oder Höchstdauer): Der Server nennt
+	 * nur E-Mail-Adresse und Grund. Es gibt weder Rechte noch Live-Leitung, bis das Passwort
 	 * eingegeben ist.
 	 * @param {{ email?: string }} zustand
 	 */

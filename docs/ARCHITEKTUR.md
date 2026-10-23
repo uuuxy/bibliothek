@@ -454,7 +454,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 21.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 23.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -1032,7 +1032,7 @@ Vollständig: `schema.sql` und [invarianten.md](invarianten.md).
 | `idempotency_keys`             | Schlüssel → gespeicherte Antwort (TTL 24 h)                                                                       |
 | `audit_logs`                   | Ereignisprotokoll, `details JSONB`; append-only als **Konvention**, DSGVO-Tilgung als bewusste Ausnahme            |
 | `revoked_tokens`               | Sperrliste abgemeldeter JWTs                                                                                      |
-| `sitzungen`                    | eine Zeile je Anmeldung: Sperre nach Inaktivität und Prüfwert des Passworts, bis zum Abmelden oder Ablauf         |
+| `sitzungen`                    | eine Zeile je Anmeldung: Sperre nach Inaktivität, Zeit der letzten Passworteingabe und Prüfwert des Passworts, bis zum Abmelden oder Ablauf |
 | `schueler_fotos`               | AES-256-GCM verschlüsselte Passbilder (kein öffentliches Dateiverzeichnis)                                        |
 | `system_einstellungen`         | Die Schalter der Einstellungskategorien (FACHKONZEPT §17); Lieferanten, Schlagworte und Mail in eigenen Tabellen   |
 | `mail_settings_config`, `mail_vorlagen` | SMTP-Zugang (Passwort verschlüsselt) und Textvorlagen                                                    |
@@ -1075,7 +1075,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 22.10.2026
+Stand: 23.10.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1135,8 +1135,9 @@ unlesbarer Wert bricht den Start ab.
 2. Sperrliste (`revoked_tokens`),
 3. **Kontostatus live in der DB** (aktiv, nicht gelöscht) — deshalb braucht es keine
    zusätzliche „Zombie-Session"-Prüfung,
-4. **Sperre nach Inaktivität** (`sitzungen`): Eine gesperrte Anmeldung bekommt **423**, bis
-   das Passwort eingegeben ist,
+4. **Sperre** (`sitzungen`): Eine Anmeldung, die nach Inaktivität gesperrt ist oder deren
+   letzte Passworteingabe 10 Stunden zurückliegt, bekommt **423**, bis das Passwort eingegeben
+   ist; die Erneuerung des Tokens ändert an der Passworteingabe nichts,
 5. Recht aus `role_permissions`, gecacht 60 s, abgesichert über den Epochenzähler,
 6. UUID-Form der Pfadparameter.
 
@@ -1642,7 +1643,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 20.10.2026
+Stand: 23.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1728,7 +1729,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | **CSRF**                  | Double-Submit-Cookie; `GET /api/csrf-token` holt Token und Cookie vor der ersten Änderung; die Refresh-Route ist ausgenommen                        |
 | **Anmeldung**             | IMAP über implizites TLS (:993, min. TLS 1.2, feste Cipher-Auswahl). **Kein** Passwort im System                                                     |
 | **Brute-Force**           | Schlüssel `lower(email)\|ip`, 5 Fehlversuche / 15 min; je Adresse allein erst 50 (`api/anmelde_bremse.go`). Nur-IP mit 5 wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                            |
-| **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, Cookie `HttpOnly` + `SameSite=Strict` (+ `Secure` nach Betriebslage); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
+| **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, erneuert ab der halben Laufzeit; höchstens 10 h nach der letzten Passworteingabe, dann 423 bis zum Passwort; Cookie `HttpOnly` + `SameSite=Strict` (+ `Secure` nach Betriebslage); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
 | **Autorisierung**         | `verlangeRecht` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
 | **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt |

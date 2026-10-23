@@ -1,7 +1,8 @@
 package repository
 
-// sitzungen.go — die Anweisungen zur Tabelle sitzungen: eine Zeile je Anmeldung, an ihr hängt
-// die Sperre nach Inaktivität. Was eine fehlende Zeile bedeutet, entscheidet auth/; die
+// sitzungen.go — die Anweisungen zur Tabelle sitzungen: eine Zeile je Anmeldung, an ihr hängen
+// die Sperre nach Inaktivität und die Zeit der letzten Passworteingabe. Was eine fehlende Zeile
+// bedeutet, entscheidet auth/; die
 // Lesefunktionen reichen pgx.ErrNoRows deshalb durch.
 
 import (
@@ -20,13 +21,13 @@ func LegeSitzungAn(ctx context.Context, db Datenbank, benutzerID, pruefwert stri
 	return id, err
 }
 
-// IstSitzungGesperrt sagt, ob die Anmeldung gesperrt ist.
-func IstSitzungGesperrt(ctx context.Context, db Datenbank, sitzungID string) (bool, error) {
-	var gesperrt bool
-	err := db.QueryRow(ctx, `
-		SELECT gesperrt_seit IS NOT NULL FROM sitzungen WHERE id = $1
-	`, sitzungID).Scan(&gesperrt)
-	return gesperrt, err
+// LadeSitzungsZustand liefert, ob die Anmeldung nach Inaktivität gesperrt ist und wann ihr
+// Passwort zuletzt geprüft wurde. Wie lange das her sein darf, entscheidet auth/.
+func LadeSitzungsZustand(ctx context.Context, db Datenbank, sitzungID string) (gesperrt bool, passwortGeprueftAm time.Time, err error) {
+	err = db.QueryRow(ctx, `
+		SELECT gesperrt_seit IS NOT NULL, passwort_geprueft_am FROM sitzungen WHERE id = $1
+	`, sitzungID).Scan(&gesperrt, &passwortGeprueftAm)
+	return gesperrt, passwortGeprueftAm, err
 }
 
 // SperreSitzung sperrt die Anmeldung und nennt die Zahl der getroffenen Zeilen. Eine schon
@@ -41,9 +42,12 @@ func SperreSitzung(ctx context.Context, db Datenbank, sitzungID string) (int64, 
 	return tag.RowsAffected(), nil
 }
 
-// EntsperreSitzung hebt die Sperre auf. Keine Zeile ist kein Fehler: Dann war nichts gesperrt.
+// EntsperreSitzung hebt die Sperre auf und vermerkt das eben geprüfte Passwort. Keine Zeile ist
+// kein Fehler: Dann war nichts gesperrt.
 func EntsperreSitzung(ctx context.Context, db Datenbank, sitzungID string) error {
-	_, err := db.Exec(ctx, `UPDATE sitzungen SET gesperrt_seit = NULL WHERE id = $1`, sitzungID)
+	_, err := db.Exec(ctx, `
+		UPDATE sitzungen SET gesperrt_seit = NULL, passwort_geprueft_am = NOW() WHERE id = $1
+	`, sitzungID)
 	return err
 }
 

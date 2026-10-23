@@ -1,5 +1,5 @@
 <script>
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fokusFalle } from '../ui/fokusFalle.js';
 	import { Lock } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -11,8 +11,9 @@
 	import { verwerfenFrage } from '../../stores/bestaetigung.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { scanSchutz } from '../../scanErkennung.js';
+	import { leseSperrzustand } from '../../stores/sperreAmServer.js';
 
-	// Sperrbildschirm nach Inaktivität. Die
+	// Sperrbildschirm nach Inaktivität und zehn Stunden nach der letzten Passworteingabe. Die
 	// Anwendung dahinter bleibt stehen, damit Ungespeichertes die Sperre überlebt, ist aber
 	// ausgeblendet und träge (App.svelte): Die Druckvorschau zeigt sie nicht, Tab erreicht
 	// sie nicht, Screenreader lesen sie nicht. Tasten und Zeiger
@@ -21,6 +22,16 @@
 	// hält die Anmeldung so lange gesperrt (stores/leerlaufSperre).
 
 	let passwort = $state('');
+	// Warum gesperrt ist, weiß der Server. Bis er antwortet, gilt die Inaktivität: Sperrt der
+	// Browser selbst, kann seine Sperre den Server noch nicht erreicht haben.
+	let grund = $state(
+		/** @type {import('../../stores/sperreAmServer.js').SperrGrund} */ ('inaktivitaet')
+	);
+	onMount(() => {
+		void leseSperrzustand().then((stand) => {
+			if (stand.zustand === 'gesperrt') grund = stand.grund;
+		});
+	});
 	// Ein Scan am Sperrbildschirm ist kein Passwort: Er geht nicht zum Server, wo er als
 	// Fehlversuch zählte, und er drückt keinen Knopf.
 	let scanErkannt = $state(false);
@@ -76,8 +87,11 @@
 		</div>
 		<div class="text-center space-y-1">
 			<h2 id="sperre-titel" class="text-base font-bold text-on-surface">
-				Gesperrt wegen Inaktivität
+				{grund === 'hoechstdauer' ? 'Gesperrt nach 10 Stunden' : 'Gesperrt wegen Inaktivität'}
 			</h2>
+			{#if leerlaufSperre.anwendungSteht}
+				<p class="text-sm text-on-surface-variant">Was nicht gespeichert ist, bleibt erhalten.</p>
+			{/if}
 			<p class="text-xs text-on-surface-variant">
 				Angemeldet als <span class="font-semibold text-on-surface"
 					>{authStore.currentUser?.email}</span

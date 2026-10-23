@@ -15,6 +15,9 @@ const (
 	// MeldungSitzungGesperrt geht mit 423 hinaus: Die Anmeldung gilt, ist nach Inaktivität aber
 	// gesperrt (ErrSitzungGesperrt).
 	MeldungSitzungGesperrt = "Gesperrt wegen Inaktivität. Bitte das Passwort eingeben."
+	// MeldungHoechstdauerErreicht geht mit 423 hinaus, wenn die Höchstdauer nach der
+	// Passworteingabe vergangen ist (ErrHoechstdauerErreicht).
+	MeldungHoechstdauerErreicht = "Seit der letzten Passworteingabe sind 10 Stunden vergangen. Bitte das Passwort eingeben."
 
 	meldungEmailFehlt            = "Bitte die E-Mail-Adresse eingeben"
 	meldungPasswortFehlt         = "Bitte das Passwort eingeben"

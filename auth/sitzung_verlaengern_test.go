@@ -46,11 +46,12 @@ func erwarteSitzungVerlaengert(mock pgxmock.PgxPoolIface, zeilen int64) {
 		WillReturnResult(pgxmock.NewResult("UPDATE", zeilen))
 }
 
-// erwarteSperrzustand erwartet die Abfrage der Sperre in PruefeToken.
+// erwarteSperrzustand erwartet die Abfrage der Sperre in PruefeToken; das Passwort ist eben
+// geprüft, die Höchstdauer also fern.
 func erwarteSperrzustand(mock pgxmock.PgxPoolIface, gesperrt bool) {
-	mock.ExpectQuery(`SELECT gesperrt_seit IS NOT NULL FROM sitzungen`).
+	mock.ExpectQuery(`SELECT gesperrt_seit IS NOT NULL, passwort_geprueft_am FROM sitzungen`).
 		WithArgs(testSitzungID).
-		WillReturnRows(pgxmock.NewRows([]string{"gesperrt"}).AddRow(gesperrt))
+		WillReturnRows(pgxmock.NewRows([]string{"gesperrt", "passwort_geprueft_am"}).AddRow(gesperrt, time.Now()))
 }
 
 func erwarteNichtWiderrufen(mock pgxmock.PgxPoolIface) {

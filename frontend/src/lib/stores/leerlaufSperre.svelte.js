@@ -201,7 +201,7 @@ export class LeerlaufSperre {
 		void this.#sperreAmServer();
 	}
 
-	/** Der Server hat eine Anfrage mit „gesperrt" beantwortet (ein anderes Fenster hat gesperrt). */
+	/** Der Server hat eine Anfrage mit „gesperrt" beantwortet: anderes Fenster oder Höchstdauer. */
 	vomServerGesperrt() {
 		if (!this.#laeuft) return;
 		const neu = !this.#amServerGesperrt;

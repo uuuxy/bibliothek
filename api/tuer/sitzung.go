@@ -29,9 +29,9 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 		return nil, http.StatusServiceUnavailable, err
 	}
 	if errors.Is(err, auth.ErrSitzungGesperrt) {
-		// Gesperrt nach Inaktivität: Die Anmeldung gilt weiter, antwortet aber nicht, bis
-		// das Passwort eingegeben ist. 423 statt 401, damit der Client den Sperrbildschirm
-		// zeigt und nicht abmeldet.
+		// Gesperrt nach Inaktivität oder nach der Höchstdauer: Die Anmeldung gilt weiter,
+		// antwortet aber nicht, bis das Passwort eingegeben ist. 423 statt 401, damit der Client
+		// den Sperrbildschirm zeigt und nicht abmeldet.
 		return nil, http.StatusLocked, err
 	}
 	if err != nil {
@@ -48,6 +48,8 @@ func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
 	switch {
 	case errors.Is(err, auth.ErrPruefungGestoert):
 		apierrors.AntworteFehlerMitMeldung(w, status, auth.MeldungPruefungGestoert, err)
+	case errors.Is(err, auth.ErrHoechstdauerErreicht):
+		apierrors.AntworteFehlerMitMeldung(w, status, auth.MeldungHoechstdauerErreicht, err)
 	case errors.Is(err, auth.ErrSitzungGesperrt):
 		apierrors.AntworteFehlerMitMeldung(w, status, auth.MeldungSitzungGesperrt, err)
 	default:
