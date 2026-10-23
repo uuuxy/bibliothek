@@ -59,33 +59,7 @@ export function erzeugeZusammenfuehrenVorschau() {
 }
 
 /**
- * Was zum bleibenden Titel kommt, als Zeilen der Vorschau: die gewanderten Zeilen mit ihrer
- * Zahl, dann die Felder, die er übernimmt.
- * @param {any} v die Antwort der Vorschau
- * @returns {string[]}
+ * Die Zahl der Exemplare in Worten, wie die Trefferliste und die Zeile „Danach" sie nennen.
+ * @param {number | null | undefined} n
  */
-export function kommtHinzu(v) {
-	/** @param {number} n @param {string} eins @param {string} mehr */
-	const zahl = (n, eins, mehr) => `${n} ${n === 1 ? eins : mehr}`;
-	const zeilen = [];
-	if (v.exemplare > 0)
-		zeilen.push(
-			`${zahl(v.exemplare, 'Exemplar', 'Exemplare')} — Nummer, Etikett und Ausleihen bleiben`
-		);
-	if (v.vormerkungen > 0) {
-		const doppelt = v.vormerkungen_doppelt
-			? `; ${zahl(v.vormerkungen_doppelt, 'doppelte fällt', 'doppelte fallen')} weg`
-			: '';
-		zeilen.push(zahl(v.vormerkungen, 'Vormerkung', 'Vormerkungen') + doppelt);
-	}
-	if (v.klassensaetze > 0)
-		zeilen.push(zahl(v.klassensaetze, 'Klassensatz-Reservierung', 'Klassensatz-Reservierungen'));
-	if (v.bestellpositionen > 0)
-		zeilen.push(
-			zahl(v.bestellpositionen, 'Position einer Bestellung', 'Positionen von Bestellungen')
-		);
-	if (v.anliegen > 0) zeilen.push(zahl(v.anliegen, 'Meldung', 'Meldungen') + ' von Lehrkräften');
-	for (const f of v.uebernommen ?? [])
-		zeilen.push(f.wert ? `${f.bezeichnung}: ${f.wert}` : f.bezeichnung);
-	return zeilen;
-}
+export const exemplare = (n) => `${n ?? 0} ${n === 1 ? 'Exemplar' : 'Exemplare'}`;

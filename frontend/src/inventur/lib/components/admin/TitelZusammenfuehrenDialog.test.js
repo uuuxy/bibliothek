@@ -14,9 +14,9 @@ import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 import { snackbars } from '../../../../lib/stores/snackbars.svelte.js';
 import TitelZusammenfuehrenDialog from './TitelZusammenfuehrenDialog.svelte';
 
-// „Mit anderem Titel zusammenführen": suchen, festlegen, welcher Titel bleibt, die Vorschau des
-// Servers lesen, bestätigen. Material 3, Dialogs: „Disable confirming actions until a choice is
-// made. Dismissive actions are never disabled."
+// „Mit anderem Titel zusammenführen": suchen, antippen, eine Zeile Vorschau des Servers,
+// bestätigen. Der Titel mit ISBN bleibt. Material 3, Dialogs: „Disable confirming actions until
+// a choice is made. Dismissive actions are never disabled."
 
 const dieser = { id: 'gross', title: 'Natur und Technik - Biologie 7/10', isbn: '' };
 const anderer = {
@@ -29,18 +29,18 @@ const anderer = {
 	verfuegbar: 1,
 	imZulauf: 0
 };
+// Ein zweiter Treffer ohne ISBN: Mit ihm bleibt dieser Titel.
+const ohneISBN = { ...anderer, id: 'liste', title: 'Natur und Technik Biologie 7-10', isbn: '' };
 const vorschau = {
-	titel_id: 'gross',
-	titel: dieser.title,
-	quelle_id: 'klein',
-	quelle_titel: anderer.title,
-	exemplare: 1,
-	vormerkungen: 0,
-	vormerkungen_doppelt: 0,
-	klassensaetze: 0,
-	bestellpositionen: 0,
-	anliegen: 0,
-	uebernommen: [{ bezeichnung: 'ISBN', wert: '9783060158423' }],
+	titel_id: 'klein',
+	titel: anderer.title,
+	isbn: '9783060158423',
+	exemplare_danach: 59,
+	quelle_id: 'gross',
+	quelle_titel: dieser.title,
+	quelle_isbn: '',
+	exemplare: 58,
+	uebernommen: [],
 	abweichend: []
 };
 /** @param {number} status @param {any} koerper @returns {any} */
@@ -51,7 +51,7 @@ function server(vorschauAntwort = antwort(200, vorschau)) {
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
 		if (u.startsWith('/api/books?q=')) {
-			return antwort(200, { data: u.includes('bestand=ohne') ? [] : [anderer, dieser] });
+			return antwort(200, { data: u.includes('bestand=ohne') ? [] : [anderer, dieser, ohneISBN] });
 		}
 		if (u.includes('/zusammenfuehren?quelle_id=')) return vorschauAntwort;
 		throw new Error(`unerwarteter Aufruf ${u}`);
@@ -104,34 +104,38 @@ describe('TitelZusammenfuehrenDialog', () => {
 		await vi.advanceTimersByTimeAsync(250);
 
 		const treffer = screen.getAllByRole('button', { name: /Natur und Technik/ });
-		expect(treffer).toHaveLength(1);
-		expect(treffer[0].textContent).toContain('9783060158423');
+		expect(treffer.map((t) => t.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+			'Natur und Technik - Biologie 7/10 9783060158423 · 1 Exemplar',
+			'Natur und Technik Biologie 7-10 ohne ISBN · 1 Exemplar'
+		]);
 	});
 
-	it('zeigt die Vorschau des Servers und gibt erst dann „Zusammenführen" frei', async () => {
+	it('lässt den Titel mit ISBN bleiben und zeigt in einer Zeile, wie er danach aussieht', async () => {
 		server();
 		const { screen } = await bisZurVorschau();
 
-		expect(vorschauen()).toEqual(['/api/buecher/titel/gross/zusammenfuehren?quelle_id=klein']);
-		expect(screen.getByText('1 Exemplar — Nummer, Etikett und Ausleihen bleiben')).toBeTruthy();
-		expect(screen.getByText('ISBN: 9783060158423')).toBeTruthy();
-		expect(screen.getByText(/wird danach gelöscht/)).toBeTruthy();
+		expect(vorschauen()).toEqual(['/api/buecher/titel/klein/zusammenfuehren?quelle_id=gross']);
+		expect(screen.getByText(/9783060158423 · 59 Exemplare/)).toBeTruthy();
+		expect(screen.getByText(/\(ohne ISBN\) wird gelöscht/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: /9783060158423/ }).getAttribute('aria-pressed')).toBe(
+			'true'
+		);
 		expect(screen.getByRole('button', { name: 'Zusammenführen' }).hasAttribute('disabled')).toBe(
 			false
 		);
 	});
 
-	it('fragt die Vorschau neu, wenn der andere Titel bleiben soll', async () => {
+	it('lässt diesen Titel bleiben, wenn der andere keine ISBN hat', async () => {
 		server();
 		const { screen } = await bisZurVorschau();
 
-		await fireEvent.click(screen.getByLabelText(/der andere/));
+		await fireEvent.click(screen.getByRole('button', { name: /ohne ISBN/ }));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(vorschauen().at(-1)).toBe('/api/buecher/titel/klein/zusammenfuehren?quelle_id=gross');
+		expect(vorschauen().at(-1)).toBe('/api/buecher/titel/gross/zusammenfuehren?quelle_id=liste');
 	});
 
-	it('führt zusammen und meldet den bleibenden Titel', async () => {
+	it('führt zusammen und meldet den bleibenden Titel mit seiner Zahl', async () => {
 		server();
 		vi.mocked(apiClient.post).mockResolvedValueOnce(antwort(200, vorschau));
 		const { screen, onZusammengefuehrt } = await bisZurVorschau();
@@ -139,12 +143,12 @@ describe('TitelZusammenfuehrenDialog', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Zusammenführen' }));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(apiClient.post).toHaveBeenCalledWith('/api/buecher/titel/gross/zusammenfuehren', {
-			quelle_id: 'klein'
+		expect(apiClient.post).toHaveBeenCalledWith('/api/buecher/titel/klein/zusammenfuehren', {
+			quelle_id: 'gross'
 		});
-		expect(onZusammengefuehrt).toHaveBeenCalledWith('gross');
+		expect(onZusammengefuehrt).toHaveBeenCalledWith('klein');
 		expect(vi.mocked(snackbars.addToast).mock.calls[0]).toEqual([
-			expect.stringContaining('1 Exemplar übernommen'),
+			'Zusammengeführt: „Natur und Technik - Biologie 7/10“ hat jetzt 59 Exemplare.',
 			'success'
 		]);
 	});

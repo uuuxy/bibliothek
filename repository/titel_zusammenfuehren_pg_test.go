@@ -302,6 +302,10 @@ func TestFuehreTitelZusammen_VorschauAendertNichts(t *testing.T) {
 	if erg.Exemplare != 2 || erg.QuelleISBN != "9783060158423" || len(erg.Uebernommen) == 0 {
 		t.Errorf("Vorschau %+v, erwartet 2 Exemplare, die ISBN und übernommene Felder", *erg)
 	}
+	// Danach: je ein Exemplar im Bestand von beiden; das bestellte zählt wie im Katalog nicht.
+	if erg.ISBN != "9783060158423" || erg.ExemplareDanach != 2 {
+		t.Errorf("danach ISBN %q mit %d Exemplaren, erwartet 9783060158423 mit 2", erg.ISBN, erg.ExemplareDanach)
+	}
 	var titel, isbn *string
 	var protokoll int
 	if err := pool.QueryRow(ctx, `SELECT

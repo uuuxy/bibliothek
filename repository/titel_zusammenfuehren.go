@@ -63,6 +63,11 @@ type TitelZusammenfuehrung struct {
 	// denen beide verschieden sind und das Ziel seinen Wert behält.
 	Uebernommen []TitelFeld       `json:"uebernommen"`
 	Abweichend  []TitelAbweichung `json:"abweichend"`
+	// ISBN und ExemplareDanach beschreiben den bleibenden Titel danach, für die eine Zeile der
+	// Vorschau; gezählt wie „gesamt“ im Katalog (SQLExemplarImBestand). An der Zahl sieht man,
+	// wenn beide Titel dieselben Bücher trugen.
+	ISBN            string `json:"isbn"`
+	ExemplareDanach int    `json:"exemplare_danach"`
 	// coverDateien sind lokale Cover der Quelle, die nach dem Commit gelöscht werden.
 	coverDateien []string
 }
@@ -122,7 +127,11 @@ func fuehreTitelZusammenIn(ctx context.Context, tx pgx.Tx, a TitelZusammenfuehre
 		return nil, err
 	}
 	erg := ergebnisDerZusammenfuehrung(ziel, quelle, g)
-	erg.Uebernommen, erg.Abweichend = uebernommen, abweichend
+	erg.Uebernommen, erg.Abweichend, erg.ISBN = uebernommen, abweichend, wert(nachher.isbn)
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM buecher_exemplare e WHERE e.titel_id = $1 AND `+
+		SQLExemplarImBestand, ziel.id).Scan(&erg.ExemplareDanach); err != nil {
+		return nil, fmt.Errorf("titel zusammenführen: bestand zählen: %w", err)
+	}
 	if err := verbindeWerkMitZiel(ctx, tx, koepfe[ziel.id], koepfe[quelle.id]); err != nil {
 		return nil, err
 	}
