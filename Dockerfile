@@ -1,7 +1,7 @@
 # ==============================================================================
 # Stage 1: Build the Svelte 5 frontend
 # ==============================================================================
-FROM node:24-alpine AS frontend-builder
+FROM node:25-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy dependencies first for Docker caching. .npmrc gehört dazu: Es schaltet die
