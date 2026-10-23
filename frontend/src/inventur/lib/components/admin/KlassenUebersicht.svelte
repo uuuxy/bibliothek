@@ -24,15 +24,15 @@
 
 	const ZWEIGE = [
 		{ value: '', label: 'Alle anzeigen' },
-		...['G', 'R', 'H', 'F'].map((z) => ({ value: z, label: `Nur ${z}-Klassen` }))
+		...['G', 'R', 'H', 'F'].map((z) => ({ value: z, label: `Nur ${z}-Klassen` })),
+		{ value: 'oberstufe', label: 'Nur Oberstufe' }
 	];
 	const SORTIERUNG = [
-		{ value: 'asc', label: 'Aufsteigend 5-10' },
-		{ value: 'desc', label: 'Absteigend 10-5' }
+		{ value: 'asc', label: 'Aufsteigend 5–13' },
+		{ value: 'desc', label: 'Absteigend 13–5' }
 	];
 
-	/** @type {any[]} */
-	let gruppen = $state([]);
+	let gruppen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
 	let fehler = $state(null);
 	let isManaging = $state(false);

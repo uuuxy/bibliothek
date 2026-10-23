@@ -89,4 +89,18 @@ describe('KlassenUebersicht', () => {
 		await screen.findByText('09z1');
 		expect(screen.queryByText('Klassensätze nicht geladen')).toBeNull();
 	});
+
+	// Die Oberstufe trägt keinen Zweigbuchstaben; der Server wählt sie über den Wert
+	// zweigOberstufe (inventur/datenbank_klassen.go).
+	it('fragt mit „Nur Oberstufe" den Server nach branch=oberstufe', async () => {
+		alsBenutzerMit(['view_books']);
+		const screen = render(KlassenUebersicht);
+		await screen.findByText('09z1');
+
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Klassen nach Zweig filtern' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Nur Oberstufe' }));
+
+		const zuletzt = String(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]);
+		expect(new URL(zuletzt, 'http://x').searchParams.get('branch')).toBe('oberstufe');
+	});
 });

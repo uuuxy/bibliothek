@@ -3,7 +3,9 @@ package inventur
 import (
 	"context"
 	"fmt"
+	"os"
 	"slices"
+	"strings"
 	"testing"
 
 	"bibliothek/internal/pgtest"
@@ -106,13 +108,14 @@ func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 }
 
 // Die Oberstufe bildet Klassensätze aus Ausleihen wie die Mittelstufe, auch die Einführungsphase,
-// deren Klasse nicht mit einer Zahl beginnt („ET1"). Sie steht als Jahrgang 11 vor 12T.
+// deren Klasse nicht mit einer Zahl beginnt („ET1"). Sie steht als Jahrgang 11 vor 12T, und die
+// Auswahl „Nur Oberstufe" zeigt nur sie.
 func TestLadeKlassensatzGruppen_Oberstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	sqls := []string{`DELETE FROM ausleihen`, `DELETE FROM class_books`, `DELETE FROM buecher_exemplare`,
 		`DELETE FROM buecher_titel`, `DELETE FROM schueler WHERE barcode_id LIKE 'OS-%'`}
-	for i, klasse := range []string{"12T1", "ET1"} {
+	for i, klasse := range []string{"12T1", "ET1", "07G1"} {
 		// Sechs Kinder, fünf mit demselben Buch: mehr als die Hälfte und die Mindestzahl.
 		sqls = append(sqls,
 			fmt.Sprintf(`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -139,17 +142,38 @@ func TestLadeKlassensatzGruppen_Oberstufe(t *testing.T) {
 		}
 	})
 
-	gruppen, err := NewTitelAbfragen(pool).ladeKlassensatzGruppen(ctx, "", "asc")
-	if err != nil {
-		t.Fatalf("ladeKlassensatzGruppen: %v", err)
-	}
-	if got := gruppenNamen(gruppen); !slices.Equal(got, []string{"ET1", "12T1"}) {
-		t.Fatalf("Gruppen %v, erwartet [ET1 12T1]", got)
-	}
-	for _, g := range gruppen {
-		if len(g.Titel) != 1 || g.Titel[0].Quelle != "ausleihe" || g.Titel[0].Leser != 5 {
-			t.Errorf("%s: %+v, erwartet ein Buch aus Ausleihen mit fünf Lesern", g.Klasse, g.Titel)
+	for _, fall := range []struct {
+		zweig string
+		want  []string
+	}{
+		// Ohne Auswahl stehen die Zweige vorn (G vor allem ohne Zweigbuchstaben), dann die Oberstufe.
+		{"", []string{"07G1", "ET1", "12T1"}},
+		{zweigOberstufe, []string{"ET1", "12T1"}},
+	} {
+		gruppen, err := NewTitelAbfragen(pool).ladeKlassensatzGruppen(ctx, fall.zweig, "asc")
+		if err != nil {
+			t.Fatalf("ladeKlassensatzGruppen(%q): %v", fall.zweig, err)
 		}
+		if got := gruppenNamen(gruppen); !slices.Equal(got, fall.want) {
+			t.Fatalf("Auswahl %q: Gruppen %v, erwartet %v", fall.zweig, got, fall.want)
+		}
+		for _, g := range gruppen {
+			if len(g.Titel) != 1 || g.Titel[0].Quelle != "ausleihe" || g.Titel[0].Leser != 5 {
+				t.Errorf("%s: %+v, erwartet ein Buch aus Ausleihen mit fünf Lesern", g.Klasse, g.Titel)
+			}
+		}
+	}
+}
+
+// Die Auswahl der Oberfläche schickt für „Nur Oberstufe" denselben Wert, den der Server kennt.
+// Die beiden Seiten verbindet sonst nur die Schreibweise.
+func TestZweigOberstufe_StehtInDerAuswahl(t *testing.T) {
+	inhalt, err := os.ReadFile("../frontend/src/inventur/lib/components/admin/KlassenUebersicht.svelte")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(inhalt), "{ value: '"+zweigOberstufe+"', label: 'Nur Oberstufe' }") {
+		t.Errorf("KlassenUebersicht.svelte bietet „Nur Oberstufe“ nicht mit dem Wert %q an", zweigOberstufe)
 	}
 }
 

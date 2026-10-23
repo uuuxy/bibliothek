@@ -40,6 +40,10 @@ func legeKlassensatzZuordnungenAn(ctx context.Context, tx pgx.Tx, neueKlassen, t
 // ein Satz.
 const klassensatzMindestLeser = 5
 
+// zweigOberstufe wählt in der Klassenübersicht Jahrgang 11 bis 13. Die Oberstufe trägt keinen
+// Zweigbuchstaben wie G oder R im Namen, also wählt der Server sie über den Jahrgang.
+const zweigOberstufe = "oberstufe"
+
 // ladeKlassensatzGruppen liefert je Klasse ihre Titel der Klassensätze aus zwei Quellen (über
 // die LUSD weiß das Programm, in welcher Klasse jeder Schüler ist, also kann sich die Liste
 // selbst aktualisieren): der von Hand gepflegten Zuordnung (class_books, Quelle „hand"; bleibt
@@ -49,7 +53,8 @@ const klassensatzMindestLeser = 5
 // Klassensatz, Schulbuch oder Lektüre. Gezählt werden die Klassen mit einem Jahrgang
 // (repository.JahrgangSQL), auch die Einführungsphase ohne Zahl am Anfang. Ein Titel, der schon
 // von Hand zugeordnet ist, erscheint nur einmal (hand). Beide Quellen laufen durch dieselbe
-// Sortierung; zweig filtert auf den Bildungsgang, reihenfolge bestimmt die Reihenfolge der Klassen.
+// Sortierung; zweig filtert auf den Bildungsgang (zweigOberstufe auf Jahrgang 11 bis 13),
+// reihenfolge bestimmt die Reihenfolge der Klassen.
 //
 // Auflagen: Gezählt wird am Buch, nicht an der Auflage, mit COALESCE(werk_id, id) wie im
 // Bestellbedarf. Je Auflage gezählt, verschwände ein Klassensatz, sobald er auf zwei Auflagen
@@ -127,7 +132,9 @@ func (a *TitelAbfragen) ladeKlassensatzGruppen(ctx context.Context, zweig string
 		JOIN buecher_titel b ON cb.book_id = b.id
 		LEFT JOIN buecher_exemplare e ON e.titel_id = b.id
 		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
-		WHERE ($1 = '' OR cb.class_name ILIKE '%' || $1 || '%')
+		WHERE CASE $1 WHEN '' THEN true
+		              WHEN '` + zweigOberstufe + `' THEN ` + repository.JahrgangSQL("cb.class_name") + ` >= 11
+		              ELSE cb.class_name ILIKE '%' || $1 || '%' END
 		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, cb.quelle, cb.leser
 		ORDER BY ` + klassenSortierung(zweig, reihenfolge)
 

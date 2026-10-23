@@ -30,8 +30,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [ ] Klassensätze: entscheiden, ob die Auswahl „Nur Oberstufe" bekommt und die Sortierung
-  „5 bis 13" heißt. (4.38)
 - [ ] Die Datei anlegen, die Vorschläge der Kollaborateure an deine Freigabe bindet, oder ihr
   Anlegen ausdrücklich freigeben. (7.11)
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken. (7.10)
@@ -84,15 +82,6 @@ den Mailserver der Schule (`auth/imap.go`), DNB, Google Books und OpenLibrary
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 4.38 Klassensätze: Auswahl und Sortierung mit der Oberstufe
-
-ET, 12T und 13T erscheinen in der Übersicht als Jahrgang 11 bis 13, hinter den Zweigen F, G, R
-und H. Die Auswahl bietet nur „Nur G-Klassen" bis „Nur F-Klassen" (`ZWEIGE` in
-`KlassenUebersicht.svelte`), die Sortierung heißt „Aufsteigend 5-10" und „Absteigend 10-5".
-Vorschlag: ein Eintrag „Nur Oberstufe" (Jahrgang 11 bis 13 über `repository.JahrgangSQL`); einen
-einzelnen Jahrgang zeigt schon das Suchfeld („ET", „12T"). Die Sortierung heißt „Aufsteigend
-5–13" und „Absteigend 13–5". Vor dem Bau die M3-Seite zu Menüs lesen.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -277,6 +277,9 @@ die Klassen, die schon eine Buchliste haben; eintippen lässt sich eine Klasse n
 Klassen kommen mit dem LUSD-Abgleich. Der Papierkorb an einer Klasse löscht nur ihre Buchliste. Reservierungen aus dem Kollegium stehen im Bestellwesen
 (→ _Klassensatz-Reservierungen_). (§4)
 
+Die Auswahl unter dem Suchfeld zeigt einen Zweig (G, R, H, F) oder _Nur Oberstufe_ (ET, 12T,
+13T); einen einzelnen Jahrgang zeigt das Suchfeld, etwa mit „12T".
+
 Die Liste ergänzt sich von selbst: Hat mehr als die Hälfte einer Klasse
 (mindestens fünf Kinder) denselben Titel ausgeliehen, erscheint er bei der Klasse mit dem
 Abzeichen _aus Ausleihen · n Leser_ — Schulbuch wie Lektüre, live aus den Ausleihen
