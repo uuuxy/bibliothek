@@ -28,7 +28,15 @@ allein lässt sich deshalb kein Passwort durchprobieren. Abmelden löscht die Ze
 räumt der Server alle 15 Minuten ab, und ein gelöschtes Konto nimmt seine Zeilen mit. Mit der
 Zeile endet jedes Token der Anmeldung, auch eines von vor der letzten Erneuerung: Die Erneuerung
 lässt das vorige gelten, und das Abmelden widerruft nur das letzte (`pruefeToken` in
-`auth/token.go`, Gate `api/abmeldung_ganze_sitzung_pg_test.go`). Eine neue
+`auth/token.go`, Gate `api/abmeldung_ganze_sitzung_pg_test.go`). Das gilt auch für die
+Live-Leitung (`GET /events`), eine Antwort ohne Ende: Sie prüft die Anmeldung beim Aufbau und
+vor jedem Lebenszeichen (alle 15 Sekunden, `IstSitzungGueltig` in `api/tuer/sitzung.go`) und
+endet, sobald die Anmeldung abgemeldet, gesperrt oder über der Höchstdauer ist oder das Konto
+nicht mehr aktiv. Ein Strom, den jemand mit einem kopierten Token geöffnet hat, läuft so
+höchstens 15 Sekunden darüber hinaus. Ein Aussetzer der Datenbank (503) beendet ihn nicht: Ohne
+Datenbank gibt es keine Buchung, die er melden könnte, und jede Theke zeigte sonst „Keine
+Verbindung". Gates: `sse/sse_test.go`, `api/leitung_endet_mit_der_anmeldung_pg_test.go`,
+`frontend/e2e/leitung-endet-mit-der-anmeldung.spec.js`, jedes am Rückbau rot gesehen. Eine neue
 Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niemand neu anmelden
 (entschieden am 05.10.2026).
 

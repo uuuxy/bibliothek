@@ -41,6 +41,21 @@ let gewollt = false;
 /** @type {Map<string, Set<(e: MessageEvent) => void>>} */
 const abonnenten = new Map();
 
+// Der Server beendet die Leitung auch, wenn die Anmeldung nicht mehr gilt, und ein EventSource
+// nennt den Status nicht; ob abgemeldet oder gesperrt, muss der Zuhörer den Server fragen
+// (stores/leitungsAbriss.js). Eine Registrierung statt eines Imports: Die Stores importieren
+// dieses Modul.
+/** @type {(() => void) | null} */
+let abrissHandler = null;
+
+/**
+ * Meldet, wer von einem Abriss der Leitung erfährt, solange sie bestehen soll.
+ * @param {() => void} handler
+ */
+export function registriereAbrissHandler(handler) {
+	abrissHandler = handler;
+}
+
 /** @param {string} name */
 function hoerZu(name) {
 	quelle?.addEventListener(name, (e) => {
@@ -79,6 +94,7 @@ function planeWiederaufbau() {
 	quelle?.close();
 	quelle = null;
 	if (!gewollt) return;
+	abrissHandler?.();
 
 	const dieseWartezeit = wartezeit;
 	wartezeit = Math.min(wartezeit * 2, MAX_WARTEZEIT_MS);
@@ -135,4 +151,5 @@ export function abonniere(name, handler) {
 export function _zuruecksetzenFuerTests() {
 	trenne();
 	abonnenten.clear();
+	abrissHandler = null;
 }

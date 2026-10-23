@@ -3,10 +3,12 @@ package sse
 import (
 	"bufio"
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -238,7 +240,7 @@ func TestNebenlaeufigkeit(t *testing.T) {
 // verteiltes Ereignis kommt beim Browser an.
 func TestTuerLiefertStromUndEreignisse(t *testing.T) {
 	broker := NewBroker()
-	srv := httptest.NewServer(broker.Tuer())
+	srv := httptest.NewServer(broker.Tuer(immerGueltig))
 	defer srv.Close()
 
 	ctx, abbrechen := context.WithCancel(context.Background())
@@ -286,6 +288,70 @@ func TestTuerLiefertStromUndEreignisse(t *testing.T) {
 	}
 }
 
+// Vor jedem Lebenszeichen fragt die Tür, ob die Anmeldung noch gilt, mit der Anfrage, die den
+// Strom geöffnet hat. Solange sie gilt, kommen Lebenszeichen, danach endet der Strom. Sonst läse
+// ein Mithörer mit einem kopierten Token nach Abmelden oder Sperre weiter mit.
+func TestTuerBeendetDenStromOhneGueltigeAnmeldung(t *testing.T) {
+	broker := NewBroker()
+	broker.takt = 20 * time.Millisecond
+	var gueltig, fremdeAnfrage atomic.Bool
+	gueltig.Store(true)
+	var gefragt atomic.Int32
+	gilt := func(r *http.Request) bool {
+		if cookie, err := r.Cookie("session_token"); err != nil || cookie.Value != "token-vom-aufbau" {
+			fremdeAnfrage.Store(true)
+		}
+		gefragt.Add(1)
+		return gueltig.Load()
+	}
+	srv := httptest.NewServer(broker.Tuer(gilt))
+	defer srv.Close()
+
+	ctx, abbrechen := context.WithCancel(context.Background())
+	defer abbrechen()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
+	if err != nil {
+		t.Fatalf("Anfrage: %v", err)
+	}
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: "token-vom-aufbau"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Verbindung: %v", err)
+	}
+	defer closeutil.Schliesse(resp.Body, "sse-test response body")
+
+	leser := bufio.NewReader(resp.Body)
+	if zeile := leseZeile(t, leser); zeile != "event: connected" {
+		t.Fatalf("leseZeile(t, leser) = %q, erwartet Handshake", zeile)
+	}
+	for pings := 0; pings < 2; {
+		if leseZeile(t, leser) == "event: ping" {
+			pings++
+		}
+	}
+	if gefragt.Load() < 2 {
+		t.Errorf("zwei Lebenszeichen nach %d Prüfungen, erwartet eine vor jedem", gefragt.Load())
+	}
+
+	gueltig.Store(false)
+	ende := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(io.Discard, leser)
+		ende <- err
+	}()
+	select {
+	case err := <-ende:
+		if err != nil {
+			t.Errorf("Strom endete mit %v, erwartet ein geordnetes Ende", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("der Strom läuft weiter, obwohl die Anmeldung nicht mehr gilt")
+	}
+	if fremdeAnfrage.Load() {
+		t.Error("die Prüfung bekam nicht die Anfrage mit dem Cookie vom Aufbau")
+	}
+}
+
 // Kommt nach dem Signal noch eine Verbindung, antwortet die Tür mit 503, statt das
 // Herunterfahren aufzuhalten.
 func TestTuerWeistNachDemHerunterfahrenAb(t *testing.T) {
@@ -295,7 +361,7 @@ func TestTuerWeistNachDemHerunterfahrenAb(t *testing.T) {
 	cancel()
 	warteAufHerunterfahren(t, broker)
 
-	srv := httptest.NewServer(broker.Tuer())
+	srv := httptest.NewServer(broker.Tuer(immerGueltig))
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL) //nolint:noctx // Testaufruf gegen den lokalen Testserver
@@ -309,6 +375,9 @@ func TestTuerWeistNachDemHerunterfahrenAb(t *testing.T) {
 			resp.StatusCode)
 	}
 }
+
+// immerGueltig ist die Prüfung der Anmeldung für die Tests, die nur den Strom ansehen.
+func immerGueltig(*http.Request) bool { return true }
 
 func leseZeile(t *testing.T, r *bufio.Reader) string {
 	t.Helper()

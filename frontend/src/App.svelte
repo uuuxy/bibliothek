@@ -10,6 +10,8 @@
 	import { appState } from './inventur/lib/store.svelte.js';
 	import { druckWarteschlange } from './lib/stores/druckWarteschlange.svelte.js';
 	import { leerlaufSperre } from './lib/stores/leerlaufSperre.svelte.js';
+	// Reißt die Live-Leitung ab, folgt die Anwendung der Anmeldung am Server.
+	import './lib/stores/leitungsAbriss.js';
 
 	import Anmeldung from './lib/components/auth/Anmeldung.svelte';
 	import Sperrbildschirm from './lib/components/auth/Sperrbildschirm.svelte';

@@ -17,6 +17,10 @@ import (
 // Bedienung an der Theke.
 const pufferJeFenster = 10
 
+// lebenszeichenTakt ist der Abstand der Lebenszeichen. Die Oberfläche meldet eine Störung nach 25
+// Sekunden ohne Lebenszeichen (App.svelte).
+const lebenszeichenTakt = 15 * time.Second
+
 // Broker verteilt Ereignisse an alle offenen Ströme.
 //
 // Der Zustand liegt hinter einem RWMutex statt hinter einer Ereignisschleife mit Kanälen zum
@@ -27,11 +31,13 @@ type Broker struct {
 	mu          sync.RWMutex
 	fenster     map[chan string]struct{}
 	geschlossen bool
+	// takt ist der Abstand der Lebenszeichen; ein Test verkürzt ihn, statt 15 Sekunden zu warten.
+	takt time.Duration
 }
 
 // NewBroker baut einen Broker ohne angemeldete Fenster.
 func NewBroker() *Broker {
-	return &Broker{fenster: make(map[chan string]struct{})}
+	return &Broker{fenster: make(map[chan string]struct{}), takt: lebenszeichenTakt}
 }
 
 // FuehreAus hält den Broker am Leben, bis ctx abgebrochen wird, und fährt ihn dann herunter;
@@ -112,7 +118,11 @@ func (b *Broker) Verteile(ereignis, daten string) {
 
 // Tuer liefert die Tür, an der ein Fenster seinen Strom öffnet: Kopfzeilen für den Strom, ein
 // Lebenszeichen alle 15 Sekunden, dann die Ereignisse.
-func (b *Broker) Tuer() http.HandlerFunc {
+//
+// Vor jedem Lebenszeichen fragt die Tür gilt, ob die Anmeldung noch gilt, mit der der Strom
+// aufgebaut wurde, und beendet ihn sonst. Der Strom hat keine Frist: Wer ihn mit einem kopierten
+// Token geöffnet hat, läse nach Abmelden oder Sperre sonst bis zum nächsten Neustart mit.
+func (b *Broker) Tuer(gilt func(*http.Request) bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		kanal := b.meldeAn()
 		if kanal == nil {
@@ -132,7 +142,7 @@ func (b *Broker) Tuer() http.HandlerFunc {
 		// Browser bricht mit ERR_HTTP2_PROTOCOL_ERROR ab. Der Strom läuft über HTTP/1.1 und
 		// HTTP/2 auch ohne; CORS regelt corsMiddleware für alle Wege.
 
-		schreibeEreignisse(w, r, rc, kanal)
+		b.schreibeEreignisse(w, r, rc, kanal, gilt)
 	}
 }
 
@@ -149,9 +159,9 @@ func hebeFristenAuf(rc *http.ResponseController) {
 }
 
 // schreibeEreignisse schreibt die Begrüßung, alle 15 Sekunden ein Lebenszeichen und die
-// verteilten Ereignisse, bis der Browser die Verbindung schließt, der Broker herunterfährt
-// oder das Schreiben scheitert.
-func schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, kanal <-chan string) {
+// verteilten Ereignisse, bis der Browser die Verbindung schließt, der Broker herunterfährt,
+// die Anmeldung nicht mehr gilt oder das Schreiben scheitert.
+func (b *Broker) schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *http.ResponseController, kanal <-chan string, gilt func(*http.Request) bool) {
 	// schreibe schickt ein Stück des Stroms sofort hinaus. Ein Fehler heißt, dass der Browser
 	// weg ist; die Tür endet dann.
 	schreibe := func(stueck string) error {
@@ -167,25 +177,31 @@ func schreibeEreignisse(w http.ResponseWriter, r *http.Request, rc *http.Respons
 
 	// Am Lebenszeichen erkennt die Oberfläche, dass die Verbindung lebt; bleibt es aus, meldet
 	// sie die Störung. Der Server merkt am Schreiben, dass ein Fenster weg ist.
-	takt := time.NewTicker(15 * time.Second)
+	takt := time.NewTicker(b.takt)
 	defer takt.Stop()
 
 	for {
-		select {
-		case <-r.Context().Done():
+		stueck, weiter := naechstesStueck(r, takt.C, kanal, gilt)
+		if !weiter || schreibe(stueck) != nil {
 			return
-		case <-takt.C:
-			ping := fmt.Sprintf("event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix())
-			if err := schreibe(ping); err != nil {
-				return
-			}
-		case nachricht, ok := <-kanal:
-			if !ok {
-				return // Broker heruntergefahren oder Fenster abgemeldet
-			}
-			if err := schreibe(nachricht); err != nil {
-				return
-			}
 		}
+	}
+}
+
+// naechstesStueck wartet auf das nächste Stück des Stroms: ein Lebenszeichen, wenn die Anmeldung
+// noch gilt, oder ein verteiltes Ereignis. false heißt, dass der Strom endet: Der Browser ist weg,
+// die Anmeldung gilt nicht mehr, oder der Broker ist heruntergefahren oder hat das Fenster
+// abgemeldet.
+func naechstesStueck(r *http.Request, takt <-chan time.Time, kanal <-chan string, gilt func(*http.Request) bool) (string, bool) {
+	select {
+	case <-r.Context().Done():
+		return "", false
+	case <-takt:
+		if !gilt(r) {
+			return "", false
+		}
+		return fmt.Sprintf("event: ping\ndata: {\"timestamp\":%d}\n\n", time.Now().Unix()), true
+	case nachricht, ok := <-kanal:
+		return nachricht, ok
 	}
 }

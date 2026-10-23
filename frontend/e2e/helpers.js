@@ -37,6 +37,21 @@ export async function uiLogin(page, asEmail = ADMIN_EMAIL) {
 }
 
 /**
+ * Die Kennung der Anmeldung dieses Browsers, aus dem Token im Cookie. Damit sperrt, altert oder
+ * beendet ein Test nur die eigene Anmeldung: Andere Tests laufen mit demselben Konto daneben.
+ * @param {import('@playwright/test').Page} page
+ */
+export async function sitzungsKennung(page) {
+	const cookie = (await page.context().cookies()).find((c) => c.name === 'session_token');
+	if (!cookie) throw new Error('kein Cookie der Anmeldung');
+	const nutzlast = JSON.parse(Buffer.from(cookie.value.split('.')[1], 'base64url').toString());
+	if (!/^[0-9a-f-]{36}$/.test(nutzlast.sid ?? '')) {
+		throw new Error(`das Token trägt keine Kennung der Anmeldung: ${nutzlast.sid}`);
+	}
+	return nutzlast.sid;
+}
+
+/**
  * Holt das CSRF-Token (Double-Submit-Cookie-Pattern) für schreibende API-Calls.
  * @param {import('@playwright/test').Page} page
  */

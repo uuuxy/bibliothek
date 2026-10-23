@@ -113,7 +113,8 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	// „offline". Hinge er an einem Fachrecht, liefe jede Rolle ohne dieses Recht in eine Schleife
 	// aus 403 und neuem Verbindungsaufbau. Der Strom trägt nur Ereignisse der Abläufe (Typ,
 	// Kennungen, Zeitstempel), keinen Namen und kein Buch (thekenEreignis in
-	// api/theke/eingabe_anfrage_antwort.go, VerlangeAnmeldung in api/tuer/sitzung.go).
-	liveLeitung := s.Broker.Tuer()
+	// api/theke/eingabe_anfrage_antwort.go, VerlangeAnmeldung in api/tuer/sitzung.go). Die
+	// Anmeldung prüft er beim Aufbau und vor jedem Lebenszeichen (IstSitzungGueltig).
+	liveLeitung := s.Broker.Tuer(s.IstSitzungGueltig)
 	mux.Handle("GET /events", s.VerlangeAnmeldung()(liveLeitung))
 }

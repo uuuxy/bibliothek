@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, ADMIN_PASSWORD, menuepunkt } from './helpers.js';
+import {
+	uiLogin,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	ADMIN_PASSWORD,
+	menuepunkt,
+	sitzungsKennung
+} from './helpers.js';
 import {
 	legeBuecherAn,
 	legeSchuelerAn,
@@ -17,16 +25,6 @@ import {
 // Speichern geht danach.
 const s = uniqueSuffix().slice(0, 6);
 const TITEL = `Hoechstdauer ${s}`;
-
-/** Die Kennung der Anmeldung dieses Browsers, aus dem Token im Cookie.
- * @param {import('@playwright/test').Page} page */
-async function sitzungsKennung(page) {
-	const cookie = (await page.context().cookies()).find((c) => c.name === 'session_token');
-	if (!cookie) throw new Error('kein Cookie der Anmeldung');
-	const nutzlast = JSON.parse(Buffer.from(cookie.value.split('.')[1], 'base64url').toString());
-	expect(nutzlast.sid).toMatch(/^[0-9a-f-]{36}$/);
-	return nutzlast.sid;
-}
 
 test.afterAll(() => {
 	seedSQL(`

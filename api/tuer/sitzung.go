@@ -41,6 +41,14 @@ func (b *Basis) PruefeSitzung(r *http.Request) (*auth.Claims, int, error) {
 	return claims, 0, nil
 }
 
+// IstSitzungGueltig sagt einer Antwort ohne Ende wie der Live-Leitung, ob die Anmeldung noch gilt,
+// mit der sie begann: abgemeldet, gesperrt oder ohne aktives Konto heißt nein. Ein Aussetzer der
+// Datenbank (503) sagt über die Anmeldung nichts; die Antwort läuft dann weiter.
+func (b *Basis) IstSitzungGueltig(r *http.Request) bool {
+	_, status, err := b.PruefeSitzung(r)
+	return err == nil || status == http.StatusServiceUnavailable
+}
+
 // sendeSitzungsfehler schickt den Fehler aus PruefeSitzung an den Client: einen Satz der
 // Anmeldung, die Ursache nur ins Log. Der Text der Prüfung („failed to parse token: …") gehört
 // nicht an die Theke.

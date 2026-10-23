@@ -24,7 +24,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Sperrbildschirm nach dem Passwort. (5.96)
 - [x] Eine gelungene Anmeldung leert den Zähler der Fehlversuche je Adresse nicht mehr. (5.97)
 - [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
-- [ ] Die Live-Leitung endet mit der Anmeldung: abgemeldet, gesperrt oder nach der Höchstdauer.
+- [x] Die Live-Leitung endet mit der Anmeldung: abgemeldet, gesperrt oder nach der Höchstdauer.
   (5.99)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
@@ -99,23 +99,6 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.99 Die Live-Leitung prüft die Anmeldung nur beim Aufbau
-
-`GET /events` prüft die Anmeldung beim Aufbau (`VerlangeAnmeldung` in `api/tuer/sitzung.go`) und
-läuft danach ohne Frist (`hebeFristenAuf` in `sse/sse.go`). Ob die Anmeldung inzwischen
-abgemeldet, gesperrt oder über der Höchstdauer ist, fragt sie nicht mehr. Die Oberfläche schließt
-ihre eigene Leitung beim Sperren und Abmelden (`haltLiveAn`, `trenne`); eine Leitung, die jemand
-mit einem kopierten Token geöffnet hat, läuft weiter. Sie trägt bei jeder Ausleihe und Rückgabe
-die Kennung des Lesers mit Zeitpunkt (`thekenEreignis` in `api/theke/eingabe_anfrage_antwort.go`),
-also wer wann ausleiht, ohne das Buch.
-
-**Vorschlag:** Bei jedem Herzschlag (15 Sekunden) prüft die Leitung das Token wie jede Tür und
-endet bei 401 oder 423; ein Aussetzer der Datenbank (503) beendet sie nicht. Die Oberfläche baut
-eine beendete Leitung neu auf und zeigt nach 25 Sekunden ohne Herzschlag „Verbindung verloren"
-(`liveEvents.js`, `App.svelte`). Scheitert der Aufbau, fragt sie deshalb erst `/api/auth/me` und
-zeigt bei 423 den Sperrbildschirm, bei 401 die Anmeldung; sonst sähe eine gesperrte Theke wie
-eine ohne Netz aus.
 
 ### 7.2 Frisches Littera-Backup
 

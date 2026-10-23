@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { verbinde, trenne, abonniere, _zuruecksetzenFuerTests } from './liveEvents.js';
+import {
+	verbinde,
+	trenne,
+	abonniere,
+	registriereAbrissHandler,
+	_zuruecksetzenFuerTests
+} from './liveEvents.js';
 
 // Die Live-Verbindung ist der einzige Weg, auf dem ein Arbeitsplatz erfährt, dass an einem
 // ANDEREN etwas gebucht wurde. Fällt sie aus, ohne sich zu melden, arbeitet der Bildschirm
@@ -204,5 +210,24 @@ describe('liveEvents', () => {
 		FakeEventSource.letzte.sende('action');
 
 		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	// Der Server beendet die Leitung auch, wenn die Anmeldung nicht mehr gilt. Was davon zutrifft,
+	// erfährt nur, wer nach einem Abriss fragt: bei jedem Abriss, nach trenne() nicht mehr.
+	it('meldet jeden Abriss, solange die Leitung bestehen soll', () => {
+		const abriss = vi.fn();
+		registriereAbrissHandler(abriss);
+		verbinde();
+
+		FakeEventSource.letzte.scheitert();
+		expect(abriss).toHaveBeenCalledTimes(1);
+		vi.advanceTimersByTime(2000);
+		FakeEventSource.letzte.scheitert();
+		expect(abriss).toHaveBeenCalledTimes(2);
+
+		const letzte = FakeEventSource.letzte;
+		trenne();
+		letzte.scheitert();
+		expect(abriss).toHaveBeenCalledTimes(2);
 	});
 });

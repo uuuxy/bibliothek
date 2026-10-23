@@ -367,7 +367,7 @@ graph TB
 | Schnittstelle                    | Protokoll / Format                              | Richtung        | Absicherung                                                                                                                       |
 | -------------------------------- | ----------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | **Browser → Backend**            | HTTPS, JSON über `/api`, `POST /login`          | eingehend       | Security-Header/CSP, CORS auf die Schuldomain, Body-Limit 100 MB, Timeouts, Rate-Limit, CSRF (Double-Submit), JWT im HttpOnly-Cookie |
-| **Backend → Browser (Echtzeit)** | Server-Sent Events, `GET /events`               | ausgehend       | Nur authentifiziert (`VerlangeAnmeldung`); Heartbeat alle 15 s; **kein** `WriteTimeout` am Server, weil der Strom nie endet     |
+| **Backend → Browser (Echtzeit)** | Server-Sent Events, `GET /events`               | ausgehend       | Nur authentifiziert, beim Aufbau und vor jedem Heartbeat (alle 15 s, `IstSitzungGueltig`); **kein** `WriteTimeout` am Server, weil der Strom nie endet |
 | **Statische Auslieferung**       | SPA aus `frontend/dist`, PWA-Service-Worker      | ausgehend       | Dateizugriffe OS-seitig an `dist/` gebunden (`os.OpenRoot`); ein unbekannter `/api/`-Pfad antwortet 404 statt App-Shell            |
 | **Cover-Dateien**                | `GET /uploads/...`                              | ausgehend       | **Bewusst ohne Anmeldung** (Katalog/Monitor brauchen Cover); in der Allowlist von `geschuetzte_routen_test.go` vermerkt          |
 | **Backend → PostgreSQL**         | Postgres-Wire über `pgx/v5`-Pool                | ausgehend       | Netz nur intern; Passwort aus `.env`; `pg_dump` erhält es über eine temporäre `.pgpass`, nicht über `PGPASSWORD`                    |
@@ -984,6 +984,7 @@ Basis des Servers.
 | Abmelden/Herunterfahren| Schließen der Kanäle unter **Schreib**sperre → kann sich mit dem Senden nie überschneiden             |
 | Rückstau               | Puffer 10 je Client, `select`/`default`: ein langsamer Client wird übersprungen, nicht abgewartet     |
 | Lebenszeichen          | Heartbeat alle 15 s als Dead-Man-Switch                                                               |
+| Anmeldung              | Vor jedem Heartbeat fragt die Tür `gilt` (`IstSitzungGueltig`); gilt die Anmeldung nicht mehr, endet der Strom |
 | Abbruch                | Kontext-Abbruch beim Shutdown; Zeitfenster 10 s in `main.go`                                          |
 
 > **Wer hier einen „zentralen Event-Loop" wiederherstellt, baut einen Betriebsfehler
@@ -1974,7 +1975,11 @@ Nach jedem Commit geht ein Ereignis an alle verbundenen Stationen. Der Broker ha
 **keinen** Event-Loop (Details und die Begründung:
 [5.4.4](#544-ssessego--broker-ohne-event-loop)). Im Client:
 Reconnect mit Guards (`isLoggedIn`, Timeout), damit ein abgemeldeter Tab nicht endlos
-gegen die Tür klopft.
+gegen die Tür klopft. Der Server beendet die Leitung, sobald die Anmeldung nicht mehr gilt, und
+ein EventSource nennt den Status einer Antwort nicht. Nach jedem Abriss fragt der Client deshalb
+`/api/auth/me` (`stores/leitungsAbriss.js`): gesperrt kommt der Sperrbildschirm, abgemeldet die
+Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesperrte Theke nach
+25 Sekunden „Keine Verbindung".
 
 #### Offline
 
@@ -3342,9 +3347,9 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   Frist; der Datenschutz-Nachweis sagt das so. Anlass: ein Vorfall oder eine Frage des
   Datenschutzbeauftragten.
 - **Die Live-Leitung** (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
-  trägt zu jeder Buchung die Kennung des Lesers, Buchnummer und Titel, aber keinen Namen
-  (PII-Matrix, Stufe 0). Zuhörer sind nur Theke und Abgänger-Seite. Frage mit Anlass: Braucht
-  jeder Empfänger die Kennung?
+  trägt zu jeder Ausleihe und Rückgabe die Kennung des Lesers und den Zeitpunkt, aber weder
+  Namen noch Buch (PII-Matrix, Stufe 0). Zuhörer sind nur Theke und Abgänger-Seite. Frage mit
+  Anlass: Braucht jeder Empfänger die Kennung?
 
 #### Theke, Netz und Zwischenspeicher
 
