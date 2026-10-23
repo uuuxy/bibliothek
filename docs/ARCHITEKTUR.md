@@ -216,7 +216,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Schulserver** (`/root/caddy/Caddyfile`, geschrieben von `update_caddy.sh`). |
 | T10| **Der Betrieb läuft ggf. über HTTP im Schul-LAN**                              | Deshalb ist `COOKIE_SECURE` eine bewusst treffbare Betriebsentscheidung — Vorgabe `true` außerhalb lokaler Entwicklung, ein explizites `false` warnt laut, bricht aber nicht ab.                            |
 | T11| **Zeitzone Europe/Berlin fachlich, UTC technisch**                              | Fristen pinnen `Europe/Berlin` im Code (`schulzeit.TagesEnde`), der Cron-Zeitplan ist auf UTC genagelt (`cron.WithLocation(time.UTC)`) — sonst verschluckt die Zeitumstellung den 02:30-Backup-Job.  |
-| T12| **Lizenz EUPL-1.2**                                                             | Der Lizenztext steht in `LICENSE`, der Hinweis im Kopf von `main.go`; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen.                                                                                 |
+| T12| **Lizenz EUPL-1.2**                                                             | Der Lizenztext steht in `LICENSE`, der Hinweis im Kopf von `main.go`; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen. `LICENSE` trägt die englische Fassung: Nur sie erkennt GitHub als „EUPL-1.2", die deutsche zeigt es als „Other". Rechtlich sind alle Sprachfassungen gleichwertig (Artikel 13 der EUPL). |
 
 ---
 
