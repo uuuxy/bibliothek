@@ -24,7 +24,7 @@ const BESTAND = {
 	'src/lib/components/leser/LusdImport.svelte': 311,
 	'src/lib/apiFetch.js': 291,
 	'src/lib/components/leser/schuelerSuche.svelte.js': 209,
-	'src/lib/designer/ausweisVorlagen.js': 482,
+	'src/lib/designer/ausweisVorlagen.js': 451,
 	'src/lib/designer/idDesignerStore.svelte.js': 543,
 	'src/lib/lmfplanDienst.js': 380,
 	'src/lib/lmfplanPlaner.svelte.js': 234,

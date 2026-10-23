@@ -5,16 +5,12 @@
 	 * Elemente (inkl. Auswahl-Ring und Skalier-Griffe) liegt in CanvasElement.svelte;
 	 * hier wohnt die Drag-/Resize-Mechanik, weil Fensterlistener und ihr Aufräumen an
 	 * EINE Stelle gehören.
-	 *
-	 * Drag & Resize:
-	 *   Both operations bind pointermove/pointerup on `window` to allow the pointer
-	 *   to travel outside the card boundary. `ziehenAufraeumen` stores the teardown
-	 *   function and is called by onDestroy to prevent listener leaks on unmount.
 	 */
 	import { onDestroy } from 'svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
 	import CanvasElement from './CanvasElement.svelte';
 	import { kartenStil } from './kartenFarben.js';
+	import { SICHERHEITSRAND_MM } from './kartenRand.js';
 
 	/** @type {{ side: 'front'|'back', gewaehlteKennung: string|null, onSelect: (id: string|null)=>void, leser: any, zoom: number, barcodeType: string }} */
 	const { side, gewaehlteKennung, onSelect, leser, zoom, barcodeType } = $props();
@@ -41,6 +37,22 @@
 	function pxToMm() {
 		if (!karteEl) return 1;
 		return 85.6 / karteEl.getBoundingClientRect().width;
+	}
+
+	/**
+	 * Hängt die Listener einer Bewegung an window, damit der Zeiger die Karte verlassen darf.
+	 * Loslassen nimmt sie ab, ebenso onDestroy mitten in der Bewegung (ziehenAufraeumen).
+	 * @param {(mv: PointerEvent) => void} onMove
+	 */
+	function verfolge(onMove) {
+		function onUp() {
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('pointerup', onUp);
+			ziehenAufraeumen = null;
+		}
+		window.addEventListener('pointermove', onMove);
+		window.addEventListener('pointerup', onUp);
+		ziehenAufraeumen = onUp;
 	}
 
 	/**
@@ -71,17 +83,7 @@
 			el.x = Math.max(0, Math.min(85.6 - el.width, Math.round((ix + dx) * 10) / 10));
 			el.y = Math.max(0, Math.min(53.98 - el.height, Math.round((iy + dy) * 10) / 10));
 		}
-		function onUp() {
-			window.removeEventListener('pointermove', onMove);
-			window.removeEventListener('pointerup', onUp);
-			ziehenAufraeumen = null;
-		}
-		window.addEventListener('pointermove', onMove);
-		window.addEventListener('pointerup', onUp);
-		ziehenAufraeumen = () => {
-			window.removeEventListener('pointermove', onMove);
-			window.removeEventListener('pointerup', onUp);
-		};
+		verfolge(onMove);
 	}
 
 	/**
@@ -138,17 +140,7 @@
 				el.height = newH;
 			}
 		}
-		function onUp() {
-			window.removeEventListener('pointermove', onMove);
-			window.removeEventListener('pointerup', onUp);
-			ziehenAufraeumen = null;
-		}
-		window.addEventListener('pointermove', onMove);
-		window.addEventListener('pointerup', onUp);
-		ziehenAufraeumen = () => {
-			window.removeEventListener('pointermove', onMove);
-			window.removeEventListener('pointerup', onUp);
-		};
+		verfolge(onMove);
 	}
 
 	/** Deselect on clicking empty canvas background. */
@@ -187,6 +179,13 @@
 						onStartResize={startResize}
 					/>
 				{/each}
+				<!-- Bis hierher druckt der Kartendrucker sicher (kartenRand.js); die Linie wird nicht gedruckt. -->
+				<div
+					data-sicherheitsrand
+					aria-hidden="true"
+					class="pointer-events-none absolute z-50 border border-dashed border-outline"
+					style="inset: {SICHERHEITSRAND_MM}mm;"
+				></div>
 			</div>
 		</div>
 	</div>
@@ -195,5 +194,6 @@
 		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-on-surface-variant font-medium pointer-events-none"
 	>
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'} · Drag &amp; Drop zum Verschieben · Ecken zum Skalieren
+		· Gestrichelt: sicherer Druckbereich
 	</span>
 </div>

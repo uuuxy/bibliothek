@@ -32,7 +32,8 @@ Nur, was kein Test leisten kann.
 
 - [ ] Die Datei anlegen, die Vorschläge der Kollaborateure an deine Freigabe bindet, oder ihr
   Anlegen ausdrücklich freigeben. (7.11)
-- [ ] Ausweise aus der Leserdatei am Kartendrucker drucken. (7.10)
+- [ ] Im Ausweis-Designer das gespeicherte Design hinter die gestrichelte Linie schieben und an
+  beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
@@ -180,11 +181,13 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
 
 ### 7.10 Was nur ein Mensch am Gerät sieht
 
-**Ausweise am Kartendrucker.** In der Leserdatei zwei Leser ankreuzen, „Ausweise drucken";
-dasselbe mit „Testdruck Vorderseite" im Druck-Center, Reiter „Schülerausweise". Erwartet: Jede
-Karte trägt nur den Ausweis, oben steht keine Reiterzeile, die Nummer unter dem Strichcode steht
-auf der Karte. Die Druckansicht misst `frontend/e2e/ausweis-druckseite.spec.js`, den Drucker
-nicht.
+**Ausweise am Kartendrucker.** Der Drucker druckt; was näher als 3 mm am Rand stand, fehlte
+unten. Im Druck-Center, Reiter „Schülerausweise", Text, Bilder und Strichcode des gespeicherten
+Designs hinter die gestrichelte Linie schieben (Farbflächen dürfen bis an den Rand), dann in der
+Leserdatei zwei Leser ankreuzen, „Ausweise drucken", an jedem der zwei Drucker. Erwartet: Nichts
+fehlt am Rand, die Nummer unter dem Strichcode steht ganz auf der Karte. Die Lage messen
+`frontend/src/lib/designer/kartenRand.test.js` (Standard-Design und Vorlagen) und
+`frontend/e2e/ausweis-druckseite.spec.js` (Druckansicht), den Drucker nicht.
 
 **Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`pdf/orte_test.go`),
 Rand und Maßstab des Druckers nicht. Je einmal drucken: einen Mahnbrief für einen Schüler mit

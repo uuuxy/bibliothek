@@ -42,7 +42,9 @@ async function druckseite(page) {
 			const r = k.getBoundingClientRect();
 			return { links: r.left, oben: r.top, breite: r.width, hoehe: r.height };
 		});
-		return { betriebsart: document.body.dataset.printMode ?? '', fremd, karten };
+		// Die gestrichelte Linie des sicheren Rands gehört zur Leinwand des Designers, nicht zur Karte.
+		const linie = [...document.querySelectorAll('[data-sicherheitsrand]')].some(sichtbar);
+		return { betriebsart: document.body.dataset.printMode ?? '', fremd, karten, linie };
 	});
 	await page.emulateMedia({ media: 'screen' });
 	return lage;
@@ -52,6 +54,7 @@ async function druckseite(page) {
 function erwarteNurKarten(lage, wo) {
 	expect(lage.karten.length, `${wo}: Im Druck steht keine Karte.`).toBeGreaterThan(0);
 	expect(lage.fremd, `${wo}: Neben der Karte druckt Text der Oberfläche mit.`).toEqual([]);
+	expect(lage.linie, `${wo}: Die Linie des sicheren Rands druckt mit.`).toBe(false);
 	expect(lage.karten[0].oben, `${wo}: Die erste Karte beginnt nicht am Seitenanfang.`).toBeCloseTo(
 		0,
 		0

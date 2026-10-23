@@ -29,9 +29,9 @@ const SVG = /<svg[\s>]/;
 // Diese Liste schrumpft NICHT; sie ist die Ausnahme, nicht der Rückstand.
 const ZEICHNUNGEN = [
 	'src/lib/components/statistik/StatistikVerlauf.svelte', // Verlaufsgraph, viewBox aus den Daten
-	// Kartenhintergründe der Design-Vorlagen (Kopfband, Wellen-Motiv) als data:-URIs —
-	// Bilder auf dem Ausweis, keine Bauteil-Symbole (dasselbe Muster wie BuchCoverUpload).
-	'src/lib/designer/ausweisVorlagen.js'
+	// Das Wellen-Motiv der Ausweis-Vorlage „Reis-Welle" als data:-URI — ein Bild auf dem
+	// Ausweis, kein Bauteil-Symbol (dasselbe Muster wie BuchCoverUpload).
+	'src/lib/designer/welleMotiv.js'
 ];
 
 // ── Ratsche ─────────────────────────────────────────────────────────────────

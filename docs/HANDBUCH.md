@@ -266,7 +266,9 @@ gilt für die Vorschläge im Feld _Signatur_ und für die Auswahl der Inventur. 
 Vier Reiter: **Buch-Etiketten** (Format, Startposition auf dem Bogen, Titel aus dem Katalog
 oder aus einer Klasse) · **Fehlende Etiketten** (alle Exemplare, die noch keins haben — die
 Zahl steht als Badge in der Navigation) · **Schülerausweise** (Designer für Vorder- und
-Rückseite) · **Klassenweise drucken** (Ausweise für eine ganze Klasse). Der Druck läuft
+Rückseite; bis zur gestrichelten Linie druckt der Kartendrucker sicher, Text, Bilder und
+Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand) · **Klassenweise drucken**
+(Ausweise für eine ganze Klasse). Der Druck läuft
 über den Browser-Druckdialog. Die Vorschau der Buch-Etiketten zeigt den ersten Bogen; darunter
 steht, wie viele es werden („Bogen 1 von 3 · 68 Etiketten"). (§9)
 

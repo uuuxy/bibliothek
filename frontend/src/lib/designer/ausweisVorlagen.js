@@ -4,6 +4,7 @@ import {
 	PLATZHALTER_ADRESSE,
 	FRONT_THEME_DEFAULT
 } from './idDesignerStore.svelte.js';
+import { welleSvg } from './welleMotiv.js';
 
 /**
  * @file ausweisVorlagen.js
@@ -14,7 +15,7 @@ import {
  * mit Füllfarbe und optionalen runden Ecken, das Kartenseite/CanvasElement als schlichtes
  * div rendern. Als eingebettete SVG-Bilder wäre ihre Farbe nicht editierbar, und
  * object-contain ließe am Kartenrand weiße Streifen stehen. Einzig das Wellen-Motiv
- * (Reis-Welle) bleibt ein SVG-Bild: 40 Balken sind kein Rechteck.
+ * (Reis-Welle) bleibt ein SVG-Bild: 40 Balken sind kein Rechteck (welleMotiv.js).
  *
  * Regeln, die alle Vorlagen einhalten:
  *   - Schulname/Adresse tragen die IDs 'header'/'address' mit den Platzhalter-Texten,
@@ -25,6 +26,8 @@ import {
  *     (Begründung am details-Filter in idDesignerStore.applySeite).
  *   - Der Barcode liegt immer auf heller Fläche: Kartenseite rendert die Nummer dunkel,
  *     auf dunklem Grund wäre sie unlesbar.
+ *   - Text, Bilder und Barcode halten den sicheren Rand (kartenRand.js); nur Farbflächen
+ *     und das Wellen-Motiv reichen bis an den Rand.
  */
 
 /** ISO 7810 ID-1 — dieselben Maße wie Leinwand und Kartendruck. */
@@ -64,40 +67,6 @@ export const AUSWEIS_VORLAGEN = [
 	{ value: 'indigo-kopfkarte', label: 'Indigo (Kopfkarte)' },
 	{ value: 'sonnenstreifen', label: 'Sommer-Streifen' }
 ];
-
-/**
- * @param {number} breite SVG-Koordinaten (10 Einheiten = 1 mm)
- * @param {number} hoehe
- * @param {string} inhalt
- */
-function svgUrl(breite, hoehe, inhalt) {
-	return (
-		'data:image/svg+xml;utf8,' +
-		encodeURIComponent(
-			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${breite} ${hoehe}">${inhalt}</svg>`
-		)
-	);
-}
-
-/**
- * Schallwellen-Balken (Philipp Reis, Telefon 1861) — Seitenverhältnis 856:90.
- * @param {number} deckkraft
- */
-function welleSvg(deckkraft) {
-	const hoehen = [
-		8, 12, 10, 16, 22, 30, 44, 58, 50, 38, 26, 18, 12, 10, 14, 20, 32, 48, 62, 54, 40, 28, 16, 10,
-		8, 12, 18, 28, 42, 56, 46, 34, 22, 14, 10, 8, 12, 16, 10, 8
-	];
-	const schritt = 856 / hoehen.length;
-	const balken = hoehen
-		.map((h, i) => {
-			const bh = (h / 62) * 84;
-			const x = (i * schritt + schritt / 2 - 3).toFixed(1);
-			return `<rect x="${x}" y="${(45 - bh / 2).toFixed(1)}" width="6" rx="3" height="${bh.toFixed(1)}" fill="${GRUEN}" fill-opacity="${deckkraft}"/>`;
-		})
-		.join('');
-	return svgUrl(856, 90, balken);
-}
 
 const BESTIMMUNGEN =
 	'Der Ausweis ist Eigentum der Schule und nicht übertragbar.\n' +
@@ -242,7 +211,7 @@ function standardRueckseite(theme, deko = [], yStart = 11, x = 5) {
 			el('text', 'back-header', 'Bestimmungen', [x, yStart, 40, 5], 1, stil(8, SCHWARZ, 'bold')),
 			el('text', 'back-info', BESTIMMUNGEN, [x, yStart + 6.5, 62, 16], 1, stil(7, '#3a4234')),
 			...unterschrift(x, 40),
-			el('text', 'back-fund', FUNDHINWEIS, [x, 48.7, 70, 4], 1, stil(6, '#64748b'))
+			el('text', 'back-fund', FUNDHINWEIS, [x, 46.5, 70, 4], 1, stil(6, '#64748b'))
 		]
 	};
 }
@@ -258,7 +227,7 @@ function blanko() {
 				el('logo', 'logo', '', [71.5, 3, 10, 10], 2),
 				el('photo', 'photo', '', [4, 16.5, 21, 25], 2),
 				...personenBlock(farben, 28, 17),
-				el('barcode', 'barcode', '', [28, 40, 30, 11], 1)
+				el('barcode', 'barcode', '', [28, 39, 30, 11], 1)
 			]
 		},
 		back: standardRueckseite(WEISS_THEME, [], 5, 4)
@@ -274,7 +243,7 @@ function schwarzGruen() {
 			elements: [
 				box('kopfband', SCHWARZ, [0, 0, KARTE_BREITE, 13.4]),
 				box('kopflinie', GRUEN, [0, 13.4, KARTE_BREITE, 1.1]),
-				el('logo', 'logo', '', [4, 2, 9.5, 9.5], 2),
+				el('logo', 'logo', '', [4, 3, 9.5, 9.5], 2),
 				...schulkopf(16.5, 3.2, 64, { name: '#ffffff', adresse: '#c9d6c2' }),
 				el('photo', 'photo', '', [4, 17.5, 22, 27], 2),
 				...personenBlock(farben, 30, 18),
@@ -296,12 +265,12 @@ function waldgruen() {
 		front: {
 			theme: WALDGRUEN_THEME,
 			elements: [
-				box('fussband', '#f2f7e9', [0, 40, KARTE_BREITE, KARTE_HOEHE - 40]),
-				el('logo', 'logo', '', [4, 2.5, 9.5, 9.5], 2),
+				box('fussband', '#f2f7e9', [0, 38.5, KARTE_BREITE, KARTE_HOEHE - 38.5]),
+				el('logo', 'logo', '', [4, 3, 9.5, 9.5], 2),
 				...schulkopf(16, 4.2, 64, { name: '#ffffff', adresse: '#d8ecc0' }),
 				el('photo', 'photo', '', [4, 14.5, 21, 24], 2),
 				...personenBlock(farben, 29, 14.5),
-				el('barcode', 'barcode', '', [29, 41.5, 30, 11], 1)
+				el('barcode', 'barcode', '', [29, 39, 30, 11], 1)
 			]
 		},
 		back: {
@@ -326,18 +295,18 @@ function reisWelle() {
 			elements: [
 				...schulkopf(4, 3.5, 60, { name: SCHWARZ, adresse: '#64748b' }),
 				el('logo', 'logo', '', [71.5, 3, 10, 10], 2),
-				el('image', 'welle', welleSvg(1), [0, 13, KARTE_BREITE, 9], 0),
+				el('image', 'welle', welleSvg(GRUEN, 1, 70), [0, 13, KARTE_BREITE, 7], 0),
 				el(
 					'text',
 					'welle-text',
 					'Philipp Reis baute in Friedrichsdorf das erste Telefon (1861).',
-					[28, 22.3, 53.6, 3.5],
+					[28, 20.1, 53.6, 2.4],
 					1,
 					stil(4.5, '#7a8474', 'normal', 'right')
 				),
-				el('photo', 'photo', '', [4, 26.5, 20, 24.5], 2),
-				...personenBlock(farben, 28, 26.5),
-				el('barcode', 'barcode', '', [28, 42.5, 30, 11], 1)
+				el('photo', 'photo', '', [4, 22.6, 20, 24], 2),
+				...personenBlock(farben, 28, 22.6),
+				el('barcode', 'barcode', '', [28, 39.4, 30, 11], 1)
 			]
 		},
 		back: {
@@ -345,9 +314,9 @@ function reisWelle() {
 			elements: [
 				el('text', 'back-header', 'Bestimmungen', [4, 4.5, 40, 5], 1, stil(8, SCHWARZ, 'bold')),
 				el('text', 'back-info', BESTIMMUNGEN, [4, 10.5, 62, 15], 1, stil(7, '#3a4234')),
-				el('image', 'back-welle', welleSvg(0.25), [0, 26, KARTE_BREITE, 12], 0),
+				el('image', 'back-welle', welleSvg(GRUEN, 0.25, 90), [0, 26, KARTE_BREITE, 12], 0),
 				...unterschrift(50, 43),
-				el('text', 'back-fund', FUNDHINWEIS, [4, 48.7, 45, 4], 1, stil(6, '#64748b'))
+				el('text', 'back-fund', FUNDHINWEIS, [4, 46.5, 45, 4], 1, stil(6, '#64748b'))
 			]
 		}
 	};
@@ -365,7 +334,7 @@ function marine() {
 				el('photo', 'photo', '', [3, 14, 20, 24], 2),
 				// Logo unter dem Foto im Seitenband, damit der Schulname rechts die volle
 				// Spaltenbreite bekommt — in 39 mm brach ein langer Name in die Adresse.
-				el('logo', 'logo', '', [8, 41, 10, 10], 2),
+				el('logo', 'logo', '', [8, 40.5, 10, 10], 2),
 				...schulkopf(31, 3.5, 50, { name: '#16324f', adresse: '#64748b' }, 2),
 				...personenBlock(farben, 31, 19),
 				el('barcode', 'barcode', '', [31, 38.5, 30, 11], 1)
@@ -394,7 +363,7 @@ function indigoKopfkarte() {
 				...schulkopf(17.5, 5.8, 62, { name: '#ffffff', adresse: INDIGO_HELL }),
 				el('photo', 'photo', '', [4, 20.5, 20, 24], 2),
 				...personenBlock(farben, 27.5, 21),
-				el('barcode', 'barcode', '', [27.5, 41, 30, 11], 1),
+				el('barcode', 'barcode', '', [27.5, 39, 30, 11], 1),
 				box('fusslinie', INDIGO_AKZENT, [3, 52.6, 79.6, 0.9], 0, 0.45)
 			]
 		},
