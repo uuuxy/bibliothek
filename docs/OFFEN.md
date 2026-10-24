@@ -29,7 +29,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Der Mahnversand an die Klassenleitungen lehnt einen Rumpf ohne Klassenliste ab, statt an
   alle Klassen zu verschicken. (5.100)
 - [x] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
-- [ ] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
+- [x] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -103,33 +103,6 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.102 Null-Zeichen in einer Eingabe gibt 500
-
-PostgreSQL nimmt kein Null-Zeichen in Text an (`invalid byte sequence for encoding "UTF8":
-0x00`, SQLSTATE 22021). Das Programm reicht die Eingabe durch und antwortet 500 statt 400. Am
-24.10.2026 im selben Lauf gezählt, je Route ein Abruf mit Null-Zeichen in den üblichen
-Abfragewerten, im Pfad und in den Textfeldern des Rumpfs: 21 Türen.
-
-- **Lesend (15):** `/api/schueler`, `/api/books`, `/api/books/vorhanden`,
-  `/api/buecher/titel/suche`, `/api/search`, `/api/public/opac/suche` (ohne Anmeldung),
-  `/api/portal/lernmittel`, `/api/portal/lernmittel/export`,
-  `/api/reservierungen/klassensatz/katalog`, `/api/schlagworte`, `/api/schlagworte/pflege`,
-  `/api/exemplare/etiketten-offen`, `/api/audit/tresen-auskunft`,
-  `/api/schueler/{barcode_id}/photo`, `/api/schueler/{id}/zusammenfuehren-kandidaten`.
-- **Schreibend (6):** `POST /api/action`, `POST /api/buecher/aus-isbn`,
-  `PUT /api/buecher/exemplare/{id}/barcode`, `PUT /api/buecher/titel/{id}/signatur`,
-  `PUT /api/anliegen/{id}/erledigen`, `PUT /api/reservierungen/klassensatz/{id}/erledigen`.
-
-Nachstellen: `GET /api/schueler?q=%00` als Admin. Eine gemeinsame Regel gibt es nicht; nur die
-Übernahme der Barcodes entfernt Null-Zeichen (`internal/service/import_zeilen.go`). Einstufung
-B: Der Server antwortet laut, der Fehlertext geht nicht hinaus, nichts wird gespeichert.
-
-**Zu bauen:** eine Stelle am Eingang statt 21 einzelner. Pfad und Abfrage mit Null-Zeichen
-bekommen 400, und ein Rumpf mit `\u0000` in einem Text ebenso, auch für Türen mit eigenem
-Decoder. Die Kette steht in `api/router.go` (`baueKette`). Dazu ein Test, der jede registrierte
-Route mit Null-Zeichen aufruft und 5xx verbietet; ein Gate zählt erst, wenn es am alten Code rot
-war.
 
 ### 7.2 Frisches Littera-Backup
 

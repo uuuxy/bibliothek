@@ -305,7 +305,8 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	// Die Zahl klingt nach Speicherrisiko, ist aber keins: rumpfGrenzeMiddleware setzt
 	// http.MaxBytesReader, und der begrenzt nur, wie viel eine Tür lesen darf. Er
 	// puffert nichts. Wer 100 MB schickt, ohne dass eine Tür sie liest, belegt keinen
-	// Speicher; wer mehr schickt, bekommt einen Lesefehler.
+	// Speicher; wer mehr schickt, bekommt einen Lesefehler. Vorab liest nur die Prüfung auf
+	// Null-Zeichen, von einem JSON-Rumpf höchstens 64 KiB (nullZeichenVorlauf).
 	//
 	// Kleiner setzen wäre riskanter als es aussieht: Über diesen einen Wert laufen auch
 	// der Littera-Import, der Bestands-Import und der Excel-Katalogimport. Ein zu enger
@@ -319,13 +320,16 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	adressen := clientip.NewErmittler(s.vertrauteProxys)
 
 	// Kette: Adresse → panik → sentry → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
-	// rumpfGrenze → frist → bremse → csrf → kompression → Route merken → Mux.
+	// rumpfGrenze → frist → bremse → csrf → Null-Zeichen → kompression → Route merken → Mux.
 	//
 	// Die Adresse des Browsers ermittelt das erste Glied, damit jede Bremse und jede Tür
 	// dahinter sie mit clientip.AusAnfrage liest.
 	//
 	// Kompression sitzt innen am Mux: Gepackt wird, was eine Tür liefert. Hinter CORS,
 	// weil CORS den Vary-Kopf setzt statt ergänzt und Accept-Encoding sonst daraus fiele.
+	//
+	// Die Prüfung auf Null-Zeichen steht hinter csrf: Den Rumpf einer fremden Seite liest sie
+	// gar nicht erst vorab.
 	//
 	// erweitereLesefristFuerLangeUploads steht vor rumpfGrenze und damit vor jedem Lesen des
 	// Rumpfes; danach gesetzt käme die Frist zu spät. Sie hebt die strenge
@@ -334,7 +338,7 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	// uuidPfadMiddleware steht nicht in dieser Kette: Um den Mux gelegt läse sie
 	// r.PathValue("id"), bevor die Route aufgelöst ist, und der Wert wäre immer leer. Sie sitzt
 	// in verlangeRecht, hinter dem Routing, wo PathValue gefüllt ist.
-	kette := adressen.Middleware(panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(merkeRoute(mux))))))))))))))
+	kette := adressen.Middleware(panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(nullZeichenMiddleware(kompressionMiddleware(merkeRoute(mux)))))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Jede Anfrage ins Log, ohne die Adresse des Aufrufers (DSGVO).
