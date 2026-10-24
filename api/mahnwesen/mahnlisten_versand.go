@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/mail"
@@ -21,22 +20,16 @@ import (
 	"bibliothek/repository"
 )
 
-// klassenVersandAnfrage ist der freiwillige Rumpf jedes Massenversands an Klassen (Mahnlauf,
-// Kontoauszüge der Abgänger). Ein Typ für beide, weil es die gefährliche Regel darunter
-// (leere Auswahl heißt „niemand", nicht „alle") nur an
-// einer Stelle geben.
+// klassenVersandAnfrage ist der Rumpf jedes Massenversands an Klassen (Mahnlauf, Kontoauszüge
+// der Abgänger). Ein Typ für beide, damit es die gefährliche Regel darunter nur an einer Stelle
+// gibt: Jede Klasse, die Post bekommt, steht in Klassen. Eine Auswahl „alle“ gibt es nicht; die
+// Oberfläche schickt die angehakten Klassen.
 //
-// Klassen ist bewusst ein Zeiger, weil „Feld fehlt" und „leeres Array" hier nicht
-// dasselbe bedeuten dürfen:
-//
-//	nil (Feld fehlt)  → alle überfälligen Klassen (Vertrag vor dem Konfigurations-Dialog)
-//	[]  (leer gesendet) → 400
-//
-// Eine leere Auswahl heißt „niemand". Sie als „alle" zu lesen, wäre der teuerste
+// Eine fehlende oder leere Auswahl heißt „niemand". Sie als „alle" zu lesen, wäre der teuerste
 // denkbare Fehlgriff des Systems: ein Klick, hunderte ungewollte Mahnungen.
 type klassenVersandAnfrage struct {
-	Klassen   *[]string `json:"klassen"`
-	Umleitung string    `json:"override_email"`
+	Klassen   []string `json:"klassen"`
+	Umleitung string   `json:"override_email"`
 }
 
 // klassenVersandAntwort ist die Antwort von POST /api/mail/send-bulk-overdue und
@@ -75,11 +68,9 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// 1. Auswahl aus dem Rumpf lesen. Fehlt der Rumpf ganz, bleibt es beim alten
-		//    Vertrag „alle überfälligen Klassen an ihre Klassenleitungen".
-		req, err := leseKlassenVersandAnfrage(r)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		// 1. Auswahl aus dem Rumpf lesen; ohne genannte Klasse kein Lauf.
+		req, ok := leseKlassenVersandAnfrage(w, r)
+		if !ok {
 			return
 		}
 
@@ -114,11 +105,10 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		//    300 versendeten Mahnungen ab, stünde nirgends, wer den Lauf ausgelöst hat
 		//    und an welche Adresse er ging.
 		t.protokolliereKlassenVersand(r, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
-			Phase:       "start",
-			Klassen:     klassennamen(gewaehlt),
-			AlleKlassen: req.Klassen == nil,
-			Umleitung:   req.Umleitung,
-			Unbekannt:   unbekannt,
+			Phase:     "start",
+			Klassen:   klassennamen(gewaehlt),
+			Umleitung: req.Umleitung,
+			Unbekannt: unbekannt,
 		})
 
 		// 6. Je Klasse eine eigene Mahnliste versenden. erzeugeMahnliste und Sende kommen
@@ -130,7 +120,6 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 		t.protokolliereKlassenVersand(r, "BULK_OVERDUE_MAIL", klassenVersandProtokoll{
 			Phase:          "ende",
 			Klassen:        klassennamen(gewaehlt),
-			AlleKlassen:    req.Klassen == nil,
 			Umleitung:      req.Umleitung,
 			Unbekannt:      unbekannt,
 			Versendet:      erg.Versendet,
@@ -149,13 +138,14 @@ func (t *Tueren) MahnlistenVersenden(mahnAbfragen *repository.MahnwesenAbfragen)
 	}
 }
 
-// leseKlassenVersandAnfrage liest die freiwillige Auswahl aus dem Rumpf und weist alles
-// zurück, was einen Massenversand an den falschen Empfänger schicken würde. Ein fehlender Rumpf
-// ist gültig (alle Klassen), ein kaputter nicht.
-func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
+// leseKlassenVersandAnfrage liest die Auswahl aus dem Rumpf und weist alles zurück, was einen
+// Massenversand an den falschen Empfänger schicken würde: einen fehlenden oder kaputten Rumpf,
+// ein unbekanntes Feld, eine ungültige Umleitung und eine Auswahl ohne Klasse. Bei einem Fehler
+// hat sie mit 400 geantwortet und liefert false.
+func leseKlassenVersandAnfrage(w http.ResponseWriter, r *http.Request) (klassenVersandAnfrage, bool) {
 	var req klassenVersandAnfrage
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
-		return req, apierrors.BadRequest(apierrors.MeldungAnfrageUnlesbar, err)
+	if !tuer.LeseAnfrageStreng(w, r, &req) {
+		return req, false
 	}
 
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
@@ -164,25 +154,23 @@ func leseKlassenVersandAnfrage(r *http.Request) (klassenVersandAnfrage, error) {
 	req.Umleitung = ergaenzeSchulDomain(strings.TrimSpace(req.Umleitung))
 	if req.Umleitung != "" {
 		if _, err := mail.ParseAddress(req.Umleitung); err != nil {
-			return req, apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine E-Mail-Adresse", req.Umleitung), err)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("„%s“ ist keine E-Mail-Adresse", req.Umleitung), err)
+			return req, false
 		}
 	}
 
-	if req.Klassen == nil {
-		return req, nil
-	}
-
-	gesaeubert := make([]string, 0, len(*req.Klassen))
-	for _, k := range *req.Klassen {
+	gesaeubert := make([]string, 0, len(req.Klassen))
+	for _, k := range req.Klassen {
 		if k = strings.TrimSpace(k); k != "" {
 			gesaeubert = append(gesaeubert, k)
 		}
 	}
 	if len(gesaeubert) == 0 {
-		return req, apierrors.BadRequest("Keine Klasse ausgewählt", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Keine Klasse ausgewählt", nil)
+		return req, false
 	}
-	req.Klassen = &gesaeubert
-	return req, nil
+	req.Klassen = gesaeubert
+	return req, true
 }
 
 // ergaenzeSchulDomain vervollständigt eine von Hand eingetippte Adresse ohne „@"
@@ -228,19 +216,15 @@ func nurKlassen(gruppen []repository.MahnwesenKlasse) []repository.MahnwesenKlas
 // Die Unbekannten werden nicht verschluckt, sondern auditiert: Sonst wäre ein
 // Format-Versatz zwischen Oberfläche und Datenbank („5a" gegen „05A") ein dauerhaft stiller
 // Nullversand: Der Lauf meldet Erfolg, und niemand bekommt Post.
-func waehleKlassen(alle []repository.MahnwesenKlasse, auswahl *[]string) (gewaehlt []repository.MahnwesenKlasse, unbekannt []string) {
-	if auswahl == nil {
-		return alle, nil
-	}
-
+func waehleKlassen(alle []repository.MahnwesenKlasse, auswahl []string) (gewaehlt []repository.MahnwesenKlasse, unbekannt []string) {
 	vorhanden := make(map[string]repository.MahnwesenKlasse, len(alle))
 	for _, k := range alle {
 		vorhanden[k.Klasse] = k
 	}
 
-	gewaehlt = make([]repository.MahnwesenKlasse, 0, len(*auswahl))
-	gesehen := make(map[string]bool, len(*auswahl))
-	for _, name := range *auswahl {
+	gewaehlt = make([]repository.MahnwesenKlasse, 0, len(auswahl))
+	gesehen := make(map[string]bool, len(auswahl))
+	for _, name := range auswahl {
 		if gesehen[name] {
 			continue // doppelt gesendete Auswahl darf nicht doppelt mahnen
 		}
@@ -369,7 +353,6 @@ type klassenVersandProtokoll struct {
 	// Nur so bleibt ein mittendrin abgebrochener Versand nachvollziehbar.
 	Phase          string   `json:"phase"`
 	Klassen        []string `json:"klassen"`
-	AlleKlassen    bool     `json:"alle_klassen"`
 	Umleitung      string   `json:"override_email,omitempty"`
 	Unbekannt      []string `json:"unbekannt,omitempty"`
 	Versendet      int      `json:"sent"`

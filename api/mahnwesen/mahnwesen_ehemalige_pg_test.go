@@ -139,10 +139,25 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 		}
 	})
 
+	t.Run("ohne Auswahl geht keine Mail hinaus", func(t *testing.T) {
+		post, sitzungen := tuertest.FangeMailAb(t)
+		srv.Mail = post
+		for _, rumpf := range []string{"", `{}`, `{"klasse":["08H3"]}`} {
+			if rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", rumpf)); rec.Code != http.StatusBadRequest {
+				t.Errorf("Mahnlauf mit Rumpf %q: Status %d — %s, erwartet 400", rumpf, rec.Code, rec.Body.String())
+			}
+		}
+		select {
+		case <-sitzungen:
+			t.Error("ohne Auswahl ging eine Mahnliste hinaus")
+		default:
+		}
+	})
+
 	t.Run("die Mail an die Klassenleitung nennt den Ehemaligen nicht", func(t *testing.T) {
 		post, sitzungen := tuertest.FangeMailAb(t)
 		srv.Mail = post
-		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", ""))
+		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", `{"klassen":["08H3"]}`))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -154,8 +169,8 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
 		}
-		// Der Testserver nimmt eine Sitzung an. Ginge die Gruppe der Ehemaligen als zweite
-		// Mail hinaus, stünde sie hier als übersprungen oder fehlgeschlagen.
+		// Der Testserver nimmt eine Sitzung an; eine zweite Mail stünde hier als übersprungen
+		// oder fehlgeschlagen.
 		if antwort.Versendet != 1 || antwort.Uebersprungen != 0 || antwort.Fehlgeschlagen != 0 {
 			t.Errorf("Mahnlauf: %d verschickt, %d übersprungen, %d fehlgeschlagen — erwartet genau die Mail der 08H3",
 				antwort.Versendet, antwort.Uebersprungen, antwort.Fehlgeschlagen)

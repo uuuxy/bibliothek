@@ -47,9 +47,8 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		req, err := leseKlassenVersandAnfrage(r)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		req, ok := leseKlassenVersandAnfrage(w, r)
+		if !ok {
 			return
 		}
 
@@ -90,10 +89,9 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 		}
 
 		protokoll := klassenVersandProtokoll{
-			Klassen:     abgaengerKlassennamen(gewaehlt),
-			AlleKlassen: req.Klassen == nil,
-			Umleitung:   req.Umleitung,
-			Unbekannt:   unbekannt,
+			Klassen:   abgaengerKlassennamen(gewaehlt),
+			Umleitung: req.Umleitung,
+			Unbekannt: unbekannt,
 		}
 
 		// Absicht vor dem Versand protokollieren, siehe protokolliereKlassenVersand.
@@ -132,30 +130,19 @@ func (t *Tueren) ladeKlassenleitungsAdressen(ctx context.Context) (map[string]st
 func waehleAbgaengerKlassen(
 	eintraege []pdf.KontoauszugEintrag,
 	adressen map[string]string,
-	auswahl *[]string,
+	auswahl []string,
 ) (gewaehlt []abgaengerKlasse, unbekannt []string) {
-	// Reihenfolge der Klassen folgt der Abfrage (nach Klasse sortiert), damit
-	// Protokoll und Rückmeldung stabil bleiben.
 	nachKlasse := map[string]*abgaengerKlasse{}
-	reihenfolge := make([]string, 0)
 	for _, e := range eintraege {
 		k := e.Schueler.Klasse
 		if _, ok := nachKlasse[k]; !ok {
 			nachKlasse[k] = &abgaengerKlasse{Klasse: k, Empfaenger: adressen[repository.KlassenSchluessel(k)]}
-			reihenfolge = append(reihenfolge, k)
 		}
 		nachKlasse[k].Eintraege = append(nachKlasse[k].Eintraege, e)
 	}
 
-	if auswahl == nil {
-		for _, k := range reihenfolge {
-			gewaehlt = append(gewaehlt, *nachKlasse[k])
-		}
-		return gewaehlt, nil
-	}
-
 	gesehen := map[string]bool{}
-	for _, name := range *auswahl {
+	for _, name := range auswahl {
 		if gesehen[name] {
 			continue // doppelte Auswahl darf nicht doppelt mailen
 		}

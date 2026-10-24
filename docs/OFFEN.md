@@ -26,7 +26,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
 - [x] Die Live-Leitung endet mit der Anmeldung: abgemeldet, gesperrt oder nach der Höchstdauer.
   (5.99)
-- [ ] Der Mahnversand an die Klassenleitungen lehnt einen Rumpf ohne Klassenliste ab, statt an
+- [x] Der Mahnversand an die Klassenleitungen lehnt einen Rumpf ohne Klassenliste ab, statt an
   alle Klassen zu verschicken. (5.100)
 - [ ] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
 - [ ] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
@@ -103,25 +103,6 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.100 Mahnversand ohne Klassenliste geht an alle Klassen
-
-Gefunden am 24.10.2026 beim Lasttest mit k6 gegen eine abgeschottete Kopie der Generalprobe
-(Littera-Sicherung von 2010): Jede schreibende Route bekam kaputte Rümpfe.
-`POST /api/mail/send-bulk-overdue` antwortete auf einen solchen Rumpf mit 200 und begann den
-Lauf an alle überfälligen Klassen. `leseKlassenVersandAnfrage` (`api/mahnwesen/mahnlisten_versand.go`)
-liest nachsichtig: Fehlt `klassen`, gilt der alte Vertrag „alle überfälligen Klassen an ihre
-Klassenleitungen". Das gilt laut Kommentar für einen fehlenden Rumpf, trifft aber ebenso `{}`,
-`null` und einen Rumpf mit fremden Feldern. Die Oberfläche schickt immer eine Auswahl
-(`frontend/src/lib/stores/mahnwesenMail.svelte.js`). Erreichbar ist der Weg also nur über einen
-Rumpf, den sie nicht schickt, etwa aus einer veralteten Fassung. Einstufung A nach Regel 4:
-Mahnlisten gehen still an Klassenleitungen, die niemand gewählt hat. Bis zum Test, der am alten
-Code rot wird, ist es ein Verdacht.
-
-**Zu bauen:** Ohne `klassen` antwortet die Tür 400 „Keine Klasse ausgewählt" (die Meldung gibt
-es für die leere Liste schon), fremde Felder lehnt sie ab. Vorher nachsehen, ob ein Test oder
-Skript den alten Vertrag braucht (`grep -rn send-bulk-overdue`). Test: Rumpf `{}` gibt 400, und
-der Versand läuft nicht an.
 
 ### 5.101 Mail-Einstellungen: Speichern ohne Felder leert sie
 

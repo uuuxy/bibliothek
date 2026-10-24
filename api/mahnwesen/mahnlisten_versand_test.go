@@ -14,6 +14,8 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/google/go-cmp/cmp"
@@ -32,7 +34,7 @@ func TestMahnlistenVersenden_SMTPFehlt(t *testing.T) {
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 	mahnRepo := repository.NewMahnwesenAbfragen(mock)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", strings.NewReader(`{"klassen":["5a"]}`))
 	rec := httptest.NewRecorder()
 	server.MahnlistenVersenden(mahnRepo)(rec, req)
 
@@ -168,22 +170,21 @@ func (a *argFaenger) Match(v any) bool {
 	return ok
 }
 
-// Der Rumpf ist freiwillig, aber nicht beliebig: Ein fehlendes klassen-Feld heißt
-// „alle" (alter Vertrag), ein leeres Array heißt „niemand" und muss abgewiesen
-// werden. Würden beide gleich behandelt, löste eine leere Auswahl den größten
-// denkbaren Fehlversand aus.
+// Ohne genannte Klasse gibt es keinen Lauf: Ein fehlendes klassen-Feld heißt wie ein leeres
+// Array „niemand" und wird abgewiesen. Läse die Tür eines davon als „alle", löste ein Rumpf ohne
+// Auswahl den größten denkbaren Fehlversand aus.
 func TestLeseKlassenVersandAnfrage(t *testing.T) {
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
 	tests := []struct {
 		name        string
 		body        string
 		wantErr     bool
-		wantAlle    bool     // Klassen == nil → alle Klassen
-		wantKlassen []string // nur geprüft, wenn wantAlle == false
+		wantKlassen []string
 		wantEmail   string
 	}{
-		{name: "kein Body → alle Klassen", body: "", wantAlle: true},
-		{name: "leeres Objekt → alle Klassen", body: `{}`, wantAlle: true},
+		{name: "kein Body → Fehler", body: "", wantErr: true},
+		{name: "leeres Objekt → Fehler", body: `{}`, wantErr: true},
+		{name: "unbekanntes Feld → Fehler", body: `{"klasse":["5a"]}`, wantErr: true},
 		{name: "leeres Array → Fehler", body: `{"klassen":[]}`, wantErr: true},
 		{name: "nur Leerzeichen-Klassen → Fehler", body: `{"klassen":["  ",""]}`, wantErr: true},
 		{name: "kaputtes JSON → Fehler", body: `{"klassen":`, wantErr: true},
@@ -206,23 +207,20 @@ func TestLeseKlassenVersandAnfrage(t *testing.T) {
 				body = strings.NewReader(tt.body)
 			}
 			req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", body)
+			rec := httptest.NewRecorder()
 
-			got, err := leseKlassenVersandAnfrage(req)
+			got, ok := leseKlassenVersandAnfrage(rec, req)
 			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("leseKlassenVersandAnfrage(…) = keinen (%+v), erwartet Fehler", got)
+				if ok || rec.Code != http.StatusBadRequest {
+					t.Fatalf("leseKlassenVersandAnfrage(…) = %+v, Status %d, erwartet 400", got, rec.Code)
 				}
 				return
 			}
-			if err != nil {
-				t.Fatalf("unerwarteter Fehler: %v", err)
+			if !ok {
+				t.Fatalf("unerwartet abgewiesen: %s", rec.Body.String())
 			}
-			if tt.wantAlle {
-				if got.Klassen != nil {
-					t.Fatalf("Klassen = %v, erwartet nil (= alle Klassen)", *got.Klassen)
-				}
-			} else if !cmp.Equal(*got.Klassen, tt.wantKlassen) {
-				t.Fatalf("Klassen = %v, erwartet %v", *got.Klassen, tt.wantKlassen)
+			if !cmp.Equal(got.Klassen, tt.wantKlassen) {
+				t.Fatalf("Klassen = %v, erwartet %v", got.Klassen, tt.wantKlassen)
 			}
 			if got.Umleitung != tt.wantEmail {
 				t.Fatalf("Umleitung = %q, erwartet %q", got.Umleitung, tt.wantEmail)
@@ -241,16 +239,16 @@ func TestWaehleKlassen(t *testing.T) {
 		{Klasse: "7c", LehrerEmail: "c@schule.de"},
 	}
 
-	t.Run("nil = alle Klassen (alter Vertrag)", func(t *testing.T) {
+	t.Run("ohne Auswahl keine Klasse", func(t *testing.T) {
 		gewaehlt, unbekannt := waehleKlassen(alle, nil)
-		if len(gewaehlt) != 3 || unbekannt != nil {
-			t.Fatalf("gewaehlt=%d unbekannt=%v, erwartet 3 und nil", len(gewaehlt), unbekannt)
+		if len(gewaehlt) != 0 || unbekannt != nil {
+			t.Fatalf("gewaehlt=%d unbekannt=%v, erwartet 0 und nil", len(gewaehlt), unbekannt)
 		}
 	})
 
 	t.Run("schneidet auf die Auswahl zu", func(t *testing.T) {
 		auswahl := []string{"6b"}
-		gewaehlt, unbekannt := waehleKlassen(alle, &auswahl)
+		gewaehlt, unbekannt := waehleKlassen(alle, auswahl)
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "6b" {
 			t.Fatalf("gewaehlt = %+v, erwartet genau [6b]", gewaehlt)
 		}
@@ -261,7 +259,7 @@ func TestWaehleKlassen(t *testing.T) {
 
 	t.Run("meldet unbekannte Klassen, statt sie zu verschlucken", func(t *testing.T) {
 		auswahl := []string{"5a", "05A"}
-		gewaehlt, unbekannt := waehleKlassen(alle, &auswahl)
+		gewaehlt, unbekannt := waehleKlassen(alle, auswahl)
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "5a" {
 			t.Fatalf("gewaehlt = %+v, erwartet genau [5a]", gewaehlt)
 		}
@@ -272,7 +270,7 @@ func TestWaehleKlassen(t *testing.T) {
 
 	t.Run("doppelte Auswahl mahnt nicht doppelt", func(t *testing.T) {
 		auswahl := []string{"5a", "5a", "5a"}
-		gewaehlt, _ := waehleKlassen(alle, &auswahl)
+		gewaehlt, _ := waehleKlassen(alle, auswahl)
 		if len(gewaehlt) != 1 {
 			t.Fatalf("gewaehlt = %d Klassen, erwartet 1 — sonst bekommt die Klasse drei Mahnungen", len(gewaehlt))
 		}
@@ -317,29 +315,56 @@ func TestLenkeKlassenUm_LenktAlleKlassenUm(t *testing.T) {
 	}
 }
 
-// Eine leere Auswahl darf nicht erst in der DB auffallen: Die Tür weist sie ab,
-// bevor er auch nur eine Query absetzt.
-func TestMahnlistenVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
+// Ohne gültige Auswahl läuft kein Massenversand an, an keiner der beiden Türen: Die Tür weist
+// den Rumpf ab, bevor sie eine Klasse lädt. Versand eingerichtet und Saison offen, damit keine
+// andere Sperre den Test grün macht.
+func TestKlassenVersand_OhneAuswahlKeinLauf(t *testing.T) {
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
-	for _, body := range []string{`{"klassen":[]}`, `{"klassen":["5a"],"override_email":"kein-mail"}`} {
-		mock, err := pgxmock.NewPool()
-		if err != nil {
-			t.Fatalf("pgxmock: %v", err)
-		}
+	faelle := []struct {
+		pfad string
+		tuer func(*Tueren, *repository.MahnwesenAbfragen) http.HandlerFunc
+	}{
+		{"/api/mail/send-bulk-overdue", (*Tueren).MahnlistenVersenden},
+		{"/api/abgaenger/mail", func(s *Tueren, _ *repository.MahnwesenAbfragen) http.HandlerFunc {
+			return s.AbgaengerKontoauszuegeVersenden()
+		}},
+	}
+	ruempfe := []string{
+		``,
+		`{}`,
+		`null`,
+		`{"klassen":null}`,
+		`{"klassen":[]}`,
+		`{"klassen":["  ",""]}`,
+		`{"klasse":["5a"]}`,
+		`{"klassen":["5a"],"alle":true}`,
+		`{"klassen":["5a"],"override_email":"kein-mail"}`,
+	}
+	for _, fall := range faelle {
+		for _, rumpf := range ruempfe {
+			t.Run(fall.pfad+" "+rumpf, func(t *testing.T) {
+				mock, err := pgxmock.NewPool()
+				if err != nil {
+					t.Fatalf("pgxmock: %v", err)
+				}
+				defer mock.Close()
+				post, sitzungen := tuertest.FangeMailAb(t)
+				server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}, Mail: post, Uhr: testdaten.SaisonUhr}}
 
-		server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
-		req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", strings.NewReader(body))
-		rec := httptest.NewRecorder()
-		server.MahnlistenVersenden(repository.NewMahnwesenAbfragen(mock))(rec, req)
+				rec := httptest.NewRecorder()
+				fall.tuer(server, repository.NewMahnwesenAbfragen(mock))(rec,
+					httptest.NewRequest(http.MethodPost, fall.pfad, strings.NewReader(rumpf)))
 
-		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("Rumpf %s: Status = %d, erwartet 400: %s", body, rec.Code, rec.Body.String())
+				if rec.Code != http.StatusBadRequest {
+					t.Fatalf("Status = %d, erwartet 400: %s", rec.Code, rec.Body.String())
+				}
+				select {
+				case <-sitzungen:
+					t.Error("eine Mail ging hinaus")
+				default:
+				}
+			})
 		}
-		// Keine einzige erwartete Query registriert → es gab keinen DB-Zugriff.
-		if err := mock.ExpectationsWereMet(); err != nil {
-			t.Errorf("Body %s: unerwarteter DB-Zugriff: %v", body, err)
-		}
-		mock.Close()
 	}
 }
 
@@ -419,9 +444,9 @@ func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail",
 		strings.NewReader(`{"klassen":["9h"],"override_email":" mueller "}`))
 
-	got, err := leseKlassenVersandAnfrage(req)
-	if err != nil {
-		t.Fatalf("unerwarteter Fehler: %v", err)
+	got, ok := leseKlassenVersandAnfrage(httptest.NewRecorder(), req)
+	if !ok {
+		t.Fatal("unerwartet abgewiesen")
 	}
 	if got.Umleitung != "mueller@schule.example" {
 		t.Fatalf("Umleitung = %q, erwartet mueller@schule.example", got.Umleitung)

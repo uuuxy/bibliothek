@@ -5,17 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"bibliothek/pdf"
 	"bibliothek/repository"
-
-	"github.com/pashagolub/pgxmock/v5"
 )
 
 func eintrag(vorname, nachname, klasse string) pdf.KontoauszugEintrag {
@@ -37,8 +31,14 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 	}
 	adressen := map[string]string{"5a": "lehrer5a@schule.de", "6c": "lehrer6c@schule.de"}
 
-	t.Run("nil = alle Klassen", func(t *testing.T) {
-		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, nil)
+	t.Run("ohne Auswahl keine Klasse", func(t *testing.T) {
+		if gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, nil); len(gewaehlt) != 0 {
+			t.Fatalf("gewaehlt = %+v, erwartet keine Klasse", gewaehlt)
+		}
+	})
+
+	t.Run("gruppiert die gewählten Klassen mit ihrem Empfänger", func(t *testing.T) {
+		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, []string{"5a", "6c"})
 		if len(gewaehlt) != 2 || unbekannt != nil {
 			t.Fatalf("gewaehlt=%d unbekannt=%v, erwartet 2 und nil", len(gewaehlt), unbekannt)
 		}
@@ -52,7 +52,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 
 	t.Run("schneidet auf die Auswahl zu und meldet Unbekanntes", func(t *testing.T) {
 		auswahl := []string{"6c", "05A"}
-		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, &auswahl)
+		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, auswahl)
 		if len(gewaehlt) != 1 || gewaehlt[0].Klasse != "6c" {
 			t.Fatalf("gewaehlt = %+v, erwartet genau [6c]", gewaehlt)
 		}
@@ -63,14 +63,17 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 
 	t.Run("doppelte Auswahl mailt nicht doppelt", func(t *testing.T) {
 		auswahl := []string{"5a", "5a"}
-		gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, &auswahl)
+		gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, auswahl)
 		if len(gewaehlt) != 1 {
 			t.Fatalf("gewaehlt = %d, erwartet 1 — sonst bekommt die Klassenleitung zwei Mails", len(gewaehlt))
 		}
 	})
 
 	t.Run("Klasse ohne hinterlegte Adresse behält leeren Empfänger", func(t *testing.T) {
-		gewaehlt, _ := waehleAbgaengerKlassen(eintraege, map[string]string{}, nil)
+		gewaehlt, _ := waehleAbgaengerKlassen(eintraege, map[string]string{}, []string{"5a", "6c"})
+		if len(gewaehlt) != 2 {
+			t.Fatalf("gewaehlt = %d Klassen, erwartet 2", len(gewaehlt))
+		}
 		for _, k := range gewaehlt {
 			if k.Empfaenger != "" {
 				t.Fatalf("Empfänger = %q, erwartet leer (kein Mapping vorhanden)", k.Empfaenger)
@@ -192,27 +195,6 @@ func TestLenkeAbgaengerUm(t *testing.T) {
 	}
 }
 
-// Eine leere Auswahl heißt „niemand": abgewiesen, bevor eine Query läuft.
-func TestAbgaengerKontoauszuegeVersenden_LeereAuswahlOhneDBZugriff(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("pgxmock: %v", err)
-	}
-	defer mock.Close()
-
-	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
-	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":[]}`))
-	rec := httptest.NewRecorder()
-	server.AbgaengerKontoauszuegeVersenden()(rec, req)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("rec.Code = %d, erwartet 400: %s", rec.Code, rec.Body.String())
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("unerwarteter DB-Zugriff: %v", err)
-	}
-}
-
 // Rückschritt: Die Klassenleitungen pflegen Menschen, die Klassen kommen aus dem
 // LUSD-Import. „5A" gegen „5a" oder ein mitkopiertes Leerzeichen darf den Versand
 // nicht kosten — vorher meldete die Oberfläche „keine E-Mail" und der Lauf
@@ -223,7 +205,7 @@ func TestWaehleAbgaengerKlassen_SchreibweiseDerKlassenleitungEgal(t *testing.T) 
 		repository.KlassenSchluessel(" 5A "): "nberger@philipp-reis-schule.de",
 	}
 
-	gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, nil)
+	gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, []string{"5a"})
 
 	if len(gewaehlt) != 1 || gewaehlt[0].Empfaenger != "nberger@philipp-reis-schule.de" {
 		t.Fatalf("Empfänger = %q, erwartet nberger@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)

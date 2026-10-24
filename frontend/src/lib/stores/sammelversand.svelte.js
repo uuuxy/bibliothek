@@ -23,8 +23,8 @@ export function erzeugeSammelversand(schicke, ersatzMeldung) {
 	/** @param {{ klassen: string[], overrideEmail?: string }} auswahl */
 	async function sende(auswahl) {
 		if (laeuft) return;
-		// Ohne Auswahl gar nicht erst losschicken: Ein fehlendes klassen-Feld bedeutet
-		// serverseitig „ALLE Klassen", genau der Rundumschlag, den der Dialog verhindert.
+		// Ohne Auswahl gar nicht erst losschicken: Der Server wiese den Rumpf mit 400 ab
+		// (klassenVersandAnfrage), hier kommt dieselbe Meldung ohne den Umweg.
 		if (!auswahl?.klassen?.length) {
 			melde('Keine Klasse ausgewählt.', 'error');
 			return;

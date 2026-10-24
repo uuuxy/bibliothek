@@ -59,7 +59,7 @@ describe('useMahnwesenMail.sende', () => {
 		expect(melde).toHaveBeenCalledWith('an sek@schule.de', 'success');
 	});
 
-	it('schickt ohne Auswahl gar nicht erst los (leeres Feld hiesse serverseitig ALLE Klassen)', async () => {
+	it('schickt ohne Auswahl gar nicht erst los', async () => {
 		const store = useMahnwesenMail();
 
 		await store.sende({ klassen: [] });
