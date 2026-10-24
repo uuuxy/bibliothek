@@ -50,7 +50,7 @@ services:
       - "127.0.0.1:8084:8084" # Lokaler Zugriff unter http://localhost:8084
     environment:
       - PORT=8084
-      # Lokaler Entwicklungsmodus (APP_ENV=local): COOKIE_SECURE=false, Guard aus.
+      # Lokaler Entwicklungsmodus (APP_ENV=local): keine Umleitung auf HTTPS, Guard aus.
       # Das DB-Passwort kommt aus der .env (POSTGRES_PASSWORD) — kein committetes
       # Default-Secret mehr; siehe .env.example (cp .env.example .env).
       # Nur im lokalen Stack: Die E2E-Suite feuert neunundneunzig Flows ohne Pause von
@@ -62,7 +62,6 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt - bitte .env aus .env.example anlegen (cp .env.example .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-local-dev-jwt-secret-min-32-characters}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
-      - COOKIE_SECURE=false
       # Mit dieser Adresse melden sich die Browser-Tests an (ADMIN_EMAIL in frontend/e2e/helpers.js).
       - INITIAL_ADMIN_EMAIL=admin@schule.example
       - IMAP_HOST=mock

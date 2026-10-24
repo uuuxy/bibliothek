@@ -60,11 +60,11 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 )
 
-// Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), ob der
-// Betrieb nur über HTTPS läuft und welchen Proxys er die Adresse des Browsers glaubt.
+// Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), ob er
+// Anfragen über HTTP auf HTTPS umleitet und welchen Proxys er die Adresse des Browsers glaubt.
 type Server struct {
 	tuer.Basis
-	nurHTTPS bool
+	umleitungAufHTTPS bool
 	// vertrauteProxys sind die Netze der Proxys, deren X-Forwarded-For gilt; Loopback gilt immer.
 	vertrauteProxys []string
 	// coverAbgleich ist der Abgleich der Cover, den der Knopf in der Verwaltung startet.
@@ -76,12 +76,11 @@ type Server struct {
 }
 
 // ServerKonfig ist, was der Start dem Server über Datenbank, Anmeldung und Live-Leitung hinaus
-// mitgibt. Der Nullwert gilt für Tests: ohne HTTPS, als Proxy nur Loopback, mit eigenem Abgleich
-// der Cover.
+// mitgibt. Der Nullwert gilt für Tests: ohne Umleitung auf HTTPS, als Proxy nur Loopback, mit
+// eigenem Abgleich der Cover.
 type ServerKonfig struct {
-	// NurHTTPS setzt die Cookies nur für HTTPS und leitet Anfragen über HTTP dorthin um
-	// (COOKIE_SECURE).
-	NurHTTPS bool
+	// UmleitungAufHTTPS leitet Anfragen über HTTP auf HTTPS um; der Start setzt sie im Betrieb.
+	UmleitungAufHTTPS bool
 	// VertrauteProxys sind CIDR-Angaben oder Adressen der Proxys, deren X-Forwarded-For gilt
 	// (TRUSTED_PROXIES).
 	VertrauteProxys []string
@@ -106,10 +105,10 @@ func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *
 			DB: datenbank, Auth: authenticator, Broker: broker,
 			Mail: mailservice.NewPostausgang(mailservice.KonfigAusDatenbank(datenbank.Pool)),
 		},
-		nurHTTPS:        konfig.NurHTTPS,
-		vertrauteProxys: konfig.VertrauteProxys,
-		coverAbgleich:   coverAbgleich,
-		fehlerstand:     konfig.Fehlerstand,
+		umleitungAufHTTPS: konfig.UmleitungAufHTTPS,
+		vertrauteProxys:   konfig.VertrauteProxys,
+		coverAbgleich:     coverAbgleich,
+		fehlerstand:       konfig.Fehlerstand,
 	}
 }
 
@@ -250,7 +249,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 
 func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	// Ohne Anmeldung erreichbar.
-	mux.Handle("POST /login", s.bremse.schuetze(http.HandlerFunc(auth.Anmelden(s.DB.Pool, s.Auth, s.nurHTTPS))))
+	mux.Handle("POST /login", s.bremse.schuetze(http.HandlerFunc(auth.Anmelden(s.DB.Pool, s.Auth))))
 
 	// Cover aus dem Cache, ohne Anmeldung.
 	mux.HandleFunc("GET /api/images/cover", s.katalog().Cover())
@@ -260,7 +259,7 @@ func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/csrf-token", s.csrfToken())
 
 	// Die Sitzung verlängern; von der CSRF-Prüfung ausgenommen (istPruefungsAusnahme).
-	mux.HandleFunc("POST /api/auth/refresh", auth.SitzungVerlaengern(s.Auth, s.nurHTTPS))
+	mux.HandleFunc("POST /api/auth/refresh", auth.SitzungVerlaengern(s.Auth))
 
 	// Die Sitzung beim Start der Oberfläche wiederherstellen: prüft Cookie und Zustand in der
 	// Datenbank und antwortet wie die Anmeldung.

@@ -25,8 +25,8 @@
 
 ## 2024-05-24 - [CRITICAL] Fix CWE-614 Hardcoded Environment Check for Cookie Secure Attribute
 **Vulnerability:** The codebase had a CWE-614 vulnerability where `http.Cookie` instances in `auth/handlers.go`, `api/logout_handler.go`, and `api/csrf.go` determined their `Secure` attribute by dynamically checking `os.Getenv("APP_ENV") != "local"`. This bypassed the explicit `cookieSecure` boolean parameter that was injected throughout the application (e.g., in the `Server` struct and `auth.LoginHandler`).
-**Learning:** Hardcoding environment checks inside middleware and handlers creates a security vulnerability and violates the architecture's configuration pattern. In this project, the `COOKIE_SECURE` boolean flag is specifically designed and explicitly passed as a parameter (`cookieSecure`) down from `main.go` to ensure that cookies are properly secured regardless of specific, easily-missed environment variables.
-**Prevention:** Always use the explicitly injected `cookieSecure` boolean parameter for configuring the `Secure` attribute in `http.Cookie`. Do not use `os.Getenv` directly within handlers for configuration overrides.
+**Learning:** Environment checks inside handlers drift away from the central rule. The application runs only over HTTPS, so there is no switch at all: every cookie sets `Secure: true` literally (`docs/ARCHITEKTUR.md`, T10). Browsers still accept such cookies on `http://localhost`.
+**Prevention:** Set `Secure: true` on every `http.Cookie` the server sends; gosec G124 (`scripts/gosec-gate.sh`) and the cookie tests fail otherwise. Do not reintroduce a configuration switch or an `APP_ENV` check for it.
 ## 2024-05-15 - [Medium] Path Traversal in PDF Generation via os.ReadFile
 **Vulnerability:** Path traversal vulnerability during PDF generation (`api/mahnwesen_pdf.go`) where a user-provided image path was read directly with `os.ReadFile`.
 **Learning:** `os.ReadFile` does not protect against traversing directories. Even if the input is sanitized (as it was partly done in `coverDateiPfad`), it relies on manual validation instead of OS-level scoping.

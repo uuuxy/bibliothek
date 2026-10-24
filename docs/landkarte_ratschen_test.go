@@ -23,7 +23,6 @@ func TestSweeps_JedeRatscheHatEineZeile(t *testing.T) {
 	// Testdateien, die keine Ratsche sind — je mit dem Grund.
 	keineRatsche := map[string]string{
 		"main_test.go":               "Start des Servers, kein Gate",
-		"cookie_secure_test.go":      "Einheitstest der Vorgabe COOKIE_SECURE",
 		"landkarte_ratschen_test.go": "dieser Test",
 	}
 

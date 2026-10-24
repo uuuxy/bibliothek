@@ -23,7 +23,7 @@ import (
 // MitCSRF trägt den Nachweis ein, den der Router bei ändernden Methoden verlangt: Cookie und
 // Kopfzeile mit demselben Wert.
 func MitCSRF(req *http.Request) *http.Request {
-	req.AddCookie(&http.Cookie{Name: "csrf_token", Value: "pii-gate-csrf"})
+	req.AddCookie(&http.Cookie{Name: "csrf_token", Value: "pii-gate-csrf"}) // #nosec G124 -- Cookie einer Anfrage im Test
 	req.Header.Set("X-CSRF-Token", "pii-gate-csrf")
 	return req
 }
@@ -66,7 +66,7 @@ func RouterAufruf(router http.Handler, sitzung string) func(t *testing.T, method
 		t.Helper()
 		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung}) // #nosec G124 -- Cookie einer Anfrage im Test
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, MitCSRF(req))
 		return rec

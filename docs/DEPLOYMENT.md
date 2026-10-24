@@ -24,9 +24,8 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `DATABASE_URL`                                                             | PostgreSQL-DSN                                                                                                                                                                                                                               | Pflicht                                                                                                                                                                                                                                    |
 | `JWT_SECRET`                                                               | HMAC-Signatur-Schlüssel                                                                                                                                                                                                                      | Pflicht, ≥ 32 Zeichen                                                                                                                                                                                                                      |
 | `APP_ENCRYPTION_KEY`                                                       | AES-256-Schlüssel für Schülerfotos **und** das gespeicherte SMTP-Passwort                                                                                                                                                                    | Pflicht, genau 32 Bytes (oder 64 Hex-Zeichen). **Der einzige gültige Name** — ist `ENCRYPTION_KEY` gesetzt und weicht ab, bricht der Server den Start ab                                                                       |
-| `APP_ENV`                                                                  | Umgebung. Auf einem Server bleibt `production`; `local` / `development` / `test` lassen die Beispiel-Geheimnisse und `IMAP_HOST=mock` (jedes Passwort) gelten                                                                  | `docker-compose.yml` setzt fest `production`, ein Eintrag in der `.env` wirkt dort nicht; `local` setzt nur `docker-compose.local.yml`                                                                                                      |
+| `APP_ENV`                                                                  | Umgebung. Auf einem Server bleibt `production`; `local` / `development` / `test` lassen die Beispiel-Geheimnisse und `IMAP_HOST=mock` (jedes Passwort) gelten und leiten HTTP nicht auf HTTPS um                                 | `docker-compose.yml` setzt fest `production`, ein Eintrag in der `.env` wirkt dort nicht; `local` setzt nur `docker-compose.local.yml`                                                                                                      |
 | `ENFORCE_PROD_SECRETS`                                                     | Harte Start-Verweigerung bei Default-Secrets                                                                                                                                                                                                 | **Vorgabe scharf** außerhalb von `local/development/test`; nur ausdrückliches `false` schaltet ab                                                                                                                                          |
-| `COOKIE_SECURE`                                                            | `true` hinter TLS-Proxy (Caddy)                                                                                                                                                                                                              | Standard: **`true`**, außerhalb von `APP_ENV=local/development/test`. Nicht gesetzt → `true` mit Warnung im Log; unlesbarer Wert → harter Abbruch (`ermittleCookieSecure`). `docker-compose.yml` setzt zusätzlich `${COOKIE_SECURE:-true}` |
 | `PORT`                                                                     | HTTP-Port des Backends                                                                                                                                                                                                                       | Pflicht                                                                                                                                                                                                                                    |
 | `IMAP_HOST`                                                                | IMAP-Server der Schule — die Anmeldung prüft Zugangsdaten dagegen                                                                                                                                                                            | **Pflicht.** Ohne diese Variable bricht der Start ab (`FATAL: IMAP_HOST ist nicht gesetzt`); lokal `IMAP_HOST=mock` zusammen mit `APP_ENV=local`                                                                                           |
 | `IMAP_PORT`                                                                | IMAP-Port                                                                                                                                                                                                                                    | Standard: 993.                                                                                                                                                                                                                             |
@@ -122,7 +121,6 @@ Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 # /root/bibliothek/.env
 APP_ENV=production
 # ENFORCE_PROD_SECRETS ist von selbst scharf — nichts zu setzen
-COOKIE_SECURE=true
 # Das eigene Postfach am Mailserver der Schule; ohne Eintrag bricht der erste Start ab
 INITIAL_ADMIN_EMAIL=
 SMTP_HOST=smtp.example.com
@@ -169,9 +167,7 @@ verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der St
 > Mit `false` als Vorgabe reichte eine vergessene Zeile, um den Schulserver mit dem
 > JWT-Schlüssel aus dem Repository zu betreiben. `APP_ENV` ist daran gekoppelt: `local`/`development`/`test`
 > schalten den Guard ab, solange `ENFORCE_PROD_SECRETS` nicht gesetzt ist — und erlauben
-> zugleich `IMAP_HOST=mock`, also die Anmeldung mit jedem Passwort. Das Cookie-`Secure`-Flag
-> fällt nur weg,
-> wenn `COOKIE_SECURE` nicht gesetzt ist — `docker-compose.yml` setzt es immer.
+> zugleich `IMAP_HOST=mock`, also die Anmeldung mit jedem Passwort.
 
 Fehlermeldung bei Default-Secret, als Zeile der Stufe ERROR im Log; danach endet der Prozess:
 
@@ -185,7 +181,7 @@ Default-Secrets (auch die Beispielwerte aus `.env.example`), fehlender Backup-Sc
 `IMAP_HOST=mock`, `APP_ENV` auf `local`/`development`/`test`, offene Produktionsschalter.
 Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen lässt.
 
-**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `INITIAL_ADMIN_EMAIL` ist ein Postfach dort; `APP_ENV` bleibt `production`; `COOKIE_SECURE=true` (hinter Caddy-HTTPS); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`. Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
+**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `INITIAL_ADMIN_EMAIL` ist ein Postfach dort; `APP_ENV` bleibt `production`; der Server ist nur über HTTPS erreichbar (Caddy mit Zertifikat, auch bei Zugriff über eine IP-Adresse); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`. Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
 
 > **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
 > überschreiben — Schülerfotos und das gespeicherte SMTP-Passwort sind damit
@@ -323,8 +319,8 @@ docker compose -f docker-compose.local.yml up -d
 
 - Backend: `http://localhost:8084`
 - PostgreSQL: `localhost:5434`
-- `APP_ENV=local` → Default-Secrets aus `docker-compose.local.yml` sind erlaubt
-- `COOKIE_SECURE=false` → kein TLS nötig
+- `APP_ENV=local` → Default-Secrets aus `docker-compose.local.yml` sind erlaubt, keine Umleitung auf HTTPS
+- Kein TLS nötig: Die Cookies tragen `Secure`, und Browser nehmen sie auf `http://localhost` trotzdem an
 
 Die lokale Compose-Datei enthält bereits gültige Entwicklungs-Secrets (≥32 Zeichen), die bewusst im Repo liegen dürfen — sie gelten **nur** für `APP_ENV=local`.
 

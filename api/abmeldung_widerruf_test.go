@@ -33,7 +33,7 @@ func abmeldeServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 	if err != nil {
 		t.Fatalf("authenticator init: %v", err)
 	}
-	return &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}, nurHTTPS: true}, mock
+	return &Server{Basis: tuer.Basis{DB: &db.Verbindung{Pool: mock}, Auth: a}}, mock
 }
 
 func abmeldenMitToken(t *testing.T, s *Server) *httptest.ResponseRecorder {

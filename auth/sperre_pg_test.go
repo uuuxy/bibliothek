@@ -59,7 +59,7 @@ func sperreAnfrage(tuer http.HandlerFunc, pfad, rumpf string, cookie *http.Cooki
 func sperreAnmelden(t *testing.T, pool *pgxpool.Pool, a *Anmeldung, email, passwort string) *http.Cookie {
 	t.Helper()
 	rumpf := fmt.Sprintf(`{"email":%q,"password":%q}`, email, passwort)
-	rec := sperreAnfrage(Anmelden(pool, a, false), "/login", rumpf, nil)
+	rec := sperreAnfrage(Anmelden(pool, a), "/login", rumpf, nil)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Anmeldung: Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -260,7 +260,7 @@ func TestSperre_UeberdauertDieErneuerungDesTokens(t *testing.T) {
 		t.Fatal("Sperren meldet gesperrt=false")
 	}
 
-	rec := sperreAnfrage(SitzungVerlaengern(a, false), "/api/auth/refresh", "", cookie)
+	rec := sperreAnfrage(SitzungVerlaengern(a), "/api/auth/refresh", "", cookie)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"refresh":"renewed"`) {
 		t.Fatalf("Erneuerung einer gesperrten Anmeldung: Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -293,7 +293,7 @@ func TestSperre_TokenOhneZeileWirdNichtGesperrtUndNichtErneuert(t *testing.T) {
 		t.Fatalf("ein Token ohne Zeile bleibt gültig: %v", err)
 	}
 
-	rec := sperreAnfrage(SitzungVerlaengern(a, false), "/api/auth/refresh", "", cookie)
+	rec := sperreAnfrage(SitzungVerlaengern(a), "/api/auth/refresh", "", cookie)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"refresh":"skipped"`) {
 		t.Fatalf("Erneuerung ohne Zeile: Status %d: %s — erwartet skipped", rec.Code, rec.Body.String())
 	}

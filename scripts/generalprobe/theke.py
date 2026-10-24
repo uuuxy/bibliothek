@@ -17,7 +17,10 @@ import uuid
 import zlib
 
 BASE = "http://bibliothek-backend-probe:8086"
-cj = http.cookiejar.CookieJar()
+# Das Backend setzt jedes Cookie mit Secure, die Probe spricht im abgeschotteten Netz ohne TLS mit
+# ihm. Ein Browser schickte die Cookies hier nicht zurück; die Probe muss es, um wie die Theke zu
+# arbeiten.
+cj = http.cookiejar.CookieJar(http.cookiejar.DefaultCookiePolicy(secure_protocols=("https", "http")))
 op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 fehler = []
 

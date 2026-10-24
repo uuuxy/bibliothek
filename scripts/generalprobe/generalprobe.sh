@@ -237,7 +237,7 @@ pruefe "$(sql "$aufbau" bibliothek_restore)" "$(sql "$aufbau")" "Tabellen, Indiz
 docker run -d --rm --name probe-restore-backend --network "$NETZ" -e PORT=8087 -e APP_ENV=local \
 	-e "DATABASE_URL=postgres://postgres:probe-nur-lokal@bibliothek-db-probe:5432/bibliothek_restore?sslmode=disable" \
 	-e JWT_SECRET=probe-jwt-secret-nur-lokal-mindestens-32-zeichen -e 'APP_ENCRYPTION_KEY=probe-aes-key-32-zeichen-lokal!!' \
-	-e COOKIE_SECURE=false -e IMAP_HOST=mock -e SMTP_HOST=127.0.0.1 -e SMTP_PORT=9 bibliothek-probe:latest >/dev/null
+	-e IMAP_HOST=mock -e SMTP_HOST=127.0.0.1 -e SMTP_PORT=9 bibliothek-probe:latest >/dev/null
 for _ in $(seq 1 30); do
 	[ "$(docker exec bibliothek-werkzeug-probe curl -s -o /dev/null -w '%{http_code}' http://probe-restore-backend:8087/health || true)" = 200 ] && break
 	sleep 2

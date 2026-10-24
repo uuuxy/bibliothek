@@ -34,7 +34,7 @@ func rufeAnmelden(t *testing.T, a *Anmeldung, mock pgxmock.PgxPoolIface, rumpf s
 	anfrage := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(rumpf))
 	anfrage.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	Anmelden(mock, a, false)(rec, anfrage)
+	Anmelden(mock, a)(rec, anfrage)
 	return rec
 }
 

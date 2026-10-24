@@ -137,8 +137,9 @@ func panikMiddleware(next http.Handler) http.Handler {
 // httpsMiddleware leitet unverschlüsselte Anfragen auf HTTPS um.
 func (s *Server) httpsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Ohne nurHTTPS (lokaler Betrieb, Entwicklung) keine Umleitung.
-		if !s.nurHTTPS {
+		// Ohne Umleitung (APP_ENV local, development, test und der Nullwert in Tests) geht jede
+		// Anfrage durch.
+		if !s.umleitungAufHTTPS {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -148,9 +149,9 @@ func (s *Server) httpsMiddleware(next http.Handler) http.Handler {
 		// Die Sonde kommt aus dem Container selbst (Docker HEALTHCHECK, wget gegen 127.0.0.1) und
 		// damit ohne TLS und ohne X-Forwarded-Proto. Mit Umleitung bekäme sie eine 301 auf
 		// https://127.0.0.1:PORT, versuchte dort einen TLS-Handshake gegen den Klartext-Port und
-		// scheiterte mit "wrong version number", im Betrieb (COOKIE_SECURE=true) also immer. Der
-		// Container gälte dauerhaft als unhealthy, und alles, was daran hängt (Neustart-Regeln,
-		// depends_on: service_healthy, das Deploy-Skript), entschiede nach einer falschen Anzeige.
+		// scheiterte mit "wrong version number", im Betrieb also immer. Der Container gälte dauerhaft
+		// als unhealthy, und alles, was daran hängt (Neustart-Regeln, depends_on: service_healthy,
+		// das Deploy-Skript), entschiede nach einer falschen Anzeige.
 		//
 		// Unbedenklich: Die Antwort ist {"status":"healthy"}, kein Geheimnis, keine Sitzung, kein
 		// Cookie. Eine Verbindung im Klartext gibt hier nichts preis.

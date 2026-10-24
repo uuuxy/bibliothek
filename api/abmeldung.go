@@ -52,7 +52,6 @@ func (s *Server) abmelden() http.HandlerFunc {
 			}
 		}
 
-		// #nosec G124 - Secure folgt nurHTTPS
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    "",
@@ -60,7 +59,7 @@ func (s *Server) abmelden() http.HandlerFunc {
 			Expires:  time.Unix(0, 0),
 			MaxAge:   -1,
 			HttpOnly: true,
-			Secure:   s.nurHTTPS,
+			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
 		})
 

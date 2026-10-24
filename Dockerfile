@@ -126,10 +126,6 @@ USER appuser
 EXPOSE 8081
 
 # Environment variables defaults
-#
-# COOKIE_SECURE steht hier nicht: Ein im Image gesetztes "false" ist ein gesetzter Wert, und
-# ermittleCookieSecure() (main.go) greift seine sichere Vorgabe nur bei ungesetzter
-# Variable. Ungesetzt liefert APP_ENV=local/development/test false, alles andere true.
 ENV PORT=8081
 ENV DATABASE_URL=""
 

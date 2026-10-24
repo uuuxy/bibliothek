@@ -40,7 +40,6 @@ services:
       - DATABASE_URL=postgres://postgres:probe-nur-lokal@postgres-db:5432/bibliothek?sslmode=disable
       - JWT_SECRET=probe-jwt-secret-nur-lokal-mindestens-32-zeichen
       - APP_ENCRYPTION_KEY=probe-aes-key-32-zeichen-lokal!!
-      - COOKIE_SECURE=false
       - INITIAL_ADMIN_EMAIL=probe-admin@test.local
       - IMAP_HOST=mock
       - SMTP_HOST=127.0.0.1

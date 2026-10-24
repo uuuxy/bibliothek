@@ -122,17 +122,6 @@ fi
 echo
 echo "── Produktionsschalter ──────────────────────────────────"
 
-pruefe_schalter() {
-	local var="$1" erwartet="$2" begruendung="$3"
-	local wert
-	wert="$(lies "$var")"
-	if [ "$(echo "$wert" | tr '[:upper:]' '[:lower:]')" = "$erwartet" ]; then
-		gut "$var=$erwartet"
-	else
-		kritisch "$var ist nicht $erwartet (aktuell: ${wert:-<nicht gesetzt>})" "$begruendung"
-	fi
-}
-
 # Die Verweigerung bekannter Beispiel-Secrets ist die Vorgabe des Servers
 # (bereitschaft.IstGeheimnisSchutzScharf): nicht gesetzt oder true ist gut, nur ein ausdrückliches
 # false schaltet sie ab — und das gehört gemeldet, nicht übersehen.
@@ -143,8 +132,6 @@ if [ "$enforce" = "false" ]; then
 else
 	gut "ENFORCE_PROD_SECRETS ${enforce:-nicht gesetzt} (Vorgabe: scharf)"
 fi
-pruefe_schalter COOKIE_SECURE true \
-	"Hinter Caddy-HTTPS gehört das Sitzungscookie auf Secure."
 
 imap="$(lies IMAP_HOST)"
 if [ "$imap" = "mock" ]; then

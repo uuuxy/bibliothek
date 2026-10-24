@@ -27,7 +27,6 @@ func setzeGueltigeUmgebung() {
 	setzeVariable("JWT_SECRET", "this-is-a-very-secret-key-that-is-at-least-32-bytes")
 	setzeVariable("APP_ENCRYPTION_KEY", "12345678901234567890123456789012")
 	setzeVariable("PORT", "8080")
-	setzeVariable("COOKIE_SECURE", "true")
 	setzeVariable("ENFORCE_PROD_SECRETS", "false")
 	setzeVariable("IMAP_HOST", "imap.example.test")
 }
@@ -59,8 +58,8 @@ func TestLeseKonfig_Gueltig(t *testing.T) {
 	if port != "8080" {
 		t.Errorf("port = %s, erwartet ist der gesetzte Wert", port)
 	}
-	if !server.NurHTTPS {
-		t.Errorf("NurHTTPS = %v, erwartet ist true", server.NurHTTPS)
+	if !server.UmleitungAufHTTPS {
+		t.Errorf("UmleitungAufHTTPS = %v, erwartet ist true", server.UmleitungAufHTTPS)
 	}
 	if got := strings.Join(server.VertrauteProxys, " "); got != "172.16.0.0/12 10.0.0.0/8" {
 		t.Errorf("VertrauteProxys = %q, erwartet die Netze aus TRUSTED_PROXIES", got)

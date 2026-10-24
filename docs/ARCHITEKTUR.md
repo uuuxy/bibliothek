@@ -214,7 +214,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T7 | **Anmeldung gegen den Schul-Mailserver (IMAP)**                                | Die Anwendung speichert **kein** Benutzerpasswort; eine Passwortspalte gibt es seit Migration 012 nicht. Für die Dauer einer Anmeldung hält sie einen Prüfwert davon (Migration 155, A2). Folge: Die E-Mail **ist** die Identität, und `benutzer.email` schreiben zu dürfen heißt, ein Konto übernehmen zu können. |
 | T8 | **Barcodes des Altbestands dürfen nicht neu geklebt werden**                   | Ausweise und Etiketten aus Littera tragen nackte Nummern ohne Präfix. Deshalb löst die Omnibox **ohne** Präfix der Reihe nach auf, und deshalb gibt es die Prüfzeichen-Nachsicht (`pkg/code39`).           |
 | T9 | **Docker Compose hinter Caddy**, TLS per ACME                                  | Kein Kubernetes, kein Ingress-Controller. Die maßgebliche Caddy-Konfiguration liegt **auf dem Schulserver** (`/root/caddy/Caddyfile`, geschrieben von `update_caddy.sh`). |
-| T10| **Der Betrieb läuft ggf. über HTTP im Schul-LAN**                              | Deshalb ist `COOKIE_SECURE` eine bewusst treffbare Betriebsentscheidung — Vorgabe `true` außerhalb lokaler Entwicklung, ein explizites `false` warnt laut, bricht aber nicht ab.                            |
+| T10| **Der Betrieb läuft nur über HTTPS**                                           | Die Cookies von Sitzung und CSRF tragen fest `Secure`; einen Schalter für den Betrieb über HTTP gibt es nicht. Ohne TLS gingen Sitzung, das Mail-Passwort jeder Anmeldung und die Schülerdaten offen durchs Schulnetz. Auch ein Server, den die Schule nur über eine IP-Adresse erreicht, braucht deshalb ein Zertifikat. Lokal genügt `http://localhost`: Dort nehmen Browser Cookies mit `Secure` an (MDN, Set-Cookie). |
 | T11| **Zeitzone Europe/Berlin fachlich, UTC technisch**                              | Fristen pinnen `Europe/Berlin` im Code (`schulzeit.TagesEnde`), der Cron-Zeitplan ist auf UTC genagelt (`cron.WithLocation(time.UTC)`) — sonst verschluckt die Zeitumstellung den 02:30-Backup-Job.  |
 | T12| **Lizenz EUPL-1.2**                                                             | Der Lizenztext steht in `LICENSE`, der Hinweis im Kopf von `main.go`; `frontend/package.json` nennt dieselbe Lizenz. Abhängigkeiten müssen dazu passen. `LICENSE` trägt die englische Fassung: Nur sie erkennt GitHub als „EUPL-1.2", die deutsche zeigt es als „Other". Rechtlich sind alle Sprachfassungen gleichwertig (Artikel 13 der EUPL). |
 
@@ -507,7 +507,7 @@ HTTP-Anfrage
    ├─ 3 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
    ├─ 4 CORS ─────────────────── nur die konfigurierte Schuldomain (ALLOWED_ORIGIN)
    ├─ 5 Logging ──────────────── nur 5xx: Status, Methode, Pfad — ohne IP, Token maskiert
-   ├─ 6 HTTPSRedirect ────────── nur wenn der Proxy es anzeigt
+   ├─ 6 HTTPSRedirect ────────── HTTP auf HTTPS, außer lokal und für /health
    ├─ 7 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
    ├─ 8 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
    ├─ 9 Timeout ──────────────── Kontext-Deadline je Route (bearbeitungsfristVorgabe)
@@ -1113,7 +1113,7 @@ sequenceDiagram
         A->>I: IMAP-Login, implizites TLS :993, min. TLS 1.2
         I-->>A: OK
         A->>A: JWT (HMAC, 12 h) erzeugen
-        A-->>B: Set-Cookie session_token (HttpOnly, Secure*) + CSRF-Cookie
+        A-->>B: Set-Cookie session_token (HttpOnly, Secure) + CSRF-Cookie
     else Kein Konto, aber Postfach der Schuldomain
         A->>I: IMAP-Login
         I-->>A: OK
@@ -1125,10 +1125,6 @@ sequenceDiagram
         A-->>B: 401 (Zähler auf »email|ip«)
     end
 ```
-
-\* `Secure` nach `ermittleCookieSecure()`: Vorgabe `true` außerhalb von
-`local/development/test`; ein fehlender Wert warnt und wählt die **sichere** Richtung, ein
-unlesbarer Wert bricht den Start ab.
 
 **Bei jeder folgenden Anfrage** prüft `verlangeRecht`:
 
@@ -1568,10 +1564,10 @@ zählt dreierlei:
 
 - **Was fehlt, hält den Start an, statt still zu gelten:** `DATABASE_URL`, `JWT_SECRET`
   (mindestens 32 Zeichen), `APP_ENCRYPTION_KEY` (genau 32 Byte), `PORT`, `IMAP_HOST`. Ein
-  abweichend gesetzter früherer Zweitname des Schlüssels bricht ebenfalls ab, und ein
-  unlesbarer Wert von `COOKIE_SECURE` auch.
-- **Die Vorgabe ist die sichere Richtung:** `ENFORCE_PROD_SECRETS` ist von selbst scharf,
-  `COOKIE_SECURE` ohne Wert ist `true`; abschalten geht nur ausdrücklich und mit Warnung.
+  abweichend gesetzter früherer Zweitname des Schlüssels bricht ebenfalls ab.
+- **Die Vorgabe ist die sichere Richtung:** `ENFORCE_PROD_SECRETS` ist von selbst scharf;
+  abschalten geht nur ausdrücklich und mit Warnung. `Secure` an den Cookies ist kein Schalter
+  (T10).
 - **`TRUSTED_PROXIES` ist praktisch Pflicht.** Ohne das Netz von Caddy sieht das Backend nur die
   Adresse des Proxys: 50 Fehlversuche aus der ganzen Schule sperren die Anmeldung für alle 15
   Minuten, und alle teilen sich die Bremse der Anfragen. Compose setzt das private Docker-Netz
@@ -1734,7 +1730,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | **CSRF**                  | Double-Submit-Cookie; `GET /api/csrf-token` holt Token und Cookie vor der ersten Änderung; die Refresh-Route ist ausgenommen                        |
 | **Anmeldung**             | IMAP über implizites TLS (:993, min. TLS 1.2, feste Cipher-Auswahl). **Kein** Passwort gespeichert, es geht bei jeder Anmeldung über den Server (A2) |
 | **Brute-Force**           | Schlüssel `lower(email)\|ip`, 5 Fehlversuche / 15 min; je Adresse allein erst 50 (`api/anmelde_bremse.go`). Nur-IP mit 5 wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                            |
-| **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, erneuert ab der halben Laufzeit; höchstens 10 h nach der letzten Passworteingabe, dann 423 bis zum Passwort; Cookie `HttpOnly` + `SameSite=Strict` (+ `Secure` nach Betriebslage); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
+| **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, erneuert ab der halben Laufzeit; höchstens 10 h nach der letzten Passworteingabe, dann 423 bis zum Passwort; Cookie `HttpOnly` + `SameSite=Strict` + `Secure` (T10); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
 | **Autorisierung**         | `verlangeRecht` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
 | **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt |
@@ -2136,11 +2132,11 @@ Zwei Orte mit klarer Trennung:
 
 | Ort                              | Inhalt                                                                                                         | Änderbar durch            |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| **Umgebung** (`.env`, Compose)   | Was zum Starten gebraucht wird und Sicherheitsentscheidungen: DSN, Geheimnisse, Ports, IMAP, Proxy-Vertrauen, Cookie-Secure, Backup- und S3-Zugang | Betrieb (Neustart nötig)  |
+| **Umgebung** (`.env`, Compose)   | Was zum Starten gebraucht wird und Sicherheitsentscheidungen: DSN, Geheimnisse, Ports, IMAP, Proxy-Vertrauen, Backup- und S3-Zugang | Betrieb (Neustart nötig)  |
 | **Datenbank** (`system_einstellungen`, `mail_settings_config`, `role_permissions`) | Fachliche Schalter der Einstellungskategorien (FACHKONZEPT §17): Fristen, Limits, Karenzzeit, Sitzungsfristen, SMTP-Zugang, Rechtematrix | Oberfläche (sofort wirksam) |
 
-**Die Vorgabe ist immer die sichere Richtung.** `COOKIE_SECURE` ohne Wert ⇒ `true` mit
-Warnung; unlesbarer Wert ⇒ Abbruch. Der Secret-Guard ist von selbst scharf. Fehlt
+**Die Vorgabe ist immer die sichere Richtung.** Der Secret-Guard ist von selbst scharf; `Secure`
+an den Cookies ist gar kein Schalter (T10). Fehlt
 `BACKUP_ENCRYPTION_KEY`, überspringt sich der Backup-Job — und die Selbstprüfung macht
 genau das sichtbar, statt dass es unbemerkt bleibt.
 
@@ -3470,7 +3466,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Code und Werkzeuge
 
-- **gosec nimmt sieben Regeln global aus** (G706, G704, G703, G120, G124, G115, G101; der Grund je
+- **gosec nimmt sechs Regeln global aus** (G706, G704, G703, G120, G115, G101; der Grund je
   Regel steht in `scripts/gosec-gate.sh`). Eine neue Stelle dieser Regeln meldet gosec nicht.
   Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds. Erbe der Pull Requests von außen:

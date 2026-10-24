@@ -117,7 +117,7 @@ const anmeldeRumpfMaxBytes = 16 << 10
 
 // Anmelden liefert die Tür der Anmeldung. Angemeldet wird nur mit E-Mail und Passwort gegen den
 // Mailserver der Schule (IMAP).
-func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
+func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		adresse := adresseDerAnfrage(r)
 
@@ -173,7 +173,9 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 			Path:     "/",
 			Expires:  time.Now().Add(anmeldung.laufzeit),
 			HttpOnly: true,
-			Secure:   nurHTTPS,
+			// Fest, weil das Programm nur über HTTPS läuft. Auf http://localhost nimmt der Browser ein
+			// Cookie mit Secure trotzdem an, die Entwicklung geht also ohne Zertifikat.
+			Secure:   true,
 			SameSite: http.SameSiteStrictMode, // keine Anfragen von fremden Seiten
 		})
 
@@ -455,7 +457,7 @@ func AngemeldetesKonto(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 // Erneuert wird nur ein Token mit einer Zeile in sitzungen; das neue trägt dieselbe Kennung, eine
 // Sperre nach Inaktivität bleibt also bestehen. Ein Token ohne Zeile läuft aus: Es ließe sich
 // sonst beliebig lange halten, ohne je sperrbar zu sein.
-func SitzungVerlaengern(anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
+func SitzungVerlaengern(anmeldung *Anmeldung) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
@@ -480,14 +482,14 @@ func SitzungVerlaengern(anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusUnauthorized, MeldungNichtAngemeldet, err)
 			return
 		}
-		erneuereSitzung(w, r, anmeldung, claims, nurHTTPS)
+		erneuereSitzung(w, r, anmeldung, claims)
 	}
 }
 
 // erneuereSitzung stellt für eine geprüfte Sitzung ein neues Token aus, wenn weniger als die
 // halbe Laufzeit übrig ist und die Zeile in sitzungen sich verlängern lässt; sonst bleibt es beim
 // alten.
-func erneuereSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldung, claims *Claims, nurHTTPS bool) {
+func erneuereSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldung, claims *Claims) {
 	// Erst ab der halben Laufzeit, sonst entstünde bei häufigen Anfragen ein Token nach dem
 	// anderen.
 	if claims.ExpiresAt != nil {
@@ -525,7 +527,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, anmeldung *Anmeldun
 		Path:     "/",
 		Expires:  time.Now().Add(anmeldung.laufzeit),
 		HttpOnly: true,
-		Secure:   nurHTTPS,
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	})
 

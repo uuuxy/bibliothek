@@ -25,13 +25,11 @@ GOSEC_FASSUNG="v2.29.1-0.20261005092323-d2b649ec0182"
 #         Umgebung und Kommandozeile des Betreibers.
 #   G120  Formular ohne Grenze: Importe und Uploads; die Body-Grenze der Anfragekette begrenzt
 #         jeden Rumpf.
-#   G124  Cookie-Attribute: Secure hängt an COOKIE_SECURE (im Betrieb true), HttpOnly und
-#         SameSite=Strict stehen fest; zwei Stellen in der Prüfhilfe internal/tuertest.
 #   G115  Zahl nach rune, byte oder uint32: Prüfziffern der Littera-Etiketten (Ziffern 0 bis 9)
 #         und die Parameter des Passwort-Prüfwerts, deren Grenzen ParseUint setzt.
 #   G101  „Zugangsdaten": Meldungen mit dem Wort Passwort und eine SQL-Bedingung der
 #         Schlagwort-Suche.
-AUSNAHMEN="G706,G704,G703,G120,G124,G115,G101"
+AUSNAHMEN="G706,G704,G703,G120,G115,G101"
 
 BERICHT="$(mktemp)"
 trap 'rm -f "$BERICHT"' EXIT

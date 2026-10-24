@@ -101,20 +101,13 @@ services:
       #   JWT_SECRET=<zufällig, >=32 Zeichen>        z. B. openssl rand -hex 32
       #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 32
       #   POSTGRES_PASSWORD=<eigenes Passwort>
-      #   COOKIE_SECURE=true   # hinter Caddy-HTTPS
       # Fest, nicht aus der .env: local, development und test schalten die Prüfung der
-      # Beispiel-Geheimnisse ab und lassen IMAP_HOST=mock zu, das jedes Passwort annimmt. Den
-      # lokalen Stack setzt docker-compose.local.yml.
+      # Beispiel-Geheimnisse und die Umleitung auf HTTPS ab und lassen IMAP_HOST=mock zu, das jedes
+      # Passwort annimmt. Den lokalen Stack setzt docker-compose.local.yml.
       - APP_ENV=production
       - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-}
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET muss gesetzt sein (>=32 Zeichen, zufaellig - siehe .env.example)}
-      # Vorgabe true, nicht false: Dieser Stack läuft hinter Caddy (caddy_global_net,
-      # Backend nur auf 127.0.0.1) — also über HTTPS. Ein Default von false setzte die
-      # Variable auf den unsicheren Wert und hebelte damit die sichere Vorgabe in
-      # ermittleCookieSecure() aus, die nur bei NICHT gesetzter Variable greift.
-      # Nur überschreiben, wenn die Anwendung ausschließlich über HTTP im LAN läuft.
-      - COOKIE_SECURE=${COOKIE_SECURE:-true}
       - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (exakt 32 Byte - siehe .env.example)}
       # Kein Default: Die Attrappe "mock" (auth/imap.go) nimmt jedes Passwort für jede in
       # benutzer vorhandene E-Mail an; als Vorgabe stünde die Anmeldung offen. Fehlt die

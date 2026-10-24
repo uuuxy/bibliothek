@@ -9,7 +9,7 @@ import (
 )
 
 func TestCSRFTokenOhneCookieErzeugtNeuesToken(t *testing.T) {
-	s := &Server{nurHTTPS: true}
+	s := &Server{}
 	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
@@ -56,7 +56,7 @@ func TestCSRFTokenOhneCookieErzeugtNeuesToken(t *testing.T) {
 }
 
 func TestCSRFTokenMitCookieLiefertDasVorhandene(t *testing.T) {
-	s := &Server{nurHTTPS: true}
+	s := &Server{}
 	handler := s.csrfToken()
 
 	existingToken := "mein-existierendes-token-123"
@@ -91,7 +91,7 @@ func TestCSRFTokenMitCookieLiefertDasVorhandene(t *testing.T) {
 }
 
 func TestCSRFTokenMitLeeremCookieErzeugtNeuesToken(t *testing.T) {
-	s := &Server{nurHTTPS: true}
+	s := &Server{}
 	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
@@ -132,7 +132,7 @@ func TestCSRFTokenMitLeeremCookieErzeugtNeuesToken(t *testing.T) {
 }
 
 func TestCSRFToken_NeuesToken(t *testing.T) {
-	s := &Server{nurHTTPS: true}
+	s := &Server{}
 	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)
@@ -164,7 +164,7 @@ func TestCSRFToken_NeuesToken(t *testing.T) {
 }
 
 func TestCSRFToken_BestehendesToken(t *testing.T) {
-	s := &Server{nurHTTPS: true}
+	s := &Server{}
 	handler := s.csrfToken()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/csrf-token", nil)

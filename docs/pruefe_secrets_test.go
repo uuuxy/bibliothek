@@ -45,7 +45,6 @@ func saubereEnv(ersetze map[string]string) string {
 		{"APP_ENCRYPTION_KEY", "nur-fuer-den-test-nur-fuer-0002x"},
 		{"POSTGRES_PASSWORD", "nur-fuer-den-test-0003"},
 		{"BACKUP_ENCRYPTION_KEY", "nur-fuer-den-test-nur-fuer-den-test-0004"},
-		{"COOKIE_SECURE", "true"},
 		{"IMAP_HOST", "imap.example.test"},
 		{"APP_ENV", "production"},
 	}

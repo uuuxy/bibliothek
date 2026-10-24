@@ -362,7 +362,7 @@ read -rsp "BACKUP_ENCRYPTION_KEY vom Blatt: " B; echo
   echo "APP_ENCRYPTION_KEY=$A"
   echo "BACKUP_ENCRYPTION_KEY=$B"
 } >> .env; unset A B; chmod 600 .env
-#    Dazu von Hand die Einstellungen aus DEPLOYMENT.md 2.1 (APP_ENV, COOKIE_SECURE, IMAP_HOST …).
+#    Dazu von Hand die Einstellungen aus DEPLOYMENT.md 2.1 (APP_ENV, IMAP_HOST …).
 #    Ohne IMAP_HOST startet Schritt 4 nicht.
 
 # 3. Die Sicherung vom zweiten Ort nach ./backups legen und beim Namen nennen. Gewählt wird

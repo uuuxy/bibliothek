@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -190,46 +189,6 @@ func richteDatenbankEin(ctx context.Context, dsn string) *db.Verbindung {
 	return verbindung
 }
 
-// ermittleCookieSecure entscheidet über das Merkmal Secure der Cookies für Sitzung und CSRF.
-//
-// Ohne Variable gilt außerhalb der lokalen Entwicklung `true`: Bei einer stillen Vorgabe `false`
-// reichte ein vergessenes COOKIE_SECURE im Deploy, damit Sitzungscookies ohne Secure ausgeliefert
-// werden, und auffallen würde das niemandem, weil über HTTPS trotzdem alles funktioniert. Wer es
-// unsicher will, muss es hinschreiben.
-//
-// Kein Abbruch bei ausdrücklichem false: Ein Server in der Schule läuft womöglich über schlichtes
-// HTTP im LAN, und dort machte ein Secure-Cookie die Anmeldung unmöglich (der Browser sendet es
-// über http nicht mit). Diese Entscheidung darf der Betrieb treffen; sie soll nur nicht
-// versehentlich geschehen, deshalb die deutliche Warnung.
-func ermittleCookieSecure() bool {
-	appEnv := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
-	lokal := appEnv == "local" || appEnv == "development" || appEnv == "test"
-
-	roh, gesetzt := os.LookupEnv("COOKIE_SECURE")
-	if !gesetzt || strings.TrimSpace(roh) == "" {
-		if lokal {
-			return false
-		}
-		slog.Warn("COOKIE_SECURE ist nicht gesetzt — sichere Vorgabe (true) wird verwendet",
-			"app_env", appEnv)
-		return true
-	}
-
-	wert, err := strconv.ParseBool(strings.TrimSpace(roh))
-	if err != nil {
-		// Ein unlesbarer Wert ist immer ein Fehler und nie eine Absicht; ihn als "false" zu deuten, wäre
-		// eine stille Fehlannahme.
-		slog.Error("COOKIE_SECURE ist kein Wahrheitswert (erlaubt: true/false)", "wert", roh)
-		os.Exit(1)
-	}
-
-	if !wert && !lokal {
-		slog.Warn("COOKIE_SECURE=false außerhalb der lokalen Entwicklung — Sitzungscookies werden OHNE Secure-Flag ausgeliefert. Nur zulässig, wenn die Anwendung ausschließlich über HTTP im lokalen Netz erreichbar ist.",
-			"app_env", appEnv)
-	}
-	return wert
-}
-
 // leseKonfig liest die Konfiguration aus der Umgebung und bricht beim Start ab, wenn sie
 // unbrauchbar oder gefährlich ist.
 func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
@@ -308,7 +267,8 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 		os.Exit(1)
 	}
 
-	server.NurHTTPS = ermittleCookieSecure()
+	// Lokal läuft der Stack über http://localhost; eine Umleitung auf HTTPS liefe dort ins Leere.
+	server.UmleitungAufHTTPS = bereitschaft.IstEchterBetrieb(strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV"))))
 
 	server.VertrauteProxys = vertrauteProxysAusUmgebung()
 

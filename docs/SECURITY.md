@@ -54,7 +54,7 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
   - **Ohne Verbindung zum Server** wird nicht gesperrt, nur die Theke geleert (FACHKONZEPT.md 18.4). Kommt die Verbindung zurück, überträgt der Rechner erst die Warteschlange und sperrt dann.
   - **Eine Anmeldung ohne Zeile in `sitzungen`** (ausgestellt vor Migration 155) sperrt der Server nicht und erneuert sie nicht: Ohne Prüfwert ließe sie sich bei einem Ausfall des Mailservers nicht aufschließen. Für sie bleibt die Sperre bis zum Ablauf des Tokens ein Sichtschutz im Fenster.
   - Gates: `auth/sperre_pg_test.go` (Server, auch mit totem Mailserver), `api/sperre_middleware_test.go` (423 an jeder geschützten Route), `frontend/src/lib/stores/leerlaufSperre*.test.js` (gestellte Uhr, mehrere Fenster), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js` (423 hinter der Sperre, Neuladen, neuer Tab). Jedes am Rückbau rot gesehen.
-- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Der Code setzt `http.SameSiteStrictMode` (`auth/anmelden.go`).
+- **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict` und immer `Secure`: Das Programm läuft nur über HTTPS, einen Schalter für HTTP gibt es nicht (ARCHITEKTUR.md, T10). Auf `http://localhost` nehmen Browser solche Cookies trotzdem an. Gates: `auth/sitzungscookie_test.go`, `api/csrf_cookie_test.go`, `api/abmeldung_cookie_test.go` und gosec G124 in `scripts/gosec-gate.sh`.
 
 ### Brute-Force-Schutz (Login)
 
@@ -381,8 +381,7 @@ entscheiden. Gates: `internal/bereitschaft/geheimnisse_test.go`,
 `TestLeseKonfig_ProduktionOhneSchalterVerweigertBeispielJWT`.
 
 Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
-`IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort. Das Cookie-`Secure`-Flag fiele nur weg, wenn `COOKIE_SECURE` nicht gesetzt
-ist; `docker-compose.yml` setzt es immer. Wer auf einem production-Server ohne eigene
+`IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort. Wer auf einem production-Server ohne eigene
 Geheimnisse testen will, schreibt `ENFORCE_PROD_SECRETS=false` — sichtbar, und
 `scripts/pruefe_secrets.sh` meldet es als kritisch, ebenso `APP_ENV` auf `local`,
 `development` oder `test` und die Beispielwerte aus `.env.example`. Die Vorlage trägt

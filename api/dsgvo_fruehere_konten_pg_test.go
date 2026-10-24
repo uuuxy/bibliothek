@@ -241,7 +241,7 @@ func TestDSGVOAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(`{"email":"`+email+`","password":"beliebig"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		auth.Anmelden(pool, authenticator, false)(rec, req)
+		auth.Anmelden(pool, authenticator)(rec, req)
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("erste Anmeldung: Status %d, erwartet 403 (Zugang beantragt) — %s", rec.Code, rec.Body.String())
 		}

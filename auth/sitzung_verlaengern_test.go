@@ -81,7 +81,7 @@ func rufeSitzungVerlaengern(t *testing.T, a *Anmeldung, cookie *http.Cookie) *ht
 		anfrage.AddCookie(cookie)
 	}
 	rec := httptest.NewRecorder()
-	SitzungVerlaengern(a, false)(rec, anfrage)
+	SitzungVerlaengern(a)(rec, anfrage)
 	return rec
 }
 

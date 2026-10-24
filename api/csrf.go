@@ -35,16 +35,16 @@ func erzeugeCSRFToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// newCSRFCookie baut das (nicht-HttpOnly) Double-Submit-Cookie. Das Secure-Flag wird
-// übergeben, damit es konfigurierbar ist.
-func newCSRFCookie(token string, nurHTTPS bool) *http.Cookie {
-	// #nosec G124 - Secure folgt nurHTTPS
+// newCSRFCookie baut das Double-Submit-Cookie. Secure ist fest wie beim Cookie der Sitzung
+// (auth.Anmelden).
+func newCSRFCookie(token string) *http.Cookie {
+	// #nosec G124 - ohne HttpOnly, weil die Oberfläche den Wert als X-CSRF-Token zurückschickt
 	return &http.Cookie{
 		Name:     csrfCookieName,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: false, // Die Oberfläche muss es lesen können.
-		Secure:   nurHTTPS,
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   86400, // 24 Stunden
 	}
@@ -67,7 +67,7 @@ func (s *Server) csrfToken() http.HandlerFunc {
 				return
 			}
 			token = erzeugt
-			http.SetCookie(w, newCSRFCookie(token, s.nurHTTPS))
+			http.SetCookie(w, newCSRFCookie(token))
 		}
 		tuer.AntworteJSON(w, http.StatusOK, map[string]string{"csrf_token": token})
 	}
@@ -108,7 +108,7 @@ func istPruefungsAusnahme(pfad string) bool {
 // erneuereCSRFCookie setzt das Cookie csrf_token, falls noch keines (oder ein leeres) da
 // ist, damit die Oberfläche es lesen kann. Die Tür csrfToken verwaltet ihr Cookie selbst und
 // wird hier übersprungen, um doppelte Köpfe Set-Cookie zu vermeiden.
-func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfad string, nurHTTPS bool) {
+func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfad string) {
 	if !istAPI || pfad == "/api/csrf-token" {
 		return
 	}
@@ -123,7 +123,7 @@ func erneuereCSRFCookie(w http.ResponseWriter, r *http.Request, istAPI bool, pfa
 	}
 	token, err := erzeugeCSRFToken()
 	if err == nil {
-		http.SetCookie(w, newCSRFCookie(token, nurHTTPS))
+		http.SetCookie(w, newCSRFCookie(token))
 	}
 }
 
@@ -162,7 +162,7 @@ func (s *Server) csrfMiddleware(next http.Handler) http.Handler {
 		istAPI := istAPIPfad(pfad)
 
 		// Das Cookie immer setzen oder erneuern, damit die Oberfläche es lesen kann.
-		erneuereCSRFCookie(w, r, istAPI, pfad, s.nurHTTPS)
+		erneuereCSRFCookie(w, r, istAPI, pfad)
 
 		// Geprüft werden nur ändernde Anfragen an die Schnittstelle.
 		aendert := r.Method == http.MethodPost ||

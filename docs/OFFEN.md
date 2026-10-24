@@ -84,8 +84,8 @@ nur aus dem Schulnetz, also auch nicht für Lehrkräfte von zu Hause.
 `/api/public/bestellung/…` und `/health` (7.5) durch. Mehr braucht die Seite nicht: Das
 CSRF-Cookie setzt der erste Abruf (`erneuereCSRFCookie` in `api/csrf.go`), und `/api/auth/me`
 darf beim Laden scheitern. Das Zertifikat kommt von Let's Encrypt; ohne HTTPS schickt der Browser
-das Sitzungs-Cookie nicht (`ermittleCookieSecure` in `main.go`). Danach in den Einstellungen die
-öffentliche Adresse setzen und [ARCHITEKTUR.md](ARCHITEKTUR.md) 7 und 9 nachziehen.
+das Sitzungs-Cookie nicht (`Secure` ist fest, ARCHITEKTUR.md T10). Danach in den Einstellungen
+die öffentliche Adresse setzen und [ARCHITEKTUR.md](ARCHITEKTUR.md) 7 und 9 nachziehen.
 
 **Vorher muss feststehen:** der Name des Servers im Internet (auch die Geräte der Schule nutzen
 ihn, das Zertifikat gilt für den Namen), die Freigabe von Port 443, der Netzabschnitt des Servers

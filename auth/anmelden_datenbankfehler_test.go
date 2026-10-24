@@ -47,7 +47,7 @@ func TestAnmelden_DatenbankfehlerIstKeinFalschesPasswort(t *testing.T) {
 			strings.NewReader(`{"email":"dbfehler@test.invalid","password":"richtig"}`))
 		anfrage.Header.Set("Content-Type", "application/json")
 		anfrage.RemoteAddr = "203.0.113.7:4711"
-		Anmelden(mock, anmeldung, false)(rec, anfrage)
+		Anmelden(mock, anmeldung)(rec, anfrage)
 
 		if rec.Code == http.StatusTooManyRequests {
 			t.Fatalf("Versuch %d: 429 — der DB-Ausfall wurde als Fehlversuch gezählt und hat das Konto gesperrt", versuch)
@@ -89,7 +89,7 @@ func TestAnmelden_AbbruchDesBrowsersIstKeinAusfall(t *testing.T) {
 		strings.NewReader(`{"email":"abbruch@test.invalid","password":"richtig"}`))
 	anfrage.Header.Set("Content-Type", "application/json")
 	anfrage.RemoteAddr = "203.0.113.8:4711"
-	Anmelden(mock, anmeldung, false)(rec, anfrage)
+	Anmelden(mock, anmeldung)(rec, anfrage)
 
 	// 499 ist der Status für „Browser hat abgebrochen" (apierrors.statusAbgebrochen).
 	if rec.Code != 499 {

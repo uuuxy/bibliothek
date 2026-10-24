@@ -531,9 +531,9 @@ Liest eine `.env` und meldet die Fehlkonfigurationen, die **still** bleiben: bek
 Default-Secrets aus dem Repository (auch die Beispielwerte aus `.env.example`), fehlender
 `BACKUP_ENCRYPTION_KEY` (der nächtliche Job überspringt sich dann kommentarlos),
 `IMAP_HOST=mock` (akzeptiert jedes Passwort), `APP_ENV` auf `local`, `development` oder
-`test` (lässt Beispielwerte und `mock` gelten), ausdrückliches
-`ENFORCE_PROD_SECRETS=false` oder ungesetztes `COOKIE_SECURE`. Was das Skript meldet,
-hält `docs/pruefe_secrets_test.go` fest; am Server läuft es nur von Hand.
+`test` (lässt Beispielwerte und `mock` gelten) und ausdrückliches
+`ENFORCE_PROD_SECRETS=false`. Was das Skript meldet, hält `docs/pruefe_secrets_test.go` fest;
+am Server läuft es nur von Hand.
 
 Das Skript **ändert nichts**. Exit-Code 0 = sauber, 1 = kritischer Befund.
 

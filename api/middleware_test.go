@@ -8,7 +8,7 @@ import (
 )
 
 func TestHTTPSMiddleware(t *testing.T) {
-	s := &Server{nurHTTPS: true}
+	s := &Server{umleitungAufHTTPS: true}
 
 	t.Run("no ALLOWED_ORIGIN fallback to valid r.Host", func(t *testing.T) {
 		_ = os.Setenv("ALLOWED_ORIGIN", "") //nolint:errcheck
@@ -33,8 +33,8 @@ func TestHTTPSMiddleware(t *testing.T) {
 	// Die Sonde des Containers spricht Klartext-HTTP gegen 127.0.0.1 und trägt weder TLS
 	// noch X-Forwarded-Proto. Würde sie umgeleitet, folgte busybox-wget der 301 auf https://
 	// und scheiterte am TLS-Handshake gegen den Klartext-Port ("wrong version number"), in
-	// Produktion also immer, lokal (nurHTTPS=false) nie. Der Container gälte damit dauerhaft
-	// als unhealthy, und jede Entscheidung, die daran hängt, wäre blind.
+	// Produktion also immer. Der Container gälte damit dauerhaft als unhealthy, und jede
+	// Entscheidung, die daran hängt, wäre blind.
 	t.Run("health probe is never redirected", func(t *testing.T) {
 		_ = os.Setenv("ALLOWED_ORIGIN", "https://bibliothek.schule.de") //nolint:errcheck
 		req := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:8083/health", nil)

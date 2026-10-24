@@ -81,7 +81,7 @@ func TestSperre_HoechstdauerNachDerPassworteingabe(t *testing.T) {
 	}
 
 	// Die Erneuerung des Tokens verlängert die Anmeldung, nicht die Zeit seit dem Passwort.
-	rec = sperreAnfrage(SitzungVerlaengern(a, false), "/api/auth/refresh", "", cookie)
+	rec = sperreAnfrage(SitzungVerlaengern(a), "/api/auth/refresh", "", cookie)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"refresh":"renewed"`) {
 		t.Fatalf("Erneuerung nach der Höchstdauer: Status %d: %s", rec.Code, rec.Body.String())
 	}

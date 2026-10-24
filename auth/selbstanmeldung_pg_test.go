@@ -74,7 +74,7 @@ func anmelden(t *testing.T, pool *pgxpool.Pool, email string) (int, string) {
 	anfrage := httptest.NewRequest(http.MethodPost, "/login", rumpf)
 	anfrage.Header.Set("Content-Type", "application/json")
 
-	Anmelden(pool, auth, false)(rec, anfrage)
+	Anmelden(pool, auth)(rec, anfrage)
 
 	// Eine gelungene Antwort trägt kein Feld error; ein Fehler beim Lesen ist deshalb kein Fehler
 	// des Tests, der Statuscode bleibt aussagekräftig. Stillschweigend verworfen wird er trotzdem
