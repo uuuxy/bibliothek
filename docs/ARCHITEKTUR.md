@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 23.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 24.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1648,7 +1648,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 23.10.2026
+Stand: 24.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1732,7 +1732,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | **Fristen (Slowloris)**   | `ReadHeaderTimeout` 5 s, `ReadTimeout` als Lesefrist, `IdleTimeout` 120 s, kein `WriteTimeout` (SSE) — siehe [7.1](#fristen-müssen-zueinander-passen) |
 | **Rate-Limit**            | 50 Anfragen/s/IP (Map + Mutex, kein externer Cache). Ausgenommen sind Auslieferungspfade (`/api/images/cover`, `/uploads/`, `/api/barcode`, `/events`) — ein Seitenaufruf lädt dutzende Bilder, SSE ist eine Dauerverbindung. Der **teure** Zweig des Cover-Proxys hat eine eigene Bremse |
 | **CSRF**                  | Double-Submit-Cookie; `GET /api/csrf-token` holt Token und Cookie vor der ersten Änderung; die Refresh-Route ist ausgenommen                        |
-| **Anmeldung**             | IMAP über implizites TLS (:993, min. TLS 1.2, feste Cipher-Auswahl). **Kein** Passwort im System                                                     |
+| **Anmeldung**             | IMAP über implizites TLS (:993, min. TLS 1.2, feste Cipher-Auswahl). **Kein** Passwort gespeichert, es geht bei jeder Anmeldung über den Server (A2) |
 | **Brute-Force**           | Schlüssel `lower(email)\|ip`, 5 Fehlversuche / 15 min; je Adresse allein erst 50 (`api/anmelde_bremse.go`). Nur-IP mit 5 wäre an einer Schul-NAT eine Aussperrung der ganzen Schule                            |
 | **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, erneuert ab der halben Laufzeit; höchstens 10 h nach der letzten Passworteingabe, dann 423 bis zum Passwort; Cookie `HttpOnly` + `SameSite=Strict` (+ `Secure` nach Betriebslage); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
@@ -2120,7 +2120,7 @@ steht in `lmf_barcode`.
 | `slog` als JSON auf stdout   | Ein Handler für alles — auch für die noch vorhandenen `log.Printf`-Aufrufe (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
 | Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit dem Status |
 | 500er                        | Stack schreibt `panikMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
-| Docker-Logs                  | json-file, 3 × 10 MB je Container                                                                                    |
+| Docker-Logs                  | json-file, 3 × 10 MB je Container. Das Log gehört zum Container: Baut `./update.sh` ein neues Image, ersetzt es den Container, und Docker löscht das alte Log mit. Wer einem Fehler nachgeht, liest das Log vor dem Update |
 | Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
 | Selbstprüfung                | „Was ist eingerichtet, aber nicht in Betrieb?" — Mail, Selbstanmeldung, Geheimnisse, Backup, Restore-Probe            |
@@ -2378,7 +2378,7 @@ sieht.
 
 ## 9. Architekturentscheidungen
 
-Stand: 21.10.2026
+Stand: 24.10.2026
 
 Sechsundzwanzig Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre
 Nummer wird nicht neu vergeben. Format je Eintrag:
@@ -2455,14 +2455,19 @@ fällt mit dem Abmelden, dem Ablauf oder dem Konto. Eine neue Anmeldung prüft w
 der Mailserver. Dabei bleibt es (entschieden am 05.10.2026): Ist er nicht erreichbar, kann sich
 niemand neu anmelden.
 
-**Anlass.** Ein zweiter Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen; die
-Schule pflegt die Postfächer ohnehin.
+**Anlass.** Die Anmeldung über das Schulpostfach ist vorgegeben (Randbedingung T7). Ein zweiter
+Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen; die Schule pflegt die Postfächer
+ohnehin.
 
 **Folge.** Die **E-Mail ist die Identität**. Wer `benutzer.email` schreiben darf, übernimmt
 damit ein Konto — ein Rechte-Audit, das nur auf `rolle` schaut, sieht diesen Weg nicht.
 Daraus folgen A12 und der Eskalationsschutz. Es gibt keinen „Passwort vergessen"-Pfad.
 Nebenwirkung: Der Brute-Force-Schutz schützt auch den **Mailserver** vor
 Credential-Stuffing über diesen Weg. Ein Helfer braucht ein Schulpostfach.
+
+Das Passwort des Schulpostfachs geht bei jeder Anmeldung und jedem Aufschließen über den
+Server. Wer ihn übernimmt, kann es mitlesen, und einen zweiten Faktor gibt es auf diesem Weg
+nicht. Der Server braucht deshalb denselben Schutz wie der Mailserver.
 
 **Fundstelle.** `auth/anmelden.go` (`pruefeIMAPZugang`), Migration 012;
 `auth/pruefwert.go`, `auth/sperre.go`, Migration 155.
