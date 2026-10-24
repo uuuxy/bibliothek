@@ -536,7 +536,13 @@ dieser Neuerung der Normalfall, ab dem zweiten ist der Abgleich scharf. Lokal ma
 
 Jede Zeile im Log trägt eine Stufe. `ERROR` heißt: Etwas ist schiefgegangen und gehört
 angesehen. `WARN` heißt: Das Programm hat sich selbst geholfen. `INFO` ist der normale Ablauf
-(Regel: [STIL.md](STIL.md), Abschnitt 11). Die Ursache steht im Feld `fehler`. Im
+(Regel: [STIL.md](STIL.md), Abschnitt 11). Die Ursache steht im Feld `fehler`.
+
+Die Zeilen mit `ERROR` zählt der Server selbst: System → Einstellungen → Fehler im Log nennt die
+der letzten 24 Stunden je Meldung mit Anzahl, letzter Uhrzeit und Ursache, eine fehlgeschlagene
+Anfrage mit ihrer Route, und die tägliche Alarm-Mail geht an die Alarm-Empfänger (Einstellungen →
+Erreichbarkeit & Alarme, leer: alle aktiven Admins). Der Zählerstand liegt alle zehn Sekunden in
+der Datenbank und übersteht ein Update. Jede Zeile einzeln zeigen die Befehle, im
 Programmverzeichnis am Server:
 
 ```bash
@@ -547,6 +553,17 @@ grep -h '"level":"ERROR"' logs/backend_*.log
 ```
 
 Warnungen zeigt derselbe Befehl mit `"level":"WARN"`.
+
+Steht dort „Voriger Lauf des Servers endete ohne geordnetes Herunterfahren“, ist der Server
+abgestürzt, wurde von außen beendet, oder der Strom fiel aus; Docker hat ihn neu gestartet. Was
+vorher geschah, zeigen:
+
+```bash
+# Neustarts durch Docker, Abbruch wegen Speichermangels, Start des laufenden Backends
+docker inspect -f '{{.RestartCount}} Neustarts, OOMKilled={{.State.OOMKilled}}, läuft seit {{.State.StartedAt}}' bibliothek-backend
+# Absturzmeldung von Go vor dem Neustart, mit dem Stack
+docker logs bibliothek-backend --since 24h 2>&1 | grep -A 20 -E '^(panic|fatal error):'
+```
 
 ### Neustart nach Host-Neustart
 

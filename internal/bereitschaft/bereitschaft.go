@@ -21,7 +21,7 @@ import (
 const (
 	StufeOK       = "ok"       // eingerichtet und in Betrieb
 	StufeWarnung  = "warnung"  // läuft, aber nicht wie gedacht
-	StufeKritisch = "kritisch" // vor dem Echtbetrieb zu klären
+	StufeKritisch = "kritisch" // zu klären; der Wächter mailt ihn täglich
 )
 
 // Mehrere Prüfungen nennen diese Abhilfe wörtlich gleich; sie steht einmal, damit die

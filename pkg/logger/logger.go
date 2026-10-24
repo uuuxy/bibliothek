@@ -1,5 +1,5 @@
-// Package logger nimmt einer Eingabe die Zeilenumbrüche, bevor sie ins Log geht: Eine Eingabe
-// kann so keine eigene Zeile vortäuschen.
+// Package logger hilft dem Log des Servers: Es nimmt einer Eingabe die Zeilenumbrüche, damit sie
+// keine eigene Zeile vortäuschen kann, und zählt die Zeilen der Stufe ERROR (Fehlerstand).
 package logger
 
 import "strings"

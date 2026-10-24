@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -35,6 +36,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
 	"bibliothek/pkg/clientip"
+	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -291,7 +293,7 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 	// Ausdrücklich protokolliert, weil eine vergessene Einstellung sonst genauso aussieht
 	// wie eine funktionierende: Die Lehrkraft bekommt in beiden Fällen nur eine
 	// abgelehnte Anmeldung, und niemand käme auf die Idee, in der .env nachzusehen.
-	slog.Info(auth.SelbstanmeldungStatus())
+	slog.Info("Selbstanmeldung", "stand", auth.SelbstanmeldungStatus())
 
 	port = os.Getenv("PORT")
 	if port == "" {
@@ -319,11 +321,19 @@ func vertrauteProxysAusUmgebung() []string {
 	return eintraege
 }
 
-func main() {
-	// 0. Strukturiertes Log als JSON.
-	logAusgabe := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+// baueLog baut das Log des Servers: JSON ab der Stufe INFO, davor der Fehlerstand, der die Zeilen
+// der Stufe ERROR für die Selbstprüfung zählt. Er steht vor allem anderen, damit er auch die
+// Zeilen des Starts zählt.
+func baueLog(ausgabe io.Writer) (*slog.Logger, *logger.Fehlerstand) {
+	fehlerstand := logger.NewFehlerstand()
+	return slog.New(fehlerstand.SchalteVor(slog.NewJSONHandler(ausgabe, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
-	}))
+	}))), fehlerstand
+}
+
+func main() {
+	// 0. Strukturiertes Log als JSON, mit dem Fehlerstand davor.
+	logAusgabe, fehlerstand := baueLog(os.Stdout)
 	// slog.SetDefault hängt seit Go 1.21 auch das Standardpaket log hier ein: Bibliotheken, die über
 	// log schreiben, landen im selben JSON, mit der Stufe INFO. Der eigene Code schreibt über slog
 	// mit Stufe (docs/STIL.md, Abschnitt 11).
@@ -365,6 +375,9 @@ func main() {
 	verbindung := richteDatenbankEin(ctx, dsn)
 	defer verbindung.Close()
 
+	// Den Fehlerstand des vorigen Laufs übernehmen und den eigenen fortlaufend ablegen.
+	go jobs.FuehreFehlerstandAblageAus(ctx, verbindung.Pool, fehlerstand)
+
 	// 3. Anmeldung, Tokens zwölf Stunden gültig.
 	anmeldung, err := auth.NewAnmeldung(jwtGeheimnis, verbindung.Pool, 12*time.Hour)
 	if err != nil {
@@ -392,6 +405,7 @@ func main() {
 
 	// 6. Server und Routen.
 	serverKonfig.CoverAbgleich = coverAbgleich
+	serverKonfig.Fehlerstand = fehlerstand
 	server := api.NewServer(verbindung, anmeldung, broker, serverKonfig)
 	starteBereitschaftsWaechter(ctx, server)
 	httpServer := starteServer(port, server)
@@ -407,10 +421,21 @@ func main() {
 	herunterfahrKontext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Der Vermerk „geordnet beendet" geht hinaus, bevor der Server auf offene Anfragen wartet:
+	// Docker bricht nach derselben Frist ab, und ein Update ist kein Absturz.
+	fehlerstand.Beende()
+	jobs.SchreibeFehlerstand(herunterfahrKontext, verbindung.Pool, fehlerstand)
+
 	if err := httpServer.Shutdown(herunterfahrKontext); err != nil {
 		slog.Error("Graceful shutdown failed", "fehler", err)
+		// Die Frist ist um; die Zeile darüber soll trotzdem im abgelegten Stand stehen.
+		letzteAblage, abbrechen := context.WithTimeout(context.Background(), 3*time.Second)
+		jobs.SchreibeFehlerstand(letzteAblage, verbindung.Pool, fehlerstand)
+		abbrechen()
 		os.Exit(1)
 	}
+	// Der letzte Stand, bevor das Update den nächsten Lauf startet.
+	jobs.SchreibeFehlerstand(herunterfahrKontext, verbindung.Pool, fehlerstand)
 
 	slog.Info("Server stopped successfully.")
 }

@@ -55,6 +55,20 @@ test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async (
 	await expect(page.getByText(/Punkt(e)? offen\./)).toBeVisible();
 });
 
+test('Fehler im Log nennt den Stand des Zählers am Server', async ({ page }) => {
+	await uiLogin(page);
+	await page.getByRole('button', { name: 'System', exact: true }).click();
+	await menuepunkt(page, 'Einstellungen').click();
+	await einstellungsKategorie(page, 'Fehler im Log').click();
+
+	// Der Server zählt die Zeilen der Stufe ERROR in seinem Log. „Nicht erhoben" hieße, der
+	// Zähler hängt nicht am Server; Fehler fielen dann nur im Log auf. Ob es Meldungen gibt,
+	// hängt an den Läufen davor; der Befund des Servers nennt in beiden Fällen den Zeitraum. Der
+	// Satz unter der Überschrift nennt ihn auch, deshalb wird am Wort „Fehlermeldung" geprüft.
+	await expect(page.getByText(/Fehlermeldung(en)? in den letzten 24 Stunden/)).toBeVisible();
+	await expect(page.getByText('Nicht erhoben', { exact: false })).toHaveCount(0);
+});
+
 test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	// Ein Helfer an der Theke darf sie nicht sehen. Die Meldungen nennen Zustände der
 	// Anlage — Beispiel-Geheimnisse, mock-Anmeldung, fehlende Auslagerung —, und das ist
@@ -66,6 +80,13 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	expect(
 		antwort.status(),
 		'ohne manage_settings darf der Endpunkt keine Auskunft geben'
+	).toBeGreaterThanOrEqual(400);
+
+	// Die Meldungen im Log nennen Pfade, Adressen und Ursachen aus dem Betrieb; dasselbe Recht.
+	const fehlerImLog = await page.request.get('/api/admin/system/fehler-im-log');
+	expect(
+		fehlerImLog.status(),
+		'ohne manage_settings darf auch das Log keine Auskunft geben'
 	).toBeGreaterThanOrEqual(400);
 
 	// Und der Bildschirm selbst bleibt zu.
@@ -84,5 +105,9 @@ test('Betriebsbereitschaft hängt am Verwaltungsrecht', async ({ page }) => {
 	await expect(
 		page.getByText('Was ist eingerichtet, aber nicht in Betrieb?'),
 		'ein Helfer darf den Bildschirm gar nicht erst zu sehen bekommen'
+	).toHaveCount(0);
+	await expect(
+		page.getByText('Was ist im Betrieb schiefgegangen?'),
+		'die Kategorie „Fehler im Log" bleibt ihm ebenso verschlossen'
 	).toHaveCount(0);
 });

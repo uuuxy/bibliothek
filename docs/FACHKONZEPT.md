@@ -737,8 +737,8 @@ abweist; Warnung, weil ohne Bescheid-Bedarf nichts ausfällt).
 Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
 **Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet
 die Meldung auf einem Zettel statt in der `.env`. Dazu eine **Stufe**: `ok` (in Betrieb),
-`warnung` (läuft, aber nicht wie gedacht), `kritisch` (vor dem Echtbetrieb zwingend zu
-klären). Bewusst nur drei — eine feinere Skala liest niemand.
+`warnung` (läuft, aber nicht wie gedacht), `kritisch` (zu klären; löst die tägliche
+Alarm-Mail aus). Bewusst nur drei — eine feinere Skala liest niemand.
 
 **Der Wächter meldet sich selbst:** Kritische Befunde gehen täglich
 per Mail — solange sie bestehen, mit Befund, Folge und Abhilfe je Punkt. Der
@@ -748,6 +748,19 @@ sicherer Rückfall an alle aktiven Admin-Konten — ein Alarm, der niemanden err
 ist keiner. Die Mail nennt im Fußtext, an wen sie ging und in welchem Modus. Warnungen lösen bewusst keine Mail aus (Dauerrauschen stumpft ab);
 ihre Zahl steht als Fußnote. Auf Spielwiesen (`APP_ENV=local/development/test`)
 schweigt der Alarm — die lokale `.env` zeigt auf den echten Schul-SMTP.
+
+**Fehler im Log** stehen auf einer eigenen Seite gleich darunter (Kategorie „Fehler im Log“,
+Recht `manage_settings`, `GET /api/admin/system/fehler-im-log`): Die Betriebsbereitschaft nennt
+Zustände, das Log Ereignisse. Der Server zählt die Zeilen der Stufe ERROR selbst, vor der Ausgabe
+des Logs (`logger.Fehlerstand`), damit sie auffallen, ohne dass jemand das Log liest: je Meldung
+mit Anzahl, letzter Uhrzeit und Ursache, eine fehlgeschlagene Anfrage je Route, über die letzten
+24 Stunden, die jüngste zuerst. Einen Absturz des Servers meldet der nächste Start. Schon
+eine Zeile ist ein Grund für die tägliche Mail; sie nennt die Fehler in einem eigenen Teil nach den
+kritischen Befunden, höchstens fünf Meldungen einzeln, und der Betreff nennt ihre Zahl. Jede
+einzelne Zeile zeigt der Befehl im Betriebshandbuch ([DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im
+Log finden“). Der Zählerstand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`)
+und übersteht so ein Update: Die Mail, die der Wächter drei Minuten nach dem Start schickt, nennt
+auch die Fehler davor.
 
 Die Seite ist eine **reine Prüffunktion**: Sie ändert nichts, sie schaltet nichts frei.
 Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut

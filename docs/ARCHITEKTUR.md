@@ -1035,7 +1035,7 @@ Vollständig: `schema.sql` und [invarianten.md](invarianten.md).
 | `revoked_tokens`               | Sperrliste abgemeldeter JWTs                                                                                      |
 | `sitzungen`                    | eine Zeile je Anmeldung: Sperre nach Inaktivität, Zeit der letzten Passworteingabe und Prüfwert des Passworts, bis zum Abmelden oder Ablauf |
 | `schueler_fotos`               | AES-256-GCM verschlüsselte Passbilder (kein öffentliches Dateiverzeichnis)                                        |
-| `system_einstellungen`         | Die Schalter der Einstellungskategorien (FACHKONZEPT §17); Lieferanten, Schlagworte und Mail in eigenen Tabellen   |
+| `system_einstellungen`         | Die Schalter der Einstellungskategorien (FACHKONZEPT §17) und zwei Ergebnisse, die das Programm selbst ablegt: Restore-Probe und Fehler im Log; Lieferanten, Schlagworte und Mail in eigenen Tabellen |
 | `mail_settings_config`, `mail_vorlagen` | SMTP-Zugang (Passwort verschlüsselt) und Textvorlagen                                                    |
 | `view_buecher_bestand` (Sicht) | Bestandszahlen je Titel für Katalog und Theke                                                                     |
 
@@ -2125,6 +2125,7 @@ steht in `lmf_barcode`.
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
 | Selbstprüfung                | „Was ist eingerichtet, aber nicht in Betrieb?" — Mail, Selbstanmeldung, Geheimnisse, Backup, Restore-Probe            |
 | Bereitschafts-Wächter        | Meldet kritische Befunde per Mail an die Admins: 3 Minuten nach dem Start, danach täglich. Auf Spielwiesen schweigt er von selbst |
+| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update; den Vermerk „beendet“ trägt er erst ab dem Signal zum Herunterfahren. Fehlt er, meldet der nächste Start den vorigen Lauf als abgebrochen (Absturz, Abbruch von außen, Stromausfall). Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht; dafür bräuchte es einen Fehler-Tracker, Sentry ist im Echtbetrieb aus (DEPLOYMENT.md 7) |
 | `GIT_COMMIT` im Image        | „Gesund" heißt nicht „aktuell" — `update.sh` vergleicht nach dem Deploy                                              |
 
 ---

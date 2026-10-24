@@ -4,7 +4,10 @@
 // die ein Bestand ins Programm kommt.
 package system
 
-import "bibliothek/api/tuer"
+import (
+	"bibliothek/api/tuer"
+	"bibliothek/pkg/logger"
+)
 
 // Tueren sind die Türen dieses Themas. Sie stehen auf der Basis des Servers und halten sie als
 // Zeiger: Datenbank, Anmeldung, Live-Leitung und Uhr gibt es so einmal, für jedes Thema dieselben.
@@ -13,4 +16,7 @@ type Tueren struct {
 	// VertrauteProxys sind die Einträge aus TRUSTED_PROXIES, mit denen der Server die Adresse des
 	// Browsers ermittelt; die Selbstprüfung nennt die unlesbaren.
 	VertrauteProxys []string
+	// Fehlerstand zählt die Zeilen der Stufe ERROR im Log; nil heißt, die Selbstprüfung meldet den
+	// Bereich als nicht erhoben.
+	Fehlerstand *logger.Fehlerstand
 }

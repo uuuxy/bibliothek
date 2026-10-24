@@ -13,12 +13,12 @@ import (
 // ein Alarm, der bei Warnungen feuert, wird stummgeschaltet.
 func TestFormatiereAlarmMail(t *testing.T) {
 	t.Run("ohne Kritisches keine Mail", func(t *testing.T) {
-		_, _, n := formatiereAlarmMail([]bereitschaft.Befund{
+		betreff, _, n := formatiereAlarmMail([]bereitschaft.Befund{
 			{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung, Befund: "2000 Demo-Schüler"},
 			{Bereich: "Anmeldung", Stufe: bereitschaft.StufeOK},
-		})
-		if n != 0 {
-			t.Fatalf("kritische = %d, erwartet 0", n)
+		}, fehlerImLogAntwort{Stufe: bereitschaft.StufeOK})
+		if n != 0 || betreff != "" {
+			t.Fatalf("kritische = %d, Betreff %q, erwartet 0 und keine Mail", n, betreff)
 		}
 	})
 
@@ -28,7 +28,7 @@ func TestFormatiereAlarmMail(t *testing.T) {
 				Befund: "Kein Ziel außer Haus eingerichtet.", Folge: "Ein Plattenausfall kostet alles.",
 				Abhilfe: "S3_ENDPOINT setzen."},
 			{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung, Befund: "2000 Demo-Schüler"},
-		})
+		}, fehlerImLogAntwort{Stufe: bereitschaft.StufeOK})
 		if n != 1 {
 			t.Fatalf("kritische = %d, erwartet 1", n)
 		}
@@ -44,6 +44,56 @@ func TestFormatiereAlarmMail(t *testing.T) {
 			}
 		}
 	})
+}
+
+// Die Fehler im Log haben einen eigenen Teil der Mail, jede Meldung unter dem Befund, die Ursache
+// darunter, und der Betreff nennt sie. Schon sie allein lösen die Mail aus; ohne Fehler und ohne
+// kritischen Befund geht keine hinaus, auch nicht, wenn der Server nicht zählt.
+func TestFormatiereAlarmMail_FehlerImLog(t *testing.T) {
+	fehler := fehlerImLogAntwort{
+		Stufe: bereitschaft.StufeKritisch, Anzahl: 3,
+		Befund: "3 Fehlermeldungen in den letzten 24 Stunden, zuletzt heute um 11:47.",
+		Meldungen: []fehlerZeile{
+			{Text: "Anfrage mit Serverfehler beendet", Zusatz: "2 × · zuletzt 11:47"},
+			{Text: "Backup: S3 upload failed", Zusatz: "1 × · 02:31 · 403 AccessDenied"},
+		},
+		Folge: "Eine Fehlermeldung heißt: Etwas ist schiefgegangen.", Abhilfe: "Befehl im Betriebshandbuch.",
+	}
+	kritisch := bereitschaft.Befund{Bereich: "Auslagerung der Backups", Stufe: bereitschaft.StufeKritisch,
+		Befund: "Kein Ziel außer Haus.", Folge: "Ein Plattenausfall kostet alles.", Abhilfe: "S3_ENDPOINT setzen."}
+
+	betreff, text, n := formatiereAlarmMail(nil, fehler)
+	if n != 0 || betreff != "Bibliothek: 3 Fehlermeldungen im Log" {
+		t.Errorf("nur Fehler: kritische = %d, Betreff %q, erwartet 0 und den Betreff der Fehler", n, betreff)
+	}
+	want := "‼ Fehler im Log\n" +
+		"   Befund:  3 Fehlermeldungen in den letzten 24 Stunden, zuletzt heute um 11:47.\n" +
+		"            Anfrage mit Serverfehler beendet\n" +
+		"              2 × · zuletzt 11:47\n" +
+		"            Backup: S3 upload failed\n" +
+		"              1 × · 02:31 · 403 AccessDenied\n" +
+		"   Folge:   Eine Fehlermeldung heißt: Etwas ist schiefgegangen.\n" +
+		"   Abhilfe: Befehl im Betriebshandbuch.\n"
+	if !strings.Contains(text, want) {
+		t.Errorf("Mail-Text ohne den Teil\n%s\nist:\n%s", want, text)
+	}
+	if !strings.HasPrefix(text, "Die tägliche Selbstprüfung meldet Zustände, die zu klären sind.\n") {
+		t.Errorf("erster Satz der Mail: %q", strings.SplitN(text, "\n", 2)[0])
+	}
+
+	betreff, text, n = formatiereAlarmMail([]bereitschaft.Befund{kritisch}, fehler)
+	if want := "Bibliothek: 1 kritische(r) Befund(e) der Betriebsbereitschaft, 3 Fehlermeldungen im Log"; n != 1 || betreff != want {
+		t.Errorf("beides: kritische = %d, Betreff %q, erwartet 1 und %q", n, betreff, want)
+	}
+	if i, j := strings.Index(text, "‼ Auslagerung der Backups"), strings.Index(text, "‼ Fehler im Log"); i < 0 || j < i {
+		t.Errorf("beides: Befund an %d, Fehler an %d, erwartet erst den Befund, dann die Fehler:\n%s", i, j, text)
+	}
+
+	for _, stufe := range []string{bereitschaft.StufeOK, bereitschaft.StufeWarnung} {
+		if betreff, _, _ := formatiereAlarmMail(nil, fehlerImLogAntwort{Stufe: stufe}); betreff != "" {
+			t.Errorf("Fehler im Log mit Stufe %q: Betreff %q, erwartet keine Mail", stufe, betreff)
+		}
+	}
 }
 
 // Die Wahl der Empfänger: konfiguriert schlägt Verteiler, Müll ohne @ fällt raus, und ganz

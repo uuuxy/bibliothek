@@ -12,6 +12,7 @@
 	import Datenverwaltung from '../admin/Datenverwaltung.svelte';
 	import SchuljahreswechselBereich from '../admin/SchuljahreswechselBereich.svelte';
 	import Betriebsbereitschaft from '../../Betriebsbereitschaft.svelte';
+	import FehlerImLog from '../../FehlerImLog.svelte';
 	import Klassenleitungen from '../../Klassenleitungen.svelte';
 	import LMFVerlaengerung from '../../LMFVerlaengerung.svelte';
 	import KategorieRahmen from './KategorieRahmen.svelte';
@@ -89,6 +90,13 @@
 			kurz="Was ist eingerichtet, aber nicht in Betrieb? Diese Seite prüft nur — geändert wird in den Kategorien daneben."
 		>
 			<Betriebsbereitschaft />
+		</KategorieRahmen>
+	{:else if aktiv === 'fehler'}
+		<KategorieRahmen
+			titel="Fehler im Log"
+			kurz="Was in den letzten 24 Stunden im Betrieb schiefgegangen ist, je Meldung mit Ursache."
+		>
+			<FehlerImLog />
 		</KategorieRahmen>
 	{/if}
 {/key}

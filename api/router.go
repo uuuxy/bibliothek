@@ -53,6 +53,7 @@ import (
 	"bibliothek/mailservice"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -68,6 +69,8 @@ type Server struct {
 	vertrauteProxys []string
 	// coverAbgleich ist der Abgleich der Cover, den der Knopf in der Verwaltung startet.
 	coverAbgleich *service.CoverDienst
+	// fehlerstand zählt die Zeilen der Stufe ERROR im Log; die Selbstprüfung zeigt ihn.
+	fehlerstand *logger.Fehlerstand
 	// bremse zählt die gescheiterten Anmeldungen je Adresse; der Nullwert ist leer.
 	bremse anmeldeBremse
 }
@@ -85,6 +88,9 @@ type ServerKonfig struct {
 	// CoverAbgleich ist der Abgleich der Cover, den Start und Zeitplan mit dem Knopf in der
 	// Verwaltung teilen; nil heißt, der Server legt einen eigenen an.
 	CoverAbgleich *service.CoverDienst
+	// Fehlerstand zählt die Zeilen der Stufe ERROR im Log des Servers (main.go); nil heißt, die
+	// Selbstprüfung meldet den Bereich als nicht erhoben.
+	Fehlerstand *logger.Fehlerstand
 }
 
 // NewServer baut den Server. Sein Mailversand liest die in der Oberfläche gespeicherte
@@ -103,6 +109,7 @@ func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *
 		nurHTTPS:        konfig.NurHTTPS,
 		vertrauteProxys: konfig.VertrauteProxys,
 		coverAbgleich:   coverAbgleich,
+		fehlerstand:     konfig.Fehlerstand,
 	}
 }
 
@@ -129,7 +136,7 @@ func (s *Server) portal() *portal.Tueren {
 
 // system ist der Zugang zu den Türen der Systempflege.
 func (s *Server) system() *system.Tueren {
-	return &system.Tueren{Basis: &s.Basis, VertrauteProxys: s.vertrauteProxys}
+	return &system.Tueren{Basis: &s.Basis, VertrauteProxys: s.vertrauteProxys, Fehlerstand: s.fehlerstand}
 }
 
 // BereitschaftsAlarm prüft die Betriebsbereitschaft und mailt kritische Befunde an die Admins.

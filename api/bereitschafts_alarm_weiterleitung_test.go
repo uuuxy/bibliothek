@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/pkg/logger"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
@@ -40,5 +41,21 @@ func TestBereitschaftsAlarm_ServerReichtAnDieSystempflegeWeiter(t *testing.T) {
 
 	if pool.abfragen == 0 {
 		t.Fatal("der Alarm hat keine Lage gesammelt: Der Server reicht den Aufruf nicht weiter")
+	}
+}
+
+// Der Start gibt dem Server den Fehlerstand, an dem das Log zählt (main.go), und die Systempflege
+// muss denselben bekommen. Bekäme sie keinen, meldete die Seite „nicht erhoben"; bekäme sie einen
+// eigenen, zeigte sie dauerhaft keine Fehler.
+func TestNewServer_ReichtDenFehlerstandAnDieSystempflege(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	t.Cleanup(mock.Close)
+	stand := logger.NewFehlerstand()
+	srv := NewServer(&db.Verbindung{Pool: mock}, nil, nil, ServerKonfig{Fehlerstand: stand})
+	if got := srv.system().Fehlerstand; got != stand {
+		t.Errorf("system().Fehlerstand = %p, erwartet den Fehlerstand des Starts %p", got, stand)
 	}
 }

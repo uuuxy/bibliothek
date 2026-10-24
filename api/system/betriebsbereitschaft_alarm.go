@@ -23,8 +23,8 @@ import (
 	"bibliothek/repository"
 )
 
-// BereitschaftsAlarm sammelt die Lage, prüft sie und mailt kritische Befunde.
-// Läuft nur im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
+// BereitschaftsAlarm sammelt die Lage, prüft sie und mailt kritische Befunde und die Fehler im
+// Log. Läuft nur im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
 // ein Entwicklungsrechner darf niemals Alarm-Mails auslösen.
 func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	einstellungsAbfragen := repository.NewEinstellungsAbfragen(t.DB.Pool)
@@ -37,19 +37,22 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	}
 
 	befunde := bereitschaft.Pruefe(lage)
-	betreff, textkoerper, kritische := formatiereAlarmMail(befunde)
-	if kritische == 0 {
+	fehler := baueFehlerImLog(t.fehlergruppen(lage.Jetzt), lage.Jetzt, hoechstzahlMeldungenInDerMail)
+	betreff, textkoerper, kritische := formatiereAlarmMail(befunde, fehler)
+	if betreff == "" {
 		return
 	}
 
 	admins, err := zustandAbfragen.LadeAktiveAdmins(ctx)
 	if err != nil {
-		slog.Error("Bereitschafts-Alarm: kritische Befunde, aber Admin-Konten nicht lesbar", "befunde", kritische, "fehler", err)
+		slog.Error("Bereitschafts-Alarm: zu melden, aber Admin-Konten nicht lesbar",
+			"befunde", kritische, "fehlermeldungen", fehler.Anzahl, "fehler", err)
 		return
 	}
 	empfaenger, beschreibung := waehleAlarmEmpfaenger(lage.AlarmEmpfaenger, admins)
 	if len(empfaenger) == 0 {
-		slog.Error("Bereitschafts-Alarm: kritische Befunde, aber keine Empfänger (weder konfiguriert noch aktive Admins)", "befunde", kritische)
+		slog.Error("Bereitschafts-Alarm: zu melden, aber keine Empfänger (weder konfiguriert noch aktive Admins)",
+			"befunde", kritische, "fehlermeldungen", fehler.Anzahl)
 		return
 	}
 
@@ -65,12 +68,14 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 			slog.Error("Bereitschafts-Alarm: Versand fehlgeschlagen", "empfaenger", an, "fehler", err)
 		}
 	}
-	slog.Info("Bereitschafts-Alarm: kritische Befunde gemeldet", "befunde", kritische, "anzahl_empfaenger", len(empfaenger))
+	slog.Info("Bereitschafts-Alarm: gemeldet", "befunde", kritische, "fehlermeldungen", fehler.Anzahl,
+		"anzahl_empfaenger", len(empfaenger))
 }
 
-// formatiereAlarmMail baut Betreff und Text aus den Befunden. Reine Funktion —
-// prüfbar ohne Mailserver, Datenbank oder Umgebung.
-func formatiereAlarmMail(befunde []bereitschaft.Befund) (betreff, textkoerper string, kritische int) {
+// formatiereAlarmMail baut Betreff und Text aus den Befunden und den Fehlern im Log. Reine
+// Funktion — prüfbar ohne Mailserver, Datenbank oder Umgebung. Ohne kritischen Befund und ohne
+// Fehlermeldung bleibt der Betreff leer, und es geht keine Mail hinaus.
+func formatiereAlarmMail(befunde []bereitschaft.Befund, fehler fehlerImLogAntwort) (betreff, textkoerper string, kritische int) {
 	var kritischeBefunde []bereitschaft.Befund
 	warnungen := 0
 	for _, b := range befunde {
@@ -81,30 +86,55 @@ func formatiereAlarmMail(befunde []bereitschaft.Befund) (betreff, textkoerper st
 			warnungen++
 		}
 	}
-	if len(kritischeBefunde) == 0 {
+	mitFehlern := fehler.Stufe == bereitschaft.StufeKritisch
+	if len(kritischeBefunde) == 0 && !mitFehlern {
 		return "", "", 0
 	}
 
-	betreff = fmt.Sprintf("Bibliothek: %d kritische(r) Befund(e) der Betriebsbereitschaft", len(kritischeBefunde))
+	var teile []string
+	if len(kritischeBefunde) > 0 {
+		teile = append(teile, fmt.Sprintf("%d kritische(r) Befund(e) der Betriebsbereitschaft", len(kritischeBefunde)))
+	}
+	if mitFehlern {
+		teile = append(teile, fehlermeldungen(fehler.Anzahl)+" im Log")
+	}
+	betreff = "Bibliothek: " + strings.Join(teile, ", ")
 
 	var sb strings.Builder
-	sb.WriteString("Die tägliche Selbstprüfung meldet Zustände, die vor dem Echtbetrieb zwingend zu klären sind.\n" +
+	sb.WriteString("Die tägliche Selbstprüfung meldet Zustände, die zu klären sind.\n" +
 		"Diese Mail kommt täglich, solange sie bestehen.\n\n")
 	for _, b := range kritischeBefunde {
-		fmt.Fprintf(&sb, "‼ %s\n", b.Bereich)
-		fmt.Fprintf(&sb, "   Befund:  %s\n", b.Befund)
-		if b.Folge != "" {
-			fmt.Fprintf(&sb, "   Folge:   %s\n", b.Folge)
-		}
-		if b.Abhilfe != "" {
-			fmt.Fprintf(&sb, "   Abhilfe: %s\n", b.Abhilfe)
-		}
-		sb.WriteString("\n")
+		schreibeAlarmTeil(&sb, b, nil)
+	}
+	if mitFehlern {
+		schreibeAlarmTeil(&sb, bereitschaft.Befund{
+			Bereich: "Fehler im Log", Befund: fehler.Befund, Folge: fehler.Folge, Abhilfe: fehler.Abhilfe,
+		}, fehler.Meldungen)
 	}
 	if warnungen > 0 {
 		fmt.Fprintf(&sb, "Daneben stehen %d Warnung(en) — Details unter System → Einstellungen → Betriebsbereitschaft.\n", warnungen)
 	}
 	return betreff, sb.String(), len(kritischeBefunde)
+}
+
+// schreibeAlarmTeil schreibt einen Teil der Mail: Bereich und Befund, die Meldungen darunter, dann
+// Folge und Abhilfe.
+func schreibeAlarmTeil(sb *strings.Builder, b bereitschaft.Befund, meldungen []fehlerZeile) {
+	fmt.Fprintf(sb, "‼ %s\n", b.Bereich)
+	fmt.Fprintf(sb, "   Befund:  %s\n", b.Befund)
+	for _, m := range meldungen {
+		fmt.Fprintf(sb, "            %s\n", m.Text)
+		if m.Zusatz != "" {
+			fmt.Fprintf(sb, "              %s\n", m.Zusatz)
+		}
+	}
+	if b.Folge != "" {
+		fmt.Fprintf(sb, "   Folge:   %s\n", b.Folge)
+	}
+	if b.Abhilfe != "" {
+		fmt.Fprintf(sb, "   Abhilfe: %s\n", b.Abhilfe)
+	}
+	sb.WriteString("\n")
 }
 
 // waehleAlarmEmpfaenger bestimmt, wohin die kritischen Alarme gehen: Ist in den

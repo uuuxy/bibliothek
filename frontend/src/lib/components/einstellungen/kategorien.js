@@ -16,6 +16,7 @@ import {
 	CalendarClock,
 	Clock,
 	Database,
+	FileExclamationPoint,
 	Globe,
 	GraduationCap,
 	Mail,
@@ -135,6 +136,13 @@ export const KATEGORIEN = [
 		titel: 'Betriebsbereitschaft',
 		kurz: 'Eingerichtet, aber nicht in Betrieb?',
 		icon: Activity
+	},
+	{
+		// Neben der Betriebsbereitschaft, nicht in ihr: Sie nennt Zustände, das Log Ereignisse.
+		id: 'fehler',
+		titel: 'Fehler im Log',
+		kurz: 'Was ist im Betrieb schiefgegangen?',
+		icon: FileExclamationPoint
 	}
 ];
 

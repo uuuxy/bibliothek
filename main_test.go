@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 )
 
 func setzeVariable(name, wert string) {
@@ -207,5 +209,23 @@ func TestLeseKonfig_AusdruecklichFalseLaesstBeispielJWTDurch(t *testing.T) {
 	setzeVariable("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
 	if _, jwtGeheimnis, _, _ := leseKonfig(); jwtGeheimnis == "" {
 		t.Fatal("leseKonfig ist ausgestiegen, obwohl ENFORCE_PROD_SECRETS=false gesetzt ist")
+	}
+}
+
+// Das Log des Servers schreibt jede Zeile als JSON und zählt dabei die der Stufe ERROR in den
+// Fehlerstand, den der Start an den Server gibt.
+func TestBaueLog_SchreibtJSONUndZaehltFehler(t *testing.T) {
+	var ausgabe bytes.Buffer
+	log, fehlerstand := baueLog(&ausgabe)
+	log.Debug("unter der Stufe INFO")
+	log.Info("Anfrage")
+	log.Error("Mail nicht zugestellt", "fehler", "dial tcp: i/o timeout")
+
+	if n := strings.Count(ausgabe.String(), "\n"); n != 2 || !strings.Contains(ausgabe.String(), `"level":"ERROR"`) {
+		t.Errorf("Log = %q, erwartet zwei Zeilen JSON ab INFO", ausgabe.String())
+	}
+	gruppen := fehlerstand.Gruppen(time.Now())
+	if len(gruppen) != 1 || gruppen[0].Meldung != "Mail nicht zugestellt" || gruppen[0].Ursache != "dial tcp: i/o timeout" {
+		t.Errorf("Fehlerstand = %+v, erwartet die eine Zeile der Stufe ERROR mit Ursache", gruppen)
 	}
 }

@@ -42,6 +42,9 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	// einem Umbruch das Recht nicht. Lieber eine lange Zeile als eine Prüfung, die man entschärfen
 	// muss.
 	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.verlangeRecht("manage_settings")(s.system().Betriebsbereitschaft(einstellungsAbfragen, mailEinstellungsAbfragen, repository.NewBetriebszustandAbfragen(pool))))
+	// Die Fehler im Log stehen neben der Betriebsbereitschaft, nicht in ihr: Sie nennen Ereignisse,
+	// keine Zustände (api/system/fehler_im_log.go).
+	mux.Handle("GET /api/admin/system/fehler-im-log", s.verlangeRecht("manage_settings")(s.system().FehlerImLog()))
 	mux.Handle("PUT /api/admin/permissions", s.verlangeRecht("manage_users")(s.benutzer().RollenRechtSetzen()))
 
 	// Protokoll

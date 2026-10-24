@@ -67,6 +67,7 @@ var listenGrenze = map[string]string{
 	"GET /api/public/opac/suche $":                                        "LIMIT 50 (opacGrenze, api/portal/opac.go; repository.FindeImKatalog)",
 	"GET /api/mail-templates $":                                           "keine Obergrenze in der Abfrage; je Art der Vorlage eine Zeile, typ ist eindeutig (UNIQUE in mail_vorlagen; repository.LadeMailVorlagen)",
 	"GET /api/admin/system/betriebsbereitschaft $.befunde":                "einundzwanzig feste Bereiche, je einer ein Befund (bereitschaft.Pruefe)",
+	"GET /api/admin/system/fehler-im-log $.meldungen":                     "höchstens hundert, je Meldung eine Zeile; bei mehr fällt die Meldung, deren letzte Zeile am längsten zurückliegt (hoechstzahlGruppen, pkg/logger/fehlerstand.go)",
 	"GET /api/faecher $":                                                  "keine Obergrenze in der Abfrage; die verschiedenen Fächer der Titel (DISTINCT), wächst mit den Fächern, nicht mit den Büchern (repository.LadeFaecher)",
 	"GET /api/klassen $":                                                  "keine Obergrenze in der Abfrage; die verschiedenen Klassen der aktiven Schüler (DISTINCT), wächst mit der Schule, nicht mit den Jahren (LeserAbfragen.LadeKlassen)",
 	"GET /api/buecher/titel/{id}/auflagen $.auflagen":                     "keine Obergrenze in der Abfrage; die Auflagen desselben Werks (werk_id) wie der eine Titel (repository.LadeAuflagenDesTitels)",

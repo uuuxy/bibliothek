@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-22. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-24. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (228)
+## Alle registrierten Routen (229)
 
 - `/`
 - `/api/admin`
@@ -51,6 +51,7 @@
 - `GET /api/admin/settings/mail`
 - `GET /api/admin/system/backup-status`
 - `GET /api/admin/system/betriebsbereitschaft`
+- `GET /api/admin/system/fehler-im-log`
 - `GET /api/anliegen/anzahl`
 - `GET /api/anliegen/eigene`
 - `GET /api/anliegen/offen`

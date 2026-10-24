@@ -395,6 +395,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/admin/permissions":                 {URL: "/api/admin/permissions"},
 		"GET /api/admin/system/backup-status":        {URL: "/api/admin/system/backup-status"},
 		"GET /api/admin/system/betriebsbereitschaft": {URL: "/api/admin/system/betriebsbereitschaft"},
+		"GET /api/admin/system/fehler-im-log":        {URL: "/api/admin/system/fehler-im-log"},
 		"GET /api/audit":                             {URL: "/api/audit"},
 		"GET /api/audit/tresen-auskunft":             {URL: "/api/audit/tresen-auskunft?barcode=" + w.buchBarcode, Positiv: []string{"Vogelbeere"}},
 		"GET /api/mail-templates":                    {URL: "/api/mail-templates"},
