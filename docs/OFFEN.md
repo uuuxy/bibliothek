@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 23.10.2026
+Stand: 24.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -26,6 +26,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
 - [x] Die Live-Leitung endet mit der Anmeldung: abgemeldet, gesperrt oder nach der Höchstdauer.
   (5.99)
+- [ ] Der Mahnversand an die Klassenleitungen lehnt einen Rumpf ohne Klassenliste ab, statt an
+  alle Klassen zu verschicken. (5.100)
+- [ ] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
+- [ ] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -99,6 +103,65 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.100 Mahnversand ohne Klassenliste geht an alle Klassen
+
+Gefunden am 24.10.2026 beim Lasttest mit k6 gegen eine abgeschottete Kopie der Generalprobe
+(Littera-Sicherung von 2010): Jede schreibende Route bekam kaputte Rümpfe.
+`POST /api/mail/send-bulk-overdue` antwortete auf einen solchen Rumpf mit 200 und begann den
+Lauf an alle überfälligen Klassen. `leseKlassenVersandAnfrage` (`api/mahnwesen/mahnlisten_versand.go`)
+liest nachsichtig: Fehlt `klassen`, gilt der alte Vertrag „alle überfälligen Klassen an ihre
+Klassenleitungen". Das gilt laut Kommentar für einen fehlenden Rumpf, trifft aber ebenso `{}`,
+`null` und einen Rumpf mit fremden Feldern. Die Oberfläche schickt immer eine Auswahl
+(`frontend/src/lib/stores/mahnwesenMail.svelte.js`). Erreichbar ist der Weg also nur über einen
+Rumpf, den sie nicht schickt, etwa aus einer veralteten Fassung. Einstufung A nach Regel 4:
+Mahnlisten gehen still an Klassenleitungen, die niemand gewählt hat. Bis zum Test, der am alten
+Code rot wird, ist es ein Verdacht.
+
+**Zu bauen:** Ohne `klassen` antwortet die Tür 400 „Keine Klasse ausgewählt" (die Meldung gibt
+es für die leere Liste schon), fremde Felder lehnt sie ab. Vorher nachsehen, ob ein Test oder
+Skript den alten Vertrag braucht (`grep -rn send-bulk-overdue`). Test: Rumpf `{}` gibt 400, und
+der Versand läuft nicht an.
+
+### 5.101 Mail-Einstellungen: Speichern ohne Felder leert sie
+
+Gefunden am 24.10.2026 im selben Lauf: `PUT /api/admin/settings/mail` mit einem Rumpf ohne ein
+einziges bekanntes Feld antwortete 200. Danach waren Server, Port, Benutzer und Absender leer;
+das Verwaltungsprotokoll zeigt `UPDATE_MAIL_SETTINGS` mit leeren Werten.
+`MailEinstellungenSchreiben` (`api/system/mail_einstellungen.go`) liest mit `tuer.LeseAnfrage`
+und speichert ein fehlendes Feld als leer. Die Oberfläche schickt alle Felder. Was der Versand
+mit geleerten Einstellungen tut, ist nicht geprüft: Der Massenversand der Mahnlisten lief in der
+Kopie danach noch an (`IstKonfiguriert`). Das vor dem Bau klären, davon hängt die Einstufung ab.
+
+**Zu bauen:** strenges Lesen (`tuer.LeseAnfrageStreng`); Server und Port Pflicht, sonst 400.
+Test: Rumpf ohne Felder gibt 400, die gespeicherte Einstellung bleibt.
+
+### 5.102 Null-Zeichen in einer Eingabe gibt 500
+
+PostgreSQL nimmt kein Null-Zeichen in Text an (`invalid byte sequence for encoding "UTF8":
+0x00`, SQLSTATE 22021). Das Programm reicht die Eingabe durch und antwortet 500 statt 400. Am
+24.10.2026 im selben Lauf gezählt, je Route ein Abruf mit Null-Zeichen in den üblichen
+Abfragewerten, im Pfad und in den Textfeldern des Rumpfs: 21 Türen.
+
+- **Lesend (15):** `/api/schueler`, `/api/books`, `/api/books/vorhanden`,
+  `/api/buecher/titel/suche`, `/api/search`, `/api/public/opac/suche` (ohne Anmeldung),
+  `/api/portal/lernmittel`, `/api/portal/lernmittel/export`,
+  `/api/reservierungen/klassensatz/katalog`, `/api/schlagworte`, `/api/schlagworte/pflege`,
+  `/api/exemplare/etiketten-offen`, `/api/audit/tresen-auskunft`,
+  `/api/schueler/{barcode_id}/photo`, `/api/schueler/{id}/zusammenfuehren-kandidaten`.
+- **Schreibend (6):** `POST /api/action`, `POST /api/buecher/aus-isbn`,
+  `PUT /api/buecher/exemplare/{id}/barcode`, `PUT /api/buecher/titel/{id}/signatur`,
+  `PUT /api/anliegen/{id}/erledigen`, `PUT /api/reservierungen/klassensatz/{id}/erledigen`.
+
+Nachstellen: `GET /api/schueler?q=%00` als Admin. Eine gemeinsame Regel gibt es nicht; nur die
+Übernahme der Barcodes entfernt Null-Zeichen (`internal/service/import_zeilen.go`). Einstufung
+B: Der Server antwortet laut, der Fehlertext geht nicht hinaus, nichts wird gespeichert.
+
+**Zu bauen:** eine Stelle am Eingang statt 21 einzelner. Pfad und Abfrage mit Null-Zeichen
+bekommen 400, und ein Rumpf mit `\u0000` in einem Text ebenso, auch für Türen mit eigenem
+Decoder. Die Kette steht in `api/router.go` (`baueKette`). Dazu ein Test, der jede registrierte
+Route mit Null-Zeichen aufruft und 5xx verbietet; ein Gate zählt erst, wenn es am alten Code rot
+war.
 
 ### 7.2 Frisches Littera-Backup
 
