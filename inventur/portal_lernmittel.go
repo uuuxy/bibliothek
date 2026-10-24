@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/pdf"
 	"bibliothek/pkg/lmf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -56,9 +57,9 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 	}
 	ueberschrift := ""
 	if gewaehlt {
-		ueberschrift = fachAnzeige(fachName)
+		ueberschrift = pdf.FachAnzeige(fachName)
 	}
-	datei, err := schulbuecherAlsPDF(titel, ueberschrift, filterKlartext(filter))
+	datei, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(titel), ueberschrift, filterKlartext(filter))
 	if err != nil {
 		slog.Error("Portal Lernmittel-Export: PDF fehlgeschlagen", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
@@ -111,4 +112,54 @@ func lernmittelFilterParam(r *http.Request) lernmittelFilter {
 		f.Jahrgang = j
 	}
 	return f
+}
+
+// schulbuecherFuerPDF füllt die Zeilen des Blatts aus den Zeilen der Abfrage: dieselben Bücher
+// und Zahlen wie auf dem Bildschirm.
+func schulbuecherFuerPDF(titel []LernmittelTitel) []pdf.Schulbuch {
+	zeilen := make([]pdf.Schulbuch, 0, len(titel))
+	for _, buch := range titel {
+		var auflagen []pdf.SchulbuchAuflage
+		for _, auflage := range buch.AuflagenBestand {
+			auflagen = append(auflagen, pdf.SchulbuchAuflage{
+				Auflage: auflage.Auflage, Erscheinungsjahr: auflage.Erscheinungsjahr, Gesamt: auflage.Gesamt,
+			})
+		}
+		zeilen = append(zeilen, pdf.Schulbuch{
+			Titel: buch.Titel, Autor: buch.Autor, Fach: buch.Fach, CoverURL: buch.CoverURL, ISBN: buch.ISBN,
+			JahrgangVon: buch.JahrgangVon, JahrgangBis: buch.JahrgangBis, Zweig: buch.Zweig,
+			Gezaehlt: buch.Gezaehlt, Gesamt: buch.Gesamt, Verliehen: buch.Verliehen,
+			Verfuegbar: buch.Verfuegbar, Auflagen: auflagen,
+		})
+	}
+	return zeilen
+}
+
+// dateinamenTeil macht aus einem Fachnamen einen Dateinamen-Bestandteil.
+func dateinamenTeil(s string) string {
+	var b strings.Builder
+	for _, c := range strings.ToLower(s) {
+		switch {
+		case c >= 'a' && c <= 'z', c >= '0' && c <= '9':
+			b.WriteRune(c)
+		case c == 'ä':
+			b.WriteString("ae")
+		case c == 'ö':
+			b.WriteString("oe")
+		case c == 'ü':
+			b.WriteString("ue")
+		case c == 'ß':
+			b.WriteString("ss")
+		default:
+			b.WriteRune('-')
+		}
+	}
+	name := strings.Trim(b.String(), "-")
+	for strings.Contains(name, "--") {
+		name = strings.ReplaceAll(name, "--", "-")
+	}
+	if name == "" {
+		return "ohne-fach"
+	}
+	return name
 }

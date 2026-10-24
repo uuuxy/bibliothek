@@ -1,4 +1,4 @@
-package inventur
+package pdf
 
 import (
 	"bytes"
@@ -45,6 +45,37 @@ const (
 	coverBrt = 10.0
 )
 
+// Schulbuch ist eine Zeile der Bestandsliste der Schulbücher: was der Reiter „Schulbücher" im
+// Portal zu einem Buch zeigt. Die Tür füllt sie aus der Abfrage; das Blatt kennt die Datenbank
+// nicht.
+type Schulbuch struct {
+	Titel    string
+	Autor    string
+	Fach     string
+	CoverURL string
+	ISBN     string
+	// JahrgangVon und JahrgangBis: 0 und 0 heißt „unbekannt".
+	JahrgangVon int
+	JahrgangBis int
+	// Zweig ist der Schulzweig; leer heißt „gilt für alle Zweige".
+	Zweig string
+	// Gezaehlt ist der Tag der letzten Zählung als „TT.MM.JJJJ"; leer heißt „noch nie gezählt".
+	Gezaehlt   string
+	Gesamt     int
+	Verliehen  int
+	Verfuegbar int
+	// Auflagen: Steht die Zeile für ein Buch in mehreren Auflagen, sind die Zahlen oben die
+	// Summe, und hier steht, woraus sie besteht, die neueste Auflage zuerst.
+	Auflagen []SchulbuchAuflage
+}
+
+// SchulbuchAuflage ist eine Auflage eines Schulbuchs mit ihrem Bestand.
+type SchulbuchAuflage struct {
+	Auflage          string
+	Erscheinungsjahr int
+	Gesamt           int
+}
+
 // titelBreite füllt den Rest der Zeile.
 func titelBreite(mitGezaehlt bool) float64 {
 	belegt := spCover + spAutor + spISBN + spJg + spZweig + 3*spZahl
@@ -54,9 +85,9 @@ func titelBreite(mitGezaehlt bool) float64 {
 	return nutzBreite - belegt
 }
 
-// schulbuecherAlsPDF baut die Bestandsliste. fachName ist die Überschrift („Englisch"
+// ErzeugeSchulbuecher baut die Bestandsliste. fachName ist die Überschrift („Englisch"
 // oder "" für alle Fächer), zusatz die aktive Einschränkung als Klartext.
-func schulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byte, error) {
+func ErzeugeSchulbuecher(titel []Schulbuch, fachName, zusatz string) ([]byte, error) {
 	// Die Zählspalte erscheint nur, wenn in dieser Auswahl überhaupt etwas gezählt wurde.
 	// Eine Spalte, die auf jedem Blatt leer bliebe, nähme der Titelspalte 17 mm weg und
 	// behauptete zugleich eine Angabe, die es nicht gibt.
@@ -100,7 +131,7 @@ func schulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 			if pdf.GetY()+7+zeilenH > randUnten {
 				pdf.AddPage()
 			}
-			zeichneFachTrenner(pdf, tr, fachAnzeige(t.Fach))
+			zeichneFachTrenner(pdf, tr, FachAnzeige(t.Fach))
 		}
 		zeichneSchulbuchZeile(pdf, tr, t, breiteTitel, mitGezaehlt, &fehlendeCover)
 	}
@@ -125,7 +156,7 @@ func schulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 }
 
 // hatZaehlung sagt, ob in der Auswahl mindestens ein Titel gezählt wurde.
-func hatZaehlung(titel []LernmittelTitel) bool {
+func hatZaehlung(titel []Schulbuch) bool {
 	for _, t := range titel {
 		if t.Gezaehlt != "" {
 			return true
@@ -171,7 +202,7 @@ func zeichneFachTrenner(pdf *gofpdf.Fpdf, tr func(string) string, fach string) {
 
 // zeichneSchulbuchZeile rendert eine Zeile samt Cover. Fehlt das Bild, bleibt die
 // Rahmenzelle leer — die Zeile darf deshalb nicht ausfallen.
-func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breiteTitel float64, mitGezaehlt bool, fehlend *int) {
+func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Schulbuch, breiteTitel float64, mitGezaehlt bool, fehlend *int) {
 	// Den Seitenumbruch selbst auslösen, bevor das Cover gezeichnet wird. gofpdf prüft
 	// ihn erst in der ersten CellFormat; das Bild geht aber mit fester Position an die
 	// aktuelle Seite und wäre dann schon unten im Fußsteg gelandet, während die Zeile
@@ -203,7 +234,7 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 }
 
 // jahrgangText: „7", „12–13"; ohne Angabe (0) leer.
-func jahrgangText(t LernmittelTitel) string {
+func jahrgangText(t Schulbuch) string {
 	if t.JahrgangVon == 0 {
 		return ""
 	}
@@ -213,7 +244,9 @@ func jahrgangText(t LernmittelTitel) string {
 	return fmt.Sprintf("%d–%d", t.JahrgangVon, t.JahrgangBis)
 }
 
-func fachAnzeige(fach string) string {
+// FachAnzeige nennt ein Fach so, wie es über seinen Büchern steht; ein Buch ohne Fach steht unter
+// „ohne Fach“.
+func FachAnzeige(fach string) string {
 	if fach == "" {
 		return "ohne Fach"
 	}
@@ -224,9 +257,9 @@ func fachAnzeige(fach string) string {
 // mehreren Auflagen, steht darunter kleiner, woraus ihre Zahlen
 // bestehen — dieselben Worte wie auf dem Bildschirm. Die Zelle behält ihre Höhe: Wüchse die
 // Zeile, stimmte der Umbruch vor dem Cover nicht mehr (zeichneSchulbuchZeile).
-func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breite float64) {
+func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t Schulbuch, breite float64) {
 	titel := pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Titel), breite)
-	if len(t.AuflagenBestand) < 2 {
+	if len(t.Auflagen) < 2 {
 		pdf.CellFormat(breite, zeilenH, tr(titel), "1", 0, "L", false, 0, "")
 		return
 	}
@@ -235,7 +268,7 @@ func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTit
 	pdf.SetXY(x, y+1.5)
 	pdf.CellFormat(breite, 4, tr(titel), "", 2, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 6.5)
-	pdf.MultiCell(breite, 3, tr(auflagenText(pdf, tr, t.AuflagenBestand, breite)), "", "L", false)
+	pdf.MultiCell(breite, 3, tr(auflagenText(pdf, tr, t.Auflagen, breite)), "", "L", false)
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetXY(x+breite, y)
 }
@@ -243,7 +276,7 @@ func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTit
 // auflagenText ist die Aufschlüsselung unter dem Titel, gekürzt auf höchstens drei Zeilen
 // (1,5 + 4 + 3 × 3 = 14,5 mm von 17), gezählt, wie MultiCell in der gesetzten Schrift umbricht.
 // Eine vierte Zeile druckte MultiCell in die nächste Zeile der Tabelle.
-func auflagenText(pdf pdfzeichen.Zeilenteiler, tr func(string) string, auflagen []AuflageImBestand, breite float64) string {
+func auflagenText(pdf pdfzeichen.Zeilenteiler, tr func(string) string, auflagen []SchulbuchAuflage, breite float64) string {
 	return pdfzeichen.KuerzeAufZeilen(pdf, tr, auflagenAufschluesselung(auflagen), breite, 3)
 }
 
@@ -267,39 +300,10 @@ func auflagenBeschriftung(auflage string, jahr int) string {
 }
 
 // auflagenAufschluesselung ist der Zwilling der gleichnamigen Funktion in auflagenText.js.
-func auflagenAufschluesselung(auflagen []AuflageImBestand) string {
+func auflagenAufschluesselung(auflagen []SchulbuchAuflage) string {
 	teile := make([]string, 0, len(auflagen))
 	for _, a := range auflagen {
 		teile = append(teile, fmt.Sprintf("%s (%d)", auflagenBeschriftung(a.Auflage, a.Erscheinungsjahr), a.Gesamt))
 	}
 	return fmt.Sprintf("Bestand aus %d Auflagen: %s", len(auflagen), strings.Join(teile, ", "))
-}
-
-// dateinamenTeil macht aus einem Fachnamen einen Dateinamen-Bestandteil.
-func dateinamenTeil(s string) string {
-	var b strings.Builder
-	for _, c := range strings.ToLower(s) {
-		switch {
-		case c >= 'a' && c <= 'z', c >= '0' && c <= '9':
-			b.WriteRune(c)
-		case c == 'ä':
-			b.WriteString("ae")
-		case c == 'ö':
-			b.WriteString("oe")
-		case c == 'ü':
-			b.WriteString("ue")
-		case c == 'ß':
-			b.WriteString("ss")
-		default:
-			b.WriteRune('-')
-		}
-	}
-	name := strings.Trim(b.String(), "-")
-	for strings.Contains(name, "--") {
-		name = strings.ReplaceAll(name, "--", "-")
-	}
-	if name == "" {
-		return "ohne-fach"
-	}
-	return name
 }

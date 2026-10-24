@@ -14,7 +14,7 @@ import (
 )
 
 // Der Ausdruck der Schulbücher über seine Tür. Abfrage und Blatt haben eigene Tests
-// (TestLernmittelJeFach_ZaehltNurSchulbuecher, lernmittel_pdf_test.go); hier zählt, was die Tür
+// (TestLernmittelJeFach_ZaehltNurSchulbuecher, pdf/schulbuecher_test.go); hier zählt, was die Tür
 // dazwischen tut: Fach und Filter der Ansicht aus der Adresse lesen, an die Abfrage geben und im
 // Kopf des Blatts nennen. Ohne den Hinweis im Kopf sähe ein gefilterter Auszug wie der volle
 // Bestand aus.

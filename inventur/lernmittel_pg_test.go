@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
+	"bibliothek/pdf"
 )
 
 // Schulbücher je Fach (Portal des Kollegiums) an Postgres: Nur Lernmittel zählen, das Fach
@@ -180,7 +181,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if alle, err = abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{}); err != nil {
 		t.Fatal(err)
 	}
-	doc, err := schulbuecherAlsPDF(alle, "", "Jahrgang 7")
+	doc, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(alle), "", "Jahrgang 7")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +204,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	docOhne, err := schulbuecherAlsPDF(nurOhneFach, "ohne Fach", "")
+	docOhne, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(nurOhneFach), "ohne Fach", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +217,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc, err = schulbuecherAlsPDF(nurMathe, "Mathematik", "")
+	doc, err = pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(nurMathe), "Mathematik", "")
 	if err != nil {
 		t.Fatal(err)
 	}

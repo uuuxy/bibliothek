@@ -1,5 +1,5 @@
 {
-	"_zweck": "Geteilte Prüffälle: Der Jahrgang eines Titels steht zweimal als Text, im Browser (format.js, jahrgangSpanne) und im Ausdruck der Schulbuchliste (inventur/lernmittel_pdf.go, jahrgangText). Beide Tests lesen diese Datei; rechnen die Seiten verschieden, nennt der Ausdruck einen Jahrgang anders als der Bildschirm.",
+	"_zweck": "Geteilte Prüffälle: Der Jahrgang eines Titels steht zweimal als Text, im Browser (format.js, jahrgangSpanne) und im Ausdruck der Schulbuchliste (pdf/schulbuecher.go, jahrgangText). Beide Tests lesen diese Datei; rechnen die Seiten verschieden, nennt der Ausdruck einen Jahrgang anders als der Bildschirm.",
 	"faelle": [
 		{ "fall": "ein Jahr", "von": 7, "bis": 7, "soll": "7" },
 		{ "fall": "eine Spanne", "von": 7, "bis": 10, "soll": "7–10" },

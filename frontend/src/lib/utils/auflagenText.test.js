@@ -9,7 +9,7 @@ import pruefung from './auflagenText.faelle.json';
 
 // Wie eine Auflage in Listen heißt: Titel derselben Reihe unterscheiden sich oft nur in
 // Auflage und Jahr (docs/OFFEN.md 4.18). Die JavaScript-Seite der geteilten Prüffälle — der
-// Ausdruck (inventur/lernmittel_pdf.go) liest dieselbe Datei in
+// Ausdruck (pdf/schulbuecher.go) liest dieselbe Datei in
 // TestAuflagenBeschriftung_WieImBrowser.
 describe('auflagenBeschriftung und auflagenAufschluesselung, geteilte Prüffälle', () => {
 	it('liest die gemeinsame Datei überhaupt ein', () => {

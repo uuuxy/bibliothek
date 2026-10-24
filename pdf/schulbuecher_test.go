@@ -1,4 +1,4 @@
-package inventur
+package pdf
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ var bildMatrix = regexp.MustCompile(`([0-9.]+) 0 0 ([0-9.]+) ([0-9.]+) ([0-9.]+)
 // der neuen steht: Ab der 14. Zeile klebte auf jedem Blattende ein herrenloses Cover im Fußsteg,
 // und die zugehörige Zeile hätte oben ein leeres Bildkästchen, was aussieht wie „für dieses Buch
 // ist kein Cover hinterlegt". Der Test an Postgres sieht das nicht: drei Titel, eine Seite.
-func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
+func TestErzeugeSchulbuecher_CoverBleibtBeiSeinerZeile(t *testing.T) {
 	// coverdatei liest relativ zum Arbeitsverzeichnis; ein eigenes uploads/ mit einem
 	// echten Bild darin macht den Cover-Pfad im Test begehbar.
 	verzeichnis := t.TempDir()
@@ -53,15 +53,15 @@ func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	titel := make([]LernmittelTitel, 0, 30)
+	titel := make([]Schulbuch, 0, 30)
 	for i := 1; i <= 30; i++ {
-		titel = append(titel, LernmittelTitel{
-			ID: strconv.Itoa(i), Titel: fmt.Sprintf("Titel %02d", i), Autor: "Verlag",
+		titel = append(titel, Schulbuch{
+			Titel: fmt.Sprintf("Titel %02d", i), Autor: "Verlag",
 			CoverURL: "/uploads/cover.png", Gesamt: i, Verfuegbar: i,
 		})
 	}
 
-	doc, err := schulbuecherAlsPDF(titel, "Biologie", "")
+	doc, err := ErzeugeSchulbuecher(titel, "Biologie", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,8 +86,8 @@ func TestSchulbuecherAlsPDF_CoverBleibtBeiSeinerZeile(t *testing.T) {
 	}
 }
 
-func TestSchulbuecherAlsPDF_Inhalt(t *testing.T) {
-	titel := []LernmittelTitel{
+func TestErzeugeSchulbuecher_Inhalt(t *testing.T) {
+	titel := []Schulbuch{
 		{
 			Titel:       "Chemie Heute",
 			Autor:       "Schroedel",
@@ -103,7 +103,7 @@ func TestSchulbuecherAlsPDF_Inhalt(t *testing.T) {
 		},
 	}
 
-	doc, err := schulbuecherAlsPDF(titel, "Chemie", "Filter")
+	doc, err := ErzeugeSchulbuecher(titel, "Chemie", "Filter")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,15 +141,15 @@ func TestSchulbuecherAlsPDF_Inhalt(t *testing.T) {
 // Titel, Autor und Zweig stehen gekürzt mit Auslassungszeichen da, sobald sie gedruckt breiter
 // wären als ihre Spalte; kurze Texte stehen ganz da. Gemessen wird die Breite, nicht die Zahl
 // der Zeichen.
-func TestSchulbuecherAlsPDF_Kuerzen(t *testing.T) {
+func TestErzeugeSchulbuecher_Kuerzen(t *testing.T) {
 	const (
 		langerTitel = "DEUTSCHBUCH GYMNASIUM – ALLGEMEINE AUSGABE 2019, 5. SCHULJAHR, SCHÜLERBUCH MIT ARBEITSHEFT"
 		langerAutor = "Annegret Müller-Lüdenscheidt und Kollegen"
 		langerZweig = "Gymnasialzweig und Realschulzweig"
 	)
-	doc, err := schulbuecherAlsPDF([]LernmittelTitel{
-		{ID: "1", Titel: langerTitel, Autor: langerAutor, ISBN: "ISBN-PROBE-1", JahrgangVon: 7, JahrgangBis: 7, Zweig: langerZweig},
-		{ID: "2", Titel: "Atlas", Autor: "Diercke", ISBN: "ISBN-PROBE-2", JahrgangVon: 7, JahrgangBis: 7, Zweig: "G"},
+	doc, err := ErzeugeSchulbuecher([]Schulbuch{
+		{Titel: langerTitel, Autor: langerAutor, ISBN: "ISBN-PROBE-1", JahrgangVon: 7, JahrgangBis: 7, Zweig: langerZweig},
+		{Titel: "Atlas", Autor: "Diercke", ISBN: "ISBN-PROBE-2", JahrgangVon: 7, JahrgangBis: 7, Zweig: "G"},
 	}, "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -183,8 +183,8 @@ func TestSchulbuecherAlsPDF_Kuerzen(t *testing.T) {
 	}
 }
 
-func TestSchulbuecherAlsPDF_LeereAuswahl(t *testing.T) {
-	doc, err := schulbuecherAlsPDF(nil, "", "")
+func TestErzeugeSchulbuecher_LeereAuswahl(t *testing.T) {
+	doc, err := ErzeugeSchulbuecher(nil, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,10 +204,10 @@ func TestSchulbuecherAlsPDF_LeereAuswahl(t *testing.T) {
 	}
 }
 
-func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
+func TestErzeugeSchulbuecher_GezaehltSpalte(t *testing.T) {
 	// 1. Ohne Gezaehlt
-	titelOhne := []LernmittelTitel{{Titel: "Buch 1"}}
-	docOhne, err := schulbuecherAlsPDF(titelOhne, "", "")
+	titelOhne := []Schulbuch{{Titel: "Buch 1"}}
+	docOhne, err := ErzeugeSchulbuecher(titelOhne, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,8 +219,8 @@ func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 	}
 
 	// 2. Mit Gezaehlt
-	titelMit := []LernmittelTitel{{Titel: "Buch 1", Gezaehlt: "02.02.2022"}}
-	docMit, err := schulbuecherAlsPDF(titelMit, "", "")
+	titelMit := []Schulbuch{{Titel: "Buch 1", Gezaehlt: "02.02.2022"}}
+	docMit, err := ErzeugeSchulbuecher(titelMit, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,16 +237,16 @@ func TestSchulbuecherAlsPDF_GezaehltSpalte(t *testing.T) {
 	}
 }
 
-func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
+func TestErzeugeSchulbuecher_JahrgangText(t *testing.T) {
 	faelle := []struct {
 		name string
-		t    LernmittelTitel
+		t    Schulbuch
 		want string
 	}{
-		{"0-0", LernmittelTitel{JahrgangVon: 0, JahrgangBis: 0}, ""},
-		{"5-10 ist eine Angabe wie jede andere", LernmittelTitel{JahrgangVon: 5, JahrgangBis: 10}, "5–10"},
-		{"Einzeljahrgang", LernmittelTitel{JahrgangVon: 7, JahrgangBis: 7}, "7"},
-		{"Von-Bis", LernmittelTitel{JahrgangVon: 7, JahrgangBis: 13}, "7–13"},
+		{"0-0", Schulbuch{JahrgangVon: 0, JahrgangBis: 0}, ""},
+		{"5-10 ist eine Angabe wie jede andere", Schulbuch{JahrgangVon: 5, JahrgangBis: 10}, "5–10"},
+		{"Einzeljahrgang", Schulbuch{JahrgangVon: 7, JahrgangBis: 7}, "7"},
+		{"Von-Bis", Schulbuch{JahrgangVon: 7, JahrgangBis: 13}, "7–13"},
 	}
 
 	for _, f := range faelle {
@@ -283,7 +283,7 @@ func TestJahrgangText_WieImBrowser(t *testing.T) {
 		t.Fatal("keine Prüffälle gelesen — zeigt der Pfad noch auf jahrgangSpanne.faelle.json?")
 	}
 	for _, f := range pruefung.Faelle {
-		if ist := jahrgangText(LernmittelTitel{JahrgangVon: f.Von, JahrgangBis: f.Bis}); ist != f.Soll {
+		if ist := jahrgangText(Schulbuch{JahrgangVon: f.Von, JahrgangBis: f.Bis}); ist != f.Soll {
 			t.Errorf("%s: jahrgangText(%d, %d) = %q, erwartet %q", f.Fall, f.Von, f.Bis, ist, f.Soll)
 		}
 	}
@@ -337,9 +337,9 @@ func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
 		}
 	}
 	for _, f := range pruefung.Aufschluesselung {
-		auflagen := make([]AuflageImBestand, 0, len(f.Auflagen))
+		auflagen := make([]SchulbuchAuflage, 0, len(f.Auflagen))
 		for _, a := range f.Auflagen {
-			auflagen = append(auflagen, AuflageImBestand{Auflage: a.Auflage, Erscheinungsjahr: a.Jahr, Gesamt: a.Bestand})
+			auflagen = append(auflagen, SchulbuchAuflage{Auflage: a.Auflage, Erscheinungsjahr: a.Jahr, Gesamt: a.Bestand})
 		}
 		if ist := auflagenAufschluesselung(auflagen); ist != f.Soll {
 			t.Errorf("%s: auflagenAufschluesselung = %q, erwartet %q", f.Fall, ist, f.Soll)
@@ -359,19 +359,19 @@ func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
 // Ein Buch in mehreren Auflagen: Unter dem Titel steht im
 // Ausdruck, woraus die Zahlen der Zeile bestehen — ein Buch ohne weitere Auflage bleibt, wie es
 // war.
-func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {
-	titel := []LernmittelTitel{
+func TestErzeugeSchulbuecher_AuflagenUnterDemTitel(t *testing.T) {
+	titel := []Schulbuch{
 		{
 			Titel: "Mathe 7", ISBN: "978-B2", Fach: "Mathematik", JahrgangVon: 7, JahrgangBis: 7,
 			Gesamt: 58, Verliehen: 12, Verfuegbar: 46,
-			AuflagenBestand: []AuflageImBestand{
-				{ID: "neu", Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 16},
-				{ID: "alt", Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 42},
+			Auflagen: []SchulbuchAuflage{
+				{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 16},
+				{Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 42},
 			},
 		},
 		{Titel: "Mathe 8", ISBN: "978-B8", Fach: "Mathematik", JahrgangVon: 8, JahrgangBis: 8, Gesamt: 5, Verfuegbar: 5},
 	}
-	doc, err := schulbuecherAlsPDF(titel, "Mathematik", "")
+	doc, err := ErzeugeSchulbuecher(titel, "Mathematik", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -403,7 +403,7 @@ func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {
 
 // Ein Cover im Querformat bleibt in seiner Spalte. Skaliert nur über die Höhe, wäre es breiter
 // als die Spalte und läge über dem Titel.
-func TestSchulbuecherAlsPDF_QuerformatBleibtInSeinerSpalte(t *testing.T) {
+func TestErzeugeSchulbuecher_QuerformatBleibtInSeinerSpalte(t *testing.T) {
 	verzeichnis := t.TempDir()
 	t.Chdir(verzeichnis)
 	if err := os.MkdirAll(filepath.Join(verzeichnis, "uploads"), 0o750); err != nil {
@@ -423,7 +423,7 @@ func TestSchulbuecherAlsPDF_QuerformatBleibtInSeinerSpalte(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doc, err := schulbuecherAlsPDF([]LernmittelTitel{{ID: "1", Titel: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
+	doc, err := ErzeugeSchulbuecher([]Schulbuch{{Titel: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -459,7 +459,7 @@ func TestAuflagenText_HoechstensDreiZeilen(t *testing.T) {
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 	breite := titelBreite(true)
 
-	gross := []AuflageImBestand{
+	gross := []SchulbuchAuflage{
 		{Auflage: "AUSGABE HESSEN WWW", Erscheinungsjahr: 2019, Gesamt: 100},
 		{Auflage: "AUSGABE HESSEN MMM", Erscheinungsjahr: 2020, Gesamt: 100},
 		{Auflage: "AUSGABE HESSEN WWW", Erscheinungsjahr: 2021, Gesamt: 100},
@@ -472,7 +472,7 @@ func TestAuflagenText_HoechstensDreiZeilen(t *testing.T) {
 		t.Errorf("Aufschlüsselung in Großbuchstaben ungekürzt: %q", text)
 	}
 
-	ueblich := []AuflageImBestand{
+	ueblich := []SchulbuchAuflage{
 		{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 16},
 		{Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 42},
 	}

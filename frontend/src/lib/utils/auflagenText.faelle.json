@@ -1,5 +1,5 @@
 {
-	"_zweck": "Geteilte Prüffälle: auflagenBeschriftung und auflagenAufschluesselung stehen zweimal, im Browser (auflagenText.js) und im Ausdruck des Portal-Reiters „Schulbücher“ (inventur/lernmittel_pdf.go). Beide Tests lesen diese Datei; rechnen die Seiten verschieden, nennt das PDF eine Auflage anders als der Bildschirm (docs/OFFEN.md 4.18, Stufe 6).",
+	"_zweck": "Geteilte Prüffälle: auflagenBeschriftung und auflagenAufschluesselung stehen zweimal, im Browser (auflagenText.js) und im Ausdruck des Portal-Reiters „Schulbücher“ (pdf/schulbuecher.go). Beide Tests lesen diese Datei; rechnen die Seiten verschieden, nennt das PDF eine Auflage anders als der Bildschirm (docs/OFFEN.md 4.18, Stufe 6).",
 	"beschriftung": [
 		{ "fall": "Auflage und Jahr", "auflage": "4. Aufl.", "jahr": 2023, "soll": "4. Aufl. · 2023" },
 		{

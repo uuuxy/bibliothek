@@ -13,7 +13,7 @@
  * capitalized"), und ein großes „Ohne" mitten im Satz bräche sie.
  *
  * Der Ausdruck des Portal-Reiters „Schulbücher" rechnet dasselbe in Go
- * (inventur/lernmittel_pdf.go); beide Seiten lesen dieselben Prüffälle (auflagenText.faelle.json).
+ * (pdf/schulbuecher.go); beide Seiten lesen dieselben Prüffälle (auflagenText.faelle.json).
  * @param {{ auflage?: string, erscheinungsjahr?: number }} a
  */
 export function auflagenBeschriftung(a) {

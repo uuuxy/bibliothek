@@ -101,7 +101,7 @@ export function zulaufSatz(imZulauf) {
 /**
  * Der Jahrgang eines Titels als Text: „7" für ein Jahr, „7–10" für eine Spanne. Ohne Eintrag
  * ist er unbekannt und der Text leer. Dieselbe Regel wie im Ausdruck der Schulbuchliste
- * (inventur/lernmittel_pdf.go, jahrgangText); beide Seiten lesen dieselben Prüffälle
+ * (pdf/schulbuecher.go, jahrgangText); beide Seiten lesen dieselben Prüffälle
  * (jahrgangSpanne.faelle.json).
  *
  * @param {number | string | null | undefined} von
