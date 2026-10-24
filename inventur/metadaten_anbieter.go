@@ -408,7 +408,7 @@ func (c *MetadatenClient) SucheTextDNB(kontext context.Context, abfrage string) 
 
 	bereinigteSuche := isbnutil.OhneTrenner(bereinigt)
 	var sruAbfrage string
-	if validiereISBN(bereinigteSuche) {
+	if isbnutil.HatForm(bereinigteSuche) {
 		sruAbfrage = "NUM=" + bereinigteSuche
 	} else {
 		sruAbfrage = url.QueryEscape(cqlAlleWoerter(bereinigt))

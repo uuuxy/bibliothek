@@ -1,5 +1,5 @@
 // Package coverablage kennt den Ort der lokal gespeicherten Cover: Es prüft den Pfad einer
-// Cover-URL, öffnet das Verzeichnis und entfernt eine Cover-Datei.
+// Cover-URL, öffnet das Verzeichnis, legt eine Cover-Datei ab und entfernt sie.
 //
 // Ohne Bildbibliothek. pkg/coverdatei wandelt Cover für die PDF-Erzeuger und zieht dafür die
 // WebP-Bibliothek (cgo) mit; das Löschen eines Titels braucht nur den Pfad, und über
@@ -7,6 +7,7 @@
 package coverablage
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,4 +73,48 @@ func Loesche(coverURL string) error {
 		return err
 	}
 	return nil
+}
+
+// Schreibe legt inhalt als Datei name direkt in der Wurzel ab und legt die Wurzel an, wenn es sie
+// noch nicht gibt. Ein Name, der aus der Wurzel herausführt, scheitert am Betriebssystem
+// (os.Root), nicht an einer Prüfung der Zeichenkette: Zwischen Prüfung und Zugriff könnte sich
+// der Pfad ändern, eine Verknüpfung in uploads genügt.
+func Schreibe(name string, inhalt []byte) error {
+	return mitAngelegterWurzel(func(wurzel *os.Root) error {
+		datei, err := wurzel.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			return fmt.Errorf("datei %q konnte nicht angelegt werden: %w", name, err)
+		}
+		defer closeutil.Schliesse(datei, "upload file")
+
+		if _, err := datei.Write(inhalt); err != nil {
+			return fmt.Errorf("datei %q konnte nicht geschrieben werden: %w", name, err)
+		}
+		return nil
+	})
+}
+
+// IstVorhanden sagt, ob name schon als Datei direkt in der Wurzel liegt.
+func IstVorhanden(name string) bool {
+	vorhanden := false
+	_ = mitAngelegterWurzel(func(wurzel *os.Root) error { //nolint:errcheck // ohne Verzeichnis gibt es die Datei nicht
+		info, err := wurzel.Stat(name)
+		vorhanden = err == nil && info.Mode().IsRegular()
+		return nil
+	})
+	return vorhanden
+}
+
+// mitAngelegterWurzel legt die Wurzel an, öffnet sie und übergibt sie an fn. Die Wurzel wird in
+// jedem Fall geschlossen.
+func mitAngelegterWurzel(fn func(*os.Root) error) error {
+	if err := os.MkdirAll(Wurzel, 0750); err != nil {
+		return fmt.Errorf("uploads-Verzeichnis konnte nicht angelegt werden: %w", err)
+	}
+	wurzel, err := os.OpenRoot(Wurzel)
+	if err != nil {
+		return fmt.Errorf("uploads-Verzeichnis konnte nicht geöffnet werden: %w", err)
+	}
+	defer closeutil.Schliesse(wurzel, "uploads dir")
+	return fn(wurzel)
 }

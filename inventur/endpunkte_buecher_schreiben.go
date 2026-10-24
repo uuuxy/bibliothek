@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
 )
@@ -21,7 +22,7 @@ func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe titelEingabe) bool 
 		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel darf nicht leer sein")
 		return false
 	}
-	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !validiereISBN(isbn) {
+	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !isbnutil.HatForm(isbn) {
 		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN ist ungültig")
 		return false
 	}

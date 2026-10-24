@@ -76,7 +76,7 @@ func TestTitelLoeschen(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		imTestVerzeichnis(t) // das Aufräumen der Cover-Dateien legt sonst inventur/uploads im Repo an
+		t.Chdir(t.TempDir()) // das Aufräumen der Cover-Dateien legt sonst inventur/uploads im Repo an
 
 		// Die Erwartungen in der Reihenfolge von LoescheTitel (Begin zuerst, jedes Lesen in der
 		// Transaktion, die Befehle des Löschens liefern ihre Spur über RETURNING). Die Reihenfolge selbst

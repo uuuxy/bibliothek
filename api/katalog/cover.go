@@ -216,7 +216,7 @@ func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) erro
 		return err
 	}
 
-	// 0600 wie in inventur/uploads_pfad.go, nicht 0666: Im Container fängt die umask das meist
+	// 0600 wie in pkg/coverablage/coverablage.go, nicht 0666: Im Container fängt die umask das meist
 	// ab, aber „meist" ist bei Dateirechten keine Zusage. Nur dieser Prozess muss die Dateien je
 	// anfassen; ausgeliefert werden sie über den Server, nicht über das Dateisystem.
 	datei, err := root.OpenFile(dateiname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)

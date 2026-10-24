@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/apierrors"
+	"bibliothek/pkg/coverablage"
 	"bibliothek/pkg/imageutil"
 	"bibliothek/pkg/logger"
 	"bibliothek/repository"
@@ -96,18 +97,12 @@ func verarbeiteHochgeladenesBild(inhalt []byte, id string) ([]byte, string, erro
 	return fertig, endung, nil
 }
 
-// loescheCoverDatei entfernt ein Cover aus uploads/, wenn coverURL dorthin zeigt. Fehler
-// werden nur protokolliert: Aufräumen darf die Antwort an den Aufrufer nicht ändern.
+// loescheCoverDatei entfernt ein Cover aus uploads/, wenn coverURL dorthin zeigt
+// (coverablage.Loesche). Fehler werden nur protokolliert: Aufräumen darf die Antwort an den
+// Aufrufer nicht ändern.
 func loescheCoverDatei(coverURL string) {
-	if !strings.HasPrefix(coverURL, "/uploads/") {
-		return
-	}
-	dateiname := filepath.Base(coverURL)
-	if dateiname == "" || dateiname == "/" || dateiname == "." {
-		return
-	}
-	if err := loescheUploadDatei(dateiname); err != nil {
-		slog.Warn("cover-upload: Cover konnte nicht entfernt werden", "datei", logger.OhneUmbruch(dateiname), "fehler", err)
+	if err := coverablage.Loesche(coverURL); err != nil {
+		slog.Warn("cover-upload: Cover konnte nicht entfernt werden", "datei", logger.OhneUmbruch(coverURL), "fehler", err)
 	}
 }
 
@@ -226,7 +221,7 @@ func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte,
 func speichereHochgeladenesCover(w http.ResponseWriter, id string, fertig []byte, endung string) (string, bool) {
 	dateiname := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), endung)
 
-	if err := schreibeUploadDatei(dateiname, fertig); err != nil {
+	if err := coverablage.Schreibe(dateiname, fertig); err != nil {
 		slog.Error("cover-upload: speichern fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "fehler beim speichern")
 		return "", false

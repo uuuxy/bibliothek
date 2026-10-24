@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/isbnutil"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -16,7 +17,7 @@ func (t *Tueren) ISBNSuche(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validiereISBN(isbn) {
+	if !isbnutil.HatForm(isbn) {
 		schreibeFehler(w, http.StatusBadRequest, "Die ISBN ist ungültig")
 		return
 	}

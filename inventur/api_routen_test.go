@@ -97,7 +97,8 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 // /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird deshalb nur, was direkt im
 // Verzeichnis liegt: Dort legen Upload und Cover-Abruf ihre Dateien ab.
 func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
-	verzeichnis := imTestVerzeichnis(t)
+	verzeichnis := t.TempDir()
+	t.Chdir(verzeichnis)
 	lege := func(rel, inhalt string) {
 		t.Helper()
 		pfad := filepath.Join(verzeichnis, rel)
@@ -158,7 +159,7 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 // oben hängt daran, dass beide direkt in uploads/ ablegen: Mit einer Adresse im
 // Unterordner zeigte die Oberfläche für den Titel kein Cover.
 func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
-	imTestVerzeichnis(t)
+	t.Chdir(t.TempDir())
 
 	mock, err := pgxmock.NewPool()
 	if err != nil {

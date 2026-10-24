@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/coverablage"
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/imageutil"
 	"bytes"
@@ -98,10 +99,10 @@ func speichereCoverDatei(fertig []byte, isbn, endung string) string {
 	summe := sha256.Sum256(fertig)
 	dateiname := fmt.Sprintf("cover_auto_%s_%x%s", filepath.Base(isbn), summe[:6], endung)
 
-	if uploadDateiVorhanden(dateiname) {
+	if coverablage.IstVorhanden(dateiname) {
 		return "/uploads/" + dateiname
 	}
-	if err := schreibeUploadDatei(dateiname, fertig); err != nil {
+	if err := coverablage.Schreibe(dateiname, fertig); err != nil {
 		slog.Error("Cover-Download: Datei nicht gespeichert", "fehler", err)
 		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}

@@ -152,7 +152,7 @@ func TestSpeichereCoverDatei(t *testing.T) {
 	// inventur/uploads im Repository anlegt und wieder löscht, stört die Ratschen im Wurzelpaket,
 	// die parallel den Baum lesen (WalkDir) und über das verschwundene Verzeichnis stolpern
 	// („open inventur/uploads: no such file").
-	imTestVerzeichnis(t)
+	t.Chdir(t.TempDir())
 
 	t.Run("successful save", func(t *testing.T) {
 		ergebnis := speichereCoverDatei([]byte("dummy data"), "1234567890", ".webp")
@@ -198,7 +198,7 @@ func TestSpeichereCoverDatei(t *testing.T) {
 
 func TestSpeichereCoverLokal(t *testing.T) {
 	ctx := context.Background()
-	imTestVerzeichnis(t) // siehe TestSpeichereCoverDatei
+	t.Chdir(t.TempDir()) // siehe TestSpeichereCoverDatei
 
 	t.Run("invalid image data fails decode", func(t *testing.T) {
 		client := &http.Client{

@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/isbnutil"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -78,7 +79,7 @@ const (
 // schon da oder von Hand hochgeladen, und das ersetzt dieser Lauf nicht. Die Suche liefert
 // immer den lokalen Pfad (MetadatenClient.aufloeseCover), nie eine Adresse im Netz.
 func (t *Tueren) ladeCoverErneut(ctx context.Context, eintrag Titel) string {
-	if !validiereISBN(eintrag.ISBN) || !strings.HasPrefix(eintrag.CoverURL, "http") {
+	if !isbnutil.HatForm(eintrag.ISBN) || !strings.HasPrefix(eintrag.CoverURL, "http") {
 		return coverUebersprungen
 	}
 

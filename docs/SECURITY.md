@@ -273,12 +273,12 @@ dass er an jeder Einsetzstelle aufgerufen wird.
 
 - 10 MB Body-Limit, 0600 Dateiberechtigungen.
 - Ebenfalls `PruefeBildgroesse` vor dem vollständigen Decode.
-- **Pfadbindung über `os.OpenRoot`** (`inventur/uploads_pfad.go`). Eine Prüfung **im
+- **Pfadbindung über `os.OpenRoot`** (`pkg/coverablage/coverablage.go`). Eine Prüfung **im
   Programm** (`filepath.Join` → `filepath.Clean` → `strings.HasPrefix`) hält den
   geradlinigen Fall auf, aber der Pfad geht danach trotzdem ans Betriebssystem. Ein Symlink
   in `uploads/` genügte: `HasPrefix("uploads/raus.jpg", "uploads/")` ist wahr, und
   geschrieben würde außerhalb. Mit `os.OpenRoot` scheitert die Auflösung am Kernel
-  (`inventur/uploads_pfad_test.go`, Symlink-Test).
+  (`pkg/coverablage/coverablage_test.go`, Test mit Verknüpfung).
 
 ### Cover-Proxy (`GET /api/images/cover`) — der teuerste öffentliche Pfad
 

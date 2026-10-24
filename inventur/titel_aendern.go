@@ -184,7 +184,7 @@ func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, ei
 	switch {
 	case !nennt("isbn") || eintrag.ISBN == "" || isbnutil.Normalform(eintrag.ISBN) == isbnutil.Normalform(isbn):
 		return nil
-	case !validiereISBN(eintrag.ISBN):
+	case !isbnutil.HatForm(eintrag.ISBN):
 		return errISBNFormat
 	}
 	return isbnVergeben(ctx, tx, eintrag.ISBN, id)

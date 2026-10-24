@@ -15,7 +15,7 @@ import (
 // (rotiereBackups) und der Wächter des Stands (api/system/backup_stand.go).
 //
 // Gelesen wird über os.OpenRoot, wie überall im Projekt bei Verzeichnissen mit Dateinamen von
-// außen (inventur/uploads_pfad.go): Die Wurzel bindet jeden Zugriff im Betriebssystem an das
+// außen (pkg/coverablage/coverablage.go): Die Wurzel bindet jeden Zugriff im Betriebssystem an das
 // Verzeichnis; ein Symlink darin wird als Link gesehen und als Link gelöscht, nie sein Ziel.
 //
 // Einen Eingang für Angreifer gibt es hier nicht: Das Verzeichnis kommt aus BACKUP_DIR, also vom

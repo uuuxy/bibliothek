@@ -72,7 +72,7 @@ func TestLoescheTitel(t *testing.T) {
 	// Scheitert das Löschen der Ausleihen, bleibt nichts stehen: kein Titel-DELETE,
 	// keine Spur, Rollback. Ohne die Spur verschwände ein verliehenes Buch lautlos.
 	t.Run("Ausleihen nicht löschbar", func(t *testing.T) {
-		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
+		t.Chdir(t.TempDir()) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatalf("pgxmock.NewPool: %v", err)
@@ -99,7 +99,7 @@ func TestLoescheTitel(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
+		t.Chdir(t.TempDir()) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatalf("pgxmock.NewPool: %v", err)
@@ -135,7 +135,7 @@ func TestLoescheTitel(t *testing.T) {
 	})
 
 	t.Run("book not found", func(t *testing.T) {
-		imTestVerzeichnis(t) // LoescheTitel legt sonst inventur/uploads/ im Repo an
+		t.Chdir(t.TempDir()) // LoescheTitel legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatalf("pgxmock.NewPool: %v", err)

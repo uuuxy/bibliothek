@@ -1,10 +1,10 @@
-package inventur
+package isbnutil
 
 import (
 	"testing"
 )
 
-func TestValidiereISBN(t *testing.T) {
+func TestHatForm(t *testing.T) {
 	faelle := []struct {
 		name     string
 		isbn     string
@@ -36,9 +36,9 @@ func TestValidiereISBN(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			ergebnis := validiereISBN(f.isbn)
+			ergebnis := HatForm(f.isbn)
 			if ergebnis != f.expected {
-				t.Errorf("validiereISBN(%q) = %v, erwartet %v", f.isbn, ergebnis, f.expected)
+				t.Errorf("HatForm(%q) = %v, erwartet %v", f.isbn, ergebnis, f.expected)
 			}
 		})
 	}

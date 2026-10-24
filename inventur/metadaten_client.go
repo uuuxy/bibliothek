@@ -106,7 +106,7 @@ var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
 // das Programm mit allen.
 func (c *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	saubereISBN := isbnutil.OhneTrenner(isbn)
-	if !validiereISBN(saubereISBN) {
+	if !isbnutil.HatForm(saubereISBN) {
 		return nil, ErrUngueltigeISBN
 	}
 	ergebnis, fehler := c.sucheDNB(kontext, saubereISBN)
@@ -130,9 +130,9 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	saubereISBN := isbnutil.OhneTrenner(isbn)
 
 	// SSRF und Argument Injection Schutz: Nur gültige ISBN-Zeichenfolgen zulassen
-	// validiereISBN nimmt einen vorab übersetzten regulären Ausdruck, statt ihn bei jedem Aufruf
+	// isbnutil.HatForm nimmt einen vorab übersetzten regulären Ausdruck, statt ihn bei jedem Aufruf
 	// neu zu übersetzen.
-	if !validiereISBN(saubereISBN) {
+	if !isbnutil.HatForm(saubereISBN) {
 		return nil, fmt.Errorf("ungültiges ISBN format: sicherheitsabbruch")
 	}
 

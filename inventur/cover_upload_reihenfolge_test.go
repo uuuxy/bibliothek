@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/coverablage"
 	"bytes"
 	"mime/multipart"
 	"net/http"
@@ -49,7 +50,7 @@ func coverUploadAnfrage(t *testing.T, id string) *http.Request {
 // wird am Testende, damit ein roter Lauf den nächsten nicht mitfärbt.
 func coverDateien(t *testing.T, id string) []string {
 	t.Helper()
-	treffer, err := filepath.Glob(filepath.Join(uploadsVerzeichnis, "cover_"+id+"_*"))
+	treffer, err := filepath.Glob(filepath.Join(coverablage.Wurzel, "cover_"+id+"_*"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +60,7 @@ func coverDateien(t *testing.T, id string) []string {
 func raeumeCoverDateienAuf(t *testing.T, id string) {
 	t.Helper()
 	t.Cleanup(func() {
-		treffer, _ := filepath.Glob(filepath.Join(uploadsVerzeichnis, "cover_"+id+"_*")) //nolint:errcheck
+		treffer, _ := filepath.Glob(filepath.Join(coverablage.Wurzel, "cover_"+id+"_*")) //nolint:errcheck
 		for _, datei := range treffer {
 			_ = os.Remove(datei) //nolint:errcheck
 		}
@@ -71,7 +72,7 @@ func raeumeCoverDateienAuf(t *testing.T, id string) {
 func altesCover(t *testing.T, id string) (name string, zeile *pgxmock.Rows) {
 	t.Helper()
 	name = "cover_" + id + "_alt.jpg"
-	if err := schreibeUploadDatei(name, []byte("alt")); err != nil {
+	if err := coverablage.Schreibe(name, []byte("alt")); err != nil {
 		t.Fatal(err)
 	}
 	zeile = pgxmock.NewRows(reihenfolgeBuchSpalten).AddRow(
