@@ -3,7 +3,7 @@ package theke
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/internal/service"
@@ -123,11 +123,11 @@ func (t *Tueren) legeNachbuchErgebnisAb(ctx context.Context, erg nachbuchErgebni
 	defer abbruch()
 	daten, err := json.Marshal(nachbuchAblage{Nachbuchen: &erg})
 	if err != nil {
-		log.Printf("nachbuchen: Ergebnis zu %s nicht serialisierbar: %v", erg.Schluessel, err)
+		slog.Error("nachbuchen: Ergebnis nicht serialisierbar", "schluessel", erg.Schluessel, "fehler", err)
 		return
 	}
 	if err := repository.SchreibeIdempotenzAntwort(ctx, t.DB.Pool, erg.Schluessel, daten, http.StatusOK); err != nil {
-		log.Printf("nachbuchen: Ergebnis zu %s nicht abgelegt: %v", erg.Schluessel, err)
+		slog.Error("nachbuchen: Ergebnis nicht abgelegt", "schluessel", erg.Schluessel, "fehler", err)
 	}
 }
 
@@ -138,11 +138,11 @@ func (t *Tueren) gibNachbuchSchluesselZurueck(ctx context.Context, schluessel st
 	defer abbruch()
 	if lage.online != nil {
 		if err := repository.StelleIdempotenzAntwortWiederHer(ctx, t.DB.Pool, schluessel, *lage.online); err != nil {
-			log.Printf("nachbuchen: Online-Antwort zu %s nicht zurückgelegt: %v", schluessel, err)
+			slog.Error("nachbuchen: Online-Antwort nicht zurückgelegt", "schluessel", schluessel, "fehler", err)
 		}
 		return
 	}
 	if _, err := repository.GibIdempotenzSchluesselFrei(ctx, t.DB.Pool, schluessel); err != nil {
-		log.Printf("nachbuchen: Schlüssel %s nicht freigegeben: %v", schluessel, err)
+		slog.Error("nachbuchen: Schlüssel nicht freigegeben", "schluessel", schluessel, "fehler", err)
 	}
 }

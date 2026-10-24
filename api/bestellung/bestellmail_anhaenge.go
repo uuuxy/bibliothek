@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"bibliothek/api/tuer"
 	"bibliothek/internal/buchetikett"
@@ -73,7 +73,7 @@ func (t *Tueren) verschickeBestellmail(ctx context.Context, m bestellMail) error
 	}
 
 	if err := t.Post().Sende(ctx, nachricht); err != nil {
-		log.Printf("Failed to send order email to %s: %v", m.Empfaenger, err)
+		slog.Error("Failed to send order email", "empfaenger", m.Empfaenger, "fehler", err)
 		return err
 	}
 	return nil

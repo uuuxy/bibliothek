@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -162,6 +162,6 @@ func (t *Tueren) merkeBestellmailVersendet(ctx context.Context, bestellungID, em
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), fristBestellmailVermerk)
 	defer abbruch()
 	if err := repository.MerkeBestellmailVersendet(ctx, t.DB.Pool, bestellungID, empfaenger); err != nil {
-		log.Printf("Bestellung %s: Empfänger des erneuten Versands nicht vermerkt: %v", bestellungID, err)
+		slog.Error("Bestellung: Empfänger des erneuten Versands nicht vermerkt", "bestellung", bestellungID, "fehler", err)
 	}
 }

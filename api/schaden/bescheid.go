@@ -3,7 +3,7 @@ package schaden
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -58,7 +58,7 @@ func protokolliereBescheid(ctx context.Context, t *Tueren, protokollAbfragen *re
 		return
 	}
 	if err := protokollAbfragen.ProtokolliereAdminAktion(ctx, claims.KontoID, aktion, ip, details); err != nil {
-		log.Printf("Audit %s fehlgeschlagen: %v", aktion, err)
+		slog.Error("Audit fehlgeschlagen", "aktion", aktion, "fehler", err)
 	}
 }
 

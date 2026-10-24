@@ -3,7 +3,7 @@ package leser
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -75,7 +75,7 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen *repository.ProtokollAbf
 				"schaeden":           erg.Schaeden,
 				"vormerkungen":       erg.Vormerkungen,
 			}); err != nil {
-				log.Printf("Zusammenführen: Audit-Eintrag fehlgeschlagen: %v", err)
+				slog.Error("Zusammenführen: Audit-Eintrag fehlgeschlagen", "fehler", err)
 			}
 		}
 		tuer.AntworteJSON(w, http.StatusOK, erg)

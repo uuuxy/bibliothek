@@ -7,7 +7,7 @@ import (
 	"bibliothek/internal/auskunft"
 	"bibliothek/repository"
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -233,7 +233,7 @@ func (t *Tueren) protokolliereDSGVOAuskunft(ctx context.Context, id string) {
 		bearbeiterID = &claims.KontoID
 	}
 	if err := repository.ProtokolliereDSGVOAuskunft(ctx, t.DB.Pool, id, bearbeiterID, akteur); err != nil {
-		log.Printf("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen: %v", err)
+		slog.Error("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen", "fehler", err)
 	}
 }
 

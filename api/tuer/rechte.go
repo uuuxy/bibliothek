@@ -3,7 +3,7 @@ package tuer
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -134,7 +134,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 	schluessel := string(claims.Rolle) + ":" + recht
 	if erlaubt, gefunden := b.Rechte.recht(schluessel); gefunden {
 		if !erlaubt {
-			log.Printf("Permission denied for role '%s' permission '%s' (FROM CACHE).", claims.Rolle, recht)
+			slog.Warn("Permission denied (FROM CACHE)", "rolle", claims.Rolle, "recht", recht)
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Keine Berechtigung für diese Aktion", nil)
 			return
 		}
@@ -144,13 +144,13 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 
 	erlaubt, err := b.ladeUndMerkeRecht(r.Context(), string(claims.Rolle), recht, schluessel)
 	if err != nil {
-		log.Printf("Permission check DB error for role '%s' permission '%s': %v", claims.Rolle, recht, err)
+		slog.Error("Permission check DB error", "rolle", claims.Rolle, "recht", recht, "fehler", err)
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("berechtigung konnte nicht geprüft werden"))
 		return
 	}
 
 	if !erlaubt {
-		log.Printf("Permission denied for role '%s' permission '%s'. allowed: %v", claims.Rolle, recht, erlaubt)
+		slog.Warn("Permission denied", "rolle", claims.Rolle, "recht", recht, "erlaubt", erlaubt)
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Keine Berechtigung für diese Aktion", nil)
 		return
 	}

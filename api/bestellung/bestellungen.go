@@ -3,7 +3,7 @@ package bestellung
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -103,7 +103,7 @@ func (t *Tueren) legeBestellungAn(w http.ResponseWriter, r *http.Request, bestel
 	}
 
 	if !t.Post().IstKonfiguriert(ctx) {
-		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
+		slog.Warn("Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
 		t.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",

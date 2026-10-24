@@ -2,7 +2,7 @@ package bestellung
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -36,7 +36,7 @@ func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set("Content-Disposition", "attachment; filename=bestellliste.pdf")
 		if err := pdf.Output(w); err != nil {
-			log.Printf("Bestellliste: PDF stream output failed: %v", err)
+			slog.Error("Bestellliste: PDF stream output failed", "fehler", err)
 		}
 	}
 }

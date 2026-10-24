@@ -25,7 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -213,7 +213,7 @@ func (s *Server) Routes() http.Handler {
 func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 	// Das Verzeichnis der Uploads für das Inventur-Modul.
 	if err := os.MkdirAll("uploads", 0750); err != nil {
-		log.Printf("router: Upload-Verzeichnis konnte nicht angelegt werden: %v", err)
+		slog.Error("router: Upload-Verzeichnis konnte nicht angelegt werden", "fehler", err)
 	}
 	// Ein Unterordner uploads/fotos entsteht hier nicht: Schülerfotos liegen verschlüsselt
 	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
@@ -288,7 +288,7 @@ func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {
 	// des Verzeichnisses existiert (gosec G304).
 	oberflaeche, oberflaecheFehler := os.OpenRoot("./frontend/dist")
 	if oberflaecheFehler != nil {
-		log.Printf("router: frontend/dist nicht verfügbar (%v) — SPA-Auslieferung deaktiviert", oberflaecheFehler)
+		slog.Warn("router: frontend/dist nicht verfügbar — SPA-Auslieferung deaktiviert", "fehler", oberflaecheFehler)
 	}
 	mux.HandleFunc("/", liefereOberflaeche(oberflaeche))
 }
@@ -338,7 +338,7 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 		// Zeile und damit in einem Logfile, das weitergereicht und in Tickets gehängt
 		// wird. Das hätte die Hash-Speicherung in der Datenbank wieder entwertet.
 		// #nosec G706
-		log.Printf("Incoming Request: %s %s", r.Method, maskiereToken(r.URL.Path))
+		slog.Info("Incoming Request", "methode", r.Method, "pfad", maskiereToken(r.URL.Path))
 		kette.ServeHTTP(w, r)
 	})
 }

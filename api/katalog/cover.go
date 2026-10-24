@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -231,7 +231,7 @@ func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) erro
 	}
 	if err != nil {
 		if rerr := root.Remove(dateiname); rerr != nil { // die angefangene Datei entfernen
-			log.Printf("cover cache: cleanup of %s failed: %v", dateiname, rerr)
+			slog.Warn("cover cache: cleanup failed", "datei", dateiname, "fehler", rerr)
 		}
 		return err
 	}

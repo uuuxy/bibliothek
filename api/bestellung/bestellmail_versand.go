@@ -3,7 +3,7 @@ package bestellung
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/api/tuer"
@@ -132,6 +132,6 @@ func (t *Tueren) merkeBestellmailGescheitert(ctx context.Context, bestellungID s
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), fristBestellmailVermerk)
 	defer abbruch()
 	if err := repository.MerkeBestellmailGescheitert(ctx, t.DB.Pool, bestellungID); err != nil {
-		log.Printf("Bestellung %s: Vermerk über den gescheiterten Mailversand nicht geschrieben: %v", bestellungID, err)
+		slog.Error("Bestellung: Vermerk über den gescheiterten Mailversand nicht geschrieben", "bestellung", bestellungID, "fehler", err)
 	}
 }

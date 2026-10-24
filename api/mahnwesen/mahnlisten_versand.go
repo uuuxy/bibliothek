@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -333,7 +333,7 @@ func versendeKlassenMahnungen(
 
 		pdfDaten, err := erzeugePDF(einzelKlasse)
 		if err != nil {
-			log.Printf("bulk-overdue: PDF für Klasse %s fehlgeschlagen: %v", kl.Klasse, err)
+			slog.Error("bulk-overdue: PDF für Klasse fehlgeschlagen", "klasse", kl.Klasse, "fehler", err)
 			erg.Fehlgeschlagen++
 			continue
 		}
@@ -345,7 +345,7 @@ func versendeKlassenMahnungen(
 		)
 
 		if err := sendeMail(ctx, nachricht); err != nil {
-			log.Printf("bulk-overdue: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.LehrerEmail, err)
+			slog.Error("bulk-overdue: Versand an Klasse fehlgeschlagen", "klasse", kl.Klasse, "empfaenger", kl.LehrerEmail, "fehler", err)
 			erg.Fehlgeschlagen++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {
 				erg.Abgebrochen = true
@@ -391,7 +391,7 @@ func (t *Tueren) protokolliereKlassenVersand(r *http.Request, aktion string, det
 	}
 	inhalt, err := json.Marshal(details)
 	if err != nil {
-		log.Printf("%s: Audit-Details nicht serialisierbar: %v", aktion, err)
+		slog.Error("Audit-Details nicht serialisierbar", "aktion", aktion, "fehler", err)
 		return
 	}
 	// Vom Kontext der Anfrage abgekoppelt: Der Eintrag am Ende kommt nach dem Versand, und ein

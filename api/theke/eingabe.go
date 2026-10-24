@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -100,7 +100,7 @@ func (t *Tueren) erlangeIdempotenz(ctx context.Context, schluessel string) idemp
 	for {
 		reserviert, antwort, err := repository.ReserviereIdempotenzSchluessel(ctx, t.DB.Pool, schluessel)
 		if err != nil {
-			log.Printf("idempotenz: Schlüssel nicht reservierbar, Anfrage läuft ohne Schutz: %v", err)
+			slog.Warn("idempotenz: Schlüssel nicht reservierbar, Anfrage läuft ohne Schutz", "fehler", err)
 			return idempotenzLage{}
 		}
 		if reserviert {
@@ -135,17 +135,17 @@ func (t *Tueren) legeAntwortAb(ctx context.Context, schluessel string, daten any
 	defer abbruch()
 	if status >= 500 {
 		if _, err := repository.GibIdempotenzSchluesselFrei(ctx, t.DB.Pool, schluessel); err != nil {
-			log.Printf("idempotenz: Schlüssel nach Serverfehler nicht freigegeben: %v", err)
+			slog.Error("idempotenz: Schlüssel nach Serverfehler nicht freigegeben", "fehler", err)
 		}
 		return
 	}
 	antwortDaten, err := json.Marshal(daten)
 	if err != nil {
-		log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", err)
+		slog.Error("idempotenz: Antwort konnte nicht serialisiert werden", "fehler", err)
 		return
 	}
 	if err := repository.SchreibeIdempotenzAntwort(ctx, t.DB.Pool, schluessel, antwortDaten, status); err != nil {
-		log.Printf("idempotenz: Antwort nicht gespeichert: %v", err)
+		slog.Error("idempotenz: Antwort nicht gespeichert", "fehler", err)
 	}
 }
 
@@ -158,7 +158,7 @@ func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.Id
 	if status >= 400 {
 		var fehlerDaten map[string]string
 		if uerr := json.Unmarshal(daten, &fehlerDaten); uerr != nil {
-			log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
+			slog.Warn("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet", "fehler", uerr)
 			return false
 		}
 		if merkmal := fehlerDaten[sperrAblageFeld]; merkmal == sperrUebergehbar || merkmal == sperrAmLeser {
@@ -170,7 +170,7 @@ func (t *Tueren) antworteAusAblage(w http.ResponseWriter, antwort *repository.Id
 
 	var gespeichert eingabeAntwort
 	if uerr := json.Unmarshal(daten, &gespeichert); uerr != nil {
-		log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
+		slog.Warn("idempotenz: beschädigte Antwort im Cache, wird neu berechnet", "fehler", uerr)
 		return false
 	}
 	tuer.AntworteJSON(w, status, gespeichert)

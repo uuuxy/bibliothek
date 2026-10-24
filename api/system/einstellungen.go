@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -145,7 +145,7 @@ func (t *Tueren) protokolliereEinstellungen(r *http.Request, req repository.Eins
 	}
 	details, merr := json.Marshal(req)
 	if merr != nil {
-		log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
+		slog.Error("audit: Settings-Details konnten nicht serialisiert werden", "fehler", merr)
 		return
 	}
 	t.SchreibeAdminProtokoll(r.Context(), claims.KontoID, "UPDATE_SETTINGS", "", string(details))

@@ -2,7 +2,7 @@ package portal
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -206,7 +206,7 @@ func (t *Tueren) KlassensatzReservierungErledigen() http.HandlerFunc {
 				Betreff: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
 				Text:    klassensatzBereitText(erledigt),
 			}); err != nil {
-				log.Printf("Klassensatz-Bereit-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
+				slog.Error("Klassensatz-Bereit-Mail fehlgeschlagen", "empfaenger", *erledigt.AnfragendeMail, "fehler", err)
 				mailStatus = mailStatusFehlgeschlagen
 			}
 		}

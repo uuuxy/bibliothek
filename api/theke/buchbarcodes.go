@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -94,15 +94,14 @@ func (t *Tueren) Buchbarcodes() http.HandlerFunc {
 		groesse, err := schreibeGezaehlt(w, antwort)
 		if err != nil {
 			// Nach dem ersten geschriebenen Byte hilft kein Statuscode mehr — nur das Log.
-			log.Printf("buchbarcodes: Antwort abgebrochen (%d Einträge): %v", antwort.Anzahl, err)
+			slog.Warn("buchbarcodes: Antwort abgebrochen", "anzahl", antwort.Anzahl, "fehler", err)
 			return nil
 		}
 		if groesse > buchbarcodesWarnAb {
-			log.Printf("buchbarcodes: WARNUNG %d Einträge, %d Byte vor dem Packen in %s — die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (api/theke/buchbarcodes.go)",
-				antwort.Anzahl, groesse, time.Since(begonnen).Round(time.Millisecond))
+			slog.Warn("buchbarcodes: die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (api/theke/buchbarcodes.go)", "anzahl", antwort.Anzahl, "groesse", groesse, "dauer", time.Since(begonnen).Round(time.Millisecond).String())
 			return nil
 		}
-		log.Printf("buchbarcodes: %d Einträge, %d Byte vor dem Packen in %s ausgeliefert", antwort.Anzahl, groesse, time.Since(begonnen).Round(time.Millisecond))
+		slog.Info("buchbarcodes ausgeliefert", "anzahl", antwort.Anzahl, "groesse", groesse, "dauer", time.Since(begonnen).Round(time.Millisecond).String())
 		return nil
 	})
 }

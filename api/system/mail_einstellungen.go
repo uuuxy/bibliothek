@@ -3,7 +3,7 @@ package system
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -102,7 +102,7 @@ func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstel
 				"password_changed": req.SMTPPasswort != "",
 			})
 			if merr != nil {
-				log.Printf("audit: Mail-Settings-Details konnten nicht serialisiert werden: %v", merr)
+				slog.Error("audit: Mail-Settings-Details konnten nicht serialisiert werden", "fehler", merr)
 			} else {
 				t.SchreibeAdminProtokoll(ctx, claims.KontoID, "UPDATE_MAIL_SETTINGS", "", string(details))
 			}

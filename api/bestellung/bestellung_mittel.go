@@ -2,7 +2,7 @@ package bestellung
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -106,6 +106,6 @@ func (t *Tueren) protokolliereMittelKorrektur(r *http.Request, bestellungID, von
 	details := map[string]any{"bestellung_id": bestellungID, "von": von, "nach": nach, "grund": grund}
 	if err := repository.NewProtokollAbfragen(t.DB.Pool).
 		ProtokolliereAdminAktion(r.Context(), claims.KontoID, aktionBestellungMittelKorrigiert, clientip.AusAnfrage(r), details); err != nil {
-		log.Printf("Audit %s fehlgeschlagen: %v", aktionBestellungMittelKorrigiert, err)
+		slog.Error("Audit fehlgeschlagen", "aktion", aktionBestellungMittelKorrigiert, "fehler", err)
 	}
 }

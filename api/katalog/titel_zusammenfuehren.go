@@ -2,7 +2,7 @@ package katalog
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -63,7 +63,7 @@ func (t *Tueren) FuehreTitelZusammen(protokollAbfragen *repository.ProtokollAbfr
 				"aufgeloest_titel": erg.QuelleTitel,
 				"exemplare":        erg.Exemplare,
 			}); err != nil {
-				log.Printf("Titel zusammenführen: Eintrag im Protokoll der Verwaltung fehlgeschlagen: %v", err)
+				slog.Error("Titel zusammenführen: Eintrag im Protokoll der Verwaltung fehlgeschlagen", "fehler", err)
 			}
 		}
 		tuer.AntworteJSON(w, http.StatusOK, erg)

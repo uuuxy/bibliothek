@@ -2,7 +2,7 @@ package leser
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -141,6 +141,6 @@ func protokolliereSperre(r *http.Request, protokollAbfragen *repository.Protokol
 		}
 	}
 	if err := protokollAbfragen.ProtokolliereAdminAktion(r.Context(), bearbeiterID, aktion, clientip.AusAnfrage(r), details); err != nil {
-		log.Printf("Audit für %s fehlgeschlagen: %v", aktion, err)
+		slog.Error("Audit fehlgeschlagen", "aktion", aktion, "fehler", err)
 	}
 }

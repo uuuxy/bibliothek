@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -237,7 +237,7 @@ func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 			"schueler_id": id,
 			"ziel_id":     kontoID,
 		}); protokollFehler != nil {
-			log.Printf("Audit für Kontonachtrag fehlgeschlagen: %v", protokollFehler)
+			slog.Error("Audit für Kontonachtrag fehlgeschlagen", "fehler", protokollFehler)
 		}
 	}
 
@@ -246,7 +246,7 @@ func (t *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 			"schueler_id": id,
 			"lusd_id":     a.lusdNachgetragen,
 		}); protokollFehler != nil {
-			log.Printf("Audit für LUSD-ID-Nachtrag fehlgeschlagen: %v", protokollFehler)
+			slog.Error("Audit für LUSD-ID-Nachtrag fehlgeschlagen", "fehler", protokollFehler)
 		}
 	}
 	return true

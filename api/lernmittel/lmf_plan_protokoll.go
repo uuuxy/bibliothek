@@ -12,7 +12,7 @@ package lernmittel
 // den Vorgang nicht ab, der Fehlversuch steht im Log des Servers.
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/auth"
@@ -40,6 +40,6 @@ func (t *Tueren) protokolliereLMFPlan(r *http.Request, aktion, art string, planI
 	details := map[string]any{"art": art, "plan_id": planID, "fristen_angepasst": fristen}
 	if err := repository.NewProtokollAbfragen(t.DB.Pool).
 		ProtokolliereAdminAktion(r.Context(), claims.KontoID, aktion, clientip.AusAnfrage(r), details); err != nil {
-		log.Printf("LMF-Plan-Audit (%s) fehlgeschlagen: %v", aktion, err)
+		slog.Error("LMF-Plan-Audit fehlgeschlagen", "aktion", aktion, "fehler", err)
 	}
 }

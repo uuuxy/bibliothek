@@ -2,7 +2,7 @@ package lernmittel
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -45,7 +45,7 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		ctx := r.Context()
 		tx, err := t.DB.Pool.Begin(ctx)
 		if err != nil {
-			log.Printf("Fehler beim Starten der Transaktion: %v", err)
+			slog.Error("LMF-Verlängerung: Fehler beim Starten der Transaktion", "fehler", err)
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}
@@ -53,13 +53,13 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 
 		angepasst, err := repository.VerlaengereLernmittelDerKlasse(ctx, tx, req.Klasse, frist)
 		if err != nil {
-			log.Printf("Fehler beim globalen Verlängern: %v", err)
+			slog.Error("LMF-Verlängerung: Fehler beim globalen Verlängern", "fehler", err)
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
 			return
 		}
 
 		if err := tx.Commit(ctx); err != nil {
-			log.Printf("Fehler beim Commit der Transaktion: %v", err)
+			slog.Error("LMF-Verlängerung: Fehler beim Commit der Transaktion", "fehler", err)
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 			return
 		}

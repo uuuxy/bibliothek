@@ -5,9 +5,10 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -82,7 +83,7 @@ func erweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if anfrageFrist(r.URL.Path, LesefristVorgabe) != LesefristVorgabe {
 			if err := http.NewResponseController(w).SetReadDeadline(time.Now().Add(langLaufendeFrist)); err != nil {
-				log.Printf("Lesefrist für %s nicht verlängerbar, es gilt die Vorgabe: %v", r.URL.Path, err)
+				slog.Warn("Lesefrist nicht verlängerbar, es gilt die Vorgabe", "pfad", r.URL.Path, "fehler", err)
 			}
 		}
 		next.ServeHTTP(w, r)
@@ -124,7 +125,7 @@ func panikMiddleware(next http.Handler) http.Handler {
 				// auf der Seite für Lieferanten schreibt genau diesen Pfad ins Log. Ohne die
 				// Maskierung enthielte ein weitergereichtes Logfile funktionierende Links, und
 				// die Speicherung als Hash in der Datenbank wäre entwertet.
-				log.Printf("PANIC RECOVERED in request %s %s: %v", r.Method, maskiereToken(r.URL.Path), err)
+				slog.Error("PANIC RECOVERED", "methode", r.Method, "pfad", maskiereToken(r.URL.Path), "fehler", err, "stack", string(debug.Stack()))
 				apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
 			}
 		}()
@@ -339,7 +340,7 @@ func logMiddleware(next http.Handler) http.Handler {
 		// nie den der Fehlerstelle. Den Stack eines Panics schreibt panikMiddleware; die
 		// Ursache eines 5xx steht in der Zeile, die apierrors beim Senden ins Log schreibt.
 		if merker.status >= 500 {
-			log.Printf("HTTP %d on %s %s", merker.status, r.Method, maskiereToken(r.URL.Path))
+			slog.Error("Anfrage mit Serverfehler beendet", "status", merker.status, "methode", r.Method, "pfad", maskiereToken(r.URL.Path))
 		}
 	})
 }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -205,6 +205,6 @@ func (t *Tueren) protokolliereLUSDImport(r *http.Request, res *lusd.Vorschau, ma
 	}
 	if err := repository.NewProtokollAbfragen(t.DB.Pool).
 		ProtokolliereAdminAktion(r.Context(), claims.KontoID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
-		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
+		slog.Error("LUSD-Import: Audit-Eintrag fehlgeschlagen", "fehler", err)
 	}
 }

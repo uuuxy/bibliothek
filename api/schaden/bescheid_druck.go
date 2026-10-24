@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -38,7 +38,7 @@ func (t *Tueren) BescheidPDF(bescheidAbfragen *repository.BescheidAbfragen) http
 		}
 		if err := bescheidAbfragen.VermerkeDruck(ctx, id); err != nil {
 			// Der Vermerk ist Buchführung, nicht der Zweck: Der Brief geht trotzdem raus.
-			log.Printf("Druckvermerk für Bescheid %s fehlgeschlagen: %v", id, err)
+			slog.Error("Druckvermerk für Bescheid fehlgeschlagen", "bescheid", id, "fehler", err)
 		}
 
 		w.Header().Set("Content-Type", tuer.ContentTypePDF)
@@ -47,7 +47,7 @@ func (t *Tueren) BescheidPDF(bescheidAbfragen *repository.BescheidAbfragen) http
 				strings.ReplaceAll(bescheid.Referenznummer, " ", "-")))
 		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, als Anhang, nosniff); aus der Anfrage stammt nur die Kennung des Bescheids
 		if _, err := w.Write(roh); err != nil {
-			log.Printf("Bescheid-PDF senden: %v", err)
+			slog.Warn("Bescheid-PDF: Antwort an den Browser abgebrochen", "fehler", err)
 		}
 		return nil
 	})

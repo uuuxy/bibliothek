@@ -2,7 +2,7 @@ package druck
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -64,7 +64,7 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen *repository.LeserAbfragen) http
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, "inline; filename=\"schueler_etiketten.pdf\"")
 		if err := bogen.Output(w); err != nil {
-			log.Printf("Fehler beim Senden des Etikettenbogens: %v", err)
+			slog.Error("Fehler beim Senden des Etikettenbogens", "fehler", err)
 		}
 	}
 }

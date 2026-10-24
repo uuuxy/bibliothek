@@ -5,7 +5,7 @@ package system
 import (
 	"bibliothek/api/tuer"
 	"bibliothek/repository"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 )
@@ -48,7 +48,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		// 1. Beliebteste Titel (die Renner), mit den Feldern der Detailseite
 		renner, err := repository.LadeRenner(ctx, t.DB.Pool, ausleihenFilter, bestandsFilter, listenGrenze)
 		if err != nil {
-			log.Printf("stats: Renner konnten nicht ermittelt werden: %v", err)
+			slog.Error("stats: Renner konnten nicht ermittelt werden", "fehler", err)
 			renner = []repository.Renner{}
 			nichtGelesen = append(nichtGelesen, "renner")
 		}
@@ -56,7 +56,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		// 2. Ladenhüter (seit zwei Jahren oder nie ausgeliehen), mit den Feldern der Detailseite
 		ladenhueter, err := repository.LadeLadenhueter(ctx, t.DB.Pool, bestandsFilter, listenGrenze)
 		if err != nil {
-			log.Printf("stats: Ladenhüter konnten nicht ermittelt werden: %v", err)
+			slog.Error("stats: Ladenhüter konnten nicht ermittelt werden", "fehler", err)
 			ladenhueter = []repository.Ladenhueter{}
 			nichtGelesen = append(nichtGelesen, "ladenhueter")
 		}
@@ -64,7 +64,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		// 3. Verlust-, Finanz- und Zirkulationskennzahlen (ein aggregierter Scan)
 		kennzahlen, err := repository.LadeBestandKennzahlen(ctx, t.DB.Pool, bestandsFilter)
 		if err != nil {
-			log.Printf("stats: Bestandskennzahlen konnten nicht ermittelt werden: %v", err)
+			slog.Error("stats: Bestandskennzahlen konnten nicht ermittelt werden", "fehler", err)
 			kennzahlen = &repository.BestandKennzahlen{}
 			nichtGelesen = append(nichtGelesen, "kennzahlen")
 		}
@@ -74,7 +74,7 @@ func (t *Tueren) Statistik() http.HandlerFunc {
 		//    eigenes 12-Monats-Fenster; der Bestand-Filter (LMF/Freihand) gilt aber.
 		monatsTrend, err := repository.LadeMonatsTrend(ctx, t.DB.Pool, bestandsFilter)
 		if err != nil {
-			log.Printf("stats: Monatstrend konnte nicht ermittelt werden: %v", err)
+			slog.Error("stats: Monatstrend konnte nicht ermittelt werden", "fehler", err)
 			monatsTrend = []repository.MonatsTrendPunkt{}
 			nichtGelesen = append(nichtGelesen, "monats_trend")
 		}

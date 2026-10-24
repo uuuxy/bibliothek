@@ -2,7 +2,7 @@ package druck
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -48,7 +48,7 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 		w.Header().Set(tuer.HeaderContentDisposition, "inline; filename=\"etiketten_custom.pdf\"")
 
 		if err := bogen.Output(w); err != nil {
-			log.Printf("Fehler beim Senden des PDFs: %v", err)
+			slog.Error("Fehler beim Senden des PDFs", "fehler", err)
 		}
 	}
 }

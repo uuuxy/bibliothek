@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -227,6 +227,6 @@ func (t *Tueren) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
-	log.Printf("Schuljahreswechsel durchgeführt (Benutzer %s): %d Schüler versetzt, %d neue Abgänger", kontoID, versetzt, archiviert)
+	slog.Info("Schuljahreswechsel durchgeführt", "konto", kontoID, "versetzt", versetzt, "abgaenger", archiviert)
 	return true
 }

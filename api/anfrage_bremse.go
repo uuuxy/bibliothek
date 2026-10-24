@@ -1,7 +1,7 @@
 package api
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -64,7 +64,7 @@ func anfragenJeSekundeAusUmgebung() int {
 	}
 	n, err := strconv.Atoi(roh)
 	if err != nil || n <= 0 {
-		log.Printf("RATE_LIMIT=%q ist keine positive Zahl — es gilt die Vorgabe 50", roh)
+		slog.Warn("RATE_LIMIT ist keine positive Zahl — es gilt die Vorgabe 50", "wert", roh)
 		return 50
 	}
 	return n

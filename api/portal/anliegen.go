@@ -3,7 +3,7 @@ package portal
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -200,7 +200,7 @@ func (t *Tueren) sendeAnliegenErledigtMail(ctx context.Context, erledigt *reposi
 	}
 	text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
 	if err := t.Post().Sende(ctx, mailservice.Nachricht{An: *erledigt.AnfragendeMail, Betreff: betreff, Text: text}); err != nil {
-		log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
+		slog.Error("Anliegen-Mail fehlgeschlagen", "empfaenger", *erledigt.AnfragendeMail, "fehler", err)
 		return mailStatusFehlgeschlagen
 	}
 	return mailStatusVersendet

@@ -15,7 +15,7 @@ package system
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"bibliothek/internal/bereitschaft"
@@ -44,12 +44,12 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 
 	admins, err := zustandAbfragen.LadeAktiveAdmins(ctx)
 	if err != nil {
-		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber Admin-Konten nicht lesbar (%v)", kritische, err)
+		slog.Error("Bereitschafts-Alarm: kritische Befunde, aber Admin-Konten nicht lesbar", "befunde", kritische, "fehler", err)
 		return
 	}
 	empfaenger, beschreibung := waehleAlarmEmpfaenger(lage.AlarmEmpfaenger, admins)
 	if len(empfaenger) == 0 {
-		log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e), aber keine Empfänger (weder konfiguriert noch aktive Admins)", kritische)
+		slog.Error("Bereitschafts-Alarm: kritische Befunde, aber keine Empfänger (weder konfiguriert noch aktive Admins)", "befunde", kritische)
 		return
 	}
 
@@ -62,10 +62,10 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 		if err := t.Post().Sende(ctx, mailservice.Nachricht{An: an, Betreff: betreff, Text: textkoerper}); err != nil {
 			// Kaputter Mailversand ist selbst ein Befund der Seite — hier bleibt nur
 			// das Log; eine Mail über den kaputten Mailversand gibt es nicht.
-			log.Printf("Bereitschafts-Alarm an %s fehlgeschlagen: %v", an, err)
+			slog.Error("Bereitschafts-Alarm: Versand fehlgeschlagen", "empfaenger", an, "fehler", err)
 		}
 	}
-	log.Printf("Bereitschafts-Alarm: %d kritische(r) Befund(e) an %d Empfänger gemeldet", kritische, len(empfaenger))
+	slog.Info("Bereitschafts-Alarm: kritische Befunde gemeldet", "befunde", kritische, "anzahl_empfaenger", len(empfaenger))
 }
 
 // formatiereAlarmMail baut Betreff und Text aus den Befunden. Reine Funktion —

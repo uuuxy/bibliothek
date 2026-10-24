@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -234,7 +234,7 @@ func versendeAbgaengerKontoauszuege(
 		}
 
 		if err := sendeMail(ctx, baueAbgaengerMail(kl, anhaenge)); err != nil {
-			log.Printf("abgaenger-kontoauszug: Versand an Klasse %s (%s) fehlgeschlagen: %v", kl.Klasse, kl.Empfaenger, err)
+			slog.Error("abgaenger-kontoauszug: Versand an Klasse fehlgeschlagen", "klasse", kl.Klasse, "empfaenger", kl.Empfaenger, "fehler", err)
 			erg.Fehlgeschlagen++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {
 				erg.Abgebrochen = true
@@ -258,8 +258,7 @@ func baueKontoauszugAnhaenge(
 	for _, e := range kl.Eintraege {
 		pdfDaten, err := erzeugePDF(e)
 		if err != nil {
-			log.Printf("abgaenger-kontoauszug: PDF für %s %s (%s) fehlgeschlagen: %v",
-				e.Schueler.Vorname, e.Schueler.Nachname, kl.Klasse, err)
+			slog.Error("abgaenger-kontoauszug: PDF eines Schülers fehlgeschlagen", "klasse", kl.Klasse, "fehler", err)
 			continue
 		}
 		anhaenge = append(anhaenge, mailservice.Anhang{

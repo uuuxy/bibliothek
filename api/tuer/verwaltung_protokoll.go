@@ -2,7 +2,7 @@ package tuer
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -40,7 +40,7 @@ func (b *Basis) ProtokolliereVerwaltung(ctx context.Context, aktion string, deta
 	}
 	if err := repository.NewProtokollAbfragen(b.DB.Pool).
 		ProtokolliereAdminAktion(ctx, claims.KontoID, aktion, "", details); err != nil {
-		log.Printf("Protokoll (%s) fehlgeschlagen: %v", aktion, err)
+		slog.Error("Protokoll fehlgeschlagen", "aktion", aktion, "fehler", err)
 	}
 }
 
@@ -59,7 +59,7 @@ func (b *Basis) ProtokolliereKontoAnlage(ctx context.Context, kontoID, email, ro
 // Fehlversuch steht im Server-Log.
 func (b *Basis) SchreibeAdminProtokoll(ctx context.Context, adminID, aktion, ip, details string) {
 	if err := repository.SchreibeAdminProtokoll(ctx, b.DB.Pool, adminID, aktion, ip, details); err != nil {
-		log.Printf("audit/idempotenz: schreibvorgang fehlgeschlagen: %v", err)
+		slog.Error("audit/idempotenz: schreibvorgang fehlgeschlagen", "fehler", err)
 	}
 }
 

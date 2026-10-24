@@ -3,7 +3,7 @@ package theke
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -133,8 +133,7 @@ func (t *Tueren) bucheWarteschlangeNach(w http.ResponseWriter, r *http.Request, 
 
 	versatz := empfangen.Sub(req.GesendetAm)
 	if versatz >= uhrVersatzWarnenAb || versatz <= -uhrVersatzWarnenAb {
-		log.Printf("nachbuchen: WARNUNG die Uhr des Theken-Rechners weicht um %s ab (Konto %s) — Scan-Zeitpunkte werden umgerechnet, die Uhr sollte gestellt werden",
-			(-versatz).Round(time.Second), claims.KontoID)
+		slog.Warn("nachbuchen: die Uhr des Theken-Rechners weicht ab — Scan-Zeitpunkte werden umgerechnet, die Uhr sollte gestellt werden", "versatz", (-versatz).Round(time.Second).String(), "konto", claims.KontoID)
 	}
 
 	ctx := r.Context()
@@ -175,7 +174,7 @@ type nachbuchAbsender struct {
 func (t *Tueren) bucheEintragNach(ctx context.Context, dienst nachbuchung, e nachbuchEintrag, absender nachbuchAbsender) nachbuchErgebnis {
 	lage, err := t.ergreifeNachbuchSchluessel(ctx, e)
 	if err != nil {
-		log.Printf("nachbuchen: Schlüssel %s nicht lesbar: %v", e.Schluessel, err)
+		slog.Error("nachbuchen: Schlüssel nicht lesbar", "schluessel", e.Schluessel, "fehler", err)
 		return nachbuchErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "Server nicht erreichbar"}
 	}
 	if lage.antwort != nil {
@@ -190,7 +189,7 @@ func (t *Tueren) bucheEintragNach(ctx context.Context, dienst nachbuchung, e nac
 		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, BearbeiterID: absender.bearbeiterID,
 	})
 	if err != nil {
-		log.Printf("nachbuchen: Eintrag %s konnte nicht gebucht werden: %v", e.Schluessel, err)
+		slog.Error("nachbuchen: Eintrag konnte nicht gebucht werden", "schluessel", e.Schluessel, "fehler", err)
 		t.gibNachbuchSchluesselZurueck(ctx, e.Schluessel, lage)
 		return nachbuchErgebnis{Schluessel: e.Schluessel, Ergebnis: nachbuchWiederholen, Grund: "konnte nicht gebucht werden"}
 	}
@@ -221,7 +220,7 @@ func (t *Tueren) bucheEintragNach(ctx context.Context, dienst nachbuchung, e nac
 func (t *Tueren) zaehleMeldungen(ctx context.Context) (int, bool) {
 	n, err := repository.ZaehleOffeneNachbuchMeldungen(ctx, t.DB.Pool)
 	if err != nil {
-		log.Printf("nachbuchen: Meldungen nicht zählbar: %v", err)
+		slog.Error("nachbuchen: Meldungen nicht zählbar", "fehler", err)
 		return 0, false
 	}
 	return n, true
