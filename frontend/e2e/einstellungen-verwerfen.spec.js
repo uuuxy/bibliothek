@@ -88,7 +88,7 @@ test('Eine geänderte Mail-Vorlage hält den Wechsel der Seite an', async ({ pag
 	await gehZu(page, '/einstellungen');
 	await einstellungsKategorie(page, 'Mail').click();
 	await kategorieOffen(page, 'Mail');
-	await page.getByLabel('SMTP Host').fill(`smtp-${s}.example`);
+	await page.getByLabel('SMTP Host *').fill(`smtp-${s}.example`);
 	await menuepunkt(page, 'Ausleihe').click();
 	await expect(rueckfrage(page)).toBeVisible();
 	await rueckfrage(page).getByRole('button', { name: 'Verwerfen' }).click();

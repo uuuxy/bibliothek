@@ -29,6 +29,7 @@ type mailEinstellungenAntwort struct {
 // mailEinstellungenAnfrage ist die eingehende Mail-Konfiguration. Ein leeres SMTPPasswort
 // bedeutet „unverändert lassen": Sonst würde jedes Speichern der Einstellungsseite das
 // Passwort löschen, weil die Oberfläche es gar nicht kennt (siehe mailEinstellungenAntwort).
+// Ein leerer Port heißt 587, wie im Versand und in der Umgebung (mailservice.ladeSMTPKonfig).
 type mailEinstellungenAnfrage struct {
 	SMTPHost      string `json:"smtp_host"`
 	SMTPPort      string `json:"smtp_port"`
@@ -64,25 +65,45 @@ func (t *Tueren) MailEinstellungen(mailAbfragen *repository.MailEinstellungsAbfr
 	}
 }
 
+// leseMailEinstellungen liest die Mail-Konfiguration aus dem Rumpf und prüft sie. Bei einem
+// Fehler hat sie mit 400 geantwortet und liefert false.
+func leseMailEinstellungen(w http.ResponseWriter, r *http.Request) (mailEinstellungenAnfrage, bool) {
+	// Streng, weil die Tür jedes Feld schreibt: Ein Feld, das sie nicht kennt, ginge sonst
+	// verloren, und die fehlenden stünden danach leer in der Datenbank.
+	var req mailEinstellungenAnfrage
+	if !tuer.LeseAnfrageStreng(w, r, &req) {
+		return req, false
+	}
+
+	// Ohne Server nähme der Versand still die Umgebung statt dieser Einstellung, und Port,
+	// Benutzer und Absender wären verloren.
+	req.SMTPHost = strings.TrimSpace(req.SMTPHost)
+	if req.SMTPHost == "" {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte das Feld „SMTP Host“ ausfüllen", nil)
+		return req, false
+	}
+
+	// Absender beim Speichern prüfen, nicht erst beim Versand: Eine Adresse mit
+	// Tippfehler fiele sonst erst im Testversand auf, als 500, die der Admin als
+	// Datenbankfehler läse. Leer ist erlaubt; dann setzt der Versand seinen
+	// Vorgabe-Absender ein.
+	if absender := strings.TrimSpace(req.AbsenderEmail); absender != "" {
+		adresse, err := mail.ParseAddress(absender)
+		if err != nil {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Absenders ist ungültig", err)
+			return req, false
+		}
+		req.AbsenderEmail = adresse.Address
+	}
+	return req, true
+}
+
 // MailEinstellungenSchreiben speichert die Mail-Konfiguration
 func (t *Tueren) MailEinstellungenSchreiben(mailAbfragen *repository.MailEinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req mailEinstellungenAnfrage
-		if !tuer.LeseAnfrage(w, r, &req) {
+		req, ok := leseMailEinstellungen(w, r)
+		if !ok {
 			return
-		}
-
-		// Absender beim Speichern prüfen, nicht erst beim Versand: Eine Adresse mit
-		// Tippfehler fiele sonst erst im Testversand auf, als 500, die der Admin als
-		// Datenbankfehler läse. Leer ist erlaubt; dann setzt der Versand seinen
-		// Vorgabe-Absender ein.
-		if absender := strings.TrimSpace(req.AbsenderEmail); absender != "" {
-			adresse, err := mail.ParseAddress(absender)
-			if err != nil {
-				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die E-Mail-Adresse des Absenders ist ungültig", err)
-				return
-			}
-			req.AbsenderEmail = adresse.Address
 		}
 
 		ctx := r.Context()

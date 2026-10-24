@@ -127,7 +127,7 @@
 			</div>
 
 			<div class="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-				<Feld bind:value={host} etikett="SMTP Host" type="text" placeholder="smtp.example.com" />
+				<Feld bind:value={host} etikett="SMTP Host *" type="text" placeholder="smtp.example.com" />
 				<Feld bind:value={port} etikett="SMTP Port" type="text" placeholder="587" />
 				<Feld
 					bind:value={benutzername}

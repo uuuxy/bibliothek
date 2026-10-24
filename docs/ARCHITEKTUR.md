@@ -2073,7 +2073,8 @@ steht in `lmf_barcode`.
   sie vor jedem Versand (`mailservice.KonfigAusDatenbank`), der Test-Knopf (`SendeTestmail`) aus
   derselben Quelle. `UebernimmMailKonfig` übernimmt beim Start die Werte aus der Umgebung nur,
   solange in der Datenbank noch die Vorgabe des Schemas steht, und meldet nur, wenn wirklich
-  übernommen wurde.
+  übernommen wurde. Ein leerer Server in der Zeile heißt dagegen „Umgebung“ (`ladeSMTPKonfig`);
+  deshalb weist das Speichern einen Rumpf ohne Server ab. Ein leerer Port heißt 587.
 - **Aufbau und Versand stehen in `mailservice/`**; eine Tür ruft `t.Post().Sende`, den
   Postausgang ihrer Basis. Ohne Postausgang lehnt `Post()` jede Mail als nicht konfiguriert ab,
   wie ein Server ohne SMTP. Ein Test fängt ab, was eine Tür verschickt (`tuertest.FangeMailAb`),

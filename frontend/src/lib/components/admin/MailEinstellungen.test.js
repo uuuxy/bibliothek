@@ -22,7 +22,7 @@ describe('MailEinstellungen', () => {
 		const screen = render(MailEinstellungen);
 
 		await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
-		expect(screen.queryByLabelText('SMTP Host')).toBeNull();
+		expect(screen.queryByLabelText('SMTP Host *')).toBeNull();
 		expect(screen.queryByRole('button', { name: /Speichern/ })).toBeNull();
 		expect(apiPut).not.toHaveBeenCalled();
 	});
@@ -40,7 +40,7 @@ describe('MailEinstellungen', () => {
 
 		await fireEvent.click(await screen.findByRole('button', { name: 'Erneut versuchen' }));
 
-		const host = /** @type {HTMLInputElement} */ (await screen.findByLabelText('SMTP Host'));
+		const host = /** @type {HTMLInputElement} */ (await screen.findByLabelText('SMTP Host *'));
 		expect(host.value).toBe('mail.schule.example');
 		expect(screen.queryByRole('alert')).toBeNull();
 	});

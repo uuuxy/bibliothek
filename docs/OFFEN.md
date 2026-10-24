@@ -28,7 +28,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (5.99)
 - [x] Der Mahnversand an die Klassenleitungen lehnt einen Rumpf ohne Klassenliste ab, statt an
   alle Klassen zu verschicken. (5.100)
-- [ ] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
+- [x] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
 - [ ] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
@@ -103,19 +103,6 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.101 Mail-Einstellungen: Speichern ohne Felder leert sie
-
-Gefunden am 24.10.2026 im selben Lauf: `PUT /api/admin/settings/mail` mit einem Rumpf ohne ein
-einziges bekanntes Feld antwortete 200. Danach waren Server, Port, Benutzer und Absender leer;
-das Verwaltungsprotokoll zeigt `UPDATE_MAIL_SETTINGS` mit leeren Werten.
-`MailEinstellungenSchreiben` (`api/system/mail_einstellungen.go`) liest mit `tuer.LeseAnfrage`
-und speichert ein fehlendes Feld als leer. Die Oberfläche schickt alle Felder. Was der Versand
-mit geleerten Einstellungen tut, ist nicht geprüft: Der Massenversand der Mahnlisten lief in der
-Kopie danach noch an (`IstKonfiguriert`). Das vor dem Bau klären, davon hängt die Einstufung ab.
-
-**Zu bauen:** strenges Lesen (`tuer.LeseAnfrageStreng`); Server und Port Pflicht, sonst 400.
-Test: Rumpf ohne Felder gibt 400, die gespeicherte Einstellung bleibt.
 
 ### 5.102 Null-Zeichen in einer Eingabe gibt 500
 
