@@ -161,6 +161,36 @@ func TestZustandAbschlagRundetNurEinmal(t *testing.T) {
 	}
 }
 
+// Kaufmännisch gerundet wird der Betrag, der auf dem Papier steht, nicht eine Kommazahl des
+// Rechners. In ihr liegt 10 % von 10,05 € knapp unter 1,005, und der Bescheid nennte 1,00 €
+// statt 1,01 €. Die Probe ist dieselbe Rechnung in ganzen Cent.
+func TestBetragRundetDenDezimalwert(t *testing.T) {
+	if got := Berechne(6, 0, 10.05, 0, PreisquelleListenpreis).Betrag; got != 1.01 {
+		t.Errorf("10 %% von 10,05 € = %.4f, erwartet 1.01", got)
+	}
+	if got := BerechneNeuwert(0, 0.35, 10, PreisquelleListenpreis).Betrag; got != 0.32 {
+		t.Errorf("0,35 € abzüglich 10 %% = %.4f, erwartet 0.32", got)
+	}
+	for cent := 1; cent <= 5000; cent++ {
+		preis := float64(cent) / 100
+		for _, abschlag := range []int{0, 5, 10, 20, 25, 42, 50} {
+			for jahr := 1; jahr <= 6; jahr++ {
+				got := Berechne(jahr, 0, preis, abschlag, PreisquelleListenpreis)
+				want := float64((cent*got.Prozent*(100-abschlag)+5000)/10000) / 100
+				if got.Betrag != want {
+					t.Fatalf("%d. Verleihjahr, %.2f €, Abschlag %d %%: %.4f, erwartet %.2f",
+						jahr, preis, abschlag, got.Betrag, want)
+				}
+			}
+			got := BerechneNeuwert(0, preis, abschlag, PreisquelleListenpreis)
+			if want := float64((cent*(100-abschlag)+50)/100) / 100; got.Betrag != want {
+				t.Fatalf("Neuwert %.2f €, Abschlag %d %%: %.4f, erwartet %.2f",
+					preis, abschlag, got.Betrag, want)
+			}
+		}
+	}
+}
+
 // Die Schule wählt, welcher Preis ab dem zweiten Verleihjahr gilt.
 //
 // Der Nullwert ist die Regel der Arbeitshilfe: der Fall einer Schule, die die Einstellung nie

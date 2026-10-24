@@ -20,7 +20,11 @@
 // Neupreis: Im ersten Jahr ist das Buch neu, danach zählt, was ein Ersatz heute kostet.
 package ersatzwert
 
-import "math"
+import (
+	"math"
+	"math/big"
+	"strconv"
+)
 
 // prozentstaffel nennt den Prozentsatz je Verleihjahr, beginnend mit dem ersten; ab dem
 // sechsten Jahr gilt der letzte Wert.
@@ -116,9 +120,8 @@ func Berechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int,
 	}
 
 	basis, preis := basisFuer(verleihjahr, kaufpreis, neupreis, quelle)
-	zeitwert := preis * float64(prozent) / 100
 	return Vorschlag{
-		Betrag:          rundeAufCent(zeitwert * float64(100-zustandAbschlag) / 100),
+		Betrag:          anteilAufCent(preis, prozent, zustandAbschlag),
 		Prozent:         prozent,
 		Basis:           basis,
 		BasisPreis:      preis,
@@ -151,7 +154,7 @@ func BerechneNeuwert(kaufpreis, listenpreis float64, zustandAbschlag int, quelle
 
 	basis, preis := neuwertBasis(kaufpreis, listenpreis, quelle)
 	return Vorschlag{
-		Betrag:     rundeAufCent(preis * float64(100-zustandAbschlag) / 100),
+		Betrag:     anteilAufCent(preis, 100, zustandAbschlag),
 		Prozent:    100,
 		Basis:      basis,
 		BasisPreis: preis,
@@ -202,9 +205,20 @@ func basisFuer(verleihjahr int, kaufpreis, neupreis float64, quelle Preisquelle)
 	return BasisKaufpreisErsatzweise, kaufpreis
 }
 
-// rundeAufCent rundet kaufmännisch auf zwei Stellen; der Betrag steht in einem Brief.
-func rundeAufCent(betrag float64) float64 {
-	return math.Round(betrag*100) / 100
+// anteilAufCent ist preis · prozent/100 · (100−abschlag)/100, kaufmännisch auf den Cent
+// gerundet; der Betrag steht in einem Brief. Gerechnet wird mit der Dezimalzahl, als die der
+// Preis gespeichert und angezeigt wird: Als Kommazahl des Rechners liegt 10 % von 10,05 € knapp
+// unter 1,005, und der Bescheid nennte 1,00 € statt 1,01 €.
+func anteilAufCent(preis float64, prozent, abschlag int) float64 {
+	genau, ok := new(big.Rat).SetString(strconv.FormatFloat(math.Abs(preis), 'f', -1, 64))
+	if !ok {
+		return 0
+	}
+	// In Cent und um einen halben Cent erhöht, damit das Abschneiden kaufmännisch rundet.
+	genau.Mul(genau, big.NewRat(int64(prozent*(100-abschlag)), 100))
+	genau.Add(genau, big.NewRat(1, 2))
+	cent := new(big.Int).Quo(genau.Num(), genau.Denom())
+	return math.Copysign(float64(cent.Int64())/100, preis)
 }
 
 // Verleihjahr leitet das Verleihjahr aus den zwei Größen ab, die das Programm kennt: der Zahl
