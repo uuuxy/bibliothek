@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -20,6 +21,25 @@ func TestCSRFCookieFolgtDerKonfiguration(t *testing.T) {
 		c := newCSRFCookie("tok123", secure)
 		if c.Secure != secure {
 			t.Errorf("Secure = %v, erwartet %v", c.Secure, secure)
+		}
+	}
+}
+
+// Das Cookie, das jede Anfrage an die Schnittstelle ohne Cookie bekommt, setzt die Middleware selbst
+// (erneuereCSRFCookie). Es folgt der Konfiguration wie das der Tür csrf-token; ohne diesen Test
+// blieb ein festes false an dieser Stelle unbemerkt.
+func TestCSRFCookieDerMiddlewareFolgtDerKonfiguration(t *testing.T) {
+	for _, secure := range []bool{true, false} {
+		s := &Server{nurHTTPS: secure}
+		antwort := httptest.NewRecorder()
+		s.csrfMiddleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).
+			ServeHTTP(antwort, httptest.NewRequest(http.MethodGet, "/api/books", nil))
+		cookies := antwort.Result().Cookies()
+		if len(cookies) != 1 || cookies[0].Name != csrfCookieName {
+			t.Fatalf("secure=%v: Cookies %v, erwartet das CSRF-Cookie", secure, cookies)
+		}
+		if cookies[0].Secure != secure {
+			t.Errorf("secure=%v: Secure = %v — das Cookie der Middleware folgt der Konfiguration nicht", secure, cookies[0].Secure)
 		}
 	}
 }
