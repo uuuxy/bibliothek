@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/pkg/lmf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -106,7 +107,7 @@ func lernmittelFilterParam(r *http.Request) lernmittelFilter {
 	if r := []rune(f.Suche); len(r) > 100 {
 		f.Suche = string(r[:100])
 	}
-	if j, err := strconv.Atoi(q.Get("jahrgang")); err == nil && j >= 5 && j <= 13 {
+	if j, err := strconv.Atoi(q.Get("jahrgang")); err == nil && lmf.IstJahrgang(j) {
 		f.Jahrgang = j
 	}
 	return f

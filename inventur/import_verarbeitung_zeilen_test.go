@@ -8,7 +8,7 @@ func TestLeseKlassenstufe(t *testing.T) {
 	faelle := []struct {
 		name     string
 		gradeStr string
-		expected int16
+		expected int
 	}{
 		{"Valid grade string inside bounds", "7", 7},
 		{"Valid grade string lower bound", "5", 5},

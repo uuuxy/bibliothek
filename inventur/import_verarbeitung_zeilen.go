@@ -53,8 +53,8 @@ func verarbeiteImportZeile(ctx context.Context, konfig importZeile) (*Titel, err
 		Titel:           titelText,
 		Autor:           autor,
 		Fach:            fach,
-		JahrgangVon:     int(klasse),
-		JahrgangBis:     int(klasse),
+		JahrgangVon:     klasse,
+		JahrgangBis:     klasse,
 		Bestand:         leseBestand(spalteLesen("bestand")),
 		ZuletztGezaehlt: nil,
 	}
@@ -70,25 +70,17 @@ func verarbeiteImportZeile(ctx context.Context, konfig importZeile) (*Titel, err
 	return &eintrag, nil
 }
 
-// leseKlassenstufe liest den Jahrgang aus der Spalte „klasse". Gültig ist 5–13 (kooperative
-// Gesamtschule inkl. Oberstufe). Fehlt die Spalte, ist sie leer oder liegt der Wert daneben,
-// ist der Jahrgang unbekannt (0), und beide Upserts schreiben NULL in die Spanne. Geraten
-// wird nicht: Ein geratener Jahrgang ist in der Datenbank von einem gepflegten nicht zu
-// unterscheiden, und das Upsert behält eine vorhandene Spanne.
-//
-// Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
-// einem Pfad liegen, den der Bounds-Check exklusiv kontrolliert — nach einem Merge
-// mit dem Default-Zweig gilt der Check statisch nicht mehr als Guard
-// (go/incorrect-integer-conversion).
-func leseKlassenstufe(stufeText string) int16 {
-	stufe := 0
-	if g, err := strconv.Atoi(stufeText); err == nil {
-		stufe = g
-	}
-	if stufe < 5 || stufe > 13 {
+// leseKlassenstufe liest den Jahrgang aus der Spalte „klasse" (lmf.IstJahrgang). Fehlt die
+// Spalte, ist sie leer oder liegt der Wert daneben, ist der Jahrgang unbekannt (0), und beide
+// Upserts schreiben NULL in die Spanne. Geraten wird nicht: Ein geratener Jahrgang ist in der
+// Datenbank von einem gepflegten nicht zu unterscheiden, und das Upsert behält eine vorhandene
+// Spanne.
+func leseKlassenstufe(stufeText string) int {
+	stufe, err := strconv.Atoi(stufeText)
+	if err != nil || !lmf.IstJahrgang(stufe) {
 		return 0
 	}
-	return int16(stufe)
+	return stufe
 }
 
 // leseBestand liest den Bestand aus der Import-Spalte. Nur Werte aus [0, MaxInt32]

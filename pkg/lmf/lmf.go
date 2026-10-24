@@ -144,15 +144,22 @@ func Zerlege(signatur string) (z Zerlegung, ok bool) {
 	return z, true
 }
 
+// IstJahrgang sagt, ob eine Zahl ein Jahrgang der Schule ist: 5 bis 13, die kooperative
+// Gesamtschule mit Oberstufe. Signatur, Titel, Listenimport und der Filter des Portals lesen
+// eine Zahl nur in diesem Bereich als Jahrgang; jede trägt ihn in dieselbe Spanne am Titel ein.
+func IstJahrgang(n int) bool {
+	return n >= 5 && n <= 13
+}
+
 // jahrgangsSpanne liest den kleinsten und den größten Jahrgang aus dem Rest der Signatur;
-// ohne Zahl zwischen 5 und 13 bleibt es bei 0 und 0.
+// ohne Zahl, die ein Jahrgang ist, bleibt es bei 0 und 0.
 func jahrgangsSpanne(rest string) (von, bis int) {
 	for _, zahl := range jahrgangsZahlen.FindAllString(rest, -1) {
 		j := int(zahl[0] - '0')
 		if len(zahl) == 2 {
 			j = j*10 + int(zahl[1]-'0')
 		}
-		if j < 5 || j > 13 {
+		if !IstJahrgang(j) {
 			continue
 		}
 		if von == 0 || j < von {

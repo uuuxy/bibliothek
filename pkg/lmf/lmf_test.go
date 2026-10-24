@@ -236,3 +236,13 @@ func TestFachExakt(t *testing.T) {
 		}
 	}
 }
+
+// Ein Jahrgang der Schule ist 5 bis 13. Die Grenzen sind die Fälle, an denen Signatur, Titel,
+// Listenimport und Portal früher je für sich gezählt haben.
+func TestIstJahrgang(t *testing.T) {
+	for n, want := range map[int]bool{-1: false, 0: false, 4: false, 5: true, 7: true, 13: true, 14: false, 20: false} {
+		if got := IstJahrgang(n); got != want {
+			t.Errorf("IstJahrgang(%d) = %v, erwartet %v", n, got, want)
+		}
+	}
+}
