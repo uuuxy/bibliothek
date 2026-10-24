@@ -1,4 +1,4 @@
-package inventur
+package katalogdienste
 
 import (
 	"bytes"
@@ -150,9 +150,9 @@ func TestLadeCoverBytes_ErsatzbildIstKeinCover(t *testing.T) {
 
 func TestSpeichereCoverDatei(t *testing.T) {
 	// Im vorübergehenden Verzeichnis, nicht im Verzeichnis des Pakets: Ein Test, der
-	// inventur/uploads im Repository anlegt und wieder löscht, stört die Ratschen im Wurzelpaket,
-	// die parallel den Baum lesen (WalkDir) und über das verschwundene Verzeichnis stolpern
-	// („open inventur/uploads: no such file").
+	// internal/katalogdienste/uploads im Repository anlegt und wieder löscht, stört die Ratschen
+	// im Wurzelpaket, die parallel den Baum lesen (WalkDir) und über das verschwundene
+	// Verzeichnis stolpern („open internal/katalogdienste/uploads: no such file").
 	t.Chdir(t.TempDir())
 
 	t.Run("successful save", func(t *testing.T) {

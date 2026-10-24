@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"bibliothek/internal/katalogdienste"
 )
 
 // baueISBNAnfrage baut den GET für eine ISBN. Den Platzhalter {isbn} füllt im Betrieb der
@@ -47,7 +49,7 @@ func TestISBNSuche_SucheScheitert(t *testing.T) {
 		},
 	}
 
-	metadaten := NewMetadatenClient()
+	metadaten := katalogdienste.NewMetadatenClient()
 	metadaten.SetzeHTTPClientFuerTest(mockClient)
 
 	tueren := &Tueren{
@@ -94,7 +96,7 @@ func findeISBNMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorde
 			}, nil
 		},
 	}
-	metadaten := NewMetadatenClient()
+	metadaten := katalogdienste.NewMetadatenClient()
 	metadaten.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTr})
 	tueren := &Tueren{metadaten: metadaten}
 

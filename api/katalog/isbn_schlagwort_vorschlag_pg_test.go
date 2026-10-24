@@ -12,10 +12,10 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
-	"bibliothek/inventur"
 	"bibliothek/repository"
 )
 
@@ -35,7 +35,7 @@ func TestLegeTitelAusTrefferAn_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	resp, err := srv.legeTitelAusTrefferAn(ctx, "9783751200530", &inventur.MetadatenErgebnis{
+	resp, err := srv.legeTitelAusTrefferAn(ctx, "9783751200530", &katalogdienste.MetadatenErgebnis{
 		Titel: "Dunkelnacht", Autor: "Boie, Kirsten",
 		Stichwoerter: []string{"Jugendbuch", "Krieg", "Erste Liebe", "TikTok"},
 	})
@@ -79,7 +79,7 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := inventur.NewMetadatenClient()
+	client := katalogdienste.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">
@@ -131,7 +131,7 @@ func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := inventur.NewMetadatenClient()
+	client := katalogdienste.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">

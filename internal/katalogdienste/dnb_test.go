@@ -1,4 +1,4 @@
-package inventur
+package katalogdienste
 
 import (
 	"context"
@@ -145,7 +145,7 @@ func TestAutorUndTitel(t *testing.T) {
 }
 
 func TestSucheDNB_And_SucheTextDNB(t *testing.T) {
-	// mockTransport steht in metadaten_client_test.go.
+	// mockTransport steht in katalogdienste_test.go.
 	mockTr := &mockTransport{
 		roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
 			if strings.Contains(anfrage.URL.String(), "NUM=9781234567890") || anfrage.URL.Query().Get("query") == `any all "Test Book"` {

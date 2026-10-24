@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"bibliothek/internal/katalogdienste"
 )
 
 // Ein Ausfall des Netzes ist kein fehlender Treffer.
@@ -37,7 +39,7 @@ func (leereQuellen) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func findeISBNMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseRecorder {
 	t.Helper()
-	client := NewMetadatenClient()
+	client := katalogdienste.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: transport})
 	tueren := &Tueren{metadaten: client}
 
@@ -65,16 +67,16 @@ func TestLookup_ErreichbarOhneTrefferBleibt404(t *testing.T) {
 // Die Unterscheidung lebt im Client: Transportfehler tragen das Sentinel, ein leeres
 // Ergebnis erreichbarer Quellen nicht.
 func TestSucheNachISBN_KlassifiziertAusfallUndTreffer(t *testing.T) {
-	client := NewMetadatenClient()
+	client := katalogdienste.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: kaputtesNetz{}})
 	_, err := client.SucheNachISBN(t.Context(), "9783551551672")
-	if !errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
+	if !errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 		t.Fatalf("Netzausfall = %v, erwartet ErrKatalogdiensteNichtErreichbar", err)
 	}
 
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: leereQuellen{}})
 	_, err = client.SucheNachISBN(t.Context(), "9783551551672")
-	if err == nil || errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
+	if err == nil || errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 		t.Fatalf("erreichbar ohne Treffer = %v, erwartet schlichten Nicht-Treffer", err)
 	}
 }

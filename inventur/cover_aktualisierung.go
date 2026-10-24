@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 )
@@ -31,7 +32,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 
 	nachschlagen, err := t.metadaten.SucheNachISBN(r.Context(), eintrag.ISBN)
 	if err != nil || nachschlagen == nil {
-		if errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
+		if errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 			// Netzausfall ist kein Nicht-Treffer — sonst sieht „Cover neu laden" bei
 			// WLAN-Störung so aus, als gäbe es schlicht kein besseres Cover.
 			schreibeFehler(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.")

@@ -9,9 +9,9 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/inventur"
 )
 
 // Ein über die Bestellsuche neu aus der DNB angelegter Titel entsteht ohne das Kennzeichen
@@ -24,7 +24,7 @@ func TestNeuerDNBTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783060000001", &inventur.MetadatenErgebnis{Titel: "Mathematik 7 Hessen"})
+	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783060000001", &katalogdienste.MetadatenErgebnis{Titel: "Mathematik 7 Hessen"})
 	if err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}

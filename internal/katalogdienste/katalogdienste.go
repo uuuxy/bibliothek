@@ -1,4 +1,11 @@
-package inventur
+// Package katalogdienste fragt die Katalogdienste nach den Angaben zu einem Buch: die Deutsche
+// Nationalbibliothek, Google Books und OpenLibrary. Es liest ihre Antworten, schätzt aus dem Titel
+// Fach und Jahrgang und legt das gefundene Cover in der lokalen Ablage ab (pkg/coverablage).
+//
+// Das Paket formuliert keine Anweisung an die Datenbank. Wer einen Treffer speichert, ist die
+// Tür, die ihn bekommt: die Maske eines Titels, die Bestellung über die ISBN, der Listenimport und
+// der Abgleich der Cover.
+package katalogdienste
 
 import (
 	"context"
@@ -70,7 +77,7 @@ func NewMetadatenClient() *MetadatenClient {
 
 // SetzeHTTPClientFuerTest injiziert einen HTTP-Client mit eigenem Transport. Der Zweck
 // ist ausschließlich, in Tests anderer Pakete den echten Netzzugriff zu kappen (DNB/
-// Google/OpenLibrary): Innerhalb von inventur reicht das unexportierte httpClient-Feld,
+// Google/OpenLibrary): Innerhalb des Pakets reicht das unexportierte httpClient-Feld,
 // aber ein Test der Bestellsuche in internal/service kommt sonst nur über unsafe/reflect an
 // das Feld — genau die Fragilität, die bei einer Feldumbenennung still bricht. Diese
 // eine exportierte Naht macht den Weg sicher und benennt ihn ehrlich.

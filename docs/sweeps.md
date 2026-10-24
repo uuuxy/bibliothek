@@ -386,7 +386,7 @@ Die drei Abfragen bei DNB, Google und OpenLibrary (`api/katalog/isbn_zu_titel.go
 mit 502 „Katalogdienste nicht erreichbar", mit 404 nur, wenn mindestens eine Quelle geantwortet
 hat. Mit demselben Bildschirm wie bei einem echten Nicht-Treffer würde die Theke bei einer
 Störung des Netzes Bücher von Hand erfassen, die in der DNB stehen. Umsetzung:
-`inventur.ErrKatalogdiensteNichtErreichbar` (Transportfehler je Quelle in `holeInhalt`),
+`katalogdienste.ErrKatalogdiensteNichtErreichbar` (Transportfehler je Quelle in `holeInhalt`),
 `errors.Is` in allen drei Türen. Gate: `inventur/lookup_ausfall_test.go` (kaputtes Netz → 502,
 erreichbar ohne Treffer → 404).
 

@@ -31,7 +31,7 @@ func mahnlisteUmgebung(t *testing.T) {
 }
 
 // schreibeCoverDatei legt ein Cover als WebP ab, wie der Abruf der Cover es tut
-// (inventur/cover_ablage.go), und liefert die Adresse, wie sie am Titel steht.
+// (internal/katalogdienste/cover_bild.go), und liefert die Adresse, wie sie am Titel steht.
 func schreibeCoverDatei(t *testing.T, name string) string {
 	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, 60, 90))

@@ -11,11 +11,11 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
-	"bibliothek/inventur"
 )
 
 // POST /api/bestellungen/suche sucht einen Titel zum Bestellen im eigenen Katalog und in der
@@ -63,7 +63,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	var ausfall string
 	suche := func(t *testing.T, dnb http.RoundTripper, rumpf string) (int, []service.BestellTreffer, string) {
 		t.Helper()
-		client := inventur.NewMetadatenClient()
+		client := katalogdienste.NewMetadatenClient()
 		client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnb})
 		rec := httptest.NewRecorder()
 		srv.sucheBestellung(client)(rec, httptest.NewRequest(http.MethodPost, "/api/bestellungen/suche", strings.NewReader(rumpf)))

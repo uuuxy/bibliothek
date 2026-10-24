@@ -3485,7 +3485,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `frontend-hygiene-spaete-pruefung.test.js`, einen gemeinsamen Baustein gibt es nicht. Rund
   fünfzehn Türen setzen die Kopfzeilen eines PDF je selbst; Zugangs- und Abgangsbuch
   (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich. Ein
-  Cover holen `api/katalog/cover.go` und `inventur/cover_downloader.go` je selbst, mit derselben
+  Cover holen `api/katalog/cover.go` und `internal/katalogdienste/cover.go` je selbst, mit derselben
   Liste erlaubter Server und derselben Grenze für die Bildgröße. Anlass: ein Fehler in einer der
   Kopien.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`

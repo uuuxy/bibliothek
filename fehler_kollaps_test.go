@@ -42,7 +42,7 @@ var kollapsBestand = map[string]string{
 	"auth/anmelden.go:leseSitzung":        "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	"auth/anmelden.go:SitzungVerlaengern": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	// Die drei Kataloge (DNB, Google, OpenLibrary) stehen nicht hier, sie ordnen ein: Netzausfall =
-	// 502 (inventur.ErrKatalogdiensteNichtErreichbar), erreichbar ohne Treffer = 404.
+	// 502 (katalogdienste.ErrKatalogdiensteNichtErreichbar), erreichbar ohne Treffer = 404.
 }
 
 // kollapsAntworten: die harmlosen Antworten als Status-Konstante und als Helfer der Hausform

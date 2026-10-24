@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 
@@ -46,7 +47,7 @@ func (t *Tueren) findeLokalenTitel(ctx context.Context, isbn string) (*isbnZuTit
 	return nil, err
 }
 
-func (t *Tueren) schreibeTitelAusMetadaten(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (isbnZuTitelAntwort, error) {
+func (t *Tueren) schreibeTitelAusMetadaten(ctx context.Context, isbn string, meta *katalogdienste.MetadatenErgebnis) (isbnZuTitelAntwort, error) {
 	jahr := leseErscheinungsjahr(meta.Jahr)
 
 	// subject ist ein Fremdschlüssel auf die Systematik: das Fach, das die Katalogdienste
@@ -135,7 +136,7 @@ type isbnZuTitelAntwort struct {
 // Schlagwort-Vorschlag mit. Der Vorschlag wird vor dem Anlegen gelesen: Scheitert die Abfrage,
 // entsteht kein Titel; sonst stünde ein angelegter Titel hinter einer Fehlermeldung, und der
 // zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
-func (t *Tueren) legeTitelAusTrefferAn(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (isbnZuTitelAntwort, error) {
+func (t *Tueren) legeTitelAusTrefferAn(ctx context.Context, isbn string, meta *katalogdienste.MetadatenErgebnis) (isbnZuTitelAntwort, error) {
 	liste, neu, err := repository.LadeSchlagwortVorschlagAusDNB(ctx, t.DB.Pool, meta.Stichwoerter, meta.Normdaten)
 	if err != nil {
 		return isbnZuTitelAntwort{}, err
@@ -155,13 +156,13 @@ func (t *Tueren) legeTitelAusTrefferAn(ctx context.Context, isbn string, meta *i
 // kann. Die zehn- und die dreizehnstellige Form einer ISBN sind dabei dieselbe Nummer: Der
 // Katalog führt sie dreizehnstellig.
 func (t *Tueren) ISBNZuTitel() http.HandlerFunc {
-	return t.isbnZuTitelTuer(inventur.NewMetadatenClient())
+	return t.isbnZuTitelTuer(katalogdienste.NewMetadatenClient())
 }
 
 // isbnZuTitelTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt die
 // Antwort der DNB nach (MetadatenClient.SetzeHTTPClientFuerTest), statt sie im Netz
 // abzufragen; so ist auch geprüft, dass die Tür den Schlagwort-Vorschlag weitergibt.
-func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.HandlerFunc {
+func (t *Tueren) isbnZuTitelTuer(metadaten *katalogdienste.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			ISBN string `json:"isbn"`
@@ -192,7 +193,7 @@ func (t *Tueren) isbnZuTitelTuer(metadaten *inventur.MetadatenClient) http.Handl
 		// 2. Noch nicht im Katalog: die Metadaten bei DNB, Google Books und OpenLibrary holen.
 		meta, err := metadaten.SucheNachISBN(ctx, req.ISBN)
 		if err != nil {
-			if errors.Is(err, inventur.ErrKatalogdiensteNichtErreichbar) {
+			if errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 				// Netzausfall ist kein Nicht-Treffer: Bei 404 legt die Theke während
 				// einer WLAN-Störung Titel von Hand an, die längst in der DNB stehen.
 				apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.", err)

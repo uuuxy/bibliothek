@@ -6,9 +6,9 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/inventur"
 )
 
 // Bestellen per ISBN legt den Titel aus der DNB an, mit Untertitel und Ladenpreis. Den Preis
@@ -31,7 +31,7 @@ func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 	}
 
 	// 1. Neuer Titel: beides kommt an.
-	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555551", &inventur.MetadatenErgebnis{
+	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555551", &katalogdienste.MetadatenErgebnis{
 		Titel: "Wolkenkind", Untertitel: "Ein Roman über Freundschaft", Autor: "Muster, Erika", Preis: 14.99,
 	})
 	if err != nil {
@@ -42,7 +42,7 @@ func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 	}
 
 	// 2. Ein Preis von 0 heißt „nicht ermittelbar", nicht „kostet nichts".
-	resp0, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555568", &inventur.MetadatenErgebnis{
+	resp0, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555568", &katalogdienste.MetadatenErgebnis{
 		Titel: "Ohne Preis", Preis: 0,
 	})
 	if err != nil {
@@ -57,7 +57,7 @@ func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 		`UPDATE buecher_titel SET untertitel = 'Gepflegt', listenpreis = 20.00 WHERE id = $1`, resp.TitelID); err != nil {
 		t.Fatalf("pflegen: %v", err)
 	}
-	if _, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555551", &inventur.MetadatenErgebnis{
+	if _, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555551", &katalogdienste.MetadatenErgebnis{
 		Titel: "Wolkenkind", Untertitel: "Anderer Untertitel", Preis: 9.99,
 	}); err != nil {
 		t.Fatalf("erneut: %v", err)

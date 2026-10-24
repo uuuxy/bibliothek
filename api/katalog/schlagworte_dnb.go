@@ -6,7 +6,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
-	"bibliothek/inventur"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/repository"
 )
 
@@ -36,21 +36,21 @@ type dnbSchlagwortVorschlagAntwort struct {
 // DNBSchlagwortVorschlag liefert den Schlagwort-Vorschlag der DNB zu einer ISBN
 // (GET /api/schlagworte/dnb-vorschlag?isbn=).
 func (t *Tueren) DNBSchlagwortVorschlag() http.HandlerFunc {
-	return t.dnbSchlagwortVorschlagTuer(inventur.NewMetadatenClient())
+	return t.dnbSchlagwortVorschlagTuer(katalogdienste.NewMetadatenClient())
 }
 
 // dnbSchlagwortVorschlagTuer ist die Tür mit den Katalogdiensten als Parameter: Ein Test stellt
 // die Antwort der DNB nach (MetadatenClient.SetzeHTTPClientFuerTest), wie bei isbnZuTitelTuer.
-func (t *Tueren) dnbSchlagwortVorschlagTuer(metadaten *inventur.MetadatenClient) http.HandlerFunc {
+func (t *Tueren) dnbSchlagwortVorschlagTuer(metadaten *katalogdienste.MetadatenClient) http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		antwort := dnbSchlagwortVorschlagAntwort{SchlagwortVorschlaege: []string{}, SchlagwortVorschlaegeNeu: []string{}}
 		meta, err := metadaten.SucheDNBNachISBN(r.Context(), r.URL.Query().Get("isbn"))
 		switch {
-		case errors.Is(err, inventur.ErrUngueltigeISBN):
+		case errors.Is(err, katalogdienste.ErrUngueltigeISBN):
 			return apierrors.BadRequest("Keine gültige ISBN", err)
-		case errors.Is(err, inventur.ErrDNBNichtErreichbar):
+		case errors.Is(err, katalogdienste.ErrDNBNichtErreichbar):
 			return apierrors.New(http.StatusBadGateway, "Die DNB ist nicht erreichbar. Bitte später erneut versuchen.", err)
-		case errors.Is(err, inventur.ErrNichtInDerDNB):
+		case errors.Is(err, katalogdienste.ErrNichtInDerDNB):
 			tuer.AntworteJSON(w, http.StatusOK, antwort)
 			return nil
 		case err != nil:

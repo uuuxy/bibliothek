@@ -11,10 +11,10 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
-	"bibliothek/inventur"
 	"bibliothek/repository"
 )
 
@@ -72,7 +72,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			client := inventur.NewMetadatenClient()
+			client := katalogdienste.NewMetadatenClient()
 			client.SetzeHTTPClientFuerTest(&http.Client{Transport: f.dnb})
 			tuer := (&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).dnbSchlagwortVorschlagTuer(client)
 
@@ -94,7 +94,7 @@ func TestDNBSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	// Dieselbe Regel wie beim Anlegen: Die Tür des Bestellens schlägt zum selben Satz dieselben
 	// Wörter vor. Hier über legeTitelAusTrefferAn, das einen neuen Titel anlegt — deshalb zuletzt.
 	var antwort dnbSchlagwortVorschlagAntwort
-	client := inventur.NewMetadatenClient()
+	client := katalogdienste.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: satz}})
 	rec := httptest.NewRecorder()
 	(&Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}).dnbSchlagwortVorschlagTuer(client)(rec,

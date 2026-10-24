@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/lmf"
 )
 
@@ -14,7 +15,7 @@ type importZeile struct {
 	Zeile     []string
 	Spalten   map[string]int
 	Abfragen  *TitelAbfragen
-	Metadaten *MetadatenClient
+	Metadaten *katalogdienste.MetadatenClient
 }
 
 // verarbeiteImportZeile verarbeitet eine einzelne Excel-Zeile und erstellt das
@@ -96,7 +97,7 @@ func leseBestand(s string) int {
 }
 
 // ergaenzeMetadaten ergänzt fehlende Buch-Metadaten über externe APIs.
-func ergaenzeMetadaten(ctx context.Context, metadaten *MetadatenClient, eintrag *Titel) {
+func ergaenzeMetadaten(ctx context.Context, metadaten *katalogdienste.MetadatenClient, eintrag *Titel) {
 	if eintrag.Titel != "" && eintrag.Autor != "" && eintrag.CoverURL != "" {
 		return
 	}

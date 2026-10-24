@@ -10,8 +10,8 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/service"
-	"bibliothek/inventur"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -195,12 +195,12 @@ const dnbAusfallKopf = "X-DNB-Ausfall"
 // zusätzlich bei der DNB. Der Metadaten-Client wird einmal beim Registrieren der Route
 // gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
 func (t *Tueren) BestellSuche() http.HandlerFunc {
-	return t.sucheBestellung(inventur.NewMetadatenClient())
+	return t.sucheBestellung(katalogdienste.NewMetadatenClient())
 }
 
 // sucheBestellung ist die Tür mit ihrem Client für die DNB als Parameter: Ein Test stellt
 // die Antwort der DNB nach, wie bei isbnZuTitelTuer in api/katalog.
-func (t *Tueren) sucheBestellung(metadaten *inventur.MetadatenClient) http.HandlerFunc {
+func (t *Tueren) sucheBestellung(metadaten *katalogdienste.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req bestellSucheAnfrage
 		if !tuer.LeseAnfrage(w, r, &req) {

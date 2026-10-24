@@ -1,14 +1,13 @@
 package service
 
 import (
+	"bibliothek/internal/katalogdienste"
 	"bytes"
 	"context"
 	"errors"
 	"io"
 	"net/http"
 	"testing"
-
-	"bibliothek/inventur"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -73,7 +72,7 @@ func TestFindeZumBestellen_KatalogUndDNBZusammen(t *testing.T) {
 		},
 	}
 
-	metaClient := inventur.NewMetadatenClient()
+	metaClient := katalogdienste.NewMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
 	mock.ExpectQuery(`SELECT isbn_normalform\(isbn\) FROM buecher_titel`).
@@ -136,7 +135,7 @@ func TestFindeZumBestellen_NurKatalogWennDNBScheitert(t *testing.T) {
 		},
 	}
 
-	metaClient := inventur.NewMetadatenClient()
+	metaClient := katalogdienste.NewMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
 	results, dnbAusfall, err := FindeZumBestellen(ctx, mock, metaClient, "TestBook")
@@ -205,7 +204,7 @@ func TestFindeZumBestellen_NurDNBWennKatalogScheitert(t *testing.T) {
 		},
 	}
 
-	metaClient := inventur.NewMetadatenClient()
+	metaClient := katalogdienste.NewMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
 	mock.ExpectQuery(`SELECT isbn_normalform\(isbn\) FROM buecher_titel`).
@@ -234,7 +233,7 @@ func TestFindeZumBestellen_NurDNBWennKatalogScheitert(t *testing.T) {
 }
 
 func TestBaueDNBTreffer(t *testing.T) {
-	ergebnis := inventur.MetadatenErgebnis{
+	ergebnis := katalogdienste.MetadatenErgebnis{
 		ISBN:     "978-3-16-148410-0",
 		Titel:    "Test Titel",
 		Autor:    "Test Autor",
@@ -287,7 +286,7 @@ func TestBaueDNBTreffer_VorhandenInJederSchreibweise(t *testing.T) {
 		"falsches Prüfzeichen im Katalog":   {"978-3-499-50025-1", "3499500252", false},
 		"ohne ISBN":                         {"", "9783551551672", false},
 	} {
-		treffer := inventur.MetadatenErgebnis{ISBN: f.dnb, Titel: "Probe"}
+		treffer := katalogdienste.MetadatenErgebnis{ISBN: f.dnb, Titel: "Probe"}
 		item := baueDNBTreffer(treffer, map[string]struct{}{f.imKatalog: {}})
 		if item.IstDublette != f.vorhanden {
 			t.Errorf("%s: IstDublette = %v, erwartet %v", name, item.IstDublette, f.vorhanden)

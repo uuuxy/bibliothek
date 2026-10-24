@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/tuertest"
 	"encoding/json"
 	"net/http"
@@ -290,7 +291,7 @@ func ruf(t *testing.T, tueren *Tueren, id, rumpf string) *httptest.ResponseRecor
 }
 
 // stummerMetadatenClient liefert einen Client, dessen Katalogdienste nichts finden.
-func stummerMetadatenClient() *MetadatenClient {
+func stummerMetadatenClient() *katalogdienste.MetadatenClient {
 	return metadatenUeber(&http.Client{
 		Transport: tuertest.Transport(func(*http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusNotFound, Body: http.NoBody}, nil

@@ -11,10 +11,10 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
-	"bibliothek/inventur"
 )
 
 // Die zehn- und die dreizehnstellige Form einer ISBN sind dieselbe Nummer (Migration 157):
@@ -41,7 +41,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 	roman := lege("Ein Roman", "9783499500251")
 
 	var anfragen atomic.Int32
-	client := inventur.NewMetadatenClient()
+	client := katalogdienste.NewMetadatenClient()
 	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.ZaehlendeDNB{Anfragen: &anfragen, DNBAttrappe: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">

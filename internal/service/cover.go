@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"bibliothek/db"
-	"bibliothek/inventur"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/safego"
 	"bibliothek/repository"
 )
@@ -18,7 +18,7 @@ type CoverDienst struct {
 	pool db.Pool
 	// katalog baut den Client für die Katalogdienste. Ein Test stellt die Dienste darüber
 	// nach, statt DNB, Google Books und OpenLibrary im Netz zu fragen.
-	katalog func() *inventur.MetadatenClient
+	katalog func() *katalogdienste.MetadatenClient
 	// laeuft verhindert, dass zwei Läufe sich überlappen. Start, Zeitplan und der Knopf in der
 	// Verwaltung teilen sich deshalb einen Dienst (main.go).
 	laeuft atomic.Bool
@@ -28,7 +28,7 @@ type CoverDienst struct {
 func NewCoverDienst(pool db.Pool) *CoverDienst {
 	return &CoverDienst{
 		pool:    pool,
-		katalog: inventur.NewMetadatenClient,
+		katalog: katalogdienste.NewMetadatenClient,
 	}
 }
 
@@ -116,7 +116,7 @@ func (d *CoverDienst) GleicheFehlendeCoverAb(ctx context.Context) {
 
 // verarbeiteCover sucht das Cover eines Titels, legt es bei Erfolg als WebP ab und vermerkt den
 // Stand in der Datenbank.
-func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *inventur.MetadatenClient, titel fehlendesCover, gefunden, nichtGefunden, gescheitert *atomic.Int64) {
+func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *katalogdienste.MetadatenClient, titel fehlendesCover, gefunden, nichtGefunden, gescheitert *atomic.Int64) {
 	anfrageCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	treffer, err := metadaten.SucheNachISBN(anfrageCtx, titel.ISBN)
 	cancel()

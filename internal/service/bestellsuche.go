@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	"bibliothek/db"
-	"bibliothek/inventur"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 )
@@ -41,7 +41,7 @@ type BestellTreffer struct {
 // FindeZumBestellen sucht einen Titel zum Bestellen im eigenen Katalog und bei der DNB. dnbAusfall
 // sagt, dass die DNB nicht geantwortet hat: Die Liste trägt dann nur den eigenen Katalog, und
 // ein Buch, das die DNB kennt, sähe ohne das Merkmal aus wie eines, das sie nicht kennt.
-func FindeZumBestellen(ctx context.Context, pool db.Pool, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, dnbAusfall bool, err error) {
+func FindeZumBestellen(ctx context.Context, pool db.Pool, metadaten *katalogdienste.MetadatenClient, text string) (treffer []BestellTreffer, dnbAusfall bool, err error) {
 	treffer = findeImKatalog(ctx, pool, text)
 	vonDNB, dnbAusfall := findeBeiDerDNB(ctx, pool, metadaten, text)
 	return append(treffer, vonDNB...), dnbAusfall, nil
@@ -75,7 +75,7 @@ func findeImKatalog(ctx context.Context, pool db.Pool, text string) []BestellTre
 // findeBeiDerDNB fragt die DNB nach Titeln und markiert bereits lokal vorhandene ISBNs.
 // Jeder Fehler der Abfrage ist ein Ausfall: Eine Suche ohne Treffer beantwortet die DNB mit
 // einer leeren Liste, nicht mit einem Fehler.
-func findeBeiDerDNB(ctx context.Context, pool db.Pool, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, ausfall bool) {
+func findeBeiDerDNB(ctx context.Context, pool db.Pool, metadaten *katalogdienste.MetadatenClient, text string) (treffer []BestellTreffer, ausfall bool) {
 	dnbTreffer, dnbErr := metadaten.SucheTextDNB(ctx, text)
 	if dnbErr != nil {
 		slog.Warn("bestellsuche: die DNB hat nicht geantwortet", "fehler", dnbErr)
@@ -114,7 +114,7 @@ func ladeVorhandeneISBNs(ctx context.Context, pool db.Pool, isbns []string) map[
 // baueDNBTreffer macht aus einem Treffer der DNB einen Eintrag der Bestellsuche: ohne
 // eigenes Cover die Cover-Adresse der DNB, und „Vorhanden", wenn die ISBN in der Menge der
 // schon getragenen steht (ladeVorhandeneISBNs, Normalform).
-func baueDNBTreffer(dnb inventur.MetadatenErgebnis, vorhanden map[string]struct{}) BestellTreffer {
+func baueDNBTreffer(dnb katalogdienste.MetadatenErgebnis, vorhanden map[string]struct{}) BestellTreffer {
 	coverURL := dnb.CoverURL
 	if coverURL == "" && dnb.ISBN != "" {
 		coverURL = fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", dnb.ISBN)

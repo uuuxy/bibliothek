@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/isbnutil"
 	"errors"
 	"log/slog"
@@ -24,7 +25,7 @@ func (t *Tueren) ISBNSuche(w http.ResponseWriter, r *http.Request) {
 
 	ergebnis, err := t.metadaten.SucheNachISBN(r.Context(), isbn)
 	if err != nil {
-		if errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
+		if errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 			// Netzausfall ist kein Nicht-Treffer: Bei 404 katalogisiert die Theke
 			// während einer WLAN-Störung Bücher von Hand, die längst in der DNB stehen.
 			slog.Warn("isbn-lookup: Katalogdienste nicht erreichbar", "isbn", isbn, "fehler", err)

@@ -47,6 +47,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/middleware"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
@@ -225,7 +226,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
 	// was direkt in uploads/ liegt (inventur/api_routen.go).
 	inventurAbfragen := inventur.NewTitelAbfragen(s.DB.Pool)
-	metadaten := inventur.NewMetadatenClient()
+	metadaten := katalogdienste.NewMetadatenClient()
 
 	inventurTueren := inventur.NewTueren(inventur.TuerenKonfig{
 		Abfragen:          inventurAbfragen,

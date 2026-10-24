@@ -14,7 +14,7 @@ import (
 const schlagwortStichwoerterMax = 300
 
 // ladeSchlagworteAusStichwoertern gleicht die Stichwörter eines DNB-Satzes (Gattungsbegriffe und
-// Verlagswörter, inventur.MetadatenErgebnis.Stichwoerter) gegen die eigene Liste ab —
+// Verlagswörter, katalogdienste.MetadatenErgebnis.Stichwoerter) gegen die eigene Liste ab —
 // der Schlagwort-Vorschlag beim Bestellen per ISBN. Vorgeschlagen wird
 // nur, was es schon gibt: ein Schlagwort, das mindestens ein Titel trägt, oder ein Verweis
 // darauf, aufgelöst zu seinem Ziel („Science Fiction" → „Science-Fiction"). Dieselbe Regel
@@ -40,7 +40,7 @@ func ladeSchlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoer
 }
 
 // Normdatenbegriff ist ein Schlagwort der Gemeinsamen Normdatei aus einem DNB-Satz (MARC 600
-// bis 651 mit $2 gnd; inventur.MetadatenErgebnis.Normdaten). Formen sind
+// bis 651 mit $2 gnd; katalogdienste.MetadatenErgebnis.Normdaten). Formen sind
 // die Schreibweisen, unter denen er in der Liste stehen kann; Anzeige ist die, in der er als
 // neues Wort angeboten wird. Die DNB schreibt eine Person „Kafka, Franz", die Littera-Liste
 // „Kafka <Franz>" — im Katalogisat vom Juni 2026 stehen 2.059 Wörter in dieser Form und eines

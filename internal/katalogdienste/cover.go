@@ -1,4 +1,4 @@
-package inventur
+package katalogdienste
 
 import (
 	"bibliothek/pkg/closeutil"

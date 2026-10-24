@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"bibliothek/internal/katalogdienste"
 )
 
 // neuteredFileSystem liefert nur Dateien direkt im Verzeichnis aus: /uploads/ ist ohne
@@ -43,7 +45,7 @@ func (dateisystem neuteredFileSystem) Open(pfad string) (http.File, error) {
 // verpflichtend gestellt.
 type TuerenKonfig struct {
 	Abfragen        *TitelAbfragen
-	Metadaten       *MetadatenClient
+	Metadaten       *katalogdienste.MetadatenClient
 	VerlangeLesen   func(http.Handler) http.Handler
 	VerlangeAendern func(http.Handler) http.Handler
 	// VerlangeLoeschen ist das Recht, Bestand zu vernichten, getrennt von edit_books, weil Ändern
@@ -60,7 +62,7 @@ type TuerenKonfig struct {
 // jobs.BackupLauf: verschlüsselt, täglich, mit Anzeige des Stands in der Oberfläche.
 type Tueren struct {
 	abfragen  *TitelAbfragen
-	metadaten *MetadatenClient
+	metadaten *katalogdienste.MetadatenClient
 	mux       *http.ServeMux
 }
 

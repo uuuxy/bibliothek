@@ -11,13 +11,15 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/internal/katalogdienste"
 )
 
 // offlineMetadatenClient baut einen MetadatenClient, dessen Transport jede
 // Anfrage mit 404 beantwortet. Die Import-Tests duerfen nie ins echte Netz
 // (ergaenzeMetadaten wuerde sonst pro CSV-Zeile DNB/Google/OpenLibrary
 // abfragen und gefundene Cover real nach uploads/ schreiben).
-func offlineMetadatenClient() *MetadatenClient {
+func offlineMetadatenClient() *katalogdienste.MetadatenClient {
 	return metadatenUeber(&http.Client{Transport: &mockTransportCover{
 		roundTripFunc: func(*http.Request) (*http.Response, error) {
 			return &http.Response{

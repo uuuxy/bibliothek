@@ -145,9 +145,10 @@ internal/testdaten/schaden.go: unreachable func: LegeOffenenSchadenAn
 internal/testweg/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 
 # Testinfrastruktur per Paket-Design: eine Anfrage an eine Tür stellen und ihre Antwort lesen,
-# dazu die Attrappe der DNB (vorher Helfer in Testdateien von api/, die Tests mehrerer Themen
-# brauchen) und Konto mit Sitzung für Tests über den ganzen Router, die im Ordner eines Themas
-# stehen (docs/OFFEN.md 5.65). Wird ausschließlich von *_test.go importiert.
+# dazu die Attrappe der DNB und einen Transport aus einer Funktion (vorher Helfer in Testdateien
+# von api/ und inventur/, die Tests mehrerer Pakete brauchen) und Konto mit Sitzung für Tests
+# über den ganzen Router, die im Ordner eines Themas stehen (docs/OFFEN.md 5.65). Wird
+# ausschließlich von *_test.go importiert.
 internal/tuertest/tuertest.go: unreachable func: MitCSRF
 internal/tuertest/tuertest.go: unreachable func: JSONPost
 internal/tuertest/tuertest.go: unreachable func: AlsKonto
@@ -159,6 +160,7 @@ internal/tuertest/tuertest.go: unreachable func: Bestelle
 internal/tuertest/felder.go: unreachable func: LeereFelder
 internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
 internal/tuertest/dnb.go: unreachable func: ZaehlendeDNB.RoundTrip
+internal/tuertest/dnb.go: unreachable func: Transport.RoundTrip
 internal/tuertest/einstellungen.go: unreachable func: EinstellungenAttrappe.Lade
 internal/tuertest/mail.go: unreachable func: FangeMailAb
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht

@@ -314,7 +314,7 @@ präpariertes Bild ist über einen erlaubten Host erreichbar, deshalb greifen di
 Größengrenzen unabhängig von ihr.
 
 Denselben Header-Guard hat der Cover-Downloader des Inventur-Moduls
-(`inventur/cover_downloader.go`), neben dem 10-MB-Limit auf der Leitung.
+(`internal/katalogdienste/cover.go`), neben dem 10-MB-Limit auf der Leitung.
 
 ---
 

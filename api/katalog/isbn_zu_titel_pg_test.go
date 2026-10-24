@@ -6,9 +6,9 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/inventur"
 )
 
 // Ein über die Bestellsuche neu aus der DNB angelegter Titel bekommt das Fach aus der
@@ -21,7 +21,7 @@ func TestSchreibeTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *test
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	meta := &inventur.MetadatenErgebnis{
+	meta := &katalogdienste.MetadatenErgebnis{
 		Titel:  "Die Tribute von Panem",
 		Autor:  "Collins, Suzanne",
 		Verlag: "Oetinger",
@@ -58,7 +58,7 @@ func TestSchreibeTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
-	meta := &inventur.MetadatenErgebnis{Titel: "Ein Fachbuch ohne Genre-Treffer"}
+	meta := &katalogdienste.MetadatenErgebnis{Titel: "Ein Fachbuch ohne Genre-Treffer"}
 
 	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783150009999", meta)
 	if err != nil {

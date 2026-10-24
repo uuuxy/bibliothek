@@ -14,8 +14,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/pgtest"
-	"bibliothek/inventur"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -48,8 +48,8 @@ type katalog struct {
 	cover   []byte // das Bild des DNB-Cover-Dienstes; nil = keines
 }
 
-func (k katalog) client() *inventur.MetadatenClient {
-	c := inventur.NewMetadatenClient()
+func (k katalog) client() *katalogdienste.MetadatenClient {
+	c := katalogdienste.NewMetadatenClient()
 	c.SetzeHTTPClientFuerTest(&http.Client{Transport: &dnbTransportAttrappe{antwort: k.antworte}})
 	return c
 }
@@ -288,7 +288,7 @@ func TestGleicheFehlendeCoverAb_ZweiterLaufWirdUebersprungen(t *testing.T) {
 
 	svc := NewCoverDienst(pool)
 	svc.laeuft.Store(true)
-	svc.katalog = func() *inventur.MetadatenClient {
+	svc.katalog = func() *katalogdienste.MetadatenClient {
 		t.Error("der übersprungene Lauf fragt die Katalogdienste")
 		return katalog{}.client()
 	}
