@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 
@@ -42,7 +42,7 @@ func LadeLokaleCoverNurDieserTitel(ctx context.Context, q titelCoverLeser, ids [
 func LoescheCoverDateien(coverURLs []string) {
 	for _, coverURL := range coverURLs {
 		if err := coverablage.Loesche(coverURL); err != nil {
-			log.Printf("Cover-Datei %q nicht entfernt: %v", coverURL, err)
+			slog.Warn("Cover-Datei nicht entfernt", "url", coverURL, "fehler", err)
 		}
 	}
 }

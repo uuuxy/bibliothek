@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 
 	"bibliothek/repository"
 
@@ -101,7 +101,7 @@ func deuteAnlegeFehler(err error) error {
 func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, schuelerID string, erg *AusleihErgebnis) {
 	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, exemplar.TitelID, schuelerID)
 	if err != nil {
-		log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", exemplar.TitelID, err)
+		slog.Error("ausleihe: Vormerkung konnte nicht entfernt werden", "titel", exemplar.TitelID, "fehler", err)
 		return
 	}
 	if bereitgestellt == nil || *bereitgestellt == exemplar.ID {
@@ -110,7 +110,7 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repos
 
 	barcode, err := repository.LadeExemplarNummer(ctx, tx, *bereitgestellt)
 	if err != nil {
-		log.Printf("ausleihe: Barcode des reservierten Exemplars %s nicht ladbar: %v", *bereitgestellt, err)
+		slog.Warn("ausleihe: Barcode des reservierten Exemplars nicht ladbar", "exemplar", *bereitgestellt, "fehler", err)
 		return
 	}
 	erg.RegalfreigabeBarcode = barcode
@@ -161,7 +161,7 @@ func (d *AusleihDienst) verarbeiteAusleihe(
 func (d *AusleihDienst) ladeAuflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
 	m, err := repository.LadeAuflagenMischungInKlasse(ctx, d.pool, titelID, schuelerID)
 	if err != nil {
-		log.Printf("auflagen-hinweis: %v", err)
+		slog.Warn("auflagen-hinweis nicht ladbar", "fehler", err)
 		return nil
 	}
 	return m
@@ -223,7 +223,7 @@ func (d *AusleihDienst) verarbeiteFremdrueckgabe(
 	if offeneAusleihe.SchuelerID != nil {
 		vorbesitzer, err = d.leserAbfragen.Finde(ctx, *offeneAusleihe.SchuelerID)
 		if err != nil {
-			log.Printf("fremdrückgabe: Vorbesitzer konnte nicht geladen werden: %v", err)
+			slog.Warn("fremdrückgabe: Vorbesitzer konnte nicht geladen werden", "fehler", err)
 		}
 	}
 

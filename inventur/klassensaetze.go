@@ -2,7 +2,7 @@ package inventur
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -45,7 +45,7 @@ func (t *Tueren) Klassensaetze(w http.ResponseWriter, r *http.Request) {
 	reihenfolge := r.URL.Query().Get("sort")
 	gruppen, err := t.abfragen.ladeKlassensatzGruppen(r.Context(), zweig, reihenfolge)
 	if err != nil {
-		log.Printf("Fehler beim Laden der Klassengruppen: %v", err)
+		slog.Error("Fehler beim Laden der Klassengruppen", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klassen konnten nicht geladen werden")
 		return
 	}
@@ -107,7 +107,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 	}
 	err := t.abfragen.aendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.TitelIDs)
 	if err != nil {
-		log.Printf("Fehler beim Aktualisieren der Klassenbücher: %v", err)
+		slog.Error("Fehler beim Aktualisieren der Klassenbücher", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden")
 		return
 	}
@@ -135,7 +135,7 @@ func (t *Tueren) KlassensatzGruppeLoeschen(w http.ResponseWriter, r *http.Reques
 
 	err := t.abfragen.loescheKlassensatzGruppe(r.Context(), klassen)
 	if err != nil {
-		log.Printf("Fehler beim Löschen der Klassengruppen %v: %v", klassen, err)
+		slog.Error("Fehler beim Löschen der Klassengruppen", "klassen", klassen, "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden")
 		return
 	}
@@ -192,7 +192,7 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 	}
 	err := t.abfragen.ordneTitelKlassenZu(r.Context(), zielKlassen, eingabe.TitelIDs)
 	if err != nil {
-		log.Printf("Fehler beim Hinzufügen der Bücher: %v", err)
+		slog.Error("Fehler beim Hinzufügen der Bücher", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden")
 		return
 	}

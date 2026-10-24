@@ -24,7 +24,7 @@ func TestMeldeProtokollFehler(t *testing.T) {
 			name:     "Error logged correctly",
 			action:   "Ausleihe",
 			err:      errors.New("db connection failed"),
-			expected: "audit: Ausleihe konnte nicht protokolliert werden: db connection failed\n",
+			expected: "ERROR audit: Eintrag konnte nicht protokolliert werden aktion=Ausleihe fehler=\"db connection failed\"\n",
 		},
 	}
 

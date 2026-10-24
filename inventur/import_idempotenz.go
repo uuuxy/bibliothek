@@ -3,7 +3,7 @@ package inventur
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/pkg/kennung"
@@ -103,13 +103,13 @@ func (t *Tueren) schliesseImportLauf(ctx context.Context, schluessel string, ges
 		tag, err := t.abfragen.pool.Exec(ctx,
 			`DELETE FROM idempotency_keys WHERE idempotency_key = $1`, schluessel)
 		if err != nil || tag.RowsAffected() == 0 {
-			log.Printf("listenimport idempotenz: schlüssel %s nicht freigegeben: %v", schluessel, err)
+			slog.Error("listenimport idempotenz: schlüssel nicht freigegeben", "schluessel", schluessel, "fehler", err)
 		}
 		return
 	}
 	daten, err := json.Marshal(antwort)
 	if err != nil {
-		log.Printf("listenimport idempotenz: antwort nicht serialisierbar: %v", err)
+		slog.Error("listenimport idempotenz: antwort nicht serialisierbar", "fehler", err)
 		return
 	}
 	// 0 Zeilen hieße: Der Marker ist weg (Aufräumjob nach 24 h mitten im Lauf) — dann
@@ -118,6 +118,6 @@ func (t *Tueren) schliesseImportLauf(ctx context.Context, schluessel string, ges
 		UPDATE idempotency_keys SET response_data = $2, status_code = $3
 		 WHERE idempotency_key = $1`, schluessel, daten, status)
 	if err != nil || tag.RowsAffected() == 0 {
-		log.Printf("listenimport idempotenz: ergebnis zu %s nicht gespeichert: %v", schluessel, err)
+		slog.Error("listenimport idempotenz: ergebnis nicht gespeichert", "schluessel", schluessel, "fehler", err)
 	}
 }

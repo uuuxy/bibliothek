@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -44,14 +44,14 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string, i
 	// freigegebenen (Parsing Differential, gosec G704). Siehe pkg/coverquelle.
 	sichereURL, ok := sichereCoverURL(coverURL)
 	if !ok {
-		log.Printf("SSRF Schutz: Cover-URL %s stammt nicht von einem erlaubten Host", coverURL)
+		slog.Warn("SSRF Schutz: Cover-URL stammt nicht von einem erlaubten Host", "url", coverURL)
 		return nil
 	}
 
 	// #nosec G107 - URL aus geprüften Teilen neu gebaut (Host aus der Allowlist-Konstante)
 	anfrage, err := http.NewRequestWithContext(ctx, http.MethodGet, sichereURL, nil)
 	if err != nil {
-		log.Printf("Fehler beim Erstellen der Request für Cover %s: %v", sichereURL, err)
+		slog.Warn("Fehler beim Erstellen der Request für Cover", "url", sichereURL, "fehler", err)
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string, i
 
 	httpAntwort, err := client.Do(anfrage)
 	if err != nil {
-		log.Printf("Cover-Download fehlgeschlagen für %s: %v", coverURL, err)
+		slog.Warn("Cover-Download fehlgeschlagen", "url", coverURL, "fehler", err)
 		return nil
 	}
 	defer closeutil.Schliesse(httpAntwort.Body, "cover download")
@@ -75,7 +75,7 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string, i
 	// einem falschen User-Agent HTTP 200 mit einer HTML-Challenge — das ist kein Cover.
 	// So fällt der Aufrufer sauber auf die nächste Quelle zurück, statt HTML zu dekodieren.
 	if contentType := httpAntwort.Header.Get("Content-Type"); strings.Contains(contentType, "html") || strings.Contains(contentType, "text/") || strings.Contains(contentType, "json") {
-		log.Printf("Cover-Download: Nicht-Bild-Antwort (%s) für %s — übersprungen", contentType, coverURL)
+		slog.Info("Cover-Download: Nicht-Bild-Antwort — übersprungen", "content_type", contentType, "url", coverURL)
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func speichereCoverDatei(fertig []byte, isbn, endung string) string {
 		return "/uploads/" + dateiname
 	}
 	if err := schreibeUploadDatei(dateiname, fertig); err != nil {
-		log.Printf("Cover-Download: %v", err)
+		slog.Error("Cover-Download: Datei nicht gespeichert", "fehler", err)
 		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}
 	return "/uploads/" + dateiname
@@ -123,7 +123,7 @@ func speichereCoverLokal(ctx context.Context, client *http.Client, coverURL stri
 	// klein auf der Leitung und groß im RAM (30000×30000 ≈ 3,6 GB). PruefeBildgroesse
 	// liest nur den Header und allokiert keine Pixeldaten.
 	if err := imageutil.PruefeBildgroesse(inhalt); err != nil {
-		log.Printf("Cover-Download: Bild abgelehnt (%s): %v", coverURL, err)
+		slog.Info("Cover-Download: Bild abgelehnt", "url", coverURL, "fehler", err)
 		return ""
 	}
 

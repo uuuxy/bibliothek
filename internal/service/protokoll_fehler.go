@@ -1,6 +1,6 @@
 package service
 
-import "log"
+import "log/slog"
 
 // meldeProtokollFehler schreibt ins Log, wenn ein Eintrag der Verwaltung
 // (ProtokolliereAdminAktion: übergangene Sperre, Wareneingang) nicht geschrieben werden konnte.
@@ -9,6 +9,6 @@ import "log"
 // Transaktion der Buchung, und ein Fehler dort lässt die Buchung scheitern.
 func meldeProtokollFehler(aktion string, err error) {
 	if err != nil {
-		log.Printf("audit: %s konnte nicht protokolliert werden: %v", aktion, err)
+		slog.Error("audit: Eintrag konnte nicht protokolliert werden", "aktion", aktion, "fehler", err)
 	}
 }

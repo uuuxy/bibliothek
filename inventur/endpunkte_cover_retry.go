@@ -3,7 +3,7 @@ package inventur
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -13,7 +13,7 @@ import (
 func (t *Tueren) FremdeCoverListe(w http.ResponseWriter, r *http.Request) {
 	eintraege, err := t.abfragen.ladeTitelMitFremdemCover(r.Context(), 300)
 	if err != nil {
-		log.Printf("Fehler beim Laden externer Cover-Bücher: %v", err)
+		slog.Error("Fehler beim Laden externer Cover-Bücher", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden")
 		return
 	}
@@ -47,7 +47,7 @@ func (t *Tueren) FremdeCoverNeuLaden(w http.ResponseWriter, r *http.Request) {
 		eintraege, err = t.abfragen.ladeTitelMitFremdemCover(r.Context(), eingabe.Limit)
 	}
 	if err != nil {
-		log.Printf("Fehler beim Laden externer Cover für Retry: %v", err)
+		slog.Error("Fehler beim Laden externer Cover für Retry", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden")
 		return
 	}

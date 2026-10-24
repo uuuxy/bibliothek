@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
@@ -41,7 +41,7 @@ func (t *Tueren) TitelListe(antwort http.ResponseWriter, anfrage *http.Request) 
 	}
 	buecher, fehler := t.abfragen.LadeTitelListe(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
 	if fehler != nil {
-		log.Printf("Fehler beim Laden der Bücherliste: %v", fehler)
+		slog.Error("Fehler beim Laden der Bücherliste", "fehler", fehler)
 		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher")
 		return
 	}
@@ -155,7 +155,7 @@ func (t *Tueren) Titel(antwort http.ResponseWriter, anfrage *http.Request) {
 		return
 	}
 	if fehler != nil {
-		log.Printf("Fehler beim Laden des Buches: %v", fehler)
+		slog.Error("Fehler beim Laden des Buches", "fehler", fehler)
 		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")
 		return
 	}
@@ -189,7 +189,7 @@ func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (Titel, error) {
 func (t *Tueren) gespeichert(ctx context.Context, gesendet Titel) Titel {
 	buch, err := t.ladeTitelVoll(ctx, gesendet.ID)
 	if err != nil {
-		log.Printf("Titel %s nach dem Speichern nicht lesbar: %v", gesendet.ID, err)
+		slog.Error("Titel nach dem Speichern nicht lesbar", "titel", gesendet.ID, "fehler", err)
 		return gesendet
 	}
 	return buch
@@ -209,7 +209,7 @@ func (t *Tueren) TitelVorhanden(antwort http.ResponseWriter, anfrage *http.Reque
 
 	vorhanden, fehler := t.abfragen.titelMitISBN(anfrage.Context(), isbn)
 	if fehler != nil {
-		log.Printf("Dublettenkontrolle vorab: %v", fehler)
+		slog.Error("Dublettenkontrolle vorab fehlgeschlagen", "fehler", fehler)
 		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")
 		return
 	}

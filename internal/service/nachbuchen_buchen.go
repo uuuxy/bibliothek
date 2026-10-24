@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/pkg/betrag"
@@ -285,6 +285,6 @@ func (d *AusleihDienst) pruefeNachbuchSchranken(ctx context.Context, q pgx.Tx, l
 // seine fachliche Antwort behalten.
 func verwerfeStill(ctx context.Context, tx pgx.Tx) {
 	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-		log.Printf("nachbuchen: Rollback fehlgeschlagen: %v", err)
+		slog.Error("nachbuchen: Rollback fehlgeschlagen", "fehler", err)
 	}
 }

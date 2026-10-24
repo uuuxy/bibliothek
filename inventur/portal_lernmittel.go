@@ -2,7 +2,7 @@ package inventur
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,13 +23,13 @@ func (t *Tueren) PortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	filter := lernmittelFilterParam(r)
 	faecher, err := t.abfragen.ladeLernmittelFaecher(ctx, filter)
 	if err != nil {
-		log.Printf("Portal Lernmittel: Fächer: %v", err)
+		slog.Error("Portal Lernmittel: Fächer nicht ladbar", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
 		return
 	}
 	titel, err := t.abfragen.ladeLernmittelTitel(ctx, "", true, filter)
 	if err != nil {
-		log.Printf("Portal Lernmittel: Titel: %v", err)
+		slog.Error("Portal Lernmittel: Titel nicht ladbar", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
 		return
 	}
@@ -49,7 +49,7 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 	filter := lernmittelFilterParam(r)
 	titel, err := t.abfragen.ladeLernmittelTitel(r.Context(), fachName, !gewaehlt, filter)
 	if err != nil {
-		log.Printf("Portal Lernmittel-Export: %v", err)
+		slog.Error("Portal Lernmittel-Export: Titel nicht ladbar", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
 		return
 	}
@@ -59,7 +59,7 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 	}
 	datei, err := schulbuecherAlsPDF(titel, ueberschrift, filterKlartext(filter))
 	if err != nil {
-		log.Printf("Portal Lernmittel-Export: PDF: %v", err)
+		slog.Error("Portal Lernmittel-Export: PDF fehlgeschlagen", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
 		return
 	}
@@ -70,7 +70,7 @@ func (t *Tueren) PortalLernmittelExport(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s_%s.pdf"`, name, schulzeit.Jetzt().Format("2006-01-02")))
 	if _, err := w.Write(datei); err != nil {
-		log.Printf("Portal Lernmittel-Export: schreiben: %v", err)
+		slog.Warn("Portal Lernmittel-Export: Antwort an den Browser abgebrochen", "fehler", err)
 	}
 }
 

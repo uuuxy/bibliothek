@@ -3,7 +3,7 @@ package inventur
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"bibliothek/repository"
 
@@ -178,9 +178,7 @@ func (a *TitelAbfragen) LadeTitelListe(ctx context.Context, fach string, suchanf
 		return nil, err
 	}
 	if len(eintraege) >= titelListeGrenze {
-		log.Printf("WARNUNG: /api/books hat die Sicherheits-Kappung von %d Titeln erreicht — "+
-			"die Katalogliste ist unvollständig. Jetzt auf serverseitige Pagination umstellen.",
-			titelListeGrenze)
+		slog.Error("/api/books hat die Sicherheits-Kappung erreicht — die Katalogliste ist unvollständig. Jetzt auf serverseitige Pagination umstellen.", "grenze", titelListeGrenze)
 	}
 
 	ids := make([]string, len(eintraege))

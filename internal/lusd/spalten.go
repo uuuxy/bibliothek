@@ -1,7 +1,7 @@
 package lusd
 
 import (
-	"log"
+	"log/slog"
 	"regexp"
 	"strings"
 )
@@ -104,6 +104,6 @@ func meldeErkannteOptionaleSpalten(spalten map[string]int) {
 		}
 	}
 	if len(erkannt) > 0 {
-		log.Printf("LUSD-Import: Adress-/Kontaktspalten erkannt: %v — nicht gefunden: %v", erkannt, fehlend)
+		slog.Info("LUSD-Import: Adress-/Kontaktspalten erkannt", "erkannt", erkannt, "nicht_gefunden", fehlend)
 	}
 }

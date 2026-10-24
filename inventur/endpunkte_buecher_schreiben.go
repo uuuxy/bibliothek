@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -62,7 +62,7 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 			schreibeDubletteTitel(antwort, gleichnamig)
 			return false
 		}
-		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
+		slog.Error("Fehler beim Erstellen eines Titels", "isbn", buch.ISBN, "fehler", fehler)
 		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel ließ sich nicht anlegen")
 		return false
 	}
@@ -80,7 +80,7 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 		schreibeFehler(antwort, http.StatusConflict, "Einen Titel mit dieser ISBN gibt es bereits")
 		return
 	}
-	log.Printf("Dublette abgelehnt: %v", fehler)
+	slog.Info("Dublette abgelehnt", "fehler", fehler)
 	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":     dublette.Meldung(),
 		"vorhanden": dublette.alsAntwort(),
@@ -148,7 +148,7 @@ func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Reques
 			schreibeFehler(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden")
 			return
 		}
-		log.Printf("Fehler beim Löschen von Büchern: %v", fehler)
+		slog.Error("Fehler beim Löschen von Büchern", "fehler", fehler)
 		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher")
 		return
 	}

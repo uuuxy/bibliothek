@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -52,7 +52,7 @@ type fehlendesCover = repository.TitelMitISBN
 // vorübergehender Fehler beim nächsten Lauf verschwindet. Endet ctx, holt er keine weiteren.
 func (d *CoverDienst) GleicheFehlendeCoverAb(ctx context.Context) {
 	if !d.laeuft.CompareAndSwap(false, true) {
-		log.Println("Cover Sync: Lauf bereits aktiv – überspringe.")
+		slog.Info("Cover Sync: Lauf bereits aktiv – überspringe.")
 		return
 	}
 	defer d.laeuft.Store(false)
@@ -67,16 +67,16 @@ func (d *CoverDienst) GleicheFehlendeCoverAb(ctx context.Context) {
 	// kein Cover mehr von fremden Servern lädt.
 	fehlende, err := repository.LadeTitelFuerCoverAbgleich(ctx, d.pool)
 	if err != nil {
-		log.Printf("Cover Sync: Fehler beim Abrufen der fehlenden Cover: %v", err)
+		slog.Error("Cover Sync: Fehler beim Abrufen der fehlenden Cover", "fehler", err)
 		return
 	}
 
 	if len(fehlende) == 0 {
-		log.Println("Cover Sync: Keine fehlenden Cover gefunden.")
+		slog.Info("Cover Sync: Keine fehlenden Cover gefunden.")
 		return
 	}
 
-	log.Printf("Cover Sync: Starte parallelen Download für %d Cover (%d Worker)...", len(fehlende), coverAbgleichArbeiter)
+	slog.Info("Cover Sync: Starte parallelen Download", "anzahl", len(fehlende), "arbeiter", coverAbgleichArbeiter)
 
 	metadaten := d.katalog()
 
@@ -111,8 +111,7 @@ func (d *CoverDienst) GleicheFehlendeCoverAb(ctx context.Context) {
 	close(aufgaben)
 	wg.Wait()
 
-	log.Printf("Cover Sync: Abgeschlossen. Gefunden: %d, Nicht gefunden: %d, Fehlgeschlagen: %d",
-		gefunden.Load(), nichtGefunden.Load(), gescheitert.Load())
+	slog.Info("Cover Sync: Abgeschlossen", "gefunden", gefunden.Load(), "nicht_gefunden", nichtGefunden.Load(), "gescheitert", gescheitert.Load())
 }
 
 // verarbeiteCover sucht das Cover eines Titels, legt es bei Erfolg als WebP ab und vermerkt den
@@ -129,7 +128,7 @@ func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *inventur.M
 	case treffer.CoverURL != "":
 		gefunden.Add(1)
 		if schreibFehler := repository.SetzeGefundenesCover(ctx, d.pool, titel.ID, treffer.CoverURL); schreibFehler != nil {
-			log.Printf("Cover Sync: DB-Update für Titel %s fehlgeschlagen: %v", titel.ID, schreibFehler)
+			slog.Error("Cover Sync: DB-Update fehlgeschlagen", "titel", titel.ID, "fehler", schreibFehler)
 		}
 	default:
 		nichtGefunden.Add(1)
@@ -141,6 +140,6 @@ func (d *CoverDienst) verarbeiteCover(ctx context.Context, metadaten *inventur.M
 // Lauf nimmt den Titel ohnehin wieder.
 func (d *CoverDienst) vermerkeCoverStatus(ctx context.Context, id, status string) {
 	if err := repository.SetzeCoverStatus(ctx, d.pool, id, status); err != nil {
-		log.Printf("Cover Sync: Status %q für Titel %s konnte nicht gesetzt werden: %v", status, id, err)
+		slog.Error("Cover Sync: Status konnte nicht gesetzt werden", "status", status, "titel", id, "fehler", err)
 	}
 }

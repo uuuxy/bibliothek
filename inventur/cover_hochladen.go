@@ -11,7 +11,7 @@ import (
 	"image"
 	"image/jpeg"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -86,7 +86,7 @@ func verarbeiteHochgeladenesBild(inhalt []byte, id string) ([]byte, string, erro
 		var puffer bytes.Buffer
 		err = jpeg.Encode(&puffer, ziel, &jpeg.Options{Quality: coverJPEGQualitaet})
 		if err != nil {
-			log.Printf("cover-upload: jpeg encode failed for book %s: %v", logger.OhneUmbruch(id), err)
+			slog.Error("cover-upload: jpeg encode failed", "titel", logger.OhneUmbruch(id), "fehler", err)
 			return nil, "", fmt.Errorf("%w: %w", errBildverarbeitung, err)
 		}
 		fertig = puffer.Bytes()
@@ -107,7 +107,7 @@ func loescheCoverDatei(coverURL string) {
 		return
 	}
 	if err := loescheUploadDatei(dateiname); err != nil {
-		log.Printf("cover-upload: Cover %s konnte nicht entfernt werden: %v", logger.OhneUmbruch(dateiname), err)
+		slog.Warn("cover-upload: Cover konnte nicht entfernt werden", "datei", logger.OhneUmbruch(dateiname), "fehler", err)
 	}
 }
 
@@ -144,7 +144,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.Printf("cover-upload: buch %s laden: %v", logger.OhneUmbruch(id), err)
+		slog.Error("cover-upload: buch laden fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "buch konnte nicht geladen werden")
 		return
 	}
@@ -164,7 +164,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		loescheCoverDatei(coverURL)
-		log.Printf("cover-upload: metadata update failed for book %s: %v", logger.OhneUmbruch(id), err)
+		slog.Error("cover-upload: metadata update failed", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden")
 		return
 	}
@@ -189,7 +189,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte, bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxCoverUploadBytes)
 	if err := r.ParseMultipartForm(maxCoverUploadBytes); err != nil {
-		log.Printf("cover-upload: multipart parse failed for book %s: %v", logger.OhneUmbruch(id), err)
+		slog.Warn("cover-upload: multipart parse failed", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusBadRequest, "Die Datei ist zu groß oder ungültig, höchstens 10 MB")
 		return nil, false
 	}
@@ -203,7 +203,7 @@ func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte,
 
 	inhalt, err := io.ReadAll(datei)
 	if err != nil {
-		log.Printf("cover-upload: read failed for book %s: %v", logger.OhneUmbruch(id), err)
+		slog.Warn("cover-upload: read failed", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "fehler beim lesen der datei")
 		return nil, false
 	}
@@ -227,7 +227,7 @@ func speichereHochgeladenesCover(w http.ResponseWriter, id string, fertig []byte
 	dateiname := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), endung)
 
 	if err := schreibeUploadDatei(dateiname, fertig); err != nil {
-		log.Printf("cover-upload: speichern fehlgeschlagen für Buch %s: %v", logger.OhneUmbruch(id), err)
+		slog.Error("cover-upload: speichern fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "fehler beim speichern")
 		return "", false
 	}

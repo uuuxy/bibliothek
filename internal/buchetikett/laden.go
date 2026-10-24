@@ -3,7 +3,7 @@ package buchetikett
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 
 	"bibliothek/repository"
 )
@@ -40,10 +40,10 @@ func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, e
 	bekannt, err := repository.LadeEtikettServerfelderZuBarcodes(ctx, datenbank, barcodes)
 	if err != nil {
 		if errors.Is(err, repository.ErrZeileUnlesbar) {
-			log.Printf("Etiketten: Serverfelder unvollständig gelesen: %v", err)
+			slog.Error("Etiketten: Serverfelder unvollständig gelesen", "fehler", err)
 			return
 		}
-		log.Printf("Etiketten: Serverfelder nicht ermittelbar, drucke ohne: %v", err)
+		slog.Error("Etiketten: Serverfelder nicht ermittelbar, drucke ohne", "fehler", err)
 		return
 	}
 

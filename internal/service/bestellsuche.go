@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"bibliothek/db"
 	"bibliothek/inventur"
@@ -78,7 +78,7 @@ func findeImKatalog(ctx context.Context, pool db.Pool, text string) []BestellTre
 func findeBeiDerDNB(ctx context.Context, pool db.Pool, metadaten *inventur.MetadatenClient, text string) (treffer []BestellTreffer, ausfall bool) {
 	dnbTreffer, dnbErr := metadaten.SucheTextDNB(ctx, text)
 	if dnbErr != nil {
-		log.Printf("bestellsuche: die DNB hat nicht geantwortet: %v", dnbErr)
+		slog.Warn("bestellsuche: die DNB hat nicht geantwortet", "fehler", dnbErr)
 		return nil, true
 	}
 
@@ -105,7 +105,7 @@ func findeBeiDerDNB(ctx context.Context, pool db.Pool, metadaten *inventur.Metad
 func ladeVorhandeneISBNs(ctx context.Context, pool db.Pool, isbns []string) map[string]struct{} {
 	vorhanden, err := repository.FindeISBNsImKatalog(ctx, pool, isbns)
 	if err != nil {
-		log.Printf("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen: %v", err)
+		slog.Warn("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen", "fehler", err)
 		return map[string]struct{}{}
 	}
 	return vorhanden

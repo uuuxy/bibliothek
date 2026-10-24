@@ -2,7 +2,7 @@ package inventur
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -26,11 +26,11 @@ func (t *Tueren) ISBNSuche(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, ErrKatalogdiensteNichtErreichbar) {
 			// Netzausfall ist kein Nicht-Treffer: Bei 404 katalogisiert die Theke
 			// während einer WLAN-Störung Bücher von Hand, die längst in der DNB stehen.
-			log.Printf("isbn-lookup: Katalogdienste nicht erreichbar für %s: %v", isbn, err)
+			slog.Warn("isbn-lookup: Katalogdienste nicht erreichbar", "isbn", isbn, "fehler", err)
 			schreibeFehler(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.")
 			return
 		}
-		log.Printf("isbn-lookup fehlgeschlagen für %s: %v", isbn, err)
+		slog.Info("isbn-lookup: keine Angaben gefunden", "isbn", isbn, "fehler", err)
 		schreibeFehler(w, http.StatusNotFound, "Keine Angaben zu dieser ISBN gefunden")
 		return
 	}

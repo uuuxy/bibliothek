@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -215,7 +215,7 @@ func sammleExemplare(zeilen [][]string, spalten map[string]int, bestand reposito
 		// Eine Zeile ohne Nummer steht im Log und wird übersprungen.
 		if barcode == "" {
 			id := fmt.Sprintf("Zeile %d", i+2)
-			log.Printf("Warnung: Exemplar ID %s hat keinen Barcode", id)
+			slog.Warn("Import: Exemplar hat keinen Barcode", "exemplar", id)
 			continue
 		}
 
@@ -312,7 +312,7 @@ func (d *ImportDienst) ImportiereZeilen(ctx context.Context, zeilen [][]string, 
 		return 0, 0, err
 	}
 	if uebersprungen > 0 {
-		log.Printf("Warnung: %d Exemplare wurden übersprungen (bereits vorhanden)", uebersprungen)
+		slog.Info("Import: Exemplare übersprungen (bereits vorhanden)", "anzahl", uebersprungen)
 	}
 
 	if err := tx.Commit(ctx); err != nil {

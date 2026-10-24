@@ -3,7 +3,7 @@ package inventur
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -109,7 +109,7 @@ func schulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 	// sähe genauso aus: ein PDF ohne ein einziges Bild, ohne Hinweis, ohne Log. Eine Zeile
 	// macht den Unterschied auffindbar.
 	if fehlendeCover > 0 {
-		log.Printf("Schulbuch-PDF: %d von %d Covern nicht lesbar", fehlendeCover, len(titel))
+		slog.Warn("Schulbuch-PDF: Cover nicht lesbar", "fehlend", fehlendeCover, "gesamt", len(titel))
 	}
 	if len(titel) == 0 {
 		pdf.SetFont("Arial", "I", 10)

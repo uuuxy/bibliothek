@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -327,7 +327,7 @@ func (d *OmniboxDienst) ladeAbholbereiteVormerkungen(ctx context.Context, schuel
 	}
 	buecher, err := repository.LadeAbholbereiteTitel(ctx, d.pool, schuelerID)
 	if err != nil {
-		log.Printf("omnibox: Abholfach-Hinweis nicht ladbar für Schüler %s: %v", schuelerID, err)
+		slog.Warn("omnibox: Abholfach-Hinweis nicht ladbar", "leser", schuelerID, "fehler", err)
 		return nil
 	}
 	var liste []AbholbereiteVormerkung

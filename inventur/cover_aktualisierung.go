@@ -2,7 +2,7 @@ package inventur
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -24,7 +24,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.Printf("cover-refresh: buch %s laden: %v", logger.OhneUmbruch(id), err)
+		slog.Error("cover-refresh: buch laden fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "buch konnte nicht geladen werden")
 		return
 	}
@@ -53,7 +53,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 
 	err = t.abfragen.aendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if err != nil {
-		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", logger.OhneUmbruch(id), err)
+		slog.Error("cover-refresh: update fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "cover konnte nicht gespeichert werden")
 		return
 	}

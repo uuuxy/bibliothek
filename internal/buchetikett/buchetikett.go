@@ -10,7 +10,7 @@ package buchetikett
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"bibliothek/db"
 	"bibliothek/pdf"
@@ -65,7 +65,7 @@ func (k Kopf) vermerkFuer(topf string) string {
 func LadeKopf(ctx context.Context, pool db.Pool) Kopf {
 	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen: %v", err)
+		slog.Error("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen", "fehler", err)
 		return Kopf{Eigentumsvermerk: repository.EigentumsvermerkVorgabe}
 	}
 	return KopfAus(einstellungen)

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -150,7 +150,7 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		schreibeFehler(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet)
 		return
 	}
-	log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
+	slog.Error("Fehler beim Aktualisieren eines Titels", "titel", id, "fehler", fehler)
 	schreibeFehler(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
 }
 
