@@ -20,7 +20,8 @@ Abschnitt 11, `paketzustand_ratsche_test.go` jeden Zustand der Paketebene,
 `testmeldung_ratsche_test.go` jede Meldung in Tests und `hilfsfunktion_ratsche_test.go` jede
 Hilfsfunktion ohne `t.Helper()` gegen Abschnitt 10, `leerimport_ratsche_test.go` jeden Leerimport
 und `kontext_ratsche_test.go` jeden selbst angelegten Kontext gegen Abschnitt 12, `ireturn` im
-Linter jeden Erzeuger, der eine Schnittstelle liefert, gegen Abschnitt 14. Für die Oberfläche
+Linter jeden Erzeuger, der eine Schnittstelle liefert, gegen Abschnitt 14, `errorlint` jeden
+Fehler, den `fmt.Errorf` mit `%v` in seinen Text setzt, gegen Abschnitt 11. Für die Oberfläche
 gilt dasselbe Wörterbuch (Abschnitt 13). Neuer Code folgt den Regeln von Anfang an.
 
 ## 1. Sprache
@@ -282,15 +283,23 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   einen Menschen am Terminal schreiben.
   - `ERROR`: Etwas ist schiefgegangen, das jemand ansehen sollte. Ein Vorgang, eine Buchung, ein
     Eintrag im Protokoll der Verwaltung, eine Mail, eine Sicherung oder ein Löschlauf ist
-    gescheitert, oder eine Antwort endet mit 5xx.
+    gescheitert, oder eine Antwort endet mit 5xx. Ein 5xx steht einmal im Log: `apierrors`
+    übergibt die Ursache an die Zeile zum Status, die `logMiddleware` mit Route und Pfad schreibt.
   - `WARN`: Das Programm hat sich selbst geholfen: Vorgabe statt Einstellung, ein Hinweis fehlt,
     ein Dienst draußen antwortet nicht, die Antwort an den Browser brach ab, Aufräumen scheiterte.
+    Ein Abbruch ist nie ein Fehler: Ein 5xx einer abgebrochenen Anfrage steht als „Anfrage vom
+    Browser abgebrochen“.
   - `INFO`: der Ablauf, auch eine abgelehnte Eingabe (Fehlerantwort mit 4xx).
 - Die Meldung einer Logzeile ist fest; Werte stehen als Felder dahinter, die Ursache immer unter
-  `fehler`. Weitere Namen: `pfad`, `methode`, `status`, `aktion`, `titel`, `exemplar`, `leser`,
-  `konto`, `klasse`, `empfaenger`, `anzahl`, `dauer`. Eine Dauer steht als Text (`12ms`); der
+  `fehler`. Weitere Namen: `pfad`, `methode`, `status`, `route` (das Muster der Route), `aktion`,
+  `titel`, `exemplar`, `leser`, `konto`, `klasse`, `empfaenger`, `anzahl`, `dauer`. Eine Dauer
+  steht als Text (`12ms`); der
   JSON-Handler schriebe sie sonst in Nanosekunden. Eine Person steht mit ihrer Kennung im Log,
   nicht mit ihrem Namen.
+- Wer einen Fehler in den Text eines anderen setzt, wickelt ihn ein, auch zweimal:
+  `fmt.Errorf("%w: sperrliste: %w", ErrPruefungGestoert, err)`. Mit `%v` reißt die Kette, und
+  die Antwort erkennt einen Abbruch des Browsers nicht mehr: Statt 499 stünde er als ERROR im Log
+  und in der Alarm-Mail. `errorlint` im Linter hält es.
 
 ## 12. Zustand der Paketebene
 

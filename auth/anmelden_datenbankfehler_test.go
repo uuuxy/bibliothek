@@ -2,7 +2,11 @@ package auth
 
 import (
 	"bibliothek/internal/testdaten"
+	"bytes"
+	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -34,7 +38,7 @@ func TestAnmelden_DatenbankfehlerIstKeinFalschesPasswort(t *testing.T) {
 	}
 
 	for versuch := 1; versuch <= 6; versuch++ {
-		mock.ExpectQuery(`SELECT id, coalesce\(barcode_id`).
+		mock.ExpectQuery(`SELECT b\.id, b\.rolle`).
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnError(errors.New("dial tcp: connection refused"))
 
@@ -52,6 +56,90 @@ func TestAnmelden_DatenbankfehlerIstKeinFalschesPasswort(t *testing.T) {
 			t.Errorf("Versuch %d: HTTP %d, erwartet 503 (Anmeldedienst gestört, kein Passwortfehler): %s",
 				versuch, rec.Code, rec.Body.String())
 		}
+	}
+	// Sonst endete die Anmeldung an einer unerwarteten Abfrage, nicht am Ausfall, den der Test
+	// nachstellt.
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Abfrage des Kontos nicht gestellt: %v", err)
+	}
+}
+
+// Bricht der Browser die Anmeldung ab, während das Konto gelesen wird, ist die Anmeldung nicht
+// gestört: 499 statt 503, und kein Fehlversuch. Mit 503 stünde der Abbruch als ERROR im Log und
+// löste die tägliche Alarm-Mail aus.
+func TestAnmelden_AbbruchDesBrowsersIstKeinAusfall(t *testing.T) {
+	t.Setenv("IMAP_HOST", "mock")
+	t.Setenv("APP_ENV", "test")
+
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	anmeldung, err := NewAnmeldung("test-secret-mit-mindestens-32-zeichen!!", mock, time.Hour)
+	if err != nil {
+		t.Fatalf("NewAnmeldung: %v", err)
+	}
+	mock.ExpectQuery(`SELECT b\.id, b\.rolle`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnError(fmt.Errorf("zeile lesen: %w", context.Canceled))
+
+	rec := httptest.NewRecorder()
+	anfrage := httptest.NewRequest(http.MethodPost, "/login",
+		strings.NewReader(`{"email":"abbruch@test.invalid","password":"richtig"}`))
+	anfrage.Header.Set("Content-Type", "application/json")
+	anfrage.RemoteAddr = "203.0.113.8:4711"
+	Anmelden(mock, anmeldung, false)(rec, anfrage)
+
+	// 499 ist der Status für „Browser hat abgebrochen" (apierrors.statusAbgebrochen).
+	if rec.Code != 499 {
+		t.Errorf("Anmelden bei abgebrochener Anfrage = %d, erwartet 499: %s", rec.Code, rec.Body.String())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Abfrage des Kontos nicht gestellt: %v", err)
+	}
+}
+
+// Ein Konto, das ohne Administrator entstand, und kein Eintrag im Protokoll: Das ist ein Fehler,
+// den jemand ansehen muss (docs/STIL.md, Abschnitt 11), wie in tuer.Basis.ProtokolliereVerwaltung.
+// Als Warnung stünde er nicht auf der Seite „Fehler im Log“.
+func TestSelbstanmeldung_ProtokollFehltStehtAlsFehler(t *testing.T) {
+	t.Setenv(selbstanmeldeDomainVariable, "test.invalid")
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	const mail = "ohne.protokoll@test.invalid"
+	mock.ExpectExec(`INSERT INTO benutzer`).
+		WithArgs("Ohne", "Protokoll", mail).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectQuery(`SELECT b\.id, b\.rolle`).
+		WithArgs(mail).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("00000000-0000-0000-0000-0000000000a1", "kollegium", "Ohne", "Protokoll", false, mail, true))
+	mock.ExpectExec(`INSERT INTO audit_logs`).
+		WithArgs(pgxmock.AnyArg(), "SELBSTANMELDUNG", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnError(errors.New("audit_logs nicht beschreibbar"))
+
+	konto, err := legeZugangsanfrageAn(t.Context(), mock, mail)
+	if err != nil {
+		t.Fatalf("legeZugangsanfrageAn: %v — das fehlende Protokoll darf die Anmeldung nicht aufhalten", err)
+	}
+	if !konto.neuAngelegt {
+		t.Error("das neue Konto kam nicht als neu angelegt zurück")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Schreiben des Protokolls nicht versucht: %v", err)
+	}
+	zeile := `level=ERROR msg="Selbstanmeldung: Audit-Zeile konnte nicht geschrieben werden" fehler="audit_logs nicht beschreibbar"`
+	if !strings.Contains(protokoll.String(), zeile) {
+		t.Errorf("im Log fehlt %s:\n%s", zeile, protokoll.String())
 	}
 }
 

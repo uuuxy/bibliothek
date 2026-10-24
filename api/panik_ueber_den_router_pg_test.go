@@ -1,9 +1,11 @@
 package api_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -97,7 +99,18 @@ func pruefeNeutrales500(t *testing.T, rec *httptest.ResponseRecorder) {
 }
 
 func TestPanik_OhneSentryAntwortetDerServerMit500(t *testing.T) {
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
 	pruefeNeutrales500(t, anfrageInPanik(t, "panik-ohne-sentry@example.org"))
+
+	// Die Panik steht einmal im Log, mit ihrem Stack; eine zweite Zeile zählte sie auf der Seite
+	// „Fehler im Log“ doppelt.
+	if n := strings.Count(protokoll.String(), panikText); n != 1 {
+		t.Errorf("%d Zeilen mit dem Text der Panik, erwartet eine:\n%s", n, protokoll.String())
+	}
 }
 
 // Eingerichtet wird Sentry wie in main.go, allein mit der Adresse. Sie zeigt auf einen

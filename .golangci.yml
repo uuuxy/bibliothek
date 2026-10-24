@@ -18,7 +18,15 @@ linters:
     - containedctx  # Kein Kontext als Feld eines Typs (Decisions, „Contexts")
     - contextcheck  # Wer einen Kontext hat, reicht ihn weiter, statt einen neuen anzulegen (Decisions, „Contexts")
     - ireturn       # Ein Erzeuger liefert den Typ, keine Schnittstelle (docs/STIL.md, Abschnitt 14)
+    - errorlint     # Ein Fehler im Text eines Fehlers bleibt eingewickelt, %w statt %v (docs/STIL.md, Abschnitt 11)
   settings:
+    errorlint:
+      # Nur fmt.Errorf: Mit %v reißt die Kette, und die Antwort erkennt einen Abbruch des Browsers
+      # nicht mehr; er stünde als ERROR im Log und löste den Alarm aus.
+      errorf: true
+      errorf-multi: true
+      asserts: false
+      comparison: false
     ireturn:
       # Nur die Schnittstellen dieses Projekts: pgx.Rows, pgx.Tx und die Attrappen von pgxmock gibt
       # die Bibliothek vor.

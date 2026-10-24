@@ -2,6 +2,7 @@ package httpresp
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -80,5 +81,18 @@ func TestSchreibeJSON_NichtListenUnveraendert(t *testing.T) {
 				t.Errorf("%s = %s, erwartet %s", f.name, got, f.want)
 			}
 		})
+	}
+}
+
+// Die Antwort bleibt Byte für Byte, was json.Encoder schrieb, auch mit Zeichen, die er umschreibt.
+func TestSchreibeJSON_WieDerEncoder(t *testing.T) {
+	antwort := map[string]any{"titel": "<Faust> & Co", "liste": []eintrag{{ID: "a"}}}
+	var ist, encoder bytes.Buffer
+	SchreibeJSON(&ist, antwort)
+	if err := json.NewEncoder(&encoder).Encode(antwort); err != nil {
+		t.Fatalf("Encode: %v", err)
+	}
+	if ist.String() != encoder.String() {
+		t.Errorf("SchreibeJSON = %q, erwartet %q", ist.String(), encoder.String())
 	}
 }

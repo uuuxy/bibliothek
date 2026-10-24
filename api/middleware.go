@@ -4,7 +4,7 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -126,7 +126,8 @@ func panikMiddleware(next http.Handler) http.Handler {
 				// Maskierung enthielte ein weitergereichtes Logfile funktionierende Links, und
 				// die Speicherung als Hash in der Datenbank wäre entwertet.
 				slog.Error("PANIC RECOVERED", "methode", r.Method, "pfad", maskiereToken(r.URL.Path), "fehler", err, "stack", string(debug.Stack()))
-				apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("interner server fehler: %v", err))
+				// Ohne Ursache: Die Zeile darüber nennt sie samt Stack, eine zweite zählte den Fehler doppelt.
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, nil)
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -272,10 +273,20 @@ func (s *Server) verlangeRecht(recht string) func(http.Handler) http.Handler {
 	}
 }
 
-// statusMerker reicht die Antwort durch und merkt sich ihren Status.
+// statusMerker reicht die Antwort durch und merkt sich, was die Zeile zu einem 5xx braucht: den
+// Status, die Route (merkeRoute) und die Ursache, die apierrors beim Antworten übergibt.
 type statusMerker struct {
 	http.ResponseWriter
-	status int
+	status  int
+	route   string
+	ursache string
+}
+
+// MerkeUrsache nimmt die Ursache eines 5xx von apierrors an; es gilt die erste.
+func (m *statusMerker) MerkeUrsache(ursache string) {
+	if m.ursache == "" {
+		m.ursache = ursache
+	}
 }
 
 func (m *statusMerker) WriteHeader(status int) {
@@ -320,10 +331,11 @@ func maskiereToken(pfad string) string {
 	return pfad
 }
 
-// logMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode, Pfad.
-// Mehr nicht, keine Dauer, keine Anfragekennung, und bei 2xx bis 4xx gar nichts. Die Zeile je
-// Anfrage („Incoming Request", Methode und Pfad, vor der Verarbeitung) schreibt baueKette in
-// router.go.
+// logMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode, Pfad, Route
+// und Ursache. Mehr nicht, keine Dauer, keine Anfragekennung, und bei 2xx bis 4xx gar nichts. So
+// steht ein Serverfehler einmal im Log und zählt auf der Seite „Fehler im Log“ einmal, je Route.
+// Die Zeile je Anfrage („Incoming Request", Methode und Pfad, vor der Verarbeitung) schreibt
+// baueKette in router.go.
 //
 // Der Pfad läuft an beiden Stellen durch die Maskierung darüber: Ein Geheimnis im Pfad
 // (Bestätigungs-Token) darf nicht im Klartext im Log landen.
@@ -334,13 +346,46 @@ func logMiddleware(next http.Handler) http.Handler {
 			status:         http.StatusOK,
 		}
 
-		next.ServeHTTP(merker, r)
+		next.ServeHTTP(merker, r.WithContext(context.WithValue(r.Context(), statusMerkerSchluessel{}, merker)))
 
 		// Kein debug.Stack() hier: Er zeigte den Stack dieser Middleware nach next.ServeHTTP,
-		// nie den der Fehlerstelle. Den Stack eines Panics schreibt panikMiddleware; die
-		// Ursache eines 5xx steht in der Zeile, die apierrors beim Senden ins Log schreibt.
+		// nie den der Fehlerstelle. Den Stack eines Panics schreibt panikMiddleware.
 		if merker.status >= 500 {
-			slog.Error("Anfrage mit Serverfehler beendet", "status", merker.status, "methode", r.Method, "pfad", maskiereToken(r.URL.Path))
+			schreibeStatuszeile(r, merker)
+		}
+	})
+}
+
+// statusMerkerSchluessel ist der Schlüssel des statusMerker im Kontext der Anfrage; merkeRoute
+// findet ihn darüber.
+type statusMerkerSchluessel struct{}
+
+// schreibeStatuszeile schreibt die Zeile zu einem 5xx: als ERROR, oder als WARN, wenn der Browser
+// die Anfrage abgebrochen hat. Dann erreicht die Antwort niemanden mehr, und ein Fehler des Servers
+// ist es nicht (docs/STIL.md, Abschnitt 11).
+func schreibeStatuszeile(r *http.Request, merker *statusMerker) {
+	felder := []any{"status", merker.status, "methode", r.Method, "pfad", maskiereToken(r.URL.Path)}
+	if merker.route != "" {
+		felder = append(felder, "route", merker.route)
+	}
+	if merker.ursache != "" {
+		felder = append(felder, "fehler", merker.ursache)
+	}
+	if errors.Is(r.Context().Err(), context.Canceled) {
+		slog.WarnContext(r.Context(), "Anfrage vom Browser abgebrochen", felder...)
+		return
+	}
+	slog.ErrorContext(r.Context(), "Anfrage mit Serverfehler beendet", felder...)
+}
+
+// merkeRoute trägt nach dem Routing das Muster der Route in den statusMerker ein. Der Mux setzt
+// r.Pattern an der Anfrage, die er bekommt; die Zeile zu einem 5xx zählt so je Route, nicht je Pfad,
+// in dem eine Kennung stehen kann.
+func merkeRoute(mux http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux.ServeHTTP(w, r)
+		if merker, ok := r.Context().Value(statusMerkerSchluessel{}).(*statusMerker); ok {
+			merker.route = r.Pattern
 		}
 	})
 }

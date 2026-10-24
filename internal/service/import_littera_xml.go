@@ -52,7 +52,7 @@ func (d *ImportDienst) ImportiereLitteraXML(ctx context.Context, datei io.Reader
 	var wurzel katalogisate
 
 	if err := xmlLeser.Decode(&wurzel); err != nil {
-		return 0, fmt.Errorf("%w: %v", ErrKeinKatalogisat, err)
+		return 0, fmt.Errorf("%w: %w", ErrKeinKatalogisat, err)
 	}
 	if len(wurzel.Datensaetze) == 0 {
 		return 0, ErrKeinKatalogisat

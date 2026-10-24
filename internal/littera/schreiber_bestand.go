@@ -450,7 +450,7 @@ func jsonEigenschaften(werte map[string]string) (string, error) {
 	}
 	b, err := json.Marshal(gefiltert)
 	if err != nil {
-		return "", fmt.Errorf("%w: erweiterte_eigenschaften nicht serialisierbar: %v",
+		return "", fmt.Errorf("%w: erweiterte_eigenschaften nicht serialisierbar: %w",
 			uebernahme.ErrZeile, err)
 	}
 	return string(b), nil

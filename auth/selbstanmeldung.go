@@ -124,14 +124,14 @@ func legeZugangsanfrageAn(ctx context.Context, pool db.Pool, email string) (anme
 	// „Zugang beantragt", und das Protokoll nennte eine Selbstanmeldung, die nie stattfand.
 	neuAngelegt, err := repository.LegeZugangsanfrageAn(ctx, pool, vorname, nachname, email)
 	if err != nil {
-		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %v", errAnmeldedienstGestoert, err)
+		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %w", errAnmeldedienstGestoert, err)
 	}
 
 	// Dasselbe Lesen wie in der Anmeldung: Trifft die Anlage ein vorhandenes Konto, geht die
 	// Anmeldung mit ihm weiter.
 	gelesen, err := repository.LadeAnmeldeKonto(ctx, pool, email)
 	if err != nil {
-		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", errAnmeldedienstGestoert, err)
+		return anmeldeKonto{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %w", errAnmeldedienstGestoert, err)
 	}
 	konto := anmeldeKontoAus(gelesen)
 	konto.neuAngelegt = neuAngelegt
@@ -152,7 +152,7 @@ func legeZugangsanfrageAn(ctx context.Context, pool db.Pool, email string) (anme
 		details = []byte("{}")
 	}
 	if err := repository.SchreibeAdminProtokoll(ctx, pool, konto.id, "SELBSTANMELDUNG", "", string(details)); err != nil {
-		slog.Warn("Selbstanmeldung: Audit-Zeile konnte nicht geschrieben werden", "fehler", err)
+		slog.Error("Selbstanmeldung: Audit-Zeile konnte nicht geschrieben werden", "fehler", err)
 	}
 	return konto, nil
 }

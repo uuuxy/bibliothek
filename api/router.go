@@ -313,7 +313,7 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	adressen := clientip.NewErmittler(s.vertrauteProxys)
 
 	// Kette: Adresse → panik → sentry → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
-	// rumpfGrenze → frist → bremse → csrf → kompression → Mux.
+	// rumpfGrenze → frist → bremse → csrf → kompression → Route merken → Mux.
 	//
 	// Die Adresse des Browsers ermittelt das erste Glied, damit jede Bremse und jede Tür
 	// dahinter sie mit clientip.AusAnfrage liest.
@@ -328,7 +328,7 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	// uuidPfadMiddleware steht nicht in dieser Kette: Um den Mux gelegt läse sie
 	// r.PathValue("id"), bevor die Route aufgelöst ist, und der Wert wäre immer leer. Sie sitzt
 	// in verlangeRecht, hinter dem Routing, wo PathValue gefüllt ist.
-	kette := adressen.Middleware(panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(mux)))))))))))))
+	kette := adressen.Middleware(panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(kompressionMiddleware(merkeRoute(mux))))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Jede Anfrage ins Log, ohne die Adresse des Aufrufers (DSGVO).

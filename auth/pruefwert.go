@@ -75,7 +75,7 @@ func pruefwertPasst(schluessel []byte, pruefwert, passwort string) (bool, error)
 	salz, err4 := base64.RawStdEncoding.DecodeString(teile[4])
 	soll, err5 := base64.RawStdEncoding.DecodeString(teile[5])
 	if err := errors.Join(err1, err2, err3, err4, err5); err != nil {
-		return false, fmt.Errorf("%w: %v", errPruefwertUnlesbar, err)
+		return false, fmt.Errorf("%w: %w", errPruefwertUnlesbar, err)
 	}
 	if speicher == 0 || runden == 0 || faeden == 0 || len(salz) == 0 || len(soll) == 0 {
 		return false, errPruefwertUnlesbar

@@ -16,11 +16,17 @@ func Schreibe(w io.Writer, b []byte) {
 	}
 }
 
-// SchreibeJSON schreibt antwort als JSON nach w und einen Fehler dabei ins Log.
+// SchreibeJSON schreibt antwort als JSON nach w und einen Fehler dabei ins Log. Ein Wert, der
+// sich nicht als JSON schreiben lässt, ist ein Fehler im Programm (ERROR); bricht das Schreiben
+// ab, hat meist der Browser die Verbindung aufgegeben, und das steht wie in Schreibe als WARN.
 func SchreibeJSON(w io.Writer, antwort any) {
-	if err := json.NewEncoder(w).Encode(alsListe(antwort)); err != nil {
+	roh, err := json.Marshal(alsListe(antwort))
+	if err != nil {
 		slog.Error("httpresp: encoding JSON response failed", "fehler", err)
+		return
 	}
+	// Encode hängt einen Zeilenumbruch an; die Antworten bleiben Byte für Byte, wie sie waren.
+	Schreibe(w, append(roh, '\n'))
 }
 
 // alsListe ersetzt eine Liste ohne Wert durch eine leere, damit eine Antwort mit einer Liste

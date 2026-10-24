@@ -157,8 +157,8 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung, nurHTTPS bool) http.HandlerFun
 		// lieber keine Anmeldung.
 		sitzungID, err := anmeldung.Sitzungen.beginne(ctx, konto.id, passwort, time.Now().Add(anmeldung.laufzeit))
 		if err != nil {
-			slog.Error("Login: Sitzung konnte nicht angelegt werden", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert, errAnmeldedienstGestoert)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert,
+				fmt.Errorf("%w: sitzung anlegen: %w", errAnmeldedienstGestoert, err))
 			return
 		}
 		token, err := anmeldung.ErzeugeToken(konto.id, rolle, sitzungID)
@@ -257,10 +257,10 @@ func (a *Anmeldung) meldeAn(ctx context.Context, w http.ResponseWriter, pool db.
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungMailserverNichtErreichbar, err)
 			return anmeldeKonto{}, false
 		}
-		// Ebenso ein Aussetzer der Datenbank. Der Grund steht im Log.
+		// Ebenso ein Aussetzer der Datenbank. Der Grund steht im Log; hat der Browser die
+		// Anfrage abgebrochen, ist es keiner (apierrors, Status 499).
 		if errors.Is(err, errAnmeldedienstGestoert) {
-			slog.Error("Login: Anmeldedienst gestört", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert, errAnmeldedienstGestoert)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, meldungAnmeldedienstGestoert, err)
 			return anmeldeKonto{}, false
 		}
 		a.bremse.merkeFehlversuch(schluessel)
@@ -302,7 +302,7 @@ func (a *Anmeldung) pruefeIMAPZugang(ctx context.Context, pool db.Pool, email, p
 		// (Verbindungsabriss, Pool erschöpft, Frist) ist ein Ausfall der Anmeldung und kein
 		// Fehlversuch.
 		if !errors.Is(err, pgx.ErrNoRows) {
-			return anmeldeKonto{}, fmt.Errorf("%w: benutzer lesen: %v", errAnmeldedienstGestoert, err)
+			return anmeldeKonto{}, fmt.Errorf("%w: benutzer lesen: %w", errAnmeldedienstGestoert, err)
 		}
 		// Ohne Konto: Ist die Selbstanmeldung für die Domain freigegeben, entsteht eine inaktive
 		// Anfrage, ein Eintrag, den die Bibliothek freischalten kann. Sonst gibt es keine

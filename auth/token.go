@@ -188,7 +188,7 @@ func (a *Anmeldung) PruefeTokenTrotzSperre(ctx context.Context, token string) (*
 func (a *Anmeldung) pruefeToken(ctx context.Context, token string) (*Claims, sperrGrund, error) {
 	widerrufen, err := a.Sperrliste.istWiderrufen(ctx, token)
 	if err != nil {
-		return nil, sperrGrundKeiner, fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)
+		return nil, sperrGrundKeiner, fmt.Errorf("%w: sperrliste: %w", ErrPruefungGestoert, err)
 	}
 	if widerrufen {
 		return nil, sperrGrundKeiner, errors.New("token has been revoked (logged out)")
@@ -225,7 +225,7 @@ func (a *Anmeldung) pruefeToken(ctx context.Context, token string) (*Claims, spe
 
 	grund, besteht, err := a.Sitzungen.zustand(ctx, claims.SitzungID)
 	if err != nil {
-		return nil, sperrGrundKeiner, fmt.Errorf("%w: sitzung: %v", ErrPruefungGestoert, err)
+		return nil, sperrGrundKeiner, fmt.Errorf("%w: sitzung: %w", ErrPruefungGestoert, err)
 	}
 	if !besteht {
 		return nil, sperrGrundKeiner, errors.New("session has ended (logged out)")
@@ -245,7 +245,7 @@ func (a *Anmeldung) ladeKontoStatus(ctx context.Context, kontoID string) (Rolle,
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", errors.New("user account no longer exists")
 		}
-		return "", fmt.Errorf("%w: kontostatus: %v", ErrPruefungGestoert, err)
+		return "", fmt.Errorf("%w: kontostatus: %w", ErrPruefungGestoert, err)
 	}
 	if !aktiv {
 		return "", errors.New("user account is deactivated")

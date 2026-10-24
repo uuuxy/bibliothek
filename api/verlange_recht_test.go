@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -257,6 +259,32 @@ func TestVerlangeRecht_SperrlisteOhneDatenbankIst503(t *testing.T) {
 	pruefeSitzungsfehlerRumpf(t, rr, "connection reset by peer")
 	if reached {
 		t.Error("bei nicht verifizierbarem Token darf Handler nicht erreicht werden")
+	}
+}
+
+// Bricht der Browser die Anfrage ab, während die Sperrliste gelesen wird, ist die Datenbank nicht
+// gestört: 499 statt 503. Mit 503 stünde jeder Seitenwechsel mitten im Laden als ERROR im Log und
+// löste die tägliche Alarm-Mail aus.
+func TestVerlangeRecht_AbbruchDesBrowsersIst499(t *testing.T) {
+	s, mock := baueRechteServer(t)
+	defer mock.Close()
+
+	mock.ExpectQuery("revoked_tokens").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnError(fmt.Errorf("zeile lesen: %w", context.Canceled))
+
+	req := anfrageMitToken(t, s, auth.RolleKollegium)
+	rr, reached := laufeDurch(s, "buch.ausleihen", req)
+
+	// 499 ist der Status für „Browser hat abgebrochen" (apierrors.statusAbgebrochen).
+	if rr.Code != 499 {
+		t.Errorf("Abbruch beim Lesen der Sperrliste = %d, erwartet 499", rr.Code)
+	}
+	if reached {
+		t.Error("bei abgebrochener Prüfung darf der Handler nicht erreicht werden")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Abfrage der Sperrliste nicht gestellt: %v", err)
 	}
 }
 

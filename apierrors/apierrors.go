@@ -135,8 +135,8 @@ func MitFehlerantwort(tuer TuerMitFehler) http.HandlerFunc {
 			}
 			var fehler *Fehler
 			if errors.As(err, &fehler) {
-				if fehler.Status >= 500 {
-					slog.Error("Fehlerantwort", "status", fehler.Status, "fehler", fehler.Ursache)
+				if zeile, ok := logZeile(fehler.Meldung, fehler.Ursache); ok && fehler.Status >= 500 {
+					schreibeLogzeile(w, fehler.Status, zeile, fehler.Ursache)
 				}
 				schreibeFehlerJSON(w, fehler.Status, fehler.Meldung)
 			} else {
@@ -167,13 +167,7 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 		return
 	}
 	if zeile, ok := logZeile(meldung, ursache); ok {
-		// Ein 4xx ist eine abgelehnte Eingabe und kein Fehler des Servers; als ERROR zählte jeder
-		// falsche Scan an der Theke mit.
-		if status >= http.StatusInternalServerError {
-			slog.Error("Fehlerantwort", "status", status, "fehler", zeile)
-		} else {
-			slog.Info("Fehlerantwort", "status", status, "fehler", zeile)
-		}
+		schreibeLogzeile(w, status, zeile, ursache)
 	}
 
 	text := meldungOhneSatz
@@ -196,6 +190,54 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 	}
 
 	schreibeFehlerJSON(w, status, text)
+}
+
+// ursachenMerker nimmt die Ursache einer Antwort mit 5xx auf. Wer ihn in die Kette der Writer
+// stellt, schreibt die eine Zeile zur Anfrage selbst, mit Route, Pfad und Status
+// (api.logMiddleware): So steht ein Serverfehler einmal im Log und zählt einmal.
+type ursachenMerker interface {
+	MerkeUrsache(ursache string)
+}
+
+// schreibeLogzeile schreibt die Zeile zu einer Fehlerantwort. Die Ursache eines 5xx geht an den
+// ursachenMerker in der Kette des Writers; nur ohne ihn steht hier eine Zeile der Stufe ERROR.
+func schreibeLogzeile(w http.ResponseWriter, status int, zeile string, ursache error) {
+	if status >= http.StatusInternalServerError && merkeUrsache(w, zeile) {
+		return
+	}
+	if stufeDerFehlerantwort(status, ursache) == slog.LevelError {
+		slog.Error("Fehlerantwort", "status", status, "fehler", zeile)
+		return
+	}
+	slog.Info("Fehlerantwort", "status", status, "fehler", zeile)
+}
+
+// merkeUrsache gibt die Ursache an den ursachenMerker in der Kette des Writers und sagt, ob es
+// einen gab. Jede Hülle reicht mit Unwrap weiter, wie es http.ResponseController verlangt.
+func merkeUrsache(w http.ResponseWriter, zeile string) bool {
+	for {
+		if merker, ok := w.(ursachenMerker); ok {
+			merker.MerkeUrsache(zeile)
+			return true
+		}
+		huelle, ok := w.(interface{ Unwrap() http.ResponseWriter })
+		if !ok {
+			return false
+		}
+		w = huelle.Unwrap()
+	}
+}
+
+// stufeDerFehlerantwort ist die Stufe der Zeile zu einer Fehlerantwort ohne ursachenMerker. Ein 4xx
+// ist eine abgelehnte Eingabe und kein Fehler des Servers; als ERROR zählte jeder falsche Scan an
+// der Theke mit. Ein 5xx ohne Ursache steht als INFO: Den Fehler zählt die Zeile zum Status, die
+// logMiddleware schreibt (api/middleware.go), und die nennt einen Abbruch des Browsers nicht als
+// Fehler. Als ERROR zählte er doppelt, und ein Abbruch bliebe einer.
+func stufeDerFehlerantwort(status int, ursache error) slog.Level {
+	if status >= http.StatusInternalServerError && ursache != nil {
+		return slog.LevelError
+	}
+	return slog.LevelInfo
 }
 
 // logZeile ist der Text im Feld "fehler" zu einer Fehlerantwort: die Ursache, ohne sie die

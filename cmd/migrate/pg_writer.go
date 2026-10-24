@@ -193,7 +193,7 @@ func legeMediumAn(
 
 	eigenschaften, err := baueErweiterteEigenschaften(m)
 	if err != nil {
-		return ergebnis, fmt.Errorf("%w: JSONB konnte nicht erzeugt werden: %v", uebernahme.ErrZeile, err)
+		return ergebnis, fmt.Errorf("%w: JSONB konnte nicht erzeugt werden: %w", uebernahme.ErrZeile, err)
 	}
 
 	felder := kuerzeFelder(fehlerprotokoll, m)

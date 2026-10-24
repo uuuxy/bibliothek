@@ -81,7 +81,7 @@ func LeseMappe[T any](r io.Reader, lies func(*excelize.File) (T, error)) (ergebn
 
 	mappe, oerr := excelize.OpenReader(gepuffert, Optionen())
 	if oerr != nil {
-		return ergebnis, fmt.Errorf("%w: %v", errMappeBeschaedigt, oerr)
+		return ergebnis, fmt.Errorf("%w: %w", errMappeBeschaedigt, oerr)
 	}
 	defer func() { _ = mappe.Close() }() //nolint:errcheck
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -168,7 +169,7 @@ func TestAntworteFehlerMitMeldung_UrsacheBleibtImLog(t *testing.T) {
 	rec := httptest.NewRecorder()
 	gestoert := errors.New("sitzung konnte nicht geprüft werden, bitte erneut versuchen")
 	AntworteFehlerMitMeldung(rec, http.StatusServiceUnavailable, gestoert.Error(),
-		fmt.Errorf("%w: sperrliste: %v", gestoert, errors.New("connection reset by peer")))
+		fmt.Errorf("%w: sperrliste: %w", gestoert, errors.New("connection reset by peer")))
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("Status = %d, erwartet 503", rec.Code)
@@ -281,6 +282,26 @@ func TestAntworteFehler_FehlerMitMeldungSchicktDieMeldung(t *testing.T) {
 		zeile, ok := logZeile("", err)
 		if !ok || !strings.Contains(zeile, "Klasse fehlt.") {
 			t.Errorf("%s: logZeile = %q, %v, erwartet einen Eintrag mit der Meldung", name, zeile, ok)
+		}
+	}
+}
+
+// Eine Fehlerantwort steht nur mit Ursache und 5xx als ERROR im Log. Ohne Ursache zählt die Zeile
+// zum Status aus logMiddleware den Fehler, die einen Abbruch des Browsers nicht mitzählt.
+func TestStufeDerFehlerantwort(t *testing.T) {
+	faelle := []struct {
+		status  int
+		ursache error
+		will    slog.Level
+	}{
+		{http.StatusInternalServerError, errors.New("kaputt"), slog.LevelError},
+		{http.StatusServiceUnavailable, errors.New("kaputt"), slog.LevelError},
+		{http.StatusInternalServerError, nil, slog.LevelInfo},
+		{http.StatusBadRequest, errors.New("unlesbar"), slog.LevelInfo},
+	}
+	for _, f := range faelle {
+		if got := stufeDerFehlerantwort(f.status, f.ursache); got != f.will {
+			t.Errorf("stufeDerFehlerantwort(%d, %v) = %v, erwartet %v", f.status, f.ursache, got, f.will)
 		}
 	}
 }

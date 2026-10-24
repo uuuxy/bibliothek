@@ -112,10 +112,10 @@ func (c *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string)
 	ergebnis, fehler := c.sucheDNB(kontext, saubereISBN)
 	switch {
 	case errors.Is(fehler, errQuelleNichtErreichbar):
-		return nil, fmt.Errorf("%w: %v", ErrDNBNichtErreichbar, fehler)
+		return nil, fmt.Errorf("%w: %w", ErrDNBNichtErreichbar, fehler)
 	case fehler != nil:
 		// „nicht gefunden", 4xx oder unlesbare Antwort: Die DNB war da (wie in SucheNachISBN).
-		return nil, fmt.Errorf("%w: %v", ErrNichtInDerDNB, fehler)
+		return nil, fmt.Errorf("%w: %w", ErrNichtInDerDNB, fehler)
 	}
 	return ergebnis, nil
 }
@@ -160,7 +160,7 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	}
 
 	if !erreichbar {
-		return nil, fmt.Errorf("%w (zuletzt: %v)", ErrKatalogdiensteNichtErreichbar, letzterAusfall)
+		return nil, fmt.Errorf("%w (zuletzt: %w)", ErrKatalogdiensteNichtErreichbar, letzterAusfall)
 	}
 	return nil, fmt.Errorf("keine metadaten für ISBN gefunden")
 }
@@ -238,7 +238,7 @@ func (c *MetadatenClient) holeInhalt(kontext context.Context, adresse string) ([
 	if fehler != nil {
 		// Transportfehler tragen das Sentinel: Die Quelle war nicht da — der Unterschied
 		// zwischen „Netz weg" (502) und „Buch unbekannt" (404) entsteht genau hier.
-		return nil, fmt.Errorf("%w: %v", errQuelleNichtErreichbar, fehler)
+		return nil, fmt.Errorf("%w: %w", errQuelleNichtErreichbar, fehler)
 	}
 	defer func() { _ = antwort.Body.Close() }() //nolint:errcheck
 	if antwort.StatusCode >= http.StatusInternalServerError {

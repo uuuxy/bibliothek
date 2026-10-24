@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -85,7 +86,7 @@ func spieleDumpEin(ctx context.Context, dsn string, sqlText []byte) error {
 	var stderr bytes.Buffer
 	psql.Stderr = &stderr
 	if err := psql.Run(); err != nil {
-		return fmt.Errorf("psql-Wiederherstellung fehlgeschlagen: %v — %s", err, kuerzeFehlertext(stderr.String()))
+		return fmt.Errorf("psql-Wiederherstellung fehlgeschlagen: %w — %s", err, kuerzeFehlertext(stderr.String()))
 	}
 	return nil
 }
@@ -105,8 +106,11 @@ func zaehleProbeTabellen(ctx context.Context, dsn string) (int, error) {
 	ergebnis := verbindung.ExecParams(ctx,
 		`SELECT count(*)::text FROM information_schema.tables WHERE table_schema = 'public'`,
 		nil, nil, nil, nil).Read()
-	if ergebnis.Err != nil || len(ergebnis.Rows) == 0 {
-		return 0, fmt.Errorf("tabellen nicht zählbar: %v", ergebnis.Err)
+	if ergebnis.Err != nil {
+		return 0, fmt.Errorf("tabellen nicht zählbar: %w", ergebnis.Err)
+	}
+	if len(ergebnis.Rows) == 0 {
+		return 0, errors.New("tabellen nicht zählbar: keine Zeile")
 	}
 	var anzahl int
 	if _, err := fmt.Sscanf(string(ergebnis.Rows[0][0]), "%d", &anzahl); err != nil {
