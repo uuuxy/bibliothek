@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -166,6 +166,6 @@ func (s *Sitzungen) raeumeAb(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if err := repository.LoescheAbgelaufeneSitzungen(ctx, s.pool); err != nil {
-		log.Printf("sitzungen: Abräumen abgelaufener Zeilen fehlgeschlagen: %v", err)
+		slog.Warn("sitzungen: Abräumen abgelaufener Zeilen fehlgeschlagen", "fehler", err)
 	}
 }

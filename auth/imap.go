@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net"
 	"os"
@@ -243,20 +242,20 @@ func (a *Anmeldung) pruefeIMAPAnmeldung(ctx context.Context, email, passwort str
 	if err != nil {
 		// Ein Ausfall der Verbindung ist kein falsches Passwort: Die Tür antwortet 503 statt 401
 		// mit Fehlversuch (ErrMailserverNichtErreichbar).
-		slog.Error("IMAP Connection failed", "addr", adresse, "error", err)
+		slog.Error("IMAP Connection failed", "adresse", adresse, "fehler", err)
 		return errMailserverNichtErreichbar
 	}
 	c.Timeout = imapBefehlsfrist
 	defer func() {
 		if c != nil {
 			if err := c.Logout(); err != nil {
-				log.Printf("imap: Logout fehlgeschlagen: %v", err)
+				slog.Warn("imap: Logout fehlgeschlagen", "fehler", err)
 			}
 		}
 	}()
 
 	if err := meldeBeiIMAPAn(ctx, c, verbindung, email, passwort); err != nil {
-		slog.Warn("IMAP Login failed", "error", err)
+		slog.Warn("IMAP Login failed", "fehler", err)
 		closeutil.Schliesse(verbindung, imapVerbindung)
 		// Es entscheidet der Inhalt, nicht die Uhr: Nur eine Antwort des Servers (NO oder BAD)
 		// heißt falsche Zugangsdaten. Frist, EOF, Abbruch von TLS oder fehlende Begrüßung sind

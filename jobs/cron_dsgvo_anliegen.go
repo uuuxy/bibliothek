@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -28,7 +28,7 @@ func (z *Zeitplan) fuehreAnliegenBefristungAus(ctx context.Context) {
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Scheduler Anliegen: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		slog.Error("Scheduler Anliegen: Einstellungen nicht lesbar, Lauf übersprungen", "fehler", err)
 		return
 	}
 	tage := repository.TageOderVorgabe(einst.AnliegenTage, repository.AnliegenTageVorgabe)
@@ -38,18 +38,18 @@ func (z *Zeitplan) fuehreAnliegenBefristungAus(ctx context.Context) {
 	// nichts, und der Lauf endet hier ohne Eintrag.
 	geloescht, err := repository.LoescheErledigteAnliegen(ctx, z.pool, tage)
 	if err != nil {
-		log.Printf("Scheduler Anliegen: Löschen fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Anliegen: Löschen fehlgeschlagen", "fehler", err)
 		return
 	}
 	if geloescht == 0 {
 		return
 	}
-	log.Printf("Scheduler Anliegen: %d erledigte Anliegen nach %d Tagen gelöscht", geloescht, tage)
+	slog.Info("Scheduler Anliegen: erledigte Anliegen gelöscht", "anzahl", geloescht, "tage", tage)
 
 	if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "lehrer_anliegen", "DELETE",
 		"DSGVO: erledigte Anliegen nach Frist gelöscht",
 		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
-		log.Printf("Scheduler Anliegen: Audit-Eintrag fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Anliegen: Audit-Eintrag fehlgeschlagen", "fehler", err)
 	}
 }
 
@@ -66,7 +66,7 @@ func (z *Zeitplan) fuehreKlassensatzBefristungAus(ctx context.Context) {
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Scheduler Klassensatz: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		slog.Error("Scheduler Klassensatz: Einstellungen nicht lesbar, Lauf übersprungen", "fehler", err)
 		return
 	}
 	tage := repository.TageOderVorgabe(einst.AnliegenTage, repository.AnliegenTageVorgabe)
@@ -74,17 +74,17 @@ func (z *Zeitplan) fuehreKlassensatzBefristungAus(ctx context.Context) {
 	// Dieselbe Einstellung wie bei den Anliegen; eine Frist von 0 schaltet auch hier ab.
 	geloescht, err := repository.LoescheErledigteKlassensatzReservierungen(ctx, z.pool, tage)
 	if err != nil {
-		log.Printf("Scheduler Klassensatz: Löschen fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Klassensatz: Löschen fehlgeschlagen", "fehler", err)
 		return
 	}
 	if geloescht == 0 {
 		return
 	}
-	log.Printf("Scheduler Klassensatz: %d erledigte Reservierungen nach %d Tagen gelöscht", geloescht, tage)
+	slog.Info("Scheduler Klassensatz: erledigte Reservierungen gelöscht", "anzahl", geloescht, "tage", tage)
 
 	if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "klassensatz_reservierungen", "DELETE",
 		"DSGVO: erledigte Klassensatz-Reservierungen nach Frist gelöscht",
 		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
-		log.Printf("Scheduler Klassensatz: Audit-Eintrag fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Klassensatz: Audit-Eintrag fehlgeschlagen", "fehler", err)
 	}
 }

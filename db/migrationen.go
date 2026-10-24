@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -43,9 +43,9 @@ func (v *Verbindung) FuehreMigrationenAus(ctx context.Context, verzeichnis strin
 	}
 
 	if eingespielt == 0 {
-		log.Println("Migrations: all up to date.")
+		slog.Info("Migrations: all up to date.")
 	} else {
-		log.Printf("Migrations: %d migration(s) applied successfully.", eingespielt)
+		slog.Info("Migrations applied successfully", "anzahl", eingespielt)
 	}
 	return nil
 }
@@ -62,16 +62,16 @@ func (v *Verbindung) spieleSchemaEin(ctx context.Context) error {
 		return nil
 	}
 
-	log.Println("Migrations: Fresh database detected. Applying schema.sql as baseline...")
+	slog.Info("Migrations: Fresh database detected. Applying schema.sql as baseline...")
 	schema, err := os.ReadFile("schema.sql")
 	if err != nil {
-		log.Printf("Migrations: warning: schema.sql not found: %v", err)
+		slog.Warn("Migrations: schema.sql not found", "fehler", err)
 		return nil
 	}
 	if _, err := v.Pool.Exec(ctx, string(schema)); err != nil {
 		return fmt.Errorf("migrations: failed to apply schema.sql: %w", err)
 	}
-	log.Println("Migrations: schema.sql applied successfully.")
+	slog.Info("Migrations: schema.sql applied successfully.")
 	return nil
 }
 
@@ -103,7 +103,7 @@ func findeMigrationsdateien(verzeichnis string) (dateien []string, fehlt bool, e
 	})
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("Migrations: directory %q not found — skipping.", verzeichnis)
+			slog.Warn("Migrations: directory not found — skipping", "verzeichnis", verzeichnis)
 			return nil, true, nil
 		}
 		return nil, false, fmt.Errorf("migrations: failed to scan directory: %w", err)
@@ -154,6 +154,6 @@ func (v *Verbindung) spieleMigrationEin(ctx context.Context, pfad string) (neu b
 		return false, fmt.Errorf("migrations: failed to commit migration %q: %w", version, err)
 	}
 
-	log.Printf("Migrations: applied %s", version)
+	slog.Info("Migrations: applied", "version", version)
 	return true, nil
 }

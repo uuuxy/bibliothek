@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -39,7 +39,7 @@ func (v *Verbindung) UebernimmMailKonfig(ctx context.Context) error {
 	if err != nil {
 		// Ohne lesbare Zeile fällt der Versand auf die Umgebung zurück
 		// (mailservice.LadeSMTPKonfig); das ist kein Grund, den Start abzubrechen.
-		log.Printf("mail-konfig: gespeicherte Konfiguration nicht lesbar, Übernahme übersprungen: %v", err)
+		slog.Error("mail-konfig: gespeicherte Konfiguration nicht lesbar, Übernahme übersprungen", "fehler", err)
 		return nil
 	}
 
@@ -86,10 +86,10 @@ func (v *Verbindung) UebernimmMailKonfig(ctx context.Context) error {
 	// währenddessen. Dann darf nicht „übernommen" im Log stehen, und der Versand fällt wie beim
 	// Lesefehler auf die Umgebung zurück.
 	if tag.RowsAffected() == 0 {
-		log.Printf("mail-konfig: Konfigurationszeile verschwand während der Übernahme — nichts übernommen")
+		slog.Warn("mail-konfig: Konfigurationszeile verschwand während der Übernahme — nichts übernommen")
 		return nil
 	}
 
-	log.Printf("mail-konfig: SMTP-Zugangsdaten aus der Umgebung übernommen (%s:%s) — ab jetzt gilt die Einstellung in der Oberfläche", umgebungHost, umgebungPort)
+	slog.Info("mail-konfig: SMTP-Zugangsdaten aus der Umgebung übernommen — ab jetzt gilt die Einstellung in der Oberfläche", "host", umgebungHost, "port", umgebungPort)
 	return nil
 }

@@ -250,15 +250,15 @@ func TestAntworteFehlerMitMeldung_OhneUrsacheSchicktDieMeldung(t *testing.T) {
 		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != erwartet {
 			t.Errorf("AntworteFehlerMitMeldung(%d) = %q, erwartet %q", status, meldung, erwartet)
 		}
-		zeileMitFehlerwert, ok := logZeile(status, "", errors.New(text))
+		zeileMitFehlerwert, ok := logZeile("", errors.New(text))
 		if !ok {
 			t.Fatalf("logZeile(%d) mit Ursache: kein Eintrag", status)
 		}
-		if zeile, ok := logZeile(status, text, nil); !ok || zeile != zeileMitFehlerwert {
+		if zeile, ok := logZeile(text, nil); !ok || zeile != zeileMitFehlerwert {
 			t.Errorf("logZeile(%d) ohne Ursache = %q, %v, erwartet %q", status, zeile, ok, zeileMitFehlerwert)
 		}
 	}
-	if zeile, ok := logZeile(http.StatusBadRequest, "", nil); ok {
+	if zeile, ok := logZeile("", nil); ok {
 		t.Errorf("logZeile ohne Meldung und Ursache = %q, erwartet keinen Eintrag", zeile)
 	}
 }
@@ -278,7 +278,7 @@ func TestAntworteFehler_FehlerMitMeldungSchicktDieMeldung(t *testing.T) {
 		if meldung := leseFehlermeldung(t, rec.Body.String()); meldung != "Klasse fehlt." {
 			t.Errorf("%s: AntworteFehler = %q, erwartet %q", name, meldung, "Klasse fehlt.")
 		}
-		zeile, ok := logZeile(http.StatusBadRequest, "", err)
+		zeile, ok := logZeile("", err)
 		if !ok || !strings.Contains(zeile, "Klasse fehlt.") {
 			t.Errorf("%s: logZeile = %q, %v, erwartet einen Eintrag mit der Meldung", name, zeile, ok)
 		}

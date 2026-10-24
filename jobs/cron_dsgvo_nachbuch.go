@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -23,22 +23,22 @@ func (z *Zeitplan) fuehreNachbuchMeldungenBefristungAus(ctx context.Context) {
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Scheduler Nachbuch-Meldungen: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		slog.Error("Scheduler Nachbuch-Meldungen: Einstellungen nicht lesbar, Lauf übersprungen", "fehler", err)
 		return
 	}
 	tage := repository.NachbuchMeldungenTage(einst)
 	geloescht, err := repository.LoescheQuittierteNachbuchMeldungen(ctx, z.pool, tage)
 	if err != nil {
-		log.Printf("Scheduler Nachbuch-Meldungen: Löschen fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Nachbuch-Meldungen: Löschen fehlgeschlagen", "fehler", err)
 		return
 	}
 	if geloescht == 0 {
 		return
 	}
-	log.Printf("Scheduler Nachbuch-Meldungen: %d quittierte Meldungen nach %d Tagen gelöscht", geloescht, tage)
+	slog.Info("Scheduler Nachbuch-Meldungen: quittierte Meldungen gelöscht", "anzahl", geloescht, "tage", tage)
 	if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "nachbuch_meldungen", "DELETE",
 		"DSGVO: quittierte Nachbuch-Meldungen nach Frist gelöscht",
 		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
-		log.Printf("Scheduler Nachbuch-Meldungen: Audit-Eintrag fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Nachbuch-Meldungen: Audit-Eintrag fehlgeschlagen", "fehler", err)
 	}
 }

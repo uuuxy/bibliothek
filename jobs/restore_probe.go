@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,17 +59,16 @@ func (z *Zeitplan) fuehreRestoreProbeAus(ctx context.Context) {
 	// Ein Abbruch beim Herunterfahren sagt nichts über die Sicherung. Gespeichert als Fehlschlag
 	// stünde die Betriebsbereitschaft zu Unrecht auf kritisch; es bleibt das letzte Ergebnis.
 	if ctx.Err() != nil {
-		log.Printf("Restore-Probe: abgebrochen, der Server fährt herunter (%v)", ctx.Err())
+		slog.Warn("Restore-Probe: abgebrochen, der Server fährt herunter", "fehler", ctx.Err())
 		return
 	}
 	ergebnis.Zeitpunkt = time.Now().UTC()
 	ergebnis.DauerMS = time.Since(start).Milliseconds()
 	z.speichereProbeErgebnis(ctx, ergebnis)
 	if ergebnis.Erfolg {
-		log.Printf("Restore-Probe: ERFOLG — %s in %d ms wiederhergestellt (%d Tabellen)",
-			ergebnis.BackupDatei, ergebnis.DauerMS, ergebnis.Tabellen)
+		slog.Info("Restore-Probe: ERFOLG", "datei", ergebnis.BackupDatei, "dauer_ms", ergebnis.DauerMS, "tabellen", ergebnis.Tabellen)
 	} else {
-		log.Printf("Restore-Probe: FEHLGESCHLAGEN — %s", ergebnis.Fehler)
+		slog.Error("Restore-Probe: FEHLGESCHLAGEN", "fehler", ergebnis.Fehler)
 	}
 }
 
@@ -113,7 +112,7 @@ func (z *Zeitplan) probeJuengsteSicherung(ctx context.Context, schluessel, dsn, 
 		hintergrund, abbruch := context.WithTimeout(context.WithoutCancel(ctx), time.Minute)
 		defer abbruch()
 		if _, err := z.pool.Exec(hintergrund, `DROP DATABASE IF EXISTS `+probeDatenbank+` WITH (FORCE)`); err != nil {
-			log.Printf("Restore-Probe: Wegwerf-Datenbank blieb stehen (%v) — der nächste Lauf räumt sie ab", err)
+			slog.Warn("Restore-Probe: Wegwerf-Datenbank blieb stehen — der nächste Lauf räumt sie ab", "fehler", err)
 		}
 	}()
 
@@ -141,14 +140,14 @@ func (z *Zeitplan) probeJuengsteSicherung(ctx context.Context, schluessel, dsn, 
 func (z *Zeitplan) speichereProbeErgebnis(ctx context.Context, e RestoreProbeErgebnis) {
 	wert, err := json.Marshal(e)
 	if err != nil {
-		log.Printf("Restore-Probe: Ergebnis nicht serialisierbar: %v", err)
+		slog.Error("Restore-Probe: Ergebnis nicht serialisierbar", "fehler", err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	zustand := repository.NewBetriebszustandAbfragen(z.pool)
 	if err := zustand.SchreibeEinstellungswert(ctx, RestoreProbeSchluessel, string(wert)); err != nil {
-		log.Printf("Restore-Probe: Ergebnis konnte nicht gespeichert werden: %v", err)
+		slog.Error("Restore-Probe: Ergebnis konnte nicht gespeichert werden", "fehler", err)
 	}
 }
 
@@ -165,7 +164,7 @@ func (z *Zeitplan) probeBeimStartNachFehlschlag(ctx context.Context) {
 	if err := json.Unmarshal([]byte(wert), &letzte); err != nil || letzte.Erfolg {
 		return
 	}
-	log.Printf("Restore-Probe: letzter Lauf war fehlgeschlagen (%s) — probe beim Start erneut", letzte.Fehler)
+	slog.Warn("Restore-Probe: letzter Lauf war fehlgeschlagen — probe beim Start erneut", "fehler", letzte.Fehler)
 	z.fuehreRestoreProbeAus(ctx)
 }
 

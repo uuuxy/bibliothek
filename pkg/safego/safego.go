@@ -5,7 +5,10 @@
 // eigene Goroutinen, und ein Panic dort wäre ein Ausfall für alle.
 package safego
 
-import "log"
+import (
+	"log/slog"
+	"runtime/debug"
+)
 
 // FangePanic fängt ein Panic der laufenden Goroutine und schreibt es mit name ins Log. Es
 // steht als erste Zeile mit defer in der Goroutine:
@@ -19,6 +22,6 @@ import "log"
 // endet, der Server läuft weiter.
 func FangePanic(name string) {
 	if r := recover(); r != nil {
-		log.Printf("safego: Panic in Goroutine %q gefangen, Prozess bleibt am Leben: %v", name, r)
+		slog.Error("safego: Panic in Goroutine gefangen, Prozess bleibt am Leben", "goroutine", name, "fehler", r, "stack", string(debug.Stack()))
 	}
 }

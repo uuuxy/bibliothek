@@ -15,7 +15,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -31,19 +31,19 @@ func (z *Zeitplan) fuehreProtokollAufbewahrungAus(ctx context.Context) {
 	// Oberfläche steht.
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Audit-Aufbewahrung: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		slog.Error("Audit-Aufbewahrung: Einstellungen nicht lesbar, Lauf übersprungen", "fehler", err)
 		return
 	}
 	monate := repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate)
 
 	geloeschtDatensatz, err := repository.LoescheAltesProtokoll(ctx, z.pool, monate)
 	if err != nil {
-		log.Printf("Audit-Aufbewahrung: audit_log: %v", err)
+		slog.Error("Audit-Aufbewahrung: audit_log nicht bereinigt", "fehler", err)
 		return
 	}
 	geloeschtAdmin, err := repository.LoescheAltesVerwaltungsProtokoll(ctx, z.pool, monate)
 	if err != nil {
-		log.Printf("Audit-Aufbewahrung: audit_logs: %v", err)
+		slog.Error("Audit-Aufbewahrung: audit_logs nicht bereinigt", "fehler", err)
 		return
 	}
 
@@ -59,8 +59,7 @@ func (z *Zeitplan) fuehreProtokollAufbewahrungAus(ctx context.Context) {
 			"geloescht_audit_log": geloeschtDatensatz,
 			"geloescht_admin_log": geloeschtAdmin,
 		}); err != nil {
-		log.Printf("Audit-Aufbewahrung: Meta-Eintrag: %v", err)
+		slog.Error("Audit-Aufbewahrung: Meta-Eintrag fehlgeschlagen", "fehler", err)
 	}
-	log.Printf("Audit-Aufbewahrung: %d + %d Einträge älter als %d Monate entfernt",
-		geloeschtDatensatz, geloeschtAdmin, monate)
+	slog.Info("Audit-Aufbewahrung: alte Einträge entfernt", "audit_log", geloeschtDatensatz, "audit_logs", geloeschtAdmin, "monate", monate)
 }

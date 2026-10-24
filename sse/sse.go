@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -64,7 +64,7 @@ func (b *Broker) fahreHerunter() {
 		close(kanal)
 		delete(b.fenster, kanal)
 	}
-	log.Println("SSE: Broker heruntergefahren, alle Ströme geschlossen")
+	slog.Info("SSE: Broker heruntergefahren, alle Ströme geschlossen")
 }
 
 // meldeAn meldet einen neuen Strom an. nil heißt, dass der Broker gerade herunterfährt: Die
@@ -78,7 +78,7 @@ func (b *Broker) meldeAn() chan string {
 	}
 	kanal := make(chan string, pufferJeFenster)
 	b.fenster[kanal] = struct{}{}
-	log.Println("SSE: New client registered")
+	slog.Info("SSE: New client registered")
 	return kanal
 }
 
@@ -94,7 +94,7 @@ func (b *Broker) meldeAb(kanal chan string) {
 	}
 	delete(b.fenster, kanal)
 	close(kanal)
-	log.Println("SSE: Client disconnected")
+	slog.Info("SSE: Client disconnected")
 }
 
 // Verteile schickt ein Ereignis an alle angemeldeten Fenster.
@@ -151,10 +151,10 @@ func (b *Broker) Tuer(gilt func(*http.Request) bool) http.HandlerFunc {
 // deshalb nur im Log.
 func hebeFristenAuf(rc *http.ResponseController) {
 	if err := rc.SetReadDeadline(time.Time{}); err != nil {
-		log.Printf("SSE: could not clear read deadline: %v", err)
+		slog.Warn("SSE: could not clear read deadline", "fehler", err)
 	}
 	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
-		log.Printf("SSE: could not clear write deadline: %v", err)
+		slog.Warn("SSE: could not clear write deadline", "fehler", err)
 	}
 }
 

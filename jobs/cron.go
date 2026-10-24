@@ -5,7 +5,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -74,14 +74,14 @@ const (
 func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDienst) {
 	// Täglich um Mitternacht: Anonymisierung und Löschung nach DSGVO.
 	if _, err := z.cron.AddFunc("0 0 * * *", func() { z.fuehreNaechtlicheDSGVOAus(ctx) }); err != nil {
-		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
+		slog.Error("Scheduler: Failed to register GDPR jobs", "fehler", err)
 		return
 	}
 
 	// Täglich um 03:00 UTC die Aufbewahrung des Protokolls, nach der Sicherung (02:30), damit
 	// die Sicherung des Tages die Einträge noch vor ihrer Löschung enthält.
 	if _, err := z.cron.AddFunc(zeitProtokollAufbewahrung, func() { z.fuehreProtokollAufbewahrungAus(ctx) }); err != nil {
-		log.Printf("Scheduler: Failed to register audit retention job: %v", err)
+		slog.Error("Scheduler: Failed to register audit retention job", "fehler", err)
 	}
 
 	// Täglich um 02:30 UTC die verschlüsselte Sicherung der Datenbank, in einer ruhigen Zeit.
@@ -95,20 +95,16 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	// Verwaltung (api/system/backup_stand.go) meldet den Fall als "critical", dafür muss aber
 	// jemand hinsehen. Diese Zeile steht im Log des Starts.
 	if os.Getenv("BACKUP_ENCRYPTION_KEY") == "" {
-		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist nicht gesetzt — es werden KEINE " +
-			"Datenbank-Backups erstellt. Der nächtliche Job überspringt sich. Variable in " +
-			"der .env setzen und den Stack neu starten.")
+		slog.Error("BACKUP_ENCRYPTION_KEY ist nicht gesetzt — es werden KEINE Datenbank-Backups erstellt. Der nächtliche Job überspringt sich. Variable in der .env setzen und den Stack neu starten.")
 	} else if IstSchluesselSchwach(os.Getenv("BACKUP_ENCRYPTION_KEY")) {
-		log.Printf("ACHTUNG: BACKUP_ENCRYPTION_KEY ist kürzer als %d Zeichen. Auch scrypt "+
-			"rettet eine kurze Passphrase nicht — sie ist an einer entwendeten "+
-			"Backup-Datei offline durchprobierbar.", minBackupSchluesselLaenge)
+		slog.Warn("BACKUP_ENCRYPTION_KEY ist zu kurz. Auch scrypt rettet eine kurze Passphrase nicht — sie ist an einer entwendeten Backup-Datei offline durchprobierbar.", "mindestlaenge", minBackupSchluesselLaenge)
 	}
 
 	if _, err := z.cron.AddFunc(zeitSicherung, func() {
-		log.Println("Scheduler Backup: starting scheduled daily database backup...")
+		slog.Info("Scheduler Backup: starting scheduled daily database backup...")
 		backup.FuehreAus(ctx)
 	}); err != nil {
-		log.Printf("Scheduler: Failed to register backup job: %v", err)
+		slog.Error("Scheduler: Failed to register backup job", "fehler", err)
 	}
 
 	// Stündlich die abgelaufenen Idempotenz-Schlüssel löschen, damit die Tabelle nicht ohne
@@ -116,7 +112,7 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	if _, err := z.cron.AddFunc("17 * * * *", func() {
 		z.fuehreIdempotenzBereinigungAus(ctx)
 	}); err != nil {
-		log.Printf("Scheduler: Failed to register idempotency cleanup job: %v", err)
+		slog.Error("Scheduler: Failed to register idempotency cleanup job", "fehler", err)
 	}
 
 	// Alle sechs Stunden fehlende und gescheiterte Cover nachladen (neu importierte Titel und
@@ -125,7 +121,7 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	if _, err := z.cron.AddFunc("0 */6 * * *", func() {
 		coverAbgleich.GleicheFehlendeCoverAb(ctx)
 	}); err != nil {
-		log.Printf("Scheduler: Failed to register cover resync job: %v", err)
+		slog.Error("Scheduler: Failed to register cover resync job", "fehler", err)
 	}
 
 	// Stündlich abgelaufene Vormerkungen im Zustand „abholbereit" verfallen lassen (wer nicht
@@ -133,7 +129,7 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	// Lauf bliebe eine nicht abgeholte Vormerkung für immer 'abholbereit', und die Wartenden
 	// dahinter kämen nie an die Reihe.
 	if _, err := z.cron.AddFunc("23 * * * *", func() { z.fuehreVormerkungsVerfallAus(ctx) }); err != nil {
-		log.Printf("Scheduler: Failed to register vormerkung expiry job: %v", err)
+		slog.Error("Scheduler: Failed to register vormerkung expiry job", "fehler", err)
 	}
 
 	// Wöchentlich die Restore-Probe, Sonntag 03:30 UTC, nach der Sicherung (02:30) und der
@@ -141,7 +137,7 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	// die Quere kommt. Sie belegt, dass die echten Dateien auf der Platte sich wiederherstellen
 	// lassen; die Übung in der CI belegt nur das Verfahren (jobs/restore_probe.go).
 	if _, err := z.cron.AddFunc(zeitRestoreProbe, func() { z.fuehreRestoreProbeAus(ctx) }); err != nil {
-		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
+		slog.Error("Scheduler: Failed to register restore probe job", "fehler", err)
 	}
 	// Nach einem gescheiterten Lauf probt der Start erneut, sonst stünde die
 	// Betriebsbereitschaft nach der Behebung bis zu sieben Tage auf „kritisch", und die
@@ -150,7 +146,7 @@ func (z *Zeitplan) Starte(ctx context.Context, coverAbgleich *service.CoverDiens
 	go z.probeBeimStartNachFehlschlag(ctx)
 
 	z.cron.Start()
-	log.Println("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
+	slog.Info("Scheduler: GDPR, backup, retention, and idempotency cleanup jobs successfully started.")
 }
 
 // Stoppe hält den Cron an.
@@ -167,11 +163,11 @@ func (z *Zeitplan) fuehreIdempotenzBereinigungAus(ctx context.Context) {
 
 	n, err := repository.LoescheAlteIdempotenzSchluessel(ctx, z.pool)
 	if err != nil {
-		log.Printf("Scheduler Idempotency Cleanup: Fehler beim Löschen abgelaufener Schlüssel: %v", err)
+		slog.Error("Scheduler Idempotency Cleanup: Fehler beim Löschen abgelaufener Schlüssel", "fehler", err)
 		return
 	}
 	if n > 0 {
-		log.Printf("Scheduler Idempotency Cleanup: %d abgelaufene Idempotenz-Schlüssel entfernt.", n)
+		slog.Info("Scheduler Idempotency Cleanup: abgelaufene Idempotenz-Schlüssel entfernt", "anzahl", n)
 	}
 }
 
@@ -183,11 +179,11 @@ func (z *Zeitplan) fuehreVormerkungsVerfallAus(ctx context.Context) {
 
 	verfallen, neuBereit, err := repository.NewVormerkungsAbfragen(z.pool).LasseAbgelaufeneVerfallen(ctx)
 	if err != nil {
-		log.Printf("Scheduler Vormerkung-Verfall: Fehler: %v", err)
+		slog.Error("Scheduler Vormerkung-Verfall fehlgeschlagen", "fehler", err)
 		return
 	}
 	if verfallen > 0 {
-		log.Printf("Scheduler Vormerkung-Verfall: %d abgelaufene Abhol-Reservierung(en) verfallen, %d Exemplar(e) an den nächsten Wartenden zugeteilt.", verfallen, neuBereit)
+		slog.Info("Scheduler Vormerkung-Verfall: abgelaufene Abhol-Reservierungen verfallen, Exemplare an den nächsten Wartenden zugeteilt", "verfallen", verfallen, "zugeteilt", neuBereit)
 	}
 }
 

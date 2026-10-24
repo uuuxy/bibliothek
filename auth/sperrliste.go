@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -48,7 +48,7 @@ func (s *Sperrliste) Widerrufe(ctx context.Context, token string, laeuftAb time.
 	defer cancel()
 
 	if err := repository.WiderrufeToken(ctx, s.pool, hash, laeuftAb); err != nil {
-		log.Printf("token-blacklist: WARN Token konnte nicht widerrufen werden: %v", err)
+		slog.Error("token-blacklist: Token konnte nicht widerrufen werden", "fehler", err)
 		return err
 	}
 	return nil
@@ -75,6 +75,6 @@ func (s *Sperrliste) raeumeAb(ctx context.Context) {
 	defer cancel()
 
 	if err := repository.LoescheAbgelaufeneWiderrufe(ctx, s.pool); err != nil {
-		log.Printf("token-blacklist: Aufräumen abgelaufener Tokens fehlgeschlagen: %v", err)
+		slog.Warn("token-blacklist: Aufräumen abgelaufener Tokens fehlgeschlagen", "fehler", err)
 	}
 }

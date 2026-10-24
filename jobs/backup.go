@@ -5,7 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,7 +61,7 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 	stempel := time.Now().UTC().Format(sicherungsStempel)
 	zieldatei := filepath.Join(verzeichnis, fmt.Sprintf("backup_%s.sql.gz.enc", stempel))
 
-	log.Printf("Backup: starting daily PostgreSQL backup → %s", zieldatei)
+	slog.Info("Backup: starting daily PostgreSQL backup", "datei", zieldatei)
 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
@@ -74,7 +75,7 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 	verschluesselt, err := backupkrypto.Verschluessele(schluessel, gepackt)
 	if err != nil {
 		// #nosec G706
-		log.Printf("Backup: encryption failed: %v", err)
+		slog.Error("Backup: encryption failed", "fehler", err)
 		return
 	}
 
@@ -83,13 +84,13 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 	// #nosec G304 - zieldatei entsteht aus BACKUP_DIR und einem Zeitstempel
 	if err := os.WriteFile(zieldatei, verschluesselt, 0600); err != nil {
 		// #nosec G706
-		log.Printf("Backup: writing backup file failed: %v", err)
+		slog.Error("Backup: writing backup file failed", "fehler", err)
 		return
 	}
 
 	groesseMB := float64(len(verschluesselt)) / 1024 / 1024
 	// #nosec G706
-	log.Printf("Backup: completed successfully → %s (%.2f MB)", zieldatei, groesseMB)
+	slog.Info("Backup: completed successfully", "datei", zieldatei, "groesse_mb", math.Round(groesseMB*100)/100)
 
 	// Kopie außer Haus nach S3, dort mit derselben Aufbewahrung (backup_auslagerung.go).
 	if ziel, ok := leseS3Ziel(); ok && schreibeBackupNachS3(ctx, ziel, filepath.Base(zieldatei), verschluesselt) {
@@ -106,21 +107,19 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 func leseBackupUmgebung() (schluessel, dsn, verzeichnis string, ok bool) {
 	schluessel = os.Getenv("BACKUP_ENCRYPTION_KEY")
 	if schluessel == "" {
-		log.Println("Backup: BACKUP_ENCRYPTION_KEY not set – skipping encrypted backup")
+		slog.Error("Backup: BACKUP_ENCRYPTION_KEY not set – skipping encrypted backup")
 		return "", "", "", false
 	}
 	// Warnen, aber weitermachen: Eine Sicherung mit kurzer Passphrase ist viel besser als gar
 	// keine. Sichtbar wird der Zustand über /api/admin/system/backup-status in der Verwaltung; eine
 	// Logzeile allein liest niemand.
 	if IstSchluesselSchwach(schluessel) {
-		log.Printf("Backup: BACKUP_ENCRYPTION_KEY ist nur %d Zeichen lang (empfohlen: >= %d) – "+
-			"scrypt erschwert das Raten, ersetzt aber keine Entropie; kurze Passphrasen bleiben angreifbar",
-			len(schluessel), minBackupSchluesselLaenge)
+		slog.Warn("Backup: BACKUP_ENCRYPTION_KEY ist kürzer als empfohlen – scrypt erschwert das Raten, ersetzt aber keine Entropie; kurze Passphrasen bleiben angreifbar", "laenge", len(schluessel), "empfohlen", minBackupSchluesselLaenge)
 	}
 
 	dsn = os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Println("Backup: DATABASE_URL not set – skipping backup")
+		slog.Error("Backup: DATABASE_URL not set – skipping backup")
 		return "", "", "", false
 	}
 
@@ -130,7 +129,7 @@ func leseBackupUmgebung() (schluessel, dsn, verzeichnis string, ok bool) {
 	}
 	if err := os.MkdirAll(verzeichnis, 0750); err != nil {
 		// #nosec G706
-		log.Printf("Backup: cannot create backup directory: %v", err)
+		slog.Error("Backup: cannot create backup directory", "fehler", err)
 		return "", "", "", false
 	}
 	return schluessel, dsn, verzeichnis, true
@@ -171,13 +170,13 @@ func erzeugeGepacktenDump(ctx context.Context, dsn string) (gepackt []byte, ok b
 	// Den DSN lesen, um die Angaben der Verbindung für pg_dump zu gewinnen.
 	konfig, err := pgconn.ParseConfig(dsn)
 	if err != nil {
-		log.Printf("Backup: failed to parse DSN: %v", err)
+		slog.Error("Backup: failed to parse DSN", "fehler", err)
 		return nil, false
 	}
 
 	pgpassDatei, err := erzeugePgpassDatei(konfig)
 	if err != nil {
-		log.Printf("Backup: %v", err)
+		slog.Error("Backup: pgpass-Datei nicht angelegt", "fehler", err)
 		return nil, false
 	}
 	defer func() { _ = os.Remove(pgpassDatei) }() //nolint:errcheck
@@ -205,7 +204,7 @@ func erzeugeGepacktenDump(ctx context.Context, dsn string) (gepackt []byte, ok b
 
 	if err := pgDump.Start(); err != nil {
 		// #nosec G706
-		log.Printf("Backup: pg_dump start failed: %v", err)
+		slog.Error("Backup: pg_dump start failed", "fehler", err)
 		return nil, false
 	}
 
@@ -240,13 +239,13 @@ func erzeugeGepacktenDump(ctx context.Context, dsn string) (gepackt []byte, ok b
 	inhalt, err := io.ReadAll(gepacktLeser)
 	if err != nil {
 		// #nosec G706
-		log.Printf("Backup: compression failed: %v", err)
+		slog.Error("Backup: compression failed", "fehler", err)
 		return nil, false
 	}
 
 	if err := <-endeFehler; err != nil {
 		// #nosec G706
-		log.Printf("Backup: pg_dump finished with error: %v", err)
+		slog.Error("Backup: pg_dump finished with error", "fehler", err)
 		return nil, false
 	}
 
@@ -268,16 +267,16 @@ func rotiereBackups(verzeichnis string, naechte, wochen int) {
 		// Nicht stumm aufhören: Ohne Aufbewahrung wächst das Verzeichnis, bis die Platte voll ist,
 		// und genau dann entsteht auch keine neue Sicherung mehr. Der Fehler darf deshalb nicht im
 		// gewöhnlichen Fall „noch nicht genug Sicherungen" verschwinden.
-		log.Printf("Backup rotation: Verzeichnis %s nicht lesbar, es wird nichts rotiert: %v", verzeichnis, err)
+		slog.Warn("Backup rotation: Verzeichnis nicht lesbar, es wird nichts rotiert", "verzeichnis", verzeichnis, "fehler", err)
 		return
 	}
 	for _, d := range zuLoeschen(dateien, naechte, wochen) {
 		if err := wurzel.Remove(d.Name); err != nil {
 			// #nosec G706
-			log.Printf("Backup rotation: failed to delete %s: %v", d.Name, err)
+			slog.Warn("Backup rotation: failed to delete", "datei", d.Name, "fehler", err)
 		} else {
 			// #nosec G706
-			log.Printf("Backup rotation: deleted old backup %s", d.Name)
+			slog.Info("Backup rotation: deleted old backup", "datei", d.Name)
 		}
 	}
 }

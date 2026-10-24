@@ -6,7 +6,7 @@ package mailservice
 import (
 	"crypto/tls"
 	"errors"
-	"log"
+	"log/slog"
 	"net"
 	"net/smtp"
 	"os"
@@ -92,7 +92,7 @@ func versendeMitFristen(fristen smtpFristen, konfig SMTPKonfig, absender string,
 	// zugestellte Mahnung als „nicht versendet", und der nächste Lauf schickte sie ein zweites
 	// Mal an dieselbe Klassenleitung.
 	if err := c.Quit(); err != nil {
-		log.Printf("mail: Verbindung zu %s wurde nach der Annahme nicht sauber beendet (Nachricht ist zugestellt): %v", adresse, err)
+		slog.Warn("mail: Verbindung wurde nach der Annahme nicht sauber beendet (Nachricht ist zugestellt)", "adresse", adresse, "fehler", err)
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ var errSMTPKlartext = errors.New("SMTP-Server bietet kein STARTTLS an — Versan
 func sichereVerbindung(c *smtp.Client, host string) error {
 	if ok, _ := c.Extension("STARTTLS"); !ok {
 		if os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true" {
-			log.Printf("mail: WARNUNG — %s bietet kein STARTTLS an, SMTP_ALLOW_PLAINTEXT=true erlaubt den Klartextversand. Mailinhalte (Schülernamen, Elternadressen) gehen unverschlüsselt über das Netz.", host)
+			slog.Warn("mail: Server bietet kein STARTTLS an, SMTP_ALLOW_PLAINTEXT=true erlaubt den Klartextversand. Mailinhalte (Schülernamen, Elternadressen) gehen unverschlüsselt über das Netz.", "host", host)
 			return nil
 		}
 		return errSMTPKlartext

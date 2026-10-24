@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -37,7 +37,7 @@ func (z *Zeitplan) fuehreLesehistorieBefristungAus(ctx context.Context) {
 
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Scheduler Lesehistorie: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		slog.Error("Scheduler Lesehistorie: Einstellungen nicht lesbar, Lauf übersprungen", "fehler", err)
 		return
 	}
 	freihandTage := repository.TageOderVorgabe(einst.LesehistorieTage, repository.LesehistorieTageVorgabe)
@@ -51,8 +51,7 @@ func (z *Zeitplan) fuehreLesehistorieBefristungAus(ctx context.Context) {
 
 	protokoll := protokollFreihand + protokollLernmittel + protokollVormerkung
 	gesamt := getrenntFreihand + getrenntLernmittel + protokoll
-	log.Printf("Scheduler Lesehistorie: %d Ausleihen vom Schüler getrennt (Schülerbücherei %d nach %d Tagen, Lernmittel %d nach %d Tagen), %d Protokolleinträge bereinigt",
-		getrenntFreihand+getrenntLernmittel, getrenntFreihand, freihandTage, getrenntLernmittel, lernmittelTage, protokoll)
+	slog.Info("Scheduler Lesehistorie: Ausleihen vom Schüler getrennt, Protokolleinträge bereinigt", "getrennt", getrenntFreihand+getrenntLernmittel, "schuelerbuecherei", getrenntFreihand, "schuelerbuecherei_tage", freihandTage, "lernmittel", getrenntLernmittel, "lernmittel_tage", lernmittelTage, "protokoll", protokoll)
 	if gesamt == 0 {
 		return
 	}
@@ -67,7 +66,7 @@ func (z *Zeitplan) fuehreLesehistorieBefristungAus(ctx context.Context) {
 			"ausgefuehrt_am":             time.Now().UTC().Format(time.RFC3339),
 		},
 	); err != nil {
-		log.Printf("audit: Lesehistorie-ANONYMIZE konnte nicht protokolliert werden: %v", err)
+		slog.Error("audit: Lesehistorie-ANONYMIZE konnte nicht protokolliert werden", "fehler", err)
 	}
 }
 
@@ -76,7 +75,7 @@ func (z *Zeitplan) fuehreLesehistorieBefristungAus(ctx context.Context) {
 func (z *Zeitplan) trenneAusleihen(ctx context.Context, tage int, lernmittel bool) int64 {
 	getrennt, err := repository.TrenneAusleihenVomLeser(ctx, z.pool, lernmittel, tage)
 	if err != nil {
-		log.Printf("Scheduler Lesehistorie: Trennung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
+		slog.Error("Scheduler Lesehistorie: Trennung fehlgeschlagen", "lernmittel", lernmittel, "fehler", err)
 		return 0
 	}
 	return getrennt
@@ -88,7 +87,7 @@ func (z *Zeitplan) trenneAusleihen(ctx context.Context, tage int, lernmittel boo
 func (z *Zeitplan) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmittel bool) int64 {
 	bereinigt, err := repository.TilgeLeserImAusleihProtokoll(ctx, z.pool, lernmittel, tage)
 	if err != nil {
-		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
+		slog.Error("Scheduler Lesehistorie: Protokoll-Bereinigung fehlgeschlagen", "lernmittel", lernmittel, "fehler", err)
 		return 0
 	}
 	return bereinigt
@@ -99,7 +98,7 @@ func (z *Zeitplan) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmitt
 func (z *Zeitplan) tilgeVormerkSpur(ctx context.Context, tage int) int64 {
 	bereinigt, err := repository.TilgeLeserInVormerkSpuren(ctx, z.pool, tage)
 	if err != nil {
-		log.Printf("Scheduler Lesehistorie: Bereinigung der Vormerk-Spuren fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Lesehistorie: Bereinigung der Vormerk-Spuren fehlgeschlagen", "fehler", err)
 		return 0
 	}
 	return bereinigt

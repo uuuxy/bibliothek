@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -76,6 +76,6 @@ func (v *Verbindung) Close() {
 // im Log.
 func Verwerfe(ctx context.Context, tx pgx.Tx) {
 	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-		log.Printf("db: transaction rollback failed: %v", err)
+		slog.Error("db: transaction rollback failed", "fehler", err)
 	}
 }

@@ -38,7 +38,7 @@ func TestSchliesse(t *testing.T) {
 
 		Schliesse(&attrappe{err: errors.New("simulierter Fehler")}, "test-failure")
 
-		want := "test-failure: close failed: simulierter Fehler"
+		want := `WARN close failed stelle=test-failure fehler="simulierter Fehler"`
 		if got := ausgabe.String(); !strings.Contains(got, want) {
 			t.Errorf("Log = %q, erwartet darin %q", got, want)
 		}

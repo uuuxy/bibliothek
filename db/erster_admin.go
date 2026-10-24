@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/mail"
 	"os"
 	"strings"
@@ -52,6 +52,6 @@ func (v *Verbindung) LegeErstenAdminAn(ctx context.Context) error {
 		return fmt.Errorf("failed to insert initial admin: %w", err)
 	}
 
-	log.Printf("Erster Admin-Benutzer (%s) wurde erfolgreich initialisiert.", email)
+	slog.Info("Erster Admin-Benutzer wurde erfolgreich initialisiert.", "email", email)
 	return nil
 }

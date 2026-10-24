@@ -5,21 +5,21 @@ package httpresp
 import (
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"reflect"
 )
 
 // Schreibe schreibt b nach w und einen Fehler dabei ins Log.
 func Schreibe(w io.Writer, b []byte) {
 	if _, err := w.Write(b); err != nil {
-		log.Printf("httpresp: writing response body failed: %v", err)
+		slog.Warn("httpresp: writing response body failed", "fehler", err)
 	}
 }
 
 // SchreibeJSON schreibt antwort als JSON nach w und einen Fehler dabei ins Log.
 func SchreibeJSON(w io.Writer, antwort any) {
 	if err := json.NewEncoder(w).Encode(alsListe(antwort)); err != nil {
-		log.Printf("httpresp: encoding JSON response failed: %v", err)
+		slog.Error("httpresp: encoding JSON response failed", "fehler", err)
 	}
 }
 

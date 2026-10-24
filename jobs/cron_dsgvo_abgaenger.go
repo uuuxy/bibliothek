@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/pkg/logger"
@@ -40,17 +40,16 @@ func (z *Zeitplan) FuehreAbgaengerLoeschungAus(ctx context.Context) {
 	// Löschphase beginnt.
 	abgaenger, err := repository.LadeLoeschreifeAbgaenger(ctx, z.pool, jetzt)
 	if err != nil {
-		log.Printf("Scheduler GDPR Delete: Failed to fetch eligible students: %v", err)
+		slog.Error("Scheduler GDPR Delete: Failed to fetch eligible students", "fehler", err)
 		return
 	}
 
 	if len(abgaenger) == 0 {
-		log.Printf("Scheduler GDPR Delete: no eligible students for deletion (cutoff year: %d)", stichjahr)
+		slog.Info("Scheduler GDPR Delete: no eligible students for deletion", "stichjahr", stichjahr)
 		return
 	}
 
-	log.Printf("Scheduler GDPR Delete: %d student(s) eligible for DSGVO deletion (Abgangsjahr < %d)",
-		len(abgaenger), stichjahr)
+	slog.Info("Scheduler GDPR Delete: students eligible for DSGVO deletion", "anzahl", len(abgaenger), "stichjahr", stichjahr)
 
 	geloescht := 0
 	var fehlschlaege []string
@@ -61,14 +60,12 @@ func (z *Zeitplan) FuehreAbgaengerLoeschungAus(ctx context.Context) {
 		// Datensatz gelöscht); der Grund der Löschung steht über den festen Kontext der Methode im
 		// Protokoll.
 		if err := z.leserLoeschung.LoescheAbgaengerEndgueltig(ctx, a.ID, ""); err != nil {
-			log.Printf("Scheduler GDPR Delete: failed to purge student ID %s: %v",
-				logger.OhneUmbruch(a.ID), err)
+			slog.Error("Scheduler GDPR Delete: failed to purge student", "leser", logger.OhneUmbruch(a.ID), "fehler", err)
 			fehlschlaege = append(fehlschlaege, a.ID)
 			continue
 		}
 
-		log.Printf("Scheduler GDPR Delete: deleted student ID %s (Klasse %s, Abgang %d)",
-			logger.OhneUmbruch(a.ID), logger.OhneUmbruch(a.Klasse), a.AbgaengerJahr)
+		slog.Info("Scheduler GDPR Delete: deleted student", "leser", logger.OhneUmbruch(a.ID), "klasse", logger.OhneUmbruch(a.Klasse), "abgangsjahr", a.AbgaengerJahr)
 		geloescht++
 	}
 
@@ -82,12 +79,12 @@ func (z *Zeitplan) FuehreAbgaengerLoeschungAus(ctx context.Context) {
 			"ausgefuehrt_am": time.Now().UTC().Format(time.RFC3339),
 		},
 	); err != nil {
-		log.Printf("audit: BATCH_DELETE konnte nicht protokolliert werden: %v", err)
+		slog.Error("audit: BATCH_DELETE konnte nicht protokolliert werden", "fehler", err)
 	}
 
 	if len(fehlschlaege) > 0 {
-		log.Printf("Scheduler GDPR Delete: completed with %d failure(s): %v", len(fehlschlaege), fehlschlaege)
+		slog.Error("Scheduler GDPR Delete: completed with failures", "anzahl", len(fehlschlaege), "leser", fehlschlaege)
 	} else {
-		log.Printf("Scheduler GDPR Delete: successfully deleted %d student(s)", geloescht)
+		slog.Info("Scheduler GDPR Delete: successfully deleted students", "anzahl", geloescht)
 	}
 }

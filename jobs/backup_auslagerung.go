@@ -3,7 +3,7 @@ package jobs
 import (
 	"bytes"
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"slices"
 	"strings"
@@ -33,7 +33,7 @@ func leseS3Ziel() (s3Ziel, bool) {
 	mitSSL := os.Getenv("S3_USE_SSL") != "false" // Vorgabe: mit SSL
 
 	if endpunkt == "" || zugang == "" || geheimnis == "" || bucket == "" {
-		log.Println("Backup: S3 credentials not fully configured – skipping offsite upload")
+		slog.Info("Backup: S3 credentials not fully configured – skipping offsite upload")
 		return s3Ziel{}, false
 	}
 	client, err := minio.New(endpunkt, &minio.Options{
@@ -41,7 +41,7 @@ func leseS3Ziel() (s3Ziel, bool) {
 		Secure: mitSSL,
 	})
 	if err != nil {
-		log.Printf("Backup: Failed to initialize S3 client: %v", err)
+		slog.Error("Backup: Failed to initialize S3 client", "fehler", err)
 		return s3Ziel{}, false
 	}
 	return s3Ziel{client: client, bucket: bucket}, true
@@ -54,17 +54,17 @@ func schreibeBackupNachS3(ctx context.Context, ziel s3Ziel, objektname string, v
 	vorhanden, bucketFehler := ziel.client.BucketExists(ctx, ziel.bucket)
 	if bucketFehler == nil && !vorhanden {
 		if err := ziel.client.MakeBucket(ctx, ziel.bucket, minio.MakeBucketOptions{}); err != nil {
-			log.Printf("Backup: S3-Bucket %q konnte nicht angelegt werden: %v", ziel.bucket, err)
+			slog.Error("Backup: S3-Bucket konnte nicht angelegt werden", "bucket", ziel.bucket, "fehler", err)
 		}
 	}
 
 	if _, err := ziel.client.PutObject(ctx, ziel.bucket, objektname, bytes.NewReader(verschluesselt), int64(len(verschluesselt)), minio.PutObjectOptions{
 		ContentType: "application/octet-stream",
 	}); err != nil {
-		log.Printf("Backup: S3 upload failed for %s: %v", objektname, err)
+		slog.Error("Backup: S3 upload failed", "objekt", objektname, "fehler", err)
 		return false
 	}
-	log.Printf("Backup: S3 upload successful → s3://%s/%s", ziel.bucket, objektname)
+	slog.Info("Backup: S3 upload successful", "bucket", ziel.bucket, "objekt", objektname)
 	return true
 }
 
@@ -74,15 +74,15 @@ func schreibeBackupNachS3(ctx context.Context, ziel s3Ziel, objektname string, v
 func rotiereBackupsInS3(ctx context.Context, ziel s3Ziel, naechte, wochen int) {
 	dateien, err := leseS3Backups(ctx, ziel)
 	if err != nil {
-		log.Printf("Backup rotation S3: Liste von %s nicht lesbar, es wird nichts gelöscht: %v", ziel.bucket, err)
+		slog.Warn("Backup rotation S3: Liste nicht lesbar, es wird nichts gelöscht", "bucket", ziel.bucket, "fehler", err)
 		return
 	}
 	for _, d := range zuLoeschen(dateien, naechte, wochen) {
 		// %q, weil die Namen setzt, wer Zugang zum Bucket hat; ein Zeilenumbruch darin fälschte das Log.
 		if err := ziel.client.RemoveObject(ctx, ziel.bucket, d.Name, minio.RemoveObjectOptions{}); err != nil {
-			log.Printf("Backup rotation S3: failed to delete %q: %v", d.Name, err)
+			slog.Warn("Backup rotation S3: failed to delete", "objekt", d.Name, "fehler", err)
 		} else {
-			log.Printf("Backup rotation S3: deleted old backup %q", d.Name)
+			slog.Info("Backup rotation S3: deleted old backup", "objekt", d.Name)
 		}
 	}
 }

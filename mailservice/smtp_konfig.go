@@ -12,7 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/smtp"
 	"os"
 	"strings"
@@ -97,7 +97,7 @@ func ladeSMTPKonfig(ctx context.Context, pool db.Pool) (SMTPKonfig, error) {
 		// Keine Zeile (frische Datenbank, noch nicht gelaufene Migration): Die Umgebung
 		// trägt weiter, damit ein Mahnlauf nicht an einer Konfigurationslücke scheitert.
 		// Protokolliert, weil es sonst niemand merkt.
-		log.Printf("mail: gespeicherte SMTP-Konfiguration nicht lesbar, Umgebung wird benutzt: %v", err)
+		slog.Error("mail: gespeicherte SMTP-Konfiguration nicht lesbar, Umgebung wird benutzt", "fehler", err)
 		return KonfigAusUmgebung(), nil
 	}
 	k := SMTPKonfig{

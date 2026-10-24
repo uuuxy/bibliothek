@@ -7,8 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -137,7 +136,7 @@ func MitFehlerantwort(tuer TuerMitFehler) http.HandlerFunc {
 			var fehler *Fehler
 			if errors.As(err, &fehler) {
 				if fehler.Status >= 500 {
-					log.Printf("API Error [HTTP %d]: %v", fehler.Status, fehler.Ursache)
+					slog.Error("Fehlerantwort", "status", fehler.Status, "fehler", fehler.Ursache)
 				}
 				schreibeFehlerJSON(w, fehler.Status, fehler.Meldung)
 			} else {
@@ -167,8 +166,14 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 		antworteAbbruch(w)
 		return
 	}
-	if zeile, ok := logZeile(status, meldung, ursache); ok {
-		log.Print(zeile)
+	if zeile, ok := logZeile(meldung, ursache); ok {
+		// Ein 4xx ist eine abgelehnte Eingabe und kein Fehler des Servers; als ERROR zählte jeder
+		// falsche Scan an der Theke mit.
+		if status >= http.StatusInternalServerError {
+			slog.Error("Fehlerantwort", "status", status, "fehler", zeile)
+		} else {
+			slog.Info("Fehlerantwort", "status", status, "fehler", zeile)
+		}
 	}
 
 	text := meldungOhneSatz
@@ -193,14 +198,14 @@ func AntworteFehlerMitMeldung(w http.ResponseWriter, status int, meldung string,
 	schreibeFehlerJSON(w, status, text)
 }
 
-// logZeile ist der Eintrag im Log zu einer Fehlerantwort: die Ursache, ohne sie die Meldung. Ohne
-// beides gibt es keinen Eintrag.
-func logZeile(status int, meldung string, ursache error) (string, bool) {
+// logZeile ist der Text im Feld "fehler" zu einer Fehlerantwort: die Ursache, ohne sie die
+// Meldung. Ohne beides gibt es keinen Eintrag.
+func logZeile(meldung string, ursache error) (string, bool) {
 	switch {
 	case ursache != nil:
-		return fmt.Sprintf("API Error [HTTP %d]: %v (path: %s)", status, ursache, "unknown"), true
+		return ursache.Error(), true
 	case meldung != "":
-		return fmt.Sprintf("API Error [HTTP %d]: %s (path: %s)", status, meldung, "unknown"), true
+		return meldung, true
 	}
 	return "", false
 }

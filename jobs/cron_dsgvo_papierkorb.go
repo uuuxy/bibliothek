@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/pkg/logger"
@@ -27,7 +27,7 @@ func (z *Zeitplan) fuehrePapierkorbLoeschungAus(ctx context.Context) {
 	// eine eigene Transaktion öffnen.
 	ids, err := repository.LadeKollegenImPapierkorb(ctx, z.pool)
 	if err != nil {
-		log.Printf("Scheduler Papierkorb: Kollegen konnten nicht gelesen werden: %v", err)
+		slog.Error("Scheduler Papierkorb: Kollegen konnten nicht gelesen werden", "fehler", err)
 		return
 	}
 	if len(ids) == 0 {
@@ -40,12 +40,12 @@ func (z *Zeitplan) fuehrePapierkorbLoeschungAus(ctx context.Context) {
 		// Das Protokoll nennt SYSTEM als Akteur statt einer Person.
 		weg, err := z.leserLoeschung.LoescheKollegenAusDemPapierkorb(ctx, id)
 		if err != nil {
-			log.Printf("Scheduler Papierkorb: Leser %s nicht gelöscht: %v", logger.OhneUmbruch(id), err)
+			slog.Error("Scheduler Papierkorb: Leser nicht gelöscht", "leser", logger.OhneUmbruch(id), "fehler", err)
 			fehlschlaege = append(fehlschlaege, id)
 			continue
 		}
 		if !weg {
-			log.Printf("Scheduler Papierkorb: Leser %s ist nicht mehr löschreif, bleibt", logger.OhneUmbruch(id))
+			slog.Info("Scheduler Papierkorb: Leser ist nicht mehr löschreif, bleibt", "leser", logger.OhneUmbruch(id))
 			continue
 		}
 		geloescht++
@@ -58,7 +58,7 @@ func (z *Zeitplan) fuehrePapierkorbLoeschungAus(ctx context.Context) {
 			"fehlschlaege": len(fehlschlaege),
 			"tage":         repository.AnonymisierungPapierkorbTage,
 		}); err != nil {
-		log.Printf("Scheduler Papierkorb: Audit-Eintrag fehlgeschlagen: %v", err)
+		slog.Error("Scheduler Papierkorb: Audit-Eintrag fehlgeschlagen", "fehler", err)
 	}
-	log.Printf("Scheduler Papierkorb: %d Kollegen endgültig gelöscht, %d Fehlschläge", geloescht, len(fehlschlaege))
+	slog.Info("Scheduler Papierkorb: Kollegen endgültig gelöscht", "geloescht", geloescht, "fehlschlaege", len(fehlschlaege))
 }

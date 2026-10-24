@@ -4,13 +4,13 @@ package closeutil
 
 import (
 	"io"
-	"log"
+	"log/slog"
 )
 
 // Schliesse schließt c und schreibt einen Fehler mit der genannten Stelle ins Log. Gedacht
 // für defer an Lesern, Antwortrümpfen und nur lesend geöffneten Dateien.
 func Schliesse(c io.Closer, stelle string) {
 	if err := c.Close(); err != nil {
-		log.Printf("%s: close failed: %v", stelle, err)
+		slog.Warn("close failed", "stelle", stelle, "fehler", err)
 	}
 }

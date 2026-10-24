@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -79,7 +78,7 @@ func starteServer(port string, server *api.Server) *http.Server {
 	go func() {
 		slog.Info("Server listening", "url", "http://localhost:"+port)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Server error", "error", err)
+			slog.Error("Server error", "fehler", err)
 			os.Exit(1)
 		}
 	}()
@@ -146,26 +145,26 @@ func richteDatenbankEin(ctx context.Context, dsn string) *db.Verbindung {
 	slog.Info("Establishing database connection pool...")
 	verbindung, err := db.Verbinde(ctx, dsn)
 	if err != nil {
-		slog.Error("Database connection pool failed", "error", err)
+		slog.Error("Database connection pool failed", "fehler", err)
 		os.Exit(1)
 	}
 	slog.Info("Database connection pool successfully initialized.")
 
 	slog.Info("Running database migrations...")
 	if err := verbindung.FuehreMigrationenAus(ctx, "migrations"); err != nil {
-		slog.Error("Database migration failed", "error", err)
+		slog.Error("Database migration failed", "fehler", err)
 		os.Exit(1)
 	}
 
 	slog.Info("Initializing role permissions...")
 	if err := verbindung.SchreibeRechteVorgabe(ctx); err != nil {
-		slog.Error("Database permission initialization failed", "error", err)
+		slog.Error("Database permission initialization failed", "fehler", err)
 		os.Exit(1)
 	}
 
 	slog.Info("Bootstrapping initial admin (if database is empty)...")
 	if err := verbindung.LegeErstenAdminAn(ctx); err != nil {
-		slog.Error("Admin bootstrapping failed", "error", err)
+		slog.Error("Admin bootstrapping failed", "fehler", err)
 		os.Exit(1)
 	}
 
@@ -175,7 +174,7 @@ func richteDatenbankEin(ctx context.Context, dsn string) *db.Verbindung {
 	// Meldung kommt nur, wenn wirklich übernommen wurde, sonst stünde sie bei jedem Start da.
 	slog.Info("Prüfe gespeicherte SMTP-Konfiguration...")
 	if err := verbindung.UebernimmMailKonfig(ctx); err != nil {
-		slog.Error("Übernahme der Mail-Konfiguration fehlgeschlagen", "error", err)
+		slog.Error("Übernahme der Mail-Konfiguration fehlgeschlagen", "fehler", err)
 		os.Exit(1)
 	}
 
@@ -211,7 +210,8 @@ func ermittleCookieSecure() bool {
 	if err != nil {
 		// Ein unlesbarer Wert ist immer ein Fehler und nie eine Absicht; ihn als "false" zu deuten, wäre
 		// eine stille Fehlannahme.
-		log.Fatalf("FATAL: COOKIE_SECURE=%q ist kein Wahrheitswert (erlaubt: true/false)", roh)
+		slog.Error("COOKIE_SECURE ist kein Wahrheitswert (erlaubt: true/false)", "wert", roh)
+		os.Exit(1)
 	}
 
 	if !wert && !lokal {
@@ -226,27 +226,31 @@ func ermittleCookieSecure() bool {
 func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 	dsn = os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Fatalf("FATAL: DATABASE_URL environment variable is required and cannot be empty")
+		slog.Error("DATABASE_URL environment variable is required and cannot be empty")
+		os.Exit(1)
 	}
 
 	jwtGeheimnis = os.Getenv("JWT_SECRET")
 	if len(jwtGeheimnis) < 32 {
-		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
+		slog.Error("JWT_SECRET environment variable must be at least 32 characters long for security")
+		os.Exit(1)
 	}
 
 	schluessel := os.Getenv(crypto.SchluesselVariable)
 	if len(schluessel) != 32 && len(schluessel) != 64 {
-		log.Fatalf("FATAL: %s must be exactly 32 bytes (or 64 hex characters) long", crypto.SchluesselVariable)
+		slog.Error("encryption key must be exactly 32 bytes (or 64 hex characters) long", "variable", crypto.SchluesselVariable)
+		os.Exit(1)
 	}
 
 	// Der frühere Zweitname darf nicht unbemerkt danebenstehen. Er wird nicht mehr gelesen; wer ihn
 	// gesetzt hat, erwartet aber, dass er gilt. Also lieber hier laut abbrechen als mit einem
 	// Schlüssel verschlüsseln, mit dem der Betrieb nicht rechnet.
 	if alt := os.Getenv(crypto.FruehereVariable); alt != "" && alt != schluessel {
-		log.Fatalf("FATAL: %s ist gesetzt und weicht von %s ab. Der Zweitname wird nicht mehr gelesen — "+
-			"bitte %s entfernen und ausschließlich %s setzen. Achtung: Mit dem falschen Schlüssel sind "+
+		slog.Error("Der frühere Name des Schlüssels ist gesetzt und weicht ab. Er wird nicht mehr gelesen — "+
+			"bitte entfernen und ausschließlich den neuen Namen setzen. Achtung: Mit dem falschen Schlüssel sind "+
 			"Schülerfotos und das gespeicherte SMTP-Passwort nicht mehr entschlüsselbar.",
-			crypto.FruehereVariable, crypto.SchluesselVariable, crypto.FruehereVariable, crypto.SchluesselVariable)
+			"frueher", crypto.FruehereVariable, "variable", crypto.SchluesselVariable)
+		os.Exit(1)
 	}
 
 	// Die Beispiel-Geheimnisse aus dem Repository dürfen im echten Betrieb nicht verwendet werden.
@@ -267,10 +271,12 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 		// Fehlerart, gegen die die Selbstprüfung antritt: Sie meldete „alles gut", während der Server aus
 		// demselben Grund den Start verweigert.
 		if bereitschaft.IstBeispielGeheimnis(jwtGeheimnis) {
-			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
+			slog.Error("JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
+			os.Exit(1)
 		}
 		if bereitschaft.IstBeispielGeheimnis(schluessel) {
-			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
+			slog.Error("APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
+			os.Exit(1)
 		}
 	}
 
@@ -278,7 +284,8 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 	// ist kein Detail, das bei der ersten Anmeldung auffallen darf; im einen Fall kann sich niemand
 	// anmelden, im anderen jeder.
 	if err := auth.PruefeIMAPKonfiguration(); err != nil {
-		log.Fatalf("FATAL: %v", err)
+		slog.Error("IMAP-Konfiguration ungültig", "fehler", err)
+		os.Exit(1)
 	}
 
 	// Ausdrücklich protokolliert, weil eine vergessene Einstellung sonst genauso aussieht
@@ -288,7 +295,8 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 
 	port = os.Getenv("PORT")
 	if port == "" {
-		log.Fatalf("FATAL: PORT environment variable is required and cannot be empty")
+		slog.Error("PORT environment variable is required and cannot be empty")
+		os.Exit(1)
 	}
 
 	server.NurHTTPS = ermittleCookieSecure()
@@ -316,8 +324,9 @@ func main() {
 	logAusgabe := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
-	// slog.SetDefault hängt seit Go 1.21 auch das Standardpaket log hier ein; alle log.Printf im Haus
-	// laufen damit durch diesen JSONHandler.
+	// slog.SetDefault hängt seit Go 1.21 auch das Standardpaket log hier ein: Bibliotheken, die über
+	// log schreiben, landen im selben JSON, mit der Stufe INFO. Der eigene Code schreibt über slog
+	// mit Stufe (docs/STIL.md, Abschnitt 11).
 	//
 	// Das ist zugleich der Schutz gegen eingeschleuste Zeilen im Log (CodeQL meldet dafür
 	// go/log-injection): Ein Zeilenumbruch in einem Wert aus einer Anfrage wird beim Serialisieren zu
@@ -338,7 +347,7 @@ func main() {
 			Dsn: sentryDSN,
 		})
 		if err != nil {
-			slog.Error("sentry.Init failed", "error", err)
+			slog.Error("sentry.Init failed", "fehler", err)
 		} else {
 			defer sentry.Flush(2 * time.Second)
 			slog.Info("Sentry initialized successfully.")
@@ -359,7 +368,7 @@ func main() {
 	// 3. Anmeldung, Tokens zwölf Stunden gültig.
 	anmeldung, err := auth.NewAnmeldung(jwtGeheimnis, verbindung.Pool, 12*time.Hour)
 	if err != nil {
-		slog.Error("Failed to initialize authenticator", "error", err)
+		slog.Error("Failed to initialize authenticator", "fehler", err)
 		os.Exit(1)
 	}
 	// Abgelaufene Widerrufe und Sitzungen abräumen, bis der Server herunterfährt.
@@ -399,7 +408,7 @@ func main() {
 	defer cancel()
 
 	if err := httpServer.Shutdown(herunterfahrKontext); err != nil {
-		slog.Error("Graceful shutdown failed", "error", err)
+		slog.Error("Graceful shutdown failed", "fehler", err)
 		os.Exit(1)
 	}
 

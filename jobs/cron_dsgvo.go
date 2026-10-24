@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"bibliothek/repository"
@@ -24,10 +24,10 @@ func (z *Zeitplan) FuehreBearbeiterAnonymisierungAus(ctx context.Context) {
 
 	anzahl, err := repository.AnonymisiereBearbeiterAlterAusleihen(ctx, z.pool)
 	if err != nil {
-		log.Printf("Scheduler GDPR Anonymize: Error anonymizing operator IDs: %v", err)
+		slog.Error("Scheduler GDPR Anonymize: Error anonymizing operator IDs", "fehler", err)
 		return
 	}
-	log.Printf("Scheduler GDPR Anonymize: anonymized %d loans (returned > 14 days ago)", anzahl)
+	slog.Info("Scheduler GDPR Anonymize: anonymized loans (returned > 14 days ago)", "anzahl", anzahl)
 
 	// Eintrag des Systems im Protokoll.
 	if anzahl > 0 {
@@ -39,7 +39,7 @@ func (z *Zeitplan) FuehreBearbeiterAnonymisierungAus(ctx context.Context) {
 				"ausgefuehrt_am":       time.Now().UTC().Format(time.RFC3339),
 			},
 		); err != nil {
-			log.Printf("audit: ANONYMIZE konnte nicht protokolliert werden: %v", err)
+			slog.Error("audit: ANONYMIZE konnte nicht protokolliert werden", "fehler", err)
 		}
 	}
 }
@@ -61,7 +61,7 @@ func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
 	// Tage eingestellt, träfe ein einziger Lesefehler die Abgänger zwischen Tag 91 und 365.
 	einst, err := repository.NewEinstellungsAbfragen(z.pool).Lade(ctx)
 	if err != nil {
-		log.Printf("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		slog.Error("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Lauf übersprungen", "fehler", err)
 		return
 	}
 	karenzTage := repository.AbgaengerKarenzTageOderVorgabe(einst)
@@ -69,14 +69,14 @@ func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
 	// als Rückstand zählt.
 	anzahl, err := repository.AnonymisiereSchueler(ctx, z.pool, karenzTage)
 	if err != nil {
-		log.Printf("Scheduler GDPR Anonymize: Error anonymizing old students: %v", err)
+		slog.Error("Scheduler GDPR Anonymize: Error anonymizing old students", "fehler", err)
 		return
 	}
 
 	// Scheitert das Löschen der Fotos, läuft die Tilgung der Spuren trotzdem; die nächste
 	// Nacht räumt die Fotos nach.
 	if fotoFehler := repository.LoescheFotosAnonymisierterSchueler(ctx, z.pool); fotoFehler != nil {
-		log.Printf("Scheduler GDPR Anonymize: Fotos anonymisierter Schüler konnten nicht gelöscht werden: %v", fotoFehler)
+		slog.Error("Scheduler GDPR Anonymize: Fotos anonymisierter Schüler konnten nicht gelöscht werden", "fehler", fotoFehler)
 	}
 
 	// Die Spuren anonymisierter Schüler in den übrigen Tabellen tilgen. Die Zeile in leser zu
@@ -87,7 +87,7 @@ func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
 	z.bereinigeAnonymisierteSchuelerSpuren(ctx)
 
 	if anzahl > 0 {
-		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", anzahl)
+		slog.Info("Scheduler GDPR Anonymize: successfully anonymized old student records", "anzahl", anzahl)
 		if err := z.protokollAbfragen.ProtokolliereSystemAktion(ctx, "schueler", "ANONYMIZE",
 			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > Karenzzeit)",
 			map[string]any{
@@ -96,10 +96,10 @@ func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
 				"ausgefuehrt_am":      time.Now().UTC().Format(time.RFC3339),
 			},
 		); err != nil {
-			log.Printf("audit: ANONYMIZE konnte nicht protokolliert werden: %v", err)
+			slog.Error("audit: ANONYMIZE konnte nicht protokolliert werden", "fehler", err)
 		}
 	} else {
-		log.Printf("Scheduler GDPR Anonymize: no old students found to anonymize.")
+		slog.Info("Scheduler GDPR Anonymize: no old students found to anonymize.")
 	}
 }
 
@@ -115,7 +115,7 @@ func (z *Zeitplan) fuehreSchuelerAnonymisierungAus(ctx context.Context) {
 func (z *Zeitplan) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
 	ids, err := repository.LadeAnonymisierteSchuelerIDs(ctx, z.pool)
 	if err != nil {
-		log.Printf("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden: %v", err)
+		slog.Error("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden", "fehler", err)
 		return
 	}
 	if len(ids) == 0 {
@@ -124,9 +124,9 @@ func (z *Zeitplan) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
 
 	for _, tilgung := range repository.SpurTilgungen() {
 		if n, err := tilgung.Tilge(ctx, z.pool, ids, "DSGVO-Anonymisierung"); err != nil {
-			log.Printf("Scheduler GDPR Anonymize: Spur %s konnte nicht getilgt werden: %v", tilgung.Beschreibung, err)
+			slog.Error("Scheduler GDPR Anonymize: Spur konnte nicht getilgt werden", "spur", tilgung.Beschreibung, "fehler", err)
 		} else if n > 0 {
-			log.Printf("Scheduler GDPR Anonymize: Spur %s — %d Zeilen bereinigt.", tilgung.Beschreibung, n)
+			slog.Info("Scheduler GDPR Anonymize: Spur bereinigt", "spur", tilgung.Beschreibung, "anzahl", n)
 		}
 	}
 }
