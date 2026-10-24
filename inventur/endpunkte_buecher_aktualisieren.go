@@ -100,10 +100,10 @@ func leseAenderung(anfrage *http.Request) (titelEingabe, []string, error) {
 		return eingabe, nil, fehler
 	}
 	felder := []string{}
-	for _, feld := range titelFelder {
+	for _, name := range titelFeldNamen() {
 		for schluessel := range genannt {
-			if strings.EqualFold(schluessel, feld.name) {
-				felder = append(felder, feld.name)
+			if strings.EqualFold(schluessel, name) {
+				felder = append(felder, name)
 				break
 			}
 		}

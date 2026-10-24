@@ -1,3 +1,6 @@
+// Package inventur ist der Medienkatalog mit eigenen Türen und eigener Datenbankschicht: Titel
+// lesen, anlegen, ändern und löschen, der Import aus Excel, die Abfrage über die ISBN, die
+// Cover und die hochgeladenen Dateien (docs/ARCHITEKTUR.md 5.2.3).
 package inventur
 
 import (
@@ -5,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"bibliothek/db"
 	"bibliothek/internal/katalogdienste"
 )
 
@@ -44,7 +48,9 @@ func (dateisystem neuteredFileSystem) Open(pfad string) (http.File, error) {
 // herein: Das Inventur-Modul kennt die Prüfung der Rechte nicht selbst, bekommt sie aber
 // verpflichtend gestellt.
 type TuerenKonfig struct {
-	Abfragen        *TitelAbfragen
+	Abfragen *TitelAbfragen
+	// Pool trägt die Schlüssel des Listenimports (repository.ReserviereImportSchluessel).
+	Pool            db.Pool
 	Metadaten       *katalogdienste.MetadatenClient
 	VerlangeLesen   func(http.Handler) http.Handler
 	VerlangeAendern func(http.Handler) http.Handler
@@ -63,6 +69,7 @@ type TuerenKonfig struct {
 type Tueren struct {
 	abfragen  *TitelAbfragen
 	metadaten *katalogdienste.MetadatenClient
+	pool      db.Pool
 	mux       *http.ServeMux
 }
 
@@ -70,6 +77,7 @@ type Tueren struct {
 func NewTueren(konfig TuerenKonfig) *Tueren {
 	tueren := &Tueren{
 		abfragen:  konfig.Abfragen,
+		pool:      konfig.Pool,
 		metadaten: konfig.Metadaten,
 		mux:       http.NewServeMux(),
 	}

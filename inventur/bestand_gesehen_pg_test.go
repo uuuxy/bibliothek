@@ -30,8 +30,8 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
-	sitzung := &auth.Claims{KontoID: bearbeiterFuerAussonderung(t, pool)}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
+	sitzung := &auth.Claims{KontoID: bearbeiterFuerAussonderungTuer(t, pool)}
 	sende := func(methode, id string, extra map[string]any) *httptest.ResponseRecorder {
 		t.Helper()
 		koerper := map[string]any{"isbn": isbn, "title": "Bestandsprobe", "author": "Test", "coverUrl": "/uploads/x.webp", "listenpreis": 9.99}

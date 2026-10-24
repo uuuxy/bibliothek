@@ -52,7 +52,7 @@ func (t *Tueren) schreibeTitelAusMetadaten(ctx context.Context, isbn string, met
 
 	// subject ist ein Fremdschlüssel auf die Systematik: das Fach, das die Katalogdienste
 	// nahelegen, erst anlegen, dann seine kanonische Schreibweise schreiben.
-	kanonisch, err := inventur.StelleFaecherSicher(ctx, t.DB.Pool, []string{meta.Fach})
+	kanonisch, err := repository.StelleFaecherSicher(ctx, t.DB.Pool, []string{meta.Fach})
 	if err != nil {
 		return isbnZuTitelAntwort{}, err
 	}

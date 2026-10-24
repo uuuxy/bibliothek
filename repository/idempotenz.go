@@ -151,3 +151,49 @@ func LoescheAlteIdempotenzSchluessel(ctx context.Context, pool db.Pool) (int64, 
 	}
 	return tag.RowsAffected(), nil
 }
+
+// ReserviereImportSchluessel trägt den Schlüssel eines Listenimports mit dem Marker ein, den ein
+// zweiter Aufruf bekommt, solange der Lauf geht. reserviert = true heißt: Dieser Aufruf
+// importiert. Sonst liefert antwort, was unter dem Schlüssel steht, den Marker oder das Ergebnis
+// des ersten Laufs. Anders als die Theke übernimmt der Import keine verwaiste Reservierung: Ein
+// Lauf dauert länger als IdempotenzReservierungsfrist, und eine Übernahme spielte die Liste ein
+// zweites Mal ein.
+func ReserviereImportSchluessel(ctx context.Context, pool db.Pool, schluessel string, marker []byte, status int) (reserviert bool, antwort *IdempotenzAntwort, err error) {
+	tag, err := pool.Exec(ctx, `
+		INSERT INTO idempotency_keys (idempotency_key, response_data, status_code)
+		VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, schluessel, marker, status)
+	if err != nil {
+		return false, nil, err
+	}
+	if tag.RowsAffected() == 1 {
+		return true, nil, nil
+	}
+	antwort, err = LadeIdempotenzAntwort(ctx, pool, schluessel)
+	if err != nil {
+		return false, nil, err
+	}
+	return false, antwort, nil
+}
+
+// SchreibeImportErgebnis ersetzt den Marker eines Listenimports durch sein Ergebnis. false heißt:
+// Die Zeile fehlt, etwa weil der Aufräumlauf sie nach 24 Stunden mitten im Lauf gelöscht hat.
+func SchreibeImportErgebnis(ctx context.Context, pool db.Pool, schluessel string, daten []byte, status int) (bool, error) {
+	tag, err := pool.Exec(ctx, `
+		UPDATE idempotency_keys SET response_data = $2, status_code = $3
+		 WHERE idempotency_key = $1`, schluessel, daten, status)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+// GibImportSchluesselFrei löscht den Schlüssel eines Listenimports, der nichts geschrieben hat,
+// damit ein neuer Versuch mit derselben Dateiauswahl wirklich läuft. false heißt: Es gab ihn
+// nicht mehr.
+func GibImportSchluesselFrei(ctx context.Context, pool db.Pool, schluessel string) (bool, error) {
+	tag, err := pool.Exec(ctx, `DELETE FROM idempotency_keys WHERE idempotency_key = $1`, schluessel)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}

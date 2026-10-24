@@ -215,7 +215,7 @@ func (t *Tueren) TitelVorhanden(antwort http.ResponseWriter, anfrage *http.Reque
 	}
 	if vorhanden != nil {
 		schreibeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
-			"vorhanden": vorhanden.alsAntwort(),
+			"vorhanden": vorhandenAlsAntwort(vorhanden.ID, vorhanden.Titel, vorhanden.HatExemplar),
 			"meldung":   vorhanden.Meldung(),
 		}})
 		return

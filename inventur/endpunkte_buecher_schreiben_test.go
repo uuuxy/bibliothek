@@ -83,7 +83,7 @@ func TestTitelLoeschen(t *testing.T) {
 		// Transaktion, die Befehle des Löschens liefern ihre Spur über RETURNING). Die Reihenfolge selbst
 		// prüft titel_loeschen_test.go; hier zählt, dass die Tür mit 200 antwortet.
 		mock.ExpectBegin()
-		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
+		erwarteAuflagenSperreTuer(mock, pgxmock.AnyArg())
 
 		// Barcode-Snapshots vor den DELETEs (Theken-Auskunft; hier: keine Exemplare).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
@@ -213,11 +213,11 @@ func TestTitelAnlegen(t *testing.T) {
 			"coverUrl": "test.jpg"
 		}`
 
-		erwarteFachBekannt(mock, "Math") // auf dem Pool, vor der Tx
+		erwarteFachBekanntTuer(mock, "Math") // auf dem Pool, vor der Tx
 		// LegeTitelAn ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
 		// wird gleicheBestandAb nicht aufgerufen.
 		mock.ExpectBegin()
-		erwarteKeineDublette(mock)
+		erwarteKeineDubletteTuer(mock)
 		mock.ExpectQuery(`INSERT INTO buecher_titel`).
 			WithArgs(
 				"978-3-16-148410-0", // isbn

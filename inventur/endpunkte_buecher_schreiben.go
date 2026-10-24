@@ -84,8 +84,15 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 	slog.Info("Dublette abgelehnt", "fehler", fehler)
 	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":     dublette.Meldung(),
-		"vorhanden": dublette.alsAntwort(),
+		"vorhanden": vorhandenAlsAntwort(dublette.ID, dublette.Titel, dublette.HatExemplar),
 	})
+}
+
+// vorhandenAlsAntwort nennt den Titel, der eine ISBN schon trägt oder ohne ISBN gleich heißt, in
+// der Form, in der die Auskunft vorab und die Ablehnung beim Speichern ihn unter „vorhanden"
+// nennen.
+func vorhandenAlsAntwort(id, titel string, hatExemplar bool) map[string]any {
+	return map[string]any{"id": id, "title": titel, "ohneExemplar": !hatExemplar}
 }
 
 // schreibeDubletteTitel antwortet mit 409 und nennt unter „vorhanden" den Titel, der ohne ISBN
@@ -94,7 +101,7 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *dubletteTitel) {
 	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":         gleichnamig.Meldung(),
-		"vorhanden":     gleichnamig.alsAntwort(),
+		"vorhanden":     vorhandenAlsAntwort(gleichnamig.ID, gleichnamig.Titel, gleichnamig.HatExemplar),
 		"gleicherTitel": true,
 	})
 }

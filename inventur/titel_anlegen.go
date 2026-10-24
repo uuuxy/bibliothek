@@ -24,7 +24,7 @@ func (a *TitelAbfragen) legeTitelAlsAnderesMediumAn(ctx context.Context, eintrag
 func (a *TitelAbfragen) legeTitelZeileAn(ctx context.Context, eintrag Titel, anderesMedium bool) (string, error) {
 	// subject ist FK auf die Systematik: unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
-	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
+	kanonisch, err := repository.StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {
 		return "", err
 	}
@@ -224,7 +224,7 @@ func baueTitelStapel(eintraege []Titel) titelStapel {
 	return daten
 }
 
-func (a *TitelAbfragen) fuehreStapelAbfrageAus(ctx context.Context, q dbSchreiber, daten titelStapel) (int64, error) {
+func (a *TitelAbfragen) fuehreStapelAbfrageAus(ctx context.Context, q repository.Datenbank, daten titelStapel) (int64, error) {
 	// signatur: NULLIF beim Insert + COALESCE beim Konflikt — Import-Läufe
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
 	// ist_lernmittel wird per OR nur gesetzt, nie gelöscht: Eine Excel-Liste ohne
@@ -276,7 +276,7 @@ func (a *TitelAbfragen) SchreibeTitelStapel(ctx context.Context, eintraege []Tit
 	daten := baueTitelStapel(eintraege)
 	// subject ist FK auf die Systematik: unbekannte Fächer der
 	// Import-Zeilen registrieren und jede auf die kanonische Schreibweise ziehen.
-	kanonisch, err := StelleFaecherSicher(ctx, a.pool, daten.faecher)
+	kanonisch, err := repository.StelleFaecherSicher(ctx, a.pool, daten.faecher)
 	if err != nil {
 		return 0, err
 	}
@@ -354,7 +354,7 @@ func (a *TitelAbfragen) legeImportExemplareAn(ctx context.Context, q repository.
 // titelBeiKonflikt, und legt seine Exemplare an.
 func (a *TitelAbfragen) schreibeTitel(ctx context.Context, eintrag Titel) (string, error) {
 	// subject ist ein Fremdschlüssel auf die Systematik, siehe LegeTitelAn.
-	kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
+	kanonisch, err := repository.StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 	if err != nil {
 		return "", err
 	}

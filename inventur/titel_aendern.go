@@ -59,6 +59,16 @@ var sqlTitelAendern = func() string {
 	return b.String()
 }()
 
+// titelFeldNamen nennt die Felder, die AendereTitel schreibt, unter den Namen, unter denen eine
+// Änderung sie nennt.
+func titelFeldNamen() []string {
+	namen := make([]string, 0, len(titelFelder))
+	for _, f := range titelFelder {
+		namen = append(namen, f.name)
+	}
+	return namen
+}
+
 // pruefeFeldnamen lehnt einen Namen ab, den titelFelder nicht kennt: Die Anweisung überginge
 // ihn, und der Aufrufer hielte sein Feld für gespeichert.
 func pruefeFeldnamen(felder []string) error {
@@ -132,7 +142,7 @@ func (a *TitelAbfragen) titelWerte(ctx context.Context, id string, eintrag Titel
 	}
 	fach := ""
 	if slices.Contains(felder, "subject") {
-		kanonisch, err := StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
+		kanonisch, err := repository.StelleFaecherSicher(ctx, a.pool, []string{eintrag.Fach})
 		if err != nil {
 			return nil, err
 		}
@@ -295,8 +305,8 @@ func zaehleBestand(ctx context.Context, q repository.Datenbank, titelID string) 
 
 // gleicheBestandAb gleicht die Zeilen in buecher_exemplare an den erwarteten Bestand an.
 //
-// q ist repository.Datenbank statt dbSchreiber, weil die Vergabe der Nummern (barcode_seq beim
-// Abgleich des Bestands) Query braucht; pgx.Tx und der Pool erfüllen beides. bearbeiterID darf
+// q ist repository.Datenbank, weil die Vergabe der Nummern (barcode_seq beim Abgleich des
+// Bestands) Query braucht; pgx.Tx und der Pool erfüllen es. bearbeiterID darf
 // leer sein, solange der Bestand nicht sinkt: Das Anlegen eines Titels sondert nichts aus.
 func (a *TitelAbfragen) gleicheBestandAb(ctx context.Context, q repository.Datenbank, titelID string, erwarteterBestand int, bearbeiterID string) error {
 	aktuellerBestand, err := zaehleBestand(ctx, q, titelID)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"bibliothek/pkg/kennung"
+	"bibliothek/repository"
 )
 
 // Idempotenz des Listenimports.
@@ -76,22 +77,11 @@ func importSchluessel(w http.ResponseWriter, r *http.Request) (string, bool) {
 // dieser Aufruf darf importieren. Sonst kommt zurück, was gespeichert ist — der Marker
 // oder das Ergebnis des ersten Laufs.
 func (t *Tueren) reserviereImportLauf(ctx context.Context, schluessel string) (frisch bool, alt *gecachteAntwort, err error) {
-	tag, err := t.abfragen.pool.Exec(ctx, `
-		INSERT INTO idempotency_keys (idempotency_key, response_data, status_code)
-		VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, schluessel, importLaeuftMarker, http.StatusConflict)
-	if err != nil {
-		return false, nil, err
+	reserviert, antwort, err := repository.ReserviereImportSchluessel(ctx, t.pool, schluessel, importLaeuftMarker, http.StatusConflict)
+	if err != nil || reserviert {
+		return reserviert, nil, err
 	}
-	if tag.RowsAffected() == 1 {
-		return true, nil, nil
-	}
-	var a gecachteAntwort
-	if err := t.abfragen.pool.QueryRow(ctx, `
-		SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1`,
-		schluessel).Scan(&a.Daten, &a.Status); err != nil {
-		return false, nil, err
-	}
-	return false, &a, nil
+	return false, &gecachteAntwort{Status: antwort.Status, Daten: antwort.Daten}, nil
 }
 
 // schliesseImportLauf ersetzt den Marker durch das Ergebnis — oder gibt den Schlüssel
@@ -100,9 +90,8 @@ func (t *Tueren) reserviereImportLauf(ctx context.Context, schluessel string) (f
 func (t *Tueren) schliesseImportLauf(ctx context.Context, schluessel string, geschrieben bool, status int, antwort map[string]any) {
 	ctx = context.WithoutCancel(ctx)
 	if !geschrieben {
-		tag, err := t.abfragen.pool.Exec(ctx,
-			`DELETE FROM idempotency_keys WHERE idempotency_key = $1`, schluessel)
-		if err != nil || tag.RowsAffected() == 0 {
+		freigegeben, err := repository.GibImportSchluesselFrei(ctx, t.pool, schluessel)
+		if err != nil || !freigegeben {
 			slog.Error("listenimport idempotenz: schlüssel nicht freigegeben", "schluessel", schluessel, "fehler", err)
 		}
 		return
@@ -114,10 +103,8 @@ func (t *Tueren) schliesseImportLauf(ctx context.Context, schluessel string, ges
 	}
 	// 0 Zeilen hieße: Der Marker ist weg (Aufräumjob nach 24 h mitten im Lauf) — dann
 	// gäbe es beim nächsten Klick keinen Schutz. Das gehört ins Log, nicht ins Stille.
-	tag, err := t.abfragen.pool.Exec(ctx, `
-		UPDATE idempotency_keys SET response_data = $2, status_code = $3
-		 WHERE idempotency_key = $1`, schluessel, daten, status)
-	if err != nil || tag.RowsAffected() == 0 {
+	gespeichert, err := repository.SchreibeImportErgebnis(ctx, t.pool, schluessel, daten, status)
+	if err != nil || !gespeichert {
 		slog.Error("listenimport idempotenz: ergebnis nicht gespeichert", "schluessel", schluessel, "fehler", err)
 	}
 }

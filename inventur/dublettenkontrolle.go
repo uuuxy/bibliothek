@@ -36,11 +36,6 @@ func (d *dubletteISBN) Meldung() string {
 	return "Diese ISBN trägt schon der Titel „" + d.Titel + "“." + hinweisOhneExemplar(d.HatExemplar)
 }
 
-// alsAntwort ist der Titel in der Form, in der beide Türen ihn unter „vorhanden" nennen.
-func (d *dubletteISBN) alsAntwort() map[string]any {
-	return map[string]any{"id": d.ID, "title": d.Titel, "ohneExemplar": !d.HatExemplar}
-}
-
 // hinweisOhneExemplar nennt die Sicht, in der ein Titel ohne Exemplar steht: Keine Suche
 // zeigt ihn.
 func hinweisOhneExemplar(hatExemplar bool) string {
@@ -66,8 +61,6 @@ func (d *dubletteTitel) Unwrap() error { return errDubletteTitel }
 func (d *dubletteTitel) Meldung() string {
 	return "Ohne ISBN steht schon ein Titel „" + d.Titel + "“ im Katalog." + hinweisOhneExemplar(d.HatExemplar)
 }
-
-func (d *dubletteTitel) alsAntwort() map[string]any { return (*dubletteISBN)(d).alsAntwort() }
 
 // titelMitISBN sucht den Titel, der die ISBN schon trägt, in jeder Schreibweise und in beiden
 // Längen (repository.SQLTitelTraegtISBN); eigeneID nimmt den Titel aus, der gerade geändert

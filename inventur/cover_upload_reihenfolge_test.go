@@ -115,7 +115,7 @@ func TestCoverUpload_GescheitertesUpdateLaesstAltesCoverStehen(t *testing.T) {
 	mock.ExpectQuery("(?s)SELECT id, COALESCE.*").WithArgs(reihenfolgeBuchID).WillReturnRows(zeile)
 	mock.ExpectExec("(?s)UPDATE buecher_titel.*").
 		WithArgs("", "", pgxmock.AnyArg(), reihenfolgeBuchID).
-		WillReturnError(errTest)
+		WillReturnError(errTestTuer)
 
 	rec := httptest.NewRecorder()
 	(&Tueren{abfragen: NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))

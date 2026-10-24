@@ -12,7 +12,7 @@ import (
 // Einen Titel zu ändern, den es nicht gibt, ist ein 404 mit Auskunft und kein 500.
 func TestTitelAendern_UnbekannterTitelIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 
 	const unbekannt = "00000000-0000-0000-0000-00000000dead"
 	anfrage := httptest.NewRequest(http.MethodPut, "/api/books/"+unbekannt,

@@ -181,13 +181,13 @@ func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 		defer mock.Close()
 
 		// Kein einziger gleicheBestandAb-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
-		erwarteFachBekannt(mock, "Mathe")
+		erwarteFachBekanntTuer(mock, "Mathe")
 		mock.ExpectBegin()
 		beliebig := make([]any, 21) // eine Stelle je Spalte, die Kennung und die genannten Felder
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}
-		erwarteTitelstand(mock, "9783161484100", "Autor")
+		erwarteTitelstandTuer(mock, "9783161484100", "Autor")
 		mock.ExpectExec("UPDATE buecher_titel").WithArgs(beliebig...).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectCommit()
@@ -243,13 +243,13 @@ func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 			defer mock.Close()
 
 			const id = "0f8fad5b-d9cb-469f-a165-70867728950e"
-			erwarteFachBekannt(mock, "Mathe")
+			erwarteFachBekanntTuer(mock, "Mathe")
 			mock.ExpectBegin()
 			autor := ""
 			if fall.hatAutor {
 				autor = "Funke, Cornelia"
 			}
-			erwarteTitelstand(mock, "9783161484100", autor)
+			erwarteTitelstandTuer(mock, "9783161484100", autor)
 			if fall.hatAutor {
 				mock.ExpectRollback()
 			} else {

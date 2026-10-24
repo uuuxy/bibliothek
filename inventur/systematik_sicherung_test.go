@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"context"
 	"testing"
 
@@ -30,12 +31,12 @@ func TestStelleFaecherSicher_Bekannt(t *testing.T) {
 		WithArgs("Deutsch").
 		WillReturnRows(pgxmock.NewRows([]string{"bezeichnung"}).AddRow("Deutsch"))
 
-	ergebnis, err := StelleFaecherSicher(context.Background(), mock, []string{"Deutsch"})
+	ergebnis, err := repository.StelleFaecherSicher(context.Background(), mock, []string{"Deutsch"})
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if ergebnis["Deutsch"] != "Deutsch" {
-		t.Errorf("StelleFaecherSicher(…)[\"Deutsch\"] = %q, erwartet Deutsch", ergebnis["Deutsch"])
+		t.Errorf("repository.StelleFaecherSicher(…)[\"Deutsch\"] = %q, erwartet Deutsch", ergebnis["Deutsch"])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -64,12 +65,12 @@ func TestStelleFaecherSicher_UnbekanntNeu(t *testing.T) {
 		WithArgs("Neues Fach").
 		WillReturnRows(pgxmock.NewRows([]string{"bezeichnung"}).AddRow("Neues Fach"))
 
-	ergebnis, err := StelleFaecherSicher(context.Background(), mock, []string{"Neues Fach"})
+	ergebnis, err := repository.StelleFaecherSicher(context.Background(), mock, []string{"Neues Fach"})
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if ergebnis["Neues Fach"] != "Neues Fach" {
-		t.Errorf("StelleFaecherSicher(…)[\"Neues Fach\"] = %q, erwartet Neues Fach", ergebnis["Neues Fach"])
+		t.Errorf("repository.StelleFaecherSicher(…)[\"Neues Fach\"] = %q, erwartet Neues Fach", ergebnis["Neues Fach"])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -107,12 +108,12 @@ func TestStelleFaecherSicher_KuerzelKollision(t *testing.T) {
 		WithArgs("Mathe").
 		WillReturnRows(pgxmock.NewRows([]string{"bezeichnung"}).AddRow("Mathe"))
 
-	ergebnis, err := StelleFaecherSicher(context.Background(), mock, []string{"Mathe"})
+	ergebnis, err := repository.StelleFaecherSicher(context.Background(), mock, []string{"Mathe"})
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
 	if ergebnis["Mathe"] != "Mathe" {
-		t.Errorf("StelleFaecherSicher(…)[\"Mathe\"] = %q, erwartet Mathe", ergebnis["Mathe"])
+		t.Errorf("repository.StelleFaecherSicher(…)[\"Mathe\"] = %q, erwartet Mathe", ergebnis["Mathe"])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
@@ -142,7 +143,7 @@ func TestStelleFaecherSicher_Mehrere(t *testing.T) {
 		WithArgs("Neues Fach").
 		WillReturnRows(pgxmock.NewRows([]string{"bezeichnung"}).AddRow("Neues Fach"))
 
-	ergebnis, err := StelleFaecherSicher(context.Background(), mock, []string{"Deutsch", "Neues Fach", " ", "Deutsch"})
+	ergebnis, err := repository.StelleFaecherSicher(context.Background(), mock, []string{"Deutsch", "Neues Fach", " ", "Deutsch"})
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

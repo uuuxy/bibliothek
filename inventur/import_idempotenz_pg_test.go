@@ -32,7 +32,7 @@ func TestListenimport_SchluesselVerhindertDoppeltenBestand(t *testing.T) {
 		}
 	})
 
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), pool: pool, metadaten: offlineMetadatenClient()}
 	schluessel := uuid.NewString()
 	sende := func(idempotenzSchluessel string) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func TestListenimport_AbgebrochenerLaufGibtDenSchluesselFrei(t *testing.T) {
 	// Der Browser geht, während der Server auf das Nachschlagen der ISBN wartet.
 	abgebrochen, abbrechen := context.WithCancel(ctx)
 	defer abbrechen()
-	brichtAb := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: metadatenUeber(&http.Client{
+	brichtAb := &Tueren{abfragen: NewTitelAbfragen(pool), pool: pool, metadaten: metadatenUeber(&http.Client{
 		Transport: &mockTransportCover{roundTripFunc: func(*http.Request) (*http.Response, error) {
 			abbrechen()
 			return nil, context.Canceled
@@ -129,7 +129,7 @@ func TestListenimport_AbgebrochenerLaufGibtDenSchluesselFrei(t *testing.T) {
 	}
 
 	zweiter := httptest.NewRecorder()
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), pool: pool, metadaten: offlineMetadatenClient()}
 	tueren.ExcelImport(zweiter, listenAnfrage(t, liste, schluessel))
 	if zweiter.Code != http.StatusOK {
 		t.Fatalf("derselbe Klick danach: %d %s, erwartet 200 — der Schlüssel blieb belegt", zweiter.Code, zweiter.Body.String())

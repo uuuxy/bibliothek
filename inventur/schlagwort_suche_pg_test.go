@@ -21,7 +21,7 @@ import (
 func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool)}
 
 	titel := func(name, barcode string) string {
 		t.Helper()

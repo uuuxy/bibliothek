@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -66,7 +67,7 @@ func (p *genanntProbe) lege() string {
 	ctx := context.Background()
 	p.nr++
 	fach := genanntVorsatz + "Fach alt"
-	if _, err := StelleFaecherSicher(ctx, p.pool, []string{fach}); err != nil {
+	if _, err := repository.StelleFaecherSicher(ctx, p.pool, []string{fach}); err != nil {
 		p.t.Fatalf("Fach anlegen: %v", err)
 	}
 	var id string
@@ -180,21 +181,21 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 		"listenpreis":             {19.9, "listenpreis", "19.90"},
 		"mehrjahresband":          {true, "mehrjahresband", "true"},
 	}
-	if len(beispiele) != len(titelFelder) {
-		t.Errorf("%d Beispiele für %d Felder der Tür", len(beispiele), len(titelFelder))
+	if len(beispiele) != len(titelFeldNamen()) {
+		t.Errorf("%d Beispiele für %d Felder der Tür", len(beispiele), len(titelFeldNamen()))
 	}
 
-	for _, feld := range titelFelder {
-		beispiel, ok := beispiele[feld.name]
+	for _, name := range titelFeldNamen() {
+		beispiel, ok := beispiele[name]
 		if !ok {
-			t.Errorf("Feld %q hat kein Beispiel", feld.name)
+			t.Errorf("Feld %q hat kein Beispiel", name)
 			continue
 		}
-		t.Run(feld.name, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			id := p.lege()
 			vorher := p.zeile(id)
 
-			if status, rumpf := p.aendere(id, map[string]any{feld.name: beispiel.wert}); status != http.StatusOK {
+			if status, rumpf := p.aendere(id, map[string]any{name: beispiel.wert}); status != http.StatusOK {
 				t.Fatalf("Status %d: %s", status, rumpf)
 			}
 

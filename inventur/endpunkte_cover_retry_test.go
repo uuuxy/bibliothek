@@ -76,7 +76,7 @@ func testListExternalCoversDatabaseError(t *testing.T) {
 
 	mock.ExpectQuery(coverQueryRegex).
 		WithArgs(300).
-		WillReturnError(errTest)
+		WillReturnError(errTestTuer)
 
 	anfrage := httptest.NewRequest(http.MethodGet, "/api/covers/external", nil)
 	w := httptest.NewRecorder()

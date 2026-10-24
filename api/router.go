@@ -230,6 +230,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 
 	inventurTueren := inventur.NewTueren(inventur.TuerenKonfig{
 		Abfragen:          inventurAbfragen,
+		Pool:              s.DB.Pool,
 		Metadaten:         metadaten,
 		VerlangeLesen:     s.verlangeRecht("view_books"),
 		VerlangeAendern:   s.verlangeRecht("edit_books"),

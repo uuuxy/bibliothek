@@ -413,7 +413,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 }
 
 func TestKlassensaetzeAendern(t *testing.T) {
-	errTest := errors.New("test error")
+	errTestTuer := errors.New("test error")
 
 	faelle := []struct {
 		name           string
@@ -452,7 +452,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			method: "POST",
 			rumpf:  `{"className": "5A", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectBegin().WillReturnError(errTest)
+				mock.ExpectBegin().WillReturnError(errTestTuer)
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   "Ein interner Serverfehler ist aufgetreten",

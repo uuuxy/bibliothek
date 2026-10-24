@@ -25,7 +25,7 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 	type antwort struct {
 		Data struct {
 			ID          string    `json:"id"`

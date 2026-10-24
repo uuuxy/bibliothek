@@ -85,7 +85,7 @@ func TestCoverAktualisieren_DatenbankfehlerIst500(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
-		WillReturnError(errTest)
+		WillReturnError(errTestTuer)
 
 	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
 	anfrage.SetPathValue("id", "00000000-0000-0000-0000-000000000000")

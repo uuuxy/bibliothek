@@ -30,7 +30,7 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 
 	lege := func(bestand int) *httptest.ResponseRecorder {
 		t.Helper()
