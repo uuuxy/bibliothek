@@ -29,6 +29,13 @@ func FuzzKlassenSchluessel_ParitaetZurSQLFunktion(f *testing.F) {
 		if !utf8.ValidString(in) || strings.ContainsRune(in, 0) {
 			t.Skip()
 		}
+		// Groß- und Kleinbuchstaben kennen Go und die C-Bibliothek der Datenbank (musl) nur in den
+		// lateinischen Blöcken gleich, und nur aus ihnen bestehen Klassennamen.
+		for _, r := range in {
+			if r > 0x024F && (r < 0x1E00 || r > 0x1EFF) {
+				t.Skip()
+			}
+		}
 		pool := pgtest.Pool(t)
 		var sql string
 		if err := pool.QueryRow(t.Context(), `SELECT klassen_normkey($1)`, in).Scan(&sql); err != nil {
