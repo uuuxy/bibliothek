@@ -1,6 +1,9 @@
 package jobs
 
 import (
+	"bytes"
+	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,5 +45,30 @@ func TestZeitplan_SicherungVorAufbewahrungVorProbe(t *testing.T) {
 func TestZeitplan_RechnetInUTC(t *testing.T) {
 	if ort := NewZeitplan(nil, nil).cron.Location(); ort != time.UTC {
 		t.Errorf("der Zeitplan rechnet in %s, erwartet UTC", ort)
+	}
+}
+
+// Ein Panic in einem Lauf des Zeitplans beendet nur diesen Lauf. Die Bibliothek fängt es nicht;
+// ohne die Hülle käme es hier durch und beendete im Betrieb den Server.
+func TestZeitplan_PanicBeendetNurDenLauf(t *testing.T) {
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
+	z := NewZeitplan(nil, nil)
+	if _, err := z.cron.AddFunc("@every 1h", func() { panic("simulierter Absturz") }); err != nil {
+		t.Fatalf("AddFunc: %v", err)
+	}
+	func() {
+		defer func() {
+			if p := recover(); p != nil {
+				t.Errorf("das Panic des Laufs kam durch: %v", p)
+			}
+		}()
+		z.cron.Entries()[0].WrappedJob.Run()
+	}()
+	if !strings.Contains(protokoll.String(), "level=ERROR") || !strings.Contains(protokoll.String(), "goroutine=zeitplan") {
+		t.Errorf("kein Fehler im Log zum Panic des Laufs:\n%s", protokoll.String())
 	}
 }

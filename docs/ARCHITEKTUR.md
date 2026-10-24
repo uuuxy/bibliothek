@@ -1754,7 +1754,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | **SMTP-Header-Injection**     | `mailservice.kopfzeilenWert` weist CR/LF in Kopfzeilenwerten ab — direkt an der Schreibstelle, nicht nur bei der Empfängerprüfung                                                    |
 | **Dekompressionsbombe**       | Bild-Uploads werden gegen aufgeblähte Pixelmaße geprüft, bevor dekodiert wird                                                                                                   |
 | **Token im Pfad**             | Der Bestätigungslink des Händlers trägt sein Geheimnis im Pfad; `maskiereToken` hält es aus der Logzeile (sonst wäre die Hash-Speicherung in der Datenbank entwertet)             |
-| **Panics**                    | `panikMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit      |
+| **Panics**                    | `panikMiddleware` für HTTP-Handler, `pkg/safego` für unbeaufsichtigte Goroutinen — ein ungefangenes Panic in einer Goroutine reißt in Go den **ganzen** Prozess mit. Der Zeitplan fängt jeden Lauf (`cron.WithChain`), eine Schleife je Lauf (`safego.FuehreAus`). Eine Goroutine, auf deren Ergebnis jemand wartet, fängt keins, der Wartende bliebe hängen: Der Prozess endet, und der nächste Start meldet den Abbruch |
 
 #### Endpunkte ohne Anmeldung (bewusst)
 

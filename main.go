@@ -37,6 +37,7 @@ import (
 	"bibliothek/jobs"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/logger"
+	"bibliothek/pkg/safego"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -95,9 +96,11 @@ func starteServer(port string, server *api.Server) *http.Server {
 // selben Vormittag, nicht erst am nächsten Tag.
 func starteBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 	go func() {
+		// Ein Panic beendet nur den einen Lauf; der Wächter meldet sich am nächsten Tag wieder.
+		alarm := func() { safego.FuehreAus("bereitschafts-alarm", func() { server.BereitschaftsAlarm(ctx) }) }
 		select {
 		case <-time.After(3 * time.Minute):
-			server.BereitschaftsAlarm(ctx)
+			alarm()
 		case <-ctx.Done():
 			return
 		}
@@ -107,7 +110,7 @@ func starteBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 		for {
 			select {
 			case <-ticker.C:
-				server.BereitschaftsAlarm(ctx)
+				alarm()
 			case <-ctx.Done():
 				slog.Info("Background Worker: Bereitschafts-Wächter gracefully stopped.")
 				return
@@ -120,9 +123,14 @@ func starteBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 // Start und danach alle 24 Stunden, neben den Läufen des Zeitplans.
 func starteDSGVOLauf(ctx context.Context, zeitplan *jobs.Zeitplan) {
 	go func() {
+		// Je Lauf gefangen: Ein Panic in der Anonymisierung hält die Löschung nicht auf, und der
+		// nächste Lauf kommt im Takt.
+		loesche := func() {
+			safego.FuehreAus("dsgvo-anonymisierung", func() { zeitplan.FuehreBearbeiterAnonymisierungAus(ctx) })
+			safego.FuehreAus("dsgvo-abgaenger", func() { zeitplan.FuehreAbgaengerLoeschungAus(ctx) })
+		}
 		slog.Info("Background Worker: Running initial GDPR cleanup on startup...")
-		zeitplan.FuehreBearbeiterAnonymisierungAus(ctx)
-		zeitplan.FuehreAbgaengerLoeschungAus(ctx)
+		loesche()
 
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
@@ -131,8 +139,7 @@ func starteDSGVOLauf(ctx context.Context, zeitplan *jobs.Zeitplan) {
 			select {
 			case <-ticker.C:
 				slog.Info("Background Worker: Running scheduled 24h GDPR cleanup...")
-				zeitplan.FuehreBearbeiterAnonymisierungAus(ctx)
-				zeitplan.FuehreAbgaengerLoeschungAus(ctx)
+				loesche()
 			case <-ctx.Done():
 				slog.Info("Background Worker: GDPR worker gracefully stopped.")
 				return

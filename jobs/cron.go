@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/safego"
 	"bibliothek/repository"
 
 	"github.com/robfig/cron/v3"
@@ -56,8 +57,14 @@ func NewZeitplan(pool db.Pool, protokollAbfragen systemProtokoll) *Zeitplan {
 		pool:              pool,
 		protokollAbfragen: protokollAbfragen,
 		leserLoeschung:    repository.NewLeserAbfragen(pool),
-		cron:              cron.New(cron.WithLocation(time.UTC)),
+		cron:              cron.New(cron.WithLocation(time.UTC), cron.WithChain(fangePanic)),
 	}
+}
+
+// fangePanic ist die Hülle jedes Laufs im Zeitplan: Die Bibliothek fängt kein Panic, und eines
+// beendete den ganzen Server. So endet nur der Lauf, und der nächste kommt zu seiner Zeit.
+func fangePanic(lauf cron.Job) cron.Job {
+	return cron.FuncJob(func() { safego.FuehreAus("zeitplan", lauf.Run) })
 }
 
 // Die drei Zeiten der Nacht hängen aneinander: erst die Sicherung, dann die Aufbewahrung des
