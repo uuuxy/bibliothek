@@ -1609,6 +1609,7 @@ liest, muss in Compose ankommen.
 | `security-scan.yml`   | Push, Pull Request, **Zeitplan**  | `govulncheck` über `scripts/govulncheck-gate.sh` (benannte Ausnahmen in `security/vuln-ausnahmen.json`) · `gosec` über `scripts/gosec-gate.sh` · `npm audit` · Trivy-Scan des **gebauten Images** samt Container-Smoke (läuft unprivilegiert? sind die Laufzeitwerkzeuge da? ist jedes Volume beschreibbar?) |
 | `docker-publish.yml`  | Push auf `main`, `v*.*.*`, manuell | Build und Push nach `ghcr.io/uuuxy/bibliothek`, `linux/amd64`                                                                                                                                 |
 | `release.yml`         | Tag `v*.*.*`                      | Prüft Muster, Zugehörigkeit zu `main` und **grüne CI**, dann GitHub-Release mit generierten Notes                                                                                             |
+| `fuzz.yml`            | Zeitplan (nachts), manuell        | Je Fuzz-Test 15 Minuten `go test -fuzz`, die Ziele an der Datenbank mit Postgres-Dienst und einem Arbeitsprozess; ein Fund macht den Lauf rot                                                 |
 
 Dazu lokal: `scripts/install-hooks.sh` installiert pre-commit (Formatierung, ESLint,
 `golangci-lint`) und pre-push (Go-Tests, `golangci-lint`, `svelte-check`, Vitest,
@@ -2216,10 +2217,13 @@ sieht.
   `internal/lusd/klassen_schluessel_pg_test.go`). Ein Panic fangen die Middleware, `pkg/safego`
   und `pkg/xlsxgrenze` ab; eine Suche nur danach findet hier wenig. Ohne `-fuzz` laufen die
   Startwerte und die Funde unter `testdata/fuzz` des Pakets. Gesucht wird je Ziel mit
-  `go test -run '^$' -fuzz '^FuzzName$' -fuzztime 10m ./<paket>/`; ein Fund landet als Datei unter
-  `testdata/fuzz` und kommt mit der Korrektur ins Repository. Die Ziele an der Datenbank brauchen
-  `-parallel 1`, weil `internal/pgtest` seine Sperre je Prozess bis zum Ende hält und ein zweiter
-  Arbeitsprozess für immer wartete. Am Arbeitsplatz bekommen sie eine eigene Datenbank
+  `go test -run '^$' -fuzz '^FuzzName$' -fuzztime 10m ./<paket>/`, nachts je Ziel 15 Minuten in
+  `.github/workflows/fuzz.yml`. Ein Fund landet als Datei unter `testdata/fuzz` (in der CI nennt
+  die Meldung die Eingabe) und kommt als Startwert mit der Korrektur ins Repository. Die Ziele an
+  der Datenbank brauchen `-parallel 1`, weil `internal/pgtest` seine Sperre je Prozess bis zum
+  Ende hält und ein zweiter Arbeitsprozess für immer wartete, dazu `-fuzzminimizetime 5s`: Go
+  verkleinert jede Eingabe mit neuer Abdeckung, mit der Vorgabe bis zu 60 s, und zählt diese Zeit
+  nicht als Fortschritt. Am Arbeitsplatz bekommen sie eine eigene Datenbank
   (`CREATE DATABASE`, danach entfernen): Die Sperre gilt je Datenbank, und auf der gemeinsamen
   hielte der Lauf die Tests anderer Sitzungen auf.
 - **Eine Migration, die Daten ändert, wird mit ihrer echten Datei geprüft:** aus `migrations/`

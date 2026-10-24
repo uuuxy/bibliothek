@@ -1,0 +1,68 @@
+name: Fuzz
+
+# Sucht mit den Fuzz-Tests nach Eingaben, an denen Go und Datenbank verschieden rechnen oder eine
+# Normalform beim zweiten Durchgang noch umschreibt (docs/ARCHITEKTUR.md 8.14). Ein Fund macht den
+# Lauf rot, die Meldung nennt die Eingabe.
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ziel:
+          - { name: FuzzNormalform_ZweimalIstEinmal, paket: ./pkg/isbnutil/, datenbank: false }
+          - { name: FuzzKlassenSchluessel_ZweimalIstEinmal, paket: ./internal/lusd/, datenbank: false }
+          - { name: FuzzISBN_NormalformGoUndSQLSindGleich, paket: ./repository/, datenbank: true }
+          - { name: FuzzKlassenSchluessel_ParitaetZurSQLFunktion, paket: ./internal/lusd/, datenbank: true }
+    env:
+      TEST_DATABASE_URL: postgres://postgres@localhost:5432/bibliothek_test?sslmode=disable
+    # Wie in ci.yml: trust statt eines Passworts, der Container lebt nur für diesen Job.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: bibliothek_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go.mod'
+
+      # Ohne TEST_DATABASE_URL überspränge sich jede Eingabe an der Datenbank, und der Lauf wäre grün.
+      - name: Datenbank gesetzt
+        if: matrix.ziel.datenbank
+        run: go test -count=1 -run '^TestDBTestsLaufenInCI$' ./db/
+
+      # An der Datenbank ein Arbeitsprozess: internal/pgtest hält seine Sperre je Prozess bis zum Ende.
+      # Verkleinern höchstens 5 s je Eingabe: Mit der Vorgabe von 60 s stünden die Ziele an der
+      # Datenbank in den ersten Minuten meist still.
+      - name: Fuzzen
+        env:
+          ZIEL: ${{ matrix.ziel.name }}
+          PAKET: ${{ matrix.ziel.paket }}
+          PARALLEL: ${{ matrix.ziel.datenbank && '1' || '4' }}
+        run: go test -run '^$' -fuzz "^${ZIEL}\$" -fuzztime 15m -fuzzminimizetime 5s -parallel "$PARALLEL" "$PAKET"

@@ -33,6 +33,7 @@ func TestPostgresMajorUeberallGleich(t *testing.T) {
 			imagePin,
 			regexp.MustCompile(`PG_MAJOR=(\d+)`),
 		}},
+		{"../.github/workflows/fuzz.yml", []*regexp.Regexp{imagePin}},
 		{"../Dockerfile", []*regexp.Regexp{
 			regexp.MustCompile(`postgresql(\d+)-client`),
 		}},
