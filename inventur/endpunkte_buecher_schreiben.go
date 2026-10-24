@@ -47,18 +47,18 @@ func ListenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
 // speichereNeuenTitel legt das Buch an und setzt buch.ID. anderesMedium ist die Antwort der
 // Maske auf die Frage nach dem gleichnamigen Titel. ok=false: die Fehlerantwort (409 bei
 // vergebener ISBN oder gleichnamigem Titel, sonst 400) wurde bereits geschrieben.
-func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseWriter, buch *Titel, anderesMedium bool) bool {
+func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseWriter, buch *repository.KatalogTitel, anderesMedium bool) bool {
 	anlegen := t.abfragen.LegeTitelAn
 	if anderesMedium {
-		anlegen = t.abfragen.legeTitelAlsAnderesMediumAn
+		anlegen = t.abfragen.LegeTitelAlsAnderesMediumAn
 	}
 	erstellteID, fehler := anlegen(ctx, *buch)
 	if fehler != nil {
-		if errors.Is(fehler, errISBNDoppelt) {
+		if errors.Is(fehler, repository.ErrISBNDoppelt) {
 			schreibeDubletteISBN(antwort, fehler)
 			return false
 		}
-		var gleichnamig *dubletteTitel
+		var gleichnamig *repository.DubletteTitel
 		if errors.As(fehler, &gleichnamig) {
 			schreibeDubletteTitel(antwort, gleichnamig)
 			return false
@@ -76,7 +76,7 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 // Exemplare" der Titelliste, das sagt die Meldung dazu. Der Rückfall ohne Titel ist die
 // Verletzung des UNIQUE-Index bei zwei gleichzeitigen Anfragen (handleDbError).
 func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
-	var dublette *dubletteISBN
+	var dublette *repository.DubletteISBN
 	if !errors.As(fehler, &dublette) {
 		schreibeFehler(antwort, http.StatusConflict, "Einen Titel mit dieser ISBN gibt es bereits")
 		return
@@ -98,7 +98,7 @@ func vorhandenAlsAntwort(id, titel string, hatExemplar bool) map[string]any {
 // schreibeDubletteTitel antwortet mit 409 und nennt unter „vorhanden" den Titel, der ohne ISBN
 // gleich heißt. „gleicherTitel" sagt der Maske, dass sie fragen und nach der Antwort „anderes
 // Medium" noch einmal schicken darf; eine vergebene ISBN lässt sich so nicht übergehen.
-func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *dubletteTitel) {
+func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *repository.DubletteTitel) {
 	schreibeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":         gleichnamig.Meldung(),
 		"vorhanden":     vorhandenAlsAntwort(gleichnamig.ID, gleichnamig.Titel, gleichnamig.HatExemplar),
@@ -151,7 +151,7 @@ func (t *Tueren) TitelLoeschen(antwort http.ResponseWriter, anfrage *http.Reques
 		return
 	}
 
-	if fehler := t.abfragen.LoescheTitel(anfrage.Context(), eingabe.IDs); fehler != nil {
+	if fehler := t.abfragen.LoescheTitelSamtAusleihen(anfrage.Context(), eingabe.IDs); fehler != nil {
 		if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
 			schreibeFehler(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden")
 			return
@@ -178,11 +178,11 @@ func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request
 	if !pruefeTitelEingabe(antwort, eingabe) {
 		return
 	}
-	if fehler := pruefeJahrgangsSpanne(eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
+	if fehler := repository.PruefeJahrgangsSpanne(eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
 		schreibeFehler(antwort, http.StatusBadRequest, meldungJahrgangsSpanne)
 		return
 	}
-	if fehler := pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
+	if fehler := repository.PruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
 		schreibeFehler(antwort, http.StatusBadRequest, meldungMehrjahresband)
 		return
 	}
@@ -196,7 +196,7 @@ func (t *Tueren) TitelAnlegen(antwort http.ResponseWriter, anfrage *http.Request
 		return
 	}
 
-	buch := Titel{
+	buch := repository.KatalogTitel{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),
 		Fach:                    strings.TrimSpace(eingabe.Fach),
 		Zweig:                   strings.TrimSpace(eingabe.Schulzweig),

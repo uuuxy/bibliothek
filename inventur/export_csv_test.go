@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // exportSpalten sind die Spalten der Export-Abfrage in ihrer Reihenfolge.
@@ -23,7 +25,7 @@ func TestCSVExport(t *testing.T) {
 		}
 		defer mock.Close()
 
-		abfragen := NewTitelAbfragen(mock)
+		abfragen := repository.NewTitelAbfragen(mock)
 		tueren := &Tueren{abfragen: abfragen}
 
 		zeilen := pgxmock.NewRows(exportSpalten).
@@ -31,7 +33,7 @@ func TestCSVExport(t *testing.T) {
 			AddRow("=Buch 2", "", "", "", 0, "", "", "", "", "", "", "-Keller", "") // Formelschutz: Titel und Standort
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
-			WithArgs(exportSchlagwortTrenner).
+			WithArgs(repository.ExportSchlagwortTrenner).
 			WillReturnRows(zeilen)
 
 		anfrage := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
@@ -89,11 +91,11 @@ func TestCSVExport(t *testing.T) {
 		}
 		defer mock.Close()
 
-		abfragen := NewTitelAbfragen(mock)
+		abfragen := repository.NewTitelAbfragen(mock)
 		tueren := &Tueren{abfragen: abfragen}
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
-			WithArgs(exportSchlagwortTrenner).
+			WithArgs(repository.ExportSchlagwortTrenner).
 			WillReturnError(errors.New("db error"))
 
 		anfrage := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
@@ -128,7 +130,7 @@ func TestCSVExport(t *testing.T) {
 		}
 		defer mock.Close()
 
-		abfragen := NewTitelAbfragen(mock)
+		abfragen := repository.NewTitelAbfragen(mock)
 		tueren := &Tueren{abfragen: abfragen}
 
 		zeilen := pgxmock.NewRows(exportSpalten).
@@ -136,7 +138,7 @@ func TestCSVExport(t *testing.T) {
 			RowError(0, errors.New("connection lost"))
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
-			WithArgs(exportSchlagwortTrenner).
+			WithArgs(repository.ExportSchlagwortTrenner).
 			WillReturnRows(zeilen)
 
 		anfrage := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)

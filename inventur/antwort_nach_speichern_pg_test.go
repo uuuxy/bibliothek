@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Die Antwort auf Anlegen und Ändern ist der Titel, wie er gespeichert ist, samt Bestand.
@@ -25,7 +26,7 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 	type antwort struct {
 		Data struct {
 			ID          string    `json:"id"`

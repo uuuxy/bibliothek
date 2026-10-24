@@ -15,7 +15,7 @@ import (
 // Der Standort eines Exemplars: wo es steht, wenn nicht an
 // seinem Platz nach der Signatur. Die Übernahme aus Littera schreibt ihn beim Anlegen
 // (internal/littera), jedes andere neue Exemplar erbt ihn von den Exemplaren seines Titels
-// (SQLGeerbterStandort); von Hand wird er geändert wie das Eigentum: Exemplare eines Titels
+// (sqlGeerbterStandort); von Hand wird er geändert wie das Eigentum: Exemplare eines Titels
 // markieren, einen Wert für alle setzen. Ein einzelnes Exemplar ist eine Liste mit einem
 // Eintrag.
 //
@@ -51,7 +51,7 @@ type StandortZahl struct {
 	Anzahl   int    `json:"anzahl"`
 }
 
-// SQLGeerbterStandort ist der Standort, den ein neues Exemplar eines Titels bekommt: der, den
+// sqlGeerbterStandort ist der Standort, den ein neues Exemplar eines Titels bekommt: der, den
 // alle Exemplare des Titels im Bestand tragen. Trägt eines keinen oder einen anderen, oder hat
 // der Titel kein Exemplar im Bestand, ist der Ausdruck NULL, und das neue steht nach der
 // Signatur. Jeder Weg, der ein Exemplar zu einem Titel anlegt, setzt ihn als Wert der Spalte
@@ -59,19 +59,19 @@ type StandortZahl struct {
 //
 // titel ist die Kennung des Titels in der umgebenden Anweisung, als Parameter oder Spalte.
 // Der Alias e gehört hier den vorhandenen Exemplaren: Eine Spalte über e bände sich an sie.
-func SQLGeerbterStandort(titel string) string {
+func sqlGeerbterStandort(titel string) string {
 	return `(SELECT min(e.standort) FROM buecher_exemplare e
 		WHERE e.titel_id = ` + titel + ` AND ` + SQLExemplarImBestand + `
 		HAVING count(*) = count(e.standort) AND count(DISTINCT e.standort) = 1)`
 }
 
-// ladeGeerbteStandorte liest SQLGeerbterStandort je Titel für den Weg, der seine Zeilen ohne
+// ladeGeerbteStandorte liest sqlGeerbterStandort je Titel für den Weg, der seine Zeilen ohne
 // SQL-Ausdruck schreibt (CopyFrom der Bestellung). Der Schlüssel ist die Kennung, wie der
 // Aufrufer sie schreibt; ein Titel ohne Erbe fehlt in der Antwort.
 func ladeGeerbteStandorte(ctx context.Context, q Datenbank, titelIDs []string) (map[string]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT roh, standort
-		FROM (SELECT u.roh, `+SQLGeerbterStandort("u.roh::uuid")+` AS standort
+		FROM (SELECT u.roh, `+sqlGeerbterStandort("u.roh::uuid")+` AS standort
 		      FROM (SELECT DISTINCT unnest($1::text[]) AS roh) u) erbe
 		WHERE standort IS NOT NULL`, titelIDs)
 	if err != nil {
@@ -236,11 +236,11 @@ func LadeExemplarStandorte(ctx context.Context, q Datenbank) ([]StandortZahl, er
 	return liste, nil
 }
 
-// LadeStandorteDerTitel zählt je Titel die Standorte seiner Exemplare im Bestand, für die Spalte
+// ladeStandorteDerTitel zählt je Titel die Standorte seiner Exemplare im Bestand, für die Spalte
 // „Standort" der Titel-Verwaltung. Dieselbe Grenze wie die Zahl „Bestand" daneben
 // (SQLExemplarImBestand): Die Zahlen einer Zeile sind höchstens so groß wie ihr Bestand. Ein
 // Titel ohne Standort steht nicht in der Antwort.
-func LadeStandorteDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]StandortZahl, error) {
+func ladeStandorteDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]StandortZahl, error) {
 	jeTitel := make(map[string][]StandortZahl)
 	if len(titelIDs) == 0 {
 		return jeTitel, nil

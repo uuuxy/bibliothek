@@ -225,7 +225,7 @@ func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
 	// Ein Unterordner uploads/fotos entsteht hier nicht: Schülerfotos liegen verschlüsselt
 	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
 	// was direkt in uploads/ liegt (inventur/api_routen.go).
-	inventurAbfragen := inventur.NewTitelAbfragen(s.DB.Pool)
+	inventurAbfragen := repository.NewTitelAbfragen(s.DB.Pool)
 	metadaten := katalogdienste.NewMetadatenClient()
 
 	inventurTueren := inventur.NewTueren(inventur.TuerenKonfig{

@@ -58,7 +58,7 @@ var lesepfadeGeprueft = map[string]struct {
 	// Die übrigen Stellen.
 	"repository/leser_pruefungen.go":        {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
 	"internal/littera/schreiber.go":         {1, "Zielbestand-Probe zählt die littera:-Herkunft, die nur schreibeSchueler setzt; Kollegen aus Littera werden Konten (benutzer)"},
-	"inventur/datenbank_klassen.go":         {2, "Klassengruppen der Inventur — Klassen haben nur Schüler"},
+	"repository/klassensaetze.go":           {2, "Klassengruppen der Inventur — Klassen haben nur Schüler"},
 	"repository/betriebszustand.go":         {3, "Demo-Zähler (scripts/seed_demo.sql legt nur Schüler an, Präfix DEMO-S-), Klassenliste und Wächter Ehemalige (ist_abgaenger gibt es nur bei Schülern)"},
 	"repository/lmf_plan.go":                {1, "Klassen im LMF-Plan — Klassen haben nur Schüler"},
 	"repository/lmf_termine.go":             {1, "Fristübernahme je KLASSE für Lernmittel; ein Kollege hat keine Klasse und leiht auf Dauer (wie repository/ausleihe_frist.go)"},
@@ -67,7 +67,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/abgaenger_liste.go":         {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
 	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs.
-	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie inventur/datenbank_klassen.go, und der Aufruf steht nur hinter istSchueler()"},
+	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie repository/klassensaetze.go, und der Aufruf steht nur hinter istSchueler()"},
 	// Prüfhilfe der Tests, kein Lesepfad des Programms.
 	"internal/testdaten/leser.go": {1, "LadeSchuelerStatus lädt den Stand eines Schülers für die Tests zu LUSD-Abgleich und Versetzung — beide kennen nur Schüler"},
 }

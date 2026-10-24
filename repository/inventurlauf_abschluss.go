@@ -33,7 +33,7 @@ func (a *InventurAbfragen) SperreLaufFuerAbschluss(ctx context.Context, id strin
 // anderer Lauf erfasst hat, bleibt unberührt, weil jede Erfassung an ihrem Lauf hängt.
 //
 // bearbeiterID nennt, wer abschließt: Der Lauf trägt nur, wer ihn begonnen hat, und jedes als
-// Verlust gebuchte Exemplar steht mit dieser Person im Protokoll (ProtokolliereAussonderung).
+// Verlust gebuchte Exemplar steht mit dieser Person im Protokoll (protokolliereAussonderung).
 func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, bereich InventurBereich, bearbeiterID string) (int, error) {
 	if bearbeiterID == "" {
 		return 0, ErrAussonderungOhneBearbeiter
@@ -85,7 +85,7 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)
 	}
 	verloren := len(verlorenIDs)
-	if err := ProtokolliereAussonderung(ctx, a.db, verlorenIDs, bearbeiterID, AussonderungsWegInventur,
+	if err := protokolliereAussonderung(ctx, a.db, verlorenIDs, bearbeiterID, AussonderungsWegInventur,
 		map[string]any{"inventur_session_id": laufID}); err != nil {
 		return 0, err
 	}

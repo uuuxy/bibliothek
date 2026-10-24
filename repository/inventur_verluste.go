@@ -118,7 +118,7 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 	}
 
 	rows, err := a.db.Query(ctx, `
-		SELECT e.id, e.barcode_id, coalesce(e.lmf_barcode, ''), t.titel, `+SQLWarImBestand+`
+		SELECT e.id, e.barcode_id, coalesce(e.lmf_barcode, ''), t.titel, `+sqlWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.id = ANY($1) AND e.ist_ausgesondert = true AND e.aussonderung_grund = 'VERLUST'
@@ -160,7 +160,7 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 
 	// Die abhängigen Zeilen zuerst: ausleihen.exemplar_id und schadensfaelle.exemplar_id stehen
 	// auf ON DELETE RESTRICT. Reihenfolge wie beim Löschen eines Titels
-	// (inventur/titel_loeschen.go): Schadensfälle, Ausleihen, dann das Exemplar. Was hier
+	// (repository/titel_loeschen_samt_ausleihen.go): Schadensfälle, Ausleihen, dann das Exemplar. Was hier
 	// fällt, ist erledigt; offene Vorgänge hat pruefeVerlusteLoeschbar abgewiesen. Der
 	// Fehlbestandsbericht behält seine Abschrift, und der Barcode wird wieder frei:
 	// buecher_exemplare.barcode_id ist ohne Teilindex eindeutig, eine stehengebliebene Zeile
@@ -186,7 +186,7 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 			"barcode_id": s.barcode, "titel": s.titel,
 			"action": ProtokollAktionVerlustEndgueltigGeloescht, ProtokollDetailWarImBestand: s.warImBestand,
 		}
-		MerkeLMFBarcode(details, s.lmfBarcode)
+		merkeLMFBarcode(details, s.lmfBarcode)
 		if err := schreibeProtokollEintrag(ctx, a.db, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: s.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER",

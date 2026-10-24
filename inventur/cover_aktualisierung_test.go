@@ -18,6 +18,8 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // mockTransportCover ist eine eigene Attrappe des Transports dieses Tests.
@@ -51,7 +53,7 @@ func TestCoverAktualisieren_TitelFehlt(t *testing.T) {
 	}
 	defer mock.Close()
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
@@ -81,11 +83,11 @@ func TestCoverAktualisieren_DatenbankfehlerIst500(t *testing.T) {
 	}
 	defer mock.Close()
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs("00000000-0000-0000-0000-000000000000").
-		WillReturnError(errTestTuer)
+		WillReturnError(errTest)
 
 	anfrage := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
 	anfrage.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
@@ -120,7 +122,7 @@ func TestCoverAktualisieren_SucheScheitert(t *testing.T) {
 	metadaten := metadatenUeber(&http.Client{Transport: mockTr})
 
 	tueren := &Tueren{
-		abfragen:  NewTitelAbfragen(mock),
+		abfragen:  repository.NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
@@ -196,7 +198,7 @@ func TestCoverAktualisieren_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	metadaten := metadatenUeber(&http.Client{Transport: mockTr})
 
 	tueren := &Tueren{
-		abfragen:  NewTitelAbfragen(mock),
+		abfragen:  repository.NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 
@@ -287,7 +289,7 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 	metadaten := metadatenUeber(&http.Client{Transport: mockTr})
 
 	tueren := &Tueren{
-		abfragen:  NewTitelAbfragen(mock),
+		abfragen:  repository.NewTitelAbfragen(mock),
 		metadaten: metadaten,
 	}
 

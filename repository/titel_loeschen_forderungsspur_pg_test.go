@@ -6,7 +6,6 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/inventur"
 	"bibliothek/repository"
 )
 
@@ -64,7 +63,7 @@ func TestLoescheTitel_NurOffeneForderungHinterlaesstSpur(t *testing.T) {
 	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, einzeln, bearbeiter); err != nil {
 		t.Fatalf("einzelnen Titel löschen: %v", err)
 	}
-	if err := inventur.NewTitelAbfragen(pool).LoescheTitel(ctx, []string{gesammelt}); err != nil {
+	if err := repository.NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{gesammelt}); err != nil {
 		t.Fatalf("Sammellöschung: %v", err)
 	}
 

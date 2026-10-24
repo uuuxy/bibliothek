@@ -58,11 +58,11 @@ type BestellbedarfAuflage struct {
 // sobald genug bestellt ist. t.meldebestand steht nur zur Anzeige dabei.
 //
 // Gezählt wird am Buch: Auflagen mit derselben werk_id bilden eine Zeile, ihre Summe steht
-// gegen die Schwelle, und gezeigt wird die neueste Auflage (SQLNeuesteAuflageZuerst), denn die
+// gegen die Schwelle, und gezeigt wird die neueste Auflage (sqlNeuesteAuflageZuerst), denn die
 // wird bestellt. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein eigenes Buch. Die
 // Bedingung des Topfs (topfBedingung) gilt je Auflage, bevor gezählt wird.
 func LadeBestellbedarf(ctx context.Context, db Datenbank, topfBedingung string, schwelle int) ([]Bestellbedarf, error) {
-	neueste := SQLNeuesteAuflageZuerst("t")
+	neueste := sqlNeuesteAuflageZuerst("t")
 	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang; danach wird je Buch
 	// summiert, und DISTINCT ON wählt die neueste Auflage je Buch. Ein zweites LATERAL je Zeile
 	// liefe für jede Zeile einmal über alle Titel: gemessen über 6.048 Titel 810 bis 825 ms

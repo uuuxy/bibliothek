@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/internal/tuertest"
+	"bibliothek/repository"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -53,7 +54,7 @@ func TestTitelLoeschen(t *testing.T) {
 	}
 	defer mock.Close()
 
-	abfragen := NewTitelAbfragen(mock)
+	abfragen := repository.NewTitelAbfragen(mock)
 	tueren := &Tueren{abfragen: abfragen}
 
 	t.Run("Invalid JSON", func(t *testing.T) {
@@ -83,7 +84,7 @@ func TestTitelLoeschen(t *testing.T) {
 		// Transaktion, die Befehle des Löschens liefern ihre Spur über RETURNING). Die Reihenfolge selbst
 		// prüft titel_loeschen_test.go; hier zählt, dass die Tür mit 200 antwortet.
 		mock.ExpectBegin()
-		erwarteAuflagenSperreTuer(mock, pgxmock.AnyArg())
+		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
 
 		// Barcode-Snapshots vor den DELETEs (Theken-Auskunft; hier: keine Exemplare).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
@@ -140,7 +141,7 @@ func TestTitelAnlegen(t *testing.T) {
 	}
 	defer mock.Close()
 
-	abfragen := NewTitelAbfragen(mock)
+	abfragen := repository.NewTitelAbfragen(mock)
 
 	// Attrappe des HTTP-Clients für den MetadatenClient.
 	mockHTTP := &http.Client{
@@ -213,11 +214,11 @@ func TestTitelAnlegen(t *testing.T) {
 			"coverUrl": "test.jpg"
 		}`
 
-		erwarteFachBekanntTuer(mock, "Math") // auf dem Pool, vor der Tx
+		erwarteFachBekannt(mock, "Math") // auf dem Pool, vor der Tx
 		// LegeTitelAn ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
 		// wird gleicheBestandAb nicht aufgerufen.
 		mock.ExpectBegin()
-		erwarteKeineDubletteTuer(mock)
+		erwarteKeineDublette(mock)
 		mock.ExpectQuery(`INSERT INTO buecher_titel`).
 			WithArgs(
 				"978-3-16-148410-0", // isbn

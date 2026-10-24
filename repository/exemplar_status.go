@@ -47,7 +47,7 @@ func (a *KatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string, b
 // und der Ersatzbetrag stiege wieder auf den vollen Zeitwert.
 //
 // Wird ein Exemplar dabei ausgesondert, steht es mit der Person im Protokoll
-// (ProtokolliereAussonderung), in derselben Transaktion wie der Wechsel; ohne bearbeiterID
+// (protokolliereAussonderung), in derselben Transaktion wie der Wechsel; ohne bearbeiterID
 // lehnt es mit ErrAussonderungOhneBearbeiter ab. Wer ein schon
 // ausgesondertes Exemplar noch einmal speichert, etwa mit geänderter Notiz, schreibt keinen
 // zweiten Eintrag.
@@ -101,7 +101,7 @@ func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, 
 		return ErrExemplarNichtGefunden
 	}
 	if istAusgesondert && !warAusgesondert {
-		if err := ProtokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil); err != nil {
+		if err := protokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil); err != nil {
 			return err
 		}
 	}

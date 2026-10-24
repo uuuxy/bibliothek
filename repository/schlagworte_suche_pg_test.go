@@ -8,8 +8,8 @@ import (
 )
 
 // Suche über Schlagworte. Zwei Formen derselben Regel: die Bedingung
-// am Server (SQLTitelUeberSchlagwort — Titel-Verwaltung, öffentlicher Katalog, Portal) und
-// die Wörter je Titel für die Suche im Browser (LadeSuchwoerterDerTitel — Medienkatalog „Suche
+// am Server (sqlTitelUeberSchlagwort — Titel-Verwaltung, öffentlicher Katalog, Portal) und
+// die Wörter je Titel für die Suche im Browser (ladeSuchwoerterDerTitel — Medienkatalog „Suche
 // & Filter"). Beide müssen dieselben Titel finden, sonst fände der eine Reiter des
 // Medienkatalogs etwas anderes als der andere. Und beide müssen den Verweis auflösen:
 // „Tierfantasy" findet, was „Fantasy" trägt.
@@ -34,7 +34,7 @@ func TestSchlagwortSuche_ServerUndBrowserFindenDieselbenTitel(t *testing.T) {
 		t.Fatalf("Verweis anlegen: %v", err)
 	}
 
-	woerter, err := LadeSuchwoerterDerTitel(ctx, pool, []string{drachen, krabat, mathe})
+	woerter, err := ladeSuchwoerterDerTitel(ctx, pool, []string{drachen, krabat, mathe})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestSchlagwortSuche_ServerUndBrowserFindenDieselbenTitel(t *testing.T) {
 	amServer := func(muster string) []string {
 		t.Helper()
 		rows, err := pool.Query(ctx, `SELECT bt.titel FROM buecher_titel bt WHERE `+
-			SQLTitelUeberSchlagwort("bt", "$1")+` ORDER BY bt.titel`, muster)
+			sqlTitelUeberSchlagwort("bt", "$1")+` ORDER BY bt.titel`, muster)
 		if err != nil {
 			t.Fatalf("Bedingung %q: %v", muster, err)
 		}

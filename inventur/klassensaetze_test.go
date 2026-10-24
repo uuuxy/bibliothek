@@ -13,6 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 func TestKlassensaetze(t *testing.T) {
@@ -30,7 +32,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", klassensatzMindestLeser).
+					WithArgs("", repository.KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}).AddRow(
@@ -48,7 +50,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", klassensatzMindestLeser).
+					WithArgs("", repository.KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}).AddRow(
@@ -65,7 +67,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", klassensatzMindestLeser).
+					WithArgs("", repository.KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}))
@@ -79,7 +81,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "desc",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("F", klassensatzMindestLeser).
+					WithArgs("F", repository.KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}))
@@ -93,7 +95,7 @@ func TestKlassensaetze(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", klassensatzMindestLeser).
+					WithArgs("", repository.KlassensatzMindestLeser).
 					WillReturnError(errors.New("db error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -109,7 +111,7 @@ func TestKlassensaetze(t *testing.T) {
 			}
 			defer mock.Close()
 
-			abfragen := NewTitelAbfragen(mock)
+			abfragen := repository.NewTitelAbfragen(mock)
 			tueren := &Tueren{abfragen: abfragen}
 
 			f.setupMock(mock)
@@ -238,7 +240,7 @@ func TestKlassensatzGruppeLoeschen(t *testing.T) {
 	}
 	defer mock.Close()
 
-	abfragen := NewTitelAbfragen(mock)
+	abfragen := repository.NewTitelAbfragen(mock)
 	tueren := &Tueren{abfragen: abfragen}
 
 	t.Run("No class name provided", func(t *testing.T) {
@@ -288,7 +290,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mockPool)}
 
 		anfrage := httptest.NewRequest(http.MethodPost, "/add-class-books", bytes.NewBufferString("invalid json"))
 		rr := httptest.NewRecorder()
@@ -307,7 +309,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mockPool)}
 
 		nutzlast := map[string]any{
 			"classNames": []string{"   ", ""},
@@ -334,7 +336,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mockPool)}
 
 		nutzlast := map[string]any{
 			"classNames": []string{"ThisClassNameIsWayTooLongToBeValidAndShouldBeRejected"},
@@ -361,7 +363,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 		}
 		defer mockPool.Close()
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mockPool)}
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errors.New("db error"))
 
 		nutzlast := map[string]any{
@@ -391,7 +393,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 
 		mockPool.ExpectExec("INSERT INTO class_books").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mockPool)}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mockPool)}
 
 		nutzlast := map[string]any{
 			"classNames": []string{"10A", "10B"},
@@ -413,7 +415,7 @@ func TestKlassensaetzeZuordnen(t *testing.T) {
 }
 
 func TestKlassensaetzeAendern(t *testing.T) {
-	errTestTuer := errors.New("test error")
+	errTest := errors.New("test error")
 
 	faelle := []struct {
 		name           string
@@ -452,7 +454,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			method: "POST",
 			rumpf:  `{"className": "5A", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectBegin().WillReturnError(errTestTuer)
+				mock.ExpectBegin().WillReturnError(errTest)
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   "Ein interner Serverfehler ist aufgetreten",
@@ -504,7 +506,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			}
 			defer mock.Close()
 
-			abfragen := NewTitelAbfragen(mock)
+			abfragen := repository.NewTitelAbfragen(mock)
 			tueren := &Tueren{abfragen: abfragen}
 
 			f.mockSetup(mock)

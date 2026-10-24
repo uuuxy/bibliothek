@@ -31,7 +31,7 @@ var koerperlicheLoeschungBestand = map[string]struct {
 }{
 	"repository/titel_loeschen.go": {2, "Titel löschen (einzeln): erst die Exemplare, dann der Titel. " +
 		"Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
-	"inventur/titel_loeschen.go": {1, "Titel löschen (Massenaktion): die Exemplare fallen per " +
+	"repository/titel_loeschen_samt_ausleihen.go": {1, "Titel löschen (Massenaktion): die Exemplare fallen per " +
 		"ON DELETE CASCADE. Spur je Exemplar in titel_loeschen_spur.go, ebenfalls ProtokollAktionTitelGeloescht."},
 	"repository/inventur_verluste.go": {1, "Verlust endgültig löschen (Inventur). " +
 		"Spur je Exemplar mit ProtokollAktionVerlustEndgueltigGeloescht."},

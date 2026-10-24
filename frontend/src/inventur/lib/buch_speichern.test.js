@@ -112,7 +112,7 @@ describe('buch_speichern: stehtInSicht', () => {
 });
 
 // Ohne Angabe liefert der Server für den Jahrgang 0 und 0 (Migration 162), für das
-// Erscheinungsjahr 0 (COALESCE in inventur/datenbank_buecher_leser.go). In der Maske stehen die
+// Erscheinungsjahr 0 (COALESCE in repository/titel_liste.go). In der Maske stehen die
 // Felder dann leer, und der Stand vom Öffnen trägt dasselbe: Ein unberührter Titel schickt nichts.
 describe('buch_speichern: titelFuerMaske', () => {
 	beforeEach(() => {

@@ -11,10 +11,11 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/repository"
 )
 
 // Ein neuer Titel ohne Bestandsangabe hat kein Exemplar und steht deshalb in keinem Katalog
-// (repository.SQLTitelHatExemplar). Wer dieselbe ISBN danach noch einmal anlegt, bekommt die
+// (repository.sqlTitelHatExemplar). Wer dieselbe ISBN danach noch einmal anlegt, bekommt die
 // Ablehnung der Dublettenkontrolle — und fand den Titel bis dahin über keine Suche. Die
 // Antwort nennt deshalb den Titel, seine Kennung und ob er ohne Exemplar ist: Die Maske
 // führt damit zu ihm.
@@ -30,7 +31,7 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 	loesche()
 	t.Cleanup(loesche)
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 
 	lege := func(bestand int) *httptest.ResponseRecorder {
 		t.Helper()

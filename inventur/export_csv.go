@@ -36,7 +36,7 @@ func (t *Tueren) CSVExport(w http.ResponseWriter, r *http.Request) {
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
 	// Nutzereingaben und dürfen beim Öffnen in Excel keine Formel auslösen (je Zeile).
-	err := t.abfragen.ladeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
+	err := t.abfragen.LadeTitelFuerCSVExport(ctx, kopf, func(zeile []string) error {
 		return csvSchreiber.Write(csvutil.EntschaerfeZeile(zeile))
 	})
 	csvSchreiber.Flush()

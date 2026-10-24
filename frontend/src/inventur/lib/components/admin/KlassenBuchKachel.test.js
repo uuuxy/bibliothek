@@ -4,7 +4,7 @@ import KlassenBuchKachel from './KlassenBuchKachel.svelte';
 
 // Die Kachel eines Klassensatzes mit gemischten Auflagen (docs/OFFEN.md 4.18, Stufe 5):
 // GetClassGroups liefert `auflagen` nur, wenn Kinder der Klasse eine andere Auflage als die der
-// Kachel haben (inventur/datenbank_klassen.go) — dann steht die Aufschlüsselung auf der Kachel.
+// Kachel haben (repository/klassensaetze.go) — dann steht die Aufschlüsselung auf der Kachel.
 const buch = (/** @type {any} */ extra = {}) => ({
 	id: 'neu',
 	isbn: '',

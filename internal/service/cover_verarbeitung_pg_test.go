@@ -224,7 +224,7 @@ func TestVerarbeiteCover_HandUploadWaehrendDesLaufsBleibt(t *testing.T) {
 			if !inDerAuswahl(t, pool, mc.ID) {
 				t.Fatal("Gegenprobe: Der Titel steht vor dem Hand-Upload nicht in der Auswahl — der Test misst nichts")
 			}
-			// Der Hand-Upload, wie ihn inventur.AendereTitelMetadaten schreibt.
+			// Der Hand-Upload, wie ihn repository.TitelAbfragen.AendereTitelMetadaten schreibt.
 			if _, err := pool.Exec(context.Background(),
 				`UPDATE buecher_titel SET cover_url = $2, cover_status = 'FOUND' WHERE id = $1`, mc.ID, handCover); err != nil {
 				t.Fatal(err)

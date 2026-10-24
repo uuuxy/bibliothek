@@ -11,8 +11,8 @@ import (
 
 // Ein gelöschtes Exemplar bleibt an der Theke über sein altes LMF-Etikett auffindbar: Beide
 // Türen dieses Pakets, die ein Exemplar endgültig löschen, schreiben das alte Etikett in ihre
-// Spur (MerkeLMFBarcode), und FindeThekenExemplare sucht dort. Die dritte Tür, die
-// Massenlöschung der Titel, prüft inventur/titel_loeschen_lmf_pg_test.go.
+// Spur (merkeLMFBarcode), und FindeThekenExemplare sucht dort. Die dritte Tür, die
+// Massenlöschung der Titel, prüft repository/titel_loeschen_lmf_pg_test.go.
 func TestAltesLMFEtikett_GeloeschtesExemplarBleibtAuffindbar(t *testing.T) {
 	pool := pgTestPool(t)
 	testdaten.LeereBestandsdaten(t, pool)

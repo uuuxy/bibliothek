@@ -79,15 +79,15 @@ type Abgangsbuch struct {
 	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 
-// SQLWarImBestand sagt, ob ein Exemplar je im Bestand war: Es trägt ein Zugangsdatum.
+// sqlWarImBestand sagt, ob ein Exemplar je im Bestand war: Es trägt ein Zugangsdatum.
 // Die Löschspuren vermerken dasselbe (ProtokollDetailWarImBestand).
-const SQLWarImBestand = `e.zugang_am IS NOT NULL`
+const sqlWarImBestand = `e.zugang_am IS NOT NULL`
 
 // sqlIstAbgang ist die Grenze beider Abfragen und der Verlustzahlen der Statistik:
 // ausgesondert und vorher im Bestand gewesen.
 // Ein bestelltes Exemplar, das nie eintraf und ausgebucht wurde, trägt kein Zugangsdatum
 // und steht damit in keinem der beiden Bücher.
-const sqlIstAbgang = `e.ist_ausgesondert = true AND ` + SQLWarImBestand
+const sqlIstAbgang = `e.ist_ausgesondert = true AND ` + sqlWarImBestand
 
 // LadeAbgangsbuch liest die Abgänge eines Zeitraums. `von` und `bis` sind Kalendertage der
 // Schule, beide einschließlich — der 15.9. gehört noch in das Halbjahr, das an ihm endet.

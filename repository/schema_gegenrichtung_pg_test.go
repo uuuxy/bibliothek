@@ -279,7 +279,7 @@ var checkBedingungenBestand = []string{
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_inv_session_scope",
 	// Migration 162: Die Spanne ist ganz gesetzt oder gar nicht, 1 bis
-	// 13, „von" nicht über „bis". Der Code kennt die Regel: inventur.pruefeJahrgangsSpanne weist
+	// 13, „von" nicht über „bis". Der Code kennt die Regel: PruefeJahrgangsSpanne weist
 	// beim Anlegen und beim Ändern mit einem Satz ab (400), beim Ändern am Stand nach der
 	// Änderung, weil die Maske nur die geänderten Felder schickt. Die übrigen Schreiber: Listen-
 	// und Scanner-Anlage schicken keinen Jahrgang (0 und 0 wird NULL); Katalog-Import,
@@ -438,7 +438,7 @@ var triggerBestand = []string{
 	// 157, auch eine Länge: Eine zehnstellige ISBN mit richtigem
 	// Prüfzeichen wird dreizehnstellig. Frage 12: Wer eine ISBN vergleicht, vergleicht die
 	// Normalform — Go über isbnutil.Normalform, SQL über isbn_normalform()
-	// (SQLTitelTraegtISBN, SQLSuchtextIstISBN); die Parität prüft
+	// (sqlTitelTraegtISBN, sqlSuchtextIstISBN); die Parität prüft
 	// repository/isbn_normalform_pg_test.go. Wer eine Zuordnung ISBN → Titel in Go führt (die
 	// Importe, die Übernahme), führt sie unter der Normalform, sonst trifft der zweite Titel
 	// erst den UNIQUE-Index.
@@ -447,7 +447,7 @@ var triggerBestand = []string{
 	// werden zusammengesetzt gespeichert (NFC) — die DNB liefert Umlaute zerlegt, und zerlegt
 	// fand keine eingetippte Suche den Titel (api/portal/opac_nfc_pg_test.go, am Rückbau rot). Frage 12:
 	// Wer einen gespeicherten Titeltext mit einem Wert aus Go vergleicht, muss ihn ebenfalls
-	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
+	// zusammensetzen; die DNB-Antwort tut das in katalogdienste.dekodiereMARC, die Schlagworte in
 	// repository.schlagwortNormalform, die Titelschlüssel beider Importe (Katalogisat und
 	// Listenimport) in repository.NormalisiereTitelSchluessel
 	// (internal/service/import_zeilen_nfc_pg_test.go). Die Signatur ist bewusst
@@ -460,7 +460,7 @@ var triggerBestand = []string{
 	// eingegebenen Text mit einem gespeicherten Titeltext vergleicht, bringt ihn in dieselbe
 	// Form — die Suchen und die Titelschlüssel der Importe über repository.TiteltextNormalform,
 	// die Dublettenkontrolle der Maske über titeltext_normalform()
-	// (inventur/dublettenkontrolle_pg_test.go). Dass Go und SQL dieselbe Form bilden, prüft
+	// (repository/dublettenkontrolle_pg_test.go). Dass Go und SQL dieselbe Form bilden, prüft
 	// repository/titeltext_normalform_pg_test.go an jedem Zeichen der ersten Unicode-Ebene.
 	"trg_titel_text_normalform @ buecher_titel",
 	// Migration 143: keine Kette von Verweisen, kein Titel an einem

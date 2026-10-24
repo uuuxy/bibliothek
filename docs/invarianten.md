@@ -108,7 +108,7 @@ Vorname, Nachname, Ausweisnummer und Klasse lehnt die Tür leer mit 400 ab
 | ISBN eindeutig (wo gesetzt), über alle Schreibweisen und beide Längen: Die Datenbank bringt jede geschriebene ISBN in eine Normalform — ohne Trennzeichen, eine zehnstellige mit richtigem Prüfzeichen dreizehnstellig (Migration 133 und 157) | 🟢 UNIQUE, Trigger `trg_titel_isbn_normalform` | `buecher_titel.isbn`, `repository/isbn_normalform_pg_test.go` |
 | Titeltexte (Titel, Untertitel, Autor, Verlag) in einer Form gespeichert: kein Leerraum am Rand, Leerraum in Folge ein Leerzeichen, Umlaute zusammengesetzt (Unicode NFC) — Littera führt Titel mit zwei Leerzeichen und mit geschütztem Leerzeichen, die DNB liefert Umlaute zerlegt; der getippte Suchtext traf sie nicht (Migration 154 und 160) | 🟢 Trigger `trg_titel_text_normalform` | `repository/titeltext_normalform_pg_test.go`, `inventur/titel_suche_leerraum_pg_test.go`, `api/portal/opac_nfc_pg_test.go` |
 | Exemplar-Barcode eindeutig                                                                                                                              | 🟢 UNIQUE NOT NULL                               | `buecher_exemplare.barcode_id`                                                         |
-| Systemvergebene Exemplarnummern aus EINER Quelle (`barcode_seq`, `B-`) — alle fünf Wege, kein zweiter Kreis (Migration 105), in einer Form: mindestens fünf Ziffern, eine längere Zahl ganz (`B-100000`) | 🟢 PG-Tests | `api/katalog/barcode_vergabe_pg_test.go`, `inventur/bestandskorrektur_nummernkreis_pg_test.go`, `internal/littera/schreiber_pg_test.go` |
+| Systemvergebene Exemplarnummern aus EINER Quelle (`barcode_seq`, `B-`) — alle fünf Wege, kein zweiter Kreis (Migration 105), in einer Form: mindestens fünf Ziffern, eine längere Zahl ganz (`B-100000`) | 🟢 PG-Tests | `api/katalog/barcode_vergabe_pg_test.go`, `repository/bestandskorrektur_nummernkreis_pg_test.go`, `internal/littera/schreiber_pg_test.go` |
 | Exemplar hängt an existierendem Titel                                                                                                                   | 🟢 FK ON DELETE CASCADE                          | `buecher_exemplare.titel_id`                                                           |
 | **[G4]** Jahrgang am Titel ganz oder gar nicht: „von“ und „bis“ beide gesetzt oder keins, 1–13, „von“ nicht über „bis“. Die „Klasse“ (`grade_level`) entfiel mit Migration 163, der Bestand am Titel (`stock`) mit Migration 073 | 🟢 `chk_jahrgang_spanne` | `migrations/162`, `migrations/163` |
 | **[G3]** Aussonderungs-Grund strukturiert: im Umlauf = NULL, ausgesondert = genau ein Wert aus {VERLUST, BESCHAEDIGUNG, AUSSORTIERT, BESTANDSKORREKTUR} | 🟢 `chk_aussonderung_grund`                      | `migrations/043`                                                                       |
@@ -425,7 +425,7 @@ Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle 
   (`MailEinstellungen.test.js`; `ui/LadeFehler`).
 - **Frage 6, die Reihenfolge als Schutz:** Trägt eine Prüfung nur, weil eine Anweisung davor
   eine Zeile sperrt? Dann steht die Reihenfolge in einem Test
-  (`inventur/bestand_gleichzeitig_pg_test.go`: Der Vergleich mit dem gesehenen Bestand zählt
+  (`repository/bestand_gleichzeitig_pg_test.go`: Der Vergleich mit dem gesehenen Bestand zählt
   erst nach dem UPDATE des Titels).
 - **Frage 8, was liegen bleibt:** Der Lebenszyklus gilt auch für Dateien auf der Platte und
   für Einträge im Speicher des Browsers, nicht nur für Zeilen — und für Schwebendes, das an
@@ -510,7 +510,7 @@ selbst festhält:
 
 Das Aussondern steht mit der Person im Protokoll, auch auf diesen drei Wegen: der Status in
 der Buchakte, ein kleinerer Bestand in „Buch
-bearbeiten", der Abschluss einer Inventur (`repository.ProtokolliereAussonderung`,
+bearbeiten", der Abschluss einer Inventur (`repository.protokolliereAussonderung`,
 `TestAussondern_StehtMitDerPersonImProtokoll`). Der Eintrag nennt Bearbeiter, Weg und Grund;
 den Grund liest er vom Exemplar. Die Zustandsnotiz steht nicht darin: Sie ist Freitext, kann
 eine Person nennen und bliebe bis zur Audit-Aufbewahrung. Das Abgangsbuch liest diese Einträge

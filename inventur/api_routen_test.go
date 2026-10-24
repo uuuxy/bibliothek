@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // TestNeuteredFileSystem_Open hält die Aufgabe dieses Dateisystems fest: Ein Verzeichnis
@@ -172,7 +174,7 @@ func TestUploadsLiefertWasDerUploadAblegt(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	upload := httptest.NewRecorder()
-	(&Tueren{abfragen: NewTitelAbfragen(mock)}).CoverHochladen(upload, coverUploadAnfrage(t, reihenfolgeBuchID))
+	(&Tueren{abfragen: repository.NewTitelAbfragen(mock)}).CoverHochladen(upload, coverUploadAnfrage(t, reihenfolgeBuchID))
 	if upload.Code != http.StatusOK {
 		t.Fatalf("Upload: Status %d, erwartet 200: %s", upload.Code, upload.Body.String())
 	}

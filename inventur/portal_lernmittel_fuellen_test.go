@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
+	"bibliothek/repository"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -14,11 +15,11 @@ import (
 // kommt aus seiner Quelle, die Werte sind je Feld verschieden; ein Feld, das pdf.Schulbuch später
 // dazubekommt und das niemand füllt, fällt an tuertest.LeereFelder auf.
 func TestSchulbuecherFuerPDF_FuelltJedesFeldAusDerAbfrage(t *testing.T) {
-	titel := []LernmittelTitel{{
+	titel := []repository.LernmittelTitel{{
 		ID: "titel-1", Titel: "Mathematik 7", Autor: "Autorin", Fach: "Mathematik",
 		CoverURL: "/uploads/cover.png", ISBN: "9783060000001", Gesamt: 30, Verliehen: 12,
 		Verfuegbar: 17, JahrgangVon: 7, JahrgangBis: 8, Zweig: "Gymnasium", Gezaehlt: "02.02.2026",
-		AuflagenBestand: []AuflageImBestand{
+		AuflagenBestand: []repository.AuflageImBestand{
 			{ID: "neu", Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 18},
 			{ID: "alt", Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 12},
 		},

@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/katalogdienste"
+	"bibliothek/repository"
 )
 
 // neuteredFileSystem liefert nur Dateien direkt im Verzeichnis aus: /uploads/ ist ohne
@@ -48,7 +49,7 @@ func (dateisystem neuteredFileSystem) Open(pfad string) (http.File, error) {
 // herein: Das Inventur-Modul kennt die Prüfung der Rechte nicht selbst, bekommt sie aber
 // verpflichtend gestellt.
 type TuerenKonfig struct {
-	Abfragen *TitelAbfragen
+	Abfragen *repository.TitelAbfragen
 	// Pool trägt die Schlüssel des Listenimports (repository.ReserviereImportSchluessel).
 	Pool            db.Pool
 	Metadaten       *katalogdienste.MetadatenClient
@@ -67,7 +68,7 @@ type TuerenKonfig struct {
 // Tueren bündelt die Türen des Inventur-Moduls. Gesichert wird nicht hier, sondern über
 // jobs.BackupLauf: verschlüsselt, täglich, mit Anzeige des Stands in der Oberfläche.
 type Tueren struct {
-	abfragen  *TitelAbfragen
+	abfragen  *repository.TitelAbfragen
 	metadaten *katalogdienste.MetadatenClient
 	pool      db.Pool
 	mux       *http.ServeMux

@@ -11,7 +11,7 @@ import (
 // Die Vergabe selbst steht in barcode_vergabe.go — sie ist die einzige Quelle für
 // B-Nummern und liefert nur Nummern, die im Bestand noch nicht vorkommen.
 func (a *KatalogAbfragen) ErzeugeBarcodes(ctx context.Context, anzahl int) ([]string, error) {
-	barcodes, err := ZieheFreieExemplarBarcodes(ctx, a.db, anzahl)
+	barcodes, err := zieheFreieExemplarBarcodes(ctx, a.db, anzahl)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (a *KatalogAbfragen) ErzeugeBarcodes(ctx context.Context, anzahl int) ([]st
 
 // LegeExemplareAn legt die Exemplare in der Transaktion des Rufers an, alle in einem Zug
 // (CopyFrom). Den Standort
-// erben sie von den Exemplaren ihres Titels im Bestand (SQLGeerbterStandort), gelesen vor dem
+// erben sie von den Exemplaren ihres Titels im Bestand (sqlGeerbterStandort), gelesen vor dem
 // Einfügen: Die neuen Zeilen zählen dabei nicht mit.
 func (a *KatalogAbfragen) LegeExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ExemplarNeu) error {
 	if len(exemplare) == 0 {

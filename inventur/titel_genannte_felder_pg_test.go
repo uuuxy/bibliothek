@@ -51,7 +51,7 @@ func newGenanntProbe(t *testing.T) *genanntProbe {
 
 	durchlass := func(next http.Handler) http.Handler { return next }
 	return &genanntProbe{t: t, pool: pool, tueren: NewTueren(TuerenKonfig{
-		Abfragen:          NewTitelAbfragen(pool),
+		Abfragen:          repository.NewTitelAbfragen(pool),
 		Metadaten:         offlineMetadatenClient(),
 		VerlangeLesen:     durchlass,
 		VerlangeAendern:   durchlass,
@@ -181,11 +181,11 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 		"listenpreis":             {19.9, "listenpreis", "19.90"},
 		"mehrjahresband":          {true, "mehrjahresband", "true"},
 	}
-	if len(beispiele) != len(titelFeldNamen()) {
-		t.Errorf("%d Beispiele für %d Felder der Tür", len(beispiele), len(titelFeldNamen()))
+	if len(beispiele) != len(repository.TitelFeldNamen()) {
+		t.Errorf("%d Beispiele für %d Felder der Tür", len(beispiele), len(repository.TitelFeldNamen()))
 	}
 
-	for _, name := range titelFeldNamen() {
+	for _, name := range repository.TitelFeldNamen() {
 		beispiel, ok := beispiele[name]
 		if !ok {
 			t.Errorf("Feld %q hat kein Beispiel", name)

@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/pkg/isbnutil"
+	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -12,7 +13,7 @@ import (
 // FremdeCoverListe ist die Tür GET /api/admin/books/external-covers: die Titel, deren Cover
 // noch von außen geladen wird.
 func (t *Tueren) FremdeCoverListe(w http.ResponseWriter, r *http.Request) {
-	eintraege, err := t.abfragen.ladeTitelMitFremdemCover(r.Context(), 300)
+	eintraege, err := t.abfragen.LadeTitelMitFremdemCover(r.Context(), 300)
 	if err != nil {
 		slog.Error("Fehler beim Laden externer Cover-Bücher", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden")
@@ -39,13 +40,13 @@ func (t *Tueren) FremdeCoverNeuLaden(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var (
-		eintraege []Titel
+		eintraege []repository.KatalogTitel
 		err       error
 	)
 	if len(eingabe.IDs) > 0 {
 		eintraege, err = t.abfragen.LadeTitelNachIDs(r.Context(), eingabe.IDs)
 	} else {
-		eintraege, err = t.abfragen.ladeTitelMitFremdemCover(r.Context(), eingabe.Limit)
+		eintraege, err = t.abfragen.LadeTitelMitFremdemCover(r.Context(), eingabe.Limit)
 	}
 	if err != nil {
 		slog.Error("Fehler beim Laden externer Cover für Retry", "fehler", err)
@@ -78,7 +79,7 @@ const (
 // Nachgeladen wird nur, was noch eine Adresse im Netz trägt: Ein Cover, das lokal liegt, ist
 // schon da oder von Hand hochgeladen, und das ersetzt dieser Lauf nicht. Die Suche liefert
 // immer den lokalen Pfad (MetadatenClient.aufloeseCover), nie eine Adresse im Netz.
-func (t *Tueren) ladeCoverErneut(ctx context.Context, eintrag Titel) string {
+func (t *Tueren) ladeCoverErneut(ctx context.Context, eintrag repository.KatalogTitel) string {
 	if !isbnutil.HatForm(eintrag.ISBN) || !strings.HasPrefix(eintrag.CoverURL, "http") {
 		return coverUebersprungen
 	}
@@ -88,7 +89,7 @@ func (t *Tueren) ladeCoverErneut(ctx context.Context, eintrag Titel) string {
 		return coverGescheitert
 	}
 
-	if aenderFehler := t.abfragen.aendereTitelMetadaten(ctx, eintrag.ID, "", "", nachschlagen.CoverURL); aenderFehler != nil {
+	if aenderFehler := t.abfragen.AendereTitelMetadaten(ctx, eintrag.ID, "", "", nachschlagen.CoverURL); aenderFehler != nil {
 		return coverGescheitert
 	}
 	return coverAktualisiert

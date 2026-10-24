@@ -248,7 +248,7 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 }
 
 // Wird ein Titel gelöscht, während ein Exemplar verliehen ist, hinterlässt das eine Zeile im
-// Protokoll mit dem Namen des Entleihers (inventur/titel_loeschen_spur.go). Die Zeile ist eine
+// Protokoll mit dem Namen des Entleihers (repository/titel_loeschen_spur.go). Die Zeile ist eine
 // Kopie von Personendaten wie jede andere Spur einer Ausleihe und muss derselben Frist
 // unterliegen.
 //

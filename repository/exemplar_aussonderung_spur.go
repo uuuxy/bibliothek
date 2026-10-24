@@ -28,12 +28,12 @@ const (
 // ErrAussonderungOhneBearbeiter lehnt ein Aussondern ab, das keine Person nennt.
 var ErrAussonderungOhneBearbeiter = errors.New("aussondern ohne bearbeiter")
 
-// ProtokolliereAussonderung schreibt je Exemplar einen Eintrag mit Bearbeiter, Weg und Grund.
+// protokolliereAussonderung schreibt je Exemplar einen Eintrag mit Bearbeiter, Weg und Grund.
 // Den Grund liest die Anweisung vom Exemplar: Im Eintrag steht, was das Abgangsbuch zeigt.
 // Der Aufrufer ruft sie nach dem Aussondern in derselben Transaktion; ein Exemplar, das nicht
 // ausgesondert ist, bekommt keinen Eintrag, und der Aufruf scheitert. zusatz ergänzt die
 // Einzelheiten, etwa um die Inventur.
-func ProtokolliereAussonderung(ctx context.Context, q Datenbank, exemplarIDs []string, bearbeiterID, weg string, zusatz map[string]any) error {
+func protokolliereAussonderung(ctx context.Context, q Datenbank, exemplarIDs []string, bearbeiterID, weg string, zusatz map[string]any) error {
 	if bearbeiterID == "" {
 		return ErrAussonderungOhneBearbeiter
 	}

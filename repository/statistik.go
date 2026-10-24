@@ -106,7 +106,7 @@ func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typFilter string) 
 		LEFT JOIN aktive_ausleihen al ON al.exemplar_id = e.id
 		-- Gezählt wird, was im Bestand ist oder war; ein bestelltes Exemplar zählt ab dem Eintreffen.
 		WHERE %[3]s %[2]s
-	`, istVerlust, typFilter, SQLWarImBestand)
+	`, istVerlust, typFilter, sqlWarImBestand)
 
 	k := &BestandKennzahlen{}
 	err := db.QueryRow(ctx, q).Scan(

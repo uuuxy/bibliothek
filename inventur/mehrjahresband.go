@@ -1,6 +1,10 @@
 package inventur
 
-import "errors"
+import (
+	"errors"
+
+	"bibliothek/repository"
+)
 
 // Sätze zu den beiden Regeln für die Oberfläche; die Fehlerwerte oben stehen im Log.
 const (
@@ -14,9 +18,9 @@ const (
 // ok ist false für jeden anderen Fehler.
 func meldungZurSpanne(err error) (meldung string, ok bool) {
 	switch {
-	case errors.Is(err, errJahrgangsSpanne):
+	case errors.Is(err, repository.ErrJahrgangsSpanne):
 		return meldungJahrgangsSpanne, true
-	case errors.Is(err, errMehrjahresband):
+	case errors.Is(err, repository.ErrMehrjahresband):
 		return meldungMehrjahresband, true
 	}
 	return "", false

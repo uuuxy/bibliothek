@@ -37,20 +37,20 @@ const barcodeNummerMuster = `^B-[0-9]{1,15}$`
 // Die Nummer ist danach verbraucht, auch wenn der Vorschlag nicht gespeichert wird.
 // Eine Lücke im Nummernkreis ist harmlos — eine doppelt vergebene Nummer nicht.
 func ZieheFreienExemplarBarcode(ctx context.Context, db Datenbank) (string, error) {
-	barcodes, err := ZieheFreieExemplarBarcodes(ctx, db, 1)
+	barcodes, err := zieheFreieExemplarBarcodes(ctx, db, 1)
 	if err != nil {
 		return "", err
 	}
 	return barcodes[0], nil
 }
 
-// ZieheFreieExemplarBarcodes liefert anzahl garantiert unbelegte Exemplarnummern.
+// zieheFreieExemplarBarcodes liefert anzahl garantiert unbelegte Exemplarnummern.
 //
 // Der Abgleich gegen den Bestand ist nötig, weil barcode_seq nur die maschinell
 // erzeugten Nummern kennt: Ein in der Exemplarkarte von Hand eingetipptes "B-12345"
 // steht in der Tabelle, aber nicht in der Sequenz. Kollidiert ein gezogener Wert, wird
 // die Sequenz über den belegten Bereich gehoben und nachgezogen.
-func ZieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
+func zieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
 	if anzahl <= 0 {
 		return nil, nil
 	}
@@ -86,7 +86,7 @@ func ZieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) (
 func exemplarNummer(n int64) string { return fmt.Sprintf("B-%05d", n) }
 
 // ZieheExemplarNummern holt anzahl Nummern aus barcode_seq, ohne den Bestand anzusehen. Wer sie
-// vergibt, prüft, ob eine schon an einem Exemplar hängt: ZieheFreieExemplarBarcodes und die
+// vergibt, prüft, ob eine schon an einem Exemplar hängt: zieheFreieExemplarBarcodes und die
 // Littera-Übernahme mit ihrer Liste belegter Nummern.
 func ZieheExemplarNummern(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
 	rows, err := db.Query(ctx, `SELECT nextval('barcode_seq') FROM generate_series(1, $1)`, anzahl)

@@ -16,6 +16,7 @@ import (
 
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/safego"
+	"bibliothek/repository"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -126,14 +127,14 @@ func errateSpaltenAusInhalt(kopf []string, spalten map[string]int) {
 	}
 }
 
-func (t *Tueren) verarbeiteImportZeilen(ctx context.Context, datenZeilen [][]string, spalten map[string]int) ([]Titel, int32, error) {
+func (t *Tueren) verarbeiteImportZeilen(ctx context.Context, datenZeilen [][]string, spalten map[string]int) ([]repository.KatalogTitel, int32, error) {
 	var gescheitert int32 = 0
 	var ersterFehler error
 	var fehlerSperre sync.Mutex
 	var wg sync.WaitGroup
 	begrenzung := make(chan struct{}, 10)
 
-	var zuSchreiben []Titel
+	var zuSchreiben []repository.KatalogTitel
 	var titelSperre sync.Mutex
 
 	for _, zeile := range datenZeilen {
@@ -211,7 +212,7 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 // speichereImportierteTitel schreibt die eingelesenen Bücher per Batch-Upsert; schlägt der
 // Batch fehl, wird zeilenweise als Fallback eingefügt. Liefert die aktualisierten
 // Zähler zurück.
-func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []Titel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
+func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []repository.KatalogTitel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
 	if len(zuSchreiben) == 0 {
 		return 0, gescheitert, ersterFehler
 	}
@@ -232,9 +233,9 @@ func (t *Tueren) speichereImportierteTitel(ctx context.Context, zuSchreiben []Ti
 }
 
 // speichereTitelEinzeln führt einzelne Inserts als Fallback aus, wenn der Batch-Insert fehlschlägt.
-func (t *Tueren) speichereTitelEinzeln(ctx context.Context, eintraege []Titel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
+func (t *Tueren) speichereTitelEinzeln(ctx context.Context, eintraege []repository.KatalogTitel, gescheitert int32, ersterFehler error) (importiert, gescheitertAus int32, fehlerAus error) {
 	for _, eintrag := range eintraege {
-		_, einzelFehler := t.abfragen.schreibeTitel(ctx, eintrag)
+		_, einzelFehler := t.abfragen.SchreibeTitelAusListe(ctx, eintrag)
 		if einzelFehler != nil {
 			gescheitert++
 			if ersterFehler == nil {

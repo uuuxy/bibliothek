@@ -30,7 +30,7 @@ import (
 // im ersten verschachtelten if ein; die gilt als sauber.
 //
 // Reparatur bei Rot: `errors.Is(err, pgx.ErrNoRows)` bzw. den Sentinel prüfen und den Rest als
-// 500 (oder eingepackt) weiterreichen, wie inventur/titel_metadaten.go.
+// 500 (oder eingepackt) weiterreichen, wie repository/titel_metadaten.go.
 var kollapsBestand = map[string]string{
 	// „datei:funktion": Einordnung. Die Stellen hier sind vertretbar; der Fehler ist dort die
 	// negative Antwort.

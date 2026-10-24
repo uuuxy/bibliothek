@@ -121,7 +121,7 @@ func SchlagworteAusFremddaten(roh []string) ([]string, SchlagwortAufbereitung) {
 // SetzeSchlagworte ersetzt die Schlagworte eines Titels durch die genannten und liefert
 // sie in der gespeicherten Schreibweise zurück. Eine leere Liste entfernt alle; wer
 // nichts ändern will, ruft die Funktion nicht auf (die Aufrufer unterscheiden „nicht
-// mitgeschickt" von „leer", siehe inventur.BuchEingabe).
+// mitgeschickt" von „leer", siehe KatalogTitel.Schlagworte).
 //
 // Unbekannte Wörter werden angelegt. Ein Wort, das es in anderer Groß- und
 // Kleinschreibung schon gibt, wird nicht neu angelegt: Wer „fantasy" tippt, bekommt das

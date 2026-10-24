@@ -13,6 +13,7 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/repository"
 )
 
 // Die Titelliste (GET /api/books, Titel-Verwaltung und Medienkatalog) steht nach dem Titel.
@@ -61,7 +62,7 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 
 	durch := func(h http.Handler) http.Handler { return h }
 	tueren := NewTueren(TuerenKonfig{
-		Abfragen:          NewTitelAbfragen(pool),
+		Abfragen:          repository.NewTitelAbfragen(pool),
 		Metadaten:         metadatenUeber(&http.Client{}),
 		VerlangeLesen:     durch,
 		VerlangeAendern:   durch,

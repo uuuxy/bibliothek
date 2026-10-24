@@ -78,7 +78,7 @@ var suchSynonyme = map[string]string{
 //
 // Der Collator entsteht je Aufruf: Er hält Zustand und darf nicht zwei Anfragen zugleich
 // dienen.
-func sortiereBuecherNachTitel(buecher []Titel) {
+func sortiereBuecherNachTitel(buecher []repository.KatalogTitel) {
 	if len(buecher) <= 1 {
 		return
 	}
@@ -96,7 +96,7 @@ func sortiereBuecherNachTitel(buecher []Titel) {
 		return bytes.Compare(schluessel[reihenfolge[a]], schluessel[reihenfolge[b]]) < 0
 	})
 
-	sortiert := make([]Titel, len(buecher))
+	sortiert := make([]repository.KatalogTitel, len(buecher))
 	for ziel, quelle := range reihenfolge {
 		sortiert[ziel] = buecher[quelle]
 	}
@@ -165,18 +165,18 @@ func (t *Tueren) Titel(antwort http.ResponseWriter, anfrage *http.Request) {
 
 // ladeTitelVoll liest einen Titel, wie die Maske ihn bekommt: mit den Bestandszahlen und den
 // Schlagworten. Der Einzel-Read und die Antwort auf das Speichern haben damit dieselbe Form.
-func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (Titel, error) {
+func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (repository.KatalogTitel, error) {
 	buecher, err := t.abfragen.LadeTitelNachIDs(ctx, []string{id})
 	if err != nil {
-		return Titel{}, err
+		return repository.KatalogTitel{}, err
 	}
 	if len(buecher) == 0 {
-		return Titel{}, repository.ErrTitelNichtGefunden
+		return repository.KatalogTitel{}, repository.ErrTitelNichtGefunden
 	}
 	buch := buecher[0]
-	buch.Schlagworte, err = t.abfragen.ladeSchlagworteDesTitels(ctx, id)
+	buch.Schlagworte, err = t.abfragen.LadeSchlagworte(ctx, id)
 	if err != nil {
-		return Titel{}, err
+		return repository.KatalogTitel{}, err
 	}
 	return buch, nil
 }
@@ -186,7 +186,7 @@ func (t *Tueren) ladeTitelVoll(ctx context.Context, id string) (Titel, error) {
 // allein stünde dort der Bestand 0. Scheitert das Nachlesen, bleibt es bei den gesendeten
 // Angaben, denn gespeichert ist der Titel; nach einem Ändern sind das nur die Felder, die
 // der Rumpf genannt hat.
-func (t *Tueren) gespeichert(ctx context.Context, gesendet Titel) Titel {
+func (t *Tueren) gespeichert(ctx context.Context, gesendet repository.KatalogTitel) repository.KatalogTitel {
 	buch, err := t.ladeTitelVoll(ctx, gesendet.ID)
 	if err != nil {
 		slog.Error("Titel nach dem Speichern nicht lesbar", "titel", gesendet.ID, "fehler", err)
@@ -207,7 +207,7 @@ func (t *Tueren) TitelVorhanden(antwort http.ResponseWriter, anfrage *http.Reque
 		return
 	}
 
-	vorhanden, fehler := t.abfragen.titelMitISBN(anfrage.Context(), isbn)
+	vorhanden, fehler := t.abfragen.FindeTitelMitISBN(anfrage.Context(), isbn)
 	if fehler != nil {
 		slog.Error("Dublettenkontrolle vorab fehlgeschlagen", "fehler", fehler)
 		schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")

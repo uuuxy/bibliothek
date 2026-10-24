@@ -90,23 +90,23 @@ var phantomBestand = map[string]int{
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,
 	// Legt das Passbild an oder ersetzt es: Die Anweisung trifft immer genau eine Zeile.
-	"repository/leser_foto.go:SchreibeFoto":                            1,
-	"inventur/datenbank_klassen.go:ordneTitelKlassenZu":                1,
-	"inventur/datenbank_klassen.go:loescheKlassensatzGruppe":           1,
-	"inventur/datenbank_klassen.go:aendereKlassensaetze":               2,
-	"inventur/datenbank_klassen.go:legeKlassensatzZuordnungenAn":       1,
-	"inventur/titel_anlegen.go:legeImportExemplareAn":                  1,
-	"inventur/titel_loeschen_spur.go:protokolliereGeloeschteExemplare": 1,
-	"inventur/titel_loeschen_spur.go:protokolliereOffeneAusleihen":     1,
+	"repository/leser_foto.go:SchreibeFoto":                              1,
+	"repository/klassensaetze.go:OrdneTitelKlassenZu":                    1,
+	"repository/klassensaetze.go:LoescheKlassensatzGruppe":               1,
+	"repository/klassensaetze.go:AendereKlassensaetze":                   2,
+	"repository/klassensaetze.go:legeKlassensatzZuordnungenAn":           1,
+	"repository/titel_anlegen.go:legeImportExemplareAn":                  1,
+	"repository/titel_loeschen_spur.go:protokolliereGeloeschteExemplare": 1,
+	"repository/titel_loeschen_spur.go:protokolliereOffeneAusleihen":     1,
 	// Dieselbe Bauart wie die Zeile darüber: ein INSERT ins Protokoll je gelesener Zeile. Ein
 	// CommandTag zu prüfen hieße, einen INSERT ohne ON CONFLICT auf 1 zu vergleichen; die
 	// Fehlerrückgabe deckt den Fall schon ab.
-	"inventur/titel_loeschen_spur.go:protokolliereOffeneSchaeden":           1,
+	"repository/titel_loeschen_spur.go:protokolliereOffeneSchaeden":         1,
 	"repository/titel_loeschen_forderung.go:protokolliereOffeneForderungen": 1,
 	// Dritte Zeile derselben Bauart: ein INSERT ins Protokoll je Zeile, die der CASCADE gleich
 	// nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
-	"inventur/titel_aendern.go:gleicheExemplareAn":                       1,
+	"repository/titel_aendern.go:gleicheExemplareAn":                     1,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
 	// Räumt die Fotos aller anonymisierten Schüler; null Zeilen ist der Normalfall.
 	"repository/nachtlauf.go:LoescheFotosAnonymisierterSchueler": 1,

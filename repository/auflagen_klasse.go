@@ -19,7 +19,7 @@ import (
 
 // AuflageInKlasse ist eine Auflage desselben Buchs und wie viele Kinder der Klasse sie
 // gerade haben — an der Theke (die anderen Auflagen) und in der Klassensatz-Übersicht (alle,
-// die die Klasse hat; inventur.LadeKlassensatzGruppen).
+// die die Klasse hat; TitelAbfragen.LadeKlassensatzGruppen).
 type AuflageInKlasse struct {
 	ID               string `json:"id"`
 	Auflage          string `json:"auflage"`
@@ -68,7 +68,7 @@ func LadeAuflagenMischungInKlasse(ctx context.Context, q Datenbank, titelID, sch
 		  AND s.deleted_at IS NULL AND s.ist_abgaenger = false
 		  AND klassen_normkey(s.klasse) = klassen_normkey($3)
 		GROUP BY t.id, t.auflage, t.erscheinungsjahr
-		ORDER BY count(DISTINCT s.id) DESC, `+SQLNeuesteAuflageZuerst("t"), *werkID, titelID, m.Klasse)
+		ORDER BY count(DISTINCT s.id) DESC, `+sqlNeuesteAuflageZuerst("t"), *werkID, titelID, m.Klasse)
 	if err != nil {
 		return nil, fmt.Errorf("auflagen in der klasse: %w", err)
 	}

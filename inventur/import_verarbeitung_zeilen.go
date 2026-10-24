@@ -8,19 +8,20 @@ import (
 
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/lmf"
+	"bibliothek/repository"
 )
 
 // importZeile bündelt die Parameter für die Verarbeitung einer Importzeile.
 type importZeile struct {
 	Zeile     []string
 	Spalten   map[string]int
-	Abfragen  *TitelAbfragen
+	Abfragen  *repository.TitelAbfragen
 	Metadaten *katalogdienste.MetadatenClient
 }
 
 // verarbeiteImportZeile verarbeitet eine einzelne Excel-Zeile und erstellt das
 // entsprechende Book-Objekt für den Batch-Import.
-func verarbeiteImportZeile(ctx context.Context, konfig importZeile) (*Titel, error) {
+func verarbeiteImportZeile(ctx context.Context, konfig importZeile) (*repository.KatalogTitel, error) {
 	spalteLesen := func(name string) string {
 		stelle := konfig.Spalten[name]
 		if stelle >= 0 && stelle < len(konfig.Zeile) {
@@ -49,7 +50,7 @@ func verarbeiteImportZeile(ctx context.Context, konfig importZeile) (*Titel, err
 	// rechnen Inventur und Portal, und die Titelliste zeigt sie. 0 heißt unbekannt.
 	klasse := leseKlassenstufe(spalteLesen("klasse"))
 
-	eintrag := Titel{
+	eintrag := repository.KatalogTitel{
 		ISBN:            isbn,
 		Titel:           titelText,
 		Autor:           autor,
@@ -97,7 +98,7 @@ func leseBestand(s string) int {
 }
 
 // ergaenzeMetadaten ergänzt fehlende Buch-Metadaten über externe APIs.
-func ergaenzeMetadaten(ctx context.Context, metadaten *katalogdienste.MetadatenClient, eintrag *Titel) {
+func ergaenzeMetadaten(ctx context.Context, metadaten *katalogdienste.MetadatenClient, eintrag *repository.KatalogTitel) {
 	if eintrag.Titel != "" && eintrag.Autor != "" && eintrag.CoverURL != "" {
 		return
 	}

@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/repository"
 )
 
 // Die Auskunft vorab (GET /api/books/vorhanden) und die Ablehnung beim Speichern (POST
@@ -38,7 +39,7 @@ func TestTitelVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 
 	durchlass := func(next http.Handler) http.Handler { return next }
 	tueren := NewTueren(TuerenKonfig{
-		Abfragen:          NewTitelAbfragen(pool),
+		Abfragen:          repository.NewTitelAbfragen(pool),
 		Metadaten:         offlineMetadatenClient(),
 		VerlangeLesen:     durchlass,
 		VerlangeAendern:   durchlass,

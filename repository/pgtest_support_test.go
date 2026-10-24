@@ -63,7 +63,7 @@ func legeSignaturMitExemplarenAn(t *testing.T, pool *pgxpool.Pool, signatur stri
 // sichereTestSystematik registriert das Fach in systematik_kategorien —
 // buecher_titel.subject ist seit Migration 078 ein FK auf die Bezeichnung, direkte
 // Titel-INSERTs mit Fach scheitern sonst. (Die produktiven Schreibpfade registrieren
-// selbst, via inventur.StelleFaecherSicher; Test-Seeds schreiben daran vorbei.)
+// selbst, via StelleFaecherSicher; Test-Seeds schreiben daran vorbei.)
 func sichereTestSystematik(t *testing.T, pool *pgxpool.Pool, subject string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `

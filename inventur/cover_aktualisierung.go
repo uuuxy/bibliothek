@@ -19,7 +19,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eintrag, err := t.abfragen.ladeTitel(r.Context(), id)
+	eintrag, err := t.abfragen.LadeTitel(r.Context(), id)
 	if errors.Is(err, repository.ErrTitelNichtGefunden) {
 		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
 		return
@@ -52,7 +52,7 @@ func (t *Tueren) CoverAktualisieren(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.abfragen.aendereTitelMetadaten(r.Context(), id, "", "", coverURL)
+	err = t.abfragen.AendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if err != nil {
 		slog.Error("cover-refresh: update fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "cover konnte nicht gespeichert werden")

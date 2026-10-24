@@ -21,7 +21,7 @@ package repository
 // im Protokoll.
 //
 // Warum hier und nicht im Paket inventur: Es gibt zwei Türen zum Löschen eines Titels, die
-// Massenaktion der Bestandstabelle (DELETE /api/books, inventur/titel_loeschen.go) und den
+// Massenaktion der Bestandstabelle (DELETE /api/books, repository/titel_loeschen_samt_ausleihen.go) und den
 // Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/titel_loeschen.go). Beide
 // fahren über denselben CASCADE, und zwei Fassungen derselben Regel liefen auseinander;
 // `inventur` importiert `repository`, also steht sie hier.
@@ -53,9 +53,9 @@ type wartendeAbfrager interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-// LadeWartendeBezuege sammelt Vormerkungen, Klassensatz-Reservierungen und
+// ladeWartendeBezuege sammelt Vormerkungen, Klassensatz-Reservierungen und
 // Klassensatz-Zuordnungen der Titel — vor dem Löschen, denn danach sind sie weg.
-func LadeWartendeBezuege(ctx context.Context, q wartendeAbfrager, ids []string) ([]WartenderBezug, error) {
+func ladeWartendeBezuege(ctx context.Context, q wartendeAbfrager, ids []string) ([]WartenderBezug, error) {
 	var alle []WartenderBezug
 
 	// Nur offene Vormerkungen: Eine erledigte Zeile beschreibt einen abgeschlossenen

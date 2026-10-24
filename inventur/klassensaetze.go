@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"bibliothek/repository"
 )
 
 // Klassensaetze ist die Tür GET /api/class-books (und GET /api/portal/klassensaetze für das
@@ -12,7 +14,7 @@ import (
 func (t *Tueren) Klassensaetze(w http.ResponseWriter, r *http.Request) {
 	zweig := r.URL.Query().Get("branch")
 	reihenfolge := r.URL.Query().Get("sort")
-	gruppen, err := t.abfragen.ladeKlassensatzGruppen(r.Context(), zweig, reihenfolge)
+	gruppen, err := t.abfragen.LadeKlassensatzGruppen(r.Context(), zweig, reihenfolge)
 	if err != nil {
 		slog.Error("Fehler beim Laden der Klassengruppen", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klassen konnten nicht geladen werden")
@@ -20,7 +22,7 @@ func (t *Tueren) Klassensaetze(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if gruppen == nil {
-		gruppen = []klassensatzGruppe{}
+		gruppen = []repository.KlassensatzGruppe{}
 	}
 
 	schreibeJSON(w, http.StatusOK, map[string]any{"data": gruppen})
@@ -74,7 +76,7 @@ func (t *Tueren) KlassensaetzeAendern(w http.ResponseWriter, r *http.Request) {
 		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
-	err := t.abfragen.aendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.TitelIDs)
+	err := t.abfragen.AendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.TitelIDs)
 	if err != nil {
 		slog.Error("Fehler beim Aktualisieren der Klassenbücher", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden")
@@ -102,7 +104,7 @@ func (t *Tueren) KlassensatzGruppeLoeschen(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := t.abfragen.loescheKlassensatzGruppe(r.Context(), klassen)
+	err := t.abfragen.LoescheKlassensatzGruppe(r.Context(), klassen)
 	if err != nil {
 		slog.Error("Fehler beim Löschen der Klassengruppen", "klassen", klassen, "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden")
@@ -159,7 +161,7 @@ func (t *Tueren) KlassensaetzeZuordnen(w http.ResponseWriter, r *http.Request) {
 		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
 		return
 	}
-	err := t.abfragen.ordneTitelKlassenZu(r.Context(), zielKlassen, eingabe.TitelIDs)
+	err := t.abfragen.OrdneTitelKlassenZu(r.Context(), zielKlassen, eingabe.TitelIDs)
 	if err != nil {
 		slog.Error("Fehler beim Hinzufügen der Bücher", "fehler", err)
 		schreibeFehler(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden")

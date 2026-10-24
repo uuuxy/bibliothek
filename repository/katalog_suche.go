@@ -31,7 +31,7 @@ type KatalogSuche struct {
 // gehören dazu: Das Kollegium reserviert dort die Klassensätze, und ohne sie fände die
 // Suche das Biologiebuch der 8 nicht, das im Bestand steht.
 func SQLKollegiumSichtbar(titelAlias string) string {
-	return SQLTitelHatExemplar(titelAlias)
+	return sqlTitelHatExemplar(titelAlias)
 }
 
 // FindeImKatalog liefert die Titel eines Katalogs alphabetisch, höchstens s.Grenze, und die
@@ -58,8 +58,8 @@ func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]Katalog
 		   OR bt.titel ILIKE '%' || $2 || '%'
 		   OR bt.autor ILIKE '%' || $2 || '%'
 		   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%'
-		   OR `+SQLSuchtextIstISBN("bt", "$1")+`
-		   OR `+SQLTitelUeberSchlagwort("bt", "$2")+`)`)
+		   OR `+sqlSuchtextIstISBN("bt", "$1")+`
+		   OR `+sqlTitelUeberSchlagwort("bt", "$2")+`)`)
 	}
 	if s.SchlagwortID != "" {
 		args = append(args, s.SchlagwortID)
@@ -80,7 +80,7 @@ func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]Katalog
 		GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url
 		ORDER BY bt.titel COLLATE deutsch
 		LIMIT %d`,
-		SQLExemplarImBestand, SQLFilterImZulauf, strings.Join(bedingungen, " AND "), s.Grenze), args...)
+		SQLExemplarImBestand, sqlFilterImZulauf, strings.Join(bedingungen, " AND "), s.Grenze), args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("katalog durchsuchen: %w", err)
 	}

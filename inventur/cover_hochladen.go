@@ -133,7 +133,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 	// läge die neue Datei schon auf der Platte, wenn sich herausstellt, dass es den Titel nicht
 	// gibt, und das alte Cover wäre schon gelöscht, wenn das UPDATE scheitert; die Datenbank zeigte
 	// dann auf eine Datei, die fehlt (cover_upload_reihenfolge_test.go).
-	buch, err := t.abfragen.ladeTitel(r.Context(), id)
+	buch, err := t.abfragen.LadeTitel(r.Context(), id)
 	if errors.Is(err, repository.ErrTitelNichtGefunden) {
 		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
 		return
@@ -151,7 +151,7 @@ func (t *Tueren) CoverHochladen(w http.ResponseWriter, r *http.Request) {
 
 	// Scheitert das UPDATE, geht die neue Datei wieder weg — sonst läge sie verwaist in
 	// uploads/, während die Datenbank weiter auf das alte Cover zeigt.
-	err = t.abfragen.aendereTitelMetadaten(r.Context(), id, "", "", coverURL)
+	err = t.abfragen.AendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if errors.Is(err, repository.ErrTitelNichtGefunden) {
 		loescheCoverDatei(coverURL)
 		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")

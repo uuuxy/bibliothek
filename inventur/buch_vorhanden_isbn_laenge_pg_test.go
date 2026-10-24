@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Eine zehnstellige Nummer mit falschem Prüfzeichen ist keine andere Schreibweise der
@@ -34,7 +35,7 @@ func TestTitelVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 
 	durchlass := func(next http.Handler) http.Handler { return next }
 	tueren := NewTueren(TuerenKonfig{
-		Abfragen: NewTitelAbfragen(pool), Metadaten: offlineMetadatenClient(),
+		Abfragen: repository.NewTitelAbfragen(pool), Metadaten: offlineMetadatenClient(),
 		VerlangeLesen: durchlass, VerlangeAendern: durchlass,
 		VerlangeLoeschen: durchlass, VerlangeAnmeldung: durchlass,
 	})

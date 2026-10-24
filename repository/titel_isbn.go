@@ -21,7 +21,7 @@ func FindeTitelZuISBN(ctx context.Context, db Datenbank, isbn string) (TitelZuIS
 	var t TitelZuISBN
 	err := db.QueryRow(ctx, `
 		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel, isbn
-		FROM buecher_titel WHERE `+SQLTitelTraegtISBN("", "$1")+` LIMIT 1
+		FROM buecher_titel WHERE `+sqlTitelTraegtISBN("", "$1")+` LIMIT 1
 	`, isbn).Scan(&t.TitelID, &t.Titel, &t.Autor, &t.Verlag, &t.CoverURL, &t.Signatur, &t.IstLernmittel, &t.ISBN)
 	return t, err
 }

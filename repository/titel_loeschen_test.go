@@ -218,7 +218,7 @@ func TestProtokolliereAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T)
 }
 
 // erwarteAuflagenSperre: Das Löschen nimmt zuerst die Sperre der Auflagen und liest die Werke
-// des Titels (LadeWerkeDerTitel). Hier gehört er zu keinem, also räumt RaeumeWerkeAuf danach nichts
+// des Titels (ladeWerkeDerTitel). Hier gehört er zu keinem, also räumt raeumeWerkeAuf danach nichts
 // auf.
 func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids []string) {
 	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(auflagenSperre).

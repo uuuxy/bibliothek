@@ -86,7 +86,7 @@ Wiederkehrende Bausteine tragen dasselbe Wort: Die Angaben eines neuen Datensatz
 (`AusleihErgebnis`), der Helfer, der eine Zeile der Datenbank liest, beginnt
 mit `lese` (`leseExemplar`), der Schlüssel einer Sperre der Datenbank endet auf `Sperre`
 (`auflagenSperre`), und was ein Stück SQL liefert, beginnt mit `sql` oder `SQL`
-(`sqlKarenzUhr`, `SQLTitelHatExemplar`). Der Lauf einer Inventur hat einen Bereich
+(`sqlKarenzUhr`, `sqlTitelHatExemplar`). Der Lauf einer Inventur hat einen Bereich
 (`InventurBereich`), keinen Scope.
 
 ## 3. Verben

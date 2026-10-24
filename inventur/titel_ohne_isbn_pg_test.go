@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Die Türen der Buchmaske an Titeln ohne ISBN. Rund ein Drittel der Titel aus Littera trägt
@@ -55,7 +56,7 @@ func newOhneISBNProbe(t *testing.T) *ohneISBNProbe {
 	return &ohneISBNProbe{
 		t: t,
 		tueren: NewTueren(TuerenKonfig{
-			Abfragen:          NewTitelAbfragen(pool),
+			Abfragen:          repository.NewTitelAbfragen(pool),
 			Metadaten:         offlineMetadatenClient(),
 			VerlangeLesen:     durchlass,
 			VerlangeAendern:   durchlass,

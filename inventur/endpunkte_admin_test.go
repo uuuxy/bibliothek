@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 func TestTitelVerwaltung_Routen(t *testing.T) {
@@ -15,7 +17,7 @@ func TestTitelVerwaltung_Routen(t *testing.T) {
 	}
 	defer mockPool.Close()
 
-	abfragen := NewTitelAbfragen(mockPool)
+	abfragen := repository.NewTitelAbfragen(mockPool)
 	metadatenClient := metadatenUeber(&http.Client{})
 
 	tueren := NewTueren(TuerenKonfig{

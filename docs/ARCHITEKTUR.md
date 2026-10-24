@@ -3347,7 +3347,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   ```
 - **Das Feld „Auflage" trägt aus Littera auch Heftnummern und eigene Nummern** („34 / 2010",
   „D-Ga-066"; im Katalog-Export vom Juni 2026 neben 5.033 Auflagen 955 Heftnummern, 69 eigene
-  Nummern und 96 andere Angaben). Keine Suche vergleicht das Feld (`repository/titel_suche.go`, `inventur/datenbank_buecher_leser.go`). Anlass: Die
+  Nummern und 96 andere Angaben). Keine Suche vergleicht das Feld (`repository/titel_suche.go`, `repository/titel_liste.go`). Anlass: Die
   Bücherei sucht nach einer dieser Angaben.
 - **Der Katalogisat-Import legt Einträge über den Titeltext zusammen;** ein zweiter Lauf schreibt
   die Angaben des zuletzt passenden Eintrags darüber (`SchreibeTitel`). Am Export vom Juni 2026

@@ -13,6 +13,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 
 	"bibliothek/internal/katalogdienste"
+	"bibliothek/repository"
 )
 
 // offlineMetadatenClient baut einen MetadatenClient, dessen Transport jede
@@ -118,7 +119,7 @@ func TestExcelImport(t *testing.T) {
 		}
 		defer mock.Close()
 
-		abfragen := NewTitelAbfragen(mock)
+		abfragen := repository.NewTitelAbfragen(mock)
 
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
@@ -151,7 +152,7 @@ func TestExcelImport(t *testing.T) {
 		// Transaktion.
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 1))
-		erwarteBarcodeVergabeTuer(mock, 5) // bestand 5 in der Testdatei
+		erwarteBarcodeVergabe(mock, 5) // bestand 5 in der Testdatei
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 0))
 		mock.ExpectCommit()
 
@@ -183,7 +184,7 @@ func TestExcelImport(t *testing.T) {
 		}
 		defer mock.Close()
 
-		abfragen := NewTitelAbfragen(mock)
+		abfragen := repository.NewTitelAbfragen(mock)
 
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
@@ -211,12 +212,12 @@ func TestExcelImport(t *testing.T) {
 		}
 
 		mock.ExpectBegin()
-		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTestTuer)
+		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
 		// Rückfall je Zeile: schreibeTitel schlägt kein Fach nach (das Fach ist leer statt „Unbekannt")
 		// und öffnet direkt seine eigene Transaktion.
 		mock.ExpectBegin()
-		mock.ExpectQuery(".*").WillReturnError(errTestTuer)
+		mock.ExpectQuery(".*").WillReturnError(errTest)
 		mock.ExpectRollback()
 
 		tueren.ExcelImport(w, anfrage)
@@ -241,7 +242,7 @@ func TestExcelImport(t *testing.T) {
 		}
 		defer mock.Close()
 
-		abfragen := NewTitelAbfragen(mock)
+		abfragen := repository.NewTitelAbfragen(mock)
 
 		rumpf := new(bytes.Buffer)
 		schreiber := multipart.NewWriter(rumpf)
@@ -269,16 +270,16 @@ func TestExcelImport(t *testing.T) {
 		}
 
 		mock.ExpectBegin()
-		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTestTuer)
+		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
 		// Fallback Einzel-Upsert je Zeile (ohne Fach-Nachschlag, das Fach ist leer): erste
 		// Zeile scheitert im Upsert (Begin→Rollback), zweite gelingt (Begin→…→Commit).
 		mock.ExpectBegin()
-		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTestTuer)
+		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(errTest)
 		mock.ExpectRollback()
 		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("test-id"))
-		erwarteBarcodeVergabeTuer(mock, 5) // bestand 5 der zweiten Zeile
+		erwarteBarcodeVergabe(mock, 5) // bestand 5 der zweiten Zeile
 		mock.ExpectExec("INSERT INTO buecher_exemplare").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 5))
 		mock.ExpectCommit()
 

@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // Verhalten zu uuid_eingaben_test.go (Root-Paket): Eine Titel-Kennung, die keine UUID
@@ -22,7 +24,7 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock)}
 
 	faelle := []struct {
 		name    string
@@ -76,7 +78,7 @@ func TestTitelKennungImPfadIst400AmMux(t *testing.T) {
 	defer mock.Close()
 	durch := func(next http.Handler) http.Handler { return next }
 	mux := NewTueren(TuerenKonfig{
-		Abfragen:          NewTitelAbfragen(mock),
+		Abfragen:          repository.NewTitelAbfragen(mock),
 		Metadaten:         stummerMetadatenClient(),
 		VerlangeLesen:     durch,
 		VerlangeAendern:   durch,

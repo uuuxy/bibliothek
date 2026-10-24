@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Der Listenimport gleicht über ON CONFLICT (isbn) ab. Trägt der Katalog ein Buch und nennt
@@ -14,7 +15,7 @@ import (
 func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool)}
 
 	// stand zählt Titel und Exemplare zu einer ISBN, in welcher Länge sie auch gespeichert ist.
 	stand := func(isbn string) (titel, exemplare int) {
@@ -49,7 +50,7 @@ func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 		}
 
 		importiert, gescheitert, err := tueren.speichereImportierteTitel(ctx,
-			[]Titel{{ISBN: "3-551-55167-7", Titel: "Harry Potter 1", Bestand: 2}}, 0, nil)
+			[]repository.KatalogTitel{{ISBN: "3-551-55167-7", Titel: "Harry Potter 1", Bestand: 2}}, 0, nil)
 		if err != nil || importiert != 1 || gescheitert != 0 {
 			t.Fatalf("Listenimport: %d importiert, %d gescheitert, %v", importiert, gescheitert, err)
 		}
@@ -65,7 +66,7 @@ func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 		loesche(zehn, dreizehn)
 		t.Cleanup(func() { loesche(zehn, dreizehn) })
 
-		importiert, gescheitert, err := tueren.speichereImportierteTitel(ctx, []Titel{
+		importiert, gescheitert, err := tueren.speichereImportierteTitel(ctx, []repository.KatalogTitel{
 			{ISBN: dreizehn, Titel: "Advanced Organic Chemistry", Bestand: 2},
 			{ISBN: zehn, Titel: "Advanced Organic Chemistry", Bestand: 3},
 		}, 0, nil)
@@ -85,7 +86,7 @@ func TestListenimport_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 		loesche(falsch, dreizehn)
 		t.Cleanup(func() { loesche(falsch, dreizehn) })
 
-		importiert, gescheitert, err := tueren.speichereImportierteTitel(ctx, []Titel{
+		importiert, gescheitert, err := tueren.speichereImportierteTitel(ctx, []repository.KatalogTitel{
 			{ISBN: dreizehn, Titel: "Das eine Buch", Bestand: 1},
 			{ISBN: falsch, Titel: "Das andere Buch", Bestand: 1},
 		}, 0, nil)

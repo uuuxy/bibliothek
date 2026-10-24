@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // coverQueryRegex matcht die SELECT-Query von handleListExternalCovers (LIMIT $1).
@@ -26,7 +28,7 @@ func testListExternalCoversSuccess(t *testing.T) {
 	}
 	defer mock.Close()
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(coverQueryRegex).
 		WithArgs(300).
@@ -43,7 +45,7 @@ func testListExternalCoversSuccess(t *testing.T) {
 		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusOK)
 	}
 
-	var antwort map[string][]Titel
+	var antwort map[string][]repository.KatalogTitel
 	if err := json.Unmarshal(w.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
@@ -72,11 +74,11 @@ func testListExternalCoversDatabaseError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(mock)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock)}
 
 	mock.ExpectQuery(coverQueryRegex).
 		WithArgs(300).
-		WillReturnError(errTestTuer)
+		WillReturnError(errTest)
 
 	anfrage := httptest.NewRequest(http.MethodGet, "/api/covers/external", nil)
 	w := httptest.NewRecorder()

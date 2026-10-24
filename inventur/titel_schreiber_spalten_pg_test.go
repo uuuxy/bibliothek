@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"bibliothek/repository"
 )
 
 // Die drei Wege, auf denen ein Titel entsteht (Anlegen an der Maske, Listenimport im Stapel und
@@ -13,13 +15,13 @@ import (
 func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 	p := newGenanntProbe(t)
 	ctx := context.Background()
-	abfragen := NewTitelAbfragen(p.pool)
+	abfragen := repository.NewTitelAbfragen(p.pool)
 
 	fach := genanntVorsatz + "Fach Schreiber"
 	preis := 19.9
 	gezaehlt := "2026-09-30"
-	buch := func(nr int) Titel {
-		return Titel{
+	buch := func(nr int) repository.KatalogTitel {
+		return repository.KatalogTitel{
 			ISBN:                    fmt.Sprintf("97899966%05d", nr),
 			Titel:                   fmt.Sprintf("%sSchreiber %d", genanntVorsatz, nr),
 			Autor:                   "Eine Autorin",
@@ -64,18 +66,18 @@ func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 		name string
 		// Nur das Anlegen an der Maske schreibt das Mehrjahresband; die Importe kennen es nicht.
 		mehrjahresband string
-		schreibe       func(Titel) error
+		schreibe       func(repository.KatalogTitel) error
 	}{
-		{"LegeTitelAn", "true", func(b Titel) error {
+		{"LegeTitelAn", "true", func(b repository.KatalogTitel) error {
 			_, err := abfragen.LegeTitelAn(ctx, b)
 			return err
 		}},
-		{"schreibeTitel (Einzel-Rückfall)", "false", func(b Titel) error {
-			_, err := abfragen.schreibeTitel(ctx, b)
+		{"schreibeTitel (Einzel-Rückfall)", "false", func(b repository.KatalogTitel) error {
+			_, err := abfragen.SchreibeTitelAusListe(ctx, b)
 			return err
 		}},
-		{"SchreibeTitelStapel", "false", func(b Titel) error {
-			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
+		{"SchreibeTitelStapel", "false", func(b repository.KatalogTitel) error {
+			_, err := abfragen.SchreibeTitelStapel(ctx, []repository.KatalogTitel{b})
 			return err
 		}},
 	}

@@ -155,7 +155,7 @@ DELETE FROM audit_logs WHERE details->>'schueler_id' IN (SELECT id::text FROM de
 DELETE FROM buecher_exemplare WHERE id IN (SELECT id FROM demo_b);
 -- Schüler: Fotos und Vormerkungen fallen per CASCADE.
 DELETE FROM schueler WHERE id IN (SELECT id FROM demo_s);
--- Regel der Auflagen wie im Programm (repository.LadeWerkeDerTitel, RaeumeWerkeAuf): unter
+-- Regel der Auflagen wie im Programm (repository.ladeWerkeDerTitel, raeumeWerkeAuf): unter
 -- der Sperre der Auflagen die Werke der Titel merken, die gleich fallen.
 DO $$ BEGIN PERFORM pg_advisory_xact_lock(7502026); END $$;
 CREATE TEMP TABLE werke_der_geloeschten ON COMMIT DROP AS

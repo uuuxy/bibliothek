@@ -3,6 +3,7 @@ package inventur
 import (
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/tuertest"
+	"bibliothek/repository"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -181,18 +182,18 @@ func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 		defer mock.Close()
 
 		// Kein einziger gleicheBestandAb-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
-		erwarteFachBekanntTuer(mock, "Mathe")
+		erwarteFachBekannt(mock, "Mathe")
 		mock.ExpectBegin()
 		beliebig := make([]any, 21) // eine Stelle je Spalte, die Kennung und die genannten Felder
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}
-		erwarteTitelstandTuer(mock, "9783161484100", "Autor")
+		erwarteTitelstand(mock, "9783161484100", "Autor")
 		mock.ExpectExec("UPDATE buecher_titel").WithArgs(beliebig...).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectCommit()
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"Titel","author":"Autor","subject":"Mathe"}`
 		w := ruf(t, tueren, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
@@ -211,7 +212,7 @@ func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 		}
 		defer mock.Close()
 
-		tueren := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
+		tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"","author":"Autor","subject":"Mathe"}`
 		w := ruf(t, tueren, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
@@ -243,13 +244,13 @@ func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 			defer mock.Close()
 
 			const id = "0f8fad5b-d9cb-469f-a165-70867728950e"
-			erwarteFachBekanntTuer(mock, "Mathe")
+			erwarteFachBekannt(mock, "Mathe")
 			mock.ExpectBegin()
 			autor := ""
 			if fall.hatAutor {
 				autor = "Funke, Cornelia"
 			}
-			erwarteTitelstandTuer(mock, "9783161484100", autor)
+			erwarteTitelstand(mock, "9783161484100", autor)
 			if fall.hatAutor {
 				mock.ExpectRollback()
 			} else {
@@ -262,7 +263,7 @@ func TestTitelAendern_LeerHeisstBeimAendernNichtVorgabe(t *testing.T) {
 				mock.ExpectCommit()
 			}
 
-			tueren := &Tueren{abfragen: NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
+			tueren := &Tueren{abfragen: repository.NewTitelAbfragen(mock), metadaten: stummerMetadatenClient()}
 			w := ruf(t, tueren, id, `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`)
 
 			if w.Code != fall.status {

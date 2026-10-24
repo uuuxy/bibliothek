@@ -32,12 +32,12 @@ import (
 // Handlung ist selten und geschieht von Hand — eine Sperre für alle kostet nichts.
 const auflagenSperre int64 = 750_2026
 
-// SQLNeuesteAuflageZuerst ordnet die Auflagen eines Buchs: die jüngste zuerst, nach dem
+// sqlNeuesteAuflageZuerst ordnet die Auflagen eines Buchs: die jüngste zuerst, nach dem
 // Erscheinungsjahr, bei gleichem oder fehlendem Jahr die zuletzt angelegte. Die eine
 // Stelle für „die neueste Auflage" — die Liste der Titelmaske zeigt sie oben, und die
 // Nachbestell-Liste bestellt sie (api/bestellung/bestellbedarf.go). titelAlias ist der Alias, unter dem
 // die Zeile in der umgebenden Abfrage steht; sie braucht erscheinungsjahr, erstellt_am und id.
-func SQLNeuesteAuflageZuerst(titelAlias string) string {
+func sqlNeuesteAuflageZuerst(titelAlias string) string {
 	return titelAlias + ".erscheinungsjahr DESC NULLS LAST, " + titelAlias + ".erstellt_am DESC, " + titelAlias + ".id"
 }
 
@@ -78,7 +78,7 @@ func LadeAuflagenDesTitels(ctx context.Context, q Datenbank, titelID string) ([]
 		FROM buecher_titel b
 		WHERE b.id = $1
 		   OR b.werk_id = (SELECT werk_id FROM buecher_titel WHERE id = $1)
-		ORDER BY `+SQLNeuesteAuflageZuerst("b"), titelID)
+		ORDER BY `+sqlNeuesteAuflageZuerst("b"), titelID)
 	if err != nil {
 		return nil, fmt.Errorf("auflagen lesen: %w", err)
 	}
@@ -283,15 +283,15 @@ func raeumeWerkAuf(ctx context.Context, tx pgx.Tx, werkID string) error {
 	return loescheWerk(ctx, tx, werkID)
 }
 
-// LadeWerkeDerTitel nimmt die Sperre der Auflagen und liefert die Werke, zu denen die genannten
-// Titel gehören. Die Löschwege eines Titels (LoescheTitel, inventur.LoescheTitel) rufen das als
+// ladeWerkeDerTitel nimmt die Sperre der Auflagen und liefert die Werke, zu denen die genannten
+// Titel gehören. Die Löschwege eines Titels (KatalogAbfragen.LoescheTitel, TitelAbfragen.LoescheTitelSamtAusleihen) rufen das als
 // Erstes in ihrer Transaktion auf: erst die Sperre, dann die Zeilen, dieselbe Reihenfolge wie
 // Zusammenfassen und Lösen (sperreAuflagen); umgekehrt warteten zwei Transaktionen aufeinander.
 //
-// Nach dem Löschen räumt RaeumeWerkeAuf auf: Die Regel „ein Werk mit weniger als zwei Titeln
+// Nach dem Löschen räumt raeumeWerkeAuf auf: Die Regel „ein Werk mit weniger als zwei Titeln
 // fällt" gilt auch beim Löschen. Sonst bliebe nach einem von zwei Titeln der andere allein an
 // seinem Werk, nach beiden das Werk ohne Titel.
-func LadeWerkeDerTitel(ctx context.Context, tx pgx.Tx, titelIDs []string) ([]string, error) {
+func ladeWerkeDerTitel(ctx context.Context, tx pgx.Tx, titelIDs []string) ([]string, error) {
 	if err := nimmAuflagenSperre(ctx, tx); err != nil {
 		return nil, err
 	}
@@ -317,10 +317,10 @@ func LadeWerkeDerTitel(ctx context.Context, tx pgx.Tx, titelIDs []string) ([]str
 	return werke, nil
 }
 
-// RaeumeWerkeAuf hält nach dem Löschen von Titeln die Regel der Auflagen: Jedes der Werke, an
+// raeumeWerkeAuf hält nach dem Löschen von Titeln die Regel der Auflagen: Jedes der Werke, an
 // dem weniger als zwei Titel übrig sind, fällt samt dem Verweis am letzten — wie beim Lösen.
-// Die Sperre hat LadeWerkeDerTitel in derselben Transaktion schon genommen.
-func RaeumeWerkeAuf(ctx context.Context, tx pgx.Tx, werkIDs []string) error {
+// Die Sperre hat ladeWerkeDerTitel in derselben Transaktion schon genommen.
+func raeumeWerkeAuf(ctx context.Context, tx pgx.Tx, werkIDs []string) error {
 	for _, werkID := range werkIDs {
 		if err := raeumeWerkAuf(ctx, tx, werkID); err != nil {
 			return err

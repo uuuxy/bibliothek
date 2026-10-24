@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // „Externe Cover nachladen" ersetzt die Adresse im Netz durch das heruntergeladene Bild. Ein
@@ -79,7 +80,7 @@ func TestFremdeCoverNeuLaden_ErsetztNurAdressenImNetz(t *testing.T) {
 		}
 		return antwort(http.StatusNotFound, nil, ""), nil
 	}}
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: metadatenUeber(&http.Client{Transport: katalog})}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool), metadaten: metadatenUeber(&http.Client{Transport: katalog})}
 
 	anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/books/retry-covers",
 		strings.NewReader(`{"ids":["`+extern+`","`+hand+`"]}`))

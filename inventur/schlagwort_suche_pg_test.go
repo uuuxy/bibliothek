@@ -21,7 +21,7 @@ import (
 func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool)}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool)}
 
 	titel := func(name, barcode string) string {
 		t.Helper()
@@ -29,7 +29,7 @@ func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 		if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ($1) RETURNING id`, name).Scan(&id); err != nil {
 			t.Fatalf("Titel %q: %v", name, err)
 		}
-		// Ohne Exemplar steht ein Titel in keinem Katalog (repository.SQLTitelHatExemplar).
+		// Ohne Exemplar steht ein Titel in keinem Katalog (repository.sqlTitelHatExemplar).
 		testdaten.LegeExemplarAn(t, pool, id, barcode, true, "")
 		return id
 	}

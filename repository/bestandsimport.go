@@ -151,7 +151,7 @@ func pruefeImportNummernGegenAusweise(ctx context.Context, tx pgx.Tx, exemplare 
 // Ein Exemplar mit LMF-Nummer bekommt eine kurze Nummer (kurzeNummernFuerLMF), die LMF-Nummer
 // steht in lmf_barcode: Sein Etikett scannt weiter, ein neues trägt die kurze Nummer. Gezogen
 // werden die kurzen Nummern erst, wenn die übrigen Exemplare der Datei angelegt sind: Die Prüfung
-// gegen den Bestand (ZieheFreieExemplarBarcodes) sieht dann auch deren Nummern, und kein
+// gegen den Bestand (zieheFreieExemplarBarcodes) sieht dann auch deren Nummern, und kein
 // LMF-Exemplar bekommt die Nummer eines Buchs weiter unten in der Datei.
 func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExemplar) (angelegt, vorhanden int, err error) {
 	if len(exemplare) == 0 {
@@ -171,7 +171,7 @@ func LegeImportExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExe
 
 	anlegen := `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, etikett_gedruckt, standort)
-		VALUES ($1, $2, $3, NULLIF($4, ''), true, ` + SQLGeerbterStandort("$1::uuid") + `)
+		VALUES ($1, $2, $3, NULLIF($4, ''), true, ` + sqlGeerbterStandort("$1::uuid") + `)
 		ON CONFLICT (barcode_id) DO NOTHING
 	`
 	batch := &pgx.Batch{}
@@ -198,7 +198,7 @@ func legeLMFExemplareAn(ctx context.Context, tx pgx.Tx, exemplare []ImportExempl
 	}
 	anlegenMitLMF := `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, lmf_barcode, ist_ausleihbar, zustand_notiz, etikett_gedruckt, standort)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), true, ` + SQLGeerbterStandort("$1::uuid") + `)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), true, ` + sqlGeerbterStandort("$1::uuid") + `)
 		ON CONFLICT (lmf_barcode) DO NOTHING
 	`
 	batch := &pgx.Batch{}
@@ -255,7 +255,7 @@ func lmfNummer(nummer string) (string, bool) {
 }
 
 // kurzeNummernFuerLMF gibt jeder LMF-Nummer der Datei, die noch kein Exemplar trägt, eine kurze
-// Nummer aus barcode_seq (ZieheFreieExemplarBarcodes). Gezogen wird nur für diese: Ein zweiter
+// Nummer aus barcode_seq (zieheFreieExemplarBarcodes). Gezogen wird nur für diese: Ein zweiter
 // Lauf derselben Datei verbraucht keine Nummern.
 func kurzeNummernFuerLMF(ctx context.Context, tx pgx.Tx, exemplare []ImportExemplar) (map[string]string, error) {
 	var lmf []string
@@ -291,7 +291,7 @@ func kurzeNummernFuerLMF(ctx context.Context, tx pgx.Tx, exemplare []ImportExemp
 		}
 	}
 
-	nummern, err := ZieheFreieExemplarBarcodes(ctx, tx, len(neu))
+	nummern, err := zieheFreieExemplarBarcodes(ctx, tx, len(neu))
 	if err != nil {
 		return nil, fmt.Errorf("kurze nummern für lmf-exemplare: %w", err)
 	}

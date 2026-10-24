@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Der Ausdruck der Schulbücher über seine Tür. Abfrage und Blatt haben eigene Tests
@@ -21,7 +22,7 @@ import (
 func TestPortalLernmittelExport_FachUndFilterGeltenUndStehenImKopf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 
 	// Das Fach eines Titels verweist auf die Systematik; die Titel fallen deshalb vor ihren Fächern.
 	raeume := func() {

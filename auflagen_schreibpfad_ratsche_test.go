@@ -22,13 +22,13 @@ import (
 // Zwei Regeln, mechanisch:
 //  1. SQL, das werk_id schreibt (SET-Klausel, Spaltenliste eines INSERT) oder die Tabelle
 //     werke ändert, steht nur in repository/auflagen.go.
-//  2. Jede Funktion mit DELETE FROM buecher_titel ruft LadeWerkeDerTitel und RaeumeWerkeAuf.
+//  2. Jede Funktion mit DELETE FROM buecher_titel ruft ladeWerkeDerTitel und raeumeWerkeAuf.
 //
 // Blindheit: Liest Zeichenketten-Literale einzeln; SQL, das erst aus Variablen oder
 // Sprintf-Teilen entsteht, sieht sie nur, soweit das Merkmal in einem Literal steht. Migrationen
-// liest sie nicht; die Skripte hält TestAuflagen_SkripteHaltenDieWerke. Ob RaeumeWerkeAuf nach
+// liest sie nicht; die Skripte hält TestAuflagen_SkripteHaltenDieWerke. Ob raeumeWerkeAuf nach
 // dem DELETE und in derselben Transaktion läuft, prüft sie nicht; das messen repository/ und
-// inventur/auflagen_loeschen_pg_test.go.
+// repository/titel_loeschen_samt_ausleihen_auflagen_pg_test.go.
 func TestAuflagen_EinSchreibpfad(t *testing.T) {
 	const tuer = "repository/auflagen.go"
 	var verstoesse []string
@@ -73,9 +73,9 @@ func TestAuflagen_EinSchreibpfad(t *testing.T) {
 			}
 			if loescht {
 				loescher++
-				if !istFunktion || !ruft(fn.Body, "LadeWerkeDerTitel") || !ruft(fn.Body, "RaeumeWerkeAuf") {
+				if !istFunktion || !ruft(fn.Body, "ladeWerkeDerTitel") || !ruft(fn.Body, "raeumeWerkeAuf") {
 					verstoesse = append(verstoesse, ort+": löscht Titel, ohne die Werke zu halten — "+
-						"zuerst repository.LadeWerkeDerTitel, nach dem DELETE RaeumeWerkeAuf")
+						"zuerst repository.ladeWerkeDerTitel, nach dem DELETE raeumeWerkeAuf")
 				}
 			}
 		}
@@ -215,7 +215,7 @@ func TestAuflagen_SkripteHaltenDieWerke(t *testing.T) {
 		loesen, loeschen := letzterTreffer(werkLoesen, sql), letzterTreffer(werkeAendern, sql)
 		if loesen < letztes || loeschen < letztes {
 			t.Errorf("%s: räumt nach dem letzten Löschen der Titel die Werke nicht auf "+
-				"(UPDATE buecher_titel SET werk_id = NULL, DELETE FROM werke), wie RaeumeWerkeAuf", pfad)
+				"(UPDATE buecher_titel SET werk_id = NULL, DELETE FROM werke), wie raeumeWerkeAuf", pfad)
 		}
 		return nil
 	})

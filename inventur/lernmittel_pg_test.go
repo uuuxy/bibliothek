@@ -8,6 +8,7 @@ import (
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
 	"bibliothek/pdf"
+	"bibliothek/repository"
 )
 
 // Schulbücher je Fach (Portal des Kollegiums) an Postgres: Nur Lernmittel zählen, das Fach
@@ -39,9 +40,9 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 			t.Fatalf("%s: %v", sql[:30], err)
 		}
 	}
-	abfragen := NewTitelAbfragen(pool)
+	abfragen := repository.NewTitelAbfragen(pool)
 
-	faecher, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{})
+	faecher, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +58,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("ohne Fach: %+v", faecher[1])
 	}
 
-	titel, err := abfragen.ladeLernmittelTitel(ctx, "Mathematik", false, lernmittelFilter{})
+	titel, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if len(titel) != 2 || titel[0].Titel != "Mathe 7" || titel[0].Gesamt != 2 || titel[0].Verliehen != 1 || titel[0].Verfuegbar != 1 {
 		t.Errorf("Titel eines Fachs: %+v", titel)
 	}
-	alle, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{})
+	alle, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,28 +84,28 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10 WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
 		t.Fatal(err)
 	}
-	jg7, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Jahrgang: 7})
+	jg7, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Jahrgang: 7})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(jg7) != 1 || jg7[0].Titel != "Mathe 7" {
 		t.Errorf("Jahrgang 7 = %+v, erwartet nur Mathe 7 (das Lesebuch trägt keinen Jahrgang)", jg7)
 	}
-	ohneFilter, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{})
+	ohneFilter, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(ohneFilter) != 3 || ohneFilter[2].Titel != "Lesebuch" || ohneFilter[2].JahrgangVon != 0 || ohneFilter[2].JahrgangBis != 0 {
 		t.Errorf("ohne Filter = %+v, erwartet drei Lernmittel, das Lesebuch mit 0 und 0 (unbekannt)", ohneFilter)
 	}
-	f12, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{Jahrgang: 12})
+	f12, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{Jahrgang: 12})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(f12) != 0 {
 		t.Errorf("Jahrgang 12 = %+v, erwartet keine Fächer", f12)
 	}
-	jg8, err := abfragen.ladeLernmittelTitel(ctx, "Mathematik", false, lernmittelFilter{Jahrgang: 8})
+	jg8, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{Jahrgang: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +118,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
 		t.Fatal(err)
 	}
-	reihe, err := abfragen.ladeLernmittelTitel(ctx, "Mathematik", false, lernmittelFilter{})
+	reihe, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,14 +136,14 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	// „Gymnasium" muss Mathe 8 und die Bücher ohne Zweigangabe liefern: leer heißt laut
 	// Buchmaske „gilt für alle Zweige", und der ganze Littera-Altbestand ist so. Ein
 	// Filter, der nur die ausdrücklich zugeordneten zeigt, versteckt fast alles.
-	gym, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Zweig: "Gymnasium"})
+	gym, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Zweig: "Gymnasium"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(gym) != 3 {
 		t.Errorf("Zweig Gymnasium = %+v, erwartet Mathe 8 plus die zweiglosen Titel", gym)
 	}
-	ohne, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Zweig: zweigOhne})
+	ohne, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Zweig: repository.ZweigOhne})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,14 +153,14 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 
 	// Suche greift über Titel, ISBN, Autor und Fach — „Mathematik" findet beide
 	// Mathe-Bücher über das Fach, obwohl keines das Wort im Titel trägt.
-	treffer, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Suche: "Mathematik"})
+	treffer, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Suche: "Mathematik"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(treffer) != 2 {
 		t.Errorf("Suche Mathematik = %+v, erwartet 2 Titel über das Fach", treffer)
 	}
-	fSuche, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{Suche: "Lesebuch"})
+	fSuche, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{Suche: "Lesebuch"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +179,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 13, jahrgang_bis = 13, track = 'Gymnasium', last_counted = DATE '2026-04-17' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
 		t.Fatal(err)
 	}
-	if alle, err = abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{}); err != nil {
+	if alle, err = abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{}); err != nil {
 		t.Fatal(err)
 	}
 	doc, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(alle), "", "Jahrgang 7")
@@ -200,7 +201,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 
 	// Die Zählspalte erscheint nur, wenn in der Auswahl überhaupt gezählt wurde: Das
 	// Lesebuch allein trägt kein Datum, also fehlt die Spalte samt Überschrift.
-	nurOhneFach, err := abfragen.ladeLernmittelTitel(ctx, "", false, lernmittelFilter{})
+	nurOhneFach, err := abfragen.LadeLernmittelTitel(ctx, "", false, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +214,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	}
 
 	// Ein einzelnes Fach trägt seinen Namen in der Überschrift und nur seine Titel.
-	nurMathe, err := abfragen.ladeLernmittelTitel(ctx, "Mathematik", false, lernmittelFilter{})
+	nurMathe, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,12 +271,12 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 			}
 		}
 	})
-	abfragen := NewTitelAbfragen(pool)
-	aufschluesselung := []AuflageImBestand{
+	abfragen := repository.NewTitelAbfragen(pool)
+	aufschluesselung := []repository.AuflageImBestand{
 		{ID: neu, Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 1},
 		{ID: alt, Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 2},
 	}
-	pruefeBuch := func(name string, z LernmittelTitel, id, isbn string) {
+	pruefeBuch := func(name string, z repository.LernmittelTitel, id, isbn string) {
 		t.Helper()
 		if z.ID != id || z.ISBN != isbn || z.Gesamt != 3 || z.Verliehen != 1 || z.Verfuegbar != 2 {
 			t.Errorf("%s: %s/%s %d/%d/%d — erwartet %s/%s mit 3 gesamt, 1 verliehen, 2 verfügbar (die alte Auflage ohne Schulbuch-Schalter zählt nicht)",
@@ -286,7 +287,7 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 		}
 	}
 
-	zeilen, err := abfragen.ladeLernmittelTitel(ctx, "Mathematik", false, lernmittelFilter{})
+	zeilen, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +299,7 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 		t.Errorf("Mathe 8 ohne Buch: %+v — erwartet eine gewöhnliche Zeile ohne Aufschlüsselung", zeilen[1])
 	}
 
-	getroffen, err := abfragen.ladeLernmittelTitel(ctx, "", true, lernmittelFilter{Suche: "978-B1"})
+	getroffen, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Suche: "978-B1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,14 +308,14 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 	}
 	pruefeBuch("Suche 978-B1", getroffen[0], alt, "978-B1")
 
-	faecher, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{})
+	faecher, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(faecher) != 1 || faecher[0].Titel != 2 || faecher[0].Gesamt != 4 || faecher[0].Verliehen != 1 {
 		t.Errorf("Fach-Zahlen: %+v — erwartet Mathematik mit 2 Büchern, 4 gesamt, 1 verliehen", faecher)
 	}
-	fSuche, err := abfragen.ladeLernmittelFaecher(ctx, lernmittelFilter{Suche: "978-B1"})
+	fSuche, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{Suche: "978-B1"})
 	if err != nil {
 		t.Fatal(err)
 	}

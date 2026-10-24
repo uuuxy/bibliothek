@@ -12,15 +12,17 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // sortiertWieErwartet gibt die Titel rückwärts hinein und vergibt die laufende Nummer aus dem
 // Anlegen (sort_order) dabei aufsteigend: Die alte Reihenfolge wäre die umgekehrte.
 func sortiertWieErwartet(t *testing.T, erwartet []string) {
 	t.Helper()
-	buecher := make([]Titel, 0, len(erwartet))
+	buecher := make([]repository.KatalogTitel, 0, len(erwartet))
 	for i := len(erwartet) - 1; i >= 0; i-- {
-		buecher = append(buecher, Titel{Titel: erwartet[i], Reihenfolge: len(buecher) + 1})
+		buecher = append(buecher, repository.KatalogTitel{Titel: erwartet[i], Reihenfolge: len(buecher) + 1})
 	}
 	sortiereBuecherNachTitel(buecher)
 	ist := make([]string, len(buecher))
@@ -85,7 +87,7 @@ func TestSortiereBuecherNachTitel_OhneLeerzeichenAmRand(t *testing.T) {
 
 // Gleiche Titel behalten die Reihenfolge, in der die Abfrage sie liefert.
 func TestSortiereBuecherNachTitel_GleicheTitelBleibenInAbfrageReihenfolge(t *testing.T) {
-	buecher := []Titel{
+	buecher := []repository.KatalogTitel{
 		{ID: "c", Titel: "Mathe 7"}, {ID: "x", Titel: "Zebra"}, {ID: "a", Titel: "Mathe 7"}, {ID: "b", Titel: "Mathe 7"},
 	}
 	sortiereBuecherNachTitel(buecher)
@@ -118,12 +120,12 @@ func TestTitelListe(t *testing.T) {
 					}).AddRow(
 						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", "G", false, int64(5), int64(10), int64(2), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 					))
-				// Die Suchwörter der gelieferten Titel (repository.LadeSuchwoerterDerTitel).
+				// Die Suchwörter der gelieferten Titel (repository.ladeSuchwoerterDerTitel).
 				m.ExpectQuery("(?s)SELECT tsw.titel_id.*FROM schlagworte sw").
 					WithArgs([]string{"b1"}).
 					WillReturnRows(pgxmock.NewRows([]string{"titel_id", "woerter"}).
 						AddRow("b1", []string{"Fantasy", "Tierfantasy"}))
-				// Die Standorte der Exemplare im Bestand (repository.LadeStandorteDerTitel).
+				// Die Standorte der Exemplare im Bestand (repository.ladeStandorteDerTitel).
 				m.ExpectQuery("(?s)SELECT e.titel_id::text, e.standort.*FROM buecher_exemplare e").
 					WithArgs([]string{"b1"}).
 					WillReturnRows(pgxmock.NewRows([]string{"titel_id", "standort", "anzahl"}).
@@ -211,7 +213,7 @@ func TestTitelListe(t *testing.T) {
 			}
 			defer mock.Close()
 
-			abfragen := NewTitelAbfragen(mock)
+			abfragen := repository.NewTitelAbfragen(mock)
 			tueren := &Tueren{abfragen: abfragen}
 
 			if f.setupMock != nil {

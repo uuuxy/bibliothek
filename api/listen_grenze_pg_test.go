@@ -46,7 +46,7 @@ var listenGrenze = map[string]string{
 	"GET /api/admin/auditlog $":   "LIMIT 1000, die jüngsten zuerst (api/system/verwaltungs_protokoll.go)",
 	"GET /api/schueler/deleted $": "LIMIT 1000, die jüngsten Löschungen zuerst (papierkorbGrenze, api/leser/papierkorb.go)",
 	"GET /api/books $.data": "Kappung bei 50000 Titeln mit Warnung im Log (titelListeGrenze, " +
-		"inventur/datenbank_buecher_leser.go)",
+		"repository/titel_liste.go)",
 	"GET /api/signaturen $": "keine Obergrenze in der Abfrage; eine Zeile je Regaladresse (GROUP BY über die " +
 		"Titel), die Liste wächst mit den Regalen, nicht mit den Büchern (repository.LadeSignaturGruppen)",
 	"GET /api/auth/me $.permissions":                                      "keine Obergrenze in der Abfrage; die erlaubten Rechte der Rolle aus role_permissions, höchstens der Katalog der Rechte (db.SchreibeRechteVorgabe), beim Admin nur \"*\" (auth.ladeRechteDerRolle)",

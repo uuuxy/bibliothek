@@ -30,7 +30,7 @@ var fkSperrenBestand = []string{
 	// Befragt: Drei Wege löschen Exemplare und räumen vorher ab. Das Löschen eines Titels lehnt
 	// verliehene Exemplare mit Satz ab (400 mit den Barcodes, repository.LoescheTitel); die
 	// Massenaktion der Bestandstabelle löscht auch die offenen Ausleihen, mit Spur im Protokoll
-	// (inventur.LoescheTitel). Das Löschen von Verlusten weist offene Vorgänge mit Satz ab (409,
+	// (TitelAbfragen.LoescheTitelSamtAusleihen). Das Löschen von Verlusten weist offene Vorgänge mit Satz ab (409,
 	// ErrVerlustNochGebunden). Danach fallen Schadensfälle und zurückgegebene Ausleihen in
 	// derselben Transaktion. Die Sperre trifft nur eine Ausleihe oder Forderung, die zwischen
 	// Abräumen und Löschen entsteht: Dann bricht das Löschen mit 500 ab, mit dem neutralen Satz
@@ -103,7 +103,7 @@ var eindeutigkeitBestand = []string{
 	// von apierrors.
 	"benutzer_email_key @ benutzer (email)",
 	// Befragt: Neue Exemplare ziehen ihre Nummer aus barcode_seq, abgeglichen gegen den Bestand
-	// (ZieheFreieExemplarBarcodes). Das Ändern einer Nummer antwortet auf eine vergebene mit 409
+	// (zieheFreieExemplarBarcodes). Das Ändern einer Nummer antwortet auf eine vergebene mit 409
 	// (IstExemplarBarcodeVergeben, api/katalog/exemplar_barcode.go), der Bestands-Import übergeht
 	// sie (ON CONFLICT DO NOTHING), die Übernahme aus Littera gibt doppelten Nummern vorher eine
 	// neue (klaereBarcodes).

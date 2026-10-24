@@ -103,7 +103,7 @@ func FuehreTitelZusammen(ctx context.Context, q Datenbank, a TitelZusammenfuehre
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("titel zusammenführen: commit: %w", err)
 	}
-	LoescheCoverDateien(erg.coverDateien)
+	loescheCoverDateien(erg.coverDateien)
 	return erg, nil
 }
 
@@ -138,7 +138,7 @@ func fuehreTitelZusammenIn(ctx context.Context, tx pgx.Tx, a TitelZusammenfuehre
 	}
 	// Ein lokales Cover der Quelle fällt mit ihr, außer das Ziel übernimmt es.
 	if wert(nachher.coverURL) != wert(quelle.coverURL) {
-		if erg.coverDateien, err = LadeLokaleCoverNurDieserTitel(ctx, tx, []string{quelle.id}); err != nil {
+		if erg.coverDateien, err = ladeLokaleCoverNurDieserTitel(ctx, tx, []string{quelle.id}); err != nil {
 			return nil, err
 		}
 	}
@@ -194,9 +194,9 @@ func protokolliereZusammenfuehrung(ctx context.Context, tx pgx.Tx, bearbeiterID 
 }
 
 // loescheQuelle löscht die Quelle, nachdem alles von ihr gewandert ist, und hält die Regel der
-// Auflagen: Ein Werk mit weniger als zwei Titeln fällt (LadeWerkeDerTitel, RaeumeWerkeAuf).
+// Auflagen: Ein Werk mit weniger als zwei Titeln fällt (ladeWerkeDerTitel, raeumeWerkeAuf).
 func loescheQuelle(ctx context.Context, tx pgx.Tx, zielID, quelleID string) error {
-	werke, err := LadeWerkeDerTitel(ctx, tx, []string{zielID, quelleID})
+	werke, err := ladeWerkeDerTitel(ctx, tx, []string{zielID, quelleID})
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func loescheQuelle(ctx context.Context, tx pgx.Tx, zielID, quelleID string) erro
 	if tag.RowsAffected() != 1 {
 		return ErrTitelNichtGefunden
 	}
-	return RaeumeWerkeAuf(ctx, tx, werke)
+	return raeumeWerkeAuf(ctx, tx, werke)
 }
 
 // verschiebeTitelZeilen hängt alles, was an der Quelle hängt, an das Ziel. Von zwei

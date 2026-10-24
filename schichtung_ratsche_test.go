@@ -30,7 +30,6 @@ import (
 // Schrägstrich am Ende gilt für alle Pakete darunter.
 var datenbankschicht = map[string]string{
 	"repository":         "Abfragen und Schreibpfade der Anwendung",
-	"inventur":           "eigene Datenbankschicht des Medienkatalogs (ARCHITEKTUR 5.2.3)",
 	"db":                 "Pool, Migrationen, Rechte-Seed und Übernahmen beim Start; repository/ bindet db/ ein",
 	"internal/littera":   "Schreiber der einmaligen Übernahme aus Littera",
 	"internal/pgtest":    "Prüfhilfe, legt das Schema der Testdatenbank an",
@@ -329,13 +328,13 @@ func TestDatenbankAufrufe_ErkenntJedeForm(t *testing.T) {
 // Ein Eintrag mit Schrägstrich gilt für die Pakete darunter, ein Eintrag ohne nur für sich:
 // „db" darf kein Paket „db_export" freistellen.
 func TestInDatenbankschicht_GrenztPaketeAb(t *testing.T) {
-	drin := []string{"repository", "inventur", "db", "internal/littera", "cmd/migrate", "cmd/littera-import"}
+	drin := []string{"repository", "db", "internal/littera", "internal/testdaten", "cmd/migrate", "cmd/littera-import"}
 	for _, p := range drin {
 		if _, ok := inDatenbankschicht(p); !ok {
 			t.Errorf("%s gilt nicht als Datenbankschicht", p)
 		}
 	}
-	draussen := []string{"api", "jobs", "auth", "internal/service", "internal", "repository_alt", "db_export", "cmd", "internal/littera/neu", "."}
+	draussen := []string{"api", "jobs", "auth", "internal/service", "internal/katalogdienste", "inventur", "internal", "repository_alt", "db_export", "cmd", "internal/littera/neu", "."}
 	for _, p := range draussen {
 		if eintrag, ok := inDatenbankschicht(p); ok {
 			t.Errorf("%s gilt als Datenbankschicht (Eintrag %q)", p, eintrag)

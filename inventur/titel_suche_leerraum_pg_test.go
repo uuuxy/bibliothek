@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/repository"
 )
 
 // Titel-Verwaltung und Lernmittel-Liste suchen am Server und vergleichen den Suchtext mit
@@ -20,7 +21,7 @@ import (
 func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	abfragen := NewTitelAbfragen(pool)
+	abfragen := repository.NewTitelAbfragen(pool)
 	tueren := &Tueren{abfragen: abfragen, metadaten: offlineMetadatenClient()}
 	const gespeichert, barcode = "Leerraumprobe La Peste", "B-LEERRAUM-INV-1"
 	geschuetzt := string(rune(0x00A0))
@@ -36,7 +37,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	raeume()
 	t.Cleanup(raeume)
 
-	id, err := abfragen.LegeTitelAn(ctx, Titel{
+	id, err := abfragen.LegeTitelAn(ctx, repository.KatalogTitel{
 		Titel: "Leerraumprobe La  Peste", Autor: "Camus," + geschuetzt + "Albert", IstLernmittel: true,
 	})
 	if err != nil {
@@ -46,7 +47,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 
 	// Die Lernmittel-Liste über ihre Tür: Liste, Fach-Zahlen und Ausdruck lesen den Suchtext
 	// an einer Stelle (lernmittelFilterParam).
-	lernmittel := func(suchtext string) []LernmittelTitel {
+	lernmittel := func(suchtext string) []repository.LernmittelTitel {
 		t.Helper()
 		rec := httptest.NewRecorder()
 		tueren.PortalLernmittel(rec, httptest.NewRequest(http.MethodGet,
@@ -55,7 +56,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 			t.Fatalf("Lernmittel, Suche %+q: %d %s", suchtext, rec.Code, rec.Body.String())
 		}
 		var antwort struct {
-			Titel []LernmittelTitel `json:"titel"`
+			Titel []repository.LernmittelTitel `json:"titel"`
 		}
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatal(err)

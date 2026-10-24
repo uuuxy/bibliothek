@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/pkg/coverablage"
+	"bibliothek/repository"
 	"bytes"
 	"mime/multipart"
 	"net/http"
@@ -91,7 +92,7 @@ func TestCoverUpload_UnbekanntesBuchHinterlaesstKeineDatei(t *testing.T) {
 	mock.ExpectQuery("(?s)SELECT id, COALESCE.*").WithArgs(reihenfolgeBuchID).WillReturnError(pgx.ErrNoRows)
 
 	rec := httptest.NewRecorder()
-	(&Tueren{abfragen: NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))
+	(&Tueren{abfragen: repository.NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
@@ -115,10 +116,10 @@ func TestCoverUpload_GescheitertesUpdateLaesstAltesCoverStehen(t *testing.T) {
 	mock.ExpectQuery("(?s)SELECT id, COALESCE.*").WithArgs(reihenfolgeBuchID).WillReturnRows(zeile)
 	mock.ExpectExec("(?s)UPDATE buecher_titel.*").
 		WithArgs("", "", pgxmock.AnyArg(), reihenfolgeBuchID).
-		WillReturnError(errTestTuer)
+		WillReturnError(errTest)
 
 	rec := httptest.NewRecorder()
-	(&Tueren{abfragen: NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))
+	(&Tueren{abfragen: repository.NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500: %s", rec.Code, rec.Body.String())
@@ -147,7 +148,7 @@ func TestCoverUpload_ErfolgErsetztAltesCover(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	rec := httptest.NewRecorder()
-	(&Tueren{abfragen: NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))
+	(&Tueren{abfragen: repository.NewTitelAbfragen(mock)}).CoverHochladen(rec, coverUploadAnfrage(t, reihenfolgeBuchID))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())

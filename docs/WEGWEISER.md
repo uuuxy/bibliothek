@@ -51,7 +51,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 
 Der Medienkatalog ist ein eigenes Untermodul: Titelliste, Buchmaske und Import haben ihre
 Türen und ihre Abfragen in `inventur/`; seine Beschreibung steht am Kopf von
-`inventur/datenbank.go`. Was jede Tür braucht (Eingabe lesen, Recht prüfen,
+`repository/titel_abfragen.go`. Was jede Tür braucht (Eingabe lesen, Recht prüfen,
 Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bildschirm
 öffnet, steht in `frontend/src/lib/menue.js` und `frontend/src/lib/Router.svelte`.
 

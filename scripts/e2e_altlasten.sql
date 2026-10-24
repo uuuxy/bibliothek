@@ -47,7 +47,7 @@ DELETE FROM ausleihen a
  USING buecher_exemplare e, buecher_titel t
  WHERE a.exemplar_id = e.id AND e.titel_id = t.id AND t.titel LIKE 'E2E %';
 
--- Regel der Auflagen wie im Programm (repository.LadeWerkeDerTitel, RaeumeWerkeAuf): unter
+-- Regel der Auflagen wie im Programm (repository.ladeWerkeDerTitel, raeumeWerkeAuf): unter
 -- der Sperre der Auflagen die Werke der Titel merken, die gleich fallen.
 DO $$ BEGIN PERFORM pg_advisory_xact_lock(7502026); END $$;
 CREATE TEMP TABLE werke_der_geloeschten ON COMMIT DROP AS

@@ -9,7 +9,6 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
-	"bibliothek/inventur"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -17,7 +16,7 @@ import (
 )
 
 // Ein neues Exemplar erbt den Standort, den alle Exemplare seines Titels im Bestand tragen
-// (repository.SQLGeerbterStandort). Ein Exemplar kommt auf vier Wegen zu
+// (repository.sqlGeerbterStandort). Ein Exemplar kommt auf vier Wegen zu
 // einem vorhandenen Titel; jede Ausgangslage läuft deshalb über jeden Weg.
 
 // erbTitel ist ein Titel der Probe: Die Wege finden ihn über Kennung, Namen oder ISBN.
@@ -33,20 +32,20 @@ func erbWege() []erbWeg {
 	ctx := context.Background()
 	return []erbWeg{
 		{"Bestand in der Titelmaske erhöht", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			repo := inventur.NewTitelAbfragen(pool)
+			repo := repository.NewTitelAbfragen(pool)
 			buecher, err := repo.LadeTitelNachIDs(ctx, []string{titel.id})
 			if err != nil || len(buecher) != 1 {
 				t.Fatalf("Titel lesen: %v, %d Titel", err, len(buecher))
 			}
 			gesehen := buecher[0].Bestand
 			if err := repo.AendereTitel(ctx, titel.id, buecher[0], nil,
-				&inventur.Bestandsangabe{Soll: gesehen + 2, Gesehen: &gesehen}); err != nil {
+				&repository.Bestandsangabe{Soll: gesehen + 2, Gesehen: &gesehen}); err != nil {
 				t.Fatalf("Bestand erhöhen: %v", err)
 			}
 		}},
 		{"Listenimport mit Stückzahl", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			if _, err := inventur.NewTitelAbfragen(pool).
-				SchreibeTitelStapel(ctx, []inventur.Titel{{ISBN: titel.isbn, Bestand: 2}}); err != nil {
+			if _, err := repository.NewTitelAbfragen(pool).
+				SchreibeTitelStapel(ctx, []repository.KatalogTitel{{ISBN: titel.isbn, Bestand: 2}}); err != nil {
 				t.Fatalf("Listenimport: %v", err)
 			}
 		}},

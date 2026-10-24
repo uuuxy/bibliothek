@@ -57,7 +57,7 @@ export function signaturFehlt(formular) {
 
 /**
  * Der Hinweis unter „Aktueller Bestand". Neuer Titel: Ohne Exemplar zeigt ihn kein Katalog
- * (repository.SQLTitelHatExemplar), nur die Sicht „Ohne Exemplare" der Titelliste.
+ * (repository.sqlTitelHatExemplar), nur die Sicht „Ohne Exemplare" der Titelliste.
  * Vorhandener Titel: Ein leeres Feld ändert nichts (bestandsAngabe in buch_speichern.js).
  * @param {string|null|undefined} id
  * @param {number|string|null|undefined} bestand

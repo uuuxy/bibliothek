@@ -12,7 +12,7 @@ import (
 // Die Felder beim Zusammenführen zweier Titel: Was am Ziel steht, bleibt; was dort leer ist,
 // kommt von der Quelle. Leer heißt hier „unbekannt". Ein Feld, in dem leer etwas bedeutet,
 // füllt die Quelle nicht auf: Ein Titel ohne Schulzweig gilt für alle Zweige. Lernmittel geht
-// nie verloren, wie beim Listenimport (inventur/titel_anlegen.go): Ist einer der beiden ein
+// nie verloren, wie beim Listenimport (repository/titel_anlegen.go): Ist einer der beiden ein
 // Lernmittel, ist es das Ziel danach auch.
 
 // TitelFeld ist ein Feld, das das Ziel von der Quelle übernimmt, mit der Bezeichnung der Maske.

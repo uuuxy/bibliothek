@@ -1,6 +1,6 @@
 package repository
 
-// SQLTitelTraegtISBN ist die Bedingung „der Titel trägt diese ISBN", in jeder Schreibweise und
+// sqlTitelTraegtISBN ist die Bedingung „der Titel trägt diese ISBN", in jeder Schreibweise und
 // in beiden Längen: Verglichen wird die Normalform (isbn_normalform; in Go
 // isbnutil.Normalform). wert ist der SQL-Ausdruck der gefragten Nummer.
 //
@@ -8,18 +8,18 @@ package repository
 // trägt (eine Dublette), führt ihre ISBN noch in der alten Schreibweise.
 //
 // titelAlias ist der Alias der Titeltabelle in der umgebenden Abfrage, leer für keinen.
-func SQLTitelTraegtISBN(titelAlias, wert string) string {
+func sqlTitelTraegtISBN(titelAlias, wert string) string {
 	return `isbn_normalform(` + spalteISBN(titelAlias) + `) = isbn_normalform(` + wert + `)`
 }
 
-// SQLSuchtextIstISBN ist die Bedingung „der Suchtext ist die ISBN des Titels", für die
+// sqlSuchtextIstISBN ist die Bedingung „der Suchtext ist die ISBN des Titels", für die
 // Suchfelder: Eine getippte zehnstellige ISBN findet den Titel, den die Datenbank unter der
 // dreizehnstelligen führt, und Bindestriche stören nicht. Der Teilstring-Vergleich der
 // Suchen sieht das nicht — beide Längen enden auf verschiedene Prüfzeichen.
 //
 // Die Spalte steht hier ohne Funktion, damit der UNIQUE-Index auf isbn greift; eine Suche
 // läuft bei jedem Tastendruck. suchtext ist der SQL-Ausdruck des Suchtexts.
-func SQLSuchtextIstISBN(titelAlias, suchtext string) string {
+func sqlSuchtextIstISBN(titelAlias, suchtext string) string {
 	return spalteISBN(titelAlias) + ` = isbn_normalform(` + suchtext + `)`
 }
 

@@ -17,7 +17,7 @@ import (
 // dreizehnstellig (isbn_normalform), und beide Längen enden auf verschiedene Prüfzeichen.
 //
 // Die Regel: Wo SQL die Spalte isbn mit LIKE oder ILIKE gegen einen Suchtext vergleicht, steht in
-// derselben Deklaration auch repository.SQLSuchtextIstISBN, der Vergleich mit der Normalform des
+// derselben Deklaration auch repository.sqlSuchtextIstISBN, der Vergleich mit der Normalform des
 // Suchtexts.
 //
 // Blindheit: Liest Zeichenketten-Literale; SQL, das erst aus Sprintf-Teilen entsteht, sieht sie
@@ -28,7 +28,7 @@ import (
 // im Baum keinen. Suchen, die die ISBN nur über den Volltext (search_vector) treffen, und Filter
 // im Browser sieht sie nicht.
 func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
-	const baustein = "SQLSuchtextIstISBN"
+	const baustein = "sqlSuchtextIstISBN"
 	var verstoesse []string
 	suchen := 0
 

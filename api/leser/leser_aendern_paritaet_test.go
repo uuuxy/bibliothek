@@ -11,7 +11,7 @@ import (
 // Gate gegen die andere Hälfte der Datenverlust-Bugklasse — hier am dynamischen
 // UPDATE der Schülerdatei.
 //
-// inventur/schema_paritaet_test.go bewacht die eine Seite: eine Spalte, die kein Schreiber
+// repository/schema_paritaet_test.go bewacht die eine Seite: eine Spalte, die kein Schreiber
 // füllt. Diese Seite ist die gefährlichere, weil sie täglich benutzt wird: ein Feld im
 // Anfrage-Typ, das baueLeserAenderung in der Änderung der Leserzeile nicht nennt.
 //

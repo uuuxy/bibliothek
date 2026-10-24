@@ -35,7 +35,7 @@ func FindeTitelZumBestellen(ctx context.Context, db Datenbank, suchtext string) 
 				OR t.autor ILIKE '%' || $1 || '%'
 				OR regexp_replace(coalesce(t.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1, '[- ]', '', 'g') || '%'
 				OR replace(t.isbn, '-', '') = replace($1, '-', '')
-				OR `+SQLSuchtextIstISBN("t", "$1")+`
+				OR `+sqlSuchtextIstISBN("t", "$1")+`
 			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel COLLATE deutsch ASC
 			LIMIT 50
 		)

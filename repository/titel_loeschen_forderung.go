@@ -2,7 +2,7 @@ package repository
 
 // Die Spur, die eine gelöschte Forderung hinterlässt.
 //
-// Das Gegenstück zu inventur/titel_loeschen_spur.go für das Löschen eines einzelnen Titels.
+// Das Gegenstück zu repository/titel_loeschen_spur.go für das Löschen eines einzelnen Titels.
 // Beide Wege räumen schadensfaelle ohne Rücksicht auf ist_bezahlt ab, weil der Fremdschlüssel
 // den Titel sonst festhielte. Spurlos darf das nicht geschehen: Ein unbezahlter Schadensfall
 // ist Geld, das ein Leser der Schule schuldet.

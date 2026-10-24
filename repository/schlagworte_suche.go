@@ -12,9 +12,9 @@ import (
 //
 // Die Regel steht hier für beide Formen der Suche:
 //   - am Server (Titel-Verwaltung, öffentlicher Katalog und Portal) als Bedingung,
-//     SQLTitelUeberSchlagwort;
+//     sqlTitelUeberSchlagwort;
 //   - im Browser (Medienkatalog „Suche & Filter" lädt die ganze Liste und filtert selbst)
-//     als Wörter je Titel, LadeSuchwoerterDerTitel.
+//     als Wörter je Titel, ladeSuchwoerterDerTitel.
 //
 // Beide lösen ein Wort so auf wie der Schreibpfad SetzeSchlagworte: coalesce(verweis_auf, id).
 // Ein Schlagwort steht für sich, ein Verweis für sein Ziel.
@@ -25,7 +25,7 @@ import (
 const sqlWortZumTitel = `schlagworte sw
 		JOIN titel_schlagworte tsw ON tsw.schlagwort_id = coalesce(sw.verweis_auf, sw.id)`
 
-// SQLTitelUeberSchlagwort ist die Bedingung „ein Schlagwort des Titels oder ein Verweis
+// sqlTitelUeberSchlagwort ist die Bedingung „ein Schlagwort des Titels oder ein Verweis
 // darauf enthält den Suchtext". Verglichen wird wie bei Titel und Autor: Teilstring, ohne
 // Rücksicht auf Groß- und Kleinschreibung.
 //
@@ -35,7 +35,7 @@ const sqlWortZumTitel = `schlagworte sw
 //
 // Die Unterabfrage hängt nicht vom Titel ab; Postgres rechnet sie einmal je Suche und
 // prüft jeden Titel gegen die gehashte Menge.
-func SQLTitelUeberSchlagwort(titelAlias, muster string) string {
+func sqlTitelUeberSchlagwort(titelAlias, muster string) string {
 	return titelAlias + `.id IN (
 		SELECT tsw.titel_id FROM ` + sqlWortZumTitel + `
 		WHERE sw.wort ILIKE '%' || ` + muster + ` || '%')`
@@ -60,13 +60,13 @@ type SchlagwortFilter struct {
 	Wort string `json:"wort"`
 }
 
-// LadeSuchwoerterDerTitel liefert je Titel die Wörter, über die er gefunden wird: seine
+// ladeSuchwoerterDerTitel liefert je Titel die Wörter, über die er gefunden wird: seine
 // Schlagworte und die Verweise darauf, alphabetisch. Ein Titel ohne Schlagworte fehlt in
 // der Antwort.
 //
 // Das ist ein Suchindex, keine Anzeige: Ein Verweis ist kein Schlagwort des Titels. Was am
 // Titel steht, liefert LadeSchlagworteDesTitels.
-func LadeSuchwoerterDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]string, error) {
+func ladeSuchwoerterDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]string, error) {
 	woerter := make(map[string][]string)
 	if len(titelIDs) == 0 {
 		return woerter, nil

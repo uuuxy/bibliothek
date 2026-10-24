@@ -35,7 +35,7 @@ func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bear
 
 	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen.
 	// Zuerst, weil die Sperre der Auflagen vor jeder Zeilensperre kommt.
-	werke, err := LadeWerkeDerTitel(ctx, tx, []string{titelID})
+	werke, err := ladeWerkeDerTitel(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
 	}
@@ -48,8 +48,8 @@ func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bear
 		return err
 	}
 	// Das lokal gespeicherte Cover fällt mit dem Titel, wie in der Massenaktion der
-	// Bestandstabelle (inventur.LoescheTitel).
-	cover, err := LadeLokaleCoverNurDieserTitel(ctx, tx, []string{titelID})
+	// Bestandstabelle (TitelAbfragen.LoescheTitelSamtAusleihen).
+	cover, err := ladeLokaleCoverNurDieserTitel(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bear
 	if tag.RowsAffected() == 0 {
 		return ErrTitelNichtGefunden
 	}
-	if err = RaeumeWerkeAuf(ctx, tx, werke); err != nil {
+	if err = raeumeWerkeAuf(ctx, tx, werke); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bear
 	if err = tx.Commit(ctx); err != nil {
 		return err
 	}
-	LoescheCoverDateien(cover)
+	loescheCoverDateien(cover)
 	return nil
 }
 
@@ -160,7 +160,7 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string)
 func leseTitelExemplare(ctx context.Context, tx pgx.Tx, titelID string) ([]titelExemplar, error) {
 	var exemplare []titelExemplar
 	rows, err := tx.Query(ctx,
-		`SELECT e.id::text, e.barcode_id, coalesce(e.lmf_barcode, ''), `+SQLWarImBestand+` FROM buecher_exemplare e WHERE e.titel_id = $1`, titelID)
+		`SELECT e.id::text, e.barcode_id, coalesce(e.lmf_barcode, ''), `+sqlWarImBestand+` FROM buecher_exemplare e WHERE e.titel_id = $1`, titelID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
 	}
@@ -188,7 +188,7 @@ func protokolliereWasMitDemTitelFaellt(ctx context.Context, tx pgx.Tx, titelID s
 	if err := protokolliereOffeneForderungen(ctx, tx, titelID); err != nil {
 		return err
 	}
-	wartende, err := LadeWartendeBezuege(ctx, tx, []string{titelID})
+	wartende, err := ladeWartendeBezuege(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVor
 			"barcode_id": ex.barcode, "titel": vorher.titel, "titel_id": vorher.id,
 			"action": ProtokollAktionTitelGeloescht, ProtokollDetailWarImBestand: ex.warImBestand,
 		}
-		MerkeLMFBarcode(details, ex.lmfBarcode)
+		merkeLMFBarcode(details, ex.lmfBarcode)
 		if err := schreibeProtokollEintrag(ctx, tx, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: ex.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
@@ -244,9 +244,9 @@ const (
 	ProtokollDetailLMFBarcode = "lmf_barcode"
 )
 
-// MerkeLMFBarcode trägt das alte LMF-Etikett in die Spur eines gelöschten Exemplars ein, wenn es
+// merkeLMFBarcode trägt das alte LMF-Etikett in die Spur eines gelöschten Exemplars ein, wenn es
 // eins hatte (ProtokollDetailLMFBarcode).
-func MerkeLMFBarcode(details map[string]any, lmfBarcode string) {
+func merkeLMFBarcode(details map[string]any, lmfBarcode string) {
 	if lmfBarcode != "" {
 		details[ProtokollDetailLMFBarcode] = lmfBarcode
 	}

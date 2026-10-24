@@ -37,7 +37,7 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 	loesche()
 	t.Cleanup(loesche)
 
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
+	tueren := &Tueren{abfragen: repository.NewTitelAbfragen(pool), metadaten: offlineMetadatenClient()}
 
 	sende := func(methode string, id string, koerper map[string]any) *httptest.ResponseRecorder {
 		t.Helper()

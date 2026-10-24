@@ -14,7 +14,7 @@ import (
 // die die Schreiber heute anlegen: Tabelle, Aktion, Merker und kontext stehen so in
 // repository/protokoll.go, titel_loeschen.go, exemplar_aussondern.go, leser_loeschen.go,
 // forderung_erledigen.go, bescheid_rueckkehr.go, schueler_zusammenfuehren.go,
-// titel_loeschen_wartende.go und inventur/titel_loeschen_spur.go.
+// titel_loeschen_wartende.go und repository/titel_loeschen_spur.go.
 func TestDSGVOVorgang(t *testing.T) {
 	satz := func(s string) *string { return &s }
 	faelle := []struct {

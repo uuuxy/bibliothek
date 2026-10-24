@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Eine Liste ohne die Spalte „klasse" lässt den Jahrgang unbekannt (NULL), auch wenn der Titel
@@ -13,15 +14,15 @@ import (
 func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	abfragen := NewTitelAbfragen(pool)
+	abfragen := repository.NewTitelAbfragen(pool)
 
-	wege := map[string]func(Titel) error{
-		"SchreibeTitelStapel": func(b Titel) error {
-			_, err := abfragen.SchreibeTitelStapel(ctx, []Titel{b})
+	wege := map[string]func(repository.KatalogTitel) error{
+		"SchreibeTitelStapel": func(b repository.KatalogTitel) error {
+			_, err := abfragen.SchreibeTitelStapel(ctx, []repository.KatalogTitel{b})
 			return err
 		},
-		"schreibeTitel (Einzel-Rückfall)": func(b Titel) error {
-			_, err := abfragen.schreibeTitel(ctx, b)
+		"schreibeTitel (Einzel-Rückfall)": func(b repository.KatalogTitel) error {
+			_, err := abfragen.SchreibeTitelAusListe(ctx, b)
 			return err
 		},
 	}
@@ -50,7 +51,7 @@ func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 			}
 			return s
 		}
-		zeile := func(spalten map[string]int, werte ...string) Titel {
+		zeile := func(spalten map[string]int, werte ...string) repository.KatalogTitel {
 			t.Helper()
 			buch, err := verarbeiteImportZeile(ctx, importZeile{
 				Zeile:     append([]string{isbn, "Die 13½ Leben des Käpt'n Blaubär", "Moers"}, werte...),

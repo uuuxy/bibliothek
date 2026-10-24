@@ -16,6 +16,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
+
+	"bibliothek/repository"
 )
 
 // erzeugeTestbild liefert die Bytes eines Bildes im genannten Format.
@@ -334,7 +336,7 @@ func TestCoverHochladen(t *testing.T) {
 			}
 			defer mock.Close()
 
-			abfragen := NewTitelAbfragen(mock)
+			abfragen := repository.NewTitelAbfragen(mock)
 			tueren := &Tueren{abfragen: abfragen}
 
 			fall.setupMock(mock)

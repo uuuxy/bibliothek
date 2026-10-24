@@ -6,7 +6,7 @@ import (
 
 // FindeTitel führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch und
 // vergleicht daneben Teile des Texts und die ISBN; die Treffer stehen nach ihrem Rang, höchstens
-// 50, und nur Titel mit einem Exemplar (SQLTitelHatExemplar). Der Teilstring-Vergleich nimmt den
+// 50, und nur Titel mit einem Exemplar (sqlTitelHatExemplar). Der Teilstring-Vergleich nimmt den
 // Suchtext in der Form, in der Titeltexte gespeichert sind (TiteltextNormalform).
 func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Titel, error) {
 	suchtext = TiteltextNormalform(suchtext)
@@ -21,8 +21,8 @@ func (a *KatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Ti
 			OR b.autor ILIKE '%' || $1::text || '%'
 			OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1::text, '[- ]', '', 'g') || '%'
 			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
-			OR ` + SQLSuchtextIstISBN("b", "$1::text") + `
-		) AND ` + SQLTitelHatExemplar("b") + `
+			OR ` + sqlSuchtextIstISBN("b", "$1::text") + `
+		) AND ` + sqlTitelHatExemplar("b") + `
 		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel COLLATE deutsch ASC
 		LIMIT 50
 	`
@@ -82,11 +82,11 @@ func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext strin
 			OR lower(b.isbn)        LIKE '%' || lower($4::text) || '%'
 			OR lower(b.signatur)    LIKE '%' || lower($4::text) || '%'
 			OR replace(b.isbn, '-', '') = replace($2::text, '-', '')
-			OR ` + SQLSuchtextIstISBN("b", "$2::text") + `
+			OR ` + sqlSuchtextIstISBN("b", "$2::text") + `
 		  )
 		  AND (
 			   replace(b.isbn, '-', '') = replace($2::text, '-', '')
-			OR ` + SQLSuchtextIstISBN("b", "$2::text") + `
+			OR ` + sqlSuchtextIstISBN("b", "$2::text") + `
 			OR (
 				SELECT bool_and(
 					   suchnorm(coalesce(b.titel, ''))     LIKE '%' || tokens.norm || '%'
@@ -96,7 +96,7 @@ func (a *KatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext strin
 				FROM tokens
 			   )
 		  )
-		  AND ` + SQLTitelHatExemplar("b") + `
+		  AND ` + sqlTitelHatExemplar("b") + `
 		ORDER BY
 			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE tokens.norm || '%') DESC,
 			b.titel COLLATE deutsch ASC
