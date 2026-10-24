@@ -42,14 +42,21 @@ BACKUP_DIR="$(dirname "$0")/../backups"
 # gesamten Bestands und bekommt die kurze Lunte.
 RETENTION_ENC_TAGE=7
 RETENTION_KLARTEXT_TAGE=2
+# Logs ersetzter Container legt update.sh unter logs/ ab, mit derselben Frist wie dort. Die Uhr
+# am Server löscht sie mit, sonst blieben sie bis zum nächsten Update liegen.
+RETENTION_LOG_TAGE=14
+LOG_DIR="$(dirname "$0")/../logs"
 
 # Aufräumen nach Frist, am Ende jeder Sicherung und allein für die Uhr am Server.
 # Verschlüsselt nur die eigenen: Im selben Ordner liegen die Vorab-Sicherungen von update.sh
 # mit 30 Tagen Frist. Klartext dagegen jeder (Gate: docs/backup_ablage_test.go).
 raeume_auf() {
-  echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage)..."
+  echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage, Logs: ${RETENTION_LOG_TAGE} Tage)..."
   find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
   find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime "+${RETENTION_KLARTEXT_TAGE}" -exec rm -f {} \;
+  if [ -d "$LOG_DIR" ]; then
+    find "$LOG_DIR" -type f -name "backend_*.log" -mtime "+${RETENTION_LOG_TAGE}" -exec rm -f {} \;
+  fi
 
   KLARTEXT_UEBRIG=$(find "$BACKUP_DIR" -type f -name "*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$KLARTEXT_UEBRIG" -gt 0 ]; then

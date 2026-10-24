@@ -195,6 +195,12 @@ func TestBackupAblage_UhrRaeumtNurAuf(t *testing.T) {
 		}
 	}
 
+	// Logs ersetzter Container legt update.sh unter logs/ ab; die Uhr löscht sie nach 14 Tagen mit.
+	logs := filepath.Join(wurzel, "logs")
+	logAlt, logJung := "backend_20260901_000000.log", "backend_20261010_000000.log"
+	schreibeLog(t, logs, logAlt, 20*24*time.Hour)
+	schreibeLog(t, logs, logJung, 10*24*time.Hour)
+
 	lauf := func(angabe string) (string, error) {
 		befehl := exec.Command("bash", filepath.Join(skripte, "backup.sh"), angabe)
 		befehl.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
@@ -213,6 +219,12 @@ func TestBackupAblage_UhrRaeumtNurAuf(t *testing.T) {
 	}
 	if !strings.Contains(ausgabe, "WARNUNG: 1 unverschlüsselte") {
 		t.Errorf("der frische Klartext wird nicht gemeldet:\n%s", ausgabe)
+	}
+	for name, bleibt := range map[string]bool{logAlt: false, logJung: true} {
+		_, fehler := os.Stat(filepath.Join(logs, name))
+		if da := fehler == nil; da != bleibt {
+			t.Errorf("%s: nach dem Aufräumen da = %v, erwartet %v", name, da, bleibt)
+		}
 	}
 
 	ausgabe, err = lauf("--nur-aufraumen")

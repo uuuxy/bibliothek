@@ -6,10 +6,12 @@
 #   1. pg_dump Backup mit Zeitstempel → ./backups/
 #   2. Code holen: am Schulserver das neueste Release (UPDATE_STAND=release), am Testserver
 #      git pull (main, auch ohne Eintrag)
-#   3. Frische Images: Datenbank-Image holen, Backend mit --pull bauen, dann starten
+#   3. Frische Images: Datenbank-Image holen, Backend mit --pull bauen, sein Log nach ./logs/
+#      legen, dann starten
 #   4. Bei Fehler: Abbruch + Rollback-Anleitung
 #   5. Nach erfolgreichem Deploy: Vorab-Sicherung verschlüsseln, Klartext löschen
-#   6. Alte Backups aufräumen: vordeploy_ älter als 30 Tage, Klartext älter als 2 Tage.
+#   6. Alte Backups aufräumen: vordeploy_ älter als 30 Tage, Klartext älter als 2 Tage; Logs
+#      ersetzter Container älter als 14 Tage.
 #      Gelöscht wird nur hier, bei einem Lauf — eine Uhr, die ohne Lauf löscht, gibt es nicht.
 #   7. Docker-Build-Cache wird geleert
 # ==============================================================================
@@ -85,6 +87,12 @@ TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 # Restore-Anleitung per `ls -t backups/backup_*` die letzte Deploy-Sicherung statt des
 # Nachtbackups, und alles seit dem letzten Deploy wäre nach dem Restore still weg.
 BACKUP_FILE="${BACKUP_DIR}/vordeploy_${TIMESTAMP}.sql.gz"
+# Docker löscht das Log des Backends mit dem Container, den Schritt 3 ersetzt; deshalb legt
+# Schritt 3 es vorher hier ab. Fehlerzeilen nennen Mailadressen des Kollegiums, daher die Frist.
+LOG_DIR="$(cd "$(dirname "$0")" && pwd)/logs"
+LOG_RETENTION_DAYS=14
+LOG_FILE="${LOG_DIR}/backend_${TIMESTAMP}.log"
+ALTER_CONTAINER=""
 # Der Stand VOR diesem Update — der Rückweg der Rollback-Anleitung. Gelesen in Schritt 0
 # aus dem laufenden Image; nur wenn das nicht geht, in Schritt 2 aus dem Arbeitsverzeichnis.
 # VORHER_QUELLE sagt, woher er stammt ("image" oder "arbeitsverzeichnis").
@@ -315,14 +323,35 @@ export GIT_COMMIT
 # Frisch in beiden Fällen: Das Datenbank-Image kommt in der neuesten Nebenversion (sie braucht
 # weder Sicherung noch Neuaufbau, PFLEGEKONZEPT.md 4), der Bau holt die Basis-Images neu
 # (--pull). Sonst blieben beide auf dem Stand, der beim ersten Aufbau vorlag.
+# Liefert immer Erfolg: Ohne Kopie fehlt nach dem Update nur das alte Log, das Update selbst
+# soll daran nicht scheitern.
+hebe_backend_log_auf() {
+    ALTER_CONTAINER="$(docker inspect --type container --format='{{.Id}}' "${APP_CONTAINER}" 2>/dev/null || true)"
+    [ -n "${ALTER_CONTAINER}" ] || return 0
+    mkdir -p -m 700 "${LOG_DIR}" || return 0
+    (umask 077; docker logs "${APP_CONTAINER}" > "${LOG_FILE}" 2>&1) || true
+    return 0
+}
+
 if docker compose -f "${COMPOSE_FILE}" pull postgres-db \
     && docker compose -f "${COMPOSE_FILE}" build --pull \
+    && hebe_backend_log_auf \
     && docker compose -f "${COMPOSE_FILE}" up -d; then
     log_ok "Container erfolgreich neu gestartet."
 else
     log_error "Holen, Bauen oder Starten ist fehlgeschlagen (docker compose pull, build, up)!"
     print_rollback_instructions
     exit 1
+fi
+
+# Ist der Container geblieben, steht sein Log weiter in Docker; die Kopie hielte dieselben
+# Zeilen über die Frist hinaus.
+if [ -f "${LOG_FILE}" ]; then
+    if [ "$(docker inspect --type container --format='{{.Id}}' "${APP_CONTAINER}" 2>/dev/null || true)" = "${ALTER_CONTAINER}" ]; then
+        rm -f "${LOG_FILE}"
+    else
+        log_info "Log des ersetzten Backends: ${LOG_FILE}"
+    fi
 fi
 
 # ── Schritt 4: Health-Check ───────────────────────────────────────────────────
@@ -455,7 +484,7 @@ else
 fi
 
 # ── Schritt 6: Alte Backups aufräumen ─────────────────────────────────────────
-log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION_DAYS} Tage, Klartext: ${KLARTEXT_RETENTION_DAYS} Tage)"
+log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION_DAYS} Tage, Klartext: ${KLARTEXT_RETENTION_DAYS} Tage, Logs: ${LOG_RETENTION_DAYS} Tage)"
 
 # Zwei Fristen, zwei Muster. `*.sql.gz` trifft NICHT die `.enc`-Dateien — deren Name
 # endet auf `.enc`, und `find -name` vergleicht den ganzen Namen.
@@ -469,6 +498,13 @@ if [ "${DELETED}" -gt 0 ] || [ "${DELETED_KLAR}" -gt 0 ]; then
     log_ok "${DELETED} verschlüsselte/s und ${DELETED_KLAR} unverschlüsselte/s Backup/s gelöscht."
 else
     log_info "Keine alten Backups zum Löschen gefunden."
+fi
+
+if [ -d "${LOG_DIR}" ]; then
+    DELETED_LOGS=$(find "${LOG_DIR}" -name "backend_*.log" -mtime "+${LOG_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+    if [ "${DELETED_LOGS}" -gt 0 ]; then
+        log_ok "${DELETED_LOGS} Log/s ersetzter Container gelöscht (älter als ${LOG_RETENTION_DAYS} Tage)."
+    fi
 fi
 
 REMAINING=$(find "${BACKUP_DIR}" -name "*.sql.gz.enc" 2>/dev/null | wc -l | tr -d ' ')

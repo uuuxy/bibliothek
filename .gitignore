@@ -68,6 +68,8 @@ Thumbs.db
 # (das schema.sql von Commit e5740b95), keine Daten. Bewusst nur diese EINE Datei.
 !db/testdata/schema_baseline_e5740b95.sql
 backups/
+# Logs ersetzter Container, abgelegt von update.sh
+logs/
 *.sql.gz
 *.sql.gz.enc
 # Arbeitsdateien der Wiederherstellung und der Schlüsselwechsel

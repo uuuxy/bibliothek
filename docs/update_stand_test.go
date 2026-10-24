@@ -12,7 +12,8 @@ import (
 // mit frischem Datenbank-Image und frischen Basis-Images in beiden Fällen. Die Tests fahren das
 // echte Skript in einem Wegwerf-Repo: drei Commits auf main, die ersten zwei als v1.0.0 und
 // v1.1.0 getaggt, der Server auf dem ersten. docker ist ein Stellvertreter im PATH, der jeden
-// Aufruf mitschreibt und nach dem Bau dessen Commit als den des laufenden Images meldet.
+// Aufruf mitschreibt und nach dem Bau dessen Commit als den des laufenden Images meldet. Nach
+// `up -d` meldet er einen neuen Backend-Container, außer GLEICHER_CONTAINER ist gesetzt.
 
 // updateLauf ist das Ergebnis eines Laufs: Ausgabe, Fehler, der Commit des Servers danach, die
 // Aufrufe von docker und die Commits des Ursprungs (alt, Release v1.1.0, Spitze von main).
@@ -22,7 +23,9 @@ type updateLauf struct {
 	alt, release, spitze  string
 }
 
-func fahreUpdate(t *testing.T, envZeile string, mitTags, serverVorn bool) updateLauf {
+// fahreUpdate ruft jedes vorher mit dem Ordner des Servers, bevor update.sh läuft; was es
+// zurückgibt, kommt in die Umgebung des Laufs.
+func fahreUpdate(t *testing.T, envZeile string, mitTags, serverVorn bool, vorher ...func(server string) []string) updateLauf {
 	t.Helper()
 	for _, werkzeug := range []string{"bash", "git", "gzip"} {
 		if _, err := exec.LookPath(werkzeug); err != nil {
@@ -95,6 +98,7 @@ func fahreUpdate(t *testing.T, envZeile string, mitTags, serverVorn bool) update
 	}
 	protokoll := filepath.Join(wurzel, "docker.log")
 	gebaut := filepath.Join(wurzel, "gebaut")
+	kennung := filepath.Join(wurzel, "kennung")
 	schreibe(filepath.Join(bin, "docker"), `#!/bin/sh
 echo "$*" >> "`+protokoll+`"
 case "$1" in
@@ -104,9 +108,17 @@ case "$1" in
       *"printenv GIT_COMMIT"*) cat "`+gebaut+`" 2>/dev/null || echo alt ;;
       *pg_dump*) echo "-- Probe-Dump" ;;
     esac ;;
-  inspect) echo healthy ;;
+  inspect)
+    case "$*" in
+      *.Id*) cat "`+kennung+`" 2>/dev/null || echo alter-container ;;
+      *) echo healthy ;;
+    esac ;;
+  logs) echo '{"level":"INFO","msg":"Zeile aus dem alten Container"}' ;;
   compose)
-    case "$*" in *build*) printf '%s' "$GIT_COMMIT" > "`+gebaut+`" ;; esac ;;
+    case "$*" in
+      *build*) printf '%s' "$GIT_COMMIT" > "`+gebaut+`" ;;
+      *"up -d"*) [ -n "$GLEICHER_CONTAINER" ] || echo neuer-container > "`+kennung+`" ;;
+    esac ;;
 esac
 exit 0
 `, 0o755)
@@ -114,6 +126,9 @@ exit 0
 	befehl := exec.Command("bash", filepath.Join(server, "update.sh"))
 	befehl.Dir = server
 	befehl.Env = append(gitUmgebung, "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	for _, vorbereite := range vorher {
+		befehl.Env = append(befehl.Env, vorbereite(server)...)
+	}
 	roh, err := befehl.CombinedOutput()
 	lauf.ausgabe, lauf.err = string(roh), err
 	lauf.kopf = git(server, "rev-parse", "HEAD")

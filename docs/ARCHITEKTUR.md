@@ -2120,7 +2120,7 @@ steht in `lmf_barcode`.
 | `slog` als JSON auf stdout   | Ein Handler für alles — auch für die noch vorhandenen `log.Printf`-Aufrufe (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
 | Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit dem Status |
 | 500er                        | Stack schreibt `panikMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
-| Docker-Logs                  | json-file, 3 × 10 MB je Container. Das Log gehört zum Container: Baut `./update.sh` ein neues Image, ersetzt es den Container, und Docker löscht das alte Log mit. Wer einem Fehler nachgeht, liest das Log vor dem Update |
+| Docker-Logs                  | json-file, 3 × 10 MB je Container. Das Log gehört zum Container, Docker löscht es mit ihm. Ersetzt `./update.sh` das Backend, legt es dessen Log vorher unter `logs/` ab, nur für den Besitzer lesbar; nach 14 Tagen löschen es `update.sh` und die Uhr am Server (`scripts/backup.sh --nur-aufraeumen`). Das Log der Datenbank geht weiter mit ihrem Container, also nur bei einem neuen Postgres-Image |
 | Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
 | Selbstprüfung                | „Was ist eingerichtet, aber nicht in Betrieb?" — Mail, Selbstanmeldung, Geheimnisse, Backup, Restore-Probe            |

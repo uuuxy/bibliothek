@@ -344,8 +344,8 @@ Schulserver (`UPDATE_STAND=release` in der `.env`) nur `./update.sh`: Es wechsel
 neueste Release ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
 
 Führt aus: Backup (siehe oben) → Code (Release oder `git pull`) → Datenbank-Image holen,
-`docker compose build --pull`, `up -d` →
-Gesundheitsprüfung (Docker-Status **und** `/health` im Container) → alte Backups
+`docker compose build --pull`, Log des alten Backends nach `logs/`, `up -d` →
+Gesundheitsprüfung (Docker-Status **und** `/health` im Container) → alte Backups und Logs
 aufräumen. Bei Fehlschlag: Abbruch mit Rollback-Anleitung, die auf das eben erzeugte
 Backup zeigt und auf den Commit des laufenden Images (`GIT_COMMIT`) — nicht auf HEAD, das
 nach dem vorgezogenen `git pull` schon der neue Stand ist.

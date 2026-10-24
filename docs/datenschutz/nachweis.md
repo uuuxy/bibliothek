@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 23.10.2026 (Entwurf)
+Stand: 24.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -84,6 +84,7 @@ Datenschutz & Sitzung.
 | Sicherung vor einem Update                                           | gelöscht beim ersten Update, bei dem sie älter als 30 Tage ist                                  | nein        |
 | Sicherung von Hand                                                   | gelöscht beim ersten Lauf von Hand, bei dem sie älter als 7 Tage ist                            | nein        |
 | unverschlüsselte Sicherung (misslungenes Update, Verschlüsselung nicht möglich) | gelöscht beim ersten Update oder Lauf von Hand nach 2 Tagen; jeder Lauf meldet, wie viele noch liegen | nein        |
+| Log des Programms (Fehlerzeilen nennen Mailadressen des Kollegiums)  | im laufenden Container höchstens 30 MB, die ältesten Zeilen fallen zuerst weg; nach einem Update unter `logs/`, gelöscht beim ersten Update oder Aufräumlauf, bei dem es älter als 14 Tage ist | nein        |
 
 Beim Anonymisieren leert das Programm Name, Anschrift, Geburtsdatum, Schuleintritt, LUSD-ID und
 Eltern-E-Mail, löscht das Foto, ersetzt die Ausweisnummer und tilgt die Spuren der Person im

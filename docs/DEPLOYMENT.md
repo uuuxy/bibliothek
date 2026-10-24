@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-10-21
+> Zuletzt aktualisiert: 2026-10-24
 
 ---
 
@@ -237,7 +237,9 @@ neue Fassung des Skripts wirkt dort erst beim nächsten Lauf.
 
 Führt aus: **Backup** → Code (das neueste Release oder `git pull`) → Datenbank-Image holen,
 Backend mit frischen Basis-Images bauen (`--pull`), starten → **Gesundheitsprüfung** → alte
-Backups aufräumen. Bei Fehlschlag bricht es ab und gibt
+Backups aufräumen. Vor dem Start legt es das Log des alten Backends unter
+`logs/backend_<Zeit>.log` ab, denn Docker löscht es mit dem Container; nach 14 Tagen löscht es
+die Datei. Das jüngste ansehen: `less "$(ls -t logs/backend_*.log | head -1)"`. Bei Fehlschlag bricht es ab und gibt
 eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus. Den Commit, auf den sie
 zurückführt, liest es aus dem laufenden Image (`GIT_COMMIT`), nicht aus dem
 Arbeitsverzeichnis — nach dem vorgezogenen `git pull` stünde dort schon der neue Stand.
@@ -431,7 +433,7 @@ Adresse und jede Ausleihe im Klartext. Details:
 **Die Uhr für den Klartext-Rest.** Gelöscht wird nur, wenn eines der Skripte läuft. Damit ein
 Klartext-Rest auch dann nach zwei Tagen geht, wenn lange keine Sicherung und kein Update kommt,
 ruft eine Uhr am Server täglich `scripts/backup.sh --nur-aufraeumen` auf. Es räumt nach
-denselben Fristen auf und legt keine Sicherung an. Einmal einrichten, im Programmverzeichnis
+denselben Fristen auf, auch die Logs unter `logs/` nach 14 Tagen, und legt keine Sicherung an. Einmal einrichten, im Programmverzeichnis
 als der Benutzer, dem es gehört; ein zweiter Aufruf ersetzt die Zeile, statt sie zu
 verdoppeln. Die zweite Zeile zeigt, was eingetragen ist:
 
