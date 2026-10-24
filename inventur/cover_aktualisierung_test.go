@@ -117,7 +117,7 @@ func TestCoverAktualisieren_SucheScheitert(t *testing.T) {
 			}, nil
 		},
 	}
-	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
+	metadaten := metadatenUeber(&http.Client{Transport: mockTr})
 
 	tueren := &Tueren{
 		abfragen:  NewTitelAbfragen(mock),
@@ -193,7 +193,7 @@ func TestCoverAktualisieren_KeinCoverIst404OhneSchreiben(t *testing.T) {
 			}, nil
 		},
 	}
-	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
+	metadaten := metadatenUeber(&http.Client{Transport: mockTr})
 
 	tueren := &Tueren{
 		abfragen:  NewTitelAbfragen(mock),
@@ -284,7 +284,7 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 			}, nil
 		},
 	}
-	metadaten := &MetadatenClient{httpClient: &http.Client{Transport: mockTr}}
+	metadaten := metadatenUeber(&http.Client{Transport: mockTr})
 
 	tueren := &Tueren{
 		abfragen:  NewTitelAbfragen(mock),

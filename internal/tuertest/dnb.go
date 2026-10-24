@@ -39,3 +39,12 @@ func (z ZaehlendeDNB) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 	return z.DNBAttrappe.RoundTrip(r)
 }
+
+// Transport macht aus einer Funktion den Transport eines http.Client: Ein Test bestimmt damit,
+// was die Katalogdienste oder eine Cover-Quelle antworten, ohne ins Netz zu gehen.
+type Transport func(*http.Request) (*http.Response, error)
+
+// RoundTrip macht die Funktion zum Transport eines http.Client.
+func (f Transport) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}

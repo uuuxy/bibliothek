@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/internal/tuertest"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -143,16 +144,14 @@ func TestTitelAnlegen(t *testing.T) {
 
 	// Attrappe des HTTP-Clients für den MetadatenClient.
 	mockHTTP := &http.Client{
-		Transport: &mockTransport{
-			roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       http.NoBody,
-				}, nil
-			},
-		},
+		Transport: tuertest.Transport(func(anfrage *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       http.NoBody,
+			}, nil
+		}),
 	}
-	metadatenClient := &MetadatenClient{httpClient: mockHTTP}
+	metadatenClient := metadatenUeber(mockHTTP)
 
 	tueren := &Tueren{
 		abfragen:  abfragen,

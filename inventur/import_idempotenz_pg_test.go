@@ -113,12 +113,12 @@ func TestListenimport_AbgebrochenerLaufGibtDenSchluesselFrei(t *testing.T) {
 	// Der Browser geht, während der Server auf das Nachschlagen der ISBN wartet.
 	abgebrochen, abbrechen := context.WithCancel(ctx)
 	defer abbrechen()
-	brichtAb := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
+	brichtAb := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: metadatenUeber(&http.Client{
 		Transport: &mockTransportCover{roundTripFunc: func(*http.Request) (*http.Response, error) {
 			abbrechen()
 			return nil, context.Canceled
 		}},
-	}}}
+	})}
 	erster := httptest.NewRecorder()
 	brichtAb.ExcelImport(erster, listenAnfrage(t, liste, schluessel).WithContext(abgebrochen))
 	if erster.Code != http.StatusBadRequest {

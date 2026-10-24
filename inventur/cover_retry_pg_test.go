@@ -79,7 +79,7 @@ func TestFremdeCoverNeuLaden_ErsetztNurAdressenImNetz(t *testing.T) {
 		}
 		return antwort(http.StatusNotFound, nil, ""), nil
 	}}
-	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: &MetadatenClient{httpClient: &http.Client{Transport: katalog}}}
+	tueren := &Tueren{abfragen: NewTitelAbfragen(pool), metadaten: metadatenUeber(&http.Client{Transport: katalog})}
 
 	anfrage := httptest.NewRequest(http.MethodPost, "/api/admin/books/retry-covers",
 		strings.NewReader(`{"ids":["`+extern+`","`+hand+`"]}`))

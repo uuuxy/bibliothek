@@ -16,7 +16,7 @@ func TestTitelVerwaltung_Routen(t *testing.T) {
 	defer mockPool.Close()
 
 	abfragen := NewTitelAbfragen(mockPool)
-	metadatenClient := &MetadatenClient{httpClient: &http.Client{}}
+	metadatenClient := metadatenUeber(&http.Client{})
 
 	tueren := NewTueren(TuerenKonfig{
 		Abfragen:          abfragen,

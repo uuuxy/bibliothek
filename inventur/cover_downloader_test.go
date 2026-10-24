@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pkg/coverablage"
 	"bibliothek/pkg/coverquelle"
 )
 
@@ -274,6 +275,15 @@ func TestSpeichereCoverLokal(t *testing.T) {
 		ergebnis := speichereCoverLokal(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", "123")
 		if !strings.HasPrefix(ergebnis, "/uploads/cover_auto_123_") {
 			t.Errorf("speichereCoverLokal(…) = %s, erwartet den Anfang /uploads/cover_auto_123_", ergebnis)
+		}
+		// Die Datei liegt direkt in uploads/: Nur von dort liefert /uploads/ aus, und mit einer
+		// Adresse im Unterordner zeigte die Oberfläche für den Titel kein Cover.
+		datei := strings.TrimPrefix(ergebnis, "/")
+		if filepath.Dir(datei) != coverablage.Wurzel {
+			t.Errorf("abgelegt unter %s, erwartet direkt in %s/", datei, coverablage.Wurzel)
+		}
+		if info, err := os.Stat(datei); err != nil || info.Size() == 0 {
+			t.Errorf("die Adresse %s zeigt auf keine Datei mit Inhalt (%v)", ergebnis, err)
 		}
 	})
 }

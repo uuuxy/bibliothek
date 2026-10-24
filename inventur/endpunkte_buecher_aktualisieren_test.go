@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/internal/tuertest"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -290,9 +291,9 @@ func ruf(t *testing.T, tueren *Tueren, id, rumpf string) *httptest.ResponseRecor
 
 // stummerMetadatenClient liefert einen Client, dessen Katalogdienste nichts finden.
 func stummerMetadatenClient() *MetadatenClient {
-	return &MetadatenClient{httpClient: &http.Client{
-		Transport: &mockTransport{roundTripFunc: func(*http.Request) (*http.Response, error) {
+	return metadatenUeber(&http.Client{
+		Transport: tuertest.Transport(func(*http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusNotFound, Body: http.NoBody}, nil
-		}},
-	}}
+		}),
+	})
 }

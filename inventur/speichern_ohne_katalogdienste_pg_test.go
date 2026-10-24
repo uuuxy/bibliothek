@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/tuertest"
 )
 
 // Das Speichern eines Titels fragt die Katalogdienste nicht und trägt nichts ein, was die
@@ -39,12 +40,12 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		  <datafield tag="245" ind1="1" ind2="0"><subfield code="a">Harry Potter und der Stein der Weisen</subfield></datafield>
 		</record></recordData></record></records></searchRetrieveResponse>`
 	var gefragt []string
-	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: &MetadatenClient{httpClient: &http.Client{
-		Transport: &mockTransport{roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
+	tueren := &Tueren{abfragen: &TitelAbfragen{pool: pool}, metadaten: metadatenUeber(&http.Client{
+		Transport: tuertest.Transport(func(anfrage *http.Request) (*http.Response, error) {
 			gefragt = append(gefragt, anfrage.URL.Host)
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(satz)), Header: make(http.Header)}, nil
-		}},
-	}}}
+		}),
+	})}
 
 	sende := func(methode, id string, koerper map[string]any) *httptest.ResponseRecorder {
 		t.Helper()

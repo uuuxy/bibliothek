@@ -18,7 +18,7 @@ import (
 // (ergaenzeMetadaten wuerde sonst pro CSV-Zeile DNB/Google/OpenLibrary
 // abfragen und gefundene Cover real nach uploads/ schreiben).
 func offlineMetadatenClient() *MetadatenClient {
-	return &MetadatenClient{httpClient: &http.Client{Transport: &mockTransportCover{
+	return metadatenUeber(&http.Client{Transport: &mockTransportCover{
 		roundTripFunc: func(*http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusNotFound,
@@ -26,7 +26,7 @@ func offlineMetadatenClient() *MetadatenClient {
 				Header:     make(http.Header),
 			}, nil
 		},
-	}}}
+	}})
 }
 
 func TestExcelImport(t *testing.T) {

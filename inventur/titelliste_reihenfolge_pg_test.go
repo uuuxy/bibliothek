@@ -62,7 +62,7 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 	durch := func(h http.Handler) http.Handler { return h }
 	tueren := NewTueren(TuerenKonfig{
 		Abfragen:          NewTitelAbfragen(pool),
-		Metadaten:         &MetadatenClient{httpClient: &http.Client{}},
+		Metadaten:         metadatenUeber(&http.Client{}),
 		VerlangeLesen:     durch,
 		VerlangeAendern:   durch,
 		VerlangeLoeschen:  durch,

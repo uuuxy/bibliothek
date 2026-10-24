@@ -1,11 +1,8 @@
 package inventur
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -155,10 +152,10 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 	}
 }
 
-// Was Upload und Cover-Abruf als Adresse zurückgeben, liefert /uploads/ aus. Die Regel
-// oben hängt daran, dass beide direkt in uploads/ ablegen: Mit einer Adresse im
-// Unterordner zeigte die Oberfläche für den Titel kein Cover.
-func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
+// Was der Upload als Adresse zurückgibt, liefert /uploads/ aus. Die Regel oben hängt daran, dass
+// er direkt in uploads/ ablegt: Mit einer Adresse im Unterordner zeigte die Oberfläche für den
+// Titel kein Cover. Für den Cover-Abruf hält es TestSpeichereCoverLokal bei den Katalogdiensten.
+func TestUploadsLiefertWasDerUploadAblegt(t *testing.T) {
 	t.Chdir(t.TempDir())
 
 	mock, err := pgxmock.NewPool()
@@ -188,19 +185,6 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 		t.Fatalf("Upload: Antwort nicht lesbar: %v", err)
 	}
 
-	bild := erzeugeTestbild("png", 20, 20)
-	fremd := &http.Client{Transport: &mockTransport{
-		roundTripFunc: func(*http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader(bild)),
-				Header:     http.Header{"Content-Type": []string{"image/png"}},
-			}, nil
-		},
-	}}
-	abgerufen := speichereCoverLokal(context.Background(), fremd,
-		"https://covers.openlibrary.org/b/id/1-L.jpg", "9783161484100")
-
 	durchlass := func(next http.Handler) http.Handler { return next }
 	tueren := NewTueren(TuerenKonfig{
 		VerlangeLesen:     durchlass,
@@ -208,20 +192,14 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 		VerlangeLoeschen:  durchlass,
 		VerlangeAnmeldung: durchlass,
 	})
-	for _, f := range []struct{ schreiber, adresse string }{
-		{"Upload", antwort.Data.CoverURL},
-		{"Cover-Abruf", abgerufen},
-	} {
-		if f.adresse == "" {
-			t.Errorf("%s: keine Adresse — ohne sie misst der Test nichts", f.schreiber)
-			continue
-		}
-		rec := httptest.NewRecorder()
-		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.adresse, nil))
-		if rec.Code != http.StatusOK || rec.Body.Len() == 0 {
-			t.Errorf("%s legte %s ab, der Abruf darauf: Status %d, %d Bytes — die Oberfläche zeigt für diesen Titel kein Cover",
-				f.schreiber, f.adresse, rec.Code, rec.Body.Len())
-		}
+	if antwort.Data.CoverURL == "" {
+		t.Fatal("Upload: keine Adresse — ohne sie misst der Test nichts")
+	}
+	rec := httptest.NewRecorder()
+	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, antwort.Data.CoverURL, nil))
+	if rec.Code != http.StatusOK || rec.Body.Len() == 0 {
+		t.Errorf("Upload legte %s ab, der Abruf darauf: Status %d, %d Bytes — die Oberfläche zeigt für diesen Titel kein Cover",
+			antwort.Data.CoverURL, rec.Code, rec.Body.Len())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Datenbank: %v", err)
