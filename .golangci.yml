@@ -13,7 +13,7 @@ linters:
     - revive
     - unused        # Findet ungenutzte Variablen, Konstanten und Funktionen
     - depguard      # Sperrt Prüfbibliotheken neben dem Paket testing (docs/STIL.md, Abschnitt 10)
-    - forbidigo     # Sperrt reflect.DeepEqual in Tests (docs/STIL.md, Abschnitt 10)
+    - forbidigo     # Sperrt reflect.DeepEqual in Tests und log.Print/Fatal/Panic im Server (docs/STIL.md, Abschnitte 10 und 11)
     - recvcheck     # Die Methoden eines Typs nehmen alle einen Zeiger oder alle einen Wert (Decisions, „Receiver type")
     - containedctx  # Kein Kontext als Feld eines Typs (Decisions, „Contexts")
     - contextcheck  # Wer einen Kontext hat, reicht ihn weiter, statt einen neuen anzulegen (Decisions, „Contexts")
@@ -38,6 +38,9 @@ linters:
       forbid:
         - pattern: ^reflect\.DeepEqual$
           msg: "Tests vergleichen mit cmp.Equal oder cmp.Diff (docs/STIL.md, Abschnitt 10)"
+        # Das Paket log kennt keine Stufe; über slog.SetDefault landete jeder Fehler als INFO.
+        - pattern: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)$
+          msg: "Der Server schreibt mit slog und Stufe ins Log (docs/STIL.md, Abschnitt 11)"
     errcheck:
       check-type-assertions: true
       check-blank: true
@@ -68,10 +71,18 @@ linters:
       - frontend
       - node_modules
     rules:
-      # forbidigo gilt nur in Tests: cmp ist für Tests gebaut und gehört nicht in den Server.
+      # Die Sperre von reflect.DeepEqual gilt nur in Tests: cmp ist für Tests gebaut und gehört
+      # nicht in den Server.
       - path-except: _test\.go
         linters:
           - forbidigo
+        text: cmp\.Equal
+      # Die Sperre des Pakets log gilt nur im Server: Tests und die Kommandozeilen-Werkzeuge in
+      # cmd/ und scripts/ schreiben für einen Menschen am Terminal.
+      - path: (_test\.go$|^cmd/|^scripts/)
+        linters:
+          - forbidigo
+        text: slog und Stufe
       # Tests rufen die Prüfhilfen, die sich ihren Kontext selbst anlegen; die Regel gilt dem
       # Programmcode (kontext_ratsche_test.go).
       - path: _test\.go

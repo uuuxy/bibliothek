@@ -2,7 +2,7 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-22
+> Zuletzt aktualisiert: 2026-10-24
 
 ---
 
@@ -519,10 +519,10 @@ APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
 
 Symptom: Caddy liefert **502**, `docker compose up -d backend` meldet trotzdem „Started".
 Der Container startet, der Prozess beendet sich sofort — `main.go` prüft die Schlüssellänge
-und bricht mit `FATAL` ab, wenn sie nicht genau 32 oder 64 beträgt.
+und bricht mit einer Zeile der Stufe ERROR ab, wenn sie nicht genau 32 oder 64 beträgt.
 
 ```bash
-docker compose logs --tail=20 backend     # zeigt die FATAL-Zeile
+docker compose logs --tail=20 backend     # zeigt die Zeile mit "level":"ERROR"
 grep -n APP_ENCRYPTION_KEY .env           # steht dort ein unbrauchbarer Wert?
 ```
 

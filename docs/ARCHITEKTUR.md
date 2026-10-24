@@ -705,7 +705,7 @@ nur kleiner werden kann.
 | `ersatzwert`       | Schadensersatz-**Vorschlag** nach Staffel, **mit Herleitung** (der Betrag liegt im Ermessen der Schule)                           |
 | `httpresp`         | Antwortkörper schreiben, wenn Status und Header schon draußen sind (dann bleibt nur Logging)                                       |
 | `closeutil`        | Schließen mit protokolliertem, aber nicht behebbarem Fehler                                                                       |
-| `logger`           | Log-Injection-Schutz für Werte, die nicht durch `slog` gehen (CWE-117)                                                            |
+| `logger`           | Nimmt Werten aus der Anfrage die Zeilenumbrüche, bevor sie ins Log gehen (CWE-117), zusätzlich zum JSON-Handler von `slog`         |
 | `safego`           | Unbeaufsichtigte Goroutinen überleben ein Panic, ohne den Prozess mitzunehmen                                                     |
 
 #### 5.2.3 Warum `inventur/` ein eigenes Untermodul ist
@@ -2117,8 +2117,8 @@ steht in `lmf_barcode`.
 
 | Mittel                       | Inhalt                                                                                                              |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `slog` als JSON auf stdout   | Ein Handler für alles — auch für die noch vorhandenen `log.Printf`-Aufrufe (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
-| Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit dem Status |
+| `slog` als JSON auf stdout   | Ein Handler für alles. Der Server schreibt mit Stufe (ERROR, WARN, INFO) und nennt die Ursache im Feld `fehler` ([STIL.md](STIL.md), Abschnitt 11); `forbidigo` sperrt das Paket `log`. Bibliotheken, die über `log` schreiben, landen mit INFO im selben JSON (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
+| Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit dem Status, Stufe ERROR |
 | 500er                        | Stack schreibt `panikMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
 | Docker-Logs                  | json-file, 3 × 10 MB je Container. Das Log gehört zum Container, Docker löscht es mit ihm. Ersetzt `./update.sh` das Backend, legt es dessen Log vorher unter `logs/` ab, nur für den Besitzer lesbar; nach 14 Tagen löschen es `update.sh` und die Uhr am Server (`scripts/backup.sh --nur-aufraeumen`). Das Log der Datenbank geht weiter mit ihrem Container, also nur bei einem neuen Postgres-Image |
 | Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |

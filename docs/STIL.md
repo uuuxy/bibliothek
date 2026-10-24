@@ -1,6 +1,6 @@
 # Stil — wie der Code geschrieben ist
 
-Stand: 16.10.2026
+Stand: 24.10.2026
 
 Eine Seite mit den Regeln für Namen, Sichtbarkeit und Kommentare im Go-Code, über `gofmt` und
 den Linter hinaus. Maßstab ist Googles Regelwerk für Go
@@ -276,6 +276,21 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   höchstens 60 Zeichen"). Die
   Sätze der Theke entstehen im Dienst, weil mehrere Türen sie zeigen; der Fehler trägt den Satz
   als Feld neben seiner Art, `service.MeldungAus` liefert ihn, `Error()` beginnt mit der Art.
+- Ins Log schreibt der Server über `log/slog`, immer mit Stufe. Das Paket `log` kennt keine Stufe;
+  über `slog.SetDefault` stand dort jeder Fehler als INFO. `forbidigo` in `.golangci.yml` sperrt
+  es; ausgenommen sind Tests und die Kommandozeilen-Werkzeuge in `cmd/` und `scripts/`, die für
+  einen Menschen am Terminal schreiben.
+  - `ERROR`: Etwas ist schiefgegangen, das jemand ansehen sollte. Ein Vorgang, eine Buchung, ein
+    Eintrag im Protokoll der Verwaltung, eine Mail, eine Sicherung oder ein Löschlauf ist
+    gescheitert, oder eine Antwort endet mit 5xx.
+  - `WARN`: Das Programm hat sich selbst geholfen: Vorgabe statt Einstellung, ein Hinweis fehlt,
+    ein Dienst draußen antwortet nicht, die Antwort an den Browser brach ab, Aufräumen scheiterte.
+  - `INFO`: der Ablauf, auch eine abgelehnte Eingabe (Fehlerantwort mit 4xx).
+- Die Meldung einer Logzeile ist fest; Werte stehen als Felder dahinter, die Ursache immer unter
+  `fehler`. Weitere Namen: `pfad`, `methode`, `status`, `aktion`, `titel`, `exemplar`, `leser`,
+  `konto`, `klasse`, `empfaenger`, `anzahl`, `dauer`. Eine Dauer steht als Text (`12ms`); der
+  JSON-Handler schriebe sie sonst in Nanosekunden. Eine Person steht mit ihrer Kennung im Log,
+  nicht mit ihrem Namen.
 
 ## 12. Zustand der Paketebene
 

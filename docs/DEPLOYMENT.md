@@ -110,7 +110,7 @@ sich genau der Fall oben:
 
 ```bash
 docker compose up -d
-docker logs bibliothek-backend --since 2m 2>&1 | grep -iE "pool|error|fatal"
+docker logs bibliothek-backend --since 2m 2>&1 | grep -iE "pool|error"
 curl -s -o /dev/null -w "health: %{http_code}\n" https://DEINE-DOMAIN/health
 ```
 
@@ -173,11 +173,10 @@ verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der St
 > fällt nur weg,
 > wenn `COOKIE_SECURE` nicht gesetzt ist — `docker-compose.yml` setzt es immer.
 
-Fehlermeldung bei Default-Secret:
+Fehlermeldung bei Default-Secret, als Zeile der Stufe ERROR im Log; danach endet der Prozess:
 
 ```
-FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes
-JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.
+{"time":"…","level":"ERROR","msg":"JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase."}
 ```
 
 **Prüfen statt hoffen:** `./scripts/pruefe_secrets.sh /pfad/zur/.env` liest die Datei,
@@ -532,6 +531,22 @@ steht in der Meldung (`docker compose build --no-cache && docker compose up -d`)
 das Image gar keinen Commit, gibt es nur eine Warnung — das ist beim ersten Deploy nach
 dieser Neuerung der Normalfall, ab dem zweiten ist der Abgleich scharf. Lokal macht
 `./scripts/stack-neu.sh` dasselbe (siehe [SCRIPTS.md](SCRIPTS.md) §3).
+
+### Fehler im Log finden
+
+Jede Zeile im Log trägt eine Stufe. `ERROR` heißt: Etwas ist schiefgegangen und gehört
+angesehen. `WARN` heißt: Das Programm hat sich selbst geholfen. `INFO` ist der normale Ablauf
+(Regel: [STIL.md](STIL.md), Abschnitt 11). Die Ursache steht im Feld `fehler`. Im
+Programmverzeichnis am Server:
+
+```bash
+# Fehler der letzten 24 Stunden im laufenden Backend
+docker logs bibliothek-backend --since 24h 2>&1 | grep '"level":"ERROR"'
+# Fehler in den Logs, die ein Update aufgehoben hat (logs/, 14 Tage)
+grep -h '"level":"ERROR"' logs/backend_*.log
+```
+
+Warnungen zeigt derselbe Befehl mit `"level":"WARN"`.
 
 ### Neustart nach Host-Neustart
 

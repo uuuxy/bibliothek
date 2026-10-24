@@ -393,7 +393,7 @@ docker compose exec -T postgres-db psql -U postgres -d bibliothek -c "SELECT (SE
 #    dazugekommen sind.
 docker compose up -d
 for i in $(seq 1 60); do st=$(docker inspect -f '{{.State.Health.Status}}' bibliothek-backend); [ "$st" = "healthy" ] && break; sleep 2; done; echo "Backend: $st"
-docker logs bibliothek-backend 2>&1 | grep -iE "migration|fatal|panic"
+docker logs bibliothek-backend 2>&1 | grep -iE "migration|error|panic"
 curl -s -o /dev/null -w "health: %{http_code}\n" http://127.0.0.1:8083/health
 
 # 9. Buchcover: Das Volume ist leer. Status und Pfad zurücksetzen, dann lädt der nächste Lauf

@@ -33,6 +33,7 @@ der Commit-Nachricht, zu finden etwa mit `git log -S'Fehler-Kollaps' -- docs/swe
 
 | Bugklasse | Form | Gate | Stand |
 | --------- | ---- | ---- | ----- |
+| **Fehler ohne Stufe im Log** | Der Server schreibt über das Paket `log`; über `slog.SetDefault` steht jeder Fehler als INFO, und die Suche nach `"level":"ERROR"` findet ihn nicht | `forbidigo` in `.golangci.yml` (`log.Print…`, `log.Fatal…`, `log.Panic…`; nicht in Tests, `cmd/`, `scripts/`) | Die Regel sieht nur das Paket, nicht, ob die gewählte Stufe stimmt (ERROR statt WARN); dafür gilt [STIL.md](STIL.md) 11. Bibliotheken, die über `log` schreiben, landen weiter mit INFO |
 | **Fehler-Kollaps** | `if err != nil { 404/401/403 }` ohne Einordnung — DB-Fehler wird zum Bedienfehler, Diagnose stirbt | `fehler_kollaps_test.go` (AST) | Mit Grund eingefroren (`kollapsBestand`): die CSRF-Prüfung und die drei Prüfungen der Sitzung; ihr Fehler ist die Ablehnung selbst. Die Katalogdienste ordnen den Ausfall ein (Abschnitt „Katalogdienste nicht erreichbar" unten) |
 | **NULL-Scan** | nullbare Spalte in nicht-nullbaren Go-Typ → 500 | nur echter PG-Test (`*_pg_test.go`) | Abhilfe: `COALESCE` in der Abfrage oder ein Zeiger im Go-Typ. Ein Mock sieht die Form nicht, ein Datensatz mit leeren Feldern schon. Dieselbe Form in einem Prädikat: Ein Teilausdruck ohne Treffer macht das ganze Prädikat zu NULL (`repository.AbschlussklasseSQL` fängt es mit `coalesce`; Paar-Gate `api/abgaenger_versetzung_paar_pg_test.go`) |
 | **Upsert-Blanking** | leerer Eingabewert löscht Bestandswert | Paarungs-Gates je Import (LUSD, Littera, Schlanke Liste) | Prüfmuster: Bei jedem Upsert aus einer unvollständigen Quelle jedes Feld der SET-Klausel einzeln prüfen; ein leerer Wert der Quelle löscht sonst den Bestandswert (für die Klasse im LUSD-Export `api/leser/lusd_klassenwechsel_pg_test.go`) |
@@ -367,7 +368,9 @@ Ob die Tests prüfen, was sie zusagen, zeigt ein Durchgang über vier Fragen:
    `-bench` in Hook oder CI misst nie etwas.
 2. **Rot-Beweis:** Kann jede Ratsche noch rot werden? Je Ratsche ein eingeschleuster
    Verstoß, als Probe-Datei oder vorübergehende Änderung, danach zurückgenommen — nie über
-   `git checkout` auf alte Stände.
+   `git checkout` auf alte Stände. Bei einer Regel in `.golangci.yml` steht der Verstoß in
+   einer Zeile, die sonst nichts meldet: `golangci-lint` zeigt je Zeile nur einen Fund, und ein
+   fehlender Kommentar an derselben Zeile verdeckt die Regel.
 3. **Attrappen:** Prüft der Test den echten Pfad? Jede Spec prüft etwas; eine Stelle mit
    `if (isVisible)` folgt dem `.or()`-Muster oder trägt eine Untergrenze (`geprueft > 5`);
    `networkidle` tritt wegen der Live-Leitung nie ein.
