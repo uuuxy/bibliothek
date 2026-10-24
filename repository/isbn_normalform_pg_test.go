@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"bibliothek/pkg/isbnutil"
 
@@ -92,14 +94,15 @@ func TestISBN_HatEineSchreibweiseInDerDatenbank(t *testing.T) {
 }
 
 // Go und SQL rechnen dieselbe Normalform — sonst fände ein Lesepfad (Import-Zuordnung,
-// Schnellanlage, Suche) still nichts, was die Datenbank gerade geschrieben hat.
-func TestISBN_NormalformGoUndSQLSindGleich(t *testing.T) {
-	pool := pgTestPool(t)
-	ctx := context.Background()
+// Schnellanlage, Suche) still nichts, was die Datenbank gerade geschrieben hat. Ohne -fuzz
+// laufen nur die Startwerte; wie gesucht wird, steht in docs/ARCHITEKTUR.md 8.14.
+func FuzzISBN_NormalformGoUndSQLSindGleich(f *testing.F) {
 	faelle := []string{
 		"978-3-16-148410-0", " 978 3 16 148410 0 ", "3-16-148410-x", "9783161484100",
 		"0-306-40615-2", "3499500252", "9791234567896", "0000000000",
 		"ISBN-0000000001", "3-12-345678-9 kart.", " - ", "", "978-3-16-ü", "12345",
+		// Tab und Zeilenumbruch am Rand: btrim schneidet nur Leerzeichen ab.
+		"\t978-3-16-148410-0", "3-16-148410-x\n",
 	}
 	// Je Kern alle elf Prüfzeichen: Genau eines ist richtig und wird dreizehnstellig, die
 	// zehn übrigen bleiben. So laufen beide Rechnungen über jede Ziffer an jeder Stelle.
@@ -114,11 +117,20 @@ func TestISBN_NormalformGoUndSQLSindGleich(t *testing.T) {
 		}
 	}
 	if umgerechnet != 10 {
-		t.Errorf("%d von 10 Kernen wurden dreizehnstellig — je Kern ist genau ein Prüfzeichen richtig", umgerechnet)
+		f.Errorf("%d von 10 Kernen wurden dreizehnstellig — je Kern ist genau ein Prüfzeichen richtig", umgerechnet)
 	}
 	for _, roh := range faelle {
+		f.Add(roh)
+	}
+	f.Fuzz(func(t *testing.T, roh string) {
+		// Postgres nimmt in Text kein ungültiges UTF-8 und kein Nullbyte; solche Werte erreichen
+		// die Spalte nie.
+		if !utf8.ValidString(roh) || strings.ContainsRune(roh, 0) {
+			t.Skip()
+		}
+		pool := pgTestPool(t)
 		var sql *string
-		if err := pool.QueryRow(ctx, `SELECT isbn_normalform($1)`, roh).Scan(&sql); err != nil {
+		if err := pool.QueryRow(t.Context(), `SELECT isbn_normalform($1)`, roh).Scan(&sql); err != nil {
 			t.Fatalf("isbn_normalform(%q): %v", roh, err)
 		}
 		sqlWert := ""
@@ -128,5 +140,5 @@ func TestISBN_NormalformGoUndSQLSindGleich(t *testing.T) {
 		if goWert := isbnutil.Normalform(roh); goWert != sqlWert {
 			t.Errorf("Normalform(%q): Go %q, SQL %q — die beiden Seiten sind auseinander", roh, goWert, sqlWert)
 		}
-	}
+	})
 }

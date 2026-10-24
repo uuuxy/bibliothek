@@ -16,14 +16,16 @@ var isbnForm = regexp.MustCompile(`^([0-9]{9}[0-9X]|[0-9]{13})$`)
 // Bindestriche und Leerzeichen fallen weg, das Prüfzeichen X steht groß, und eine zehnstellige
 // ISBN mit richtigem Prüfzeichen wird dreizehnstellig. Mit falschem Prüfzeichen bleibt sie
 // zehnstellig, weil die Rechnung auf die ISBN eines anderen Buchs führte. Was keine ISBN ist,
-// bleibt wie geschrieben; was nur aus Trennern besteht, wird leer.
+// bleibt wie geschrieben, nur ohne Leerzeichen am Rand; was nur aus Trennern besteht, wird leer.
 func Normalform(roh string) string {
 	ohne := strings.ToUpper(OhneTrenner(roh))
 	switch {
 	case ohne == "":
 		return ""
 	case !isbnForm.MatchString(ohne):
-		return strings.TrimSpace(roh)
+		// Nur Leerzeichen wie btrim in SQL: Schnitte Go auch Tab oder Zeilenumbruch ab, käme
+		// beim ersten Durchgang eine andere Zeichenkette heraus als in der Datenbank.
+		return strings.Trim(roh, " ")
 	case len(ohne) == 10 && pruefzeichen10(ohne[:9]) == ohne[9:]:
 		zwoelf := "978" + ohne[:9]
 		return zwoelf + pruefziffer13(zwoelf)

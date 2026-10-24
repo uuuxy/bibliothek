@@ -2209,6 +2209,19 @@ sieht.
   Laufzeit lesen, sehen das Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren.
   Reicht eine Tür mehrere Werte gleichen Typs weiter, gehört je Wert eine Probe mit dem
   Nachbarwert dazu ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
+- **Fuzz-Tests prüfen eine Eigenschaft, nicht nur „kein Panic".** Wo eine Normalform in Go und in
+  SQL steht und die Eingabe einen Aufbau hat (Ränder, Trenner, Länge), prüft ein Fuzz-Test
+  „zweimal ist einmal" oder „Go liefert dasselbe wie SQL" (`pkg/isbnutil/normalform_test.go`,
+  `repository/isbn_normalform_pg_test.go`, `internal/lusd/klassen_schluessel_test.go`,
+  `internal/lusd/klassen_schluessel_pg_test.go`). Ein Panic fangen die Middleware, `pkg/safego`
+  und `pkg/xlsxgrenze` ab; eine Suche nur danach findet hier wenig. Ohne `-fuzz` laufen die
+  Startwerte und die Funde unter `testdata/fuzz` des Pakets. Gesucht wird je Ziel mit
+  `go test -run '^$' -fuzz '^FuzzName$' -fuzztime 10m ./<paket>/`; ein Fund landet als Datei unter
+  `testdata/fuzz` und kommt mit der Korrektur ins Repository. Die Ziele an der Datenbank brauchen
+  `-parallel 1`, weil `internal/pgtest` seine Sperre je Prozess bis zum Ende hält und ein zweiter
+  Arbeitsprozess für immer wartete. Am Arbeitsplatz bekommen sie eine eigene Datenbank
+  (`CREATE DATABASE`, danach entfernen): Die Sperre gilt je Datenbank, und auf der gemeinsamen
+  hielte der Lauf die Tests anderer Sitzungen auf.
 - **Eine Migration, die Daten ändert, wird mit ihrer echten Datei geprüft:** aus `migrations/`
   lesen, an der Testdatenbank ausführen, ein zweites Mal ausführen (ändert nichts). Verbietet eine
   spätere Regel die Daten, die sie umstellt, läuft der Test in einer Transaktion, die die Regel

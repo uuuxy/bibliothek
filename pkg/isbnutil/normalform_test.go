@@ -37,16 +37,22 @@ func TestNormalform(t *testing.T) {
 
 // Die Normalform ist ein Fixpunkt: Was die Datenbank gespeichert hat, ändert ein zweiter
 // Durchgang nicht mehr. Sonst schriebe jedes Speichern eines unveränderten Titels die ISBN um.
-func TestNormalform_ZweimalIstEinmal(t *testing.T) {
+// Ohne -fuzz laufen nur die Startwerte; wie gesucht wird, steht in docs/ARCHITEKTUR.md 8.14.
+func FuzzNormalform_ZweimalIstEinmal(f *testing.F) {
 	for _, roh := range []string{
 		"3-16-148410-x", "0306406152", "3499500252", "978-3-16-148410-0", "9791234567896",
 		"ISBN-0000000001", "3-12-345678-9 kart.", " - ",
+		// Tab und Zeilenumbruch am Rand: Sie stehen nicht in der Liste der Trenner.
+		"\t978-3-16-148410-0", "3-16-148410-x\n",
 	} {
+		f.Add(roh)
+	}
+	f.Fuzz(func(t *testing.T, roh string) {
 		einmal := Normalform(roh)
 		if zweimal := Normalform(einmal); zweimal != einmal {
 			t.Errorf("Normalform(%q) = %q, noch einmal %q", roh, einmal, zweimal)
 		}
-	}
+	})
 }
 
 // Zwei Rechnungen, eine Wahrheit: Die Datenbank führt eine ISBN in der Normalform, die
