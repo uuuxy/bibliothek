@@ -57,7 +57,7 @@
 			Was ist eingerichtet, aber nicht in Betrieb? Funktionen, die fertig sind und nichts tun, weil
 			eine Einstellung fehlt, melden sich nirgends — hier stehen sie.
 		</p>
-		<Button variant="secondary" onclick={laden} disabled={laedt}>
+		<Button variant="secondary" onclick={laden} disabled={laedt} class="shrink-0">
 			<RefreshCw class="h-4 w-4 {laedt ? 'animate-spin' : ''}" aria-hidden="true" />
 			Neu prüfen
 		</Button>
