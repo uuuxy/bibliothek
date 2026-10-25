@@ -2,6 +2,10 @@ module bibliothek
 
 go 1.27.3
 
+// Ein npm-Paket kann Go-Code mitbringen (flatted tut es); ohne diese Zeile baut ./... ihn mit, und
+// go test ./... im Hook vor dem Push führte die Tests eines Pakets aus npm aus.
+ignore ./frontend/node_modules
+
 require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/chai2010/webp v1.4.0
