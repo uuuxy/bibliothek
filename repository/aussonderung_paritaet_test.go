@@ -55,8 +55,8 @@ func TestAussonderungSetztBeideSpalten(t *testing.T) {
 	}
 }
 
-// goDateien liefert alle Go-Quellen des Baums (ohne Tests) — die Aussonderungswege
-// liegen in repository/ UND in inventur/.
+// goDateien liefert alle Go-Quellen des Baums (ohne Tests): Ein Aussonderungsweg außerhalb
+// von repository/ fiele sonst nicht auf.
 func goDateien(t *testing.T) []string {
 	t.Helper()
 	var aus []string

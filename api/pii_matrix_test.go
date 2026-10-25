@@ -67,12 +67,12 @@ func leseMatrix(t *testing.T) map[string]matrixZeile {
 	return zeilen
 }
 
-// registrierteRouten sammelt Route → Zeile der Anmeldung aus den Routendateien von api/ und
-// dem Mux der Inventur. Dieselbe Technik wie geschuetzte_routen_test.go, aber je Zeile; deshalb
-// steht jede Anmeldung in einer Zeile.
+// registrierteRouten sammelt Route → Zeile der Anmeldung aus den Routendateien von api/.
+// Dieselbe Technik wie geschuetzte_routen_test.go, aber je Zeile; deshalb steht jede Anmeldung
+// in einer Zeile.
 func registrierteRouten(t *testing.T) map[string]string {
 	t.Helper()
-	muster := regexp.MustCompile(`(?:mux|handler\.mux)\.Handle(?:Func)?\("([^"]+)"`)
+	muster := regexp.MustCompile(`mux\.Handle(?:Func)?\("([^"]+)"`)
 	routen := map[string]string{}
 
 	dateien, err := filepath.Glob("routen_*.go")

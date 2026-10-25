@@ -18,7 +18,7 @@ import (
 // Tag zu kurz. Die Zeitzone steht in pkg/schulzeit, eine Quelle, kein Nachbau.
 //
 // Geprüft wird jede Quelldatei, die einen Baukasten für PDFs einbindet, nicht nur das Paket pdf/:
-// Erzeuger stehen auch unter api/ und inventur/. Die Selbstprobe unten zählt sie.
+// Erzeuger stehen auch unter api/ und internal/. Die Selbstprobe unten zählt sie.
 func TestKeinRohesTimeNowInGedrucktenDokumenten(t *testing.T) {
 	dateien := pdfErzeuger(t)
 
@@ -42,14 +42,14 @@ func TestKeinRohesTimeNowInGedrucktenDokumenten(t *testing.T) {
 		}
 	}
 	if geprueft < 8 {
-		t.Fatalf("nur %d PDF-Erzeuger gefunden — der Detektor greift ins Leere. Beim Bau "+
-			"der Regel waren es 16 in pdf/, api/ und inventur/.", geprueft)
+		t.Fatalf("nur %d PDF-Erzeuger gefunden — der Detektor greift ins Leere. Erwartet sind "+
+			"gut zwanzig in pdf/, api/ und internal/.", geprueft)
 	}
 }
 
 // pdfErzeuger sammelt alle Quelldateien des Projekts, die gofpdf oder maroto einbinden —
 // also alles, was ein Dokument zum Ausdrucken erzeugt. Nach dem Verzeichnis zu suchen
-// wäre falsch: Die Erzeuger sitzen in pdf/, api/ und inventur/.
+// wäre falsch: Die Erzeuger sitzen in pdf/, api/ und internal/.
 func pdfErzeuger(t *testing.T) []string {
 	t.Helper()
 	wurzel := filepath.Join("..")

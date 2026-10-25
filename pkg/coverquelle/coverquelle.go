@@ -28,7 +28,7 @@ var BildHosts = []string{
 }
 
 // MetadatenHosts sind die Hosts, von denen Daten zu Titel und Autor kommen dürfen. Die Liste
-// ist enger als BildHosts: Von books.google.* holt das Paket inventur nur Bilder, keine
+// ist enger als BildHosts: Von books.google.* holen die Katalogdienste nur Bilder, keine
 // Datensätze.
 var MetadatenHosts = []string{
 	"services.dnb.de",

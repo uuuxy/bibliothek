@@ -3,7 +3,7 @@
 // Tabelle, nicht über den Weg des Programms: Ein Test stellt damit eine Lage her und prüft dann
 // die Tür. Was über den Weg des Programms geht, steht in internal/testweg. Pakete des Projekts
 // bindet testdaten nicht ein, außer internal/pgtest und zwei aus pkg/ ohne eigene Abhängigkeiten:
-// So können auch die Tests von repository, db, inventur und internal/service es einbinden.
+// So können auch die Tests von repository, db und internal/service es einbinden.
 //
 // Wie internal/pgtest ist es ein gewöhnliches Paket, das nur Tests einbinden: Eine Testdatei
 // lässt sich nicht aus einem anderen Paket einbinden, und die Tests der Türen stehen in mehr

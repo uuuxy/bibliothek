@@ -71,7 +71,7 @@ func erlaubt(rohURL string, erlaubte []string) bool {
 // Die Liste für Metadaten ist mit Absicht enger als die für Bilder. Der Test hält den
 // Unterschied fest, damit ihn niemand beim Aufräumen angleicht.
 func TestMetadatenHostsSindEngerAlsBildHosts(t *testing.T) {
-	// Von Google Books holt das Paket inventur nur Bilder, keine Datensätze.
+	// Von Google Books holen die Katalogdienste nur Bilder, keine Datensätze.
 	const googleBooks = "https://books.google.com/books/content?id=abc"
 	if !erlaubt(googleBooks, BildHosts) {
 		t.Error("books.google.com muss für Cover erlaubt sein")
