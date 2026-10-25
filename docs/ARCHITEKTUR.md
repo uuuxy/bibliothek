@@ -2340,6 +2340,28 @@ sieht.
   (`host.docker.internal:8084`, `auto_https off`); TLS und HTTP/2 des Servers bildet das nicht
   nach.
 
+**Unter Last:**
+
+- **Der Lasttest** ([OFFEN.md](OFFEN.md) 7.14) läuft mit k6 gegen die Kopie, die
+  `scripts/generalprobe/generalprobe.sh … --behalten` stehen lässt; die Skripte liegen außerhalb
+  des Repositorys. Der Aufbau braucht:
+  - **HTTPS davor.** Die Cookies tragen immer `Secure`, k6 schickt sie über HTTP nicht zurück:
+    ein Wegwerf-Caddy mit `tls internal` im Netz `bibliothek-probe_intern`, k6 mit
+    `K6_INSECURE_SKIP_TLS_VERIFY=true`.
+  - **Eine Adresse je Theke.** Die Bremse zählt 50 Anfragen je Sekunde und Adresse. k6 setzt je
+    Nutzer `X-Forwarded-For`, Caddy reicht ihn mit
+    `header_up X-Forwarded-For {http.request.header.X-Forwarded-For}` unverändert weiter, das
+    Backend bekommt `TRUSTED_PROXIES` mit den privaten Netzen. Wer alle Türen nacheinander
+    abfragt, braucht dazu eine Pause je Anfrage, sonst antwortet die Bremse statt der Tür.
+  - **Ein Postfach ohne Anmeldung** im selben Netz und `SMTP_ALLOW_PLAINTEXT=true` am Backend:
+    Mit Zugangsdaten verweigert der Versand eine Verbindung ohne TLS.
+  - **Daten eines Schultags.** Die offenen Ausleihen der Littera-Sicherung von 2010 sind alle
+    überfällig; in der Kopie werden sie auf die letzten Wochen gelegt. Den Startzustand hält
+    `CREATE DATABASE … TEMPLATE`, damit der lange Lauf am Stand vor dem Probelauf beginnt.
+  - **Kein Fund:** Das Ausleihlimit lässt sich nicht übergehen (403), `GET /api/einstellungen`
+    verlangt `manage_settings`, und `GET /api/reservierungen/klassensatz/offen` gehört zum Portal
+    und trägt keine Kennung; erledigt wird über `GET /api/reservierungen/klassensatz`.
+
 ---
 
 ### 8.15 Abhängigkeits-Hygiene
@@ -3095,7 +3117,7 @@ gemessenes Limit:
 | Globales Rate-Limit                 | 50 Anfragen/s/IP, Auslieferungspfade ausgenommen                                          |
 | Nachbuch-Portion                    | 1–50 Einträge je Aufruf (mehr wäre eine zu lange offene Transaktion)                      |
 | Cover-Sync                          | Worker-Pool 8, alle 6 Stunden und auf Anforderung                                         |
-| Lastprüfung                         | kein Lasttest; gleichzeitige Scans prüfen Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
+| Lastprüfung                         | Lasttest mit k6 außerhalb des Repositorys ([OFFEN.md](OFFEN.md) 7.14), zuletzt am Stand 26937182: zehn Theken über sechs Stunden, 81.518 Anfragen ohne 5xx, Scan p95 18 ms, Speicher des Backends ohne Wachstum; ein Neustart mit 20 s Pause in der Stoßstunde ging ohne verlorene oder doppelte Buchung durch. Gleichzeitige Scans prüfen dazu Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
 
 **Nicht Teil der Zusage:** horizontale Skalierung, Mehrmandantenfähigkeit, Hochverfügbarkeit
 ohne Wartungsfenster. Ein Deploy ist ein kurzer, geordneter Abriss der Verbindungen

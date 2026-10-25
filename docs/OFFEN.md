@@ -223,10 +223,12 @@ um den Satz ergänzen.
 Entschieden am 25.10.2026: Der Lasttest läuft vor dem Echtstart noch einmal, nach allen übrigen
 Schritten der Etappe 1. Er findet, was kein Test von selbst findet: eine Tür, die einem fehlenden
 Feld eine eigene Bedeutung gibt, etwa „fehlt die Klassenliste, gilt es für alle Klassen". Vorlage
-ist der Lauf in 1c86bc51: k6 gegen eine abgeschottete Kopie der Generalprobe, mit
-Gleichzeitigkeit an demselben Buch, Stoßzeit, einer Stunde Dauerlast, dem Büchertausch-Tag, den
-Rechten je Rolle über alle Routen und kaputten Rümpfen an jeder Tür. Die Skripte kommen nicht
-ins Repository (bf8f0580); fehlen sie, werden sie neu geschrieben.
+sind die Läufe mit k6 gegen eine abgeschottete Kopie der Generalprobe in 1c86bc51
+(Gleichzeitigkeit an demselben Buch, Stoßzeit, eine Stunde Dauerlast, Büchertausch-Tag) und am
+Stand 26937182 (ein Schultag mit zehn Theken über sechs Stunden, mit Neustart des Servers und
+einer Theke ohne Netz; Ergebnis in [ARCHITEKTUR.md](ARCHITEKTUR.md) 10.3), dazu die Rechte je
+Rolle über alle Routen und kaputte Rümpfe an jeder Tür. Die Skripte kommen nicht ins Repository
+(bf8f0580); fehlen sie, werden sie neu geschrieben, der Aufbau steht in ARCHITEKTUR 8.14.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
