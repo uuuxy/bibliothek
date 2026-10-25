@@ -2409,6 +2409,7 @@ veralten.
 | A25 | `repository/` bleibt ein Paket                                                 | 13.10.2026    | gültig   |
 | A26 | Die Türen stehen je Menüpunkt in einem Paket unter `api/`                      | 12.10.2026    | gültig   |
 | A27 | Keine Swagger-Beschreibung; die Routenliste ist das Verzeichnis                | 20.10.2026    | gültig   |
+| A28 | Keine erzeugten Typen für die Antworten des Servers                            | 25.10.2026    | gültig   |
 
 ---
 
@@ -2952,6 +2953,33 @@ Rümpfe; geschriebene Anfragen scheitern im Scan ohnehin an CSRF. Im sicheren Mo
 importierte er 235 Adressen.
 
 **Fundstelle.** `scripts/api_inventar.sh` (`--routen`), `security-scan.sh` (Schritt 3).
+
+---
+
+### A28 — Keine erzeugten Typen für die Antworten des Servers
+
+**Entscheidung.** Die Oberfläche bekommt keine Typen, die aus den Go-Strukturen der Antworten
+erzeugt werden (etwa mit tygo). Eine Lesestelle liest die Antwort so, wie die Tür sie schreibt;
+die Browser-Tests gegen den echten Server prüfen das. Kehrt ein Lesefehler dieser Art wieder,
+bekommt er einen solchen Test.
+
+**Anlass.** Ein Erzeuger übersetzt Strukturen, weiß aber nicht, welche Adresse welche schickt. Ohne
+diese Zuordnung stünde der Typ an jeder Lesestelle von Hand (127 Aufrufe von `json()` und
+`werteAntwortAus` in 92 Dateien, ohne Tests) und könnte so falsch sein wie die Lesestelle selbst.
+Mit ihr bräuchte es einen eigenen Erzeuger über Router und Türen und einen Umbau der Türen: Von
+rund 195 Antwortstellen (`tuer.AntworteJSON`, `httpresp.SchreibeJSON`) schicken 77 eine Map ohne
+festen Aufbau, in der ein Erzeuger keine Feldnamen sieht. Demgegenüber fand eine Stichwortsuche
+von Juli bis Oktober 2026 sieben Lesefehler dieser Art unter 1.101 Fixes. Vier gehören zu drei
+Formen, die an der Quelle geschlossen sind, je mit einer Prüfung: die Hülle `{"data": …}` (eine
+Antwortform), die Fehlermeldung als roher Text (`leseApiFehler`) und `null` statt einer leeren
+Liste (`httpresp`). Die übrige Form, ein Feld, das der Server nicht schickt, kam dreimal vor.
+
+**Folge.** `res.json()` liefert weiter `any` (A22). Die Antwortform halten
+`antwort_huelle_ratsche_test.go` und `frontend-hygiene-antwortform.test.js`, die leeren Listen
+`httpresp.alsListe`. Eine Liste in einem Feld einer Struktur, die `nil` bleibt, kommt weiter als
+`null` an.
+
+**Fundstelle.** `api/tuer/antwort.go`, `pkg/httpresp/httpresp.go`, `frontend/src/lib/apiFetch.js`.
 
 ---
 

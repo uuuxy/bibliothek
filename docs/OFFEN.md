@@ -33,8 +33,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Ein Fenster, das vor einem Update geöffnet wurde, merkt den neuen Stand und bittet ums
   Neuladen. (5.103)
 - [ ] Auch ein offener öffentlicher Katalog merkt ein Update und bittet ums Neuladen. (5.105)
-- [ ] Die Oberfläche kennt die Form jeder Antwort des Servers als Typ, erzeugt aus den
-  Go-Strukturen; eine falsche Lesestelle meldet die Prüfung vor dem Push. (5.104)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -120,20 +118,6 @@ falsche Treffer, bis jemand neu lädt.
 
 Nächster Schritt: nach dem Abruf `programmstand.merkeAus(res)`, `NeueFassung` über den Treffern,
 ein Browser-Test wie `e2e/neue-fassung.spec.js` am Katalog.
-
-### 5.104 Typen für die Antworten des Servers
-
-Die Oberfläche liest jede Antwort als `any`: `res.json()` und `werteAntwortAus` in
-`frontend/src/lib/apiFetch.js` geben keinen Typ weiter, an 176 Lesestellen in 117 Dateien. Ob eine
-Lesestelle zur Antwort passt, zeigt deshalb erst ein Test, und nur, wenn er die echte Antwort
-benutzt. Belege: f9f34b91 (die Leserakte las `.data` einer Liste und zeigte nie einen Bescheid),
-671d3299 (Fehlermeldungen als `{"error": …}`), 81cba378 (Listen als `null` statt `[]`).
-
-Nächster Schritt: Ein Erzeuger schreibt aus den Go-Strukturen der Antworten die Typen als JSDoc,
-ein Test hält die erzeugte Datei gleich mit dem Go-Code. Die Abruf-Helfer bekommen je Adresse
-ihren Typ, danach meldet `svelte-check` eine Lesestelle, die nicht zur Antwort passt. Zuerst die
-Bereiche, die schon einmal falsch lasen (Leserakte, Katalog, Fehlerantworten), dann Bereich für
-Bereich. Ohne Umbau auf TypeScript.
 
 ### 7.2 Frisches Littera-Backup
 
