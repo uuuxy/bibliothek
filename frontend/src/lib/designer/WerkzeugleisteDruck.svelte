@@ -11,7 +11,7 @@
 <script>
 	import { Printer } from '@lucide/svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
-	import { ETIKETT_FORMATE } from '../etikettformate.js';
+	import { ETIKETT_FORMATE } from '../components/etiketten/etikettformate.js';
 	import Button from '../components/ui/Button.svelte';
 	import Select from '../components/ui/Select.svelte';
 

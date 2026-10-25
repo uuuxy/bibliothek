@@ -1,5 +1,5 @@
 <script>
-	import { leserArtText, istKollegium } from '../../leserArt.js';
+	import { leserArtText, istKollegium } from '../leser/leserArt.js';
 
 	let { leser, index, gewaehlt, onSelect } = $props();
 

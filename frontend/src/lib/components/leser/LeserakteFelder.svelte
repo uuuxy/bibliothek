@@ -21,7 +21,7 @@
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import LeserArtWahl from './LeserArtWahl.svelte';
 	import LeserKontaktFelder from './LeserKontaktFelder.svelte';
-	import { istKollegium, LESER_ARTEN } from '../../leserArt.js';
+	import { istKollegium, LESER_ARTEN } from './leserArt.js';
 	import { KLASSEN_LADEFEHLER } from './klassenVorschlaege.svelte.js';
 
 	/**

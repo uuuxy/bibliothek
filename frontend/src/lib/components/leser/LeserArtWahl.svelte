@@ -12,7 +12,7 @@
      constrained". Das Bauteil ist ui/Select, wie die Klasse eine Zeile tiefer. -->
 <script>
 	import Select from '../ui/Select.svelte';
-	import { LESER_ARTEN, leserArtText } from '../../leserArt.js';
+	import { LESER_ARTEN, leserArtText } from './leserArt.js';
 
 	/**
 	 * Alle Arten stehen immer in der Liste, die Maske hat für jeden dieselbe Form. Was nicht

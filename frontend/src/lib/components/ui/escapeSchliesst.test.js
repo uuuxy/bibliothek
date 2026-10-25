@@ -91,7 +91,7 @@ const KEIN_DIALOG = [
 	// Ladeschleier über der ganzen Anwendung; er hat keinen Ausgang, er wartet.
 	'src/App.svelte',
 	// Der Flur-Monitor IST der Bildschirm, kein Overlay über etwas anderem.
-	'src/lib/Monitor.svelte',
+	'src/lib/monitor/Monitor.svelte',
 	// Sperrbildschirm: Escape darf ihn gerade NICHT schließen — das ist sein Zweck.
 	'src/lib/components/auth/Sperrbildschirm.svelte'
 ];

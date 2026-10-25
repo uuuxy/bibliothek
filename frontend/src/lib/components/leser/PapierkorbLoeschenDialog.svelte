@@ -5,7 +5,7 @@
      Audit-Spur und entfernt den Datensatz. Eigener M3-Dialog statt window.confirm(),
      aus demselben Grund wie beim Fehlbestand (VerlustLoeschenDialog). -->
 <script>
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ open: boolean, name: string, laeuft: boolean, onConfirm: () => void, onClose: () => void }} */

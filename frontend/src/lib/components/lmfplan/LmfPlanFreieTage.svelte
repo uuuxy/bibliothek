@@ -12,9 +12,9 @@
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
-	import { datumKurz, wochentag } from '../../lmfplanDienst.js';
+	import { datumKurz, wochentag } from './lmfplanDienst.js';
 
-	/** @type {{ tage: import('../../lmfplanDienst.js').FreierTag[], ausfaelle: import('../../lmfplanDienst.js').Ausfall[] }} */
+	/** @type {{ tage: import('./lmfplanDienst.js').FreierTag[], ausfaelle: import('./lmfplanDienst.js').Ausfall[] }} */
 	let { tage = $bindable(), ausfaelle } = $props();
 
 	let offen = $state(false);
@@ -35,7 +35,7 @@
 		offen = false;
 	}
 
-	/** @param {import('../../lmfplanDienst.js').FreierTag} t */
+	/** @param {import('./lmfplanDienst.js').FreierTag} t */
 	function text(t) {
 		return t.grund ? `${datumKurz(t.datum)} ${t.grund}` : datumKurz(t.datum);
 	}

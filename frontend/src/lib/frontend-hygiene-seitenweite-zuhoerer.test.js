@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { ohneKommentare, relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
-import { ABGESCHIRMT } from './sperrSchild.js';
+import { ABGESCHIRMT } from './components/auth/sperrSchild.js';
 
 // Hinter dem Sperrbildschirm bleibt die Anwendung stehen (App.svelte), damit Ungespeichertes
 // die Sperre überlebt. Ein Bauteil, das an window oder document auf Bedienung hört, bekäme
@@ -30,7 +30,7 @@ const OHNE_SCHILD = {
 const NAME_AUS_VARIABLE = {
 	'src/lib/stores/leerlaufSperre.svelte.js':
 		'zählt Bedienung für die Uhr der Sperre; aktivitaet() steigt aus, solange gesperrt ist',
-	'src/lib/sperrSchild.js': 'der Schild selbst'
+	'src/lib/components/auth/sperrSchild.js': 'der Schild selbst'
 };
 
 /**

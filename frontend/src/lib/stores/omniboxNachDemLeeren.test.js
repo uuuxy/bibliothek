@@ -14,7 +14,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn() }
 }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
@@ -33,7 +33,7 @@ import { apiClient, apiFetch } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 import { thekeLeeren } from './thekeLeeren.js';
-import { ladeWarteschlange, dequeueOfflineAction } from '../offlineWarteschlange.js';
+import { ladeWarteschlange, dequeueOfflineAction } from './offlineWarteschlange.js';
 
 const MIA = { id: 'leser-1', art: 'schueler', vorname: 'Mia', nachname: 'Muster', klasse: '07B' };
 const BUCH = { titel: 'Natura 2' };

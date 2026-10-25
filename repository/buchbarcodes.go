@@ -16,7 +16,7 @@ import (
 // Exemplare eindeutig; eine Nummer bleibt eine Buchnummer, auch wenn das Buch abgeschrieben ist.
 //
 // Littera-Etiketten stehen nicht als EAN-13 in der Liste, nur als Nummer: Der Rechner rechnet
-// das Etikett selbst zurück (frontend/src/lib/litteraEtikett.js, gleiche Prüffälle wie der
+// das Etikett selbst zurück (frontend/src/lib/utils/litteraEtikett.js, gleiche Prüffälle wie der
 // Server) und schlägt die Nummer nach.
 
 // BuchbarcodeStand ist die Kennzahl des Bestands: Anzahl und jüngste Änderung. Beides

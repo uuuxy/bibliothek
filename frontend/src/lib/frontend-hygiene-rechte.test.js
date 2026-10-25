@@ -58,7 +58,7 @@ const AUSNAHMEN = [
 			'für die Rolle kollegium. Alle anderen Dateien rufen hatRecht auf.'
 	},
 	{
-		datei: 'src/lib/BenutzerUndRechte.svelte',
+		datei: 'src/lib/components/benutzer/BenutzerUndRechte.svelte',
 		grund:
 			'Die Zeile der Rolle admin ist unveränderlich (Admin darf immer alles). Hier wird über ' +
 			'Rollen ITERIERT, nicht eine Aktion nach Rolle versteckt.'

@@ -1,4 +1,4 @@
-import { ETIKETT_FORMATE } from '../etikettformate.js';
+import { ETIKETT_FORMATE } from '../components/etiketten/etikettformate.js';
 import { heileAltBaender } from './idDesignAltbestand.js';
 import {
 	HINTERGRUND_VORDERSEITE,

@@ -10,13 +10,13 @@ import (
 //
 // Online entscheidet der Server, ob ein Scan ein Aufdruck von früher ist
 // (internal/service/omnibox.go). Ohne Netz muss der Theken-Rechner dasselbe tun
-// (frontend/src/lib/code39Pruefzeichen.js) — sonst gälte ein Buch offline als unklar, das
+// (frontend/src/lib/utils/code39Pruefzeichen.js) — sonst gälte ein Buch offline als unklar, das
 // online gebucht wird, oder umgekehrt. Dieselbe Bauart wie bei den Littera-Etiketten.
 //
 // Beide Seiten lesen dieselben Fälle. Dieser Test prüft die Go-Seite und dass der Vitest
 // die Datei wirklich einliest; der Vitest prüft die JavaScript-Seite.
 func TestCode39_GoUndJavaScriptTeilenDiePrueffaelle(t *testing.T) {
-	const faelleDatei = "../../frontend/src/lib/code39.faelle.json"
+	const faelleDatei = "../../frontend/src/lib/utils/code39.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
 	if err != nil {
 		t.Fatalf("Prüffälle lesen: %v", err)

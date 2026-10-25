@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { ETIKETT_FORMATE, felderProBogen } from './etikettformate.js';
+import { ETIKETT_FORMATE, felderProBogen } from './components/etiketten/etikettformate.js';
 import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 
 // Die Etikettenraster stehen an mehreren Stellen — und das ist genau die Bauform, die in
@@ -10,7 +10,7 @@ import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 // Cover-Host-Allowlist, die eine Kopie kannte books.google nicht).
 //
 // Maßgeblich ist pdf/etikett_formate.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
-// eigene Kopie davon: src/lib/etikettformate.js. Vorher waren es zwei (Liste in
+// eigene Kopie davon: src/lib/components/etiketten/etikettformate.js. Vorher waren es zwei (Liste in
 // EtikettLayoutOptionen.svelte, Stückzahlen in stores/etiketten.svelte.js), und mit den
 // Schüler-Etiketten wäre die Ausweis-Werkzeugleiste die dritte geworden.
 //

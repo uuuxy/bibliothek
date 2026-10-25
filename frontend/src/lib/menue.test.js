@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ALLE_KATEGORIE_RECHTE } from './components/einstellungen/kategorien.js';
-import { DRUCK_CENTER_REITER } from './druckCenterReiter.js';
+import { DRUCK_CENTER_REITER } from './components/etiketten/druckCenterReiter.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { darfSehen, erlaubteBildschirme, menueGruppen, bildschirmGesperrt } from './menue.js';
@@ -239,12 +239,17 @@ describe('Menü-Sichtbarkeit', () => {
 		// Berichtsreiter darin hätte kein gemeinsames Thema mit Bestellen, Wareneingang
 		// und Historie.
 		let verzeichnis = process.cwd();
-		while (!existsSync(resolve(verzeichnis, 'src/lib/Bestellwesen.svelte'))) {
+		while (
+			!existsSync(resolve(verzeichnis, 'src/lib/components/bestellungen/Bestellwesen.svelte'))
+		) {
 			const eltern = dirname(verzeichnis);
 			if (eltern === verzeichnis) throw new Error('Bestellwesen.svelte nicht gefunden');
 			verzeichnis = eltern;
 		}
-		const quelle = readFileSync(resolve(verzeichnis, 'src/lib/Bestellwesen.svelte'), 'utf8');
+		const quelle = readFileSync(
+			resolve(verzeichnis, 'src/lib/components/bestellungen/Bestellwesen.svelte'),
+			'utf8'
+		);
 
 		// Nicht-leer-Garantie: Ohne sie wäre der Test auch dann grün, wenn die Reiterliste
 		// ganz verschwindet und die Muster unten ins Leere greifen.

@@ -4,9 +4,9 @@ import {
 	enqueueOfflineAction,
 	normalisiereEintrag,
 	leserFuerVersand
-} from '../offlineWarteschlange.js';
+} from './offlineWarteschlange.js';
 import { apiClient } from '../apiFetch.js';
-import { spieleErfolgston } from '../audio.js';
+import { spieleErfolgston } from '../utils/audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
 
@@ -26,7 +26,7 @@ import { netzLage } from './netzLage.svelte.js';
 // aus einem früheren Seitenaufruf (Neuladen, eingespielte Sicherung), gilt der gespeicherte
 // Wert; dort gibt es nichts Besseres.
 /**
- * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
+ * @param {import('./offlineWarteschlange.js').OfflineEintrag[]} batchItems
  * @returns {{ gesendet_am: string, eintraege: any[] }}
  */
 function baueNachbuchPayload(batchItems) {
@@ -95,7 +95,7 @@ const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 //   - `aufsicht_informieren` ist keine Meldung, sondern eine Aufgabe: Das Buch stand auf
 //     einem Bescheid, der schon bei der Schulaufsicht liegt.
 /**
- * @param {import('../offlineWarteschlange.js').OfflineEintrag} posten
+ * @param {import('./offlineWarteschlange.js').OfflineEintrag} posten
  * @param {any} erg das endgültige Ergebnis des Servers zu diesem Eintrag
  * @returns {{ barcode: string, meldung: string }[]}
  */
@@ -138,7 +138,7 @@ function zuPruefendeFuer(posten, erg) {
 // ohne Antwort bleibt ebenfalls liegen: Schweigen ist kein Erfolg.
 /**
  * @param {any} antwort
- * @param {import('../offlineWarteschlange.js').OfflineEintrag[]} batchItems
+ * @param {import('./offlineWarteschlange.js').OfflineEintrag[]} batchItems
  * @returns {Promise<{ pruefen: { barcode: string, meldung: string }[], weiter: boolean }>}
  */
 async function verarbeiteNachbuchErgebnisse(antwort, batchItems) {
@@ -285,7 +285,7 @@ function erzeugeOfflineSync() {
 		let syncedAny = false;
 
 		while (!netzLage.offline) {
-			/** @type {import('../offlineWarteschlange.js').OfflineEintrag[]} */
+			/** @type {import('./offlineWarteschlange.js').OfflineEintrag[]} */
 			let q;
 			try {
 				q = await ladeWarteschlange();

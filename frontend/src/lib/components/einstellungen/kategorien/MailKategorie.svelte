@@ -10,7 +10,7 @@
 	 */
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import MailEinstellungen from '../../admin/MailEinstellungen.svelte';
-	import MailVorlagen from '../../../MailVorlagen.svelte';
+	import MailVorlagen from '../MailVorlagen.svelte';
 </script>
 
 <KategorieRahmen titel="Mail" kurz="Der Postausgang der Schule und die Texte, die er verschickt.">

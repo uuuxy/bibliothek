@@ -10,7 +10,7 @@
 <script>
 	import { apiGet, apiPost } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 

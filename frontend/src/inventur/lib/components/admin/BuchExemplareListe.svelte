@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { Trash } from '@lucide/svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
-	import { exemplarStatus } from '../../../../lib/components/exemplarStatus.js';
+	import { exemplarStatus } from '../../../../lib/components/buchakte/exemplarStatus.js';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 

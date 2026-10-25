@@ -22,7 +22,9 @@ const repoRoot = join(libDir, '..', '..', '..');
 
 const schema = readFileSync(join(repoRoot, 'schema.sql'), 'utf8');
 // Die UI-Dateien, die den Vormerkungs-Status anzeigen dürfen.
-const uiQuellen = [readFileSync(join(libDir, 'LeserVormerkungenKarte.svelte'), 'utf8')];
+const uiQuellen = [
+	readFileSync(join(libDir, 'components', 'leserakte', 'LeserVormerkungenKarte.svelte'), 'utf8')
+];
 
 /** Liest die erlaubten Statuswerte aus chk_vormerkung_status. */
 function statusWerteAusSchema() {

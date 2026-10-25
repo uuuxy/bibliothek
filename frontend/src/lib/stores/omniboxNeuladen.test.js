@@ -8,7 +8,7 @@ import 'fake-indexeddb/auto';
 
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));

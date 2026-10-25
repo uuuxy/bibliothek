@@ -5,7 +5,7 @@ import LmfPlanTabelle from './LmfPlanTabelle.svelte';
 // Die Tabelle ist die Form, die das Kollegium aus der Excel-Liste kennt: je Art ein
 // Block, darin Wochentag, Datum, Stunde, Klassen, Besonderheiten. Lesend — bearbeitet
 // wird im Planer (LmfPlanReihenfolge), seit 05.09.2026 abends.
-/** @type {import('../../lmfplanDienst.js').LmfTermin[]} */
+/** @type {import('./lmfplanDienst.js').LmfTermin[]} */
 const termine = [
 	{ id: 'a', datum: '2027-06-28', stunde: 3, art: 'rueckgabe', klassen: ['09H1'], vermerk: '' },
 	{

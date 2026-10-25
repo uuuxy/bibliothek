@@ -4,7 +4,7 @@
      Browser-Dialoge. Es ist ein echtes DELETE und kein Papierkorb — die Abfrage nennt die
      Zahl, statt nur „sicher?" zu fragen. -->
 <script>
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ open: boolean, anzahl: number, laeuft: boolean, onConfirm: () => void, onClose: () => void }} */

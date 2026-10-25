@@ -13,12 +13,12 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 211,
-	'src/lib/Bestellwesen.svelte': 216,
-	'src/lib/Omnibox.svelte': 202,
-	'src/lib/Statistik.svelte': 341,
-	'src/lib/Leserakte.svelte': 211,
-	'src/lib/Inventur.svelte': 231,
-	'src/lib/Konten.svelte': 208,
+	'src/lib/components/bestellungen/Bestellwesen.svelte': 216,
+	'src/lib/components/omnibox/Omnibox.svelte': 202,
+	'src/lib/components/statistik/Statistik.svelte': 341,
+	'src/lib/components/leserakte/Leserakte.svelte': 211,
+	'src/lib/components/inventur/Inventur.svelte': 231,
+	'src/lib/components/benutzer/Konten.svelte': 208,
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 360,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 236,
 	'src/lib/components/leser/LusdImport.svelte': 311,
@@ -26,8 +26,8 @@ const BESTAND = {
 	'src/lib/components/leser/schuelerSuche.svelte.js': 209,
 	'src/lib/designer/ausweisVorlagen.js': 451,
 	'src/lib/designer/idDesignerStore.svelte.js': 543,
-	'src/lib/lmfplanDienst.js': 380,
-	'src/lib/lmfplanPlaner.svelte.js': 234,
+	'src/lib/components/lmfplan/lmfplanDienst.js': 380,
+	'src/lib/components/lmfplan/lmfplanPlaner.svelte.js': 234,
 	'src/lib/menue.js': 272,
 	'src/lib/stores/authStore.svelte.js': 354,
 	'src/lib/stores/bestellStore.svelte.js': 532,
@@ -36,9 +36,9 @@ const BESTAND = {
 	'src/lib/stores/mahnwesen.svelte.js': 231,
 	'src/lib/stores/offlineSync.svelte.js': 420,
 	'src/lib/stores/omnibox.svelte.js': 412,
-	'src/lib/useBuchakte.svelte.js': 210,
-	'src/lib/useInventur.svelte.js': 234,
-	'src/lib/useLeserakte.svelte.js': 315
+	'src/lib/components/buchakte/useBuchakte.svelte.js': 210,
+	'src/lib/components/inventur/useInventur.svelte.js': 234,
+	'src/lib/components/leserakte/useLeserakte.svelte.js': 315
 };
 
 describe('Dateigröße: höchstens 200 Zeilen je Komponente und JS-Modul', () => {

@@ -5,7 +5,7 @@ import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
-import { mahnungenJeKind } from '../mahnungen.js';
+import { mahnungenJeKind } from '../components/mahnwesen/mahnungen.js';
 import { SvelteSet } from 'svelte/reactivity';
 
 /**

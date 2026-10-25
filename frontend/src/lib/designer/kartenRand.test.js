@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AUSWEIS_VORLAGEN, vorlage } from './ausweisVorlagen.js';
 import { idStore, resetDesign } from './idDesignerStore.svelte.js';
 import { SICHERHEITSRAND_MM, STRICHCODE_RAND_MM } from './kartenRand.js';
-import { NUMMERNZEILE_MM } from '../strichcodeBild.js';
+import { NUMMERNZEILE_MM } from '../utils/strichcodeBild.js';
 
 // ISO 7810 ID-1 — dieselben Maße, die der Designer und der Kartendruck verwenden.
 const KARTE_BREITE = 85.6;

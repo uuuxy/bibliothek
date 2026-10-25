@@ -63,7 +63,7 @@ const thekenMaxEreignisse = 100
 // deuteThekenEreignis deutet eine Protokollzeile: der Leser (Schüler oder Kollege) vor dem
 // Konto alter Einträge, und ohne auflösbaren Namen ist der Personenbezug getilgt — keine
 // leere Zelle. Bei einem Kollegen steht statt der Klasse die Art; dieselben Wörter wie
-// frontend/src/lib/leserArt.js (leserart.KlasseOderArt).
+// frontend/src/lib/components/leser/leserArt.js (leserart.KlasseOderArt).
 func deuteThekenEreignis(z repository.ThekenEreignisZeile) thekenEreignis {
 	e := thekenEreignis{Zeitpunkt: z.Zeitpunkt, Aktion: z.Aktion, Bearbeiter: z.BearbeiterName}
 	switch {

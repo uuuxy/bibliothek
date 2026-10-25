@@ -9,8 +9,8 @@
      unumkehrbare Löschen. Eine Sperre ist umkehrbar und gehört deshalb hierher. -->
 <script>
 	import { Lock, LockOpen } from '@lucide/svelte';
-	import { ausleiheGesperrt } from '../../sperrStatus.js';
-	import { istKollegium } from '../../leserArt.js';
+	import { ausleiheGesperrt } from './sperrStatus.js';
+	import { istKollegium } from './leserArt.js';
 	import Button from '../ui/Button.svelte';
 	import { formatEuro } from '../../utils/format.js';
 

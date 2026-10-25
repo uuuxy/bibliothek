@@ -8,14 +8,14 @@ import { render } from '@testing-library/svelte';
 
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post: vi.fn() } }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';
 import { erzeugeOmniboxStore } from './omnibox.svelte.js';
-import OmniboxThekeHinweise from '../components/OmniboxThekeHinweise.svelte';
+import OmniboxThekeHinweise from '../components/omnibox/OmniboxThekeHinweise.svelte';
 import { omniboxStore } from './omnibox.svelte.js';
 
 const HINWEIS = {

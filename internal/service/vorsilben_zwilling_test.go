@@ -12,7 +12,7 @@ import (
 // Die Vorsilben eines Scans stehen zweimal im Baum — und müssen dasselbe heißen.
 //
 // Ohne Netz ordnet der Theken-Rechner jeden Scan selbst ein
-// (frontend/src/lib/scanEinordnen.js): `A-`/`S-`/`L-` sind ein Ausweis, `B-`/`LMF-` ein Buch,
+// (frontend/src/lib/utils/scanEinordnen.js): `A-`/`S-`/`L-` sind ein Ausweis, `B-`/`LMF-` ein Buch,
 // `G-` ein Gerät. Mit Netz entscheidet der Switch in omnibox.go dieselbe Frage. Ein Kommentar
 // allein hält zwei Seiten nicht zusammen: Fehlt eine Vorsilbe im Switch, kommt sie vielleicht
 // nur über einen Umweg (verarbeiteOhneVorsilbe) zum selben Ergebnis, und niemand merkt es.
@@ -72,7 +72,7 @@ func TestVorsilben_JedeStehtAuchInDerVereinheitlichung(t *testing.T) {
 
 func leseScanEinordnen(t *testing.T) string {
 	t.Helper()
-	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "scanEinordnen.js")
+	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "utils", "scanEinordnen.js")
 	roh, err := os.ReadFile(pfad)
 	if err != nil {
 		t.Fatalf("%s nicht lesbar: %v", pfad, err)

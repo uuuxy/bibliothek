@@ -1,5 +1,5 @@
 import { apiFetch } from '../apiFetch.js';
-import { backupMessage, backupHint } from '../backupStatusText.js';
+import { backupMessage, backupHint } from '../components/system/backupStatusText.js';
 
 /**
  * Backup-Wächter: der nächtliche Job überspringt sich still, wenn
@@ -9,7 +9,7 @@ import { backupMessage, backupHint } from '../backupStatusText.js';
  * einmal pro Sitzung abgefragt wird und nicht zweimal.
  */
 export const backupStatus = new (class {
-	/** @type {import('../backupStatusText.js').BackupStatus | null} */
+	/** @type {import('../components/system/backupStatusText.js').BackupStatus | null} */
 	data = $state(null);
 
 	#loading = false;

@@ -16,7 +16,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Button from '../ui/Button.svelte';
-	import { bescheidStatus } from '../../bescheidStatus.js';
+	import { bescheidStatus } from './bescheidStatus.js';
 	import { FileText, Printer } from '@lucide/svelte';
 	import { formatEuro } from '../../utils/format.js';
 

@@ -19,9 +19,9 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import LmfPlanVorrat from './LmfPlanVorrat.svelte';
 	import LmfPlanZeile from './LmfPlanZeile.svelte';
-	import * as op from '../../lmfplanZeilen.js';
+	import * as op from './lmfplanZeilen.js';
 
-	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, bereit: boolean, ausgelassen: string[], draussen: (klasse: string) => boolean, markiert: { index: number } | null, onklasseraus: (klasse: string) => void, onhinein: (klasse: string, vor?: number) => void, ontausch: (i: number, alt: string, neu: string) => void }} */
+	/** @type {{ zeilen: import('./lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('./lmfplanDienst.js').klassenMarker>, bereit: boolean, ausgelassen: string[], draussen: (klasse: string) => boolean, markiert: { index: number } | null, onklasseraus: (klasse: string) => void, onhinein: (klasse: string, vor?: number) => void, ontausch: (i: number, alt: string, neu: string) => void }} */
 	let {
 		zeilen = $bindable(),
 		plaetze,

@@ -13,7 +13,7 @@
      Mit `frage` zeigt er diese statt der des Stores, auch keine, solange sie null ist: Der
      Sperrbildschirm fragt so selbst, und hinter ihm darf keine Frage der Anwendung erscheinen. -->
 <script>
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './Button.svelte';
 	import { bestaetigungStore } from '../../stores/bestaetigung.svelte.js';
 

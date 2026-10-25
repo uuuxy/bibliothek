@@ -1,5 +1,5 @@
 <script>
-	import { strichcodeBildUrl, strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
+	import { strichcodeBildUrl, strichcodeBildOptionenFuerElement } from '../utils/strichcodeBild.js';
 	/**
 	 * @file Kartenseite.svelte
 	 * Rendert EINE Ausweisseite (front/back) aus dem zentralen Element-Modell für einen
@@ -13,7 +13,7 @@
 	 * gehört nicht dazu: Ohne Leser ist die Vorgabe „Schülerausweis".
 	 */
 	import { idStore } from './idDesignerStore.svelte.js';
-	import { ausweisTitel, istKollegium } from '../leserArt.js';
+	import { ausweisTitel, istKollegium } from '../components/leser/leserArt.js';
 	import { NUMMER_FARBE } from './kartenFarben.js';
 
 	/**

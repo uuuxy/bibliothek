@@ -20,7 +20,7 @@ import (
 // gegen die Prüffälle, das Wort auf dem Blatt der Auskunft der Test in internal/auskunft; hier
 // steht die Datenbank.
 func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
-	const faelleDatei = "../../frontend/src/lib/leserArt.faelle.json"
+	const faelleDatei = "../../frontend/src/lib/components/leser/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
 	if err != nil {
 		t.Fatalf("Prüffälle lesen: %v", err)
@@ -67,7 +67,7 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	}
 
 	// Liest die Browser-Seite dieselbe Datei? Sonst prüfte jede Seite nur sich selbst.
-	vitest, err := os.ReadFile("../../frontend/src/lib/leserArt.test.js")
+	vitest, err := os.ReadFile("../../frontend/src/lib/components/leser/leserArt.test.js")
 	if err != nil {
 		t.Fatalf("Vitest lesen: %v", err)
 	}

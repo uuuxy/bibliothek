@@ -3,11 +3,11 @@
 // hält dieser Teil. Nur der Omnibox-Store lädt die Datei (frontend-hygiene-omnibox-teile.test.js);
 // den Leser an der Theke und die Rückmeldung behält er und reicht sie als Funktionen herein.
 
-import { spieleErfolgston, spieleFehlerton } from '../audio.js';
-import { enqueueOfflineAction } from '../offlineWarteschlange.js';
+import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
+import { enqueueOfflineAction } from './offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
-import { ordneScanEin } from '../scanEinordnen.js';
+import { ordneScanEin } from '../utils/scanEinordnen.js';
 
 /**
  * @param {{
@@ -57,7 +57,7 @@ export function erzeugeOmniboxOhneNetz({
 	 * @param {string} q
 	 * @param {string} idempotencyKey
 	 * @param {'ausleihe' | 'rueckgabe' | null} absicht
-	 * @returns {import('../offlineWarteschlange.js').OfflineEintrag}
+	 * @returns {import('./offlineWarteschlange.js').OfflineEintrag}
 	 */
 	function schnappschuss(q, idempotencyKey, absicht) {
 		const aktiverLeser = leseLeser();
@@ -85,7 +85,7 @@ export function erzeugeOmniboxOhneNetz({
 	// Buchliste dieses Rechners; abgelegt wird die Nummer aus der Einordnung, weil ein
 	// Littera-Etikett eine EAN-13 trägt und der Server nur die Nummer darin kennt.
 	/**
-	 * @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
+	 * @param {import('./offlineWarteschlange.js').OfflineEintrag} eintrag
 	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
 	 */
 	async function speichereOfflineAktion(eintrag) {
@@ -140,7 +140,7 @@ export function erzeugeOmniboxOhneNetz({
 		);
 	}
 
-	/** @param {import('../scanEinordnen.js').ScanEinordnung} einordnung */
+	/** @param {import('../utils/scanEinordnen.js').ScanEinordnung} einordnung */
 	function verwirfOfflineScan(einordnung) {
 		// Den Ausweis merkt speichereOfflineAktion vorher; hier kommt er nicht an.
 		const meldungen = {
@@ -166,7 +166,7 @@ export function erzeugeOmniboxOhneNetz({
 	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der
 	// Server hat den Scan nicht gesehen, der Schnappschuss geht in die Warteschlange.
 	/**
-	 * @param {unknown} e @param {import('../offlineWarteschlange.js').OfflineEintrag} eintrag
+	 * @param {unknown} e @param {import('./offlineWarteschlange.js').OfflineEintrag} eintrag
 	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
 	 */
 	function verarbeiteVersandfehler(e, eintrag) {

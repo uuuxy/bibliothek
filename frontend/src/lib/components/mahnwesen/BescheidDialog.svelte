@@ -16,7 +16,7 @@
      Dialog sagt das, damit niemand den Knopf zum Ausprobieren drückt. Der Zustand lebt
      in bescheidFormular.svelte.js. -->
 <script>
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import BescheidPositionen from './BescheidPositionen.svelte';

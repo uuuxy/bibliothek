@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Datensatz, den es nicht mehr gab.
 const apiFetch = vi.hoisted(() => vi.fn());
 vi.mock('../apiFetch.js', () => ({ apiFetch, apiClient: { post: vi.fn() } }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));

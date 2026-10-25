@@ -17,7 +17,7 @@ vi.mock('../apiFetch.js', () => ({
 	}),
 	apiClient: { post: vi.fn() }
 }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
@@ -46,7 +46,7 @@ import { thekeLeeren } from './thekeLeeren.js';
 // 16.09.2026. Belegt in stores/omniboxZeitgeber.test.js.
 afterEach(() => omniboxStore.stoppeZeitgeber());
 
-import { ladeWarteschlange, dequeueOfflineAction } from '../offlineWarteschlange.js';
+import { ladeWarteschlange, dequeueOfflineAction } from './offlineWarteschlange.js';
 
 /**
  * Eine Server-Antwort, wie apiClient.post sie liefert.

@@ -5,7 +5,7 @@
 	// POST /api/admin/class-books/add (klassenname wird serverseitig normalisiert).
 	import { apiFetch, apiClient, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
-	import Dialog from '../../../../lib/Dialog.svelte';
+	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import {

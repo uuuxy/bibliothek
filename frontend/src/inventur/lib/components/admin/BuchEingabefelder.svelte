@@ -6,7 +6,7 @@
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import ChipFeld from '../../../../lib/components/ui/ChipFeld.svelte';
-	import SchlagwortDnbVorschlag from '../../../../lib/components/SchlagwortDnbVorschlag.svelte';
+	import SchlagwortDnbVorschlag from '../../../../lib/components/katalog/SchlagwortDnbVorschlag.svelte';
 	import { erzeugeSchlagwortVorschlaege } from '../../../../lib/utils/schlagwortVorschlaege.svelte.js';
 
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];

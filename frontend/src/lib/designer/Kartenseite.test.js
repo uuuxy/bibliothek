@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import Kartenseite from './Kartenseite.svelte';
 import { idStore } from './idDesignerStore.svelte.js';
-import { strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
+import { strichcodeBildOptionenFuerElement } from '../utils/strichcodeBild.js';
 
 /**
  * Der Testdruck des Ausweis-Designers und der echte Ausweis rendern beide über

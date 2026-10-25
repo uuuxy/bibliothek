@@ -25,7 +25,7 @@ import (
 //
 // Deshalb hält der Rechner die Barcodes aller Exemplare, auch der ausgesonderten (das
 // Nachbuchen holt ein zurückgekommenes Buch in den Umlauf). Ein 13-stelliges Littera-Etikett
-// rechnet der Rechner zuerst selbst auf die Nummer zurück (frontend/src/lib/litteraEtikett.js,
+// rechnet der Rechner zuerst selbst auf die Nummer zurück (frontend/src/lib/utils/litteraEtikett.js,
 // dieselben Prüffälle wie der Server); steht die Nummer auf der Liste, ist sie ein Buch; sonst
 // gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. Keine
 // Personendaten: nur Buchnummern.

@@ -16,7 +16,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn() }
 }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
@@ -32,10 +32,10 @@ vi.mock('./buchBarcodes.svelte.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { spieleFehlerton } from '../audio.js';
+import { spieleFehlerton } from '../utils/audio.js';
 import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
-import { ladeWarteschlange, dequeueOfflineAction } from '../offlineWarteschlange.js';
+import { ladeWarteschlange, dequeueOfflineAction } from './offlineWarteschlange.js';
 
 const MIA = { id: 'leser-1', art: 'schueler', vorname: 'Mia', nachname: 'Muster', klasse: '07B' };
 const TOM = { id: 'leser-2', art: 'schueler', vorname: 'Tom', nachname: 'Test', klasse: '07B' };

@@ -15,7 +15,7 @@
 	import { X } from '@lucide/svelte';
 	import Button from '../../ui/Button.svelte';
 	import Feld from '../../ui/Feld.svelte';
-	import { speichereKategorie, hatAenderungen } from '../../../einstellungenSpeichern.js';
+	import { speichereKategorie, hatAenderungen } from '../einstellungenSpeichern.js';
 	import { meldeFormular } from '../../../stores/verlassenSchutz.svelte.js';
 
 	/** @typedef {{ jahr: number, von: string, bis: string }} Eintrag */

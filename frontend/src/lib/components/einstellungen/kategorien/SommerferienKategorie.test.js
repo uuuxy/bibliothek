@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import SommerferienKategorie from './SommerferienKategorie.svelte';
-import { speichereKategorie } from '../../../einstellungenSpeichern.js';
+import { speichereKategorie } from '../einstellungenSpeichern.js';
 
 // Die Sommerferien als Einstellung (06.09.2026): Programmjahre stehen als „Programm",
 // eigene als „eigener Eintrag" und gewinnen für dasselbe Jahr; aufnehmen, entfernen,
 // speichern — gespeichert wird die JSON-Liste der EIGENEN Jahre unter „sommerferien".
-vi.mock('../../../einstellungenSpeichern.js', () => ({ speichereKategorie: vi.fn() }));
+vi.mock('../einstellungenSpeichern.js', () => ({ speichereKategorie: vi.fn() }));
 
 const DATEN = {
 	sommerferien_programm: [

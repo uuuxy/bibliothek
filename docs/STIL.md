@@ -352,6 +352,14 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
   `route` und `fetch`, und die Vorsilbe `use` eines Moduls mit Zustand (`useLeserakte`).
 - Ein Ordner mit Fachbezug heißt deutsch wie sein Thema unter `api/` (`leser`, `etiketten`,
   `einstellungen`, `statistik`).
+- Jede Komponente und jedes Modul liegt im Ordner seines Themas unter `components/`, die Teile
+  einer Ansicht bei ihr (`components/leserakte/`); ein Werkzeug ohne Thema liegt in `utils/`,
+  Zustand, den mehrere Ansichten teilen, in `stores/`. Oben in `src/lib` stehen nur der Rahmen
+  der Anwendung (`Router.svelte`, `menue.js`, `routenTabelle.js`, `routenAnwenden.js`,
+  `escapeRegel.js`), die Anbindung an den Server (`apiFetch.js`, `liveEvents.js`) und die
+  Prüfungen über den ganzen Baum mit ihren Helfern; `components/` hat keine eigenen Dateien. Ein
+  Test steht neben seinem Gegenstand. `frontend/src/lib/frontend-hygiene-ordner.test.js` hält die
+  oberste Ebene.
 - `frontend/src/lib/frontend-hygiene-sprache.test.js` hält es für Datei- und Ordnernamen: Ihr
   Bestand nennt je Pfad, was noch umzubenennen ist, und darf nur sinken. Für Namen innerhalb
   der Dateien gilt dieselbe Regel; der zweite Teil derselben Prüfung zählt je Datei die

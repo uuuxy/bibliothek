@@ -32,7 +32,7 @@ const HANDGEBAUT_BESTAND = 0;
  */
 const AUSNAHMEN = [
 	{
-		datei: 'src/lib/components/OmniboxInput.svelte',
+		datei: 'src/lib/components/omnibox/OmniboxInput.svelte',
 		grund:
 			'Füllt die 48-px-Scan-Pille (h-full, ohne eigenen Rahmen) — die Pille ist das ' +
 			'Bedienelement, nicht das Feld. Gate: e2e/suchpille-einheitlich.spec.js.'

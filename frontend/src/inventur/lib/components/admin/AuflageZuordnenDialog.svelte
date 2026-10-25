@@ -8,7 +8,7 @@
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { melde } from '$lib/store.svelte.js';
-	import Dialog from '../../../../lib/Dialog.svelte';
+	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
 	import AuflagenZeile from './AuflagenZeile.svelte';

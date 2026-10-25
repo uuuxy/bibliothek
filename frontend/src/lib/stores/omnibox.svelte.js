@@ -4,8 +4,8 @@
 // omnibox<Teil>.svelte.js, die nur diese Datei lädt (frontend-hygiene-omnibox-teile.test.js).
 
 import { apiFetch } from '../apiFetch.js';
-import { spieleFehlerton } from '../audio.js';
-import { normalisiereScan } from '../scanEinordnen.js';
+import { spieleFehlerton } from '../utils/audio.js';
+import { normalisiereScan } from '../utils/scanEinordnen.js';
 import { snackbars } from './snackbars.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';

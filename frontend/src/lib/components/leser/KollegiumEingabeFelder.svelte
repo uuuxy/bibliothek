@@ -20,7 +20,7 @@
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import { Info } from '@lucide/svelte';
-	import { artMitKonto } from '../../leserArt.js';
+	import { artMitKonto } from './leserArt.js';
 
 	/** @type {{ art?: string, vorname: string, nachname: string, barcode: string, email: string }} */
 	let {

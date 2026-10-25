@@ -13,7 +13,7 @@ import (
 //
 // Es gibt zwei Listen von Berechtigungen, und beide steuern etwas Echtes:
 //
-//   - `frontend/src/lib/rechteKategorien.js` — die Schalter, die ein Admin umlegt,
+//   - `frontend/src/lib/components/benutzer/rechteKategorien.js` — die Schalter, die ein Admin umlegt,
 //     samt Beschriftung; `menue.js` blendet Menüpunkte danach ein.
 //   - die `verlangeRecht("…")` an den Routen — was der Server tatsächlich prüft.
 //
@@ -44,7 +44,7 @@ func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 	for _, recht := range sortiert(anRouten) {
 		if !inOberflaeche[recht] {
 			t.Errorf("Route verlangt %q, aber die Rechte-Oberfläche kennt es nicht — niemand kann es "+
-				"erteilen. Zeile in frontend/src/lib/rechteKategorien.js ergänzen.", recht)
+				"erteilen. Zeile in frontend/src/lib/components/benutzer/rechteKategorien.js ergänzen.", recht)
 		}
 	}
 }
@@ -80,7 +80,7 @@ func TestMenuepunkteVerlangenBekannteRechte(t *testing.T) {
 
 func rechteAusOberflaeche(t *testing.T) map[string]bool {
 	t.Helper()
-	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "rechteKategorien.js"))
+	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "components", "benutzer", "rechteKategorien.js"))
 	if err != nil {
 		t.Fatalf("rechteKategorien.js lesen: %v", err)
 	}

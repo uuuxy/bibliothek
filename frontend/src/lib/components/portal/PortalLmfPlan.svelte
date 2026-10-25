@@ -8,7 +8,7 @@
 	import { CalendarDays, Printer } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
-	import * as dienst from '../../lmfplanDienst.js';
+	import * as dienst from '../lmfplan/lmfplanDienst.js';
 	import { abonniere } from '../../liveEvents.js';
 
 	/** @type {any[]} */

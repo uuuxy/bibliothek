@@ -9,7 +9,7 @@
      made. Dismissive actions are never disabled."). -->
 <script>
 	import { tick } from 'svelte';
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './Button.svelte';
 
 	/** @type {{ open: boolean, titel: string, aktion: string, gueltig: boolean, onclose: () => void, onbestaetigen: () => void, children: import('svelte').Snippet }} */

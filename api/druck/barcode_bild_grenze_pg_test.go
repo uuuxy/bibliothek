@@ -18,7 +18,7 @@ func TestBarcodeBild_GroesseUndInhaltSindBegrenzt(t *testing.T) {
 	_, rufe := routertest.MitAufruf(t, pool)
 
 	// Die größte Bitte der Oberfläche: ein Strichcode über die ganze Ausweiskarte in 300 dpi
-	// (frontend/src/lib/strichcodeBild.js).
+	// (frontend/src/lib/utils/strichcodeBild.js).
 	if rec := rufe(t, http.MethodGet, "/api/barcode?content=B-10001&width=1011&height=638", ""); rec.Code != http.StatusOK {
 		t.Fatalf("Ausweisgröße: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}

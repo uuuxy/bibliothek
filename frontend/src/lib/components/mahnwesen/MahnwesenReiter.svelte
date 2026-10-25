@@ -11,7 +11,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { bescheideStore } from '../../stores/bescheide.svelte.js';
 	import Reiter from '../ui/Reiter.svelte';
-	import { ANSICHTEN } from '../../mahnungen.js';
+	import { ANSICHTEN } from './mahnungen.js';
 
 	/** Höchste Überfälligkeit eines Schülers in Tagen. @param {any} s */
 	const maxTage = (s) =>

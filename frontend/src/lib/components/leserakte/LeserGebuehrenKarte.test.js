@@ -1,0 +1,158 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
+import LeserGebuehrenKarte from './LeserGebuehrenKarte.svelte';
+import { apiClient } from '../../apiFetch.js';
+import { serverAntwort } from '../../serverAntwort.js';
+
+// apiGet/apiPost: der Bescheid-Dialog importiert sie; er öffnet in diesen Tests nie.
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiClient: { post: vi.fn() },
+	apiGet: vi.fn(),
+	apiPost: vi.fn()
+}));
+
+/**
+ * Die zwei Erledigungs-Wege einer Gebühr: Der Storno darf NIE ohne Grund abgehen
+ * (das Backend lehnt ihn mit 400 ab, aber die UI soll es gar nicht erst anbieten),
+ * und ein erledigter Fall darf keine Aktionsknöpfe mehr zeigen — sonst kassiert
+ * die zweite Kollegin am Mehrplatz-System einen nackten Fehler statt einer Antwort.
+ */
+
+const OFFEN = {
+	id: 'sf-1',
+	beschreibung: 'Wasserschaden',
+	betrag: 12.5,
+	ist_bezahlt: false,
+	erstellt_am: '2026-08-01T10:00:00Z',
+	storniert_am: null,
+	stornierungsgrund: null,
+	titel: 'Mathematik 8',
+	barcode_id: 'B-1'
+};
+
+const STORNIERT = {
+	...OFFEN,
+	id: 'sf-2',
+	ist_bezahlt: true,
+	storniert_am: '2026-08-02T10:00:00Z',
+	stornierungsgrund: 'Buch wiedergefunden'
+};
+
+beforeEach(() => {
+	vi.mocked(apiClient.post).mockReset();
+});
+
+describe('LeserGebuehrenKarte', () => {
+	it('zeigt Aktionen nur am offenen Fall — und nur mit Bearbeitungsrecht', () => {
+		const screen = render(LeserGebuehrenKarte, {
+			props: { gebuehren: [OFFEN, STORNIERT], darfBearbeiten: true, onChanged: () => {} }
+		});
+		// Ein offener Fall: je ein Bezahlt-/Storno-Knopf; der stornierte Fall trägt keine.
+		expect(screen.getAllByRole('button', { name: /Bezahlt/ })).toHaveLength(1);
+		expect(screen.getAllByRole('button', { name: /Stornieren/ })).toHaveLength(1);
+		expect(screen.getByText('storniert')).toBeTruthy();
+		expect(screen.getByText('Grund: Buch wiedergefunden')).toBeTruthy();
+		screen.unmount();
+
+		const ohneRecht = render(LeserGebuehrenKarte, {
+			props: { gebuehren: [OFFEN], darfBearbeiten: false, onChanged: () => {} }
+		});
+		expect(ohneRecht.queryByRole('button', { name: /Bezahlt/ })).toBeNull();
+	});
+
+	it('Storno geht nur mit Grund raus — und der Grund bleibt nicht im Modal stehen', async () => {
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({}) })
+		);
+		const onChanged = vi.fn();
+		const screen = render(LeserGebuehrenKarte, {
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: /^Stornieren$/ }));
+		const bestaetigen = /** @type {HTMLButtonElement | undefined} */ (
+			screen.getAllByRole('button', { name: /Stornieren/ }).find((b) => b.closest('.fixed'))
+		);
+		if (!bestaetigen) throw new Error('Bestätigen-Knopf im Modal nicht gefunden');
+		// Ohne Grund ist der Bestätigen-Knopf gesperrt — kein Request.
+		expect(bestaetigen.disabled).toBe(true);
+
+		await fireEvent.input(screen.getByLabelText('Stornierungsgrund'), {
+			target: { value: '  Kulanz  ' }
+		});
+		expect(bestaetigen.disabled).toBe(false);
+		await fireEvent.click(bestaetigen);
+
+		expect(apiClient.post).toHaveBeenCalledWith('/api/schadensfaelle/sf-1/storno', {
+			grund: 'Kulanz'
+		});
+		expect(onChanged).toHaveBeenCalled();
+		// Modal zu, Grund geleert — beim nächsten Fall darf nichts vorausgefüllt sein.
+		expect(screen.queryByLabelText('Stornierungsgrund')).toBeNull();
+	});
+
+	it('Bezahlt schickt keinen Body-Betrag — der kommt aus der Datenbank', async () => {
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({}) })
+		);
+		const screen = render(LeserGebuehrenKarte, {
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged: () => {} }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
+		expect(apiClient.post).toHaveBeenCalledWith('/api/schadensfaelle/sf-1/bezahlt', {});
+	});
+
+	it('lädt nach einem 409-Konflikt neu — die Akte zeigt den echten Zustand', async () => {
+		// Mehrplatz-Realität: "eine Kollegin war schneller". Der Toast nennt den
+		// Konflikt, und onChanged synchronisiert die Liste, damit der veraltete
+		// Aktionsknopf verschwindet. Nur bei Netzwerkfehlern wird NICHT neu geladen.
+		vi.mocked(apiClient.post).mockResolvedValue(
+			serverAntwort(409, { error: 'Schadensfall wurde bereits bezahlt oder storniert' })
+		);
+		const onChanged = vi.fn();
+		const screen = render(LeserGebuehrenKarte, {
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
+		await vi.waitFor(() => expect(onChanged).toHaveBeenCalled());
+	});
+
+	it('lädt bei Netzwerkfehler NICHT neu — es gibt keinen neuen Zustand zu holen', async () => {
+		vi.mocked(apiClient.post).mockRejectedValue(new Error('offline'));
+		const onChanged = vi.fn();
+		const screen = render(LeserGebuehrenKarte, {
+			props: { gebuehren: [OFFEN], darfBearbeiten: true, onChanged }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
+		expect(onChanged).not.toHaveBeenCalled();
+	});
+});
+
+// „Bescheid erstellen" steht an der Gebühren-Karte, weil die Forderung dort entsteht
+// (15.09.2026). Der Knopf gehört nur zu einer offenen Forderung, die noch auf keinem Brief
+// steht — sonst führte er in einen leeren Dialog.
+describe('LeserGebuehrenKarte: Bescheid erstellen', () => {
+	const props = (gebuehr, darfBearbeiten = true) => ({
+		props: { schuelerId: 's1', gebuehren: [gebuehr], darfBearbeiten, onChanged: () => {} }
+	});
+
+	it('bietet den Bescheid bei einer offenen Forderung ohne Brief an', () => {
+		const screen = render(LeserGebuehrenKarte, props(OFFEN));
+		expect(screen.getByRole('button', { name: /Bescheid erstellen/ })).toBeTruthy();
+	});
+
+	it.each([
+		['bezahlt', { ...OFFEN, ist_bezahlt: true }],
+		['storniert', STORNIERT],
+		['schon auf einem Bescheid', { ...OFFEN, bescheid_id: 'b1' }]
+	])('bietet ihn nicht an, wenn die Forderung %s ist', (_, gebuehr) => {
+		const screen = render(LeserGebuehrenKarte, props(gebuehr));
+		expect(screen.queryByRole('button', { name: /Bescheid erstellen/ })).toBeNull();
+	});
+
+	it('bietet ihn ohne Schreibrecht nicht an', () => {
+		const screen = render(LeserGebuehrenKarte, props(OFFEN, false));
+		expect(screen.queryByRole('button', { name: /Bescheid erstellen/ })).toBeNull();
+	});
+});

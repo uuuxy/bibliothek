@@ -1,6 +1,6 @@
 <script>
-	import { strichcodeBildUrl } from '../../strichcodeBild.js';
-	import { etikettFormat } from '../../etikettformate.js';
+	import { strichcodeBildUrl } from '../../utils/strichcodeBild.js';
+	import { etikettFormat } from './etikettformate.js';
 	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 

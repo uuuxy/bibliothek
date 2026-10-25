@@ -10,7 +10,7 @@ import (
 // und Browser beide lesen; eine Art, die dsgvoLeserart nicht kennt, stünde mit ihrem Wert aus
 // der Datenbank auf dem Blatt.
 func TestDSGVOLeserart_SchreibtJedeArtAus(t *testing.T) {
-	const faelleDatei = "../../frontend/src/lib/leserArt.faelle.json"
+	const faelleDatei = "../../frontend/src/lib/components/leser/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
 	if err != nil {
 		t.Fatalf("Prüffälle lesen: %v", err)

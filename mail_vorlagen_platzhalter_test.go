@@ -73,11 +73,11 @@ func leseRendererPlatzhalter(t *testing.T, datei string) map[string]bool {
 	return sammlePlatzhalter(ohneKommentare(string(roh)))
 }
 
-// leseEditorPlatzhalter parst vorlagenInfo aus frontend/src/lib/mailVorlagenInfo.js:
+// leseEditorPlatzhalter parst vorlagenInfo aus frontend/src/lib/components/einstellungen/mailVorlagenInfo.js:
 // je Typ-Block die platzhalter-Liste (und dass es den Block überhaupt gibt).
 func leseEditorPlatzhalter(t *testing.T) map[string]map[string]bool {
 	t.Helper()
-	roh, err := os.ReadFile(filepath.Join("frontend", "src", "lib", "mailVorlagenInfo.js"))
+	roh, err := os.ReadFile(filepath.Join("frontend", "src", "lib", "components", "einstellungen", "mailVorlagenInfo.js"))
 	if err != nil {
 		t.Fatalf("mailVorlagenInfo.js lesen: %v", err)
 	}

@@ -246,7 +246,7 @@ func legeEingereihteAn(ctx context.Context, tx pgx.Tx, batch *pgx.Batch, exempla
 const lmfVorsilbe = "LMF-"
 
 // lmfNummer erkennt die Nummer eines LMF-Etiketts und schreibt die Vorsilbe groß, wie der Scan
-// sie liefert (normalisiereScan in frontend/src/lib/scanEinordnen.js).
+// sie liefert (normalisiereScan in frontend/src/lib/utils/scanEinordnen.js).
 func lmfNummer(nummer string) (string, bool) {
 	if len(nummer) <= len(lmfVorsilbe) || !strings.EqualFold(nummer[:len(lmfVorsilbe)], lmfVorsilbe) {
 		return "", false

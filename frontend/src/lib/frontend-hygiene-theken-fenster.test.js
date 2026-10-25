@@ -5,11 +5,11 @@ import { srcRoot, ohneKommentare } from './hygiene-quellen.js';
 
 // Ratsche: Jedes Fenster, das die Theke selbst einhängt, steht in rueckfrageOffen
 // (stores/omnibox.svelte.js). Daran hängen drei Zusagen: Ein Scan bei offenem Fenster drückt
-// keinen Knopf darin (scanOhneFokus.js), seine Zeichen fallen nicht ins Scanfeld dahinter, und
+// keinen Knopf darin (components/omnibox/scanOhneFokus.js), seine Zeichen fallen nicht ins Scanfeld dahinter, und
 // die Scan-Reihe hält an. Ein Fenster, das dort fehlt, schlösse der nächste Scan.
 //
-// Blind: für ein Fenster, das tiefer hängt (in der Akte) oder nicht aus components/Omnibox…
-// kommt, und für eines, das die Theke anders ein- und ausblendet als mit
+// Blind: für ein Fenster, das tiefer hängt (in der Akte) oder nicht aus
+// components/omnibox/Omnibox… kommt, und für eines, das die Theke anders ein- und ausblendet als mit
 // {#if omniboxStore.<Zustand>} in der eigenen Datei. Ob der Scan wirklich abgefangen wird,
 // prüft e2e/theke-scan-reihe.spec.js.
 
@@ -22,8 +22,10 @@ describe('Fenster der Theke stehen in rueckfrageOffen', () => {
 			.exec(lies('stores/omnibox.svelte.js'))?.[1]
 			.split('||')
 			.map((z) => z.trim()) ?? [];
-	const fenster = [...lies('Omnibox.svelte').matchAll(/'\.\/(components\/Omnibox\w+\.svelte)'/g)]
-		.map((m) => m[1])
+	const fenster = [
+		...lies('components/omnibox/Omnibox.svelte').matchAll(/'\.\/(Omnibox\w+\.svelte)'/g)
+	]
+		.map((m) => `components/omnibox/${m[1]}`)
 		.filter((rel) => /aria-modal="true"|<Dialog\b/.test(lies(rel)));
 
 	it('findet Fenster und Zustände — sonst wäre das Gate wertlos grün', () => {

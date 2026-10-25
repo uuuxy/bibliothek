@@ -7,7 +7,7 @@
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
-	import { ETIKETT_FORMATE } from '../../etikettformate.js';
+	import { ETIKETT_FORMATE } from './etikettformate.js';
 	const BARCODE_AUSGABE = [
 		// Der Wert heißt 'code39', gedruckt wird Code 128 (pkg/strichcode). Der gespeicherte
 		// Wert bleibt, weil er in den Ausweis-Layouts steht; die Beschriftung sagt, was

@@ -19,9 +19,9 @@
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
 	import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
-	import { STUNDEN, datumKurz, wochentag } from '../../lmfplanDienst.js';
+	import { STUNDEN, datumKurz, wochentag } from './lmfplanDienst.js';
 
-	/** @type {{ art: string, entwurf: import('../../lmfplanDienst.js').PlanEntwurf, ausfaelle: import('../../lmfplanDienst.js').Ausfall[], beginn: { datum: string, stunde: number } | null, sommerferien: import('../../lmfplanDienst.js').Sommerferien | null }} */
+	/** @type {{ art: string, entwurf: import('./lmfplanDienst.js').PlanEntwurf, ausfaelle: import('./lmfplanDienst.js').Ausfall[], beginn: { datum: string, stunde: number } | null, sommerferien: import('./lmfplanDienst.js').Sommerferien | null }} */
 	let { art, entwurf = $bindable(), ausfaelle, beginn, sommerferien } = $props();
 
 	const ende = $derived(art === 'rueckgabe');

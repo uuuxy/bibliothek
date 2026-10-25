@@ -10,7 +10,7 @@ import { uiLogin } from './helpers.js';
 // andere Datei im selben Repo still umstellt, misst nicht das Programm, sondern die
 // Konfiguration.
 //
-// Die Textlogik je Zustand ist vollständig unit-getestet (src/lib/backupStatusText.test.js).
+// Die Textlogik je Zustand ist vollständig unit-getestet (src/lib/components/system/backupStatusText.test.js).
 // Hier bleibt die Frage, die nur am laufenden Stack zu beantworten ist: Kommt der echte
 // Status vom Server bis in den Alert? Deshalb wird der Zustand gelesen und die dazu
 // passende Meldung erwartet — der Test gilt in jeder Stack-Konfiguration und bleibt

@@ -10,7 +10,7 @@
 	import BestaetigungsDialog from '../ui/BestaetigungsDialog.svelte';
 	import { verwerfenFrage } from '../../stores/bestaetigung.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
-	import { scanSchutz } from '../../scanErkennung.js';
+	import { scanSchutz } from '../../utils/scanErkennung.js';
 	import { leseSperrzustand } from '../../stores/sperreAmServer.js';
 
 	// Sperrbildschirm nach Inaktivität und zehn Stunden nach der letzten Passworteingabe. Die

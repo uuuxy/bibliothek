@@ -4,10 +4,10 @@
 // (frontend-hygiene-omnibox-teile.test.js), der Zustand, Merker und Rückmeldung hereinreicht.
 
 import { apiClient, leseApiFehler } from '../apiFetch.js';
-import { spieleFehlerton } from '../audio.js';
+import { spieleFehlerton } from '../utils/audio.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
-import { ordneScanEin } from '../scanEinordnen.js';
-import { leserFuerVersand } from '../offlineWarteschlange.js';
+import { ordneScanEin } from '../utils/scanEinordnen.js';
+import { leserFuerVersand } from './offlineWarteschlange.js';
 
 // 502 bis 504 und 423: Gebucht hat der Server nicht (Neustart, Sitzung nicht lesbar, gesperrt).
 const nichtErreicht = (/** @type {Response} */ res) => [423, 502, 503, 504].includes(res.status);
@@ -17,7 +17,7 @@ const nichtErreicht = (/** @type {Response} */ res) => [423, 502, 503, 504].incl
  * @typedef {{ q: string, reloadProfileCb?: (() => void) | null, overrideBlock: boolean,
  *   confirmedChecklist: boolean, absicht: 'ausleihe' | 'rueckgabe' | null }} Auftrag
  */
-/** @typedef {import('../offlineWarteschlange.js').OfflineEintrag} OfflineEintrag */
+/** @typedef {import('./offlineWarteschlange.js').OfflineEintrag} OfflineEintrag */
 
 /**
  * @param {{

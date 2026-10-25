@@ -16,7 +16,7 @@
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
 
-	/** @type {{ klassen: string[], draussen: (klasse: string) => boolean, marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, onhinein: (klasse: string) => void }} */
+	/** @type {{ klassen: string[], draussen: (klasse: string) => boolean, marker: ReturnType<typeof import('./lmfplanDienst.js').klassenMarker>, onhinein: (klasse: string) => void }} */
 	let { klassen, draussen, marker, onhinein } = $props();
 
 	const offene = $derived(klassen.filter((k) => !draussen(k)));

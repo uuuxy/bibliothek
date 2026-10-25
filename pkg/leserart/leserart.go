@@ -2,8 +2,8 @@
 // heißen und was an ihnen hängt.
 //
 // Die Werte sind dieselben wie in chk_leser_art in der Datenbank und in
-// frontend/src/lib/leserArt.js. Server und Browser lesen dieselben Prüffälle
-// (frontend/src/lib/leserArt.faelle.json); pkg/leserart/leserart_pg_test.go hält sie zusätzlich
+// frontend/src/lib/components/leser/leserArt.js. Server und Browser lesen dieselben Prüffälle
+// (frontend/src/lib/components/leser/leserArt.faelle.json); pkg/leserart/leserart_pg_test.go hält sie zusätzlich
 // gegen die Datenbank.
 //
 // Entschieden wird an der Art zweierlei: Schüler oder nicht (IstSchueler, IstKollegium) und,
@@ -48,7 +48,7 @@ func IstSchueler(art string) bool { return art == Schueler }
 
 // IstKollegium sagt, ob die Art keine Schüler-Art ist. Leer heißt Schüler: Eine Abfrage über
 // die Sicht schueler füllt die Art nicht (repository.Leser.Art), und
-// frontend/src/lib/leserArt.js antwortet genauso.
+// frontend/src/lib/components/leser/leserArt.js antwortet genauso.
 func IstKollegium(art string) bool { return art != "" && art != Schueler }
 
 // HatKonto sagt, ob zu dieser Art ein Zugang zu „Mein Portal" gehört und damit die

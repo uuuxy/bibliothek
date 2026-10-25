@@ -10,7 +10,7 @@
      Bauform wie der Storno-Dialog der Gebühren (LeserGebuehrenKarte): Modal, Radio-Gruppe,
      ein Feld für den Grund, die Aktion erst mit Grund freigegeben. -->
 <script>
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';

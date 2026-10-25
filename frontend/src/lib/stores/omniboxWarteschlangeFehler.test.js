@@ -17,13 +17,13 @@ vi.mock('../apiFetch.js', () => ({
 		})
 	}
 }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
-import { enqueueOfflineAction, ladeWarteschlange } from '../offlineWarteschlange.js';
+import { enqueueOfflineAction, ladeWarteschlange } from './offlineWarteschlange.js';
 import { omniboxStore } from './omnibox.svelte.js';
 
 // Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
@@ -35,7 +35,7 @@ afterEach(() => omniboxStore.stoppeZeitgeber());
 
 import { offlineSync } from './offlineSync.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
-import { spieleErfolgston, spieleFehlerton } from '../audio.js';
+import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
 
 describe('Warteschlange nicht erreichbar', () => {
 	beforeEach(() => {

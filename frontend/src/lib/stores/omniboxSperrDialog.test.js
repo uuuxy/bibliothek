@@ -16,7 +16,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn(),
 	apiClient: { post }
 }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));

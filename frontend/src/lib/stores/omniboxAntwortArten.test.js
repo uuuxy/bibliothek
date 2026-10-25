@@ -10,13 +10,13 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn(),
 	apiClient: { post: vi.fn() }
 }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { spieleErfolgston, spieleFehlerton } from '../audio.js';
+import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
 import { snackbars } from './snackbars.svelte.js';
 import { erzeugeOmniboxStore } from './omnibox.svelte.js';
 

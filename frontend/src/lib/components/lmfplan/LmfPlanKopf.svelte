@@ -15,7 +15,7 @@
 	import { Printer, Send, Trash } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Segmente from '../ui/Segmente.svelte';
-	import { ARTEN, datumKurz } from '../../lmfplanDienst.js';
+	import { ARTEN, datumKurz } from './lmfplanDienst.js';
 
 	/** @type {{ art: string, stand: any, laedt: boolean, ladeFehler: boolean, gueltig: boolean, speichert: boolean, onart: (a: string) => void, onpdf: () => void, onverwerfen: () => void, onspeichern: () => void, onveroeffentlichen: () => void }} */
 	let {

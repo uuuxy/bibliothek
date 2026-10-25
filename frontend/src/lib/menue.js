@@ -1,4 +1,4 @@
-import { DRUCK_RECHTE } from './druckCenterReiter.js';
+import { DRUCK_RECHTE } from './components/etiketten/druckCenterReiter.js';
 
 /**
  * @typedef {Object} MenuItem

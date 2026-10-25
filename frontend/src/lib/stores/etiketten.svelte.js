@@ -2,13 +2,13 @@
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
 import { apiFetch } from '../apiFetch.js';
-import { felderProBogen } from '../etikettformate.js';
+import { felderProBogen } from '../components/etiketten/etikettformate.js';
 import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
-import { normalisiereScan } from '../scanEinordnen.js';
-import { dekodiereLitteraEtikett } from '../litteraEtikett.js';
-import { ohnePruefzeichen } from '../code39Pruefzeichen.js';
-import { druckeBogen } from '../etikettenDruck.js';
+import { normalisiereScan } from '../utils/scanEinordnen.js';
+import { dekodiereLitteraEtikett } from '../utils/litteraEtikett.js';
+import { ohnePruefzeichen } from '../utils/code39Pruefzeichen.js';
+import { druckeBogen } from '../components/etiketten/etikettenDruck.js';
 
 function erzeugeEtikettenStore() {
 	let suche = $state('');

@@ -1,8 +1,8 @@
 <script>
-	import OpacSuche from './lib/OpacSuche.svelte';
+	import OpacSuche from './lib/components/katalog/OpacSuche.svelte';
 	import Ladekreis from './lib/components/ui/Ladekreis.svelte';
-	import Monitor from './lib/Monitor.svelte';
-	import BestellBestaetigung from './lib/BestellBestaetigung.svelte';
+	import Monitor from './lib/monitor/Monitor.svelte';
+	import BestellBestaetigung from './lib/components/bestellungen/BestellBestaetigung.svelte';
 
 	import { authStore } from './lib/stores/authStore.svelte.js';
 	import { uiStore } from './lib/stores/uiStore.svelte.js';
@@ -16,10 +16,10 @@
 	import Anmeldung from './lib/components/auth/Anmeldung.svelte';
 	import Sperrbildschirm from './lib/components/auth/Sperrbildschirm.svelte';
 	import Anwendungsrahmen from './lib/components/layout/Anwendungsrahmen.svelte';
-	import OfflineAnzeige from './lib/components/OfflineAnzeige.svelte';
-	import SnackbarAnzeige from './lib/SnackbarAnzeige.svelte';
+	import OfflineAnzeige from './lib/components/layout/OfflineAnzeige.svelte';
+	import SnackbarAnzeige from './lib/components/layout/SnackbarAnzeige.svelte';
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
-	import ThekenDaten from './lib/components/ThekenDaten.svelte';
+	import ThekenDaten from './lib/components/layout/ThekenDaten.svelte';
 	import { initTooltips } from './lib/actions/tooltip.js';
 	import * as Sentry from '@sentry/svelte';
 

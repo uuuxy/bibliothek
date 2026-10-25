@@ -14,7 +14,7 @@
 	import StatusChip from '../ui/StatusChip.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 
-	/** @type {{ klassen: string[], i: number, vorrat: string[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, onklasseraus: (klasse: string) => void, ontausch: (alt: string, neu: string) => void }} */
+	/** @type {{ klassen: string[], i: number, vorrat: string[], marker: ReturnType<typeof import('./lmfplanDienst.js').klassenMarker>, onklasseraus: (klasse: string) => void, ontausch: (alt: string, neu: string) => void }} */
 	let { klassen, i, vorrat, marker, onklasseraus, ontausch } = $props();
 
 	const OHNE_SCHUELER_TIP =

@@ -4,7 +4,7 @@
      gleich mit, damit Leserakte.svelte (an der 200-Zeilen-Ratsche) nichts davon halten
      muss. -->
 <script>
-	import { istKollegium } from '../../leserArt.js';
+	import { istKollegium } from './leserArt.js';
 	import { Merge } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import SchuelerZusammenfuehrenDialog from './SchuelerZusammenfuehrenDialog.svelte';

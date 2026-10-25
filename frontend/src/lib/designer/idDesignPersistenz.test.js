@@ -74,7 +74,7 @@ describe('Ausweis-Design laden', () => {
 	// Satz daneben (Bugklasse „Lügende Ratsche durch Kommentar").
 	it('die Auto-Speicherung des Bildschirms fragt dieses Flag', () => {
 		const quelle = ohneKommentare(
-			readFileSync(join(srcRoot, 'lib', 'AusweisDesigner.svelte'), 'utf8')
+			readFileSync(join(srcRoot, 'lib', 'designer', 'AusweisDesigner.svelte'), 'utf8')
 		);
 		expect(quelle).toMatch(/if\s*\(!ablage\.geladen\)\s*return;/);
 	});

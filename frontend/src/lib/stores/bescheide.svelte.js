@@ -11,7 +11,7 @@
 
 import { apiGet, apiPost } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
-import { liegtBeiDerSchule } from '../bescheidStatus.js';
+import { liegtBeiDerSchule } from '../components/mahnwesen/bescheidStatus.js';
 
 class BescheideStore {
 	/** @type {any[]} Die geschriebenen Briefe. */

@@ -18,14 +18,14 @@
 	 * @prop {string} titel
 	 * @prop {string} kurz - Supporting Text, EIN Satz.
 	 * @prop {import('svelte').Snippet} [mehr] - Ausführliche Erläuterung im Aufklapper.
-	 * @prop {() => import('../../einstellungenSpeichern.js').KategorieEingabe} [eingabe] - Die Felder
+	 * @prop {() => import('./einstellungenSpeichern.js').KategorieEingabe} [eingabe] - Die Felder
 	 *   der Kategorie mit dem Stand beim Öffnen. Ohne sie trägt die Kategorie keinen Knopf
 	 *   (Prüf- und Werkzeugseiten wie die Betriebsbereitschaft).
 	 * @prop {() => void | Promise<void>} [onSaved] - Neu laden nach dem Speichern.
 	 * @prop {import('svelte').Snippet} children
 	 */
 	import Button from '../ui/Button.svelte';
-	import { speichereKategorie, hatAenderungen } from '../../einstellungenSpeichern.js';
+	import { speichereKategorie, hatAenderungen } from './einstellungenSpeichern.js';
 	import { schuetzeFormulare } from '../../stores/verlassenSchutz.svelte.js';
 
 	let {

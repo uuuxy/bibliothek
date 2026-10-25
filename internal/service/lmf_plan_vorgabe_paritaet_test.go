@@ -18,7 +18,7 @@ import (
 // Zwei Zahlen für dieselbe Vorgabe brauchen deshalb eine Prüfung: Ohne sie zieht der nächste
 // Wechsel der Schulorganisation eine Seite nach und die andere nicht.
 func TestLMFPlanVorgabeIstInGoUndImPlanerDieselbe(t *testing.T) {
-	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "lmfplanDienst.js")
+	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "components", "lmfplan", "lmfplanDienst.js")
 	roh, err := os.ReadFile(pfad)
 	if err != nil {
 		t.Fatalf("%s lesen: %v", pfad, err)

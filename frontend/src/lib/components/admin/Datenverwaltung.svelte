@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
 	import { Download, Upload } from '@lucide/svelte';
-	import LitteraImport from '../../LitteraImport.svelte';
+	import LitteraImport from './LitteraImport.svelte';
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import BestandImport from './BestandImport.svelte';

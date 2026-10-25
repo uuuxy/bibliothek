@@ -4,7 +4,7 @@
 // Blatt zählt keine Mahnung.
 
 import { baueListenDruckHtml } from './listenDruck.js';
-import { ANSICHTEN, gemahntSatz } from '../mahnungen.js';
+import { ANSICHTEN, gemahntSatz } from '../components/mahnwesen/mahnungen.js';
 
 // Zahlen in der Klasse zählen als Zahl: 9A steht vor 10R.
 const ORDNUNG = new Intl.Collator('de', { numeric: true });

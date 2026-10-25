@@ -23,7 +23,7 @@
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Abschnitt from '../ui/Abschnitt.svelte';
-	import { istKollegium, artMitKonto } from '../../leserArt.js';
+	import { istKollegium, artMitKonto } from './leserArt.js';
 
 	/** @type {{ eingaben: any, kontoVorhanden?: boolean }} */
 	let { eingaben, kontoVorhanden = false } = $props();

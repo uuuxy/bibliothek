@@ -4,7 +4,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import logoUrl from '../../../assets/logo.png';
-	import { scanSchutz } from '../../scanErkennung.js';
+	import { scanSchutz } from '../../utils/scanErkennung.js';
 
 	// Ein Scan im Passwortfeld ginge als Anmeldeversuch zum Server und zählte als Fehlversuch.
 	function beiScan() {

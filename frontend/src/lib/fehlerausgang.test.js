@@ -41,7 +41,10 @@ const BESTAND = {
 		1,
 		'Klassengruppen als Filter (die Titelsuche daneben ist behoben)'
 	],
-	'src/lib/useInventurlauf.svelte.js': [2, 'Signaturen- und Fächerliste als Filter'],
+	'src/lib/components/inventur/useInventurlauf.svelte.js': [
+		2,
+		'Signaturen- und Fächerliste als Filter'
+	],
 
 	// — Zähler an Menüpunkten: Eine Pille, die fehlt, hält niemanden auf.
 	'src/lib/stores/uiStore.svelte.js': [3, 'Zählerpillen (Reservierungen, Anliegen, Etiketten)'],
@@ -51,7 +54,7 @@ const BESTAND = {
 		1,
 		'Zusatzinfo; das Portal bleibt ohne sie benutzbar'
 	],
-	'src/lib/lmfplanPlaner.svelte.js': [
+	'src/lib/components/lmfplan/lmfplanPlaner.svelte.js': [
 		1,
 		'kein Response, sondern ein Ergebnis-Objekt — der Toast steht eine Zeile davor'
 	],
@@ -59,7 +62,7 @@ const BESTAND = {
 	// — Seit dem 12.09.2026 sieht der Detektor zwei weitere Formen (UND-Kette und
 	//   `? … : neutraler Wert`). Was er dabei fand, ist behoben; diese drei bleiben, weil
 	//   sie den Fehler BEHANDELN — sie sehen nur aus wie die Form.
-	'src/lib/Monitor.svelte': [
+	'src/lib/monitor/Monitor.svelte': [
 		1,
 		'Flur-Monitor: null heißt „nichts Neues" — der Takt behält die Folien und versucht es wieder (monitorTakt.svelte.js)'
 	],
@@ -67,7 +70,7 @@ const BESTAND = {
 		1,
 		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus leseApiFehler'
 	],
-	'src/lib/useLeserakte.svelte.js': [
+	'src/lib/components/leserakte/useLeserakte.svelte.js': [
 		1,
 		'der Kopf, bewusst zugewiesen (06.09.2026): Scheitert sein Abruf, darf NICHT der vorher geöffnete Schüler stehen bleiben. Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 in fehlendeListen (OFFEN.md 1.5)'
 	]

@@ -6,7 +6,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Mail } from '@lucide/svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
-	import { gemahntSatz } from '../../mahnungen.js';
+	import { gemahntSatz } from './mahnungen.js';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function zeigeAkte(schuelerId) {

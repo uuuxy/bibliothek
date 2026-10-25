@@ -11,7 +11,7 @@
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
-	import { gemahntSatz } from '../../mahnungen.js';
+	import { gemahntSatz } from './mahnungen.js';
 
 	/** @param {string} iso */
 	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');

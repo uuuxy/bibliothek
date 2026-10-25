@@ -13,7 +13,7 @@ import {
 // be placed at the bottom of a UI, in front of the main content. In some cases, snackbars can
 // be nudged upwards to avoid overlapping with other UI elements near the bottom"; „Avoid
 // placing snackbars in front of navigation components". Die Rechnung steht in
-// src/lib/meldungsPlatz.js; hier wird gemessen.
+// src/lib/components/layout/meldungsPlatz.js; hier wird gemessen.
 
 test.use({ viewport: { width: 1280, height: 720 } });
 

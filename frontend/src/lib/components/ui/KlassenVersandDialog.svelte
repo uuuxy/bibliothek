@@ -1,7 +1,7 @@
 <script>
 	import { untrack } from 'svelte';
 	import { Mail } from '@lucide/svelte';
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from './Dialog.svelte';
 	import Button from './Button.svelte';
 	import Kaestchen from './Kaestchen.svelte';
 	import Feld from './Feld.svelte';

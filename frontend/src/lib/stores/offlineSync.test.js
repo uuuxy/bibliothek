@@ -5,7 +5,7 @@ vi.mock('../apiFetch.js', () => ({
 	apiClient: { post: vi.fn() }
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));
@@ -15,7 +15,7 @@ import {
 	enqueueOfflineAction,
 	ladeWarteschlange,
 	dequeueOfflineAction
-} from '../offlineWarteschlange.js';
+} from './offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 

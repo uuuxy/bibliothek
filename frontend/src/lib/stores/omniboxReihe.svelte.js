@@ -3,7 +3,7 @@
 // (frontend-hygiene-omnibox-teile.test.js); die Buchung, die Rückfrage und die Rückmeldung
 // reicht er als Funktionen herein.
 
-import { spieleFehlerton } from '../audio.js';
+import { spieleFehlerton } from '../utils/audio.js';
 
 /** @typedef {import('./omniboxBuchung.svelte.js').Auftrag} Auftrag */
 

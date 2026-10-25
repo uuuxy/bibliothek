@@ -12,9 +12,9 @@
 		datumKurz,
 		stundeText,
 		wochentag
-	} from '../../lmfplanDienst.js';
+	} from './lmfplanDienst.js';
 
-	/** @type {{ termine: import('../../lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[] }} */
+	/** @type {{ termine: import('./lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[] }} */
 	let { termine, eingangsjahrgaenge = [] } = $props();
 
 	const bloecke = $derived(

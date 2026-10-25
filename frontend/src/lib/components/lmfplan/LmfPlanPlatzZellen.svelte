@@ -14,9 +14,9 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
-	import { STUNDEN, datumKurz, stundeText, wochentag } from '../../lmfplanDienst.js';
+	import { STUNDEN, datumKurz, stundeText, wochentag } from './lmfplanDienst.js';
 
-	/** @type {{ zeile: import('../../lmfplanDienst.js').PlanZeile, i: number, platz: { datum: string, stunde: number } | undefined, onfest: () => void }} */
+	/** @type {{ zeile: import('./lmfplanDienst.js').PlanZeile, i: number, platz: { datum: string, stunde: number } | undefined, onfest: () => void }} */
 	let { zeile = $bindable(), i, platz, onfest } = $props();
 
 	/** Klick auf eine gerechnete Zelle: festlegen, dann das passende Feld fokussieren.

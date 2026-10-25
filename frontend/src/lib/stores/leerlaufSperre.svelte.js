@@ -24,7 +24,7 @@ import { authStore, registriereGesperrterStartHandler } from './authStore.svelte
 import { beobachteAndereFenster, meldeAktivitaet, meldeSperre } from './fensterSignale.js';
 import { netzLage } from './netzLage.svelte.js';
 import { offlineSync } from './offlineSync.svelte.js';
-import { stelleSperrSchildAuf } from '../sperrSchild.js';
+import { stelleSperrSchildAuf } from '../components/auth/sperrSchild.js';
 import { entsperreAmServer, leseSperrzustand, sperreAmServer } from './sperreAmServer.js';
 import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 

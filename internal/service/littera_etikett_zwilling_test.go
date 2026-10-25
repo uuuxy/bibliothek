@@ -11,7 +11,7 @@ import (
 //
 // Online rechnet der Server ein 13-stelliges Littera-Etikett auf die Exemplarnummer zurück
 // (dekodiereLitteraEtikett). Ohne Netz muss der Theken-Rechner dasselbe tun
-// (frontend/src/lib/litteraEtikett.js) und die Nummer dann in der Barcode-Liste nachschlagen:
+// (frontend/src/lib/utils/litteraEtikett.js) und die Nummer dann in der Barcode-Liste nachschlagen:
 // Die Liste führt nur die Nummern, und auf dem Server tragen 30.658 von 34.777 Exemplaren die
 // nackte Nummer. Rechneten die beiden Seiten verschieden, gälte ein Buch offline als unklar,
 // das online gebucht wird — oder umgekehrt.
@@ -19,7 +19,7 @@ import (
 // Beide Seiten lesen dieselben Fälle. Dieser Test prüft die Go-Seite und dass der Vitest die
 // Datei wirklich einliest; der Vitest prüft die JavaScript-Seite.
 func TestLitteraEtikett_GoUndJavaScriptTeilenDiePrueffaelle(t *testing.T) {
-	const faelleDatei = "../../frontend/src/lib/litteraEtikett.faelle.json"
+	const faelleDatei = "../../frontend/src/lib/utils/litteraEtikett.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
 	if err != nil {
 		t.Fatalf("Prüffälle lesen: %v", err)
@@ -53,7 +53,7 @@ func TestLitteraEtikett_GoUndJavaScriptTeilenDiePrueffaelle(t *testing.T) {
 		t.Fatalf("%d gültige und %d ungültige Fälle — zu wenige, um beide Seiten zu binden", gueltig, ungueltig)
 	}
 
-	vitest, err := os.ReadFile("../../frontend/src/lib/litteraEtikett.test.js")
+	vitest, err := os.ReadFile("../../frontend/src/lib/utils/litteraEtikett.test.js")
 	if err != nil {
 		t.Fatalf("Vitest lesen: %v", err)
 	}

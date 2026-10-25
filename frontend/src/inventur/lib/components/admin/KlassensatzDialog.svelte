@@ -8,7 +8,7 @@
 	import KlassensatzTitelRaster from './KlassensatzTitelRaster.svelte';
 	import KlassensatzZusammenfassung from './KlassensatzZusammenfassung.svelte';
 	import { TriangleAlert, X } from '@lucide/svelte';
-	import Dialog from '../../../../lib/Dialog.svelte';
+	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
 
 	/**
 	 * @type {{

@@ -13,7 +13,7 @@
 	import { erzeugeDnbSchlagwortVorschlag } from '../../utils/dnbSchlagwortVorschlag.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import ChipFeld from '../ui/ChipFeld.svelte';
-	import SchlagwortDnbVorschlag from '../SchlagwortDnbVorschlag.svelte';
+	import SchlagwortDnbVorschlag from '../katalog/SchlagwortDnbVorschlag.svelte';
 	import { untrack } from 'svelte';
 
 	/**

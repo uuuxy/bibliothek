@@ -76,7 +76,7 @@ func TestWegweiserNennenOrteDieEsGibt(t *testing.T) {
 var wegKeinWeg = []struct{ datei, stueck, grund string }{
 	{"repository/schuljahreswechsel.go", "Abgänger werden gesperrt → chk_schueler_block_reason", "Kommentar in einer Abfrage"},
 	{"db/rechte_vorgabe.go", "vererbung manage_", "Fehlertext über zwei Rechte"},
-	{"frontend/src/lib/Zugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},
+	{"frontend/src/lib/components/benutzer/Zugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},
 	{"frontend/src/lib/components/einstellungen/kategorien.js", "Klasse → Lehrkraft", "Zuordnung, die die Kategorie pflegt"},
 	{"frontend/src/lib/components/leser/Schuljahreswechsel.svelte", "5a → 6a", "Beispiel einer Versetzung"},
 }

@@ -53,7 +53,7 @@
 
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
-	import ThekenKamera from '../../ThekenKamera.svelte';
+	import ThekenKamera from '../omnibox/ThekenKamera.svelte';
 
 	// Kamera-Scanner (Schalter `kamera`, Standard aus): Der erkannte Code
 	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche

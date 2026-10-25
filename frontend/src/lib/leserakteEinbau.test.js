@@ -56,13 +56,13 @@ describe('Einbauorte der Schülerakte', () => {
 	// Omnibox.svelte darf sie deshalb NICHT mehr selbst einbauen — sonst stünden zwei
 	// Einbauorte nebeneinander und nur einer ginge über gibZurueck.
 	it('die Theke gibt aus der Akte über gibZurueck zurück', () => {
-		const panel = dateien.find((p) => p.endsWith('/components/OmniboxAktiverLeser.svelte'));
+		const panel = dateien.find((p) => p.endsWith('/components/omnibox/OmniboxAktiverLeser.svelte'));
 		expect(panel, 'OmniboxAktiverLeser.svelte nicht gefunden').toBeTruthy();
 		const tags = einbauorte(readFileSync(/** @type {string} */ (panel), 'utf8'), 'Leserakte');
 		expect(tags).toHaveLength(1);
 		expect(tags[0]).toMatch(/onReturnClick=\{[^}]*gibZurueck\(/);
 
-		const omnibox = dateien.find((p) => p.endsWith('/lib/Omnibox.svelte'));
+		const omnibox = dateien.find((p) => p.endsWith('/components/omnibox/Omnibox.svelte'));
 		expect(omnibox, 'Omnibox.svelte nicht gefunden').toBeTruthy();
 		expect(
 			einbauorte(readFileSync(/** @type {string} */ (omnibox), 'utf8'), 'Leserakte'),

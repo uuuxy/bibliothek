@@ -11,7 +11,7 @@
 	import Radio from '../ui/Radio.svelte';
 	import ZusammenfuehrenKandidat from './ZusammenfuehrenKandidat.svelte';
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
 	/** @type {{ open: boolean, leser: any, onMerged: (zielId: string) => void }} */

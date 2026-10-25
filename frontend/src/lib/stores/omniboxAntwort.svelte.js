@@ -3,7 +3,7 @@
 // Nur der Omnibox-Store lädt diese Datei (frontend-hygiene-omnibox-teile.test.js); den Zustand
 // der Theke und die Rückmeldung behält er und reicht sie als Funktionen herein.
 
-import { spieleErfolgston, spieleFehlerton } from '../audio.js';
+import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(daten) {

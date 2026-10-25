@@ -1,5 +1,5 @@
 <script>
-	import { strichcodeBildUrl, strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
+	import { strichcodeBildUrl, strichcodeBildOptionenFuerElement } from '../utils/strichcodeBild.js';
 	/**
 	 * @file CanvasElement.svelte
 	 * Ein Element auf dem Reißbrett des Ausweis-Designers: Darstellung je Elementart plus
@@ -8,7 +8,7 @@
 	 * Aufräumen gehören an eine Stelle.
 	 */
 	import { User } from '@lucide/svelte';
-	import { ausweisTitel } from '../leserArt.js';
+	import { ausweisTitel } from '../components/leser/leserArt.js';
 	import { NUMMER_FARBE } from './kartenFarben.js';
 
 	/**

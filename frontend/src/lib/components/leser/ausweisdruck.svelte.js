@@ -4,8 +4,8 @@ import {
 	meldeDesignNichtGeladen
 } from '../../designer/ausweisDesignLaden.js';
 import { idStore } from '../../designer/idDesignerStore.svelte.js';
-import { felderProBogen } from '../../etikettformate.js';
-import { oeffneEtikettenbogen } from '../../schuelerEtiketten.js';
+import { felderProBogen } from '../etiketten/etikettformate.js';
+import { oeffneEtikettenbogen } from '../etiketten/schuelerEtiketten.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
 /**

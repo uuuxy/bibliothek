@@ -9,13 +9,13 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
-	import { enterSpeichert } from '../../../../lib/scanErkennung.js';
+	import { enterSpeichert } from '../../../../lib/utils/scanErkennung.js';
 	import { etikettenStore } from '../../../../lib/stores/etiketten.svelte.js';
 	import { uiStore } from '../../../../lib/stores/uiStore.svelte.js';
 	import { darfVerwerfen } from '../../../../lib/stores/verlassenSchutz.svelte.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menue.js';
-	import { rechteDesReiters } from '../../../../lib/druckCenterReiter.js';
+	import { rechteDesReiters } from '../../../../lib/components/etiketten/druckCenterReiter.js';
 	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
 
 	/**

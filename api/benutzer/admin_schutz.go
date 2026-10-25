@@ -12,7 +12,7 @@ import (
 // Trennung von manage_users und Administrator.
 //
 // manage_users ist ein Recht, das der Administrator weitergeben kann: Die Rechte-Matrix bietet
-// es den Rollen unterhalb des Administrators an (frontend/src/lib/rechteKategorien.js). Ohne
+// es den Rollen unterhalb des Administrators an (frontend/src/lib/components/benutzer/rechteKategorien.js). Ohne
 // die Regeln dieser Datei käme es einem Administrator gleich, auf drei Wegen:
 //
 //  1. Selbstbeförderung: PUT /api/benutzer/{eigene-id} mit rolle:"admin". pruefeSelbstschutz

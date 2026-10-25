@@ -159,12 +159,15 @@ describe('MahnwesenAktionen', () => {
 		// nicht gerendert wird. Die Knöpfe hängen an einem Prop; ohne diese Prüfung könnte die
 		// Seite sie an ein beliebiges Recht binden, und die Tests oben blieben grün.
 		let verzeichnis = process.cwd();
-		while (!existsSync(resolve(verzeichnis, 'src/lib/Mahnwesen.svelte'))) {
+		while (!existsSync(resolve(verzeichnis, 'src/lib/components/mahnwesen/Mahnwesen.svelte'))) {
 			const eltern = dirname(verzeichnis);
 			if (eltern === verzeichnis) throw new Error('Mahnwesen.svelte nicht gefunden');
 			verzeichnis = eltern;
 		}
-		const seite = readFileSync(resolve(verzeichnis, 'src/lib/Mahnwesen.svelte'), 'utf8');
+		const seite = readFileSync(
+			resolve(verzeichnis, 'src/lib/components/mahnwesen/Mahnwesen.svelte'),
+			'utf8'
+		);
 		// Bekannte Zeile als Nicht-leer-Garantie: Sie steht seit dem Bescheid-Knopf dort.
 		expect(seite).toContain("hatRecht(authStore.currentUser, 'edit_students')");
 		expect(seite).toContain(

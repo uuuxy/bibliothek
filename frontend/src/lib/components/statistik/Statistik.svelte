@@ -1,0 +1,341 @@
+<script>
+	import Tabelle from '../ui/Tabelle.svelte';
+	import { formatEuro as euro } from '../../utils/format.js';
+	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import UeberfaelligQuote from './UeberfaelligQuote.svelte';
+	import StatistikVerlauf from './StatistikVerlauf.svelte';
+	import Button from '../ui/Button.svelte';
+	import Segmente from '../ui/Segmente.svelte';
+	import BuchCover from '../ui/BuchCover.svelte';
+	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { statistikAbruf } from './statistikAbruf.svelte.js';
+	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
+
+	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau.
+	const FLAECHE = 'bg-surface rounded-xl border border-outline-variant';
+
+	// State Runes (Svelte 5). Abruf, Reihenfolge-Schutz und Fehlerzustand: statistikAbruf.
+	const abruf = statistikAbruf();
+	const kennzahlen = $derived(abruf.daten);
+	let zeitraum = $state('all');
+	/** Bestandsfilter: '' = Gesamt, 'freihand' = Schülerbücherei, 'lmf' = Lernmittel */
+	let medientyp = $state('');
+	/** Segmented Control der „Bestands-Analysen"-Card. @type {'renner' | 'ladenhueter'} */
+	let analyse = $state('renner');
+
+	/** Drill-Down: navigiert auf die eigene Detailseite (deep-linkbar), kein Slide-in mehr.
+	 *  @param {'renner' | 'ladenhueter'} kind */
+	function openDetail(kind) {
+		uiStore.statsDetailKind = kind;
+		uiStore.activeTab = 'stats_detail';
+	}
+
+	const TIMEFRAMES = [
+		{ wert: 'all', text: 'Alle' },
+		{ wert: 'schuljahr', text: 'Schuljahr' },
+		{ wert: 'monat', text: 'Monat' }
+	];
+
+	const BESTAND_TYPES = [
+		{ wert: '', text: 'Gesamt' },
+		{ wert: 'freihand', text: 'Freihand' },
+		{ wert: 'lmf', text: 'LMF' }
+	];
+
+	// Die beiden Sichten der „Bestands-Analysen"-Card.
+	const ANALYSEN = [
+		{ wert: 'renner', text: 'Renner' },
+		{ wert: 'ladenhueter', text: 'Ladenhüter' }
+	];
+
+	/** Ganzzahl mit deutscher Tausender-Trennung (33166 → „33.166"). @param {number} v */
+	const num = (v) => (v ?? 0).toLocaleString('de-DE');
+
+	// Die Card zeigt Top 8 (eine Tabelle statt zwei → mehr Platz pro Zeile);
+	// die volle Liste liegt auf der Detailseite.
+	const topRenner = $derived(kennzahlen?.popular_titles?.slice(0, 8) ?? []);
+	const topWarmers = $derived(kennzahlen?.shelf_warmers?.slice(0, 8) ?? []);
+	const aktiveListe = $derived(analyse === 'renner' ? topRenner : topWarmers);
+	const analyseName = $derived(ANALYSEN.find((a) => a.wert === analyse)?.text);
+
+	// Verluste werden erst rot, wenn es etwas zu melden gibt, bei 0 bleiben sie grün: So behält
+	// Rot seine Signalwirkung. Das Warn-Dreieck trägt die Aussage ohne Farbe mit (WCAG 1.4.1).
+	const hatVerluste = $derived((kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0);
+
+	// limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
+	// dadurch keinen einzigen weiteren API-Call.
+	function ladeKennzahlen() {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const params = new URLSearchParams({ limit: '100' });
+		if (zeitraum !== 'all') params.set('zeitraum', zeitraum);
+		if (medientyp) params.set('type', medientyp);
+		abruf.laden(params);
+	}
+
+	// Re-fetch whenever timeframe or Bestandsfilter changes
+	$effect(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		zeitraum; // track dependency
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		medientyp;
+		ladeKennzahlen();
+	});
+</script>
+
+<!-- KPI-Kachel: Zahl groß und dünn, Label fett (M3-Typografie); Fläche = „filled card" (Gate: e2e/m3-bauform.spec.js). -->
+{#snippet kpi(label, value, hint, valueClass, status = /** @type {'warn' | null} */ (null))}
+	<div class="{FLAECHE} p-5 flex flex-col justify-between gap-3 text-left">
+		<span class="text-sm font-medium text-on-surface-variant">{label}</span>
+		<span
+			class="text-4xl font-light tracking-tight tabular-nums leading-none flex items-center gap-2 {valueClass}"
+		>
+			<!-- shrink-0: Die gekürzte Zahl daneben drückt das Dreieck sonst zusammen. -->
+			{#if status === 'warn'}<TriangleAlert class="w-6 h-6 shrink-0" aria-hidden="true" />{/if}
+			<span class="truncate">{value}</span>
+		</span>
+		<span class="text-sm text-on-surface-variant leading-snug">{hint}</span>
+	</div>
+{/snippet}
+
+<!-- Kopfzeile jeder großen Card: Label links, optionale Aktionen rechts. -->
+{#snippet cardTitel(label)}
+	<h3 class="text-base font-medium text-on-surface-variant">{label}</h3>
+{/snippet}
+
+{#snippet drillDownButton()}
+	<Button
+		variant="secondary"
+		size="sm"
+		type="button"
+		onclick={() => openDetail(analyse)}
+		class="shrink-0 gap-1"
+	>
+		Alle anzeigen
+		<ChevronRight class="w-3 h-3" aria-hidden="true" />
+	</Button>
+{/snippet}
+
+<!-- Leerzustand als eigene Fläche statt als Tabellenzeile: nur so lässt er sich in der
+     fixen Boxhöhe zentrieren (eine <td> würde oben kleben). -->
+{#snippet leerFlaeche(inhalt)}
+	<div
+		class="h-full flex flex-col items-center justify-center text-center text-xs text-on-surface-variant font-medium"
+	>
+		{@render inhalt()}
+	</div>
+{/snippet}
+
+{#snippet spaltenKopf(spalten)}
+	<thead>
+		<tr>
+			{#each spalten as s (s.label)}
+				<th class={s.right ? 'text-right' : 'text-left'}>{s.label}</th>
+			{/each}
+		</tr>
+	</thead>
+{/snippet}
+
+{#snippet keineAusleihen()}
+	<ChartColumn class="mx-auto mb-2 h-7 w-7" aria-hidden="true" />
+	Noch keine Ausleihen registriert
+{/snippet}
+
+{#snippet keineLadenhueter()}
+	<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün. -->
+	<CircleCheck class="w-7 h-7 mx-auto mb-2 text-success" aria-hidden="true" />
+	Keine Ladenhüter — der Bestand ist in Bewegung.
+{/snippet}
+
+{#snippet rennerTabelle()}
+	<Tabelle beschriftung="Renner: meistausgeliehene Titel" sticky>
+		{@render spaltenKopf([
+			{ label: 'Buchtitel' },
+			{ label: 'Autor' },
+			{ label: 'Ausleihen', right: true }
+		])}
+		<tbody>
+			{#each topRenner as book (book.id)}
+				<tr>
+					<td>
+						<div class="flex items-center gap-3 min-w-0">
+							<BuchCover
+								coverUrl={book.cover_url}
+								isbn={book.isbn}
+								titel={book.titel}
+								nurGespeichert
+								dekorativ
+							/>
+							<span class="truncate font-semibold" title={book.titel}>{book.titel}</span>
+						</div>
+					</td>
+					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
+					<td class="font-semibold tabular-nums text-right">{num(book.count)}×</td>
+				</tr>
+			{/each}
+		</tbody>
+	</Tabelle>
+{/snippet}
+
+{#snippet ladenhueterTabelle()}
+	<Tabelle beschriftung="Ladenhüter: seit über zwei Jahren nicht ausgeliehen" sticky>
+		{@render spaltenKopf([
+			{ label: 'Buchtitel' },
+			{ label: 'Autor' },
+			{ label: 'Zuletzt geliehen', right: true }
+		])}
+		<tbody>
+			{#each topWarmers as book (book.id)}
+				<tr>
+					<td class="font-semibold truncate max-w-64" title={book.titel}>{book.titel}</td>
+					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
+					<td class="font-semibold text-warning tabular-nums text-right">{book.letzte_aus}</td>
+				</tr>
+			{/each}
+		</tbody>
+	</Tabelle>
+{/snippet}
+
+<!-- Skeleton in der Geometrie des fertigen Layouts: beim Filterwechsel springt nichts. -->
+{#snippet skeleton()}
+	<div class="flex-1 min-h-0 flex flex-col gap-4 animate-pulse" aria-hidden="true">
+		<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+			{#each [0, 1, 2, 3] as i (i)}<div class="h-40 {FLAECHE}"></div>{/each}
+		</div>
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+			<div class="lg:col-span-2 h-72 {FLAECHE}"></div>
+			<div class="h-72 {FLAECHE}"></div>
+		</div>
+		<div class="flex-1 min-h-48 {FLAECHE}"></div>
+	</div>
+{/snippet}
+
+<!-- Graue Fläche (Material-Kontrast): die weißen Cards heben sich davon ab (Bento-Struktur).
+     Das Dashboard ist eine Höhen-Flexbox: die Bento-Reihen oben haben feste Höhen, die
+     „Bestands-Analysen"-Card unten nimmt den Rest. Dadurch endet das Layout genau am
+     unteren Viewport-Rand statt in einen Scroll-Wurm auszulaufen.
+     flex-1/min-h-0 statt min-h-full: Die Deckelung braucht eine DEFINITE Höhe. min-height:100%
+     setzt nur eine Untergrenze — die Card unten wäre trotzdem auf Inhaltshöhe gewachsen und
+     hätte die Seite wieder scrollen lassen. Die Höhe kommt aus der Flex-Kette des Routers. -->
+<Seitenrahmen>
+	<div class="flex-1 min-h-0 flex flex-col gap-4">
+		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
+		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
+			<div class="flex items-center gap-2">
+				<span class="text-sm font-medium text-on-surface-variant">Bestand</span>
+				<Segmente
+					etikett="Bestand filtern"
+					optionen={BESTAND_TYPES}
+					wert={medientyp}
+					onwahl={(v) => (medientyp = v)}
+				/>
+			</div>
+			<div class="flex items-center gap-2">
+				<span class="text-sm font-medium text-on-surface-variant">Zeitraum</span>
+				<Segmente
+					etikett="Zeitraum filtern"
+					optionen={TIMEFRAMES}
+					wert={zeitraum}
+					onwahl={(v) => (zeitraum = v)}
+				/>
+			</div>
+		</div>
+
+		{#if abruf.loading}
+			{@render skeleton()}
+		{:else if abruf.fehler}
+			<LadeFehler
+				onerneut={ladeKennzahlen}
+				titel="Statistik nicht geladen"
+				text="Die Kennzahlen konnten nicht abgerufen werden."
+			/>
+		{:else if kennzahlen}
+			<!-- 1) KPI-Reihe: vier gleichwertige Kacheln in EINEM durchgehenden 4er-Grid. -->
+			{#if abruf.fehlt('kennzahlen')}
+				<div class="shrink-0 h-40 {FLAECHE} flex items-center justify-center">
+					<LadeFehler knapp titel="Kennzahlen nicht geladen" />
+				</div>
+			{:else}
+				<div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
+					{@render kpi(
+						'Gesamtbestand',
+						num(kennzahlen.loss_stats.gesamt_bestand),
+						'Physische Buchkopien im System',
+						'text-on-surface'
+					)}
+					{@render kpi(
+						'Aktuell verliehen',
+						num(kennzahlen.zirkulation?.aktuell_verliehen ?? 0),
+						`von ${num(kennzahlen.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
+						'text-primary'
+					)}
+					<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
+					     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
+					{@render kpi(
+						'Zirkulationsquote',
+						`${num(kennzahlen.zirkulationsquote ?? 0)}\u00a0%`,
+						'verliehen ÷ aktiver Bestand',
+						'text-on-surface'
+					)}
+					{@render kpi(
+						'Verluste & Schäden',
+						num(kennzahlen.loss_stats.verlorene_exemplare),
+						`${num(kennzahlen.loss_stats.verlust_quote ?? 0)}\u00a0% Quote · ${euro(kennzahlen.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
+						hatVerluste ? 'text-error' : 'text-success',
+						hatVerluste ? 'warn' : null
+					)}
+				</div>
+			{/if}
+
+			<!-- 2) Asymmetrische Reihe: Chart (2 Spalten) + Mahnungs-Widget (1 Spalte).
+			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
+			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
+				<div class="lg:col-span-2 {FLAECHE} p-5 h-72 flex flex-col">
+					<StatistikVerlauf
+						daten={kennzahlen.monats_trend ?? []}
+						nichtGelesen={abruf.fehlt('monats_trend')}
+					/>
+				</div>
+				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
+				<div class="{FLAECHE} p-5 h-72 flex flex-col">
+					<UeberfaelligQuote aktuellVerliehen={kennzahlen.zirkulation?.aktuell_verliehen ?? 0} />
+				</div>
+			</div>
+
+			<!-- 3) Bestands-Analysen: EINE Card, Segmented Control schaltet Renner ↔ Ladenhüter.
+			     flex-1: füllt die Resthöhe bis zum Viewport-Rand aus. -->
+			<div class="flex-1 min-h-0 {FLAECHE} p-5 flex flex-col">
+				<div class="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
+					{@render cardTitel('Bestands-Analysen')}
+					<div class="flex items-center gap-2">
+						<Segmente
+							etikett="Analyse umschalten"
+							optionen={ANALYSEN}
+							wert={analyse}
+							onwahl={(v) => (analyse = v === 'ladenhueter' ? 'ladenhueter' : 'renner')}
+						/>
+						{@render drillDownButton()}
+					</div>
+				</div>
+
+				<!-- Die Liste bekommt exakt die Resthöhe (nie mehr) und scrollt INNERHALB der Box —
+				     die Kopfzeile bleibt dabei stehen. min-h-48 ist die Untergrenze: erst wenn das
+				     Fenster darunter schrumpft, scrollt überhaupt die Seite. Feste Höhe statt max-h,
+				     damit beim Umschalten Renner ↔ Ladenhüter nichts springt. -->
+				<div class="flex-1 min-h-48 overflow-y-auto overflow-x-auto">
+					{#if abruf.fehlt(analyse)}
+						<div class="h-full flex items-center justify-center">
+							<LadeFehler knapp titel="{analyseName} nicht geladen" />
+						</div>
+					{:else if aktiveListe.length === 0}
+						{@render leerFlaeche(analyse === 'renner' ? keineAusleihen : keineLadenhueter)}
+					{:else if analyse === 'renner'}
+						{@render rennerTabelle()}
+					{:else}
+						{@render ladenhueterTabelle()}
+					{/if}
+				</div>
+			</div>
+		{/if}
+	</div>
+</Seitenrahmen>

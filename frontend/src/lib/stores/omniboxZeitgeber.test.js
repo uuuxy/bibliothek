@@ -18,7 +18,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Timer mehr offen, und ein Rückruf, der die Seite anfasst, kann nicht mehr feuern.
 const post = vi.hoisted(() => vi.fn());
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiClient: { post } }));
-vi.mock('../audio.js', () => ({
+vi.mock('../utils/audio.js', () => ({
 	spieleErfolgston: vi.fn(),
 	spieleFehlerton: vi.fn()
 }));

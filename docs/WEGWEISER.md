@@ -32,22 +32,22 @@ Oberfläche nennt [api_inventar.md](api_inventar.md).
 Die Türen sind nach den Menüpunkten der Oberfläche geordnet. Die genannte Datei trägt am Kopf
 die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 
-| Menüpunkt                               | Bildschirm in `frontend/src/lib/`                                                        | Türen                              |
-| --------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
-| Ausleihe (Theke)                        | `Omnibox.svelte`                                                                         | `api/theke/theke.go`               |
-| Medienkatalog, Klassensätze             | `Medienkatalog.svelte`, `Schulklassen.svelte`                                             | `api/katalog/katalog.go`           |
-| Buchakte, Signaturen                    | `Buchakte.svelte`, `Signaturen.svelte`                                               | `api/katalog/katalog.go`           |
-| Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                              | `api/katalog/katalog.go`           |
-| Druck-Center                            | `DruckCenter.svelte`                                                                     | `api/druck/druck.go`               |
-| Leserdatei, Leserakte                   | `Schuelerdatei.svelte`, `Leserakte.svelte`                                       | `api/leser/leser.go`               |
-| Schaden, Forderung, Bescheid            | `SchadenMeldenDialog.svelte`, `LeserGebuehrenKarte.svelte`, `LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
-| Mahnwesen, Abgänger                     | `Mahnwesen.svelte`, `Abgaenger.svelte`                                                   | `api/mahnwesen/mahnwesen.go`       |
-| Bestellungen, Bestellberichte           | `Bestellwesen.svelte`, `components/bestellungen/BestellBerichte.svelte`              | `api/bestellung/bestellung.go`     |
-| Inventur                                | `Inventur.svelte`                                                                | `api/inventurlauf/inventurlauf.go` |
-| Schuljahreswechsel (LMF-Plan)           | `LmfPlan.svelte`                                                                         | `api/lernmittel/lernmittel.go`     |
-| Benutzer & Rechte                       | `Berechtigungen.svelte`                                                                  | `api/benutzer/benutzer.go`         |
-| Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `Statistik.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
-| Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSuche.svelte`                                            | `api/portal/portal.go`             |
+| Menüpunkt                               | Bildschirm in `frontend/src/lib/`                                                                                                                       | Türen                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Ausleihe (Theke)                        | `components/omnibox/Omnibox.svelte`                                                                                                                     | `api/theke/theke.go`               |
+| Medienkatalog, Klassensätze             | `components/katalog/Medienkatalog.svelte`, `components/leser/Schulklassen.svelte`                                                                       | `api/katalog/katalog.go`           |
+| Buchakte, Signaturen                    | `components/buchakte/Buchakte.svelte`, `components/signaturen/Signaturen.svelte`                                                                        | `api/katalog/katalog.go`           |
+| Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                                                                                             | `api/katalog/katalog.go`           |
+| Druck-Center                            | `components/etiketten/DruckCenter.svelte`                                                                                                               | `api/druck/druck.go`               |
+| Leserdatei, Leserakte                   | `components/leser/Schuelerdatei.svelte`, `components/leserakte/Leserakte.svelte`                                                                        | `api/leser/leser.go`               |
+| Schaden, Forderung, Bescheid            | `components/leserakte/SchadenMeldenDialog.svelte`, `components/leserakte/LeserGebuehrenKarte.svelte`, `components/leserakte/LeserBescheideKarte.svelte` | `api/schaden/schaden.go`           |
+| Mahnwesen, Abgänger                     | `components/mahnwesen/Mahnwesen.svelte`, `components/leser/Abgaenger.svelte`                                                                            | `api/mahnwesen/mahnwesen.go`       |
+| Bestellungen, Bestellberichte           | `components/bestellungen/Bestellwesen.svelte`, `components/bestellungen/BestellBerichte.svelte`                                                         | `api/bestellung/bestellung.go`     |
+| Inventur                                | `components/inventur/Inventur.svelte`                                                                                                                   | `api/inventurlauf/inventurlauf.go` |
+| Schuljahreswechsel (LMF-Plan)           | `components/lmfplan/LmfPlan.svelte`                                                                                                                     | `api/lernmittel/lernmittel.go`     |
+| Benutzer & Rechte                       | `components/benutzer/Berechtigungen.svelte`                                                                                                             | `api/benutzer/benutzer.go`         |
+| Einstellungen, Statistiken, System-Logs | `components/einstellungen/Einstellungen.svelte`, `components/statistik/Statistik.svelte`, `components/system/SystemLogs.svelte`                         | `api/system/system.go`             |
+| Mein Portal, öffentlicher Katalog       | `components/portal/KollegiumPortal.svelte`, `components/katalog/OpacSuche.svelte`                                                                       | `api/portal/portal.go`             |
 
 Die Abfragen aller Themen stehen in `repository/`, je Sache eine Datei; die des Medienkatalogs
 beschreibt der Kopf von `repository/titel_abfragen.go`. Was jede Tür braucht (Eingabe lesen,

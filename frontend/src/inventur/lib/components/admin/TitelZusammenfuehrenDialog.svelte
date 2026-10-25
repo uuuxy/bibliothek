@@ -8,7 +8,7 @@
 	import { Merge, CircleAlert } from '@lucide/svelte';
 	import { apiClient, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { snackbars } from '../../../../lib/stores/snackbars.svelte.js';
-	import Dialog from '../../../../lib/Dialog.svelte';
+	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
 	import { erzeugeDialogAnfrage } from '../../../../lib/components/ui/dialogAnfrage.svelte.js';

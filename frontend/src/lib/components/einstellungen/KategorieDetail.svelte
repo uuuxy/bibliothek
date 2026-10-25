@@ -11,10 +11,10 @@
 	 */
 	import Datenverwaltung from '../admin/Datenverwaltung.svelte';
 	import SchuljahreswechselBereich from '../admin/SchuljahreswechselBereich.svelte';
-	import Betriebsbereitschaft from '../../Betriebsbereitschaft.svelte';
-	import FehlerImLog from '../../FehlerImLog.svelte';
-	import Klassenleitungen from '../../Klassenleitungen.svelte';
-	import LMFVerlaengerung from '../../LMFVerlaengerung.svelte';
+	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
+	import FehlerImLog from './FehlerImLog.svelte';
+	import Klassenleitungen from './Klassenleitungen.svelte';
+	import LMFVerlaengerung from './LMFVerlaengerung.svelte';
 	import KategorieRahmen from './KategorieRahmen.svelte';
 	import SchuleKategorie from './kategorien/SchuleKategorie.svelte';
 	import AusleiheKategorie from './kategorien/AusleiheKategorie.svelte';

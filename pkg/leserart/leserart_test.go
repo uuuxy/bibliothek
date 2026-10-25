@@ -12,7 +12,7 @@ import (
 // zum Kollegium, Zugang und Reihenfolge je Art; die Werte der Datenbank hält
 // pkg/leserart/leserart_pg_test.go dagegen.
 func TestArten_WieInDenPrueffaellen(t *testing.T) {
-	const faelleDatei = "../../frontend/src/lib/leserArt.faelle.json"
+	const faelleDatei = "../../frontend/src/lib/components/leser/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
 	if err != nil {
 		t.Fatalf("Prüffälle lesen: %v", err)
@@ -71,7 +71,7 @@ func TestArten_WieInDenPrueffaellen(t *testing.T) {
 	}
 
 	// Liest die Browser-Seite dieselbe Datei? Sonst prüfte jede Seite nur sich selbst.
-	vitest, err := os.ReadFile("../../frontend/src/lib/leserArt.test.js")
+	vitest, err := os.ReadFile("../../frontend/src/lib/components/leser/leserArt.test.js")
 	if err != nil {
 		t.Fatalf("Vitest lesen: %v", err)
 	}

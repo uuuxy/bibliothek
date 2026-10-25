@@ -348,7 +348,7 @@ haben sie die Form „LMF-", ISBN-13, dreistellige laufende Nummer (`LMF-9783060
 das Programm vergibt diese Form nirgends, neue Exemplare bekommen `B-`. Die Theke und die Suche
 im Medienkatalog schlagen eine solche Nummer nach, wie sie gescannt wird, und `LMF-` ist eine
 Vorsilbe für Bücher wie `B-`: am Server (`internal/service/omnibox.go`) und ohne Netz
-(`BUCH_VORSILBEN` in `frontend/src/lib/scanEinordnen.js`);
+(`BUCH_VORSILBEN` in `frontend/src/lib/utils/scanEinordnen.js`);
 `internal/service/vorsilben_zwilling_test.go` hält beide gleich. Sie ist kein Rest eines
 Titelzusatzes „LMF-" und bleibt. Ein Exemplar mit LMF-Nummer trägt eine kurze Nummer, die
 LMF-Nummer steht in `buecher_exemplare.lmf_barcode` (Migrationen 166 und 167; der Bestands-Import

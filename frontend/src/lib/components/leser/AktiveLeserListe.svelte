@@ -16,9 +16,9 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { ausleiheGesperrt } from '../../sperrStatus.js';
+	import { ausleiheGesperrt } from './sperrStatus.js';
 	import LeserAvatar from './LeserAvatar.svelte';
-	import { leserArtText, istKollegium } from '../../leserArt.js';
+	import { leserArtText, istKollegium } from './leserArt.js';
 
 	/**
 	 * @typedef {Object} Props

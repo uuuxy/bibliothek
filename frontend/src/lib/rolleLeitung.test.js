@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from './hygiene-quellen.js';
 import { authStore } from './stores/authStore.svelte.js';
 import { appState } from '../inventur/lib/store.svelte.js';
-import { ROLLEN_AUSWAHL } from './benutzerRollen.js';
+import { ROLLEN_AUSWAHL } from './components/benutzer/benutzerRollen.js';
 
 // Die Rolle Leitung (Migration 121/122). Sie ist im Server vollständig, sobald der
 // ENUM-Wert und die Rechte stehen — aber genau so war die Rolle Helfer monatelang
@@ -24,7 +24,9 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	it('die Benutzerverwaltung bietet die Rolle zur Auswahl an', () => {
 		expect(ROLLEN_AUSWAHL).toContainEqual({ value: 'leitung', label: 'Leitung' });
 		// Die Liste nützt nur, wenn der Dialog sie auch einsetzt.
-		expect(quelle('lib/KontoBearbeitenDialog.svelte')).toMatch(/options:\s*ROLLEN_AUSWAHL\b/);
+		expect(quelle('lib/components/benutzer/KontoBearbeitenDialog.svelte')).toMatch(
+			/options:\s*ROLLEN_AUSWAHL\b/
+		);
 	});
 
 	it('Kollegium steht VOR den Rollen — es ist der Grundzustand, keine Rolle', () => {
@@ -42,12 +44,12 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	it('die Rechte-Matrix hat eine Spalte für die Leitung', () => {
 		// Ohne die Spalte wäre die Rolle nur über die Vorgabe im Seed steuerbar — genau
 		// der Audit-Befund vom 01.08.2026 zur Rolle Helfer.
-		const src = quelle('lib/RechteMatrix.svelte');
+		const src = quelle('lib/components/benutzer/RechteMatrix.svelte');
 		expect(src).toContain("'LEITUNG', 'leitung'");
 	});
 
 	it('die Matrix belegt die Spalte vor, damit sie auch ohne Server-Zeile erscheint', () => {
-		const src = quelle('lib/BenutzerUndRechte.svelte');
+		const src = quelle('lib/components/benutzer/BenutzerUndRechte.svelte');
 		expect(src).toMatch(/const newState = \{[^;]*\bleitung:/);
 	});
 
@@ -66,7 +68,7 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	// das Strippen prüfte dieser Test die Begründung statt des Bauteils und bliebe
 	// für immer rot — dieselbe Falle wie bei einer Ratsche, die einen Kommentar liest.
 	it('die Rechte-Matrix hat KEINE Spalte für das Kollegium', () => {
-		const src = ohneKommentare(quelle('lib/RechteMatrix.svelte'));
+		const src = ohneKommentare(quelle('lib/components/benutzer/RechteMatrix.svelte'));
 		expect(src).not.toContain('KOLLEGIUM');
 		expect(src).not.toContain("'kollegium'");
 	});

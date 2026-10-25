@@ -12,7 +12,7 @@
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { untrack } from 'svelte';
-	import { lieferantStand } from '../../lieferantFormular.js';
+	import { lieferantStand } from './lieferantFormular.js';
 	import { nurGeaendertes } from '../../utils/geaendert.js';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 

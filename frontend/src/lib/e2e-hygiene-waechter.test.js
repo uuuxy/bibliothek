@@ -117,12 +117,12 @@ const KALENDER_SKIP = /\btest\.skip\(\s*[^'"`)\s]/;
 const KALENDER_AUSNAHMEN = [
 	{
 		datei: 'e2e/abgaenger-versand.spec.js',
-		abdeckung: 'src/lib/abgaengerDienst.test.js',
+		abdeckung: 'src/lib/components/leser/abgaengerDienst.test.js',
 		grund: 'Saisonfenster kommt aus der Serveruhr; die Nutzlast des Versands hält der Unit-Test.'
 	},
 	{
 		datei: 'e2e/schueler-profil-klick.spec.js',
-		abdeckung: 'src/lib/components/AbgaengerTabelle.test.js',
+		abdeckung: 'src/lib/components/leser/AbgaengerTabelle.test.js',
 		grund:
 			'Saisonfenster kommt aus der Serveruhr; alle vier Zustände der Tabelle hält der Unit-Test.'
 	}

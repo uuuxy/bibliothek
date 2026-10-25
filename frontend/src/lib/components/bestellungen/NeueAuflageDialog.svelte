@@ -11,7 +11,7 @@
 <script>
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
-	import Dialog from '../../Dialog.svelte';
+	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
