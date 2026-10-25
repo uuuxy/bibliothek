@@ -29,11 +29,13 @@ import (
 
 const testISBN = "9783161484100"
 
+// pngEinfarbig liefert ein einfarbiges Bild von 12 × 12 Pixeln; kleiner gälte es dem Abruf als
+// Platzhalter (coverquelle.Hole).
 func pngEinfarbig(t *testing.T, c color.RGBA) []byte {
 	t.Helper()
-	img := image.NewRGBA(image.Rect(0, 0, 4, 4))
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
+	img := image.NewRGBA(image.Rect(0, 0, 12, 12))
+	for y := 0; y < 12; y++ {
+		for x := 0; x < 12; x++ {
 			img.Set(x, y, c)
 		}
 	}

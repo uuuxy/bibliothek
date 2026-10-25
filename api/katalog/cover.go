@@ -1,17 +1,11 @@
 package katalog
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"fmt"
-	"image"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"bibliothek/api/tuer"
@@ -19,18 +13,9 @@ import (
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/httpresp"
-	"bibliothek/pkg/imageutil"
 	"bibliothek/pkg/ratelimit"
 	"bibliothek/pkg/safehttp"
-
-	"github.com/chai2010/webp"
 )
-
-// maxCoverBytes begrenzt, wie viel von einer fremden Antwort in den Speicher gelesen wird.
-// Ohne die Grenze bestimmte der fremde Server, wie viel Speicher ein einzelner Aufruf dieses
-// öffentlichen Endpunkts kostet. 10 MB sind für ein Buchcover großzügig; dieselbe Grenze gilt
-// im Cover-Downloader der Katalogdienste (internal/katalogdienste/cover.go).
-const maxCoverBytes = 10 << 20
 
 // coverDownloadsProSekunde begrenzt nur den teuren Zweig dieses Endpunkts: den Fehltreffer im
 // Cache, der einen fremden Download samt vollständiger Bilddekodierung auslöst. Treffer im Cache
@@ -148,74 +133,19 @@ func (c coverAbruf) ersatzbild(antwort []byte) bool {
 	return coverquelle.IstErsatzbild(antwort)
 }
 
-// holeUndKonvertiere lädt das Cover herunter und legt es als WebP im Cache-Verzeichnis ab;
-// eine angefangene Datei entfernt schreibeCoverAlsWebP bei einem Fehler wieder.
+// holeUndKonvertiere holt das Cover nach den Regeln aus coverquelle.Hole, die auch beim Anlegen
+// eines Titels gelten, und legt es im Cache ab.
 func (c coverAbruf) holeUndKonvertiere(ctx context.Context, root *os.Root, adresse, dateiname string) error {
-	rohBytes, err := c.holeBytes(ctx, adresse)
+	fertig, err := coverquelle.Hole(ctx, c.httpClient(), adresse, c.ersatzbild)
 	if err != nil {
 		return err
 	}
-	return schreibeCoverAlsWebP(root, dateiname, rohBytes)
+	return schreibeCoverDatei(root, dateiname, fertig)
 }
 
-// holeBytes holt die Antwort der Quelle und weist ab, was kein Cover ist, bevor irgendetwas
-// dekodiert wird.
-func (c coverAbruf) holeBytes(ctx context.Context, adresse string) ([]byte, error) {
-	anfrage, err := http.NewRequestWithContext(ctx, http.MethodGet, adresse, nil)
-	if err != nil {
-		return nil, err
-	}
-	anfrage.Header.Set("User-Agent", "Inventur/1.0")
-
-	antwort, err := c.httpClient().Do(anfrage)
-	if err != nil {
-		return nil, err
-	}
-	defer closeutil.Schliesse(antwort.Body, "cover download")
-	if antwort.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("cover download: unerwarteter Status %d", antwort.StatusCode)
-	}
-
-	// Was kein Bild ist, sofort verwerfen: Schranken gegen Roboter (DNB/Anubis) liefern bei
-	// unerwartetem User-Agent HTTP 200 mit einer Prüfseite in HTML. Dieselbe Prüfung steht im
-	// Cover-Downloader der Katalogdienste.
-	if ct := antwort.Header.Get(tuer.HeaderContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
-		return nil, fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
-	}
-
-	// Erst begrenzt einlesen, dann den Kopf des Bilds prüfen, dann dekodieren, weil jeder Schritt
-	// den nächsten teurer macht. image.Decode direkt auf antwort.Body überließe die Größe der
-	// Pixelmatrix dem fremden Server: Ein PNG mit 30000×30000 Pixeln sind wenige hundert KB auf
-	// der Leitung und rund 3,6 GB im Speicher dieses Prozesses. covers.openlibrary.org steht auf
-	// der Liste erlaubter Hosts, wird aber von Freiwilligen befüllt; die Liste begrenzt das Ziel,
-	// nicht den Inhalt. PruefeBildgroesse liest nur den Kopf des Bilds (image.DecodeConfig legt
-	// keine Pixeldaten an).
-	rohBytes, err := io.ReadAll(io.LimitReader(antwort.Body, maxCoverBytes+1))
-	if err != nil {
-		return nil, err
-	}
-	if len(rohBytes) > maxCoverBytes {
-		return nil, fmt.Errorf("cover download: Antwort überschreitet %d MB", maxCoverBytes>>20)
-	}
-	// Ein Ersatzbild der Quelle ist kein Cover: Der Aufrufer zeigt dann die nächste Quelle
-	// oder die Initiale des Titels.
-	if c.ersatzbild(rohBytes) {
-		return nil, errors.New("cover download: die Quelle hat zu dieser ISBN kein Cover (Ersatzbild)")
-	}
-	if err := imageutil.PruefeBildgroesse(rohBytes); err != nil {
-		return nil, err
-	}
-	return rohBytes, nil
-}
-
-// schreibeCoverAlsWebP dekodiert das geprüfte Bild und legt es als WebP in den Cache. Eine
-// angefangene Datei wird bei einem Fehler wieder entfernt.
-func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) error {
-	bild, _, err := image.Decode(bytes.NewReader(rohBytes))
-	if err != nil {
-		return err
-	}
-
+// schreibeCoverDatei legt das fertige Cover im Cache ab. Eine angefangene Datei wird bei einem
+// Fehler wieder entfernt.
+func schreibeCoverDatei(root *os.Root, dateiname string, fertig []byte) error {
 	// 0600 wie in pkg/coverablage/coverablage.go, nicht 0666: Im Container fängt die umask das meist
 	// ab, aber „meist" ist bei Dateirechten keine Zusage. Nur dieser Prozess muss die Dateien je
 	// anfassen; ausgeliefert werden sie über den Server, nicht über das Dateisystem.
@@ -223,9 +153,9 @@ func schreibeCoverAlsWebP(root *os.Root, dateiname string, rohBytes []byte) erro
 	if err != nil {
 		return err
 	}
-	err = webp.Encode(datei, bild, &webp.Options{Lossless: false, Quality: 80})
+	_, err = datei.Write(fertig)
 	// Ein gescheitertes Close kann eine abgeschnittene Datei hinterlassen; es zählt wie ein
-	// Fehler beim Kodieren.
+	// Fehler beim Schreiben.
 	if cerr := datei.Close(); cerr != nil && err == nil {
 		err = cerr
 	}

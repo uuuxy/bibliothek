@@ -3,7 +3,6 @@ package katalogdienste
 import (
 	"bytes"
 	"context"
-	"errors"
 	"image"
 	"image/color"
 	"image/png"
@@ -15,138 +14,7 @@ import (
 	"testing"
 
 	"bibliothek/pkg/coverablage"
-	"bibliothek/pkg/coverquelle"
 )
-
-func TestLadeCoverBytes(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("empty url", func(t *testing.T) {
-		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, "", coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("openLibrary placeholder url", func(t *testing.T) {
-		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, openLibraryLeeresCover, coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("invalid url format", func(t *testing.T) {
-		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, "http://%42", coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("disallowed host", func(t *testing.T) {
-		client := &http.Client{}
-		ergebnis := ladeCoverBytes(ctx, client, "https://evil.com/img.png", coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("client error", func(t *testing.T) {
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
-					return nil, errors.New("network error")
-				},
-			},
-		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("non 200 status code", func(t *testing.T) {
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
-					return &http.Response{
-						StatusCode: http.StatusNotFound,
-						Body:       io.NopCloser(bytes.NewBufferString("not found")),
-					}, nil
-				},
-			},
-		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("bot protection html response", func(t *testing.T) {
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
-					antwort := &http.Response{
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewBufferString("<html><head>bot check</head></html>")),
-						Header:     make(http.Header),
-					}
-					antwort.Header.Set("Content-Type", "text/html; charset=utf-8")
-					return antwort, nil
-				},
-			},
-		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
-		if ergebnis != nil {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet nil", ergebnis)
-		}
-	})
-
-	t.Run("valid image response", func(t *testing.T) {
-		expectedBytes := []byte("fake_image_data")
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(anfrage *http.Request) (*http.Response, error) {
-					antwort := &http.Response{
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader(expectedBytes)),
-						Header:     make(http.Header),
-					}
-					antwort.Header.Set("Content-Type", "image/jpeg")
-					return antwort, nil
-				},
-			},
-		}
-		ergebnis := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg", coverquelle.IstErsatzbild)
-		if !bytes.Equal(ergebnis, expectedBytes) {
-			t.Errorf("ladeCoverBytes(…) = %v, erwartet %v", ergebnis, expectedBytes)
-		}
-	})
-}
-
-// Ein Ersatzbild der Quelle („image not available") ist kein Cover: Die Abfrage geht zur
-// nächsten Quelle, statt es am Titel abzulegen.
-func TestLadeCoverBytes_ErsatzbildIstKeinCover(t *testing.T) {
-	bild := []byte("das ersatzbild der quelle")
-	client := &http.Client{Transport: &mockTransport{
-		roundTripFunc: func(*http.Request) (*http.Response, error) {
-			antwort := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(bild)), Header: make(http.Header)}
-			antwort.Header.Set("Content-Type", "image/png")
-			return antwort, nil
-		},
-	}}
-	const adresse = "https://books.google.com/books/content?vid=ISBN:9783551551672&printsec=frontcover&img=1&zoom=1"
-
-	if got := ladeCoverBytes(context.Background(), client, adresse, coverquelle.IstErsatzbild); !bytes.Equal(got, bild) {
-		t.Fatalf("ein gewöhnliches Bild kommt nicht an: %q", got)
-	}
-	istErsatzbild := func(antwort []byte) bool { return bytes.Equal(antwort, bild) }
-	if got := ladeCoverBytes(context.Background(), client, adresse, istErsatzbild); got != nil {
-		t.Errorf("das Ersatzbild kommt als Cover zurück (%d Bytes)", len(got))
-	}
-}
 
 func TestSpeichereCoverDatei(t *testing.T) {
 	// Im vorübergehenden Verzeichnis, nicht im Verzeichnis des Pakets: Ein Test, der

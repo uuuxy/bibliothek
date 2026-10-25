@@ -312,8 +312,8 @@ Freiwilligen befüllt — die Allowlist begrenzt das **Ziel**, nicht den **Inhal
 präpariertes Bild ist über einen erlaubten Host erreichbar, deshalb greifen die
 Größengrenzen unabhängig von ihr.
 
-Denselben Header-Guard hat der Cover-Downloader der Katalogdienste
-(`internal/katalogdienste/cover.go`), neben dem 10-MB-Limit auf der Leitung.
+Die Grenzen der Antwort und des Bilds stehen in `pkg/coverquelle/abruf.go` (`Hole`) und gelten
+ebenso, wenn die Katalogdienste beim Anlegen eines Titels ein Cover holen.
 
 ---
 

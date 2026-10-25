@@ -2,16 +2,18 @@ package katalog
 
 import (
 	"context"
+	"crypto/tls"
 	"image/color"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 )
 
 // Was der Cover-Abruf abweist, landet nicht im Cache: eine Antwort ohne Status 200, eine Seite
-// statt eines Bilds, eine Antwort über der Größengrenze und Bytes, die kein Bild sind.
+// statt eines Bilds und Bytes, die kein Bild sind. Welche Antworten coverquelle.Hole abweist,
+// prüft pkg/coverquelle; hier zählt, dass danach keine Datei liegt.
 func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 	bild := pngEinfarbig(t, color.RGBA{0, 0, 255, 255})
 	schreibe := func(w http.ResponseWriter, typ string, inhalt []byte) {
@@ -20,14 +22,12 @@ func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 			t.Errorf("Stub-Antwort schreiben: %v", err)
 		}
 	}
-	stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	stub := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/gestoert":
 			w.WriteHeader(http.StatusBadGateway)
 		case "/seite":
 			schreibe(w, "text/html; charset=utf-8", bild)
-		case "/zu-gross":
-			schreibe(w, "image/png", make([]byte, maxCoverBytes+1))
 		case "/kein-bild":
 			schreibe(w, "image/png", []byte("kein Bild"))
 		default:
@@ -35,7 +35,12 @@ func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 		}
 	}))
 	t.Cleanup(stub.Close)
-	abruf := coverAbruf{client: stub.Client()}
+	abruf := coverAbruf{client: &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // Wegwerf-Zertifikat des Teststubs
+		DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+			return net.Dial("tcp", stub.Listener.Addr().String())
+		},
+	}}}
 
 	root, err := os.OpenRoot(t.TempDir())
 	if err != nil {
@@ -47,22 +52,16 @@ func TestHoleUndKonvertiereCover_AbweisungenLegenNichtsAb(t *testing.T) {
 		}
 	})
 
-	for _, f := range []struct{ pfad, meldung string }{
-		{"/gestoert", "unerwarteter Status 502"},
-		{"/seite", "Nicht-Bild-Antwort"},
-		{"/zu-gross", "überschreitet 10 MB"},
-		{"/kein-bild", "Bild-Header"},
-	} {
-		err := abruf.holeUndKonvertiere(context.Background(), root, stub.URL+f.pfad, "cover.webp")
-		if err == nil || !strings.Contains(err.Error(), f.meldung) {
-			t.Errorf("%s: Fehler %v, erwartet eine Abweisung mit %q", f.pfad, err, f.meldung)
+	for _, pfad := range []string{"/gestoert", "/seite", "/kein-bild"} {
+		if err := abruf.holeUndKonvertiere(context.Background(), root, "https://covers.openlibrary.org"+pfad, "cover.webp"); err == nil {
+			t.Errorf("%s: holeUndKonvertiere(…) nimmt die Antwort an, erwartet eine Abweisung", pfad)
 		}
 		if _, statErr := root.Stat("cover.webp"); statErr == nil {
-			t.Errorf("%s: die abgewiesene Antwort liegt als Datei im Cache", f.pfad)
+			t.Errorf("%s: die abgewiesene Antwort liegt als Datei im Cache", pfad)
 		}
 	}
 
-	if err := abruf.holeUndKonvertiere(context.Background(), root, stub.URL+"/bild", "cover.webp"); err != nil {
+	if err := abruf.holeUndKonvertiere(context.Background(), root, "https://covers.openlibrary.org/bild", "cover.webp"); err != nil {
 		t.Fatalf("ein Bild wird abgewiesen: %v", err)
 	}
 	if info, err := root.Stat("cover.webp"); err != nil || info.Size() == 0 {

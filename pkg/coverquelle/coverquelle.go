@@ -1,5 +1,6 @@
 // Package coverquelle führt die Listen der Hosts, von denen das Programm Cover und Metadaten
-// holt, und baut eine geprüfte URL aus ihren geprüften Teilen neu auf.
+// holt, baut eine geprüfte URL aus ihren geprüften Teilen neu auf und holt von dort ein Cover
+// (Hole).
 //
 // Der Neuaufbau schließt eine Lücke zwischen Prüfen und Abrufen: Geprüft wird mit url.Parse,
 // und zwei Parser lesen Zeichen wie \, @, # und ? nicht immer gleich. Ginge die rohe Eingabe an

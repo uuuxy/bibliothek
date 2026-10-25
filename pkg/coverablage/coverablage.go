@@ -19,6 +19,13 @@ import (
 // Arbeitsverzeichnis des Servers.
 const Wurzel = "uploads"
 
+// MaxBreite und MaxHoehe begrenzen ein abgelegtes Cover, ob hochgeladen oder aus dem Netz
+// geholt; was größer ankommt, wird vor dem Ablegen verkleinert.
+const (
+	MaxBreite = 600
+	MaxHoehe  = 900
+)
+
 // Zerlege prüft die Cover-URL und liefert den Dateipfad zweimal: einmal relativ zur Wurzel
 // (so verlangt es os.Root) und einmal vollständig, weil die PDF-Erzeuger ihn als Namen ihres
 // Bildspeichers führen. ok=false heißt: nicht verwendbar.

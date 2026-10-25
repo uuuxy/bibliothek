@@ -67,7 +67,7 @@ type MetadatenErgebnis struct {
 //
 // Der Client kommt aus pkg/safehttp und nicht mehr blank aus http.Client: Er spricht
 // mit fremden Servern (DNB, Google, OpenLibrary, lobid) und lädt über dieselbe Instanz
-// auch Cover herunter. Die Hostnamen-Allowlist in ladeCoverBytes prüft nur die URL,
+// auch Cover herunter. Die Hostnamen-Allowlist in coverquelle.Hole prüft nur die URL,
 // die WIR bilden — wohin ein erlaubter Host per Redirect weiterschickt, sah sie nicht.
 // safehttp lehnt nicht-öffentliche Ziele auf Dialer-Ebene ab und damit bei jedem Hop.
 func NewMetadatenClient() *MetadatenClient {

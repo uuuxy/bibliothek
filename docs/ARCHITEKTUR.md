@@ -689,11 +689,11 @@ kann.
 | `clientip`         | Echte Client-IP hinter dem Proxy — `X-Forwarded-For` wird **nur** von konfigurierten Proxies geglaubt (sonst wäre Rate-Limiting ein globaler DoS) |
 | `safehttp`         | HTTP-Clients für **fremde** Ziele; Verbindungen zu nicht-öffentlichen IP-Adressen werden abgelehnt (SSRF)                          |
 | `ratelimit`        | Die Bremse je Adresse: ein Vorrat von Anfragen je Sekunde, der sich wieder füllt                                                  |
-| `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential)                     |
+| `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential); holt ein Cover nach einer Regel für Anzeige und Anlegen (`Hole`) |
 | `coverdatei`       | Lokale WebP-Cover in einer Form, die die PDF-Bibliotheken einbetten können, und die eine Stelle, die ein Cover im Seitenverhältnis setzt (`BindeEin`) |
 | `coverablage`      | Der Ort der lokal gespeicherten Cover, ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können        |
 | `betrag`           | Geldbeträge in ganzen Cent (`Cent`): genau aus NUMERIC und JSON gelesen, kaufmännisch auf den Cent gerundet wie NUMERIC(10,2), deutsch geschrieben (zwei Nachkommastellen, Komma); kein Geld als float64, Ratsche `geld_in_cent_ratsche_test.go` |
-| `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG)                                                                                      |
+| `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG oder WebP) und Verkleinern auf Höchstmaße (`Verkleinere`)                            |
 | `csvutil`          | Schutz vor CSV-/Formel-Injection (CWE-1236) beim Export                                                                           |
 | `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs (gofpdf druckt in cp1252) und das Kürzen eines Texts auf Zeichen, gedruckte Breite und Zelle; Ratsche `pdfzeichen_ratsche_test.go` |
 | `xlsxgrenze`       | Die eine Tür zu einer hochgeladenen XLSX: Entpackgrenze, Abweisung verschlüsselter Container, Schranke gegen Abstürze der Bibliothek |
@@ -3473,10 +3473,8 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `auflagenSuche`, `schuelerSuche`, `portalSuche` und andere); die Prüfung danach hält
   `frontend-hygiene-spaete-pruefung.test.js`, einen gemeinsamen Baustein gibt es nicht. Rund
   fünfzehn Türen setzen die Kopfzeilen eines PDF je selbst; Zugangs- und Abgangsbuch
-  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich. Ein
-  Cover holen `api/katalog/cover.go` und `internal/katalogdienste/cover.go` je selbst, mit derselben
-  Liste erlaubter Server und derselben Grenze für die Bildgröße. Anlass: ein Fehler in einer der
-  Kopien.
+  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich.
+  Anlass: ein Fehler in einer der Kopien.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
   beenden das Programm an 15 Stellen selbst (`log.Fatalf`, `os.Exit`); Best Practices, „Program
   initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen

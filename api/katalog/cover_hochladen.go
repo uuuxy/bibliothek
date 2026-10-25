@@ -19,14 +19,10 @@ import (
 	"bibliothek/pkg/imageutil"
 	"bibliothek/pkg/logger"
 	"bibliothek/repository"
-
-	"golang.org/x/image/draw"
 )
 
 const (
 	maxCoverUploadBytes = 10 << 20 // 10 MB
-	maxCoverBreite      = 600
-	maxCoverHoehe       = 900
 	coverJPEGQualitaet  = 82
 )
 
@@ -70,21 +66,8 @@ func verarbeiteHochgeladenesBild(inhalt []byte, id string) ([]byte, string, erro
 	}
 
 	// Bild verkleinern, falls es die Maximalmaße überschreitet
-	if breite > maxCoverBreite || hoehe > maxCoverHoehe {
-		verhaeltnis := float64(breite) / float64(hoehe)
-		neueBreite, neueHoehe := breite, hoehe
-
-		if neueBreite > maxCoverBreite {
-			neueBreite = maxCoverBreite
-			neueHoehe = int(float64(neueBreite) / verhaeltnis)
-		}
-		if neueHoehe > maxCoverHoehe {
-			neueHoehe = maxCoverHoehe
-			neueBreite = int(float64(neueHoehe) * verhaeltnis)
-		}
-
-		ziel := image.NewRGBA(image.Rect(0, 0, neueBreite, neueHoehe))
-		draw.ApproxBiLinear.Scale(ziel, ziel.Bounds(), bild, rahmen, draw.Over, nil)
+	if breite > coverablage.MaxBreite || hoehe > coverablage.MaxHoehe {
+		ziel := imageutil.Verkleinere(bild, coverablage.MaxBreite, coverablage.MaxHoehe)
 
 		var puffer bytes.Buffer
 		err = jpeg.Encode(&puffer, ziel, &jpeg.Options{Quality: coverJPEGQualitaet})
