@@ -36,7 +36,6 @@ COPY api/ ./api/
 COPY apierrors/ ./apierrors/
 COPY auth/ ./auth/
 COPY db/ ./db/
-COPY inventur/ ./inventur/
 COPY jobs/ ./jobs/
 COPY migrations/ ./migrations/
 COPY repository/ ./repository/
