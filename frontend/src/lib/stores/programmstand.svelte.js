@@ -5,8 +5,10 @@
 // Server weiter und liest eine geänderte Antwort falsch, ohne Meldung. Der Stand ist der Name der
 // Programmdatei, mit der die Startseite die Oberfläche lädt (/assets/index-….js); der Server nennt
 // seinen in jeder Antwort (pkg/oberflaechenstand). Weicht er ab, steht über dem Inhalt der
-// Hinweis „Neu laden" (NeueFassung.svelte). Neu lädt erst die Person: Die Theke darf sich nicht
-// mitten in einer Ausleihe erneuern und eine Maske nicht mit ihren Eingaben.
+// Hinweis „Neu laden" (NeueFassung.svelte).
+//
+// Von selbst lädt ein Fenster nur neu, wenn darin noch niemand etwas bedient hat: Die Theke darf
+// sich nicht mitten in einer Ausleihe erneuern und eine Maske nicht mit ihren Eingaben.
 
 import { abonniere } from '../liveEvents.js';
 
@@ -53,6 +55,16 @@ export class Programmstand {
 		} catch {
 			// Ohne Antwort bleibt der bekannte Stand; die nächste Anfrage nennt ihn.
 		}
+	}
+
+	/**
+	 * Ein neuer Service Worker ist aktiv (main.js, registerSW). Ohne diese Stelle lädt
+	 * vite-plugin-pwa jedes offene Fenster sofort neu, auch wenn ein anderes Fenster desselben
+	 * Browsers das Update geholt hat. Kennt der Browser `userActivation` nicht, gilt das Fenster
+	 * als bedient.
+	 */
+	neuerServiceWorker() {
+		if (navigator.userActivation?.hasBeenActive === false) this.#ladeNeu();
 	}
 
 	ladeNeu() {

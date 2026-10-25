@@ -831,8 +831,9 @@ Ausleihe, und ein Bildschirm, der ein Drittel der Zeit „Keine Daten verfügbar
 abgeschaltet; sind alle drei leer, bleibt die aktuelle stehen. **Einmal täglich um 03:00 Uhr lädt
 sich die Seite selbst neu** — ein Bildschirm ohne Tastatur navigiert nie, und der Service Worker
 prüft nur beim Laden auf eine neue Version; ohne den Neustart bekäme der Monitor ein Deploy erst
-mit, wenn jemand den Stecker zieht. Die Theke lädt sich NICHT von selbst neu (sie darf sich nie
-mitten in einer Ausleihe erneuern).
+mit, wenn jemand den Stecker zieht. Die Theke lädt sich nicht von selbst neu, sobald an ihr
+gearbeitet wurde (sie darf sich nie mitten in einer Ausleihe erneuern); nach einem Update steht
+über dem Inhalt der Hinweis „Neu laden".
 
 ### 16.3 Bestellbestätigung durch den Händler — `/bestellung/<token>`
 

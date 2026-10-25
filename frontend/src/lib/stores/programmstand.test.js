@@ -19,7 +19,8 @@ function antwortMit(stand) {
 	return new Response('{}', { headers: { [KOPF_OBERFLAECHENSTAND]: stand } });
 }
 
-// Nach einem Update läuft ein offenes Fenster mit dem alten Programm weiter. Es muss das merken.
+// Nach einem Update läuft ein offenes Fenster mit dem alten Programm weiter. Es muss das merken,
+// und es darf sich dabei nicht selbst neu laden, solange darin gearbeitet wird.
 describe('programmstand', () => {
 	beforeEach(() => zuhoerer.clear());
 	afterEach(() => vi.unstubAllGlobals());
@@ -76,5 +77,36 @@ describe('programmstand', () => {
 		stand.starte(ALT);
 		await stand.frageServer();
 		expect(stand.veraltet).toBe(false);
+	});
+
+	describe('ein neuer Service Worker', () => {
+		/** @param {boolean | undefined} bedient */
+		function mitBedienung(bedient) {
+			vi.stubGlobal('navigator', {
+				...navigator,
+				userActivation: bedient === undefined ? undefined : { hasBeenActive: bedient }
+			});
+		}
+
+		it('lädt ein Fenster neu, in dem noch niemand etwas bedient hat', () => {
+			mitBedienung(false);
+			const ladeNeu = vi.fn();
+			new Programmstand(ladeNeu).neuerServiceWorker();
+			expect(ladeNeu).toHaveBeenCalledOnce();
+		});
+
+		it('lädt ein bedientes Fenster nicht neu: Eine Ausleihe oder eine Eingabe ginge verloren', () => {
+			mitBedienung(true);
+			const ladeNeu = vi.fn();
+			new Programmstand(ladeNeu).neuerServiceWorker();
+			expect(ladeNeu).not.toHaveBeenCalled();
+		});
+
+		it('lädt nicht neu, wenn der Browser die Bedienung nicht nennt', () => {
+			mitBedienung(undefined);
+			const ladeNeu = vi.fn();
+			new Programmstand(ladeNeu).neuerServiceWorker();
+			expect(ladeNeu).not.toHaveBeenCalled();
+		});
 	});
 });

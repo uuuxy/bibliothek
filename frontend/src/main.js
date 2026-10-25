@@ -23,7 +23,7 @@ import { programmstand } from './lib/stores/programmstand.svelte.js';
 
 // Der Stand dieses Fensters ist der Name dieser Programmdatei; der Entwicklungsserver hat keinen.
 programmstand.starte(import.meta.env.DEV ? '' : new URL(import.meta.url).pathname);
-registerSW({ immediate: true });
+registerSW({ immediate: true, onNeedReload: () => programmstand.neuerServiceWorker() });
 
 const target = document.getElementById('app');
 const app = target ? mount(App, { target }) : undefined;

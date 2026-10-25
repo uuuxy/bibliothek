@@ -1967,9 +1967,11 @@ Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesper
 
 - **PWA** (`vite-plugin-pwa`, `registerType: 'autoUpdate'`): Der Service Worker beantwortet
   Navigationen aus dem Cache mit der App-Shell — aber nur für Pfade, die auch wirklich
-  Anwendungspfade sind. Ein offenes Fenster zeigt den Hinweis „Neu laden", sobald der Server
-  einen anderen Stand der Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der
-  Live-Leitung (`stores/programmstand.svelte.js`).
+  Anwendungspfade sind. Nach einem Update übernimmt der neue Service Worker jedes offene Fenster
+  des Browsers, sobald eines von ihnen die Seite lädt; neu geladen wird davon nur ein Fenster, in
+  dem noch niemand etwas bedient hat (`navigator.userActivation`, `stores/programmstand.svelte.js`).
+  Jedes andere zeigt den Hinweis „Neu laden", sobald der Server einen anderen Stand der
+  Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der Live-Leitung.
 - **IndexedDB-Warteschlange** (`idb`): Scans werden lokal gehalten und gehen später durch
   die **Nachbuch-Tür**. Ein Eintrag verlässt die Warteschlange nur bei einem **endgültigen**
   Serverurteil (acht von neun Wörtern).
@@ -3045,7 +3047,7 @@ vermerkt.
 | S17 | Zwei Orte behaupten dasselbe (Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
 | S18 | Ein Deploy während laufender Kiosk-Verbindungen                                                    | Geordnetes Herunterfahren innerhalb von 10 s, **kein** `os.Exit(1)`; Migrationen laufen beim Start des neuen Containers | `sse/sse_test.go`, `main_test.go`                                           |
 | S23 | Toter Code bleibt liegen (eine geschriebene, getestete und nie gerufene Funktion)                   | Deadcode-Gate wird rot                                                                                 | `scripts/deadcode_gate.sh` + Baseline                                       |
-| S25 | Nach einem Update ist an einem Arbeitsplatz noch das alte Programm offen                            | Über dem Inhalt steht „Neu laden", sobald der Server einen anderen Stand der Oberfläche nennt                 | `api/oberflaechenstand_test.go`, `frontend/src/lib/stores/programmstand.test.js`, `frontend/e2e/neue-fassung.spec.js` |
+| S25 | Nach einem Update ist an einem Arbeitsplatz noch das alte Programm offen                            | Über dem Inhalt steht „Neu laden"; von selbst lädt nur ein Fenster neu, in dem noch niemand etwas bedient hat | `api/oberflaechenstand_test.go`, `frontend/src/lib/stores/programmstand.test.js`, `frontend/e2e/neue-fassung.spec.js` |
 
 ---
 
