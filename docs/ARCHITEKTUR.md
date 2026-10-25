@@ -503,7 +503,7 @@ HTTP-Anfrage
    ├─ 1 PanicRecovery ────────── fängt Panics, 500 statt Prozess-Ende
    ├─ 2 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
    ├─ 3 CORS ─────────────────── nur die konfigurierte Schuldomain (ALLOWED_ORIGIN)
-   ├─ 4 Logging ──────────────── nur 5xx: Status, Methode, Pfad — ohne IP, Token maskiert
+   ├─ 4 Logging ──────────────── nur 5xx: Status, Methode, Pfad, Route, Ursache — ohne IP, Token maskiert
    ├─ 5 HTTPSRedirect ────────── HTTP auf HTTPS, außer lokal und für /health
    ├─ 6 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
    ├─ 7 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
@@ -512,6 +512,7 @@ HTTP-Anfrage
    ├─10 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
    ├─11 Null-Zeichen ─────────── U+0000 in Pfad, Abfrage oder JSON-Rumpf: 400, bevor eine Tür läuft
    ├─12 Kompression ──────────── gzip für JSON, den CSV-Export und die Textdateien der Oberfläche; der SSE-Strom läuft daran vorbei
+   ├─13 Route ────────────────── nach dem Routing: das Muster der Route für die Zeile zu einem 5xx (merkeRoute)
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │
@@ -738,7 +739,7 @@ gemessen über die Importe des Produktivcodes:
 | `golang-jwt/jwt/v5`                                            | `auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
 | `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
-| `chai2010/webp`                                                | `main.go`, `api`, `pkg/imageutil`                                | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
+| `chai2010/webp`                                                | `main.go`, `pkg/imageutil`                                       | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
 | `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `pdf`, `api`, `internal/auskunft`, `pkg/coverdatei`              | Erzeugte Dokumente (8.9)                                                                |
 | `boombuler/barcode`                                            | `pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `pkg/code39`              |
 | `xuri/excelize/v2`                                             | `api`, `internal/lusd`, `pkg/xlsxgrenze`                         | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
@@ -747,7 +748,7 @@ gemessen über die Importe des Produktivcodes:
 | `google/uuid`                                                  | `api`, `repository`                                              | Kennungen erzeugen                                                                      |
 | `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
 | `golang.org/x/crypto`                                          | `auth`, `internal/backupkrypto`                                  | Argon2id für den Prüfwert der Sperre (`auth/pruefwert.go`), scrypt-Schlüsselableitung des Backups |
-| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `api`, `internal/katalogdienste`, `internal/service`, `repository` | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
+| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `api`, `internal/katalogdienste`, `internal/service`, `pkg/imageutil`, `repository` | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
 | `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
 | `pashagolub/pgxmock/v5`, `google/go-cmp`, `uudashr/gocognit`, `golang.org/x/tools` | nur `*_test.go`                     | Prüfhilfen; cmp vergleicht zusammengesetzte Werte, gocognit misst für `komplexitaet_ratsche_test.go`, x/tools lädt die Pakete mit Typen für `sichtbarkeit_ratsche_test.go` |
 
@@ -1660,8 +1661,8 @@ an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
 **Katalog und Bestand sind strikt getrennt.** `buecher_titel` ist der Titel, einer je Auflage
 (ISBN, Titel, Autor, Jahrgang, `ist_lernmittel`), `buecher_exemplare` ist das physische Stück
 (Barcode, Zustand, Ausleihbarkeit). Eine Ausleihe hängt immer am **Exemplar**, nie am Titel.
-Genau diese Trennung ist der Grund, warum die Trefferliste an der Theke „3 Stück, 1 frei"
-sagen kann — und warum ein Titel ohne Exemplar es ausdrücklich sagen muss.
+Genau diese Trennung ist der Grund, warum die Trefferliste an der Theke „1 von 3 verfügbar"
+sagen kann — und warum ein Titel ohne Exemplar ausdrücklich „Keine Exemplare" sagt.
 
 **Auflagen desselben Buchs fasst ein Werk zusammen** (`buecher_titel.werk_id`). Die Spalte ist
 nullbar und wird über `COALESCE(werk_id, id)` gelesen: Ein Titel ohne Werk ist sein eigenes. An
@@ -2837,7 +2838,7 @@ keine Personendaten. Ein Unterordner kommt nicht ins Netz, auch kein von Hand an
 auf einem Server mit älterem Volume kann `uploads/fotos` noch liegen (OFFEN.md 7.8).
 
 **Fundstelle.** `api/katalog/uploads.go` (`neuteredFileSystem`), `Dockerfile`,
-`api/router.go` (`registriereInventurRouten`), `internal/crypto`.
+`api/router.go` (`registriereUploads`), `internal/crypto`.
 Gates: `api/katalog/uploads_test.go`, `api/uploads_auslieferung_pg_test.go`.
 
 ---
@@ -3508,18 +3509,17 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich.
   Anlass: ein Fehler in einer der Kopien.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
-  beenden das Programm an 15 Stellen selbst (`log.Fatalf`, `os.Exit`); Best Practices, „Program
+  beenden das Programm an 14 Stellen selbst (`os.Exit`); Best Practices, „Program
   initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen
   Abbruch beim Start prüfen soll. 47 Funktionen des Programms (ohne `cmd/` und Prüfhilfen) haben
   sechs oder sieben Parameter; Google nennt keine Zahl („Don't let the signature of a function
-  get too long"). An 17 Stellen hängt `fmt.Errorf` einen Fehler mit `%v` statt `%w` an; Google
-  lässt die Wahl je Stelle. Ausführbare Beispiele (`Example…`) gibt es keine, Nutzer der Pakete
-  außerhalb des Programms auch nicht.
+  get too long"). Ausführbare Beispiele (`Example…`) gibt es keine, Nutzer der Pakete außerhalb
+  des Programms auch nicht.
 
 #### Bewusst nicht entschieden
 
-Bundle-Splitting · TypeScript-Migration · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
-geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (23 Dateien
+Bundle-Splitting · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
+geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (25 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
 [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·

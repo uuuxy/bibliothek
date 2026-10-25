@@ -20,19 +20,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (7.2, 4.20)
 - [ ] Eingang und Ausgang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar,
   nach außen nur die Dienste, die das Programm braucht. (4.23)
-- [x] Eine Anmeldung gilt höchstens 10 Stunden nach der Passworteingabe, danach fragt der
-  Sperrbildschirm nach dem Passwort. (5.96)
-- [x] Eine gelungene Anmeldung leert den Zähler der Fehlversuche je Adresse nicht mehr. (5.97)
-- [x] Betriebs-Compose: Datenbank im eigenen Netz, `APP_ENV` fest auf `production`. (5.98)
-- [x] Die Live-Leitung endet mit der Anmeldung: abgemeldet, gesperrt oder nach der Höchstdauer.
-  (5.99)
-- [x] Der Mahnversand an die Klassenleitungen lehnt einen Rumpf ohne Klassenliste ab, statt an
-  alle Klassen zu verschicken. (5.100)
-- [x] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
-- [x] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
-- [x] Ein Fenster, das vor einem Update geöffnet wurde, merkt den neuen Stand und bittet ums
-  Neuladen. (5.103)
-- [x] Auch ein offener öffentlicher Katalog merkt ein Update und bittet ums Neuladen. (5.105)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -45,16 +32,12 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [x] Die Datei anlegen, die Vorschläge der Kollaborateure an deine Freigabe bindet, oder ihr
-  Anlegen ausdrücklich freigeben. (7.11)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
 - [ ] Vor dem nächsten Update am Testserver nachsehen, ob außer dem Backend ein Container die
   Datenbank der Bibliothek anspricht. (7.8)
-- [x] Am Testserver nachsehen, gegen welchen Mailserver die Anmeldung prüft (`IMAP_HOST` in der
-  `.env`) und ob dort echte Daten von Schülern liegen. (7.12)
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
   17.09.2026 als Verlust ausgebucht. Liegt es dort: in der Buchakte den Status des Exemplars
   zurückstellen.
