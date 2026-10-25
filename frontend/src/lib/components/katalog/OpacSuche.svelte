@@ -5,6 +5,8 @@
 	import Suchpille from '../ui/Suchpille.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
+	import NeueFassung from '../layout/NeueFassung.svelte';
+	import { programmstand } from '../../stores/programmstand.svelte.js';
 
 	let suche = $state('');
 	/** @type {any[]} */
@@ -28,6 +30,8 @@
 		try {
 			const url = `/api/public/opac/suche?q=${encodeURIComponent(q)}`;
 			const res = await fetch(url);
+			// Ohne Anmeldung und Live-Leitung erfährt der Katalog ein Update nur aus dieser Antwort.
+			programmstand.merkeAus(res);
 			if (res.ok) {
 				ergebnisse = await res.json();
 				gesamt = Number(res.headers.get('X-Treffer-Gesamt')) || ergebnisse.length;
@@ -73,6 +77,9 @@
 		     Zweck der Seite — deshalb Fokus beim Betreten. Ohne ihn tippt der erste
 		     Anschlag ins Leere, und beim Barcode-Scanner geht der Scan verloren, ohne dass
 		     jemand einen Fehler sieht. -->
+		<!-- Der Hinweis nach einem Update steht über dem Inhalt wie in der Anwendung; zwischen
+		     Suchfeld und Treffern trennte er die beiden. -->
+		<NeueFassung />
 		<Suchpille
 			id="opac-suchfeld"
 			bind:wert={suche}

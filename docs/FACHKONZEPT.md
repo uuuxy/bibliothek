@@ -791,9 +791,10 @@ mindestens ein Exemplar im Haus (nicht
 ausgesondert, nicht nur bestellt). Maximal 50 Treffer; der Kopf `X-Treffer-Gesamt` nennt, wie
 viele es insgesamt sind, und die Seite sagt dann „Gezeigt werden 50 von N
 Treffern" statt „50 Treffer".
-Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal sucht mit
-derselben Abfrage über eine eigene Tür hinter der Anmeldung, die auch Lernmittel und bestellte
-Titel zeigt (§4.2).
+Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Nach einem Update steht mit der
+nächsten Suche über dem Suchfeld der Hinweis „Neu laden", wie in der Verwaltung (§16.2). Das
+Kollegiums-Portal sucht mit derselben Abfrage über eine eigene Tür hinter der Anmeldung, die
+auch Lernmittel und bestellte Titel zeigt (§4.2).
 
 ### 16.2 Bibliotheks-Monitor — `/monitor`
 

@@ -32,7 +32,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
 - [x] Ein Fenster, das vor einem Update geöffnet wurde, merkt den neuen Stand und bittet ums
   Neuladen. (5.103)
-- [ ] Auch ein offener öffentlicher Katalog merkt ein Update und bittet ums Neuladen. (5.105)
+- [x] Auch ein offener öffentlicher Katalog merkt ein Update und bittet ums Neuladen. (5.105)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
@@ -107,17 +107,6 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.105 Der öffentliche Katalog merkt kein Update
-
-Den Hinweis „Neu laden" zeigt nur die angemeldete Oberfläche (`layout/Anwendungsrahmen.svelte`).
-Der öffentliche Katalog (`/katalog`, `katalog/OpacSuche.svelte`) liest seine Treffer mit `fetch`
-statt mit `apiFetch` und hat keine Live-Leitung; ein dort offenes Fenster erfährt den Stand des
-Servers nie. Ändert ein Update die Antwort von `/api/public/opac/suche`, zeigt es keine oder
-falsche Treffer, bis jemand neu lädt.
-
-Nächster Schritt: nach dem Abruf `programmstand.merkeAus(res)`, `NeueFassung` über den Treffern,
-ein Browser-Test wie `e2e/neue-fassung.spec.js` am Katalog.
 
 ### 7.2 Frisches Littera-Backup
 

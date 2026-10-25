@@ -1971,7 +1971,9 @@ Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesper
   des Browsers, sobald eines von ihnen die Seite lädt; neu geladen wird davon nur ein Fenster, in
   dem noch niemand etwas bedient hat (`navigator.userActivation`, `stores/programmstand.svelte.js`).
   Jedes andere zeigt den Hinweis „Neu laden", sobald der Server einen anderen Stand der
-  Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der Live-Leitung.
+  Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der Live-Leitung. Der
+  öffentliche Katalog hat weder Anmeldung noch Live-Leitung und liest den Stand aus der Antwort
+  auf die Suche (`katalog/OpacSuche.svelte`).
 - **IndexedDB-Warteschlange** (`idb`): Scans werden lokal gehalten und gehen später durch
   die **Nachbuch-Tür**. Ein Eintrag verlässt die Warteschlange nur bei einem **endgültigen**
   Serverurteil (acht von neun Wörtern).

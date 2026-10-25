@@ -69,3 +69,34 @@ test('nennt der Server wieder den Stand des Fensters, geht der Hinweis weg', asy
 	await menuepunkt(page, 'Leserdatei').click();
 	await expect(hinweis).toBeHidden();
 });
+
+// Der öffentliche Katalog hat keine Anmeldung und keine Live-Leitung: Er erfährt den Stand aus
+// der Antwort auf die Suche.
+test('der öffentliche Katalog zeigt den Hinweis nach einer Suche', async ({ page }) => {
+	await page.goto('/katalog');
+	const suchfeld = page.getByRole('searchbox', { name: 'Im Medienkatalog suchen' });
+	const hinweis = page.getByRole('status').filter({ hasText: HINWEIS });
+	const ergebnis = page.getByText(/\d+ Treffer|Keine Bücher gefunden/).first();
+	const programmdatei = await page
+		.locator('script[type="module"][src]')
+		.first()
+		.getAttribute('src');
+
+	const antwort = page.waitForResponse(
+		(res) => new URL(res.url()).pathname === '/api/public/opac/suche'
+	);
+	await suchfeld.fill('Buch');
+	expect((await antwort).headers()['x-oberflaechenstand']).toBe(programmdatei);
+	await expect(ergebnis).toBeVisible();
+	await expect(hinweis).toBeHidden();
+
+	await serverNenntNeuenStand(page);
+	await suchfeld.fill('Roman');
+	await expect(hinweis).toBeVisible();
+
+	const geladen = page.waitForEvent('load');
+	await hinweis.getByRole('button', { name: 'Neu laden' }).click();
+	await geladen;
+	await expect(suchfeld).toBeVisible();
+	await page.unrouteAll({ behavior: 'ignoreErrors' });
+});

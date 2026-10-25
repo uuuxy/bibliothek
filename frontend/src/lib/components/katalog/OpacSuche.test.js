@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import OpacSuche from './OpacSuche.svelte';
+import { programmstand } from '../../stores/programmstand.svelte.js';
 
 // Der öffentliche Katalog zeigt höchstens 50 Titel (api/portal/opac.go). Bis zum 23.09.2026 stand
 // über der Liste dann „50 Treffer" — die Kappung des Servers, nicht die Zahl der Bücher.
@@ -57,5 +58,35 @@ describe('OpacSuche: Zahl der Treffer', () => {
 		await suche(screen, 'Buch');
 		expect(screen.getByText('3 Treffer')).toBeTruthy();
 		expect(screen.queryByText(/Gezeigt werden/)).toBeNull();
+	});
+});
+
+// Der Katalog hat keine Anmeldung und keine Live-Leitung: Von einem Update erfährt ein offenes
+// Fenster nur aus der Antwort auf die Suche.
+describe('OpacSuche: neue Fassung', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+		programmstand.eigener = '';
+		programmstand.server = '';
+	});
+
+	it('zeigt nach der Suche den Hinweis, wenn der Server einen anderen Stand nennt', async () => {
+		vi.useFakeTimers();
+		programmstand.eigener = '/assets/index-alt111.js';
+		const res = antwort(3, 3);
+		res.headers.set('X-Oberflaechenstand', '/assets/index-neu222.js');
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => res)
+		);
+		const screen = render(OpacSuche);
+		expect(screen.queryByRole('status')).toBeNull();
+
+		await suche(screen, 'Buch');
+		expect(screen.getByRole('status').textContent).toContain(
+			'Eine neue Fassung des Programms ist eingespielt.'
+		);
+		expect(screen.getByText('3 Treffer')).toBeTruthy();
 	});
 });
