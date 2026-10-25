@@ -38,6 +38,7 @@ func pngBild(t *testing.T, breite, hoehe int) []byte {
 }
 
 func antworteMit(t *testing.T, typ string, inhalt []byte) http.HandlerFunc {
+	t.Helper()
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", typ)
 		if _, err := w.Write(inhalt); err != nil {
