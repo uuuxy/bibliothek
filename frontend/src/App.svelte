@@ -21,7 +21,6 @@
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
 	import ThekenDaten from './lib/components/layout/ThekenDaten.svelte';
 	import { initTooltips } from './lib/actions/tooltip.js';
-	import * as Sentry from '@sentry/svelte';
 
 	const _currentPath = window.location.pathname;
 
@@ -32,19 +31,6 @@
 	// Ein Zuhörer für alle Sprechblasen (data-tip). Muss vor jedem Bildschirm stehen,
 	// weil er delegiert arbeitet und die Elemente erst später entstehen.
 	$effect(() => initTooltips());
-
-	$effect(() => {
-		const beiFehler = (event) => Sentry.captureException(event.error || event);
-		const beiAbweisung = (event) => Sentry.captureException(event.reason);
-
-		window.addEventListener('error', beiFehler);
-		window.addEventListener('unhandledrejection', beiAbweisung);
-
-		return () => {
-			window.removeEventListener('error', beiFehler);
-			window.removeEventListener('unhandledrejection', beiAbweisung);
-		};
-	});
 
 	// Hinter der Sperre nach Inaktivität beantwortet der Server nichts: Die Abrufe ruhen.
 	$effect(() => {

@@ -140,7 +140,6 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}
       - S3_BUCKET=${S3_BUCKET:-}
       - S3_USE_SSL=${S3_USE_SSL:-true}
-      - SENTRY_DSN=${SENTRY_DSN:-}
       # Fünf Variablen, die der Server liest; ohne diese Zeilen gälte im Container immer die
       # eingebaute Vorgabe, egal was in der .env steht. Leer ergibt bei allen fünf die Vorgabe
       # (RATE_LIMIT 50, IMAP_PORT 993, ALLOWED_ORIGIN = Host der Anfrage; die beiden

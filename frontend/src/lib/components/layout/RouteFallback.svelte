@@ -1,16 +1,9 @@
 <script>
-	import * as Sentry from '@sentry/svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 
-	let { bildschirm } = $props();
-
 	// Der Router rendert diese Komponente nur in seinem {:else}: wenn ein activeTab gesetzt
-	// ist, den kein Zweig behandelt. Ohne sie stünde dort eine weiße Seite; so sieht man es,
-	// und Sentry erfährt den Namen des Tabs.
-	$effect(() => {
-		Sentry.captureMessage(`Router: unbehandelter activeTab '${bildschirm}'`, 'error');
-	});
+	// ist, den kein Zweig behandelt. Ohne sie stünde dort eine weiße Seite.
 </script>
 
 <div class="w-full flex flex-col items-center justify-center py-24 text-center animate-fade-in">

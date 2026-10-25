@@ -45,7 +45,6 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `INITIAL_ADMIN_EMAIL`                                                      | E-Mail des initialen Admins — gelesen **nur**, wenn die Tabelle `benutzer` leer ist                                                                                                                                                          | **Pflicht beim ersten Start**, keine Vorgabe. Fehlt sie oder ist der Wert keine Adresse, bricht der erste Start ab, und die Tabelle bleibt leer; ein System mit Konten startet ohne sie. Ein Passwort gibt es dazu nicht (Anmeldung per IMAP); die Adresse muss auf dem Mailserver der Schule existieren, sonst kommt der so angelegte Admin nicht hinein. Eine falsche Adresse lässt sich danach nicht über die Variable berichtigen (die Tabelle ist nicht mehr leer), nur am Konto in der Datenbank |
 | `RATE_LIMIT`                                                               | Globales Limit in Requests/s/IP                                                                                                                                                                                                              | Vorgabe **50** (der Produktionswert). Ein unlesbarer Wert wird protokolliert und ignoriert, es gilt dann die Vorgabe.                                                                                                                      |
 | `SMTP_PASS`                                                                | Historischer Zweitname für `SMTP_PASSWORD`                                                                                                                                                                                                   | Wird nur gelesen, wenn `SMTP_PASSWORD` leer ist. `docker-compose.yml` setzt beide Namen — beim Suchen nach „warum nimmt er das alte Passwort" ist das die Stelle                                                                           |
-| `SENTRY_DSN`                                                               | Sentry Error Tracking                                                                                                                                                                                                                        | Optional; leer = aus. In Produktion nur leer oder mit EU-Instanz (Datenschutz A6)                                                                                                                    |
 
 **Nicht als Variable, sondern in der Oberfläche:** Mail-Zugangsdaten (Einstellungen → Mail)
 und die **Öffentliche Adresse** (Einstellungen → Erreichbarkeit & Alarme) leben in der Datenbank. Die `SMTP_*`-Variablen werden
@@ -567,9 +566,6 @@ Beide Dienste in `docker-compose.yml` tragen `restart: unless-stopped`. Ohne das
 die Anwendung nach einem Neustart des Hosts einfach aus — `unattended-upgrades` hat
 genau das auf diesem Server schon einmal ausgelöst, und gemerkt hat es niemand, weil
 kein Fehler auftrat: Es lief nur nichts mehr.
-
-Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`. Im Echtbetrieb leer lassen
-(sonst gehen Fehlerberichte in die USA) oder eine Instanz in der EU eintragen.
 
 ---
 

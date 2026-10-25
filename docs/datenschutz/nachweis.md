@@ -47,8 +47,8 @@ Schülerdaten; für den Betrieb ist ein Server der Schule vorgesehen.
   Titel und Exemplare.
 - **Was nicht hinausgeht:** Buchdaten werden bei der Deutschen Nationalbibliothek, Open Library
   und Google Books nach ISBN oder Titel nachgeschlagen, ohne Personendaten. Die Browser laden Buchcover nur
-  vom eigenen Server, nicht bei diesen Diensten. Fehlerberichte an einen externen Dienst sind ab
-  Werk aus und bleiben es (Betriebsregel).
+  vom eigenen Server, nicht bei diesen Diensten. Fehlerberichte an einen externen Dienst schickt
+  das Programm nicht.
 
 ## 3. Wer was sieht
 

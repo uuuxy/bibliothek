@@ -19,22 +19,6 @@ import './app.css';
 import App from './App.svelte';
 // @ts-expect-error  virtual:pwa-register wird erst von vite-plugin-pwa zur Bauzeit erzeugt
 import { registerSW } from 'virtual:pwa-register';
-import * as Sentry from '@sentry/svelte';
-
-// Keine Personendaten an Sentry. Bis Version 10 hieß das `sendDefaultPii: false`; Version 11
-// hat die Option gestrichen und sammelt ohne Angabe Nutzerdaten, Cookies, Header, Bodies und
-// Query-Parameter (resolveDataCollectionOptions, Vorgabe jeweils „an"). Wer die Zeile hier
-// löscht, schaltet das still ein.
-Sentry.init({
-	dsn: import.meta.env.VITE_SENTRY_DSN,
-	dataCollection: {
-		userInfo: false,
-		cookies: false,
-		httpHeaders: false,
-		httpBodies: [],
-		urlQueryParams: false
-	}
-});
 
 registerSW({ immediate: true });
 

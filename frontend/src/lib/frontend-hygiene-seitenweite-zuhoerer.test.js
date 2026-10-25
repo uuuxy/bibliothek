@@ -10,8 +10,6 @@ import { ABGESCHIRMT } from './components/auth/sperrSchild.js';
 // fern. Diese Ratsche verlangt für jedes Ereignis, auf das seitenweit gehört wird, eine
 // Entscheidung: abgeschirmt, oder hier mit Grund ausgenommen.
 const OHNE_SCHILD = {
-	error: 'Fehlerbericht, keine Bedienung',
-	unhandledrejection: 'Fehlerbericht, keine Bedienung',
 	scroll: 'führt Maße nach, ändert keinen Inhalt',
 	resize: 'führt Maße nach, ändert keinen Inhalt',
 	beforeunload: 'warnt vor dem Schließen des Fensters — auch hinter der Sperre gewollt',

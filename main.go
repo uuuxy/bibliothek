@@ -40,8 +40,6 @@ import (
 	"bibliothek/repository"
 	"bibliothek/sse"
 
-	"github.com/getsentry/sentry-go"
-
 	// Die Bildformate, die der Server liest: Cover und Ausweisfotos. WebP dekodiert libwebp aus
 	// chai2010/webp, mit dem pkg/imageutil die Cover auch schreibt.
 	_ "github.com/chai2010/webp"
@@ -316,20 +314,6 @@ func main() {
 	// Wer diese Zeile entfernt oder log.SetOutput dahinter setzt, hebt beides auf: die strukturierte
 	// Ausgabe und den Schutz.
 	slog.SetDefault(logAusgabe)
-
-	// Sentry, falls eingestellt.
-	sentryDSN := os.Getenv("SENTRY_DSN")
-	if sentryDSN != "" {
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn: sentryDSN,
-		})
-		if err != nil {
-			slog.Error("sentry.Init failed", "fehler", err)
-		} else {
-			defer sentry.Flush(2 * time.Second)
-			slog.Info("Sentry initialized successfully.")
-		}
-	}
 
 	// 1. Konfiguration aus der Umgebung.
 	dsn, jwtGeheimnis, port, serverKonfig := leseKonfig()

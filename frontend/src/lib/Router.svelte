@@ -159,7 +159,7 @@
 			/>
 		</div>
 	{:else}
-		<!-- Unbekannter Tab: sichtbarer Fallback statt lautloser weißer Seite (+ Sentry). -->
-		<RouteFallback bildschirm={uiStore.activeTab} />
+		<!-- Unbekannter Tab: sichtbarer Fallback statt lautloser weißer Seite. -->
+		<RouteFallback />
 	{/if}
 </div>

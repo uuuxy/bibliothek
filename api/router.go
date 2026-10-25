@@ -56,8 +56,6 @@ import (
 	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 	"bibliothek/sse"
-
-	sentryhttp "github.com/getsentry/sentry-go/http"
 )
 
 // Server hält, was jede Tür braucht (Datenbank, Anmeldung, Live-Leitung in tuer.Basis), ob er
@@ -302,7 +300,7 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	frist := fristMiddleware(bearbeitungsfristVorgabe)
 	adressen := clientip.NewErmittler(s.vertrauteProxys)
 
-	// Kette: Adresse → panik → sentry → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
+	// Kette: Adresse → panik → Sicherheitskopfzeilen → cors → log → https → Lesefrist →
 	// rumpfGrenze → frist → bremse → csrf → Null-Zeichen → kompression → Route merken → Mux.
 	//
 	// Die Adresse des Browsers ermittelt das erste Glied, damit jede Bremse und jede Tür
@@ -317,11 +315,11 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 	// erweitereLesefristFuerLangeUploads steht vor rumpfGrenze und damit vor jedem Lesen des
 	// Rumpfes; danach gesetzt käme die Frist zu spät. Sie hebt die strenge
 	// serverweite ReadTimeout (main.go) für die Import-Endpunkte an.
-	sentry := sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle
+	//
 	// uuidPfadMiddleware steht nicht in dieser Kette: Um den Mux gelegt läse sie
 	// r.PathValue("id"), bevor die Route aufgelöst ist, und der Wert wäre immer leer. Sie sitzt
 	// in verlangeRecht, hinter dem Routing, wo PathValue gefüllt ist.
-	kette := adressen.Middleware(panikMiddleware(sentry(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(nullZeichenMiddleware(kompressionMiddleware(merkeRoute(mux)))))))))))))))
+	kette := adressen.Middleware(panikMiddleware(middleware.Sicherheitskopfzeilen(corsMiddleware(logMiddleware(s.httpsMiddleware(erweitereLesefristFuerLangeUploads(rumpfGrenze(frist(bremse(s.csrfMiddleware(nullZeichenMiddleware(kompressionMiddleware(merkeRoute(mux))))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Jede Anfrage ins Log, ohne die Adresse des Aufrufers (DSGVO).

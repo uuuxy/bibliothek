@@ -4,7 +4,7 @@
 #
 # Abgeschottet, weil hier echte Personendaten liegen: Das Backend hängt NUR am Netz „intern"
 # (internal: true, ohne Weg nach draußen). Kein Cover-Abgleich bei Google & Co., keine Mail, kein
-# S3, kein Sentry — das Skript prüft das vor der Übernahme und bricht sonst ab. Die Anmeldung
+# S3 — das Skript prüft das vor der Übernahme und bricht sonst ab. Die Anmeldung
 # läuft über IMAP_HOST=mock. Die Datenbank ist für die Übernahme vom Rechner aus nur auf
 # 127.0.0.1:5436 erreichbar; dafür hängt sie zusätzlich am Netz „aussen".
 #

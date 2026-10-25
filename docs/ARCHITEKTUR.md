@@ -359,7 +359,6 @@ graph TB
      ┌────────────────────┐   optional   ┌────────────────────────┐
      │ Volume /app/backups│ ───────────► │ S3-kompatibler Speicher│
      └────────────────────┘              └────────────────────────┘
-                                          optional: Sentry (SENTRY_DSN)
 ```
 
 #### Schnittstellen technisch
@@ -375,7 +374,6 @@ graph TB
 | **Backend → SMTP**               | SMTP mit **erzwungenem** STARTTLS und Zertifikatsprüfung | ausgehend | Bietet der Server kein STARTTLS, bricht der Versand ab (`errSMTPKlartext`); nur ein ausdrückliches `SMTP_ALLOW_PLAINTEXT=true` erlaubt es. Kopfzeilen werden gegen CR/LF-Einschmuggelung geprüft |
 | **Backend → Metadaten/Cover**    | HTTPS GET an eine **Host-Allowlist**             | ausgehend       | `pkg/coverquelle` baut die URL aus geprüften Teilen **neu** auf (Schema fest HTTPS, Host aus der Konstante); `pkg/safehttp` lehnt Verbindungen zu nicht-öffentlichen IPs ab (SSRF) |
 | **Backend → S3 (optional)**      | S3-API über `minio-go`                           | ausgehend       | Nur aktiv, wenn `S3_ENDPOINT/ACCESS_KEY/SECRET_KEY/BUCKET` vollständig gesetzt sind; sonst überspringt der Job den Offsite-Upload und sagt das |
-| **Backend → Sentry (optional)**  | HTTPS                                            | ausgehend       | Nur bei gesetztem `SENTRY_DSN`                                                                                                     |
 | **Littera-Altbestand**           | CSV aus `mdb-export` (einmalig, CLI)             | eingehend       | Kein HTTP-Weg: eigenes Kommando `cmd/littera-altbestand` gegen dieselbe Datenbank, Savepoint je Datensatz                            |
 | **Bestellbestätigung Händler**   | `GET/POST /bestellung/<token>` ohne Anmeldung     | eingehend       | Token einmalig, Hash gespeichert, im Log maskiert; die Bestätigung ist über `WHERE bestaetigt_am IS NULL` atomar                    |
 | **Scanner / Kamera**             | USB-HID (Tastatureingabe) bzw. `html5-qrcode`     | eingehend       | Kein Gerätetreiber im System: Ein Handscanner ist eine Tastatur, die Kamera läuft im Browser                                        |
@@ -503,18 +501,17 @@ HTTP-Anfrage
    ├─ Log ────────────────────── jede Anfrage: Methode und Pfad, Token maskiert, ohne IP
    ├─ 0 Adresse ──────────────── Client-IP hinter dem Proxy (pkg/clientip), gelesen von Bremse und Türen
    ├─ 1 PanicRecovery ────────── fängt Panics, 500 statt Prozess-Ende
-   ├─ 2 Sentry (Repanic: true) ─ Fehlerweitergabe, optional
-   ├─ 3 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
-   ├─ 4 CORS ─────────────────── nur die konfigurierte Schuldomain (ALLOWED_ORIGIN)
-   ├─ 5 Logging ──────────────── nur 5xx: Status, Methode, Pfad — ohne IP, Token maskiert
-   ├─ 6 HTTPSRedirect ────────── HTTP auf HTTPS, außer lokal und für /health
-   ├─ 7 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
-   ├─ 8 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
-   ├─ 9 Timeout ──────────────── Kontext-Deadline je Route (bearbeitungsfristVorgabe)
-   ├─10 RateLimit ────────────── je Client-IP (pkg/clientip: genau ein Proxy-Hop)
-   ├─11 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
-   ├─12 Null-Zeichen ─────────── U+0000 in Pfad, Abfrage oder JSON-Rumpf: 400, bevor eine Tür läuft
-   ├─13 Kompression ──────────── gzip für JSON, den CSV-Export und die Textdateien der Oberfläche; der SSE-Strom läuft daran vorbei
+   ├─ 2 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
+   ├─ 3 CORS ─────────────────── nur die konfigurierte Schuldomain (ALLOWED_ORIGIN)
+   ├─ 4 Logging ──────────────── nur 5xx: Status, Methode, Pfad — ohne IP, Token maskiert
+   ├─ 5 HTTPSRedirect ────────── HTTP auf HTTPS, außer lokal und für /health
+   ├─ 6 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
+   ├─ 7 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
+   ├─ 8 Timeout ──────────────── Kontext-Deadline je Route (bearbeitungsfristVorgabe)
+   ├─ 9 RateLimit ────────────── je Client-IP (pkg/clientip: genau ein Proxy-Hop)
+   ├─10 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
+   ├─11 Null-Zeichen ─────────── U+0000 in Pfad, Abfrage oder JSON-Rumpf: 400, bevor eine Tür läuft
+   ├─12 Kompression ──────────── gzip für JSON, den CSV-Export und die Textdateien der Oberfläche; der SSE-Strom läuft daran vorbei
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │
@@ -741,7 +738,6 @@ gemessen über die Importe des Produktivcodes:
 | `golang-jwt/jwt/v5`                                            | `auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
 | `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
-| `getsentry/sentry-go`                                          | `main.go`, `api`                                                 | Fehlerweitergabe, nur mit `SENTRY_DSN`                                                  |
 | `chai2010/webp`                                                | `main.go`, `api`, `pkg/imageutil`                                | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
 | `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `pdf`, `api`, `internal/auskunft`, `pkg/coverdatei`              | Erzeugte Dokumente (8.9)                                                                |
 | `boombuler/barcode`                                            | `pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `pkg/code39`              |
@@ -1428,7 +1424,7 @@ sequenceDiagram
     P->>HTTP: Shutdown(ctx, 10 s)
     HTTP-->>P: offene Anfragen zu Ende, SSE-Handler kehren zurück
     P->>P: authenticator.Blacklist.Stop() (Ticker alle 15 min)
-    P->>P: database.Close(), scheduler.Stop(), sentry.Flush(2 s)
+    P->>P: database.Close(), scheduler.Stop()
     P-->>OP: »Server stopped successfully«
 ```
 
@@ -2107,11 +2103,10 @@ steht in `lmf_barcode`.
 | Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit Status, Route und Ursache (die übergibt `apierrors`), Stufe ERROR; hat der Browser abgebrochen, WARN. Ein Serverfehler steht so einmal im Log |
 | 500er                        | Stack schreibt `panikMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
 | Docker-Logs                  | json-file, 3 × 10 MB je Container. Das Log gehört zum Container, Docker löscht es mit ihm. Ersetzt `./update.sh` das Backend, legt es dessen Log vorher unter `logs/` ab, nur für den Besitzer lesbar; nach 14 Tagen löschen es `update.sh` und die Uhr am Server (`scripts/backup.sh --nur-aufraeumen`). Das Log der Datenbank geht weiter mit ihrem Container, also nur bei einem neuen Postgres-Image |
-| Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
 | Selbstprüfung                | „Was ist eingerichtet, aber nicht in Betrieb?" — Mail, Selbstanmeldung, Geheimnisse, Backup, Restore-Probe            |
 | Bereitschafts-Wächter        | Meldet kritische Befunde per Mail an die Admins: 3 Minuten nach dem Start, danach täglich. Auf Spielwiesen schweigt er von selbst |
-| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update; den Vermerk „beendet“ trägt er erst ab dem Signal zum Herunterfahren. Fehlt er, meldet der nächste Start den vorigen Lauf als abgebrochen (Absturz, Abbruch von außen, Stromausfall). Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht; dafür bräuchte es einen Fehler-Tracker, Sentry ist im Echtbetrieb aus (DEPLOYMENT.md 7) |
+| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update; den Vermerk „beendet“ trägt er erst ab dem Signal zum Herunterfahren. Fehlt er, meldet der nächste Start den vorigen Lauf als abgebrochen (Absturz, Abbruch von außen, Stromausfall). Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht, und einen Fehler-Tracker hat das Programm nicht |
 | `GIT_COMMIT` im Image        | „Gesund" heißt nicht „aktuell" — `update.sh` vergleicht nach dem Deploy                                              |
 
 ---
