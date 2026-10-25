@@ -22,35 +22,35 @@ func TestBestellberichtToepfe_FuelltJedesFeldAusDerZeile(t *testing.T) {
 	tag := func(tag int) time.Time { return time.Date(2026, 9, tag, 10, 0, 0, 0, time.UTC) }
 	// In der Folge der Abfrage, nach dem Bestelldatum: Die Töpfe stehen durcheinander.
 	zeilen := []repository.BerichtBestellung{
-		{ID: "id-1", LieferantName: "Lieferant 1", Kundennummer: "K-1", Bestelldatum: tag(1), Gesamtbetrag: 10.5, AnzahlExemplare: 3, Mittel: "",
-			Positionen: []repository.BerichtPosition{{TitelName: "Titel 1", ISBN: "isbn-1", Menge: 3, Einzelpreis: 3.5}}},
-		{ID: "id-2", LieferantName: "Lieferant 2", Kundennummer: "K-2", Bestelldatum: tag(2), Gesamtbetrag: 45.5, AnzahlExemplare: 5, Mittel: mitteltopf.Schultraeger,
-			Positionen: []repository.BerichtPosition{{TitelName: "Titel 2", ISBN: "isbn-2", Menge: 5, Einzelpreis: 9.1}}},
-		{ID: "id-3", LieferantName: "Lieferant 3", Kundennummer: "K-3", Bestelldatum: tag(3), Gesamtbetrag: 120, AnzahlExemplare: 30, Mittel: mitteltopf.Land,
+		{ID: "id-1", LieferantName: "Lieferant 1", Kundennummer: "K-1", Bestelldatum: tag(1), Gesamtbetrag: 1050, AnzahlExemplare: 3, Mittel: "",
+			Positionen: []repository.BerichtPosition{{TitelName: "Titel 1", ISBN: "isbn-1", Menge: 3, Einzelpreis: 350}}},
+		{ID: "id-2", LieferantName: "Lieferant 2", Kundennummer: "K-2", Bestelldatum: tag(2), Gesamtbetrag: 4550, AnzahlExemplare: 5, Mittel: mitteltopf.Schultraeger,
+			Positionen: []repository.BerichtPosition{{TitelName: "Titel 2", ISBN: "isbn-2", Menge: 5, Einzelpreis: 910}}},
+		{ID: "id-3", LieferantName: "Lieferant 3", Kundennummer: "K-3", Bestelldatum: tag(3), Gesamtbetrag: 12000, AnzahlExemplare: 30, Mittel: mitteltopf.Land,
 			Positionen: []repository.BerichtPosition{
-				{TitelName: "Titel 3a", ISBN: "isbn-3a", Menge: 10, Einzelpreis: 4},
-				{TitelName: "Titel 3b", ISBN: "isbn-3b", Menge: 20, Einzelpreis: 4.25},
+				{TitelName: "Titel 3a", ISBN: "isbn-3a", Menge: 10, Einzelpreis: 400},
+				{TitelName: "Titel 3b", ISBN: "isbn-3b", Menge: 20, Einzelpreis: 425},
 			}},
-		{ID: "id-4", LieferantName: "Lieferant 4", Kundennummer: "K-4", Bestelldatum: tag(4), Gesamtbetrag: 80, AnzahlExemplare: 20, Mittel: mitteltopf.Land,
-			Positionen: []repository.BerichtPosition{{TitelName: "Titel 4", ISBN: "isbn-4", Menge: 20, Einzelpreis: 4.75}}},
+		{ID: "id-4", LieferantName: "Lieferant 4", Kundennummer: "K-4", Bestelldatum: tag(4), Gesamtbetrag: 8000, AnzahlExemplare: 20, Mittel: mitteltopf.Land,
+			Positionen: []repository.BerichtPosition{{TitelName: "Titel 4", ISBN: "isbn-4", Menge: 20, Einzelpreis: 475}}},
 	}
 	will := []pdf.BestellberichtTopf{
 		{Beschriftung: "Lernmittelfreiheit (Land)", Bestellungen: []pdf.BestellberichtBestellung{
-			{LieferantName: "Lieferant 3", Kundennummer: "K-3", Bestelldatum: tag(3), Gesamtbetrag: 120, AnzahlExemplare: 30,
+			{LieferantName: "Lieferant 3", Kundennummer: "K-3", Bestelldatum: tag(3), Gesamtbetrag: 12000, AnzahlExemplare: 30,
 				Positionen: []pdf.BestellberichtPosition{
-					{TitelName: "Titel 3a", ISBN: "isbn-3a", Menge: 10, Einzelpreis: 4},
-					{TitelName: "Titel 3b", ISBN: "isbn-3b", Menge: 20, Einzelpreis: 4.25},
+					{TitelName: "Titel 3a", ISBN: "isbn-3a", Menge: 10, Einzelpreis: 400},
+					{TitelName: "Titel 3b", ISBN: "isbn-3b", Menge: 20, Einzelpreis: 425},
 				}},
-			{LieferantName: "Lieferant 4", Kundennummer: "K-4", Bestelldatum: tag(4), Gesamtbetrag: 80, AnzahlExemplare: 20,
-				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 4", ISBN: "isbn-4", Menge: 20, Einzelpreis: 4.75}}},
+			{LieferantName: "Lieferant 4", Kundennummer: "K-4", Bestelldatum: tag(4), Gesamtbetrag: 8000, AnzahlExemplare: 20,
+				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 4", ISBN: "isbn-4", Menge: 20, Einzelpreis: 475}}},
 		}},
 		{Beschriftung: "Schülerbücherei (Schulträger)", Bestellungen: []pdf.BestellberichtBestellung{
-			{LieferantName: "Lieferant 2", Kundennummer: "K-2", Bestelldatum: tag(2), Gesamtbetrag: 45.5, AnzahlExemplare: 5,
-				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 2", ISBN: "isbn-2", Menge: 5, Einzelpreis: 9.1}}},
+			{LieferantName: "Lieferant 2", Kundennummer: "K-2", Bestelldatum: tag(2), Gesamtbetrag: 4550, AnzahlExemplare: 5,
+				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 2", ISBN: "isbn-2", Menge: 5, Einzelpreis: 910}}},
 		}},
 		{Beschriftung: "ohne Zuordnung", Bestellungen: []pdf.BestellberichtBestellung{
-			{LieferantName: "Lieferant 1", Kundennummer: "K-1", Bestelldatum: tag(1), Gesamtbetrag: 10.5, AnzahlExemplare: 3,
-				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 1", ISBN: "isbn-1", Menge: 3, Einzelpreis: 3.5}}},
+			{LieferantName: "Lieferant 1", Kundennummer: "K-1", Bestelldatum: tag(1), Gesamtbetrag: 1050, AnzahlExemplare: 3,
+				Positionen: []pdf.BestellberichtPosition{{TitelName: "Titel 1", ISBN: "isbn-1", Menge: 3, Einzelpreis: 350}}},
 		}},
 	}
 	ist, err := bestellberichtToepfe(zeilen)

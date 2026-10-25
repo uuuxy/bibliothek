@@ -45,7 +45,7 @@ func TestBestellhistorie_GescheiterteAbfrageIst500(t *testing.T) {
 			},
 			folgt: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery(jeTopf).WillReturnRows(pgxmock.NewRows(
-					[]string{"mittel", "gesamt", "gesamtbetrag", "exemplare"}).AddRow("land", 1, 5.0, 1))
+					[]string{"mittel", "gesamt", "gesamtbetrag", "exemplare"}).AddRow("land", 1, "5.00", 1))
 			},
 		},
 		{
@@ -54,7 +54,7 @@ func TestBestellhistorie_GescheiterteAbfrageIst500(t *testing.T) {
 			ziel: "/api/bestellhistorie/uebersicht",
 			erwarte: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery(kennzahlen).WillReturnRows(pgxmock.NewRows(
-					[]string{"gesamt", "gesamtbetrag", "exemplare", "offen"}).AddRow(10, 150.0, 50, 2))
+					[]string{"gesamt", "gesamtbetrag", "exemplare", "offen"}).AddRow(10, "150.00", 50, 2))
 				m.ExpectQuery(jeTopf).WillReturnError(kaputt)
 			},
 		},
@@ -77,7 +77,7 @@ func TestBestellhistorie_GescheiterteAbfrageIst500(t *testing.T) {
 					"etiketten_groesse", "bestaetigt_durch", "link_aktiv", "link_gueltig_bis",
 					"mittel", "mail_gescheitert_am",
 				}).AddRow("b1", "Lieferant", "bestellung@example.org", "K-1", time.Now(),
-					10.0, 1, false, nil, nil, nil, false, nil, "", nil))
+					"10.00", 1, false, nil, nil, nil, false, nil, "", nil))
 				m.ExpectQuery(positionen).WithArgs(pgxmock.AnyArg()).WillReturnError(kaputt)
 			},
 		},

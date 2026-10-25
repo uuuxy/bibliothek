@@ -62,7 +62,7 @@ func erbWege() []erbWeg {
 			if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 				Mittel:      mitteltopf.Land,
 				LieferantID: testdaten.LegeLieferantAn(t, pool, "Händler "+titel.isbn, false),
-				Positionen:  []service.BestellAuftragPosition{{TitelID: titel.id, Menge: 2, Preis: 10, MitVorabBarcode: true}},
+				Positionen:  []service.BestellAuftragPosition{{TitelID: titel.id, Menge: 2, Preis: 1000, MitVorabBarcode: true}},
 			}); err != nil {
 				t.Fatalf("Bestellung: %v", err)
 			}

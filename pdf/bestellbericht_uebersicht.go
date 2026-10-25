@@ -20,19 +20,19 @@ var berichtMonatsnamen = [...]string{"Januar", "Februar", "März", "April", "Mai
 
 type berichtMonthStat struct {
 	count, exemplare int
-	betrag           float64
+	betrag           betrag.Cent
 }
 
 type lieferantenSumme struct {
 	count     int
 	exemplare int
-	betrag    float64
+	betrag    betrag.Cent
 }
 
 // zeichneBerichtMonate setzt die Tabelle „Übersicht nach Monat". Ohne Preise entfällt die
 // Betragsspalte, und die übrigen Spalten füllen dieselbe Breite; sonst endete die Tabelle
 // mitten auf der Seite.
-func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen []BestellberichtBestellung, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
+func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen []BestellberichtBestellung, gesamtExemplare int, gesamtBetrag betrag.Cent, mitPreisen bool) {
 	jeMonat := map[time.Month]*berichtMonthStat{}
 	for _, o := range bestellungen {
 		// Der Monat der Schule: Eine Bestellung aus der ersten Stunde eines Monats zählt zu ihm.
@@ -70,7 +70,7 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen [
 			p.CellFormat(bAnzahl, 6, fmt.Sprintf("%d", werte.count), "1", 0, "C", false, 0, "")
 			if mitPreisen {
 				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", werte.exemplare), "1", 0, "C", false, 0, "")
-				p.CellFormat(35, 6, tr(betrag.Euro(werte.betrag)), "1", 1, "R", false, 0, "")
+				p.CellFormat(35, 6, tr(werte.betrag.Euro()), "1", 1, "R", false, 0, "")
 			} else {
 				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", werte.exemplare), "1", 1, "C", false, 0, "")
 			}
@@ -82,7 +82,7 @@ func zeichneBerichtMonate(p *gofpdf.Fpdf, tr func(string) string, bestellungen [
 	p.CellFormat(bAnzahl, 7, fmt.Sprintf("%d", len(bestellungen)), "1", 0, "C", true, 0, "")
 	if mitPreisen {
 		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
-		p.CellFormat(35, 7, tr(betrag.Euro(gesamtBetrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(35, 7, tr(gesamtBetrag.Euro()), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 1, "C", true, 0, "")
 	}
@@ -138,7 +138,7 @@ func zeichneBerichtLieferanten(p *gofpdf.Fpdf, tr func(string) string, bestellun
 		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
 		p.CellFormat(40, 6, fmt.Sprintf("%d", werte.count), "1", 0, "C", false, 0, "")
 		if mitPreisen {
-			p.CellFormat(45, 6, tr(betrag.Euro(werte.betrag)), "1", 1, "R", false, 0, "")
+			p.CellFormat(45, 6, tr(werte.betrag.Euro()), "1", 1, "R", false, 0, "")
 		} else {
 			p.CellFormat(45, 6, fmt.Sprintf("%d", werte.exemplare), "1", 1, "C", false, 0, "")
 		}

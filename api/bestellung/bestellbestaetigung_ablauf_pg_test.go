@@ -43,8 +43,8 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 		Mittel:      mitteltopf.Land,
 		LieferantID: lieferant,
 		Positionen: []service.BestellAuftragPosition{
-			{TitelID: mitBarcode, Menge: 3, Preis: 10, MitVorabBarcode: true},
-			{TitelID: ohneBarcode, Menge: 2, Preis: 10, MitVorabBarcode: false},
+			{TitelID: mitBarcode, Menge: 3, Preis: 1000, MitVorabBarcode: true},
+			{TitelID: ohneBarcode, Menge: 2, Preis: 1000, MitVorabBarcode: false},
 		},
 	})
 	if err != nil {
@@ -127,7 +127,7 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
 		LieferantID: lieferant,
-		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: true}},
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 1000, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

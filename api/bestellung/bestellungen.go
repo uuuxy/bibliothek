@@ -12,6 +12,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -19,10 +20,10 @@ import (
 
 // bestellPosition ist eine Zeile des Warenkorbs.
 type bestellPosition struct {
-	TitelID         string  `json:"titel_id" validate:"required,uuid_oder_leer"`
-	Menge           int     `json:"menge"`
-	Preis           float64 `json:"preis"`
-	MitVorabBarcode bool    `json:"generate_barcodes"`
+	TitelID         string      `json:"titel_id" validate:"required,uuid_oder_leer"`
+	Menge           int         `json:"menge"`
+	Preis           betrag.Cent `json:"preis"`
+	MitVorabBarcode bool        `json:"generate_barcodes"`
 }
 
 // bestellungAnlegenAnfrage ist ein kompletter Warenkorb an genau einen Lieferanten. Die Bestellung

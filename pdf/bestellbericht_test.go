@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/pkg/betrag"
 )
 
 func berichtTestdaten() []BestellberichtTopf {
@@ -22,10 +23,10 @@ func berichtTestdaten() []BestellberichtTopf {
 				LieferantName:   "Cornelsen",
 				Kundennummer:    "C-88123",
 				Bestelldatum:    time.Date(2026, 3, 14, 0, 0, 0, 0, time.UTC),
-				Gesamtbetrag:    54.00,
+				Gesamtbetrag:    5400,
 				AnzahlExemplare: 2,
 				Positionen: []BestellberichtPosition{
-					{TitelName: "Alexander Gesamtausgabe", ISBN: "9783124912008", Menge: 2, Einzelpreis: 27.00},
+					{TitelName: "Alexander Gesamtausgabe", ISBN: "9783124912008", Menge: 2, Einzelpreis: 2700},
 				},
 			},
 			{
@@ -122,17 +123,17 @@ func TestBestellbericht_OhneBestellungen(t *testing.T) {
 // Folge der Eingabe, und darunter die Summe über alle. Ein Block ohne Bestellung bekommt weder
 // Überschrift noch Summe.
 func TestBestellbericht_JederBlockStehtMitBeschriftungUndSumme(t *testing.T) {
-	bestellung := func(lieferant string, betrag float64, exemplare int) BestellberichtBestellung {
+	bestellung := func(lieferant string, summe betrag.Cent, exemplare int) BestellberichtBestellung {
 		return BestellberichtBestellung{
 			LieferantName: lieferant, Kundennummer: "K-1", Bestelldatum: time.Date(2026, 9, 3, 10, 0, 0, 0, time.UTC),
-			Gesamtbetrag: betrag, AnzahlExemplare: exemplare,
-			Positionen: []BestellberichtPosition{{TitelName: "Titel " + lieferant, ISBN: "978", Menge: exemplare, Einzelpreis: betrag / float64(exemplare)}},
+			Gesamtbetrag: summe, AnzahlExemplare: exemplare,
+			Positionen: []BestellberichtPosition{{TitelName: "Titel " + lieferant, ISBN: "978", Menge: exemplare, Einzelpreis: summe / betrag.Cent(exemplare)}},
 		}
 	}
 	toepfe := []BestellberichtTopf{
-		{Beschriftung: "Block-Zwei", Bestellungen: []BestellberichtBestellung{bestellung("Haendler-C", 45.50, 5)}},
+		{Beschriftung: "Block-Zwei", Bestellungen: []BestellberichtBestellung{bestellung("Haendler-C", 4550, 5)}},
 		{Beschriftung: "Block-Leer", Bestellungen: nil},
-		{Beschriftung: "Block-Eins", Bestellungen: []BestellberichtBestellung{bestellung("Haendler-A", 120.00, 30), bestellung("Haendler-B", 80.00, 20)}},
+		{Beschriftung: "Block-Eins", Bestellungen: []BestellberichtBestellung{bestellung("Haendler-A", 12000, 30), bestellung("Haendler-B", 8000, 20)}},
 	}
 	for _, f := range []struct {
 		mitPreisen bool
@@ -216,7 +217,7 @@ func TestBestellbericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
 	for i, name := range namen {
 		bestellungen = append(bestellungen, BestellberichtBestellung{
 			LieferantName: name, Bestelldatum: time.Date(2026, time.Month(i+1), 10, 0, 0, 0, 0, time.UTC),
-			Gesamtbetrag: float64(10 * (i + 1)), AnzahlExemplare: i + 1,
+			Gesamtbetrag: betrag.Cent(1000 * (i + 1)), AnzahlExemplare: i + 1,
 		})
 	}
 
@@ -255,10 +256,10 @@ func TestBestellbericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
 // Die Übersichten der Jahresansicht zählen die Bestellungen aller Blöcke: Der Monat und der
 // Lieferant einer Bestellung hängen nicht an ihrem Topf.
 func TestBestellbericht_UebersichtenZaehlenUeberAlleBloecke(t *testing.T) {
-	bestellung := func(monat time.Month, betrag float64, exemplare int) BestellberichtBestellung {
+	bestellung := func(monat time.Month, summe betrag.Cent, exemplare int) BestellberichtBestellung {
 		return BestellberichtBestellung{
 			LieferantName: "Haendler-A", Kundennummer: "K-1", Bestelldatum: time.Date(2026, monat, 10, 0, 0, 0, 0, time.UTC),
-			Gesamtbetrag: betrag, AnzahlExemplare: exemplare,
+			Gesamtbetrag: summe, AnzahlExemplare: exemplare,
 		}
 	}
 	roh, err := ErzeugeBestellbericht(Bestellbericht{
@@ -266,8 +267,8 @@ func TestBestellbericht_UebersichtenZaehlenUeberAlleBloecke(t *testing.T) {
 		Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
 		Jahresansicht: true, MitPreisen: true,
 		Toepfe: []BestellberichtTopf{
-			{Beschriftung: "Block-Eins", Bestellungen: []BestellberichtBestellung{bestellung(time.March, 100, 10), bestellung(time.May, 7.25, 3)}},
-			{Beschriftung: "Block-Zwei", Bestellungen: []BestellberichtBestellung{bestellung(time.March, 20.50, 2)}},
+			{Beschriftung: "Block-Eins", Bestellungen: []BestellberichtBestellung{bestellung(time.March, 10000, 10), bestellung(time.May, 725, 3)}},
+			{Beschriftung: "Block-Zwei", Bestellungen: []BestellberichtBestellung{bestellung(time.March, 2050, 2)}},
 		},
 	}, SchuleInfo{Name: "Testbibliothek"})
 	if err != nil {
@@ -305,7 +306,7 @@ func TestBestellbericht_UebersichtenOhnePreiseNennenExemplare(t *testing.T) {
 	bestellung := func(monat time.Month, exemplare int) BestellberichtBestellung {
 		return BestellberichtBestellung{
 			LieferantName: "Haendler-A", Kundennummer: "K-1", Bestelldatum: time.Date(2026, monat, 10, 0, 0, 0, 0, time.UTC),
-			Gesamtbetrag: 999, AnzahlExemplare: exemplare,
+			Gesamtbetrag: 99900, AnzahlExemplare: exemplare,
 		}
 	}
 	roh, err := ErzeugeBestellbericht(Bestellbericht{
@@ -364,11 +365,11 @@ func TestBestellbericht_TitelBleibtInSeinerSpalte(t *testing.T) {
 	)
 	bestellungen := []BestellberichtBestellung{{
 		LieferantName: "Cornelsen", Kundennummer: "C-1", Bestelldatum: time.Date(2026, 3, 14, 0, 0, 0, 0, time.UTC),
-		Gesamtbetrag: 81, AnzahlExemplare: 3,
+		Gesamtbetrag: 8100, AnzahlExemplare: 3,
 		Positionen: []BestellberichtPosition{
-			{TitelName: lang, ISBN: "ISBN-PROBE-1", Menge: 1, Einzelpreis: 27},
-			{TitelName: gross, ISBN: "ISBN-PROBE-2", Menge: 1, Einzelpreis: 27},
-			{TitelName: "Atlas", ISBN: "ISBN-PROBE-3", Menge: 1, Einzelpreis: 27},
+			{TitelName: lang, ISBN: "ISBN-PROBE-1", Menge: 1, Einzelpreis: 2700},
+			{TitelName: gross, ISBN: "ISBN-PROBE-2", Menge: 1, Einzelpreis: 2700},
+			{TitelName: "Atlas", ISBN: "ISBN-PROBE-3", Menge: 1, Einzelpreis: 2700},
 		},
 	}}
 	for _, mitPreisen := range []bool{true, false} {
@@ -415,7 +416,7 @@ func TestBestellbericht_BestelldatumStehtAmKalendertagDerSchule(t *testing.T) {
 		Jahresansicht: true, MitPreisen: false,
 		Toepfe: []BestellberichtTopf{{Beschriftung: "Block-Eins", Bestellungen: []BestellberichtBestellung{{
 			LieferantName: "Haendler-A", Kundennummer: "K-1", Bestelldatum: time.Date(2026, time.August, 31, 22, 30, 0, 0, time.UTC),
-			Gesamtbetrag: 10, AnzahlExemplare: 1,
+			Gesamtbetrag: 1000, AnzahlExemplare: 1,
 		}}}},
 	}, SchuleInfo{Name: "Testbibliothek"})
 	if err != nil {

@@ -41,7 +41,7 @@ type BestellberichtBestellung struct {
 	LieferantName   string
 	Kundennummer    string
 	Bestelldatum    time.Time
-	Gesamtbetrag    float64
+	Gesamtbetrag    betrag.Cent
 	AnzahlExemplare int
 	Positionen      []BestellberichtPosition
 }
@@ -51,7 +51,7 @@ type BestellberichtPosition struct {
 	TitelName   string
 	ISBN        string
 	Menge       int
-	Einzelpreis float64
+	Einzelpreis betrag.Cent
 }
 
 // bestellungen nennt die Bestellungen aller Blöcke hintereinander, für Summen und Übersichten
@@ -83,7 +83,7 @@ func spaltenFuerBericht(mitPreisen bool) berichtSpalten {
 type berichtRahmen struct {
 	Von, Bis        time.Time
 	Bestellungen    int
-	GesamtBetrag    float64
+	GesamtBetrag    betrag.Cent
 	GesamtExemplare int
 	MitPreisen      bool
 }
@@ -132,8 +132,8 @@ func zeichneBerichtPositionen(p *gofpdf.Fpdf, tr func(string) string, positionen
 		p.CellFormat(s.ISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
 		if mitPreisen {
 			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
-			p.CellFormat(20, 5, tr(betrag.Euro(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
-			p.CellFormat(20, 5, tr(betrag.Euro(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(pos.Einzelpreis.Euro()), "1", 0, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(pos.Einzelpreis.Mal(pos.Menge).Euro()), "1", 1, "R", false, 0, "")
 		} else {
 			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 1, "C", false, 0, "")
 		}
@@ -146,7 +146,7 @@ func zeichneBerichtBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o Bestel
 	p.SetFillColor(235, 235, 245)
 	if mitPreisen {
 		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
-		p.CellFormat(20, 6, tr(betrag.Euro(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(20, 6, tr(o.Gesamtbetrag.Euro()), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(170, 6, tr(fmt.Sprintf("Summe: %d Exemplare", o.AnzahlExemplare)), "LBR", 1, "R", true, 0, "")
 	}
@@ -162,7 +162,7 @@ func zeichneBerichtGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r bericht
 	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(datumsformat), r.Bis.Format(datumsformat))
 	if r.MitPreisen {
 		p.CellFormat(150, 9, tr("Gesamtbetrag "+zeitraum), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 9, tr(betrag.Euro(r.GesamtBetrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(20, 9, tr(r.GesamtBetrag.Euro()), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(150, 9, tr("Gesamt "+zeitraum), "1", 0, "R", true, 0, "")
 		p.CellFormat(20, 9, fmt.Sprintf("%d", r.GesamtExemplare), "1", 1, "R", true, 0, "")
@@ -209,7 +209,7 @@ func zeichneBerichtDetailliste(p *gofpdf.Fpdf, tr func(string) string, toepfe []
 }
 
 // berichtSumme liefert Betrag und Exemplarzahl einer Gruppe.
-func berichtSumme(bestellungen []BestellberichtBestellung) (summe float64, exemplare int) {
+func berichtSumme(bestellungen []BestellberichtBestellung) (summe betrag.Cent, exemplare int) {
 	for _, o := range bestellungen {
 		summe += o.Gesamtbetrag
 		exemplare += o.AnzahlExemplare
@@ -239,7 +239,7 @@ func zeichneBerichtTopfSumme(p *gofpdf.Fpdf, tr func(string) string, topf Bestel
 		topf.Beschriftung, len(topf.Bestellungen), exemplare)
 	if mitPreisen {
 		p.CellFormat(150, 7, tr(beschriftung), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 7, tr(betrag.Euro(summe)), "1", 1, "R", true, 0, "")
+		p.CellFormat(20, 7, tr(summe.Euro()), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(170, 7, tr(beschriftung), "1", 1, "R", true, 0, "")
 	}
@@ -282,7 +282,7 @@ func ErzeugeBestellbericht(b Bestellbericht, schule SchuleInfo) ([]byte, error) 
 
 	// Zusammenfassung
 	bestellungen := b.bestellungen()
-	var gesamtBetrag float64
+	var gesamtBetrag betrag.Cent
 	var gesamtExemplare int
 	for _, o := range bestellungen {
 		gesamtBetrag += o.Gesamtbetrag
@@ -294,7 +294,7 @@ func ErzeugeBestellbericht(b Bestellbericht, schule SchuleInfo) ([]byte, error) 
 	if b.MitPreisen {
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", len(bestellungen))), "1", 0, "C", true, 0, "")
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 0, "C", true, 0, "")
-		p.CellFormat(50, 10, tr("Gesamtbetrag: "+betrag.Euro(gesamtBetrag)), "1", 1, "C", true, 0, "")
+		p.CellFormat(50, 10, tr("Gesamtbetrag: "+gesamtBetrag.Euro()), "1", 1, "C", true, 0, "")
 	} else {
 		p.CellFormat(85, 10, tr(fmt.Sprintf("Bestellungen: %d", len(bestellungen))), "1", 0, "C", true, 0, "")
 		p.CellFormat(85, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 1, "C", true, 0, "")

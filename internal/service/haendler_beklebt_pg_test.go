@@ -57,7 +57,7 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
 		LieferantID: beklebtID,
-		Positionen:  []service.BestellAuftragPosition{{TitelID: titelBeklebt, Menge: 2, Preis: 10, MitVorabBarcode: true}},
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titelBeklebt, Menge: 2, Preis: 1000, MitVorabBarcode: true}},
 	}); err != nil {
 		t.Fatalf("Bestellung beim beklebenden Händler: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestLegeBestellungAn_HaendlerBeklebtSelbst(t *testing.T) {
 	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
 		LieferantID: selbstID,
-		Positionen:  []service.BestellAuftragPosition{{TitelID: titelSelbst, Menge: 2, Preis: 10, MitVorabBarcode: true}},
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titelSelbst, Menge: 2, Preis: 1000, MitVorabBarcode: true}},
 	}); err != nil {
 		t.Fatalf("Bestellung beim normalen Händler: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestLegeBestellungAn_EtikettenTragenSignatur(t *testing.T) {
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
 		LieferantID: lieferant,
-		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: true}},
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 1000, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)
@@ -139,7 +139,7 @@ func TestLegeBestellungAn_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	if _, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mitteltopf.Land,
 		LieferantID: lieferant,
-		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: false}},
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 1000, MitVorabBarcode: false}},
 	}); err != nil {
 		t.Fatalf("Bestellung ohne Barcodebogen: %v", err)
 	}

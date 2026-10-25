@@ -13,6 +13,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -133,7 +134,7 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			t.Errorf("Reihenfolge der Töpfe: %+v", u.NachMittel)
 		}
 
-		var summeBetrag float64
+		var summeBetrag betrag.Cent
 		var summeAnzahl, summeExemplare int
 		for _, m := range u.NachMittel {
 			summeBetrag += m.Gesamtbetrag
@@ -141,11 +142,11 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			summeExemplare += m.GesamtExemplare
 		}
 		if summeAnzahl != u.Gesamt || summeExemplare != u.GesamtExemplare || summeBetrag != u.Gesamtbetrag {
-			t.Errorf("die Aufteilung ergibt %d Bestellungen / %d Exemplare / %.2f €, die Gesamtzahlen sagen %d / %d / %.2f",
-				summeAnzahl, summeExemplare, summeBetrag, u.Gesamt, u.GesamtExemplare, u.Gesamtbetrag)
+			t.Errorf("die Aufteilung ergibt %d Bestellungen / %d Exemplare / %s, die Gesamtzahlen sagen %d / %d / %s",
+				summeAnzahl, summeExemplare, summeBetrag.Euro(), u.Gesamt, u.GesamtExemplare, u.Gesamtbetrag.Euro())
 		}
-		if u.NachMittel[0].Gesamtbetrag != 200.00 {
-			t.Errorf("Lernmittelfreiheit: %.2f €, erwartet 200,00 €", u.NachMittel[0].Gesamtbetrag)
+		if u.NachMittel[0].Gesamtbetrag != 20000 {
+			t.Errorf("Lernmittelfreiheit: %s, erwartet 200,00 €", u.NachMittel[0].Gesamtbetrag.Euro())
 		}
 	})
 }

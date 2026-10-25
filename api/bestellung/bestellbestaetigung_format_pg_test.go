@@ -66,7 +66,7 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, me
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel:      mittel,
 		LieferantID: lieferant,
-		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: menge, Preis: 10, MitVorabBarcode: true}},
+		Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: menge, Preis: 1000, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

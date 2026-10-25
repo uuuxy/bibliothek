@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -17,10 +18,10 @@ import (
 // Zeilen rechnen, stünde nach dem Deckeln eine zu kleine Zahl im Kopf — und zwar eine,
 // die aussieht wie eine Gesamtsumme. Eine falsche Zahl ist schlimmer als keine.
 type bestellhistorieUebersicht struct {
-	Gesamt               int     `json:"gesamt"`
-	Gesamtbetrag         float64 `json:"gesamtbetrag"`
-	GesamtExemplare      int     `json:"gesamt_exemplare"`
-	OffeneBestaetigungen int     `json:"offene_bestaetigungen"`
+	Gesamt               int         `json:"gesamt"`
+	Gesamtbetrag         betrag.Cent `json:"gesamtbetrag"`
+	GesamtExemplare      int         `json:"gesamt_exemplare"`
+	OffeneBestaetigungen int         `json:"offene_bestaetigungen"`
 	// NachMittel teilt dieselben Zahlen auf die Töpfe auf (Migration 109): Lernmittel
 	// aus Landesmitteln, Schülerbücherei aus Mitteln des Schulträgers, dazu die
 	// Alt-Bestellungen ohne eindeutige Zuordnung. Immer alle drei Einträge, auch mit
@@ -32,10 +33,10 @@ type bestellhistorieUebersicht struct {
 // bestellhistorieTopf sind die Kennzahlen eines Topfes.
 type bestellhistorieTopf struct {
 	// Mittel ist der Wert der Spalte; leer = ohne Zuordnung.
-	Mittel          string  `json:"mittel"`
-	Gesamt          int     `json:"gesamt"`
-	Gesamtbetrag    float64 `json:"gesamtbetrag"`
-	GesamtExemplare int     `json:"gesamt_exemplare"`
+	Mittel          string      `json:"mittel"`
+	Gesamt          int         `json:"gesamt"`
+	Gesamtbetrag    betrag.Cent `json:"gesamtbetrag"`
+	GesamtExemplare int         `json:"gesamt_exemplare"`
 }
 
 // BestellhistorieUebersicht liefert die Kennzahlen über alle Bestellungen.

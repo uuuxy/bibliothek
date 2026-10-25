@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"bibliothek/pkg/betrag"
 )
 
 // BerichtBestellung ist eine Bestellung des Bestellberichts mit ihren Positionen.
@@ -12,7 +14,7 @@ type BerichtBestellung struct {
 	LieferantName   string
 	Kundennummer    string
 	Bestelldatum    time.Time
-	Gesamtbetrag    float64
+	Gesamtbetrag    betrag.Cent
 	AnzahlExemplare int
 	// Mittel ist der Topf, aus dem die Bestellung bezahlt wird. Leer heißt alte Bestellung ohne
 	// eindeutige Zuordnung; sie wird als solche ausgewiesen und keinem Topf zugeschlagen.
@@ -25,7 +27,7 @@ type BerichtPosition struct {
 	TitelName   string
 	ISBN        string
 	Menge       int
-	Einzelpreis float64
+	Einzelpreis betrag.Cent
 }
 
 // LadeBerichtBestellungen liest die Bestellungen im Zeitraum (optional je Lieferant) und

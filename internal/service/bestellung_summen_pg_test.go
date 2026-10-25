@@ -28,8 +28,8 @@ func TestLegeBestellungAn_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel: mitteltopf.Land, LieferantID: lieferant,
 		Positionen: []service.BestellAuftragPosition{
-			{TitelID: erster, Menge: 3, Preis: 10, MitVorabBarcode: true},
-			{TitelID: zweiter, Menge: 2, Preis: 4.5, MitVorabBarcode: true},
+			{TitelID: erster, Menge: 3, Preis: 1000, MitVorabBarcode: true},
+			{TitelID: zweiter, Menge: 2, Preis: 450, MitVorabBarcode: true},
 		},
 	})
 	if err != nil {
@@ -72,7 +72,7 @@ func TestLegeBestellungAn_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 	for _, mittel := range []string{"", "kreis"} {
 		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 			Mittel: mittel, LieferantID: lieferant,
-			Positionen: []service.BestellAuftragPosition{{TitelID: titel, Menge: 2, Preis: 10, MitVorabBarcode: true}},
+			Positionen: []service.BestellAuftragPosition{{TitelID: titel, Menge: 2, Preis: 1000, MitVorabBarcode: true}},
 		})
 		if !errors.Is(err, mitteltopf.ErrUngueltig) {
 			t.Errorf("Topf %q: Fehler %v und Ergebnis %+v, erwartet mitteltopf.ErrUngueltig", mittel, err, res)
@@ -109,8 +109,8 @@ func TestLegeBestellungAn_JedePositionStehtInIhrenSpalten(t *testing.T) {
 	res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 		Mittel: mitteltopf.Land, LieferantID: lieferant,
 		Positionen: []service.BestellAuftragPosition{
-			{TitelID: erster, Menge: 3, Preis: 10.5, MitVorabBarcode: true},
-			{TitelID: zweiter, Menge: 2, Preis: 4.25, MitVorabBarcode: false},
+			{TitelID: erster, Menge: 3, Preis: 1050, MitVorabBarcode: true},
+			{TitelID: zweiter, Menge: 2, Preis: 425, MitVorabBarcode: false},
 		},
 	})
 	if err != nil {

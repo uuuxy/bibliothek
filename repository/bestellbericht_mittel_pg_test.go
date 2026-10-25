@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -56,12 +57,12 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 		name         string
 		mittel       string
 		anzahl       int
-		betrag       float64
+		summe        betrag.Cent
 		erwartetTopf string
 	}{
-		{"ohne Filter alle drei", "", 3, 175.50, ""},
-		{"nur Lernmittelfreiheit", mitteltopf.Land, 1, 120.00, mitteltopf.Land},
-		{"nur Schülerbücherei", mitteltopf.Schultraeger, 1, 45.50, mitteltopf.Schultraeger},
+		{"ohne Filter alle drei", "", 3, 17550, ""},
+		{"nur Lernmittelfreiheit", mitteltopf.Land, 1, 12000, mitteltopf.Land},
+		{"nur Schülerbücherei", mitteltopf.Schultraeger, 1, 4550, mitteltopf.Schultraeger},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -72,12 +73,12 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 			if len(orders) != f.anzahl {
 				t.Fatalf("%d Bestellungen, erwartet %d", len(orders), f.anzahl)
 			}
-			var betrag float64
+			var summe betrag.Cent
 			for _, o := range orders {
-				betrag += o.Gesamtbetrag
+				summe += o.Gesamtbetrag
 			}
-			if betrag != f.betrag {
-				t.Errorf("Summe %.2f, erwartet %.2f", betrag, f.betrag)
+			if summe != f.summe {
+				t.Errorf("Summe %s, erwartet %s", summe.Text(), f.summe.Text())
 			}
 			if f.mittel == "" {
 				return

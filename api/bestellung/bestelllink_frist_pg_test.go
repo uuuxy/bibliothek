@@ -65,7 +65,7 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 		res, err := svc.LegeAn(ctx, service.BestellAuftrag{
 			Mittel:      mitteltopf.Land,
 			LieferantID: lieferant,
-			Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, MitVorabBarcode: true}},
+			Positionen:  []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 1000, MitVorabBarcode: true}},
 		})
 		if err != nil {
 			t.Fatalf("Bestellung: %v", err)

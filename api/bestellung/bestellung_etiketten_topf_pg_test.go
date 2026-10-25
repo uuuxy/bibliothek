@@ -34,7 +34,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		Mittel:      mitteltopf.Schultraeger,
 		LieferantID: testdaten.LegeLieferantAn(t, pool, "Naacher", true),
 		Positionen: []service.BestellAuftragPosition{{
-			TitelID: testdaten.LegeTitelAn(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, MitVorabBarcode: true}},
+			TitelID: testdaten.LegeTitelAn(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 1000, MitVorabBarcode: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

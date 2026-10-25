@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -42,25 +43,25 @@ func berichtBlatt(t *testing.T, titel string, orders []repository.BerichtBestell
 	return pdftest.Suchtext(t, roh)
 }
 
-func berichtBestellung(mittel string, betrag float64, exemplare int, titel string) repository.BerichtBestellung {
+func berichtBestellung(mittel string, summe betrag.Cent, exemplare int, titel string) repository.BerichtBestellung {
 	return repository.BerichtBestellung{
 		ID:              "id-" + titel,
 		LieferantName:   "Testhändler",
 		Kundennummer:    "K-1",
 		Bestelldatum:    time.Date(2026, 9, 3, 10, 0, 0, 0, time.UTC),
-		Gesamtbetrag:    betrag,
+		Gesamtbetrag:    summe,
 		AnzahlExemplare: exemplare,
 		Mittel:          mittel,
-		Positionen:      []repository.BerichtPosition{{TitelName: titel, ISBN: "978", Menge: exemplare, Einzelpreis: betrag / float64(exemplare)}},
+		Positionen:      []repository.BerichtPosition{{TitelName: titel, ISBN: "978", Menge: exemplare, Einzelpreis: summe / betrag.Cent(exemplare)}},
 	}
 }
 
 func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 	orders := []repository.BerichtBestellung{
-		berichtBestellung(mitteltopf.Land, 120.00, 30, "Mathematik 7"),
-		berichtBestellung(mitteltopf.Land, 80.00, 20, "Englisch 8"),
-		berichtBestellung(mitteltopf.Schultraeger, 45.50, 5, "Die unendliche Geschichte"),
-		berichtBestellung("", 10.00, 2, "Alt ohne Zuordnung"),
+		berichtBestellung(mitteltopf.Land, 12000, 30, "Mathematik 7"),
+		berichtBestellung(mitteltopf.Land, 8000, 20, "Englisch 8"),
+		berichtBestellung(mitteltopf.Schultraeger, 4550, 5, "Die unendliche Geschichte"),
+		berichtBestellung("", 1000, 2, "Alt ohne Zuordnung"),
 	}
 	text := berichtBlatt(t, "Bestellbericht", orders)
 
@@ -90,7 +91,7 @@ func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 // Ein Bericht über einen einzigen Topf (Lieferantenabrechnung mit Filter) nennt den anderen
 // nicht: Das Blatt wird gegen eine Rechnung dieses Topfs gehalten.
 func TestBestellberichtUeberEinenTopfNenntDenAnderenNicht(t *testing.T) {
-	orders := []repository.BerichtBestellung{berichtBestellung(mitteltopf.Land, 120.00, 30, "Mathematik 7")}
+	orders := []repository.BerichtBestellung{berichtBestellung(mitteltopf.Land, 12000, 30, "Mathematik 7")}
 	text := berichtBlatt(t, "Lieferantenabrechnung", orders)
 
 	if !strings.Contains(text, "Lernmittelfreiheit") {

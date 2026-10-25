@@ -1,6 +1,7 @@
 package auskunft
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -174,7 +175,10 @@ func dsgvoDetails(roh json.RawMessage) (details map[string]any, rest []string) {
 	if text == "" || text == "null" {
 		return nil, nil
 	}
-	if err := json.Unmarshal(roh, &details); err != nil {
+	// Zahlen als json.Number: Ein Betrag steht so genau da, wie er gespeichert ist („12.50").
+	leser := json.NewDecoder(bytes.NewReader(roh))
+	leser.UseNumber()
+	if err := leser.Decode(&details); err != nil {
 		return nil, []string{text}
 	}
 	return details, nil
@@ -264,9 +268,9 @@ func dsgvoWertNachArt(art repository.ProtokollWertArt, wert any) (string, bool) 
 		case repository.ProtokollLeserart:
 			return dsgvoLeserart(w), true
 		}
-	case float64:
+	case json.Number:
 		if art == repository.ProtokollBetrag {
-			return betrag.Text(w) + " EUR", true
+			return dsgvoBetrag(w.String()) + " EUR", true
 		}
 	case []any:
 		if art == repository.ProtokollAnzahl {
@@ -282,8 +286,8 @@ func dsgvoWertAlsText(wert any) string {
 	switch w := wert.(type) {
 	case string:
 		return strings.TrimSpace(w)
-	case float64:
-		return strconv.FormatFloat(w, 'f', -1, 64)
+	case json.Number:
+		return w.String()
 	case bool:
 		return dsgvoJaNein(w)
 	}
@@ -327,9 +331,9 @@ func dsgvoProtokollZeit(text string) string {
 // dsgvoBetrag schreibt einen Betrag aus der Datenbank („12.50") wie Briefe und Berichte
 // („12,50"); ein Text, der keine Zahl ist, bleibt stehen.
 func dsgvoBetrag(text string) string {
-	zahl, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+	cent, err := betrag.LeseEuro(text)
 	if err != nil {
 		return text
 	}
-	return betrag.Text(zahl)
+	return cent.Text()
 }

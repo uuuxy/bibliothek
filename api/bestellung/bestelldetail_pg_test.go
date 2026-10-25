@@ -119,7 +119,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 	if gepflegt.CoverURL != "/uploads/cover/ls7.webp" {
 		t.Errorf("CoverURL = %q — ohne Cover ist die Ansicht nur eine schmalere Tabelle", gepflegt.CoverURL)
 	}
-	if gepflegt.Gesamtpreis != 49.00 {
+	if gepflegt.Gesamtpreis != 4900 {
 		t.Errorf("Gesamtpreis = %v, erwartet 49.00 (2 × 24,50)", gepflegt.Gesamtpreis)
 	}
 

@@ -1,11 +1,15 @@
 package repository
 
-import "context"
+import (
+	"context"
+
+	"bibliothek/pkg/betrag"
+)
 
 // BestellKennzahlen sind die Summen über alle Bestellungen.
 type BestellKennzahlen struct {
 	Gesamt               int
-	Gesamtbetrag         float64
+	Gesamtbetrag         betrag.Cent
 	GesamtExemplare      int
 	OffeneBestaetigungen int
 }
@@ -33,7 +37,7 @@ func LadeBestellKennzahlen(ctx context.Context, db Datenbank) (BestellKennzahlen
 type BestellTopfKennzahlen struct {
 	Mittel          string
 	Gesamt          int
-	Gesamtbetrag    float64
+	Gesamtbetrag    betrag.Cent
 	GesamtExemplare int
 }
 

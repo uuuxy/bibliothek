@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 )
 
 // EtikettOffenBedingung ist die eine Bestimmung von „Etikett steht noch aus". Der Zähler im
@@ -19,16 +20,16 @@ const EtikettOffenBedingung = `e.etikett_gedruckt = false AND e.ist_ausgesondert
 
 // BestellungKopf sind die Stammdaten einer Bestellung.
 type BestellungKopf struct {
-	ID              string     `json:"id"`
-	LieferantName   string     `json:"lieferant_name"`
-	LieferantEmail  string     `json:"lieferant_email"`
-	Kundennummer    string     `json:"kundennummer"`
-	Bestelldatum    time.Time  `json:"bestelldatum"`
-	Gesamtbetrag    float64    `json:"gesamtbetrag"`
-	AnzahlExemplare int        `json:"anzahl_exemplare"`
-	MitBestaetigung bool       `json:"mit_bestaetigung"`
-	BestaetigtAm    *time.Time `json:"bestaetigt_am,omitempty"`
-	BestaetigtDurch *string    `json:"bestaetigt_durch,omitempty"`
+	ID              string      `json:"id"`
+	LieferantName   string      `json:"lieferant_name"`
+	LieferantEmail  string      `json:"lieferant_email"`
+	Kundennummer    string      `json:"kundennummer"`
+	Bestelldatum    time.Time   `json:"bestelldatum"`
+	Gesamtbetrag    betrag.Cent `json:"gesamtbetrag"`
+	AnzahlExemplare int         `json:"anzahl_exemplare"`
+	MitBestaetigung bool        `json:"mit_bestaetigung"`
+	BestaetigtAm    *time.Time  `json:"bestaetigt_am,omitempty"`
+	BestaetigtDurch *string     `json:"bestaetigt_durch,omitempty"`
 
 	// EtikettenGroesse und LinkAktiv heißen wie in der Bestellhistorie, damit die Detailansicht
 	// denselben Baustein der Oberfläche nutzen kann (BestellStatusBlock): Der Ablauf der
@@ -55,15 +56,15 @@ type BestellungKopf struct {
 // und CoverURL können in buecher_titel leer sein und kommen über COALESCE als leerer Text: NULL
 // ließe sich nicht in einen Text lesen. Leer heißt „nicht hinterlegt".
 type BestellPositionDetail struct {
-	TitelID     string  `json:"titel_id,omitempty"`
-	TitelName   string  `json:"titel_name"`
-	ISBN        string  `json:"isbn"`
-	Autor       string  `json:"autor"`
-	Verlag      string  `json:"verlag"`
-	CoverURL    string  `json:"cover_url"`
-	Menge       int     `json:"menge"`
-	Einzelpreis float64 `json:"einzelpreis"`
-	Gesamtpreis float64 `json:"gesamtpreis"`
+	TitelID     string      `json:"titel_id,omitempty"`
+	TitelName   string      `json:"titel_name"`
+	ISBN        string      `json:"isbn"`
+	Autor       string      `json:"autor"`
+	Verlag      string      `json:"verlag"`
+	CoverURL    string      `json:"cover_url"`
+	Menge       int         `json:"menge"`
+	Einzelpreis betrag.Cent `json:"einzelpreis"`
+	Gesamtpreis betrag.Cent `json:"gesamtpreis"`
 
 	// EtikettenOffen zählt die Exemplare dieses Titels ohne Etikett, nicht die dieser
 	// Lieferung, wie in der Bestellhistorie: Die Zahl trägt den Verweis in die Liste zum
@@ -175,7 +176,7 @@ func (a *BestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID
 			&p.Autor, &p.Verlag, &p.CoverURL, &p.EtikettenOffen); err != nil {
 			return nil, err
 		}
-		p.Gesamtpreis = float64(p.Menge) * p.Einzelpreis
+		p.Gesamtpreis = p.Einzelpreis.Mal(p.Menge)
 		positionen = append(positionen, p)
 	}
 	return positionen, rows.Err()

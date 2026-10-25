@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"bibliothek/pkg/betrag"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -15,7 +17,7 @@ type BestellkopfNeu struct {
 	LieferantName        string
 	LieferantEmail       string
 	Kundennummer         string
-	Gesamtbetrag         float64
+	Gesamtbetrag         betrag.Cent
 	Menge                int
 	TokenHash            string
 	LinkTage             int
@@ -64,7 +66,7 @@ type BestellpositionNeu struct {
 	TitelName       string
 	ISBN            string
 	Menge           int
-	Einzelpreis     float64
+	Einzelpreis     betrag.Cent
 	MitVorabBarcode bool
 }
 

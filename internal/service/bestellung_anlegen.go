@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/pkg/bestelllink"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -40,7 +41,7 @@ func NewBestellDienst(datenbank *db.Verbindung, katalogAbfragen *repository.Kata
 type BestellAuftragPosition struct {
 	TitelID string
 	Menge   int
-	Preis   float64
+	Preis   betrag.Cent
 	// MitVorabBarcode sagt, ob die Exemplare dieser Position auf dem Barcodebogen für den
 	// Lieferanten stehen.
 	MitVorabBarcode bool
@@ -139,7 +140,7 @@ type positionsErgebnis struct {
 	position        repository.BestellpositionNeu
 	exemplare       []repository.ExemplarNeu
 	etiketten       []BestellEtikett
-	betrag          float64
+	betrag          betrag.Cent
 }
 
 // LegeAn legt die Bestellung in einer Transaktion an und reserviert ihre Barcodes.
@@ -225,7 +226,7 @@ type bestellPosten struct {
 	bestellteTitel []BestellterTitel
 	positionen     []repository.BestellpositionNeu
 	exemplare      []repository.ExemplarNeu
-	gesamtbetrag   float64
+	gesamtbetrag   betrag.Cent
 	menge          int
 }
 
@@ -304,7 +305,7 @@ func (d *BestellDienst) verarbeitePosition(ctx context.Context, tx pgx.Tx, posit
 			Einzelpreis:     position.Preis,
 			MitVorabBarcode: position.MitVorabBarcode,
 		},
-		betrag: float64(position.Menge) * position.Preis,
+		betrag: position.Preis.Mal(position.Menge),
 	}
 
 	// Jedes Exemplar bekommt seinen Barcode schon mit der Bestellung, auch ohne Barcodebogen.

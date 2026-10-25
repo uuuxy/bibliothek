@@ -3,15 +3,17 @@ package repository
 import (
 	"context"
 	"time"
+
+	"bibliothek/pkg/betrag"
 )
 
 // BestellVerlaufPosition ist eine Position einer Bestellung im Verlauf.
 type BestellVerlaufPosition struct {
-	TitelName   string  `json:"titel_name"`
-	ISBN        string  `json:"isbn"`
-	Menge       int     `json:"menge"`
-	Einzelpreis float64 `json:"einzelpreis"`
-	Gesamtpreis float64 `json:"gesamtpreis"`
+	TitelName   string      `json:"titel_name"`
+	ISBN        string      `json:"isbn"`
+	Menge       int         `json:"menge"`
+	Einzelpreis betrag.Cent `json:"einzelpreis"`
+	Gesamtpreis betrag.Cent `json:"gesamtpreis"`
 	// TitelID verweist auf den Titel und kann leer sein: Der Fremdschlüssel steht auf ON DELETE
 	// SET NULL, die Bestellung bleibt als Beleg, wenn der Titel aus dem Katalog verschwindet.
 	// Die Oberfläche baut daraus keinen Verweis, ohne zu prüfen.
@@ -32,7 +34,7 @@ type BestellVerlaufEintrag struct {
 	LieferantEmail  string                   `json:"lieferant_email"`
 	Kundennummer    string                   `json:"kundennummer"`
 	Bestelldatum    time.Time                `json:"bestelldatum"`
-	Gesamtbetrag    float64                  `json:"gesamtbetrag"`
+	Gesamtbetrag    betrag.Cent              `json:"gesamtbetrag"`
 	AnzahlExemplare int                      `json:"anzahl_exemplare"`
 	Positionen      []BestellVerlaufPosition `json:"positionen"`
 	// Mittel ist der Topf ('land' oder 'schultraeger'); leer bei einer alten Bestellung ohne
@@ -157,7 +159,7 @@ func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, bestellunge
 			&p.TitelID, &p.EtikettenOffen); err != nil {
 			return err
 		}
-		p.Gesamtpreis = float64(p.Menge) * p.Einzelpreis
+		p.Gesamtpreis = p.Einzelpreis.Mal(p.Menge)
 		if platz, ok := platzJeBestellung[bestellungID]; ok {
 			bestellungen[platz].Positionen = append(bestellungen[platz].Positionen, p)
 		}

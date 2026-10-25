@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"bibliothek/pkg/betrag"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -21,7 +23,7 @@ type ExemplarNeu struct {
 	// EtikettGedruckt speichert, ob das Barcode-Etikett bereits gedruckt wurde.
 	EtikettGedruckt bool
 	// Einkaufspreis speichert den Netto-Anschaffungspreis des Exemplars.
-	Einkaufspreis float64
+	Einkaufspreis betrag.Cent
 	// Bestellstatus setzt neue Exemplare aus dem Bestellwesen in den Bestellweg ('bestellt'
 	// oder 'im_zulauf'); leer heißt kein Bestellvorgang (NULL). Nur diese Spalte entscheidet
 	// über die Sichtbarkeit im OPAC, die zustand_notiz ist Text für Menschen.

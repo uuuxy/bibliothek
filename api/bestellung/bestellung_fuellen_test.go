@@ -24,8 +24,8 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 		IdempotenzSchluessel: "schluessel-1",
 		Mittel:               mitteltopf.Schultraeger,
 		Positionen: []bestellPosition{
-			{TitelID: "titel-1", Menge: 3, Preis: 9.5, MitVorabBarcode: true},
-			{TitelID: "titel-2", Menge: 7, Preis: 12.25, MitVorabBarcode: true},
+			{TitelID: "titel-1", Menge: 3, Preis: 950, MitVorabBarcode: true},
+			{TitelID: "titel-2", Menge: 7, Preis: 1225, MitVorabBarcode: true},
 		},
 	}
 	will := service.BestellAuftrag{
@@ -33,8 +33,8 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 		IdempotenzSchluessel: "schluessel-1",
 		Mittel:               mitteltopf.Schultraeger,
 		Positionen: []service.BestellAuftragPosition{
-			{TitelID: "titel-1", Menge: 3, Preis: 9.5, MitVorabBarcode: true},
-			{TitelID: "titel-2", Menge: 7, Preis: 12.25, MitVorabBarcode: true},
+			{TitelID: "titel-1", Menge: 3, Preis: 950, MitVorabBarcode: true},
+			{TitelID: "titel-2", Menge: 7, Preis: 1225, MitVorabBarcode: true},
 		},
 	}
 	ist := bestellAuftrag(anfrage)
