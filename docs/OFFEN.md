@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 24.10.2026
+Stand: 25.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -36,6 +36,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   nachsehen: Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
+- [ ] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
 ### Bei dir
 
@@ -230,6 +231,16 @@ Passwort des Mailversands und die Sicherungen ([datenschutz/nachweis.md](datensc
 „Verschlüsselung"). Wer die Platte bekommt, bei Diebstahl, Austausch oder Entsorgung, liest alle
 Daten der Schüler. Beim Einrichten des Schulservers die Platte verschlüsseln, danach den Nachweis
 um den Satz ergänzen.
+
+### 7.14 Lasttest vor dem Echtstart
+
+Entschieden am 25.10.2026: Der Lasttest läuft vor dem Echtstart noch einmal, nach allen übrigen
+Schritten der Etappe 1. Er findet, was kein Test von selbst findet: eine Tür, die einem fehlenden
+Feld eine eigene Bedeutung gibt, etwa „fehlt die Klassenliste, gilt es für alle Klassen". Vorlage
+ist der Lauf in 1c86bc51: k6 gegen eine abgeschottete Kopie der Generalprobe, mit
+Gleichzeitigkeit an demselben Buch, Stoßzeit, einer Stunde Dauerlast, dem Büchertausch-Tag, den
+Rechten je Rolle über alle Routen und kaputten Rümpfen an jeder Tür. Die Skripte kommen nicht
+ins Repository (bf8f0580); fehlen sie, werden sie neu geschrieben.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
