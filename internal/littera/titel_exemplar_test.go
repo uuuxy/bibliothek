@@ -92,7 +92,7 @@ func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
 	if ex[0].TitelID != "2" {
 		t.Errorf("Fremdschluessel muss aus Spalte 'Titel' kommen, war %q", ex[0].TitelID)
 	}
-	if ex[0].Preis != 12.90 {
+	if ex[0].Preis != 1290 {
 		t.Errorf("Preis falsch: %v", ex[0].Preis)
 	}
 	// Der Platzhalter "0" bedeutet "keine Angabe" und darf nicht am Buch landen.

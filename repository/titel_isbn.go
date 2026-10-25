@@ -1,6 +1,10 @@
 package repository
 
-import "context"
+import (
+	"context"
+
+	"bibliothek/pkg/betrag"
+)
 
 // TitelZuISBN sind die Angaben eines Titels, die das Bestellen über eine ISBN braucht. ISBN
 // ist die Nummer, wie der Katalog sie trägt.
@@ -38,7 +42,7 @@ type TitelMetadaten struct {
 	CoverURL         string
 	Fach             string
 	Untertitel       string
-	Listenpreis      *float64
+	Listenpreis      *betrag.Cent
 }
 
 // LegeTitelAusMetadatenAn legt den Titel zur ISBN an. Steht er schon da, folgen Titel, Autor,

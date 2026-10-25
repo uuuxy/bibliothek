@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/katalogdienste"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 )
@@ -30,7 +31,7 @@ type BestellTreffer struct {
 	// PreisVorschlag ist der Ladenpreis laut DNB (MARC21 020 $c), 0 heißt keiner. Er gilt
 	// zum Erscheinen und ist nicht der Preis der Schule: Die Oberfläche füllt damit das
 	// Preisfeld vor und übernimmt ihn nie ungefragt als Ausgabe.
-	PreisVorschlag float64 `json:"preis_vorschlag,omitempty"`
+	PreisVorschlag betrag.Cent `json:"preis_vorschlag,omitempty"`
 	// IstLernmittel ist nur bei source="local" aussagekräftig: der Vorschlag für den Topf der
 	// Bestellung (Lernmittel heißt Land, sonst Schulträger; mittel.js im Warenkorb). Ein
 	// Treffer der DNB ist noch kein Titel und trägt false; beim Anlegen fragt die Oberfläche

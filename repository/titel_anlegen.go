@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 )
 
 // LegeTitelAn legt einen Titel an. Trägt ein anderer die ISBN, lehnt sie ab (dubletteISBN);
@@ -160,7 +161,7 @@ type titelStapel struct {
 	signaturen        []string
 	auflagen          []string
 	// Zeiger, weil NULL („kein Listenpreis erfasst") und 0 verschiedene Aussagen sind.
-	listenpreise            []*float64
+	listenpreise            []*betrag.Cent
 	lernmittel              []bool
 	erweiterteEigenschaften [][]byte
 }
@@ -183,7 +184,7 @@ func baueTitelStapel(eintraege []KatalogTitel) titelStapel {
 		erscheinungsjahre:       make([]int, len(eintraege)),
 		signaturen:              make([]string, len(eintraege)),
 		auflagen:                make([]string, len(eintraege)),
-		listenpreise:            make([]*float64, len(eintraege)),
+		listenpreise:            make([]*betrag.Cent, len(eintraege)),
 		lernmittel:              make([]bool, len(eintraege)),
 		erweiterteEigenschaften: make([][]byte, len(eintraege)),
 	}

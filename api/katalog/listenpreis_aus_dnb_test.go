@@ -1,6 +1,10 @@
 package katalog
 
-import "testing"
+import (
+	"testing"
+
+	"bibliothek/pkg/betrag"
+)
 
 // Der Ladenpreis der DNB füllt den Listenpreis.
 //
@@ -16,25 +20,25 @@ import "testing"
 // richtig gelesen wird, steht in metadaten_preis_test.go; hier geht es darum, wann ihr Preis
 // übernommen werden darf.
 func TestListenpreisAusNachschlagen(t *testing.T) {
-	preis := func(p float64) *float64 { return &p }
+	preis := func(p betrag.Cent) *betrag.Cent { return &p }
 
 	faelle := []struct {
 		name      string
-		vorhanden *float64
-		gefunden  float64
-		want      *float64
+		vorhanden *betrag.Cent
+		gefunden  betrag.Cent
+		want      *betrag.Cent
 		warum     string
 	}{
 		{
-			name: "leeres Feld wird gefüllt", vorhanden: nil, gefunden: 27.00, want: preis(27.00),
+			name: "leeres Feld wird gefüllt", vorhanden: nil, gefunden: 2700, want: preis(2700),
 			warum: "sonst bliebe das Feld für den ganzen Bestand leer",
 		},
 		{
-			name: "ein getippter Preis bleibt stehen", vorhanden: preis(19.90), gefunden: 27.00, want: preis(19.90),
+			name: "ein getippter Preis bleibt stehen", vorhanden: preis(1990), gefunden: 2700, want: preis(1990),
 			warum: "was der Mensch eingetragen hat, gewinnt gegen jedes Nachschlagen",
 		},
 		{
-			name: "auch eine getippte 0 bleibt stehen", vorhanden: preis(0), gefunden: 27.00, want: preis(0),
+			name: "auch eine getippte 0 bleibt stehen", vorhanden: preis(0), gefunden: 2700, want: preis(0),
 			warum: "eine getippte 0 ist eine Aussage („verschenkt bekommen“), keine Lücke",
 		},
 		{
@@ -43,7 +47,7 @@ func TestListenpreisAusNachschlagen(t *testing.T) {
 				"einen Ersatzbetrag von 0,00 € im Bescheid",
 		},
 		{
-			name: "ein negativer Fund wird nicht übernommen", vorhanden: nil, gefunden: -5, want: nil,
+			name: "ein negativer Fund wird nicht übernommen", vorhanden: nil, gefunden: -500, want: nil,
 			warum: "die Spalte verbietet es ohnehin (chk_listenpreis_nonneg) — hier scheitert " +
 				"es schon vorher, statt als 500 aus der Datenbank zu kommen",
 		},
@@ -55,11 +59,11 @@ func TestListenpreisAusNachschlagen(t *testing.T) {
 
 			switch {
 			case f.want == nil && got != nil:
-				t.Errorf("Listenpreis = %.2f, erwartet nil — %s", *got, f.warum)
+				t.Errorf("Listenpreis = %s, erwartet nil — %s", got.Text(), f.warum)
 			case f.want != nil && got == nil:
-				t.Errorf("Listenpreis = nil, erwartet %.2f — %s", *f.want, f.warum)
+				t.Errorf("Listenpreis = nil, erwartet %s — %s", f.want.Text(), f.warum)
 			case f.want != nil && got != nil && *got != *f.want:
-				t.Errorf("Listenpreis = %.2f, erwartet %.2f — %s", *got, *f.want, f.warum)
+				t.Errorf("Listenpreis = %s, erwartet %s — %s", got.Text(), f.want.Text(), f.warum)
 			}
 		})
 	}

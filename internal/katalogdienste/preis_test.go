@@ -1,6 +1,10 @@
 package katalogdienste
 
-import "testing"
+import (
+	"testing"
+
+	"bibliothek/pkg/betrag"
+)
 
 // Die Vorlagen stammen aus echten DNB-Antworten zu Titeln aus dem Bestand dieser
 // Schule — nicht aus der MARC-Spezifikation. Genau diese Zeichenketten haben die
@@ -9,11 +13,11 @@ func TestPreisAusVerfuegbarkeit(t *testing.T) {
 	faelle := []struct {
 		name    string
 		eingabe string
-		erwarte float64
+		erwarte betrag.Cent
 	}{
-		{"Euro mit Punkt (ISBN 9783124912008)", "Pp. : EUR 27.00, sfr 46.90", 27.00},
-		{"Euro mit Komma", "kart. : EUR 24,95", 24.95},
-		{"Euro ohne Einband-Vorspann", "EUR 12.50", 12.50},
+		{"Euro mit Punkt (ISBN 9783124912008)", "Pp. : EUR 27.00, sfr 46.90", 2700},
+		{"Euro mit Komma", "kart. : EUR 24,95", 2495},
+		{"Euro ohne Einband-Vorspann", "EUR 12.50", 1250},
 
 		// Der Weltatlas der Schule: Der Satz kennt nur D-Mark. Ein Preis aus der Zeit vor dem Euro ist
 		// kein Preis von heute, und ein Buch, das nur in DM verzeichnet ist, wird ohnehin nicht mehr
@@ -35,7 +39,7 @@ func TestPreisAusVerfuegbarkeit(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			if got := preisAusVerfuegbarkeit(f.eingabe); got != f.erwarte {
-				t.Errorf("preisAusVerfuegbarkeit(%q) = %v, erwartet %v", f.eingabe, got, f.erwarte)
+				t.Errorf("preisAusVerfuegbarkeit(%q) = %s, erwartet %s", f.eingabe, got.Text(), f.erwarte.Text())
 			}
 		})
 	}
@@ -54,7 +58,7 @@ func TestVerarbeiteISBNNimmtDenErstenBrauchbarenPreis(t *testing.T) {
 		{Code: "c", Value: "Pp. : DM 42.00, EUR 21.47"},
 	})
 
-	if b.preis != 27.00 {
-		t.Errorf("preis = %v, erwartet 27.00 (der aeltere Satz darf den neueren nicht ueberschreiben)", b.preis)
+	if b.preis != 2700 {
+		t.Errorf("preis = %s, erwartet 27,00 (der aeltere Satz darf den neueren nicht ueberschreiben)", b.preis.Text())
 	}
 }

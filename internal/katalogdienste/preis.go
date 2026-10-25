@@ -2,8 +2,8 @@ package katalogdienste
 
 import (
 	"regexp"
-	"strconv"
-	"strings"
+
+	"bibliothek/pkg/betrag"
 )
 
 // MARC21 020 $c ("Terms of availability") enthält bei DNB-Datensätzen den Ladenpreis.
@@ -31,7 +31,7 @@ var (
 //     Zeit der Umstellung, der Wert in Euro ist die Umrechnung eines alten Preises ("DM 42.00,
 //     EUR 21.47"; derselbe Titel kostet laut neuerem Satz 27.00). Ein plausibel aussehender
 //     falscher Preis ist schlimmer als gar keiner: Er wird übernommen, ohne dass jemand stutzt.
-func preisAusVerfuegbarkeit(verfuegbarkeit string) float64 {
+func preisAusVerfuegbarkeit(verfuegbarkeit string) betrag.Cent {
 	if verfuegbarkeit == "" || enthaeltDM.MatchString(verfuegbarkeit) {
 		return 0
 	}
@@ -40,9 +40,9 @@ func preisAusVerfuegbarkeit(verfuegbarkeit string) float64 {
 		return 0
 	}
 	// Deutsche Schreibweise ("24,95") wie englische ("27.00") — beide kommen vor.
-	betrag, err := strconv.ParseFloat(strings.Replace(treffer[1], ",", ".", 1), 64)
-	if err != nil || betrag <= 0 {
+	preis, err := betrag.LeseEuro(treffer[1])
+	if err != nil || preis <= 0 {
 		return 0
 	}
-	return betrag
+	return preis
 }

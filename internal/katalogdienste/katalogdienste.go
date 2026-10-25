@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/safehttp"
@@ -48,7 +49,7 @@ type MetadatenErgebnis struct {
 	// Preis ist der DNB-Ladenpreis (MARC21 020 $c) als Vorschlag. 0 = keiner ermittelbar.
 	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis — die Oberflaeche
 	// darf ihn nur vorschlagen, nie als erfasste Ausgabe verbuchen.
-	Preis float64 `json:"preis,omitempty"`
+	Preis betrag.Cent `json:"preis,omitempty"`
 	// Stichwoerter sind die Gattungsbegriffe (655 $a) und die freien Wörter des Verlags (653 $a ohne
 	// Vorsatz) der DNB, Kandidaten für den Vorschlag der Schlagworte beim Bestellen über die ISBN
 	// (repository.ladeSchlagworteAusStichwoertern). Nie gespeichert und nie ausgeliefert: Ein Satz

@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/tuertest"
+	"bibliothek/pkg/betrag"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"
@@ -106,7 +107,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 			name: "Negativer Listenpreis",
 			eingabe: titelAnfrage{
 				ISBN:        "978-3-16-148410-0",
-				Listenpreis: zeigerAufPreis(-0.01),
+				Listenpreis: zeigerAufPreis(-1),
 			},
 			wantErr: true,
 			errMsg:  "Der Listenpreis darf nicht negativ sein. Leer lassen, wenn er unbekannt ist.",
@@ -171,7 +172,7 @@ func TestBereinigeTitelEingabe(t *testing.T) {
 func zeigerAuf(n int) *int { return &n }
 
 // zeigerAufPreis: dasselbe für den Listenpreis — nil heißt „nicht erfasst", 0 ist ein Preis.
-func zeigerAufPreis(p float64) *float64 { return &p }
+func zeigerAufPreis(p betrag.Cent) *betrag.Cent { return &p }
 
 // Die drei folgenden Fälle: Beim Ändern bedeutet ein fehlender oder geleerter Wert etwas anderes
 // als beim Anlegen.

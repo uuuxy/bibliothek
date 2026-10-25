@@ -32,7 +32,7 @@ func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 
 	// 1. Neuer Titel: beides kommt an.
 	resp, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555551", &katalogdienste.MetadatenErgebnis{
-		Titel: "Wolkenkind", Untertitel: "Ein Roman über Freundschaft", Autor: "Muster, Erika", Preis: 14.99,
+		Titel: "Wolkenkind", Untertitel: "Ein Roman über Freundschaft", Autor: "Muster, Erika", Preis: 1499,
 	})
 	if err != nil {
 		t.Fatalf("anlegen: %v", err)
@@ -58,7 +58,7 @@ func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 		t.Fatalf("pflegen: %v", err)
 	}
 	if _, err := srv.schreibeTitelAusMetadaten(ctx, "9783551555551", &katalogdienste.MetadatenErgebnis{
-		Titel: "Wolkenkind", Untertitel: "Anderer Untertitel", Preis: 9.99,
+		Titel: "Wolkenkind", Untertitel: "Anderer Untertitel", Preis: 999,
 	}); err != nil {
 		t.Fatalf("erneut: %v", err)
 	}

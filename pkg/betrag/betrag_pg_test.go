@@ -38,4 +38,15 @@ func TestCent_RundreiseDurchPostgres(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT 7::numeric(10,2)`).Scan(&gesetzt); err != nil || gesetzt == nil || *gesetzt != 700 {
 		t.Errorf("Scan in *Cent: %v, %v — erwartet 700", gesetzt, err)
 	}
+
+	// Als Liste, wie der Stapel-Import die Listenpreise schickt ($18::numeric[]): Jedes Element
+	// geht über Value, nicht über den int64 darunter, sonst stünde 1295 statt 12.95 in der Spalte.
+	preis := betrag.Cent(1295)
+	var liste string
+	if err := pool.QueryRow(ctx, `SELECT ($1::numeric[])::text`, []*betrag.Cent{&preis, nil}).Scan(&liste); err != nil {
+		t.Fatalf("Liste schreiben: %v", err)
+	}
+	if liste != "{12.95,NULL}" {
+		t.Errorf("Postgres las die Liste als %q, erwartet „{12.95,NULL}“", liste)
+	}
 }

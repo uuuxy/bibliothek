@@ -1,5 +1,7 @@
 package repository
 
+import "bibliothek/pkg/betrag"
+
 // KatalogTitel ist ein Titel, wie ihn der Medienkatalog liest und schreibt: mit den Zahlen seiner
 // Exemplare, den Feldern der Buchmaske und den Namen, unter denen die Titelliste ihn ausliefert.
 // Titel ist dieselbe Zeile für Theke, Bestellwesen und Übernahme, mit anderen Namen in JSON.
@@ -45,7 +47,7 @@ type KatalogTitel struct {
 	// verschiedene Aussagen, und der Unterschied steht am Ende in einem Bescheid an
 	// Erziehungsberechtigte. Bei nil weicht die Staffel auf den Kaufpreis aus und sagt
 	// das; bei 0 nennte sie 0,00 €.
-	Listenpreis             *float64       `json:"listenpreis" db:"listenpreis"`
+	Listenpreis             *betrag.Cent   `json:"listenpreis" db:"listenpreis"`
 	Verlag                  string         `json:"verlag" db:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`

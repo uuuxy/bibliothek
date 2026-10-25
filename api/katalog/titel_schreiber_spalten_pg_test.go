@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -18,7 +19,7 @@ func TestTitelSchreiber_JedesFeldInSeinerSpalte(t *testing.T) {
 	abfragen := repository.NewTitelAbfragen(p.pool)
 
 	fach := genanntVorsatz + "Fach Schreiber"
-	preis := 19.9
+	preis := betrag.Cent(1990)
 	gezaehlt := "2026-09-30"
 	buch := func(nr int) repository.KatalogTitel {
 		return repository.KatalogTitel{

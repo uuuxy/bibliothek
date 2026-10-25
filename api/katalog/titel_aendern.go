@@ -12,6 +12,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -200,7 +201,7 @@ func bereinigeTitelEingabe(eingabe *titelAnfrage) error {
 // (chk_listenpreis_nonneg): Sonst käme beim Ändern eine 500 und beim Anlegen „buch konnte nicht
 // erstellt werden", beides ohne zu sagen, was erlaubt ist. Leer (nil) heißt „nicht erfasst" und
 // ist etwas anderes als 0.
-func pruefeListenpreis(preis *float64) error {
+func pruefeListenpreis(preis *betrag.Cent) error {
 	if preis != nil && *preis < 0 {
 		return apierrors.BadRequest("Der Listenpreis darf nicht negativ sein. Leer lassen, wenn er unbekannt ist.", nil)
 	}

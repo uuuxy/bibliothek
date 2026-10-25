@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -61,7 +62,7 @@ type Exemplar struct {
 	Barcode           string // Litteras Druckzeichenkette, nicht der Scanwert (siehe barcodeInhalt)
 	Signatur          string // Sig1 + Sig2, zusammengesetzt
 	Zugangsdatum      string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
-	Preis             float64
+	Preis             betrag.Cent
 	// Eigentumsvermerk ist Litteras Angabe, wem das Exemplar gehört (Freitext mit
 	// Wertehilfe, 50 Zeichen). Was davon übernommen wird, entscheidet vermerkZuordnung.
 	Eigentumsvermerk string
@@ -254,20 +255,14 @@ func bereinigeSignaturteil(s string) string {
 	return s
 }
 
-// preisAus liest den Preis; unlesbare oder leere Angaben ergeben 0.
-func preisAus(roh string) float64 {
-	roh = strings.TrimSpace(roh)
-	if roh == "" {
-		return 0
-	}
-	// Littera exportiert mit Punkt als Dezimaltrenner; ein Komma kommt aus
-	// nachbearbeiteten Dateien trotzdem vor.
-	roh = strings.Replace(roh, ",", ".", 1)
-	wert, err := strconv.ParseFloat(roh, 64)
+// preisAus liest den Preis; unlesbare oder leere Angaben ergeben 0. Littera exportiert mit
+// Punkt als Dezimaltrenner, ein Komma aus nachbearbeiteten Dateien liest LeseEuro ebenso.
+func preisAus(roh string) betrag.Cent {
+	preis, err := betrag.LeseEuro(roh)
 	if err != nil {
 		return 0
 	}
-	return wert
+	return preis
 }
 
 // leseVerlage liest die Nachschlagetabelle `Verlag` als Schlüssel → Name.

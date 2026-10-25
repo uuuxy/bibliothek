@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
@@ -38,7 +39,7 @@ func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe titelAnfrage) bool 
 //  2. Ein gefundener Preis von 0 füllt nichts. Die DNB-Regeln liefern 0, wenn der Satz nur
 //     D-Mark kennt (metadaten_preis.go); eine 0 in der Spalte hieße „kostet heute nichts"
 //     und ergäbe einen Ersatzbetrag von 0,00 €.
-func listenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
+func listenpreisAusNachschlagen(vorhanden *betrag.Cent, gefunden betrag.Cent) *betrag.Cent {
 	if vorhanden != nil || gefunden <= 0 {
 		return vorhanden
 	}
@@ -241,7 +242,7 @@ type titelAnfrage struct {
 	Auflage string `json:"auflage"`
 	// Listenpreis aus der Maske. Zeiger aus demselben Grund wie oben:
 	// Ein leeres Feld ist „nicht erfasst", eine getippte 0 ist eine Aussage.
-	Listenpreis             *float64       `json:"listenpreis"`
+	Listenpreis             *betrag.Cent   `json:"listenpreis"`
 	Verlag                  string         `json:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
 	Signatur                string         `json:"signatur"`

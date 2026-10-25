@@ -18,14 +18,13 @@ import (
 // einen halben Cent fiel, kippte beim Runden (10 % von 10,05 € gaben 1,00 € statt 1,01 €).
 //
 // Die Regel: Kein Feld, kein Parameter, kein Ergebnis und keine Variable mit einem Namen für
-// Geld (Betrag, Preis, Summe, Kosten, Ersatzwert) hat den Typ float64. Was noch umzustellen ist,
-// führt geldAlsFloatBestand; er kann nur sinken.
+// Geld (Betrag, Preis, Summe, Kosten, Ersatzwert) hat den Typ float64.
 //
 // Blindheit: Erkennt Geld am Namen. Ein Betrag unter anderem Namen (wert, x) und eine
 // Variable aus := ohne genannten Typ sieht sie nicht; eine Abfrage, die einen Betrag mit
 // ::float8 in einen Cent liest, scheitert am Lesen (betrag.Cent.Scan nimmt kein float64).
 func TestGeldInCent(t *testing.T) {
-	gefunden := map[string]bool{}
+	var gefunden []string
 	gelesen := 0
 	fset := token.NewFileSet()
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -48,7 +47,7 @@ func TestGeldInCent(t *testing.T) {
 		}
 		gelesen++
 		for _, name := range geldAlsFloat(datei) {
-			gefunden[filepath.ToSlash(pfad)+": "+name] = true
+			gefunden = append(gefunden, filepath.ToSlash(pfad)+": "+name)
 		}
 		return nil
 	})
@@ -59,24 +58,9 @@ func TestGeldInCent(t *testing.T) {
 		t.Fatalf("nur %d Dateien gelesen — die Prüfung misst nichts", gelesen)
 	}
 
-	var neu, weg []string
-	for eintrag := range gefunden {
-		if !geldAlsFloatBestand[eintrag] {
-			neu = append(neu, eintrag)
-		}
-	}
-	for eintrag := range geldAlsFloatBestand {
-		if !gefunden[eintrag] {
-			weg = append(weg, eintrag)
-		}
-	}
-	sort.Strings(neu)
-	sort.Strings(weg)
-	for _, eintrag := range neu {
+	sort.Strings(gefunden)
+	for _, eintrag := range gefunden {
 		t.Errorf("%s ist Geld als float64 — als betrag.Cent führen", eintrag)
-	}
-	for _, eintrag := range weg {
-		t.Errorf("%s steht im Bestand, ist aber umgestellt oder fort — aus geldAlsFloatBestand streichen", eintrag)
 	}
 }
 
@@ -138,21 +122,4 @@ func menge() float64 { return 0 }`
 	if want := "Gesamtbetrag Einzelpreis listenpreise betragLand summe kosten preisAus"; got != want {
 		t.Errorf("geldAlsFloat = %q, erwartet %q", got, want)
 	}
-}
-
-// geldAlsFloatBestand sind die Stellen, die noch umzustellen sind: der Listenpreis am Titel
-// und die Preise, die die Katalogdienste und die Littera-Übernahme dafür lesen.
-var geldAlsFloatBestand = map[string]bool{
-	"api/katalog/titel_aendern.go: preis":                      true,
-	"api/katalog/titel_anlegen.go: Listenpreis":                true,
-	"api/katalog/titel_anlegen.go: listenpreisAusNachschlagen": true,
-	"internal/katalogdienste/dnb.go: preis":                    true,
-	"internal/katalogdienste/katalogdienste.go: Preis":         true,
-	"internal/katalogdienste/preis.go: preisAusVerfuegbarkeit": true,
-	"internal/littera/titel_exemplar.go: Preis":                true,
-	"internal/littera/titel_exemplar.go: preisAus":             true,
-	"internal/service/bestellsuche.go: PreisVorschlag":         true,
-	"repository/katalog_titel.go: Listenpreis":                 true,
-	"repository/titel_anlegen.go: listenpreise":                true,
-	"repository/titel_isbn.go: Listenpreis":                    true,
 }

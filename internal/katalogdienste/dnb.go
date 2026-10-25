@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 
@@ -100,7 +101,7 @@ type marcBibDaten struct {
 	zielgruppe string
 	// preis ist der Ladenpreis aus MARC21 020 $c — ein Vorschlag, keine Tatsache:
 	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis.
-	preis float64
+	preis betrag.Cent
 }
 
 // verarbeiteFeld gibt ein Datenfeld an die Auswertung seines Tags weiter.

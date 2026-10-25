@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pkg/betrag"
+
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -285,7 +287,7 @@ func TestSchreibeTitelStapel(t *testing.T) {
 				[]string{eintraege[0].Signatur},
 				[]bool{eintraege[0].IstLernmittel},
 				[]string{eintraege[0].Auflage},
-				[]*float64{eintraege[0].Listenpreis},
+				[]*betrag.Cent{eintraege[0].Listenpreis},
 			).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
@@ -364,7 +366,7 @@ func TestSchreibeTitelStapel(t *testing.T) {
 				[]string{eintraege[0].Signatur},
 				[]bool{eintraege[0].IstLernmittel},
 				[]string{eintraege[0].Auflage},
-				[]*float64{eintraege[0].Listenpreis},
+				[]*betrag.Cent{eintraege[0].Listenpreis},
 			).
 			WillReturnError(fmt.Errorf("db batch failed"))
 		mock.ExpectRollback()

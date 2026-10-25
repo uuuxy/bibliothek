@@ -238,7 +238,7 @@ func TestBaueDNBTreffer(t *testing.T) {
 		Titel:    "Test Titel",
 		Autor:    "Test Autor",
 		Verlag:   "Test Verlag",
-		Preis:    19.99,
+		Preis:    1999,
 		CoverURL: "http://example.com/cover.jpg",
 	}
 
