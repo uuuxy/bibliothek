@@ -1,11 +1,45 @@
 package api
 
 import (
-	"bibliothek/repository"
 	"net/http"
+
+	"bibliothek/repository"
 )
 
 func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *repository.KatalogAbfragen, protokollAbfragen *repository.ProtokollAbfragen) {
+	// ── Medienkatalog: Titelliste, Buchmaske, Import, Export, Cover, Klassensätze ──
+	// Lesend view_books, schreibend edit_books. Die Kennung des Titels steht als Platzhalter in
+	// der Adresse statt in einer Sammelroute mit selbst zerlegtem Pfad: Nur einen Platzhalter
+	// sieht uuidPfadMiddleware in verlangeRecht, und eine falsche Kennung wird so 400 statt 500.
+	mux.Handle("GET /api/books", s.verlangeRecht("view_books")(s.katalog().TitelListe()))
+	mux.Handle("GET /api/books/{id}", s.verlangeRecht("view_books")(s.katalog().Titel()))
+	mux.Handle("GET /api/books/vorhanden", s.verlangeRecht("view_books")(s.katalog().TitelVorhanden()))
+	mux.Handle("GET /api/lookup/{isbn}", s.verlangeRecht("view_books")(s.katalog().ISBNSuche()))
+	mux.Handle("POST /api/books", s.verlangeRecht("edit_books")(s.katalog().TitelAnlegen()))
+	mux.Handle("PUT /api/books/{id}", s.verlangeRecht("edit_books")(s.katalog().TitelAendern()))
+	// Löschen vieler Titel mit delete_books, nicht edit_books: Hinge es an edit_books, während das
+	// Löschen eines einzelnen Titels delete_books verlangt, stünde die größere Handlung unter dem
+	// kleineren Recht.
+	mux.Handle("DELETE /api/books", s.verlangeRecht("delete_books")(s.katalog().MarkierteTitelLoeschen()))
+	mux.Handle("POST /api/books/import", s.verlangeRecht("edit_books")(s.katalog().ExcelImport()))
+	mux.Handle("GET /api/admin/books/export", s.verlangeRecht("edit_books")(s.katalog().CSVExport()))
+	mux.Handle("POST /api/books/{id}/refresh-cover", s.verlangeRecht("edit_books")(s.katalog().CoverAktualisieren()))
+	mux.Handle("POST /api/books/{id}/cover-upload", s.verlangeRecht("edit_books")(s.katalog().CoverHochladen()))
+	mux.Handle("GET /api/admin/books/external-covers", s.verlangeRecht("edit_books")(s.katalog().FremdeCoverListe()))
+	mux.Handle("POST /api/admin/books/retry-covers", s.verlangeRecht("edit_books")(s.katalog().FremdeCoverNeuLaden()))
+	mux.Handle("GET /api/class-books", s.verlangeRecht("view_books")(s.katalog().Klassensaetze()))
+	mux.Handle("GET /api/admin/class-books", s.verlangeRecht("edit_books")(s.katalog().Klassensaetze()))
+	mux.Handle("POST /api/admin/class-books", s.verlangeRecht("edit_books")(s.katalog().KlassensaetzeAendern()))
+	mux.Handle("POST /api/admin/class-books/add", s.verlangeRecht("edit_books")(s.katalog().KlassensaetzeZuordnen()))
+	mux.Handle("DELETE /api/admin/class-books", s.verlangeRecht("edit_books")(s.katalog().KlassensatzGruppeLoeschen()))
+	// Lehrerportal: Das Kollegium sieht Bestand und Mengen der Lernmittel und die Zuordnung der
+	// Klassensätze hinter der Anmeldung, aber ohne view_books: Das Recht öffnete der Rolle auch den
+	// ganzen Medienkatalog im Menü. Die Antworten tragen nur Buch- und Zähldaten, keine Ausleih-
+	// oder Personendaten; die Klassensätze kommen aus derselben Tür wie /api/class-books.
+	mux.Handle("GET /api/portal/klassensaetze", s.VerlangeAnmeldung()(s.katalog().Klassensaetze()))
+	mux.Handle("GET /api/portal/lernmittel", s.VerlangeAnmeldung()(s.portal().Schulbuecher()))
+	mux.Handle("GET /api/portal/lernmittel/export", s.VerlangeAnmeldung()(s.portal().SchulbuecherExport()))
+
 	// ── Titel und Exemplare ──
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschen(katalogAbfragen)))
 	// Zwei Titel desselben Buchs zu einem: delete_books wie das Löschen, denn danach gibt es einen

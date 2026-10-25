@@ -76,9 +76,9 @@ func (s *Server) csrfToken() http.HandlerFunc {
 // istAPIPfad entscheidet, ob ein Pfad der Prüfung unterliegt. Alles andere ist statische
 // Auslieferung (gebaute Oberfläche, Uploads) und ändert nichts.
 //
-// Die Prüfung gilt für alle Pfade unter /api/, auch für die des Inventur-Moduls und der
-// Verwaltung: PUT /api/admin/settings/mail genügte, um den SMTP-Host samt Zugangsdaten auf
-// einen fremden Server umzubiegen.
+// Die Prüfung gilt für alle Pfade unter /api/, auch für die der Verwaltung:
+// PUT /api/admin/settings/mail genügte, um den SMTP-Host samt Zugangsdaten auf einen fremden
+// Server umzubiegen.
 //
 // /login gehört dazu, obwohl es nicht unter /api/ liegt: Ohne die Prüfung könnte eine fremde
 // Seite ein Formular mit enctype="text/plain" abschicken, dessen Rumpf als JSON durchgeht (kein

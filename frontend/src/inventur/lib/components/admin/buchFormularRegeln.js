@@ -15,7 +15,7 @@ export function bisNachVon(vonVorher, vonNeu, bis) {
 /**
  * Der Hinweis unter dem Kästchen „Mehrjahresband" (docs/OFFEN.md 9.6): Die Zahl, bis zu der
  * das Buch beim Kind bleibt, ist „bis" aus der Spanne — eine zweite gibt es nicht. Dieselbe
- * Regel wie am Server (inventur/mehrjahresband.go): nur mit einer Spanne über mehr als einen
+ * Regel wie am Server (repository/titel_spanne.go): nur mit einer Spanne über mehr als einen
  * Jahrgang.
  * @param {boolean} an
  * @param {number|string} von

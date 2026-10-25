@@ -1,12 +1,16 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"bibliothek/db"
+	"bibliothek/sse"
 )
 
 // Nach einem Rückbau auf einen älteren Stand sind die Dateien auf dem Server älter als die im
@@ -81,4 +85,37 @@ func TestOberflaeche_NachRueckbau(t *testing.T) {
 			t.Errorf("Status %d, erwartet 304: Eine Datei mit Prüfwert im Namen darf der Browser behalten", rec.Code)
 		}
 	})
+}
+
+// Eine Adresse unter /api/, die keine Route nimmt, meldet sich mit jeder Methode als unbekannt:
+// Ein POST an einen umbenannten Endpunkt ist kein Fehler der Methode. Geprüft am Router samt
+// Middleware, deshalb tragen die ändernden Anfragen das Token gegen CSRF.
+func TestOberflaeche_UnbekannterEndpunkt(t *testing.T) {
+	t.Chdir(t.TempDir())
+	router := NewServer(&db.Verbindung{}, nil, sse.NewBroker(), ServerKonfig{}).Routes()
+	for _, fall := range []struct{ methode, pfad string }{
+		{http.MethodGet, "/api/gibt-es-nicht"},
+		{http.MethodPost, "/api/gibt-es-nicht"},
+		{http.MethodPut, "/api/admin/books/reorder"},
+		{http.MethodPost, "/api/admin/books/import"},
+		{http.MethodDelete, "/api/books/1"},
+	} {
+		t.Run(fall.methode+" "+fall.pfad, func(t *testing.T) {
+			req := httptest.NewRequest(fall.methode, fall.pfad, nil)
+			req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "probe"})
+			req.Header.Set("X-CSRF-Token", "probe")
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			var antwort struct {
+				Fehler string `json:"error"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+				t.Fatalf("Antwort ist kein JSON-Fehler (%s): %v", rec.Body.String(), err)
+			}
+			want := "Unbekannter Endpunkt: " + fall.methode + " " + fall.pfad
+			if rec.Code != http.StatusNotFound || antwort.Fehler != want {
+				t.Errorf("Status %d, Meldung %q, erwartet 404 und %q", rec.Code, antwort.Fehler, want)
+			}
+		})
+	}
 }

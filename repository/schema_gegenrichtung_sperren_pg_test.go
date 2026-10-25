@@ -118,7 +118,7 @@ var eindeutigkeitBestand = []string{
 	// Befragt: Das Anlegen über die ISBN schreibt mit ON CONFLICT (isbn) DO UPDATE
 	// (repository/titel_isbn.go). Anlegen und Ändern in der Bestandstabelle übersetzen die
 	// Verletzung in ErrISBNDoppelt, die Türen antworten mit 409 und Satz
-	// (inventur/endpunkte_buecher_schreiben.go, endpunkte_buecher_aktualisieren.go). Die Importe
+	// (api/katalog/titel_anlegen.go, endpunkte_buecher_aktualisieren.go). Die Importe
 	// gleichen vorher gegen den Bestand und die Datei ab (titelSchreibLauf), die Übernahme aus
 	// Littera klärt doppelte ISBN vorher.
 	"buecher_titel_isbn_key @ buecher_titel (isbn)",

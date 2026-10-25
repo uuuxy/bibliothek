@@ -12,7 +12,7 @@ import (
 )
 
 // Bestellen per ISBN legt den Titel aus der DNB an, mit Untertitel und Ladenpreis. Den Preis
-// übernimmt der Bestellweg nach der Regel aus inventur.ListenpreisAusNachschlagen: Ein Preis
+// übernimmt der Bestellweg nach der Regel aus listenpreisAusNachschlagen: Ein Preis
 // von 0 füllt nichts, und was schon erfasst ist, gewinnt.
 func TestSchreibeTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
 	pool := pgtest.Pool(t)

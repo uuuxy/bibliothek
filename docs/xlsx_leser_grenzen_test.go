@@ -21,7 +21,7 @@ import (
 var xlsxLeserBestand = map[string]string{
 	"api/system/littera_import.go": "Littera-Katalogübernahme (POST /api/import/littera, manage_inventory)",
 	"internal/lusd/quelle.go":      "LUSD-Schülerabgleich (POST /api/lusd/preview und /import, import_students)",
-	"inventur/excel_import.go":     "Listenimport des Bestands",
+	"api/katalog/listenimport.go":  "Listenimport des Bestands",
 }
 
 // einzigerOpenReader ist die eine Datei, die excelize.OpenReader rufen darf; dass die

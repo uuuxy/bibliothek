@@ -209,7 +209,7 @@ var checkBedingungenBestand = []string{
 	// Migration 134: Ein Mehrjahresband nur an einem Lernmittel und nur mit einer Spanne über
 	// mehr als einen Jahrgang. Wer gegen die Regel läuft,
 	// je Schreiber der vier Spalten: Die Titel-Verwaltung prüft sie an beiden
-	// Türen (inventur/mehrjahresband.go, 400). Die Lernmittel-Tür des Bestellfensters nimmt
+	// Türen (repository/titel_spanne.go, 400). Die Lernmittel-Tür des Bestellfensters nimmt
 	// den Schalter mit, wenn das Kennzeichen fällt (war 500). Der Katalogisat-Import lässt die
 	// Spanne eines Mehrjahresbands stehen (brach vorher mit dem ganzen Import ab). Listen- und
 	// Sammelimport behalten eine vorhandene Spanne und setzen das Kennzeichen nur per OR; die
@@ -286,7 +286,7 @@ var checkBedingungenBestand = []string{
 	// Sammelimport und Littera-Übernahme bekommen ihn aus pkg/lmf, das nur Paare zwischen 5 und
 	// 13 liefert oder 0 und 0. Ein Schreiber, der nur eine Seite setzt, bekommt einen Abbruch
 	// (23514), keinen Satz. Gegenfrage: Die Regel verbietet eine Spanne unter 5 nicht, die Maske
-	// bietet sie nicht an (inventur/jahrgang_vorgabe_pg_test.go).
+	// bietet sie nicht an (api/katalog/jahrgang_vorgabe_pg_test.go).
 	"chk_jahrgang_spanne",
 	// Migration 149: Eine laufende Inventur ist nie verworfen. Die
 	// Schreiber der beiden Spalten: LegeLaufAn legt ohne beide an (false, NULL),
@@ -456,7 +456,7 @@ var triggerBestand = []string{
 	// nimmt Leerraum am Rand weg und macht aus Leerraum in Folge ein Leerzeichen
 	// (titeltext_normalform) — Littera führt Titel mit zwei Leerzeichen und mit geschütztem
 	// Leerzeichen, und die Titel-Verwaltung fand sie mit dem getippten Wortlaut nicht
-	// (inventur/titel_suche_leerraum_pg_test.go, am Rückbau rot). Frage 12: Wer einen
+	// (api/portal/schulbuecher_suche_leerraum_pg_test.go, am Rückbau rot). Frage 12: Wer einen
 	// eingegebenen Text mit einem gespeicherten Titeltext vergleicht, bringt ihn in dieselbe
 	// Form — die Suchen und die Titelschlüssel der Importe über repository.TiteltextNormalform,
 	// die Dublettenkontrolle der Maske über titeltext_normalform()

@@ -260,7 +260,7 @@ var paketwerteOhneZustand = map[string]string{
 		"binden das Paket ein",
 	"internal/pgtest/pgtest.go: sperrVerbindung": "eine Verbindung zur Testdatenbank je Testlauf; " +
 		"nur Tests binden das Paket ein",
-	"inventur/import_idempotenz.go: importLaeuftMarker":                 "Antwort aus Literalen, einmal kodiert",
+	"api/katalog/listenimport_schluessel.go: importLaeuftMarker":        "Antwort aus Literalen, einmal kodiert",
 	"repository/titel_aendern.go: sqlTitelAendern":                      "SQL aus der Liste der Felder, beim Start gebaut",
 	"pdf/etikett_schueler.go: MusterSchuelerEtikett":                    "Beispiel für die Vorschau, nur gelesen",
 	"pkg/lmfplan/sommerferien.go: sommerferienHessen":                   "Ferientabelle aus Literalen, beim Start gebaut",

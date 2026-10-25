@@ -10,7 +10,6 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/katalogdienste"
-	"bibliothek/inventur"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -61,7 +60,7 @@ func (t *Tueren) schreibeTitelAusMetadaten(ctx context.Context, isbn string, met
 	// das Buchformular: 0 heißt „nicht ermittelbar" und füllt nichts. Steht der Titel schon da
 	// (ON CONFLICT), gewinnt, was erfasst ist. Die Altersangabe (Zielgruppe) bleibt ungespeichert:
 	// Es gibt für sie keine Spalte und keinen Leser.
-	listenpreis := inventur.ListenpreisAusNachschlagen(nil, meta.Preis)
+	listenpreis := listenpreisAusNachschlagen(nil, meta.Preis)
 	titel, err := repository.LegeTitelAusMetadatenAn(ctx, t.DB.Pool, repository.TitelMetadaten{
 		Titel:            meta.Titel,
 		Autor:            meta.Autor,

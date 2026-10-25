@@ -423,7 +423,7 @@ func ruftValidatorDerTuerenAuf(body *ast.BlockStmt, validatorName string) bool {
 }
 
 // ruftHelferAuf: irgendwo im Rumpf steht name(…) — ein Prüf-Helfer im selben Paket
-// (inventur.alleUUIDs).
+// (katalog.alleUUIDs).
 func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
 	gefunden := false
 	ast.Inspect(body, func(n ast.Node) bool {
@@ -620,7 +620,7 @@ func istTextKennung(typ ast.Expr) bool {
 
 func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
 	namen := pruefeEingabeDerTueren(t)
-	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api", "inventur"), namen)
+	maengel, gesehen := pruefeUUIDEingaben(ladeUUIDPakete(t, "api"), namen)
 	if len(gesehen) < 5 {
 		t.Fatalf("nur %d Kennungs-Eingaben gefunden — der Sammler greift vermutlich ins Leere", len(gesehen))
 	}

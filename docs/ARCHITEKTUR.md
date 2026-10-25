@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 24.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 25.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -454,7 +454,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 23.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 25.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -489,7 +489,7 @@ Stand: 23.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-na
 | **Frontend (SPA/PWA)**     | Bedienung, Ansichten, Offline-Warteschlange, Menü-Sichtbarkeit, Druckvorbereitung                     | Autorisierung (nur Blende — Autorität ist immer das Backend)          |
 | **Backend (Go)**           | Routing, Auth/RBAC, Fachlogik, Persistenz, PDF, Mail, Hintergrundjobs, Echtzeit, Auslieferung der SPA  | Rendering der Oberfläche; Zustandshaltung über Prozessgrenzen hinweg  |
 | **PostgreSQL**             | Datenhaltung **und Durchsetzung der Invarianten** (Constraints, partielle Unique-Indizes, Sichten)    | Geschäftsregeln, die Ermessen enthalten (Ersatzwert-Vorschlag, Übergehen eines Hinweises) |
-| **cmd-Werkzeuge**          | Übernahme aus Littera und aus MySQL, Backup verschlüsseln und zurückspielen, Schlüsselwechsel (5.2.4) | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
+| **cmd-Werkzeuge**          | Übernahme aus Littera und aus MySQL, Backup verschlüsseln und zurückspielen, Schlüsselwechsel (5.2.3) | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
 
 ---
 
@@ -524,7 +524,7 @@ HTTP-Anfrage
    ├─ VerlangeAnmeldung() — nur Routen ohne UUID im Pfad (api/uuid_pfadparameter_test.go)
    │     └─ Cookie → JWT prüfen → Kontostatus in der DB
    ▼
-  Handler (api/<Thema>/, inventur/, auth/)
+  Handler (api/<Thema>/, auth/)
    ▼
   Service (internal/service/) — Regeln, Orchestrierung, Transaktionsklammer
    ▼
@@ -554,14 +554,13 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 | `api/<Thema>/`          | Die Türen je Menüpunkt (A26): `lernmittel`, `inventurlauf`, `benutzer`, `portal`, `system`, `mahnwesen`, `schaden`, `katalog`, `druck`, `bestellung`, `leser`, `theke`        |
 | `internal/service/`     | Fachlogik mit Transaktionsklammer: Ausleihe und Rückgabe (5.4.1), Omnibox (5.4.2), Nachbuchen, Geräte, Cover, Passbilder, Ersatzwert, Bestellungen, LMF-Plan und seine Fristen, Importe, Littera-Etiketten |
 | `repository/`           | Die Datenbankschicht (A25): Abfragen, Schreibpfade, Zeilensperren, Bewegungsstempel, Protokoll, Einstellungen, die Anweisungen der Nachtläufe, der Anmeldung und der Theke     |
-| `inventur/`             | Der Medienkatalog mit eigenen Türen und eigener Datenbankschicht (5.2.3)                                                                                                        |
 | `auth/`                 | Anmeldung gegen IMAP, Token, Sperrliste widerrufener Token, Sperre nach Inaktivität mit Prüfwert des Passworts, Selbstanmeldung des Kollegiums                                 |
 | `jobs/`                 | Zeitplan (UTC) und Nachtläufe: DSGVO-Kette, Protokoll-Aufbewahrung, Backup, Idempotenz-TTL, Vormerkungs-Verfall, Cover-Abgleich, Restore-Probe (5.4.5)                        |
 | `internal/lusd/`        | Abgleich mit dem Export der LUSD: Datei lesen, Zeilen zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion ([LUSD.md](LUSD.md))                              |
 | `internal/bereitschaft/` | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, je Bereich ein Befund mit Folge und Abhilfe; die Lage sammelt `api/system`                         |
 | `internal/auskunft/`    | Auskunft nach Art. 15 DSGVO: Typen der Antwort, Pflichtangaben, das Blatt aus derselben Antwort                                                                                |
 | `internal/buchetikett/` | Die Eingabe der Buchetiketten, die Druck-Center und Bestellung drucken (8.9)                                                                                                    |
-| `internal/littera/`, `internal/uebernahme/` | Übernahme des Littera-Altbestands (5.2.4)                                                                                                                   |
+| `internal/littera/`, `internal/uebernahme/` | Übernahme des Littera-Altbestands (5.2.3)                                                                                                                   |
 | `internal/crypto/`, `internal/backupkrypto/`, `internal/ausweis/`, `internal/middleware/` | AES-256-GCM; scrypt und Dateiformat der Backups; Gültigkeit eines Ausweises; Security-Header                                    |
 | `internal/pgtest/`, `smtptest/`, `pdftest/`, `xlsxtest/`, `testdaten/`, `testweg/`, `tuertest/`, `routertest/` | Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden                                                                   |
 | `pdf/`                  | Erzeugte Dokumente: Briefe, Listen, Bescheid, Rechnung, Etiketten mit ihren Bogenformaten, Bestandsbücher (8.9)                                                                 |
@@ -570,7 +569,7 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
 | `apierrors/`            | Einheitliche Fehlerantworten und ihre Abbildung auf HTTP-Status (8.6)                                                                                                          |
 | `db/`                   | Verbindungspool, Lauf der Migrationen, Rechte je Rolle ab Werk (`rechte_vorgabe.go`), erster Admin, Übernahme der SMTP-Konfiguration                                           |
 | `pkg/`                  | Regeln und Hilfen ohne Abhängigkeit zu den Schichten darüber (Tabelle unten)                                                                                                    |
-| `cmd/`                  | Sechs Kommandos neben dem Server (5.2.4)                                                                                                                                        |
+| `cmd/`                  | Sechs Kommandos neben dem Server (5.2.3)                                                                                                                                        |
 | `migrations/`           | Nummerierte, idempotente Schritte des Schemas; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | Die Gates der Dokumente, nur Testdateien                                                                                                                                         |
 
@@ -588,6 +587,11 @@ ihrer Schicht zu. Wie groß sie sind, misst der [Anhang](#anhang-die-zahlen-selb
   (`s.lernmittel().LMFPlanSchreiben()`), der die Basis als Zeiger weiterreicht;
   `api/zugaenge_basis_test.go` hält das je Zugang. Außerhalb von `api/` erreicht niemand die
   Türen eines Themas.
+- Eine Tür ist eine Fabrik: `func (t *Tueren) LMFPlanSchreiben() http.HandlerFunc`. Ein langer
+  Rumpf steht als klein geschriebene Methode daneben, die die Fabrik zurückgibt
+  (`return t.schliesseInventurAb`), weil eine Closure für `komplexitaet_ratsche_test.go` als
+  eigene Ebene zählt. `api/themen_ratsche_test.go` weist eine exportierte Methode ab, die selbst
+  Antwort und Anfrage nimmt.
 - Kein Thema bindet ein anderes oder `api/` ein (`api/themen_ratsche_test.go`). Was zwei Themen
   brauchen, steht in `api/tuer` oder einer Schicht darunter: der Eintrag zur Konto-Anlage
   (`tuer.Basis.ProtokolliereKontoAnlage`), der Ersatzwert (`internal/service/ersatzwert_vorschlag.go`),
@@ -670,13 +674,13 @@ Für `api/`, `internal/service` und `repository/` gilt:
   keine Sitzung, Selbstanmeldung), den Prüfwert des Passworts und die Antworten.
 
 Zwei Ratschen halten die Schichtung. `schichtung_ratsche_test.go` liest jede Produktivdatei:
-Anweisungen formuliert und schickt nur die Datenbankschicht (`repository/`, `inventur/`, `db/`,
-der Schreiber der Littera-Übernahme, die Einmal-Werkzeuge; der Grund je Paket steht in der
-Datei). Sie erkennt eine Anweisung an ihrem Text und am Aufruf, der sie abschickt (`Exec`,
-`Query`, `QueryRow`, `SendBatch`, `CopyFrom`), auch wenn der Text erst aus Variablen entsteht;
-was außerhalb noch Anweisungen trägt (die Restore-Probe in `jobs/`), führt sie als Bestand, der
-nur sinken kann. `api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der
-nur kleiner werden kann.
+Anweisungen formuliert und schickt nur die Datenbankschicht (`repository/`, `db/`, der Schreiber
+der Littera-Übernahme, die Einmal-Werkzeuge; der Grund je Paket steht in der Datei). Sie erkennt
+eine Anweisung an ihrem Text und am Aufruf, der sie abschickt (`Exec`, `Query`, `QueryRow`,
+`SendBatch`, `CopyFrom`), auch wenn der Text erst aus Variablen entsteht; was außerhalb noch
+Anweisungen trägt (die Restore-Probe in `jobs/`), führt sie als Bestand, der nur sinken kann.
+`api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der nur kleiner werden
+kann.
 
 ##### Die `pkg/`-Pakete im Einzelnen
 
@@ -709,22 +713,7 @@ nur kleiner werden kann.
 | `logger`           | Nimmt Werten aus der Anfrage die Zeilenumbrüche, bevor sie ins Log gehen (CWE-117), zusätzlich zum JSON-Handler von `slog`         |
 | `safego`           | Unbeaufsichtigte Goroutinen überleben ein Panic, ohne den Prozess mitzunehmen                                                     |
 
-#### 5.2.3 Warum `inventur/` ein eigenes Untermodul ist
-
-`inventur/` ist der Medienkatalog samt Beschaffung von Titeldaten und Covern. Es hat seine
-**eigene** Datenbankschicht (`inventur/datenbank*.go`) und seine eigenen Türen
-(`inventur.NewTueren`), die der Hauptrouter unter wenigen Pfadpräfixen einhängt:
-`/api/books`, `/api/class-books`, `/api/portal/`, `/api/lookup/`, `/api/admin`, `/uploads/`.
-
-Die Rechteprüfung kommt dabei **von außen hinein**: Der Hauptrouter übergibt die fertigen
-Middleware-Wrapper (`VerlangeLesen`, `VerlangeAendern`, `VerlangeLoeschen`,
-`VerlangeAnmeldung`) in der Konfiguration. Das Untermodul entscheidet also nicht selbst
-über Rechte — es bekommt sie.
-
-Das ist historisch gewachsen (der Katalog war ein eigenes Projekt) und bleibt so, weil die
-Grenze sauber ist: Der Katalog kennt keine Ausleihen, keine Leser und kein Mahnwesen.
-
-#### 5.2.4 Neben der Anfragekette: die Einmal-Werkzeuge
+#### 5.2.3 Neben der Anfragekette: die Einmal-Werkzeuge
 
 Sechs Kommandos laufen nicht über Handler, Service und Repository, sondern für sich gegen
 dieselbe Datenbank oder die Dateien einer Sicherung ([SCRIPTS.md](SCRIPTS.md)):
@@ -741,28 +730,28 @@ dieselbe Datenbank oder die Dateien einer Sicherung ([SCRIPTS.md](SCRIPTS.md)):
 `cmd/migrate` entstand: Eine zweite Fassung für Littera hätte dieselben Fehler noch einmal
 gemacht, etwa den fehlenden Savepoint je Datensatz, mit dem ein Fehler den ganzen Batch mitnimmt.
 
-#### 5.2.5 Fremdbibliotheken des Backends
+#### 5.2.4 Fremdbibliotheken des Backends
 
 Maßgeblich ist `go.mod`. Die Tabelle nennt, **wo** jede direkte Abhängigkeit eingesetzt wird,
 gemessen über die Importe des Produktivcodes:
 
 | Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
 | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`repository`, `db`, `api`, `auth`, `jobs`, `inventur`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
+| `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`repository`, `db`, `api`, `auth`, `jobs`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
 | `golang-jwt/jwt/v5`                                            | `auth`                                                           | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/token.go`)                   |
 | `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
 | `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
 | `getsentry/sentry-go`                                          | `main.go`, `api`                                                 | Fehlerweitergabe, nur mit `SENTRY_DSN`                                                  |
 | `chai2010/webp`                                                | `main.go`, `api`, `pkg/imageutil`                                | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
-| `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `pdf`, `api`, `inventur`, `internal/auskunft`, `pkg/coverdatei`  | Erzeugte Dokumente (8.9)                                                                |
+| `phpdave11/gofpdf`, `johnfercher/maroto/v2`                     | `pdf`, `api`, `internal/auskunft`, `pkg/coverdatei`              | Erzeugte Dokumente (8.9)                                                                |
 | `boombuler/barcode`                                            | `pkg/strichcode`                                                 | Code 128 und QR auf Aufdrucken (A14); Code 39 nur im Test von `pkg/code39`              |
-| `xuri/excelize/v2`                                             | `api`, `inventur`, `internal/lusd`, `pkg/xlsxgrenze`             | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
+| `xuri/excelize/v2`                                             | `api`, `internal/lusd`, `pkg/xlsxgrenze`                         | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
 | `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
 | `google/uuid`                                                  | `api`, `repository`                                              | Kennungen erzeugen                                                                      |
 | `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
 | `golang.org/x/crypto`                                          | `auth`, `internal/backupkrypto`                                  | Argon2id für den Prüfwert der Sperre (`auth/pruefwert.go`), scrypt-Schlüsselableitung des Backups |
-| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `inventur`, `internal/service`, `repository`                     | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
+| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `api`, `internal/katalogdienste`, `internal/service`, `repository` | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
 | `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
 | `pashagolub/pgxmock/v5`, `google/go-cmp`, `uudashr/gocognit`, `golang.org/x/tools` | nur `*_test.go`                     | Prüfhilfen; cmp vergleicht zusammengesetzte Werte, gocognit misst für `komplexitaet_ratsche_test.go`, x/tools lädt die Pakete mit Typen für `sichtbarkeit_ratsche_test.go` |
 
@@ -785,7 +774,7 @@ frontend/src
 │   │                     omnibox, offlineSync, druckWarteschlange, snackbars, mahnwesen*, …
 │   └─ …                 Fachansichten (Leserakte, Buchakte, Mahnwesen, LmfPlan,
 │                         DruckCenter, KollegiumPortal, Betriebsbereitschaft, Monitor, …)
-├─ inventur/             Die Katalog-Oberfläche des Untermoduls (eigene lib/ + routes/)
+├─ inventur/             Die Oberfläche des Medienkatalogs (eigene lib/ + routes/)
 └─ styles/, assets/
 ```
 
@@ -798,7 +787,7 @@ frontend/src
 | `stores/offlineSync` | IndexedDB-Warteschlange; entfernt einen Eintrag **nur** bei einem endgültigen Serverurteil                         |
 | `stores/authStore`   | Sitzungszustand, Rechte-Map für die Blende, Abmeldung                                                              |
 | `stores/druckWarteschlange`  | Sammelt Etiketten/Ausweise für den Stapeldruck                                                                     |
-| `inventur/`          | Katalogpflege, Import, Cover — spiegelt die Grenze des Backend-Untermoduls                                          |
+| `inventur/`          | Katalogpflege, Import, Cover; die Türen dazu stehen in `api/katalog`                                               |
 
 **Regeln, die im Frontend architektonisch tragen:**
 
@@ -1062,9 +1051,8 @@ find frontend/src -name '*.svelte' -not -path '*/node_modules/*' | wc -l
 find frontend/src \( -name '*.svelte' -o -name '*.js' \) -not -path '*/node_modules/*' | xargs cat | wc -l
 ls frontend/e2e | wc -l
 
-# Routen — ohne Testdateien, die für sich Routen anmelden, und mit inventur/, das seine
-# Routen selbst anmeldet
-grep -rhoE '\.(Handle|HandleFunc)\(' api inventur --include='*.go' --exclude='*_test.go' | wc -l
+# Routen — ohne Testdateien, die für sich Routen anmelden
+grep -rhoE '\.(Handle|HandleFunc)\(' api --include='*.go' --exclude='*_test.go' | wc -l
 
 # Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
 grep -c '^CREATE TABLE' schema.sql
@@ -1645,7 +1633,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 24.10.2026
+Stand: 25.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2297,7 +2285,7 @@ sieht.
 - **Eine Regel über Titeltexte wird an Sätzen der DNB gemessen,** nicht an der Datenbank am
   Arbeitsplatz. Die DNB liefert Sätze über SRU ohne Anmeldung, 100 je Abruf:
   `https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=tit%3DSchuljahr&recordSchema=MARC21-xml&maximumRecords=100&startRecord=1`.
-  Ein Wegwerf-Test im Paket `inventur` liest sie mit `dekodiereMARC`, bildet den Titel wie die
+  Ein Wegwerf-Test im Paket `internal/katalogdienste` liest sie mit `dekodiereMARC`, bildet den Titel wie die
   ISBN-Abfrage (`marcBibDaten`) und lässt alte und neue Regel nebeneinander laufen; gezählt wird
   je Titel neu, geändert, verloren, unverändert, und jede Gruppe wird gelesen.
 
@@ -2377,7 +2365,7 @@ sieht.
 
 ## 9. Architekturentscheidungen
 
-Stand: 24.10.2026
+Stand: 25.10.2026
 
 Sechsundzwanzig Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre
 Nummer wird nicht neu vergeben. Format je Eintrag:
@@ -2845,9 +2833,9 @@ und wären vollständig aufzählbar.
 keine Personendaten. Ein Unterordner kommt nicht ins Netz, auch kein von Hand angelegter;
 auf einem Server mit älterem Volume kann `uploads/fotos` noch liegen (OFFEN.md 7.8).
 
-**Fundstelle.** `inventur/api_routen.go` (`neuteredFileSystem`), `Dockerfile`,
+**Fundstelle.** `api/katalog/uploads.go` (`neuteredFileSystem`), `Dockerfile`,
 `api/router.go` (`registriereInventurRouten`), `internal/crypto`.
-Gates: `inventur/api_routen_test.go`, `api/uploads_auslieferung_pg_test.go`.
+Gates: `api/katalog/uploads_test.go`, `api/uploads_auslieferung_pg_test.go`.
 
 ---
 
@@ -2910,8 +2898,7 @@ eigene Offen-Liste**; Kapitel 11 benennt Risiken und verweist für den Stand auf
 **Anlass.** Gemessen mit Typprüfung über die 151 Dateien des Pakets: An den Namen sah die
 Schicht teilbar aus, an den Dateien nicht. Ohne Umbau ließen sich 48 Dateien einem Thema
 zuordnen; 103 mit 72 % der Zeilen blieben gemeinsam, weil Protokoll, Einstellungen, Titel und
-Leser mehrere Themen bedienen. 21 Tabellen bekämen Schreiber in mehr als einem Paket. Wie das
-aussieht, zeigt `inventur/` mit einer zweiten Datenbankschicht für `buecher_titel` (5.2.3).
+Leser mehrere Themen bedienen. 21 Tabellen bekämen Schreiber in mehr als einem Paket.
 
 **Folge.** Die Schreiber einer Tabelle stehen in einem Paket. Gefunden wird über den Namen der
 Datei, der wie ihre Sache heißt. Googles Regelwerk für Go, [Package
@@ -2939,7 +2926,9 @@ easier to use."
 
 **Folge.** Eine Änderung an einem Thema berührt die Dateien der anderen nicht, und kein Thema
 bindet ein anderes ein (`api/themen_ratsche_test.go`). Was zwei Themen brauchen, steht in
-`api/tuer` oder einer Schicht darunter.
+`api/tuer` oder einer Schicht darunter. Das gilt ohne Ausnahme: Auch die Türen des Medienkatalogs
+stehen in `api/katalog`, ihre Routen in `api/routen_katalog.go` und ihre Abfragen in
+`repository/`.
 
 **Fundstelle.** `api/router.go` (die Zugänge), `api/<Thema>/<Thema>.go`, 5.2.2.
 
@@ -3102,7 +3091,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 23.10.2026
+Stand: 25.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3499,8 +3488,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Bewusst nicht entschieden
 
-Integer-Cent statt float64 · Bundle-Splitting · TypeScript-Migration · `inventur/` ins Haupt-API
-verschmelzen · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
+Integer-Cent statt float64 · Bundle-Splitting · TypeScript-Migration · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
 geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (23 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt

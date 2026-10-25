@@ -13,9 +13,7 @@ import (
 //
 // Das ist die kleine, aber empfindliche Fläche, die jede angemeldete Rolle öffnen kann, auch
 // Kollegium (Portal) und Helfer (Kiosk). Ein Satz im Kommentar über VerlangeAnmeldung, der die
-// Routen zählt, liegt leicht falsch: Die drei Routen des Portals im Paket inventur bekommen die
-// Middleware hereingereicht (konfig.VerlangeAnmeldung), statt sie als Methode zu rufen, und ein
-// Zähler, der nur nach der Methode von api/ sucht, übersieht sie.
+// Routen zählt, liegt leicht falsch, sobald eine Route dazukommt.
 //
 // Deshalb zählt eine Ratsche statt eines Kommentars. Jede Zeile hier ist eine bewusste
 // Entscheidung: Der Inhalt muss PII-Stufe 0 sein (keine Schülerdaten), sonst gehört die Route
@@ -32,15 +30,13 @@ func TestNurSitzungRoutenSindBenannt(t *testing.T) {
 		"GET /api/portal/lernmittel/export": "derselbe Bestand als PDF-Export.",
 	}
 
-	// Zwei Schreibweisen, ein Sinn: `s.VerlangeAnmeldung()(…)` in api/, und die
-	// hereingereichte Fassung `konfig.VerlangeAnmeldung(…)` im Paket inventur.
-	registrierung := regexp.MustCompile(`(?:tueren\.)?mux\.Handle(?:Func)?\("([^"]+)"[^)]*VerlangeAnmeldung`)
+	registrierung := regexp.MustCompile(`mux\.Handle(?:Func)?\("([^"]+)"[^)]*VerlangeAnmeldung`)
 
 	dateien, err := filepath.Glob("routen_*.go")
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}
-	dateien = append(dateien, "router.go", filepath.Join("..", "inventur", "api_routen.go"))
+	dateien = append(dateien, "router.go")
 
 	gefunden := map[string]bool{}
 	for _, datei := range dateien {

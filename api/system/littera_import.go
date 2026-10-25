@@ -201,7 +201,13 @@ func (t *Tueren) LitteraImport() http.HandlerFunc {
 // namensbasiertes Spalten-Mapping, Titel-Dedup über ImportiereZeilen). Dadurch ist es
 // egal, ob die Datei Komma- oder Semikolon-getrennt ist bzw. die Zustand-Spalte
 // enthält — ein Formatfehler des Nutzers wird als 400 (nicht 500) gemeldet.
-func (t *Tueren) BestandImport(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) BestandImport() http.HandlerFunc {
+	return t.importiereBestand
+}
+
+// importiereBestand ist der Rumpf von BestandImport. Er steht auf der obersten Ebene, weil eine
+// Closure für die Komplexitätsmessung als eigene Ebene zählt.
+func (t *Tueren) importiereBestand(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
 	if err := r.ParseMultipartForm(20 << 20); err != nil {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungHochladen(20<<20), err)

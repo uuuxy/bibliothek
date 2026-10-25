@@ -1,6 +1,6 @@
 # Wegweiser — wo steht was
 
-Stand: 23.10.2026
+Stand: 25.10.2026
 
 Eine Seite für den Einstieg in den Code: der Weg einer Anfrage, vom Menüpunkt zum Ordner und
 für häufige Änderungen die Stelle. Warum etwas so gebaut ist, steht in
@@ -35,7 +35,7 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Menüpunkt                               | Bildschirm in `frontend/src/lib/`                                                        | Türen                              |
 | --------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
 | Ausleihe (Theke)                        | `Omnibox.svelte`                                                                         | `api/theke/theke.go`               |
-| Medienkatalog, Klassensätze             | `Medienkatalog.svelte`, `Schulklassen.svelte`                                             | `inventur/api_routen.go`           |
+| Medienkatalog, Klassensätze             | `Medienkatalog.svelte`, `Schulklassen.svelte`                                             | `api/katalog/katalog.go`           |
 | Buchakte, Signaturen                    | `Buchakte.svelte`, `Signaturen.svelte`                                               | `api/katalog/katalog.go`           |
 | Bestandsbücher                          | `components/bestand/Bestandsbuecher.svelte`                                              | `api/katalog/katalog.go`           |
 | Druck-Center                            | `DruckCenter.svelte`                                                                     | `api/druck/druck.go`               |
@@ -49,11 +49,10 @@ die Beschreibung ihres Themas, die übrigen Dateien des Ordners je eine Sache.
 | Einstellungen, Statistiken, System-Logs | `Einstellungen.svelte`, `Statistik.svelte`, `SystemLogs.svelte`                    | `api/system/system.go`             |
 | Mein Portal, öffentlicher Katalog       | `KollegiumPortal.svelte`, `OpacSuche.svelte`                                            | `api/portal/portal.go`             |
 
-Der Medienkatalog ist ein eigenes Untermodul: Titelliste, Buchmaske und Import haben ihre
-Türen und ihre Abfragen in `inventur/`; seine Beschreibung steht am Kopf von
-`repository/titel_abfragen.go`. Was jede Tür braucht (Eingabe lesen, Recht prüfen,
-Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen Bildschirm
-öffnet, steht in `frontend/src/lib/menue.js` und `frontend/src/lib/Router.svelte`.
+Die Abfragen aller Themen stehen in `repository/`, je Sache eine Datei; die des Medienkatalogs
+beschreibt der Kopf von `repository/titel_abfragen.go`. Was jede Tür braucht (Eingabe lesen,
+Recht prüfen, Protokoll schreiben), steht in `api/tuer/tuer.go`. Welcher Menüpunkt welchen
+Bildschirm öffnet, steht in `frontend/src/lib/menue.js` und `frontend/src/lib/Router.svelte`.
 
 ## Ich will etwas ändern
 

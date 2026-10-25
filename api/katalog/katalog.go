@@ -1,13 +1,17 @@
-// Package katalog trägt die Türen des Medienkatalogs zu einem Titel und seinen Exemplaren: die
-// Exemplare, die Ausleiher und die Historie eines Titels lesen, Nummer, Zustand, Eigentum und
+// Package katalog trägt die Türen des Medienkatalogs: die Titelliste, die Buchmaske mit Anlegen
+// und Ändern, das Löschen markierter Titel, der Listenimport und der CSV-Export, die Abfrage
+// eines Titels über die ISBN, die Cover samt Upload und Auslieferung, die Klassensätze, dazu
+// je Titel und Exemplar: Exemplare, Ausleiher und Historie lesen, Nummer, Zustand, Eigentum und
 // Standort eines Exemplars ändern, die nächste freie Nummer nennen, aussondern und löschen,
-// dazu Auflagen, Signaturen, Systematik und Schlagworte, die Abfrage eines Titels über die
-// ISBN, die Cover, die Geräte und die Bestandsbücher (Zugangs- und Abgangsbuch). Die
-// Titelliste, die Buchmaske mit Anlegen und Ändern und der Import stehen im Untermodul
-// inventur/.
+// Auflagen, Signaturen, Systematik und Schlagworte, die Geräte und die Bestandsbücher (Zugangs-
+// und Abgangsbuch).
 package katalog
 
-import "bibliothek/api/tuer"
+import (
+	"bibliothek/api/tuer"
+	"bibliothek/internal/katalogdienste"
+	"bibliothek/repository"
+)
 
 // Tueren sind die Türen dieses Themas. Sie stehen auf der Basis des Servers und halten sie als
 // Zeiger: Datenbank, Anmeldung, Live-Leitung und Uhr gibt es so einmal, für jedes Thema dieselben.
@@ -15,6 +19,22 @@ type Tueren struct {
 	*tuer.Basis
 	// cover holt Cover von fremden Quellen; der Nullwert ist der Betrieb.
 	cover coverAbruf
+	// Katalogdienste fragt DNB, Google Books und OpenLibrary. Der Server teilt einen Client mit
+	// allen Türen, damit die Verbindungen zu den Diensten wiederverwendet werden.
+	Katalogdienste *katalogdienste.MetadatenClient
+}
+
+// titelAbfragen sind die Abfragen des Medienkatalogs am Pool der Basis.
+func (t *Tueren) titelAbfragen() *repository.TitelAbfragen {
+	return repository.NewTitelAbfragen(t.DB.Pool)
+}
+
+// katalogdienste ist der Client, den der Server stellt; ohne ihn, etwa in einem Test, ein eigener.
+func (t *Tueren) katalogdienste() *katalogdienste.MetadatenClient {
+	if t.Katalogdienste != nil {
+		return t.Katalogdienste
+	}
+	return katalogdienste.NewMetadatenClient()
 }
 
 // Sätze der Türen zum Exemplar, die mehrere Türen dieses Pakets ausgeben.

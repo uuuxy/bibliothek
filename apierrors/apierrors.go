@@ -262,7 +262,9 @@ func schreibeFehlerJSON(w http.ResponseWriter, status int, meldung string) {
 }
 
 // istDatenbankFehler erkennt einen Text aus der Datenbank (SQL, Bedingungen, Meldungen des
-// Treibers), der nie ungefiltert an die Oberfläche geht. Der Text ist klein geschrieben.
+// Treibers), der nie ungefiltert an die Oberfläche geht. Der Text ist klein geschrieben. DELETE
+// zählt nur mit FROM, wie es in SQL immer steht: Allein ist es auch eine Methode von HTTP, und
+// die nennt die Meldung zu einem unbekannten Endpunkt.
 func istDatenbankFehler(text string) bool {
 	return strings.Contains(text, "pgx") ||
 		strings.Contains(text, "pgconn") ||
@@ -274,7 +276,7 @@ func istDatenbankFehler(text string) bool {
 		strings.Contains(text, "insert into") ||
 		strings.Contains(text, "select ") ||
 		strings.Contains(text, "update ") ||
-		strings.Contains(text, "delete ")
+		strings.Contains(text, "delete from")
 }
 
 // neutraleMeldung liefert die Meldung für einen Fehler im Server; zwei bekannte Verletzungen

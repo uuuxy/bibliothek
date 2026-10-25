@@ -12,9 +12,7 @@ import (
 // router.go oder routen_*.go angemeldete Route erfüllt eine der drei Bedingungen:
 //
 //  1. Sie trägt eine Prüfung des Zugriffs (verlangeRecht oder VerlangeAnmeldung).
-//  2. Sie reicht an inventurTueren weiter (dessen Routen prüft
-//     TestPIIMatrixRechtStimmtMitCodeUeberein).
-//  3. Sie steht bewusst auf der Liste der öffentlichen Routen unten.
+//  2. Sie steht bewusst auf der Liste der öffentlichen Routen unten.
 //
 // Eine neue Route ohne Schutz macht diesen Test rot; so geht kein Endpunkt unbemerkt ohne
 // Zugriffskontrolle in Betrieb. Der Test liest die Quelltexte der Anmeldungen als Text; das ist
@@ -35,7 +33,9 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/public/bestellung/{token}":                     "Bestätigungs-Link: Bestellansicht des Lieferanten (Token = Ausweis, nur diese Bestellung)",
 		"/api/public/bestellung/{token}/etiketten/{groesse}": "Bestätigungs-Link: Etikettenbogen dieser Bestellung (identisch zum Mailanhang)",
 		"/api/public/bestellung/{token}/bestaetigen":         "Bestätigungs-Link: einmalige Bestätigung durch den Lieferanten (atomar, danach 409)",
-		"/uploads/":         "hochgeladene Cover-Bilder (öffentlich lesbar für Katalog/Monitor; Schülerfotos liegen NICHT hier, die stehen AES-verschlüsselt in der DB)",
+		"/uploads/": "hochgeladene Cover-Bilder, öffentlich lesbar für Katalog/Monitor. Kein Verzeichnislisting und " +
+			"kein Unterordner (neuteredFileSystem in api/katalog/uploads.go); Schülerfotos liegen nicht hier, sondern " +
+			"AES-verschlüsselt in der Datenbank.",
 		"/api/auth/refresh": "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/me":      "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/logout":  "Auth-Endpunkt",
@@ -79,8 +79,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 				// richtige Schwelle für Endpunkte, die jede angemeldete Rolle öffnet
 				// (nur_sitzung_liste_test.go nennt sie). Bewusst hier und nicht auf der Liste der
 				// öffentlichen Routen: Ohne Sitzung kommt niemand durch.
-				strings.Contains(ausdruck, "VerlangeAnmeldung(") ||
-				strings.Contains(ausdruck, "inventurTueren")
+				strings.Contains(ausdruck, "VerlangeAnmeldung(")
 			if geschuetzt {
 				continue
 			}
@@ -100,60 +99,6 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		t.Fatalf("nur %d Routen erkannt — der Scanner greift vermutlich nicht mehr (erwartet >100). "+
 			"Registrierungs-Syntax/Regex prüfen.", geprueft)
 	}
-}
-
-// TestInventurDelegationIstWirklichGeschuetzt prüft die Annahme nach, auf der Bedingung 2 des
-// Tests oben beruht.
-//
-// Der Test oben wertet jede Anmeldung mit inventurTueren als geschützt, weil der Mux der
-// Inventur intern VerlangeLesen oder VerlangeAendern setze. Für /uploads/ stimmt das nicht:
-// Die Route bedient dort ein nackter http.FileServer. Der Test oben meldete also „geschützt" für
-// einen Endpunkt, den er nie geprüft hat.
-//
-// Statt der Zusicherung zu glauben, liest dieser Test die Anmeldungen im Mux der Inventur und
-// verlangt für jede ohne Prüfung des Zugriffs einen bewussten Eintrag in
-// oeffentlicheRoutenInventur. Kommt dort eine ungeschützte Route hinzu, wird dieser Test rot,
-// nicht erst der Betrieb.
-func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
-	inhalt, err := os.ReadFile(filepath.Join("..", "inventur", "api_routen.go"))
-	if err != nil {
-		t.Fatalf("inventur/api_routen.go lesen: %v", err)
-	}
-
-	registrierung := regexp.MustCompile(`tueren\.mux\.Handle(?:Func)?\("([^"]+)"`)
-	methodenPraefix := regexp.MustCompile(`^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) `)
-
-	geprueft := 0
-	for _, ausdruck := range registrierungsAusdruecke(string(inhalt), "tueren.mux.") {
-		m := registrierung.FindStringSubmatch(ausdruck)
-		if m == nil {
-			continue
-		}
-		geprueft++
-		if strings.Contains(ausdruck, "konfig.Verlange") || strings.Contains(ausdruck, "verwaltung") {
-			continue
-		}
-		pfad := methodenPraefix.ReplaceAllString(m[1], "")
-		if _, ok := oeffentlicheRoutenInventur[pfad]; ok {
-			continue
-		}
-		t.Errorf("Inventur-Route %q trägt keinen Autorisierungs-Wrapper und steht nicht auf der "+
-			"Public-Allowlist.\n→ Das Gate in TestAlleRoutenSindGeschuetzt hält jede Delegation an "+
-			"inventurTueren pauschal für geschützt; diese Route wäre dort unbemerkt durchgerutscht.", m[1])
-	}
-
-	if geprueft < 5 {
-		t.Fatalf("nur %d Inventur-Registrierungen erkannt — der Scanner greift vermutlich nicht mehr "+
-			"(erwartet >10). Registrierungs-Syntax/Regex prüfen.", geprueft)
-	}
-}
-
-// oeffentlicheRoutenInventur nennt die Routen des Inventur-Mux, die bewusst ohne
-// Autorisierung ausgeliefert werden. Jede Ergänzung ist eine Entscheidung über die Sicherheit.
-var oeffentlicheRoutenInventur = map[string]string{
-	"/uploads/": "hochgeladene Cover-Bilder, öffentlich lesbar für Katalog/Monitor. " +
-		"Kein Verzeichnislisting und kein Unterordner (neuteredFileSystem); Schülerfotos " +
-		"liegen nicht hier, sondern AES-verschlüsselt in der Datenbank.",
 }
 
 // registrierungsAusdruecke liefert jeden Aufruf `<praefix>Handle(` oder `<praefix>HandleFunc(`

@@ -227,6 +227,21 @@ func TestAntworteFehlerMitMeldung_DatenbanktextWirdTrotzdemGefiltert(t *testing.
 	}
 }
 
+// DELETE ist auch eine Methode von HTTP: Die Meldung zu einem unbekannten Endpunkt nennt sie und
+// geht unverändert hinaus, der Text einer Abfrage mit DELETE bleibt gefiltert.
+func TestAntworteFehlerMitMeldung_MethodeDeleteIstKeinDatenbanktext(t *testing.T) {
+	for meldung, gehtHinaus := range map[string]bool{
+		"Unbekannter Endpunkt: DELETE /api/books/1":      true,
+		"delete from benutzer where id = $1 schlug fehl": false,
+	} {
+		rec := httptest.NewRecorder()
+		AntworteFehlerMitMeldung(rec, http.StatusNotFound, meldung, nil)
+		if got := leseFehlermeldung(t, rec.Body.String()); (got == meldung) != gehtHinaus {
+			t.Errorf("Meldung %q: hinaus ging %q", meldung, got)
+		}
+	}
+}
+
 // Eine Meldung geht ohne Umweg über einen Fehlerwert hinaus, unter und über 500; ein 500
 // antwortet mit der neutralen Meldung. Der Eintrag im Log nennt die Meldung, wie er sonst die
 // Ursache nennt.

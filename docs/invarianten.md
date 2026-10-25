@@ -106,7 +106,7 @@ Vorname, Nachname, Ausweisnummer und Klasse lehnt die Tür leer mit 400 ab
 | Invariante                                                                                                                                              | Durchsetzung                                     | Fundstelle                                                                             |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | ISBN eindeutig (wo gesetzt), über alle Schreibweisen und beide Längen: Die Datenbank bringt jede geschriebene ISBN in eine Normalform — ohne Trennzeichen, eine zehnstellige mit richtigem Prüfzeichen dreizehnstellig (Migration 133 und 157) | 🟢 UNIQUE, Trigger `trg_titel_isbn_normalform` | `buecher_titel.isbn`, `repository/isbn_normalform_pg_test.go` |
-| Titeltexte (Titel, Untertitel, Autor, Verlag) in einer Form gespeichert: kein Leerraum am Rand, Leerraum in Folge ein Leerzeichen, Umlaute zusammengesetzt (Unicode NFC) — Littera führt Titel mit zwei Leerzeichen und mit geschütztem Leerzeichen, die DNB liefert Umlaute zerlegt; der getippte Suchtext traf sie nicht (Migration 154 und 160) | 🟢 Trigger `trg_titel_text_normalform` | `repository/titeltext_normalform_pg_test.go`, `inventur/titel_suche_leerraum_pg_test.go`, `api/portal/opac_nfc_pg_test.go` |
+| Titeltexte (Titel, Untertitel, Autor, Verlag) in einer Form gespeichert: kein Leerraum am Rand, Leerraum in Folge ein Leerzeichen, Umlaute zusammengesetzt (Unicode NFC) — Littera führt Titel mit zwei Leerzeichen und mit geschütztem Leerzeichen, die DNB liefert Umlaute zerlegt; der getippte Suchtext traf sie nicht (Migration 154 und 160) | 🟢 Trigger `trg_titel_text_normalform` | `repository/titeltext_normalform_pg_test.go`, `api/portal/schulbuecher_suche_leerraum_pg_test.go`, `api/portal/opac_nfc_pg_test.go` |
 | Exemplar-Barcode eindeutig                                                                                                                              | 🟢 UNIQUE NOT NULL                               | `buecher_exemplare.barcode_id`                                                         |
 | Systemvergebene Exemplarnummern aus EINER Quelle (`barcode_seq`, `B-`) — alle fünf Wege, kein zweiter Kreis (Migration 105), in einer Form: mindestens fünf Ziffern, eine längere Zahl ganz (`B-100000`) | 🟢 PG-Tests | `api/katalog/barcode_vergabe_pg_test.go`, `repository/bestandskorrektur_nummernkreis_pg_test.go`, `internal/littera/schreiber_pg_test.go` |
 | Exemplar hängt an existierendem Titel                                                                                                                   | 🟢 FK ON DELETE CASCADE                          | `buecher_exemplare.titel_id`                                                           |
@@ -387,13 +387,13 @@ veraltet ist. Die Bugklassen dazu stehen in [sweeps.md](sweeps.md).
   Akte ungespeicherte Stammdaten, bucht die Theke keinen Scan; ein Scan in ein Feld der Maske
   bleibt dort (`frontend/e2e/theke-stammdaten-offen.spec.js`).
 - **17 · Ausfall.** Das Speichern eines Titels fragt keinen Katalogdienst
-  (`inventur/speichern_ohne_katalogdienste_pg_test.go`). Ohne Netz wird nicht gesperrt, und ein
+  (`api/katalog/speichern_ohne_katalogdienste_pg_test.go`). Ohne Netz wird nicht gesperrt, und ein
   Ausfall des Mailservers zählt nicht als Fehlversuch und sperrt niemanden aus (Migration 155).
 - **18 · Veralteter Stand.** Eine Maske schickt, was sie seit dem Öffnen geändert hat, und die
   Tür schreibt, was der Rumpf nennt; den Bestand eines Titels schickt die Maske mit der Zahl
   vom Öffnen, und der Server lehnt bei abweichendem Stand ab. So halten es Titel, Leserakte,
   Benutzer, Gerät, Lieferant und die Kategorien der Einstellungen
-  (`inventur/titel_genannte_felder_pg_test.go`, `frontend/e2e/buchmaske-zwei-plaetze.spec.js`,
+  (`api/katalog/titel_genannte_felder_pg_test.go`, `frontend/e2e/buchmaske-zwei-plaetze.spec.js`,
   `frontend/e2e/leserakte-zwei-plaetze.spec.js`, `benutzer-nur-geaendertes.spec.js`,
   `geraet-nur-geaendertes.spec.js`, `lieferant-nur-geaendertes.spec.js` und
   `einstellungen-kategorien.spec.js` in `frontend/e2e/`). Ändern zwei Plätze dasselbe Feld,
@@ -443,7 +443,7 @@ Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle 
 - **Frage 14, die Zeile ohne den Pflichtwert:** Verlangt eine Maske oder ihre Tür beim Ändern
   ein Feld, das Zeilen im Bestand nicht tragen? An Zeilen mit dem Wert fällt es nie auf; in
   der Littera-Sicherung von 2010 tragen 2.193 von 10.732 Titeln keine ISBN
-  (`inventur/titel_ohne_isbn_pg_test.go`). Dazu gehört die Zeile, deren Wert die Prüfung
+  (`api/katalog/titel_ohne_isbn_pg_test.go`). Dazu gehört die Zeile, deren Wert die Prüfung
   nicht besteht: Eine Tür prüft, was sich ändert.
 - **Frage 16, der Scan vor der Antwort:** Was geschieht mit dem nächsten Scan, solange die
   Antwort auf den vorigen aussteht — fragt er neu, oder schließt er sich dem laufenden Ablauf

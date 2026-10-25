@@ -1,5 +1,5 @@
 {
-	"_zweck": "Geteilte Prüffälle zur Reihenfolge von Texten: Die Titelliste (GET /api/books) ordnet mit sortiereBuecherNachTitel (inventur/endpunkte_buecher_lesen.go), jede andere Liste des Servers in der Datenbank mit der Kollation deutsch (Migration 165), die Listen der Oberfläche mit Intl.Collator('de', {numeric: true}). Alle drei Tests lesen diese Datei; jede Liste steht in der erwarteten Reihenfolge. Ordnen die Seiten verschieden, steht derselbe Titel am Server woanders als in einer Liste des Browsers.",
+	"_zweck": "Geteilte Prüffälle zur Reihenfolge von Texten: Die Titelliste (GET /api/books) ordnet mit sortiereBuecherNachTitel (api/katalog/titel_lesen.go), jede andere Liste des Servers in der Datenbank mit der Kollation deutsch (Migration 165), die Listen der Oberfläche mit Intl.Collator('de', {numeric: true}). Alle drei Tests lesen diese Datei; jede Liste steht in der erwarteten Reihenfolge. Ordnen die Seiten verschieden, steht derselbe Titel am Server woanders als in einer Liste des Browsers.",
 	"faelle": [
 		{
 			"fall": "Zahlen nach ihrer Größe",

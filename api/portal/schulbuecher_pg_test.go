@@ -1,0 +1,325 @@
+package portal
+
+import (
+	"context"
+	"strings"
+	"testing"
+
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/pdf"
+	"bibliothek/repository"
+)
+
+// Schulbücher je Fach (Portal des Kollegiums) an Postgres: Nur Lernmittel zählen, das Fach
+// gruppiert, „ohne Fach" ist eine eigene Kachel, und die Zahlen folgen derselben Zählweise wie
+// die Klassensätze (ausgesondert und nur bestellt zählen nicht, verliehen = offene Ausleihe).
+func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	for _, sql := range []string{
+		`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`,
+		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('LMTEST-MA', 'Mathematik') ON CONFLICT DO NOTHING`,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ('LM-S1', 'Lern', 'Mittel', '07A', 2031) ON CONFLICT DO NOTHING`,
+		`INSERT INTO buecher_titel (id, titel, isbn, subject, ist_lernmittel) VALUES
+			('00000000-0000-0000-0000-00000000a001', 'Mathe 7', '978-1', 'Mathematik', true),
+			('00000000-0000-0000-0000-00000000a002', 'Mathe 8', '978-2', 'Mathematik', true),
+			('00000000-0000-0000-0000-00000000a003', 'Lesebuch', '978-3', NULL, true),
+			('00000000-0000-0000-0000-00000000a004', 'Roman', '978-4', 'Mathematik', false)`,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, ist_ausgesondert, aussonderung_grund) VALUES
+			('00000000-0000-0000-0000-00000000a001', 'LM-1', true, false, NULL),
+			('00000000-0000-0000-0000-00000000a001', 'LM-2', true, false, NULL),
+			('00000000-0000-0000-0000-00000000a001', 'LM-3', true, true, 'AUSSORTIERT'),
+			('00000000-0000-0000-0000-00000000a002', 'LM-4', true, false, NULL),
+			('00000000-0000-0000-0000-00000000a003', 'LM-5', true, false, NULL),
+			('00000000-0000-0000-0000-00000000a004', 'LM-6', true, false, NULL)`,
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+			SELECT e.id, s.id, now() + interval '14 days' FROM buecher_exemplare e, schueler s WHERE e.barcode_id = 'LM-1' AND s.barcode_id = 'LM-S1'`,
+	} {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatalf("%s: %v", sql[:30], err)
+		}
+	}
+	abfragen := repository.NewTitelAbfragen(pool)
+
+	faecher, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(faecher) != 2 || faecher[0].Fach != "Mathematik" || faecher[1].Fach != "" {
+		t.Fatalf("abfragen.ladeLernmittelFaecher(…) = %+v, erwartet Mathematik + ohne Fach", faecher)
+	}
+	ma := faecher[0]
+	// Mathe 7: 2 aktive (1 verliehen), 1 ausgesondert zählt nicht; Mathe 8: 1. Roman zählt nicht (kein Lernmittel).
+	if ma.Titel != 2 || ma.Gesamt != 3 || ma.Verliehen != 1 || ma.Verfuegbar != 2 {
+		t.Errorf("Mathematik: %+v (erwartet 2 Titel, 3 gesamt, 1 verliehen, 2 verfügbar)", ma)
+	}
+	if faecher[1].Titel != 1 || faecher[1].Gesamt != 1 {
+		t.Errorf("ohne Fach: %+v", faecher[1])
+	}
+
+	titel, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Mathe 7: LM-1 verliehen, LM-2 frei, LM-3 ausgesondert (zählt nirgends).
+	if len(titel) != 2 || titel[0].Titel != "Mathe 7" || titel[0].Gesamt != 2 || titel[0].Verliehen != 1 || titel[0].Verfuegbar != 1 {
+		t.Errorf("Titel eines Fachs: %+v", titel)
+	}
+	alle, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(alle) != 3 || alle[2].Titel != "Lesebuch" {
+		t.Errorf("Export-Liste: erwartet 3 Lernmittel, ohne Fach zuletzt: %+v", alle)
+	}
+
+	// Jahrgang-Filter: Mathe 8 nur Jahrgang 8, Mathe 7 trägt die Spanne 5 bis 10 als Angabe.
+	// Das Lesebuch trägt keine und steht unter keinem Jahrgang: Bis dahin
+	// zählte jeder Titel ohne Angabe über die Vorgabe 5 bis 10 bei jedem Jahrgang darin mit.
+	// Jahrgang 12 trifft nichts.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 8, jahrgang_bis = 8 WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10 WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
+		t.Fatal(err)
+	}
+	jg7, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Jahrgang: 7})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jg7) != 1 || jg7[0].Titel != "Mathe 7" {
+		t.Errorf("Jahrgang 7 = %+v, erwartet nur Mathe 7 (das Lesebuch trägt keinen Jahrgang)", jg7)
+	}
+	ohneFilter, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ohneFilter) != 3 || ohneFilter[2].Titel != "Lesebuch" || ohneFilter[2].JahrgangVon != 0 || ohneFilter[2].JahrgangBis != 0 {
+		t.Errorf("ohne Filter = %+v, erwartet drei Lernmittel, das Lesebuch mit 0 und 0 (unbekannt)", ohneFilter)
+	}
+	f12, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{Jahrgang: 12})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f12) != 0 {
+		t.Errorf("Jahrgang 12 = %+v, erwartet keine Fächer", f12)
+	}
+	jg8, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{Jahrgang: 8})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jg8) != 2 || jg8[0].JahrgangVon != 5 || jg8[1].JahrgangVon != 8 {
+		t.Errorf("Jahrgang 8 in Mathematik = %+v, erwartet Mathe 7 (5–10) und Mathe 8 (8)", jg8)
+	}
+
+	// In der Liste eines Fachs steht ein Titel ohne Jahrgang hinter denen mit Jahrgang, nicht
+	// als „Jahrgang 0" davor.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
+		t.Fatal(err)
+	}
+	reihe, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reihe) != 2 || reihe[0].Titel != "Mathe 8" || reihe[1].Titel != "Mathe 7" {
+		t.Errorf("Reihenfolge im Fach = %+v, erwartet Mathe 8 (Jahrgang 8) vor Mathe 7 (ohne Jahrgang)", reihe)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10 WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
+		t.Fatal(err)
+	}
+
+	// Filter des Schulzweigs: Mathe 8 auf Gymnasium; "-" trifft die ohne Zweig.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET track = 'Gymnasium' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+	// „Gymnasium" muss Mathe 8 und die Bücher ohne Zweigangabe liefern: leer heißt laut
+	// Buchmaske „gilt für alle Zweige", und der ganze Littera-Altbestand ist so. Ein
+	// Filter, der nur die ausdrücklich zugeordneten zeigt, versteckt fast alles.
+	gym, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Zweig: "Gymnasium"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gym) != 3 {
+		t.Errorf("Zweig Gymnasium = %+v, erwartet Mathe 8 plus die zweiglosen Titel", gym)
+	}
+	ohne, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Zweig: repository.ZweigOhne})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ohne) != 2 {
+		t.Errorf("Zweig ohne Angabe = %+v, erwartet 2 Titel", ohne)
+	}
+
+	// Suche greift über Titel, ISBN, Autor und Fach — „Mathematik" findet beide
+	// Mathe-Bücher über das Fach, obwohl keines das Wort im Titel trägt.
+	treffer, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Suche: "Mathematik"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(treffer) != 2 {
+		t.Errorf("Suche Mathematik = %+v, erwartet 2 Titel über das Fach", treffer)
+	}
+	fSuche, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{Suche: "Lesebuch"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fSuche) != 1 || fSuche[0].Fach != "" || fSuche[0].Titel != 1 {
+		t.Errorf("Suche wirkt auch auf die Fach-Zahlen: %+v", fSuche)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET track = NULL WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+
+	// Export als PDF: geprüft am fertigen Dokument, an Signatur, Abschluss und den gedruckten
+	// Textstücken. Ein Export, dessen Zahlen im Struct stimmen, aber nicht aufs Blatt kommen, wäre
+	// sonst grün. Jahrgang und Schulzweig sind eigene Spalten. Beide bekommen hier einen Wert, den
+	// nichts anderes auf dem Blatt trägt; sonst wäre eine leer gezeichnete Spalte vom richtigen
+	// Blatt nicht zu unterscheiden.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 13, jahrgang_bis = 13, track = 'Gymnasium', last_counted = DATE '2026-04-17' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+	if alle, err = abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{}); err != nil {
+		t.Fatal(err)
+	}
+	doc, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(alle), "", "Jahrgang 7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pdftest.IstPDF(t, doc, "Schulbuch-Export")
+	gedruckt := strings.Join(pdftest.Texte(t, doc), "\n")
+	for _, muss := range []string{"Schulbücher", "Mathe 7", "Mathe 8", "Lesebuch", "Jahrgang 7", "ohne Fach", "13", "Gymnasium", "Gezählt", "17.04.2026"} {
+		if !strings.Contains(gedruckt, muss) {
+			t.Errorf("Schulbuch-PDF druckt %q nicht. Gedruckt: %s", muss, gedruckt)
+		}
+	}
+	// Der Filterhinweis im Kopf ist kein Schmuck: Ohne ihn sähe ein gefilterter Auszug
+	// wie der volle Bestand aus, und niemand erkennt ihn als Auszug.
+	if !strings.Contains(gedruckt, "3 Titel") {
+		t.Errorf("Schulbuch-PDF nennt die Titelzahl im Kopf nicht. Gedruckt: %s", gedruckt)
+	}
+
+	// Die Zählspalte erscheint nur, wenn in der Auswahl überhaupt gezählt wurde: Das
+	// Lesebuch allein trägt kein Datum, also fehlt die Spalte samt Überschrift.
+	nurOhneFach, err := abfragen.LadeLernmittelTitel(ctx, "", false, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	docOhne, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(nurOhneFach), "ohne Fach", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g := strings.Join(pdftest.Texte(t, docOhne), "\n"); strings.Contains(g, "Gezählt") {
+		t.Errorf("ungezählte Auswahl zeigt trotzdem die Zählspalte. Gedruckt: %s", g)
+	}
+
+	// Ein einzelnes Fach trägt seinen Namen in der Überschrift und nur seine Titel.
+	nurMathe, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err = pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(nurMathe), "Mathematik", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pdftest.IstPDF(t, doc, "Schulbuch-Export Mathematik")
+	gedruckt = strings.Join(pdftest.Texte(t, doc), "\n")
+	if !strings.Contains(gedruckt, "Mathematik") || strings.Contains(gedruckt, "Lesebuch") {
+		t.Errorf("Fach-Export zeigt das falsche Fach. Gedruckt: %s", gedruckt)
+	}
+}
+
+// Ein Buch in mehreren Auflagen ist im Portal eine Zeile: die
+// 3. Auflage mit zwei Exemplaren (eines verliehen), die 4. mit einem, dazu eine alte, die kein
+// Schulbuch mehr ist und nicht mitzählt. Oben steht die neueste getroffene Auflage, die Zahlen
+// sind die Summe, und die Fach-Zahlen zählen Bücher statt Auflagen. Nach der ISBN der 3.
+// Auflage gesucht steht diese oben — gezählt wird trotzdem das ganze Buch.
+func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	const (
+		werk = "00000000-0000-0000-0000-0000000b5000"
+		alt  = "00000000-0000-0000-0000-0000000b5001"
+		neu  = "00000000-0000-0000-0000-0000000b5002"
+		weg  = "00000000-0000-0000-0000-0000000b5003"
+		m8   = "00000000-0000-0000-0000-0000000b5004"
+	)
+	aufraeumen := []string{`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`, `DELETE FROM werke`}
+	for _, sql := range append(append([]string{}, aufraeumen...),
+		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('LMTEST-MA', 'Mathematik') ON CONFLICT DO NOTHING`,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ('LM-S1', 'Lern', 'Mittel', '07A', 2031) ON CONFLICT DO NOTHING`,
+		`INSERT INTO werke (id) VALUES ('`+werk+`')`,
+		`INSERT INTO buecher_titel (id, titel, isbn, subject, ist_lernmittel, auflage, erscheinungsjahr, werk_id) VALUES
+			('`+alt+`', 'Mathe 7', '978-B1', 'Mathematik', true, '3. Aufl.', 2019, '`+werk+`'),
+			('`+neu+`', 'Mathe 7', '978-B2', 'Mathematik', true, '4. Aufl.', 2023, '`+werk+`'),
+			('`+weg+`', 'Mathe 7', '978-B0', 'Mathematik', false, '2. Aufl.', 2015, '`+werk+`'),
+			('`+m8+`', 'Mathe 8', '978-B8', 'Mathematik', true, NULL, NULL, NULL)`,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES
+			('`+alt+`', 'LMA-1'), ('`+alt+`', 'LMA-2'), ('`+neu+`', 'LMA-3'), ('`+m8+`', 'LMA-4'),
+			('`+weg+`', 'LMA-5'), ('`+weg+`', 'LMA-6'), ('`+weg+`', 'LMA-7')`,
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+			SELECT e.id, s.id, now() + interval '14 days' FROM buecher_exemplare e, schueler s WHERE e.barcode_id = 'LMA-1' AND s.barcode_id = 'LM-S1'`,
+	) {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatalf("%.40s: %v", sql, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, sql := range aufraeumen {
+			if _, err := pool.Exec(context.Background(), sql); err != nil {
+				t.Logf("Aufräumen: %v", err)
+			}
+		}
+	})
+	abfragen := repository.NewTitelAbfragen(pool)
+	aufschluesselung := []repository.AuflageImBestand{
+		{ID: neu, Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 1},
+		{ID: alt, Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 2},
+	}
+	pruefeBuch := func(name string, z repository.LernmittelTitel, id, isbn string) {
+		t.Helper()
+		if z.ID != id || z.ISBN != isbn || z.Gesamt != 3 || z.Verliehen != 1 || z.Verfuegbar != 2 {
+			t.Errorf("%s: %s/%s %d/%d/%d — erwartet %s/%s mit 3 gesamt, 1 verliehen, 2 verfügbar (die alte Auflage ohne Schulbuch-Schalter zählt nicht)",
+				name, z.ID, z.ISBN, z.Gesamt, z.Verliehen, z.Verfuegbar, id, isbn)
+		}
+		if len(z.AuflagenBestand) != 2 || z.AuflagenBestand[0] != aufschluesselung[0] || z.AuflagenBestand[1] != aufschluesselung[1] {
+			t.Errorf("%s: Aufschlüsselung %+v — erwartet %+v", name, z.AuflagenBestand, aufschluesselung)
+		}
+	}
+
+	zeilen, err := abfragen.LadeLernmittelTitel(ctx, "Mathematik", false, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(zeilen) != 2 {
+		t.Fatalf("Mathematik: %d Zeilen %+v — erwartet das Buch einmal und Mathe 8", len(zeilen), zeilen)
+	}
+	pruefeBuch("ohne Suche", zeilen[0], neu, "978-B2")
+	if zeilen[1].ID != m8 || zeilen[1].AuflagenBestand != nil {
+		t.Errorf("Mathe 8 ohne Buch: %+v — erwartet eine gewöhnliche Zeile ohne Aufschlüsselung", zeilen[1])
+	}
+
+	getroffen, err := abfragen.LadeLernmittelTitel(ctx, "", true, repository.LernmittelFilter{Suche: "978-B1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(getroffen) != 1 {
+		t.Fatalf("Suche nach der ISBN der 3. Auflage: %+v — erwartet eine Zeile", getroffen)
+	}
+	pruefeBuch("Suche 978-B1", getroffen[0], alt, "978-B1")
+
+	faecher, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(faecher) != 1 || faecher[0].Titel != 2 || faecher[0].Gesamt != 4 || faecher[0].Verliehen != 1 {
+		t.Errorf("Fach-Zahlen: %+v — erwartet Mathematik mit 2 Büchern, 4 gesamt, 1 verliehen", faecher)
+	}
+	fSuche, err := abfragen.LadeLernmittelFaecher(ctx, repository.LernmittelFilter{Suche: "978-B1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fSuche) != 1 || fSuche[0].Titel != 1 || fSuche[0].Gesamt != 3 {
+		t.Errorf("Fach-Zahlen der Suche: %+v — erwartet 1 Buch mit 3 Exemplaren", fSuche)
+	}
+}

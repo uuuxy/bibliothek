@@ -29,7 +29,7 @@ import (
 // maxCoverBytes begrenzt, wie viel von einer fremden Antwort in den Speicher gelesen wird.
 // Ohne die Grenze bestimmte der fremde Server, wie viel Speicher ein einzelner Aufruf dieses
 // öffentlichen Endpunkts kostet. 10 MB sind für ein Buchcover großzügig; dieselbe Grenze gilt
-// im Cover-Downloader des Inventur-Moduls.
+// im Cover-Downloader der Katalogdienste (internal/katalogdienste/cover.go).
 const maxCoverBytes = 10 << 20
 
 // coverDownloadsProSekunde begrenzt nur den teuren Zweig dieses Endpunkts: den Fehltreffer im
@@ -104,8 +104,8 @@ func liefereCoverAusCache(w http.ResponseWriter, r *http.Request, root *os.Root,
 }
 
 // baueSichereCoverURL prüft die Adresse eines Covers gegen die Liste erlaubter Hosts und baut
-// sie aus geprüften Teilen neu auf. Liste und Neuaufbau liegen in pkg/coverquelle, weil das
-// Inventur-Modul dieselbe Prüfung braucht (Cover-Download und Abruf der Metadaten).
+// sie aus geprüften Teilen neu auf. Liste und Neuaufbau liegen in pkg/coverquelle, weil die
+// Katalogdienste dieselbe Prüfung brauchen (Cover-Download und Abruf der Metadaten).
 func baueSichereCoverURL(adresse string) (string, bool) {
 	return coverquelle.SichereURL(adresse, coverquelle.BildHosts)
 }
@@ -114,8 +114,8 @@ func baueSichereCoverURL(adresse string) (string, bool) {
 // nicht öffentlichen Adressen lehnt er beim Verbindungsaufbau ab, nach der DNS-Auflösung und
 // damit auch für jede Weiterleitung (OpenLibrary leitet auf archive.org um) und bei
 // DNS-Rebinding. Für den ganzen Abruf gilt eine feste Zeitgrenze von 20 Sekunden. Die
-// Umsetzung liegt in pkg/safehttp, weil das Inventur-Modul für seine Abrufe denselben Schutz
-// braucht.
+// Umsetzung liegt in pkg/safehttp, weil die Katalogdienste für ihre Abrufe denselben Schutz
+// brauchen.
 var coverHTTPClient = safehttp.NewClient(20 * time.Second)
 
 // coverAbruf ist, womit die Tür ein Cover holt, erkennt und ablegt. Der Nullwert ist der
@@ -178,7 +178,7 @@ func (c coverAbruf) holeBytes(ctx context.Context, adresse string) ([]byte, erro
 
 	// Was kein Bild ist, sofort verwerfen: Schranken gegen Roboter (DNB/Anubis) liefern bei
 	// unerwartetem User-Agent HTTP 200 mit einer Prüfseite in HTML. Dieselbe Prüfung steht im
-	// Cover-Downloader des Inventur-Moduls.
+	// Cover-Downloader der Katalogdienste.
 	if ct := antwort.Header.Get(tuer.HeaderContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
 		return nil, fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
 	}

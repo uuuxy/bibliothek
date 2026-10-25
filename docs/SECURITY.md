@@ -109,7 +109,7 @@ Gates: `TestErmittler_LanClientHinterProxy`, `TestErmittler_DurchgereichterHeade
 
 ### verlangeRecht-Middleware
 
-- Alle schützenswerten Endpunkte sind über `verlangeRecht` abgesichert (im Inventur-Modul über die hereingereichten Wächter `VerlangeLesen`, `VerlangeAendern`, `VerlangeLoeschen` und `VerlangeAnmeldung`); einen Wächter, der nach der Rolle fragt, gibt es nicht.
+- Alle schützenswerten Endpunkte sind über `verlangeRecht` abgesichert; einen Wächter, der nach der Rolle fragt, gibt es nicht.
 - **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
 - **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
 - **PII-Matrix:** [`docs/PII_MATRIX.de.md`](PII_MATRIX.de.md) stuft jede Route nach Schülerdaten ein (Stufe 0–3) und nennt das Recht davor; `api/pii_matrix_test.go` hält Tabelle und Registrierung deckungsgleich — eine neue Route ohne Einstufung wird rot. Der Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und wird ohne `view_students` überall ausgeblendet (`ohneSperrgrund`). Die Stufe ist **gemessen, nicht nur behauptet**: `api/pii_antwort_pg_test.go` ruft jede GET-Route und die lesenden POSTs (Theken-Scan samt Batch, LUSD-Vorschau) über den echten Router mit genau dem Recht ihrer Zeile auf und prüft die Antwort gegen Kanarienwerte je Stufe.
@@ -164,11 +164,10 @@ jeder Lehrkraft (siehe unten).
 ### Endpunkte ohne Anmeldung
 
 `TestAlleRoutenSindGeschuetzt` (`api/geschuetzte_routen_test.go`) lässt jede registrierte
-Route fehlschlagen, die weder `verlangeRecht` noch `VerlangeAnmeldung` trägt noch an
-das Inventur-Modul übergibt und nicht mit Begründung auf der Allowlist im Test steht. Die
-Routen des Inventur-Moduls prüfen die Tests in `api/pii_matrix_test.go`: Jede Route muss in
-der [PII-Matrix](PII_MATRIX.de.md) stehen, und das dort genannte Recht muss an ihrer
-Registrierung stehen. Eine ungeschützte Route kann also nicht unbemerkt live gehen. Die
+Route fehlschlagen, die weder `verlangeRecht` noch `VerlangeAnmeldung` trägt und nicht mit
+Begründung auf der Allowlist im Test steht. Die Tests in `api/pii_matrix_test.go` verlangen für
+jede Route eine Zeile in der [PII-Matrix](PII_MATRIX.de.md), und das dort genannte Recht muss an
+ihrer Registrierung stehen. Eine ungeschützte Route kann also nicht unbemerkt live gehen. Die
 Tabelle gibt die Allowlist wieder; verbindlich ist die Liste im Test, und kein Test
 vergleicht die beiden.
 
@@ -223,7 +222,7 @@ Zuschnitt begrenzt den Schaden:
 ### CSV-Formel-Injection (CWE-1236)
 
 - **Angriffsvektor:** Buchtitel oder Autornamen, die mit `=`, `+`, `-`, `@`, `\t`, `\r`, `\n` beginnen, können in CSV-Dateien als Formeln interpretiert werden (Excel/LibreOffice führt diese bei Öffnen aus).
-- **Schutz:** `pkg/csvutil.EntschaerfeZeile()` setzt einen Apostroph-Präfix vor alle Zellen, die mit einem dieser Zeichen beginnen (OWASP-Empfehlung). Wird bei allen CSV-Exporten verwendet (`inventur/export_csv.go`, Bestellexporte).
+- **Schutz:** `pkg/csvutil.EntschaerfeZeile()` setzt einen Apostroph-Präfix vor alle Zellen, die mit einem dieser Zeichen beginnen (OWASP-Empfehlung). Wird bei allen CSV-Exporten verwendet (`api/katalog/bestand_export.go`, Bestellexporte).
 
 ### XSS (Cross-Site Scripting)
 
@@ -313,7 +312,7 @@ Freiwilligen befüllt — die Allowlist begrenzt das **Ziel**, nicht den **Inhal
 präpariertes Bild ist über einen erlaubten Host erreichbar, deshalb greifen die
 Größengrenzen unabhängig von ihr.
 
-Denselben Header-Guard hat der Cover-Downloader des Inventur-Moduls
+Denselben Header-Guard hat der Cover-Downloader der Katalogdienste
 (`internal/katalogdienste/cover.go`), neben dem 10-MB-Limit auf der Leitung.
 
 ---

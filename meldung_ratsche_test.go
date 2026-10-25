@@ -40,7 +40,7 @@ import (
 // "message" in einer Antwort (Sätze einer erfolgreichen Antwort).
 //
 // Sieht nicht: Texte, die erst zur Laufzeit entstehen (err.Error(), Variablen), einen Status aus
-// einer Variablen, eigene Helfer außer inventur.schreibeFehler und Antworten, die {"error": …}
+// einer Variablen, eigene Helfer außer katalog.schreibeFehler und Antworten, die {"error": …}
 // selbst schreiben.
 
 // meldungBestand: Dateien mit Verstößen und ihre Zahl. Eine Datei ohne Verstoß fällt heraus.

@@ -334,7 +334,7 @@ func TestInDatenbankschicht_GrenztPaketeAb(t *testing.T) {
 			t.Errorf("%s gilt nicht als Datenbankschicht", p)
 		}
 	}
-	draussen := []string{"api", "jobs", "auth", "internal/service", "internal/katalogdienste", "inventur", "internal", "repository_alt", "db_export", "cmd", "internal/littera/neu", "."}
+	draussen := []string{"api", "jobs", "auth", "internal/service", "internal/katalogdienste", "internal", "repository_alt", "db_export", "cmd", "internal/littera/neu", "."}
 	for _, p := range draussen {
 		if eintrag, ok := inDatenbankschicht(p); ok {
 			t.Errorf("%s gilt als Datenbankschicht (Eintrag %q)", p, eintrag)

@@ -1,0 +1,95 @@
+package portal
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+
+	"bibliothek/api/tuer"
+	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/repository"
+)
+
+// Titel-Verwaltung und Lernmittel-Liste suchen am Server und vergleichen den Suchtext mit
+// dem Wortlaut. Littera führt Titel mit zwei Leerzeichen in Folge („La  Peste") und mit
+// geschütztem Leerzeichen; „La Peste" traf sie nicht. Die Datenbank speichert Titeltexte
+// mit einem Leerzeichen zwischen den Wörtern, und die Suche nimmt den
+// Suchtext in derselben Form. Der Titel entsteht hier an der Tür der Maske.
+func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	abfragen := repository.NewTitelAbfragen(pool)
+	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	const gespeichert, barcode = "Leerraumprobe La Peste", "B-LEERRAUM-INV-1"
+	geschuetzt := string(rune(0x00A0))
+
+	raeume := func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE barcode_id = $1`, barcode); err != nil {
+			t.Errorf("aufräumen: Probe-Exemplar löschen: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel LIKE 'Leerraumprobe%'`); err != nil {
+			t.Errorf("aufräumen: Probe-Titel löschen: %v", err)
+		}
+	}
+	raeume()
+	t.Cleanup(raeume)
+
+	id, err := abfragen.LegeTitelAn(ctx, repository.KatalogTitel{
+		Titel: "Leerraumprobe La  Peste", Autor: "Camus," + geschuetzt + "Albert", IstLernmittel: true,
+	})
+	if err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	testdaten.LegeExemplarAn(t, pool, id, barcode, true, "")
+
+	// Die Lernmittel-Liste über ihre Tür: Liste, Fach-Zahlen und Ausdruck lesen den Suchtext
+	// an einer Stelle (lernmittelFilterParam).
+	lernmittel := func(suchtext string) []repository.LernmittelTitel {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		tueren.Schulbuecher()(rec, httptest.NewRequest(http.MethodGet,
+			"/api/portal/lernmittel?q="+url.QueryEscape(suchtext), nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Lernmittel, Suche %+q: %d %s", suchtext, rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Titel []repository.LernmittelTitel `json:"titel"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatal(err)
+		}
+		return antwort.Titel
+	}
+
+	for _, suchtext := range []string{
+		"Leerraumprobe La Peste",               // getippt, wie man tippt
+		"Leerraumprobe La  Peste",              // wie der Titel in Littera steht
+		"leerraumprobe la" + geschuetzt + "pe", // aus einer Liste kopiert, Wortanfang
+		"Camus, Albert",
+		"Camus,  Alb",
+	} {
+		liste, err := abfragen.LadeTitelListe(ctx, "", suchtext, false)
+		if err != nil {
+			t.Fatalf("LadeTitelListe(%+q): %v", suchtext, err)
+		}
+		if len(liste) != 1 || liste[0].ID != id || liste[0].Titel != gespeichert {
+			t.Errorf("Titel-Verwaltung, Suche %+q: %d Treffer, erwartet den Titel %q", suchtext, len(liste), gespeichert)
+		}
+		if treffer := lernmittel(suchtext); len(treffer) != 1 || treffer[0].ID != id {
+			t.Errorf("Lernmittel, Suche %+q: %d Treffer, erwartet den Titel %q", suchtext, len(treffer), gespeichert)
+		}
+	}
+
+	// Gegenprobe: Der Leerraum fällt nicht weg, zwei Wörter bleiben zwei.
+	if liste, err := abfragen.LadeTitelListe(ctx, "", "Leerraumprobe LaPeste", false); err != nil || len(liste) != 0 {
+		t.Errorf("Titel-Verwaltung ohne Leerzeichen: %d Treffer, %v — erwartet keinen", len(liste), err)
+	}
+	if treffer := lernmittel("Leerraumprobe LaPeste"); len(treffer) != 0 {
+		t.Errorf("Lernmittel ohne Leerzeichen: %d Treffer, erwartet keinen", len(treffer))
+	}
+}

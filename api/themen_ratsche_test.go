@@ -1,8 +1,10 @@
 package api
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"io/fs"
 	"path/filepath"
 	"strconv"
@@ -101,6 +103,78 @@ func TestKeinThemaBindetEinAnderesEin(t *testing.T) {
 				"Einbindungen dieses Themas offenbar nicht", thema)
 		}
 	}
+}
+
+// Eine Tür ist eine Fabrik (func (t *Tueren) X() http.HandlerFunc), und die Routenliste ruft sie:
+// s.katalog().TitelListe(). Eine Methode, die selbst Antwort und Anfrage nimmt, wäre eine zweite
+// Form derselben Sache (docs/ARCHITEKTUR.md 5.2.2).
+//
+// Blindheit: Sie liest Methoden am Typ Tueren. Eine Funktion ohne Empfänger mit derselben
+// Signatur sieht sie nicht.
+func TestTuerenSindFabriken(t *testing.T) {
+	fset := token.NewFileSet()
+	fabriken := map[string]int{} // Türen je Thema, die einen Handler liefern
+	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		name := eintrag.Name()
+		if eintrag.IsDir() {
+			if pfad != "." && (strings.HasPrefix(name, ".") || name == "testdata" || name == "uploads") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		teile := strings.Split(filepath.ToSlash(pfad), "/")
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") || len(teile) < 2 {
+			return nil
+		}
+		datei, err := parser.ParseFile(fset, pfad, nil, 0)
+		if err != nil {
+			return err
+		}
+		for _, erklaerung := range datei.Decls {
+			methode, ok := erklaerung.(*ast.FuncDecl)
+			// Nur eine exportierte Methode erreicht die Routenliste; eine klein geschriebene mit
+			// Antwort und Anfrage ist der Rumpf, an den eine Fabrik weiterreicht.
+			if !ok || methode.Recv == nil || !methode.Name.IsExported() ||
+				!strings.HasSuffix(types.ExprString(methode.Recv.List[0].Type), "Tueren") {
+				continue
+			}
+			switch {
+			case typen(methode.Type.Params) == "http.ResponseWriter, *http.Request":
+				t.Errorf("api/%s: %s nimmt selbst Antwort und Anfrage. Eine Tür ist eine Fabrik, "+
+					"func (t *Tueren) %s() http.HandlerFunc (docs/ARCHITEKTUR.md 5.2.2).",
+					filepath.ToSlash(pfad), methode.Name.Name, methode.Name.Name)
+			case typen(methode.Type.Results) == "http.HandlerFunc" || typen(methode.Type.Results) == "http.Handler":
+				fabriken[teile[0]]++
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("api/ nicht lesbar: %v", err)
+	}
+	for _, thema := range erklaerteZugaenge(t) {
+		if fabriken[thema] == 0 {
+			t.Errorf("in api/%s keine Tür gefunden, die einen Handler liefert — die Prüfung liest "+
+				"dieses Thema nicht", thema)
+		}
+	}
+}
+
+// typen nennt die Typen einer Liste von Parametern oder Ergebnissen, durch Komma getrennt.
+func typen(liste *ast.FieldList) string {
+	if liste == nil {
+		return ""
+	}
+	var aus []string
+	for _, feld := range liste.List {
+		for range max(1, len(feld.Names)) {
+			aus = append(aus, types.ExprString(feld.Type))
+		}
+	}
+	return strings.Join(aus, ", ")
 }
 
 func TestEinbindungErlaubt_UnterscheidetDieFaelle(t *testing.T) {

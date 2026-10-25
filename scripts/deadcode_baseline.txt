@@ -33,7 +33,7 @@ internal/pdftest/pdftest.go: unreachable func: texteInReihenfolge
 # Dazu Seitenzahl und Seitenmaß eines PDFs (vorher Helfer in api/etiketten_layout_test.go; seit
 # die Erzeuger der Etiketten in pdf/ stehen, brauchen ihn die Tests beider Pakete).
 internal/pdftest/seiten.go: unreachable func: Seiten
-# Dazu die Prüfung, ob ein gedruckter Text in seine Zelle passt (Tests in pdf/, api/ und inventur/).
+# Dazu die Prüfung, ob ein gedruckter Text in seine Zelle passt (Tests in pdf/).
 internal/pdftest/spalte.go: unreachable func: InSpalte
 internal/pdftest/spalte.go: unreachable func: InSpalteFett
 internal/pdftest/spalte.go: unreachable func: inSpalte
@@ -82,10 +82,6 @@ internal/littera/leser.go: unreachable func: nurArt
 # wird von den pgtest-Support-Dateien mehrerer Pakete benutzt.
 internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leere
 
-# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Die Ersatzbilder
-# der Cover-Quellen stehen als Prüfsumme im Programm, nicht als Datei im Repository.
-# Die Tests der beiden Ladewege (api, inventur) melden deshalb ein eigenes Bild an
-# und prüfen so die Erkennung selbst statt einer Attrappe.
 # Testinfrastruktur per Paket-Design: die Test-Arbeitsmappe für die Excel-Leser (vorher
 # Helfer in api/lusd_quelle_test.go, seit dem 09.10.2026 von internal/lusd und api
 # gebraucht). Wird ausschließlich von *_test.go importiert.
@@ -177,3 +173,7 @@ internal/routertest/routertest.go: unreachable func: MitAufruf
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Ein Test ohne Tabelle der
 # Rechte legt die Entscheidung, was eine Rolle darf, in den Cache seines eigenen Servers.
 api/tuer/rechte.go: unreachable func: RechteCache.MerkeFuerTest
+
+# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Methode): Die Tests in api/katalog,
+# internal/service und internal/katalogdienste kappen mit ihr den Weg ins Netz.
+internal/katalogdienste/katalogdienste.go: unreachable func: MetadatenClient.SetzeHTTPClientFuerTest

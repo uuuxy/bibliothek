@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-24. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-25. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -14,19 +14,11 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (229)
+## Alle registrierten Routen (225)
 
 - `/`
-- `/api/admin`
-- `/api/admin/`
-- `/api/books`
-- `/api/books/`
-- `/api/class-books`
-- `/api/lookup/`
-- `/api/portal/`
 - `/favicon.ico`
-- `/uploads/`
-- `DELETE /api/admin/`
+- `DELETE /api/admin/class-books`
 - `DELETE /api/benutzer/{id}`
 - `DELETE /api/bestellungen/{id}/mail`
 - `DELETE /api/books`
@@ -45,8 +37,10 @@
 - `GET /api/action/buchbarcodes`
 - `GET /api/action/nachbuch-meldungen`
 - `GET /api/action/nachbuch-meldungen/anzahl`
-- `GET /api/admin/`
 - `GET /api/admin/auditlog`
+- `GET /api/admin/books/export`
+- `GET /api/admin/books/external-covers`
+- `GET /api/admin/class-books`
 - `GET /api/admin/permissions`
 - `GET /api/admin/settings/mail`
 - `GET /api/admin/system/backup-status`
@@ -158,7 +152,9 @@
 - `POST /api/action`
 - `POST /api/action/nachbuch-meldungen/{id}/quittieren`
 - `POST /api/action/nachbuchen`
-- `POST /api/admin/`
+- `POST /api/admin/books/retry-covers`
+- `POST /api/admin/class-books`
+- `POST /api/admin/class-books/add`
 - `POST /api/admin/import-bestand`
 - `POST /api/admin/mahnungen/bulk-print`
 - `POST /api/admin/settings/mail/test`

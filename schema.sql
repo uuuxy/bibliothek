@@ -127,7 +127,7 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- (db.RechteVorgabe, ON CONFLICT DO NOTHING) — nur die Struktur steht hier, und in
 -- Migration 106, nicht im Go-Prozess: Eine Tabelle, die erst der Start anlegt, sieht die
 -- Schema-Paritäts-Ratsche nicht, weil derselbe Start auf beiden verglichenen Seiten läuft
--- (Gate an der Quelle: inventur/kein_ddl_im_schreibpfad_test.go).
+-- (Gate an der Quelle: kein_ddl_im_schreibpfad_test.go).
 CREATE TABLE role_permissions (
     role VARCHAR(50) NOT NULL,
     permission VARCHAR(100) NOT NULL,
@@ -2022,7 +2022,7 @@ SELECT setval('barcode_seq', (
 -- Excel-Sammelimport ziehen aus barcode_seq; die eigene Sequenz der „SYS-…"-Nummern schafft
 -- Migration 105 ab. Vorhandene SYS-Exemplare behalten ihre Nummer — sie kann physisch am
 -- Buch kleben; die Exemplarkarte zeigt sie als Platzhalter („Barcode scannen"). Gate gegen
--- DDL im Schreibpfad: inventur/kein_ddl_im_schreibpfad_test.go.
+-- DDL im Schreibpfad: kein_ddl_im_schreibpfad_test.go.
 
 CREATE TABLE IF NOT EXISTS idempotency_keys (
     idempotency_key UUID PRIMARY KEY,

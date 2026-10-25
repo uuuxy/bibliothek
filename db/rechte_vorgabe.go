@@ -243,7 +243,7 @@ const sqlVererbeZusammenfuehren = `
 // SchreibeRechteVorgabe schreibt die Zeilen aus RechteVorgabe, die in role_permissions fehlen;
 // bestehende fasst sie nicht an. Vorher erben zwei Rechte den Wert des Rechts, aus dem sie
 // hervorgingen. Der Start schreibt nur Daten, das Schema kommt aus den Migrationen
-// (inventur/kein_ddl_im_schreibpfad_test.go).
+// (kein_ddl_im_schreibpfad_test.go).
 func (v *Verbindung) SchreibeRechteVorgabe(ctx context.Context) error {
 	if _, err := v.Pool.Exec(ctx, sqlVererbeAufgeteilteRechte); err != nil {
 		return fmt.Errorf("vererbung manage_users → manage_settings/manage_students_admin: %w", err)

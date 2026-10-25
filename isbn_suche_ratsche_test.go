@@ -80,9 +80,9 @@ func TestISBNSuche_VergleichtDieNormalform(t *testing.T) {
 		t.Error(v)
 	}
 
-	// Nicht-leer-Garantie, von Hand gezählt: Suchleiste und Thekensuche (repository), die
-	// Titel-Verwaltung und die Lernmittel (inventur), die Bestellsuche (service), der Katalog
-	// für Leser (api). Findet der Detektor weniger, misst er nichts mehr.
+	// Nicht-leer-Garantie, von Hand gezählt: Suchleiste und Thekensuche, die Titel-Verwaltung und
+	// die Lernmittel (alle repository), die Bestellsuche (service), der Katalog für Leser (api).
+	// Findet der Detektor weniger, misst er nichts mehr.
 	if suchen < 6 {
 		t.Errorf("nur %d Deklarationen mit einer Suche über die ISBN gefunden — erwartet mindestens 6: misst der Detektor noch?", suchen)
 	}

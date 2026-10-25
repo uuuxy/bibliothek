@@ -50,7 +50,6 @@ import (
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/internal/middleware"
 	"bibliothek/internal/service"
-	"bibliothek/inventur"
 	"bibliothek/mailservice"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
@@ -74,6 +73,8 @@ type Server struct {
 	fehlerstand *logger.Fehlerstand
 	// bremse zählt die gescheiterten Anmeldungen je Adresse; der Nullwert ist leer.
 	bremse anmeldeBremse
+	// katalogdienste fragt DNB, Google Books und OpenLibrary, ein Client für alle Türen.
+	katalogdienste *katalogdienste.MetadatenClient
 }
 
 // ServerKonfig ist, was der Start dem Server über Datenbank, Anmeldung und Live-Leitung hinaus
@@ -110,6 +111,7 @@ func NewServer(datenbank *db.Verbindung, authenticator *auth.Anmeldung, broker *
 		vertrauteProxys:   konfig.VertrauteProxys,
 		coverAbgleich:     coverAbgleich,
 		fehlerstand:       konfig.Fehlerstand,
+		katalogdienste:    katalogdienste.NewMetadatenClient(),
 	}
 }
 
@@ -158,7 +160,7 @@ func (s *Server) schaden() *schaden.Tueren {
 
 // katalog ist der Zugang zu den Türen des Medienkatalogs zu einem Titel und seinen Exemplaren.
 func (s *Server) katalog() *katalog.Tueren {
-	return &katalog.Tueren{Basis: &s.Basis}
+	return &katalog.Tueren{Basis: &s.Basis, Katalogdienste: s.katalogdienste}
 }
 
 // druck ist der Zugang zu den Türen des Druck-Centers.
@@ -200,7 +202,7 @@ func (s *Server) Routes() http.Handler {
 	nachbuchDienst := service.NewNachbuchDienst(s.DB.Pool, leserAbfragen, katalogAbfragen, ausleihAbfragen, protokollAbfragen)
 	bestellDienst := service.NewBestellDienst(s.DB, katalogAbfragen)
 
-	s.registriereInventurRouten(mux)
+	s.registriereUploads(mux)
 	s.registriereAnmeldeRouten(mux)
 
 	// Die Routenlisten je Sache.
@@ -217,36 +219,15 @@ func (s *Server) Routes() http.Handler {
 	return s.baueKette(mux)
 }
 
-func (s *Server) registriereInventurRouten(mux *http.ServeMux) {
-	// Das Verzeichnis der Uploads für das Inventur-Modul.
+func (s *Server) registriereUploads(mux *http.ServeMux) {
+	// Das Verzeichnis der hochgeladenen und abgerufenen Cover.
 	if err := os.MkdirAll("uploads", 0750); err != nil {
 		slog.Error("router: Upload-Verzeichnis konnte nicht angelegt werden", "fehler", err)
 	}
 	// Ein Unterordner uploads/fotos entsteht hier nicht: Schülerfotos liegen verschlüsselt
 	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
-	// was direkt in uploads/ liegt (inventur/api_routen.go).
-	inventurAbfragen := repository.NewTitelAbfragen(s.DB.Pool)
-	metadaten := katalogdienste.NewMetadatenClient()
-
-	inventurTueren := inventur.NewTueren(inventur.TuerenKonfig{
-		Abfragen:          inventurAbfragen,
-		Pool:              s.DB.Pool,
-		Metadaten:         metadaten,
-		VerlangeLesen:     s.verlangeRecht("view_books"),
-		VerlangeAendern:   s.verlangeRecht("edit_books"),
-		VerlangeLoeschen:  s.verlangeRecht("delete_books"),
-		VerlangeAnmeldung: s.VerlangeAnmeldung(),
-	})
-
-	// Die Routen des Inventur-Moduls.
-	mux.Handle("/api/books", inventurTueren)
-	mux.Handle("/api/books/", inventurTueren)
-	mux.Handle("/api/class-books", inventurTueren)
-	mux.Handle("/api/portal/", inventurTueren)
-	mux.Handle("/api/lookup/", inventurTueren)
-	mux.Handle("/api/admin", inventurTueren)
-	mux.Handle("/api/admin/", inventurTueren)
-	mux.Handle("/uploads/", inventurTueren)
+	// was direkt in uploads/ liegt (api/katalog/uploads.go).
+	mux.Handle("GET /uploads/", s.katalog().Uploads())
 }
 
 func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
@@ -281,7 +262,7 @@ func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 func (s *Server) registriereImportRouten(mux *http.ServeMux) {
 	// Der Import aus Littera, der Bestandsimport und der Abgleich der Cover (manage_inventory).
 	mux.Handle("POST /api/import/littera", s.verlangeRecht("manage_inventory")(s.system().LitteraImport()))
-	mux.Handle("POST /api/admin/import-bestand", s.verlangeRecht("manage_inventory")(http.HandlerFunc(s.system().BestandImport)))
+	mux.Handle("POST /api/admin/import-bestand", s.verlangeRecht("manage_inventory")(s.system().BestandImport()))
 	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen(s.coverAbgleich)))
 }
 
@@ -374,6 +355,18 @@ func (s *Server) lebenszeichen() http.HandlerFunc {
 // im Betriebssystem an dist/ (gegen Path-Traversal, gosec G304).
 func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Ein unbekannter /api/-Pfad ist ein Fehler, keine Seite: Bekäme er die App-Shell,
+		// antwortete ein vertippter, umbenannter oder mit der falschen Methode gerufener
+		// Endpunkt mit "200 text/html", und der Aufrufer scheiterte erst beim Lesen des JSON,
+		// mit einer Meldung, die nichts mit der Ursache zu tun hat. Das gilt für jede Methode:
+		// Ein POST an einen umbenannten Endpunkt ist kein Fehler der Methode.
+		//
+		// Die App-Shell bleibt für alles andere richtig: /schuelerdatei, /bestellungen und jede
+		// andere Route der Oberfläche gibt es nur im Browser.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, fmt.Sprintf("Unbekannter Endpunkt: %s %s", r.Method, r.URL.Path), nil)
+			return
+		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusMethodNotAllowed, "Diese Methode ist hier nicht erlaubt", nil)
 			return
@@ -383,18 +376,6 @@ func liefereOberflaeche(oberflaeche *os.Root) http.HandlerFunc {
 			return
 		}
 		if liefereVorhandeneDatei(w, r, oberflaeche, strings.TrimPrefix(r.URL.Path, "/")) {
-			return
-		}
-
-		// Ein unbekannter /api/-Pfad ist ein Fehler, keine Seite: Bekäme er die App-Shell,
-		// antwortete ein vertippter, umbenannter oder mit der falschen Methode gerufener
-		// Endpunkt mit "200 text/html", und der Aufrufer scheiterte erst beim Lesen des JSON,
-		// mit einer Meldung, die nichts mit der Ursache zu tun hat.
-		//
-		// Die App-Shell bleibt für alles andere richtig: /schuelerdatei, /bestellungen und jede
-		// andere Route der Oberfläche gibt es nur im Browser.
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, fmt.Sprintf("Unbekannter Endpunkt: %s %s", r.Method, r.URL.Path), nil)
 			return
 		}
 

@@ -423,16 +423,18 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/auth/me":      {URL: "/api/auth/me"},
 		"GET /health":           {URL: "/health"},
 
-		// inventur/api_routen.go
-		"GET /uploads/":                     {URL: "/uploads/"},
-		"GET /api/books":                    {URL: "/api/books"},
-		"GET /api/books/{id}":               {URL: "/api/books/" + w.titelID},
-		"GET /api/books/vorhanden":          {URL: "/api/books/vorhanden?isbn=9780306406157"},
-		"GET /api/class-books":              {URL: "/api/class-books"},
-		"GET /api/portal/klassensaetze":     {URL: "/api/portal/klassensaetze"},
-		"GET /api/portal/lernmittel":        {URL: "/api/portal/lernmittel"},
-		"GET /api/portal/lernmittel/export": {URL: "/api/portal/lernmittel/export"},
-		"GET /api/admin/":                   {URL: "/api/admin/"},
+		// routen_katalog.go und router.go: der Medienkatalog
+		"GET /uploads/":                        {URL: "/uploads/"},
+		"GET /api/books":                       {URL: "/api/books"},
+		"GET /api/books/{id}":                  {URL: "/api/books/" + w.titelID},
+		"GET /api/books/vorhanden":             {URL: "/api/books/vorhanden?isbn=9780306406157"},
+		"GET /api/class-books":                 {URL: "/api/class-books"},
+		"GET /api/portal/klassensaetze":        {URL: "/api/portal/klassensaetze"},
+		"GET /api/portal/lernmittel":           {URL: "/api/portal/lernmittel"},
+		"GET /api/portal/lernmittel/export":    {URL: "/api/portal/lernmittel/export"},
+		"GET /api/admin/class-books":           {URL: "/api/admin/class-books"},
+		"GET /api/admin/books/external-covers": {URL: "/api/admin/books/external-covers"},
+		"GET /api/admin/books/export":          {URL: "/api/admin/books/export"},
 	}
 }
 
@@ -445,9 +447,8 @@ var erwarteterFehlstatus = map[string]int{
 	"GET /api/bestellhistorie/{id}":                          404, // bewusst die Nullen-UUID: nur der Fehlerpfad ist ohne Bestellwelt erreichbar
 	"GET /api/public/bestellung/{token}":                     404, // Dummy-Token — ein echter entstünde nur über den Bestell-Schreibpfad
 	"GET /api/public/bestellung/{token}/etiketten/{groesse}": 404, // dito
-	"GET /api/admin/":                                        404, // Mount-Sammelpfad des Inventur-Mux — der nackte Pfad trifft keine innere Route; die inneren stehen einzeln in der Matrix
-	"GET /uploads/":                                          404, // FileServer auf leerem Cover-Verzeichnis, kein Index; im Lauf dieses Tests liegen dort keine Dateien
-	"GET /api/inventur/fehlbestand":                          400, // verlangt session_id einer echten Inventur; ohne Inventur-Welt ist der Parameter-Fehlerpfad die ehrliche Antwort
+	"GET /uploads/":                 404, // FileServer auf leerem Cover-Verzeichnis, kein Index; im Lauf dieses Tests liegen dort keine Dateien
+	"GET /api/inventur/fehlbestand": 400, // verlangt session_id einer echten Inventur; ohne Inventur-Welt ist der Parameter-Fehlerpfad die ehrliche Antwort
 }
 
 // bewusstAusgelassen: GET-Zeilen der Matrix, die dieser Test mit Begründung
@@ -472,10 +473,6 @@ func rechtFuerZeile(recht string) (permission string, mitSitzung bool) {
 		return "", false
 	case "Sitzung", "selbst-prüfend":
 		return "", true
-	case "inventur:view_books":
-		return "view_books", true
-	case "inventur:edit_books":
-		return "edit_books", true
 	default:
 		return recht, true
 	}

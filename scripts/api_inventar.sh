@@ -13,7 +13,7 @@ set -eu
 # (`GET /api/dinge/{id}`, `POST /extend/`), die keine Routen sind. Dieselbe Regel wie beim
 # Frontend unten.
 go_routen() {
-  grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" --exclude="*_test.go" \
+  grep -rhE '\.Handle(Func)?\(' api/ --include="*.go" --exclude="*_test.go" \
     | grep -oE '"(GET |POST |PUT |PATCH |DELETE )?/[^"]*"' \
     | tr -d '"' | sed 's/^ *//' | sort -u
 }

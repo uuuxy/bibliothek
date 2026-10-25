@@ -37,7 +37,7 @@ func TestUUIDPfadParameter_JederPlatzhalterIstEingeordnet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dateien = append(dateien, "router.go", filepath.Join("..", "inventur", "api_routen.go"))
+	dateien = append(dateien, "router.go")
 
 	vorkommen := map[string]int{}
 	for _, datei := range dateien {

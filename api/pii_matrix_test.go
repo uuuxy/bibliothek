@@ -30,7 +30,7 @@ import (
 
 type matrixZeile struct {
 	Route  string // "GET /api/vormerkungen"
-	Recht  string // "view_students", "öffentlich", "Sitzung", "inventur:view_books", ...
+	Recht  string // "view_students", "öffentlich", "Sitzung", ...
 	Stufe  string // "0".."3"
 	Quelle string // Dateiname laut Abschnittsüberschrift im Dokument
 }
@@ -79,7 +79,7 @@ func registrierteRouten(t *testing.T) map[string]string {
 	if err != nil {
 		t.Fatalf("glob: %v", err)
 	}
-	dateien = append(dateien, "router.go", filepath.Join("..", "inventur", "api_routen.go"))
+	dateien = append(dateien, "router.go")
 	for _, datei := range dateien {
 		if strings.HasSuffix(datei, "_test.go") {
 			continue
@@ -109,7 +109,7 @@ func TestRegistrierteRouten_SiehtJedeAnmeldung(t *testing.T) {
 	gelesen := registrierteRouten(t)
 
 	imBaum := map[string]string{}
-	for _, wurzel := range []string{".", filepath.Join("..", "inventur")} {
+	for _, wurzel := range []string{"."} {
 		for _, rel := range produktivDateien(t, wurzel) {
 			datei := filepath.Join(wurzel, rel)
 			fset := token.NewFileSet()
@@ -145,7 +145,7 @@ func TestRegistrierteRouten_SiehtJedeAnmeldung(t *testing.T) {
 	for muster, ort := range imBaum {
 		if _, ok := gelesen[muster]; !ok {
 			t.Errorf("%s: Route %q fehlt in registrierteRouten.\n"+
-				"→ Es liest routen_*.go, router.go und inventur/api_routen.go, je Anmeldung eine Zeile mit mux.Handle(\"…\".", ort, muster)
+				"→ Es liest routen_*.go und router.go, je Anmeldung eine Zeile mit mux.Handle(\"…\".", ort, muster)
 		}
 	}
 	for muster, zeile := range gelesen {
@@ -195,25 +195,7 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 			}
 			continue
 		case "Sitzung":
-			// api/ ruft die Methode VerlangeAnmeldung, das Paket inventur das hereingereichte Feld
-			// VerlangeAnmeldung seiner Konfiguration.
 			if !strings.Contains(zeile, "VerlangeAnmeldung(") {
-				t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))
-			}
-			continue
-		case "inventur-Mux":
-			erwartet = "inventurTueren" // Schutz liegt im inneren Mux, dessen Routen stehen einzeln in der Matrix
-		case "inventur:view_books":
-			erwartet = "VerlangeLesen("
-		case "inventur:delete_books":
-			// Bestand vernichten ist ein eigenes Recht, getrennt von edit_books: Hinge der
-			// Massenlöschweg an edit_books, wäre er offener als das Löschen eines einzelnen
-			// Titels, das delete_books verlangt.
-			erwartet = "VerlangeLoeschen("
-		case "inventur:edit_books":
-			// Die Schreibrouten teilen sich eine vorgebaute Tür:
-			// verwaltung := konfig.VerlangeAendern(...); die Variable ist die Prüfung des Zugriffs.
-			if !strings.Contains(zeile, "VerlangeAendern(") && !strings.Contains(zeile, "verwaltung") {
 				t.Errorf("%s: Matrix dokumentiert Recht %q, die Registrierung sagt etwas anderes: %s", route, z.Recht, strings.TrimSpace(zeile))
 			}
 			continue

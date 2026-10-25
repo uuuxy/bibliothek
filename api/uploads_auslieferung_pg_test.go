@@ -17,7 +17,7 @@ import (
 
 // Der Weg von außen, am Router des Betriebs und ohne Sitzung: Ein Cover kommt an, eine
 // Datei aus einem Unterordner von uploads/ nicht. Die Regel selbst prüft
-// inventur/api_routen_test.go; hier steht, dass kein Mount an ihr vorbeiführt.
+// api/katalog/uploads_test.go; hier steht, dass kein Mount an ihr vorbeiführt.
 func TestUploadsOhneAnmeldungNurDateienDirektImVerzeichnis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	t.Chdir(t.TempDir())
