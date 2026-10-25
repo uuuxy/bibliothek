@@ -68,9 +68,9 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 
 	// Sperrgründe erst jetzt, nach dem Lesen der Ausleihe, weil die eigene Rückgabe nie
 	// gesperrt ist: offene Schäden (0), Einstellungen, Überfällige (0).
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\) FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
+		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, "0"))
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_ausleihen_schueler", testdaten.ZeigerAuf("5")).

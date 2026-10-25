@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -23,7 +24,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 	faelle := []struct {
 		name          string
 		groessen      repository.ErsatzwertGroessen
-		wantBetrag    float64
+		wantBetrag    betrag.Cent
 		wantImSatz    string
 		wantNichtSatz string
 		// wantOhnePreis: Dem Betrag liegt kein Preis zugrunde. Die Vorgabe ist bewusst
@@ -33,29 +34,29 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Lernmittel im 1. Verleihjahr — voller Kaufpreis",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 20.00, Topf: mitteltopf.Land,
+				Kaufpreis: 2000, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 1, SchuljahreImBestand: 0,
 			},
-			wantBetrag: 20.00,
+			wantBetrag: 2000,
 			wantImSatz: "100 %",
 		},
 		{
 			// Das Beispiel „Schüler C" aus der Arbeitshilfe: drittes Verleihjahr, 60 %.
 			name: "Lernmittel im 3. Verleihjahr — 60 %",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 41.50, Topf: mitteltopf.Land,
+				Kaufpreis: 4150, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 			},
-			wantBetrag: 24.90,
+			wantBetrag: 2490,
 			wantImSatz: "60 %",
 		},
 		{
 			name: "Lernmittel im 9. Verleihjahr — ab dem 6. sind es 10 %",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 30.00, Topf: mitteltopf.Land,
+				Kaufpreis: 3000, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 2, SchuljahreImBestand: 8,
 			},
-			wantBetrag: 3.00,
+			wantBetrag: 300,
 			wantImSatz: "10 %",
 		},
 		{
@@ -71,10 +72,10 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Büchereibuch, neu — Neuwert",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 12.00, Topf: mitteltopf.Schultraeger,
+				Kaufpreis: 1200, Topf: mitteltopf.Schultraeger,
 				SchuljahreMitAusleihe: 1, SchuljahreImBestand: 0,
 			},
-			wantBetrag:    12.00,
+			wantBetrag:    1200,
 			wantImSatz:    "ohne Altersabschlag",
 			wantNichtSatz: "Verleihjahr",
 		},
@@ -83,10 +84,10 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			// 1,20 €. Die Benutzungsordnung kennt diesen Abschlag nicht.
 			name: "Büchereibuch, zehn Jahre alt — TROTZDEM voller Neuwert",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 12.00, Topf: mitteltopf.Schultraeger,
+				Kaufpreis: 1200, Topf: mitteltopf.Schultraeger,
 				SchuljahreMitAusleihe: 7, SchuljahreImBestand: 10,
 			},
-			wantBetrag:    12.00,
+			wantBetrag:    1200,
 			wantImSatz:    "ohne Altersabschlag",
 			wantNichtSatz: "%",
 		},
@@ -107,8 +108,8 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			got := ErsatzwertVorschlagAus(f.groessen, ersatzwert.PreisquelleListenpreis)
 
 			if got.Betrag != f.wantBetrag {
-				t.Errorf("Betrag = %.2f, want %.2f — die Zahl landet in einer Forderung "+
-					"(Herleitung: %q)", got.Betrag, f.wantBetrag, got.Herleitung)
+				t.Errorf("Betrag = %s, want %s — die Zahl landet in einer Forderung "+
+					"(Herleitung: %q)", got.Betrag.Text(), f.wantBetrag.Text(), got.Herleitung)
 			}
 			if !strings.Contains(got.Herleitung, f.wantImSatz) {
 				t.Errorf("Herleitung = %q, erwartet darin %q", got.Herleitung, f.wantImSatz)
@@ -118,8 +119,8 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			// ein deutscher Satz die Schnittstelle: Ihn könnte dieser Test umformulieren, ohne
 			// dass vorn etwas rot wird.
 			if got.Bekannt == f.wantOhnePreis {
-				t.Errorf("Bekannt = %v bei Betrag %.2f (%q) — erwartet %v",
-					got.Bekannt, got.Betrag, got.Herleitung, !f.wantOhnePreis)
+				t.Errorf("Bekannt = %v bei Betrag %s (%q) — erwartet %v",
+					got.Bekannt, got.Betrag.Text(), got.Herleitung, !f.wantOhnePreis)
 			}
 			if f.wantNichtSatz != "" && strings.Contains(got.Herleitung, f.wantNichtSatz) {
 				t.Errorf("Herleitung = %q — darf %q NICHT enthalten: Für den Bestand des "+
@@ -143,13 +144,13 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	// 60 % von 41,50 € = 24,90 €, abzüglich 20 % für den Zustand = 19,92 €.
 	mitAbschlag := repository.ErsatzwertGroessen{
-		Kaufpreis: 20.00, Listenpreis: 41.50, ZustandAbschlag: 20, Topf: mitteltopf.Land,
+		Kaufpreis: 2000, Listenpreis: 4150, ZustandAbschlag: 20, Topf: mitteltopf.Land,
 		SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 	}
 	got := ErsatzwertVorschlagAus(mitAbschlag, ersatzwert.PreisquelleListenpreis)
 
-	if got.Betrag != 19.92 {
-		t.Errorf("Betrag = %.2f, erwartet 19.92 (Herleitung: %q)", got.Betrag, got.Herleitung)
+	if got.Betrag != 1992 {
+		t.Errorf("Betrag = %s, erwartet 19,92 (Herleitung: %q)", got.Betrag.Text(), got.Herleitung)
 	}
 	for _, teil := range []string{"3. Verleihjahr", "60 %", "41,50", "Listenpreis",
 		"abzüglich 20 % für den Zustand"} {
@@ -163,8 +164,8 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	ohneAbschlag := mitAbschlag
 	ohneAbschlag.ZustandAbschlag = 0
 	ohne := ErsatzwertVorschlagAus(ohneAbschlag, ersatzwert.PreisquelleListenpreis)
-	if ohne.Betrag != 24.90 {
-		t.Errorf("Betrag ohne Abschlag = %.2f, erwartet 24.90", ohne.Betrag)
+	if ohne.Betrag != 2490 {
+		t.Errorf("Betrag ohne Abschlag = %s, erwartet 24,90", ohne.Betrag.Text())
 	}
 	if strings.Contains(ohne.Herleitung, "abzüglich") {
 		t.Errorf("Herleitung = %q — ohne Abschlag darf kein Abzug im Satz stehen",

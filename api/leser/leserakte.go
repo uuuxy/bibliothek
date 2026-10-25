@@ -1,13 +1,15 @@
 package leser
 
 import (
-	"bibliothek/api/tuer"
-	"bibliothek/apierrors"
-	"bibliothek/pkg/leserart"
-	"bibliothek/repository"
 	"context"
 	"fmt"
 	"net/http"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/pkg/betrag"
+	"bibliothek/pkg/leserart"
+	"bibliothek/repository"
 )
 
 // leseFotoURL liefert die Foto-URL eines Schülers, falls ein (verschlüsseltes) Foto
@@ -67,8 +69,8 @@ type leserakteAntwort struct {
 
 // offeneForderungen sind Anzahl und Summe der unbezahlten Forderungen eines Lesers.
 type offeneForderungen struct {
-	Anzahl int     `json:"anzahl"`
-	Summe  float64 `json:"summe"`
+	Anzahl int         `json:"anzahl"`
+	Summe  betrag.Cent `json:"summe"`
 }
 
 // Leserakte liefert die Akte eines Lesers: Stammdaten, die Adresse des Ausweisfotos, falls

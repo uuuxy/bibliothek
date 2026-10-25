@@ -6,6 +6,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -54,8 +55,8 @@ func (t *Tueren) gibTitelExemplare(w http.ResponseWriter, r *http.Request, besch
 		// Ersatzwert und Herleitung: was ein Ersatz für dieses Exemplar heute kostet. Gerechnet
 		// wird mit service.ErsatzwertVorschlagAus, derselben Funktion wie im Dialog zum Melden
 		// eines Schadens, damit Buchakte und Forderung nie zwei Zahlen für dasselbe Buch zeigen.
-		Ersatzwert           float64 `json:"ersatzwert"`
-		ErsatzwertHerleitung string  `json:"ersatzwert_herleitung"`
+		Ersatzwert           betrag.Cent `json:"ersatzwert"`
+		ErsatzwertHerleitung string      `json:"ersatzwert_herleitung"`
 		// ErsatzwertBekannt: Liegt dem Betrag ein Preis zugrunde? Ohne dieses Feld
 		// müsste die Karte die Antwort aus dem Herleitungssatz lesen — und 0,00 € heißt
 		// zweierlei (Totalschaden oder kein Preis erfasst).

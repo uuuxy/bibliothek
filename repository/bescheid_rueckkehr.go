@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -14,7 +15,7 @@ import (
 // rueckkehrForderung ist eine offene Forderung des Exemplars samt ihrem Brief.
 type rueckkehrForderung struct {
 	id             string
-	betrag         float64
+	betrag         betrag.Cent
 	bescheidStatus string
 	bescheidID     string
 	referenznummer string
@@ -25,7 +26,7 @@ type RueckkehrBefund struct {
 	// StornierteForderungen zählt die Forderungen, die die Schule selbst beendet hat.
 	StornierteForderungen int
 	// StornierterBetrag ist ihre Summe, für die Meldung an der Theke.
-	StornierterBetrag float64
+	StornierterBetrag betrag.Cent
 	// AufsichtInformieren nennt die Referenznummern der Bescheide, die schon übergeben waren.
 	AufsichtInformieren []string
 }
@@ -114,7 +115,7 @@ func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 // gesetzt, weil alle Filter auf „offen" daran hängen, und storniert_am unterscheidet sie von
 // einer Zahlung. Der Eintrag trägt dieselbe Aktion STORNIERUNG, damit das Protokoll eine Form
 // kennt.
-func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, betrag float64, bearbeiterID, grund string) error {
+func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, hoehe betrag.Cent, bearbeiterID, grund string) error {
 	var leserID *string
 	err := q.QueryRow(ctx, `
 		UPDATE schadensfaelle
@@ -133,7 +134,7 @@ func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID strin
 		return fmt.Errorf("forderung stornieren: %w", err)
 	}
 	// Dieselben Schlüssel wie StorniereForderung; die Kennung des Lesers ist der Griff der Tilgung.
-	details := map[string]any{"betrag": betrag, "grund": grund, "anlass": "rueckgabe"}
+	details := map[string]any{"betrag": hoehe, "grund": grund, "anlass": "rueckgabe"}
 	if leserID != nil {
 		details["schueler_id"] = *leserID
 	}

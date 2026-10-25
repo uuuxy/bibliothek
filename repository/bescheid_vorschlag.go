@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -27,11 +28,11 @@ type OffeneForderung struct {
 	Art            string
 	Titel          string
 	ISBN           string
-	Kaufpreis      float64
+	Kaufpreis      betrag.Cent
 	// Listenpreis und ZustandAbschlag: Die Arbeitshilfe rechnet ab dem zweiten Verleihjahr auf
 	// den Neupreis, und der Zustand dieses Exemplars zieht davon ab. Ein Listenpreis von 0
 	// heißt „nicht erfasst".
-	Listenpreis     float64
+	Listenpreis     betrag.Cent
 	ZustandAbschlag int
 	// Topf ist das Eigentum des Exemplars (ExemplarTopfSQL): wem die Forderung zusteht und nach
 	// welcher Regel ihr Betrag vorgeschlagen wird. Leer bei einer Forderung ohne Exemplar
@@ -73,8 +74,8 @@ func (a *BescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID
 	// verschöbe jeden Betrag um eine Stufe der Staffel.
 	rows, err := a.db.Query(ctx, `
 		SELECT f.id, f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''),
-		       coalesce(e.einkaufspreis, 0)::float8,
-		       coalesce(t.listenpreis, 0)::float8,
+		       coalesce(e.einkaufspreis, 0),
+		       coalesce(t.listenpreis, 0),
 		       coalesce(e.zustand_abwertung_prozent, 0),
 		       CASE WHEN e.id IS NULL THEN '' ELSE `+ExemplarTopfSQL+` END,
 		       -- Zugang statt Bestelltag (Begründung an ersatzwert_groessen.go).

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"bibliothek/internal/pdftest"
 )
 
 // Das Paket pdf erzeugt jedes Schriftstück, das die Schule aus der Hand gibt: Ersatzforderung,
@@ -58,8 +60,8 @@ func TestErzeugeRechnung(t *testing.T) {
 		Strasse: "Übergasse", Hausnummer: "3a", PLZ: "61440", Ort: "Oberursel",
 	}
 	positionen := []RechnungsPosition{
-		{Titel: umlautText, Barcode: "B-00001", Ausleihdatum: time.Now().AddDate(0, -3, 0), Ersatzpreis: 12.99},
-		{Titel: "Zweites Buch", Barcode: "B-00002", Ausleihdatum: time.Now().AddDate(0, -2, 0), Ersatzpreis: 7.50},
+		{Titel: umlautText, Barcode: "B-00001", Ausleihdatum: time.Now().AddDate(0, -3, 0), Ersatzpreis: 1299},
+		{Titel: "Zweites Buch", Barcode: "B-00002", Ausleihdatum: time.Now().AddDate(0, -2, 0), Ersatzpreis: 750},
 	}
 
 	got, err := ErzeugeRechnung(schueler, positionen, testSchule(), testZahlung())
@@ -69,13 +71,12 @@ func TestErzeugeRechnung(t *testing.T) {
 	istPDF(t, got, "Rechnung")
 }
 
-// TestRechnungSummeRundetAufCent sichert die Entscheidung ab, Geld als float64 zu führen
-// (Kommentar in bauePositionen). Drei Posten zu 0.10 ergeben in
-// Fließkomma 0.30000000000000004; ohne die Rundung stünde das auf der Forderung.
+// Drei Posten zu 0,10 € ergeben auf der Rechnung 0,30 €. Als float64 summiert wären es
+// 0.30000000000000004 gewesen; in Cent ist die Summe genau, und das Blatt zeigt sie so.
 func TestRechnungSummeRundetAufCent(t *testing.T) {
 	positionen := make([]RechnungsPosition, 3)
 	for i := range positionen {
-		positionen[i] = RechnungsPosition{Titel: "Posten", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 0.10}
+		positionen[i] = RechnungsPosition{Titel: "Posten", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 10}
 	}
 
 	got, err := ErzeugeRechnung(Schueler{Vorname: "A", Nachname: "B"}, positionen, testSchule(), testZahlung())
@@ -83,17 +84,8 @@ func TestRechnungSummeRundetAufCent(t *testing.T) {
 		t.Fatalf("ErzeugeRechnung: %v", err)
 	}
 	istPDF(t, got, "Rechnung mit Rundung")
-
-	// Gegenprobe an der Rechnung selbst; im Strom des PDFs ist der Text komprimiert.
-	var summe float64
-	for _, position := range positionen {
-		summe += position.Ersatzpreis
-	}
-	if summe == 0.30 {
-		t.Skip("Fließkomma verhält sich hier exakt — die Rundung ist trotzdem richtig")
-	}
-	if gerundet := float64(int(summe*100+0.5)) / 100; gerundet != 0.30 {
-		t.Errorf("Rundung auf Cent ergibt %v statt 0.30", gerundet)
+	if blatt := strings.Join(pdftest.Texte(t, got), " "); !strings.Contains(blatt, "0,30 EUR") {
+		t.Errorf("die Summe der Rechnung steht nicht als 0,30 EUR auf dem Blatt: %q", blatt)
 	}
 }
 
@@ -148,7 +140,7 @@ func TestUeberlangeEingabenBringenKeinDokumentUm(t *testing.T) {
 
 	got, err := ErzeugeRechnung(
 		Schueler{Vorname: lang, Nachname: lang, Strasse: lang, Ort: lang},
-		[]RechnungsPosition{{Titel: lang, Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1}},
+		[]RechnungsPosition{{Titel: lang, Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 100}},
 		SchuleInfo{Name: lang, Strasse: lang, Ort: lang},
 		testZahlung(),
 	)

@@ -10,6 +10,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/internal/tuertest"
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -19,7 +20,7 @@ type meldeAttrappe struct {
 	err error
 }
 
-func (a meldeAttrappe) Melde(context.Context, string, string, string, string, repository.SchadensArt, float64) (string, error) {
+func (a meldeAttrappe) Melde(context.Context, string, string, string, string, repository.SchadensArt, betrag.Cent) (string, error) {
 	return "", a.err
 }
 

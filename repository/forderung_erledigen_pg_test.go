@@ -61,8 +61,8 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 		storno).Scan(&auditBetrag); err != nil {
 		t.Fatalf("Storno-Audit fehlt: %v", err)
 	}
-	if auditBetrag != "12.5" {
-		t.Errorf("Audit-Betrag = %q, erwartet 12.5 (aus der DB, nicht vom Aufrufer)", auditBetrag)
+	if auditBetrag != "12.50" {
+		t.Errorf("Audit-Betrag = %q, erwartet 12.50 (aus der DB, nicht vom Aufrufer)", auditBetrag)
 	}
 
 	// (2) Ein zweites Storno und das Bezahlen eines erledigten Falls liefern

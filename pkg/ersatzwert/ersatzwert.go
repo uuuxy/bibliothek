@@ -20,11 +20,7 @@
 // Neupreis: Im ersten Jahr ist das Buch neu, danach zählt, was ein Ersatz heute kostet.
 package ersatzwert
 
-import (
-	"math"
-	"math/big"
-	"strconv"
-)
+import "bibliothek/pkg/betrag"
 
 // prozentstaffel nennt den Prozentsatz je Verleihjahr, beginnend mit dem ersten; ab dem
 // sechsten Jahr gilt der letzte Wert.
@@ -68,10 +64,10 @@ const (
 // Vorschlag ist das Ergebnis mit seiner Herleitung: der Betrag, der Prozentsatz, die Basis und
 // der Preis, auf den sich der Prozentsatz bezieht.
 type Vorschlag struct {
-	Betrag      float64
+	Betrag      betrag.Cent
 	Prozent     int
 	Basis       Basis
-	BasisPreis  float64
+	BasisPreis  betrag.Cent
 	Verleihjahr int
 	// ZustandAbschlag ist der Prozentsatz, der für den Zustand dieses Exemplars vom Zeitwert
 	// abgezogen wurde (0 heißt keiner). Er steht hier, damit die Herleitung ihn nennen kann:
@@ -104,7 +100,7 @@ func (v Vorschlag) HatPreis() bool {
 // Werte außerhalb von 0 bis 100 werden gekappt und nicht abgelehnt: Die Spalte lässt sie nicht
 // zu (chk_zustand_abwertung_bereich), und ein negativer Abschlag, der den Betrag erhöht, wäre
 // in einer Forderung schlimmer als ein übergangener Tippfehler.
-func Berechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int, quelle Preisquelle) Vorschlag {
+func Berechne(verleihjahr int, kaufpreis, neupreis betrag.Cent, zustandAbschlag int, quelle Preisquelle) Vorschlag {
 	if verleihjahr < 1 {
 		verleihjahr = 1
 	}
@@ -121,7 +117,7 @@ func Berechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int,
 
 	basis, preis := basisFuer(verleihjahr, kaufpreis, neupreis, quelle)
 	return Vorschlag{
-		Betrag:          anteilAufCent(preis, prozent, zustandAbschlag),
+		Betrag:          anteil(preis, prozent, zustandAbschlag),
 		Prozent:         prozent,
 		Basis:           basis,
 		BasisPreis:      preis,
@@ -144,7 +140,7 @@ func Berechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int,
 //
 // Der Abschlag für den Zustand zählt auch hier, das Alter nicht: Ein zehn Jahre alter Roman
 // kostet in der Ersatzbeschaffung so viel wie ein neuer.
-func BerechneNeuwert(kaufpreis, listenpreis float64, zustandAbschlag int, quelle Preisquelle) Vorschlag {
+func BerechneNeuwert(kaufpreis, listenpreis betrag.Cent, zustandAbschlag int, quelle Preisquelle) Vorschlag {
 	if zustandAbschlag < 0 {
 		zustandAbschlag = 0
 	}
@@ -154,7 +150,7 @@ func BerechneNeuwert(kaufpreis, listenpreis float64, zustandAbschlag int, quelle
 
 	basis, preis := neuwertBasis(kaufpreis, listenpreis, quelle)
 	return Vorschlag{
-		Betrag:     anteilAufCent(preis, 100, zustandAbschlag),
+		Betrag:     anteil(preis, 100, zustandAbschlag),
 		Prozent:    100,
 		Basis:      basis,
 		BasisPreis: preis,
@@ -167,7 +163,7 @@ func BerechneNeuwert(kaufpreis, listenpreis float64, zustandAbschlag int, quelle
 
 // neuwertBasis wählt den Preis für den Neuwert: den Listenpreis, wenn es einen gibt und die
 // Schule nichts anderes eingestellt hat, sonst den Kaufpreis. Die Basis nennt, welcher es ist.
-func neuwertBasis(kaufpreis, listenpreis float64, quelle Preisquelle) (Basis, float64) {
+func neuwertBasis(kaufpreis, listenpreis betrag.Cent, quelle Preisquelle) (Basis, betrag.Cent) {
 	if quelle == PreisquelleKaufpreis && kaufpreis > 0 {
 		return BasisKaufpreisGewaehlt, kaufpreis
 	}
@@ -183,7 +179,7 @@ func neuwertBasis(kaufpreis, listenpreis float64, quelle Preisquelle) (Basis, fl
 //
 // Die eingestellte Preisquelle wirkt erst ab dem zweiten Jahr. Im ersten gilt der Kaufpreis,
 // weil das Buch neu war, als es verliehen wurde.
-func basisFuer(verleihjahr int, kaufpreis, neupreis float64, quelle Preisquelle) (Basis, float64) {
+func basisFuer(verleihjahr int, kaufpreis, neupreis betrag.Cent, quelle Preisquelle) (Basis, betrag.Cent) {
 	if verleihjahr == 1 {
 		if kaufpreis > 0 {
 			return BasisKaufpreis, kaufpreis
@@ -205,20 +201,17 @@ func basisFuer(verleihjahr int, kaufpreis, neupreis float64, quelle Preisquelle)
 	return BasisKaufpreisErsatzweise, kaufpreis
 }
 
-// anteilAufCent ist preis · prozent/100 · (100−abschlag)/100, kaufmännisch auf den Cent
-// gerundet; der Betrag steht in einem Brief. Gerechnet wird mit der Dezimalzahl, als die der
-// Preis gespeichert und angezeigt wird: Als Kommazahl des Rechners liegt 10 % von 10,05 € knapp
-// unter 1,005, und der Bescheid nennte 1,00 € statt 1,01 €.
-func anteilAufCent(preis float64, prozent, abschlag int) float64 {
-	genau, ok := new(big.Rat).SetString(strconv.FormatFloat(math.Abs(preis), 'f', -1, 64))
-	if !ok {
-		return 0
+// anteil ist preis · prozent/100 · (100−abschlag)/100, kaufmännisch auf den Cent gerundet; der
+// Betrag steht in einem Brief. Gerechnet wird in ganzen Cent: Als Kommazahl des Rechners läge
+// 10 % von 10,05 € knapp unter 1,005, und der Bescheid nennte 1,00 € statt 1,01 €.
+func anteil(preis betrag.Cent, prozent, abschlag int) betrag.Cent {
+	// In Zehntausendsteln eines Cents; ein halber Cent dazu, damit das Abschneiden kaufmännisch
+	// rundet, auch für einen negativen Preis vom Nullpunkt weg.
+	zaehler := int64(preis) * int64(prozent*(100-abschlag))
+	if zaehler < 0 {
+		return -betrag.Cent((-zaehler + 5000) / 10000)
 	}
-	// In Cent und um einen halben Cent erhöht, damit das Abschneiden kaufmännisch rundet.
-	genau.Mul(genau, big.NewRat(int64(prozent*(100-abschlag)), 100))
-	genau.Add(genau, big.NewRat(1, 2))
-	cent := new(big.Int).Quo(genau.Num(), genau.Denom())
-	return math.Copysign(float64(cent.Int64())/100, preis)
+	return betrag.Cent((zaehler + 5000) / 10000)
 }
 
 // Verleihjahr leitet das Verleihjahr aus den zwei Größen ab, die das Programm kennt: der Zahl

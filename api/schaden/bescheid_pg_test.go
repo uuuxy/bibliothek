@@ -108,8 +108,8 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 		t.Errorf("Referenznummer = %q, erwartet „5830 <Jahr> 1234 0001\"", b.Referenznummer)
 	}
 	// 2. Die Summe ist die der Positionen, nicht die der Forderungsbeträge von vorher (0).
-	if b.Gesamtbetrag != 36.90 {
-		t.Errorf("Gesamtbetrag = %.2f, erwartet 36.90", b.Gesamtbetrag)
+	if b.Gesamtbetrag != 3690 {
+		t.Errorf("Gesamtbetrag = %s, erwartet 36,90", b.Gesamtbetrag.Text())
 	}
 	if b.AnzahlPositionen != 2 {
 		t.Errorf("AnzahlPositionen = %d, erwartet 2", b.AnzahlPositionen)

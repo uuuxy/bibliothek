@@ -33,8 +33,8 @@ import (
 
 // ErsatzwertVorschlag ist die Antwort für den Melde-Dialog.
 type ErsatzwertVorschlag struct {
-	// Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt".
-	Betrag float64 `json:"betrag"`
+	// Betrag ist der Vorschlag; 0 heißt „kein Preis hinterlegt".
+	Betrag betrag.Cent `json:"betrag"`
 	// Herleitung sagt dem Personal, warum dieser Betrag vorgeschlagen wird — damit im
 	// Dialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung
 	// landet.
@@ -57,8 +57,8 @@ type ErsatzwertVorschlag struct {
 // kommt (Bescheid-Vorschlag). Ein Typ, eine Rechnung, eine Herleitung: Mit zwei Rechnungen
 // nannten Dialog und Brief für dasselbe Buch verschiedene Beträge.
 type ErsatzwertEingabe struct {
-	Kaufpreis       float64
-	Listenpreis     float64
+	Kaufpreis       betrag.Cent
+	Listenpreis     betrag.Cent
 	ZustandAbschlag int
 	// Die beiden Größen des Verleihjahrs — nur die Staffel benutzt sie.
 	SchuljahreMitAusleihe int
@@ -143,10 +143,10 @@ func ErsatzwertHerleitung(v ersatzwert.Vorschlag) string {
 	// ausdrücklich „ohne Altersabschlag" sagen, weil ein Zustandsabschlag gleich
 	// dahinter stehen kann.
 	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s (%s)",
-		betrag.Euro(v.BasisPreis), basis)
+		v.BasisPreis.Euro(), basis)
 	if v.Verleihjahr > 0 {
 		satz = fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
-			v.Verleihjahr, v.Prozent, betrag.Euro(v.BasisPreis), basis)
+			v.Verleihjahr, v.Prozent, v.BasisPreis.Euro(), basis)
 	}
 	if v.ZustandAbschlag > 0 {
 		satz += fmt.Sprintf(", abzüglich %d %% für den Zustand", v.ZustandAbschlag)

@@ -80,7 +80,7 @@ type BescheidPosition struct {
 	SchuelerName string
 	Titel        string
 	ISBN         string
-	Betrag       float64
+	Betrag       betrag.Cent
 }
 
 // BescheidEmpfaenger ist die Anschrift zum Briefdatum (Snapshot).
@@ -107,7 +107,7 @@ type BescheidBrief struct {
 	// Die beiden Fallgruppen des Formulars.
 	NichtZurueckgegeben []BescheidPosition
 	Beschaedigt         []BescheidPosition
-	Gesamtbetrag        float64
+	Gesamtbetrag        betrag.Cent
 	Zahlstelle          string
 	Bankverbindung      string
 	Referenznummer      string
@@ -298,7 +298,7 @@ func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []Besche
 		}
 		y := p.GetY()
 		x := bescheidRandLinks
-		werte := []string{pos.SchuelerName, pos.Titel, pos.ISBN, betrag.Euro(pos.Betrag)}
+		werte := []string{pos.SchuelerName, pos.Titel, pos.ISBN, pos.Betrag.Euro()}
 		p.SetFont("Times", "", 10)
 		for i, wert := range werte {
 			p.Rect(x, y, bescheidSpalten[i], bescheidZeileHoehe, "D")
@@ -351,7 +351,7 @@ func bescheidPlatzOderNeueSeite(p *gofpdf.Fpdf, hoehe float64) bool {
 
 // bescheidZahlung zeichnet Gesamtbetrag, Zahlstelle, Bankverbindung und Referenznummer.
 func bescheidZahlung(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
-	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidZahlsatz, betrag.Euro(b.Gesamtbetrag), b.Zahlstelle))
+	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidZahlsatz, b.Gesamtbetrag.Euro(), b.Zahlstelle))
 	p.SetFont("Times", "", 11)
 	for _, zeile := range strings.Split(b.Bankverbindung, "\n") {
 		p.SetX(bescheidRandLinks)

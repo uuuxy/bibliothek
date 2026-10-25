@@ -73,7 +73,7 @@ func zahlungswegZeilen(land bool, a Zahlungsangaben) []string {
 //
 // Trägt der Brief nur einen Topf, bekommt der Block keine Überschrift: Dann geht es um den
 // ganzen Betrag, und eine Teilsumme danebenzuschreiben verwirrt nur.
-func zahlungswegBloecke(betragLand, betragTraeger float64, a Zahlungsangaben) []zahlungswegBlock {
+func zahlungswegBloecke(betragLand, betragTraeger betrag.Cent, a Zahlungsangaben) []zahlungswegBlock {
 	beide := betragLand > 0 && betragTraeger > 0
 	var bloecke []zahlungswegBlock
 	// Beträge von 0,00 EUR bekommen keinen Weg: Da ist nichts zu zahlen. Einen Brief ohne jede
@@ -81,14 +81,14 @@ func zahlungswegBloecke(betragLand, betragTraeger float64, a Zahlungsangaben) []
 	if betragLand > 0 {
 		b := zahlungswegBlock{Zeilen: zahlungswegZeilen(true, a)}
 		if beide {
-			b.Ueberschrift = fmt.Sprintf("Für die Lernmittel des Landes (%s EUR):", betrag.Text(betragLand))
+			b.Ueberschrift = fmt.Sprintf("Für die Lernmittel des Landes (%s EUR):", betragLand.Text())
 		}
 		bloecke = append(bloecke, b)
 	}
 	if betragTraeger > 0 {
 		b := zahlungswegBlock{Zeilen: zahlungswegZeilen(false, a)}
 		if beide {
-			b.Ueberschrift = fmt.Sprintf("Für die Bücher der Schülerbücherei (%s EUR):", betrag.Text(betragTraeger))
+			b.Ueberschrift = fmt.Sprintf("Für die Bücher der Schülerbücherei (%s EUR):", betragTraeger.Text())
 		}
 		bloecke = append(bloecke, b)
 	}

@@ -273,7 +273,7 @@ func TestFundMelden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort nicht lesbar: %v (%s)", err, rec.Body.String())
 	}
-	if antwort.Status != "ok" || antwort.StornierteForderungen != 1 || antwort.StornierterBetrag != 24.90 || antwort.Hinweis != "" {
+	if antwort.Status != "ok" || antwort.StornierteForderungen != 1 || antwort.StornierterBetrag != 2490 || antwort.Hinweis != "" {
 		t.Errorf("Antwort %+v, erwartet eine stornierte Forderung über 24,90 ohne Hinweis", antwort)
 	}
 

@@ -90,8 +90,8 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		if err != nil {
 			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
-		if g.Kaufpreis != 20.00 {
-			t.Errorf("Kaufpreis = %.2f, erwartet 20.00", g.Kaufpreis)
+		if g.Kaufpreis != 2000 {
+			t.Errorf("Kaufpreis = %s, erwartet 20,00", g.Kaufpreis.Text())
 		}
 		if g.Topf != mitteltopf.Land {
 			t.Errorf("Topf = %q — der Titel ist als Lernmittel angelegt, ohne Bestellung und ohne Eigentum am Exemplar gilt Land", g.Topf)
@@ -138,8 +138,8 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		}
 		v := ersatzwert.Berechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
 			g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag, ersatzwert.PreisquelleListenpreis)
-		if v.Betrag != 40.00 {
-			t.Errorf("Betrag = %.2f, erwartet 40.00 (voller Kaufpreis im ersten Verleihjahr)", v.Betrag)
+		if v.Betrag != 4000 {
+			t.Errorf("Betrag = %s, erwartet 40,00 (voller Kaufpreis im ersten Verleihjahr)", v.Betrag.Text())
 		}
 	})
 

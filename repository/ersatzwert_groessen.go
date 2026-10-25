@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -14,11 +15,11 @@ import (
 // pkg/ersatzwert, und die Herleitung formuliert die Tür.
 type ErsatzwertGroessen struct {
 	// Kaufpreis ist der Einkaufspreis des Exemplars; 0, wenn keiner erfasst ist.
-	Kaufpreis float64
+	Kaufpreis betrag.Cent
 	// Listenpreis ist, was ein Ersatz heute kostet, der „Neupreis zum Zeitpunkt des Verlusts"
 	// der Arbeitshilfe. 0 heißt „nicht erfasst"; die Staffel weicht dann auf den Kaufpreis aus
 	// und sagt das in der Herleitung.
-	Listenpreis float64
+	Listenpreis betrag.Cent
 	// ZustandAbschlag ist der Prozentsatz für den Zustand dieses Exemplars (0 bis 100).
 	ZustandAbschlag int
 	// SchuljahreMitAusleihe und SchuljahreImBestand sind die beiden Größen für das Verleihjahr,
@@ -70,8 +71,8 @@ func (a *BescheidAbfragen) LadeGroessenFuerTitel(ctx context.Context, titelID st
 func (a *BescheidAbfragen) ladeGroessen(ctx context.Context, bedingung string, wert any) (map[string]ErsatzwertGroessen, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT e.id,
-		       coalesce(e.einkaufspreis, 0)::float8,
-		       coalesce(t.listenpreis, 0)::float8,
+		       coalesce(e.einkaufspreis, 0),
+		       coalesce(t.listenpreis, 0),
 		       e.zustand_abwertung_prozent,
 		       `+ExemplarTopfSQL+`,
 		       -- Der Zugang, nicht der Bestelltag: Im Bestellweg entsteht die

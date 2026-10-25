@@ -50,7 +50,7 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	schueler := legeSchuelerAn(t, pool, "FF-A", "Emil", "9c")
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
-	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 18.50)
+	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 1850)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	if !gefunden {
 		t.Fatal("gefunden=false, erwartet true")
 	}
-	if befund.StornierteForderungen != 1 || befund.StornierterBetrag != 18.50 {
+	if befund.StornierteForderungen != 1 || befund.StornierterBetrag != 1850 {
 		t.Errorf("Befund = %+v, erwartet 1 stornierte Forderung über 18,50", befund)
 	}
 	var storniert bool
@@ -108,7 +108,7 @@ func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 	loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
 
 	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
-		"nicht zurückgegeben", SchadensArtNichtZurueck, 15.0)
+		"nicht zurückgegeben", SchadensArtNichtZurueck, 1500)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
 	}

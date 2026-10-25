@@ -195,7 +195,7 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 		bearbeiterID: f.bearbeiterID,
 		beschreibung: "Stempel-Test",
 		art:          SchadensArtNichtZurueck,
-		betrag:       10,
+		betrag:       1000,
 	}); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}

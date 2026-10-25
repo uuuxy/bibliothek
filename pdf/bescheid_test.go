@@ -42,13 +42,13 @@ func testBescheid() BescheidBrief {
 		BriefDatum:        time.Date(2026, 9, 10, 0, 0, 0, 0, time.Local),
 		FristBis:          time.Date(2026, 10, 8, 0, 0, 0, 0, time.Local),
 		NichtZurueckgegeben: []BescheidPosition{
-			{SchuelerName: "Ayşe Demir", Titel: "Mathematik 7", ISBN: "978-3-12-733071-6", Betrag: 24.90},
-			{SchuelerName: "Ayşe Demir", Titel: "Deutschbuch 8 — Sprach- und Lesebuch", ISBN: "978-3-06-062477-3", Betrag: 18.50},
+			{SchuelerName: "Ayşe Demir", Titel: "Mathematik 7", ISBN: "978-3-12-733071-6", Betrag: 2490},
+			{SchuelerName: "Ayşe Demir", Titel: "Deutschbuch 8 — Sprach- und Lesebuch", ISBN: "978-3-06-062477-3", Betrag: 1850},
 		},
 		Beschaedigt: []BescheidPosition{
-			{SchuelerName: "Ayşe Demir", Titel: "Englisch Green Line 7", ISBN: "978-3-12-834271-0", Betrag: 12.00},
+			{SchuelerName: "Ayşe Demir", Titel: "Englisch Green Line 7", ISBN: "978-3-12-834271-0", Betrag: 1200},
 		},
-		Gesamtbetrag:   55.40,
+		Gesamtbetrag:   5540,
 		Zahlstelle:     "HCC-Schulbereich bei der Landesbank Hessen-Thüringen",
 		Bankverbindung: "Konto-Nr. 1002401\nBankleitzahl 500 500 00\nIBAN DE86500500000001002401\nBIC HELADEFFXXX",
 		Referenznummer: "5830 2026 1234 0001",
@@ -199,7 +199,7 @@ func TestBescheidZerreisstDieTabelleNicht(t *testing.T) {
 			SchuelerName: "Ayşe Demir",
 			Titel:        fmt.Sprintf("Lernmittel Nummer %d", i+1),
 			ISBN:         fmt.Sprintf("978-3-12-7330%02d-6", i),
-			Betrag:       9.90,
+			Betrag:       990,
 		})
 	}
 	b.Beschaedigt = nil
@@ -237,7 +237,7 @@ func TestBescheidErsetztZeichenAusserhalbDesZeichensatzes(t *testing.T) {
 	b := testBescheid()
 	b.Empfaenger.Name = "Ayşe Öztürk-Ćurić"
 	b.NichtZurueckgegeben = []BescheidPosition{
-		{SchuelerName: "Ayşe Öztürk-Ćurić", Titel: "Mathematik 7", ISBN: "978-3-12-733071-6", Betrag: 24.90},
+		{SchuelerName: "Ayşe Öztürk-Ćurić", Titel: "Mathematik 7", ISBN: "978-3-12-733071-6", Betrag: 2490},
 	}
 	b.Beschaedigt = nil
 

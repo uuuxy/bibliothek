@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -14,20 +15,20 @@ import (
 
 // Bescheid ist ein geschriebener Brief.
 type Bescheid struct {
-	ID             string     `json:"id"`
-	SchuelerID     *string    `json:"schueler_id,omitempty"`
-	SchuelerName   string     `json:"schueler_name,omitempty"`
-	Klasse         string     `json:"klasse,omitempty"`
-	Mittel         string     `json:"mittel"`
-	Referenznummer string     `json:"referenznummer"`
-	Kassenjahr     int        `json:"kassenjahr"`
-	LaufendeNr     int        `json:"laufende_nr"`
-	BriefDatum     time.Time  `json:"brief_datum"`
-	FristBis       time.Time  `json:"frist_bis"`
-	Gesamtbetrag   float64    `json:"gesamtbetrag"`
-	Status         string     `json:"status"`
-	UebergebenAm   *time.Time `json:"uebergeben_am,omitempty"`
-	LetzterDruckAm *time.Time `json:"letzter_druck_am,omitempty"`
+	ID             string      `json:"id"`
+	SchuelerID     *string     `json:"schueler_id,omitempty"`
+	SchuelerName   string      `json:"schueler_name,omitempty"`
+	Klasse         string      `json:"klasse,omitempty"`
+	Mittel         string      `json:"mittel"`
+	Referenznummer string      `json:"referenznummer"`
+	Kassenjahr     int         `json:"kassenjahr"`
+	LaufendeNr     int         `json:"laufende_nr"`
+	BriefDatum     time.Time   `json:"brief_datum"`
+	FristBis       time.Time   `json:"frist_bis"`
+	Gesamtbetrag   betrag.Cent `json:"gesamtbetrag"`
+	Status         string      `json:"status"`
+	UebergebenAm   *time.Time  `json:"uebergeben_am,omitempty"`
+	LetzterDruckAm *time.Time  `json:"letzter_druck_am,omitempty"`
 	// FristAbgelaufen heißt: offen, und die Frist ist vorbei. Diese Bescheide sind die
 	// Arbeitsliste.
 	FristAbgelaufen bool `json:"frist_abgelaufen"`
@@ -45,10 +46,10 @@ type BescheidAbfragen struct{ db db.Pool }
 // BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck. Den Namen
 // des Schülers trägt der Druck aus dem Schnappschuss des Empfängers ein (LadePositionen).
 type BescheidBriefPosition struct {
-	Art    string  `json:"art"`
-	Titel  string  `json:"titel"`
-	ISBN   string  `json:"isbn"`
-	Betrag float64 `json:"betrag"`
+	Art    string      `json:"art"`
+	Titel  string      `json:"titel"`
+	ISBN   string      `json:"isbn"`
+	Betrag betrag.Cent `json:"betrag"`
 }
 
 // NewBescheidAbfragen liefert die Abfragen der Bescheide an Postgres.

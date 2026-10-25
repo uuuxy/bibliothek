@@ -30,7 +30,7 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	legeAusleiheAn(t, pool, copyID, schuelerB, bearbeiter)
 
 	// Der verspätete Klick auf „Schaden melden" nennt die alte Ausleihe.
-	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
+	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 500)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
 		t.Fatalf("repo.Melde(…) = %v, erwartet ErrExemplarNeuVerliehen", err)
 	}
@@ -63,7 +63,7 @@ func TestSchadenMelden_Normalfall(t *testing.T) {
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
-	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
+	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 300)
 	if err != nil {
 		t.Fatalf("regulärer Schaden abgelehnt: %v", err)
 	}
@@ -94,11 +94,11 @@ func TestSchadenMelden_Idempotent(t *testing.T) {
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
-	id1, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
+	id1, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 750)
 	if err != nil {
 		t.Fatalf("erster Report abgelehnt: %v", err)
 	}
-	id2, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
+	id2, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 750)
 	if err != nil {
 		t.Fatalf("zweiter Report (Doppelklick) abgelehnt: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestSchadenMelden_SchuldnerAusAusleihe(t *testing.T) {
 
 	loan := legeAusleiheAn(t, pool, copyID, echterSchuldner, bearbeiter)
 
-	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
+	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 400)
 	if err != nil {
 		t.Fatalf("Melde: %v", err)
 	}
@@ -197,7 +197,7 @@ func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 	bucheRueckgabe(t, pool, loan)
 
 	_, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
-		"nicht zurückgegeben", SchadensArtNichtZurueck, 12.0)
+		"nicht zurückgegeben", SchadensArtNichtZurueck, 1200)
 	if !errors.Is(err, ErrAusleiheInzwischenZurueck) {
 		t.Fatalf("NewSchadensAbfragen(pool).Melde(…) = %v, erwartet ErrAusleiheInzwischenZurueck", err)
 	}
@@ -228,7 +228,7 @@ func TestSchadenMelden_ExemplarKommtAusDerAusleihe(t *testing.T) {
 	loan := legeAusleiheAn(t, pool, geliehen, schueler, bearbeiter)
 
 	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, imRegal, loan, bearbeiter,
-		"Wasserschaden", SchadensArtBeschaedigt, 6.0)
+		"Wasserschaden", SchadensArtBeschaedigt, 600)
 	if err != nil {
 		t.Fatalf("Meldung abgelehnt: %v", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -16,7 +17,7 @@ import (
 // steht, liefert es repository.ErrExemplarNeuVerliehen oder
 // repository.ErrAusleiheInzwischenZurueck.
 type schadensMeldung interface {
-	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art repository.SchadensArt, betrag float64) (string, error)
+	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art repository.SchadensArt, hoehe betrag.Cent) (string, error)
 }
 
 // SchadenMelden meldet einen Verlust oder Schaden (POST /api/damage/report): Das Exemplar wird
@@ -38,8 +39,8 @@ func (t *Tueren) SchadenMelden(schadensAbfragen schadensMeldung) http.HandlerFun
 			// Art: Fallgruppe des Bescheids, Pflicht und ohne stillen Vorgabewert: Mit der
 			// Vorgabe 'beschaedigt' der Spalte nennte der Bescheid ein verlorenes Buch „beschädigt
 			// zurückgegeben".
-			Art    string  `json:"art"`
-			Betrag float64 `json:"betrag"`
+			Art    string      `json:"art"`
+			Betrag betrag.Cent `json:"betrag"`
 		}
 		if !tuer.LeseAnfrage(w, r, &req) {
 			return nil

@@ -99,13 +99,13 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 			t.Fatalf("Ausleihe lesen: %v", err)
 		}
 		schadensID, err := damageRepo.Melde(ctx, exemplarID, loanID, mitarbeiterID,
-			"Nicht zurückgegeben (Test)", repository.SchadensArtNichtZurueck, 12.00)
+			"Nicht zurückgegeben (Test)", repository.SchadensArtNichtZurueck, 1200)
 		if err != nil {
 			t.Fatalf("Forderung melden: %v", err)
 		}
 		b, err := bescheidRepo.LegeAn(ctx, repository.BescheidEingabe{
 			SchuelerID: schuelerID, Mittel: "land", Kassenjahr: time.Now().Year(), FristBis: frist,
-			Positionen:     []repository.BescheidPositionEingabe{{SchadensfallID: schadensID, Betrag: 12.00}},
+			Positionen:     []repository.BescheidPositionEingabe{{SchadensfallID: schadensID, Betrag: 1200}},
 			Empfaenger:     map[string]string{"name": "Wieder Da"},
 			ErstelltVon:    mitarbeiterID,
 			Referenznummer: func(nr int) string { return fmt.Sprintf("TEST-%s-%04d", suffix, nr) },
@@ -204,7 +204,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		t.Fatalf("Ausleihe lesen: %v", err)
 	}
 	if _, err := damageRepo.Melde(ctx, defektID, defektLoanID, mitarbeiterID,
-		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 7.50); err != nil {
+		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 750); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}
 	if _, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: barcodeDefekt, BearbeiterID: mitarbeiterID}); err != nil {

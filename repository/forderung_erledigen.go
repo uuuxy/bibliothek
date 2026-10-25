@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -21,12 +22,12 @@ var (
 // ladeBetragFuerErledigung liest den Betrag einer offenen Forderung und sperrt die Zeile bis zum
 // Commit. Im Protokoll steht so der Betrag aus der Datenbank und nicht der aus der Anfrage.
 // Eine unbekannte und eine schon erledigte Forderung meldet die Funktion je mit eigenem Fehler.
-func ladeBetragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string) (float64, error) {
-	var betrag float64
+func ladeBetragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string) (betrag.Cent, error) {
+	var hoehe betrag.Cent
 	var istBezahlt bool
 	err := tx.QueryRow(ctx,
 		`SELECT betrag, ist_bezahlt FROM schadensfaelle WHERE id = $1 FOR UPDATE`,
-		schadensfallID).Scan(&betrag, &istBezahlt)
+		schadensfallID).Scan(&hoehe, &istBezahlt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, ErrSchadensfallNichtGefunden
 	}
@@ -36,7 +37,7 @@ func ladeBetragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID str
 	if istBezahlt {
 		return 0, ErrSchadensfallErledigt
 	}
-	return betrag, nil
+	return hoehe, nil
 }
 
 // StorniereForderung setzt eine offene Forderung mit Begründung auf storniert und schreibt den
@@ -50,7 +51,7 @@ func (a *SchadensAbfragen) StorniereForderung(ctx context.Context, schadensfallI
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	betrag, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
+	hoehe, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func (a *SchadensAbfragen) StorniereForderung(ctx context.Context, schadensfallI
 	// Der getippte Grund kann die Person nennen. Die Kennung des Lesers steht daneben, damit
 	// die Tilgung den Eintrag findet, auch wenn die Forderung schon gelöscht ist.
 	details := map[string]any{
-		"betrag":        betrag,
+		"betrag":        hoehe,
 		"grund":         grund,
 		"storniert_am":  time.Now().UTC().Format(time.RFC3339),
 		"bearbeiter_id": bearbeiterID,
@@ -102,7 +103,7 @@ func (a *SchadensAbfragen) VerbucheZahlung(ctx context.Context, schadensfallID s
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	betrag, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
+	hoehe, err := ladeBetragFuerErledigung(ctx, tx, schadensfallID)
 	if err != nil {
 		return err
 	}
@@ -120,7 +121,7 @@ func (a *SchadensAbfragen) VerbucheZahlung(ctx context.Context, schadensfallID s
 		Tabelle: "schadensfaelle", Aktion: "ZAHLUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{
-			"betrag":        betrag,
+			"betrag":        hoehe,
 			"bearbeiter_id": bearbeiterID,
 		},
 	}); err != nil {

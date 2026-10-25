@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 )
 
 // SchadensArt ist die Fallgruppe einer Forderung, eines der beiden Kästchen im Formular des
@@ -36,15 +37,15 @@ type SchadensAbfragen struct {
 // BarcodeID sind Zeiger, weil exemplar_id bei einem Geräteschaden leer ist und sich NULL nicht
 // in einen Text lesen lässt.
 type Schadensfall struct {
-	ID                string     `json:"id"`
-	Beschreibung      string     `json:"beschreibung"`
-	Betrag            float64    `json:"betrag"`
-	IstBezahlt        bool       `json:"ist_bezahlt"`
-	ErstelltAm        time.Time  `json:"erstellt_am"`
-	StorniertAm       *time.Time `json:"storniert_am"`
-	Stornierungsgrund *string    `json:"stornierungsgrund"`
-	Titel             *string    `json:"titel"`
-	BarcodeID         *string    `json:"barcode_id"`
+	ID                string      `json:"id"`
+	Beschreibung      string      `json:"beschreibung"`
+	Betrag            betrag.Cent `json:"betrag"`
+	IstBezahlt        bool        `json:"ist_bezahlt"`
+	ErstelltAm        time.Time   `json:"erstellt_am"`
+	StorniertAm       *time.Time  `json:"storniert_am"`
+	Stornierungsgrund *string     `json:"stornierungsgrund"`
+	Titel             *string     `json:"titel"`
+	BarcodeID         *string     `json:"barcode_id"`
 	// BescheidID nennt den Schadensersatz-Bescheid, auf dem die Forderung steht. Die Akte
 	// bietet „Bescheid erstellen" nur an, solange eine offene Forderung ohne Brief da ist.
 	BescheidID *string `json:"bescheid_id"`
@@ -92,7 +93,7 @@ var ErrExemplarNeuVerliehen = errors.New("exemplar inzwischen neu ausgeliehen")
 // Melde bucht einen Verlust oder Schaden an einer Ausleihe in eigener Transaktion, für
 // „Verlust/Schaden melden" in der Akte. Einen Schuldner nimmt es nicht entgegen: Er steht an der
 // Ausleihe. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
-func (a *SchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+func (a *SchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, hoehe betrag.Cent) (string, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return "", err
@@ -105,7 +106,7 @@ func (a *SchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, be
 		bearbeiterID: bearbeiterID,
 		beschreibung: beschreibung,
 		art:          art,
-		betrag:       betrag,
+		betrag:       hoehe,
 	})
 	if err != nil {
 		return "", err

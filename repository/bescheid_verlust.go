@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -18,10 +19,10 @@ type UeberfaelligeAusleihe struct {
 	ExemplarID string
 	Titel      string
 	ISBN       string
-	Kaufpreis  float64
+	Kaufpreis  betrag.Cent
 	// Listenpreis und ZustandAbschlag sind dieselben Größen wie in OffeneForderung, damit beide
 	// Wege denselben Betrag vorschlagen.
-	Listenpreis     float64
+	Listenpreis     betrag.Cent
 	ZustandAbschlag int
 	// Topf ist das Eigentum des Exemplars (ExemplarTopfSQL), wie bei OffeneForderung.
 	Topf        string
@@ -39,7 +40,7 @@ type UeberfaelligeAusleihe struct {
 // BescheidVerlustEingabe ist ein Buch, das mit dem Brief als Verlust gebucht wird.
 type BescheidVerlustEingabe struct {
 	AusleiheID string
-	Betrag     float64
+	Betrag     betrag.Cent
 }
 
 // Die Abweisungen sind Bedienfälle (409), keine Serverfehler: Der Dialog stand offen, während
@@ -61,8 +62,8 @@ func (a *BescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schue
 	// Buch stünde in der Liste, und die Staffel nennte eine Stufe daneben.
 	jetzt := schulzeit.Jetzt()
 	rows, err := a.db.Query(ctx, `
-		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
-		       coalesce(t.listenpreis, 0)::float8, coalesce(e.zustand_abwertung_prozent, 0),
+		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0),
+		       coalesce(t.listenpreis, 0), coalesce(e.zustand_abwertung_prozent, 0),
 		       -- Zugang statt Bestelltag (Begründung an ersatzwert_groessen.go).
 		       `+ExemplarTopfSQL+`, a.rueckgabe_frist, a.mahnstufe, a.letztes_mahndatum,
 		       COALESCE(e.zugang_am, e.erworben_am)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"bibliothek/pkg/betrag"
+
 	"github.com/google/uuid"
 )
 
@@ -13,7 +15,7 @@ type RechnungsPosition struct {
 	Titel        string
 	Barcode      string
 	Ausleihdatum time.Time
-	Ersatzpreis  float64
+	Ersatzpreis  betrag.Cent
 	Land         bool
 }
 

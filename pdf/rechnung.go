@@ -2,7 +2,6 @@ package pdf
 
 import (
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -36,7 +35,7 @@ type RechnungsPosition struct {
 	Titel        string
 	Barcode      string
 	Ausleihdatum time.Time
-	Ersatzpreis  float64
+	Ersatzpreis  betrag.Cent
 	// Land sagt, dass die Position ein Buch des Landes betrifft (Eigentum nach
 	// repository.ExemplarTopfSQL). Das entscheidet den Zahlungsweg: Bücher des Landes an das
 	// Land, alles andere (Bücherei, Geräte) an den Schulträger (zahlungsweg.go). Eine Rechnung
@@ -160,27 +159,23 @@ func bauePositionen(m core.Maroto, positionen []RechnungsPosition) {
 	)
 
 	// Zeilen der Tabelle
-	var summe float64
+	var summe betrag.Cent
 	for _, position := range positionen {
 		m.AddRows(positionsZeilen(position)...)
 		summe += position.Ersatzpreis
 	}
-	// Geldbeträge stehen in der Datenbank genau als NUMERIC(10,2), in Go als float64. Die Summe
-	// wird hier auf Cent gerundet, damit eine Abweichung der Gleitkommazahl nie im Betrag der
-	// Rechnung steht.
-	summe = math.Round(summe*100) / 100
 
 	// Summenzeile
 	m.AddRow(15,
 		col.New(10).Add(text.New("Summe:", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
-		col.New(2).Add(text.New(betrag.Text(summe)+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(summe.Text()+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 }
 
 // baueFuss zeichnet den Zahlungsweg, je Topf einen, damit Geld des Landes und
 // Geld des Schulträgers nicht in einer Summe auf einem Konto landen (zahlungsweg.go).
 func baueFuss(m core.Maroto, positionen []RechnungsPosition, zahlung Zahlungsangaben) {
-	var land, traeger float64
+	var land, traeger betrag.Cent
 	for _, position := range positionen {
 		if position.Land {
 			land += position.Ersatzpreis
@@ -188,8 +183,6 @@ func baueFuss(m core.Maroto, positionen []RechnungsPosition, zahlung Zahlungsang
 		}
 		traeger += position.Ersatzpreis
 	}
-	land = math.Round(land*100) / 100
-	traeger = math.Round(traeger*100) / 100
 
 	m.AddRow(20, col.New(12))
 	for _, block := range zahlungswegBloecke(land, traeger, zahlung) {
@@ -213,7 +206,7 @@ func positionsZeilen(position RechnungsPosition) []core.Row {
 			col.New(5).Add(text.New(position.Titel, props.Text{Size: 10})),
 			code.NewBarCol(3, position.Barcode, props.Barcode{Center: true, Percent: 90}),
 			col.New(2).Add(text.New(position.Ausleihdatum.In(schulzeit.Zone()).Format("02.01.2006"), props.Text{Size: 10})),
-			col.New(2).Add(text.New(betrag.Text(position.Ersatzpreis)+" EUR", props.Text{Size: 10, Align: align.Right})),
+			col.New(2).Add(text.New(position.Ersatzpreis.Text()+" EUR", props.Text{Size: 10, Align: align.Right})),
 		),
 		row.New(5).Add(
 			col.New(5),

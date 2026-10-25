@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
@@ -24,13 +25,13 @@ type bescheidErstellenAnfrage struct {
 	Mittel     string `json:"mittel"`
 	FristBis   string `json:"frist_bis"`
 	Positionen []struct {
-		SchadensfallID string  `json:"schadensfall_id" validate:"omitempty,uuid_oder_leer"`
-		Betrag         float64 `json:"betrag"`
+		SchadensfallID string      `json:"schadensfall_id" validate:"omitempty,uuid_oder_leer"`
+		Betrag         betrag.Cent `json:"betrag"`
 	} `json:"positionen" validate:"dive"`
 	// Ausleihen: überfällige Bücher, die mit dem Brief als Verlust gebucht werden.
 	Ausleihen []struct {
-		AusleiheID string  `json:"ausleihe_id" validate:"omitempty,uuid_oder_leer"`
-		Betrag     float64 `json:"betrag"`
+		AusleiheID string      `json:"ausleihe_id" validate:"omitempty,uuid_oder_leer"`
+		Betrag     betrag.Cent `json:"betrag"`
 	} `json:"ausleihen" validate:"dive"`
 }
 

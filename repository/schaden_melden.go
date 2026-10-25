@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"bibliothek/pkg/betrag"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -16,7 +18,7 @@ type schadensMeldung struct {
 	bearbeiterID string
 	beschreibung string
 	art          SchadensArt
-	betrag       float64
+	betrag       betrag.Cent
 }
 
 // meldeSchaden bucht einen Verlust oder Schaden an einer Ausleihe: Exemplar aussondern,

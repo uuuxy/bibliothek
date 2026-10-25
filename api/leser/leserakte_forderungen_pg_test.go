@@ -85,7 +85,7 @@ func TestProfilNenntOffeneForderungen(t *testing.T) {
 
 	t.Run("zwei offene Forderungen, Summe ohne Bezahltes und Storniertes", func(t *testing.T) {
 		p := profil(t, mitID)
-		if p.OffeneForderungen.Anzahl != 2 || p.OffeneForderungen.Summe != 19.50 {
+		if p.OffeneForderungen.Anzahl != 2 || p.OffeneForderungen.Summe != 1950 {
 			t.Errorf("offene Forderungen = %+v, erwartet 2 über 19,50", p.OffeneForderungen)
 		}
 		if !p.HatOffeneSchaeden {

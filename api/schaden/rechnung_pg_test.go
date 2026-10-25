@@ -59,7 +59,7 @@ func TestLadeRechnungPosten_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 	if items[0].Barcode != "G-RECH-1" {
 		t.Errorf("Barcode = %q, erwartet den Geräte-Barcode", items[0].Barcode)
 	}
-	if items[0].Ersatzpreis != 24.90 {
+	if items[0].Ersatzpreis != 2490 {
 		t.Errorf("Betrag = %v, erwartet 24.90", items[0].Ersatzpreis)
 	}
 	if items[0].Ausleihdatum.IsZero() {

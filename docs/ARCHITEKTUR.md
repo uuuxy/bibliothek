@@ -692,7 +692,7 @@ kann.
 | `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential)                     |
 | `coverdatei`       | Lokale WebP-Cover in einer Form, die die PDF-Bibliotheken einbetten können, und die eine Stelle, die ein Cover im Seitenverhältnis setzt (`BindeEin`) |
 | `coverablage`      | Der Ort der lokal gespeicherten Cover, ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können        |
-| `betrag`           | Geldbeträge in der deutschen Form (zwei Nachkommastellen, Komma)                                                                  |
+| `betrag`           | Geldbeträge in ganzen Cent (`Cent`): genau aus NUMERIC und JSON gelesen, kaufmännisch auf den Cent gerundet wie NUMERIC(10,2), deutsch geschrieben (zwei Nachkommastellen, Komma); Ratsche `geld_in_cent_ratsche_test.go` mit dem Bestand, der noch als float64 läuft |
 | `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG)                                                                                      |
 | `csvutil`          | Schutz vor CSV-/Formel-Injection (CWE-1236) beim Export                                                                           |
 | `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs (gofpdf druckt in cp1252) und das Kürzen eines Texts auf Zeichen, gedruckte Breite und Zelle; Ratsche `pdfzeichen_ratsche_test.go` |
@@ -3488,7 +3488,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Bewusst nicht entschieden
 
-Integer-Cent statt float64 · Bundle-Splitting · TypeScript-Migration · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
+Bundle-Splitting · TypeScript-Migration · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
 geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (23 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt

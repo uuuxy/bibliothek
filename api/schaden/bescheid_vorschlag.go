@@ -8,6 +8,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -20,11 +21,11 @@ import (
 // bescheidVorschlagPosition ist eine offene Forderung mit dem vorgeschlagenen Betrag und
 // seiner Herleitung — der Dialog zeigt beides, damit der Mensch die Zahl beurteilen kann.
 type bescheidVorschlagPosition struct {
-	SchadensfallID string  `json:"schadensfall_id"`
-	Art            string  `json:"art"`
-	Titel          string  `json:"titel"`
-	ISBN           string  `json:"isbn"`
-	Betrag         float64 `json:"betrag"`
+	SchadensfallID string      `json:"schadensfall_id"`
+	Art            string      `json:"art"`
+	Titel          string      `json:"titel"`
+	ISBN           string      `json:"isbn"`
+	Betrag         betrag.Cent `json:"betrag"`
 	// Herleitung: „3. Verleihjahr → 60 % von 41,50 €" bzw. der Hinweis, dass kein Preis
 	// hinterlegt ist.
 	Herleitung string `json:"herleitung"`
@@ -37,13 +38,13 @@ type bescheidVorschlagPosition struct {
 // bescheidVorschlagAusleihe ist ein überfälliges Buch ohne Forderung: Es kommt mit dem
 // Brief als Verlust in die Bücher. Betrag und Herleitung wie bei einer Position.
 type bescheidVorschlagAusleihe struct {
-	AusleiheID  string  `json:"ausleihe_id"`
-	Titel       string  `json:"titel"`
-	ISBN        string  `json:"isbn"`
-	Betrag      float64 `json:"betrag"`
-	Herleitung  string  `json:"herleitung"`
-	Topf        string  `json:"topf"`
-	FaelligSeit string  `json:"faellig_seit"`
+	AusleiheID  string      `json:"ausleihe_id"`
+	Titel       string      `json:"titel"`
+	ISBN        string      `json:"isbn"`
+	Betrag      betrag.Cent `json:"betrag"`
+	Herleitung  string      `json:"herleitung"`
+	Topf        string      `json:"topf"`
+	FaelligSeit string      `json:"faellig_seit"`
 	// Mahnstufe und LetztesMahndatum (JJJJ-MM-TT, leer ohne Datum): wie oft und wann
 	// zuletzt ein Mahnbrief zu diesem Buch gedruckt wurde.
 	Mahnstufe        int    `json:"mahnstufe"`

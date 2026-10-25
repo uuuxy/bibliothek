@@ -3,16 +3,18 @@ package repository
 import (
 	"context"
 	"time"
+
+	"bibliothek/pkg/betrag"
 )
 
 // ForderungOhneBescheid ist eine Zeile des Reiters „Schadensersatz": ein Kind mit offenen
 // Forderungen ohne Brief.
 type ForderungOhneBescheid struct {
-	SchuelerID   string  `json:"schueler_id"`
-	SchuelerName string  `json:"schueler_name"`
-	Klasse       string  `json:"klasse"`
-	Anzahl       int     `json:"anzahl"`
-	Summe        float64 `json:"summe"`
+	SchuelerID   string      `json:"schueler_id"`
+	SchuelerName string      `json:"schueler_name"`
+	Klasse       string      `json:"klasse"`
+	Anzahl       int         `json:"anzahl"`
+	Summe        betrag.Cent `json:"summe"`
 	// Seit ist das Datum der ältesten dieser Forderungen: So lange wartet der Fall schon.
 	Seit time.Time `json:"seit"`
 	// Land heißt: Mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach
@@ -31,7 +33,7 @@ type ForderungOhneBescheid struct {
 func (a *BescheidAbfragen) LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT s.id, s.vorname || ' ' || s.nachname, coalesce(s.klasse, ''),
-		       count(*)::int, coalesce(sum(f.betrag), 0)::float8, min(f.erstellt_am),
+		       count(*)::int, coalesce(sum(f.betrag), 0), min(f.erstellt_am),
 		       bool_or(e.id IS NOT NULL AND `+ExemplarTopfSQL+` = 'land')
 		FROM schadensfaelle f
 		JOIN schueler s ON s.id = f.schueler_id

@@ -113,7 +113,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 		}
 		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_log WHERE tabelle = 'schadensfaelle' AND aktion = 'STORNIERUNG'
-			   AND datensatz_id = $1::uuid AND details->>'betrag' = '12.5' AND details->>'schueler_id' = $2`,
+			   AND datensatz_id = $1::uuid AND details->>'betrag' = '12.50' AND details->>'schueler_id' = $2`,
 			forderung, leser); n != 1 {
 			t.Errorf("der Eintrag STORNIERUNG steht nach der Anonymisierung nicht mehr mit Betrag und Kennung da")
 		}

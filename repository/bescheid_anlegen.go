@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -15,7 +16,7 @@ import (
 // den die Schule festgesetzt hat.
 type BescheidPositionEingabe struct {
 	SchadensfallID string
-	Betrag         float64
+	Betrag         betrag.Cent
 }
 
 // BescheidEingabe ist alles, was der Rufer für einen neuen Bescheid mitbringt.
@@ -93,7 +94,7 @@ func (a *BescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Besc
 		absender = &text
 	}
 
-	var summe float64
+	var summe betrag.Cent
 	for _, p := range e.Positionen {
 		summe += p.Betrag
 	}

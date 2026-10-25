@@ -53,6 +53,14 @@ linters:
         # Das Paket log kennt keine Stufe; über slog.SetDefault landete jeder Fehler als INFO.
         - pattern: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)$
           msg: "Der Server schreibt mit slog und Stufe ins Log (docs/STIL.md, Abschnitt 11)"
+    recvcheck:
+      # Die Gegenstücke zu den Marshal-Methoden, die recvcheck von sich aus ausnimmt: UnmarshalJSON
+      # und Scan ändern den Wert und brauchen einen Zeiger; MarshalJSON und Value arbeiten auf dem
+      # Wert, sonst übergingen json.Marshal und pgx sie an einem Feld, das kein Zeiger ist, und
+      # schrieben die Zahl der Cent als Euro.
+      exclusions:
+        - "Cent.UnmarshalJSON"
+        - "Cent.Scan"
     errcheck:
       check-type-assertions: true
       check-blank: true

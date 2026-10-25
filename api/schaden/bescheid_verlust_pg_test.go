@@ -151,8 +151,8 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
 		t.Fatal(err)
 	}
-	if b.Gesamtbetrag != 36.90 || b.AnzahlPositionen != 2 {
-		t.Errorf("Brief: Summe %.2f, Positionen %d — erwartet 36.90 und 2", b.Gesamtbetrag, b.AnzahlPositionen)
+	if b.Gesamtbetrag != 3690 || b.AnzahlPositionen != 2 {
+		t.Errorf("Brief: Summe %s, Positionen %d — erwartet 36,90 und 2", b.Gesamtbetrag.Text(), b.AnzahlPositionen)
 	}
 
 	for ausleihe, want := range map[string]float64{a1: 24.90, a2: 12.00} {

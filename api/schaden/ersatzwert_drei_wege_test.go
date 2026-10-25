@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/service"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -26,7 +27,7 @@ func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {
 		}
 		t.Run(name, func(t *testing.T) {
 			// Zehn Jahre im Bestand, 20 % Wasserschaden, beide Preise erfasst.
-			const kauf, liste = 8.00, 14.00
+			const kauf, liste betrag.Cent = 800, 1400
 			const abschlag = 20
 			const mitAusleihe, imBestand = 7, 10
 
@@ -49,8 +50,8 @@ func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {
 			}, ersatzwert.PreisquelleListenpreis)
 
 			if ausForderung.Betrag != ausExemplar.Betrag || ausAusleihe.Betrag != ausExemplar.Betrag {
-				t.Errorf("drei Wege, drei Beträge: Exemplar %.2f, Forderung %.2f, Ausleihe %.2f",
-					ausExemplar.Betrag, ausForderung.Betrag, ausAusleihe.Betrag)
+				t.Errorf("drei Wege, drei Beträge: Exemplar %s, Forderung %s, Ausleihe %s",
+					ausExemplar.Betrag.Text(), ausForderung.Betrag.Text(), ausAusleihe.Betrag.Text())
 			}
 			if ausForderung.Herleitung != ausExemplar.Herleitung ||
 				ausAusleihe.Herleitung != ausExemplar.Herleitung {
@@ -61,13 +62,13 @@ func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {
 			// Und die Regel ist die richtige: Für das Büchereibuch darf das Alter nichts
 			// abziehen (14 € minus 20 % Zustand), für das Buch des Landes schon (10 % von
 			// 14 €, davon 20 % ab).
-			wantBetrag := 11.20
+			wantBetrag := betrag.Cent(1120)
 			if topf == mitteltopf.Land {
-				wantBetrag = 1.12
+				wantBetrag = 112
 			}
 			if ausExemplar.Betrag != wantBetrag {
-				t.Errorf("Betrag = %.2f, erwartet %.2f (Herleitung: %q)",
-					ausExemplar.Betrag, wantBetrag, ausExemplar.Herleitung)
+				t.Errorf("Betrag = %s, erwartet %s (Herleitung: %q)",
+					ausExemplar.Betrag.Text(), wantBetrag.Text(), ausExemplar.Herleitung)
 			}
 		})
 	}

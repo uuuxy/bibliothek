@@ -23,7 +23,7 @@ func blattText(t *testing.T, roh []byte) string {
 
 func TestRechnungLernmittelNenntDasKontoDesLandes(t *testing.T) {
 	positionen := []RechnungsPosition{
-		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, Land: true},
+		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1990, Land: true},
 	}
 	got, err := ErzeugeRechnung(Schueler{Vorname: "Lena", Nachname: "Land"}, positionen, testSchule(), testZahlung())
 	if err != nil {
@@ -48,7 +48,7 @@ func TestRechnungLernmittelNenntDasKontoDesLandes(t *testing.T) {
 
 func TestRechnungBuechereiSagtDassDerWegFehlt(t *testing.T) {
 	positionen := []RechnungsPosition{
-		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 9.95},
+		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 995},
 	}
 	got, err := ErzeugeRechnung(Schueler{Vorname: "Bea", Nachname: "Buecherei"}, positionen, testSchule(), testZahlung())
 	if err != nil {
@@ -75,8 +75,8 @@ func TestRechnungBuechereiSagtDassDerWegFehlt(t *testing.T) {
 // Landes in der Kasse des Trägers.
 func TestRechnungMitBeidenToepfenZeigtBeideWegeMitTeilsummen(t *testing.T) {
 	positionen := []RechnungsPosition{
-		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, Land: true},
-		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 9.95},
+		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1990, Land: true},
+		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 995},
 	}
 	got, err := ErzeugeRechnung(Schueler{Vorname: "Mia", Nachname: "Gemischt"}, positionen, testSchule(), testZahlung())
 	if err != nil {

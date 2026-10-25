@@ -49,9 +49,9 @@ func strPtr(s string) *string { return &s }
 // erwarteEinstellungenUndUeberfaellige richtet die Mock-Erwartungen für einen Durchlauf der
 // Sperrprüfung ohne Sperre ein: offene Schäden → ladeEinstellungen → Overdue-Zählung.
 func erwarteEinstellungenUndUeberfaellige(mock pgxmock.PgxPoolIface, overdueCount int) {
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\) FROM schadensfaelle").
 		WithArgs("s1").
-		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
+		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, "0"))
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_overdue_items", strPtr("1")).

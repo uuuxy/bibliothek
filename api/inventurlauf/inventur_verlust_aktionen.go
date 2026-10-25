@@ -11,6 +11,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 )
 
@@ -65,9 +66,9 @@ func (t *Tueren) FundMelden() http.HandlerFunc {
 // fundAntwort ist die Antwort der Fund-Meldung: was mit der Forderung
 // geschah, die das Buch abgerechnet hatte.
 type fundAntwort struct {
-	Status                string  `json:"status"`
-	StornierteForderungen int     `json:"stornierte_forderungen"`
-	StornierterBetrag     float64 `json:"stornierter_betrag"`
+	Status                string      `json:"status"`
+	StornierteForderungen int         `json:"stornierte_forderungen"`
+	StornierterBetrag     betrag.Cent `json:"stornierter_betrag"`
 	// Hinweis ist leer, wenn nichts zu tun ist.
 	Hinweis string `json:"hinweis,omitempty"`
 }

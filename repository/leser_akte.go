@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"time"
+
+	"bibliothek/pkg/betrag"
 )
 
 // LaufendeAusleihe ist eine Zeile der Ausleihliste in der Akte: das Exemplar, das der Leser
@@ -43,15 +45,15 @@ func (a *LeserAbfragen) HatFoto(ctx context.Context, leserID string) (bool, erro
 // ZaehleOffeneSchaeden zählt die unbezahlten Forderungen eines Lesers aus jedem Topf und nennt ihre
 // Summe. Ein Storno setzt ist_bezahlt mit, die eine Bedingung deckt beides. Die Akte und der
 // Hinweis an der Theke (service.pruefeHinweise) fragen beide hier, damit sie dieselbe Zahl nennen.
-func ZaehleOffeneSchaeden(ctx context.Context, q Datenbank, leserID string) (anzahl int, summe float64, err error) {
+func ZaehleOffeneSchaeden(ctx context.Context, q Datenbank, leserID string) (anzahl int, summe betrag.Cent, err error) {
 	err = q.QueryRow(ctx,
-		`SELECT COUNT(*), COALESCE(SUM(betrag), 0)::float8 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
+		`SELECT COUNT(*), COALESCE(SUM(betrag), 0) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
 		leserID).Scan(&anzahl, &summe)
 	return anzahl, summe, err
 }
 
 // ZaehleOffeneSchaeden zählt die unbezahlten Forderungen des Lesers und nennt ihre Summe.
-func (a *LeserAbfragen) ZaehleOffeneSchaeden(ctx context.Context, leserID string) (int, float64, error) {
+func (a *LeserAbfragen) ZaehleOffeneSchaeden(ctx context.Context, leserID string) (int, betrag.Cent, error) {
 	return ZaehleOffeneSchaeden(ctx, a.db, leserID)
 }
 

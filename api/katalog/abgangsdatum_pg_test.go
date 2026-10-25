@@ -91,7 +91,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
 	if _, err := damageRepo.Melde(ctx, vier, ausleiheID, bearbeiterID, "Wasserschaden",
-		repository.SchadensArtBeschaedigt, 12.50); err != nil {
+		repository.SchadensArtBeschaedigt, 1250); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}
 
