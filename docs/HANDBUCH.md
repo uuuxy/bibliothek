@@ -880,6 +880,9 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
 - **Mahnliste kommt bei niemandem an** → _Mahnwesen-Routing_: Klasse hat keine Lehrkraft.
 - **Rote Meldung „Kein Backup"** → _Betriebsbereitschaft_ öffnen; dort steht je Punkt, was
   fehlt und wie es zu beheben ist.
+- **Hinweis „Eine neue Fassung des Programms ist eingespielt"** → Nach einem Update arbeitet ein
+  offenes Fenster noch mit dem alten Programm. Erst abschließen, was offen ist (eine Ausleihe,
+  eine Maske mit Eingaben), dann _Neu laden_.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.
 - **Netz weg** → weiterarbeiten. Oben erscheint ein schmales Band, die Theke bleibt bedienbar,

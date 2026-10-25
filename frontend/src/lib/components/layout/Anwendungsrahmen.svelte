@@ -12,6 +12,7 @@
 	import Router from '../../Router.svelte';
 	import BackupHinweis from '../system/BackupHinweis.svelte';
 	import Hauptbereich from './Hauptbereich.svelte';
+	import NeueFassung from './NeueFassung.svelte';
 	import Seitenleiste from './Seitenleiste.svelte';
 	import SkipLink from './SkipLink.svelte';
 
@@ -34,8 +35,9 @@
 		class="print-flow bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
 	>
 		<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
-		     nicht in der Navigation. Sichtbar für alle, die den Backup-Status lesen
-		     dürfen (GET /api/admin/system/backup-status verlangt manage_settings). -->
+		     nicht in der Navigation. Die neue Fassung sieht jeder; den Backup-Status alle, die
+		     ihn lesen dürfen (GET /api/admin/system/backup-status verlangt manage_settings). -->
+		<NeueFassung />
 		{#if hatRecht(authStore.currentUser, 'manage_settings')}
 			<BackupHinweis />
 		{/if}

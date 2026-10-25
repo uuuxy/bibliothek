@@ -1967,7 +1967,9 @@ Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesper
 
 - **PWA** (`vite-plugin-pwa`, `registerType: 'autoUpdate'`): Der Service Worker beantwortet
   Navigationen aus dem Cache mit der App-Shell — aber nur für Pfade, die auch wirklich
-  Anwendungspfade sind.
+  Anwendungspfade sind. Ein offenes Fenster zeigt den Hinweis „Neu laden", sobald der Server
+  einen anderen Stand der Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der
+  Live-Leitung (`stores/programmstand.svelte.js`).
 - **IndexedDB-Warteschlange** (`idb`): Scans werden lokal gehalten und gehen später durch
   die **Nachbuch-Tür**. Ein Eintrag verlässt die Warteschlange nur bei einem **endgültigen**
   Serverurteil (acht von neun Wörtern).
@@ -2108,6 +2110,7 @@ steht in `lmf_barcode`.
 | Bereitschafts-Wächter        | Meldet kritische Befunde per Mail an die Admins: 3 Minuten nach dem Start, danach täglich. Auf Spielwiesen schweigt er von selbst |
 | Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update; den Vermerk „beendet“ trägt er erst ab dem Signal zum Herunterfahren. Fehlt er, meldet der nächste Start den vorigen Lauf als abgebrochen (Absturz, Abbruch von außen, Stromausfall). Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht, und einen Fehler-Tracker hat das Programm nicht |
 | `GIT_COMMIT` im Image        | „Gesund" heißt nicht „aktuell" — `update.sh` vergleicht nach dem Deploy                                              |
+| Stand der Oberfläche         | Jede Antwort nennt ihn im Kopf `X-Oberflaechenstand`: den Namen der Programmdatei aus `index.html`, der mit jeder geänderten Oberfläche wechselt und ohnehin in der Startseite steht (der Commit verriete, welcher Stand des öffentlichen Repositorys läuft). Weicht er vom Stand eines offenen Fensters ab, steht dort „Neu laden" |
 
 ---
 
@@ -2952,7 +2955,7 @@ importierte er 235 Adressen.
 
 ## 10. Qualitätsanforderungen
 
-Stand: 16.10.2026
+Stand: 25.10.2026
 
 ---
 
@@ -2982,7 +2985,8 @@ Qualität
 └── Q5 Änderbarkeit (Wartbarkeit)
     ├── Ein behobener Fehler bleibt behoben                             → S16
     ├── Zwei Wahrheiten laufen nicht auseinander                        → S17
-    └── Ein Deploy unterbricht den Betrieb nicht dauerhaft              → S18
+    ├── Ein Deploy unterbricht den Betrieb nicht dauerhaft              → S18
+    └── Nach einem Deploy läuft kein Fenster still mit dem alten Programm → S25
 ```
 
 ---
@@ -3041,6 +3045,7 @@ vermerkt.
 | S17 | Zwei Orte behaupten dasselbe (Migrationsliste vs. `schema.sql`, Compose vs. Code, Dokumentzahl vs. Rechenfunktion) | Drift wird rot                                                          | `db/migrationen_drift_test.go`, `docs/compose_variablen_test.go`, `docs/ersatzwert_staffel_test.go`, `docs/stand_angaben_test.go` |
 | S18 | Ein Deploy während laufender Kiosk-Verbindungen                                                    | Geordnetes Herunterfahren innerhalb von 10 s, **kein** `os.Exit(1)`; Migrationen laufen beim Start des neuen Containers | `sse/sse_test.go`, `main_test.go`                                           |
 | S23 | Toter Code bleibt liegen (eine geschriebene, getestete und nie gerufene Funktion)                   | Deadcode-Gate wird rot                                                                                 | `scripts/deadcode_gate.sh` + Baseline                                       |
+| S25 | Nach einem Update ist an einem Arbeitsplatz noch das alte Programm offen                            | Über dem Inhalt steht „Neu laden", sobald der Server einen anderen Stand der Oberfläche nennt                 | `api/oberflaechenstand_test.go`, `frontend/src/lib/stores/programmstand.test.js`, `frontend/e2e/neue-fassung.spec.js` |
 
 ---
 

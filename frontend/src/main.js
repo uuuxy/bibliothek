@@ -19,7 +19,10 @@ import './app.css';
 import App from './App.svelte';
 // @ts-expect-error  virtual:pwa-register wird erst von vite-plugin-pwa zur Bauzeit erzeugt
 import { registerSW } from 'virtual:pwa-register';
+import { programmstand } from './lib/stores/programmstand.svelte.js';
 
+// Der Stand dieses Fensters ist der Name dieser Programmdatei; der Entwicklungsserver hat keinen.
+programmstand.starte(import.meta.env.DEV ? '' : new URL(import.meta.url).pathname);
 registerSW({ immediate: true });
 
 const target = document.getElementById('app');

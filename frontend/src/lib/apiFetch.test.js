@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiFetch, leseApiFehler } from './apiFetch.js';
+import { programmstand, KOPF_OBERFLAECHENSTAND } from './stores/programmstand.svelte.js';
 
 /** Baut eine minimale Response-Attrappe mit gegebenem Body/Status. */
 function fakeResponse(body, status = 400) {
@@ -102,6 +103,28 @@ describe('apiFetch CSRF-Bootstrap', () => {
 		await apiFetch('/api/lieferanten');
 
 		expect(fetchMock.mock.calls.some(([u]) => String(u) === '/api/csrf-token')).toBe(false);
+	});
+});
+
+// Jede Antwort nennt den Stand der Oberfläche am Server. apiFetch reicht ihn weiter; ohne das
+// merkte ein offenes Fenster ein Update erst über die Live-Leitung.
+describe('apiFetch und der Stand der Oberfläche', () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+		programmstand.eigener = '/assets/index-alt111.js';
+		programmstand.server = '';
+	});
+
+	it('merkt sich den Stand aus dem Kopf der Antwort', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(
+			async () =>
+				new Response('[]', { headers: { [KOPF_OBERFLAECHENSTAND]: '/assets/index-neu222.js' } })
+		);
+
+		await apiFetch('/api/lieferanten');
+
+		expect(programmstand.server).toBe('/assets/index-neu222.js');
+		expect(programmstand.veraltet).toBe(true);
 	});
 });
 

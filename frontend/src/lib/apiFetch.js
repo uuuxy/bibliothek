@@ -81,7 +81,6 @@ export async function apiFetch(url, options = {}) {
 		}
 	}
 
-	// Set up AbortController for network timeouts.
 	// Datei-Uploads (FormData) laufen naturgemäß lange — ein voller Katalog-Import
 	// überträgt Megabytes und berührt tausende Zeilen. Das starre 10s-Limit brach
 	// solche Uploads mitten im Lauf ab ("Netzwerk-Timeout"), obwohl der Server noch
@@ -99,14 +98,14 @@ export async function apiFetch(url, options = {}) {
 	const controller = new AbortController();
 	const id = setTimeout(() => controller.abort(), timeoutMs);
 
-	// If the user already provided a signal, link them (simplified handling: we just overwrite with our timeout,
-	// or if they passed one we could use `AbortSignal.any` but standard AbortController is enough for our use-case)
+	// Ein Signal des Aufrufers wird durch das der Frist ersetzt.
 	options.signal = controller.signal;
 
 	try {
 		const response = await fetch(url, options);
 		clearTimeout(id);
 		meldeSitzungsverlust(url, response.status);
+		programmstand.merkeAus(response);
 		return response;
 	} catch (error) {
 		clearTimeout(id);
@@ -164,6 +163,7 @@ export const apiClient = {
 };
 
 import { snackbars } from './stores/snackbars.svelte.js';
+import { programmstand } from './stores/programmstand.svelte.js';
 
 /**
  * Die Meldung einer abgelehnten Anfrage samt den übrigen Angaben ihrer Antwort (ein 409 nennt

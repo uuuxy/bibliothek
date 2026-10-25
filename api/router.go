@@ -54,6 +54,7 @@ import (
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/logger"
+	"bibliothek/pkg/oberflaechenstand"
 	"bibliothek/repository"
 	"bibliothek/sse"
 )
@@ -212,9 +213,9 @@ func (s *Server) Routes() http.Handler {
 	s.registriereBestellRouten(mux, bestellDienst)
 
 	s.registriereImportRouten(mux)
-	s.registriereOberflaechenRouten(mux)
+	stand := s.registriereOberflaechenRouten(mux)
 
-	return s.baueKette(mux)
+	return s.baueKette(mux, stand)
 }
 
 func (s *Server) registriereUploads(mux *http.ServeMux) {
@@ -264,7 +265,8 @@ func (s *Server) registriereImportRouten(mux *http.ServeMux) {
 	mux.Handle("POST /api/admin/sync-covers", s.verlangeRecht("manage_inventory")(s.katalog().CoverAbgleichen(s.coverAbgleich)))
 }
 
-func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {
+// registriereOberflaechenRouten liefert den Stand der Oberfläche, den jede Antwort nennt.
+func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) string {
 	// Ein fehlendes favicon.ico antwortet 204, statt auf index.html zu fallen.
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -278,9 +280,11 @@ func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) {
 		slog.Warn("router: frontend/dist nicht verfügbar — SPA-Auslieferung deaktiviert", "fehler", oberflaecheFehler)
 	}
 	mux.HandleFunc("/", liefereOberflaeche(oberflaeche))
+	return oberflaechenstand.Lese(oberflaeche)
 }
 
-func (s *Server) baueKette(mux http.Handler) http.Handler {
+// baueKette legt die Schichten um mux; stand ist der Stand der Oberfläche, leer ohne gebaute.
+func (s *Server) baueKette(mux http.Handler, stand string) http.Handler {
 	// 100 MB — bewusst großzügig und bewusst global.
 	//
 	// Die Zahl klingt nach Speicherrisiko, ist aber keins: rumpfGrenzeMiddleware setzt
@@ -330,6 +334,9 @@ func (s *Server) baueKette(mux http.Handler) http.Handler {
 		// wird. Das hätte die Hash-Speicherung in der Datenbank wieder entwertet.
 		// #nosec G706
 		slog.Info("Incoming Request", "methode", r.Method, "pfad", maskiereToken(r.URL.Path))
+		if stand != "" {
+			w.Header().Set(oberflaechenstand.Kopf, stand)
+		}
 		kette.ServeHTTP(w, r)
 	})
 }

@@ -30,8 +30,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   alle Klassen zu verschicken. (5.100)
 - [x] Speichern der Mail-Einstellungen ohne Felder leert sie nicht mehr. (5.101)
 - [x] Ein Null-Zeichen in einer Eingabe bekommt 400 statt 500, an jeder Tür. (5.102)
-- [ ] Ein Fenster, das vor einem Update geöffnet wurde, merkt den neuen Stand und bittet ums
+- [x] Ein Fenster, das vor einem Update geöffnet wurde, merkt den neuen Stand und bittet ums
   Neuladen. (5.103)
+- [ ] Auch ein offener öffentlicher Katalog merkt ein Update und bittet ums Neuladen. (5.105)
 - [ ] Die Oberfläche kennt die Form jeder Antwort des Servers als Typ, erzeugt aus den
   Go-Strukturen; eine falsche Lesestelle meldet die Prüfung vor dem Push. (5.104)
 - [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
@@ -109,23 +110,16 @@ Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etike
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
 
-### 5.103 Ein offenes Fenster merkt kein Update
+### 5.105 Der öffentliche Katalog merkt kein Update
 
-Der Service Worker sucht nur beim Laden der Seite nach einem neuen Stand (`frontend/src/main.js`,
-`registerSW`), und die Theke lädt sich nie selbst neu (`frontend/src/lib/monitor/monitorTakt.svelte.js`
-nennt beides); auch die Sperre nach zehn Stunden lädt nicht neu. Ein Fenster, das vor einem
-Update geöffnet wurde, arbeitet danach mit dem alten Programm gegen den neuen Server, bis jemand
-neu lädt. Ändert das Update die Form einer Antwort, liest das alte Fenster sie falsch, ohne
-Meldung. Beleg am Stand vor f9f34b91 (Antworten ohne Hülle): Ein Medienkatalog von davor zeigt
-leere Listen (`json.data || []`), die Prüfung auf eine vorhandene ISBN meldet „nicht vorhanden",
-und nach dem Speichern eines Titels bleibt die Maske ohne Meldung offen, obwohl der Titel
-gespeichert ist (`AdminBuchAktionen.svelte`: `if (!updated) return`).
+Den Hinweis „Neu laden" zeigt nur die angemeldete Oberfläche (`layout/Anwendungsrahmen.svelte`).
+Der öffentliche Katalog (`/katalog`, `katalog/OpacSuche.svelte`) liest seine Treffer mit `fetch`
+statt mit `apiFetch` und hat keine Live-Leitung; ein dort offenes Fenster erfährt den Stand des
+Servers nie. Ändert ein Update die Antwort von `/api/public/opac/suche`, zeigt es keine oder
+falsche Treffer, bis jemand neu lädt.
 
-Vorschlag: Der Server nennt in jeder Antwort seinen Stand (`GIT_COMMIT` steht schon im Image);
-weicht er von dem ab, mit dem die Seite geladen wurde, zeigt die Oberfläche ein Band mit „Neu
-laden". Selbst neu laden darf sie nicht: Die Theke darf sich mitten in einer Ausleihe nicht
-erneuern. Offen ist, ob das vor dem Echtstart kommt. Bis dahin nach jedem `update.sh` alle
-offenen Fenster der Bibliothek neu laden.
+Nächster Schritt: nach dem Abruf `programmstand.merkeAus(res)`, `NeueFassung` über den Treffern,
+ein Browser-Test wie `e2e/neue-fassung.spec.js` am Katalog.
 
 ### 5.104 Typen für die Antworten des Servers
 
