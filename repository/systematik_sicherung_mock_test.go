@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -88,14 +87,11 @@ func TestStelleFaecherSicher_KuerzelKollision(t *testing.T) {
 		WithArgs("Mathe").
 		WillReturnError(pgx.ErrNoRows)
 
-	// Das erste INSERT scheitert an der Eindeutigkeit von kuerzel.
-	pgErr := &pgconn.PgError{
-		Code:           "23505",
-		ConstraintName: "systematik_kategorien_kuerzel_key",
-	}
+	// Das erste INSERT legt nichts an: Das Kürzel ist besetzt, ON CONFLICT übergeht es ohne
+	// Fehler.
 	mock.ExpectExec(`INSERT INTO systematik_kategorien \(kuerzel, bezeichnung\)`).
 		WithArgs("Mathe", "Mathe").
-		WillReturnError(pgErr)
+		WillReturnResult(pgxmock.NewResult("INSERT", 0))
 
 	// Das zweite gelingt mit angehängtem Hash.
 	mock.ExpectExec(`INSERT INTO systematik_kategorien \(kuerzel, bezeichnung\)`).

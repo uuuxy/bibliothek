@@ -78,29 +78,26 @@ func sichereEinFach(ctx context.Context, db fachSchreiber, fach string) (string,
 // entscheidet ein Hash-Suffix. Der Konflikt auf lower(bezeichnung) ist dagegen das
 // benigne Rennen zweier Importe — DO NOTHING, der Aufrufer liest danach den Gewinner.
 func registriereFach(ctx context.Context, db fachSchreiber, fach string) error {
+	// ON CONFLICT ohne Ziel übergeht auch ein besetztes Kürzel, statt zu scheitern: Ein Fehler
+	// bräche die Transaktion der Importe ab, und der zweite Versuch mit Endung käme nie an (25P02).
 	const einfuegen = `
 		INSERT INTO systematik_kategorien (kuerzel, bezeichnung)
 		VALUES ($1, $2)
-		ON CONFLICT (lower(bezeichnung)) DO NOTHING`
+		ON CONFLICT DO NOTHING`
 
 	kuerzel := kuerzeRunen(strings.ReplaceAll(fach, " ", ""), 50)
-	_, err := db.Exec(ctx, einfuegen, kuerzel, fach)
-	if !istKuerzelKollision(err) {
+	tag, err := db.Exec(ctx, einfuegen, kuerzel, fach)
+	if err != nil || tag.RowsAffected() == 1 {
 		return err
 	}
 
+	// Nichts angelegt: Das Kürzel ist besetzt, oder die Bezeichnung gibt es schon. Im zweiten
+	// Fall legt auch dieser Versuch nichts an, und sichereEinFach liest die vorhandene.
 	h := sha256.Sum256([]byte(strings.ToLower(fach)))
 	suffix := fmt.Sprintf("~%x", h[:4]) // "~" + 8 Hex-Zeichen
 	kuerzel = kuerzeRunen(kuerzel, 50-len(suffix)) + suffix
 	_, err = db.Exec(ctx, einfuegen, kuerzel, fach)
 	return err
-}
-
-// istKuerzelKollision erkennt den Unique-Konflikt auf systematik_kategorien.kuerzel.
-func istKuerzelKollision(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23505" &&
-		pgErr.ConstraintName == "systematik_kategorien_kuerzel_key"
 }
 
 // kuerzeRunen kappt auf grenze Zeichen (nicht Bytes — VARCHAR zählt Zeichen, und ein

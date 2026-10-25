@@ -107,7 +107,7 @@ var phantomBestand = map[string]int{
 	// nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
 	"repository/titel_aendern.go:gleicheExemplareAn":                     1,
-	"repository/systematik_sicherung.go:registriereFach":                 2,
+	"repository/systematik_sicherung.go:registriereFach":                 1,
 	// Räumt die Fotos aller anonymisierten Schüler; null Zeilen ist der Normalfall.
 	"repository/nachtlauf.go:LoescheFotosAnonymisierterSchueler": 1,
 	"jobs/restore_probe.go:probeJuengsteSicherung":               3,
