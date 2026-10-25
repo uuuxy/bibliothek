@@ -85,9 +85,7 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		t.Fatalf("Anlegen: %d %s", rec.Code, rec.Body.String())
 	}
 	var angelegt struct {
-		Data struct {
-			ID string `json:"id"`
-		} `json:"data"`
+		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &angelegt); err != nil {
 		t.Fatal(err)
@@ -98,7 +96,7 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 
 	// Ändern: Der Titel hat keinen Autor, die Maske schickt ihn leer zurück.
 	ohneAutor := map[string]any{"isbn": isbn, "title": "Von Hand getippt", "author": "", "signatur": "Spe 2"}
-	if rec := sende(http.MethodPut, angelegt.Data.ID, ohneAutor); rec.Code != http.StatusOK {
+	if rec := sende(http.MethodPut, angelegt.ID, ohneAutor); rec.Code != http.StatusOK {
 		t.Fatalf("Ändern ohne Autor: %d %s", rec.Code, rec.Body.String())
 	}
 	if s := lies(); s.Autor != "" || s.Cover != "" || s.Signatur != "Spe 2" {
@@ -110,7 +108,7 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 		t.Fatal(err)
 	}
 	ohneAutor["signatur"] = "Spe 3"
-	if rec := sende(http.MethodPut, angelegt.Data.ID, ohneAutor); rec.Code != http.StatusBadRequest {
+	if rec := sende(http.MethodPut, angelegt.ID, ohneAutor); rec.Code != http.StatusBadRequest {
 		t.Errorf("Ändern mit geleertem Autor: %d %s, erwartet 400", rec.Code, rec.Body.String())
 	}
 	if s := lies(); s.Autor != "Von Hand, Autor" || s.Signatur != "Spe 2" {
@@ -127,11 +125,9 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 	abfrage := httptest.NewRecorder()
 	tueren.ISBNSuche()(abfrage, anfrage)
 	var antwort struct {
-		Data struct {
-			Preis float64 `json:"preis"`
-		} `json:"data"`
+		Preis float64 `json:"preis"`
 	}
-	if err := json.Unmarshal(abfrage.Body.Bytes(), &antwort); err != nil || antwort.Data.Preis != 9.5 {
-		t.Errorf("ISBN-Abfrage: preis %v (%v), erwartet 9.5 — %s", antwort.Data.Preis, err, abfrage.Body.String())
+	if err := json.Unmarshal(abfrage.Body.Bytes(), &antwort); err != nil || antwort.Preis != 9.5 {
+		t.Errorf("ISBN-Abfrage: preis %v (%v), erwartet 9.5 — %s", antwort.Preis, err, abfrage.Body.String())
 	}
 }

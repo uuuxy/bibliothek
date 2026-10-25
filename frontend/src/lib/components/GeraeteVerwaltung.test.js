@@ -35,9 +35,7 @@ describe('GeraeteVerwaltung', () => {
 	});
 
 	it('leer bleibt leer', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(
-			/** @type {any} */ ({ ok: true, json: async () => ({ data: [] }) })
-		);
+		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		const { findByText } = render(GeraeteVerwaltung);
 		expect(await findByText('Noch keine Geräte erfasst.')).toBeTruthy();
 	});

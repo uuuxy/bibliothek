@@ -141,9 +141,7 @@ test('Theke leert sich nach 5 Minuten, Sperrbildschirm nach 15, Passwort entsper
 	// Aufräumen: Testschüler weg (Soft-Delete reicht).
 	const token = await csrfToken(page);
 	const liste = await (await page.request.get(`/api/schueler?q=Sperre-${suffix}`)).json();
-	const treffer = (Array.isArray(liste) ? liste : (liste.items ?? liste.data ?? [])).find(
-		(/** @type {any} */ s) => s.barcode_id === `S-${suffix}`
-	);
+	const treffer = liste.find((/** @type {any} */ s) => s.barcode_id === `S-${suffix}`);
 	if (treffer?.id) {
 		await page.request.delete(`/api/schueler/${treffer.id}`, {
 			headers: { 'X-CSRF-Token': token }

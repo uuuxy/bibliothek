@@ -34,9 +34,9 @@ func SchreibeJSON(w io.Writer, antwort any) {
 // an null ab, gerade an einer frischen Anlage, an der viele Listen leer sind. Die Stelle ist
 // hier, weil jede JSON-Antwort durch sie läuft.
 //
-// Ersetzt wird auch in den Werten einer Map, eine Ebene tief, weil viele Antworten ihre Liste
-// in einem Umschlag {"data": …} tragen. In Strukturen und tiefer nicht: Deren Felder legt
-// die Tür fest, die sie schreibt.
+// Ersetzt wird auch in den Werten einer Map, eine Ebene tief, weil manche Antworten ihre Listen
+// als Werte einer Map tragen ({"faecher": …, "titel": …}). In Strukturen und tiefer nicht:
+// Deren Felder legt die Tür fest, die sie schreibt.
 func alsListe(antwort any) any {
 	if antwort == nil {
 		return antwort

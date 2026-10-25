@@ -34,7 +34,7 @@ describe('KlassenUebersicht', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(apiFetch).mockImplementation(
-			/** @type {any} */ (async () => ({ ok: true, json: async () => ({ data: GRUPPEN }) }))
+			/** @type {any} */ (async () => ({ ok: true, json: async () => GRUPPEN }))
 		);
 	});
 

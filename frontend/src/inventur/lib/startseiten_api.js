@@ -18,7 +18,7 @@ export async function buecherLaden() {
 		}
 		throw new Error('Fehler beim Laden der Bücher');
 	}
-	return (await antwort.json()).data ?? [];
+	return await antwort.json();
 }
 
 // WZ-Synonyme für Suchbegriffe auf der Startseite.

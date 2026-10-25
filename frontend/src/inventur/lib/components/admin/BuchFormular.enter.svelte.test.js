@@ -37,7 +37,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
-		if (u.startsWith('/api/books/vorhanden')) return antwort(200, { data: { vorhanden: null } });
+		if (u.startsWith('/api/books/vorhanden')) return antwort(200, { vorhanden: null });
 		if (u.startsWith('/api/lookup/')) return antwort(404, {});
 		return antwort(200, []);
 	});

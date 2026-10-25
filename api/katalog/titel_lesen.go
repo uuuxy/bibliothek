@@ -1,7 +1,6 @@
 package katalog
 
 import (
-	"bibliothek/repository"
 	"bytes"
 	"context"
 	"errors"
@@ -9,6 +8,10 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
@@ -25,7 +28,7 @@ func (t *Tueren) TitelListe() http.HandlerFunc {
 
 		suchbegriff := strings.TrimSpace(strings.ToLower(anfrageParameter.Get("q")))
 		if len(suchbegriff) > 200 {
-			schreibeFehler(antwort, http.StatusBadRequest, "Der Suchbegriff ist zu lang, höchstens 200 Zeichen")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Der Suchbegriff ist zu lang, höchstens 200 Zeichen", nil)
 			return
 		}
 
@@ -37,19 +40,19 @@ func (t *Tueren) TitelListe() http.HandlerFunc {
 		// nicht ausgesondertes Exemplar. Ohne den Parameter ist es der Katalog.
 		sicht := strings.TrimSpace(anfrageParameter.Get("bestand"))
 		if sicht != "" && sicht != "ohne" {
-			schreibeFehler(antwort, http.StatusBadRequest, "Unbekannter Wert für den Bestand")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Unbekannter Wert für den Bestand", nil)
 			return
 		}
 		buecher, fehler := t.titelAbfragen().LadeTitelListe(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
 		if fehler != nil {
 			slog.Error("Fehler beim Laden der Bücherliste", "fehler", fehler)
-			schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher", nil)
 			return
 		}
 
 		sortiereBuecherNachTitel(buecher)
 
-		schreibeJSON(antwort, http.StatusOK, map[string]any{"data": buecher})
+		tuer.AntworteJSON(antwort, http.StatusOK, buecher)
 	}
 }
 
@@ -144,7 +147,7 @@ func (t *Tueren) Titel() http.HandlerFunc {
 	return func(antwort http.ResponseWriter, anfrage *http.Request) {
 		id := anfrage.PathValue("id")
 		if id == "" {
-			schreibeFehler(antwort, http.StatusBadRequest, "ID fehlt")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "ID fehlt", nil)
 			return
 		}
 
@@ -154,16 +157,16 @@ func (t *Tueren) Titel() http.HandlerFunc {
 		// Speichern als Aussage „keine Schlagworte" zurückkäme.
 		buch, fehler := t.ladeTitelVoll(anfrage.Context(), id)
 		if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
-			schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Buch nicht gefunden", nil)
 			return
 		}
 		if fehler != nil {
 			slog.Error("Fehler beim Laden des Buches", "fehler", fehler)
-			schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler", nil)
 			return
 		}
 
-		schreibeJSON(antwort, http.StatusOK, buch)
+		tuer.AntworteJSON(antwort, http.StatusOK, buch)
 	}
 }
 
@@ -208,24 +211,25 @@ func (t *Tueren) TitelVorhanden() http.HandlerFunc {
 	return func(antwort http.ResponseWriter, anfrage *http.Request) {
 		isbn := strings.TrimSpace(anfrage.URL.Query().Get("isbn"))
 		if isbn == "" {
-			schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN fehlt")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die ISBN fehlt", nil)
 			return
 		}
 
 		vorhanden, fehler := t.titelAbfragen().FindeTitelMitISBN(anfrage.Context(), isbn)
 		if fehler != nil {
 			slog.Error("Dublettenkontrolle vorab fehlgeschlagen", "fehler", fehler)
-			schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler", nil)
 			return
 		}
 		if vorhanden != nil {
-			schreibeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
+			tuer.AntworteJSON(antwort, http.StatusOK, map[string]any{
 				"vorhanden": vorhandenAlsAntwort(vorhanden.ID, vorhanden.Titel, vorhanden.HatExemplar),
 				"meldung":   vorhanden.Meldung(),
-			}})
+			})
+
 			return
 		}
 
-		schreibeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{"vorhanden": nil}})
+		tuer.AntworteJSON(antwort, http.StatusOK, map[string]any{"vorhanden": nil})
 	}
 }

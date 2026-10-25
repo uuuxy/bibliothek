@@ -1,8 +1,6 @@
 package katalog
 
 import (
-	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,6 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"bibliothek/api/tuer"
+	"bibliothek/db"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -173,23 +174,21 @@ func TestUploadsLiefertWasDerUploadAblegt(t *testing.T) {
 		t.Fatalf("Upload: Status %d, erwartet 200: %s", upload.Code, upload.Body.String())
 	}
 	var antwort struct {
-		Data struct {
-			CoverURL string `json:"coverUrl"`
-		} `json:"data"`
+		CoverURL string `json:"coverUrl"`
 	}
 	if err := json.Unmarshal(upload.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Upload: Antwort nicht lesbar: %v", err)
 	}
 
 	tueren := katalogMux(&Tueren{})
-	if antwort.Data.CoverURL == "" {
+	if antwort.CoverURL == "" {
 		t.Fatal("Upload: keine Adresse — ohne sie misst der Test nichts")
 	}
 	rec := httptest.NewRecorder()
-	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, antwort.Data.CoverURL, nil))
+	tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, antwort.CoverURL, nil))
 	if rec.Code != http.StatusOK || rec.Body.Len() == 0 {
 		t.Errorf("Upload legte %s ab, der Abruf darauf: Status %d, %d Bytes — die Oberfläche zeigt für diesen Titel kein Cover",
-			antwort.Data.CoverURL, rec.Code, rec.Body.Len())
+			antwort.CoverURL, rec.Code, rec.Body.Len())
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Datenbank: %v", err)

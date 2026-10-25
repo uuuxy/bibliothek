@@ -37,18 +37,17 @@ func TestSchreibeJSON_BefuellteListe(t *testing.T) {
 	}
 }
 
-// TestEncodeUmschlagMitLeererListe sichert die Umschlag-Konvention {"data": ...} ab,
-// die u. a. das inventur-Paket durchgehend nutzt: Auch dort muss eine leere Liste als
-// [] ankommen, nicht als null — das null saesse sonst eine Ebene tiefer als die
-// Top-Level-Normalisierung reicht.
-func TestSchreibeJSON_UmschlagMitLeererListe(t *testing.T) {
+// Eine Antwort trägt Listen auch als Werte einer Map ({"faecher": …, "titel": …},
+// api/portal/schulbuecher.go). Auch dort kommt eine leere Liste als [] an, nicht als null: Das
+// null säße eine Ebene tiefer, als die Normalisierung der obersten Ebene reicht.
+func TestSchreibeJSON_ListeInMapMitLeererListe(t *testing.T) {
 	var leer []eintrag
 
 	var buf bytes.Buffer
-	SchreibeJSON(&buf, map[string]any{"data": leer})
+	SchreibeJSON(&buf, map[string]any{"titel": leer})
 
-	if got := strings.TrimSpace(buf.String()); got != `{"data":[]}` {
-		t.Errorf(`Umschlag: erwartet {"data":[]}, war: %s`, got)
+	if got := strings.TrimSpace(buf.String()); got != `{"titel":[]}` {
+		t.Errorf(`Liste in einer Map: erwartet {"titel":[]}, war: %s`, got)
 	}
 }
 
@@ -66,10 +65,10 @@ func TestSchreibeJSON_NichtListenUnveraendert(t *testing.T) {
 		{"nil-Payload bleibt null", nil, "null"},
 		{"leere Map bleibt {}", map[string]string{}, "{}"},
 		{"Zahl", 42, "42"},
-		// Ein untypisiertes nil im Umschlag ist KEINE Liste — es muss null bleiben
-		// (bewusstes "kein Datensatz", z. B. {"data": null} bei Einzelobjekten).
-		{"Umschlag mit nil-Objekt", map[string]any{"data": nil}, `{"data":null}`},
-		{"Umschlag mit Struct", map[string]any{"data": eintrag{ID: "y"}}, `{"data":{"id":"y"}}`},
+		// Ein untypisiertes nil in einer Map ist keine Liste und bleibt null: ein bewusstes
+		// „kein Datensatz", etwa {"vorhanden": null} der Dublettenkontrolle vorab.
+		{"Map mit nil-Objekt", map[string]any{"vorhanden": nil}, `{"vorhanden":null}`},
+		{"Map mit Struct", map[string]any{"titel": eintrag{ID: "y"}}, `{"titel":{"id":"y"}}`},
 	}
 
 	for _, f := range faelle {

@@ -21,8 +21,8 @@ export async function vorhandenerTitel(isbn) {
 		credentials: 'include'
 	});
 	if (!res.ok) throw new Error('Der Katalog ließ sich nicht nach dieser ISBN fragen.');
-	const { data } = await res.json();
-	return data?.vorhanden ? { meldung: data.meldung, vorhanden: data.vorhanden } : null;
+	const antwort = await res.json();
+	return antwort?.vorhanden ? { meldung: antwort.meldung, vorhanden: antwort.vorhanden } : null;
 }
 
 /**

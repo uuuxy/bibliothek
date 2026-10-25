@@ -159,14 +159,12 @@ func TestGeraetelisteBlendetAusleiherOhneRechtSchuelerdateiAnzeigenAus(t *testin
 	if strings.Contains(helferAntwort, "Nio Test") {
 		t.Errorf("Helfer sieht den Ausleihernamen: %s", helferAntwort)
 	}
-	var helferDaten struct {
-		Data []map[string]any `json:"data"`
-	}
-	if err := json.Unmarshal([]byte(helferAntwort), &helferDaten); err != nil || len(helferDaten.Data) != 1 {
+	var helferDaten []map[string]any
+	if err := json.Unmarshal([]byte(helferAntwort), &helferDaten); err != nil || len(helferDaten) != 1 {
 		t.Fatalf("Geräteliste unlesbar: %v / %s", err, helferAntwort)
 	}
-	if wert, ok := helferDaten.Data[0]["ausgeliehen_an"]; !ok || wert != "" {
-		t.Errorf("Geräteliste ausgeliehen_an = %v, erwartet den leeren Namen als Zeichen für „verliehen“", helferDaten.Data[0]["ausgeliehen_an"])
+	if wert, ok := helferDaten[0]["ausgeliehen_an"]; !ok || wert != "" {
+		t.Errorf("Geräteliste ausgeliehen_an = %v, erwartet den leeren Namen als Zeichen für „verliehen“", helferDaten[0]["ausgeliehen_an"])
 	}
 
 	adminAntwort := geraeteAnfrage(s, "admin").Body.String()

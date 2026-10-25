@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
 
@@ -18,7 +20,7 @@ func (t *Tueren) Klassensaetze() http.HandlerFunc {
 		gruppen, err := t.titelAbfragen().LadeKlassensatzGruppen(r.Context(), zweig, reihenfolge)
 		if err != nil {
 			slog.Error("Fehler beim Laden der Klassengruppen", "fehler", err)
-			schreibeFehler(w, http.StatusInternalServerError, "klassen konnten nicht geladen werden")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klassen konnten nicht geladen werden", nil)
 			return
 		}
 
@@ -26,7 +28,7 @@ func (t *Tueren) Klassensaetze() http.HandlerFunc {
 			gruppen = []repository.KlassensatzGruppe{}
 		}
 
-		schreibeJSON(w, http.StatusOK, map[string]any{"data": gruppen})
+		tuer.AntworteJSON(w, http.StatusOK, gruppen)
 	}
 }
 
@@ -47,7 +49,7 @@ func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 		return
 	}
 
@@ -65,14 +67,14 @@ func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(zielKlassen) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "Bitte mindestens eine Klasse angeben")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte mindestens eine Klasse angeben", nil)
 		return
 	}
 
 	// Klassennamen-Länge begrenzen (max. 20 Zeichen Schutz gegen Missbrauch)
 	for _, cn := range zielKlassen {
 		if len(cn) > 20 {
-			schreibeFehler(w, http.StatusBadRequest, "Der Name einer Klasse hat höchstens 20 Zeichen")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Name einer Klasse hat höchstens 20 Zeichen", nil)
 			return
 		}
 	}
@@ -81,17 +83,17 @@ func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 	alterName := strings.TrimSpace(eingabe.AlteKlasse)
 
 	if !alleUUIDs(eingabe.TitelIDs) {
-		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig", nil)
 		return
 	}
 	err := t.titelAbfragen().AendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.TitelIDs)
 	if err != nil {
 		slog.Error("Fehler beim Aktualisieren der Klassenbücher", "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden", nil)
 		return
 	}
 
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Gespeichert"})
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"message": "Gespeichert"})
 }
 
 // KlassensatzGruppeLoeschen ist die Tür DELETE /api/admin/class-books: Sie löscht die
@@ -109,18 +111,18 @@ func (t *Tueren) KlassensatzGruppeLoeschen() http.HandlerFunc {
 		}
 
 		if len(klassen) == 0 {
-			schreibeFehler(w, http.StatusBadRequest, "Der Name der Klasse fehlt")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Name der Klasse fehlt", nil)
 			return
 		}
 
 		err := t.titelAbfragen().LoescheKlassensatzGruppe(r.Context(), klassen)
 		if err != nil {
 			slog.Error("Fehler beim Löschen der Klassengruppen", "klassen", klassen, "fehler", err)
-			schreibeFehler(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden", nil)
 			return
 		}
 
-		schreibeJSON(w, http.StatusOK, map[string]any{"message": "Klasse gelöscht"})
+		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"message": "Klasse gelöscht"})
 	}
 }
 
@@ -149,7 +151,7 @@ func (t *Tueren) ordneKlassensaetzeZu(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 		return
 	}
 
@@ -162,27 +164,27 @@ func (t *Tueren) ordneKlassensaetzeZu(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(zielKlassen) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "Bitte mindestens eine Klasse angeben")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte mindestens eine Klasse angeben", nil)
 		return
 	}
 
 	for _, cn := range zielKlassen {
 		if len(cn) > 20 {
-			schreibeFehler(w, http.StatusBadRequest, "Der Name einer Klasse hat höchstens 20 Zeichen")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Der Name einer Klasse hat höchstens 20 Zeichen", nil)
 			return
 		}
 	}
 
 	if !alleUUIDs(eingabe.TitelIDs) {
-		schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig", nil)
 		return
 	}
 	err := t.titelAbfragen().OrdneTitelKlassenZu(r.Context(), zielKlassen, eingabe.TitelIDs)
 	if err != nil {
 		slog.Error("Fehler beim Hinzufügen der Bücher", "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden", nil)
 		return
 	}
 
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Hinzugefügt"})
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"message": "Hinzugefügt"})
 }

@@ -47,14 +47,9 @@ func testListExternalCoversSuccess(t *testing.T) {
 		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusOK)
 	}
 
-	var antwort map[string][]repository.KatalogTitel
-	if err := json.Unmarshal(w.Body.Bytes(), &antwort); err != nil {
+	var eintraege []repository.KatalogTitel
+	if err := json.Unmarshal(w.Body.Bytes(), &eintraege); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
-	}
-
-	eintraege, ok := antwort["data"]
-	if !ok {
-		t.Fatalf("Antwort ohne Schlüssel 'data'")
 	}
 
 	if len(eintraege) != 2 {

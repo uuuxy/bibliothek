@@ -16,8 +16,7 @@ export async function holeBuecherListe() {
 		}
 		throw new Error('Fehler beim Laden der Bücher');
 	}
-	const json = await res.json();
-	return json.data || [];
+	return await res.json();
 }
 
 /**
@@ -84,8 +83,7 @@ export async function holeExterneCover() {
 		credentials: 'include'
 	});
 	if (!res.ok) throw new Error('Externe Cover konnten nicht geladen werden');
-	const json = await res.json();
-	return json.data || [];
+	return await res.json();
 }
 
 /** @param {string[]} ids */
@@ -99,8 +97,7 @@ export async function retryExterneCover(ids = []) {
 		body: JSON.stringify({ ids, limit: 300 })
 	});
 	if (!res.ok) throw new Error('Cover konnten nicht lokalisiert werden');
-	const json = await res.json();
-	return json.data;
+	return await res.json();
 }
 
 export async function exportiereCSV() {
@@ -150,6 +147,5 @@ export async function coverNeuHolen(id) {
 		credentials: 'include'
 	});
 	if (!res.ok) throw new Error(await leseApiFehler(res, 'Cover konnte nicht neu geholt werden'));
-	const json = await res.json();
-	return json.data.coverUrl;
+	return (await res.json()).coverUrl;
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"bibliothek/apierrors"
 	"bibliothek/pkg/csvutil"
 	"bibliothek/pkg/schulzeit"
 )
@@ -43,7 +44,7 @@ func (t *Tueren) CSVExport() http.HandlerFunc {
 		csvSchreiber.Flush()
 		if err != nil {
 			if !kopfGesendet {
-				schreibeFehler(w, http.StatusInternalServerError, "fehler beim datenbank-export")
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "Der Export ließ sich nicht erstellen", err)
 				return
 			}
 			// Header ist längst raus; ein sauberer HTTP-Fehler geht nicht mehr. Die

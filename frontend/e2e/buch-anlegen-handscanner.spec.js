@@ -65,7 +65,7 @@ test.describe.serial('Buch anlegen mit dem Handscanner', () => {
 			return route.fulfill({
 				status: 200,
 				contentType: 'application/json',
-				body: JSON.stringify({ data: dienste[nummer] })
+				body: JSON.stringify(dienste[nummer])
 			});
 		});
 		await oeffneNeuesBuch(page);

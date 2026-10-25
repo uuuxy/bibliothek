@@ -21,7 +21,7 @@ export function erzeugeGeraeteListe() {
 			const res = await apiFetch('/api/geraete');
 			if (!res.ok) throw new Error(await leseApiFehler(res));
 			const daten = await res.json();
-			liste = Array.isArray(daten?.data) ? daten.data : [];
+			liste = Array.isArray(daten) ? daten : [];
 			ladefehler = '';
 		} catch (err) {
 			// Leer heißt leer — ein Ladefehler heißt Ladefehler.

@@ -138,7 +138,7 @@ func TestTitelListe(t *testing.T) {
 			// nur der Einzel-Read lädt sie, und ein PUT mit null lässt sie unangetastet.
 			// suchwoerter trägt die Wörter, über die die Suche im Browser den Titel findet,
 			// standorte die Standorte der Exemplare für die Spalte der Titel-Verwaltung.
-			expectedBody: `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"],"standorte":[{"standort":"Lehrerschrank","anzahl":2}]}]}`,
+			expectedBody: `[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"],"standorte":[{"standort":"Lehrerschrank","anzahl":2}]}]`,
 		},
 		{
 			name:    "Success - synonym translation",
@@ -151,7 +151,7 @@ func TestTitelListe(t *testing.T) {
 					}))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[]}`,
+			expectedBody:   `[]`,
 		},
 		{
 			// Die Aufräumsicht der Verwaltung: dasselbe Prädikat mit NOT.
@@ -165,7 +165,7 @@ func TestTitelListe(t *testing.T) {
 					}))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[]}`,
+			expectedBody:   `[]`,
 		},
 		{
 			name:           "Error - unbekannte Sicht",
@@ -192,7 +192,7 @@ func TestTitelListe(t *testing.T) {
 					}))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[]}`,
+			expectedBody:   `[]`,
 		},
 		{
 			name:    "Error - DB fails",

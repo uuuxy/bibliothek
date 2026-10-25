@@ -56,9 +56,9 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
-		if (!u.startsWith('/api/lookup/')) return antwort(200, { data: { vorhanden: null } });
+		if (!u.startsWith('/api/lookup/')) return antwort(200, { vorhanden: null });
 		const daten = DIENSTE[u.slice('/api/lookup/'.length)];
-		return daten ? antwort(200, { data: daten }) : antwort(404, {});
+		return daten ? antwort(200, daten) : antwort(404, {});
 	});
 });
 
@@ -312,7 +312,7 @@ describe('isbnAbfrage: Untertitel, Listenpreis und das Speichern', () => {
 		expect(formular.title).toBe('Buch A');
 
 		vi.mocked(apiFetch).mockImplementation(async () =>
-			antwort(200, { data: { vorhanden: { id: 't1', title: 'Buch A' }, meldung: 'Vergeben.' } })
+			antwort(200, { vorhanden: { id: 't1', title: 'Buch A' }, meldung: 'Vergeben.' })
 		);
 		formular.isbn = B;
 		abfrage.nachschlagen(false);

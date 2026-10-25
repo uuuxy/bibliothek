@@ -1,15 +1,12 @@
 package katalog
 
 import (
-	"bibliothek/apierrors"
-	"bibliothek/internal/katalogdienste"
-	"bibliothek/pkg/lmf"
-	"bibliothek/pkg/xlsxgrenze"
 	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -17,8 +14,13 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/isbnutil"
+	"bibliothek/pkg/lmf"
 	"bibliothek/pkg/safego"
+	"bibliothek/pkg/xlsxgrenze"
 	"bibliothek/repository"
 
 	"github.com/xuri/excelize/v2"
@@ -188,7 +190,7 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 
 	spalten, mitKopfzeile := bestimmeSpalten(zeilen[0])
 	if spalten["isbn"] == -1 {
-		schreibeFehler(w, http.StatusBadRequest, "Die Spalte ISBN fehlt in der Datei. Bitte eine Spalte ISBN anlegen.")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Spalte ISBN fehlt in der Datei. Bitte eine Spalte ISBN anlegen.", nil)
 		return nil, nil, false
 	}
 
@@ -199,7 +201,7 @@ func (t *Tueren) bereiteImportZeilenVor(w http.ResponseWriter, r *http.Request) 
 
 	const maxImportZeilen = 100000
 	if len(datenZeilen) > maxImportZeilen {
-		schreibeFehler(w, http.StatusBadRequest, fmt.Sprintf("Die Datei hat %d Zeilen, höchstens %d sind möglich", len(datenZeilen), maxImportZeilen))
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Die Datei hat %d Zeilen, höchstens %d sind möglich", len(datenZeilen), maxImportZeilen), nil)
 		return nil, nil, false
 	}
 
@@ -248,53 +250,58 @@ func (t *Tueren) speichereTitelEinzeln(ctx context.Context, eintraege []reposito
 // ExcelImport ist die Tür POST /api/books/import: Sie übernimmt eine Liste von Titeln aus
 // Excel oder CSV.
 func (t *Tueren) ExcelImport() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		schluessel, ok := importSchluessel(w, r)
-		if !ok {
-			return
-		}
-		datenZeilen, spalten, ok := t.bereiteImportZeilenVor(w, r)
-		if !ok {
-			return
-		}
-		// Erst nach der Dateiprüfung reservieren: Ein Formfehler ist deterministisch und
-		// braucht kein Gedächtnis; ein reservierter Schlüssel dagegen sperrt den zweiten
-		// Aufruf, solange dieser läuft.
-		if schluessel != "" {
-			frisch, alt, err := t.reserviereImportLauf(r.Context(), schluessel)
-			if err != nil {
-				schreibeFehler(w, http.StatusInternalServerError, "import-schlüssel konnte nicht geprüft werden")
-				return
-			}
-			if !frisch {
-				schreibeJSON(w, alt.Status, alt.Daten)
-				return
-			}
-		}
+	return t.importiereListe
+}
 
-		zuSchreiben, gescheitert, ersterFehler := t.verarbeiteImportZeilen(r.Context(), datenZeilen, spalten)
-		importiert, gescheitert, ersterFehler := t.speichereImportierteTitel(r.Context(), zuSchreiben, gescheitert, ersterFehler)
-
-		status, antwort := importAntwort(importiert, gescheitert, ersterFehler)
-		if schluessel != "" {
-			t.schliesseImportLauf(r.Context(), schluessel, importiert > 0, status, antwort)
-		}
-		schreibeJSON(w, status, antwort)
+// importiereListe ist der Rumpf von ExcelImport. Er steht auf der obersten Ebene, weil eine
+// Closure für die Komplexitätsmessung als eigene Ebene zählt.
+func (t *Tueren) importiereListe(w http.ResponseWriter, r *http.Request) {
+	schluessel, ok := importSchluessel(w, r)
+	if !ok {
+		return
 	}
+	datenZeilen, spalten, ok := t.bereiteImportZeilenVor(w, r)
+	if !ok {
+		return
+	}
+	// Erst nach der Dateiprüfung reservieren: Ein Formfehler ist deterministisch und
+	// braucht kein Gedächtnis; ein reservierter Schlüssel dagegen sperrt den zweiten
+	// Aufruf, solange dieser läuft.
+	if schluessel != "" {
+		frisch, alt, err := t.reserviereImportLauf(r.Context(), schluessel)
+		if err != nil {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "Der Schlüssel des Imports ließ sich nicht prüfen", err)
+			return
+		}
+		if !frisch {
+			tuer.AntworteJSON(w, alt.Status, alt.Daten)
+			return
+		}
+	}
+
+	zuSchreiben, gescheitert, ersterFehler := t.verarbeiteImportZeilen(r.Context(), datenZeilen, spalten)
+	importiert, gescheitert, ersterFehler := t.speichereImportierteTitel(r.Context(), zuSchreiben, gescheitert, ersterFehler)
+
+	status, antwort := importAntwort(importiert, gescheitert, ersterFehler)
+	if ersterFehler != nil {
+		slog.Warn("Listenimport: Zeilen nicht gespeichert", "gescheitert", gescheitert, "fehler", ersterFehler)
+	}
+	if schluessel != "" {
+		t.schliesseImportLauf(r.Context(), schluessel, importiert > 0, status, antwort)
+	}
+	tuer.AntworteJSON(w, status, antwort)
 }
 
 // importAntwort formt das Ergebnis eines Laufs — eine Stelle, weil dieselbe Antwort
-// beim Wiederholungsaufruf aus dem Idempotenz-Gedächtnis kommt.
+// beim Wiederholungsaufruf aus dem Idempotenz-Gedächtnis kommt. Der Text des Fehlers ist für das
+// Log geschrieben und geht nicht hinaus (docs/STIL.md 11); die Meldung nennt nur einen Grund, den
+// repository für die Oberfläche formuliert hat.
 func importAntwort(importiert, gescheitert int32, ersterFehler error) (int, map[string]any) {
 	if importiert == 0 && gescheitert > 0 {
-		meldung := "keine bücher konnten importiert werden."
-		if ersterFehler != nil {
-			meldung += " fehler: " + ersterFehler.Error()
-		}
-		return http.StatusBadRequest, map[string]any{"error": meldung}
+		return http.StatusBadRequest, map[string]any{"error": repository.MitGrund("Keine Zeile der Liste ließ sich importieren", ersterFehler)}
 	}
 
-	zusammenfassung := fmt.Sprintf("%d bücher importiert", importiert)
+	zusammenfassung := fmt.Sprintf("%d Titel importiert", importiert)
 	if gescheitert > 0 {
 		zusammenfassung += fmt.Sprintf(", %d fehlgeschlagen", gescheitert)
 	}

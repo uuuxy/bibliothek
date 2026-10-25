@@ -51,7 +51,7 @@ function server(vorschauAntwort = antwort(200, vorschau)) {
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
 		if (u.startsWith('/api/books?q=')) {
-			return antwort(200, { data: u.includes('bestand=ohne') ? [] : [anderer, dieser, ohneISBN] });
+			return antwort(200, u.includes('bestand=ohne') ? [] : [anderer, dieser, ohneISBN]);
 		}
 		if (u.includes('/zusammenfuehren?quelle_id=')) return vorschauAntwort;
 		throw new Error(`unerwarteter Aufruf ${u}`);

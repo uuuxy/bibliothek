@@ -106,14 +106,12 @@ func TestFremdeCoverNeuLaden_ErsetztNurAdressenImNetz(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", w.Code, w.Body.String())
 	}
-	var httpAntwort struct {
-		Data map[string]int `json:"data"`
-	}
-	if err := json.Unmarshal(w.Body.Bytes(), &httpAntwort); err != nil {
+	var zahlen map[string]int
+	if err := json.Unmarshal(w.Body.Bytes(), &zahlen); err != nil {
 		t.Fatalf("Antwort: %v (%s)", err, w.Body.String())
 	}
-	if httpAntwort.Data["retried"] != 2 || httpAntwort.Data["updated"] != 1 || httpAntwort.Data["skipped"] != 1 || httpAntwort.Data["failed"] != 0 {
-		t.Errorf("Zahlen %v — erwartet 2 versucht, 1 aktualisiert, 1 übersprungen, 0 gescheitert", httpAntwort.Data)
+	if zahlen["retried"] != 2 || zahlen["updated"] != 1 || zahlen["skipped"] != 1 || zahlen["failed"] != 0 {
+		t.Errorf("Zahlen %v — erwartet 2 versucht, 1 aktualisiert, 1 übersprungen, 0 gescheitert", zahlen)
 	}
 	if !strings.HasPrefix(neu, "/uploads/cover_auto_") {
 		t.Errorf("das externe Cover steht weiter als %q da — erwartet den lokalen Pfad des heruntergeladenen Bilds", neu)

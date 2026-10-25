@@ -69,13 +69,11 @@ func TestKatalogliste_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET /api/books?q=%s: %d %s", q, rec.Code, rec.Body.String())
 		}
-		var antwort struct {
-			Data []zeile `json:"data"`
-		}
-		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		var liste []zeile
+		if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 			t.Fatal(err)
 		}
-		return antwort.Data
+		return liste
 	}
 	ids := func(zeilen []zeile) []string {
 		var out []string

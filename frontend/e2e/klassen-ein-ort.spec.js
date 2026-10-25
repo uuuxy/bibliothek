@@ -31,7 +31,7 @@ test('Klassensätze stehen an genau EINEM Ort', async ({ page }) => {
 
 	// --- Zwei Klassensätze anlegen, damit „filtern" überhaupt etwas bedeutet ---
 	const buecher = await (await page.request.get('/api/books')).json();
-	const ids = (buecher.data ?? []).slice(0, 2).map((/** @type {any} */ b) => b.id);
+	const ids = buecher.slice(0, 2).map((/** @type {any} */ b) => b.id);
 	expect(ids.length, 'Testdaten: mindestens zwei Bücher nötig').toBe(2);
 
 	await apiPost(page, '/api/admin/class-books/add', {

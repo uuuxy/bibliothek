@@ -30,7 +30,7 @@ beforeEach(() => {
 			return /** @type {any} */ ({
 				ok: true,
 				status: 200,
-				json: async () => ({ data: { title: 'Dunkelnacht', author: 'Boie, Kirsten' } })
+				json: async () => ({ title: 'Dunkelnacht', author: 'Boie, Kirsten' })
 			});
 		}
 		if (u === DNB) {

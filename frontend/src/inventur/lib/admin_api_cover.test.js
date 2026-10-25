@@ -27,7 +27,7 @@ describe('admin_api: coverNeuHolen', () => {
 
 	it('ruft die Tür des einen Titels auf und liefert den neuen Cover-Pfad', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(
-			/** @type {any} */ (antwort(true, 200, { data: { coverUrl: '/uploads/cover_auto_1.webp' } }))
+			/** @type {any} */ (antwort(true, 200, { coverUrl: '/uploads/cover_auto_1.webp' }))
 		);
 		await expect(coverNeuHolen('abc')).resolves.toBe('/uploads/cover_auto_1.webp');
 		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/books/abc/refresh-cover');

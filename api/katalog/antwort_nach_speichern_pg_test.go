@@ -29,14 +29,12 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 
 	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}, Katalogdienste: offlineMetadatenClient()}
 	type antwort struct {
-		Data struct {
-			ID          string    `json:"id"`
-			Stock       int       `json:"stock"`
-			Gesamt      int       `json:"gesamt"`
-			Verfuegbar  int       `json:"verfuegbar"`
-			Signatur    string    `json:"signatur"`
-			Schlagworte *[]string `json:"schlagworte"`
-		} `json:"data"`
+		ID          string    `json:"id"`
+		Stock       int       `json:"stock"`
+		Gesamt      int       `json:"gesamt"`
+		Verfuegbar  int       `json:"verfuegbar"`
+		Signatur    string    `json:"signatur"`
+		Schlagworte *[]string `json:"schlagworte"`
 	}
 	sende := func(methode, id string, extra map[string]any) antwort {
 		t.Helper()
@@ -65,9 +63,8 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 		}
 		return a
 	}
-	pruefe := func(schritt string, a antwort, signatur string) {
+	pruefe := func(schritt string, d antwort, signatur string) {
 		t.Helper()
-		d := a.Data
 		if d.Stock != 2 || d.Gesamt != 2 || d.Verfuegbar != 2 {
 			t.Errorf("%s: Antwort nennt stock %d, gesamt %d, verfügbar %d — der Titel hat zwei Exemplare",
 				schritt, d.Stock, d.Gesamt, d.Verfuegbar)
@@ -82,6 +79,6 @@ func TestSpeichern_AntwortTraegtDenBestand(t *testing.T) {
 
 	angelegt := sende(http.MethodPost, "", map[string]any{"stock": 2, "signatur": "Ant 1"})
 	pruefe("Anlegen", angelegt, "Ant 1")
-	geaendert := sende(http.MethodPut, angelegt.Data.ID, map[string]any{"signatur": "Ant 2"})
+	geaendert := sende(http.MethodPut, angelegt.ID, map[string]any{"signatur": "Ant 2"})
 	pruefe("Ändern ohne Bestand", geaendert, "Ant 2")
 }

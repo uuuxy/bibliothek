@@ -54,18 +54,13 @@ func TestTitelVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 			t.Fatalf("Auskunft zu %q: %d %s", isbn, rec.Code, rec.Body.String())
 		}
 		var antwort struct {
-			Data *struct {
-				Vorhanden *titel `json:"vorhanden"`
-				Meldung   string `json:"meldung"`
-			} `json:"data"`
+			Vorhanden *titel `json:"vorhanden"`
+			Meldung   string `json:"meldung"`
 		}
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatal(err)
 		}
-		if antwort.Data == nil {
-			t.Fatalf("Auskunft zu %q ohne data: %s", isbn, rec.Body.String())
-		}
-		return antwort.Data.Vorhanden, antwort.Data.Meldung
+		return antwort.Vorhanden, antwort.Meldung
 	}
 	// speichere legt über die Tür der Maske an und gibt Status und Körper zurück.
 	speichere := func(isbn, name string) (int, []byte) {

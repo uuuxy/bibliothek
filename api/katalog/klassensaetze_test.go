@@ -42,7 +42,7 @@ func TestKlassensaetze(t *testing.T) {
 					))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10,"imZulauf":0,"quelle":"hand","leser":0}]}]}`,
+			expectedBody:   `[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10,"imZulauf":0,"quelle":"hand","leser":0}]}]`,
 		},
 		{
 			// Gemischte Auflagen: Die Schlüssel der Aufschlüsselung
@@ -61,7 +61,7 @@ func TestKlassensaetze(t *testing.T) {
 					))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[{"className":"07B","books":[{"id":"b1","title":"Mathe 7","subject":"Math","track":"G","coverUrl":"","isbn":"","verfuegbar":0,"gesamt":4,"imZulauf":0,"quelle":"ausleihe","leser":6,"auflagen":[{"id":"b1","auflage":"4. Aufl.","erscheinungsjahr":2023,"kinder":4},{"id":"b0","auflage":"3. Aufl.","erscheinungsjahr":2019,"kinder":2}]}]}]}`,
+			expectedBody:   `[{"className":"07B","books":[{"id":"b1","title":"Mathe 7","subject":"Math","track":"G","coverUrl":"","isbn":"","verfuegbar":0,"gesamt":4,"imZulauf":0,"quelle":"ausleihe","leser":6,"auflagen":[{"id":"b1","auflage":"4. Aufl.","erscheinungsjahr":2023,"kinder":4},{"id":"b0","auflage":"3. Aufl.","erscheinungsjahr":2019,"kinder":2}]}]}]`,
 		},
 		{
 			name:   "Success - Empty results fallback",
@@ -75,7 +75,7 @@ func TestKlassensaetze(t *testing.T) {
 					}))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[]}`,
+			expectedBody:   `[]`,
 		},
 		{
 			name:   "Success - With Query Params",
@@ -89,7 +89,7 @@ func TestKlassensaetze(t *testing.T) {
 					}))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[]}`,
+			expectedBody:   `[]`,
 		},
 		{
 			name:   "Database Error",

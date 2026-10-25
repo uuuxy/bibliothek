@@ -1,8 +1,6 @@
 package katalog
 
 import (
-	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -17,8 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
+	"bibliothek/api/tuer"
+	"bibliothek/db"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -309,22 +309,13 @@ func TestCoverAktualisieren_Erfolg(t *testing.T) {
 		t.Errorf("w.Code = %d, erwartet %d", w.Code, http.StatusOK)
 	}
 
-	var tuerAntwort map[string]any
-	if err := json.Unmarshal(w.Body.Bytes(), &tuerAntwort); err != nil {
+	var daten map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &daten); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
-	}
-
-	if tuerAntwort["message"] != "Cover aktualisiert" {
-		t.Errorf("unexpected message: %v", tuerAntwort["message"])
-	}
-
-	daten, ok := tuerAntwort["data"].(map[string]any)
-	if !ok {
-		t.Fatalf("Antwort ohne Feld 'data'")
 	}
 	coverURL, ok := daten["coverUrl"].(string)
 	if !ok || daten["title"] != "Old Title" || daten["author"] != "Old Author" || !strings.HasPrefix(coverURL, "/uploads/cover_auto_") {
-		t.Fatalf("CoverAktualisieren: data = %v, erwartet Titel und Autor unverändert, Cover lokal", daten)
+		t.Fatalf("CoverAktualisieren: Antwort %v, erwartet Titel und Autor unverändert, Cover lokal", daten)
 	}
 	if err := os.Remove(filepath.Join("uploads", filepath.Base(coverURL))); err != nil {
 		t.Errorf("heruntergeladenes Testbild aufräumen: %v", err)

@@ -40,13 +40,11 @@ func TestTitelVorhanden_FalschesPruefzeichenWirdNichtGepaart(t *testing.T) {
 		t.Helper()
 		rec := httptest.NewRecorder()
 		tueren.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/books/vorhanden?isbn="+url.QueryEscape(isbn), nil))
-		var antwort struct {
-			Data map[string]any `json:"data"`
-		}
+		var antwort map[string]any
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil || rec.Code != http.StatusOK {
 			t.Fatalf("Auskunft zu %q: %d %v %s", isbn, rec.Code, err, rec.Body.String())
 		}
-		return antwort.Data
+		return antwort
 	}
 
 	for _, isbn := range []string{falsch, "3-499-50025-2"} {

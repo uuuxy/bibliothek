@@ -45,7 +45,7 @@ test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet 
 	// Einen Titel aus dem Bestand nehmen, statt einen zu erfinden: Der Dialog zeigt nur,
 	// was es wirklich gibt.
 	const buecher = await (await page.request.get('/api/books')).json();
-	const titel = (buecher.data ?? [])[0]?.title;
+	const titel = buecher[0]?.title;
 	expect(titel, 'Testdaten: mindestens ein Buch nötig').toBeTruthy();
 
 	await page.goto('/schulklassen');

@@ -1,9 +1,6 @@
 package katalog
 
 import (
-	"bibliothek/api/tuer"
-	"bibliothek/db"
-	"bibliothek/pkg/coverablage"
 	"bytes"
 	"mime/multipart"
 	"net/http"
@@ -11,6 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"bibliothek/api/tuer"
+	"bibliothek/db"
+	"bibliothek/pkg/coverablage"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"

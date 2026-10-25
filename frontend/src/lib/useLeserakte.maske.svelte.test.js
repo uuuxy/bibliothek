@@ -18,7 +18,7 @@ beforeEach(() => {
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
 		if (u.includes('vormerkungen')) return ok([]);
-		if (u.includes('schadensfaelle') || u.includes('bescheide')) return ok({ data: [] });
+		if (u.includes('schadensfaelle') || u.includes('bescheide')) return ok([]);
 		return ok({ id: u.includes('/B') ? 'B' : 'A', vorname: 'Anna' });
 	});
 });

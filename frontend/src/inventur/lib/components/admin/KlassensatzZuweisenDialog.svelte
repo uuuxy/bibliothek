@@ -42,8 +42,8 @@
 		try {
 			const res = await apiFetch('/api/admin/class-books', { credentials: 'include' });
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const json = await res.json();
-			existing = (json.data || []).map((/** @type {any} */ g) => g.className);
+			const gruppen = await res.json();
+			existing = gruppen.map((/** @type {any} */ g) => g.className);
 		} catch {
 			buchlistenFehler = true;
 		}

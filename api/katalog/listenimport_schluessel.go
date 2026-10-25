@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"bibliothek/apierrors"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
 )
@@ -67,7 +68,7 @@ func importSchluessel(w http.ResponseWriter, r *http.Request) (string, bool) {
 		return "", true
 	}
 	if !kennung.IstUUID(wert) {
-		schreibeFehler(w, http.StatusBadRequest, importSchluesselKopf+" muss eine UUID sein")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, importSchluesselKopf+" muss eine UUID sein", nil)
 		return "", false
 	}
 	return wert, true

@@ -25,8 +25,7 @@ export function erzeugeBuecherListe() {
 					fehler = true;
 					return;
 				}
-				const json = await res.json();
-				if (json.data) liste = json.data;
+				liste = await res.json();
 				fehler = false;
 			} catch (e) {
 				fehler = true;

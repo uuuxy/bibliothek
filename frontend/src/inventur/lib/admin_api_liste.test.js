@@ -15,7 +15,7 @@ describe('admin_api: holeBuecherListe', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(apiFetch).mockResolvedValue(
-			/** @type {any} */ ({ ok: true, status: 200, json: async () => ({ data: [] }) })
+			/** @type {any} */ ({ ok: true, status: 200, json: async () => [] })
 		);
 		appState.searchQuery = '';
 		appState.bestandsAnsicht = 'mit';

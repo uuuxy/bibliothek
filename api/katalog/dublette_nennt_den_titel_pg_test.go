@@ -52,15 +52,13 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Liste: %d %s", rec.Code, rec.Body.String())
 		}
-		var antwort struct {
-			Data []struct {
-				ID string `json:"id"`
-			} `json:"data"`
+		var liste []struct {
+			ID string `json:"id"`
 		}
-		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 			t.Fatal(err)
 		}
-		return len(antwort.Data)
+		return len(liste)
 	}
 	type dublette struct {
 		Error     string `json:"error"`
@@ -91,9 +89,7 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 		t.Fatalf("erstes Anlegen: %d %s", erster.Code, erster.Body.String())
 	}
 	var angelegt struct {
-		Data struct {
-			ID string `json:"id"`
-		} `json:"data"`
+		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(erster.Body.Bytes(), &angelegt); err != nil {
 		t.Fatal(err)
@@ -107,8 +103,8 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 	}
 
 	ohne := abgelehnt()
-	if ohne.Vorhanden.ID != angelegt.Data.ID || ohne.Vorhanden.Title != titel {
-		t.Errorf("vorhanden = %+v, erwartet Kennung %s und Titel %q", *ohne.Vorhanden, angelegt.Data.ID, titel)
+	if ohne.Vorhanden.ID != angelegt.ID || ohne.Vorhanden.Title != titel {
+		t.Errorf("vorhanden = %+v, erwartet Kennung %s und Titel %q", *ohne.Vorhanden, angelegt.ID, titel)
 	}
 	if !ohne.Vorhanden.OhneExemplar {
 		t.Error("ohneExemplar = false, der Titel hat aber kein Exemplar")
@@ -117,7 +113,7 @@ func TestTitelAnlegen_DubletteNenntDenTitelUndWoErSteht(t *testing.T) {
 		t.Errorf("Meldung %q nennt weder den Titel noch die Sicht, in der er steht", ohne.Error)
 	}
 
-	testdaten.LegeExemplarAn(t, pool, angelegt.Data.ID, "B-DUBLETTE-"+isbn, true, "")
+	testdaten.LegeExemplarAn(t, pool, angelegt.ID, "B-DUBLETTE-"+isbn, true, "")
 	mit := abgelehnt()
 	if mit.Vorhanden.OhneExemplar {
 		t.Error("ohneExemplar = true, der Titel hat inzwischen ein Exemplar")

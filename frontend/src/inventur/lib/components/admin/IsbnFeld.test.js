@@ -30,18 +30,18 @@ function server(katalog) {
 		const u = String(url);
 		if (u.startsWith(KATALOG)) {
 			if (katalog === 'gestört') return antwort(500, { error: 'Interner Serverfehler' });
-			return antwort(200, {
-				data:
-					katalog === 'vergeben'
-						? {
-								vorhanden: { id: 'titel-1', title: 'Tintenherz', ohneExemplar: false },
-								meldung: MELDUNG
-							}
-						: { vorhanden: null }
-			});
+			return antwort(
+				200,
+				katalog === 'vergeben'
+					? {
+							vorhanden: { id: 'titel-1', title: 'Tintenherz', ohneExemplar: false },
+							meldung: MELDUNG
+						}
+					: { vorhanden: null }
+			);
 		}
 		if (u.startsWith(DIENSTE)) {
-			return antwort(200, { data: { title: 'Tintenherz', author: 'Funke, Cornelia' } });
+			return antwort(200, { title: 'Tintenherz', author: 'Funke, Cornelia' });
 		}
 		return antwort(200, {});
 	});

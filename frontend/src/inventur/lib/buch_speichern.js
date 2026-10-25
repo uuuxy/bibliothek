@@ -133,7 +133,7 @@ export async function speichereBuch(formular, antwort = {}) {
 		}
 		throw new Error(meldung);
 	}
-	return (await res.json()).data;
+	return await res.json();
 }
 
 /**

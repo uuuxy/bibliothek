@@ -26,14 +26,12 @@ test('die ISBN-Abfrage zeigt Untertitel, Listenpreis und Jahrgang; gespeichert w
 			status: 200,
 			contentType: 'application/json',
 			body: JSON.stringify({
-				data: {
-					title: `Angaben ${s}`,
-					subtitle: `Untertitel ${s}`,
-					author: 'Probe, Paula',
-					jahrgangVon: 7,
-					jahrgangBis: 10,
-					preis: 12.5
-				}
+				title: `Angaben ${s}`,
+				subtitle: `Untertitel ${s}`,
+				author: 'Probe, Paula',
+				jahrgangVon: 7,
+				jahrgangBis: 10,
+				preis: 12.5
 			})
 		})
 	);

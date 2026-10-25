@@ -1,14 +1,15 @@
 package katalog
 
 import (
-	"bibliothek/api/tuer"
-	"bibliothek/db"
-	"bibliothek/internal/tuertest"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"bibliothek/api/tuer"
+	"bibliothek/db"
+	"bibliothek/internal/tuertest"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -254,8 +255,10 @@ func TestTitelAnlegen(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &httpAntwort); err != nil {
 			t.Fatalf("failed to parse response body: %v", err)
 		}
-		if httpAntwort["message"] != "Titel angelegt" {
-			t.Errorf("TitelAnlegen: Meldung %v, erwartet 'Titel angelegt'", httpAntwort["message"])
+		// Die Antwort ist der gespeicherte Titel; scheitert das Nachlesen wie hier am Mock, sind es
+		// die gesendeten Angaben mit der neuen Kennung.
+		if httpAntwort["id"] != "11111111-1111-1111-1111-111111111111" {
+			t.Errorf("TitelAnlegen: Kennung %v, erwartet die des angelegten Titels", httpAntwort["id"])
 		}
 	})
 }

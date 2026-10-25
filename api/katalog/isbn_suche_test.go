@@ -132,16 +132,14 @@ func TestISBNSuche_SpanneAusDemTitel(t *testing.T) {
           </datafield>`)
 
 	var antwort struct {
-		Data struct {
-			JahrgangVon int `json:"jahrgangVon"`
-			JahrgangBis int `json:"jahrgangBis"`
-		} `json:"data"`
+		JahrgangVon int `json:"jahrgangVon"`
+		JahrgangBis int `json:"jahrgangBis"`
 	}
 	if err := json.Unmarshal(rr.Body.Bytes(), &antwort); err != nil {
 		t.Fatalf("Antwort nicht lesbar: %v — %s", err, rr.Body.String())
 	}
-	if antwort.Data.JahrgangVon != 8 || antwort.Data.JahrgangBis != 10 {
-		t.Fatalf("jahrgangVon = %d, jahrgangBis = %d, erwartet 8 und 10 — %s", antwort.Data.JahrgangVon, antwort.Data.JahrgangBis, rr.Body.String())
+	if antwort.JahrgangVon != 8 || antwort.JahrgangBis != 10 {
+		t.Fatalf("jahrgangVon = %d, jahrgangBis = %d, erwartet 8 und 10 — %s", antwort.JahrgangVon, antwort.JahrgangBis, rr.Body.String())
 	}
 }
 

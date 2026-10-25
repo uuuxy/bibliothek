@@ -79,8 +79,7 @@
 				credentials: 'include'
 			});
 			if (!res.ok) throw new Error('Fehler beim Laden der Klassen-Bücher');
-			const json = await res.json();
-			gruppen = json.data || [];
+			gruppen = await res.json();
 		} catch (err) {
 			fehler = /** @type {any} */ (err).message;
 		} finally {

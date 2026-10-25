@@ -68,16 +68,14 @@ func TestTitelliste_StehtNachTitel(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /api/books: HTTP %d — %s", rec.Code, rec.Body.String())
 	}
-	var antwort struct {
-		Data []struct {
-			Title string `json:"title"`
-		} `json:"data"`
+	var liste []struct {
+		Title string `json:"title"`
 	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
-	ist := make([]string, len(antwort.Data))
-	for i, b := range antwort.Data {
+	ist := make([]string, len(liste))
+	for i, b := range liste {
 		ist[i] = b.Title
 	}
 	if !slices.Equal(ist, erwartet) {

@@ -1,13 +1,16 @@
 package katalog
 
 import (
-	"bibliothek/pkg/isbnutil"
-	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/pkg/isbnutil"
+	"bibliothek/repository"
 )
 
 // FremdeCoverListe ist die Tür GET /api/admin/books/external-covers: die Titel, deren Cover
@@ -17,11 +20,11 @@ func (t *Tueren) FremdeCoverListe() http.HandlerFunc {
 		eintraege, err := t.titelAbfragen().LadeTitelMitFremdemCover(r.Context(), 300)
 		if err != nil {
 			slog.Error("Fehler beim Laden externer Cover-Bücher", "fehler", err)
-			schreibeFehler(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden", nil)
 			return
 		}
 
-		schreibeJSON(w, http.StatusOK, map[string]any{"data": eintraege})
+		tuer.AntworteJSON(w, http.StatusOK, eintraege)
 	}
 }
 
@@ -34,11 +37,11 @@ func (t *Tueren) FremdeCoverNeuLaden() http.HandlerFunc {
 			Limit int      `json:"limit"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-			schreibeFehler(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 			return
 		}
 		if !alleUUIDs(eingabe.IDs) {
-			schreibeFehler(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Eine der Kennungen ist ungültig", nil)
 			return
 		}
 
@@ -53,7 +56,7 @@ func (t *Tueren) FremdeCoverNeuLaden() http.HandlerFunc {
 		}
 		if err != nil {
 			slog.Error("Fehler beim Laden externer Cover für Retry", "fehler", err)
-			schreibeFehler(w, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden", nil)
 			return
 		}
 
@@ -63,10 +66,8 @@ func (t *Tueren) FremdeCoverNeuLaden() http.HandlerFunc {
 			zahlen[t.ladeCoverErneut(r.Context(), eintrag)]++
 		}
 
-		schreibeJSON(w, http.StatusOK, map[string]any{
-			"message": "Cover erneut gesucht",
-			"data":    zahlen,
-		})
+		tuer.AntworteJSON(w, http.StatusOK, zahlen)
+
 	}
 }
 

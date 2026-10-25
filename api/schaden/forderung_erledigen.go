@@ -46,7 +46,7 @@ func (t *Tueren) SchadensfaelleDesSchuelers(schadensAbfragen *repository.Schaden
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Schadensfälle", err)
 		}
-		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"data": faelle})
+		tuer.AntworteJSON(w, http.StatusOK, faelle)
 		return nil
 	})
 }

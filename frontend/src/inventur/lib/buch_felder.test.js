@@ -146,7 +146,7 @@ describe('buch_felder: der Stand vom Öffnen', () => {
 describe('buch_speichern: der Rumpf eines vorhandenen Titels', () => {
 	/** @param {any} formular */
 	async function gesendet(formular) {
-		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(200, { data: { id: 'abc' } }));
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(200, { id: 'abc' }));
 		await speichereBuch(formular);
 		return JSON.parse(String(vi.mocked(apiFetch).mock.calls.at(-1)?.[1]?.body));
 	}

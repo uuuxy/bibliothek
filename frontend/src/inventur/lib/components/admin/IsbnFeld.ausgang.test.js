@@ -20,7 +20,7 @@ const antwort = (status, koerper) =>
  * @param {() => any} dienste */
 function server(dienste) {
 	vi.mocked(apiFetch).mockImplementation(async (url) =>
-		String(url).startsWith('/api/lookup/') ? dienste() : antwort(200, { data: { vorhanden: null } })
+		String(url).startsWith('/api/lookup/') ? dienste() : antwort(200, { vorhanden: null })
 	);
 }
 
@@ -101,7 +101,7 @@ describe('IsbnFeld: der Ausgang einer Abfrage ohne Treffer', () => {
 		await fireEvent.blur(eingabe);
 		await fertig();
 		expect(hinweis()).not.toBe('');
-		dienste = () => antwort(200, { data: { title: 'Tintenherz' } });
+		dienste = () => antwort(200, { title: 'Tintenherz' });
 		await fireEvent.blur(eingabe);
 		await fertig();
 		expect(hinweis(), 'nach dem Treffer').toBe('');

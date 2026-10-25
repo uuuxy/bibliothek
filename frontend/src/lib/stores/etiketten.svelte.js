@@ -99,10 +99,7 @@ function erzeugeEtikettenStore() {
 		try {
 			const res = await apiFetch('/api/class-books');
 			if (res.ok) {
-				const body = await res.json();
-				if (body?.data) {
-					klassen = body.data;
-				}
+				klassen = await res.json();
 			}
 		} catch (err) {
 			console.error('Fehler beim Laden der Klassengruppen:', err);

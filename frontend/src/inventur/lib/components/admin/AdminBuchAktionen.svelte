@@ -170,9 +170,9 @@
 			});
 			if (!res.ok) throw new Error(await leseApiFehler(res, 'Upload fehlgeschlagen'));
 			const json = await res.json();
-			uebernimmGespeichert(formular, 'coverUrl', json.data.coverUrl);
+			uebernimmGespeichert(formular, 'coverUrl', json.coverUrl);
 			titelListe = titelListe.map((/** @type {any} */ b) =>
-				b.id === formular.id ? { ...b, coverUrl: json.data.coverUrl } : b
+				b.id === formular.id ? { ...b, coverUrl: json.coverUrl } : b
 			);
 			melde('Cover erfolgreich hochgeladen', 'success');
 		} catch (err) {

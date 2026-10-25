@@ -30,7 +30,7 @@ describe('buch_speichern: speichereBuch', () => {
 	});
 
 	it('legt ohne id an und ändert mit id', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { id: 'neu', stock: 1 }));
 		expect(await speichereBuch({ id: null, isbn: '978', stock: 1 })).toEqual({
 			id: 'neu',
 			stock: 1
@@ -73,7 +73,7 @@ describe('buch_speichern: speichereBuch', () => {
 	});
 
 	it('„anderes Medium" geht nur nach der Antwort darauf mit', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu' } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { id: 'neu' }));
 		const rumpf = (/** @type {number} */ n) =>
 			JSON.parse(String(vi.mocked(apiFetch).mock.calls[n][1]?.body));
 
@@ -93,7 +93,7 @@ describe('buch_speichern: speichereBuch', () => {
 	});
 
 	it('ein Bestand ohne Zahl wird nicht mitgeschickt', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'abc' } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { id: 'abc' }));
 		await speichereBuch(geoeffnet({ id: 'abc', isbn: '978', stock: undefined }));
 		const koerper = JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 		expect('stock' in koerper).toBe(false);

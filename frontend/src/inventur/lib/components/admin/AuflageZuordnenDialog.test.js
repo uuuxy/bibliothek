@@ -26,7 +26,7 @@ const treffer = {
 	verfuegbar: 30,
 	imZulauf: 0
 };
-const buecher = (liste) => ({ ok: true, status: 200, json: async () => ({ data: liste }) });
+const buecher = (liste) => ({ ok: true, status: 200, json: async () => liste });
 const auflagen = (n) => ({
 	ok: true,
 	status: 200,

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/kennung"
@@ -19,11 +20,11 @@ import (
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
 func pruefeTitelEingabe(antwort http.ResponseWriter, eingabe titelAnfrage) bool {
 	if strings.TrimSpace(eingabe.Titel) == "" {
-		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel darf nicht leer sein")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Der Titel darf nicht leer sein", nil)
 		return false
 	}
 	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !isbnutil.HatForm(isbn) {
-		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN ist ungültig")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die ISBN ist ungültig", nil)
 		return false
 	}
 	return true
@@ -64,7 +65,7 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 			return false
 		}
 		slog.Error("Fehler beim Erstellen eines Titels", "isbn", buch.ISBN, "fehler", fehler)
-		schreibeFehler(antwort, http.StatusBadRequest, "Der Titel ließ sich nicht anlegen")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Der Titel ließ sich nicht anlegen", nil)
 		return false
 	}
 	buch.ID = erstellteID
@@ -78,14 +79,15 @@ func (t *Tueren) speichereNeuenTitel(ctx context.Context, antwort http.ResponseW
 func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 	var dublette *repository.DubletteISBN
 	if !errors.As(fehler, &dublette) {
-		schreibeFehler(antwort, http.StatusConflict, "Einen Titel mit dieser ISBN gibt es bereits")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusConflict, "Einen Titel mit dieser ISBN gibt es bereits", nil)
 		return
 	}
 	slog.Info("Dublette abgelehnt", "fehler", fehler)
-	schreibeJSON(antwort, http.StatusConflict, map[string]any{
+	tuer.AntworteJSON(antwort, http.StatusConflict, map[string]any{
 		"error":     dublette.Meldung(),
 		"vorhanden": vorhandenAlsAntwort(dublette.ID, dublette.Titel, dublette.HatExemplar),
 	})
+
 }
 
 // vorhandenAlsAntwort nennt den Titel, der eine ISBN schon trägt oder ohne ISBN gleich heißt, in
@@ -99,11 +101,12 @@ func vorhandenAlsAntwort(id, titel string, hatExemplar bool) map[string]any {
 // gleich heißt. „gleicherTitel" sagt der Maske, dass sie fragen und nach der Antwort „anderes
 // Medium" noch einmal schicken darf; eine vergebene ISBN lässt sich so nicht übergehen.
 func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *repository.DubletteTitel) {
-	schreibeJSON(antwort, http.StatusConflict, map[string]any{
+	tuer.AntworteJSON(antwort, http.StatusConflict, map[string]any{
 		"error":         gleichnamig.Meldung(),
 		"vorhanden":     vorhandenAlsAntwort(gleichnamig.ID, gleichnamig.Titel, gleichnamig.HatExemplar),
 		"gleicherTitel": true,
 	})
+
 }
 
 // alleUUIDs: Jede Kennung der Liste ist eine UUID. Eine, die keine ist, ginge sonst an
@@ -125,7 +128,7 @@ func alleUUIDs(ids []string) bool {
 func titelKennungAusPfad(antwort http.ResponseWriter, anfrage *http.Request) (string, bool) {
 	id := anfrage.PathValue("id")
 	if !kennung.IstUUID(id) {
-		schreibeFehler(antwort, http.StatusBadRequest, "Die Kennung des Titels ist ungültig")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die Kennung des Titels ist ungültig", nil)
 		return "", false
 	}
 	return id, true
@@ -139,7 +142,7 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 		var eingabe titelAnfrage
 
 		if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-			schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 			return
 		}
 
@@ -147,11 +150,11 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 			return
 		}
 		if fehler := repository.PruefeJahrgangsSpanne(eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
-			schreibeFehler(antwort, http.StatusBadRequest, meldungJahrgangsSpanne)
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, meldungJahrgangsSpanne, nil)
 			return
 		}
 		if fehler := repository.PruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
-			schreibeFehler(antwort, http.StatusBadRequest, meldungMehrjahresband)
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, meldungMehrjahresband, nil)
 			return
 		}
 		if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
@@ -160,7 +163,7 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 		}
 		schlagworte, fehler := schlagworteAusAnfrage(eingabe.Schlagworte)
 		if fehler != nil {
-			schreibeFehler(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler))
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler), nil)
 			return
 		}
 
@@ -192,7 +195,7 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 			return
 		}
 
-		schreibeJSON(antwort, http.StatusCreated, map[string]any{"message": "Titel angelegt", "data": t.gespeichert(anfrage.Context(), buch)})
+		tuer.AntworteJSON(antwort, http.StatusCreated, t.gespeichert(anfrage.Context(), buch))
 	}
 }
 

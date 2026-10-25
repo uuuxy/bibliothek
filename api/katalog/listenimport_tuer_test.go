@@ -150,8 +150,8 @@ func TestExcelImport(t *testing.T) {
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
 		}
-		if antwort["message"] != "1 bücher importiert" {
-			t.Errorf("antwort[\"message\"] = %v, erwartet %v", antwort["message"], "1 bücher importiert")
+		if antwort["message"] != "1 Titel importiert" {
+			t.Errorf("antwort[\"message\"] = %v, erwartet %v", antwort["message"], "1 Titel importiert")
 		}
 		if antwort["imported"] != float64(1) {
 			t.Errorf("antwort[\"imported\"] = %v, erwartet %v", antwort["imported"], float64(1))
@@ -209,8 +209,9 @@ func TestExcelImport(t *testing.T) {
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
 		}
-		if got, ok := antwort["error"].(string); !ok || !strings.Contains(got, "keine bücher konnten importiert werden") {
-			t.Errorf("antwort[\"error\"] = %v, erwartet darin %q", antwort["error"], "keine bücher konnten importiert werden")
+		// Der Text des Fehlers aus der Datenbank geht nicht hinaus, die Meldung nennt den Lauf.
+		if got := antwort["error"]; got != "Keine Zeile der Liste ließ sich importieren" {
+			t.Errorf("antwort[\"error\"] = %v, erwartet die Meldung ohne den Text des Fehlers (%q)", got, errTest)
 		}
 	})
 
@@ -267,8 +268,8 @@ func TestExcelImport(t *testing.T) {
 		if err != nil {
 			t.Fatalf("json.NewDecoder(w.Body).Decode: %v", err)
 		}
-		if antwort["message"] != "1 bücher importiert, 1 fehlgeschlagen" {
-			t.Errorf("antwort[\"message\"] = %v, erwartet %v", antwort["message"], "1 bücher importiert, 1 fehlgeschlagen")
+		if antwort["message"] != "1 Titel importiert, 1 fehlgeschlagen" {
+			t.Errorf("antwort[\"message\"] = %v, erwartet %v", antwort["message"], "1 Titel importiert, 1 fehlgeschlagen")
 		}
 		if antwort["imported"] != float64(1) {
 			t.Errorf("antwort[\"imported\"] = %v, erwartet %v", antwort["imported"], float64(1))

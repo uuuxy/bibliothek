@@ -1,15 +1,16 @@
 package katalog
 
 import (
-	"bibliothek/api/tuer"
-	"bibliothek/db"
-	"bibliothek/internal/katalogdienste"
-	"bibliothek/internal/tuertest"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"bibliothek/api/tuer"
+	"bibliothek/db"
+	"bibliothek/internal/katalogdienste"
+	"bibliothek/internal/tuertest"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pashagolub/pgxmock/v5"

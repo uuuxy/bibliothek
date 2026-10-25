@@ -71,9 +71,8 @@ type ohneISBNAntwort struct {
 	Status int
 	Rumpf  string
 	Error  string `json:"error"`
-	Data   struct {
-		ID string `json:"id"`
-	} `json:"data"`
+	// ID ist die Kennung des gespeicherten Titels; die Antwort ist der Titel selbst.
+	ID        string `json:"id"`
 	Vorhanden *struct {
 		ID           string `json:"id"`
 		Title        string `json:"title"`
@@ -199,17 +198,17 @@ func TestTitelOhneISBN_Anlegen(t *testing.T) {
 	t.Run("ein Spiel ohne ISBN und ohne Autor", func(t *testing.T) {
 		rumpf := map[string]any{"isbn": "", "title": ohneISBNVorsatz + "Spiel", "author": "", "medientyp": "Spiel", "signatur": "Pro 4"}
 		a := p.schicke("", rumpf)
-		if a.Status != http.StatusCreated || a.Data.ID == "" {
+		if a.Status != http.StatusCreated || a.ID == "" {
 			t.Fatalf("Status %d %s", a.Status, a.Rumpf)
 		}
-		if autor := p.sql(`SELECT COALESCE(autor, '') FROM buecher_titel WHERE id = $1`, a.Data.ID); autor != "" {
+		if autor := p.sql(`SELECT COALESCE(autor, '') FROM buecher_titel WHERE id = $1`, a.ID); autor != "" {
 			t.Errorf("der Titel trägt den Autor %q, den niemand eingetragen hat", autor)
 		}
-		if got := p.isbnVon(a.Data.ID); got != "(keine)" {
+		if got := p.isbnVon(a.ID); got != "(keine)" {
 			t.Errorf("ISBN %q, erwartet keine", got)
 		}
 		rumpf["signatur"] = "Pro 4b"
-		if b := p.schicke(a.Data.ID, rumpf); b.Status != http.StatusOK || p.signaturVon(a.Data.ID) != "Pro 4b" {
+		if b := p.schicke(a.ID, rumpf); b.Status != http.StatusOK || p.signaturVon(a.ID) != "Pro 4b" {
 			t.Errorf("danach ändern: Status %d %s", b.Status, b.Rumpf)
 		}
 	})
@@ -235,7 +234,7 @@ func TestTitelOhneISBN_Anlegen(t *testing.T) {
 
 		zweiter := p.schicke("", rumpf)
 		if zweiter.Status != http.StatusConflict || !zweiter.GleicherTitel || zweiter.Vorhanden == nil ||
-			zweiter.Vorhanden.ID != erster.Data.ID || !zweiter.Vorhanden.OhneExemplar {
+			zweiter.Vorhanden.ID != erster.ID || !zweiter.Vorhanden.OhneExemplar {
 			t.Fatalf("zweites Heft: Status %d %s", zweiter.Status, zweiter.Rumpf)
 		}
 		if !strings.Contains(zweiter.Error, ohneISBNVorsatz+"Heft") {
@@ -274,8 +273,8 @@ func TestTitelOhneISBN_Anlegen(t *testing.T) {
 		}
 		delete(rumpf, "anderesMedium")
 		a := p.schicke("", rumpf)
-		if a.Status != http.StatusConflict || a.Vorhanden == nil || a.Vorhanden.ID != mitExemplar.Data.ID || a.Vorhanden.OhneExemplar {
-			t.Errorf("Status %d %s, erwartet den Titel %s mit Exemplar", a.Status, a.Rumpf, mitExemplar.Data.ID)
+		if a.Status != http.StatusConflict || a.Vorhanden == nil || a.Vorhanden.ID != mitExemplar.ID || a.Vorhanden.OhneExemplar {
+			t.Errorf("Status %d %s, erwartet den Titel %s mit Exemplar", a.Status, a.Rumpf, mitExemplar.ID)
 		}
 	})
 

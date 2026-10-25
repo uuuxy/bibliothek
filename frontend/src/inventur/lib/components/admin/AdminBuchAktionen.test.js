@@ -104,7 +104,7 @@ describe('AdminBuchAktionen: Titel ohne ISBN', () => {
 		JSON.parse(String(vi.mocked(apiFetch).mock.calls[n][1]?.body));
 
 	it('ein vorhandener Titel ohne ISBN wird gespeichert', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-9', stock: 1 } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { id: 'titel-9', stock: 1 }));
 		const geladen = {
 			id: 'titel-9',
 			isbn: '',
@@ -122,7 +122,7 @@ describe('AdminBuchAktionen: Titel ohne ISBN', () => {
 	});
 
 	it('ein neuer Titel ohne ISBN wird angelegt', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { id: 'neu', stock: 1 }));
 		await maske({
 			id: null,
 			isbn: '',
@@ -173,7 +173,7 @@ describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
 
 	it('„Anderes Medium" schickt denselben Titel noch einmal und meldet das Speichern', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(GLEICH);
-		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { id: 'neu', stock: 1 }));
 		vi.mocked(fragen).mockResolvedValue(false);
 		await maske(heft()).speichereAenderungen();
 
@@ -207,7 +207,7 @@ describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
 
 describe('AdminBuchAktionen: neuer Titel ohne Exemplar', () => {
 	it('die Meldung nennt die Sicht, in der er steht', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 0 } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { id: 'neu', stock: 0 }));
 		await maske({
 			id: null,
 			isbn: '9783791504544',
@@ -218,7 +218,7 @@ describe('AdminBuchAktionen: neuer Titel ohne Exemplar', () => {
 	});
 
 	it('mit Exemplar bleibt es bei der gewohnten Meldung', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { id: 'neu', stock: 1 }));
 		await maske({
 			id: null,
 			isbn: '9783791504544',
@@ -237,7 +237,7 @@ describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 	const rumpf = () => JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 
 	it('verringert: fragt mit beiden Zahlen, auch wenn der Titel nicht in der Liste steht', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-3' } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { id: 'titel-3' }));
 		vi.mocked(bestaetigen).mockResolvedValue(true);
 		await maske({ ...titel, stock: 1 }).speichereAenderungen();
 
@@ -254,14 +254,14 @@ describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 	});
 
 	it('geleertes Feld: keine Rückfrage, der Bestand geht nicht mit', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-3' } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { id: 'titel-3' }));
 		await maske({ ...titel, stock: null }).speichereAenderungen();
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect('stock' in rumpf()).toBe(false);
 	});
 
 	it('unverändert: keine Rückfrage, der Bestand geht nicht mit', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-3' } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { id: 'titel-3' }));
 		await maske({ ...titel, stock: 3 }).speichereAenderungen();
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect('stock' in rumpf()).toBe(false);
@@ -289,7 +289,7 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 
 		const erster = aktionen.speichereAenderungen();
 		const zweiter = aktionen.speichereAenderungen();
-		for (const fertig of wartende) fertig(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		for (const fertig of wartende) fertig(antwort(201, { id: 'neu', stock: 1 }));
 		await Promise.all([erster, zweiter]);
 
 		expect(apiFetch).toHaveBeenCalledTimes(1);
@@ -298,7 +298,7 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 
 	it('nach einer Ablehnung geht das Speichern wieder', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(500, { error: 'Speichern fehlgeschlagen' }));
-		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { id: 'neu', stock: 1 }));
 		const aktionen = maske({ id: null, isbn: '9783791504544', title: 'Mit Buch', stock: 1 });
 
 		await aktionen.speichereAenderungen();

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
 	"bibliothek/internal/katalogdienste"
 	"bibliothek/pkg/logger"
 	"bibliothek/repository"
@@ -27,12 +29,12 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 
 	eintrag, err := t.titelAbfragen().LadeTitel(r.Context(), id)
 	if errors.Is(err, repository.ErrTitelNichtGefunden) {
-		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Titel nicht gefunden", nil)
 		return
 	}
 	if err != nil {
 		slog.Error("cover-refresh: buch laden fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "buch konnte nicht geladen werden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "buch konnte nicht geladen werden", nil)
 		return
 	}
 
@@ -41,10 +43,10 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, katalogdienste.ErrKatalogdiensteNichtErreichbar) {
 			// Netzausfall ist kein Nicht-Treffer — sonst sieht „Cover neu laden" bei
 			// WLAN-Störung so aus, als gäbe es schlicht kein besseres Cover.
-			schreibeFehler(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.")
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadGateway, "Die Katalogdienste (DNB, Google, OpenLibrary) sind nicht erreichbar. Bitte später erneut versuchen.", err)
 			return
 		}
-		schreibeFehler(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel.")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel.", nil)
 		return
 	}
 
@@ -54,17 +56,17 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 	// Der Knopf verspricht ein Bild, also ändert die Tür nur das Bild.
 	coverURL := strings.TrimSpace(nachschlagen.CoverURL)
 	if coverURL == "" {
-		schreibeFehler(w, http.StatusNotFound, "Bei DNB, Google Books und OpenLibrary gibt es kein Cover zu dieser ISBN")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Bei DNB, Google Books und OpenLibrary gibt es kein Cover zu dieser ISBN", nil)
 		return
 	}
 
 	err = t.titelAbfragen().AendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if err != nil {
 		slog.Error("cover-refresh: update fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "cover konnte nicht gespeichert werden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "cover konnte nicht gespeichert werden", nil)
 		return
 	}
 
 	eintrag.CoverURL = coverURL
-	schreibeJSON(w, http.StatusOK, map[string]any{"message": "Cover aktualisiert", "data": eintrag})
+	tuer.AntworteJSON(w, http.StatusOK, eintrag)
 }

@@ -27,7 +27,7 @@ const antwort = (status, koerper) =>
 function server(vorhanden, dienste = async () => antwort(404, {})) {
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
-		if (u.startsWith('/api/books/vorhanden')) return antwort(200, { data: vorhanden });
+		if (u.startsWith('/api/books/vorhanden')) return antwort(200, vorhanden);
 		if (u.startsWith('/api/lookup/')) return dienste();
 		return antwort(200, []);
 	});
@@ -64,7 +64,7 @@ describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
 		const dienste = new Promise((gibFrei) => (antworte = () => gibFrei(undefined)));
 		server({ vorhanden: null }, async () => {
 			await dienste;
-			return antwort(200, { data: { title: 'Green Line 3' } });
+			return antwort(200, { title: 'Green Line 3' });
 		});
 		const formular = $state({ ...leeresBuchFormular(), isbn: ISBN, signatur: 'Eng 3' });
 		let titelBeimSpeichern = null;
@@ -119,11 +119,11 @@ describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
 		const erste = new Promise((gibFrei) => (antworte = () => gibFrei(undefined)));
 		vi.mocked(apiFetch).mockImplementation(async (url) => {
 			const u = String(url);
-			if (u.startsWith('/api/books/vorhanden')) return antwort(200, { data: { vorhanden: null } });
-			if (u === `/api/lookup/${ZWEITE}`) return antwort(200, { data: { title: 'Zweites Buch' } });
+			if (u.startsWith('/api/books/vorhanden')) return antwort(200, { vorhanden: null });
+			if (u === `/api/lookup/${ZWEITE}`) return antwort(200, { title: 'Zweites Buch' });
 			if (u.startsWith('/api/lookup/')) {
 				await erste;
-				return antwort(200, { data: { title: 'Erstes Buch', author: 'Autorin des ersten' } });
+				return antwort(200, { title: 'Erstes Buch', author: 'Autorin des ersten' });
 			}
 			return antwort(200, []);
 		});

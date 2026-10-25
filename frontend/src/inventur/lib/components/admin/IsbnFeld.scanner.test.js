@@ -35,7 +35,7 @@ const fertig = () => new Promise((r) => setTimeout(r, 0));
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.mocked(apiFetch).mockImplementation(async (url) =>
-		String(url).startsWith(DIENSTE) ? antwort({ data: {} }) : antwort({ data: { vorhanden: null } })
+		String(url).startsWith(DIENSTE) ? antwort({}) : antwort({ vorhanden: null })
 	);
 });
 

@@ -61,14 +61,12 @@ func TestBestand_GiltNurMitDemGesehenenStand(t *testing.T) {
 		t.Fatalf("Anlegen: %d %s", angelegt.Code, angelegt.Body.String())
 	}
 	var antwort struct {
-		Data struct {
-			ID string `json:"id"`
-		} `json:"data"`
+		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(angelegt.Body.Bytes(), &antwort); err != nil {
 		t.Fatal(err)
 	}
-	id := antwort.Data.ID
+	id := antwort.ID
 
 	// {im Bestand, ausgesondert, Signatur}
 	type stand struct {

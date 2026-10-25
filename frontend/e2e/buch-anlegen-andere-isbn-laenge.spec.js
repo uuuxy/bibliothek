@@ -74,7 +74,7 @@ test.describe('Neues Buch: die ISBN in der anderen Länge ist dieselbe Nummer', 
 			route.fulfill({
 				status: 200,
 				contentType: 'application/json',
-				body: JSON.stringify({ data: { title: `Anderes Buch ${s}`, author: 'Probe, Paula' } })
+				body: JSON.stringify({ title: `Anderes Buch ${s}`, author: 'Probe, Paula' })
 			})
 		);
 		const frage = await neuesBuchMitIsbn(page, ZEHN_FALSCH);

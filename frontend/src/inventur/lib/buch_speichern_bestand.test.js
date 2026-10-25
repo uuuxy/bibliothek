@@ -31,7 +31,7 @@ const geoeffnet = (formular) =>
 
 /** @param {any} formular */
 async function gesendet(formular) {
-	vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: formular.id ?? 'neu' } }));
+	vi.mocked(apiFetch).mockResolvedValue(antwort(200, { id: formular.id ?? 'neu' }));
 	await speichereBuch(geoeffnet(formular));
 	return JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 }

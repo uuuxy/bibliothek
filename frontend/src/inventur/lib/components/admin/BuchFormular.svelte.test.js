@@ -39,16 +39,17 @@ function server(vergeben, dienste = 200) {
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
 		if (u.startsWith(KATALOG)) {
-			return antwort(200, {
-				data: vergeben
+			return antwort(
+				200,
+				vergeben
 					? {
 							vorhanden: { id: 'titel-1', title: 'Green Line 3', ohneExemplar: false },
 							meldung: 'Diese ISBN trägt schon der Titel „Green Line 3“.'
 						}
 					: { vorhanden: null }
-			});
+			);
 		}
-		if (u.startsWith(DIENSTE)) return antwort(dienste, { data: { title: 'Green Line 3' } });
+		if (u.startsWith(DIENSTE)) return antwort(dienste, { title: 'Green Line 3' });
 		return antwort(200, []);
 	});
 }

@@ -1,11 +1,6 @@
 package katalog
 
 import (
-	"bibliothek/apierrors"
-	"bibliothek/pkg/coverablage"
-	"bibliothek/pkg/imageutil"
-	"bibliothek/pkg/logger"
-	"bibliothek/repository"
 	"bytes"
 	"errors"
 	"fmt"
@@ -17,6 +12,13 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/pkg/coverablage"
+	"bibliothek/pkg/imageutil"
+	"bibliothek/pkg/logger"
+	"bibliothek/repository"
 
 	"golang.org/x/image/draw"
 )
@@ -128,7 +130,7 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 	fertig, endung, err := verarbeiteHochgeladenesBild(inhalt, id)
 	if err != nil {
 		if errors.Is(err, errBildverarbeitung) {
-			schreibeFehler(w, http.StatusInternalServerError, errBildverarbeitung.Error())
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "Das Bild ließ sich nicht verarbeiten", err)
 		} else {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		}
@@ -141,12 +143,12 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 	// dann auf eine Datei, die fehlt (cover_upload_reihenfolge_test.go).
 	buch, err := t.titelAbfragen().LadeTitel(r.Context(), id)
 	if errors.Is(err, repository.ErrTitelNichtGefunden) {
-		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Titel nicht gefunden", nil)
 		return
 	}
 	if err != nil {
 		slog.Error("cover-upload: buch laden fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "buch konnte nicht geladen werden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "buch konnte nicht geladen werden", nil)
 		return
 	}
 
@@ -160,13 +162,13 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 	err = t.titelAbfragen().AendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if errors.Is(err, repository.ErrTitelNichtGefunden) {
 		loescheCoverDatei(coverURL)
-		schreibeFehler(w, http.StatusNotFound, "Titel nicht gefunden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Titel nicht gefunden", nil)
 		return
 	}
 	if err != nil {
 		loescheCoverDatei(coverURL)
 		slog.Error("cover-upload: metadata update failed", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden", nil)
 		return
 	}
 
@@ -176,13 +178,8 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 		loescheCoverDatei(buch.CoverURL)
 	}
 
-	schreibeJSON(w, http.StatusOK, map[string]any{
-		"message": "Bild hochgeladen",
-		"data": map[string]any{
-			"id":       id,
-			"coverUrl": coverURL,
-		},
-	})
+	tuer.AntworteJSON(w, http.StatusOK, map[string]string{"id": id, "coverUrl": coverURL})
+
 }
 
 // leseCoverUpload liest und validiert das hochgeladene Bild (Größe, Nicht-Leer,
@@ -191,13 +188,13 @@ func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte,
 	r.Body = http.MaxBytesReader(w, r.Body, maxCoverUploadBytes)
 	if err := r.ParseMultipartForm(maxCoverUploadBytes); err != nil {
 		slog.Warn("cover-upload: multipart parse failed", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusBadRequest, "Die Datei ist zu groß oder ungültig, höchstens 10 MB")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Datei ist zu groß oder ungültig, höchstens 10 MB", nil)
 		return nil, false
 	}
 
 	datei, kopf, err := r.FormFile("cover")
 	if err != nil {
-		schreibeFehler(w, http.StatusBadRequest, "Kein Bild gefunden")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Kein Bild gefunden", nil)
 		return nil, false
 	}
 	defer func() { _ = datei.Close() }() //nolint:errcheck
@@ -205,17 +202,17 @@ func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte,
 	inhalt, err := io.ReadAll(datei)
 	if err != nil {
 		slog.Warn("cover-upload: read failed", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "fehler beim lesen der datei")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "fehler beim lesen der datei", nil)
 		return nil, false
 	}
 	if len(inhalt) == 0 {
-		schreibeFehler(w, http.StatusBadRequest, "Die Datei ist leer")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Datei ist leer", nil)
 		return nil, false
 	}
 
 	endung := strings.ToLower(filepath.Ext(kopf.Filename))
 	if endung != ".jpg" && endung != ".jpeg" && endung != ".png" && endung != ".webp" {
-		schreibeFehler(w, http.StatusBadRequest, "Nur JPG, PNG oder WebP")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Nur JPG, PNG oder WebP", nil)
 		return nil, false
 	}
 	return inhalt, true
@@ -229,7 +226,7 @@ func speichereHochgeladenesCover(w http.ResponseWriter, id string, fertig []byte
 
 	if err := coverablage.Schreibe(dateiname, fertig); err != nil {
 		slog.Error("cover-upload: speichern fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		schreibeFehler(w, http.StatusInternalServerError, "fehler beim speichern")
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "fehler beim speichern", nil)
 		return "", false
 	}
 

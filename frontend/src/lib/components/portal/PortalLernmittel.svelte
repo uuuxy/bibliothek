@@ -25,7 +25,7 @@
 	onMount(async () => {
 		try {
 			const k = await apiFetch('/api/portal/klassensaetze');
-			if (k.ok) klassensaetze = (await k.json()).data ?? [];
+			if (k.ok) klassensaetze = await k.json();
 			else ladefehler = true;
 		} catch {
 			// Sonst sagte der leere Zustand unten „Noch keine Klassensätze zugeordnet", auch wenn

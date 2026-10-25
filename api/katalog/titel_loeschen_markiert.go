@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
 
@@ -19,29 +21,29 @@ func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 			IDs []string `json:"ids"`
 		}
 		if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-			schreibeFehler(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 			return
 		}
 
 		if len(eingabe.IDs) == 0 {
-			schreibeFehler(antwort, http.StatusBadRequest, "Keine Titel ausgewählt")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Keine Titel ausgewählt", nil)
 			return
 		}
 		if !alleUUIDs(eingabe.IDs) {
-			schreibeFehler(antwort, http.StatusBadRequest, "Eine der Kennungen ist ungültig")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Eine der Kennungen ist ungültig", nil)
 			return
 		}
 
 		if fehler := t.titelAbfragen().LoescheTitelSamtAusleihen(anfrage.Context(), eingabe.IDs); fehler != nil {
 			if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
-				schreibeFehler(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden")
+				apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden", nil)
 				return
 			}
 			slog.Error("Fehler beim Löschen von Büchern", "fehler", fehler)
-			schreibeFehler(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher", nil)
 			return
 		}
 
-		schreibeJSON(antwort, http.StatusOK, map[string]string{"message": "Titel gelöscht"})
+		tuer.AntworteJSON(antwort, http.StatusOK, map[string]string{"message": "Titel gelöscht"})
 	}
 }

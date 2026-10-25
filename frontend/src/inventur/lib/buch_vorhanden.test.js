@@ -24,9 +24,7 @@ describe('buch_vorhanden: die ISBN ist schon vergeben', () => {
 	});
 
 	it('fragt den Katalog nach der ISBN, auch mit Bindestrichen und Leerzeichen', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(
-			antwort(200, { data: { vorhanden: VORHANDEN, meldung: MELDUNG } })
-		);
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { vorhanden: VORHANDEN, meldung: MELDUNG }));
 		expect(await vorhandenerTitel('978-3 7915')).toEqual({
 			meldung: MELDUNG,
 			vorhanden: VORHANDEN
@@ -35,14 +33,12 @@ describe('buch_vorhanden: die ISBN ist schon vergeben', () => {
 	});
 
 	it('kein Titel mit dieser ISBN: null', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { vorhanden: null } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { vorhanden: null }));
 		expect(await vorhandenerTitel('9783791504544')).toBeNull();
 	});
 
 	it('vergeben: fragt und öffnet den vorhandenen Titel', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(
-			antwort(200, { data: { vorhanden: VORHANDEN, meldung: MELDUNG } })
-		);
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { vorhanden: VORHANDEN, meldung: MELDUNG }));
 		vi.mocked(bestaetigen).mockResolvedValue(true);
 		expect(await frageWennVergeben('9783791504544')).toBe(true);
 		const frage = vi.mocked(bestaetigen).mock.calls[0][0];
@@ -53,16 +49,14 @@ describe('buch_vorhanden: die ISBN ist schon vergeben', () => {
 	});
 
 	it('vergeben und abgebrochen: die Maske bleibt, die ISBN gilt weiter als vergeben', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(
-			antwort(200, { data: { vorhanden: VORHANDEN, meldung: MELDUNG } })
-		);
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { vorhanden: VORHANDEN, meldung: MELDUNG }));
 		vi.mocked(bestaetigen).mockResolvedValue(false);
 		expect(await frageWennVergeben('9783791504544')).toBe(true);
 		expect(appState.bookToEdit).toBeNull();
 	});
 
 	it('frei: keine Frage', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { vorhanden: null } }));
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { vorhanden: null }));
 		expect(await frageWennVergeben('9783791504544')).toBe(false);
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect(melde).not.toHaveBeenCalled();

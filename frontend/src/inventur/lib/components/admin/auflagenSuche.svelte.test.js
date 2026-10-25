@@ -19,18 +19,18 @@ const titel = (id, title, jahr, lernmittel = true) => ({
 	erscheinungsjahr: jahr,
 	istLernmittel: lernmittel
 });
-const antwort = (liste) => ({ ok: true, status: 200, json: async () => ({ data: liste }) });
+const antwort = (liste) => ({ ok: true, status: 200, json: async () => liste });
 
 describe('kandidaten', () => {
 	it('nimmt beide Hälften, nur Lernmittel, ohne die bekannten, jeden Titel einmal', () => {
-		const mit = { data: [titel('A', 'Mathe 7', 2019), titel('R', 'Roman', 2020, false)] };
-		const ohne = { data: [titel('B', 'Mathe 7', 2014), titel('a', 'Mathe 7', 2019)] };
+		const mit = [titel('A', 'Mathe 7', 2019), titel('R', 'Roman', 2020, false)];
+		const ohne = [titel('B', 'Mathe 7', 2014), titel('a', 'Mathe 7', 2019)];
 		const liste = kandidaten([mit, ohne], ['SELBST']);
 		expect(liste.map((t) => t.id)).toEqual(['A', 'B']);
 	});
 
 	it('lässt die Titel weg, die schon zu diesem Buch gehören — auch in anderer Schreibweise', () => {
-		const liste = kandidaten([{ data: [titel('abc', 'Mathe 7', 2019)] }, { data: [] }], ['ABC']);
+		const liste = kandidaten([[titel('abc', 'Mathe 7', 2019)], []], ['ABC']);
 		expect(liste).toEqual([]);
 	});
 
@@ -38,7 +38,7 @@ describe('kandidaten', () => {
 		const viele = Array.from({ length: AUFLAGEN_TREFFER_MAX + 5 }, (_, i) =>
 			titel(`t${i}`, 'Deutschbuch 7', 2000 + i)
 		);
-		const liste = kandidaten([{ data: viele }, { data: [titel('x', 'Chemie 8', 2010)] }], []);
+		const liste = kandidaten([viele, [titel('x', 'Chemie 8', 2010)]], []);
 		expect(liste).toHaveLength(AUFLAGEN_TREFFER_MAX);
 		expect(liste[0].id).toBe('x');
 		expect(liste[1].erscheinungsjahr).toBe(2000 + AUFLAGEN_TREFFER_MAX + 4);

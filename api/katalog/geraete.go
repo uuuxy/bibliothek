@@ -69,7 +69,7 @@ func (t *Tueren) Geraete(geraeteAbfragen geraeteListe) http.HandlerFunc {
 				}
 			}
 		}
-		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"data": geraete})
+		tuer.AntworteJSON(w, http.StatusOK, geraete)
 		return nil
 	})
 }

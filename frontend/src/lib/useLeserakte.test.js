@@ -36,7 +36,7 @@ describe('useLeserakte.ladeAkte', () => {
 	it('lässt die Gebühren des vorigen Schülers nicht stehen', async () => {
 		vi.mocked(apiFetch).mockImplementation(async (url) => {
 			const u = String(url);
-			if (u.includes('schadensfaelle')) return /** @type {any} */ (ok({ data: [{ id: 'f-A' }] }));
+			if (u.includes('schadensfaelle')) return /** @type {any} */ (ok([{ id: 'f-A' }]));
 			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
 			return /** @type {any} */ (ok({ id: 'A', vorname: 'Anna' }));
 		});
@@ -65,11 +65,9 @@ describe('useLeserakte.ladeAkte', () => {
 			vi.mocked(apiFetch).mockImplementation(async (url) => {
 				const u = String(url);
 				if (u.includes('bescheide')) {
-					return /** @type {any} */ (
-						bescheideOk ? ok({ data: [{ id: 'bescheid-' + id }] }) : fehler
-					);
+					return /** @type {any} */ (bescheideOk ? ok([{ id: 'bescheid-' + id }]) : fehler);
 				}
-				if (u.includes('schadensfaelle')) return /** @type {any} */ (ok({ data: [] }));
+				if (u.includes('schadensfaelle')) return /** @type {any} */ (ok([]));
 				if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
 				return /** @type {any} */ (ok({ id, vorname: id }));
 			});
@@ -96,7 +94,7 @@ describe('useLeserakte.ladeAkte', () => {
 			for (const [teil, antwort] of Object.entries(je)) if (u.includes(teil)) return antwort;
 			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
 			if (u.includes('schadensfaelle') || u.includes('bescheide'))
-				return /** @type {any} */ (ok({ data: [] }));
+				return /** @type {any} */ (ok([]));
 			return /** @type {any} */ (ok({ id: 'A', vorname: 'Anna' }));
 		});
 
@@ -146,7 +144,7 @@ describe('useLeserakte.ladeAkte', () => {
 			const u = String(url);
 			const istA = u.includes('/A');
 			if (istA) await aKam;
-			if (u.includes('schadensfaelle')) return /** @type {any} */ (ok({ data: [] }));
+			if (u.includes('schadensfaelle')) return /** @type {any} */ (ok([]));
 			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
 			return /** @type {any} */ (ok({ id: istA ? 'A' : 'B', vorname: istA ? 'Anna' : 'Ben' }));
 		});
@@ -170,18 +168,16 @@ describe('useLeserakte.ladeAkte', () => {
 			const u = String(url);
 			const istA = u.includes('/A');
 			if (u.includes('schadensfaelle'))
-				return /** @type {any} */ (
-					istA ? { ok: true, json: faelleA } : ok({ data: [{ id: 'fall-B' }] })
-				);
+				return /** @type {any} */ (istA ? { ok: true, json: faelleA } : ok([{ id: 'fall-B' }]));
 			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
-			if (u.includes('bescheide')) return /** @type {any} */ (ok({ data: [] }));
+			if (u.includes('bescheide')) return /** @type {any} */ (ok([]));
 			return /** @type {any} */ (ok({ id: istA ? 'A' : 'B' }));
 		});
 		const st = useLeserakte();
 		const langsam = st.ladeAkte('A');
 		await vi.waitFor(() => expect(faelleA).toHaveBeenCalled());
 		await st.ladeAkte('B');
-		gibFaelleA({ data: [{ id: 'fall-A' }] });
+		gibFaelleA([{ id: 'fall-A' }]);
 		await langsam;
 
 		expect(st.akte?.id).toBe('B');

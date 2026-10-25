@@ -59,17 +59,17 @@ export function useLeserakte() {
 			// aller Körper (wie useBuchakte): Sonst stünden Teile des vorher geöffneten Lesers da, und
 			// „Zahlung verbucht" schriebe auf dessen Schadensfall. 403 heißt nur, keine Liste zu zeigen.
 			const fehlend = /** @type {string[]} */ ([]);
-			/** @param {Response} res @param {string} name @param {(json: any) => any[]} auspacken */
-			const listeOderVermerk = async (res, name, auspacken) => {
-				if (res.ok) return auspacken(await res.json()) || [];
+			/** @param {Response} res @param {string} name */
+			const listeOderVermerk = async (res, name) => {
+				if (res.ok) return (await res.json()) || [];
 				if (res.status !== 403) fehlend.push(name);
 				return [];
 			};
 			const neu = await Promise.all([
 				resProfile.ok ? resProfile.json() : null,
-				listeOderVermerk(resVormerkungen, 'Vormerkungen', (j) => j),
-				listeOderVermerk(resGebuehren, 'Gebühren', (j) => j.data),
-				listeOderVermerk(resBescheide, 'Bescheide', (j) => j.data)
+				listeOderVermerk(resVormerkungen, 'Vormerkungen'),
+				listeOderVermerk(resGebuehren, 'Gebühren'),
+				listeOderVermerk(resBescheide, 'Bescheide')
 			]);
 			if (meine !== laufNr) return;
 			[akte, vormerkungen, gebuehren, bescheide] = neu;

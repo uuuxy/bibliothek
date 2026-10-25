@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -35,7 +36,7 @@ func (t *Tueren) TitelAendern() http.HandlerFunc {
 		}
 		schlagworte, fehler := schlagworteAusAnfrage(eingabe.Schlagworte)
 		if fehler != nil {
-			schreibeFehler(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler))
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, repository.MitGrund(meldungSchlagworteNichtGespeichert, fehler), nil)
 			return
 		}
 
@@ -44,8 +45,8 @@ func (t *Tueren) TitelAendern() http.HandlerFunc {
 		// Die Katalogdienste füllen hier nichts nach — sonst wartete das Speichern auf sie, und
 		// in der Akte stünde, was niemand eingetragen und niemand gesehen hat.
 		if slices.Contains(felder, "title") && eingabe.Titel == "" {
-			schreibeFehler(antwort, http.StatusBadRequest,
-				"Der Titel darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.")
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Der Titel darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.", nil)
+
 			return
 		}
 
@@ -78,7 +79,7 @@ func (t *Tueren) TitelAendern() http.HandlerFunc {
 		}
 
 		buch.ID = id
-		schreibeJSON(antwort, http.StatusOK, map[string]any{"message": "Titel gespeichert", "data": t.gespeichert(anfrage.Context(), buch)})
+		tuer.AntworteJSON(antwort, http.StatusOK, t.gespeichert(anfrage.Context(), buch))
 	}
 }
 
@@ -122,38 +123,39 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		return
 	}
 	if meldung, ok := meldungZurSpanne(fehler); ok {
-		schreibeFehler(antwort, http.StatusBadRequest, meldung)
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, meldung, nil)
 		return
 	}
 	var veraltet *repository.BestandVeraltet
 	if errors.As(fehler, &veraltet) {
 		// Mit dem Stand in der Antwort stellt die Maske ihr Feld nach, ohne dass die
 		// übrigen Eingaben verloren gehen.
-		schreibeJSON(antwort, http.StatusConflict, map[string]any{
+		tuer.AntworteJSON(antwort, http.StatusConflict, map[string]any{
 			"error":   veraltet.Meldung(),
 			"bestand": veraltet.Aktuell,
 		})
+
 		return
 	}
 	if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
-		schreibeFehler(antwort, http.StatusNotFound, "Buch nicht gefunden")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Buch nicht gefunden", nil)
 		return
 	}
 	if errors.Is(fehler, repository.ErrAutorGeleert) {
-		schreibeFehler(antwort, http.StatusBadRequest,
-			"Der Autor darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Der Autor darf nicht leer sein. Beim Ändern setzt das Programm keinen Platzhalter ein.", nil)
+
 		return
 	}
 	if errors.Is(fehler, repository.ErrISBNFormat) {
-		schreibeFehler(antwort, http.StatusBadRequest, "Die ISBN ist ungültig")
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die ISBN ist ungültig", nil)
 		return
 	}
 	if errors.Is(fehler, repository.ErrAussonderungOhneBearbeiter) {
-		schreibeFehler(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet)
+		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 		return
 	}
 	slog.Error("Fehler beim Aktualisieren eines Titels", "titel", id, "fehler", fehler)
-	schreibeFehler(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
+	apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden", nil)
 }
 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt

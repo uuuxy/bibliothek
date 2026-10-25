@@ -88,7 +88,7 @@ const istLernmittel = (titel) => Boolean(titel.istLernmittel);
 /**
  * Führt die beiden Antworten zusammen: nur die passenden (Vorgabe: Lernmittel), ohne die
  * bekannten, jeder Titel einmal, nach Titel und dann dem jüngsten Jahr.
- * @param {any[]} antworten — die Körper der beiden Aufrufe ({ data: [...] })
+ * @param {any[]} antworten — die Körper der beiden Aufrufe, je eine Liste von Titeln
  * @param {string[]} bekannte
  * @param {(titel: any) => boolean} [passt]
  */
@@ -99,7 +99,7 @@ export function kandidaten(antworten, bekannte, passt = istLernmittel) {
 	/** @type {Record<string, any>} */
 	const gesehen = {};
 	for (const antwort of antworten) {
-		for (const t of antwort?.data ?? []) {
+		for (const t of antwort ?? []) {
 			const id = String(t.id).toLowerCase();
 			if (!passt(t) || aus.includes(id) || id in gesehen) continue;
 			gesehen[id] = t;

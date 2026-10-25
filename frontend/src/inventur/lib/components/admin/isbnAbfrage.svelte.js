@@ -117,7 +117,7 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 			const antwort = await apiFetch(`/api/lookup/${encodeURIComponent(isbn)}`);
 			if (veraltet()) return;
 			if (!antwort.ok) return meldeAusgang(AUSGAENGE[antwort.status] ?? GESCHEITERT);
-			const daten = (await antwort.json()).data ?? {};
+			const daten = (await antwort.json()) ?? {};
 			if (veraltet()) return;
 			const frei = felderAus(daten).filter(([feld]) => formular[feld] === beimBeginn[feld]);
 			for (const [feld, wert] of frei) schreibe(formular, feld, wert);
