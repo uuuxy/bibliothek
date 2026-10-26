@@ -140,15 +140,72 @@ describe('Benutzerliste: Meldungen', () => {
 		expect(zeile.className).not.toMatch(/justify-center/);
 	});
 
-	it('zeigt einen Ladefehler als Meldung, die sich über einen benannten Knopf schließen lässt', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort({}, false, 500));
-		const screen = render(Konten);
+	it('lässt den Grund eines gescheiterten Speicherns nach dem Abbrechen über einen benannten Knopf schließen', async () => {
+		server(antwort({}, false, 500));
+		const screen = await benutzerliste();
+		await fireEvent.click(screen.getByRole('button', { name: /Benutzer anlegen/ }));
+		const dialog = screen.getByRole('dialog');
+		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));
+		await within(dialog).findByText('Der Server meldet einen Fehler.');
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
 
 		const meldung = await screen.findByRole('alert');
 		expect(meldung.textContent).toContain('Der Server meldet einen Fehler.');
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Meldung schließen' }));
 		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
+	it('filtert die Liste nach dem Suchtext und sagt, wenn nichts passt', async () => {
+		const screen = await benutzerliste();
+		const suche = screen.getByRole('searchbox', { name: 'Benutzer suchen' });
+
+		await fireEvent.input(suche, { target: { value: 'A-112' } });
+		expect(screen.getByText('Kora Muster')).toBeTruthy();
+
+		await fireEvent.input(suche, { target: { value: 'niemand' } });
+		expect(screen.queryByText('Kora Muster')).toBeNull();
+		expect(screen.getByText('Keine Systembenutzer gefunden')).toBeTruthy();
+	});
+
+	// Wie überall: Scheitert nur das Neuladen, ist die Liste von vorhin noch brauchbar. Der Grund
+	// steht dann oben im Band, nicht als Kasten an ihrer Stelle.
+	it('lässt die Liste stehen, wenn nur das Neuladen scheitert, und nennt den Grund oben', async () => {
+		const screen = await benutzerliste();
+		vi.mocked(apiFetch).mockImplementation(async (adresse, optionen) =>
+			adresse === '/api/benutzer' && !optionen ? antwort({}, false, 500) : antwort({})
+		);
+		await fireEvent.click(screen.getByRole('button', { name: /Benutzer anlegen/ }));
+		const dialog = screen.getByRole('dialog');
+		for (const [feld, wert] of [
+			['Vorname', 'Nele'],
+			['Nachname', 'Neu'],
+			['E-Mail Adresse', 'nele@test.local']
+		])
+			await fireEvent.input(within(dialog).getByLabelText(feld), { target: { value: wert } });
+		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));
+
+		await waitFor(() =>
+			expect(screen.getByRole('alert').textContent).toContain('Der Server meldet einen Fehler.')
+		);
+		expect(screen.getByText('Kora Muster')).toBeTruthy();
+		expect(screen.queryByText('Benutzerkonten nicht geladen')).toBeNull();
+	});
+
+	// Darunter stand „Keine Systembenutzer gefunden": Es gäbe keine Konten, während nur der
+	// Abruf scheiterte.
+	it('nennt den Grund statt der leeren Liste, wenn die Konten nicht kommen, und lädt neu', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort({}, false, 500));
+		const screen = render(Konten);
+
+		await screen.findByText('Benutzerkonten nicht geladen');
+		expect(screen.getAllByText('Der Server meldet einen Fehler.')).toHaveLength(1);
+		expect(screen.queryByText('Keine Systembenutzer gefunden')).toBeNull();
+
+		server();
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+		await screen.findByRole('table', { name: 'Benutzerkonten' });
+		expect(screen.queryByText('Benutzerkonten nicht geladen')).toBeNull();
 	});
 });
 

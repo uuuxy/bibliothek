@@ -26,6 +26,7 @@
 
 	/** @type {string | null} */
 	let fehler = $state(null);
+	let ladefehler = $state('');
 
 	let formularOffen = $state(false);
 	let istAenderung = $state(false);
@@ -39,22 +40,10 @@
 	let zuLoeschen = $state(null);
 	let loescht = $state(false);
 
-	let gefilterteKonten = $derived.by(() => {
-		const suche = suchtext.trim().toLowerCase();
-		if (!suche) return konten;
-		return konten.filter(
-			(u) =>
-				u.vorname.toLowerCase().includes(suche) ||
-				u.nachname.toLowerCase().includes(suche) ||
-				u.email.toLowerCase().includes(suche) ||
-				(u.barcode_id && u.barcode_id.toLowerCase().includes(suche)) ||
-				u.rolle.toLowerCase().includes(suche)
-		);
-	});
-
 	async function ladeKonten() {
 		laedt = true;
 		fehler = null;
+		ladefehler = '';
 		try {
 			const res = await apiFetch('/api/benutzer');
 			if (!res.ok) {
@@ -64,7 +53,10 @@
 			}
 			konten = await res.json();
 		} catch (err) {
-			fehler = fehlertext(err);
+			// Steht eine Liste von vorhin, bleibt sie, und der Grund steht oben im Band; sonst steht er
+			// an der Stelle der Liste.
+			if (konten.length) fehler = fehlertext(err);
+			else ladefehler = fehlertext(err);
 		} finally {
 			laedt = false;
 		}
@@ -183,7 +175,15 @@
 	</div>
 </div>
 
-<KontenTabelle {laedt} konten={gefilterteKonten} {oeffneKonto} {frageLoeschen} />
+<KontenTabelle
+	{laedt}
+	{konten}
+	{suchtext}
+	{ladefehler}
+	{ladeKonten}
+	{oeffneKonto}
+	{frageLoeschen}
+/>
 
 <KontoBearbeitenDialog
 	open={formularOffen}
