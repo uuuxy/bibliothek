@@ -11,6 +11,7 @@
 	import * as dienst from '../lmfplan/lmfplanDienst.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import { abonniere } from '../../liveEvents.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {any[]} */
 	let termine = $state([]);
@@ -49,7 +50,11 @@
 		und die Ausgabe an die neuen Klassen danach — der Plan der Bibliothek, immer auf dem aktuellen
 		Stand.
 	</p>
-	<Button variant="secondary" onclick={() => dienst.ladePdf()} disabled={termine.length === 0}>
+	<Button
+		variant="secondary"
+		onclick={() => dienst.ladePdf().catch((e) => snackbars.addToast(fehlertext(e), 'error'))}
+		disabled={termine.length === 0}
+	>
 		<Printer class="h-4 w-4" aria-hidden="true" />
 		Als PDF
 	</Button>
