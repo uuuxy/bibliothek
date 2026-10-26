@@ -21,6 +21,8 @@
 	import Button from '../ui/Button.svelte';
 	import Segmente from '../ui/Segmente.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import EtikettenListe from './EtikettenListe.svelte';
 	import AltbestandDialog from './AltbestandDialog.svelte';
 
@@ -30,6 +32,7 @@
 	/** @type {{ barcode_id: string, titel: string, autor: string, zugang_am: string, etikett_gedruckt: boolean }[]} */
 	let offen = $state.raw([]);
 	let laedt = $state(true);
+	let ladefehler = $state(''); // Grund, wenn die Liste nicht kam
 	let suche = $state('');
 	let arbeitet = $state(false);
 	let altbestandOffen = $state(false);
@@ -42,13 +45,9 @@
 	let gesamt = $state(0);
 
 	/**
-	 * Welche Exemplare die Liste zeigt: 'offen' (Vorgabe), 'erledigt' oder 'alle'.
-	 *
-	 * Erledigte sichtbar zu machen ist der WEG ZURÜCK. Bisher setzten alle drei Wege das
-	 * Kennzeichen nur in eine Richtung — Stapeldruck, Einzeldruck, Altbestand-Stichtag.
-	 * Blieb der Bogen im Drucker stecken oder war der Stichtag zu weit gefasst, galten die
-	 * Exemplare als erledigt, ohne dass ein Etikett existierte, und verschwanden dauerhaft
-	 * aus dieser Liste. Wer sie nicht sehen kann, kann sie auch nicht zurückholen.
+	 * Welche Exemplare die Liste zeigt: 'offen' (Vorgabe), 'erledigt' oder 'alle'. Erledigte zu
+	 * zeigen ist der Weg zurück: Blieb der Bogen im Drucker stecken oder war der Stichtag zu weit
+	 * gefasst, gelten Exemplare als erledigt, ohne dass ein Etikett existiert.
 	 */
 	let status = $state(/** @type {'offen' | 'erledigt' | 'alle'} */ ('offen'));
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -57,21 +56,18 @@
 	/** Barcodes der angehakten Zeilen. */
 	let gewaehlt = $state(/** @type {string[]} */ ([]));
 
-	/**
-	 * Laufende Nummer der Abfrage. Zwei Ladevorgänge können sich überholen — Tippen in der
-	 * Suche und ein Klick auf eine andere Stufe stoßen beide `laden()` an, und die
-	 * langsamere Antwort würde sonst die schnellere überschreiben.
-	 */
+	// Laufende Nummer der Abfrage: Tippen in der Suche und ein Klick auf eine andere Stufe stoßen
+	// beide laden() an, und die langsamere Antwort überschriebe sonst die schnellere.
 	let lauf = 0;
 
 	async function laden() {
 		const meiner = ++lauf;
 		laedt = true;
+		ladefehler = '';
 		try {
 			const q = suche.trim();
-			// Von Hand zusammengesetzt statt per URLSearchParams: Das ist hier ein
-			// Wegwerf-String, und die Svelte-Lint-Regel verlangt für die eingebaute Klasse
-			// sonst die reaktive Variante — Aufwand ohne Gegenwert.
+			// Von Hand statt per URLSearchParams: Für die eingebaute Klasse verlangte die
+			// Svelte-Lint-Regel die reaktive Variante, für einen Wegwerf-Text.
 			const teile = [];
 			if (q) teile.push(`q=${encodeURIComponent(q)}`);
 			if (status !== 'offen') teile.push(`status=${status}`);
@@ -94,7 +90,7 @@
 		} catch (err) {
 			if (meiner !== lauf) return;
 			console.error('Offene Etiketten konnten nicht geladen werden', err);
-			snackbars.addToast('Liste konnte nicht geladen werden.', 'error');
+			ladefehler = fehlertext(err);
 		} finally {
 			if (meiner === lauf) laedt = false;
 		}
@@ -314,6 +310,9 @@
 
 	{#if laedt}
 		<p class="animate-pulse py-16 text-center text-on-surface-variant">Lade Exemplare…</p>
+	{:else if ladefehler}
+		<!-- Nicht „Für alle Exemplare wurden Etiketten gedruckt": Die Liste kam nicht. -->
+		<LadeFehler titel="Exemplare nicht geladen" text={ladefehler} onerneut={laden} />
 	{:else if offen.length === 0}
 		<div class="py-16 text-center text-on-surface-variant">
 			{#if suche.trim() && status === 'erledigt'}
