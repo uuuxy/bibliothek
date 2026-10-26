@@ -1,5 +1,6 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 
 /** Schlüssel des Formulars, das zu keinem Treffer gehört. */
 export const OHNE_BUCH = 'ohne-buch';
@@ -92,7 +93,7 @@ export function erzeugeProblemMeldung(nachSenden) {
 				await nachSenden();
 				return true;
 			} catch (err) {
-				snackbars.addToast(/** @type {any} */ (err).message || String(err), 'error');
+				snackbars.addToast(fehlertext(err), 'error');
 				return false;
 			} finally {
 				if (forms[key]) forms[key].sending = false;

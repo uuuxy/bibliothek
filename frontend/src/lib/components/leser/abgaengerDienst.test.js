@@ -7,7 +7,12 @@ vi.mock('../../apiFetch.js', async (original) => ({
 vi.mock('../../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../../apiFetch.js';
 import { melde } from '../../../inventur/lib/store.svelte.js';
-import { sendeKontoauszuege, kontoauszugAdresse, zeigeKontoauszuege } from './abgaengerDienst.js';
+import {
+	sendeKontoauszuege,
+	kontoauszugAdresse,
+	zeigeKontoauszuege,
+	ladeAbgaenger
+} from './abgaengerDienst.js';
 import { erzeugeSammelversand } from '../../stores/sammelversand.svelte.js';
 import { serverAntwort } from '../../serverAntwort.js';
 
@@ -111,6 +116,17 @@ describe('abgaengerDienst.kontoauszugAdresse', () => {
 // Die Kontoauszüge tragen die Namen der Abgänger; als Download blieben sie im Download-Ordner
 // des Arbeitsplatzes liegen. Sie gehen im Tab auf (utils/pdfImFenster.js); den Dateinamen fürs
 // Speichern nennt der Server (api/mahnwesen/abgaenger_druck_auswahl_pg_test.go).
+// Die Liste nennt beim Laden den Grund des Servers; vorher stand dort „Error: Fehler beim Laden".
+describe('abgaengerDienst.ladeAbgaenger', () => {
+	it('wirft bei einer Fehlerantwort die Meldung des Servers', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(503, { error: 'Die Datenbank antwortet nicht.' })
+		);
+		await expect(ladeAbgaenger()).rejects.toThrow(/^Die Datenbank antwortet nicht\.$/);
+	});
+});
+
 describe('abgaengerDienst.zeigeKontoauszuege: im Tab', () => {
 	const erzeuge = URL.createObjectURL;
 	/** @type {{ closed: boolean, close: any, location: { replace: any } } | null} */

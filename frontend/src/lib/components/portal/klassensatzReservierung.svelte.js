@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 
 /** @param {string} pfad @param {(daten: any[]) => void} setze */
 async function ladeListe(pfad, setze) {
@@ -140,7 +141,7 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 					f.error = await leseApiFehler(res, 'Fehler beim Senden.');
 				}
 			} catch (e) {
-				f.error = String(e);
+				f.error = fehlertext(e);
 			} finally {
 				f.loading = false;
 			}

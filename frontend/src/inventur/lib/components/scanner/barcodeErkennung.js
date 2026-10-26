@@ -108,7 +108,7 @@ export async function erzeugeBarcodeErkenner() {
 						// nach oben. Ein Browser, der `File` nicht kennt oder kein Bild liefert, sähe
 						// sonst aus wie eine Kamera, die nur nichts vor der Linse hat.
 						if (istNichtsGefunden(err)) return [];
-						throw err instanceof Error ? err : new Error(String(err));
+						throw err instanceof Error ? err : new Error(fehlertext(err));
 					}
 				}
 			}

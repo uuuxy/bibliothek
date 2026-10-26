@@ -14,6 +14,7 @@
 	import { erzeugeKlassensatzListe } from './klassensatzListe.svelte.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
@@ -94,7 +95,7 @@
 			}
 			uiStore.fetchPendingReservierungen();
 		} catch (err) {
-			snackbars.addToast(/** @type {any} */ (err).message || String(err), 'error');
+			snackbars.addToast(fehlertext(err), 'error');
 		} finally {
 			completingId = null;
 		}

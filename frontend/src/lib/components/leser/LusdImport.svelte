@@ -12,6 +12,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Button from '../ui/Button.svelte';
 	import LusdUmbenennungen from './LusdUmbenennungen.svelte';
@@ -83,9 +84,7 @@
 		const res = await apiFetch(url, { method: 'POST', body: formulardaten });
 		if (!res.ok) {
 			const meldung = await leseApiFehler(res, 'Fehler bei der Verarbeitung der LUSD-Datei.');
-			const err = new Error(meldung);
-			/** @type {any} */ (err).status = res.status;
-			throw err;
+			throw Object.assign(new Error(meldung), { status: res.status });
 		}
 		return res.json();
 	}
@@ -103,7 +102,7 @@
 			stage = 'preview';
 		} catch (err) {
 			// Nur das Inline-Banner unten — kein zusätzlicher Toast mit identischem Text.
-			fehler = /** @type {any} */ (err).message || String(err);
+			fehler = fehlertext(err);
 		} finally {
 			probeLaeuft = false;
 		}
@@ -122,7 +121,7 @@
 		} catch (err) {
 			// 409 = serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten.
 			needsGraduateConfirm = /** @type {any} */ (err).status === 409;
-			fehler = /** @type {any} */ (err).message || String(err);
+			fehler = fehlertext(err);
 		} finally {
 			importLaeuft = false;
 		}

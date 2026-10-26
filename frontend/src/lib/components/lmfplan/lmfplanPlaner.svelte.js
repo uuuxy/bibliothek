@@ -106,7 +106,7 @@ export function erzeugePlaner() {
 		} catch (e) {
 			if (meine !== ladeNr) return;
 			zustand.ladeFehler = true;
-			melde(`${e}`, 'error');
+			melde(fehlertext(e), 'error');
 		} finally {
 			if (meine === ladeNr) zustand.laedt = false;
 		}
@@ -131,7 +131,7 @@ export function erzeugePlaner() {
 			zustand.ausfaelle = z.ausfaelle;
 			zustand.beginn = z.beginn;
 		} catch (e) {
-			if (meine === laufNr) melde(`${e}`, 'error');
+			if (meine === laufNr) melde(fehlertext(e), 'error');
 		}
 	}
 
@@ -216,7 +216,7 @@ export function erzeugePlaner() {
 	}
 
 	// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
-	const pdf = () => dienst.ladePdf(false, true).catch((e) => melde(`${e}`, 'error'));
+	const pdf = () => dienst.ladePdf(false, true).catch((e) => melde(fehlertext(e), 'error'));
 
 	return {
 		zustand,

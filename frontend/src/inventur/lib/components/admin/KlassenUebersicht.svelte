@@ -11,6 +11,7 @@
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { melde } from '$lib/store.svelte.js';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 	import { onMount } from 'svelte';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menue.js';
@@ -89,9 +90,7 @@
 
 	onMount(ladeKlassen);
 
-	/**
-	 * @param {string} className
-	 */
+	/** @param {string} className */
 	async function loescheKlasse(className) {
 		if (!(await loeschenBestaetigen(`Buchliste von ${className} löschen?`))) return;
 		try {
@@ -102,7 +101,7 @@
 			if (!res.ok) throw new Error('Fehler beim Löschen');
 			ladeKlassen();
 		} catch (err) {
-			melde(/** @type {any} */ (err).message, 'error');
+			melde(fehlertext(err), 'error');
 		}
 	}
 </script>

@@ -9,6 +9,7 @@
 	import Button from '../ui/Button.svelte';
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
 	import * as dienst from '../lmfplan/lmfplanDienst.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import { abonniere } from '../../liveEvents.js';
 
 	/** @type {any[]} */
@@ -25,7 +26,7 @@
 			eingangsjahrgaenge = plan.eingangsjahrgaenge ?? [];
 			fehler = '';
 		} catch (e) {
-			fehler = `${e}`;
+			fehler = fehlertext(e);
 		} finally {
 			laedt = false;
 		}

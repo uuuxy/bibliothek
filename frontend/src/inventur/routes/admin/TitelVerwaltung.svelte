@@ -9,6 +9,7 @@
 	import { schuetzeUngespeichertes } from '../../../lib/stores/verlassenSchutz.svelte.js';
 	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
 	import { appState, melde } from '$lib/store.svelte.js';
+	import { fehlertext } from '../../../lib/utils/fehlertext.js';
 	import Bestandstabelle from '$lib/components/admin/Bestandstabelle.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
@@ -112,7 +113,7 @@
 			await loescheBuecher(ids);
 			liste.buecher = liste.buecher.filter((b) => !ids.includes(b.id));
 		} catch (fehler) {
-			melde(/** @type {any} */ (fehler).message, 'error');
+			melde(fehlertext(fehler), 'error');
 		}
 	}
 
@@ -139,7 +140,7 @@
 				'info'
 			);
 		} catch (fehler) {
-			melde(/** @type {any} */ (fehler).message, 'error');
+			melde(fehlertext(fehler), 'error');
 		}
 	}
 </script>

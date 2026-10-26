@@ -1,5 +1,6 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
 import { apiFetch, leseApiFehler, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { abonniere, trenne, verbinde } from '../liveEvents.js';
 import { hatRecht } from '../menue.js';
 import { thekeLeeren } from './thekeLeeren.js';
@@ -285,8 +286,7 @@ class AuthStore {
 			this.loginPassword = '';
 			this.#applyLogin(konto, onRoleCallback);
 		} catch (err) {
-			const meldung = /** @type {any} */ (err).message || String(err);
-			this.loginError = meldung;
+			this.loginError = fehlertext(err);
 			this.loginPassword = '';
 			if (!(/** @type {any} */ (err)?.bleibtStehen)) {
 				setTimeout(() => {

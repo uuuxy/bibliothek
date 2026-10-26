@@ -5,6 +5,7 @@
 	import { TriangleAlert, CircleCheck, Info } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import Button from '../ui/Button.svelte';
 	import { zeilen } from './schuljahreswechselZeilen.js';
 
@@ -44,7 +45,7 @@
 		try {
 			probe = await sendeWechsel({ dry_run: true });
 		} catch (err) {
-			fehler = /** @type {any} */ (err).message || String(err);
+			fehler = fehlertext(err);
 		} finally {
 			laedt = false;
 		}
@@ -62,7 +63,7 @@
 		try {
 			ergebnis = await sendeWechsel({ confirm: true });
 		} catch (err) {
-			fehler = /** @type {any} */ (err).message || String(err);
+			fehler = fehlertext(err);
 		} finally {
 			awaitingConfirmation = false;
 			laedt = false;

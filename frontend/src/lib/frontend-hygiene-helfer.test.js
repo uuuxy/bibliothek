@@ -17,7 +17,22 @@ import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-
 const FORMAT = 'src/lib/utils/format.js';
 const BETRAG = /\+\s*['"`](?:\s|\\u00a0)*€|\}(?:\s|\\u00a0|&nbsp;)+€|currency\s*:\s*['"`]EUR/;
 const FEHLERTEXT =
-	/instanceof\s+Error\s*\?\s*[\w$.]+\.message\s*:\s*String\(|String\(\s*[\w$.]+\s+instanceof\s+Error\s*\?/;
+	/instanceof\s+Error\s*\?\s*[\w$.]+\.message\s*:\s*String\(|String\(\s*[\w$.]+\s+instanceof\s+Error\s*\?|\.message\s*\|\|\s*String\(/;
+
+// Ein gefangener Wert roh in einem Text (`${e}`, String(e), '…' + e) wird zu „Error: …", ein
+// Netzfehler zu „TypeError: Failed to fetch"; seine message direkt in der Meldung ist der
+// Fehlertext von Hand. Sieht nicht: den Wert, nachdem er in eine andere Variable gewandert ist,
+// und einen Fehler, der als Parameter statt über catch ankommt.
+const FANG = /\bcatch\s*\(\s*([\w$]+)\s*\)|\.catch\(\s*\(?\s*([\w$]+)\s*\)?\s*=>/g;
+/** @param {string} quelle */
+function meldetGefangenesOhneHelfer(quelle) {
+	return [...quelle.matchAll(FANG)].some(([, inCatch, inRueckruf]) => {
+		const n = (inCatch ?? inRueckruf).replaceAll('$', '\\$');
+		const roh = `\\$\\{\\s*${n}\\s*\\}|(?<![\\w$.])String\\(\\s*${n}\\s*\\)|\\+\\s*${n}(?![\\w$.[(])`;
+		const message = `(?:addToast|melde)\\(\\s*(?:\\/\\*\\*[^*]*\\*\\/\\s*)?\\(?\\s*${n}\\s*\\)?\\.message\\b`;
+		return new RegExp(`${roh}|${message}`).test(quelle);
+	});
+}
 const GEAENDERT = 'src/lib/utils/geaendert.js';
 const VERGLEICH_MIT_GELADEN = /!==\s*(?:[\w$]+\.)*geladen\[/;
 
@@ -65,6 +80,38 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 			treffer(FEHLERTEXT),
 			'Fehlertext von Hand geschrieben — fehlertext aus utils/fehlertext.js nehmen'
 		).toEqual([]);
+	});
+
+	it('keine Quelldatei setzt einen gefangenen Wert ohne fehlertext in eine Meldung', () => {
+		expect(
+			dateien
+				.filter((f) => meldetGefangenesOhneHelfer(ohneKommentare(readFileSync(f, 'utf8'))))
+				.map(relPfad),
+			'Gefangener Wert ohne Helfer in der Meldung („Error: …") — fehlertext aus utils/fehlertext.js nehmen'
+		).toEqual([]);
+		for (const form of [
+			"} catch (e) {\n\tmelde(`Netzwerkfehler beim Versand: ${e}`, 'error');",
+			".catch((e) => melde(`${e}`, 'error'));",
+			'.catch(e => { fehler = `${ e }`; });',
+			'} catch (err) {\n\tladefehler = `Die Liste fehlt (${err}).`;',
+			'} catch (e) {\n\tf.error = String(e);',
+			"} catch (fehler) {\n\tmelde('Fehler: ' + fehler, 'error');",
+			"} catch (err) {\n\tmelde(/** @type {any} */ (err).message, 'error');",
+			"} catch (e) {\n\tsnackbars.addToast(e.message, 'error');",
+			"} catch (e) {\n\tmelde(e.message + ' (gekürzt)', 'error');"
+		]) {
+			expect(meldetGefangenesOhneHelfer(form), form).toBe(true);
+		}
+		for (const form of [
+			"} catch (e) {\n\tmelde(fehlertext(e), 'error');",
+			"} catch (e) {\n\tmelde(`Netzwerkfehler: ${fehlertext(e)}`, 'error');",
+			"} catch (e) {\n\tconsole.error('Laden fehlgeschlagen', e);",
+			'} catch (err) {\n\tthrow err instanceof Error ? err : new Error(fehlertext(err));',
+			"} catch (e) {\n\tconsole.error('Abbruch: ' + e.stack);",
+			"} catch (e) {\n\tconsole.warn(e);\n}\nmelde(json.message ?? 'Gesendet', 'success');"
+		]) {
+			expect(meldetGefangenesOhneHelfer(form), form).toBe(false);
+		}
 	});
 
 	it('keine Maske vergleicht von Hand mit ihrem Stand vom Öffnen', () => {
@@ -149,10 +196,13 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 		for (const form of [
 			'error = err instanceof Error ? err.message : String(err);',
 			'melde(fehler instanceof Error ? fehler.message : String(fehler));',
-			'fehler = String(e instanceof Error ? e.message : e);'
+			'fehler = String(e instanceof Error ? e.message : e);',
+			'fehler = /** @type {any} */ (err).message || String(err);',
+			"snackbars.addToast(err.message || String(err), 'error');"
 		]) {
 			expect(FEHLERTEXT.test(form), form).toBe(true);
 		}
+		expect(FEHLERTEXT.test("const text = e.message || 'Unbekannter Fehler';")).toBe(false);
 		expect(
 			FEHLERTEXT.test("return e instanceof Error ? e.message : 'Zuordnen fehlgeschlagen';")
 		).toBe(false);

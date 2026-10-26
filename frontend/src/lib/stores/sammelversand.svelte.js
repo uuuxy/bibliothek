@@ -9,6 +9,7 @@
 
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { leseApiFehler } from '../apiFetch.js';
+import { fehlertext } from '../utils/fehlertext.js';
 
 /** @typedef {{ klassen: string[], override_email: string }} VersandRumpf */
 
@@ -47,7 +48,7 @@ export function erzeugeSammelversand(schicke, ersatzMeldung) {
 				melde(await leseApiFehler(res, 'Versand fehlgeschlagen.'), 'error');
 			}
 		} catch (e) {
-			melde(`Netzwerkfehler beim Versand: ${e}`, 'error');
+			melde(`Netzwerkfehler beim Versand: ${fehlertext(e)}`, 'error');
 		} finally {
 			laeuft = false;
 		}

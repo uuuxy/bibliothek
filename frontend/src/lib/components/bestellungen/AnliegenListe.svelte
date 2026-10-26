@@ -7,6 +7,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { apiFetch, leseApiFehler, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
@@ -101,7 +102,7 @@
 				snackbars.addToast('Erledigt — die Lehrkraft bekommt eine Mail.', 'success');
 			}
 		} catch (err) {
-			snackbars.addToast(/** @type {any} */ (err).message || String(err), 'error');
+			snackbars.addToast(fehlertext(err), 'error');
 		} finally {
 			completingId = null;
 		}

@@ -117,7 +117,7 @@
 			fenster = antwort.fenster;
 			ladefehler = null;
 		} catch (err) {
-			ladefehler = `Die Abgängerliste konnte nicht geladen werden (${err}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
+			ladefehler = `Die Abgängerliste konnte nicht geladen werden (${fehlertext(err)}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
 		} finally {
 			laedt = false;
 		}

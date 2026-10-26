@@ -15,7 +15,7 @@ import { zeigePdf } from '../../utils/pdfImFenster.js';
  *  @returns {Promise<{ fenster: { offen: boolean, von: string, bis: string }, abgaenger: any[] }>} */
 export async function ladeAbgaenger() {
 	const res = await apiFetch('/api/abgaenger');
-	if (!res.ok) throw new Error('Fehler beim Laden');
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Laden'));
 	return await res.json();
 }
 
