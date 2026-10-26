@@ -10,10 +10,7 @@ export async function holeBuecherListe() {
 		credentials: 'include'
 	});
 	if (!res.ok) {
-		if (res.status === 401) {
-			appState.adminAuthenticated = false;
-			throw new Error('UNAUTHORIZED');
-		}
+		if (res.status === 401) appState.adminAuthenticated = false;
 		throw new Error(await leseApiFehler(res, 'Fehler beim Laden der Bücher'));
 	}
 	return await res.json();

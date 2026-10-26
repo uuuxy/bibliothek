@@ -5,6 +5,7 @@ vi.mock('./admin_api.js', () => ({ holeBuecherListe: vi.fn() }));
 import { holeBuecherListe } from './admin_api.js';
 import { erstelleTitelListe } from './titelListe.svelte.js';
 import { keineAenderungen, merkeAenderungen, mitAenderungen } from './titelListeAenderungen.js';
+import { appState } from './store.svelte.js';
 
 /** Eine Antwort, die der Test selbst freigibt. */
 function spaeteAntwort() {
@@ -87,6 +88,41 @@ describe('Titelliste: Änderungen während des Ladens', () => {
 		await erster;
 
 		expect(liste.buecher.map((b) => b.id)).toEqual(['treffer']);
+	});
+});
+
+// Ein gescheitertes Laden ist keine Abmeldung: Die Suche der Seite lädt nur, solange
+// appState.adminAuthenticated gilt, und blieb nach einem Fehler des Servers stehen.
+describe('Titelliste: der Abruf scheitert', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		appState.adminAuthenticated = true;
+	});
+
+	it('nennt den Grund und lässt die Anmeldung stehen', async () => {
+		vi.mocked(holeBuecherListe).mockRejectedValueOnce(
+			new Error('Ein interner Serverfehler ist aufgetreten')
+		);
+		const liste = erstelleTitelListe();
+
+		await liste.lade();
+
+		expect(liste.ladefehler).toBe('Ein interner Serverfehler ist aufgetreten');
+		expect(appState.adminAuthenticated).toBe(true);
+		expect(liste.wirdGeladen).toBe(false);
+	});
+
+	it('ein gelungener Abruf danach räumt den Grund', async () => {
+		vi.mocked(holeBuecherListe)
+			.mockRejectedValueOnce(new Error('Ein interner Serverfehler ist aufgetreten'))
+			.mockResolvedValueOnce([{ id: 'a' }]);
+		const liste = erstelleTitelListe();
+
+		await liste.lade();
+		await liste.lade();
+
+		expect(liste.ladefehler).toBe('');
+		expect(liste.buecher.map((b) => b.id)).toEqual(['a']);
 	});
 });
 

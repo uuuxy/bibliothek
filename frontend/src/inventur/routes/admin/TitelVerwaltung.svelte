@@ -8,6 +8,7 @@
 	} from '../../../lib/stores/bestaetigung.svelte.js';
 	import { schuetzeUngespeichertes } from '../../../lib/stores/verlassenSchutz.svelte.js';
 	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
+	import LadeFehler from '../../../lib/components/ui/LadeFehler.svelte';
 	import { appState, melde } from '$lib/store.svelte.js';
 	import { fehlertext } from '../../../lib/utils/fehlertext.js';
 	import Bestandstabelle from '$lib/components/admin/Bestandstabelle.svelte';
@@ -165,6 +166,8 @@
 		<div class="flex justify-center py-32 transition-opacity delay-200 starting:opacity-0">
 			<Ladekreis size="lg" />
 		</div>
+	{:else if liste.ladefehler}
+		<LadeFehler titel="Titel nicht geladen" text={liste.ladefehler} onerneut={liste.lade} />
 	{:else}
 		<Bestandstabelle
 			titelListe={liste.buecher}
