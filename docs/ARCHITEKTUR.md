@@ -2350,6 +2350,12 @@ sieht.
   beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Der WebKit-Testbrowser zeichnet
   keine PDFs; ob Safari eines zeigt, beantwortet nur Safari über `safaridriver`, dort mit
   „Entfernte Automatisierung erlauben".
+- **Eine Attrappe von `apiFetch.js` behält `leseApiFehler`:** `vi.mock('…/apiFetch.js', async
+  (importOriginal) => ({ ...(await importOriginal()), apiFetch: vi.fn() }))`. Fehlt der Helfer in
+  der Attrappe, wirft der Fehlerweg schon beim Lesen des Grundes; das catch des Bausteins fängt
+  das, und ein Test des Fehlerfalls besteht, ohne dass der Weg lief. Eine Antwort des Servers
+  stellt `serverAntwort(status, rumpf)` nach (`frontend/src/lib/serverAntwort.js`), einen leeren
+  Rumpf wie den eines 502 vom Proxy `serverAntwort(502)`.
 - **Browser-Tests verschicken keine Mail:** Für die Dauer des Laufs zeigt die Einstellung auf
   eine Adresse, an der nichts zuhört (`frontend/e2e/mailserver.js`, gehalten von
   `frontend/e2e/mailserver-stumm.spec.js`).
