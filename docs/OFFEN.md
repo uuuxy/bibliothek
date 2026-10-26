@@ -35,6 +35,8 @@ Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
 
 - [x] Eine Fehlerantwort wird durch einen eigenen Satz ersetzt: 30 Stellen über den ganzen
   Bestand, mit Prüfregel. (5.106)
+- [x] Ein gescheitertes Laden zeigt einen Leerzustand oder eine Entwarnung: 16 Stellen über den
+  ganzen Bestand, eine davon an der Theke, mit Prüfregel. (5.106)
 - [x] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
 - [ ] Mahnwesen, Bescheide und Schäden. (5.106)
 - [ ] Druck-Center und Etiketten. (5.106)
