@@ -39,6 +39,15 @@ function symbolImFeld(m, wo) {
 	expect(Math.abs(mitte(symbol) - mitte(feld)), `${wo}: nicht mittig`).toBeLessThan(1);
 }
 
+/**
+ * Misst, bis die Lage steht: Mit Knöpfen im Feld misst ui/Feld deren Breite samt Symbol erst nach
+ * dem Fehler und rückt den Innenabstand einen Takt später nach. Bleibt die Lage falsch, rot.
+ * @param {import('@playwright/test').Locator} feld @param {string} wo
+ */
+async function symbolStehtImFeld(feld, wo) {
+	await expect(async () => symbolImFeld(await miss(feld), wo)).toPass({ timeout: 5000 });
+}
+
 test('Signaturen: Symbol im Formular und in der Tabelle; wer tippt, bleibt im Feld', async ({
 	page
 }) => {
@@ -51,8 +60,8 @@ test('Signaturen: Symbol im Formular und in der Tabelle; wer tippt, bleibt im Fe
 		const kuerzel = page.locator('#sys-kuerzel');
 		await page.getByRole('button', { name: 'Anlegen' }).click();
 		await expect(kuerzel).toHaveAttribute('aria-invalid', 'true');
-		symbolImFeld(await miss(kuerzel), 'Kürzel');
-		symbolImFeld(await miss(page.locator('#sys-bezeichnung')), 'Bezeichnung');
+		await symbolStehtImFeld(kuerzel, 'Kürzel');
+		await symbolStehtImFeld(page.locator('#sys-bezeichnung'), 'Bezeichnung');
 
 		// Der Fehler geht mit dem ersten Zeichen; das Feld wird dabei nicht neu gebaut.
 		await expect(kuerzel).toBeFocused();
@@ -69,7 +78,7 @@ test('Signaturen: Symbol im Formular und in der Tabelle; wer tippt, bleibt im Fe
 		await tabellenKuerzel.fill('');
 		await page.getByRole('button', { name: 'Sichern' }).click();
 		await expect(tabellenKuerzel).toHaveAttribute('aria-invalid', 'true');
-		symbolImFeld(await miss(tabellenKuerzel), 'Kürzel in der Tabelle');
+		await symbolStehtImFeld(tabellenKuerzel, 'Kürzel in der Tabelle');
 	} finally {
 		seedSQL(`DELETE FROM systematik_kategorien WHERE kuerzel = 'F${s}';`);
 	}
@@ -92,16 +101,18 @@ test('Buchmaske: Das Symbol steht vor den Knöpfen der ISBN, die Knöpfe bleiben
 	await isbn.fill('12345');
 	await isbn.press('Tab');
 	await expect(isbn).toHaveAttribute('aria-invalid', 'true');
-	const m = await miss(isbn);
-	if (!m.symbol) throw new Error('ISBN: kein Fehlersymbol im Feld.');
-	expect(await Promise.all(knoepfe.map((k) => k.boundingBox()))).toEqual(vorher);
 	const ersterKnopf = /** @type {{ x: number }} */ (vorher[0]);
-	expect(m.symbol.rechts, 'Das Symbol liegt nicht vor den Knöpfen.').toBeLessThanOrEqual(
-		ersterKnopf.x
-	);
-	expect(m.symbol.links, 'Das Symbol liegt über dem Text.').toBeGreaterThanOrEqual(
-		m.feld.rechts - m.innenRechts
-	);
+	await expect(async () => {
+		const m = await miss(isbn);
+		if (!m.symbol) throw new Error('ISBN: kein Fehlersymbol im Feld.');
+		expect(await Promise.all(knoepfe.map((k) => k.boundingBox()))).toEqual(vorher);
+		expect(m.symbol.rechts, 'Das Symbol liegt nicht vor den Knöpfen.').toBeLessThanOrEqual(
+			ersterKnopf.x
+		);
+		expect(m.symbol.links, 'Das Symbol liegt über dem Text.').toBeGreaterThanOrEqual(
+			m.feld.rechts - m.innenRechts
+		);
+	}).toPass({ timeout: 5000 });
 });
 
 test('Leserakte: Der Knopf am Ausweisjahr liegt im Feld, das Fehlersymbol auch', async ({
@@ -136,7 +147,7 @@ test('Leserakte: Der Knopf am Ausweisjahr liegt im Feld, das Fehlersymbol auch',
 		// Aus „Vorkurs" lässt sich kein Jahr rechnen: Das Feld steht leer und ungültig da.
 		await oeffne(`Vera${s}`);
 		await expect(jahr).toHaveAttribute('aria-invalid', 'true');
-		symbolImFeld(await miss(jahr), 'Ausweisjahr');
+		await symbolStehtImFeld(jahr, 'Ausweisjahr');
 	} finally {
 		seedSQL(`DELETE FROM schueler WHERE barcode_id IN ('FS-H-${s}', 'FS-V-${s}');`);
 	}
@@ -152,5 +163,5 @@ test('Datumsfeld: Das Symbol liegt neben dem Kalender des Browsers, nicht darauf
 	await page.locator('#sommerferien-von').fill('2031-07-20');
 	await bis.fill('2031-07-01');
 	await expect(bis).toHaveAttribute('aria-invalid', 'true');
-	symbolImFeld(await miss(bis), 'Ende der Sommerferien');
+	await symbolStehtImFeld(bis, 'Ende der Sommerferien');
 });

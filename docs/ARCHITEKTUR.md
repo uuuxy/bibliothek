@@ -2314,6 +2314,9 @@ sieht.
   die Live-Leitung offen bleibt; `frontend/e2e/messhilfe.js` misst, wenn keine Datenanfrage mehr
   offen ist und die Zählung dreimal gleich ausfällt, und zählt danach zur Gegenprobe noch einmal.
   `gehZu` in `frontend/e2e/helpers.js` belegt, dass die Anwendung auf der Seite geblieben ist.
+  Eine Lage, die ein Bauteil erst nach dem Messen seiner Teile setzt (`bind:clientWidth` in
+  `ui/Feld.svelte`), wartet der Test mit `expect(…).toPass` ab; bleibt sie falsch, ist er rot
+  (`frontend/e2e/feld-fehlersymbol.spec.js`).
 - **Scanfelder werden getippt, nicht gefüllt** (`page.keyboard.type`, Enter, Nachweis an der
   Datenbank; Vorlage `frontend/e2e/kiosk-scannerfokus.spec.js`): `locator.fill()` und
   `locator.click()` setzen den Fokus selbst und verdecken, dass er fehlt.
