@@ -78,6 +78,8 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		await expect(platz1.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
 		expect(stand()).toBe('6/0/0');
 		expect(signatur()).toBe('Bes 2');
+		await platz1.context().close();
+		await platz2.context().close();
 	});
 
 	test('inzwischen geändert: abgelehnt, das Feld zeigt den neuen Stand, die Maske bleibt', async ({

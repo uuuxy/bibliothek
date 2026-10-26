@@ -89,5 +89,7 @@ test.describe.serial('Leserakte: zwei Plätze, ein Leser', () => {
 		expect(steht('ort')).toBe('Bad Homburg');
 		expect(steht('plz')).toBe('61348');
 		expect(steht('klasse')).toBe('08G');
+		await platz1.context().close();
+		await platz2.context().close();
 	});
 });

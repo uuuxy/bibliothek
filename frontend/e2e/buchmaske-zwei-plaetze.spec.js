@@ -82,5 +82,7 @@ test.describe.serial('Buchmaske: zwei Plätze, ein Titel', () => {
 		expect(steht('verlag')).toBe('Neuer Verlag');
 		expect(steht('erscheinungsjahr')).toBe('2019');
 		expect(steht('listenpreis')).toBe('12.50');
+		await platz1.context().close();
+		await platz2.context().close();
 	});
 });

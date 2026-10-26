@@ -368,6 +368,12 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   ihr gelöscht wird; was Docker belegt, zeigen `docker system df` und die letzten Zeilen von
   `docker buildx du`. Am Server leert `update.sh` den Build-Cache nach jedem Update ganz
   (Schritt 7).
+- **Das Seitenbild eines roten Browser-Tests zeigt eine Seite, die der Test nie geöffnet hat.**
+  Zu einem roten Test legt Playwright Abzüge aller offenen Seiten des Browsers ab, und das
+  Seitenbild in `error-context.md` kann von einer davon stammen. Ein Kontext aus
+  `browser.newContext()` bleibt offen, bis ihn jemand schließt; Playwright tut es erst mit dem
+  Ende des Workers, und der läuft nach grünen Tests weiter. Jede Spec schließt deshalb am Ende
+  des Tests die Kontexte, die sie selbst geöffnet hat.
 
 ---
 
