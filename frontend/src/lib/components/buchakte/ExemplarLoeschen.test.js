@@ -13,6 +13,8 @@ vi.mock('../../apiFetch.js', async (original) => ({
 import { apiFetch } from '../../apiFetch.js';
 import BuchakteExemplare from './BuchakteExemplare.svelte';
 import { authStore } from '../../stores/authStore.svelte.js';
+import { melde } from '../../../inventur/lib/store.svelte.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
 // Der Kopf der Buchakte nennt „1 von 2 verfügbar". Nach „Exemplar löschen" führt der Reiter
 // die zwei Zahlen nach: Ein bestelltes Exemplar, das nie eintraf, stand nie im Bestand, sein
@@ -58,5 +60,51 @@ describe('Buchakte: Exemplar löschen führt den Bestand im Kopf nach', () => {
 			gesamt: 1,
 			verfuegbar: 0
 		});
+	});
+});
+
+// Scheitert beim Löschen mehrerer Exemplare eines, nennt die Meldung den Grund des Servers, und
+// das Exemplar bleibt markiert. Vorher stand der Fehlschlag nur in der Konsole.
+describe('Buchakte: markierte Exemplare löschen', () => {
+	beforeEach(() => {
+		vi.mocked(melde).mockReset();
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockImplementation(async (url) =>
+			String(url).endsWith('/e2')
+				? serverAntwort(409, { error: 'Das Exemplar ist ausgeliehen.' })
+				: serverAntwort(200)
+		);
+		authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
+	});
+
+	it('meldet, was nicht gelöscht wurde, und lässt es markiert', async () => {
+		const exemplare = ['e1', 'e2', 'e3'].map((id, i) => ({
+			id,
+			barcode_id: `B-${i + 1}`,
+			ist_ausleihbar: true,
+			ist_verfuegbar: true,
+			im_bestand: true
+		}));
+		const screen = render(BuchakteExemplare, {
+			props: { exemplare, titel: { id: 't-1', title: 'Momo' }, ladeAlles: () => {} }
+		});
+		for (const nummer of ['B-1', 'B-2', 'B-3']) {
+			await fireEvent.click(screen.getByLabelText(`Exemplar ${nummer} auswählen`));
+		}
+		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+
+		await waitFor(() =>
+			expect(melde).toHaveBeenCalledWith(
+				'1 von 3 Exemplaren nicht gelöscht: Das Exemplar ist ausgeliehen.',
+				'error'
+			)
+		);
+		expect(melde).toHaveBeenCalledWith('2 Exemplare erfolgreich gelöscht', 'success');
+		const bleibt = /** @type {HTMLInputElement} */ (
+			screen.getByLabelText('Exemplar B-2 auswählen')
+		);
+		expect(bleibt.checked).toBe(true);
+		expect(screen.queryByLabelText('Exemplar B-1 auswählen')).toBeNull();
+		expect(screen.getByText('1 markiert')).toBeTruthy();
 	});
 });

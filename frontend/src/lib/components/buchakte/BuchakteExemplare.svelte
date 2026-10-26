@@ -7,6 +7,7 @@
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import ExemplarKarte from './ExemplarKarte.svelte';
 	import { exemplarZahlen } from './exemplarStatus.js';
 	import ExemplarEigentumDialog from './ExemplarEigentumDialog.svelte';
@@ -91,32 +92,35 @@
 		if (gewaehlteExemplare.size === 0) return;
 		if (!(await loeschenBestaetigen(`${gewaehlteExemplare.size} Exemplare löschen?`))) return;
 
-		let successCount = 0;
-
 		const ergebnisse = await Promise.allSettled(
 			Array.from(gewaehlteExemplare).map(async (id) => {
 				const res = await apiFetch(`/api/buecher/exemplare/${id}`, {
 					method: 'DELETE',
 					credentials: 'include'
 				});
-				if (!res.ok) throw new Error('not ok');
+				if (!res.ok)
+					throw new Error(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'));
 				return id;
 			})
 		);
 
+		// Was nicht gelöscht ist, bleibt markiert; die Meldung nennt den Grund des Servers.
+		const gruende = [];
 		for (const ergebnis of ergebnisse) {
-			if (ergebnis.status === 'fulfilled') {
-				const id = ergebnis.value;
-				exemplare = exemplare.filter((e) => e.id !== id);
-				successCount++;
-			} else {
-				console.error('Fehler beim Löschen:', ergebnis.reason);
+			if (ergebnis.status === 'rejected') gruende.push(fehlertext(ergebnis.reason));
+			else {
+				exemplare = exemplare.filter((e) => e.id !== ergebnis.value);
+				gewaehlteExemplare.delete(ergebnis.value);
 			}
 		}
-		gewaehlteExemplare.clear();
-		if (successCount > 0) {
-			melde(`${successCount} Exemplare erfolgreich gelöscht`, 'success');
+		const geloescht = ergebnisse.length - gruende.length;
+		if (geloescht > 0) {
+			melde(`${geloescht} Exemplare erfolgreich gelöscht`, 'success');
 			if (titel && titel.id) ladeAlles(titel.id);
+		}
+		if (gruende.length > 0) {
+			const anzahl = `${gruende.length} von ${ergebnisse.length} Exemplaren`;
+			melde(`${anzahl} nicht gelöscht: ${gruende[0]}`, 'error');
 		}
 	}
 </script>
