@@ -1,4 +1,4 @@
-import { apiFetch, apiClient } from '../apiFetch.js';
+import { apiFetch, apiClient, leseApiFehler } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
 
 /**
@@ -61,7 +61,7 @@ class NachbuchMeldungen {
 				this.fehler =
 					res.status === 403
 						? 'Für die Meldungen fehlt das Recht, Schülerdaten zu sehen.'
-						: `Meldungen nicht abrufbar (${res.status}).`;
+						: await leseApiFehler(res, `Meldungen nicht abrufbar (${res.status}).`);
 				return;
 			}
 			const d = await res.json();
@@ -88,7 +88,7 @@ class NachbuchMeldungen {
 		try {
 			const res = await apiClient.post(`/api/action/nachbuch-meldungen/${id}/quittieren`, {});
 			if (!res.ok && res.status !== 404) {
-				this.fehler = `Quittieren fehlgeschlagen (${res.status}).`;
+				this.fehler = await leseApiFehler(res, `Quittieren fehlgeschlagen (${res.status}).`);
 				return;
 			}
 		} catch (err) {

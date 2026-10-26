@@ -1,4 +1,4 @@
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 /**
  * Der eine Abruf der Statistik (`/api/statistiken`) für Übersicht und Detailseite —
@@ -24,7 +24,7 @@ export function statistikAbruf() {
 		try {
 			const res = await apiFetch(`/api/statistiken?${params}`);
 			if (meine !== laufNr) return; // eine jüngere Anfrage ist unterwegs oder da
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			const json = await res.json();
 			if (meine !== laufNr) return;
 			daten = json;

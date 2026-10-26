@@ -3,10 +3,21 @@ import { render, fireEvent } from '@testing-library/svelte';
 import KlassenUebersicht from './KlassenUebersicht.svelte';
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { authStore } from '../../../../lib/stores/authStore.svelte.js';
+import { serverAntwort } from '../../../../lib/serverAntwort.js';
+import { melde } from '$lib/store.svelte.js';
 
-vi.mock('../../../../lib/apiFetch.js', () => ({
+vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
 	registriereSitzungAbgelaufenHandler: vi.fn()
+}));
+vi.mock('$lib/store.svelte.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	melde: vi.fn()
+}));
+vi.mock('../../../../lib/stores/bestaetigung.svelte.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	loeschenBestaetigen: vi.fn(async () => true)
 }));
 
 // Die Seite steht jedem mit view_books offen, auch den Bibliotheks-Helfern:
@@ -88,6 +99,34 @@ describe('KlassenUebersicht', () => {
 
 		await screen.findByText('09z1');
 		expect(screen.queryByText('Klassensätze nicht geladen')).toBeNull();
+	});
+
+	// Statt eines festen Satzes nennen Kasten und Meldung den Grund des Servers, etwa ein fehlendes
+	// Recht.
+	it('nennt beim Ladefehler den Grund, den der Server angibt', async () => {
+		alsBenutzerMit(['view_books']);
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+		const screen = render(KlassenUebersicht);
+
+		await screen.findByText('Klassensätze nicht geladen');
+		expect(screen.getByText('Keine Berechtigung für diese Aktion')).toBeTruthy();
+	});
+
+	it('nennt beim Löschen den Grund, den der Server angibt', async () => {
+		alsBenutzerMit(['view_books', 'edit_books']);
+		const screen = render(KlassenUebersicht);
+		await screen.findByText('09z1');
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+
+		await fireEvent.click(screen.getAllByRole('button', { name: 'Buchliste löschen' })[0]);
+
+		await vi.waitFor(() =>
+			expect(melde).toHaveBeenCalledWith('Keine Berechtigung für diese Aktion', 'error')
+		);
 	});
 
 	// Die Oberstufe trägt keinen Zweigbuchstaben; der Server wählt sie über den Wert

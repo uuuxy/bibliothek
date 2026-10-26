@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import MailVorlagen from './MailVorlagen.svelte';
 import { apiClient } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
 // apiClient ruft apiFetch innerhalb desselben Moduls; ersetzt wird deshalb apiClient selbst.
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
@@ -90,6 +91,27 @@ describe('Mail-Vorlagen', () => {
 		expect(meldung.textContent).toContain('Fehler beim Laden der Vorlagen.');
 		// Neben dem Fehler behauptet die Liste nicht, sie lade noch.
 		expect(screen.queryByText(/Lade Vorlagen/)).toBeNull();
+	});
+
+	// Lehnt der Server ab, steht sein Grund da, etwa ein fehlendes Recht.
+	it('nennt beim Laden den Grund, den der Server angibt', async () => {
+		vi.mocked(apiClient.get).mockResolvedValue(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+		const screen = render(MailVorlagen);
+		const meldung = await screen.findByRole('alert');
+		expect(meldung.textContent).toContain('Keine Berechtigung für diese Aktion');
+	});
+
+	it('nennt beim Speichern den Grund, den der Server angibt', async () => {
+		vi.mocked(apiClient.put).mockResolvedValue(
+			serverAntwort(404, { error: 'Mail-Vorlage nicht gefunden' })
+		);
+		const screen = await vorlagen();
+		await fireEvent.click(screen.getByRole('button', { name: /Speichern/ }));
+
+		const meldung = await screen.findByRole('alert');
+		expect(meldung.textContent).toContain('Mail-Vorlage nicht gefunden');
 	});
 
 	// Die Kategorie trägt die Überschrift „Mail-Vorlagen" schon; eine zweite, größere

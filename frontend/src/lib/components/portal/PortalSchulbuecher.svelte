@@ -14,7 +14,7 @@
 	 */
 	import { onDestroy, onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
 	import FachKarte from './FachKarte.svelte';
@@ -81,7 +81,8 @@
 			const res = await apiFetch(`/api/portal/lernmittel${parameter ? `?${parameter}` : ''}`);
 			if (seq !== lauf) return;
 			if (!res.ok) {
-				fehler = 'Schulbücher konnten nicht geladen werden.';
+				const grund = await leseApiFehler(res, 'Schulbücher konnten nicht geladen werden.');
+				if (seq === lauf) fehler = grund;
 				return;
 			}
 			const daten = await res.json();

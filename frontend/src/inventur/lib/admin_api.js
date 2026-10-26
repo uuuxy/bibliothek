@@ -14,7 +14,7 @@ export async function holeBuecherListe() {
 			appState.adminAuthenticated = false;
 			throw new Error('UNAUTHORIZED');
 		}
-		throw new Error('Fehler beim Laden der Bücher');
+		throw new Error(await leseApiFehler(res, 'Fehler beim Laden der Bücher'));
 	}
 	return await res.json();
 }
@@ -35,7 +35,7 @@ export async function holeBuchDetail(id) {
 			appState.adminAuthenticated = false;
 			throw new Error('UNAUTHORIZED');
 		}
-		throw new Error('Buch konnte nicht geladen werden');
+		throw new Error(await leseApiFehler(res, 'Buch konnte nicht geladen werden'));
 	}
 	return await res.json();
 }
@@ -82,7 +82,8 @@ export async function holeExterneCover() {
 	const res = await apiFetch('/api/admin/books/external-covers', {
 		credentials: 'include'
 	});
-	if (!res.ok) throw new Error('Externe Cover konnten nicht geladen werden');
+	if (!res.ok)
+		throw new Error(await leseApiFehler(res, 'Externe Cover konnten nicht geladen werden'));
 	return await res.json();
 }
 
@@ -96,7 +97,7 @@ export async function retryExterneCover(ids = []) {
 		},
 		body: JSON.stringify({ ids, limit: 300 })
 	});
-	if (!res.ok) throw new Error('Cover konnten nicht lokalisiert werden');
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Cover konnten nicht lokalisiert werden'));
 	return await res.json();
 }
 
@@ -106,7 +107,7 @@ export async function exportiereCSV() {
 		credentials: 'include'
 	});
 	if (!res.ok) {
-		throw new Error('Export fehlgeschlagen');
+		throw new Error(await leseApiFehler(res, 'Export fehlgeschlagen'));
 	}
 	const blob = await res.blob();
 	const url = window.URL.createObjectURL(blob);

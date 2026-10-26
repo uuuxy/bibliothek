@@ -60,7 +60,7 @@
 				neuerBarcode = daten.next_barcode;
 				barcodeFehler = '';
 			} else {
-				barcodeFehler = 'Fehler beim Generieren der ID';
+				barcodeFehler = await leseApiFehler(res, 'Fehler beim Generieren der ID');
 			}
 		} catch {
 			barcodeFehler = 'Netzwerkfehler';

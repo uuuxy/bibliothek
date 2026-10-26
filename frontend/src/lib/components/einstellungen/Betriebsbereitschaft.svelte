@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { CircleCheck, TriangleAlert, OctagonAlert, RefreshCw } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
@@ -35,7 +35,8 @@
 		fehler = '';
 		try {
 			const res = await apiFetch('/api/admin/system/betriebsbereitschaft');
-			if (!res.ok) throw new Error(`Abruf fehlgeschlagen (HTTP ${res.status})`);
+			if (!res.ok)
+				throw new Error(await leseApiFehler(res, `Abruf fehlgeschlagen (HTTP ${res.status})`));
 			bericht = await res.json();
 		} catch (e) {
 			fehler = fehlertext(e);

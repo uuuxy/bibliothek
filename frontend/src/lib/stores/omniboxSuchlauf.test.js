@@ -7,6 +7,8 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 
 import { apiFetch } from '../apiFetch.js';
 import { erzeugeOmniboxStore } from './omnibox.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
+import { serverAntwort } from '../serverAntwort.js';
 
 /**
  * Antwort mit genau einem Schüler. Als Response getypt: apiFetch verspricht eine
@@ -155,5 +157,58 @@ describe('Omnibox-Suchlauf', () => {
 
 		expect(store.suche.suchTreffer.students).toEqual([]);
 		expect(store.suche.trefferlisteOffen).toBe(false);
+	});
+});
+
+// Lehnt der Server die Suche ab, nennt die Meldung seinen Grund, etwa ein fehlendes Recht. Auch
+// das Lesen des Grundes dauert: Hat inzwischen ein neuer Suchlauf begonnen, meldet der alte nichts.
+describe('Omnibox-Suche: Meldung bei Ablehnung', () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.restoreAllMocks();
+	});
+	afterEach(() => vi.useRealTimers());
+
+	it('nennt den Grund, den der Server angibt', async () => {
+		const store = erzeugeOmniboxStore();
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		vi.mocked(apiFetch).mockImplementation(async () =>
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+
+		store.eingabe = 'Mül';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(meldung).toHaveBeenCalledWith('Keine Berechtigung für diese Aktion', 'error');
+	});
+
+	it('meldet die Ablehnung eines überholten Suchlaufs nicht', async () => {
+		const store = erzeugeOmniboxStore();
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		/** @type {(rumpf: string) => void} */
+		let alterGrund = () => {};
+		vi.mocked(apiFetch)
+			.mockImplementationOnce(async () => ({
+				...serverAntwort(500),
+				text: () => new Promise((ja) => (alterGrund = ja))
+			}))
+			.mockImplementation(async () => treffer('Schmidt'));
+
+		store.eingabe = 'Mül';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+
+		store.eingabe = 'Schmidt';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+
+		alterGrund(JSON.stringify({ error: 'Ein interner Serverfehler ist aufgetreten' }));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(
+			meldung,
+			'die Ablehnung des Suchtexts „Mül" steht unter „Schmidt"'
+		).not.toHaveBeenCalled();
+		expect(/** @type {any} */ (store.suche.suchTreffer.students[0]).id).toBe('Schmidt');
 	});
 });

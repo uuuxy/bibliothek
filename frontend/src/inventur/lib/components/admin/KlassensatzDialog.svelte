@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { snackbars } from '../../../../lib/stores/snackbars.svelte.js';
 	import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
 	import { erzeugeBuecherListe } from './klassensatzBuecher.svelte.js';
@@ -120,7 +120,7 @@
 				});
 				onClose();
 			} else {
-				snackbars.addToast('Ein Fehler ist aufgetreten. Bitte erneut versuchen.', 'error');
+				snackbars.addToast(await leseApiFehler(res, 'Zuweisung nicht gespeichert.'), 'error');
 			}
 		} catch (e) {
 			console.error('Netzwerkfehler', e);

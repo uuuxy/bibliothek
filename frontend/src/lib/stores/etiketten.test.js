@@ -4,12 +4,15 @@ vi.mock('./snackbars.svelte.js', () => ({
 	snackbars: { addToast: vi.fn() }
 }));
 
-vi.mock('../apiFetch.js', () => ({
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn()
 }));
 
 import { apiFetch } from '../apiFetch.js';
 import { etikettenStore } from './etiketten.svelte.js';
+import { snackbars } from './snackbars.svelte.js';
+import { serverAntwort } from '../serverAntwort.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 
@@ -224,6 +227,39 @@ describe('etikettenStore: Titelsuche, späte Antwort', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		expect(etikettenStore.treffer).toEqual([]);
+		vi.useRealTimers();
+	});
+
+	it('nennt beim Fehlschlag den Grund, den der Server angibt', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+
+		await tippe('Faust');
+
+		expect(snackbars.addToast).toHaveBeenCalledWith('Keine Berechtigung für diese Aktion', 'error');
+		expect(etikettenStore.treffer).toEqual([]);
+		vi.useRealTimers();
+	});
+
+	// Auch das Lesen des Grundes dauert: Hat inzwischen eine neue Suche begonnen, meldet die alte
+	// nichts mehr.
+	it('meldet den Fehlschlag eines älteren Suchtexts nicht', async () => {
+		/** @type {(rumpf: string) => void} */
+		let alterGrund = () => {};
+		apiFetchMock.mockResolvedValueOnce({
+			...serverAntwort(500),
+			text: () => new Promise((ja) => (alterGrund = ja))
+		});
+		apiFetchMock.mockResolvedValueOnce(treffer(['Faust II']));
+
+		await tippe('Faust');
+		await tippe('Faust II');
+		alterGrund(JSON.stringify({ error: 'Ein interner Serverfehler ist aufgetreten' }));
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(snackbars.addToast).not.toHaveBeenCalled();
+		expect(etikettenStore.treffer.map((b) => b.titel)).toEqual(['Faust II']);
 		vi.useRealTimers();
 	});
 });

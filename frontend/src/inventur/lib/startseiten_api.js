@@ -1,4 +1,4 @@
-import { apiFetch } from '../../lib/apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
 import { isbnFormen, normalisiereIsbn } from '../../lib/utils/isbnFormen.js';
 /**
  * Laden, Suchen und Zusammenfassen je Buch für den Medienkatalog (Suche & Filter).
@@ -16,7 +16,7 @@ export async function buecherLaden() {
 		if (antwort.status === 401) {
 			throw new Error('UNAUTHORIZED');
 		}
-		throw new Error('Fehler beim Laden der Bücher');
+		throw new Error(await leseApiFehler(antwort, 'Fehler beim Laden der Bücher'));
 	}
 	return await antwort.json();
 }

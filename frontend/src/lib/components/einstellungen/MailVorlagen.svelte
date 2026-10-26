@@ -4,7 +4,7 @@
      auch den Hinweis trägt; eine eigene Überschrift hätte die Ordnung der Seite umgekehrt. -->
 <script>
 	import { TriangleAlert } from '@lucide/svelte';
-	import { apiClient } from '../../apiFetch.js';
+	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -48,7 +48,7 @@
 					gewaehlteKennung = vorlagen[0].id;
 				}
 			} else {
-				fehler = 'Fehler beim Laden der Vorlagen.';
+				fehler = await leseApiFehler(res, 'Fehler beim Laden der Vorlagen.');
 			}
 		} catch (error) {
 			console.error(error);
@@ -75,7 +75,7 @@
 				merke(vorlage);
 				snackbars.addToast('Vorlage gespeichert.', 'success');
 			} else {
-				fehler = 'Fehler beim Speichern der Vorlage.';
+				fehler = await leseApiFehler(res, 'Fehler beim Speichern der Vorlage.');
 			}
 		} catch (error) {
 			console.error(error);

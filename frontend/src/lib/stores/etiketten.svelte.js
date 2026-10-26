@@ -1,7 +1,7 @@
 // stores/etiketten.svelte.js
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { felderProBogen } from '../components/etiketten/etikettformate.js';
 import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
@@ -107,12 +107,7 @@ function erzeugeEtikettenStore() {
 	}
 
 	function wechsleKlasse() {
-		const group = klassen.find((g) => g.className === gewaehlteKlasse);
-		if (group) {
-			klassenTitel = group.books || [];
-		} else {
-			klassenTitel = [];
-		}
+		klassenTitel = klassen.find((g) => g.className === gewaehlteKlasse)?.books || [];
 		gewaehlterTitel = null;
 		vorhandeneExemplare = [];
 		ausgesondertAnzahl = 0;
@@ -183,7 +178,11 @@ function erzeugeEtikettenStore() {
 					// Sonst blieben die Treffer des vorigen Suchtextes stehen: Man klickte auf
 					// eine Zeile, die zu einer anderen Eingabe gehört, und druckte deren Etikett.
 					treffer = [];
-					snackbars.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
+					const grund = await leseApiFehler(
+						res,
+						'Titelsuche fehlgeschlagen — bitte erneut versuchen.'
+					);
+					if (lauf === suchLauf) snackbars.addToast(grund, 'error');
 				}
 			} catch (err) {
 				if (lauf !== suchLauf) return;

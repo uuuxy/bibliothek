@@ -6,7 +6,7 @@ vi.mock('../../lib/apiFetch.js', async (importOriginal) => ({
 }));
 vi.mock('./store.svelte.js', () => ({ appState: {} }));
 import { apiFetch } from '../../lib/apiFetch.js';
-import { coverNeuHolen } from './admin_api.js';
+import { coverNeuHolen, exportiereCSV, holeExterneCover, retryExterneCover } from './admin_api.js';
 import { serverAntwort } from '../../lib/serverAntwort.js';
 
 // „Cover neu holen" (OFFEN.md 4.16, 22.09.2026): Die Auskunft des Servers — kein Cover
@@ -48,5 +48,25 @@ describe('admin_api: coverNeuHolen', () => {
 	it('hat eine Vorgabe, wenn der Server keine Auskunft gibt', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(502));
 		await expect(coverNeuHolen('abc')).rejects.toThrow('Cover konnte nicht neu geholt werden');
+	});
+});
+
+// Die Sammelaktionen der Titelverwaltung melden den Fehler mit fehlertext (TitelVerwaltung,
+// Datenverwaltung): Lehnt der Server ab, steht dort sein Grund, etwa ein fehlendes Recht.
+describe('admin_api: Cover und Export nennen den Grund des Servers', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	it.each([
+		['holeExterneCover', () => holeExterneCover()],
+		['retryExterneCover', () => retryExterneCover(['t1'])],
+		['exportiereCSV', () => exportiereCSV()]
+	])('%s', async (_name, aufruf) => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+
+		await expect(aufruf()).rejects.toThrow('Keine Berechtigung für diese Aktion');
 	});
 });

@@ -5,6 +5,7 @@ import { apiFetch, apiClient } from '../../apiFetch.js';
 import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import { authStore } from '../../stores/authStore.svelte.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -68,6 +69,33 @@ describe('BuchakteVormerkungen', () => {
 		const tabelle = await screen.findByRole('table', { name: 'Vormerkungen' });
 		expect(within(tabelle).getByText('Ida Imker')).toBeTruthy();
 		expect(snackbars.toasts.map((t) => t.message)).toContain('Erfolgreich vorgemerkt');
+	});
+
+	// Angelegt ist angelegt: Scheitert danach das Nachladen der Liste, sagt die Meldung das zuerst
+	// und nennt dann den Grund des Servers.
+	it('nennt beim gescheiterten Nachladen die angelegte Vormerkung und den Grund', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (adresse) =>
+			String(adresse).startsWith('/api/schueler?q=')
+				? antwort([
+						{ id: 's1', vorname: 'Ida', nachname: 'Imker', klasse: '07A', barcode_id: 'A-1' }
+					])
+				: serverAntwort(500, { error: 'Ein interner Serverfehler ist aufgetreten' })
+		);
+		vi.mocked(apiClient.post).mockResolvedValue(antwort({}));
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Barcode)'), {
+			target: { value: 'Ida' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Auswählen' }));
+
+		await waitFor(() =>
+			expect(snackbars.toasts.map((t) => t.message)).toContain(
+				'Vormerkung angelegt — die Liste konnte nicht neu geladen werden: Ein interner Serverfehler ist aufgetreten'
+			)
+		);
 	});
 
 	// M3, Tabs: „Text labels should clearly and succinctly describe the content within the

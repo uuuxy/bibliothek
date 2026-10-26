@@ -1,19 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ladeTitelSchlagworte } from './schlagworte.js';
+import { ladeDnbSchlagwortVorschlag, ladeTitelSchlagworte } from './schlagworte.js';
 import { apiFetch } from '../apiFetch.js';
+import { serverAntwort } from '../serverAntwort.js';
 
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn(), apiPut: vi.fn() }));
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn(),
+	apiPut: vi.fn()
+}));
+
+beforeEach(() => {
+	vi.mocked(apiFetch).mockReset();
+});
+
+/** @param {any} antwort */
+const serverAntwortet = (antwort) => vi.mocked(apiFetch).mockResolvedValue(antwort);
 
 // Der Bestellkorb ersetzt die Schlagworte eines Titels als Ganzes. Kennt er die vorhandenen
 // nicht, sperrt er das Feld; dafür muss das Laden scheitern, statt eine leere Liste zu liefern.
 describe('ladeTitelSchlagworte', () => {
-	beforeEach(() => {
-		vi.mocked(apiFetch).mockReset();
-	});
-
-	/** @param {any} antwort */
-	const serverAntwortet = (antwort) => vi.mocked(apiFetch).mockResolvedValue(antwort);
-
 	it('liefert die Liste des Titels', async () => {
 		serverAntwortet({ ok: true, json: async () => ({ schlagworte: ['Fantasy', 'Drachen'] }) });
 
@@ -33,10 +38,24 @@ describe('ladeTitelSchlagworte', () => {
 	});
 
 	it('scheitert, wenn der Server ablehnt', async () => {
-		serverAntwortet({ ok: false, status: 503 });
+		serverAntwortet(serverAntwort(503));
 
 		await expect(ladeTitelSchlagworte('t1')).rejects.toThrow(
 			'Schlagworte konnten nicht geladen werden (503)'
 		);
+	});
+
+	it('nennt den Grund, den der Server angibt', async () => {
+		serverAntwortet(serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' }));
+
+		await expect(ladeTitelSchlagworte('t1')).rejects.toThrow('Keine Berechtigung für diese Aktion');
+	});
+});
+
+describe('ladeDnbSchlagwortVorschlag', () => {
+	it('nennt den Grund, den der Server angibt', async () => {
+		serverAntwortet(serverAntwort(400, { error: 'Keine gültige ISBN' }));
+
+		await expect(ladeDnbSchlagwortVorschlag('978-3')).rejects.toThrow('Keine gültige ISBN');
 	});
 });

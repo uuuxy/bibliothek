@@ -1,4 +1,4 @@
-import { apiFetch } from '../../lib/apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
 import { bestaetigen, fragen } from '../../lib/stores/bestaetigung.svelte.js';
 import { DubletteFehler, speichereBuch } from './buch_speichern.js';
 import { appState, melde } from './store.svelte.js';
@@ -20,7 +20,10 @@ export async function vorhandenerTitel(isbn) {
 	const res = await apiFetch(`/api/books/vorhanden?isbn=${encodeURIComponent(isbn)}`, {
 		credentials: 'include'
 	});
-	if (!res.ok) throw new Error('Der Katalog ließ sich nicht nach dieser ISBN fragen.');
+	if (!res.ok)
+		throw new Error(
+			await leseApiFehler(res, 'Der Katalog ließ sich nicht nach dieser ISBN fragen.')
+		);
 	const antwort = await res.json();
 	return antwort?.vorhanden ? { meldung: antwort.meldung, vorhanden: antwort.vorhanden } : null;
 }

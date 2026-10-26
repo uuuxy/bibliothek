@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { serverAntwort } from '../serverAntwort.js';
 
 // Der Zähler gehört jeder Theken-Rolle, die Liste nur `view_students` — beides prüft der
 // Server. Hier steht, was der Browser daraus macht: dass er die WIRKUNG liest (die Zeile
@@ -18,7 +19,8 @@ vi.mock('../liveEvents.js', () => ({
 }));
 const fetchMock = vi.fn();
 const postMock = vi.fn();
-vi.mock('../apiFetch.js', () => ({
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: (...args) => fetchMock(...args),
 	apiClient: { post: (...args) => postMock(...args) }
 }));
@@ -97,6 +99,24 @@ describe('Meldungen aus dem Nachbuchen', () => {
 		postMock.mockResolvedValue(antwort({}, 500));
 		await m.quittiere('a');
 		expect(m.fehler).toMatch(/500/);
+	});
+
+	// Lehnt der Server ab, steht sein Grund da; der eigene Satz mit dem Status bleibt für eine
+	// Antwort ohne Rumpf.
+	it('nennt beim Quittieren den Grund, den der Server angibt', async () => {
+		postMock.mockResolvedValue(
+			serverAntwort(500, { error: 'Nachbuch-Meldung konnte nicht quittiert werden' })
+		);
+		await m.quittiere('a');
+		expect(m.fehler).toBe('Nachbuch-Meldung konnte nicht quittiert werden');
+	});
+
+	it('nennt beim Laden den Grund, den der Server angibt', async () => {
+		fetchMock.mockResolvedValue(
+			serverAntwort(500, { error: 'Ein interner Serverfehler ist aufgetreten' })
+		);
+		await m.lade();
+		expect(m.fehler).toBe('Ein interner Serverfehler ist aufgetreten');
 	});
 
 	// Der zweite Arbeitsplatz zeigte sonst die alte Zahl bis zur nächsten Anmeldung.

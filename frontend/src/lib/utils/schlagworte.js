@@ -1,4 +1,4 @@
-import { apiFetch, apiPut } from '../apiFetch.js';
+import { apiFetch, apiPut, leseApiFehler } from '../apiFetch.js';
 
 /**
  * Die Schlagworte des Bestands als Vorschläge für ein ChipFeld (Migration 138), über
@@ -49,7 +49,7 @@ export async function ladeSchlagwortVorschlaege(suche = '') {
 export async function ladeDnbSchlagwortVorschlag(isbn) {
 	const res = await apiFetch(`/api/schlagworte/dnb-vorschlag?isbn=${encodeURIComponent(isbn)}`);
 	if (!res.ok) {
-		throw new Error(`DNB-Vorschlag nicht geladen (${res.status})`);
+		throw new Error(await leseApiFehler(res, `DNB-Vorschlag nicht geladen (${res.status})`));
 	}
 	const antwort = await res.json();
 	const liste = antwort?.schlagwort_vorschlaege;
@@ -73,7 +73,9 @@ export async function ladeDnbSchlagwortVorschlag(isbn) {
 export async function ladeTitelSchlagworte(titelId) {
 	const res = await apiFetch(`/api/buecher/titel/${encodeURIComponent(titelId)}/schlagworte`);
 	if (!res.ok) {
-		throw new Error(`Schlagworte konnten nicht geladen werden (${res.status})`);
+		throw new Error(
+			await leseApiFehler(res, `Schlagworte konnten nicht geladen werden (${res.status})`)
+		);
 	}
 	const antwort = await res.json();
 	if (!Array.isArray(antwort?.schlagworte)) {

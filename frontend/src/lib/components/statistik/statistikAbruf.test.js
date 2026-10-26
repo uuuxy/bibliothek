@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiFetch } from '../../apiFetch.js';
 import { statistikAbruf } from './statistikAbruf.svelte.js';
 
-vi.mock('../../apiFetch.js', () => ({
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
 	registriereSitzungAbgelaufenHandler: vi.fn()
 }));

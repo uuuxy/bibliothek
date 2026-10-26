@@ -33,7 +33,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 Je Bereich jeder Knopf und jeder Scan, der mit dem Server oder dem Browser spricht, mit den fünf
 Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
 
-- [ ] Eine Fehlerantwort wird durch einen eigenen Satz ersetzt: elf Stellen über den ganzen
+- [x] Eine Fehlerantwort wird durch einen eigenen Satz ersetzt: 30 Stellen über den ganzen
   Bestand, mit Prüfregel. (5.106)
 - [ ] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
 - [ ] Mahnwesen, Bescheide und Schäden. (5.106)
@@ -142,10 +142,13 @@ Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)). Umfang
 
 Bekannt und offen:
 
-- Eine Fehlerantwort wird durch einen eigenen Satz ersetzt (`if (!res.ok) throw new Error('…')`),
-  der Grund des Servers fehlt: dreimal in `lmfplanDienst.js`, je zweimal in
-  `KlassenUebersicht.svelte` und `admin_api.js`, je einmal in `statistikAbruf.svelte.js`,
-  `Betriebsbereitschaft.svelte`, `KlassensatzZuweisenDialog.svelte` und `buch_vorhanden.js`.
+- Der Aufrufer ersetzt den Grund des Servers noch einmal durch einen festen Satz oder eine
+  Markierung: die Statistik (Übersicht und Liste, `statistikAbruf.svelte.js`), die Klassenwahl
+  beim Klassensatz (`KLASSEN_LADEFEHLER`), der Vorschlag im Schadensdialog, die ISBN-Prüfung der
+  Buchmaske (`frageWennVergeben`), „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und
+  die Schlagworte in der Bestellung (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag
+  meldet bei jedem Fehler „Die DNB ist nicht erreichbar", auch wenn der Server „Keine gültige
+  ISBN" antwortet.
 - Druck-Center: Scheitert nach dem Druck der Vermerk „gedruckt", steht das nur in der Konsole
   (`vermerkeGedruckt` in `etikettenDruck.js`). Die Etiketten bleiben auf der Liste der fehlenden
   und werden womöglich doppelt gedruckt.

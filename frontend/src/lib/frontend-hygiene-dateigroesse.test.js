@@ -12,7 +12,7 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 //   - Wer eine Datei unter 200 bringt, trägt sie aus: Der Bestand ist eine Arbeitsliste.
 const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
-	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 210,
+	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 209,
 	'src/lib/components/bestellungen/Bestellwesen.svelte': 216,
 	'src/lib/components/omnibox/Omnibox.svelte': 202,
 	'src/lib/components/statistik/Statistik.svelte': 341,
@@ -31,7 +31,7 @@ const BESTAND = {
 	'src/lib/menue.js': 272,
 	'src/lib/stores/authStore.svelte.js': 354,
 	'src/lib/stores/bestellStore.svelte.js': 532,
-	'src/lib/stores/etiketten.svelte.js': 359,
+	'src/lib/stores/etiketten.svelte.js': 358,
 	'src/lib/stores/leerlaufSperre.svelte.js': 382,
 	'src/lib/stores/mahnwesen.svelte.js': 231,
 	'src/lib/stores/offlineSync.svelte.js': 420,

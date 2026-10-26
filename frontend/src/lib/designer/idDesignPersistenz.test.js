@@ -4,9 +4,13 @@ import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from '../hygiene-quellen.js';
 import { erzeugeDesignAblage } from './idDesignPersistenz.svelte.js';
 import { apiFetch } from '../apiFetch.js';
+import { serverAntwort } from '../serverAntwort.js';
 import { applyDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
 
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 // Teilweise gemockt: ausweisVorlagen.js liest echte Konstanten aus diesem Store.
 vi.mock('./idDesignerStore.svelte.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -55,6 +59,19 @@ describe('Ausweis-Design laden', () => {
 		await ablage.laden();
 		expect(ablage.geladen).toBe(false);
 		expect(ablage.ladefehler).toMatch(/Netzwerkfehler/);
+	});
+
+	it('nennt im Ladefehler den Grund, den der Server angibt', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+		const ablage = erzeugeDesignAblage();
+		await ablage.laden();
+
+		expect(ablage.ladefehler).toBe(
+			'Das gespeicherte Ausweis-Design konnte nicht geladen werden (Keine Berechtigung für diese Aktion). Es wird nichts gespeichert, solange das so ist.'
+		);
+		expect(ablage.geladen).toBe(false);
 	});
 
 	it('lädt beim Erststart ein leeres Design und speichert danach normal weiter', async () => {

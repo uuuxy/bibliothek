@@ -41,7 +41,7 @@
 		klassenListe.lade();
 		try {
 			const res = await apiFetch('/api/admin/class-books', { credentials: 'include' });
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			const gruppen = await res.json();
 			existing = gruppen.map((/** @type {any} */ g) => g.className);
 		} catch {

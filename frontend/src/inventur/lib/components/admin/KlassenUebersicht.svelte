@@ -8,7 +8,7 @@
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import LadeFehler from '../../../../lib/components/ui/LadeFehler.svelte';
 	import SuchZustand from '../../../../lib/components/ui/SuchZustand.svelte';
-	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { melde } from '$lib/store.svelte.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
@@ -35,7 +35,7 @@
 
 	let gruppen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
-	let fehler = $state(null);
+	let fehler = $state(/** @type {string|null} */ (null));
 	let isManaging = $state(false);
 	let managingGroup = $state(null);
 
@@ -79,10 +79,13 @@
 			const res = await apiFetch(`/api/class-books?${parameter.toString()}`, {
 				credentials: 'include'
 			});
-			if (!res.ok) throw new Error('Fehler beim Laden der Klassen-Bücher');
+			if (!res.ok)
+				throw new Error(
+					await leseApiFehler(res, 'Die Klassensätze konnten nicht abgerufen werden.')
+				);
 			gruppen = await res.json();
 		} catch (err) {
-			fehler = /** @type {any} */ (err).message;
+			fehler = fehlertext(err);
 		} finally {
 			laedt = false;
 		}
@@ -98,7 +101,7 @@
 				`/api/admin/class-books?className=${encodeURIComponent(className)}`,
 				{ method: 'DELETE', credentials: 'include' }
 			);
-			if (!res.ok) throw new Error('Fehler beim Löschen');
+			if (!res.ok) throw new Error(await leseApiFehler(res, 'Fehler beim Löschen'));
 			ladeKlassen();
 		} catch (err) {
 			melde(fehlertext(err), 'error');
@@ -153,11 +156,7 @@
 	{#if laedt}
 		<div class="flex justify-center py-12"><Ladekreis size="lg" /></div>
 	{:else if fehler}
-		<LadeFehler
-			titel="Klassensätze nicht geladen"
-			text="Die Klassensätze konnten nicht abgerufen werden."
-			onerneut={ladeKlassen}
-		/>
+		<LadeFehler titel="Klassensätze nicht geladen" text={fehler} onerneut={ladeKlassen} />
 	{:else if sichtbareGruppen.length === 0}
 		<!-- Zwei verschiedene Leermeldungen: „nichts angelegt" schickt sonst jemanden
 		     auf die Suche nach Daten, die es gibt — sein Suchbegriff passt nur nicht. -->

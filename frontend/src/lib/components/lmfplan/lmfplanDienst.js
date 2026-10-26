@@ -97,7 +97,7 @@ export function artBeschriftung(art) {
  *  @returns {Promise<{ ab: string, termine: LmfTermin[], eingangsjahrgaenge?: number[] }>} */
 export async function ladePlan(alle = false) {
 	const res = await apiFetch(`/api/lmf-termine${alle ? '?alle=1' : ''}`);
-	if (!res.ok) throw new Error('LMF-Plan konnte nicht geladen werden');
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'LMF-Plan konnte nicht geladen werden'));
 	return await res.json();
 }
 
@@ -105,7 +105,7 @@ export async function ladePlan(alle = false) {
  *  @param {string} art @returns {Promise<PlanStand>} */
 export async function ladeStand(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}`);
-	if (!res.ok) throw new Error('LMF-Plan konnte nicht geladen werden');
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'LMF-Plan konnte nicht geladen werden'));
 	return await res.json();
 }
 
@@ -310,7 +310,7 @@ export async function verwerfePlan(art) {
 export async function ladePdf(alle = false, entwurf = false) {
 	const pfad = entwurf ? '/api/lmf-termine/entwurf/pdf' : '/api/lmf-termine/pdf';
 	const res = await apiFetch(`${pfad}${alle ? '?alle=1' : ''}`);
-	if (!res.ok) throw new Error('PDF konnte nicht erzeugt werden');
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'PDF konnte nicht erzeugt werden'));
 	const blob = await res.blob();
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');

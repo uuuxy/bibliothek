@@ -7,7 +7,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 	// `book.ohneForderung` = der Entleiher ist ein Kollege. Gesetzt wird es beim Öffnen
 	// (useLeserakte: oeffneSchaden), damit die Entscheidung an einer Stelle steht. Dann
@@ -51,7 +51,7 @@
 
 		apiFetch(`/api/buecher/exemplare/${exemplarId}/ersatzwert-vorschlag`)
 			.then(async (res) => {
-				if (!res.ok) throw new Error(String(res.status));
+				if (!res.ok) throw new Error(await leseApiFehler(res));
 				return res.json();
 			})
 			.then((v) => {

@@ -1,4 +1,4 @@
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { bestaetigen } from '../stores/bestaetigung.svelte.js';
 import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
 import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
@@ -45,7 +45,7 @@ export function erzeugeDesignAblage() {
 			try {
 				const res = await apiFetch('/api/ausweis-layout');
 				if (!res.ok) {
-					ladefehler = `Das gespeicherte Ausweis-Design konnte nicht geladen werden (Fehler ${res.status}). Es wird nichts gespeichert, solange das so ist.`;
+					ladefehler = `Das gespeicherte Ausweis-Design konnte nicht geladen werden (${await leseApiFehler(res)}). Es wird nichts gespeichert, solange das so ist.`;
 					return;
 				}
 				applyDesign(await res.json());

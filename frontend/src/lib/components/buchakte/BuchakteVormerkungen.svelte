@@ -52,6 +52,7 @@
 		}
 	}
 
+	const NACHLADEN_GESCHEITERT = 'Vormerkung angelegt — die Liste konnte nicht neu geladen werden';
 	async function legeVormerkungAn(studentId) {
 		try {
 			const res = await apiClient.post('/api/vormerkungen', {
@@ -68,7 +69,7 @@
 				const listenAntwort = await apiFetch(`/api/vormerkungen?titel_id=${titel.id}`);
 				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
 				if (listenAntwort.ok) vormerkungen = await listenAntwort.json();
-				else melde('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
+				else melde(`${NACHLADEN_GESCHEITERT}: ${await leseApiFehler(listenAntwort)}`, 'error');
 			} else {
 				melde(await leseApiFehler(res, 'Fehler beim Hinzufügen'), 'error');
 			}

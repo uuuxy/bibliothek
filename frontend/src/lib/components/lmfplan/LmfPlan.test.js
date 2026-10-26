@@ -4,6 +4,7 @@ import { tick } from 'svelte';
 import LmfPlan from './LmfPlan.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { VORSCHAU_ENTPRELLUNG_MS } from './lmfplanDienst.js';
+import { melde } from '../../../inventur/lib/store.svelte.js';
 
 // Scheitert das Laden, darf der Planer NICHT erscheinen.
 //
@@ -15,7 +16,10 @@ import { VORSCHAU_ENTPRELLUNG_MS } from './lmfplanDienst.js';
 //
 // Gemockt wird apiFetch, nicht der Dienst: So läuft der echte Lesepfad (lmfplanDienst)
 // mit, und der Fehler entsteht dort, wo er im Betrieb entsteht.
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 const STAND = {
@@ -69,6 +73,8 @@ describe('LmfPlan: gescheitertes Laden', () => {
 		expect(screen.queryByText(/noch nicht gespeichert/)).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Plan speichern' })).toBeNull();
 		expect(screen.getByRole('button', { name: 'Erneut versuchen' })).toBeTruthy();
+		// Der Satz des Dienstes für eine Antwort ohne Grund, nicht ein Fehler der Attrappe.
+		expect(melde).toHaveBeenCalledWith('LMF-Plan konnte nicht geladen werden', 'error');
 	});
 
 	it('zeigt den Planer, wenn das Laden gelingt (Gegenprobe)', async () => {

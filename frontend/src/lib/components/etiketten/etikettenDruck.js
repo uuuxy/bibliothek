@@ -1,6 +1,6 @@
 // Der Druck eines Bogens im Druck-Center: Auftrag schicken, PDF öffnen, Druck gegenbuchen.
 
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
@@ -65,7 +65,7 @@ export async function druckeBogen(bogen, etiketten) {
 			await vermerkeGedruckt(etiketten);
 		} else {
 			console.error('Fehler beim Erstellen des PDFs');
-			snackbars.addToast('Fehler beim Erstellen des PDFs', 'error');
+			snackbars.addToast(await leseApiFehler(res, 'Fehler beim Erstellen des PDFs'), 'error');
 		}
 	} catch (err) {
 		console.error('Netzwerkfehler beim Drucken', err);
