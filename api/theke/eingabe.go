@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -50,7 +49,7 @@ func ohneSperrgrund(err error, darfGrundSehen bool) error {
 	if err == nil || darfGrundSehen || !errors.As(err, &sg) {
 		return err
 	}
-	return fmt.Errorf("%w — bitte an die Bibliotheksleitung wenden", sg.Kern)
+	return sg.OhneGrund()
 }
 
 func statusDesFehlers(err error) int {

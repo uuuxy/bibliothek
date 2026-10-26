@@ -2,7 +2,6 @@ package theke
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 func TestSperrgrundBleibtOhneRechtSchuelerdateiAnzeigenGeheim(t *testing.T) {
 	grund := "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
 	sperrFehler := &service.SperrgrundFehler{
-		Kern:  fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt),
+		Kern:  service.Sperre("Manuelle Sperre"),
 		Grund: grund,
 	}
 
@@ -34,7 +33,7 @@ func TestSperrgrundBleibtOhneRechtSchuelerdateiAnzeigenGeheim(t *testing.T) {
 	}
 
 	// Andere Fehler (auch ErrGesperrt ohne Freitext, z. B. Ausleihlimit) unverändert.
-	limit := fmt.Errorf("%w: Ausleihlimit von 5 Büchern überschritten", service.ErrGesperrt)
+	limit := service.Sperre("Ausleihlimit von 5 Büchern überschritten")
 	if ohneSperrgrund(limit, false) != limit {
 		t.Error("Fehler ohne Sperr-Freitext dürfen nicht angefasst werden")
 	}

@@ -17,9 +17,8 @@ import "errors"
 // „Sperre" oder „überfällig", und den Sperrgrund sieht nicht jeder (ausleih_vorgang_test.go,
 // api/theke/sperr_merkmal_test.go).
 //
-// Bei SperrgrundFehler gehört das Merkmal in Kern: ohneSperrgrund (api/theke/eingabe.go) baut
-// den Fehler für Aufrufer ohne view_students aus Kern neu, ein Merkmal außen herum ginge dabei
-// verloren.
+// Bei SperrgrundFehler gehört das Merkmal in Kern: OhneGrund baut den Fehler für Aufrufer ohne
+// view_students aus Kern neu, ein Merkmal außen herum ginge dabei verloren.
 type uebergehbareSperre struct{ err error }
 
 func (u *uebergehbareSperre) Error() string { return u.err.Error() }
@@ -67,3 +66,17 @@ func (e *SperrgrundFehler) Error() string { return e.Kern.Error() + ": " + e.Gru
 
 // Unwrap hält errors.Is(err, ErrGesperrt) am Leben, damit der HTTP-Status 403 bleibt.
 func (e *SperrgrundFehler) Unwrap() error { return e.Kern }
+
+// hinweisOhneGrund steht, wo ein Aufrufer ohne view_students den Freitext nicht sieht.
+const hinweisOhneGrund = " — bitte an die Bibliotheksleitung wenden"
+
+// OhneGrund liefert die Sperre ohne den Freitext, mit dem Hinweis an seiner Stelle. Merkmale und
+// errors.Is bleiben, weil der Kern bleibt.
+func (e *SperrgrundFehler) OhneGrund() error { return &sperreOhneGrund{kern: e.Kern} }
+
+type sperreOhneGrund struct{ kern error }
+
+func (e *sperreOhneGrund) Error() string { return e.kern.Error() + hinweisOhneGrund }
+
+// Unwrap hält errors.Is(err, ErrGesperrt) und die Merkmale am Leben.
+func (e *sperreOhneGrund) Unwrap() error { return e.kern }

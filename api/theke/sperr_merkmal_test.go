@@ -14,7 +14,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -54,22 +53,26 @@ func scanAnfrage(schluessel string) *http.Request {
 func TestSperrMerkmalImHeader(t *testing.T) {
 	grund := "Eltern zahlen nicht"
 
+	// meldung: Die Theke zeigt sie als Satz, groß begonnen, mit dem allgemeinen Grund; der
+	// Fehlertext bleibt klein.
 	faelle := []struct {
 		name    string
 		fehler  error
 		merkmal string
+		meldung string
 	}{
 		{"manuelle Sperre, Grund für Helfer gekürzt", &service.SperrgrundFehler{
-			Kern:  service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)),
+			Kern:  service.SperreAmLeser(service.Sperre("Manuelle Sperre")),
 			Grund: grund,
-		}, "leser"},
+		}, "leser", "Die Ausleihe ist gesperrt: Manuelle Sperre — bitte an die Bibliotheksleitung wenden"},
 		{"Sperre der Ehemaligen, Grund für Helfer gekürzt", &service.SperrgrundFehler{
 			Kern:  service.SperreAmLeser(service.ErrGesperrt),
 			Grund: grund,
-		}, "leser"},
-		{"offener Schaden", service.UebergehbareSperre(
-			fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrGesperrt)), "uebergehbar"},
-		{"Gerät gesperrt (kein Override)", fmt.Errorf("%w: Gerät ist aktuell gesperrt", service.ErrGesperrt), ""},
+		}, "leser", "Die Ausleihe ist gesperrt — bitte an die Bibliotheksleitung wenden"},
+		{"offener Schaden", service.UebergehbareSperre(service.Sperre("1 unbezahlte(r) Schadensfall/-fälle offen")),
+			"uebergehbar", "Die Ausleihe ist gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen"},
+		{"Gerät gesperrt (kein Override)", service.Sperre("Gerät ist aktuell gesperrt"), "",
+			"Die Ausleihe ist gesperrt: Gerät ist aktuell gesperrt"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -83,6 +86,12 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 			}
 			if strings.Contains(w.Body.String(), grund) {
 				t.Errorf("Sperrgrund erreicht die Helferin: %s", w.Body.String())
+			}
+			var rumpf struct {
+				Fehler string `json:"error"`
+			}
+			if err := json.Unmarshal(w.Body.Bytes(), &rumpf); err != nil || rumpf.Fehler != f.meldung {
+				t.Errorf("Meldung %q, erwartet %q (%v)", rumpf.Fehler, f.meldung, err)
 			}
 		})
 	}
@@ -122,7 +131,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: mock}})}
-		fehler := service.UebergehbareSperre(fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrGesperrt))
+		fehler := service.UebergehbareSperre(service.Sperre("1 unbezahlte(r) Schadensfall/-fälle offen"))
 		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluessel))
 
 		if got := w.Header().Get("X-Sperre"); got != "uebergehbar" {
@@ -171,7 +180,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		s := &Tueren{Basis: helferOhneRechte(&tuer.Basis{DB: &db.Verbindung{Pool: mock}})}
-		fehler := &service.SperrgrundFehler{Kern: service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), Grund: "x"}
+		fehler := &service.SperrgrundFehler{Kern: service.SperreAmLeser(service.Sperre("Manuelle Sperre")), Grund: "x"}
 		s.EingabeVerarbeiten(&sperrOmnibox{fehler: fehler})(w, scanAnfrage(schluesselLeser))
 		if got := w.Header().Get("X-Sperre"); got != "leser" {
 			t.Errorf("X-Sperre = %q, erwartet leser", got)

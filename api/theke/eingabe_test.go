@@ -25,8 +25,8 @@ func TestStatusDesFehlers(t *testing.T) {
 		{"unbekannter Fehler", errors.New("irgendein Fehler"), http.StatusInternalServerError},
 		// So kommt ein Sperrfehler an, wenn ohneSperrgrund ihm den Freitext nimmt: der Kern
 		// (selbst eine ErrGesperrt-Kette) mit dem Hinweis dahinter.
-		{"eingewickelt, gesperrt", fmt.Errorf("%w — bitte an die Bibliotheksleitung wenden",
-			fmt.Errorf("%w: Manuelle Sperre", service.ErrGesperrt)), http.StatusForbidden},
+		{"eingewickelt, gesperrt", (&service.SperrgrundFehler{Kern: service.Sperre("Manuelle Sperre"), Grund: "x"}).OhneGrund(),
+			http.StatusForbidden},
 		{"eingewickelt, nicht gefunden", fmt.Errorf("leser: %w", service.ErrNichtGefunden), http.StatusNotFound},
 	}
 

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"bibliothek/db"
@@ -75,7 +74,7 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 		return meldung(ErrUngueltigerZustand, "Gerät ist ausgesondert")
 	}
 	if !g.IstAusleihbar {
-		return fmt.Errorf("%w: Gerät ist aktuell gesperrt", ErrGesperrt)
+		return Sperre("Gerät ist aktuell gesperrt")
 	}
 	return nil
 }

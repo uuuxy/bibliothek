@@ -95,7 +95,7 @@ describe('Sperr-Dialog an der Theke', () => {
 	// und bietet das Aufheben an, nicht das Übergehen (OmniboxSperrHinweis.test.js).
 	it('öffnet für eine Sperre am Leser und merkt sich die Art', async () => {
 		post.mockResolvedValue(
-			antwort403('die ausleihe ist gesperrt: Manuelle Sperre', { 'X-Sperre': 'leser' })
+			antwort403('Die Ausleihe ist gesperrt: Manuelle Sperre', { 'X-Sperre': 'leser' })
 		);
 		await scanne();
 		expect(omniboxStore.sperrHinweis?.art).toBe('leser');
@@ -103,7 +103,7 @@ describe('Sperr-Dialog an der Theke', () => {
 
 	it('merkt sich beim Hinweis die Art „uebergehbar"', async () => {
 		post.mockResolvedValue(
-			antwort403('die ausleihe ist gesperrt: 2 überfällige Medien vorhanden (Sperr-Automatik)', {
+			antwort403('Die Ausleihe ist gesperrt: 2 überfällige Medien vorhanden (Sperr-Automatik)', {
 				'X-Sperre': 'uebergehbar'
 			})
 		);

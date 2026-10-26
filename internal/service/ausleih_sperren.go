@@ -76,11 +76,11 @@ func istKollegium(leser *repository.Leser) bool {
 func pruefeSperrschalter(leser *repository.Leser, lernmittel bool) error {
 	if leser.IstAnonymisiert {
 		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/leser_sperre.go lehnt ab).
-		return fmt.Errorf("%w: der Datensatz ist anonymisiert", ErrGesperrt)
+		return Sperre("der Datensatz ist anonymisiert")
 	}
 	if leser.IstVonHandGesperrt {
 		return &SperrgrundFehler{
-			Kern:  SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", ErrGesperrt)),
+			Kern:  SperreAmLeser(Sperre("Manuelle Sperre")),
 			Grund: sperrgrund(leser, "ohne Grund"),
 		}
 	}
@@ -116,7 +116,7 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 	}
 	if offen > 0 {
 		if !uebergehen {
-			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrGesperrt, offen))
+			return sperrLage{}, UebergehbareSperre(Sperre("%d unbezahlte(r) Schadensfall/-fälle offen", offen))
 		}
 		lage.uebergangen = append(lage.uebergangen, fmt.Sprintf("Ausleihsperre manuell ignoriert (unbezahlte Schäden: %d)", offen))
 	}
@@ -132,7 +132,7 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 	}
 	if ueberfaellig >= einst.UeberfaelligSperreAbMedien {
 		if !uebergehen {
-			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrGesperrt, ueberfaellig))
+			return sperrLage{}, UebergehbareSperre(Sperre("%d überfällige Medien vorhanden (Sperr-Automatik)", ueberfaellig))
 		}
 		lage.uebergangen = append(lage.uebergangen, fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", ueberfaellig))
 	}

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -47,7 +46,7 @@ func (d *AusleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang 
 		return err
 	}
 	if !exemplar.IstLernmittel && anzahlOffene >= einst.MaxAusleihenSchueler {
-		return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", ErrGesperrt, einst.MaxAusleihenSchueler, anzahlOffene)
+		return Sperre("Ausleihlimit von %d Büchern überschritten (aktuell: %d)", einst.MaxAusleihenSchueler, anzahlOffene)
 	}
 	return nil
 }

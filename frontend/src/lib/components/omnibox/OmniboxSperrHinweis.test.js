@@ -40,8 +40,8 @@ function sperre(art) {
 	omniboxStore.sperrHinweis = {
 		message:
 			art === 'leser'
-				? 'die ausleihe ist gesperrt: Manuelle Sperre: Ausweis verloren'
-				: 'die ausleihe ist gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen',
+				? 'Die Ausleihe ist gesperrt: Manuelle Sperre: Ausweis verloren'
+				: 'Die Ausleihe ist gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen',
 		query: 'B-1',
 		art
 	};
