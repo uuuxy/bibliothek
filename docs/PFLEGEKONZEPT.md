@@ -384,6 +384,10 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Änderung, bis keine Anfrage der Seite mehr offen ist (`beobachteDatenanfragen` in
   `e2e/messhilfe.js`). Wann welche Anfrage ankam, zeigt das Protokoll des Backends
   (`docker logs`).
+- **Wer einen roten Fall der ganzen Suite allein wiederholt, verliert dessen Spur.** Playwright
+  leert seinen Ordner für Ergebnisse (`test-results/`) zu Beginn jedes Laufs, samt Trace und
+  Seitenabzug des roten Falls. Die ganze Suite läuft deshalb mit `--output <Zwischenordner>`,
+  oder der Ordner wird vor der Wiederholung gesichert.
 
 ---
 
