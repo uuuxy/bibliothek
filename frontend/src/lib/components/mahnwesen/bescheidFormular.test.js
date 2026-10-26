@@ -109,6 +109,19 @@ describe('BescheidFormular', () => {
 		expect(f.sendet).toBe(false);
 	});
 
+	it('merkt sich den Grund, wenn der Vorschlag nicht kommt; ein neuer Versuch räumt ihn', async () => {
+		vi.mocked(apiGet).mockRejectedValue(new Error('Die Datenbank antwortet nicht'));
+		const f = new BescheidFormular('s1');
+		await f.laden();
+		expect(f.ladefehler).toBe('Die Datenbank antwortet nicht');
+		expect(f.bereit).toBe(false);
+
+		vi.mocked(apiGet).mockResolvedValue(vorschlag);
+		await f.laden();
+		expect(f.ladefehler).toBe('');
+		expect(f.bereit).toBe(true);
+	});
+
 	it('liefert null, wenn der Server abweist, und bleibt bedienbar', async () => {
 		vi.mocked(apiGet).mockResolvedValue(vorschlag);
 		vi.mocked(apiPost).mockRejectedValue(new Error('409'));

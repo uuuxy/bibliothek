@@ -11,6 +11,7 @@
 // wieder, wie der Server sie kennt.
 
 import { apiGet, apiPost } from '../../apiFetch.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 
 /**
  * Forderungen und überfällige Bücher in EINER Liste. `key` ist die ID der Quelle
@@ -38,6 +39,8 @@ export class BescheidFormular {
 	/** @type {any} */
 	vorschlag = $state(null);
 	laedt = $state(true);
+	/** Der Grund, wenn der Vorschlag nicht kam. Ohne ihn hieße die leere Liste „nichts offen". */
+	ladefehler = $state('');
 	sendet = $state(false);
 	/** @type {Record<string, boolean>} */
 	gewaehlt = $state({});
@@ -70,6 +73,7 @@ export class BescheidFormular {
 	 *  das Eigentum nach der Regel des Servers — nicht mehr ist_lernmittel des Titels). */
 	async laden() {
 		this.laedt = true;
+		this.ladefehler = '';
 		try {
 			const daten = await apiGet(`/api/schueler/${this.#schuelerId}/bescheid-vorschlag`);
 			this.vorschlag = daten;
@@ -78,8 +82,9 @@ export class BescheidFormular {
 				this.gewaehlt[p.key] = p.topf === 'land';
 				this.betraege[p.key] = p.betrag;
 			}
-		} catch {
+		} catch (e) {
 			this.vorschlag = null;
+			this.ladefehler = fehlertext(e);
 		} finally {
 			this.laedt = false;
 		}

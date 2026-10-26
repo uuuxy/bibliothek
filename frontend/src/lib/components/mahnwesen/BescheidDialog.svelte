@@ -21,6 +21,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import BescheidPositionen from './BescheidPositionen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { BescheidFormular } from './bescheidFormular.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { formatEuro } from '../../utils/format.js';
@@ -74,6 +75,13 @@
 			<div class="flex items-center gap-2 py-8 text-sm text-on-surface-variant">
 				<Ladekreis size="sm" /> Überfällige Bücher und offene Forderungen werden geladen …
 			</div>
+		{:else if formular.ladefehler}
+			<!-- Nicht „weder ein überfälliges Buch noch eine Forderung": Der Vorschlag kam nicht. -->
+			<LadeFehler
+				titel="Bücher und Forderungen nicht geladen"
+				text={formular.ladefehler}
+				onerneut={() => formular.laden()}
+			/>
 		{:else if formular.fehlt.length > 0}
 			<!-- Kein stumm gesperrter Knopf: Der Dialog sagt, WAS fehlt und wo es steht. -->
 			<div
