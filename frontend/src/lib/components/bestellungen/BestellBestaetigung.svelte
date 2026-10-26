@@ -9,11 +9,14 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Button from '../ui/Button.svelte';
 	import BestaetigungEtiketten from './BestaetigungEtiketten.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 
 	const token = window.location.pathname.replace(/^\/bestellung\//, '').replace(/\/+$/, '');
 
-	/** @type {'laedt' | 'bereit' | 'ungueltig'} */
+	/** @type {'laedt' | 'bereit' | 'ungueltig' | 'gestoert'} */
 	let zustand = $state('laedt');
+	let ladefehler = $state('');
 	/** @type {any} */
 	let bestellung = $state(null);
 	let fehler = $state('');
@@ -30,17 +33,17 @@
 	let formatId = $state('');
 
 	async function laden() {
+		if (zustand === 'gestoert') zustand = 'laedt';
 		try {
 			const res = await apiFetch(`/api/public/bestellung/${encodeURIComponent(token)}`);
-			if (!res.ok) {
-				zustand = 'ungueltig';
-				return;
-			}
+			if (!res.ok) throw Object.assign(new Error(await leseApiFehler(res)), { status: res.status });
 			bestellung = await res.json();
 			formatId ||= bestellung.etiketten_format_vorgabe ?? '';
 			zustand = 'bereit';
-		} catch {
-			zustand = 'ungueltig';
+		} catch (e) {
+			// Ungültig ist der Link nur, wenn der Server das sagt (404); sonst ist etwas gestört.
+			ladefehler = fehlertext(e);
+			zustand = /** @type {any} */ (e).status === 404 ? 'ungueltig' : 'gestoert';
 		}
 	}
 	laden();
@@ -113,6 +116,8 @@
 	<div class="mx-auto max-w-2xl space-y-6">
 		{#if zustand === 'laedt'}
 			<p class="text-on-surface-variant text-center">Bestellung wird geladen …</p>
+		{:else if zustand === 'gestoert'}
+			<LadeFehler titel="Bestellung nicht geladen" text={ladefehler} onerneut={laden} />
 		{:else if zustand === 'ungueltig'}
 			<div class="bg-surface-container-lowest rounded-xl p-8 text-center shadow-sm">
 				<h1 class="text-on-surface text-lg">Dieser Link ist nicht mehr gültig</h1>
