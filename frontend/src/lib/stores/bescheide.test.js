@@ -54,4 +54,14 @@ describe('bescheideStore', () => {
 		expect(bescheideStore.ausstehend).toHaveLength(2);
 		expect(bescheideStore.beiDerSchule).toBe(5);
 	});
+
+	it('merkt sich den Grund, wenn ein Abruf scheitert, und vergisst ihn beim nächsten Erfolg', async () => {
+		apiGetMock.mockRejectedValue(new Error('Die Datenbank antwortet nicht'));
+		await bescheideStore.lade();
+		expect(bescheideStore.ladefehler).toBe('Die Datenbank antwortet nicht');
+
+		apiGetMock.mockResolvedValue([]);
+		await bescheideStore.lade();
+		expect(bescheideStore.ladefehler).toBe('');
+	});
 });

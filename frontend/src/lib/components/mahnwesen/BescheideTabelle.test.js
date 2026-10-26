@@ -93,4 +93,36 @@ describe('BescheideTabelle', () => {
 		expect(screen.getAllByRole('button', { name: 'Übergeben' })).toHaveLength(1);
 		expect(screen.getByText('Frist läuft')).toBeTruthy();
 	});
+
+	// „Keine offenen Schadensersatz-Fälle." stand auch da, solange die Listen nie gekommen waren:
+	// beim ersten Laden und wenn es scheiterte.
+	it('nennt den Grund statt der Entwarnung, wenn die Listen nie kamen', () => {
+		bescheideStore.ausstehend = [];
+		bescheideStore.liste = [];
+		bescheideStore.geladen = false;
+		bescheideStore.ladefehler = 'Die Datenbank antwortet nicht';
+		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
+		expect(screen.getByText('Schadensersatz nicht geladen')).toBeTruthy();
+		expect(screen.getByText('Die Datenbank antwortet nicht')).toBeTruthy();
+		expect(screen.queryByText('Keine offenen Schadensersatz-Fälle.')).toBeNull();
+	});
+
+	it('zeigt beim ersten Laden den Ladekreis statt der Entwarnung', () => {
+		bescheideStore.ausstehend = [];
+		bescheideStore.liste = [];
+		bescheideStore.geladen = false;
+		bescheideStore.ladefehler = '';
+		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
+		expect(screen.getByRole('progressbar')).toBeTruthy();
+		expect(screen.queryByText('Keine offenen Schadensersatz-Fälle.')).toBeNull();
+	});
+
+	it('sagt nach gelungenem Laden, dass nichts offen ist', () => {
+		bescheideStore.ausstehend = [];
+		bescheideStore.liste = [];
+		bescheideStore.geladen = true;
+		bescheideStore.ladefehler = '';
+		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
+		expect(screen.getByText('Keine offenen Schadensersatz-Fälle.')).toBeTruthy();
+	});
 });

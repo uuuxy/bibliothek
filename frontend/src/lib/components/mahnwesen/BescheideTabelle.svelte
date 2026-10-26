@@ -16,6 +16,8 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Button from '../ui/Button.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { bescheidStatus } from './bescheidStatus.js';
 	import { FileText, Printer } from '@lucide/svelte';
 	import { formatEuro } from '../../utils/format.js';
@@ -57,7 +59,17 @@
 	{/if}
 {/snippet}
 
-{#if leer}
+<!-- „Keine offenen Fälle" erst, wenn die Listen da sind: vorher der Ladekreis, nach einem
+     Fehlschlag der Grund. Listen von vorhin bleiben stehen. -->
+{#if leer && bescheideStore.ladefehler}
+	<LadeFehler
+		titel="Schadensersatz nicht geladen"
+		text={bescheideStore.ladefehler}
+		onerneut={() => bescheideStore.lade()}
+	/>
+{:else if leer && !bescheideStore.geladen}
+	<div class="flex justify-center py-10"><Ladekreis etikett="Schadensersatz lädt" /></div>
+{:else if leer}
 	<div class="rounded-xl border border-outline-variant py-10 text-center">
 		<p class="font-semibold text-on-surface">Keine offenen Schadensersatz-Fälle.</p>
 		<p class="mt-1 text-sm text-on-surface-variant">

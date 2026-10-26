@@ -11,6 +11,7 @@
 
 import { apiGet, apiPost } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { liegtBeiDerSchule } from '../components/mahnwesen/bescheidStatus.js';
 
 class BescheideStore {
@@ -21,6 +22,8 @@ class BescheideStore {
 	laedt = $state(false);
 	/** Wurde schon einmal geladen? false = die Zahl am Reiter ist noch unbekannt. */
 	geladen = $state(false);
+	/** Der Grund, wenn der letzte Abruf scheiterte; die Tabelle zeigt ihn statt einer leeren. */
+	ladefehler = $state('');
 
 	/** Die Briefe, die der Reiter zeigt: erledigte (bezahlt, storniert) bleiben in der Akte. */
 	zeilen = $derived(this.liste.filter((b) => b.status !== 'erledigt'));
@@ -31,6 +34,7 @@ class BescheideStore {
 
 	async lade() {
 		this.laedt = true;
+		this.ladefehler = '';
 		try {
 			const [liste, ausstehend] = await Promise.all([
 				apiGet('/api/bescheide'),
@@ -39,9 +43,9 @@ class BescheideStore {
 			this.liste = liste || [];
 			this.ausstehend = ausstehend || [];
 			this.geladen = true;
-		} catch {
-			// apiFetch zeigt den Fehler; die Listen bleiben stehen, statt leer zu behaupten,
-			// es gäbe nichts.
+		} catch (e) {
+			// Die Listen bleiben stehen, statt leer zu behaupten, es gäbe nichts.
+			this.ladefehler = fehlertext(e);
 		} finally {
 			this.laedt = false;
 		}
