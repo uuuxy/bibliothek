@@ -11,6 +11,8 @@
 	import BuchRasterStartseite from '$lib/components/BuchRasterStartseite.svelte';
 	import StartseitenFilter from '$lib/components/StartseitenFilter.svelte';
 	import SuchZustand from '../../lib/components/ui/SuchZustand.svelte';
+	import LadeFehler from '../../lib/components/ui/LadeFehler.svelte';
+	import { fehlertext } from '../../lib/utils/fehlertext.js';
 	import { Search } from '@lucide/svelte';
 	import Button from '../../lib/components/ui/Button.svelte';
 	import { hatRecht } from '../../lib/menue.js';
@@ -41,6 +43,7 @@
 
 	/** @type {any[]} */
 	let buecher = $state.raw([]);
+	let ladefehler = $state('');
 
 	// Eine Exemplarnummer, gescannt oder getippt, steht in keiner Angabe eines Titels. Der Server
 	// erkennt sie wie die Theke, auch über das Etikett von Littera; ihr Titel steht dann vorn.
@@ -73,11 +76,14 @@
 	});
 
 	async function ladeDaten() {
+		ladefehler = '';
 		try {
 			buecher = await buecherLaden();
 			appState.guestAuthenticated = true;
-		} catch {
-			appState.guestAuthenticated = false;
+		} catch (e) {
+			// Ohne Liste sagte jede Suche „Keine Bücher gefunden"; ein gescheitertes Laden ist auch
+			// keine Abmeldung (die meldet apiFetch bei 401).
+			ladefehler = fehlertext(e);
 		}
 	}
 
@@ -104,7 +110,9 @@
 		     Scan den gelesenen Code. Form und Wortlaut wie im OPAC und im Kollegiums-Portal
 		     (ui/SuchZustand); die M3-Seite zur Suche trifft dazu keine Aussage. -->
 		<!-- Solange die Frage nach dem Exemplar läuft, steht noch kein „nichts gefunden". -->
-		{#if suche.trim() !== '' && gefilterteTitel.length === 0 && exemplar.stand !== 'laeuft'}
+		{#if ladefehler}
+			<LadeFehler titel="Katalog nicht geladen" text={ladefehler} onerneut={ladeDaten} />
+		{:else if suche.trim() !== '' && gefilterteTitel.length === 0 && exemplar.stand !== 'laeuft'}
 			<SuchZustand
 				symbol={Search}
 				titel="Keine Bücher gefunden"

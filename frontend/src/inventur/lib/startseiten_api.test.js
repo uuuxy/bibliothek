@@ -1,5 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { buecherSuchen, buecherJeBuch } from './startseiten_api.js';
+import { describe, it, expect, vi } from 'vitest';
+import { buecherLaden, buecherSuchen, buecherJeBuch } from './startseiten_api.js';
+import { apiFetch } from '../../lib/apiFetch.js';
+import { serverAntwort } from '../../lib/serverAntwort.js';
+
+vi.mock('../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 const buch = (/** @type {any} */ felder) => ({ id: Math.random().toString(), ...felder });
 
@@ -248,5 +255,16 @@ describe('buecherJeBuch', () => {
 
 	it('eine Auflage allein im Katalog ist eine gewöhnliche Kachel', () => {
 		expect(buecherJeBuch([faust, neu], [faust, neu])).toEqual([faust, neu]);
+	});
+});
+
+// Die Seite zeigt den Grund an; ein Merkwort auf Englisch stünde dort sonst als Meldung.
+describe('buecherLaden: der Server lehnt ab', () => {
+	it('nennt bei 401 den Satz des Servers', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(401, { error: 'Nicht angemeldet. Bitte neu anmelden.' })
+		);
+
+		await expect(buecherLaden()).rejects.toThrow('Nicht angemeldet. Bitte neu anmelden.');
 	});
 });

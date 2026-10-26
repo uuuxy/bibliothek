@@ -12,12 +12,7 @@ export async function buecherLaden() {
 	const antwort = await apiFetch('/api/books', {
 		credentials: 'include'
 	});
-	if (!antwort.ok) {
-		if (antwort.status === 401) {
-			throw new Error('UNAUTHORIZED');
-		}
-		throw new Error(await leseApiFehler(antwort, 'Fehler beim Laden der Bücher'));
-	}
+	if (!antwort.ok) throw new Error(await leseApiFehler(antwort, 'Fehler beim Laden der Bücher'));
 	return await antwort.json();
 }
 
