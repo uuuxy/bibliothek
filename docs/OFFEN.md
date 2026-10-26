@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 25.10.2026
+Stand: 27.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -56,6 +56,11 @@ Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
 
 Nur, was kein Test leisten kann.
 
+- [ ] Entscheiden: Mit dem Löschen eines Titels oder eines Verlusts fällt eine Forderung aus ihrem
+  Bescheid, und der Bescheid gilt als erledigt. Empfehlung: Sie bleibt, ohne Exemplar (Weg B).
+  (5.107)
+- [ ] Freigeben: Pull Request #759 schließen, die Speichergrenze beim Hochladen gibt es schon.
+  (5.108)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -156,6 +161,45 @@ Bekannt und offen:
   und werden womöglich doppelt gedruckt.
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
+
+### 5.107 Forderung im Bescheid fällt mit ihrem Exemplar
+
+Beleg, nachgestellt am 27.10.2026: ein Bescheid über eine Forderung von 12,00 €, danach der Titel
+des Exemplars gelöscht (`LoescheTitel`). Die Positionen gehen von 1 auf 0, der Gesamtbetrag bleibt
+12,00 €, der Status wird von „offen“ zu „erledigt“ (abgeleitet: kein offener Posten,
+`bescheidHatOffenePosition`), und die Forderung ist weg; im Protokoll steht nur ihre Spur.
+Dieselbe Form haben alle drei Wege, die Exemplare samt Forderungen löschen: ein Titel
+(`LoescheTitel`), mehrere Titel (`LoescheTitelSamtAusleihen`) und die Verluste der Inventur
+(`LoescheVerlusteEndgueltig`, dort nur bezahlte oder stornierte). Folge: Der Bescheid fällt aus
+der Arbeitsliste des Mahnwesens, die Schuld aus dem Konto des Kindes, und der Nachdruck des
+Briefs nennt den Betrag ohne eine Position. Die Regel, dass Forderungen mit ihrem
+Titel fallen (06.09.2026), ist älter als die Bescheide (10.09.2026).
+
+Zwei Wege:
+
+- **A:** Das Löschen abweisen, solange eine Forderung des Titels oder des Exemplars in einem
+  Bescheid steht; der Satz nennt die Referenznummer. Klein und ohne Migration, aber für diesen
+  Fall gegen die Entscheidung vom 23.08.2026: „Beim Löschen eines Titels soll ALLES weg“.
+- **B:** Die Forderung bleibt, ohne Exemplar und mit ihrer Beschreibung; Titel, Exemplare und
+  Ausleihen gehen weiter ganz weg. Braucht eine Migration: `check_damage_item` verlangt heute
+  genau einen Gegenstand (Exemplar oder Gerät); künftig darf er fehlen, wenn die Forderung in
+  einem Bescheid steht. Akte, Schadensbrief und Bescheid lesen Forderungen schon mit `LEFT JOIN`, wie
+  die zu einem Gerät. Ein gemeinsamer Helfer für alle drei Wege setzt vor Spur und Löschen
+  `exemplar_id = NULL` für die Forderungen in einem Bescheid; ohne Migration scheitert er an
+  `check_damage_item` (nachgestellt).
+
+Empfehlung: B. Aufwand rund eine Stunde mit Migration, Test am alten Stand rot und Raster.
+
+### 5.108 Pull Request #759 (Speichergrenze beim Hochladen)
+
+Der automatische Vorschlag senkt an fünf Stellen in vier Dateien den Teil eines hochgeladenen
+Formulars, den Go im Speicher hält, auf 1 MB (`ParseMultipartForm`). Begrenzt ist die Anfrage
+dort schon vorher (`http.MaxBytesReader` mit derselben Grenze). gosec meldet die fünf Stellen
+auch mit dem Vorschlag (G120, nachgestellt): Die Regel sieht nur den Aufruf an einer Anfrage,
+nicht die Zahl, und ist deshalb in `scripts/gosec-gate.sh` mit Grund ausgenommen. Mit 1 MB läge
+jede größere Datei als Zwischendatei auf der Platte, beim LUSD-Import samt Schülerdaten. Dazu
+kommt `.jules/sentinel.md` als Beifang. Schließen mit Begründung ist ein Schreiben bei
+GitHub und wartet auf die Freigabe.
 
 ### 7.2 Frisches Littera-Backup
 
