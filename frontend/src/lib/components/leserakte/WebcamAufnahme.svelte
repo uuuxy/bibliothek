@@ -14,6 +14,7 @@
 	import { onMount } from 'svelte';
 	import { ruhtWennTraege } from '../../actions/ruhtWennTraege.js';
 	import { passbildAusschnitt, PASSBILD_BILDFORM } from './passbildAusschnitt.js';
+	import { kamerafehlertext } from '../../utils/kamerafehler.js';
 
 	/** @type {{ leserKennung: string, onCapture: (url: string) => void, onClose: () => void }} */
 	let { leserKennung, onCapture, onClose } = $props();
@@ -51,8 +52,7 @@
 				videoEl.srcObject = stream;
 			}
 		} catch (err) {
-			const fehler = /** @type {any} */ (err);
-			kameraFehler = 'Kamera-Zugriff fehlgeschlagen: ' + fehler.message;
+			kameraFehler = kamerafehlertext(err);
 		}
 	}
 

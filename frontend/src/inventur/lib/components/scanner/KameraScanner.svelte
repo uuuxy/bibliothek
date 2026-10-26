@@ -4,6 +4,7 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ruhtWennTraege } from '../../../../lib/actions/ruhtWennTraege.js';
 	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
+	import { kamerafehlertext } from '../../../../lib/utils/kamerafehler.js';
 
 	let { onDecode, onStatusChange, showControls = true, scanning = $bindable(false) } = $props();
 
@@ -65,8 +66,7 @@
 			scanLoop();
 		} catch (error) {
 			console.error('Kamerafehler:', error);
-			const errMsg = fehlertext(error);
-			onStatusChange(`Kamerafehler: ${errMsg}`);
+			onStatusChange(kamerafehlertext(error));
 		} finally {
 			starting = false;
 		}
