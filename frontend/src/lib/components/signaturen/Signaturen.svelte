@@ -8,9 +8,12 @@
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
+	let ladefehler = $state('');
 	let suche = $state('');
 	let gewaehlt = $state('');
 
@@ -20,12 +23,15 @@
 		signaturen.filter((s) => s.signatur.toLowerCase().includes(suche.trim().toLowerCase()))
 	);
 
+	// Kommen die Signaturen nicht, steht der Grund da: „Noch kein Buch trägt eine Signatur" hieße,
+	// es gebe keine.
 	async function ladeSignaturen() {
 		laedt = true;
+		ladefehler = '';
 		try {
 			signaturen = (await apiGet('/api/signaturen')) || [];
-		} catch {
-			// apiGet hat die Servermeldung bereits als Toast gezeigt.
+		} catch (e) {
+			ladefehler = fehlertext(e);
 		} finally {
 			laedt = false;
 		}
@@ -60,6 +66,8 @@
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
 			{#if laedt}
 				<div class="flex justify-center py-6"><Ladekreis etikett="Signaturen laden" /></div>
+			{:else if ladefehler}
+				<LadeFehler titel="Signaturen nicht geladen" text={ladefehler} onerneut={ladeSignaturen} />
 			{:else if signaturen.length === 0}
 				<p class="text-sm text-on-surface-variant">
 					Noch kein Buch trägt eine Signatur. Sie entsteht am Buch selbst — im Buchformular,

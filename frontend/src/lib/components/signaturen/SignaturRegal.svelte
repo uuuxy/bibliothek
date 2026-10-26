@@ -2,6 +2,8 @@
 	import { apiGet } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 
@@ -11,11 +13,16 @@
 	let buecher = $state(/** @type {any[]} */ ([]));
 	let gekappt = $state(false);
 	let laedt = $state(false);
+	// Kommt das Regal nicht, steht der Grund da: „Unter … steht kein Buch" hieße, es sei leer.
+	let ladefehler = $state('');
+	// Zählt „Erneut versuchen": Der Abruf hängt am Effekt, und der läuft so noch einmal.
+	let versuch = $state(0);
 
 	// Neu laden, sobald eine andere Signatur gewählt wird. Ohne das Zurücksetzen von
 	// buecher/gekappt bliebe beim Wechsel kurz das Regal der vorigen Signatur stehen.
 	$effect(() => {
 		const gewaehlt = signatur;
+		void versuch;
 		if (!gewaehlt) {
 			buecher = [];
 			gekappt = false;
@@ -23,6 +30,7 @@
 		}
 		let abgebrochen = false;
 		laedt = true;
+		ladefehler = '';
 		buecher = [];
 		gekappt = false;
 		apiGet(`/api/signaturen/buecher?signatur=${encodeURIComponent(gewaehlt)}`)
@@ -31,8 +39,8 @@
 				buecher = daten?.buecher ?? [];
 				gekappt = daten?.gekappt ?? false;
 			})
-			.catch(() => {
-				// apiGet hat die Servermeldung bereits als Toast gezeigt.
+			.catch((e) => {
+				if (!abgebrochen) ladefehler = fehlertext(e);
 			})
 			.finally(() => {
 				if (!abgebrochen) laedt = false;
@@ -57,6 +65,8 @@
 	</div>
 {:else if laedt}
 	<div class="flex justify-center p-6"><Ladekreis etikett="Regal lädt" /></div>
+{:else if ladefehler}
+	<LadeFehler titel="Regal nicht geladen" text={ladefehler} onerneut={() => (versuch += 1)} />
 {:else if buecher.length === 0}
 	<div class="text-sm text-on-surface-variant p-6 text-center">
 		Unter „{signatur}“ steht kein Buch.

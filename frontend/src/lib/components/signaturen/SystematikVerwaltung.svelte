@@ -5,6 +5,8 @@
 	// zweiter Toast im catch verdeckte den Grund („Kürzel existiert bereits").
 	import { apiGet, apiPost } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -14,6 +16,7 @@
 
 	let liste = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
+	let ladefehler = $state('');
 	let kuerzel = $state('');
 	let bezeichnung = $state('');
 	let speichert = $state(false);
@@ -24,12 +27,14 @@
 	const bezeichnungFehlt = $derived(verlangt && !bezeichnung.trim());
 
 	// Der Ladekreis steht nur beim ersten Laden. Ersetzte er die Tabelle auch beim Nachladen nach
-	// einer Änderung, ginge eine offene Zeile samt Eingabe mit ihr.
+	// einer Änderung, ginge eine offene Zeile samt Eingabe mit ihr. Aus demselben Grund steht der
+	// Grund eines gescheiterten Abrufs nur an der Stelle der leeren Liste.
 	async function laden() {
+		ladefehler = '';
 		try {
 			liste = (await apiGet('/api/systematics')) || [];
-		} catch {
-			// Meldung kam bereits aus apiGet.
+		} catch (e) {
+			ladefehler = fehlertext(e);
 		} finally {
 			laedt = false;
 		}
@@ -105,6 +110,9 @@
 
 	{#if laedt}
 		<div class="flex justify-center py-6"><Ladekreis etikett="Sachgruppen laden" /></div>
+	{:else if ladefehler && liste.length === 0}
+		<!-- Nicht „Noch keine Sachgruppen": Die Liste kam nicht. -->
+		<LadeFehler titel="Sachgruppen nicht geladen" text={ladefehler} onerneut={laden} />
 	{:else if liste.length === 0}
 		<p class="text-sm text-on-surface-variant">
 			Noch keine Sachgruppen. Ohne sie schlägt das Buchformular nur „BIB“ bzw. „LMF“ ohne Fachkürzel
