@@ -34,13 +34,13 @@
 		offlineSync.wartendeAnzahl > 0 ||
 			ohneNetz ||
 			offlineSync.warteschlangeFehler ||
-			offlineSync.abgelehntMitStatus !== null ||
+			offlineSync.abgelehnt !== null ||
 			nachbuchMeldungen.offen > 0 ||
 			nachbuchMeldungen.geoeffnet
 	);
 	// Rot wie der Warteschlangen-Fehler: Beide heißen „hier muss jemand etwas tun",
 	// während der Zähler allein nur „es läuft noch" heißt.
-	let haengt = $derived(offlineSync.warteschlangeFehler || offlineSync.abgelehntMitStatus !== null);
+	let haengt = $derived(offlineSync.warteschlangeFehler || offlineSync.abgelehnt !== null);
 
 	async function sichere() {
 		try {
@@ -108,7 +108,7 @@
 				{#if offlineSync.warteschlangeFehler}
 					Warteschlange nicht lesbar — Offline-Scans werden auf diesem Rechner NICHT gespeichert.
 					Bitte an einem anderen Rechner weiterarbeiten.
-				{:else if offlineSync.abgelehntMitStatus === 401 || offlineSync.abgelehntMitStatus === 403}
+				{:else if offlineSync.abgelehnt?.status === 401 || offlineSync.abgelehnt?.status === 403}
 					<!-- Warten hilft hier nicht: Die Vorgänge sind gespeichert, aber diese Anmeldung
 					     darf sie nicht buchen. Ohne diesen Satz lief der Versuch jede Minute ins
 					     Leere, und das Band zeigte weiter nur „noch nicht im System". -->
@@ -116,10 +116,12 @@
 					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang wartet' : 'Vorgänge warten'} — diese Anmeldung
 					darf an der Theke nicht buchen. Bitte mit dem Bibliotheks-Konto anmelden; gespeichert bleibt
 					alles.
-				{:else if offlineSync.abgelehntMitStatus !== null}
+				{:else if offlineSync.abgelehnt !== null}
+					<!-- Der Grund des Servers steht da: Wer die Bibliothek verständigt, kann ihn nennen. -->
 					{offlineSync.wartendeAnzahl}
-					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang lässt' : 'Vorgänge lassen'} sich nicht buchen —
-					der Server weist sie ab. Gespeichert bleibt alles; bitte die Bibliothek verständigen.
+					{offlineSync.wartendeAnzahl === 1 ? 'Vorgang lässt' : 'Vorgänge lassen'} sich nicht buchen:
+					{offlineSync.abgelehnt.grund.replace(/\.$/, '')}. Gespeichert bleibt alles; bitte die
+					Bibliothek verständigen.
 				{:else if offlineSync.wartendeAnzahl > 0}
 					<!-- Die Mehrzahl ausgeschrieben: Ein angehängtes „e" ergäbe „Vorgange". -->
 					{offlineSync.wartendeAnzahl}

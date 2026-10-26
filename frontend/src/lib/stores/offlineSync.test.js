@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../apiFetch.js', () => ({
+// Die Attrappe behält leseApiFehler: Damit liest der Abgleich den Grund einer Ablehnung.
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiClient: { post: vi.fn() }
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
@@ -18,6 +20,7 @@ import {
 } from './offlineWarteschlange.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
+import { serverAntwort } from '../serverAntwort.js';
 
 /** Einträge in Format 2, wie schnappschuss() sie im Omnibox-Store baut. */
 let zaehler = 0;
@@ -148,7 +151,7 @@ describe('offlineSync.starteAbgleich', () => {
 		expect(await ladeWarteschlange()).toHaveLength(1);
 		// 502 heißt „der Server kommt gleich wieder" — nichts anzusagen, die nächste Runde
 		// läuft in einer Minute.
-		expect(offlineSync.abgelehntMitStatus).toBeNull();
+		expect(offlineSync.abgelehnt).toBeNull();
 	});
 
 	// Warten hilft nicht bei einer Antwort, die sich von selbst nicht ändert
@@ -162,7 +165,21 @@ describe('offlineSync.starteAbgleich', () => {
 
 		await offlineSync.starteAbgleich();
 		expect(await ladeWarteschlange(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
-		expect(offlineSync.abgelehntMitStatus).toBe(403);
+		expect(offlineSync.abgelehnt?.status).toBe(403);
+	});
+
+	// Wer die Bibliothek verständigt, nennt den Grund des Servers, nicht nur „lässt sich nicht buchen".
+	it('merkt sich zur Ablehnung den Grund des Servers', async () => {
+		await enqueueOfflineAction(rueckgabe('B-205'));
+		vi.mocked(apiClient.post).mockResolvedValue(
+			serverAntwort(400, { error: 'Höchstens 50 Einträge je Aufruf' })
+		);
+
+		await offlineSync.starteAbgleich();
+		expect(offlineSync.abgelehnt).toEqual({
+			status: 400,
+			grund: 'Höchstens 50 Einträge je Aufruf'
+		});
 	});
 
 	// 423 heißt „gesperrt nach Inaktivität": Nach dem Aufschließen geht derselbe Stapel durch.
@@ -174,7 +191,7 @@ describe('offlineSync.starteAbgleich', () => {
 
 		await offlineSync.starteAbgleich();
 		expect(await ladeWarteschlange(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
-		expect(offlineSync.abgelehntMitStatus).toBeNull();
+		expect(offlineSync.abgelehnt).toBeNull();
 	});
 
 	// Die Sperre nach Inaktivität wartet auf das Ende der Übertragung (leerlaufSperre). Liefe der
@@ -204,13 +221,13 @@ describe('offlineSync.starteAbgleich', () => {
 		await enqueueOfflineAction(rueckgabe('B-202'));
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
 		await offlineSync.starteAbgleich();
-		expect(offlineSync.abgelehntMitStatus).toBe(403);
+		expect(offlineSync.abgelehnt?.status).toBe(403);
 
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ ergebnisse: [] }) })
 		);
 		await offlineSync.starteAbgleich();
-		expect(offlineSync.abgelehntMitStatus).toBeNull();
+		expect(offlineSync.abgelehnt).toBeNull();
 	});
 });
 

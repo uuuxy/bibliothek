@@ -17,8 +17,8 @@ const sync = {
 	ohneNetz: false,
 	gleichtAb: false,
 	warteschlangeFehler: false,
-	/** @type {number | null} */
-	abgelehntMitStatus: null,
+	/** @type {{ status: number, grund: string } | null} */
+	abgelehnt: null,
 	exportiereWarteschlange: vi.fn(),
 	importiereWarteschlange: vi.fn()
 };
@@ -54,7 +54,7 @@ describe('Offline-Band', () => {
 		sync.ohneNetz = false;
 		sync.gleichtAb = false;
 		sync.warteschlangeFehler = false;
-		sync.abgelehntMitStatus = null;
+		sync.abgelehnt = null;
 		meldungen.offen = 0;
 		meldungen.geoeffnet = false;
 		recht.wert = true;
@@ -108,7 +108,7 @@ describe('Offline-Band', () => {
 	// „noch nicht im System", nicht „geht so nicht mehr".
 	it('sagt es, wenn die Vorgänge mit dieser Anmeldung nicht zu buchen sind', () => {
 		sync.wartendeAnzahl = 4;
-		sync.abgelehntMitStatus = 403;
+		sync.abgelehnt = { status: 403, grund: 'Keine Berechtigung für diese Aktion' };
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 		expect(text).toContain('darf an der Theke nicht buchen');
@@ -120,17 +120,28 @@ describe('Offline-Band', () => {
 
 	it('nennt eine andere Ablehnung, ohne den Menschen mit einer Zahl allein zu lassen', () => {
 		sync.wartendeAnzahl = 1;
-		sync.abgelehntMitStatus = 400;
+		sync.abgelehnt = { status: 400, grund: 'Höchstens 50 Einträge je Aufruf' };
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
-		expect(text).toContain('lässt sich nicht buchen');
+		expect(text).toContain('1 Vorgang lässt sich nicht buchen: Höchstens 50 Einträge je Aufruf.');
 		expect(text).toContain('Bibliothek verständigen');
+	});
+
+	// Ein Grund, der schon mit einem Punkt endet, bekommt keinen zweiten.
+	it('setzt hinter einen Grund mit Punkt keinen zweiten', () => {
+		sync.wartendeAnzahl = 2;
+		sync.abgelehnt = { status: 400, grund: 'Die Anfrage ist zu groß. Bitte in Teilen senden.' };
+		const screen = render(OfflineAnzeige, {});
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+		expect(text).toContain(
+			'2 Vorgänge lassen sich nicht buchen: Die Anfrage ist zu groß. Bitte in Teilen senden. Gespeichert'
+		);
 	});
 
 	// Die Gegenprobe: Ein Server, der gleich wiederkommt, darf die Theke NICHT anschreien.
 	it('bleibt bei 502 leise — dort hilft Warten', () => {
 		sync.wartendeAnzahl = 2;
-		sync.abgelehntMitStatus = null; // sendeBatch merkt sich 5xx bewusst nicht
+		sync.abgelehnt = null; // sendeBatch merkt sich 5xx bewusst nicht
 		const screen = render(OfflineAnzeige, {});
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 		expect(text).toContain('noch nicht im System');

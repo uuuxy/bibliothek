@@ -5,7 +5,7 @@ import {
 	normalisiereEintrag,
 	leserFuerVersand
 } from './offlineWarteschlange.js';
-import { apiClient } from '../apiFetch.js';
+import { apiClient, leseApiFehler } from '../apiFetch.js';
 import { spieleErfolgston } from '../utils/audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
@@ -206,9 +206,9 @@ function erzeugeOfflineSync() {
 	let gleichtAb = $state(false);
 	// Die Warteschlange ließ sich nicht lesen (Commit 5): Das Band sagt es, statt 0 zu zeigen.
 	let warteschlangeFehler = $state(false);
-	// Der Server hat den Stapel abgelehnt, und Warten hilft nicht (4xx). Siehe sendeBatch.
-	/** @type {number | null} */
-	let abgelehntMitStatus = $state(null);
+	// Der Server hat den Stapel abgelehnt, und Warten hilft nicht (4xx): Status und Grund.
+	/** @type {{ status: number, grund: string } | null} */
+	let abgelehnt = $state(null);
 
 	async function zaehleNeu() {
 		try {
@@ -237,10 +237,10 @@ function erzeugeOfflineSync() {
 				// 5xx, 429 und 423 (gesperrt nach Inaktivität, bis jemand aufschließt): Warten
 				// hilft. Sonst 4xx: Warten hilft nicht — das gehört gesagt.
 				const wartenHilft = res.status >= 500 || res.status === 429 || res.status === 423;
-				abgelehntMitStatus = wartenHilft ? null : res.status;
+				abgelehnt = wartenHilft ? null : { status: res.status, grund: await leseApiFehler(res) };
 				return false;
 			}
-			abgelehntMitStatus = null;
+			abgelehnt = null;
 
 			const antwort = await res.json();
 			const { pruefen, weiter } = await verarbeiteNachbuchErgebnisse(antwort, batchItems);
@@ -405,9 +405,9 @@ function erzeugeOfflineSync() {
 		get warteschlangeFehler() {
 			return warteschlangeFehler;
 		},
-		/** Status der letzten Ablehnung, bei der Warten nicht hilft — sonst null. */
-		get abgelehntMitStatus() {
-			return abgelehntMitStatus;
+		/** Status und Grund der letzten Ablehnung, bei der Warten nicht hilft, sonst null. */
+		get abgelehnt() {
+			return abgelehnt;
 		},
 		zaehleNeu,
 		starteAbgleich,
