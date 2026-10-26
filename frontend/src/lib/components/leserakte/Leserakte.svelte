@@ -100,8 +100,8 @@
 						darfAuskunft={darfAuskunftUeber(rechte, st.akte)}
 						kontoauszugLaedt={st.kontoauszugLaedt}
 						rechnungLaedt={st.rechnungLaedt}
-						downloadKontoauszugPDF={st.ladeKontoauszugHerunter}
-						downloadRechnungPDF={st.ladeRechnungHerunter}
+						zeigeKontoauszug={st.zeigeKontoauszug}
+						zeigeRechnung={st.zeigeRechnung}
 						onPrint={druckeAusweis}
 						gueltigBis={gueltigBisEffektiv}
 						onGueltigBis={(jahr) => (gueltigBisOverride = jahr)}

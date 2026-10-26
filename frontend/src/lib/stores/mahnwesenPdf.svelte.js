@@ -1,7 +1,7 @@
 import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { snackbars } from './snackbars.svelte.js';
-import { SvelteDate } from 'svelte/reactivity';
+import { zeigePdf, PDF_BLOCKIERT } from '../utils/pdfImFenster.js';
 
 /** Der Druck der Mahnbriefe aus der Auswahl. */
 export function useMahnwesenPdf() {
@@ -37,21 +37,19 @@ export function useMahnwesenPdf() {
 				return;
 			}
 
-			const res = await apiFetch('/api/admin/mahnungen/bulk-print', {
-				method: 'POST',
-				body: JSON.stringify({ ausleih_ids: ausleihIds })
-			});
-
+			// Der Druck zählt die Mahnung. Blockiert der Browser den Tab, geht keine Anfrage hinaus.
+			const res = await zeigePdf(() =>
+				apiFetch('/api/admin/mahnungen/bulk-print', {
+					method: 'POST',
+					body: JSON.stringify({ ausleih_ids: ausleihIds })
+				})
+			);
+			if (!res) {
+				snackbars.addToast(PDF_BLOCKIERT, 'warning');
+				return;
+			}
 			if (!res.ok)
 				throw new Error(await leseApiFehler(res, 'Die Mahnbriefe ließen sich nicht erzeugen.'));
-
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `mahnbriefe_${new SvelteDate().toISOString().slice(0, 10)}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
 
 			gewaehlteKennungen.clear();
 			await refreshData();

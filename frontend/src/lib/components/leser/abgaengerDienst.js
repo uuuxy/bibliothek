@@ -3,7 +3,8 @@
  *  Getrennt von Abgaenger.svelte, weil hier nichts Sichtbares passiert: Diese drei
  *  Funktionen reden mit dem Backend und geben Daten oder eine Meldung zurück. Die
  *  Entscheidung, was davon als Toast erscheint, bleibt in der Komponente. */
-import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler, FRIST_SAMMELVERSAND_MS } from '../../apiFetch.js';
+import { zeigePdf } from '../../utils/pdfImFenster.js';
 
 /** Lädt die Abgängerliste samt Saisonfenster.
  *
@@ -43,34 +44,24 @@ export function kontoauszugAdresse(klasse, suche = '', sichtbar = []) {
 	return parameterText ? `/api/abgaenger/pdf?${parameterText}` : '/api/abgaenger/pdf';
 }
 
-/** Der Dateiname sagt, was im PDF steht: die Auswahl einer Suche, eine Klasse oder alle.
- *  @param {string} klasse
- *  @param {string} suche */
-function kontoauszugDateiname(klasse, suche) {
-	if (suche.trim()) return 'Kontoauszuege_Auswahl.pdf';
-	return klasse ? `Kontoauszuege_${klasse}.pdf` : 'Kontoauszuege_Abgaenger.pdf';
-}
-
-/** Lädt den Kontoauszug als PDF herunter.
+/** Zeigt die Kontoauszüge als PDF in einem neuen Tab (utils/pdfImFenster.js).
  *
  *  Das PDF heißt serverseitig noch /abgaenger/pdf, ist aber seit Langem der
  *  Kontoauszug mit Freigabezeile — eine Seite je Abgänger. Ist eine Klasse gewählt,
  *  druckt er gezielt nur diese; ist eine Suche aktiv, nur die sichtbaren Zeilen.
  *  @param {string} klasse
  *  @param {string} [suche]
- *  @param {{ id: string }[]} [sichtbar] */
-export async function ladeKontoauszuege(klasse, suche = '', sichtbar = []) {
-	const response = await apiFetch(kontoauszugAdresse(klasse, suche, sichtbar));
-	if (!response.ok) throw new Error('Failed to load PDF');
-
-	const url = window.URL.createObjectURL(await response.blob());
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = kontoauszugDateiname(klasse, suche);
-	document.body.appendChild(a);
-	a.click();
-	window.URL.revokeObjectURL(url);
-	a.remove();
+ *  @param {{ id: string }[]} [sichtbar]
+ *  @returns {Promise<boolean>} false, wenn der Browser den Tab blockiert hat */
+export async function zeigeKontoauszuege(klasse, suche = '', sichtbar = []) {
+	// Die Adresse vor dem Tab: Eine Suche ohne Treffer wirft, und dann bleibt kein leerer Tab.
+	const adresse = kontoauszugAdresse(klasse, suche, sichtbar);
+	const antwort = await zeigePdf(() => apiFetch(adresse));
+	if (!antwort) return false;
+	if (!antwort.ok) {
+		throw new Error(await leseApiFehler(antwort, 'Der Server hat kein PDF geliefert.'));
+	}
+	return true;
 }
 
 /** Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger. Gibt die

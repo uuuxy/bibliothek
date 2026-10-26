@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useLeserakte } from './useLeserakte.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -214,6 +214,13 @@ describe('useLeserakte: Fehlermeldungen', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		snackbars.toasts.forEach((t) => snackbars.removeToast(t.id));
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => ({ closed: false, close: vi.fn(), location: { replace: vi.fn() } }))
+		);
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
 	});
 
 	it('zeigt den Satz des Servers statt seines JSON-Rumpfs', async () => {
@@ -231,11 +238,56 @@ describe('useLeserakte: Fehlermeldungen', () => {
 
 		const hook = useLeserakte();
 		await hook.ladeAkte('A');
-		await hook.ladeRechnungHerunter();
+		await hook.zeigeRechnung();
 
 		// Über die Meldungen der Anwendung, nicht über eine eigene Fläche der Akte.
 		const meldung = snackbars.toasts.at(-1);
 		expect(meldung?.type).toBe('error');
 		expect(meldung?.message).toBe('Keine offene Forderung ohne Bescheid.');
+	});
+});
+
+// Kontoauszug und Rechnung tragen den Namen des Kindes; als Download blieben sie im
+// Download-Ordner des Arbeitsplatzes liegen. Sie gehen im Tab auf (utils/pdfImFenster.js).
+describe('useLeserakte: Kontoauszug und Rechnung im Tab', () => {
+	const erzeuge = URL.createObjectURL;
+	/** @type {{ closed: boolean, close: any, location: { replace: any } }} */
+	let fenster;
+
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+		fenster = { closed: false, close: vi.fn(), location: { replace: vi.fn() } };
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => fenster)
+		);
+		URL.createObjectURL = vi.fn(() => 'blob:akte');
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			if (String(url).startsWith('/api/print/')) {
+				return /** @type {any} */ ({ ok: true, blob: async () => new Blob(['%PDF']) });
+			}
+			return /** @type {any} */ ({ ok: true, json: async () => ({ id: 'A', vorname: 'Anna' }) });
+		});
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+		URL.createObjectURL = erzeuge;
+	});
+
+	it('öffnet beide im Tab und lädt keine Datei herunter', async () => {
+		const anker = vi.spyOn(HTMLAnchorElement.prototype, 'click');
+		const hook = useLeserakte();
+		await hook.ladeAkte('A');
+
+		await hook.zeigeKontoauszug();
+		await hook.zeigeRechnung();
+
+		expect(vi.mocked(apiFetch).mock.calls.map(([url]) => url)).toEqual(
+			expect.arrayContaining(['/api/print/kontoauszug/A', '/api/print/rechnung/A'])
+		);
+		expect(fenster.location.replace).toHaveBeenCalledTimes(2);
+		expect(fenster.location.replace).toHaveBeenCalledWith('blob:akte');
+		expect(anker).not.toHaveBeenCalled();
 	});
 });

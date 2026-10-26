@@ -12,6 +12,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 	import { Printer, TriangleAlert, ShieldCheck } from '@lucide/svelte';
 
 	/**
@@ -21,8 +22,8 @@
 	 *   darfAuskunft?: boolean,
 	 *   kontoauszugLaedt: boolean,
 	 *   rechnungLaedt: boolean,
-	 *   downloadKontoauszugPDF: () => void,
-	 *   downloadRechnungPDF: () => void
+	 *   zeigeKontoauszug: () => void,
+	 *   zeigeRechnung: () => void
 	 * }}
 	 */
 	let {
@@ -31,32 +32,24 @@
 		darfAuskunft = false,
 		kontoauszugLaedt,
 		rechnungLaedt,
-		downloadKontoauszugPDF,
-		downloadRechnungPDF
+		zeigeKontoauszug,
+		zeigeRechnung
 	} = $props();
 
-	async function downloadDsgvoAuskunft() {
+	async function zeigeDsgvoAuskunft() {
 		try {
-			const res = await apiFetch(`/api/schueler/${leser.id}/dsgvo-auskunft/pdf`);
-			if (res.ok) {
-				const blob = await res.blob();
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `dsgvo-auskunft-${leser.nachname || 'Unbekannt'}-${leser.vorname || 'Unbekannt'}.pdf`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
-			} else {
+			const res = await zeigePdf(() => apiFetch(`/api/schueler/${leser.id}/dsgvo-auskunft/pdf`));
+			if (!res) {
+				snackbars.addToast(PDF_BLOCKIERT, 'warning');
+			} else if (!res.ok) {
 				snackbars.addToast(
-					await leseApiFehler(res, 'Fehler beim Herunterladen der Auskunft.'),
+					await leseApiFehler(res, 'Die Auskunft ließ sich nicht erzeugen.'),
 					'error'
 				);
 			}
 		} catch (e) {
 			console.error(e);
-			snackbars.addToast('Netzwerkfehler beim Herunterladen der Auskunft.', 'error');
+			snackbars.addToast('Netzwerkfehler beim Erzeugen der Auskunft.', 'error');
 		}
 	}
 </script>
@@ -69,7 +62,7 @@
 	<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
 	<Button
 		variant="secondary"
-		onclick={downloadKontoauszugPDF}
+		onclick={zeigeKontoauszug}
 		disabled={kontoauszugLaedt || !(leser.entliehene_buecher?.length > 0)}
 	>
 		{#if kontoauszugLaedt}{@render spinner()}{:else}<Printer class="w-4 h-4 text-primary" />{/if}
@@ -92,7 +85,7 @@
 	>
 		<Button
 			variant="secondary"
-			onclick={downloadRechnungPDF}
+			onclick={zeigeRechnung}
 			disabled={rechnungLaedt || !leser.has_open_damages}
 		>
 			{#if rechnungLaedt}{@render spinner()}{:else}<TriangleAlert class="w-4 h-4 text-error" />{/if}
@@ -104,8 +97,8 @@
 {#if darfAuskunft}
 	<Button
 		variant="secondary"
-		onclick={downloadDsgvoAuskunft}
-		title="DSGVO-Auskunft (Art. 15) als PDF exportieren"
+		onclick={zeigeDsgvoAuskunft}
+		title="DSGVO-Auskunft (Art. 15) als PDF anzeigen"
 	>
 		<ShieldCheck class="w-4 h-4 text-on-surface-variant" />
 		DSGVO-Auskunft

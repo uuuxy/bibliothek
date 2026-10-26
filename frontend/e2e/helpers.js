@@ -1,6 +1,7 @@
 // Gemeinsame Helfer für die E2E-Smoke-Flows.
 
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 // Legt docker-compose.local.yml beim ersten Start an (INITIAL_ADMIN_EMAIL).
 export const ADMIN_EMAIL = 'admin@schule.example';
@@ -542,4 +543,28 @@ export async function scanneWieScanner(page, nummer) {
 	// sonst einen früheren Zeitpunkt als das Enter des Scans.
 	const voraus = (beginn + tasten.length * abstand) * 1000 - Date.now();
 	if (voraus > 0) await page.waitForTimeout(voraus);
+}
+
+/**
+ * Klickt einen Auslöser, der ein PDF in einem neuen Tab zeigen soll, und liefert die Bytes des
+ * PDFs. Der Testbrowser (headless shell) hat keinen PDF-Betrachter und legt das PDF des Tabs als
+ * Download ab, mit der Adresse blob:…; ein Download aus der Seite selbst, ohne Tab, fiele hier
+ * durch, weil kein Tab aufgeht.
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} ausloeser
+ * @returns {Promise<Buffer>}
+ */
+export async function pdfImFenster(page, ausloeser) {
+	// Der Zuhörer hängt am Tab, sobald es ihn gibt: Kommt das PDF schnell, wäre ein Warten nach
+	// dem Klick zu spät.
+	/** @type {Promise<import('@playwright/test').Download>} */
+	const dateiKommt = new Promise((fertig) => {
+		page.context().once('page', (fenster) => fenster.once('download', fertig));
+	});
+	await ausloeser.click();
+	const datei = await dateiKommt;
+	if (!datei.url().startsWith('blob:')) {
+		throw new Error(`Der Tab lud ${datei.url()} statt des PDFs, das die Seite geholt hat`);
+	}
+	return readFileSync(await datei.path());
 }

@@ -174,6 +174,10 @@ describe('erzeugeAusweisdruck: Leser ohne Ausweisnummer', () => {
 	});
 
 	it('schickt dem Etikettenbogen nur Leser mit Nummer', async () => {
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => ({ closed: false, close: vi.fn(), location: { replace: vi.fn() } }))
+		);
 		vi.mocked(apiFetch).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'etikett' }) })
 		);

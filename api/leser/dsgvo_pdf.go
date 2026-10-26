@@ -46,7 +46,7 @@ func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {
 		t.protokolliereDSGVOAuskunft(ctx, id)
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, `attachment; filename="DSGVO-Auskunft.pdf"`)
+		w.Header().Set(tuer.HeaderContentDisposition, `inline; filename="DSGVO-Auskunft.pdf"`)
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
 		http.ServeContent(w, r, "DSGVO-Auskunft.pdf", schulzeit.Jetzt(), bytes.NewReader(pdfDaten))
 		return nil

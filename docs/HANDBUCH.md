@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-23. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-26. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -484,6 +484,9 @@ Liste.
   Kind einen Schadensersatz-Bescheid, steht im Reiter _Gebühren & Schäden_ die Liste
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).
+  Kontoauszug, Ersatzforderung, DSGVO-Auskunft und Bescheid gehen in einem neuen Tab auf,
+  ebenso die Mahnbriefe und die Kontoauszüge der Abgänger. Gedruckt und gespeichert wird dort
+  über die Knöpfe des Browsers; in den Ordner „Downloads" des Rechners kommt nichts von selbst.
 - **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_, _Lehrerausweis_
   (Lehrkraft und LiV) oder _Leserausweis_ (Praktikum, Sekretariat, U-plus, Fachbereich). Die
   Gültigkeit („Gültig bis 31.07. …") trägt nur der Schülerausweis; ein Ausweis im Kollegium
@@ -884,6 +887,9 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
   offenes Fenster noch mit dem alten Programm. Erst abschließen, was offen ist (eine Ausleihe,
   eine Maske mit Eingaben), dann _Neu laden_. Ein Fenster, an dem noch niemand gearbeitet hat,
   lädt sich selbst neu.
+- **„Bitte erlaube Popups, um das PDF zu öffnen."** → Der Browser hat den neuen Tab blockiert;
+  gedruckt und gezählt ist nichts. In der Adresszeile für diese Seite Pop-ups erlauben und noch
+  einmal klicken.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.
 - **Netz weg** → weiterarbeiten. Oben erscheint ein schmales Band, die Theke bleibt bedienbar,

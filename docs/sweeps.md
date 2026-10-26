@@ -262,6 +262,7 @@ steht im Kopfkommentar der Datei.
 | `docs/npm_ohne_installationsskripte_test.go`    | Nur `frontend/.npmrc` und die Reihenfolge im Dockerfile; ein `npm install` in einem anderen Ordner, einen Aufruf mit `--ignore-scripts=false` und ein kompromittiertes Paket, das erst beim Bauen oder im ausgelieferten Code wirkt, nicht. |
 | `api/uploads_auslieferung_pg_test.go`           | Nur den Pfad `/uploads/` am Router, mit einer Datei direkt im Verzeichnis und einer in `uploads/fotos`; eine zweite Auslieferung desselben Verzeichnisses unter einem anderen Pfad und eine Verknüpfung in `uploads/`, die nach draußen zeigt, sieht er nicht. Die Regel selbst prüft `api/katalog/uploads_test.go`. |
 | `api/katalog/uploads_test.go`                   | `TestUploadsLiefertWasUploadUndCoverAbrufAblegen`: nur die zwei Schreiber, die selbst eine Datei ablegen (Upload, Cover-Abruf); eine Adresse, die über Titel-Formular, Import oder ISBN-Suche in `cover_url` kommt, sieht er nicht. |
+| `api/anhang_ratsche_test.go` | Nur Text unter `api/`: einen Anhang, dessen Angabe aus einer Konstante eines anderen Pakets kommt, und eine Datei, die erst die Oberfläche als Download speichert (das hält `frontend-hygiene-downloads.test.js`). Ob ein Eintrag der Liste wirklich keine Personendaten trägt, liest ein Mensch. |
 
 **Schema + DB (PG-Tests: CI immer; pre-push nur, wenn Stack-Postgres:5434 läuft — sonst STILL übersprungen)**
 
@@ -329,6 +330,7 @@ steht im Kopfkommentar der Datei.
 | `betrag_schreibweise_test.go` | Nur Text, je Zeile: einen Betrag über `%v` oder `strconv`, ein Format aus zwei Zeichenketten und einen Betrag ohne Währung dahinter (Spalten, deren Kopf die Währung nennt) sieht der Test nicht. Ob `pkg/betrag` richtig schreibt und rundet, prüft `pkg/betrag/betrag_test.go`. |
 | `frontend-hygiene-menueklick.test.js` | Nur Text: einen Namen aus einer Variablen und eine Suche über einen regulären Ausdruck sieht der Test nicht; andere Elemente als Menüpunkte (ein Knopf mit `title`) prüft er nicht. |
 | `designer/ausweisDesignLaden.test.js` | Nur den Pfad `/api/ausweis-layout` als ganze Zeichenkette; einen Abruf mit zusammengesetztem Pfad nicht. Ob ein neuer Druckweg vor `window.print()` `designFuerDruck` fragt, sieht der Test nicht; das prüfen die Tests der zwei vorhandenen Wege. |
+| `frontend-hygiene-downloads.test.js` | Nur Text: einen Link auf eine Adresse, die der Server als Anhang schickt (das hält `api/anhang_ratsche_test.go`), und einen Download über eine andere Schreibweise als `.download =` oder das Attribut `download`. Ob ein Eintrag der Liste wirklich keine Personendaten trägt, liest ein Mensch. |
 
 **Browser-Gates (Playwright — NUR in CI, nie in pre-push)**
 

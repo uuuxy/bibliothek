@@ -12,6 +12,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 import { apiFetch } from '../apiFetch.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
+import { PDF_BLOCKIERT } from '../utils/pdfImFenster.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 
@@ -34,14 +35,20 @@ function mockErrorResponse(meldung) {
 
 /** @type {{ href: string, download: string }[]} */
 let clicks;
-/** @type {ReturnType<typeof vi.fn>} */
+/** @type {{ closed: boolean, close: any, location: { replace: any } } | null} */
+let fenster;
 beforeEach(() => {
 	vi.clearAllMocks();
 	clicks = [];
-	// jsdom kennt createObjectURL nicht; der Anchor-Spy fängt den Download ab,
-	// ohne document.createElement zu verbiegen.
+	// jsdom kennt createObjectURL und window.open nicht. Der Spion am Anker hält fest, dass
+	// nichts als Datei heruntergeladen wird.
 	URL.createObjectURL = vi.fn(() => 'blob:mock-url');
 	URL.revokeObjectURL = vi.fn();
+	fenster = { closed: false, close: vi.fn(), location: { replace: vi.fn() } };
+	vi.stubGlobal(
+		'open',
+		vi.fn(() => fenster)
+	);
 	vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
 		/** @this {HTMLAnchorElement} */ function () {
 			clicks.push({ href: this.href, download: this.download });
@@ -53,8 +60,6 @@ afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
-
-const heute = () => new Date().toISOString().slice(0, 10);
 
 describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 	const schuelerListe = [
@@ -72,7 +77,7 @@ describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 		expect(apiFetch).not.toHaveBeenCalled();
 	});
 
-	it('sammelt die ausleih_ids der Auswahl, lädt das PDF und räumt auf', async () => {
+	it('sammelt die ausleih_ids der Auswahl, zeigt das PDF im Tab und räumt auf', async () => {
 		apiFetchMock.mockResolvedValueOnce(mockPdfResponse());
 		const store = useMahnwesenPdf();
 		const gewaehlteKennungen = new Set(['s1', 's2']);
@@ -84,9 +89,27 @@ describe('useMahnwesenPdf.druckeGewaehlteMahnungen', () => {
 			method: 'POST',
 			body: JSON.stringify({ ausleih_ids: ['a1', 'a2', 'a3'] })
 		});
-		expect(clicks).toEqual([{ href: 'blob:mock-url', download: `mahnbriefe_${heute()}.pdf` }]);
+		expect(fenster?.location.replace).toHaveBeenCalledWith('blob:mock-url');
+		expect(clicks, 'die Briefe tragen Namen und Anschriften; keine Datei').toEqual([]);
 		expect(gewaehlteKennungen.size).toBe(0);
 		expect(refreshData).toHaveBeenCalledTimes(1);
+		expect(store.drucktPdf).toBe(false);
+	});
+
+	// Der Druck zählt die Mahnung (api/mahnwesen/mahnbriefe.go). Ginge die Anfrage hinaus, obwohl
+	// der Tab blockiert ist, wäre gemahnt, ohne dass jemand den Brief sieht.
+	it('fragt bei blockiertem Tab nicht an und behält die Auswahl', async () => {
+		fenster = null;
+		const store = useMahnwesenPdf();
+		const gewaehlteKennungen = new Set(['s2']);
+		const refreshData = vi.fn();
+
+		await store.druckeGewaehlteMahnungen(gewaehlteKennungen, () => schuelerListe, refreshData);
+
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(snackbars.addToast).toHaveBeenCalledWith(PDF_BLOCKIERT, 'warning');
+		expect(gewaehlteKennungen.size).toBe(1);
+		expect(refreshData).not.toHaveBeenCalled();
 		expect(store.drucktPdf).toBe(false);
 	});
 

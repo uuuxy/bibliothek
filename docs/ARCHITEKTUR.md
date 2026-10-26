@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 25.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 26.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -274,7 +274,7 @@ Diese Werkzeuge sind keine Beigabe: Ohne sie wären mehrere Entscheidungen in
 
 ## 3. Kontextabgrenzung
 
-Stand: 08.10.2026
+Stand: 26.10.2026
 
 ---
 
@@ -377,7 +377,7 @@ graph TB
 | **Littera-Altbestand**           | CSV aus `mdb-export` (einmalig, CLI)             | eingehend       | Kein HTTP-Weg: eigenes Kommando `cmd/littera-altbestand` gegen dieselbe Datenbank, Savepoint je Datensatz                            |
 | **Bestellbestätigung Händler**   | `GET/POST /bestellung/<token>` ohne Anmeldung     | eingehend       | Token einmalig, Hash gespeichert, im Log maskiert; die Bestätigung ist über `WHERE bestaetigt_am IS NULL` atomar                    |
 | **Scanner / Kamera**             | USB-HID (Tastatureingabe) bzw. `html5-qrcode`     | eingehend       | Kein Gerätetreiber im System: Ein Handscanner ist eine Tastatur, die Kamera läuft im Browser                                        |
-| **Drucker**                      | PDF-Download, Druck aus dem Browser              | ausgehend       | Etiketten/Ausweise als PDF mit festen Bogenmaßen; Gate `npm run test:druck` prüft die Drucksektionen                               |
+| **Drucker**                      | PDF im Tab des Browsers, Druck von dort          | ausgehend       | Etiketten/Ausweise als PDF mit festen Bogenmaßen; Gate `npm run test:druck` prüft die Drucksektionen                               |
 
 #### Was ausdrücklich **nicht** angebunden ist
 
@@ -1630,7 +1630,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 25.10.2026
+Stand: 26.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2056,6 +2056,21 @@ des Druck-Centers, denn Statuscode und Dateigröße wären bei einem fehlenden F
 LMF-Nummer kommt auf kein Etikett: Als Nummer eines Exemplars lehnt die Datenbank sie ab
 (`chk_exemplar_barcode_keine_lmf_nummer`, Migration 168), die Nummer eines alten LMF-Etiketts
 steht in `lmf_barcode`.
+
+**Ein PDF geht im Tab auf, nicht in den Download-Ordner.** Ein Download bliebe auf dem
+Arbeitsplatz liegen, auch für den Nächsten am Rechner. Die Oberfläche zeigt ein PDF über
+`zeigePdf` (`frontend/src/lib/utils/pdfImFenster.js`): Der Tab geht beim Klick auf, vor der Anfrage.
+Nach einer Antwort, die länger als einige Sekunden braucht, blockiert der Browser ein neues
+Fenster (gemessen in Chromium), und ein Druck, der beim Server zählt (Mahnbrief), hätte dann
+gezählt, ohne dass jemand das Blatt sieht. Blockiert der Browser den Tab trotzdem, geht keine
+Anfrage hinaus. Die Adresse im Speicher gibt die Seite erst frei, wenn der Tab zu ist:
+„Speichern" im Tab lädt sie noch einmal und bricht nach der Freigabe ab. Wer speichert, bekommt
+einen Dateinamen aus Zufallszeichen; die Bescheide öffnet die Oberfläche über ihre Adresse, sie
+behalten den Namen, den der Server nennt. Als Datei kommen nur Dokumente ohne Personendaten
+(Bestellliste, Bestellbericht, Katalog als CSV, LMF-Plan, die Bücher eines Fachs im Portal) und
+die Sicherung der Offline-Scans. Gates: `frontend/src/lib/frontend-hygiene-downloads.test.js`
+und `api/anhang_ratsche_test.go`; dass das PDF im Tab ankommt, prüfen `e2e/mahnwesen.spec.js`
+und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
 
 ---
 

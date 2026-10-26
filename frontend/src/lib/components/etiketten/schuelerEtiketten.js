@@ -1,8 +1,9 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 /**
- * Holt den Schüler-Etikettenbogen als PDF und öffnet ihn.
+ * Holt den Schüler-Etikettenbogen als PDF und öffnet ihn in einem neuen Tab.
  *
  * EIN Weg für beide Aufrufer: den Muster-Testdruck des Ausweis-Designers und den
  * Stapeldruck der Schülerdatei. Der Testdruck soll zeigen, was der echte Bogen zeigt —
@@ -24,12 +25,17 @@ export async function oeffneEtikettenbogen({
 	muster = false
 }) {
 	try {
-		const res = await apiFetch('/api/print/schueler-etiketten', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ formatId, startPosition, schuelerIds, muster })
-		});
-
+		const res = await zeigePdf(() =>
+			apiFetch('/api/print/schueler-etiketten', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ formatId, startPosition, schuelerIds, muster })
+			})
+		);
+		if (!res) {
+			snackbars.addToast(PDF_BLOCKIERT, 'warning');
+			return false;
+		}
 		if (!res.ok) {
 			// Die Meldung des Servers durchreichen statt sie durch ein allgemeines
 			// „Fehler beim Drucken" zu ersetzen: Sie nennt den Grund, den die Theke
@@ -38,17 +44,6 @@ export async function oeffneEtikettenbogen({
 			snackbars.addToast(meldung, 'error');
 			return false;
 		}
-
-		const url = URL.createObjectURL(await res.blob());
-		const fenster = window.open(url, '_blank');
-		if (!fenster) {
-			snackbars.addToast('Der Etikettenbogen wurde vom Browser blockiert (Pop-up).', 'error');
-			URL.revokeObjectURL(url);
-			return false;
-		}
-		// Nicht sofort freigeben — das neue Fenster lädt die Adresse erst noch. Eine
-		// Minute reicht für jeden Ladevorgang und lässt den Speicher nicht liegen.
-		setTimeout(() => URL.revokeObjectURL(url), 60_000);
 		return true;
 	} catch {
 		snackbars.addToast('Netzwerkfehler beim Erzeugen des Etikettenbogens.', 'error');

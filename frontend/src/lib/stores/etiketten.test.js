@@ -46,7 +46,10 @@ describe('etikettenStore: vorhandene Exemplare abwählen', () => {
 		expect(aufDemBogen()).toHaveLength(3);
 		etikettenStore.vorhandeneExemplare[0].checked = false;
 
-		vi.stubGlobal('open', vi.fn());
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => ({ closed: false, close: vi.fn(), location: { replace: vi.fn() } }))
+		);
 		URL.createObjectURL = vi.fn(() => 'blob:probe');
 		apiFetchMock.mockResolvedValueOnce(
 			/** @type {any} */ ({ ok: true, blob: async () => new Blob(['%PDF']) })

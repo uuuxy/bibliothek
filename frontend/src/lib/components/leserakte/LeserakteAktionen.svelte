@@ -13,8 +13,8 @@
 	 * @property {boolean} [darfAuskunft]  manage_students_admin — DSGVO-Auskunft (Art. 15)
 	 * @property {boolean} kontoauszugLaedt
 	 * @property {boolean} rechnungLaedt
-	 * @property {() => void} downloadKontoauszugPDF
-	 * @property {() => void} downloadRechnungPDF
+	 * @property {() => void} zeigeKontoauszug
+	 * @property {() => void} zeigeRechnung
 	 * @property {(side: 'front'|'back'|'both') => void} onPrint
 	 * @property {number|null} gueltigBis        aktuell gewaehltes Ablaufjahr
 	 * @property {(jahr: number|null) => void} onGueltigBis
@@ -25,8 +25,8 @@
 		darfAuskunft = false,
 		kontoauszugLaedt,
 		rechnungLaedt,
-		downloadKontoauszugPDF,
-		downloadRechnungPDF,
+		zeigeKontoauszug,
+		zeigeRechnung,
 		onPrint,
 		gueltigBis,
 		onGueltigBis
@@ -140,7 +140,7 @@
 		{darfAuskunft}
 		{kontoauszugLaedt}
 		{rechnungLaedt}
-		{downloadKontoauszugPDF}
-		{downloadRechnungPDF}
+		{zeigeKontoauszug}
+		{zeigeRechnung}
 	/>
 </div>

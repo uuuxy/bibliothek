@@ -7,7 +7,7 @@ vi.mock('../../apiFetch.js', async (original) => ({
 vi.mock('../../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../../apiFetch.js';
 import { melde } from '../../../inventur/lib/store.svelte.js';
-import { sendeKontoauszuege, kontoauszugAdresse, ladeKontoauszuege } from './abgaengerDienst.js';
+import { sendeKontoauszuege, kontoauszugAdresse, zeigeKontoauszuege } from './abgaengerDienst.js';
 import { erzeugeSammelversand } from '../../stores/sammelversand.svelte.js';
 import { serverAntwort } from '../../serverAntwort.js';
 
@@ -100,53 +100,54 @@ describe('abgaengerDienst.kontoauszugAdresse', () => {
 		expect(() => kontoauszugAdresse('', 'zzz', [])).toThrow(/niemanden/);
 
 		vi.mocked(apiFetch).mockReset();
-		await expect(ladeKontoauszuege('', 'zzz', [])).rejects.toThrow(/niemanden/);
+		vi.stubGlobal('open', vi.fn());
+		await expect(zeigeKontoauszuege('', 'zzz', [])).rejects.toThrow(/niemanden/);
 		expect(apiFetch).not.toHaveBeenCalled();
+		expect(window.open, 'kein leerer Tab für eine Suche ohne Treffer').not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
 	});
 });
 
-describe('abgaengerDienst.ladeKontoauszuege: der Dateiname', () => {
-	/** @type {string[]} */
-	let namen;
+// Die Kontoauszüge tragen die Namen der Abgänger; als Download blieben sie im Download-Ordner
+// des Arbeitsplatzes liegen. Sie gehen im Tab auf (utils/pdfImFenster.js); den Dateinamen fürs
+// Speichern nennt der Server (api/mahnwesen/abgaenger_druck_auswahl_pg_test.go).
+describe('abgaengerDienst.zeigeKontoauszuege: im Tab', () => {
 	const erzeuge = URL.createObjectURL;
-	const gibFrei = URL.revokeObjectURL;
+	/** @type {{ closed: boolean, close: any, location: { replace: any } } | null} */
+	let fenster;
 
 	beforeEach(() => {
-		namen = [];
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(apiFetch).mockResolvedValue(
 			/** @type {any} */ ({ ok: true, blob: async () => new Blob(['%PDF']) })
 		);
-		// jsdom kennt createObjectURL nicht; der Spion am Anker fängt den Download ab.
-		URL.createObjectURL = vi.fn(() => 'blob:kontoauszug');
-		URL.revokeObjectURL = vi.fn();
-		vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
-			/** @this {HTMLAnchorElement} */ function () {
-				namen.push(this.download);
-			}
+		fenster = { closed: false, close: vi.fn(), location: { replace: vi.fn() } };
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => fenster)
 		);
+		URL.createObjectURL = vi.fn(() => 'blob:kontoauszug');
 	});
 	afterEach(() => {
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 		URL.createObjectURL = erzeuge;
-		URL.revokeObjectURL = gibFrei;
 	});
 
-	it('nennt die Klasse, sonst alle Abgänger, und bei einer Suche die Auswahl', async () => {
-		await ladeKontoauszuege('');
-		await ladeKontoauszuege('10R1');
-		await ladeKontoauszuege('', 'müller', [{ id: 'a-1' }]);
-		// Die Suche geht vor: Auch mit Klasse stehen nur die sichtbaren Zeilen im PDF.
-		await ladeKontoauszuege('10R1', 'müller', [{ id: 'a-1' }]);
-		// Nur Leerzeichen ist keine Suche.
-		await ladeKontoauszuege('10R1', '   ');
+	it('zeigt das PDF im Tab und lädt keine Datei herunter', async () => {
+		const anker = vi.spyOn(HTMLAnchorElement.prototype, 'click');
 
-		expect(namen).toEqual([
-			'Kontoauszuege_Abgaenger.pdf',
-			'Kontoauszuege_10R1.pdf',
-			'Kontoauszuege_Auswahl.pdf',
-			'Kontoauszuege_Auswahl.pdf',
-			'Kontoauszuege_10R1.pdf'
-		]);
+		expect(await zeigeKontoauszuege('10R1')).toBe(true);
+
+		expect(apiFetch).toHaveBeenCalledWith('/api/abgaenger/pdf?klasse=10R1');
+		expect(fenster?.location.replace).toHaveBeenCalledWith('blob:kontoauszug');
+		expect(anker).not.toHaveBeenCalled();
+	});
+
+	it('meldet einen blockierten Tab und fragt nicht beim Server an', async () => {
+		fenster = null;
+
+		expect(await zeigeKontoauszuege('10R1')).toBe(false);
+		expect(apiFetch).not.toHaveBeenCalled();
 	});
 });

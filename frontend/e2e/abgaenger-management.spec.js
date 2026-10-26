@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, pdfImFenster } from './helpers.js';
 
 // Abgänger-Ansicht (/abgaenger): die Abschlussklassen (9H, 10R, 13) mit offenen
 // Ausleihen — noch an der Schule, zum Einsammeln vor der Entlassung. Wer nichts mehr
@@ -66,10 +66,12 @@ test('Abgänger: Abschlussklasse mit offenem Buch — Saison entscheidet über L
 
 		// Kontoauszug-PDF (Smoke): Der frühere „Laufzettel" ist längst der Kontoauszug mit
 		// Freigabezeile — jetzt heißt auch der Knopf so.
-		const downloadPromise = page.waitForEvent('download');
-		await page.getByRole('button', { name: /Kontoauszüge drucken/i }).click();
-		const download = await downloadPromise;
-		expect(download.suggestedFilename()).toBe('Kontoauszuege_Abgaenger.pdf');
+		// Die Auszüge tragen die Namen der Abgänger: Sie gehen im Tab auf, nicht als Datei.
+		const pdf = await pdfImFenster(
+			page,
+			page.getByRole('button', { name: /Kontoauszüge drucken/i })
+		);
+		expect(pdf.subarray(0, 4).toString(), 'der Druck ist ein PDF').toBe('%PDF');
 	} finally {
 		seedSQL(`
 			DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id = 'B-abg-${s}');

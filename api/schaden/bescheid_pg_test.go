@@ -470,6 +470,11 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("PDF: %d %s", rec.Code, rec.Body.String())
 		}
+		// Die Oberfläche öffnet den Bescheid über seine Adresse in einem Tab. Als Anhang landete
+		// er mit Namen und Anschrift im Download-Ordner des Arbeitsplatzes.
+		if ablage := rec.Header().Get("Content-Disposition"); !strings.HasPrefix(ablage, "inline;") {
+			t.Errorf("Content-Disposition %q, erwartet inline", ablage)
+		}
 		return pdftest.Suchtext(t, rec.Body.Bytes())
 	}
 

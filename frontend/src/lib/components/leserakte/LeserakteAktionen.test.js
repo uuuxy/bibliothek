@@ -25,8 +25,8 @@ describe('Ausweis drucken in der Leserakte', () => {
 			},
 			kontoauszugLaedt: false,
 			rechnungLaedt: false,
-			downloadKontoauszugPDF: vi.fn(),
-			downloadRechnungPDF: vi.fn(),
+			zeigeKontoauszug: vi.fn(),
+			zeigeRechnung: vi.fn(),
 			onPrint: vi.fn(),
 			gueltigBis: null,
 			onGueltigBis: vi.fn()

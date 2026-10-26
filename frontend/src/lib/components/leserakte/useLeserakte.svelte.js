@@ -3,6 +3,7 @@ import { apiFetch, apiClient, leseApiFehler } from '../../apiFetch.js';
 import { istKollegium } from '../leser/leserArt.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { fehlertext } from '../../utils/fehlertext.js';
+import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 export function useLeserakte() {
 	/** @type {any} */
@@ -118,23 +119,18 @@ export function useLeserakte() {
 		ladeAkte(studentId);
 	}
 
-	async function ladeRechnungHerunter() {
+	async function zeigeRechnung() {
 		if (!akte) return;
 		rechnungLaedt = true;
 		try {
-			const res = await apiFetch(`/api/print/rechnung/${akte.id}`);
-			if (!res.ok) {
+			const res = await zeigePdf(() => apiFetch(`/api/print/rechnung/${akte.id}`));
+			if (!res) {
+				snackbars.addToast(PDF_BLOCKIERT, 'warning');
+			} else if (!res.ok) {
 				// leseApiFehler packt die Meldung aus dem JSON des Servers; roh stünden die
 				// Klammern im Toast.
 				throw new Error((await leseApiFehler(res)) || 'Keine ausstehenden Rechnungen gefunden');
 			}
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `Rechnung_${akte.vorname}_${akte.nachname}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
 		} catch (e) {
 			snackbars.addToast(fehlertext(e), 'error');
 		} finally {
@@ -142,21 +138,16 @@ export function useLeserakte() {
 		}
 	}
 
-	async function ladeKontoauszugHerunter() {
+	async function zeigeKontoauszug() {
 		if (!akte) return;
 		kontoauszugLaedt = true;
 		try {
-			const res = await apiFetch(`/api/print/kontoauszug/${akte.id}`);
-			if (!res.ok) {
+			const res = await zeigePdf(() => apiFetch(`/api/print/kontoauszug/${akte.id}`));
+			if (!res) {
+				snackbars.addToast(PDF_BLOCKIERT, 'warning');
+			} else if (!res.ok) {
 				throw new Error((await leseApiFehler(res)) || 'Keine aktiven Ausleihen gefunden');
 			}
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `Kontoauszug_${akte.vorname}_${akte.nachname}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
 		} catch (e) {
 			snackbars.addToast(fehlertext(e), 'error');
 		} finally {
@@ -306,8 +297,8 @@ export function useLeserakte() {
 		nachBearbeiten,
 		schliesseBearbeiten,
 		nachFoto,
-		ladeRechnungHerunter,
-		ladeKontoauszugHerunter,
+		zeigeRechnung,
+		zeigeKontoauszug,
 		oeffneSchaden,
 		meldeSchaden,
 		nachSperre

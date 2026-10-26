@@ -159,7 +159,7 @@ func (t *Tueren) MahnbriefeDrucken() http.HandlerFunc {
 		dateiname := fmt.Sprintf("mahnbriefe_%s.pdf", schulzeit.Jetzt().Format(tuer.DatumsformatISO))
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="%s"`, dateiname))
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
 
 		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))

@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt, pdfImFenster } from './helpers.js';
 
 // Mahnwesen: überfällige Ausleihe erscheint in der Übersicht, und „Liste drucken" druckt
 // die Liste als Tabelle mit dem Buch.
@@ -79,12 +78,9 @@ test('Mahnbrief: aus der Auswahl gedruckt, danach steht die Mahnung in der Liste
 	await expect(page.getByRole('button', { name: 'Mahnbriefe', exact: true })).toHaveCount(0);
 
 	await page.getByLabel(`E2E Briefkind-${suffix} auswählen`).click();
-	const download = page.waitForEvent('download');
-	await page.getByRole('button', { name: 'Mahnbriefe drucken' }).click();
-	const datei = await download;
-	expect(datei.suggestedFilename()).toMatch(/^mahnbriefe_\d{4}-\d{2}-\d{2}\.pdf$/);
-	const pfad = await datei.path();
-	expect(readFileSync(pfad).subarray(0, 4).toString(), 'der Druck ist ein PDF').toBe('%PDF');
+	// Die Briefe tragen Namen und Anschriften: Sie gehen im Tab auf, nicht als Datei.
+	const pdf = await pdfImFenster(page, page.getByRole('button', { name: 'Mahnbriefe drucken' }));
+	expect(pdf.subarray(0, 4).toString(), 'der Druck ist ein PDF').toBe('%PDF');
 
 	// Die Liste lädt nach dem Druck neu und nennt die Mahnung mit dem heutigen Tag.
 	const heute = new Date().toLocaleDateString('de-DE', {

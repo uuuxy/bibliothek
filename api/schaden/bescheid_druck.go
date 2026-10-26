@@ -43,9 +43,9 @@ func (t *Tueren) BescheidPDF(bescheidAbfragen *repository.BescheidAbfragen) http
 
 		w.Header().Set("Content-Type", tuer.ContentTypePDF)
 		w.Header().Set("Content-Disposition",
-			fmt.Sprintf(`attachment; filename="bescheid_%s.pdf"`,
+			fmt.Sprintf(`inline; filename="bescheid_%s.pdf"`,
 				strings.ReplaceAll(bescheid.Referenznummer, " ", "-")))
-		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, als Anhang, nosniff); aus der Anfrage stammt nur die Kennung des Bescheids
+		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, nosniff); aus der Anfrage stammt nur die Kennung des Bescheids
 		if _, err := w.Write(roh); err != nil {
 			slog.Warn("Bescheid-PDF: Antwort an den Browser abgebrochen", "fehler", err)
 		}

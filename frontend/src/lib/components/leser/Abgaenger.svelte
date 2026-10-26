@@ -12,6 +12,8 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
+	import { PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 	import KlassenVersandDialog from '../ui/KlassenVersandDialog.svelte';
 	import AbgaengerTabelle from './AbgaengerTabelle.svelte';
 	import AbgaengerKopfzeile from './AbgaengerKopfzeile.svelte';
@@ -74,9 +76,11 @@
 	async function druckeKontoauszuege() {
 		drucktKontoauszuege = true;
 		try {
-			await dienst.ladeKontoauszuege(gewaehlteKlasse, suche, gefilterteAbgaenger);
+			if (!(await dienst.zeigeKontoauszuege(gewaehlteKlasse, suche, gefilterteAbgaenger))) {
+				melde(PDF_BLOCKIERT, 'warning');
+			}
 		} catch (err) {
-			melde(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
+			melde(`Kontoauszüge konnten nicht erstellt werden: ${fehlertext(err)}`, 'error');
 		} finally {
 			drucktKontoauszuege = false;
 		}

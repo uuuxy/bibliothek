@@ -2,6 +2,7 @@
 
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 /** @typedef {{ barcode_id?: string, titel?: string, autor?: string }} DruckEtikett */
 /** @typedef {{ formatId: string, startFeld: number, alsQR: boolean }} DruckBogen */
@@ -56,10 +57,11 @@ function sendeBogen(bogen, etiketten) {
 export async function druckeBogen(bogen, etiketten) {
 	if (etiketten.length === 0) return;
 	try {
-		const res = await sendeBogen(bogen, etiketten);
-		if (res.ok) {
-			const blob = await res.blob();
-			window.open(window.URL.createObjectURL(blob), '_blank');
+		const res = await zeigePdf(() => sendeBogen(bogen, etiketten));
+		if (!res) {
+			// Ohne offenes PDF ist nichts gedruckt; die Etiketten bleiben auf der Liste.
+			snackbars.addToast(PDF_BLOCKIERT, 'warning');
+		} else if (res.ok) {
 			await vermerkeGedruckt(etiketten);
 		} else {
 			console.error('Fehler beim Erstellen des PDFs');

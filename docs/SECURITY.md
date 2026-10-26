@@ -2,7 +2,7 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-24
+> Zuletzt aktualisiert: 2026-10-26
 
 ---
 
@@ -427,6 +427,14 @@ Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 - **Gelöschte Kollegen endgültig löschen (`fuehrePapierkorbLoeschungAus`):** Ein Kollege, der seit 180 Tagen im Papierkorb liegt, wird mit derselben Tilgung wie „Endgültig löschen" von Hand entfernt (`LoescheKollegenAusDemPapierkorb`); die Löschung stellt die Frage der Liste in ihrer Transaktion noch einmal, mit gesperrter Zeile, und offene Ausleihen und unbezahlte Forderungen halten ihn. Anonymisieren lässt sich ein Kollege nicht (`chk_leser_nur_schueler_werden_abgaenger`), sein Zugangskonto geht schon beim Löschen.
 - **Anonymisierung alter Datensätze (`fuehreSchuelerAnonymisierungAus`):** Leert nach Frist (Soft-Delete > 180 Tage; Abgänger nach der einstellbaren **Karenzzeit** `abgaenger_karenz_tage`, Vorgabe 90 Tage ab dem spätesten von Abgang `abgaenger_seit` und letztem abgeschlossenem Vorgang `letzter_vorgang_am` — letzte Rückgabe oder letzter Schadensabschluss, als Spalte am Leser gespeichert (Migration 137), weil die Lesehistorie-Befristung die Zuordnung über `ausleihen.schueler_id` löst; der Zeitpunkt steht in der Art.-15-Auskunft und sagt nichts darüber, was ausgeliehen war) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail), ersetzt die Ausweisnummer durch `ANON-…`, löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID, die Ausweisnummern und den Sperrgrund aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung. Eine `A-`-Nummer, die dabei — oder beim endgültigen Löschen, Zusammenführen, Leeren, Umschreiben — aus `leser` verschwindet, hält ein Trigger in `ausweisnummern_ausgeschieden` fest: nur die Zahl, ohne Person und ohne Datum. Der Generator vergibt sie deshalb nicht noch einmal, und eine alte Karte findet an der Theke niemanden (Migration 146).
 - **Erledigte Anliegen und Klassensatz-Reservierungen befristen (`fuehreAnliegenBefristungAus`, `fuehreKlassensatzBefristungAus`):** Löscht erledigte Wünsche, Meldungen und Klassensatz-Reservierungen aus dem Kollegiums-Portal nach der Einstellung `anliegen_tage` (Vorgabe 365 Tage nach der Erledigung, 0 = aus); offene bleiben. Eine Reservierung, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
+
+### Dokumente auf dem Arbeitsplatz
+
+PDFs mit Personendaten (DSGVO-Auskunft, Kontoauszug, Rechnung, Bescheid, Mahnbriefe, Kontoauszüge
+der Abgänger) öffnet die Oberfläche in einem Tab des Browsers. In den Download-Ordner des
+Arbeitsplatzes, wo sie für den Nächsten am Rechner lägen, kommen sie nur, wenn jemand sie selbst
+speichert. Der Server schickt sie zum Anzeigen (`inline`), als Anhang nur Dokumente ohne
+Personendaten. Regel und Gates: [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.9.
 
 ### Datenverschlüsselung
 
