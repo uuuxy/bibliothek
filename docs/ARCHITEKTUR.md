@@ -2360,7 +2360,8 @@ sieht.
     `CREATE DATABASE … TEMPLATE`, damit der lange Lauf am Stand vor dem Probelauf beginnt.
   - **Kein Fund:** Das Ausleihlimit lässt sich nicht übergehen (403), `GET /api/einstellungen`
     verlangt `manage_settings`, und `GET /api/reservierungen/klassensatz/offen` gehört zum Portal
-    und trägt keine Kennung; erledigt wird über `GET /api/reservierungen/klassensatz`.
+    und trägt keine Kennung der Reservierung; erledigt wird über
+    `GET /api/reservierungen/klassensatz`.
 
 ---
 
