@@ -169,7 +169,7 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 // zulässige Endung). ok=false: die Fehlerantwort wurde bereits geschrieben.
 func leseCoverUpload(w http.ResponseWriter, r *http.Request, id string) ([]byte, bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxCoverUploadBytes)
-	if err := r.ParseMultipartForm(maxCoverUploadBytes); err != nil {
+	if err := r.ParseMultipartForm(1 << 20); err != nil { // 1 MB memory limit
 		slog.Warn("cover-upload: multipart parse failed", "titel", logger.OhneUmbruch(id), "fehler", err)
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Datei ist zu groß oder ungültig, höchstens 10 MB", nil)
 		return nil, false
