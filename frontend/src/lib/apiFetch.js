@@ -81,11 +81,8 @@ export async function apiFetch(url, options = {}) {
 		}
 	}
 
-	// Datei-Uploads (FormData) laufen naturgemäß lange — ein voller Katalog-Import
-	// überträgt Megabytes und berührt tausende Zeilen. Das starre 10s-Limit brach
-	// solche Uploads mitten im Lauf ab ("Netzwerk-Timeout"), obwohl der Server noch
-	// arbeitete. Sie bekommen daher großzügige 5 Minuten (abgestimmt auf Caddys
-	// response_header_timeout). Aufrufer können per options.timeoutMs überschreiben.
+	// Datei-Uploads laufen lange (ein Katalog-Import überträgt Megabytes): 5 Minuten, abgestimmt auf
+	// Caddys response_header_timeout. Eine eigene Frist setzt der Aufrufer mit options.timeoutMs.
 	const isUpload = typeof FormData !== 'undefined' && options.body instanceof FormData;
 	let defaultTimeout = 15000;
 	if (isUpload) {
@@ -112,6 +109,9 @@ export async function apiFetch(url, options = {}) {
 		if (error instanceof Error && error.name === 'AbortError') {
 			throw new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.');
 		}
+		// Ohne Antwort wirft fetch einen TypeError mit englischem Text des Browsers („Load failed").
+		if (error instanceof TypeError)
+			throw new Error('Keine Verbindung zum Server.', { cause: error });
 		throw error;
 	}
 }

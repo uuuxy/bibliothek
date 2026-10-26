@@ -152,6 +152,16 @@ describe('apiFetch error handling', () => {
 			'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
 		);
 	});
+
+	// Ohne Antwort wirft fetch einen TypeError mit dem Text des Browsers (gemessen in Chromium,
+	// Firefox und WebKit); die Meldung zeigt sonst diesen englischen Text.
+	it.each(['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed'])(
+		'übersetzt den Netzfehler „%s"',
+		async (text) => {
+			vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError(text));
+			await expect(apiFetch('/api/test')).rejects.toThrow(/^Keine Verbindung zum Server\.$/);
+		}
+	);
 });
 
 describe('Sitzungsverlust-Haken', () => {
