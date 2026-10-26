@@ -8,7 +8,7 @@ import { hatRecht } from '../../menue.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, zusammenfuehren: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, loeschenMitZugang: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, zusammenfuehren: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -20,6 +20,9 @@ export function schuelerRechte(user) {
 		bearbeiten: hatRecht(user, 'edit_students'),
 		// Papierkorb: DELETE /api/schueler/{id}, GET …/deleted, POST …/restore
 		loeschen: hatRecht(user, 'delete_students'),
+		// Hängt am Leser ein Zugang (`hat_zugang`), verlangt das Löschen zusätzlich manage_users:
+		// Mit ihm fällt das Konto (api/leser/leser_aendern.go, kontoregel).
+		loeschenMitZugang: hatRecht(user, 'manage_users'),
 		// DELETE /api/schueler/deleted/{id} — sofortiges endgültiges Löschen aus dem
 		// Papierkorb (Art.-17-Löschverlangen), nicht dasselbe Recht wie der Soft-Delete
 		endgueltigLoeschen: hatRecht(user, 'manage_students_admin'),

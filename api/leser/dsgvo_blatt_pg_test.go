@@ -93,7 +93,7 @@ func TestDSGVOBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 
 	// In den Papierkorb: der Eintrag an der Leserzeile selbst.
-	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, sid, bearbeiter, "Blatt-Löschgrund"); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, sid, bearbeiter, "Blatt-Löschgrund", nil); err != nil {
 		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 

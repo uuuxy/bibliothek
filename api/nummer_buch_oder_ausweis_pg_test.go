@@ -98,7 +98,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 				t.Errorf("Bearbeiter aufräumen: %v", err)
 			}
 		})
-		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test", nil); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		exemplar(t, "N131-D")

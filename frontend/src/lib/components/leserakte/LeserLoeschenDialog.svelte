@@ -5,7 +5,8 @@
 
      Beim Kollegium fällt mit dem Eintrag der Zugang, und das Wiederherstellen bringt ihn
      nicht zurück. Der Satz steht nur, wenn es einen Zugang gibt — Praktikum und Fachbereich
-     haben keinen (Migration 153). -->
+     haben keinen (Migration 153), eine aus Littera übernommene Lehrkraft nur ein Konto mit
+     Ersatzadresse. -->
 <script>
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Dialog from '../ui/Dialog.svelte';
@@ -18,8 +19,8 @@
 	let { open = false, leser, onclose, onsuccess } = $props();
 
 	const kollege = $derived(istKollegium({ art: leser?.art }));
-	// `email` ist die Adresse am Konto; leer heißt: kein Zugang, der erlöschen könnte.
-	const mitZugang = $derived(kollege && !!leser?.email);
+	// Ob sich mit dem Konto jemand anmeldet, sagt der Server (`hat_zugang` der Akte).
+	const mitZugang = $derived(!!leser?.hat_zugang);
 
 	let fehler = $state('');
 	let laeuft = $state(false);

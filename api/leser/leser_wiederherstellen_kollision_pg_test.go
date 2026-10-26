@@ -40,7 +40,7 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 		if err := pool.QueryRow(ctx, anlegen).Scan(&id); err != nil {
 			t.Fatalf("Schüler anlegen: %v", err)
 		}
-		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test", nil); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		if _, err := pool.Exec(ctx, zwilling); err != nil {
@@ -92,7 +92,7 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 
 	t.Run("ohne Zwilling gelingt die Wiederherstellung", func(t *testing.T) {
 		id := testdaten.LegeSchuelerMitNamenAn(t, pool, "S-ZW-FREI", "Cem", "Cord", "7a", 2030)
-		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test", nil); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		if rec := wiederherstellen(id); rec.Code != http.StatusOK {

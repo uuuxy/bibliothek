@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
 
 // RBAC-Negativpfad: Wir testen sonst nur den voll autorisierten Admin.
 // Hier der Beweis, dass die Kette Server-403 → UI-Ausblendung für
@@ -78,4 +78,56 @@ test('Lehrer: /abgaenger direkt aufgerufen leakt keine Schülerdaten', async ({ 
 		rolle: 'admin'
 	});
 	expect(createUser.status(), 'Benutzer anlegen als Lehrer').toBe(403);
+});
+
+// Mit der Leserzeile eines Kollegen fällt sein Konto. Einen Zugang löscht deshalb nur, wer auch
+// Konten verwaltet (manage_users), wie in der Benutzerverwaltung; die Akte zeigt dem Mitarbeiter
+// den Knopf abgeschaltet und den Grund daneben. Ob ein Zugang da ist, sagt der Server
+// (`hat_zugang` der Akte): Die Lehrkraft aus Littera hat nur ein Konto mit Ersatzadresse, mit dem
+// sich niemand anmeldet, und bleibt löschbar.
+test('Mitarbeiter: einen Kollegen mit Zugang löscht er nicht, die Akte sagt warum', async ({
+	page
+}) => {
+	seedUsers();
+	const suffix = uniqueSuffix();
+	const mitZugang = `Zugang-${suffix}`;
+	const ausLittera = `Littera-${suffix}`;
+	// Die Leserzeilen legt der Trigger trg_benutzer_hat_leserzeile zu jedem Konto an.
+	seedSQL(`
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES
+			('Zora', '${mitZugang}', 'zora-${suffix}@schule.example', 'kollegium', true),
+			('Lutz', '${ausLittera}', 'littera-${suffix}@littera.invalid', 'kollegium', true);
+	`);
+	try {
+		await uiLogin(page, MITARBEITER_EMAIL);
+
+		/** @param {string} vorname @param {string} nachname */
+		const loeschknopf = async (vorname, nachname) => {
+			await gehZu(page, '/schuelerdatei');
+			await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(nachname);
+			await page
+				.getByRole('button', { name: `Profil von ${vorname} ${nachname} (Lehrkraft) anzeigen` })
+				.click();
+			await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
+			return page.getByRole('button', { name: 'Kollegen archivieren / löschen' });
+		};
+
+		await expect(await loeschknopf('Zora', mitZugang)).toBeDisabled();
+		await expect(
+			page.getByText(
+				'Diese Person hat einen Zugang zu „Mein Portal“. Löschen kann sie nur, wer „Benutzer & Rechte verwalten“ darf.'
+			)
+		).toBeVisible();
+
+		await expect(await loeschknopf('Lutz', ausLittera)).toBeEnabled();
+		await expect(page.getByText(/Benutzer & Rechte verwalten/)).toHaveCount(0);
+	} finally {
+		seedSQL(`
+			WITH weg AS (
+				DELETE FROM benutzer
+				WHERE email IN ('zora-${suffix}@schule.example', 'littera-${suffix}@littera.invalid')
+				RETURNING leser_id)
+			DELETE FROM leser WHERE id IN (SELECT leser_id FROM weg);
+		`);
+	}
 });

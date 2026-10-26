@@ -524,8 +524,11 @@ Liste.
   ein Ehemaliger unter „Ehemalige", sobald die Frist eines Buchs abgelaufen ist; läuft sie noch
   (etwa bei einem Mehrjahresband), in der Akte an der Ausleihe das Rückgabedatum auf heute
   setzen. Löschen in
-  der Akte verlangt den Namen zur Bestätigung und legt die Person in den Papierkorb. Dort lässt
-  sie sich bis zu 180 Tage lang wiederherstellen; danach wird ein Schüler anonymisiert, ein
+  der Akte verlangt den Namen zur Bestätigung und legt die Person in den Papierkorb. Mit einem
+  Kollegen fällt dabei sein Zugang zu „Mein Portal"; hat er einen, löscht ihn nur, wer auch
+  _Benutzer & Rechte_ darf, ein Admin-Konto nur ein Admin. Sonst ist der Knopf abgeschaltet,
+  und der Grund steht daneben. Im Papierkorb lässt sich die Person bis zu 180 Tage lang
+  wiederherstellen; danach wird ein Schüler anonymisiert, ein
   Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
   anonymisiert, wenn sie früher abläuft. _Endgültig löschen_ im Papierkorb wirkt sofort und
   braucht ein eigenes Recht (DSGVO-Kette, §8).

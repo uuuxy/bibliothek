@@ -66,8 +66,10 @@ func protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschun
 
 // loescheKontenDerLeserzeile löscht die Zugangskonten, die auf eine Leserzeile zeigen, und
 // schreibt je Konto den Löscheintrag: die Tür „Leserzeile eines Kollegen in den Papierkorb"
-// (LegeLeserInPapierkorb).
-func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string) (int64, error) {
+// (LegeLeserInPapierkorb). pruefeKonto sieht die gesperrten Konten, bevor eines fällt: Eine
+// Prüfung vor der Transaktion sähe ein Konto nicht, das ein Zusammenführen gerade an die Zeile
+// hängt.
+func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string, pruefeKonto func(KontoDerLeserzeile) error) (int64, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id::text, coalesce(vorname, ''), coalesce(nachname, ''), coalesce(email, ''), coalesce(rolle::text, '')
 		FROM benutzer WHERE leser_id = $1 FOR UPDATE`, leserID)
@@ -86,6 +88,9 @@ func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbei
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		return 0, fmt.Errorf("konten der leserzeile lesen: %w", err)
+	}
+	if err := pruefeKonten(konten, pruefeKonto); err != nil {
+		return 0, err
 	}
 
 	kontext := "Konto mit der Leserzeile gelöscht (Papierkorb)"
@@ -108,4 +113,18 @@ func loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbei
 		}
 	}
 	return geloescht, nil
+}
+
+// pruefeKonten legt jedes Konto pruefeKonto vor; der erste Einwand gilt. Ohne Prüfung ist jedes
+// erlaubt.
+func pruefeKonten(konten []kontoLoeschung, pruefeKonto func(KontoDerLeserzeile) error) error {
+	if pruefeKonto == nil {
+		return nil
+	}
+	for _, k := range konten {
+		if err := pruefeKonto(KontoDerLeserzeile{Rolle: k.rolle, Email: k.email}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -53,6 +53,45 @@ func (t *Tueren) pruefeLeserLoeschbar(ctx context.Context, id string) (int, erro
 	return 0, nil
 }
 
+// Einwände der Kontoregel gegen das Löschen; den Satz setzt antworteLoeschenAbgelehnt.
+var (
+	errZugangOhneKontenrecht = errors.New("zugang ohne das recht für konten")
+	errKontoEinesAdmins      = errors.New("konto eines administrators")
+)
+
+// kontoregel hält beim Löschen die Regeln der Benutzerverwaltung (api/benutzer/admin_schutz.go):
+// Mit der Leserzeile eines Kollegen fällt sein Konto, und einen Zugang löscht nur, wer Konten
+// verwaltet, den eines Administrators nur ein Administrator. Die Rechte stehen vor der
+// Transaktion fest; entschieden wird darin, an den Konten, die fallen (LegeLeserInPapierkorb).
+func kontoregel(darfKonten, istAdmin bool) func(repository.KontoDerLeserzeile) error {
+	return func(konto repository.KontoDerLeserzeile) error {
+		switch {
+		case !repository.IstZugangsadresse(konto.Email):
+			return nil
+		case !darfKonten:
+			return errZugangOhneKontenrecht
+		case auth.Rolle(konto.Rolle).IstAdmin() && !istAdmin:
+			return errKontoEinesAdmins
+		}
+		return nil
+	}
+}
+
+// antworteLoeschenAbgelehnt übersetzt das Scheitern des Papierkorbs: ein Einwand der Kontoregel
+// mit seinem Satz, alles andere als Störung.
+func antworteLoeschenAbgelehnt(w http.ResponseWriter, err error) {
+	if errors.Is(err, errZugangOhneKontenrecht) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden,
+			"Diese Person hat einen Zugang zu „Mein Portal“. Löschen kann sie nur, wer „Benutzer & Rechte verwalten“ darf.", err)
+		return
+	}
+	if errors.Is(err, errKontoEinesAdmins) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das Konto eines Administrators löscht nur ein Administrator", err)
+		return
+	}
+	apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+}
+
 // LeserLoeschen legt einen Leser in den Papierkorb, wenn er keine offenen Ausleihen und keine
 // offenen Schäden hat, und schreibt den Vorgang ins Protokoll.
 func (t *Tueren) LeserLoeschen(leserAbfragen *repository.LeserAbfragen) http.HandlerFunc {
@@ -91,9 +130,11 @@ func (t *Tueren) LeserLoeschen(leserAbfragen *repository.LeserAbfragen) http.Han
 			return
 		}
 
-		// In den Papierkorb, in einer Transaktion mit dem Eintrag im Protokoll.
-		if err := leserAbfragen.LegeLeserInPapierkorb(ctx, id, claims.KontoID, "Manuelle Löschung"); err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		// In den Papierkorb, in einer Transaktion mit dem Eintrag im Protokoll und mit der
+		// Kontoregel für das Konto, das dabei fällt.
+		regel := kontoregel(t.HatRecht(r, "manage_users"), claims.Rolle.IstAdmin())
+		if err := leserAbfragen.LegeLeserInPapierkorb(ctx, id, claims.KontoID, "Manuelle Löschung", regel); err != nil {
+			antworteLoeschenAbgelehnt(w, err)
 			return
 		}
 

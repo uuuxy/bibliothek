@@ -31,7 +31,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'delete_students',
 				label: 'Schüler löschen',
-				desc: 'Schüler in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen'
+				desc: 'Schüler und Kollegen in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen. Mit einem Kollegen fällt sein Zugang zu „Mein Portal"; hat er einen, nur zusammen mit „Benutzer & Rechte verwalten", ein Administrator-Konto nur als Administrator'
 			},
 			{
 				key: 'import_students',
@@ -149,7 +149,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
-				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Admin-Audit-Log einsehen — öffnet den Menüpunkt „Berechtigungen". Zusammen mit „Schülerverwaltung: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto'
+				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Admin-Audit-Log einsehen — öffnet den Menüpunkt „Berechtigungen". Zusammen mit „Schülerverwaltung: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Schüler löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei'
 			}
 		]
 	}

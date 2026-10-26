@@ -63,7 +63,11 @@ type leserakteAntwort struct {
 	// bei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.
 	// Leer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte
 	// nachtragbar. Bei einem Schüler steht hier nie etwas.
-	Email             string                        `json:"email"`
+	Email string `json:"email"`
+	// HatZugang sagt, ob sich mit dem Konto jemand anmeldet; das Konto einer aus Littera
+	// übernommenen Lehrkraft trägt eine Ersatzadresse und tut es nie. Am Zugang hängen der Satz
+	// beim Löschen und das zusätzliche Recht dafür (kontoregel).
+	HatZugang         bool                          `json:"hat_zugang"`
 	EntlieheneBuecher []repository.LaufendeAusleihe `json:"entliehene_buecher"`
 }
 
@@ -158,6 +162,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		Ort:                leser.Ort,
 		ElternEmail:        leser.ElternEmail,
 		Email:              schulEmail,
+		HatZugang:          repository.IstZugangsadresse(schulEmail),
 		EntlieheneBuecher:  entliehen,
 	}
 

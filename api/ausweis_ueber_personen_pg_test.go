@@ -102,7 +102,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	t.Run("Wiederherstellen, während eine Lehrkraft die Nummer trägt", func(t *testing.T) {
 		id := schueler(t, "AW118-C")
 		bearbeiter := lehrkraft(t, "AW118-C-L", "c-bearbeiter@ausweis118.invalid")
-		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test", nil); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		lehrkraft(t, "AW118-C", "c@ausweis118.invalid")
@@ -128,7 +128,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	t.Run("Gegenprobe: die Nummer eines gelöschten Schülers ist frei", func(t *testing.T) {
 		id := schueler(t, "AW118-F")
 		bearbeiter := lehrkraft(t, "AW118-F-L", "f-bearbeiter@ausweis118.invalid")
-		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test", nil); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		rec := fahre(srv.benutzer().KontoAnlegen(userRepo), http.MethodPost, "/api/benutzer", "",

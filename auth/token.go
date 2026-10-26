@@ -62,6 +62,12 @@ func (r *Rolle) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// IstAdmin sagt, ob es die Rolle des Administrators ist. Die Datenbank schreibt sie klein, die
+// Konstanten groß; verglichen wird deshalb ohne Rücksicht auf die Schreibweise.
+func (r Rolle) IstAdmin() bool {
+	return strings.EqualFold(strings.TrimSpace(string(r)), string(RolleAdmin))
+}
+
 // Claims ist der Inhalt des Tokens einer Sitzung.
 type Claims struct {
 	KontoID string `json:"user_id"`

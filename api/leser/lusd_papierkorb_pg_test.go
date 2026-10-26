@@ -37,7 +37,7 @@ func TestLUSDImport_PapierkorbGehoertNichtZumBestand(t *testing.T) {
 		ids[name] = id
 	}
 	for _, name := range []string{"zurueck", "weg"} {
-		if err := leserAbfragen.LegeLeserInPapierkorb(ctx, ids[name], bearbeiter, "Testaufbau"); err != nil {
+		if err := leserAbfragen.LegeLeserInPapierkorb(ctx, ids[name], bearbeiter, "Testaufbau", nil); err != nil {
 			t.Fatalf("Schüler %s in den Papierkorb legen: %v", name, err)
 		}
 	}

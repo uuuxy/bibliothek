@@ -145,7 +145,7 @@ func TestDSGVOAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Konto des Kollegen anlegen: %v", err)
 	}
-	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, kollege, admin, "Test"); err != nil {
+	if err := repository.NewLeserAbfragen(pool).LegeLeserInPapierkorb(ctx, kollege, admin, "Test", nil); err != nil {
 		t.Fatalf("Kollegen löschen: %v", err)
 	}
 	a = auskunftZu(kollege)

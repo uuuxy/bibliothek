@@ -1,24 +1,57 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// Das echte Modul bleibt, weil authStore beim Laden einen Haken darin anmeldet.
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 import LeserGefahrenzone from './LeserGefahrenzone.svelte';
 import LeserLoeschenDialog from './LeserLoeschenDialog.svelte';
+import { authStore } from '../../stores/authStore.svelte.js';
 
 // Gefahrenzone und Lösch-Dialog der Akte sagen beim Kollegium, dass mit dem Eintrag der Zugang
-// zu „Mein Portal" erlischt. Praktikum und Fachbereich haben nie einen (Migration 153), eine
-// Lehrkraft nicht mehr, wenn die Benutzerverwaltung ihr Konto gelöscht hat. Bei ihnen wäre der
-// Satz falsch. `email` im Profil ist die Adresse am Konto; leer heißt kein Konto.
+// zu „Mein Portal" erlischt. Praktikum und Fachbereich haben nie einen (Migration 153), eine aus
+// Littera übernommene Lehrkraft nur ein Konto mit Ersatzadresse, eine Lehrkraft keinen mehr, wenn
+// die Benutzerverwaltung ihr Konto gelöscht hat. Bei ihnen wäre der Satz falsch. Ob es einen
+// gibt, sagt die Akte in `hat_zugang` (api/leser/leserakte.go), nicht die Adresse am Konto.
 
 const lehrkraft = {
 	vorname: 'Lena',
 	nachname: 'Lehr',
 	art: 'lehrkraft',
-	email: 'lena@schule.invalid'
+	email: 'lena@schule.invalid',
+	hat_zugang: true
 };
-const praktikum = { vorname: 'Paul', nachname: 'Praktikum', art: 'praktikum', email: '' };
-const schueler = { vorname: 'Mia', nachname: 'Muster', art: 'schueler', klasse: '07A' };
+const praktikum = {
+	vorname: 'Paul',
+	nachname: 'Praktikum',
+	art: 'praktikum',
+	email: '',
+	hat_zugang: false
+};
+const ausLittera = {
+	vorname: 'Lutz',
+	nachname: 'Littera',
+	art: 'lehrkraft',
+	email: 'littera-4711@littera.invalid',
+	hat_zugang: false
+};
+const schueler = {
+	vorname: 'Mia',
+	nachname: 'Muster',
+	art: 'schueler',
+	klasse: '07A',
+	hat_zugang: false
+};
+
+const admin = { rolle: 'admin', permissions: [] };
+const mitarbeiter = { rolle: 'mitarbeiter', permissions: ['view_students', 'delete_students'] };
+
+beforeEach(() => {
+	authStore.currentUser = admin;
+});
 
 /** @param {any} profile */
 const zone = (profile) =>
@@ -93,5 +126,53 @@ describe('Löschen in der Akte: vom Zugang nur, wenn es einen gibt', () => {
 		const text = zone(schueler);
 		expect(text).toMatch(/Das Löschen dieses Schülerprofils/);
 		expect(text).not.toMatch(/Zugang/);
+	});
+
+	// Mit der Ersatzadresse meldet sich niemand an; die Akte zeigt die Adresse trotzdem.
+	it('aus Littera übernommen: kein Wort vom Zugang, obwohl ein Konto da ist', () => {
+		expect(zone(ausLittera)).not.toMatch(/Zugang/);
+		expect(dialog(ausLittera)).not.toMatch(/Zugang/);
+	});
+});
+
+// Einen Zugang löscht nur, wer auch Konten verwaltet (manage_users), wie in der
+// Benutzerverwaltung; der Server lehnt sonst ab (api/leser_loeschen_zugang_pg_test.go). Die Zone
+// zeigt den Knopf abgeschaltet und den Grund, statt ihn bis zur Ablehnung anzubieten.
+describe('Löschen in der Akte: einen Zugang löscht nur, wer Konten verwaltet', () => {
+	/** @param {any} profile */
+	const knopf = (profile) =>
+		/** @type {HTMLButtonElement} */ (
+			render(LeserGefahrenzone, { props: { leser: profile, onDelete: () => {} } }).getByRole(
+				'button',
+				{ name: /archivieren \/ löschen/ }
+			)
+		);
+
+	it('ohne manage_users: Knopf abgeschaltet, der Grund steht daneben', () => {
+		authStore.currentUser = mitarbeiter;
+		expect(knopf(lehrkraft).disabled).toBe(true);
+		expect(zone(lehrkraft).replace(/\s+/g, ' ')).toContain(
+			'Diese Person hat einen Zugang zu „Mein Portal“. Löschen kann sie nur, wer „Benutzer & ' +
+				'Rechte verwalten“ darf.'
+		);
+	});
+
+	it('mit manage_users: Knopf offen, der Satz vom erlöschenden Zugang', () => {
+		authStore.currentUser = {
+			...mitarbeiter,
+			permissions: [...mitarbeiter.permissions, 'manage_users']
+		};
+		expect(knopf(lehrkraft).disabled).toBe(false);
+		expect(zone(lehrkraft)).toMatch(/mit ihr den Zugang zu „Mein\s+Portal“/);
+	});
+
+	it.each([
+		['Praktikum', praktikum],
+		['aus Littera übernommen', ausLittera],
+		['Schüler', schueler]
+	])('%s: ohne Zugang genügt das Recht zum Löschen', (_wer, profile) => {
+		authStore.currentUser = mitarbeiter;
+		expect(knopf(profile).disabled).toBe(false);
+		expect(zone(profile)).not.toMatch(/Benutzer & Rechte/);
 	});
 });

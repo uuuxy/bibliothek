@@ -78,6 +78,20 @@ func LadeKontoEmail(ctx context.Context, pool db.Pool, leserID string) (string, 
 	return email, err
 }
 
+// IstZugangsadresse sagt, ob sich mit einem Konto unter dieser Adresse jemand anmeldet. Die
+// Anmeldung läuft über den Mailserver der Schule; eine leere Adresse und die Ersatzadresse der
+// Littera-Übernahme (PlatzhalterDomain) gibt es dort nicht.
+func IstZugangsadresse(email string) bool {
+	adresse := strings.ToLower(strings.TrimSpace(email))
+	return adresse != "" && !strings.HasSuffix(adresse, PlatzhalterDomain)
+}
+
+// KontoDerLeserzeile ist ein Konto, das mit seiner Leserzeile in den Papierkorb fiele.
+type KontoDerLeserzeile struct {
+	Rolle string
+	Email string
+}
+
 // LadeLeserName liefert Vor- und Nachnamen einer Leserzeile.
 func LadeLeserName(ctx context.Context, pool db.Pool, leserID string) (vorname, nachname string, err error) {
 	err = pool.QueryRow(ctx,

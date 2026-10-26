@@ -2,29 +2,40 @@
 	import { TriangleAlert } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import { istKollegium } from '../leser/leserArt.js';
+	import { schuelerRechte } from '../leser/schuelerRechte.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
 
 	/**
 	 * @component LeserGefahrenzone
-	 * Admin-only "Gefahrenzone" zum Archivieren/Löschen eines Leser-Profils.
-	 * Wird ausschließlich am unteren Ende des Reiters "Stammdaten & Adresse" gerendert.
+	 * "Gefahrenzone" zum Archivieren/Löschen eines Leser-Profils, für jeden mit dem Recht
+	 * delete_students. Wird ausschließlich am unteren Ende des Reiters "Stammdaten & Adresse"
+	 * gerendert.
 	 *
 	 * Sie steht auch beim Kollegium, und mit einem Kollegen fällt sein Zugang. Das muss hier
 	 * stehen, bevor jemand klickt: Nach dem Wiederherstellen ist der Zugang nicht von allein
 	 * zurück, er wird über die Schul-E-Mail in der Akte neu angelegt.
 	 *
-	 * Vom Zugang spricht sie nur, wenn es einen gibt: Praktikum und Fachbereich haben nie
-	 * einen (Migration 153), und eine Lehrkraft verliert ihn, wenn die Benutzerverwaltung das
-	 * Konto löscht. `email` im Profil ist die Adresse am Konto, leer heißt kein Konto.
+	 * Vom Zugang spricht sie nur, wenn es einen gibt (`hat_zugang` der Akte): Praktikum und
+	 * Fachbereich haben nie einen (Migration 153), eine aus Littera übernommene Lehrkraft nur ein
+	 * Konto mit Ersatzadresse, und eine Lehrkraft verliert ihn, wenn die Benutzerverwaltung das
+	 * Konto löscht.
+	 *
+	 * Einen Zugang löscht nur, wer auch Konten verwaltet, wie in der Benutzerverwaltung. Wer das
+	 * nicht darf, sieht den Knopf abgeschaltet und den Grund daneben, statt nach ihm zu suchen.
 	 *
 	 * @prop {() => void} onDelete - Callback, der den Lösch-/Archivierungsdialog öffnet.
-	 * @prop {any} leser - die geladene Akte (art, email).
+	 * @prop {any} leser - die geladene Akte (art, hat_zugang).
 	 */
 
 	/** @type {{ onDelete: () => void, leser: any }} */
 	let { onDelete, leser } = $props();
 
 	const kollege = $derived(istKollegium(leser));
-	const mitZugang = $derived(kollege && !!leser?.email);
+	const mitZugang = $derived(!!leser?.hat_zugang);
+	// Das Recht nach derselben Zuordnung wie die Akte (schuelerRechte), nicht nach der Rolle.
+	const zugangGesperrt = $derived(
+		mitZugang && !schuelerRechte(authStore.currentUser).loeschenMitZugang
+	);
 </script>
 
 <section
@@ -36,7 +47,10 @@
 			Gefahrenzone
 		</h3>
 		<p class="text-error/80 text-sm mt-1 max-w-xl">
-			{#if mitZugang}
+			{#if zugangGesperrt}
+				Diese Person hat einen Zugang zu „Mein Portal“. Löschen kann sie nur, wer „Benutzer &amp;
+				Rechte verwalten“ darf.
+			{:else if mitZugang}
 				Das Löschen entfernt die Person aus dem regulären System — und mit ihr den Zugang zu „Mein
 				Portal“. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
 			{:else if kollege}
@@ -52,6 +66,7 @@
 		variant="danger"
 		size="lg"
 		onclick={onDelete}
+		disabled={zugangGesperrt}
 		class="shrink-0 px-6 bg-surface-container-lowest"
 	>
 		{kollege ? 'Kollegen archivieren / löschen' : 'Schüler archivieren / löschen'}

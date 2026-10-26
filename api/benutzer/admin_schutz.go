@@ -27,24 +27,21 @@ import (
 //
 // Die Regel dahinter: manage_users verwaltet Konten unterhalb der Administratorebene.
 // Wer einen Administrator anlegen, verändern oder löschen will, muss selbst einer sein.
-
-// istAdminRolle erkennt die Administratorrolle unabhängig von Groß-/Kleinschreibung.
-func istAdminRolle(rolle string) bool {
-	return strings.EqualFold(strings.TrimSpace(rolle), string(auth.RolleAdmin))
-}
+// Dieselbe Regel hält das Löschen in der Leserdatei, mit dem das Konto eines Kollegen fällt
+// (api/leser/leser_aendern.go, kontoregel).
 
 // istAufruferAdmin liest die Rolle des Aufrufers aus den Claims. Die stammt aus der
 // Datenbank, nicht aus dem signierten Token — auth.PruefeToken überschreibt sie bei
 // jeder Anfrage, eine Herabstufung wirkt also sofort.
 func istAufruferAdmin(r *http.Request) bool {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
-	return ok && istAdminRolle(string(claims.Rolle))
+	return ok && claims.Rolle.IstAdmin()
 }
 
 // pruefeAdminVergabe verlangt Administratorrechte, wenn die gewünschte Rolle "admin"
 // ist. Bei Verstoß wird die HTTP-Antwort geschrieben und false geliefert.
 func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle string) bool {
-	if !istAdminRolle(gewuenschteRolle) || istAufruferAdmin(r) {
+	if !auth.Rolle(gewuenschteRolle).IstAdmin() || istAufruferAdmin(r) {
 		return true
 	}
 	apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Die Rolle Administrator vergibt nur ein Administrator", nil)
@@ -63,7 +60,7 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if istAdminRolle(rolle) {
+	if auth.Rolle(rolle).IstAdmin() {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusForbidden, "Das Konto eines Administrators bearbeitet nur ein Administrator", nil)
 		return false
 	}

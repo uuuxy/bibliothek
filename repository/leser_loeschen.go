@@ -16,9 +16,11 @@ import (
 // Leser gesperrt. Seine Daten bleiben, damit sich ein versehentliches Löschen zurücknehmen
 // lässt; endgültig löscht LoescheLeserEndgueltig.
 //
-// Die Tür ruft es mit der ID des Bearbeiters, der nächtliche Lauf mit leerer ID; der Eintrag
-// nennt dann SYSTEM.
-func (a *LeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error {
+// Die Tür ruft es mit der ID des Bearbeiters; ohne ID nennt der Eintrag SYSTEM.
+//
+// pruefeKonto entscheidet über jedes Konto, das mit der Zeile fiele; sein Fehler bricht ab, ohne
+// dass etwas bleibt, und kommt unverändert zurück. nil prüft nicht.
+func (a *LeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string, pruefeKonto func(KontoDerLeserzeile) error) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -70,12 +72,12 @@ func (a *LeserAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID strin
 	// der Akte die Schul-E-Mail nachträgt (api/leser/leser_schul_email.go).
 	var kontenGeloescht int64
 	if !leserart.IstSchueler(art) {
-		if kontenGeloescht, err = loescheKontenDerLeserzeile(ctx, tx, leserID, bearbeiterID); err != nil {
+		if kontenGeloescht, err = loescheKontenDerLeserzeile(ctx, tx, leserID, bearbeiterID, pruefeKonto); err != nil {
 			return err
 		}
 	}
 
-	// Ohne Bearbeiter war es der nächtliche Lauf.
+	// Ohne Bearbeiter nennt der Eintrag SYSTEM.
 	var akteur string
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
