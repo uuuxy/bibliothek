@@ -13,6 +13,7 @@ import {
 	FRIST_MAILVERSAND_MS
 } from '../apiFetch.js';
 import { snackbars } from './snackbars.svelte.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import {
 	MITTEL,
 	MITTEL_REIHENFOLGE,
@@ -109,6 +110,8 @@ class BestellStore {
 	recommendations = $state([]);
 	/** @type {any[]} */
 	incomingShipments = $state([]);
+	/** Der Grund, wenn eine Liste nicht kam (lieferanten, zulauf, bedarf); die Seite zeigt ihn. */
+	nichtGeladen = $state(/** @type {Record<string, string>} */ ({}));
 
 	/** Zeitpunkt des letzten vollständigen Ladens (0 = noch nie). */
 	#zuletztGeladen = 0;
@@ -116,16 +119,10 @@ class BestellStore {
 	/**
 	 * Lädt die Arbeitsdaten des Bestellwesens.
 	 *
-	 * Der Store ist ein Singleton, seine Daten überleben also den Unmount der Ansicht.
-	 * Trotzdem lud jeder Mount alles neu — und Bestellwesen wird bei jedem
-	 * Tab-Wechsel neu aufgebaut (Router.svelte nutzt {#if}/{:else if}). Der
-	 * Bestellbedarf ist die mit Abstand grösste Liste der Anwendung; genau das war der
-	 * spürbare Hänger beim Zurückwechseln auf „Bestellungen".
-	 *
-	 * Jetzt: vorhandene Daten sofort anzeigen und nur dann auffrischen, wenn sie älter
-	 * als frischeDauerMs sind — im Hintergrund, ohne die Ansicht zu blockieren. Nach
-	 * jeder verändernden Aktion (Wareneingang, Bestellung) laden die Aufrufer ohnehin
-	 * gezielt neu, die Liste ist also nicht auf den Tab-Wechsel als Auslöser angewiesen.
+	 * Der Store ist ein Singleton, seine Daten überleben den Unmount der Ansicht, und Bestellwesen
+	 * wird bei jedem Tab-Wechsel neu aufgebaut. Deshalb stehen vorhandene Daten sofort da und
+	 * werden erst nach frischeDauerMs im Hintergrund aufgefrischt. Nach jeder verändernden
+	 * Aktion (Wareneingang, Bestellung) laden die Aufrufer ohnehin gezielt neu.
 	 */
 	async init() {
 		const frischeDauerMs = 60_000;
@@ -157,16 +154,25 @@ class BestellStore {
 		}
 	}
 
-	// Die Loader melden zurück, ob sie durchkamen (Fehler-Toast zeigt apiFetch selbst):
-	// #ladeAlles stempelt den Cache nur bei vollem Erfolg. Ein gecachter Fehlschlag
-	// hieße sonst: 60 Sekunden leere Listen ohne Retry beim nächsten Mount.
-	async loadSuppliers() {
-		let ok = true;
+	// Holt eine Liste; null heißt, sie kam nicht, und ihr Grund steht in nichtGeladen. Statt eines
+	// Leerzustands zeigt die Seite dann ihn: „Keine Lieferanten" wäre eine falsche Auskunft.
+	/** @param {string} name @param {string} url @returns {Promise<any[] | null>} */
+	async #hole(name, url) {
 		try {
-			this.suppliers = (await apiGet('/api/lieferanten')) || [];
-		} catch {
-			ok = false;
+			const liste = (await apiGet(url)) || [];
+			this.nichtGeladen = { ...this.nichtGeladen, [name]: '' };
+			return liste;
+		} catch (e) {
+			this.nichtGeladen = { ...this.nichtGeladen, [name]: fehlertext(e) };
+			return null;
 		}
+	}
+
+	// Die Loader melden zurück, ob sie durchkamen: #ladeAlles stempelt den Cache nur bei vollem
+	// Erfolg, sonst lädt der nächste Mount sofort neu.
+	async loadSuppliers() {
+		const liste = await this.#hole('lieferanten', '/api/lieferanten');
+		if (liste) this.suppliers = liste;
 		// Auswahl per ID stabil halten; Index-basierte Auswahl kippt bei Reload/Umsortierung
 		//
 		// Vorgewaehlt wird der als Standard hinterlegte Lieferant. Vorher gewann schlicht der
@@ -189,7 +195,7 @@ class BestellStore {
 		if (auswahlUngueltig || (this.cart.length === 0 && standardWeicht)) {
 			this.selectedSupplierId = (standard ?? this.suppliers[0])?.id ?? '';
 		}
-		return ok;
+		return liste !== null;
 	}
 
 	/**
@@ -221,21 +227,15 @@ class BestellStore {
 	}
 
 	async loadIncomingShipments() {
-		try {
-			this.incomingShipments = (await apiGet('/api/bestellungen/zulauf')) || [];
-			return true;
-		} catch {
-			return false;
-		}
+		const liste = await this.#hole('zulauf', '/api/bestellungen/zulauf');
+		if (liste) this.incomingShipments = liste;
+		return liste !== null;
 	}
 
 	async loadRecommendations() {
-		try {
-			this.recommendations = (await apiGet('/api/bestellungen')) || [];
-			return true;
-		} catch {
-			return false;
-		}
+		const liste = await this.#hole('bedarf', '/api/bestellungen');
+		if (liste) this.recommendations = liste;
+		return liste !== null;
 	}
 
 	/**

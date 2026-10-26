@@ -4,9 +4,30 @@
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import LieferantZeile from './LieferantZeile.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
 
-	let { suppliers, onAddSupplier, onEditSupplier, onRemoveSupplier } = $props();
+	// ladefehler: der Grund, wenn die Lieferanten nicht kamen. „Keine Lieferanten angelegt" hieße
+	// sonst, es gebe keine, und lüde zum doppelten Anlegen ein. Eine Liste von vorhin bleibt stehen.
+	// Ohne onErneut zeigt LadeFehler keinen Knopf.
+	/**
+	 * @type {{
+	 *   suppliers: import('../../stores/bestellStore.svelte.js').Supplier[],
+	 *   ladefehler?: string,
+	 *   onErneut?: () => void,
+	 *   onAddSupplier: (name: string, email: string, kundennummer: string, haupt: boolean, kundennummerSchultraeger: string) => Promise<any>,
+	 *   onEditSupplier: (id: string, aenderung: Record<string, any>) => Promise<any>,
+	 *   onRemoveSupplier: (id: string) => void
+	 * }}
+	 */
+	let {
+		suppliers,
+		ladefehler = '',
+		onErneut,
+		onAddSupplier,
+		onEditSupplier,
+		onRemoveSupplier
+	} = $props();
 
 	let newName = $state('');
 	let newEmail = $state('');
@@ -117,7 +138,9 @@
 		<h2 class="text-base font-bold text-on-surface border-b border-outline-variant pb-3">
 			Aktive Lieferanten
 		</h2>
-		{#if !suppliers.length}
+		{#if ladefehler && !suppliers.length}
+			<LadeFehler titel="Lieferanten nicht geladen" text={ladefehler} onerneut={onErneut} />
+		{:else if !suppliers.length}
 			<div class="py-12 text-center text-on-surface-variant text-base">
 				Keine Lieferanten angelegt.
 			</div>

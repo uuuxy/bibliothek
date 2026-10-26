@@ -1,6 +1,7 @@
 <script>
 	import { CircleCheck, Printer } from '@lucide/svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Button from '../ui/Button.svelte';
 	import BedarfZeile from './BedarfZeile.svelte';
 	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
@@ -8,6 +9,9 @@
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { resthoehe } from '../../actions/resthoehe.js';
 	let { vorschlaege, onAddToCart } = $props();
+	// Kam der Bedarf nicht, steht der Grund statt der leeren Liste da: „Bestände ausreichend" hieße,
+	// es sei nichts zu bestellen. Scheitert nur das Auffrischen, bleibt die Liste von vorhin stehen.
+	const ladefehler = $derived(bestellStore.nichtGeladen.bedarf);
 
 	// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): die Zeile, deren Dialog offen ist.
 	/** @type {any | null} */
@@ -112,7 +116,13 @@
 	</header>
 
 	<!-- List -->
-	{#if !vorschlaege.length}
+	{#if ladefehler && !vorschlaege.length}
+		<LadeFehler
+			titel="Bestellbedarf nicht geladen"
+			text={ladefehler}
+			onerneut={() => bestellStore.loadRecommendations()}
+		/>
+	{:else if !vorschlaege.length}
 		<div
 			class="flex flex-col items-center justify-center text-center py-16 px-6 text-on-surface-variant"
 		>

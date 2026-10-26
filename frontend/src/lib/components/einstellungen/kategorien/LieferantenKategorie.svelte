@@ -22,6 +22,8 @@
 >
 	<Lieferanten
 		suppliers={bestellStore.suppliers}
+		ladefehler={bestellStore.nichtGeladen.lieferanten}
+		onErneut={() => bestellStore.loadSuppliers()}
 		onAddSupplier={(name, email, customerNumber, istHauptlieferant, kundennummerSchultraeger) =>
 			bestellStore.addSupplier(
 				name,

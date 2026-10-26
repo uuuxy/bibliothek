@@ -18,6 +18,7 @@
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Select from '../ui/Select.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import { Printer } from '@lucide/svelte';
@@ -127,7 +128,9 @@
 			{:else}
 				<div class="space-y-1.5">
 					<label class="block text-sm font-medium text-on-surface" for="lieferant">Lieferant</label>
-					{#if suppliers.length === 0}
+					{#if bestellStore.nichtGeladen.lieferanten && suppliers.length === 0}
+						<LadeFehler knapp titel="Lieferanten nicht geladen" />
+					{:else if suppliers.length === 0}
 						<p class="text-sm text-on-surface-variant italic">Keine Lieferanten vorhanden.</p>
 					{:else}
 						<Select

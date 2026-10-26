@@ -3,6 +3,8 @@
 	import Button from '../ui/Button.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 
 	/**
 	 * @component WareneingangTabelle
@@ -61,7 +63,15 @@
 	<!-- Ohne eigenen Scrollkasten: Die Positionen scrollen mit der Seite, der Name des
 	     Lieferanten bleibt dabei oben stehen. -->
 	<div>
-		{#if incomingShipments.length === 0}
+		<!-- Kam der Zulauf nicht, steht der Grund da: „Keine Positionen im Zulauf" hieße, es sei
+		     nichts unterwegs. Scheitert nur das Auffrischen, bleibt die Liste von vorhin stehen. -->
+		{#if bestellStore.nichtGeladen.zulauf && incomingShipments.length === 0}
+			<LadeFehler
+				titel="Zulauf nicht geladen"
+				text={bestellStore.nichtGeladen.zulauf}
+				onerneut={() => bestellStore.loadIncomingShipments()}
+			/>
+		{:else if incomingShipments.length === 0}
 			<div class="py-12 text-center text-sm font-medium text-on-surface-variant">
 				Keine Positionen im Zulauf.
 			</div>
