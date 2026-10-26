@@ -15,15 +15,25 @@
 	 *   erstellt_am: string }} MeineReservierung
 	 */
 
-	/** @type {{ reservierungen: MeineReservierung[] }} */
-	let { reservierungen } = $props();
+	import LadeFehler from '../ui/LadeFehler.svelte';
+
+	/** @type {{ reservierungen: MeineReservierung[], ladefehler?: string, onerneut?: () => void }} */
+	let { reservierungen, ladefehler = '', onerneut } = $props();
 
 	const offene = $derived(reservierungen.filter((r) => !r.erledigt));
 	const bereitgestellte = $derived(reservierungen.filter((r) => r.erledigt));
 </script>
 
 <section class="flex w-full max-w-3xl flex-col gap-3 pt-4">
-	{#if reservierungen.length === 0}
+	<!-- Kamen sie nicht, steht der Grund da: „Zurzeit wartet keine Reservierung" hieße, es gebe
+	     keine, und lüde dazu ein, denselben Satz noch einmal zu reservieren. -->
+	{#if ladefehler}
+		<LadeFehler
+			titel="Deine Reservierungen konnten nicht geladen werden"
+			text={ladefehler}
+			{onerneut}
+		/>
+	{:else if reservierungen.length === 0}
 		<p class="text-sm text-on-surface-variant">
 			Zurzeit wartet keine Reservierung — suche oben einen Titel, um einen Klassensatz zu
 			reservieren.

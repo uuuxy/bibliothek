@@ -1,18 +1,22 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 
-/** @param {string} pfad @param {(daten: any[]) => void} setze */
+/**
+ * Lädt eine Liste und liefert den Grund, wenn sie nicht kam, sonst ''.
+ * @param {string} pfad @param {(daten: any[]) => void} setze
+ * @returns {Promise<string>}
+ */
 async function ladeListe(pfad, setze) {
 	try {
 		const res = await apiFetch(pfad);
-		if (res.ok) {
-			const daten = await res.json();
-			// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
-			// nicht mit einem .filter-Absturz aus dem Rendern werfen.
-			if (Array.isArray(daten)) setze(daten);
-		}
-	} catch {
-		/* Anzeige ist Zusatzinfo — ohne sie bleibt das Portal benutzbar */
+		if (!res.ok) return await leseApiFehler(res, 'Die Liste ist nicht abrufbar');
+		const daten = await res.json();
+		// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
+		// nicht mit einem .filter-Absturz aus dem Rendern werfen.
+		if (Array.isArray(daten)) setze(daten);
+		return '';
+	} catch (e) {
+		return fehlertext(e);
 	}
 }
 
@@ -29,6 +33,9 @@ async function ladeListe(pfad, setze) {
 export function erzeugeReservierungsListen() {
 	let offene = $state(/** @type {any[]} */ ([]));
 	let eigene = $state(/** @type {any[]} */ ([]));
+	// Der Grund, wenn die eigenen nicht kamen: Der Überblick sagt es, statt „Zurzeit wartet keine
+	// Reservierung" zu behaupten.
+	let eigeneFehler = $state('');
 
 	return /** @satisfies {object} */ ({
 		get offene() {
@@ -37,11 +44,17 @@ export function erzeugeReservierungsListen() {
 		get eigene() {
 			return eigene;
 		},
+		get eigeneFehler() {
+			return eigeneFehler;
+		},
 		/** @param {string} titelId */
 		warteschlangeFuer: (titelId) => offene.filter((o) => o.titel_id === titelId),
+		// Die Warteschlange aller ist Zusatzinfo an den Treffern: Ohne sie bleibt das Portal benutzbar.
 		lade() {
 			ladeListe('/api/reservierungen/klassensatz/offen', (d) => (offene = d));
-			ladeListe('/api/reservierungen/klassensatz/eigene', (d) => (eigene = d));
+			ladeListe('/api/reservierungen/klassensatz/eigene', (d) => (eigene = d)).then(
+				(grund) => (eigeneFehler = grund)
+			);
 		}
 	});
 }

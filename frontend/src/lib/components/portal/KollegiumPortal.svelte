@@ -162,7 +162,11 @@
 		{:else if suche.leer}
 			<!-- Solange nichts gesucht wird: was die Lehrkraft geschickt hat und was daraus
 			     geworden ist. -->
-			<PortalUeberblick reservierungen={listen.eigene} />
+			<PortalUeberblick
+				reservierungen={listen.eigene}
+				ladefehler={listen.eigeneFehler}
+				onerneut={listen.lade}
+			/>
 			<PortalMeldungen
 				anliegen={eigeneAnliegen.liste}
 				onaktualisiert={eigeneAnliegen.lade}

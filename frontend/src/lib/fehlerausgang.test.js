@@ -14,7 +14,7 @@ import { findeVerschluckteFehlantworten } from './fehlerausgangScanner.js';
 //   - Der Ausweis-Designer schrieb nach einem fehlgeschlagenen Laden das VORGABE-Design
 //     an alle Arbeitsplätze — ohne Klick, nur durch Öffnen des Bildschirms (c2be1069).
 //
-// Die vierzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
+// Die Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
 // Ausnahmen, KEINE Erlaubnis: Neues gehört behandelt, nicht eingetragen.
 //
 // Ausgetragen am 30.09.2026: die Klassen in klassenVorschlaege.svelte.js und in KlassensatzZuweisenDialog.
@@ -50,10 +50,6 @@ const BESTAND = {
 	'src/lib/stores/uiStore.svelte.js': [3, 'Zählerpillen (Reservierungen, Anliegen, Etiketten)'],
 
 	'src/lib/stores/backupStatus.svelte.js': [1, 'kein Abzeichen statt falscher Entwarnung'],
-	'src/lib/components/portal/klassensatzReservierung.svelte.js': [
-		1,
-		'Zusatzinfo; das Portal bleibt ohne sie benutzbar'
-	],
 	'src/lib/components/lmfplan/lmfplanPlaner.svelte.js': [
 		1,
 		'kein Response, sondern ein Ergebnis-Objekt — der Toast steht eine Zeile davor'

@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { erzeugeReservierungsListen } from './klassensatzReservierung.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 const OFFEN = '/api/reservierungen/klassensatz/offen';
 const EIGENE = '/api/reservierungen/klassensatz/eigene';
@@ -74,5 +78,25 @@ describe('Reservierungs-Listen des Portals', () => {
 
 		expect(listen.offene).toEqual([]);
 		expect(listen.warteschlangeFuer('t1')).toEqual([]);
+		expect(listen.eigeneFehler).toBe('Netz weg');
+	});
+
+	// Kommen die eigenen Reservierungen nicht, sagt der Überblick es mit dem Grund, statt
+	// „Zurzeit wartet keine Reservierung" zu behaupten.
+	it('nennt den Grund, wenn die eigenen nicht kommen, und vergisst ihn beim nächsten Erfolg', async () => {
+		antworte({
+			[OFFEN]: ok([]),
+			[EIGENE]: serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		});
+		const listen = erzeugeReservierungsListen();
+		listen.lade();
+		await ausgelaufen();
+		expect(listen.eigeneFehler).toBe('Keine Berechtigung für diese Aktion');
+
+		antworte({ [OFFEN]: ok([]), [EIGENE]: ok([{ titel_id: 't2', klasse: '08B' }]) });
+		listen.lade();
+		await ausgelaufen();
+		expect(listen.eigeneFehler).toBe('');
+		expect(listen.eigene).toHaveLength(1);
 	});
 });
