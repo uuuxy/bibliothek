@@ -61,7 +61,7 @@ describe('Meldungen aus dem Nachbuchen', () => {
 	it('sagt bei fehlendem Recht, woran es liegt', async () => {
 		fetchMock.mockResolvedValue(antwort({}, 403));
 		await m.lade();
-		expect(m.fehler).toMatch(/Recht/);
+		expect(m.ladefehler).toMatch(/Recht/);
 		expect(m.liste).toHaveLength(0);
 	});
 
@@ -116,7 +116,7 @@ describe('Meldungen aus dem Nachbuchen', () => {
 			serverAntwort(500, { error: 'Ein interner Serverfehler ist aufgetreten' })
 		);
 		await m.lade();
-		expect(m.fehler).toBe('Ein interner Serverfehler ist aufgetreten');
+		expect(m.ladefehler).toBe('Ein interner Serverfehler ist aufgetreten');
 	});
 
 	// Der zweite Arbeitsplatz zeigte sonst die alte Zahl bis zur nächsten Anmeldung.

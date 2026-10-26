@@ -25,6 +25,9 @@ class NachbuchMeldungen {
 	/** @type {any[]} Die geladenen Zeilen; leer, solange die Liste nie geöffnet wurde. */
 	liste = $state([]);
 	laeuft = $state(false);
+	/** Warum die Liste nicht kam; die Liste zeigt dann nicht „Nichts offen". */
+	ladefehler = $state('');
+	/** Warum eine Meldung nicht quittiert wurde. */
 	fehler = $state('');
 	/** Ist die Liste gerade aufgeschlagen? */
 	geoeffnet = $state(false);
@@ -52,13 +55,13 @@ class NachbuchMeldungen {
 	/** Die Liste holen — laut, denn hier wartet jemand auf eine Antwort. */
 	async lade() {
 		this.laeuft = true;
-		this.fehler = '';
+		this.ladefehler = '';
 		try {
 			const res = await apiFetch(
 				`/api/action/nachbuch-meldungen${this.auchQuittierte ? '?alle=1' : ''}`
 			);
 			if (!res.ok) {
-				this.fehler =
+				this.ladefehler =
 					res.status === 403
 						? 'Für die Meldungen fehlt das Recht, Schülerdaten zu sehen.'
 						: await leseApiFehler(res, `Meldungen nicht abrufbar (${res.status}).`);
@@ -70,7 +73,7 @@ class NachbuchMeldungen {
 			// das Band eine andere Zahl als die Liste darunter.
 			if (!this.auchQuittierte) this.offen = this.liste.length;
 		} catch (err) {
-			this.fehler = err instanceof Error ? err.message : 'Meldungen nicht abrufbar.';
+			this.ladefehler = err instanceof Error ? err.message : 'Meldungen nicht abrufbar.';
 		} finally {
 			this.laeuft = false;
 		}
@@ -106,6 +109,7 @@ class NachbuchMeldungen {
 	schliesse() {
 		this.geoeffnet = false;
 		this.fehler = '';
+		this.ladefehler = '';
 	}
 
 	/**
@@ -132,6 +136,7 @@ class NachbuchMeldungen {
 		this.geoeffnet = false;
 		this.auchQuittierte = false;
 		this.fehler = '';
+		this.ladefehler = '';
 	}
 }
 

@@ -14,6 +14,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { nachbuchMeldungen as m } from '../../stores/nachbuchMeldungen.svelte.js';
 
 	/** Die sieben Ergebniswörter der Tür in der Sprache der Theke. */
@@ -51,7 +52,7 @@
 	<div class="p-4">
 		<p class="mb-3 text-sm text-on-surface-variant">
 			Hier steht, was beim Nachbuchen der ohne Netz gescannten Vorgänge anders lief als beim Scan.
-			„Erledigt" heisst: angesehen und in Ordnung gebracht.
+			„Erledigt" heißt: angesehen und in Ordnung gebracht.
 		</p>
 
 		<div class="mb-3">
@@ -66,7 +67,11 @@
 			<p class="mb-3 text-sm font-semibold text-error">{m.fehler}</p>
 		{/if}
 
-		{#if m.laeuft && m.liste.length === 0}
+		<!-- Kam die Liste nicht, steht an ihrer Stelle der Grund: „Nichts offen" hieße, es sei
+		     alles erledigt, während das Band noch offene zählt. -->
+		{#if m.ladefehler}
+			<LadeFehler titel="Meldungen nicht geladen" text={m.ladefehler} onerneut={() => m.lade()} />
+		{:else if m.laeuft && m.liste.length === 0}
 			<Ladekreis />
 		{:else if m.liste.length === 0}
 			<p class="py-6 text-center text-sm text-on-surface-variant">
