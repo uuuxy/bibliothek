@@ -64,11 +64,11 @@ func TestSperrMerkmalImHeader(t *testing.T) {
 		{"manuelle Sperre, Grund für Helfer gekürzt", &service.SperrgrundFehler{
 			Kern:  service.SperreAmLeser(service.Sperre("Manuelle Sperre")),
 			Grund: grund,
-		}, "leser", "Die Ausleihe ist gesperrt: Manuelle Sperre — bitte an die Bibliotheksleitung wenden"},
+		}, "leser", "Die Ausleihe ist gesperrt: Manuelle Sperre. Bitte an die Bibliotheksleitung wenden."},
 		{"Sperre der Ehemaligen, Grund für Helfer gekürzt", &service.SperrgrundFehler{
 			Kern:  service.SperreAmLeser(service.ErrGesperrt),
 			Grund: grund,
-		}, "leser", "Die Ausleihe ist gesperrt — bitte an die Bibliotheksleitung wenden"},
+		}, "leser", "Die Ausleihe ist gesperrt. Bitte an die Bibliotheksleitung wenden."},
 		{"offener Schaden", service.UebergehbareSperre(service.Sperre("1 unbezahlte(r) Schadensfall/-fälle offen")),
 			"uebergehbar", "Die Ausleihe ist gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen"},
 		{"Gerät gesperrt (kein Override)", service.Sperre("Gerät ist aktuell gesperrt"), "",

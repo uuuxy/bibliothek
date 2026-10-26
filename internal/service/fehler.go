@@ -72,7 +72,7 @@ func MeldungAus(err error) string {
 	case errors.As(err, &m):
 		return m.satz
 	case errors.As(err, &ohne):
-		return MeldungAus(ohne.kern) + hinweisOhneGrund
+		return MeldungAus(ohne.kern) + ". " + meldungBitteAnDieLeitung + "."
 	case errors.As(err, &mit):
 		return MeldungAus(mit.Kern) + ": " + mit.Grund
 	case errors.As(err, &s):

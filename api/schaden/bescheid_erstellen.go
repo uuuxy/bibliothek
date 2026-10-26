@@ -96,7 +96,7 @@ func (t *Tueren) erstelleBescheid(w http.ResponseWriter, r *http.Request, besche
 		// Die Zuordnungs-Prüfung ist ein Bedienfehler (Forderung bezahlt, storniert
 		// oder schon auf einem Brief), kein Serverfehler — ebenso ein Buch, das
 		// inzwischen zurück ist, schon gemeldet wurde oder einem anderen Kind gehört.
-		if meldung, ok := lageGeaendert(err); ok {
+		if meldung, ok := meldungZuGeaenderterLage(err); ok {
 			return apierrors.Conflict(meldung, err)
 		}
 		return apierrors.Internal("Bescheid konnte nicht erstellt werden", err)
@@ -168,24 +168,25 @@ func bescheidPostenAus(req bescheidErstellenAnfrage) ([]repository.BescheidPosit
 	return positionen, verluste
 }
 
-// lageGeaendert nennt zu einem Bedienfehler, bei dem sich die Lage geändert hat, seit Akte oder
-// Dialog offen stehen, den Satz für die Bibliothekskraft; ok ist false für jeden anderen Fehler.
-// Schadensmeldung und Bescheid antworten darauf mit 409.
-func lageGeaendert(err error) (meldung string, ok bool) {
+// meldungZuGeaenderterLage nennt zu einem Bedienfehler, bei dem sich die Lage geändert hat, seit
+// Akte oder Dialog offen stehen, den Satz für die Bibliothekskraft; ok ist false für jeden anderen
+// Fehler. Schadensmeldung und Bescheid antworten darauf mit 409. Der Name beginnt mit meldung,
+// damit meldung_ratsche_test.go die Sätze prüft.
+func meldungZuGeaenderterLage(err error) (meldung string, ok bool) {
 	var nichtZugeordnet *repository.ForderungenNichtZugeordnet
 	switch {
 	case errors.As(err, &nichtZugeordnet):
-		return fmt.Sprintf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
-			"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?",
+		return fmt.Sprintf("Es konnten %d von %d Forderungen nicht zugeordnet werden. "+
+			"Gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?",
 			nichtZugeordnet.Fehlend, nichtZugeordnet.Verlangt), true
 	case errors.Is(err, repository.ErrAusleiheInzwischenZurueck):
-		return "Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen.", true
+		return "Ein gewähltes Buch ist inzwischen zurückgegeben. Bitte den Dialog neu öffnen.", true
 	case errors.Is(err, repository.ErrAusleiheSchonGemeldet):
-		return "Für ein gewähltes Buch ist schon eine Forderung erfasst — bitte den Dialog neu öffnen.", true
+		return "Für ein gewähltes Buch ist schon eine Forderung erfasst. Bitte den Dialog neu öffnen.", true
 	case errors.Is(err, repository.ErrAusleiheFremd):
-		return "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen.", true
+		return "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen", true
 	case errors.Is(err, repository.ErrExemplarNeuVerliehen):
-		return "Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden", true
+		return "Exemplar wurde zwischenzeitlich neu ausgeliehen. Bitte den Vorgang neu laden.", true
 	}
 	return "", false
 }

@@ -55,7 +55,7 @@ func (t *Tueren) SchadenMelden(schadensAbfragen schadensMeldung) http.HandlerFun
 		if err != nil {
 			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
 			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.
-			if meldung, ok := lageGeaendert(err); ok {
+			if meldung, ok := meldungZuGeaenderterLage(err); ok {
 				return apierrors.Conflict(meldung, err)
 			}
 			return apierrors.Internal("Fehler beim Melden des Schadens", err)

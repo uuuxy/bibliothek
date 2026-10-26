@@ -227,9 +227,9 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 	fremd := bescheidAusleihe(t, pool, fremdEx, anderes, 30)
 
 	for _, f := range []struct{ name, ausleihe, meldung string }{
-		{"zurückgegeben", zurueck, "Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen."},
-		{"schon gemeldet", gemeldet, "Für ein gewähltes Buch ist schon eine Forderung erfasst — bitte den Dialog neu öffnen."},
-		{"fremdes Kind", fremd, "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen."},
+		{"zurückgegeben", zurueck, "Ein gewähltes Buch ist inzwischen zurückgegeben. Bitte den Dialog neu öffnen."},
+		{"schon gemeldet", gemeldet, "Für ein gewähltes Buch ist schon eine Forderung erfasst. Bitte den Dialog neu öffnen."},
+		{"fremdes Kind", fremd, "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen"},
 	} {
 		rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
 			bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{f.ausleihe: 10}))
@@ -278,8 +278,8 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "1 von 1 Forderungen konnten nicht zugeordnet werden — " +
-		"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
+	const erwartet = "Es konnten 1 von 1 Forderungen nicht zugeordnet werden. " +
+		"Gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
 	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
 		t.Errorf("BescheidErstellen: Meldung %q, erwartet %q", got, erwartet)
 	}

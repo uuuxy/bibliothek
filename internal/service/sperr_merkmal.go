@@ -67,8 +67,13 @@ func (e *SperrgrundFehler) Error() string { return e.Kern.Error() + ": " + e.Gru
 // Unwrap hält errors.Is(err, ErrGesperrt) am Leben, damit der HTTP-Status 403 bleibt.
 func (e *SperrgrundFehler) Unwrap() error { return e.Kern }
 
-// hinweisOhneGrund steht, wo ein Aufrufer ohne view_students den Freitext nicht sieht.
+// hinweisOhneGrund steht im Fehlertext, wo ein Aufrufer ohne view_students den Freitext nicht
+// sieht. Auf dem Bildschirm steht stattdessen meldungBitteAnDieLeitung als eigener Satz
+// (MeldungAus): M3 rät vom Gedankenstrich ab.
 const hinweisOhneGrund = " — bitte an die Bibliotheksleitung wenden"
+
+// meldungBitteAnDieLeitung ist der Satz der Theke für einen Aufrufer ohne view_students.
+const meldungBitteAnDieLeitung = "Bitte an die Bibliotheksleitung wenden"
 
 // OhneGrund liefert die Sperre ohne den Freitext, mit dem Hinweis an seiner Stelle. Merkmale und
 // errors.Is bleiben, weil der Kern bleibt.

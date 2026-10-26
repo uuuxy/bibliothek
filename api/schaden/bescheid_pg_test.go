@@ -176,8 +176,8 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, erwartet 409: %s", rec.Code, rec.Body.String())
 	}
 	// Die Antwort trägt den Satz, an dem das Sekretariat abliest, was zu prüfen ist.
-	const erwartet = "1 von 1 Forderungen konnten nicht zugeordnet werden — " +
-		"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
+	const erwartet = "Es konnten 1 von 1 Forderungen nicht zugeordnet werden. " +
+		"Gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?"
 	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
 		t.Errorf("BescheidErstellen: Meldung %q, erwartet %q", got, erwartet)
 	}

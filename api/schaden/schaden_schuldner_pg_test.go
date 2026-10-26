@@ -100,7 +100,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
 	}
-	const erwartet = "Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen."
+	const erwartet = "Ein gewähltes Buch ist inzwischen zurückgegeben. Bitte den Dialog neu öffnen."
 	if got := tuertest.Fehlermeldung(t, rec); got != erwartet {
 		t.Errorf("SchadenMelden: Meldung %q, erwartet %q", got, erwartet)
 	}

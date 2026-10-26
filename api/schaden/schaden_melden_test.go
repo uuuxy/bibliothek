@@ -34,9 +34,9 @@ func TestSchadenMelden_Meldungen(t *testing.T) {
 		meldung string
 	}{
 		{"neu verliehen", repository.ErrExemplarNeuVerliehen, http.StatusConflict,
-			"Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden"},
+			"Exemplar wurde zwischenzeitlich neu ausgeliehen. Bitte den Vorgang neu laden."},
 		{"inzwischen zurück", repository.ErrAusleiheInzwischenZurueck, http.StatusConflict,
-			"Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen."},
+			"Ein gewähltes Buch ist inzwischen zurückgegeben. Bitte den Dialog neu öffnen."},
 		{"Störung", errors.New("verbindung abgerissen"), http.StatusInternalServerError,
 			"Fehler beim Melden des Schadens"},
 	}
