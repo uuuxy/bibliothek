@@ -152,8 +152,6 @@ Bekannt und offen:
 - Druck-Center: Scheitert nach dem Druck der Vermerk „gedruckt", steht das nur in der Konsole
   (`vermerkeGedruckt` in `etikettenDruck.js`). Die Etiketten bleiben auf der Liste der fehlenden
   und werden womöglich doppelt gedruckt.
-- Öffentlicher Katalog: Bei einem Fehler des Servers zeigt die Suche „keine Treffer"
-  (`OpacSuche.svelte`).
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
 

@@ -1,18 +1,23 @@
 <script>
 	import { BookOpen, Search, ShieldCheck } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import LogoRelief from '../ui/LogoRelief.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import NeueFassung from '../layout/NeueFassung.svelte';
-	import { programmstand } from '../../stores/programmstand.svelte.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 
 	let suche = $state('');
 	/** @type {any[]} */
 	let ergebnisse = $state.raw([]);
 	let laedt = $state(false);
 	let searched = $state(false);
+	// Der Grund, wenn die Suche scheiterte: „Keine Bücher gefunden" hieße, der Katalog habe das Buch
+	// nicht.
+	let ladefehler = $state('');
 	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/portal/opac.go). */
 	let gesamt = $state(0);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -20,6 +25,7 @@
 
 	async function starteSuche() {
 		const q = suche.trim();
+		ladefehler = '';
 		if (!q) {
 			ergebnisse = [];
 			searched = false;
@@ -28,16 +34,15 @@
 		laedt = true;
 		searched = true;
 		try {
-			const url = `/api/public/opac/suche?q=${encodeURIComponent(q)}`;
-			const res = await fetch(url);
-			// Ohne Anmeldung und Live-Leitung erfährt der Katalog ein Update nur aus dieser Antwort.
-			programmstand.merkeAus(res);
-			if (res.ok) {
-				ergebnisse = await res.json();
-				gesamt = Number(res.headers.get('X-Treffer-Gesamt')) || ergebnisse.length;
-			} else ergebnisse = [];
-		} catch {
+			// Ohne Anmeldung und Live-Leitung erfährt der Katalog ein Update nur aus dieser Antwort;
+			// apiFetch merkt sich den Stand des Servers.
+			const res = await apiFetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
+			if (!res.ok) throw new Error(await leseApiFehler(res));
+			ergebnisse = await res.json();
+			gesamt = Number(res.headers.get('X-Treffer-Gesamt')) || ergebnisse.length;
+		} catch (e) {
 			ergebnisse = [];
+			ladefehler = fehlertext(e);
 		} finally {
 			laedt = false;
 		}
@@ -93,7 +98,9 @@
 
 	<!-- Results / empty states -->
 	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10 relative z-10">
-		{#if ergebnisse.length > 0}
+		{#if ladefehler}
+			<LadeFehler titel="Katalog nicht geladen" text={ladefehler} onerneut={starteSuche} />
+		{:else if ergebnisse.length > 0}
 			<!-- Ist die Antwort gekappt, nennt die Zeile beide Zahlen: Sonst stünde die Kappung
 			     des Servers da wie die Zahl der Bücher. Derselbe Satz wie in „Mein Portal". -->
 			<p class="text-xs text-on-surface-variant font-medium mb-4">

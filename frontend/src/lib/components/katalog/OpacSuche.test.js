@@ -90,3 +90,50 @@ describe('OpacSuche: neue Fassung', () => {
 		expect(screen.getByText('3 Treffer')).toBeTruthy();
 	});
 });
+
+// Scheiterte die Suche, stand „Keine Bücher gefunden" da: Der Katalog hätte das Buch nicht,
+// während nur der Server nicht antwortete.
+describe('OpacSuche: die Suche scheitert', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	it('nennt den Grund des Servers statt „Keine Bücher gefunden" und sucht auf Wunsch neu', async () => {
+		vi.useFakeTimers();
+		const abruf = vi.fn(async () => ({
+			ok: false,
+			status: 503,
+			headers: new Headers(),
+			text: async () => JSON.stringify({ error: 'Die Datenbank antwortet nicht' })
+		}));
+		vi.stubGlobal('fetch', abruf);
+		const screen = render(OpacSuche);
+		await suche(screen, 'Buch');
+
+		expect(screen.getByText('Katalog nicht geladen')).toBeTruthy();
+		expect(screen.getByText('Die Datenbank antwortet nicht')).toBeTruthy();
+		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+
+		abruf.mockImplementation(async () => /** @type {any} */ (antwort(3, 3)));
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+		await vi.waitFor(() => expect(screen.getByText('3 Treffer')).toBeTruthy());
+		expect(screen.queryByText('Katalog nicht geladen')).toBeNull();
+	});
+
+	it('sagt ohne Netz auf Deutsch, dass der Server nicht erreichbar ist', async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => {
+				throw new TypeError('Failed to fetch');
+			})
+		);
+		const screen = render(OpacSuche);
+		await suche(screen, 'Buch');
+
+		expect(screen.getByText('Keine Verbindung zum Server.')).toBeTruthy();
+		expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+	});
+});
