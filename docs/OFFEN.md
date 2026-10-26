@@ -28,6 +28,28 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 - [ ] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
+### Fehlerfälle der Oberfläche, Bereich für Bereich
+
+Je Bereich jeder Knopf und jeder Scan, der mit dem Server oder dem Browser spricht, mit den fünf
+Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
+
+- [ ] Eine Fehlerantwort wird durch einen eigenen Satz ersetzt: elf Stellen über den ganzen
+  Bestand, mit Prüfregel. (5.106)
+- [ ] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
+- [ ] Mahnwesen, Bescheide und Schäden. (5.106)
+- [ ] Druck-Center und Etiketten. (5.106)
+- [ ] Leserakte. (5.106)
+- [ ] Abgänger und Versand an die Klassenleitungen. (5.106)
+- [ ] LMF-Plan, Lernmittel und Klassensätze. (5.106)
+- [ ] Bestellungen und Lieferanten. (5.106)
+- [ ] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
+- [ ] Medienkatalog und Buchakte. (5.106)
+- [ ] Inventur. (5.106)
+- [ ] Einstellungen, Benutzer und Rechte. (5.106)
+- [ ] Portal und öffentlicher Katalog. (5.106)
+- [ ] Anmeldung, Sperre und Update-Hinweis. (5.106)
+- [ ] Statistik, Protokoll und Betrieb. (5.106)
+
 ### Bei dir
 
 Nur, was kein Test leisten kann.
@@ -42,6 +64,8 @@ Nur, was kein Test leisten kann.
   17.09.2026 als Verlust ausgebucht. Liegt es dort: in der Buchakte den Status des Exemplars
   zurückstellen.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
+- [ ] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
+  Danach laufen die Durchgänge auch in Safari; der WebKit-Testbrowser zeichnet keine PDFs. (5.106)
 
 ### Termin
 
@@ -90,6 +114,45 @@ beliebiges Ziel.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.106 Fehlerfälle der Oberfläche, Bereich für Bereich
+
+Beleg: Drei Fehler traten nur im Fehlerfall auf, und kein Test konnte sie sehen (behoben in
+29b2bbd0). Der Etikettenbogen vermerkte die Etiketten als gedruckt, wenn der Browser das Fenster
+blockiert hatte; „Speichern" im Tab der Schüler-Etiketten brach nach einer Minute ab; die
+Kontoauszüge der Abgänger meldeten „Error: Failed to load PDF". Der Browser der Browser-Tests hat
+weder Popup-Blocker noch PDF-Betrachter, und ein Test geht meist den Weg, auf dem alles klappt.
+
+Je Bereich geht jeder Knopf und jeder Scan, der mit dem Server oder dem Browser spricht, durch fünf
+Störfälle, im Browser herbeigeführt (Chromium, Firefox, WebKit; Handgriffe in
+[ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14):
+
+1. Der Server meldet einen Fehler: Steht seine Meldung da, auf Deutsch, und ist nichts als
+   erledigt vermerkt?
+2. Der Server antwortet langsam: Bleibt alles richtig, zählt ein Doppelklick doppelt?
+3. Das Netz ist weg: Kommt eine deutsche Meldung, ohne halb erledigten Zustand?
+4. Der Browser verweigert etwas (Fenster, Druckdialog, Kamera): Wird trotzdem etwas vermerkt?
+5. Später oder ein zweites Mal (nach einer Minute, nach dem Neuladen, beim zweiten Versuch): Geht
+   es noch, und zählt es nur einmal?
+
+Jeder Fund wird mit einem Test behoben, der am alten Stand rot ist. Danach geht die Suche nach
+derselben Form über den ganzen Bestand, und eine Prüfregel hält sie ([sweeps.md](sweeps.md)). Im
+Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)). Umfang: 179 Abrufe in
+105 Dateien der Oberfläche, 225 Routen am Server.
+
+Bekannt und offen:
+
+- Eine Fehlerantwort wird durch einen eigenen Satz ersetzt (`if (!res.ok) throw new Error('…')`),
+  der Grund des Servers fehlt: dreimal in `lmfplanDienst.js`, je zweimal in
+  `KlassenUebersicht.svelte` und `admin_api.js`, je einmal in `statistikAbruf.svelte.js`,
+  `Betriebsbereitschaft.svelte`, `KlassensatzZuweisenDialog.svelte` und `buch_vorhanden.js`.
+- Druck-Center: Scheitert nach dem Druck der Vermerk „gedruckt", steht das nur in der Konsole
+  (`vermerkeGedruckt` in `etikettenDruck.js`). Die Etiketten bleiben auf der Liste der fehlenden
+  und werden womöglich doppelt gedruckt.
+- Öffentlicher Katalog: Bei einem Fehler des Servers zeigt die Suche „keine Treffer"
+  (`OpacSuche.svelte`).
+- Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
+  WebKit-Testbrowser zeichnet keine PDFs.
 
 ### 7.2 Frisches Littera-Backup
 

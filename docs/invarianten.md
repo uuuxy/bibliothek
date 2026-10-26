@@ -423,6 +423,11 @@ Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle 
 - **Frage 5, das Formular nach dem Ladefehler:** Zeigt eine Maske nach einem gescheiterten
   Abruf leere Felder, schreibt „Speichern" sie über die echten Werte
   (`MailEinstellungen.test.js`; `ui/LadeFehler`).
+- **Frage 5, was der Browser verweigert:** Ein Fenster, das der Popup-Blocker nicht aufgehen
+  lässt, ein abgebrochener Druckdialog, eine verweigerte Kamera: Vermerkt der Pfad trotzdem einen
+  Erfolg? Ein Vermerk folgt der Wirkung, die das Programm sehen kann
+  (`frontend/src/lib/components/etiketten/etikettenDruck.test.js`: Ohne offenen Tab bleiben die
+  Etiketten auf der Liste).
 - **Frage 6, die Reihenfolge als Schutz:** Trägt eine Prüfung nur, weil eine Anweisung davor
   eine Zeile sperrt? Dann steht die Reihenfolge in einem Test
   (`repository/bestand_gleichzeitig_pg_test.go`: Der Vergleich mit dem gesehenen Bestand zählt
@@ -463,6 +468,11 @@ Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle 
   Servers, die des fremden Dienstes —, und was sieht die Person, wenn die Oberfläche zuerst
   aufgibt? Der Server arbeitet dann weiter, seine Antwort sieht niemand, und der zweite
   Versuch trifft eine Arbeit, die schon geschehen ist (`api/mail_routen_frist_test.go`).
+- **Frage 17, der Fehlerfall an der Oberfläche:** Was steht da, wenn der Server einen Fehler
+  meldet, nicht erreichbar ist oder ein Teil mehrerer Anfragen scheitert? Die Meldung des Servers
+  auf Deutsch, und nichts als erledigt vermerkt (`frontend/src/lib/apiFetch.test.js`,
+  `frontend/src/lib/components/buchakte/ExemplarLoeschen.test.js`). Geprüft wird durch
+  Herbeiführen im Browser ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, [OFFEN.md](OFFEN.md) 5.106).
 - **Frage 18, die jüngste Öffnung:** Fordert ein Bildschirm nacheinander zwei Inhalte an
   (zweiter Klick, „Neu"), welche Antwort gilt, wenn die erste später ankommt?
   (`frontend/e2e/titel-oeffnen-rennen.spec.js`.)

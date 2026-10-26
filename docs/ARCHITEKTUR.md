@@ -2339,6 +2339,16 @@ sieht.
 - **Eine Druckseite wird in der Druckansicht gemessen:** `window.print` durch eine Attrappe
   ersetzen, den echten Auslöser klicken, `page.emulateMedia({ media: 'print' })`
   (`frontend/e2e/ausweis-druckseite.spec.js`).
+- **Fehlerfälle des Browsers werden herbeigeführt, nicht abgewartet.** Der Browser der Suite
+  (headless shell) hat weder Popup-Blocker noch PDF-Betrachter: Ein blockiertes Fenster stellt
+  `window.open = () => null` nach, ein PDF im Tab zeigt `chromium.launch({ channel: 'chromium' })`.
+  Firefox blockiert Fenster und zeigt PDFs erst mit den `firefoxUserPrefs`
+  `'pdfjs.disabled': false` und `'dom.disable_open_during_load': true`. Eine Fehlerantwort kommt
+  über `route.fulfill` mit Status und Rumpf `{"error": …}`, ein Netzausfall über
+  `route.abort('failed')`. In WebKit greift `page.route` nur mit `serviceWorkers: 'block'`, sonst
+  beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Der WebKit-Testbrowser zeichnet
+  keine PDFs; ob Safari eines zeigt, beantwortet nur Safari über `safaridriver`, dort mit
+  „Entfernte Automatisierung erlauben".
 - **Browser-Tests verschicken keine Mail:** Für die Dauer des Laufs zeigt die Einstellung auf
   eine Adresse, an der nichts zuhört (`frontend/e2e/mailserver.js`, gehalten von
   `frontend/e2e/mailserver-stumm.spec.js`).
