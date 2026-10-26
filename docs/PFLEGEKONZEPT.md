@@ -374,6 +374,16 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   `browser.newContext()` bleibt offen, bis ihn jemand schließt; Playwright tut es erst mit dem
   Ende des Workers, und der läuft nach grünen Tests weiter. Jede Spec schließt deshalb am Ende
   des Tests die Kontexte, die sie selbst geöffnet hat.
+- **Ein Browser-Test, der die Anmeldung in der Datenbank ändert, ist am Arbeitsplatz manchmal
+  rot, in der CI grün.** Eine Anfrage der Seite, die erst nach der Änderung beim Server ankommt,
+  bekommt 423. Der Sperrbildschirm kommt dann vor dem nächsten Schritt des Tests, und dessen
+  Klick endet mit „element is not visible“: Hinter dem Sperrbildschirm ist die Anwendung
+  ausgeblendet. Am Arbeitsplatz antworten Listen bei den Resten vieler Testläufe langsamer; in
+  der Titel-Verwaltung kam die zweite gleichlautende Abfrage der Titelliste erst beim Server
+  an, als die Antwort auf die erste begann, rund 180 ms später. Der Test wartet deshalb vor der
+  Änderung, bis keine Anfrage der Seite mehr offen ist (`beobachteDatenanfragen` in
+  `e2e/messhilfe.js`). Wann welche Anfrage ankam, zeigt das Protokoll des Backends
+  (`docker logs`).
 
 ---
 

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { seedSQL, sitzungsKennung } from './helpers.js';
 import { oeffneTheke } from './ohne-netz.js';
+import { beobachteDatenanfragen } from './messhilfe.js';
 
 // Die Live-Leitung endet, sobald die Anmeldung am Server nicht mehr gilt (IstSitzungGueltig in
 // api/tuer/sitzung.go). Die Theke zeigt dann ohne Bedienung, was am Server gilt: den
@@ -33,8 +34,12 @@ test('zehn Stunden nach der Passworteingabe zeigt die Theke von selbst den Sperr
 }) => {
 	test.setTimeout(60_000);
 	const abgewiesen = await nurDieLeitungMeldet(page);
+	const anfragen = beobachteDatenanfragen(page);
 	await oeffneTheke(page);
 
+	// Erst altern, wenn keine Anfrage der Theke mehr offen ist: Eine, die danach ankommt, stünde
+	// mit 423 in `abgewiesen`, und die Sperre käme nicht von der Leitung.
+	await expect.poll(() => anfragen.pfade()).toEqual([]);
 	const sid = await sitzungsKennung(page);
 	seedSQL(
 		`UPDATE sitzungen SET passwort_geprueft_am = NOW() - INTERVAL '10 hours 1 minute' WHERE id = '${sid}'`

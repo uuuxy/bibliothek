@@ -18,6 +18,7 @@ import {
 	verliehenAn,
 	warteschlange
 } from './ohne-netz.js';
+import { beobachteDatenanfragen } from './messhilfe.js';
 
 // Zehn Stunden nach der letzten Passworteingabe sperrt der Server die Anmeldung (OFFEN 5.96). Wer
 // in dem Moment eine Maske offen hat, verliert nichts: Statt abzumelden, kommt der
@@ -35,12 +36,17 @@ test.afterAll(() => {
 test('zehn Stunden nach der Passworteingabe kommt der Sperrbildschirm; die Eingabe überlebt, Speichern geht danach', async ({
 	page
 }) => {
+	const anfragen = beobachteDatenanfragen(page);
 	await uiLogin(page);
 	await menuepunkt(page, 'Medienkatalog').click();
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
 	await page.locator('#buch-titel').fill(TITEL);
 	await page.locator('#buch-signatur').fill('Hoe 1');
+
+	// Erst altern, wenn keine Anfrage der Seite mehr offen ist: Eine, die danach beim Server
+	// ankommt, bekommt 423, und der Sperrbildschirm verdeckt „Speichern" vor dem Klick.
+	await expect.poll(() => anfragen.pfade()).toEqual([]);
 
 	// Nur diese Anmeldung altert: Andere Tests laufen mit demselben Konto daneben.
 	const sid = await sitzungsKennung(page);
@@ -83,12 +89,15 @@ test('ein Scan, der auf die Grenze trifft, wird nach dem Aufschließen gebucht',
 	const buch = `B-HD${teil}`;
 	legeBuecherAn(teil, [buch]);
 	try {
+		const anfragen = beobachteDatenanfragen(page);
 		await page.clock.install();
 		await oeffneTheke(page);
 		const anna = await legeSchuelerAn(page, 'Anna', teil);
 		await scanne(page, anna.nummer);
 		await expect(page.getByRole('heading', { name: /Anna/ }).first()).toBeVisible();
 
+		// Wie oben: Sonst träfe eine andere Anfrage vor dem Scan auf die Sperre.
+		await expect.poll(() => anfragen.pfade()).toEqual([]);
 		const sid = await sitzungsKennung(page);
 		seedSQL(
 			`UPDATE sitzungen SET passwort_geprueft_am = NOW() - INTERVAL '10 hours 1 minute' WHERE id = '${sid}'`

@@ -4,7 +4,8 @@ import { expect } from '@playwright/test';
  * Für die messenden Specs (Kontrast, Schriftgrößen, Feldhöhen, Trefferflächen): Eine Seite
  * wird erst gemessen, wenn ihre Datenanfragen beantwortet sind, und der Test wird rot, wenn
  * nach der Messung noch Inhalt nachkommt. Eine feste Untergrenze je Seite taugt dafür nicht,
- * weil die Datenmenge je Umgebung verschieden ist.
+ * weil die Datenmenge je Umgebung verschieden ist. Specs, die die Anmeldung in der Datenbank
+ * ändern, warten mit beobachteDatenanfragen, bis keine Anfrage der Seite mehr offen ist.
  */
 
 /**
