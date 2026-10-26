@@ -1,4 +1,4 @@
-import { apiFetch, leseApiFehlerMitDaten } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler, leseApiFehlerMitDaten } from '../../apiFetch.js';
 
 // Reine API-Aufrufe der Inventur, getrennt von der Zustandslogik im Hook.
 // Jede Funktion liefert ein { ok, data?, status, error? }-Objekt, damit der Hook
@@ -16,10 +16,13 @@ async function auswerten(res) {
 	return { ok: false, status: res.status, error: meldung, data: daten ?? {} };
 }
 
-/** Laufende Sessions laden (für die "bereits laufend"-Anzeige). */
+/**
+ * Laufende Sessions laden (für die "bereits laufend"-Anzeige). Lehnt der Server ab, wirft der
+ * Abruf mit seinem Grund: Eine leere Liste hieße, es laufe keine Inventur.
+ */
 export async function ladeOffeneSessions() {
 	const res = await apiFetch('/api/inventur/sessions');
-	if (!res.ok) return [];
+	if (!res.ok) throw new Error(await leseApiFehler(res));
 	return (await res.json().catch(() => [])) || [];
 }
 
@@ -115,7 +118,7 @@ export async function schliesseAb(sessionId) {
  */
 export async function ladeAbgeschlosseneInventuren() {
 	const res = await apiFetch('/api/inventur/abgeschlossen');
-	if (!res.ok) return [];
+	if (!res.ok) throw new Error(await leseApiFehler(res));
 	return (await res.json().catch(() => [])) || [];
 }
 

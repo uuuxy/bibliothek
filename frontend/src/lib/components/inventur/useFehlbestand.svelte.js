@@ -6,14 +6,16 @@ import {
 	loescheVerlustEndgueltig
 } from './inventurApi.js';
 import { formatEuro } from '../../utils/format.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 
 /**
  * Der Fehlbestandsbericht: Liste, frühere Läufe, und die zwei Handlungen darauf
  * (Gefunden / endgültig löschen). Aus useInventur herausgelöst — die
  * Session-Scan-Mechanik und der Bericht über eine ABGESCHLOSSENE Inventur sind zwei
  * verschiedene Zuständigkeiten, die nur zufällig denselben Bildschirm teilen.
+ * @param {{ frueher: string }} [nichtGeladen] bekommt den Grund, wenn die früheren nicht kamen
  */
-export function useFehlbestand() {
+export function useFehlbestand(nichtGeladen = { frueher: '' }) {
 	/** Fehlbestand der zuletzt abgeschlossenen (oder nachträglich aufgerufenen)
 	 *  Inventur — bleibt stehen, bis er ausdruecklich geschlossen wird. */
 	let fehlbestand = $state.raw(/** @type {any[]} */ ([]));
@@ -105,7 +107,12 @@ export function useFehlbestand() {
 	}
 
 	async function ladeFruehereInventuren() {
-		abgeschlosseneInventuren = await ladeAbgeschlosseneInventuren();
+		try {
+			abgeschlosseneInventuren = await ladeAbgeschlosseneInventuren();
+			nichtGeladen.frueher = '';
+		} catch (e) {
+			nichtGeladen.frueher = fehlertext(e);
+		}
 	}
 
 	/** @param {{session_id: string, label: string, abgeschlossen_am: string}} inventur */

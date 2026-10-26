@@ -7,9 +7,9 @@
 	import Button from '../ui/Button.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import FehlbestandBericht from './FehlbestandBericht.svelte';
+	import InventurLaeufe from './InventurLaeufe.svelte';
 	import ScanRueckmeldung from './ScanRueckmeldung.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
-	import { formatDatum } from '../../utils/format.js';
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
 
 	const ablauf = useInventur();
@@ -80,74 +80,7 @@
 				</div>
 			{/if}
 
-			{#if ablauf.offeneLaeufe.length > 0}
-				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
-					<h4 class="text-sm font-semibold text-on-surface-variant">Laufende Inventuren</h4>
-					{#each ablauf.offeneLaeufe as session (session.session_id)}
-						<div
-							class="flex items-center justify-between gap-3 p-3 bg-warning-container text-on-warning-container rounded-lg"
-						>
-							<div class="min-w-0">
-								<div class="font-semibold truncate">{session.label}</div>
-								<div class="text-xs">
-									{session.erfasst} / {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
-										0,
-										16
-									)}
-								</div>
-							</div>
-							<div class="flex items-center gap-2 shrink-0">
-								<Button size="sm" onclick={() => ablauf.setzeLaufFort(session)}>Fortsetzen</Button>
-								<Button variant="secondary" size="sm" onclick={() => ablauf.verwerfeLauf(session)}>
-									Verwerfen
-								</Button>
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Frühere Inventuren.
-			     Der Fehlbestandsbericht entstand bisher nur aus der Antwort des Abschlusses
-			     und lebte im Arbeitsspeicher DIESES Browsers: Neu laden — weg. Der Kollege am
-			     zweiten Arbeitsplatz, der mit der Liste ins Regal geht, sah ihn nie. Die Daten
-			     liegen dauerhaft auf dem Server; hier ist der Weg zurück zu ihnen. Eine verworfene
-			     Inventur hat nichts gebucht und keinen Bericht; ihr Bereich ist nicht geprüft. -->
-			{#if ablauf.abgeschlosseneInventuren.length > 0}
-				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
-					<h4 class="text-sm font-semibold text-on-surface-variant">Frühere Inventuren</h4>
-					{#each ablauf.abgeschlosseneInventuren as inventur (inventur.session_id)}
-						<div
-							class="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-outline-variant"
-						>
-							<div class="min-w-0">
-								<div class="font-semibold text-on-surface truncate">{inventur.label}</div>
-								<div class="text-xs text-on-surface-variant">
-									{formatDatum(inventur.abgeschlossen_am)} · {inventur.erfasst} erfasst ·
-									{#if inventur.verworfen}
-										verworfen
-									{:else if inventur.verluste > 0}
-										<span class="text-error font-semibold">{inventur.verluste} fehlend</span>
-									{:else}
-										vollständig
-									{/if}
-								</div>
-							</div>
-							{#if !inventur.verworfen}
-								<Button
-									variant="secondary"
-									size="sm"
-									class="shrink-0"
-									disabled={ablauf.ladeFruehereLaeuft}
-									onclick={() => ablauf.zeigeFrueherenFehlbestand(inventur)}
-								>
-									Fehlbestand
-								</Button>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
+			<InventurLaeufe {ablauf} />
 		</div>
 	{:else}
 		<div class="space-y-6">

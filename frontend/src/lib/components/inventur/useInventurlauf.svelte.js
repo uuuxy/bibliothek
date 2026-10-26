@@ -1,4 +1,5 @@
 import { apiFetch } from '../../apiFetch.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 import { ladeOffeneSessions, starteLauf, brichAb } from './inventurApi.js';
 
 /**
@@ -25,6 +26,9 @@ export function useInventurlauf(opts = {}) {
 	let gewaehlterJahrgang = $state('');
 	let faecher = $state(/** @type {string[]} */ ([]));
 	let offeneLaeufe = $state(/** @type {any[]} */ ([]));
+	// Der Grund, wenn eine Liste der Seite nicht kam (laeufe, frueher), sonst ''. Ein Objekt, damit
+	// useFehlbestand die früheren eintragen kann. Ohne die laufenden lüde die Seite zum Start ein.
+	const nichtGeladen = $state({ laeufe: '', frueher: '' });
 	let stand = $state({ erwartet: 0, erfasst: 0, label: '' });
 	let startOffen = $state(false);
 	let fehler = $state('');
@@ -48,7 +52,12 @@ export function useInventurlauf(opts = {}) {
 	}
 
 	async function ladeOffeneLaeufe() {
-		offeneLaeufe = await ladeOffeneSessions();
+		try {
+			offeneLaeufe = await ladeOffeneSessions();
+			nichtGeladen.laeufe = '';
+		} catch (e) {
+			nichtGeladen.laeufe = fehlertext(e);
+		}
 	}
 
 	async function starteInventur() {
@@ -159,6 +168,7 @@ export function useInventurlauf(opts = {}) {
 		get offeneLaeufe() {
 			return offeneLaeufe;
 		},
+		nichtGeladen,
 		get stand() {
 			return stand;
 		},

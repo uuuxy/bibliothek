@@ -11,7 +11,13 @@ vi.mock('../../apiFetch.js', () => ({
 vi.mock('../../utils/audio.js', () => ({ spieleErfolgston: vi.fn(), spieleFehlerton: vi.fn() }));
 
 import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
-import { schliesseAb, ladeOffeneSessions, scanne, deuteScanErgebnis } from './inventurApi.js';
+import {
+	schliesseAb,
+	ladeOffeneSessions,
+	ladeAbgeschlosseneInventuren,
+	scanne,
+	deuteScanErgebnis
+} from './inventurApi.js';
 import { useInventur, abschlussText } from './useInventur.svelte.js';
 import { spieleErfolgston, spieleFehlerton } from '../../utils/audio.js';
 
@@ -171,5 +177,31 @@ describe('Ton beim Scan', () => {
 
 		expect(spieleFehlerton).toHaveBeenCalledTimes(2);
 		expect(spieleErfolgston).not.toHaveBeenCalled();
+	});
+});
+
+// Kamen die laufenden Inventuren nicht, fehlte ihre Liste still, und darüber stand „Keine
+// Inventur aktiv" mit dem Knopf für einen neuen Lauf. Kamen die früheren nicht, fehlten sie
+// ebenso still.
+describe('Inventur: eine Liste kommt nicht', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it('merkt sich je Liste den Grund und vergisst ihn beim nächsten Erfolg', async () => {
+		vi.mocked(ladeOffeneSessions).mockRejectedValue(new Error('Die Datenbank antwortet nicht'));
+		vi.mocked(ladeAbgeschlosseneInventuren).mockRejectedValue(new Error('Zeitüberschreitung'));
+		const ablauf = useInventur();
+		await ablauf.ladeOffeneLaeufe();
+		await ablauf.ladeFruehereInventuren();
+		expect(ablauf.nichtGeladen).toEqual({
+			laeufe: 'Die Datenbank antwortet nicht',
+			frueher: 'Zeitüberschreitung'
+		});
+
+		vi.mocked(ladeOffeneSessions).mockResolvedValue([{ session_id: 's1' }]);
+		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue([]);
+		await ablauf.ladeOffeneLaeufe();
+		await ablauf.ladeFruehereInventuren();
+		expect(ablauf.nichtGeladen).toEqual({ laeufe: '', frueher: '' });
+		expect(ablauf.offeneLaeufe).toEqual([{ session_id: 's1' }]);
 	});
 });

@@ -19,19 +19,18 @@ export function abschlussText(offen) {
 }
 
 /**
- * Hook für die Inventur. Der Fortschritt ist seit dem Session-Umbau an eine
- * session_id gebunden (Backend: inventur_sessions); mehrere Inventuren können parallel
- * laufen, ohne sich zu überschreiben.
+ * Hook für die Inventur. Der Fortschritt hängt an einer session_id (inventur_sessions); mehrere
+ * Inventuren laufen parallel, ohne sich zu überschreiben.
  */
 export function useInventur() {
 	let letzterScan = $state(/** @type {any} */ (null));
 	let barcodeEingabe = $state('');
 	let scanLaeuft = $state(false);
 
-	const fb = useFehlbestand();
 	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurlauf, aber
 	// letzterScan bleibt hier — es ist Zustand des Scan-Bildschirms, nicht der Session.
 	const lauf = useInventurlauf({ onActivate: () => (letzterScan = null) });
+	const fb = useFehlbestand(lauf.nichtGeladen);
 
 	// Scans, die eintreffen, solange einer am Server ist. Ein Handscanner wartet nicht auf die
 	// Antwort; ein verworfener Scan fiele beim Abschluss als Verlust auf.
@@ -196,6 +195,7 @@ export function useInventur() {
 		get offeneLaeufe() {
 			return lauf.offeneLaeufe;
 		},
+		nichtGeladen: lauf.nichtGeladen,
 		get stand() {
 			return lauf.stand;
 		},
