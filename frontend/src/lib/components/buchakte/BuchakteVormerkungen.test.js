@@ -127,4 +127,30 @@ describe('BuchakteVormerkungen', () => {
 			await screen.findByText('Keine ausstehenden Vormerkungen für diesen Titel.')
 		).toBeTruthy();
 	});
+
+	// Lehnt der Server die Suche ab, steht sein Grund da. „Keine Schüler gefunden" hieße, es gebe
+	// den Schüler nicht.
+	it('nennt bei einer abgelehnten Suche den Grund statt „Keine Schüler gefunden"', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
+
+		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Barcode)'), {
+			target: { value: 'Ida' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
+
+		expect(await screen.findByText('Keine Berechtigung für diese Aktion')).toBeTruthy();
+		expect(screen.queryByText('Keine Schüler gefunden.')).toBeNull();
+	});
+
+	it('schreibt das Datum der Vormerkung als TT.MM.JJJJ', () => {
+		const screen = render(BuchakteVormerkungen, {
+			vormerkungen: [VORMERKUNG],
+			titel: { id: 't1' }
+		});
+		expect(screen.getByText('20.09.2026')).toBeTruthy();
+	});
 });

@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiFetch } from '../../apiFetch.js';
 import { sucheSchuelerFuerVormerkung, MAX_TREFFER } from './vormerkungSchuelersuche.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 // Der Vormerkungs-Reiter sucht Schüler über die Schülerdatei, nicht über die Theken-Suche
 // (Befund-Register, Entscheidung 3 vom 05.09.2026). Hier ohne Browser: welche Tür, welche
@@ -43,9 +47,17 @@ describe('Schülersuche des Vormerkungs-Reiters', () => {
 		expect(await sucheSchuelerFuerVormerkung('N')).toHaveLength(MAX_TREFFER);
 	});
 
-	it('liefert bei Fehlerantwort und Nicht-Liste eine leere Auswahl', async () => {
-		antwort([], false);
-		expect(await sucheSchuelerFuerVormerkung('x')).toEqual([]);
+	// Eine leere Auswahl hieße „Keine Schüler gefunden": Lehnt der Server ab, steht sein Grund da.
+	it('wirft bei einer Fehlerantwort mit dem Grund des Servers', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			serverAntwort(403, { error: 'Keine Berechtigung für diese Aktion' })
+		);
+		await expect(sucheSchuelerFuerVormerkung('x')).rejects.toThrow(
+			'Keine Berechtigung für diese Aktion'
+		);
+	});
+
+	it('liefert bei einer Antwort ohne Liste eine leere Auswahl', async () => {
 		antwort({ error: 'nicht erlaubt' });
 		expect(await sucheSchuelerFuerVormerkung('x')).toEqual([]);
 	});

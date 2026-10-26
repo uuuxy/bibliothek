@@ -6,19 +6,21 @@
 // vorgemerkt wird.
 //
 // Eigenes Modul, damit der Weg ohne Browser prüfbar ist (vormerkungSchuelersuche.test.js).
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
 // Die Theken-Suche lieferte höchstens zehn; die Schülerdatei kappt eine Suche bewusst
 // nicht (sie ist eine Liste). Der Reiter zeigt eine Auswahl, keine Liste — also hier.
 export const MAX_TREFFER = 10;
 
 /**
+ * Lehnt der Server ab, wirft die Suche mit seinem Grund: Eine leere Auswahl hieße „Keine
+ * Schüler gefunden".
  * @param {string} q
  * @returns {Promise<Array<{ id: string, title: string, subtitle: string }>>}
  */
 export async function sucheSchuelerFuerVormerkung(q) {
 	const res = await apiFetch(`/api/schueler?q=${encodeURIComponent(q.trim())}`);
-	if (!res.ok) return [];
+	if (!res.ok) throw new Error(await leseApiFehler(res, 'Suche fehlgeschlagen'));
 	const liste = await res.json();
 	return (Array.isArray(liste) ? liste : []).slice(0, MAX_TREFFER).map((s) => ({
 		id: s.id,

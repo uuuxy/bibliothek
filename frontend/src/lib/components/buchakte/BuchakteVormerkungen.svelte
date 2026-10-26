@@ -6,6 +6,8 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { schuelerRechte } from '../leser/schuelerRechte.js';
 	import { sucheSchuelerFuerVormerkung } from './vormerkungSchuelersuche.js';
+	import { formatDatum } from '../../utils/format.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { Clock, Trash } from '@lucide/svelte';
@@ -17,6 +19,7 @@
 	let suche = $state('');
 	let treffer = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
+	let suchFehler = $state('');
 	let notiz = $state('');
 	// Die Schülersuche läuft über die Schülerdatei (GET /api/schueler?q=), also gilt deren
 	// Recht — dasselbe, das der Server an der Route verlangt (schuelerRechte.js).
@@ -38,15 +41,14 @@
 	}
 
 	async function sucheLeser() {
-		if (!suche.trim()) {
-			treffer = [];
-			return;
-		}
+		treffer = [];
+		suchFehler = '';
+		if (!suche.trim()) return;
 		isSearching = true;
 		try {
 			treffer = await sucheSchuelerFuerVormerkung(suche);
-		} catch {
-			treffer = [];
+		} catch (e) {
+			suchFehler = fehlertext(e);
 		} finally {
 			isSearching = false;
 		}
@@ -142,6 +144,8 @@
 							</div>
 						{/each}
 					</div>
+				{:else if suchFehler}
+					<p role="alert" class="text-sm text-error mt-2">{suchFehler}</p>
 				{:else if suche && !isSearching && treffer.length === 0}
 					<p class="text-sm text-on-surface-variant mt-2">Keine Schüler gefunden.</p>
 				{/if}
@@ -169,13 +173,7 @@
 			<tbody>
 				{#each vormerkungen as v, _i (_i)}
 					<tr>
-						<td class="font-medium">
-							{new Date(v.erstellt_am).toLocaleDateString('de-DE', {
-								day: '2-digit',
-								month: '2-digit',
-								year: 'numeric'
-							})}
-						</td>
+						<td class="font-medium">{formatDatum(v.erstellt_am)}</td>
 						<td class="font-semibold text-primary">
 							{v.schueler_name || 'Unbekannt'}
 						</td>
