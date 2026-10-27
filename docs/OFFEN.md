@@ -39,7 +39,7 @@ Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
   ganzen Bestand, eine davon an der Theke, mit Prüfregel. (5.106)
 - [x] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
 - [x] Mahnwesen, Bescheide und Schäden. (5.106)
-- [ ] Druck-Center und Etiketten. (5.106)
+- [x] Druck-Center und Etiketten. (5.106)
 - [ ] Leserakte. (5.106)
 - [ ] Abgänger und Versand an die Klassenleitungen. (5.106)
 - [ ] LMF-Plan, Lernmittel und Klassensätze. (5.106)

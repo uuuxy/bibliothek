@@ -2361,6 +2361,11 @@ sieht.
   das, und ein Test des Fehlerfalls besteht, ohne dass der Weg lief. Eine Antwort des Servers
   stellt `serverAntwort(status, rumpf)` nach (`frontend/src/lib/serverAntwort.js`), einen leeren
   Rumpf wie den eines 502 vom Proxy `serverAntwort(502)`.
+- **Eine neue Datei heißt anders als jede vorhandene, auch ohne Rücksicht auf Groß- und
+  Kleinschreibung:** Das Dateisystem am Arbeitsplatz unterscheidet sie nicht. Ein neuer
+  `Etikettendruck.test.js` überschreibt `etikettenDruck.test.js`, und der Lauf bleibt grün, weil
+  die Datei weiter Tests enthält. In `git status` erscheint eine neue Datei als `??`, nicht als
+  `M`.
 - **Browser-Tests verschicken keine Mail:** Für die Dauer des Laufs zeigt die Einstellung auf
   eine Adresse, an der nichts zuhört (`frontend/e2e/mailserver.js`, gehalten von
   `frontend/e2e/mailserver-stumm.spec.js`).
