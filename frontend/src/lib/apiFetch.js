@@ -197,56 +197,56 @@ export async function leseApiFehler(res, vorgabe) {
 	return (await leseApiFehlerMitDaten(res, vorgabe)).meldung;
 }
 
+// Markiert den Fehler als „dem Nutzer bereits gezeigt". Ohne das legen Aufrufer in ihrem
+// catch-Block gern noch einen generischen Toast („Fehler beim Speichern") obendrauf, der die
+// Meldung mit der Ursache verdeckt. Die Aufrufer der Hüllen darunter melden selbst nichts.
+/** @param {Error} err @returns {never} */
+function zeigeUndWirf(err) {
+	snackbars.addToast(err.message, 'error');
+	throw Object.assign(err, { handled: true });
+}
+
 async function werteAntwortAus(res) {
-	if (res.ok) {
-		if (res.status === 204) return null;
-		const text = await res.text();
-		if (!text) return null;
-		try {
-			return JSON.parse(text);
-		} catch {
-			return text;
-		}
-	} else {
-		const fehlerText = await leseApiFehler(res);
-		snackbars.addToast(fehlerText, 'error');
-		const err = new Error(fehlerText);
-		// Markiert den Fehler als "dem Nutzer bereits gezeigt". Ohne das legen Aufrufer
-		// in ihrem catch-Block gern noch einen generischen Toast ("Fehler beim Speichern")
-		// obendrauf — der verdeckt die eigentliche Servermeldung, die die Ursache nennt.
-		Object.assign(err, { handled: true });
-		throw err;
+	if (!res.ok) zeigeUndWirf(new Error(await leseApiFehler(res)));
+	if (res.status === 204) return null;
+	const text = await res.text();
+	if (!text) return null;
+	try {
+		return JSON.parse(text);
+	} catch {
+		return text;
 	}
 }
 
+/**
+ * apiFetch für die Hüllen: Auch ein Fehler ohne Antwort (kein Netz, Frist abgelaufen) erscheint
+ * als Meldung, wie die Ablehnung des Servers.
+ * @param {string} url @param {RequestInit & { timeoutMs?: number }} options
+ */
+const hole = (url, options) => apiFetch(url, options).catch(zeigeUndWirf).then(werteAntwortAus);
+
+/** @param {string} method @param {any} daten @param {RequestInit} options */
+const mitJson = (method, daten, options) => ({
+	...options,
+	method,
+	headers: { 'Content-Type': 'application/json', ...options.headers },
+	body: daten ? JSON.stringify(daten) : undefined
+});
+
 export async function apiGet(url, options = {}) {
-	const res = await apiFetch(url, { ...options, method: 'GET' });
-	return werteAntwortAus(res);
+	return hole(url, { ...options, method: 'GET' });
 }
 
 export async function apiPost(url, daten, options = {}) {
-	const res = await apiFetch(url, {
-		...options,
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json', ...options.headers },
-		body: daten ? JSON.stringify(daten) : undefined
-	});
-	return werteAntwortAus(res);
+	return hole(url, mitJson('POST', daten, options));
 }
 
 export async function apiPut(url, daten, options = {}) {
-	const res = await apiFetch(url, {
-		...options,
-		method: 'PUT',
-		headers: { 'Content-Type': 'application/json', ...options.headers },
-		body: daten ? JSON.stringify(daten) : undefined
-	});
-	return werteAntwortAus(res);
+	return hole(url, mitJson('PUT', daten, options));
 }
 
 export async function apiDelete(url, options = {}) {
-	const res = await apiFetch(url, { ...options, method: 'DELETE' });
-	return werteAntwortAus(res);
+	return hole(url, { ...options, method: 'DELETE' });
 }
 
 // ── Zentraler Sitzungsverlust-Haken ─────────────────────────────────────────

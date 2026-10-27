@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiFetch, leseApiFehler } from './apiFetch.js';
+import { apiFetch, apiGet, apiPost, apiPut, apiDelete, leseApiFehler } from './apiFetch.js';
 import { programmstand, KOPF_OBERFLAECHENSTAND } from './stores/programmstand.svelte.js';
+import { snackbars } from './stores/snackbars.svelte.js';
+import { serverAntwort } from './serverAntwort.js';
 
 /** Baut eine minimale Response-Attrappe mit gegebenem Body/Status. */
 function fakeResponse(body, status = 400) {
@@ -207,5 +209,57 @@ describe('Sitzungsverlust-Haken', () => {
 		// Der eigene Zustand wird gesperrt mit 423 beantwortet — das ist die Auskunft, kein Anlass.
 		await apiFetch('/api/auth/me');
 		expect(gesperrt).toHaveBeenCalledTimes(1);
+	});
+});
+
+// Die Aufrufer der Hüllen verlassen sich darauf, dass jeder Fehler als Meldung erscheint
+// („apiFetch zeigt den Fehler-Toast"), und melden selbst nichts. Ohne Antwort blieb er still:
+// „Übergeben" und „Bescheid erstellen" im Mahnwesen taten ohne Netz sichtbar nichts.
+describe('apiGet, apiPost, apiPut und apiDelete melden jeden Fehler', () => {
+	beforeEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	const abbruch = Object.assign(new Error('The operation was aborted'), { name: 'AbortError' });
+	/** @type {[string, () => Promise<any>][]} */
+	const huellen = [
+		['apiGet', () => apiGet('/api/test')],
+		['apiPost', () => apiPost('/api/test', {})],
+		['apiPut', () => apiPut('/api/test', {})],
+		['apiDelete', () => apiDelete('/api/test')]
+	];
+
+	it.each(huellen)('%s ohne Netz und nach der Frist', async (_, rufe) => {
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		for (const [wurf, text] of [
+			[new TypeError('Failed to fetch'), 'Keine Verbindung zum Server.'],
+			[abbruch, 'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.']
+		]) {
+			vi.spyOn(globalThis, 'fetch').mockRejectedValue(wurf);
+			const fehler = await rufe().catch((/** @type {any} */ e) => e);
+			expect(fehler.message).toBe(text);
+			expect(fehler.handled).toBe(true);
+			expect(meldung).toHaveBeenLastCalledWith(text, 'error');
+		}
+	});
+
+	it.each(huellen)('%s bei einer Ablehnung des Servers', async (_, rufe) => {
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			serverAntwort(409, { error: 'Der Bescheid ist nicht mehr offen' })
+		);
+		const fehler = await rufe().catch((/** @type {any} */ e) => e);
+		expect(fehler.message).toBe('Der Bescheid ist nicht mehr offen');
+		expect(fehler.handled).toBe(true);
+		expect(meldung).toHaveBeenCalledWith('Der Bescheid ist nicht mehr offen', 'error');
+	});
+
+	it('liefert die Antwort ausgepackt und meldet nichts', async () => {
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(serverAntwort(200, { id: 'b1' }));
+		expect(await apiPost('/api/test', {})).toEqual({ id: 'b1' });
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(serverAntwort(204));
+		expect(await apiDelete('/api/test')).toBeNull();
+		expect(meldung).not.toHaveBeenCalled();
 	});
 });

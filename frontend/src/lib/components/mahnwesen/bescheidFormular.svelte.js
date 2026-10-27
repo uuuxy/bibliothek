@@ -105,7 +105,7 @@ export class BescheidFormular {
 		};
 	}
 
-	/** Erstellt den Brief; null, wenn der Server abgewiesen hat (apiFetch zeigt den Toast).
+	/** Erstellt den Brief; null, wenn es scheiterte (apiPost meldet den Grund, auch ohne Netz).
 	 *  @returns {Promise<any>} */
 	async erstellen() {
 		if (!this.bereit) return null;
