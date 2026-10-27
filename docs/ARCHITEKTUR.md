@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 26.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 27.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1630,7 +1630,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 26.10.2026
+Stand: 27.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2372,7 +2372,9 @@ sieht.
   `M`.
 - **Browser-Tests verschicken keine Mail:** Für die Dauer des Laufs zeigt die Einstellung auf
   eine Adresse, an der nichts zuhört (`frontend/e2e/mailserver.js`, gehalten von
-  `frontend/e2e/mailserver-stumm.spec.js`).
+  `frontend/e2e/mailserver-stumm.spec.js`). Eine Probe mit eigener Konfiguration läuft ohne das
+  Setup der Suite und erreicht den eingetragenen Mailserver: Anfragen an Türen, die Mail
+  verschicken, beantwortet sie selbst (`route.fulfill`).
 - **Ein Umbau, der die Oberfläche nicht ändern soll,** wird am Bau belegt: `npx vite build
   --outDir <Ordner>` vor und nach dem Umbau, dann die Prüfsummen der Dateien vergleichen; zwei
   Bauten desselben Stands sind gleich.
