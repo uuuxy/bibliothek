@@ -3,12 +3,20 @@
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
 	import { Trash } from '@lucide/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 
 	/** @type {{ vormerkungen: any[] }} */
 	let { vormerkungen = $bindable() } = $props();
 
+	// Vormerkungen, deren Löschen läuft. Ein zweiter Auftrag vor der Antwort schickte eine zweite
+	// Anfrage, und deren „Vormerkung nicht gefunden" stand nach dem Erfolg der ersten da.
+	const loescht = new SvelteSet();
+
 	async function loescheVormerkung(id) {
+		if (loescht.has(id)) return;
 		if (!(await loeschenBestaetigen('Vormerkung löschen?'))) return;
+		loescht.add(id);
 		try {
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
 			if (res.ok) {
@@ -19,6 +27,8 @@
 			}
 		} catch {
 			melde('Netzwerkfehler', 'error');
+		} finally {
+			loescht.delete(id);
 		}
 	}
 </script>
@@ -54,13 +64,19 @@
 							<p class="text-sm text-on-surface-variant mt-1 italic">Notiz: {v.notiz}</p>
 						{/if}
 					</div>
+					<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie „Verlängern" daneben. -->
 					<button
 						onclick={() => loescheVormerkung(v.id)}
-						class="icon-btn text-error"
+						disabled={loescht.has(v.id)}
+						class="icon-btn text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
 						data-tip="Vormerkung löschen"
 						aria-label="Vormerkung löschen"
 					>
-						<Trash class="w-5 h-5" aria-hidden="true" />
+						{#if loescht.has(v.id)}
+							<Ladekreis size="sm" farbe="aktuell" />
+						{:else}
+							<Trash class="w-5 h-5" aria-hidden="true" />
+						{/if}
 					</button>
 				</div>
 			{/each}
