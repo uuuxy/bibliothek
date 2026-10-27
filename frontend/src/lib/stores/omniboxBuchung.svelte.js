@@ -133,7 +133,7 @@ export function erzeugeOmniboxBuchung({
 		// Der Scan erreicht den Server nicht: Der Schnappschuss geht in die Warteschlange. Nach dem
 		// Leeren zählt dabei nur ein Buch, denn ein Ausweis würde gemerkt und bekäme die nächsten.
 		/** @param {unknown} grund */
-		function legeAb(grund) {
+		async function legeAb(grund) {
 			if (!ueberholt()) {
 				leuchteRand('red');
 				return verarbeiteVersandfehler(grund, eintrag);

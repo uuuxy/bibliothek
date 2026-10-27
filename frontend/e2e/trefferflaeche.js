@@ -42,7 +42,7 @@ export const SYMBOLKNOEPFE = ({ ziel, messen }) => {
 	/** @param {Element} el */
 	const name = (el) =>
 		el.getAttribute('aria-label') ||
-		el.getAttribute('data-tip') ||
+		el.dataset.tip ||
 		el.getAttribute('title') ||
 		(el.textContent || '').trim().slice(0, 40) ||
 		el.tagName.toLowerCase();
@@ -53,7 +53,7 @@ export const SYMBOLKNOEPFE = ({ ziel, messen }) => {
 			// nicht als Beschriftung, ein Wort wie „LMF" schon.
 			!/\p{L}/u.test(knopf.textContent || '') &&
 			// Die rechte Hälfte eines Split-Buttons gehört zu einem Knopf mit Beschriftung.
-			!knopf.hasAttribute('data-split-pfeil') &&
+			!('splitPfeil' in knopf.dataset) &&
 			sichtbar(knopf)
 	);
 	const bedienelemente = [...document.querySelectorAll(BEDIENBAR)];
@@ -68,12 +68,57 @@ export const SYMBOLKNOEPFE = ({ ziel, messen }) => {
 		[0, 1, 'unten'],
 		[1, 1, 'rechts unten']
 	]);
-	const ergebnis = [];
-	for (const knopf of knoepfe) {
+	/** @typedef {{ mx: number, my: number, halbB: number, halbH: number }} Flaeche */
+	/**
+	 * Die Punkte der Fläche, an denen nicht der Knopf liegt.
+	 * @param {Element} knopf
+	 * @param {Flaeche} f
+	 */
+	const fremdePunkte = (knopf, { mx, my, halbB, halbH }) => {
 		/** @type {string[]} */
 		const fremd = [];
+		for (const [dx, dy, wo] of PUNKTE) {
+			const x = mx + dx * (halbB - 1);
+			const y = my + dy * (halbH - 1);
+			if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
+			const getroffen = document.elementFromPoint(x, y);
+			if (getroffen && (getroffen === knopf || knopf.contains(getroffen))) continue;
+			const wer = getroffen ? name(getroffen.closest(BEDIENBAR) ?? getroffen) : 'nichts';
+			fremd.push(`${wo} trifft ${wer}`);
+		}
+		return fremd;
+	};
+	/**
+	 * Die Bedienelemente, die in die Fläche ragen.
+	 * @param {Element} knopf
+	 * @param {Flaeche} f
+	 */
+	const ueberdeckteElemente = (knopf, { mx, my, halbB, halbH }) => {
 		/** @type {string[]} */
 		const ueberdeckt = [];
+		for (const anderes of bedienelemente) {
+			if (anderes === knopf || anderes.contains(knopf) || knopf.contains(anderes)) continue;
+			const a = anderes.getBoundingClientRect();
+			// Ein Symbol im Feld (Kamera, Löschen) gehört zum Feld: Material 3 legt seine Fläche
+			// in den Rand des Textfelds, und der Text endet davor.
+			const imFeld =
+				anderes.matches('input, textarea, select') &&
+				mx > a.left &&
+				mx < a.right &&
+				my > a.top &&
+				my < a.bottom;
+			if (imFeld) continue;
+			const trennt =
+				a.right <= mx - halbB ||
+				a.left >= mx + halbB ||
+				a.bottom <= my - halbH ||
+				a.top >= my + halbH;
+			if (!trennt && sichtbar(anderes)) ueberdeckt.push(name(anderes));
+		}
+		return ueberdeckt;
+	};
+	const ergebnis = [];
+	for (const knopf of knoepfe) {
 		// Ziele der Navigation sind keine Symbolknöpfe, sie folgen der Navigation rail.
 		const navigation = knopf.closest('nav') !== null;
 		const abtasten = messen && !navigation;
@@ -83,40 +128,15 @@ export const SYMBOLKNOEPFE = ({ ziel, messen }) => {
 			knopf.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
 		}
 		const r = knopf.getBoundingClientRect();
-		if (abtasten) {
-			const mx = r.left + r.width / 2;
-			const my = r.top + r.height / 2;
-			const halbB = Math.max(ziel, r.width) / 2;
-			const halbH = Math.max(ziel, r.height) / 2;
-			for (const [dx, dy, wo] of PUNKTE) {
-				const x = mx + dx * (halbB - 1);
-				const y = my + dy * (halbH - 1);
-				if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
-				const getroffen = document.elementFromPoint(x, y);
-				if (getroffen && (getroffen === knopf || knopf.contains(getroffen))) continue;
-				const wer = getroffen ? name(getroffen.closest(BEDIENBAR) ?? getroffen) : 'nichts';
-				fremd.push(`${wo} trifft ${wer}`);
-			}
-			for (const anderes of bedienelemente) {
-				if (anderes === knopf || anderes.contains(knopf) || knopf.contains(anderes)) continue;
-				const a = anderes.getBoundingClientRect();
-				// Ein Symbol im Feld (Kamera, Löschen) gehört zum Feld: Material 3 legt seine Fläche
-				// in den Rand des Textfelds, und der Text endet davor.
-				const imFeld =
-					anderes.matches('input, textarea, select') &&
-					mx > a.left &&
-					mx < a.right &&
-					my > a.top &&
-					my < a.bottom;
-				if (imFeld) continue;
-				const trennt =
-					a.right <= mx - halbB ||
-					a.left >= mx + halbB ||
-					a.bottom <= my - halbH ||
-					a.top >= my + halbH;
-				if (!trennt && sichtbar(anderes)) ueberdeckt.push(name(anderes));
-			}
-		}
+		/** @type {Flaeche} */
+		const flaeche = {
+			mx: r.left + r.width / 2,
+			my: r.top + r.height / 2,
+			halbB: Math.max(ziel, r.width) / 2,
+			halbH: Math.max(ziel, r.height) / 2
+		};
+		const fremd = abtasten ? fremdePunkte(knopf, flaeche) : [];
+		const ueberdeckt = abtasten ? ueberdeckteElemente(knopf, flaeche) : [];
 		ergebnis.push({
 			breite: Math.round(r.width),
 			hoehe: Math.round(r.height),

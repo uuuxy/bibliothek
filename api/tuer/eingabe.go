@@ -74,7 +74,7 @@ func Pruefmeldung(err error) string {
 	case "min", "max":
 		return grenzmeldung(f, feld)
 	}
-	return "Das Feld " + feld + " ist ungültig"
+	return fmt.Sprintf("Das Feld %s ist ungültig", feld)
 }
 
 // grenzmeldung nennt die Grenze aus min oder max: bei einer Liste die Zahl der Einträge, sonst
@@ -83,13 +83,13 @@ func grenzmeldung(f validator.FieldError, feld string) string {
 	liste := f.Kind() == reflect.Slice || f.Kind() == reflect.Array || f.Kind() == reflect.Map
 	switch {
 	case liste && f.Tag() == "min":
-		return "Das Feld " + feld + " braucht mindestens " + f.Param() + " Einträge"
+		return fmt.Sprintf("Das Feld %s braucht mindestens %s Einträge", feld, f.Param())
 	case liste:
-		return "Das Feld " + feld + " hat höchstens " + f.Param() + " Einträge"
+		return fmt.Sprintf("Das Feld %s hat höchstens %s Einträge", feld, f.Param())
 	case f.Tag() == "min":
-		return "Das Feld " + feld + " muss mindestens " + f.Param() + " sein"
+		return fmt.Sprintf("Das Feld %s muss mindestens %s sein", feld, f.Param())
 	}
-	return "Das Feld " + feld + " darf höchstens " + f.Param() + " sein"
+	return fmt.Sprintf("Das Feld %s darf höchstens %s sein", feld, f.Param())
 }
 
 // LeseUUIDParameter liest einen Parameter der Adresse, der eine UUID sein muss. Leer bleibt

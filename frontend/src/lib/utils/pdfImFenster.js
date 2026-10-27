@@ -36,9 +36,9 @@ export async function zeigePdf(hole) {
 		fenster.location.replace(adresse);
 		gibFreiWennZu(fenster, adresse);
 		return antwort;
-	} catch (fehler) {
+	} catch (err) {
 		fenster.close();
-		throw fehler;
+		throw err;
 	}
 }
 

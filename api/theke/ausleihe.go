@@ -20,6 +20,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// meldungAusleiheNichtGefunden antwortet auf eine Ausleihe, die es nicht gibt oder die schon
+// zurückgegeben ist; beides sieht die Theke gleich.
+const meldungAusleiheNichtGefunden = "Ausleihe nicht gefunden oder schon zurückgegeben"
+
 // fristAnfrage ist die Frist, die von Hand gesetzt wird.
 type fristAnfrage struct {
 	FaelligAm string `json:"faellig_am" validate:"required"` // Zeitstempel nach RFC 3339 oder nur der Tag nach ISO 8601
@@ -88,7 +92,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 
 	alteFrist, err := repository.SperreOffeneAusleiheMitFrist(ctx, tx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Ausleihe nicht gefunden oder schon zurückgegeben", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungAusleiheNichtGefunden, nil)
 		return
 	}
 	if err != nil {
@@ -173,7 +177,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 	id, gesetzteFrist, err := repository.SetzeAusleihFrist(ctx, t.DB.Pool, ausleiheID, neuesDatum)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Ausleihe nicht gefunden oder schon zurückgegeben", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungAusleiheNichtGefunden, nil)
 			return
 		}
 		slog.Error("Fehler bei manueller Frist-Überschreibung", "fehler", err)
@@ -232,7 +236,7 @@ func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsA
 func (t *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, ausleiheID, vorgang string) (gesperrt bool, grund string, geprueft bool) {
 	gesperrt, grund, err := t.pruefeAusleihSperre(ctx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Ausleihe nicht gefunden oder schon zurückgegeben", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungAusleiheNichtGefunden, nil)
 		return false, "", false
 	}
 	if err != nil {

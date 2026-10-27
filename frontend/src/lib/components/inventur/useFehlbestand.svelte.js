@@ -13,9 +13,9 @@ import { fehlertext } from '../../utils/fehlertext.js';
  * (Gefunden / endgültig löschen). Aus useInventur herausgelöst — die
  * Session-Scan-Mechanik und der Bericht über eine ABGESCHLOSSENE Inventur sind zwei
  * verschiedene Zuständigkeiten, die nur zufällig denselben Bildschirm teilen.
- * @param {{ frueher: string }} [nichtGeladen] bekommt den Grund, wenn die früheren nicht kamen
+ * @param {{ frueher: string }} nichtGeladen bekommt den Grund, wenn die früheren nicht kamen
  */
-export function useFehlbestand(nichtGeladen = { frueher: '' }) {
+export function useFehlbestand(nichtGeladen) {
 	/** Fehlbestand der zuletzt abgeschlossenen (oder nachträglich aufgerufenen)
 	 *  Inventur — bleibt stehen, bis er ausdruecklich geschlossen wird. */
 	let fehlbestand = $state.raw(/** @type {any[]} */ ([]));

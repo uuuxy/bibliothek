@@ -8,31 +8,31 @@ import { apiPost, querySQL, seedSQL, uiLogin, uniqueSuffix } from './helpers.js'
 /** Das Band, solange kein Vorgang wartet (OfflineAnzeige.svelte). */
 export const OHNE_NETZ = /Keine Verbindung — Scannen geht weiter/;
 
+/** Lädt die Warteschlange aus IndexedDB. Läuft im Browser (page.evaluate), deshalb ohne Import. */
+const LADE_WARTESCHLANGE = async () => {
+	/** @param {IDBRequest} anfrage */
+	const ergebnis = (anfrage) =>
+		new Promise((fertig, scheitert) => {
+			anfrage.onsuccess = () => fertig(anfrage.result);
+			anfrage.onerror = () => scheitert(anfrage.error);
+		});
+	const db = /** @type {IDBDatabase} */ (await ergebnis(indexedDB.open('bibliothek-offline-db')));
+	try {
+		return await ergebnis(
+			db.transaction('offline_actions').objectStore('offline_actions').getAll()
+		);
+	} finally {
+		db.close();
+	}
+};
+
 /**
  * Die Warteschlange, wie sie im Browser liegt (offlineWarteschlange.js), nach Scan-Zeitpunkt.
  * @param {import('@playwright/test').Page} page
  * @returns {Promise<any[]>}
  */
 export async function warteschlange(page) {
-	const eintraege = await page.evaluate(
-		() =>
-			new Promise((fertig, scheitert) => {
-				const auf = indexedDB.open('bibliothek-offline-db');
-				auf.onerror = () => scheitert(auf.error);
-				auf.onsuccess = () => {
-					const db = auf.result;
-					const alle = db.transaction('offline_actions').objectStore('offline_actions').getAll();
-					alle.onsuccess = () => {
-						db.close();
-						fertig(alle.result);
-					};
-					alle.onerror = () => {
-						db.close();
-						scheitert(alle.error);
-					};
-				};
-			})
-	);
+	const eintraege = await page.evaluate(LADE_WARTESCHLANGE);
 	return /** @type {any[]} */ (eintraege).sort((a, b) => a.gescannt_am - b.gescannt_am);
 }
 

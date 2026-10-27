@@ -17,6 +17,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 )
 
@@ -28,10 +29,16 @@ func MitCSRF(req *http.Request) *http.Request {
 	return req
 }
 
+// setzeJSONKopf sagt der Tür, dass der Rumpf JSON ist. Die Funktion steht auf Paketebene, weil
+// der Parameter tuer in den Helfern unten den Namen des Pakets verdeckt.
+func setzeJSONKopf(req *http.Request) {
+	req.Header.Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
+}
+
 // JSONPost baut eine POST-Anfrage mit JSON-Rumpf und CSRF-Nachweis.
 func JSONPost(url, rumpf string) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(rumpf))
-	req.Header.Set("Content-Type", "application/json")
+	setzeJSONKopf(req)
 	return MitCSRF(req)
 }
 
@@ -48,7 +55,7 @@ func AlsKonto(req *http.Request, kontoID string) *http.Request {
 func RufeAlsAdmin(t *testing.T, adminID string, tuer http.HandlerFunc, methode, pfad, rumpf string, pfadwerte map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
-	req.Header.Set("Content-Type", "application/json")
+	setzeJSONKopf(req)
 	for k, v := range pfadwerte {
 		req.SetPathValue(k, v)
 	}
@@ -65,7 +72,7 @@ func RouterAufruf(router http.Handler, sitzung string) func(t *testing.T, method
 	return func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
-		req.Header.Set("Content-Type", "application/json")
+		setzeJSONKopf(req)
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung}) // #nosec G124 -- Cookie einer Anfrage im Test
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, MitCSRF(req))
@@ -82,7 +89,7 @@ func Bestelle(t *testing.T, tuer http.HandlerFunc, lieferantID, titelID string) 
 		lieferantID, titelID)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
-	req.Header.Set("Content-Type", "application/json")
+	setzeJSONKopf(req)
 	rec := httptest.NewRecorder()
 	tuer(rec, req)
 	return rec
@@ -111,7 +118,7 @@ func StatusOhneDB(t *testing.T, tuer http.HandlerFunc, methode, pfad, rumpf stri
 		}
 	}()
 	req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
-	req.Header.Set("Content-Type", "application/json")
+	setzeJSONKopf(req)
 	rec := httptest.NewRecorder()
 	tuer(rec, req)
 	return rec.Code

@@ -15,6 +15,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// meldungLieferantNichtGefunden antwortet auf eine Kennung, unter der kein Lieferant steht.
+const meldungLieferantNichtGefunden = "Lieferant nicht gefunden"
+
 // lieferantAntwort ist ein Lieferant, wie die Oberfläche ihn zeigt.
 type lieferantAntwort struct {
 	ID           string    `json:"id"`
@@ -199,7 +202,7 @@ func (t *Tueren) aendereLieferant(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	alt, neu, err := t.schreibeLieferant(ctx, id, req)
 	if errors.Is(err, pgx.ErrNoRows) {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLieferantNichtGefunden, nil)
 		return
 	}
 	if err != nil {
@@ -274,7 +277,7 @@ func (t *Tueren) antworteLieferantNichtGeloescht(ctx context.Context, w http.Res
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungHauptlieferantLoeschen, nil)
 		return
 	}
-	apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLieferantNichtGefunden, nil)
 }
 
 // LieferantLoeschen löscht einen Lieferanten, den Hauptlieferanten nicht.
@@ -306,7 +309,7 @@ func (t *Tueren) LieferantLoeschen() http.HandlerFunc {
 		istHaupt, name, err := repository.LadeLieferantHauptUndName(ctx, t.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Lieferant nicht gefunden", nil)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLieferantNichtGefunden, nil)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

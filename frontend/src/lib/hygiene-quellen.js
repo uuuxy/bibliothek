@@ -67,18 +67,9 @@ export function elemente(quelle, tag) {
 	/** @type {{ start: number, kopf: string, inhalt: string }[]} */
 	const gefunden = [];
 	for (let start = quelle.indexOf(`<${tag}`); start !== -1;) {
-		let i = start + tag.length + 1;
-		const istTag = !/[A-Za-z0-9_]/.test(quelle[i] ?? '');
-		let tiefe = 0;
-		let zitat = '';
-		for (; istTag && i < quelle.length; i++) {
-			const z = quelle[i];
-			if (zitat) zitat = z === zitat ? '' : zitat;
-			else if (z === '"' || z === "'" || z === '`') zitat = z;
-			else if (z === '{') tiefe++;
-			else if (z === '}') tiefe--;
-			else if (z === '>' && tiefe === 0) break;
-		}
+		const nachName = start + tag.length + 1;
+		const istTag = !/\w/.test(quelle[nachName] ?? '');
+		const i = istTag ? kopfEnde(quelle, nachName) : nachName;
 		const ende = quelle.indexOf(`</${tag}>`, i);
 		if (istTag && ende !== -1 && quelle[i - 1] !== '/') {
 			gefunden.push({ start, kopf: quelle.slice(start, i), inhalt: quelle.slice(i + 1, ende) });
@@ -86,6 +77,26 @@ export function elemente(quelle, tag) {
 		start = quelle.indexOf(`<${tag}`, i);
 	}
 	return gefunden;
+}
+
+/**
+ * Die Stelle des „>", das den Kopf schließt: das erste ab von außerhalb von Klammern und
+ * Anführungszeichen, ohne ein solches das Ende der Quelle.
+ * @param {string} quelle
+ * @param {number} von
+ */
+function kopfEnde(quelle, von) {
+	let tiefe = 0;
+	let zitat = '';
+	for (let i = von; i < quelle.length; i++) {
+		const z = quelle[i];
+		if (zitat) zitat = z === zitat ? '' : zitat;
+		else if (z === '"' || z === "'" || z === '`') zitat = z;
+		else if (z === '{') tiefe++;
+		else if (z === '}') tiefe--;
+		else if (z === '>' && tiefe === 0) return i;
+	}
+	return quelle.length;
 }
 
 /**
