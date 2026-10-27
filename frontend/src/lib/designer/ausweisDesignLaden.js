@@ -1,10 +1,13 @@
 import { tick } from 'svelte';
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, leseApiFehler } from '../apiFetch.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
 import { applyDesign, designWurdeGeladen } from './idDesignerStore.svelte.js';
 
 /** @type {Promise<boolean> | null} */
 let lauf = null;
+// Der Grund des letzten gescheiterten Abrufs, für die Meldung dessen, der drucken will.
+let grund = '';
 
 /**
  * Lädt das zentral gespeicherte Ausweis-Design beim ersten Bedarf der Sitzung, für jeden
@@ -24,18 +27,26 @@ export function ladeAusweisDesign() {
 async function abruf() {
 	try {
 		const res = await apiFetch('/api/ausweis-layout');
-		if (!res.ok) return false;
+		if (!res.ok) {
+			grund = await leseApiFehler(res);
+			return false;
+		}
 		applyDesign(await res.json());
+		grund = '';
 		return true;
-	} catch {
+	} catch (e) {
+		grund = fehlertext(e);
 		return false;
 	}
 }
 
+/** „: <Grund>" für die Meldungen, ohne doppelten Punkt; leer, wenn keiner bekannt ist. */
+const mitGrund = () => (grund ? `: ${grund.replace(/\.$/, '')}` : '');
+
 /** Die Meldung einer Seite, deren Bedienung vom Design abhängt (Karte oder Etikett). */
 export function meldeDesignNichtGeladen() {
 	snackbars.addToast(
-		'Ausweis-Design nicht geladen: Ausweise lassen sich gerade nicht drucken.',
+		`Ausweis-Design nicht geladen${mitGrund()}. Ausweise lassen sich gerade nicht drucken.`,
 		'error'
 	);
 }
@@ -49,7 +60,10 @@ export function meldeDesignNichtGeladen() {
 export async function designFuerDruck() {
 	const standSchon = designWurdeGeladen();
 	if (!(await ladeAusweisDesign())) {
-		snackbars.addToast('Nicht gedruckt: Das Ausweis-Design ist nicht geladen.', 'error');
+		snackbars.addToast(
+			`Nicht gedruckt, das Ausweis-Design ist nicht geladen${mitGrund()}.`,
+			'error'
+		);
 		return false;
 	}
 	// Erst jetzt geladen: Die Karten zeichnen sich neu und holen Logo und Strichcode. Der

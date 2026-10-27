@@ -4,7 +4,11 @@ import { idStore, vergissDesignLadezustand } from '../../designer/idDesignerStor
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// leseApiFehler bleibt echt (ARCHITEKTUR.md 8.14).
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 // Dieses Modul entscheidet am zentral gespeicherten printMode, ob Karten oder Etiketten aus
@@ -112,7 +116,7 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 	// Ohne das gespeicherte Design gälte der Kartendruck mit den Standardwerten, auch wenn
 	// die Schule Etiketten eingestellt hat.
 	it('druckt nicht, solange das Design nicht zu laden ist', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Netz weg'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
 		const drucken = vi.fn();
 		vi.stubGlobal('print', drucken);
 		const druck = erzeugeAusweisdruck();
@@ -123,7 +127,7 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 
 		expect(drucken).not.toHaveBeenCalled();
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Nicht gedruckt: Das Ausweis-Design ist nicht geladen.',
+			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server.',
 			'error'
 		);
 	});

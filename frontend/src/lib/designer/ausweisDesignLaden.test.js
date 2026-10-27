@@ -9,8 +9,13 @@ import { idStore, vergissDesignLadezustand } from './idDesignerStore.svelte.js';
 import { apiFetch } from '../apiFetch.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
 import { ohneKommentare, relPfad, sammleQuelldateien, srcRoot } from '../hygiene-quellen.js';
+import { serverAntwort } from '../serverAntwort.js';
 
-vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// leseApiFehler bleibt echt (ARCHITEKTUR.md 8.14).
+vi.mock('../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 /** @param {any} daten */
@@ -99,13 +104,26 @@ describe('designFuerDruck', () => {
 		expect(bild.decode).not.toHaveBeenCalled();
 	});
 
-	it('druckt nicht mit den Standardwerten: Scheitert der Abruf, steht die Meldung da', async () => {
-		vi.mocked(apiFetch).mockRejectedValue(new Error('Netz weg'));
+	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich (OFFEN.md 5.106).
+	it('druckt nicht mit den Standardwerten: Scheitert der Abruf, steht die Meldung mit dem Grund da', async () => {
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
 
 		expect(await designFuerDruck()).toBe(false);
 		expect(snackbars.addToast).toHaveBeenCalledTimes(1);
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Nicht gedruckt: Das Ausweis-Design ist nicht geladen.',
+			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Keine Verbindung zum Server.',
+			'error'
+		);
+	});
+
+	it('nennt den Grund, den der Server angibt', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
+		);
+
+		expect(await designFuerDruck()).toBe(false);
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Die Datenbank antwortet nicht.',
 			'error'
 		);
 	});
@@ -141,11 +159,14 @@ describe('designFuerDruck', () => {
 });
 
 describe('meldeDesignNichtGeladen', () => {
-	it('sagt, dass ohne das Design nicht gedruckt wird', () => {
+	it('sagt mit dem Grund, dass ohne das Design nicht gedruckt wird', async () => {
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		await ladeAusweisDesign();
+
 		meldeDesignNichtGeladen();
 
 		expect(snackbars.addToast).toHaveBeenCalledWith(
-			'Ausweis-Design nicht geladen: Ausweise lassen sich gerade nicht drucken.',
+			'Ausweis-Design nicht geladen: Keine Verbindung zum Server. Ausweise lassen sich gerade nicht drucken.',
 			'error'
 		);
 	});
