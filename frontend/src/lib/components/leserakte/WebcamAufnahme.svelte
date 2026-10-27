@@ -38,6 +38,9 @@
 	}
 
 	async function starteKamera() {
+		// „Erneut versuchen" nach einem gescheiterten Speichern: Der Strom davon läuft noch, und
+		// ohne Halt bliebe seine Kamera auch nach dem Schließen an.
+		stoppeKamera();
 		try {
 			kameraFehler = null;
 			stream = await navigator.mediaDevices.getUserMedia({
