@@ -38,7 +38,7 @@ type LitteraImportAntwort struct {
 // hochgeladene Datei. Bei Fehler ist schon geantwortet, und ok ist false.
 func (t *Tueren) leseUploadInhalt(w http.ResponseWriter, r *http.Request, maxBytes int64) (inhalt []byte, dateiname string, ok bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
-	if err := r.ParseMultipartForm(1 << 20); err != nil { // 1 MB memory limit
+	if err := r.ParseMultipartForm(maxBytes); err != nil {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungHochladen(maxBytes), err)
 		return nil, "", false
 	}
@@ -209,7 +209,7 @@ func (t *Tueren) BestandImport() http.HandlerFunc {
 // Closure für die Komplexitätsmessung als eigene Ebene zählt.
 func (t *Tueren) importiereBestand(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 20<<20)
-	if err := r.ParseMultipartForm(1 << 20); err != nil { // 1 MB memory limit
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungHochladen(20<<20), err)
 		return
 	}
