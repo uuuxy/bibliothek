@@ -24,6 +24,8 @@ class BescheideStore {
 	geladen = $state(false);
 	/** Der Grund, wenn der letzte Abruf scheiterte; die Tabelle zeigt ihn statt einer leeren. */
 	ladefehler = $state('');
+	/** Der Bescheid, dessen Übergabe gerade läuft; leer = keiner. */
+	uebergibt = $state('');
 
 	/** Die Briefe, die der Reiter zeigt: erledigte (bezahlt, storniert) bleiben in der Akte. */
 	zeilen = $derived(this.liste.filter((b) => b.status !== 'erledigt'));
@@ -53,12 +55,18 @@ class BescheideStore {
 
 	/** @param {string} id */
 	async uebergebe(id) {
+		// Ein zweiter Klick vor der Antwort schickte die Übergabe noch einmal: Der Server weist sie
+		// ab, und neben „gebucht" stünde „Übergabe nicht möglich".
+		if (this.uebergibt) return;
+		this.uebergibt = id;
 		try {
 			await apiPost(`/api/bescheide/${id}/uebergeben`, {});
 			snackbars.addToast('Bescheid als übergeben gebucht.', 'success');
 			await this.lade();
 		} catch {
-			/* apiFetch zeigt den Fehler-Toast */
+			/* apiPost meldet jeden Fehler selbst */
+		} finally {
+			this.uebergibt = '';
 		}
 	}
 }

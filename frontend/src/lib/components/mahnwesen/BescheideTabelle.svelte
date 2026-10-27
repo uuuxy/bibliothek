@@ -163,7 +163,16 @@
 									Nachdruck
 								</Button>
 								{#if darfSchreiben && b.status === 'offen' && b.frist_abgelaufen}
-									<Button onclick={() => bescheideStore.uebergebe(b.id)}>Übergeben</Button>
+									<Button
+										onclick={() => bescheideStore.uebergebe(b.id)}
+										disabled={bescheideStore.uebergibt !== ''}
+									>
+										{#if bescheideStore.uebergibt === b.id}<Ladekreis
+												size="sm"
+												farbe="aktuell"
+											/>{/if}
+										Übergeben
+									</Button>
 								{/if}
 							</td>
 						</tr>

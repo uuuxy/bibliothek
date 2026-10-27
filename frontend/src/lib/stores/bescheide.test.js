@@ -3,10 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('./snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 vi.mock('../apiFetch.js', () => ({ apiGet: vi.fn(), apiPost: vi.fn() }));
 
-import { apiGet } from '../apiFetch.js';
+import { apiGet, apiPost } from '../apiFetch.js';
 import { bescheideStore } from './bescheide.svelte.js';
 
 const apiGetMock = vi.mocked(apiGet);
+const apiPostMock = vi.mocked(apiPost);
 
 // Die Zahl am Reiter „Schadensersatz" ist die Menge dessen, was bei der Schule liegt:
 // Kinder mit Forderung ohne Brief, Briefe mit laufender oder abgelaufener Frist, Rückgaben
@@ -63,5 +64,36 @@ describe('bescheideStore', () => {
 		apiGetMock.mockResolvedValue([]);
 		await bescheideStore.lade();
 		expect(bescheideStore.ladefehler).toBe('');
+	});
+
+	// Ein Doppelklick auf „Übergeben" schickte zwei Anfragen. Der Server bucht nur die erste, auf
+	// die zweite antwortet er „Übergabe nicht möglich", und die Meldung stand neben „gebucht".
+	it('schickt die Übergabe bei einem zweiten Klick vor der Antwort nicht noch einmal', async () => {
+		/** @type {(wert: unknown) => void} */
+		let antworte = () => {};
+		apiPostMock.mockReset();
+		apiPostMock.mockImplementation(() => new Promise((fertig) => (antworte = fertig)));
+		apiGetMock.mockResolvedValue([]);
+
+		const erster = bescheideStore.uebergebe('b1');
+		const zweiter = bescheideStore.uebergebe('b1');
+		expect(apiPostMock).toHaveBeenCalledTimes(1);
+		expect(bescheideStore.uebergibt).toBe('b1');
+
+		antworte({ id: 'b1', status: 'uebergeben' });
+		await Promise.all([erster, zweiter]);
+		expect(bescheideStore.uebergibt).toBe('');
+	});
+
+	it('gibt den Knopf auch nach einer Ablehnung wieder frei', async () => {
+		apiPostMock.mockReset();
+		apiPostMock.mockRejectedValue(
+			Object.assign(new Error('Übergabe nicht möglich'), { handled: true })
+		);
+		await bescheideStore.uebergebe('b1');
+		expect(bescheideStore.uebergibt).toBe('');
+		apiPostMock.mockResolvedValue({ id: 'b2', status: 'uebergeben' });
+		await bescheideStore.uebergebe('b2');
+		expect(apiPostMock).toHaveBeenLastCalledWith('/api/bescheide/b2/uebergeben', {});
 	});
 });

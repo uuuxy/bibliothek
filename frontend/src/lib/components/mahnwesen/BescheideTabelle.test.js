@@ -125,4 +125,32 @@ describe('BescheideTabelle', () => {
 		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
 		expect(screen.getByText('Keine offenen Schadensersatz-Fälle.')).toBeTruthy();
 	});
+
+	/** Ein Brief nach Fristablauf, der übergeben werden kann. */
+	const faellig = {
+		id: 'b9',
+		referenznummer: '5830 2026 1234 0009',
+		schueler_id: 's9',
+		schueler_name: 'Ida Frist',
+		klasse: '08G2',
+		anzahl_positionen: 1,
+		brief_datum: '2026-09-01T00:00:00Z',
+		frist_bis: '2026-09-29T00:00:00Z',
+		gesamtbetrag: 22,
+		status: 'offen',
+		frist_abgelaufen: true
+	};
+
+	it('sperrt „Übergeben", solange eine Übergabe läuft', () => {
+		bescheideStore.ausstehend = [];
+		bescheideStore.liste = [faellig];
+		bescheideStore.uebergibt = 'b9';
+		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
+
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: /Übergeben/ })
+		);
+		expect(knopf.disabled).toBe(true);
+		bescheideStore.uebergibt = '';
+	});
 });
