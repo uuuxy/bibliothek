@@ -5,6 +5,7 @@ import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { felderProBogen } from '../components/etiketten/etikettformate.js';
 import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { normalisiereScan } from '../utils/scanEinordnen.js';
 import { dekodiereLitteraEtikett } from '../utils/litteraEtikett.js';
 import { ohnePruefzeichen } from '../utils/code39Pruefzeichen.js';
@@ -98,9 +99,7 @@ function erzeugeEtikettenStore() {
 	async function ladeKlassen() {
 		try {
 			const res = await apiFetch('/api/class-books');
-			if (res.ok) {
-				klassen = await res.json();
-			}
+			if (res.ok) klassen = await res.json();
 		} catch (err) {
 			console.error('Fehler beim Laden der Klassengruppen:', err);
 		}
@@ -187,7 +186,8 @@ function erzeugeEtikettenStore() {
 			} catch (err) {
 				if (lauf !== suchLauf) return;
 				treffer = [];
-				console.error('Fehler bei Buchtitelsuche:', err);
+				// Ohne Antwort hieße das leere Feld „kein Treffer"; der Grund steht in der Meldung.
+				snackbars.addToast(fehlertext(err), 'error');
 			} finally {
 				if (lauf === suchLauf) sucht = false;
 			}

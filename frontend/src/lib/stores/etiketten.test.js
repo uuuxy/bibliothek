@@ -242,6 +242,23 @@ describe('etikettenStore: Titelsuche, späte Antwort', () => {
 		vi.useRealTimers();
 	});
 
+	// Ohne Antwort blieb das Feld ohne Treffer und ohne Meldung, als gäbe es den Titel nicht
+	// (OFFEN.md 5.106, in Chromium, Firefox und WebKit).
+	it('nennt auch ohne Antwort den Grund', async () => {
+		// mockImplementationOnce: Ein abgelehntes Promise aus dem Aufsetzen gälte bis zum Ablauf der
+		// Wartezeit als unbehandelt.
+		apiFetchMock.mockImplementationOnce(() =>
+			Promise.reject(new Error('Keine Verbindung zum Server.'))
+		);
+
+		await tippe('Faust');
+
+		expect(snackbars.addToast).toHaveBeenCalledWith('Keine Verbindung zum Server.', 'error');
+		expect(etikettenStore.treffer).toEqual([]);
+		expect(etikettenStore.sucht).toBe(false);
+		vi.useRealTimers();
+	});
+
 	// Auch das Lesen des Grundes dauert: Hat inzwischen eine neue Suche begonnen, meldet die alte
 	// nichts mehr.
 	it('meldet den Fehlschlag eines älteren Suchtexts nicht', async () => {
