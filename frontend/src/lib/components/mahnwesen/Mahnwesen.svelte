@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { offlineSync } from '../../stores/offlineSync.svelte.js';
 	import MahnwesenFilters from './MahnwesenFilters.svelte';
@@ -36,11 +37,9 @@
 
 	// Die Zahl am Reiter „Schadensersatz" steht schon vor dem ersten Blick darauf — sonst
 	// zeigte er 0, solange niemand hineingesehen hat, und wäre damit eine Falschaussage.
-	$effect(() => {
-		if (!bescheideStore.geladen) {
-			bescheideStore.lade();
-		}
-	});
+	// Bei jedem Besuch wie die Mahnliste: Der Store gilt für die Sitzung und zeigte sonst den
+	// Stand des ersten Besuchs, ohne die Forderungen und Bescheide anderer Plätze.
+	onMount(() => bescheideStore.lade());
 </script>
 
 <div class="w-full h-full flex flex-col">

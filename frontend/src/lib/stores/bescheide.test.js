@@ -66,6 +66,28 @@ describe('bescheideStore', () => {
 		expect(bescheideStore.ladefehler).toBe('');
 	});
 
+	// Geladen wird bei jedem Besuch und nach jeder Übergabe. Die Antwort auf den älteren Abruf
+	// kann zuletzt ankommen; dann zählt sie nicht mehr.
+	it('lässt eine ältere Antwort, die zuletzt kommt, den jüngeren Stand nicht überschreiben', async () => {
+		/** @type {((liste: unknown[]) => void)[]} */
+		const antworten = [];
+		apiGetMock.mockImplementation((url) =>
+			url === '/api/bescheide'
+				? new Promise((fertig) => antworten.push(fertig))
+				: Promise.resolve([])
+		);
+
+		const aelter = bescheideStore.lade();
+		const juenger = bescheideStore.lade();
+		antworten[1]([{ id: 'b1', status: 'uebergeben' }]);
+		await juenger;
+		antworten[0]([{ id: 'b1', status: 'offen', frist_abgelaufen: true }]);
+		await aelter;
+
+		expect(bescheideStore.liste).toEqual([{ id: 'b1', status: 'uebergeben' }]);
+		expect(bescheideStore.laedt).toBe(false);
+	});
+
 	// Ein Doppelklick auf „Übergeben" schickte zwei Anfragen. Der Server bucht nur die erste, auf
 	// die zweite antwortet er „Übergabe nicht möglich", und die Meldung stand neben „gebucht".
 	it('schickt die Übergabe bei einem zweiten Klick vor der Antwort nicht noch einmal', async () => {

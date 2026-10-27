@@ -34,7 +34,12 @@ class BescheideStore {
 	/** Rückgabe nach der Übergabe: die Aufsicht ist zu informieren. */
 	zuInformieren = $derived(this.liste.filter((b) => b.rueckgabe_nach_uebergabe).length);
 
+	/** Der jüngste Abruf. Geladen wird bei jedem Besuch und nach jeder Übergabe; kommt eine
+	 *  ältere Antwort zuletzt an, stünde sonst der Stand vor der Übergabe da. */
+	#lauf = 0;
+
 	async lade() {
+		const meiner = ++this.#lauf;
 		this.laedt = true;
 		this.ladefehler = '';
 		try {
@@ -42,14 +47,16 @@ class BescheideStore {
 				apiGet('/api/bescheide'),
 				apiGet('/api/bescheide/ausstehend')
 			]);
+			if (meiner !== this.#lauf) return;
 			this.liste = liste || [];
 			this.ausstehend = ausstehend || [];
 			this.geladen = true;
 		} catch (e) {
+			if (meiner !== this.#lauf) return;
 			// Die Listen bleiben stehen, statt leer zu behaupten, es gäbe nichts.
 			this.ladefehler = fehlertext(e);
 		} finally {
-			this.laedt = false;
+			if (meiner === this.#lauf) this.laedt = false;
 		}
 	}
 
