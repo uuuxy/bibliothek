@@ -409,7 +409,7 @@ describe('etikettenStore: Startfeld', () => {
 			{ barcode_id: 'B-2', titel: 'Titel', autor: 'Autorin' }
 		]);
 
-		druckWarteschlange.copies = [{ barcode_id: 'B-9', titel: 'Anderer', autor: null }];
+		druckWarteschlange.copies = [{ barcode_id: 'B-9', titel: 'Anderer' }];
 		expect(etikettenStore.bogen).toEqual([
 			{ isBlank: true },
 			{ isBlank: true },
