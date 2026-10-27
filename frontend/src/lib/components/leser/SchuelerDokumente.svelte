@@ -36,7 +36,13 @@
 		zeigeRechnung
 	} = $props();
 
+	// Jeder Abruf erteilt eine Auskunft und steht im Protokoll (api/leser/dsgvo_pdf.go): Ein
+	// zweiter Klick vor der Antwort öffnete einen zweiten Tab und zählte eine zweite Auskunft.
+	let auskunftLaedt = $state(false);
+
 	async function zeigeDsgvoAuskunft() {
+		if (auskunftLaedt) return;
+		auskunftLaedt = true;
 		try {
 			const res = await zeigePdf(() => apiFetch(`/api/schueler/${leser.id}/dsgvo-auskunft/pdf`));
 			if (!res) {
@@ -50,6 +56,8 @@
 		} catch (e) {
 			console.error(e);
 			snackbars.addToast('Netzwerkfehler beim Erzeugen der Auskunft.', 'error');
+		} finally {
+			auskunftLaedt = false;
 		}
 	}
 </script>
@@ -98,9 +106,12 @@
 	<Button
 		variant="secondary"
 		onclick={zeigeDsgvoAuskunft}
+		disabled={auskunftLaedt}
 		title="DSGVO-Auskunft (Art. 15) als PDF anzeigen"
 	>
-		<ShieldCheck class="w-4 h-4 text-on-surface-variant" />
+		{#if auskunftLaedt}{@render spinner()}{:else}<ShieldCheck
+				class="w-4 h-4 text-on-surface-variant"
+			/>{/if}
 		DSGVO-Auskunft
 	</Button>
 {/if}
