@@ -59,7 +59,7 @@ Nur, was kein Test leisten kann.
 - [ ] Entscheiden: Mit dem Löschen eines Titels oder eines Verlusts fällt eine Forderung aus ihrem
   Bescheid, und der Bescheid gilt als erledigt. Empfehlung: Sie bleibt, ohne Exemplar (Weg B).
   (5.107)
-- [ ] Freigeben: Pull Request #759 schließen, die Speichergrenze beim Hochladen gibt es schon.
+- [x] Freigeben: Pull Request #759 schließen, die Speichergrenze beim Hochladen gibt es schon.
   (5.108)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
@@ -189,17 +189,6 @@ Zwei Wege:
   `check_damage_item` (nachgestellt).
 
 Empfehlung: B. Aufwand rund eine Stunde mit Migration, Test am alten Stand rot und Raster.
-
-### 5.108 Pull Request #759 (Speichergrenze beim Hochladen)
-
-Der automatische Vorschlag senkt an fünf Stellen in vier Dateien den Teil eines hochgeladenen
-Formulars, den Go im Speicher hält, auf 1 MB (`ParseMultipartForm`). Begrenzt ist die Anfrage
-dort schon vorher (`http.MaxBytesReader` mit derselben Grenze). gosec meldet die fünf Stellen
-auch mit dem Vorschlag (G120, nachgestellt): Die Regel sieht nur den Aufruf an einer Anfrage,
-nicht die Zahl, und ist deshalb in `scripts/gosec-gate.sh` mit Grund ausgenommen. Mit 1 MB läge
-jede größere Datei als Zwischendatei auf der Platte, beim LUSD-Import samt Schülerdaten. Dazu
-kommt `.jules/sentinel.md` als Beifang. Schließen mit Begründung ist ein Schreiben bei
-GitHub und wartet auf die Freigabe.
 
 ### 7.2 Frisches Littera-Backup
 
