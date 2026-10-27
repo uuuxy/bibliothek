@@ -21,6 +21,8 @@
 	import { bescheidStatus } from './bescheidStatus.js';
 	import { FileText, Printer } from '@lucide/svelte';
 	import { formatEuro } from '../../utils/format.js';
+	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {{ darfSchreiben: boolean, onBescheid: (schuelerId: string) => void }} */
 	let { darfSchreiben, onBescheid } = $props();
@@ -35,9 +37,8 @@
 
 	/** @param {any} b */
 	function nachdruck(b) {
-		// Neues Fenster statt fetch: Das PDF soll im Betrachter des Browsers aufgehen,
-		// wie bei den übrigen Briefen des Mahnwesens.
-		window.open(`/api/bescheide/${b.id}/pdf`, '_blank');
+		if (!zeigePdfAdresse(`/api/bescheide/${b.id}/pdf`))
+			snackbars.addToast(PDF_BLOCKIERT, 'warning');
 	}
 
 	const leer = $derived(

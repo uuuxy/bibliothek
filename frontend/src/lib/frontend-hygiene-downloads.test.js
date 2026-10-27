@@ -52,4 +52,24 @@ describe('Dokumente gehen im Tab auf, nicht in den Download-Ordner', () => {
 			'PDF von Hand in ein Fenster geladen — zeigePdf aus utils/pdfImFenster.js nehmen'
 		).toEqual([]);
 	});
+
+	// Die Helfer sagen, ob der Browser den Tab verweigert hat, und der Aufrufer meldet es. Die Briefe
+	// der Bescheide öffneten ihren Tab von Hand, und ein blockierter Tab blieb ohne Wort.
+	it('öffnet einen Tab nur über die Helfer, die einen blockierten melden lassen', () => {
+		const helfer = [ZEIGE_PDF, 'src/lib/utils/listenDruck.js'];
+		const mitGrund = {
+			'src/lib/components/bestellungen/BestaetigungEtiketten.svelte':
+				'die Seite des Lieferanten: mit noopener liefert window.open immer null'
+		};
+		const vonHand = quellen.filter((q) => /window\.open\(/.test(q.text)).map((q) => q.pfad);
+		expect(vonHand, 'der Detektor findet die Helfer nicht').toEqual(expect.arrayContaining(helfer));
+		expect(
+			vonHand.filter((p) => !helfer.includes(p) && !(p in mitGrund)),
+			'Tab von Hand geöffnet — zeigePdf, zeigePdfAdresse oder druckeDokument nehmen und einen blockierten Tab melden'
+		).toEqual([]);
+		expect(
+			Object.keys(mitGrund).filter((p) => !vonHand.includes(p)),
+			'Eintrag ohne Fund — austragen'
+		).toEqual([]);
+	});
 });

@@ -13,6 +13,8 @@
 	import Button from '../ui/Button.svelte';
 	import { Printer } from '@lucide/svelte';
 	import { formatEuro } from '../../utils/format.js';
+	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
+	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {{ bescheide: any[] }} */
 	let { bescheide = [] } = $props();
@@ -22,8 +24,8 @@
 
 	/** @param {any} b */
 	function nachdruck(b) {
-		// Neues Fenster wie im Mahnwesen: Das PDF gehört in den Betrachter des Browsers.
-		window.open(`/api/bescheide/${b.id}/pdf`, '_blank');
+		if (!zeigePdfAdresse(`/api/bescheide/${b.id}/pdf`))
+			snackbars.addToast(PDF_BLOCKIERT, 'warning');
 	}
 </script>
 

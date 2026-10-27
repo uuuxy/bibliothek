@@ -5,6 +5,8 @@ vi.mock('../../apiFetch.js', () => ({ apiGet: vi.fn(), apiPost: vi.fn() }));
 
 import { bescheideStore } from '../../stores/bescheide.svelte.js';
 import BescheideTabelle from './BescheideTabelle.svelte';
+import { snackbars } from '../../stores/snackbars.svelte.js';
+import { PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 // Die Stufe zwischen Mahnliste und Bescheid: „Verlust melden" beendet die Ausleihe, das
 // Kind fällt aus der Mahnliste — und stand bis zum 15.09.2026 nirgends mehr. Der Reiter
@@ -140,6 +142,23 @@ describe('BescheideTabelle', () => {
 		status: 'offen',
 		frist_abgelaufen: true
 	};
+
+	// Verweigerte der Browser den Tab, geschah nichts, und niemand erfuhr, warum.
+	it('meldet beim Nachdruck, wenn der Browser den Tab verweigert', () => {
+		bescheideStore.ausstehend = [];
+		bescheideStore.liste = [faellig];
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => null)
+		);
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		const screen = render(BescheideTabelle, { darfSchreiben: true, onBescheid: vi.fn() });
+
+		screen.getByRole('button', { name: /Nachdruck/ }).click();
+
+		expect(meldung).toHaveBeenCalledWith(PDF_BLOCKIERT, 'warning');
+		vi.unstubAllGlobals();
+	});
 
 	it('sperrt „Übergeben", solange eine Übergabe läuft', () => {
 		bescheideStore.ausstehend = [];

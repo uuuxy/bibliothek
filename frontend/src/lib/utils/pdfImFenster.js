@@ -43,6 +43,17 @@ export async function zeigePdf(hole) {
 }
 
 /**
+ * Öffnet ein PDF, das der Server inline schickt, über seine Adresse in einem Tab. Der Browser
+ * speichert es dann unter dem Namen des Servers (bescheid_<Nummer>.pdf), nicht unter der
+ * Zufallsadresse eines geholten PDFs. Wie bei zeigePdf meldet der Aufrufer einen blockierten Tab.
+ * @param {string} adresse
+ * @returns {boolean} false, wenn der Browser den Tab blockiert hat
+ */
+export function zeigePdfAdresse(adresse) {
+	return window.open(adresse, '_blank') !== null;
+}
+
+/**
  * Gibt die Adresse frei, sobald der Tab geschlossen ist. Vorher nicht: „Speichern" im Tab lädt
  * die Adresse noch einmal und bricht nach der Freigabe ab.
  * @param {Window} fenster

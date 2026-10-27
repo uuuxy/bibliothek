@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import LeserBescheideKarte from './LeserBescheideKarte.svelte';
+import { snackbars } from '../../stores/snackbars.svelte.js';
+import { PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 // Die Akte zeigt, wonach Eltern in der Bibliothek fragen: Referenznummer, Frist, Betrag
 // und ob der Fall noch bei der Schule liegt. Bis zum 12.09.2026 stand davon nichts in der
@@ -46,6 +48,21 @@ describe('LeserBescheideKarte', () => {
 		screen.getByRole('button', { name: /Nachdruck/ }).click();
 
 		expect(oeffne).toHaveBeenCalledWith('/api/bescheide/b-1/pdf', '_blank');
+		vi.unstubAllGlobals();
+	});
+
+	// Verweigerte der Browser den Tab, geschah nichts, und niemand erfuhr, warum.
+	it('meldet, wenn der Browser den Tab verweigert', () => {
+		vi.stubGlobal(
+			'open',
+			vi.fn(() => null)
+		);
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		const screen = render(LeserBescheideKarte, { bescheide: [bescheid] });
+
+		screen.getByRole('button', { name: /Nachdruck/ }).click();
+
+		expect(meldung).toHaveBeenCalledWith(PDF_BLOCKIERT, 'warning');
 		vi.unstubAllGlobals();
 	});
 });

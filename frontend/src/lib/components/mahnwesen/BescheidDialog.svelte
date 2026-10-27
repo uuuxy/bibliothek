@@ -25,6 +25,7 @@
 	import { BescheidFormular } from './bescheidFormular.svelte.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { formatEuro } from '../../utils/format.js';
+	import { zeigePdfAdresse, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 	/**
 	 * @type {{
@@ -49,7 +50,10 @@
 		if (!bescheid) return;
 		snackbars.addToast(`Bescheid ${bescheid.referenznummer ?? ''} erstellt.`, 'success', {
 			label: 'Brief öffnen',
-			onClick: () => window.open(`/api/bescheide/${bescheid.id}/pdf`, '_blank')
+			onClick: () => {
+				if (!zeigePdfAdresse(`/api/bescheide/${bescheid.id}/pdf`))
+					snackbars.addToast(PDF_BLOCKIERT, 'warning');
+			}
 		});
 		await onErstellt();
 		onclose();
