@@ -96,3 +96,25 @@ describe('Lieferanten', () => {
 		).toBeTruthy();
 	});
 });
+
+// Ein zweiter Klick auf „Löschen" vor der Antwort schickte ein zweites DELETE, und nach dem
+// Löschen stand „Lieferant nicht gefunden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('Lieferanten: Löschen', () => {
+	it('schickt einen zweiten Klick nicht, solange das Löschen läuft', async () => {
+		/** @type {(wert?: unknown) => void} */
+		let fertig = () => {};
+		const onRemoveSupplier = vi.fn(() => new Promise((aufloesen) => (fertig = aufloesen)));
+		const ansicht = baue({ suppliers: [LIEFERANT], onRemoveSupplier });
+		const knopf = ansicht.getByRole('button', { name: 'Lieferant Buchhandlung Alt löschen' });
+
+		await fireEvent.click(knopf);
+		expect(knopf.hasAttribute('disabled'), 'gesperrt, solange das Löschen läuft').toBe(true);
+		await fireEvent.click(knopf);
+		expect(onRemoveSupplier, 'ein zweites DELETE vor der Antwort').toHaveBeenCalledTimes(1);
+
+		fertig();
+		await tick();
+		await tick();
+		expect(knopf.hasAttribute('disabled')).toBe(false);
+	});
+});

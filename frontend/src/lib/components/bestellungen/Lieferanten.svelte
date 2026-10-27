@@ -17,7 +17,7 @@
 	 *   onErneut?: () => void,
 	 *   onAddSupplier: (name: string, email: string, kundennummer: string, haupt: boolean, kundennummerSchultraeger: string) => Promise<any>,
 	 *   onEditSupplier: (id: string, aenderung: Record<string, any>) => Promise<any>,
-	 *   onRemoveSupplier: (id: string) => void
+	 *   onRemoveSupplier: (id: string) => Promise<any>
 	 * }}
 	 */
 	let {
@@ -62,6 +62,22 @@
 		newCustNum = '';
 		newCustNumSchultraeger = '';
 		newIstHaupt = false;
+	}
+
+	/** @type {string|null} */
+	let loeschtKennung = $state(null);
+
+	// Gesperrt, bis die Liste nachgeladen ist: Ein zweiter Klick schickte ein zweites DELETE, und
+	// nach dem Löschen stand „Lieferant nicht gefunden".
+	/** @param {string} id */
+	async function loesche(id) {
+		if (loeschtKennung) return;
+		loeschtKennung = id;
+		try {
+			await onRemoveSupplier(id);
+		} finally {
+			loeschtKennung = null;
+		}
 	}
 
 	// Die Zeile schließt erst, wenn gespeichert ist; sonst gingen die Änderungen mit ihr.
@@ -162,8 +178,9 @@
 								<LieferantZeile
 									{s}
 									bearbeiten={bearbeiteteKennung === s.id}
+									loescht={loeschtKennung === s.id}
 									onEdit={(z) => (bearbeiteteKennung = z.id)}
-									onRemove={onRemoveSupplier}
+									onRemove={loesche}
 									onSave={speichereAenderung}
 									onCancel={() => (bearbeiteteKennung = null)}
 								/>

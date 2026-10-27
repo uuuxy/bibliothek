@@ -20,13 +20,14 @@
 	 * @type {{
 	 *   s: { id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean, kundennummer_schultraeger?: string },
 	 *   bearbeiten: boolean,
+	 *   loescht?: boolean,
 	 *   onEdit: (s: any) => void,
 	 *   onRemove: (id: string) => void,
 	 *   onSave: (aenderung: Record<string, any>) => Promise<void>,
 	 *   onCancel: () => void
 	 * }}
 	 */
-	let { s, bearbeiten, onEdit, onRemove, onSave, onCancel } = $props();
+	let { s, bearbeiten, loescht = false, onEdit, onRemove, onSave, onCancel } = $props();
 
 	// Beim Bearbeiten IMMER den aktuellen Stand vorbelegen. Ohne den Hauptlieferanten-
 	// Haken stünde beim Bearbeiten „aus" im Feld, und wer nur die E-Mail korrigiert,
@@ -117,8 +118,10 @@
 			>
 			<button
 				onclick={() => onRemove(s.id)}
+				disabled={loescht}
 				aria-label="Lieferant {s.name} löschen"
-				class="text-error cursor-pointer text-sm">Löschen</button
+				class="text-error cursor-pointer text-sm disabled:cursor-not-allowed disabled:text-on-surface/38"
+				>Löschen</button
 			>
 		</td>
 	</tr>
