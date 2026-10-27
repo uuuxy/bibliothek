@@ -116,13 +116,20 @@
 											anonymisiert (DSGVO)
 										</span>
 									{:else}
+										<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie „Verlängern" in der
+										     Leserakte: Ein zweiter Klick schickte sonst eine zweite. -->
 										<button
 											onclick={() => papierkorb.wiederherstellen(s.id)}
+											disabled={papierkorb.stelltHer(s.id)}
 											data-tip="Wiederherstellen"
 											aria-label="Wiederherstellen"
-											class="icon-btn bg-success-container text-on-success-container hover:opacity-80 shadow-sm"
+											class="icon-btn bg-success-container text-on-success-container hover:opacity-80 shadow-sm disabled:cursor-not-allowed"
 										>
-											<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
+											{#if papierkorb.stelltHer(s.id)}
+												<Ladekreis size="sm" farbe="aktuell" />
+											{:else}
+												<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
+											{/if}
 										</button>
 									{/if}
 									{#if darfEndgueltigLoeschen}

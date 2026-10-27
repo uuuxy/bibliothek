@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
 import Papierkorb from './Papierkorb.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -105,6 +105,36 @@ describe('Papierkorb', () => {
 				'dieser Datensatz ist bereits anonymisiert (DSGVO)',
 				'error'
 			)
+		);
+	});
+
+	// Ein Doppelklick schickte zwei Anfragen; die zweite meldete „Schüler nicht im Papierkorb
+	// gefunden", obwohl die erste den Leser zurückgeholt hatte (OFFEN.md 5.106).
+	it('schickt bei einem zweiten Klick vor der Antwort keine zweite Anfrage', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		vi.mocked(apiFetch).mockImplementation(async (_url, opts) => {
+			if (opts?.method === 'POST') return new Promise((fertig) => (liefere = fertig));
+			return /** @type {any} */ (antwort([NORMAL]));
+		});
+		render(Papierkorb, { props: {} });
+
+		const knopf = /** @type {HTMLButtonElement} */ (
+			await screen.findByRole('button', { name: 'Wiederherstellen' })
+		);
+		await fireEvent.click(knopf);
+		await fireEvent.click(knopf);
+
+		const posts = () => vi.mocked(apiFetch).mock.calls.filter(([, o]) => o?.method === 'POST');
+		expect(posts()).toHaveLength(1);
+		expect(knopf.disabled).toBe(true);
+
+		liefere(antwort({ error: 'Datenbank nicht erreichbar' }, { ok: false, status: 503 }));
+		await waitFor(() =>
+			expect(
+				/** @type {HTMLButtonElement} */ (screen.getByRole('button', { name: 'Wiederherstellen' }))
+					.disabled
+			).toBe(false)
 		);
 	});
 });

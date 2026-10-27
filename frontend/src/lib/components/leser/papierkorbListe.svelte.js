@@ -10,6 +10,7 @@
 
 // Gezeigt wird die Meldung des Servers, nicht unsere Vermutung: Er begründet 409 und 400 im
 // Klartext („offene Ausleihen", „bereits anonymisiert").
+import { SvelteSet } from 'svelte/reactivity';
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
@@ -30,6 +31,9 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 	let laedt = $state(false);
 	let ladefehler = $state('');
 	let loeschtGerade = $state(false);
+	// Leser, deren Wiederherstellung läuft. Ein zweiter Klick vor der Antwort schickte eine zweite
+	// Anfrage, und deren „nicht im Papierkorb" stand nach dem Erfolg der ersten da.
+	const stelltHer = new SvelteSet();
 
 	return /** @satisfies {object} */ ({
 		get liste() {
@@ -44,6 +48,10 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 		},
 		get loeschtGerade() {
 			return loeschtGerade;
+		},
+		/** @param {string} id */
+		stelltHer(id) {
+			return stelltHer.has(id);
 		},
 
 		async laden() {
@@ -68,6 +76,8 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 
 		/** @param {string} id */
 		async wiederherstellen(id) {
+			if (stelltHer.has(id)) return;
+			stelltHer.add(id);
 			try {
 				const res = await apiFetch(`/api/schueler/${id}/restore`, { method: 'POST' });
 				if (res.ok) {
@@ -82,6 +92,8 @@ export function erzeugePapierkorb(onRestoreSuccess = () => {}) {
 			} catch (err) {
 				snackbars.addToast('Netzwerkfehler bei der Wiederherstellung.', 'error');
 				console.error('Fehler bei Wiederherstellung:', err);
+			} finally {
+				stelltHer.delete(id);
 			}
 		},
 
