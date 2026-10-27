@@ -5,9 +5,10 @@ import { uiLogin, gehZu, seedSQL, uniqueSuffix, scanneWieScanner } from './helpe
 // Drucker. Akte und Leserdatei drucken dann nicht und sagen es beim Druck; die Theke bleibt
 // still, solange dort nur ein Leser geladen wird.
 
-const DRUCKEN_GESPERRT = 'Nicht gedruckt: Das Ausweis-Design ist nicht geladen.';
+// Mit dem Grund aus designFaelltAus („Lesefehler").
+const DRUCKEN_GESPERRT = 'Nicht gedruckt, das Ausweis-Design ist nicht geladen: Lesefehler.';
 const SEITE_OHNE_DESIGN =
-	'Ausweis-Design nicht geladen: Ausweise lassen sich gerade nicht drucken.';
+	'Ausweis-Design nicht geladen: Lesefehler. Ausweise lassen sich gerade nicht drucken.';
 
 /** Zählt die Aufrufe des Druckdialogs, statt ihn zu öffnen.
  * @param {import('@playwright/test').Page} page */
