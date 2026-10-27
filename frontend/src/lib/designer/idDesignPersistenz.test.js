@@ -169,3 +169,63 @@ describe('Ausweis-Design laden: Schulname und Adresse', () => {
 		expect(ablage.geladen).toBe(true);
 	});
 });
+
+// Scheiterte das Speichern, stand „Speichern fehlgeschlagen", ohne Grund und ohne zweiten Versuch.
+// Der Stand ging erst mit der nächsten Änderung hinaus; änderte nach dem Netzausfall niemand mehr
+// etwas, nie (OFFEN.md 5.106, in Chromium, Firefox und WebKit).
+describe('Ausweis-Design speichern', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	it('nennt den Grund und schickt denselben Stand auf Wunsch noch einmal', async () => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(serverAntwort(503, { error: 'Die Datenbank antwortet nicht' }))
+			.mockResolvedValueOnce(serverAntwort(200, {}));
+		const ablage = erzeugeDesignAblage();
+
+		await ablage.speichern('{"seite":"vorne"}');
+		expect(ablage.zustand).toBe('error');
+		expect(ablage.speicherfehler).toBe('Die Datenbank antwortet nicht');
+
+		await ablage.erneutSpeichern();
+		expect(vi.mocked(apiFetch).mock.calls[1][1]?.body).toBe('{"seite":"vorne"}');
+		expect(ablage.zustand).toBe('saved');
+		expect(ablage.speicherfehler).toBe('');
+	});
+
+	it('nennt auch ohne Antwort den Grund', async () => {
+		vi.mocked(apiFetch).mockImplementationOnce(() =>
+			Promise.reject(new Error('Keine Verbindung zum Server.'))
+		);
+		const ablage = erzeugeDesignAblage();
+
+		await ablage.speichern('{}');
+
+		expect(ablage.zustand).toBe('error');
+		expect(ablage.speicherfehler).toBe('Keine Verbindung zum Server.');
+	});
+
+	it('lässt einen älteren Stand, der zuletzt scheitert, den neueren nicht überschreiben', async () => {
+		/** @type {() => void} */
+		let scheitereAlt = () => {};
+		vi.mocked(apiFetch)
+			.mockImplementationOnce(
+				() =>
+					new Promise((_, nein) => {
+						scheitereAlt = () => nein(new Error('Keine Verbindung zum Server.'));
+					})
+			)
+			.mockResolvedValueOnce(serverAntwort(200, {}));
+		const ablage = erzeugeDesignAblage();
+
+		const alt = ablage.speichern('{"stand":"alt"}');
+		await ablage.speichern('{"stand":"neu"}');
+		scheitereAlt();
+		await alt;
+
+		expect(ablage.zustand).toBe('saved');
+		await ablage.erneutSpeichern();
+		expect(apiFetch).toHaveBeenCalledTimes(2);
+	});
+});

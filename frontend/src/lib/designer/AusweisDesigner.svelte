@@ -122,7 +122,14 @@
 		{:else if ablage.zustand === 'saved'}
 			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
 		{:else if ablage.zustand === 'error'}
-			<span class="text-error">Speichern fehlgeschlagen</span>
+			<span class="text-error">Speichern fehlgeschlagen: {ablage.speicherfehler}</span>
+			<button
+				type="button"
+				onclick={() => ablage.erneutSpeichern()}
+				class="text-on-surface-variant underline underline-offset-2 cursor-pointer"
+			>
+				Erneut speichern
+			</button>
 		{/if}
 		<button
 			type="button"

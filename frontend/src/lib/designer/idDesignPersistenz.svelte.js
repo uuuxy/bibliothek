@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../apiFetch.js';
+import { fehlertext } from '../utils/fehlertext.js';
 import { bestaetigen } from '../stores/bestaetigung.svelte.js';
 import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
 import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
@@ -12,7 +13,7 @@ import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
  * der ihn wieder abräumt.
  */
 
-/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladefehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
+/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladefehler: string, readonly speicherfehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, erneutSpeichern: () => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
 export function erzeugeDesignAblage() {
 	/** @type {'idle'|'saving'|'saved'|'error'} */
 	let zustand = $state('idle');
@@ -28,6 +29,13 @@ export function erzeugeDesignAblage() {
 	// Nicht leer = die Leinwand zeigt NICHT den zentralen Stand. Der Bildschirm sagt es,
 	// statt still mit Vorgabewerten weiterzuarbeiten.
 	let ladefehler = $state('');
+	// Scheitert das Speichern, gilt der Stand nur an diesem Platz. Der Grund steht da, und der Stand
+	// wartet auf „Erneut speichern"; sonst ginge er erst mit der nächsten Änderung hinaus. Nur das
+	// jüngste Speichern zählt: Ein älterer Stand, der zuletzt scheitert, überschriebe den neueren.
+	let speicherfehler = $state('');
+	/** @type {string | null} */
+	let ungespeichert = null;
+	let speicherLauf = 0;
 
 	return /** @satisfies {object} */ ({
 		get zustand() {
@@ -38,6 +46,9 @@ export function erzeugeDesignAblage() {
 		},
 		get ladefehler() {
 			return ladefehler;
+		},
+		get speicherfehler() {
+			return speicherfehler;
 		},
 
 		/** Lädt das zentral gespeicherte Design. Leeres {} (Erststart) → Vorgabewerte. */
@@ -70,16 +81,29 @@ export function erzeugeDesignAblage() {
 
 		/** @param {string} body */
 		async speichern(body) {
+			const meiner = ++speicherLauf;
+			let grund = '';
 			try {
 				const res = await apiFetch('/api/ausweis-layout', {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
 					body
 				});
-				zustand = res.ok ? 'saved' : 'error';
-			} catch {
-				zustand = 'error';
+				if (!res.ok) grund = await leseApiFehler(res);
+			} catch (e) {
+				grund = fehlertext(e);
 			}
+			if (meiner !== speicherLauf) return;
+			speicherfehler = grund;
+			ungespeichert = grund ? body : null;
+			zustand = grund ? 'error' : 'saved';
+		},
+
+		/** Schickt den Stand noch einmal, dessen Speichern zuletzt scheiterte. */
+		async erneutSpeichern() {
+			if (ungespeichert === null) return;
+			zustand = 'saving';
+			await this.speichern(ungespeichert);
 		},
 
 		/**
