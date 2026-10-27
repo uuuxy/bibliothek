@@ -42,7 +42,7 @@ einem Fehler (5.106).
 - [x] Mahnwesen, Bescheide und Schäden. (5.106)
 - [x] Druck-Center und Etiketten. (5.106)
 - [x] Leserakte. (5.106)
-- [ ] Abgänger und Versand an die Klassenleitungen. (5.106)
+- [x] Abgänger und Versand an die Klassenleitungen. (5.106)
 - [ ] LMF-Plan, Lernmittel und Klassensätze. (5.106)
 - [ ] Bestellungen und Lieferanten. (5.106)
 - [ ] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
