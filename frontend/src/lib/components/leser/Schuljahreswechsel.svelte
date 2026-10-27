@@ -56,8 +56,12 @@
 	// Die Ansicht ist kurz, die Banner stehen direkt beim Vorgang, und der Ergebnisblock
 	// bleibt bis „Fertig" stehen — ein Toast, der nach Sekunden verschwindet, kann für
 	// einen irreversiblen Massenvorgang ohnehin nicht der tragende Kanal sein.
-	async function executePromotion() {
-		if (laedt) return;
+	//
+	// Die Bestätigung erscheint an der Stelle von „Schuljahr wechseln", der zweite Klick eines
+	// Doppelklicks träfe sie: detail zählt die Klicks in Folge, die Tastatur liefert 0.
+	/** @param {MouseEvent} e */
+	async function executePromotion(e) {
+		if (laedt || e.detail > 1) return;
 		laedt = true;
 		fehler = null;
 		try {
