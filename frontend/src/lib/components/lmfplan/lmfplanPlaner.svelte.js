@@ -192,26 +192,24 @@ export function erzeugePlaner() {
 		}
 	}
 
+	// Mit der Sperre des Speicherns: Ein zweiter Auftrag vor der Antwort verwarf ein zweites Mal,
+	// und nach „Plan verworfen." stand „Kein Plan vorhanden".
 	async function verwerfen() {
-		if (!zustand.stand?.plan) return;
-		if (
-			!(await bestaetigen({
-				titel: `Plan vom ${dienst.datumKurz(zustand.stand.plan.erster_tag)} verwerfen?`,
-				aktion: 'Verwerfen',
-				gefaehrlich: true
-			}))
-		)
-			return;
+		if (!zustand.stand?.plan || zustand.speichert) return;
+		const titel = `Plan vom ${dienst.datumKurz(zustand.stand.plan.erster_tag)} verwerfen?`;
+		if (!(await bestaetigen({ titel, aktion: 'Verwerfen', gefaehrlich: true }))) return;
+		zustand.speichert = true;
 		try {
 			const erg = await dienst.verwerfePlan(zustand.art);
 			melde(erg.meldung, erg.ok ? 'success' : 'error');
-			// Wie beim Veröffentlichen: Gelöscht wird zuerst, die Fristen kehren danach
-			// zurück. Nach einem Fehlschlag ist der Plan womöglich weg — neu laden, sonst
-			// zeigt der Planer einen Plan, den es nicht mehr gibt.
-			await lade();
 		} catch (e) {
 			schreibfehler(e, 'Verwerfen');
+		} finally {
+			// Wie beim Veröffentlichen: Gelöscht wird zuerst, die Fristen kehren danach zurück.
+			// Nach einem Fehlschlag ist der Plan womöglich weg; neu laden, sonst zeigt der Planer
+			// einen Plan, den es nicht mehr gibt.
 			await lade();
+			zustand.speichert = false;
 		}
 	}
 

@@ -54,7 +54,11 @@
 					<Printer class="h-4 w-4" aria-hidden="true" />
 					Als PDF
 				</Button>
-				<Button variant="secondary" onclick={onverwerfen} disabled={!stand?.plan || stand.vorbei}>
+				<Button
+					variant="secondary"
+					onclick={onverwerfen}
+					disabled={!stand?.plan || stand.vorbei || speichert}
+				>
 					<Trash class="h-4 w-4" aria-hidden="true" />
 					Plan verwerfen
 				</Button>
