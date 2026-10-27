@@ -67,10 +67,24 @@
 		try {
 			ergebnis = await sendeWechsel({ confirm: true });
 		} catch (err) {
-			fehler = fehlertext(err);
+			await frageNach(err);
 		} finally {
 			awaitingConfirmation = false;
 			laedt = false;
+		}
+	}
+
+	// Nach einem Fehler ist offen, ob der Wechsel lief: Eine Antwort geht auch verloren, nachdem
+	// der Server festgeschrieben hat. Eine neue Vorschau fragt nach; nach einem Lauf lehnt der
+	// Server sie ab und nennt ihn, sonst steht sie mit dem Grund von eben wieder da.
+	/** @param {unknown} err */
+	async function frageNach(err) {
+		probe = null;
+		try {
+			probe = await sendeWechsel({ dry_run: true });
+			fehler = fehlertext(err);
+		} catch (nachfrage) {
+			fehler = fehlertext(nachfrage);
 		}
 	}
 </script>

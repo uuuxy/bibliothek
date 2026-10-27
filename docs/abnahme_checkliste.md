@@ -1,6 +1,6 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-10-14. Für die Abnahme mit dem Sekretariat.
+> Stand: 2026-10-27. Für die Abnahme mit dem Sekretariat.
 > Alle fünf Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
@@ -95,8 +95,9 @@ oder nur die Versetzung nutzen, wenn kein frischer LUSD-Export vorliegt.
 3. [ ] Ausführen (rote Bestätigungsstufe) → Erfolgsmeldung.
 4. [ ] Gegenprobe: je einen Schüler aus niedrigster und höchster Stufe prüfen.
 
-**Eingebaute Bremsen:** Doppellauf-Schutz (zweiter Lauf innerhalb von 12 Stunden wird abgewiesen),
-Vorschau und Ausführung rechnen identisches SQL.
+**Eingebaute Bremsen:** Doppellauf-Schutz (ein zweiter Lauf geht erst ein halbes Jahr nach dem
+letzten; schon die Vorschau nennt dann Tag und Uhrzeit des letzten), Vorschau und Ausführung
+rechnen identisches SQL.
 
 **Bestanden, wenn:** Vorschau-Zahlen stimmen mit der realen Klassenstruktur überein, Gegenproben korrekt.
 

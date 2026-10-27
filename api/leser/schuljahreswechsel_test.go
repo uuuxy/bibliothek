@@ -2,10 +2,12 @@ package leser
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/auth"
@@ -45,12 +47,17 @@ func TestSchuljahreswechsel_VerlangtBestaetigung(t *testing.T) {
 	}
 }
 
-func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testing.T) {
+func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneProtokoll(t *testing.T) {
 	s, mock := schuljahreswechselTueren(t)
 
-	// Probelauf: nur Begin → Lesen → CTE → Rollback. Keine Sperre gegen den Doppellauf, kein
-	// Protokolleintrag, kein Commit; sonst wäre die „Vorschau" keine.
+	// Probelauf: Begin → Sperre → Prüfung auf einen jüngsten Lauf → Lesen → CTE → Rollback. Kein
+	// Protokolleintrag, kein Commit; sonst wäre die „Vorschau" keine. Die Sperre lässt sie auf
+	// einen laufenden Wechsel warten (fuehreSchuljahreswechselAus).
 	mock.ExpectBegin()
+	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
+	mock.ExpectQuery(`FROM audit_logs`).
+		WithArgs("SCHULJAHRESWECHSEL", pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"zeitstempel", "naechster_ab"}))
 	mock.ExpectQuery(`SELECT klasse FROM schueler`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse"}).AddRow("14A"))
 	mock.ExpectQuery(`WITH parsed AS`).
@@ -76,22 +83,42 @@ func TestSchuljahreswechsel_ProbelaufRolltZurueckOhneSperreUndProtokoll(t *testi
 	}
 }
 
-func TestSchuljahreswechsel_ZweiterLaufImZeitfensterIst409(t *testing.T) {
-	s, mock := schuljahreswechselTueren(t)
+// Ein Lauf vor weniger als sechs Monaten sperrt den nächsten, auch dessen Vorschau: Nach einem
+// Lauf zeigte sie sonst die Zahlen eines zweiten unter „es wurde noch nichts geändert". Die
+// Meldung nennt den Lauf und den Tag, ab dem der nächste geht, in der Uhr der Schule.
+func TestSchuljahreswechsel_ZweiterLaufImAbstandIst409(t *testing.T) {
+	sommer := time.Date(2026, time.July, 20, 8, 15, 0, 0, time.UTC)    // 10:15 Sommerzeit
+	winter := time.Date(2027, time.January, 20, 9, 15, 0, 0, time.UTC) // 10:15 Winterzeit
+	const meldung = "Der Schuljahreswechsel lief am 20.07.2026 um 10:15 Uhr. Ein zweiter Lauf würde alle " +
+		"Schüler ein weiteres Mal versetzen; der nächste geht ab dem 20.01.2027 um 10:15 Uhr."
+	for _, rumpf := range []string{`{"confirm": true}`, `{"dry_run": true}`} {
+		t.Run(rumpf, func(t *testing.T) {
+			s, mock := schuljahreswechselTueren(t)
+			// Kein UPDATE, kein Protokolleintrag: Nach der Prüfung folgt nur das Rollback.
+			mock.ExpectBegin()
+			mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
+			mock.ExpectQuery(`FROM audit_logs`).
+				WithArgs("SCHULJAHRESWECHSEL", pgxmock.AnyArg()).
+				WillReturnRows(pgxmock.NewRows([]string{"zeitstempel", "naechster_ab"}).AddRow(sommer, winter))
+			mock.ExpectRollback()
 
-	// Ein Lauf innerhalb des Schutzfensters (12 h) existiert → 409, ohne dass das UPDATE läuft.
-	mock.ExpectBegin()
-	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
-	mock.ExpectRollback()
-
-	rec := rufeSchuljahreswechsel(t, s, `{"confirm": true}`)
-	if rec.Code != http.StatusConflict {
-		t.Errorf("rec.Code = %d, erwartet 409 bei Doppellauf: %s", rec.Code, rec.Body.String())
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("offene Erwartungen: %v", err)
+			rec := rufeSchuljahreswechsel(t, s, rumpf)
+			if rec.Code != http.StatusConflict {
+				t.Errorf("rec.Code = %d, erwartet 409 bei Doppellauf: %s", rec.Code, rec.Body.String())
+			}
+			var antwort struct {
+				Error string `json:"error"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+				t.Fatalf("Antwort unlesbar: %v: %s", err, rec.Body.String())
+			}
+			if antwort.Error != meldung {
+				t.Errorf("Meldung = %q, erwartet %q", antwort.Error, meldung)
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("offene Erwartungen: %v", err)
+			}
+		})
 	}
 }
 
@@ -100,8 +127,9 @@ func TestSchuljahreswechsel_EchterLaufSchreibtProtokoll(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery(`FROM audit_logs`).
+		WithArgs("SCHULJAHRESWECHSEL", pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"zeitstempel", "naechster_ab"}))
 	mock.ExpectQuery(`SELECT klasse FROM schueler`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse"}))
 	mock.ExpectQuery(`WITH parsed AS`).

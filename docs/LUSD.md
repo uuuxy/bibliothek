@@ -1,6 +1,6 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-10-21. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-10-27. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `api/leser/lusd.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
@@ -190,7 +190,9 @@ Regeln (`repository/leser_zusammenfuehren.go`):
 6. Danach die Versetzung (Klassen hochzählen), falls der Export noch die alten Klassen trug.
    Die Klassenleitungen aus dem Mahnwesen-Routing rücken mit hoch, außer von 6 nach 7 und von
    10 in die Oberstufe: Dort entfällt die Zuordnung, und die neuen Klassen bekommen sie unter
-   _Einstellungen → Mahnwesen-Routing_ von Hand.
+   _Einstellungen → Mahnwesen-Routing_ von Hand. Ein zweiter Wechsel geht erst ein halbes Jahr
+   nach dem letzten; bis dahin nennt schon die Vorschau Tag und Uhrzeit des letzten Laufs. Kommt
+   nach _Ja, unwiderruflich ausführen_ keine Antwort, fragt die Seite selbst nach, ob er lief.
 
 ## 7. Datenschutz in einem Absatz
 

@@ -2,6 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"time"
+
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -12,8 +16,15 @@ import (
 const schuljahreswechselSperre int64 = 748_2026
 
 // AktionSchuljahreswechsel ist die Aktion, unter der ein Lauf in audit_logs steht. An ihr
-// erkennt ZaehleJuengsteSchuljahreswechsel den Lauf davor.
+// erkennt FindeJuengstenSchuljahreswechsel den Lauf davor.
 const AktionSchuljahreswechsel = "SCHULJAHRESWECHSEL"
+
+// schuljahreswechselAbstandMonate ist der Abstand, den ein Lauf vom vorigen mindestens hat. Der
+// Wechsel läuft einmal im Jahr, in den Sommerferien; ein zweiter im selben Halbjahr versetzte alle
+// Schüler ein weiteres Mal, und von einem Lauf weiß nur sein Eintrag im Protokoll. Der Abstand
+// bleibt in der kürzesten Aufbewahrung des Protokolls (protokollAufbewahrungMonateMinimum), sonst
+// löschte der Nachtlauf den Eintrag, bevor er endet.
+const schuljahreswechselAbstandMonate = 6
 
 // SperreSchuljahreswechsel hält gleichzeitige Läufe auseinander: Der zweite wartet, bis die
 // Transaktion des ersten endet, und sieht dann dessen Eintrag im Protokoll.
@@ -22,16 +33,37 @@ func SperreSchuljahreswechsel(ctx context.Context, tx pgx.Tx) error {
 	return err
 }
 
-// ZaehleJuengsteSchuljahreswechsel zählt die Läufe der letzten zwölf Stunden. Der Eintrag
-// eines Laufs entsteht in dessen Transaktion; ein abgebrochener Lauf hinterlässt keinen.
-func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, error) {
-	var laeufe int
+// JuengsterSchuljahreswechsel ist ein Lauf, der den nächsten noch sperrt.
+type JuengsterSchuljahreswechsel struct {
+	Lief        time.Time
+	NaechsterAb time.Time
+}
+
+// FindeJuengstenSchuljahreswechsel liefert den jüngsten Lauf, nach dem noch kein weiterer geht;
+// nil, wenn keiner sperrt. Der Eintrag eines Laufs entsteht in dessen Transaktion; ein
+// abgebrochener Lauf hinterlässt keinen. Den Abstand zählt die Uhr der Schule: ein halbes Jahr
+// später zur selben Uhrzeit, auch über die Umstellung auf Sommerzeit.
+func FindeJuengstenSchuljahreswechsel(ctx context.Context, db Datenbank) (*JuengsterSchuljahreswechsel, error) {
+	var lauf JuengsterSchuljahreswechsel
 	err := db.QueryRow(ctx, `
-		SELECT COUNT(*) FROM audit_logs
-		WHERE aktion = 'SCHULJAHRESWECHSEL'
-		  AND zeitstempel > NOW() - INTERVAL '12 hours'
-	`).Scan(&laeufe)
-	return laeufe, err
+		WITH lauf AS (
+			SELECT zeitstempel,
+			       ((zeitstempel AT TIME ZONE '`+schulzeit.ZonenName+`') + make_interval(months => $2::int))
+			           AT TIME ZONE '`+schulzeit.ZonenName+`' AS naechster_ab
+			FROM audit_logs
+			WHERE aktion = $1
+		)
+		SELECT zeitstempel, naechster_ab FROM lauf
+		WHERE naechster_ab > NOW()
+		ORDER BY zeitstempel DESC
+		LIMIT 1`, AktionSchuljahreswechsel, schuljahreswechselAbstandMonate).Scan(&lauf.Lief, &lauf.NaechsterAb)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &lauf, nil
 }
 
 // sqlVersetzeSchueler zählt Klassenbezeichnungen um eine Stufe hoch und markiert

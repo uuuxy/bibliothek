@@ -87,20 +87,20 @@ func (t *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 	}
 	defer db.Verwerfe(ctx, tx)
 
-	if !anfrage.Probelauf {
-		// Harte Serialisierung gegen den Doppellauf. Der COUNT-Check unten allein ist
-		// TOCTOU: Zwei gleichzeitige Klicks (oder zwei Admins) lesen beide 0, bevor einer
-		// committet — und versetzen die ganze Schule ein zweites Mal (+2 Stufen,
-		// irreversibel). Der Advisory-Lock (transaktionsgebunden, gibt beim Commit/
-		// Rollback automatisch frei) zwingt den zweiten Lauf zu warten, bis der erste
-		// fertig ist; danach sieht dessen COUNT den Protokolleintrag und antwortet 409.
-		if err := repository.SperreSchuljahreswechsel(ctx, tx); err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-			return antwort, false
-		}
-		if !pruefeDoppellaufSchutz(ctx, tx, w) {
-			return antwort, false
-		}
+	// Harte Serialisierung gegen den Doppellauf. Die Prüfung unten allein ist TOCTOU: Zwei
+	// gleichzeitige Klicks (oder zwei Admins) finden beide keinen Lauf, bevor einer committet,
+	// und versetzen die ganze Schule ein zweites Mal (+2 Stufen, irreversibel). Der
+	// Advisory-Lock (transaktionsgebunden, gibt beim Commit/Rollback automatisch frei) zwingt
+	// den zweiten Lauf zu warten, bis der erste fertig ist; danach sieht er dessen Eintrag im
+	// Protokoll und antwortet 409. Die Vorschau wartet ebenso: Nach einer verlorenen Antwort
+	// fragt die Oberfläche mit ihr nach, ob der Wechsel lief (Schuljahreswechsel.svelte), und
+	// ohne die Sperre rechnete sie an einem Lauf vorbei, der noch nicht committet hat.
+	if err := repository.SperreSchuljahreswechsel(ctx, tx); err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return antwort, false
+	}
+	if !pruefeDoppellaufSchutz(ctx, tx, w) {
+		return antwort, false
 	}
 
 	if antwort.KlassenAusserhalb, err = repository.LadeKlassenAusserhalbDerVersetzung(ctx, tx); err != nil {
@@ -189,25 +189,29 @@ func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schu
 	return anfrage, true
 }
 
-// pruefeDoppellaufSchutz verhindert einen zweiten Schuljahreswechsel innerhalb von
-// 12 Stunden (ein zweiter Lauf würde alle Schüler +2 versetzen). ok=false: die
-// Fehlerantwort (500 oder 409) wurde bereits geschrieben.
+// pruefeDoppellaufSchutz verhindert einen zweiten Schuljahreswechsel, solange der letzte keine
+// sechs Monate her ist (ein zweiter Lauf würde alle Schüler +2 versetzen), und nennt den letzten.
+// Das gilt auch für die Vorschau, sonst zeigte sie nach einem Lauf die Zahlen eines zweiten unter
+// „es wurde noch nichts geändert". ok=false: die Fehlerantwort (500 oder 409) wurde bereits
+// geschrieben.
 //
-// Das Fenster ist bewusst großzügig: Der Schuljahreswechsel läuft einmal im Jahr. Ein
-// Fenster von zehn Minuten ließe genau den wahrscheinlichsten Fehler durch: Der Admin bemerkt
-// etwas, korrigiert und klickt nach einer Viertelstunde erneut, und die ganze Schule würde ein
-// zweites Mal versetzt. Ein Wiederholungslauf nach einem fehlgeschlagenen Wechsel bleibt
-// möglich: Der Eintrag im Protokoll wird atomar mit dem Lauf committet
-// (finalisiereSchuljahreswechsel), ein abgebrochener Lauf hinterlässt also keinen Eintrag und
-// keine Sperre.
+// Ein kurzes Fenster ließe den wahrscheinlichsten Fehler durch: Die Antwort ging verloren, oder
+// die Klassen sehen nach den Ferien falsch aus, und jemand startet den Wechsel Tage später noch
+// einmal. Ein Wiederholungslauf nach einem fehlgeschlagenen Wechsel bleibt möglich: Der Eintrag
+// im Protokoll wird atomar mit dem Lauf committet (finalisiereSchuljahreswechsel), ein
+// abgebrochener Lauf hinterlässt also keinen Eintrag und keine Sperre.
 func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
-	juengsteLaeufe, err := repository.ZaehleJuengsteSchuljahreswechsel(ctx, tx)
+	lauf, err := repository.FindeJuengstenSchuljahreswechsel(ctx, tx)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if juengsteLaeufe > 0 {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Der Schuljahreswechsel lief vor wenigen Minuten. Ein zweiter Lauf würde alle Schüler doppelt versetzen.", nil)
+	if lauf != nil {
+		lief, naechster := lauf.Lief.In(schulzeit.Zone()), lauf.NaechsterAb.In(schulzeit.Zone())
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, fmt.Sprintf(
+			"Der Schuljahreswechsel lief am %s um %s Uhr. Ein zweiter Lauf würde alle Schüler ein weiteres Mal versetzen; der nächste geht ab dem %s um %s Uhr.",
+			lief.Format(tuer.DatumsformatDE), lief.Format("15:04"),
+			naechster.Format(tuer.DatumsformatDE), naechster.Format("15:04")), nil)
 		return false
 	}
 	return true
