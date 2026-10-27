@@ -156,8 +156,6 @@ Bekannt und offen:
   „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und die Schlagworte in der Bestellung
   (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist
   nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet.
-- Druck-Center: Scheitert im Altbestand die Zählung, steht dort „Bis zu diesem Tag steht kein
-  Exemplar mehr offen" (`zaehle` in `AltbestandDialog.svelte`).
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
 

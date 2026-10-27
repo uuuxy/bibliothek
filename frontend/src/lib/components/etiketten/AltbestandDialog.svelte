@@ -13,36 +13,49 @@
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 
 	/** @type {{ open: boolean, onclose: () => void, onfertig: () => void }} */
 	let { open, onclose, onfertig } = $props();
 
 	let stichtag = $state('');
 	let betroffen = $state(0);
+	// Der Grund, wenn die Zählung scheiterte. Ohne ihn hieße die 0 „nichts mehr offen".
+	let zaehlfehler = $state('');
+	let zaehlt = $state(false);
 	let arbeitet = $state(false);
+	// Die jüngste Zählung: Wer den Tag schnell wechselt, sähe sonst die Zahl eines anderen Tages,
+	// und der Knopf vermerkte bis zum neuen.
+	let zaehlLauf = 0;
 
 	// Der Dialog bleibt gemountet, der Zustand überlebt also das Schließen: Ohne Reset
 	// trägt der nächste Aufruf den Stichtag des vorigen mit — und zeigt eine Anzahl, die
 	// zu einem Datum gehört, das niemand mehr im Kopf hat.
 	$effect(() => {
 		if (open) {
+			zaehlLauf++;
 			stichtag = '';
 			betroffen = 0;
+			zaehlfehler = '';
+			zaehlt = false;
 		}
 	});
 
 	async function zaehle() {
-		if (!stichtag) {
-			betroffen = 0;
-			return;
-		}
+		const meine = ++zaehlLauf;
+		betroffen = 0;
+		zaehlfehler = '';
+		zaehlt = stichtag !== '';
+		if (!zaehlt) return;
 		try {
 			const daten = await apiGet(
 				`/api/exemplare/etiketten-offen/anzahl?bis=${encodeURIComponent(stichtag)}`
 			);
-			betroffen = daten?.anzahl ?? 0;
-		} catch {
-			betroffen = 0;
+			if (meine === zaehlLauf) betroffen = daten?.anzahl ?? 0;
+		} catch (e) {
+			if (meine === zaehlLauf) zaehlfehler = fehlertext(e);
+		} finally {
+			if (meine === zaehlLauf) zaehlt = false;
 		}
 	}
 
@@ -86,7 +99,11 @@
 				class="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 				role="status"
 			>
-				{#if betroffen === 0}
+				{#if zaehlt}
+					Wird gezählt …
+				{:else if zaehlfehler}
+					Nicht gezählt: {zaehlfehler}
+				{:else if betroffen === 0}
 					Bis zu diesem Tag steht kein Exemplar mehr offen — es gäbe nichts zu vermerken.
 				{:else}
 					<strong class="font-semibold">{betroffen.toLocaleString('de-DE')} Exemplare</strong>
