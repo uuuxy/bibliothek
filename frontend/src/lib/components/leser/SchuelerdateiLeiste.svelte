@@ -11,13 +11,13 @@
 	 * gekappt, und ein Filter im Browser säße hinter dieser Kappung — er zeigte dann einen
 	 * Teil des Jahrgangs und sähe dabei vollständig aus.
 	 *
-	 * @type {{ suche?: string, jahrgang?: string, jahrgaenge?: number[], jahrgaengeFehler?: boolean, darfAnlegen?: boolean, trefferzahl?: number, suchend?: boolean, gekuerzt?: boolean, onsearch?: () => void, oncreate?: () => void }}
+	 * @type {{ suche?: string, jahrgang?: string, jahrgaenge?: number[], jahrgaengeFehler?: string, darfAnlegen?: boolean, trefferzahl?: number, suchend?: boolean, gekuerzt?: boolean, onsearch?: () => void, oncreate?: () => void }}
 	 */
 	let {
 		suche = $bindable(''),
 		jahrgang = $bindable(''),
 		jahrgaenge = [],
-		jahrgaengeFehler = false,
+		jahrgaengeFehler = '',
 		darfAnlegen = false,
 		trefferzahl = 0,
 		suchend = false,
@@ -59,7 +59,7 @@
 			bind:value={jahrgang}
 			options={jahrgangsOptionen}
 			onchange={onsearch}
-			disabled={jahrgaengeFehler}
+			disabled={!!jahrgaengeFehler}
 			class="w-44"
 			aria-label="Nach Jahrgang filtern"
 		/>
@@ -86,4 +86,12 @@
 			{/if}
 		</div>
 	</div>
+	<!-- Der Grund, warum der Filter gesperrt ist, unter der Zeile wie an den Klassenwahlen
+	     (klassenVorschlaege.svelte.js; M3 Text fields, „Error text"). -->
+	{#if jahrgaengeFehler}
+		<p class="text-xs text-error">
+			Die Jahrgänge ließen sich nicht laden: {jahrgaengeFehler.replace(/\.$/, '')}. Bitte neu
+			öffnen.
+		</p>
+	{/if}
 </div>

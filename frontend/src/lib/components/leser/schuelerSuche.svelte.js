@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 
 /**
@@ -39,11 +40,11 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	/** Die besetzten Jahrgänge fürs Auswahlfeld — vom Server, damit die Ableitung
 	 *  „Klassenname → Jahrgang" nicht ein zweites Mal in JavaScript entsteht. */
 	let jahrgaenge = $state.raw(/** @type {number[]} */ ([]));
-	/** Wahr, wenn die Jahrgänge nicht geladen werden konnten. Leer heißt leer, ein
+	/** Der Grund, wenn die Jahrgänge nicht geladen werden konnten. Leer heißt leer, ein
 	 *  Ladefehler heißt Ladefehler — dieselbe Regel wie bei der Liste darüber. Ohne
 	 *  diesen Zustand stünde im Auswahlfeld nur „Alle Jahrgänge", und das sähe aus wie
 	 *  „diese Schule hat keine Jahrgänge". */
-	let jahrgaengeFehler = $state(false);
+	let jahrgaengeFehler = $state('');
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
 
@@ -127,16 +128,12 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	async function ladeJahrgaenge() {
 		try {
 			const res = await apiFetch('/api/jahrgaenge');
-			if (res.ok) {
-				jahrgaenge = (await res.json()) || [];
-				jahrgaengeFehler = false;
-			} else {
-				jahrgaenge = [];
-				jahrgaengeFehler = true;
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res));
+			jahrgaenge = (await res.json()) || [];
+			jahrgaengeFehler = '';
 		} catch (err) {
 			jahrgaenge = [];
-			jahrgaengeFehler = true;
+			jahrgaengeFehler = fehlertext(err);
 			console.error('Jahrgänge konnten nicht geladen werden:', err);
 		}
 	}

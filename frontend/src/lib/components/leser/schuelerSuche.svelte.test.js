@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { erzeugeSchuelerSuche } from './schuelerSuche.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 
-vi.mock('../../apiFetch.js', () => ({
-	apiFetch: vi.fn(),
-	leseApiFehler: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
+// leseApiFehler bleibt echt (ARCHITEKTUR.md 8.14).
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
 }));
 
 // Die Suche der Schülerdatei läuft auf dem Server, und nur die JÜNGSTE Antwort darf die
@@ -182,6 +183,38 @@ describe('Leserdatei-Suche', () => {
 			expect(suche.gekuerzt).toBe(false);
 		} finally {
 			stopp();
+		}
+	});
+
+	// Kamen die Jahrgänge nicht, stand nur „Jahrgänge nicht geladen", ohne den Grund des Servers
+	// (OFFEN.md 5.106).
+	it('nennt den Grund, wenn die Jahrgänge nicht kamen', async () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		/** @type {[() => any, string][]} */
+		const faelle = [
+			[() => fehler('Datenbank nicht erreichbar'), 'Datenbank nicht erreichbar'],
+			[
+				() => {
+					throw new Error('Keine Verbindung zum Server.');
+				},
+				'Keine Verbindung zum Server.'
+			]
+		];
+		for (const [antwort, grund] of faelle) {
+			vi.mocked(apiFetch).mockImplementation(async (url) =>
+				String(url) === '/api/jahrgaenge' ? antwort() : ok([])
+			);
+			/** @type {any} */
+			let suche;
+			const stopp = $effect.root(() => {
+				suche = erzeugeSchuelerSuche(() => {});
+			});
+			try {
+				await vi.waitFor(() => expect(suche.jahrgaengeFehler).toBe(grund));
+				expect(suche.jahrgaenge).toEqual([]);
+			} finally {
+				stopp();
+			}
 		}
 	});
 });

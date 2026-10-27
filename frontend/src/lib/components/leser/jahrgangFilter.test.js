@@ -75,10 +75,14 @@ describe('Jahrgangsfilter in der Leserdatei', () => {
 		// stünde im Feld „Alle Jahrgänge", und das läse sich wie „diese Schule hat keine
 		// Jahrgänge" — dieselbe Sorte stiller Fehlantwort, die das Kollegiums-Portal am
 		// 17.09.2026 abgelegt hat.
-		const screen = zeichne({ jahrgaenge: [], jahrgaengeFehler: true });
+		const screen = zeichne({ jahrgaenge: [], jahrgaengeFehler: 'Datenbank nicht erreichbar' });
 		const feld = screen.getByLabelText('Nach Jahrgang filtern');
 
 		expect(screen.container.textContent ?? '').toContain('Jahrgänge nicht geladen');
+		// Mit dem Grund des Servers (OFFEN.md 5.106).
+		expect((screen.container.textContent ?? '').replace(/\s+/g, ' ')).toContain(
+			'Die Jahrgänge ließen sich nicht laden: Datenbank nicht erreichbar. Bitte neu öffnen.'
+		);
 		expect(feld.getAttribute('disabled') ?? feld.getAttribute('aria-disabled')).not.toBeNull();
 		// Die Datei selbst bleibt benutzbar — der Filter fehlt, die Suche nicht.
 		expect(screen.getByLabelText('Leser suchen')).not.toBeNull();
