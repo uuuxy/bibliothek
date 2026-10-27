@@ -657,6 +657,12 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   und der ist ein Schreiben an Erziehungsberechtigte; er braucht Klasse und Anschrift, die von einer Lehrkraft
   nirgends stehen. Ersatz von einer Lehrkraft zu verlangen ist Sache der Schulleitung gegenüber dem Dienstherrn
   und dort auch nur bei Vorsatz oder grober Fahrlässigkeit.
+- **Gelöscht ist gelöscht, auch im Bescheid** (wie in Littera): Wer einen Titel löscht, einzeln oder
+  in der Bestandstabelle, nimmt die Forderungen seiner Exemplare mit, auch eine, die schon in einem
+  Schadensersatz-Bescheid steht; „Verluste endgültig löschen" nach der Inventur nimmt die bezahlten
+  und stornierten mit. Der Bescheid behält Nummer und Gesamtbetrag, verliert die Position und gilt
+  danach als erledigt (`repository.bescheidHatOffenePosition`). Eine offene Forderung hinterlässt
+  ihre Spur im Protokoll (`repository/titel_loeschen_spur.go`).
 - **Was ein Buch heute noch wert ist, steht am Exemplar** (`pkg/ersatzwert`,
   Migration 127): Die Buchakte zeigt an jedem Exemplar den Ersatzwert samt Herleitung
   („3. Verleihjahr → 60 % von 24,90 €"). Zwei Regeln, nicht eine — für ein **Buch des
