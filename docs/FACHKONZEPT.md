@@ -662,7 +662,8 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   Schadensersatz-Bescheid steht; „Verluste endgültig löschen" nach der Inventur nimmt die bezahlten
   und stornierten mit. Der Bescheid behält Nummer und Gesamtbetrag, verliert die Position und gilt
   danach als erledigt (`repository.bescheidHatOffenePosition`). Eine offene Forderung hinterlässt
-  ihre Spur im Protokoll (`repository/titel_loeschen_spur.go`).
+  ihre Spur im Protokoll, beim einzelnen Titel über `repository/titel_loeschen_forderung.go`, in
+  der Bestandstabelle über `repository/titel_loeschen_spur.go`.
 - **Was ein Buch heute noch wert ist, steht am Exemplar** (`pkg/ersatzwert`,
   Migration 127): Die Buchakte zeigt an jedem Exemplar den Ersatzwert samt Herleitung
   („3. Verleihjahr → 60 % von 24,90 €"). Zwei Regeln, nicht eine — für ein **Buch des
