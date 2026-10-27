@@ -56,8 +56,13 @@
 	/** @type {{ speichereWennGeaendert: () => Promise<void> } | undefined} */
 	let schlagwortTeil = $state();
 	const lernmittelBeiStart = untrack(() => Boolean(treffer.ist_lernmittel));
+	let laeuft = $state(false);
 
+	// Gesperrt, bis der Titel im Warenkorb liegt: Ein zweiter Klick, während Signatur oder
+	// Kennzeichen noch gespeichert wurden, legte ihn ein zweites Mal hinein.
 	async function uebernehmen() {
+		if (laeuft) return;
+		laeuft = true;
 		const neueSignatur = signatur.trim();
 		if (neueSignatur !== signaturBeiStart) {
 			try {
@@ -164,6 +169,6 @@
 
 	<div class="flex items-center gap-2">
 		<Button variant="ghost" onclick={onDone}>Abbrechen</Button>
-		<Button onclick={uebernehmen} class="flex-1">In den Warenkorb</Button>
+		<Button onclick={uebernehmen} disabled={laeuft} class="flex-1">In den Warenkorb</Button>
 	</div>
 </div>

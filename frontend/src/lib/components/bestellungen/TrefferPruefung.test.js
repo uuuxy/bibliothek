@@ -351,3 +351,30 @@ describe('TrefferPruefung: Schlagworte', () => {
 		);
 	});
 });
+
+// Bei langsamer Antwort auf Signatur und Kennzeichen legte ein Doppelklick den Titel zweimal in
+// den Warenkorb, die Menge stand bei 2, in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('TrefferPruefung: ein zweiter Klick', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it('legt den Titel einmal in den Warenkorb, während das Kennzeichen gespeichert wird', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		vi.mocked(apiPut).mockImplementationOnce(() => new Promise((fertig) => (liefere = fertig)));
+		const screen = fenster();
+
+		screen.getByLabelText(/Lernmittel/).click();
+		const knopf = screen.getByRole('button', { name: 'In den Warenkorb' });
+		knopf.click();
+		await vi.waitFor(() => expect(apiPut).toHaveBeenCalledTimes(1));
+		knopf.click();
+		liefere({});
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 20));
+
+		expect(
+			bestellStore.addToCart,
+			'der zweite Klick legte ihn noch einmal hinein'
+		).toHaveBeenCalledTimes(1);
+	});
+});
