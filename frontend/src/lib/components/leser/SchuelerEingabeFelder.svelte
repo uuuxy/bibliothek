@@ -13,13 +13,13 @@
 <script>
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
-	import { KLASSEN_LADEFEHLER, klassenPlatzhalter } from './klassenVorschlaege.svelte.js';
+	import { klassenLadefehler, klassenPlatzhalter } from './klassenVorschlaege.svelte.js';
 
 	/**
 	 * @type {{
 	 *   vorname: string, nachname: string, geburtsdatum: string,
 	 *   klasse: string, barcode: string,
-	 *   klassen: string[], klassenFehler?: boolean
+	 *   klassen: string[], klassenFehler?: string
 	 * }}
 	 */
 	let {
@@ -29,7 +29,7 @@
 		klasse = $bindable(),
 		barcode = $bindable(),
 		klassen = [],
-		klassenFehler = false
+		klassenFehler = ''
 	} = $props();
 
 	const klassenOptionen = $derived(klassen.map((k) => ({ value: k, label: k })));
@@ -56,7 +56,7 @@
 		placeholder={klassenPlatzhalter(klassen.length, klassenFehler)}
 	/>
 	{#if klassenFehler}
-		<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+		<span class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
 	{:else if !klassen.length}
 		<span class="text-xs text-on-surface-variant">Die Klassen kommen mit dem LUSD-Abgleich.</span>
 	{/if}

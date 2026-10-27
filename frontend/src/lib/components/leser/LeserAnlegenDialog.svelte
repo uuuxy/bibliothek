@@ -19,7 +19,7 @@
 	import { TriangleAlert } from '@lucide/svelte';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
-	let { open = false, klassen = [], klassenFehler = false, onclose, onsuccess } = $props();
+	let { open = false, klassen = [], klassenFehler = '', onclose, onsuccess } = $props();
 
 	let art = $state('schueler');
 	let newVorname = $state('');

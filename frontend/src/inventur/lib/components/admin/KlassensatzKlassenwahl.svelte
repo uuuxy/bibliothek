@@ -9,7 +9,7 @@
 	import {
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter,
-		KLASSEN_LADEFEHLER
+		klassenLadefehler
 	} from '../../../../lib/components/leser/klassenVorschlaege.svelte.js';
 
 	/** @type {{ gewaehlteKlassen: string[], vorhandeneGruppen?: { className: string }[] }} */
@@ -72,6 +72,6 @@
 		/>
 	</div>
 	{#if klassenListe.ladefehler}
-		<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+		<span class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</span>
 	{/if}
 </div>

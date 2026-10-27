@@ -11,8 +11,9 @@
 	import {
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter,
-		KLASSEN_LADEFEHLER
+		klassenLadefehler
 	} from '../../../../lib/components/leser/klassenVorschlaege.svelte.js';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 
 	/** @type {{ titelIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { titelIds, onClose, onAssigned } = $props();
@@ -33,8 +34,8 @@
 	);
 
 	// Scheitert eine der beiden Quellen, fehlt womöglich genau die gesuchte Klasse; der Dialog
-	// sagt es dann unter dem Auswahlfeld.
-	let buchlistenFehler = $state(false);
+	// sagt es dann unter dem Auswahlfeld, mit dem Grund.
+	let buchlistenFehler = $state('');
 	const ladefehler = $derived(klassenListe.ladefehler || buchlistenFehler);
 
 	onMount(async () => {
@@ -44,8 +45,8 @@
 			if (!res.ok) throw new Error(await leseApiFehler(res));
 			const gruppen = await res.json();
 			existing = gruppen.map((/** @type {any} */ g) => g.className);
-		} catch {
-			buchlistenFehler = true;
+		} catch (err) {
+			buchlistenFehler = fehlertext(err);
 		}
 	});
 
@@ -91,7 +92,7 @@
 				placeholder={klassenPlatzhalter(optionen.length, ladefehler)}
 			/>
 			{#if ladefehler}
-				<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+				<span class="text-xs text-error">{klassenLadefehler(ladefehler)}</span>
 			{/if}
 		</div>
 

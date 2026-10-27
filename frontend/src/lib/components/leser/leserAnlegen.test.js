@@ -188,13 +188,15 @@ describe('Neuen Leser anlegen', () => {
 		const screen = render(LeserAnlegenDialog, {
 			open: true,
 			klassen: [],
-			klassenFehler: true,
+			klassenFehler: 'Datenbank nicht erreichbar',
 			onclose: vi.fn(),
 			onsuccess: vi.fn()
 		});
 		const text = screen.baseElement.textContent ?? '';
 
-		expect(text).toMatch(/Die Klassen ließen sich nicht laden\. Bitte neu öffnen\./);
+		expect(text).toMatch(
+			/Die Klassen ließen sich nicht laden: Datenbank nicht erreichbar\. Bitte neu öffnen\./
+		);
 		expect(text).toMatch(/Klassen nicht geladen/);
 		expect(text).not.toMatch(/LUSD-Abgleich/);
 		expect(text).not.toMatch(/Keine Klassen/);

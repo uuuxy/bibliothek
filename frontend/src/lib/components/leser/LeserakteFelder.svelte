@@ -22,19 +22,19 @@
 	import LeserArtWahl from './LeserArtWahl.svelte';
 	import LeserKontaktFelder from './LeserKontaktFelder.svelte';
 	import { istKollegium, LESER_ARTEN } from './leserArt.js';
-	import { KLASSEN_LADEFEHLER } from './klassenVorschlaege.svelte.js';
+	import { klassenLadefehler } from './klassenVorschlaege.svelte.js';
 
 	/**
 	 * `eingaben` ist der $state-Proxy aus useLeserakteFormular und wird hier direkt an den
 	 * Feldern gebunden — kein $bindable: Gebunden werden die EIGENSCHAFTEN des Objekts,
 	 * das Objekt selbst wird nie ersetzt. Ein $bindable verlangte vom Aufrufer ein
 	 * `bind:`, und dort ist eingaben ein `const` aus der Hook-Destrukturierung.
-	 * @type {{ eingaben: any, klassen?: string[], klassenFehler?: boolean, lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
+	 * @type {{ eingaben: any, klassen?: string[], klassenFehler?: string, lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
 	 */
 	let {
 		eingaben,
 		klassen = [],
-		klassenFehler = false,
+		klassenFehler = '',
 		lusdVerknuepft = false,
 		kontoVorhanden = false
 	} = $props();
@@ -114,7 +114,7 @@
 				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse.</span>
 			{:else if klassenFehler}
 				<!-- Zur Wahl steht dann nur die eigene Klasse; der Fehlertext sagt, warum. -->
-				<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+				<span class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
 			{/if}
 		</div>
 		<Feld

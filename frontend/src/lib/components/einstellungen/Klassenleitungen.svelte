@@ -10,7 +10,8 @@
 	import Select from '../ui/Select.svelte';
 	import {
 		erzeugeKlassenVorschlaege,
-		klassenPlatzhalter
+		klassenPlatzhalter,
+		klassenLadefehler
 	} from '../leser/klassenVorschlaege.svelte.js';
 	import { Trash } from '@lucide/svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
@@ -160,5 +161,9 @@
 				{zuordnungSpeichert ? 'Lädt…' : 'Hinzufügen'}
 			</Button>
 		</div>
+		<!-- Unter der Zeile, nicht unter der Auswahl: Auswahl, Feld und Knopf stehen bündig unten. -->
+		{#if klassenListe.ladefehler}
+			<p class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</p>
+		{/if}
 	{/if}
 </div>
