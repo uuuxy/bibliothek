@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 27.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 28.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1630,7 +1630,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 27.10.2026
+Stand: 28.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2376,6 +2376,10 @@ sieht.
   `Etikettendruck.test.js` überschreibt `etikettenDruck.test.js`, und der Lauf bleibt grün, weil
   die Datei weiter Tests enthält. In `git status` erscheint eine neue Datei als `??`, nicht als
   `M`.
+- **Ein Schuljahreswechsel sperrt den nächsten ein halbes Jahr lang,** auch seine Vorschau: Die
+  Sperre ist der Eintrag `SCHULJAHRESWECHSEL` in `audit_logs`. Browser-Tests und Proben, die den
+  Wechsel auslösen, löschen ihn vorher (`frontend/e2e/admin-versetzung.spec.js`); an einer
+  Testdatenbank geht ein zweiter Lauf nur so.
 - **Browser-Tests verschicken keine Mail:** Für die Dauer des Laufs zeigt die Einstellung auf
   eine Adresse, an der nichts zuhört (`frontend/e2e/mailserver.js`, gehalten von
   `frontend/e2e/mailserver-stumm.spec.js`). Eine Probe mit eigener Konfiguration läuft ohne das
