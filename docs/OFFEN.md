@@ -160,10 +160,8 @@ Bekannt und offen:
   der Bestellsuche (`BestellSuche.svelte`), Signatur und Lernmittel-Kennzeichen in der
   Trefferprüfung (`TrefferPruefung.svelte`), der Altbestand und „Vermerken" im Druck-Center
   (`AltbestandDialog.svelte`, `EtikettenNachdruck.svelte`).
-- Druck-Center: Scheitert nach dem Druck der Vermerk „gedruckt", steht das nur in der Konsole
-  (`vermerkeGedruckt` in `etikettenDruck.js`). Die Etiketten bleiben auf der Liste der fehlenden
-  und werden womöglich doppelt gedruckt. Scheitert im Altbestand die Zählung, steht dort „Bis zu
-  diesem Tag steht kein Exemplar mehr offen" (`zaehle` in `AltbestandDialog.svelte`).
+- Druck-Center: Scheitert im Altbestand die Zählung, steht dort „Bis zu diesem Tag steht kein
+  Exemplar mehr offen" (`zaehle` in `AltbestandDialog.svelte`).
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
 

@@ -2,6 +2,7 @@
 
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 /** @typedef {{ barcode_id?: string, titel?: string, autor?: string }} DruckEtikett */
@@ -18,21 +19,28 @@ const JSON_KOPF = { 'Content-Type': 'application/json' };
  * Scheitert der Vermerk, bleibt der Druck trotzdem gültig: Das PDF ist bereits offen,
  * und ein Fehler an dieser Stelle darf ihn nicht als fehlgeschlagen erscheinen lassen.
  * Der Preis ist ein Exemplar, das erneut auf der Liste steht — harmlos gegenüber einem
- * Etikett, das niemand mehr nachdruckt.
+ * Etikett, das niemand mehr nachdruckt. Die Warnung sagt es, sonst druckte es jemand zweimal.
  * @param {DruckEtikett[]} gedruckt
  */
 async function vermerkeGedruckt(gedruckt) {
 	const barcodes = gedruckt.map((l) => l.barcode_id).filter(Boolean);
 	if (barcodes.length === 0) return;
+	let grund = '';
 	try {
-		await apiFetch('/api/exemplare/etiketten-gedruckt', {
+		const res = await apiFetch('/api/exemplare/etiketten-gedruckt', {
 			method: 'POST',
 			headers: JSON_KOPF,
 			body: JSON.stringify({ barcode_ids: barcodes })
 		});
+		if (!res.ok) grund = await leseApiFehler(res);
 	} catch (err) {
-		console.error('Etiketten konnten nicht als gedruckt vermerkt werden', err);
+		grund = fehlertext(err);
 	}
+	if (!grund) return;
+	snackbars.addToast(
+		`Nicht als gedruckt vermerkt: ${grund.replace(/\.$/, '')}. Die Etiketten stehen weiter unter „Fehlende Etiketten".`,
+		'warning'
+	);
 }
 
 /** @param {DruckBogen} bogen @param {DruckEtikett[]} etiketten */

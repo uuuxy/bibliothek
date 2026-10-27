@@ -84,6 +84,30 @@ describe('druckeBogen', () => {
 		expect(rumpfe('/api/exemplare/etiketten-gedruckt')).toHaveLength(0);
 	});
 
+	// Scheiterte der Vermerk nach dem Druck, stand das nur in der Konsole: Die Etiketten blieben
+	// unter „Fehlende Etiketten" und wurden womöglich ein zweites Mal gedruckt (OFFEN.md 5.106).
+	it.each([
+		[
+			'bei einer Ablehnung',
+			async () => serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
+		],
+		['ohne Antwort', () => Promise.reject(new Error('Keine Verbindung zum Server.'))]
+	])('warnt %s des Vermerks, dass die Etiketten als fehlend gelten', async (_, vermerk) => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(antwort(200))
+			.mockImplementationOnce(/** @type {any} */ (vermerk));
+
+		await druckeBogen(BOGEN, ETIKETTEN);
+
+		expect(fenster?.location.replace).toHaveBeenCalledWith('blob:probe');
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			expect.stringMatching(
+				/^Nicht als gedruckt vermerkt: (Die Datenbank antwortet nicht|Keine Verbindung zum Server)\. Die Etiketten stehen weiter unter „Fehlende Etiketten"\.$/
+			),
+			'warning'
+		);
+	});
+
 	// Ohne offenes PDF ist nichts gedruckt. Ein Vermerk nähme die Etiketten von der Liste, und
 	// niemand druckte sie nach.
 	it('vermerkt nichts, wenn der Browser den Tab blockiert', async () => {
