@@ -29,8 +29,9 @@
 	// ausgerechnet bei einer Störung „alles in Ordnung", und wer dann bestellte,
 	// verschickte Mails ohne Bestätigungs-Link. Der Toast aus apiFetch meldet die Störung
 	// zwar, aber er verschwindet; wer danach auf den Bildschirm sieht, braucht die Auskunft
-	// dort.
-	const ungeprueft = $derived(!bestellStore.konfigurationGeladen);
+	// dort. Solange die Antwort aussteht, ist nichts ungeprüft: Sonst stünde der Hinweis bei
+	// jedem ersten Öffnen da, bis die Konfiguration kommt.
+	const ungeprueft = $derived(Boolean(bestellStore.nichtGeladen.konfiguration));
 
 	function einstellungenOeffnen() {
 		uiStore.requestedSettingsTab = 'erreichbarkeit';

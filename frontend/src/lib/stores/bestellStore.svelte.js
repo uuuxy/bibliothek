@@ -91,8 +91,6 @@ class BestellStore {
 	 * danach.
 	 */
 	bestelllinkOhneAdresse = $state(false);
-	/** Wurde die Bestellkonfiguration erfolgreich geladen? false = Aussage unbekannt. */
-	konfigurationGeladen = $state(false);
 
 	searchQuery = $state('');
 	/** @type {any[]} */
@@ -110,7 +108,8 @@ class BestellStore {
 	recommendations = $state([]);
 	/** @type {any[]} */
 	incomingShipments = $state([]);
-	/** Der Grund, wenn eine Liste nicht kam (lieferanten, zulauf, bedarf); die Seite zeigt ihn. */
+	/** Der Grund, wenn eine Liste nicht kam (lieferanten, zulauf, bedarf, konfiguration); die Seite
+	 * zeigt ihn. Ohne Eintrag steht die Antwort noch aus, ein leerer heißt: sie kam. */
 	nichtGeladen = $state(/** @type {Record<string, string>} */ ({}));
 
 	/** Zeitpunkt des letzten vollständigen Ladens (0 = noch nie). */
@@ -217,11 +216,11 @@ class BestellStore {
 			const daten = await apiGet('/api/bestellungen/konfiguration');
 			this.preiseErfassen = daten?.preise_erfassen ?? true;
 			this.bestelllinkOhneAdresse = daten?.bestelllink_ohne_adresse ?? false;
-			this.konfigurationGeladen = true;
+			this.nichtGeladen = { ...this.nichtGeladen, konfiguration: '' };
 			return true;
-		} catch {
+		} catch (e) {
 			// Bewusst KEIN Zurücksetzen: Ein unbekannter Zustand ist nicht „kein Problem".
-			this.konfigurationGeladen = false;
+			this.nichtGeladen = { ...this.nichtGeladen, konfiguration: fehlertext(e) };
 			return false;
 		}
 	}
