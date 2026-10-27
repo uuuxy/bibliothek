@@ -30,7 +30,7 @@
 				snackbars.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
 			}
 		} catch {
-			snackbars.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
+			/* apiPost meldet jeden Fehler selbst, mit dem Grund */
 		} finally {
 			resolvingDnb = false;
 		}

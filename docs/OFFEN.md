@@ -155,11 +155,7 @@ Bekannt und offen:
   beim Klassensatz (`KLASSEN_LADEFEHLER`), die ISBN-Prüfung der Buchmaske (`frageWennVergeben`),
   „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und die Schlagworte in der Bestellung
   (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist
-  nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet. Nach der Meldung von
-  `apiPost` oder `apiPut` setzt ein eigener Satz die nächste, die sie ersetzt: das DNB-Buch in
-  der Bestellsuche (`BestellSuche.svelte`), Signatur und Lernmittel-Kennzeichen in der
-  Trefferprüfung (`TrefferPruefung.svelte`), der Altbestand und „Vermerken" im Druck-Center
-  (`AltbestandDialog.svelte`, `EtikettenNachdruck.svelte`).
+  nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet.
 - Druck-Center: Scheitert im Altbestand die Zählung, steht dort „Bis zu diesem Tag steht kein
   Exemplar mehr offen" (`zaehle` in `AltbestandDialog.svelte`).
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der

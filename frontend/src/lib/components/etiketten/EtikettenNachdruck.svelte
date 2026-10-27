@@ -197,7 +197,7 @@
 			snackbars.addToast(meldung(daten?.markiert ?? daten?.zurueckgesetzt ?? 0), 'success');
 			await laden();
 		} catch {
-			snackbars.addToast('Vermerken nicht möglich.', 'error');
+			/* apiPost meldet jeden Fehler selbst, mit dem Grund */
 		} finally {
 			arbeitet = false;
 		}

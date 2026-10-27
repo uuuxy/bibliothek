@@ -74,11 +74,8 @@
 			if (password !== '') hasPassword = true;
 			password = '';
 			gespeichert = stand();
-		} catch (e) {
-			// Servermeldung wurde von apiFetch bereits als Toast gezeigt — nicht überdecken.
-			if (!(/** @type {any} */ (e)?.handled)) {
-				snackbars.addToast('Fehler beim Speichern', 'error');
-			}
+		} catch {
+			/* apiPut meldet jeden Fehler selbst, mit dem Grund */
 		} finally {
 			speichert = false;
 		}

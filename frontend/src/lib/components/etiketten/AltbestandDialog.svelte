@@ -55,7 +55,7 @@
 			onfertig();
 			onclose();
 		} catch {
-			snackbars.addToast('Der Altbestand konnte nicht vermerkt werden.', 'error');
+			/* apiPost meldet jeden Fehler selbst, mit dem Grund; der Dialog bleibt offen */
 		} finally {
 			arbeitet = false;
 		}

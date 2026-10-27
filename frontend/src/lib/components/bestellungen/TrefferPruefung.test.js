@@ -14,6 +14,7 @@ vi.mock('../../stores/bestellStore.svelte.js', () => ({
 
 import { apiPut, apiFetch } from '../../apiFetch.js';
 import { bestellStore } from '../../stores/bestellStore.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 import TrefferPruefung from './TrefferPruefung.svelte';
 
 // Das offene Gate aus #596: „DNB-Titel mit Haken entsteht als Lernmittel".
@@ -78,6 +79,26 @@ describe('TrefferPruefung: die Frage „Lernmittel?"', () => {
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/lernmittel', {
 			ist_lernmittel: false
 		});
+	});
+
+	// Scheitert das Speichern, nennt die Meldung den Grund, und der Titel geht trotzdem in den
+	// Warenkorb. Vorher ersetzte ein fester Satz die Meldung von apiPut mit dem Grund.
+	it('nennt den Grund, wenn das Kennzeichen nicht gespeichert wird, und bestellt trotzdem', async () => {
+		vi.mocked(apiPut).mockImplementationOnce(() =>
+			Promise.reject(
+				Object.assign(new Error('Keine Berechtigung für diese Aktion'), { handled: true })
+			)
+		);
+		const screen = fenster();
+
+		screen.getByLabelText(/Lernmittel/).click();
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(bestellStore.addToCart).toHaveBeenCalled());
+
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			'Lernmittel-Kennzeichen nicht gespeichert: Keine Berechtigung für diese Aktion. Der Titel wird trotzdem bestellt.',
+			'error'
+		);
 	});
 });
 
