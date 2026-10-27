@@ -5,10 +5,24 @@
 	import EtikettEinstellungen from './EtikettEinstellungen.svelte';
 	import EtikettVorschau from './EtikettVorschau.svelte';
 	import Button from '../ui/Button.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 
 	onMount(() => {
 		etikettenStore.ladeKlassen();
 	});
+
+	// Ein zweiter Klick vor der Antwort schickte den Bogen noch einmal und öffnete ihn in einem
+	// zweiten Tab: dieselben Etiketten zweimal auf dem Papier.
+	let druckt = $state(false);
+	async function drucke() {
+		if (druckt) return;
+		druckt = true;
+		try {
+			await etikettenStore.drucke();
+		} finally {
+			druckt = false;
+		}
+	}
 </script>
 
 <div class="w-full space-y-6 no-print text-on-surface animate-fade-in">
@@ -22,11 +36,15 @@
 	<div class="flex justify-end border-t border-outline-variant pt-5">
 		<Button
 			size="lg"
-			onclick={etikettenStore.drucke}
-			disabled={etikettenStore.bogen.filter((lbl) => !lbl.isBlank).length === 0}
+			onclick={drucke}
+			disabled={druckt || etikettenStore.bogen.filter((lbl) => !lbl.isBlank).length === 0}
 			class="px-5"
 		>
-			<Printer class="h-4 w-4" aria-hidden="true" />
+			{#if druckt}
+				<Ladekreis size="sm" farbe="aktuell" />
+			{:else}
+				<Printer class="h-4 w-4" aria-hidden="true" />
+			{/if}
 			A4-Bogen drucken
 		</Button>
 	</div>
