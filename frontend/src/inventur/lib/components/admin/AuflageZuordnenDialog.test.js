@@ -113,4 +113,28 @@ describe('AuflageZuordnenDialog', () => {
 		expect(screen.getByRole('alert').textContent).toContain('Fehler 400');
 		expect(onZugeordnet).not.toHaveBeenCalled();
 	});
+
+	// Nach einer Zeitüberschreitung hat die Zuordnung den Server erreicht und ist vielleicht
+	// geschehen. Die Meldung nennt den Fehler statt „hat den Server nicht erreicht"; ein zweiter
+	// Klick ordnet nichts doppelt zu (repository.verbindeWerke).
+	it('sagt nach einem Netzfehler nicht, die Zuordnung habe den Server nicht erreicht', async () => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(/** @type {any} */ (buecher([treffer])))
+			.mockResolvedValueOnce(/** @type {any} */ (buecher([])))
+			.mockResolvedValueOnce(/** @type {any} */ (auflagen(1)));
+		vi.mocked(apiClient.post).mockRejectedValue(
+			new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.')
+		);
+		const { screen, onZugeordnet } = await bisZumTreffer();
+		await fireEvent.click(screen.getByRole('button', { name: /4\. Aufl\. · 2023/ }));
+		await vi.advanceTimersByTimeAsync(0);
+		await fireEvent.click(screen.getByRole('button', { name: 'Zuordnen' }));
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(screen.getByRole('alert').textContent).toContain(
+			'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
+		);
+		expect(screen.getByRole('alert').textContent).not.toContain('nicht erreicht');
+		expect(onZugeordnet).not.toHaveBeenCalled();
+	});
 });

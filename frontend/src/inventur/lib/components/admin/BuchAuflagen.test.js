@@ -9,6 +9,7 @@ vi.mock('../../../../lib/apiFetch.js', () => ({
 vi.mock('$lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
+import { melde } from '$lib/store.svelte.js';
 import BuchAuflagen from './BuchAuflagen.svelte';
 
 // „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske (docs/OFFEN.md 4.18,
@@ -35,6 +36,7 @@ const stillhalten = async () => {
 
 beforeEach(() => {
 	vi.mocked(apiFetch).mockReset();
+	vi.mocked(melde).mockReset();
 });
 
 describe('BuchAuflagen', () => {
@@ -99,5 +101,32 @@ describe('BuchAuflagen', () => {
 		expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/buecher/titel/t1/auflagen');
 		expect(screen.queryByRole('list', { name: 'Auflagen dieses Buchs' })).toBeNull();
 		expect(screen.getByRole('button', { name: 'Andere Auflage zuordnen' })).toBeTruthy();
+	});
+
+	// Geht die Antwort auf das Lösen verloren, kann der Server schon gelöst haben. „Die Auflage
+	// wurde nicht gelöst" stimmte dann nicht, und die Liste zeigte den Stand davor; jetzt nennt
+	// die Meldung den Fehler, und die Liste wird neu gelesen.
+	it('liest nach einem Netzfehler beim Lösen die Liste neu und sagt nicht, es sei nicht gelöst', async () => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(
+				/** @type {any} */ (
+					antwort([auflage('t2', '4. Aufl.', 2023), auflage('t1', '3. Aufl.', 2019)])
+				)
+			)
+			.mockRejectedValueOnce(new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'))
+			.mockResolvedValueOnce(/** @type {any} */ (antwort([auflage('t1', '3. Aufl.', 2019)])));
+		const screen = render(BuchAuflagen, { formular: { id: 't1', istLernmittel: true } });
+
+		await fireEvent.click(
+			await screen.findByRole('button', { name: '4. Aufl. · 2023 aus den Auflagen lösen' })
+		);
+		await stillhalten();
+
+		expect(melde).toHaveBeenCalledWith(
+			'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.',
+			'error'
+		);
+		expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/buecher/titel/t1/auflagen');
+		expect(screen.queryByRole('list', { name: 'Auflagen dieses Buchs' })).toBeNull();
 	});
 });

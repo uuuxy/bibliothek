@@ -11,6 +11,7 @@
 <script>
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
@@ -61,8 +62,10 @@
 				return;
 			}
 			gefunden = await res.json();
-		} catch {
-			fehler = 'Netzwerkfehler — die ISBN-Abfrage hat den Server nicht erreicht.';
+		} catch (err) {
+			// Ob die Anfrage ankam, sagt ein Netzfehler nicht; ein Titel, den sie angelegt hat,
+			// findet der zweite Versuch über die ISBN (api/katalog/isbn_zu_titel.go).
+			fehler = fehlertext(err);
 		} finally {
 			laeuft = false;
 		}
@@ -96,8 +99,10 @@
 				'success'
 			);
 			onbestellt({ ...gefunden, id: gefunden.titel_id, ist_lernmittel: true });
-		} catch {
-			fehler = 'Netzwerkfehler — die Zuordnung hat den Server nicht erreicht.';
+		} catch (err) {
+			// Ob die Zuordnung ankam, sagt ein Netzfehler nicht. Ein zweiter Versuch ordnet nichts
+			// doppelt zu (repository.verbindeWerke), in den Warenkorb kommt der Titel erst danach.
+			fehler = fehlertext(err);
 		} finally {
 			laeuft = false;
 		}

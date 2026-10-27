@@ -8,6 +8,7 @@
 	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { melde } from '$lib/store.svelte.js';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 	import Dialog from '../../../../lib/components/ui/Dialog.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
@@ -71,8 +72,10 @@
 			onZugeordnet(antwort.auflagen ?? []);
 			melde(`Zugeordnet: ${auflagenBeschriftung(gewaehlt)}`, 'success');
 			open = false;
-		} catch {
-			fehler = 'Netzwerkfehler — die Zuordnung hat den Server nicht erreicht.';
+		} catch (err) {
+			// Ob die Zuordnung ankam, sagt ein Netzfehler nicht. Ein zweiter Klick ordnet nichts
+			// doppelt zu (repository.verbindeWerke).
+			fehler = fehlertext(err);
 		} finally {
 			laeuft = false;
 		}

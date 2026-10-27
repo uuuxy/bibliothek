@@ -91,4 +91,39 @@ describe('NeueAuflageDialog', () => {
 		expect(apiClient.put).not.toHaveBeenCalled();
 		expect(onbestellt).not.toHaveBeenCalled();
 	});
+
+	// Nach einer Zeitüberschreitung hat die Anfrage den Server erreicht und vielleicht einen Titel
+	// angelegt oder zugeordnet. Der Satz „hat den Server nicht erreicht" stimmte dann nicht; die
+	// Meldung nennt den Fehler, und ein zweiter Versuch legt nichts doppelt an.
+	it('sagt nach einem Netzfehler nicht, die ISBN-Abfrage habe den Server nicht erreicht', async () => {
+		vi.mocked(apiClient.post).mockRejectedValueOnce(
+			new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.')
+		);
+		const screen = render(NeueAuflageDialog, { zeile, onschliessen: vi.fn(), onbestellt: vi.fn() });
+		await fireEvent.input(screen.getByLabelText('ISBN der neuen Auflage'), {
+			target: { value: '9783120000026' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
+		await vi.waitFor(() =>
+			expect(screen.getByRole('alert').textContent).toContain(
+				'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
+			)
+		);
+		expect(screen.getByRole('alert').textContent).not.toContain('nicht erreicht');
+	});
+
+	it('sagt nach einem Netzfehler beim Zuordnen nicht, es habe den Server nicht erreicht', async () => {
+		const { screen, onbestellt } = await bisZumVorschlag({ ...neu, ist_lernmittel: true });
+		vi.mocked(apiClient.post).mockRejectedValueOnce(
+			new Error('Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.')
+		);
+		await fireEvent.click(screen.getByRole('button', { name: 'Zuordnen und bestellen' }));
+		await vi.waitFor(() =>
+			expect(screen.getByRole('alert').textContent).toContain(
+				'Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.'
+			)
+		);
+		expect(screen.getByRole('alert').textContent).not.toContain('nicht erreicht');
+		expect(onbestellt).not.toHaveBeenCalled();
+	});
 });

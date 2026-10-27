@@ -12,6 +12,7 @@
 	import { Plus, Unlink } from '@lucide/svelte';
 	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
 	import { melde } from '$lib/store.svelte.js';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 	import { bestandSatz } from '../../../../lib/utils/format.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import AuflagenZeile from './AuflagenZeile.svelte';
@@ -63,8 +64,11 @@
 			// denn mit dem vorletzten fällt auch der letzte heraus.
 			await laden();
 			melde(`Gelöst: ${auflagenBeschriftung(a)}`, 'success');
-		} catch {
-			melde('Netzwerkfehler — die Auflage wurde nicht gelöst.', 'error');
+		} catch (err) {
+			// Ob der Server gelöst hat, sagt ein Netzfehler nicht; die neu gelesene Liste zeigt es.
+			// Ein zweites Lösen schadet nicht (repository.LoeseAuflage).
+			melde(fehlertext(err), 'error');
+			await laden();
 		} finally {
 			loest = '';
 		}
