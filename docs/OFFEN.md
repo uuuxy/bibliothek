@@ -45,7 +45,7 @@ einem Fehler (5.106).
 - [x] Abgänger und Versand an die Klassenleitungen. (5.106)
 - [x] LMF-Plan, Lernmittel und Klassensätze. (5.106)
 - [x] Bestellungen und Lieferanten. (5.106)
-- [ ] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
+- [x] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
 - [ ] Medienkatalog und Buchakte. (5.106)
 - [ ] Inventur. (5.106)
 - [ ] Einstellungen, Benutzer und Rechte. (5.106)

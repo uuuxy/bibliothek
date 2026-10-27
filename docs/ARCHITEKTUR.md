@@ -2348,7 +2348,13 @@ sieht.
   Firefox blockiert Fenster und zeigt PDFs erst mit den `firefoxUserPrefs`
   `'pdfjs.disabled': false` und `'dom.disable_open_during_load': true`. Eine Fehlerantwort kommt
   über `route.fulfill` mit Status und Rumpf `{"error": …}`, ein Netzausfall über
-  `route.abort('failed')`. In WebKit greift `page.route` nur mit `serviceWorkers: 'block'`, sonst
+  `route.abort('failed')`, eine verlorene Antwort über `route.fetch()` und danach
+  `route.abort('failed')`: Der Server hat gearbeitet, der Browser sieht keine Antwort. Ein
+  Doppelklick von Hand ist ein Klick und 120 ms später nur der zweite (`mouse.down` und
+  `mouse.up` mit `clickCount: 2`); `page.mouse.click(x, y, { clickCount: 2 })` schickt zwei
+  Klicks (`detail` 1 und 2), mit dem ersten zusammen also drei. Vor einem Klick auf einen Knopf,
+  der gesperrt sein kann, sagt `isDisabled()`, ob er es ist; sonst wartet `locator.click()` bis
+  zum Ende der Testfrist. In WebKit greift `page.route` nur mit `serviceWorkers: 'block'`, sonst
   beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Ein Tab, den die Seite öffnet,
   lädt an `page.route` vorbei; seine Anfragen fängt `context.route`. Die Meldungen schreibt ein
   `MutationObserver` aus `page.addInitScript` mit, sobald sie erscheinen: Eine neue ersetzt die
