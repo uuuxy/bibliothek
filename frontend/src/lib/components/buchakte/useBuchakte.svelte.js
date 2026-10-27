@@ -2,23 +2,7 @@ import { appState } from '../../../inventur/lib/store.svelte.js';
 import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
-
-/**
- * Das geparste JSON eines erfüllten, erfolgreichen Ergebnisses — sonst `null`.
- *
- * Nicht „sonst ein leeres Array": Ein leeres Array ist eine Aussage über den Bestand, und
- * der Reiter schriebe sie hin („Ausleiher (0)" für einen Titel, der Ausleiher hat). `null`
- * heißt „nicht geladen", und das ist etwas anderes als „keine da".
- *
- * @param {PromiseSettledResult<any>} settled
- * @returns {Promise<any[] | null>}
- */
-async function jsonOderNull(settled) {
-	if (settled.status === 'fulfilled' && settled.value.ok) {
-		return await settled.value.json();
-	}
-	return null;
-}
+import { leseTeil } from '../../utils/aktenTeile.js';
 
 /**
  * Holt den Kopf eines Titels vom Server. Ein 404 heißt „den Titel gibt es nicht" und trägt
@@ -53,8 +37,9 @@ export function useBuchakte() {
 	let aktiverReiter = $state('ausleiher');
 	let laedt = $state(true);
 
-	/** Listen, deren Abruf gescheitert ist — ihre Zahl ist keine Zahl, sondern ein Fragezeichen. */
-	let fehlendeListen = $state(/** @type {string[]} */ ([]));
+	/** Listen, deren Abruf gescheitert ist, mit Grund — ihre Zahl ist keine Zahl, sondern ein
+	 *  Fragezeichen. */
+	let fehlendeListen = $state(/** @type {{ name: string, grund: string }[]} */ ([]));
 	/** Der Kopf des Titels kam nicht an — im Unterschied zu „den Titel gibt es nicht". */
 	let kopfFehler = $state('');
 
@@ -125,13 +110,13 @@ export function useBuchakte() {
 		];
 		// Wie beim Kopf erst prüfen, wenn die Körper gelesen sind: Ist ein jüngerer Titel
 		// inzwischen ganz geladen, lägen diese Listen sonst unter seinem Kopf.
-		const daten = await Promise.all(listen.map(([, antwort]) => jsonOderNull(antwort)));
+		const daten = await Promise.all(listen.map(([, antwort]) => leseTeil(antwort)));
 		if (meine !== laufNr) return;
-		/** @type {string[]} */
+		/** @type {{ name: string, grund: string }[]} */
 		const fehlend = [];
 		listen.forEach(([name, , setze], i) => {
-			setze(daten[i] ?? []);
-			if (daten[i] === null) fehlend.push(name);
+			setze(daten[i].wert ?? []);
+			if (daten[i].grund) fehlend.push({ name, grund: daten[i].grund });
 		});
 		fehlendeListen = fehlend;
 		laedt = false;

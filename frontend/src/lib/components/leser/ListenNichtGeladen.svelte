@@ -4,14 +4,15 @@
      Eigenes Bauteil, weil dieselbe Zeile in zwei Reitern der Akte steht. -->
 <script>
 	import Button from '../ui/Button.svelte';
+	import { nenneFehlende } from '../../utils/aktenTeile.js';
 
-	/** @type {{ listen?: string[], onErneut: () => void }} */
+	/** @type {{ listen?: { name: string, grund: string }[], onErneut: () => void }} */
 	let { listen = [], onErneut } = $props();
 </script>
 
 {#if listen.length > 0}
 	<p class="text-sm font-semibold text-error" role="alert">
-		Nicht geladen: {listen.join(', ')}. Diese Karten sind leer, weil der Abruf gescheitert ist —
+		Nicht geladen: {nenneFehlende(listen)}. Diese Karten sind leer, weil der Abruf gescheitert ist —
 		nicht, weil nichts vorläge.
 		<Button variant="ghost" size="sm" onclick={onErneut}>Erneut laden</Button>
 	</p>

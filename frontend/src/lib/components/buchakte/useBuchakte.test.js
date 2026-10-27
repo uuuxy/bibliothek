@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from '../../hygiene-quellen.js';
+import { serverAntwort } from '../../serverAntwort.js';
 import { useBuchakte } from './useBuchakte.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { appState } from '../../../inventur/lib/store.svelte.js';
@@ -18,12 +19,10 @@ import { appState } from '../../../inventur/lib/store.svelte.js';
 //   „Gesamten Titel löschen" schickt `buch.id`. Stand dort noch der VORIGE Titel, fällt
 //   dieser — mit allen Exemplaren, Ausleihen und offenen Forderungen —, während die
 //   Rückfrage die Exemplarzahl des neuen nannte.
-vi.mock('../../apiFetch.js', () => ({
-	apiFetch: vi.fn(),
-	leseApiFehler: vi.fn(async (/** @type {any} */ res) => {
-		const text = await res.text();
-		return text ? JSON.parse(text).error : `Fehler ${res.status}`;
-	})
+// leseApiFehler bleibt echt (ARCHITEKTUR.md 8.14).
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
 }));
 vi.mock('../../../inventur/lib/store.svelte.js', () => ({
 	appState: { selectedBook: null, bookToEdit: null, requestAdminView: false, activeBookId: null },
@@ -101,14 +100,19 @@ describe('useBuchakte.ladeAlles', () => {
 			const u = String(url);
 			if (u.startsWith('/api/books/'))
 				return /** @type {any} */ (ok({ id: 'A', titel: 'Titel A' }));
-			if (u.includes('/ausleiher')) return /** @type {any} */ ({ ok: false, status: 500 });
+			if (u.includes('/ausleiher'))
+				return /** @type {any} */ (serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
 			if (u.includes('/historie')) return /** @type {any} */ ({ ok: false, status: 500 });
 			return /** @type {any} */ (ok([]));
 		});
 		const akte = useBuchakte();
 		await akte.ladeAlles('A');
 
-		expect(akte.fehlendeListen).toEqual(['Ausleiher', 'Historie']);
+		// Mit dem Grund des Servers (OFFEN.md 5.106); ohne Rumpf „Fehler <Status>".
+		expect(akte.fehlendeListen).toEqual([
+			{ name: 'Ausleiher', grund: 'Datenbank nicht erreichbar' },
+			{ name: 'Historie', grund: 'Fehler 500' }
+		]);
 		expect(akte.ausleiher, 'die Anzeige braucht trotzdem ein Array').toEqual([]);
 	});
 
@@ -152,7 +156,7 @@ describe('useBuchakte.ladeAlles', () => {
 		});
 		const akte = useBuchakte();
 		await akte.ladeAlles('A');
-		expect(akte.fehlendeListen).toEqual(['Ausleiher']);
+		expect(akte.fehlendeListen.map((l) => l.name)).toEqual(['Ausleiher']);
 
 		vi.mocked(apiFetch).mockImplementation(antworten('B'));
 		await akte.ladeAlles('B');
@@ -165,7 +169,7 @@ describe('useBuchakte.ladeAlles', () => {
 		const quelle = ohneKommentare(
 			readFileSync(join(srcRoot, 'lib', 'components', 'buchakte', 'Buchakte.svelte'), 'utf8')
 		);
-		expect(quelle).toMatch(/fehlendeListen\.includes\(name\)\s*\?\s*'\?'/);
+		expect(quelle).toMatch(/fehlendeListen\.some\(\(l\) => l\.name === name\)\s*\?\s*'\?'/);
 	});
 });
 

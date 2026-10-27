@@ -12,7 +12,7 @@
 	 * @type {{
 	 *   buecher: any[],
 	 *   vormerkungen: any[],
-	 *   fehlendeListen?: string[],
+	 *   fehlendeListen?: { name: string, grund: string }[],
 	 *   onReturnClick?: (barcode: string) => void,
 	 *   onDamageClick?: (buch: any) => void,
 	 *   onChanged: () => void,

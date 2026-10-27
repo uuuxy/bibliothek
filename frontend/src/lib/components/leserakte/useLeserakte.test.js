@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useLeserakte } from './useLeserakte.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
 // Die Akte lädt vier Dinge nebeneinander: Stammdaten, Vormerkungen, Gebühren, Bescheide.
 //
@@ -103,14 +104,54 @@ describe('useLeserakte.ladeAkte', () => {
 		const st = useLeserakte();
 		await st.ladeAkte('A');
 		expect(st.bescheide).toEqual([]);
-		expect(st.fehlendeListen, 'der Ausfall muss in der Akte sichtbar sein').toEqual(['Bescheide']);
+		expect(st.fehlendeListen, 'der Ausfall muss in der Akte sichtbar sein').toEqual([
+			{ name: 'Bescheide', grund: 'Fehler 503' }
+		]);
 
 		antwortenJe({
 			schadensfaelle: fehler,
 			vormerkungen: { ok: false, status: 504, json: async () => ({}) }
 		});
 		await st.ladeAkte('A');
-		expect(st.fehlendeListen).toEqual(['Vormerkungen', 'Gebühren']);
+		expect(st.fehlendeListen.map((l) => l.name)).toEqual(['Vormerkungen', 'Gebühren']);
+	});
+
+	// Der Grund des Servers stand nicht da: „Nicht geladen: Vormerkungen" und bei der Akte selbst
+	// „Die Daten dieses Lesers konnten nicht abgerufen werden" (OFFEN.md 5.106).
+	it('nennt den Grund, wenn die Akte oder eine Liste nicht kam', async () => {
+		antwortenJe({ vormerkungen: serverAntwort(503, { error: 'Datenbank nicht erreichbar' }) });
+		const st = useLeserakte();
+		await st.ladeAkte('A');
+		expect(st.akte?.id).toBe('A');
+		expect(st.fehlendeListen).toEqual([
+			{ name: 'Vormerkungen', grund: 'Datenbank nicht erreichbar' }
+		]);
+
+		vi.mocked(apiFetch).mockResolvedValue(serverAntwort(404, { error: 'Leser nicht gefunden' }));
+		await st.ladeAkte('A');
+		expect(st.akte).toBeNull();
+		expect(st.ladefehler).toBe('Leser nicht gefunden');
+	});
+
+	// Kam nur eine Liste ohne Antwort zurück, verschwand die ganze Akte hinter „Akte nicht
+	// geladen". Wie bei einer Fehlantwort steht die Akte jetzt da, und nur die Liste fehlt.
+	it('zeigt die Akte, wenn nur eine Liste ohne Antwort bleibt', async () => {
+		antwortenJe({});
+		const ohneNetz = new Error('Keine Verbindung zum Server.');
+		const vorher = /** @type {(url: any, o: any) => Promise<any>} */ (
+			vi.mocked(apiFetch).getMockImplementation()
+		);
+		vi.mocked(apiFetch).mockImplementation(async (url, o) => {
+			if (String(url).includes('bescheide')) throw ohneNetz;
+			return vorher(url, o);
+		});
+		const st = useLeserakte();
+		await st.ladeAkte('A');
+		expect(st.akte?.id).toBe('A');
+		expect(st.ladefehler).toBe('');
+		expect(st.fehlendeListen).toEqual([
+			{ name: 'Bescheide', grund: 'Keine Verbindung zum Server.' }
+		]);
 	});
 
 	it('403 (Rolle ohne Einsicht) und eine leere Liste sind kein Ladefehler', async () => {
@@ -131,9 +172,10 @@ describe('useLeserakte.ladeAkte', () => {
 		await st.ladeAkte('A');
 		// Der Netzwerkfehler wird im Hook protokolliert (console.error) — hier stumm, wie in liveEvents.test.js.
 		vi.spyOn(console, 'error').mockImplementation(() => {});
-		vi.mocked(apiFetch).mockRejectedValue(new TypeError('Failed to fetch'));
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
 		await st.ladeAkte('B');
-		expect(st.fehlendeListen).toEqual(['Vormerkungen', 'Gebühren', 'Bescheide']);
+		expect(st.fehlendeListen.map((l) => l.name)).toEqual(['Vormerkungen', 'Gebühren', 'Bescheide']);
+		expect(st.ladefehler).toBe('Keine Verbindung zum Server.');
 	});
 
 	it('lässt die überholte Antwort nicht gewinnen', async () => {

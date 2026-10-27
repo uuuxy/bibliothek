@@ -61,10 +61,6 @@ const BESTAND = {
 	'src/lib/components/leser/zusammenfuehrenSuche.svelte.js': [
 		1,
 		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus leseApiFehler'
-	],
-	'src/lib/components/leserakte/useLeserakte.svelte.js': [
-		1,
-		'der Kopf, bewusst zugewiesen (06.09.2026): Scheitert sein Abruf, darf NICHT der vorher geöffnete Schüler stehen bleiben. Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 in fehlendeListen (OFFEN.md 1.5)'
 	]
 };
 

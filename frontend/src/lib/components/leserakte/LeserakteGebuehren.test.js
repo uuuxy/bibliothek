@@ -40,9 +40,14 @@ describe('LeserakteGebuehren', () => {
 			...daten,
 			gebuehren: [],
 			bescheide: [],
-			fehlendeListen: ['Gebühren', 'Bescheide']
+			fehlendeListen: [
+				{ name: 'Gebühren', grund: 'Datenbank nicht erreichbar' },
+				{ name: 'Bescheide', grund: 'Datenbank nicht erreichbar' }
+			]
 		});
-		expect(screen.getByRole('alert').textContent).toMatch(/Nicht geladen: Gebühren, Bescheide/);
+		expect(screen.getByRole('alert').textContent).toMatch(
+			/Nicht geladen: Gebühren, Bescheide \(Datenbank nicht erreichbar\)/
+		);
 		expect(screen.queryByText(/Keine Gebühren/)).toBeNull();
 	});
 

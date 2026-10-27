@@ -124,7 +124,7 @@
 						<LeserakteAusleihen
 							buecher={st.akte.entliehene_buecher || []}
 							bind:vormerkungen={st.vormerkungen}
-							fehlendeListen={st.fehlendeListen.filter((l) => l === 'Vormerkungen')}
+							fehlendeListen={st.fehlendeListen.filter((l) => l.name === 'Vormerkungen')}
 							{onReturnClick}
 							onDamageClick={rechte.bearbeiten ? st.oeffneSchaden : undefined}
 							onChanged={() => st.ladeAkte(st.akte.id)}
@@ -135,7 +135,7 @@
 							schuelerId={st.akte.id}
 							gebuehren={st.gebuehren}
 							bescheide={st.bescheide}
-							fehlendeListen={st.fehlendeListen.filter((l) => l !== 'Vormerkungen')}
+							fehlendeListen={st.fehlendeListen.filter((l) => l.name !== 'Vormerkungen')}
 							darfBearbeiten={rechte.bearbeiten}
 							onChanged={() => st.ladeAkte(st.akte.id)}
 						/>
@@ -167,7 +167,7 @@
 	<LadeFehler
 		onerneut={ladeNeu}
 		titel="Akte nicht geladen"
-		text="Die Daten dieses Lesers konnten nicht abgerufen werden."
+		text={st.ladefehler || 'Die Daten dieses Lesers konnten nicht abgerufen werden.'}
 	/>
 {/if}
 

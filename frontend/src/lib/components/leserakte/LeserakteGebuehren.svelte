@@ -13,7 +13,7 @@
 	 *   schuelerId?: string,
 	 *   gebuehren: any[],
 	 *   bescheide: any[],
-	 *   fehlendeListen?: string[],
+	 *   fehlendeListen?: { name: string, grund: string }[],
 	 *   darfBearbeiten: boolean,
 	 *   onChanged: () => void
 	 * }}

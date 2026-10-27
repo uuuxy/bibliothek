@@ -13,6 +13,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { exemplarZahlen } from './exemplarStatus.js';
+	import { nenneFehlende } from '../../utils/aktenTeile.js';
 	import { ChevronLeft, FaceSlightlyFrowning } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 
@@ -32,7 +33,7 @@
 	// Liste, wäre „Ausleiher (0)" eine Aussage über den Bestand, die niemand geprüft hat.
 	/** @param {string} name @param {number} anzahl */
 	const zaehler = (name, anzahl) =>
-		`${name} (${akte.fehlendeListen.includes(name) ? '?' : anzahl})`;
+		`${name} (${akte.fehlendeListen.some((l) => l.name === name) ? '?' : anzahl})`;
 	// „Exemplare" zählt den Bestand wie „1 von 2 verfügbar" im Kopf; bestellte und
 	// ausgesonderte stehen im Reiter mit ihrem Wort an der Karte.
 	const reiter = $derived([
@@ -87,7 +88,7 @@
 
 		{#if akte.fehlendeListen.length > 0}
 			<p class="text-sm font-semibold text-error" role="alert">
-				Nicht geladen: {akte.fehlendeListen.join(', ')}. Diese Reiter sind leer, weil der Abruf
+				Nicht geladen: {nenneFehlende(akte.fehlendeListen)}. Diese Reiter sind leer, weil der Abruf
 				gescheitert ist — nicht, weil nichts da wäre.
 			</p>
 		{/if}

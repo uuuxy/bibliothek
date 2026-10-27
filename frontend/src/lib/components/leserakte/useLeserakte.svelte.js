@@ -4,6 +4,7 @@ import { istKollegium } from '../leser/leserArt.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
+import { ladeLeserakte } from './ladeLeserakte.js';
 
 export function useLeserakte() {
 	/** @type {any} */
@@ -14,9 +15,11 @@ export function useLeserakte() {
 	let gebuehren = $state([]);
 	/** @type {any[]} */
 	let bescheide = $state([]);
-	// Listen, deren Abruf gescheitert ist, wie in der Buch-Akte (useBuchakte): Ihre Karte ist
-	// leer, weil nichts ankam, nicht weil nichts vorläge („bei uns liegt kein Bescheid vor").
-	let fehlendeListen = $state(/** @type {string[]} */ ([]));
+	// Listen, deren Abruf gescheitert ist, mit Grund, wie in der Buch-Akte (useBuchakte): Ihre
+	// Karte ist leer, weil nichts ankam, nicht weil nichts vorläge („bei uns liegt kein Bescheid vor").
+	let fehlendeListen = $state(/** @type {{ name: string, grund: string }[]} */ ([]));
+	// Der Grund, wenn die Akte selbst nicht kam.
+	let ladefehler = $state('');
 	let laedt = $state(true);
 	let kameraOffen = $state(false);
 	let fotoStand = $state(Date.now());
@@ -50,36 +53,22 @@ export function useLeserakte() {
 		const meine = ++laufNr;
 		laedt = true;
 		try {
-			const [resProfile, resVormerkungen, resGebuehren, resBescheide] = await Promise.all([
-				apiFetch(`/api/schueler/${studentId}`),
-				apiFetch(`/api/vormerkungen?schueler_id=${studentId}`),
-				apiFetch(`/api/schueler/${studentId}/schadensfaelle`),
-				apiFetch(`/api/schueler/${studentId}/bescheide`)
-			]);
-			// Jede der vier Antworten wird zugewiesen, auch wenn sie scheitert, und erst nach dem Lesen
-			// aller Körper (wie useBuchakte): Sonst stünden Teile des vorher geöffneten Lesers da, und
-			// „Zahlung verbucht" schriebe auf dessen Schadensfall. 403 heißt nur, keine Liste zu zeigen.
-			const fehlend = /** @type {string[]} */ ([]);
-			/** @param {Response} res @param {string} name */
-			const listeOderVermerk = async (res, name) => {
-				if (res.ok) return (await res.json()) || [];
-				if (res.status !== 403) fehlend.push(name);
-				return [];
-			};
-			const neu = await Promise.all([
-				resProfile.ok ? resProfile.json() : null,
-				listeOderVermerk(resVormerkungen, 'Vormerkungen'),
-				listeOderVermerk(resGebuehren, 'Gebühren'),
-				listeOderVermerk(resBescheide, 'Bescheide')
-			]);
+			const neu = await ladeLeserakte(studentId);
 			if (meine !== laufNr) return;
-			[akte, vormerkungen, gebuehren, bescheide] = neu;
-			fehlendeListen = fehlend;
+			// Jeder der vier Teile wird zugewiesen, auch ein gescheiterter (wie useBuchakte): Sonst
+			// stünden Teile des vorher geöffneten Lesers da, und „Zahlung verbucht" schriebe auf
+			// dessen Schadensfall.
+			akte = neu.akte;
+			ladefehler = neu.ladefehler;
+			[vormerkungen, gebuehren, bescheide] = neu.listen;
+			fehlendeListen = neu.fehlendeListen;
 		} catch (err) {
+			// Eine Antwort, deren Körper sich nicht lesen ließ.
 			if (meine !== laufNr) return;
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
 			[akte, vormerkungen, gebuehren, bescheide] = [null, [], [], []];
-			fehlendeListen = ['Vormerkungen', 'Gebühren', 'Bescheide'];
+			ladefehler = fehlertext(err);
+			fehlendeListen = [];
 		} finally {
 			if (meine === laufNr) laedt = false;
 		}
@@ -236,6 +225,9 @@ export function useLeserakte() {
 		},
 		get fehlendeListen() {
 			return fehlendeListen;
+		},
+		get ladefehler() {
+			return ladefehler;
 		},
 		get laedt() {
 			return laedt;

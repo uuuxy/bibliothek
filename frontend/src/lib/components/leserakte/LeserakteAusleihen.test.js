@@ -25,9 +25,14 @@ describe('LeserakteAusleihen', () => {
 
 	// Eine leere Karte sähe aus wie „nichts vorgemerkt": Der gescheiterte Abruf steht darüber.
 	it('nennt die Listen, deren Abruf gescheitert ist', () => {
-		const screen = render(LeserakteAusleihen, { ...daten, fehlendeListen: ['Vormerkungen'] });
+		const screen = render(LeserakteAusleihen, {
+			...daten,
+			fehlendeListen: [{ name: 'Vormerkungen', grund: 'Datenbank nicht erreichbar' }]
+		});
 		const hinweis = screen.getByRole('alert');
-		expect(hinweis.textContent).toMatch(/Nicht geladen: Vormerkungen/);
+		expect(hinweis.textContent).toMatch(
+			/Nicht geladen: Vormerkungen \(Datenbank nicht erreichbar\)/
+		);
 	});
 
 	it('schweigt, wenn alles geladen ist', () => {
