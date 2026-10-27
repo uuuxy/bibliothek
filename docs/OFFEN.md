@@ -38,7 +38,7 @@ Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
 - [x] Ein gescheitertes Laden zeigt einen Leerzustand oder eine Entwarnung: 16 Stellen über den
   ganzen Bestand, eine davon an der Theke, mit Prüfregel. (5.106)
 - [x] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
-- [ ] Mahnwesen, Bescheide und Schäden. (5.106)
+- [x] Mahnwesen, Bescheide und Schäden. (5.106)
 - [ ] Druck-Center und Etiketten. (5.106)
 - [ ] Leserakte. (5.106)
 - [ ] Abgänger und Versand an die Klassenleitungen. (5.106)
@@ -51,6 +51,7 @@ Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
 - [ ] Portal und öffentlicher Katalog. (5.106)
 - [ ] Anmeldung, Sperre und Update-Hinweis. (5.106)
 - [ ] Statistik, Protokoll und Betrieb. (5.106)
+- [ ] Der Browser-Test „Handscanner: der Fokus steht woanders" wackelt nach „Bezahlt". (5.109)
 
 ### Bei dir
 
@@ -154,12 +155,28 @@ Bekannt und offen:
   beim Klassensatz (`KLASSEN_LADEFEHLER`), die ISBN-Prüfung der Buchmaske (`frageWennVergeben`),
   „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und die Schlagworte in der Bestellung
   (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist
-  nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet.
+  nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet. Nach der Meldung von
+  `apiPost` oder `apiPut` setzt ein eigener Satz die nächste, die sie ersetzt: das DNB-Buch in
+  der Bestellsuche (`BestellSuche.svelte`), Signatur und Lernmittel-Kennzeichen in der
+  Trefferprüfung (`TrefferPruefung.svelte`), der Altbestand und „Vermerken" im Druck-Center
+  (`AltbestandDialog.svelte`, `EtikettenNachdruck.svelte`).
 - Druck-Center: Scheitert nach dem Druck der Vermerk „gedruckt", steht das nur in der Konsole
   (`vermerkeGedruckt` in `etikettenDruck.js`). Die Etiketten bleiben auf der Liste der fehlenden
-  und werden womöglich doppelt gedruckt.
+  und werden womöglich doppelt gedruckt. Scheitert im Altbestand die Zählung, steht dort „Bis zu
+  diesem Tag steht kein Exemplar mehr offen" (`zaehle` in `AltbestandDialog.svelte`).
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
+
+### 5.109 Ein Browser-Test der Theke wackelt
+
+`kiosk-scannerfokus.spec.js`, Fall „der Scan wird verbucht: auf dem Reiter, nach „Bezahlt", nach
+einem Klick ins Leere": In der ganzen Suite einmal rot mit „Fokus nach „Bezahlt"". Vor dem
+blinden Scan stand der Fokus schon wieder im Scanfeld, der Schritt prüfte also nichts. Allein
+50-mal grün, die Datei 15-mal ganz. Eine um 300 ms verzögerte Antwort auf die Buchung macht ihn
+nicht rot; der Zeitgeber der Theke nach einer Buchung (`fokussiereScanfeld`, 50 ms) ist es also
+nicht allein. Nächster Schritt: herausfinden, was den Fokus nach „Bezahlt" ins Scanfeld legt
+(Live-Meldung der Zahlung und Neuladen der Akte), es mit einer Verzögerung rot machen und den
+Test auf das Ende dieses Wegs warten lassen.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -2349,7 +2349,10 @@ sieht.
   `'pdfjs.disabled': false` und `'dom.disable_open_during_load': true`. Eine Fehlerantwort kommt
   über `route.fulfill` mit Status und Rumpf `{"error": …}`, ein Netzausfall über
   `route.abort('failed')`. In WebKit greift `page.route` nur mit `serviceWorkers: 'block'`, sonst
-  beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Der WebKit-Testbrowser zeichnet
+  beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Ein Tab, den die Seite öffnet,
+  lädt an `page.route` vorbei; seine Anfragen fängt `context.route`. Die Meldungen schreibt ein
+  `MutationObserver` aus `page.addInitScript` mit, sobald sie erscheinen: Eine neue ersetzt die
+  stehende, und ein Blick nach dem Klick sieht nur die letzte. Der WebKit-Testbrowser zeichnet
   keine PDFs; ob Safari eines zeigt, beantwortet nur Safari über `safaridriver`, dort mit
   „Entfernte Automatisierung erlauben".
 - **Eine Attrappe von `apiFetch.js` behält `leseApiFehler`:** `vi.mock('…/apiFetch.js', async
