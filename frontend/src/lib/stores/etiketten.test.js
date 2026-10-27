@@ -13,6 +13,7 @@ import { apiFetch } from '../apiFetch.js';
 import { etikettenStore } from './etiketten.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
 import { serverAntwort } from '../serverAntwort.js';
+import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 
@@ -104,21 +105,22 @@ describe('etikettenStore: Exemplare nicht geladen', () => {
 		vi.clearAllMocks();
 	});
 
-	it('meldet eine Fehlantwort als Ladefehler', async () => {
-		apiFetchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }));
+	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich (OFFEN.md 5.106).
+	it('meldet eine Fehlantwort als Ladefehler mit dem Grund des Servers', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
+		);
 		await etikettenStore.waehleTitel(titel);
 
-		expect(etikettenStore.exemplareNichtGeladen).toBe(true);
+		expect(etikettenStore.exemplarFehler).toBe('Die Datenbank antwortet nicht');
 		expect(aufDemBogen()).toEqual([]);
 	});
 
-	it('meldet einen Netzwerkfehler ebenso', async () => {
-		const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
-		apiFetchMock.mockRejectedValueOnce(new Error('Failed to fetch'));
+	it('meldet einen Fehler ohne Antwort ebenso, mit seinem Grund', async () => {
+		apiFetchMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
 		await etikettenStore.waehleTitel(titel);
 
-		expect(etikettenStore.exemplareNichtGeladen).toBe(true);
-		stumm.mockRestore();
+		expect(etikettenStore.exemplarFehler).toBe('Keine Verbindung zum Server.');
 	});
 
 	it('lädt erneut und zeigt danach die Exemplare', async () => {
@@ -127,7 +129,7 @@ describe('etikettenStore: Exemplare nicht geladen', () => {
 		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1']));
 		await etikettenStore.ladeExemplare();
 
-		expect(etikettenStore.exemplareNichtGeladen).toBe(false);
+		expect(etikettenStore.exemplarFehler).toBe('');
 		expect(aufDemBogen()).toEqual(['B-1']);
 	});
 
@@ -136,7 +138,7 @@ describe('etikettenStore: Exemplare nicht geladen', () => {
 		apiFetchMock.mockResolvedValueOnce(exemplare([]));
 		await etikettenStore.waehleTitel(titel);
 
-		expect(etikettenStore.exemplareNichtGeladen).toBe(false);
+		expect(etikettenStore.exemplarFehler).toBe('');
 		expect(etikettenStore.vorhandeneExemplare).toEqual([]);
 	});
 });
@@ -385,5 +387,37 @@ describe('etikettenStore: alle, keine und einzelne Exemplare wählen', () => {
 		await etikettenStore.waehleTitel({ id: 't4', titel: 'Anderer Titel', autor: '' });
 		expect(etikettenStore.exemplarSuche).toBe('');
 		expect(etikettenStore.sichtbareExemplare.map((c) => c.barcode_id)).toEqual(['B-7']);
+	});
+});
+
+// Ein angebrochener Bogen: Vor dem Startfeld bleiben die Felder leer, beim gewählten Titel wie
+// bei Etiketten, die „Fehlende Etiketten" übergeben hat.
+describe('etikettenStore: Startfeld', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		leereDruckwarteschlange();
+	});
+
+	it('lässt die Felder vor dem Startfeld leer, beim Titel und bei der Übergabe', async () => {
+		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1', 'B-2']));
+		await etikettenStore.waehleTitel({ id: 't3', titel: 'Titel', autor: 'Autorin' });
+		etikettenStore.startFeld = 3;
+		expect(etikettenStore.bogen).toEqual([
+			{ isBlank: true },
+			{ isBlank: true },
+			{ barcode_id: 'B-1', titel: 'Titel', autor: 'Autorin' },
+			{ barcode_id: 'B-2', titel: 'Titel', autor: 'Autorin' }
+		]);
+
+		druckWarteschlange.copies = [{ barcode_id: 'B-9', titel: 'Anderer', autor: null }];
+		expect(etikettenStore.bogen).toEqual([
+			{ isBlank: true },
+			{ isBlank: true },
+			{ barcode_id: 'B-9', titel: 'Anderer', autor: '' }
+		]);
+
+		leereDruckwarteschlange();
+		etikettenStore.startFeld = 1;
+		expect(etikettenStore.bogen.filter((l) => l.isBlank)).toEqual([]);
 	});
 });

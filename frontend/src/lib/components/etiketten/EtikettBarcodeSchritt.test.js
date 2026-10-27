@@ -5,13 +5,16 @@ vi.mock('../../stores/snackbars.svelte.js', () => ({
 	snackbars: { addToast: vi.fn() }
 }));
 
-vi.mock('../../apiFetch.js', () => ({
+// leseApiFehler bleibt echt: Ohne ihn wirft schon das Lesen einer Ablehnung (ARCHITEKTUR.md 8.14).
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn()
 }));
 
 import { apiFetch } from '../../apiFetch.js';
 import { etikettenStore } from '../../stores/etiketten.svelte.js';
 import EtikettBarcodeSchritt from './EtikettBarcodeSchritt.svelte';
+import { serverAntwort } from '../../serverAntwort.js';
 
 const apiFetchMock = vi.mocked(apiFetch);
 const KEIN_EXEMPLAR = 'Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.';
@@ -24,11 +27,14 @@ describe('Druck-Center, Schritt 2: Exemplare nicht geladen', () => {
 	});
 
 	it('zeigt den Ladefehler mit „Erneut versuchen“ und lädt darauf die Liste', async () => {
-		apiFetchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }));
+		apiFetchMock.mockResolvedValueOnce(
+			serverAntwort(503, { error: 'Die Datenbank antwortet nicht' })
+		);
 		await etikettenStore.waehleTitel({ id: 't1', titel: 'Titel', autor: '' });
 		const k = render(EtikettBarcodeSchritt);
 
 		expect(k.getByRole('alert').textContent).toContain('Exemplare nicht geladen');
+		expect(k.getByRole('alert').textContent).toContain('Die Datenbank antwortet nicht');
 		expect(k.queryByText(KEIN_EXEMPLAR)).toBeNull();
 
 		apiFetchMock.mockResolvedValueOnce(

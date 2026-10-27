@@ -38,9 +38,9 @@ function erzeugeEtikettenStore() {
 	// Zahl steht als Hinweis darunter. Dieselbe Regel wie repository.EtikettOffenBedingung.
 	let ausgesondertAnzahl = $state(0);
 	let laedtExemplare = $state(false);
-	// Ein gescheiterter Abruf ist ein eigener Zustand: Eine leere Liste hieße „kein Exemplar",
-	// und der Bogen bliebe leer, ohne dass jemand den Grund sieht.
-	let exemplareNichtGeladen = $state(false);
+	// Ein gescheiterter Abruf ist ein eigener Zustand mit seinem Grund: Eine leere Liste hieße
+	// „kein Exemplar", und der Bogen bliebe leer, ohne dass jemand den Grund sieht.
+	let exemplarFehler = $state('');
 	// Zählt die Abrufe der Exemplare: Nur die Antwort des jüngsten zählt. Die langsamere
 	// Antwort eines früher gewählten Titels stellte sonst dessen Nummern unter den neuen Titel.
 	let exemplarLauf = 0;
@@ -68,6 +68,8 @@ function erzeugeEtikettenStore() {
 
 	/** @type {Array<{isBlank?: boolean, barcode_id?: string, titel?: string, autor?: string}>} */
 	let bogen = $derived.by(() => {
+		const offsetCount = Math.max(0, startFeld - 1);
+		const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
 		if ((druckWarteschlange.copies?.length ?? 0) > 0) {
 			const copies = /** @type {any[]} */ (druckWarteschlange.copies);
 			const etikettenListe = copies.map((c) => ({
@@ -75,8 +77,6 @@ function erzeugeEtikettenStore() {
 				titel: c.titel,
 				autor: c.autor || ''
 			}));
-			const offsetCount = Math.max(0, startFeld - 1);
-			const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
 			return [...leereFelder, ...etikettenListe];
 		}
 
@@ -89,10 +89,6 @@ function erzeugeEtikettenStore() {
 				titel: gewaehlterTitel.titel,
 				autor: gewaehlterTitel.autor || ''
 			}));
-
-		const offsetCount = Math.max(0, startFeld - 1);
-		const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
-
 		return [...leereFelder, ...etikettenListe];
 	});
 
@@ -110,7 +106,7 @@ function erzeugeEtikettenStore() {
 		gewaehlterTitel = null;
 		vorhandeneExemplare = [];
 		ausgesondertAnzahl = 0;
-		exemplareNichtGeladen = false;
+		exemplarFehler = '';
 		exemplarSuche = '';
 		exemplarLauf++;
 		laedtExemplare = false;
@@ -213,7 +209,7 @@ function erzeugeEtikettenStore() {
 		laedtExemplare = true;
 		exemplarSuche = '';
 		ausgesondertAnzahl = 0;
-		exemplareNichtGeladen = false;
+		exemplarFehler = '';
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${gewaehlterTitel.id}/exemplare`);
 			if (res.ok) {
@@ -224,15 +220,16 @@ function erzeugeEtikettenStore() {
 					.filter((c) => !c.ist_ausgesondert)
 					.map((c) => ({ ...c, checked: true }));
 				ausgesondertAnzahl = alle.length - vorhandeneExemplare.length;
-			} else if (lauf === exemplarLauf) {
+			} else {
+				const grund = await leseApiFehler(res);
+				if (lauf !== exemplarLauf) return;
 				vorhandeneExemplare = [];
-				exemplareNichtGeladen = true;
+				exemplarFehler = grund;
 			}
 		} catch (err) {
 			if (lauf !== exemplarLauf) return;
-			console.error('Fehler beim Laden der Exemplare:', err);
 			vorhandeneExemplare = [];
-			exemplareNichtGeladen = true;
+			exemplarFehler = fehlertext(err);
 		} finally {
 			if (lauf === exemplarLauf) laedtExemplare = false;
 		}
@@ -311,8 +308,8 @@ function erzeugeEtikettenStore() {
 		get laedtExemplare() {
 			return laedtExemplare;
 		},
-		get exemplareNichtGeladen() {
-			return exemplareNichtGeladen;
+		get exemplarFehler() {
+			return exemplarFehler;
 		},
 		get ausgesondertAnzahl() {
 			return ausgesondertAnzahl;

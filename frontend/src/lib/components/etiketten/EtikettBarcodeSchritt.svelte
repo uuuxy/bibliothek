@@ -47,10 +47,10 @@
 				<div class="flex items-center justify-center py-4">
 					<Ladekreis size="md" />
 				</div>
-			{:else if etikettenStore.exemplareNichtGeladen}
+			{:else if etikettenStore.exemplarFehler}
 				<LadeFehler
 					titel="Exemplare nicht geladen"
-					text="Die Exemplare dieses Titels konnten nicht abgerufen werden. Welche es schon gibt, ist deshalb nicht zu sehen."
+					text={etikettenStore.exemplarFehler}
 					onerneut={etikettenStore.ladeExemplare}
 				/>
 			{:else if etikettenStore.vorhandeneExemplare.length === 0}
