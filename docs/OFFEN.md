@@ -151,11 +151,10 @@ Bekannt und offen:
 
 - Der Aufrufer ersetzt den Grund des Servers noch einmal durch einen festen Satz oder eine
   Markierung: die Statistik (Übersicht und Liste, `statistikAbruf.svelte.js`), die Klassenwahl
-  beim Klassensatz (`KLASSEN_LADEFEHLER`), der Vorschlag im Schadensdialog, die ISBN-Prüfung der
-  Buchmaske (`frageWennVergeben`), „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und
-  die Schlagworte in der Bestellung (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag
-  meldet bei jedem Fehler „Die DNB ist nicht erreichbar", auch wenn der Server „Keine gültige
-  ISBN" antwortet.
+  beim Klassensatz (`KLASSEN_LADEFEHLER`), die ISBN-Prüfung der Buchmaske (`frageWennVergeben`),
+  „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und die Schlagworte in der Bestellung
+  (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist
+  nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet.
 - Druck-Center: Scheitert nach dem Druck der Vermerk „gedruckt", steht das nur in der Konsole
   (`vermerkeGedruckt` in `etikettenDruck.js`). Die Etiketten bleiben auf der Liste der fehlenden
   und werden womöglich doppelt gedruckt.

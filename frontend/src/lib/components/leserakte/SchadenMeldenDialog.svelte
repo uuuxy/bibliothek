@@ -8,6 +8,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 
 	// `book.ohneForderung` = der Entleiher ist ein Kollege. Gesetzt wird es beim Öffnen
 	// (useLeserakte: oeffneSchaden), damit die Entscheidung an einer Stelle steht. Dann
@@ -59,11 +60,11 @@
 				if (!vonHand) schadensbetrag = v.betrag ?? 0;
 				herleitung = v.herleitung ?? '';
 			})
-			.catch(() => {
+			.catch((e) => {
 				if (abgebrochen) return;
 				// Kein stilles 0,00 €: Wer hier nichts liest, hielte den Startwert für
-				// einen berechneten Vorschlag.
-				herleitung = 'Vorschlag konnte nicht berechnet werden — bitte Betrag selbst eintragen.';
+				// einen berechneten Vorschlag. Der Grund steht dabei, etwa „Keine Verbindung zum Server".
+				herleitung = `Vorschlag konnte nicht berechnet werden: ${fehlertext(e).replace(/\.$/, '')}. Bitte Betrag selbst eintragen.`;
 			});
 
 		return () => {

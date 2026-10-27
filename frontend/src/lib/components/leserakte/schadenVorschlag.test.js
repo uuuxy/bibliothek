@@ -2,8 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor, fireEvent } from '@testing-library/svelte';
 import SchadenMeldenDialog from './SchadenMeldenDialog.svelte';
 import { apiFetch } from '../../apiFetch.js';
+import { serverAntwort } from '../../serverAntwort.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// leseApiFehler bleibt echt: Ohne ihn wirft schon das Lesen einer Ablehnung, und der Fehlerfall
+// bestünde, ohne dass sein Weg lief (ARCHITEKTUR.md 8.14).
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 // Gate gegen die Rückkehr der festen 15,00 € (OFFEN.md 9.3 a).
 //
@@ -82,12 +88,25 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		);
 	});
 
-	it('sagt es, wenn der Vorschlag nicht berechnet werden konnte', async () => {
+	// Mit dem Grund: Ohne ihn hieß jeder Fehlschlag gleich, ob das Netz fehlte oder der Server
+	// den Vorschlag ablehnte (OFFEN.md 5.106).
+	it.each([
+		[
+			'ohne Antwort',
+			() => Promise.reject(new Error('Keine Verbindung zum Server.')),
+			'Vorschlag konnte nicht berechnet werden: Keine Verbindung zum Server. Bitte Betrag selbst eintragen.'
+		],
+		[
+			'bei einer Ablehnung',
+			async () => serverAntwort(503, { error: 'Die Datenbank antwortet nicht' }),
+			'Vorschlag konnte nicht berechnet werden: Die Datenbank antwortet nicht. Bitte Betrag selbst eintragen.'
+		]
+	])('sagt %s, warum der Vorschlag fehlt', async (_, antwort, satz) => {
 		// mockImplementation statt mockRejectedValue: Letzteres erzeugt das abgelehnte
 		// Promise schon beim Aufsetzen des Mocks — also einen Tick, bevor der Dialog seine
 		// Kette daranhängt. Vitest meldet das als unbehandelte Ablehnung und färbt den Test
 		// rot, obwohl der Dialog den Fehler sauber fängt.
-		vi.mocked(apiFetch).mockImplementation(() => Promise.reject(new Error('Netz weg')));
+		vi.mocked(apiFetch).mockImplementation(/** @type {any} */ (antwort));
 
 		const screen = render(SchadenMeldenDialog, {
 			ausleihe: buch,
@@ -95,9 +114,7 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 			onSubmit: vi.fn()
 		});
 
-		await waitFor(() =>
-			expect(screen.container.textContent ?? '').toContain('bitte Betrag selbst eintragen')
-		);
+		await waitFor(() => expect(screen.container.textContent ?? '').toContain(satz));
 	});
 
 	// Der Vorschlag kann nach dem Tippen eintreffen, etwa bei langsamem Netz. Der getippte
