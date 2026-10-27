@@ -33,10 +33,6 @@ const BESTAND = {
 		1,
 		'Systematik-Vorschläge (Datalist)'
 	],
-	'src/lib/components/leser/KlassenDruckEinstieg.svelte': [
-		1,
-		'Klassenliste; der Weg über die Schülerdatei bleibt'
-	],
 	'src/lib/stores/etiketten.svelte.js': [
 		1,
 		'Klassengruppen als Filter (die Titelsuche daneben ist behoben)'

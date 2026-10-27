@@ -11,26 +11,36 @@
 	 * Etikettenbogens.
 	 */
 	import { onMount } from 'svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Select from '../ui/Select.svelte';
 
 	/** @type {string[]} */
 	let klassen = $state([]);
 	let klasse = $state('');
+	// Der Grund, wenn die Klassenliste nicht kam. Die Klasse wird hier gewählt, nicht getippt:
+	// Eine leere Auswahl ohne Wort sähe aus wie eine Schule ohne Klassen.
+	let ladefehler = $state('');
 
-	onMount(async () => {
+	async function ladeKlassen() {
+		ladefehler = '';
 		try {
 			const res = await apiFetch('/api/klassen');
-			if (res.ok) {
-				const daten = await res.json();
-				klassen = Array.isArray(daten) ? daten : [];
+			if (!res.ok) {
+				ladefehler = await leseApiFehler(res);
+				return;
 			}
-		} catch {
-			/* Ohne Klassenliste bleibt der Weg über die Leserdatei offen. */
+			const daten = await res.json();
+			klassen = Array.isArray(daten) ? daten : [];
+		} catch (e) {
+			ladefehler = fehlertext(e);
 		}
-	});
+	}
+
+	onMount(ladeKlassen);
 
 	function markieren() {
 		if (!klasse) return;
@@ -45,14 +55,18 @@
 		Aktionsleiste (Ausweiskarten oder Etikettenbogen, je nach Betriebsart im Reiter
 		„Schülerausweise“).
 	</p>
-	<div class="flex flex-wrap items-end gap-4">
-		<Select
-			bind:value={klasse}
-			options={klassen.map((k) => ({ value: k, label: k }))}
-			placeholder="Klasse wählen"
-			aria-label="Klasse"
-			class="w-48"
-		/>
-		<Button onclick={markieren} disabled={!klasse}>Klasse zum Druck markieren</Button>
-	</div>
+	{#if ladefehler}
+		<LadeFehler titel="Klassen nicht geladen" text={ladefehler} onerneut={ladeKlassen} />
+	{:else}
+		<div class="flex flex-wrap items-end gap-4">
+			<Select
+				bind:value={klasse}
+				options={klassen.map((k) => ({ value: k, label: k }))}
+				placeholder="Klasse wählen"
+				aria-label="Klasse"
+				class="w-48"
+			/>
+			<Button onclick={markieren} disabled={!klasse}>Klasse zum Druck markieren</Button>
+		</div>
+	{/if}
 </div>
