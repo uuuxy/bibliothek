@@ -2354,7 +2354,11 @@ sieht.
   `MutationObserver` aus `page.addInitScript` mit, sobald sie erscheinen: Eine neue ersetzt die
   stehende, und ein Blick nach dem Klick sieht nur die letzte. Der WebKit-Testbrowser zeichnet
   keine PDFs; ob Safari eines zeigt, beantwortet nur Safari über `safaridriver`, dort mit
-  „Entfernte Automatisierung erlauben".
+  „Entfernte Automatisierung erlauben". Eine Kamera ist eine Attrappe von
+  `navigator.mediaDevices.getUserMedia`, die den Strom einer Zeichenfläche liefert
+  (`captureStream`, Vorlage `frontend/e2e/passbild-ausschnitt.spec.js`) oder mit
+  `NotAllowedError` die Verweigerung nachstellt. Merkt sie sich jeden Strom, zeigt der
+  `readyState` seiner Spuren nach dem Schließen, ob eine Kamera weiterläuft.
 - **Eine Attrappe von `apiFetch.js` behält `leseApiFehler`:** `vi.mock('…/apiFetch.js', async
   (importOriginal) => ({ ...(await importOriginal()), apiFetch: vi.fn() }))`. Fehlt der Helfer in
   der Attrappe, wirft der Fehlerweg schon beim Lesen des Grundes; das catch des Bausteins fängt

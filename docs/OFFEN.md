@@ -30,8 +30,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 ### Fehlerfälle der Oberfläche, Bereich für Bereich
 
-Je Bereich jeder Knopf und jeder Scan, der mit dem Server oder dem Browser spricht, mit den fünf
-Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
+Je Bereich die Knöpfe und Scans, die etwas buchen, zählen, vermerken, drucken, verschicken oder
+löschen: Doppelklick bei langsamer Antwort, verweigertes Fenster oder Kamera, zweiter Versuch nach
+einem Fehler (5.106).
 
 - [x] Eine Fehlerantwort wird durch einen eigenen Satz ersetzt: 30 Stellen über den ganzen
   Bestand, mit Prüfregel. (5.106)
@@ -40,7 +41,7 @@ Störfällen aus 5.106. Zuerst, was zählt, bucht, vermerkt oder verschickt.
 - [x] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
 - [x] Mahnwesen, Bescheide und Schäden. (5.106)
 - [x] Druck-Center und Etiketten. (5.106)
-- [ ] Leserakte. (5.106)
+- [x] Leserakte. (5.106)
 - [ ] Abgänger und Versand an die Klassenleitungen. (5.106)
 - [ ] LMF-Plan, Lernmittel und Klassensätze. (5.106)
 - [ ] Bestellungen und Lieferanten. (5.106)
@@ -131,31 +132,27 @@ blockiert hatte; „Speichern" im Tab der Schüler-Etiketten brach nach einer Mi
 Kontoauszüge der Abgänger meldeten „Error: Failed to load PDF". Der Browser der Browser-Tests hat
 weder Popup-Blocker noch PDF-Betrachter, und ein Test geht meist den Weg, auf dem alles klappt.
 
-Je Bereich geht jeder Knopf und jeder Scan, der mit dem Server oder dem Browser spricht, durch fünf
-Störfälle, im Browser herbeigeführt (Chromium, Firefox, WebKit; Handgriffe in
-[ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14):
+Je Bereich gehen die Knöpfe und Scans, die etwas buchen, zählen, vermerken, drucken, verschicken
+oder löschen, durch drei Störfälle, im Browser herbeigeführt (Chromium, Firefox, WebKit;
+Handgriffe in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14):
 
-1. Der Server meldet einen Fehler: Steht seine Meldung da, auf Deutsch, und ist nichts als
-   erledigt vermerkt?
-2. Der Server antwortet langsam: Bleibt alles richtig, zählt ein Doppelklick doppelt?
-3. Das Netz ist weg: Kommt eine deutsche Meldung, ohne halb erledigten Zustand?
-4. Der Browser verweigert etwas (Fenster, Druckdialog, Kamera): Wird trotzdem etwas vermerkt?
-5. Später oder ein zweites Mal (nach einer Minute, nach dem Neuladen, beim zweiten Versuch): Geht
-   es noch, und zählt es nur einmal?
+1. Der Server antwortet langsam: Zählt ein Doppelklick doppelt?
+2. Der Browser verweigert etwas (Fenster, Druckdialog, Kamera): Wird trotzdem etwas vermerkt?
+3. Ein zweites Mal, nach einer Ablehnung des Servers, ohne Netz oder nach dem Neuladen: Geht es,
+   und zählt es nur einmal?
+
+Entschieden am 27.10.2026: Ob eine Meldung den Grund des Servers nennt, wird nicht mehr je Bereich
+gesucht, und Knöpfe, die nur lesen, gehen nicht mehr durch. Beleg aus der Leserakte: Von neun
+Funden hatten zwei eine Wirkung, beide an solchen Knöpfen; vier waren fehlende Gründe in Meldungen.
 
 Jeder Fund wird mit einem Test behoben, der am alten Stand rot ist. Danach geht die Suche nach
 derselben Form über den ganzen Bestand, und eine Prüfregel hält sie ([sweeps.md](sweeps.md)). Im
-Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)). Umfang: 179 Abrufe in
-105 Dateien der Oberfläche, 225 Routen am Server.
+Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)).
 
 Bekannt und offen:
 
-- Der Aufrufer ersetzt den Grund des Servers noch einmal durch einen festen Satz oder eine
-  Markierung: die Statistik (Übersicht und Liste, `statistikAbruf.svelte.js`), die Klassenwahl
-  beim Klassensatz (`KLASSEN_LADEFEHLER`), die ISBN-Prüfung der Buchmaske (`frageWennVergeben`),
-  „Titel öffnen" in der Titelverwaltung (`oeffneDetails`) und die Schlagworte in der Bestellung
-  (`TrefferPruefungSchlagworte.svelte`). Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist
-  nicht erreichbar", auch wenn der Server „Keine gültige ISBN" antwortet.
+- Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist nicht erreichbar", auch wenn der Server
+  „Keine gültige ISBN" antwortet: ein falscher Grund, nicht nur ein fehlender.
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
 
