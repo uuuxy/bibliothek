@@ -9,7 +9,12 @@ vi.mock('../../apiFetch.js', async (original) => ({
 	apiDelete: vi.fn()
 }));
 
-import { apiGet, apiPost, apiPut } from '../../apiFetch.js';
+vi.mock('../../stores/bestaetigung.svelte.js', async (original) => ({
+	...(await original()),
+	loeschenBestaetigen: vi.fn(async () => true)
+}));
+
+import { apiGet, apiPost, apiPut, apiDelete } from '../../apiFetch.js';
 import SystematikVerwaltung from './SystematikVerwaltung.svelte';
 
 /** @param {HTMLElement} feld */
@@ -103,5 +108,37 @@ describe('Sachgruppen: offene Zeile beim Nachladen', () => {
 			await k.findByLabelText('Bezeichnung bearbeiten')
 		);
 		expect(feld.value).toBe('Deutsch als Zweitsprache');
+	});
+});
+
+// Ein zweiter Auftrag zum Löschen vor der Antwort schickte ein zweites DELETE: Nach „Sachgruppe
+// gelöscht." stand „Sachgruppe nicht gefunden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('Sachgruppen: Löschen', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(apiGet).mockResolvedValue([{ id: 's1', kuerzel: 'Deu', bezeichnung: 'Deutsch' }]);
+	});
+
+	it('schickt kein zweites DELETE, solange das erste läuft', async () => {
+		/** @type {() => void} */
+		let fertig = () => {};
+		vi.mocked(apiDelete).mockImplementation(
+			() => new Promise((weiter) => (fertig = () => weiter(null)))
+		);
+		const k = render(SystematikVerwaltung);
+		const knopf = /** @type {HTMLButtonElement} */ (
+			await k.findByRole('button', { name: 'Löschen' })
+		);
+
+		await fireEvent.click(knopf);
+		await waitFor(() => expect(apiDelete).toHaveBeenCalledTimes(1));
+		await fireEvent.click(knopf);
+		await new Promise((weiter) => setTimeout(weiter));
+
+		expect(apiDelete, 'ein zweites DELETE vor der Antwort').toHaveBeenCalledTimes(1);
+		expect(knopf.disabled, 'gesperrt, solange das Löschen läuft').toBe(true);
+
+		fertig();
+		await waitFor(() => expect(knopf.disabled).toBe(false));
 	});
 });

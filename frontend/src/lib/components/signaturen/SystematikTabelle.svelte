@@ -7,6 +7,7 @@
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 
 	/**
 	 * Die Sachgruppen als Tabelle; je Zeile ändern oder löschen. Nach jeder Änderung lädt
@@ -24,6 +25,10 @@
 	let verlangt = $state(false);
 	const kuerzelFehlt = $derived(verlangt && !bearbeiteKuerzel.trim());
 	const bezeichnungFehlt = $derived(verlangt && !bearbeiteBezeichnung.trim());
+	// Die Sachgruppe, deren Löschen läuft; bis zur Antwort ist „Löschen" gesperrt, der Ladekreis
+	// steht nur in ihrer Zeile. Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE,
+	// und nach „Sachgruppe gelöscht." stand „Sachgruppe nicht gefunden".
+	let loescht = $state(/** @type {string | null} */ (null));
 
 	/** @param {any} eintrag */
 	function starteBearbeiten(eintrag) {
@@ -71,19 +76,23 @@
 
 	/** @param {any} eintrag */
 	async function loeschen(eintrag) {
+		if (loescht) return;
 		if (
 			!(await loeschenBestaetigen(
 				`Sachgruppe „${eintrag.kuerzel} – ${eintrag.bezeichnung}“ löschen?`
 			))
 		)
 			return;
+		loescht = eintrag.id;
 		try {
 			await apiDelete(`/api/systematics/${eintrag.id}`);
+			await onGeaendert();
+			snackbars.addToast('Sachgruppe gelöscht.', 'success');
 		} catch {
-			return; // Meldung kam bereits aus apiDelete (z. B. "hängt noch an Büchern").
+			// Meldung kam bereits aus apiDelete (z. B. "hängt noch an Büchern").
+		} finally {
+			loescht = null;
 		}
-		await onGeaendert();
-		snackbars.addToast('Sachgruppe gelöscht.', 'success');
 	}
 </script>
 
@@ -134,7 +143,17 @@
 							<Button size="sm" variant="secondary" onclick={() => starteBearbeiten(eintrag)}>
 								Ändern
 							</Button>
-							<Button size="sm" variant="danger" onclick={() => loeschen(eintrag)}>Löschen</Button>
+							<Button
+								size="sm"
+								variant="danger"
+								onclick={() => loeschen(eintrag)}
+								disabled={loescht !== null}
+							>
+								{#if loescht === eintrag.id}
+									<Ladekreis size="sm" farbe="aktuell" />
+								{/if}
+								Löschen
+							</Button>
 						</td>
 					{/if}
 				</tr>
