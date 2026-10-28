@@ -20,7 +20,7 @@
 // Seite und scrollen in sich. Mit einer festen Rechnung für die Höhe der Liste ragte sie
 // darunter hinaus, und die Seite bekam einen zweiten Scrollbalken für die letzten Pixel.
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedBestellbedarf } from './helpers.js';
+import { uiLogin, seedBestellbedarf, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 import { MINDESTHOEHE } from '../src/lib/actions/resthoehe.js';
 
 // Der Test bringt seinen Bedarf selbst mit, statt ihn vorauszusetzen. Vorher war er rot,
@@ -256,4 +256,58 @@ test('Die Trefferliste der Titelsuche liegt bei leerem Warenkorb ganz in der Bes
 		`Die Trefferliste endet bei ${lage.listeUnten} px, die Bestellspalte bei ${lage.spalteUnten} px`
 	).toBeLessThanOrEqual(lage.spalteUnten);
 	expect(lage.spalteScrollt, 'Die Bestellspalte scrollt wegen der Trefferliste').toBe(false);
+});
+
+// Erschien ein Hinweis über dem Bestellwesen erst nach dem Aufbau der Spalte, rückte sie um seine
+// Höhe unter den Rand: Keine beobachtete Größe änderte sich, und gemessen wurde nicht neu. In der
+// ganzen Suite hing das an der Reihenfolge der Antworten (ein früherer Fall lässt einen
+// Hauptlieferanten zurück, die öffentliche Adresse fehlt). Hier steht das Rennen fest: Die Antwort,
+// die den Hinweis auslöst, kommt anderthalb Sekunden nach dem Aufbau.
+test('Ein Hinweis, der nach dem Aufbau erscheint, schiebt die Bestellspalte nicht unter den Rand', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const adresse = querySQL(
+		`SELECT wert FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse'`
+	);
+	seedSQL(`
+		DELETE FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse';
+		UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant;
+		INSERT INTO lieferanten (name, email, kundennummer, ist_hauptlieferant)
+		VALUES ('E2E-Spaeter-Hinweis ${s}', 'e2e-${s}@example.invalid', 'K-${s}', true);
+	`);
+	try {
+		await page.route('**/api/bestellungen/konfiguration', async (route) => {
+			await new Promise((fertig) => setTimeout(fertig, 1500));
+			return route.fallback();
+		});
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await uiLogin(page);
+		await page.goto('/bestellungen');
+		await expect(page.getByText('Bestellungen gehen ohne Bestätigungs-Link raus')).toBeVisible({
+			timeout: 10_000
+		});
+		await expect
+			.poll(
+				() =>
+					page.evaluate(() => {
+						const spalte = document.getElementById('bestellspalte');
+						if (!spalte) throw new Error('Die Bestellspalte (#bestellspalte) gibt es nicht mehr');
+						return Math.round(spalte.getBoundingClientRect().bottom);
+					}),
+				{ timeout: 5000, message: 'Die Bestellspalte reicht nach dem Hinweis unter den Rand' }
+			)
+			.toBeLessThanOrEqual(800);
+	} finally {
+		// Der Hauptlieferant der Anlage kommt mit dem globalTeardown zurück (e2e/global-setup.js).
+		seedSQL(`
+			DELETE FROM lieferanten WHERE name = 'E2E-Spaeter-Hinweis ${s}';
+			${
+				adresse
+					? `INSERT INTO system_einstellungen (schluessel, wert) VALUES ('oeffentliche_adresse', '${adresse}')
+					   ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;`
+					: ''
+			}
+		`);
+	}
 });

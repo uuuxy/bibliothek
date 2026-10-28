@@ -41,9 +41,16 @@ export function resthoehe(node, wahl = {}) {
 	window.addEventListener('scroll', planen, true);
 	window.addEventListener('resize', planen);
 	// Die Oberkante wandert auch, wenn sich über dem Element etwas ändert: ein Band, das später
-	// erscheint, eine Liste, die geladen ist. Das zeigt sich an der Höhe des Inhalts im Bereich.
+	// erscheint, eine Liste, die geladen ist. Das zeigt sich an der Höhe des Inhalts im Bereich
+	// oder an der eines Vorfahren; ein Band, das neu dazukommt, meldet nur sein Vorfahr.
 	const beobachter = new ResizeObserver(planen);
-	for (const el of [document.body, node, bereich, ...(bereich?.children ?? [])]) {
+	for (const el of [
+		document.body,
+		node,
+		bereich,
+		...(bereich?.children ?? []),
+		...vorfahren(node, bereich)
+	]) {
 		if (el) beobachter.observe(el);
 	}
 	return {
@@ -59,6 +66,18 @@ export function resthoehe(node, wahl = {}) {
 			cancelAnimationFrame(geplant);
 		}
 	};
+}
+
+/**
+ * Die Vorfahren des Elements bis vor den Bereich.
+ * @param {HTMLElement} node
+ * @param {HTMLElement | null} bereich
+ * @returns {HTMLElement[]}
+ */
+function vorfahren(node, bereich) {
+	const liste = [];
+	for (let e = node.parentElement; e && e !== bereich; e = e.parentElement) liste.push(e);
+	return liste;
 }
 
 /**
