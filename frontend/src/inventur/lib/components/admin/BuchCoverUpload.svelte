@@ -19,6 +19,9 @@
 	/** @param {Event} e */
 	function beiDateiwahl(e) {
 		onCoverUpload(e);
+		// Die Datei ist übergeben. Bliebe sie im Feld, meldeten Chromium und WebKit bei derselben
+		// Datei kein change: Nach einem gescheiterten Hochladen ging der zweite Versuch nicht hinaus.
+		if (fileInput) fileInput.value = '';
 	}
 </script>
 

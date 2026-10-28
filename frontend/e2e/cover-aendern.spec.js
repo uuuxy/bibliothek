@@ -13,7 +13,10 @@
 // dass die Falle weg ist UND dass die Fähigkeit geblieben ist. Nur das erste zu prüfen
 // hiesse, den Rückbau gegen sich selbst zu testen.
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { writeFileSync } from 'node:fs';
+import { uiLogin, gehZu, seedSQL, uniqueSuffix, raeumtNachJedemFallAuf } from './helpers.js';
+
+const angelegt = raeumtNachJedemFallAuf(test);
 
 test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" bleibt', async ({
 	page
@@ -81,4 +84,60 @@ test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" blei
 		`Auf dem Cover liegt ein Bedienelement (${daraufGetippt.bedienbar}). Ein Tipp auf das ` +
 			`Bild darf keinen Dateidialog öffnen — dafür gibt es „Cover ändern" darunter.`
 	).toBe('');
+});
+
+// Nach einem gescheiterten Hochladen ging dieselbe Datei kein zweites Mal hinaus: Das Dateifeld
+// hielt sie noch, und der Browser meldet kein change, wenn die Wahl gleich bleibt (Chromium und
+// WebKit; Firefox schickte sie). Gewählt wird über den Dateidialog wie von Hand (OFFEN.md 5.106).
+test('Cover: nach einem gescheiterten Hochladen geht dieselbe Datei noch einmal hinaus', async ({
+	page
+}, info) => {
+	const marke = uniqueSuffix();
+	const titel = `Cover zweiter Versuch ${marke}`;
+	angelegt.titel.push(titel);
+	// Mit einem Exemplar: Die Titelliste zeigt zuerst die Titel mit Bestand.
+	seedSQL(`
+		WITH t AS (INSERT INTO buecher_titel (titel, autor, signatur) VALUES ('${titel}', 'Probe', 'CZ 1') RETURNING id)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+		SELECT id, 'CZ-${marke.slice(-8)}', true FROM t;`);
+	const datei = info.outputPath('cover.png');
+	// Ein PNG von 1 × 1 Bildpunkt.
+	const png =
+		'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+	writeFileSync(datei, Buffer.from(png, 'base64'));
+	let versuche = 0;
+	// Beide Antworten kommen von hier: Ein echtes Hochladen legte bei jedem Lauf eine Datei unter
+	// uploads ab.
+	await page.route(/\/api\/books\/[^/]+\/cover-upload$/, (route) => {
+		versuche += 1;
+		const rumpf =
+			versuche === 1
+				? { error: 'Datenbank nicht erreichbar' }
+				: { coverUrl: '/uploads/covers/e2e.webp' };
+		return route.fulfill({
+			status: versuche === 1 ? 503 : 200,
+			contentType: 'application/json',
+			body: JSON.stringify(rumpf)
+		});
+	});
+	await uiLogin(page);
+	await gehZu(page, '/medienkatalog');
+	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(titel);
+	await page.getByText(titel, { exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+
+	const waehle = async () => {
+		const dialog = page.waitForEvent('filechooser');
+		await page.getByRole('button', { name: 'Cover ändern' }).click();
+		await (await dialog).setFiles(datei);
+	};
+	await waehle();
+	await expect(page.getByText('Datenbank nicht erreichbar')).toBeVisible();
+	await waehle();
+
+	await expect
+		.poll(() => versuche, { message: 'dieselbe Datei ging kein zweites Mal hinaus', timeout: 5000 })
+		.toBe(2);
+	await expect(page.getByText('Cover erfolgreich hochgeladen')).toBeVisible();
 });
