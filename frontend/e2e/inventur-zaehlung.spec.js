@@ -1,17 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
-// Ein Buch, das laut Programm verliehen ist, steht im Regal und wird gescannt. Der Abschluss
-// erwartet es nicht, gefunden ist damit keins der erwarteten. Zählte die Seite jede Erfassung,
-// zeigte sie „2 / 2 erfasst", die Rückfrage sagte „keines als verloren", und der Abschluss buchte
-// doch einen Verlust. Gescannt werden ein erwartetes Buch und das verliehene; das zweite
-// erwartete fehlt.
-test('Inventur: Ein verliehenes Buch im Regal zählt nicht als gefunden', async ({ page }) => {
+// Im Regal stehen zwei erwartete Bücher, dazu ein gesperrtes und eines, das laut Programm
+// verliehen ist. Das gesperrte erwartet der Abschluss nicht: Gescannt zählt es nicht als gefunden.
+// Zählte die Seite jede Erfassung, zeigte sie „2 / 2 erfasst", die Rückfrage sagte „keines als
+// verloren", und der Abschluss buchte doch einen Verlust. Das verliehene bucht der Scan zurück wie
+// die Theke; danach gehört es zu den erwarteten und ist gefunden. Das zweite erwartete fehlt.
+test('Inventur: Zählung wie beim Abschluss, ein verliehenes Buch wird zurückgebucht', async ({
+	page
+}) => {
 	await uiLogin(page);
 	const s = uniqueSuffix();
 	const signatur = `E2E-INVZ-${s}`;
-	const [da, fehlt, verliehen] = ['DA', 'FEHLT', 'VERL'].map((b) => `B-INVZ${b}-${s}`);
-	const barcodes = [da, fehlt, verliehen].map((b) => `'${b}'`).join(', ');
+	const [da, fehlt, gesperrt, verliehen] = ['DA', 'FEHLT', 'GESP', 'VERL'].map(
+		(b) => `B-INVZ${b}-${s}`
+	);
+	const barcodes = [da, fehlt, gesperrt, verliehen].map((b) => `'${b}'`).join(', ');
 
 	try {
 		seedSQL(`
@@ -20,7 +24,7 @@ test('Inventur: Ein verliehenes Buch im Regal zählt nicht als gefunden', async 
 				VALUES ('E2E-Zaehlbuch-${s}', '${signatur}') RETURNING id
 			), ex AS (
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-				SELECT id, b, true FROM t, unnest(ARRAY[${barcodes}]) AS b
+				SELECT id, b, b <> '${gesperrt}' FROM t, unnest(ARRAY[${barcodes}]) AS b
 				RETURNING id, barcode_id
 			), sch AS (
 				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -42,12 +46,25 @@ test('Inventur: Ein verliehenes Buch im Regal zählt nicht als gefunden', async 
 		await scan.fill(da);
 		await scan.press('Enter');
 		await expect(fortschritt).toHaveText(/1 \/ 2/);
-		await scan.fill(verliehen);
+		await scan.fill(gesperrt);
 		await scan.press('Enter');
-		await expect(page.getByText('Buch ist laut System aktuell ausgeliehen.')).toBeVisible();
-		await expect(fortschritt, 'das verliehene Buch erwartet der Abschluss nicht').toHaveText(
+		await expect(page.getByText(`Barcode: ${gesperrt}`)).toBeVisible();
+		await expect(fortschritt, 'das gesperrte Buch erwartet der Abschluss nicht').toHaveText(
 			/1 \/ 2/
 		);
+		await scan.fill(verliehen);
+		await scan.press('Enter');
+		await expect(
+			page.getByText('Zurückgebucht: Das Buch war laut Programm noch ausgeliehen.')
+		).toBeVisible();
+		await expect(fortschritt, 'zurückgebucht ist das Buch erwartet und gefunden').toHaveText(
+			/2 \/ 3/
+		);
+		expect(
+			querySQL(`SELECT count(*) FROM ausleihen a JOIN buecher_exemplare e ON e.id = a.exemplar_id
+				WHERE e.barcode_id = '${verliehen}' AND a.rueckgabe_am IS NULL`),
+			'die Ausleihe ist beendet'
+		).toBe('0');
 
 		await page.getByRole('button', { name: 'Inventur abschließen' }).click();
 		await expect(

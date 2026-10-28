@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -32,16 +33,6 @@ func ladeExemplarFuerScan(ctx context.Context, abfragen *repository.InventurAbfr
 	return exemplar, true
 }
 
-// scanWarnungen sammelt Hinweise zu einem gescannten Exemplar, die den Scan nicht aufhalten.
-// Ein Buch außerhalb des Bereichs ist keine Warnung, sondern wird abgewiesen (verbucheScan).
-func scanWarnungen(istVerliehen bool) []string {
-	var warnungen []string
-	if istVerliehen {
-		warnungen = append(warnungen, "Buch ist laut System aktuell ausgeliehen.")
-	}
-	return warnungen
-}
-
 // scanAnfrage nennt den Lauf und den gescannten Barcode.
 type scanAnfrage struct {
 	LaufID    string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
@@ -61,15 +52,18 @@ type scanAntwort struct {
 	*repository.LaufStand
 }
 
-// ScanVerbuchen verbucht den Scan eines Exemplars in einem offenen Lauf.
-func (t *Tueren) ScanVerbuchen() http.HandlerFunc {
-	return t.verbucheScan
+// ScanVerbuchen verbucht den Scan eines Exemplars in einem offenen Lauf. Ein verliehenes Buch
+// bucht rueckgabe zurück (hinweiseZumVerliehenen).
+func (t *Tueren) ScanVerbuchen(rueckgabe rueckgabeBuchung) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t.verbucheScan(w, r, rueckgabe)
+	}
 }
 
 // verbucheScan verbucht einen Scan. Eine eigene Methode statt einer Funktion in der Tür,
 // damit die vielen frühen Rücksprünge nicht zusätzlich als Verschachtelung zählen (SonarQube
 // S3776).
-func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
+func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request, rueckgabe rueckgabeBuchung) {
 	var req scanAnfrage
 	if !tuer.LeseAnfrage(w, r, &req) {
 		return
@@ -137,12 +131,34 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var warnungen []string
+	if exemplar.IstVerliehen {
+		var zurueck bool
+		warnungen, zurueck = t.hinweiseZumVerliehenen(r, rueckgabe, exemplar.BarcodeID)
+		if zurueck {
+			stand = standNachRueckgabe(ctx, abfragen, lauf, stand)
+		}
+	}
+
 	tuer.AntworteJSON(w, http.StatusOK, scanAntwort{
 		BarcodeID: exemplar.BarcodeID,
 		Titel:     exemplar.Titel,
 		CoverURL:  exemplar.CoverURL,
 		Status:    "erfasst",
-		Warnungen: scanWarnungen(exemplar.IstVerliehen),
+		Warnungen: warnungen,
 		LaufStand: &stand,
 	})
+}
+
+// standNachRueckgabe zählt den Stand neu, nachdem der Scan ein verliehenes Buch zurückgebucht hat:
+// Es gehört jetzt zu den erwarteten und ist gescannt, zählt also als gefunden. Scheitert die
+// Zählung, bleibt der Stand von vorher; Scan und Rückgabe sind gebucht, und der nächste Scan
+// bringt den neuen Stand.
+func standNachRueckgabe(ctx context.Context, abfragen *repository.InventurAbfragen, lauf *repository.Inventurlauf, vorher repository.LaufStand) repository.LaufStand {
+	stand, err := abfragen.ZaehleStand(ctx, lauf.ID, lauf.Bereich())
+	if err != nil {
+		slog.Warn("Inventur: Stand nach der Rückgabe nicht gezählt", "lauf", lauf.ID, "fehler", err)
+		return vorher
+	}
+	return stand
 }

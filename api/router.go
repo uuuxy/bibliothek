@@ -206,7 +206,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Die Routenlisten je Sache.
 	s.registriereOeffentlicheRouten(mux)
-	s.registriereThekenUndInventurRouten(mux, leserAbfragen, katalogAbfragen, omniboxDienst, nachbuchDienst)
+	s.registriereThekenUndInventurRouten(mux, leserAbfragen, katalogAbfragen, omniboxDienst, nachbuchDienst, ausleihDienst)
 	s.registriereLeserRouten(mux, leserAbfragen, mahnAbfragen, protokollAbfragen)
 	s.registriereKatalogRouten(mux, katalogAbfragen, protokollAbfragen)
 	s.registriereSystemRouten(mux, protokollAbfragen, kontoAbfragen, s.DB.Pool)

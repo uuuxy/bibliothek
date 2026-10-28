@@ -7,7 +7,7 @@ import (
 	"bibliothek/internal/service"
 )
 
-func (s *Server) registriereThekenUndInventurRouten(mux *http.ServeMux, leserAbfragen *repository.LeserAbfragen, katalogAbfragen *repository.KatalogAbfragen, omniboxDienst *service.OmniboxDienst, nachbuchDienst *service.NachbuchDienst) {
+func (s *Server) registriereThekenUndInventurRouten(mux *http.ServeMux, leserAbfragen *repository.LeserAbfragen, katalogAbfragen *repository.KatalogAbfragen, omniboxDienst *service.OmniboxDienst, nachbuchDienst *service.NachbuchDienst, ausleihDienst *service.AusleihDienst) {
 	// Die Eingabe der Omnibox: perform_actions, nicht view_students, weil das die Kernfunktion
 	// der Theke ist (Ausleihe, Rückgabe, Scan, Suche). So arbeitet die Rolle Helfer an der Theke
 	// ohne die breiten Rechte von view_students (Schülerlisten, Mahnwesen, Sammeldruck der
@@ -33,7 +33,7 @@ func (s *Server) registriereThekenUndInventurRouten(mux *http.ServeMux, leserAbf
 	// Inventur
 	mux.Handle("GET /api/inventur/sessions", s.verlangeRecht("inventory_scan")(s.inventurlauf().LaufendeInventuren()))
 	mux.Handle("POST /api/inventur/start", s.verlangeRecht("manage_inventory")(s.inventurlauf().InventurStarten()))
-	mux.Handle("POST /api/inventur/scan", s.verlangeRecht("inventory_scan")(s.inventurlauf().ScanVerbuchen()))
+	mux.Handle("POST /api/inventur/scan", s.verlangeRecht("inventory_scan")(s.inventurlauf().ScanVerbuchen(ausleihDienst)))
 	mux.Handle("POST /api/inventur/finish", s.verlangeRecht("manage_inventory")(s.inventurlauf().InventurAbschliessen()))
 	// Der Fehlbestand einer bereits abgeschlossenen Inventur — zum Nachsuchen und Ausdrucken.
 	// Beide gehören zusammen: /abgeschlossen liefert die session_id, /fehlbestand die

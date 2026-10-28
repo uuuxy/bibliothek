@@ -88,7 +88,8 @@ func inventurScan(t *testing.T, srv *Tueren, laufID, barcode string) *httptest.R
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/scan", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.ScanVerbuchen().ServeHTTP(rec, req)
+	// Ohne Anmeldung bucht der Scan kein verliehenes Buch zurück; der Dienst bleibt ungenutzt.
+	srv.ScanVerbuchen(nil).ServeHTTP(rec, req)
 	return rec
 }
 
