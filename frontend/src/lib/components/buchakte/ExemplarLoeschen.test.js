@@ -108,3 +108,72 @@ describe('Buchakte: markierte Exemplare löschen', () => {
 		expect(screen.getByText('1 markiert')).toBeTruthy();
 	});
 });
+
+// Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE: Nach „Exemplar erfolgreich
+// gelöscht" stand „Exemplar nicht gefunden oder schon ausgebucht", beim Löschen der markierten
+// „2 von 2 Exemplaren nicht gelöscht", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('Buchakte: ein Auftrag je Exemplar', () => {
+	const leereWarteschlange = () => new Promise((weiter) => setTimeout(weiter));
+	/** @type {((antwort: any) => void)[]} */
+	let offen = [];
+	const exemplare = () =>
+		['e1', 'e2'].map((id, i) => ({
+			id,
+			barcode_id: `B-${i + 1}`,
+			ist_ausleihbar: true,
+			ist_verfuegbar: true,
+			im_bestand: true
+		}));
+
+	beforeEach(() => {
+		offen = [];
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockImplementation(() => new Promise((fertig) => offen.push(fertig)));
+		authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
+	});
+	const baue = () =>
+		render(BuchakteExemplare, {
+			props: { exemplare: exemplare(), titel: { id: 't-1', title: 'Momo' }, ladeAlles: () => {} }
+		});
+
+	it('schickt für dasselbe Exemplar kein zweites DELETE, solange das erste läuft', async () => {
+		const screen = baue();
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getAllByRole('button', { name: 'Exemplar löschen' })[0]
+		);
+
+		await fireEvent.click(knopf);
+		await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(1));
+		await fireEvent.click(knopf);
+		await leereWarteschlange();
+
+		expect(apiFetch, 'ein zweites DELETE vor der Antwort').toHaveBeenCalledTimes(1);
+		expect(knopf.disabled, 'gesperrt, solange das Löschen läuft').toBe(true);
+
+		for (const liefere of offen)
+			liefere(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+	});
+
+	it('schickt für die markierten Exemplare kein zweites DELETE, solange das erste läuft', async () => {
+		const screen = baue();
+		for (const nummer of ['B-1', 'B-2']) {
+			await fireEvent.click(screen.getByLabelText(`Exemplar ${nummer} auswählen`));
+		}
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: 'Löschen' })
+		);
+
+		await fireEvent.click(knopf);
+		await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(2));
+		await fireEvent.click(knopf);
+		await leereWarteschlange();
+
+		expect(apiFetch, 'zweite DELETE vor der Antwort').toHaveBeenCalledTimes(2);
+		expect(knopf.disabled, 'gesperrt, solange das Löschen läuft').toBe(true);
+
+		for (const liefere of offen)
+			liefere(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+	});
+});

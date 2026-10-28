@@ -14,12 +14,17 @@
 	import ExemplarStandortDialog from './ExemplarStandortDialog.svelte';
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { BookOpen, Trash } from '@lucide/svelte';
 
 	/** @type {{ exemplare: any[], titel: any, ladeAlles: (id: string) => void }} */
 	let { exemplare = $bindable([]), titel, ladeAlles } = $props();
 
 	const gewaehlteExemplare = new SvelteSet();
+	// Exemplare, deren Löschen läuft. Ein zweiter Auftrag vor der Antwort schickte ein zweites
+	// DELETE, und nach dem Erfolg des ersten stand „Exemplar nicht gefunden oder schon ausgebucht".
+	const loescht = new SvelteSet();
+	const markierteLoeschen = $derived([...gewaehlteExemplare].every((id) => loescht.has(id)));
 	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 	// Löschen hängt am Server an delete_books (routen_katalog.go) — die Leiste zeigt den Knopf
@@ -64,7 +69,9 @@
 
 	/** @param {any} ex */
 	async function loescheExemplar(ex) {
+		if (loescht.has(ex.id)) return;
 		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
+		loescht.add(ex.id);
 		try {
 			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
 				method: 'DELETE',
@@ -85,15 +92,19 @@
 			}
 		} catch {
 			melde('Netzwerkfehler beim Löschen.', 'error');
+		} finally {
+			loescht.delete(ex.id);
 		}
 	}
 
 	async function loescheGewaehlte() {
-		if (gewaehlteExemplare.size === 0) return;
-		if (!(await loeschenBestaetigen(`${gewaehlteExemplare.size} Exemplare löschen?`))) return;
+		const ids = [...gewaehlteExemplare].filter((id) => !loescht.has(id));
+		if (ids.length === 0) return;
+		if (!(await loeschenBestaetigen(`${ids.length} Exemplare löschen?`))) return;
+		for (const id of ids) loescht.add(id);
 
 		const ergebnisse = await Promise.allSettled(
-			Array.from(gewaehlteExemplare).map(async (id) => {
+			ids.map(async (id) => {
 				const res = await apiFetch(`/api/buecher/exemplare/${id}`, {
 					method: 'DELETE',
 					credentials: 'include'
@@ -103,6 +114,7 @@
 				return id;
 			})
 		);
+		for (const id of ids) loescht.delete(id);
 
 		// Was nicht gelöscht ist, bleibt markiert; die Meldung nennt den Grund des Servers.
 		const gruende = [];
@@ -138,6 +150,7 @@
 				{ex}
 				gewaehlt={gewaehlteExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}
+				loescht={loescht.has(ex.id)}
 				onDelete={() => loescheExemplar(ex)}
 				onEtikett={darfEtikett ? () => etikettDrucken(ex) : undefined}
 			/>
@@ -159,8 +172,12 @@
 			<Button variant="secondary" onclick={() => (standortOffen = true)}>Standort ändern</Button>
 			<Button onclick={() => (eigentumOffen = true)}>Eigentum ändern</Button>
 			{#if darfLoeschen}
-				<Button variant="danger" onclick={loescheGewaehlte}>
-					<Trash class="h-4 w-4" aria-hidden="true" />
+				<Button variant="danger" onclick={loescheGewaehlte} disabled={markierteLoeschen}>
+					{#if markierteLoeschen}
+						<Ladekreis size="sm" farbe="aktuell" />
+					{:else}
+						<Trash class="h-4 w-4" aria-hidden="true" />
+					{/if}
 					Löschen
 				</Button>
 			{/if}

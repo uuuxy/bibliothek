@@ -5,14 +5,24 @@
 	import { exemplarStatus } from './exemplarStatus.js';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Pencil, Plus, Printer, Trash } from '@lucide/svelte';
 
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
 	 * (Barcode/Status) lokal; Auswahl, Löschen und Etikett laufen über Callbacks zum Eltern-Tab.
-	 * @type {{ ex: any, gewaehlt: boolean, darfBearbeiten?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
+	 * `loescht`: Das Löschen läuft; der Papierkorb ist bis zur Antwort gesperrt.
+	 * @type {{ ex: any, gewaehlt: boolean, darfBearbeiten?: boolean, loescht?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
 	 */
-	let { ex, gewaehlt, darfBearbeiten = false, onToggleSelect, onDelete, onEtikett } = $props();
+	let {
+		ex,
+		gewaehlt,
+		darfBearbeiten = false,
+		loescht = false,
+		onToggleSelect,
+		onDelete,
+		onEtikett
+	} = $props();
 
 	let barcodeBearbeiten = $state(false);
 
@@ -116,10 +126,15 @@
 						<button
 							aria-label="Exemplar löschen"
 							data-tip="Exemplar löschen"
-							class="icon-btn text-on-surface-variant hover:text-error"
+							class="icon-btn text-on-surface-variant hover:text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
 							onclick={onDelete}
+							disabled={loescht}
 						>
-							<Trash class="h-4 w-4" aria-hidden="true" />
+							{#if loescht}
+								<Ladekreis size="sm" farbe="aktuell" />
+							{:else}
+								<Trash class="h-4 w-4" aria-hidden="true" />
+							{/if}
 						</button>
 					{/if}
 				</div>
