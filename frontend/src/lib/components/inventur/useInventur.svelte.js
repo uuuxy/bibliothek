@@ -7,15 +7,15 @@ import { spieleErfolgston, spieleFehlerton } from '../../utils/audio.js';
 
 /**
  * Was die Rückfrage vor dem Abschluss sagt: wie viele Bücher als verloren gebucht werden.
- * @param {number} offen erwartete, nicht gescannte Exemplare
+ * @param {number} fehlend erwartete, nicht gescannte Exemplare, wie der Server sie zählt
  */
-export function abschlussText(offen) {
-	if (offen <= 0) {
+export function abschlussText(fehlend) {
+	if (fehlend <= 0) {
 		return 'Alle Bücher aus dem Bereich dieser Inventur sind gescannt. Es wird keines als verloren markiert.';
 	}
-	return offen === 1
+	return fehlend === 1
 		? '1 Buch aus dem Bereich dieser Inventur ist nicht gescannt. Es wird unwiderruflich als verloren markiert und ausgesondert.'
-		: `${offen} Bücher aus dem Bereich dieser Inventur sind nicht gescannt. Sie werden unwiderruflich als verloren markiert und ausgesondert.`;
+		: `${fehlend} Bücher aus dem Bereich dieser Inventur sind nicht gescannt. Sie werden unwiderruflich als verloren markiert und ausgesondert.`;
 }
 
 /**
@@ -44,7 +44,7 @@ export function useInventur() {
 		try {
 			const r = await scanne(lauf.laufKennung, barcode);
 			const ergebnis = deuteScanErgebnis(r, barcode);
-			if (ergebnis.zaehlen) lauf.stand.erfasst = ergebnis.erfasst;
+			if (ergebnis.zaehlen) Object.assign(lauf.stand, ergebnis.stand);
 			letzterScan = ergebnis.lastScan;
 			// Der Ton folgt wie an der Theke der Buchung: Gezählt klingt nach Erfolg, auch mit
 			// Hinweis; was nicht zählt, gibt den Fehlerton, damit man auf den Bildschirm sieht.
@@ -123,7 +123,7 @@ export function useInventur() {
 		await scansGebucht;
 		const ja = await bestaetigen({
 			titel: 'Inventur abschließen?',
-			text: abschlussText(lauf.stand.erwartet - lauf.stand.erfasst),
+			text: abschlussText(lauf.stand.fehlend),
 			aktion: 'Ja, unwiderruflich abschließen',
 			gefaehrlich: true
 		});

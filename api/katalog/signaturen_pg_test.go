@@ -44,12 +44,22 @@ func TestSignaturBereich_PraefixMitGrenze(t *testing.T) {
 	invRepo := repository.NewInventurAbfragen(pool)
 	scope := repository.InventurBereich{Signatur: &basis}
 
-	anzahl, err := invRepo.ZaehleBereich(ctx, scope)
+	// Gezählt wird, was ein Lauf über das Regal erwartet; verworfen bucht er nichts.
+	lauf, err := invRepo.LegeLaufAn(ctx, "signature", scope, basis, "")
 	if err != nil {
-		t.Fatalf("ZaehleBereich: %v", err)
+		t.Fatalf("LegeLaufAn: %v", err)
 	}
-	if anzahl != 2 {
-		t.Errorf("Scope %q = %d, erwartet 2 Exemplare (genau + Unterfach)", basis, anzahl)
+	t.Cleanup(func() {
+		if err := invRepo.VerwerfeLauf(context.Background(), lauf.ID); err != nil {
+			t.Errorf("VerwerfeLauf: %v", err)
+		}
+	})
+	stand, err := invRepo.ZaehleStand(ctx, lauf.ID, scope)
+	if err != nil {
+		t.Fatalf("ZaehleStand: %v", err)
+	}
+	if stand.Erwartet != 2 {
+		t.Errorf("Scope %q = %d, erwartet 2 Exemplare (genau + Unterfach)", basis, stand.Erwartet)
 	}
 
 	imScope := map[string]bool{exGenau: true, exUnter: true, exNachbar: false, exFremd: false}

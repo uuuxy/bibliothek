@@ -9,14 +9,13 @@ import (
 	"bibliothek/repository"
 )
 
-// offenerLauf ist ein offener Lauf, wie die Oberfläche ihn zeigt.
+// offenerLauf ist ein offener Lauf, wie die Oberfläche ihn zeigt, mit seinem Stand.
 type offenerLauf struct {
 	LaufID      string `json:"session_id"`
 	Bereich     string `json:"scope"`
 	Bezeichnung string `json:"label"`
 	GestartetAm string `json:"gestartet_am"`
-	Erfasst     int    `json:"erfasst"`
-	Erwartet    int    `json:"erwartet"`
+	repository.LaufStand
 }
 
 // abgeschlossenerLauf ist eine fertige Inventur, wie die Oberfläche sie zur Auswahl zeigt:
@@ -82,7 +81,7 @@ func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 
 		liste := make([]offenerLauf, 0, len(laeufe))
 		for i := range laeufe {
-			erwartet, err := abfragen.ZaehleBereich(ctx, laeufe[i].Bereich())
+			stand, err := abfragen.ZaehleStand(ctx, laeufe[i].ID, laeufe[i].Bereich())
 			if err != nil {
 				apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 				return
@@ -92,8 +91,7 @@ func (t *Tueren) LaufendeInventuren() http.HandlerFunc {
 				Bereich:     laeufe[i].BereichArt,
 				Bezeichnung: laeufe[i].Bezeichnung,
 				GestartetAm: laeufe[i].GestartetAm,
-				Erfasst:     laeufe[i].Erfasst,
-				Erwartet:    erwartet,
+				LaufStand:   stand,
 			})
 		}
 		tuer.AntworteJSON(w, http.StatusOK, liste)

@@ -36,7 +36,7 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 			t.Fatalf("Session %s anlegen: %v", f.signatur, err)
 		}
 		for _, id := range ex[:f.gescan] {
-			if _, err := repo.VerbucheScan(ctx, sess.ID, id); err != nil {
+			if _, err := repo.VerbucheScan(ctx, sess.ID, sess.Bereich(), id); err != nil {
 				t.Fatalf("Scan %s: %v", f.signatur, err)
 			}
 		}

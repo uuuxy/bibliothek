@@ -46,12 +46,13 @@ func (a startAnfrage) bereich() repository.InventurBereich {
 	}
 }
 
-// startAntwort nennt den neuen Lauf und die Zahl der Exemplare, die er erwartet.
+// startAntwort nennt den neuen Lauf und seinen Stand: wie viele Exemplare er erwartet und dass
+// noch alle fehlen.
 type startAntwort struct {
 	LaufID      string `json:"session_id"`
 	Bereich     string `json:"scope"`
 	Bezeichnung string `json:"label"`
-	Erwartet    int    `json:"erwartet"`
+	repository.LaufStand
 }
 
 // pruefeStartAnfrage prüft die Art des Bereichs und die Felder, die sie verlangt.
@@ -137,7 +138,7 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 			return
 		}
 
-		erwartet, err := abfragen.LadeLaufMitErwartung(ctx, lauf.ID)
+		stand, err := abfragen.ZaehleStand(ctx, lauf.ID, lauf.Bereich())
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -147,7 +148,7 @@ func (t *Tueren) InventurStarten() http.HandlerFunc {
 			LaufID:      lauf.ID,
 			Bereich:     lauf.BereichArt,
 			Bezeichnung: lauf.Bezeichnung,
-			Erwartet:    erwartet.Erwartet,
+			LaufStand:   stand,
 		})
 	}
 }

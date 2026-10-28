@@ -25,7 +25,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 		t.Fatalf("Session A anlegen: %v", err)
 	}
 	for _, ex := range matheEx[:3] {
-		if _, err := repo.VerbucheScan(ctx, sessA.ID, ex); err != nil {
+		if _, err := repo.VerbucheScan(ctx, sessA.ID, sessA.Bereich(), ex); err != nil {
 			t.Fatalf("Scan A: %v", err)
 		}
 	}
@@ -70,20 +70,18 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	ex := legeSignaturMitExemplarenAn(t, pool, physik, 3)
 	leiheAus(t, pool, ex[0]) // ein Exemplar verliehen
 
-	// Der Bereich zählt nur die 2, die im Regal stehen.
-	scope, err := repo.ZaehleBereich(ctx, InventurBereich{Signatur: &physik})
-	if err != nil {
-		t.Fatalf("ZaehleBereich: %v", err)
-	}
-	if scope != 2 {
-		t.Errorf("Scope mit 1 verliehenen = %d, erwartet 2", scope)
-	}
-
 	// Lauf starten, nichts scannen, abschließen: Nur die 2 im Regal fehlen. Das verliehene Buch
 	// ist nicht darunter.
 	sess, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &physik}, "Physik", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
+	}
+	stand, err := repo.ZaehleStand(ctx, sess.ID, sess.Bereich())
+	if err != nil {
+		t.Fatalf("ZaehleStand: %v", err)
+	}
+	if stand != (LaufStand{Erwartet: 2, Fehlend: 2}) {
+		t.Errorf("Stand mit 1 verliehenen = %+v, erwartet 2 erwartet und 2 fehlend", stand)
 	}
 	verloren, err := repo.SchliesseLaufAb(ctx, sess.ID, InventurBereich{Signatur: &physik}, bearbeiter)
 	if err != nil {
@@ -156,10 +154,14 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	subject, grade := "Mathematik", 5
 	scope := InventurBereich{Fach: &subject, Jahrgang: &grade}
 
-	if n, err := repo.ZaehleBereich(ctx, scope); err != nil {
-		t.Fatalf("ZaehleBereich: %v", err)
-	} else if n != 1 {
-		t.Errorf("Scope 'Mathe Kl.5' = %d, erwartet 1", n)
+	sess, err := repo.LegeLaufAn(ctx, "filter", scope, "Mathematik · Kl. 5", "")
+	if err != nil {
+		t.Fatalf("Filter-Session anlegen: %v", err)
+	}
+	if stand, err := repo.ZaehleStand(ctx, sess.ID, scope); err != nil {
+		t.Fatalf("ZaehleStand: %v", err)
+	} else if stand.Erwartet != 1 {
+		t.Errorf("Scope 'Mathe Kl.5' = %d, erwartet 1", stand.Erwartet)
 	}
 
 	// Die Warnung beim Scan: Nur das Exemplar mit passendem Fach und Jahrgang gehört dazu.
@@ -180,11 +182,6 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 		t.Error("Mathe ohne Jahrgang sollte NICHT im Scope einer Klasse sein")
 	}
 
-	sess, err := repo.LegeLaufAn(ctx, "filter", scope, "Mathematik · Kl. 5", "")
-	if err != nil {
-		t.Fatalf("Filter-Session anlegen: %v", err)
-	}
-
 	// Nichts scannen, abschließen: Genau das eine Exemplar im Bereich fehlt.
 	verloren, err := repo.SchliesseLaufAb(ctx, sess.ID, scope, bearbeiter)
 	if err != nil {
@@ -201,8 +198,8 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	}
 }
 
-// VerbucheScan liefert die Zahl der erfassten Exemplare des Laufs. Ein zweiter Scan desselben
-// Exemplars ändert sie nicht, ein Scan in einem anderen Lauf auch nicht.
+// VerbucheScan liefert den Stand des Laufs. Ein zweiter Scan desselben Exemplars ändert ihn
+// nicht, ein Scan in einem anderen Lauf auch nicht.
 func TestVerbucheScan_ZaehltExemplareNichtScans(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -222,20 +219,66 @@ func TestVerbucheScan_ZaehltExemplareNichtScans(t *testing.T) {
 	}
 
 	for i, schritt := range []struct {
-		lauf, exemplar string
-		erfasst        int
+		lauf     *Inventurlauf
+		exemplar string
+		stand    LaufStand
 	}{
-		{matheLauf.ID, matheEx[0], 1},
-		{matheLauf.ID, matheEx[0], 1},
-		{deutschLauf.ID, deutschEx[0], 1},
-		{matheLauf.ID, matheEx[1], 2},
+		{matheLauf, matheEx[0], LaufStand{Erwartet: 2, Fehlend: 1}},
+		{matheLauf, matheEx[0], LaufStand{Erwartet: 2, Fehlend: 1}},
+		{deutschLauf, deutschEx[0], LaufStand{Erwartet: 1, Fehlend: 0}},
+		{matheLauf, matheEx[1], LaufStand{Erwartet: 2, Fehlend: 0}},
 	} {
-		erfasst, err := repo.VerbucheScan(ctx, schritt.lauf, schritt.exemplar)
+		stand, err := repo.VerbucheScan(ctx, schritt.lauf.ID, schritt.lauf.Bereich(), schritt.exemplar)
 		if err != nil {
 			t.Fatalf("Scan %d: %v", i+1, err)
 		}
-		if erfasst != schritt.erfasst {
-			t.Errorf("Scan %d: erfasst = %d, erwartet %d", i+1, erfasst, schritt.erfasst)
+		if stand != schritt.stand {
+			t.Errorf("Scan %d: Stand = %+v, erwartet %+v", i+1, stand, schritt.stand)
 		}
+	}
+}
+
+// Steht ein Buch im Regal, das laut Programm verliehen oder gesperrt ist, und wird es gescannt,
+// zählt es nicht als gefunden: Der Abschluss erwartet es nicht. Der Stand nennt als fehlend
+// genau die Bücher, die der Abschluss danach als Verlust bucht. Zählte er jede Erfassung, hieße
+// es „alle gescannt", und der Abschluss buchte trotzdem einen Verlust.
+func TestZaehleStand_NenntWasDerAbschlussBucht(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
+
+	biologie := "Biologie"
+	ex := legeSignaturMitExemplarenAn(t, pool, biologie, 4)
+	leiheAus(t, pool, ex[2])
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = $1`, ex[3]); err != nil {
+		t.Fatalf("Exemplar sperren: %v", err)
+	}
+	lauf, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &biologie}, "Biologie", "")
+	if err != nil {
+		t.Fatalf("Lauf anlegen: %v", err)
+	}
+
+	// Gescannt: ein erwartetes Buch, das verliehene und das gesperrte. Das zweite erwartete fehlt.
+	var stand LaufStand
+	for _, id := range []string{ex[0], ex[2], ex[3]} {
+		if stand, err = repo.VerbucheScan(ctx, lauf.ID, lauf.Bereich(), id); err != nil {
+			t.Fatalf("Scan: %v", err)
+		}
+	}
+	if stand != (LaufStand{Erwartet: 2, Fehlend: 1}) {
+		t.Errorf("Stand nach drei Scans = %+v, erwartet 2 erwartet und 1 fehlend", stand)
+	}
+
+	verloren, err := repo.SchliesseLaufAb(ctx, lauf.ID, lauf.Bereich(), bearbeiter)
+	if err != nil {
+		t.Fatalf("Abschluss: %v", err)
+	}
+	if verloren != stand.Fehlend {
+		t.Errorf("Abschluss buchte %d Verluste, der Stand nannte %d fehlend", verloren, stand.Fehlend)
+	}
+	if aus := ausgesonderteZahl(t, pool, ex[1:2]); aus != 1 {
+		t.Error("das nicht gescannte, erwartete Buch ist nicht als Verlust gebucht")
 	}
 }

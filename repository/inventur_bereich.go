@@ -55,6 +55,17 @@ func (s InventurBereich) bedingung(start int) (string, []any) {
 	return strings.Join(bedingungen, "\n  AND "), args
 }
 
+// nichtErfasst liefert die Bedingung „in diesem Lauf nicht gescannt" für das Exemplar e, mit der
+// ID des Laufs im Platzhalter $platz. Was im Bereich liegt und sie erfüllt, bucht der Abschluss
+// als Verlust; die Zählung davor (ZaehleStand) nimmt sie von hier, damit beide dieselben Bücher
+// meinen.
+func nichtErfasst(platz int) string {
+	return fmt.Sprintf(`NOT EXISTS (
+		SELECT 1 FROM inventur_erfassungen ie
+		WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
+	)`, platz)
+}
+
 // dimensionBedingung liefert nur die Einschränkungen (Signatur, Fach, Jahrgang), für die
 // Warnung beim Scan. Ohne Einschränkung ist alles im Bereich: "TRUE".
 func (s InventurBereich) dimensionBedingung(start int) (string, []any) {

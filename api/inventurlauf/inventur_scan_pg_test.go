@@ -71,6 +71,9 @@ func TestScanVerbuchen_FremderBereichNichtErfasst(t *testing.T) {
 	if len(payload.Warnungen) == 0 {
 		t.Error("409-Antwort trägt keinen Warntext")
 	}
+	if payload.LaufStand != nil {
+		t.Errorf("409-Antwort nennt einen Stand %+v, obwohl nichts erfasst wurde", *payload.LaufStand)
+	}
 
 	// Deutschbuch im Lauf für Deutsch: 200, erfasst (Gegenprobe).
 	rec = inventurScan(t, srv, session.ID, barcodeDeutsch)
@@ -207,10 +210,11 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 	}
 }
 
-// TestScanVerbuchen_ZweiterScanZaehltEinmal: Die Antwort nennt, wie viele Exemplare der Lauf
-// erfasst hat, und ein zweiter Scan desselben Buchs ändert die Zahl nicht. Die Oberfläche zählte
-// jede Antwort mit; die Rückfrage vor dem Abschluss nannte dann zu wenige Verluste. Gelesen wird
-// die Antwort als Map, damit der Test auch gegen den Stand ohne das Feld übersetzt.
+// TestScanVerbuchen_ZweiterScanZaehltEinmal: Die Antwort nennt den Stand des Laufs, erwartet und
+// fehlend, auch eine 0. Ein zweiter Scan desselben Buchs ändert ihn nicht, ein gesperrtes Buch im
+// Regal auch nicht: Der Abschluss erwartet es nicht. Die Oberfläche zählte jede Antwort mit; die
+// Rückfrage vor dem Abschluss nannte dann zu wenige Verluste. Gelesen wird die Antwort als Map,
+// damit der Test auch gegen den Stand ohne die Felder übersetzt.
 func TestScanVerbuchen_ZweiterScanZaehltEinmal(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -221,9 +225,13 @@ func TestScanVerbuchen_ZweiterScanZaehltEinmal(t *testing.T) {
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	signatur := "INV-Zweimal-" + suffix
-	erstes, zweites := "B-Z1-"+suffix, "B-Z2-"+suffix
+	erstes, zweites, gesperrt := "B-Z1-"+suffix, "B-Z2-"+suffix, "B-ZG-"+suffix
 	testdaten.LegeExemplarMitSignaturAn(t, pool, signatur, erstes)
 	testdaten.LegeExemplarMitSignaturAn(t, pool, signatur, zweites)
+	gesperrtID := testdaten.LegeExemplarMitSignaturAn(t, pool, signatur, gesperrt)
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = $1`, gesperrtID); err != nil {
+		t.Fatalf("Exemplar sperren: %v", err)
+	}
 	lauf, err := repository.NewInventurAbfragen(pool).
 		LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &signatur}, "Zweimal", "")
 	if err != nil {
@@ -232,9 +240,10 @@ func TestScanVerbuchen_ZweiterScanZaehltEinmal(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 
 	for i, schritt := range []struct {
-		barcode string
-		erfasst float64
-	}{{erstes, 1}, {erstes, 1}, {zweites, 2}} {
+		barcode  string
+		fehlend  float64
+		erwartet float64
+	}{{erstes, 1, 2}, {erstes, 1, 2}, {gesperrt, 1, 2}, {zweites, 0, 2}} {
 		rec := inventurScan(t, srv, lauf.ID, schritt.barcode)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Scan %d: Status %d: %s", i+1, rec.Code, rec.Body.String())
@@ -243,8 +252,9 @@ func TestScanVerbuchen_ZweiterScanZaehltEinmal(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 			t.Fatalf("Scan %d: Antwort lesen: %v", i+1, err)
 		}
-		if antwort["erfasst"] != schritt.erfasst {
-			t.Errorf("Scan %d (%s): erfasst = %v, erwartet %v", i+1, schritt.barcode, antwort["erfasst"], schritt.erfasst)
+		if antwort["fehlend"] != schritt.fehlend || antwort["erwartet"] != schritt.erwartet {
+			t.Errorf("Scan %d (%s): fehlend = %v, erwartet = %v; verlangt %v und %v", i+1, schritt.barcode,
+				antwort["fehlend"], antwort["erwartet"], schritt.fehlend, schritt.erwartet)
 		}
 	}
 }

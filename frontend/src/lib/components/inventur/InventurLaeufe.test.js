@@ -39,7 +39,7 @@ describe('InventurLaeufe', () => {
 	});
 
 	it('zeigt die Listen mit ihren Knöpfen, wenn sie kamen', async () => {
-		const lauf = { session_id: 's1', label: 'Gesamtbestand', erfasst: 3, erwartet: 9 };
+		const lauf = { session_id: 's1', label: 'Gesamtbestand', erwartet: 9, fehlend: 6 };
 		const frueher = {
 			session_id: 's0',
 			label: 'LMF Deu 7',
@@ -52,6 +52,8 @@ describe('InventurLaeufe', () => {
 		const screen = render(InventurLaeufe, { ablauf: a });
 
 		expect(screen.getByText('Laufende Inventuren')).toBeTruthy();
+		// Gefunden sind die erwarteten Bücher, die nicht mehr fehlen, wie der Abschluss sie zählt.
+		expect(screen.getByText(/^3 \/ 9 erfasst/)).toBeTruthy();
 		expect(screen.getByText('2 fehlend')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Fortsetzen' }));
 		expect(a.setzeLaufFort).toHaveBeenCalledWith(lauf);

@@ -36,11 +36,11 @@
 		if (barcodeInputEl) barcodeInputEl.focus();
 	}
 
-	// Anteil der erfassten an den erwarteten Exemplaren, für die Zahl und den Balken.
+	// Gefunden sind die erwarteten Exemplare, die nicht mehr fehlen; ein verliehenes oder gesperrtes
+	// Buch im Regal zählt nicht, der Abschluss erwartet es nicht. Der Anteil für Zahl und Balken.
+	const gefunden = $derived(ablauf.stand.erwartet - ablauf.stand.fehlend);
 	const prozent = $derived(
-		ablauf.stand.erwartet === 0
-			? 0
-			: Math.min(100, Math.round((ablauf.stand.erfasst / ablauf.stand.erwartet) * 100))
+		ablauf.stand.erwartet === 0 ? 0 : Math.round((gefunden / ablauf.stand.erwartet) * 100)
 	);
 </script>
 
@@ -97,7 +97,7 @@
 					<div>
 						<span class="text-sm font-semibold text-on-surface-variant">Aktueller Fortschritt</span>
 						<div class="text-2xl font-bold text-on-surface mt-1">
-							{ablauf.stand.erfasst} / {ablauf.stand.erwartet}
+							{gefunden} / {ablauf.stand.erwartet}
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>
 						</div>
 					</div>

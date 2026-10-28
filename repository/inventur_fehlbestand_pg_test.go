@@ -51,7 +51,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	}
 
 	repo := NewInventurAbfragen(pool)
-	if _, err := repo.VerbucheScan(ctx, sessionID, gescannt); err != nil {
+	if _, err := repo.VerbucheScan(ctx, sessionID, InventurBereich{}, gescannt); err != nil {
 		t.Fatalf("Scan erfassen: %v", err)
 	}
 
@@ -132,7 +132,7 @@ func TestInventurScanUndAbschlussAbgestimmt(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			<-start
-			_, scanErr = repo.VerbucheScan(ctx, sessionID, exID)
+			_, scanErr = repo.VerbucheScan(ctx, sessionID, InventurBereich{}, exID)
 		}()
 		go func() {
 			defer wg.Done()

@@ -39,7 +39,7 @@
 				<div class="min-w-0">
 					<div class="font-semibold truncate">{session.label}</div>
 					<div class="text-xs">
-						{session.erfasst} / {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
+						{session.erwartet - session.fehlend} / {session.erwartet} erfasst · seit {session.gestartet_am?.slice(
 							0,
 							16
 						)}

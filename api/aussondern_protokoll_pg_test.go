@@ -197,7 +197,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Inventur beginnen: %v", err)
 		}
-		if _, err := invRepo.VerbucheScan(ctx, session.ID, gezaehlt); err != nil {
+		if _, err := invRepo.VerbucheScan(ctx, session.ID, session.Bereich(), gezaehlt); err != nil {
 			t.Fatalf("Exemplar zählen: %v", err)
 		}
 

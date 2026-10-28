@@ -34,8 +34,7 @@ type Inventurlauf struct {
 	Bezeichnung  string
 	GestartetVon *string
 	GestartetAm  string
-	Erwartet     int // Exemplare im Bereich, die im Regal stehen müssten; bei jedem Lesen neu gezählt
-	Erfasst      int // in diesem Lauf gescannte Exemplare
+	Erfasst      int // in diesem Lauf gescannte Exemplare, auch die, die der Bereich nicht erwartet
 	// Nur bei abgeschlossenen Läufen gefüllt (LadeAbgeschlosseneLaeufe):
 	AbgeschlossenAm *string
 	Verluste        int  // beim Abschluss gebuchte Fehlbestände (inventur_verluste)
@@ -96,24 +95,39 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 	return &s, nil
 }
 
-// ZaehleBereich zählt die Exemplare im Bereich, die im Regal stehen müssten.
-func (a *InventurAbfragen) ZaehleBereich(ctx context.Context, bereich InventurBereich) (int, error) {
+// LaufStand ist der Fortschritt eines offenen Laufs, gezählt nach den Bedingungen des
+// Abschlusses: Erwartet sind die Exemplare im Bereich, die im Regal stehen müssten, Fehlend die
+// davon, die der Lauf noch nicht erfasst hat. Fehlend ist genau die Zahl, die SchliesseLaufAb
+// jetzt als Verlust buchen würde; ein gescanntes Buch, das der Bereich nicht erwartet
+// (verliehen, gesperrt), ändert keine der beiden Zahlen.
+type LaufStand struct {
+	Erwartet int `json:"erwartet"`
+	Fehlend  int `json:"fehlend"`
+}
+
+// ZaehleStand zählt den Stand eines Laufs. Beide Zahlen kommen aus einer Abfrage und damit aus
+// demselben Moment: Eine Rückgabe an der Theke zwischen zwei Abfragen ließe sonst mehr fehlen,
+// als erwartet sind.
+func (a *InventurAbfragen) ZaehleStand(ctx context.Context, laufID string, bereich InventurBereich) (LaufStand, error) {
 	bedingung, args := bereich.bedingung(1)
-	var anzahl int
-	err := a.db.QueryRow(ctx, `
-		SELECT count(*)
+	laufPlatz := len(args) + 1
+	args = append(args, laufID)
+	var stand LaufStand
+	err := a.db.QueryRow(ctx, fmt.Sprintf(`
+		SELECT count(*), count(*) FILTER (WHERE %s)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE `+bedingung, args...).Scan(&anzahl)
+		WHERE %s
+	`, nichtErfasst(laufPlatz), bedingung), args...).Scan(&stand.Erwartet, &stand.Fehlend)
 	if err != nil {
-		return 0, fmt.Errorf("scope-zählung fehlgeschlagen: %w", err)
+		return LaufStand{}, fmt.Errorf("stand des laufs zählen fehlgeschlagen: %w", err)
 	}
-	return anzahl, nil
+	return stand, nil
 }
 
 // LadeLauf lädt einen offenen Lauf mit der Zahl seiner Erfassungen, ohne die teurere Zählung
-// des Bereichs: für den Scan. Erwartet bleibt 0; wer es braucht, ruft LadeLaufMitErwartung.
-// pgx.ErrNoRows, wenn kein offener Lauf diese ID trägt.
+// des Bereichs: für den Scan. Den Stand zählt ZaehleStand. pgx.ErrNoRows, wenn kein offener Lauf
+// diese ID trägt.
 func (a *InventurAbfragen) LadeLauf(ctx context.Context, id string) (*Inventurlauf, error) {
 	var s Inventurlauf
 	err := a.db.QueryRow(ctx, `
@@ -128,20 +142,6 @@ func (a *InventurAbfragen) LadeLauf(ctx context.Context, id string) (*Inventurla
 		return nil, err
 	}
 	return &s, nil
-}
-
-// LadeLaufMitErwartung lädt einen offenen Lauf mit erwartet und erfasst.
-func (a *InventurAbfragen) LadeLaufMitErwartung(ctx context.Context, id string) (*Inventurlauf, error) {
-	s, err := a.LadeLauf(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	erwartet, err := a.ZaehleBereich(ctx, s.Bereich())
-	if err != nil {
-		return nil, err
-	}
-	s.Erwartet = erwartet
-	return s, nil
 }
 
 // LadeAbgeschlosseneLaeufe liefert die zuletzt abgeschlossenen Läufe mit der Zahl ihrer
@@ -196,16 +196,12 @@ func (a *InventurAbfragen) LadeAbgeschlosseneLaeufe(ctx context.Context, limit i
 }
 
 // LadeOffeneLaeufe liefert alle laufenden Läufe, für die Anzeige: damit niemand in einem
-// Bereich startet, in dem schon gezählt wird.
+// Bereich startet, in dem schon gezählt wird. Ihren Stand zählt ZaehleStand je Lauf; es sind
+// wenige (idx_inv_session_offen_*).
 func (a *InventurAbfragen) LadeOffeneLaeufe(ctx context.Context) ([]Inventurlauf, error) {
-	// Ohne CTE und LATERAL wie in LadeAbgeschlosseneLaeufe: Die lohnen sich nur, weil dort ein
-	// LIMIT die Zählung auf zehn Zeilen begrenzt. Hier wird jeder offene Lauf ohnehin gezählt,
-	// und es sind wenige (idx_inv_session_offen_*).
 	rows, err := a.db.Query(ctx, `
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
-		       s.gestartet_von::text, s.gestartet_am::text,
-		       COALESCE(s.erfasst_gemeldet,
-		                (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id))
+		       s.gestartet_von::text, s.gestartet_am::text
 		FROM inventur_sessions s
 		WHERE s.abgeschlossen_am IS NULL
 		ORDER BY s.gestartet_am ASC
@@ -219,7 +215,7 @@ func (a *InventurAbfragen) LadeOffeneLaeufe(ctx context.Context) ([]Inventurlauf
 	for rows.Next() {
 		var s Inventurlauf
 		if err := rows.Scan(&s.ID, &s.BereichArt, &s.Signatur, &s.Fach, &s.Jahrgang, &s.Bezeichnung,
-			&s.GestartetVon, &s.GestartetAm, &s.Erfasst); err != nil {
+			&s.GestartetVon, &s.GestartetAm); err != nil {
 			return nil, fmt.Errorf("session-zeile unlesbar: %w", err)
 		}
 		laeufe = append(laeufe, s)

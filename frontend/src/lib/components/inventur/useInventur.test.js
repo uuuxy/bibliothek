@@ -68,13 +68,14 @@ describe('Inventur abschließen', () => {
 // Ein Handscanner wartet nicht auf die Antwort. Ein Scan, der eintrifft, solange der vorige am
 // Server ist, wird danach gebucht: Verworfen fiele das Buch beim Abschluss als Verlust auf,
 // obwohl es im Regal steht.
-/** Die Antwort des Servers auf einen gezählten Scan, mit der Zahl erfasster Exemplare des Laufs.
- * @param {string} barcode @param {number} erfasst */
-const treffer = (barcode, erfasst) =>
+/** Die Antwort des Servers auf einen gezählten Scan, mit dem Stand des Laufs: neun erwartete
+ * Bücher, davon `fehlend` noch nicht gescannt.
+ * @param {string} barcode @param {number} fehlend */
+const treffer = (barcode, fehlend) =>
 	/** @type {any} */ ({
 		ok: true,
 		status: 200,
-		data: { barcode_id: barcode, titel: barcode, erfasst }
+		data: { barcode_id: barcode, titel: barcode, erwartet: 9, fehlend }
 	});
 
 describe('Scan während der Anfrage', () => {
@@ -92,7 +93,7 @@ describe('Scan während der Anfrage', () => {
 		let ersterFertig = () => {};
 		scan.mockImplementationOnce(() => new Promise((fertig) => (ersterFertig = fertig)));
 		scan.mockImplementation(async (_sitzung, barcode) =>
-			treffer(barcode, Number(barcode.slice(2)))
+			treffer(barcode, 9 - Number(barcode.slice(2)))
 		);
 		const inventur = useInventur();
 
@@ -101,24 +102,24 @@ describe('Scan während der Anfrage', () => {
 		const dritter = inventur.verarbeiteScan('B-3');
 		expect(scan).toHaveBeenCalledTimes(1);
 
-		ersterFertig(treffer('B-1', 1));
+		ersterFertig(treffer('B-1', 8));
 		await Promise.all([erster, zweiter, dritter]);
 
 		expect(scan.mock.calls.map((aufruf) => aufruf[1])).toEqual(['B-1', 'B-2', 'B-3']);
-		expect(inventur.stand.erfasst).toBe(3);
+		expect(inventur.stand.fehlend).toBe(6);
 		expect(inventur.letzterScan.barcode).toBe('B-3');
 		expect(inventur.scanLaeuft).toBe(false);
 	});
 
 	it('bucht die folgenden Scans auch, wenn einer scheitert', async () => {
 		scan.mockRejectedValueOnce(new Error('Netz weg'));
-		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode, 1));
+		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode, 8));
 		const inventur = useInventur();
 
 		await Promise.all([inventur.verarbeiteScan('B-1'), inventur.verarbeiteScan('B-2')]);
 
 		expect(scan).toHaveBeenCalledTimes(2);
-		expect(inventur.stand.erfasst).toBe(1);
+		expect(inventur.stand.fehlend).toBe(8);
 		expect(inventur.letzterScan.barcode).toBe('B-2');
 	});
 
@@ -134,7 +135,7 @@ describe('Scan während der Anfrage', () => {
 		await Promise.resolve();
 		expect(frage, 'die Zahl der fehlenden Bücher stimmt erst nach dem Scan').not.toHaveBeenCalled();
 
-		ersterFertig(treffer('B-1', 1));
+		ersterFertig(treffer('B-1', 8));
 		await Promise.all([laufend, abschlussFrage]);
 		expect(frage).toHaveBeenCalledTimes(1);
 	});
@@ -154,20 +155,40 @@ describe('Zählung der Scans', () => {
 	});
 
 	it('zeigt die Zahl des Servers: ein zweimal gescanntes Buch zählt einmal', async () => {
-		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode, 1));
+		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode, 8));
 		const inventur = useInventur();
 		await inventur.verarbeiteScan('B-1');
 		await inventur.verarbeiteScan('B-1');
 
-		expect(inventur.stand.erfasst).toBe(1);
+		expect(inventur.stand).toMatchObject({ erwartet: 9, fehlend: 8 });
 	});
 
 	it('übernimmt die Zahl des Servers auch, wenn ein anderer Scanner mitzählt', async () => {
-		scan.mockResolvedValue(treffer('B-1', 7));
+		scan.mockResolvedValue(treffer('B-1', 2));
 		const inventur = useInventur();
 		await inventur.verarbeiteScan('B-1');
 
-		expect(inventur.stand.erfasst).toBe(7);
+		expect(inventur.stand.fehlend).toBe(2);
+	});
+
+	// Ein verliehenes oder gesperrtes Buch im Regal wird erfasst, der Abschluss erwartet es aber
+	// nicht. Zählte die Seite jede Erfassung, hieße es „2 / 2" und „keines als verloren", und der
+	// Abschluss buchte trotzdem einen Verlust. Die Rückfrage nennt deshalb die Zahl des Servers.
+	it('nennt in der Rückfrage die fehlenden Bücher, wie der Server sie zählt', async () => {
+		scan.mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				status: 200,
+				data: { barcode_id: 'B-V', titel: 'Verliehen', erwartet: 2, fehlend: 1 }
+			})
+		);
+		frage.mockResolvedValue(false);
+		const inventur = useInventur();
+		inventur.setzeLaufFort({ session_id: 's1', erwartet: 2, fehlend: 2, label: 'Regal' });
+		await inventur.verarbeiteScan('B-V');
+		await inventur.abschliessenNachRueckfrage();
+
+		expect(frage).toHaveBeenCalledWith(expect.objectContaining({ text: abschlussText(1) }));
 	});
 });
 
@@ -281,7 +302,7 @@ describe('Inventur verwerfen', () => {
 // laufender Inventurlauf mit dieser Kennung". Gleich in Chromium, Firefox und WebKit (OFFEN.md
 // 5.106).
 describe('Abschluss ohne Antwort', () => {
-	const lauf = { session_id: 's1', erwartet: 3, erfasst: 1, label: 'Gesamtbestand' };
+	const lauf = { session_id: 's1', erwartet: 3, fehlend: 2, label: 'Gesamtbestand' };
 	const frueher = [{ session_id: 's1', label: 'Gesamtbestand', erfasst: 1, verluste: 2 }];
 
 	beforeEach(() => {

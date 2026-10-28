@@ -29,7 +29,8 @@ export function useInventurlauf(opts = {}) {
 	// Der Grund, wenn eine Liste der Seite nicht kam (laeufe, frueher), sonst ''. Ein Objekt, damit
 	// useFehlbestand die früheren eintragen kann. Ohne die laufenden lüde die Seite zum Start ein.
 	const nichtGeladen = $state({ laeufe: '', frueher: '' });
-	let stand = $state({ erwartet: 0, erfasst: 0, label: '' });
+	// Die Zahlen des Servers, gezählt wie beim Abschluss: fehlend bucht er als Verlust.
+	let stand = $state({ erwartet: 0, fehlend: 0, label: '' });
 	let startOffen = $state(false);
 	let fehler = $state('');
 
@@ -81,7 +82,7 @@ export function useInventurlauf(opts = {}) {
 		const r = await starteLauf(payload);
 		if (r.ok) {
 			laufKennung = r.data.session_id;
-			stand = { erwartet: r.data.erwartet, erfasst: 0, label: r.data.label };
+			stand = { erwartet: r.data.erwartet, fehlend: r.data.fehlend, label: r.data.label };
 			status = 'active';
 			startOffen = false;
 			onActivate?.();
@@ -101,7 +102,7 @@ export function useInventurlauf(opts = {}) {
 	/** @param {any} session laufende Session aus offeneLaeufe */
 	function setzeLaufFort(session) {
 		laufKennung = session.session_id;
-		stand = { erwartet: session.erwartet, erfasst: session.erfasst, label: session.label };
+		stand = { erwartet: session.erwartet, fehlend: session.fehlend, label: session.label };
 		fehler = '';
 		status = 'active';
 		onActivate?.();
@@ -127,7 +128,7 @@ export function useInventurlauf(opts = {}) {
 	function setzeZurueck() {
 		status = 'idle';
 		laufKennung = '';
-		stand = { erwartet: 0, erfasst: 0, label: '' };
+		stand = { erwartet: 0, fehlend: 0, label: '' };
 	}
 
 	return /** @satisfies {object} */ ({

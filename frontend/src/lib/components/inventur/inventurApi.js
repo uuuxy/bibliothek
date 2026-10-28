@@ -71,12 +71,12 @@ export async function scanne(sessionId, barcode) {
 }
 
 /**
- * Deutet eine Scan-Antwort in { lastScan, zaehlen, erfasst } — pur, ohne Zustand, damit die
+ * Deutet eine Scan-Antwort in { lastScan, zaehlen, stand } — pur, ohne Zustand, damit die
  * Optik-Regeln (Treffer / außer-Scope-Warnung / unbekannt) getrennt vom Hook testbar sind.
  * `zaehlen` ist nur beim echten Treffer true; ein außer-Scope-Buch wird bewusst NICHT
- * mitgezählt, aber als (gelbe) Warnung mit echtem Titel gezeigt. `erfasst` ist die Zahl des
- * Servers: Ein zweimal gescanntes Buch zählt dort einmal, mitgezählte Antworten zählten es
- * doppelt.
+ * mitgezählt, aber als (gelbe) Warnung mit echtem Titel gezeigt. `stand` sind die Zahlen des
+ * Servers, gezählt wie beim Abschluss: Ein zweimal gescanntes Buch zählt einmal, ein verliehenes
+ * oder gesperrtes im Regal gar nicht, weil der Abschluss es nicht erwartet.
  * @param {{ok: boolean, status: number, data?: any, error?: string}} r
  * @param {string} barcode
  */
@@ -84,7 +84,7 @@ export function deuteScanErgebnis(r, barcode) {
 	if (r.ok) {
 		return {
 			zaehlen: true,
-			erfasst: r.data.erfasst,
+			stand: { erwartet: r.data.erwartet, fehlend: r.data.fehlend },
 			lastScan: {
 				success: true,
 				barcode: r.data.barcode_id,

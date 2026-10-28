@@ -65,10 +65,7 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 			FROM buecher_titel t
 			WHERE e.titel_id = t.id
 			  AND %s
-			  AND NOT EXISTS (
-			      SELECT 1 FROM inventur_erfassungen ie
-			      WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
-			  )
+			  AND %s
 			RETURNING e.id, e.barcode_id, t.titel, coalesce(t.autor, '') AS autor,
 			          coalesce(btrim(t.signatur), '') AS signatur
 		), mitschrift AS (
@@ -79,7 +76,7 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 			RETURNING 1
 		)
 		SELECT coalesce(array_agg(v.id::text), '{}') FROM verloren v
-	`, bedingung, laufPlatz, laufPlatz)
+	`, bedingung, nichtErfasst(laufPlatz), laufPlatz)
 	var verlorenIDs []string
 	if err := a.db.QueryRow(ctx, query, args...).Scan(&verlorenIDs); err != nil {
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)
