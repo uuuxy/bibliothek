@@ -172,13 +172,21 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 		/** Blind scannen. Vorher steht der Fokus nicht im Scanfeld — sonst prüfte der Schritt nichts. */
 		const scanne = async (n, wo) => {
 			expect(await fokus(page), `Fokus ${wo}`).not.toBe('omnibox-input');
+			const beantwortet = page.waitForEvent(
+				'requestfinished',
+				(r) => r.method() === 'POST' && new URL(r.url()).pathname === '/api/action'
+			);
 			await page.keyboard.type(`B-Reiter${n}-${suffix}`, { delay: 5 });
 			await page.keyboard.press('Enter');
 			await expect
 				.poll(() => verbucht(suffix, n), { message: `Der Scan ${wo} wurde nicht verbucht` })
 				.toBe('1');
-			// Nach der Buchung gibt die Theke dem Scanfeld den Fokus zurück; erst danach der
-			// nächste Klick, damit ihr Zeitgeber ihn nicht nachträglich verdeckt.
+			// Nach der Antwort gibt die Theke dem Scanfeld den Fokus zurück, über einen Zeitgeber von
+			// 50 ms (fokussiereScanfeld). Erst danach der nächste Klick: Käme die Antwort nach ihm,
+			// legte der Zeitgeber den Fokus nachträglich ins Scanfeld. Dass er schon dort steht, sagt
+			// nichts, das erste getippte Zeichen hat ihn hingelegt (scanOhneFokus.js).
+			await beantwortet;
+			await page.evaluate(() => new Promise((weiter) => setTimeout(weiter, 300)));
 			await expect.poll(() => fokus(page)).toBe('omnibox-input');
 		};
 

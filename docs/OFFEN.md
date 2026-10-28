@@ -52,7 +52,7 @@ einem Fehler (5.106).
 - [x] Portal und öffentlicher Katalog. (5.106)
 - [ ] Anmeldung, Sperre und Update-Hinweis. (5.106)
 - [ ] Statistik, Protokoll und Betrieb. (5.106)
-- [ ] Der Browser-Test „Handscanner: der Fokus steht woanders" wackelt nach „Bezahlt". (5.109)
+- [x] Der Browser-Test „Handscanner: der Fokus steht woanders" wackelt nach „Bezahlt". (5.109)
 
 ### Bei dir
 
@@ -154,17 +154,6 @@ Bekannt und offen:
 
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
-
-### 5.109 Ein Browser-Test der Theke wackelt
-
-`kiosk-scannerfokus.spec.js`, Fall „der Scan wird verbucht: auf dem Reiter, nach „Bezahlt", nach
-einem Klick ins Leere": In der ganzen Suite einmal rot mit „Fokus nach „Bezahlt"". Vor dem
-blinden Scan stand der Fokus schon wieder im Scanfeld, der Schritt prüfte also nichts. Allein
-50-mal grün, die Datei 15-mal ganz. Eine um 300 ms verzögerte Antwort auf die Buchung macht ihn
-nicht rot; der Zeitgeber der Theke nach einer Buchung (`fokussiereScanfeld`, 50 ms) ist es also
-nicht allein. Nächster Schritt: herausfinden, was den Fokus nach „Bezahlt" ins Scanfeld legt
-(Live-Meldung der Zahlung und Neuladen der Akte), es mit einer Verzögerung rot machen und den
-Test auf das Ende dieses Wegs warten lassen.
 
 ### 7.2 Frisches Littera-Backup
 
