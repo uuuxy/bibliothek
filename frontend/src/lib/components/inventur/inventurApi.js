@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler, leseApiFehlerMitDaten } from '../../apiFetch.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 
 // Reine API-Aufrufe der Inventur, getrennt von der Zustandslogik im Hook.
 // Jede Funktion liefert ein { ok, data?, status, error? }-Objekt, damit der Hook
@@ -17,6 +18,22 @@ async function auswerten(res) {
 }
 
 /**
+ * Schickt die Anfrage und wertet die Antwort aus. Ohne Antwort (kein Netz, Frist abgelaufen)
+ * kommt der Fehler als Ergebnis mit status 0 zurück, und der Aufrufer meldet ihn wie eine
+ * Ablehnung; geworfen blieb er ungefangen, und die Seite tat sichtbar nichts.
+ * @param {string} url @param {RequestInit} [options]
+ */
+async function sende(url, options) {
+	let res;
+	try {
+		res = await apiFetch(url, options);
+	} catch (e) {
+		return { ok: false, status: 0, error: fehlertext(e), data: {} };
+	}
+	return auswerten(res);
+}
+
+/**
  * Laufende Sessions laden (für die "bereits laufend"-Anzeige). Lehnt der Server ab, wirft der
  * Abruf mit seinem Grund: Eine leere Liste hieße, es laufe keine Inventur.
  */
@@ -31,16 +48,16 @@ export async function ladeOffeneSessions() {
  * @param {{type: string, signatur?: string, subject?: string, grade?: number}} payload
  */
 export async function starteLauf(payload) {
-	const res = await apiFetch('/api/inventur/start', {
+	return sende('/api/inventur/start', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(payload)
 	});
-	return auswerten(res);
 }
 
 /**
- * Ein Exemplar in einer Session verbuchen.
+ * Ein Exemplar in einer Session verbuchen. Ohne Antwort wirft der Aufruf: Die Inventur zeigt den
+ * Fehler dann als Ergebnis des Scans, mit Fehlerton (bucheScan in useInventur).
  * @param {string} sessionId
  * @param {string} barcode
  */
@@ -102,12 +119,11 @@ export function deuteScanErgebnis(r, barcode) {
 
 /** @param {string} sessionId */
 export async function schliesseAb(sessionId) {
-	const res = await apiFetch('/api/inventur/finish', {
+	return sende('/api/inventur/finish', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ session_id: sessionId })
 	});
-	return auswerten(res);
 }
 
 /**
@@ -130,38 +146,32 @@ export async function ladeAbgeschlosseneInventuren() {
  * @param {string} sessionId
  */
 export async function ladeFehlbestand(sessionId) {
-	const res = await apiFetch(
-		`/api/inventur/fehlbestand?session_id=${encodeURIComponent(sessionId)}`
-	);
-	return auswerten(res);
+	return sende(`/api/inventur/fehlbestand?session_id=${encodeURIComponent(sessionId)}`);
 }
 
 /** @param {string} sessionId */
 export async function brichAb(sessionId) {
-	const res = await apiFetch('/api/inventur/abort', {
+	return sende('/api/inventur/abort', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ session_id: sessionId })
 	});
-	return auswerten(res);
 }
 
 /** Ein als Verlust gebuchtes Exemplar wurde beim Nachsuchen gefunden — zurück in Umlauf.
  * @param {string} exemplarId */
 export async function meldeVerlustGefunden(exemplarId) {
-	const res = await apiFetch(`/api/buecher/exemplare/${encodeURIComponent(exemplarId)}/gefunden`, {
+	return sende(`/api/buecher/exemplare/${encodeURIComponent(exemplarId)}/gefunden`, {
 		method: 'POST'
 	});
-	return auswerten(res);
 }
 
 /** Verlust-Exemplare unwiderruflich löschen.
  * @param {string[]} exemplarIds */
 export async function loescheVerlustEndgueltig(exemplarIds) {
-	const res = await apiFetch('/api/buecher/exemplare/verlust-endgueltig-loeschen', {
+	return sende('/api/buecher/exemplare/verlust-endgueltig-loeschen', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ exemplar_ids: exemplarIds })
 	});
-	return auswerten(res);
 }
