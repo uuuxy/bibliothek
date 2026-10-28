@@ -2371,7 +2371,11 @@ sieht.
   wie von Hand. Mit einem Puffer setzt Playwright die Datei selbst und meldet change jedes Mal.
   Ein Knopf unter einem Feld, das mit `transition:slide` aufklappt, rückt, bis das Feld offen ist:
   Ein Doppelklick von Hand an seinen Koordinaten davor trifft mit dem zweiten Klick daneben und
-  sieht harmlos aus. Druckt die Seite in einem Fenster, das sie selbst öffnet, kehrt `print()` dort
+  sieht harmlos aus. Die Maus trifft nur, was im Bild steht: Ein Knopf unterhalb des sichtbaren
+  Bereichs bekommt vorher `scrollIntoViewIfNeeded()`, sonst geht der Klick ins Leere, und der Fall
+  zeigt keine Anfrage und keine Meldung. Eine Probe stellt geänderte Zeilen mit `UPDATE` in einer
+  Transaktion zurück, nie mit `DELETE` und neuem `INSERT`: Scheiterte das `INSERT`, stand eine
+  Rolle ohne ein einziges Recht da. Die Rollen stehen in `role_permissions` in Großbuchstaben. Druckt die Seite in einem Fenster, das sie selbst öffnet, kehrt `print()` dort
   im headless Firefox nicht zurück und hält den Klick an; die Probe ersetzt `window.print` vorher
   mit `context.addInitScript`. Ein Lauf über viele Minuten startet mit `caffeinate -is`: Schläft
   der Rechner auf Akku ein, laufen Fälle in die Testfrist, und Firefox zeigt das Band „Keine
@@ -2381,7 +2385,10 @@ sieht.
   der Attrappe, wirft der Fehlerweg schon beim Lesen des Grundes; das catch des Bausteins fängt
   das, und ein Test des Fehlerfalls besteht, ohne dass der Weg lief. Eine Antwort des Servers
   stellt `serverAntwort(status, rumpf)` nach (`frontend/src/lib/serverAntwort.js`), einen leeren
-  Rumpf wie den eines 502 vom Proxy `serverAntwort(502)`.
+  Rumpf wie den eines 502 vom Proxy `serverAntwort(502)`. `vi.clearAllMocks()` lässt vorbereitete
+  Einmal-Antworten (`mockResolvedValueOnce`) stehen: Scheitert ein Fall, bevor er sie verbraucht,
+  bekommt sie der nächste, und ein roter Fall macht weitere rot. Wo ein Fall Einmal-Antworten
+  vorbereitet, setzt `beforeEach` die Attrappe mit `mockReset()` zurück.
 - **Eine neue Datei heißt anders als jede vorhandene, auch ohne Rücksicht auf Groß- und
   Kleinschreibung:** Das Dateisystem am Arbeitsplatz unterscheidet sie nicht. Ein neuer
   `Etikettendruck.test.js` überschreibt `etikettenDruck.test.js`, und der Lauf bleibt grün, weil

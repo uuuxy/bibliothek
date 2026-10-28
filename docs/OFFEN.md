@@ -48,7 +48,7 @@ einem Fehler (5.106).
 - [x] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
 - [x] Medienkatalog, Buchakte und Signaturen. (5.106)
 - [x] Inventur. (5.106)
-- [ ] Einstellungen, Benutzer und Rechte. (5.106)
+- [x] Einstellungen, Benutzer und Rechte. (5.106)
 - [ ] Portal und öffentlicher Katalog. (5.106)
 - [ ] Anmeldung, Sperre und Update-Hinweis. (5.106)
 - [ ] Statistik, Protokoll und Betrieb. (5.106)
@@ -152,10 +152,6 @@ Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)).
 
 Bekannt und offen:
 
-- Löschen ohne Sperre: Ein zweiter Auftrag vor der Antwort schickt ein zweites DELETE, und nach
-  dem Löschen steht „nicht gefunden" ([sweeps.md](sweeps.md), „Zweiter Auftrag vor der Antwort").
-  Ohne Sperre im Code steht noch die Zuordnung der Klassenleitungen (Einstellungen); sie geht in
-  ihrem Bereich durch.
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
 
