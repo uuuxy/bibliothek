@@ -251,14 +251,14 @@ class BestellStore {
 		kundennummerSchultraeger = ''
 	) {
 		if (!name || !email || !customerNumber) return;
+		// Auch nach einem Fehler neu laden: Ging nur die Antwort verloren, steht er schon in der Liste.
 		await apiPost('/api/lieferanten', {
 			name,
 			email,
 			customerNumber,
 			ist_hauptlieferant: istHauptlieferant,
 			kundennummer_schultraeger: kundennummerSchultraeger
-		});
-		await this.loadSuppliers();
+		}).finally(() => this.loadSuppliers());
 	}
 
 	/**

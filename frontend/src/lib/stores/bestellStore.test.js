@@ -266,6 +266,29 @@ describe('bestellStore.submitOrder', () => {
 	});
 });
 
+// Ging die Antwort auf das Anlegen verloren, stand der Lieferant schon am Server, die Liste zeigte
+// ihn nicht, und ein zweiter Versuch legte ihn noch einmal an (OFFEN.md 5.106).
+describe('bestellStore.addSupplier', () => {
+	beforeEach(() => {
+		resetStore();
+		apiPostMock.mockReset();
+		vi.mocked(apiGet).mockReset();
+	});
+
+	it('lädt die Liste auch nach einem Fehler neu und gibt den Fehler weiter', async () => {
+		apiPostMock.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiGet).mockResolvedValueOnce([
+			{ id: 'l1', name: 'Neu', email: 'n@example.invalid', customerNumber: 'K1' }
+		]);
+
+		await expect(bestellStore.addSupplier('Neu', 'n@example.invalid', 'K1')).rejects.toThrow(
+			'Keine Verbindung zum Server.'
+		);
+
+		expect(bestellStore.suppliers.map((s) => s.name)).toEqual(['Neu']);
+	});
+});
+
 describe('bestellStore Suche', () => {
 	beforeEach(() => {
 		resetStore();
