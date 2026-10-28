@@ -155,7 +155,7 @@
 
 <InventurStartDialog
 	open={ablauf.startOffen}
-	state={ablauf}
+	{ablauf}
 	onClose={() => {
 		ablauf.startOffen = false;
 		ablauf.leereFehler();

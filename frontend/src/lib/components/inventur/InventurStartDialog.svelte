@@ -11,6 +11,7 @@
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 
 	const KLASSEN = [
 		{ value: '', label: 'Alle Klassen' },
@@ -34,18 +35,32 @@
 	/**
 	 * @type {{
 	 *   open: boolean,
-	 *   state: any,
+	 *   ablauf: any,
 	 *   onClose: () => void,
-	 *   onStart: () => void
+	 *   onStart: () => Promise<void>
 	 * }}
 	 */
-	let { open, state, onClose, onStart } = $props();
+	let { open, ablauf, onClose, onStart } = $props();
+
+	// Solange der Start am Server ist, bleibt „Inventur Starten" gesperrt. Ein zweiter Klick
+	// schickte einen zweiten Start, den der Server ablehnt; nach dem Abschluss stand dann „Für
+	// diesen Bereich läuft bereits eine Inventur", obwohl keine lief.
+	let startet = $state(false);
+	async function starte() {
+		if (startet) return;
+		startet = true;
+		try {
+			await onStart();
+		} finally {
+			startet = false;
+		}
+	}
 
 	const bereit = $derived(
-		state.bereichArt === 'global' ||
-			(state.bereichArt === 'signature' && String(state.gewaehlteSignatur).trim() !== '') ||
-			(state.bereichArt === 'filter' &&
-				(state.gewaehltesFach !== '' || state.gewaehlterJahrgang !== ''))
+		ablauf.bereichArt === 'global' ||
+			(ablauf.bereichArt === 'signature' && String(ablauf.gewaehlteSignatur).trim() !== '') ||
+			(ablauf.bereichArt === 'filter' &&
+				(ablauf.gewaehltesFach !== '' || ablauf.gewaehlterJahrgang !== ''))
 	);
 </script>
 
@@ -62,7 +77,7 @@
 			<legend class="sr-only">Bereich der Inventur</legend>
 			{#each BEREICHE as b (b.wert)}
 				<label class="flex cursor-pointer items-start gap-3 text-sm text-on-surface">
-					<Radio bind:group={state.bereichArt} value={b.wert} aria-label={b.name} />
+					<Radio bind:group={ablauf.bereichArt} value={b.wert} aria-label={b.name} />
 					<span>
 						<span class="block font-medium">{b.name}</span>
 						<span class="block text-xs text-on-surface-variant">{b.text}</span>
@@ -71,7 +86,7 @@
 			{/each}
 		</fieldset>
 
-		{#if state.bereichArt === 'signature'}
+		{#if ablauf.bereichArt === 'signature'}
 			<div transition:slide>
 				<!-- Freie Eingabe mit Vorschlagsliste: Die Signatur wird als Präfix gelesen,
 				     „LMF Deu 7" erfasst also auch „LMF Deu 7 / Bie". Eine reine Auswahlliste
@@ -80,19 +95,19 @@
 					id="inv-signatur"
 					etikett="Signatur auswählen"
 					list="inv-signatur-vorschlaege"
-					bind:value={state.gewaehlteSignatur}
+					bind:value={ablauf.gewaehlteSignatur}
 					placeholder="z. B. LMF Deu 7"
 					hint="Erfasst alles, was mit dieser Signatur beginnt — „LMF Deu 7“ also auch „LMF Deu 7 / Bie“."
 				/>
 				<datalist id="inv-signatur-vorschlaege">
-					{#each state.signaturen as sig (sig.signatur)}
+					{#each ablauf.signaturen as sig (sig.signatur)}
 						<option value={sig.signatur}>{sig.signatur} — {sig.exemplare} Exemplare</option>
 					{/each}
 				</datalist>
 			</div>
 		{/if}
 
-		{#if state.bereichArt === 'filter'}
+		{#if ablauf.bereichArt === 'filter'}
 			<div transition:slide class="grid grid-cols-2 gap-3">
 				<div class="space-y-1.5">
 					<label for="inventur-fach" class="block text-xs font-medium text-on-surface-variant"
@@ -100,10 +115,10 @@
 					>
 					<Select
 						id="inventur-fach"
-						bind:value={state.gewaehltesFach}
+						bind:value={ablauf.gewaehltesFach}
 						options={[
 							{ value: '', label: 'Alle Fächer' },
-							...state.faecher.map((/** @type {string} */ f) => ({ value: f, label: f }))
+							...ablauf.faecher.map((/** @type {string} */ f) => ({ value: f, label: f }))
 						]}
 					/>
 				</div>
@@ -111,18 +126,23 @@
 					<label for="inventur-klasse" class="block text-xs font-medium text-on-surface-variant"
 						>Klasse</label
 					>
-					<Select id="inventur-klasse" bind:value={state.gewaehlterJahrgang} options={KLASSEN} />
+					<Select id="inventur-klasse" bind:value={ablauf.gewaehlterJahrgang} options={KLASSEN} />
 				</div>
 			</div>
 		{/if}
 
-		{#if state.fehler}
-			<p class="text-sm text-error" role="alert">{state.fehler}</p>
+		{#if ablauf.fehler}
+			<p class="text-sm text-error" role="alert">{ablauf.fehler}</p>
 		{/if}
 
 		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="ghost" onclick={onClose}>Abbrechen</Button>
-			<Button onclick={onStart} disabled={!bereit}>Inventur Starten</Button>
+			<Button onclick={starte} disabled={!bereit || startet}>
+				{#if startet}
+					<Ladekreis size="sm" farbe="aktuell" />
+				{/if}
+				Inventur Starten
+			</Button>
 		</div>
 	</div>
 </Dialog>
