@@ -95,16 +95,22 @@ export function useInventur() {
 			// Die Liste vor dem Zurücksetzen sichern: Mit der Zahl allein geht niemand ins Regal, und
 			// nach der Aussonderung fallen die Exemplare aus dem Bereich der Inventur.
 			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label);
-			// Lässt den Fehlbestand stehen: Der Bericht soll den Abschluss überleben.
-			lauf.setzeZurueck();
-			letzterScan = null;
-			await lauf.ladeOffeneLaeufe();
-			// Die gerade beendete Inventur gehört sofort in die Auswahl früherer Läufe —
-			// sonst müsste man die Seite neu laden, um sie dort zu finden.
-			await fb.ladeFruehereInventuren();
+			await zurueckZumStart();
 		} else {
 			snackbars.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
+			// Ohne Antwort (status 0) oder mit „kein laufender Lauf" (404) kann der Server schon
+			// abgeschlossen haben; die Seite zeigt dann seinen Stand statt des Scanfelds.
+			if (r.status === 0 || r.status === 404) await zurueckZumStart();
 		}
+	}
+
+	// Zurück zum Startschirm; ein Fehlbestand bleibt stehen. Beide Listen kommen neu vom Server, die
+	// beendete Inventur steht damit sofort unter den früheren, ohne dass jemand die Seite neu lädt.
+	async function zurueckZumStart() {
+		lauf.setzeZurueck();
+		letzterScan = null;
+		await lauf.ladeOffeneLaeufe();
+		await fb.ladeFruehereInventuren();
 	}
 
 	/**
@@ -134,11 +140,6 @@ export function useInventur() {
 		// Wie nach dem Abschluss: Die verworfene Inventur steht sofort unter den früheren —
 		// als verworfen, nicht als vollständig (Migration 149).
 		await fb.ladeFruehereInventuren();
-	}
-
-	function fortschrittProzent() {
-		if (lauf.stand.erwartet === 0) return 0;
-		return Math.min(100, Math.round((lauf.stand.erfasst / lauf.stand.erwartet) * 100));
 	}
 
 	return /** @satisfies {object} */ ({
@@ -228,7 +229,6 @@ export function useInventur() {
 		setzeLaufFort: lauf.setzeLaufFort,
 		verwerfeLauf,
 		verarbeiteScan,
-		abschliessenNachRueckfrage,
-		fortschrittProzent
+		abschliessenNachRueckfrage
 	});
 }

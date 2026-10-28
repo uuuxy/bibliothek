@@ -35,6 +35,13 @@
 	function focusInput() {
 		if (barcodeInputEl) barcodeInputEl.focus();
 	}
+
+	// Anteil der erfassten an den erwarteten Exemplaren, für die Zahl und den Balken.
+	const prozent = $derived(
+		ablauf.stand.erwartet === 0
+			? 0
+			: Math.min(100, Math.round((ablauf.stand.erfasst / ablauf.stand.erwartet) * 100))
+	);
 </script>
 
 <Seitenrahmen>
@@ -94,14 +101,14 @@
 							<span class="text-base font-medium text-on-surface-variant">erfasst</span>
 						</div>
 					</div>
-					<div class="text-3xl font-bold text-primary">{ablauf.fortschrittProzent()}%</div>
+					<div class="text-3xl font-bold text-primary">{prozent}%</div>
 				</div>
 				<!-- Spur und Anzeige wie der lineare Fortschritt in M3 (material-web.dev, Tokens
 				     track-color: surface-container-highest, active-indicator-color: primary). -->
 				<div class="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
 					<div
 						class="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
-						style="width: {ablauf.fortschrittProzent()}%"
+						style="width: {prozent}%"
 					></div>
 				</div>
 			</div>

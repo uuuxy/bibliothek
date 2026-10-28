@@ -11,6 +11,7 @@ vi.mock('../../apiFetch.js', () => ({
 vi.mock('../../utils/audio.js', () => ({ spieleErfolgston: vi.fn(), spieleFehlerton: vi.fn() }));
 
 import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 import {
 	schliesseAb,
 	ladeOffeneSessions,
@@ -272,5 +273,51 @@ describe('Inventur verwerfen', () => {
 
 		expect(ablauf.fehler).toBe('');
 		expect(ladeOffeneSessions).toHaveBeenCalledTimes(1);
+	});
+});
+
+// Kam auf den Abschluss keine Antwort, hatte der Server oft schon abgeschlossen. Die Seite blieb
+// beim Scanfeld, ohne Meldung und ohne Fehlbestand; ein zweiter Versuch meldete nur „Kein
+// laufender Inventurlauf mit dieser Kennung". Gleich in Chromium, Firefox und WebKit (OFFEN.md
+// 5.106).
+describe('Abschluss ohne Antwort', () => {
+	const lauf = { session_id: 's1', erwartet: 3, erfasst: 1, label: 'Gesamtbestand' };
+	const frueher = [{ session_id: 's1', label: 'Gesamtbestand', erfasst: 1, verluste: 2 }];
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		frage.mockResolvedValue(true);
+		vi.mocked(ladeOffeneSessions).mockResolvedValue([]);
+		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue(frueher);
+	});
+
+	it.each([
+		['ohne Antwort', { ok: false, status: 0, error: 'Keine Verbindung zum Server.' }],
+		[
+			'auf „kein laufender Lauf"',
+			{ ok: false, status: 404, error: 'Kein laufender Inventurlauf mit dieser Kennung' }
+		]
+	])('zeigt %s den Stand des Servers statt des Scanfelds', async (_name, antwort) => {
+		abschluss.mockResolvedValue(/** @type {any} */ (antwort));
+		const ablauf = useInventur();
+		ablauf.setzeLaufFort(lauf);
+		await ablauf.abschliessenNachRueckfrage();
+
+		expect(snackbars.addToast).toHaveBeenCalledWith(antwort.error, 'error');
+		expect(ablauf.status).toBe('idle');
+		expect(ladeOffeneSessions).toHaveBeenCalledTimes(1);
+		expect(ablauf.abgeschlosseneInventuren).toEqual(frueher);
+	});
+
+	it('bleibt beim Scanfeld, wenn der Server ablehnt', async () => {
+		abschluss.mockResolvedValue(
+			/** @type {any} */ ({ ok: false, status: 503, error: 'Die Datenbank antwortet nicht' })
+		);
+		const ablauf = useInventur();
+		ablauf.setzeLaufFort(lauf);
+		await ablauf.abschliessenNachRueckfrage();
+
+		expect(ablauf.status).toBe('active');
+		expect(ladeOffeneSessions).not.toHaveBeenCalled();
 	});
 });
