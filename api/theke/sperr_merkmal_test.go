@@ -112,7 +112,8 @@ func (m merkmalInDerAblage) Match(v any) bool {
 // Eine wiederholte Anfrage mit demselben Idempotenz-Schlüssel kommt aus dem Cache. Ohne
 // das Merkmal im Cache verlöre sie den Dialog.
 func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
-	const schluessel = "sperr-merkmal-1"
+	// Der Schlüssel ist eine UUID wie an der echten Theke; die Tür weist jeden anderen ab.
+	const schluessel = "5e1d0c8a-5b0e-4c55-9d0f-3a8b1c2d4e01"
 
 	t.Run("erste Antwort legt das Merkmal ab", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -165,7 +166,7 @@ func TestSperrMerkmalUeberlebtIdempotenzAblage(t *testing.T) {
 	})
 
 	t.Run("Sperre am Leser: Merkmal in den Cache und wieder heraus", func(t *testing.T) {
-		const schluesselLeser = "sperr-merkmal-leser"
+		const schluesselLeser = "5e1d0c8a-5b0e-4c55-9d0f-3a8b1c2d4e02"
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatal(err)

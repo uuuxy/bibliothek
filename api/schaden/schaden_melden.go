@@ -15,9 +15,10 @@ import (
 // schadensMeldung bucht einen Verlust oder Schaden an einer Ausleihe und liefert die ID des
 // Schadensfalls (repository.SchadensAbfragen). Hat sich die Lage geändert, seit die Akte offen
 // steht, liefert es repository.ErrExemplarNeuVerliehen oder
-// repository.ErrAusleiheInzwischenZurueck.
+// repository.ErrAusleiheInzwischenZurueck, für eine Geräteausleihe
+// repository.ErrAusleiheOhneBuch.
 type schadensMeldung interface {
-	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art repository.SchadensArt, hoehe betrag.Cent) (string, error)
+	Melde(ctx context.Context, ausleiheID, bearbeiterID, beschreibung string, art repository.SchadensArt, hoehe betrag.Cent) (string, error)
 }
 
 // SchadenMelden meldet einen Verlust oder Schaden (POST /api/damage/report): Das Exemplar wird
@@ -30,9 +31,9 @@ func (t *Tueren) SchadenMelden(schadensAbfragen schadensMeldung) http.HandlerFun
 		}
 
 		var req struct {
-			AusleiheID string `json:"loan_id" validate:"omitempty,uuid_oder_leer"`
-			// SchuelerID schickt der Dialog mit; gelesen wird es nicht. Der Schuldner steht
-			// an der Ausleihe (repository.meldeSchaden).
+			AusleiheID string `json:"loan_id" validate:"required,uuid_oder_leer"`
+			// SchuelerID und ExemplarID schickt der Dialog mit; gelesen werden sie nicht.
+			// Schuldner und Exemplar stehen an der Ausleihe (repository.meldeSchaden).
 			SchuelerID   string `json:"schueler_id" validate:"omitempty,uuid_oder_leer"`
 			ExemplarID   string `json:"copy_id" validate:"omitempty,uuid_oder_leer"`
 			Beschreibung string `json:"beschreibung"`
@@ -51,7 +52,7 @@ func (t *Tueren) SchadenMelden(schadensAbfragen schadensMeldung) http.HandlerFun
 				errors.New("art fehlt oder ist ungültig"))
 		}
 
-		schadensID, err := schadensAbfragen.Melde(r.Context(), req.ExemplarID, req.AusleiheID, claims.KontoID, req.Beschreibung, art, req.Betrag)
+		schadensID, err := schadensAbfragen.Melde(r.Context(), req.AusleiheID, claims.KontoID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
 			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
 			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.

@@ -34,7 +34,8 @@ type bestellungAnlegenAnfrage struct {
 	// IdempotenzSchluessel: von der Oberfläche je Absenden vergeben. Ein Doppelklick schickt
 	// denselben Schlüssel; die zweite Anfrage bewirkt nichts (keine zweite Bestellung, keine
 	// zweite Lieferanten-Mail). Wahlweise: Ohne Schlüssel läuft die Anfrage ohne diesen Schutz.
-	IdempotenzSchluessel string `json:"idempotency_key,omitempty"`
+	// Er geht als UUID in die Datenbank.
+	IdempotenzSchluessel string `json:"idempotency_key,omitempty" validate:"omitempty,uuid_oder_leer"`
 	// Mittel: der Topf dieser Bestellung — 'land' (Lernmittelfreiheit) oder
 	// 'schultraeger' (Schülerbücherei), siehe pkg/mitteltopf. Pflicht: Der Vermerk
 	// muss auf der Bestellung stehen, und ein Standardwert wäre eine stille Zuordnung

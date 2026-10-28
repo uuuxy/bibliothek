@@ -27,7 +27,8 @@ var Pruefer = newPruefer()
 //
 // Am Feld steht `validate:"omitempty,uuid_oder_leer"`, an einer Liste
 // `validate:"omitempty,dive,required,uuid_oder_leer"`: Ohne `required` ginge ein leeres Element
-// durch.
+// durch. Braucht die Tür die Kennung und meldet ihr Fehlen nicht selbst, steht am Feld
+// `validate:"required,uuid_oder_leer"`; sonst erreicht "" die Datenbank.
 const regelUUIDOderLeer = "uuid_oder_leer"
 
 func newPruefer() *validator.Validate {

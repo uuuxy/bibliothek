@@ -25,12 +25,12 @@ type bescheidErstellenAnfrage struct {
 	Mittel     string `json:"mittel"`
 	FristBis   string `json:"frist_bis"`
 	Positionen []struct {
-		SchadensfallID string      `json:"schadensfall_id" validate:"omitempty,uuid_oder_leer"`
+		SchadensfallID string      `json:"schadensfall_id" validate:"required,uuid_oder_leer"`
 		Betrag         betrag.Cent `json:"betrag"`
 	} `json:"positionen" validate:"dive"`
 	// Ausleihen: überfällige Bücher, die mit dem Brief als Verlust gebucht werden.
 	Ausleihen []struct {
-		AusleiheID string      `json:"ausleihe_id" validate:"omitempty,uuid_oder_leer"`
+		AusleiheID string      `json:"ausleihe_id" validate:"required,uuid_oder_leer"`
 		Betrag     betrag.Cent `json:"betrag"`
 	} `json:"ausleihen" validate:"dive"`
 }
@@ -169,9 +169,10 @@ func bescheidPostenAus(req bescheidErstellenAnfrage) ([]repository.BescheidPosit
 }
 
 // meldungZuGeaenderterLage nennt zu einem Bedienfehler, bei dem sich die Lage geändert hat, seit
-// Akte oder Dialog offen stehen, den Satz für die Bibliothekskraft; ok ist false für jeden anderen
-// Fehler. Schadensmeldung und Bescheid antworten darauf mit 409. Der Name beginnt mit meldung,
-// damit meldung_ratsche_test.go die Sätze prüft.
+// Akte oder Dialog offen stehen, oder bei dem die Ausleihe nicht passt (ein anderes Kind, ein
+// Gerät), den Satz für die Bibliothekskraft; ok ist false für jeden anderen Fehler.
+// Schadensmeldung und Bescheid antworten darauf mit 409. Der Name beginnt mit meldung, damit
+// meldung_ratsche_test.go die Sätze prüft.
 func meldungZuGeaenderterLage(err error) (meldung string, ok bool) {
 	var nichtZugeordnet *repository.ForderungenNichtZugeordnet
 	switch {
@@ -185,6 +186,8 @@ func meldungZuGeaenderterLage(err error) (meldung string, ok bool) {
 		return "Für ein gewähltes Buch ist schon eine Forderung erfasst. Bitte den Dialog neu öffnen.", true
 	case errors.Is(err, repository.ErrAusleiheFremd):
 		return "Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen", true
+	case errors.Is(err, repository.ErrAusleiheOhneBuch):
+		return "Verlust und Schaden lassen sich hier nur für ein ausgeliehenes Buch buchen, nicht für ein Gerät", true
 	case errors.Is(err, repository.ErrExemplarNeuVerliehen):
 		return "Exemplar wurde zwischenzeitlich neu ausgeliehen. Bitte den Vorgang neu laden.", true
 	}

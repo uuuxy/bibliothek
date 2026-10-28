@@ -21,8 +21,8 @@ type klassensatzReservierungAnfrage struct {
 	Notiz   string `json:"notiz,omitempty"`
 	// IdempotenzSchluessel vergibt die Oberfläche je Absenden. Ein Doppelklick schickt
 	// denselben Schlüssel und legt keine zweite Reservierung an; ohne Schlüssel legt jedes
-	// Absenden eine an.
-	IdempotenzSchluessel string `json:"idempotency_key,omitempty"`
+	// Absenden eine an. Er geht als UUID in die Datenbank.
+	IdempotenzSchluessel string `json:"idempotency_key,omitempty" validate:"omitempty,uuid_oder_leer"`
 }
 
 // KlassensatzReservierungAnlegen nimmt die Reservierung eines Klassensatzes durch eine

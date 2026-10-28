@@ -30,7 +30,7 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	legeAusleiheAn(t, pool, copyID, schuelerB, bearbeiter)
 
 	// Der verspätete Klick auf „Schaden melden" nennt die alte Ausleihe.
-	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 500)
+	_, err := repo.Melde(ctx, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 500)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
 		t.Fatalf("repo.Melde(…) = %v, erwartet ErrExemplarNeuVerliehen", err)
 	}
@@ -63,7 +63,7 @@ func TestSchadenMelden_Normalfall(t *testing.T) {
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
-	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 300)
+	schadensID, err := repo.Melde(ctx, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 300)
 	if err != nil {
 		t.Fatalf("regulärer Schaden abgelehnt: %v", err)
 	}
@@ -94,11 +94,11 @@ func TestSchadenMelden_Idempotent(t *testing.T) {
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
-	id1, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 750)
+	id1, err := repo.Melde(ctx, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 750)
 	if err != nil {
 		t.Fatalf("erster Report abgelehnt: %v", err)
 	}
-	id2, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 750)
+	id2, err := repo.Melde(ctx, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 750)
 	if err != nil {
 		t.Fatalf("zweiter Report (Doppelklick) abgelehnt: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestSchadenMelden_SchuldnerAusAusleihe(t *testing.T) {
 
 	loan := legeAusleiheAn(t, pool, copyID, echterSchuldner, bearbeiter)
 
-	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 400)
+	schadensID, err := repo.Melde(ctx, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 400)
 	if err != nil {
 		t.Fatalf("Melde: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 	bucheRueckgabe(t, pool, loan)
 
-	_, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
+	_, err := NewSchadensAbfragen(pool).Melde(ctx, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 1200)
 	if !errors.Is(err, ErrAusleiheInzwischenZurueck) {
 		t.Fatalf("NewSchadensAbfragen(pool).Melde(…) = %v, erwartet ErrAusleiheInzwischenZurueck", err)
@@ -211,39 +211,5 @@ func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 	}
 	if forderungen != 0 {
 		t.Errorf("%d Forderung(en) für ein zurückgegebenes Buch", forderungen)
-	}
-}
-
-// Das Exemplar steht an der Ausleihe wie der Schuldner. Nennt die Anfrage ein anderes, trifft
-// die Meldung trotzdem das geliehene Buch und lässt das genannte in Ruhe.
-func TestSchadenMelden_ExemplarKommtAusDerAusleihe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetInventurDaten(t, pool)
-	ctx := context.Background()
-
-	ex := legeSignaturMitExemplarenAn(t, pool, "ExemplarTest", 2)
-	geliehen, imRegal := ex[0], ex[1]
-	schueler := legeSchuelerAn(t, pool, "EXA-A", "Finn", "8a")
-	bearbeiter := legeBearbeiterAn(t, pool)
-	loan := legeAusleiheAn(t, pool, geliehen, schueler, bearbeiter)
-
-	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, imRegal, loan, bearbeiter,
-		"Wasserschaden", SchadensArtBeschaedigt, 600)
-	if err != nil {
-		t.Fatalf("Meldung abgelehnt: %v", err)
-	}
-	if ausgesondert := ausgesonderteZahl(t, pool, []string{imRegal}); ausgesondert != 0 {
-		t.Error("das Exemplar aus der Anfrage wurde ausgesondert, es war nie verliehen")
-	}
-	if ausgesondert := ausgesonderteZahl(t, pool, []string{geliehen}); ausgesondert != 1 {
-		t.Error("das geliehene Exemplar wurde nicht ausgesondert")
-	}
-	var amFall string
-	if err := pool.QueryRow(ctx,
-		`SELECT exemplar_id::text FROM schadensfaelle WHERE id = $1`, schadensID).Scan(&amFall); err != nil {
-		t.Fatal(err)
-	}
-	if amFall != geliehen {
-		t.Errorf("die Forderung nennt Exemplar %s, geliehen war %s", amFall, geliehen)
 	}
 }

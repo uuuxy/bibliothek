@@ -11,7 +11,8 @@ package main
 // Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe ankommt.
 //
 // Regel: In jedem Struct, das eine Tür aus dem Rumpf der Anfrage liest (tuer.LeseAnfrage oder
-// json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" vom Typ string,
+// json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" oder, für den
+// Schlüssel gegen Doppelbuchung, auf „key"/„schluessel" vom Typ string,
 // *string oder []string einen validate-Tag mit „uuid", oder es steht mit Grund in
 // uuidEingabenAusnahmen. Liest eine Tür direkt per json.NewDecoder, muss sie außerdem selbst
 // prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
@@ -499,9 +500,13 @@ func idParameterName(call *ast.CallExpr, queryVars map[string]bool) (string, boo
 	return name, istKennungsName(name)
 }
 
+// istKennungsName: Kennungen heißen auf id oder ids, der Schlüssel gegen Doppelbuchung auf key
+// oder schluessel; alle gehen als UUID in die Datenbank. Ein Schlüssel, der keine UUID ist,
+// gehört mit Grund in uuidEingabenAusnahmen.
 func istKennungsName(name string) bool {
 	n := strings.ToLower(name)
-	return strings.HasSuffix(n, "id") || strings.HasSuffix(n, "ids")
+	return strings.HasSuffix(n, "id") || strings.HasSuffix(n, "ids") ||
+		strings.HasSuffix(n, "key") || strings.HasSuffix(n, "schluessel")
 }
 
 func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besucht map[string]bool,
@@ -745,6 +750,10 @@ func wTuer(w, r any) { var req ohneTag3; tuer.LESE(w, r, &req) }
 func xTuerStreng(w, r any) { var req ohneTag4; tuer.LESESTRENG(w, r, &req) }
 func yTuerSauber(w, r any) { var req mitTag; tuer.LESE(w, r, &req) }
 func zDirektTuerValidator(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req); tuer.VALIDATOR.Struct(req) }
+type schluesselOhneTag struct { Schluessel string ` + "`json:\"idempotency_key\"`" + ` }
+type schluesselMitTag struct { Schluessel string ` + "`json:\"idempotency_key\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
+func aaSchluessel(w, r any) { var req schluesselOhneTag; LESE(w, r, &req) }
+func abSchluesselSauber(w, r any) { var req schluesselMitTag; LESE(w, r, &req) }
 `
 	namen := pruefeEingabeDerTueren(t)
 	var lese, leseStreng string
@@ -778,7 +787,9 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	// Gegenprobe. Kennungsliste mit `dive`, aber ohne `required` je Element (uListeLeer);
 	// vListeSauber ist ihre Gegenprobe. Der Dekodierer hinter dem Paketnamen (wTuer,
 	// xTuerStreng) zählt wie ohne; yTuerSauber und zDirektTuerValidator sind die Gegenproben,
-	// die zweite für den Validator der Türen nach einem eigenen Dekodieren.
+	// die zweite für den Validator der Türen nach einem eigenen Dekodieren. Ein Schlüssel gegen
+	// Doppelbuchung heißt auf key und geht ebenfalls als UUID in die Datenbank (aaSchluessel);
+	// abSchluesselSauber ist seine Gegenprobe.
 	erwartet := []string{
 		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",
@@ -788,6 +799,7 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 		"p.ohneTag2.SessionID (oKurz)",
 		"p.ohneTag3.SessionID (wTuer)",
 		"p.ohneTag4.SessionID (xTuerStreng)",
+		"p.schluesselOhneTag.Schluessel (aaSchluessel)",
 		"p.stapel.Eintraege:ohne dive (qStapel)",
 		"p:cQuery:query:titel_id (cQuery)",
 		"p:dDirekt:ohne Validierung (dDirekt)",

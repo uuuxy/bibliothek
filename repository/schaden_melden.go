@@ -9,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// schadensMeldung trägt die Angaben einer Schadensmeldung. Eine Struktur, weil Exemplar,
-// Ausleihe, Bearbeiter und Beschreibung nebeneinander Texte sind: In der Reihenfolge
-// vertauscht, liefe die Meldung ohne Fehler auf das falsche Exemplar oder die falsche Ausleihe.
+// schadensMeldung trägt die Angaben einer Schadensmeldung. Eine Struktur, weil Ausleihe,
+// Bearbeiter und Beschreibung nebeneinander Texte sind: In der Reihenfolge vertauscht, liefe die
+// Meldung ohne Fehler auf die falsche Ausleihe. Ein Exemplar trägt sie nicht, es steht an der
+// Ausleihe (ladeSchadensAusleihe).
 type schadensMeldung struct {
-	exemplarID   string
 	ausleiheID   string
 	bearbeiterID string
 	beschreibung string
@@ -109,14 +109,14 @@ type schadensAusleihe struct {
 // Sperre reiht zwei Klicks auf dieselbe Ausleihe hintereinander: Der zweite findet den
 // Schadensfall des ersten. Schuldner und Exemplar stehen an der Ausleihe, nicht in der
 // Anfrage; mit einer fremden Kennung träfe die Forderung sonst ein unbeteiligtes Kind und die
-// Aussonderung ein Exemplar, das nie verliehen war. Die Kennung der Anfrage gilt nur für eine
-// Ausleihe ohne Buch.
+// Aussonderung ein Exemplar, das nie verliehen war. Eine Ausleihe ohne Buch ist eine
+// Geräteausleihe und bekommt ErrAusleiheOhneBuch.
 //
 // Ein Kollege bekommt keine Forderung: Der Bescheid ist ein Schreiben an
 // Erziehungsberechtigte, und über den Ersatz einer Lehrkraft entscheidet die Schulleitung.
 // Gebucht wird trotzdem, was den Bestand angeht.
 func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (schadensAusleihe, error) {
-	a := schadensAusleihe{exemplarID: meldung.exemplarID}
+	var a schadensAusleihe
 	var exemplarID *string
 	if err := tx.QueryRow(ctx, `
 		SELECT a.schueler_id, a.exemplar_id::text, a.rueckgabe_am IS NOT NULL,
@@ -127,9 +127,10 @@ func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, meldung schadensMeldun
 	).Scan(&a.schuelerID, &exemplarID, &a.zurueck, &a.exemplarAusgesondert); err != nil {
 		return a, err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
-	if exemplarID != nil {
-		a.exemplarID = *exemplarID
+	if exemplarID == nil {
+		return a, ErrAusleiheOhneBuch
 	}
+	a.exemplarID = *exemplarID
 	if a.schuelerID != nil {
 		if err := tx.QueryRow(ctx,
 			`SELECT art <> 'schueler' FROM leser WHERE id = $1`, *a.schuelerID,

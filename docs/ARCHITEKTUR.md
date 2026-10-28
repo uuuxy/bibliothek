@@ -1062,7 +1062,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 23.10.2026
+Stand: 28.10.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1228,7 +1228,7 @@ Welcher Pfad welche Zeile sperrt:
 | Rückgabe mit Vormerkung, Nachrücken | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt: Sie könnte sich mit der Ausleih-Logik verklemmen, und mit `SKIP LOCKED` fiele ein Wartender aus der Reihe, dessen Zeile eine Ausleihe gerade hält. Dass eine Sperre über einen Verbund ihre Tabelle nennt, hält `zeilensperre_verbund_ratsche_test.go` | `SperreNaechsteWartendeVormerkung` (`repository/vormerkung_theke.go`), `bedieneNaechstenWartenden` (`repository/vormerkung_nachruecken.go`) |
 | Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `SperreOffeneGeraeteAusleihe` (`repository/geraete_ausleihe.go`) |
 | Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `SperreLeserzeile`, `SperreExemplarzeile` (`repository/ausleihe_zeilensperren.go`); die Folge bestimmt `internal/service/nachbuchen.go` |
-| Verlust oder Schaden melden | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
+| Verlust oder Schaden melden | die **Ausleihe**-Zeile — Schuldner und Exemplar werden aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
 | Verlängerung                   | die **Ausleihe**-Zeile; die neue Frist rechnet Go                      | `verlaengereAusleihe` (`api/theke/ausleihe.go`)                      |
 | Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LeserSperren` (`api/leser/leser_sperre.go`)                         |

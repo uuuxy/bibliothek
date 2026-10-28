@@ -310,7 +310,8 @@ Bewusst schlank, kein Ticketsystem (entschieden am 18.08.2026):
   protokolliert wird erst mit der Ausleihe.
 - Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab. Eine
   Forderung für ein Gerät legt das Programm noch nicht an — der Schadensfall-Weg am
-  Profil nimmt nur Buch-Exemplare, die Datenbank sieht Geräte-Forderungen vor
+  Profil nimmt nur Buch-Exemplare und weist eine Geräteausleihe ab, die Datenbank sieht
+  Geräte-Forderungen vor
   ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
 
 ---

@@ -23,7 +23,7 @@ func TestSchadenMelden_NichtZurueckgegebenIstVerlust(t *testing.T) {
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
 
-	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 0); err != nil {
+	if _, err := repo.Melde(ctx, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("Verlust melden: %v", err)
 	}
 	if grund := aussonderungsGrund(t, pool, copyID); grund != "VERLUST" {
@@ -50,7 +50,7 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	schueler := legeSchuelerAn(t, pool, "FF-A", "Emil", "9c")
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, schueler, bearbeiter)
-	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 1850)
+	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 1850)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 	bearbeiter := legeBearbeiterAn(t, pool)
 	loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
 
-	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
+	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 1500)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
@@ -152,7 +152,7 @@ func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 	loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
 	repo := NewSchadensAbfragen(pool)
 
-	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
+	if _, err := repo.Melde(ctx, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("erste Meldung: %v", err)
 	}
 	var erste time.Time
@@ -160,7 +160,7 @@ func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
+	if _, err := repo.Melde(ctx, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("zweite Meldung: %v", err)
 	}
 	var zweite time.Time

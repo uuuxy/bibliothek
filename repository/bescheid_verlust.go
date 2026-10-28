@@ -127,19 +127,19 @@ func (a *BescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schue
 // Kind, läuft noch und trägt keine Forderung. Der Dialog kann minutenlang offen stehen, während
 // das Buch an der Theke zurückkommt oder jemand in der Akte den Verlust meldet; ohne die
 // Prüfung entstünde ein Brief über ein Buch, das im Regal steht, oder eine zweite Forderung für
-// dasselbe Buch.
+// dasselbe Buch. Das Exemplar liest meldeSchaden von der Ausleihe; eine Geräteausleihe kommt
+// von dort als ErrAusleiheOhneBuch zurück.
 func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznummer string) ([]BescheidPositionEingabe, error) {
 	beschreibung := "Nicht zurückgegeben, Schadensersatz-Bescheid " + referenznummer
 	positionen := make([]BescheidPositionEingabe, 0, len(e.Verluste))
 	for _, v := range e.Verluste {
-		var exemplarID string
 		var schuelerID *string
 		var zurueck, gemeldet bool
 		err := tx.QueryRow(ctx, `
-			SELECT a.exemplar_id, a.schueler_id, a.rueckgabe_am IS NOT NULL,
+			SELECT a.schueler_id, a.rueckgabe_am IS NOT NULL,
 			       EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL)
 			FROM ausleihen a WHERE a.id = $1 FOR UPDATE`, v.AusleiheID,
-		).Scan(&exemplarID, &schuelerID, &zurueck, &gemeldet)
+		).Scan(&schuelerID, &zurueck, &gemeldet)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrAusleiheFremd
 		}
@@ -155,14 +155,13 @@ func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznu
 			return nil, ErrAusleiheInzwischenZurueck
 		}
 		schadensfallID, err := meldeSchaden(ctx, tx, schadensMeldung{
-			exemplarID:   exemplarID,
 			ausleiheID:   v.AusleiheID,
 			bearbeiterID: e.ErstelltVon,
 			beschreibung: beschreibung,
 			art:          SchadensArtNichtZurueck,
 			betrag:       v.Betrag,
 		})
-		if errors.Is(err, ErrExemplarNeuVerliehen) {
+		if errors.Is(err, ErrExemplarNeuVerliehen) || errors.Is(err, ErrAusleiheOhneBuch) {
 			return nil, err // Bedienfall: Die Tür antwortet mit 409, ein Zusatz brächte nichts
 		}
 		if err != nil {

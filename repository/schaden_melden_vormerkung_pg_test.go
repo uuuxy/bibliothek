@@ -31,7 +31,7 @@ func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 	}
 
 	repo := NewSchadensAbfragen(pool)
-	if _, err := repo.Melde(ctx, ex[0], loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 1000); err != nil {
+	if _, err := repo.Melde(ctx, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 1000); err != nil {
 		t.Fatalf("Melde: %v", err)
 	}
 

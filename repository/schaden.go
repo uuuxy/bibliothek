@@ -90,10 +90,14 @@ func (a *SchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]S
 // während das Formular der Schadensmeldung offen stand. Die Tür antwortet mit 409.
 var ErrExemplarNeuVerliehen = errors.New("exemplar inzwischen neu ausgeliehen")
 
+// ErrAusleiheOhneBuch meldet eine Geräteausleihe an Schadensmeldung oder Bescheid: Es gibt kein
+// Buch, das sich aussondern ließe. Die Tür antwortet mit 409.
+var ErrAusleiheOhneBuch = errors.New("ausleihe ohne buch")
+
 // Melde bucht einen Verlust oder Schaden an einer Ausleihe in eigener Transaktion, für
-// „Verlust/Schaden melden" in der Akte. Einen Schuldner nimmt es nicht entgegen: Er steht an der
-// Ausleihe. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
-func (a *SchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, hoehe betrag.Cent) (string, error) {
+// „Verlust/Schaden melden" in der Akte. Schuldner und Exemplar nimmt es nicht entgegen: Beide
+// stehen an der Ausleihe. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
+func (a *SchadensAbfragen) Melde(ctx context.Context, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, hoehe betrag.Cent) (string, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return "", err
@@ -101,7 +105,6 @@ func (a *SchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, be
 	defer db.Verwerfe(ctx, tx)
 
 	schadensID, err := meldeSchaden(ctx, tx, schadensMeldung{
-		exemplarID:   exemplarID,
 		ausleiheID:   ausleiheID,
 		bearbeiterID: bearbeiterID,
 		beschreibung: beschreibung,

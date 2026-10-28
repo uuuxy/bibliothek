@@ -20,7 +20,7 @@ type meldeAttrappe struct {
 	err error
 }
 
-func (a meldeAttrappe) Melde(context.Context, string, string, string, string, repository.SchadensArt, betrag.Cent) (string, error) {
+func (a meldeAttrappe) Melde(context.Context, string, string, string, repository.SchadensArt, betrag.Cent) (string, error) {
 	return "", a.err
 }
 
@@ -37,6 +37,8 @@ func TestSchadenMelden_Meldungen(t *testing.T) {
 			"Exemplar wurde zwischenzeitlich neu ausgeliehen. Bitte den Vorgang neu laden."},
 		{"inzwischen zurück", repository.ErrAusleiheInzwischenZurueck, http.StatusConflict,
 			"Ein gewähltes Buch ist inzwischen zurückgegeben. Bitte den Dialog neu öffnen."},
+		{"Geräteausleihe", repository.ErrAusleiheOhneBuch, http.StatusConflict,
+			"Verlust und Schaden lassen sich hier nur für ein ausgeliehenes Buch buchen, nicht für ein Gerät"},
 		{"Störung", errors.New("verbindung abgerissen"), http.StatusInternalServerError,
 			"Fehler beim Melden des Schadens"},
 	}

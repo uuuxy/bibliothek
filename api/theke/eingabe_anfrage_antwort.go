@@ -15,7 +15,9 @@ type EingabeAnfrage struct {
 	AktiverLeserID       *string `json:"active_leser_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	ChecklisteBestaetigt bool    `json:"confirmed_checklist,omitempty"`
 	SperreUebergehen     bool    `json:"override_block,omitempty"`
-	IdempotenzSchluessel string  `json:"idempotency_key,omitempty"`
+	// IdempotenzSchluessel geht als UUID in idempotency_keys; ein anderer Text liefe dort in
+	// 22P02, und der Scan buchte ohne Schutz vor der Doppelbuchung.
+	IdempotenzSchluessel string `json:"idempotency_key,omitempty" validate:"omitempty,uuid_oder_leer"`
 }
 
 // eingabeAntwort ist die Antwort der Theke auf eine Eingabe: service.OmniboxErgebnis in der

@@ -190,7 +190,6 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	zuletzt := stempel()
 
 	if _, err := meldeSchaden(ctx, lang, schadensMeldung{
-		exemplarID:   f.exemplarID,
 		ausleiheID:   loan.ID,
 		bearbeiterID: f.bearbeiterID,
 		beschreibung: "Stempel-Test",

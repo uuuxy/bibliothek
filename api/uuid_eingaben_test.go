@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/api/theke"
 	"bibliothek/api/tuer"
+	"bibliothek/auth"
 	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
@@ -71,6 +73,63 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 	}
 }
 
+// Der Schlüssel gegen Doppelbuchung geht als UUID in die Datenbank, und Schadensmeldung und
+// Bescheid brauchen ihre Kennungen. Ohne Prüfung endete ein Schlüssel wie „scan-1" als 22P02:
+// An der Theke lief die Buchung ohne Schutz und schrieb eine Fehlerzeile ins Log, Bestellung und
+// Klassensatz antworteten mit 500. Eine leere Kennung erreichte bei Schaden und Bescheid die
+// Datenbank, ebenfalls 500.
+func TestSchluesselUndPflichtkennungSind400VorDerDatenbank(t *testing.T) {
+	s := &Server{}
+	const titel = "22222222-2222-2222-2222-222222222222"
+	frist := time.Now().AddDate(0, 0, 28).Format(tuer.DatumsformatISO)
+	faelle := []struct {
+		name, pfad, rumpf string
+		h                 http.HandlerFunc
+	}{
+		{"Theke, Schlüssel keine UUID", "/api/action", `{"query":"B-1","idempotency_key":"scan-1"}`,
+			mitAnmeldung(s.theke().EingabeVerarbeiten(nil))},
+		{"Bestellung, Schlüssel keine UUID", "/api/bestellungen",
+			`{"supplier_id":"11111111-1111-1111-1111-111111111111","mittel":"land","idempotency_key":"abc",` +
+				`"items":[{"titel_id":"` + titel + `","menge":1,"preis":100}]}`,
+			s.bestellung().BestellungAnlegen(nil)},
+		{"Klassensatz, Schlüssel keine UUID", "/api/reservierungen/klassensatz",
+			`{"titel_id":"` + titel + `","klasse":"5a","anzahl":1,"idempotency_key":"abc"}`,
+			mitAnmeldung(s.portal().KlassensatzReservierungAnlegen())},
+		{"Schaden melden, leere Ausleihe", "/api/damage/report", `{"loan_id":"","art":"beschaedigt","betrag":1}`,
+			mitAnmeldung(s.schaden().SchadenMelden(nil))},
+		{"Bescheid, leere Forderung", "/api/schueler/" + titel + "/bescheide",
+			`{"mittel":"land","frist_bis":"` + frist + `","positionen":[{"schadensfall_id":"","betrag":500}]}`,
+			mitKennungImPfad(s.schaden().BescheidErstellen(nil, nil), titel)},
+		{"Bescheid, leere Ausleihe", "/api/schueler/" + titel + "/bescheide",
+			`{"mittel":"land","frist_bis":"` + frist + `","ausleihen":[{"ausleihe_id":"","betrag":500}]}`,
+			mitKennungImPfad(s.schaden().BescheidErstellen(nil, nil), titel)},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			if status := tuertest.StatusOhneDB(t, f.h, http.MethodPost, f.pfad, f.rumpf); status != http.StatusBadRequest {
+				t.Fatalf("Status %d, erwartet 400", status)
+			}
+		})
+	}
+}
+
+// mitAnmeldung legt eine Anmeldung in den Kontext: Theke, Schadensmeldung und Klassensatz fragen
+// danach, bevor oder nachdem sie die Anfrage lesen.
+func mitAnmeldung(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h(w, r.WithContext(context.WithValue(r.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: "33333333-3333-3333-3333-333333333333", Rolle: auth.RolleAdmin})))
+	}
+}
+
+// mitKennungImPfad setzt {id}, das sonst der Router füllt.
+func mitKennungImPfad(h http.HandlerFunc, id string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("id", id)
+		h(w, r)
+	}
+}
+
 func TestVormerkungen_UngueltigeKennungErreichtDieAbfragenNicht(t *testing.T) {
 	s := &Server{}
 	faelle := []struct {
@@ -111,7 +170,10 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 		t.Fatalf("gültige UUID abgewiesen: %v", err)
 	}
 	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1"}); err != nil {
-		t.Fatalf("nil-Zeiger abgewiesen: %v", err)
+		t.Fatalf("nil-Zeiger und leerer Schlüssel abgewiesen: %v", err)
+	}
+	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1", IdempotenzSchluessel: gut}); err != nil {
+		t.Fatalf("gültiger Schlüssel abgewiesen: %v", err)
 	}
 	if err := tuer.Pruefer.Struct(theke.EingabeAnfrage{Text: "B-1", AktiverLeserID: &[]string{"x"}[0]}); err == nil {
 		t.Fatal("„x“ als active_leser_id durchgelassen")
