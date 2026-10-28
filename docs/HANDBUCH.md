@@ -712,8 +712,9 @@ gebucht wird. Ein Buch, das laut Programm verliehen ist und im Regal gescannt wi
 zurück wie die Theke; ist es vorgemerkt, sagt die Karte „ins Abholfach legen". Wer an der Theke
 nicht zurücknehmen darf, bekommt nur den Hinweis. Was während der Inventur an der Theke war oder
 neu eingetragen wurde, erwartet der Abschluss nicht und bucht es nicht als verloren. **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im
-Umfang als Verlust — vorher den Fehlbestandsbericht prüfen; dort lassen sich Funde wieder
-zurückholen. _Liste drucken_ im Bericht druckt die Exemplare, die noch fehlen, in der
+Umfang als Verlust; danach stehen diese Bücher im Fehlbestandsbericht, auch später unter
+_Frühere Inventuren_. Ein Buch, das sich doch findet, holt ein Kreuz unter _Gefunden_ zurück,
+ebenso ein Scan an der Theke. _Liste drucken_ im Bericht druckt die Exemplare, die noch fehlen, in der
 Reihenfolge der Signaturen, mit ganzem Titel und einem Kästchen zum Abhaken; gefundene und
 endgültig gelöschte nennt das Blatt nur als Zahl. Laufende Inventuren können fortgesetzt oder
 verworfen werden. Verwerfen bucht nichts: Unter _Frühere Inventuren_ steht der Lauf dann als
