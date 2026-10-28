@@ -56,3 +56,57 @@ describe('Bestandstabelle: Auswahl und Massenaktion', () => {
 		expect(geloescht.mock.calls[0][0], 'die Massenaktion traf unsichtbare Zeilen').toEqual(['1']);
 	});
 });
+
+// „Löschen (n)" nahm die Markierung schon beim Klick weg: Nach einer Ablehnung des Servers, nach
+// „Abbrechen" in der Rückfrage und nach einem Doppelklick, dessen zweiter Klick die Rückfrage
+// schloss, musste jeder Titel neu markiert werden, in Chromium, Firefox und WebKit (OFFEN.md
+// 5.106). Wie bei den Exemplaren der Buchakte bleibt markiert, was nicht gelöscht ist.
+describe('Bestandstabelle: Löschen der markierten Titel', () => {
+	const zwei = () => [buch('1', 'Mathe 5'), buch('2', 'Deutsch 5')];
+
+	it('lässt die Titel markiert, wenn das Löschen nicht gelang', async () => {
+		const { getByLabelText, getByRole } = zeige(
+			zwei(),
+			vi.fn(async () => {})
+		);
+		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
+
+		await fireEvent.click(getByRole('button', { name: /Löschen \(2\)/ }));
+		await new Promise((weiter) => setTimeout(weiter));
+
+		expect(
+			getByRole('button', { name: /Löschen \(2\)/ }),
+			'die Markierung ging mit dem Klick'
+		).toBeTruthy();
+	});
+
+	it('nimmt die gelöschten Titel aus der Markierung', async () => {
+		const { getByLabelText, getByRole, queryByRole, rerender } = zeige(
+			zwei(),
+			vi.fn(async () => {})
+		);
+		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
+		await fireEvent.click(getByRole('button', { name: /Löschen \(2\)/ }));
+
+		await rerender({ titelListe: [] });
+
+		expect(queryByRole('button', { name: /Löschen \(/ })).toBeNull();
+	});
+
+	it('schickt keinen zweiten Auftrag, solange der erste läuft', async () => {
+		/** @type {() => void} */
+		let fertig = () => {};
+		const onDelete = vi.fn(() => new Promise((weiter) => (fertig = () => weiter(undefined))));
+		const { getByLabelText, getByRole } = zeige(zwei(), onDelete);
+		await fireEvent.click(getByLabelText('Alle Bücher auswählen'));
+		const knopf = /** @type {HTMLButtonElement} */ (getByRole('button', { name: /Löschen \(2\)/ }));
+
+		await fireEvent.click(knopf);
+		await fireEvent.click(knopf);
+
+		expect(onDelete, 'ein zweiter Auftrag vor der Antwort').toHaveBeenCalledTimes(1);
+		expect(knopf.disabled, 'gesperrt, solange das Löschen läuft').toBe(true);
+		fertig();
+		await vi.waitFor(() => expect(knopf.disabled).toBe(false));
+	});
+});

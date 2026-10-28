@@ -3,12 +3,14 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
+	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import { BookOpen, Camera, Plus, RefreshCw, Trash } from '@lucide/svelte';
 
 	/**
 	 * @type {{
 	 *   titelAnzahl: number,
 	 *   anzahlGewaehlt: number,
+	 *   loescht?: boolean,
 	 *   onDelete: () => void,
 	 *   onAssignClass: () => void,
 	 *   onScan: () => void,
@@ -16,8 +18,16 @@
 	 *   onRetryCovers: () => void
 	 * }}
 	 */
-	let { titelAnzahl, anzahlGewaehlt, onDelete, onAssignClass, onScan, onCreateNew, onRetryCovers } =
-		$props();
+	let {
+		titelAnzahl,
+		anzahlGewaehlt,
+		loescht = false,
+		onDelete,
+		onAssignClass,
+		onScan,
+		onCreateNew,
+		onRetryCovers
+	} = $props();
 </script>
 
 <div class="flex flex-col gap-4 border-b border-outline-variant px-4 py-4 md:px-6">
@@ -52,8 +62,12 @@
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
 				Zum Klassensatz hinzufügen ({anzahlGewaehlt})
 			</Button>
-			<Button variant="danger" onclick={onDelete}>
-				<Trash class="w-4 h-4" aria-hidden="true" />
+			<Button variant="danger" onclick={onDelete} disabled={loescht}>
+				{#if loescht}
+					<Ladekreis size="sm" farbe="aktuell" />
+				{:else}
+					<Trash class="w-4 h-4" aria-hidden="true" />
+				{/if}
 				Löschen ({anzahlGewaehlt})
 			</Button>
 		{/if}

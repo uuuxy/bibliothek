@@ -13,7 +13,7 @@
 	 *   onOpenDetail: (book: any) => void,
 	 *   onCreateNew: () => void,
 	 *   onScan: () => void,
-	 *   onDelete: (ids: string[]) => void,
+	 *   onDelete: (ids: string[]) => Promise<void> | void,
 	 *   onAssignClass: (ids: string[]) => void,
 	 *   onRetryCovers: () => void
 	 * }}
@@ -37,9 +37,18 @@
 	// Performance: Begrenzung der gerenderten DOM-Elemente
 	let maxVisible = $state(50);
 
-	function loesche() {
-		onDelete(auswahl.ids);
-		auswahl.leeren();
+	// Die Markierung bleibt: Was gelöscht ist, verlässt die Liste und mit ihr die Auswahl
+	// (angleichen); nach einer Ablehnung oder „Abbrechen" steht sie noch da. Solange das Löschen
+	// läuft, geht kein zweiter Auftrag hinaus.
+	let loescht = $state(false);
+	async function loesche() {
+		if (loescht) return;
+		loescht = true;
+		try {
+			await onDelete(auswahl.ids);
+		} finally {
+			loescht = false;
+		}
 	}
 
 	function ordneKlasseZu() {
@@ -53,6 +62,7 @@
 	<BestandstabelleLeiste
 		titelAnzahl={titelListe.length}
 		anzahlGewaehlt={auswahl.anzahl}
+		{loescht}
 		onDelete={loesche}
 		onAssignClass={ordneKlasseZu}
 		{onScan}
