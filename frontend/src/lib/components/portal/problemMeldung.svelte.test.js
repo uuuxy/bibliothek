@@ -102,6 +102,26 @@ describe('Problem melden', () => {
 		expect(nachSenden).not.toHaveBeenCalled();
 	});
 
+	// Ohne Antwort ist offen, ob die Meldung angekommen ist. Ein zweites Senden legte sie doppelt
+	// an (Probe in Chromium, Firefox und WebKit, OFFEN.md 5.106); die eigenen Meldungen zeigen
+	// es vorher. Die Eingabe bleibt, falls sie nicht angekommen ist.
+	it('liest nach einem Fehler ohne Antwort die eigenen Meldungen neu', async () => {
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		const nachSenden = vi.fn();
+		const meldung = erzeugeProblemMeldung(nachSenden);
+		meldung.oeffne('titel-1');
+		meldung.form('titel-1').text = 'Seiten fehlen';
+
+		expect(await meldung.senden('titel-1', 'Markl Biologie 2')).toBe(false);
+
+		expect(nachSenden).toHaveBeenCalledTimes(1);
+		expect(meldung.form('titel-1')).toMatchObject({ open: true, text: 'Seiten fehlen' });
+		expect(vi.mocked(snackbars.addToast)).toHaveBeenCalledWith(
+			'Keine Verbindung zum Server.',
+			'error'
+		);
+	});
+
 	it('schließt ein Formular, ohne die Eingabe zu verwerfen', () => {
 		const meldung = erzeugeProblemMeldung(vi.fn());
 		meldung.oeffne('titel-1');

@@ -68,7 +68,7 @@ export function erzeugeReservierungsListen() {
  * @param {() => any} nutzer - Getter (kein Wert: Props sind $state, ein direkt
  *   übergebener Wert fröre den Anmelde-Moment ein — svelte/state_referenced_locally)
  * @param {(titelId: string) => any[]} warteschlangeFuer - offene Reservierungen zum Titel
- * @param {() => void} nachSenden - lädt die Warteschlange nach einem Erfolg neu
+ * @param {() => void} nachSenden - lädt die Warteschlange nach einem Erfolg oder ohne Antwort neu
  */
 export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSenden) {
 	/** @type {Record<string, { open: boolean, klasse: string, anzahl: number, notiz: string, loading: boolean, success: string|null, error: string|null, idempotencyKey: string|null }>} */
@@ -155,6 +155,9 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 				}
 			} catch (e) {
 				f.error = fehlertext(e);
+				// Ohne Antwort ist offen, ob die Reservierung angekommen ist; die Warteschlange zeigt
+				// es. Ein zweites Senden trägt denselben Schlüssel, der Server legt nichts doppelt an.
+				nachSenden();
 			} finally {
 				f.loading = false;
 			}

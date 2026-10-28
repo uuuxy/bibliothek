@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { erzeugeReservierungsListen } from './klassensatzReservierung.svelte.js';
+import {
+	erzeugeReservierungsListen,
+	erzeugeKlassensatzReservierung
+} from './klassensatzReservierung.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { serverAntwort } from '../../serverAntwort.js';
 
@@ -98,5 +101,39 @@ describe('Reservierungs-Listen des Portals', () => {
 		await ausgelaufen();
 		expect(listen.eigeneFehler).toBe('');
 		expect(listen.eigene).toHaveLength(1);
+	});
+});
+
+// Ohne Antwort ist offen, ob die Reservierung angekommen ist: Die Warteschlange zeigt es, und
+// ein zweites Senden trägt denselben Schlüssel, der Server legt nichts doppelt an
+// (OFFEN.md 5.106).
+describe('Klassensatz reservieren ohne Antwort', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	it('liest die Warteschlange neu und schickt beim zweiten Versuch denselben Schlüssel', async () => {
+		const nachSenden = vi.fn();
+		const reservierung = erzeugeKlassensatzReservierung(
+			() => ({ klasse: '' }),
+			() => [],
+			nachSenden
+		);
+		reservierung.toggle('titel-1');
+		reservierung.form('titel-1').klasse = '9b';
+		vi.mocked(apiFetch).mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+
+		await reservierung.senden('titel-1');
+
+		expect(nachSenden).toHaveBeenCalledTimes(1);
+		expect(reservierung.form('titel-1').error).toBe('Keine Verbindung zum Server.');
+		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ (ok({ id: 'r1' })));
+		await reservierung.senden('titel-1');
+		const schluessel = vi
+			.mocked(apiFetch)
+			.mock.calls.map(
+				([, optionen]) => JSON.parse(/** @type {any} */ (optionen).body).idempotency_key
+			);
+		expect(schluessel[1]).toBe(schluessel[0]);
 	});
 });

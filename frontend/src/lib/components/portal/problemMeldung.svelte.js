@@ -75,8 +75,10 @@ export function erzeugeProblemMeldung(nachSenden) {
 			const titelText = titel === undefined ? f.worum.trim() : titel.trim() || 'Unbekannter Titel';
 			if (f.sending || titelText === '' || f.text.trim() === '') return false;
 			f.sending = true;
+			/** @type {Response | undefined} */
+			let res;
 			try {
-				const res = await apiFetch('/api/anliegen', {
+				res = await apiFetch('/api/anliegen', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
@@ -94,6 +96,9 @@ export function erzeugeProblemMeldung(nachSenden) {
 				return true;
 			} catch (err) {
 				snackbars.addToast(fehlertext(err), 'error');
+				// Ohne Antwort ist offen, ob die Meldung angekommen ist; die eigenen Meldungen zeigen
+				// es, bevor jemand ein zweites Mal sendet. Eine Ablehnung legt nichts an.
+				if (!res) await nachSenden();
 				return false;
 			} finally {
 				if (forms[key]) forms[key].sending = false;
