@@ -50,3 +50,17 @@ describe('Anmeldung: leeres Feld', () => {
 		expect(globalThis.fetch).not.toHaveBeenCalled();
 	});
 });
+
+// Der Grund einer gescheiterten Anmeldung erscheint nach dem Klick, ohne dass der Fokus zu ihm
+// wandert: Ohne Rolle liest ein Bildschirmleser nichts vor.
+describe('Anmeldung: der Grund einer Ablehnung', () => {
+	afterEach(() => {
+		authStore.loginError = null;
+	});
+
+	it('wird als Meldung vorgelesen', async () => {
+		const k = render(Anmeldung);
+		authStore.loginError = 'E-Mail oder Passwort falsch.';
+		expect((await k.findByRole('alert')).textContent).toContain('E-Mail oder Passwort falsch.');
+	});
+});

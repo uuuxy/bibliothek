@@ -81,7 +81,9 @@
 			{/if}
 		</Button>
 		{#if authStore.loginError}
-			<p class="text-xs text-error font-semibold animate-slide-up">{authStore.loginError}</p>
+			<p role="alert" class="text-xs text-error font-semibold animate-slide-up">
+				{authStore.loginError}
+			</p>
 		{/if}
 		{#if authStore.abmeldeHinweis}
 			<!-- Bleibt stehen bis zur nächsten Anmeldung: Ein Toast wäre nach Sekunden weg, und
