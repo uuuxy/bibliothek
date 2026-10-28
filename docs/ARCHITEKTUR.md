@@ -2349,13 +2349,20 @@ sieht.
   `'pdfjs.disabled': false` und `'dom.disable_open_during_load': true`. Eine Fehlerantwort kommt
   über `route.fulfill` mit Status und Rumpf `{"error": …}`, ein Netzausfall über
   `route.abort('failed')`, eine verlorene Antwort über `route.fetch()` und danach
-  `route.abort('failed')`: Der Server hat gearbeitet, der Browser sieht keine Antwort. Ein
+  `route.abort('failed')`: Der Server hat gearbeitet, der Browser sieht keine Antwort. Ein Cookie
+  aus dieser Antwort legt `route.fetch()` trotzdem im Browser ab: Nach einer verlorenen Anmeldung
+  ist das Cookie da, und die Maske zeigt den Fehler. Ein
   Doppelklick von Hand ist ein Klick und 120 ms später nur der zweite (`mouse.down` und
   `mouse.up` mit `clickCount: 2`); `page.mouse.click(x, y, { clickCount: 2 })` schickt zwei
   Klicks (`detail` 1 und 2), mit dem ersten zusammen also drei. Vor einem Klick auf einen Knopf,
   der gesperrt sein kann, sagt `isDisabled()`, ob er es ist; sonst wartet `locator.click()` bis
   zum Ende der Testfrist. In WebKit greift `page.route` nur mit `serviceWorkers: 'block'`, sonst
-  beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Ein Tab, den die Seite öffnet,
+  beantwortet der Service Worker die Anfrage am Werkzeug vorbei. Beim Neuladen schickt WebKit
+  bedingte Anfragen, und eine Antwort 304 lässt sich mit `route.fulfill` nicht umschreiben: Eine
+  Probe, die Antworten umschreibt, nimmt `If-None-Match` und `If-Modified-Since` aus den
+  Kopfzeilen für `route.fetch`. Springt `page.clock.fastForward` über Minuten, fehlt in dieser Zeit
+  der Herzschlag der Live-Leitung; vor dem Sperrbildschirm steht dann kurz das Band „Keine
+  Verbindung", ein Werk der Uhr, nicht des Netzes. Ein Tab, den die Seite öffnet,
   lädt an `page.route` vorbei; seine Anfragen fängt `context.route`. Die Meldungen schreibt ein
   `MutationObserver` aus `page.addInitScript` mit, sobald sie erscheinen: Eine neue ersetzt die
   stehende, und ein Blick nach dem Klick sieht nur die letzte. Der WebKit-Testbrowser zeichnet
