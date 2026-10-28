@@ -31,6 +31,9 @@
 	let bildform = $state(16 / 9);
 	const hochkant = $derived(bildform < PASSBILD_BILDFORM);
 
+	// Jeder Halt zählt weiter: Kommt die Kamera eines Starts erst danach, hält er sie gleich an.
+	let lauf = 0;
+
 	function leseBildform() {
 		if (videoEl?.videoWidth && videoEl.videoHeight) {
 			bildform = videoEl.videoWidth / videoEl.videoHeight;
@@ -41,9 +44,10 @@
 		// „Erneut versuchen" nach einem gescheiterten Speichern: Der Strom davon läuft noch, und
 		// ohne Halt bliebe seine Kamera auch nach dem Schließen an.
 		stoppeKamera();
+		const meiner = lauf;
 		try {
 			kameraFehler = null;
-			stream = await navigator.mediaDevices.getUserMedia({
+			const neu = await navigator.mediaDevices.getUserMedia({
 				video: {
 					width: { ideal: 1920 }, // High resolution for sharp details
 					height: { ideal: 1080 },
@@ -51,11 +55,14 @@
 					facingMode: 'user'
 				}
 			});
+			// Dialog zu, Sperre oder ein zweiter Start: Sonst brennte das Licht der Kamera weiter.
+			if (meiner !== lauf) return neu.getTracks().forEach((track) => track.stop());
+			stream = neu;
 			if (videoEl) {
 				videoEl.srcObject = stream;
 			}
 		} catch (err) {
-			kameraFehler = kamerafehlertext(err);
+			if (meiner === lauf) kameraFehler = kamerafehlertext(err);
 		}
 	}
 
@@ -105,6 +112,7 @@
 	}
 
 	function stoppeKamera() {
+		lauf++;
 		if (stream) {
 			for (const track of stream.getTracks()) {
 				track.stop();

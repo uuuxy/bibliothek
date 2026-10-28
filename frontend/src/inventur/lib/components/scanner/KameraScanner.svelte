@@ -17,6 +17,10 @@
 	/** @type {any} */
 	let erkenner = null;
 	let starting = false;
+	// Jeder Halt zählt weiter. Ein Start, dessen Kamera erst nach einem Halt kommt (Dialog zu,
+	// Sperre, „Stoppen"), hält ihren Strom sofort an; sonst brennte ihr Licht weiter, und niemand
+	// hielte sie mehr an.
+	let lauf = 0;
 	let lastDecoded = '';
 	let lastDecodeTime = 0;
 	let fehlerInFolge = 0;
@@ -25,7 +29,9 @@
 	const DECODE_COOLDOWN_MS = 3000;
 
 	onMount(() => {
-		setTimeout(startScanner, 300);
+		// Schließt der Dialog vor dem Start, startet nichts mehr.
+		const verzoegerung = setTimeout(startScanner, 300);
+		return () => clearTimeout(verzoegerung);
 	});
 
 	onDestroy(() => {
@@ -35,9 +41,11 @@
 	export async function startScanner() {
 		if (scanning || starting) return;
 		starting = true;
+		const meiner = lauf;
 
 		try {
 			const erkennung = await erzeugeBarcodeErkenner();
+			if (meiner !== lauf) return;
 			if (!erkennung) {
 				onStatusChange('Barcode-Erkennung wird von diesem Browser nicht unterstützt.');
 				return;
@@ -45,7 +53,7 @@
 			erkenner = erkennung.detector;
 
 			// Kamera-Stream starten
-			stream = await navigator.mediaDevices.getUserMedia({
+			const neu = await navigator.mediaDevices.getUserMedia({
 				video: {
 					facingMode: { ideal: 'environment' },
 					width: { ideal: 1280 },
@@ -53,11 +61,18 @@
 				},
 				audio: false
 			});
+			if (meiner !== lauf) {
+				neu.getTracks().forEach((/** @type {MediaStreamTrack} */ t) => t.stop());
+				return;
+			}
+			stream = neu;
 
 			if (videoEl) {
 				videoEl.srcObject = stream;
 				await videoEl.play();
 			}
+			// Ein Halt während play() hat den Strom schon angehalten.
+			if (meiner !== lauf) return;
 
 			scanning = true;
 			onStatusChange('Kamera aktiv. Barcode scannen.');
@@ -65,10 +80,12 @@
 			// Scan-Schleife starten
 			scanLoop();
 		} catch (error) {
+			if (meiner !== lauf) return;
 			console.error('Kamerafehler:', error);
 			onStatusChange(kamerafehlertext(error));
 		} finally {
-			starting = false;
+			// Ein überholter Start gibt die Sperre nicht frei: Sie gehört dem Start nach dem Halt.
+			if (meiner === lauf) starting = false;
 		}
 	}
 
@@ -116,6 +133,9 @@
 	}
 
 	export async function stopScanner() {
+		lauf++;
+		// Ein Start, der noch wartet, ist damit überholt; der nächste darf beginnen.
+		starting = false;
 		scanning = false;
 
 		if (animFrameId) {
