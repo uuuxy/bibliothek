@@ -40,9 +40,9 @@
 	let zuLoeschen = $state(null);
 	let loescht = $state(false);
 
-	async function ladeKonten() {
+	async function ladeKonten({ grund = /** @type {string | null} */ (null) } = {}) {
 		laedt = true;
-		fehler = null;
+		fehler = grund;
 		ladefehler = '';
 		try {
 			const res = await apiFetch('/api/benutzer');
@@ -84,7 +84,7 @@
 			);
 			ladeKonten();
 		} catch (err) {
-			fehler = fehlertext(err);
+			ladeKonten({ grund: fehlertext(err) });
 		} finally {
 			speichert = false;
 		}
@@ -106,9 +106,9 @@
 			snackbars.addToast('Benutzer erfolgreich gelöscht.', 'success');
 			ladeKonten();
 		} catch (err) {
-			// Der Dialog bleibt offen: Der Satz des Servers sagt, was zu tun ist, und steht
-			// deshalb dort, wo die Frage gestellt wurde.
-			fehler = fehlertext(err);
+			// Der Dialog bleibt offen und nennt den Satz des Servers, der sagt, was zu tun ist. Neu geladen
+			// wird wie nach gescheitertem Speichern: Ohne Antwort kann der Server schon gewirkt haben.
+			ladeKonten({ grund: fehlertext(err) });
 		} finally {
 			loescht = false;
 		}

@@ -230,3 +230,50 @@ describe('Benutzerliste: Namen für Vorleseprogramme', () => {
 		expect(screen.getByRole('dialog', { name: 'Benutzer unwiderruflich löschen?' })).toBeTruthy();
 	});
 });
+
+// Ging die Antwort verloren, hatte der Server schon gewirkt: Die Liste zeigte das gelöschte Konto
+// weiter und das angelegte nicht, und der zweite Versuch meldete „Konto nicht gefunden" oder „gibt
+// es bereits". In Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('Benutzerliste: nach einem Fehler neu laden', () => {
+	const NEU = { ...KONTO, id: 'u2', vorname: 'Nele', nachname: 'Neu', email: 'nele@test.local' };
+
+	/** Die Liste antwortet mit `listen[n]` beim n-ten Abruf; jeder Auftrag scheitert ohne Antwort. */
+	function ohneAntwort(/** @type {any[][]} */ ...listen) {
+		const abrufe = { n: 0 };
+		vi.mocked(apiFetch).mockImplementation(async (adresse, optionen) => {
+			if (adresse === '/api/benutzer' && !optionen) return antwort(listen[abrufe.n++] ?? []);
+			throw new Error('Keine Verbindung zum Server.');
+		});
+		return abrufe;
+	}
+
+	it('lädt die Liste nach einem gescheiterten Anlegen neu und lässt den Grund im Dialog', async () => {
+		const abrufe = ohneAntwort([KONTO], [KONTO, NEU]);
+		const screen = await benutzerliste();
+		await fireEvent.click(screen.getByRole('button', { name: /Benutzer anlegen/ }));
+		const dialog = screen.getByRole('dialog');
+		for (const [feld, wert] of [
+			['Vorname', NEU.vorname],
+			['Nachname', NEU.nachname],
+			['E-Mail Adresse', NEU.email]
+		])
+			await fireEvent.input(within(dialog).getByLabelText(feld), { target: { value: wert } });
+		await fireEvent.submit(/** @type {HTMLFormElement} */ (dialog.querySelector('form')));
+
+		await waitFor(() => expect(abrufe.n).toBe(2));
+		expect(await screen.findByText(NEU.email)).toBeTruthy();
+		expect(within(dialog).getByRole('alert').textContent).toContain('Keine Verbindung zum Server.');
+	});
+
+	it('lädt die Liste nach einem gescheiterten Löschen neu und lässt den Grund im Dialog', async () => {
+		const abrufe = ohneAntwort([KONTO], []);
+		const screen = await benutzerliste();
+		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		const dialog = screen.getByRole('dialog');
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
+
+		await waitFor(() => expect(abrufe.n).toBe(2));
+		await waitFor(() => expect(screen.queryByText(KONTO.email)).toBeNull());
+		expect(within(dialog).getByRole('alert').textContent).toContain('Keine Verbindung zum Server.');
+	});
+});
