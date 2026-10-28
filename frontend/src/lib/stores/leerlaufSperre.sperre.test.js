@@ -286,6 +286,49 @@ describe('leerlaufSperre: Sperre am Server', () => {
 		});
 	});
 
+	// Bis der Server die Sperre bestätigt, verdeckt sie nur dieses Fenster: Neuladen oder ein
+	// neuer Tab öffneten die Anwendung ohne Passwort. Ein Fehler ohne erkennbaren Ausfall des
+	// Netzes (Neustart des Servers, 503) meldet keine Rückkehr.
+	describe('kommt die Sperre nicht beim Server an', () => {
+		it('fragt das Fenster jede Minute noch einmal, bis der Server sie bestätigt', async () => {
+			serverAntwortet({ '/api/auth/sperren': { status: 503 } });
+			await fristLaeuftAb();
+			vi.mocked(apiFetch).mockClear();
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(aufrufe()).toEqual(['/api/auth/sperren']);
+			expect(signal()).toBe('');
+
+			serverAntwortet(SPERRBAR);
+			vi.mocked(apiFetch).mockClear();
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(aufrufe()).toEqual(['/api/auth/sperren']);
+			expect(signal()).toBe('gesperrt');
+
+			vi.mocked(apiFetch).mockClear();
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			expect(aufrufe()).toEqual([]);
+		});
+
+		it('hört auf, sobald aufgeschlossen ist', async () => {
+			vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+			await fristLaeuftAb();
+			serverAntwortet({ '/api/auth/entsperren': { status: 200, body: KONTO } });
+			expect(await lock.entsperren('geheim')).toBe(true);
+			vi.mocked(apiFetch).mockClear();
+			// Kürzer als die Frist bis zur nächsten Sperre (drei Minuten).
+			await vi.advanceTimersByTimeAsync(2 * 60_000);
+			expect(aufrufe()).not.toContain('/api/auth/sperren');
+		});
+
+		it('hört auf, wenn der Server die Anmeldung nicht mehr kennt', async () => {
+			serverAntwortet({ '/api/auth/sperren': { status: 401 } });
+			await fristLaeuftAb();
+			vi.mocked(apiFetch).mockClear();
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
+			expect(aufrufe()).toEqual([]);
+		});
+	});
+
 	describe('mehrere Fenster eines Browsers', () => {
 		it('Bedienung im anderen Fenster schiebt die Sperre hinaus, die eigene Theke leert sich trotzdem', async () => {
 			lock.start();

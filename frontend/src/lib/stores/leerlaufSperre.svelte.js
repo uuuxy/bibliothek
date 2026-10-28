@@ -25,7 +25,7 @@ import { beobachteAndereFenster, meldeAktivitaet, meldeSperre } from './fensterS
 import { netzLage } from './netzLage.svelte.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { stelleSperrSchildAuf } from '../components/auth/sperrSchild.js';
-import { entsperreAmServer, leseSperrzustand, sperreAmServer } from './sperreAmServer.js';
+import { entsperreAmServer, leseSperrzustand, sperreBisZumServer } from './sperreAmServer.js';
 import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 
 const AKTIVITAETS_EREIGNISSE = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
@@ -236,9 +236,9 @@ export class LeerlaufSperre {
 	async #sperreAmServer() {
 		if (offlineSync.wartendeAnzahl > 0) await offlineSync.starteAbgleich();
 		// Inzwischen aufgeschlossen: Eine verspätete Sperre träfe jemanden bei der Arbeit.
-		if (!this.#laeuft || !this.gesperrt) return;
-		const ergebnis = await sperreAmServer();
-		if (ergebnis !== 'gesperrt' || !this.#laeuft || !this.gesperrt) return;
+		const faellig = () => this.#laeuft && this.gesperrt && !this.#amServerGesperrt;
+		if (!faellig()) return;
+		if ((await sperreBisZumServer(faellig)) !== 'gesperrt' || !faellig()) return;
 		this.#amServerGesperrt = true;
 		meldeSperre(true);
 	}

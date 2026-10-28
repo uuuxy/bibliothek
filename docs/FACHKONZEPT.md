@@ -914,10 +914,12 @@ hat, bleibt gebucht, und ein Buch, das den Server nicht erreicht hat, geht mit d
 Ausweis vom Scan in die Warteschlange.
 
 Der Server sperrt die Anmeldung mit: Neuladen oder ein neuer Tab zeigen wieder den
-Sperrbildschirm, und hinter ihm liefert der Server keine Daten. Alle Fenster eines Browsers
-sperren und öffnen gemeinsam; wird in einem gearbeitet, sperrt keines. Ist der Mailserver der
-Schule nicht erreichbar, schließt das Passwort trotzdem auf — der Server prüft es dann gegen
-einen Wert, den er sich bei der Anmeldung gemerkt hat und beim Abmelden löscht.
+Sperrbildschirm, und hinter ihm liefert der Server keine Daten. Erreicht ihn die Sperre nicht
+(Neustart, kurzer Ausfall), fragt der Bildschirm jede Minute noch einmal, bis er sie bestätigt.
+Alle Fenster eines Browsers sperren und öffnen gemeinsam; wird in einem gearbeitet, sperrt
+keines. Ist der Mailserver der Schule nicht erreichbar, schließt das Passwort trotzdem auf — der
+Server prüft es dann gegen einen Wert, den er sich bei der Anmeldung gemerkt hat und beim
+Abmelden löscht.
 
 Denselben Sperrbildschirm zeigt der Server 10 Stunden nach der letzten Passworteingabe, auch
 mitten in der Arbeit; er nennt dann diesen Grund („Gesperrt nach 10 Stunden"). Eine offene Maske
