@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler, leseApiFehlerMitDaten } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
@@ -23,8 +23,21 @@
 		extendingIds.add(id);
 
 		try {
-			const response = await apiFetch(`/api/ausleihen/${id}/verlaengern`, { method: 'POST' });
-			if (response.ok) {
+			// Die gezeigte Frist geht mit: Hat ein früherer Auftrag schon gewirkt, etwa einer, dessen
+			// Antwort verloren ging, verlängert der Server nicht noch einmal und nennt die jetzige.
+			const response = await apiFetch(`/api/ausleihen/${id}/verlaengern`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ frist_bisher: book.rueckgabe_frist })
+			});
+			if (response.status === 409) {
+				const { meldung, daten } = await leseApiFehlerMitDaten(
+					response,
+					'Verlängerung nicht möglich.'
+				);
+				if (daten?.rueckgabe_frist) book.rueckgabe_frist = daten.rueckgabe_frist;
+				melde(meldung, 'info');
+			} else if (response.ok) {
 				const daten = await response.json();
 				book.rueckgabe_frist = daten.neues_rueckgabe_datum;
 				// Die Meldung nennt das neue Datum: Wer auf den Knopf sieht, sähe sonst nichts

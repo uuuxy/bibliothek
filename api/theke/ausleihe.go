@@ -5,6 +5,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"context"
@@ -29,6 +30,11 @@ type fristAnfrage struct {
 	FaelligAm string `json:"faellig_am" validate:"required"` // Zeitstempel nach RFC 3339 oder nur der Tag nach ISO 8601
 }
 
+// verlaengerungsAnfrage nennt freiwillig die Frist, die die Oberfläche beim Klick zeigte.
+type verlaengerungsAnfrage struct {
+	FristBisher string `json:"frist_bisher"` // wie faellig_am; leer: verlängert ohne Abgleich
+}
+
 // einstellungsAbruf liest die Einstellungen (repository.EinstellungsAbfragen); ohne Fehler ist
 // das Ergebnis nie nil.
 type einstellungsAbruf interface {
@@ -50,6 +56,10 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Ausleihe fehlt", nil)
+		return
+	}
+	gezeigt, ok := leseGezeigteFrist(w, r)
+	if !ok {
 		return
 	}
 
@@ -100,6 +110,10 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
+	if gezeigt != nil && !gleicherTag(*gezeigt, alteFrist) {
+		antworteFristGeaendert(w, alteFrist)
+		return
+	}
 	basis := t.Jetzt()
 	if alteFrist.After(basis) {
 		basis = alteFrist
@@ -121,6 +135,40 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{
 		"success":               true,
 		"neues_rueckgabe_datum": gesetzteFrist,
+	})
+}
+
+// leseGezeigteFrist liest die Frist, die die Oberfläche beim Klick zeigte; nil ohne Angabe.
+// ok=false: Die Fehlerantwort ist geschrieben.
+func leseGezeigteFrist(w http.ResponseWriter, r *http.Request) (*time.Time, bool) {
+	var req verlaengerungsAnfrage
+	if r.ContentLength > 0 && !tuer.LeseAnfrage(w, r, &req) {
+		return nil, false
+	}
+	if req.FristBisher == "" {
+		return nil, true
+	}
+	gezeigt, err := leseFaelligAm(req.FristBisher)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
+		return nil, false
+	}
+	return &gezeigt, true
+}
+
+// gleicherTag vergleicht zwei Fristen am Kalendertag der Schule.
+func gleicherTag(a, b time.Time) bool {
+	zone := schulzeit.Zone()
+	return a.In(zone).Format(time.DateOnly) == b.In(zone).Format(time.DateOnly)
+}
+
+// antworteFristGeaendert lehnt eine zweite Verlängerung ab: Die Frist am Server ist nicht mehr
+// die gezeigte, ein früherer Auftrag hat schon gewirkt, etwa einer, dessen Antwort verloren
+// ging. Die Antwort nennt die jetzige Frist, damit die Oberfläche sie zeigt.
+func antworteFristGeaendert(w http.ResponseWriter, frist time.Time) {
+	tuer.AntworteJSON(w, http.StatusConflict, map[string]any{
+		"error":           fmt.Sprintf("Die Frist steht schon auf dem %s.", frist.In(schulzeit.Zone()).Format(tuer.DatumsformatDE)),
+		"rueckgabe_frist": frist,
 	})
 }
 

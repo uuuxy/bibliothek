@@ -309,3 +309,62 @@ func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t
 		&tuertest.EinstellungenAttrappe{Fehler: errors.New("einstellungen nicht lesbar")})
 	pruefeFrist(t, testdaten.LadeFrist(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 30))
 }
+
+// Ging die Antwort auf eine Verlängerung verloren, verlängerte der zweite Auftrag noch einmal: Aus
+// 21 Tagen wurden 42, und die Leserakte meldete nur „Verlängert bis …". Nennt die Oberfläche die
+// Frist, die sie zeigte, und steht am Server schon eine andere, antwortet die Tür mit 409 und der
+// jetzigen Frist (OFFEN.md 5.106).
+func TestAusleiheVerlaengern_ZweiterAuftragMitAlterFristVerlaengertNichtNochEinmal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-VG-3", "Zweimal", "5a")
+	gezeigt := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, schueler, "Buch für zwei Klicks", gezeigt)
+
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
+	}))
+	verlaengere := func(fristBisher time.Time) *httptest.ResponseRecorder {
+		t.Helper()
+		rumpf := `{"frist_bisher":"` + fristBisher.Format(time.RFC3339) + `"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleihe+"/verlaengern", strings.NewReader(rumpf))
+		req.Header.Set("Content-Type", "application/json")
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: auth.RolleAdmin}))
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+
+	if rec := verlaengere(gezeigt); rec.Code != http.StatusOK {
+		t.Fatalf("erste Verlängerung: Status %d: %s", rec.Code, rec.Body.String())
+	}
+	nachErster := testdaten.LadeFrist(t, pool, ausleihe)
+
+	zweite := verlaengere(gezeigt)
+	if zweite.Code != http.StatusConflict {
+		t.Fatalf("zweiter Auftrag mit der alten Frist: Status %d, erwartet 409: %s", zweite.Code, zweite.Body.String())
+	}
+	if frist := testdaten.LadeFrist(t, pool, ausleihe); !frist.Equal(nachErster) {
+		t.Errorf("der zweite Auftrag hat noch einmal verlängert: %s statt %s",
+			frist.Format(time.RFC3339), nachErster.Format(time.RFC3339))
+	}
+	var antwort struct {
+		Fehler         string    `json:"error"`
+		RueckgabeFrist time.Time `json:"rueckgabe_frist"`
+	}
+	if err := json.Unmarshal(zweite.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	datum := nachErster.In(schulzeit.Zone()).Format(tuer.DatumsformatDE)
+	if !antwort.RueckgabeFrist.Equal(nachErster) || !strings.Contains(antwort.Fehler, datum) {
+		t.Errorf("die Antwort nennt nicht die jetzige Frist %s: %+v", datum, antwort)
+	}
+
+	// Mit der jetzigen Frist verlängert ein bewusster zweiter Auftrag weiter.
+	if rec := verlaengere(nachErster); rec.Code != http.StatusOK {
+		t.Errorf("Verlängerung mit der jetzigen Frist: Status %d: %s", rec.Code, rec.Body.String())
+	}
+}
