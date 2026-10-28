@@ -74,3 +74,34 @@ test('Inventur: Ein verliehenes Buch im Regal zählt nicht als gefunden', async 
 		`);
 	}
 });
+
+// Läuft im gewählten Bereich schon eine Inventur, nennt der Kasten über der Liste den Grund. Er
+// erscheint nach dem Klick auf „Inventur Starten", ohne dass der Fokus zu ihm wandert; vorgelesen
+// wird er deshalb nur als Meldung (role="alert"), wie dieselbe Meldung im Start-Dialog.
+test('Inventur: Der Grund über der Liste wird als Meldung vorgelesen', async ({ page }) => {
+	await uiLogin(page);
+	const s = uniqueSuffix();
+	const signatur = `E2E-INVM-${s}`;
+
+	try {
+		seedSQL(`
+			INSERT INTO inventur_sessions (scope_type, scope_signatur, scope_label)
+			VALUES ('signature', '${signatur}', 'Signatur ${signatur}');
+		`);
+
+		await menuepunkt(page, 'Inventur').click();
+		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		await page.getByText('Nur bestimmte Signatur').click();
+		await page.getByLabel('Signatur auswählen').fill(signatur);
+		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+
+		// Der Dialog schließt nach der Ablehnung; dieselbe Meldung in ihm zählt nicht.
+		await expect(page.getByRole('heading', { name: 'Bereich der Inventur wählen' })).toBeHidden();
+		await expect(page.getByText('Für diesen Bereich läuft bereits eine Inventur')).toBeVisible();
+		await expect(
+			page.getByRole('alert').filter({ hasText: 'Für diesen Bereich läuft bereits eine Inventur' })
+		).toBeVisible();
+	} finally {
+		seedSQL(`DELETE FROM inventur_sessions WHERE scope_signatur = '${signatur}';`);
+	}
+});

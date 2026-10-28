@@ -80,7 +80,10 @@
 			</Button>
 
 			{#if ablauf.fehler}
+				<!-- role="alert" wie dieselbe Meldung im Start-Dialog: Sie erscheint nach einem Klick,
+				     ohne dass der Fokus hierher wandert. -->
 				<div
+					role="alert"
 					class="w-full max-w-lg mx-auto p-3 bg-warning-container rounded-lg text-sm text-on-warning-container"
 				>
 					{ablauf.fehler}
