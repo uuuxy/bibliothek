@@ -1,12 +1,13 @@
 // Package tuer trägt, was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Sitzung
 // und die Rechte einer Anfrage prüfen, einen Vorgang der Verwaltung ins Protokoll schreiben,
-// die Uhr der Schule, den Kopf ihrer Briefe und den Versand von Mail. Es steht unter den Türen,
-// damit ein Paket mit den Türen eines Themas es einbinden kann; api/ selbst ließe sich von dort
-// nicht einbinden.
+// die Uhr der Schule, den Kopf ihrer Briefe, den Versand von Mail und die Meldung nach einer
+// Ausleihe oder Rückgabe an die übrigen Arbeitsplätze. Es steht unter den Türen, damit ein Paket
+// mit den Türen eines Themas es einbinden kann; api/ selbst ließe sich von dort nicht einbinden.
 package tuer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -64,6 +65,27 @@ func (b *Basis) Jetzt() time.Time {
 		return b.Uhr()
 	}
 	return schulzeit.Jetzt()
+}
+
+// thekenEreignis ist die Meldung „action" der Live-Leitung nach einer Ausleihe oder Rückgabe.
+// Jedes angemeldete Konto bekommt sie, auch das Kollegium; sie trägt deshalb keinen Namen und
+// kein Buch. Die Oberfläche braucht nur Art und Leser (Omnibox.svelte lädt die offene Akte neu,
+// Abgaenger.svelte die Liste); mit Titel oder Nummer des Buchs ergäbe die Kennung des Lesers eine
+// Lesehistorie neben der befristeten.
+type thekenEreignis struct {
+	Art       string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
+	LeserID   string `json:"student_id,omitempty"`
+	Zeitpunkt int64  `json:"timestamp"`
+}
+
+// SendeThekenEreignis schickt nach einer Ausleihe oder Rückgabe die Meldung „action" über die
+// Live-Leitung, damit die übrigen Arbeitsplätze die offene Akte neu laden. Theke und Inventur
+// buchen beide zurück und melden es hier, in derselben Form.
+func (b *Basis) SendeThekenEreignis(art, leserID string) {
+	daten, err := json.Marshal(thekenEreignis{Art: art, LeserID: leserID, Zeitpunkt: time.Now().Unix()})
+	if err == nil {
+		b.Broker.Verteile("action", string(daten))
+	}
 }
 
 // Datumsformate (Go-Referenzzeit "Mon Jan 2 15:04:05 MST 2006").

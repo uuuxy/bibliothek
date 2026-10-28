@@ -1,7 +1,6 @@
 package theke
 
 import (
-	"encoding/json"
 	"time"
 
 	"bibliothek/repository"
@@ -61,17 +60,6 @@ type abholbereiteVormerkung struct {
 	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
-// thekenEreignis ist die Meldung „action" der Live-Leitung nach einer Ausleihe oder Rückgabe.
-// Jedes angemeldete Konto bekommt sie, auch das Kollegium; sie trägt deshalb keinen Namen und
-// kein Buch. Die Oberfläche braucht nur Art und Leser (Omnibox.svelte lädt die offene Akte neu,
-// Abgaenger.svelte die Liste); mit Titel oder Nummer des Buchs ergäbe die Kennung des Lesers eine
-// Lesehistorie neben der befristeten.
-type thekenEreignis struct {
-	Art       string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
-	LeserID   string `json:"student_id,omitempty"`
-	Zeitpunkt int64  `json:"timestamp"`
-}
-
 // sendeThekenEreignis schickt das Ereignis über die Live-Leitung; ohne Exemplar (Gerät)
 // schickt es nichts.
 func (t *Tueren) sendeThekenEreignis(antwort eingabeAntwort) {
@@ -82,17 +70,9 @@ func (t *Tueren) sendeThekenEreignis(antwort eingabeAntwort) {
 	if antwort.Leser != nil {
 		leserID = antwort.Leser.ID
 	}
-	ereignis := thekenEreignis{
-		Art:       antwort.Art,
-		LeserID:   leserID,
-		Zeitpunkt: time.Now().Unix(),
-	}
+	art := antwort.Art
 	if antwort.Fremdrueckgabe {
-		ereignis.Art = "fremdrueckgabe"
+		art = "fremdrueckgabe"
 	}
-
-	daten, err := json.Marshal(ereignis)
-	if err == nil {
-		t.Broker.Verteile("action", string(daten))
-	}
+	t.SendeThekenEreignis(art, leserID)
 }
