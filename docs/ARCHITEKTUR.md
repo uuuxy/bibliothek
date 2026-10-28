@@ -1502,7 +1502,7 @@ Stand: 16.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 | Stufe                    | Basis                  | Erzeugnis                                                                                                          |
 | ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 1 `frontend-builder`     | `node:24-alpine`       | `npm ci` (Lockfile verbindlich) → `npm run build` → `frontend/dist`                                                |
+| 1 `frontend-builder`     | `node:26-alpine`       | `npm ci` (Lockfile verbindlich) → `npm run build` → `frontend/dist`                                                |
 | 2 `backend-builder`      | `golang:1.27.3-alpine` | `main` mit **CGO_ENABLED=1** (WebP), dazu `rotate-encryption-key`, `restore-backup`, `encrypt-backup` mit **CGO_ENABLED=0** |
 | 3 Laufzeit               | `alpine:3.24`          | `apk upgrade` + `ca-certificates`, `tzdata`, **`postgresql18-client`**; Binaries, `schema.sql`, `migrations/`, `frontend/dist`; `USER appuser`; `EXPOSE 8081`; `HEALTHCHECK` auf `/health`; `CMD ["./main"]` |
 

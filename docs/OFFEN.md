@@ -78,8 +78,9 @@ Nur, was kein Test leisten kann.
 
 ### Termin
 
-- [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
+- [x] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
+- [ ] Ab dem 20. Oktober 2027: Node 27, nach derselben Regel.
 
 ---
 
