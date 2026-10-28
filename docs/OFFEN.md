@@ -51,7 +51,7 @@ einem Fehler (5.106).
 - [x] Einstellungen, Benutzer und Rechte. (5.106)
 - [x] Portal und öffentlicher Katalog. (5.106)
 - [x] Anmeldung, Sperre und Update-Hinweis. (5.106)
-- [ ] Statistik, Protokoll und Betrieb. (5.106)
+- [x] Statistik, Protokoll und Betrieb. (5.106)
 - [x] Der Browser-Test „Handscanner: der Fokus steht woanders" wackelt nach „Bezahlt". (5.109)
 
 ### Bei dir
