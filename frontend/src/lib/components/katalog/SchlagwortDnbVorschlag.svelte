@@ -42,9 +42,9 @@
 	{:else if status === 'unbekannt'}
 		<p class="text-xs text-on-surface-variant" role="status">Die DNB kennt diese ISBN nicht.</p>
 	{:else if status === 'fehler'}
-		<p class="text-xs text-error" role="alert">
-			Die DNB ist nicht erreichbar. Bitte später erneut versuchen.
-		</p>
+		<!-- Der Grund kommt vom Server oder vom Browser: Ein fester Satz sagte auch bei „Keine
+		     gültige ISBN", die DNB sei nicht erreichbar. -->
+		<p class="text-xs text-error" role="alert">{vorschlag.grund(isbn)}</p>
 	{/if}
 	{#if status === '' || status === 'laedt' || status === 'fehler'}
 		<Button

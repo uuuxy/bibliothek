@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn(), apiPut: vi.fn() }));
+// leseApiFehler bleibt echt (ARCHITEKTUR.md 8.14).
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn(),
+	apiPut: vi.fn()
+}));
 
 import { apiFetch } from '../../apiFetch.js';
+import { serverAntwort } from '../../serverAntwort.js';
 import SchlagwortDnbVorschlag from './SchlagwortDnbVorschlag.svelte';
 import { erzeugeDnbSchlagwortVorschlag } from '../../utils/dnbSchlagwortVorschlag.svelte.js';
 
@@ -76,7 +82,9 @@ describe('SchlagwortDnbVorschlag', () => {
 	});
 
 	it('meldet einen Ausfall als Ausfall und lässt den Knopf zum erneuten Versuch stehen', async () => {
-		dnbAntwortet({ error: 'DNB nicht erreichbar' }, 502);
+		vi.mocked(apiFetch).mockResolvedValue(
+			serverAntwort(502, { error: 'Die DNB ist nicht erreichbar. Bitte später erneut versuchen.' })
+		);
 		const { screen } = knopf();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
@@ -85,6 +93,28 @@ describe('SchlagwortDnbVorschlag', () => {
 			expect(screen.getByRole('alert').textContent).toMatch(/Die DNB ist nicht erreichbar/)
 		);
 		expect(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeTruthy();
+	});
+
+	// Die Zeile sagte bei jedem Fehler „Die DNB ist nicht erreichbar", auch bei „Keine gültige ISBN"
+	// und ohne Netz: Wer eine falsche Prüfziffer eingetippt hatte, versuchte es später vergeblich
+	// noch einmal (OFFEN.md 5.106).
+	it('nennt den Grund des Servers und ohne Netz den Netzfehler', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(serverAntwort(400, { error: 'Keine gültige ISBN' }));
+		const { screen } = knopf();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
+
+		await vi.waitFor(() =>
+			expect(screen.getByRole('alert').textContent).toMatch(/Keine gültige ISBN/)
+		);
+		expect(screen.getByRole('alert').textContent).not.toMatch(/nicht erreichbar/);
+
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
+
+		await vi.waitFor(() =>
+			expect(screen.getByRole('alert').textContent).toMatch(/Keine Verbindung zum Server\./)
+		);
 	});
 
 	it('zeigt ohne ISBN keinen Knopf', () => {

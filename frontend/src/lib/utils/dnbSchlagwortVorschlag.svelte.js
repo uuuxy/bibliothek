@@ -1,5 +1,6 @@
 import { ladeDnbSchlagwortVorschlag } from './schlagworte.js';
 import { normalisiereIsbn as normiere } from './isbnFormen.js';
+import { fehlertext } from './fehlertext.js';
 
 /**
  * Der Schlagwort-Vorschlag aus der DNB für ein Schlagwort-Feld: im
@@ -10,11 +11,13 @@ import { normalisiereIsbn as normiere } from './isbnFormen.js';
  * liste und neu nichts, und der Knopf fragt neu. Nur die jüngste Antwort schreibt.
  *
  * status: '' (nicht gefragt) · 'laedt' · 'da' · 'unbekannt' (die DNB kennt die ISBN nicht) ·
- * 'fehler' (nicht erreichbar).
+ * 'fehler'; grund nennt dann, was der Server oder der Browser sagte: „Keine gültige ISBN",
+ * „Die DNB ist nicht erreichbar. …", „Keine Verbindung zum Server.".
  */
 export function erzeugeDnbSchlagwortVorschlag() {
 	/** @type {'' | 'laedt' | 'da' | 'unbekannt' | 'fehler'} */
 	let status = $state('');
+	let grund = $state('');
 	let fuer = $state('');
 	/** @type {string[]} */
 	let liste = $state([]);
@@ -27,6 +30,8 @@ export function erzeugeDnbSchlagwortVorschlag() {
 	return {
 		/** @param {string | null | undefined} isbn */
 		status: (isbn) => (gilt(isbn) ? status : ''),
+		/** @param {string | null | undefined} isbn */
+		grund: (isbn) => (gilt(isbn) ? grund : ''),
 		/** Die Wörter der eigenen Liste. @param {string | null | undefined} isbn */
 		liste: (isbn) => (gilt(isbn) ? liste : []),
 		/** Die Normdatei-Wörter, die die Liste noch nicht kennt. @param {string | null | undefined} isbn */
@@ -38,6 +43,7 @@ export function erzeugeDnbSchlagwortVorschlag() {
 			const meine = ++laufNr;
 			fuer = nummer;
 			status = 'laedt';
+			grund = '';
 			liste = [];
 			neu = [];
 			try {
@@ -46,8 +52,10 @@ export function erzeugeDnbSchlagwortVorschlag() {
 				liste = antwort.liste;
 				neu = antwort.neu;
 				status = antwort.dnbSatz ? 'da' : 'unbekannt';
-			} catch {
-				if (meine === laufNr) status = 'fehler';
+			} catch (e) {
+				if (meine !== laufNr) return;
+				status = 'fehler';
+				grund = fehlertext(e);
 			}
 		}
 	};
