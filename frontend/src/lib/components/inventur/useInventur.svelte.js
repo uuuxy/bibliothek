@@ -44,7 +44,7 @@ export function useInventur() {
 		try {
 			const r = await scanne(lauf.laufKennung, barcode);
 			const ergebnis = deuteScanErgebnis(r, barcode);
-			if (ergebnis.zaehlen) lauf.stand.erfasst++;
+			if (ergebnis.zaehlen) lauf.stand.erfasst = ergebnis.erfasst;
 			letzterScan = ergebnis.lastScan;
 			// Der Ton folgt wie an der Theke der Buchung: Gezählt klingt nach Erfolg, auch mit
 			// Hinweis; was nicht zählt, gibt den Fehlerton, damit man auf den Bildschirm sieht.

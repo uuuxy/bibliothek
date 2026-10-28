@@ -46,18 +46,19 @@ func (a *InventurAbfragen) LadeExemplar(ctx context.Context, barcodeID string) (
 // Die Tür macht daraus 409: Der Scan ist gegenstandslos, aber kein Fehler.
 var ErrInventurAbgeschlossen = errors.New("inventur bereits abgeschlossen")
 
-// VerbucheScan verbucht ein Exemplar als in diesem Lauf erfasst. Ein zweiter Scan desselben
-// Exemplars im selben Lauf ändert nichts (Primärschlüssel).
+// VerbucheScan verbucht ein Exemplar als in diesem Lauf erfasst und liefert, wie viele
+// Exemplare der Lauf danach erfasst hat. Ein zweiter Scan desselben Exemplars im selben Lauf
+// ändert nichts (Primärschlüssel); die Zahl zählt deshalb Exemplare, nicht Scans.
 //
 // Scannen mehrere Geräte, stimmt sich der Scan über die Zeile des Laufs mit einem
 // gleichzeitigen Abschluss ab: Er hält sie mit FOR SHARE, solange er die Erfassung schreibt.
 // Der Abschluss nimmt sie mit FOR UPDATE (SperreLaufFuerAbschluss), wartet also auf den Scan
 // und sieht dessen Erfassung sicher. Ist der Lauf schon abgeschlossen, findet der Scan keine
 // offene Zeile und wird abgewiesen, statt ein Buch, das vorliegt, als Verlust zurückzulassen.
-func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID string) error {
+func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID string) (int, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("scan-transaktion konnte nicht gestartet werden: %w", err)
+		return 0, fmt.Errorf("scan-transaktion konnte nicht gestartet werden: %w", err)
 	}
 	defer db.Verwerfe(ctx, tx) // nach dem Commit ohne Wirkung
 
@@ -66,9 +67,9 @@ func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID 
 		`SELECT id FROM inventur_sessions WHERE id = $1 AND abgeschlossen_am IS NULL FOR SHARE`,
 		laufID).Scan(&id); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrInventurAbgeschlossen
+			return 0, ErrInventurAbgeschlossen
 		}
-		return fmt.Errorf("session für scan sperren fehlgeschlagen: %w", err)
+		return 0, fmt.Errorf("session für scan sperren fehlgeschlagen: %w", err)
 	}
 
 	if _, err := tx.Exec(ctx, `
@@ -76,9 +77,19 @@ func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID 
 		VALUES ($1, $2)
 		ON CONFLICT (session_id, exemplar_id) DO NOTHING
 	`, laufID, exemplarID); err != nil {
-		return fmt.Errorf("scan verbuchen fehlgeschlagen: %w", err)
+		return 0, fmt.Errorf("scan verbuchen fehlgeschlagen: %w", err)
 	}
-	return tx.Commit(ctx)
+
+	var erfasst int
+	if err := tx.QueryRow(ctx,
+		`SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1`, laufID,
+	).Scan(&erfasst); err != nil {
+		return 0, fmt.Errorf("erfassungen des laufs zählen fehlgeschlagen: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	return erfasst, nil
 }
 
 // IstExemplarImBereich prüft, ob ein Exemplar zu Signatur, Fach und Jahrgang eines Laufs

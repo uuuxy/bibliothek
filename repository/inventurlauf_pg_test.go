@@ -25,7 +25,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 		t.Fatalf("Session A anlegen: %v", err)
 	}
 	for _, ex := range matheEx[:3] {
-		if err := repo.VerbucheScan(ctx, sessA.ID, ex); err != nil {
+		if _, err := repo.VerbucheScan(ctx, sessA.ID, ex); err != nil {
 			t.Fatalf("Scan A: %v", err)
 		}
 	}
@@ -198,5 +198,44 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	}
 	if aus := ausgesonderteZahl(t, pool, []string{matheKl9, deutschKl5, matheOhne}); aus != 0 {
 		t.Errorf("Out-of-Scope-Exemplare fälschlich ausgesondert: %d", aus)
+	}
+}
+
+// VerbucheScan liefert die Zahl der erfassten Exemplare des Laufs. Ein zweiter Scan desselben
+// Exemplars ändert sie nicht, ein Scan in einem anderen Lauf auch nicht.
+func TestVerbucheScan_ZaehltExemplareNichtScans(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+
+	mathe, deutsch := "Mathematik", "Deutsch"
+	matheEx := legeSignaturMitExemplarenAn(t, pool, mathe, 2)
+	deutschEx := legeSignaturMitExemplarenAn(t, pool, deutsch, 1)
+	matheLauf, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &mathe}, "Mathematik", "")
+	if err != nil {
+		t.Fatalf("Lauf Mathematik anlegen: %v", err)
+	}
+	deutschLauf, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &deutsch}, "Deutsch", "")
+	if err != nil {
+		t.Fatalf("Lauf Deutsch anlegen: %v", err)
+	}
+
+	for i, schritt := range []struct {
+		lauf, exemplar string
+		erfasst        int
+	}{
+		{matheLauf.ID, matheEx[0], 1},
+		{matheLauf.ID, matheEx[0], 1},
+		{deutschLauf.ID, deutschEx[0], 1},
+		{matheLauf.ID, matheEx[1], 2},
+	} {
+		erfasst, err := repo.VerbucheScan(ctx, schritt.lauf, schritt.exemplar)
+		if err != nil {
+			t.Fatalf("Scan %d: %v", i+1, err)
+		}
+		if erfasst != schritt.erfasst {
+			t.Errorf("Scan %d: erfasst = %d, erwartet %d", i+1, erfasst, schritt.erfasst)
+		}
 	}
 }

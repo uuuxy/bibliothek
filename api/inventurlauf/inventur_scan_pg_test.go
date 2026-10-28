@@ -206,3 +206,45 @@ func TestScanVerbuchen_Fehlerfaelle(t *testing.T) {
 		})
 	}
 }
+
+// TestScanVerbuchen_ZweiterScanZaehltEinmal: Die Antwort nennt, wie viele Exemplare der Lauf
+// erfasst hat, und ein zweiter Scan desselben Buchs ändert die Zahl nicht. Die Oberfläche zählte
+// jede Antwort mit; die Rückfrage vor dem Abschluss nannte dann zu wenige Verluste. Gelesen wird
+// die Antwort als Map, damit der Test auch gegen den Stand ohne das Feld übersetzt.
+func TestScanVerbuchen_ZweiterScanZaehltEinmal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
+		t.Fatalf("Sessions leeren: %v", err)
+	}
+	testdaten.LeereBestandsdaten(t, pool)
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	signatur := "INV-Zweimal-" + suffix
+	erstes, zweites := "B-Z1-"+suffix, "B-Z2-"+suffix
+	testdaten.LegeExemplarMitSignaturAn(t, pool, signatur, erstes)
+	testdaten.LegeExemplarMitSignaturAn(t, pool, signatur, zweites)
+	lauf, err := repository.NewInventurAbfragen(pool).
+		LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &signatur}, "Zweimal", "")
+	if err != nil {
+		t.Fatalf("Inventur anlegen: %v", err)
+	}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	for i, schritt := range []struct {
+		barcode string
+		erfasst float64
+	}{{erstes, 1}, {erstes, 1}, {zweites, 2}} {
+		rec := inventurScan(t, srv, lauf.ID, schritt.barcode)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Scan %d: Status %d: %s", i+1, rec.Code, rec.Body.String())
+		}
+		var antwort map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Scan %d: Antwort lesen: %v", i+1, err)
+		}
+		if antwort["erfasst"] != schritt.erfasst {
+			t.Errorf("Scan %d (%s): erfasst = %v, erwartet %v", i+1, schritt.barcode, antwort["erfasst"], schritt.erfasst)
+		}
+	}
+}

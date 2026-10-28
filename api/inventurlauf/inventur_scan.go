@@ -55,6 +55,9 @@ type scanAntwort struct {
 	CoverURL  string   `json:"cover_url,omitempty"`
 	Status    string   `json:"status"`
 	Warnungen []string `json:"warnungen,omitempty"`
+	// Erfasst nennt, wie viele Exemplare der Lauf nach diesem Scan erfasst hat; die Oberfläche
+	// zeigt die Zahl, statt Scans zu zählen. Fehlt, wenn der Scan abgewiesen wurde.
+	Erfasst int `json:"erfasst,omitempty"`
 }
 
 // ScanVerbuchen verbucht den Scan eines Exemplars in einem offenen Lauf.
@@ -121,7 +124,8 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := abfragen.VerbucheScan(ctx, req.LaufID, exemplar.ExemplarID); err != nil {
+	erfasst, err := abfragen.VerbucheScan(ctx, req.LaufID, exemplar.ExemplarID)
+	if err != nil {
 		// Der Lauf wurde inzwischen an einem anderen Scanner abgeschlossen: Der Scan ist
 		// gegenstandslos, aber kein Fehler des Servers (409).
 		if errors.Is(err, repository.ErrInventurAbgeschlossen) {
@@ -138,5 +142,6 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request) {
 		CoverURL:  exemplar.CoverURL,
 		Status:    "erfasst",
 		Warnungen: scanWarnungen(exemplar.IstVerliehen),
+		Erfasst:   erfasst,
 	})
 }

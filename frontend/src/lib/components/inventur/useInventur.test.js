@@ -66,11 +66,17 @@ describe('Inventur abschließen', () => {
 // Ein Handscanner wartet nicht auf die Antwort. Ein Scan, der eintrifft, solange der vorige am
 // Server ist, wird danach gebucht: Verworfen fiele das Buch beim Abschluss als Verlust auf,
 // obwohl es im Regal steht.
+/** Die Antwort des Servers auf einen gezählten Scan, mit der Zahl erfasster Exemplare des Laufs.
+ * @param {string} barcode @param {number} erfasst */
+const treffer = (barcode, erfasst) =>
+	/** @type {any} */ ({
+		ok: true,
+		status: 200,
+		data: { barcode_id: barcode, titel: barcode, erfasst }
+	});
+
 describe('Scan während der Anfrage', () => {
 	const scan = vi.mocked(scanne);
-	/** @param {string} barcode */
-	const treffer = (barcode) =>
-		/** @type {any} */ ({ ok: true, status: 200, data: { barcode_id: barcode, titel: barcode } });
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
@@ -83,7 +89,9 @@ describe('Scan während der Anfrage', () => {
 		/** @type {(antwort: any) => void} */
 		let ersterFertig = () => {};
 		scan.mockImplementationOnce(() => new Promise((fertig) => (ersterFertig = fertig)));
-		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode));
+		scan.mockImplementation(async (_sitzung, barcode) =>
+			treffer(barcode, Number(barcode.slice(2)))
+		);
 		const inventur = useInventur();
 
 		const erster = inventur.verarbeiteScan('B-1');
@@ -91,7 +99,7 @@ describe('Scan während der Anfrage', () => {
 		const dritter = inventur.verarbeiteScan('B-3');
 		expect(scan).toHaveBeenCalledTimes(1);
 
-		ersterFertig(treffer('B-1'));
+		ersterFertig(treffer('B-1', 1));
 		await Promise.all([erster, zweiter, dritter]);
 
 		expect(scan.mock.calls.map((aufruf) => aufruf[1])).toEqual(['B-1', 'B-2', 'B-3']);
@@ -102,7 +110,7 @@ describe('Scan während der Anfrage', () => {
 
 	it('bucht die folgenden Scans auch, wenn einer scheitert', async () => {
 		scan.mockRejectedValueOnce(new Error('Netz weg'));
-		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode));
+		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode, 1));
 		const inventur = useInventur();
 
 		await Promise.all([inventur.verarbeiteScan('B-1'), inventur.verarbeiteScan('B-2')]);
@@ -124,9 +132,40 @@ describe('Scan während der Anfrage', () => {
 		await Promise.resolve();
 		expect(frage, 'die Zahl der fehlenden Bücher stimmt erst nach dem Scan').not.toHaveBeenCalled();
 
-		ersterFertig(treffer('B-1'));
+		ersterFertig(treffer('B-1', 1));
 		await Promise.all([laufend, abschlussFrage]);
 		expect(frage).toHaveBeenCalledTimes(1);
+	});
+});
+
+// Ein Buch, das zweimal gescannt wird (der Handscanner liest doppelt, oder jemand scannt zur
+// Sicherheit noch einmal), zählt einmal: Der Server kennt jedes Exemplar je Lauf nur einmal.
+// Mitgezählte Antworten zählten es doppelt, und die Rückfrage vor dem Abschluss nannte zu wenige
+// Verluste.
+describe('Zählung der Scans', () => {
+	const scan = vi.mocked(scanne);
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		const echt = /** @type {any} */ (await vi.importActual('./inventurApi.js'));
+		vi.mocked(deuteScanErgebnis).mockImplementation(echt.deuteScanErgebnis);
+	});
+
+	it('zeigt die Zahl des Servers: ein zweimal gescanntes Buch zählt einmal', async () => {
+		scan.mockImplementation(async (_sitzung, barcode) => treffer(barcode, 1));
+		const inventur = useInventur();
+		await inventur.verarbeiteScan('B-1');
+		await inventur.verarbeiteScan('B-1');
+
+		expect(inventur.stand.erfasst).toBe(1);
+	});
+
+	it('übernimmt die Zahl des Servers auch, wenn ein anderer Scanner mitzählt', async () => {
+		scan.mockResolvedValue(treffer('B-1', 7));
+		const inventur = useInventur();
+		await inventur.verarbeiteScan('B-1');
+
+		expect(inventur.stand.erfasst).toBe(7);
 	});
 });
 
