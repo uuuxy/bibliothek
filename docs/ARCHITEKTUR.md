@@ -2364,7 +2364,11 @@ sieht.
   `navigator.mediaDevices.getUserMedia`, die den Strom einer Zeichenfläche liefert
   (`captureStream`, Vorlage `frontend/e2e/passbild-ausschnitt.spec.js`) oder mit
   `NotAllowedError` die Verweigerung nachstellt. Merkt sie sich jeden Strom, zeigt der
-  `readyState` seiner Spuren nach dem Schließen, ob eine Kamera weiterläuft.
+  `readyState` seiner Spuren nach dem Schließen, ob eine Kamera weiterläuft. Eine Datei wählt
+  der Test über den Dateidialog (`page.waitForEvent('filechooser')`, dann `setFiles` mit einem
+  Pfad; Vorlage `frontend/e2e/cover-aendern.spec.js`): Mit einem Pfad geht Playwright den Weg
+  des Browsers, und dieselbe Datei ein zweites Mal meldet in Chromium und WebKit kein change,
+  wie von Hand. Mit einem Puffer setzt Playwright die Datei selbst und meldet change jedes Mal.
 - **Eine Attrappe von `apiFetch.js` behält `leseApiFehler`:** `vi.mock('…/apiFetch.js', async
   (importOriginal) => ({ ...(await importOriginal()), apiFetch: vi.fn() }))`. Fehlt der Helfer in
   der Attrappe, wirft der Fehlerweg schon beim Lesen des Grundes; das catch des Bausteins fängt

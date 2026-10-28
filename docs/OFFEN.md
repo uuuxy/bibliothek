@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 27.10.2026
+Stand: 28.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -46,7 +46,7 @@ einem Fehler (5.106).
 - [x] LMF-Plan, Lernmittel und Klassensätze. (5.106)
 - [x] Bestellungen und Lieferanten. (5.106)
 - [x] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
-- [ ] Medienkatalog und Buchakte. (5.106)
+- [x] Medienkatalog, Buchakte und Signaturen. (5.106)
 - [ ] Inventur. (5.106)
 - [ ] Einstellungen, Benutzer und Rechte. (5.106)
 - [ ] Portal und öffentlicher Katalog. (5.106)
@@ -152,11 +152,9 @@ Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)).
 Bekannt und offen:
 
 - Löschen ohne Sperre: Ein zweiter Auftrag vor der Antwort schickt ein zweites DELETE, und nach
-  dem Löschen steht „nicht gefunden". Ohne Sperre im Code stehen noch die Zuordnung der
-  Klassenleitungen und die Systematik (Einstellungen) sowie Vormerkung, Titel und Exemplar der
-  Buchakte; sie gehen in ihren Bereichen durch.
-- Der DNB-Vorschlag meldet bei jedem Fehler „Die DNB ist nicht erreichbar", auch wenn der Server
-  „Keine gültige ISBN" antwortet: ein falscher Grund, nicht nur ein fehlender.
+  dem Löschen steht „nicht gefunden" ([sweeps.md](sweeps.md), „Zweiter Auftrag vor der Antwort").
+  Ohne Sperre im Code steht noch die Zuordnung der Klassenleitungen (Einstellungen); sie geht in
+  ihrem Bereich durch.
 - Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
   WebKit-Testbrowser zeichnet keine PDFs.
 
