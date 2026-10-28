@@ -16,7 +16,8 @@ import {
 	ladeOffeneSessions,
 	ladeAbgeschlosseneInventuren,
 	scanne,
-	deuteScanErgebnis
+	deuteScanErgebnis,
+	brichAb
 } from './inventurApi.js';
 import { useInventur, abschlussText } from './useInventur.svelte.js';
 import { spieleErfolgston, spieleFehlerton } from '../../utils/audio.js';
@@ -242,5 +243,34 @@ describe('Inventur: eine Liste kommt nicht', () => {
 		await ablauf.ladeFruehereInventuren();
 		expect(ablauf.nichtGeladen).toEqual({ laeufe: '', frueher: '' });
 		expect(ablauf.offeneLaeufe).toEqual([{ session_id: 's1' }]);
+	});
+});
+
+// „Verwerfen" überging die Antwort des Servers: Lehnte er ab, blieb die Inventur in der Liste
+// stehen, und nichts sagte, warum. Gleich in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('Inventur verwerfen', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(ladeOffeneSessions).mockResolvedValue([]);
+		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue([]);
+	});
+
+	it('nennt den Grund, wenn der Server ablehnt', async () => {
+		vi.mocked(brichAb).mockResolvedValue(
+			/** @type {any} */ ({ ok: false, status: 503, error: 'Die Datenbank antwortet nicht' })
+		);
+		const ablauf = useInventur();
+		await ablauf.verwerfeLauf({ session_id: 's1' });
+
+		expect(ablauf.fehler).toBe('Die Datenbank antwortet nicht');
+	});
+
+	it('meldet nichts, wenn der Server verworfen hat', async () => {
+		vi.mocked(brichAb).mockResolvedValue(/** @type {any} */ ({ ok: true, status: 200 }));
+		const ablauf = useInventur();
+		await ablauf.verwerfeLauf({ session_id: 's1' });
+
+		expect(ablauf.fehler).toBe('');
+		expect(ladeOffeneSessions).toHaveBeenCalledTimes(1);
 	});
 });

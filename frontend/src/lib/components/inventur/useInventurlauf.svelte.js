@@ -110,7 +110,9 @@ export function useInventurlauf(opts = {}) {
 	/** @param {any} session */
 	async function verwerfeLauf(session) {
 		fehler = '';
-		await brichAb(session.session_id);
+		const r = await brichAb(session.session_id);
+		// Der Grund steht über der Liste; ohne ihn blieb die Inventur stehen, und nichts sagte, warum.
+		if (!r.ok) fehler = r.error || 'Fehler beim Verwerfen der Inventur.';
 		await ladeOffeneLaeufe();
 	}
 
