@@ -7,8 +7,9 @@
      Der Standort steht am Exemplar: Die Zeile nennt die Standorte der Exemplare im Bestand
      mit ihrer Zahl, gezählt aus den Karten des Reiters „Exemplare". -->
 <script>
-	import { Copy, MapPin, SquarePen, Trash } from '@lucide/svelte';
+	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import TitelLoeschen from './TitelLoeschen.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { standorteAusExemplaren, standortZeile } from '../../utils/standorte.js';
 	import { exemplarZahlen } from './exemplarStatus.js';
@@ -20,7 +21,7 @@
 	 * @property {any[]} ausleiher
 	 * @property {any[]} exemplare
 	 * @property {(() => void) | undefined} [onEdit] nur mit edit_books
-	 * @property {(() => void) | undefined} [onDelete] nur mit delete_books
+	 * @property {(() => Promise<unknown> | void) | undefined} [onDelete] nur mit delete_books
 	 */
 
 	/** @type {Props} */
@@ -127,10 +128,7 @@
 					</Button>
 				{/if}
 				{#if onDelete}
-					<Button variant="ghost" onclick={onDelete} class="text-error">
-						<Trash class="h-4 w-4" aria-hidden="true" />
-						Titel löschen
-					</Button>
+					<TitelLoeschen {onDelete} />
 				{/if}
 			</div>
 		{/if}

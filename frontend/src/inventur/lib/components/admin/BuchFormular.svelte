@@ -16,7 +16,8 @@
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menue.js';
 	import { rechteDesReiters } from '../../../../lib/components/etiketten/druckCenterReiter.js';
-	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
+	import { BookOpen, Printer, X } from '@lucide/svelte';
+	import TitelLoeschen from '../../../../lib/components/buchakte/TitelLoeschen.svelte';
 
 	/**
 	 * onDelete und onZusammengefuehrt kommen nur mit dem Recht delete_books (TitelVerwaltung) —
@@ -164,15 +165,11 @@
 						{/if}
 						{#if onDelete}
 							<!-- Der Server verweigert das Löschen bei verliehenen Exemplaren. -->
-							<Button
-								variant="ghost"
-								onclick={onDelete}
-								class="w-full text-error"
+							<TitelLoeschen
+								{onDelete}
+								class="w-full"
 								title="Diesen Titel mit allen Exemplaren löschen"
-							>
-								<Trash class="w-4 h-4" aria-hidden="true" />
-								Titel löschen
-							</Button>
+							/>
 						{/if}
 					</div>
 				{/if}
