@@ -117,6 +117,7 @@
 
 	{#if fehler}
 		<div
+			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
 			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{fehler}</span>

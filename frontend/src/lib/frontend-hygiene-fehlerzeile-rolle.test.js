@@ -4,20 +4,20 @@ import { parse as svelteParse } from 'svelte/compiler';
 import { walk } from 'estree-walker';
 import { sammleQuelldateien, srcRoot, relPfad } from './hygiene-quellen.js';
 
-// Gate zur Bugklasse „Grund ohne Rolle" (docs/sweeps.md): Eine Zeile in der Fehlerfarbe, die
-// einen Fehler zeigt, erscheint nach einem Klick oder einem gescheiterten Abruf, ohne dass der
-// Fokus zu ihr wandert. Ohne role="alert" liest ein Bildschirmleser nichts vor. M3, Text fields,
-// Accessibility: „Text field error messages should be given an “alert” role in accessibility
-// labels"; LadeFehler trägt dieselbe Rolle. Als Rolle zählen auch status und aria-live, an der
-// Zeile oder einem Element um sie herum.
+// Gate zur Bugklasse „Grund ohne Rolle" (docs/sweeps.md): Eine Zeile oder ein Kasten in den
+// Fehlerrollen, die einen Fehler zeigen, erscheinen nach einem Klick oder einem gescheiterten
+// Abruf, ohne dass der Fokus zu ihnen wandert. Ohne role="alert" liest ein Bildschirmleser nichts
+// vor. M3, Text fields, Accessibility: „Text field error messages should be given an “alert” role
+// in accessibility labels"; LadeFehler trägt dieselbe Rolle. Als Rolle zählen auch status und
+// aria-live, am Element oder einem um es herum.
 //
-// Sieht nicht: eine Fehlerzeile ohne die Klasse text-error oder mit ihr erst aus einem Ausdruck
-// in der Klasse, einen Fehler unter einem Namen ohne fehler/error, einen festen Satz in der
-// Fehlerfarbe und eine Rolle an einem Element, das schon vor dem Fehler steht und sich nicht
-// ändert.
+// Sieht nicht: einen Fehler ohne die Klassen text-error, text-on-error-container oder
+// bg-error-container, oder mit ihnen erst aus einem Ausdruck in der Klasse; einen Fehler unter
+// einem Namen ohne fehler/error, einen festen Satz in der Fehlerfarbe und eine Rolle an einem
+// Element, das schon vor dem Fehler steht und sich nicht ändert.
 
 const FEHLERNAME = /fehler|error/i;
-const FEHLERFARBE = /(^|\s)text-error(\s|$)/;
+const FEHLERFARBE = /(^|\s)(text-error|text-on-error-container|bg-error-container)(\s|$)/;
 
 /**
  * Ausnahmen mit Grund. Das ist ein Bestand bewusster Ausnahmen, KEINE Erlaubnis.
@@ -116,6 +116,7 @@ describe('Fehlerzeilen werden vorgelesen', () => {
 			'{#if fehler}<p class="text-xs text-error">{fehler}</p>{/if}',
 			'<span class="font-semibold text-error">Speichern fehlgeschlagen: {ablage.speicherfehler}</span>',
 			'<div class="py-4"><p class="text-error">{s.error}</p></div>',
+			'<div class="rounded-xl bg-error-container p-4 text-on-error-container">{exportFehler}</div>',
 			'<p class="text-error" role="presentation"><strong>{klassenLadefehler(x)}</strong></p>'
 		]) {
 			expect(fehlerzeilenOhneRolle(form).funde, form).not.toEqual([]);

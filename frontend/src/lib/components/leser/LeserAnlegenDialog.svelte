@@ -136,7 +136,10 @@
 		{/if}
 
 		{#if fehler}
-			<div class="p-3 bg-error-container rounded-xl text-xs font-semibold text-on-error-container">
+			<div
+				role="alert"
+				class="p-3 bg-error-container rounded-xl text-xs font-semibold text-on-error-container"
+			>
 				{fehler}
 			</div>
 		{/if}

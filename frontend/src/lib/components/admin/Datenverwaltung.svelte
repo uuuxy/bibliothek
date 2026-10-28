@@ -135,7 +135,10 @@
 			{@render actionButton('Katalog als CSV herunterladen', Download, exportiere, isExporting)}
 		</div>
 		{#if exportFehler}
-			<div class="rounded-xl bg-error-container p-4 text-sm font-semibold text-on-error-container">
+			<div
+				role="alert"
+				class="rounded-xl bg-error-container p-4 text-sm font-semibold text-on-error-container"
+			>
 				{exportFehler}
 			</div>
 		{/if}

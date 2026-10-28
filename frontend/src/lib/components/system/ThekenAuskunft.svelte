@@ -74,7 +74,10 @@
 	</form>
 
 	{#if fehler}
-		<div class="rounded-xl bg-error-container p-4 text-sm font-medium text-on-error-container">
+		<div
+			role="alert"
+			class="rounded-xl bg-error-container p-4 text-sm font-medium text-on-error-container"
+		>
 			{fehler}
 		</div>
 	{:else if auskunft}

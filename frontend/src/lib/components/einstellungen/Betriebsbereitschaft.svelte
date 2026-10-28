@@ -65,7 +65,9 @@
 	</div>
 
 	{#if fehler}
-		<p class="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container">{fehler}</p>
+		<p role="alert" class="rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container">
+			{fehler}
+		</p>
 	{:else if laedt && !bericht}
 		<p class="py-16 text-center text-sm text-on-surface-variant">Wird geprüft …</p>
 	{:else if bericht}
