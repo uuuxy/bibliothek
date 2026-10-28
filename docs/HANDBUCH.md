@@ -706,7 +706,12 @@ führte sie auf ein anderes Buch.
 ## Inventur
 
 _Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
-scannen; Fortschrittsbalken. **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im
+scannen; Fortschrittsbalken. Gezählt wird, was der Abschluss erwartet: Ein gesperrtes Buch im
+Regal zählt nicht mit, und die Rückfrage vor dem Abschluss nennt genau die Zahl, die als verloren
+gebucht wird. Ein Buch, das laut Programm verliehen ist und im Regal gescannt wird, bucht der Scan
+zurück wie die Theke; ist es vorgemerkt, sagt die Karte „ins Abholfach legen". Wer an der Theke
+nicht zurücknehmen darf, bekommt nur den Hinweis. Was während der Inventur an der Theke war oder
+neu eingetragen wurde, erwartet der Abschluss nicht und bucht es nicht als verloren. **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im
 Umfang als Verlust — vorher den Fehlbestandsbericht prüfen; dort lassen sich Funde wieder
 zurückholen. _Liste drucken_ im Bericht druckt die Exemplare, die noch fehlen, in der
 Reihenfolge der Signaturen, mit ganzem Titel und einem Kästchen zum Abhaken; gefundene und

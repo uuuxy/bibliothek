@@ -321,8 +321,9 @@ Die Inventur findet im laufenden Betrieb statt, ohne dass die Bibliothek zwingen
 
 - **Session-basiert:** Jede Inventur erhält einen Bereich — die ganze Bibliothek, eine Signatur oder Fach und Klasse (im Code `scope`) — und läuft in einer eigenen Session (`inventur_sessions`). Mehrere Mitarbeiter können mit Handscannern parallel inventarisieren, ohne sich gegenseitig zu überschreiben.
 - **Fehlmengen-Ausbuchung:** Wird die Session beendet (`Finish`), vergleicht das System alle gescannten Exemplare mit dem theoretischen Bestand in diesem Bereich.
-- **Schutz aktiver Ausleihen:** Bücher, die laut Datenbank aktuell _verliehen_ sind, werden vom System bei der Fehlmengenberechnung ignoriert – sie können nicht versehentlich als Verlust ausgebucht werden, nur weil sie nicht im Regal standen.
-- Fehlende, nicht verliehene Exemplare erhalten automatisch den Status `VERLUST`.
+- **Erwartet ist, was seit dem Beginn im Regal stehen musste:** vorhanden und ausleihbar, beim Beginn nicht verliehen und seitdem weder verliehen noch zurückgegeben, entsperrt, wieder aufgenommen oder neu angelegt (`repository.InventurBereich`, eine Bedingung für Zählung und Abschluss). Ein Buch beim Schüler kann niemand scannen; ein Buch, das erst während der Inventur ins Regal kam, beweist nicht gescannt keinen Verlust. Nicht erfasst ist ein Titel, dessen Signatur während der Inventur in den Bereich wechselt.
+- Fehlende erwartete Exemplare erhalten automatisch den Status `VERLUST`. Fortschritt („gefunden / erwartet") und Rückfrage vor dem Abschluss zählt der Server nach derselben Bedingung (`ZaehleStand`); die Rückfrage nennt die Zahl, die der Abschluss bucht. Ein gescanntes Buch, das der Abschluss nicht erwartet (gesperrt, verliehen), zählt nicht als gefunden.
+- **Verliehenes Buch im Regal:** Der Scan bucht es zurück wie die Theke, über denselben Dienst (`AusleihDienst.NimmZurueck`: Ausleihe beenden, Vormerkung bedienen, Protokoll, Meldung an die Arbeitsplätze). Ist der Titel vorgemerkt, sagt die Karte „ins Abholfach legen"; einen Alarm, der das Scanfeld sperrt wie an der Theke, gibt es hier nicht, weil der nächste Scan schon eintrifft. Wer an der Theke nicht zurücknehmen darf (`perform_actions`), bekommt nur den Hinweis.
 
 ---
 

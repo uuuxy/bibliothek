@@ -2369,6 +2369,13 @@ sieht.
   Pfad; Vorlage `frontend/e2e/cover-aendern.spec.js`): Mit einem Pfad geht Playwright den Weg
   des Browsers, und dieselbe Datei ein zweites Mal meldet in Chromium und WebKit kein change,
   wie von Hand. Mit einem Puffer setzt Playwright die Datei selbst und meldet change jedes Mal.
+  Ein Knopf unter einem Feld, das mit `transition:slide` aufklappt, rückt, bis das Feld offen ist:
+  Ein Doppelklick von Hand an seinen Koordinaten davor trifft mit dem zweiten Klick daneben und
+  sieht harmlos aus. Druckt die Seite in einem Fenster, das sie selbst öffnet, kehrt `print()` dort
+  im headless Firefox nicht zurück und hält den Klick an; die Probe ersetzt `window.print` vorher
+  mit `context.addInitScript`. Ein Lauf über viele Minuten startet mit `caffeinate -is`: Schläft
+  der Rechner auf Akku ein, laufen Fälle in die Testfrist, und Firefox zeigt das Band „Keine
+  Verbindung“; ob er schlief, sagt `pmset -g log | grep -E "Sleep|Wake"`.
 - **Eine Attrappe von `apiFetch.js` behält `leseApiFehler`:** `vi.mock('…/apiFetch.js', async
   (importOriginal) => ({ ...(await importOriginal()), apiFetch: vi.fn() }))`. Fehlt der Helfer in
   der Attrappe, wirft der Fehlerweg schon beim Lesen des Grundes; das catch des Bausteins fängt

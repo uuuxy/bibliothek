@@ -47,7 +47,7 @@ einem Fehler (5.106).
 - [x] Bestellungen und Lieferanten. (5.106)
 - [x] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
 - [x] Medienkatalog, Buchakte und Signaturen. (5.106)
-- [ ] Inventur. (5.106)
+- [x] Inventur. (5.106)
 - [ ] Einstellungen, Benutzer und Rechte. (5.106)
 - [ ] Portal und öffentlicher Katalog. (5.106)
 - [ ] Anmeldung, Sperre und Update-Hinweis. (5.106)
