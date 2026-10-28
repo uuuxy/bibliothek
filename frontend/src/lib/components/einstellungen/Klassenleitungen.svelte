@@ -36,7 +36,8 @@
 			mappingRows = (await apiGet('/api/klassen-mapping')) || [];
 			ladeFehler = false;
 		} catch {
-			ladeFehler = true;
+			// Scheitert nur das Neuladen, bleibt die Liste von vorhin stehen; den Grund meldet apiGet.
+			ladeFehler = mappingRows.length === 0;
 		} finally {
 			zuordnungLaedt = false;
 		}

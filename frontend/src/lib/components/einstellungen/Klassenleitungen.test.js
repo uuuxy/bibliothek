@@ -93,4 +93,21 @@ describe('Klassenleitungen: Löschen', () => {
 		await waitFor(() => expect(screen.queryByText(ZEILE.lehrer_email)).toBeNull());
 		expect(apiGet).toHaveBeenCalledTimes(2);
 	});
+
+	// docs/sweeps.md, „Abschnitt leer statt gescheitert": Scheitert nur das Auffrischen, bleibt die
+	// Liste von vorhin stehen; den Grund meldet apiGet selbst.
+	it('lässt Liste und Formular stehen, wenn nach dem Löschen auch das Neuladen scheitert', async () => {
+		vi.mocked(apiGet)
+			.mockResolvedValueOnce([ZEILE])
+			.mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		vi.mocked(apiDelete).mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		const screen = render(Klassenleitungen);
+
+		await fireEvent.click(await screen.findByRole('button', { name: 'Zuordnung für 05F löschen' }));
+
+		await waitFor(() => expect(apiGet).toHaveBeenCalledTimes(2));
+		expect(await screen.findByText(ZEILE.lehrer_email)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Hinzufügen' })).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
 });
