@@ -154,3 +154,62 @@ describe('BuchakteVormerkungen', () => {
 		expect(screen.getByText('20.09.2026')).toBeTruthy();
 	});
 });
+
+// Ein zweiter Auftrag vor der Antwort schickte eine zweite Anfrage: Nach „Erfolgreich vorgemerkt"
+// stand „Dieser Schüler hat den Titel bereits vorgemerkt", nach „Vormerkung gelöscht" stand
+// „Vormerkung nicht gefunden", in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('BuchakteVormerkungen: ein Auftrag zur Zeit', () => {
+	const leereWarteschlange = () => new Promise((weiter) => setTimeout(weiter));
+
+	it('schickt bei einem zweiten Klick auf „Auswählen" vor der Antwort keine zweite Vormerkung', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		vi.mocked(apiFetch).mockImplementation(async () =>
+			antwort([{ id: 's1', vorname: 'Ida', nachname: 'Imker', klasse: '07A', barcode_id: 'A-1' }])
+		);
+		vi.mocked(apiClient.post).mockImplementation(() => new Promise((fertig) => (liefere = fertig)));
+		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
+		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Barcode)'), {
+			target: { value: 'Ida' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
+		const knopf = /** @type {HTMLButtonElement} */ (
+			await screen.findByRole('button', { name: 'Auswählen' })
+		);
+
+		await fireEvent.click(knopf);
+		await fireEvent.click(knopf);
+		await leereWarteschlange();
+
+		expect(apiClient.post, 'eine zweite Vormerkung vor der Antwort').toHaveBeenCalledTimes(1);
+		expect(knopf.disabled, 'gesperrt, solange das Vormerken läuft').toBe(true);
+
+		liefere(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+	});
+
+	it('schickt bei einem zweiten Auftrag zum Löschen vor der Antwort keine zweite Anfrage', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		vi.mocked(apiFetch).mockImplementation(() => new Promise((fertig) => (liefere = fertig)));
+		const screen = render(BuchakteVormerkungen, {
+			vormerkungen: [VORMERKUNG],
+			titel: { id: 't1' }
+		});
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: 'Vormerkung löschen' })
+		);
+
+		await fireEvent.click(knopf);
+		await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(1));
+		await fireEvent.click(knopf);
+		await leereWarteschlange();
+
+		expect(apiFetch, 'ein zweites DELETE vor der Antwort').toHaveBeenCalledTimes(1);
+		expect(knopf.disabled, 'gesperrt, solange das Löschen läuft').toBe(true);
+
+		liefere(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
+		await waitFor(() => expect(knopf.disabled).toBe(false));
+	});
+});

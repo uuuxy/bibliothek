@@ -1,32 +1,26 @@
 <script>
-	import { apiFetch, apiClient, leseApiFehler } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { melde } from '../../../inventur/lib/store.svelte.js';
-	import { authStore } from '../../stores/authStore.svelte.js';
-	import { schuelerRechte } from '../leser/schuelerRechte.js';
-	import { sucheSchuelerFuerVormerkung } from './vormerkungSchuelersuche.js';
 	import { formatDatum } from '../../utils/format.js';
-	import { fehlertext } from '../../utils/fehlertext.js';
-	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
+	import BuchakteVormerken from './BuchakteVormerken.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { Clock, Trash } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[], titel: any }} */
 	let { vormerkungen = $bindable(), titel } = $props();
 
-	let isAdding = $state(false);
-	let suche = $state('');
-	let treffer = $state.raw(/** @type {any[]} */ ([]));
-	let isSearching = $state(false);
-	let suchFehler = $state('');
-	let notiz = $state('');
-	// Die Schülersuche läuft über die Schülerdatei (GET /api/schueler?q=), also gilt deren
-	// Recht — dasselbe, das der Server an der Route verlangt (schuelerRechte.js).
-	const rechte = $derived(schuelerRechte(authStore.currentUser));
+	// Vormerkungen, deren Löschen läuft. Ein zweiter Auftrag vor der Antwort schickte eine zweite
+	// Anfrage, und deren „Vormerkung nicht gefunden" stand nach dem Erfolg der ersten da.
+	const loescht = new SvelteSet();
 
+	/** @param {string} id */
 	async function loescheVormerkung(id) {
+		if (loescht.has(id)) return;
 		if (!(await loeschenBestaetigen('Vormerkung löschen?'))) return;
+		loescht.add(id);
 		try {
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
 			if (res.ok) {
@@ -37,121 +31,15 @@
 			}
 		} catch {
 			melde('Netzwerkfehler', 'error');
-		}
-	}
-
-	async function sucheLeser() {
-		treffer = [];
-		suchFehler = '';
-		if (!suche.trim()) return;
-		isSearching = true;
-		try {
-			treffer = await sucheSchuelerFuerVormerkung(suche);
-		} catch (e) {
-			suchFehler = fehlertext(e);
 		} finally {
-			isSearching = false;
-		}
-	}
-
-	const NACHLADEN_GESCHEITERT = 'Vormerkung angelegt — die Liste konnte nicht neu geladen werden';
-	async function legeVormerkungAn(studentId) {
-		try {
-			const res = await apiClient.post('/api/vormerkungen', {
-				titel_id: titel.id,
-				schueler_id: studentId,
-				notiz
-			});
-			if (res.ok) {
-				melde('Erfolgreich vorgemerkt', 'success');
-				isAdding = false;
-				suche = '';
-				treffer = [];
-				notiz = '';
-				const listenAntwort = await apiFetch(`/api/vormerkungen?titel_id=${titel.id}`);
-				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
-				if (listenAntwort.ok) vormerkungen = await listenAntwort.json();
-				else melde(`${NACHLADEN_GESCHEITERT}: ${await leseApiFehler(listenAntwort)}`, 'error');
-			} else {
-				melde(await leseApiFehler(res, 'Fehler beim Hinzufügen'), 'error');
-			}
-		} catch {
-			melde('Netzwerkfehler', 'error');
+			loescht.delete(id);
 		}
 	}
 </script>
 
 <!-- Ohne eigene Überschrift: Der Reiter nennt den Inhalt, wie bei den anderen Reitern der Akte. -->
 <div class="space-y-6 pt-4">
-	<div class="flex justify-end">
-		<Button onclick={() => (isAdding = !isAdding)}>
-			{isAdding ? 'Abbrechen' : '+ Schüler vormerken'}
-		</Button>
-	</div>
-
-	{#if isAdding}
-		<div class="p-5 bg-surface border border-outline-variant rounded-xl space-y-4 animate-fade-in">
-			{#if !rechte.einsehen}
-				<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
-				<p class="text-sm text-on-surface-variant">
-					Die Suche nach Lesern braucht das Recht „Leserdatei anzeigen“ (view_students).
-				</p>
-			{:else}
-				<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht. -->
-				<div class="flex flex-col sm:flex-row items-end gap-4">
-					<div class="flex flex-1 w-full items-end gap-2">
-						<Feld
-							id="student-search-input"
-							etikett="Schüler suchen (Name oder Barcode)"
-							bind:value={suche}
-							onkeydown={(e) => e.key === 'Enter' && sucheLeser()}
-							placeholder="z.B. Max Mustermann"
-							class="flex-1"
-						/>
-						<Button variant="secondary" onclick={sucheLeser} disabled={isSearching}>
-							{isSearching ? '...' : 'Suchen'}
-						</Button>
-					</div>
-					<Feld
-						id="notiz-input"
-						etikett="Interne Notiz (optional)"
-						bind:value={notiz}
-						placeholder="z.B. Braucht es dringend für Referat"
-						class="flex-1 w-full"
-					/>
-				</div>
-
-				{#if treffer.length > 0}
-					<div
-						class="mt-4 border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest"
-					>
-						{#each treffer as r, _i (_i)}
-							<div
-								class="flex items-center justify-between p-3 border-b border-outline-variant last:border-0 hover:bg-surface transition-colors"
-							>
-								<div>
-									<p class="font-semibold text-on-surface text-sm">{r.title}</p>
-									<p class="text-xs text-on-surface-variant">{r.subtitle}</p>
-								</div>
-								<Button
-									variant="secondary"
-									size="sm"
-									onclick={() => legeVormerkungAn(r.id)}
-									class="border-transparent bg-secondary-container text-on-secondary-container"
-								>
-									Auswählen
-								</Button>
-							</div>
-						{/each}
-					</div>
-				{:else if suchFehler}
-					<p role="alert" class="text-sm text-error mt-2">{suchFehler}</p>
-				{:else if suche && !isSearching && treffer.length === 0}
-					<p class="text-sm text-on-surface-variant mt-2">Keine Schüler gefunden.</p>
-				{/if}
-			{/if}
-		</div>
-	{/if}
+	<BuchakteVormerken bind:vormerkungen {titel} />
 
 	{#if vormerkungen.length === 0}
 		<div
@@ -181,13 +69,19 @@
 							{v.notiz || '—'}
 						</td>
 						<td class="text-right">
+							<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie in der Leserakte. -->
 							<button
 								onclick={() => loescheVormerkung(v.id)}
-								class="icon-btn text-error"
+								disabled={loescht.has(v.id)}
+								class="icon-btn text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
 								data-tip="Vormerkung löschen"
 								aria-label="Vormerkung löschen"
 							>
-								<Trash class="w-4 h-4" aria-hidden="true" />
+								{#if loescht.has(v.id)}
+									<Ladekreis size="sm" farbe="aktuell" />
+								{:else}
+									<Trash class="w-4 h-4" aria-hidden="true" />
+								{/if}
 							</button>
 						</td>
 					</tr>
