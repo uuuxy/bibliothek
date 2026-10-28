@@ -56,7 +56,7 @@
 		placeholder={klassenPlatzhalter(klassen.length, klassenFehler)}
 	/>
 	{#if klassenFehler}
-		<span class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
+		<span role="alert" class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
 	{:else if !klassen.length}
 		<span class="text-xs text-on-surface-variant">Die Klassen kommen mit dem LUSD-Abgleich.</span>
 	{/if}

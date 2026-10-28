@@ -91,7 +91,7 @@
 			onclick={() => (bearbeiten = false)}>✕</Button
 		>
 	</div>
-	{#if fehler}<p class="text-xs text-error mt-1">{fehler}</p>{/if}
+	{#if fehler}<p role="alert" class="text-xs text-error mt-1">{fehler}</p>{/if}
 {:else if darfBearbeiten}
 	<button
 		onclick={starte}

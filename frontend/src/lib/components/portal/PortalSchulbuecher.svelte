@@ -144,7 +144,7 @@
 	</div>
 
 	{#if fehler}
-		<p class="text-sm font-bold text-error">{fehler}</p>
+		<p role="alert" class="text-sm font-bold text-error">{fehler}</p>
 	{:else if laedt && faecher.length === 0}
 		<p class="py-4 text-sm text-on-surface-variant">Lädt …</p>
 	{:else if faecher.length === 0}

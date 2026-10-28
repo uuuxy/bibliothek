@@ -89,7 +89,7 @@
 	<!-- Der Grund, warum der Filter gesperrt ist, unter der Zeile wie an den Klassenwahlen
 	     (klassenVorschlaege.svelte.js; M3 Text fields, „Error text"). -->
 	{#if jahrgaengeFehler}
-		<p class="text-xs text-error">
+		<p role="alert" class="text-xs text-error">
 			Die Jahrgänge ließen sich nicht laden: {jahrgaengeFehler.replace(/\.$/, '')}. Bitte neu
 			öffnen.
 		</p>

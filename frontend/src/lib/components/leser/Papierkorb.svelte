@@ -59,7 +59,7 @@
 		     falsche Auskunft über gelöschte Schülerdaten. -->
 		<div class="py-16 flex flex-col items-center justify-center space-y-2 px-6 text-center">
 			<ShieldOff class="h-10 w-10 text-error" aria-hidden="true" />
-			<span class="text-sm font-semibold text-error">{papierkorb.ladefehler}</span>
+			<span role="alert" class="text-sm font-semibold text-error">{papierkorb.ladefehler}</span>
 			<button
 				onclick={() => papierkorb.laden()}
 				class="text-sm font-semibold text-primary underline cursor-pointer"

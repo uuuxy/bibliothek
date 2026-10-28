@@ -104,7 +104,7 @@
 					autofokus
 				/>
 				{#if s.fehler}
-					<p class="text-xs font-bold text-error">{s.fehler}</p>
+					<p role="alert" class="text-xs font-bold text-error">{s.fehler}</p>
 				{:else if s.treffer.length > 0}
 					<ul
 						class="max-h-72 divide-y divide-outline-variant/40 overflow-y-auto rounded-xl border border-outline-variant"

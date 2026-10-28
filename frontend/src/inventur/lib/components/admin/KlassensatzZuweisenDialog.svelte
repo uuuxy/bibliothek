@@ -92,12 +92,12 @@
 				placeholder={klassenPlatzhalter(optionen.length, ladefehler)}
 			/>
 			{#if ladefehler}
-				<span class="text-xs text-error">{klassenLadefehler(ladefehler)}</span>
+				<span role="alert" class="text-xs text-error">{klassenLadefehler(ladefehler)}</span>
 			{/if}
 		</div>
 
 		{#if fehler}
-			<div class="text-sm text-error">{fehler}</div>
+			<div role="alert" class="text-sm text-error">{fehler}</div>
 		{/if}
 
 		<div class="flex justify-end gap-3">

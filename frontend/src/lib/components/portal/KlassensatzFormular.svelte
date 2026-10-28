@@ -37,7 +37,7 @@
 		</p>
 	{/if}
 	{#if formular.error}
-		<p class="text-xs text-error">{formular.error}</p>
+		<p role="alert" class="text-xs text-error">{formular.error}</p>
 	{/if}
 	<div class="flex justify-end">
 		<Button onclick={onsenden} disabled={formular.loading}>

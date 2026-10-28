@@ -103,6 +103,6 @@
 	</div>
 	<!-- Unter der Zeile, nicht unter der Auswahl: Auswahl, Feld und Knopf stehen bündig unten. -->
 	{#if klassenListe.ladefehler}
-		<p class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</p>
+		<p role="alert" class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</p>
 	{/if}
 </div>

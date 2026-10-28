@@ -114,7 +114,7 @@
 				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse.</span>
 			{:else if klassenFehler}
 				<!-- Zur Wahl steht dann nur die eigene Klasse; der Fehlertext sagt, warum. -->
-				<span class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
+				<span role="alert" class="text-xs text-error">{klassenLadefehler(klassenFehler)}</span>
 			{/if}
 		</div>
 		<Feld

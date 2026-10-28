@@ -65,7 +65,7 @@
 		<Ladekreis size="lg" />
 	</div>
 {:else if fehler}
-	<p class="py-8 text-center text-sm text-error">{fehler}</p>
+	<p role="alert" class="py-8 text-center text-sm text-error">{fehler}</p>
 {:else if termine.length === 0}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div

@@ -183,7 +183,7 @@
 							: ''}
 					</p>
 					{#if fehler}
-						<p class="text-error mt-3 text-sm font-medium">{fehler}</p>
+						<p role="alert" class="text-error mt-3 text-sm font-medium">{fehler}</p>
 					{/if}
 					<Button size="lg" class="mt-4" disabled={sendet} onclick={bestaetigen}>
 						{sendet ? 'Wird gesendet …' : 'Bestellung jetzt bestätigen'}

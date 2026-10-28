@@ -153,6 +153,6 @@
 		<Button size="sm" onclick={speichereStatus}>Speichern</Button>
 	</div>
 	{#if fehler}
-		<p class="text-label-small text-error mt-1">{fehler}</p>
+		<p role="alert" class="text-label-small text-error mt-1">{fehler}</p>
 	{/if}
 </div>

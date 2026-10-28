@@ -72,6 +72,7 @@
 		/>
 	</div>
 	{#if klassenListe.ladefehler}
-		<span class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</span>
+		<span role="alert" class="text-xs text-error">{klassenLadefehler(klassenListe.ladefehler)}</span
+		>
 	{/if}
 </div>
