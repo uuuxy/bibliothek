@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -131,13 +130,11 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request, rueckgabe 
 		return
 	}
 
+	// Zurückgebucht ändert das Buch den Stand nicht: Es war beim Beginn des Laufs verliehen, und
+	// der Abschluss erwartet es nicht (repository.InventurBereich).
 	var warnungen []string
 	if exemplar.IstVerliehen {
-		var zurueck bool
-		warnungen, zurueck = t.hinweiseZumVerliehenen(r, rueckgabe, exemplar.BarcodeID)
-		if zurueck {
-			stand = standNachRueckgabe(ctx, abfragen, lauf, stand)
-		}
+		warnungen = t.hinweiseZumVerliehenen(r, rueckgabe, exemplar.BarcodeID)
 	}
 
 	tuer.AntworteJSON(w, http.StatusOK, scanAntwort{
@@ -148,17 +145,4 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request, rueckgabe 
 		Warnungen: warnungen,
 		LaufStand: &stand,
 	})
-}
-
-// standNachRueckgabe zählt den Stand neu, nachdem der Scan ein verliehenes Buch zurückgebucht hat:
-// Es gehört jetzt zu den erwarteten und ist gescannt, zählt also als gefunden. Scheitert die
-// Zählung, bleibt der Stand von vorher; Scan und Rückgabe sind gebucht, und der nächste Scan
-// bringt den neuen Stand.
-func standNachRueckgabe(ctx context.Context, abfragen *repository.InventurAbfragen, lauf *repository.Inventurlauf, vorher repository.LaufStand) repository.LaufStand {
-	stand, err := abfragen.ZaehleStand(ctx, lauf.ID, lauf.Bereich())
-	if err != nil {
-		slog.Warn("Inventur: Stand nach der Rückgabe nicht gezählt", "lauf", lauf.ID, "fehler", err)
-		return vorher
-	}
-	return stand
 }

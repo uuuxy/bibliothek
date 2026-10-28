@@ -26,15 +26,15 @@ const (
 )
 
 // hinweiseZumVerliehenen bucht ein verliehenes Buch, das im Regal gescannt wurde, zurück und
-// liefert die Hinweise für die Karte; zurueck sagt, ob gebucht wurde. Das Buch liegt in der Hand,
-// laut Programm hätte es sonst weiter der Schüler, mit Mahnung nach der Frist. Gebucht wird über
-// den Dienst der Theke (Ausleihe beenden, Vormerkung bedienen, Protokoll), und die übrigen
-// Arbeitsplätze erfahren es wie nach einer Rückgabe an der Theke. Wer an der Theke nicht
-// zurücknehmen darf (perform_actions), bekommt nur den Hinweis.
-func (t *Tueren) hinweiseZumVerliehenen(r *http.Request, rueckgabe rueckgabeBuchung, barcodeID string) (hinweise []string, zurueck bool) {
+// liefert die Hinweise für die Karte. Das Buch liegt in der Hand, laut Programm hätte es sonst
+// weiter der Schüler, mit Mahnung nach der Frist. Gebucht wird über den Dienst der Theke
+// (Ausleihe beenden, Vormerkung bedienen, Protokoll), und die übrigen Arbeitsplätze erfahren es
+// wie nach einer Rückgabe an der Theke. Wer an der Theke nicht zurücknehmen darf
+// (perform_actions), bekommt nur den Hinweis.
+func (t *Tueren) hinweiseZumVerliehenen(r *http.Request, rueckgabe rueckgabeBuchung, barcodeID string) []string {
 	claims, ok := auth.ClaimsAusKontext(r.Context())
 	if !ok || !t.HatRecht(r, "perform_actions") {
-		return []string{hinweisVerliehen}, false
+		return []string{hinweisVerliehen}
 	}
 	ctx := r.Context()
 	exemplar, err := repository.NewKatalogAbfragen(t.DB.Pool).FindeExemplar(ctx, barcodeID)
@@ -47,11 +47,11 @@ func (t *Tueren) hinweiseZumVerliehenen(r *http.Request, rueckgabe rueckgabeBuch
 	}
 	if errors.Is(err, service.ErrUngueltigerZustand) {
 		// Die Theke oder ein zweiter Scanner hat das Buch inzwischen zurückgebucht.
-		return nil, false
+		return nil
 	}
 	if err != nil {
 		slog.Error("Inventur: verliehenes Buch nicht zurückgebucht", "barcode", barcodeID, "fehler", err)
-		return []string{hinweisVerliehen, hinweisNichtZurueck}, false
+		return []string{hinweisVerliehen, hinweisNichtZurueck}
 	}
 
 	var leserID string
@@ -59,7 +59,7 @@ func (t *Tueren) hinweiseZumVerliehenen(r *http.Request, rueckgabe rueckgabeBuch
 		leserID = erg.Leser.ID
 	}
 	t.SendeThekenEreignis("rueckgabe", leserID)
-	return append([]string{hinweisZurueckgebucht}, hinweisAbholfach(erg)...), true
+	return append([]string{hinweisZurueckgebucht}, hinweisAbholfach(erg)...)
 }
 
 // hinweisAbholfach sagt wie die Theke, dass ein zurückgebuchtes Buch vorgemerkt ist und ins

@@ -89,9 +89,9 @@ func offeneAusleihen(t *testing.T, pool *pgxpool.Pool, barcode string) int {
 
 // Ein verliehenes Buch steht im Regal und wird in der Inventur gescannt: Der Scan bucht es zurück
 // wie die Theke. Die Ausleihe endet, die Vormerkung eines anderen Kindes ist bedient, die Karte
-// sagt „ins Abholfach", die übrigen Arbeitsplätze bekommen die Meldung „action", und der Stand
-// zählt das Buch als gefunden. Die Meldung wird am Strom gelesen: Was nach „connected" ankommt,
-// hat der Scan gesendet.
+// sagt „ins Abholfach", und die übrigen Arbeitsplätze bekommen die Meldung „action". Der Stand
+// bleibt: Das Buch war beim Beginn des Laufs verliehen, der Abschluss erwartet es nicht. Die
+// Meldung wird am Strom gelesen: Was nach „connected" ankommt, hat der Scan gesendet.
 func TestScanVerbuchen_VerliehenesBuchWirdZurueckgebucht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	regal := legeVerliehenesImRegalAn(t, pool)
@@ -160,8 +160,8 @@ func TestScanVerbuchen_VerliehenesBuchWirdZurueckgebucht(t *testing.T) {
 		WHERE schueler_id = $1 AND status = 'abholbereit'`, wartend); n != 1 {
 		t.Errorf("Vormerkung des wartenden Kindes nicht bereitgestellt (%d abholbereit)", n)
 	}
-	if antwort.LaufStand == nil || *antwort.LaufStand != (repository.LaufStand{Erwartet: 2, Fehlend: 1}) {
-		t.Errorf("Stand %+v, erwartet 2 erwartet und 1 fehlend: das zurückgebuchte Buch zählt als gefunden", antwort.LaufStand)
+	if antwort.LaufStand == nil || *antwort.LaufStand != (repository.LaufStand{Erwartet: 1, Fehlend: 1}) {
+		t.Errorf("Stand %+v, erwartet 1 erwartet und 1 fehlend: das zurückgebuchte Buch erwartet der Abschluss nicht", antwort.LaufStand)
 	}
 	if z := naechste(); z != "event: action" {
 		t.Fatalf("Meldung %q, erwartet event: action", z)

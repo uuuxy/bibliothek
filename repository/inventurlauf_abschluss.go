@@ -38,11 +38,8 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 	if bearbeiterID == "" {
 		return 0, ErrAussonderungOhneBearbeiter
 	}
-	// Die Bedingung des Bereichs kommt aus der einen Quelle; die ID des Laufs hängt als letzter
-	// Platzhalter an.
-	bedingung, args := bereich.bedingung(1)
-	laufPlatz := len(args) + 1
-	args = append(args, laufID)
+	// Die Bedingung kommt aus der einen Quelle; die ID des Laufs steht in $1.
+	bedingung, args := bereich.bedingung(laufID)
 	// Die Verluste werden mitgeschrieben und nicht nur gezählt: Nach der Aussonderung fallen
 	// die Exemplare aus der Bedingung des Bereichs, und ohne die Mitschrift ließe sich weder
 	// nachsehen, welche fehlen, noch eine Liste zum Nachsuchen drucken. Titel, Autor und
@@ -70,13 +67,13 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 			          coalesce(btrim(t.signatur), '') AS signatur
 		), mitschrift AS (
 			INSERT INTO inventur_verluste (session_id, exemplar_id, barcode_id, titel, autor, signatur)
-			SELECT $%d, v.id, v.barcode_id, v.titel, v.autor, v.signatur
+			SELECT $1, v.id, v.barcode_id, v.titel, v.autor, v.signatur
 			FROM verloren v
 			ON CONFLICT DO NOTHING
 			RETURNING 1
 		)
 		SELECT coalesce(array_agg(v.id::text), '{}') FROM verloren v
-	`, bedingung, nichtErfasst(laufPlatz), laufPlatz)
+	`, bedingung, nichtErfasst)
 	var verlorenIDs []string
 	if err := a.db.QueryRow(ctx, query, args...).Scan(&verlorenIDs); err != nil {
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)

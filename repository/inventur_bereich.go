@@ -42,29 +42,36 @@ func (s InventurBereich) dimensionen(start int) ([]string, []any) {
 	return bedingungen, args
 }
 
-// bedingung liefert die ganze Bedingung „im Bereich" (ohne WHERE): vorhanden, ausleihbar und
-// nicht verliehen, dazu die Einschränkungen. Ein Buch beim Schüler kann niemand scannen, und es
-// darf beim Abschluss nicht als Verlust gelten. Die Argumente beginnen bei $start.
-func (s InventurBereich) bedingung(start int) (string, []any) {
-	teile, args := s.dimensionen(start)
+// laufBeginn ist der Beginn des Laufs, dessen ID in $1 steht.
+const laufBeginn = "(SELECT gestartet_am FROM inventur_sessions WHERE id = $1)"
+
+// bedingung liefert die Bedingung „erwartet" des Laufs laufID (ohne WHERE) samt Argumenten: die
+// ID des Laufs in $1, die Einschränkungen danach. Erwartet ist ein Exemplar im Bereich, das
+// vorhanden und ausleihbar ist und seit dem Beginn des Laufs im Regal stehen musste. Ein Buch beim
+// Schüler kann niemand scannen. Was seit dem Beginn verliehen oder zurückgegeben, angelegt,
+// entsperrt oder wieder aufgenommen wurde, kam erst während der Inventur ins Regal oder ging
+// hinaus; nicht gescannt bewiese es keinen Verlust.
+func (s InventurBereich) bedingung(laufID string) (string, []any) {
+	teile, args := s.dimensionen(2)
 	bedingungen := append([]string{
 		"e.ist_ausgesondert = false",
 		"e.ist_ausleihbar = true",
-		"NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)",
+		"NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND (a.rueckgabe_am IS NULL OR a.rueckgabe_am >= " + laufBeginn + "))",
+		// Ausleihe, Rückgabe und jeder Wechsel von ist_ausleihbar oder ist_ausgesondert stempeln
+		// letzte_bewegung_am (invarianten.md 1); ein neues Exemplar trägt keinen Stempel.
+		"(e.letzte_bewegung_am IS NULL OR e.letzte_bewegung_am < " + laufBeginn + ")",
+		"e.erstellt_am < " + laufBeginn,
 	}, teile...)
-	return strings.Join(bedingungen, "\n  AND "), args
+	return strings.Join(bedingungen, "\n  AND "), append([]any{laufID}, args...)
 }
 
-// nichtErfasst liefert die Bedingung „in diesem Lauf nicht gescannt" für das Exemplar e, mit der
-// ID des Laufs im Platzhalter $platz. Was im Bereich liegt und sie erfüllt, bucht der Abschluss
-// als Verlust; die Zählung davor (ZaehleStand) nimmt sie von hier, damit beide dieselben Bücher
-// meinen.
-func nichtErfasst(platz int) string {
-	return fmt.Sprintf(`NOT EXISTS (
+// nichtErfasst ist die Bedingung „in diesem Lauf nicht gescannt" für das Exemplar e; die ID des
+// Laufs steht in $1. Was erwartet ist und sie erfüllt, bucht der Abschluss als Verlust; die
+// Zählung davor (ZaehleStand) nimmt sie von hier, damit beide dieselben Bücher meinen.
+const nichtErfasst = `NOT EXISTS (
 		SELECT 1 FROM inventur_erfassungen ie
-		WHERE ie.session_id = $%d AND ie.exemplar_id = e.id
-	)`, platz)
-}
+		WHERE ie.session_id = $1 AND ie.exemplar_id = e.id
+	)`
 
 // dimensionBedingung liefert nur die Einschränkungen (Signatur, Fach, Jahrgang), für die
 // Warnung beim Scan. Ohne Einschränkung ist alles im Bereich: "TRUE".

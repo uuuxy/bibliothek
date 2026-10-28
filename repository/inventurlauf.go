@@ -96,8 +96,9 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 }
 
 // LaufStand ist der Fortschritt eines offenen Laufs, gezählt nach den Bedingungen des
-// Abschlusses: Erwartet sind die Exemplare im Bereich, die im Regal stehen müssten, Fehlend die
-// davon, die der Lauf noch nicht erfasst hat. Fehlend ist genau die Zahl, die SchliesseLaufAb
+// Abschlusses: Erwartet sind die Exemplare im Bereich, die seit dem Beginn des Laufs im Regal
+// stehen müssten (InventurBereich.bedingung), Fehlend die davon, die der Lauf noch nicht erfasst
+// hat. Fehlend ist genau die Zahl, die SchliesseLaufAb
 // jetzt als Verlust buchen würde; ein gescanntes Buch, das der Bereich nicht erwartet
 // (verliehen, gesperrt), ändert keine der beiden Zahlen.
 type LaufStand struct {
@@ -106,19 +107,17 @@ type LaufStand struct {
 }
 
 // ZaehleStand zählt den Stand eines Laufs. Beide Zahlen kommen aus einer Abfrage und damit aus
-// demselben Moment: Eine Rückgabe an der Theke zwischen zwei Abfragen ließe sonst mehr fehlen,
-// als erwartet sind.
+// demselben Moment: Ein Buch, das zwischen zwei Abfragen an der Theke ausgeliehen wird, stünde
+// sonst unter den erwarteten, aber nicht unter den fehlenden, und zählte als gefunden.
 func (a *InventurAbfragen) ZaehleStand(ctx context.Context, laufID string, bereich InventurBereich) (LaufStand, error) {
-	bedingung, args := bereich.bedingung(1)
-	laufPlatz := len(args) + 1
-	args = append(args, laufID)
+	bedingung, args := bereich.bedingung(laufID)
 	var stand LaufStand
 	err := a.db.QueryRow(ctx, fmt.Sprintf(`
 		SELECT count(*), count(*) FILTER (WHERE %s)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE %s
-	`, nichtErfasst(laufPlatz), bedingung), args...).Scan(&stand.Erwartet, &stand.Fehlend)
+	`, nichtErfasst, bedingung), args...).Scan(&stand.Erwartet, &stand.Fehlend)
 	if err != nil {
 		return LaufStand{}, fmt.Errorf("stand des laufs zählen fehlgeschlagen: %w", err)
 	}
