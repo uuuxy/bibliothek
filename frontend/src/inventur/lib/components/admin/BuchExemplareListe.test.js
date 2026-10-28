@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
-vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
+// leseApiFehler bleibt echt (ARCHITEKTUR.md 8.14).
+vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({
 	loeschenBestaetigen: vi.fn()
 }));
@@ -10,6 +14,7 @@ vi.mock('$lib/store.svelte.js', () => ({ melde: vi.fn() }));
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import BuchExemplareListe from './BuchExemplareListe.svelte';
+import { serverAntwort } from '../../../../lib/serverAntwort.js';
 
 /** @param {any} koerper */
 const antwort = (koerper) => /** @type {any} */ ({ ok: true, json: async () => koerper });
@@ -131,5 +136,38 @@ describe('BuchExemplareListe', () => {
 
 		expect(await screen.findByText('Kein Exemplar im Bestand.')).toBeTruthy();
 		expect(screen.getByText(/Nicht im Bestand: 1 ausgesondert\./)).toBeTruthy();
+	});
+});
+
+// Ein zweiter Auftrag vor der Antwort schickte ein zweites DELETE: Nach „Exemplar erfolgreich
+// gelöscht" stand „Exemplar nicht gefunden oder schon ausgebucht", in Chromium, Firefox und
+// WebKit (OFFEN.md 5.106).
+describe('BuchExemplareListe: Exemplar löschen', () => {
+	it('schickt kein zweites DELETE, solange das erste läuft', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		vi.mocked(apiFetch).mockImplementation(async (_url, optionen) =>
+			optionen?.method === 'DELETE'
+				? new Promise((fertig) => (liefere = fertig))
+				: antwort([exemplar('1')])
+		);
+		vi.mocked(loeschenBestaetigen).mockResolvedValue(true);
+		const deletes = () =>
+			vi.mocked(apiFetch).mock.calls.filter(([, optionen]) => optionen?.method === 'DELETE').length;
+		const screen = render(BuchExemplareListe, { formular: { id: 't-1', stock: 1 } });
+		const knopf = /** @type {HTMLButtonElement} */ (
+			await screen.findByRole('button', { name: 'Exemplar löschen' })
+		);
+
+		await fireEvent.click(knopf);
+		await vi.waitFor(() => expect(deletes()).toBe(1));
+		await fireEvent.click(knopf);
+		await new Promise((weiter) => setTimeout(weiter));
+
+		expect(deletes(), 'ein zweites DELETE vor der Antwort').toBe(1);
+		expect(knopf.disabled, 'gesperrt, solange das Löschen läuft').toBe(true);
+
+		liefere(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
+		await vi.waitFor(() => expect(knopf.disabled).toBe(false));
 	});
 });

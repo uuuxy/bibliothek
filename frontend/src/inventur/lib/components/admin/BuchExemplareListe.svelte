@@ -4,7 +4,9 @@
 	import { melde } from '$lib/store.svelte.js';
 	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { Trash } from '@lucide/svelte';
+	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import { exemplarStatus } from '../../../../lib/components/buchakte/exemplarStatus.js';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
@@ -22,6 +24,9 @@
 	let bestellt = $state(0);
 	let laedt = $state(true);
 	let fehler = $state('');
+	// Exemplare, deren Löschen läuft. Ein zweiter Auftrag vor der Antwort schickte ein zweites
+	// DELETE, und nach dem Erfolg des ersten stand „Exemplar nicht gefunden oder schon ausgebucht".
+	const loescht = new SvelteSet();
 
 	const nichtImBestand = $derived(
 		[ausgesondert && `${ausgesondert} ausgesondert`, bestellt && `${bestellt} bestellt`]
@@ -58,7 +63,9 @@
 
 	/** @param {any} ex */
 	async function loescheExemplar(ex) {
+		if (loescht.has(ex.id)) return;
 		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
+		loescht.add(ex.id);
 		try {
 			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
 				method: 'DELETE',
@@ -76,6 +83,8 @@
 			}
 		} catch {
 			melde('Netzwerkfehler beim Löschen.', 'error');
+		} finally {
+			loescht.delete(ex.id);
 		}
 	}
 </script>
@@ -133,10 +142,15 @@
 							<button
 								data-tip="Exemplar löschen"
 								aria-label="Exemplar löschen"
-								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none disabled:cursor-not-allowed disabled:text-on-surface/38"
 								onclick={() => loescheExemplar(ex)}
+								disabled={loescht.has(ex.id)}
 							>
-								<Trash class="w-4 h-4" aria-hidden="true" />
+								{#if loescht.has(ex.id)}
+									<Ladekreis size="sm" farbe="aktuell" />
+								{:else}
+									<Trash class="w-4 h-4" aria-hidden="true" />
+								{/if}
 							</button>
 						</div>
 					{/each}
