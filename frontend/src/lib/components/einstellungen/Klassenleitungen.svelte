@@ -65,14 +65,24 @@
 		}
 	}
 
+	// Die Klasse, deren Zuordnung gerade gelöscht wird; bis die Liste nachgeladen ist, sind die
+	// Löschknöpfe gesperrt. Ein zweiter Klick schickte ein zweites DELETE, und nach dem Löschen
+	// stand „Kein Eintrag für diese Klasse".
+	let loeschtKlasse = $state(/** @type {string | null} */ (null));
+
 	/** @param {string} klasse */
 	async function loescheZuordnung(klasse) {
+		if (loeschtKlasse) return;
+		loeschtKlasse = klasse;
 		try {
 			await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);
-			await fetchMapping();
 			snackbars.addToast(`Zuordnung für ${klasse} gelöscht.`, 'success');
 		} catch {
 			// Toast already shown by apiDelete
+		} finally {
+			// Auch nach einem Fehler: Ging nur die Antwort verloren, ist die Zuordnung schon gelöscht.
+			await fetchMapping();
+			loeschtKlasse = null;
 		}
 	}
 </script>
@@ -116,11 +126,16 @@
 						<td class="text-right">
 							<button
 								onclick={() => loescheZuordnung(row.klasse)}
-								class="icon-btn h-9 w-9 text-error"
+								disabled={loeschtKlasse !== null}
+								class="icon-btn h-9 w-9 text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
 								aria-label="Zuordnung für {row.klasse} löschen"
 								data-tip="Zuordnung löschen"
 							>
-								<Trash class="w-5 h-5" aria-hidden="true" />
+								{#if loeschtKlasse === row.klasse}
+									<Ladekreis size="sm" farbe="aktuell" />
+								{:else}
+									<Trash class="w-5 h-5" aria-hidden="true" />
+								{/if}
 							</button>
 						</td>
 					</tr>

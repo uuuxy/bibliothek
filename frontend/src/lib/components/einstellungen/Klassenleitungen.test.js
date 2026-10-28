@@ -10,7 +10,7 @@ vi.mock('../../apiFetch.js', async (original) => ({
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
-import { apiFetch, apiGet } from '../../apiFetch.js';
+import { apiFetch, apiGet, apiDelete } from '../../apiFetch.js';
 import Klassenleitungen from './Klassenleitungen.svelte';
 
 // Scheitert das Laden, steht weder „Noch keine Zuordnungen" noch das Formular da: Hinzufügen
@@ -44,5 +44,53 @@ describe('Klassenleitungen', () => {
 		expect(await screen.findByText('lehrkraft@schule.example')).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Hinzufügen' })).toBeTruthy();
 		expect(screen.queryByRole('alert')).toBeNull();
+	});
+});
+
+const ZEILE = { klasse: '05F', lehrer_email: 'lehrkraft@schule.example' };
+
+// Ein zweiter Klick vor der Antwort schickte ein zweites DELETE: Nach „Zuordnung für 05F
+// gelöscht." stand „Kein Eintrag für diese Klasse". Ging die Antwort verloren, blieb die gelöschte
+// Zeile stehen. Beides in Chromium, Firefox und WebKit (OFFEN.md 5.106).
+describe('Klassenleitungen: Löschen', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		// Ganz zurück: Ein unverbrauchter Wert aus einem Fall davor käme sonst als erste Antwort.
+		vi.mocked(apiGet).mockReset();
+		vi.mocked(apiDelete).mockReset();
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ['05F'] })
+		);
+	});
+
+	it('schickt bei einem zweiten Klick vor der Antwort kein zweites DELETE', async () => {
+		vi.mocked(apiGet).mockResolvedValue([ZEILE]);
+		/** @type {(wert?: any) => void} */
+		let antworte = () => {};
+		vi.mocked(apiDelete).mockReturnValueOnce(new Promise((fertig) => (antworte = fertig)));
+		const screen = render(Klassenleitungen);
+		const knopf = await screen.findByRole('button', { name: 'Zuordnung für 05F löschen' });
+
+		await fireEvent.click(knopf);
+		await fireEvent.click(knopf);
+
+		expect(apiDelete).toHaveBeenCalledTimes(1);
+		expect(
+			/** @type {HTMLButtonElement} */ (knopf).disabled,
+			'gesperrt, solange das Löschen läuft'
+		).toBe(true);
+		antworte();
+		await waitFor(() => expect(apiGet).toHaveBeenCalledTimes(2));
+	});
+
+	it('lädt die Liste auch nach einem Fehler neu', async () => {
+		vi.mocked(apiGet).mockResolvedValueOnce([ZEILE]).mockResolvedValueOnce([]);
+		vi.mocked(apiDelete).mockRejectedValueOnce(new Error('Keine Verbindung zum Server.'));
+		const screen = render(Klassenleitungen);
+
+		await fireEvent.click(await screen.findByRole('button', { name: 'Zuordnung für 05F löschen' }));
+
+		await waitFor(() => expect(screen.queryByText(ZEILE.lehrer_email)).toBeNull());
+		expect(apiGet).toHaveBeenCalledTimes(2);
 	});
 });
