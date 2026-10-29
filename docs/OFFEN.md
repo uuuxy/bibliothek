@@ -185,8 +185,6 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
 - Flow 4 entfällt: Die Littera-Übernahme setzt den Etikett-Vermerk selbst
   (`internal/littera/schreiber_bestand.go`).
 - Flow 5: Selbstanmeldung einer Lehrkraft.
-- Danach `littera.mdb` am Server und auf dem USB-Stick löschen ([DEPLOYMENT.md](DEPLOYMENT.md),
-  Abschnitt 9).
 
 ### 7.8 Am Server nachsehen
 

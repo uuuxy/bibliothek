@@ -706,9 +706,9 @@ Rückgabe: 0 vollständig übernommen, 1 angehalten oder abgebrochen, 2 übernom
 fehlen (FEHLER-Zeilen im Protokoll). Das Protokoll nennt Namen; das Skript gibt seinen Pfad aus,
 nach der Durchsicht löschen. Danach kommt der LUSD-Import.
 
-Die Sicherung trägt alle Schülerdaten, unverschlüsselt. Sie bleibt am Server, bis die Abnahmen
-mit echten Daten durch sind ([abnahme_checkliste.md](abnahme_checkliste.md)), für einen zweiten
-Versuch und die Vergleiche dort; danach `littera.mdb` am Server und auf dem USB-Stick löschen.
+Die Sicherung trägt alle Schülerdaten, unverschlüsselt. Wie lange sie aufgehoben wird und wo, am
+Server und auf dem USB-Stick, legt das Löschkonzept der Schule gegenüber Littera fest
+([datenschutz/nachweis.md](datenschutz/nachweis.md), B7).
 
 **Noch einmal von vorn**, etwa mit einer neueren Sicherung: Die Datenbank wird neu angelegt, nicht
 aufgeräumt. Das löscht alles, was im Programm steht, auch Konten und Einstellungen; Uploads und
