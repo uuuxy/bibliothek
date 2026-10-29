@@ -138,9 +138,24 @@ test('Etikettenbogen und Ausweiskarte bleiben im dunklen Schema hell', async ({ 
 		await page.getByText('Buch-Etiketten', { exact: true }).first().click();
 		await page.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' }).fill(`Papier ${s}`);
 		await page.getByRole('button', { name: new RegExp(`E2E Papier ${s}`) }).click();
+		// Der Etikettenbogen ist ein Bild des Druck-PDFs: Sein Papier bleibt weiß, auch im dunklen
+		// Schema. Gelesen wird ein Bildpunkt am Rand des Blatts, oberhalb der ersten Etikettenreihe,
+		// so wie er auf dem Bildschirm steht: Ein Filter, der das Blatt abdunkelte, fiele auf.
 		const blatt = page.getByTestId('etiketten-blatt');
-		await expect(blatt).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-		await expect(blatt.getByText(`E2E Papier ${s}`).first()).toHaveCSS('color', 'rgb(26, 28, 30)');
+		await expect(blatt).toBeVisible();
+		const foto = (await blatt.screenshot()).toString('base64');
+		const papier = await page.evaluate(async (daten) => {
+			const bild = new Image();
+			bild.src = `data:image/png;base64,${daten}`;
+			await bild.decode();
+			const leinwand = document.createElement('canvas');
+			leinwand.width = bild.naturalWidth;
+			leinwand.height = bild.naturalHeight;
+			const kontext = /** @type {CanvasRenderingContext2D} */ (leinwand.getContext('2d'));
+			kontext.drawImage(bild, 0, 0);
+			return Array.from(kontext.getImageData(10, 10, 1, 1).data);
+		}, foto);
+		expect(papier).toEqual([255, 255, 255, 255]);
 		expect(await dunkel(page)).toBe(true);
 	} finally {
 		seedSQL(`DELETE FROM buecher_titel WHERE isbn = '978d${s}';`);

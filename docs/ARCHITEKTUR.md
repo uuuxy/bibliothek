@@ -899,8 +899,9 @@ frontend/src
 - **Farben kommen aus den Rollen in `styles/rollen.css`, in einem hellen und einem dunklen
   Schema.** Das dunkle (`.schema-dunkel`) steht an `<html>`, wenn der Rechner es gewählt hat, und
   an Bereichen, die immer dunkel sind (Flur-Monitor, Kamera-Sucher). Ein Bereich, der Papier
-  zeigt (Etikettenbogen, Ausweiskarte im Designer), trägt `.schema-hell` und bleibt hell;
-  gedruckt wird immer im hellen Schema, das dunkle gilt nur in `@media screen`. Wer eine Rolle
+  zeigt (Ausweiskarte im Designer), trägt `.schema-hell` und bleibt hell; die Etikettenvorschau
+  ist ein Bild des Druck-PDFs und damit von selbst weiß. Gedruckt wird immer im hellen Schema, das
+  dunkle gilt nur in `@media screen`. Wer eine Rolle
   mit ihrem `on-`-Paar nimmt, ist in beiden lesbar (Material 3, Color system: „a dark surface
   color is algorithmically paired with a light text label color so the UI automatically meets
   contrast requirements"). Gemessen: `rollen-schema.test.js`,

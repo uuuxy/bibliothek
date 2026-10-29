@@ -101,7 +101,7 @@
 			{#if fehler}
 				<LadeFehler titel="Vorschau nicht geladen" text={fehler} onerneut={() => (versuch += 1)} />
 			{:else if bild}
-				<!-- Hell auch im dunklen Design: Die Vorschau zeigt Papier. Zeichnet der Server neu,
+				<!-- Das Bild des PDFs ist auch im dunklen Design weißes Papier. Zeichnet der Server neu,
 				     bleibt der alte Bogen abgeblendet stehen, darüber der Ladekreis (M3, Progress
 				     indicators: 200 ms bis 5 s „Use a loading indicator"). -->
 				<div class="relative w-full" style="max-width: {HOECHSTBREITE_PX}px;">
@@ -109,7 +109,7 @@
 						src={bild}
 						alt="Erster Bogen, wie er gedruckt wird"
 						data-testid="etiketten-blatt"
-						class="schema-hell w-full shadow-2xl transition-opacity {laedt ? 'opacity-60' : ''}"
+						class="w-full shadow-2xl transition-opacity {laedt ? 'opacity-60' : ''}"
 					/>
 					{#if laedt}
 						<div class="absolute inset-0 flex items-center justify-center"><Ladekreis /></div>
