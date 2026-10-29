@@ -906,13 +906,17 @@ frontend/src
   contrast requirements"). Gemessen: `rollen-schema.test.js`,
   `frontend/e2e/barrierefreiheit-axe.spec.js` (jede Seite hell und dunkel),
   `frontend/e2e/darstellung.spec.js`.
-- **„Dunkles Design" schaltet jeder Rechner für sich,** mit einem Schalter unten in der
-  Seitenleiste, wie bei Gemini, Googles Programm mit Seitenleiste: „By default, the color scheme
-  for the Gemini app matches the color scheme of the device you're on", die Wahl gilt „on the
-  same browser and device" (Gemini-Hilfe, „Use Dark theme in Gemini Apps"). Ein Schalter, weil er
-  sofort wirkt (Material 3, Switch: „Switches change settings and other options immediately"),
-  und „Dunkles Design" statt „Hell oder Dunkel", weil er eine Sache an- und ausschaltet
-  („Switches control binary options, not opposing ones"). Die Wahl steht im Speicher des
+- **„Dunkles Design" schaltet jeder Rechner für sich,** wie bei Gemini, Googles Programm mit
+  Seitenleiste: „By default, the color scheme for the Gemini app matches the color scheme of the
+  device you're on", die Wahl gilt „on the same browser and device" (Gemini-Hilfe, „Use Dark theme
+  in Gemini Apps"). Gemini legt den Schalter unten in das Menü „Settings & help"; hier wäre er
+  dort der einzige Eintrag und steht deshalb ohne Menü unten in der Seitenleiste. Ein Schalter,
+  weil er sofort wirkt (Material 3, Switch: „Switches change settings and other options
+  immediately"), und „Dunkles Design" statt „Hell oder Dunkel", weil er eine Sache an- und
+  ausschaltet („Switches control binary options, not opposing ones"); die Beschriftung bleibt
+  auch im hellen Design stehen („A label should describe what the control does when the switch is
+  on"). Nach dem ersten Umlegen gilt die Wahl, bis jemand sie wieder umlegt; eine dritte Wahl
+  „wie das System" hat Gemini nicht und dieses Programm auch nicht. Die Wahl steht im Speicher des
   Browsers (`bibliothek.darstellung`) und nicht am Server, wo die Einstellungen für alle
   Arbeitsplätze liegen. `public/darstellung.js` setzt das Schema vor dem ersten Bild, weil das
   Programm erst nach dem Lesen der Seite läuft; `stores/darstellung.svelte.js` hält es danach
@@ -2021,7 +2025,8 @@ Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesper
 | Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite; der Versand zählt keine Mahnung        |
 | Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe (A18). Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule |
 | Bestellanschreiben                        | `pdf/bestellanschreiben.go`            | Anhang der Bestellmail; Betreff und Vermerk nennen den Topf, ein Satz den Weg zu den Etiketten       |
-| Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)             | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
+| Kontoauszug                               | `pdf/kontoauszug.go`                   | Kopf der Schule wie Bestandsbuch und Bestellbericht. Eine abgelaufene Frist trägt das Wort „überfällig" in fetter Schrift, keine Farbe: Die Schule druckt schwarz-weiß. Der Satz unter der Liste nennt dann die Zahl |
+| Rechnung, Schadensfall, LMF-Plan          | `pdf/` (gofpdf/maroto)                 | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
 | Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/katalog/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |

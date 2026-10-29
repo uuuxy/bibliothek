@@ -23,8 +23,7 @@ const OEFFENTLICH = [
 	['Katalog', '/katalog']
 ];
 
-/** Jede interne Hauptansicht (Router.svelte, pfadJeBildschirm) — außer dem Kollegiums-Portal,
- *  das ein Admin nicht sieht. */
+/** Jede interne Hauptansicht (Router.svelte, pfadJeBildschirm). */
 const INTERN = [
 	['Ausleihe', '/kiosk'],
 	['Medienkatalog', '/medienkatalog'],
@@ -40,7 +39,8 @@ const INTERN = [
 	['System-Logs', '/system-logs'],
 	['Schuljahreswechsel', '/schuljahr'],
 	['Benutzer & Rechte', '/berechtigungen'],
-	['Einstellungen', '/einstellungen']
+	['Einstellungen', '/einstellungen'],
+	['Mein Portal', '/kollegium-portal']
 ];
 
 /**

@@ -45,10 +45,11 @@
 	</div>
 {:else}
 	<div class="animate-fade-in no-print flex shrink-0 flex-col gap-3 p-4 text-left">
-		<!-- Wie Gemini, Googles Programm mit Seitenleiste: „Dunkles Design" als Schalter unten in der
-		     Leiste. Er gilt für diesen Rechner, nicht für die Person, und steht deshalb über ihr, mit
-		     Abstand, statt zwischen Name und Abmelden (Material 3, Spacing: „establish boundaries
-		     between unrelated items"); in den Einstellungen gälte er für alle Arbeitsplätze.
+		<!-- Gemini, Googles Programm mit Seitenleiste, legt „Dark theme" unten in das Menü „Settings &
+		     help". Hier wäre es der einzige Eintrag, deshalb steht der Schalter ohne Menü davor. Er gilt
+		     für diesen Rechner, nicht für die Person, und steht deshalb über ihr, mit Abstand, statt
+		     zwischen Name und Abmelden (Material 3, Spacing: „establish boundaries between unrelated
+		     items"); in den Einstellungen gälte er für alle Arbeitsplätze.
 		     Eingeklappt zeigt die Leiste ihn beim Überfahren. -->
 		<div class="mb-2 flex items-center justify-between gap-3">
 			<label for="dunkles-design" class="text-on-surface text-sm font-medium">Dunkles Design</label>
