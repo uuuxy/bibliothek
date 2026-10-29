@@ -688,3 +688,54 @@ in `git tag -n`.
 Testserver `git pull`); die ghcr-Images sind
 Nachweis und Artefakt, kein zweiter Deploy-Pfad. Rollback = Backup zurückspielen
 (Abschnitt 6); Migrationen laufen nur vorwärts.
+
+---
+
+## 9. Littera-Übernahme (einmal, beim Umstieg)
+
+Bücher, Leser und Ausleihen aus Littera kommen mit einem Befehl am Server ins Programm. Die
+Übernahme läuft einmal, in eine frisch angelegte Datenbank, und vor dem LUSD-Import: Nach einem
+LUSD-Import legte sie jeden Schüler ein zweites Mal an ([SCRIPTS.md](SCRIPTS.md), Abschnitte 0
+und 1).
+
+**Vorher, in Littera:** Leser ohne Gruppe einer Gruppe zuordnen, sonst hält der Probelauf an.
+Dann unter „Dienstprogramme → Datensicherung" sichern; die Sicherung enthält `littera.mdb`. Die
+Datei trägt alle Schülerdaten: per USB-Stick auf den Server, nicht per Mail oder Cloud.
+
+**Am Server**, im Verzeichnis des Programms, nachdem `./update.sh` den aktuellen Stand
+eingespielt hat:
+
+```bash
+scripts/littera_uebernahme.sh /pfad/zur/littera.mdb
+```
+
+Das Skript arbeitet in einem Wegwerf-Container aus dem Image des Programms; der Server braucht
+nur Docker. Es
+
+1. prüft, dass die Datenbank leer ist: Stehen schon Bücher, Schüler oder Ausleihen darin, hält es
+   an, bevor es etwas schreibt;
+2. liest die Sicherung (`scripts/littera_export.sh`, mit `mdb-export` aus dem Image);
+3. macht einen Probelauf, der nur liest, und zeigt, was ankäme: Zahlen je Art, Lesergruppen,
+   Standorte;
+4. fragt nach und übernimmt erst nach `ja`.
+
+Der Probelauf listet jeden Wert, der als Standort ankäme. Was davon kein Standort ist, etwa ein
+Verfasser ohne Komma, beim nächsten Aufruf ausnehmen:
+`scripts/littera_uebernahme.sh /pfad/zur/littera.mdb -kein-standort "Wert"` (SCRIPTS.md,
+Abschnitt 1).
+
+Rückgabe: 0 vollständig übernommen, 1 angehalten oder abgebrochen, 2 übernommen, aber Datensätze
+fehlen (FEHLER-Zeilen im Protokoll). Das Protokoll nennt Namen; das Skript gibt seinen Pfad aus,
+nach der Durchsicht löschen. Danach kommt der LUSD-Import.
+
+**Noch einmal von vorn**, etwa mit einer neueren Sicherung: Die Datenbank wird neu angelegt, nicht
+aufgeräumt. Das löscht alles, was im Programm steht, auch Konten und Einstellungen; Uploads und
+Sicherungen bleiben.
+
+```bash
+docker compose down
+docker volume ls --filter name=postgres_data    # Name der Datenbank, etwa bibliothek_postgres_data
+docker volume rm bibliothek_postgres_data
+docker compose up -d                             # das Programm legt die Datenbank neu an
+scripts/littera_uebernahme.sh /pfad/zur/littera.mdb
+```

@@ -66,6 +66,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/r
 # Werkzeug im Container verschlüsseln sie über dieselbe Ableitung wie der Job, ohne den
 # Schlüssel je an den Host zu reichen.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o encrypt-backup ./cmd/encrypt-backup
+# Die Littera-Übernahme läuft einmal am Server (scripts/littera_uebernahme.sh), aus demselben
+# Grund im Image. Sie bindet internal/littera und pgx ein, kein cgo.
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o littera-altbestand ./cmd/littera-altbestand
 
 # ==============================================================================
 # Stage 3: Runner container
@@ -81,9 +84,12 @@ WORKDIR /app
 # ab 17), die ein älterer Server unter ON_ERROR_STOP nicht einspielt. Beim Upgrade des
 # Servers diese Zeile mitziehen, sonst schlägt die Restore-Probe am ersten Sonntag Alarm.
 #
+# mdbtools-utils: mdb-export liest die Sicherung von Littera (eine Access-Datei) für die
+# Übernahme. Im Container gelesen, braucht der Server dafür kein eigenes Werkzeug.
+#
 # apk upgrade zuerst: Das Basisimage trägt die Paketstände seines Release-Tags;
 # Sicherheits-Fixes kommen nur über das Upgrade herein.
-RUN apk --no-cache upgrade && apk --no-cache add ca-certificates tzdata postgresql18-client
+RUN apk --no-cache upgrade && apk --no-cache add ca-certificates tzdata postgresql18-client mdbtools-utils
 
 # Copy database schema file (for reference / first-run init)
 COPY schema.sql ./
@@ -104,6 +110,9 @@ COPY --from=backend-builder /app/restore-backup .
 # Verschlüsselung für die Shell-Wege (docs/resilience_and_recovery.md 1b):
 #   … | docker exec -i bibliothek-backend ./encrypt-backup > <datei>.sql.gz.enc
 COPY --from=backend-builder /app/encrypt-backup .
+# Littera-Übernahme in eine frisch angelegte Datenbank; aufgerufen über
+# scripts/littera_uebernahme.sh (docs/DEPLOYMENT.md, Abschnitt 9).
+COPY --from=backend-builder /app/littera-altbestand .
 
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist

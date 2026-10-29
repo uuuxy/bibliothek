@@ -164,7 +164,7 @@ Alles Weitere liegt in `docs/`.
 | Dokument                                                 | Inhalt                                                                                          |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | [PFLEGEKONZEPT.md](docs/PFLEGEKONZEPT.md)                     | Pflegekonzept und Wartungshandbuch (Entwurf): Zuständigkeiten, Update und Wiederherstellung für die Vertretung, wiederkehrende Aufgaben, Ende der Pflege; im Anhang die Vorlage für das Blatt bei der Schule |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md)                           | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups                                      |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md)                           | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups, Littera-Übernahme (Abschnitt 9)     |
 | [resilience_and_recovery.md](docs/resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
 | [SCRIPTS.md](docs/SCRIPTS.md)                                 | CLI-Werkzeuge: Littera-Altbestand, Foto-Migration, Backup, Deployment, Lasttest                 |
 | [littera_schema_befund.md](docs/littera_schema_befund.md)     | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen                        |

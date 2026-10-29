@@ -10,7 +10,9 @@ Die Importe hängen aneinander; die Reihenfolge steht sonst nur im Code:
    Titel und Exemplare mit Barcodes.
 2. **Littera-Personen und -Ausleihen im selben Lauf** (`-personen -ausleihen`, Abschnitt 1).
    Die Ausleihen finden ihre Entleiher nur über eine Zuordnung im Speicher des laufenden
-   Prozesses; ein späterer Ausleihlauf meldet alle als „ohne Entleiher".
+   Prozesses; ein späterer Ausleihlauf meldet alle als „ohne Entleiher". Am Server erledigt
+   `scripts/littera_uebernahme.sh` Bestand, Personen und Ausleihen in einem Lauf
+   ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 9).
 3. **LUSD-Import** (All_Inklusiv-Bericht, der einzige Export mit Schüleradresse). Er erkennt
    Littera-Schüler an Name + Geburtsdatum und übernimmt sie samt Klasse und Anschrift, statt
    sie doppelt anzulegen. Der Littera-Personenlauf kann das NICHT: nach einem LUSD-Import
@@ -25,13 +27,14 @@ doppelt an. Vor dem Lauf am frischen Backup prüfen.
 Überträgt den Littera-Altbestand nach PostgreSQL. Quelle sind `mdb-export`-CSVs, nicht
 die Access-Datei selbst: Deren ODBC-Treiber gibt es nur unter Windows.
 
+Am Server läuft das über `scripts/littera_uebernahme.sh` im Container des Programms, mit
+Probelauf und Rückfrage ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 9); dort liegen
+`mdb-export` und dieses Kommando im Image. Die Schritte hier sind der Weg auf dem
+Arbeitsrechner.
+
 ```bash
-# 1. Export erzeugen (mdbtools, plattformunabhängig)
-for t in Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih \
-         Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte \
-         Interessenskreis IntZuMed; do
-  mdb-export littera_sav.mdb "$t" > "littera-export/$(echo "$t" | tr 'A-Z' 'a-z').csv"
-done
+# 1. Export erzeugen (mdbtools); die Liste der Tabellen steht nur in diesem Skript
+scripts/littera_export.sh littera_sav.mdb littera-export
 
 # 2. Trockenlauf – liest und berichtet, schreibt nichts. Mit denselben Schaltern wie der
 #    Lauf (etwa -personen -ausleihen): Dann nennt er auch Lesergruppen ohne Zuordnung.
@@ -248,8 +251,9 @@ Was die Probe tut, in dieser Reihenfolge:
 2. **Abschottung, bevor Daten hineinkommen:** Das Backend hängt nur an einem Netz ohne Weg ins
    Internet (erreicht es doch eins, bricht die Probe ab). Anmeldung über die IMAP-Attrappe,
    keine Mail, kein S3, kein Cover-Abgleich.
-3. **Export** der fünfzehn Tabellen aus Abschnitt 1 mit `mdb-export`, dazu `FremdLeserNummer` und
-   `FremdBarcode`, wenn es sie gibt — oder die CSVs aus dem übergebenen Verzeichnis.
+3. **Export** mit `scripts/littera_export.sh`, demselben Skript wie bei der Übernahme am Server:
+   die fünfzehn Tabellen aus Abschnitt 1, dazu `FremdLeserNummer` und `FremdBarcode`, wenn es
+   sie gibt — oder die CSVs aus dem übergebenen Verzeichnis.
 4. **Trockenlauf** mit `-personen -ausleihen`. Nennt er Lesergruppen ohne Zuordnung, prüft die
    Probe, dass der echte Lauf anhält und nichts schreibt. Weiter geht es dann nur mit
    `--gruppe 'Undefinierte Untergruppe=Schüler'`: Das stellt nach, was die Bücherei in Littera

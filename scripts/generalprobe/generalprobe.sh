@@ -28,8 +28,6 @@ COMPOSE=(docker compose -f "$HIER/docker-compose.yml")
 DB="postgresql://postgres:probe-nur-lokal@127.0.0.1:5436"
 NETZ=bibliothek-probe_intern
 SCHLUESSEL=probe-backup-schluessel-nur-lokal-32-zeichen
-TABELLEN=(Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih
-	Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte Interessenskreis IntZuMed)
 [ -d /opt/homebrew/opt/libpq/bin ] && PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 QUELLE="" BEHALTEN=0 GRUPPEN=()
@@ -105,20 +103,9 @@ ok "Backend ohne Weg ins Internet"
 pruefe "$(docker inspect -f '{{range $n, $_ := .NetworkSettings.Networks}}{{$n}} {{end}}' bibliothek-backend-probe | xargs)" "$NETZ" "Backend nur am Netz $NETZ"
 
 schritt "Export"
-mkdir "$ARBEIT/export"
-if [ -d "$QUELLE" ]; then
-	cp "$QUELLE"/*.csv "$ARBEIT/export/"
-else
-	for t in "${TABELLEN[@]}" FremdLeserNummer FremdBarcode; do
-		if mdb-tables -1 "$QUELLE" | grep -qx "$t"; then
-			mdb-export "$QUELLE" "$t" >"$ARBEIT/export/$(echo "$t" | tr 'A-Z' 'a-z').csv"
-		fi
-	done
-fi
-for t in "${TABELLEN[@]}"; do
-	[ -s "$ARBEIT/export/$(echo "$t" | tr 'A-Z' 'a-z').csv" ] || abbruch "Tabelle $t fehlt im Export"
-done
-echo "  $(ls "$ARBEIT/export" | wc -l | tr -d ' ') Tabellen"
+# Derselbe Export wie bei der Übernahme am Server (scripts/littera_uebernahme.sh).
+ausgabe="$(sh "$WURZEL/scripts/littera_export.sh" "$QUELLE" "$ARBEIT/export")" || abbruch "Export scheiterte"
+echo "  $ausgabe"
 
 schritt "Übernahme-Werkzeuge bauen"
 (cd "$WURZEL" && go build -o "$ARBEIT/littera-altbestand" ./cmd/littera-altbestand &&

@@ -16,8 +16,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 (entschieden am 28.09.2026). R7, R8 und R9 sind Risiken aus [ARCHITEKTUR.md](ARCHITEKTUR.md)
 11.1.
 
-- [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt.
-  (7.2, 4.20)
+- [ ] Littera-Übernahme am Schulserver mit der Sicherung der Schule
+  ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 9). (7.2, 4.20)
 - [x] Eingang des Servers: Von außen kommt nur die Seite der Lieferanten durch; die Sperre steht
   in der Caddy-Konfiguration. Was nach außen gehen darf, regelt die Firewall der Schule. (4.23)
 - [ ] Am Schulserver einrichten: Netze der Schule für den Eingang ([DEPLOYMENT.md](DEPLOYMENT.md),
@@ -140,16 +140,16 @@ und Exemplare nach 2010, rund 1.350 Titel haben keine Signatur. Die Übernahme b
 [SCRIPTS.md](SCRIPTS.md) (Abschnitte 0, 1 und 1b), was Littera speichert,
 [littera_schema_befund.md](littera_schema_befund.md).
 
-**Die Sicherung öffnen.** Die Sicherungen vom 01. und 02.09.2026 sind verschlüsselte `.7z` mit je
-einer `.bak` der SQL-Server-Fassung (Littera-Handbuch, „Datensicherung mit SQL Server-Datenbank");
-`mdb-export` liest sie nicht. Zum Zurückspielen braucht es „das Kennwort welches bei der
-Installation des Servers erfasst wurde". Mit Kennwort: die `.bak` lokal in einen SQL Server
-einspielen, die Tabellen aus SCRIPTS.md Abschnitt 1 als CSV ausgeben, Spaltennamen und
-Datumsformate gegen den Importer prüfen. Ohne Kennwort blieben die Auswertungen von Littera; ob
-sie die nötigen Nummern tragen, ist nicht geprüft, und sie bräuchten einen neuen Importer.
+**Die Sicherung der Schule.** Sie hat kein Kennwort. Die verschlüsselten `.7z` auf dem
+Arbeitsrechner sind eine Testdatenbank des Medienzentrums mit unbekanntem Kennwort; sie zählen
+nicht. Ist die Sicherung eine `littera.mdb` (Littera mit Access), übernimmt
+`scripts/littera_uebernahme.sh` sie direkt. Ist sie eine `.bak` (Littera mit eigenem SQL Server,
+Handbuch „Datensicherung mit SQL Server-Datenbank"), fehlt der Schritt davor: die `.bak` in einen
+SQL Server im Container einspielen, die Tabellen aus SCRIPTS.md Abschnitt 1 als CSV ausgeben,
+Spaltennamen und Datumsformate gegen den Importer prüfen.
 
-**Was die Generalprobe beantworten muss** (SCRIPTS.md Abschnitt 1b; mit der Sicherung von 2010
-bestanden):
+**Was die Übernahme mit der Sicherung der Schule beantworten muss** (Probelauf und Bericht von
+`scripts/littera_uebernahme.sh`; mit der Sicherung von 2010 in der Generalprobe bestanden):
 
 1. Ist `FremdLeserNummer` gefüllt? Sonst muss jeder Ausweis neu gedruckt werden; der Lauf trägt
    dann die Lesernummer als Ausweisnummer ein.
