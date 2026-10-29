@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -257,6 +258,11 @@ func TestKlassensatzGruppeLoeschen(t *testing.T) {
 		mock.ExpectExec("DELETE FROM class_books").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnError(fmt.Errorf("db error"))
+		// Die Zeile im Log nennt die Klasse: Die Adresse im Log trägt den Abfrageteil nicht.
+		var protokoll bytes.Buffer
+		vorher := slog.Default()
+		slog.SetDefault(slog.New(slog.NewJSONHandler(&protokoll, nil)))
+		t.Cleanup(func() { slog.SetDefault(vorher) })
 
 		anfrage := httptest.NewRequest(http.MethodDelete, "/api/class-books?className=5A", nil)
 		rec := httptest.NewRecorder()
@@ -264,6 +270,9 @@ func TestKlassensatzGruppeLoeschen(t *testing.T) {
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Errorf("rec.Code = %d, erwartet %d", rec.Code, http.StatusInternalServerError)
+		}
+		if zeile := protokoll.String(); !strings.Contains(zeile, "5A") || !strings.Contains(zeile, "db error") {
+			t.Errorf("Log ohne Klasse oder Ursache:\n%s", zeile)
 		}
 	})
 

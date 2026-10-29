@@ -115,7 +115,7 @@ func (t *Tueren) KlassensatzGruppeLoeschen() http.HandlerFunc {
 
 		err := t.titelAbfragen().LoescheKlassensatzGruppe(r.Context(), klassen)
 		if err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden", fmt.Errorf("klassengruppen löschen: %w", err))
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden", fmt.Errorf("klassengruppen %q löschen: %w", klassen, err))
 			return
 		}
 
