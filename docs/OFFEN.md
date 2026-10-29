@@ -38,7 +38,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [ ] Freigeben: Pull Request #761 schließen; er ist derselbe Vorschlag wie #759. (5.111)
+- [x] Freigeben: Pull Request #761 schließen; er ist derselbe Vorschlag wie #759. (5.111)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -104,10 +104,6 @@ bekommt. Gebaut wird nach der Darstellung hell und dunkel.
 - **#760** setzt in `ui/Button.svelte` `type="button"` als Vorgabe; ohne `type` sendet ein Knopf in
   einem `<form>` das Formular ab. Nächster Schritt: einen Knopf des Hauses in einem `<form>`
   finden, an dem das geschieht, und den Vorschlag dort rot zeigen; gibt es keinen, schließen.
-- **#761** begrenzt `ParseMultipartForm` an denselben fünf Stellen auf 1 MB wie #759. Der wurde
-  geschlossen: Alle fünf begrenzen die Anfrage vorher mit `http.MaxBytesReader`, gosec meldet G120
-  auch mit dem Vorschlag, und mit 1 MB lägen größere Dateien als Zwischendatei auf der Platte,
-  beim LUSD-Import samt Schülerdaten (e1eff101).
 - **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
   `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
   Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.
