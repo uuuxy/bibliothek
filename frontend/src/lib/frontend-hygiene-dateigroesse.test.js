@@ -28,7 +28,7 @@ const BESTAND = {
 	'src/lib/components/lmfplan/lmfplanDienst.js': 380,
 	'src/lib/components/lmfplan/lmfplanPlaner.svelte.js': 232,
 	'src/lib/menue.js': 272,
-	'src/lib/stores/authStore.svelte.js': 354,
+	'src/lib/stores/authStore.svelte.js': 351,
 	'src/lib/stores/bestellStore.svelte.js': 531,
 	'src/lib/stores/etiketten.svelte.js': 355,
 	'src/lib/stores/leerlaufSperre.svelte.js': 382,
