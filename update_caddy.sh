@@ -82,12 +82,13 @@ flasch2.herzog-dupont.de {
 # gälte bei SCHULNETZ= keine Adresse als Schulnetz, auch nicht die Theke.
 #
 # Der zweite handle-Block hat bewusst keinen Pfad: Caddy sortiert handle-Blöcke selbst, und ein
-# Block mit Pfad wie /* liefe vor dem mit @draussen.
+# Block mit Pfad wie /* liefe vor dem mit @draussen. Welche Dateien die Seite vom Wurzelpfad lädt,
+# hält caddy_von_aussen_test.go gegen index.html und frontend/public.
 flasch3.herzog-dupont.de {
     @draussen {
         expression `{env.SCHULNETZ} != ""`
         not remote_ip {$SCHULNETZ:0.0.0.0/0 ::/0}
-        not path /bestellung/* /api/public/bestellung/* /assets/* /favicon.svg /icons.svg /manifest.webmanifest /health
+        not path /bestellung/* /api/public/bestellung/* /assets/* /darstellung.js /favicon.svg /icons.svg /manifest.webmanifest /health
     }
     handle @draussen {
         respond "Die Bibliothek ist nur im Schulnetz erreichbar." 403
