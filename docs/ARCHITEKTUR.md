@@ -2089,6 +2089,12 @@ LMF-Nummer kommt auf kein Etikett: Als Nummer eines Exemplars lehnt die Datenban
 (`chk_exemplar_barcode_keine_lmf_nummer`, Migration 168), die Nummer eines alten LMF-Etiketts
 steht in `lmf_barcode`.
 
+**Strichcode und QR-Code tragen dieselben Zeilen** (`zeichneEtikett` in `pdf/etikett_buch.go`);
+auf dem kleinen Format steht die Nummer neben dem QR-Code, weil unter ihm kein Platz ist. Dass
+nichts über die Kante eines Etiketts reicht und nichts übereinanderliegt, prüft
+`TestBuchEtikett_NichtsReichtUeberSeineKante` an den Koordinaten im Inhaltsstrom: Eine Nummer auf
+dem Etikett darunter ergibt dasselbe PDF mit denselben Texten.
+
 **Ein PDF geht im Tab auf, nicht in den Download-Ordner.** Ein Download bliebe auf dem
 Arbeitsplatz liegen, auch für den Nächsten am Rechner. Die Oberfläche zeigt ein PDF über
 `zeigePdf` (`frontend/src/lib/utils/pdfImFenster.js`): Der Tab geht beim Klick auf, vor der Anfrage.

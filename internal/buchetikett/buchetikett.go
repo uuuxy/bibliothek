@@ -96,7 +96,6 @@ func PDFEtiketten(auftrag []Etikett, kopf Kopf) []pdf.BuchEtikett {
 			Schulname:        kopf.Schulname,
 			BarcodeID:        e.BarcodeID,
 			Titel:            e.Titel,
-			Autor:            e.Autor,
 			AnschaffungsJahr: e.AnschaffungsJahr,
 			Signatur:         e.Signatur,
 			Eigentumsvermerk: kopf.vermerkFuer(e.Topf),

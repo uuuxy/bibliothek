@@ -22,7 +22,6 @@ function erzeugeEtikettenStore() {
 
 	let gewaehlterTitel = $state(/** @type {any} */ (null));
 	let barcodeArt = $state('code39'); // "code39" | "qr"
-	let mitRahmen = $state(true);
 	let startFeld = $state(1); // 1 to 21
 
 	// Vorgabe = die des Servers (pdf/etikett_formate.go EtikettFormatVorgabe): das Papier des
@@ -279,12 +278,6 @@ function erzeugeEtikettenStore() {
 		},
 		set barcodeArt(v) {
 			barcodeArt = v;
-		},
-		get mitRahmen() {
-			return mitRahmen;
-		},
-		set mitRahmen(v) {
-			mitRahmen = v;
 		},
 		get formatId() {
 			return formatId;

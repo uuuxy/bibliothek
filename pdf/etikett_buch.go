@@ -4,7 +4,6 @@ import (
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/strichcode"
 	"bytes"
-	"fmt"
 	"math"
 
 	"github.com/phpdave11/gofpdf"
@@ -21,7 +20,6 @@ type BuchEtikett struct {
 	Schulname string
 	BarcodeID string
 	Titel     string
-	Autor     string
 	// AnschaffungsJahr und Signatur stehen zusammen in einer Zeile unter dem Titel; ein
 	// leerer Wert lässt seine Angabe weg.
 	AnschaffungsJahr string
@@ -56,42 +54,6 @@ func zeichneNummer(pdf *gofpdf.Fpdf, tr func(string) string, beschriftung, numme
 	pdf.CellFormat(breite, hoehe, tr(text), "", 0, "C", false, 0, "")
 }
 
-// zeichneQREtikett setzt ein Etikett mit QR-Code: Titel, Autor, Code und darunter die Nummer.
-func zeichneQREtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFormat, etikett BuchEtikett, pos etikettPosition) {
-	breite := format.Breite - 4
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(pos.X+2, pos.Y+3)
-	pdf.Cell(breite, 4, tr(kuerzeAufEtikett(pdf, tr, etikett.Titel, 40, breite)))
-
-	pdf.SetFont("Arial", "", 7)
-	pdf.SetXY(pos.X+2, pos.Y+7)
-	pdf.Cell(breite, 4, tr(kuerzeAufEtikett(pdf, tr, etikett.Autor, 30, breite)))
-
-	bild, err := strichcode.PNG(etikett.BarcodeID, true, 200, 200)
-	if err == nil {
-		bildLeser := bytes.NewReader(bild)
-		pdf.RegisterImageOptionsReader(etikett.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, bildLeser)
-		qrGroesse := 16.0
-		if !format.istGross() {
-			qrGroesse = 12.0 // niedrige Etiketten wie standard_52 fassen den großen Code nicht
-		}
-		qrX := pos.X + (format.Breite-qrGroesse)/2
-		qrY := pos.Y + 11.0
-		if !format.istGross() {
-			qrY = pos.Y + 8.0
-		}
-		pdf.Image(etikett.BarcodeID, qrX, qrY, qrGroesse, qrGroesse, false, "", 0, "")
-	}
-
-	pdf.SetFont("Arial", "B", 8)
-	textY := pos.Y + 28
-	if !format.istGross() {
-		textY = pos.Y + 21
-	}
-	pdf.SetXY(pos.X+2, textY)
-	zeichneNummer(pdf, tr, "", etikett.BarcodeID, format.Breite-4, 4)
-}
-
 // zweiteZeile setzt Anschaffungsjahr und Signatur in eine Zeile ("Ansch.J. 2016 ·
 // LMF-Deutsch 5"). Für eine eigene Zeile je Angabe sind die Bögen zu niedrig: Der übrige
 // Inhalt füllt rund 35 mm, die Etiketten sind 38,1 mm (Zweckform L4760) und 37 mm (Avery
@@ -109,78 +71,114 @@ func zweiteZeile(jahr, signatur string) string {
 	}
 }
 
-// zeichneBarcodeEtikett setzt das Buchetikett mit Strichcode nach der Vorlage, die in der
-// Bibliothek an den Büchern klebt:
+// etikettMasse sind die senkrechten Maße eines Buchetiketts in mm: wo die erste Zeile beginnt,
+// wie hoch eine Zeile ist, die Luft über und unter dem Code und die Höhe des Codes.
+type etikettMasse struct {
+	oben, zeile, vorCode, nachCode, strichHoehe, qrSeite float64
+}
+
+// masseFuer liefert die Maße für das Format. Auf dem kleinen Format (21,2 mm) rücken die Zeilen
+// enger, und der Code wird kleiner, damit die Nummer über der Unterkante bleibt; mit den Maßen
+// des großen stand sie halb auf dem Etikett darunter.
+func masseFuer(format EtikettFormat) etikettMasse {
+	if format.istGross() {
+		return etikettMasse{oben: 2.5, zeile: 3.5, vorCode: 1, nachCode: 1.5, strichHoehe: 10, qrSeite: 12}
+	}
+	return etikettMasse{oben: 1.5, zeile: 3, vorCode: 0.5, nachCode: 0.5, strichHoehe: 7, qrSeite: 10}
+}
+
+// Neben dem QR-Code des kleinen Formats: Abstand des Codes zum Rand und der Nummer zum Code, in mm.
+const (
+	qrRandKlein    = 3.0
+	qrAbstandKlein = 2.0
+)
+
+// zeichneEtikett setzt das Buchetikett nach der Vorlage, die in der Bibliothek an den Büchern
+// klebt:
 //
 //	Philipp-Reis-Schule, Friedrichsdorf   ← fett, Schulname aus den Einstellungen
 //	Seydlitz - Geographie Gymnasium       ← fett, Titel
 //	Ansch.J. 2016 · LMF-Deutsch 5         ← Anschaffungsjahr · Signatur
-//	[ Barcode ]
+//	[ Strichcode oder QR-Code ]
 //	Exemplar-Nr.: 82347
 //	Eigentum des Landes Hessen
 //
 // Der Eigentumsvermerk ist bei einem Buch, das dem Land gehört und über Jahre durch
-// Schülerhände geht, der Grund, warum es zurückkommt. Auf dem kleinen Format (21,2 mm) ist
-// für sechs Zeilen kein Platz: Dort entfallen Anschaffungsjahr mit Signatur und der
-// Eigentumsvermerk, sonst stünden Zeilen übereinander.
-func zeichneBarcodeEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFormat, etikett BuchEtikett, pos etikettPosition) {
-	grossesEtikett := format.istGross()
+// Schülerhände geht, der Grund, warum es zurückkommt; deshalb trägt das Etikett mit QR-Code
+// dieselben Zeilen. Auf dem kleinen Format ist für sechs Zeilen kein Platz: Dort entfallen
+// Anschaffungsjahr mit Signatur und der Eigentumsvermerk, und neben dem QR-Code steht die
+// Nummer, weil unter ihm kein Platz ist.
+func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettFormat, etikett BuchEtikett, alsQR bool, pos etikettPosition) {
+	gross := format.istGross()
+	m := masseFuer(format)
 
-	y := pos.Y + 2.5
+	y := pos.Y + m.oben
 	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.Breite, 3.5, tr(kuerzeAufEtikett(pdf, tr, etikett.Schulname, 42, format.Breite)), "", 0, "C", false, 0, "")
-
-	y += 3.5
-	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.Breite, 3.5, tr(kuerzeAufEtikett(pdf, tr, etikett.Titel, 40, format.Breite)), "", 0, "C", false, 0, "")
-
-	zeile2 := zweiteZeile(etikett.AnschaffungsJahr, etikett.Signatur)
-	if grossesEtikett && zeile2 != "" {
-		y += 3.5
+	zeichneZeile(pdf, tr, etikett.Schulname, 42, pos.X, y, format.Breite, m.zeile)
+	y += m.zeile
+	zeichneZeile(pdf, tr, etikett.Titel, 40, pos.X, y, format.Breite, m.zeile)
+	y += m.zeile
+	if zeile2 := zweiteZeile(etikett.AnschaffungsJahr, etikett.Signatur); gross && zeile2 != "" {
 		pdf.SetFont("Arial", "", 7)
-		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.Breite, 3, tr(kuerzeAufEtikett(pdf, tr, zeile2, 45, format.Breite)), "", 0, "C", false, 0, "")
+		zeichneZeile(pdf, tr, zeile2, 45, pos.X, y, format.Breite, 3)
 		y += 3
-	} else {
-		y += 3.5
 	}
 
-	strichBreite := 40.0
-	strichHoehe := 10.0
-	if format.Breite < 50 {
-		strichBreite = 35.0
-		strichHoehe = 8.0
-	}
-
-	bild, err := strichcode.PNG(etikett.BarcodeID, false, 250, 70)
-	if err == nil {
-		bildLeser := bytes.NewReader(bild)
-		bildName := fmt.Sprintf("1d_%s", etikett.BarcodeID)
-		optionen := gofpdf.ImageOptions{ImageType: "PNG"}
-		pdf.RegisterImageOptionsReader(bildName, optionen, bildLeser)
-
-		strichX := pos.X + (format.Breite-strichBreite)/2
-		pdf.ImageOptions(bildName, strichX, y+1, strichBreite, strichHoehe, false, optionen, 0, "")
-	}
-	y += strichHoehe + 1.5
-
-	// Die Nummer unter dem Strichcode ist die, die er trägt; die Beschriftung benennt sie,
-	// damit sie ohne Scanner ablesbar ist (etwa für die Mahnliste).
+	// Die Nummer unter dem Code ist die, die er trägt; die Beschriftung benennt sie, damit sie
+	// ohne Scanner ablesbar ist (etwa für die Mahnliste).
 	pdf.SetFont("Courier", "B", 9)
+	y += m.vorCode
+	if alsQR && !gross {
+		zeichneCode(pdf, etikett.BarcodeID, true, pos.X+qrRandKlein, y, m.qrSeite, m.qrSeite)
+		x := pos.X + qrRandKlein + m.qrSeite + qrAbstandKlein
+		pdf.SetXY(x, y+(m.qrSeite-m.zeile)/2)
+		zeichneNummer(pdf, tr, "", etikett.BarcodeID, pos.X+format.Breite-qrRandKlein-x, m.zeile)
+		return
+	}
+	codeBreite, codeHoehe := 40.0, m.strichHoehe
+	if format.Breite < 50 {
+		codeBreite = 35.0
+	}
+	if alsQR {
+		codeBreite, codeHoehe = m.qrSeite, m.qrSeite
+	}
+	zeichneCode(pdf, etikett.BarcodeID, alsQR, pos.X+(format.Breite-codeBreite)/2, y, codeBreite, codeHoehe)
+	y += codeHoehe + m.nachCode
+
 	pdf.SetXY(pos.X, y)
 	beschriftung := ""
-	if grossesEtikett {
+	if gross {
 		beschriftung = "Exemplar-Nr.: "
 	}
-	zeichneNummer(pdf, tr, beschriftung, etikett.BarcodeID, format.Breite, 3.5)
+	zeichneNummer(pdf, tr, beschriftung, etikett.BarcodeID, format.Breite, m.zeile)
 
-	if vermerk := etikett.Eigentumsvermerk; grossesEtikett && vermerk != "" {
-		y += 4.5
+	if vermerk := etikett.Eigentumsvermerk; gross && vermerk != "" {
 		pdf.SetFont("Arial", "", 7)
-		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.Breite, 3, tr(kuerzeAufEtikett(pdf, tr, vermerk, 45, format.Breite)), "", 0, "C", false, 0, "")
+		zeichneZeile(pdf, tr, vermerk, 45, pos.X, y+m.zeile+1, format.Breite, 3)
 	}
+}
+
+// zeichneZeile setzt eine Zeile des Etiketts zentriert in eine Zelle über die ganze Breite, in
+// der gerade gesetzten Schrift und gekürzt wie kuerzeAufEtikett.
+func zeichneZeile(pdf *gofpdf.Fpdf, tr func(string) string, text string, zeichen int, x, y, breite, hoehe float64) {
+	pdf.SetXY(x, y)
+	pdf.CellFormat(breite, hoehe, tr(kuerzeAufEtikett(pdf, tr, text, zeichen, breite)), "", 0, "C", false, 0, "")
+}
+
+// zeichneCode setzt den Strichcode oder den QR-Code der Nummer als Bild in das Rechteck. Lässt
+// sich die Nummer nicht kodieren, bleibt das Rechteck leer; die Nummer darunter steht trotzdem da.
+func zeichneCode(pdf *gofpdf.Fpdf, nummer string, alsQR bool, x, y, breite, hoehe float64) {
+	pixelBreite, pixelHoehe, name := 250, 70, "1d_"+nummer
+	if alsQR {
+		pixelBreite, pixelHoehe, name = 200, 200, "qr_"+nummer
+	}
+	bild, err := strichcode.PNG(nummer, alsQR, pixelBreite, pixelHoehe)
+	if err != nil {
+		return
+	}
+	optionen := gofpdf.ImageOptions{ImageType: "PNG"}
+	pdf.RegisterImageOptionsReader(name, optionen, bytes.NewReader(bild))
+	pdf.ImageOptions(name, x, y, breite, hoehe, false, optionen, 0, "")
 }
 
 // ErzeugeBuchEtiketten erzeugt A4-Bögen mit Etiketten für Bücher. formatID nennt den Bogen (etwa
@@ -197,11 +195,7 @@ func ErzeugeBuchEtiketten(formatID string, startPosition int, mitQR bool, etiket
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	zeichneRaster(pdf, format, startPosition, len(etiketten), func(i int, pos etikettPosition) {
-		if mitQR {
-			zeichneQREtikett(pdf, tr, format, etiketten[i], pos)
-		} else {
-			zeichneBarcodeEtikett(pdf, tr, format, etiketten[i], pos)
-		}
+		zeichneEtikett(pdf, tr, format, etiketten[i], mitQR, pos)
 	})
 
 	return pdf, nil

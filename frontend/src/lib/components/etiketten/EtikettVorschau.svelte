@@ -79,9 +79,7 @@
 								</div>
 							{:else}
 								<div
-									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between {etikettenStore.mitRahmen
-										? 'border border-outline-variant'
-										: ''}"
+									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between"
 									style="width: {mm(format.breite)}; max-width: 100%; height: {mm(
 										format.hoehe
 									)}; padding: 1.5mm; font-size: 5px; box-sizing: border-box;"

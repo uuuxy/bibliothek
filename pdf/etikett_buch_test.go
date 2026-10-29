@@ -10,8 +10,8 @@ import (
 
 func TestErzeugeBuchEtiketten(t *testing.T) {
 	etiketten := []BuchEtikett{
-		{Schulname: "Testbibliothek", BarcodeID: "B-10001", Titel: "Test Buch 1", Autor: "Autor 1", Signatur: "LMF-Deutsch 5", Eigentumsvermerk: "Eigentum des Landes Hessen"},
-		{Schulname: "Testbibliothek", BarcodeID: "B-10002", Titel: "Test Buch 2", Autor: "Autor 2", Eigentumsvermerk: "Eigentum des Landes Hessen"},
+		{Schulname: "Testbibliothek", BarcodeID: "B-10001", Titel: "Test Buch 1", Signatur: "LMF-Deutsch 5", Eigentumsvermerk: "Eigentum des Landes Hessen"},
+		{Schulname: "Testbibliothek", BarcodeID: "B-10002", Titel: "Test Buch 2", Eigentumsvermerk: "Eigentum des Landes Hessen"},
 	}
 
 	dokument, err := ErzeugeBuchEtiketten("zweckform_l4760", 1, false, etiketten)
@@ -74,25 +74,13 @@ func gedruckteZeilen(t *testing.T, roh []byte, wort string) []string {
 }
 
 // Der Erzeuger kennt weder Einstellungen noch den Topf: Er druckt Schulname und Vermerk, die
-// das Etikett trägt, und ohne Vermerk keinen. Auf dem kleinen Format unter 30 mm hat die
-// Zeile des Vermerks keinen Platz.
+// das Etikett trägt, und ohne Vermerk keinen, mit Strichcode wie mit QR-Code. Auf dem kleinen
+// Format unter 30 mm hat die Zeile des Vermerks keinen Platz.
 func TestBuchEtikett_DrucktSchulnameUndVermerkDesEtiketts(t *testing.T) {
 	etiketten := []BuchEtikett{
 		{Schulname: "Schule Eins", BarcodeID: "B-1", Titel: "Eins", Eigentumsvermerk: "Vermerk Eins"},
 		{Schulname: "Schule Zwei", BarcodeID: "B-2", Titel: "Zwei", Eigentumsvermerk: "Vermerk Zwei"},
 		{Schulname: "Schule Drei", BarcodeID: "B-3", Titel: "Drei"},
-	}
-	bogen := func(format string) []byte {
-		t.Helper()
-		dokument, err := ErzeugeBuchEtiketten(format, 1, false, etiketten)
-		if err != nil {
-			t.Fatalf("Bogen %s: %v", format, err)
-		}
-		var buf bytes.Buffer
-		if err := dokument.Output(&buf); err != nil {
-			t.Fatalf("Bogen %s ausgeben: %v", format, err)
-		}
-		return buf.Bytes()
 	}
 	gross, err := ErzeugeLernmittelEtiketten(etiketten)
 	if err != nil {
@@ -101,7 +89,12 @@ func TestBuchEtikett_DrucktSchulnameUndVermerkDesEtiketts(t *testing.T) {
 
 	schulen := []string{"Schule Eins", "Schule Zwei", "Schule Drei"}
 	vermerke := []string{"Vermerk Eins", "Vermerk Zwei"}
-	for name, roh := range map[string][]byte{"Bogen ab 30 mm": bogen("zweckform_l4760"), "großes Etikett": gross} {
+	bogen := map[string][]byte{
+		"Bogen ab 30 mm mit Strichcode": buchBogen(t, "zweckform_l4760", false, etiketten...),
+		"Bogen ab 30 mm mit QR-Code":    buchBogen(t, "zweckform_l4760", true, etiketten...),
+		"großes Etikett":                gross,
+	}
+	for name, roh := range bogen {
 		if ist := gedruckteZeilen(t, roh, "Schule"); strings.Join(ist, "|") != strings.Join(schulen, "|") {
 			t.Errorf("%s: gedruckte Schulnamen %q, erwartet %q", name, ist, schulen)
 		}
@@ -109,11 +102,13 @@ func TestBuchEtikett_DrucktSchulnameUndVermerkDesEtiketts(t *testing.T) {
 			t.Errorf("%s: gedruckte Vermerke %q, erwartet %q", name, ist, vermerke)
 		}
 	}
-	klein := bogen("standard_52")
-	if ist := gedruckteZeilen(t, klein, "Schule"); strings.Join(ist, "|") != strings.Join(schulen, "|") {
-		t.Errorf("kleines Format: gedruckte Schulnamen %q, erwartet %q", ist, schulen)
-	}
-	if ist := gedruckteZeilen(t, klein, "Vermerk"); len(ist) != 0 {
-		t.Errorf("kleines Format: gedruckte Vermerke %q, erwartet keinen", ist)
+	for _, alsQR := range []bool{false, true} {
+		klein := buchBogen(t, "standard_52", alsQR, etiketten...)
+		if ist := gedruckteZeilen(t, klein, "Schule"); strings.Join(ist, "|") != strings.Join(schulen, "|") {
+			t.Errorf("kleines Format (QR %v): gedruckte Schulnamen %q, erwartet %q", alsQR, ist, schulen)
+		}
+		if ist := gedruckteZeilen(t, klein, "Vermerk"); len(ist) != 0 {
+			t.Errorf("kleines Format (QR %v): gedruckte Vermerke %q, erwartet keinen", alsQR, ist)
+		}
 	}
 }

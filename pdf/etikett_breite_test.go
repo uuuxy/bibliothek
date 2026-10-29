@@ -28,7 +28,6 @@ var breitesEtikett = BuchEtikett{
 	Schulname:        "Schule " + strings.Repeat("W", 60),
 	BarcodeID:        "1000000000001",
 	Titel:            "Titel " + strings.Repeat("M", 60),
-	Autor:            "Autor " + strings.Repeat("W", 40),
 	AnschaffungsJahr: "2026",
 	Signatur:         "Signatur " + strings.Repeat("W", 60),
 	Eigentumsvermerk: "Vermerk " + strings.Repeat("M", 60),
@@ -78,8 +77,8 @@ func pruefeEtikettZeilen(t *testing.T, roh []byte, zeilen []etikettZeile) {
 	}
 }
 
-// Kein Text des Buchetiketts ist breiter als seine Zelle. Die Zelle reicht über das ganze
-// Etikett; was übersteht, steht auf dem Nachbaretikett.
+// Kein Text des Buchetiketts ist breiter als seine Zelle, mit Strichcode wie mit QR-Code. Die
+// Zelle reicht über das ganze Etikett; was übersteht, steht auf dem Nachbaretikett.
 func TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle(t *testing.T) {
 	e := breitesEtikett
 	if len(etikettFormatReihenfolge) == 0 {
@@ -87,25 +86,22 @@ func TestBuchEtikett_KeinTextIstBreiterAlsSeineZelle(t *testing.T) {
 	}
 	for _, id := range etikettFormatReihenfolge {
 		f := etikettFormate[id]
+		zeilen := []etikettZeile{
+			{name: "Schulname", quelle: e.Schulname, fett: true, groesse: 8, zelle: f.Breite, zeichen: 42},
+			{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.Breite, zeichen: 40},
+		}
+		// Unter 30 mm Höhe druckt das Etikett weder Jahr und Signatur noch den Vermerk.
+		if f.Hoehe >= 30 {
+			zeilen = append(zeilen,
+				etikettZeile{name: "Jahr und Signatur", quelle: zweiteZeile(e.AnschaffungsJahr, e.Signatur), groesse: 7, zelle: f.Breite, zeichen: 45},
+				etikettZeile{name: "Eigentumsvermerk", quelle: e.Eigentumsvermerk, groesse: 7, zelle: f.Breite, zeichen: 45},
+			)
+		}
 		t.Run(id+"/Strichcode", func(t *testing.T) {
-			zeilen := []etikettZeile{
-				{name: "Schulname", quelle: e.Schulname, fett: true, groesse: 8, zelle: f.Breite, zeichen: 42},
-				{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.Breite, zeichen: 40},
-			}
-			// Unter 30 mm Höhe druckt das Etikett weder Jahr und Signatur noch den Vermerk.
-			if f.Hoehe >= 30 {
-				zeilen = append(zeilen,
-					etikettZeile{name: "Jahr und Signatur", quelle: zweiteZeile(e.AnschaffungsJahr, e.Signatur), groesse: 7, zelle: f.Breite, zeichen: 45},
-					etikettZeile{name: "Eigentumsvermerk", quelle: e.Eigentumsvermerk, groesse: 7, zelle: f.Breite, zeichen: 45},
-				)
-			}
 			pruefeEtikettZeilen(t, buchBogen(t, id, false, e), zeilen)
 		})
 		t.Run(id+"/QR-Code", func(t *testing.T) {
-			pruefeEtikettZeilen(t, buchBogen(t, id, true, e), []etikettZeile{
-				{name: "Titel", quelle: e.Titel, fett: true, groesse: 8, zelle: f.Breite - 4, zeichen: 40},
-				{name: "Autor", quelle: e.Autor, groesse: 7, zelle: f.Breite - 4, zeichen: 30},
-			})
+			pruefeEtikettZeilen(t, buchBogen(t, id, true, e), zeilen)
 		})
 	}
 }
@@ -207,8 +203,14 @@ func TestEtikett_NummerStehtGanzInIhrerZelle(t *testing.T) {
 			t.Run(id+"/Strichcode/"+laenge, func(t *testing.T) {
 				pruefeNummer(t, buchBogen(t, id, false, e), nummer, nummernZelle{beschriftung, "Courier", "B", 9, f.Breite})
 			})
+			// Auf dem kleinen Format steht die Nummer neben dem QR-Code, ihre Zelle reicht vom
+			// Code bis an den Rand.
+			qrZelle := nummernZelle{beschriftung, "Courier", "B", 9, f.Breite}
+			if !f.istGross() {
+				qrZelle.breite = f.Breite - 2*qrRandKlein - masseFuer(f).qrSeite - qrAbstandKlein
+			}
 			t.Run(id+"/QR-Code/"+laenge, func(t *testing.T) {
-				pruefeNummer(t, buchBogen(t, id, true, e), nummer, nummernZelle{"", "Arial", "B", 8, f.Breite - 4})
+				pruefeNummer(t, buchBogen(t, id, true, e), nummer, qrZelle)
 			})
 		}
 		t.Run("Lernmittel/"+laenge, func(t *testing.T) {

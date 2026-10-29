@@ -1,12 +1,11 @@
 <!-- @component EtikettLayoutOptionen — Schritt 3 des Druck-Centers: Wie das Blatt
-     bedruckt wird (Format, Startfeld auf angebrochenen Bögen, Barcode-Art,
-     Hilfsrahmen). Steht getrennt, weil es die einzige Gruppe ist, die nichts über
-     den INHALT der Etiketten sagt. -->
+     bedruckt wird (Format, Startfeld auf angebrochenen Bögen, Barcode-Art). Steht
+     getrennt, weil es die einzige Gruppe ist, die nichts über den INHALT der Etiketten
+     sagt. -->
 <script>
 	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
-	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { ETIKETT_FORMATE } from './etikettformate.js';
 	const BARCODE_AUSGABE = [
 		// Der Wert heißt 'code39', gedruckt wird Code 128 (pkg/strichcode). Der gespeicherte
@@ -60,10 +59,5 @@
 				aria-label="Barcode-Ausgabe"
 			/>
 		</div>
-
-		<Kaestchen
-			bind:checked={etikettenStore.mitRahmen}
-			etikett="Hilfsrahmen auf dem Etikett zeichnen"
-		/>
 	</div>
 </div>

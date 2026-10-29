@@ -29,7 +29,7 @@ func TestPDFEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 		t.Fatalf("%d Etiketten aus einem Auftrag, erwartet 1", len(etiketten))
 	}
 	want := pdf.BuchEtikett{
-		Schulname: "Schule", BarcodeID: "B-1", Titel: "Titel", Autor: "Autor",
+		Schulname: "Schule", BarcodeID: "B-1", Titel: "Titel",
 		AnschaffungsJahr: "2016", Signatur: "Signatur", Eigentumsvermerk: "Vermerk Land",
 	}
 	if etiketten[0] != want {
