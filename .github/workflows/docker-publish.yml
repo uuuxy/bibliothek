@@ -75,6 +75,12 @@ jobs:
       - name: Tags und Labels bestimmen
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        # build-push-action hängt einen Herkunftsnachweis an, das Image geht deshalb als Index
+        # hinaus. Aus einem Index liest ghcr.io Quelle, Beschreibung und Lizenz nur aus dessen
+        # Annotationen, nicht aus den Labels; ohne sie ist das Paket nicht mit dem Repository
+        # verbunden.
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
         with:
           images: ghcr.io/uuuxy/bibliothek
           # latest=false: Sonst hängt metadata-action bei semver-Tags automatisch latest an.
@@ -100,6 +106,7 @@ jobs:
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           # Das Dockerfile stempelt GIT_COMMIT ins Image; update.sh vergleicht den Wert
           # nach dem Deploy mit git rev-parse HEAD (läuft der Container aus DIESEM Commit?).
           build-args: |
