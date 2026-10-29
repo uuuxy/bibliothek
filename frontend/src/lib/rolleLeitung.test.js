@@ -121,7 +121,6 @@ describe('Login-Weiche', () => {
 		// Rechte des Kollegiums ab Werk: nur create_reservations (db/rechte_vorgabe.go).
 		await meldeAn('kollegium', ['create_reservations']);
 		expect(appState.adminAuthenticated).toBe(false);
-		expect(appState.guestAuthenticated).toBe(true);
 	});
 
 	it('die Weiche kennt keine Rollennamen mehr — die nächste Rolle braucht sie nicht', () => {

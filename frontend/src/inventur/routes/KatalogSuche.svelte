@@ -79,7 +79,6 @@
 		ladefehler = '';
 		try {
 			buecher = await buecherLaden();
-			appState.guestAuthenticated = true;
 		} catch (e) {
 			// Ohne Liste sagte jede Suche „Keine Bücher gefunden"; ein gescheitertes Laden ist auch
 			// keine Abmeldung (die meldet apiFetch bei 401).

@@ -157,7 +157,6 @@ class AuthStore {
 		this.lastHeartbeatTime = Date.now();
 		this.heartbeatOk = true;
 		this.startSessionRefresh();
-		appState.guestAuthenticated = false;
 		appState.adminAuthenticated = false;
 	}
 
@@ -197,7 +196,6 @@ class AuthStore {
 		// (db/rechte_vorgabe.go) und sieht sein Portal. Welchen Bildschirm jemand öffnen darf,
 		// liest der Router ohnehin aus denselben Rechten (menue.js, erlaubteBildschirme).
 		const arbeitetInDerBibliothek = hatRecht(konto, 'perform_actions');
-		appState.guestAuthenticated = true;
 		appState.adminAuthenticated = arbeitetInDerBibliothek;
 		if (onRoleCallback) onRoleCallback(konto?.rolle || '');
 	}
@@ -330,7 +328,6 @@ class AuthStore {
 		this.loginPassword = '';
 		this.loginError = null;
 		appState.adminAuthenticated = false;
-		appState.guestAuthenticated = false;
 		this.stopSessionRefresh();
 		// Theke leeren: Die Omnibox-Stores sind Modul-Singletons und überleben das Abmelden.
 		// Ohne diese Zeile sähe der nächste Bediener nach seiner Anmeldung weiter das

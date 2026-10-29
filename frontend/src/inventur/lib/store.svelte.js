@@ -1,6 +1,6 @@
 import { snackbars } from '../../lib/stores/snackbars.svelte.js';
 
-/** @type {{ searchQuery: string, bestandsAnsicht: 'mit' | 'ohne', selectedBook: any, activeBookId: string | null, adminAuthenticated: boolean, guestAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
+/** @type {{ searchQuery: string, bestandsAnsicht: 'mit' | 'ohne', selectedBook: any, activeBookId: string | null, adminAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
 export const appState = $state({
 	searchQuery: '',
 	// Sicht der Titelverwaltung: der Katalog ('mit') oder die Aufräumsicht ('ohne'
@@ -9,7 +9,6 @@ export const appState = $state({
 	selectedBook: null,
 	activeBookId: null,
 	adminAuthenticated: false,
-	guestAuthenticated: false,
 	triggerStudentScan: '',
 	bookToEdit: null,
 	requestAdminView: false
