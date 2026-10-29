@@ -27,24 +27,12 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 - [ ] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
-### Am Programm
-
-- [x] Zugangsbuch: Ohne gewähltes Datum steht das vorherige Schulhalbjahr da, nicht das laufende.
-  (5.110)
-- [ ] Vorschlag von Jules prüfen: #762 (Abfrage des Bestellverlaufs). Übernommen wird, was am
-  alten Stand einen Fehler zeigt. (5.111)
-- [x] Etikettenvorschau: Sie zeigt, was gedruckt wird; das QR-Etikett bekommt Schulname, Jahr und
-  Vermerk; der Hilfsrahmen wirkt oder entfällt. (5.114)
-- [x] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
-  Lauf lässt sich löschen. (5.112)
-- [x] Logo oben links und als Wasserzeichen scharf, auch im dunklen Design. (5.113)
-
 ### Bei dir
 
 Nur, was kein Test leisten kann.
 
-- [ ] Freigeben: Pull Request #760 schließen; kein Knopf des Programms zeigt den Fehler, den er
-  verhindern soll. (5.111)
+- [ ] Freigeben: Pull Requests #760 und #762 schließen; keiner zeigt am alten Stand einen Fehler.
+  (5.111)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -93,13 +81,18 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 
 ### 5.111 Vorschläge von Jules vom 29.10.2026
 
+Übernommen wird, was am alten Stand einen Fehler zeigt. Beide Vorschläge zeigen keinen; die
+Freigabe zum Schließen steht unter „Bei dir".
+
 - **#760** setzt in `ui/Button.svelte` `type="button"` als Vorgabe; ohne `type` sendet ein Knopf in
   einem `<form>` das Formular ab. Geprüft: Jeder Knopf in einem `<form>` des Programms trägt ein
-  ausdrückliches `type`, auch die in Switch, Select, Suchfeld und Suchpille. Nach der Regel oben
-  wird der Vorschlag geschlossen; die Freigabe steht unter „Bei dir".
+  ausdrückliches `type`, auch die in Switch, Select, Suchfeld und Suchpille.
 - **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
-  `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
-  Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.
+  `LATERAL`-Join statt für alle Titel auf einmal. Gemessen an einem Bestand in Schulgröße (10.732
+  Titel, 65.585 Exemplare, davon 4.065 ohne Etikett; 50 Bestellungen mit 500 Positionen): Die
+  heutige Abfrage liest nur den Teil-Index der offenen Etiketten
+  (`idx_buecher_exemplare_etikett_offen`), keine ganze Tabelle, und braucht 0,7 bis 1,3 ms, der
+  Vorschlag 0,5 bis 1,0 ms. Trägt kein einziges Exemplar ein Etikett, sind es 7 ms gegen 0,8 ms.
 
 ### 7.2 Frisches Littera-Backup
 
