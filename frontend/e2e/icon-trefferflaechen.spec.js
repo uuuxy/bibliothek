@@ -1,5 +1,5 @@
 // Gate: Jeder Symbolknopf ist mindestens 32 px groß und rund, und die 48 × 48 px um seine Mitte
-// gehören ihm.
+// gehören ihm. Dieselbe Fläche gilt für jeden Schalter (Material 3, Switch: „Target Size 48dp").
 //
 // Material 3, Icon buttons, Specs: Container „extra small" 32 dp, Shape „Round (default)" und
 // „Extra small and small icon buttons must have a target size of 48x48dp or larger to be
@@ -161,8 +161,8 @@ test('Symbolknöpfe: 32 px, rund, 48 px Trefferfläche', async ({ page }) => {
 		.soft(
 			befunde.flaeche,
 			`Symbolknöpfe, denen die ${ZIEL}×${ZIEL} px um ihre Mitte nicht gehören.\n` +
-				`Behebung: .icon-btn setzen; zu Nachbarn 16 px Abstand, zum Rand eines Containers, der\n` +
-				`abschneidet, 8 px.\n\n` +
+				`Behebung: .icon-btn setzen (ein Schalter: ui/Switch.svelte); zu Nachbarn 16 px Abstand,\n` +
+				`zum Rand eines Containers, der abschneidet, 8 px.\n\n` +
 				befunde.flaeche.join('\n')
 		)
 		.toEqual([]);

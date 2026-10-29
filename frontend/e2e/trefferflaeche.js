@@ -1,4 +1,5 @@
-// Messhilfe für e2e/icon-trefferflaechen.spec.js: misst jeden sichtbaren Symbolknopf einer Seite.
+// Messhilfe für e2e/icon-trefferflaechen.spec.js: misst jeden sichtbaren Symbolknopf und Schalter
+// einer Seite.
 //
 // Ob die 48 × 48 px um einen Knopf ihm gehören, zeigt nur der Browser: Ein Nachbar, ein
 // abschneidender Container oder eine Leiste darüber nimmt ihm einen Streifen, ohne dass sich
@@ -48,12 +49,15 @@ export const SYMBOLKNOEPFE = ({ ziel, messen }) => {
 		el.tagName.toLowerCase();
 	const knoepfe = [...document.querySelectorAll('button, [role="button"]')].filter(
 		(knopf) =>
-			knopf.querySelector('svg') !== null &&
-			// Beschriftete Knöpfe misst control-hoehen.spec.js; eine Zahl neben dem Symbol zählt
-			// nicht als Beschriftung, ein Wort wie „LMF" schon.
-			!/\p{L}/u.test(knopf.textContent || '') &&
-			// Die rechte Hälfte eines Split-Buttons gehört zu einem Knopf mit Beschriftung.
-			!('splitPfeil' in knopf.dataset) &&
+			// Ein Schalter trägt kein Symbol und braucht dieselbe Fläche (Material 3, Switch:
+			// „Target Size 48dp").
+			(knopf.getAttribute('role') === 'switch' ||
+				(knopf.querySelector('svg') !== null &&
+					// Beschriftete Knöpfe misst control-hoehen.spec.js; eine Zahl neben dem Symbol
+					// zählt nicht als Beschriftung, ein Wort wie „LMF" schon.
+					!/\p{L}/u.test(knopf.textContent || '') &&
+					// Die rechte Hälfte eines Split-Buttons gehört zu einem Knopf mit Beschriftung.
+					!('splitPfeil' in knopf.dataset))) &&
 			sichtbar(knopf)
 	);
 	const bedienelemente = [...document.querySelectorAll(BEDIENBAR)];
