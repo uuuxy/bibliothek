@@ -7,7 +7,7 @@
   barcode_seq — für Sammelkäufe und Spenden, die nicht durchs Bestellwesen laufen. Die
   Exemplare stehen danach im Druck-Center unter „Fehlende Etiketten".
 -->
-<script lang="ts">
+<script>
 	import { importiereListe } from '../../../inventur/lib/admin_api.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
@@ -18,9 +18,11 @@
 	// schon bei manage_inventory. Ohne eigene Prüfung sähe jemand einen Knopf, der 403 liefert.
 	const darf = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
-	let files: FileList | null = $state(null);
+	let files = $state(/** @type {FileList | null} */ (null));
 	let laeuft = $state(false);
-	let ergebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
+	let ergebnis = $state(
+		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
+	);
 	// Ein Schlüssel je Dateiauswahl, nicht je Klick: Bleibt die Auswahl nach einem
 	// Netzfehler stehen, holt der nächste Klick das Ergebnis des ersten Laufs ab, statt
 	// die Exemplare ein zweites Mal anzulegen. Eine neue Auswahl ist ein neuer Lauf.

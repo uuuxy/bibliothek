@@ -5,14 +5,16 @@
   apiFetch statt fetch: setzt den CSRF-Token selbst und gibt Uploads fünf Minuten statt zehn
   Sekunden (frontend/src/lib/apiFetch.js).
 -->
-<script lang="ts">
+<script>
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 
-	let files: FileList | null = $state(null);
+	let files = $state(/** @type {FileList | null} */ (null));
 	let laeuft = $state(false);
-	let ergebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
+	let ergebnis = $state(
+		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
+	);
 
 	async function importieren() {
 		if (!files || files.length === 0) return;

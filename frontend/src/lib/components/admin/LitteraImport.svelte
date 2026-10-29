@@ -1,11 +1,13 @@
-<script lang="ts">
+<script>
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 
-	let files: FileList | null = $state(null);
+	let files = $state(/** @type {FileList | null} */ (null));
 	let isImporting = $state(false);
-	let importErgebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
+	let importErgebnis = $state(
+		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
+	);
 
 	async function ladeHoch() {
 		if (!files || files.length === 0) return;

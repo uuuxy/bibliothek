@@ -5,7 +5,7 @@
   CSV-Export. Jeder Import ist ein eigenes Widget, damit diese Datei unter der
   200-Zeilen-Regel bleibt.
 -->
-<script lang="ts">
+<script>
 	import { Download, Upload } from '@lucide/svelte';
 	import LitteraImport from './LitteraImport.svelte';
 	import Button from '../ui/Button.svelte';
@@ -22,7 +22,7 @@
 	const darfExport = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	let isExporting = $state(false);
-	let exportFehler = $state<string | null>(null);
+	let exportFehler = $state(/** @type {string | null} */ (null));
 
 	async function exportiere() {
 		isExporting = true;
@@ -37,7 +37,9 @@
 	}
 
 	let isSyncingCovers = $state(false);
-	let coverAbgleichErgebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
+	let coverAbgleichErgebnis = $state(
+		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
+	);
 
 	async function gleicheCoverAb() {
 		isSyncingCovers = true;
@@ -58,11 +60,7 @@
 	}
 </script>
 
-<!-- contentSnippet bleibt `any`: der explizite Snippet-Import aus 'svelte' kollidiert hier mit
-     dem ambienten Snippet-Typ, den svelte-check für Inline-Snippets verwendet („Two different
-     types with this name exist") — die Typisierung erzeugte zwei neue Fehler statt Sicherheit. -->
-<!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
-{#snippet adminCard(title: string, description: string, Symbol: typeof Upload, contentSnippet: any)}
+{#snippet adminCard(title, description, Symbol, contentSnippet)}
 	<!-- Flach über die volle Breite: keine Kachel mit Schatten, nur ein Trennstrich zwischen
 	     den Abschnitten, wie in jeder anderen Einstellungs-Kategorie. -->
 	<div class="border-outline-variant space-y-6 border-b pb-8">
@@ -83,7 +81,7 @@
 
 <!-- Umrandet statt gefüllt: Beides sind eigene Werkzeuge der Seite, kein Abschluss eines
      Ablaufs. Gefüllt ist hier nur der Import einer gewählten Datei. -->
-{#snippet actionButton(label: string, Symbol: typeof Upload, onclick: () => void, laeuft: boolean)}
+{#snippet actionButton(label, Symbol, onclick, laeuft)}
 	<Button variant="secondary" size="lg" class="px-6" {onclick} disabled={laeuft}>
 		{#if laeuft}
 			<Ladekreis size="sm" farbe="aktuell" />
