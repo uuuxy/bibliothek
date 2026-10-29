@@ -150,7 +150,20 @@ test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ p
 		const beschriftung = page.getByText(label, { exact: true });
 		const text = beschriftung.locator('..');
 		const zeile = beschriftung.locator('../..');
+
+		// Erst die Rückfrage: „Abbrechen" lässt die Inventur laufen, „Verwerfen" beendet sie.
+		const rueckfrage = page.getByRole('dialog', { name: `Inventur „${label}“ verwerfen?` });
 		await zeile.getByRole('button', { name: 'Verwerfen' }).click();
+		await rueckfrage.getByRole('button', { name: 'Abbrechen' }).click();
+		await expect(rueckfrage).toHaveCount(0);
+		await expect(zeile.getByRole('button', { name: 'Fortsetzen' })).toBeVisible();
+		expect(
+			querySQL(
+				`SELECT abgeschlossen_am IS NULL FROM inventur_sessions WHERE scope_label = '${label}'`
+			)
+		).toBe('t');
+		await zeile.getByRole('button', { name: 'Verwerfen' }).click();
+		await rueckfrage.getByRole('button', { name: 'Verwerfen' }).click();
 
 		// Ohne Neuladen in der Liste früherer Inventuren, als verworfen und ohne Bericht.
 		await expect(text).toContainText(/1 erfasst\s*·\s*verworfen/);

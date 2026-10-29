@@ -4,6 +4,7 @@
 <script>
 	import Button from '../ui/Button.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import { formatDatum } from '../../utils/format.js';
 
 	/**
@@ -21,6 +22,19 @@
 	 * } }}
 	 */
 	let { ablauf } = $props();
+
+	// Verwerfen lässt sich nicht zurücknehmen, und der Knopf steht neben „Fortsetzen": Ein
+	// Fehlklick beendete sonst die Inventur, und alle Scans bis dahin zählten nicht mehr.
+	/** @param {any} session */
+	async function verwerfen(session) {
+		const ja = await bestaetigen({
+			titel: `Inventur „${session.label}“ verwerfen?`,
+			text: 'Sie lässt sich danach nicht fortsetzen, eine neue Inventur beginnt wieder bei null. Kein Buch wird als verloren markiert.',
+			aktion: 'Verwerfen',
+			gefaehrlich: true
+		});
+		if (ja) ablauf.verwerfeLauf(session);
+	}
 </script>
 
 {#if ablauf.nichtGeladen.laeufe}
@@ -47,7 +61,7 @@
 				</div>
 				<div class="flex items-center gap-2 shrink-0">
 					<Button size="sm" onclick={() => ablauf.setzeLaufFort(session)}>Fortsetzen</Button>
-					<Button variant="secondary" size="sm" onclick={() => ablauf.verwerfeLauf(session)}>
+					<Button variant="secondary" size="sm" onclick={() => verwerfen(session)}>
 						Verwerfen
 					</Button>
 				</div>

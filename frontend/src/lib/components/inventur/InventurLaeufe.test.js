@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
+
+vi.mock('../../stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
+
+import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
 import InventurLaeufe from './InventurLaeufe.svelte';
 
 /** Die Fassade, soweit die Abschnitte sie lesen. @param {Record<string, any>} [anders] */
@@ -59,5 +63,26 @@ describe('InventurLaeufe', () => {
 		expect(a.setzeLaufFort).toHaveBeenCalledWith(lauf);
 		await fireEvent.click(screen.getByRole('button', { name: 'Fehlbestand' }));
 		expect(a.zeigeFrueherenFehlbestand).toHaveBeenCalledWith(frueher);
+	});
+
+	// „Verwerfen" steht neben „Fortsetzen" und lässt sich nicht zurücknehmen: Erst die Rückfrage,
+	// und „Abbrechen" lässt die Inventur laufen.
+	it('verwirft eine laufende Inventur erst nach der Rückfrage', async () => {
+		const lauf = { session_id: 's1', label: 'Gesamtbestand', erwartet: 9, fehlend: 6 };
+		const a = ablauf({ offeneLaeufe: [lauf] });
+		const screen = render(InventurLaeufe, { ablauf: a });
+		const verwerfen = screen.getByRole('button', { name: 'Verwerfen' });
+
+		vi.mocked(bestaetigen).mockResolvedValueOnce(false);
+		await fireEvent.click(verwerfen);
+		await new Promise((r) => setTimeout(r));
+		expect(bestaetigen).toHaveBeenCalledWith(
+			expect.objectContaining({ titel: 'Inventur „Gesamtbestand“ verwerfen?', gefaehrlich: true })
+		);
+		expect(a.verwerfeLauf).not.toHaveBeenCalled();
+
+		vi.mocked(bestaetigen).mockResolvedValueOnce(true);
+		await fireEvent.click(verwerfen);
+		await vi.waitFor(() => expect(a.verwerfeLauf).toHaveBeenCalledWith(lauf));
 	});
 });
