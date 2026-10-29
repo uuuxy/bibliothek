@@ -33,3 +33,30 @@ func TestHalbjahr_Raender(t *testing.T) {
 		}
 	}
 }
+
+// Das vorige Halbjahr endet am Tag vor dem Beginn des laufenden, auch über den Jahreswechsel und
+// am ersten Tag eines Halbjahres.
+func TestVorigesHalbjahr_Raender(t *testing.T) {
+	faelle := []struct {
+		tag      string
+		von, bis string
+	}{
+		{"2026-10-29", "2026-03-16", "2026-09-15"},
+		{"2026-09-16", "2026-03-16", "2026-09-15"}, // erster Tag des Winterhalbjahres
+		{"2026-09-15", "2025-09-16", "2026-03-15"}, // letzter Tag des Sommerhalbjahres
+		{"2027-01-10", "2026-03-16", "2026-09-15"}, // nach dem Jahreswechsel
+		{"2027-03-15", "2026-03-16", "2026-09-15"},
+		{"2027-03-16", "2026-09-16", "2027-03-15"},
+	}
+	for _, f := range faelle {
+		tag, err := time.ParseInLocation("2006-01-02", f.tag, Zone())
+		if err != nil {
+			t.Fatalf("Testdatum %s: %v", f.tag, err)
+		}
+		von, bis := VorigesHalbjahr(tag)
+		if von.Format("2006-01-02") != f.von || bis.Format("2006-01-02") != f.bis {
+			t.Errorf("VorigesHalbjahr(%s) = %s bis %s, erwartet %s bis %s",
+				f.tag, von.Format("2006-01-02"), bis.Format("2006-01-02"), f.von, f.bis)
+		}
+	}
+}

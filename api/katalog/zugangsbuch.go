@@ -8,6 +8,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -58,7 +59,7 @@ func zugangsbuchBlatt(antwort zugangsbuchAntwort) pdf.Zugangsbuch {
 // GET /api/bestand/zugangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (t *Tueren) Zugangsbuch() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		von, bis, err := bestandsbuchZeitraum(r)
+		von, bis, err := bestandsbuchZeitraum(r, schulzeit.VorigesHalbjahr)
 		if err != nil {
 			return err
 		}
@@ -75,7 +76,7 @@ func (t *Tueren) Zugangsbuch() http.HandlerFunc {
 // GET /api/bestand/zugangsbuch/pdf?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (t *Tueren) ZugangsbuchPDF() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		von, bis, err := bestandsbuchZeitraum(r)
+		von, bis, err := bestandsbuchZeitraum(r, schulzeit.VorigesHalbjahr)
 		if err != nil {
 			return err
 		}

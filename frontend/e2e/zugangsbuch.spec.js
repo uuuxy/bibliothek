@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
 
 // Die zweite Hälfte von Punkt 1 des Protokolls vom 16.09.2026. Gemessen wird am Draht, was
 // die Bibliothekskraft sieht: Zugänge des laufenden Halbjahres, getrennt nach Topf — und der
@@ -32,6 +32,18 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 		// Der Menüpunkt steht unter „Berichte → Bestandsbücher".
 		await gehZu(page, '/bestandsbuecher');
 		await page.getByRole('tab', { name: 'Zugangsbuch' }).click();
+
+		// 0. Ohne Datum steht das vorige Schulhalbjahr da: Gedruckt wird zu Beginn eines
+		//    Halbjahres für das vorige (Leitfaden Lernmittelfreiheit, 11.5). Es endet vor heute;
+		//    die Zugänge von heute zeigt erst der gewählte Tag.
+		const heute = querySQL(`SELECT to_char(CURRENT_DATE, 'YYYY-MM-DD')`);
+		const vonFeld = page.getByLabel('Von', { exact: true });
+		const bisFeld = page.getByLabel('Bis', { exact: true });
+		await expect(bisFeld).not.toHaveValue('');
+		expect((await bisFeld.inputValue()) < heute, 'das vorige Halbjahr endet vor heute').toBe(true);
+		await vonFeld.fill(heute);
+		await bisFeld.fill(heute);
+		await page.getByRole('button', { name: 'Anzeigen' }).click();
 
 		// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.
 		// Die Seite baut alle Zugänge des Halbjahres auf einmal auf. Auf einer großen Datenbank

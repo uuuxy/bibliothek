@@ -5,8 +5,9 @@
 
      Abschnitte und Überschriften kommen fertig vom Server, damit Blatt und Bildschirm
      denselben Topf mit demselben Wort nennen. Der Zeitraum ebenso: Das erste Laden fragt ohne
-     Datum, der Server antwortet mit dem laufenden Schulhalbjahr (Stichtage 15.3./15.9.), und
-     die Felder zeigen danach, was er gelesen hat. -->
+     Datum, der Server antwortet mit seiner Vorgabe (Zugangsbuch: das vorige Schulhalbjahr,
+     Abgangsbuch: das laufende; Stichtage 15.3./15.9.), und die Felder zeigen danach, was er
+     gelesen hat. -->
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
@@ -59,7 +60,7 @@
 	// Der Ausdruck nimmt den geladenen Zeitraum, nicht den in den Eingabefeldern: Wer ein Datum
 	// ändert und ohne „Anzeigen" druckt, heftete sonst ein Blatt ab, dessen Zeitraum nie auf dem
 	// Bildschirm stand. Vor der ersten Antwort bleibt die Adresse ohne Zeitraum; der Server
-	// nimmt dann das laufende Halbjahr.
+	// nimmt dann seine Vorgabe.
 	const druckZeitraum = $derived(
 		buch
 			? `?von=${encodeURIComponent(String(buch.von).slice(0, 10))}&bis=${encodeURIComponent(String(buch.bis).slice(0, 10))}`

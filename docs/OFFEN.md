@@ -29,7 +29,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 ### Am Programm
 
-- [ ] Zugangsbuch: Ohne gewähltes Datum steht das vorherige Schulhalbjahr da, nicht das laufende.
+- [x] Zugangsbuch: Ohne gewähltes Datum steht das vorherige Schulhalbjahr da, nicht das laufende.
   (5.110)
 - [ ] Vorschläge von Jules prüfen: #760 (Vorgabe `type="button"` am Knopf) und #762 (Abfrage des
   Bestellverlaufs). Übernommen wird, was am alten Stand einen Fehler zeigt. (5.111)
@@ -84,20 +84,6 @@ Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zei
 Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
-
-### 5.110 Zugangsbuch: das vorherige Halbjahr vorschlagen
-
-Ohne Datum nimmt der Server das laufende Schulhalbjahr (`bestandsbuchZeitraum` in
-`api/katalog/bestandsbuch.go`, für Zugangs- und Abgangsbuch). Ausgedruckt wird das Zugangsbuch
-aber zu Beginn eines Halbjahres, und zwar für das vorherige: Der Leitfaden Lernmittelfreiheit
-verlangt unter 11.5 „zu Beginn jedes Schulhalbjahres ein Ausdruck der Neuanschaffungen des
-vorhergehenden Halbjahres". Wer dann druckt, bekommt heute ein fast leeres Blatt, wenn er die
-Daten nicht von Hand umstellt.
-
-Entschieden am 29.10.2026: Vorgeschlagen wird das vorherige Halbjahr; Seitenzahlen über alle
-Ausdrucke hinweg werden nicht gebaut ([FACHKONZEPT.md](FACHKONZEPT.md) §20). Das Blatt trägt
-heute gar keine Seitenzahlen (`pdf/zugangsbuch.go`); offen ist, ob es dabei „Seite x von y"
-bekommt. Gebaut wird nach der Darstellung hell und dunkel.
 
 ### 5.111 Vorschläge von Jules vom 29.10.2026
 

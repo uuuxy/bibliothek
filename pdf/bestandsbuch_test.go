@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -237,5 +238,33 @@ func TestBestandsbuecher_TitelSignaturUndLieferantBleibenInIhrerSpalte(t *testin
 	}
 	if titel, lieferant = nach(zugang, "B-92"); titel != "Atlas" || lieferant != "Naacher" {
 		t.Errorf("Zugangsbuch: kurze Texte stehen als %q und %q da", titel, lieferant)
+	}
+}
+
+// Jede Seite des Zugangsbuchs trägt „Seite x von y", gezählt je Ausdruck: Am abgehefteten Blatt
+// sieht man, ob eine Seite fehlt.
+func TestZugangsbuch_ZaehltSeitenJeAusdruck(t *testing.T) {
+	zeilen := make([]ZugangsZeile, 0, 120)
+	for i := 0; i < cap(zeilen); i++ {
+		zeilen = append(zeilen, ZugangsZeile{Datum: buchVon, Barcode: fmt.Sprintf("B-%05d", 80000+i), Titel: "Lesebuch", Lieferant: "Buchhandlung"})
+	}
+	for name, abschnitte := range map[string][]ZugangsAbschnitt{
+		"leer": nil,
+		"lang": {{Titel: "Topf Eins", Zeilen: zeilen}},
+	} {
+		roh, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis, Abschnitte: abschnitte}, SchuleInfo{})
+		if err != nil {
+			t.Fatalf("%s: Zugangsbuch drucken: %v", name, err)
+		}
+		seiten := pdftest.TexteJeSeite(t, roh)
+		for nr, seite := range seiten {
+			soll := fmt.Sprintf("Seite %d von %d", nr+1, len(seiten))
+			if !slices.Contains(seite, soll) {
+				t.Errorf("%s, Seite %d: %q fehlt", name, nr+1, soll)
+			}
+		}
+		if name == "lang" && len(seiten) < 2 {
+			t.Errorf("lang: %d Seite, erwartet mehrere", len(seiten))
+		}
 	}
 }

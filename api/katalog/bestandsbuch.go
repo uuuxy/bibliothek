@@ -64,18 +64,19 @@ func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []topfAbschnitt[T]
 // meldungZeitraumUeberEinJahr lehnt einen Zeitraum ab, der länger ist als ein Jahr.
 const meldungZeitraumUeberEinJahr = "Der Zeitraum darf höchstens ein Jahr umfassen"
 
-// bestandsbuchZeitraum liest von und bis aus der Anfrage; fehlt eines, gilt das laufende
-// Schulhalbjahr (Stichtage 15.3. und 15.9., siehe schulzeit.Halbjahr).
+// bestandsbuchZeitraum liest von und bis aus der Anfrage; fehlt eines, gilt der Zeitraum, den
+// vorgabe zu heute liefert: beim Zugangsbuch das vorige Schulhalbjahr (schulzeit.VorigesHalbjahr),
+// beim Abgangsbuch das laufende (schulzeit.Halbjahr), je mit den Stichtagen 15.3. und 15.9.
 //
 // Eine Stelle für beide Bücher und für beide Türen jedes Buchs (Bildschirm und Blatt): Zwei
-// Auslegungen von „laufendes Halbjahr" ergäben einen Ausdruck, der einen anderen Zeitraum
-// abdeckt als die Liste, aus der er entstand.
+// Auslegungen eines Halbjahres ergäben einen Ausdruck, der einen anderen Zeitraum abdeckt als
+// die Liste, aus der er entstand.
 //
 // Ein Zeitraum umfasst höchstens ein Jahr, „bis" eingeschlossen: Jede Zeile steht in der Antwort,
 // weil jemand den Nachweis unterschreibt und eine fehlende Zeile seine Zahl änderte. Mehrere
 // Jahre gehen als mehrere Ausdrucke.
-func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
-	von, bis = schulzeit.Halbjahr(schulzeit.Jetzt())
+func bestandsbuchZeitraum(r *http.Request, vorgabe func(time.Time) (time.Time, time.Time)) (von, bis time.Time, err error) {
+	von, bis = vorgabe(schulzeit.Jetzt())
 	lies := func(schluessel string, ziel *time.Time) error {
 		roh := r.URL.Query().Get(schluessel)
 		if roh == "" {

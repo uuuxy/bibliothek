@@ -1,6 +1,7 @@
 package katalog_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -156,6 +157,35 @@ func TestBestandsbuecher_HoechstensEinJahr(t *testing.T) {
 			if f.status == http.StatusBadRequest && !strings.Contains(rec.Body.String(), "Der Zeitraum darf höchstens ein Jahr umfassen") {
 				t.Errorf("%s?%s: Die Antwort nennt die Grenze nicht: %s", tuerPfad, f.zeitraum, rec.Body.String())
 			}
+		}
+	}
+}
+
+// Ohne Datum schlägt das Zugangsbuch das vorige Schulhalbjahr vor: Ausgedruckt wird zu Beginn
+// eines Halbjahres, für das vorige (Leitfaden Lernmittelfreiheit, 11.5). Das Abgangsbuch bleibt
+// beim laufenden.
+func TestBestandsbuecher_ZeitraumOhneDatum(t *testing.T) {
+	pool := pgtest.Pool(t)
+	_, rufe := routertest.MitAufruf(t, pool)
+	for buch, vorgabe := range map[string]func(time.Time) (time.Time, time.Time){
+		"zugangsbuch": schulzeit.VorigesHalbjahr,
+		"abgangsbuch": schulzeit.Halbjahr,
+	} {
+		rec := rufe(t, http.MethodGet, "/api/bestand/"+buch, "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: Status %d — %s", buch, rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Von string `json:"von"`
+			Bis string `json:"bis"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("%s: Antwort unlesbar: %v", buch, err)
+		}
+		von, bis := vorgabe(schulzeit.Jetzt())
+		if antwort.Von[:10] != von.Format(time.DateOnly) || antwort.Bis[:10] != bis.Format(time.DateOnly) {
+			t.Errorf("%s ohne Datum: %s bis %s, erwartet %s bis %s", buch, antwort.Von[:10], antwort.Bis[:10],
+				von.Format(time.DateOnly), bis.Format(time.DateOnly))
 		}
 	}
 }

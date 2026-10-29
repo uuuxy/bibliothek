@@ -57,6 +57,17 @@ func ErzeugeZugangsbuch(buch Zugangsbuch, schule SchuleInfo) ([]byte, error) {
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
 	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
+	// „Seite x von y" je Ausdruck: Am abgehefteten Blatt sieht man, ob eine Seite fehlt. Der
+	// Leitfaden Lernmittelfreiheit (11.5) verlangt den Ausdruck „fortlaufend paginiert"; über alle
+	// Ausdrucke hinweg wird nicht gezählt (FACHKONZEPT §20).
+	p.AliasNbPages("")
+	p.SetFooterFunc(func() {
+		p.SetY(-12)
+		p.SetFont("Arial", "", 8)
+		p.SetTextColor(120, 120, 120)
+		p.CellFormat(0, 5, tr(fmt.Sprintf("Seite %d von {nb}", p.PageNo())), "", 0, "C", false, 0, "")
+		p.SetTextColor(0, 0, 0)
+	})
 	p.AddPage()
 
 	bestandsbuchKopf(p, tr, "Zugangsbuch", buch.Von, buch.Bis, schule)

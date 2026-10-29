@@ -735,8 +735,10 @@ ist. (§11)
 Zwei Reiter, beide mit einem Blatt zum Ausdrucken und Abheften: **Zugangsbuch** (welche
 Exemplare in einem Zeitraum in den Bestand gekommen sind — Eingangsdatum, Nummer, Titel,
 Lieferant) und **Abgangsbuch** (welche hinausgegangen sind — Datum, Nummer, Titel,
-Signatur, Grund). Vorbelegt ist das laufende Schulhalbjahr mit den Stichtagen 15.3. und
-15.9.; beide Datumsfelder lassen sich überschreiben. Ein Zeitraum umfasst höchstens ein Jahr
+Signatur, Grund). Vorbelegt ist beim Zugangsbuch das vorige Schulhalbjahr, weil es zu Beginn
+eines Halbjahres für das vorige ausgedruckt wird, beim Abgangsbuch das laufende; die Stichtage
+sind der 15.3. und der 15.9., beide Datumsfelder lassen sich überschreiben. Jede Seite des
+Zugangsbuchs trägt „Seite x von y". Ein Zeitraum umfasst höchstens ein Jahr
 (sonst: _Der Zeitraum darf höchstens ein Jahr umfassen_): Ein Schuljahr vom 15.9. bis 14.9.
 geht, mehrere Jahre gehen als mehrere Ausdrucke. Land und Schulträger stehen getrennt,
 jeweils mit eigener Stückzahl.

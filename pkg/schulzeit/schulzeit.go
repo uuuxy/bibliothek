@@ -92,3 +92,11 @@ func Halbjahr(t time.Time) (von, bis time.Time) {
 		return herbst, tag(d.Year()+1, time.March, 15)
 	}
 }
+
+// VorigesHalbjahr liefert das Schulhalbjahr vor dem, in dem ein Tag liegt. Das Zugangsbuch
+// schlägt es vor: Ausgedruckt wird „zu Beginn jedes Schulhalbjahres ein Ausdruck der
+// Neuanschaffungen des vorhergehenden Halbjahres" (Leitfaden Lernmittelfreiheit, 11.5).
+func VorigesHalbjahr(t time.Time) (von, bis time.Time) {
+	anfang, _ := Halbjahr(t)
+	return Halbjahr(anfang.AddDate(0, 0, -1))
+}
