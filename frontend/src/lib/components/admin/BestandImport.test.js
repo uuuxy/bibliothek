@@ -42,4 +42,17 @@ describe('BestandImport: abgelehnter Import', () => {
 		const ergebnis = await screen.findByTestId('bestandimport-ergebnis');
 		expect(ergebnis.textContent?.trim()).toBe(meldung);
 	});
+
+	// Das Ergebnis erscheint nach dem Klick, ohne dass der Fokus zu ihm wandert: Ohne Rolle liest
+	// ein Bildschirmleser es nicht vor. Fehler als alert, Erfolg als status.
+	it('lässt Fehler und Erfolg vorlesen', async () => {
+		let screen = await importiere(serverAntwort(400, { error: 'Zeile 3 ist leer.' }));
+		expect((await screen.findByRole('alert')).textContent?.trim()).toBe('Zeile 3 ist leer.');
+		screen.unmount();
+
+		screen = await importiere(
+			serverAntwort(200, { new_titles_count: 2, imported_copies_count: 5 })
+		);
+		expect((await screen.findByRole('status')).textContent).toContain('2 neue Titel');
+	});
 });

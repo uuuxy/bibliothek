@@ -95,6 +95,7 @@
 
 		{#if ergebnis}
 			<div
+				role={ergebnis.type === 'error' ? 'alert' : 'status'}
 				class="mt-4 p-4 rounded-xl text-sm font-semibold {ergebnis.type === 'error'
 					? 'bg-error-container text-on-error-container'
 					: 'bg-success-container text-on-success-container'}"

@@ -116,6 +116,7 @@
 
 			{#if coverAbgleichErgebnis}
 				<div
+					role={coverAbgleichErgebnis.type === 'error' ? 'alert' : 'status'}
 					class="mt-4 rounded-xl p-4 text-sm font-semibold {coverAbgleichErgebnis.type === 'error'
 						? 'bg-error-container text-on-error-container'
 						: 'bg-success-container text-on-success-container'}"

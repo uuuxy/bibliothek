@@ -11,12 +11,19 @@ import { sammleQuelldateien, srcRoot, relPfad } from './hygiene-quellen.js';
 // in accessibility labels"; LadeFehler trägt dieselbe Rolle. Als Rolle zählen auch status und
 // aria-live, am Element oder einem um es herum.
 //
+// Wählt ein Ausdruck in der Klasse die Fehlerfarbe (`{x.type === 'error' ? 'bg-error-container' :
+// …}`, `class:text-error`), zählt das Element, wenn es eine Meldung zeigt (ein Ausdruck mit
+// message, meldung, fehler oder error): Im Fehlerfall erscheint es wie jede andere Fehlerzeile.
+// Eine rot hervorgehobene Frist oder Mahnstufe in einer Liste ist keine Meldung. Als Rolle zählt
+// dann auch eine aus einem Ausdruck.
+//
 // Sieht nicht: einen Fehler ohne die Klassen text-error, text-on-error-container oder
-// bg-error-container, oder mit ihnen erst aus einem Ausdruck in der Klasse; einen Fehler unter
-// einem Namen ohne fehler/error, einen festen Satz in der Fehlerfarbe und eine Rolle an einem
-// Element, das schon vor dem Fehler steht und sich nicht ändert.
+// bg-error-container; bei fester Fehlerfarbe einen Fehler unter einem Namen ohne fehler/error;
+// einen festen Satz in der Fehlerfarbe und eine Rolle an einem Element, das schon vor dem Fehler
+// steht und sich nicht ändert.
 
 const FEHLERNAME = /fehler|error/i;
+const MELDUNGSNAME = /fehler|error|message|meldung/i;
 const FEHLERFARBE = /(^|\s)(text-error|text-on-error-container|bg-error-container)(\s|$)/;
 
 /**
@@ -40,18 +47,45 @@ const text = (attribut) =>
 const attribut = (element, name) =>
 	element.attributes?.find((/** @type {any} */ a) => a.type === 'Attribute' && a.name === name);
 
+/** Die festen Zeichenketten in den Ausdrücken eines Attributs. @param {any} attribut */
+function literaleIn(attribut) {
+	const wert = attribut?.value;
+	const teile = Array.isArray(wert) ? wert : wert && typeof wert === 'object' ? [wert] : [];
+	/** @type {string[]} */
+	const texte = [];
+	for (const teil of teile.filter((/** @type {any} */ t) => t.type === 'ExpressionTag'))
+		walk(teil.expression, {
+			enter(/** @type {any} */ k) {
+				if (k.type === 'Literal' && typeof k.value === 'string') texte.push(k.value);
+				if (k.type === 'TemplateElement') texte.push(k.value.cooked ?? '');
+			}
+		});
+	return texte;
+}
+
+/** Wählt ein Ausdruck die Fehlerfarbe, in der Klasse oder als class:…? @param {any} element */
+const fehlerfarbeAusAusdruck = (element) =>
+	literaleIn(attribut(element, 'class')).some((t) => FEHLERFARBE.test(t)) ||
+	element.attributes?.some(
+		(/** @type {any} */ a) => a.type === 'ClassDirective' && FEHLERFARBE.test(a.name)
+	);
+
 /** Wird das Element vorgelesen, sobald es erscheint? @param {any} element */
 const vorgelesen = (element) =>
 	['alert', 'status'].includes(text(attribut(element, 'role')).trim()) ||
+	literaleIn(attribut(element, 'role')).some((t) => ['alert', 'status'].includes(t)) ||
 	attribut(element, 'aria-live') !== undefined;
 
-/** Zeigt das Element einen Ausdruck, der einen Fehler trägt? @param {any} element @param {string} quelle */
-function zeigtFehler(element, quelle) {
+/**
+ * Zeigt das Element einen Ausdruck, dessen Text das Muster trifft?
+ * @param {any} element @param {string} quelle @param {RegExp} [muster]
+ */
+function zeigtFehler(element, quelle, muster = FEHLERNAME) {
 	let ja = false;
 	walk(element.fragment, {
 		enter(/** @type {any} */ k) {
 			if (k.type === 'ExpressionTag')
-				ja ||= FEHLERNAME.test(quelle.slice(k.expression.start, k.expression.end));
+				ja ||= muster.test(quelle.slice(k.expression.start, k.expression.end));
 		}
 	});
 	return ja;
@@ -71,7 +105,11 @@ export function fehlerzeilenOhneRolle(quelle) {
 	walk(/** @type {any} */ (svelteParse(quelle, { modern: true })).fragment, {
 		enter(/** @type {any} */ k) {
 			if (k.type !== 'RegularElement') return;
-			if (FEHLERFARBE.test(text(attribut(k, 'class'))) && zeigtFehler(k, quelle)) {
+			const fest = FEHLERFARBE.test(text(attribut(k, 'class')));
+			if (
+				(fest && zeigtFehler(k, quelle)) ||
+				(!fest && fehlerfarbeAusAusdruck(k) && zeigtFehler(k, quelle, MELDUNGSNAME))
+			) {
 				zeilen++;
 				if (!vorgelesen(k) && !vorfahren.some(vorgelesen))
 					funde.push(`${quelle.slice(0, k.start).split('\n').length}: <${k.name}>`);
@@ -117,7 +155,9 @@ describe('Fehlerzeilen werden vorgelesen', () => {
 			'<span class="font-semibold text-error">Speichern fehlgeschlagen: {ablage.speicherfehler}</span>',
 			'<div class="py-4"><p class="text-error">{s.error}</p></div>',
 			'<div class="rounded-xl bg-error-container p-4 text-on-error-container">{exportFehler}</div>',
-			'<p class="text-error" role="presentation"><strong>{klassenLadefehler(x)}</strong></p>'
+			'<p class="text-error" role="presentation"><strong>{klassenLadefehler(x)}</strong></p>',
+			`<div class="p-4 {e.type === 'error' ? 'bg-error-container' : 'bg-success-container'}">{e.message}</div>`,
+			'<p class:text-error={kaputt}>{meldung}</p>'
 		]) {
 			expect(fehlerzeilenOhneRolle(form).funde, form).not.toEqual([]);
 		}
@@ -127,7 +167,9 @@ describe('Fehlerzeilen werden vorgelesen', () => {
 			'<p aria-live="polite" class="text-error">{fehler}</p>',
 			'<span class="text-error">Gesperrt</span>',
 			'<p class="text-error/80">{fehler}</p>',
-			'<span class="text-error">{formatEuro(summe)}</span>'
+			'<span class="text-error">{formatEuro(summe)}</span>',
+			`<div role={e.ok ? 'status' : 'alert'} class="p-4 {e.ok ? '' : 'bg-error-container'}">{e.message}</div>`,
+			`<span class="{ueberfaellig ? 'text-error' : ''}">{formatDatum(frist)}</span>`
 		]) {
 			expect(fehlerzeilenOhneRolle(form).funde, form).toEqual([]);
 		}

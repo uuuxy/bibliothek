@@ -180,6 +180,7 @@
 
 			{#if testErgebnis}
 				<div
+					role={testErgebnis.ok ? 'status' : 'alert'}
 					class="rounded-xl border px-4 py-3 text-sm {testErgebnis.ok
 						? 'border-outline-variant bg-secondary-container text-on-secondary-container'
 						: 'border-error bg-error-container text-on-error-container'}"
