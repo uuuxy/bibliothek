@@ -180,7 +180,7 @@ Default-Secrets (auch die Beispielwerte aus `.env.example`), fehlender Backup-Sc
 `IMAP_HOST=mock`, `APP_ENV` auf `local`/`development`/`test`, offene Produktionsschalter.
 Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen lässt.
 
-**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `INITIAL_ADMIN_EMAIL` ist ein Postfach dort; `APP_ENV` bleibt `production`; der Server ist nur über HTTPS erreichbar (Caddy mit Zertifikat, auch bei Zugriff über eine IP-Adresse); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`. Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
+**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `INITIAL_ADMIN_EMAIL` ist ein Postfach dort; `APP_ENV` bleibt `production`; der Server ist nur über HTTPS erreichbar (Caddy mit Zertifikat, auch bei Zugriff über eine IP-Adresse); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`; Caddy kennt die Netze der Schule (`SCHULNETZ`), und die Probe von außen ist gemacht (Abschnitt 3, „Von außen nur die Bestellseite“). Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
 
 > **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
 > überschreiben — Schülerfotos und das gespeicherte SMTP-Passwort sind damit
@@ -321,6 +321,10 @@ Am Schulserver:
    nicht mehr gültig". Sieht die Theke den Satz, fehlt ihr Netz in `SCHULNETZ`. Kommt das Handy
    ins Programm, gibt die Firewall Anfragen unter ihrer eigenen Adresse weiter; dann wirkt die
    Sperre erst, wenn sie die Absenderadresse stehen lässt.
+
+In `SCHULNETZ` gehören nur die Netze der Schulgeräte, keine ganzen Bereiche wie `172.16.0.0/12`:
+Dort liegen auch die Netze von Docker, und was Docker selbst an Caddy weiterreicht, käme sonst als
+Schulnetz durch.
 
 Nach außen braucht der Server den Mailserver der Schule zum Anmelden (IMAP, Port 993) und den
 Server für den Mailversand (Einstellungen → Mail), DNB, Google Books und OpenLibrary, Let's
