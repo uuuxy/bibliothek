@@ -29,7 +29,7 @@ import (
 //
 // Der Barcode wird dabei frei; neu vergeben wird er nicht (barcode_seq zählt nur vorwärts), das
 // zurückkommende Buch kann also nicht mit einem anderen verwechselt werden.
-func (a *TitelAbfragen) LoescheTitelSamtAusleihen(ctx context.Context, ids []string) error {
+func (a *TitelAbfragen) LoescheTitelSamtAusleihen(ctx context.Context, ids []string, bearbeiterID string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -50,9 +50,10 @@ func (a *TitelAbfragen) LoescheTitelSamtAusleihen(ctx context.Context, ids []str
 	// Alles, was eine Spur braucht, wird in der Transaktion gelesen: Was ein Lesen davor sähe, wäre
 	// nicht zwingend das, was fällt.
 	//
-	// Schnappschüsse der Barcodes aller Exemplare, bevor die Zeilen fallen: Die Auskunft an der Theke
-	// findet gelöschte Exemplare nur darüber (Begründung an leseExemplarSnapshots).
-	exemplarSnaps, err := leseExemplarSnapshots(ctx, tx, ids)
+	// Angaben und Exemplare der Titel, bevor die Zeilen fallen: Daraus schreibt der Eintrag zum
+	// Titel, wer gelöscht hat, und je Exemplar die Zeile, über die die Theken-Auskunft das Buch
+	// findet. Derselbe Leser wie beim Löschen eines einzelnen Titels (leseTitelFuersProtokoll).
+	titel, err := leseTitelFuersProtokoll(ctx, tx, ids)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (a *TitelAbfragen) LoescheTitelSamtAusleihen(ctx context.Context, ids []str
 	}
 
 	// In derselben Transaktion: entweder die Löschung und ihre Spur oder keins von beidem.
-	if err := protokolliereWasMitDenTitelnFiel(ctx, tx, offeneSchaeden, wartende, offene, exemplarSnaps); err != nil {
+	if err := protokolliereWasMitDenTitelnFiel(ctx, tx, offeneSchaeden, wartende, offene, titel, bearbeiterID); err != nil {
 		return err
 	}
 
@@ -110,8 +111,9 @@ func (a *TitelAbfragen) LoescheTitelSamtAusleihen(ctx context.Context, ids []str
 }
 
 // protokolliereWasMitDenTitelnFiel schreibt fest, was das Löschen mitgenommen hat: unbezahlte
-// Forderungen, Wartende, laufende Ausleihen und die Barcodes der Exemplare.
-func protokolliereWasMitDenTitelnFiel(ctx context.Context, tx pgx.Tx, schaeden []offenerSchaden, wartende []WartenderBezug, ausleihen []offeneAusleihe, exemplare []exemplarSnapshot) error {
+// Forderungen, Wartende und laufende Ausleihen, dann je Titel den Eintrag mit dem Bearbeiter und
+// die Barcodes seiner Exemplare, wie beim Löschen eines einzelnen Titels.
+func protokolliereWasMitDenTitelnFiel(ctx context.Context, tx pgx.Tx, schaeden []offenerSchaden, wartende []WartenderBezug, ausleihen []offeneAusleihe, titel []titelVorDemLoeschen, bearbeiterID string) error {
 	if err := protokolliereOffeneSchaeden(ctx, tx, schaeden); err != nil {
 		return err
 	}
@@ -121,5 +123,10 @@ func protokolliereWasMitDenTitelnFiel(ctx context.Context, tx pgx.Tx, schaeden [
 	if err := protokolliereOffeneAusleihen(ctx, tx, ausleihen); err != nil {
 		return err
 	}
-	return protokolliereGeloeschteExemplare(ctx, tx, exemplare)
+	for _, vorher := range titel {
+		if err := protokolliereTitelLoeschung(ctx, tx, vorher, bearbeiterID); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -63,7 +63,7 @@ func TestLoescheTitel_NurOffeneForderungHinterlaesstSpur(t *testing.T) {
 	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, einzeln, bearbeiter); err != nil {
 		t.Fatalf("einzelnen Titel löschen: %v", err)
 	}
-	if err := repository.NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{gesammelt}); err != nil {
+	if err := repository.NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{gesammelt}, bearbeiter); err != nil {
 		t.Fatalf("Sammellöschung: %v", err)
 	}
 

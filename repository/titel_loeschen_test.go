@@ -9,13 +9,6 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// snapshotTitelRows liefert die Zeile, die LoescheTitel vor dem Löschen für das Protokoll
-// liest.
-func snapshotTitelRows() *pgxmock.Rows {
-	return pgxmock.NewRows([]string{"titel", "autor", "isbn"}).
-		AddRow("Der Vorleser", "Bernhard Schlink", "9783161484100")
-}
-
 // Ein Titel mit verliehenen Exemplaren wurde nie gelöscht; unbrauchbar war die Rückmeldung. Die
 // Tür erkannte den Fall am Anfang des Fehlertexts und traf nie, jeder abgelehnte Versuch endete
 // als Serverfehler, und die Liste der verliehenen Barcodes ging verloren. Deshalb ein
@@ -31,9 +24,6 @@ func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 
 	mock.ExpectBegin()
 	erwarteAuflagenSperre(mock, []string{titelID})
-	mock.ExpectQuery("FROM buecher_titel WHERE id").
-		WithArgs(titelID).
-		WillReturnRows(snapshotTitelRows())
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).
@@ -69,18 +59,19 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 
 	mock.ExpectBegin()
 	erwarteAuflagenSperre(mock, []string{titelID})
-	mock.ExpectQuery("FROM buecher_titel WHERE id").
-		WithArgs(titelID).
-		WillReturnRows(snapshotTitelRows())
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"})) // keine offenen Ausleihen
-	// Die Barcodes der Exemplare vor dem Löschen: Die Theken-Auskunft findet gelöschte
-	// Exemplare nur über diese Spur.
-	mock.ExpectQuery("FROM buecher_exemplare e WHERE e.titel_id").
-		WithArgs(titelID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "lmf_barcode", "war_im_bestand"}).
-			AddRow("ex-1", "B-00001", "", true))
+	// Angaben und Exemplare des Titels vor dem Löschen, derselbe Leser wie beim Löschen
+	// markierter Titel: Die Theken-Auskunft findet gelöschte Exemplare nur über diese Spur.
+	mock.ExpectQuery("FROM buecher_titel WHERE id = ANY").
+		WithArgs([]string{titelID}).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn"}).
+			AddRow(titelID, "Der Vorleser", "Bernhard Schlink", "9783161484100"))
+	mock.ExpectQuery("FROM buecher_exemplare e WHERE e.titel_id = ANY").
+		WithArgs([]string{titelID}).
+		WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id", "barcode_id", "lmf_barcode", "war_im_bestand"}).
+			AddRow(titelID, "ex-1", "B-00001", "", true))
 	// Offene Forderungen vor dem Löschen ins Protokoll: Ein unbezahlter Schadensfall ist Geld,
 	// das ein Leser schuldet, und verschwände sonst mit dem Titel.
 	mock.ExpectQuery("FROM schadensfaelle sf").
@@ -155,9 +146,6 @@ func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 
 	mock.ExpectBegin()
 	erwarteAuflagenSperre(mock, []string{titelID})
-	mock.ExpectQuery("FROM buecher_titel WHERE id").
-		WithArgs(titelID).
-		WillReturnRows(snapshotTitelRows())
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).

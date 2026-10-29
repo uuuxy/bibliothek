@@ -88,9 +88,8 @@ func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]of
 // Transaktion der Löschung: Entweder beides oder nichts.
 //
 // datensatz_id ist das Exemplar — so sucht man später, wenn das Buch auf der Theke liegt
-// und der Scan ins Leere geht. akteur 'SYSTEM' ohne bearbeiter_id, weil die Tür das
-// Konto hier nicht durchreicht; wer gelöscht hat, steht in der Admin-Spur des
-// Endpunkts, was dabei verschwand, steht hier.
+// und der Scan ins Leere geht. akteur 'SYSTEM' ohne bearbeiter_id: Wer gelöscht hat, steht am
+// Eintrag des Titels (protokolliereTitelLoeschung), was dabei verschwand, steht hier.
 func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offeneAusleihe) error {
 	for _, o := range offene {
 		inhalt := map[string]any{
@@ -120,78 +119,6 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 			"Titel gelöscht, Buch war zu diesem Zeitpunkt verliehen",
 			string(details)); err != nil {
 			return fmt.Errorf("protokoll der laufenden ausleihe: %w", err)
-		}
-	}
-	return nil
-}
-
-// exemplarSnapshot ist das, was die Theken-Auskunft nach dem Löschen noch braucht:
-// die Exemplar-ID als datensatz_id, Barcode und altes LMF-Etikett als Suchschlüssel, der Titel
-// als Anzeige der Trefferzeile.
-type exemplarSnapshot struct {
-	ID           string
-	Barcode      string
-	LMFBarcode   string
-	Titel        string
-	WarImBestand bool
-}
-
-// leseExemplarSnapshots sammelt alle Exemplare der zu löschenden Titel, in der Transaktion der
-// Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen: Die Auskunft an der Theke
-// (FindeThekenExemplare) findet gelöschte Exemplare nur über Zeilen in audit_log mit
-// tabelle='buecher_exemplare' und details->>'barcode_id'; die Spur der Ausleihen oben sieht sie
-// nicht. Ohne den Schnappschuss wäre ein durch das Löschen eines Titels verschwundenes Buch beim
-// Scannen „nie gesehen" statt „gelöscht am …".
-func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
-	zeilen, err := tx.Query(ctx, `
-		SELECT e.id, e.barcode_id, coalesce(e.lmf_barcode, ''), t.titel, `+sqlWarImBestand+`
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE e.titel_id = ANY($1::uuid[])
-		ORDER BY e.barcode_id`, ids)
-	if err != nil {
-		return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
-	}
-	defer zeilen.Close()
-
-	var schnappschuesse []exemplarSnapshot
-	for zeilen.Next() {
-		var s exemplarSnapshot
-		if err := zeilen.Scan(&s.ID, &s.Barcode, &s.LMFBarcode, &s.Titel, &s.WarImBestand); err != nil {
-			return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
-		}
-		schnappschuesse = append(schnappschuesse, s)
-	}
-	if err := zeilen.Err(); err != nil {
-		return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
-	}
-	return schnappschuesse, nil
-}
-
-// protokolliereGeloeschteExemplare schreibt je Exemplar die Barcode-Spur — dasselbe
-// Format wie SondereExemplarAus und das Verlust-Löschen (repository), damit die Auskunft
-// alle drei Wege gleich findet. Läuft in der Transaktion der Löschung.
-func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, schnappschuesse []exemplarSnapshot) error {
-	for _, s := range schnappschuesse {
-		spur := map[string]any{
-			"barcode_id": s.Barcode,
-			"titel":      s.Titel,
-			"action":     ProtokollAktionTitelGeloescht,
-
-			ProtokollDetailWarImBestand: s.WarImBestand,
-		}
-		merkeLMFBarcode(spur, s.LMFBarcode)
-		details, err := json.Marshal(spur)
-		if err != nil {
-			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)
-		}
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, kontext, details)
-			VALUES ('buecher_exemplare', 'DELETE', $1, 'SYSTEM', $2, $3::jsonb)`,
-			s.ID,
-			"Titel gelöscht — Exemplar mit entfernt",
-			string(details)); err != nil {
-			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)
 		}
 	}
 	return nil

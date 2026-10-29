@@ -1,6 +1,7 @@
 package katalog
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/api/tuer"
+	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/tuertest"
 
@@ -87,10 +89,15 @@ func TestTitelLoeschen(t *testing.T) {
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
 
-		// Barcode-Snapshots vor den DELETEs (Theken-Auskunft; hier: keine Exemplare).
+		// Angaben und Exemplare des Titels vor den DELETEs: Daraus entsteht der Eintrag mit dem
+		// Bearbeiter (hier: ein Titel ohne Exemplare).
+		mock.ExpectQuery(`FROM buecher_titel WHERE id = ANY`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn"}).
+				AddRow("11111111-1111-1111-1111-111111111111", "Leer", "", ""))
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}))
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id", "barcode_id", "lmf_barcode", "war_im_bestand"}))
 
 		// Die drei Kinder des Titels über CASCADE im Protokoll: Vormerkungen, Reservierungen und
 		// Zuordnungen von Klassensätzen.
@@ -121,11 +128,15 @@ func TestTitelLoeschen(t *testing.T) {
 		mock.ExpectExec("DELETE FROM buecher_titel").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mock.ExpectExec(`INSERT INTO audit_log`).
+			WithArgs("buecher_titel", "DELETE", "11111111-1111-1111-1111-111111111111", pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		mock.ExpectCommit()
 
 		rumpf := `{"ids": ["11111111-1111-1111-1111-111111111111"]}`
 		anfrage := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(rumpf))
+		anfrage = anfrage.WithContext(context.WithValue(anfrage.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: "22222222-2222-2222-2222-222222222222"}))
 		rec := httptest.NewRecorder()
 		tueren.MarkierteTitelLoeschen()(rec, anfrage)
 

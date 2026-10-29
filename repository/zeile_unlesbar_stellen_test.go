@@ -125,7 +125,6 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 			const titelID = "33333333-3333-3333-3333-333333333333"
 			mock.ExpectBegin()
 			erwarteAuflagenSperre(mock, []string{titelID})
-			mock.ExpectQuery("FROM buecher_titel WHERE id").WithArgs(titelID).WillReturnRows(snapshotTitelRows())
 			mock.ExpectQuery("FROM ausleihen a").WithArgs(titelID).WillReturnRows(
 				pgxmock.NewRows([]string{"barcode_id"}).AddRow(nil))
 			// Kein ExpectExec: Bei unklarer Lage wird nichts gelöscht.

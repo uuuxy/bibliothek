@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Löscht die Bestandstabelle einen Titel, bleibt sein Exemplar an der Theke auch über das alte
@@ -39,7 +40,7 @@ func TestLoescheTitel_AltesLMFEtikettBleibtAuffindbar(t *testing.T) {
 		}
 	})
 
-	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}); err != nil {
+	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
 	}
 

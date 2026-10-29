@@ -23,12 +23,16 @@ func TestLoescheTitel(t *testing.T) {
 	erwarteLeser := func(mock pgxmock.PgxPoolIface, cover string) {
 		mock.ExpectBegin()
 		erwarteAuflagenSperre(mock, ids)
-		// Schnappschüsse der Barcodes aller Exemplare vor den DELETEs: Die Auskunft an der Theke findet
-		// gelöschte Exemplare nur über diese Spur.
+		// Angaben und Exemplare der Titel vor den DELETEs: Daraus entstehen der Eintrag zum Titel mit
+		// dem Bearbeiter und die Spur jedes Exemplars, über die die Theken-Auskunft es findet.
+		mock.ExpectQuery(`FROM buecher_titel WHERE id = ANY`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn"}).
+				AddRow("id-1", "Titel Eins", "", "").AddRow("id-2", "Titel Zwei", "", ""))
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "lmf_barcode", "titel", "war_im_bestand"}).
-				AddRow("ex-1", "BC-1", "", "Titel Eins", true))
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id", "barcode_id", "lmf_barcode", "war_im_bestand"}).
+				AddRow("id-1", "ex-1", "BC-1", "", true))
 		// Die drei Kinder des Titels über CASCADE: Vormerkungen, Reservierungen und Zuordnungen von
 		// Klassensätzen.
 		mock.ExpectQuery(`FROM vormerkungen v`).
@@ -59,7 +63,7 @@ func TestLoescheTitel(t *testing.T) {
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, []string{})
+		err = abfragen.LoescheTitelSamtAusleihen(ctx, []string{}, "konto-1")
 		if err != nil {
 			t.Fatalf("abfragen.LoescheTitelSamtAusleihen: %v", err)
 		}
@@ -88,7 +92,7 @@ func TestLoescheTitel(t *testing.T) {
 			WillReturnError(fmt.Errorf("db error"))
 		mock.ExpectRollback()
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids)
+		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids, "konto-1")
 		if err == nil || !strings.Contains(err.Error(), "ausleihen konnten nicht gelöscht werden") {
 			t.Errorf("abfragen.LoescheTitelSamtAusleihen: Fehler %v, erwartet einen mit %q", err, "ausleihen konnten nicht gelöscht werden")
 		}
@@ -119,12 +123,15 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectExec(`DELETE FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 2))
-		mock.ExpectExec(`INSERT INTO audit_log`).
-			WithArgs("ex-1", pgxmock.AnyArg(), pgxmock.AnyArg()).
-			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		// Je Titel der Eintrag mit dem Bearbeiter, dahinter die Exemplare des Titels.
+		for _, eintrag := range [][2]string{{"buecher_titel", "id-1"}, {"buecher_exemplare", "ex-1"}, {"buecher_titel", "id-2"}} {
+			mock.ExpectExec(`INSERT INTO audit_log`).
+				WithArgs(eintrag[0], "DELETE", eintrag[1], pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
+				WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		}
 		mock.ExpectCommit()
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids)
+		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids, "konto-1")
 		if err != nil {
 			t.Fatalf("abfragen.LoescheTitelSamtAusleihen: %v", err)
 		}
@@ -154,7 +161,7 @@ func TestLoescheTitel(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 		mock.ExpectRollback()
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids)
+		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids, "konto-1")
 		if !errors.Is(err, ErrTitelNichtGefunden) {
 			t.Errorf("abfragen.LoescheTitelSamtAusleihen: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
 		}

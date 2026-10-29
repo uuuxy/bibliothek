@@ -90,14 +90,13 @@ var phantomBestand = map[string]int{
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,
 	// Legt das Passbild an oder ersetzt es: Die Anweisung trifft immer genau eine Zeile.
-	"repository/leser_foto.go:SchreibeFoto":                              1,
-	"repository/klassensaetze.go:OrdneTitelKlassenZu":                    1,
-	"repository/klassensaetze.go:LoescheKlassensatzGruppe":               1,
-	"repository/klassensaetze.go:AendereKlassensaetze":                   2,
-	"repository/klassensaetze.go:legeKlassensatzZuordnungenAn":           1,
-	"repository/titel_anlegen.go:legeImportExemplareAn":                  1,
-	"repository/titel_loeschen_spur.go:protokolliereGeloeschteExemplare": 1,
-	"repository/titel_loeschen_spur.go:protokolliereOffeneAusleihen":     1,
+	"repository/leser_foto.go:SchreibeFoto":                          1,
+	"repository/klassensaetze.go:OrdneTitelKlassenZu":                1,
+	"repository/klassensaetze.go:LoescheKlassensatzGruppe":           1,
+	"repository/klassensaetze.go:AendereKlassensaetze":               2,
+	"repository/klassensaetze.go:legeKlassensatzZuordnungenAn":       1,
+	"repository/titel_anlegen.go:legeImportExemplareAn":              1,
+	"repository/titel_loeschen_spur.go:protokolliereOffeneAusleihen": 1,
 	// Dieselbe Bauart wie die Zeile darüber: ein INSERT ins Protokoll je gelesener Zeile. Ein
 	// CommandTag zu prüfen hieße, einen INSERT ohne ON CONFLICT auf 1 zu vergleichen; die
 	// Fehlerrückgabe deckt den Fall schon ab.

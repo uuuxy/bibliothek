@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // „Titel löschen" an Postgres, an der Regel des Betreibers: Es geht alles, auch ein Exemplar,
@@ -100,7 +101,7 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		VALUES ($1, $2, $3, 'Fleck', 3.00, false)
 		RETURNING to_char(erstellt_am, 'YYYY-MM-DD')`, imRegal, altAusleihe, schuelerID)
 
-	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}); err != nil {
+	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Titel mit verliehenem Exemplar muss löschbar sein: %v", err)
 	}
 

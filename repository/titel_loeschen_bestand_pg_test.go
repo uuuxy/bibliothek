@@ -48,7 +48,7 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 	}
 	vorher := abgaenge()
 
-	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}); err != nil {
+	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 

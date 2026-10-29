@@ -105,19 +105,14 @@ type titelExemplar struct {
 // leseTitelVorDemLoeschen liest die Angaben fürs Protokoll und lehnt ab, solange ein Exemplar
 // verliehen ist. Einen unbekannten Titel lässt sie durch; den meldet das DELETE.
 func leseTitelVorDemLoeschen(ctx context.Context, tx pgx.Tx, titelID string) (titelVorDemLoeschen, error) {
-	vorher := titelVorDemLoeschen{id: titelID}
-	err := tx.QueryRow(ctx,
-		`SELECT coalesce(titel,''), coalesce(autor,''), coalesce(isbn,'') FROM buecher_titel WHERE id = $1`,
-		titelID,
-	).Scan(&vorher.titel, &vorher.autor, &vorher.isbn)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return vorher, fmt.Errorf("failed to snapshot title for audit: %w", err)
-	}
 	if err := pruefeKeineAktivenAusleihen(ctx, tx, titelID); err != nil {
-		return vorher, err
+		return titelVorDemLoeschen{id: titelID}, err
 	}
-	vorher.exemplare, err = leseTitelExemplare(ctx, tx, titelID)
-	return vorher, err
+	gelesen, err := leseTitelFuersProtokoll(ctx, tx, []string{titelID})
+	if err != nil || len(gelesen) == 0 {
+		return titelVorDemLoeschen{id: titelID}, err
+	}
+	return gelesen[0], nil
 }
 
 // pruefeKeineAktivenAusleihen lehnt das Löschen ab, solange ein Exemplar des Titels verliehen
@@ -153,31 +148,60 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string)
 	return nil
 }
 
-// leseTitelExemplare liest Kennung, Barcode und altes LMF-Etikett jedes Exemplars vor dem
-// Löschen. Die Theken-Auskunft findet gelöschte Exemplare nur über Protokollzeilen mit
-// tabelle='buecher_exemplare' und details->>'barcode_id' (FindeThekenExemplare); ohne sie
-// hieße ein später gescanntes Buch „nie gesehen" statt „gelöscht am …".
-func leseTitelExemplare(ctx context.Context, tx pgx.Tx, titelID string) ([]titelExemplar, error) {
-	var exemplare []titelExemplar
+// leseTitelFuersProtokoll liest Angaben und Exemplare der Titel, bevor sie fallen; beide
+// Löschwege schreiben daraus dieselben Einträge (protokolliereTitelLoeschung). Eine unbekannte
+// Kennung fehlt in der Antwort. Die Theken-Auskunft findet gelöschte Exemplare nur über
+// Protokollzeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
+// (FindeThekenExemplare); ohne sie hieße ein später gescanntes Buch „nie gesehen" statt
+// „gelöscht am …".
+func leseTitelFuersProtokoll(ctx context.Context, tx pgx.Tx, ids []string) ([]titelVorDemLoeschen, error) {
 	rows, err := tx.Query(ctx,
-		`SELECT e.id::text, e.barcode_id, coalesce(e.lmf_barcode, ''), `+sqlWarImBestand+` FROM buecher_exemplare e WHERE e.titel_id = $1`, titelID)
+		`SELECT id::text, coalesce(titel,''), coalesce(autor,''), coalesce(isbn,'')
+		 FROM buecher_titel WHERE id = ANY($1::uuid[]) ORDER BY id`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to snapshot titles for audit: %w", err)
+	}
+	var titel []titelVorDemLoeschen
+	for rows.Next() {
+		var v titelVorDemLoeschen
+		if err := rows.Scan(&v.id, &v.titel, &v.autor, &v.isbn); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan title snapshot: %w", zeileUnlesbar(err))
+		}
+		titel = append(titel, v)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to read title snapshots: %w", err)
+	}
+
+	stelle := make(map[string]int, len(titel))
+	for i, v := range titel {
+		stelle[v.id] = i
+	}
+	rows, err = tx.Query(ctx,
+		`SELECT e.titel_id::text, e.id::text, e.barcode_id, coalesce(e.lmf_barcode, ''), `+sqlWarImBestand+`
+		 FROM buecher_exemplare e WHERE e.titel_id = ANY($1::uuid[]) ORDER BY e.barcode_id`, ids)
 	if err != nil {
 		return nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
 	}
 	for rows.Next() {
-		var s titelExemplar
-		if err := rows.Scan(&s.id, &s.barcode, &s.lmfBarcode, &s.warImBestand); err != nil {
+		var titelID string
+		var ex titelExemplar
+		if err := rows.Scan(&titelID, &ex.id, &ex.barcode, &ex.lmfBarcode, &ex.warImBestand); err != nil {
 			rows.Close()
-			return nil, fmt.Errorf("failed to scan copy snapshot: %w", err)
+			return nil, fmt.Errorf("failed to scan copy snapshot: %w", zeileUnlesbar(err))
 		}
-		exemplare = append(exemplare, s)
+		if i, ok := stelle[titelID]; ok {
+			titel[i].exemplare = append(titel[i].exemplare, ex)
+		}
 	}
 	rows.Close()
 	// Bricht die Iteration vorzeitig ab, fehlten Einträge still.
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read copy snapshots: %w", err)
 	}
-	return exemplare, nil
+	return titel, nil
 }
 
 // protokolliereWasMitDemTitelFaellt hält vor dem Löschen fest, was mit dem Titel verschwindet:

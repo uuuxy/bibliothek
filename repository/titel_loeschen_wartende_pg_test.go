@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // An `buecher_titel` hängen vier Kinder mit ON DELETE CASCADE: die Exemplare, Vormerkungen,
@@ -69,7 +70,7 @@ func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 		t.Fatalf("Klassensatz-Zuordnung anlegen: %v", err)
 	}
 
-	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}); err != nil {
+	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
 	}
 

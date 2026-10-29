@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Massenaktion der Bestandstabelle hält dieselbe Regel wie das Löschen eines einzelnen
@@ -46,7 +47,7 @@ func TestLoescheTitelSamtAusleihen_HaeltDieRegelDerAuflagen(t *testing.T) {
 	werkBeide, beide := buch()
 	werkEiner, einer := buch()
 
-	if err := abfragen.LoescheTitelSamtAusleihen(ctx, append(beide, einer[0])); err != nil {
+	if err := abfragen.LoescheTitelSamtAusleihen(ctx, append(beide, einer[0]), testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
 	}
 	var rest []string

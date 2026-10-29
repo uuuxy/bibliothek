@@ -8,13 +8,14 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/repository"
 )
 
 // MarkierteTitelLoeschen ist die Tür DELETE /api/books: Sie löscht die in der Titelliste
 // markierten Titel ({"ids": [...]}) samt allem, was an ihnen hängt, auch verliehene Exemplare
 // (TitelAbfragen.LoescheTitelSamtAusleihen). Die Tür für einen einzelnen Titel lehnt einen
-// verliehenen ab (TitelLoeschen).
+// verliehenen ab (TitelLoeschen). Im Protokoll steht, wer gelöscht hat, wie dort.
 func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 	return func(antwort http.ResponseWriter, anfrage *http.Request) {
 		var eingabe struct {
@@ -33,8 +34,13 @@ func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Eine der Kennungen ist ungültig", nil)
 			return
 		}
+		claims, ok := auth.ClaimsAusKontext(anfrage.Context())
+		if !ok {
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
+			return
+		}
 
-		if fehler := t.titelAbfragen().LoescheTitelSamtAusleihen(anfrage.Context(), eingabe.IDs); fehler != nil {
+		if fehler := t.titelAbfragen().LoescheTitelSamtAusleihen(anfrage.Context(), eingabe.IDs, claims.KontoID); fehler != nil {
 			if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
 				apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden", nil)
 				return
