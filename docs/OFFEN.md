@@ -37,7 +37,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Vermerk; der Hilfsrahmen wirkt oder entfällt. (5.114)
 - [x] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
   Lauf lässt sich löschen. (5.112)
-- [ ] Logo oben links und als Wasserzeichen scharf, auch im dunklen Design. (5.113)
+- [x] Logo oben links und als Wasserzeichen scharf, auch im dunklen Design. (5.113)
 
 ### Bei dir
 
@@ -100,18 +100,6 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 - **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
   `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
   Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.
-
-### 5.113 Logo unscharf, im dunklen Design auffällig
-
-`frontend/src/assets/logo.png` hat 97 × 90 Pixel. Gezeigt wird es oben links mit 48 Pixeln
-(`frontend/src/lib/components/layout/Seitenleiste.svelte`), bei der Anmeldung mit 96
-(`frontend/src/lib/components/auth/Anmeldung.svelte`) und als Wasserzeichen mit bis zu 600
-(`frontend/src/lib/components/ui/LogoRelief.svelte`); ein Bildschirm mit doppelter Pixeldichte
-braucht jeweils das Doppelte. Verkleinert wurde die Datei für die Grenze des Offline-Speichers
-(2 MB, Vorgabe von Workbox; das Original hatte 5,2 MB). Das Original (2574 × 1664, Commit
-4b369ba7) trägt ein eingezeichnetes Schachbrettmuster; das Logo darin ist rund 1000 Pixel breit.
-Nächster Schritt: das Logo als SVG oder aus dem Original freigestellt als PNG; beides bleibt weit
-unter der Grenze.
 
 ### 7.2 Frisches Littera-Backup
 

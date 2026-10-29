@@ -13,18 +13,19 @@
 </script>
 
 <!-- Die Bildmarke bleibt, der Schriftzug wird abgeschnitten.
-     logo.png ist 97×90 px und trägt unter dem Sechseck den Schriftzug „Bibliosys". Beim
-     Anschneiden am Bildschirmrand blieb davon „bliosys" bzw. „Biblios" stehen — ein
-     angeschnittenes Zeichen wirkt gewollt, ein angeschnittenes Wort wirkt wie ein Fehler.
-     Der Rahmen im Seitenverhältnis 97:66 zeigt deshalb nur das Sechseck; der Schriftzug
-     liegt außerhalb und kann gar nicht erst halb im Bild landen. -->
+     logo.png ist 975×910 px und trägt unter dem Sechseck den Schriftzug „Bibliosys"; zwischen
+     beiden liegen die Zeilen 619 bis 668 frei. Beim Anschneiden am Bildschirmrand blieb vom
+     Schriftzug „bliosys" bzw. „Biblios" stehen — ein angeschnittenes Zeichen wirkt gewollt, ein
+     angeschnittenes Wort wirkt wie ein Fehler. Der Rahmen im Seitenverhältnis 975:644 zeigt
+     deshalb nur das Sechseck; der Schriftzug liegt außerhalb und kann gar nicht erst halb im
+     Bild landen. -->
 <!-- Eine Marke, nicht zwei: Zwei Marken auf derselben Fläche lesen sich nicht als Signatur,
      sondern als Textur, und eine gedrehte macht aus der Dekoration ein zweites Motiv, das um
      Aufmerksamkeit konkurriert. Eine große, gerade gesetzte Marke ist ruhiger.
      Unten rechts verankert, damit sie aus dem Weg bleibt: Suchfeld und Trefferliste wachsen
      von oben links nach unten. -->
 <div class="absolute inset-0 z-0 pointer-events-none no-print overflow-hidden" aria-hidden="true">
-	<div class="absolute -bottom-16 -right-20 w-96 md:w-150 aspect-97/66 overflow-hidden">
+	<div class="absolute -bottom-16 -right-20 w-96 md:w-150 aspect-975/644 overflow-hidden">
 		<img
 			src={logoUrl}
 			alt=""
