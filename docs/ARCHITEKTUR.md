@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 28.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 29.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1437,7 +1437,7 @@ kürzer als der Heartbeat-Abstand und länger als jede normale Anfrage.
 
 ## 7. Verteilungssicht
 
-Stand: 16.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
+Stand: 29.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ---
 
@@ -1483,6 +1483,7 @@ Stand: 16.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 | **Volume-Mount auf `/var/lib/postgresql`, nicht `…/data`**        | Seit dem 18er-Image liegt `PGDATA` unter `/var/lib/postgresql/18/docker`; der alte Mount landete in einem anonymen Volume, das ein Neuerstellen löscht.                            |
 | **`bibliothek_backups` als benanntes Volume**                     | Die verschlüsselten Dumps überleben einen Neubau des Containers.                                                                                                                  |
 | **Netz `caddy_global_net` extern**                                | Auf dem Host laufen mehrere Dienste hinter **einem** Caddy.                                                                                                                        |
+| **Von außen nur die Bestellseite**                                | Caddy lässt Anfragen von außerhalb von `SCHULNETZ` nur an die Seite des Hauptlieferanten und an `/health` durch; eine Firewall sieht den Pfad nicht (A29).                         |
 
 #### Fristen müssen zueinander passen
 
@@ -2478,9 +2479,9 @@ sieht.
 
 ## 9. Architekturentscheidungen
 
-Stand: 25.10.2026
+Stand: 29.10.2026
 
-Sechsundzwanzig Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre
+Siebenundzwanzig Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre
 Nummer wird nicht neu vergeben. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
 Geschichte hat, steht sie knapp; ausführlicher ist die Commit-Historie, und die kann nicht
@@ -2523,6 +2524,7 @@ veralten.
 | A26 | Die Türen stehen je Menüpunkt in einem Paket unter `api/`                      | 12.10.2026    | gültig   |
 | A27 | Keine Swagger-Beschreibung; die Routenliste ist das Verzeichnis                | 20.10.2026    | gültig   |
 | A28 | Keine erzeugten Typen für die Antworten des Servers                            | 25.10.2026    | gültig   |
+| A29 | Von außen nur die Bestellseite; die Grenze zieht Caddy                         | 28.09.2026    | gültig   |
 
 ---
 
@@ -3093,6 +3095,27 @@ Liste (`httpresp`). Die übrige Form, ein Feld, das der Server nicht schickt, ka
 `null` an.
 
 **Fundstelle.** `api/tuer/antwort.go`, `pkg/httpresp/httpresp.go`, `frontend/src/lib/apiFetch.js`.
+
+---
+
+### A29 — Von außen nur die Bestellseite; die Grenze zieht Caddy
+
+**Entscheidung.** Von außerhalb des Schulnetzes ist nur die Seite erreichbar, auf der der
+Hauptlieferant seine Bestellung bestätigt, dazu `/health` für die Ausfallmeldung. Alles andere,
+auch die Anmeldung, geht nur aus dem Schulnetz, also auch nicht für Lehrkräfte von zu Hause. Die
+Grenze zieht der Abschnitt „Bibliothek" in `update_caddy.sh` nach der Absenderadresse
+(`remote_ip`) und dem Pfad; die Netze der Schule stehen in `SCHULNETZ`, ohne sie ist alles offen.
+
+**Anlass.** Für den Link des Hauptlieferanten muss Port 443 von außen offen sein. Eine Firewall
+öffnet den ganzen Port; den Pfad sieht sie bei HTTPS nicht. Im Programm käme die Absenderadresse
+erst über `X-Forwarded-For` und `TRUSTED_PROXIES` an, Caddy sieht sie unmittelbar. Ob die Firewall
+der Schule die Absenderadresse stehen lässt, zeigt ohnehin nur die Probe an der echten Anlage.
+
+**Folge.** Eine neue Tür für den Lieferanten gehört unter `/api/public/bestellung/`, eine neue
+Seite für ihn unter `/bestellung/`; sonst sperrt Caddy sie von außen. Katalog, Monitor und Cover
+sind von außen gesperrt. Einrichtung und Probe: DEPLOYMENT.md 3.
+
+**Fundstelle.** `update_caddy.sh`, `api/routen_oeffentlich.go`.
 
 ---
 

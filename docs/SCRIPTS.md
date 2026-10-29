@@ -355,7 +355,8 @@ macht den Rest; einen zweiten Weg für die Einrichtung gibt es nicht.
 
 `./update_caddy.sh` schreibt die Caddy-Konfiguration des Servers neu
 (`/root/caddy/Caddyfile`, alle Dienste des Hosts), prüft sie mit `caddy validate` und lädt
-sie per `caddy reload` neu, ohne Caddy neu zu starten.
+sie per `caddy reload` neu, ohne Caddy neu zu starten. Der Abschnitt der Bibliothek trägt die
+Sperre für Anfragen von außen ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3).
 
 ### `scripts/stack-neu.sh` — dasselbe lokal, mit Beweis
 

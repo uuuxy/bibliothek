@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-10-24
+> Zuletzt aktualisiert: 2026-10-29
 
 ---
 
@@ -295,6 +295,38 @@ gehört der Abschnitt „Bibliothek" daraus in dessen Caddyfile, samt den Friste
 `transport http`: Sie müssen zur Anwendung passen, denn ein Import darf 5 Minuten dauern
 (`langLaufendeFrist` in `api/middleware.go`), und der SSE-Strom `/events` läuft dauerhaft. Eine
 `tls`-Zeile braucht es nicht, Caddy holt das Zertifikat selbst (ACME).
+
+### Von außen nur die Bestellseite
+
+Von außerhalb des Schulnetzes lässt der Abschnitt „Bibliothek" nur die Seite durch, auf der der
+Hauptlieferant seine Bestellung bestätigt (`/bestellung/…`, `/api/public/bestellung/…` und die
+Dateien, die sie lädt), dazu `/health` für die Ausfallmeldung (7.0). Alles andere, auch die
+Anmeldung, beantwortet Caddy mit „Die Bibliothek ist nur im Schulnetz erreichbar." Eine Firewall
+kann das nicht: Sie öffnet den ganzen Port 443, die Seite sieht erst Caddy (ARCHITEKTUR.md A29).
+
+Die Netze der Schule bekommt Caddy als Umgebungsvariable `SCHULNETZ`, mehrere durch Leerzeichen
+getrennt, etwa `SCHULNETZ=10.20.0.0/16 192.168.5.0/24`; nutzt die Schule IPv6, gehört ihr Netz
+dazu. Fehlt die Variable oder ist sie leer, gilt jede Adresse als Schulnetz; so läuft der
+Testserver. Caddy liest sie beim Laden der Konfiguration aus der Umgebung seines Containers; eine
+geänderte Variable wirkt erst in einem neu angelegten Container.
+
+Am Schulserver:
+
+1. Die Firewall der Schule leitet Port 443 und für das Zertifikat Port 80 an den Server und lässt
+   dabei die Absenderadresse stehen.
+2. Caddy mit `SCHULNETZ` anlegen und den Abschnitt „Bibliothek" mit dem Namen des Schulservers
+   übernehmen (oben).
+3. Probe: An einem Rechner der Theke öffnet die Adresse das Programm. Ein Handy ohne WLAN sieht
+   unter der Adresse nur den Satz oben und unter `/bestellung/probe` die Seite „Dieser Link ist
+   nicht mehr gültig". Sieht die Theke den Satz, fehlt ihr Netz in `SCHULNETZ`. Kommt das Handy
+   ins Programm, gibt die Firewall Anfragen unter ihrer eigenen Adresse weiter; dann wirkt die
+   Sperre erst, wenn sie die Absenderadresse stehen lässt.
+
+Nach außen braucht der Server den Mailserver der Schule zum Anmelden (IMAP, Port 993) und den
+Server für den Mailversand (Einstellungen → Mail), DNB, Google Books und OpenLibrary, Let's
+Encrypt für das Zertifikat, den Speicher der Sicherung außer Haus und für Updates GitHub, Docker
+Hub und die Paketquellen (Alpine, npm, Go). Sperrt die Firewall der Schule nach außen, braucht sie
+diese Liste.
 
 ### Zero-Downtime Reload
 

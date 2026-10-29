@@ -515,9 +515,9 @@ Dokuments.
    automatischen Sicherheitsupdates in der Nacht (entschieden am 28.09.2026); die Zusage des
    Schulträgers steht aus.
 2. **Erreichbarkeit von außen:** entschieden am 28.09.2026 — von außen nur die Seite für die
-   Lieferanten, alles andere nur aus dem Schulnetz. Offen sind die Sperre am Eingang und die
-   Angaben des Schulträgers dazu: Name im Internet, Freigabe von Port 443, Absenderadresse der
-   Schulgeräte ([OFFEN.md](OFFEN.md) 4.23).
+   Lieferanten, alles andere nur aus dem Schulnetz. Die Sperre steht in der Caddy-Konfiguration
+   ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3). Offen sind die Angaben des Schulträgers dazu:
+   Name im Internet, Freigabe von Port 443 und 80, Netze der Schulgeräte.
 3. **Vertretung:** noch nicht benannt.
 4. **Betrieb:** Sicherung außer Haus (entschieden am 28.09.2026: zuerst beim Schulträger nach
    einem Speicher fragen), externes Signal bei Ausfall, Probe der Wiederherstellung an einem

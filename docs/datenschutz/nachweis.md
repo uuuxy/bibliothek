@@ -213,8 +213,9 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   Klassensatz-Reservierungen nach der Frist für erledigte Wünsche und Meldungen; eine
   Reservierung, die vor Migration 089 erledigt wurde, hat keinen Zeitpunkt und bleibt stehen.
 - Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere
-  nur aus dem Schulnetz (entschieden am 28.09.2026); die Sperre am Eingang ist nicht eingerichtet
-  (4.23).
+  nur aus dem Schulnetz (entschieden am 28.09.2026). Die Sperre am Eingang steht in der
+  Caddy-Konfiguration und greift, sobald am Schulserver die Netze der Schule eingetragen sind
+  ([DEPLOYMENT.md](../DEPLOYMENT.md), Abschnitt 3).
 - Ein gelöschtes Zugangskonto nennt die Auskunft; Löschungen vor dem 29.09.2026 tragen den
   Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der Nachtrag
   einer Schul-E-Mail stehen unter dem früheren Konto; Einträge vor dem 08.10.2026 tragen die

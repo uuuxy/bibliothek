@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 28.10.2026
+Stand: 29.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -18,9 +18,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt.
   (7.2, 4.20)
-- [ ] Eingang und Ausgang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar,
-  nach außen nur die Dienste, die das Programm braucht. (4.23)
-- [ ] Am Schulserver einrichten: verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
+- [x] Eingang des Servers: Von außen kommt nur die Seite der Lieferanten durch; die Sperre steht
+  in der Caddy-Konfiguration. Was nach außen gehen darf, regelt die Firewall der Schule. (4.23)
+- [ ] Am Schulserver einrichten: Netze der Schule für den Eingang ([DEPLOYMENT.md](DEPLOYMENT.md),
+  Abschnitt 3), verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
   (9.9), Uhr für den Klartext-Rest ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6). Danach
   nachsehen: Admin-Konten, Verbindung zur DNB (7.8).
@@ -95,29 +96,6 @@ Die Übernahme zählt die Verweise zwischen Schlagworten (`Verweise_Schlagworte`
 `Verweis_Zu_Schlagworte`), übernimmt sie aber nicht (`internal/littera/schlagworte.go`); in der
 Sicherung von 2010 sind beide leer. Hat die Sicherung von 2026 welche: an ihnen die Form ablesen
 und die Übernahme bauen.
-
-### 4.23 Erreichbarkeit von außen
-
-Entschieden am 28.09.2026: Von außen ist nur die Seite der Lieferanten erreichbar, alles andere
-nur aus dem Schulnetz, also auch nicht für Lehrkräfte von zu Hause.
-
-**Zu bauen:** Caddy lässt von außen nur `/bestellung/<token>` mit den Dateien der Oberfläche,
-`/api/public/bestellung/…` und `/health` (7.5) durch. Mehr braucht die Seite nicht: Das
-CSRF-Cookie setzt der erste Abruf (`erneuereCSRFCookie` in `api/csrf.go`), und `/api/auth/me`
-darf beim Laden scheitern. Das Zertifikat kommt von Let's Encrypt; ohne HTTPS schickt der Browser
-das Sitzungs-Cookie nicht (`Secure` ist fest, ARCHITEKTUR.md T10). Danach in den Einstellungen
-die öffentliche Adresse setzen und [ARCHITEKTUR.md](ARCHITEKTUR.md) 7 und 9 nachziehen.
-
-**Vorher muss feststehen:** der Name des Servers im Internet (auch die Geräte der Schule nutzen
-ihn, das Zertifikat gilt für den Namen), die Freigabe von Port 443, der Netzabschnitt des Servers
-und die Absenderadresse, an der der Eingang das Schulnetz erkennt. Ausgehend braucht der Server
-den Mailserver der Schule zum Anmelden (IMAP, Port 993, `auth/imap.go`) und den Server für den
-Mailversand (SMTP, eingetragen unter Einstellungen → Mail; der Mailserver der Schule nimmt Port
-587 und 25 an, [SECURITY.md](SECURITY.md)), DNB, Google Books und OpenLibrary
-(`pkg/coverquelle`), Let's Encrypt für das Zertifikat, den Speicher der Sicherung außer Haus
-(7.3) und für Updates GitHub, Docker Hub und die Paketquellen. Alles andere sperrt die Firewall
-nach außen: Dann schickt auch Code, der mit einem Update hereinkommt, keine Daten an ein
-beliebiges Ziel.
 
 ### 4.24 Eigentumsvermerk auf neuen Etiketten
 
@@ -226,8 +204,8 @@ Vertretung.
 ### 7.5 Externes Uptime-Signal
 
 Fällt der Server ganz aus, meldet es niemand. Ein externer Monitor ruft alle 5 Minuten `/health`
-ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0); am Schulserver erst, wenn der Eingang aus 4.23
-`/health` durchlässt.
+ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0); die Sperre am Eingang lässt `/health` durch
+(Abschnitt 3).
 
 ### 7.7 Abnahmen
 
