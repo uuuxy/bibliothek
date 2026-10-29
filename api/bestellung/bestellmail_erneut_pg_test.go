@@ -14,6 +14,7 @@ import (
 	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
@@ -228,6 +229,10 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 			t.Errorf("%q fehlt in der erneut gesendeten Mail:\n%s", teil, smtptest.Kopf(mail.Nachricht))
 		}
 	}
+	// Das Anschreiben nennt die bestellten Titel; ohne sie hielte der Händler eine leere Bestellung.
+	if blatt := strings.Join(pdftest.Texte(t, []byte(smtptest.DateiAusMail(t, mail.Nachricht, "bestellanschreiben"))), " "); !strings.Contains(blatt, "LMF-Mathe-Erneut") {
+		t.Errorf("Das Anschreiben der erneuten Mail nennt den Titel nicht: %s", blatt)
+	}
 	// Die Etiketten liegen hinter dem Link, wie bei der ersten Mail.
 	if strings.Contains(mail.Nachricht, "etiketten_klein") {
 		t.Error("Der Etikettenbogen hängt an der Mail, obwohl ein Link mitgeht")
@@ -427,4 +432,100 @@ func zwischen(text, anfang string) string {
 		return rest
 	}
 	return rest[:ende]
+}
+
+// behalteOeffentlicheAdresse stellt nach dem Test die öffentliche Adresse wieder her, die vorher
+// galt: Andere Tests dieses Pakets setzen sie, ohne sie zurückzunehmen.
+func behalteOeffentlicheAdresse(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	var vorher string
+	if err := pool.QueryRow(t.Context(),
+		`SELECT coalesce(max(wert), '') FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse'`).Scan(&vorher); err != nil {
+		t.Fatalf("öffentliche Adresse lesen: %v", err)
+	}
+	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, vorher) })
+}
+
+// Ohne öffentliche Adresse geht auch die erneute Mail an den Hauptlieferanten ohne Link. Die
+// Antwort warnt wie beim ersten Versand, damit jemand den Link in der Historie nachträgt, und die
+// Bögen hängen an der Mail, beim Lernmittel auch das große Etikett.
+func TestBestellmail_ErneutOhneAdresseWarntUndHaengtDieBoegenAn(t *testing.T) {
+	l := bestellmailLageAnlegen(t, "ohne-adresse")
+	behalteOeffentlicheAdresse(t, l.pool)
+	testdaten.SetzeOeffentlicheAdresse(t, l.pool, "")
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Naacher-OhneAdresse", true)
+
+	l.srv.Mail = mailserverNichtErreichbar(t, nil)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-OhneAdresse", 0))
+	post, sitzungen := tuertest.FangeMailAb(t)
+	l.srv.Mail = post
+
+	rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Erneut senden: Status %d: %s", rec.Code, rec.Body.String())
+	}
+	var antwort struct{ Status, Message string }
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	if antwort.Status != "warning" || !strings.Contains(antwort.Message, "ohne Bestätigungs-Link") {
+		t.Errorf("Antwort %+v, erwartet die Warnung, dass der Link fehlt", antwort)
+	}
+	mail := smtptest.WarteAufMail(t, sitzungen)
+	for _, bogen := range []string{"etiketten_klein", "etiketten_gross"} {
+		if !strings.Contains(mail, bogen) {
+			t.Errorf("Der Bogen %s hängt nicht an der Mail ohne Link", bogen)
+		}
+	}
+}
+
+// Gibt der Browser während eines langsamen Versands auf, geht die Mail trotzdem raus. Dann stehen
+// auch die Adresse am Beleg und der Eintrag im Protokoll: Wer erneut gesendet hat, darf nicht
+// davon abhängen, ob der Browser die Antwort noch abgewartet hat.
+func TestBestellmail_ErneutGesendetStehtAuchNachAbbruchImProtokoll(t *testing.T) {
+	l := bestellmailLageAnlegen(t, "abbruch-gesendet")
+	lieferant := testdaten.LegeLieferantAn(t, l.pool, "Buchhandlung-AbbruchGesendet", false)
+	l.srv.Mail = mailserverNichtErreichbar(t, nil)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.LegeTitelAn(t, l.pool, "LMF-Mathe-AbbruchGesendet", 0))
+	if _, err := l.pool.Exec(t.Context(),
+		`UPDATE lieferanten SET email = 'abbruch-berichtigt@example.invalid' WHERE id = $1`, lieferant); err != nil {
+		t.Fatalf("Adresse berichtigen: %v", err)
+	}
+
+	// Der Mailserver nimmt die Mail an; die Anfrage bricht ab, sobald der Versand beginnt.
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
+	ctx, abbrechen := context.WithCancel(t.Context())
+	defer abbrechen()
+	aufrufe := 0
+	l.srv.Mail = mailservice.NewPostausgang(func(context.Context) (mailservice.SMTPKonfig, error) {
+		// Der erste Aufruf fragt nur, ob ein Mailserver eingerichtet ist; ab dem zweiten läuft der Versand.
+		aufrufe++
+		if aufrufe >= 2 {
+			abbrechen()
+		}
+		return mailservice.SMTPKonfig{Host: host, Port: port, Absender: "bibliothek@schule.invalid"}, nil
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", nil).WithContext(ctx)
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: l.sitzung})
+	l.router.ServeHTTP(httptest.NewRecorder(), tuertest.MitCSRF(req))
+	if ctx.Err() == nil {
+		t.Fatal("Die Anfrage ist nicht abgebrochen worden; der Versand hat nicht begonnen")
+	}
+	smtptest.WarteAufMail(t, sitzungen)
+
+	var adresse string
+	var offen bool
+	if err := l.pool.QueryRow(t.Context(), `
+		SELECT lieferant_email, mail_gescheitert_am IS NOT NULL FROM bestellungen_verlauf WHERE id = $1`,
+		bestellung).Scan(&adresse, &offen); err != nil {
+		t.Fatalf("Bestellung lesen: %v", err)
+	}
+	if adresse != "abbruch-berichtigt@example.invalid" || offen {
+		t.Errorf("Am Beleg steht %q, Vermerk offen %t; erwartet die berichtigte Adresse und keinen Vermerk", adresse, offen)
+	}
+	if n := pgtest.ZaehleZeilen(t, l.pool, `
+		SELECT count(*) FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET' AND details->>'bestellung_id' = $1`,
+		bestellung); n != 1 {
+		t.Errorf("%d Einträge „erneut gesendet“ im Protokoll, erwartet 1: Die Mail ging raus", n)
+	}
 }

@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/bestelllink"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -208,5 +209,38 @@ func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
 	}
 	if rec := holeOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusOK {
 		t.Errorf("der alte Link antwortet mit %d, erwartet 200: Er gilt weiter, solange kein neuer entsteht", rec.Code)
+	}
+}
+
+// „Neuen Link erzeugen" gibt es nur für eine Bestellung im Bestätigungsweg. Eine unbekannte
+// Kennung ist ein 404, eine Bestellung ohne Bestätigungsschritt ein 400, und keine von beiden
+// bekommt einen Token: Ein Link zu einer solchen Bestellung böte dem Händler eine Bestätigung an,
+// die niemand erwartet.
+func TestNeuerLink_NurImBestaetigungsweg(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
+	ohneSchritt := testdaten.LegeBestellungOhneTopfAn(t, pool, "Ohne Bestätigungsschritt", nil)
+
+	for _, f := range []struct {
+		name, id string
+		status   int
+		meldung  string
+	}{
+		{"unbekannte Kennung", "00000000-0000-0000-0000-00000000dead", http.StatusNotFound, "Bestellung nicht gefunden"},
+		{"ohne Bestätigungsschritt", ohneSchritt, http.StatusBadRequest, "Diese Bestellung hat keinen Bestätigungsschritt"},
+	} {
+		req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+f.id+"/bestaetigungs-link", nil)
+		req.SetPathValue("id", f.id)
+		rec := httptest.NewRecorder()
+		srv.BestaetigungsLinkErneuern().ServeHTTP(rec, req)
+		if rec.Code != f.status || tuertest.Fehlermeldung(t, rec) != f.meldung {
+			t.Errorf("%s: Status %d, erwartet %d mit %q: %s", f.name, rec.Code, f.status, f.meldung, rec.Body.String())
+		}
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf WHERE id = $1 AND bestaetigungs_token_hash IS NOT NULL`, ohneSchritt); n != 0 {
+		t.Errorf("die Bestellung ohne Bestätigungsschritt hat einen Token bekommen")
 	}
 }

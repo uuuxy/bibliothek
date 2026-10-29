@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -66,10 +67,11 @@ func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 	}
 
 	var bestaetigtAmGesetzt bool
-	var groesse string
+	var groesse, durch string
 	if err := pool.QueryRow(ctx, `
-		SELECT (bestaetigt_am IS NOT NULL), coalesce(etiketten_groesse, '') FROM bestellungen_verlauf WHERE id = $1
-	`, bestellung).Scan(&bestaetigtAmGesetzt, &groesse); err != nil {
+		SELECT (bestaetigt_am IS NOT NULL), coalesce(etiketten_groesse, ''), coalesce(bestaetigt_durch, '')
+		FROM bestellungen_verlauf WHERE id = $1
+	`, bestellung).Scan(&bestaetigtAmGesetzt, &groesse, &durch); err != nil {
 		t.Fatalf("Bestellung lesen: %v", err)
 	}
 	if !bestaetigtAmGesetzt {
@@ -77,6 +79,10 @@ func TestBestellungBestaetigen_Erfolg(t *testing.T) {
 	}
 	if groesse != "gross" {
 		t.Errorf("etiketten_groesse = %q, erwartet %q", groesse, "gross")
+	}
+	// Die Historie unterscheidet den Nachtrag aus dem Haus von der Bestätigung des Lieferanten.
+	if durch != "bibliothek" {
+		t.Errorf("bestaetigt_durch = %q, erwartet %q", durch, "bibliothek")
 	}
 }
 
@@ -128,5 +134,30 @@ func TestBestellungBestaetigen_UngueltigeGroesse(t *testing.T) {
 	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"mittel"}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Status = %d, erwartet 400, Rumpf: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// Ein Raster, das es nicht gibt, und eine unbekannte Bestellung weist der Nachtrag ab, ohne zu
+// schreiben. Die unbekannte Kennung ist ein 404 und keine 500: Der Sanitizer ersetzte deren
+// Meldung, und die Historie zeigte einen Serverfehler statt „nicht gefunden".
+func TestBestellungBestaetigen_UnbekanntesRasterUndUnbekannteBestellung(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	lieferant := testdaten.LegeLieferantAn(t, pool, "Naacher4", true)
+	bestellung := bestellungFuerLieferant(t, pool, lieferant)
+
+	rec := bestaetigeVonHand(srv, bestellung, `{"etiketten_groesse":"klein","etiketten_format":"gibtesnicht"}`)
+	if rec.Code != http.StatusBadRequest || tuertest.Fehlermeldung(t, rec) != "Unbekanntes Format der Etiketten" {
+		t.Errorf("unbekanntes Raster: Status %d, erwartet 400 mit Hinweis: %s", rec.Code, rec.Body.String())
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf WHERE id = $1 AND bestaetigt_am IS NULL`, bestellung); n != 1 {
+		t.Errorf("nach dem abgewiesenen Nachtrag ist die Bestellung nicht mehr offen")
+	}
+
+	rec = bestaetigeVonHand(srv, "00000000-0000-0000-0000-00000000dead", `{"etiketten_groesse":"klein"}`)
+	if rec.Code != http.StatusNotFound || tuertest.Fehlermeldung(t, rec) != "Bestellung nicht gefunden" {
+		t.Errorf("unbekannte Bestellung: Status %d, erwartet 404 mit Hinweis: %s", rec.Code, rec.Body.String())
 	}
 }

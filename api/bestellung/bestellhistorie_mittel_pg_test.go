@@ -16,6 +16,8 @@ import (
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Historie und Kennzahlen nach Topf.
@@ -149,4 +151,31 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			t.Errorf("Lernmittelfreiheit: %s, erwartet 200,00 €", u.NachMittel[0].Gesamtbetrag.Euro())
 		}
 	})
+}
+
+// Ein Topf ohne Bestellung steht mit null in den Kennzahlen. Fehlte seine Zeile, läse sich der
+// Kopf wie „nichts bestellt" in einem Topf, den es nicht gibt, und die Spalten der Töpfe
+// verrutschten.
+func TestBestellhistorieUebersicht_TopfOhneBestellungStehtMitNull(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	if _, err := pool.Exec(context.Background(), `DELETE FROM bestellungen_verlauf`); err != nil {
+		t.Fatalf("Verlauf leeren: %v", err)
+	}
+	testdaten.LegeBestellungAn(t, mitteltopf.Land)
+
+	rec := httptest.NewRecorder()
+	srv.BestellhistorieUebersicht()(rec, httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/uebersicht", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
+	}
+	var u bestellhistorieUebersicht
+	if err := json.Unmarshal(rec.Body.Bytes(), &u); err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	erwartet := []bestellhistorieTopf{{Mittel: mitteltopf.Land, Gesamt: 1}, {Mittel: mitteltopf.Schultraeger}, {Mittel: ""}}
+	if diff := cmp.Diff(erwartet, u.NachMittel); diff != "" {
+		t.Errorf("Töpfe der Kennzahlen (-erwartet +bekommen):\n%s", diff)
+	}
 }

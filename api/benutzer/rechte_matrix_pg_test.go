@@ -2,6 +2,8 @@ package benutzer
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -138,5 +140,58 @@ func TestRechteMatrix_AenderungGiltSofort(t *testing.T) {
 
 	if !srv.HatRecht(mitarbeiter, "audit_logs") {
 		t.Error("HatRecht(mitarbeiter, audit_logs) = false nach der Änderung, erwartet true: die alte Entscheidung kam aus dem Cache")
+	}
+}
+
+// Die Matrix, wie die Oberfläche sie lädt und schaltet: Die Rolle steht klein geschrieben, jedes
+// Paar trägt den Wert aus role_permissions, und ein Haken lässt sich wieder nehmen. Zeigte die
+// Matrix einen falschen Wert, schaltete der Admin ein Recht, das er für aus hält, in Wahrheit ab.
+func TestRechteMatrix_ZeigtDenStandUndNimmtEinRechtWieder(t *testing.T) {
+	pool := pgtest.Pool(t)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	ohneProtokollRecht(t, pool)
+
+	schalte := func(erlaubt bool) {
+		t.Helper()
+		rumpf := fmt.Sprintf(`{"role":"mitarbeiter","permission":"audit_logs","allowed":%t}`, erlaubt)
+		w := httptest.NewRecorder()
+		srv.RollenRechtSetzen().ServeHTTP(w, anfrageAls(t, http.MethodPut, "/api/admin/permissions", rumpf, "admin-1", auth.RolleAdmin))
+		if w.Code != http.StatusOK {
+			t.Fatalf("Recht auf %t schalten: Status %d, erwartet 200 (%s)", erlaubt, w.Code, w.Body.String())
+		}
+	}
+	// feldDerMatrix liest das Feld mitarbeiter/audit_logs aus der Antwort der Tür.
+	feldDerMatrix := func() (gefunden, erlaubt bool) {
+		t.Helper()
+		w := httptest.NewRecorder()
+		srv.RechteMatrix().ServeHTTP(w, anfrageAls(t, http.MethodGet, "/api/admin/permissions", "", "admin-1", auth.RolleAdmin))
+		if w.Code != http.StatusOK {
+			t.Fatalf("Matrix laden: Status %d, erwartet 200 (%s)", w.Code, w.Body.String())
+		}
+		var matrix []rollenRecht
+		if err := json.Unmarshal(w.Body.Bytes(), &matrix); err != nil {
+			t.Fatalf("Matrix lesen: %v", err)
+		}
+		for _, feld := range matrix {
+			if feld.Rolle == "mitarbeiter" && feld.Recht == "audit_logs" {
+				return true, feld.Erlaubt
+			}
+		}
+		return false, false
+	}
+
+	if gefunden, erlaubt := feldDerMatrix(); !gefunden || erlaubt {
+		t.Fatalf("vor dem Schalten: Feld gefunden %t, erlaubt %t; erwartet das Feld der Rolle „mitarbeiter“, nicht erlaubt", gefunden, erlaubt)
+	}
+	schalte(true)
+	if _, erlaubt := feldDerMatrix(); !erlaubt {
+		t.Errorf("nach dem Setzen zeigt die Matrix das Recht als nicht erlaubt")
+	}
+	schalte(false)
+	if _, erlaubt := feldDerMatrix(); erlaubt {
+		t.Errorf("nach dem Entziehen zeigt die Matrix das Recht weiter als erlaubt")
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs' AND allowed`); n != 0 {
+		t.Errorf("nach dem Entziehen steht das Recht in role_permissions weiter als erlaubt")
 	}
 }

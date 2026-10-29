@@ -74,7 +74,11 @@ func (t *Tueren) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	}
 
 	t.merkeBestellmailVersendet(ctx, id, auftrag.Empfaenger)
-	t.ProtokolliereVerwaltung(ctx, aktionBestellmailErneutGesendet, map[string]any{"bestellung_id": id})
+	// Die Mail ist raus, auch wenn der Browser inzwischen aufgegeben hat. Der Eintrag hängt deshalb
+	// wie der Vermerk nicht an der Anfrage; sonst fehlte er gerade nach einem langsamen Versand.
+	nachVersand, abbruch := context.WithTimeout(context.WithoutCancel(ctx), fristBestellmailVermerk)
+	defer abbruch()
+	t.ProtokolliereVerwaltung(nachVersand, aktionBestellmailErneutGesendet, map[string]any{"bestellung_id": id})
 
 	meldung, warnung := bestellVersandMeldung(auftrag.LieferantName, daten.IstHauptlieferant && !mitLink)
 	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": versandStatus(warnung), "message": meldung})
