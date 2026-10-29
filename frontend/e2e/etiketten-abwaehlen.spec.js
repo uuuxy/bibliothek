@@ -4,8 +4,23 @@ import { uiLogin, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
 // Druck-Center, Schritt 2: Die vorhandenen Exemplare eines Titels sind vorgehakt. Was abgewählt
 // wird, steht weder in der Vorschau noch im Druckauftrag noch im Vermerk „Etikett gedruckt".
 //
-// Der Druck selbst wird abgefangen: Geprüft wird, was der Browser schicken würde, und kein
-// Exemplar bekommt den Vermerk.
+// Vorschau und Druck schicken denselben Auftrag an /api/print/labels; geprüft wird der jüngste.
+// Das PDF kommt vom Server, der Vermerk wird abgefangen: Kein Exemplar bekommt ihn.
+
+/**
+ * Fängt die Aufträge an /api/print/labels mit, das PDF liefert der Server.
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<() => string[] | undefined>} die Nummern des jüngsten Auftrags
+ */
+async function juengsterAuftrag(page) {
+	/** @type {any[]} */
+	const auftraege = [];
+	await page.route('**/api/print/labels', async (route) => {
+		auftraege.push(route.request().postDataJSON());
+		await route.fulfill({ response: await route.fetch() });
+	});
+	return () => auftraege.at(-1)?.items.map((/** @type {any} */ i) => i.BarcodeID);
+}
 /** @type {(() => void) | undefined} */
 let aufraeumen;
 test.afterEach(() => {
@@ -31,14 +46,9 @@ test('Etiketten: ein abgewähltes Exemplar steht weder in der Vorschau noch im D
 		WHERE t.titel = '${titel}';
 	`);
 
-	/** @type {any} */
-	let druckauftrag;
+	const zuletzt = await juengsterAuftrag(page);
 	/** @type {any} */
 	let vermerk;
-	await page.route('**/api/print/labels', async (route) => {
-		druckauftrag = route.request().postDataJSON();
-		await route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4 Probe' });
-	});
 	await page.route('**/api/exemplare/etiketten-gedruckt', async (route) => {
 		vermerk = route.request().postDataJSON();
 		await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
@@ -50,24 +60,19 @@ test('Etiketten: ein abgewähltes Exemplar steht weder in der Vorschau noch im D
 	await page.getByRole('button', { name: new RegExp(titel) }).click();
 	await expect(page.getByText('Exemplare auswählen: 3 von 3')).toBeVisible();
 
-	// Ein Etikett der Vorschau ist 42,3 × 25,4 mm; die Nummer steht darauf.
-	const etiketten = page.locator('div[style*="42.3mm"][style*="25.4mm"]');
-	await expect(etiketten).toHaveCount(3);
+	await expect.poll(zuletzt).toEqual([nummer(1), nummer(2), nummer(3)]);
+	await expect(page.getByRole('img', { name: 'Erster Bogen, wie er gedruckt wird' })).toBeVisible();
 
 	await page
 		.locator('label', { hasText: nummer(2) })
 		.getByRole('checkbox')
 		.uncheck();
 	await expect(page.getByText('Exemplare auswählen: 2 von 3')).toBeVisible();
-	await expect(etiketten).toHaveCount(2);
-	await expect(etiketten.filter({ hasText: nummer(2) })).toHaveCount(0);
+	await expect.poll(zuletzt).toEqual([nummer(1), nummer(3)]);
 
 	await page.getByRole('button', { name: 'A4-Bogen drucken' }).click();
 	await expect.poll(() => vermerk?.barcode_ids).toEqual([nummer(1), nummer(3)]);
-	expect(druckauftrag.items.map((/** @type {any} */ i) => i.BarcodeID)).toEqual([
-		nummer(1),
-		nummer(3)
-	]);
+	expect(zuletzt()).toEqual([nummer(1), nummer(3)]);
 });
 
 // Über der Liste steht ein Kästchen für alle und, sobald die Liste länger ist als ihr Kasten,
@@ -96,12 +101,7 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 		WHERE t.titel = '${titel}';
 	`);
 
-	/** @type {any} */
-	let druckauftrag;
-	await page.route('**/api/print/labels', async (route) => {
-		druckauftrag = route.request().postDataJSON();
-		await route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4 Probe' });
-	});
+	const zuletzt = await juengsterAuftrag(page);
 	await page.route('**/api/exemplare/etiketten-gedruckt', (route) =>
 		route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
 	);
@@ -111,21 +111,20 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 	await page.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' }).fill(titel);
 	await page.getByRole('button', { name: new RegExp(titel) }).click();
 
-	const etiketten = page.locator('div[style*="42.3mm"][style*="25.4mm"]');
 	const alle = page.getByRole('checkbox', { name: 'Alle 8 Exemplare' });
 	const feld = page.getByRole('searchbox', { name: 'Exemplar nach Nummer suchen' });
 
 	// Acht im Bestand, alle vorgehakt; das ausgesonderte fehlt in Liste und Vorschau.
 	await expect(page.getByText('Exemplare auswählen: 8 von 8')).toBeVisible();
 	await expect(alle).toBeChecked();
-	await expect(etiketten).toHaveCount(8);
+	await expect.poll(zuletzt).toEqual([1, 2, 3, 4, 5, 6, 7, 8].map(nummer));
 	await expect(page.getByText(ausgesondert)).toHaveCount(0);
 	await expect(page.getByText('1 ausgesondertes Exemplar steht nicht in der Liste.')).toBeVisible();
 
 	// Ein Klick nimmt alle vom Bogen; ohne Etikett gibt es nichts zu drucken.
 	await alle.uncheck();
 	await expect(page.getByText('Exemplare auswählen: 0 von 8')).toBeVisible();
-	await expect(etiketten).toHaveCount(0);
+	await expect(page.getByText('Keine Etiketten gewählt')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'A4-Bogen drucken' })).toBeDisabled();
 
 	// Die Nummer, klein getippt wie von Hand, und die Eingabetaste: genau dieses Exemplar.
@@ -135,8 +134,7 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 	await page.keyboard.press('Enter');
 	await expect(feld).toHaveValue('');
 	await expect(page.getByText('Exemplare auswählen: 1 von 8')).toBeVisible();
-	await expect(etiketten).toHaveCount(1);
-	await expect(etiketten.filter({ hasText: nummer(5) })).toHaveCount(1);
+	await expect.poll(zuletzt).toEqual([nummer(5)]);
 	await expect(alle).toHaveJSProperty('indeterminate', true);
 
 	// Eine Nummer, die nicht zu diesem Titel gehört, wählt nichts und bleibt stehen.
@@ -145,14 +143,12 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 	await expect(
 		page.getByText(`Kein Exemplar dieses Titels passt zu „${ausgesondert}“.`)
 	).toBeVisible();
-	await expect(etiketten).toHaveCount(1);
+	await expect(page.getByText('Exemplare auswählen: 1 von 8')).toBeVisible();
 	await feld.fill('');
 
 	// Das Kästchen mit dem Strich wählt wieder alle; gedruckt wird ohne das ausgesonderte.
 	await alle.check();
-	await expect(etiketten).toHaveCount(8);
+	await expect.poll(zuletzt).toEqual([1, 2, 3, 4, 5, 6, 7, 8].map(nummer));
 	await page.getByRole('button', { name: 'A4-Bogen drucken' }).click();
-	await expect
-		.poll(() => druckauftrag?.items.map((/** @type {any} */ i) => i.BarcodeID))
-		.toEqual([1, 2, 3, 4, 5, 6, 7, 8].map(nummer));
+	await expect.poll(zuletzt).toEqual([1, 2, 3, 4, 5, 6, 7, 8].map(nummer));
 });

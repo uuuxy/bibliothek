@@ -2095,6 +2095,14 @@ nichts über die Kante eines Etiketts reicht und nichts übereinanderliegt, prü
 `TestBuchEtikett_NichtsReichtUeberSeineKante` an den Koordinaten im Inhaltsstrom: Eine Nummer auf
 dem Etikett darunter ergibt dasselbe PDF mit denselben Texten.
 
+**Die Vorschau im Druck-Center ist das Druck-PDF.** Sie schickt für den ersten Bogen denselben
+Auftrag wie der Druck (`sendeBogen` in `frontend/src/lib/components/etiketten/etikettenDruck.js`)
+und zeigt dessen erste Seite. Gezeichnet wird sie von pdf.js (`pdfjs-dist`, die PDF-Anzeige von
+Firefox) in `etiketten/pdfSeite.js`, geladen erst, wenn eine Vorschau gebraucht wird. Eine eigene
+Zeichnung im Browser lief auseinander, ihr fehlten Schulname, Jahr und Vermerk; deshalb kennt der
+Browser weder Aufbau noch Maße der Etiketten. pdf.js 6 übersetzt nichts mit eval, die
+Content-Security-Policy bleibt, wie sie ist.
+
 **Ein PDF geht im Tab auf, nicht in den Download-Ordner.** Ein Download bliebe auf dem
 Arbeitsplatz liegen, auch für den Nächsten am Rechner. Die Oberfläche zeigt ein PDF über
 `zeigePdf` (`frontend/src/lib/utils/pdfImFenster.js`): Der Tab geht beim Klick auf, vor der Anfrage.

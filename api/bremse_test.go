@@ -50,8 +50,8 @@ func schickeNAnfragen(t *testing.T, path string, n int) (blocked int) {
 	return blocked
 }
 
-// Regressionstest für die 429-Flut der Etiketten-Vorschau: ein A4-Bogen rendert
-// dutzende <img src="/api/barcode…"> gleichzeitig. /api/barcode muss — wie
+// Regressionstest für die 429-Flut der Strichcode-Bilder: Der Stapeldruck der Ausweise einer
+// Klasse rendert dutzende <img src="/api/barcode…"> gleichzeitig. /api/barcode muss — wie
 // /api/images/cover — vom Bucket ausgenommen sein, sonst blockiert ein einziger
 // Seitenaufruf einen Teil seiner eigenen Barcodes.
 func TestAnfrageBremse_BarcodeSalveIstAusgenommen(t *testing.T) {

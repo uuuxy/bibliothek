@@ -33,7 +33,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (5.110)
 - [ ] Vorschlag von Jules prüfen: #762 (Abfrage des Bestellverlaufs). Übernommen wird, was am
   alten Stand einen Fehler zeigt. (5.111)
-- [ ] Etikettenvorschau: Sie zeigt, was gedruckt wird; das QR-Etikett bekommt Schulname, Jahr und
+- [x] Etikettenvorschau: Sie zeigt, was gedruckt wird; das QR-Etikett bekommt Schulname, Jahr und
   Vermerk; der Hilfsrahmen wirkt oder entfällt. (5.114)
 - [x] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
   Lauf lässt sich löschen. (5.112)
@@ -112,26 +112,6 @@ braucht jeweils das Doppelte. Verkleinert wurde die Datei für die Grenze des Of
 4b369ba7) trägt ein eingezeichnetes Schachbrettmuster; das Logo darin ist rund 1000 Pixel breit.
 Nächster Schritt: das Logo als SVG oder aus dem Original freigestellt als PNG; beides bleibt weit
 unter der Grenze.
-
-### 5.114 Etikettenvorschau zeigt nicht, was gedruckt wird
-
-Die Vorschau im Druck-Center (`frontend/src/lib/components/etiketten/EtikettVorschau.svelte`) ist
-eine eigene Zeichnung im Browser; aufs Papier kommt das PDF des Servers (`pdf/etikett_buch.go`).
-Beim Strichcode-Etikett fehlen ihr Schulname, „Ansch.J. · Signatur", „Exemplar-Nr.:" und der
-Eigentumsvermerk; sie zeigt den Autor, den der Druck nicht setzt, und einen Rahmen, den er nie
-druckt. Der Browser schickt nur Nummer, Titel und Autor
-(`frontend/src/lib/components/etiketten/etikettenDruck.js`); Schulname, Jahr und Vermerk setzt der
-Server. Kein Test vergleicht beide. Außerdem:
-
-- „Hilfsrahmen auf dem Etikett zeichnen" wirkt nur in der Vorschau: `mitRahmen` geht nicht an den
-  Server.
-- Das QR-Etikett (`zeichneQREtikett`) druckt nur Titel, Autor, Code und Nummer, ohne Schulname,
-  Jahr und Vermerk (4.24).
-- Auf „Standard 52" fallen Jahr mit Signatur und der Vermerk absichtlich weg; die Vorschau zeigt
-  das nicht.
-
-Nächster Schritt: Die Vorschau zeigt das Druck-PDF selbst statt einer zweiten Zeichnung. Beim Bau
-entscheiden, ob der Hilfsrahmen an den Druck geht oder entfällt.
 
 ### 7.2 Frisches Littera-Backup
 

@@ -271,8 +271,11 @@ Zahl steht als Badge in der Navigation) · **Schülerausweise** (Designer für V
 Rückseite; bis zur gestrichelten Linie druckt der Kartendrucker sicher, Text, Bilder und
 Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand) · **Klassenweise drucken**
 (Ausweise für eine ganze Klasse). Der Druck läuft
-über den Browser-Druckdialog. Die Vorschau der Buch-Etiketten zeigt den ersten Bogen; darunter
-steht, wie viele es werden („Bogen 1 von 3 · 68 Etiketten"). (§9)
+über den Browser-Druckdialog. Die Vorschau der Buch-Etiketten ist das Druck-PDF selbst und zeigt
+den ersten Bogen, genau wie er gedruckt wird; darunter steht, wie viele es werden („Bogen 1 von 3
+· 68 Etiketten"). Mit Strichcode wie mit QR-Code trägt jedes Etikett Schulname, Titel, Jahr und
+Signatur, Nummer und Eigentumsvermerk; auf dem kleinen Bogen „Standard 52“ entfallen Jahr und
+Vermerk. (§9)
 
 ## Klassensätze
 

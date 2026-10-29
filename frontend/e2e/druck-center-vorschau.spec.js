@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix, gehZu, navigationSteht } from './helpers.js';
 
-// Das Vorschaublatt der Buch-Etiketten ist in echten Millimetern gezeichnet (140 mm breit) und
+// Das Vorschaublatt der Buch-Etiketten ist die erste Seite des Druck-PDFs, 140 mm breit, und
 // steht in der schmaleren der zwei Spalten. Wo die Spalte schmaler ist als das Blatt, wird es
 // als Ganzes verkleinert: Es bleibt in seiner Spalte, verdeckt kein Feld der Einstellungen
 // daneben und macht den Bereich nicht seitlich rollbar. Wo Platz ist, bleibt es in voller Größe.
@@ -29,6 +29,10 @@ test('Druck-Center: Das Vorschaublatt bleibt in seiner Spalte', async ({ page })
 		await page.getByRole('button', { name: new RegExp(`E2E Vorschau ${s}`) }).click();
 		const blatt = page.getByTestId('etiketten-blatt');
 		await expect(blatt).toBeVisible();
+		// Das Blatt ist ein Bild, das pdf.js aus dem PDF des Servers gezeichnet hat.
+		expect(
+			await blatt.evaluate((el) => /** @type {HTMLImageElement} */ (el).naturalWidth)
+		).toBeGreaterThan(500);
 
 		for (const breite of [1024, 1280, 1440, 1920]) {
 			await test.step(`Fenster ${breite} px`, async () => {

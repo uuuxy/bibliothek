@@ -4,6 +4,7 @@ import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { zeigePdf, PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
+import { startfeldAufBogen } from './etikettformate.js';
 
 /** @typedef {{ barcode_id?: string, titel?: string, autor?: string }} DruckEtikett */
 /** @typedef {{ formatId: string, startFeld: number, alsQR: boolean }} DruckBogen */
@@ -43,14 +44,18 @@ async function vermerkeGedruckt(gedruckt) {
 	);
 }
 
-/** @param {DruckBogen} bogen @param {DruckEtikett[]} etiketten */
-function sendeBogen(bogen, etiketten) {
+/**
+ * Der Auftrag an den Server für das PDF des Bogens. Die Vorschau schickt denselben Auftrag, damit
+ * sie das Blatt zeigt, das gedruckt wird.
+ * @param {DruckBogen} bogen @param {DruckEtikett[]} etiketten
+ */
+export function sendeBogen(bogen, etiketten) {
 	return apiFetch('/api/print/labels', {
 		method: 'POST',
 		headers: JSON_KOPF,
 		body: JSON.stringify({
 			formatId: bogen.formatId,
-			startPosition: bogen.startFeld,
+			startPosition: startfeldAufBogen(bogen.startFeld, bogen.formatId),
 			isQR: bogen.alsQR,
 			items: etiketten.map((l) => ({ BarcodeID: l.barcode_id, Titel: l.titel, Autor: l.autor }))
 		})

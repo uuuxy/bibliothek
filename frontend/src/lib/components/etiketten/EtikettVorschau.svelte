@@ -1,27 +1,75 @@
 <script>
-	import { strichcodeBildUrl } from '../../utils/strichcodeBild.js';
 	import { etikettFormat } from './etikettformate.js';
+	import { sendeBogen } from './etikettenDruck.js';
+	import { ersteSeiteAlsBild } from './pdfSeite.js';
 	import { etikettenStore } from '../../stores/etiketten.svelte.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
+	import { leseApiFehler } from '../../apiFetch.js';
+	import { fehlertext } from '../../utils/fehlertext.js';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 
-	// Das Blatt ist in echten Millimetern gezeichnet, zwei Drittel von A4. Ist die Spalte
-	// schmaler, wird es als Ganzes verkleinert (wie designer/VorlageMiniatur); die Hülle nimmt
-	// die verkleinerte Größe ein, damit das Blatt nichts neben sich verdeckt.
-	const BLATT_BREITE_MM = 140;
-	const PX_JE_MM = 96 / 25.4;
-	// Raster und Ränder kommen aus dem gewählten Format, gedruckt wird nach denselben Zahlen
-	// (pdf/etikett_formate.go). Die Spalten dürfen schmaler werden als ihr Maß: Drei Etiketten
-	// von 70 mm füllen das Blatt ganz, und sein Rahmen nimmt ihnen zwei Pixel.
+	// Die Vorschau ist das Druck-PDF des Servers, wie bei Chrome: Eine eigene Zeichnung im Browser
+	// lief auseinander, ihr fehlten Schulname, Jahr und Vermerk (docs/OFFEN.md 5.114). Gezeigt wird
+	// die erste Seite in zwei Dritteln von A4, in einer schmaleren Spalte verkleinert; alle Bogen
+	// zeigt das PDF, das „A4-Bogen drucken" öffnet.
+	const HOECHSTBREITE_PX = (140 * 96) / 25.4;
+	// Wer Kästchen anklickt oder die Startposition tippt, löst nicht für jeden Schritt ein PDF aus.
+	const WARTEZEIT_MS = 300;
+
 	const format = $derived(etikettFormat(etikettenStore.formatId));
-	const mm = (/** @type {number} */ wert) => `${Math.floor(((wert * 2) / 3) * 10) / 10}mm`;
-	let platz = $state(0);
-	let blattHoehe = $state(0);
-	const massstab = $derived(platz > 0 ? Math.min(1, platz / (BLATT_BREITE_MM * PX_JE_MM)) : 1);
-	// Gezeichnet wird der erste Bogen: Format, Rahmen und Startposition stehen darauf. Alle
-	// Bogen zeigt die PDF, die „A4-Bogen drucken" in einem neuen Tab öffnet.
-	const ersterBogen = $derived(etikettenStore.bogen.slice(0, etikettenStore.felderJeBogen));
+	const ersterBogen = $derived(
+		etikettenStore.bogen.slice(0, etikettenStore.felderJeBogen).filter((lbl) => !lbl.isBlank)
+	);
 	const bogenZahl = $derived(Math.ceil(etikettenStore.bogen.length / etikettenStore.felderJeBogen));
 	const etikettenZahl = $derived(etikettenStore.bogen.filter((lbl) => !lbl.isBlank).length);
+
+	let bild = $state('');
+	let laedt = $state(false);
+	let fehler = $state('');
+	let versuch = $state(0);
+
+	$effect(() => {
+		const bogen = {
+			formatId: etikettenStore.formatId,
+			startFeld: etikettenStore.startFeld,
+			alsQR: etikettenStore.barcodeArt === 'qr'
+		};
+		const etiketten = ersterBogen.map(({ barcode_id, titel, autor }) => ({
+			barcode_id,
+			titel,
+			autor
+		}));
+		void versuch;
+		if (etiketten.length === 0) return;
+		// Nur die Antwort auf die jüngste Auswahl zählt; eine langsamere ältere zeigte sonst den
+		// Bogen von vorhin.
+		let veraltet = false;
+		const zeitgeber = setTimeout(async () => {
+			laedt = true;
+			try {
+				const antwort = await sendeBogen(bogen, etiketten);
+				if (!antwort.ok) throw new Error(await leseApiFehler(antwort));
+				const neu = await ersteSeiteAlsBild(await antwort.arrayBuffer(), HOECHSTBREITE_PX);
+				if (veraltet) return;
+				if (bild) URL.revokeObjectURL(bild);
+				bild = URL.createObjectURL(neu);
+				fehler = '';
+			} catch (err) {
+				if (!veraltet) fehler = fehlertext(err);
+			} finally {
+				if (!veraltet) laedt = false;
+			}
+		}, WARTEZEIT_MS);
+		return () => {
+			veraltet = true;
+			clearTimeout(zeitgeber);
+		};
+	});
+
+	$effect(() => () => {
+		if (bild) URL.revokeObjectURL(bild);
+	});
 </script>
 
 <!-- Die Vorschau bekommt die kleinere Hälfte (5 von 12): Die Arbeit geschieht im Formular
@@ -49,76 +97,27 @@
 			>
 		</div>
 	{:else}
-		<!-- Die Zeile misst den Platz der Spalte, die Hülle darin ist so groß wie das verkleinerte
-		     Blatt. -->
-		<div class="flex w-full justify-center" bind:clientWidth={platz}>
-			<div style="width: {BLATT_BREITE_MM * massstab}mm; height: {blattHoehe * massstab}px;">
-				<div
-					bind:clientHeight={blattHoehe}
-					data-testid="etiketten-blatt"
-					class="schema-hell bg-surface-container-lowest border border-outline-variant shadow-2xl relative flex origin-top-left flex-col items-start select-none"
-					style="width: {BLATT_BREITE_MM}mm; min-height: 198mm; padding: {mm(format.randOben)} {mm(
-						format.randLinks
-					)} 0; box-sizing: border-box; transform: scale({massstab});"
-				>
-					<div
-						style="display: grid; grid-template-columns: repeat({format.spalten}, minmax(0, {mm(
-							format.breite
-						)})); column-gap: {mm(format.abstandX)}; row-gap: {mm(format.abstandY)}; width: 100%;"
-					>
-						{#each ersterBogen as lbl, _i (_i)}
-							{#if lbl.isBlank}
-								<!-- Blank Label placeholder representation -->
-								<div
-									class="border border-dashed border-outline-variant bg-surface flex items-center justify-center"
-									style="width: {mm(format.breite)}; max-width: 100%; height: {mm(format.hoehe)};"
-								>
-									<span class="text-[6px] text-on-surface-variant tracking-wider font-bold"
-										>LEER</span
-									>
-								</div>
-							{:else}
-								<div
-									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between"
-									style="width: {mm(format.breite)}; max-width: 100%; height: {mm(
-										format.hoehe
-									)}; padding: 1.5mm; font-size: 5px; box-sizing: border-box;"
-								>
-									<div
-										class="font-extrabold text-on-surface title-clamp tracking-tight mb-0.5"
-										style="font-size: 5.5px; line-height: 1.1;"
-									>
-										{lbl.titel}
-									</div>
-									<div
-										class="text-on-surface-variant author-clamp"
-										style="font-size: 5px; line-height: 1.1;"
-									>
-										{lbl.autor || 'Unbekannt'}
-									</div>
-									<div class="flex flex-col items-center justify-center grow pt-0.5">
-										<img
-											src={strichcodeBildUrl(lbl.barcode_id, {
-												qr: etikettenStore.barcodeArt === 'qr',
-												width: 150,
-												height: 50
-											})}
-											class="{etikettenStore.barcodeArt === 'qr'
-												? 'h-6 w-6'
-												: 'h-4 w-full'} object-contain"
-											alt="Barcode"
-										/>
-										<span
-											class="mt-0.5 font-bold tracking-widest text-on-surface-variant"
-											style="font-size: 4.5px;">{lbl.barcode_id}</span
-										>
-									</div>
-								</div>
-							{/if}
-						{/each}
-					</div>
+		<div class="flex w-full justify-center">
+			{#if fehler}
+				<LadeFehler titel="Vorschau nicht geladen" text={fehler} onerneut={() => (versuch += 1)} />
+			{:else if bild}
+				<!-- Hell auch im dunklen Design: Die Vorschau zeigt Papier. Zeichnet der Server neu,
+				     bleibt der alte Bogen abgeblendet stehen, darüber der Ladekreis (M3, Progress
+				     indicators: 200 ms bis 5 s „Use a loading indicator"). -->
+				<div class="relative w-full" style="max-width: {HOECHSTBREITE_PX}px;">
+					<img
+						src={bild}
+						alt="Erster Bogen, wie er gedruckt wird"
+						data-testid="etiketten-blatt"
+						class="schema-hell w-full shadow-2xl transition-opacity {laedt ? 'opacity-60' : ''}"
+					/>
+					{#if laedt}
+						<div class="absolute inset-0 flex items-center justify-center"><Ladekreis /></div>
+					{/if}
 				</div>
-			</div>
+			{:else}
+				<div class="py-12"><Ladekreis /></div>
+			{/if}
 		</div>
 		{#if bogenZahl > 1}
 			<p class="mt-4 text-xs font-medium text-on-surface-variant">
@@ -127,29 +126,3 @@
 		{/if}
 	{/if}
 </div>
-
-<style>
-	/* 
-    LINE-CLAMPING LOGIK FÜR EXTREM LANGE BUCHTITEL & AUTOREN:
-    - title-clamp: Begrenzt lange Buchtitel auf maximal 2 Zeilen.
-      Schneidet den Text mit '...' ab, um den Barcode/QR-Code nicht zu verschieben.
-    - author-clamp: Begrenzt Autorennamen auf maximal 1 Zeile.
-  */
-	.title-clamp {
-		display: -webkit-box;
-		-webkit-line-clamp: 2; /* Maximal 2 Zeilen anzeigen */
-		line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		word-break: break-word;
-	}
-
-	.author-clamp {
-		display: -webkit-box;
-		-webkit-line-clamp: 1; /* Maximal 1 Zeile anzeigen */
-		line-clamp: 1;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		word-break: break-word;
-	}
-</style>

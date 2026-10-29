@@ -23,11 +23,10 @@ func anfrageBremse(jeSekunde int) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Bilder und Uploads sind ausgenommen, weil ein Seitenaufruf oft Dutzende Bilder
-			// gleichzeitig lädt. /api/barcode gehört in dieselbe Klasse: Die Vorschau der
-			// Etiketten (EtikettVorschau.svelte) zeichnet einen ganzen A4-Bogen (52 Etiketten) und
-			// ruft je Etikett ein <img src="/api/barcode…"> fast gleichzeitig ab; das sprengte
-			// die 50 Anfragen je Sekunde und lieferte 429 (angemeldet, view_books, kleine
-			// PNGs). Der Browser legt die Bilder nicht ab
+			// gleichzeitig lädt. /api/barcode gehört in dieselbe Klasse: Der Stapeldruck der
+			// Ausweise einer Klasse (designer/Druckvorschau.svelte, je Leser eine Kartenseite) ruft
+			// je Karte ein <img src="/api/barcode…"> fast gleichzeitig ab; mit Bremse käme ein Teil
+			// davon als 429 zurück. Der Browser legt die Bilder nicht ab
 			// (internal/middleware/sicherheitskopfzeilen.go), jeder Seitenaufruf holt sie neu.
 			// Der Pfad muss genau passen, damit /api/barcode/next (JSON) gebremst bleibt.
 			// /events (SSE) ist eine lange Verbindung, die sonst bei jedem neuen Aufbau vom

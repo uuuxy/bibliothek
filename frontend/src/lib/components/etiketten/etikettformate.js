@@ -12,12 +12,10 @@
 
 /**
  * `label` steht in der Auswahlliste, `kurz` dort, wo nur der Bogenname hingehört
- * (Vorschau-Überschrift) — sonst schreibt jemand die Namen ein zweites Mal hin.
+ * (Vorschau-Überschrift) — sonst schreibt jemand die Namen ein zweites Mal hin. Die Maße in
+ * Millimetern kennt nur der Server: Die Vorschau zeigt sein Druck-PDF.
  *
- * Die Maße in Millimetern (Etikett, Rand des Blatts, Abstand zwischen den Etiketten) braucht
- * die Vorschau des Druck-Centers, damit sie den gewählten Bogen zeichnet.
- *
- * @typedef {{ value: string, label: string, kurz: string, spalten: number, zeilen: number, breite: number, hoehe: number, randOben: number, randLinks: number, abstandX: number, abstandY: number }} EtikettFormat
+ * @typedef {{ value: string, label: string, kurz: string, spalten: number, zeilen: number }} EtikettFormat
  * @type {EtikettFormat[]}
  */
 export const ETIKETT_FORMATE = [
@@ -26,45 +24,27 @@ export const ETIKETT_FORMATE = [
 		label: 'Zweckform L4760 (3x7, 21 Etiketten)',
 		kurz: 'Zweckform L4760',
 		spalten: 3,
-		zeilen: 7,
-		breite: 63.5,
-		hoehe: 38.1,
-		randOben: 15.1,
-		randLinks: 7.2,
-		abstandX: 2.5,
-		abstandY: 0
+		zeilen: 7
 	},
 	{
 		value: 'avery_3475',
 		label: 'Avery 3475 (3x8, 24 Etiketten)',
 		kurz: 'Avery 3475',
 		spalten: 3,
-		zeilen: 8,
-		breite: 70,
-		hoehe: 37,
-		randOben: 0.5,
-		randLinks: 0,
-		abstandX: 0,
-		abstandY: 0
+		zeilen: 8
 	},
 	{
 		value: 'standard_52',
 		label: 'Kleine Barcodes (4x13, 52 Etiketten)',
 		kurz: 'Standard 52',
 		spalten: 4,
-		zeilen: 13,
-		breite: 48.3,
-		hoehe: 21.2,
-		randOben: 10.7,
-		randLinks: 3.4,
-		abstandX: 0,
-		abstandY: 0
+		zeilen: 13
 	}
 ];
 
 /**
- * Das Format zu einer Kennung. Unbekanntes liefert den ersten Eintrag, damit Überschrift,
- * Startposition und Vorschau bedienbar bleiben.
+ * Das Format zu einer Kennung. Unbekanntes liefert den ersten Eintrag, damit Überschrift und
+ * Startposition bedienbar bleiben.
  *
  * @param {string} formatId
  * @returns {EtikettFormat}
@@ -86,4 +66,17 @@ export function etikettFormat(formatId) {
 export function felderProBogen(formatId) {
 	const format = etikettFormat(formatId);
 	return format.spalten * format.zeilen;
+}
+
+/**
+ * Die Startposition, mit der gedruckt wird: zwischen dem ersten und dem letzten Feld des Bogens.
+ * Das Eingabefeld nimmt auch eine größere Zahl an; ohne Grenze zählten Vorschau und Druck die
+ * Felder verschieden.
+ *
+ * @param {number} startFeld
+ * @param {string} formatId
+ * @returns {number}
+ */
+export function startfeldAufBogen(startFeld, formatId) {
+	return Math.min(Math.max(1, Math.trunc(Number(startFeld)) || 1), felderProBogen(formatId));
 }

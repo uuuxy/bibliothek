@@ -2,7 +2,7 @@
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
 import { apiFetch, leseApiFehler } from '../apiFetch.js';
-import { felderProBogen } from '../components/etiketten/etikettformate.js';
+import { felderProBogen, startfeldAufBogen } from '../components/etiketten/etikettformate.js';
 import { druckWarteschlange, leereDruckwarteschlange } from './druckWarteschlange.svelte.js';
 import { snackbars } from './snackbars.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
@@ -67,7 +67,7 @@ function erzeugeEtikettenStore() {
 
 	/** @type {Array<{isBlank?: boolean, barcode_id?: string, titel?: string, autor?: string}>} */
 	let bogen = $derived.by(() => {
-		const offsetCount = Math.max(0, startFeld - 1);
+		const offsetCount = startfeldAufBogen(startFeld, formatId) - 1;
 		const leereFelder = Array.from({ length: offsetCount }, () => ({ isBlank: true }));
 		if ((druckWarteschlange.copies?.length ?? 0) > 0) {
 			const copies = /** @type {any[]} */ (druckWarteschlange.copies);

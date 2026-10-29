@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { ETIKETT_FORMATE, felderProBogen } from './components/etiketten/etikettformate.js';
+import {
+	ETIKETT_FORMATE,
+	felderProBogen,
+	startfeldAufBogen
+} from './components/etiketten/etikettformate.js';
 import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 
 // Die Etikettenraster stehen an mehreren Stellen — und das ist genau die Bauform, die in
@@ -25,19 +29,9 @@ const repoRoot = join(libDir, '..', '..', '..');
 
 const goQuelle = readFileSync(join(repoRoot, 'pdf', 'etikett_formate.go'), 'utf8');
 
-// Die sechs Maße eines Bogens in Millimetern: Feld in Go, Feld in etikettformate.js.
-const MASSE = /** @type {const} */ ([
-	['Breite', 'breite'],
-	['Hoehe', 'hoehe'],
-	['RandOben', 'randOben'],
-	['RandLinks', 'randLinks'],
-	['AbstandX', 'abstandX'],
-	['AbstandY', 'abstandY']
-]);
-
 /**
- * Liest die Formate aus pdf/etikett_formate.go: ID, Spalten, Zeilen und die Maße.
- * @returns {{id: string, cols: number, rows: number, masse: Record<string, number>}[]}
+ * Liest die Formate aus pdf/etikett_formate.go: ID, Spalten und Zeilen.
+ * @returns {{id: string, cols: number, rows: number}[]}
  */
 function formateAusGo() {
 	const out = [];
@@ -48,13 +42,7 @@ function formateAusGo() {
 		const [, id, rumpf] = m;
 		const cols = rumpf.match(/Spalten:\s*(\d+)/);
 		const rows = rumpf.match(/Zeilen:\s*(\d+)/);
-		/** @type {Record<string, number>} */
-		const masse = {};
-		for (const [goFeld] of MASSE) {
-			const wert = rumpf.match(new RegExp(`${goFeld}:\\s*([0-9.]+)`));
-			if (wert) masse[goFeld] = Number(wert[1]);
-		}
-		if (cols && rows) out.push({ id, cols: Number(cols[1]), rows: Number(rows[1]), masse });
+		if (cols && rows) out.push({ id, cols: Number(cols[1]), rows: Number(rows[1]) });
 	}
 	return out;
 }
@@ -99,23 +87,21 @@ describe('Etikettenformate: Go-Liste und Oberfläche', () => {
 		}
 	});
 
-	it('die Maße in Millimetern stimmen mit dem Backend überein', () => {
-		// Die Vorschau zeichnet den Bogen aus diesen Zahlen, gedruckt wird nach der Go-Liste.
-		for (const f of goFormate) {
-			const e = /** @type {Record<string, any>} */ (ETIKETT_FORMATE.find((x) => x.value === f.id));
-			expect(Object.keys(f.masse), `Maße von ${f.id} in der Go-Datei`).toHaveLength(MASSE.length);
-			for (const [goFeld, feld] of MASSE) {
-				expect(e[feld], `${feld} von ${f.id}`).toBe(f.masse[goFeld]);
-			}
-		}
-	});
-
 	it('felderProBogen liefert Spalten × Zeilen — auch für Unbekanntes eine bedienbare Zahl', () => {
 		// Die Zahl ist das max des Startpositionsfeldes. Eine 0 machte es unbedienbar.
 		for (const f of goFormate) {
 			expect(felderProBogen(f.id), `felderProBogen('${f.id}')`).toBe(f.cols * f.rows);
 		}
 		expect(felderProBogen('gibt-es-nicht')).toBeGreaterThan(0);
+	});
+
+	it('startfeldAufBogen hält die Startposition zwischen erstem und letztem Feld', () => {
+		// Druck und Vorschau zählen mit diesem Wert; eine Zahl hinter dem letzten Feld setzte der
+		// Server sonst auf ein anderes Feld, als der Browser den Bogen zählt.
+		expect(startfeldAufBogen(30, 'zweckform_l4760')).toBe(21);
+		expect(startfeldAufBogen(30, 'standard_52')).toBe(30);
+		expect(startfeldAufBogen(0, 'avery_3475')).toBe(1);
+		expect(startfeldAufBogen(Number(''), 'avery_3475')).toBe(1);
 	});
 
 	it('keine zweite Formatliste im Frontend', () => {
