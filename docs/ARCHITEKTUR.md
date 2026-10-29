@@ -43,7 +43,7 @@ Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
 | 6   | [Laufzeitsicht](#6-laufzeitsicht)                                       | Zehn Szenarien im Ablauf — Scan, Login, Offline, Nachtlauf, Shutdown …            |
 | 7   | [Verteilungssicht](#7-verteilungssicht)                                 | Container, Volumes, Ports, Reverse Proxy, CI/CD-Wege                              |
 | 8   | [Querschnittliche Konzepte](#8-querschnittliche-konzepte)               | Sicherheit, Datenschutz, Persistenz, Nebenläufigkeit, Zeit, Fehler, Test …        |
-| 9   | [Architekturentscheidungen](#9-architekturentscheidungen)               | 26 Entscheidungen als ADR: Stand, Grund, Folge, Fundstelle                        |
+| 9   | [Architekturentscheidungen](#9-architekturentscheidungen)               | Die Entscheidungen als ADR: Stand, Grund, Folge, Fundstelle                       |
 | 10  | [Qualitätsanforderungen](#10-qualitätsanforderungen)                    | Qualitätsbaum und messbare Szenarien samt zugehörigem Gate                        |
 | 11  | [Risiken und technische Schulden](#11-risiken-und-technische-schulden)   | Was heute weh tut oder morgen weh tun wird — mit Einschätzung                     |
 | 12  | [Glossar](#12-glossar)                                                   | Die Fachsprache des Hauses, deutsch, mit Code-Bezug                               |
@@ -1504,13 +1504,14 @@ Stand: 29.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 | Stufe                    | Basis                  | Erzeugnis                                                                                                          |
 | ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | 1 `frontend-builder`     | `node:26-alpine`       | `npm ci` (Lockfile verbindlich) → `npm run build` → `frontend/dist`                                                |
-| 2 `backend-builder`      | `golang:1.27.3-alpine` | `main` mit **CGO_ENABLED=1** (WebP), dazu `rotate-encryption-key`, `restore-backup`, `encrypt-backup` mit **CGO_ENABLED=0** |
-| 3 Laufzeit               | `alpine:3.24`          | `apk upgrade` + `ca-certificates`, `tzdata`, **`postgresql18-client`**; Binaries, `schema.sql`, `migrations/`, `frontend/dist`; `USER appuser`; `EXPOSE 8081`; `HEALTHCHECK` auf `/health`; `CMD ["./main"]` |
+| 2 `backend-builder`      | `golang:1.27.3-alpine` | `main` mit **CGO_ENABLED=1** (WebP), dazu `rotate-encryption-key`, `restore-backup`, `encrypt-backup` und `littera-altbestand` mit **CGO_ENABLED=0** |
+| 3 Laufzeit               | `alpine:3.24`          | `apk upgrade` + `ca-certificates`, `tzdata`, **`postgresql18-client`**, `mdbtools-utils`; Binaries, `schema.sql`, `migrations/`, `frontend/dist`; `USER appuser`; `EXPOSE 8081`; `HEALTHCHECK` auf `/health`; `CMD ["./main"]` |
 
 **Warum die Werkzeuge mit ins Image gehören:** Der Schulserver hat kein Go. Ein
 Wiederherstellungswerkzeug, das man genau dort nicht starten kann, wo man es braucht, ist
 keines. Deshalb liegen
-`restore-backup`, `encrypt-backup` und `rotate-encryption-key` im Image,
+`restore-backup`, `encrypt-backup` und `rotate-encryption-key` im Image, für die einmalige
+Übernahme aus Littera auch `littera-altbestand` und `mdb-export` (aus `mdbtools-utils`),
 und ein Gate (`docs/werkzeuge_im_image_test.go`) hält die Anleitungen damit deckungsgleich.
 
 **Warum die Go-Version patch-genau gepinnt ist:** CVE-Fixes stecken in
@@ -1612,7 +1613,7 @@ täglich 02:30  pg_dump → gzip → AES-256-GCM (scrypt)  →  Volume bibliothe
                                                        └─ optional S3 (minio-go)
 vor jedem Deploy  Vorabsicherung (update.sh), nach Erfolg verschlüsselt, Klartext gelöscht
 wöchentlich So 03:30  Restore-Probe in eine Wegwerf-Datenbank  →  Befund der Selbstprüfung
-Aufbewahrung  Backups > 30 Tage werden von update.sh aufgeräumt
+Aufbewahrung  die jüngsten 14 Nächte, dazu 12 Wochenstände; Vorabsicherungen 30 Tage
 ```
 
 **Gesichert wird nur die Datenbank** — eine bewusste Entscheidung vom 11.07.2026. Cover
@@ -1631,7 +1632,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 28.10.2026
+Stand: 29.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1720,7 +1721,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | **Sitzung**               | JWT **HMAC-only** (HS256; `alg=none` ausgeschlossen), 12 h, erneuert ab der halben Laufzeit; höchstens 10 h nach der letzten Passworteingabe, dann 423 bis zum Passwort; Cookie `HttpOnly` + `SameSite=Strict` + `Secure` (T10); Sperrliste für abgemeldete Token, Aufräum-Ticker alle 15 min |
 | **Fail-closed**           | Ist die Sperrlisten- oder Kontostatus-Abfrage nicht erreichbar, wird die Anfrage mit **503** abgelehnt — nicht durchgelassen und **nicht** mit 401 beantwortet (eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist) |
 | **Autorisierung**         | `verlangeRecht` je Route: Recht aus `role_permissions` (Cache 60 s mit Epochenzähler) **plus** Live-Kontostatus **plus** UUID-Form der Pfadparameter |
-| **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt |
+| **Eskalationsschutz**     | Ein Admin-Konto bleibt der Leitung auch mit `manage_users` verschlossen (`api/benutzer/admin_schutz.go`) — weil wer `benutzer.email` schreiben darf, ein Konto übernimmt. Dieselbe Regel gilt beim Löschen in der Leserdatei, mit dessen Leserzeile ein Konto fällt (`kontoregel` in `api/leser/leser_aendern.go`) |
 | **Secret-Guard**          | Außerhalb von `local/development/test` verweigert der Server den Start bei bekannten Beispiel-Geheimnissen. Die Liste steht **einmal** (`bereitschaft.IstBeispielGeheimnis`) und wird von der Selbstprüfung mitbenutzt — zwei Listen würden „alles gut" melden, während der Server aus demselben Grund nicht startet |
 
 #### Injection und Datenausgänge
@@ -2481,8 +2482,8 @@ sieht.
 
 Stand: 29.10.2026
 
-Siebenundzwanzig Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre
-Nummer wird nicht neu vergeben. Format je Eintrag:
+Die Entscheidungen, die diese Architektur tragen; eine aufgehobene fällt weg, ihre Nummer wird
+nicht neu vergeben. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
 Geschichte hat, steht sie knapp; ausführlicher ist die Commit-Historie, und die kann nicht
 veralten.
@@ -3257,7 +3258,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 25.10.2026
+Stand: 29.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3451,8 +3452,8 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 
 Das Programm läuft heute an einem Testserver; der Echtbetrieb beginnt am Schulserver mit einer
 leeren Datenbank und der Littera-Übernahme (entschieden am 28.09.2026). Über den Risiken aus
-11.1 steht bis dahin ein fachliches: Die Übernahme ist mit der Sicherung von 2010 erprobt, die
-Sicherung von 2026 lässt sich noch nicht öffnen. Ob die vorhandenen Ausweise weiter gelten,
+11.1 steht bis dahin ein fachliches: Die Übernahme ist mit der Sicherung von 2010 erprobt, mit
+der Sicherung der Schule von 2026 noch nicht. Ob die vorhandenen Ausweise weiter gelten,
 welche Ausleihen offen sind und was an Standorten, Verweisen, Sperren und Salden mitkommt,
 zeigt erst die Generalprobe mit ihr.
 
@@ -3653,9 +3654,9 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 Bundle-Splitting · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
 geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (25 Dateien
-mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
-Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
-[mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
+mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Bestandskartei-Ausdruck zum
+15.3. und 15.9. (nennt [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als
+Verfahrensvorgabe; nicht gebaut) ·
 ein Schüler wird Lehrkraft (die Datenbank verbietet es, `chk_leser_nur_schueler_werden_abgaenger`;
 heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) ·
 Schlagwortliste drucken, Schlagwortkatalog als Datei aus- und einlesen (wie Littera, nur wenn die

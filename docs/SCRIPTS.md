@@ -311,7 +311,7 @@ Es gibt **drei Wege**; alle drei verschlüsseln über dieselbe Ableitung
 | Pipeline      | `pg_dump → gzip → AES-GCM`                                | `pg_dump → gzip → AES-GCM` (in EINER Pipe) | `pg_dump → gzip`, AES-GCM in Schritt 5         |
 | Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`)                          | **ja**                                     | **ja, nach gesundem Deploy**                   |
 | Dateirechte   | 0600                                                      | 0600                                       | 0600                                           |
-| Rotation      | letzte 14                                                 | 7 Tage (`.enc`) / 2 Tage (Klartext)        | 30 Tage (`.enc`) / 2 Tage (Klartext)           |
+| Rotation      | 14 Nächte, dazu 12 Wochenstände                           | 7 Tage (`.enc`) / 2 Tage (Klartext)        | 30 Tage (`.enc`) / 2 Tage (Klartext)           |
 | Dateiname     | `backup_<Zeitstempel>.sql.gz.enc`                         | `bibliothek_backup_<Datum>.sql.gz.enc`     | `vordeploy_<Zeitstempel>.sql.gz.enc`           |
 | Ablage        | Volume `bibliothek_backups` (`/app/backups` im Container) | `./backups` auf dem Host                   | `./backups` auf dem Host                       |
 
