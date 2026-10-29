@@ -76,9 +76,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         # build-push-action hängt einen Herkunftsnachweis an, das Image geht deshalb als Index
-        # hinaus. Aus einem Index liest ghcr.io Quelle, Beschreibung und Lizenz nur aus dessen
-        # Annotationen, nicht aus den Labels; ohne sie ist das Paket nicht mit dem Repository
-        # verbunden.
+        # hinaus. Aus einem Index liest ghcr.io die Angaben der Paketseite, etwa die Beschreibung,
+        # nur aus dessen Annotationen, nicht aus den Labels.
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: index
         with:
