@@ -22,3 +22,6 @@
 ## 2026-09-05 - ARIA Labels on Icon-only Buttons
 **Learning:** When using components like `<Trash2>` inside a `<button>` without visible text, the `title` attribute alone is insufficient for screen readers. An explicit `aria-label` must be provided on the button element itself.
 **Action:** Always ensure icon-only buttons include an `aria-label` attribute describing their function, regardless of whether a `title` attribute (for tooltips) is present.
+## 2024-10-29 - Button component defaults to type="submit"
+**Learning:** In HTML, buttons inside forms default to `type="submit"` unless explicitly set to `type="button"`. This can cause unintentional form submissions in a Svelte application, especially when reusable `<Button>` components are placed inside forms for unrelated interactions (like "Cancel" or "Show More").
+**Action:** Ensure custom button components explicitly default to `type="button"` to prevent side-effects, while allowing callers to override it via `type="submit"` when intentional.

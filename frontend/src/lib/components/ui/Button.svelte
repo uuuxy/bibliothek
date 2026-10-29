@@ -13,6 +13,7 @@
 		size = 'md',
 		class: className = '',
 		element = $bindable(),
+		type = 'button',
 		...rest
 	} = $props();
 
@@ -88,6 +89,7 @@
 
 <button
 	bind:this={element}
+	{type}
 	class="{baseClasses} {sizes[size]} {variantClasses} {className}"
 	{...rest}
 >

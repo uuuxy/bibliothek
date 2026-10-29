@@ -96,4 +96,13 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 			unmount();
 		}
 	});
+	it('setzt type="button" standardmäßig', () => {
+		const { getByRole } = render(Button);
+		expect(getByRole('button').getAttribute('type')).toBe('button');
+	});
+
+	it('erlaubt das Überschreiben von type', () => {
+		const { getByRole } = render(Button, { type: 'submit' });
+		expect(getByRole('button').getAttribute('type')).toBe('submit');
+	});
 });
