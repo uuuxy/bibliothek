@@ -2,7 +2,7 @@ package katalog
 
 import (
 	"encoding/json"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -19,8 +19,7 @@ func (t *Tueren) Klassensaetze() http.HandlerFunc {
 		reihenfolge := r.URL.Query().Get("sort")
 		gruppen, err := t.titelAbfragen().LadeKlassensatzGruppen(r.Context(), zweig, reihenfolge)
 		if err != nil {
-			slog.Error("Fehler beim Laden der Klassengruppen", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klassen konnten nicht geladen werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klassen konnten nicht geladen werden", fmt.Errorf("klassengruppen laden: %w", err))
 			return
 		}
 
@@ -88,8 +87,7 @@ func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 	}
 	err := t.titelAbfragen().AendereKlassensaetze(r.Context(), alterName, zielKlassen, eingabe.TitelIDs)
 	if err != nil {
-		slog.Error("Fehler beim Aktualisieren der Klassenbücher", "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klassenbücher konnten nicht aktualisiert werden", fmt.Errorf("klassenbücher aktualisieren: %w", err))
 		return
 	}
 
@@ -117,8 +115,7 @@ func (t *Tueren) KlassensatzGruppeLoeschen() http.HandlerFunc {
 
 		err := t.titelAbfragen().LoescheKlassensatzGruppe(r.Context(), klassen)
 		if err != nil {
-			slog.Error("Fehler beim Löschen der Klassengruppen", "klassen", klassen, "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "klasse konnte nicht gelöscht werden", fmt.Errorf("klassengruppen löschen: %w", err))
 			return
 		}
 
@@ -181,8 +178,7 @@ func (t *Tueren) ordneKlassensaetzeZu(w http.ResponseWriter, r *http.Request) {
 	}
 	err := t.titelAbfragen().OrdneTitelKlassenZu(r.Context(), zielKlassen, eingabe.TitelIDs)
 	if err != nil {
-		slog.Error("Fehler beim Hinzufügen der Bücher", "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "bücher konnten nicht hinzugefügt werden", fmt.Errorf("bücher der klasse hinzufügen: %w", err))
 		return
 	}
 

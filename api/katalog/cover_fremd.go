@@ -3,7 +3,7 @@ package katalog
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -19,8 +19,7 @@ func (t *Tueren) FremdeCoverListe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		eintraege, err := t.titelAbfragen().LadeTitelMitFremdemCover(r.Context(), 300)
 		if err != nil {
-			slog.Error("Fehler beim Laden externer Cover-Bücher", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "externe cover konnten nicht geladen werden", fmt.Errorf("bücher mit fremdem cover laden: %w", err))
 			return
 		}
 
@@ -55,8 +54,7 @@ func (t *Tueren) FremdeCoverNeuLaden() http.HandlerFunc {
 			eintraege, err = t.titelAbfragen().LadeTitelMitFremdemCover(r.Context(), eingabe.Limit)
 		}
 		if err != nil {
-			slog.Error("Fehler beim Laden externer Cover für Retry", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "cover-retry konnte nicht gestartet werden", fmt.Errorf("fremde cover für den neuen versuch laden: %w", err))
 			return
 		}
 

@@ -1,8 +1,7 @@
 package lernmittel
 
 import (
-	"errors"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -45,22 +44,19 @@ func (t *Tueren) LernmittelDerKlasseVerlaengern() http.HandlerFunc {
 		ctx := r.Context()
 		tx, err := t.DB.Pool.Begin(ctx)
 		if err != nil {
-			slog.Error("LMF-Verlängerung: Fehler beim Starten der Transaktion", "fehler", err)
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("transaktion der lmf-verlängerung beginnen: %w", err))
 			return
 		}
 		defer db.Verwerfe(ctx, tx)
 
 		angepasst, err := repository.VerlaengereLernmittelDerKlasse(ctx, tx, req.Klasse, frist)
 		if err != nil {
-			slog.Error("LMF-Verlängerung: Fehler beim globalen Verlängern", "fehler", err)
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("lernmittel der klasse verlängern: %w", err))
 			return
 		}
 
 		if err := tx.Commit(ctx); err != nil {
-			slog.Error("LMF-Verlängerung: Fehler beim Commit der Transaktion", "fehler", err)
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("commit der lmf-verlängerung: %w", err))
 			return
 		}
 

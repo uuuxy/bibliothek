@@ -1,8 +1,7 @@
 package portal
 
 import (
-	"errors"
-	"log/slog"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -22,8 +21,7 @@ func (t *Tueren) MonitorFolien() http.HandlerFunc {
 		if err != nil {
 			// Echter Grund ins Log, nach außen nur die Gattung: Der Endpunkt ist ohne
 			// Anmeldung erreichbar, ein Postgres-Fehlertext gehört nicht auf den Flur.
-			slog.Error("DB Error in Monitor", "fehler", err)
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("internal server error"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("monitor laden: %w", err))
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, folien)

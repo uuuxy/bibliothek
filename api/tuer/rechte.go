@@ -2,7 +2,7 @@ package tuer
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -144,8 +144,7 @@ func (b *Basis) PruefeRecht(w http.ResponseWriter, r *http.Request, next http.Ha
 
 	erlaubt, err := b.ladeUndMerkeRecht(r.Context(), string(claims.Rolle), recht, schluessel)
 	if err != nil {
-		slog.Error("Permission check DB error", "rolle", claims.Rolle, "recht", recht, "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("berechtigung konnte nicht geprüft werden"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("recht %s der rolle %s prüfen: %w", recht, claims.Rolle, err))
 		return
 	}
 

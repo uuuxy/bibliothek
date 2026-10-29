@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sort"
@@ -45,8 +46,7 @@ func (t *Tueren) TitelListe() http.HandlerFunc {
 		}
 		buecher, fehler := t.titelAbfragen().LadeTitelListe(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
 		if fehler != nil {
-			slog.Error("Fehler beim Laden der Bücherliste", "fehler", fehler)
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher", nil)
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher", fmt.Errorf("bücherliste laden: %w", fehler))
 			return
 		}
 
@@ -161,8 +161,7 @@ func (t *Tueren) Titel() http.HandlerFunc {
 			return
 		}
 		if fehler != nil {
-			slog.Error("Fehler beim Laden des Buches", "fehler", fehler)
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler", nil)
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler", fmt.Errorf("buch laden: %w", fehler))
 			return
 		}
 
@@ -217,8 +216,7 @@ func (t *Tueren) TitelVorhanden() http.HandlerFunc {
 
 		vorhanden, fehler := t.titelAbfragen().FindeTitelMitISBN(anfrage.Context(), isbn)
 		if fehler != nil {
-			slog.Error("Dublettenkontrolle vorab fehlgeschlagen", "fehler", fehler)
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler", nil)
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler", fmt.Errorf("dublettenkontrolle vorab: %w", fehler))
 			return
 		}
 		if vorhanden != nil {

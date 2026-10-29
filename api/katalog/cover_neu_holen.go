@@ -2,14 +2,13 @@ package katalog
 
 import (
 	"errors"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/katalogdienste"
-	"bibliothek/pkg/logger"
 	"bibliothek/repository"
 )
 
@@ -33,8 +32,7 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		slog.Error("cover-refresh: buch laden fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "buch konnte nicht geladen werden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "buch konnte nicht geladen werden", fmt.Errorf("cover neu holen, titel laden: %w", err))
 		return
 	}
 
@@ -62,8 +60,7 @@ func (t *Tueren) holeCoverNeu(w http.ResponseWriter, r *http.Request) {
 
 	err = t.titelAbfragen().AendereTitelMetadaten(r.Context(), id, "", "", coverURL)
 	if err != nil {
-		slog.Error("cover-refresh: update fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "cover konnte nicht gespeichert werden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "cover konnte nicht gespeichert werden", fmt.Errorf("cover neu holen, speichern: %w", err))
 		return
 	}
 

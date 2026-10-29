@@ -286,7 +286,8 @@ dieser Grenze trägt das Feld in Go den deutschen Namen und sein Tag den Namen d
     gescheitert, oder eine Antwort endet mit 5xx. Jede solche Zeile steht auf der Seite „Fehler im
     Log“ der Einstellungen, und die tägliche Alarm-Mail meldet sie. Ein 5xx steht einmal im Log:
     `apierrors` übergibt die Ursache an die Zeile zum Status, die `logMiddleware` mit Route und Pfad
-    schreibt.
+    schreibt. Die Tür schreibt die Ursache deshalb nicht selbst mit `slog.Error`, sie gibt sie an
+    die Antwort; `fehler_einmal_im_log_test.go` hält es.
   - `WARN`: Das Programm hat sich selbst geholfen: Vorgabe statt Einstellung, ein Hinweis fehlt,
     ein Dienst draußen antwortet nicht, die Antwort an den Browser brach ab, Aufräumen scheiterte.
     Ein Abbruch ist nie ein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen

@@ -3,7 +3,7 @@ package katalog
 import (
 	"encoding/json"
 	"errors"
-	"log/slog"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -45,8 +45,7 @@ func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 				apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden", nil)
 				return
 			}
-			slog.Error("Fehler beim Löschen von Büchern", "fehler", fehler)
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher", nil)
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher", fmt.Errorf("markierte titel löschen: %w", fehler))
 			return
 		}
 

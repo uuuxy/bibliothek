@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -155,8 +155,7 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		apierrors.AntworteFehlerMitMeldung(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 		return
 	}
-	slog.Error("Fehler beim Aktualisieren eines Titels", "titel", id, "fehler", fehler)
-	apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden", nil)
+	apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden", fmt.Errorf("titel ändern: %w", fehler))
 }
 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt

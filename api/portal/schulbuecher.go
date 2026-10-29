@@ -28,14 +28,12 @@ func (t *Tueren) Schulbuecher() http.HandlerFunc {
 		filter := lernmittelFilterParam(r)
 		faecher, err := repository.NewTitelAbfragen(t.DB.Pool).LadeLernmittelFaecher(ctx, filter)
 		if err != nil {
-			slog.Error("Portal Lernmittel: Fächer nicht ladbar", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden", fmt.Errorf("fächer der schulbücher laden: %w", err))
 			return
 		}
 		titel, err := repository.NewTitelAbfragen(t.DB.Pool).LadeLernmittelTitel(ctx, "", true, filter)
 		if err != nil {
-			slog.Error("Portal Lernmittel: Titel nicht ladbar", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden", fmt.Errorf("titel der schulbücher laden: %w", err))
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, map[string]any{"faecher": faecher, "titel": titel})
@@ -56,8 +54,7 @@ func (t *Tueren) SchulbuecherExport() http.HandlerFunc {
 		filter := lernmittelFilterParam(r)
 		titel, err := repository.NewTitelAbfragen(t.DB.Pool).LadeLernmittelTitel(r.Context(), fachName, !gewaehlt, filter)
 		if err != nil {
-			slog.Error("Portal Lernmittel-Export: Titel nicht ladbar", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "export konnte nicht erstellt werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "export konnte nicht erstellt werden", fmt.Errorf("titel für den export der schulbücher laden: %w", err))
 			return
 		}
 		ueberschrift := ""
@@ -66,8 +63,7 @@ func (t *Tueren) SchulbuecherExport() http.HandlerFunc {
 		}
 		datei, err := pdf.ErzeugeSchulbuecher(schulbuecherFuerPDF(titel), ueberschrift, filterKlartext(filter))
 		if err != nil {
-			slog.Error("Portal Lernmittel-Export: PDF fehlgeschlagen", "fehler", err)
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "export konnte nicht erstellt werden", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "export konnte nicht erstellt werden", fmt.Errorf("pdf der schulbücher erzeugen: %w", err))
 			return
 		}
 		name := "schulbuecher"

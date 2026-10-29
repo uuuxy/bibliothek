@@ -130,8 +130,7 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err != nil {
-		slog.Error("cover-upload: buch laden fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "buch konnte nicht geladen werden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "buch konnte nicht geladen werden", fmt.Errorf("cover hochladen, titel laden: %w", err))
 		return
 	}
 
@@ -150,8 +149,7 @@ func (t *Tueren) schreibeHochgeladenesCover(w http.ResponseWriter, r *http.Reque
 	}
 	if err != nil {
 		loescheCoverDatei(coverURL)
-		slog.Error("cover-upload: metadata update failed", "titel", logger.OhneUmbruch(id), "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden", fmt.Errorf("cover hochladen, angaben speichern: %w", err))
 		return
 	}
 
@@ -208,8 +206,7 @@ func speichereHochgeladenesCover(w http.ResponseWriter, id string, fertig []byte
 	dateiname := fmt.Sprintf("cover_%s_%d%s", filepath.Base(id), time.Now().Unix(), endung)
 
 	if err := coverablage.Schreibe(dateiname, fertig); err != nil {
-		slog.Error("cover-upload: speichern fehlgeschlagen", "titel", logger.OhneUmbruch(id), "fehler", err)
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "fehler beim speichern", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusInternalServerError, "fehler beim speichern", fmt.Errorf("cover hochladen, datei speichern: %w", err))
 		return "", false
 	}
 

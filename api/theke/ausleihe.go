@@ -94,8 +94,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 	// gesperrt, bis die neue Frist steht, damit zwei Verlängerungen zugleich nacheinander rechnen.
 	tx, err := t.DB.Pool.Begin(ctx)
 	if err != nil {
-		slog.Error("Fehler beim Starten der Transaktion (Einzel-Verlaengerung)", "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("transaktion der einzel-verlängerung beginnen: %w", err))
 		return
 	}
 	defer db.Verwerfe(ctx, tx)
@@ -106,8 +105,7 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 		return
 	}
 	if err != nil {
-		slog.Error("Fehler bei Einzel-Verlaengerung", "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einzel-verlängerung: %w", err))
 		return
 	}
 	if gezeigt != nil && !gleicherTag(*gezeigt, alteFrist) {
@@ -122,13 +120,11 @@ func (t *Tueren) verlaengereAusleihe(w http.ResponseWriter, r *http.Request, ein
 
 	_, gesetzteFrist, err := repository.VerlaengereAusleihe(ctx, tx, ausleiheID, neueFrist)
 	if err != nil {
-		slog.Error("Fehler bei Einzel-Verlaengerung", "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einzel-verlängerung: %w", err))
 		return
 	}
 	if err := tx.Commit(ctx); err != nil {
-		slog.Error("Fehler beim Abschluss der Einzel-Verlaengerung", "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("abschluss der einzel-verlängerung: %w", err))
 		return
 	}
 
@@ -228,8 +224,7 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungAusleiheNichtGefunden, nil)
 			return
 		}
-		slog.Error("Fehler bei manueller Frist-Überschreibung", "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("manuelle frist-überschreibung: %w", err))
 		return
 	}
 
@@ -288,8 +283,7 @@ func (t *Tueren) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 		return false, "", false
 	}
 	if err != nil {
-		slog.Error("Fehler bei Sperr-Prüfung", "vorgang", vorgang, "fehler", err)
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("sperr-prüfung (%s): %w", vorgang, err))
 		return false, "", false
 	}
 	return gesperrt, grund, true
