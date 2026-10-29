@@ -431,34 +431,12 @@ im Client-Installationsschritt).
 
 ## 6. Backup & Recovery
 
-Automatischer Backup-Cronjob täglich um **02:30 UTC** (konfigurierbar in `jobs/cron.go`) —
-in Deutschland also 03:30 Winter- bzw. 04:30 Sommerzeit:
-
-```
-pg_dump → gzip → AES-GCM-Verschlüsselung (Zufalls-Nonce) → 0600 auf Disk
-```
-
-Backup-Rotation: älteste Dateien werden nach Ablauf des Aufbewahrungsfensters gelöscht.
-
-Manuelles Backup:
-
-```bash
-./scripts/backup.sh
-```
-
-Auch die beiden **Shell-Wege** verschlüsseln (Befund A5):
-`scripts/backup.sh` schreibt `.sql.gz.enc` direkt aus der Pipe — der Klartext berührt die
-Platte nie —, und `./update.sh` verschlüsselt seine Vorab-Sicherung in Schritt 5, sobald
-der neue Container gesund und aus dem richtigen Commit gebaut ist. Beide nutzen
-`cmd/encrypt-backup` im Backend-Container; der Schlüssel verlässt den Container nicht.
-
-**Klartext gibt es nur noch als Ausnahme** — bei fehlgeschlagenem Deploy (dann ist die
-Datei der Rollback-Weg) oder wenn die Verschlüsselung nicht möglich war (Container aus,
-`BACKUP_ENCRYPTION_KEY` nicht gesetzt). Solche Dateien werden nach **2 Tagen** gelöscht,
-und beide Skripte melden bei jedem Lauf, wie viele davon noch liegen. Solange eine da ist,
-gehört `backups/` zum schutzbedürftigen Bestand — sie enthält jeden Schülernamen, jede
-Adresse und jede Ausleihe im Klartext. Details:
-[resilience_and_recovery.md](resilience_and_recovery.md).
+Das Programm sichert die Datenbank jede Nacht um **02:30 UTC** (03:30 Uhr im Winter, 04:30 Uhr im
+Sommer) verschlüsselt in das Volume `bibliothek_backups`; dazu kommen die Vorab-Sicherung von
+`./update.sh` und Sicherungen von Hand mit `./scripts/backup.sh`. Wie die drei Wege arbeiten, wie
+lange eine Sicherung bleibt, was mit einem Klartext-Rest geschieht und wie man zurückholt, steht in
+[resilience_and_recovery.md](resilience_and_recovery.md). Hier stehen die Uhr, die beim Einrichten
+dazukommt, und was die Sicherung nicht umfasst.
 
 **Die Uhr für den Klartext-Rest.** Gelöscht wird nur, wenn eines der Skripte läuft. Damit ein
 Klartext-Rest auch dann nach zwei Tagen geht, wenn lange keine Sicherung und kein Update kommt,

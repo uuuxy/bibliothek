@@ -43,7 +43,7 @@ var bestandVorgeschichte = map[string]struct {
 	"docs/invarianten.md":             {11, "Entscheidungen und Messungen zu einzelnen Invarianten"},
 	"docs/mittel_konzept.md":          {10, "Entscheidungen der Schule, Antworten der Servicestelle"},
 	"docs/SECURITY.md":                {8, "Entscheidungen, Proben am Mailserver, Fassung der Excel-Bibliothek"},
-	"docs/SCRIPTS.md":                 {7, "Entscheidung, Ergebnisse der Generalprobe, Messungen, Grenze einer Reparatur"},
+	"docs/SCRIPTS.md":                 {6, "Entscheidung, Ergebnisse der Generalprobe, Messungen, Grenze einer Reparatur"},
 	"docs/LUSD.md":                    {5, "Entscheidungen, Prüfung der Feldliste, der Lauf in Schulgröße"},
 	"docs/PII_MATRIX.de.md":           {5, "Erhebung, Zählung der Schreibrouten, Grenze gespeicherter Protokolle"},
 	"docs/datenschutz/nachweis.md":    {5, "Entscheidung, Grenzen gespeicherter Protokolle, Rechtsquelle, Zählung"},

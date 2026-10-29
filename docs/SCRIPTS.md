@@ -318,25 +318,10 @@ Es gibt **drei Wege**; alle drei verschlüsseln über dieselbe Ableitung
 `./scripts/backup.sh --nur-aufraeumen` räumt nur auf, nach denselben Fristen, und legt keine
 Sicherung an. So ruft es die Uhr am Server ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 6).
 
-**Warum `update.sh` erst in Schritt 5 verschlüsselt.** Seine Vorab-Sicherung ist der
-Rückweg für genau das Zeitfenster, in dem der neue Container nicht hochkommt — und in dem
-damit auch das Verschlüsselungswerkzeug nicht erreichbar wäre. Sie bleibt deshalb im
-Klartext, bis Gesundheits- und Commit-Prüfung bestanden sind (Schritt 4/4b); erst dann
-verschlüsselt Schritt 5 sie und löscht den Klartext. Der dokumentierte Rollback-Weg
-`gunzip … | psql` bleibt für dieses Fenster unangetastet.
-
-**Der Rückweg wird bewiesen, nicht angenommen.** Bevor ein Klartext-Dump gelöscht wird
-(und bevor `backup.sh` „erfolgreich" meldet), geht die fertige `.enc`-Datei durch das
-`restore-backup` im Container. Die bloße Formprüfung genügt nicht: Läuft die Platte
-während des Schreibens voll, trägt die abgeschnittene Datei ihre `BKDF`-Kennung und hat
-plausible Größe — auffallen würde der Verlust erst beim Wiederherstellen.
-
-**Klartext als Ausnahme.** Beide Skripte fallen darauf zurück, wenn die Verschlüsselung
-nicht möglich ist (Backend-Container aus, `BACKUP_ENCRYPTION_KEY` nicht gesetzt, Image
-älter als 23.08.2026) — kein Abbruch, denn ein lesbares Backup ist besser als keines. Sie
-sagen es dann laut; die Datei löscht erst ein späterer Lauf eines der beiden Skripte,
-frühestens nach 2 Tagen (eine Uhr, die ohne Lauf löscht, gibt es nicht). Wiederherstellung und
-Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
+Warum die Vorab-Sicherung erst in Schritt 5 verschlüsselt wird, wie beide Skripte den Rückweg
+prüfen, bevor sie Erfolg melden, und was mit einem Klartext-Rest geschieht, steht in
+[resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 1b; das Zurückholen in
+Abschnitt 2.
 
 ---
 

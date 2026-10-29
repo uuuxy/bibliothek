@@ -4,7 +4,8 @@ Dieses Dokument beschreibt die Backup-Strategien, Wiederherstellungsverfahren so
 
 ## 1. Backups
 
-Es gibt **zwei** Backup-Wege. Maßgeblich für die Wiederherstellung ist, welches Format vorliegt.
+Es gibt **drei** Wege zu einer Sicherung: den nächtlichen Lauf des Programms (1a) und die beiden
+Shell-Wege (1b). Maßgeblich für die Wiederherstellung ist, welches Format vorliegt.
 
 ### 1a. Automatisches verschlüsseltes Backup (Primär, Produktion)
 Der eingebaute Zeitplan (`jobs.BackupLauf`) läuft täglich um **02:30 UTC** und erzeugt
