@@ -31,11 +31,14 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Zugangsbuch: Ohne gewähltes Datum steht das vorherige Schulhalbjahr da, nicht das laufende.
   (5.110)
+- [ ] Vorschläge von Jules prüfen: #760 (Vorgabe `type="button"` am Knopf) und #762 (Abfrage des
+  Bestellverlaufs). Übernommen wird, was am alten Stand einen Fehler zeigt. (5.111)
 
 ### Bei dir
 
 Nur, was kein Test leisten kann.
 
+- [ ] Freigeben: Pull Request #761 schließen; er ist derselbe Vorschlag wie #759. (5.111)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -77,10 +80,10 @@ trägt ein neues Etikett keinen Vermerk.
 ### 5.106 Safari: Dokumente mit Personendaten im Tab
 
 DSGVO-Auskunft, Kontoauszug und Rechnung aus der Leserakte, Mahnbriefe, Bescheide und die
-Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zeigePdf` in
-`frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie zeigt, ist nicht gemessen; der
-WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem Schalter in Safari über
-`safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
+Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zeigePdf`, für die
+Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
+zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
+Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 
 ### 5.110 Zugangsbuch: das vorherige Halbjahr vorschlagen
 
@@ -93,8 +96,21 @@ Daten nicht von Hand umstellt.
 
 Entschieden am 29.10.2026: Vorgeschlagen wird das vorherige Halbjahr; Seitenzahlen über alle
 Ausdrucke hinweg werden nicht gebaut ([FACHKONZEPT.md](FACHKONZEPT.md) §20). Das Blatt trägt
-heute gar keine Seitenzahlen (`pdf/zugangsbuch.go`). Gebaut wird nach der Darstellung hell und
-dunkel.
+heute gar keine Seitenzahlen (`pdf/zugangsbuch.go`); offen ist, ob es dabei „Seite x von y"
+bekommt. Gebaut wird nach der Darstellung hell und dunkel.
+
+### 5.111 Vorschläge von Jules vom 29.10.2026
+
+- **#760** setzt in `ui/Button.svelte` `type="button"` als Vorgabe; ohne `type` sendet ein Knopf in
+  einem `<form>` das Formular ab. Nächster Schritt: einen Knopf des Hauses in einem `<form>`
+  finden, an dem das geschieht, und den Vorschlag dort rot zeigen; gibt es keinen, schließen.
+- **#761** begrenzt `ParseMultipartForm` an denselben fünf Stellen auf 1 MB wie #759. Der wurde
+  geschlossen: Alle fünf begrenzen die Anfrage vorher mit `http.MaxBytesReader`, gosec meldet G120
+  auch mit dem Vorschlag, und mit 1 MB lägen größere Dateien als Zwischendatei auf der Platte,
+  beim LUSD-Import samt Schülerdaten (e1eff101).
+- **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
+  `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
+  Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.
 
 ### 7.2 Frisches Littera-Backup
 
