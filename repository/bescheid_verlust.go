@@ -160,6 +160,7 @@ func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznu
 			beschreibung: beschreibung,
 			art:          SchadensArtNichtZurueck,
 			betrag:       v.Betrag,
+			weg:          AussonderungsWegBescheid,
 		})
 		if errors.Is(err, ErrExemplarNeuVerliehen) || errors.Is(err, ErrAusleiheOhneBuch) {
 			return nil, err // Bedienfall: Die Tür antwortet mit 409, ein Zusatz brächte nichts

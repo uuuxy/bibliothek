@@ -14,7 +14,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
 Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben; die 🟢-Invarianten sind in
-CI gegen echtes Postgres abgesichert. Stand: 2026-10-27
+CI gegen echtes Postgres abgesichert. Stand: 2026-10-29
 
 > **Fundstellen werden benannt, nicht gezählt.** Die Spalte nennt Constraint-, Index-
 > und Spaltennamen — keine Zeilennummern: Eine Zeilennummer zeigt nach dem Wachstum der
@@ -508,7 +508,9 @@ selbst festhält:
 - Theke: ausleihen und zurücknehmen, auch nach einem Netzausfall (die Ausleihe trägt, wer sie
   gebucht und wer sie beendet hat), eine Ausleihe verlängern, eine Vormerkung anlegen oder
   löschen, eine Meldung nach Netzausfall bearbeiten (die Meldung trägt, wer sie bearbeitet
-  hat), „Verlust/Schaden melden" (die Ausleihe trägt, wer sie beendet hat).
+  hat). Die Ausleihe nennt ihre Bearbeiter nur bis 14 Tage nach der Rückgabe
+  (`repository.BearbeiterKennungTage`); als Spur trägt sie deshalb nur das Ausleihen und
+  Zurücknehmen selbst.
 - Leser: einen Leser von Hand anlegen, sein Foto. Ändern, sperren, löschen, wiederherstellen
   und zusammenführen schreiben einen Eintrag.
 - Katalog: Titel anlegen und ändern, Signatur, Lernmittel, Schlagworte am Titel, Auflagen
@@ -523,13 +525,15 @@ selbst festhält:
 - Geräte, Wünsche und Meldungen des Kollegiums, Klassensatz-Reservierungen, die Sperre des
   Bildschirms, An- und Abmelden.
 
-Das Aussondern steht mit der Person im Protokoll, auch auf diesen drei Wegen: der Status in
-der Buchakte, ein kleinerer Bestand in „Buch
-bearbeiten", der Abschluss einer Inventur (`repository.protokolliereAussonderung`,
-`TestAussondern_StehtMitDerPersonImProtokoll`). Der Eintrag nennt Bearbeiter, Weg und Grund;
-den Grund liest er vom Exemplar. Die Zustandsnotiz steht nicht darin: Sie ist Freitext, kann
-eine Person nennen und bliebe bis zur Audit-Aufbewahrung. Das Abgangsbuch liest diese Einträge
-nicht, es zählt im Protokoll nur gelöschte Exemplare (`aktion = 'DELETE'`).
+Das Aussondern steht mit der Person im Protokoll, auch auf diesen fünf Wegen: der Status in
+der Buchakte, ein kleinerer Bestand in „Buch bearbeiten", der Abschluss einer Inventur,
+„Verlust/Schaden melden" in der Leserakte und der Verlust im Schadensersatz-Bescheid
+(`repository.protokolliereAussonderung`, `TestAussondern_StehtMitDerPersonImProtokoll`). Der
+Eintrag nennt Bearbeiter, Weg und Grund; den Grund liest er vom Exemplar. Nach einem Verlust
+oder Schaden nennt er auch die Forderung (`schadensfall_id`), und damit, wer sie angelegt hat.
+Die Zustandsnotiz steht nicht darin: Sie ist Freitext, kann eine Person nennen und bliebe bis
+zur Audit-Aufbewahrung. Das Abgangsbuch liest diese Einträge nicht, es zählt im Protokoll nur
+gelöschte Exemplare (`aktion = 'DELETE'`).
 
 ### Frontend-Lesart
 

@@ -139,36 +139,60 @@ func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 	}
 }
 
-// Ohne Forderung gibt es keine Zeile, an der die Idempotenz hängt. Ein zweiter Klick darf
-// deshalb nicht das Rückgabedatum verschieben.
+// Ohne Forderung gibt es keine Zeile, an der die Idempotenz hängt. Ein zweiter Klick ändert
+// deshalb in keiner Fallgruppe etwas: nicht das Rückgabedatum, nicht die Notiz am
+// ausgesonderten Exemplar und nicht das Protokoll.
 func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-
-	copyID := legeSignaturMitExemplarenAn(t, pool, "KollegeZweimal", 1)[0]
-	kollege := legeKollegenAn(t, pool, "A-90002", "Tom")
 	bearbeiter := legeBearbeiterAn(t, pool)
-	loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
 	repo := NewSchadensAbfragen(pool)
 
-	if _, err := repo.Melde(ctx, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
-		t.Fatalf("erste Meldung: %v", err)
-	}
-	var erste time.Time
-	if err := pool.QueryRow(ctx, `SELECT rueckgabe_am FROM ausleihen WHERE id = $1`, loan).Scan(&erste); err != nil {
-		t.Fatal(err)
-	}
+	for _, fall := range []struct {
+		art     SchadensArt
+		ausweis string
+	}{
+		{SchadensArtNichtZurueck, "A-90002"},
+		{SchadensArtBeschaedigt, "A-90003"},
+	} {
+		art := fall.art
+		t.Run(string(art), func(t *testing.T) {
+			copyID := legeSignaturMitExemplarenAn(t, pool, "KollegeZweimal"+string(art), 1)[0]
+			kollege := legeKollegenAn(t, pool, fall.ausweis, "Tom")
+			loan := legeAusleiheAn(t, pool, copyID, kollege, bearbeiter)
+			stand := func() (rueckgabe time.Time, notiz string, eintraege int) {
+				t.Helper()
+				if err := pool.QueryRow(ctx, `
+					SELECT a.rueckgabe_am, coalesce(e.zustand_notiz, ''),
+					       (SELECT count(*) FROM audit_log l WHERE l.datensatz_id = e.id
+					          AND l.details->>'action' = $2)
+					FROM ausleihen a JOIN buecher_exemplare e ON e.id = a.exemplar_id
+					WHERE a.id = $1`, loan, ProtokollAktionAusgesondert).Scan(&rueckgabe, &notiz, &eintraege); err != nil {
+					t.Fatal(err)
+				}
+				return rueckgabe, notiz, eintraege
+			}
 
-	if _, err := repo.Melde(ctx, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
-		t.Fatalf("zweite Meldung: %v", err)
-	}
-	var zweite time.Time
-	if err := pool.QueryRow(ctx, `SELECT rueckgabe_am FROM ausleihen WHERE id = $1`, loan).Scan(&zweite); err != nil {
-		t.Fatal(err)
-	}
-	if !zweite.Equal(erste) {
-		t.Errorf("Rückgabedatum verschoben: %s → %s", erste, zweite)
+			if _, err := repo.Melde(ctx, loan, bearbeiter, "Wasserschaden", art, 0); err != nil {
+				t.Fatalf("erste Meldung: %v", err)
+			}
+			ersteRueckgabe, ersteNotiz, _ := stand()
+
+			if _, err := repo.Melde(ctx, loan, bearbeiter, "Kaffeefleck", art, 0); err != nil {
+				t.Fatalf("zweite Meldung: %v", err)
+			}
+			rueckgabe, notiz, eintraege := stand()
+			if !rueckgabe.Equal(ersteRueckgabe) {
+				t.Errorf("Rückgabedatum verschoben: %s → %s", ersteRueckgabe, rueckgabe)
+			}
+			if notiz != ersteNotiz {
+				t.Errorf("Notiz am Exemplar überschrieben: %q → %q", ersteNotiz, notiz)
+			}
+			if eintraege != 1 {
+				t.Errorf("%d Einträge im Protokoll, erwartet 1", eintraege)
+			}
+		})
 	}
 }
 

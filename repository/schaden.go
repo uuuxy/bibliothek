@@ -110,6 +110,7 @@ func (a *SchadensAbfragen) Melde(ctx context.Context, ausleiheID, bearbeiterID, 
 		beschreibung: beschreibung,
 		art:          art,
 		betrag:       hoehe,
+		weg:          AussonderungsWegSchaden,
 	})
 	if err != nil {
 		return "", err

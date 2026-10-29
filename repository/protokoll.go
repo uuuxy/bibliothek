@@ -14,7 +14,8 @@ import (
 // ProtokollAbfragen schreibt die Einträge des Protokolls. Die Vorgänge, die mit ihrem Eintrag in
 // einer Transaktion stehen, führen die Abfragen ihrer Sache aus: Titel löschen und Exemplar
 // aussondern KatalogAbfragen, Konto löschen KontoAbfragen, Leser löschen LeserAbfragen,
-// Forderung erledigen SchadensAbfragen. So gibt es den Vorgang nicht ohne seine Spur.
+// Verlust oder Schaden buchen und Forderung erledigen SchadensAbfragen. So gibt es den Vorgang
+// nicht ohne seine Spur.
 //
 // Dass Einträge nur angefügt werden, ist eine Regel des Codes und keine der Datenbank: Kein
 // Weg ändert oder löscht einen Eintrag, außer der Tilgung des Personenbezugs

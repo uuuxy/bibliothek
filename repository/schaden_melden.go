@@ -19,12 +19,16 @@ type schadensMeldung struct {
 	beschreibung string
 	art          SchadensArt
 	betrag       betrag.Cent
+	// weg nennt im Protokoll, wo gebucht wurde: AussonderungsWegSchaden oder
+	// AussonderungsWegBescheid.
+	weg string
 }
 
-// meldeSchaden bucht einen Verlust oder Schaden an einer Ausleihe: Exemplar aussondern,
-// Forderung anlegen, Ausleihe beenden, Abholfach lösen. Die Transaktion gehört dem Rufer, weil
-// der Schadensersatz-Bescheid Verluste zusammen mit Nummer und Brief bucht: Sonst gäbe es einen
-// Brief über ein Buch, dessen Ausleihe weiterläuft, oder eine beendete Ausleihe ohne Brief.
+// meldeSchaden bucht einen Verlust oder Schaden an einer Ausleihe: Exemplar aussondern und
+// protokollieren, Forderung anlegen, Ausleihe beenden, Abholfach lösen. Die Transaktion gehört
+// dem Rufer, weil der Schadensersatz-Bescheid Verluste zusammen mit Nummer und Brief bucht:
+// Sonst gäbe es einen Brief über ein Buch, dessen Ausleihe weiterläuft, oder eine beendete
+// Ausleihe ohne Brief.
 //
 // Der Grund der Aussonderung folgt der Fallgruppe: „nicht zurückgegeben" ist VERLUST,
 // „beschädigt" BESCHAEDIGUNG. Der Fund im Fehlbestandsbericht und das endgültige Löschen dort
@@ -76,6 +80,17 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 		`, exemplarID, meldung.ausleiheID, schuldnerID, meldung.beschreibung, meldung.betrag, string(meldung.art)).Scan(&schadensID); err != nil {
 			return "", err
 		}
+	}
+
+	// Die Person steht im Protokoll, weil die Ausleihe sie nicht hält: Dort fällt sie
+	// BearbeiterKennungTage nach der Rückgabe weg, und nach einer Rückgabe an der Theke steht
+	// dort die Theke.
+	var zusatz map[string]any
+	if schadensID != "" {
+		zusatz = map[string]any{"schadensfall_id": schadensID}
+	}
+	if err := protokolliereAussonderung(ctx, tx, []string{exemplarID}, meldung.bearbeiterID, meldung.weg, zusatz); err != nil {
+		return "", err
 	}
 
 	// Die Bedingung rueckgabe_am IS NULL: Ohne Forderung gibt es keine Zeile, an der ein
@@ -169,15 +184,16 @@ func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, meldung schadensMeldu
 		return "", false, ErrExemplarNeuVerliehen
 	}
 
+	// Beim Kollegium gibt es keine Forderung, an der die eigene frühere Meldung zu erkennen wäre;
+	// dort zeigt sie das ausgesonderte Exemplar an der beendeten Ausleihe, und der zweite Klick
+	// ändert nichts, in beiden Fallgruppen.
+	if a.zurueck && a.ohneForderung && a.exemplarAusgesondert {
+		return "", true, nil
+	}
 	// „Nicht zurückgegeben" für eine beendete Ausleihe ohne Schadensfall: Das Buch kam an einem
 	// anderen Platz zurück, während die Akte offen stand, und steht im Regal. „Beschädigt
-	// zurückgegeben" bleibt nach der Rückgabe möglich. Beim Kollegium gibt es keine Forderung,
-	// an der die eigene frühere Meldung zu erkennen wäre; dort zeigt sie das ausgesonderte
-	// Exemplar, und der zweite Klick ändert nichts.
+	// zurückgegeben" bleibt nach der Rückgabe möglich.
 	if a.zurueck && meldung.art == SchadensArtNichtZurueck {
-		if a.ohneForderung && a.exemplarAusgesondert {
-			return "", true, nil
-		}
 		return "", false, ErrAusleiheInzwischenZurueck
 	}
 	return "", false, nil
