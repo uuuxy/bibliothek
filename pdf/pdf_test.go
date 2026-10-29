@@ -107,7 +107,7 @@ func TestErzeugeKontoauszug(t *testing.T) {
 			Ausleihdatum: time.Now().AddDate(0, -2, 0), Rueckgabedatum: time.Now().AddDate(0, -1, 0)},
 	}
 
-	got, err := ErzeugeKontoauszug(schueler, buecher)
+	got, err := ErzeugeKontoauszug(schueler, buecher, testSchule())
 	if err != nil {
 		t.Fatalf("ErzeugeKontoauszug: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestErzeugeKontoauszuege_MitUnterschrift(t *testing.T) {
 	}
 
 	for _, mitUnterschrift := range []bool{false, true} {
-		got, err := ErzeugeKontoauszuege(eintraege, mitUnterschrift)
+		got, err := ErzeugeKontoauszuege(eintraege, testSchule(), mitUnterschrift)
 		if err != nil {
 			t.Fatalf("ErzeugeKontoauszuege(mitUnterschrift=%v): %v", mitUnterschrift, err)
 		}

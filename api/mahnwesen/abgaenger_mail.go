@@ -45,73 +45,85 @@ func (t *Tueren) AbgaengerKontoauszuegeVersenden() http.HandlerFunc {
 	// Ein Lauf zur Zeit wie beim Mahnlauf; neben ihm darf er laufen, beide schicken anderes.
 	var laeuft atomic.Bool
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		req, ok := leseKlassenVersandAnfrage(w, r)
-		if !ok {
-			return
-		}
-
-		if !t.Post().IstKonfiguriert(r.Context()) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Der Versand ist nicht möglich, weil kein SMTP-Server eingerichtet ist", nil)
-			return
-		}
-
-		// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
-		// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
-		if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungAusserhalbDerSaison(fenster), nil)
-			return
-		}
-		if !laeuft.CompareAndSwap(false, true) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Es läuft bereits ein Versand der Kontoauszüge. Bitte warten, bis er fertig ist.", nil)
-			return
-		}
-		defer laeuft.Store(false)
-
-		// Dieselbe Abfrage, die auch der Druck benutzt (leerer Filter = alle Klassen).
-		// Papier und Mail zeigen damit garantiert denselben Stand.
-		eintraege, err := t.ladeAbgaengerKontoauszuege(ctx, "", nil)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		adressen, err := t.ladeKlassenleitungsAdressen(ctx)
-		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, req.Klassen)
-		if req.Umleitung != "" {
-			gewaehlt = lenkeAbgaengerUm(gewaehlt, req.Umleitung)
-		}
-
-		protokoll := klassenVersandProtokoll{
-			Klassen:   abgaengerKlassennamen(gewaehlt),
-			Umleitung: req.Umleitung,
-			Unbekannt: unbekannt,
-		}
-
-		// Absicht vor dem Versand protokollieren, siehe protokolliereKlassenVersand.
-		protokoll.Phase = "start"
-		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", protokoll)
-
-		erg := versendeAbgaengerKontoauszuege(r.Context(), gewaehlt, erzeugeKontoauszugPDF, t.Post().Sende)
-
-		protokoll.Phase = "ende"
-		protokoll.Versendet, protokoll.Uebersprungen, protokoll.Fehlgeschlagen, protokoll.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
-		t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", protokoll)
-
-		tuer.AntworteJSON(w, http.StatusOK, klassenVersandAntwort{
-			Versendet:      erg.Versendet,
-			Uebersprungen:  erg.Uebersprungen,
-			Fehlgeschlagen: erg.Fehlgeschlagen,
-			Abgebrochen:    erg.Abgebrochen,
-			Meldung:        abgaengerVersandMeldung(erg, req.Umleitung),
-		})
+		t.verarbeiteAbgaengerVersand(w, r, &laeuft)
 	}
+}
+
+// verarbeiteAbgaengerVersand ist der Rumpf von AbgaengerKontoauszuegeVersenden. Er steht auf der
+// obersten Ebene, weil eine Closure für die Komplexitätsmessung als eigene Ebene zählt.
+func (t *Tueren) verarbeiteAbgaengerVersand(w http.ResponseWriter, r *http.Request, laeuft *atomic.Bool) {
+	ctx := r.Context()
+
+	req, ok := leseKlassenVersandAnfrage(w, r)
+	if !ok {
+		return
+	}
+
+	if !t.Post().IstKonfiguriert(r.Context()) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusServiceUnavailable, "Der Versand ist nicht möglich, weil kein SMTP-Server eingerichtet ist", nil)
+		return
+	}
+
+	// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
+	// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
+	if fenster := abgaengerFensterFuer(t.Jetzt()); !fenster.Offen {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungAusserhalbDerSaison(fenster), nil)
+		return
+	}
+	if !laeuft.CompareAndSwap(false, true) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, "Es läuft bereits ein Versand der Kontoauszüge. Bitte warten, bis er fertig ist.", nil)
+		return
+	}
+	defer laeuft.Store(false)
+
+	// Dieselbe Abfrage, die auch der Druck benutzt (leerer Filter = alle Klassen).
+	// Papier und Mail zeigen damit garantiert denselben Stand.
+	eintraege, err := t.ladeAbgaengerKontoauszuege(ctx, "", nil)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	adressen, err := t.ladeKlassenleitungsAdressen(ctx)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
+	if err != nil {
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+		return
+	}
+
+	gewaehlt, unbekannt := waehleAbgaengerKlassen(eintraege, adressen, req.Klassen)
+	if req.Umleitung != "" {
+		gewaehlt = lenkeAbgaengerUm(gewaehlt, req.Umleitung)
+	}
+
+	protokoll := klassenVersandProtokoll{
+		Klassen:   abgaengerKlassennamen(gewaehlt),
+		Umleitung: req.Umleitung,
+		Unbekannt: unbekannt,
+	}
+
+	// Absicht vor dem Versand protokollieren, siehe protokolliereKlassenVersand.
+	protokoll.Phase = "start"
+	t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", protokoll)
+
+	erg := versendeAbgaengerKontoauszuege(r.Context(), gewaehlt, erzeugeKontoauszugPDF(tuer.SchuleAus(einstellungen)), t.Post().Sende)
+
+	protokoll.Phase = "ende"
+	protokoll.Versendet, protokoll.Uebersprungen, protokoll.Fehlgeschlagen, protokoll.Abgebrochen = erg.Versendet, erg.Uebersprungen, erg.Fehlgeschlagen, erg.Abgebrochen
+	t.protokolliereKlassenVersand(r, "ABGAENGER_KONTOAUSZUG_MAIL", protokoll)
+
+	tuer.AntworteJSON(w, http.StatusOK, klassenVersandAntwort{
+		Versendet:      erg.Versendet,
+		Uebersprungen:  erg.Uebersprungen,
+		Fehlgeschlagen: erg.Fehlgeschlagen,
+		Abgebrochen:    erg.Abgebrochen,
+		Meldung:        abgaengerVersandMeldung(erg, req.Umleitung),
+	})
 }
 
 // ladeKlassenleitungsAdressen lädt die Klassenleitungen als Nachschlagetabelle.
@@ -176,10 +188,12 @@ func abgaengerKlassennamen(klassen []abgaengerKlasse) []string {
 	return namen
 }
 
-// erzeugeKontoauszugPDF erzeugt den Kontoauszug eines Abgängers mit Unterschriftszeile, also
-// genau das Blatt, das auch aus dem Druck fällt.
-func erzeugeKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
-	return pdf.ErzeugeKontoauszuege([]pdf.KontoauszugEintrag{e}, true)
+// erzeugeKontoauszugPDF liefert die Erzeugung des Kontoauszugs eines Abgängers mit
+// Unterschriftszeile, also genau das Blatt, das auch aus dem Druck fällt.
+func erzeugeKontoauszugPDF(schule pdf.SchuleInfo) func(pdf.KontoauszugEintrag) ([]byte, error) {
+	return func(e pdf.KontoauszugEintrag) ([]byte, error) {
+		return pdf.ErzeugeKontoauszuege([]pdf.KontoauszugEintrag{e}, schule, true)
+	}
 }
 
 // versendeAbgaengerKontoauszuege verschickt je Klasse eine Mail mit einem PDF je Abgänger.

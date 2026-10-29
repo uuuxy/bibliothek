@@ -159,8 +159,14 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 			return
 		}
 
+		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+			return
+		}
+
 		// Der Kontoauszug der Abgänger trägt die Unterschriftszeile (eine Seite je Abgänger).
-		pdfDaten, err := pdf.ErzeugeKontoauszuege(eintraege, true)
+		pdfDaten, err := pdf.ErzeugeKontoauszuege(eintraege, tuer.SchuleAus(einstellungen), true)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return

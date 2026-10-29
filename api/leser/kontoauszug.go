@@ -67,7 +67,13 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 			return
 		}
 
-		pdfDaten, err := pdf.ErzeugeKontoauszug(schueler, buecher)
+		einstellungen, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
+		if err != nil {
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+			return
+		}
+
+		pdfDaten, err := pdf.ErzeugeKontoauszug(schueler, buecher, tuer.SchuleAus(einstellungen))
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
