@@ -6,6 +6,7 @@
 	import LieferantZeile from './LieferantZeile.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { meldeFormular } from '../../stores/verlassenSchutz.svelte.js';
+	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 
 	// ladefehler: der Grund, wenn die Lieferanten nicht kamen. „Keine Lieferanten angelegt" hieße
 	// sonst, es gebe keine, und lüde zum doppelten Anlegen ein. Eine Liste von vorhin bleibt stehen.
@@ -67,14 +68,17 @@
 	/** @type {string|null} */
 	let loeschtKennung = $state(null);
 
-	// Gesperrt, bis die Liste nachgeladen ist: Ein zweiter Klick schickte ein zweites DELETE, und
-	// nach dem Löschen stand „Lieferant nicht gefunden".
-	/** @param {string} id */
-	async function loesche(id) {
+	// Fragt vorher, weil „Löschen" neben „Bearbeiten" steht und nichts es zurücknimmt. Gesperrt, bis
+	// die Liste nachgeladen ist: Ein zweiter Klick schickte ein zweites DELETE.
+	/** @param {{ id: string, name: string }} s */
+	async function loesche(s) {
 		if (loeschtKennung) return;
-		loeschtKennung = id;
+		const folge =
+			'Frühere Bestellungen behalten ihre Angaben. Der Lieferant lässt sich nicht wiederherstellen.';
+		if (!(await loeschenBestaetigen(`Lieferant „${s.name}“ löschen?`, folge))) return;
+		loeschtKennung = s.id;
 		try {
-			await onRemoveSupplier(id);
+			await onRemoveSupplier(s.id);
 		} finally {
 			loeschtKennung = null;
 		}

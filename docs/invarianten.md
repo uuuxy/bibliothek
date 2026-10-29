@@ -547,9 +547,10 @@ Dieselben Fragen, übersetzt für die Oberfläche:
 | 5 · stille Fehler      | 200 ohne Wirkung                            | Ladefehler ohne Fehlerzustand — ein catch, das alten Inhalt stehen lässt und nichts anzeigt; Erfolgsmeldung aus der Eingabe statt aus der Antwort; ein Knopf, dessen Weg ohne Anfrage und ohne Meldung endet |
 | 6 · Zeit               | Zeitzone, Tx-Fenster                        | Antwort-Reihenfolge: überholt die langsame Antwort die schnelle? Sequenznummer wie im bestellStore                                                  |
 | 8 · Lebenszyklus       | Frist, Löschjob                             | Bediener- und Ansichtswechsel: welcher State muss beim Verlassen zurück auf Anfang — und welcher Code tut das wirklich?                           |
+| 10 · Rückweg           | Weg zurück, am Ergebnis bewiesen            | Ein Knopf, dessen Wirkung nichts zurücknimmt (löschen, verwerfen, zusammenführen), fragt vorher (Rückfrage aus stores/bestaetigung.svelte.js), erst recht neben einem häufigen Knopf; was sich zurücknehmen lässt, fragt nicht (Auflage lösen) |
 | 11 · geteilter Zustand | Wächter/Lader je Pfad                       | wer lädt den Store auf DIESEM Einstieg — und unmountet das Ergebnis seinen eigenen Lader? Prüft ein Wächter gegen die geladene Liste statt gegen den Datensatz, entfällt er, sobald der Datensatz nicht in ihr steht |
 
-Die übrigen Fragen bis 14 (1, 4, 7, 9, 10) gelten wörtlich auch vorn — Frage 4 heißt dort:
+Die übrigen Fragen bis 14 (1, 4, 7, 9) gelten wörtlich auch vorn — Frage 4 heißt dort:
 das Recht steuert das Menü UND die Route, nie nur eines von beiden. Die Fragen 15 bis 18
 sind an der Oberfläche gestellt; am Server heißt 17 „welche Frist hat der Aufruf nach
 außen, und was antwortet die Tür, wenn sie abläuft?" und 18 „prüft die Tür beim Schreiben,

@@ -22,7 +22,7 @@
 	 *   bearbeiten: boolean,
 	 *   loescht?: boolean,
 	 *   onEdit: (s: any) => void,
-	 *   onRemove: (id: string) => void,
+	 *   onRemove: (s: { id: string, name: string }) => void,
 	 *   onSave: (aenderung: Record<string, any>) => Promise<void>,
 	 *   onCancel: () => void
 	 * }}
@@ -117,7 +117,7 @@
 				class="text-on-surface-variant cursor-pointer text-sm mr-3">Bearbeiten</button
 			>
 			<button
-				onclick={() => onRemove(s.id)}
+				onclick={() => onRemove(s)}
 				disabled={loescht}
 				aria-label="Lieferant {s.name} löschen"
 				class="text-error cursor-pointer text-sm disabled:cursor-not-allowed disabled:text-on-surface/38"

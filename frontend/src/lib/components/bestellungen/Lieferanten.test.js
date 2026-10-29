@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
+vi.mock('../../stores/bestaetigung.svelte.js', () => ({
+	loeschenBestaetigen: vi.fn(async () => true)
+}));
+
+import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import Lieferanten from './Lieferanten.svelte';
 
 // Lehnt der Server einen neuen Lieferanten ab, bleibt die Eingabe zum Berichtigen stehen; eine
@@ -116,5 +121,25 @@ describe('Lieferanten: Löschen', () => {
 		await tick();
 		await tick();
 		expect(knopf.hasAttribute('disabled')).toBe(false);
+	});
+
+	// „Löschen" steht neben „Bearbeiten", und nichts nimmt es zurück: Erst die Rückfrage mit dem
+	// Namen, und „Abbrechen" lässt den Lieferanten stehen.
+	it('fragt vorher und löscht nach „Abbrechen" nicht', async () => {
+		const onRemoveSupplier = vi.fn(async () => {});
+		const ansicht = baue({ suppliers: [LIEFERANT], onRemoveSupplier });
+		const knopf = ansicht.getByRole('button', { name: 'Lieferant Buchhandlung Alt löschen' });
+
+		vi.mocked(loeschenBestaetigen).mockResolvedValueOnce(false);
+		await fireEvent.click(knopf);
+		await tick();
+		expect(loeschenBestaetigen).toHaveBeenCalledWith(
+			'Lieferant „Buchhandlung Alt“ löschen?',
+			expect.stringContaining('Frühere Bestellungen behalten ihre Angaben')
+		);
+		expect(onRemoveSupplier).not.toHaveBeenCalled();
+
+		await fireEvent.click(knopf);
+		await vi.waitFor(() => expect(onRemoveSupplier).toHaveBeenCalledWith('s1'));
 	});
 });

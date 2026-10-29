@@ -5,6 +5,7 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { onMount } from 'svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	import Feld from '../ui/Feld.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
@@ -71,9 +72,14 @@
 	// stand „Kein Eintrag für diese Klasse".
 	let loeschtKlasse = $state(/** @type {string | null} */ (null));
 
+	// Fragt vorher wie jedes Löschen im Haus: Nichts nimmt es zurück, und der Versand an die Klasse
+	// entfällt still.
 	/** @param {string} klasse */
 	async function loescheZuordnung(klasse) {
 		if (loeschtKlasse) return;
+		const folge =
+			'Mahnlisten und Kontoauszüge dieser Klasse werden danach beim Versand übersprungen.';
+		if (!(await loeschenBestaetigen(`Zuordnung für ${klasse} löschen?`, folge))) return;
 		loeschtKlasse = klasse;
 		try {
 			await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);

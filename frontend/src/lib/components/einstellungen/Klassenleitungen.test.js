@@ -9,8 +9,12 @@ vi.mock('../../apiFetch.js', async (original) => ({
 	apiDelete: vi.fn()
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
+vi.mock('../../stores/bestaetigung.svelte.js', () => ({
+	loeschenBestaetigen: vi.fn(async () => true)
+}));
 
 import { apiFetch, apiGet, apiDelete } from '../../apiFetch.js';
+import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import Klassenleitungen from './Klassenleitungen.svelte';
 
 // Scheitert das Laden, steht weder „Noch keine Zuordnungen" noch das Formular da: Hinzufügen
@@ -81,6 +85,27 @@ describe('Klassenleitungen: Löschen', () => {
 		).toBe(true);
 		antworte();
 		await waitFor(() => expect(apiGet).toHaveBeenCalledTimes(2));
+	});
+
+	// Nichts nimmt das Löschen zurück, und der Versand an die Klasse entfällt danach still.
+	it('fragt vorher und löscht nach „Abbrechen" nicht', async () => {
+		vi.mocked(apiGet).mockResolvedValue([ZEILE]);
+		vi.mocked(apiDelete).mockResolvedValue(undefined);
+		const screen = render(Klassenleitungen);
+		const knopf = await screen.findByRole('button', { name: 'Zuordnung für 05F löschen' });
+
+		vi.mocked(loeschenBestaetigen).mockResolvedValueOnce(false);
+		await fireEvent.click(knopf);
+		await waitFor(() =>
+			expect(loeschenBestaetigen).toHaveBeenCalledWith(
+				'Zuordnung für 05F löschen?',
+				expect.stringContaining('beim Versand übersprungen')
+			)
+		);
+		expect(apiDelete).not.toHaveBeenCalled();
+
+		await fireEvent.click(knopf);
+		await waitFor(() => expect(apiDelete).toHaveBeenCalledTimes(1));
 	});
 
 	it('lädt die Liste auch nach einem Fehler neu', async () => {
