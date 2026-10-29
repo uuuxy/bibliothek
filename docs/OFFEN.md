@@ -18,8 +18,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Littera-Übernahme am Schulserver mit der Sicherung der Schule
   ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 9). (7.2, 4.20)
-- [x] Eingang des Servers: Von außen kommt nur die Seite der Lieferanten durch; die Sperre steht
-  in der Caddy-Konfiguration. Was nach außen gehen darf, regelt die Firewall der Schule. (4.23)
 - [ ] Am Schulserver einrichten: Netze der Schule für den Eingang ([DEPLOYMENT.md](DEPLOYMENT.md),
   Abschnitt 3), verschlüsselte Platte (7.13), Sicherung außer Haus (7.3, R8),
   Uptime-Signal (7.5, R9), Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm
@@ -29,41 +27,15 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 - [ ] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
-### Fehlerfälle der Oberfläche, Bereich für Bereich
+### Am Programm
 
-Je Bereich die Knöpfe und Scans, die etwas buchen, zählen, vermerken, drucken, verschicken oder
-löschen: Doppelklick bei langsamer Antwort, verweigertes Fenster oder Kamera, zweiter Versuch nach
-einem Fehler (5.106).
-
-- [x] Eine Fehlerantwort wird durch einen eigenen Satz ersetzt: 30 Stellen über den ganzen
-  Bestand, mit Prüfregel. (5.106)
-- [x] Ein gescheitertes Laden zeigt einen Leerzustand oder eine Entwarnung: 16 Stellen über den
-  ganzen Bestand, eine davon an der Theke, mit Prüfregel. (5.106)
-- [x] Theke: Ausleihe, Rückgabe, Schnellrückgabe, Warteschlange ohne Netz. (5.106)
-- [x] Mahnwesen, Bescheide und Schäden. (5.106)
-- [x] Druck-Center und Etiketten. (5.106)
-- [x] Leserakte. (5.106)
-- [x] Abgänger und Versand an die Klassenleitungen. (5.106)
-- [x] LMF-Plan, Lernmittel und Klassensätze. (5.106)
-- [x] Bestellungen und Lieferanten. (5.106)
-- [x] Importe: LUSD, Littera, Bestand, Schuljahreswechsel. (5.106)
-- [x] Medienkatalog, Buchakte und Signaturen. (5.106)
-- [x] Inventur. (5.106)
-- [x] Einstellungen, Benutzer und Rechte. (5.106)
-- [x] Portal und öffentlicher Katalog. (5.106)
-- [x] Anmeldung, Sperre und Update-Hinweis. (5.106)
-- [x] Statistik, Protokoll und Betrieb. (5.106)
-- [x] Der Browser-Test „Handscanner: der Fokus steht woanders" wackelt nach „Bezahlt". (5.109)
+- [ ] Zugangsbuch: Ohne gewähltes Datum steht das vorherige Schulhalbjahr da, nicht das laufende.
+  (5.110)
 
 ### Bei dir
 
 Nur, was kein Test leisten kann.
 
-- [x] Entscheiden: Mit dem Löschen eines Titels oder eines Verlusts fällt eine Forderung aus ihrem
-  Bescheid, und der Bescheid gilt als erledigt. Empfehlung: Sie bleibt, ohne Exemplar (Weg B).
-  (5.107)
-- [x] Freigeben: Pull Request #759 schließen, die Speichergrenze beim Hochladen gibt es schon.
-  (5.108)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -75,13 +47,12 @@ Nur, was kein Test leisten kann.
   zurückstellen.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 - [ ] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
-  Danach laufen die Durchgänge auch in Safari; der WebKit-Testbrowser zeichnet keine PDFs. (5.106)
+  Danach prüfe ich in Safari, ob die Dokumente mit Personendaten im Tab erscheinen. (5.106)
 
 ### Termin
 
-- [x] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
+- [ ] Ab dem 20. Oktober 2027: Node 27, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
-- [ ] Ab dem 20. Oktober 2027: Node 27, nach derselben Regel.
 
 ---
 
@@ -103,35 +74,27 @@ Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etike
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
 
-### 5.106 Fehlerfälle der Oberfläche, Bereich für Bereich
+### 5.106 Safari: Dokumente mit Personendaten im Tab
 
-Beleg: Drei Fehler traten nur im Fehlerfall auf, und kein Test konnte sie sehen (behoben in
-29b2bbd0). Der Etikettenbogen vermerkte die Etiketten als gedruckt, wenn der Browser das Fenster
-blockiert hatte; „Speichern" im Tab der Schüler-Etiketten brach nach einer Minute ab; die
-Kontoauszüge der Abgänger meldeten „Error: Failed to load PDF". Der Browser der Browser-Tests hat
-weder Popup-Blocker noch PDF-Betrachter, und ein Test geht meist den Weg, auf dem alles klappt.
+DSGVO-Auskunft, Kontoauszug und Rechnung aus der Leserakte, Mahnbriefe, Bescheide und die
+Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zeigePdf` in
+`frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie zeigt, ist nicht gemessen; der
+WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem Schalter in Safari über
+`safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 
-Je Bereich gehen die Knöpfe und Scans, die etwas buchen, zählen, vermerken, drucken, verschicken
-oder löschen, durch drei Störfälle, im Browser herbeigeführt (Chromium, Firefox, WebKit;
-Handgriffe in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14):
+### 5.110 Zugangsbuch: das vorherige Halbjahr vorschlagen
 
-1. Der Server antwortet langsam: Zählt ein Doppelklick doppelt?
-2. Der Browser verweigert etwas (Fenster, Druckdialog, Kamera): Wird trotzdem etwas vermerkt?
-3. Ein zweites Mal, nach einer Ablehnung des Servers, ohne Netz oder nach dem Neuladen: Geht es,
-   und zählt es nur einmal?
+Ohne Datum nimmt der Server das laufende Schulhalbjahr (`bestandsbuchZeitraum` in
+`api/katalog/bestandsbuch.go`, für Zugangs- und Abgangsbuch). Ausgedruckt wird das Zugangsbuch
+aber zu Beginn eines Halbjahres, und zwar für das vorherige: Der Leitfaden Lernmittelfreiheit
+verlangt unter 11.5 „zu Beginn jedes Schulhalbjahres ein Ausdruck der Neuanschaffungen des
+vorhergehenden Halbjahres". Wer dann druckt, bekommt heute ein fast leeres Blatt, wenn er die
+Daten nicht von Hand umstellt.
 
-Entschieden am 27.10.2026: Ob eine Meldung den Grund des Servers nennt, wird nicht mehr je Bereich
-gesucht, und Knöpfe, die nur lesen, gehen nicht mehr durch. Beleg aus der Leserakte: Von neun
-Funden hatten zwei eine Wirkung, beide an solchen Knöpfen; vier waren fehlende Gründe in Meldungen.
-
-Jeder Fund wird mit einem Test behoben, der am alten Stand rot ist. Danach geht die Suche nach
-derselben Form über den ganzen Bestand, und eine Prüfregel hält sie ([sweeps.md](sweeps.md)). Im
-Raster stehen die Fragen bei 5 und 17 ([invarianten.md](invarianten.md)).
-
-Bekannt und offen:
-
-- Safari: Ob Safari die Dokumente mit Personendaten im Tab zeigt, ist nicht gemessen; der
-  WebKit-Testbrowser zeichnet keine PDFs.
+Entschieden am 29.10.2026: Vorgeschlagen wird das vorherige Halbjahr; Seitenzahlen über alle
+Ausdrucke hinweg werden nicht gebaut ([FACHKONZEPT.md](FACHKONZEPT.md) §20). Das Blatt trägt
+heute gar keine Seitenzahlen (`pdf/zugangsbuch.go`). Gebaut wird nach der Darstellung hell und
+dunkel.
 
 ### 7.2 Frisches Littera-Backup
 

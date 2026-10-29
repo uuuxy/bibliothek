@@ -1078,6 +1078,7 @@ Technische Alternativen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 4.3.
 | **Google Books als Quelle für Titeldaten streichen** | 24.09.2026 | Die Reihenfolge bleibt DNB, Google Books, OpenLibrary (`internal/katalogdienste/katalogdienste.go`). Für Schlagworte wird nur die DNB gefragt (§13) |
 | **Nachbau des Littera-Etiketts beim Nachdruck** | 30.09.2026 (`bb5e3104`) | Der Scanwert ist derselbe, und Bildschirm und Mahnliste zeigen die 13 Ziffern. Nachgedruckt wird das Etikett dieses Programms (§9) |
 | **Reihe neuer Nummern ohne Exemplar im Druck-Center** („Neue Barcodes" ab einer Start-Ziffer, auch aus `barcode_seq` gezogen) | 22.10.2026 | Jede Nummer entsteht mit ihrem Exemplar: bei der Bestellung (§7), in der Maske des Titels und bei der Übernahme aus Littera. Eine Nummer, die nur auf Papier steht, gehört keinem Exemplar, und eine Bestellung könnte sie ein zweites Mal vergeben |
+| **Seitenzahlen, die über alle Ausdrucke des Zugangsbuchs weiterlaufen** („fortlaufend paginiert" im Leitfaden Lernmittelfreiheit, 11.5) | 29.10.2026 | Jeder Ausdruck steht für sich. Eine Zählung über alle Ausdrucke bräuchte einen Zähler am Server und verschöbe die Seiten, sobald ein Halbjahr ein zweites Mal gedruckt wird |
 
 An anderer Stelle beschrieben, weil die Entscheidung dort zum Ablauf gehört: keine
 seitenübergreifende Suchleiste ([HANDBUCH.md](HANDBUCH.md), „Suchen"), kein Buchwunsch und kein
