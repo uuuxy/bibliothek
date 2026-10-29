@@ -31,8 +31,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [x] Zugangsbuch: Ohne gewähltes Datum steht das vorherige Schulhalbjahr da, nicht das laufende.
   (5.110)
-- [ ] Vorschläge von Jules prüfen: #760 (Vorgabe `type="button"` am Knopf) und #762 (Abfrage des
-  Bestellverlaufs). Übernommen wird, was am alten Stand einen Fehler zeigt. (5.111)
+- [ ] Vorschlag von Jules prüfen: #762 (Abfrage des Bestellverlaufs). Übernommen wird, was am
+  alten Stand einen Fehler zeigt. (5.111)
 - [ ] Etikettenvorschau: Sie zeigt, was gedruckt wird; das QR-Etikett bekommt Schulname, Jahr und
   Vermerk; der Hilfsrahmen wirkt oder entfällt. (5.114)
 - [ ] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
@@ -43,7 +43,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [x] Freigeben: Pull Request #761 schließen; er ist derselbe Vorschlag wie #759. (5.111)
+- [ ] Freigeben: Pull Request #760 schließen; kein Knopf des Programms zeigt den Fehler, den er
+  verhindern soll. (5.111)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -93,8 +94,9 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 ### 5.111 Vorschläge von Jules vom 29.10.2026
 
 - **#760** setzt in `ui/Button.svelte` `type="button"` als Vorgabe; ohne `type` sendet ein Knopf in
-  einem `<form>` das Formular ab. Nächster Schritt: einen Knopf des Hauses in einem `<form>`
-  finden, an dem das geschieht, und den Vorschlag dort rot zeigen; gibt es keinen, schließen.
+  einem `<form>` das Formular ab. Geprüft: Jeder Knopf in einem `<form>` des Programms trägt ein
+  ausdrückliches `type`, auch die in Switch, Select, Suchfeld und Suchpille. Nach der Regel oben
+  wird der Vorschlag geschlossen; die Freigabe steht unter „Bei dir".
 - **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
   `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
   Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.

@@ -3666,8 +3666,17 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `auflagenSuche`, `schuelerSuche`, `portalSuche` und andere); die Prüfung danach hält
   `frontend-hygiene-spaete-pruefung.test.js`, einen gemeinsamen Baustein gibt es nicht. Rund
   fünfzehn Türen setzen die Kopfzeilen eines PDF je selbst; Zugangs- und Abgangsbuch
-  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich.
-  Anlass: ein Fehler in einer der Kopien.
+  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich. An neun
+  Stellen lesen Türen ihren Rumpf mit `json.NewDecoder` selbst statt über `tuer.LeseAnfrage`, darunter
+  das Löschen markierter Titel und die Klassensätze (`api/katalog`); die Größe des Rumpfs begrenzt
+  die Middleware für alle. Bestands-, Listen- und Littera-Import bauen die Dateiwahl je selbst
+  (`frontend/src/lib/components/admin/`). Anlass: ein Fehler in einer der Kopien.
+- **Zwei Ordner der Oberfläche heißen nicht nach ihrem Thema.** `frontend/src/inventur/` hält die
+  Oberfläche des Medienkatalogs (5.3); „Inventur" heißt sonst der Inventurlauf, und `$lib` zeigt
+  dort hinein (`frontend/vite.config.js`, `frontend/jsconfig.json`), nicht auf `src/lib`.
+  `frontend/src/lib/components/admin/` hält Teile der Einstellungen, deren Türen in `api/system`
+  stehen; STIL.md 13 verlangt den Namen des Themas. Anlass: ein Umzug in Stufen wie der von
+  `components/students` nach `components/leser`, mit Bau-Vergleich.
 - **Abweichungen von Googles Regelwerk für Go ohne Schritt:** Hilfsfunktionen in `main.go`
   beenden das Programm an 14 Stellen selbst (`os.Exit`); Best Practices, „Program
   initialization errors": „should be propagated upward to main". Anlass: ein Test, der einen
