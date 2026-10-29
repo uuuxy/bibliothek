@@ -38,16 +38,20 @@ function lage(el) {
 async function oeffneBericht(page, eintraege) {
 	await page.route('**/api/inventur/abgeschlossen', (route) =>
 		route.fulfill({
-			json: [
-				{
-					session_id: 'druck-probe',
-					label: 'Druckprobe',
-					abgeschlossen_am: '2026-10-01T10:00:00Z',
-					erfasst: 10,
-					verluste: eintraege.length,
-					verworfen: false
-				}
-			]
+			json: {
+				laeufe: [
+					{
+						session_id: 'druck-probe',
+						label: 'Druckprobe',
+						abgeschlossen_am: '2026-10-01T10:00:00Z',
+						erfasst: 10,
+						verluste: eintraege.length,
+						verworfen: false
+					}
+				],
+				weitere: 0,
+				naechste_seite: ''
+			}
 		})
 	);
 	await page.route('**/api/inventur/fehlbestand*', (route) => route.fulfill({ json: eintraege }));

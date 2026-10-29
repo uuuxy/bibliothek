@@ -1,44 +1,39 @@
 import { snackbars } from '../../stores/snackbars.svelte.js';
-import {
-	ladeAbgeschlosseneInventuren,
-	ladeFehlbestand,
-	meldeVerlustGefunden,
-	loescheVerlustEndgueltig
-} from './inventurApi.js';
+import { ladeFehlbestand, meldeVerlustGefunden, loescheVerlustEndgueltig } from './inventurApi.js';
 import { formatEuro } from '../../utils/format.js';
-import { fehlertext } from '../../utils/fehlertext.js';
 
 /**
- * Der Fehlbestandsbericht: Liste, frühere Läufe, und die zwei Handlungen darauf
- * (Gefunden / endgültig löschen). Aus useInventur herausgelöst — die
- * Session-Scan-Mechanik und der Bericht über eine ABGESCHLOSSENE Inventur sind zwei
- * verschiedene Zuständigkeiten, die nur zufällig denselben Bildschirm teilen.
- * @param {{ frueher: string }} nichtGeladen bekommt den Grund, wenn die früheren nicht kamen
+ * Der Fehlbestandsbericht: Liste und die zwei Handlungen darauf (Gefunden / endgültig
+ * löschen). Aus useInventur herausgelöst — die Session-Scan-Mechanik und der Bericht über eine
+ * ABGESCHLOSSENE Inventur sind zwei verschiedene Zuständigkeiten, die nur zufällig denselben
+ * Bildschirm teilen. Die Liste der früheren Läufe führt useFruehereInventuren.
  */
-export function useFehlbestand(nichtGeladen) {
+export function useFehlbestand() {
 	/** Fehlbestand der zuletzt abgeschlossenen (oder nachträglich aufgerufenen)
 	 *  Inventur — bleibt stehen, bis er ausdruecklich geschlossen wird. */
 	let fehlbestand = $state.raw(/** @type {any[]} */ ([]));
 	let fehlbestandBezeichnung = $state('');
-
-	// Frühere Inventuren: Der Bericht entstand bisher NUR aus der Antwort von
-	// schliesseAb() und lebte damit im Arbeitsspeicher dieses einen Browsers. Ein
-	// Neuladen — oder der Kollege am zweiten Arbeitsplatz, der ins Regal geht — sah ihn
-	// nie. Der Server hat die Liste dauerhaft (inventur_verluste); hier ist der Weg
-	// zurück zu ihr.
-	let abgeschlosseneInventuren = $state.raw(/** @type {any[]} */ ([]));
+	// Der Lauf, zu dem der Bericht gehört: Wird er gelöscht, schließt sich der Bericht.
+	let fehlbestandLauf = '';
 	let ladeFruehereLaeuft = $state(false);
 
 	/** Setzt den Bericht neu — Aufrufer ist der Session-Abschluss.
-	 * @param {any[]} liste @param {string} label */
-	function setzeFehlbestand(liste, label) {
+	 * @param {any[]} liste @param {string} label @param {string} laufId */
+	function setzeFehlbestand(liste, label, laufId) {
 		fehlbestand = liste;
 		fehlbestandBezeichnung = label;
+		fehlbestandLauf = laufId;
 	}
 
 	function fehlbestandSchliessen() {
 		fehlbestand = [];
 		fehlbestandBezeichnung = '';
+		fehlbestandLauf = '';
+	}
+
+	/** @param {string} laufId der gelöschte Lauf */
+	function schliesseBerichtVon(laufId) {
+		if (laufId === fehlbestandLauf) fehlbestandSchliessen();
 	}
 
 	/** Ein Buch wurde beim Regal-Absuchen doch gefunden — zurück in Umlauf, im Bericht
@@ -106,15 +101,6 @@ export function useFehlbestand(nichtGeladen) {
 		}
 	}
 
-	async function ladeFruehereInventuren() {
-		try {
-			abgeschlosseneInventuren = await ladeAbgeschlosseneInventuren();
-			nichtGeladen.frueher = '';
-		} catch (e) {
-			nichtGeladen.frueher = fehlertext(e);
-		}
-	}
-
 	/** @param {{session_id: string, label: string, abgeschlossen_am: string}} inventur */
 	async function zeigeFrueherenFehlbestand(inventur) {
 		ladeFruehereLaeuft = true;
@@ -124,8 +110,7 @@ export function useFehlbestand(nichtGeladen) {
 				snackbars.addToast(r.error || 'Fehlbestand konnte nicht geladen werden.', 'error');
 				return;
 			}
-			fehlbestand = r.data ?? [];
-			fehlbestandBezeichnung = inventur.label;
+			setzeFehlbestand(r.data ?? [], inventur.label, inventur.session_id);
 			if (fehlbestand.length === 0) {
 				snackbars.addToast('Diese Inventur war vollständig — kein Fehlbestand.', 'success');
 			}
@@ -145,13 +130,10 @@ export function useFehlbestand(nichtGeladen) {
 		fehlbestandSchliessen,
 		fehlbestandGefunden,
 		fehlbestandEndgueltigLoeschen,
-		get abgeschlosseneInventuren() {
-			return abgeschlosseneInventuren;
-		},
+		schliesseBerichtVon,
 		get ladeFruehereLaeuft() {
 			return ladeFruehereLaeuft;
 		},
-		ladeFruehereInventuren,
 		zeigeFrueherenFehlbestand
 	});
 }

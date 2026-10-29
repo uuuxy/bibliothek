@@ -4,7 +4,6 @@ import { meldeVerlustGefunden } from './inventurApi.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
 vi.mock('./inventurApi.js', () => ({
-	ladeAbgeschlosseneInventuren: vi.fn(),
 	ladeFehlbestand: vi.fn(),
 	meldeVerlustGefunden: vi.fn(),
 	loescheVerlustEndgueltig: vi.fn()
@@ -24,7 +23,7 @@ describe('Fehlbestand: als gefunden verbuchen', () => {
 			})
 		);
 
-		await useFehlbestand({ frueher: '' }).fehlbestandGefunden('ex-1');
+		await useFehlbestand().fehlbestandGefunden('ex-1');
 
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über 1.234,50\u00a0€ wurde storniert.',
@@ -37,7 +36,7 @@ describe('Fehlbestand: als gefunden verbuchen', () => {
 			/** @type {any} */ ({ ok: true, data: { stornierte_forderungen: 0 } })
 		);
 
-		await useFehlbestand({ frueher: '' }).fehlbestandGefunden('ex-1');
+		await useFehlbestand().fehlbestandGefunden('ex-1');
 
 		expect(snackbars.addToast).toHaveBeenCalledWith(
 			'Als gefunden verbucht — Exemplar ist wieder verfügbar.',

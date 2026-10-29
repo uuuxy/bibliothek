@@ -718,7 +718,10 @@ ebenso ein Scan an der Theke. _Liste drucken_ im Bericht druckt die Exemplare, d
 Reihenfolge der Signaturen, mit ganzem Titel und einem Kästchen zum Abhaken; gefundene und
 endgültig gelöschte nennt das Blatt nur als Zahl. Laufende Inventuren können fortgesetzt oder
 verworfen werden. Verwerfen bucht nichts: Unter _Frühere Inventuren_ steht der Lauf dann als
-„verworfen", ohne Fehlbestand — der Bereich gilt nicht als geprüft. (§6)
+„verworfen", ohne Fehlbestand — der Bereich gilt nicht als geprüft. _Frühere Inventuren_ zeigt
+die zehn jüngsten, _Mehr laden_ die nächsten zehn. Über das Menü ⋮ einer Zeile → _Löschen_
+verschwindet eine frühere Inventur mit ihrem Fehlbestandsbericht; die Bücher darin bleiben als
+verloren gebucht und stehen weiter im Abgangsbuch. (§6)
 
 ---
 

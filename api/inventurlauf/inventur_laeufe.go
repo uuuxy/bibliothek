@@ -3,9 +3,14 @@ package inventurlauf
 import (
 	"errors"
 	"net/http"
+	"strings"
+	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/auth"
+	"bibliothek/db"
+	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
 )
 
@@ -30,7 +35,20 @@ type abgeschlossenerLauf struct {
 	Verworfen       bool   `json:"verworfen"`
 }
 
-// AbgeschlosseneInventuren liefert die zehn zuletzt abgeschlossenen Inventuren.
+// abgeschlosseneSeite ist eine Seite der früheren Inventuren: die Läufe, wie viele ältere danach
+// kommen und das Zeichen, mit dem die Oberfläche die nächste Seite anfordert (leer, wenn keine
+// mehr kommt).
+type abgeschlosseneSeite struct {
+	Laeufe        []abgeschlossenerLauf `json:"laeufe"`
+	Weitere       int                   `json:"weitere"`
+	NaechsteSeite string                `json:"naechste_seite"`
+}
+
+// laeufeJeSeite ist die Zahl der früheren Inventuren, die „Mehr laden" jeweils dazuholt.
+const laeufeJeSeite = 10
+
+// AbgeschlosseneInventuren liefert die abgeschlossenen Inventuren seitenweise, die neuesten
+// zuerst. Der Parameter seite trägt naechste_seite der vorigen Antwort; ohne ihn kommt die erste.
 //
 // Über sie kommt die Oberfläche an die Kennung für GET /api/inventur/fehlbestand: Die Liste
 // der laufenden Inventuren nennt eine fertige nicht mehr, und ohne Kennung bliebe der
@@ -38,31 +56,95 @@ type abgeschlossenerLauf struct {
 // in inventur_verluste gespeichert ist.
 func (t *Tueren) AbgeschlosseneInventuren() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vor, ok := leseSeitenzeichen(r.URL.Query().Get("seite"))
+		if !ok {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Angabe der Seite in der Adresse ist ungültig", nil)
+			return
+		}
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 
-		laeufe, err := abfragen.LadeAbgeschlosseneLaeufe(r.Context(), 10)
+		seite, err := abfragen.LadeAbgeschlosseneLaeufe(r.Context(), vor, laeufeJeSeite)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		liste := make([]abgeschlossenerLauf, 0, len(laeufe))
-		for i := range laeufe {
+		antwort := abgeschlosseneSeite{
+			Laeufe:        make([]abgeschlossenerLauf, 0, len(seite.Laeufe)),
+			Weitere:       seite.Weitere,
+			NaechsteSeite: seitenzeichen(seite.Naechste),
+		}
+		for _, lauf := range seite.Laeufe {
 			abgeschlossen := ""
-			if laeufe[i].AbgeschlossenAm != nil {
-				abgeschlossen = *laeufe[i].AbgeschlossenAm
+			if lauf.AbgeschlossenAm != nil {
+				abgeschlossen = *lauf.AbgeschlossenAm
 			}
-			liste = append(liste, abgeschlossenerLauf{
-				LaufID:          laeufe[i].ID,
-				Bezeichnung:     laeufe[i].Bezeichnung,
+			antwort.Laeufe = append(antwort.Laeufe, abgeschlossenerLauf{
+				LaufID:          lauf.ID,
+				Bezeichnung:     lauf.Bezeichnung,
 				AbgeschlossenAm: abgeschlossen,
-				Erfasst:         laeufe[i].Erfasst,
-				Verluste:        laeufe[i].Verluste,
-				Verworfen:       laeufe[i].Verworfen,
+				Erfasst:         lauf.Erfasst,
+				Verluste:        lauf.Verluste,
+				Verworfen:       lauf.Verworfen,
 			})
 		}
-		tuer.AntworteJSON(w, http.StatusOK, liste)
+		tuer.AntworteJSON(w, http.StatusOK, antwort)
 	}
+}
+
+// seitenzeichen schreibt den letzten Lauf einer Seite als Zeichen für die nächste: Abschluss und
+// Kennung. Die Oberfläche reicht es unverändert zurück, wie ein page_token bei Google.
+func seitenzeichen(marke *repository.LaufMarke) string {
+	if marke == nil {
+		return ""
+	}
+	return marke.AbgeschlossenAm.UTC().Format(time.RFC3339Nano) + "_" + marke.ID
+}
+
+// leseSeitenzeichen liest ein Zeichen aus seitenzeichen; leer heißt erste Seite. false heißt,
+// das Zeichen stammt nicht aus seitenzeichen.
+func leseSeitenzeichen(zeichen string) (*repository.LaufMarke, bool) {
+	if zeichen == "" {
+		return nil, true
+	}
+	zeit, id, gefunden := strings.Cut(zeichen, "_")
+	am, err := time.Parse(time.RFC3339Nano, zeit)
+	if !gefunden || err != nil || !kennung.IstUUID(id) {
+		return nil, false
+	}
+	return &repository.LaufMarke{AbgeschlossenAm: am, ID: id}, true
+}
+
+// AbgeschlosseneInventurLoeschen löscht eine abgeschlossene Inventur mit ihrem
+// Fehlbestandsbericht. Was sie an den Büchern gebucht hat, bleibt
+// (repository.LoescheAbgeschlossenenLauf); eine laufende Inventur wird verworfen, nicht gelöscht.
+func (t *Tueren) AbgeschlosseneInventurLoeschen() http.HandlerFunc {
+	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
+		claims, ok := auth.ClaimsAusKontext(r.Context())
+		if !ok {
+			return apierrors.Unauthorized(auth.MeldungNichtAngemeldet, errors.New("missing session information"))
+		}
+
+		ctx := r.Context()
+		tx, err := t.DB.Pool.Begin(ctx)
+		if err != nil {
+			return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
+		}
+		defer db.Verwerfe(ctx, tx)
+
+		err = repository.NewInventurAbfragen(tx).LoescheAbgeschlossenenLauf(ctx, r.PathValue("id"), claims.KontoID)
+		if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
+			return apierrors.NotFound("Keine abgeschlossene Inventur mit dieser Kennung", err)
+		}
+		if err != nil {
+			return apierrors.Internal("Die Inventur konnte nicht gelöscht werden", err)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			return apierrors.Internal("Transaktion konnte nicht abgeschlossen werden", err)
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	})
 }
 
 // LaufendeInventuren liefert alle offenen Läufe. Die Oberfläche zeigt sie, damit eine

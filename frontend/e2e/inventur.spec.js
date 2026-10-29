@@ -187,3 +187,60 @@ test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ p
         `);
 	}
 });
+
+// Unter „Frühere Inventuren" standen nur die zehn jüngsten; ältere waren samt
+// Fehlbestandsbericht nicht mehr erreichbar (docs/OFFEN.md 5.112). „Mehr laden" holt sie, und eine
+// frühere Inventur lässt sich nach der Rückfrage löschen.
+test('Inventur: ältere frühere Inventuren über „Mehr laden“, eine davon löschen', async ({
+	page
+}) => {
+	await uiLogin(page);
+	const praefix = `E2E-ALT-${uniqueSuffix()}`;
+	const aeltester = `${praefix}-1`;
+
+	try {
+		// Elf abgeschlossene Läufe im Jahr 2001: älter als alles, was andere Tests hinterlassen;
+		// sie stehen also hinter der ersten Seite.
+		seedSQL(`
+            INSERT INTO inventur_sessions (scope_type, scope_signatur, scope_label, gestartet_am,
+                                           abgeschlossen_am, erfasst_gemeldet, verloren_gemeldet)
+            SELECT 'signature', '${praefix}-' || i, '${praefix}-' || i,
+                   timestamptz '2001-01-01' + i * interval '1 day',
+                   timestamptz '2001-01-01' + i * interval '1 day' + interval '1 hour', 0, 0
+            FROM generate_series(1, 11) AS i;
+        `);
+
+		await menuepunkt(page, 'Inventur').click();
+		const zeile = page.getByText(aeltester, { exact: true });
+		const zeilen = page.getByRole('button', { name: /^Aktionen für „/ });
+		const mehr = page.getByRole('button', { name: /^Mehr laden \(\d+ weitere\)$/ });
+		await expect(zeilen.first()).toBeVisible();
+		// Jeder Klick holt zehn; wie viele Seiten davor liegen, hängt an den Läufen anderer Tests.
+		for (let i = 0; i < 50 && !(await zeile.isVisible()); i++) {
+			const vorher = await zeilen.count();
+			await mehr.click();
+			await expect(zeilen).not.toHaveCount(vorher);
+		}
+		await expect(zeile).toBeVisible();
+
+		// Erst die Rückfrage: „Abbrechen" lässt die Inventur stehen, „Löschen" nimmt sie heraus.
+		const menue = page.getByRole('button', { name: `Aktionen für „${aeltester}“` });
+		const rueckfrage = page.getByRole('dialog', { name: `Inventur „${aeltester}“ löschen?` });
+		await menue.click();
+		await page.getByRole('menuitem', { name: 'Löschen' }).click();
+		await expect(rueckfrage).toContainText('Sie war vollständig und hat keinen Fehlbestand.');
+		await rueckfrage.getByRole('button', { name: 'Abbrechen' }).click();
+		await expect(rueckfrage).toHaveCount(0);
+		await expect(zeile).toBeVisible();
+
+		await menue.click();
+		await page.getByRole('menuitem', { name: 'Löschen' }).click();
+		await rueckfrage.getByRole('button', { name: 'Löschen' }).click();
+		await expect(zeile).toHaveCount(0);
+		expect(
+			querySQL(`SELECT count(*) FROM inventur_sessions WHERE scope_label LIKE '${praefix}-%'`)
+		).toBe('10');
+	} finally {
+		seedSQL(`DELETE FROM inventur_sessions WHERE scope_label LIKE '${praefix}-%';`);
+	}
+});

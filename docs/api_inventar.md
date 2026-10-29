@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-25. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-29. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -14,7 +14,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (225)
+## Alle registrierten Routen (226)
 
 - `/`
 - `/favicon.ico`
@@ -25,6 +25,7 @@
 - `DELETE /api/buecher/exemplare/{id}`
 - `DELETE /api/buecher/titel/{id}`
 - `DELETE /api/buecher/titel/{id}/auflagen`
+- `DELETE /api/inventur/abgeschlossen/{id}`
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
 - `DELETE /api/lmf-plan/{art}`

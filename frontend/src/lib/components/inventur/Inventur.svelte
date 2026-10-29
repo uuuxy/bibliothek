@@ -29,7 +29,7 @@
 		await ablauf.ladeSignaturen();
 		await ablauf.ladeFaecher();
 		await ablauf.ladeOffeneLaeufe();
-		await ablauf.ladeFruehereInventuren();
+		await ablauf.frueher.lade();
 	});
 
 	function focusInput() {

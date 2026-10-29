@@ -127,18 +127,36 @@ export async function schliesseAb(sessionId) {
 }
 
 /**
- * Zuletzt abgeschlossene Inventuren laden — die Auswahl, über die man einen früheren
- * Fehlbestand wieder aufruft.
+ * Eine Seite der abgeschlossenen Inventuren laden, die neuesten zuerst — die Auswahl, über die
+ * man einen früheren Fehlbestand wieder aufruft.
  *
  * Ohne sie war der Bericht flüchtig: Er entstand nur aus der Antwort von schliesseAb()
  * und lebte im Arbeitsspeicher des Browsers. Ein Neuladen oder ein Wechsel an einen
  * anderen Arbeitsplatz — und die Liste der fehlenden Bücher war weg, obwohl der Server
  * sie dauerhaft gespeichert hat.
+ * @param {string} [seite] naechste_seite der vorigen Seite; ohne kommt die erste
+ * @returns {Promise<{ laeufe: any[], weitere: number, naechste_seite: string }>}
  */
-export async function ladeAbgeschlosseneInventuren() {
-	const res = await apiFetch('/api/inventur/abgeschlossen');
+export async function ladeAbgeschlosseneInventuren(seite = '') {
+	const abfrage = seite ? `?seite=${encodeURIComponent(seite)}` : '';
+	const res = await apiFetch(`/api/inventur/abgeschlossen${abfrage}`);
 	if (!res.ok) throw new Error(await leseApiFehler(res));
-	return (await res.json().catch(() => [])) || [];
+	const antwort = (await res.json().catch(() => null)) || {};
+	return {
+		laeufe: antwort.laeufe ?? [],
+		weitere: antwort.weitere ?? 0,
+		naechste_seite: antwort.naechste_seite ?? ''
+	};
+}
+
+/**
+ * Eine abgeschlossene Inventur mit ihrem Fehlbestandsbericht löschen.
+ * @param {string} sessionId
+ */
+export async function loescheAbgeschlosseneInventur(sessionId) {
+	return sende(`/api/inventur/abgeschlossen/${encodeURIComponent(sessionId)}`, {
+		method: 'DELETE'
+	});
 }
 
 /**

@@ -15,7 +15,8 @@ import {
 	brichAb,
 	meldeVerlustGefunden,
 	loescheVerlustEndgueltig,
-	ladeFehlbestand
+	ladeFehlbestand,
+	loescheAbgeschlosseneInventur
 } from './inventurApi.js';
 
 // Eine leere Liste hieße „keine Inventur läuft" und „keine frühere"; lehnt der Server ab,
@@ -42,7 +43,8 @@ describe('inventurApi: ohne Antwort des Servers', () => {
 		['Verwerfen', () => brichAb('s1')],
 		['Gefunden', () => meldeVerlustGefunden('e1')],
 		['endgültig Löschen', () => loescheVerlustEndgueltig(['e1'])],
-		['Fehlbestand', () => ladeFehlbestand('s1')]
+		['Fehlbestand', () => ladeFehlbestand('s1')],
+		['Löschen einer früheren Inventur', () => loescheAbgeschlosseneInventur('s1')]
 	])('liefert beim %s den Fehler als Ergebnis, statt zu werfen', async (_name, anfrage) => {
 		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
 		await expect(anfrage()).resolves.toEqual({
@@ -51,5 +53,23 @@ describe('inventurApi: ohne Antwort des Servers', () => {
 			error: 'Keine Verbindung zum Server.',
 			data: {}
 		});
+	});
+});
+
+// Die nächste Seite schließt an die vorige an: Ihr Zeichen geht unverändert an den Server zurück.
+describe('inventurApi: Seiten der früheren Inventuren', () => {
+	it('holt die erste Seite ohne Zeichen und die nächste mit dem Zeichen der vorigen', async () => {
+		const seite = { laeufe: [{ session_id: 's1' }], weitere: 3, naechste_seite: 'z+1' };
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => seite })
+		);
+
+		expect(await ladeAbgeschlosseneInventuren()).toEqual(seite);
+		await ladeAbgeschlosseneInventuren('2026-10-29T20:10:00.5Z_s1');
+
+		expect(vi.mocked(apiFetch).mock.calls.map(([adresse]) => adresse)).toEqual([
+			'/api/inventur/abgeschlossen',
+			'/api/inventur/abgeschlossen?seite=2026-10-29T20%3A10%3A00.5Z_s1'
+		]);
 	});
 });

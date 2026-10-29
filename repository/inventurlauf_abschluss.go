@@ -98,7 +98,8 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 	return verloren, nil
 }
 
-// ErrInventurlaufNichtGefunden meldet eine unbekannte ID beim Verwerfen.
+// ErrInventurlaufNichtGefunden meldet beim Verwerfen eine unbekannte Kennung, beim Löschen eine,
+// zu der es keinen abgeschlossenen Lauf gibt.
 var ErrInventurlaufNichtGefunden = errors.New("inventur-session nicht gefunden")
 
 // VerwerfeLauf beendet einen Lauf ohne Verlustbuchung, für abgebrochene oder liegengebliebene

@@ -2,6 +2,7 @@ import { snackbars } from '../../stores/snackbars.svelte.js';
 import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
 import { scanne, schliesseAb, deuteScanErgebnis } from './inventurApi.js';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
+import { useFruehereInventuren } from './useFruehereInventuren.svelte.js';
 import { useInventurlauf } from './useInventurlauf.svelte.js';
 import { spieleErfolgston, spieleFehlerton } from '../../utils/audio.js';
 
@@ -30,7 +31,8 @@ export function useInventur() {
 	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurlauf, aber
 	// letzterScan bleibt hier — es ist Zustand des Scan-Bildschirms, nicht der Session.
 	const lauf = useInventurlauf({ onActivate: () => (letzterScan = null) });
-	const fb = useFehlbestand(lauf.nichtGeladen);
+	const fb = useFehlbestand();
+	const frueher = useFruehereInventuren(lauf.nichtGeladen, fb.schliesseBerichtVon);
 
 	// Scans, die eintreffen, solange einer am Server ist. Ein Handscanner wartet nicht auf die
 	// Antwort; ein verworfener Scan fiele beim Abschluss als Verlust auf.
@@ -94,7 +96,7 @@ export function useInventur() {
 			);
 			// Die Liste vor dem Zurücksetzen sichern: Mit der Zahl allein geht niemand ins Regal, und
 			// nach der Aussonderung fallen die Exemplare aus dem Bereich der Inventur.
-			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label);
+			fb.setzeFehlbestand(r.data.fehlbestand ?? [], lauf.stand.label, lauf.laufKennung);
 			await zurueckZumStart();
 		} else {
 			snackbars.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
@@ -110,7 +112,7 @@ export function useInventur() {
 		lauf.setzeZurueck();
 		letzterScan = null;
 		await lauf.ladeOffeneLaeufe();
-		await fb.ladeFruehereInventuren();
+		await frueher.lade();
 	}
 
 	/**
@@ -139,7 +141,7 @@ export function useInventur() {
 		await lauf.verwerfeLauf(offene);
 		// Wie nach dem Abschluss: Die verworfene Inventur steht sofort unter den früheren —
 		// als verworfen, nicht als vollständig (Migration 149).
-		await fb.ladeFruehereInventuren();
+		await frueher.lade();
 	}
 
 	return /** @satisfies {object} */ ({
@@ -152,13 +154,10 @@ export function useInventur() {
 		fehlbestandSchliessen: fb.fehlbestandSchliessen,
 		fehlbestandGefunden: fb.fehlbestandGefunden,
 		fehlbestandEndgueltigLoeschen: fb.fehlbestandEndgueltigLoeschen,
-		get abgeschlosseneInventuren() {
-			return fb.abgeschlosseneInventuren;
-		},
+		frueher,
 		get ladeFruehereLaeuft() {
 			return fb.ladeFruehereLaeuft;
 		},
-		ladeFruehereInventuren: fb.ladeFruehereInventuren,
 		zeigeFrueherenFehlbestand: fb.zeigeFrueherenFehlbestand,
 		get status() {
 			return lauf.status;

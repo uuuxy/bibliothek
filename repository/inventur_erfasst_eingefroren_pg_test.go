@@ -89,11 +89,11 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 func erfassteLautBericht(t *testing.T, pool any, repo *InventurAbfragen, sessionID string) int {
 	t.Helper()
 	_ = pool
-	sessions, err := repo.LadeAbgeschlosseneLaeufe(context.Background(), 50)
+	seite, err := repo.LadeAbgeschlosseneLaeufe(context.Background(), nil, 50)
 	if err != nil {
 		t.Fatalf("abgeschlossene Sessions lesen: %v", err)
 	}
-	for _, s := range sessions {
+	for _, s := range seite.Laeufe {
 		if s.ID == sessionID {
 			return s.Erfasst
 		}

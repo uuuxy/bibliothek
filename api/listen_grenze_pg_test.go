@@ -116,7 +116,7 @@ var listenGrenze = map[string]string{
 	"GET /api/exemplare/etiketten-offen $":                                "LIMIT 300, die neuesten zuerst (etikettenOffenLimit, api/druck/etiketten_offen.go); die Zahl ohne Grenze liefert /api/exemplare/etiketten-offen/anzahl",
 	"GET /api/exemplare/standorte $":                                      "LIMIT 1000, die häufigsten zuerst (exemplarStandorteMax, repository.LadeExemplarStandorte)",
 	"GET /api/geraete $":                                                  "keine Obergrenze in der Abfrage; die Geräte im Bestand, ausgesonderte nicht (GeraeteAbfragen.LadeAlle)",
-	"GET /api/inventur/abgeschlossen $":                                   "LIMIT 10, die zuletzt abgeschlossenen zuerst (api/inventurlauf/inventur_laeufe.go; InventurAbfragen.LadeAbgeschlosseneLaeufe)",
+	"GET /api/inventur/abgeschlossen $.laeufe":                            "LIMIT 10 je Seite, die zuletzt abgeschlossenen zuerst; ältere über naechste_seite, die Oberfläche nennt sie in „Mehr laden (N weitere)“. Kein Index: Die Tabelle wächst um wenige Läufe im Jahr (laeufeJeSeite, api/inventurlauf/inventur_laeufe.go; InventurAbfragen.LadeAbgeschlosseneLaeufe)",
 	"GET /api/inventur/sessions $":                                        "keine Obergrenze in der Abfrage; nur laufende Inventuren, je Bereich höchstens eine (UNIQUE idx_inv_session_offen_*; InventurAbfragen.LadeOffeneLaeufe)",
 	"GET /api/klassen-mapping $":                                          "keine Obergrenze in der Abfrage; je Klasse höchstens eine Zuordnung (PRIMARY KEY klasse; repository.LadeKlassenleitungen)",
 	"GET /api/lieferanten $":                                              "keine Obergrenze in der Abfrage; alle Lieferanten, von Hand gepflegt (repository.LadeLieferanten)",

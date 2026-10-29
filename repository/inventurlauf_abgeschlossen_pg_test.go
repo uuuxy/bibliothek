@@ -2,7 +2,10 @@ package repository
 
 import (
 	"context"
+	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // LadeAbgeschlosseneLaeufe speist die Liste, über die der Fehlbestandsbericht einer
@@ -45,10 +48,11 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 		}
 	}
 
-	sessions, err := repo.LadeAbgeschlosseneLaeufe(ctx, 10)
+	seite, err := repo.LadeAbgeschlosseneLaeufe(ctx, nil, 10)
 	if err != nil {
 		t.Fatalf("LadeAbgeschlosseneLaeufe: %v", err)
 	}
+	sessions := seite.Laeufe
 	if len(sessions) != 3 {
 		t.Fatalf("Anzahl abgeschlossener Sessions = %d, erwartet 3", len(sessions))
 	}
@@ -78,36 +82,75 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 	}
 }
 
-// Das LIMIT behält die neuesten Läufe. Die Abfrage kappt vor dem Zählen; nähme die CTE die
+// Eine Seite behält die neuesten Läufe und nennt, wie viele ältere danach kommen; die nächste
+// schließt an ihren letzten Lauf an. Die Abfrage kappt vor dem Zählen; nähme die CTE die
 // falschen Zeilen, fiele es ohne diesen Test nicht auf.
-func TestLadeAbgeschlosseneLaeufe_Kappung(t *testing.T) {
+func TestLadeAbgeschlosseneLaeufe_Seiten(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
-	bearbeiter := legeBearbeiterAn(t, pool)
+	ids := schliesseLaeufeAb(t, pool, repo, "Alpha", "Beta", "Gamma", "Delta", "Epsilon")
 
-	namen := []string{"Alpha", "Beta", "Gamma", "Delta"}
+	erste, err := repo.LadeAbgeschlosseneLaeufe(ctx, nil, 2)
+	if err != nil {
+		t.Fatalf("erste Seite: %v", err)
+	}
+	if got := bezeichnungen(erste.Laeufe); got != "Epsilon Delta" || erste.Weitere != 3 {
+		t.Fatalf("erste Seite = [%s], %d weitere; erwartet [Epsilon Delta], 3 weitere", got, erste.Weitere)
+	}
+	if erste.Naechste == nil || erste.Naechste.ID != ids["Delta"] {
+		t.Fatalf("Marke der ersten Seite = %+v, erwartet den Lauf Delta", erste.Naechste)
+	}
+
+	// Zwischen zwei Seiten verschwindet an einem anderen Arbeitsplatz der letzte Lauf der ersten:
+	// Die zweite schließt trotzdem an ihn an, ohne Gamma zu überspringen.
+	if _, err := pool.Exec(ctx, `DELETE FROM inventur_sessions WHERE id = $1`, ids["Delta"]); err != nil {
+		t.Fatalf("Delta löschen: %v", err)
+	}
+	zweite, err := repo.LadeAbgeschlosseneLaeufe(ctx, erste.Naechste, 2)
+	if err != nil {
+		t.Fatalf("zweite Seite: %v", err)
+	}
+	if got := bezeichnungen(zweite.Laeufe); got != "Gamma Beta" || zweite.Weitere != 1 || zweite.Naechste == nil {
+		t.Fatalf("zweite Seite = [%s], %d weitere, Marke %+v; erwartet [Gamma Beta], 1 weiterer", got, zweite.Weitere, zweite.Naechste)
+	}
+
+	letzte, err := repo.LadeAbgeschlosseneLaeufe(ctx, zweite.Naechste, 2)
+	if err != nil {
+		t.Fatalf("letzte Seite: %v", err)
+	}
+	if got := bezeichnungen(letzte.Laeufe); got != "Alpha" || letzte.Weitere != 0 || letzte.Naechste != nil {
+		t.Errorf("letzte Seite = [%s], %d weitere, Marke %+v; erwartet [Alpha], keine weitere, keine Marke", got, letzte.Weitere, letzte.Naechste)
+	}
+}
+
+// schliesseLaeufeAb legt je Name einen Lauf über eine eigene Signatur an und schließt ihn ab, in
+// dieser Reihenfolge. Geliefert werden die Kennungen nach Namen.
+func schliesseLaeufeAb(t *testing.T, pool *pgxpool.Pool, repo *InventurAbfragen, namen ...string) map[string]string {
+	t.Helper()
+	ctx := context.Background()
+	bearbeiter := legeBearbeiterAn(t, pool)
+	ids := map[string]string{}
 	for _, name := range namen {
 		legeSignaturMitExemplarenAn(t, pool, name, 2)
 		signatur := name
 		sess, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &signatur}, name, "")
 		if err != nil {
-			t.Fatalf("Session %s anlegen: %v", name, err)
+			t.Fatalf("Lauf %s anlegen: %v", name, err)
 		}
 		if _, err := repo.SchliesseLaufAb(ctx, sess.ID, InventurBereich{Signatur: &signatur}, bearbeiter); err != nil {
 			t.Fatalf("Abschluss %s: %v", name, err)
 		}
+		ids[name] = sess.ID
 	}
+	return ids
+}
 
-	sessions, err := repo.LadeAbgeschlosseneLaeufe(ctx, 2)
-	if err != nil {
-		t.Fatalf("LadeAbgeschlosseneLaeufe: %v", err)
+func bezeichnungen(laeufe []Inventurlauf) string {
+	namen := make([]string, 0, len(laeufe))
+	for _, l := range laeufe {
+		namen = append(namen, l.Bezeichnung)
 	}
-	if len(sessions) != 2 {
-		t.Fatalf("Kappung auf 2 = %d, erwartet 2 Sessions", len(sessions))
-	}
-	if sessions[0].Bezeichnung != "Delta" || sessions[1].Bezeichnung != "Gamma" {
-		t.Errorf("nach der Kappung = [%s %s], erwartet [Delta Gamma]", sessions[0].Bezeichnung, sessions[1].Bezeichnung)
-	}
+	return strings.Join(namen, " ")
 }

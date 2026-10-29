@@ -35,7 +35,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   alten Stand einen Fehler zeigt. (5.111)
 - [ ] Etikettenvorschau: Sie zeigt, was gedruckt wird; das QR-Etikett bekommt Schulname, Jahr und
   Vermerk; der Hilfsrahmen wirkt oder entfällt. (5.114)
-- [ ] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
+- [x] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
   Lauf lässt sich löschen. (5.112)
 - [ ] Logo oben links und als Wasserzeichen scharf, auch im dunklen Design. (5.113)
 
@@ -100,17 +100,6 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 - **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
   `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
   Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.
-
-### 5.112 Frühere Inventuren: ältere erreichbar, Läufe löschbar
-
-Unter „Frühere Inventuren" stehen die zehn zuletzt beendeten Läufe, verworfene eingerechnet
-(`AbgeschlosseneInventuren` in `api/inventurlauf/inventur_laeufe.go`). Ältere sind samt
-Fehlbestandsbericht in der Oberfläche nicht mehr erreichbar, obwohl [HANDBUCH.md](HANDBUCH.md)
-(Inventur) den Bericht „auch später unter _Frühere Inventuren_" verspricht. Zu bauen: „Mehr laden
-(N weitere)" unter der Liste wie in der Katalogsuche
-(`frontend/src/inventur/routes/KatalogSuche.svelte`), und ein früherer Lauf lässt sich nach einer
-Rückfrage mit seinem Bericht löschen. Beim Bau zu klären: was das Löschen mitnimmt (Erfassungen,
-Fehlbestand), was am Buch stehen bleibt und welches Recht es verlangt.
 
 ### 5.113 Logo unscharf, im dunklen Design auffällig
 

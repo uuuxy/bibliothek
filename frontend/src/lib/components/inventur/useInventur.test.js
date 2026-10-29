@@ -253,16 +253,20 @@ describe('Inventur: eine Liste kommt nicht', () => {
 		vi.mocked(ladeAbgeschlosseneInventuren).mockRejectedValue(new Error('Zeitüberschreitung'));
 		const ablauf = useInventur();
 		await ablauf.ladeOffeneLaeufe();
-		await ablauf.ladeFruehereInventuren();
+		await ablauf.frueher.lade();
 		expect(ablauf.nichtGeladen).toEqual({
 			laeufe: 'Die Datenbank antwortet nicht',
 			frueher: 'Zeitüberschreitung'
 		});
 
 		vi.mocked(ladeOffeneSessions).mockResolvedValue([{ session_id: 's1' }]);
-		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue([]);
+		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue({
+			laeufe: [],
+			weitere: 0,
+			naechste_seite: ''
+		});
 		await ablauf.ladeOffeneLaeufe();
-		await ablauf.ladeFruehereInventuren();
+		await ablauf.frueher.lade();
 		expect(ablauf.nichtGeladen).toEqual({ laeufe: '', frueher: '' });
 		expect(ablauf.offeneLaeufe).toEqual([{ session_id: 's1' }]);
 	});
@@ -274,7 +278,11 @@ describe('Inventur verwerfen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(ladeOffeneSessions).mockResolvedValue([]);
-		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue([]);
+		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue({
+			laeufe: [],
+			weitere: 0,
+			naechste_seite: ''
+		});
 	});
 
 	it('nennt den Grund, wenn der Server ablehnt', async () => {
@@ -309,7 +317,11 @@ describe('Abschluss ohne Antwort', () => {
 		vi.clearAllMocks();
 		frage.mockResolvedValue(true);
 		vi.mocked(ladeOffeneSessions).mockResolvedValue([]);
-		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue(frueher);
+		vi.mocked(ladeAbgeschlosseneInventuren).mockResolvedValue({
+			laeufe: frueher,
+			weitere: 0,
+			naechste_seite: ''
+		});
 	});
 
 	it.each([
@@ -327,7 +339,7 @@ describe('Abschluss ohne Antwort', () => {
 		expect(snackbars.addToast).toHaveBeenCalledWith(antwort.error, 'error');
 		expect(ablauf.status).toBe('idle');
 		expect(ladeOffeneSessions).toHaveBeenCalledTimes(1);
-		expect(ablauf.abgeschlosseneInventuren).toEqual(frueher);
+		expect(ablauf.frueher.laeufe).toEqual(frueher);
 	});
 
 	it('bleibt beim Scanfeld, wenn der Server ablehnt', async () => {

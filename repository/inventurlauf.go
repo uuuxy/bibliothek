@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"bibliothek/db"
 
@@ -143,55 +144,91 @@ func (a *InventurAbfragen) LadeLauf(ctx context.Context, id string) (*Inventurla
 	return &s, nil
 }
 
-// LadeAbgeschlosseneLaeufe liefert die zuletzt abgeschlossenen Läufe mit der Zahl ihrer
+// LaufMarke bezeichnet einen abgeschlossenen Lauf an seiner Stelle in der Liste: nach dem
+// Zeitpunkt des Abschlusses, bei gleichem Zeitpunkt nach der Kennung.
+type LaufMarke struct {
+	AbgeschlossenAm time.Time
+	ID              string
+}
+
+// AbgeschlosseneSeite ist ein Ausschnitt der abgeschlossenen Läufe, die neuesten zuerst.
+type AbgeschlosseneSeite struct {
+	Laeufe []Inventurlauf
+	// Weitere zählt die älteren Läufe nach dem Ausschnitt; Naechste ist dann sein letzter Lauf,
+	// an den die nächste Seite anschließt, sonst nil.
+	Weitere  int
+	Naechste *LaufMarke
+}
+
+// LadeAbgeschlosseneLaeufe liefert bis zu anzahl abgeschlossene Läufe mit der Zahl ihrer
 // Verluste: die Liste, über die sich der Fehlbestand einer früheren Inventur wieder aufrufen
 // lässt, auch nach einem Neuladen oder an einem anderen Arbeitsplatz. Verworfene stehen mit
 // darin und tragen Verworfen: Sie sind beendet, aber nicht geprüft.
-func (a *InventurAbfragen) LadeAbgeschlosseneLaeufe(ctx context.Context, limit int) ([]Inventurlauf, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 10
+//
+// vor ist der letzte Lauf der vorigen Seite, nil beginnt beim neuesten. Die Seite schließt an
+// diesen Lauf an statt an eine Zahl von Zeilen: Endet an einem anderen Arbeitsplatz ein Lauf
+// oder wird einer gelöscht, stünde sonst eine Zeile doppelt da oder fehlte.
+func (a *InventurAbfragen) LadeAbgeschlosseneLaeufe(ctx context.Context, vor *LaufMarke, anzahl int) (AbgeschlosseneSeite, error) {
+	if anzahl <= 0 || anzahl > 50 {
+		anzahl = 10
+	}
+	var vorZeit *time.Time
+	var vorID *string
+	if vor != nil {
+		vorZeit, vorID = &vor.AbgeschlossenAm, &vor.ID
 	}
 	// Erst kappen, dann zählen: Stünden die beiden Zählungen in der SELECT-Liste, hinge es am
 	// Planer, ob er sie hinter das LIMIT schiebt; gemessen zählte er die Verluste einmal je
 	// abgeschlossenem Lauf statt zehnmal. Mit der CTE wird nur für die Zeilen gezählt, die
 	// herauskommen.
 	rows, err := a.db.Query(ctx, `
-		WITH limited_sessions AS (
+		WITH aeltere AS (
 			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
 			       gestartet_von, gestartet_am, abgeschlossen_am, erfasst_gemeldet, verworfen
 			FROM inventur_sessions
 			WHERE abgeschlossen_am IS NOT NULL
-			ORDER BY abgeschlossen_am DESC
-			LIMIT $1
+			  AND ($2::timestamptz IS NULL OR (abgeschlossen_am, id) < ($2::timestamptz, $3::uuid))
+		), limited_sessions AS (
+			SELECT * FROM aeltere ORDER BY abgeschlossen_am DESC, id DESC LIMIT $1
 		)
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
-		       s.gestartet_von::text, s.gestartet_am::text, s.abgeschlossen_am::text,
+		       s.gestartet_von::text, s.gestartet_am::text, s.abgeschlossen_am::text, s.abgeschlossen_am,
 		       COALESCE(e.count, 0),
 		       COALESCE(v.count, 0),
-		       s.verworfen
+		       s.verworfen,
+		       (SELECT count(*) FROM aeltere) - (SELECT count(*) FROM limited_sessions)
 		FROM limited_sessions s
 		-- COALESCE auf die eingefrorene Zahl: Nur eine offene Session
 		-- zählt live; ein abgeschlossener Durchgang behält, was er gezählt hat.
 		LEFT JOIN LATERAL (SELECT COALESCE(s.erfasst_gemeldet,
 			(SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id)) as count) e ON true
 		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_verluste WHERE session_id = s.id) v ON true
-		ORDER BY s.abgeschlossen_am DESC
-	`, limit)
+		ORDER BY s.abgeschlossen_am DESC, s.id DESC
+	`, anzahl, vorZeit, vorID)
 	if err != nil {
-		return nil, fmt.Errorf("abgeschlossene sessions laden fehlgeschlagen: %w", err)
+		return AbgeschlosseneSeite{}, fmt.Errorf("abgeschlossene sessions laden fehlgeschlagen: %w", err)
 	}
 	defer rows.Close()
 
-	laeufe := make([]Inventurlauf, 0)
+	seite := AbgeschlosseneSeite{Laeufe: make([]Inventurlauf, 0)}
+	var letzte LaufMarke
 	for rows.Next() {
 		var s Inventurlauf
 		if err := rows.Scan(&s.ID, &s.BereichArt, &s.Signatur, &s.Fach, &s.Jahrgang, &s.Bezeichnung,
-			&s.GestartetVon, &s.GestartetAm, &s.AbgeschlossenAm, &s.Erfasst, &s.Verluste, &s.Verworfen); err != nil {
-			return nil, fmt.Errorf("session-zeile unlesbar: %w", err)
+			&s.GestartetVon, &s.GestartetAm, &s.AbgeschlossenAm, &letzte.AbgeschlossenAm,
+			&s.Erfasst, &s.Verluste, &s.Verworfen, &seite.Weitere); err != nil {
+			return AbgeschlosseneSeite{}, fmt.Errorf("session-zeile unlesbar: %w", err)
 		}
-		laeufe = append(laeufe, s)
+		letzte.ID = s.ID
+		seite.Laeufe = append(seite.Laeufe, s)
 	}
-	return laeufe, rows.Err()
+	if err := rows.Err(); err != nil {
+		return AbgeschlosseneSeite{}, err
+	}
+	if seite.Weitere > 0 {
+		seite.Naechste = &letzte
+	}
+	return seite, nil
 }
 
 // LadeOffeneLaeufe liefert alle laufenden Läufe, für die Anzeige: damit niemand in einem

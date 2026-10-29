@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -159,16 +160,33 @@ func inventurPost(t *testing.T, h http.Handler, pfad, laufID, benutzerID string)
 	return rec
 }
 
+// abgeschlosseneInventuren liest die erste Seite der früheren Inventuren roh, wie der Bildschirm.
 func abgeschlosseneInventuren(t *testing.T, srv *Tueren) []map[string]any {
 	t.Helper()
+	return fruehereSeite(t, srv, "").Laeufe
+}
+
+// fruehereSeiteRoh ist eine Antwort von GET /api/inventur/abgeschlossen, die Läufe roh gelesen.
+type fruehereSeiteRoh struct {
+	Laeufe        []map[string]any `json:"laeufe"`
+	Weitere       int              `json:"weitere"`
+	NaechsteSeite string           `json:"naechste_seite"`
+}
+
+func fruehereSeite(t *testing.T, srv *Tueren, zeichen string) fruehereSeiteRoh {
+	t.Helper()
 	rec := httptest.NewRecorder()
-	srv.AbgeschlosseneInventuren().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/inventur/abgeschlossen", nil))
+	adresse := "/api/inventur/abgeschlossen"
+	if zeichen != "" {
+		adresse += "?seite=" + url.QueryEscape(zeichen)
+	}
+	srv.AbgeschlosseneInventuren().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, adresse, nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Liste früherer Inventuren = %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
-	var liste []map[string]any
-	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
+	var seite fruehereSeiteRoh
+	if err := json.Unmarshal(rec.Body.Bytes(), &seite); err != nil {
 		t.Fatalf("Liste nicht lesbar: %v (%s)", err, rec.Body.String())
 	}
-	return liste
+	return seite
 }

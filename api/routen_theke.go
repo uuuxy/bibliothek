@@ -39,6 +39,7 @@ func (s *Server) registriereThekenUndInventurRouten(mux *http.ServeMux, leserAbf
 	// Beide gehören zusammen: /abgeschlossen liefert die session_id, /fehlbestand die
 	// Liste dazu. Ohne die erste wäre die zweite aus der Oberfläche nicht erreichbar.
 	mux.Handle("GET /api/inventur/abgeschlossen", s.verlangeRecht("manage_inventory")(s.inventurlauf().AbgeschlosseneInventuren()))
+	mux.Handle("DELETE /api/inventur/abgeschlossen/{id}", s.verlangeRecht("manage_inventory")(s.inventurlauf().AbgeschlosseneInventurLoeschen()))
 	mux.Handle("GET /api/inventur/fehlbestand", s.verlangeRecht("manage_inventory")(s.inventurlauf().Fehlbestand()))
 	mux.Handle("POST /api/inventur/abort", s.verlangeRecht("manage_inventory")(s.inventurlauf().InventurVerwerfen()))
 	// Handlungsspielraum für den Fehlbestandsbericht: wiedergefunden oder endgültig weg.
