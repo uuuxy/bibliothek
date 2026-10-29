@@ -56,7 +56,7 @@
 				<div
 					bind:clientHeight={blattHoehe}
 					data-testid="etiketten-blatt"
-					class="bg-surface-container-lowest border border-outline-variant shadow-2xl relative flex origin-top-left flex-col items-start select-none"
+					class="schema-hell bg-surface-container-lowest border border-outline-variant shadow-2xl relative flex origin-top-left flex-col items-start select-none"
 					style="width: {BLATT_BREITE_MM}mm; min-height: 198mm; padding: {mm(format.randOben)} {mm(
 						format.randLinks
 					)} 0; box-sizing: border-box; transform: scale({massstab});"

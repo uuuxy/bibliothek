@@ -896,6 +896,27 @@ frontend/src
   off text without providing a way for users to view it." Wo es keinen gibt, läuft der Text
   um — auf Papier immer. Die Sprechblase des Hauses (`data-tip`, `actions/tooltip.js`)
   erscheint an einer Tabellenzelle nur mit der Maus und ist dort kein Weg für die Tastatur.
+- **Farben kommen aus den Rollen in `styles/rollen.css`, in einem hellen und einem dunklen
+  Schema.** Das dunkle (`.schema-dunkel`) steht an `<html>`, wenn der Rechner es gewählt hat, und
+  an Bereichen, die immer dunkel sind (Flur-Monitor, Kamera-Sucher). Ein Bereich, der Papier
+  zeigt (Etikettenbogen, Ausweiskarte im Designer), trägt `.schema-hell` und bleibt hell;
+  gedruckt wird immer im hellen Schema, das dunkle gilt nur in `@media screen`. Wer eine Rolle
+  mit ihrem `on-`-Paar nimmt, ist in beiden lesbar (Material 3, Color system: „a dark surface
+  color is algorithmically paired with a light text label color so the UI automatically meets
+  contrast requirements"). Gemessen: `rollen-schema.test.js`,
+  `frontend/e2e/barrierefreiheit-axe.spec.js` (jede Seite hell und dunkel),
+  `frontend/e2e/darstellung.spec.js`.
+- **„Dunkles Design" schaltet jeder Rechner für sich,** mit einem Schalter unten in der
+  Seitenleiste, wie bei Gemini, Googles Programm mit Seitenleiste: „By default, the color scheme
+  for the Gemini app matches the color scheme of the device you're on", die Wahl gilt „on the
+  same browser and device" (Gemini-Hilfe, „Use Dark theme in Gemini Apps"). Ein Schalter, weil er
+  sofort wirkt (Material 3, Switch: „Switches change settings and other options immediately"),
+  und „Dunkles Design" statt „Hell oder Dunkel", weil er eine Sache an- und ausschaltet
+  („Switches control binary options, not opposing ones"). Die Wahl steht im Speicher des
+  Browsers (`bibliothek.darstellung`) und nicht am Server, wo die Einstellungen für alle
+  Arbeitsplätze liegen. `public/darstellung.js` setzt das Schema vor dem ersten Bild, weil das
+  Programm erst nach dem Lesen der Seite läuft; `stores/darstellung.svelte.js` hält es danach
+  aktuell, und `darstellung.test.js` hält beide Regeln gleich.
 
 ---
 

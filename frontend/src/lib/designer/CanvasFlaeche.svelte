@@ -165,7 +165,7 @@
 		<div
 			bind:this={karteEl}
 			data-ausweis-vorschau
-			class="card-container shadow-2xl relative border border-outline-variant rounded-lg overflow-visible select-none"
+			class="schema-hell card-container shadow-2xl relative border border-outline-variant rounded-lg overflow-visible select-none"
 			style="width: 85.6mm; height: 53.98mm; background: white;"
 		>
 			<div class="w-full h-full relative rounded-lg overflow-hidden" style={kartenStil(theme)}>

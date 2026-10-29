@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-26. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-29. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -866,6 +866,14 @@ stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kat
 (§12, Rolle Kollegium)
 
 ---
+
+## Darstellung
+
+Unten in der Seitenleiste schaltet **Dunkles Design** das Programm an diesem Rechner dunkel und
+wieder hell. Solange niemand schaltet, folgt es dem Rechner (so, wie Windows oder macOS
+eingestellt ist). Die Wahl gilt in diesem Browser an diesem Rechner, nicht an den anderen
+Arbeitsplätzen. Ausdrucke, die Etiketten-Vorschau und die Ausweiskarte im Designer bleiben hell,
+weil sie Papier zeigen.
 
 ## Bedienung ohne Maus
 

@@ -125,14 +125,14 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 		const { id } = await created.json();
 		angelegt.leser.push(id);
 		angelegt.titel.push(
-			...[1, 2, 3].map((n) => `E2E-Reiter${n}-${suffix}`),
+			...[1, 2, 3, 4].map((n) => `E2E-Reiter${n}-${suffix}`),
 			`E2E-Reiter-Schaden-${suffix}`
 		);
 		seedSQL(`
 			WITH t AS (
 				INSERT INTO buecher_titel (titel, ist_lernmittel)
 				VALUES ('E2E-Reiter1-${suffix}', true), ('E2E-Reiter2-${suffix}', true),
-				       ('E2E-Reiter3-${suffix}', true)
+				       ('E2E-Reiter3-${suffix}', true), ('E2E-Reiter4-${suffix}', true)
 				RETURNING id, titel
 			)
 			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
@@ -164,7 +164,7 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 			 WHERE a.rueckgabe_am IS NULL AND e.barcode_id = 'B-Reiter${n}-${suffix}';`
 		);
 
-	test('der Scan wird verbucht: auf dem Reiter, nach „Bezahlt", nach einem Klick ins Leere', async ({
+	test('der Scan wird verbucht: auf dem Reiter, nach „Bezahlt", nach einem Klick ins Leere, auf dem Schalter der Darstellung', async ({
 		page
 	}) => {
 		const suffix = await thekeMitLeser(page);
@@ -199,6 +199,14 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 
 		await page.getByRole('heading', { name: new RegExp(`Reiter-${suffix}`) }).click();
 		await scanne(3, 'nach einem Klick neben die Knöpfe');
+
+		// Nach dem Klick behält der Schalter „Dunkles Design" im Fuß der Seitenleiste den Fokus; ein
+		// Schalter tippt nichts, der Scan gehört ins Scanfeld.
+		await page.getByRole('switch', { name: 'Dunkles Design' }).click();
+		await expect
+			.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role')))
+			.toBe('switch');
+		await scanne(4, 'auf dem Schalter „Dunkles Design"');
 	});
 
 	// Die Gegenrichtung: Ein offener Dialog liegt über dem Scanfeld und behält seine Eingabe.

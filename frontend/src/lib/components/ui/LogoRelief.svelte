@@ -41,4 +41,10 @@
 		filter: grayscale(100%) drop-shadow(-2px -2px 2px rgba(255, 255, 255, 0.9))
 			drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.12));
 	}
+
+	/* Im dunklen Schema ohne den hellen Schatten: Auf dunkler Fläche zeichnete er helle Kanten,
+	   und die Marke träte stärker hervor als im hellen. */
+	:global(.schema-dunkel) .logo-relief {
+		filter: grayscale(100%) drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.12));
+	}
 </style>

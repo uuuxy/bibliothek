@@ -83,6 +83,33 @@ async function zurRuhe(page) {
 	await page.waitForTimeout(400);
 }
 
+/**
+ * Scannt eine Seite, intern nach der Anmeldung. Vorher prüft er, dass die Seite im verlangten
+ * Farbschema steht: Sonst scannte der dunkle Lauf das helle Schema ein zweites Mal.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} name
+ * @param {string} pfad
+ * @param {boolean} intern
+ * @param {string | null | undefined} farbschema
+ */
+async function pruefeSeite(page, name, pfad, intern, farbschema) {
+	if (intern) {
+		// Der Scan liest die ganze Seite. Das Mahnwesen listet jede überfällige Ausleihe; an einer
+		// gewachsenen Entwicklungsdatenbank braucht er dort mehr als die 30 s der Vorgabe.
+		test.setTimeout(90_000);
+		await uiLogin(page);
+		await gehZu(page, pfad);
+	} else {
+		await page.goto(pfad);
+	}
+	await zurRuhe(page);
+	const dunkel = await page.evaluate(() =>
+		document.documentElement.classList.contains('schema-dunkel')
+	);
+	expect(dunkel, `Farbschema von ${name}`).toBe(farbschema === 'dark');
+	expect(await verstoesse(page), `${name} (${pfad})`).toEqual([]);
+}
+
 test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 	// Ohne laufende Übergänge messen: Mitten in einer Einblendung liest axe gemischte
 	// Farben (der Monitor wechselt Folien per Fade) und meldet Kontraste, die es im
@@ -90,11 +117,8 @@ test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 	// die Anwendung tragen muss (basis.css).
 	test.beforeEach(({ page }) => page.emulateMedia({ reducedMotion: 'reduce' }));
 	for (const [name, pfad] of OEFFENTLICH) {
-		test(`öffentlich · ${name}`, async ({ page }) => {
-			await page.goto(pfad);
-			await zurRuhe(page);
-			expect(await verstoesse(page), `${name} (${pfad})`).toEqual([]);
-		});
+		test(`öffentlich · ${name}`, ({ page, colorScheme }) =>
+			pruefeSeite(page, name, pfad, false, colorScheme));
 	}
 	// Der Monitor wechselt alle 15 s die Folie — und jede Folie hat eigene Farben. Ein
 	// einzelner Scan sieht nur eine (lokal grün, CI rot am 09.09.2026: die Rangzahlen der
@@ -125,15 +149,23 @@ test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 		expect(befunde, `Monitor, Folien: ${[...gesehen].join(', ')}`).toEqual([]);
 	});
 	for (const [name, pfad] of INTERN) {
-		test(`intern · ${name}`, async ({ page }) => {
-			// Der Scan liest die ganze Seite. Das Mahnwesen listet jede überfällige Ausleihe; an einer
-			// gewachsenen Entwicklungsdatenbank braucht er dort mehr als die 30 s der Vorgabe.
-			test.setTimeout(90_000);
-			await uiLogin(page);
-			await gehZu(page, pfad);
-			await zurRuhe(page);
-			expect(await verstoesse(page), `${name} (${pfad})`).toEqual([]);
-		});
+		test(`intern · ${name}`, ({ page, colorScheme }) =>
+			pruefeSeite(page, name, pfad, true, colorScheme));
+	}
+});
+
+// Dasselbe im dunklen Schema (stores/darstellung.svelte.js): Ohne Wahl folgt die Seite dem System,
+// das Playwright hier auf dunkel stellt. Der Monitor steht immer dunkel und ist oben geprüft.
+test.describe('axe: keine WCAG-A/AA-Verstöße im dunklen Schema', () => {
+	test.use({ colorScheme: 'dark' });
+	test.beforeEach(({ page }) => page.emulateMedia({ reducedMotion: 'reduce' }));
+	for (const [name, pfad] of OEFFENTLICH) {
+		test(`öffentlich · ${name}`, ({ page, colorScheme }) =>
+			pruefeSeite(page, name, pfad, false, colorScheme));
+	}
+	for (const [name, pfad] of INTERN) {
+		test(`intern · ${name}`, ({ page, colorScheme }) =>
+			pruefeSeite(page, name, pfad, true, colorScheme));
 	}
 });
 

@@ -1,4 +1,4 @@
-<!-- @component SeitenleisteFuss — angemeldete Person, Abmelden und der DSGVO-Hinweis.
+<!-- @component SeitenleisteFuss — angemeldete Person, Dunkles Design, Abmelden und der DSGVO-Hinweis.
 
      Eigene Datei: Die Navigation ist eine Aufgabe, der Fuß eine zweite.
 
@@ -9,6 +9,8 @@
 <script>
 	import { LogOut, ShieldCheck } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import Switch from '../ui/Switch.svelte';
+	import { darstellung } from '../../stores/darstellung.svelte.js';
 
 	/** @type {{ collapsed: boolean, benutzer: any, onLogout: () => void }} */
 	let { collapsed, benutzer, onLogout } = $props();
@@ -43,6 +45,19 @@
 	</div>
 {:else}
 	<div class="animate-fade-in no-print flex shrink-0 flex-col gap-3 p-4 text-left">
+		<!-- Wie Gemini, Googles Programm mit Seitenleiste: „Dunkles Design" als Schalter unten in der
+		     Leiste. Er gilt für diesen Rechner, nicht für die Person, und steht deshalb über ihr, mit
+		     Abstand, statt zwischen Name und Abmelden (Material 3, Spacing: „establish boundaries
+		     between unrelated items"); in den Einstellungen gälte er für alle Arbeitsplätze.
+		     Eingeklappt zeigt die Leiste ihn beim Überfahren. -->
+		<div class="mb-2 flex items-center justify-between gap-3">
+			<label for="dunkles-design" class="text-on-surface text-sm font-medium">Dunkles Design</label>
+			<Switch
+				id="dunkles-design"
+				checked={darstellung.dunkel}
+				onchange={(an) => darstellung.schalte(an)}
+			/>
+		</div>
 		{#if benutzer}
 			<div class="flex flex-col">
 				<span class="text-on-surface truncate text-xs font-bold">
