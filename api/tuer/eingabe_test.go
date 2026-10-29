@@ -64,6 +64,26 @@ func TestPruefmeldung_SatzJeRegel(t *testing.T) {
 	}
 }
 
+// Manche Türen lesen ihre Anfrage in eine anonyme Struktur; deren Pfad beginnt ohne Typnamen.
+// Die Meldung nennt das Feld trotzdem, in einer Liste mit der Stelle.
+func TestPruefmeldung_AnonymeAnfrageNenntDasFeld(t *testing.T) {
+	type position struct {
+		SchadensfallID string `json:"schadensfall_id" validate:"required"`
+	}
+	var anfrage struct {
+		LoanID     string     `json:"loan_id" validate:"required"`
+		Positionen []position `json:"positionen" validate:"dive"`
+	}
+	if got := Pruefmeldung(Pruefer.Struct(anfrage)); got != "Bitte das Feld „loan_id“ ausfüllen" {
+		t.Errorf("Feld oben: %q", got)
+	}
+	anfrage.LoanID = "x"
+	anfrage.Positionen = []position{{SchadensfallID: "a"}, {}}
+	if got := Pruefmeldung(Pruefer.Struct(anfrage)); got != "Bitte das Feld „positionen[1].schadensfall_id“ ausfüllen" {
+		t.Errorf("Feld in einer Liste: %q", got)
+	}
+}
+
 // Ein Rumpf, der kein passendes JSON ist, und ein abgelehntes Feld antworten mit 400 und einem
 // Satz; der Text aus encoding/json geht nicht hinaus.
 func TestLeseAnfrage_MeldungStattFehlertext(t *testing.T) {

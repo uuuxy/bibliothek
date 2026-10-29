@@ -60,8 +60,13 @@ func Pruefmeldung(err error) string {
 		return apierrors.MeldungAnfrageUnlesbar
 	}
 	f := fehler[0]
-	// Der Pfad beginnt mit dem Namen des Typs im Go-Code; die Anfrage kennt ihn nicht.
-	_, pfad, _ := strings.Cut(f.Namespace(), ".")
+	// Bei einer Anfrage mit eigenem Typ beginnt der Pfad mit dessen Namen, den die Anfrage nicht
+	// kennt; einer anonymen Struktur fehlt er. Der Typ heißt in beiden Pfaden gleich, ein Feld
+	// nicht (JSON-Name gegen Go-Name).
+	pfad := f.Namespace()
+	if typ, rest, gefunden := strings.Cut(pfad, "."); gefunden && strings.HasPrefix(f.StructNamespace(), typ+".") {
+		pfad = rest
+	}
 	feld := "„" + pfad + "“"
 	switch f.Tag() {
 	case "required":
