@@ -120,4 +120,9 @@ esac
 if [ -e "$ARBEIT/littera_import.log" ]; then
 	printf 'Protokoll (enthält Namen): %s\nNach der Durchsicht löschen: rm -r %s\n' "$ARBEIT/littera_import.log" "$ARBEIT"
 fi
+# Für einen zweiten Versuch wird die Sicherung noch gebraucht; nach einer Übernahme nennt das
+# Skript, wann sie gelöscht wird.
+if [ "$code" = 0 ] || [ "$code" = 2 ]; then
+	printf 'Die Sicherung trägt alle Schülerdaten: nach den Abnahmen am Server und auf dem USB-Stick löschen (%s).\n' "$QUELLE"
+fi
 exit "$code"
