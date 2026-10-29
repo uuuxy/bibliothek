@@ -58,9 +58,9 @@ const statusBearbeiter = "bearbeiter-1"
 // Transaktion, den Stand vor dem Wechsel unter Sperre und die Anweisung selbst.
 func erwarteStatusSpeichern(mock pgxmock.PgxPoolIface, muster string, args ...any) {
 	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = \$1 FOR UPDATE`).
+	mock.ExpectQuery(`SELECT ist_ausleihbar, ist_ausgesondert FROM buecher_exemplare WHERE id = \$1 FOR UPDATE`).
 		WithArgs("ex-1").
-		WillReturnRows(pgxmock.NewRows([]string{"ist_ausgesondert"}).AddRow(false))
+		WillReturnRows(pgxmock.NewRows([]string{"ist_ausleihbar", "ist_ausgesondert"}).AddRow(true, false))
 	mock.ExpectExec(muster).WithArgs(args...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 }
 

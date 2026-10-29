@@ -42,6 +42,13 @@
 	// ausleihbar sein und trägt seinen Abschlag weiter in jeden künftigen Ersatzbetrag.
 	// svelte-ignore state_referenced_locally
 	let abwertung = $state(ex.zustand_abwertung_prozent ?? 0);
+	// Der Status beim Öffnen reist mit: Hat ein anderer Platz das Exemplar inzwischen ausgesondert
+	// oder freigegeben, lehnt der Server ab, statt dessen Status mit dem alten zu überschreiben.
+	// svelte-ignore state_referenced_locally
+	const bisher = {
+		ist_ausleihbar: ex.ist_ausleihbar === true,
+		ist_ausgesondert: ex.ist_ausgesondert === true
+	};
 	let fehler = $state('');
 
 	async function speichereStatus() {
@@ -54,7 +61,8 @@
 			const koerper = {
 				ist_ausleihbar: isAusleihbar,
 				ist_ausgesondert: isAusgesondert,
-				zustand_notiz: notiz
+				zustand_notiz: notiz,
+				bisher
 			};
 			// Der Grad reist nur mit, wenn wir wissen, was drinstand, oder wenn hier
 			// etwas eingetragen ist. Hätte eine alte Antwort das Feld nicht geliefert,

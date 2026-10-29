@@ -15,6 +15,9 @@ import (
 var (
 	ErrExemplarNochVerliehen = errors.New("exemplar ist aktuell noch verliehen")
 	ErrExemplarNichtGefunden = errors.New("exemplar nicht gefunden oder bereits ausgebucht")
+	// ErrExemplarInzwischenGeaendert heißt: Ein anderer Platz hat den Status geändert, seit der
+	// Dialog geöffnet wurde.
+	ErrExemplarInzwischenGeaendert = errors.New("status des exemplars inzwischen geändert")
 )
 
 // SondereExemplarAus bucht ein Exemplar aus und schreibt den Eintrag dazu. Die Zeile bleibt in

@@ -41,6 +41,9 @@ func (t *Tueren) katalogdienste() *katalogdienste.MetadatenClient {
 const (
 	meldungExemplarVerliehen     = "Das Exemplar ist noch verliehen. Bitte zuerst die Rückgabe buchen."
 	meldungExemplarNichtGefunden = "Exemplar nicht gefunden oder schon ausgebucht"
+	// meldungExemplarInzwischenGeaendert steht im Dialog der Buchakte; die Seite zeigt den
+	// neuen Status erst nach dem Neuladen.
+	meldungExemplarInzwischenGeaendert = "Ein anderer Platz hat den Status dieses Exemplars inzwischen geändert. Bitte die Buchakte neu laden und dann noch einmal speichern."
 )
 
 // Sätze, hinter die die Tür den Grund einer Ablehnung aus repository setzt (repository.MitGrund).

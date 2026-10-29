@@ -24,6 +24,15 @@ type exemplarStatusAnfrage struct {
 	// Die Grenzen hält auch die Spalte (chk_zustand_abwertung_bereich); ohne die Prüfung hier
 	// käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.
 	ZustandAbwertungProzent *int `json:"zustand_abwertung_prozent" validate:"omitempty,min=0,max=100"`
+	// Bisher ist der Status beim Öffnen des Dialogs (repository.KatalogAbfragen.AendereExemplarStatus).
+	// Ein Fenster aus der Zeit vor dem Feld schickt ihn nicht; dann prüft die Tür nicht.
+	Bisher *exemplarStatusBisher `json:"bisher"`
+}
+
+// exemplarStatusBisher ist der Status, den der Dialog beim Öffnen gezeigt hat.
+type exemplarStatusBisher struct {
+	IstAusleihbar   bool `json:"ist_ausleihbar"`
+	IstAusgesondert bool `json:"ist_ausgesondert"`
 }
 
 // ExemplarStatusAendern ändert Ausleihbarkeit, Aussonderung, Zustandsnotiz und
@@ -69,8 +78,16 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 		req.IstAusgesondert = false
 	}
 
-	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
+	var bisher *repository.ExemplarStatusStand
+	if req.Bisher != nil {
+		bisher = &repository.ExemplarStatusStand{IstAusleihbar: req.Bisher.IstAusleihbar, IstAusgesondert: req.Bisher.IstAusgesondert}
+	}
+	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, bisher, req.IstAusleihbar, req.IstAusgesondert,
 		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.KontoID); err != nil {
+		if errors.Is(err, repository.ErrExemplarInzwischenGeaendert) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungExemplarInzwischenGeaendert, err)
+			return
+		}
 		if errors.Is(err, repository.ErrExemplarNochVerliehen) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungExemplarVerliehen, err)
 			return

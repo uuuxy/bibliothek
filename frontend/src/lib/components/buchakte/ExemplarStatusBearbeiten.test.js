@@ -102,4 +102,24 @@ describe('Status-Editor: der Status beim Öffnen', () => {
 		expect(gewaehlt).toBe('Verfügbar');
 		expect(koerper).toMatchObject({ ist_ausleihbar: true, ist_ausgesondert: false });
 	});
+
+	// Ohne den Stand beim Öffnen schriebe ein Dialog, der seit einer Schadensmeldung an einem
+	// anderen Platz offen stand, „Verfügbar" über die Aussonderung.
+	it('schickt den Status beim Öffnen mit, auch wenn ein anderer gewählt ist', async () => {
+		const screen = render(ExemplarStatusBearbeiten, {
+			props: {
+				ex: { id: 'ex-5', ist_ausleihbar: true, ist_ausgesondert: false, zustand_notiz: '' },
+				onDone: () => {}
+			}
+		});
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Status des Exemplars' }));
+		await fireEvent.click(screen.getByRole('option', { name: 'Verloren' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+		const [, koerper] = vi.mocked(apiClient.put).mock.calls[0];
+
+		expect(koerper).toMatchObject({
+			ist_ausgesondert: true,
+			bisher: { ist_ausleihbar: true, ist_ausgesondert: false }
+		});
+	});
 });

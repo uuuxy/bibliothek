@@ -45,7 +45,9 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 			_, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE id = $1`, ex)
 			return err
 		}},
-		{"DecommissionCopy", ex[3], func(ex string) error { return books.AendereExemplarStatus(ctx, ex, false, true, "", nil, bearbeiter) }},
+		{"DecommissionCopy", ex[3], func(ex string) error {
+			return books.AendereExemplarStatus(ctx, ex, nil, false, true, "", nil, bearbeiter)
+		}},
 	}
 	for _, tuer := range tueren {
 		var vID string

@@ -27,6 +27,13 @@ func (a *KatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string, b
 	return nil
 }
 
+// ExemplarStatusStand ist der Status eines Exemplars, wie ihn der Dialog der Buchakte zeigt:
+// ausleihbar, gesperrt (beides falsch) oder ausgesondert.
+type ExemplarStatusStand struct {
+	IstAusleihbar   bool
+	IstAusgesondert bool
+}
+
 // AendereExemplarStatus ändert den Verleihstatus und den Zustand eines Exemplars.
 //
 // aussonderung_grund wird mitgeführt (chk_aussonderung_grund): Ausgesondert verlangt genau
@@ -51,7 +58,12 @@ func (a *KatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string, b
 // lehnt es mit ErrAussonderungOhneBearbeiter ab. Wer ein schon
 // ausgesondertes Exemplar noch einmal speichert, etwa mit geänderter Notiz, schreibt keinen
 // zweiten Eintrag.
-func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
+//
+// bisher ist der Status, den der Dialog beim Öffnen gezeigt hat; weicht er vom heutigen ab,
+// lehnt es mit ErrExemplarInzwischenGeaendert ab. Sonst schriebe ein Dialog, der seit einer
+// Schadensmeldung an einem anderen Platz offen stand, den alten Status zurück, und das
+// ausgesonderte Buch stünde wieder im Bestand, während die Forderung bleibt. nil prüft nicht.
+func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, bisher *ExemplarStatusStand, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
 	if istAusgesondert && bearbeiterID == "" {
 		return ErrAussonderungOhneBearbeiter
 	}
@@ -63,14 +75,9 @@ func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, 
 
 	// Der Stand vor dem Wechsel, unter Sperre: Zwei Plätze, die dasselbe Exemplar zugleich
 	// aussondern, schrieben sonst beide einen Eintrag.
-	var warAusgesondert bool
-	err = tx.QueryRow(ctx, `SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, id).
-		Scan(&warAusgesondert)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrExemplarNichtGefunden
-	}
+	warAusgesondert, err := sperreExemplarStatus(ctx, tx, id, bisher)
 	if err != nil {
-		return fmt.Errorf("status: alten stand lesen: %w", err)
+		return err
 	}
 
 	query := `
@@ -134,4 +141,23 @@ func deuteAussonderungsHindernis(ctx context.Context, q Datenbank, id string) er
 		return ErrExemplarNochVerliehen
 	}
 	return ErrExemplarNichtGefunden
+}
+
+// sperreExemplarStatus liest den Status vor dem Wechsel unter Sperre, vergleicht ihn mit dem
+// Stand beim Öffnen des Dialogs (nil vergleicht nicht) und meldet, ob das Exemplar schon
+// ausgesondert war.
+func sperreExemplarStatus(ctx context.Context, tx pgx.Tx, id string, bisher *ExemplarStatusStand) (bool, error) {
+	var vorher ExemplarStatusStand
+	err := tx.QueryRow(ctx, `SELECT ist_ausleihbar, ist_ausgesondert FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, id).
+		Scan(&vorher.IstAusleihbar, &vorher.IstAusgesondert)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, ErrExemplarNichtGefunden
+	}
+	if err != nil {
+		return false, fmt.Errorf("status: alten stand lesen: %w", err)
+	}
+	if bisher != nil && *bisher != vorher {
+		return false, ErrExemplarInzwischenGeaendert
+	}
+	return vorher.IstAusgesondert, nil
 }

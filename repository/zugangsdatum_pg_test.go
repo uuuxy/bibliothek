@@ -68,7 +68,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	// 3. Tür „Freigeben" im Status-Editor — dieselbe Wirkung, anderer Schreiber.
 	freigegeben := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-FREIGABE")
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	if err := bookRepo.AendereExemplarStatus(ctx, freigegeben, true, false, "", nil, ""); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, freigegeben, nil, true, false, "", nil, ""); err != nil {
 		t.Fatalf("Freigeben: %v", err)
 	}
 	if tag := zugangsdatum(t, pool, freigegeben); tag == nil || !gleicherTag(*tag, heute) {
@@ -77,7 +77,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 
 	// 4. Ein bestelltes Exemplar, das nie ankommt und ausgebucht wird, ist kein Zugang.
 	nieGekommen := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "ZDT-NIE")
-	if err := bookRepo.AendereExemplarStatus(ctx, nieGekommen, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, nieGekommen, nil, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Aussondern aus dem Zulauf: %v", err)
 	}
 	if tag := zugangsdatum(t, pool, nieGekommen); tag != nil {

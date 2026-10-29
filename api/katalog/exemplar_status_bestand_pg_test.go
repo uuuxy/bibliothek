@@ -31,7 +31,7 @@ func TestExemplarStatus_AntwortNenntDenBestand(t *testing.T) {
 	ausgesondert := func(barcode string) string {
 		t.Helper()
 		id := testdaten.LegeExemplarAn(t, pool, titelID, barcode, true, "")
-		if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+		if err := bookRepo.AendereExemplarStatus(ctx, id, nil, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 			t.Fatalf("aussondern %s: %v", barcode, err)
 		}
 		return id
