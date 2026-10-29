@@ -33,6 +33,11 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (5.110)
 - [ ] Vorschläge von Jules prüfen: #760 (Vorgabe `type="button"` am Knopf) und #762 (Abfrage des
   Bestellverlaufs). Übernommen wird, was am alten Stand einen Fehler zeigt. (5.111)
+- [ ] Etikettenvorschau: Sie zeigt, was gedruckt wird; das QR-Etikett bekommt Schulname, Jahr und
+  Vermerk; der Hilfsrahmen wirkt oder entfällt. (5.114)
+- [ ] Frühere Inventuren: Ältere Läufe sind samt Fehlbestandsbericht erreichbar („Mehr laden"), ein
+  Lauf lässt sich löschen. (5.112)
+- [ ] Logo oben links und als Wasserzeichen scharf, auch im dunklen Design. (5.113)
 
 ### Bei dir
 
@@ -93,6 +98,49 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 - **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
   `LATERAL`-Join statt für alle Titel auf einmal. Nächster Schritt: am Abfrageplan mit einem
   Bestand in Schulgröße messen, ob die heutige Zählung spürbar Zeit kostet.
+
+### 5.112 Frühere Inventuren: ältere erreichbar, Läufe löschbar
+
+Unter „Frühere Inventuren" stehen die zehn zuletzt beendeten Läufe, verworfene eingerechnet
+(`AbgeschlosseneInventuren` in `api/inventurlauf/inventur_laeufe.go`). Ältere sind samt
+Fehlbestandsbericht in der Oberfläche nicht mehr erreichbar, obwohl [HANDBUCH.md](HANDBUCH.md)
+(Inventur) den Bericht „auch später unter _Frühere Inventuren_" verspricht. Zu bauen: „Mehr laden
+(N weitere)" unter der Liste wie in der Katalogsuche
+(`frontend/src/inventur/routes/KatalogSuche.svelte`), und ein früherer Lauf lässt sich nach einer
+Rückfrage mit seinem Bericht löschen. Beim Bau zu klären: was das Löschen mitnimmt (Erfassungen,
+Fehlbestand), was am Buch stehen bleibt und welches Recht es verlangt.
+
+### 5.113 Logo unscharf, im dunklen Design auffällig
+
+`frontend/src/assets/logo.png` hat 97 × 90 Pixel. Gezeigt wird es oben links mit 48 Pixeln
+(`frontend/src/lib/components/layout/Seitenleiste.svelte`), bei der Anmeldung mit 96
+(`frontend/src/lib/components/auth/Anmeldung.svelte`) und als Wasserzeichen mit bis zu 600
+(`frontend/src/lib/components/ui/LogoRelief.svelte`); ein Bildschirm mit doppelter Pixeldichte
+braucht jeweils das Doppelte. Verkleinert wurde die Datei für die Grenze des Offline-Speichers
+(2 MB, Vorgabe von Workbox; das Original hatte 5,2 MB). Das Original (2574 × 1664, Commit
+4b369ba7) trägt ein eingezeichnetes Schachbrettmuster; das Logo darin ist rund 1000 Pixel breit.
+Nächster Schritt: das Logo als SVG oder aus dem Original freigestellt als PNG; beides bleibt weit
+unter der Grenze.
+
+### 5.114 Etikettenvorschau zeigt nicht, was gedruckt wird
+
+Die Vorschau im Druck-Center (`frontend/src/lib/components/etiketten/EtikettVorschau.svelte`) ist
+eine eigene Zeichnung im Browser; aufs Papier kommt das PDF des Servers (`pdf/etikett_buch.go`).
+Beim Strichcode-Etikett fehlen ihr Schulname, „Ansch.J. · Signatur", „Exemplar-Nr.:" und der
+Eigentumsvermerk; sie zeigt den Autor, den der Druck nicht setzt, und einen Rahmen, den er nie
+druckt. Der Browser schickt nur Nummer, Titel und Autor
+(`frontend/src/lib/components/etiketten/etikettenDruck.js`); Schulname, Jahr und Vermerk setzt der
+Server. Kein Test vergleicht beide. Außerdem:
+
+- „Hilfsrahmen auf dem Etikett zeichnen" wirkt nur in der Vorschau: `mitRahmen` geht nicht an den
+  Server.
+- Das QR-Etikett (`zeichneQREtikett`) druckt nur Titel, Autor, Code und Nummer, ohne Schulname,
+  Jahr und Vermerk (4.24).
+- Auf „Standard 52" fallen Jahr mit Signatur und der Vermerk absichtlich weg; die Vorschau zeigt
+  das nicht.
+
+Nächster Schritt: Die Vorschau zeigt das Druck-PDF selbst statt einer zweiten Zeichnung. Beim Bau
+entscheiden, ob der Hilfsrahmen an den Druck geht oder entfällt.
 
 ### 7.2 Frisches Littera-Backup
 
