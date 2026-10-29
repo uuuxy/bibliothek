@@ -14,11 +14,12 @@
 -- echte Ausleihhistorie. Deshalb liegt das hier als bewusst zu startendes Werkzeug —
 -- dieselbe Entscheidung wie bei repair_*.sql und tabula_rasa.sql.
 --
--- Ein vollständiger e2e-Lauf hinterlässt einige Dutzend Titel, Exemplare und Ausleihen,
+-- Ein vollständiger e2e-Lauf hinterlässt einige Dutzend Titel und rund hundert Exemplare,
 -- und über Monate summiert sich das.
 --
--- ZUSCHNITT: ausschließlich Titel mit dem Präfix 'E2E ' — dasselbe Muster, das der
--- Teardown bereits für Reservierungen nutzt. Gegengeprüft: Es trifft null Titel aus dem
+-- ZUSCHNITT: ausschließlich Titel, die mit 'E2E ' oder 'E2E-' beginnen; die Specs schreiben
+-- beides („E2E Lehrerwunsch …", „E2E-Bestaetigung …"). Mit 'E2E ' allein blieben neun von
+-- zehn Rest-Exemplaren liegen. Gegengeprüft: Es trifft null Titel aus dem
 -- Littera-Altbestand (erweiterte_eigenschaften ? 'littera_id'). Schüler bleiben
 -- UNANGETASTET: Ihre Testnamen sind uneinheitlich (Testschueler, Zweitleiher-…,
 -- Klassenkind…, Zzunsichtbar…), ein Muster darauf wäre geraten.
@@ -31,31 +32,31 @@
 BEGIN;
 
 -- Was steht an? (Vor dem Löschen, damit die Zahlen im Protokoll stehen.)
-SELECT count(*) AS "E2E-Titel"      FROM buecher_titel WHERE titel LIKE 'E2E %';
+SELECT count(*) AS "E2E-Titel"      FROM buecher_titel WHERE titel ~ '^E2E[ -]';
 SELECT count(*) AS "Exemplare daran" FROM buecher_exemplare e
-  JOIN buecher_titel t ON t.id = e.titel_id WHERE t.titel LIKE 'E2E %';
+  JOIN buecher_titel t ON t.id = e.titel_id WHERE t.titel ~ '^E2E[ -]';
 SELECT count(*) AS "Ausleihen daran" FROM ausleihen a
   JOIN buecher_exemplare e ON e.id = a.exemplar_id
-  JOIN buecher_titel t ON t.id = e.titel_id WHERE t.titel LIKE 'E2E %';
+  JOIN buecher_titel t ON t.id = e.titel_id WHERE t.titel ~ '^E2E[ -]';
 
 -- Reihenfolge folgt den RESTRICT-Fremdschlüsseln: erst was blockiert, dann das Blockierte.
 DELETE FROM schadensfaelle s
  USING buecher_exemplare e, buecher_titel t
- WHERE s.exemplar_id = e.id AND e.titel_id = t.id AND t.titel LIKE 'E2E %';
+ WHERE s.exemplar_id = e.id AND e.titel_id = t.id AND t.titel ~ '^E2E[ -]';
 
 DELETE FROM ausleihen a
  USING buecher_exemplare e, buecher_titel t
- WHERE a.exemplar_id = e.id AND e.titel_id = t.id AND t.titel LIKE 'E2E %';
+ WHERE a.exemplar_id = e.id AND e.titel_id = t.id AND t.titel ~ '^E2E[ -]';
 
 -- Regel der Auflagen wie im Programm (repository.ladeWerkeDerTitel, raeumeWerkeAuf): unter
 -- der Sperre der Auflagen die Werke der Titel merken, die gleich fallen.
 DO $$ BEGIN PERFORM pg_advisory_xact_lock(7502026); END $$;
 CREATE TEMP TABLE werke_der_geloeschten ON COMMIT DROP AS
-    SELECT DISTINCT werk_id FROM buecher_titel WHERE titel LIKE 'E2E %' AND werk_id IS NOT NULL;
+    SELECT DISTINCT werk_id FROM buecher_titel WHERE titel ~ '^E2E[ -]' AND werk_id IS NOT NULL;
 
 -- Exemplare gehen per ON DELETE CASCADE mit dem Titel; ebenso Vormerkungen,
 -- Klassensatz-Reservierungen, class_books und inventur_erfassungen.
-DELETE FROM buecher_titel WHERE titel LIKE 'E2E %';
+DELETE FROM buecher_titel WHERE titel ~ '^E2E[ -]';
 
 -- Ein Werk mit weniger als zwei Titeln fällt; ein übriger Titel steht danach für sich.
 UPDATE buecher_titel SET werk_id = NULL

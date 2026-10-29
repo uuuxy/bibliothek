@@ -343,34 +343,42 @@ test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
 //
 // Der Vorrat wird hier selbst gesaet statt auf die Datenlage der Test-DB zu bauen: Ein
 // Gate, das an fremden Zeilen haengt, ist beim naechsten Aufraeumen still gruen.
+//
+// Der Titel faellt am Ende samt Exemplaren: Liegen blieben je Lauf 305 Exemplare mit Zugang
+// heute, und das Zugangsbuch des Halbjahres lief lokal in die Testfrist.
 test('Ist die Liste gedeckelt, sagt sie es — mit beiden Zahlen', async ({ page }) => {
 	const s = uniqueSuffix();
 	const marke = `E2E-KAPP-${s}`;
 
 	// 305 Exemplare: mehr als die 300, die der Endpunkt hoechstens liefert.
-	seedSQL(`
+	const titelID = querySQL(`
 		WITH t AS (
 			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Kapp-Titel ${s}', 'Viele') RETURNING id
+		), e AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+			SELECT t.id, '${marke}-' || g, false, CURRENT_DATE FROM t, generate_series(1, 305) AS g
 		)
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
-		SELECT t.id, '${marke}-' || g, false, CURRENT_DATE FROM t, generate_series(1, 305) AS g;
+		SELECT id FROM t;
 	`);
+	try {
+		await uiLogin(page);
+		await menuepunkt(page, 'Druck-Center').click();
+		await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
+		await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(marke);
 
-	await uiLogin(page);
-	await menuepunkt(page, 'Druck-Center').click();
-	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
-	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(marke);
+		// BEWEIS: Beide Zahlen stehen da — und zwar UEBER der Liste. Unter 300 Zeilen liest
+		// die Ansage niemand; im ersten Anlauf stand sie am Fuss und war im Screenshot nicht
+		// zu sehen.
+		const ansage = page.getByText(/300 von 305/);
+		await expect(ansage).toBeVisible();
+		const yAnsage = (await ansage.boundingBox())?.y ?? 0;
+		const yTabelle = (await page.locator('table').boundingBox())?.y ?? 0;
+		expect(yAnsage, 'die Ansage steht ueber der Tabelle').toBeLessThan(yTabelle);
 
-	// BEWEIS: Beide Zahlen stehen da — und zwar UEBER der Liste. Unter 300 Zeilen liest
-	// die Ansage niemand; im ersten Anlauf stand sie am Fuss und war im Screenshot nicht
-	// zu sehen.
-	const ansage = page.getByText(/300 von 305/);
-	await expect(ansage).toBeVisible();
-	const yAnsage = (await ansage.boundingBox())?.y ?? 0;
-	const yTabelle = (await page.locator('table').boundingBox())?.y ?? 0;
-	expect(yAnsage, 'die Ansage steht ueber der Tabelle').toBeLessThan(yTabelle);
-
-	await expect(page.locator('tbody tr')).toHaveCount(300);
+		await expect(page.locator('tbody tr')).toHaveCount(300);
+	} finally {
+		seedSQL(`DELETE FROM buecher_titel WHERE id = '${titelID}';`);
+	}
 });
 
 // In der Stufe „Erledigt" hing der gefuellte Knopf an `gewaehltOffen` — und davon gibt es
