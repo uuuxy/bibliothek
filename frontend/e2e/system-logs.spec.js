@@ -1,36 +1,28 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL } from './helpers.js';
+import { uiLogin, csrfToken, gehZu, seedSQL, uniqueSuffix } from './helpers.js';
 
+// Eine Änderung an den Einstellungen steht im Protokoll der Verwaltung, samt dem, was geändert
+// wurde. Die erste Fassung dieses Tests rief zwei Adressen, die es nicht gibt, und prüfte nur, ob
+// die Seite irgendeine Tabelle zeigt: Am Protokoll hätte niemand etwas gemerkt.
 test('System-Logs: Administrative Aktionen werden protokolliert', async ({ page }) => {
-	seedSQL(`
-        INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-        VALUES ('SystemLog', 'TestUser', 'logtest@local', 'mitarbeiter', true)
-        ON CONFLICT (email) DO NOTHING;
-    `);
-
+	const marke = `E2E-Vermerk ${uniqueSuffix()}`;
 	await uiLogin(page);
-
-	// 1. Aktion durchführen: Wir rufen direkt die API auf, um die Rolle zu ändern,
-	// oder eine andere Aktion auszulösen. Ein einfacher Weg ist ein API-Call.
-	// Rückgabe bewusst ignoriert: Der Aufruf soll nur einen Logbuch-Eintrag erzeugen.
-	// Ob die Rolle wirklich umgestellt wurde, prüft der Test darunter über die Settings.
-	await page.request.patch('/api/admin/users/logtest@local/role', {
-		data: { role: 'lehrer' }
+	const antwort = await page.request.put('/api/einstellungen', {
+		headers: { 'X-CSRF-Token': await csrfToken(page) },
+		data: { etikett_eigentumsvermerk: marke }
 	});
-	// Wenn die Role-API nicht existiert, triggern wir einfach die Settings-Speicherung
-	await page.request.post('/api/admin/settings', {
-		data: { active_students_limit: 5 }
-	});
+	expect(antwort.ok(), `Speichern: ${antwort.status()}`).toBe(true);
 
-	// 2. Navigation zu System-Logs
-	await page.goto('/system-logs');
-
-	// 3. Warten, bis Log-Einträge geladen sind
-	// Wir prüfen, ob im Body etwas steht wie "Settings updated" oder der User etc.
-	// Das Log-UI in Svelte zeigt eine Tabelle.
-	await expect(page.locator('table')).toBeVisible();
-	const tableText = await page.locator('table').textContent();
-	// System settings update might be logged, or user change.
-	// Just verifying the page loads successfully and shows a table is a solid smoke test.
-	expect(tableText?.length).toBeGreaterThan(0);
+	try {
+		await gehZu(page, '/system-logs');
+		await page.getByRole('tab', { name: 'Admin-Audit-Log' }).click();
+		const zeile = page.getByRole('row').filter({ hasText: marke });
+		await expect(zeile).toHaveCount(1);
+		await expect(zeile).toContainText('UPDATE_SETTINGS');
+	} finally {
+		seedSQL(`
+			DELETE FROM system_einstellungen WHERE schluessel = 'etikett_eigentumsvermerk' AND wert = '${marke}';
+			DELETE FROM audit_log WHERE details::text LIKE '%${marke}%';
+		`);
+	}
 });

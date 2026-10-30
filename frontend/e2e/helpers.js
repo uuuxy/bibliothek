@@ -162,6 +162,22 @@ export function raeumtNachJedemFallAuf(test) {
 }
 
 /**
+ * Legt Titel mit je einem Exemplar an: Katalog und Titelliste zeigen nur, was im Bestand ist.
+ * Aufgeräumt wird über raeumtNachJedemFallAuf; das Exemplar geht mit seinem Titel.
+ * @param {{ titel: string[] }} angelegt
+ * @param {string[]} titel
+ */
+export function seedTitelMitExemplar(angelegt, ...titel) {
+	for (const name of titel) {
+		angelegt.titel.push(name);
+		seedSQL(`
+			WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('${name}') RETURNING id)
+			INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'B-E2E-' || md5('${name}') FROM t;
+		`);
+	}
+}
+
+/**
  * Von innen nach außen, weil Forderung und Ausleihe mit RESTRICT an Leser und Exemplar hängen
  * (schema.sql); die Exemplare gehen mit ihrem Titel.
  * @param {{ leser: string[], titel: string[] }} angelegt

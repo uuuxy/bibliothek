@@ -11,12 +11,24 @@
 // 36-px-Gate entgangen, das /medienkatalog längst misst. Ein Grep über die Quelle
 // findet Namen, aber nicht, was ein Benutzer auf dem Bildschirm vor sich hat.
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, csrfToken } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	csrfToken,
+	seedTitelMitExemplar,
+	uniqueSuffix,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
 
 const KLASSE_A = '09Z1'; // Anzeigeform (Migration 087): Jahrgang zweistellig, groß
 const KLASSE_B = '09Z2';
 
+const angelegt = raeumtNachJedemFallAuf(test);
+
 test('Klassensätze stehen an genau EINEM Ort', async ({ page }) => {
+	const s = uniqueSuffix();
+	seedTitelMitExemplar(angelegt, `E2E-Ein-Ort A ${s}`, `E2E-Ein-Ort B ${s}`);
+
 	await uiLogin(page);
 
 	// --- Medienkatalog: kein Klassen-Reiter; die Buch-Suche ist da (seit 02.09.2026 ohne Reiter,
@@ -31,8 +43,10 @@ test('Klassensätze stehen an genau EINEM Ort', async ({ page }) => {
 
 	// --- Zwei Klassensätze anlegen, damit „filtern" überhaupt etwas bedeutet ---
 	const buecher = await (await page.request.get('/api/books')).json();
-	const ids = buecher.slice(0, 2).map((/** @type {any} */ b) => b.id);
-	expect(ids.length, 'Testdaten: mindestens zwei Bücher nötig').toBe(2);
+	const ids = buecher
+		.filter((/** @type {any} */ b) => b.title.includes(s))
+		.map((/** @type {any} */ b) => b.id);
+	expect(ids.length, 'die beiden angelegten Bücher').toBe(2);
 
 	await apiPost(page, '/api/admin/class-books/add', {
 		classNames: [KLASSE_A],

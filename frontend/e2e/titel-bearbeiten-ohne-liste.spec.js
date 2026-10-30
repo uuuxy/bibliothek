@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedTitelMitExemplar,
+	uniqueSuffix,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
+
+const angelegt = raeumtNachJedemFallAuf(test);
 
 // „Titel bearbeiten" in der Buchakte führt zur Maske, ohne dass die Titelliste dazwischen
 // steht. Die Maske braucht nur den einen Titel; die ganze Liste lädt daneben, und zwar
@@ -26,6 +34,8 @@ async function halte(page, muster) {
 }
 
 test('„Titel bearbeiten" öffnet die Maske, ohne auf die Titelliste zu warten', async ({ page }) => {
+	seedTitelMitExemplar(angelegt, `E2E-Maske-ohne-Liste ${uniqueSuffix()}`);
+
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('heading', { level: 2 }).first().getByRole('button').click();

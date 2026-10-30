@@ -153,10 +153,10 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 		for (const t of ergebnis.treffer) verstoesse.push(`[${seite}] ${t}`);
 	}
 
-	// Aussagekraft-Untergrenze über alle Seiten. Eine Zahl je Seite gibt es nicht: Die CI fährt
-	// eine frische Datenbank, jede feste Grenze wäre dort Zufall. Dass eine einzelne Seite ohne
-	// ihren Inhalt gemessen wird, hält die Gegenprobe nach jeder Messung fest.
-	expect(geprueft, 'zu wenige Textknoten erfasst — greift der Test noch?').toBeGreaterThan(300);
+	// Aussagekraft-Untergrenze über alle Seiten, gemessen an einer frischen Datenbank (96 Knoten);
+	// was andere Tests anlegen, kommt dazu. Eine Zahl je Seite gibt es nicht: Dass eine einzelne
+	// Seite ohne ihren Inhalt gemessen wird, hält die Gegenprobe nach jeder Messung fest.
+	expect(geprueft, 'zu wenige Textknoten erfasst — greift der Test noch?').toBeGreaterThan(80);
 
 	expect(
 		verstoesse,

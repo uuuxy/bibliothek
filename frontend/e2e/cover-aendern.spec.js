@@ -14,13 +14,23 @@
 // hiesse, den Rückbau gegen sich selbst zu testen.
 import { test, expect } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
-import { uiLogin, gehZu, seedSQL, uniqueSuffix, raeumtNachJedemFallAuf } from './helpers.js';
+import {
+	uiLogin,
+	gehZu,
+	seedSQL,
+	seedTitelMitExemplar,
+	uniqueSuffix,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
 
 const angelegt = raeumtNachJedemFallAuf(test);
 
 test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" bleibt', async ({
 	page
 }) => {
+	// Ein Titel muss da sein, gleich welcher: Geprüft wird die Buchakte, nicht der Bestand.
+	seedTitelMitExemplar(angelegt, `E2E-Cover-Akte ${uniqueSuffix()}`);
+
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 

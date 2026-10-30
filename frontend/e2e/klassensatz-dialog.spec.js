@@ -14,10 +14,17 @@
 // kein einziges Buch, der Dialog ist dann unbenutzbar. Genau deshalb prüft der Test nicht
 // „das Feld ist da", sondern dass es die Kachelmenge tatsächlich eingrenzt.
 import { test, expect } from '@playwright/test';
-import { uiLogin, querySQL, uniqueSuffix } from './helpers.js';
+import {
+	uiLogin,
+	querySQL,
+	seedTitelMitExemplar,
+	uniqueSuffix,
+	raeumtNachJedemFallAuf
+} from './helpers.js';
 
 const s = uniqueSuffix();
 const KLASSE = `zz${s}`.slice(0, 12);
+const angelegt = raeumtNachJedemFallAuf(test);
 
 test.afterAll(async ({ request }) => {
 	// Nur die eine angelegte Zuordnung zurücknehmen. Kein Rundumschlag: Ein Teardown hat
@@ -42,11 +49,9 @@ test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet 
 		VALUES ('KSD', 'Wegwerf-${s}', '${KLASSE}', 'S-ksd-${s}', 2030)`);
 	await uiLogin(page);
 
-	// Einen Titel aus dem Bestand nehmen, statt einen zu erfinden: Der Dialog zeigt nur,
-	// was es wirklich gibt.
-	const buecher = await (await page.request.get('/api/books')).json();
-	const titel = buecher[0]?.title;
-	expect(titel, 'Testdaten: mindestens ein Buch nötig').toBeTruthy();
+	// Zwei Titel, damit die Suche eingrenzen kann. Sonst hinge der Test am Bestand anderer Tests.
+	const titel = `E2E-Dialog-Gesucht ${s}`;
+	seedTitelMitExemplar(angelegt, titel, `E2E-Dialog-Anderer ${s}`);
 
 	await page.goto('/schulklassen');
 	await page.getByRole('button', { name: 'Klasse hinzufügen' }).click();

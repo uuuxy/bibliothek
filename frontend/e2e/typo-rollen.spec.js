@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
 
 // Gate aus dem M3-Typografie-Audit vom 25.08.2026 (Bericht aufgelöst, Historie in git log):
@@ -92,6 +92,32 @@ const MESSE_TYPO = () => {
 	}
 	return { verstoesse: [...new Set(verstoesse)].slice(0, 20), geprueft };
 };
+
+// Ohne eine Klasse mit Klassensatz gäbe es nichts aufzuklappen; der Test legt sich eine an.
+const s = uniqueSuffix();
+test.beforeEach(() => {
+	seedSQL(`
+		WITH t AS (INSERT INTO buecher_titel (titel, ist_lernmittel)
+		           VALUES ('E2E-Typo-Kachel ${s}', true) RETURNING id),
+		kinder AS (INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+		           SELECT 'Kind' || g, 'Typo-${s}', '09X8', 'S-TYPO' || g || '${s}', 2030
+		           FROM generate_series(1, 6) g RETURNING id, barcode_id),
+		ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id)
+		       SELECT t.id, 'B-TYPO' || g || '${s}' FROM t, generate_series(1, 6) g RETURNING id, barcode_id)
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+		SELECT ex.id, kinder.id, CURRENT_DATE + 300
+		FROM ex JOIN kinder ON substring(ex.barcode_id FROM 7) = substring(kinder.barcode_id FROM 7);
+	`);
+});
+test.afterEach(() => {
+	seedSQL(`
+		DELETE FROM ausleihen WHERE exemplar_id IN (
+			SELECT id FROM buecher_exemplare WHERE barcode_id LIKE 'B-TYPO%${s}');
+		DELETE FROM buecher_exemplare WHERE barcode_id LIKE 'B-TYPO%${s}';
+		DELETE FROM buecher_titel WHERE titel = 'E2E-Typo-Kachel ${s}';
+		DELETE FROM leser WHERE barcode_id LIKE 'S-TYPO%${s}';
+	`);
+});
 
 test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht <= 700)', async ({
 	page

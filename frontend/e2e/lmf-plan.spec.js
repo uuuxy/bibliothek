@@ -21,6 +21,26 @@ import {
 // dieser Suite rechnen mit dem Stichtag. Die Frist-Kopplung misst
 // api/lernmittel/lmf_termine_frist_pg_test.go am Postgres.
 const LEHRER_EMAIL = 'e2e-lehrer-lmfplan@test.local';
+
+// Der Plan schlägt die Klassen vor, in denen Schüler sind. Diese hier legt die Datei selbst an: je
+// fünf in den Jahrgängen 5 bis 10, damit die Nachbar-Regel Nachbarn hat, eine neue Klasse nicht
+// zuletzt steht und die Reihenfolge lang genug ist, um zu scrollen, dazu zwei der Oberstufe: Die
+// organisiert sich selbst und bleibt draußen.
+const marke = uniqueSuffix();
+test.beforeEach(() => {
+	seedSQL(`
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		SELECT 'S-PLAN-' || k || '-${marke}', 'Plan', 'Klasse-${marke}', k, 2030
+		FROM (
+			SELECT lpad(j::text, 2, '0') || 'G' || n AS k FROM generate_series(5, 10) j, generate_series(1, 5) n
+			UNION ALL SELECT unnest(ARRAY['11A1', '12A1'])
+		) klassen;
+	`);
+});
+test.afterEach(() => {
+	seedSQL(`DELETE FROM leser WHERE barcode_id LIKE 'S-PLAN-%-${marke}';`);
+});
+
 const ERSTER_TAG = new Date(2027, 7, 9); // Montag 09.08.2027 — erster Schultag nach den Ferien
 const STARTSTUNDE = 2; // Vorgabe des Planers (Plan 2026 der Schule: Mo 10.08., 2. Std.)
 const STUNDEN_JE_TAG = 6;
@@ -113,7 +133,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(zeile).toContainText(soll.wochentag);
 	await expect(zeile).toContainText(soll.datum);
 	await expect(zeile).toContainText(soll.stunde);
-	await zeile.getByLabel(`Besonderheiten Zeile ${nummer}`).fill(vermerk);
+	await zeile.getByLabel(`Besonderheiten Zeile ${nummer}`, { exact: true }).fill(vermerk);
 
 	// Escape im Überlaufmenü schließt NUR das Menü — bis 06.09.2026 sprang derselbe
 	// Tastendruck zusätzlich an die Theke (Router hört vor dem Overlay auf window).
@@ -461,7 +481,7 @@ test('LMF-Plan: Menüwechsel mit ungespeicherter Änderung fragt nach', async ({
 	const nummer = Number(
 		await tabelle.getByRole('row').nth(1).getByRole('cell').first().innerText()
 	);
-	const feld = tabelle.getByLabel(`Besonderheiten Zeile ${nummer}`);
+	const feld = tabelle.getByLabel(`Besonderheiten Zeile ${nummer}`, { exact: true });
 	await feld.fill('E2E ungespeichert');
 
 	await menuepunkt(page, 'Ausleihe').click();
