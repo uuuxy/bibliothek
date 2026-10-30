@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import Katalogseite from './KatalogSuche.svelte';
 import { apiFetch } from '../../lib/apiFetch.js';
@@ -54,6 +54,11 @@ beforeAll(() => {
 	});
 });
 
+// Zurück auf „kein Exemplar": Die Antwort eines Falls gälte sonst im nächsten weiter.
+beforeEach(() => {
+	vi.mocked(apiFetch).mockReset();
+});
+
 describe('Kamera-Scan im Medienkatalog', () => {
 	it('legt den gescannten Code ins Suchfeld und zeigt den Titel mit dieser ISBN', async () => {
 		render(Katalogseite);
@@ -82,8 +87,7 @@ describe('Kamera-Scan im Medienkatalog', () => {
 		await fireEvent.input(feld, { target: { value: '9781234567897' } });
 
 		expect(await screen.findByText('Keine Bücher gefunden')).toBeTruthy();
-		// Die Meldung nennt den Code erst, wenn die Frage nach einem Exemplar beantwortet ist.
-		expect(await screen.findByText(/9781234567897/)).toBeTruthy();
+		expect(screen.getByText(/9781234567897/)).toBeTruthy();
 		expect(screen.queryByText('Green Line 3')).toBeNull();
 	});
 });
