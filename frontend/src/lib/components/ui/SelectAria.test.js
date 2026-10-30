@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
 import Select from './Select.svelte';
 
 // Der Screenreader muss der Pfeiltasten-Markierung folgen (#593, aus Paket 1).
@@ -71,5 +71,22 @@ describe('Select: was der Screenreader mitbekommt', () => {
 		const kennungB = knopfIn(b.container).getAttribute('aria-activedescendant');
 		expect(kennungA).toBeTruthy();
 		expect(kennungA, 'beide Felder verweisen auf dieselbe Zeile').not.toBe(kennungB);
+	});
+});
+
+// Safari und Firefox auf dem Mac geben einem Knopf beim Klick keinen Fokus, jsdom ebenso wenig.
+// Ohne ihn erreichten Pfeiltasten und Escape das offene Feld nicht, und Escape führte an die Theke.
+describe('Select: Fokus beim Öffnen mit der Maus', () => {
+	it('nimmt den Fokus, damit die Tasten das offene Feld erreichen', async () => {
+		const screen = render(Select, {
+			options: [{ value: 'a', label: 'Eins' }],
+			'aria-label': 'Probe'
+		});
+		const feld = screen.getByRole('combobox', { name: 'Probe' });
+		expect(document.activeElement).not.toBe(feld);
+
+		await fireEvent.click(feld);
+
+		expect(document.activeElement).toBe(feld);
 	});
 });

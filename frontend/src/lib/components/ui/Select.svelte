@@ -77,6 +77,8 @@
 		if (disabled) return;
 		messen();
 		offen = true;
+		// Safari gibt einem Knopf beim Klick keinen Fokus; Pfeile und Escape erreichten das Feld nicht.
+		ausloeser?.focus();
 		aktiv = Math.max(
 			0,
 			options.findIndex((o) => o.value === value)

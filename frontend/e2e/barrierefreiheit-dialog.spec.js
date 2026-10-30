@@ -9,7 +9,7 @@
 //
 // Dieses Gate wurde vor dem ersten Fix ROT gesehen (09.09.2026).
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin, gehZu, seedSQL, uniqueSuffix } from './helpers.js';
 
 /** Liegt der Fokus innerhalb des Dialogs? */
 const fokusImDialog = (/** @type {import('@playwright/test').Page} */ page) =>
@@ -43,35 +43,55 @@ test('Dialog: Fokus wandert hinein, kreist darin und kehrt zum Auslöser zurück
 });
 
 test('Tabellen: Beschriftung an der Tabelle, scope an jeder Kopfzelle', async ({ page }) => {
-	await uiLogin(page);
-	/** @type {string[]} */
-	const befunde = [];
-	for (const [name, pfad] of [
-		['Leserdatei', '/schuelerdatei'],
-		['Mahnwesen', '/mahnwesen'],
-		// Nicht der Medienkatalog: Der ist ein Kachelraster ohne Tabelle.
-		['Benutzer & Rechte', '/berechtigungen']
-	]) {
-		await gehZu(page, pfad);
-		await page.locator('table').first().waitFor();
-		const fund = await page.evaluate(() => {
-			const tabellen = [...document.querySelectorAll('table')];
-			const ohneName = tabellen.filter(
-				(t) =>
-					!t.querySelector('caption') &&
-					!t.getAttribute('aria-label') &&
-					!t.getAttribute('aria-labelledby')
-			).length;
-			const ohneScope = [...document.querySelectorAll('table th')].filter(
-				(th) => !th.getAttribute('scope')
-			).length;
-			return { tabellen: tabellen.length, ohneName, ohneScope };
-		});
-		if (fund.ohneName)
-			befunde.push(`${name}: ${fund.ohneName}/${fund.tabellen} Tabellen ohne Beschriftung`);
-		if (fund.ohneScope) befunde.push(`${name}: ${fund.ohneScope} <th> ohne scope`);
+	// Leserdatei und Mahnwesen zeigen ohne Zeile keine Tabelle: Der Test legt einen Leser mit einem
+	// überfälligen Buch selbst an, sonst hinge er an den Resten früherer Tests.
+	const s = uniqueSuffix();
+	seedSQL(`
+		WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Tabelle ${s}') RETURNING id),
+		ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'B-TAB-${s}' FROM t RETURNING id),
+		l AS (INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		      VALUES ('S-TAB-${s}', 'Tabelle', 'Probe-${s}', '07T', 2031) RETURNING id)
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+		SELECT ex.id, l.id, CURRENT_DATE - 30 FROM ex, l;
+	`);
+	try {
+		await uiLogin(page);
+		/** @type {string[]} */
+		const befunde = [];
+		for (const [name, pfad] of [
+			['Leserdatei', '/schuelerdatei'],
+			['Mahnwesen', '/mahnwesen'],
+			// Nicht der Medienkatalog: Der ist ein Kachelraster ohne Tabelle.
+			['Benutzer & Rechte', '/berechtigungen']
+		]) {
+			await gehZu(page, pfad);
+			await page.locator('table').first().waitFor();
+			const fund = await page.evaluate(() => {
+				const tabellen = [...document.querySelectorAll('table')];
+				const ohneName = tabellen.filter(
+					(t) =>
+						!t.querySelector('caption') &&
+						!t.getAttribute('aria-label') &&
+						!t.getAttribute('aria-labelledby')
+				).length;
+				const ohneScope = [...document.querySelectorAll('table th')].filter(
+					(th) => !th.getAttribute('scope')
+				).length;
+				return { tabellen: tabellen.length, ohneName, ohneScope };
+			});
+			if (fund.ohneName)
+				befunde.push(`${name}: ${fund.ohneName}/${fund.tabellen} Tabellen ohne Beschriftung`);
+			if (fund.ohneScope) befunde.push(`${name}: ${fund.ohneScope} <th> ohne scope`);
+		}
+		expect(befunde).toEqual([]);
+	} finally {
+		seedSQL(`
+			DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id = 'B-TAB-${s}');
+			DELETE FROM buecher_exemplare WHERE barcode_id = 'B-TAB-${s}';
+			DELETE FROM buecher_titel WHERE titel = 'E2E-Tabelle ${s}';
+			DELETE FROM leser WHERE barcode_id = 'S-TAB-${s}';
+		`);
 	}
-	expect(befunde).toEqual([]);
 });
 
 test('Bewegung reduzieren: keine Animation, wenn das System es verlangt', async ({ page }) => {

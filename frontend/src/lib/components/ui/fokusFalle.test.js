@@ -76,15 +76,68 @@ describe('fokusFalle', () => {
 		falle.destroy();
 	});
 
-	it('lässt Tab in der Mitte dem Browser', async () => {
+	// Safari lässt beim Tab Knöpfe aus. Bliebe die Mitte dem Browser, spränge der Fokus vom letzten
+	// Feld am Knopf vorbei aus dem Dialog; im Browser-Test mit WebKit gesehen.
+	it('geht auch in der Mitte selbst weiter, vor und zurück', async () => {
 		const { node, knoepfe } = dialog(['Eins', 'Zwei', 'Drei']);
 		const falle = fokusFalle(node);
 		await nachDemOeffnen();
 
-		knoepfe[1].focus();
-		expect(tab()).toBe(false);
-		expect(tab({ shift: true })).toBe(false);
+		knoepfe[0].focus();
+		expect(tab()).toBe(true);
 		expect(document.activeElement).toBe(knoepfe[1]);
+		expect(tab()).toBe(true);
+		expect(document.activeElement).toBe(knoepfe[2]);
+		expect(tab({ shift: true })).toBe(true);
+		expect(document.activeElement).toBe(knoepfe[1]);
+		falle.destroy();
+	});
+
+	it('eine Radiogruppe ist ein Halt: der gewählte Knopf', async () => {
+		const { node, knoepfe } = dialog(['Davor', 'Danach']);
+		const radios = ['a', 'b', 'c'].map((wert) => {
+			const radio = document.createElement('input');
+			radio.type = 'radio';
+			radio.name = 'gruppe';
+			radio.value = wert;
+			radio.checked = wert === 'b';
+			return radio;
+		});
+		knoepfe[1].before(...radios);
+		const falle = fokusFalle(node);
+		await nachDemOeffnen();
+
+		knoepfe[0].focus();
+		tab();
+		expect(document.activeElement).toBe(radios[1]);
+		tab();
+		expect(document.activeElement).toBe(knoepfe[1]);
+		falle.destroy();
+	});
+
+	it('lässt eine Taste stehen, die ein Bauteil im Dialog schon verbraucht hat', async () => {
+		const { node, knoepfe } = dialog(['Eins', 'Zwei']);
+		const falle = fokusFalle(node);
+		await nachDemOeffnen();
+		knoepfe[0].addEventListener('keydown', (e) => e.preventDefault());
+
+		knoepfe[0].focus();
+		tab();
+
+		expect(document.activeElement).toBe(knoepfe[0]);
+		falle.destroy();
+	});
+
+	it('geht über ein Element hinweg, das den Fokus nicht nimmt', async () => {
+		const { node, knoepfe } = dialog(['Eins', 'Zwei', 'Drei']);
+		const falle = fokusFalle(node);
+		await nachDemOeffnen();
+		knoepfe[1].focus = () => {};
+
+		knoepfe[0].focus();
+		tab();
+
+		expect(document.activeElement).toBe(knoepfe[2]);
 		falle.destroy();
 	});
 

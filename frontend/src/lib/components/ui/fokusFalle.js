@@ -3,8 +3,8 @@ const stapel = [];
 
 const FOKUSSIERBAR =
 	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
-	'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), ' +
-	'[contenteditable="true"]';
+	'select:not([disabled]), textarea:not([disabled]), summary, ' +
+	'[tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
 
 /**
  * Sichtbare, fokussierbare Nachkommen in Dokumentreihenfolge. getClientRects statt
@@ -19,6 +19,28 @@ function kandidaten(node) {
 }
 
 /**
+ * Die Halte der Tab-Taste: Eine Radiogruppe ist ein Halt, ihr gewählter Knopf; innerhalb der
+ * Gruppe wandern die Pfeiltasten.
+ * @param {HTMLElement} node
+ */
+function tabHalte(node) {
+	const liste = kandidaten(node);
+	const istRadio = (/** @type {HTMLElement} */ el) =>
+		el instanceof HTMLInputElement && el.type === 'radio';
+	return liste.filter(
+		(el) =>
+			!istRadio(el) ||
+			/** @type {HTMLInputElement} */ (el).checked ||
+			!liste.some(
+				(a) =>
+					istRadio(a) &&
+					/** @type {HTMLInputElement} */ (a).checked &&
+					/** @type {HTMLInputElement} */ (a).name === /** @type {HTMLInputElement} */ (el).name
+			)
+	);
+}
+
+/**
  * `use:fokusFalle` — ein Dialog nimmt den Fokus, hält ihn und gibt ihn zurück. Sonst
  * bliebe der Fokus auf dem Knopf, der den Dialog geöffnet hat, und ein Tab wanderte durch
  * die Seite dahinter; für Tastatur- und Screenreader-Nutzung wäre der Dialog nur ein Bild.
@@ -29,7 +51,9 @@ function kandidaten(node) {
  * Drei Zusicherungen:
  *   1. Beim Öffnen wandert der Fokus auf das erste fokussierbare Element im Dialog —
  *      es sei denn, etwas darin hat ihn schon (ein Feld mit `autofocus`).
- *   2. Tab und Shift+Tab kreisen innerhalb des Dialogs.
+ *   2. Tab und Shift+Tab kreisen innerhalb des Dialogs. Die Falle geht selbst weiter, statt
+ *      das dem Browser zu überlassen: Safari lässt beim Tab Knöpfe und Links aus. Der Fokus
+ *      spränge vom letzten Feld am letzten Knopf vorbei aus dem Dialog.
  *   3. Beim Schließen kehrt der Fokus zum Auslöser zurück — aber nur, wenn ihn
  *      inzwischen niemand anders genommen hat (nach „Schüler anlegen" springt die
  *      Anwendung ins Profil; dem Auslöser den Fokus aufzuzwingen wäre falsch).
@@ -52,25 +76,23 @@ export function fokusFalle(node) {
 
 	/** @param {KeyboardEvent} e */
 	function beiTaste(e) {
-		if (e.key !== 'Tab' || stapel.at(-1) !== node) return;
-		const liste = kandidaten(node);
-		if (liste.length === 0) {
-			e.preventDefault();
-			node.focus();
-			return;
-		}
-		const erstes = liste[0];
-		// Die Liste ist hier nicht leer, at(-1) liefert also ein Element.
-		const letztes = /** @type {HTMLElement} */ (liste.at(-1));
+		// Ein Bauteil im Dialog kann die Taste für sich verbraucht haben (Vorschlag übernehmen).
+		if (e.key !== 'Tab' || e.defaultPrevented || stapel.at(-1) !== node) return;
+		e.preventDefault();
+		const liste = tabHalte(node);
 		const aktiv = document.activeElement;
 		const drinnen = aktiv instanceof HTMLElement && node.contains(aktiv) && aktiv !== node;
-		if (e.shiftKey && (!drinnen || aktiv === erstes)) {
-			e.preventDefault();
-			letztes.focus();
-		} else if (!e.shiftKey && (!drinnen || aktiv === letztes)) {
-			e.preventDefault();
-			erstes.focus();
+		const folgt = liste.filter(
+			(el) => drinnen && aktiv.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING
+		);
+		const davor = liste.filter((el) => !folgt.includes(el) && el !== aktiv);
+		const reihe = e.shiftKey ? [...davor.reverse(), ...folgt.reverse()] : [...folgt, ...davor];
+		// Ein Element, das den Fokus nicht nimmt (verborgen, gesperrte Gruppe), hält die Runde nicht auf.
+		for (const el of reihe) {
+			el.focus();
+			if (document.activeElement === el) return;
 		}
+		if (!drinnen) node.focus();
 	}
 	node.addEventListener('keydown', beiTaste);
 
