@@ -43,7 +43,7 @@ test('Klassensätze: ein Buch in zwei Auflagen zählt einmal und zeigt die Misch
 		// (KlassenUebersicht) — ein Klick schlösse sie wieder.
 		await expect(karte.locator('button[aria-expanded]')).toHaveAttribute('aria-expanded', 'true');
 
-		const kachel = karte.getByRole('button', { name: `${titel} bearbeiten` });
+		const kachel = karte.getByRole('button', { name: new RegExp(`${titel}.*bearbeiten$`) });
 		await expect(kachel).toHaveCount(1);
 		await expect(kachel.getByTestId('klassensatz-aus-ausleihen')).toHaveText(
 			'aus Ausleihen · 6 Leser'

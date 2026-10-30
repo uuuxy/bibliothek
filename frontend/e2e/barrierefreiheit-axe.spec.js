@@ -15,7 +15,7 @@
 // Dieses Gate wurde vor dem ersten Fix ROT gesehen (09.09.2026, 17 von 19 Tests).
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin, gehZu, seedSQL, uniqueSuffix } from './helpers.js';
 
 /** Öffentlich, ohne Anmeldung. */
 const OEFFENTLICH = [
@@ -168,6 +168,57 @@ test.describe('axe: keine WCAG-A/AA-Verstöße im dunklen Schema', () => {
 			pruefeSeite(page, name, pfad, true, colorScheme));
 	}
 });
+
+// Die Seite „Klassensätze" zeigt ihre Kacheln erst in einer aufgeklappten Klasse. Ob der Scan oben
+// eine sieht, hängt an den Resten früherer Tests; eine Barriere an der Kachel wäre je nach Lauf rot
+// oder grün. Klasse und Buch legt der Test deshalb selbst an.
+for (const farbschema of /** @type {const} */ (['light', 'dark'])) {
+	test.describe(`axe: Kacheln einer aufgeklappten Klasse, ${farbschema}`, () => {
+		test.use({ colorScheme: farbschema });
+		test.beforeEach(({ page }) => page.emulateMedia({ reducedMotion: 'reduce' }));
+
+		test('keine WCAG-A/AA-Verstöße', async ({ page }) => {
+			test.setTimeout(90_000);
+			const s = uniqueSuffix();
+			const klasse = '09X7';
+			seedSQL(`
+				WITH t AS (INSERT INTO buecher_titel (titel, ist_lernmittel)
+				           VALUES ('E2E-Axe-Kachel ${s}', true) RETURNING id),
+				kinder AS (INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+				           SELECT 'Kind' || g, 'Axe-${s}', '${klasse}', 'S-AXE' || g || '${s}', 2030
+				           FROM generate_series(1, 6) g RETURNING id, barcode_id),
+				ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id)
+				       SELECT t.id, 'B-AXE' || g || '${s}' FROM t, generate_series(1, 6) g RETURNING id, barcode_id)
+				INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+				SELECT ex.id, kinder.id, CURRENT_DATE + 300
+				FROM ex JOIN kinder ON substring(ex.barcode_id FROM 6) = substring(kinder.barcode_id FROM 6);
+			`);
+			try {
+				await uiLogin(page);
+				await gehZu(page, '/schulklassen');
+				await page.getByLabel('Klasse suchen').fill(klasse);
+				const karte = page.locator('.class-group').filter({ hasText: klasse });
+				await expect(karte.locator('button[aria-expanded]')).toHaveAttribute(
+					'aria-expanded',
+					'true'
+				);
+				await expect(
+					karte.getByRole('button', { name: new RegExp(`E2E-Axe-Kachel ${s}.*bearbeiten$`) })
+				).toBeVisible();
+				await zurRuhe(page);
+				expect(await verstoesse(page), 'Klassensätze, aufgeklappt').toEqual([]);
+			} finally {
+				seedSQL(`
+					DELETE FROM ausleihen WHERE exemplar_id IN (
+						SELECT id FROM buecher_exemplare WHERE barcode_id LIKE 'B-AXE%${s}');
+					DELETE FROM buecher_exemplare WHERE barcode_id LIKE 'B-AXE%${s}';
+					DELETE FROM buecher_titel WHERE titel = 'E2E-Axe-Kachel ${s}';
+					DELETE FROM leser WHERE barcode_id LIKE 'S-AXE%${s}';
+				`);
+			}
+		});
+	});
+}
 
 test('Das Dokument ist Deutsch: <html lang="de">', async ({ page }) => {
 	await page.goto('/');

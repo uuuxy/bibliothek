@@ -98,7 +98,6 @@
 		onclick={() => onEdit?.(titel)}
 		role="button"
 		tabindex="0"
-		aria-label="{titel.title} bearbeiten"
 		onkeydown={(e) => {
 			if (e.target !== e.currentTarget) return;
 			if (e.key === 'Enter' || e.key === ' ') {
@@ -108,6 +107,9 @@
 		}}
 	>
 		{@render inhalt()}
+		<!-- Der Name des Knopfs kommt aus seinem Inhalt und endet mit dem, was er tut: Ein fremder
+		     aria-label verschwiege, was auf der Kachel steht (WCAG 2.5.3, Beschriftung im Namen). -->
+		<span class="sr-only">bearbeiten</span>
 	</div>
 {:else}
 	<div class="flex flex-col gap-2 rounded-2xl p-2">
