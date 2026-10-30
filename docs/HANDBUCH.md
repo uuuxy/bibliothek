@@ -747,7 +747,8 @@ sind der 15.3. und der 15.9., beide Datumsfelder lassen sich überschreiben. Jed
 Zugangsbuchs trägt „Seite x von y". Ein Zeitraum umfasst höchstens ein Jahr
 (sonst: _Der Zeitraum darf höchstens ein Jahr umfassen_): Ein Schuljahr vom 15.9. bis 14.9.
 geht, mehrere Jahre gehen als mehrere Ausdrucke. Land und Schulträger stehen getrennt,
-jeweils mit eigener Stückzahl.
+jeweils mit eigener Stückzahl. Am Bildschirm zeigt jeder Abschnitt zuerst 50 Zeilen, _Mehr
+laden_ zeigt die nächsten 50; die Stückzahl und der Ausdruck umfassen immer alle.
 
 Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellungen →
 Wareneingang_ eingebucht haben — mit dem Tag der Lieferung, nicht dem der Bestellung.

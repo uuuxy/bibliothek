@@ -62,6 +62,14 @@ async function zugangsbuch(zahl) {
 const tabellen = (screen) =>
 	screen.queryAllByRole('table').map((t) => t.querySelector('caption')?.textContent);
 
+/**
+ * Die Zahl der Zeilen, die eine Tabelle zeichnet.
+ * @param {{ getByRole: (rolle: string, optionen: { name: string }) => HTMLElement }} screen
+ * @param {string} topf
+ */
+const gezeichnet = (screen, topf) =>
+	screen.getByRole('table', { name: `Zugangsbuch — ${topf}` }).querySelectorAll('tbody tr').length;
+
 beforeEach(() => vi.clearAllMocks());
 
 // Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein leerer Topf belegt unten
@@ -106,11 +114,12 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 		expect(screen.getAllByText(LEER)).toHaveLength(1);
 	});
 
-	// Eine Liste mit Zehntausenden Zeilen neu aufzubauen dauert Sekunden. Sie bleibt deshalb im
-	// Dokument und wird nur ausgeblendet.
+	// Eine ausgeblendete Liste bleibt im Dokument: Zurückgeschaltet steht sie da, wie sie
+	// verlassen wurde, mit den Zeilen, die „Mehr laden" dazugeholt hat.
 	it('baut eine ausgeblendete Liste beim Zurückschalten nicht neu auf', async () => {
-		const screen = await zugangsbuch({ land: 1, traeger: 2 });
+		const screen = await zugangsbuch({ land: 1, traeger: 60 });
 		const vorher = screen.getByRole('table', { name: `Zugangsbuch — ${TRAEGER}` });
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (10 weitere)' }));
 
 		const feld = screen.getByRole('button', { name: `${LAND} · 1` });
 		await fireEvent.click(feld);
@@ -118,12 +127,41 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 		await fireEvent.click(feld);
 
 		expect(screen.getByRole('table', { name: `Zugangsbuch — ${TRAEGER}` })).toBe(vorher);
+		expect(gezeichnet(screen, TRAEGER)).toBe(60);
 	});
 
-	it('schreibt große Zahlen mit Tausenderpunkt, im Feld wie in der Überschrift', async () => {
-		const screen = await zugangsbuch({ ohne: 1000 });
-		expect(screen.getByRole('button', { name: `${OHNE} · 1.000` })).toBeTruthy();
-		expect(screen.getByRole('heading', { name: `${OHNE} · 1.000 Exemplare` })).toBeTruthy();
+	// Alle Zeilen zu zeichnen hielte die Seite bei Zehntausenden Zugängen Sekunden an. Die Zahl
+	// in Feld und Überschrift bleibt die ganze.
+	it('zeichnet je Topf zuerst 50 Zeilen und mit jedem „Mehr laden" 50 weitere', async () => {
+		const screen = await zugangsbuch({ land: 3, traeger: 120 });
+		expect(gezeichnet(screen, LAND)).toBe(3);
+		expect(gezeichnet(screen, TRAEGER)).toBe(50);
+		expect(screen.getByRole('button', { name: `${TRAEGER} · 120` })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: `${TRAEGER} · 120 Exemplare` })).toBeTruthy();
+		expect(screen.getAllByRole('button', { name: /^Mehr laden/ })).toHaveLength(1);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (70 weitere)' }));
+		expect(gezeichnet(screen, TRAEGER)).toBe(100);
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (20 weitere)' }));
+		expect(gezeichnet(screen, TRAEGER)).toBe(120);
+		expect(screen.queryByRole('button', { name: /^Mehr laden/ })).toBeNull();
+	});
+
+	it('beginnt nach „Anzeigen" wieder mit den ersten 50 Zeilen', async () => {
+		const screen = await zugangsbuch({ traeger: 120 });
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (70 weitere)' }));
+		expect(gezeichnet(screen, TRAEGER)).toBe(100);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Anzeigen' }));
+		await screen.findByRole('button', { name: 'Mehr laden (70 weitere)' });
+		expect(gezeichnet(screen, TRAEGER)).toBe(50);
+	});
+
+	it('schreibt große Zahlen mit Tausenderpunkt, im Feld, in der Überschrift und im Knopf', async () => {
+		const screen = await zugangsbuch({ ohne: 1050 });
+		expect(screen.getByRole('button', { name: `${OHNE} · 1.050` })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: `${OHNE} · 1.050 Exemplare` })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Mehr laden (1.000 weitere)' })).toBeTruthy();
 	});
 
 	// Der Satz erklärt die Liste „ohne Zuordnung“; ohne die Liste erklärt er nichts.

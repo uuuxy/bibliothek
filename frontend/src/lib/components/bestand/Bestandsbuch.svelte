@@ -11,14 +11,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
-	import Abschnitt from '../ui/Abschnitt.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import FilterChips from '../ui/FilterChips.svelte';
-	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { formatDatum, formatZahl } from '../../utils/format.js';
+	import BestandsbuchAbschnitt from './BestandsbuchAbschnitt.svelte';
+	import { formatZahl } from '../../utils/format.js';
 	import { Printer } from '@lucide/svelte';
 
 	/**
@@ -53,8 +52,8 @@
 	const gezeigt = $derived(
 		abschnitte.filter((a) => (wahl === null ? a.zeilen.length > 0 : a.topf === wahl))
 	);
-	// Eine Liste mit Zeilen bleibt im Dokument und wird nur ausgeblendet: Zehntausende Zeilen
-	// neu aufzubauen dauert Sekunden, in denen der Klick ohne Antwort bliebe.
+	// Eine Liste mit Zeilen bleibt im Dokument und wird nur ausgeblendet: Zurückgeschaltet steht
+	// sie da, wie sie verlassen wurde, mit den Zeilen, die „Mehr laden" dazugeholt hat.
 	const gebaut = $derived(abschnitte.filter((a) => a.zeilen.length > 0 || a.topf === wahl));
 
 	// Der Ausdruck nimmt den geladenen Zeitraum, nicht den in den Eingabefeldern: Wer ein Datum
@@ -131,35 +130,8 @@
 		<LadeFehler titel="{buchname} nicht geladen" text={fehler} onerneut={laden} />
 	{:else if buch}
 		{#each gebaut as abschnitt (abschnitt.topf)}
-			{@const anzahl = abschnitt.zeilen.length}
 			<section hidden={!gezeigt.includes(abschnitt)}>
-				<Abschnitt
-					titel="{abschnitt.titel} · {formatZahl(anzahl)} {anzahl === 1 ? 'Exemplar' : 'Exemplare'}"
-				/>
-				{#if anzahl === 0}
-					{@render nichts()}
-				{:else}
-					<Tabelle beschriftung="{buchname} — {abschnitt.titel}">
-						<thead>
-							<tr>
-								{#each spalten as spalte (spalte.feld)}
-									<th>{spalte.kopf}</th>
-								{/each}
-							</tr>
-						</thead>
-						<tbody>
-							{#each abschnitt.zeilen as zeile (zeile.barcode)}
-								<tr>
-									{#each spalten as spalte (spalte.feld)}
-										<td class={spalte.klasse ?? ''}>
-											{spalte.feld === 'datum' ? formatDatum(zeile.datum) : zeile[spalte.feld]}
-										</td>
-									{/each}
-								</tr>
-							{/each}
-						</tbody>
-					</Tabelle>
-				{/if}
+				<BestandsbuchAbschnitt {abschnitt} {spalten} {buchname} {nichts} />
 			</section>
 		{/each}
 		{#if gezeigt.length === 0}
