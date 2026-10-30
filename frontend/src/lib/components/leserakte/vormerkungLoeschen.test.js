@@ -26,7 +26,7 @@ describe('Vormerkung löschen: ein Auftrag je Vormerkung', () => {
 		let liefere = () => {};
 		vi.mocked(apiFetch).mockImplementation(() => new Promise((fertig) => (liefere = fertig)));
 		render(LeserVormerkungenKarte, {
-			vormerkungen: [{ id: 'v1', titel_name: 'Momo', status: 'wartend', erstellt_am: '2026-10-01' }]
+			vormerkungen: [{ id: 'v1', titel: 'Momo', status: 'wartend', erstellt_am: '2026-10-01' }]
 		});
 		const knopf = /** @type {HTMLButtonElement} */ (
 			screen.getByRole('button', { name: 'Vormerkung löschen' })

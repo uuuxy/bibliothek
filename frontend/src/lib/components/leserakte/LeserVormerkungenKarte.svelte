@@ -49,7 +49,7 @@
 			{#each vormerkungen as v, _i (_i)}
 				<div class="border-b border-outline-variant py-4 flex items-start justify-between">
 					<div class="flex flex-col gap-1">
-						<h4 class="font-bold text-on-surface">{v.titel_name || 'Unbekannter Titel'}</h4>
+						<h4 class="font-bold text-on-surface">{v.titel}</h4>
 						<div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
 							<!-- Ein Span, Text je Status: 'abholbereit' zeigt die Abholfrist,
 							     alles andere ('wartend' und Unbekanntes) die Wartezeit. Das Status-Konsistenz-Gate erzwingt, dass jeder von

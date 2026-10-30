@@ -11,7 +11,7 @@ import LeserakteAusleihen from './LeserakteAusleihen.svelte';
 // Rauchtest des Reiters: Ein nicht durchgereichtes Prop ließe still eine ganze Karte leer.
 const daten = {
 	buecher: [{ id: 'b1', titel: 'Der Hobbit', barcode_id: 'B-1', rueckgabe_frist: '2026-10-01' }],
-	vormerkungen: [{ id: 'v1', titel_name: 'Momo', status: 'wartend', erstellt_am: '2026-09-01' }],
+	vormerkungen: [{ id: 'v1', titel: 'Momo', status: 'wartend', erstellt_am: '2026-09-01' }],
 	onChanged: () => {}
 };
 
