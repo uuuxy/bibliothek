@@ -5,13 +5,10 @@
 
 import { spieleErfolgston, spieleFehlerton } from '../utils/audio.js';
 
-// Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
+// Name des Vorbesitzers bei einer Fremdrückgabe, ob Schüler oder Kollege.
 function formatVorbesitzerName(daten) {
 	if (daten.vorbesitzer) {
 		return `${daten.vorbesitzer.vorname} ${daten.vorbesitzer.nachname}`;
-	}
-	if (daten.vorbesitzer_user) {
-		return `${daten.vorbesitzer_user.vorname} ${daten.vorbesitzer_user.nachname}`;
 	}
 	return 'unbekannt';
 }

@@ -47,7 +47,7 @@
 	const nummerArt = $derived(
 		titel.medientyp === 'CD' || titel.medientyp === 'DVD' ? 'EAN' : 'ISBN'
 	);
-	const signatur = $derived(titel.signatur || titel.erweiterte_eigenschaften?.signatur || '');
+	const signatur = $derived(titel.signatur || '');
 	const standort = $derived(standortZeile(standorteAusExemplaren(exemplare)));
 	// Den Bestand nennt „1 von 2 verfügbar"; daneben steht nur, was diese Zahl nicht sagt.
 	const bestellt = $derived(exemplarZahlen(exemplare).bestellt);
