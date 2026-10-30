@@ -333,8 +333,9 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 		t.Fatalf("aussondern: %v", err)
 	}
 
-	von := time.Date(2026, time.March, 16, 0, 0, 0, 0, loc)
-	bis := time.Date(2027, time.March, 15, 0, 0, 0, 0, loc)
+	// Der Zeitraum liegt um heute: Die Löschung zählt mit dem Tag, an dem der Test läuft.
+	heute := time.Now().In(loc)
+	von, bis := heute.AddDate(0, -6, 0), heute.AddDate(0, 6, 0)
 
 	// Vorher: Das Exemplar steht als Zeile im Buch.
 	vorher, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)

@@ -13,6 +13,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -41,7 +42,8 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET einkaufspreis = 20.00,
-		    erworben_am = now() - interval '2 years', zugang_am = now() - interval '2 years'
+		    -- Der Zugang ist ein Tag der Schule: In UTC ist am 1. August morgens noch Juli.
+		    erworben_am = now() - interval '2 years', zugang_am = `+schulzeit.SQLHeute+` - interval '2 years'
 		WHERE id = $1`, exID); err != nil {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}

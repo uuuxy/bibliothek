@@ -13,6 +13,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -179,7 +180,8 @@ func TestTitelExemplare_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 		SET einkaufspreis = 20.00, zustand_abwertung_prozent = 20,
 		    -- Beide Daten, wie beim Altbestand: Die Staffel liest den Zugang (Migration 129),
 		    -- und ein UPDATE von erworben_am allein zieht ihn nicht nach (Trigger nur bei INSERT).
-		    erworben_am = now() - interval '2 years', zugang_am = now() - interval '2 years'
+		    -- Der Zugang ist ein Tag der Schule: In UTC ist am 1. August morgens noch Juli.
+		    erworben_am = now() - interval '2 years', zugang_am = `+schulzeit.SQLHeute+` - interval '2 years'
 		WHERE id = $1`, exID); err != nil {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}
@@ -244,7 +246,8 @@ func TestTitelExemplare_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET einkaufspreis = 20.00,
-		    erworben_am = now() - interval '2 years', zugang_am = now() - interval '2 years'
+		    -- Der Zugang ist ein Tag der Schule: In UTC ist am 1. August morgens noch Juli.
+		    erworben_am = now() - interval '2 years', zugang_am = `+schulzeit.SQLHeute+` - interval '2 years'
 		WHERE id = $1`, exID); err != nil {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}

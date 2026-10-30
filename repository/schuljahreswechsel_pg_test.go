@@ -28,7 +28,9 @@ func TestSchuljahreswechsel_SperreHaeltDenAbstand(t *testing.T) {
 		sperrt bool
 	}{
 		{name: "gestern", alter: "1 day", sperrt: true},
-		{name: "einen Tag vor Ende des Abstands", alter: fmt.Sprintf("%d months -1 day", abstand), sperrt: true},
+		// Fünf Tage: Am Monatsende kürzt die Rechnung mit Monaten um bis zu drei Tage (Ende August
+		// plus sechs Monate ist Ende Februar). Einen Tag vor Ende sperrt dort nichts mehr.
+		{name: "kurz vor Ende des Abstands", alter: fmt.Sprintf("%d months -5 days", abstand), sperrt: true},
 		{name: "einen Tag nach Ende des Abstands", alter: fmt.Sprintf("%d months 1 day", abstand), sperrt: false},
 	} {
 		t.Run(fall.name, func(t *testing.T) {

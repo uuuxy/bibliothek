@@ -243,10 +243,11 @@ func TestBestimmeFrist_LeseclubGehtVor(t *testing.T) {
 	svc, mock := newDienstMitAttrappe(t)
 	defer mock.Close()
 
-	ziel := "2030-09-15"
+	// Das Zieldatum liegt immer in der Zukunft: Ein vergangenes gilt nicht (der Test darunter).
+	ziel := time.Now().AddDate(1, 0, 0)
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
 		AddRow("ferien_leseclub_aktiv", strPtr("true")).
-		AddRow("ferien_leseclub_zieldatum", strPtr(ziel))
+		AddRow("ferien_leseclub_zieldatum", strPtr(ziel.Format(time.DateOnly)))
 
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
@@ -256,8 +257,8 @@ func TestBestimmeFrist_LeseclubGehtVor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.Year() != 2030 || got.Month() != time.September || got.Day() != 15 {
-		t.Errorf("Leseclub-Zieldatum soll greifen = %v, erwartet 2030-09-15", got)
+	if got.Format(time.DateOnly) != ziel.Format(time.DateOnly) {
+		t.Errorf("Leseclub-Zieldatum soll greifen = %v, erwartet %s", got, ziel.Format(time.DateOnly))
 	}
 }
 
