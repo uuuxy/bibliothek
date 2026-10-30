@@ -68,6 +68,25 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
+// Die Akte eines Abgängers lieferte ist_abgaenger nicht; am offenen Datensatz fehlte die Marke,
+// die der Treffer der Suche trägt. Dass die Akte das Feld liefert, belegt
+// api/leser/leserakte_abgaenger_pg_test.go.
+describe('SchuelerZusammenfuehrenDialog: der offene Datensatz', () => {
+	it('nennt einen Abgänger', () => {
+		const screen = render(SchuelerZusammenfuehrenDialog, {
+			props: { open: true, leser: { ...PROFIL, ist_abgaenger: true }, onMerged: vi.fn() }
+		});
+
+		expect(screen.getByText('Abgänger')).toBeTruthy();
+	});
+
+	it('nennt niemanden Abgänger, der keiner ist', () => {
+		const screen = oeffne();
+
+		expect(screen.queryByText('Abgänger')).toBeNull();
+	});
+});
+
 describe('SchuelerZusammenfuehrenDialog: Kandidatensuche', () => {
 	it('lässt eine späte Antwort auf die ältere Eingabe die Liste nicht mehr überschreiben', async () => {
 		const langsam = offen();

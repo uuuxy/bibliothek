@@ -62,6 +62,35 @@ test('LUSD-Import: umbenannter Schüler wird als Paar erkannt und behält seinen
 	expect(stand).toBe(`Neu${s}|${barcode}|false`);
 });
 
+// Die Akte lieferte ist_abgaenger nicht: Am offenen Datensatz fehlte die Marke, die der Treffer der
+// Suche trägt.
+test('Leserakte eines Abgängers: der Dialog nennt ihn Abgänger', async ({ page }) => {
+	const s = uniqueSuffix();
+	seedSQL(`
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,
+		                      ist_abgaenger, abgaenger_seit)
+		VALUES ('Zm${s}', 'Weg${s}', 'ABG', 'ZMA-${s}', 2024, '2008-03-03', true, NOW());
+	`);
+	try {
+		await uiLogin(page);
+		await page.goto('/schuelerdatei');
+		await page.getByRole('tab', { name: /Ehemalige/ }).click();
+		await page
+			.getByLabel(/suchen/)
+			.first()
+			.fill(`Weg${s}`);
+		await page.getByText(`Zm${s} Weg${s}`).first().click();
+		await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
+		await page.getByRole('button', { name: 'Mit anderem Datensatz zusammenführen' }).click();
+
+		const dialog = page.getByRole('dialog', { name: 'Datensatz zusammenführen' });
+		await expect(dialog.getByText('Dieser Datensatz')).toBeVisible();
+		await expect(dialog.getByText('Abgänger', { exact: true })).toBeVisible();
+	} finally {
+		seedSQL(`DELETE FROM leser WHERE barcode_id = 'ZMA-${s}';`);
+	}
+});
+
 // Zusammenführen von Hand: zwei Datensätze derselben Testperson, die Akte des einen
 // öffnen, den anderen suchen (auch als Abgänger auffindbar), zusammenführen. Danach ein
 // Datensatz mit dem Barcode des behaltenen und dem Namen des LUSD-frischeren.

@@ -39,6 +39,9 @@ type leserakteAntwort struct {
 	Art           string `json:"art"`
 	Klasse        string `json:"klasse"`
 	AbgaengerJahr int    `json:"abgaenger_jahr"`
+	// IstAbgaenger: Der Leser hat die Schule verlassen. Der Dialog „Zusammenführen" zeigt es am
+	// offenen Datensatz wie an den Treffern seiner Suche.
+	IstAbgaenger bool `json:"ist_abgaenger"`
 	// AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem
 	// Bildungsgang gerechnet — nicht AbgaengerJahr, das die DSGVO-Löschung steuert.
 	// Der profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt
@@ -147,6 +150,7 @@ func (t *Tueren) gibLeserakte(w http.ResponseWriter, r *http.Request, leserAbfra
 		Art:                leser.Art,
 		Klasse:             leser.Klasse,
 		AbgaengerJahr:      leser.AbgaengerJahr,
+		IstAbgaenger:       leser.IstAbgaenger,
 		AusweisGueltigBis:  leser.AusweisGueltigBis,
 		IstGesperrt:        leser.IstGesperrt,
 		FotoURL:            fotoURL,
