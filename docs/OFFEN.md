@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 29.10.2026
+Stand: 30.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -31,7 +31,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [ ] Freigeben: Pull Requests #760 und #762 schließen; keiner zeigt am alten Stand einen Fehler.
+- [x] Freigeben: Pull Requests #760 und #762 schließen; keiner zeigt am alten Stand einen Fehler.
   (5.111)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
@@ -78,21 +78,6 @@ Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zei
 Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
-
-### 5.111 Vorschläge von Jules vom 29.10.2026
-
-Übernommen wird, was am alten Stand einen Fehler zeigt. Beide Vorschläge zeigen keinen; die
-Freigabe zum Schließen steht unter „Bei dir".
-
-- **#760** setzt in `ui/Button.svelte` `type="button"` als Vorgabe; ohne `type` sendet ein Knopf in
-  einem `<form>` das Formular ab. Geprüft: Jeder Knopf in einem `<form>` des Programms trägt ein
-  ausdrückliches `type`, auch die in Switch, Select, Suchfeld und Suchpille.
-- **#762** zählt in `repository/bestellverlauf.go` die offenen Etiketten je Position mit einem
-  `LATERAL`-Join statt für alle Titel auf einmal. Gemessen an einem Bestand in Schulgröße (10.732
-  Titel, 65.585 Exemplare, davon 4.065 ohne Etikett; 50 Bestellungen mit 500 Positionen): Die
-  heutige Abfrage liest nur den Teil-Index der offenen Etiketten
-  (`idx_buecher_exemplare_etikett_offen`), keine ganze Tabelle, und braucht 0,7 bis 1,3 ms, der
-  Vorschlag 0,5 bis 1,0 ms. Trägt kein einziges Exemplar ein Etikett, sind es 7 ms gegen 0,8 ms.
 
 ### 7.2 Frisches Littera-Backup
 
