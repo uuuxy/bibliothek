@@ -807,7 +807,7 @@ Code, der sich nicht geändert hat) und auf Knopfdruck:
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
 | `govulncheck`             | Bekannte CVEs in Go-Abhängigkeiten, **aufrufbezogen** (meldet nur, was tatsächlich erreicht wird)                                                                  | Eigener Code                        |
 | `gosec`                   | Muster im Go-Quelltext (SAST), Ausschlussliste in `scripts/gosec-gate.sh`                                                                                          | Zusammenhänge über Funktionsgrenzen |
-| `npm audit`               | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`)                                                                                                  | Eigener Code                        |
+| `npm audit`               | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`, `scripts/npm-audit-gate.sh`, auch im pre-push-Hook)                                              | Eigener Code                        |
 | `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik                     |
 
 **`govulncheck` läuft über `scripts/govulncheck-gate.sh`**, in der CI

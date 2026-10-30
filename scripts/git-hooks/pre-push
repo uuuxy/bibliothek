@@ -104,14 +104,21 @@ fi
 cd ..
 
 # 3. npm audit (Frontend Dependency Security)
+#
+# Über das Gate-Skript wie in der CI: Rot ist eine Schwachstelle HIGH oder CRITICAL im
+# ausgelieferten Programm, mit der die Sicherheitsprüfung nach dem Push rot würde. Ein
+# unerreichbarer Audit-Endpunkt ist kein Befund.
 echo "[3/6] Führe npm audit (Frontend) aus..."
-cd frontend || exit 1
-if npm audit; then
+npm_audit_status=0
+./scripts/npm-audit-gate.sh || npm_audit_status=$?
+if [ "$npm_audit_status" -eq 0 ]; then
     echo -e "${GREEN}✓ npm audit bestanden.${NC}"
+elif [ "$npm_audit_status" -eq 2 ]; then
+    echo -e "${YELLOW}⚠ npm audit: Audit-Endpunkt nicht erreichbar — kein Befund, nur kein Ergebnis.${NC}"
 else
-    echo -e "${YELLOW}⚠ npm audit hat Schwachstellen gefunden! Bitte prüfen (Push geht weiter, da audit oft false-positives hat).${NC}"
+    echo -e "${RED}✗ npm audit fehlgeschlagen! Schwachstelle HIGH oder CRITICAL im ausgelieferten Programm (Abhilfe: docs/PFLEGEKONZEPT.md, „Die Sicherheitsprüfung ist rot“).${NC}"
+    exit 1
 fi
-cd ..
 
 # 4. govulncheck (Backend Dependency Security)
 #
