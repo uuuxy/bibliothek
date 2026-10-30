@@ -53,6 +53,16 @@ func TestEinstellungenRoundtrip_DatenschutzZeigerSemantik(t *testing.T) {
 	ctx := context.Background()
 	repo := NewEinstellungsAbfragen(pool)
 
+	// Die Prüfung beginnt bei den Vorgaben; was andere Tests hier gespeichert haben, verdeckte sie.
+	entferne := func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM system_einstellungen WHERE schluessel = ANY($1)`,
+			[]string{"lesehistorie_tage", "lesehistorie_lernmittel_tage", "sperre_minuten", "lmf_stichtag"}); err != nil {
+			t.Fatalf("Einstellungen entfernen: %v", err)
+		}
+	}
+	entferne()
+	t.Cleanup(entferne)
+
 	geladen, err := repo.Lade(ctx)
 	if err != nil {
 		t.Fatalf("Lade: %v", err)

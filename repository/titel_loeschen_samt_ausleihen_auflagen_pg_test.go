@@ -16,7 +16,7 @@ func TestLoescheTitelSamtAusleihen_HaeltDieRegelDerAuflagen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	abfragen := NewTitelAbfragen(pool)
-	for _, sql := range []string{`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`, `DELETE FROM werke`} {
+	for _, sql := range []string{`TRUNCATE ausleihen, buecher_exemplare, buecher_titel, werke CASCADE`} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatal(err)
 		}

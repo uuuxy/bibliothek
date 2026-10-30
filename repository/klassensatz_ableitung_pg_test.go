@@ -18,7 +18,8 @@ func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	for _, sql := range []string{
-		`DELETE FROM ausleihen`, `DELETE FROM class_books`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`,
+		// TRUNCATE mit CASCADE: Ein DELETE scheitert an dem, was andere Tests auf die Exemplare gebucht haben.
+		`TRUNCATE ausleihen, class_books, buecher_exemplare, buecher_titel CASCADE`,
 		`DELETE FROM schueler WHERE barcode_id LIKE 'KA-%'`,
 		// 07G1: sechs Kinder; 05F2: vier Kinder (zu klein für einen Satz).
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -63,8 +64,8 @@ func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 		}
 	}
 	t.Cleanup(func() {
-		for _, sql := range []string{`DELETE FROM ausleihen`, `DELETE FROM class_books`, `DELETE FROM buecher_exemplare`,
-			`DELETE FROM buecher_titel`, `DELETE FROM schueler WHERE barcode_id LIKE 'KA-%'`} {
+		for _, sql := range []string{`TRUNCATE ausleihen, class_books, buecher_exemplare, buecher_titel CASCADE`,
+			`DELETE FROM schueler WHERE barcode_id LIKE 'KA-%'`} {
 			if _, err := pool.Exec(ctx, sql); err != nil {
 				t.Logf("Aufräumen: %v", err)
 			}
@@ -113,8 +114,9 @@ func TestLadeKlassensatzGruppen_HandUndAusAusleihen(t *testing.T) {
 func TestLadeKlassensatzGruppen_Oberstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	sqls := []string{`DELETE FROM ausleihen`, `DELETE FROM class_books`, `DELETE FROM buecher_exemplare`,
-		`DELETE FROM buecher_titel`, `DELETE FROM schueler WHERE barcode_id LIKE 'OS-%'`}
+	aufraeumen := []string{`TRUNCATE ausleihen, class_books, buecher_exemplare, buecher_titel CASCADE`,
+		`DELETE FROM schueler WHERE barcode_id LIKE 'OS-%'`}
+	sqls := slices.Clone(aufraeumen)
 	for i, klasse := range []string{"12T1", "ET1", "07G1"} {
 		// Sechs Kinder, fünf mit demselben Buch: mehr als die Hälfte und die Mindestzahl.
 		sqls = append(sqls,
@@ -135,7 +137,7 @@ func TestLadeKlassensatzGruppen_Oberstufe(t *testing.T) {
 		}
 	}
 	t.Cleanup(func() {
-		for _, sql := range sqls[:5] {
+		for _, sql := range aufraeumen {
 			if _, err := pool.Exec(ctx, sql); err != nil {
 				t.Logf("Aufräumen: %v", err)
 			}

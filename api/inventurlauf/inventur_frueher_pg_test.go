@@ -66,6 +66,10 @@ func TestAbgeschlosseneInventuren_SeitenUeberDasZeichen(t *testing.T) {
 func TestAbgeschlosseneInventurLoeschen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
+	// Ein offener Lauf eines anderen Tests überschnitte sich mit den beiden hier.
+	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
+		t.Fatalf("Reset: %v", err)
+	}
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
 	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
 

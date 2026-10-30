@@ -18,7 +18,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	for _, sql := range []string{
-		`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`,
+		`TRUNCATE ausleihen, buecher_exemplare, buecher_titel CASCADE`,
 		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('LMTEST-MA', 'Mathematik') ON CONFLICT DO NOTHING`,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ('LM-S1', 'Lern', 'Mittel', '07A', 2031) ON CONFLICT DO NOTHING`,
 		`INSERT INTO buecher_titel (id, titel, isbn, subject, ist_lernmittel) VALUES
@@ -244,7 +244,7 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 		weg  = "00000000-0000-0000-0000-0000000b5003"
 		m8   = "00000000-0000-0000-0000-0000000b5004"
 	)
-	aufraeumen := []string{`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`, `DELETE FROM werke`}
+	aufraeumen := []string{`TRUNCATE ausleihen, buecher_exemplare, buecher_titel, werke CASCADE`}
 	for _, sql := range append(append([]string{}, aufraeumen...),
 		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('LMTEST-MA', 'Mathematik') ON CONFLICT DO NOTHING`,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ('LM-S1', 'Lern', 'Mittel', '07A', 2031) ON CONFLICT DO NOTHING`,

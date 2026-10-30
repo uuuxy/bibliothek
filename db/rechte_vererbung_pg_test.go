@@ -5,6 +5,24 @@ import (
 	"testing"
 )
 
+// beginneMitFrischenRechten stellt die Rechte, um die es geht, auf die frische Anlage, vor dem Test und
+// nach ihm: Die Tests ändern sie, und ein anderer Test läse sonst diesen Stand als Vorgabe.
+func beginneMitFrischenRechten(t *testing.T, d *Verbindung) {
+	t.Helper()
+	ctx := context.Background()
+	setze := func() {
+		if _, err := d.Pool.Exec(ctx, `DELETE FROM role_permissions WHERE permission = ANY($1)`,
+			[]string{"manage_users", "manage_settings", "manage_students_admin", "merge_students"}); err != nil {
+			t.Fatalf("Rechte entfernen: %v", err)
+		}
+		if err := d.SchreibeRechteVorgabe(ctx); err != nil {
+			t.Fatalf("SchreibeRechteVorgabe: %v", err)
+		}
+	}
+	setze()
+	t.Cleanup(setze)
+}
+
 // Eine gewachsene Anlage, die einer Rolle manage_users erteilt hat, behält Einstellungen,
 // Versetzung, Auskunft und Papierkorb: Die beiden Rechte, die daraus hervorgingen, erben den
 // Wert. Ohne das Erbe legte SchreibeRechteVorgabe sie mit der Vorgabe false an, und die Rolle
@@ -13,9 +31,7 @@ func TestRechteVererbung_AufteilungDesRechtsBenutzerVerwalten(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	d := &Verbindung{Pool: pool}
-	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
-		t.Fatalf("SchreibeRechteVorgabe: %v", err)
-	}
+	beginneMitFrischenRechten(t, d)
 
 	allowed := func(role, perm string) bool {
 		var v bool
@@ -68,9 +84,7 @@ func TestRechteVererbung_Zusammenfuehren(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	d := &Verbindung{Pool: pool}
-	if err := d.SchreibeRechteVorgabe(ctx); err != nil {
-		t.Fatalf("SchreibeRechteVorgabe: %v", err)
-	}
+	beginneMitFrischenRechten(t, d)
 	allowed := func(role, perm string) bool {
 		var v bool
 		if err := pool.QueryRow(ctx,

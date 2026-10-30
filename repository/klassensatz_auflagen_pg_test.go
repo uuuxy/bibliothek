@@ -27,8 +27,9 @@ func TestLadeKlassensatzGruppen_ZaehltAmBuch(t *testing.T) {
 		alt  = "00000000-0000-0000-0000-0000000a5001"
 		neu  = "00000000-0000-0000-0000-0000000a5002"
 	)
-	aufraeumen := []string{`DELETE FROM ausleihen`, `DELETE FROM class_books`, `DELETE FROM buecher_exemplare`,
-		`DELETE FROM buecher_titel`, `DELETE FROM werke`, `DELETE FROM schueler WHERE barcode_id LIKE 'KB-%'`}
+	// TRUNCATE mit CASCADE: Ein DELETE scheitert an dem, was andere Tests auf die Exemplare gebucht haben.
+	aufraeumen := []string{`TRUNCATE ausleihen, class_books, buecher_exemplare, buecher_titel, werke CASCADE`,
+		`DELETE FROM schueler WHERE barcode_id LIKE 'KB-%'`}
 	vorbereitung := append(append([]string{}, aufraeumen...),
 		`INSERT INTO werke (id) VALUES ('`+werk+`')`,
 		`INSERT INTO buecher_titel (id, titel, auflage, erscheinungsjahr, ist_lernmittel, werk_id) VALUES
