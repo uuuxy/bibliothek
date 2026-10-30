@@ -69,7 +69,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 
 	// Aussonderung: Der Stempel rückt vor.
 	warte(t, pool)
-	if err := NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, f.exemplarID, nil, false, true, "", nil, f.bearbeiterID); err != nil {
+	if err := NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, f.exemplarID, nil, ExemplarStatusStand{IstAusgesondert: true}, "", nil, f.bearbeiterID); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	nachAussonderung := stempel()

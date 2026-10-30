@@ -59,12 +59,13 @@ type ExemplarStatusStand struct {
 // ausgesondertes Exemplar noch einmal speichert, etwa mit geänderter Notiz, schreibt keinen
 // zweiten Eintrag.
 //
-// bisher ist der Status, den der Dialog beim Öffnen gezeigt hat; weicht er vom heutigen ab,
-// lehnt es mit ErrExemplarInzwischenGeaendert ab. Sonst schriebe ein Dialog, der seit einer
-// Schadensmeldung an einem anderen Platz offen stand, den alten Status zurück, und das
-// ausgesonderte Buch stünde wieder im Bestand, während die Forderung bleibt. nil prüft nicht.
-func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, bisher *ExemplarStatusStand, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
-	if istAusgesondert && bearbeiterID == "" {
+// neu ist der Status, den der Dialog setzt. bisher ist der, den er beim Öffnen gezeigt hat;
+// weicht er vom heutigen ab, lehnt es mit ErrExemplarInzwischenGeaendert ab. Sonst schriebe ein
+// Dialog, der seit einer Schadensmeldung an einem anderen Platz offen stand, den alten Status
+// zurück, und das ausgesonderte Buch stünde wieder im Bestand, während die Forderung bleibt. nil
+// prüft nicht.
+func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, bisher *ExemplarStatusStand, neu ExemplarStatusStand, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
+	if neu.IstAusgesondert && bearbeiterID == "" {
 		return ErrAussonderungOhneBearbeiter
 	}
 	tx, err := a.db.Begin(ctx)
@@ -97,17 +98,17 @@ func (a *KatalogAbfragen) AendereExemplarStatus(ctx context.Context, id string, 
 		  AND NOT ($2::boolean AND EXISTS (
 		      SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $4 AND a.rueckgabe_am IS NULL))
 	`
-	tag, err := tx.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id, zustandAbwertungProzent)
+	tag, err := tx.Exec(ctx, query, neu.IstAusleihbar, neu.IstAusgesondert, zustandNotiz, id, zustandAbwertungProzent)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		if istAusgesondert {
+		if neu.IstAusgesondert {
 			return deuteAussonderungsHindernis(ctx, tx, id)
 		}
 		return ErrExemplarNichtGefunden
 	}
-	if istAusgesondert && !warAusgesondert {
+	if neu.IstAusgesondert && !warAusgesondert {
 		if err := protokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil); err != nil {
 			return err
 		}

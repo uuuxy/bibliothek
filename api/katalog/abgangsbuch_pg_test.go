@@ -115,7 +115,7 @@ func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Irrtum", "Irr 1", 0)
 	id := testdaten.LegeExemplarAn(t, pool, titelID, "AB-IRRTUM", true, "")
-	if err := bookRepo.AendereExemplarStatus(ctx, id, nil, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, id, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
@@ -150,7 +150,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
 	ausgesondert := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-STATUS")
-	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, ausgesondert, nil, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, ausgesondert, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
@@ -221,7 +221,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	// Verlust endgültig löschen: ein bestelltes Exemplar, im Status-Editor als verloren ausgebucht.
 	zweiterTitel := testdaten.LegeTitelMitSignaturAn(t, pool, "Nie geliefert, verloren", "Zul 2", 0)
 	verloren := testdaten.LegeExemplarImZulaufAn(t, pool, zweiterTitel, "AG-ZULAUF-VERLOREN")
-	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, verloren, nil, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, verloren, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	entfernt, err := repository.NewInventurAbfragen(pool).LoescheVerlusteEndgueltig(ctx, []string{verloren}, bearbeiter)

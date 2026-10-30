@@ -12,6 +12,9 @@ import (
 // etikettPosition ist die linke obere Ecke eines Etiketts auf der Seite.
 type etikettPosition struct{ X, Y float64 }
 
+// rechteck ist Lage und Größe eines Felds auf dem Etikett: linke obere Ecke, Breite, Höhe.
+type rechteck struct{ X, Y, Breite, Hoehe float64 }
+
 // BuchEtikett ist, was auf dem Etikett eines Exemplars steht. Die Tür füllt es aus dem
 // Druckauftrag, aus dem, was der Server über das Exemplar weiß, und aus den Einstellungen.
 type BuchEtikett struct {
@@ -114,13 +117,13 @@ func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettForm
 
 	y := pos.Y + m.oben
 	pdf.SetFont("Arial", "B", 8)
-	zeichneZeile(pdf, tr, etikett.Schulname, 42, pos.X, y, format.Breite, m.zeile)
+	zeichneZeile(pdf, tr, etikett.Schulname, 42, rechteck{pos.X, y, format.Breite, m.zeile})
 	y += m.zeile
-	zeichneZeile(pdf, tr, etikett.Titel, 40, pos.X, y, format.Breite, m.zeile)
+	zeichneZeile(pdf, tr, etikett.Titel, 40, rechteck{pos.X, y, format.Breite, m.zeile})
 	y += m.zeile
 	if zeile2 := zweiteZeile(etikett.AnschaffungsJahr, etikett.Signatur); gross && zeile2 != "" {
 		pdf.SetFont("Arial", "", 7)
-		zeichneZeile(pdf, tr, zeile2, 45, pos.X, y, format.Breite, 3)
+		zeichneZeile(pdf, tr, zeile2, 45, rechteck{pos.X, y, format.Breite, 3})
 		y += 3
 	}
 
@@ -129,7 +132,7 @@ func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettForm
 	pdf.SetFont("Courier", "B", 9)
 	y += m.vorCode
 	if alsQR && !gross {
-		zeichneCode(pdf, etikett.BarcodeID, true, pos.X+qrRandKlein, y, m.qrSeite, m.qrSeite)
+		zeichneCode(pdf, etikett.BarcodeID, true, rechteck{pos.X + qrRandKlein, y, m.qrSeite, m.qrSeite})
 		x := pos.X + qrRandKlein + m.qrSeite + qrAbstandKlein
 		pdf.SetXY(x, y+(m.qrSeite-m.zeile)/2)
 		zeichneNummer(pdf, tr, "", etikett.BarcodeID, pos.X+format.Breite-qrRandKlein-x, m.zeile)
@@ -142,7 +145,7 @@ func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettForm
 	if alsQR {
 		codeBreite, codeHoehe = m.qrSeite, m.qrSeite
 	}
-	zeichneCode(pdf, etikett.BarcodeID, alsQR, pos.X+(format.Breite-codeBreite)/2, y, codeBreite, codeHoehe)
+	zeichneCode(pdf, etikett.BarcodeID, alsQR, rechteck{pos.X + (format.Breite-codeBreite)/2, y, codeBreite, codeHoehe})
 	y += codeHoehe + m.nachCode
 
 	pdf.SetXY(pos.X, y)
@@ -154,20 +157,20 @@ func zeichneEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format EtikettForm
 
 	if vermerk := etikett.Eigentumsvermerk; gross && vermerk != "" {
 		pdf.SetFont("Arial", "", 7)
-		zeichneZeile(pdf, tr, vermerk, 45, pos.X, y+m.zeile+1, format.Breite, 3)
+		zeichneZeile(pdf, tr, vermerk, 45, rechteck{pos.X, y + m.zeile + 1, format.Breite, 3})
 	}
 }
 
-// zeichneZeile setzt eine Zeile des Etiketts zentriert in eine Zelle über die ganze Breite, in
-// der gerade gesetzten Schrift und gekürzt wie kuerzeAufEtikett.
-func zeichneZeile(pdf *gofpdf.Fpdf, tr func(string) string, text string, zeichen int, x, y, breite, hoehe float64) {
-	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, hoehe, tr(kuerzeAufEtikett(pdf, tr, text, zeichen, breite)), "", 0, "C", false, 0, "")
+// zeichneZeile setzt eine Zeile des Etiketts zentriert in das Rechteck, in der gerade gesetzten
+// Schrift und gekürzt wie kuerzeAufEtikett.
+func zeichneZeile(pdf *gofpdf.Fpdf, tr func(string) string, text string, zeichen int, r rechteck) {
+	pdf.SetXY(r.X, r.Y)
+	pdf.CellFormat(r.Breite, r.Hoehe, tr(kuerzeAufEtikett(pdf, tr, text, zeichen, r.Breite)), "", 0, "C", false, 0, "")
 }
 
 // zeichneCode setzt den Strichcode oder den QR-Code der Nummer als Bild in das Rechteck. Lässt
 // sich die Nummer nicht kodieren, bleibt das Rechteck leer; die Nummer darunter steht trotzdem da.
-func zeichneCode(pdf *gofpdf.Fpdf, nummer string, alsQR bool, x, y, breite, hoehe float64) {
+func zeichneCode(pdf *gofpdf.Fpdf, nummer string, alsQR bool, r rechteck) {
 	pixelBreite, pixelHoehe, name := 250, 70, "1d_"+nummer
 	if alsQR {
 		pixelBreite, pixelHoehe, name = 200, 200, "qr_"+nummer
@@ -178,7 +181,7 @@ func zeichneCode(pdf *gofpdf.Fpdf, nummer string, alsQR bool, x, y, breite, hoeh
 	}
 	optionen := gofpdf.ImageOptions{ImageType: "PNG"}
 	pdf.RegisterImageOptionsReader(name, optionen, bytes.NewReader(bild))
-	pdf.ImageOptions(name, x, y, breite, hoehe, false, optionen, 0, "")
+	pdf.ImageOptions(name, r.X, r.Y, r.Breite, r.Hoehe, false, optionen, 0, "")
 }
 
 // ErzeugeBuchEtiketten erzeugt A4-Bögen mit Etiketten für Bücher. formatID nennt den Bogen (etwa

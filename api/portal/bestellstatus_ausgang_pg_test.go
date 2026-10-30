@@ -53,7 +53,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 1. Status-Editor: auf „verfügbar" gestellt → kein Zulauf mehr, im OPAC gezählt.
 	frei := zulauf("Zulauf-Editor-Titel", "ZL-EDIT")
-	if err := books.AendereExemplarStatus(ctx, frei, nil, true, false, "", nil, ""); err != nil {
+	if err := books.AendereExemplarStatus(ctx, frei, nil, repository.ExemplarStatusStand{IstAusleihbar: true}, "", nil, ""); err != nil {
 		t.Fatalf("AendereExemplarStatus: %v", err)
 	}
 	if s := bestellstatus(frei); s != nil {
@@ -65,7 +65,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
 	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
-	if err := books.AendereExemplarStatus(ctx, weg, nil, false, true, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if err := books.AendereExemplarStatus(ctx, weg, nil, repository.ExemplarStatusStand{IstAusgesondert: true}, "", nil, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("DecommissionCopy: %v", err)
 	}
 	if s := bestellstatus(weg); s != nil {

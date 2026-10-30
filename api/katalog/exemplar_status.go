@@ -82,7 +82,8 @@ func (t *Tueren) aendereExemplarStatus(w http.ResponseWriter, r *http.Request, k
 	if req.Bisher != nil {
 		bisher = &repository.ExemplarStatusStand{IstAusleihbar: req.Bisher.IstAusleihbar, IstAusgesondert: req.Bisher.IstAusgesondert}
 	}
-	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, bisher, req.IstAusleihbar, req.IstAusgesondert,
+	neu := repository.ExemplarStatusStand{IstAusleihbar: req.IstAusleihbar, IstAusgesondert: req.IstAusgesondert}
+	if err := katalogAbfragen.AendereExemplarStatus(ctx, id, bisher, neu,
 		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.KontoID); err != nil {
 		if errors.Is(err, repository.ErrExemplarInzwischenGeaendert) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusConflict, meldungExemplarInzwischenGeaendert, err)
