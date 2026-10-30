@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 29.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 30.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -3299,7 +3299,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 29.10.2026
+Stand: 30.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3608,9 +3608,6 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   lokalen Stack 9.738 Titel mit 4,87 MB, gepackt 0,43 MB. Anlass: Der Katalog öffnet am Server
   spürbar verzögert; dann antwortet der Server mit 304 wie bei den Buchnummern der Theke
   (`api/theke/buchbarcodes.go`).
-- **Das Zugangsbuch baut alle Zugänge des Zeitraums auf einmal auf** (höchstens ein Jahr); lokal
-  34.621 Zeilen in 4,2 s im Browser, an Daten aus Importen. Anlass: ein Halbjahr mit mehreren
-  tausend Zugängen am Server.
 - **Cover:** Eine ISBN-Abfrage ohne Speichern und ein ersetztes Cover lassen Dateien in
   `uploads/` zurück. Ohne gespeichertes Cover zeigt ein Titel, was Google Books oder OpenLibrary
   liefern, für Schulbücher wenig; die DNB fragt nur der Cover-Abgleich. Der Abgleich fragt eine

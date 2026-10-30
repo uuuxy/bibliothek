@@ -37,8 +37,8 @@ Nur, was kein Test leisten kann.
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
 - [ ] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
-- [ ] Vor dem nächsten Update am Testserver nachsehen, ob außer dem Backend ein Container die
-  Datenbank der Bibliothek anspricht. (7.8)
+- [ ] Am Testserver nachsehen, ob außer dem Backend ein Container die Datenbank der Bibliothek
+  ansprechen will; erreichen kann er sie dort nicht mehr. (7.8)
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
   17.09.2026 als Verlust ausgebucht. Liegt es dort: in der Buchakte den Status des Exemplars
   zurückstellen.
@@ -169,10 +169,10 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
 - Fotos aus der Zeit vor dem 13.06.2026 lägen unverschlüsselt im Volume; das betrifft nur den
   Testserver. `docker compose exec backend ls -la uploads/fotos`; liegen dort Dateien:
   `docker compose exec backend sh -c 'rm -f uploads/fotos/*.jpg'`.
-- Die Datenbank hängt nur am eigenen Netz des Stacks (`intern` in `docker-compose.yml`). Spricht
-  ein anderer Container sie über `caddy_global_net` an, verliert er beim nächsten `./update.sh`
-  die Verbindung. Der Befehl nennt nur Namen, keine Werte; erwartet ist allein
-  `bibliothek-backend`:
+- Die Datenbank hängt nur am eigenen Netz des Stacks (`intern` in `docker-compose.yml`), am
+  Testserver schon: An `bibliothek_intern` hängen allein `bibliothek-backend` und `bibliothek-db`.
+  Ein anderer Container, der sie über `caddy_global_net` anspricht, erreicht sie also nicht. Der
+  Befehl nennt nur Namen, keine Werte; erwartet ist allein `bibliothek-backend`:
   `for c in $(docker ps --format '{{.Names}}'); do docker inspect "$c" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -q -E '@(postgres-db|bibliothek-db)' && echo "$c"; done`
 - Sind die Admin-Konten deaktiviert?
 - Erreicht der Server die DNB? Ohne sie bringt die ISBN-Abfrage keine Angaben und der
