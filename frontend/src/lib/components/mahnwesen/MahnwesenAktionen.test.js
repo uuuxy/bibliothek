@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { existsSync, readFileSync } from 'node:fs';
@@ -35,9 +35,9 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
  */
 const PROPS = { onMahnlauf: () => {}, onBescheid: () => {} };
 
-beforeAll(async () => {
+beforeEach(async () => {
 	// Der Knopf setzt geladene Überfällige voraus — ohne sie wäre „kein Knopf" auch ohne
-	// Rechteprüfung wahr, und der Test misst nichts.
+	// Rechteprüfung wahr, und der Test misst nichts. Je Test: Der Mahnlauf lädt die Liste neu.
 	/** @type {any} */ (apiFetch).mockResolvedValue({
 		ok: true,
 		json: async () => ({

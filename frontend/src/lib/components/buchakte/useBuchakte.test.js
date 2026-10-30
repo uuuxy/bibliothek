@@ -49,6 +49,7 @@ function antworten(id, kopfFehler = false) {
 describe('useBuchakte.ladeAlles', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
+		appState.selectedBook = null;
 	});
 
 	it('lässt den Kopf des vorigen Titels nicht stehen — sonst löscht der Knopf den falschen', async () => {

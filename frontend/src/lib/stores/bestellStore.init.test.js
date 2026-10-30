@@ -18,7 +18,9 @@ vi.mock('./snackbars.svelte.js', () => ({
 async function frischerStore() {
 	vi.resetModules();
 	const { apiGet } = await import('../apiFetch.js');
-	vi.mocked(apiGet).mockClear();
+	// Reset, nicht Clear: Die Attrappe überlebt resetModules, und die eines Tests, der nie antwortet,
+	// ließe den nächsten hängen.
+	vi.mocked(apiGet).mockReset();
 	const { bestellStore } = await import('./bestellStore.svelte.js');
 	return { store: bestellStore, apiGet: vi.mocked(apiGet) };
 }

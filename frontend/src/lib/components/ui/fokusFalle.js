@@ -23,7 +23,7 @@ function kandidaten(node) {
  * Gruppe wandern die Pfeiltasten.
  * @param {HTMLElement} node
  */
-function tabHalte(node) {
+function halteDerTaste(node) {
 	const liste = kandidaten(node);
 	const istRadio = (/** @type {HTMLElement} */ el) =>
 		el instanceof HTMLInputElement && el.type === 'radio';
@@ -79,7 +79,7 @@ export function fokusFalle(node) {
 		// Ein Bauteil im Dialog kann die Taste für sich verbraucht haben (Vorschlag übernehmen).
 		if (e.key !== 'Tab' || e.defaultPrevented || stapel.at(-1) !== node) return;
 		e.preventDefault();
-		const liste = tabHalte(node);
+		const liste = halteDerTaste(node);
 		const aktiv = document.activeElement;
 		const drinnen = aktiv instanceof HTMLElement && node.contains(aktiv) && aktiv !== node;
 		const folgt = liste.filter(

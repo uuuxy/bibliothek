@@ -50,10 +50,19 @@ describe('bescheideStore', () => {
 	});
 
 	it('behält die alten Listen, wenn ein Abruf scheitert — statt leer zu behaupten', async () => {
+		apiGetMock.mockImplementation(async (url) =>
+			url === '/api/bescheide/ausstehend'
+				? [{ schueler_id: 's1' }, { schueler_id: 's2' }]
+				: [{ id: 'laeuft', status: 'offen', frist_abgelaufen: false }]
+		);
+		await bescheideStore.lade();
+		expect(bescheideStore.beiDerSchule).toBe(3);
+
 		apiGetMock.mockRejectedValue(new Error('503'));
 		await bescheideStore.lade();
+
 		expect(bescheideStore.ausstehend).toHaveLength(2);
-		expect(bescheideStore.beiDerSchule).toBe(5);
+		expect(bescheideStore.beiDerSchule).toBe(3);
 	});
 
 	it('merkt sich den Grund, wenn ein Abruf scheitert, und vergisst ihn beim nächsten Erfolg', async () => {

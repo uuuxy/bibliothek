@@ -82,7 +82,8 @@ describe('Kamera-Scan im Medienkatalog', () => {
 		await fireEvent.input(feld, { target: { value: '9781234567897' } });
 
 		expect(await screen.findByText('Keine Bücher gefunden')).toBeTruthy();
-		expect(screen.getByText(/9781234567897/)).toBeTruthy();
+		// Die Meldung nennt den Code erst, wenn die Frage nach einem Exemplar beantwortet ist.
+		expect(await screen.findByText(/9781234567897/)).toBeTruthy();
 		expect(screen.queryByText('Green Line 3')).toBeNull();
 	});
 });
