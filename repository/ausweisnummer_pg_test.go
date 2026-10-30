@@ -73,6 +73,30 @@ func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
 	}
 }
 
+// Trägt ein Buch die nächste freie Nummer, von Hand im Barcode-Editor oder weil dort ein Ausweis
+// gescannt wurde, muss die Vergabe sie übergehen. Sonst scheitert jedes neue aktive Konto beim Commit
+// an „Nummer … ist schon der Barcode eines Buchs", immer an derselben Nummer.
+func TestAusweisnummer_UebergehtDieNummerEinesBuchs(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	titelID := testdaten.LegeTitelAn(t, pool, "Buch mit der Nummer eines Ausweises", 0)
+	testdaten.LegeExemplarAn(t, pool, titelID, "A-10001", true, "")
+
+	if got := naechsteAusweisnummer(t, pool); got != 10002 {
+		t.Errorf("nächste Nummer %d, erwartet 10002", got)
+	}
+
+	kontoID := testdaten.LegeKontoAn(t, pool, "Neu", "Konto", "nummer-am-buch@schule.invalid", "mitarbeiter", true)
+	var nummer string
+	if err := pool.QueryRow(context.Background(), `
+		SELECT l.barcode_id FROM benutzer b JOIN leser l ON l.id = b.leser_id WHERE b.id = $1`, kontoID).Scan(&nummer); err != nil {
+		t.Fatalf("Nummer des Kontos lesen: %v", err)
+	}
+	if nummer != "A-10002" {
+		t.Errorf("das Konto hat die Nummer %q, erwartet A-10002", nummer)
+	}
+}
+
 // Go und Datenbank setzen dieselbe gedruckte Form: Der Trigger schreibt mit
 // ausweisnummer(n), die Handanlage und der LUSD-Import mit repository.AusweisNummer(n).
 func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
@@ -232,9 +256,8 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 		t.Fatal("wieder aktiv: keine Ausweisnummer")
 	}
 
-	// Die gezogene Nummer geht durch die Buch-Prüfung (trg_leser_nummer_ist_kein_buch
-	// feuert nach diesem Trigger): Trägt ein Buch die nächste Nummer, scheitert das Leeren
-	// laut, statt dem Kollegen die Nummer eines Buchs zu geben.
+	// Trägt ein Buch die nächste Nummer, zieht das Leeren die darauf: Der Kollege bekommt nie die
+	// Nummer eines Buchs. Eine von Hand eingetragene hält trg_leser_nummer_ist_kein_buch auf.
 	naechste := repository.AusweisNummer(naechsteAusweisnummer(t, pool))
 	testdaten.LegeTitelAn(t, pool, "Leeren: Nummernprobe", 5)
 	if _, err := pool.Exec(ctx, `
@@ -242,11 +265,12 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 		VALUES ((SELECT id FROM buecher_titel WHERE titel = 'Leeren: Nummernprobe'), $1)`, naechste); err != nil {
 		t.Fatal(err)
 	}
-	_, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = NULL WHERE id = $1`, leserID)
-	if !repository.IstNummerBuchOderAusweisKollision(err) {
-		t.Errorf("Leeren, während ein Buch %s trägt: %v, erwartet die Buch-Kollision", naechste, err)
+	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = NULL WHERE id = $1`, leserID); err != nil {
+		t.Fatalf("Leeren, während ein Buch %s trägt: %v", naechste, err)
 	}
-	pruefe("nach der Buch-Kollision", *vorher)
+	if n := ausweis(); n == nil || *n == naechste || *n == *vorher {
+		t.Errorf("nach dem Leeren: Ausweis %s; das Buch trägt %s, vorher war es %s", nummerOderNull(n), naechste, *vorher)
+	}
 }
 
 // Der Nachtrag der Migration: Jeder aktive Leser ohne Nummer bekommt eine, fortlaufend in

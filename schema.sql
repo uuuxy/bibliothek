@@ -893,7 +893,7 @@ CREATE TABLE ausweisnummern_ausgeschieden (
 -- (repository.SequenceRepository.NaechsteAusweisnummer) rufen ihn. Numerisch statt
 -- lexikografisch, Fallback 10001, überlange Nummern werden übergangen; der Advisory-Lock
 -- hält bis zum Ende der Transaktion. Seit Migration 146 auch über die ausgeschiedenen
--- Nummern.
+-- Nummern, seit Migration 170 über die Nummern von Büchern.
 CREATE OR REPLACE FUNCTION ausweis_nummer_start()
 RETURNS bigint LANGUAGE plpgsql AS $$
 DECLARE
@@ -904,7 +904,10 @@ BEGIN
         (SELECT coalesce(max(substr(barcode_id, 3)::bigint), 0)
            FROM leser
           WHERE barcode_id LIKE 'A-%' AND substr(barcode_id, 3) ~ '^[0-9]{1,15}$'),
-        (SELECT coalesce(max(nummer), 0) FROM ausweisnummern_ausgeschieden))
+        (SELECT coalesce(max(nummer), 0) FROM ausweisnummern_ausgeschieden),
+        (SELECT coalesce(max(substr(barcode_id, 3)::bigint), 0)
+           FROM buecher_exemplare
+          WHERE barcode_id LIKE 'A-%' AND substr(barcode_id, 3) ~ '^[0-9]{1,15}$'))
     INTO letzte;
     IF letzte > 0 THEN
         RETURN letzte + 1;
@@ -1968,7 +1971,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('166_lmf_barcode.sql'),
 ('167_lmf_kurze_nummer.sql'),
 ('168_barcode_keine_lmf_nummer.sql'),
-('169_passwort_geprueft_am.sql')
+('169_passwort_geprueft_am.sql'),
+('170_ausweisnummer_nicht_am_buch.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
