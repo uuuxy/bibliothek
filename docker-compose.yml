@@ -120,12 +120,14 @@ services:
       # Keine Vorgabe: Die Adresse des ersten Admins gehört in die .env des Servers. Gelesen wird
       # sie nur bei leerer Tabelle benutzer, und dann bricht der Start ohne sie ab.
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-}
-      - SMTP_HOST=${SMTP_HOST}
+      # Leer ist der Normalfall und warnt deshalb nicht: Versendet wird mit der Mail-Konfiguration
+      # in der Datenbank; die Umgebung ist nur Rückfall und Erstbefüllung (db/mail_konfig_uebernahme.go).
+      - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - SMTP_PASS=${SMTP_PASSWORD}
-      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_PASS=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
       # Backup-Variablen stehen hier, weil Compose ohne env_file nur die hier gelisteten
       # Schlüssel durchreicht. Fehlte eine, fände der nächtliche Backup-Job im Container keinen
       # Schlüssel und übersprünge sich still (jobs/backup.go), auch wenn sie in der .env steht.

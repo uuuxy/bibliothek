@@ -67,12 +67,12 @@ services:
       - IMAP_HOST=mock
       # E2E: e2e/selbstanmeldung.spec.js meldet ein @test.local-Postfach ohne Konto an.
       - SELBSTANMELDUNG_DOMAIN=test.local
-      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - SMTP_PASS=${SMTP_PASSWORD}
-      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_PASS=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
       # Diese Zeilen sind Pflicht: Compose reicht ohne env_file nur die hier gelisteten
       # Schlüssel in den Container. Fehlte eine, fände der Backup-Job im Container keinen
       # Schlüssel und übersprünge sich still, auch wenn sie in der .env steht.
