@@ -21,10 +21,8 @@ export function erzeugeDesignAblage() {
 	// Store-Vorgabewerte den geladenen Stand.
 	//
 	// `geladen` gilt nur bei einer echten Antwort, nicht nach einem gescheiterten Laden: Dann
-	// zeigt die Leinwand Vorgabewerte, die Heilung der Schulstammdaten fasst den Store an, und
-	// 800 ms später ersetzte ein PUT mit dem Vorgabe-Design das Design der Schule auf allen
-	// Arbeitsplätzen, ohne einen Klick. Ein leeres {} beim Erststart ist eine (200er) Antwort
-	// und darf auto-speichern.
+	// zeigt die Leinwand Vorgabewerte, und ihre erste Änderung ersetzte das Design der Schule auf
+	// allen Arbeitsplätzen. Eine Antwort ohne gespeichertes Design ist eine (200er) Antwort.
 	let geladen = $state(false);
 	// Nicht leer = die Leinwand zeigt NICHT den zentralen Stand. Der Bildschirm sagt es,
 	// statt still mit Vorgabewerten weiterzuarbeiten.
@@ -68,11 +66,6 @@ export function erzeugeDesignAblage() {
 				console.error('Ausweis-Design konnte nicht geladen werden:', e);
 				return;
 			}
-			// NACH applyDesign(): Sonst überschreibt das geladene Design (auch eines, das
-			// den Platzhalter noch trägt) die geheilten Werte sofort wieder. Und nur nach
-			// einem GELUNGENEN Laden: Die Heilung fasst den Store an, und auf einer
-			// Leinwand voller Vorgabewerte wäre das der erste Schritt zum Überschreiben.
-			await heileSchulstammdaten();
 		},
 
 		beginneSpeichern() {
@@ -126,10 +119,9 @@ export function erzeugeDesignAblage() {
 			if (!ok) return false;
 			resetDesign();
 			// resetDesign() setzt den Kopf zurück auf PLATZHALTER_SCHULNAME. Ohne diesen
-			// erneuten Aufruf würfe „Standardwerte wiederherstellen" einen bereits
-			// geheilten echten Schulnamen wieder auf den Platzhalter zurück, ohne dass er
-			// sich von selbst erneut heilt.
-			await heileSchulstammdaten();
+			// Aufruf stünde nach „Standardwerte wiederherstellen" der Platzhalter statt des
+			// echten Schulnamens auf der Karte.
+			wendeSchulstammdatenAn();
 			return true;
 		},
 
@@ -155,29 +147,8 @@ export function erzeugeDesignAblage() {
 			});
 			if (!ok) return false;
 			if (!wendeVorlageAn(kennung)) return false;
-			await heileSchulstammdaten();
+			wendeSchulstammdatenAn();
 			return true;
 		}
 	});
-}
-
-// /api/einstellungen verlangt manage_settings — wer den Ausweis-Designer nur zum Drucken
-// öffnet (view_students reicht dafür), bekäme sonst ein sichtbares Berechtigungs-Toast
-// für eine reine Komfortfunktion. Deshalb roh über apiFetch und bei jedem Fehler
-// (auch 403) still nichts tun.
-async function heileSchulstammdaten() {
-	try {
-		const res = await apiFetch('/api/einstellungen');
-		if (!res.ok) return;
-		const daten = await res.json();
-		const adresse = [
-			daten.schule_strasse,
-			[daten.schule_plz, daten.schule_ort].filter(Boolean).join(' ')
-		]
-			.filter(Boolean)
-			.join(', ');
-		wendeSchulstammdatenAn(daten.schule_name ?? '', adresse);
-	} catch {
-		/* Komfortfunktion — Platzhalter bleibt stehen */
-	}
 }

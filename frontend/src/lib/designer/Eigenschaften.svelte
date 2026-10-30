@@ -11,10 +11,10 @@
 	import ZahlenFeld from './ZahlenFeld.svelte';
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
 	import Switch from '../components/ui/Switch.svelte';
-	import { MousePointer2, Trash } from '@lucide/svelte';
+	import { Lock, MousePointer2, Trash } from '@lucide/svelte';
 
-	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back' }} */
-	const { gewaehlteKennung, side } = $props();
+	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back', gesperrt?: boolean }} */
+	const { gewaehlteKennung, side, gesperrt = false } = $props();
 
 	/** Currently selected element object (live reference — mutations are reactive). */
 	const el = $derived(
@@ -64,10 +64,13 @@
 	class="w-full lg:w-80 bg-surface-container-lowest border border-outline-variant p-5 rounded-xl space-y-5 shrink-0 text-left overflow-y-auto max-h-[80vh]"
 >
 	{#if !el}
+		{@const Symbol = gesperrt ? Lock : MousePointer2}
 		<div class="flex flex-col items-center justify-center py-12 text-center gap-3">
-			<MousePointer2 class="w-10 h-10 text-outline-variant" aria-hidden="true" />
-			<span class="text-xs text-on-surface-variant font-medium"
-				>Element auf der Karte anklicken</span
+			<Symbol class="w-10 h-10 text-outline-variant" aria-hidden="true" />
+			<span class="text-sm text-on-surface-variant"
+				>{gesperrt
+					? 'Das Design ändern kann, wer die Einstellungen verwalten darf. Ansehen und Testdruck gehen auch so.'
+					: 'Element auf der Karte anklicken'}</span
 			>
 		</div>
 	{:else}

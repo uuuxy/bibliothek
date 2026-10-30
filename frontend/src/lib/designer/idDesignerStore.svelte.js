@@ -296,31 +296,27 @@ export function resetDesign() {
 	idStore.back.theme = BACK_THEME_DEFAULT;
 }
 
+// Schulname und Anschrift aus der Antwort des Servers. Nicht im idStore: Der wird serialisiert.
+let schule = { name: '', adresse: '' };
+
 /**
  * Ersetzt den Platzhalter-Schulnamen/-adresse auf der Vorderseite durch die echten
- * Schul-Stammdaten (Einstellungen → Allgemein), sobald sie geladen werden konnten.
+ * Schul-Stammdaten (Einstellungen → Allgemein), die mit dem Design vom Server kommen.
  *
- * Läuft nach JEDEM Laden — nicht nur beim allerersten Start: Ein bereits zentral
- * gespeichertes Design (z. B. weil beim Go-Live niemand den Kopf angepasst hat, bevor
- * das Design das erste Mal gespeichert wurde) trägt den Platzhalter sonst für immer
- * weiter, weil applyDesign() ihn aus der DB lädt statt aus defaultFrontElements().
+ * Läuft nach JEDEM Laden, auf jedem Weg, der druckt: Eine Karte trüge sonst „Musterstadt",
+ * solange niemand den Designer geöffnet hat oder das gespeicherte Design den Platzhalter trägt.
  *
- * Rührt NIE einen Wert an, der vom Platzhalter abweicht — wer den Kopf bereits selbst
- * beschriftet hat (auch mit demselben Wortlaut wie eine andere Schule), wird nicht
- * überschrieben. Leere Schul-Stammdaten (Einstellungen selbst noch nicht ausgefüllt)
- * lassen den Platzhalter bewusst stehen statt ihn durch eine leere Zeile zu ersetzen.
- *
- * @param {string} schuleName
- * @param {string} adresse
+ * Rührt NIE einen Wert an, der vom Platzhalter abweicht. Leere Schul-Stammdaten lassen den
+ * Platzhalter stehen, statt ihn durch eine leere Zeile zu ersetzen.
  */
-export function wendeSchulstammdatenAn(schuleName, adresse) {
+export function wendeSchulstammdatenAn() {
 	const header = idStore.front.elements.find((e) => e.id === 'header');
-	if (header && schuleName && header.content === PLATZHALTER_SCHULNAME) {
-		header.content = schuleName;
+	if (header && schule.name && header.content === PLATZHALTER_SCHULNAME) {
+		header.content = schule.name;
 	}
 	const address = idStore.front.elements.find((e) => e.id === 'address');
-	if (address && adresse && address.content === PLATZHALTER_ADRESSE) {
-		address.content = adresse;
+	if (address && schule.adresse && address.content === PLATZHALTER_ADRESSE) {
+		address.content = schule.adresse;
 	}
 }
 
@@ -509,6 +505,8 @@ export function applyDesign(data) {
 	}
 	applySeite(idStore.front, data.front);
 	applySeite(idStore.back, data.back);
+	schule = { name: data.schule?.name ?? '', adresse: data.schule?.adresse ?? '' };
+	wendeSchulstammdatenAn();
 }
 
 /**

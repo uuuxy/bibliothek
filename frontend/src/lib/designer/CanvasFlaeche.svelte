@@ -12,8 +12,8 @@
 	import { kartenStil } from './kartenFarben.js';
 	import { SICHERHEITSRAND_MM } from './kartenRand.js';
 
-	/** @type {{ side: 'front'|'back', gewaehlteKennung: string|null, onSelect: (id: string|null)=>void, leser: any, zoom: number, barcodeType: string }} */
-	const { side, gewaehlteKennung, onSelect, leser, zoom, barcodeType } = $props();
+	/** @type {{ side: 'front'|'back', gewaehlteKennung: string|null, onSelect: (id: string|null)=>void, leser: any, zoom: number, barcodeType: string, gesperrt?: boolean }} */
+	const { side, gewaehlteKennung, onSelect, leser, zoom, barcodeType, gesperrt = false } = $props();
 
 	/** Elements for the active side, sorted ascending by zIndex so higher layers render on top. */
 	const elements = $derived(
@@ -142,17 +142,13 @@
 		}
 		verfolge(onMove);
 	}
-
-	/** Deselect on clicking empty canvas background. */
-	function onCanvasClick() {
-		onSelect(null);
-	}
 </script>
 
 <div
 	class="flex-1 flex flex-col items-center justify-center overflow-hidden bg-surface-container border border-dashed border-outline-variant rounded-3xl min-h-120 relative p-6"
 	role="presentation"
-	onpointerdown={onCanvasClick}
+	inert={gesperrt}
+	onpointerdown={() => onSelect(null)}
 >
 	<div
 		style="transform: scale({zoom /
@@ -193,7 +189,8 @@
 	<span
 		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-on-surface-variant font-medium pointer-events-none"
 	>
-		{side === 'front' ? 'Vorderseite' : 'Rückseite'} · Drag &amp; Drop zum Verschieben · Ecken zum Skalieren
-		· Gestrichelt: sicherer Druckbereich
+		{side === 'front' ? 'Vorderseite' : 'Rückseite'}{gesperrt
+			? ''
+			: ' · Drag & Drop zum Verschieben · Ecken zum Skalieren'} · Gestrichelt: sicherer Druckbereich
 	</span>
 </div>

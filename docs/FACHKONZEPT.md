@@ -429,7 +429,8 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
 - **Ausweise:** Der Reiter _Schülerausweise_ ist der Designer — Vorlagen, Vorder- und
   Rückseite, Elemente wie Name, Gültigkeit, Logo, Passbild, Strichcode und Farbfläche. Das
   Design gilt für alle Arbeitsplätze: Es liegt am Server (`/api/ausweis-layout`), speichern
-  verlangt `manage_settings`. **Sicherer Rand:** Die Kartendrucker der Schule (Datacard Sigma DS1
+  verlangt `manage_settings`. Wer dieses Recht nicht hat, sieht den Designer gesperrt und kann
+  ihn ansehen und testdrucken. **Sicherer Rand:** Die Kartendrucker der Schule (Datacard Sigma DS1
   und DS2) drucken bis an den Rand, lassen dort aber einen schmalen weißen Streifen frei; für
   Strichcodes verlangt Datacard 6,3 mm Abstand zum Rand. Der Designer zeigt 3 mm innen eine
   gestrichelte Linie, die nicht mitdruckt (`designer/kartenRand.js`); verschieben lässt sich

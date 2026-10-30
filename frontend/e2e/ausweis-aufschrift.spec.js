@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix, menuepunkt, gehZu } from './helpers.js';
 
 // Die Aufschrift des gedruckten Ausweises, gemessen am LIVE-Pfad.
 //
@@ -16,8 +16,26 @@ import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.j
 // Die Karte liegt im DOM (`.single-card-print-section`, display:none) und wird erst per
 // @media print sichtbar — genau dieses Stück Markup geht in den Drucker.
 
-/** Setzt das gespeicherte Design auf den Stand vor dem 16.09.2026 zurück. */
-function alterTitelImGespeichertenDesign() {
+/**
+ * Setzt das gespeicherte Design auf den Stand vor dem 16.09.2026 zurück. Auf einer frischen
+ * Datenbank ist noch keines gespeichert; das Öffnen des Designers schreibt keines, erst eine
+ * Änderung.
+ * @param {import('@playwright/test').Page} page
+ */
+async function alterTitelImGespeichertenDesign(page) {
+	const gespeichert = querySQL(
+		`SELECT count(*) FROM system_einstellungen WHERE schluessel = 'ausweis_layout' AND wert::jsonb ? 'front'`
+	);
+	if (gespeichert === '0') {
+		await gehZu(page, '/druck-center');
+		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+		const schreiben = page.waitForResponse(
+			(a) => a.url().endsWith('/api/ausweis-layout') && a.request().method() === 'PUT'
+		);
+		await page.getByRole('combobox', { name: 'Karten-Hintergrund' }).click();
+		await page.getByRole('option').nth(1).click();
+		expect((await schreiben).ok()).toBe(true);
+	}
 	seedSQL(`
 		UPDATE system_einstellungen
 		SET wert = jsonb_set(
@@ -53,9 +71,9 @@ test('Die Karte einer Lehrkraft heisst Lehrerausweis — auch bei einem Design v
 }) => {
 	const s = uniqueSuffix();
 	const nachname = `Ausweis${s}`;
-	alterTitelImGespeichertenDesign();
 
 	await uiLogin(page);
+	await alterTitelImGespeichertenDesign(page);
 	const angelegt = await apiPost(page, '/api/schueler', {
 		art: 'lehrkraft',
 		vorname: 'Lena',
@@ -75,9 +93,9 @@ test('Die Karte einer Lehrkraft heisst Lehrerausweis — auch bei einem Design v
 test('Die Karte einer Schülerin bleibt der Schülerausweis, mit Gültigkeit', async ({ page }) => {
 	const s = uniqueSuffix();
 	const nachname = `Ausweis${s}`;
-	alterTitelImGespeichertenDesign();
 
 	await uiLogin(page);
+	await alterTitelImGespeichertenDesign(page);
 	const angelegt = await apiPost(page, '/api/schueler', {
 		art: 'schueler',
 		geburtsdatum: '2012-03-04',
@@ -91,4 +109,41 @@ test('Die Karte einer Schülerin bleibt der Schülerausweis, mit Gültigkeit', a
 	await expect(karte).toContainText('Schülerausweis');
 	await expect(karte).not.toContainText('Lehrerausweis');
 	await expect(karte).toContainText('Gültig bis');
+});
+
+// Der Platzhalter „Musterstadt" wurde nur im Designer ersetzt. Wer aus der Akte druckte, bevor dort
+// jemand gewesen war, bekam eine Karte mit dem Namen einer Schule, die es nicht gibt. Die Schlüssel
+// liegen während des Tests unter einem anderen Namen, damit er auf jedem Stand gleich läuft.
+test('Die Karte trägt den Namen der Schule, auch ohne dass jemand den Designer geöffnet hat', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const nachname = `Ausweis${s}`;
+	const SCHLUESSEL = `('ausweis_layout', 'schule_name', 'schule_strasse', 'schule_plz', 'schule_ort')`;
+	seedSQL(`
+		UPDATE system_einstellungen SET schluessel = 'e2e-sicherung-' || schluessel WHERE schluessel IN ${SCHLUESSEL};
+		INSERT INTO system_einstellungen (schluessel, wert) VALUES
+			('schule_name', 'Schule ${s}'), ('schule_strasse', 'Schulweg 1'), ('schule_plz', '12345'), ('schule_ort', 'Neustadt');
+	`);
+	try {
+		await uiLogin(page);
+		const angelegt = await apiPost(page, '/api/schueler', {
+			art: 'schueler',
+			geburtsdatum: '2012-03-04',
+			vorname: 'Mia',
+			nachname,
+			klasse: '10A'
+		});
+		expect(angelegt.ok(), `Anlegen fehlgeschlagen: ${angelegt.status()}`).toBeTruthy();
+
+		const karte = await oeffneAkte(page, 'Mia', nachname);
+		await expect(karte).toContainText(`Schule ${s}`);
+		await expect(karte).toContainText('Schulweg 1, 12345 Neustadt');
+		await expect(karte).not.toContainText(/Musterst/i);
+	} finally {
+		seedSQL(`
+			DELETE FROM system_einstellungen WHERE schluessel IN ${SCHLUESSEL};
+			UPDATE system_einstellungen SET schluessel = substr(schluessel, 15) WHERE schluessel LIKE 'e2e-sicherung-%';
+		`);
+	}
 });

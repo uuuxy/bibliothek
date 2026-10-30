@@ -2,9 +2,11 @@ package druck_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -23,9 +25,26 @@ import (
 // Arbeitsplätze dasselbe drucken.
 //
 // Über den ganzen Router mit Sitzung. Die Zusagen: Was gespeichert ist, kommt Byte für Byte
-// zurück. Was die Tür abweist, lässt das gespeicherte Design stehen. Und „noch kein Design"
-// antwortet sie nur, wenn wirklich keines gespeichert ist: Der Designer speichert nach einer
-// solchen Antwort seine Vorgabewerte, für alle Arbeitsplätze.
+// zurück, hinter dem Kopf der Schule. Was die Tür abweist, lässt das gespeicherte Design stehen.
+// Und „noch kein Design" antwortet sie nur, wenn wirklich keines gespeichert ist: Gedruckt würde
+// sonst mit den Vorgabewerten.
+
+// kopfDerSchule ist der Teil der Antwort vor dem Design (designMitSchule).
+var kopfDerSchule = regexp.MustCompile(`^\{"schule":\{[^{}]*\}`)
+
+// ohneKopf liefert die Antwort ohne den Kopf der Schule: das Design, wie es gespeichert ist.
+func ohneKopf(t *testing.T, rumpf string) string {
+	t.Helper()
+	kopf := kopfDerSchule.FindString(rumpf)
+	if kopf == "" {
+		t.Fatalf("Antwort ohne Kopf der Schule: %.80s", rumpf)
+	}
+	rest := strings.TrimPrefix(rumpf[len(kopf):], ",")
+	if rest == "}" {
+		return "{}"
+	}
+	return "{" + rest
+}
 
 // poolMitLesefehlerBei lässt die Abfrage scheitern, deren SQL das Muster und deren erstes
 // Argument den Schlüssel trägt. Alles andere (Sitzung, Rechte) läuft am echten Pool.
@@ -62,7 +81,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Laden: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
-		return rec.Body.String()
+		return ohneKopf(t, rec.Body.String())
 	}
 	speichere := func(t *testing.T, rumpf string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -108,6 +127,39 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		}
 		if rumpf := lade(t); rumpf != design {
 			t.Errorf("geladen %q, gespeichert %q", rumpf, design)
+		}
+	})
+
+	// Wer Ausweise druckt, darf die Einstellungen oft nicht lesen; auf die Karte gehört die Schule
+	// trotzdem. Kein Design gespeichert heißt dabei nicht: keine Schule.
+	t.Run("der Kopf nennt Schule und Anschrift", func(t *testing.T) {
+		zuruecksetzen := func() {
+			pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = ANY($1)`,
+				[]string{"schule_name", "schule_strasse", "schule_plz", "schule_ort"})
+		}
+		zuruecksetzen()
+		t.Cleanup(zuruecksetzen)
+		for schluessel, wert := range map[string]string{
+			"schule_name": "Musterschule", "schule_strasse": "Schulweg 1", "schule_plz": "12345", "schule_ort": "Neustadt",
+		} {
+			if _, err := pool.Exec(t.Context(),
+				`INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)`, schluessel, wert); err != nil {
+				t.Fatal(err)
+			}
+		}
+		rec := rufe(t, http.MethodGet, pfad, "")
+		var antwort struct {
+			Schule    struct{ Name, Adresse string } `json:"schule"`
+			PrintMode string                         `json:"printMode"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort lesen: %v: %.200s", err, rec.Body.String())
+		}
+		if antwort.Schule.Name != "Musterschule" || antwort.Schule.Adresse != "Schulweg 1, 12345 Neustadt" {
+			t.Errorf("Kopf %+v", antwort.Schule)
+		}
+		if antwort.PrintMode != "karte" {
+			t.Errorf("printMode %q: Das Design fehlt hinter dem Kopf", antwort.PrintMode)
 		}
 	})
 
@@ -193,7 +245,7 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 	rec = httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK || rec.Body.String() != design {
+	if rec.Code != http.StatusOK || ohneKopf(t, rec.Body.String()) != design {
 		t.Errorf("ungestört: Status %d, Antwort %q, erwartet das gespeicherte Design", rec.Code, rec.Body.String())
 	}
 }

@@ -12,8 +12,8 @@
 	import { AUSWEIS_VORLAGEN } from './ausweisVorlagen.js';
 	import VorlageMiniatur from './VorlageMiniatur.svelte';
 
-	/** @type {{ onVorlage: (kennung: string) => void }} */
-	let { onVorlage } = $props();
+	/** @type {{ onVorlage: (kennung: string) => void, gesperrt?: boolean }} */
+	let { onVorlage, gesperrt = false } = $props();
 
 	let offen = $state(false);
 	/** @type {HTMLDivElement | undefined} */
@@ -47,8 +47,9 @@
 		type="button"
 		aria-haspopup="dialog"
 		aria-expanded={offen}
+		disabled={gesperrt}
 		onclick={() => (offen = !offen)}
-		class="flex h-9 w-full cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:outline-none {offen
+		class="flex h-9 w-full cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 {offen
 			? 'border-primary ring-1 ring-primary'
 			: 'border-outline-variant'}"
 	>

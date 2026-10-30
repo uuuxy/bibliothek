@@ -22,16 +22,33 @@ describe('wendeSchulstammdatenAn', () => {
 	});
 
 	it('ersetzt den Platzhalter durch die echten Schul-Stammdaten', () => {
-		wendeSchulstammdatenAn('Philipp-Reis-Schule', 'Schulstraße 1, 61476 Kronberg');
+		applyDesign({
+			schule: { name: 'Philipp-Reis-Schule', adresse: 'Schulstraße 1, 61476 Kronberg' }
+		});
 
 		expect(header().content).toBe('Philipp-Reis-Schule');
 		expect(address().content).toBe('Schulstraße 1, 61476 Kronberg');
 	});
 
+	// „Standardwerte wiederherstellen" und die Vorlagen setzen den Kopf auf den Platzhalter zurück.
+	it('kennt die Schule auch nach dem Zurücksetzen noch', () => {
+		applyDesign({
+			schule: { name: 'Philipp-Reis-Schule', adresse: 'Schulstraße 1, 61476 Kronberg' }
+		});
+		resetDesign();
+		expect(header().content).toBe(PLATZHALTER_SCHULNAME);
+
+		wendeSchulstammdatenAn();
+
+		expect(header().content).toBe('Philipp-Reis-Schule');
+	});
+
 	it('rührt einen bereits selbst eingetragenen Kopf nicht an', () => {
 		header().content = 'Von Hand eingetragener Schulname';
 
-		wendeSchulstammdatenAn('Philipp-Reis-Schule', 'Schulstraße 1, 61476 Kronberg');
+		applyDesign({
+			schule: { name: 'Philipp-Reis-Schule', adresse: 'Schulstraße 1, 61476 Kronberg' }
+		});
 
 		expect(header().content).toBe('Von Hand eingetragener Schulname');
 		// Die Adresse ist weiterhin der Platzhalter, weil sie einzeln geprüft wird —
@@ -40,7 +57,7 @@ describe('wendeSchulstammdatenAn', () => {
 	});
 
 	it('lässt den Platzhalter stehen, wenn die Einstellungen selbst leer sind', () => {
-		wendeSchulstammdatenAn('', '');
+		applyDesign({ schule: { name: '', adresse: '' } });
 
 		expect(header().content).toBe(PLATZHALTER_SCHULNAME);
 		expect(address().content).toBe(PLATZHALTER_ADRESSE);
@@ -48,7 +65,9 @@ describe('wendeSchulstammdatenAn', () => {
 
 	it('ist ein no-op ohne Header-/Adress-Element auf der Seite (defensiv)', () => {
 		idStore.front.elements = idStore.front.elements.filter((e) => e.id !== 'header');
-		expect(() => wendeSchulstammdatenAn('Philipp-Reis-Schule', 'X')).not.toThrow();
+		expect(() =>
+			applyDesign({ schule: { name: 'Philipp-Reis-Schule', adresse: 'X' } })
+		).not.toThrow();
 	});
 });
 

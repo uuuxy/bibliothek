@@ -20,10 +20,11 @@
 	 *   druckArt: 'card'|'etikett',
 	 *   onDruckArt: (m: 'card'|'etikett') => void,
 	 *   side: 'front'|'back',
-	 *   onPrint: () => void
+	 *   onPrint: () => void,
+	 *   gesperrt?: boolean
 	 * }}
 	 */
-	const { druckArt, onDruckArt, side, onPrint } = $props();
+	const { druckArt, onDruckArt, side, onPrint, gesperrt = false } = $props();
 
 	const MODI = [
 		{ value: 'card', label: 'Kartendrucker' },
@@ -50,7 +51,8 @@
 				<button
 					onclick={() => onDruckArt(/** @type {'card'|'etikett'} */ (modus.value))}
 					aria-pressed={druckArt === modus.value}
-					class="cursor-pointer rounded-lg px-3 py-1.5 font-bold transition-all {druckArt ===
+					disabled={gesperrt}
+					class="cursor-pointer rounded-lg px-3 py-1.5 font-bold transition-all disabled:cursor-not-allowed disabled:text-on-surface/38 {druckArt ===
 					modus.value
 						? 'bg-surface text-on-surface shadow-xs'
 						: 'text-on-surface-variant hover:text-on-surface'}">{modus.label}</button
@@ -62,6 +64,7 @@
 			<Select
 				bind:value={idStore.etikettFormat}
 				options={ETIKETT_FORMATE}
+				disabled={gesperrt}
 				class="w-64"
 				aria-label="Etikettenformat"
 			/>

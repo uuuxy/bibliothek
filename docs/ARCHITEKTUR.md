@@ -2069,10 +2069,14 @@ Strichcodes rechnet eine Funktion für beide (`strichcodeBildOptionenFuerElement
 Bild ließ weiße Streifen am Kartenrand, und seine Farbe war nicht zu ändern.
 
 **Das Design liegt am Server** (`GET`/`PUT /api/ausweis-layout`), samt Betriebsart (Karte oder
-Etikett) und Bogenformat: Alle Arbeitsplätze drucken dasselbe. Die Antwort `{}` heißt „noch
-keines gespeichert"; ein gescheitertes Lesen beantwortet der Server deshalb mit einem Fehler,
-nie mit `{}` (`api/druck/ausweis_layout_tuer_pg_test.go`). Gedruckt wird nur mit geladenem
-Design: Jeder Druckweg fragt vor dem Druckdialog `designFuerDruck`
+Etikett) und Bogenformat: Alle Arbeitsplätze drucken dasselbe. Vor dem Design trägt die Antwort
+`schule`, Name und Anschrift aus den Einstellungen: Wer druckt, darf sie oft nicht lesen, und auf
+jedem Weg ersetzt `applyDesign` damit den Platzhalter „Musterstadt“. Steht nur `schule` in der
+Antwort, ist noch keines gespeichert; ein gescheitertes Lesen beantwortet der Server deshalb mit
+einem Fehler (`api/druck/ausweis_layout_tuer_pg_test.go`). Gespeichert wird nur eine Änderung: Den
+Designer zu öffnen, schreibt nichts. Ohne `manage_settings` ist er gesperrt, Ansehen und Testdruck
+bleiben offen. Gedruckt wird nur mit geladenem Design: Jeder Druckweg fragt vor dem Druckdialog
+`designFuerDruck`
 (`designer/ausweisDesignLaden.js`); scheitert das Laden, steht die Meldung da und nichts wird
 gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem Drucker, die richtig aussieht und
 es nicht ist. Einen weiteren Abrufer des Designs hält `designer/ausweisDesignLaden.test.js` auf.

@@ -8,6 +8,8 @@
 	import { idStore, serializeDesign } from './idDesignerStore.svelte.js';
 	import { erzeugeDesignAblage } from './idDesignPersistenz.svelte.js';
 	import { oeffneEtikettenbogen } from '../components/etiketten/schuelerEtiketten.js';
+	import { authStore } from '../stores/authStore.svelte.js';
+	import { hatRecht } from '../menue.js';
 	import CanvasFlaeche from './CanvasFlaeche.svelte';
 	import Druckvorschau from './Druckvorschau.svelte';
 	import Eigenschaften from './Eigenschaften.svelte';
@@ -23,14 +25,13 @@
 	/** @type {any} */
 	let speicherZeitgeber = null;
 
-	// Dieser Bildschirm lädt keine echten Schüler: Hier entsteht das Design, das zentral für
-	// alle Arbeitsplätze gilt. Wer wessen Karte druckt, entscheidet die Schülerdatei
-	// (markieren → „Ausweise drucken"), wo auch das Ablaufjahr je Schüler steht.
-	//
-	// Die Leinwand zeigt deshalb immer denselben Platzhalter, und das Gültigkeitsdatum ist ein
-	// Musterwert: Der Bildschirm zeigt, wie die Karte aussieht, nicht was auf einer bestimmten
-	// Karte steht. Das echte Datum kommt beim Drucken vom Server (ausweis_gueltig_bis, Regel in
-	// internal/ausweis).
+	// Ansehen und testdrucken darf, wer Ausweise druckt. Das Design gilt für alle Arbeitsplätze;
+	// ändern darf es nur, wer die Einstellungen verwaltet (api/routen_system.go).
+	const gesperrt = $derived(!hatRecht(authStore.currentUser, 'manage_settings'));
+
+	// Hier entsteht das Design, wer wessen Karte druckt, entscheidet die Schülerdatei. Die Leinwand
+	// zeigt deshalb immer denselben Platzhalter, und das Gültigkeitsdatum ist ein Musterwert. Das
+	// echte kommt beim Drucken vom Server (ausweis_gueltig_bis, Regel in internal/ausweis).
 	const PLATZHALTER_LESER = {
 		id: 'placeholder',
 		barcode_id: 'DEMO-S-001',
@@ -52,9 +53,17 @@
 	// den ausstehenden Stand deshalb sofort ab.
 	/** @type {string | null} */
 	let ausstehend = null;
+	// Der Stand, den der Effekt zuletzt gesehen hat. Der erste nach dem Laden ist der geladene:
+	// Den Bildschirm zu öffnen, schreibt nichts.
+	/** @type {string | null} */
+	let gesehen = null;
 	$effect(() => {
 		const body = JSON.stringify(serializeDesign()); // liest reaktiven State → Dependency
 		if (!ablage.geladen) return;
+		if (gesperrt) return;
+		const unveraendert = gesehen === null || body === gesehen;
+		gesehen = body;
+		if (unveraendert) return;
 		clearTimeout(speicherZeitgeber);
 		ablage.beginneSpeichern();
 		ausstehend = body;
@@ -62,9 +71,9 @@
 			ausstehend = null;
 			ablage.speichern(body);
 		}, 800);
-		return () => clearTimeout(speicherZeitgeber);
 	});
 	onDestroy(() => {
+		clearTimeout(speicherZeitgeber);
 		if (ausstehend !== null) ablage.speichern(ausstehend);
 	});
 
@@ -134,7 +143,8 @@
 		<button
 			type="button"
 			onclick={zuruecksetzen}
-			class="text-on-surface-variant underline underline-offset-2 cursor-pointer"
+			disabled={gesperrt}
+			class="text-on-surface-variant underline underline-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:text-on-surface/38"
 		>
 			Standardwerte wiederherstellen
 		</button>
@@ -142,6 +152,7 @@
 
 	<!-- printMode zentral aus idStore, nicht lokal — Begruendung in AusweisStapeldruck.svelte -->
 	<Werkzeugleiste
+		{gesperrt}
 		{zoom}
 		onZoom={(v) => {
 			zoom = v;
@@ -166,6 +177,7 @@
 
 	<div class="w-full flex flex-col lg:flex-row gap-5">
 		<CanvasFlaeche
+			{gesperrt}
 			{side}
 			{gewaehlteKennung}
 			onSelect={(id) => {
@@ -176,7 +188,7 @@
 			barcodeType={idStore.barcodeType}
 		/>
 
-		<Eigenschaften {gewaehlteKennung} {side} />
+		<Eigenschaften {gewaehlteKennung} {side} {gesperrt} />
 	</div>
 </div>
 

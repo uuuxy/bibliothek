@@ -15,11 +15,21 @@
 	 *   currentTheme: string, themes: Array<{ value: string, name: string }>,
 	 *   setTheme: (v: string) => void,
 	 *   onVorlage: (kennung: string) => void,
-	 *   zoom: number, onZoom: (v: number) => void
+	 *   zoom: number, onZoom: (v: number) => void,
+	 *   gesperrt?: boolean
 	 * }}
 	 */
-	let { barcodeType, onBarcodeType, currentTheme, themes, setTheme, onVorlage, zoom, onZoom } =
-		$props();
+	let {
+		barcodeType,
+		onBarcodeType,
+		currentTheme,
+		themes,
+		setTheme,
+		onVorlage,
+		zoom,
+		onZoom,
+		gesperrt = false
+	} = $props();
 
 	const BARCODE_TYPEN = [
 		// Wert historisch 'code39', gedruckt wird Code 128 — siehe EtikettLayoutOptionen.
@@ -33,7 +43,7 @@
 >
 	<div class="space-y-1">
 		<span class="text-sm font-medium text-on-surface-variant">Design-Vorlage</span>
-		<VorlagenGalerie {onVorlage} />
+		<VorlagenGalerie {onVorlage} {gesperrt} />
 	</div>
 
 	<div class="space-y-1">
@@ -42,6 +52,7 @@
 			value={barcodeType}
 			options={BARCODE_TYPEN}
 			onchange={(/** @type {'code39'|'qr'} */ wert) => onBarcodeType(wert)}
+			disabled={gesperrt}
 			aria-label="Barcode-Typ"
 		/>
 	</div>
@@ -52,6 +63,7 @@
 			value={currentTheme}
 			options={themes.map((/** @type {any} */ t) => ({ value: t.value, label: t.name }))}
 			onchange={(/** @type {string} */ wert) => setTheme(wert)}
+			disabled={gesperrt}
 			aria-label="Karten-Hintergrund"
 		/>
 	</div>

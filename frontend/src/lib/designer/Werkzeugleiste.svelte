@@ -34,6 +34,7 @@
 	 *   barcodeType: 'code39'|'qr', onBarcodeType: (t: 'code39'|'qr') => void,
 	 *   onVorlage: (kennung: string) => void,
 	 *   muster: any,
+	 *   gesperrt?: boolean,
 	 * }}
 	 */
 	const {
@@ -47,7 +48,8 @@
 		barcodeType,
 		onBarcodeType,
 		onVorlage,
-		muster
+		muster,
+		gesperrt = false
 	} = $props();
 
 	/** Current theme for the active side. */
@@ -82,7 +84,7 @@
 </script>
 
 <div class="w-full space-y-4 no-print">
-	<WerkzeugleisteDruck {druckArt} {onDruckArt} {side} {onPrint} />
+	<WerkzeugleisteDruck {druckArt} {onDruckArt} {side} {onPrint} {gesperrt} />
 
 	<WerkzeugleisteAuswahl
 		{barcodeType}
@@ -93,6 +95,7 @@
 		{onVorlage}
 		{zoom}
 		{onZoom}
+		{gesperrt}
 	/>
 
 	<!-- Row 3: Side tab + Add-element buttons -->
@@ -106,16 +109,27 @@
 			(v) => onSide(/** @type {'front'|'back'} */ (v))
 		)}
 
-		<Button variant="secondary" size="sm" onclick={() => fuegeTextHinzu(side)}>+ Text</Button>
+		<Button variant="secondary" size="sm" disabled={gesperrt} onclick={() => fuegeTextHinzu(side)}>
+			+ Text
+		</Button>
 
-		<Button variant="secondary" size="sm" onclick={() => fuegeRahmenHinzu(side)}>+ Fläche</Button>
+		<Button
+			variant="secondary"
+			size="sm"
+			disabled={gesperrt}
+			onclick={() => fuegeRahmenHinzu(side)}
+		>
+			+ Fläche
+		</Button>
 
 		<!-- Multi-image upload: die eigentliche Auswahl-Fläche ist die geteilte Button-
 		     Komponente (dieselbe Pillenform/Höhe wie "+ Text" daneben, statt eines eigens
 		     gestylten <label>, das bei jeder Änderung an Button.svelte hätte auseinanderlaufen
 		     können); das <input type="file"> bleibt unsichtbar und wird nur programmatisch
 		     ausgelöst. -->
-		<Button variant="secondary" size="sm" onclick={() => bildUploadEl?.click()}>+ Bild(er)</Button>
+		<Button variant="secondary" size="sm" disabled={gesperrt} onclick={() => bildUploadEl?.click()}>
+			+ Bild(er)
+		</Button>
 		<input
 			bind:this={bildUploadEl}
 			type="file"
