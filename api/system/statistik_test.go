@@ -27,8 +27,8 @@ func TestStatistik_BestandsFilterErreichtJedeAbfrage(t *testing.T) {
 	server := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: mock}}}
 
 	mock.ExpectQuery(`COUNT\(a\.id\) AS count[\s\S]*AND t\.ist_lernmittel`).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).
-			AddRow("t1", "LMF-Mathe 7", "Verlag", "", "Mathematik", "Ma 7", 2023, 42))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).
+			AddRow("t1", "LMF-Mathe 7", "Verlag", "978-3", "", "Mathematik", "Ma 7", 2023, 42))
 	mock.ExpectQuery(`MAX\(a\.ausgeliehen_am\) AS last_loan[\s\S]*AND t\.ist_lernmittel`).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "subject", "signatur", "erscheinungsjahr", "last_loan"}).
 			AddRow("sw1", "LMF-Physik 9", "", "978-1", "Physik", "Ph 9", 2019, nil))
@@ -84,8 +84,8 @@ func TestStatistik_LesefehlerNenntDenAbschnitt(t *testing.T) {
 				muster    string
 				zeilen    *pgxmock.Rows
 			}{
-				{"renner", `COUNT\(a\.id\) AS count`, pgxmock.NewRows([]string{"id", "titel", "autor", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).
-					AddRow("t1", "Momo", "Ende", "", "Deutsch", "De 1", 2001, 7)},
+				{"renner", `COUNT\(a\.id\) AS count`, pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).
+					AddRow("t1", "Momo", "Ende", "978-3", "", "Deutsch", "De 1", 2001, 7)},
 				{"ladenhueter", `MAX\(a\.ausgeliehen_am\) AS last_loan`, pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "subject", "signatur", "erscheinungsjahr", "last_loan"}).
 					AddRow("t2", "Krabat", "Preußler", "", "Deutsch", "De 2", 1971, nil)},
 				{"kennzahlen", `aktive_ausleihen AS \(`, pgxmock.NewRows([]string{"gesamt", "aktiv", "verliehen", "verlorene", "wiederbeschaffung", "verlust_quote", "zirkulationsquote"}).

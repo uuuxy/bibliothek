@@ -11,9 +11,12 @@ import (
 // Renner ist ein Eintrag der „Renner"-Liste inkl. Drill-Down-Feldern
 // (Fachbereich/Systematik/Erscheinungsjahr) für Frontend-Filter.
 type Renner struct {
-	ID               string `json:"id"`
-	Titel            string `json:"titel"`
-	Autor            string `json:"autor"`
+	ID    string `json:"id"`
+	Titel string `json:"titel"`
+	Autor string `json:"autor"`
+	// ISBN: Ein Cover von außen geht nur über den Bild-Proxy, und der braucht sie als Schlüssel
+	// (coverSrc.js); ohne sie zeigt die Liste den Platzhalter.
+	ISBN             string `json:"isbn"`
 	CoverURL         string `json:"cover_url"`
 	Fachbereich      string `json:"fachbereich,omitempty"`
 	Systematik       string `json:"systematik,omitempty"`
@@ -151,14 +154,14 @@ func schuljahresBeginn(t time.Time) time.Time {
 func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter string, limit int) ([]Renner, error) {
 	renner := []Renner{}
 	q := fmt.Sprintf(`
-		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
+		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''),
 		       coalesce(t.subject, ''), coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
 		       COUNT(a.id) AS count
 		FROM buecher_titel t
 		JOIN buecher_exemplare e ON t.id = e.titel_id
 		JOIN ausleihen a ON e.id = a.exemplar_id
 		WHERE 1=1 %s %s
-		GROUP BY t.id, t.titel, t.autor, t.cover_url, t.subject, t.signatur, t.erscheinungsjahr
+		GROUP BY t.id, t.titel, t.autor, t.isbn, t.cover_url, t.subject, t.signatur, t.erscheinungsjahr
 		ORDER BY count DESC
 		LIMIT %d
 	`, ausleihenFilter, typFilter, limit)
@@ -169,7 +172,7 @@ func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter st
 	defer rows.Close()
 	for rows.Next() {
 		var p Renner
-		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Anzahl); err != nil {
+		if err := rows.Scan(&p.ID, &p.Titel, &p.Autor, &p.ISBN, &p.CoverURL, &p.Fachbereich, &p.Systematik, &p.Erscheinungsjahr, &p.Anzahl); err != nil {
 			return nil, zeileUnlesbar(err)
 		}
 		renner = append(renner, p)

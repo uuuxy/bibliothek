@@ -42,8 +42,8 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 		}},
 		{"Renner", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
 			mock.ExpectQuery(`COUNT\(a.id\) AS count`).WillReturnRows(
-				pgxmock.NewRows([]string{"id", "titel", "autor", "cover", "fach", "signatur", "jahr", "count"}).
-					AddRow(nil, "Momo", "", "", "", "", 0, 3))
+				pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "cover", "fach", "signatur", "jahr", "count"}).
+					AddRow(nil, "Momo", "", "", "", "", "", 0, 3))
 			_, err := LadeRenner(ctx, mock, "", "", 10)
 			return err
 		}},
