@@ -11,11 +11,14 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { buchBarcodes } from '../../stores/buchBarcodes.svelte.js';
 	import { leerlaufSperre } from '../../stores/leerlaufSperre.svelte.js';
+	import { hatRecht } from '../../menue.js';
 
 	// Hinter der Sperre nach Inaktivität beantwortet der Server nichts; nach dem
-	// Aufschließen holt der Neulauf die Liste.
+	// Aufschließen holt der Neulauf die Liste. Sie gehört der Theke: Wer dort nicht bucht, hat sie
+	// nicht nötig, und der Server gibt sie ihm nicht (GET /api/action/buchbarcodes).
 	$effect(() => {
 		if (!authStore.isLoggedIn || leerlaufSperre.gesperrt) return;
+		if (!hatRecht(authStore.currentUser, 'perform_actions')) return;
 		buchBarcodes.bereitstellen();
 		// Beim Abmelden fällt der stündliche Abgleich mit — ein Zeitgeber, der die
 		// Anmeldung überlebt, fragt für niemanden nach.
