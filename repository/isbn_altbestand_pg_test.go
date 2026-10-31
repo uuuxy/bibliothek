@@ -16,6 +16,8 @@ import (
 func fahreMigrationUeberAltzeilen(t *testing.T, datei string, altzeilen map[string]string) map[string]*string {
 	t.Helper()
 	pool := pgtest.Pool(t)
+	// Trägt ein Rest aus einem anderen Test schon die Normalform, rechnet die Migration nicht um.
+	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	tx := beginne(t, pool)
 	defer func() {

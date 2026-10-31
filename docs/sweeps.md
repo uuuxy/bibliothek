@@ -427,6 +427,9 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
 
 5. **Reihenfolge:** `go test -shuffle=on ./...` und `vitest run --sequence.shuffle`. Die CI fährt
    beide so. Ein roter Lauf nennt die Folge (`-test.shuffle 1234`), `-shuffle=1234` wiederholt sie.
+   Ein Test an der Datenbank, der einen eindeutigen Wert fest nennt (ISBN, Nummer), leert vorher
+   den Bestand: Den Rest eines anderen Tests trifft er sonst nur in manchen Folgen. Ob zwei Tests
+   zusammenhängen, zeigen sie allein mit `-run` über mehrere Zufallswerte.
 6. **Jede Browser-Testdatei allein auf einer frischen Datenbank:** Vorlage mit `CREATE DATABASE …
    TEMPLATE`, Backend je Datei neu. Rot heißt: Die Datei lebt von den Resten der Dateien vor ihr.
    `cover-grossansicht` schreibt in den Container des Backends und läuft nur am Stack.
