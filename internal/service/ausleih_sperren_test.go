@@ -181,6 +181,16 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 	})
 }
 
+// Die Grenze „gesperrt ab n überfälligen Medien" schließt n ein. Die Attrappe stellt n auf 1.
+func TestAusleihSperren_GrenzeDerUeberfaelligen(t *testing.T) {
+	_, err := pruefeMitAttrappe(t, schueler(nil), false, false, func(mock pgxmock.PgxPoolIface) {
+		erwarteEinstellungenUndUeberfaellige(mock, 1)
+	})
+	if !IstUebergehbareSperre(err) {
+		t.Errorf("genau so viele überfällige wie die Grenze: %v, erwartet die Sperre", err)
+	}
+}
+
 // Das Protokoll schreibt je übergangenen Hinweis einen Eintrag — und keinen, wenn nichts
 // übergangen wurde.
 func TestAusleihSperren_ProtokollJeHinweis(t *testing.T) {

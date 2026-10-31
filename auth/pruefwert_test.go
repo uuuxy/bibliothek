@@ -56,7 +56,9 @@ func TestPruefwert_GleichesPasswortErgibtVerschiedeneWerte(t *testing.T) {
 
 func TestPruefwert_UnlesbarerWertIstEinFehlerKeinTreffer(t *testing.T) {
 	schluessel := pruefwertSchluessel([]byte(testSecret))
-	for _, wert := range []string{"", "klartext", "argon2id$19456$2$1$nur-fuenf", "bcrypt$1$2$3$YQ$YQ", "argon2id$0$2$1$YQ$YQ", "argon2id$19456$2$1$!!$YQ"} {
+	// Ein Teil mit null ist unlesbar und kein Absturz: argon2.IDKey bricht bei null Runden oder Fäden ab.
+	nullen := []string{"argon2id$19456$0$1$YQ$YQ", "argon2id$19456$2$0$YQ$YQ", "argon2id$19456$2$1$$YQ", "argon2id$19456$2$1$YQ$"}
+	for _, wert := range append(nullen, "", "klartext", "argon2id$19456$2$1$nur-fuenf", "bcrypt$1$2$3$YQ$YQ", "argon2id$0$2$1$YQ$YQ", "argon2id$19456$2$1$!!$YQ") {
 		passt, err := pruefwertPasst(schluessel, wert, "egal")
 		if passt {
 			t.Errorf("Prüfwert %q passt — ein unlesbarer Wert darf nie aufschließen", wert)

@@ -479,7 +479,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	}
 
 	text := pdfAbrufen()
-	for _, erwartet := range []string{b.Referenznummer, "19,90", "Altweg", "Altstadt", "Umzugskind"} {
+	for _, erwartet := range []string{b.Referenznummer, "19,90", "Altweg", "Altstadt", "Umzugskind", "Chemie 9"} {
 		if !strings.Contains(text, erwartet) {
 			t.Errorf("der Brief nennt %q nicht", erwartet)
 		}

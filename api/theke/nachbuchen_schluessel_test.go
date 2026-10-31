@@ -3,36 +3,33 @@ package theke
 import (
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/internal/service"
 )
 
-// Was unter dem Schlüssel als Online-Antwort steht, gilt nur als gebucht, wenn es eine
-// gelungene Ausleihe oder Rückgabe ist. Alles andere übernimmt die Nachbuch-Tür und bucht.
-func TestOnlineGebucht(t *testing.T) {
-	for _, f := range []struct {
+// Nur eine gebuchte Fremdrückgabe mit gültiger Ausleih-Kennung lässt den Eintrag „ausleihen" noch
+// zu. Jede andere Buchung gilt als vollständig; der Eintrag buchte das Buch sonst ein zweites Mal.
+func TestNurFremdrueckgabeVorAusleihe(t *testing.T) {
+	gueltig := "5e1d0c8a-5b0e-4c55-9d0f-3a8b1c2d4e01"
+	falsch := "urn:uuid:5e1d0c8a-5b0e-4c55-9d0f-3a8b1c2d4e01"
+	faelle := []struct {
 		name    string
-		status  int
-		daten   string
-		gebucht bool
+		gebucht eingabeAntwort
+		absicht string
+		soll    bool
 	}{
-		{"Ausleihe", 200, `{"type":"ausleihe","loan_id":"3f2504e0-4f89-11d3-9a0c-0305e82c3301"}`, true},
-		{"Rückgabe", 200, `{"type":"rueckgabe","fremdrueckgabe":true}`, true},
-		{"gescannter Ausweis", 200, `{"type":"student"}`, false},
-		{"Suche", 200, `{"type":"search_results"}`, false},
-		{"Fehlerantwort", 403, `{"error":"gesperrt","sperre":"leser"}`, false},
-		{"Fehlerstatus mit Typ", 409, `{"type":"ausleihe"}`, false},
-		{"Status unter 200", 100, `{"type":"ausleihe"}`, false},
-		{"unlesbar", 200, `{"type":5}`, false},
-	} {
-		gebucht, ok := onlineGebucht(&repository.IdempotenzAntwort{Status: f.status, Daten: []byte(f.daten)})
-		if ok != f.gebucht {
-			t.Errorf("%s: gebucht %v, erwartet %v", f.name, ok, f.gebucht)
-		}
-		if !ok && gebucht.Art != "" {
-			t.Errorf("%s: nicht gebucht, liefert aber eine Antwort vom Typ %q", f.name, gebucht.Art)
-		}
-		if ok && gebucht.Art == "" {
-			t.Errorf("%s: gebucht, aber ohne Inhalt", f.name)
-		}
+		{"Fremdrückgabe, Eintrag will ausleihen", eingabeAntwort{Art: "rueckgabe", Fremdrueckgabe: true, AusleiheID: &gueltig}, service.NachbuchAbsichtAusleihe, true},
+		{"gewöhnliche Rückgabe", eingabeAntwort{Art: "rueckgabe", AusleiheID: &gueltig}, service.NachbuchAbsichtAusleihe, false},
+		{"online schon ausgeliehen", eingabeAntwort{Art: "ausleihe", AusleiheID: &gueltig}, service.NachbuchAbsichtAusleihe, false},
+		{"Ausleihe mit Merkmal der Fremdrückgabe", eingabeAntwort{Art: "ausleihe", Fremdrueckgabe: true, AusleiheID: &gueltig}, service.NachbuchAbsichtAusleihe, false},
+		{"Eintrag will zurückgeben", eingabeAntwort{Art: "rueckgabe", Fremdrueckgabe: true, AusleiheID: &gueltig}, "rueckgabe", false},
+		{"ohne Kennung", eingabeAntwort{Art: "rueckgabe", Fremdrueckgabe: true}, service.NachbuchAbsichtAusleihe, false},
+		{"Kennung nicht in strenger Form", eingabeAntwort{Art: "rueckgabe", Fremdrueckgabe: true, AusleiheID: &falsch}, service.NachbuchAbsichtAusleihe, false},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			if ist := nurFremdrueckgabeVorAusleihe(f.gebucht, f.absicht); ist != f.soll {
+				t.Errorf("= %v, erwartet %v", ist, f.soll)
+			}
+		})
 	}
 }
