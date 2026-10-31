@@ -86,7 +86,8 @@ export function fokusFalle(node) {
 			(el) => drinnen && aktiv.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING
 		);
 		const davor = liste.filter((el) => !folgt.includes(el) && el !== aktiv);
-		const reihe = e.shiftKey ? [...davor.reverse(), ...folgt.reverse()] : [...folgt, ...davor];
+		const reihe = [...folgt, ...davor];
+		if (e.shiftKey) reihe.reverse();
 		// Ein Element, das den Fokus nicht nimmt (verborgen, gesperrte Gruppe), hält die Runde nicht auf.
 		for (const el of reihe) {
 			el.focus();
