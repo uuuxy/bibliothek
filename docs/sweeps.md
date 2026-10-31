@@ -434,6 +434,9 @@ echte Fehler oder falsche Tests gefunden; alle laufen auf einer Wegwerf-Instanz 
 8. **Felder, die nie kommen:** Die Antworten der Schnittstelle in der Seite als Proxy umhüllen und
    über die ganze Suite sammeln, was gelesen wird und in keiner Antwort stand. Am Go-Code einordnen:
    `omitempty`, Attrappe im Test oder Fehler. Eine Attrappe im Unit-Test beweist das Feld nicht.
+   Die Gegenrichtung: In `tuer.LeseAnfrage` über ein Overlay die Schlüssel des Rumpfs gegen den
+   Zieltyp halten und loggen, was der Server still verwirft. Null Treffer zählen erst, wenn ein
+   Fremdfeld anschlägt; Stellen mit eigenem Decoder gegen die Rümpfe der Oberfläche lesen.
 9. **Rückbau in Bedingungen und SQL:** Stichprobe über `go test -overlay` (`<` zu `<=`, `&&` zu `||`,
    Zeile weg). Die Überlebenden am Code lesen; ein Teil ist ohne Folge oder sieht das Overlay nicht.
 10. **Alle Rollen, alle Bildschirme:** Je Rolle jeden Bildschirm und Reiter öffnen und 403, 404, 5xx,
