@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 30.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 31.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -83,7 +83,7 @@ Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
 
 ## 1. Einführung und Ziele
 
-Stand: 21.10.2026
+Stand: 31.10.2026
 
 ---
 
@@ -161,7 +161,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | **Bibliotheksleitung**               | Überblick, Mahnwesen, Bestellung, Statistik ohne Klarnamen; Systempflege nicht übernehmen müssen                                   | Eigene Rolle `leitung` = Admin **minus** `manage_users`/`manage_settings`, abgeleitet statt abgeschrieben (Migration 122) |
 | **Bibliotheks-Mitarbeiter**          | Tagesgeschäft an der Theke, schnell, ohne Systemwissen                                                                             | Omnibox als einziges Eingabefeld; Fehler sprechen deutsch und sagen die nächste Handlung                             |
-| **Helfer** (Eltern, Hilfskräfte)     | Ausleihe/Rückgabe und die Frage „habt ihr Band 3 noch da?" beantworten — ohne Zugriff auf Personendaten                            | Genau zwei Rechte (`perform_actions`, `view_books`), Grenze zu Personendaten über `view_students`                     |
+| **Helfer** (Eltern, Hilfskräfte)     | Ausleihe/Rückgabe und die Frage „habt ihr Band 3 noch da?" beantworten — an der Theke mit Name, Klasse, Ausweisnummer und Sperre, ohne Akte und Ausleihen | Genau zwei Rechte (`perform_actions`, `view_books`), Grenze zur Akte über `view_students`                             |
 | **Kollegium** (~160 Lehrkräfte)      | Selbst anmelden können, Klassensätze reservieren, LMF-Termine sehen, Probleme melden                                                | Selbstanmeldung über die Schuldomain mit **Freischaltung durch die Bibliothek**; Portal hängt am Recht `create_reservations`, nicht an der Rolle |
 | **Schüler und Eltern**               | Sehen, ob ein Buch da ist — ohne Konto                                                                                             | Öffentlicher Katalog und Monitor, die ausschließlich Titeldaten liefern (PII-Stufe 0)                                |
 | **Sekretariat / Schulleitung**        | Schülerdaten müssen ohne Doppelerfassung hereinkommen; Versetzung und Abgang müssen funktionieren                                   | LUSD-Import mit drei Zuordnungsstufen, Umbenennungs-Paarung und Karenzzeit ([LUSD.md](LUSD.md))                   |
@@ -172,16 +172,16 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 21.10.2026)
+### 1.4 Umfang in Zahlen (gemessen 31.10.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 78.235 Zeilen                              |
-| Go-Tests                          | 134.822 Zeilen in 939 Testdateien          |
-| Svelte/JavaScript (`frontend/src`) | 85.684 Zeilen in 774 Dateien, davon 310 `.svelte` |
-| e2e (Playwright, `frontend/e2e`)  | 168 Dateien, davon 163 Specs               |
+| Go-Produktivcode                  | 81.400 Zeilen                              |
+| Go-Tests                          | 146.341 Zeilen in 1.020 Testdateien        |
+| Svelte/JavaScript (`frontend/src`) | 98.112 Zeilen in 877 Dateien, davon 318 `.svelte` |
+| e2e (Playwright, `frontend/e2e`)  | 196 Dateien, davon 187 Specs               |
 | Registrierte HTTP-Routen          | 226                                        |
-| Datenbank-Migrationen             | 167 Dateien, die höchste Nummer ist 164    |
+| Datenbank-Migrationen             | 173 Dateien, die höchste Nummer ist 170    |
 | Tabellen / Sichten in `schema.sql`| 43 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
 Die Befehle, mit denen diese Zahlen neu erhoben werden, stehen im
@@ -452,7 +452,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 25.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 29.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -1463,7 +1463,7 @@ kürzer als der Heartbeat-Abstand und länger als jede normale Anfrage.
 
 ## 7. Verteilungssicht
 
-Stand: 29.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
+Stand: 31.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ---
 
@@ -1615,7 +1615,7 @@ liest, muss in Compose ankommen.
 
 | Workflow              | Auslöser                          | Stufen                                                                                                                                                                                       |
 | --------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`              | Push, Pull Request                | `actionlint` · `build-and-test` (gofmt, **golangci-lint**, Deadcode-Gate, Postgres-Client für die Restore-Probe, `go test -race ./...`, **Skip-Bilanz**) · `frontend-test` (ESLint, Prettier, `svelte-check`, Vitest) · e2e (lokaler Stack **bauen**, Playwright-Browser aus Cache, Druck-Sektionen-Gate, Playwright; bei Fehlschlag Traces und Backend-Logs als Artefakt) |
+| `ci.yml`              | Push, Pull Request                | `actionlint` · `build-and-test` (gofmt, **golangci-lint**, Deadcode-Gate, Postgres-Client für die Restore-Probe, `go test -race -shuffle=on ./...`, **Skip-Bilanz**) · `frontend-test` (ESLint, Prettier, `svelte-check`, Vitest in zufälliger Reihenfolge) · e2e (lokaler Stack **bauen**, Playwright-Browser aus Cache, Druck-Sektionen-Gate, Playwright; bei Fehlschlag Traces und Backend-Logs als Artefakt) |
 | `security-scan.yml`   | Push, Pull Request, **Zeitplan**  | `govulncheck` über `scripts/govulncheck-gate.sh` (benannte Ausnahmen in `security/vuln-ausnahmen.json`) · `gosec` über `scripts/gosec-gate.sh` · `npm audit` über `scripts/npm-audit-gate.sh` · Trivy-Scan des **gebauten Images** samt Container-Smoke (läuft unprivilegiert? sind die Laufzeitwerkzeuge da? ist jedes Volume beschreibbar?) |
 | `docker-publish.yml`  | Push auf `main`, `v*.*.*`, manuell | Build und Push nach `ghcr.io/uuuxy/bibliothek`, `linux/amd64`                                                                                                                                 |
 | `release.yml`         | Tag `v*.*.*`                      | Prüft Muster, Zugehörigkeit zu `main` und **grüne CI**, dann GitHub-Release mit generierten Notes                                                                                             |
@@ -1658,7 +1658,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 29.10.2026
+Stand: 31.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -3733,7 +3733,7 @@ Frage).
 
 ## 12. Glossar
 
-Stand: 16.10.2026
+Stand: 31.10.2026
 
 Die Fachsprache des Hauses, mit dem Code-Bezug daneben. Wo ein Begriff im Code **anders**
 heißt als in der Oberfläche, steht beides — das ist die häufigste Stolperstelle beim
@@ -3831,7 +3831,7 @@ Einstieg.
 | **Admin**         | Admin          | Uneingeschränkt: Einstellungen, Benutzer, Audits, Datenschutz-Routinen                     | alle                                                 |
 | **Leitung**       | Admin          | Führt die Bibliothek, ohne die Systempflege zu übernehmen                                  | Admin **minus** `manage_users`, `manage_settings`     |
 | **Mitarbeiter**   | Admin          | Tagesgeschäft: Omnibox, Katalog, Mahnwesen, Leserdatei                                     | Fachrechte ohne Systemeinstellungen                   |
-| **Helfer**        | Admin          | Theke und Katalog lesen — Grenze zu Personendaten zieht `view_students`                     | genau zwei: `perform_actions`, `view_books`           |
+| **Helfer**        | Admin          | Theke und Katalog lesen — Grenze zur Akte zieht `view_students`                             | genau zwei: `perform_actions`, `view_books`           |
 | **Kollegium**     | **niemand** — Grundzustand nach Selbstanmeldung und Freischaltung | Eigenes Portal: Reservieren, Klassensätze, LMF-Plan, Schulbücher, Anliegen | genau eins: `create_reservations`     |
 
 Ein **Helfer braucht ein Postfach auf dem Schul-Mailserver** — es gibt keinen Code- oder

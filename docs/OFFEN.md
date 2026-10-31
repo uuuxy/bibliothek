@@ -32,15 +32,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 Nur, was kein Test leisten kann.
 
-- [x] Freigeben: Pull Requests #760 und #762 schließen; keiner zeigt am alten Stand einen Fehler.
-  (5.111)
 - [ ] Pull Request #763 schließen: derselbe Vorschlag wie #759, am Code nachgeprüft. (5.167)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
-- [x] Am Testserver nachsehen, ob unter `uploads/fotos` noch Fotos liegen. (7.8)
-- [x] Am Testserver nachsehen, ob außer dem Backend ein Container die Datenbank der Bibliothek
-  ansprechen will; erreichen kann er sie dort nicht mehr. (7.8)
 - [ ] Im Regal nachsehen, ob das Buch 2424 („Mathematik heute", Band 6) da ist; es ist seit dem
   17.09.2026 als Verlust ausgebucht. Liegt es dort: in der Buchakte den Status des Exemplars
   zurückstellen.
