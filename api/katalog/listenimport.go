@@ -2,7 +2,6 @@ package katalog
 
 import (
 	"context"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +16,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/katalogdienste"
+	"bibliothek/pkg/csvutil"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/lmf"
 	"bibliothek/pkg/safego"
@@ -50,15 +50,7 @@ func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	if err != nil {
 		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}
-	inhaltText := string(inhalt)
-	trenner := ','
-	if strings.Count(inhaltText, ";") > strings.Count(inhaltText, ",") {
-		trenner = ';'
-	}
-	leser := csv.NewReader(strings.NewReader(inhaltText))
-	leser.Comma = trenner
-	leser.LazyQuotes = true
-	zeilen, err := leser.ReadAll()
+	zeilen, err := csvutil.BaueLeser(inhalt, csvutil.HaeufigererTrenner).ReadAll()
 	if err != nil {
 		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}

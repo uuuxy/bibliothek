@@ -1,13 +1,12 @@
 package lusd
 
 import (
+	"bibliothek/pkg/csvutil"
 	"bibliothek/pkg/xlsxgrenze"
 	"bytes"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -99,14 +98,7 @@ func leseTabelle(inhalt []byte) ([]tabellenZeile, error) {
 // dürfen unterschiedlich lang sein (FieldsPerRecord -1): Titelzeilen über der
 // Kopfzeile haben weniger Felder, und spaltenWert fängt kurze Zeilen ab.
 func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
-	text := strings.TrimPrefix(string(inhalt), "\uFEFF")
-	trenner := ','
-	if strings.Count(text, ";") > strings.Count(text, ",") {
-		trenner = ';'
-	}
-	csvLeser := csv.NewReader(strings.NewReader(text))
-	csvLeser.Comma = trenner
-	csvLeser.LazyQuotes = true
+	csvLeser := csvutil.BaueLeser(inhalt, csvutil.HaeufigererTrenner)
 	csvLeser.FieldsPerRecord = -1
 
 	var tabelle []tabellenZeile

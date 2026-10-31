@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/csvutil"
 	"bibliothek/repository"
 
 	"github.com/xuri/excelize/v2"
@@ -68,7 +69,7 @@ func istLitteraXML(dateiname, inhaltText string) bool {
 }
 
 // leseTabellarischeDaten liest die Zeilen aus einer XLSX- oder CSV-Datei.
-func leseTabellarischeDaten(dateiname string, inhalt []byte, inhaltText string) (zeilen [][]string, istXLSX bool, err error) {
+func leseTabellarischeDaten(dateiname string, inhalt []byte) (zeilen [][]string, istXLSX bool, err error) {
 	if strings.HasSuffix(strings.ToLower(dateiname), ".xlsx") {
 		zeilen, err := xlsxgrenze.LeseMappe(bytes.NewReader(inhalt), func(f *excelize.File) ([][]string, error) {
 			blatt := f.GetSheetName(f.GetActiveSheetIndex())
@@ -83,10 +84,7 @@ func leseTabellarischeDaten(dateiname string, inhalt []byte, inhaltText string) 
 		return zeilen, true, nil
 	}
 
-	csvLeser := csv.NewReader(strings.NewReader(inhaltText))
-	csvLeser.Comma = service.ImportTrennzeichen(inhaltText)
-	csvLeser.LazyQuotes = true
-	zeilen, err = csvLeser.ReadAll()
+	zeilen, err = csvutil.BaueLeser(inhalt, service.ImportTrennzeichen).ReadAll()
 	if err != nil {
 		return nil, false, apierrors.BadRequest(csvLesefehlerMeldung(err), err)
 	}
@@ -155,13 +153,12 @@ func (t *Tueren) LitteraImport() http.HandlerFunc {
 			return
 		}
 
-		inhaltText := string(inhalt)
-		if istLitteraXML(dateiname, inhaltText) {
+		if istLitteraXML(dateiname, string(inhalt)) {
 			t.verarbeiteLitteraXML(w, r, inhalt)
 			return
 		}
 
-		zeilen, istXLSX, err := leseTabellarischeDaten(dateiname, inhalt, inhaltText)
+		zeilen, istXLSX, err := leseTabellarischeDaten(dateiname, inhalt)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 			return
@@ -231,12 +228,7 @@ func (t *Tueren) importiereBestand(w http.ResponseWriter, r *http.Request) {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
-	inhaltText := string(inhalt)
-
-	csvLeser := csv.NewReader(strings.NewReader(inhaltText))
-	csvLeser.Comma = service.ImportTrennzeichen(inhaltText)
-	csvLeser.LazyQuotes = true
-	zeilen, err := csvLeser.ReadAll()
+	zeilen, err := csvutil.BaueLeser(inhalt, service.ImportTrennzeichen).ReadAll()
 	if err != nil {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, csvLesefehlerMeldung(err), err)
 		return

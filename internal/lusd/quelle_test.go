@@ -87,6 +87,24 @@ func TestLeseDatei_CSVMitTitelzeileUeberKopfzeile(t *testing.T) {
 	}
 }
 
+// Excel speichert „CSV (Trennzeichen-getrennt)" unter Windows in Windows-1252: Das ü ist dort das
+// eine Byte 0xFC, auch in der Kopfzeile. Ohne Umwandlung stünde „J�rgen" in der Vorschau, und die
+// Datenbank lehnte die Übernahme ab.
+func TestLeseDatei_CSVAusExcelInWindows1252(t *testing.T) {
+	csv := "Nachname;Vorname;Klasse;Geburtsdatum;Stra\xdfe\r\nM\xfcller;J\xfcrgen;5a;1.2.2012;Gr\xfcner Weg\r\n"
+	datei, err := LeseDatei([]byte(csv))
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if len(datei.Zeilen) != 1 {
+		t.Fatalf("%d Zeilen, erwartet 1", len(datei.Zeilen))
+	}
+	z := datei.Zeilen[0]
+	if z.Vorname != "Jürgen" || z.Nachname != "Müller" || z.Strasse != "Grüner Weg" {
+		t.Errorf("Vorname %q, Nachname %q, Straße %q", z.Vorname, z.Nachname, z.Strasse)
+	}
+}
+
 func TestLeseDatei_BinaermuellBleibtVerstaendlich(t *testing.T) {
 	_, err := LeseDatei([]byte{0xff, 0xfe, 0x00, 0x9c, 0x01, 0x02, 0x03})
 	if err == nil {

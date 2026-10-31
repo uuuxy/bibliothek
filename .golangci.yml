@@ -53,6 +53,9 @@ linters:
         # Das Paket log kennt keine Stufe; über slog.SetDefault landete jeder Fehler als INFO.
         - pattern: ^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln)$
           msg: "Der Server schreibt mit slog und Stufe ins Log (docs/STIL.md, Abschnitt 11)"
+        # Excel speichert CSV unter Windows in Windows-1252; ein eigener Leser übergeht die Umwandlung.
+        - pattern: ^csv\.NewReader$
+          msg: "Eine hochgeladene CSV geht durch csvutil.BaueLeser"
     recvcheck:
       # Die Gegenstücke zu den Marshal-Methoden, die recvcheck von sich aus ausnimmt: UnmarshalJSON
       # und Scan ändern den Wert und brauchen einen Zeiger; MarshalJSON und Value arbeiten auf dem
@@ -103,6 +106,12 @@ linters:
         linters:
           - forbidigo
         text: slog und Stufe
+      # csvutil.BaueLeser gilt für hochgeladene Dateien. Tests und Werkzeuge lesen eigene Dateien,
+      # und die Übernahme des Altbestands liest die Ausgabe von mdb-export.
+      - path: (_test\.go$|^cmd/|^scripts/|^internal/littera/|^pkg/csvutil/)
+        linters:
+          - forbidigo
+        text: csvutil\.BaueLeser
       # Tests rufen die Prüfhilfen, die sich ihren Kontext selbst anlegen; die Regel gilt dem
       # Programmcode (kontext_ratsche_test.go).
       - path: _test\.go

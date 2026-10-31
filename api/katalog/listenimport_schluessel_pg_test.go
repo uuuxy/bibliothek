@@ -143,6 +143,31 @@ func TestListenimport_AbgebrochenerLaufGibtDenSchluesselFrei(t *testing.T) {
 
 // listenAnfrage baut den Aufruf der Tür POST /api/books/import mit einer CSV-Liste; ohne
 // Schlüssel fehlt die Kopfzeile.
+// Eine Liste aus Excel in Windows-1252: Die Zeile mit dem Umlaut scheiterte unumgewandelt an der
+// Datenbank, und die Antwort nannte nur „1 fehlgeschlagen".
+func TestListenimport_CSVAusExcelInWindows1252(t *testing.T) {
+	pool := pgtest.Pool(t)
+	const isbn = "9783866801860"
+	raeumeAuf := func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM buecher_titel WHERE isbn = $1`, isbn); err != nil {
+			t.Logf("Aufräumen: %v", err)
+		}
+	}
+	raeumeAuf()
+	t.Cleanup(raeumeAuf)
+
+	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}, Katalogdienste: offlineMetadatenClient()}
+	rec := httptest.NewRecorder()
+	tueren.ExcelImport()(rec, listenAnfrage(t, "isbn;titel;autor;bestand\r\n"+isbn+";Mathe f\xfcr alle;M\xfcller;1\r\n", ""))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Import = %d: %s", rec.Code, rec.Body.String())
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel
+		WHERE isbn = $1 AND titel = 'Mathe für alle' AND autor = 'Müller'`, isbn); n != 1 {
+		t.Errorf("%d Titel mit richtigem Titel und Autor, erwartet 1: %s", n, rec.Body.String())
+	}
+}
+
 func listenAnfrage(t *testing.T, csv, schluessel string) *http.Request {
 	t.Helper()
 	rumpf := new(bytes.Buffer)

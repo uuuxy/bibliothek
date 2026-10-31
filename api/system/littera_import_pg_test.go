@@ -292,6 +292,39 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 // importWelt legt ein Admin-Konto mit Sitzung an und liefert einen Aufruf über den ganzen
 // Router — dieselbe Bauart wie routertest.MitAufruf, nur mit frei wählbarem Inhaltstyp für die
 // Mehrteil-Form.
+// Die beiden Türen mit einer CSV, wie Excel sie unter Windows speichert: Windows-1252, und in der
+// Datei mit BOM geht das Gleiche als „CSV UTF-8". Der Umlaut kommt in beiden Fällen richtig an, und
+// ein Nullzeichen in einer kaputten Datei ist kein Serverfehler.
+func TestImport_CSVAusExcelKommtMitUmlautAn(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	_, _, rufeRoh := importWelt(t, pool)
+	t.Cleanup(func() {
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
+	})
+
+	for _, fall := range []struct {
+		name, pfad, inhalt, titel string
+	}{
+		{"Littera, Windows-1252", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\xdcbung f\xfcr 7;M\xfcller;IMP-K1\r\n", "E2E-Imp-Übung für 7"},
+		{"Littera, UTF-8 mit BOM", "/api/import/littera", "\xef\xbb\xbf\"Titel\";Verfasser;Exemplarnummer\r\nE2E-Imp-Übung für 8;Müller;IMP-K2\r\n", "E2E-Imp-Übung für 8"},
+		{"Bestand, Windows-1252", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\xdcbung f\xfcr 9;M\xfcller;IMP-K3\r\n", "E2E-Imp-Übung für 9"},
+		{"Littera, Nullzeichen", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x00Null 1;Müller;IMP-K4\r\n", "E2E-Imp-Null 1"},
+		{"Bestand, Nullzeichen", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x00Null 2;Müller;IMP-K5\r\n", "E2E-Imp-Null 2"},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			rec := ladeImport(t, rufeRoh, fall.pfad, "liste.csv", []byte(fall.inhalt))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+			}
+			if n := pgtest.ZaehleZeilen(t, pool,
+				`SELECT count(*) FROM buecher_titel WHERE titel = $1 AND autor = 'Müller'`, fall.titel); n != 1 {
+				t.Errorf("%d Titel %q mit Autor Müller, erwartet 1: %s", n, fall.titel, rec.Body.String())
+			}
+		})
+	}
+}
+
 func importWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, sitzung string,
 	rufeRoh func(t *testing.T, methode, pfad, rumpf, typ string) *httptest.ResponseRecorder) {
 	t.Helper()
