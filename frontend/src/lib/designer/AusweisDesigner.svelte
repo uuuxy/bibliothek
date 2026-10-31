@@ -1,15 +1,13 @@
 <script>
-	/**
-	 * @file AusweisDesigner.svelte
-	 * Canvas-based ID-card designer — top-level coordinator component.
-	 * Laden/Speichern des Designs steckt in designer/idDesignPersistenz.svelte.js.
-	 */
+	// Der Ausweis-Designer: ordnet Leinwand, Werkzeugleiste und Eigenschaften an. Laden und Speichern
+	// des Designs stehen in idDesignPersistenz.svelte.js.
 	import { onDestroy, onMount } from 'svelte';
 	import { idStore, serializeDesign } from './idDesignerStore.svelte.js';
 	import { erzeugeDesignAblage } from './idDesignPersistenz.svelte.js';
 	import { oeffneEtikettenbogen } from '../components/etiketten/schuelerEtiketten.js';
 	import { authStore } from '../stores/authStore.svelte.js';
 	import { hatRecht } from '../menue.js';
+	import Ladekreis from '../components/ui/Ladekreis.svelte';
 	import CanvasFlaeche from './CanvasFlaeche.svelte';
 	import Druckvorschau from './Druckvorschau.svelte';
 	import Eigenschaften from './Eigenschaften.svelte';
@@ -32,7 +30,7 @@
 	// Hier entsteht das Design, wer wessen Karte druckt, entscheidet die Schülerdatei. Die Leinwand
 	// zeigt deshalb immer denselben Platzhalter, und das Gültigkeitsdatum ist ein Musterwert. Das
 	// echte kommt beim Drucken vom Server (ausweis_gueltig_bis, Regel in internal/ausweis).
-	const PLATZHALTER_LESER = {
+	const muster = {
 		id: 'placeholder',
 		barcode_id: 'DEMO-S-001',
 		vorname: 'Max',
@@ -40,11 +38,8 @@
 		klasse: '9R1',
 		ausweis_gueltig_bis: new Date().getFullYear() + 1
 	};
-	const muster = $derived({ ...PLATZHALTER_LESER });
 
-	onMount(() => {
-		ablage.laden();
-	});
+	onMount(() => ablage.laden());
 
 	// Auto-Save (entprellt): Jede Design-Änderung wird zentral gespeichert, damit der
 	// Druck-Arbeitsplatz beim nächsten Öffnen denselben Stand lädt. `ausstehend` hält den
@@ -105,7 +100,10 @@
 	}
 </script>
 
-<div class="w-full space-y-5 no-print text-on-surface animate-fade-in font-sans">
+<div
+	class="w-full space-y-5 no-print text-on-surface animate-fade-in font-sans"
+	inert={ablage.ladend}
+>
 	{#if ablage.ladefehler}
 		<!-- Ohne den zentralen Stand zeigt die Leinwand Vorgabewerte, und die Auto-Speicherung
 		     ist aus: Sie schöbe diese Vorgabewerte sonst an alle Arbeitsplätze. Der Bildschirm
@@ -126,7 +124,9 @@
 	{/if}
 
 	<div class="flex items-center justify-end gap-3 text-sm font-semibold min-h-4">
-		{#if ablage.zustand === 'saving'}
+		{#if ablage.ladekreis}
+			<Ladekreis size="sm" etikett="Ausweis-Design lädt" />
+		{:else if ablage.zustand === 'saving'}
 			<span class="text-on-surface-variant">Speichert…</span>
 		{:else if ablage.zustand === 'saved'}
 			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>

@@ -56,6 +56,46 @@ beforeEach(() => {
 	);
 });
 
+describe('AusweisDesigner: bis zur Antwort des Servers', () => {
+	// Eine Änderung vor der Antwort überschriebe applyDesign still, gespeichert würde sie auch nicht.
+	it('nimmt keine Eingabe an und zeigt ab 200 ms den Ladekreis', async () => {
+		/** @type {(wert: any) => void} */
+		let antworte = () => {};
+		vi.mocked(apiFetch).mockImplementation(
+			() =>
+				new Promise((fertig) => {
+					antworte = fertig;
+				})
+		);
+		const { queryByRole } = render(AusweisDesigner);
+		await stillhalten();
+		expect(leinwandTraege()).toBe(true);
+		expect(queryByRole('progressbar')).toBeNull();
+
+		await new Promise((fertig) => setTimeout(fertig, 250));
+		await tick();
+		expect(queryByRole('progressbar')).not.toBeNull();
+
+		antworte(antwort(true, {}));
+		await stillhalten();
+		expect(leinwandTraege()).toBe(false);
+		expect(queryByRole('progressbar')).toBeNull();
+	});
+
+	// „Erneut laden" steht auf derselben Fläche.
+	it('bleibt nach einem gescheiterten Laden bedienbar', async () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(apiFetch).mockImplementation(async () => {
+			throw new Error('kein Netz');
+		});
+		const { getByRole, queryByRole } = render(AusweisDesigner);
+		await stillhalten();
+		expect(getByRole('button', { name: 'Erneut laden' })).toBeTruthy();
+		expect(leinwandTraege()).toBe(false);
+		expect(queryByRole('progressbar')).toBeNull();
+	});
+});
+
 describe('AusweisDesigner: Auto-Save nur nach einer Änderung', () => {
 	// Das Öffnen schickte das unveränderte Design: Wer es nicht ändern darf, las „Speichern
 	// fehlgeschlagen", und bei jedem anderen ging ein Schreibbefehl hinaus, ohne dass jemand

@@ -13,7 +13,7 @@ import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
  * der ihn wieder abräumt.
  */
 
-/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladefehler: string, readonly speicherfehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, erneutSpeichern: () => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
+/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladend: boolean, readonly ladekreis: boolean, readonly ladefehler: string, readonly speicherfehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, erneutSpeichern: () => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
 export function erzeugeDesignAblage() {
 	/** @type {'idle'|'saving'|'saved'|'error'} */
 	let zustand = $state('idle');
@@ -27,6 +27,9 @@ export function erzeugeDesignAblage() {
 	// Nicht leer = die Leinwand zeigt NICHT den zentralen Stand. Der Bildschirm sagt es,
 	// statt still mit Vorgabewerten weiterzuarbeiten.
 	let ladefehler = $state('');
+	// Unter 200 ms steht der Stand ohne Anzeige da (Material 3, Progress indicators: „Instant
+	// (under 200ms): No indicator", „Short (between 200ms and 5s): Use a loading indicator").
+	let ladekreis = $state(false);
 	// Scheitert das Speichern, gilt der Stand nur an diesem Platz. Der Grund steht da, und der Stand
 	// wartet auf „Erneut speichern"; sonst ginge er erst mit der nächsten Änderung hinaus. Nur das
 	// jüngste Speichern zählt: Ein älterer Stand, der zuletzt scheitert, überschriebe den neueren.
@@ -45,12 +48,22 @@ export function erzeugeDesignAblage() {
 		get ladefehler() {
 			return ladefehler;
 		},
+		// Bis zur ersten Antwort nimmt der Bildschirm keine Eingabe an: applyDesign überschriebe sie.
+		get ladend() {
+			return !geladen && !ladefehler;
+		},
+		get ladekreis() {
+			return ladekreis;
+		},
 		get speicherfehler() {
 			return speicherfehler;
 		},
 
 		/** Lädt das zentral gespeicherte Design. Leeres {} (Erststart) → Vorgabewerte. */
 		async laden() {
+			const zeitgeber = setTimeout(() => {
+				ladekreis = true;
+			}, 200);
 			try {
 				const res = await apiFetch('/api/ausweis-layout');
 				if (!res.ok) {
@@ -64,7 +77,9 @@ export function erzeugeDesignAblage() {
 				ladefehler =
 					'Das gespeicherte Ausweis-Design konnte nicht geladen werden (Netzwerkfehler). Es wird nichts gespeichert, solange das so ist.';
 				console.error('Ausweis-Design konnte nicht geladen werden:', e);
-				return;
+			} finally {
+				clearTimeout(zeitgeber);
+				ladekreis = false;
 			}
 		},
 
