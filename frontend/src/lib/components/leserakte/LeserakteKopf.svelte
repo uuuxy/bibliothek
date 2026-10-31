@@ -7,13 +7,14 @@
 	import { initialen } from './avatarKachel.js';
 	import { leserArtText, istKollegium } from '../leser/leserArt.js';
 
-	/** @type {{ leser: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
+	/** @type {{ leser: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, onDeselect: () => void, schliessenEtikett?: string, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
 	let {
 		leser = $bindable(),
 		rechte = { bearbeiten: false, foto: false },
 		timestamp,
 		showWebcam = $bindable(),
 		onDeselect,
+		schliessenEtikett = 'Akte schließen',
 		leftActions,
 		onLock,
 		offen = undefined
@@ -34,8 +35,8 @@
 	<button
 		onclick={onDeselect}
 		class="icon-btn absolute top-4 right-4 p-2 text-on-surface-variant"
-		data-tip="Akte schließen (Esc)"
-		aria-label="Akte schließen"
+		data-tip="{schliessenEtikett} (Esc)"
+		aria-label={schliessenEtikett}
 	>
 		<X class="w-5 h-5" aria-hidden="true" />
 	</button>
@@ -84,7 +85,8 @@
 			{kollege ? leserArtText(leser.art) : `Klasse ${leser.klasse}`}
 		</p>
 
-		{#if !kollege}
+		<!-- Die Antwort der Theke trägt das Abgangsjahr nicht (api/theke/theken_leser.go). -->
+		{#if !kollege && leser.abgaenger_jahr !== undefined}
 			<AbgangsjahrFeld bind:leser darfBearbeiten={rechte.bearbeiten} />
 		{/if}
 

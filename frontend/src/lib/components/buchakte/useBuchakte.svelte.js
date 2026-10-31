@@ -1,8 +1,10 @@
 import { appState } from '../../../inventur/lib/store.svelte.js';
 import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
+import { authStore } from '../../stores/authStore.svelte.js';
+import { hatRecht } from '../../menue.js';
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
-import { leseTeil } from '../../utils/aktenTeile.js';
+import { ladeBuchakteListen } from './ladeBuchakteListen.js';
 
 /**
  * Holt den Kopf eines Titels vom Server. Ein 404 heißt „den Titel gibt es nicht" und trägt
@@ -34,7 +36,14 @@ export function useBuchakte() {
 	let verlauf = $state([]);
 	/** @type {any[]} */
 	let vormerkungen = $state([]);
-	let aktiverReiter = $state('ausleiher');
+	// Ausleiher und Historie nennen Personen (view_students), die Warteliste hängt am engen
+	// Theken-Recht manage_vormerkungen (db/rechte_vorgabe.go). Ohne das Recht fragt die Akte nicht
+	// danach und bietet den Reiter nicht an.
+	const darfPersonen = $derived(hatRecht(authStore.currentUser, 'view_students'));
+	const darfVormerken = $derived(hatRecht(authStore.currentUser, 'manage_vormerkungen'));
+	let aktiverReiter = $state(
+		hatRecht(authStore.currentUser, 'view_students') ? 'ausleiher' : 'exemplare'
+	);
 	let laedt = $state(true);
 
 	/** Listen, deren Abruf gescheitert ist, mit Grund — ihre Zahl ist keine Zahl, sondern ein
@@ -50,7 +59,7 @@ export function useBuchakte() {
 	let laufNr = 0;
 
 	/**
-	 * Lädt Kopf und alle vier Listen eines Titels.
+	 * Lädt Kopf und die Listen eines Titels, die das Konto sehen darf.
 	 *
 	 * Beim Wechsel wird alles zurückgesetzt, und eine gescheiterte Anfrage (500, oder 429 vom
 	 * Rate-Limiter bei fünf parallelen Anfragen je Titel) lässt keinen alten Kopf stehen. Das
@@ -93,31 +102,14 @@ export function useBuchakte() {
 		}
 		buch = kopf;
 
-		const [bRes, eRes, hRes, vRes] = await Promise.allSettled([
-			apiFetch(`/api/buecher/titel/${id}/ausleiher`, { credentials: 'include' }),
-			apiFetch(`/api/buecher/titel/${id}/exemplare`, { credentials: 'include' }),
-			apiFetch(`/api/buecher/titel/${id}/historie`, { credentials: 'include' }),
-			apiFetch(`/api/vormerkungen?titel_id=${id}`, { credentials: 'include' })
-		]);
-		if (meine !== laufNr) return;
-
-		/** @type {[string, PromiseSettledResult<any>, (w: any[]) => void][]} */
-		const listen = [
-			['Ausleiher', bRes, (w) => (ausleiher = w)],
-			['Exemplare', eRes, (w) => (exemplare = w)],
-			['Historie', hRes, (w) => (verlauf = w)],
-			['Vormerkungen', vRes, (w) => (vormerkungen = w)]
-		];
+		const { werte, fehlend } = await ladeBuchakteListen(id, { darfPersonen, darfVormerken });
 		// Wie beim Kopf erst prüfen, wenn die Körper gelesen sind: Ist ein jüngerer Titel
 		// inzwischen ganz geladen, lägen diese Listen sonst unter seinem Kopf.
-		const daten = await Promise.all(listen.map(([, antwort]) => leseTeil(antwort)));
 		if (meine !== laufNr) return;
-		/** @type {{ name: string, grund: string }[]} */
-		const fehlend = [];
-		listen.forEach(([name, , setze], i) => {
-			setze(daten[i].wert ?? []);
-			if (daten[i].grund) fehlend.push({ name, grund: daten[i].grund });
-		});
+		ausleiher = werte.Ausleiher ?? [];
+		exemplare = werte.Exemplare ?? [];
+		verlauf = werte.Historie ?? [];
+		vormerkungen = werte.Vormerkungen ?? [];
 		fehlendeListen = fehlend;
 		laedt = false;
 	}
@@ -152,6 +144,12 @@ export function useBuchakte() {
 	}
 
 	return /** @satisfies {object} */ ({
+		get darfPersonen() {
+			return darfPersonen;
+		},
+		get darfVormerken() {
+			return darfVormerken;
+		},
 		get buch() {
 			return buch;
 		},

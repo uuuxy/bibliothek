@@ -3,6 +3,7 @@ import { flushSync } from 'svelte';
 import { useBuchakte } from './useBuchakte.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { appState } from '../../../inventur/lib/store.svelte.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 
 // Die Buch-Akte ruft ladeAlles aus einem $effect (Buchakte.svelte). Vom 06.09.2026, 21:18,
 // bis zum 07.09. lief dieser Effekt in einer Endlosschleife: ladeAlles schrieb `buch = null`,
@@ -19,7 +20,10 @@ import { appState } from '../../../inventur/lib/store.svelte.js';
 //
 // Dieser Test stellt den Effekt nach, mit dem ECHTEN reaktiven Store — die Bedingung, die
 // den Mock der Schwester-Datei zum blinden Fleck machte.
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	apiFetch: vi.fn()
+}));
 
 /** @param {any} body */
 const ok = (body) => /** @type {any} */ ({ ok: true, json: async () => body });
@@ -29,6 +33,7 @@ describe('useBuchakte.ladeAlles in einem $effect', () => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(apiFetch).mockImplementation(async () => ok([]));
 		appState.selectedBook = null;
+		authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
 	});
 
 	it('löst sich nicht selbst aus: ein neues selectedBook-Objekt heißt EIN weiterer Lauf, keine Schleife', async () => {

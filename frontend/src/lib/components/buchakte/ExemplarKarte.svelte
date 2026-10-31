@@ -12,12 +12,13 @@
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
 	 * (Barcode/Status) lokal; Auswahl, Löschen und Etikett laufen über Callbacks zum Eltern-Tab.
 	 * `loescht`: Das Löschen läuft; der Papierkorb ist bis zur Antwort gesperrt.
-	 * @type {{ ex: any, gewaehlt: boolean, darfBearbeiten?: boolean, loescht?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
+	 * @type {{ ex: any, gewaehlt: boolean, darfBearbeiten?: boolean, darfLoeschen?: boolean, loescht?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
 	 */
 	let {
 		ex,
 		gewaehlt,
 		darfBearbeiten = false,
+		darfLoeschen = false,
 		loescht = false,
 		onToggleSelect,
 		onDelete,
@@ -111,18 +112,20 @@
 			<StatusChip {...status} />
 			{#if !zustandBearbeiten}
 				<div class="flex items-center gap-4">
-					<button
-						aria-label="Status ändern"
-						data-tip="Status ändern"
-						class="icon-btn text-on-surface-variant hover:text-primary"
-						onclick={() => {
-							zustandBearbeiten = true;
-						}}
-					>
-						<Pencil class="h-4 w-4" aria-hidden="true" />
-					</button>
+					{#if darfBearbeiten}
+						<button
+							aria-label="Status ändern"
+							data-tip="Status ändern"
+							class="icon-btn text-on-surface-variant hover:text-primary"
+							onclick={() => {
+								zustandBearbeiten = true;
+							}}
+						>
+							<Pencil class="h-4 w-4" aria-hidden="true" />
+						</button>
+					{/if}
 					<!-- Ein ausgesondertes Exemplar ist schon ausgebucht; zurück kommt es über den Status. -->
-					{#if !ex.ist_ausgesondert}
+					{#if darfLoeschen && !ex.ist_ausgesondert}
 						<button
 							aria-label="Exemplar löschen"
 							data-tip="Exemplar löschen"

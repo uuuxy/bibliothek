@@ -147,6 +147,7 @@
 		{#each exemplare as ex (ex.id)}
 			<ExemplarKarte
 				{darfBearbeiten}
+				{darfLoeschen}
 				{ex}
 				gewaehlt={gewaehlteExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useLeserakte } from './useLeserakte.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { serverAntwort } from '../../serverAntwort.js';
 
@@ -32,6 +33,27 @@ describe('useLeserakte.ladeAkte', () => {
 	// ablehnende (Netzwerkfehler-Fall, 15.09.2026) ließ den Aufräumer werfen.
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
+		authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
+	});
+
+	// Die Warteliste hängt an manage_vormerkungen; das Recht der Akte öffnet sie nicht.
+	it('fragt ohne das Recht nicht nach der Warteliste und vermerkt nichts', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'mitarbeiter',
+			permissions: ['view_students']
+		});
+		vi.mocked(apiFetch).mockImplementation(async (url) =>
+			String(url).includes('/schadensfaelle') || String(url).includes('/bescheide')
+				? /** @type {any} */ (ok([]))
+				: /** @type {any} */ (ok({ id: 'A', vorname: 'Anna' }))
+		);
+		const st = useLeserakte();
+		await st.ladeAkte('A');
+
+		const pfade = vi.mocked(apiFetch).mock.calls.map(([pfad]) => String(pfad));
+		expect(pfade.some((p) => p.includes('vormerkungen'))).toBe(false);
+		expect(st.vormerkungen).toEqual([]);
+		expect(st.fehlendeListen).toEqual([]);
 	});
 
 	it('lässt die Gebühren des vorigen Schülers nicht stehen', async () => {

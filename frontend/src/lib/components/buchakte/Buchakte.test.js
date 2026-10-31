@@ -37,6 +37,39 @@ describe('Buchakte: Reiter', () => {
 	});
 });
 
+// Ein Helfer sieht die Exemplare: „habt ihr Band 3 noch da?". Ausleiher nennen Personen.
+describe('Buchakte: ohne das Recht auf Personen', () => {
+	it('zeigt keine Reiter, keinen Zähler der Ausleiher und keine Meldung', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'helfer',
+			permissions: ['perform_actions', 'view_books']
+		});
+		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
+
+		await screen.findByText('verfügbar');
+		expect(screen.queryByRole('tablist')).toBeNull();
+		expect(screen.queryByText('Ausleiher')).toBeNull();
+		expect(screen.queryByRole('alert')).toBeNull();
+		const pfade = vi.mocked(apiFetch).mock.calls.map(([pfad]) => String(pfad));
+		expect(pfade).toEqual(['/api/buecher/titel/A/exemplare']);
+	});
+
+	it('bietet mit dem Recht der Warteliste die Reiter Exemplare und Vormerkungen an', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'helfer',
+			permissions: ['view_books', 'manage_vormerkungen']
+		});
+		const screen = render(Buchakte, { titelId: 'A', onBack: vi.fn() });
+
+		const leiste = await screen.findByRole('tablist', { name: 'Bereiche der Buchakte' });
+		const namen = [...leiste.querySelectorAll('[role="tab"]')].map((r) => r.textContent?.trim());
+		expect(namen).toEqual(['Exemplare (0)', 'Vormerkungen (0)']);
+		expect(screen.getByRole('tab', { name: 'Exemplare (0)' }).getAttribute('aria-selected')).toBe(
+			'true'
+		);
+	});
+});
+
 // „1 von 2 verfügbar" nennt den Bestand; eine Zahl daneben, die auch bestellte und
 // ausgesonderte Exemplare zählte, widersprach ihr („4 Exemplare").
 describe('Buchakte: Zahlen zu den Exemplaren', () => {

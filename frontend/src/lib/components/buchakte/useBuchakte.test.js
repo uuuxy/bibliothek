@@ -6,6 +6,7 @@ import { serverAntwort } from '../../serverAntwort.js';
 import { useBuchakte } from './useBuchakte.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
 import { appState } from '../../../inventur/lib/store.svelte.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 
 // Die Buch-Akte lädt fünf Dinge je Titel: Kopf, Ausleiher, Exemplare, Historie,
 // Vormerkungen. Sie bleibt beim Wechsel MONTIERT — die Omnibox setzt nur
@@ -50,6 +51,42 @@ describe('useBuchakte.ladeAlles', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		appState.selectedBook = null;
+		authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
+	});
+
+	// Ein Helfer darf den Katalog lesen, aber keine Personen sehen: Die Akte fragte trotzdem nach
+	// allen Listen und meldete rot „Nicht geladen: Ausleiher, Historie, Vormerkungen".
+	it('fragt nur nach den Listen, die das Konto sehen darf', async () => {
+		vi.mocked(apiFetch).mockImplementation(antworten('A'));
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'helfer',
+			permissions: ['perform_actions', 'view_books']
+		});
+		const akte = useBuchakte();
+		await akte.ladeAlles('A');
+
+		const pfade = vi.mocked(apiFetch).mock.calls.map(([pfad]) => String(pfad));
+		expect(pfade).toEqual(['/api/books/A', '/api/buecher/titel/A/exemplare']);
+		expect(akte.fehlendeListen).toEqual([]);
+		expect(akte.exemplare).toEqual([{ id: 'e-A' }]);
+		expect(akte.aktiverReiter).toBe('exemplare');
+	});
+
+	it('fragt mit dem Recht der Warteliste auch nach ihr, ohne Personen zu öffnen', async () => {
+		vi.mocked(apiFetch).mockImplementation(antworten('A'));
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'helfer',
+			permissions: ['view_books', 'manage_vormerkungen']
+		});
+		const akte = useBuchakte();
+		await akte.ladeAlles('A');
+
+		const pfade = vi.mocked(apiFetch).mock.calls.map(([pfad]) => String(pfad));
+		expect(pfade).toEqual([
+			'/api/books/A',
+			'/api/buecher/titel/A/exemplare',
+			'/api/vormerkungen?titel_id=A'
+		]);
 	});
 
 	it('lässt den Kopf des vorigen Titels nicht stehen — sonst löscht der Knopf den falschen', async () => {

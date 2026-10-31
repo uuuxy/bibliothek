@@ -22,9 +22,6 @@
 
 	const akte = useBuchakte();
 
-	// Enges Theken-Recht (db/rechte_vorgabe.go): Ohne manage_vormerkungen antwortet die API
-	// mit 403 — dann den Reiter gar nicht erst anbieten statt leer scheitern lassen.
-	const darfVormerken = $derived(hatRecht(authStore.currentUser, 'manage_vormerkungen'));
 	// Die Aktionen der Akte hängen am Recht — vorher sah jeder „Titel bearbeiten" und
 	// „Gesamten Titel löschen", auch wer beides nicht durfte (Knopf → 403).
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
@@ -37,12 +34,14 @@
 	// „Exemplare" zählt den Bestand wie „1 von 2 verfügbar" im Kopf; bestellte und
 	// ausgesonderte stehen im Reiter mit ihrem Wort an der Karte.
 	const reiter = $derived([
-		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.ausleiher.length) },
+		...(akte.darfPersonen
+			? [{ id: 'ausleiher', label: zaehler('Ausleiher', akte.ausleiher.length) }]
+			: []),
 		{ id: 'exemplare', label: zaehler('Exemplare', exemplarZahlen(akte.exemplare).bestand) },
-		...(darfVormerken
+		...(akte.darfVormerken
 			? [{ id: 'vormerkungen', label: zaehler('Vormerkungen', akte.vormerkungen.length) }]
 			: []),
-		{ id: 'historie', label: 'Historie' }
+		...(akte.darfPersonen ? [{ id: 'historie', label: 'Historie' }] : [])
 	]);
 
 	// Der Effekt hängt an genau einer Sache, der Titel-ID. untrack sorgt dafür, dass nichts,
@@ -80,7 +79,7 @@
 	{:else if akte.buch}
 		<BuchakteKopf
 			titel={akte.buch}
-			ausleiher={akte.ausleiher}
+			ausleiher={akte.darfPersonen ? akte.ausleiher : undefined}
 			exemplare={akte.exemplare}
 			onEdit={darfBearbeiten ? akte.bearbeiteTitel : undefined}
 			onDelete={darfLoeschen ? () => akte.loescheTitel(melde, onBack) : undefined}
@@ -93,12 +92,16 @@
 			</p>
 		{/if}
 
-		<Reiter
-			etikett="Bereiche der Buchakte"
-			{reiter}
-			aktiv={akte.aktiverReiter}
-			onwahl={(id) => (akte.aktiverReiter = id)}
-		/>
+		<!-- M3 (Tabs): „Tabs organize groups of related content"; ein einzelner Bereich ist keine
+		     Gruppe, und sein Reiter schaltete nichts um. -->
+		{#if reiter.length > 1}
+			<Reiter
+				etikett="Bereiche der Buchakte"
+				{reiter}
+				aktiv={akte.aktiverReiter}
+				onwahl={(id) => (akte.aktiverReiter = id)}
+			/>
+		{/if}
 
 		<!-- Tab Content -->
 		<div class="w-full">

@@ -15,7 +15,7 @@
 	import { formatEuro } from '../../utils/format.js';
 
 	/** @type {{ leser: any, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
-	let { leser, onLock, offen = { anzahl: 0, summe: 0 } } = $props();
+	let { leser, onLock, offen = undefined } = $props();
 
 	const gesperrt = $derived(ausleiheGesperrt(leser));
 	const kollege = $derived(istKollegium(leser));
@@ -46,15 +46,18 @@
 	{/if}
 
 	<!-- Was der Leser schuldet, ist Kontozustand: Die Zeile steht bei jedem Leser, und „keine"
-	     bleibt still wie „Aktiv". Die Liste dazu trägt der Reiter „Gebühren & Schäden". -->
-	<div class="flex items-center justify-between">
-		<span class="text-base text-on-surface-variant">Offene Forderungen</span>
-		{#if offen.anzahl > 0}
-			<span class="text-sm font-medium text-error">{formatEuro(offen.summe)}</span>
-		{:else}
-			<span class="text-sm text-on-surface-variant">keine</span>
-		{/if}
-	</div>
+	     bleibt still wie „Aktiv". Die Liste dazu trägt der Reiter „Gebühren & Schäden". Die Theke
+	     ohne Akte kennt die Forderungen nicht; „keine" wäre dort eine ungeprüfte Auskunft. -->
+	{#if offen}
+		<div class="flex items-center justify-between">
+			<span class="text-base text-on-surface-variant">Offene Forderungen</span>
+			{#if offen.anzahl > 0}
+				<span class="text-sm font-medium text-error">{formatEuro(offen.summe)}</span>
+			{:else}
+				<span class="text-sm text-on-surface-variant">keine</span>
+			{/if}
+		</div>
+	{/if}
 
 	{#if onLock}
 		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Der Knopf hebt jede Sperre am

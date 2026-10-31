@@ -4,6 +4,7 @@ import { flushSync } from 'svelte';
 vi.mock('../../apiFetch.js', async (original) => ({ ...(await original()), apiFetch: vi.fn() }));
 
 import { apiFetch } from '../../apiFetch.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 import { useLeserakte } from './useLeserakte.svelte.js';
 
 // Solange „Stammdaten bearbeiten" offen ist, lädt die Akte desselben Lesers nicht neu: An der
@@ -14,6 +15,7 @@ import { useLeserakte } from './useLeserakte.svelte.js';
 const ok = (body) => ({ ok: true, json: async () => body });
 
 beforeEach(() => {
+	authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
 	vi.mocked(apiFetch).mockReset();
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);

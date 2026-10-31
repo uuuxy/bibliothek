@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, fireEvent, waitFor, cleanup } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', async (original) => ({
 	...(await original()),
@@ -20,6 +20,7 @@ describe('Exemplarkarte: Zustand', () => {
 			ex: { id: 'e1', barcode_id: 'B-0041873', ist_verfuegbar: true, ...ex },
 			gewaehlt: false,
 			darfBearbeiten: true,
+			darfLoeschen: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}
 		});
@@ -48,6 +49,40 @@ describe('Exemplarkarte: Zustand', () => {
 	});
 });
 
+// Ein Helfer darf den Bestand lesen. Stift und Papierkorb brächten ihm nur eine Ablehnung des Servers.
+describe('Exemplarkarte: Knöpfe nach Rechten', () => {
+	const ex = { id: 'e1', barcode_id: 'B-1', ist_ausleihbar: true, ist_verfuegbar: true };
+	const karte = (/** @type {Record<string, boolean>} */ rechte) =>
+		render(ExemplarKarte, {
+			ex,
+			gewaehlt: false,
+			...rechte,
+			onToggleSelect: vi.fn(),
+			onDelete: vi.fn()
+		});
+	const knopf = (/** @type {any} */ k, /** @type {string} */ name) =>
+		k.queryByRole('button', { name }) !== null;
+
+	it('zeigt ohne Rechte nur die Angaben', () => {
+		const k = karte({});
+		expect(knopf(k, 'Status ändern')).toBe(false);
+		expect(knopf(k, 'Exemplar löschen')).toBe(false);
+		expect(knopf(k, 'Barcode zuweisen oder ändern')).toBe(false);
+		expect(k.getByText('B-1')).toBeTruthy();
+	});
+
+	it('bietet das Ändern mit edit_books an, das Löschen erst mit delete_books', () => {
+		const nurAendern = karte({ darfBearbeiten: true });
+		expect(knopf(nurAendern, 'Status ändern')).toBe(true);
+		expect(knopf(nurAendern, 'Exemplar löschen')).toBe(false);
+		cleanup();
+
+		const nurLoeschen = karte({ darfLoeschen: true });
+		expect(knopf(nurLoeschen, 'Status ändern')).toBe(false);
+		expect(knopf(nurLoeschen, 'Exemplar löschen')).toBe(true);
+	});
+});
+
 // Lehnt der Server einen Barcode ab, steht sein Grund ungekürzt am Feld und ist dessen
 // Beschreibung: Ein Screenreader liest ihn mit dem Feld vor.
 describe('Exemplarkarte: abgelehnter Barcode', () => {
@@ -58,6 +93,7 @@ describe('Exemplarkarte: abgelehnter Barcode', () => {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
 			gewaehlt: false,
 			darfBearbeiten: true,
+			darfLoeschen: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}
 		});
@@ -107,6 +143,7 @@ describe('Exemplarkarte: leerer Barcode', () => {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
 			gewaehlt: false,
 			darfBearbeiten: true,
+			darfLoeschen: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}
 		});
@@ -175,6 +212,7 @@ describe('Exemplarkarte: zweiter Scan während des Speicherns', () => {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
 			gewaehlt: false,
 			darfBearbeiten: true,
+			darfLoeschen: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}
 		});
@@ -206,6 +244,7 @@ describe('Exemplarkarte: zweiter Scan während des Speicherns', () => {
 			ex: { id: 'e1', barcode_id: 'AUTO-000123', ist_ausleihbar: true, ist_verfuegbar: true },
 			gewaehlt: false,
 			darfBearbeiten: true,
+			darfLoeschen: true,
 			onToggleSelect: () => {},
 			onDelete: () => {}
 		});

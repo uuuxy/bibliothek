@@ -57,6 +57,15 @@ describe('LeserKontoStatus', () => {
 		expect(screen.queryByText('keine')).toBeNull();
 	});
 
+	// Die Theke ohne Akte kennt die Forderungen nicht und sagt nichts dazu.
+	it('schweigt zu den Forderungen, wenn sie niemand geladen hat', () => {
+		const screen = render(LeserKontoStatus, { leser: { art: 'schueler' } });
+
+		expect(screen.getByText('Aktiv')).toBeTruthy();
+		expect(screen.queryByText('Offene Forderungen')).toBeNull();
+		expect(screen.queryByText('keine')).toBeNull();
+	});
+
 	it('sagt „keine", wenn nichts offen ist — auch beim Kollegen', () => {
 		for (const art of ['schueler', 'lehrkraft']) {
 			const screen = render(LeserKontoStatus, {

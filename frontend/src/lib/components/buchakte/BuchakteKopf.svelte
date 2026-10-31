@@ -19,14 +19,21 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} titel
-	 * @property {any[]} ausleiher
+	 * @property {any[]} [ausleiher] fehlt, wenn das Konto Ausleiher nicht sehen darf; „0" wäre dann
+	 *   eine Aussage über den Bestand, die niemand geprüft hat
 	 * @property {any[]} exemplare
 	 * @property {(() => void) | undefined} [onEdit] nur mit edit_books
 	 * @property {(() => Promise<unknown> | void) | undefined} [onDelete] nur mit delete_books
 	 */
 
 	/** @type {Props} */
-	let { titel, ausleiher, exemplare, onEdit = undefined, onDelete = undefined } = $props();
+	let {
+		titel,
+		ausleiher = undefined,
+		exemplare,
+		onEdit = undefined,
+		onDelete = undefined
+	} = $props();
 
 	let copied = $state(false);
 
@@ -107,10 +114,12 @@
 				</dd>
 				<dt class="text-xs text-on-surface-variant">verfügbar</dt>
 			</div>
-			<div class="px-6">
-				<dd class="text-lg font-semibold tabular-nums text-on-surface">{ausleiher.length}</dd>
-				<dt class="text-xs text-on-surface-variant">Ausleiher</dt>
-			</div>
+			{#if ausleiher}
+				<div class="px-6">
+					<dd class="text-lg font-semibold tabular-nums text-on-surface">{ausleiher.length}</dd>
+					<dt class="text-xs text-on-surface-variant">Ausleiher</dt>
+				</div>
+			{/if}
 			{#if bestellt > 0}
 				<div class="pl-6">
 					<dd class="text-lg font-semibold tabular-nums text-on-surface">{bestellt}</dd>
