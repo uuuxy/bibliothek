@@ -2,7 +2,13 @@ import { tick } from 'svelte';
 import { apiFetch, leseApiFehler } from '../apiFetch.js';
 import { fehlertext } from '../utils/fehlertext.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
-import { applyDesign, designWurdeGeladen } from './idDesignerStore.svelte.js';
+import {
+	applyDesign,
+	designWurdeGeladen,
+	idStore,
+	PLATZHALTER_ADRESSE,
+	PLATZHALTER_SCHULNAME
+} from './idDesignerStore.svelte.js';
 
 /** @type {Promise<boolean> | null} */
 let lauf = null;
@@ -51,6 +57,16 @@ export function meldeDesignNichtGeladen() {
 	);
 }
 
+/** Steht auf der Vorderseite noch die Musterschule? Dann fehlt die Schule in den Einstellungen. */
+function tragtMusterkopf() {
+	return idStore.front.elements.some(
+		(e) =>
+			e.show &&
+			((e.id === 'header' && e.content === PLATZHALTER_SCHULNAME) ||
+				(e.id === 'address' && e.content === PLATZHALTER_ADRESSE))
+	);
+}
+
 /**
  * Vor jedem Druck von Ausweisen: Ohne das gespeicherte Design käme die Karte mit den
  * Standardwerten aus dem Drucker. Fehlt es noch, wird es jetzt geladen; scheitert das, steht
@@ -73,6 +89,14 @@ export async function designFuerDruck() {
 		/** @type {NodeListOf<HTMLImageElement>} */
 		const bilder = document.querySelectorAll('.print-card-box img');
 		await Promise.all([...bilder].map((bild) => bild.decode().catch(() => {})));
+	}
+	// Gedruckt wird trotzdem: Der Druckdialog zeigt die Karte, und wer gerade drucken muss, soll es
+	// können. Ohne den Satz fiele die falsche Schule erst an der fertigen Karte auf.
+	if (tragtMusterkopf()) {
+		snackbars.addToast(
+			'Auf dem Ausweis steht noch die Musterschule. Name und Anschrift fehlen in den Einstellungen unter „Schule“.',
+			'warning'
+		);
 	}
 	return true;
 }

@@ -5,7 +5,11 @@ import {
 	ladeAusweisDesign,
 	meldeDesignNichtGeladen
 } from './ausweisDesignLaden.js';
-import { idStore, vergissDesignLadezustand } from './idDesignerStore.svelte.js';
+import {
+	defaultFrontElements,
+	idStore,
+	vergissDesignLadezustand
+} from './idDesignerStore.svelte.js';
 import { apiFetch } from '../apiFetch.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
 import { ohneKommentare, relPfad, sammleQuelldateien, srcRoot } from '../hygiene-quellen.js';
@@ -129,7 +133,9 @@ describe('designFuerDruck', () => {
 	});
 
 	it('lädt ein fehlendes Design vor dem Druck nach und wartet auf die Bilder der Karten', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort({ printMode: 'card' }));
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort({ printMode: 'card', schule: { name: 'Schule', adresse: 'Weg 1' } })
+		);
 		const { bild, bildIstDa } = karteMitBild();
 		let frei = false;
 
@@ -155,6 +161,34 @@ describe('designFuerDruck', () => {
 		document.body.append(karte);
 
 		expect(await designFuerDruck()).toBe(true);
+	});
+});
+
+// Ohne Namen in den Einstellungen bleibt der Platzhalter auf der Karte. Gedruckt wird trotzdem,
+// aber nicht ohne ein Wort.
+describe('designFuerDruck: Musterschule auf der Karte', () => {
+	it('warnt, wenn die Schule in den Einstellungen fehlt', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort({ front: { elements: defaultFrontElements() } }));
+
+		expect(await designFuerDruck()).toBe(true);
+
+		expect(snackbars.addToast).toHaveBeenCalledWith(
+			expect.stringContaining('Musterschule'),
+			'warning'
+		);
+	});
+
+	it('schweigt, wenn die Schule eingetragen ist', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort({
+				front: { elements: defaultFrontElements() },
+				schule: { name: 'Philipp-Reis-Schule', adresse: 'Schulstraße 1, 61476 Kronberg' }
+			})
+		);
+
+		expect(await designFuerDruck()).toBe(true);
+
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 });
 
