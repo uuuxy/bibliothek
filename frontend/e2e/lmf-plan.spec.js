@@ -41,9 +41,37 @@ test.afterEach(() => {
 	seedSQL(`DELETE FROM leser WHERE barcode_id LIKE 'S-PLAN-%-${marke}';`);
 });
 
-const ERSTER_TAG = new Date(2027, 7, 9); // Montag 09.08.2027 — erster Schultag nach den Ferien
+// Ein Montag im August des nächsten Jahres: Ein Plan in der Vergangenheit bliebe nicht als Entwurf
+// stehen, der Planer schlüge einen neuen vor.
+const ERSTER_TAG = (() => {
+	const tag = new Date(new Date().getFullYear() + 1, 7, 9);
+	tag.setDate(tag.getDate() + ((8 - tag.getDay()) % 7));
+	return tag;
+})();
 const STARTSTUNDE = 2; // Vorgabe des Planers (Plan 2026 der Schule: Mo 10.08., 2. Std.)
 const STUNDEN_JE_TAG = 6;
+
+/** Der Tag, der n Kalendertage nach dem ersten Tag liegt. */
+function tagNach(/** @type {number} */ n) {
+	const tag = new Date(ERSTER_TAG);
+	tag.setDate(tag.getDate() + n);
+	return tag;
+}
+
+/** JJJJ-MM-TT, wie ihn ein Datumsfeld und der Server führen. */
+function iso(/** @type {Date} */ tag) {
+	const zwei = (/** @type {number} */ z) => String(z).padStart(2, '0');
+	return `${tag.getFullYear()}-${zwei(tag.getMonth() + 1)}-${zwei(tag.getDate())}`;
+}
+
+/** TT.MM.JJ, wie ihn der Planer zeigt. */
+function kurz(/** @type {Date} */ tag) {
+	return new Intl.DateTimeFormat('de-DE', {
+		day: '2-digit',
+		month: '2-digit',
+		year: '2-digit'
+	}).format(tag);
+}
 
 /**
  * Wählt eine Aktion aus dem Überlaufmenü einer Zeile des Planers.
@@ -62,15 +90,10 @@ async function zeilenAktion(page, zeile, nummer, eintrag) {
 function erwarteterPlatz(/** @type {number} */ nummer) {
 	const platz = nummer - 1 + (STARTSTUNDE - 1);
 	const schultag = Math.floor(platz / STUNDEN_JE_TAG);
-	const datum = new Date(ERSTER_TAG);
-	datum.setDate(datum.getDate() + schultag + 2 * Math.floor(schultag / 5));
+	const datum = tagNach(schultag + 2 * Math.floor(schultag / 5));
 	return {
 		wochentag: new Intl.DateTimeFormat('de-DE', { weekday: 'long' }).format(datum),
-		datum: new Intl.DateTimeFormat('de-DE', {
-			day: '2-digit',
-			month: '2-digit',
-			year: '2-digit'
-		}).format(datum),
+		datum: kurz(datum),
 		stunde: `${(platz % STUNDEN_JE_TAG) + 1}. Std.`
 	};
 }
@@ -123,11 +146,11 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		'nicht die letzte Zeile'
 	).toBeGreaterThan(nummer);
 
-	// Ersten Tag setzen (vorbelegt ist der erste Schultag nach den nächsten Ferien, hier
-	// fest 2027, damit die Rechnung steht): Die Vorschau vom Server gibt der Zeile den
+	// Ersten Tag setzen (vorbelegt ist der erste Schultag nach den nächsten Ferien, hier fest
+	// ein Montag, damit die Rechnung steht): Die Vorschau vom Server gibt der Zeile den
 	// Platz, der ihrer Nummer entspricht — Wochenende übersprungen, 6 Stunden je Tag,
 	// am ersten Tag ab der 2. Stunde (Vorgabe).
-	await page.getByLabel('Erster Tag').fill('2027-08-09');
+	await page.getByLabel('Erster Tag').fill(iso(ERSTER_TAG));
 	await expect(page.getByLabel('Beginn am ersten Tag')).toContainText('2. Stunde');
 	let soll = erwarteterPlatz(nummer);
 	await expect(zeile).toContainText(soll.wochentag);
@@ -183,7 +206,9 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	// Gespeichert ist ein ENTWURF (Migration 100): sichtbar nur hier, nicht im Portal.
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Entwurf vom 09.08.27');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText(
+		`Entwurf vom ${kurz(ERSTER_TAG)}`
+	);
 	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht veröffentlicht');
 
 	// Das Kollegium sieht denselben Plan im Portal — ohne edit_books, nur mit Sitzung —
@@ -237,7 +262,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		// Schreiben ist der Rolle verwehrt — auch die Vorschau.
 		const verboten = await lehrer.request.put('/api/lmf-plan/ausgabe', {
 			data: {
-				erster_tag: '2027-08-10',
+				erster_tag: iso(tagNach(1)),
 				startstunde: 2,
 				stunden_je_tag: 6,
 				vorschau: true,
@@ -273,21 +298,21 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 
 	const tabelle = page.getByTestId('lmf-reihenfolge');
 	const erste = tabelle.getByRole('row').nth(1);
-	await page.getByLabel('Erster Tag').fill('2027-08-09'); // Montag
-	await expect(erste).toContainText('09.08.27');
+	await page.getByLabel('Erster Tag').fill(iso(ERSTER_TAG)); // Montag
+	await expect(erste).toContainText(kurz(ERSTER_TAG));
 
 	// Der erste Tag wird freigehalten — Chip „Tag freihalten", Dialogfenster, „Freihalten"
 	// (06.09.2026): Der Plan beginnt am Dienstag, der Grund steht da.
 	await page.getByRole('button', { name: 'Tag freihalten' }).click();
-	await page.getByLabel('Freier Tag').fill('2027-08-09');
+	await page.getByLabel('Freier Tag').fill(iso(ERSTER_TAG));
 	await page.getByLabel('Grund', { exact: true }).fill('Pädagogischer Tag');
 	await page.getByRole('button', { name: 'Freihalten', exact: true }).click();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(erste).toContainText('Dienstag');
-	await expect(erste).toContainText('10.08.27');
+	await expect(erste).toContainText(kurz(tagNach(1)));
 	await expect(page.getByTestId('lmf-ausfaelle')).toContainText('Pädagogischer Tag');
 
-	// Unsere Klasse hat am Freitag 20.08. ihren Termin — fest, egal wo sie in der
+	// Unsere Klasse hat am Freitag der zweiten Woche ihren Termin — fest, egal wo sie in der
 	// Reihenfolge steht. Der Weg ist die Zelle selbst (Absprache vom 06.09.2026: „einfach
 	// anklicken um es zu ändern … statt immer über die 3 Punkte rechts"): Klick auf das
 	// Datum legt die Zeile fest, vorbelegt mit ihrem Platz, der Fokus liegt im Datumsfeld.
@@ -304,7 +329,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 		),
 		'vorbelegt mit dem Platz der Zeile'
 	).toBe(vorher.trim());
-	await festerTag.fill('2027-08-20');
+	await festerTag.fill(iso(tagNach(11)));
 	await expect(zeile).toContainText('Freitag');
 	// Die Zeile darunter fließt weiter: Sie bekommt den Platz, den die feste Zeile hatte.
 	const naechste = tabelle.getByRole('row').nth(nummer + 1);
@@ -334,21 +359,25 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(zeile).toContainText('Freitag');
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Entwurf vom 09.08.27');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText(
+		`Entwurf vom ${kurz(ERSTER_TAG)}`
+	);
 	try {
 		const stand = await (await page.request.get('/api/lmf-plan/ausgabe')).json();
 		const gespeichert = stand.zeilen.find((/** @type {any} */ z) => z.klassen.includes(klasse));
 		expect(gespeichert?.fest, 'fest-Marke im gespeicherten Plan').toBe(true);
-		expect(gespeichert?.datum).toBe('2027-08-20');
-		expect(stand.plan.freie_tage).toEqual([{ datum: '2027-08-09', grund: 'Pädagogischer Tag' }]);
+		expect(gespeichert?.datum).toBe(iso(tagNach(11)));
+		expect(stand.plan.freie_tage).toEqual([{ datum: iso(ERSTER_TAG), grund: 'Pädagogischer Tag' }]);
 
 		// Nach dem Neuladen ist der feste Platz wieder ein Eingabefeld mit seinem Datum.
 		await page.reload();
 		await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
 		await expect(
 			tabelle.getByRole('row').filter({ hasText: klasse }).getByLabel(`Fester Tag Zeile ${nummer}`)
-		).toHaveValue('2027-08-20');
-		await expect(page.getByTestId('lmf-freie-tage')).toContainText('09.08.27 Pädagogischer Tag');
+		).toHaveValue(iso(tagNach(11)));
+		await expect(page.getByTestId('lmf-freie-tage')).toContainText(
+			`${kurz(ERSTER_TAG)} Pädagogischer Tag`
+		);
 	} finally {
 		seedSQL(`DELETE FROM lmf_plaene WHERE art = 'ausgabe';`);
 	}
