@@ -43,14 +43,19 @@
 	const darfKorrigieren = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	async function laden() {
-		laedt = true;
+		// Beim Aktualisieren bleibt die Ansicht stehen, auch wenn der Abruf scheitert (die Meldung
+		// zeigt apiGet): Baute sie sich neu auf, wäre der Link weg, der nur einmal zu sehen ist.
+		const ersterAbruf = !bestellung;
+		laedt = ersterAbruf;
 		fehler = '';
 		try {
 			bestellung = await apiGet(`/api/bestellhistorie/${bestellungId}`);
 		} catch (e) {
 			// Ein veralteter Verweis liefert 404. Die Meldung nennt den Rückweg, statt eine
 			// leere Seite stehen zu lassen, die aussieht wie eine leere Bestellung.
-			fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden.';
+			if (ersterAbruf) {
+				fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden.';
+			}
 		} finally {
 			laedt = false;
 		}

@@ -155,6 +155,46 @@ test('Ein abgelaufener Link ist tot — auch wenn die Bestellung existiert', asy
 // Der Kreis schliesst sich erst hier: Was nützt die Bestätigung des Händlers, wenn sie im
 // Haus niemand sieht? Vorher stand der Status IN der Lieferantenspalte, die truncate
 // trägt — das Chip war auf wenige Pixel zerquetscht und praktisch unlesbar.
+// Der Link steht nur einmal da: In der Datenbank liegt bloß sein Hash. Baut das Neuladen danach die
+// Ansicht neu auf, ist er weg und der alte schon tot; am Server allein sieht das niemand.
+test('Im Haus einen neuen Link erzeugen: Er steht da und trägt, der alte ist tot', async ({
+	page,
+	baseURL
+}) => {
+	const adresseVorher = querySQL(
+		`SELECT wert FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse'`
+	);
+	seedSQL(`INSERT INTO system_einstellungen (schluessel, wert)
+		VALUES ('oeffentliche_adresse', '${baseURL}')
+		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;`);
+	const alterToken = `E2E-ALT-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(alterToken);
+	try {
+		await uiLogin(page);
+		await menuepunkt(page, 'Bestellungen').click();
+		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
+		await page.getByRole('button', { name: new RegExp(`bei E2E-Naacher ${s} öffnen`) }).click();
+		await page.getByRole('button', { name: 'Neuen Link erzeugen' }).click();
+
+		const feld = page.getByLabel('Bestätigungs-Link');
+		await expect(feld).toHaveValue(new RegExp(`^${baseURL}/bestellung/.+`));
+		await expect(page.getByText(/^Nur jetzt sichtbar/)).toBeVisible();
+		const neuerPfad = new URL(await feld.inputValue()).pathname;
+
+		await page.goto(`/bestellung/${alterToken}`);
+		await expect(page.getByText('Dieser Link ist nicht mehr gültig')).toBeVisible();
+		await page.goto(neuerPfad);
+		await expect(page.getByRole('button', { name: 'Bestellung jetzt bestätigen' })).toBeVisible();
+	} finally {
+		seedSQL(
+			adresseVorher === ''
+				? `DELETE FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse';`
+				: `UPDATE system_einstellungen SET wert = '${adresseVorher}'
+				   WHERE schluessel = 'oeffentliche_adresse';`
+		);
+	}
+});
+
 test('Die Bestellung erscheint im Haus als bestätigt — ohne die Zeile aufzuklappen', async ({
 	page
 }) => {
