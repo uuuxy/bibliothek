@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -223,6 +224,8 @@ func TestImportiereZeilen_SignaturAmVorhandenenTitel(t *testing.T) {
 // Regel nicht davon abhängen darf, welchen der zwei die Datenbank zuerst liefert.
 func TestImportiereZeilen_DoppelteISBNTrifftDenTitelInNormalform(t *testing.T) {
 	pool := pgtest.Pool(t)
+	// Die ISBN der Fälle ist eindeutig in der Tabelle, und ein anderer Test lässt sie stehen.
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	faelle := []struct {
