@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 30.10.2026
+Stand: 31.10.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -25,6 +25,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   nachsehen: Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
+- [ ] Die Läufe unter anderen Bedingungen wiederholen, wenn die übrigen Änderungen drin sind. (7.15)
 - [ ] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
 ### Bei dir
@@ -209,6 +210,15 @@ Stand 26937182 (ein Schultag mit zehn Theken über sechs Stunden, mit Neustart d
 einer Theke ohne Netz; Ergebnis in [ARCHITEKTUR.md](ARCHITEKTUR.md) 10.3), dazu die Rechte je
 Rolle über alle Routen und kaputte Rümpfe an jeder Tür. Die Skripte kommen nicht ins Repository
 (bf8f0580); fehlen sie, werden sie neu geschrieben, der Aufbau steht in ARCHITEKTUR 8.14.
+
+### 7.15 Läufe unter anderen Bedingungen wiederholen
+
+Entschieden am 31.10.2026: Die Läufe aus [sweeps.md](sweeps.md), „Prüfung der Prüfungen", Punkte 6
+bis 12, laufen noch einmal, wenn die übrigen Änderungen drin sind, vor dem Lasttest. Der erste
+Durchgang (b7a4fd5c bis ae68dac9) fand 14 Fehler hinter grünen Tests. Von selbst laufen nur die
+zufällige Reihenfolge und der Rundgang je Rolle (`e2e/rundgang-rollen.spec.js`); bei den übrigen
+muss jemand die Funde lesen, oder sie werden auch ohne Fehler rot. Die Skripte stehen nicht im
+Repository; fehlen sie, werden sie nach den Punkten dort neu geschrieben.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
