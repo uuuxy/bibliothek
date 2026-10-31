@@ -38,7 +38,7 @@ describe('erzeugeAusweisdruck: lädt das zentrale Design selbst', () => {
 		const druck = erzeugeAusweisdruck();
 		await stillhalten();
 
-		expect(apiFetch).toHaveBeenCalledWith('/api/ausweis-layout');
+		expect(apiFetch).toHaveBeenCalledWith('/api/ausweis-layout', undefined);
 		expect(druck.etikettModus).toBe(true);
 		expect(druck.maxPosition).toBe(24); // avery_3475: 3×8
 	});
