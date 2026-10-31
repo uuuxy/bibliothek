@@ -428,8 +428,10 @@ echte Fehler oder falsche Tests gefunden; alle laufen auf einer Wegwerf-Instanz 
 7. **Andere Kalendertage:** Eine Kopie der Go-Toolchain, deren `time.Now` einen Versatz aus der
    Umgebung addiert, Postgres unter `libfaketime` und in der Seite ein verschobenes `Date`. Gefahren
    an Monatsenden, Schaltjahr, Umstellung der Uhr, Schuljahreswechsel, in der Saison der Abgänger und
-   Jahre voraus. Die Nachtläufe gehen dazu Woche für Woche über mehrere Schuljahre eines Bestands,
-   mit den Zusagen nach jedem Schritt: keine offene Ausleihe und keine offene Forderung ohne Person,
+   Jahre voraus. Das `Date` des Test-Prozesses läuft mit: Sonst rechnet ein Test sein Soll mit dem
+   heutigen Tag, und die Zeitgeber von `page.clock` laufen über, sobald Seite und Test mehr als
+   2^31 ms auseinanderliegen. Die Nachtläufe gehen dazu Woche für Woche über mehrere Schuljahre
+   eines Bestands, mit den Zusagen nach jedem Schritt: keine offene Ausleihe und keine offene Forderung ohne Person,
    kein aktives Konto gelöscht, nichts anonymisiert, was nicht weg ist.
 8. **Felder, die nie kommen:** Die Antworten der Schnittstelle in der Seite als Proxy umhüllen und
    über die ganze Suite sammeln, was gelesen wird und in keiner Antwort stand. Am Go-Code einordnen:
