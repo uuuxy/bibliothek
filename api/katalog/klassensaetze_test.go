@@ -453,7 +453,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 		{
 			name:           "Class Name Too Long",
 			method:         "POST",
-			rumpf:          `{"className": "ThisClassNameIsWayTooLong", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:          `{"classNames": ["ThisClassNameIsWayTooLong"], "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "Der Name einer Klasse hat höchstens 20 Zeichen",
@@ -461,7 +461,7 @@ func TestKlassensaetzeAendern(t *testing.T) {
 		{
 			name:   "Database Error",
 			method: "POST",
-			rumpf:  `{"className": "5A", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:  `{"classNames": ["5A"], "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin().WillReturnError(errTest)
 			},
@@ -469,9 +469,9 @@ func TestKlassensaetzeAendern(t *testing.T) {
 			expectedBody:   "Ein interner Serverfehler ist aufgetreten",
 		},
 		{
-			name:   "Success single className",
+			name:   "Success with oldClassName",
 			method: "POST",
-			rumpf:  `{"oldClassName": "5A", "className": "5B", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
+			rumpf:  `{"oldClassName": "5A", "classNames": ["5B"], "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = \\$1$").

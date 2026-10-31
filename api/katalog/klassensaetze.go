@@ -42,7 +42,6 @@ func (t *Tueren) KlassensaetzeAendern() http.HandlerFunc {
 func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 	var eingabe struct {
 		AlteKlasse string   `json:"oldClassName,omitempty"`
-		Klasse     string   `json:"className,omitempty"` // die ältere Form des Rumpfs mit einer Klasse
 		Klassen    []string `json:"classNames,omitempty"`
 		TitelIDs   []string `json:"bookIds"`
 	}
@@ -52,17 +51,12 @@ func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Der Rumpf nennt eine Klasse (className) oder mehrere (classNames).
 	var zielKlassen []string
-	if len(eingabe.Klassen) > 0 {
-		for _, name := range eingabe.Klassen {
-			bereinigt := strings.TrimSpace(name)
-			if bereinigt != "" {
-				zielKlassen = append(zielKlassen, normalisiereKlassenname(bereinigt))
-			}
+	for _, name := range eingabe.Klassen {
+		bereinigt := strings.TrimSpace(name)
+		if bereinigt != "" {
+			zielKlassen = append(zielKlassen, normalisiereKlassenname(bereinigt))
 		}
-	} else if strings.TrimSpace(eingabe.Klasse) != "" {
-		zielKlassen = append(zielKlassen, normalisiereKlassenname(strings.TrimSpace(eingabe.Klasse)))
 	}
 
 	if len(zielKlassen) == 0 {

@@ -35,7 +35,7 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 	}{
 		{"Bücher löschen", tueren.MarkierteTitelLoeschen(), http.MethodDelete, `{"ids":["x"]}`},
 		{"Klassenbücher hinzufügen", tueren.KlassensaetzeZuordnen(), http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
-		{"Klassenbücher ändern", tueren.KlassensaetzeAendern(), http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
+		{"Klassenbücher ändern", tueren.KlassensaetzeAendern(), http.MethodPut, `{"classNames":["05G1"],"bookIds":["x"]}`},
 		{"Cover neu laden", tueren.FremdeCoverNeuLaden(), http.MethodPost, `{"ids":["x"]}`},
 		// Besteht uuid.Validate, Postgres weist sie ab (api/uuid_eingaben_test.go, urnForm).
 		{"Bücher löschen, urn-Form", tueren.MarkierteTitelLoeschen(), http.MethodDelete, `{"ids":["urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"]}`},
