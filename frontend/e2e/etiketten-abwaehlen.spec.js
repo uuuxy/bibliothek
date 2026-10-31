@@ -23,7 +23,10 @@ async function juengsterAuftrag(page) {
 }
 /** @type {(() => void) | undefined} */
 let aufraeumen;
-test.afterEach(() => {
+test.afterEach(async ({ page }) => {
+	// Die Vorschau holt nach jeder Änderung einen neuen Bogen. Läuft einer noch, wenn der Test endet,
+	// scheitert der Haken an der geschlossenen Seite, und der Test wird rot, ohne dass etwas fehlt.
+	await page.unrouteAll({ behavior: 'ignoreErrors' });
 	aufraeumen?.();
 	aufraeumen = undefined;
 });
