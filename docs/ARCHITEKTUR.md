@@ -2497,6 +2497,18 @@ sieht.
     verlangt `manage_settings`, und `GET /api/reservierungen/klassensatz/offen` gehört zum Portal
     und trägt keine Kennung der Reservierung; erledigt wird über
     `GET /api/reservierungen/klassensatz`.
+- **Echte CSV aus Excel für Mac.** Ohne Hand am Programm über AppleScript: `make new workbook`, Zellen
+  setzen, `save workbook as active workbook filename "<Pfad mit Doppelpunkten>" file format CSV file format`,
+  ebenso `CSV Mac file format`, `CSV MSDos file format`, `CSV Windows file format`. Nach dem ersten Speichern
+  trägt die Mappe einen anderen Namen; eine gemerkte Referenz läuft dann ins Leere, `active workbook` nicht.
+  Ohne Rückfrage der Sandbox schreibt Excel nur in `~/Library/Containers/com.microsoft.Excel/Data/Documents`.
+- **Die Suite hinter Caddy mit TLS.** Den Block der Bibliothek aus `update_caddy.sh` übernehmen, Adresse
+  `localhost`, Ziel `host.docker.internal:<Port>`, dazu global `local_certs` und
+  `auto_https disable_redirects`; `E2E_BASE_URL=https://localhost:<Port>`, in Playwright `ignoreHTTPSErrors`
+  und `--ignore-certificate-errors`, sonst scheitert der Service Worker am Zertifikat.
+- **Wegwerf-Backend neben einem alten.** Hält ein altes Backend den Port, endet das neue still, und `/health`
+  antwortet das alte, samt Zwischenspeicher der Rechte aus dem vorigen Lauf. Ein 502 statt 403 auf der Tür
+  der Testmail war so ein Rest. Vor dem Start den Port frei machen und prüfen, dass der neue Prozess lebt.
 
 ---
 

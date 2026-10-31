@@ -34,6 +34,7 @@ Nur, was kein Test leisten kann.
 
 - [x] Freigeben: Pull Requests #760 und #762 schließen; keiner zeigt am alten Stand einen Fehler.
   (5.111)
+- [ ] Pull Request #763 schließen: derselbe Vorschlag wie #759, am Code nachgeprüft. (5.112)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -79,6 +80,13 @@ Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zei
 Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
+
+### 5.112 Pull Request #763
+
+Senkt `maxMemory` von `ParseMultipartForm` an fünf Stellen auf 1 MB, wie #759. Alle fünf begrenzen die
+Anfrage schon vorher mit `http.MaxBytesReader` auf dieselbe Grenze. Mit 1 MB legte Go jede größere Datei
+als Zwischendatei auf die Platte, beim LUSD-Import samt Schülerdaten, und gosec meldet G120 dort auch mit
+der Änderung; die Regel ist in `scripts/gosec-gate.sh` deshalb ausgenommen.
 
 ### 7.2 Frisches Littera-Backup
 
@@ -214,7 +222,7 @@ Rolle über alle Routen und kaputte Rümpfe an jeder Tür. Die Skripte kommen ni
 ### 7.15 Läufe unter anderen Bedingungen wiederholen
 
 Entschieden am 31.10.2026: Die Läufe aus [sweeps.md](sweeps.md), „Prüfung der Prüfungen", Punkte 6
-bis 12, laufen noch einmal, wenn die übrigen Änderungen drin sind, vor dem Lasttest. Der erste
+bis 14, laufen noch einmal, wenn die übrigen Änderungen drin sind, vor dem Lasttest. Der erste
 Durchgang (b7a4fd5c bis ae68dac9) fand 14 Fehler hinter grünen Tests. Von selbst laufen nur die
 zufällige Reihenfolge und die Rundgänge je Rolle und je Recht (`e2e/rundgang-rollen.spec.js`,
 `e2e/rundgang-rechte.spec.js`); bei den übrigen
