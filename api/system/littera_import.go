@@ -84,11 +84,19 @@ func leseTabellarischeDaten(dateiname string, inhalt []byte) (zeilen [][]string,
 		return zeilen, true, nil
 	}
 
-	zeilen, err = csvutil.BaueLeser(inhalt, service.ImportTrennzeichen).ReadAll()
+	zeilen, err = leseCSVZeilen(inhalt)
 	if err != nil {
 		return nil, false, apierrors.BadRequest(csvLesefehlerMeldung(err), err)
 	}
 	return zeilen, false, nil
+}
+
+func leseCSVZeilen(inhalt []byte) ([][]string, error) {
+	leser, err := csvutil.BaueLeser(inhalt, service.ImportTrennzeichen)
+	if err != nil {
+		return nil, err
+	}
+	return leser.ReadAll()
 }
 
 // importKopfMitPflichtspalten baut die Spaltenzuordnung und prüft die
@@ -228,7 +236,7 @@ func (t *Tueren) importiereBestand(w http.ResponseWriter, r *http.Request) {
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 		return
 	}
-	zeilen, err := csvutil.BaueLeser(inhalt, service.ImportTrennzeichen).ReadAll()
+	zeilen, err := leseCSVZeilen(inhalt)
 	if err != nil {
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, csvLesefehlerMeldung(err), err)
 		return
@@ -314,6 +322,9 @@ func meldungHochladen(maxBytes int64) string {
 // csvLesefehlerMeldung nennt die Zeile, an der das Lesen der CSV-Datei scheiterte; der Text von
 // encoding/csv geht nur ins Log.
 func csvLesefehlerMeldung(err error) string {
+	if errors.Is(err, csvutil.ErrKodierung) {
+		return csvutil.MeldungKodierung
+	}
 	var lesefehler *csv.ParseError
 	if errors.As(err, &lesefehler) {
 		return fmt.Sprintf("Die CSV-Datei ließ sich nicht lesen, Zeile %d", lesefehler.Line)

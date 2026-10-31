@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/xlsxtest"
+	"bibliothek/pkg/csvutil"
 )
 
 // Die Quelle: CSV oder Excel, Kopfzeile gesucht statt vorausgesetzt. Ob die Schule
@@ -102,6 +103,31 @@ func TestLeseDatei_CSVAusExcelInWindows1252(t *testing.T) {
 	z := datei.Zeilen[0]
 	if z.Vorname != "Jürgen" || z.Nachname != "Müller" || z.Strasse != "Grüner Weg" {
 		t.Errorf("Vorname %q, Nachname %q, Straße %q", z.Vorname, z.Nachname, z.Strasse)
+	}
+}
+
+// Excel für Mac schreibt „CSV“ in Macintosh, „CSV (Macintosh)“ trennt zudem nur mit CR.
+func TestLeseDatei_CSVAusExcelFuerMac(t *testing.T) {
+	for name, trenner := range map[string]string{"CSV": "\r\n", "CSV (Macintosh)": "\r"} {
+		csv := "Nachname;Vorname;Klasse;Geburtsdatum;Stra\xa7e" + trenner + "M\x9fller;J\x9frgen;5a;1.2.2012;Gr\x9fner Weg" + trenner
+		datei, err := LeseDatei([]byte(csv))
+		if err != nil {
+			t.Fatalf("%s: unerwarteter Fehler: %v", name, err)
+		}
+		if len(datei.Zeilen) != 1 {
+			t.Fatalf("%s: %d Zeilen, erwartet 1", name, len(datei.Zeilen))
+		}
+		z := datei.Zeilen[0]
+		if z.Vorname != "Jürgen" || z.Nachname != "Müller" || z.Strasse != "Grüner Weg" {
+			t.Errorf("%s: Vorname %q, Nachname %q, Straße %q", name, z.Vorname, z.Nachname, z.Strasse)
+		}
+	}
+}
+
+func TestLeseDatei_UnklareKodierungWirdGemeldet(t *testing.T) {
+	_, err := LeseDatei([]byte("Nachname;Vorname;Klasse;Geburtsdatum\r\nKre\x9aimir;Ana;5a;1.2.2012\r\n"))
+	if !errors.Is(err, csvutil.ErrKodierung) {
+		t.Errorf("Fehler = %v, erwartet ErrKodierung", err)
 	}
 }
 

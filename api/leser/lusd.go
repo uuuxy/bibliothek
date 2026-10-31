@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/lusd"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/csvutil"
 	"bibliothek/repository"
 )
 
@@ -108,6 +109,8 @@ func lusdDateiMeldung(err error) string {
 	case errors.Is(err, lusd.ErrAltesExcel):
 		return "Die Datei ist ein altes Excel-Binärformat (.xls). " +
 			"Bitte in Excel „Speichern unter“ → .xlsx oder CSV wählen und erneut hochladen."
+	case errors.Is(err, csvutil.ErrKodierung):
+		return csvutil.MeldungKodierung
 	case errors.As(err, &zeile):
 		return lusdZeilenMeldung(zeile)
 	case errors.Is(err, lusd.ErrDateiLeer):

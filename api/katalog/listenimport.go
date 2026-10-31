@@ -50,7 +50,11 @@ func leseCSVZeilen(datei io.Reader) ([][]string, error) {
 	if err != nil {
 		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}
-	zeilen, err := csvutil.BaueLeser(inhalt, csvutil.HaeufigererTrenner).ReadAll()
+	leser, err := csvutil.BaueLeser(inhalt, csvutil.HaeufigererTrenner)
+	if err != nil {
+		return nil, apierrors.BadRequest(csvutil.MeldungKodierung, err)
+	}
+	zeilen, err := leser.ReadAll()
 	if err != nil {
 		return nil, apierrors.BadRequest("Die CSV-Datei ließ sich nicht lesen", err)
 	}

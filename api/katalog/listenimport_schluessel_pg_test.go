@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"bibliothek/api/tuer"
@@ -145,7 +146,7 @@ func TestListenimport_AbgebrochenerLaufGibtDenSchluesselFrei(t *testing.T) {
 // Schlüssel fehlt die Kopfzeile.
 // Eine Liste aus Excel in Windows-1252: Die Zeile mit dem Umlaut scheiterte unumgewandelt an der
 // Datenbank, und die Antwort nannte nur „1 fehlgeschlagen".
-func TestListenimport_CSVAusExcelInWindows1252(t *testing.T) {
+func TestListenimport_CSVAusExcel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	const isbn = "9783866801860"
 	raeumeAuf := func() {
@@ -157,14 +158,40 @@ func TestListenimport_CSVAusExcelInWindows1252(t *testing.T) {
 	t.Cleanup(raeumeAuf)
 
 	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}, Katalogdienste: offlineMetadatenClient()}
-	rec := httptest.NewRecorder()
-	tueren.ExcelImport()(rec, listenAnfrage(t, "isbn;titel;autor;bestand\r\n"+isbn+";Mathe f\xfcr alle;M\xfcller;1\r\n", ""))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Import = %d: %s", rec.Code, rec.Body.String())
+	for name, inhalt := range map[string]string{
+		"Windows-1252":    "isbn;titel;autor;bestand\r\n" + isbn + ";Mathe f\xfcr alle;M\xfcller;1\r\n",
+		"Excel für Mac":   "isbn;titel;autor;bestand\r\n" + isbn + ";Mathe f\x9fr alle;M\x9fller;1\r\n",
+		"CSV (Macintosh)": "isbn;titel;autor;bestand\r" + isbn + ";Mathe f\x9fr alle;M\x9fller;1\r",
+		"CSV (MS-DOS)":    "isbn;titel;autor;bestand\r\n" + isbn + ";Mathe f\x81r alle;M\x81ller;1\r\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			raeumeAuf()
+			rec := httptest.NewRecorder()
+			tueren.ExcelImport()(rec, listenAnfrage(t, inhalt, ""))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("Import = %d: %s", rec.Code, rec.Body.String())
+			}
+			if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel
+				WHERE isbn = $1 AND titel = 'Mathe für alle' AND autor = 'Müller'`, isbn); n != 1 {
+				t.Errorf("%d Titel mit richtigem Titel und Autor, erwartet 1: %s", n, rec.Body.String())
+			}
+		})
 	}
-	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel
-		WHERE isbn = $1 AND titel = 'Mathe für alle' AND autor = 'Müller'`, isbn); n != 1 {
-		t.Errorf("%d Titel mit richtigem Titel und Autor, erwartet 1: %s", n, rec.Body.String())
+}
+
+func TestListenimport_UnklareKodierungBleibtAusDemKatalog(t *testing.T) {
+	pool := pgtest.Pool(t)
+	const isbn = "9783866801860"
+	pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE isbn = '`+isbn+`'`)
+
+	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}, Katalogdienste: offlineMetadatenClient()}
+	rec := httptest.NewRecorder()
+	tueren.ExcelImport()(rec, listenAnfrage(t, "isbn;titel;autor;bestand\r\n"+isbn+";Kre\x9aimir;Ana;1\r\n", ""))
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "CSV UTF-8") {
+		t.Errorf("Import = %d: %s", rec.Code, rec.Body.String())
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel WHERE isbn = $1`, isbn); n != 0 {
+		t.Errorf("%d Titel im Katalog, erwartet 0", n)
 	}
 }
 

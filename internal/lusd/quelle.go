@@ -98,7 +98,10 @@ func leseTabelle(inhalt []byte) ([]tabellenZeile, error) {
 // dürfen unterschiedlich lang sein (FieldsPerRecord -1): Titelzeilen über der
 // Kopfzeile haben weniger Felder, und spaltenWert fängt kurze Zeilen ab.
 func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
-	csvLeser := csvutil.BaueLeser(inhalt, csvutil.HaeufigererTrenner)
+	csvLeser, err := csvutil.BaueLeser(inhalt, csvutil.HaeufigererTrenner)
+	if err != nil {
+		return nil, err
+	}
 	csvLeser.FieldsPerRecord = -1
 
 	var tabelle []tabellenZeile

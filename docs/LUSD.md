@@ -44,8 +44,9 @@ Nicht gelesen (bewusst): `Ansprechpartner_Alle_*` — mehrere Kontakte je Schül
 und Mail der Eltern wären ein Ratespiel („letzte Zeile gewinnt" = Großeltern). Eltern-Mail bleibt leer: Es gibt bewusst keine Eltern-Mahnmail (Datenschutz A3, 22.08.2026); wer
 sie einführt, klärt vorher den Kontakt und ergänzt VVT und Datenschutzhinweis.
 
-Formate: CSV (Komma/Semikolon; UTF-8, auch mit BOM, oder Windows-1252, das Excel unter Windows
-als „CSV" speichert) oder XLSX; mehrere Blätter (eines je Klasse) werden als eine Tabelle gelesen;
+Formate: CSV (Komma/Semikolon; UTF-8, auch mit BOM, oder was Excel als „CSV" speichert: Windows-1252,
+MS-DOS, Macintosh; bleibt die Kodierung unklar, weist der Import die Datei mit einer Anleitung ab)
+oder XLSX; mehrere Blätter (eines je Klasse) werden als eine Tabelle gelesen;
 Kopfzeilen in drei Stilen (`Vorname`, `Schueler_Vorname`, `SLR_Vorname`). Altes `.xls` wird mit
 Anleitung abgewiesen.
 

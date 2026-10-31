@@ -311,6 +311,12 @@ func TestImport_CSVAusExcelKommtMitUmlautAn(t *testing.T) {
 		{"Bestand, Windows-1252", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\xdcbung f\xfcr 9;M\xfcller;IMP-K3\r\n", "E2E-Imp-Übung für 9"},
 		{"Littera, Nullzeichen", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x00Null 1;Müller;IMP-K4\r\n", "E2E-Imp-Null 1"},
 		{"Bestand, Nullzeichen", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x00Null 2;Müller;IMP-K5\r\n", "E2E-Imp-Null 2"},
+		{"Littera, Excel für Mac", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x86bung f\x9fr 10;M\x9fller;IMP-K6\r\n", "E2E-Imp-Übung für 10"},
+		{"Bestand, Excel für Mac", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x86bung f\x9fr 11;M\x9fller;IMP-K7\r\n", "E2E-Imp-Übung für 11"},
+		{"Littera, CSV (Macintosh)", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\rE2E-Imp-\x86bung f\x9fr 12;M\x9fller;IMP-K8\r", "E2E-Imp-Übung für 12"},
+		{"Bestand, CSV (Macintosh)", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\rE2E-Imp-\x86bung f\x9fr 13;M\x9fller;IMP-K9\r", "E2E-Imp-Übung für 13"},
+		{"Littera, CSV (MS-DOS)", "/api/import/littera", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x9abung f\x81r 14;M\x81ller;IMP-K10\r\n", "E2E-Imp-Übung für 14"},
+		{"Bestand, CSV (MS-DOS)", "/api/admin/import-bestand", "Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-\x9abung f\x81r 15;M\x81ller;IMP-K11\r\n", "E2E-Imp-Übung für 15"},
 	} {
 		t.Run(fall.name, func(t *testing.T) {
 			rec := ladeImport(t, rufeRoh, fall.pfad, "liste.csv", []byte(fall.inhalt))
@@ -322,6 +328,23 @@ func TestImport_CSVAusExcelKommtMitUmlautAn(t *testing.T) {
 				t.Errorf("%d Titel %q mit Autor Müller, erwartet 1: %s", n, fall.titel, rec.Body.String())
 			}
 		})
+	}
+}
+
+// Eine Datei, deren Kodierung offen bleibt, nennt den Grund und legt keinen falschen Titel an.
+func TestImport_UnklareKodierungBleibtAusDemKatalog(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	_, _, rufeRoh := importWelt(t, pool)
+
+	for _, pfad := range []string{"/api/import/littera", "/api/admin/import-bestand"} {
+		rec := ladeImport(t, rufeRoh, pfad, "liste.csv", []byte("Titel;Verfasser;Exemplarnummer\r\nE2E-Imp-Kre\x9aimir;Ana;IMP-K12\r\n"))
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "CSV UTF-8") {
+			t.Errorf("%s = %d: %s", pfad, rec.Code, rec.Body.String())
+		}
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel WHERE titel LIKE 'E2E-Imp-Kre%'`); n != 0 {
+		t.Errorf("%d Titel im Katalog, erwartet 0", n)
 	}
 }
 
