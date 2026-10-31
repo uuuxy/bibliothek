@@ -43,3 +43,18 @@ test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }
 
 	await tab.close();
 });
+
+// Firefox und Safari kennen kein Monatsfeld und zeigen ein Textfeld. Ein unlesbarer Monat führte zu
+// einer Fehlerseite im neuen Tab; jetzt ist der Link gesperrt, und das Feld sagt warum. Das geleerte
+// Feld ist der Fall, den auch Chromium kennt.
+test('Ein unlesbarer Monat sperrt den Download und sagt warum', async ({ page }) => {
+	await uiLogin(page);
+	await menuepunkt(page, 'Bestellberichte').click();
+	const link = page.getByRole('link', { name: /PDF herunterladen/ });
+	await expect(link).toHaveAttribute('aria-disabled', 'false');
+
+	await page.locator('#monat').fill('');
+
+	await expect(page.getByText('Monat als Jahr und Monat eingeben')).toBeVisible();
+	await expect(page.getByText('PDF herunterladen')).toHaveAttribute('aria-disabled', 'true');
+});

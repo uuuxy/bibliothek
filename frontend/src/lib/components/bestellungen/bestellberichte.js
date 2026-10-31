@@ -52,6 +52,14 @@ export function berichtOptionen(mitPreisen) {
 }
 
 /**
+ * Firefox und Safari kennen kein Monatsfeld und zeigen ein Textfeld; dort lässt sich alles tippen.
+ * @param {string} wert
+ */
+export function monatIstGueltig(wert) {
+	return /^\d{4}-(0[1-9]|1[0-2])$/.test(wert);
+}
+
+/**
  * Adresse des Berichts-PDFs.
  *
  * `mittel` engt den Bericht auf einen Topf ein (leer = beide und die Alt-Bestellungen

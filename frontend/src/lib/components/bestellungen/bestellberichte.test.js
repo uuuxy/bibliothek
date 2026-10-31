@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { berichtURL } from './bestellberichte.js';
+import { berichtURL, monatIstGueltig } from './bestellberichte.js';
 
 // Der Topf gehört in die Adresse des Berichts (#596, Bauplan 7.3 Schritt 4).
 //
@@ -43,4 +43,18 @@ describe('berichtURL', () => {
 		expect(param(url, 'lieferant_id')).toBe('l-1');
 		expect(param(url, 'mittel')).toBe('schultraeger');
 	});
+});
+
+describe('monatIstGueltig', () => {
+	it.each(['2026-01', '2026-12'])('nimmt %s', (wert) => {
+		expect(monatIstGueltig(wert)).toBe(true);
+	});
+
+	// Firefox und Safari zeigen ein Textfeld; in Chromium ist das geleerte Feld der einzige Fall.
+	it.each(['', 'Oktober 2026', '2026-13', '2026-00', '26-10', '2026-1'])(
+		'lehnt „%s“ ab',
+		(wert) => {
+			expect(monatIstGueltig(wert)).toBe(false);
+		}
+	);
 });

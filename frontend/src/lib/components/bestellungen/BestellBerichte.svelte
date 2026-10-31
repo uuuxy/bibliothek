@@ -13,7 +13,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { localISO } from '../../utils/datum.js';
-	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
+	import { berichtOptionen as optionen, berichtURL, monatIstGueltig } from './bestellberichte.js';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
@@ -63,7 +63,10 @@
 	const berichtOptionen = $derived(optionen(bestellStore.preiseErfassen));
 
 	let rangeInvalid = $derived(typ === 'lieferant' && vonDatum > bisDatum);
-	let canDownload = $derived(!rangeInvalid && (typ !== 'lieferant' || lieferantId !== ''));
+	let monatUngueltig = $derived(typ === 'monat' && !monatIstGueltig(monatJahr));
+	let canDownload = $derived(
+		!rangeInvalid && !monatUngueltig && (typ !== 'lieferant' || lieferantId !== '')
+	);
 
 	let downloadURL = $derived(
 		berichtURL({
@@ -115,7 +118,14 @@
 			</div>
 
 			{#if typ === 'monat'}
-				<Feld id="monat" etikett="Monat" type="month" bind:value={monatJahr} />
+				<Feld
+					id="monat"
+					etikett="Monat"
+					type="month"
+					bind:value={monatJahr}
+					ungueltig={monatUngueltig}
+					hint={monatUngueltig ? 'Monat als Jahr und Monat eingeben, zum Beispiel 2026-10.' : ''}
+				/>
 			{:else if typ === 'jahr'}
 				<div class="space-y-1.5">
 					<label class="block text-sm font-medium text-on-surface" for="jahr">Jahr</label>
