@@ -12,6 +12,7 @@ import {
 
 /** @type {Promise<boolean> | null} */
 let lauf = null;
+let druckWirdVorbereitet = false;
 // Der Grund des letzten gescheiterten Abrufs, für die Meldung dessen, der drucken will.
 let grund = '';
 
@@ -24,15 +25,21 @@ let grund = '';
  */
 export function ladeAusweisDesign() {
 	if (designWurdeGeladen()) return Promise.resolve(true);
-	lauf ??= abruf().finally(() => {
+	return holeDesign();
+}
+
+/** @param {{ timeoutMs: number }} [optionen] */
+function holeDesign(optionen) {
+	lauf ??= abruf(optionen).finally(() => {
 		lauf = null;
 	});
 	return lauf;
 }
 
-async function abruf() {
+/** @param {{ timeoutMs: number }} [optionen] */
+async function abruf(optionen) {
 	try {
-		const res = await apiFetch('/api/ausweis-layout');
+		const res = await apiFetch('/api/ausweis-layout', optionen);
 		if (!res.ok) {
 			grund = await leseApiFehler(res);
 			return false;
@@ -69,27 +76,39 @@ function tragtMusterkopf() {
 
 /**
  * Vor jedem Druck von Ausweisen: Ohne das gespeicherte Design käme die Karte mit den
- * Standardwerten aus dem Drucker. Fehlt es noch, wird es jetzt geladen; scheitert das, steht
- * die Meldung da und der Aufrufer druckt nicht.
+ * Standardwerten aus dem Drucker. Geholt wird es jedes Mal: Eine Seite bleibt an der Theke
+ * tagelang offen, und Design und Schule ändern sich an anderen Plätzen. Bleibt die Antwort
+ * aus, gilt der Stand, der schon da ist; gibt es keinen, steht die Meldung da und der Aufrufer
+ * druckt nicht.
  * @returns {Promise<boolean>} ob gedruckt werden kann
  */
 export async function designFuerDruck() {
-	const standSchon = designWurdeGeladen();
-	if (!(await ladeAusweisDesign())) {
+	// Das Holen dauert: Ein zweiter Klick davor brächte nach dem ersten Druckdialog einen zweiten.
+	if (druckWirdVorbereitet) return false;
+	druckWirdVorbereitet = true;
+	try {
+		return await bereiteDruckVor();
+	} finally {
+		druckWirdVorbereitet = false;
+	}
+}
+
+async function bereiteDruckVor() {
+	// Mit einem Stand im Speicher wartet der Druck nicht die lange Frist von apiFetch ab.
+	const optionen = designWurdeGeladen() ? { timeoutMs: 3000 } : undefined;
+	if (!(await holeDesign(optionen)) && !designWurdeGeladen()) {
 		snackbars.addToast(
 			`Nicht gedruckt, das Ausweis-Design ist nicht geladen${mitGrund()}.`,
 			'error'
 		);
 		return false;
 	}
-	// Erst jetzt geladen: Die Karten zeichnen sich neu und holen Logo und Strichcode. Der
-	// Druckdialog nähme sonst die Karte ohne ihre Bilder auf.
-	if (!standSchon) {
-		await tick();
-		/** @type {NodeListOf<HTMLImageElement>} */
-		const bilder = document.querySelectorAll('.print-card-box img');
-		await Promise.all([...bilder].map((bild) => bild.decode().catch(() => {})));
-	}
+	// Die Karten zeichnen sich neu und holen Logo und Strichcode. Der Druckdialog nähme sonst die
+	// Karte ohne ihre Bilder auf.
+	await tick();
+	/** @type {NodeListOf<HTMLImageElement>} */
+	const bilder = document.querySelectorAll('.print-card-box img');
+	await Promise.all([...bilder].map((bild) => bild.decode().catch(() => {})));
 	// Gedruckt wird trotzdem: Der Druckdialog zeigt die Karte, und wer gerade drucken muss, soll es
 	// können. Ohne den Satz fiele die falsche Schule erst an der fertigen Karte auf.
 	if (tragtMusterkopf()) {

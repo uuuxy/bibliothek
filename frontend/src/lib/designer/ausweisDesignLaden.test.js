@@ -8,6 +8,7 @@ import {
 import {
 	defaultFrontElements,
 	idStore,
+	PLATZHALTER_SCHULNAME,
 	vergissDesignLadezustand
 } from './idDesignerStore.svelte.js';
 import { apiFetch } from '../apiFetch.js';
@@ -39,7 +40,7 @@ describe('ladeAusweisDesign', () => {
 
 		expect(ergebnisse).toEqual([true, true]);
 		expect(apiFetch).toHaveBeenCalledTimes(1);
-		expect(apiFetch).toHaveBeenCalledWith('/api/ausweis-layout');
+		expect(apiFetch).toHaveBeenCalledWith('/api/ausweis-layout', undefined);
 		expect(idStore.printMode).toBe('etikett');
 	});
 
@@ -97,15 +98,55 @@ describe('designFuerDruck', () => {
 		return { bild, bildIstDa: () => fertig() };
 	}
 
-	it('gibt den Druck frei, wenn das Design schon geladen ist, ohne Abruf', async () => {
-		vi.mocked(apiFetch).mockResolvedValue(antwort({}));
+	// Die Seite bleibt tagelang offen; Design und Schule ändern sich an anderen Plätzen.
+	it('holt das Design vor jedem Druck neu und nimmt, was der Server jetzt sagt', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort({ front: { elements: defaultFrontElements() } }));
 		await ladeAusweisDesign();
-		const { bild } = karteMitBild();
+		const kopf = () => idStore.front.elements.find((e) => e.id === 'header')?.content;
+		expect(kopf()).toBe(PLATZHALTER_SCHULNAME);
 
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort({ schule: { name: 'Philipp-Reis-Schule', adresse: 'Schulstraße 1, 61476 Kronberg' } })
+		);
 		expect(await designFuerDruck()).toBe(true);
-		expect(apiFetch).toHaveBeenCalledTimes(1);
-		// Die Karten stehen seit dem Laden: Auf ihre Bilder wartet der Druck nicht noch einmal.
-		expect(bild.decode).not.toHaveBeenCalled();
+
+		expect(apiFetch).toHaveBeenCalledTimes(2);
+		expect(kopf()).toBe('Philipp-Reis-Schule');
+	});
+
+	// Das Holen dauert: Ein zweiter Klick davor brächte nach dem ersten Druckdialog einen zweiten.
+	it('gibt bei einem Doppelklick den Druck einmal frei', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort({ schule: { name: 'Schule', adresse: 'Weg 1' } })
+		);
+
+		expect(await Promise.all([designFuerDruck(), designFuerDruck()])).toEqual([true, false]);
+		expect(snackbars.addToast).not.toHaveBeenCalled();
+		expect(await designFuerDruck(), 'der nächste Druck').toBe(true);
+	});
+
+	// Hängt der Server, käme der Druckdialog sonst erst nach der langen Frist von apiFetch.
+	it('wartet mit einem vorhandenen Stand nur kurz auf den Server', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort({ schule: { name: 'Schule', adresse: 'Weg 1' } })
+		);
+		await designFuerDruck();
+		expect(vi.mocked(apiFetch).mock.lastCall?.[1]).toBeUndefined();
+
+		await designFuerDruck();
+		expect(vi.mocked(apiFetch).mock.lastCall?.[1]).toEqual({ timeoutMs: 3000 });
+	});
+
+	// An der Theke fällt das Netz aus; die Karte steht im Speicher und lässt sich trotzdem drucken.
+	it('druckt ohne Antwort mit dem Stand, der schon da ist, und ohne Meldung', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort({ schule: { name: 'Philipp-Reis-Schule', adresse: 'Schulstraße 1' } })
+		);
+		await ladeAusweisDesign();
+
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Keine Verbindung zum Server.'));
+		expect(await designFuerDruck()).toBe(true);
+		expect(snackbars.addToast).not.toHaveBeenCalled();
 	});
 
 	// Mit dem Grund: Ein fester Satz hieß bei jedem Fehlschlag gleich (OFFEN.md 5.106).

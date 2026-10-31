@@ -2076,10 +2076,11 @@ Antwort, ist noch keines gespeichert; ein gescheitertes Lesen beantwortet der Se
 einem Fehler (`api/druck/ausweis_layout_tuer_pg_test.go`). Gespeichert wird nur eine Änderung: Den
 Designer zu öffnen, schreibt nichts. Ohne `manage_settings` ist er gesperrt, Ansehen und Testdruck
 bleiben offen. Gedruckt wird nur mit geladenem Design: Jeder Druckweg fragt vor dem Druckdialog
-`designFuerDruck`
-(`designer/ausweisDesignLaden.js`); scheitert das Laden, steht die Meldung da und nichts wird
-gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem Drucker, die richtig aussieht und
-es nicht ist. Einen weiteren Abrufer des Designs hält `designer/ausweisDesignLaden.test.js` auf.
+`designFuerDruck` (`designer/ausweisDesignLaden.js`). Es holt das Design jedes Mal neu, denn eine
+Seite bleibt an der Theke tagelang offen, und Design und Schule ändern sich an anderen Plätzen.
+Bleibt die Antwort aus, gilt der Stand im Speicher; gibt es keinen, steht die Meldung da und nichts
+wird gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem Drucker, die richtig aussieht
+und es nicht ist. Einen weiteren Abrufer des Designs hält `designer/ausweisDesignLaden.test.js` auf.
 
 **Etiketten: zwei Wege zum selben Blatt.** Ein Buch-Etikett entsteht im Druck-Center und für den
 Händler (Seite und Mailanhang). Ins Druck-Center führen der Etikett-Knopf der Exemplarkarte,

@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix, menuepunkt, gehZu } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	csrfToken,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	menuepunkt,
+	gehZu
+} from './helpers.js';
 
 // Die Aufschrift des gedruckten Ausweises, gemessen am LIVE-Pfad.
 //
@@ -140,6 +149,61 @@ test('Die Karte trägt den Namen der Schule, auch ohne dass jemand den Designer 
 		await expect(karte).toContainText(`Schule ${s}`);
 		await expect(karte).toContainText('Schulweg 1, 12345 Neustadt');
 		await expect(karte).not.toContainText(/Musterst/i);
+	} finally {
+		seedSQL(`
+			DELETE FROM system_einstellungen WHERE schluessel IN ${SCHLUESSEL};
+			UPDATE system_einstellungen SET schluessel = substr(schluessel, 15) WHERE schluessel LIKE 'e2e-sicherung-%';
+		`);
+	}
+});
+
+// Die Warnung vor der Musterschule schickt in die Einstellungen. Eine Seite bleibt an der Theke
+// tagelang offen; was dort oder an einem anderen Platz geändert wird, muss auf der nächsten Karte stehen.
+test('Wer die Schule nachträgt, druckt sie, ohne die Seite neu zu laden', async ({ page }) => {
+	const s = uniqueSuffix();
+	const nachname = `Nachtrag${s}`;
+	const SCHLUESSEL = `('ausweis_layout', 'schule_name', 'schule_strasse', 'schule_plz', 'schule_ort')`;
+	seedSQL(
+		`UPDATE system_einstellungen SET schluessel = 'e2e-sicherung-' || schluessel WHERE schluessel IN ${SCHLUESSEL};`
+	);
+	try {
+		await page.addInitScript(() => {
+			window.print = () => {};
+		});
+		await uiLogin(page);
+		const angelegt = await apiPost(page, '/api/schueler', {
+			art: 'schueler',
+			geburtsdatum: '2012-03-04',
+			vorname: 'Nora',
+			nachname,
+			klasse: '10A'
+		});
+		expect(angelegt.ok(), `Anlegen fehlgeschlagen: ${angelegt.status()}`).toBeTruthy();
+
+		await gehZu(page, '/schuelerdatei');
+		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(nachname);
+		await expect(page.locator('tbody tr').filter({ hasText: nachname })).toHaveCount(1);
+		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
+		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
+		await balken.getByRole('button', { name: 'Ausweise drucken' }).click();
+		await expect(page.getByRole('status').filter({ hasText: 'Musterschule' })).toBeVisible();
+		const karte = page.locator('.print-section-card .print-card-box').first();
+		await expect(karte).toContainText(/Musterst/i);
+
+		const gespeichert = await page.request.put('/api/einstellungen', {
+			headers: { 'X-CSRF-Token': await csrfToken(page) },
+			data: {
+				schule_name: `Schule ${s}`,
+				schule_strasse: 'Schulweg 1',
+				schule_plz: '12345',
+				schule_ort: 'Neustadt'
+			}
+		});
+		expect(gespeichert.ok(), `Speichern fehlgeschlagen: ${gespeichert.status()}`).toBeTruthy();
+
+		await balken.getByRole('button', { name: 'Ausweise drucken' }).click();
+		await expect(karte).toContainText(`Schule ${s}`);
+		await expect(karte).toContainText('Schulweg 1, 12345 Neustadt');
 	} finally {
 		seedSQL(`
 			DELETE FROM system_einstellungen WHERE schluessel IN ${SCHLUESSEL};

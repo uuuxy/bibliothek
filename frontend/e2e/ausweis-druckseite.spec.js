@@ -25,6 +25,8 @@ async function druckdialogAnhalten(page) {
  * @param {import('@playwright/test').Page} page
  */
 async function druckseite(page) {
+	// Vor dem Druckdialog holt der Druck das Design vom Server; erst danach steht die Betriebsart.
+	await expect(page.locator('body')).toHaveAttribute('data-print-mode', /.+/);
 	await page.emulateMedia({ media: 'print' });
 	const lage = await page.evaluate(() => {
 		const sichtbar = (/** @type {Element} */ e) => {
