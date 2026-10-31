@@ -91,6 +91,20 @@ export async function apiPatch(page, url, data) {
 }
 
 /**
+ * Schreibender API-Call (PUT) mit CSRF-Header.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} url
+ * @param {object} data
+ */
+export async function apiPut(page, url, data) {
+	const token = await csrfToken(page);
+	return page.request.put(url, {
+		data,
+		headers: { 'X-CSRF-Token': token }
+	});
+}
+
+/**
  * Seedet Testdaten direkt in die lokale Stack-DB (docker-compose.local.yml).
  * Nur für Entitäten ohne einfachen API-Weg (z. B. Buch-Exemplare).
  * @param {string} sql

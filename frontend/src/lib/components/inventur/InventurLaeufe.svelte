@@ -21,9 +21,9 @@
 	 *   setzeLaufFort: (session: any) => void,
 	 *   verwerfeLauf: (session: any) => void,
 	 *   zeigeFrueherenFehlbestand: (inventur: any) => void
-	 * } }}
+	 * }, darfVerwalten: boolean }}
 	 */
-	let { ablauf } = $props();
+	let { ablauf, darfVerwalten } = $props();
 
 	// Verwerfen lässt sich nicht zurücknehmen, und der Knopf steht neben „Fortsetzen": Ein
 	// Fehlklick beendete sonst die Inventur, und alle Scans bis dahin zählten nicht mehr.
@@ -78,9 +78,11 @@
 				</div>
 				<div class="flex items-center gap-2 shrink-0">
 					<Button size="sm" onclick={() => ablauf.setzeLaufFort(session)}>Fortsetzen</Button>
-					<Button variant="secondary" size="sm" onclick={() => verwerfen(session)}>
-						Verwerfen
-					</Button>
+					{#if darfVerwalten}
+						<Button variant="secondary" size="sm" onclick={() => verwerfen(session)}>
+							Verwerfen
+						</Button>
+					{/if}
 				</div>
 			</div>
 		{/each}

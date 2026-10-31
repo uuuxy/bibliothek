@@ -3,6 +3,8 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { erlaubteBildschirme } from '../../menue.js';
 	import { ChevronRight, CircleCheck } from '@lucide/svelte';
 
 	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
@@ -16,6 +18,9 @@
 	let fehler = $state(false);
 
 	const hatMahnungen = $derived((uebersicht?.total_overdue ?? 0) > 0);
+	// Die Statistik hängt an view_stats, das Mahnwesen an einem anderen Recht: Ohne das führte der
+	// Klick zurück auf die Startseite.
+	const mahnwesenOffen = $derived(erlaubteBildschirme(authStore.currentUser).has('mahnwesen'));
 
 	// Neutrale Überfälligkeitsquote = überfällig ÷ laufende Ausleihen. Rein informativ,
 	// keine Ampel — die Statistik-Seite ist ein Analyse-Kontext, kein Alarm.
@@ -115,13 +120,15 @@
 			</div>
 		{/if}
 
-		<button
-			type="button"
-			onclick={() => (uiStore.activeTab = 'mahnwesen')}
-			class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-sm font-semibold text-primary cursor-pointer"
-		>
-			Im Mahnwesen bearbeiten
-			<ChevronRight class="w-3.5 h-3.5" aria-hidden="true" />
-		</button>
+		{#if mahnwesenOffen}
+			<button
+				type="button"
+				onclick={() => (uiStore.activeTab = 'mahnwesen')}
+				class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-sm font-semibold text-primary cursor-pointer"
+			>
+				Im Mahnwesen bearbeiten
+				<ChevronRight class="w-3.5 h-3.5" aria-hidden="true" />
+			</button>
+		{/if}
 	</div>
 {/if}

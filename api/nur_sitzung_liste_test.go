@@ -23,6 +23,7 @@ func TestNurSitzungRoutenSindBenannt(t *testing.T) {
 		"GET /events":                       "SSE-Stream; der authStore baut ihn direkt nach dem Login auf. Ein Fachrecht davor erzeugt statt einer Absage eine Reconnect-Schleife plus Offline-Overlay.",
 		"GET /api/einstellungen/sitzung":    "Anzeige-Einstellungen der Sitzung (Schulname, Logo, Fristen) — jeder angemeldete Client braucht sie zum Zeichnen.",
 		"GET /api/klassen":                  "Klassennamen der aktiven Schüler (05F, 10R …), keine Schülerdaten. Gewählt wird die Klasse mit view_students, edit_books und manage_settings.",
+		"GET /api/signaturen":               "Regaladressen mit Zahl der Titel und Exemplare, keine Schülerdaten. Gewählt wird die Signatur mit view_books, edit_books, create_orders und manage_inventory.",
 		"GET /api/lmf-termine":              "veröffentlichter LMF-Plan: Datum, Stunde, Klassen, Vermerk — der Plan hängt für das ganze Kollegium aus.",
 		"GET /api/lmf-termine/pdf":          "derselbe Plan als PDF (der Entwurf hat eine eigene Route hinter edit_books).",
 		"GET /api/portal/klassensaetze":     "Klassensätze im Portal: Buch- und Zähldaten. view_books würde der Rolle den ganzen Medienkatalog öffnen.",

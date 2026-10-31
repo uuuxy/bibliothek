@@ -3,6 +3,8 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { slide } from 'svelte/transition';
 	import { useInventur } from './useInventur.svelte.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menue.js';
 	import InventurStartDialog from './InventurStartDialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
@@ -13,6 +15,10 @@
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
 
 	const ablauf = useInventur();
+
+	// Der Menüpunkt hängt an inventory_scan. Starten, Abschließen, Verwerfen und die früheren Läufe
+	// verlangen manage_inventory (api/routen_theke.go); ohne das Recht bleibt das Scannen.
+	const darfVerwalten = $derived(hatRecht(authStore.currentUser, 'manage_inventory'));
 
 	// $state, nicht `let`: Das Feld wird per bind:this gefüllt und unten in einem $effect
 	// gelesen. Es entsteht erst, wenn die Inventur läuft; ohne $state liefe der Effekt nur
@@ -26,9 +32,10 @@
 	});
 
 	onMount(async () => {
+		await ablauf.ladeOffeneLaeufe();
+		if (!darfVerwalten) return;
 		await ablauf.ladeSignaturen();
 		await ablauf.ladeFaecher();
-		await ablauf.ladeOffeneLaeufe();
 		await ablauf.frueher.lade();
 	});
 
@@ -70,14 +77,21 @@
 			<div>
 				<h3 class="text-xl font-bold text-on-surface">Keine Inventur aktiv</h3>
 				<p class="text-on-surface-variant mt-2 max-w-md mx-auto">
-					Starte einen neuen Inventur-Lauf. Du kannst entweder die gesamte Bibliothek prüfen oder
-					gezielt nach einer bestimmten Signatur / Kategorie scannen.
+					{#if darfVerwalten}
+						Starte einen neuen Inventur-Lauf. Du kannst entweder die gesamte Bibliothek prüfen oder
+						gezielt nach einer bestimmten Signatur / Kategorie scannen.
+					{:else}
+						Eine Inventur starten darf, wer das Recht „Bestand verwalten“ hat. Läuft eine, lässt sie
+						sich unten fortsetzen.
+					{/if}
 				</p>
 			</div>
-			<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
-				<Plus class="w-5 h-5" aria-hidden="true" />
-				<span>Neue Bestandsprüfung starten</span>
-			</Button>
+			{#if darfVerwalten}
+				<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
+					<Plus class="w-5 h-5" aria-hidden="true" />
+					<span>Neue Bestandsprüfung starten</span>
+				</Button>
+			{/if}
 
 			{#if ablauf.fehler}
 				<!-- role="alert" wie dieselbe Meldung im Start-Dialog: Sie erscheint nach einem Klick,
@@ -90,7 +104,7 @@
 				</div>
 			{/if}
 
-			<InventurLaeufe {ablauf} />
+			<InventurLaeufe {ablauf} {darfVerwalten} />
 		</div>
 	{:else}
 		<div class="space-y-6">
@@ -149,16 +163,18 @@
 				</div>
 			{/if}
 
-			<div class="pt-8 border-t border-outline-variant flex justify-end">
-				<Button
-					variant="danger"
-					size="lg"
-					onclick={() => ablauf.abschliessenNachRueckfrage(focusInput)}
-					class="px-6"
-				>
-					Inventur abschließen
-				</Button>
-			</div>
+			{#if darfVerwalten}
+				<div class="pt-8 border-t border-outline-variant flex justify-end">
+					<Button
+						variant="danger"
+						size="lg"
+						onclick={() => ablauf.abschliessenNachRueckfrage(focusInput)}
+						class="px-6"
+					>
+						Inventur abschließen
+					</Button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </Seitenrahmen>

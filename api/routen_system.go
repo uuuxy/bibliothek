@@ -65,13 +65,13 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	mux.Handle("GET /api/print/kontoauszug/{schueler_id}", s.verlangeRecht("view_students")(s.leser().KontoauszugPDF()))
 
 	// Übersicht und Statistik
-	mux.Handle("GET /api/dashboard/summary", s.verlangeRecht("view_students")(s.system().MahnUebersicht()))
 	// view_stats, nicht view_students: Der Schalter, den ein Admin in der Rechte-Oberfläche
 	// umlegt, heißt „Statistiken anzeigen", und das Menü blendet den Punkt genau danach ein
-	// (frontend/src/lib/menue.js). Verlangte die Route view_students, gewänne still der Server,
-	// sobald ein Admin die beiden trennt: Die Statistik antwortete trotz entzogenem Recht weiter,
-	// oder der Menüpunkt lieferte jedes Mal 403. Die Antwort trägt keine Personendaten
+	// (frontend/src/lib/menue.js). Verlangte eine der Routen view_students, gewänne still der
+	// Server, sobald ein Admin die beiden trennt: Die Statistik antwortete trotz entzogenem Recht
+	// weiter, oder der Menüpunkt lieferte jedes Mal 403. Die Antworten tragen keine Personendaten
 	// (PII-Stufe 0), view_students wäre also auch fachlich die falsche Schranke.
+	mux.Handle("GET /api/dashboard/summary", s.verlangeRecht("view_stats")(s.system().MahnUebersicht()))
 	mux.Handle("GET /api/statistiken", s.verlangeRecht("view_stats")(s.system().Statistik()))
 
 	// Nachschlagelisten
@@ -81,7 +81,8 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	mux.Handle("POST /api/systematics", s.verlangeRecht("edit_books")(s.katalog().SachgruppeAnlegen()))
 	mux.Handle("PUT /api/systematics/{id}", s.verlangeRecht("edit_books")(s.katalog().SachgruppeAendern()))
 	mux.Handle("DELETE /api/systematics/{id}", s.verlangeRecht("edit_books")(s.katalog().SachgruppeLoeschen()))
-	mux.Handle("GET /api/faecher", s.verlangeRecht("view_books")(s.katalog().Faecher()))
+	// Die Auswahl der Fächer beim Start einer Inventur, ihr einziger Leser.
+	mux.Handle("GET /api/faecher", s.verlangeRecht("manage_inventory")(s.katalog().Faecher()))
 
 	// Protokoll der Verwaltung
 	mux.Handle("GET /api/admin/auditlog", s.verlangeRecht("manage_users")(s.system().VerwaltungsProtokoll()))
@@ -91,10 +92,15 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	// barcode_seq, und die gezogene Nummer ist danach verbraucht. Wer sie nicht
 	// speichern darf (das Barcode-PUT verlangt edit_books), soll sie auch nicht ziehen.
 	mux.Handle("GET /api/barcode/next", s.verlangeRecht("edit_books")(s.katalog().ExemplarBarcodeZiehen()))
-	mux.Handle("GET /api/barcode", s.verlangeRecht("view_books")(s.druck().BarcodeBild()))
+	// view_students: Das Bild holen nur der Ausweis und sein Designer, und beide hängen an diesem
+	// Recht. Buch-Etiketten zeichnet der Server selbst (POST /api/print/labels).
+	mux.Handle("GET /api/barcode", s.verlangeRecht("view_students")(s.druck().BarcodeBild()))
 
-	// Signaturen, abgeleitet aus buecher_titel.signatur, nicht aus einer eigenen Tabelle.
-	mux.Handle("GET /api/signaturen", s.verlangeRecht("view_books")(s.katalog().Signaturen()))
+	// Signaturen, abgeleitet aus buecher_titel.signatur, nicht aus einer eigenen Tabelle. Die Liste
+	// trägt keine Schülerdaten, und gewählt wird die Signatur mit verschiedenen Rechten: im Regal
+	// (view_books), in der Buchmaske (edit_books), bei der Bestellung (create_orders) und beim
+	// Start einer Inventur (manage_inventory). Hinge sie an einem davon, blieben die anderen leer.
+	mux.Handle("GET /api/signaturen", s.VerlangeAnmeldung()(s.katalog().Signaturen()))
 	mux.Handle("GET /api/signaturen/buecher", s.verlangeRecht("view_books")(s.katalog().TitelUnterSignatur()))
 	// Schlagworte: die Vorschlagsliste der Eingabefelder, aus dem Bestand.
 	mux.Handle("GET /api/schlagworte", s.verlangeRecht("view_books")(s.katalog().SchlagwortVorschlaege()))

@@ -45,9 +45,20 @@ const fruehereInventur = {
 // Fehlt die Liste der laufenden Inventuren, weil sie nicht kam, lädt die Seite zu einem neuen
 // Lauf ein, während einer läuft; der Server weist ihn ab und verweist „unten" auf die Liste.
 describe('InventurLaeufe', () => {
+	// Fortsetzen geht mit inventory_scan; Verwerfen verlangt manage_inventory (POST /api/inventur/abort).
+	it('bietet ohne das Recht zum Verwalten nur das Fortsetzen an', () => {
+		const a = ablauf({
+			offeneLaeufe: [{ session_id: 's1', label: 'Alles', erwartet: 3, fehlend: 1 }]
+		});
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: false });
+
+		expect(screen.getByRole('button', { name: 'Fortsetzen' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Verwerfen' })).toBeNull();
+	});
+
 	it('nennt den Grund, wenn die laufenden Inventuren nicht kamen, und lädt neu', async () => {
 		const a = ablauf({ nichtGeladen: { laeufe: 'Die Datenbank antwortet nicht', frueher: '' } });
-		const screen = render(InventurLaeufe, { ablauf: a });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 
 		expect(screen.getByText('Laufende Inventuren nicht geladen')).toBeTruthy();
 		expect(screen.getByText('Die Datenbank antwortet nicht')).toBeTruthy();
@@ -57,7 +68,7 @@ describe('InventurLaeufe', () => {
 
 	it('nennt den Grund, wenn die früheren Inventuren nicht kamen, und lädt neu', async () => {
 		const a = ablauf({ nichtGeladen: { laeufe: '', frueher: 'Zeitüberschreitung' } });
-		const screen = render(InventurLaeufe, { ablauf: a });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 
 		expect(screen.getByText('Frühere Inventuren nicht geladen')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
@@ -68,7 +79,7 @@ describe('InventurLaeufe', () => {
 		const lauf = { session_id: 's1', label: 'Gesamtbestand', erwartet: 9, fehlend: 6 };
 		const frueher = fruehereInventur;
 		const a = ablauf({ offeneLaeufe: [lauf], frueher: frueheres({ laeufe: [frueher] }) });
-		const screen = render(InventurLaeufe, { ablauf: a });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 
 		expect(screen.getByText('Laufende Inventuren')).toBeTruthy();
 		// Gefunden sind die erwarteten Bücher, die nicht mehr fehlen, wie der Abschluss sie zählt.
@@ -85,7 +96,7 @@ describe('InventurLaeufe', () => {
 	it('verwirft eine laufende Inventur erst nach der Rückfrage', async () => {
 		const lauf = { session_id: 's1', label: 'Gesamtbestand', erwartet: 9, fehlend: 6 };
 		const a = ablauf({ offeneLaeufe: [lauf] });
-		const screen = render(InventurLaeufe, { ablauf: a });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 		const verwerfen = screen.getByRole('button', { name: 'Verwerfen' });
 
 		vi.mocked(bestaetigen).mockResolvedValueOnce(false);
@@ -105,14 +116,15 @@ describe('InventurLaeufe', () => {
 	// holt sie; ohne weitere steht kein Knopf da.
 	it('holt mit „Mehr laden" die älteren Inventuren und nennt ihre Zahl', async () => {
 		const a = ablauf({ frueher: frueheres({ laeufe: [fruehereInventur], weitere: 12 }) });
-		const screen = render(InventurLaeufe, { ablauf: a });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (12 weitere)' }));
 		expect(a.frueher.ladeMehr).toHaveBeenCalled();
 
 		cleanup();
 		const ohne = render(InventurLaeufe, {
-			ablauf: ablauf({ frueher: frueheres({ laeufe: [fruehereInventur] }) })
+			ablauf: ablauf({ frueher: frueheres({ laeufe: [fruehereInventur] }) }),
+			darfVerwalten: true
 		});
 		expect(ohne.queryByRole('button', { name: /^Mehr laden/ })).toBeNull();
 	});
@@ -121,7 +133,7 @@ describe('InventurLaeufe', () => {
 	// am Buch bleibt.
 	it('löscht eine frühere Inventur erst nach der Rückfrage', async () => {
 		const a = ablauf({ frueher: frueheres({ laeufe: [fruehereInventur] }) });
-		const screen = render(InventurLaeufe, { ablauf: a });
+		const screen = render(InventurLaeufe, { ablauf: a, darfVerwalten: true });
 		const loeschen = async () => {
 			await fireEvent.click(screen.getByRole('button', { name: 'Aktionen für „LMF Deu 7“' }));
 			await fireEvent.click(await screen.findByRole('menuitem', { name: 'Löschen' }));

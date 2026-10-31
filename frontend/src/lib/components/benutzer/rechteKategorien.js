@@ -52,7 +52,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'view_books',
 				label: 'Medienkatalog anzeigen',
-				desc: 'Titel, Exemplare, Signaturen, Systematik, Fächer und Geräte einsehen; Buch-Etiketten drucken, im Druck-Center zusammen mit „Bücher bearbeiten“; Schulklassen-Übersicht'
+				desc: 'Titel, Exemplare, Signaturen, Systematik und Geräte einsehen; Buch-Etiketten drucken, im Druck-Center zusammen mit „Bücher bearbeiten“; Schulklassen-Übersicht'
 			},
 			{
 				key: 'edit_books',
