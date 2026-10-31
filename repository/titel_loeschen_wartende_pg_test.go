@@ -17,6 +17,8 @@ import (
 // wie bei offenen Ausleihen und Forderungen: Was verschwindet, steht zuvor im Protokoll.
 func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 	pool := pgtest.Pool(t)
+	// Die Ausweisnummer W-1 ist fest, und ein anderer Test kann dieselbe stehen lassen.
+	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	abfragen := NewTitelAbfragen(pool)
 

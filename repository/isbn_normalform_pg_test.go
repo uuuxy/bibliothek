@@ -25,6 +25,8 @@ import (
 // Damit greift der vorhandene UNIQUE-Index über alle Schreibweisen und beide Längen.
 func TestISBN_HatEineSchreibweiseInDerDatenbank(t *testing.T) {
 	pool := pgTestPool(t)
+	// Die Fälle nennen feste ISBN, und ein anderer Test kann dieselbe stehen lassen.
+	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel LIKE 'Normalform-%'`); err != nil {
