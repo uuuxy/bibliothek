@@ -417,6 +417,32 @@ Ob die Tests prüfen, was sie zusagen, zeigt ein Durchgang über vier Fragen:
    `typo-rollen`, `kontrast`) und die Ratschen an der Datenbank brauchen den gebauten Stack
    bzw. Postgres. Nach einem Umbau an ihnen erneut rot sehen.
 
+Was der gewohnte Lauf nicht zeigen kann, zeigen sieben Läufe mit anderen Bedingungen. Jeder hat
+echte Fehler oder falsche Tests gefunden; alle laufen auf einer Wegwerf-Instanz ohne Mailserver.
+
+5. **Reihenfolge:** `go test -shuffle=on ./...` und `vitest run --sequence.shuffle`. Die CI fährt
+   beide so. Ein roter Lauf nennt die Folge (`-test.shuffle 1234`), `-shuffle=1234` wiederholt sie.
+6. **Jede Browser-Testdatei allein auf einer frischen Datenbank:** Vorlage mit `CREATE DATABASE …
+   TEMPLATE`, Backend je Datei neu. Rot heißt: Die Datei lebt von den Resten der Dateien vor ihr.
+   `cover-grossansicht` schreibt in den Container des Backends und läuft nur am Stack.
+7. **Andere Kalendertage:** Eine Kopie der Go-Toolchain, deren `time.Now` einen Versatz aus der
+   Umgebung addiert, Postgres unter `libfaketime` und in der Seite ein verschobenes `Date`. Gefahren
+   an Monatsenden, Schaltjahr, Umstellung der Uhr, Schuljahreswechsel, in der Saison der Abgänger und
+   Jahre voraus. Die Nachtläufe gehen dazu Woche für Woche über mehrere Schuljahre eines Bestands,
+   mit den Zusagen nach jedem Schritt: keine offene Ausleihe und keine offene Forderung ohne Person,
+   kein aktives Konto gelöscht, nichts anonymisiert, was nicht weg ist.
+8. **Felder, die nie kommen:** Die Antworten der Schnittstelle in der Seite als Proxy umhüllen und
+   über die ganze Suite sammeln, was gelesen wird und in keiner Antwort stand. Am Go-Code einordnen:
+   `omitempty`, Attrappe im Test oder Fehler. Eine Attrappe im Unit-Test beweist das Feld nicht.
+9. **Rückbau in Bedingungen und SQL:** Stichprobe über `go test -overlay` (`<` zu `<=`, `&&` zu `||`,
+   Zeile weg). Die Überlebenden am Code lesen; ein Teil ist ohne Folge oder sieht das Overlay nicht.
+10. **Alle Rollen, alle Bildschirme:** Je Rolle jeden Bildschirm und Reiter öffnen und 403, 404, 5xx,
+    Abstürze und Meldungen der Konsole sammeln. Die Suite meldet sich sonst fast nur als Admin an.
+11. **Firefox und WebKit:** die ganze Suite. Rot nur am Werkzeug bleiben: `newCDPSession` und
+    `page.pdf` gibt es nur in Chromium, `window.print` hält den Klick in Firefox ohne Fenster an,
+    WebKit druckt keine PDFs und lässt bei Tab Knöpfe aus, wie Safari ab Werk. Einen Knopf macht ein
+    Klick in Safari nicht zum Fokus: Was auf Tasten hört, nimmt ihn sich selbst.
+
 ## Katalogdienste nicht erreichbar
 
 Die drei Abfragen bei DNB, Google und OpenLibrary (`api/katalog/isbn_zu_titel.go`,

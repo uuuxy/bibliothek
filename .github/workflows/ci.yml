@@ -166,7 +166,7 @@ jobs:
     # `run:` ist `bash -e` OHNE pipefail; `shell: bash` schaltet ihn ein.
     - name: Run Unit Tests
       shell: bash
-      run: go test -v -race ./... 2>&1 | tee /tmp/gotest.log
+      run: go test -v -race -shuffle=on ./... 2>&1 | tee /tmp/gotest.log
 
     # Was hat dieser Lauf nicht ausgeführt? Ein übersprungener Prüfpunkt sieht aus wie ein
     # bestandener. Ob eine Prüfung laufen muss, entscheiden die Guards im Go-Code
@@ -234,7 +234,7 @@ jobs:
     - name: Run Vitest
       run: |
         cd frontend
-        npm run test
+        npm run test -- --sequence.shuffle
 
   e2e:
     runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
