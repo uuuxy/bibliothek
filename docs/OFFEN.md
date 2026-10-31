@@ -34,7 +34,7 @@ Nur, was kein Test leisten kann.
 
 - [x] Freigeben: Pull Requests #760 und #762 schließen; keiner zeigt am alten Stand einen Fehler.
   (5.111)
-- [ ] Pull Request #763 schließen: derselbe Vorschlag wie #759, am Code nachgeprüft. (5.112)
+- [ ] Pull Request #763 schließen: derselbe Vorschlag wie #759, am Code nachgeprüft. (5.167)
 - [ ] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
@@ -81,7 +81,7 @@ Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`).
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 
-### 5.112 Pull Request #763
+### 5.167 Pull Request #763
 
 Senkt `maxMemory` von `ParseMultipartForm` an fünf Stellen auf 1 MB, wie #759. Alle fünf begrenzen die
 Anfrage schon vorher mit `http.MaxBytesReader` auf dieselbe Grenze. Mit 1 MB legte Go jede größere Datei
