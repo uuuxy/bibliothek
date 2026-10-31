@@ -83,7 +83,7 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 			const kontext = await browser.newContext();
 			const seite = await kontext.newPage();
 			// Scannen verlangt perform_actions; die Theke selbst geht auch ohne das Recht auf.
-			const { stoerungen, besucht } = await geheRundgang(
+			const { stoerungen, besucht, gescannt } = await geheRundgang(
 				seite,
 				EMAIL,
 				bildschirmeMit(rechte, akten.buchakte),
@@ -91,6 +91,9 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 			);
 			await kontext.close();
 			funde.push(...stoerungen.map((s) => `${name}: ${s}`));
+			if (rechte.includes('perform_actions') && !gescannt) {
+				funde.push(`${name}: Die Theke ging nicht auf, gescannt wurde nichts.`);
+			}
 			besuchtGesamt += besucht.size;
 		}
 	} finally {

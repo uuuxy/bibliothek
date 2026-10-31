@@ -125,7 +125,7 @@ test('Helfer: Ein Scan zeigt Name und Klasse ohne Ablehnung, und das Buch ist ge
 	await scanneWieScanner(page, buch);
 	await expect.poll(() => verliehenAn(buch)).toBe('');
 
-	await page.getByRole('button', { name: 'Schließen', exact: true }).click();
+	await page.getByRole('button', { name: 'Leser schließen' }).click();
 	await expect(page.getByRole('heading', { name: `Hanna ${nachname}` })).toHaveCount(0);
 	expect(stoerungen).toEqual([]);
 });

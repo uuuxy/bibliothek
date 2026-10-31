@@ -81,7 +81,7 @@ describe('Der geladene Leser an der Theke', () => {
 		melde(['perform_actions']);
 		const screen = render(OmniboxAktiverLeser);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Schließen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Leser schließen' }));
 		expect(omniboxStore.aktiverLeser).toBeNull();
 	});
 

@@ -216,7 +216,8 @@ Rolle über alle Routen und kaputte Rümpfe an jeder Tür. Die Skripte kommen ni
 Entschieden am 31.10.2026: Die Läufe aus [sweeps.md](sweeps.md), „Prüfung der Prüfungen", Punkte 6
 bis 12, laufen noch einmal, wenn die übrigen Änderungen drin sind, vor dem Lasttest. Der erste
 Durchgang (b7a4fd5c bis ae68dac9) fand 14 Fehler hinter grünen Tests. Von selbst laufen nur die
-zufällige Reihenfolge und der Rundgang je Rolle (`e2e/rundgang-rollen.spec.js`); bei den übrigen
+zufällige Reihenfolge und die Rundgänge je Rolle und je Recht (`e2e/rundgang-rollen.spec.js`,
+`e2e/rundgang-rechte.spec.js`); bei den übrigen
 muss jemand die Funde lesen, oder sie werden auch ohne Fehler rot. Die Skripte stehen nicht im
 Repository; fehlen sie, werden sie nach den Punkten dort neu geschrieben.
 

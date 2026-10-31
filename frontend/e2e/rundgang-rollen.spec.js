@@ -29,7 +29,7 @@ for (const { value: rolle } of ROLLEN_AUSWAHL) {
 		const email = `e2e-rundgang-${rolle}@test.local`;
 		seedBenutzer(email, rolle);
 
-		const { stoerungen, besucht, geklickt } = await geheRundgang(
+		const { stoerungen, besucht, geklickt, gescannt } = await geheRundgang(
 			page,
 			email,
 			[...BILDSCHIRME, akten.buchakte],
@@ -40,5 +40,7 @@ for (const { value: rolle } of ROLLEN_AUSWAHL) {
 		// Grün heißt nur dann etwas, wenn der Rundgang auch unterwegs war.
 		expect(besucht.size).toBeGreaterThanOrEqual(rolle === 'admin' ? BILDSCHIRME.length : 1);
 		expect(geklickt).toBeGreaterThan(0);
+		// Das Kollegium hat keine Theke; alle anderen scannen, sonst sähe der Test die Akte nie.
+		expect(gescannt).toBe(rolle !== 'kollegium');
 	});
 }

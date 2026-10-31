@@ -65,7 +65,7 @@ export function legeAktenAn() {
  * @param {string} email
  * @param {string[]} bildschirme Pfade
  * @param {string} [ausweis]
- * @returns {Promise<{ stoerungen: string[], besucht: Set<string>, geklickt: number }>}
+ * @returns {Promise<{ stoerungen: string[], besucht: Set<string>, geklickt: number, gescannt: boolean }>}
  */
 export async function geheRundgang(page, email, bildschirme, ausweis) {
 	let ort = 'Anmeldung';
@@ -100,6 +100,7 @@ export async function geheRundgang(page, email, bildschirme, ausweis) {
 		await klickeReiter(angekommen);
 	}
 
+	let gescannt = false;
 	if (ausweis && besucht.has(THEKE)) {
 		ort = `${THEKE} › Scan`;
 		await page.goto(THEKE);
@@ -112,6 +113,7 @@ export async function geheRundgang(page, email, bildschirme, ausweis) {
 		await antwort;
 		await steht();
 		await klickeReiter(ort);
+		gescannt = true;
 	}
-	return { stoerungen, besucht, geklickt };
+	return { stoerungen, besucht, geklickt, gescannt };
 }

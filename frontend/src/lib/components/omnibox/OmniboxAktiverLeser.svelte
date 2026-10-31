@@ -46,7 +46,7 @@
 				timestamp={0}
 				showWebcam={false}
 				onDeselect={abwaehlen}
-				schliessenEtikett="Schließen"
+				schliessenEtikett="Leser schließen"
 			/>
 			<p class="px-6 pt-4 text-sm text-on-surface-variant">
 				Die Akte mit Ausleihen und Gebühren braucht das Recht „Leserdatei anzeigen“.
