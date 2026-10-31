@@ -18,10 +18,10 @@ const (
 
 func TestLeseText(t *testing.T) {
 	faelle := map[string]struct{ inhalt, want string }{
-		"UTF-8 bleibt":                           {"Jürgen Müller", "Jürgen Müller"},
-		"UTF-8 mit BOM":                          {"\xef\xbb\xbfJürgen", "Jürgen"},
-		"Windows-1252":                           {"J\xfcrgen M\xfcller, Stra\xdfe", "Jürgen Müller, Straße"},
-		"Windows-1252, Sonderfall":               {"\x84Fr\xfch\x93 \x80 5", "„Früh“ € 5"},
+		"UTF-8 bleibt":             {"Jürgen Müller", "Jürgen Müller"},
+		"UTF-8 mit BOM":            {"\xef\xbb\xbfJürgen", "Jürgen"},
+		"Windows-1252":             {"J\xfcrgen M\xfcller, Stra\xdfe", "Jürgen Müller, Straße"},
+		"Windows-1252, Sonderfall": {"\x84Fr\xfch\x93 \x80 5", "„Früh“ € 5"},
 		"Windows-1252, Umlaut am Wortrand klärt": {"\xdcbung, Kre\x9aimir", "Übung, Krešimir"},
 		"Windows-1252, § am Wortrand":            {"M\xfcller, Abs\xa7 5", "Müller, Abs§ 5"},
 		"Windows-1252, § allein":                 {"\xa7 7", "§ 7"},

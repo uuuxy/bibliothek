@@ -19,9 +19,11 @@ if ! npx prettier --check src/ e2e/ --log-level warn; then
     exit 1
 fi
 cd ..
-UNFORMATIERT=$(gofmt -l $(find . -name '*.go' -not -path './vendor/*' -not -path './docs/*') 2>/dev/null)
+# Das gofmt der Go-Fassung aus go.mod, wie in der CI: Eines im Pfad kann älter sein und anders ausrichten.
+GOFMT="$(go env GOROOT)/bin/gofmt"
+UNFORMATIERT=$("$GOFMT" -l $(find . -name '*.go' -not -path './vendor/*' -not -path './docs/*') 2>/dev/null)
 if [ -n "$UNFORMATIERT" ]; then
-    echo -e "${RED}✗ Backend nicht formatiert. Beheben: gofmt -w <Datei>${NC}"
+    echo -e "${RED}✗ Backend nicht formatiert. Beheben: $GOFMT -w <Datei>${NC}"
     echo "$UNFORMATIERT"
     exit 1
 fi

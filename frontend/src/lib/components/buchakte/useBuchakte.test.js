@@ -216,6 +216,7 @@ describe('useBuchakte.ladeAlles: Kopf und überholte Läufe', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		appState.selectedBook = null;
+		authStore.currentUser = /** @type {any} */ ({ rolle: 'admin', permissions: ['*'] });
 	});
 
 	/** Die Adressen, die die Akte abgerufen hat. */
