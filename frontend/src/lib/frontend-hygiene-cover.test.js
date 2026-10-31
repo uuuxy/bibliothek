@@ -17,13 +17,8 @@ import {
 // ohne eigenen Zustand.
 const EIGENES_COVER = /coverKandidaten|coverSrc\(|<img\b[^>]*\bsrc=\{[^}]*cover/i;
 
-// Zwei Stellen mit eigenem Aufbau um das Bild: Die Maske „Buch bearbeiten" legt den Hinweis
-// zum Hochladen darüber, die Auswahlkarte des Klassensatz-Dialogs die Markierung der Wahl.
-// Beide schneiden schon 2:3 und ziehen nach, wenn ihr Aufbau ohnehin geändert wird.
-const BESTAND = [
-	'src/inventur/lib/components/admin/BuchCoverUpload.svelte',
-	'src/inventur/lib/components/admin/KlassensatzTitelRaster.svelte'
-];
+/** @type {string[]} */
+const BESTAND = [];
 
 // Die beiden Bauteile selbst greifen zu Recht auf die Helfer zu: BuchCover zeichnet das
 // Bild, CoverVorschau die Großansicht. Sie sind die Quelle, nicht ein Verstoß.

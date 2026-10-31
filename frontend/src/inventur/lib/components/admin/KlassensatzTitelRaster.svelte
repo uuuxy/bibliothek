@@ -1,5 +1,6 @@
 <script>
-	import { Book, Check } from '@lucide/svelte';
+	import { Check } from '@lucide/svelte';
+	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
@@ -36,14 +37,6 @@
 		} else {
 			gewaehlteKennungen = new Set([...gewaehlteKennungen, id]);
 		}
-	}
-
-	/**
-	 * @param {Event & { target: any }} event
-	 */
-	function beiBildfehler(event) {
-		event.target.style.display = 'none';
-		event.target.nextElementSibling.style.display = 'flex';
 	}
 </script>
 
@@ -105,25 +98,15 @@
 
 			<!-- Cover -->
 			<div class="aspect-2/3 w-full overflow-hidden bg-surface-container relative shrink-0">
-				{#if book.coverUrl}
-					<img
-						src={book.coverUrl}
-						alt={book.title}
-						class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-						onerror={beiBildfehler}
-					/>
-					<div
-						class="w-full h-full hidden items-center justify-center bg-surface-container text-outline-variant"
-					>
-						<Book class="w-5 h-5" aria-hidden="true" />
-					</div>
-				{:else}
-					<div
-						class="w-full h-full flex items-center justify-center bg-surface-container text-outline-variant"
-					>
-						<Book class="w-5 h-5" aria-hidden="true" />
-					</div>
-				{/if}
+				<BuchCover
+					coverUrl={book.coverUrl}
+					isbn={book.isbn}
+					titel={book.title}
+					fach={book.subject}
+					groesse="kachel"
+					dekorativ
+					klasse="transition-transform duration-500 group-hover:scale-110"
+				/>
 				<div
 					class="absolute inset-0 bg-linear-to-t from-scrim/20 to-transparent group-hover:from-scrim/40 transition-colors"
 				></div>

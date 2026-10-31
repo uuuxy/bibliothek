@@ -1,4 +1,5 @@
 <script>
+	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 
 	let { formular = $bindable(), onCoverUpload, onCoverNeuHolen } = $props();
@@ -33,18 +34,15 @@
 		class="group relative mb-4 aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low lg:h-[clamp(8rem,calc(100vh-24rem),24rem)] lg:w-auto lg:max-w-full"
 	>
 		{#if formular.coverUrl}
-			<img
-				src={formular.coverUrl}
-				alt="Cover"
-				class="w-full h-full object-cover"
-				onerror={(/** @type {Event} */ e) => {
-					const target = /** @type {HTMLImageElement} */ (e.target);
-					if (target) {
-						target.onerror = null;
-						target.src =
-							'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-					}
-				}}
+			<!-- Nur das gespeicherte Cover: Die Maske zeigt, was am Titel liegt, nicht einen Ersatz. -->
+			<BuchCover
+				coverUrl={formular.coverUrl}
+				isbn={formular.isbn}
+				titel={formular.title}
+				fach={formular.subject}
+				groesse="kachel"
+				klasse="h-full"
+				nurGespeichert
 			/>
 		{:else if formular.id}
 			<!-- Erst nach dem ersten Speichern: Davor steht unten schon „Erst speichern, dann
