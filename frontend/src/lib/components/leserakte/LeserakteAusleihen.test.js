@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 
-vi.mock('../../apiFetch.js', () => ({
+// Das echte Modul bleibt, weil authStore beim Laden einen Haken darin anmeldet.
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(async () => ({ ok: true, json: async () => ({}) })),
 	apiClient: { post: vi.fn(async () => ({ ok: true, json: async () => ({}) })) }
 }));

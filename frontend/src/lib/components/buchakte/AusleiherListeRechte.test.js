@@ -21,7 +21,7 @@ describe('Ausleiher-Liste: Recht zu scannen', () => {
 	const zeige = () => render(AusleiherListe, { zeilen: [zeile], onBack: () => {}, fmtDate });
 
 	beforeEach(() => {
-		appState.triggerStudentScan = null;
+		appState.triggerStudentScan = '';
 	});
 
 	it('zeigt den Namen ohne das Recht als Text, nicht als Knopf', () => {

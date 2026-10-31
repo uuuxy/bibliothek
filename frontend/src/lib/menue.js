@@ -53,7 +53,7 @@ export function darfSehen(item, currentUser) {
 	// Sammelpunkt: sichtbar, sobald EINE der genannten Türen dahinter offen ist.
 	if (item.permissions) return item.permissions.some((p) => hatRecht(currentUser, p));
 
-	return hatRecht(currentUser, item.permission);
+	return !!item.permission && hatRecht(currentUser, item.permission);
 }
 
 // Unteransichten ohne eigenen Menüpunkt erben die Regel ihrer Elternansicht. Ganz ohne
