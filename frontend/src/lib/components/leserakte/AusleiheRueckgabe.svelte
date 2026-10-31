@@ -13,8 +13,8 @@
 	import Feld from '../ui/Feld.svelte';
 	import UeberfaelligZeichen from '../buchakte/UeberfaelligZeichen.svelte';
 
-	/** @type {{ ausleihe: any, ueberfaellig: boolean }} */
-	let { ausleihe, ueberfaellig } = $props();
+	/** @type {{ ausleihe: any, ueberfaellig: boolean, darfAendern: boolean }} */
+	let { ausleihe, ueberfaellig, darfAendern } = $props();
 
 	let bearbeitet = $state(false);
 	let neuesDatum = $state('');
@@ -100,17 +100,19 @@
 				<UeberfaelligZeichen />
 			{/if}
 		{/if}
-		<button
-			type="button"
-			class="icon-btn text-on-surface-variant"
-			onclick={() => {
-				neuesDatum = (ausleihe.rueckgabe_frist ?? '').split('T')[0];
-				bearbeitet = true;
-			}}
-			aria-label="Rückgabedatum bearbeiten"
-			data-tip="Rückgabedatum ändern"
-		>
-			<Pencil class="h-4 w-4" aria-hidden="true" />
-		</button>
+		{#if darfAendern}
+			<button
+				type="button"
+				class="icon-btn text-on-surface-variant"
+				onclick={() => {
+					neuesDatum = (ausleihe.rueckgabe_frist ?? '').split('T')[0];
+					bearbeitet = true;
+				}}
+				aria-label="Rückgabedatum bearbeiten"
+				data-tip="Rückgabedatum ändern"
+			>
+				<Pencil class="h-4 w-4" aria-hidden="true" />
+			</button>
+		{/if}
 	</div>
 {/if}

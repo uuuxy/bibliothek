@@ -8,7 +8,7 @@ import { hatRecht } from '../../menue.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, loeschenMitZugang: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, zusammenfuehren: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, loeschenMitZugang: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, frist: boolean, zusammenfuehren: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -35,6 +35,8 @@ export function schuelerRechte(user) {
 		auskunftMitKonto: hatRecht(user, 'manage_users'),
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
+		// POST /api/ausleihen/{id}/verlaengern, PATCH /api/admin/ausleihen/{id}/faelligkeit
+		frist: hatRecht(user, 'edit_books'),
 		// POST /api/schueler/{id}/zusammenfuehren — zwei Datensätze, ein Mensch (Umbenennung
 		// ohne Schüler-ID, Dublette). Unumkehrbar, deshalb ein eigenes Recht, das der Admin
 		// einzeln delegieren kann.

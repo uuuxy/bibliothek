@@ -10,6 +10,7 @@ vi.mock('../../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 import { apiFetch } from '../../apiFetch.js';
 import { melde } from '../../../inventur/lib/store.svelte.js';
 import { serverAntwort } from '../../serverAntwort.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 import LeserAusleihenListe from './LeserAusleihenListe.svelte';
 
 // Ging die Antwort auf „Verlängern" verloren, verlängerte der zweite Klick noch einmal: Aus 21
@@ -36,6 +37,25 @@ describe('Ausleihliste: Verlängern', () => {
 	beforeEach(() => {
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(melde).mockReset();
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books'] };
+	});
+
+	// Beide Knöpfe hängen an edit_books, die Akte selbst an view_students. Ab Werk hält eine Rolle
+	// beide Rechte; fehlt edit_books, lehnte der Server den Knopf ab.
+	it('bietet ohne edit_books weder das Verlängern noch das Ändern des Datums an', () => {
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['view_students'] };
+		const screen = render(LeserAusleihenListe, { ausleihen: beobachtet() });
+
+		expect(screen.queryByRole('button', { name: 'Ausleihe verlängern' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Rückgabedatum bearbeiten' })).toBeNull();
+		expect(screen.getByText('28.9.2026'), 'das Datum bleibt lesbar').toBeTruthy();
+	});
+
+	it('bietet mit edit_books beides an', () => {
+		const screen = render(LeserAusleihenListe, { ausleihen: beobachtet() });
+
+		expect(screen.getByRole('button', { name: 'Ausleihe verlängern' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Rückgabedatum bearbeiten' })).toBeTruthy();
 	});
 
 	it('schickt die gezeigte Frist mit', async () => {

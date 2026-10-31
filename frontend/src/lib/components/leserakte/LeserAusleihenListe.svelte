@@ -10,11 +10,14 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { istUeberfaellig } from '../../utils/ueberfaellig.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { schuelerRechte } from '../leser/schuelerRechte.js';
 
 	/** @type {{ ausleihen: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
 	let { ausleihen = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
 
 	const extendingIds = new SvelteSet();
+	const darfFristAendern = $derived(schuelerRechte(authStore.currentUser).frist);
 
 	/** @param {any} book */
 	async function verlaengere(book) {
@@ -124,25 +127,29 @@
 						</div>
 					</td>
 					<td class="hidden whitespace-nowrap tabular-nums @4xl:table-cell">{book.barcode_id}</td>
-					<td class="whitespace-nowrap"><AusleiheRueckgabe ausleihe={book} {ueberfaellig} /></td>
+					<td class="whitespace-nowrap"
+						><AusleiheRueckgabe ausleihe={book} {ueberfaellig} darfAendern={darfFristAendern} /></td
+					>
 					<!-- Symbole ohne Text: Die Spalte bleibt schmal, die Sprechblase nennt die Aktion,
 					     und nach dem Klick sagt die Meldung, was geschehen ist. -->
 					<td class="text-right whitespace-nowrap">
 						<div class="flex items-center justify-end gap-1">
-							<button
-								type="button"
-								class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/38"
-								onclick={() => verlaengere(book)}
-								disabled={extendingIds.has(ausleiheId)}
-								data-tip="Um die Standard-Leihfrist verlängern"
-								aria-label="Ausleihe verlängern"
-							>
-								{#if extendingIds.has(ausleiheId)}
-									<Ladekreis size="sm" farbe="aktuell" />
-								{:else}
-									<CalendarPlus class="h-4 w-4" aria-hidden="true" />
-								{/if}
-							</button>
+							{#if darfFristAendern}
+								<button
+									type="button"
+									class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/38"
+									onclick={() => verlaengere(book)}
+									disabled={extendingIds.has(ausleiheId)}
+									data-tip="Um die Standard-Leihfrist verlängern"
+									aria-label="Ausleihe verlängern"
+								>
+									{#if extendingIds.has(ausleiheId)}
+										<Ladekreis size="sm" farbe="aktuell" />
+									{:else}
+										<CalendarPlus class="h-4 w-4" aria-hidden="true" />
+									{/if}
+								</button>
+							{/if}
 							{#if onDamageClick}
 								<button
 									type="button"
