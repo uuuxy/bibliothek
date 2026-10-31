@@ -53,15 +53,6 @@ export function darfSehen(item, currentUser) {
 	// Sammelpunkt: sichtbar, sobald EINE der genannten Türen dahinter offen ist.
 	if (item.permissions) return item.permissions.some((p) => hatRecht(currentUser, p));
 
-	// Punkte ohne Permission-Anforderung sind allgemeine Theken-Werkzeuge (z. B. Kiosk).
-	if (!item.permission) {
-		// Ausdrücklich für diese Rolle gelistet — die Liste IST hier die Freigabe.
-		if (item.roles) return true;
-		// Das Kollegium sieht nur sein Portal + ausdrücklich freigeschaltete Rechte,
-		// keine allgemeinen Werkzeuge ohne Rechtebezug.
-		return r !== 'kollegium';
-	}
-
 	return hatRecht(currentUser, item.permission);
 }
 
@@ -121,7 +112,7 @@ export function bildschirmTitel(tab) {
 export const menueGruppen = [
 	{
 		name: 'Kiosk',
-		items: [{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk' }]
+		items: [{ id: 'kiosk', label: 'Ausleihe', icon: 'kiosk', permission: 'perform_actions' }]
 	},
 	{
 		name: 'Bibliothek',

@@ -1,12 +1,14 @@
 <!-- @component AusleiherListe — wer dieses Buch gerade hat, eine Zeile je Exemplar.
      Ein Klick auf den Namen legt den Schüler-Barcode in den Scan-Kanal und springt
-     zurück: derselbe Weg wie ein Scan am Pult.
+     zurück: derselbe Weg wie ein Scan am Pult. Ohne das Recht zu scannen bleibt der Name Text.
 
      Überfällig trägt Farbe, Zeichen und für Vorleseprogramme das Wort, wie in der Leserakte
      (UeberfaelligZeichen.svelte). -->
 <script>
 	import UeberfaelligZeichen from './UeberfaelligZeichen.svelte';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menue.js';
 	import { istUeberfaellig } from '../../utils/ueberfaellig.js';
 
 	/**
@@ -17,7 +19,15 @@
 	 * }}
 	 */
 	let { zeilen, onBack, fmtDate } = $props();
+
+	const darfScannen = $derived(hatRecht(authStore.currentUser, 'perform_actions'));
 </script>
+
+{#snippet leser(/** @type {any} */ b)}
+	{b.schueler_name}
+	{b.schueler_nachname}
+	<span class="text-xs font-normal text-on-surface-variant ml-1">({b.klasse || 'Unbekannt'})</span>
+{/snippet}
 
 <div class="w-full">
 	<ul class="divide-y divide-outline-variant">
@@ -35,19 +45,19 @@
 						{b.schueler_name?.[0] ?? ''}{b.schueler_nachname?.[0] ?? ''}
 					</div>
 					<div class="min-w-0">
-						<button
-							onclick={() => {
-								appState.triggerStudentScan = b.schueler_barcode;
-								onBack();
-							}}
-							class="text-sm font-semibold text-on-surface hover:text-primary text-left cursor-pointer truncate block"
-						>
-							{b.schueler_name}
-							{b.schueler_nachname}
-							<span class="text-xs font-normal text-on-surface-variant ml-1"
-								>({b.klasse || 'Unbekannt'})</span
+						{#if darfScannen}
+							<button
+								onclick={() => {
+									appState.triggerStudentScan = b.schueler_barcode;
+									onBack();
+								}}
+								class="text-sm font-semibold text-on-surface hover:text-primary text-left cursor-pointer truncate block"
 							>
-						</button>
+								{@render leser(b)}
+							</button>
+						{:else}
+							<p class="text-sm font-semibold text-on-surface truncate">{@render leser(b)}</p>
+						{/if}
 						<p class="text-xs text-on-surface-variant font-mono mt-0.5">
 							Exemplar: {b.exemplar_barcode}
 						</p>

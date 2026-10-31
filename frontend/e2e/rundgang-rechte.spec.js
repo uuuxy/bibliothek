@@ -82,7 +82,7 @@ test('Ein Konto mit einem einzigen Recht öffnet, was es erreicht, ohne Ablehnun
 			await setzeRechte(page, rechte);
 			const kontext = await browser.newContext();
 			const seite = await kontext.newPage();
-			// Scannen verlangt perform_actions; die Theke selbst geht auch ohne das Recht auf.
+			// Die Theke und das Scannen verlangen perform_actions.
 			const { stoerungen, besucht, gescannt } = await geheRundgang(
 				seite,
 				EMAIL,

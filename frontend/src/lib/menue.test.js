@@ -266,3 +266,22 @@ describe('Menü-Sichtbarkeit', () => {
 		expect(allePunkte.some((item) => darfSehen(item, null))).toBe(false);
 	});
 });
+
+// Ohne perform_actions lehnte der Server jeden Scan an der Theke ab, und nur dort geht sie auf.
+describe('Die Theke hängt am Recht ihrer Tür', () => {
+	const theke = menueGruppen.flatMap((g) => g.items).find((i) => i.id === 'kiosk');
+
+	it('öffnet nur mit perform_actions', () => {
+		const ohne = { rolle: 'mitarbeiter', permissions: ['view_books', 'view_students'] };
+		const mit = { rolle: 'helfer', permissions: ['perform_actions', 'view_books'] };
+		expect(darfSehen(/** @type {any} */ (theke), ohne)).toBe(false);
+		expect(darfSehen(/** @type {any} */ (theke), mit)).toBe(true);
+		expect(bildschirmGesperrt('kiosk', erlaubteBildschirme(ohne))).toBe(true);
+		expect(bildschirmGesperrt('kiosk', erlaubteBildschirme(mit))).toBe(false);
+	});
+
+	it('führt ein Konto ohne das Recht auf seinen ersten Bildschirm', () => {
+		const erlaubt = erlaubteBildschirme({ rolle: 'mitarbeiter', permissions: ['view_books'] });
+		expect([...erlaubt][0]).toBe('media_catalog');
+	});
+});
