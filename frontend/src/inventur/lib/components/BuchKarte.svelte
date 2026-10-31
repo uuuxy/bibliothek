@@ -13,6 +13,7 @@
 	import BuchCover from '../../../lib/components/ui/BuchCover.svelte';
 	import { bestandSatz, formatDatum } from '../../../lib/utils/format.js';
 	import { auflagenAufschluesselung } from '../../../lib/utils/auflagenText.js';
+	import { kopiere } from '../../../lib/utils/zwischenablage.js';
 	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
 
 	/**
@@ -55,10 +56,9 @@
 	const geprueft = $derived(titel.lastCounted ? formatDatum(titel.lastCounted) : '');
 
 	/** @param {Event} e */
-	function copyIsbn(e) {
+	async function copyIsbn(e) {
 		e.stopPropagation();
-		if (!titel.isbn) return;
-		navigator.clipboard.writeText(titel.isbn);
+		if (!titel.isbn || !(await kopiere(titel.isbn))) return;
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}

@@ -14,6 +14,7 @@
 	import { standorteAusExemplaren, standortZeile } from '../../utils/standorte.js';
 	import { exemplarZahlen } from './exemplarStatus.js';
 	import { jahrgangSpanne } from '../../utils/format.js';
+	import { kopiere } from '../../utils/zwischenablage.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -52,9 +53,8 @@
 	// Den Bestand nennt „1 von 2 verfügbar"; daneben steht nur, was diese Zahl nicht sagt.
 	const bestellt = $derived(exemplarZahlen(exemplare).bestellt);
 
-	function kopieren() {
-		if (!titel.isbn) return;
-		navigator.clipboard.writeText(titel.isbn);
+	async function kopieren() {
+		if (!titel.isbn || !(await kopiere(titel.isbn))) return;
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}

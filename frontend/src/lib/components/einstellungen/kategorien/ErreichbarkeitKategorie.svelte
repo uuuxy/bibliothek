@@ -16,6 +16,7 @@
 	import { Copy, Check } from '@lucide/svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
+	import { kopiere } from '../../../utils/zwischenablage.js';
 
 	/** @type {{ daten: Record<string, any>, onSaved?: () => void | Promise<void> }} */
 	let { daten, onSaved } = $props();
@@ -54,14 +55,10 @@
 	]);
 	let kopiert = $state('');
 	/** @param {string} url */
-	async function kopiere(url) {
-		try {
-			await navigator.clipboard.writeText(url);
-			kopiert = url;
-			setTimeout(() => (kopiert = ''), 1800);
-		} catch {
-			/* Ohne Zwischenablage (unsicherer Kontext) bleibt die Adresse markierbar. */
-		}
+	async function kopiereAdresse(url) {
+		if (!(await kopiere(url, 'Adresse bitte von Hand markieren.'))) return;
+		kopiert = url;
+		setTimeout(() => (kopiert = ''), 1800);
 	}
 
 	const eingabe = () => ({
@@ -129,7 +126,7 @@
 						class="icon-btn text-on-surface-variant hover:bg-surface-container"
 						aria-label="Adresse von {seite.name} kopieren"
 						data-tip={kopiert === url ? 'Kopiert' : 'Adresse kopieren'}
-						onclick={() => kopiere(url)}
+						onclick={() => kopiereAdresse(url)}
 					>
 						{#if kopiert === url}<Check class="h-4.5 w-4.5" aria-hidden="true" />{:else}<Copy
 								class="h-4.5 w-4.5"

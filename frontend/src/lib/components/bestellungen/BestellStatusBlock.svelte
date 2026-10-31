@@ -7,7 +7,7 @@
 	// Aktion; der manuelle Nachtrag steht darunter als ruhige zweite Ebene, weil er nur
 	// noch Rückfallebene ist, seit der Lieferant selbst bestätigen kann.
 	import { apiPut } from '../../apiFetch.js';
-	import { snackbars } from '../../stores/snackbars.svelte.js';
+	import { kopiere } from '../../utils/zwischenablage.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { CircleCheck, Clock, Copy, Check } from '@lucide/svelte';
@@ -72,12 +72,7 @@
 	}
 
 	async function kopieren() {
-		try {
-			await navigator.clipboard.writeText(neuerLink);
-			kopiert = true;
-		} catch {
-			snackbars.addToast('Kopieren nicht möglich — Link bitte von Hand markieren.', 'error');
-		}
+		kopiert = await kopiere(neuerLink, 'Link bitte von Hand markieren.');
 	}
 
 	/** @param {'klein'|'gross'} groesse */
