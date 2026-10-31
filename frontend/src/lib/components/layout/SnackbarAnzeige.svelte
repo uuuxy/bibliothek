@@ -64,9 +64,10 @@
 <!-- Unten und mittig über der Fläche rechts der Navigation (Material 3, Snackbar, „Placement":
      „Snackbars should be placed at the bottom of a UI, in front of the main content"); wo und
      warum genau, steht in meldungsPlatz.js. z-9999: Toasts müssen über allen Modals (z-50/z-60)
-     und Omnibox-Alerts (z-100) liegen. -->
+     und Omnibox-Alerts (z-100) liegen. no-print: Eine Meldung, die beim Druck steht, käme sonst
+     aufs Papier, auf eine Ausweiskarte mitten auf die Karte. -->
 <div
-	class="pointer-events-none fixed right-0 z-9999 flex flex-col items-center gap-2 px-4"
+	class="no-print pointer-events-none fixed right-0 z-9999 flex flex-col items-center gap-2 px-4"
 	style:left="{platz.links}px"
 	style:bottom="{platz.unten}px"
 	bind:clientHeight={hoehe}

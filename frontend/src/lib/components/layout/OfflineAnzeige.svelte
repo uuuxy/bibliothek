@@ -89,7 +89,7 @@
 
 {#if sichtbar}
 	<div
-		class="fixed top-0 right-0 left-0 z-9999 border-b {haengt
+		class="no-print fixed top-0 right-0 left-0 z-9999 border-b {haengt
 			? 'bg-error text-on-error border-error'
 			: offlineSync.wartendeAnzahl > 0
 				? 'bg-error-container text-on-error-container border-outline-variant'

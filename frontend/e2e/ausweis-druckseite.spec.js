@@ -50,6 +50,19 @@ async function druckseite(page) {
 	return lage;
 }
 
+/**
+ * Markiert in der Leserdatei den einen Leser und gibt den Balken mit seinen Aktionen zurück.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} vorname
+ */
+async function markiereLeser(page, vorname) {
+	await gehZu(page, '/schuelerdatei');
+	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
+	await expect(page.locator('tbody tr').filter({ hasText: vorname })).toHaveCount(1);
+	await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
+	return page.getByRole('region', { name: /Aktionen für die markierten/ });
+}
+
 /** @param {Awaited<ReturnType<typeof druckseite>>} lage @param {string} wo */
 function erwarteNurKarten(lage, wo) {
 	expect(lage.karten.length, `${wo}: Im Druck steht keine Karte.`).toBeGreaterThan(0);
@@ -84,11 +97,7 @@ test.describe('Ausweis: die Druckseite trägt nur die Karte', () => {
 	test('Stapeldruck aus der Leserdatei', async ({ page }) => {
 		await druckdialogAnhalten(page);
 		await uiLogin(page);
-		await gehZu(page, '/schuelerdatei');
-		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
-		await expect(page.locator('tbody tr').filter({ hasText: vorname })).toHaveCount(1);
-		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
-		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
+		const balken = await markiereLeser(page, vorname);
 		await balken.getByRole('button', { name: 'Ausweise drucken' }).click();
 
 		const lage = await druckseite(page);
@@ -108,6 +117,52 @@ test.describe('Ausweis: die Druckseite trägt nur die Karte', () => {
 		const lage = await druckseite(page);
 		expect(lage.betriebsart).toBe('card-single');
 		erwarteNurKarten(lage, 'Einzeldruck');
+	});
+
+	// Was am Bildschirm über allem liegt, hat auf dem Papier nichts zu suchen: Die Warnung vor der
+	// Musterschule kommt unmittelbar vor dem Druckdialog und stünde sonst auf der Karte.
+	test('Die Warnung vor der Musterschule steht am Bildschirm, nicht auf der Karte', async ({
+		page
+	}) => {
+		const SCHLUESSEL = `('ausweis_layout', 'schule_name', 'schule_strasse', 'schule_plz', 'schule_ort')`;
+		seedSQL(
+			`UPDATE system_einstellungen SET schluessel = 'e2e-sicherung-' || schluessel WHERE schluessel IN ${SCHLUESSEL};`
+		);
+		try {
+			await druckdialogAnhalten(page);
+			await uiLogin(page);
+			const balken = await markiereLeser(page, vorname);
+			await balken.getByRole('button', { name: 'Ausweise drucken' }).click();
+			await expect(page.getByRole('status').filter({ hasText: 'Musterschule' })).toBeVisible();
+
+			const lage = await druckseite(page);
+			expect(lage.betriebsart).toBe('card');
+			erwarteNurKarten(lage, 'Stapeldruck mit Warnung');
+		} finally {
+			seedSQL(
+				`UPDATE system_einstellungen SET schluessel = substr(schluessel, 15) WHERE schluessel LIKE 'e2e-sicherung-%';`
+			);
+		}
+	});
+
+	test('Das Band „Keine Verbindung“ steht am Bildschirm, nicht auf der Karte', async ({
+		page,
+		context
+	}) => {
+		await druckdialogAnhalten(page);
+		await uiLogin(page);
+		const balken = await markiereLeser(page, vorname);
+		await context.setOffline(true);
+		try {
+			await expect(page.getByText(/Keine Verbindung/)).toBeVisible();
+			await balken.getByRole('button', { name: 'Ausweise drucken' }).click();
+
+			const lage = await druckseite(page);
+			expect(lage.betriebsart).toBe('card');
+			erwarteNurKarten(lage, 'Stapeldruck ohne Netz');
+		} finally {
+			await context.setOffline(false);
+		}
 	});
 
 	test('Testdruck im Ausweis-Designer', async ({ page }) => {
