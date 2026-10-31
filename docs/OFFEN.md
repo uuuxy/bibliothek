@@ -214,7 +214,9 @@ Durchgang (b7a4fd5c bis ae68dac9) fand 14 Fehler hinter grünen Tests. Von selbs
 zufällige Reihenfolge und die Rundgänge je Rolle und je Recht (`e2e/rundgang-rollen.spec.js`,
 `e2e/rundgang-rechte.spec.js`); bei den übrigen
 muss jemand die Funde lesen, oder sie werden auch ohne Fehler rot. Die Skripte stehen nicht im
-Repository; fehlen sie, werden sie nach den Punkten dort neu geschrieben.
+Repository; fehlen sie, werden sie nach den Punkten dort neu geschrieben. Bisher in keinem Lauf:
+die Suite mit Touch und auf einem langsamen Rechner, der Mailversand mit STARTTLS und Anmeldung
+(`internal/smtptest` kündigt kein STARTTLS an) und eine CSV aus Excel für Windows.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 

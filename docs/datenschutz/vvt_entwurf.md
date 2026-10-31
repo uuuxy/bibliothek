@@ -1,6 +1,6 @@
 # Verzeichnis von Verarbeitungstätigkeiten — Entwurf (Art. 30 DSGVO, § 5 SchDSV)
 
-**Status:** Entwurf aus dem Projekt (Stand: 24.10.2026), nach dem HBDI-Muster
+**Status:** Entwurf aus dem Projekt (Stand: 25.10.2026), nach dem HBDI-Muster
 „Verfahrensverzeichnis Schulbibliothek" gegliedert. **Beschließen und unterschreiben muss
 die Schule** (Schulleitung als Verantwortliche, Beteiligung des schulischen
 Datenschutzbeauftragten). Eckige Klammern sind von der Schule auszufüllen; alles andere

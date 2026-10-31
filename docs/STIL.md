@@ -1,6 +1,6 @@
 # Stil — wie der Code geschrieben ist
 
-Stand: 24.10.2026
+Stand: 29.10.2026
 
 Eine Seite mit den Regeln für Namen, Sichtbarkeit und Kommentare im Go-Code, über `gofmt` und
 den Linter hinaus. Maßstab ist Googles Regelwerk für Go

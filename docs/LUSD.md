@@ -1,6 +1,6 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-10-27. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-10-31. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `api/leser/lusd.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),

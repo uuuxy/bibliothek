@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 24.10.2026 (Entwurf)
+Stand: 29.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was

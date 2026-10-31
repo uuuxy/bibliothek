@@ -1,6 +1,6 @@
 # Landesmittel und Kreismittel — Konzept
 
-Stand: 16.10.2026
+Stand: 21.10.2026
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).

@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-29. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-31. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -498,7 +498,7 @@ Liste.
   `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
   bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.
   Gedruckt wird mit dem Design aus dem Ausweis-Designer. Lässt es sich gerade nicht laden,
-  druckt das Programm nicht und meldet _Nicht gedruckt: Das Ausweis-Design ist nicht geladen_;
+  druckt das Programm nicht und meldet _Nicht gedruckt, das Ausweis-Design ist nicht geladen_;
   der nächste Klick versucht es erneut. Dasselbe gilt für _Ausweise drucken_ in der Leserdatei.
 - **Gebühren & Schäden** (eigener Reiter; die Zahl daran nennt die offenen Forderungen): offen /
   bezahlt / storniert; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
@@ -807,7 +807,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 
 ## Einstellungen
 
-15 Kategorien, jede einzeln speicherbar (§17):
+16 Kategorien, jede einzeln speicherbar (§17):
 
 | Kategorie               | Wofür                                                                                                                                                                                                                                                                                                                                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

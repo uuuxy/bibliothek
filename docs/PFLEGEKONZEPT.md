@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 23.10.2026 (Entwurf)
+Stand: 31.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -399,23 +399,23 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 
 ## 6. Kann jemand anderes das Programm weiterführen?
 
-Gemessen am 21.10.2026 am Go-Code ohne Tests: 603 Dateien, 2.619 Funktionen.
+Gemessen am 31.10.2026 am Go-Code ohne Tests: 612 Dateien, 2.770 Funktionen.
 
 **Was trägt:**
 
 - Die Stelle findet sich über den Menüpunkt. Die Türen stehen in zwölf Ordnern nach den
-  Menüpunkten der Oberfläche, je 6 bis 26 Dateien, und tragen kein SQL. Den Einstieg gibt
+  Menüpunkten der Oberfläche, je 7 bis 41 Dateien, und tragen kein SQL. Den Einstieg gibt
   [WEGWEISER.md](WEGWEISER.md) auf einer Seite.
-- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 107 Zeilen, neun von
-  zehn höchstens 267. 17 haben über 400, eine über 600.
-- Funktionen sind kurz: Die Hälfte hat höchstens 13 Zeilen, 18 haben über 80, die längste 148
+- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 109 Zeilen, neun von
+  zehn höchstens 270. 17 haben über 400, eine über 600.
+- Funktionen sind kurz: Die Hälfte hat höchstens 12 Zeilen, 23 haben über 80, die längste 187
   (eine Liste von Adressen).
 - Namen und Kommentare folgen einem Regelwerk ([STIL.md](STIL.md)): Fachwörter deutsch, je
   Sache ein Wort; ein Datum steht in einem Kommentar nur zu einer Quelle.
   `stil_ratsche_test.go` meldet jede Abweichung im Go-Code,
   `frontend-hygiene-vorgeschichte.test.js` jedes Datum in einem Kommentar der Oberfläche,
   `docs/kommentare_ohne_datum_test.go` jedes in Skripten, Workflows und Konfiguration.
-- 24 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
+- 22 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
   Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
   Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).
 
@@ -426,9 +426,9 @@ Gemessen am 21.10.2026 am Go-Code ohne Tests: 603 Dateien, 2.619 Funktionen.
 - Die Datenbankschicht ist ein Ordner mit 185 Dateien; gefunden wird dort über den Namen der
   Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
 - Die größte Datei hat 635 Zeilen (`repository/leser_zusammenfuehren.go`).
-- Um den Code: über 3.700 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
+- Um den Code: über 4.000 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
   [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)), ein Architektur-Dokument von
-  rund 3.600 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).
+  rund 3.900 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).
 
 ---
 
