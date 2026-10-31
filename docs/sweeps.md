@@ -370,6 +370,7 @@ steht im Kopfkommentar der Datei.
 | `kontrast.spec.js`                                                                                                             | Text über Bildern, Verläufen, halbtransparenten Flächen (wird übersprungen, Zahl steht in der Ausgabe); nur 5 Seiten.                                                                                                            |
 | `messhilfe.js` (Warten und Gegenprobe in `kontrast`, `typo-rollen`, `control-hoehen`, `icon-trefferflaechen`) | Nur fetch und XHR unter `/api/`: Inhalt, der ohne Datenanfrage später erscheint (Zeitgeber, Live-Leitung), und eine Seite, deren Antwort da ist, die aber nichts zeichnet. Die Gegenprobe vergleicht eine Zählung, nicht den Inhalt. |
 | `navigation-m3.spec.js`                                                                                                        | Bewusst blind gegen Farbwechsel in `rollen.css` — nur der Verlust der Rollennutzung.                                                                                                                                             |
+| `rundgang-rollen.spec.js` | Nur das Öffnen: Was erst ein Knopf oder Dialog auslöst, und Bildschirme, die ein Klick öffnet oder die einen Wert im Pfad tragen (Buchakte, Leserakte). Nur die Rechte ab Werk: Eine andere Verteilung auf der Berechtigungsseite sieht der Test nicht. Nur die Datenlage der Suite. Ein 401 zählt nicht, er gehört zur Anmeldung. |
 | `menue-fuehrt-irgendwohin.spec.js`                                                                                             | Der Administrator ist kein Messpunkt; „landet irgendwo" ≠ zeigt das Richtige.                                                                                                                                                    |
 | `feld-roundtrip.spec.js`                                                                                                       | Nur sieben Pfade — ein achter migrierter Schreibpfad hat keinen Beweis.                                                                                                                                                          |
 | `scripts/druck-sektionen-gate.mjs` | Braucht frischen `vite build`; läuft in keinem vitest/playwright-Lauf mit; nur zwei Sektionen, nicht Etiketten/Berichte. Die Prüfseite ist nachgebaut: Was die echten Seiten außerhalb von `.no-print` tragen, sieht es nicht; das misst `ausweis-druckseite.spec.js`. |
@@ -442,9 +443,10 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
    Fremdfeld anschlägt; Stellen mit eigenem Decoder gegen die Rümpfe der Oberfläche lesen.
 9. **Rückbau in Bedingungen und SQL:** Stichprobe über `go test -overlay` (`<` zu `<=`, `&&` zu `||`,
    Zeile weg). Die Überlebenden am Code lesen; ein Teil ist ohne Folge oder sieht das Overlay nicht.
-10. **Alle Rollen, alle Bildschirme:** Je Rolle jeden Bildschirm und Reiter öffnen und 403, 404, 5xx,
-    Abstürze und Meldungen der Konsole sammeln, einmal auf dem Bestand der Suite und einmal auf einer
-    leeren Datenbank. Die Suite meldet sich sonst fast nur als Admin an. Dazu je Rolle und Bildschirm
+10. **Alle Rollen, alle Bildschirme:** Je Rolle jeden Bildschirm und Reiter öffnen und Ablehnungen
+    des Servers, 5xx, Abstürze und Meldungen der Konsole sammeln. Die Suite fährt das selbst
+    (`e2e/rundgang-rollen.spec.js`), weil sie sich sonst fast nur als Admin anmeldet; von Hand bleibt
+    derselbe Rundgang auf einer leeren Datenbank. Dazu je Rolle und Bildschirm
     jeden Knopf einmal drücken, im Dialog auch die Bestätigung: Ein 403 auf einem Schreibweg heißt,
     die Oberfläche bietet an, was der Server ablehnt.
 11. **Firefox und WebKit:** die ganze Suite. Rot nur am Werkzeug bleiben: `newCDPSession` und
