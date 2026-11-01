@@ -101,8 +101,13 @@ func LadeZulauf(ctx context.Context, pool db.Pool) ([]*Zulaufgruppe, error) {
 		gruppen = append(gruppen, g)
 	}
 
+	// Bei gleichem Zeitpunkt entscheidet die Kennung: Die Map davor hat keine Reihenfolge, und die
+	// Liste lädt auch neu, während jemand sie liest.
 	sort.Slice(gruppen, func(i, j int) bool {
-		return gruppen[i].Zeitpunkt.After(gruppen[j].Zeitpunkt)
+		if !gruppen[i].Zeitpunkt.Equal(gruppen[j].Zeitpunkt) {
+			return gruppen[i].Zeitpunkt.After(gruppen[j].Zeitpunkt)
+		}
+		return gruppen[i].ID < gruppen[j].ID
 	})
 
 	return gruppen, nil

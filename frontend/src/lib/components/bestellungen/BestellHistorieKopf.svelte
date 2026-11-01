@@ -44,15 +44,21 @@
 		</p>
 		<!-- Nur wenn wirklich etwas aussteht. „Alles bestätigt" jeden Tag zu lesen, wäre
 		     dieselbe Zeile ohne Nachricht — auffallen soll die Abweichung. Wer den Satz
-		     sieht, weiß ohne Scrollen, dass in der Statusspalte etwas auf ihn wartet. -->
-		{#if offeneBestaetigungen > 0}
-			<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-warning">
-				<Clock size={15} aria-hidden="true" />
-				{offeneBestaetigungen === 1
-					? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
-					: `${offeneBestaetigungen} Bestellungen warten noch auf die Bestätigung des Händlers`}
-			</p>
-		{/if}
+		     sieht, weiß ohne Scrollen, dass in der Statusspalte etwas auf ihn wartet.
+		     Die Zahl sinkt ohne Zutun, wenn der Händler bestätigt, und wird deshalb vorgelesen. In den
+		     Zeilen geht das nicht: Eine Zeile ist ein Knopf, und ein Knopf nennt nur seine Beschriftung. -->
+		<div aria-live="polite">
+			{#if offeneBestaetigungen > 0}
+				<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-warning">
+					<Clock size={15} aria-hidden="true" />
+					{offeneBestaetigungen === 1
+						? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
+						: `${offeneBestaetigungen} Bestellungen warten noch auf die Bestätigung des Händlers`}
+				</p>
+			{:else}
+				<span class="sr-only">Keine Bestellung wartet auf die Bestätigung des Händlers</span>
+			{/if}
+		</div>
 	</div>
 	<!-- Ohne Preiserfassung ist "Gesamtausgaben 0,00 €" keine Auskunft, sondern eine
 	     falsche: Die Schule hat ausgegeben, nur steht es nirgends. Dann lieber die Zahl

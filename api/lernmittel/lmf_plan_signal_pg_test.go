@@ -1,20 +1,15 @@
 package lernmittel
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
-	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/sse"
+	"bibliothek/internal/tuertest"
 )
 
 // Das Live-Signal des LMF-Plans folgt dem Schreiben: Es kommt nach jedem Speichern,
@@ -30,68 +25,8 @@ func TestLMFPlan_SignalNurNachDemSchreiben(t *testing.T) {
 		}
 	}
 	raeumePlaene()
-
-	broker := sse.NewBroker()
-	ctx, cancel := context.WithCancel(context.Background())
-	go broker.FuehreAus(ctx)
-	stream := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }))
-	resp, err := http.Get(stream.URL)
-	if err != nil {
-		cancel()
-		stream.Close()
-		t.Fatalf("SSE-Strom nicht erreichbar: %v", err)
-	}
-	// Erst den Strom des Clients schließen, dann den Broker beenden: stream.Close wartet
-	// auf die offene Verbindung.
-	t.Cleanup(func() {
-		raeumePlaene()
-		if cerr := resp.Body.Close(); cerr != nil {
-			t.Logf("SSE-Strom schließen: %v", cerr)
-		}
-		cancel()
-		stream.CloseClientConnections()
-		stream.Close()
-	})
-
-	ereignisse := make(chan string, 32)
-	go func() {
-		sc := bufio.NewScanner(resp.Body)
-		for sc.Scan() {
-			if z := sc.Text(); strings.HasPrefix(z, "event: ") {
-				ereignisse <- strings.TrimPrefix(z, "event: ")
-			}
-		}
-	}()
-	naechstes := func() string {
-		t.Helper()
-		select {
-		case e := <-ereignisse:
-			return e
-		case <-time.After(3 * time.Second):
-			t.Fatal("kein SSE-Ereignis innerhalb von 3 s")
-			return ""
-		}
-	}
-	if e := naechstes(); e != "connected" {
-		t.Fatalf("erstes Ereignis = %q, erwartet den Handshake connected", e)
-	}
-	// signaleSeitDerLetztenMarke zählt die Plan-Signale, die vor der nächsten Marke ankommen.
-	marken := 0
-	signaleSeitDerLetztenMarke := func() int {
-		t.Helper()
-		marken++
-		marke := fmt.Sprintf("marke-%d", marken)
-		broker.Verteile(marke, "{}")
-		n := 0
-		for {
-			switch naechstes() {
-			case marke:
-				return n
-			case "lmf-plan":
-				n++
-			}
-		}
-	}
+	t.Cleanup(raeumePlaene)
+	broker, signale := tuertest.BeobachteLeitung(t)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}, Broker: broker}}
 	testdaten.LegeSchuelerAn(t, pool, "SIG-1", "Anna", "9H1")
@@ -118,7 +53,7 @@ func TestLMFPlan_SignalNurNachDemSchreiben(t *testing.T) {
 		if rec.Code != s.status {
 			t.Fatalf("%s: Status %d, erwartet %d: %s", s.name, rec.Code, s.status, rec.Body.String())
 		}
-		if n := signaleSeitDerLetztenMarke(); n != s.signale {
+		if n := signale("lmf-plan"); n != s.signale {
 			t.Errorf("%s: %d Signale, erwartet %d", s.name, n, s.signale)
 		}
 	}

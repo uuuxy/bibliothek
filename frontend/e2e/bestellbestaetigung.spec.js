@@ -173,7 +173,9 @@ test('Im Haus einen neuen Link erzeugen: Er steht da und trägt, der alte ist to
 		await uiLogin(page);
 		await menuepunkt(page, 'Bestellungen').click();
 		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
-		await page.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) }).click();
+		await page
+			.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+			.click();
 		await page.getByRole('button', { name: 'Neuen Link erzeugen' }).click();
 
 		const feld = page.getByLabel('Bestätigungs-Link');
@@ -265,7 +267,9 @@ test('Eine in der Historie nachgetragene Zusage steht beim Wechsel des Reiters i
 		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
 
 		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
-		await page.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) }).click();
+		await page
+			.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+			.click();
 		await page.getByRole('button', { name: 'Kleine Etiketten' }).click();
 		await expect(page.getByText('Bestätigung in der Bibliothek nachgetragen')).toBeVisible();
 
@@ -275,4 +279,201 @@ test('Eine in der Historie nachgetragene Zusage steht beim Wechsel des Reiters i
 		seedSQL(`UPDATE buecher_exemplare SET bestellstatus = NULL
 		         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
 	}
+});
+
+// Die Bestätigung kommt, während die Listen offen sind: Niemand fasst die Seite an, und sie wird
+// auch nicht neu geladen. Am Go-Test allein sähe das niemand; dort fehlt der Weg bis in die Ansicht.
+
+/** @param {string} s Kennung aus seedBestellungMitLink */
+function legeInDenZulauf(s) {
+	seedSQL(`UPDATE buecher_exemplare SET bestellstatus = 'im_zulauf'
+	         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
+}
+
+/** @param {string} s Kennung aus seedBestellungMitLink */
+function nimmAusDemZulauf(s) {
+	seedSQL(`UPDATE buecher_exemplare SET bestellstatus = NULL
+	         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
+}
+
+/**
+ * Meldet an und öffnet den Reiter des Bestellwesens. Die Marke am Fenster überlebt kein Neuladen.
+ * @param {import('@playwright/test').Page} seite
+ * @param {{ name: string | RegExp, exact?: boolean }} reiter
+ */
+async function oeffneReiter(seite, reiter) {
+	await uiLogin(seite);
+	await menuepunkt(seite, 'Bestellungen').click();
+	await seite.getByRole('tab', reiter).click();
+	await seite.evaluate(() => {
+		/** @type {any} */ (window).ohneNeuladen = true;
+	});
+}
+
+/** @param {import('@playwright/test').Page} seite */
+const nichtNeuGeladen = (seite) =>
+	seite.evaluate(() => /** @type {any} */ (window).ohneNeuladen === true);
+
+/**
+ * Der Händler bestätigt in seinem eigenen Browser, ohne Anmeldung.
+ * @param {import('@playwright/test').Browser} browser
+ * @param {string} token
+ */
+async function haendlerBestaetigt(browser, token) {
+	const kontext = await browser.newContext();
+	const seite = await kontext.newPage();
+	await seite.goto(`/bestellung/${token}`);
+	await seite.getByRole('button', { name: 'Bestellung jetzt bestätigen' }).click();
+	await expect(seite.getByRole('heading', { name: 'Bestellung bestätigt' })).toBeVisible();
+	await kontext.close();
+}
+
+const BESTAETIGT = /Bestätigt · \d\d\.\d\d\./;
+const HISTORIE = { name: 'Bestellhistorie', exact: true };
+const WARENEINGANG = { name: /^Wareneingang/ };
+
+/** @param {import('@playwright/test').Page} seite @param {string} s */
+const zeileDerHistorie = (seite, s) => seite.locator('tbody tr', { hasText: `K-${s}` }).first();
+/** @param {import('@playwright/test').Page} seite @param {string} s */
+const kopfImWareneingang = (seite, s) =>
+	seite.locator('[data-gruppe]', { hasText: `E2E-Naacher ${s}` });
+
+test('Bestätigt der Händler, wechselt der Chip in Historie und Wareneingang von selbst', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	legeInDenZulauf(s);
+	const zweiterPlatz = await (await browser.newContext()).newPage();
+
+	try {
+		await oeffneReiter(page, HISTORIE);
+		await oeffneReiter(zweiterPlatz, WARENEINGANG);
+		const zeile = zeileDerHistorie(page, s);
+		const kopf = kopfImWareneingang(zweiterPlatz, s);
+		await expect(zeile.getByText('Wartet auf Händler')).toBeVisible();
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+
+		await haendlerBestaetigt(browser, token);
+
+		await expect(zeile.getByText(BESTAETIGT)).toBeVisible();
+		await expect(kopf.getByText(BESTAETIGT)).toBeVisible();
+		await expect(zeile.getByText('Wartet auf Händler')).toHaveCount(0);
+		await expect(kopf.getByText('Wartet auf Händler')).toHaveCount(0);
+		expect(await nichtNeuGeladen(page)).toBe(true);
+		expect(await nichtNeuGeladen(zweiterPlatz)).toBe(true);
+	} finally {
+		nimmAusDemZulauf(s);
+		await zweiterPlatz.context().close();
+	}
+});
+
+test('Eine von Hand nachgetragene Zusage steht am zweiten Arbeitsplatz von selbst da', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	legeInDenZulauf(s);
+	const zweiterPlatz = await (await browser.newContext()).newPage();
+
+	try {
+		await oeffneReiter(zweiterPlatz, WARENEINGANG);
+		const kopf = kopfImWareneingang(zweiterPlatz, s);
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+
+		await oeffneReiter(page, HISTORIE);
+		await page
+			.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+			.click();
+		await page.getByRole('button', { name: 'Kleine Etiketten' }).click();
+		await expect(page.getByText('Bestätigung in der Bibliothek nachgetragen')).toBeVisible();
+
+		await expect(kopf.getByText(BESTAETIGT)).toBeVisible();
+		expect(await nichtNeuGeladen(zweiterPlatz)).toBe(true);
+	} finally {
+		nimmAusDemZulauf(s);
+		await zweiterPlatz.context().close();
+	}
+});
+
+test('Die offene Bestellung zeigt die Quittung von selbst, und der getippte Grund bleibt', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token, { mittel: 'land' });
+
+	await oeffneReiter(page, HISTORIE);
+	await page
+		.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+		.click();
+	await expect(page.getByText('Warten auf den Händler')).toBeVisible();
+	await page.getByRole('button', { name: 'Topf ändern' }).click();
+	const grund = page.getByLabel(/Grund der Korrektur/);
+	await grund.fill('falsch gekennzeichnet');
+
+	await haendlerBestaetigt(browser, token);
+
+	await expect(page.getByText('Der Lieferant hat die Bestellung bestätigt')).toBeAttached();
+	await expect(grund).toHaveValue('falsch gekennzeichnet');
+	expect(await nichtNeuGeladen(page)).toBe(true);
+});
+
+test('Im Wareneingang bleiben markierte Exemplare markiert, wenn der Händler bestätigt', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	legeInDenZulauf(s);
+
+	try {
+		await oeffneReiter(page, WARENEINGANG);
+		const kopf = kopfImWareneingang(page, s);
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+		const kaestchen = page.getByRole('checkbox', { name: `E2E-Bestaetigung ${s} auswählen` });
+		// Per Tastatur: Safari gibt einem Kästchen beim Anklicken keinen Fokus.
+		await kaestchen.focus();
+		await page.keyboard.press('Space');
+		await expect(page.getByText('2 Exemplare markiert')).toBeVisible();
+
+		await haendlerBestaetigt(browser, token);
+
+		await expect(kopf.getByText(BESTAETIGT)).toBeVisible();
+		await expect(page.getByText('2 Exemplare markiert')).toBeVisible();
+		await expect(kaestchen).toBeChecked();
+		await expect(kaestchen).toBeFocused();
+	} finally {
+		nimmAusDemZulauf(s);
+	}
+});
+
+// Was während einer Unterbrechung geschah, kommt nicht über die Leitung nach. Die Fehlerantwort ist
+// der harte Fall: Ein abgebrochener Abruf holt der Browser selbst nach (livesync-wiederaufbau.spec.js).
+test('Nach einer Unterbrechung der Leitung holt das Fenster die Bestätigung nach', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	let leitungSteht = false;
+	await page.route('**/events', async (route) => {
+		if (leitungSteht) return route.continue();
+		return route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+	});
+
+	await oeffneReiter(page, HISTORIE);
+	const zeile = zeileDerHistorie(page, s);
+	await expect(zeile.getByText('Wartet auf Händler')).toBeVisible();
+
+	await haendlerBestaetigt(browser, token);
+	// Ohne Leitung erfährt dieses Fenster nichts.
+	await expect(zeile.getByText('Wartet auf Händler')).toBeVisible();
+
+	leitungSteht = true;
+
+	await expect(zeile.getByText(BESTAETIGT)).toBeVisible({ timeout: 20_000 });
+	expect(await nichtNeuGeladen(page)).toBe(true);
 });

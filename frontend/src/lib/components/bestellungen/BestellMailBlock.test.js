@@ -222,6 +222,25 @@ describe('BestellStatusBlock: die Quittung', () => {
 			onAktualisieren: async () => {}
 		});
 
+	// Die Quittung erscheint ohne Zutun, wenn der Händler bestätigt. Vorgelesen wird nur, was in eine
+	// Region kommt, die schon dastand; der Kasten „Warten" gehört nicht hinein, sonst läse jede
+	// Änderung an ihm auch seine Knöpfe vor.
+	it('erscheint in einer Region, die vorher schon dasteht', async () => {
+		const offen = /** @type {any} */ ({ id: 'b1', mit_bestaetigung: true, link_aktiv: true });
+		const screen = render(BestellStatusBlock, { b: offen, onAktualisieren: async () => {} });
+		const region = screen.getByRole('status');
+		expect(region.textContent?.trim()).toBe('');
+		expect(screen.getByText(/Sobald der Händler dort bestätigt, erscheint es hier von selbst/));
+
+		await screen.rerender({
+			b: { ...offen, bestaetigt_am: '2026-10-12T10:00:00Z', bestaetigt_durch: 'lieferant' }
+		});
+
+		expect(screen.getByRole('status')).toBe(region);
+		expect(region.textContent).toContain('Der Lieferant hat die Bestellung bestätigt');
+		expect(screen.queryByText('Warten auf den Händler')).toBeNull();
+	});
+
 	it('nennt den Link nur, wenn der Händler ihn benutzt hat', () => {
 		expect(bestaetigt('lieferant').container.textContent).toContain('über den zugeschickten Link');
 		expect(bestaetigt('bibliothek').container.textContent).not.toContain(

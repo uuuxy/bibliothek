@@ -77,9 +77,12 @@
 				Keine Positionen im Zulauf.
 			</div>
 		{:else}
-			{#each incomingShipments as group, _i (_i)}
+			<!-- Die Liste lädt neu, während jemand sie liest: Der Schlüssel hält jede Bestellung an ihren
+			     Zeilen, und role="status" liest vor, wenn ihr Stand ohne Zutun wechselt. -->
+			{#each incomingShipments as group (group.id)}
 				<div
 					data-gruppe={group.id}
+					role="status"
 					class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-outline-variant bg-surface/80 px-6 py-3 backdrop-blur-sm"
 				>
 					<div class="font-bold text-on-surface">{group.supplierName}</div>

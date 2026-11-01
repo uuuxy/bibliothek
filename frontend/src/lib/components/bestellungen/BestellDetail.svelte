@@ -12,6 +12,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiGet } from '../../apiFetch.js';
+	import { abonniereNeuladen } from '../../liveEvents.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
@@ -41,23 +42,28 @@
 	// wie der Endpunkt — UI entscheidet nach Recht, nicht nach Rolle).
 	let mittelDialogOffen = $state(false);
 	const darfKorrigieren = $derived(hatRecht(authStore.currentUser, 'create_orders'));
+	// Es gilt die jüngste Anfrage: Ein Signal der Leitung und das Laden nach einer eigenen Aktion
+	// können sich überholen, und die ältere Antwort nennte dann eine überholte Frist des Links.
+	let ladeNr = 0;
 
 	async function laden() {
+		const nr = ++ladeNr;
 		// Beim Aktualisieren bleibt die Ansicht stehen, auch wenn der Abruf scheitert (die Meldung
 		// zeigt apiGet): Baute sie sich neu auf, wäre der Link weg, der nur einmal zu sehen ist.
 		const ersterAbruf = !bestellung;
 		laedt = ersterAbruf;
 		fehler = '';
 		try {
-			bestellung = await apiGet(`/api/bestellhistorie/${bestellungId}`);
+			const antwort = await apiGet(`/api/bestellhistorie/${bestellungId}`);
+			if (nr === ladeNr) bestellung = antwort;
 		} catch (e) {
 			// Ein veralteter Verweis liefert 404. Die Meldung nennt den Rückweg, statt eine
 			// leere Seite stehen zu lassen, die aussieht wie eine leere Bestellung.
-			if (ersterAbruf) {
+			if (ersterAbruf && nr === ladeNr) {
 				fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden.';
 			}
 		} finally {
-			laedt = false;
+			if (nr === ladeNr) laedt = false;
 		}
 	}
 
@@ -65,7 +71,10 @@
 	// Weg von einer Bestellung zur nächsten führt zwingend über den Zurück-Knopf. Damit
 	// wird diese Komponente je Bestellung neu aufgebaut, und ein Effekt, der auf einen
 	// Wechsel horcht, der nicht stattfinden kann, wäre nur eine Behauptung über den Ablauf.
-	onMount(laden);
+	onMount(() => {
+		void laden();
+		return abonniereNeuladen('bestellstand', () => void laden());
+	});
 
 	/** @param {string} iso */
 	function langdatum(iso) {

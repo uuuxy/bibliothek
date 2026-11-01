@@ -147,6 +147,19 @@ export function abonniere(name, handler) {
 	return () => menge.delete(handler);
 }
 
+/**
+ * Für Ansichten, die auf ein Ereignis hin ihre Daten neu holen. Was während einer Unterbrechung
+ * der Leitung geschah, kommt nicht nach; deshalb holen sie auch bei jedem Aufbau der Leitung neu.
+ *
+ * @param {string} name Ereignisname, z. B. 'bestellstand'
+ * @param {() => void} holeNeu
+ * @returns {() => void} Abmeldung
+ */
+export function abonniereNeuladen(name, holeNeu) {
+	const abmeldungen = [name, 'connected'].map((n) => abonniere(n, () => holeNeu()));
+	return () => abmeldungen.forEach((abmelden) => abmelden());
+}
+
 /** Nur für Tests: Zustand zurücksetzen. */
 export function _zuruecksetzenFuerTests() {
 	trenne();

@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { apiGet } from '../../apiFetch.js';
+	import { abonniereNeuladen } from '../../liveEvents.js';
 	import BestellDetail from './BestellDetail.svelte';
 	import BestellHistorieTabelle from './BestellHistorieTabelle.svelte';
 	import BestellHistorieKopf from './BestellHistorieKopf.svelte';
@@ -16,6 +17,8 @@
 	// Nur die jüngste Anfrage schreibt die Liste: Nach zwei Filterwechseln entschiede sonst die
 	// Reihenfolge der Antworten, welcher Topf unter dem Filter steht.
 	let ladeNr = 0;
+	/** @type {string|null} Der Topf der zuletzt geladenen Liste. */
+	let geladenerTopf = null;
 	/** @type {string|null} Bestellung, deren Detailansicht offen ist (null = Liste). */
 	let geoeffneteId = $state(null);
 
@@ -49,17 +52,22 @@
 		// gerechnet, stünde dort nach dem Deckeln eine zu kleine Zahl — die aussieht wie eine
 		// Gesamtsumme.
 		const nr = ++ladeNr;
+		const topf = mittel;
 		try {
 			const [liste, summen] = await Promise.all([
-				apiGet('/api/bestellhistorie' + (mittel ? `?mittel=${mittel}` : '')),
+				apiGet('/api/bestellhistorie' + (topf ? `?mittel=${topf}` : '')),
 				apiGet('/api/bestellhistorie/uebersicht')
 			]);
 			if (nr !== ladeNr) return;
 			bestellungen = liste || [];
+			geladenerTopf = topf;
 			if (summen) uebersicht = summen;
 			ladefehler = '';
 		} catch (e) {
 			if (nr !== ladeNr) return;
+			// Scheitert nur das Auffrischen, bleibt die Liste stehen (die Meldung zeigt apiGet). Unter
+			// einem anderen Filter stünde sonst die Liste des vorigen Topfes.
+			if (geladenerTopf === topf) return;
 			bestellungen = [];
 			ladefehler =
 				/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden.';
@@ -68,7 +76,14 @@
 		}
 	}
 
-	onMount(ladeBestellungen);
+	// Hinter einer geöffneten Bestellung bleibt die Liste, wie sie ist: Der Rückweg lädt sie neu, und
+	// die Bestellung holt sich ihren Stand selbst.
+	onMount(() => {
+		void ladeBestellungen();
+		return abonniereNeuladen('bestellstand', () => {
+			if (!geoeffneteId) void ladeBestellungen();
+		});
+	});
 
 	let gesamtsumme = $derived(uebersicht.gesamtbetrag);
 	let gesamtExemplare = $derived(uebersicht.gesamt_exemplare);

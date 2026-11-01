@@ -651,7 +651,8 @@ Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücher
 sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich der Topf einer
 Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten; der Kopf jeder Bestellung
-nennt ihren Stand: bestätigt, wartet auf den Händler oder Mail nicht versendet) · **Bestellhistorie** (Detail, Status,
+nennt ihren Stand: bestätigt, wartet auf den Händler oder Mail nicht versendet; bestätigt der
+Händler, wechselt der Stand hier und in der Bestellhistorie von selbst) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
 im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·

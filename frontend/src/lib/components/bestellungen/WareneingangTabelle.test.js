@@ -41,4 +41,37 @@ describe('WareneingangTabelle: Stand im Kopf der Bestellung', () => {
 		expect(kopf('Mail').queryByText('Wartet auf Händler')).toBeNull();
 		expect(document.querySelector('[data-gruppe="Altbestand"] [data-chip]')).toBeNull();
 	});
+
+	// Der Stand wechselt ohne Zutun, wenn der Händler bestätigt. Vorgelesen wird der ganze Kopf,
+	// sonst hörte man „Bestätigt", ohne zu wissen, welche Bestellung gemeint ist.
+	it('der Kopf liest den Wechsel des Stands mit dem Namen des Händlers vor', async () => {
+		const wartet = gruppe('Naacher', { mit_bestaetigung: true });
+		const screen = render(WareneingangTabelle, { incomingShipments: [wartet], totalItems: 1 });
+		const region = screen.getByRole('status');
+		expect(region.textContent).toContain('Wartet auf Händler');
+
+		await screen.rerender({
+			incomingShipments: [
+				gruppe('Naacher', { mit_bestaetigung: true, bestaetigt_am: '2026-10-12T10:00:00Z' })
+			]
+		});
+
+		expect(screen.getByRole('status')).toBe(region);
+		expect(region.textContent).toContain('Naacher');
+		expect(region.textContent).toContain('Bestätigt · 12.10.');
+	});
+
+	// Die Liste lädt neu, während jemand sie liest. An der Stelle in der Liste hinge der Kopf an
+	// einer anderen Bestellung, und der Bildschirmleser läse jeden Kopf vor, der nur weitergerückt ist.
+	it('ein Kopf bleibt bei seiner Bestellung, wenn sich die Reihenfolge ändert', async () => {
+		const screen = render(WareneingangTabelle, {
+			incomingShipments: [gruppe('A', {}), gruppe('B', {})],
+			totalItems: 2
+		});
+		const kopfVonA = document.querySelector('[data-gruppe="A"]');
+
+		await screen.rerender({ incomingShipments: [gruppe('B', {}), gruppe('A', {})] });
+
+		expect(document.querySelector('[data-gruppe="A"]')).toBe(kopfVonA);
+	});
 });

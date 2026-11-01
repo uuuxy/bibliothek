@@ -107,5 +107,18 @@ func (t *Tueren) trageBestaetigungNach(w http.ResponseWriter, r *http.Request) {
 // vorlag. Der Link und der Nachtrag von Hand laufen beide hier durch: eine Stelle, an der der
 // Zustand kippt. Die Anweisung steht an repository.BestaetigeBestellung.
 func (t *Tueren) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, format, durch string) (bereits bool, err error) {
-	return repository.BestaetigeBestellung(ctx, t.DB.Pool, bestellungID, groesse, format, durch)
+	bereits, err = repository.BestaetigeBestellung(ctx, t.DB.Pool, bestellungID, groesse, format, durch)
+	if err == nil && !bereits {
+		t.meldeBestaetigung()
+	}
+	return bereits, err
+}
+
+// meldeBestaetigung sagt allen offenen Ansichten, dass sie ihre Bestellungen neu holen sollen. Das
+// Signal trägt keine Daten: Auf der Leitung hängen auch Sitzungen des Kollegiums, und jede Ansicht
+// fragt danach ihren eigenen Endpunkt.
+func (t *Tueren) meldeBestaetigung() {
+	if t.Broker != nil {
+		t.Broker.Verteile("bestellstand", "{}")
+	}
 }

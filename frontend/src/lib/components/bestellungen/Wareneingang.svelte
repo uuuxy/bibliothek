@@ -1,6 +1,7 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { apiPost } from '../../apiFetch.js';
+	import { abonniereNeuladen } from '../../liveEvents.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
@@ -11,12 +12,30 @@
 	let { incomingShipments = [], onBack, onReceived } = $props();
 
 	// Der Stand im Kopf einer Bestellung ändert sich außerhalb dieses Reiters: Der Händler bestätigt
-	// über seinen Link, die Historie trägt nach oder sendet neu. Die Liste kommt deshalb frisch.
-	onMount(() => void bestellStore.loadIncomingShipments());
+	// über seinen Link, die Historie trägt nach oder sendet neu. Die Liste kommt deshalb beim Öffnen
+	// und bei jeder Bestätigung frisch.
+	onMount(() => {
+		void bestellStore.loadIncomingShipments();
+		return abonniereNeuladen('bestellstand', () => void bestellStore.loadIncomingShipments());
+	});
 
 	let laeuft = $state(false);
 	/** @type {string[]} */
 	let gewaehlteExemplare = $state([]);
+
+	// Das Nachladen ändert die Liste auch unter einer Auswahl, wenn ein anderer Arbeitsplatz
+	// eingebucht hat. Was nicht mehr dasteht, bleibt nicht markiert.
+	$effect(() => {
+		const vorhanden = new Set(
+			incomingShipments.flatMap((/** @type {any} */ s) =>
+				s.items.flatMap((/** @type {any} */ i) => i.exemplar_ids ?? [])
+			)
+		);
+		const auswahl = untrack(() => gewaehlteExemplare);
+		if (auswahl.some((id) => !vorhanden.has(id))) {
+			gewaehlteExemplare = auswahl.filter((id) => vorhanden.has(id));
+		}
+	});
 
 	let totalItems = $derived(
 		incomingShipments.reduce(

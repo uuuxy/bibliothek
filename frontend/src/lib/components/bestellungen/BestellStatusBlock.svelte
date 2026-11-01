@@ -44,7 +44,7 @@
 		}
 		if (!b.link_aktiv) return 'Für diese Bestellung ist kein gültiger Link unterwegs.';
 		const frist = b.link_gueltig_bis ? ` und gilt bis zum ${langdatum(b.link_gueltig_bis)}` : '';
-		return `Der Bestätigungs-Link ging mit der Bestellmail raus${frist}. Sobald der Händler dort bestätigt, steht es beim nächsten Öffnen hier.`;
+		return `Der Bestätigungs-Link ging mit der Bestellmail raus${frist}. Sobald der Händler dort bestätigt, erscheint es hier von selbst.`;
 	});
 
 	/** @param {string} iso */
@@ -90,23 +90,28 @@
 	}
 </script>
 
-{#if b.bestaetigt_am}
-	<!-- Getönter Container statt Kasten mit Rahmen: In M3 trägt ein erledigter Zustand
-	     Fläche, keine Umrandung. -->
-	<div
-		class="mb-3 flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container"
-	>
-		<CircleCheck size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
-		<div>
-			<p class="text-sm font-semibold">
-				{b.bestaetigt_durch === 'lieferant'
-					? 'Der Lieferant hat die Bestellung bestätigt'
-					: 'Bestätigung in der Bibliothek nachgetragen'}
-			</p>
-			<p class="mt-0.5 text-xs">{quittungsdetails}</p>
+<!-- Die Quittung erscheint auch ohne Zutun, wenn der Händler bestätigt. Die Region steht deshalb
+     schon vorher da, sonst liest ein Bildschirmleser sie nicht vor. -->
+<div role="status" class="mb-3">
+	{#if b.bestaetigt_am}
+		<!-- Getönter Container statt Kasten mit Rahmen: In M3 trägt ein erledigter Zustand
+		     Fläche, keine Umrandung. -->
+		<div
+			class="flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container"
+		>
+			<CircleCheck size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
+			<div>
+				<p class="text-sm font-semibold">
+					{b.bestaetigt_durch === 'lieferant'
+						? 'Der Lieferant hat die Bestellung bestätigt'
+						: 'Bestätigung in der Bibliothek nachgetragen'}
+				</p>
+				<p class="mt-0.5 text-xs">{quittungsdetails}</p>
+			</div>
 		</div>
-	</div>
-{:else}
+	{/if}
+</div>
+{#if !b.bestaetigt_am}
 	<div class="mb-3 rounded-xl border border-outline-variant bg-surface-container-lowest">
 		<div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
 			<div class="flex items-start gap-3">

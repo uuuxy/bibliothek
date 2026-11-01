@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -126,6 +127,37 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unmet expectations: %v", err)
+	}
+}
+
+// Der Altbestand kann denselben Zeitpunkt tragen. Ohne feste Ordnung entschiede die Map, und die
+// Gruppen sprängen bei jedem Nachladen, während jemand die Liste liest.
+func TestLadeZulauf_GleicherZeitpunktBleibtInDerselbenReihenfolge(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	alt := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+
+	for lauf := 0; lauf < 20; lauf++ {
+		rows := pgxmock.NewRows(zulaufSpalten)
+		for _, lieferant := range []string{"E", "A", "D", "B", "C"} {
+			rows.AddRow("ex"+lieferant, "t"+lieferant, alt, "Im Zulauf - "+lieferant, "Titel "+lieferant, "", "", nil, nil, nil, false, nil, nil, nil)
+		}
+		mock.ExpectQuery(zulaufAbfrage).WillReturnRows(rows)
+
+		gruppen, err := LadeZulauf(context.Background(), mock)
+		if err != nil {
+			t.Fatalf("LadeZulauf: %v", err)
+		}
+		namen := make([]string, 0, len(gruppen))
+		for _, g := range gruppen {
+			namen = append(namen, g.LieferantName)
+		}
+		if got := strings.Join(namen, ""); got != "ABCDE" {
+			t.Fatalf("Lauf %d: Reihenfolge = %s, erwartet ABCDE", lauf, got)
+		}
 	}
 }
 

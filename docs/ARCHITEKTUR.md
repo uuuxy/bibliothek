@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 31.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 01.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1658,7 +1658,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 31.10.2026
+Stand: 01.11.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1995,6 +1995,12 @@ ein EventSource nennt den Status einer Antwort nicht. Nach jedem Abriss fragt de
 `/api/auth/me` (`stores/leitungsAbriss.js`): gesperrt kommt der Sperrbildschirm, abgemeldet die
 Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesperrte Theke nach
 25 Sekunden „Keine Verbindung".
+
+Was während einer Unterbrechung geschah, kommt über die Leitung nicht nach. Eine Ansicht, die auf
+ein Signal hin nur ihre Daten neu holt, abonniert deshalb mit `abonniereNeuladen`: Das holt auch
+bei jedem Aufbau der Leitung neu. Das Nachladen läuft, während jemand arbeitet. Eine Eingabe, die
+ein `$effect` beim Öffnen eines Dialogs aus einem Prop vorbelegt, liest ihn deshalb mit `untrack`;
+sonst nähme ein Nachladen, das den Wert ändert, den getippten Text mit (`BestellMittelDialog`).
 
 #### Offline
 

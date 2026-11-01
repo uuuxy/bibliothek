@@ -1,6 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
+const leitung = vi.hoisted(() => ({
+	/** @type {Map<string, Set<() => void>>} */
+	hoerer: new Map(),
+	/** @param {string} name */
+	sende(name) {
+		for (const holeNeu of this.hoerer.get(name) ?? []) holeNeu();
+	}
+}));
+vi.mock('../../liveEvents.js', async (original) => ({
+	.../** @type {any} */ (await original()),
+	abonniereNeuladen: (/** @type {string} */ name, /** @type {() => void} */ holeNeu) => {
+		if (!leitung.hoerer.has(name)) leitung.hoerer.set(name, new Set());
+		leitung.hoerer.get(name)?.add(holeNeu);
+		return () => leitung.hoerer.get(name)?.delete(holeNeu);
+	}
+}));
 vi.mock('../../apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),
 	apiGet: vi.fn()
@@ -102,5 +118,102 @@ describe('BestellHistorie: die Liste zeigt nicht alles', () => {
 		await fireEvent.click(screen.getByRole('option', { name: 'Lernmittelfreiheit (Land)' }));
 
 		await waitFor(() => expect(screen.queryByText(/Neueste 1 von/)).toBeNull());
+	});
+});
+
+// Bestätigt ein Händler, während die Liste offen ist, wechselt der Chip ohne Zutun.
+describe('BestellHistorie: der Stand kommt, während die Liste offen ist', () => {
+	const wartet = { ...bestellung('Buchhandlung Nord', 'land'), mit_bestaetigung: true };
+	const bestaetigt = { ...wartet, bestaetigt_am: '2026-10-12T10:00:00Z' };
+	/** @param {any[]} liste @param {object} [summen] */
+	const antworte = (liste, summen = SUMMEN) =>
+		holen.mockImplementation(async (url) => (String(url).includes('uebersicht') ? summen : liste));
+	const listenAbrufe = () =>
+		holen.mock.calls.filter(
+			([url]) => String(url).startsWith('/api/bestellhistorie?') || url === '/api/bestellhistorie'
+		).length;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		leitung.hoerer.clear();
+	});
+
+	it('wechselt den Chip und die Zahl im Kopf, ohne die Liste auszutauschen', async () => {
+		antworte([wartet], { ...SUMMEN, offene_bestaetigungen: 1 });
+		const screen = render(BestellHistorie);
+		await screen.findByText('Wartet auf Händler');
+		expect(
+			screen.getByText('1 Bestellung wartet noch auf die Bestätigung des Händlers')
+		).toBeTruthy();
+
+		antworte([bestaetigt]);
+		leitung.sende('bestellstand');
+
+		expect(screen.queryByText(/Lade Bestellhistorie/)).toBeNull();
+		expect(await screen.findByText('Bestätigt · 12.10.')).toBeTruthy();
+		expect(screen.queryByText('Wartet auf Händler')).toBeNull();
+		expect(screen.queryByText(/wartet noch/)).toBeNull();
+	});
+
+	// Die Liste zeigt weiter, was sie weiß, und apiGet nennt den Fehler. Ein Kasten „nicht geladen"
+	// anstelle der Liste, nur weil das Auffrischen im Hintergrund scheiterte, nähme die Arbeit weg.
+	it('scheitert das Auffrischen, bleibt die Liste stehen', async () => {
+		antworte([wartet]);
+		const screen = render(BestellHistorie);
+		await screen.findByText('Buchhandlung Nord');
+
+		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
+		leitung.sende('bestellstand');
+		await new Promise((fertig) => setTimeout(fertig));
+
+		expect(screen.getByText('Buchhandlung Nord')).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
+	// Unter dem neuen Filter stünde sonst die Liste des vorigen Topfes.
+	it('scheitert der Wechsel des Filters, steht die alte Liste nicht unter dem neuen', async () => {
+		antworte([wartet]);
+		const screen = render(BestellHistorie);
+		await screen.findByText('Buchhandlung Nord');
+
+		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
+		await fireEvent.click(screen.getByRole('combobox'));
+		await fireEvent.click(screen.getByRole('option', { name: 'Lernmittelfreiheit (Land)' }));
+
+		expect(await screen.findByRole('alert')).toBeTruthy();
+		expect(screen.queryByText('Buchhandlung Nord')).toBeNull();
+	});
+
+	it('hinter einer geöffneten Bestellung lädt nur sie neu, der Rückweg dann die Liste', async () => {
+		antworte([wartet]);
+		const screen = render(BestellHistorie);
+		await screen.findByText('Buchhandlung Nord');
+		const detail = { ...wartet, positionen: [], exemplare: [], link_aktiv: true };
+		holen.mockImplementation(async (url) =>
+			String(url) === `/api/bestellhistorie/${wartet.id}` ? detail : [wartet]
+		);
+		await fireEvent.click(
+			screen.getByRole('button', { name: /Buchhandlung Nord.*Bestellung öffnen/ })
+		);
+		await screen.findByText('Warten auf den Händler');
+		const liste = listenAbrufe();
+		const alle = holen.mock.calls.length;
+
+		leitung.sende('bestellstand');
+
+		await waitFor(() => expect(holen.mock.calls.length).toBe(alle + 1));
+		expect(holen.mock.calls.at(-1)?.[0]).toBe(`/api/bestellhistorie/${wartet.id}`);
+		expect(listenAbrufe()).toBe(liste);
+	});
+
+	it('hört nach dem Verlassen nicht mehr zu', async () => {
+		antworte([wartet]);
+		const screen = render(BestellHistorie);
+		await screen.findByText('Buchhandlung Nord');
+		expect(leitung.hoerer.get('bestellstand')?.size).toBe(1);
+
+		screen.unmount();
+
+		expect(leitung.hoerer.get('bestellstand')?.size).toBe(0);
 	});
 });

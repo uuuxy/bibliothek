@@ -10,6 +10,7 @@
      Bauform wie der Storno-Dialog der Gebühren (LeserGebuehrenKarte): Modal, Radio-Gruppe,
      ein Feld für den Grund, die Aktion erst mit Grund freigegeben. -->
 <script>
+	import { untrack } from 'svelte';
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -36,10 +37,11 @@
 	let sendet = $state(false);
 
 	// Beim Öffnen auf den Stand der Bestellung setzen — nicht beim Einhängen: Der Dialog
-	// bleibt eingehängt und wird nur ein- und ausgeblendet.
+	// bleibt eingehängt und wird nur ein- und ausgeblendet. Nur beim Öffnen: Die Bestellung lädt
+	// auch neu, während der Dialog offen ist; ein neuer Topf nähme sonst den getippten Grund mit.
 	$effect(() => {
 		if (open) {
-			gewaehlt = aktuell;
+			gewaehlt = untrack(() => aktuell);
 			grund = '';
 		}
 	});

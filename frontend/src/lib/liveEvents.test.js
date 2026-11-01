@@ -3,6 +3,7 @@ import {
 	verbinde,
 	trenne,
 	abonniere,
+	abonniereNeuladen,
 	registriereAbrissHandler,
 	_zuruecksetzenFuerTests
 } from './liveEvents.js';
@@ -214,6 +215,30 @@ describe('liveEvents', () => {
 
 	// Der Server beendet die Leitung auch, wenn die Anmeldung nicht mehr gilt. Was davon zutrifft,
 	// erfährt nur, wer nach einem Abriss fragt: bei jedem Abriss, nach trenne() nicht mehr.
+	// Was während einer Unterbrechung geschah, kommt nicht nach. Wer nur auf das Ereignis hört,
+	// zeigt danach unbemerkt den alten Stand.
+	it('abonniereNeuladen holt beim Ereignis und bei jedem Aufbau der Leitung neu', () => {
+		const holeNeu = vi.fn();
+		const abmelden = abonniereNeuladen('bestellstand', holeNeu);
+		verbinde();
+
+		FakeEventSource.letzte.sende('connected');
+		expect(holeNeu).toHaveBeenCalledTimes(1);
+		FakeEventSource.letzte.sende('bestellstand');
+		expect(holeNeu).toHaveBeenCalledTimes(2);
+
+		FakeEventSource.letzte.scheitert();
+		vi.advanceTimersByTime(2000);
+		FakeEventSource.letzte.sende('connected');
+		// Die Ansichten geben ihre Ladefunktion weiter; das Ereignis gehört nicht als Argument hinein.
+		expect(holeNeu.mock.calls).toEqual([[], [], []]);
+
+		abmelden();
+		FakeEventSource.letzte.sende('bestellstand');
+		FakeEventSource.letzte.sende('connected');
+		expect(holeNeu).toHaveBeenCalledTimes(3);
+	});
+
 	it('meldet jeden Abriss, solange die Leitung bestehen soll', () => {
 		const abriss = vi.fn();
 		registriereAbrissHandler(abriss);

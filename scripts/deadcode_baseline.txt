@@ -145,6 +145,10 @@ internal/testweg/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 # von api/ und inventur/, die Tests mehrerer Pakete brauchen) und Konto mit Sitzung für Tests
 # über den ganzen Router, die im Ordner eines Themas stehen (docs/OFFEN.md 5.65). Wird
 # ausschließlich von *_test.go importiert.
+internal/tuertest/leitung.go: unreachable func: BeobachteLeitung
+internal/tuertest/leitung.go: unreachable func: leseEreignisse
+internal/tuertest/leitung.go: unreachable func: naechstesEreignis
+internal/tuertest/leitung.go: unreachable func: oeffneStrom
 internal/tuertest/tuertest.go: unreachable func: MitCSRF
 internal/tuertest/tuertest.go: unreachable func: JSONPost
 internal/tuertest/tuertest.go: unreachable func: AlsKonto

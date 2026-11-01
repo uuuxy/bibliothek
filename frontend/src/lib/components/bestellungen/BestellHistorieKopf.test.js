@@ -34,6 +34,29 @@ const basis = {
 };
 
 describe('BestellHistorieKopf', () => {
+	// Die Zahl sinkt ohne Zutun, wenn der Händler bestätigt. Ein Bildschirmleser liest nur vor, was
+	// in einer Region dazukommt, die schon dastand; ein bloßes Verschwinden der Zeile bliebe stumm.
+	it('liest vor, wenn die Zahl der wartenden Bestellungen sinkt, auch auf null', async () => {
+		const screen = render(BestellHistorieKopf, {
+			...basis,
+			offeneBestaetigungen: 2,
+			aufteilung: []
+		});
+		const region = screen.container.querySelector('[aria-live="polite"]');
+		expect(region?.textContent).toContain('2 Bestellungen warten noch');
+
+		await screen.rerender({ offeneBestaetigungen: 1 });
+		expect(screen.container.querySelector('[aria-live="polite"]')).toBe(region);
+		expect(region?.textContent).toContain('1 Bestellung wartet noch');
+
+		await screen.rerender({ offeneBestaetigungen: 0 });
+		expect(screen.container.querySelector('[aria-live="polite"]')).toBe(region);
+		expect(region?.textContent?.trim()).toBe(
+			'Keine Bestellung wartet auf die Bestätigung des Händlers'
+		);
+		expect(region?.querySelector('.sr-only')).toBeTruthy();
+	});
+
 	it('zeigt die Aufteilung auf die Töpfe unter der Gesamtsumme', () => {
 		const screen = render(BestellHistorieKopf, {
 			...basis,
