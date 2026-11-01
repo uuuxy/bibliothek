@@ -41,8 +41,8 @@ func etikettenSuchtext(r *http.Request) string {
 //
 // Sie führt zu einer Lieferung, die freigegeben wurde, ohne dass ihre Etiketten aus dem Drucker
 // kamen, etwa weil der Hinweis nach dem Wareneingang weggeklickt wurde. Mit status=erledigt
-// oder status=alle zeigt sie auch vermerkte Exemplare: Nach einem Papierstau oder einem zu
-// späten Stichtag tragen sie den Vermerk, aber kein Etikett.
+// oder status=alle zeigt sie auch vermerkte Exemplare: Nach einem Papierstau tragen sie den
+// Vermerk, aber kein Etikett.
 func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zeilen, err := repository.LadeEtikettenExemplare(r.Context(), t.DB.Pool,

@@ -44,8 +44,8 @@
 
 	/**
 	 * Welche Exemplare die Liste zeigt: 'offen' (Vorgabe), 'erledigt' oder 'alle'. Erledigte zu
-	 * zeigen ist der Weg zurück: Blieb der Bogen im Drucker stecken oder war der Stichtag zu weit
-	 * gefasst, gelten Exemplare als erledigt, ohne dass ein Etikett existiert.
+	 * zeigen ist der Weg zurück: Blieb der Bogen im Drucker stecken, gelten Exemplare als erledigt,
+	 * ohne dass ein Etikett existiert.
 	 */
 	let status = $state(/** @type {'offen' | 'erledigt' | 'alle'} */ ('offen'));
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -284,7 +284,7 @@
 					size="lg"
 					disabled={arbeitet}
 					onclick={wiederOeffnen}
-					data-tip="Etikett fehlt doch — z. B. nach Papierstau oder zu weitem Stichtag"
+					data-tip="Etikett fehlt doch — z. B. nach einem Papierstau"
 				>
 					<Undo2 class="h-4 w-4" aria-hidden="true" />
 					{zahl(gewaehltErledigt.length)} wieder als offen vermerken
