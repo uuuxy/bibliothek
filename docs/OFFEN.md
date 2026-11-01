@@ -44,7 +44,8 @@ Nur, was kein Test leisten kann.
 
 ### Nebenbei
 
-- [ ] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen. (5.169)
+- [ ] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen und die Äste von #759 bis #763
+  löschen. (5.169)
 
 ### Termin
 
@@ -81,7 +82,8 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 
 ### 5.169 Vorschläge #764 und #765
 
-Geprüft und abgelehnt. Es fehlt nur noch, sie auf GitHub zu schließen.
+Geprüft und abgelehnt. Es fehlt nur noch, sie auf GitHub zu schließen. Dazu die Äste der schon
+geschlossenen Vorschläge #759 bis #763 löschen; aus der Sitzung heraus lehnt die Rechteprüfung beides ab.
 
 - #764 senkt `maxMemory` von `ParseMultipartForm` an fünf Stellen auf 1 MB, wie zuvor #759, #761 und
   #763. Alle fünf Stellen begrenzen die Anfrage schon vorher mit `http.MaxBytesReader`. Mit 1 MB legt
