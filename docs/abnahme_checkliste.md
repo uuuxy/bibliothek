@@ -1,6 +1,6 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-10-27. Für die Abnahme mit dem Sekretariat.
+> Stand: 2026-11-01. Für die Abnahme mit dem Sekretariat.
 > Alle vier Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie

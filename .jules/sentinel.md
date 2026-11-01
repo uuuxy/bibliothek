@@ -35,3 +35,8 @@
 **Vulnerability:** A Path Traversal vulnerability was found in `inventur/db_books_delete.go` when cleaning up cover images. It used `os.Remove(filepath.Join("uploads", name))` directly, which bypasses the safer, centralized `os.OpenRoot` wrapper implementation in the package.
 **Learning:** Even when `filepath.Base()` is used for sanitization, calling `os.Remove` on a joined path remains vulnerable to traversal logic bugs and is flagged by security analyzers (e.g. gosec G304). Rely on standard wrapper functions that use the OS-level `os.OpenRoot` sandbox.
 **Prevention:** Rather than directly interacting with the filesystem using `os.Remove` in business logic, use centralized file access abstractions like `loescheUploadDatei` that employ Go 1.24's `os.OpenRoot()` and `root.Remove()` to guarantee safe directory confinement.
+
+## 2026-11-01 - G120 on ParseMultipartForm is accepted, do not lower maxMemory
+**Vulnerability:** None. gosec G120 flags `r.ParseMultipartForm` in the import and upload handlers, but each of them bounds the request with `http.MaxBytesReader` first. #759, #761, #763 and #764 proposed the same change and were rejected.
+**Learning:** With `maxMemory` at 1 MB, Go writes every larger upload to a temporary file on disk, for the LUSD import including student data. gosec reports G120 with that change as well; `scripts/gosec-gate.sh` lists the exception with its reason.
+**Prevention:** Keep `maxMemory` equal to the body limit. Do not propose this change again.

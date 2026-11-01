@@ -176,9 +176,9 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 81.539 Zeilen                              |
-| Go-Tests                          | 147.685 Zeilen in 1.032 Testdateien        |
-| Svelte/JavaScript (`frontend/src`) | 101.666 Zeilen in 900 Dateien, davon 319 `.svelte` |
+| Go-Produktivcode                  | 80.600 Zeilen                              |
+| Go-Tests                          | 147.138 Zeilen in 1.027 Testdateien        |
+| Svelte/JavaScript (`frontend/src`) | 101.414 Zeilen in 898 Dateien, davon 318 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 198 Dateien, davon 189 Specs               |
 | Registrierte HTTP-Routen          | 225                                        |
 | Datenbank-Migrationen             | 173 Dateien, die höchste Nummer ist 170    |
@@ -3529,7 +3529,7 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 
 ---
 
-### 11.4 Was vor dem Echtstart steht
+### 11.4 Was am Schulserver noch aussteht
 
 Das Programm läuft heute an einem Testserver; der Echtbetrieb beginnt am Schulserver mit einer
 leeren Datenbank und der Littera-Übernahme (entschieden am 28.09.2026). Über den Risiken aus
@@ -3540,7 +3540,7 @@ zeigt erst die Generalprobe mit ihr.
 
 Der Datenschutz-Nachweis und das Pflegekonzept stehen als Entwürfe ([OFFEN.md](OFFEN.md) 9.9).
 
-Schritte und Reihenfolge: [OFFEN.md](OFFEN.md), Etappe 1 „vor dem Echtstart". Hier steht das
+Schritte und Reihenfolge: [OFFEN.md](OFFEN.md), Etappe 1. Hier steht das
 nur, damit niemand die Architekturdokumentation liest und das größte Risiko darin nicht findet.
 
 ---
@@ -3700,6 +3700,15 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   Bestellhistorie mit einer Zeile, eine aufgeklappte Klasse), es gibt keinen Screenreader-Durchgang,
   und der Ausweis-Designer geht nur per Maus. Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs braucht, ist
   nicht geklärt ([FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19).
+
+- **Gesperrter Knopf und Tastatur.** Ein Knopf, der während seiner Anfrage gesperrt ist (`disabled`),
+  verliert in Chromium und Firefox den Fokus. Auf einer Seite führt die nächste Tab-Taste trotzdem
+  zum nächsten Element. In einem Dialog verlässt sie ihn, wenn die Anfrage scheitert und der Knopf
+  der letzte im Dialog ist: `fokusFalle` hört nur auf Tasten innerhalb des Dialogs (gemessen am Dialog
+  „Neuer Leser"; in WebKit lief die Messung nicht durch). Escape schließt ihn weiter. An der Schule
+  bedient man mit der Maus und ohne Bildschirmleser. Anlass: Jemand arbeitet nur mit der Tastatur oder
+  mit einem Bildschirmleser. Dann gehört die Änderung nach `ui/fokusFalle.js`, nicht in den gemeinsamen
+  Knopf, der jede Seite samt Theke träfe.
 
 #### Code und Werkzeuge
 

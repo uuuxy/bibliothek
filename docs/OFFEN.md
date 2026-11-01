@@ -10,7 +10,7 @@ geführt wird, steht am Ende.
 
 ## Fahrplan
 
-### Etappe 1: vor dem Echtstart
+### Etappe 1: am Schulserver
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
 (entschieden am 28.09.2026). R7, R8 und R9 sind Risiken aus [ARCHITEKTUR.md](ARCHITEKTUR.md)
@@ -44,7 +44,7 @@ Nur, was kein Test leisten kann.
 
 ### Nebenbei
 
-- [ ] Die Vorschläge #764 und #765 auf GitHub prüfen. (5.169)
+- [ ] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen. (5.169)
 
 ### Termin
 
@@ -81,8 +81,14 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 
 ### 5.169 Vorschläge #764 und #765
 
-#764 (Formular-Parsing) und #765 (`COUNT` zu `EXISTS`) sind offen und nicht gelesen. Nächster Schritt:
-erst die Abdeckung messen, dann Rückbau-Probe, wie bei den übrigen Vorschlägen dieser Art.
+Geprüft und abgelehnt. Es fehlt nur noch, sie auf GitHub zu schließen.
+
+- #764 senkt `maxMemory` von `ParseMultipartForm` an fünf Stellen auf 1 MB, wie zuvor #759, #761 und
+  #763. Alle fünf Stellen begrenzen die Anfrage schon vorher mit `http.MaxBytesReader`. Mit 1 MB legt
+  Go jede größere Datei als Zwischendatei auf die Platte, beim LUSD-Import samt Schülerdaten.
+- #765 ersetzt zwei `count(*)` durch `EXISTS`. Der eindeutige Index `uniq_ausleihen_aktiv_exemplar`
+  lässt je Exemplar nur eine offene Ausleihe zu; beide Abfragen lesen über ihn gleich viele Blöcke.
+  Nebenbei überschreibt der Vorschlag den Inhalt von `.jules/bolt.md`.
 
 ### 7.2 Frisches Littera-Backup
 
@@ -201,9 +207,9 @@ Passwort des Mailversands und die Sicherungen ([datenschutz/nachweis.md](datensc
 Daten der Schüler. Beim Einrichten des Schulservers die Platte verschlüsseln, danach den Nachweis
 um den Satz ergänzen.
 
-### 7.14 Lasttest vor dem Echtstart
+### 7.14 Lasttest wiederholen
 
-Entschieden am 25.10.2026: Der Lasttest läuft vor dem Echtstart noch einmal, nach allen übrigen
+Entschieden am 25.10.2026: Der Lasttest läuft noch einmal, nach allen übrigen
 Schritten der Etappe 1. Er findet, was kein Test von selbst findet: eine Tür, die einem fehlenden
 Feld eine eigene Bedeutung gibt, etwa „fehlt die Klassenliste, gilt es für alle Klassen". Vorlage
 sind die Läufe mit k6 gegen eine abgeschottete Kopie der Generalprobe in 1c86bc51

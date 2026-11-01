@@ -1,6 +1,6 @@
 # Landesmittel und Kreismittel — Konzept
 
-Stand: 21.10.2026
+Stand: 01.11.2026
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
@@ -156,34 +156,6 @@ die Forderungen (`schadensfaelle.bescheid_id`).
 
 ## 4. Bauplan (bestehende Struktur, keine Parallelwelt)
 
-### 4.1 Datenmodell (eine Migration)
-
-```
-schadensfaelle
-  + art            TEXT NOT NULL DEFAULT 'beschaedigung'
-                   CHECK (art IN ('nicht_zurueckgegeben','verlust','beschaedigung'))
-  + bescheid_id    UUID NULL REFERENCES schadensersatz_bescheide(id)   -- Position eines Briefs
-
-schadensersatz_bescheide           -- EIN Brief = ein Datensatz, zwei Töpfe
-  id, schueler_id (RESTRICT), mittel ('land'|'schultraeger'),
-  kassenjahr INT, laufende_nr INT, referenznummer TEXT UNIQUE,     -- Land: Bereich·Jahr·Schulnr·lfd; Schulträger: SB-Jahr-lfd
-  brief_datum DATE, frist_bis DATE, gesamtbetrag NUMERIC(10,2),
-  empfaenger_snapshot JSONB,       -- Anrede (Erziehungsberechtigte|volljährig), Name, Anschrift zum Briefdatum
-  status ('offen'|'uebergeben'|'erledigt'), uebergeben_am, erledigt_am,
-  schulaufsicht_zu_informieren BOOL, -- Rückgabe NACH Übergabe
-  erstellt_von, erstellt_am, letzter_druck_am
-  UNIQUE (mittel, kassenjahr, laufende_nr)
-
-schadensersatz_nummern (mittel, kassenjahr, letzte_nr)   -- der EINE Generator, UPDATE … RETURNING in der Tx
-```
-
-Die Positionen des Briefs SIND die Forderungen — keine zweite Positionstabelle, damit
-Sperre, Löschblockade, Auskunft und Bezahlt/Storno unverändert weiterlaufen. Der Snapshot
-des Empfängers macht den Nachdruck reproduzierbar („Kopie verbleibt in der Schule");
-er wird bei der Anonymisierung mit getilgt (DSGVO-Paar-Gate), die Nummer bleibt (die
-Schulaufsicht ordnet Zahlungen darüber zu). `mittel` ist dasselbe Vokabular wie in
-`bestellungen_verlauf` (Teil B, Migration 109).
-
 ### 4.2 Betrag: Vorschlag, kein Automat (`pkg/ersatzwert`)
 
 Reine Funktion `Berechne(verleihjahr, kaufpreis, neupreis, zustandAbschlag, quelle) Vorschlag`
@@ -227,27 +199,6 @@ Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
   Schadensfall ist entfernt, seine Spalten mit Migration 164.
   Der Eltern-**Mahnbrief** (überfällig, ohne Geld) bleibt, wie er ist.
 
-### 4.5 Oberfläche
-
-- **Leserakte → Gebühren & Schäden:** Forderungen tragen Topf und Art; Knopf
-  „Bescheid erstellen (Land)" / „Rechnung erstellen (Schulträger)" nur mit Recht; darunter
-  die Briefe mit Nummer, Frist, Status, „Nachdruck", „An die Schulaufsicht übergeben".
-- **Mahnwesen:** Auswahl-Modus bekommt neben „Mahnbriefe drucken" den Knopf
-  **„Schadensersatz-Bescheide (Land)"** — je markiertem Schüler ein Brief über seine
-  überfälligen Lernmittel plus offene Lernmittel-Forderungen; die Tabelle des Briefs
-  füllt sich aus denselben Daten wie heute der Mahnbrief. Dritter Filter „Bescheide"
-  (Frist abgelaufen → Übergabe).
-- **Schaden melden** (`SchadenMeldenDialog`): Art (verloren / beschädigt), Staffel-Vorschlag
-  mit Herleitung, Betrag überschreibbar; kein automatisches PDF-Popup mehr — der Brief
-  ist ein eigener Schritt des Sekretariats.
-- **Einstellungen → neue Kategorie „Schadensersatz"** (ein JSON-Schlüssel nach dem
-  Muster `sommerferien`, serverseitig geprüft): Bereichs-Nr. und Schulnummer für die
-  Referenznummer, Frist in Tagen (28), Konto Land, Konto Schulträger (leer bis geklärt),
-  Geschäftszeichen, Bearbeiter, Durchwahl, Name der Schulleitung, Schulaufsicht (Name +
-  Anschrift für den Schlussabsatz).
-- **Betriebsbereitschaft:** Warnung, solange Schulnummer/Bereichs-Nr./Konten fehlen —
-  ein Bescheid ohne Referenznummer ist keiner.
-
 ### 4.6 Gates (jedes am Rückbau rot zu sehen)
 
 Nummernkreis nie doppelt und nie rückwärts (PG, parallel) · Rückgabe storniert die
@@ -263,7 +214,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 1. Datenmodell + Nummernkreis + Landes-Bescheid + Einstellungen — **gebaut**
    (Migration 110, `pkg/ersatzwert`, `pdf/bescheid.go`, `repository/bescheid.go`,
    `api/schaden/bescheid.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
-   Abweichungen vom Plan oben, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
+   Abweichungen vom ersten Plan, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
    statt in der Leserakte (dort steht, wer überfällig ist); `schadensfaelle.art` hat
    **zwei** Werte statt drei (genau die zwei Kästchen des Formulars — „Verlust" IST die
    erste Gruppe); `schueler_id` ist **SET NULL** statt RESTRICT (der Brief überlebt die
@@ -357,9 +308,9 @@ des Schulträgers (Schülerbücherei) beschafft wird.
   entsteht das Zugangsbuch (Berichte → „Bestandsbücher", Reiter Zugangsbuch und
   Abgangsbuch, je Halbjahr und Topf; FACHKONZEPT.md Abschnitt 13).
 
-### 7.3 Bauplan (kleiner als Teil A)
+### 7.3 Was gebaut ist
 
-**Gebaut** sind die Schritte 1 bis 7 im ersten Schnitt: Migration 109, Warenkorb in zwei
+**Gebaut** im ersten Schnitt: Migration 109, Warenkorb in zwei
 Gruppen mit Verschieben, je Gruppe eine Bestellung, Vermerk auf Anschreiben und Mail,
 Lernmittel-Frage im Staging-Fenster, Topf-Chip in Historie und Detail, Topf nachträglich mit
 Grund korrigierbar, Bericht in Blöcken je Topf mit eigener Summe, Topf-Filter für alle drei
@@ -370,49 +321,10 @@ Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
 `db/bestellung_mittel_nachtrag_pg_test.go`, `api/bestellung/bestellanschreiben_test.go`,
 `internal/service/bestellmail_mittel_test.go`, `api/katalog/titel_lernmittel_pg_test.go`,
 `api/bestellung/bestellung_mittel_korrektur_pg_test.go`, `api/bestellung/lieferant_zweitnummer_pg_test.go`,
-`pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/bestellStore.test.js`.
-
-1. **Datenmodell:** `bestellungen_verlauf.mittel TEXT CHECK (mittel IN ('land','schultraeger'))`,
-   nullbar für Alt-Bestellungen; eine Backfill-Migration ordnet eindeutige Fälle zu (alle
-   Positionen Lernmittel → `land`, keine → `schultraeger`), gemischte bleiben NULL und
-   erscheinen als „ohne Zuordnung" — nie geraten. `lieferanten.kundennummer_schultraeger`
-   (leer = dieselbe Nummer; fehlt das Feld in einer Anfrage, bleibt die Nummer unangetastet).
-   Dasselbe Vokabular wie `schadensersatz_bescheide.mittel` in Teil A.
-2. **Eine Bestellung = ein Topf.** Der Warenkorb gruppiert seine Positionen nach dem
-   Vorschlag aus `ist_lernmittel` in „Lernmittelfreiheit (Land)" und „Schülerbücherei
-   (Schulträger)", jede Gruppe mit eigener Summe; eine Position lässt sich in die andere
-   Gruppe schieben (falsch gekennzeichneter Titel). **„Bestellung auslösen" erzeugt je
-   Gruppe eine Bestellung** — zwei Mails, zwei Anschreiben, zwei Bestätigungslinks an
-   denselben Händler, je mit eigenem Doppelklick-Schutz. Der Server nimmt `mittel` je
-   Bestellung an und speichert es; Pflichtfeld für neue Bestellungen (400 an der Tür).
-3. **Der Vermerk auf Bestellung und Mail:** Anschreiben-Betreff und -Text nach Topf
-   („Bestellung im Rahmen der Lernmittelfreiheit — Sammelbestellung der Schule" /
-   „Anschaffung für die Schülerbücherei aus Mitteln des Schulträgers"), Kundennummer des
-   Topfs. EINE Textquelle `pkg/mitteltopf`; Platzhalter `{{.Mittel}}` für die
-   Vorlage `BESTELLUNG_HAENDLER` (Platzhalter-Paritäts-Gate zieht mit; fehlt der
-   Platzhalter, ergänzt der Versand den Vermerk).
-4. **Berichte getrennt:** Die Detailliste
-   steht in Blöcken (Lernmittelfreiheit, Schülerbücherei, zuletzt die Alt-Bestellungen
-   ohne Zuordnung), je mit eigener Summe und der Gesamtsumme darunter; alle drei
-   Berichtsarten nehmen den Topf-Filter (`?mittel=land|schultraeger|ohne`), der Titel
-   nennt ihn. Die Bestellhistorie filtert serverseitig — sie ist gedeckelt, im Browser
-   gefiltert zeigte sie nur den Rest der neuesten 200 —, und die Kennzahlen im Kopf
-   stehen zusätzlich je Topf. Der Filterwert `ohne` ist der Weg zu den Alt-Bestellungen,
-   die der Rückweg (Nr. 6) noch braucht. Gates: `api/bestellung/bestellbericht_mittel_test.go`
-   (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `repository/bestellbericht_mittel_pg_test.go`,
-   `api/bestellung/bestellhistorie_mittel_pg_test.go` (Aufteilung = Gesamtzahlen),
-   `bestellberichte.test.js`, `BestellHistorieKopf.test.js`,
-   `TrefferPruefung.test.js` (der DNB-Titel mit Haken).
-5. **Neuer Titel aus der DNB-Suche:** Das Staging-Fenster fragt „Lernmittel?" und setzt
-   `ist_lernmittel` über `PUT /api/buecher/titel/{id}/lernmittel` — schließt die Lücke
-   aus 7.2.
-6. **Rückweg:** Der Topf einer bestehenden Bestellung lässt sich im Bestelldetail mit
-   Pflicht-Grund korrigieren (`PUT /api/bestellungen/{id}/mittel`, Admin-Audit-Log mit
-   von/nach/Grund). Das Anschreiben beim Händler ändert sich nicht; die Korrektur gilt der
-   eigenen Zuordnung, aus der die Berichte rechnen — auch für Alt-Bestellungen „ohne
-   Zuordnung".
-7. **Zugangsbuch-Ausdruck** je Schulhalbjahr und Topf aus dem Wareneingang: der Bericht
-   „Bestandsbücher" (7.2).
+`pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/bestellStore.test.js`,
+`api/bestellung/bestellbericht_mittel_test.go`, `repository/bestellbericht_mittel_pg_test.go`,
+`api/bestellung/bestellhistorie_mittel_pg_test.go`, `bestellberichte.test.js`,
+`BestellHistorieKopf.test.js`, `TrefferPruefung.test.js`.
 
 ### 7.4 Entscheidungen (Teil B)
 
