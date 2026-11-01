@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import GeraeteVerwaltung from './GeraeteVerwaltung.svelte';
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, apiClient } from '../../apiFetch.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
@@ -38,5 +38,25 @@ describe('GeraeteVerwaltung', () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		const { findByText } = render(GeraeteVerwaltung);
 		expect(await findByText('Noch keine Geräte erfasst.')).toBeTruthy();
+	});
+});
+
+// Nach dem Speichern geht die Maske zu. Blieb sie stehen, sähe es aus, als sei nichts geschehen,
+// und ein zweiter Klick legte das Gerät noch einmal an.
+describe('GeraeteVerwaltung: Speichern', () => {
+	it('schließt die Maske nach dem Anlegen', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
+		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: true }));
+		const screen = render(GeraeteVerwaltung);
+		await screen.findByText('Noch keine Geräte erfasst.');
+
+		await fireEvent.click(screen.getByRole('button', { name: /anlegen|erfassen|Neues Gerät/i }));
+		const modell = screen.getByLabelText(/Modell/);
+		await fireEvent.input(modell, { target: { value: 'iPad 9' } });
+		await fireEvent.click(screen.getByRole('button', { name: /^(Speichern|Anlegen)/ }));
+
+		await waitFor(() => expect(apiClient.post).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(screen.queryByLabelText(/Modell/)).toBeNull());
 	});
 });

@@ -98,3 +98,27 @@ describe('BuchEingabefelder: Schlagworte aus der DNB', () => {
 		expect(liste.textContent, 'trägt der Titel schon').not.toContain('Krieg');
 	});
 });
+
+// Der Littera-Import bringt Medientypen wie „Zeitschrift". Der vorhandene Wert steht deshalb in der
+// Liste, sonst sähe er aus wie nicht gesetzt; ein bekannter Wert steht darin nur einmal.
+describe('BuchEingabefelder: Medientyp', () => {
+	/** @param {string} medientyp */
+	async function optionen(medientyp) {
+		const screen = maske({ medientyp });
+		await fireEvent.click(screen.getByLabelText('Medientyp'));
+		return screen.getAllByRole('option').map((o) => o.textContent?.trim());
+	}
+
+	it('nimmt einen fremden Wert in die Liste auf', async () => {
+		expect(await optionen('Zeitschrift')).toContain('Zeitschrift');
+	});
+
+	it('nennt einen bekannten Wert nur einmal', async () => {
+		const liste = await optionen('Buch');
+		expect(liste.filter((o) => o === 'Buch')).toHaveLength(1);
+	});
+
+	it('bietet ohne Wert keine leere Zeile an', async () => {
+		expect(await optionen('')).not.toContain('');
+	});
+});

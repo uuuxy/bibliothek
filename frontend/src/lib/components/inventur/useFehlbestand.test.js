@@ -63,3 +63,18 @@ describe('Fehlbestand: endgültig löschen', () => {
 		expect(snackbars.addToast).toHaveBeenCalledWith(expect.stringContaining(text), art);
 	});
 });
+
+// Ein gelöschter Lauf nimmt nur seinen eigenen Bericht mit; ein offener Bericht zu einem anderen
+// Lauf bleibt stehen.
+describe('Fehlbestand: ein Lauf wird gelöscht', () => {
+	it('schließt nur den Bericht dieses Laufs', () => {
+		const bericht = useFehlbestand();
+		bericht.setzeFehlbestand([{ id: 'ex-1' }], 'Inventur 2026', 'lauf-a');
+
+		bericht.schliesseBerichtVon('lauf-b');
+		expect(bericht.fehlbestandBezeichnung).toBe('Inventur 2026');
+
+		bericht.schliesseBerichtVon('lauf-a');
+		expect(bericht.fehlbestandBezeichnung).toBe('');
+	});
+});

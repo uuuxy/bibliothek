@@ -667,3 +667,31 @@ describe('bestellStore: Lieferant anlegen und ändern', () => {
 		expect(apiGet).toHaveBeenCalledWith('/api/lieferanten');
 	});
 });
+
+// Der Preisvorschlag kommt im Hintergrund. Hat inzwischen jemand selbst einen Preis getippt,
+// bleibt der stehen.
+describe('bestellStore: später Preisvorschlag', () => {
+	beforeEach(resetStore);
+
+	/** @param {number} getippt */
+	async function vorschlagNach(getippt) {
+		bestellStore.preiseErfassen = true;
+		/** @type {(treffer: any[]) => void} */
+		let antworte = () => {};
+		apiPostMock.mockImplementationOnce(() => new Promise((fertig) => (antworte = fertig)));
+		bestellStore.addToCart({ id: 't1', titel: 'Faust', autor: 'G', isbn: '978-1' });
+		bestellStore.cart[0].preis = getippt;
+		antworte([{ preis_vorschlag: 19.9 }]);
+		await vi.waitFor(() => expect(apiPostMock).toHaveBeenCalled());
+		await new Promise((fertig) => setTimeout(fertig, 0));
+		return bestellStore.cart[0].preis;
+	}
+
+	it('überschreibt einen getippten Preis nicht', async () => {
+		expect(await vorschlagNach(12.5)).toBe(12.5);
+	});
+
+	it('trägt ihn ein, solange nichts getippt ist', async () => {
+		expect(await vorschlagNach(0)).toBe(19.9);
+	});
+});

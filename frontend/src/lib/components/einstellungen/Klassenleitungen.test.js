@@ -13,7 +13,7 @@ vi.mock('../../stores/bestaetigung.svelte.js', () => ({
 	loeschenBestaetigen: vi.fn(async () => true)
 }));
 
-import { apiFetch, apiGet, apiDelete } from '../../apiFetch.js';
+import { apiFetch, apiGet, apiPost, apiDelete } from '../../apiFetch.js';
 import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 import Klassenleitungen from './Klassenleitungen.svelte';
 
@@ -134,5 +134,33 @@ describe('Klassenleitungen: Löschen', () => {
 		expect(await screen.findByText(ZEILE.lehrer_email)).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Hinzufügen' })).toBeTruthy();
 		expect(screen.queryByRole('alert')).toBeNull();
+	});
+});
+
+// Hinzufügen schreibt die Zuordnung mit Klasse und Adresse.
+describe('Klassenleitungen: Hinzufügen', () => {
+	it('schickt Klasse und Adresse an den Server', async () => {
+		vi.clearAllMocks();
+		vi.mocked(apiGet).mockResolvedValue([]);
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ['05F'] })
+		);
+		vi.mocked(apiPost).mockResolvedValue({});
+		const screen = render(Klassenleitungen);
+
+		const klasse = await screen.findByRole('combobox');
+		await fireEvent.click(klasse);
+		await fireEvent.click(await screen.findByRole('option', { name: '05F' }));
+		await fireEvent.input(screen.getByLabelText('E-Mail'), {
+			target: { value: 'lehrkraft@schule.de' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Hinzufügen' }));
+
+		await waitFor(() =>
+			expect(apiPost).toHaveBeenCalledWith('/api/klassen-mapping', {
+				klasse: '05F',
+				lehrer_email: 'lehrkraft@schule.de'
+			})
+		);
 	});
 });

@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiFetch, apiGet, apiPost, apiPut, apiDelete, leseApiFehler } from './apiFetch.js';
+import {
+	apiFetch,
+	apiGet,
+	apiPost,
+	apiPut,
+	apiDelete,
+	leseApiFehler,
+	leseApiFehlerMitDaten
+} from './apiFetch.js';
 import { programmstand, KOPF_OBERFLAECHENSTAND } from './stores/programmstand.svelte.js';
 import { snackbars } from './stores/snackbars.svelte.js';
 import { serverAntwort } from './serverAntwort.js';
@@ -261,5 +269,18 @@ describe('apiGet, apiPost, apiPut und apiDelete melden jeden Fehler', () => {
 		vi.spyOn(globalThis, 'fetch').mockResolvedValue(serverAntwort(204));
 		expect(await apiDelete('/api/test')).toBeNull();
 		expect(meldung).not.toHaveBeenCalled();
+	});
+});
+
+// Ein Fehlerrumpf ohne brauchbare Meldung fällt auf den Rumpf selbst zurück, und die mitgeschickten
+// Daten bleiben erhalten.
+describe('leseApiFehlerMitDaten', () => {
+	it.each([
+		['ohne Meldung', '{"code":1}'],
+		['mit leerer Meldung', '{"error":"   ","code":1}']
+	])('%s', async (_, rumpf) => {
+		const { meldung, daten } = await leseApiFehlerMitDaten(fakeResponse(rumpf));
+		expect(meldung).toBe(rumpf);
+		expect(daten?.code).toBe(1);
 	});
 });

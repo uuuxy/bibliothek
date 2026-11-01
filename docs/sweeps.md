@@ -93,6 +93,7 @@ der Commit-Nachricht, zu finden etwa mit `git log -S'Fehler-Kollaps' -- docs/swe
 | **Verrottete Ausnahme-Begründung** | Ein Eintrag im Bestand einer Ratsche begründet sich mit einer Tatsache („kein DB-Zugriff"), die der Code später widerlegt | — (Detektor-Idee: Aufrufgraph gegen die Begründung) | — |
 | **Frist am Tag des Ereignisses** | Eine Regel nimmt einen Termin als Frist für einen Vorgang, der am oder nach dem Termin eine andere Bedeutung hat | `internal/service/lmf_frist_termintag_pg_test.go` (Matrix T−1/T/T+1 am Rückgabetermin, Uhr `AusleihDienst.jetzt`); übrige Fristquellen ohne Gate | — |
 | **`currentTarget` nach dem `await`** | Ein Handler liest `e.currentTarget` nach dem ersten `await`. Das Ereignis ist dann zu Ende und der Wert `null`: Der Rest der Funktion läuft nicht mehr, im Browser steht nur ein unbehandelter Fehler in der Konsole. Im Ausweis-Designer blieb die Datei im Feld, und dieselbe Datei ließ sich nicht noch einmal wählen | `frontend/src/lib/designer/bildHochladen.test.js`, `e2e/ausweis-bild-hochladen.spec.js` | Prüfmuster: jede Stelle mit `currentTarget` gegen ein `await` davor in derselben Funktion; im Bestand keine weitere. Vitest meldet die Form nur als unbehandelten Fehler bei lauter grünen Tests (Exit 1) |
+| **Bedingung, die zu weit greift** | `AND` zu `OR` im `WHERE` eines Schreibers trifft den ganzen Bestand; der Test legt nur die Zeilen des Vorgangs an und bleibt grün | `TestHoleExemplarZurueck_LaesstAndereForderungenOffen` (eine Zeile eines Unbeteiligten in der Probe) | Prüfmuster: In die Probe eines schreibenden `WHERE` gehört eine Zeile, die es nicht treffen darf; aufgefallen beim Rückbau über den Go-Code (Prüfung der Prüfungen, Punkt 9) |
 | **Timer überlebt den Abbau** | Eine Action oder Komponente plant einen Timer und räumt ihn beim Abbau nicht; im Test läuft er nach dem Ende der Datei ohne jsdom — Unhandled Error, der ganze Lauf rot, obwohl jeder Test besteht | `tastaturNavigation.test.js` zählt nach `destroy` die offenen Timer (Fake-Timer) | Prüfmuster: jedes `setTimeout`/`setInterval` gegen `clearTimeout` im `destroy` bzw. Effekt-Cleanup; Vorbild `actions/tooltip.js` |
 | **Wegweiser auf einen umbenannten Ort** | Ein Hinweistext schickt mit „A → B“ an einen Menüpunkt oder eine Kategorie der Einstellungen; nach einer Umbenennung in der Oberfläche zeigt er weiter auf den alten Namen | `wegweiser_test.go` (liest die Zeichenketten des Go-Codes per AST, die Texte unter `frontend/src` ohne Kommentare und die Namen aus `menue.js` und `kategorien.js`; ein Menüpunkt muss in der genannten Gruppe stehen; Pfeile ohne Weg stehen mit Grund in `wegKeinWeg`; zwei Selbstproben); blind für Orte ohne Pfeil, für Reiter hinter dem Menüpunkt, für einen Weg, in dem ein Schritt ausgezeichnet oder vom Programm eingesetzt ist, und dafür, ob sich am genannten Ort tun lässt, was der Text verspricht | — |
 | **Ordnung nach Codepunkt** | Die Datenbank ordnet ohne Sprachregeln: Eine Liste nach Titel oder Name steht „Mathe 10" vor „Mathe 5", „Zebra" vor „apfel", „Ägypten" hinter allem und, nach `klassen_normkey`, Jahrgang 10 vor Jahrgang 5 | `sortierung_ratsche_test.go` (AST: jedes ORDER BY nach einer Textspalte nennt `COLLATE deutsch`, eine Ordnung nach Stelle steht mit Grund in der Liste) + `repository/sortierung_zwilling_pg_test.go` (die Fälle von Go und Browser) | Die Kollation deutsch (Migration 165) ordnet wie `Intl.Collator('de', {numeric: true})`; kein Index benutzt sie. `SELECT DISTINCT` verträgt sie im ORDER BY nicht, dort steht `GROUP BY` |
@@ -448,8 +449,18 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
    Die Gegenrichtung: In `tuer.LeseAnfrage` über ein Overlay die Schlüssel des Rumpfs gegen den
    Zieltyp halten und loggen, was der Server still verwirft. Null Treffer zählen erst, wenn ein
    Fremdfeld anschlägt; Stellen mit eigenem Decoder gegen die Rümpfe der Oberfläche lesen.
-9. **Rückbau in Bedingungen und SQL:** Stichprobe über `go test -overlay` (`<` zu `<=`, `&&` zu `||`,
-   Zeile weg). Die Überlebenden am Code lesen; ein Teil ist ohne Folge oder sieht das Overlay nicht.
+9. **Rückbau in Bedingungen und SQL:** Über den ganzen fachlichen Go-Code mit `go test -overlay`
+   (`<` zu `<=`, `&&` zu `||`, Zeile weg): rund 1.100 Proben, drei Stunden mit vier Arbeitern. Über
+   die Oberfläche eine Stichprobe von 300 mit Vitest, und was dort unbemerkt bleibt, gezielt gegen
+   die zuständigen Specs an einem Entwicklungsserver aus einer eigenen Arbeitskopie. Die
+   Überlebenden am Code lesen; ein Teil ist ohne Folge. Text-Prüfungen lesen die Datei auf der
+   Platte und sehen das Overlay nicht. `golangci-lint` zeigt je Meldungstext nur drei Funde, wer
+   Rückbauten mit Meldungen abgleicht, braucht `--max-same-issues=0`. Ein neuer Test zählt erst,
+   wenn er im Nachlauf gegen denselben Rückbau rot wird: Eine Prüfung auf `IS NOT NULL` ergab
+   zufällig dieselbe Zahl und übersah die Lücke.
+   Eine Probe zählt nur, wenn der Test ohne Rückbau grün ist und mit ihm ein Test fehlschlägt: Ein
+   toter Entwicklungsserver und ein unbehandelter Fehler im Test machen sonst jeden Rückbau
+   scheinbar erkannt.
 10. **Alle Rollen, alle Bildschirme:** Je Rolle jeden Bildschirm und Reiter öffnen und Ablehnungen
     des Servers, 5xx, Abstürze und Meldungen der Konsole sammeln. Die Suite fährt das selbst
     (`e2e/rundgang-rollen.spec.js`) und dazu jedes einzelne Recht (`e2e/rundgang-rechte.spec.js`),

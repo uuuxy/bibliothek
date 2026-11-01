@@ -246,3 +246,20 @@ describe('LmfPlanReihenfolge', () => {
 		expect(tausch).toHaveBeenCalledWith(0, '10R2', '10R4');
 	});
 });
+
+// Der Tausch einer Klasse endet mit einem Klick woandershin; ein Klick in die eigene Zelle gehört
+// zum Auswahlfeld und lässt ihn stehen.
+describe('LmfPlanReihenfolge: Klasse tauschen', () => {
+	it('bricht beim Klick außerhalb der Zelle ab, nicht beim Klick in ihr', async () => {
+		const screen = zeige([{ klassen: ['10R1'], vermerk: '' }], vi.fn(), [], vi.fn());
+		await fireEvent.click(screen.getByTitle('10R1 gegen eine andere Klasse tauschen'));
+		const feld = () => screen.queryByRole('combobox', { name: 'Klasse Zeile 1 tauschen' });
+		await vi.waitFor(() => expect(feld()).toBeTruthy());
+
+		await fireEvent.pointerDown(/** @type {HTMLElement} */ (feld()));
+		expect(feld()).toBeTruthy();
+
+		await fireEvent.pointerDown(document.body);
+		await vi.waitFor(() => expect(feld()).toBeNull());
+	});
+});

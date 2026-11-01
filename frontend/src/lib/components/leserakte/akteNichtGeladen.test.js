@@ -9,6 +9,7 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
 
 import { apiFetch } from '../../apiFetch.js';
 import { serverAntwort } from '../../serverAntwort.js';
+import { authStore } from '../../stores/authStore.svelte.js';
 import Leserakte from './Leserakte.svelte';
 
 const apiFetchMock = vi.mocked(apiFetch);
@@ -42,5 +43,45 @@ describe('Leserakte: Akte nicht geladen', () => {
 		render(Leserakte, { leser: { id: 'A' }, onDeselect: vi.fn() });
 
 		await waitFor(() => expect(screen.getByText('Keine Verbindung zum Server.')).toBeTruthy());
+	});
+});
+
+// Das getippte Ablaufjahr gilt für den Ausdruck dieses einen Lesers. Bliebe es beim Wechsel
+// stehen, trüge der nächste Ausweis das Jahr eines anderen Schülers.
+describe('Leserakte: Ablaufjahr beim Wechsel des Lesers', () => {
+	it('fällt auf den Vorschlag des nächsten Lesers zurück', async () => {
+		authStore.currentUser = /** @type {any} */ ({
+			rolle: 'mitarbeiter',
+			permissions: ['view_students']
+		});
+		apiFetchMock.mockImplementation(async (url) => {
+			if (String(url) === '/api/schueler/A')
+				return serverAntwort(200, {
+					id: 'A',
+					vorname: 'Anna',
+					nachname: 'A',
+					klasse: '05A',
+					ausweis_gueltig_bis: 2030
+				});
+			if (String(url) === '/api/schueler/B')
+				return serverAntwort(200, {
+					id: 'B',
+					vorname: 'Ben',
+					nachname: 'B',
+					klasse: '09A',
+					ausweis_gueltig_bis: 2027
+				});
+			return serverAntwort(200, []);
+		});
+		const ansicht = render(Leserakte, { leser: { id: 'A' }, onDeselect: vi.fn() });
+		const jahr = () =>
+			/** @type {HTMLInputElement} */ (screen.getByLabelText('Ablaufjahr des Ausweises'));
+		await waitFor(() => expect(jahr().value).toBe('2030'));
+
+		await fireEvent.input(jahr(), { target: { value: '2041' } });
+		await waitFor(() => expect(jahr().value).toBe('2041'));
+
+		await ansicht.rerender({ leser: { id: 'B' } });
+		await waitFor(() => expect(jahr().value).toBe('2027'));
 	});
 });

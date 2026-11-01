@@ -130,3 +130,19 @@ test.describe.serial('Theke: Suchleiste', () => {
 			.toBe('1');
 	});
 });
+
+test('Ein Buch aus der Trefferliste öffnet seine Akte', async ({ page }) => {
+	const titel = `Treffer ${s}`;
+	// Mit Exemplar: Ein Titel ohne Exemplar steht in keiner Suche.
+	seedSQL(`WITH t AS (INSERT INTO buecher_titel (titel, autor) VALUES ('${titel}', 'Autor') RETURNING id)
+	         INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'B-TT-${s}' FROM t;`);
+	const titelId = querySQL(`SELECT id FROM buecher_titel WHERE titel = '${titel}';`);
+	try {
+		await uiLogin(page);
+		await page.locator('#omnibox-input').fill(titel);
+		await page.locator('#omnibox-dropdown').getByText(titel).click();
+		await expect(page).toHaveURL(new RegExp(`/medienkatalog/buch/${titelId}$`));
+	} finally {
+		seedSQL(`DELETE FROM buecher_titel WHERE id = '${titelId}';`);
+	}
+});

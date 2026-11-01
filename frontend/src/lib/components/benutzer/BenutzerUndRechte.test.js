@@ -65,6 +65,23 @@ describe('Rechte-Matrix', () => {
 		expect(screen.queryByText('Rechte nicht geladen')).toBeNull();
 	});
 
+	// Eine Rolle hat viele Zeilen in der Antwort. Jede kommt dazu, keine ersetzt die vorige.
+	it('zeigt jedes gewährte Recht einer Rolle', async () => {
+		serverMit(() => ({
+			ok: true,
+			status: 200,
+			json: async () => [
+				{ role: 'helfer', permission: 'view_books', allowed: true },
+				{ role: 'helfer', permission: 'view_students', allowed: true }
+			]
+		}));
+		const screen = await oeffneRechte();
+		const schalter = await screen.findAllByRole('switch', { name: 'HELFER Rechte umschalten' });
+
+		const an = schalter.filter((k) => k.getAttribute('aria-checked') === 'true');
+		expect(an).toHaveLength(2);
+	});
+
 	it('meldet den Grund des Servers, wenn ein Recht nicht gespeichert wird', async () => {
 		serverMit(matrixOk);
 		vi.mocked(apiClient.put).mockResolvedValue(

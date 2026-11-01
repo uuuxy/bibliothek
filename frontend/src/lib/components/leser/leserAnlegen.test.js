@@ -89,6 +89,27 @@ describe('Neuen Leser anlegen', () => {
 	// Server weist eine Adresse an einem Schüler ausdrücklich ab, das Formular schickt sie
 	// nur nicht mit.
 
+	// Ohne Geburtsdatum erkennt der LUSD-Import den Schüler nicht wieder und legt ihn doppelt an.
+	it('verlangt bei einem Schüler das Geburtsdatum und schickt es dann mit', async () => {
+		const screen = await anlegen('schueler');
+		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
+
+		await fireEvent.click(screen.getByRole('combobox', { name: 'Klasse *' }));
+		await fireEvent.click(screen.getByRole('option', { name: '07A' }));
+		await fireEvent.click(screen.getByText('Speichern'));
+		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
+		expect(screen.container.textContent ?? '').toContain('Geburtsdatum fehlt');
+
+		await fireEvent.input(screen.getByLabelText('Geburtsdatum *'), {
+			target: { value: '2012-05-06' }
+		});
+		await fireEvent.click(screen.getByText('Speichern'));
+		expect(vi.mocked(apiClient.post)).toHaveBeenCalledTimes(1);
+		expect(/** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]).geburtsdatum).toBe(
+			'2012-05-06'
+		);
+	});
+
 	it('lässt eine Lehrkraft ohne Schul-E-Mail gar nicht erst los', async () => {
 		const screen = render(LeserAnlegenDialog, {
 			open: true,

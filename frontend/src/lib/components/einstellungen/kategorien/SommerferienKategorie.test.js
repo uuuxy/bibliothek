@@ -72,3 +72,20 @@ describe('SommerferienKategorie', () => {
 		expect(container.querySelectorAll('tbody tr')[1].textContent).toContain('22.07.2030');
 	});
 });
+
+// Der Wert „sommerferien" fehlt, solange die Schule nichts eingetragen hat. Die Kategorie geht
+// dann mit den Jahren des Programms auf, sonst wäre der Weg zum ersten Eintrag versperrt.
+describe('SommerferienKategorie: ohne eigene Termine', () => {
+	it.each([
+		['fehlt', undefined],
+		['leer ist', ''],
+		['kein JSON ist', 'kein JSON']
+	])('zeigt das Programm, wenn der Wert %s', (_, sommerferien) => {
+		const { container } = render(SommerferienKategorie, {
+			daten: { sommerferien_programm: DATEN.sommerferien_programm, sommerferien }
+		});
+		const zeilen = [...container.querySelectorAll('tbody tr')].map((tr) => tr.textContent ?? '');
+		expect(zeilen).toHaveLength(2);
+		expect(zeilen.every((z) => z.includes('Programm'))).toBe(true);
+	});
+});

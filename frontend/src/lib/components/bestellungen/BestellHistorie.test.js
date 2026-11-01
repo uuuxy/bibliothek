@@ -83,3 +83,24 @@ describe('BestellHistorie', () => {
 		expect(screen.getByText('Buchhandlung Süd')).toBeTruthy();
 	});
 });
+
+// Die Zeile unter der Liste sagt, ob sie alles zeigt. Beim gefilterten Blick zählt die Zahl des
+// Topfes: Sonst stünde unter einer vollständigen Liste „Neueste 1 von 137“.
+describe('BestellHistorie: die Liste zeigt nicht alles', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it('zählt ohne Filter alle Bestellungen, mit Filter die des Topfes', async () => {
+		holen.mockImplementation(async (url) =>
+			String(url).includes('uebersicht')
+				? { ...SUMMEN, gesamt: 137, nach_mittel: [{ mittel: 'land', gesamt: 1 }] }
+				: [bestellung('Buchhandlung Nord', 'land')]
+		);
+		const screen = render(BestellHistorie);
+		expect(await screen.findByText(/Neueste 1 von 137 Bestellungen/)).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('combobox'));
+		await fireEvent.click(screen.getByRole('option', { name: 'Lernmittelfreiheit (Land)' }));
+
+		await waitFor(() => expect(screen.queryByText(/Neueste 1 von/)).toBeNull());
+	});
+});

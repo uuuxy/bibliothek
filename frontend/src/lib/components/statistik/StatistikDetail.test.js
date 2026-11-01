@@ -54,3 +54,20 @@ describe('Statistik-Detailseite', () => {
 		expect(screen.queryByText('0 von 0 Einträgen')).toBeNull();
 	});
 });
+
+// Der Satz unter der Überschrift erklärt, wonach die Liste geht; beim Ladenhüter ist es das Gegenteil.
+describe('Statistik-Detailseite: Hinweis je Liste', () => {
+	it('nennt je Liste ihren eigenen Maßstab', async () => {
+		const renner = render(StatistikDetail);
+		expect(
+			await renner.findByText('Nach Anzahl der Ausleihen im gewählten Zeitraum.')
+		).toBeTruthy();
+		renner.unmount();
+
+		uiStore.statsDetailKind = 'ladenhueter';
+		const ladenhueter = render(StatistikDetail);
+		expect(
+			await ladenhueter.findByText('Seit über 2 Jahren nicht ausgeliehen — oder noch nie.')
+		).toBeTruthy();
+	});
+});

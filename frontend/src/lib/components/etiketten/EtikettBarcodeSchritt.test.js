@@ -108,3 +108,38 @@ describe('Druck-Center, Schritt 2: nur vorhandene Exemplare', () => {
 		expect(k.getByRole('heading', { name: '2. Exemplare wählen' })).toBeTruthy();
 	});
 });
+
+// Der Kopf der Liste zählt alle gewählten Exemplare, und der Haken „alle“ sagt, worauf er wirkt:
+// auf alle Exemplare oder, während das Nummernfeld filtert, nur auf die Treffer.
+describe('Druck-Center, Schritt 2: Zahlen im Kopf der Liste', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	async function zweiExemplare() {
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [{ barcode_id: 'B-0000011' }, { barcode_id: 'B-0000012' }]
+			})
+		);
+		await etikettenStore.waehleTitel({ id: 't6', titel: 'Titel', autor: '' });
+		const k = render(EtikettBarcodeSchritt);
+		await waitFor(() => expect(k.getByText('B-0000011')).toBeTruthy());
+		return k;
+	}
+
+	it('nennt ohne Filter gewählte und alle Exemplare', async () => {
+		const k = await zweiExemplare();
+		expect(k.getByText(/^Exemplare auswählen: \d+ von 2$/)).toBeTruthy();
+		expect(k.getByText('Alle 2 Exemplare')).toBeTruthy();
+	});
+
+	it('bezieht den Haken während des Filterns auf die Treffer', async () => {
+		const k = await zweiExemplare();
+		etikettenStore.exemplarSuche = '0000011';
+		await waitFor(() => expect(k.getByText('Der eine Treffer')).toBeTruthy());
+		expect(k.queryByText('Alle 2 Exemplare')).toBeNull();
+		etikettenStore.exemplarSuche = '';
+	});
+});
