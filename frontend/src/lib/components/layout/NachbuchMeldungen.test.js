@@ -4,7 +4,7 @@ import { serverAntwort } from '../../serverAntwort.js';
 
 // Kommt die Liste der Meldungen nicht, steht an ihrer Stelle der Grund mit „Erneut versuchen".
 // „Nichts offen." hieße, es sei alles erledigt, während das Band offene Meldungen zählt.
-vi.mock('../../liveEvents.js', () => ({ abonniere: () => () => {} }));
+vi.mock('../../liveEvents.js', () => ({ abonniereNeuladen: () => () => {} }));
 const fetchMock = vi.fn();
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),

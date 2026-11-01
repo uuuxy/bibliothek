@@ -1,5 +1,5 @@
 import { apiFetch, apiClient, leseApiFehler } from '../apiFetch.js';
-import { abonniere } from '../liveEvents.js';
+import { abonniereNeuladen } from '../liveEvents.js';
 
 /**
  * Die Meldungen aus dem Nachbuchen (Migration 117).
@@ -121,7 +121,9 @@ class NachbuchMeldungen {
 	init() {
 		this.zaehle();
 		if (this.#abmelden) return;
-		this.#abmelden = abonniere('nachbuch-meldungen', () => {
+		// Kein Zeitgeber fragt die Zahl: Nach einer Unterbrechung stünde sonst bis zur nächsten
+		// Anmeldung die alte im Band.
+		this.#abmelden = abonniereNeuladen('nachbuch-meldungen', () => {
 			this.zaehle();
 			if (this.geoeffnet) this.lade();
 		});

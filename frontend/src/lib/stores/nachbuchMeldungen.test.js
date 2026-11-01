@@ -12,7 +12,7 @@ import { serverAntwort } from '../serverAntwort.js';
 /** @type {{ handler: null | (() => void) }} */
 const sse = { handler: null };
 vi.mock('../liveEvents.js', () => ({
-	abonniere: (_name, cb) => {
+	abonniereNeuladen: (_name, cb) => {
 		sse.handler = cb;
 		return () => (sse.handler = null);
 	}

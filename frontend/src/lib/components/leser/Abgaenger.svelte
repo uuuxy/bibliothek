@@ -109,7 +109,6 @@
 		})
 	);
 
-	// Fetch graduates list from backend api
 	async function ladeListe() {
 		try {
 			const antwort = await dienst.ladeAbgaenger();
@@ -129,12 +128,11 @@
 	}
 
 	onMount(() => {
-		// Initial fetch
 		ladeListe();
 
-		// Live-Abgleich über die gemeinsame Leitung (liveEvents.js): Wird an einem
-		// anderen Arbeitsplatz ein Buch zurückgegeben, muss der Abgänger hier von
-		// selbst aus der Liste fallen.
+		// Live-Abgleich über die gemeinsame Leitung (liveEvents.js): Wird an einem anderen
+		// Arbeitsplatz ein Buch zurückgegeben, muss der Abgänger hier von selbst aus der Liste
+		// fallen. Was in eine Unterbrechung der Leitung fiel, meldet niemand nach.
 		const abmelden = abonniere('action', (e) => {
 			try {
 				const nachricht = JSON.parse(e.data);
@@ -145,8 +143,12 @@
 				console.error('Failed to parse SSE payload:', err);
 			}
 		});
+		const abmeldenAufbau = abonniere('connected', () => ladeListe());
 
-		return abmelden;
+		return () => {
+			abmelden();
+			abmeldenAufbau();
+		};
 	});
 </script>
 

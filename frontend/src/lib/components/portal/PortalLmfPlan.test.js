@@ -9,7 +9,16 @@ vi.mock('../lmfplan/lmfplanDienst.js', async (importOriginal) => ({
 	ladePlan: vi.fn(),
 	ladePdf: vi.fn()
 }));
-vi.mock('../../liveEvents.js', () => ({ abonniere: () => () => {} }));
+const leitung = vi.hoisted(() => ({
+	/** @type {Map<string, () => void>} */
+	hoerer: new Map()
+}));
+vi.mock('../../liveEvents.js', () => ({
+	abonniereNeuladen: (/** @type {string} */ name, /** @type {() => void} */ holeNeu) => {
+		leitung.hoerer.set(name, holeNeu);
+		return () => leitung.hoerer.delete(name);
+	}
+}));
 
 /** @type {{ ab: string, termine: import('../lmfplan/lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge: number[] }} */
 const PLAN = {
@@ -41,5 +50,24 @@ describe('LMF-Plan im Portal: „Als PDF" scheitert', () => {
 				['Keine Berechtigung für diese Aktion', 'error']
 			])
 		);
+	});
+});
+
+// Die Seite läuft im Lehrerzimmer nebenbei: Eine verschobene Stunde kommt ohne F5, auch wenn der
+// Rechner dazwischen geschlafen hat (den Aufbau der Leitung deckt liveEvents.test.js).
+describe('PortalLmfPlan: der Plan bleibt aktuell', () => {
+	it('holt den Plan neu, wenn sich etwas ändert, und hört nach dem Verlassen auf', async () => {
+		vi.mocked(ladePlan).mockResolvedValue(
+			/** @type {any} */ ({ termine: [], eingangsjahrgaenge: [] })
+		);
+		const seite = render(PortalLmfPlan);
+		await waitFor(() => expect(ladePlan).toHaveBeenCalled());
+		const vorher = vi.mocked(ladePlan).mock.calls.length;
+
+		leitung.hoerer.get('lmf-plan')?.();
+		await waitFor(() => expect(vi.mocked(ladePlan).mock.calls.length).toBe(vorher + 1));
+
+		seite.unmount();
+		expect(leitung.hoerer.has('lmf-plan')).toBe(false);
 	});
 });

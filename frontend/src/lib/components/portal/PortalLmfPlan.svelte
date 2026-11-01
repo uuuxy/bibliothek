@@ -10,7 +10,7 @@
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
 	import * as dienst from '../lmfplan/lmfplanDienst.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
-	import { abonniere } from '../../liveEvents.js';
+	import { abonniereNeuladen } from '../../liveEvents.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 
 	/** @type {any[]} */
@@ -39,8 +39,9 @@
 		// Lehrerzimmer läuft diese Seite nebenbei, und eine verschobene Stunde erschien
 		// erst nach F5. Nur abonnieren, nicht verbinden — die Leitung gehört der Sitzung
 		// (liveEvents.js). Das Signal trägt keine Daten; geholt wird über den eigenen
-		// Endpunkt, der nur veröffentlichte Pläne kennt.
-		return abonniere('lmf-plan', () => hole());
+		// Endpunkt, der nur veröffentlichte Pläne kennt. Auch nach einer Unterbrechung: Der Rechner
+		// im Lehrerzimmer schläft zwischendurch.
+		return abonniereNeuladen('lmf-plan', hole);
 	});
 </script>
 
