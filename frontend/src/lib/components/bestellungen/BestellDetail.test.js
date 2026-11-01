@@ -190,6 +190,22 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		await waitFor(() => expect(region?.contains(document.activeElement)).toBe(true));
 	});
 
+	// Der eigene Nachtrag sperrt den Knopf, und die Browser nehmen ihm dabei den Fokus (jsdom nicht).
+	it('nach dem eigenen Nachtrag steht der Fokus auf der Quittung', async () => {
+		const screen = await geoeffnet();
+		screen.getByRole('button', { name: 'Kleine Etiketten' }).focus();
+		vi.mocked(apiPut).mockImplementation(async () => {
+			/** @type {HTMLElement} */ (document.activeElement).blur();
+			holen.mockResolvedValue({ ...BESTAETIGT, bestaetigt_durch: 'bibliothek' });
+		});
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Kleine Etiketten' }));
+
+		const quittung = await screen.findByText('Bestätigung in der Bibliothek nachgetragen');
+		const region = quittung.closest('[role="status"]');
+		await waitFor(() => expect(region?.contains(document.activeElement)).toBe(true));
+	});
+
 	it('steht der Fokus woanders, bleibt er dort', async () => {
 		const screen = await geoeffnet();
 		const zurueck = screen.getByRole('button', { name: 'Zurück zur Bestellhistorie' });

@@ -88,7 +88,8 @@ describe('Abgaenger: die Liste bleibt aktuell', () => {
 			render(Abgaenger);
 			await waitFor(() => expect(abrufe()).toBe(1));
 
-			for (const h of leitung.hoerer.get('action') ?? []) h({ data: '{kaputt' });
+			const data = '{kaputt';
+			for (const h of leitung.hoerer.get('action') ?? []) h({ data });
 
 			expect(abrufe()).toBe(1);
 			expect(fehler).toHaveBeenCalled();

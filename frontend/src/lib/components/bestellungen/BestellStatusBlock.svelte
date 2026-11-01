@@ -89,6 +89,8 @@
 
 	/** @param {'klein'|'gross'} groesse */
 	async function nachtragen(groesse) {
+		// Festgehalten vor dem Sperren: In allen Browsern nimmt die Sperre dem Knopf den Fokus.
+		const fokusImKasten = warteKasten?.contains(document.activeElement);
 		laeuft = true;
 		try {
 			await apiPut(`/api/bestellungen/${b.id}/bestaetigen`, { etiketten_groesse: groesse });
@@ -98,6 +100,7 @@
 			// „offen" mit toten Knöpfen.
 			await onAktualisieren();
 			laeuft = false;
+			if (fokusImKasten) quittung?.focus();
 		}
 	}
 </script>
