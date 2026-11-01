@@ -15,17 +15,6 @@ import { pfadJeBildschirm } from './routenTabelle.js';
  * @param {string} path
  */
 export function applyPathToState(path) {
-	if (path === '/lmf-plan') {
-		// Ältere Adresse, damit Lesezeichen weiter führen: System → Schuljahreswechsel.
-		uiStore.activeTab = 'schuljahr';
-		return;
-	}
-	if (path === '/lmf-aktionen') {
-		// Ältere Adresse, damit Lesezeichen weiter führen: die Kategorie der Einstellungen.
-		uiStore.activeTab = 'settings';
-		uiStore.requestedSettingsTab = 'lmf';
-		return;
-	}
 	if (path.startsWith('/medienkatalog/buch/')) {
 		uiStore.activeTab = 'book_detail';
 		appState.activeBookId = path.replace('/medienkatalog/buch/', '');

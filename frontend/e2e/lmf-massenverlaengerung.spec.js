@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 
-// LMF-Massenverlängerung (Einstellungen → LMF-Aktionen, bis 24.08.2026 eigener
-// Menüpunkt /lmf-aktionen): kritisches Massen-Update — verlängert alle offenen
+// LMF-Massenverlängerung (Einstellungen → LMF-Aktionen): kritisches Massen-Update — verlängert alle offenen
 // LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht seit Migration 093
 // über die Spalte ist_lernmittel — das Titelpräfix "LMF-" allein zählt nicht mehr.
 test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausleihen', async ({
@@ -86,15 +85,4 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
           AND a.rueckgabe_frist::date = '${dateStr}'
     `);
 	expect(fristen).toBe('2');
-});
-
-// Der Menüpunkt ist weg, Lesezeichen auf die alte Adresse gibt es trotzdem — der
-// Router leitet sie in die Einstellungen und öffnet die Kategorie direkt.
-test('LMF-Massenverlängerung: die alte Adresse /lmf-aktionen führt in die Einstellungen', async ({
-	page
-}) => {
-	await uiLogin(page);
-	await page.goto('/lmf-aktionen');
-
-	await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
 });

@@ -100,7 +100,7 @@ export const KATEGORIEN = [
 	{ id: 'mail', titel: 'Mail', kurz: 'Postausgang und Vorlagen', icon: Mail },
 	{
 		// Bei den anderen seltenen Eingriffen, kein eigener Menüpunkt: Das Werkzeug wird fast
-		// nie gebraucht. Die ältere Adresse /lmf-aktionen leitet hierher (routenAnwenden.js).
+		// nie gebraucht.
 		id: 'lmf',
 		titel: 'LMF-Aktionen',
 		kurz: 'Massenverlängerung je Klasse',
