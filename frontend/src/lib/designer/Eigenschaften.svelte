@@ -11,6 +11,7 @@
 	import ZahlenFeld from './ZahlenFeld.svelte';
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
 	import Switch from '../components/ui/Switch.svelte';
+	import { nimmDatei } from '../utils/dateiwahl.js';
 	import { Lock, MousePointer2, Trash } from '@lucide/svelte';
 
 	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back', gesperrt?: boolean }} */
@@ -43,13 +44,13 @@
 
 	/** @param {Event} e */
 	function ladeBildHoch(e) {
-		const files = /** @type {HTMLInputElement} */ (e.currentTarget).files;
-		if (!files || !el) return;
-		const file = files[0];
-		if (!file) return;
+		const file = nimmDatei(e);
+		// Das Element von jetzt: Bis die Datei gelesen ist, kann schon ein anderes gewählt sein.
+		const element = el;
+		if (!file || !element) return;
 		const reader = new FileReader();
 		reader.onload = (ev) => {
-			if (ev.target && typeof ev.target.result === 'string') el.content = ev.target.result;
+			if (ev.target && typeof ev.target.result === 'string') element.content = ev.target.result;
 		};
 		reader.readAsDataURL(file);
 	}

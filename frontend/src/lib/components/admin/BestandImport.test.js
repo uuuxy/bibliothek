@@ -23,8 +23,7 @@ describe('BestandImport: abgelehnter Import', () => {
 		const screen = render(BestandImport);
 		const feld = /** @type {HTMLInputElement} */ (screen.getByTestId('bestandimport-datei'));
 		const datei = new File(['Titel;Autor;Verlag'], 'bestand.csv', { type: 'text/csv' });
-		// bind:files schreibt zurück (nach dem Import leer), das Feld muss es annehmen.
-		Object.defineProperty(feld, 'files', { value: [datei], writable: true, configurable: true });
+		Object.defineProperty(feld, 'files', { value: [datei], configurable: true });
 		await fireEvent.change(feld);
 		await fireEvent.click(screen.getByRole('button', { name: 'Bestand importieren' }));
 		return screen;

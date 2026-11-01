@@ -2,21 +2,22 @@
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
+	import { nimmDatei } from '../../utils/dateiwahl.js';
 
-	let files = $state(/** @type {FileList | null} */ (null));
+	let datei = $state(/** @type {File | null} */ (null));
 	let isImporting = $state(false);
 	let importErgebnis = $state(
 		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
 	);
 
 	async function ladeHoch() {
-		if (!files || files.length === 0) return;
+		if (!datei) return;
 
 		isImporting = true;
 		importErgebnis = null;
 
 		const formulardaten = new FormData();
-		formulardaten.append('file', files[0]);
+		formulardaten.append('file', datei);
 
 		try {
 			const res = await apiFetch('/api/import/littera', {
@@ -40,7 +41,7 @@
 				type: 'success',
 				message: successMsg
 			};
-			files = null; // reset input
+			datei = null;
 		} catch (err) {
 			importErgebnis = {
 				type: 'error',
@@ -67,23 +68,18 @@
 			<input
 				type="file"
 				accept=".xml,.csv,.xlsx"
-				bind:files
+				onchange={(e) => (datei = nimmDatei(e))}
 				disabled={isImporting}
 				class="sr-only"
 			/>
 			<div
 				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
 			>
-				{files && files.length > 0 ? files[0].name : 'Datei auswählen...'}
+				{datei ? datei.name : 'Datei auswählen...'}
 			</div>
 		</label>
 
-		<Button
-			size="lg"
-			onclick={ladeHoch}
-			disabled={isImporting || !files || files.length === 0}
-			class="px-6"
-		>
+		<Button size="lg" onclick={ladeHoch} disabled={isImporting || !datei} class="px-6">
 			{#if isImporting}
 				<Ladekreis size="sm" farbe="aktuell" />
 				<span>Importiere...</span>

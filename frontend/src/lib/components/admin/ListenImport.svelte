@@ -13,12 +13,13 @@
 	import Button from '../ui/Button.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
+	import { nimmDatei } from '../../utils/dateiwahl.js';
 
 	// Die Route verlangt edit_books (api/routen_katalog.go); die Karte darüber zeigt sich
 	// schon bei manage_inventory. Ohne eigene Prüfung sähe jemand einen Knopf, der 403 liefert.
 	const darf = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
-	let files = $state(/** @type {FileList | null} */ (null));
+	let datei = $state(/** @type {File | null} */ (null));
 	let laeuft = $state(false);
 	let ergebnis = $state(
 		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
@@ -29,14 +30,14 @@
 	let schluessel = $state(crypto.randomUUID());
 
 	async function importieren() {
-		if (!files || files.length === 0) return;
+		if (!datei) return;
 		laeuft = true;
 		ergebnis = null;
 		try {
-			const r = await importiereListe(files[0], schluessel);
+			const r = await importiereListe(datei, schluessel);
 			const fehl = r.failed > 0 ? `, ${r.failed} fehlgeschlagen` : '';
 			ergebnis = { type: 'success', message: `${r.imported} Titel importiert${fehl}.` };
-			files = null;
+			datei = null;
 			schluessel = crypto.randomUUID();
 		} catch (err) {
 			ergebnis = {
@@ -65,8 +66,10 @@
 				<input
 					type="file"
 					accept=".csv,.xlsx"
-					bind:files
-					onchange={() => (schluessel = crypto.randomUUID())}
+					onchange={(e) => {
+						datei = nimmDatei(e);
+						schluessel = crypto.randomUUID();
+					}}
 					disabled={laeuft}
 					class="sr-only"
 					data-testid="listenimport-datei"
@@ -74,16 +77,11 @@
 				<div
 					class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
 				>
-					{files && files.length > 0 ? files[0].name : 'CSV- oder Excel-Datei auswählen...'}
+					{datei ? datei.name : 'CSV- oder Excel-Datei auswählen...'}
 				</div>
 			</label>
 
-			<Button
-				size="lg"
-				onclick={importieren}
-				disabled={laeuft || !files || files.length === 0}
-				class="px-6"
-			>
+			<Button size="lg" onclick={importieren} disabled={laeuft || !datei} class="px-6">
 				{#if laeuft}
 					<Ladekreis size="sm" farbe="aktuell" />
 					<span>Importiere Liste...</span>

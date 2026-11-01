@@ -96,6 +96,8 @@ test('Datenverwaltung: Listenimport erzeugt B-Nummern ohne Etikett, Bestands-Imp
 		mimeType: 'text/csv',
 		buffer: Buffer.from(`isbn,titel,autor,bestand\n${ISBN},Listenimport ${s},Autor,2\n`)
 	});
+	// Das Feld ist schon leer, die Datei bleibt gewählt: So kommt auch dieselbe Datei ein zweites Mal an.
+	await expect(page.getByTestId('listenimport-datei')).toHaveValue('');
 	await page.getByRole('button', { name: 'Liste importieren' }).click();
 	// 20 s statt der üblichen 5: Der Import holt je ISBN Metadaten aus dem Internet
 	// (internal/katalogdienste/katalogdienste.go, 8 s Timeout) — die erfundene Test-ISBN läuft dort ins

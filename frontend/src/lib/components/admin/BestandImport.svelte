@@ -9,19 +9,20 @@
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
+	import { nimmDatei } from '../../utils/dateiwahl.js';
 
-	let files = $state(/** @type {FileList | null} */ (null));
+	let datei = $state(/** @type {File | null} */ (null));
 	let laeuft = $state(false);
 	let ergebnis = $state(
 		/** @type {{ type: 'success' | 'error', message: string } | null} */ (null)
 	);
 
 	async function importieren() {
-		if (!files || files.length === 0) return;
+		if (!datei) return;
 		laeuft = true;
 		ergebnis = null;
 		const formulardaten = new FormData();
-		formulardaten.append('file', files[0]);
+		formulardaten.append('file', datei);
 		try {
 			const res = await apiFetch('/api/admin/import-bestand', {
 				method: 'POST',
@@ -33,7 +34,7 @@
 				type: 'success',
 				message: `Kombi-Import erfolgreich! ${daten.new_titles_count || 0} neue Titel und ${daten.imported_copies_count || 0} Exemplare wurden verarbeitet.`
 			};
-			files = null;
+			datei = null;
 		} catch (err) {
 			ergebnis = {
 				type: 'error',
@@ -58,7 +59,7 @@
 			<input
 				type="file"
 				accept=".csv"
-				bind:files
+				onchange={(e) => (datei = nimmDatei(e))}
 				disabled={laeuft}
 				class="sr-only"
 				data-testid="bestandimport-datei"
@@ -66,16 +67,11 @@
 			<div
 				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
 			>
-				{files && files.length > 0 ? files[0].name : 'CSV-Datei auswählen...'}
+				{datei ? datei.name : 'CSV-Datei auswählen...'}
 			</div>
 		</label>
 
-		<Button
-			size="lg"
-			onclick={importieren}
-			disabled={laeuft || !files || files.length === 0}
-			class="px-6"
-		>
+		<Button size="lg" onclick={importieren} disabled={laeuft || !datei} class="px-6">
 			{#if laeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
 				<span>Importiere Bestand...</span>

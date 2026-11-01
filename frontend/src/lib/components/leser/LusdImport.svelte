@@ -13,6 +13,7 @@
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { nimmDatei } from '../../utils/dateiwahl.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Button from '../ui/Button.svelte';
 	import LusdUmbenennungen from './LusdUmbenennungen.svelte';
@@ -55,12 +56,11 @@
 	let needsGraduateConfirm = $state(false);
 
 	function beiDateiwahl(/** @type {Event} */ e) {
-		const target = /** @type {HTMLInputElement} */ (e.target);
+		const datei = nimmDatei(e);
+		if (!datei) return;
 		// Neue Datei = neuer Durchgang, auch für die Massenabgang-Bestätigung.
-		if (target.files && target.files[0]) {
-			resetFlow();
-			gewaehlteDatei = target.files[0];
-		}
+		resetFlow();
+		gewaehlteDatei = datei;
 	}
 
 	function resetFlow() {
