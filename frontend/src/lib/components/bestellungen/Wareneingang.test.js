@@ -105,6 +105,25 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 		expect(screen.queryByText(/markiert/)).toBeNull();
 	});
 
+	// Bucht ein anderer Platz die Zeile ein, auf der der Fokus steht, fällt er auf den Anfang des Inhalts
+	// und nicht vor die Navigation. Auf die Zeile darunter darf er nicht: Die Leertaste markierte sie.
+	it('fällt die Zeile mit dem Fokus aus der Liste, rückt er auf den Anfang des Inhalts', async () => {
+		const anfang = document.createElement('main');
+		anfang.id = 'hauptinhalt';
+		anfang.tabIndex = -1;
+		document.body.append(anfang);
+		try {
+			const screen = render(Wareneingang, { ...offen, incomingShipments: [gruppe(['e1', 'e2'])] });
+			screen.getByRole('checkbox', { name: 'Titel A auswählen' }).focus();
+
+			await screen.rerender({ incomingShipments: [] });
+
+			expect(document.activeElement).toBe(anfang);
+		} finally {
+			anfang.remove();
+		}
+	});
+
 	// Danach holt die Leitung nach (liveEvents.js); die Ansicht sagt ihr, ob die Antwort kam.
 	it('meldet der Leitung, ob die Antwort kam', async () => {
 		render(Wareneingang, offen);

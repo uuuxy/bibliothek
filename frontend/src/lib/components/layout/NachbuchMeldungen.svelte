@@ -15,7 +15,18 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import { nachbuchMeldungen as m } from '../../stores/nachbuchMeldungen.svelte.js';
+
+	/** @type {HTMLElement | undefined} */
+	let inhalt = $state();
+	// Erledigt ein anderer Platz die Meldung, fällt ihr Knopf weg. Der Fokus bleibt dann im Dialog, sonst
+	// ginge die nächste Tab-Taste auf die Seite dahinter.
+	fokusAuffangen(
+		() => m.liste,
+		() => inhalt,
+		() => inhalt
+	);
 
 	/** Die sieben Ergebniswörter der Tür in der Sprache der Theke. */
 	const WORT = {
@@ -49,7 +60,7 @@
 			Meldungen aus dem Nachbuchen
 		</h3>
 	{/snippet}
-	<div class="p-4">
+	<div bind:this={inhalt} tabindex="-1" class="p-4 outline-none">
 		<p class="mb-3 text-sm text-on-surface-variant">
 			Hier steht, was beim Nachbuchen der ohne Netz gescannten Vorgänge anders lief als beim Scan.
 			„Erledigt" heißt: angesehen und in Ordnung gebracht.

@@ -9,8 +9,17 @@
 	import { CalendarClock, Check } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	/** @type {{ zeilen: any[], leer: boolean, fenster: { offen: boolean, von: string, bis: string }, ladefehler?: string | null, onErneut?: () => void, onProfil: (student: any) => void }} */
 	let { zeilen, leer, fenster, ladefehler = null, onErneut = () => {}, onProfil } = $props();
+
+	/** @type {HTMLElement | undefined} */
+	let liste = $state();
+	// Eine Rückgabe am anderen Platz nimmt die Zeile aus der Liste, auf der vielleicht der Fokus steht.
+	fokusAuffangen(
+		() => zeilen,
+		() => liste
+	);
 </script>
 
 {#if ladefehler}
@@ -42,7 +51,7 @@
 		</p>
 	</div>
 {:else}
-	<div class="overflow-x-auto">
+	<div bind:this={liste} class="overflow-x-auto">
 		<Tabelle beschriftung="Abgänger mit offenen Büchern">
 			<thead>
 				<tr>

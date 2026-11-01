@@ -8,6 +8,7 @@
 	import WareneingangTabelle from './WareneingangTabelle.svelte';
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
+	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 
 	let { incomingShipments = [], onBack, onReceived } = $props();
 
@@ -22,6 +23,13 @@
 	let laeuft = $state(false);
 	/** @type {string[]} */
 	let gewaehlteExemplare = $state([]);
+	/** @type {HTMLElement | undefined} */
+	let wurzel = $state();
+	// Bucht ein anderer Platz ein, fällt die Zeile aus der Liste und mit der Markierung die Leiste.
+	fokusAuffangen(
+		() => incomingShipments,
+		() => wurzel
+	);
 
 	// Das Nachladen ändert die Liste auch unter einer Auswahl, wenn ein anderer Arbeitsplatz
 	// eingebucht hat. Was nicht mehr dasteht, bleibt nicht markiert.
@@ -64,7 +72,7 @@
 	}
 </script>
 
-<div class="w-full h-full flex flex-col gap-6 p-6 animate-fade-in">
+<div bind:this={wurzel} class="w-full h-full flex flex-col gap-6 p-6 animate-fade-in">
 	<!-- Back Button & Header -->
 	<div
 		class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant"

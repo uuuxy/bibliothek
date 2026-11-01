@@ -46,6 +46,22 @@ describe('Meldungen aus dem Nachbuchen: die Liste kommt nicht', () => {
 		expect(screen.queryByText('Meldungen nicht geladen')).toBeNull();
 	});
 
+	// Ohne den Knopf fiele der Fokus aus dem Dialog, und die nächste Tab-Taste ginge auf die Seite dahinter.
+	it('erledigt ein anderer Platz die Meldung, bleibt der Fokus im Dialog', async () => {
+		fetchMock.mockResolvedValueOnce(serverAntwort(200, [zeile]));
+		render(NachbuchMeldungen);
+		nachbuchMeldungen.oeffne();
+		const knopf = await screen.findByRole('button', { name: 'Erledigt' });
+		const dialog = screen.getByRole('dialog');
+		knopf.focus();
+
+		fetchMock.mockResolvedValueOnce(serverAntwort(200, []));
+		await nachbuchMeldungen.lade();
+
+		await screen.findByText('Nichts offen.');
+		await vi.waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+	});
+
 	it('zeigt nach einem Netzausfall keine alte Liste unter einem anderen Filter', async () => {
 		fetchMock.mockResolvedValueOnce(serverAntwort(200, [zeile]));
 		render(NachbuchMeldungen);

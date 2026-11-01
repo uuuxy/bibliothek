@@ -18,6 +18,31 @@ const zeile = {
 };
 
 describe('AbgaengerTabelle', () => {
+	// Eine Rückgabe am anderen Platz nimmt die Zeile heraus. Der Fokus rückt auf den Anfang des Inhalts
+	// und nicht auf die nächste Zeile: Ein Enter öffnete sonst die Akte eines anderen Kindes.
+	it('fällt die Zeile mit dem Fokus aus der Liste, rückt er auf den Anfang des Inhalts', async () => {
+		const anfang = document.createElement('main');
+		anfang.id = 'hauptinhalt';
+		anfang.tabIndex = -1;
+		document.body.append(anfang);
+		try {
+			const andere = { ...zeile, id: 's2', vorname: 'Ben' };
+			const { getByRole, rerender } = render(AbgaengerTabelle, {
+				zeilen: [zeile, andere],
+				leer: false,
+				fenster: saison,
+				onProfil: () => {}
+			});
+			getByRole('button', { name: /Anna Test/ }).focus();
+
+			await rerender({ zeilen: [andere] });
+
+			expect(document.activeElement).toBe(anfang);
+		} finally {
+			anfang.remove();
+		}
+	});
+
 	it('außerhalb der Saison: Hinweis mit beiden Daten, nicht „alle entlastet"', () => {
 		const { getByText, queryByText, queryByRole } = render(AbgaengerTabelle, {
 			zeilen: [],

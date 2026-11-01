@@ -10,9 +10,21 @@
 	import { kopiere } from '../../utils/zwischenablage.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import { CircleCheck, Clock, Copy, Check } from '@lucide/svelte';
 
 	let { b, onAktualisieren } = $props();
+
+	/** @type {HTMLElement | undefined} */
+	let warteKasten = $state();
+	/** @type {HTMLElement | undefined} */
+	let quittung = $state();
+	// Die Quittung tritt an die Stelle des Kastens, also auch an die Stelle des Fokus.
+	fokusAuffangen(
+		() => b.bestaetigt_am,
+		() => warteKasten,
+		() => quittung
+	);
 
 	let laeuft = $state(false);
 	// Der Link ist nur EINMAL sichtbar: In der Datenbank steht bloß sein Hash, damit ein
@@ -97,7 +109,9 @@
 		<!-- Getönter Container statt Kasten mit Rahmen: In M3 trägt ein erledigter Zustand
 		     Fläche, keine Umrandung. -->
 		<div
-			class="flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container"
+			bind:this={quittung}
+			tabindex="-1"
+			class="flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container focus-visible:outline-2 focus-visible:outline-primary"
 		>
 			<CircleCheck size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
 			<div>
@@ -112,7 +126,10 @@
 	{/if}
 </div>
 {#if !b.bestaetigt_am}
-	<div class="mb-3 rounded-xl border border-outline-variant bg-surface-container-lowest">
+	<div
+		bind:this={warteKasten}
+		class="mb-3 rounded-xl border border-outline-variant bg-surface-container-lowest"
+	>
 		<div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
 			<div class="flex items-start gap-3">
 				<Clock size={20} class="mt-0.5 shrink-0 text-warning" aria-hidden="true" />

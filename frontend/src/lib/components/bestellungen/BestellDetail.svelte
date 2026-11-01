@@ -1,9 +1,5 @@
-<!-- @component Eine Bestellung als Beleg — Kopf, bestellte Titel, gelieferte Exemplare.
-
-     Ersetzt die aufklappende Zeile der Bestellhistorie. Die zeigte dieselben Angaben wie
-     die Tabellenzeile darüber, nur untereinander; Absprache: „geht das Feld nach unten aber
-     nicht mit merklichem Mehrwert". Zwei Dinge fehlten und passen auch nicht in eine
-     Tabellenzeile: das Cover und die Exemplarnummern.
+<!-- @component Eine Bestellung als Beleg — Kopf, bestellte Titel, gelieferte Exemplare, mit dem,
+     was nicht in eine Tabellenzeile passt: Cover und Exemplarnummern.
 
      Eigener Endpunkt statt breiterer Liste: /api/bestellhistorie ist auf 200 Bestellungen
      gedeckelt, WEIL sie ungedeckelt 2,45 MB gebraucht hat. Cover und Exemplarlisten an
@@ -23,6 +19,7 @@
 	import Button from '../ui/Button.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
+	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
 	import BestellMittelDialog from './BestellMittelDialog.svelte';
 	import { mittelBeschriftung } from './mittel.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
@@ -45,6 +42,13 @@
 	// Es gilt die jüngste Anfrage: Ein Signal der Leitung und das Laden nach einer eigenen Aktion
 	// können sich überholen, und die ältere Antwort nennte dann eine überholte Frist des Links.
 	let ladeNr = 0;
+	/** @type {HTMLElement | undefined} */
+	let wurzel = $state();
+	// Der Block zur gescheiterten Mail verschwindet, wenn der Händler bestätigt.
+	fokusAuffangen(
+		() => bestellung,
+		() => wurzel
+	);
 
 	async function laden() {
 		const nr = ++ladeNr;
@@ -101,7 +105,7 @@
 	}
 </script>
 
-<div class="space-y-6">
+<div bind:this={wurzel} class="space-y-6">
 	<Button variant="secondary" onclick={onBack}>
 		<ArrowLeft class="h-4 w-4" aria-hidden="true" />
 		Zurück zur Bestellhistorie

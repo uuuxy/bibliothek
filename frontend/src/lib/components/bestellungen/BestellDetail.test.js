@@ -176,6 +176,56 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 
+	// Der Kasten verschwindet samt dem Knopf, auf dem der Fokus steht. M3, Flow: „Focus is particularly
+	// important when an element is activated by the user or the user changes context."
+	it('bestätigt der Händler, rückt der Fokus aus dem Kasten auf die Quittung', async () => {
+		const screen = await geoeffnet();
+		screen.getByRole('button', { name: 'Kleine Etiketten' }).focus();
+
+		holen.mockResolvedValue(BESTAETIGT);
+		leitung.sende('bestellstand');
+
+		const quittung = await screen.findByText(QUITTUNG);
+		const region = quittung.closest('[role="status"]');
+		await waitFor(() => expect(region?.contains(document.activeElement)).toBe(true));
+	});
+
+	it('steht der Fokus woanders, bleibt er dort', async () => {
+		const screen = await geoeffnet();
+		const zurueck = screen.getByRole('button', { name: 'Zurück zur Bestellhistorie' });
+		zurueck.focus();
+
+		holen.mockResolvedValue(BESTAETIGT);
+		leitung.sende('bestellstand');
+		await screen.findByText(QUITTUNG);
+
+		expect(document.activeElement).toBe(zurueck);
+	});
+
+	// Der Block zur gescheiterten Mail verschwindet, wenn der Händler bestätigt, und ohne ihn hat der
+	// Fokus keinen Nachfolger: Er rückt auf den Anfang des Inhalts statt vor die Navigation.
+	it('verschwindet der Block zur gescheiterten Mail, rückt der Fokus auf den Inhalt', async () => {
+		const anfang = document.createElement('main');
+		anfang.id = 'hauptinhalt';
+		anfang.tabIndex = -1;
+		document.body.append(anfang);
+		try {
+			holen.mockResolvedValue({ ...WARTET, mail_gescheitert_am: '2026-10-12T10:00:00Z' });
+			const screen = await geoeffnet();
+			screen.getByRole('button', { name: 'Erneut senden' }).focus();
+
+			holen.mockResolvedValue(WARTET);
+			leitung.sende('bestellstand');
+
+			await waitFor(() =>
+				expect(screen.queryByRole('button', { name: 'Erneut senden' })).toBeNull()
+			);
+			await waitFor(() => expect(document.activeElement).toBe(anfang));
+		} finally {
+			anfang.remove();
+		}
+	});
+
 	// Danach holt die Leitung nach (liveEvents.js); die Ansicht sagt ihr, ob die Antwort kam.
 	it('meldet der Leitung, ob die Antwort kam', async () => {
 		await geoeffnet();

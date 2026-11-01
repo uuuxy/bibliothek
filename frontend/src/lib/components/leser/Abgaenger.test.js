@@ -82,6 +82,21 @@ describe('Abgaenger: die Liste bleibt aktuell', () => {
 		expect(abrufe()).toBe(4);
 	});
 
+	it('eine unlesbare Meldung löst kein Laden aus', async () => {
+		const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
+		try {
+			render(Abgaenger);
+			await waitFor(() => expect(abrufe()).toBe(1));
+
+			for (const h of leitung.hoerer.get('action') ?? []) h({ data: '{kaputt' });
+
+			expect(abrufe()).toBe(1);
+			expect(fehler).toHaveBeenCalled();
+		} finally {
+			fehler.mockRestore();
+		}
+	});
+
 	it('hört nach dem Verlassen auf keine der beiden Meldungen mehr', async () => {
 		const seite = render(Abgaenger);
 		await waitFor(() => expect(abrufe()).toBe(1));
