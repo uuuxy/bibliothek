@@ -64,7 +64,9 @@
 	/** Handle multi-file image upload → creates one element per file. */
 	/** @param {Event} e */
 	async function ladeBilderHoch(e) {
-		const files = /** @type {HTMLInputElement} */ (e.currentTarget).files;
+		// Vor dem await festhalten: Danach ist currentTarget des Ereignisses null.
+		const feld = /** @type {HTMLInputElement} */ (e.currentTarget);
+		const files = feld.files;
 		if (!files || files.length === 0) return;
 		/** @type {string[]} */
 		const bildDaten = await Promise.all(
@@ -78,8 +80,8 @@
 			)
 		);
 		fuegeBilderHinzu(side, bildDaten);
-		// Reset input so the same files can be re-selected
-		/** @type {HTMLInputElement} */ (e.currentTarget).value = '';
+		// Leeren, damit sich dieselbe Datei noch einmal wählen lässt.
+		feld.value = '';
 	}
 </script>
 
