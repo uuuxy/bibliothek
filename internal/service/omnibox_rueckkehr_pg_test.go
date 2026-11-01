@@ -214,3 +214,37 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		t.Error("die Schadensforderung wurde mit storniert — der Hook darf nur „nicht zurückgegeben“ beenden")
 	}
 }
+
+// Ein gesperrtes Exemplar, das nicht ausgesondert ist, holt der Scan genauso zurück wie ein
+// ausgesondertes: Es genügt, dass eine der beiden Spalten es aus dem Umlauf nimmt.
+func TestScanHoltGesperrtesExemplarZurueck(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	mitarbeiterID := testdaten.LegeBearbeiterAn(t, pool)
+	titelID := testdaten.LegeTitelAn(t, pool, "Gesperrt-Testband", 1)
+	exemplarID := testdaten.LegeExemplarAn(t, pool, titelID, "B-GESPERRT-1", false, "")
+
+	studentRepo := repository.NewLeserAbfragen(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
+	loanRepo := repository.NewAusleihAbfragen(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	svc := NewOmniboxDienst(pool, studentRepo, bookRepo, loanRepo,
+		NewAusleihDienst(pool, studentRepo, bookRepo, loanRepo, auditRepo),
+		NewGeraeteDienst(pool, studentRepo, loanRepo, auditRepo))
+
+	res, err := svc.VerarbeiteEingabe(ctx, OmniboxEingabe{Text: "B-GESPERRT-1", BearbeiterID: mitarbeiterID})
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if res.Art != "info" {
+		t.Errorf("Scan: Art %q, erwartet die Meldung über die Rückkehr", res.Art)
+	}
+	var ausleihbar bool
+	if err := pool.QueryRow(ctx, `SELECT ist_ausleihbar FROM buecher_exemplare WHERE id = $1`, exemplarID).Scan(&ausleihbar); err != nil {
+		t.Fatal(err)
+	}
+	if !ausleihbar {
+		t.Error("das Exemplar ist nach dem Scan weiter gesperrt")
+	}
+}

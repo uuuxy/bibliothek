@@ -129,3 +129,17 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 		}
 	}
 }
+
+// Eine Forderung, deren Exemplar gelöscht ist, trägt eine leere Kennung in die Liste. Sie darf die
+// Abfrage nicht erreichen: Eine leere Zeichenkette ist keine UUID, und der ganze Vorschlag des
+// Bescheids scheiterte an ihr.
+func TestVerleihjahr_LeereKennungBleibtDraussen(t *testing.T) {
+	repo := NewBescheidAbfragen(pgTestPool(t))
+	je, err := repo.zaehleSchuljahreMitAusleihe(context.Background(), []string{"", ""})
+	if err != nil {
+		t.Fatalf("zaehleSchuljahreMitAusleihe: %v", err)
+	}
+	if len(je) != 0 {
+		t.Errorf("zaehleSchuljahreMitAusleihe = %v, erwartet nichts", je)
+	}
+}

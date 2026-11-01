@@ -118,3 +118,23 @@ func rueckholenAufbau(t *testing.T, pool *pgxpool.Pool) (exemplarID, schadensfal
 	}
 	return exemplarID, schadensfallID, bearbeiterID
 }
+
+// Die Rückkehr beendet nur die Forderung dieses Exemplars. Griffe die Bedingung weiter, wäre jede
+// andere offene Forderung storniert, und die Schule verlöre den Anspruch, ohne dass es jemand sieht.
+func TestHoleExemplarZurueck_LaesstAndereForderungenOffen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	exemplarID, _, bearbeiterID := rueckholenAufbau(t, pool)
+	_, andere, _ := rueckholenAufbau(t, pool)
+
+	if _, err := HoleExemplarZurueck(ctx, pool, exemplarID, bearbeiterID, nil); err != nil {
+		t.Fatalf("zurückholen: %v", err)
+	}
+	var offen bool
+	if err := pool.QueryRow(ctx, `SELECT storniert_am IS NULL AND NOT ist_bezahlt FROM schadensfaelle WHERE id = $1`, andere).Scan(&offen); err != nil {
+		t.Fatal(err)
+	}
+	if !offen {
+		t.Error("die Forderung eines anderen Exemplars ist mit storniert")
+	}
+}

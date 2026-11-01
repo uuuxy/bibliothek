@@ -14,7 +14,7 @@ func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	ex := legeSignaturMitExemplarenAn(t, pool, "DmgVorm", 1)
+	ex := legeSignaturMitExemplarenAn(t, pool, "DmgVorm", 2)
 	titelID := titelIDVonExemplar(t, pool, ex[0])
 	schueler := legeSchuelerAn(t, pool, "DV-1", "Mia", "7a")
 	bearbeiter := legeBearbeiterAn(t, pool)
@@ -28,6 +28,15 @@ func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 		 VALUES ($1, $2, 'abholbereit', $3, now() + interval '3 days') RETURNING id`,
 		titelID, schueler, ex[0]).Scan(&vID); err != nil {
 		t.Fatalf("Vormerkung anlegen: %v", err)
+	}
+
+	// Die Zuteilung eines anderen Exemplars desselben Titels bleibt: Nur dieses Buch ist weg.
+	var andereID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis)
+		 VALUES ($1, $2, 'abholbereit', $3, now() + interval '3 days') RETURNING id`,
+		titelID, legeSchuelerAn(t, pool, "DV-2", "Ben", "7b"), ex[1]).Scan(&andereID); err != nil {
+		t.Fatalf("andere Vormerkung anlegen: %v", err)
 	}
 
 	repo := NewSchadensAbfragen(pool)
@@ -47,5 +56,12 @@ func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 	}
 	if bereitgestellt != nil {
 		t.Errorf("bereitgestellt_exemplar_id nicht gelöst: %v (zeigt weiter auf defektes Exemplar)", *bereitgestellt)
+	}
+	var andereStatus string
+	if err := pool.QueryRow(ctx, `SELECT status FROM vormerkungen WHERE id = $1`, andereID).Scan(&andereStatus); err != nil {
+		t.Fatal(err)
+	}
+	if andereStatus != "abholbereit" {
+		t.Errorf("Vormerkung auf das andere Exemplar: Status %q, erwartet abholbereit", andereStatus)
 	}
 }

@@ -288,6 +288,12 @@ func TestVersandMeldung_Saetze(t *testing.T) {
 	}{
 		{"Kontoauszüge, eine Klasse", abgaengerVersandMeldung(versandErgebnis{Versendet: 1}, ""),
 			"Kontoauszüge von 1 Klasse an die Klassenleitungen versendet, 0 übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen)"},
+		{"Kontoauszüge, nichts zu versenden", abgaengerVersandMeldung(versandErgebnis{}, ""),
+			"Keine der gewählten Klassen hat noch offene Ausleihen. Nichts versendet."},
+		{"Kontoauszüge, nur übersprungen", abgaengerVersandMeldung(versandErgebnis{Uebersprungen: 2}, ""),
+			"Kontoauszüge von 0 Klassen an die Klassenleitungen versendet, 2 übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen)"},
+		{"Kontoauszüge, nur fehlgeschlagen", abgaengerVersandMeldung(versandErgebnis{Fehlgeschlagen: 1}, ""),
+			"Kontoauszüge von 0 Klassen an die Klassenleitungen versendet, 0 übersprungen (keine E-Mail hinterlegt oder keine offenen Ausleihen). Für 1 Klasse nicht zugestellt."},
 		{"Mahnlisten mit Umleitung und Abbruch",
 			mahnlistenMeldung(versandErgebnis{Versendet: 3, Uebersprungen: 1, Fehlgeschlagen: 1, Abgebrochen: true}, "test@schule.de"),
 			"Mahnlisten von 3 Klassen an test@schule.de versendet, 1 übersprungen (keine E-Mail hinterlegt oder keine Fälle). " +

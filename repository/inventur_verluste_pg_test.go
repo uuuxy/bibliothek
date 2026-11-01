@@ -178,3 +178,27 @@ func TestLoescheVerlusteEndgueltig(t *testing.T) {
 		t.Errorf("exemplar_id sollte NULL sein (Exemplar gelöscht), war %q", *exemplarIDNachher)
 	}
 }
+
+// Der Fund schließt nur die Verlust-Zeilen dieses Exemplars. Griffe die Bedingung weiter, stünde
+// jedes andere vermisste Buch im Fehlbestandsbericht als gefunden.
+func TestMarkiereVerlustAlsGefunden_LaesstAndereVerlusteOffen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+	bearbeiterID := legeBearbeiterAn(t, pool)
+
+	gesucht := legeVerlorenesExemplarAn(t, ctx, repo, "Physikbuch 8", "GEF-A", bearbeiterID)
+	anderes := legeVerlorenesExemplarAn(t, ctx, repo, "Physikbuch 9", "GEF-B", bearbeiterID)
+
+	if _, _, err := repo.MarkiereVerlustAlsGefunden(ctx, gesucht, bearbeiterID); err != nil {
+		t.Fatalf("MarkiereVerlustAlsGefunden: %v", err)
+	}
+	var offen bool
+	if err := pool.QueryRow(ctx, `SELECT gefunden_am IS NULL FROM inventur_verluste WHERE exemplar_id = $1`, anderes).Scan(&offen); err != nil {
+		t.Fatalf("Verlust-Zeile lesen: %v", err)
+	}
+	if !offen {
+		t.Error("der Verlust eines anderen Exemplars gilt als gefunden")
+	}
+}

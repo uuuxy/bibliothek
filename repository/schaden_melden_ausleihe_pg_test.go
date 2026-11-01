@@ -213,3 +213,31 @@ func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 		t.Errorf("%d Forderung(en) für ein zurückgegebenes Buch", forderungen)
 	}
 }
+
+// Ein Schaden an einem Buch, das schon ausgesondert ist, belastet das Kind trotzdem. Nur beim
+// Kollegium, das keine Forderung bekommt, ist das ausgesonderte Exemplar das Zeichen einer früheren
+// Meldung.
+func TestSchadenMelden_AusgesondertesExemplarBelastetDasKind(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewSchadensAbfragen(pool)
+
+	ex := legeSignaturMitExemplarenAn(t, pool, "AusgesTest", 1)
+	schueler := legeSchuelerAn(t, pool, "AUSG-A", "Cora", "8a")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	loan := legeAusleiheAn(t, pool, ex[0], schueler, bearbeiter)
+	bucheRueckgabe(t, pool, loan)
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare
+		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, ex[0]); err != nil {
+		t.Fatalf("aussondern: %v", err)
+	}
+
+	schadensID, err := repo.Melde(ctx, loan, bearbeiter, "Seiten fehlen", SchadensArtBeschaedigt, 300)
+	if err != nil {
+		t.Fatalf("Melde: %v", err)
+	}
+	if schadensID == "" {
+		t.Error("keine Forderung entstanden: Die Meldung galt als schon erledigt")
+	}
+}

@@ -65,6 +65,16 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	if n := uebergangen(); n != vorher {
 		t.Errorf("die Rückgabe steht als übergangene Sperre im Protokoll (%d neue Einträge)", n-vorher)
 	}
+	// Die Theken-Auskunft kennt die Rückgabe nur aus diesem Eintrag.
+	var eintraege int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log
+		WHERE tabelle = 'ausleihen' AND aktion = 'RETURN' AND datensatz_id = $1 AND details->>'schueler_id' = $2`,
+		ex.ID, kind).Scan(&eintraege); err != nil {
+		t.Fatal(err)
+	}
+	if eintraege != 1 {
+		t.Errorf("Einträge zur Rückgabe im Protokoll = %d, erwartet 1", eintraege)
+	}
 
 	// Gegenprobe: Eine neue Ausleihe an dasselbe Kind bleibt gesperrt.
 	ex, err = bookRepo.FindeExemplar(ctx, "B-SPERRE-1")
@@ -157,6 +167,16 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 		if n := uebergangen(); n != vorher {
 			t.Errorf("die Fremdrückgabe steht als übergangene Sperre im Protokoll (%d neue Einträge)", n-vorher)
 		}
+		// Die Rückgabe steht beim Eigentümer im Protokoll: Die Theken-Auskunft kennt sie nur daraus.
+		var eintraege int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log
+			WHERE tabelle = 'ausleihen' AND aktion = 'RETURN' AND datensatz_id = $1 AND details->>'schueler_id' = $2`,
+			ex.ID, eigentuemer).Scan(&eintraege); err != nil {
+			t.Fatal(err)
+		}
+		if eintraege != 1 {
+			t.Errorf("Einträge zur Rückgabe des Eigentümers im Protokoll = %d, erwartet 1", eintraege)
+		}
 	}
 
 	// 1. Das Kind an der Theke ist gesperrt — das Buch gehört einem anderen.
@@ -175,4 +195,56 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	amLimit := testdaten.LegeSchuelerAn(t, pool, "S-FREMD-LIMIT", "AmLimit", "9H2")
 	testweg.BucheAusleiheUeberDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
 	fremdrueckgabe(t, "B-FREMD-2", amLimit, eigentuemer2)
+}
+
+// Die Ausleihe nennt der Theke die Frist, und die eigene Rückgabe gibt das Buch an den nächsten
+// Wartenden. Sonst läge es im Regal, und die Vormerkung wartete weiter.
+func TestTheke_EigeneRueckgabeStelltDemNaechstenBereit(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	bearbeiter := testdaten.LegeBearbeiterAn(t, pool)
+	kind := testdaten.LegeSchuelerAn(t, pool, "S-BEREIT-1", "Bringt", "9H1")
+	wartend := testdaten.LegeSchuelerAn(t, pool, "S-BEREIT-2", "Wartet", "9H1")
+	titel := testdaten.LegeTitelAn(t, pool, "Titel Bereit", 1)
+	testdaten.LegeExemplarAn(t, pool, titel, "B-BEREIT-1", true, "")
+
+	bookRepo := repository.NewKatalogAbfragen(pool)
+	loanSvc := service.NewAusleihDienst(pool, repository.NewLeserAbfragen(pool), bookRepo,
+		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
+	lade := func() *repository.Exemplar {
+		t.Helper()
+		ex, err := bookRepo.FindeExemplar(ctx, "B-BEREIT-1")
+		if err != nil {
+			t.Fatalf("Exemplar laden: %v", err)
+		}
+		return ex
+	}
+
+	ausgeliehen, err := loanSvc.BucheAmLeser(ctx, lade(), &kind, bearbeiter, false)
+	if err != nil {
+		t.Fatalf("Ausleihe: %v", err)
+	}
+	if ausgeliehen.Art != "ausleihe" || ausgeliehen.Frist == nil {
+		t.Errorf("Ausleihe: Art %q, Frist %v; die Theke zeigt die Frist aus dieser Antwort", ausgeliehen.Art, ausgeliehen.Frist)
+	}
+
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titel, wartend); err != nil {
+		t.Fatalf("Vormerkung: %v", err)
+	}
+	ex := lade()
+	if _, err := loanSvc.BucheAmLeser(ctx, ex, &kind, bearbeiter, false); err != nil {
+		t.Fatalf("Rückgabe: %v", err)
+	}
+
+	var status, bereit string
+	if err := pool.QueryRow(ctx, `
+		SELECT status, coalesce(bereitgestellt_exemplar_id::text, '') FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2`,
+		titel, wartend).Scan(&status, &bereit); err != nil {
+		t.Fatalf("Vormerkung lesen: %v", err)
+	}
+	if status != "abholbereit" || bereit != ex.ID {
+		t.Errorf("Vormerkung: Status %q, Exemplar %q; erwartet abholbereit mit %s", status, bereit, ex.ID)
+	}
 }

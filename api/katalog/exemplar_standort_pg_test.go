@@ -277,3 +277,18 @@ func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
 		t.Errorf("Vorschläge: %v, erwartet %v", vorschlaege, soll)
 	}
 }
+
+// Dieselbe Kennung zweimal in einer Auswahl ist ein Exemplar, kein fehlendes: Gezählt wird, was
+// verschieden ist, auch über Groß- und Kleinschreibung hinweg.
+func TestExemplarStandort_GleicheKennungZweimal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Doppelt gewählt", "Do Pe", 0)
+	ex := testdaten.LegeExemplarAn(t, pool, titel, "ES-DOPPELT", true, "")
+
+	rec := standortSetzen(t, srv, pool, []string{ex, strings.ToUpper(ex)}, "Regal 3")
+	if rec.Code != http.StatusOK {
+		t.Errorf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+}

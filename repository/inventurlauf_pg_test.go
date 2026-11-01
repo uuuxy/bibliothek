@@ -282,3 +282,12 @@ func TestZaehleStand_NenntWasDerAbschlussBucht(t *testing.T) {
 		t.Error("das nicht gescannte, erwartete Buch ist nicht als Verlust gebucht")
 	}
 }
+
+// Eine unbekannte Kennung ist kein Erfolg: Die Tür antwortet 404, statt „verworfen" zu melden.
+func TestVerwerfeLauf_UnbekannterLaufIstNichtGefunden(t *testing.T) {
+	repo := NewInventurAbfragen(pgTestPool(t))
+	err := repo.VerwerfeLauf(context.Background(), "00000000-0000-0000-0000-000000000000")
+	if !errors.Is(err, ErrInventurlaufNichtGefunden) {
+		t.Errorf("VerwerfeLauf(unbekannt) = %v, erwartet ErrInventurlaufNichtGefunden", err)
+	}
+}

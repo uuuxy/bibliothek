@@ -140,6 +140,67 @@ func TestBucheNach_UmbuchungDoppelscanUndSperre(t *testing.T) {
 	}
 }
 
+// Eine nachgebuchte Rückgabe stellt das Buch dem nächsten Wartenden bereit wie die Rückgabe am
+// Netz, und sie steht im Protokoll. Sonst läge das Buch im Regal, und die Vormerkung wartete weiter.
+func TestBucheNach_RueckgabeStelltDieVormerkungBereit(t *testing.T) {
+	w := nbAufbau(t)
+	ctx := context.Background()
+	jetzt := time.Now()
+	if _, err := w.pool.Exec(ctx, `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, ausgeliehen_am, erfasst_am, rueckgabe_frist)
+		VALUES ($1, $2, $3, $4::timestamptz, $4::timestamptz, $4::timestamptz + interval '14 days')`,
+		w.exemplarID, w.anna, w.staff, jetzt.Add(-time.Hour)); err != nil {
+		t.Fatalf("Ausleihe: %v", err)
+	}
+	if _, err := w.pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, w.titelID, w.ben); err != nil {
+		t.Fatalf("Vormerkung: %v", err)
+	}
+
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, jetzt.Add(-time.Minute)))
+	if err != nil || erg.Ergebnis != repository.NachbuchZurueckgegeben {
+		t.Fatalf("Rückgabe: %v %+v", err, erg)
+	}
+
+	var status, bereit string
+	if err := w.pool.QueryRow(ctx, `
+		SELECT status, coalesce(bereitgestellt_exemplar_id::text, '') FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2`,
+		w.titelID, w.ben).Scan(&status, &bereit); err != nil {
+		t.Fatalf("Vormerkung lesen: %v", err)
+	}
+	if status != "abholbereit" || bereit != w.exemplarID {
+		t.Errorf("Vormerkung: Status %q, Exemplar %q; erwartet abholbereit mit %s", status, bereit, w.exemplarID)
+	}
+	var eintraege int
+	if err := w.pool.QueryRow(ctx, `SELECT count(*) FROM audit_log
+		WHERE tabelle = 'ausleihen' AND aktion = 'RETURN' AND datensatz_id = $1 AND details->>'schueler_id' = $2`,
+		w.exemplarID, w.anna).Scan(&eintraege); err != nil {
+		t.Fatalf("Protokoll: %v", err)
+	}
+	if eintraege != 1 {
+		t.Errorf("Einträge zur Rückgabe im Protokoll = %d, erwartet 1", eintraege)
+	}
+}
+
+// Eine nachgebuchte Ausleihe steht im Protokoll wie die am Netz: Die Auskunft an der Theke kennt
+// sie nur aus diesem Eintrag.
+func TestBucheNach_AusleiheStehtImProtokoll(t *testing.T) {
+	w := nbAufbau(t)
+	ctx := context.Background()
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, time.Now().Add(-time.Minute)))
+	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
+		t.Fatalf("Ausleihe: %v %+v", err, erg)
+	}
+	var eintraege int
+	if err := w.pool.QueryRow(ctx, `SELECT count(*) FROM audit_log
+		WHERE tabelle = 'ausleihen' AND aktion = 'CHECKOUT' AND datensatz_id = $1 AND details->>'schueler_id' = $2`,
+		w.exemplarID, w.anna).Scan(&eintraege); err != nil {
+		t.Fatalf("Protokoll: %v", err)
+	}
+	if eintraege != 1 {
+		t.Errorf("Einträge zur Ausleihe im Protokoll = %d, erwartet 1", eintraege)
+	}
+}
+
 func TestBucheNach_WaechterUndFremdrueckgabe(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()

@@ -79,6 +79,12 @@ func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 		VALUES ($1, $2, $3, 'Buch verloren', 24.90, false)`, gesperrt, ausleiheID, schuelerID); err != nil {
 		t.Fatalf("offene Gebühr: %v", err)
 	}
+	// Zwei offene Forderungen am selben Exemplar nennen seinen Barcode einmal.
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, ist_bezahlt)
+		VALUES ($1, $2, 'Zweite Gebühr', 5.00, false)`, gesperrt, schuelerID); err != nil {
+		t.Fatalf("zweite Gebühr: %v", err)
+	}
 
 	_, err := repo.LoescheVerlusteEndgueltig(ctx, []string{frei, gesperrt}, bearbeiter)
 	if err == nil {
@@ -91,8 +97,8 @@ func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 	}
 	// Der Barcode steht in der Meldung; sonst weiß niemand, welches Exemplar den Stapel
 	// aufhält.
-	if !strings.Contains(err.Error(), "VL-GEBUEHR") {
-		t.Errorf("Meldung nennt das blockierende Exemplar nicht: %v", err)
+	if strings.Count(err.Error(), "VL-GEBUEHR") != 1 {
+		t.Errorf("Meldung nennt das blockierende Exemplar nicht genau einmal: %v", err)
 	}
 
 	// Alles oder nichts: Auch das unbelastete Exemplar bleibt stehen.
@@ -133,4 +139,30 @@ func legeZurueckgegebeneAusleiheAn(t *testing.T, ctx context.Context, pool *pgxp
 		t.Fatalf("Ausleihe: %v", err)
 	}
 	return id
+}
+
+// Das Löschen räumt nur die Ausleihen der gewählten Exemplare ab. Griffe die Bedingung weiter, fiele
+// die Ausleihgeschichte des ganzen Bestands.
+func TestLoescheVerlusteEndgueltig_LaesstAndereAusleihenStehen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
+
+	exemplarID := legeVerlorenesExemplarAn(t, ctx, repo, "Erdkundebuch 7", "VL-GEWAEHLT", bearbeiter)
+	// Erst nach dem Abschluss angelegt, sonst buchte ihn derselbe Lauf mit als Verlust.
+	anderes := testdaten.LegeExemplarAn(t, pool, testdaten.LegeTitelAn(t, pool, "Erdkundebuch 8", 5), "VL-ANDERES", true, "")
+	fremde := legeZurueckgegebeneAusleiheAn(t, ctx, pool, anderes, legeSchuelerFuerVerlustAn(t, ctx, pool, "VL-S3"))
+
+	if _, err := repo.LoescheVerlusteEndgueltig(ctx, []string{exemplarID}, bearbeiter); err != nil {
+		t.Fatalf("LoescheVerlusteEndgueltig: %v", err)
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM ausleihen WHERE id = $1`, fremde).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Error("die zurückgegebene Ausleihe eines anderen Exemplars ist gelöscht")
+	}
 }

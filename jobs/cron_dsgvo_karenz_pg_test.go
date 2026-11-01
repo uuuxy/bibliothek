@@ -76,6 +76,15 @@ func TestSchuelerAnonymisierung_KarenzUhrUndEinstellung(t *testing.T) {
 	if anonymisiert(c) {
 		t.Error("C darf bei Karenz 200 nicht anonymisiert sein — liest der Job die Einstellung?")
 	}
+
+	// Nur der Lauf, der jemanden anonymisiert hat, steht im Protokoll; sonst käme jede Nacht eine Zeile dazu.
+	var laeufe int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'ANONYMIZE'`).Scan(&laeufe); err != nil {
+		t.Fatal(err)
+	}
+	if laeufe != 1 {
+		t.Errorf("Läufe im Protokoll = %d, erwartet 1", laeufe)
+	}
 }
 
 // Unlesbare Einstellungen dürfen nicht anonymisieren.

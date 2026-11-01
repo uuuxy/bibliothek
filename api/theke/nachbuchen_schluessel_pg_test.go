@@ -202,6 +202,13 @@ func TestNachbuchen_Schluessel_WiederholtePortion(t *testing.T) {
 	if erste[0].Ergebnis != repository.NachbuchAusgeliehen || erste[1].Ergebnis != repository.NachbuchZurueckgegeben {
 		t.Fatalf("erster Aufruf: %q, %q", erste[0].Ergebnis, erste[1].Ergebnis)
 	}
+	// Die Theke vergleicht die gebuchte Wirkung mit dem Scan (offlineSync): Fehlt sie, bleibt ihr
+	// Hinweis „als Ausleihe gescannt, der Server buchte Rückgabe" aus.
+	for i, art := range []string{"ausleihe", "rueckgabe"} {
+		if erste[i].Daten == nil || erste[i].Daten.Art != art {
+			t.Errorf("Eintrag %d: gebuchte Wirkung %+v, erwartet %s", i, erste[i].Daten, art)
+		}
+	}
 	zweite := w.nachbuchen(t, portion...)
 	for i := range erste {
 		if zweite[i].Ergebnis != erste[i].Ergebnis {

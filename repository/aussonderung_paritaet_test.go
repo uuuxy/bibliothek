@@ -21,8 +21,9 @@ import (
 // true` dazu, und das prüft der zweite Fall.
 func TestAussonderungSetztBeideSpalten(t *testing.T) {
 	// Anweisungen, die buecher_exemplare anfassen — grob am UPDATE-Schlüsselwort
-	// aufgetrennt, damit jede Anweisung für sich beurteilt wird.
-	anweisung := regexp.MustCompile(`(?is)UPDATE\s+buecher_exemplare\s+SET\s+(.*?)(?:WHERE|RETURNING|` + "`" + `)`)
+	// aufgetrennt, damit jede Anweisung für sich beurteilt wird. Auch mit Kürzel der Tabelle: So
+	// schreibt der Abschluss einer Inventur (UPDATE buecher_exemplare e SET …).
+	anweisung := regexp.MustCompile(`(?is)UPDATE\s+buecher_exemplare(?:\s+(?:AS\s+)?\w+)?\s+SET\s+(.*?)(?:WHERE|RETURNING|` + "`" + `)`)
 
 	geprueft := 0
 	for _, pfad := range goDateien(t) {

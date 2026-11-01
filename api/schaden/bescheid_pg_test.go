@@ -479,6 +479,21 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	}
 
 	text := pdfAbrufen()
+	var gedruckt bool
+	if err := pool.QueryRow(ctx, `SELECT letzter_druck_am IS NOT NULL FROM schadensersatz_bescheide WHERE id = $1`, b.ID).Scan(&gedruckt); err != nil {
+		t.Fatal(err)
+	}
+	if !gedruckt {
+		t.Error("der Druck steht nicht am Bescheid")
+	}
+	// Der Vermerk unterscheidet die Kennung, die es gibt, von der, die es nicht gibt; ein falscher
+	// Fehler stünde bei jedem Druck als ERROR im Log.
+	if err := repo.VermerkeDruck(ctx, b.ID); err != nil {
+		t.Errorf("VermerkeDruck(vorhandener Bescheid) = %v", err)
+	}
+	if err := repo.VermerkeDruck(ctx, "00000000-0000-0000-0000-000000000000"); !errors.Is(err, pgx.ErrNoRows) {
+		t.Errorf("VermerkeDruck(unbekannte Kennung) = %v, erwartet ErrNoRows", err)
+	}
 	for _, erwartet := range []string{b.Referenznummer, "19,90", "Altweg", "Altstadt", "Umzugskind", "Chemie 9"} {
 		if !strings.Contains(text, erwartet) {
 			t.Errorf("der Brief nennt %q nicht", erwartet)
@@ -500,5 +515,50 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	}
 	if letzte != 1 {
 		t.Errorf("letzte_nr = %d, erwartet 1 — ein Nachdruck hat eine Nummer verbraucht", letzte)
+	}
+}
+
+// Der Brief führt verlorene und beschädigte Bücher in zwei Abschnitten, und der Wortlaut darüber
+// nennt den Grund der Forderung. Stünde ein Verlust unter „beschädigt", wäre die Begründung falsch.
+func TestBescheidBrief_TrenntVerlustUndSchaden(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	testdaten.LeereBescheide(t, pool)
+	ctx := context.Background()
+	testdaten.SetzeBescheidAngaben(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-BESCHEID-ART", "Artkind", "08G2")
+	if _, err := pool.Exec(ctx,
+		`UPDATE schueler SET strasse = 'Altweg', hausnummer = '1', plz = '11111', ort = 'Altstadt' WHERE id = $1`, sid); err != nil {
+		t.Fatal(err)
+	}
+	forderung := func(titel, barcode, art string) string {
+		t.Helper()
+		ex := testdaten.LegeExemplarAn(t, pool, testdaten.LegeLernmittelAn(t, pool, titel), barcode, true, "")
+		return testdaten.LegeForderungAn(t, pool, sid, ex, art, titel)
+	}
+	verloren := forderung("Chemie 9", "BESCH-ART-1", "nicht_zurueckgegeben")
+	kaputt := forderung("Physik 9", "BESCH-ART-2", "beschaedigt")
+
+	rec := bescheidErstellenUeberTuer(t, srv, pool, sid,
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{verloren: 19.90, kaputt: 5.00}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+
+	brief, _, err := srv.bescheidBrief(ctx, repository.NewBescheidAbfragen(pool), b.ID)
+	if err != nil {
+		t.Fatalf("bescheidBrief: %v", err)
+	}
+	if len(brief.NichtZurueckgegeben) != 1 || brief.NichtZurueckgegeben[0].Titel != "Chemie 9" {
+		t.Errorf("Abschnitt nicht zurückgegeben: %+v", brief.NichtZurueckgegeben)
+	}
+	if len(brief.Beschaedigt) != 1 || brief.Beschaedigt[0].Titel != "Physik 9" {
+		t.Errorf("Abschnitt beschädigt: %+v", brief.Beschaedigt)
 	}
 }

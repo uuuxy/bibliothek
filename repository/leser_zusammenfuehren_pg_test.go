@@ -135,9 +135,18 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	ich := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Mira", Nachname: "Suchwort", Klasse: "07A", Barcode: "ZF-6", Geburtsdatum: testdaten.Datum(2012, 6, 6)})
-	testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Mira", Nachname: "Suchwort-Alt", Klasse: "06A", Barcode: "ZF-7", Geburtsdatum: testdaten.Datum(2012, 6, 6), IstAbgaenger: true})
+	alt := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Mira", Nachname: "Suchwort-Alt", Klasse: "06A", Barcode: "ZF-7", Geburtsdatum: testdaten.Datum(2012, 6, 6), IstAbgaenger: true})
 	anon := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Mira", Nachname: "Suchwort-Anon", Klasse: "ABG", Barcode: "ZF-8"})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET anonymized_at = NOW() WHERE id = $1`, anon); err != nil {
+		t.Fatal(err)
+	}
+	// Die Liste zählt nur die offenen Ausleihen des Treffers: keine zurückgegebene, keine fremde.
+	testdaten.LegeOffeneAusleiheAn(t, pool, alt, "ZFK1")
+	testdaten.LegeOffeneAusleiheAn(t, pool, alt, "ZFK2")
+	testdaten.LegeOffeneAusleiheAn(t, pool, alt, "ZFK4")
+	testdaten.LegeOffeneAusleiheAn(t, pool, ich, "ZFK3")
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = NOW() + interval '1 minute'
+		WHERE exemplar_id = (SELECT id FROM buecher_exemplare WHERE barcode_id = 'EX-ZFK2')`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -146,7 +155,10 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(treffer) != 1 || treffer[0].Nachname != "Suchwort-Alt" || !treffer[0].IstAbgaenger || !treffer[0].IstGesperrt {
-		t.Errorf("FindeZusammenfuehrenKandidaten(…) = %+v, erwartet genau den gesperrten Abgänger", treffer)
+		t.Fatalf("FindeZusammenfuehrenKandidaten(…) = %+v, erwartet genau den gesperrten Abgänger", treffer)
+	}
+	if treffer[0].OffeneAusleihen != 2 {
+		t.Errorf("offene Ausleihen des Treffers = %d, erwartet 2", treffer[0].OffeneAusleihen)
 	}
 }
 
@@ -488,6 +500,176 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler_fotos`); n != 1 {
 		t.Errorf("Fotos = %d, erwartet genau eins", n)
 	}
+}
+
+// Die Gegenrichtung: Ist das Foto des Ziels das jüngere, bleibt es. Das ältere der Quelle verdrängt
+// es nicht, nur weil die Quelle überhaupt eins hat.
+func TestZusammenfuehren_JuengeresFotoDesZielsBleibt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Fotojung", Klasse: "07A", Barcode: "ZF-P3", Geburtsdatum: testdaten.Datum(2012, 12, 13)})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Fotojung", Klasse: "07A", Barcode: "ZF-P4", Geburtsdatum: testdaten.Datum(2012, 12, 13)})
+	for _, f := range []struct {
+		id, bytes, alter string
+	}{{ziel, `\x01`, "1 day"}, {quelle, `\x02`, "2 years"}} {
+		if _, err := pool.Exec(ctx, `INSERT INTO schueler_fotos (schueler_id, foto_encrypted, aktualisiert_am) VALUES ($1, $2::bytea, NOW() - $3::interval)`, f.id, f.bytes, f.alter); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+		t.Fatal(err)
+	}
+	var foto []byte
+	if err := pool.QueryRow(ctx, `SELECT foto_encrypted FROM schueler_fotos WHERE schueler_id = $1`, ziel).Scan(&foto); err != nil {
+		t.Fatal(err)
+	}
+	if len(foto) != 1 || foto[0] != 0x01 {
+		t.Errorf("das jüngere Foto des Ziels muss bleiben, gefunden %x", foto)
+	}
+}
+
+// Das Geburtsdatum kommt von der führenden Seite, auch wenn die andere eins hat; was der führenden
+// fehlt, kommt von der anderen. Mit gleichen Daten auf beiden Seiten fiele eine Verwechslung nicht auf.
+func TestZusammenfuehren_DatenKommenVonDerFuehrendenSeite(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Alt", Nachname: "Datum", Klasse: "07A", Barcode: "ZF-D1", Geburtsdatum: testdaten.Datum(2011, 1, 1)})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Neu", Nachname: "Datum", Klasse: "08A", Barcode: "ZF-D2", Geburtsdatum: testdaten.Datum(2012, 3, 3)})
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET schul_eintritt_am = '2021-08-30', strasse = 'Altweg', ort = 'Altstadt' WHERE id = $1`, ziel); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NOW(), schul_eintritt_am = NULL, strasse = NULL, ort = 'Neustadt' WHERE id = $1`, quelle); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+		t.Fatalf("Zusammenführen: %v", err)
+	}
+	var geburt, eintritt, strasse, ort string
+	if err := pool.QueryRow(ctx, `SELECT geburtsdatum::text, schul_eintritt_am::text, strasse, ort FROM schueler WHERE id = $1`, ziel).Scan(&geburt, &eintritt, &strasse, &ort); err != nil {
+		t.Fatal(err)
+	}
+	if ort != "Neustadt" {
+		t.Errorf("Ort = %s, erwartet den der führenden Seite", ort)
+	}
+	if strasse != "Altweg" {
+		t.Errorf("Straße = %s, erwartet die der anderen Seite", strasse)
+	}
+	if geburt != "2012-03-03" {
+		t.Errorf("Geburtsdatum = %s, erwartet das der führenden Seite", geburt)
+	}
+	if eintritt != "2021-08-30" {
+		t.Errorf("Schuleintritt = %s, erwartet das der anderen Seite", eintritt)
+	}
+}
+
+// Gleich alte Vormerkungen entstehen, wenn beide in einer Transaktion angelegt wurden. Dann bleibt
+// die des Ziels; es darf nicht beide treffen, sonst stünde das Kind nicht mehr in der Warteschlange.
+func TestZusammenfuehren_GleichAlteVormerkungBleibtEinmal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Gleichalt", Klasse: "07A", Barcode: "ZF-G1", Geburtsdatum: testdaten.Datum(2012, 10, 10)})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Gleichalt", Klasse: "07A", Barcode: "ZF-G2", Geburtsdatum: testdaten.Datum(2012, 10, 10)})
+	titelID := testdaten.LegeTitelAn(t, pool, "Vormerktitel-ZFG", 1)
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, erstellt_am)
+		VALUES ($1, $2, '2026-05-04 10:00:00+00'), ($1, $3, '2026-05-04 10:00:00+00')`, titelID, ziel, quelle); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+		t.Fatal(err)
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2`, titelID, ziel); n != 1 {
+		t.Errorf("Vormerkungen des Ziels auf den Titel = %d, erwartet genau eine", n)
+	}
+}
+
+// Das Zusammenführen berührt nur die beiden Datensätze: Foto und Protokoll eines Dritten bleiben,
+// wo sie sind, auch wenn das Ziel noch kein Foto hat und das des Dritten älter ist.
+func TestZusammenfuehren_DritterBleibtUnberuehrt(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: "Dritt", Klasse: "07A", Barcode: "ZF-U1", Geburtsdatum: testdaten.Datum(2012, 11, 1)})
+	quelle := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: "Dritt", Klasse: "07A", Barcode: "ZF-U2", Geburtsdatum: testdaten.Datum(2012, 11, 1)})
+	dritter := testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Dritter", Nachname: "Anders", Klasse: "08A", Barcode: "ZF-U3", Geburtsdatum: testdaten.Datum(2011, 2, 2)})
+	for _, f := range []struct {
+		id, bytes, alter string
+	}{{quelle, `\x02`, "1 day"}, {dritter, `\x03`, "2 years"}} {
+		if _, err := pool.Exec(ctx, `INSERT INTO schueler_fotos (schueler_id, foto_encrypted, aktualisiert_am) VALUES ($1, $2::bytea, NOW() - $3::interval)`, f.id, f.bytes, f.alter); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id) VALUES ('schueler', 'UPDATE', $1)`, dritter); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+		t.Fatalf("Zusammenführen: %v", err)
+	}
+
+	for _, f := range []struct {
+		was, id string
+		byte    byte
+	}{{"Ziel", ziel, 0x02}, {"Dritter", dritter, 0x03}} {
+		var foto []byte
+		if err := pool.QueryRow(ctx, `SELECT foto_encrypted FROM schueler_fotos WHERE schueler_id = $1`, f.id).Scan(&foto); err != nil {
+			t.Fatalf("Foto %s: %v", f.was, err)
+		}
+		if len(foto) != 1 || foto[0] != f.byte {
+			t.Errorf("Foto %s = %x, erwartet %x", f.was, foto, f.byte)
+		}
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND datensatz_id = $1`, dritter); n != 1 {
+		t.Errorf("Protokolleinträge des Dritten = %d, erwartet 1", n)
+	}
+}
+
+// Ein Platzhalter-Konto aus Littera weicht nur dem echten Konto des anderen Datensatzes. Das echte
+// Konto eines Dritten ändert nichts: Der Platzhalter wandert mit, und zwei Platzhalter gegeneinander
+// brechen ab.
+func TestZusammenfuehren_PlatzhalterWeichtNurDemKontoDesPaares(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	testdaten.LegeKontoAn(t, pool, "Ganz", "Anders", "ganz.anders@schule.invalid", "mitarbeiter", true)
+
+	paar := func(t *testing.T, praefix string) (ziel, quelle string) {
+		t.Helper()
+		ziel = testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Ziel", Nachname: praefix, Klasse: "07A", Barcode: praefix + "-Z", Geburtsdatum: testdaten.Datum(2012, 9, 9)})
+		quelle = testweg.LegeLUSDSchuelerAn(t, pool, testweg.LUSDSchuelerNeu{Vorname: "Quelle", Nachname: praefix, Klasse: "07A", Barcode: praefix + "-Q", Geburtsdatum: testdaten.Datum(2012, 9, 9)})
+		return ziel, quelle
+	}
+	platzhalter := func(t *testing.T, leser, adresse string) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
+			VALUES ('Platz', 'Halter', $1, 'kollegium', true, $2)`, adresse+repository.PlatzhalterDomain, leser); err != nil {
+			t.Fatalf("Konto %s: %v", adresse, err)
+		}
+	}
+
+	t.Run("wandert, wenn der andere Datensatz kein Konto hat", func(t *testing.T) {
+		ziel, quelle := paar(t, "PHA")
+		platzhalter(t, quelle, "pha")
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+			t.Fatalf("Zusammenführen: %v", err)
+		}
+		if n := zfZaehle(t, pool, `SELECT count(*) FROM benutzer WHERE leser_id = $1`, ziel); n != 1 {
+			t.Errorf("Konten am Ziel = %d, erwartet das gewanderte Platzhalter-Konto", n)
+		}
+	})
+
+	t.Run("zwei Platzhalter brechen ab", func(t *testing.T) {
+		ziel, quelle := paar(t, "PHB")
+		platzhalter(t, ziel, "phb-z")
+		platzhalter(t, quelle, "phb-q")
+		_, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle})
+		if !errors.Is(err, repository.ErrZusammenfuehrenZweiKonten) {
+			t.Errorf("Zusammenführen = %v, erwartet ErrZusammenfuehrenZweiKonten", err)
+		}
+	})
 }
 
 // TestZusammenfuehren_ZweiKontenBrichtAb: Haben beide Datensätze ein eigenes

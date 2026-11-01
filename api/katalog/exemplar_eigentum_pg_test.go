@@ -179,3 +179,18 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 		t.Error("Eigentum ohne Quelle wurde angenommen — chk_exemplar_eigentum_mit_quelle fehlt")
 	}
 }
+
+// Dieselbe Kennung zweimal in einer Auswahl ist ein Exemplar, kein fehlendes: Gezählt wird, was
+// verschieden ist, auch über Groß- und Kleinschreibung hinweg.
+func TestExemplarEigentum_GleicheKennungZweimal(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	titel := testdaten.LegeTitelMitSignaturAn(t, pool, "Doppelt gewählt", "Do Pe", 0)
+	ex := testdaten.LegeExemplarAn(t, pool, titel, "EE-DOPPELT", true, "")
+
+	rec := eigentumSetzen(t, srv, pool, []string{ex, strings.ToUpper(ex)}, mitteltopf.Land, "Beleg")
+	if rec.Code != http.StatusOK {
+		t.Errorf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+}

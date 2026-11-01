@@ -71,6 +71,23 @@ func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 		`INSERT INTO class_books (class_name, book_id) VALUES ($1, $2)`, klasse, titelID); err != nil {
 		t.Fatalf("Klassensatz-Zuordnung anlegen: %v", err)
 	}
+	// Weder die erledigte Reservierung dieses Titels noch die offene eines anderen ist ein Bezug,
+	// den die Spur nennt.
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erledigt) VALUES ($1, '05B', 30, true)`, titelID); err != nil {
+		t.Fatalf("erledigte Reservierung anlegen: %v", err)
+	}
+	andererTitel := eins("anderen Titel anlegen",
+		`INSERT INTO buecher_titel (titel, autor) VALUES ('Nachbar-Titel', 'Test') RETURNING id`)
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM buecher_titel WHERE id = $1`, andererTitel); err != nil {
+			t.Errorf("Aufräumen anderer Titel: %v", err)
+		}
+	})
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl) VALUES ($1, '05C', 30)`, andererTitel); err != nil {
+		t.Fatalf("fremde Reservierung anlegen: %v", err)
+	}
 
 	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
@@ -100,5 +117,21 @@ func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 	}
 	if betrifft != "Wanda Wartend" {
 		t.Errorf("Vormerkungs-Spur = %q, erwartet den Schülernamen", betrifft)
+	}
+	var stand string
+	if err := pool.QueryRow(ctx, `
+		SELECT coalesce(details->>'status', '') FROM audit_log
+		WHERE datensatz_id = $1 AND tabelle = 'klassensatz_reservierungen'`, titelID).Scan(&stand); err != nil {
+		t.Fatalf("Stand lesen: %v", err)
+	}
+	if stand != "offen" {
+		t.Errorf("Reservierungs-Spur nennt den Stand %q, erwartet offen", stand)
+	}
+	var fremd int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE datensatz_id = $1`, andererTitel).Scan(&fremd); err != nil {
+		t.Fatalf("fremde Spur lesen: %v", err)
+	}
+	if fremd != 0 {
+		t.Errorf("die offene Reservierung eines anderen Titels steht in der Spur (%d)", fremd)
 	}
 }

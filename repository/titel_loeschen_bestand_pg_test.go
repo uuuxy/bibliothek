@@ -75,3 +75,18 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		}
 	}
 }
+
+// Nur die Ausleihen dieses Titels halten das Löschen auf. Griffe die Bedingung weiter, ließe sich im
+// Betrieb kein Titel mehr löschen, solange irgendein anderes Buch verliehen ist.
+func TestLoescheTitel_AusleiheEinesAnderenTitelsHaeltNichtAuf(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	bearbeiter := legeBearbeiterAn(t, pool)
+	eigen := legeSignaturMitExemplarenAn(t, pool, "LoeschEigen", 1)
+	fremd := legeSignaturMitExemplarenAn(t, pool, "LoeschFremd", 1)
+	legeAusleiheAn(t, pool, fremd[0], legeSchuelerAn(t, pool, "LOESCH-A", "Cora", "8a"), bearbeiter)
+
+	if err := NewKatalogAbfragen(pool).LoescheTitel(context.Background(), titelIDVonExemplar(t, pool, eigen[0]), bearbeiter); err != nil {
+		t.Errorf("LoescheTitel = %v, erwartet Erfolg", err)
+	}
+}

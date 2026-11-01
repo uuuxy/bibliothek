@@ -75,6 +75,15 @@ func TestSchuelerAnonymisierung_LeertAllePII(t *testing.T) {
 	if !anonymisiert {
 		t.Fatal("fuehreSchuelerAnonymisierungAus hat den fälligen Schüler NICHT anonymisiert (Query still gescheitert?)")
 	}
+	// Rechenschaftspflicht: Der Lauf steht im Protokoll, mit der Zahl der Betroffenen.
+	var betroffen string
+	if err := pool.QueryRow(ctx, `SELECT details->>'betroffene_schueler' FROM audit_log
+		WHERE tabelle = 'schueler' AND aktion = 'ANONYMIZE'`).Scan(&betroffen); err != nil {
+		t.Fatalf("Protokoll der Anonymisierung lesen: %v", err)
+	}
+	if betroffen != "1" {
+		t.Errorf("Protokoll nennt %s Betroffene, erwartet 1", betroffen)
+	}
 
 	// (b) Keine Marke darf überleben: die ganze Zeile als Text zusammenziehen und prüfen.
 	var zeile string

@@ -15,6 +15,7 @@ func TestDarfSichSelbstAnmelden(t *testing.T) {
 	}{
 		{"nina.berger@philipp-reis-schule.de", true, "regulärer Fall"},
 		{"Nina.Berger@Philipp-Reis-Schule.DE", true, "Groß-/Kleinschreibung ist egal"},
+		{"n@philipp-reis-schule.de", true, "ein Zeichen vor dem @ reicht"},
 		{"a@fremde-schule.de", false, "fremde Domain"},
 		{"a@boesephilipp-reis-schule.de", false, "Suffix-Falle: endet auf die Domain, ist sie aber nicht"},
 		{"a@philipp-reis-schule.de.angreifer.net", false, "Domain steckt nur mittendrin"},
