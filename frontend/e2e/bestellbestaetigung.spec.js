@@ -450,6 +450,187 @@ test('Im Wareneingang bleiben markierte Exemplare markiert, wenn der Händler be
 	}
 });
 
+// Ein anderer Platz bucht den Titel darüber ein, und das nächste Signal lädt die Liste neu. An der
+// Stelle in der Liste rückte der Fokus auf den nächsten Titel, und die Leertaste markierte den falschen.
+test('Bucht ein anderer Platz den Titel darüber ein, bleibt der Fokus beim Titel', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	seedSQL(`
+		WITH b AS (
+			SELECT DISTINCT bestellung_id AS id FROM buecher_exemplare WHERE barcode_id LIKE 'E2E-BC-${s}-%'
+		),
+		t AS (
+			INSERT INTO buecher_titel (titel, autor)
+			VALUES ('E2E-Bestaetigung ${s} Zwei', 'Autor'), ('E2E-Bestaetigung ${s} Drei', 'Autor')
+			RETURNING id, titel
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, ist_ausleihbar)
+		SELECT t.id, 'E2E-BC-${s}-' || right(t.titel, 4), b.id, false FROM t, b;
+	`);
+	legeInDenZulauf(s);
+
+	try {
+		await oeffneReiter(page, WARENEINGANG);
+		const kopf = kopfImWareneingang(page, s);
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+		const namen = await page
+			.getByRole('checkbox', { name: new RegExp(`^E2E-Bestaetigung ${s}.* auswählen$`) })
+			.evaluateAll((kaestchen) => kaestchen.map((k) => k.getAttribute('aria-label') ?? ''));
+		expect(namen).toHaveLength(3);
+		const [erster, zweiter, dritter] = namen;
+		const kaestchen = page.getByRole('checkbox', { name: zweiter, exact: true });
+		await kaestchen.focus();
+
+		seedSQL(`UPDATE buecher_exemplare e SET ist_ausleihbar = true, bestellstatus = NULL
+		         FROM buecher_titel t
+		         WHERE e.titel_id = t.id AND t.titel = '${erster.replace(/ auswählen$/, '')}';`);
+		await haendlerBestaetigt(browser, token);
+
+		await expect(kopf.getByText(BESTAETIGT)).toBeVisible();
+		await expect(page.getByRole('checkbox', { name: erster, exact: true })).toHaveCount(0);
+		await expect(kaestchen).toBeFocused();
+		await page.keyboard.press('Space');
+		await expect(kaestchen).toBeChecked();
+		await expect(page.getByRole('checkbox', { name: dritter, exact: true })).not.toBeChecked();
+	} finally {
+		nimmAusDemZulauf(s);
+	}
+});
+
+// Das Signal kommt nur einmal, und die Leitung steht weiter: Scheitert das eine Holen, käme der Stand
+// erst beim nächsten Öffnen. Jede Ansicht holt beim nächsten Lebenszeichen nach (alle 15 s).
+test('Scheitert das Nachladen nach der Bestätigung, holen alle drei Ansichten es nach', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	legeInDenZulauf(s);
+	const wareneingang = await (await browser.newContext()).newPage();
+	const offeneBestellung = await (await browser.newContext()).newPage();
+
+	/**
+	 * Die nächsten Anfragen an diese Adresse scheitern.
+	 * @param {import('@playwright/test').Page} seite @param {string} adresse @param {number} anzahl
+	 */
+	const scheitere = (seite, adresse, anzahl) => {
+		let rest = anzahl;
+		return seite.route(adresse, (route) => {
+			if (rest <= 0) return route.continue();
+			rest--;
+			return route.fulfill({
+				status: 503,
+				contentType: 'application/json',
+				body: '{"error":"Datenbank kurz weg"}'
+			});
+		});
+	};
+
+	try {
+		await oeffneReiter(page, HISTORIE);
+		await oeffneReiter(wareneingang, WARENEINGANG);
+		await oeffneReiter(offeneBestellung, HISTORIE);
+		await offeneBestellung
+			.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+			.click();
+		await expect(offeneBestellung.getByText('Warten auf den Händler')).toBeVisible();
+		const zeile = zeileDerHistorie(page, s);
+		const kopf = kopfImWareneingang(wareneingang, s);
+		await expect(zeile.getByText('Wartet auf Händler')).toBeVisible();
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+
+		// Die Historie fragt Liste und Übersicht zugleich, beide scheitern.
+		await scheitere(page, '**/api/bestellhistorie**', 2);
+		await scheitere(wareneingang, '**/api/bestellungen/zulauf', 1);
+		await scheitere(offeneBestellung, '**/api/bestellhistorie/*', 1);
+
+		await haendlerBestaetigt(browser, token);
+
+		await expect(page.getByText('Datenbank kurz weg').first()).toBeVisible();
+		await expect(zeile.getByText(BESTAETIGT)).toBeVisible({ timeout: 25_000 });
+		await expect(kopf.getByText(BESTAETIGT)).toBeVisible({ timeout: 25_000 });
+		await expect(
+			offeneBestellung.getByText('Der Lieferant hat die Bestellung bestätigt')
+		).toBeVisible({ timeout: 25_000 });
+		expect(await nichtNeuGeladen(page)).toBe(true);
+	} finally {
+		nimmAusDemZulauf(s);
+		await wareneingang.context().close();
+		await offeneBestellung.context().close();
+	}
+});
+
+// Der Kasten verschwindet samt dem Knopf, auf dem der Fokus steht. Die Quittung tritt an seine Stelle.
+test('Bestätigt der Händler, rückt der Fokus aus dem Kasten auf die Quittung', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+
+	await oeffneReiter(page, HISTORIE);
+	await page
+		.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+		.click();
+	await page.getByRole('button', { name: 'Kleine Etiketten' }).focus();
+
+	await haendlerBestaetigt(browser, token);
+
+	await expect(page.getByText('Der Lieferant hat die Bestellung bestätigt')).toBeVisible();
+	await expect
+		.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[role="status"]'))))
+		.toBe(true);
+});
+
+// Der Knopf wird beim Nachtragen gesperrt, und die Browser nehmen ihm dabei den Fokus.
+test('Nach dem eigenen Nachtrag per Tastatur steht der Fokus auf der Quittung', async ({
+	page
+}) => {
+	const s = seedBestellungMitLink(`E2E-LIVE-${uniqueSuffix()}`);
+
+	await oeffneReiter(page, HISTORIE);
+	await page
+		.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) })
+		.click();
+	await page.getByRole('button', { name: 'Kleine Etiketten' }).focus();
+	await page.keyboard.press('Enter');
+
+	await expect(page.getByText('Bestätigung in der Bibliothek nachgetragen')).toBeVisible();
+	await expect
+		.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[role="status"]'))))
+		.toBe(true);
+});
+
+// Die Liste lädt neu, während jemand auf einer anderen Zeile steht: Dieselbe Zeile behält den Fokus.
+test('Der Fokus auf einer Zeile der Historie bleibt, wenn ein Händler eine andere bestätigt', async ({
+	page,
+	browser
+}) => {
+	const token = `E2E-LIVE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	const andere = seedBestellungMitLink(`E2E-LIVE-${uniqueSuffix()}`);
+
+	await oeffneReiter(page, HISTORIE);
+	const zeile = page.getByRole('button', {
+		name: new RegExp(`E2E-Naacher ${andere}.*Bestellung öffnen`)
+	});
+	await zeile.focus();
+	await page.evaluate(() => {
+		/** @type {any} */ (window).zeileVorher = document.activeElement;
+	});
+
+	await haendlerBestaetigt(browser, token);
+
+	await expect(zeileDerHistorie(page, s).getByText(BESTAETIGT)).toBeVisible();
+	await expect(zeile).toBeFocused();
+	expect(
+		await page.evaluate(() => /** @type {any} */ (window).zeileVorher === document.activeElement)
+	).toBe(true);
+});
+
 // Was während einer Unterbrechung geschah, kommt nicht über die Leitung nach. Die Fehlerantwort ist
 // der harte Fall: Ein abgebrochener Abruf holt der Browser selbst nach (livesync-wiederaufbau.spec.js).
 test('Nach einer Unterbrechung der Leitung holt das Fenster die Bestätigung nach', async ({
