@@ -54,7 +54,7 @@ func (t *Tueren) lusdTuer(uebernehmen bool) http.HandlerFunc {
 // verarbeiteLUSDDatei liest die Datei, fährt den Lauf und antwortet mit Vorschau oder Ergebnis.
 func (t *Tueren) verarbeiteLUSDDatei(w http.ResponseWriter, r *http.Request, uebernehmen bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
+	if err := r.ParseMultipartForm(1 << 20); err != nil { // 1 MB limit for form data, file uses maxBytes via MaxBytesReader
 		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungLUSDHochladen, err)
 		return
 	}
