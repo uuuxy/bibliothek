@@ -4,6 +4,7 @@ import {
 	nachbarZeile,
 	festWechseln,
 	klassenTeile,
+	klasseRaus,
 	klasseTauschen,
 	verschiebe,
 	zusammenlegen
@@ -67,7 +68,34 @@ describe('lmfplanZeilen.einordnen', () => {
 	});
 });
 
+describe('lmfplanZeilen.klasseRaus', () => {
+	it('lässt die Zeile stehen, solange eine Klasse oder ein Vermerk bleibt', () => {
+		const plan = [z('A', 'B'), { klassen: ['C'], vermerk: 'Raum 12', fest: null }];
+		expect(klasseRaus(plan, 0, 'A')[0].klassen).toEqual(['B']);
+		expect(klasseRaus(plan, 1, 'C')).toHaveLength(2);
+		expect(klasseRaus(plan, 1, 'C')[1].klassen).toEqual([]);
+	});
+
+	it('nimmt die Zeile weg, wenn weder Klasse noch Vermerk bleibt', () => {
+		const plan = [z('A'), z('B')];
+		expect(klasseRaus(plan, 0, 'A').map((x) => x.klassen[0])).toEqual(['B']);
+	});
+});
+
 describe('lmfplanZeilen.verschiebe', () => {
+	it('lässt die Zeilen stehen, wenn Start oder Ziel nicht taugen', () => {
+		const plan = [z('A'), z('B')];
+		for (const [von, nach] of [
+			[1, 1],
+			[0, -1],
+			[0, 2],
+			[-1, 0],
+			[2, 0]
+		]) {
+			expect(verschiebe(plan, von, nach), `von ${von} nach ${nach}`).toBe(plan);
+		}
+	});
+
 	it('an den Anfang und ans Ende — die weiten Wege aus dem Zeilenmenü', () => {
 		const plan = [z('A'), z('B'), z('C'), z('D')];
 		expect(verschiebe(plan, 3, 0).map((x) => x.klassen[0])).toEqual(['D', 'A', 'B', 'C']);

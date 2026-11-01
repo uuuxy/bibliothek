@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path';
 import MahnwesenAktionen from './MahnwesenAktionen.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+import { snackbars } from '../../stores/snackbars.svelte.js';
 
 // Nur apiFetch ersetzen, den Rest des Moduls behalten: authStore importiert daraus auch
 // registriereSitzungAbgelaufenHandler — ein Mock ohne diesen Export lässt schon das Laden
@@ -135,6 +136,32 @@ describe('MahnwesenAktionen', () => {
 	// noch einmal (stores/sammelversand.svelte.js). M3, Progress indicators: „A circular
 	// indicator can be placed in a button to show that the button's action is currently in
 	// progress."
+	it('sagt es nur, wenn der Browser das Druckfenster sperrt', async () => {
+		const meldung = vi.spyOn(snackbars, 'addToast');
+		const oeffnen = vi.spyOn(window, 'open');
+		try {
+			const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: false });
+			const knopf = zeile.getByRole('button', { name: 'Liste drucken' });
+
+			oeffnen.mockReturnValue(
+				/** @type {any} */ ({
+					document: { open: vi.fn(), write: vi.fn(), close: vi.fn() },
+					focus: vi.fn(),
+					print: vi.fn()
+				})
+			);
+			await fireEvent.click(knopf);
+			expect(meldung).not.toHaveBeenCalled();
+
+			oeffnen.mockReturnValue(null);
+			await fireEvent.click(knopf);
+			expect(meldung).toHaveBeenCalledWith(expect.any(String), 'warning');
+		} finally {
+			oeffnen.mockRestore();
+			meldung.mockRestore();
+		}
+	});
+
 	it('sperrt „Alle anmahnen" und zeigt den Lauf, solange ein Mahnlauf läuft', async () => {
 		/** @type {(wert: any) => void} */
 		let antworte = () => {};

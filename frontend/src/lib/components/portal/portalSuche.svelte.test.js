@@ -49,6 +49,8 @@ describe('Portal-Suche', () => {
 			expect(suche.treffer.map((/** @type {any} */ t) => t.titel)).toEqual(['Mondflug']);
 			expect(suche.gesamt).toBe(52);
 			expect(suche.leer).toBe(false);
+			// Das Laden endet mit der jüngsten Antwort; sonst drehte sich der Kreis weiter.
+			expect(suche.laedt).toBe(false);
 		} finally {
 			stopp();
 		}

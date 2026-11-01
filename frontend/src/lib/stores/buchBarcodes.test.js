@@ -94,3 +94,22 @@ describe('Barcode-Liste: stündlich nachfassen', () => {
 		expect(apiFetch, 'zwei Zeitgeber fragten doppelt').toHaveBeenCalledTimes(1);
 	});
 });
+
+describe('Barcode-Liste: der Stand', () => {
+	afterEach(() => vi.clearAllMocks());
+
+	it('fragt nach dem gemerkten Stand, damit der Server 304 antworten kann', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({
+				status: 200,
+				ok: true,
+				json: async () => ({ barcodes: ['B-1'], stand: 'abc' })
+			})
+		);
+		await buchBarcodes.auffrischen();
+
+		vi.mocked(apiFetch).mockResolvedValueOnce(unveraendert());
+		expect(await buchBarcodes.auffrischen()).toBe('unveraendert');
+		expect(vi.mocked(apiFetch).mock.lastCall?.[1]?.headers).toEqual({ 'If-None-Match': '"abc"' });
+	});
+});

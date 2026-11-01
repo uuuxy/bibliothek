@@ -149,6 +149,29 @@ describe('bestellStore.addToCart', () => {
 		expect(bestellStore.cart[0].preis_vorschlag).toBe(27);
 	});
 
+	it('holt den fehlenden Vorschlag nach, nur wenn Preise erfasst werden', async () => {
+		const suche = (/** @type {string} */ isbn) =>
+			vi
+				.mocked(apiPost)
+				.mock.calls.filter(
+					(c) => c[0] === '/api/bestellungen/suche' && /** @type {any} */ (c[1]).query === isbn
+				);
+		vi.mocked(apiPost).mockResolvedValue([{ preis_vorschlag: 12 }]);
+
+		bestellStore.preiseErfassen = true;
+		bestellStore.addToCart({ id: 'pv1', titel: 'Atlas', autor: 'K', isbn: '978-61' });
+		await vi.waitFor(() =>
+			expect(bestellStore.cart.find((/** @type {any} */ i) => i.id === 'pv1')?.preis).toBe(12)
+		);
+
+		bestellStore.preiseErfassen = false;
+		bestellStore.addToCart({ id: 'pv2', titel: 'Atlas', autor: 'K', isbn: '978-62' });
+		bestellStore.preiseErfassen = true;
+		expect(suche('978-62')).toEqual([]);
+		vi.mocked(apiPost).mockReset();
+		vi.mocked(apiPost).mockResolvedValue({});
+	});
+
 	it('ohne Vorschlag bleibt der Preis bei 0', () => {
 		bestellStore.addToCart({ id: 'p2', titel: 'Atlas', autor: 'K', isbn: '978-8' });
 		expect(bestellStore.cart[0].preis).toBe(0);
@@ -215,6 +238,24 @@ describe('bestellStore.submitOrder', () => {
 		bestellStore.cart = [];
 		await bestellStore.submitOrder();
 		expect(hatBestellungGesendet(apiPost)).toBe(false);
+	});
+
+	it('nennt die reservierten Barcodes nur, wenn der Server sie meldet', async () => {
+		bestellAntwort({ status: 'success', message: 'ok', ordered_qty: 2 });
+		bestellStore.addToCart({ id: 't7', titel: 'A', autor: '', isbn: '7' }, 2, true);
+		await bestellStore.submitOrder();
+		expect(snackbars.addToast).toHaveBeenLastCalledWith(
+			expect.stringContaining('(2 Barcodes reserviert.)'),
+			'success'
+		);
+
+		bestellAntwort({ status: 'success', message: 'ok' });
+		bestellStore.addToCart({ id: 't8', titel: 'B', autor: '', isbn: '8' }, 1, false);
+		await bestellStore.submitOrder();
+		expect(snackbars.addToast).toHaveBeenLastCalledWith(
+			expect.not.stringContaining('reserviert'),
+			'success'
+		);
 	});
 
 	it('baut das Payload korrekt und leert den Warenkorb', async () => {
@@ -351,6 +392,8 @@ describe('bestellStore Suche', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([], { dnbAusfall: true }));
 
 		await bestellStore.sucheSofort('9783060130764');
+		// Das Laden endet mit der jüngsten Antwort; sonst drehte sich der Kreis am Suchfeld weiter.
+		expect(bestellStore.searchLoading).toBe(false);
 
 		expect(bestellStore.searchResults).toEqual([]);
 		expect(bestellStore.dnbAusfall).toBe(true);

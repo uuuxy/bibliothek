@@ -72,6 +72,10 @@ describe('scanErkennung: Scanner oder Mensch', () => {
 		);
 	});
 
+	it('langsam getippt, das Enter kommt gleich danach: kein Scan', () => {
+		expect(tippe(erzeugeScanErkennung(), [...zeichen('geheim123', 200), ENTER(5)])).toBe(false);
+	});
+
 	it('schnell getippt, aber das Enter kommt später: kein Scan', () => {
 		expect(tippe(erzeugeScanErkennung(), [...zeichen('B-00123', 5), ENTER(400)])).toBe(false);
 	});

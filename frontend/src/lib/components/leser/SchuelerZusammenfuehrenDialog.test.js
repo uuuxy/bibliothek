@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import SchuelerZusammenfuehrenDialog from './SchuelerZusammenfuehrenDialog.svelte';
-import { apiFetch } from '../../apiFetch.js';
+import { apiClient, apiFetch } from '../../apiFetch.js';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiFetch: vi.fn(),
@@ -84,6 +84,54 @@ describe('SchuelerZusammenfuehrenDialog: der offene Datensatz', () => {
 		const screen = oeffne();
 
 		expect(screen.queryByText('Abgänger')).toBeNull();
+	});
+});
+
+// Die Richtung ist der unumkehrbare Teil: Die Quelle wird gelöscht. Vertauscht, ginge der Datensatz
+// verloren, den die Oberfläche als bleibend genannt hat.
+describe('SchuelerZusammenfuehrenDialog: welcher Datensatz bleibt', () => {
+	/** @param {string} [wahl] Beschriftung des Knopfs „Welcher Datensatz bleibt?", sonst die Vorgabe */
+	async function fuehreZusammen(wahl) {
+		const onMerged = vi.fn();
+		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ (antwort([KANDIDAT('k2', 'Neu')])));
+		vi.mocked(apiClient.post).mockReset();
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				status: 200,
+				json: async () => ({
+					vorname: 'Lena',
+					nachname: 'Neu',
+					klasse: '07A',
+					ziel_id: 'neue-akte'
+				})
+			})
+		);
+		const screen = render(SchuelerZusammenfuehrenDialog, {
+			props: { open: true, leser: PROFIL, onMerged }
+		});
+		await tippe(screen, 'Neu');
+		await stillhalten();
+		await fireEvent.click(screen.getByRole('button', { name: /Neu/ }));
+		if (wahl) await fireEvent.click(screen.getByRole('radio', { name: wahl }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Zusammenführen' }));
+		await stillhalten();
+		return onMerged;
+	}
+
+	it('schickt den offenen Datensatz als Ziel, wenn er bleibt', async () => {
+		const onMerged = await fuehreZusammen();
+		expect(apiClient.post).toHaveBeenCalledWith('/api/schueler/quelle/zusammenfuehren', {
+			quelle_id: 'k2'
+		});
+		expect(onMerged).toHaveBeenCalledWith('neue-akte');
+	});
+
+	it('schickt den anderen Datensatz als Ziel, wenn der bleibt', async () => {
+		await fuehreZusammen('Lena Neu (S-k2)');
+		expect(apiClient.post).toHaveBeenCalledWith('/api/schueler/k2/zusammenfuehren', {
+			quelle_id: 'quelle'
+		});
 	});
 });
 

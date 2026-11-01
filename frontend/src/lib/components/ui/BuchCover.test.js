@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
 import BuchCover from './BuchCover.svelte';
 
 // Welche Quellen ein Cover fragt. Google Books antwortet auf eine ISBN ohne Bild mit einem
@@ -60,5 +60,43 @@ describe('BuchCover: Platzhalter', () => {
 
 		const zeile = render(BuchCover, { titel: 'Krabat', nurGespeichert: true });
 		expect(zeile.container.textContent?.trim()).toBe('K');
+	});
+});
+
+// Bleibt ein Bild aus, kommt die nächste Quelle dran und am Ende die Kachel ohne Bild. Das 1×1-GIF
+// des Proxys lädt erfolgreich und zählt trotzdem als ausgeblieben.
+describe('BuchCover: Ersatz', () => {
+	const props = { isbn: '9783100000000', titel: 'Der Zauberberg' };
+	const bild = (/** @type {HTMLElement} */ container) =>
+		/** @type {HTMLImageElement | null} */ (container.querySelector('img'));
+
+	it('geht bei einem Fehler zur nächsten Quelle und am Ende zur Kachel', async () => {
+		const { container } = render(BuchCover, props);
+		const erste = bild(container)?.getAttribute('src');
+		await fireEvent.error(/** @type {HTMLImageElement} */ (bild(container)));
+		expect(bild(container), 'die zweite Quelle kommt noch dran').not.toBeNull();
+		expect(bild(container)?.getAttribute('src')).not.toBe(erste);
+
+		for (let i = 0; i < 10 && bild(container); i++) {
+			await fireEvent.error(/** @type {HTMLImageElement} */ (bild(container)));
+		}
+		expect(bild(container)).toBeNull();
+	});
+
+	it('sieht das 1×1-Bild als ausgeblieben an, ein echtes Bild nicht', async () => {
+		const { container } = render(BuchCover, props);
+		const lade = async (/** @type {number} */ breite, /** @type {number} */ hoehe) => {
+			const img = /** @type {HTMLImageElement} */ (bild(container));
+			Object.defineProperty(img, 'naturalWidth', { value: breite, configurable: true });
+			Object.defineProperty(img, 'naturalHeight', { value: hoehe, configurable: true });
+			await fireEvent.load(img);
+		};
+
+		const erste = bild(container)?.getAttribute('src');
+		await lade(200, 300);
+		expect(bild(container)?.getAttribute('src')).toBe(erste);
+		await lade(1, 1);
+		expect(bild(container), 'die zweite Quelle kommt noch dran').not.toBeNull();
+		expect(bild(container)?.getAttribute('src')).not.toBe(erste);
 	});
 });

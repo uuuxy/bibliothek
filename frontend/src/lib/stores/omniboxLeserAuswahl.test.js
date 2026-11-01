@@ -91,3 +91,45 @@ describe('Omnibox: Auswahl aus der Trefferliste', () => {
 		expect(/** @type {any} */ (koerper).query).toBe('leser:s1');
 	});
 });
+
+// Enter ohne Markierung: Der rohe Text liefe am Server in die Titelsuche, die nur Bücher kennt.
+// Zeigt die Liste genau einen Leser, ist er gemeint; neben einem Buch rät Enter nicht.
+describe('Omnibox: Enter ohne Markierung', () => {
+	const leser = {
+		id: 's1',
+		vorname: 'Lena',
+		nachname: 'Hoffmann',
+		art: 'schueler',
+		barcode_id: 'S-1'
+	};
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.mocked(apiClient.post).mockReset();
+	});
+	afterEach(() => vi.useRealTimers());
+
+	/** @param {any[]} buecher */
+	async function druecke(buecher) {
+		const store = erzeugeOmniboxStore();
+		vi.mocked(apiFetch).mockImplementation(
+			async () =>
+				/** @type {any} */ ({ ok: true, json: async () => ({ students: [leser], books: buecher }) })
+		);
+		vi.mocked(apiClient.post).mockImplementation(async () => geladen(leser));
+		store.eingabe = 'Hoffmann';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+		await store.fuehreAktionAus(null);
+		await vi.advanceTimersByTimeAsync(0);
+		return /** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0]?.[1])?.query;
+	}
+
+	it('nimmt den einen Leser, wenn die Liste nur ihn zeigt', async () => {
+		expect(await druecke([])).toBe('leser:s1');
+	});
+
+	it('rät nicht, wenn daneben ein Buch steht', async () => {
+		expect(await druecke([{ id: 'b1', titel: 'Hoffmanns Erzählungen' }])).not.toBe('leser:s1');
+	});
+});

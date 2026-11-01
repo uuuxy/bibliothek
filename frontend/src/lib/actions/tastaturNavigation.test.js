@@ -44,6 +44,36 @@ describe('tastaturNavigation', () => {
 		aktion.destroy?.();
 	});
 
+	it('Pfeil hoch geht zurück und vom Anfang ans Ende; andere Tasten bewegen nichts', () => {
+		const node = document.createElement('input');
+		const onSelect = vi.fn();
+		const onIndexChange = vi.fn();
+		const onEscape = vi.fn();
+		const aktion = tastaturNavigation(node, {
+			totalItems: 3,
+			isOpen: true,
+			selectedIndex: 1,
+			onSelect,
+			onIndexChange,
+			onEscape
+		});
+
+		taste(node, 'ArrowUp');
+		expect(onIndexChange).toHaveBeenLastCalledWith(0);
+		taste(node, 'ArrowUp');
+		expect(onIndexChange).toHaveBeenLastCalledWith(2);
+
+		onIndexChange.mockClear();
+		taste(node, 'a');
+		expect(onIndexChange).not.toHaveBeenCalled();
+
+		taste(node, 'Enter');
+		expect(onSelect).toHaveBeenCalledWith(2);
+		taste(node, 'Escape');
+		expect(onEscape).toHaveBeenCalledOnce();
+		aktion.destroy?.();
+	});
+
 	// CI 11.09.2026: Jeder Pfeil plante einen Scroll-Timer, destroy räumte ihn nicht. Endete
 	// die Testdatei vor Ablauf der 10 ms, lief er ohne jsdom — „document is not defined",
 	// der ganze Lauf rot, obwohl alle Tests grün waren. Im Browser lief er nach dem Abbau

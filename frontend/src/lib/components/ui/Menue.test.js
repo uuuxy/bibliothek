@@ -40,6 +40,24 @@ describe('Menue', () => {
 		expect(document.activeElement).toBe(knopf);
 	});
 
+	it('schließt beim Druck daneben, nicht beim Druck auf einen Eintrag oder den Knopf', async () => {
+		const { getByRole, queryByRole } = render(Menue, {
+			etikett: 'Aktionen',
+			eintraege: EINTRAEGE,
+			onwahl: vi.fn()
+		});
+		const knopf = getByRole('button', { name: 'Aktionen' });
+		await fireEvent.click(knopf);
+
+		await fireEvent.pointerDown(getByRole('menuitem', { name: 'Erster Eintrag' }));
+		expect(queryByRole('menu')).toBeTruthy();
+		await fireEvent.pointerDown(knopf);
+		expect(queryByRole('menu')).toBeTruthy();
+
+		await fireEvent.pointerDown(document.body);
+		expect(queryByRole('menu')).toBeNull();
+	});
+
 	it('lässt die Pfeiltasten über die Einträge wandern', async () => {
 		const { getByRole, getAllByRole } = render(Menue, {
 			etikett: 'Aktionen',

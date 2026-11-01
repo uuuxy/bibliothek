@@ -111,33 +111,36 @@ describe('authStore Session-Restore (Boot)', () => {
 	// der Server bei einem Datenbank-Aussetzer mit 503 statt 401 — damit ein kurzer
 	// Aussetzer nicht alle Arbeitsplätze abmeldet. Der Boot-Restore las aber nur `res.ok`:
 	// Wer währenddessen neu lud, landete trotz gültigem Cookie am Login.
-	it('hält die Sitzung, wenn der Boot-Restore in einen 503 läuft', async () => {
-		vi.useFakeTimers();
-		try {
-			const antworten = [
-				{ ok: false, status: 503 },
-				{ ok: false, status: 503 },
-				{
-					ok: true,
-					status: 200,
-					json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Nina' })
-				}
-			];
-			// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
-			globalThis.fetch = vi.fn(async () => antworten.shift());
+	it.each([500, 503])(
+		'hält die Sitzung, wenn der Boot-Restore in einen %i läuft',
+		async (status) => {
+			vi.useFakeTimers();
+			try {
+				const antworten = [
+					{ ok: false, status },
+					{ ok: false, status },
+					{
+						ok: true,
+						status: 200,
+						json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Nina' })
+					}
+				];
+				// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+				globalThis.fetch = vi.fn(async () => antworten.shift());
 
-			const lauf = authStore.restoreSession();
-			await vi.advanceTimersByTimeAsync(5000);
-			await lauf;
+				const lauf = authStore.restoreSession();
+				await vi.advanceTimersByTimeAsync(5000);
+				await lauf;
 
-			expect(globalThis.fetch).toHaveBeenCalledTimes(3);
-			expect(authStore.isLoggedIn).toBe(true);
-			expect(authStore.sessionChecked).toBe(true);
-		} finally {
-			authStore.stopSessionRefresh();
-			vi.useRealTimers();
+				expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+				expect(authStore.isLoggedIn).toBe(true);
+				expect(authStore.sessionChecked).toBe(true);
+			} finally {
+				authStore.stopSessionRefresh();
+				vi.useRealTimers();
+			}
 		}
-	});
+	);
 
 	// Die Gegenprobe zum Warten: Ein 401 ist die reguläre Antwort für „kein Cookie". Würde
 	// er auch wiederholt, stünde jeder frische Browser sechs Sekunden vor dem Ladekreis.

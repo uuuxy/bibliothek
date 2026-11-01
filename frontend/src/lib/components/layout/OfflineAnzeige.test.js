@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
 
 // Der Offline-Hinweis ist ein BAND und darf die Theke nicht anhalten.
 //
@@ -47,6 +47,7 @@ vi.mock('../../stores/authStore.svelte.js', () => ({
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
 const { default: OfflineAnzeige } = await import('./OfflineAnzeige.svelte');
+const { snackbars } = await import('../../stores/snackbars.svelte.js');
 
 describe('Offline-Band', () => {
 	beforeEach(() => {
@@ -152,6 +153,34 @@ describe('Offline-Band', () => {
 		// Bis zum 16.09.2026 legte App.svelte dafuer ein eigenes Vollbild darueber.
 		const screen = render(OfflineAnzeige, { verbindungVerloren: true });
 		expect(screen.container.textContent ?? '').toContain('Keine Verbindung');
+	});
+
+	it('nennt die Sicherung, die sich nicht übernehmen ließ, und schweigt ohne Fehler', async () => {
+		sync.ohneNetz = true;
+		sync.wartendeAnzahl = 2;
+		const { container } = render(OfflineAnzeige);
+		const feld = /** @type {HTMLInputElement} */ (container.querySelector('input[type="file"]'));
+		const waehle = (/** @type {string} */ name) =>
+			fireEvent.change(feld, { target: { files: [new File(['x'], name)] } });
+
+		sync.importiereWarteschlange.mockResolvedValueOnce(3);
+		await waehle('gut.json');
+		await vi.waitFor(() =>
+			expect(snackbars.addToast).toHaveBeenCalledWith(
+				expect.stringContaining('3 Vorgang'),
+				'success'
+			)
+		);
+		expect(snackbars.addToast).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+		sync.importiereWarteschlange.mockRejectedValueOnce(new Error('kaputt'));
+		await waehle('schlecht.json');
+		await vi.waitFor(() =>
+			expect(snackbars.addToast).toHaveBeenCalledWith(
+				expect.stringContaining('schlecht.json'),
+				'error'
+			)
+		);
 	});
 
 	it('zeigt gar nichts, wenn alles in Ordnung ist', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
-import { meldeVerlustGefunden } from './inventurApi.js';
+import { loescheVerlustEndgueltig, meldeVerlustGefunden } from './inventurApi.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 
 vi.mock('./inventurApi.js', () => ({
@@ -42,5 +42,24 @@ describe('Fehlbestand: als gefunden verbuchen', () => {
 			'Als gefunden verbucht — Exemplar ist wieder verfügbar.',
 			'success'
 		);
+	});
+});
+
+// Die Meldung sagt, was geschah, nicht, was verlangt wurde.
+describe('Fehlbestand: endgültig löschen', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it.each([
+		[[], 'Nichts gelöscht', 'warning'],
+		[['ex-1'], '1 endgültig gelöscht, 1 übersprungen', 'warning'],
+		[['ex-1', 'ex-2'], '2 Exemplare endgültig gelöscht', 'success']
+	])('%j von zwei Exemplaren', async (geloeschte_ids, text, art) => {
+		vi.mocked(loescheVerlustEndgueltig).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, data: { geloeschte_ids } })
+		);
+
+		await useFehlbestand().fehlbestandEndgueltigLoeschen(['ex-1', 'ex-2']);
+
+		expect(snackbars.addToast).toHaveBeenCalledWith(expect.stringContaining(text), art);
 	});
 });

@@ -4,6 +4,7 @@ import { apiFetch } from '../../apiFetch.js';
 import { authStore } from '../../stores/authStore.svelte.js';
 import { snackbars } from '../../stores/snackbars.svelte.js';
 import { serverAntwort } from '../../serverAntwort.js';
+import { PDF_BLOCKIERT } from '../../utils/pdfImFenster.js';
 
 // Die Akte lädt vier Dinge nebeneinander: Stammdaten, Vormerkungen, Gebühren, Bescheide.
 //
@@ -353,5 +354,47 @@ describe('useLeserakte: Kontoauszug und Rechnung im Tab', () => {
 		expect(fenster.location.replace).toHaveBeenCalledTimes(2);
 		expect(fenster.location.replace).toHaveBeenCalledWith('blob:akte');
 		expect(anker).not.toHaveBeenCalled();
+	});
+});
+
+// Das Fenster für den Kontoauszug öffnet vor der Antwort. Sperrt es der Browser, sagt die Akte das;
+// lehnt der Server ab, steht sein Grund da; sonst bleibt es still.
+describe('useLeserakte.zeigeKontoauszug', () => {
+	/** @param {any} antwort */
+	async function zeige(antwort) {
+		vi.mocked(apiFetch).mockImplementation(async (url) =>
+			String(url).includes('/kontoauszug/')
+				? antwort
+				: /** @type {any} */ (ok({ id: 'A', vorname: 'Anna' }))
+		);
+		const st = useLeserakte();
+		await st.ladeAkte('A');
+		const meldung = vi.spyOn(snackbars, 'addToast').mockClear();
+		await st.zeigeKontoauszug();
+		return meldung;
+	}
+
+	afterEach(() => vi.restoreAllMocks());
+
+	it('nennt ein gesperrtes Fenster', async () => {
+		vi.spyOn(window, 'open').mockReturnValue(null);
+		const meldung = await zeige(ok({}));
+		expect(meldung).toHaveBeenCalledWith(PDF_BLOCKIERT, 'warning');
+	});
+
+	it('nennt den Grund einer Ablehnung', async () => {
+		vi.spyOn(window, 'open').mockReturnValue(/** @type {any} */ ({ close: vi.fn() }));
+		const meldung = await zeige(serverAntwort(404, { error: 'Keine aktiven Ausleihen' }));
+		expect(meldung).toHaveBeenCalledWith('Keine aktiven Ausleihen', 'error');
+	});
+
+	it('bleibt still, wenn das PDF kommt', async () => {
+		URL.createObjectURL = vi.fn(() => 'blob:probe');
+		URL.revokeObjectURL = vi.fn();
+		vi.spyOn(window, 'open').mockReturnValue(
+			/** @type {any} */ ({ close: vi.fn(), closed: true, location: { replace: vi.fn() } })
+		);
+		const meldung = await zeige({ ok: true, blob: async () => new Blob(['%PDF']) });
+		expect(meldung).not.toHaveBeenCalled();
 	});
 });

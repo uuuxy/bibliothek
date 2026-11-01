@@ -91,3 +91,12 @@ describe('applyDesign heilt den Altbestand beim Laden', () => {
 		expect(idStore.back.elements.map((e) => e.id)).toEqual(['back-kopfband', 'back-kopflinie']);
 	});
 });
+
+describe('applyDesign: der Barcode-Typ', () => {
+	beforeEach(() => resetDesign());
+
+	it.each(['qr', 'code39'])('übernimmt %s aus dem gespeicherten Design', (typ) => {
+		applyDesign({ barcodeType: typ });
+		expect(idStore.barcodeType).toBe(typ);
+	});
+});

@@ -41,6 +41,19 @@ describe('Select: was der Screenreader mitbekommt', () => {
 		expect(zeile?.getAttribute('role')).toBe('option');
 	});
 
+	it('springt beim Tippen auf den passenden Eintrag, auch auf den ersten', async () => {
+		const screen = render(Select, { options: optionen, value: 'c' });
+		const knopf = screen.getByRole('combobox');
+
+		tippe(knopf, 'ArrowDown'); // öffnet, steht auf „Cem"
+		await Promise.resolve();
+		tippe(knopf, 'a');
+		await Promise.resolve();
+
+		const aktiv = knopf.getAttribute('aria-activedescendant');
+		expect(document.getElementById(/** @type {string} */ (aktiv))?.textContent).toContain('Anna');
+	});
+
 	it('wandert mit der Markierung weiter', async () => {
 		const screen = render(Select, { options: optionen, value: 'a' });
 		const knopf = screen.getByRole('combobox');
