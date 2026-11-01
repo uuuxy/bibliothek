@@ -83,7 +83,7 @@ Kapitel 11 nennt Risiken und bekannte Grenzen; was zu tun ist, steht nur in
 
 ## 1. Einführung und Ziele
 
-Stand: 31.10.2026
+Stand: 01.11.2026
 
 ---
 
@@ -172,14 +172,14 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 31.10.2026)
+### 1.4 Umfang in Zahlen (gemessen 01.11.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 81.400 Zeilen                              |
-| Go-Tests                          | 146.341 Zeilen in 1.020 Testdateien        |
-| Svelte/JavaScript (`frontend/src`) | 98.112 Zeilen in 877 Dateien, davon 318 `.svelte` |
-| e2e (Playwright, `frontend/e2e`)  | 196 Dateien, davon 187 Specs               |
+| Go-Produktivcode                  | 81.539 Zeilen                              |
+| Go-Tests                          | 147.685 Zeilen in 1.032 Testdateien        |
+| Svelte/JavaScript (`frontend/src`) | 101.666 Zeilen in 900 Dateien, davon 319 `.svelte` |
+| e2e (Playwright, `frontend/e2e`)  | 198 Dateien, davon 189 Specs               |
 | Registrierte HTTP-Routen          | 226                                        |
 | Datenbank-Migrationen             | 173 Dateien, die höchste Nummer ist 170    |
 | Tabellen / Sichten in `schema.sql`| 43 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
@@ -1986,7 +1986,11 @@ vorbei ist); das Mahnwesen wird nur von Hand bedient.
 
 #### SSE
 
-Nach jedem Commit geht ein Ereignis an alle verbundenen Stationen. Der Broker hat
+Eine Tür, nach deren Commit andere Arbeitsplätze etwas anderes zeigen müssten, schickt ein
+Ereignis an alle verbundenen Stationen: Ausleihe und Rückgabe an der Theke und in der Inventur
+(`action`, `SendeThekenEreignis`), der LMF-Plan (`lmf-plan`), die Sitzungsfristen
+(`sitzungsfristen`), das Nachbuchen (`nachbuch-meldungen`) und die Bestätigung einer Bestellung
+(`bestellstand`). Alles andere steht am zweiten Arbeitsplatz beim nächsten Laden da. Der Broker hat
 **keinen** Event-Loop (Details und die Begründung:
 [5.4.4](#544-ssessego--broker-ohne-event-loop)). Im Client:
 Reconnect mit Guards (`isLoggedIn`, Timeout), damit ein abgemeldeter Tab nicht endlos
@@ -1998,9 +2002,25 @@ Anmeldung, sonst baut `liveEvents.js` neu auf. Ohne die Frage zeigte eine gesper
 
 Was während einer Unterbrechung geschah, kommt über die Leitung nicht nach. Eine Ansicht, die auf
 ein Signal hin nur ihre Daten neu holt, abonniert deshalb mit `abonniereNeuladen`: Das holt auch
-bei jedem Aufbau der Leitung neu. Das Nachladen läuft, während jemand arbeitet. Eine Eingabe, die
-ein `$effect` beim Öffnen eines Dialogs aus einem Prop vorbelegt, liest ihn deshalb mit `untrack`;
-sonst nähme ein Nachladen, das den Wert ändert, den getippten Text mit (`BestellMittelDialog`).
+bei jedem Aufbau der Leitung neu. Das Signal kommt nur einmal: Liefert das Holen `false`, kam die
+Antwort nicht, und `abonniereNeuladen` holt beim nächsten Lebenszeichen der Leitung nach (alle
+15 s), danach im doppelten Abstand bis vier Minuten, damit ein gestörter Abruf nicht im Takt meldet.
+
+Das Nachladen läuft, während jemand arbeitet. Daraus folgen fünf Regeln für jede solche Ansicht:
+
+- Es gilt die jüngste Anfrage, auch beim Fehler: Eine späte Antwort oder Absage schreibt nichts mehr
+  (Laufnummer hinter dem letzten `await`).
+- Scheitert nur das Auffrischen, bleibt der Inhalt stehen, und eine Meldung nennt den Grund. Der
+  Kasten „nicht geladen" gehört dem ersten Abruf und dem Wechsel der Ansicht, unter dem sonst die
+  falsche Liste stünde.
+- Zeilen hängen an ihrer Kennung, nicht an ihrer Stelle: Sonst rückt der Fokus auf die nächste Zeile,
+  wenn eine darüber wegfällt.
+- Verschwindet das Element mit dem Fokus, fängt `ui/fokusAuffangen.svelte.js` ihn auf: auf dem, was
+  an seine Stelle tritt, sonst am Anfang des Inhalts. Auf die nächste Zeile rückt er mit Absicht
+  nicht: Die Leertaste oder ein Enter träfe dort etwas, das niemand gemeint hat.
+- Eine Eingabe, die ein `$effect` beim Öffnen eines Dialogs aus einem Prop vorbelegt, liest ihn mit
+  `untrack`; sonst nähme ein Nachladen, das den Wert ändert, den getippten Text mit
+  (`BestellMittelDialog`).
 
 #### Offline
 
@@ -3322,7 +3342,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 30.10.2026
+Stand: 01.11.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3678,9 +3698,10 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 - **Die Ausleih-Quittung der Leserakte** (`AusleihQuittung.svelte`) hat keinen Knopf und erscheint
   nur beim Druck der Akte über den Browser; für einen Kollegen ist sie der einzige Ausdruck
   seiner Ausleihen. Anlass: Jemand braucht ihn an der Theke.
-- **Browser-Gates:** Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
-  Anfangszustand, es gibt keinen Screenreader-Durchgang, und der Ausweis-Designer geht nur per
-  Maus. Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs braucht, ist
+- **Browser-Gates:** Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst neben dem
+  Anfangszustand jeder Seite nur wenige gefüllte Zustände (jede Folie des Monitors, die
+  Bestellhistorie mit einer Zeile, eine aufgeklappte Klasse), es gibt keinen Screenreader-Durchgang,
+  und der Ausweis-Designer geht nur per Maus. Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs braucht, ist
   nicht geklärt ([FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19).
 
 #### Code und Werkzeuge
