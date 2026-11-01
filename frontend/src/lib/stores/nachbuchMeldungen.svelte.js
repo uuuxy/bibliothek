@@ -1,5 +1,6 @@
 import { apiFetch, apiClient, leseApiFehler } from '../apiFetch.js';
 import { abonniereNeuladen } from '../liveEvents.js';
+import { snackbars } from './snackbars.svelte.js';
 
 /**
  * Die Meldungen aus dem Nachbuchen (Migration 117).
@@ -36,46 +37,87 @@ class NachbuchMeldungen {
 
 	/** @type {(() => void) | null} */
 	#abmelden = null;
+	// Zähler und Liste schreiben beide die Zahl. Es gilt die jüngste Anfrage, die geantwortet hat:
+	// Sonst spränge das Band von 0 zurück auf 5, und eine gescheiterte jüngere ließe die Zahl stehen.
+	#zahlAnfrage = 0;
+	#zahlStand = 0;
+	#listenLauf = 0;
+	/** @type {boolean | null} Für welche Ansicht die Liste zuletzt kam (auchQuittierte). */
+	#geladenMit = null;
+
+	/** @param {number} anfrage @param {number} offen */
+	#setzeZahl(anfrage, offen) {
+		if (anfrage < this.#zahlStand) return;
+		this.#zahlStand = anfrage;
+		this.offen = offen;
+	}
 
 	/**
 	 * Den Zähler holen. Leise: Ein Fehler hier ist kein Grund, an der Theke etwas zu
 	 * melden — die Zahl ist ein Hinweis, keine Buchung.
+	 * @returns {Promise<boolean>} ob die Antwort kam
 	 */
 	async zaehle() {
+		const anfrage = ++this.#zahlAnfrage;
 		try {
 			const res = await apiFetch('/api/action/nachbuch-meldungen/anzahl');
-			if (!res.ok) return;
+			if (!res.ok) return false;
 			const d = await res.json();
-			if (Number.isFinite(d?.offen)) this.offen = d.offen;
+			if (Number.isFinite(d?.offen)) this.#setzeZahl(anfrage, d.offen);
+			return true;
 		} catch (err) {
 			console.warn('Nachbuch-Meldungen nicht gezählt:', err);
+			return false;
 		}
 	}
 
-	/** Die Liste holen — laut, denn hier wartet jemand auf eine Antwort. */
+	// Scheitert nur das Auffrischen, bleibt die Liste stehen. Unter der anderen Ansicht stünden
+	// sonst die erledigten neben den offenen, und „nicht geladen" nähme die Arbeit weg.
+	/** @param {string} grund @param {boolean} auchQuittierte */
+	#scheitere(grund, auchQuittierte) {
+		if (this.#geladenMit === auchQuittierte) {
+			snackbars.addToast(`Die Liste wurde nicht aktualisiert: ${grund}`, 'error');
+		} else {
+			this.ladefehler = grund;
+		}
+	}
+
+	/**
+	 * Die Liste holen — laut, denn hier wartet jemand auf eine Antwort.
+	 * @returns {Promise<boolean>} false, wenn sich ein neuer Versuch lohnt
+	 */
 	async lade() {
+		const lauf = ++this.#listenLauf;
+		const anfrage = ++this.#zahlAnfrage;
+		const auchQuittierte = this.auchQuittierte;
 		this.laeuft = true;
 		this.ladefehler = '';
 		try {
 			const res = await apiFetch(
-				`/api/action/nachbuch-meldungen${this.auchQuittierte ? '?alle=1' : ''}`
+				`/api/action/nachbuch-meldungen${auchQuittierte ? '?alle=1' : ''}`
 			);
 			if (!res.ok) {
-				this.ladefehler =
+				const grund =
 					res.status === 403
 						? 'Für die Meldungen fehlt das Recht, Schülerdaten zu sehen.'
 						: await leseApiFehler(res, `Meldungen nicht abrufbar (${res.status}).`);
-				return;
+				if (lauf === this.#listenLauf) this.#scheitere(grund, auchQuittierte);
+				return res.status === 403;
 			}
 			const d = await res.json();
+			if (lauf !== this.#listenLauf) return true;
 			this.liste = Array.isArray(d) ? d : [];
+			this.#geladenMit = auchQuittierte;
 			// Die Zahl aus derselben Antwort, wenn nur offene geholt wurden: Sonst zeigte
 			// das Band eine andere Zahl als die Liste darunter.
-			if (!this.auchQuittierte) this.offen = this.liste.length;
+			if (!auchQuittierte) this.#setzeZahl(anfrage, this.liste.length);
+			return true;
 		} catch (err) {
-			this.ladefehler = err instanceof Error ? err.message : 'Meldungen nicht abrufbar.';
+			const grund = err instanceof Error ? err.message : 'Meldungen nicht abrufbar.';
+			if (lauf === this.#listenLauf) this.#scheitere(grund, auchQuittierte);
+			return false;
 		} finally {
-			this.laeuft = false;
+			if (lauf === this.#listenLauf) this.laeuft = false;
 		}
 	}
 
@@ -123,9 +165,9 @@ class NachbuchMeldungen {
 		if (this.#abmelden) return;
 		// Kein Zeitgeber fragt die Zahl: Nach einer Unterbrechung stünde sonst bis zur nächsten
 		// Anmeldung die alte im Band.
-		this.#abmelden = abonniereNeuladen('nachbuch-meldungen', () => {
-			this.zaehle();
-			if (this.geoeffnet) this.lade();
+		this.#abmelden = abonniereNeuladen('nachbuch-meldungen', async () => {
+			const antworten = await Promise.all([this.zaehle(), this.geoeffnet ? this.lade() : true]);
+			return antworten.every(Boolean);
 		});
 	}
 
@@ -133,6 +175,7 @@ class NachbuchMeldungen {
 	_zuruecksetzen() {
 		this.#abmelden?.();
 		this.#abmelden = null;
+		this.#geladenMit = null;
 		this.offen = 0;
 		this.liste = [];
 		this.geoeffnet = false;

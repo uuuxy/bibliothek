@@ -7,6 +7,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { CalendarDays, Printer } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
 	import * as dienst from '../lmfplan/lmfplanDienst.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
@@ -19,18 +20,38 @@
 	let eingangsjahrgaenge = $state([]);
 	let laedt = $state(true);
 	let fehler = $state('');
+	// Es gilt die jüngste Anfrage: Der alte Plan stünde sonst wieder da, wenn seine Antwort zuletzt kommt.
+	let ladeNr = 0;
+	let geladen = false;
 
 	async function hole() {
+		const nr = ++ladeNr;
 		try {
 			const plan = await dienst.ladePlan();
-			termine = plan.termine;
-			eingangsjahrgaenge = plan.eingangsjahrgaenge ?? [];
-			fehler = '';
+			if (nr === ladeNr) {
+				termine = plan.termine;
+				eingangsjahrgaenge = plan.eingangsjahrgaenge ?? [];
+				fehler = '';
+				geladen = true;
+			}
+			return true;
 		} catch (e) {
-			fehler = fehlertext(e);
+			if (nr === ladeNr) {
+				// Scheitert nur das Auffrischen, bleibt der Plan stehen: Er stimmt meistens noch, und
+				// die Seite läuft nebenbei, ohne dass jemand einen Fehler wegklickt.
+				if (geladen)
+					snackbars.addToast(`Der Plan wurde nicht aktualisiert: ${fehlertext(e)}`, 'error');
+				else fehler = fehlertext(e);
+			}
+			return false;
 		} finally {
-			laedt = false;
+			if (nr === ladeNr) laedt = false;
 		}
+	}
+
+	function erneutLaden() {
+		laedt = true;
+		hole();
 	}
 
 	onMount(() => {
@@ -66,7 +87,7 @@
 		<Ladekreis size="lg" />
 	</div>
 {:else if fehler}
-	<p role="alert" class="py-8 text-center text-sm text-error">{fehler}</p>
+	<LadeFehler titel="LMF-Plan nicht geladen" text={fehler} onerneut={erneutLaden} />
 {:else if termine.length === 0}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div

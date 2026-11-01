@@ -60,7 +60,7 @@
 				apiGet('/api/bestellhistorie' + (topf ? `?mittel=${topf}` : '')),
 				apiGet('/api/bestellhistorie/uebersicht')
 			]);
-			if (nr !== ladeNr) return;
+			if (nr !== ladeNr) return true;
 			bestellungen = liste || [];
 			geladenerTopf = topf;
 			if (summen) {
@@ -68,14 +68,16 @@
 				standBekannt = true;
 			}
 			ladefehler = '';
+			return true;
 		} catch (e) {
-			if (nr !== ladeNr) return;
 			// Scheitert nur das Auffrischen, bleibt die Liste stehen (die Meldung zeigt apiGet). Unter
 			// einem anderen Filter stünde sonst die Liste des vorigen Topfes.
-			if (geladenerTopf === topf) return;
-			bestellungen = [];
-			ladefehler =
-				/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden.';
+			if (nr === ladeNr && geladenerTopf !== topf) {
+				bestellungen = [];
+				ladefehler =
+					/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden.';
+			}
+			return false;
 		} finally {
 			if (nr === ladeNr) laedt = false;
 		}
@@ -85,9 +87,7 @@
 	// die Bestellung holt sich ihren Stand selbst.
 	onMount(() => {
 		void ladeBestellungen();
-		return abonniereNeuladen('bestellstand', () => {
-			if (!geoeffneteId) void ladeBestellungen();
-		});
+		return abonniereNeuladen('bestellstand', () => (geoeffneteId ? true : ladeBestellungen()));
 	});
 
 	let gesamtsumme = $derived(uebersicht.gesamtbetrag);

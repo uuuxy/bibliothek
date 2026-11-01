@@ -16,7 +16,7 @@
 	// und bei jeder Bestätigung frisch.
 	onMount(() => {
 		void bestellStore.loadIncomingShipments();
-		return abonniereNeuladen('bestellstand', () => void bestellStore.loadIncomingShipments());
+		return abonniereNeuladen('bestellstand', () => bestellStore.loadIncomingShipments());
 	});
 
 	let laeuft = $state(false);

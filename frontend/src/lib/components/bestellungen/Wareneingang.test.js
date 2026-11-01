@@ -105,6 +105,17 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 		expect(screen.queryByText(/markiert/)).toBeNull();
 	});
 
+	// Danach holt die Leitung nach (liveEvents.js); die Ansicht sagt ihr, ob die Antwort kam.
+	it('meldet der Leitung, ob die Antwort kam', async () => {
+		render(Wareneingang, offen);
+		const holeNeu = () => [...(leitung.hoerer.get('bestellstand') ?? [])][0]();
+
+		expect(await holeNeu()).toBe(true);
+
+		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
+		expect(await holeNeu()).toBe(false);
+	});
+
 	it('hört nach dem Schließen des Reiters nicht mehr zu', () => {
 		const screen = render(Wareneingang, offen);
 		expect(leitung.hoerer.get('bestellstand')?.size).toBe(1);

@@ -19,6 +19,18 @@ export async function ladeAbgaenger() {
 	return await res.json();
 }
 
+/** Nimmt dieses Ereignis der Leitung jemanden aus der Liste? Das tut nur eine Rückgabe.
+ *  @param {MessageEvent} e */
+export function istRueckgabe(e) {
+	try {
+		const { event } = JSON.parse(e.data);
+		return event === 'rueckgabe' || event === 'fremdrueckgabe';
+	} catch (err) {
+		console.error('Failed to parse SSE payload:', err);
+		return false;
+	}
+}
+
 /** Baut die Adresse des Kontoauszug-Drucks: Was auf dem Bildschirm steht, steht auf dem
  *  Papier.
  *

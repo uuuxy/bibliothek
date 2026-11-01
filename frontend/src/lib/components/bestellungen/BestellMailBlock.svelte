@@ -12,7 +12,7 @@
 	import Button from '../ui/Button.svelte';
 	import { MailWarning } from '@lucide/svelte';
 
-	/** @type {{ b: any, darfSenden: boolean, onAktualisieren: () => Promise<void> }} */
+	/** @type {{ b: any, darfSenden: boolean, onAktualisieren: () => Promise<unknown> }} */
 	let { b, darfSenden, onAktualisieren } = $props();
 
 	let laeuft = $state(false);

@@ -1,24 +1,12 @@
-// EINE Live-Verbindung für die ganze Anwendung — mit einem Wiederaufbau, der auch den
-// harten Fall überlebt.
+// Eine Live-Verbindung für die ganze Anwendung, mit einem Wiederaufbau, der auch den harten Fall
+// überlebt: Antwortet der Server einmal mit einem Fehler (/events verlangt eine gültige Sitzung,
+// nach 12 Stunden ist sie abgelaufen), schliesst ein EventSource endgültig und versucht es nie
+// wieder. Der Bildschirm arbeitete dann weiter und aktualisierte sich nicht mehr, wenn an einem
+// anderen Arbeitsplatz gebucht wird. Das sieht aus wie Normalbetrieb.
 //
-// Vorher öffnete jede interessierte Stelle ihr eigenes `new EventSource('/events')`:
-// der Auth-Store (mit Wiederaufbau), die Omnibox und die Abgängerliste (ohne). Drei
-// Verbindungen je Arbeitsplatz, drei Grade an Sorgfalt — und der Unterschied fiel nie
-// auf, weil der Browser transiente Fehler (Netzwechsel, Standby) selbst nachholt.
-//
-// Nicht nachgeholt wird der harte Fall: Antwortet der Server einmal mit einem Fehler —
-// /events verlangt eine gültige Sitzung, nach 12 Stunden ist sie abgelaufen —, schliesst
-// ein EventSource ENDGÜLTIG und versucht es nie wieder. Danach passierte Folgendes: Das
-// Overlay erschien, der Bediener meldete sich neu an, der Auth-Store verband sich, das
-// Overlay verschwand — und die beiden anderen Ströme blieben tot bis zum nächsten F5.
-// Der Bildschirm arbeitete weiter und aktualisierte sich nicht mehr, wenn an einem
-// ANDEREN Arbeitsplatz etwas gebucht wurde. Im Mehrplatzbetrieb ist das die teuerste
-// Sorte Fehler: Er sieht wie Normalbetrieb aus.
-//
-// Deshalb hier: eine Verbindung, ein Wiederaufbau, viele Zuhörer. Der Wiederaufbau ist
-// bewusst unser eigener und nicht der des Browsers — wir schliessen die Quelle im
-// Fehlerfall selbst. Zwei Mechaniken nebeneinander wären zwei Zeitpläne, von denen einer
-// unsichtbar ist.
+// Eine Verbindung, ein Wiederaufbau, viele Zuhörer. Der Wiederaufbau ist unser eigener und nicht
+// der des Browsers, wir schliessen die Quelle im Fehlerfall selbst: Zwei Mechaniken nebeneinander
+// wären zwei Zeitpläne, von denen einer unsichtbar ist.
 
 /** Erster Wiederversuch nach 2 s — schnell genug, dass ein Netzwechsel unbemerkt bleibt. */
 const BASIS_WARTEZEIT_MS = 2000;
@@ -29,6 +17,13 @@ const BASIS_WARTEZEIT_MS = 2000;
  * 2-Sekunden-Takt hämmerte bis zum Feierabend gegen die Anmeldung — mal zehn Arbeitsplätze.
  */
 const MAX_WARTEZEIT_MS = 30000;
+
+/**
+ * Scheitert das Holen nach einem Signal, kommt kein zweites Signal. Der nächste Versuch läuft beim
+ * nächsten Lebenszeichen der Leitung (alle 15 s, sse/sse.go), danach im doppelten Abstand bis zu
+ * dieser Zahl von Lebenszeichen: Ein Abruf, der gerade nicht geht, soll nicht alle 15 s melden.
+ */
+const MAX_LEBENSZEICHEN_BIS_ZUM_VERSUCH = 16;
 
 /** @type {EventSource | null} */
 let quelle = null;
@@ -150,13 +145,40 @@ export function abonniere(name, handler) {
 /**
  * Für Ansichten, die auf ein Ereignis hin ihre Daten neu holen. Was während einer Unterbrechung
  * der Leitung geschah, kommt nicht nach; deshalb holen sie auch bei jedem Aufbau der Leitung neu.
+ * Liefert das Holen false, kam die Antwort nicht, und es wird nachgeholt. Es zählt der jüngste
+ * Abruf.
  *
  * @param {string} name Ereignisname, z. B. 'bestellstand'
- * @param {() => void} holeNeu
+ * @param {() => unknown} holeNeu
+ * @param {(e: MessageEvent) => boolean} [gilt] Betrifft dieses Ereignis die Ansicht?
  * @returns {() => void} Abmeldung
  */
-export function abonniereNeuladen(name, holeNeu) {
-	const abmeldungen = [name, 'connected'].map((n) => abonniere(n, () => holeNeu()));
+export function abonniereNeuladen(name, holeNeu, gilt = () => true) {
+	let lauf = 0;
+	/** Lebenszeichen bis zum nächsten Versuch; 0 heißt, es ist nichts nachzuholen. */
+	let rest = 0;
+	let abstand = 1;
+	const hole = async () => {
+		const dieserLauf = ++lauf;
+		rest = 0;
+		const kam = await holeNeu();
+		if (dieserLauf !== lauf) return;
+		if (kam === false) {
+			rest = abstand;
+			abstand = Math.min(abstand * 2, MAX_LEBENSZEICHEN_BIS_ZUM_VERSUCH);
+		} else {
+			abstand = 1;
+		}
+	};
+	const abmeldungen = [
+		abonniere(name, (e) => {
+			if (gilt(e)) void hole();
+		}),
+		abonniere('connected', () => void hole()),
+		abonniere('ping', () => {
+			if (rest > 0 && --rest === 0) void hole();
+		})
+	];
 	return () => abmeldungen.forEach((abmelden) => abmelden());
 }
 

@@ -17,7 +17,7 @@
 	import KlassenVersandDialog from '../ui/KlassenVersandDialog.svelte';
 	import AbgaengerTabelle from './AbgaengerTabelle.svelte';
 	import AbgaengerKopfzeile from './AbgaengerKopfzeile.svelte';
-	import { abonniere } from '../../liveEvents.js';
+	import { abonniereNeuladen } from '../../liveEvents.js';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
@@ -94,10 +94,6 @@
 	// Der Dialog erwartet die Form des Mahnwesens ({ klasse, schueler, lehrer_email }),
 	// damit er für beide Aufrufer derselbe bleibt. Die Abgängerliste ist flach, also
 	// wird sie hier auf Klassen verdichtet.
-	//
-	// lehrer_email kommt seit dem Mapping-JOIN in /api/abgaenger mit. Ohne sie stand im
-	// Dialog bei JEDER Klasse „keine E-Mail" — auch bei hinterlegter Adresse, weil das
-	// Frontend die Adressen schlicht nicht kannte.
 	let klassenFuerVersand = $derived(
 		classes.map((k) => {
 			const schueler = alleAbgaenger.filter((/** @type {any} */ s) => s.klasse === k);
@@ -109,16 +105,31 @@
 		})
 	);
 
+	// Es gilt die jüngste Anfrage: Sonst stünde jemand mit erledigter Rückgabe wieder in der Liste.
+	let ladeNr = 0;
+	let geladen = false;
+
 	async function ladeListe() {
+		const nr = ++ladeNr;
 		try {
 			const antwort = await dienst.ladeAbgaenger();
-			alleAbgaenger = antwort.abgaenger;
-			fenster = antwort.fenster;
-			ladefehler = null;
+			if (nr === ladeNr) {
+				alleAbgaenger = antwort.abgaenger;
+				fenster = antwort.fenster;
+				ladefehler = null;
+				geladen = true;
+			}
+			return true;
 		} catch (err) {
-			ladefehler = `Die Abgängerliste konnte nicht geladen werden (${fehlertext(err)}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
+			if (nr === ladeNr) {
+				// Scheitert nur das Auffrischen, bleibt die Liste stehen: An ihr wird gerade gearbeitet.
+				if (geladen) melde(`Die Liste wurde nicht aktualisiert: ${fehlertext(err)}`, 'error');
+				else
+					ladefehler = `Die Abgängerliste konnte nicht geladen werden (${fehlertext(err)}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
+			}
+			return false;
 		} finally {
-			laedt = false;
+			if (nr === ladeNr) laedt = false;
 		}
 	}
 
@@ -132,23 +143,8 @@
 
 		// Live-Abgleich über die gemeinsame Leitung (liveEvents.js): Wird an einem anderen
 		// Arbeitsplatz ein Buch zurückgegeben, muss der Abgänger hier von selbst aus der Liste
-		// fallen. Was in eine Unterbrechung der Leitung fiel, meldet niemand nach.
-		const abmelden = abonniere('action', (e) => {
-			try {
-				const nachricht = JSON.parse(e.data);
-				if (nachricht.event === 'rueckgabe' || nachricht.event === 'fremdrueckgabe') {
-					ladeListe();
-				}
-			} catch (err) {
-				console.error('Failed to parse SSE payload:', err);
-			}
-		});
-		const abmeldenAufbau = abonniere('connected', () => ladeListe());
-
-		return () => {
-			abmelden();
-			abmeldenAufbau();
-		};
+		// fallen.
+		return abonniereNeuladen('action', ladeListe, dienst.istRueckgabe);
 	});
 </script>
 

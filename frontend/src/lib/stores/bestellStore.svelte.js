@@ -114,7 +114,8 @@ class BestellStore {
 
 	/** Zeitpunkt des letzten vollständigen Ladens (0 = noch nie). */
 	#zuletztGeladen = 0;
-	#zulaufLauf = 0;
+	/** Je Liste die Nummer ihrer jüngsten Anfrage. @type {Record<string, number>} */
+	#laeufe = {};
 
 	/**
 	 * Lädt die Arbeitsdaten des Bestellwesens.
@@ -155,25 +156,31 @@ class BestellStore {
 		}
 	}
 
-	// Holt eine Liste; null heißt, sie kam nicht, und ihr Grund steht in nichtGeladen. Statt eines
-	// Leerzustands zeigt die Seite dann ihn: „Keine Lieferanten" wäre eine falsche Auskunft.
-	/** @param {string} name @param {string} url @returns {Promise<any[] | null>} */
-	async #hole(name, url) {
+	// Holt eine Liste; false heißt, sie kam nicht, und ihr Grund steht in nichtGeladen. Statt eines
+	// Leerzustands zeigt die Seite dann ihn: „Keine Lieferanten" wäre eine falsche Auskunft. Es gilt
+	// die jüngste Anfrage je Liste: Eine späte Antwort brächte eben Eingebuchtes zurück, eine späte
+	// Absage nennte einen Fehler, obwohl die Liste kam.
+	/** @param {string} name @param {string} url @param {(liste: any[]) => void} uebernimm */
+	async #hole(name, url, uebernimm) {
+		const lauf = (this.#laeufe[name] = (this.#laeufe[name] ?? 0) + 1);
 		try {
 			const liste = (await apiGet(url)) || [];
+			if (lauf !== this.#laeufe[name]) return true;
+			uebernimm(liste);
 			this.nichtGeladen = { ...this.nichtGeladen, [name]: '' };
-			return liste;
+			return true;
 		} catch (e) {
-			this.nichtGeladen = { ...this.nichtGeladen, [name]: fehlertext(e) };
-			return null;
+			if (lauf === this.#laeufe[name]) {
+				this.nichtGeladen = { ...this.nichtGeladen, [name]: fehlertext(e) };
+			}
+			return false;
 		}
 	}
 
 	// Die Loader melden zurück, ob sie durchkamen: #ladeAlles stempelt den Cache nur bei vollem
 	// Erfolg, sonst lädt der nächste Mount sofort neu.
 	async loadSuppliers() {
-		const liste = await this.#hole('lieferanten', '/api/lieferanten');
-		if (liste) this.suppliers = liste;
+		const kam = await this.#hole('lieferanten', '/api/lieferanten', (l) => (this.suppliers = l));
 		// Auswahl per ID stabil halten; Index-basierte Auswahl kippt bei Reload/Umsortierung
 		//
 		// Vorgewählt wird der als Standard hinterlegte Lieferant: Einmal vergessen hieße, die
@@ -190,7 +197,7 @@ class BestellStore {
 		if (auswahlUngueltig || (this.cart.length === 0 && standardWeicht)) {
 			this.selectedSupplierId = (standard ?? this.suppliers[0])?.id ?? '';
 		}
-		return liste !== null;
+		return kam;
 	}
 
 	/**
@@ -221,19 +228,12 @@ class BestellStore {
 		}
 	}
 
-	// Es gilt die jüngste Anfrage: Der Reiter lädt beim Öffnen, das Einbuchen danach. Käme die erste
-	// Antwort zuletzt, stünden eben eingebuchte Exemplare wieder in der Liste.
 	async loadIncomingShipments() {
-		const lauf = ++this.#zulaufLauf;
-		const liste = await this.#hole('zulauf', '/api/bestellungen/zulauf');
-		if (liste && lauf === this.#zulaufLauf) this.incomingShipments = liste;
-		return liste !== null;
+		return this.#hole('zulauf', '/api/bestellungen/zulauf', (l) => (this.incomingShipments = l));
 	}
 
 	async loadRecommendations() {
-		const liste = await this.#hole('bedarf', '/api/bestellungen');
-		if (liste) this.recommendations = liste;
-		return liste !== null;
+		return this.#hole('bedarf', '/api/bestellungen', (l) => (this.recommendations = l));
 	}
 
 	/**

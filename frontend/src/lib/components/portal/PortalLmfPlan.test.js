@@ -56,6 +56,85 @@ describe('LMF-Plan im Portal: „Als PDF" scheitert', () => {
 // Die Seite läuft im Lehrerzimmer nebenbei: Eine verschobene Stunde kommt ohne F5, auch wenn der
 // Rechner dazwischen geschlafen hat (den Aufbau der Leitung deckt liveEvents.test.js).
 describe('PortalLmfPlan: der Plan bleibt aktuell', () => {
+	/** @param {string} klasse */
+	const planMit = (klasse) =>
+		/** @type {any} */ ({ ...PLAN, termine: [{ ...PLAN.termine[0], klassen: [klasse] }] });
+
+	// Der alte Plan stand sonst wieder da, wenn seine Antwort zuletzt kam.
+	it('eine ältere Antwort überschreibt die neuere nicht', async () => {
+		render(PortalLmfPlan);
+		await screen.findByText('09H1');
+
+		/** @type {(plan: any) => void} */
+		let aeltereAntwort = () => {};
+		vi.mocked(ladePlan).mockReturnValueOnce(new Promise((fertig) => (aeltereAntwort = fertig)));
+		leitung.hoerer.get('lmf-plan')?.();
+		vi.mocked(ladePlan).mockResolvedValueOnce(planMit('NEU'));
+		leitung.hoerer.get('lmf-plan')?.();
+		await screen.findByText('NEU');
+
+		aeltereAntwort(planMit('ALT'));
+		await new Promise((fertig) => setTimeout(fertig));
+
+		expect(screen.queryByText('ALT')).toBeNull();
+		expect(screen.getByText('NEU')).toBeTruthy();
+	});
+
+	it('eine späte Absage nimmt den neueren Plan nicht weg', async () => {
+		render(PortalLmfPlan);
+		await screen.findByText('09H1');
+
+		/** @type {(grund: Error) => void} */
+		let aeltereScheitert = () => {};
+		vi.mocked(ladePlan).mockReturnValueOnce(new Promise((_, nein) => (aeltereScheitert = nein)));
+		leitung.hoerer.get('lmf-plan')?.();
+		vi.mocked(ladePlan).mockResolvedValueOnce(planMit('NEU'));
+		leitung.hoerer.get('lmf-plan')?.();
+		await screen.findByText('NEU');
+
+		aeltereScheitert(new Error('Probe'));
+		await new Promise((fertig) => setTimeout(fertig));
+
+		expect(screen.getByText('NEU')).toBeTruthy();
+		expect(snackbars.toasts).toHaveLength(0);
+	});
+
+	// Die Seite läuft nebenbei im Lehrerzimmer. Der Plan stimmt meistens noch; eine rote Zeile ohne
+	// Knopf anstelle des Plans nähme ihn weg, bis jemand neu lädt.
+	it('scheitert das Auffrischen, bleibt der Plan stehen, und die Leitung holt nach', async () => {
+		render(PortalLmfPlan);
+		await screen.findByText('09H1');
+
+		vi.mocked(ladePlan).mockRejectedValueOnce(new Error('Datenbank kurz weg'));
+		expect(await leitung.hoerer.get('lmf-plan')?.()).toBe(false);
+
+		await waitFor(() =>
+			expect(snackbars.toasts.map((t) => [t.message, t.type])).toEqual([
+				['Der Plan wurde nicht aktualisiert: Datenbank kurz weg', 'error']
+			])
+		);
+		expect(screen.getByText('09H1')).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+
+		vi.mocked(ladePlan).mockResolvedValueOnce(planMit('NEU'));
+		expect(await leitung.hoerer.get('lmf-plan')?.()).toBe(true);
+		expect(await screen.findByText('NEU')).toBeTruthy();
+	});
+
+	it('scheitert der erste Abruf, nennt die Seite den Grund und bietet den Weg zurück', async () => {
+		vi.mocked(ladePlan).mockRejectedValueOnce(new Error('Datenbank kurz weg'));
+		render(PortalLmfPlan);
+
+		const meldung = await screen.findByRole('alert');
+		expect(meldung.textContent).toContain('LMF-Plan nicht geladen');
+		expect(meldung.textContent).toContain('Datenbank kurz weg');
+		expect(snackbars.toasts).toHaveLength(0);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+		expect(await screen.findByText('09H1')).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
 	it('holt den Plan neu, wenn sich etwas ändert, und hört nach dem Verlassen auf', async () => {
 		vi.mocked(ladePlan).mockResolvedValue(
 			/** @type {any} */ ({ termine: [], eingangsjahrgaenge: [] })

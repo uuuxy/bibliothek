@@ -237,6 +237,157 @@ describe('liveEvents', () => {
 		expect(holeNeu).toHaveBeenCalledTimes(3);
 	});
 
+	// Das Signal kommt nur einmal. Scheitert das eine Holen, stünde sonst bis zum nächsten Öffnen der
+	// alte Stand da, und die Leitung steht weiter: Einen Wiederaufbau, der nachholte, gibt es nicht.
+	describe('abonniereNeuladen: das Holen scheitert', () => {
+		const signal = async (/** @type {string} */ name = 'bestellstand') => {
+			FakeEventSource.letzte.sende(name);
+			await vi.advanceTimersByTimeAsync(0);
+		};
+
+		it('holt beim nächsten Lebenszeichen nach und hört auf, sobald die Antwort kam', async () => {
+			const holeNeu = vi.fn(async () => false);
+			abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+
+			await signal();
+			expect(holeNeu).toHaveBeenCalledTimes(1);
+
+			holeNeu.mockResolvedValue(true);
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(2);
+
+			await signal('ping');
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(2);
+		});
+
+		it('holt ohne Fehler nichts nach, auch wenn die Ansicht nichts zurückgibt', async () => {
+			const holeNeu = vi.fn(async () => undefined);
+			abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+
+			await signal();
+			await signal('ping');
+
+			expect(holeNeu).toHaveBeenCalledTimes(1);
+		});
+
+		// Ein Abruf, der gerade nicht geht, meldet sich jedes Mal: Alle 15 s wäre das eine Plage.
+		it('verdoppelt den Abstand bis 16 Lebenszeichen und gibt nicht auf', async () => {
+			const holeNeu = vi.fn(async () => false);
+			abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+			await signal();
+
+			/** @type {number[]} */
+			const abstaende = [];
+			let seitDemLetzten = 0;
+			for (let i = 0; i < 100 && abstaende.length < 7; i++) {
+				const vorher = holeNeu.mock.calls.length;
+				await signal('ping');
+				seitDemLetzten++;
+				if (holeNeu.mock.calls.length > vorher) {
+					abstaende.push(seitDemLetzten);
+					seitDemLetzten = 0;
+				}
+			}
+
+			expect(abstaende).toEqual([1, 2, 4, 8, 16, 16, 16]);
+		});
+
+		it('fängt nach einer geglückten Antwort wieder beim kurzen Abstand an', async () => {
+			const holeNeu = vi.fn(async () => false);
+			abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+			await signal();
+			await signal('ping');
+			await signal('ping');
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(3);
+
+			holeNeu.mockResolvedValueOnce(true);
+			await signal();
+			expect(holeNeu).toHaveBeenCalledTimes(4);
+
+			await signal();
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(6);
+		});
+
+		// Der Aufbau holt ohnehin neu; ein Versuch darf danach nicht noch einmal laufen.
+		it('der Aufbau der Leitung erledigt, was nachzuholen war', async () => {
+			const holeNeu = vi.fn(async () => false);
+			abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+			await signal();
+
+			holeNeu.mockResolvedValue(true);
+			await signal('connected');
+			expect(holeNeu).toHaveBeenCalledTimes(2);
+
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(2);
+		});
+
+		it('es zählt der jüngste Abruf, wenn sich zwei überholen', async () => {
+			/** @type {((kam: boolean) => void)[]} */
+			const antworten = [];
+			const holeNeu = vi.fn(() => new Promise((fertig) => antworten.push(fertig)));
+			abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+			await signal();
+			await signal();
+
+			// Der ältere scheitert nach dem jüngeren: nichts nachzuholen.
+			antworten[1](true);
+			antworten[0](false);
+			await vi.advanceTimersByTimeAsync(0);
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(2);
+
+			// Der jüngere scheitert, der ältere kommt danach durch: nachholen.
+			await signal();
+			await signal();
+			antworten[3](false);
+			antworten[2](true);
+			await vi.advanceTimersByTimeAsync(0);
+			await signal('ping');
+			expect(holeNeu).toHaveBeenCalledTimes(5);
+		});
+
+		it('holt nach dem Verlassen der Ansicht nichts mehr nach', async () => {
+			const holeNeu = vi.fn(async () => false);
+			const abmelden = abonniereNeuladen('bestellstand', holeNeu);
+			verbinde();
+			await signal();
+
+			abmelden();
+			await signal('ping');
+
+			expect(holeNeu).toHaveBeenCalledTimes(1);
+		});
+
+		it('fragt nur beim genannten Ereignis, ob es die Ansicht betrifft', async () => {
+			const holeNeu = vi.fn(async () => true);
+			const gilt = vi.fn((/** @type {MessageEvent} */ e) => e.data === '{"event":"rueckgabe"}');
+			abonniereNeuladen('action', holeNeu, gilt);
+			verbinde();
+
+			FakeEventSource.letzte.sende('action', '{"event":"ausleihe"}');
+			await vi.advanceTimersByTimeAsync(0);
+			expect(holeNeu).not.toHaveBeenCalled();
+
+			FakeEventSource.letzte.sende('action', '{"event":"rueckgabe"}');
+			await vi.advanceTimersByTimeAsync(0);
+			expect(holeNeu).toHaveBeenCalledTimes(1);
+
+			await signal('connected');
+			expect(holeNeu).toHaveBeenCalledTimes(2);
+			expect(gilt).toHaveBeenCalledTimes(2);
+		});
+	});
+
 	// Der Server beendet die Leitung auch, wenn die Anmeldung nicht mehr gilt. Was davon zutrifft,
 	// erfährt nur, wer nach einem Abriss fragt: bei jedem Abriss, nach trenne() nicht mehr.
 	it('meldet jeden Abriss, solange die Leitung bestehen soll', () => {

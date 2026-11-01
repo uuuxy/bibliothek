@@ -26,6 +26,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 }));
 
 const { nachbuchMeldungen: m } = await import('./nachbuchMeldungen.svelte.js');
+const { snackbars } = await import('./snackbars.svelte.js');
 
 /** @param {any} daten @param {number} status */
 const antwort = (daten, status = 200) => ({ ok: status < 400, status, json: async () => daten });
@@ -42,6 +43,7 @@ describe('Meldungen aus dem Nachbuchen', () => {
 	beforeEach(() => {
 		m._zuruecksetzen();
 		vi.clearAllMocks();
+		fetchMock.mockReset();
 	});
 
 	it('holt die Zahl fürs Band', async () => {
@@ -117,6 +119,203 @@ describe('Meldungen aus dem Nachbuchen', () => {
 		);
 		await m.lade();
 		expect(m.ladefehler).toBe('Ein interner Serverfehler ist aufgetreten');
+	});
+
+	// Signale kommen kurz nacheinander, und Antworten überholen sich.
+	describe('die jüngste Anfrage gilt', () => {
+		/** @returns {{ antworte: (wert: any) => void, scheitere: (grund: Error) => void, zusage: Promise<any> }} */
+		function offeneAntwort() {
+			/** @type {any} */
+			let antworte;
+			/** @type {any} */
+			let scheitere;
+			const zusage = new Promise((fertig, nein) => {
+				antworte = fertig;
+				scheitere = nein;
+			});
+			return { antworte, scheitere, zusage };
+		}
+
+		it('das Band springt nicht auf die Zahl der älteren Antwort zurück', async () => {
+			const alt = offeneAntwort();
+			fetchMock.mockReturnValueOnce(alt.zusage);
+			const aelter = m.zaehle();
+			fetchMock.mockResolvedValueOnce(antwort({ offen: 0 }));
+			await m.zaehle();
+			expect(m.offen).toBe(0);
+
+			alt.antworte(antwort({ offen: 5 }));
+			await aelter;
+
+			expect(m.offen).toBe(0);
+		});
+
+		it('die Zahl aus der Liste schlägt einen älteren Zähler, auch in der anderen Richtung', async () => {
+			const alt = offeneAntwort();
+			fetchMock.mockReturnValueOnce(alt.zusage);
+			const aelter = m.zaehle();
+			fetchMock.mockResolvedValueOnce(antwort([zeile('a')]));
+			await m.lade();
+			expect(m.offen).toBe(1);
+			alt.antworte(antwort({ offen: 5 }));
+			await aelter;
+			expect(m.offen).toBe(1);
+
+			const liste = offeneAntwort();
+			fetchMock.mockReturnValueOnce(liste.zusage);
+			const ladend = m.lade();
+			fetchMock.mockResolvedValueOnce(antwort({ offen: 7 }));
+			await m.zaehle();
+			expect(m.offen).toBe(7);
+			liste.antworte(antwort([zeile('a')]));
+			await ladend;
+			expect(m.offen).toBe(7);
+		});
+
+		// Scheitert die jüngere, bleibt die Zahl der älteren, die geantwortet hat.
+		it('eine gescheiterte jüngere Anfrage nimmt der älteren nichts', async () => {
+			fetchMock.mockResolvedValueOnce(antwort({ offen: 0 }));
+			await m.zaehle();
+			const alt = offeneAntwort();
+			fetchMock.mockReturnValueOnce(alt.zusage);
+			const aelter = m.zaehle();
+			fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+			await m.zaehle();
+
+			alt.antworte(antwort({ offen: 3 }));
+			await aelter;
+
+			expect(m.offen).toBe(3);
+		});
+
+		it('die Liste der vorigen Ansicht ersetzt die neue nicht und beendet das Laden nicht', async () => {
+			const alt = offeneAntwort();
+			fetchMock.mockReturnValueOnce(alt.zusage);
+			const aelter = m.lade();
+			const neu = offeneAntwort();
+			fetchMock.mockReturnValueOnce(neu.zusage);
+			m.auchQuittierte = true;
+			const juenger = m.lade();
+
+			alt.antworte(antwort([zeile('alt')]));
+			await aelter;
+			expect(m.liste).toHaveLength(0);
+			expect(m.laeuft).toBe(true);
+
+			neu.antworte(antwort([zeile('neu')]));
+			await juenger;
+			expect(m.liste.map((z) => z.id)).toEqual(['neu']);
+			expect(m.laeuft).toBe(false);
+		});
+
+		it('eine späte Absage nennt keinen Fehler, wenn die jüngere Anfrage kam', async () => {
+			for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
+			const alt = offeneAntwort();
+			fetchMock.mockReturnValueOnce(alt.zusage);
+			const aelter = m.lade();
+			fetchMock.mockResolvedValueOnce(antwort([zeile('neu')]));
+			await m.lade();
+
+			alt.antworte(serverAntwort(500, { error: 'Zu spät' }));
+			await aelter;
+
+			expect(m.ladefehler).toBe('');
+			expect(snackbars.toasts).toHaveLength(0);
+			expect(m.laeuft).toBe(false);
+		});
+
+		it('auch eine späte Absage ohne Antwort nennt keinen Fehler', async () => {
+			for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
+			const alt = offeneAntwort();
+			fetchMock.mockReturnValueOnce(alt.zusage);
+			const aelter = m.lade();
+			fetchMock.mockResolvedValueOnce(antwort([zeile('neu')]));
+			await m.lade();
+
+			alt.scheitere(new TypeError('Failed to fetch'));
+			await aelter;
+
+			expect(m.ladefehler).toBe('');
+			expect(snackbars.toasts).toHaveLength(0);
+		});
+	});
+
+	// Die Liste steht offen, während an einem anderen Platz quittiert wird. Scheitert das Auffrischen,
+	// zeigt der Dialog weiter, was er weiß; „nicht geladen" nähme die Arbeit weg.
+	describe('das Auffrischen scheitert', () => {
+		beforeEach(async () => {
+			for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
+			fetchMock.mockResolvedValueOnce(antwort([zeile('a')]));
+			await m.lade();
+		});
+
+		it('die Liste bleibt stehen, und eine Meldung nennt den Grund', async () => {
+			fetchMock.mockResolvedValueOnce(serverAntwort(503, { error: 'Datenbank kurz weg' }));
+			await m.lade();
+
+			expect(m.liste.map((z) => z.id)).toEqual(['a']);
+			expect(m.ladefehler).toBe('');
+			expect(snackbars.toasts.map((t) => t.message)).toEqual([
+				'Die Liste wurde nicht aktualisiert: Datenbank kurz weg'
+			]);
+
+			fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+			await m.lade();
+			expect(m.liste.map((z) => z.id)).toEqual(['a']);
+			expect(m.ladefehler).toBe('');
+		});
+
+		// Unter „Auch erledigte zeigen" stünde sonst die Liste der offenen.
+		it('scheitert der Wechsel der Ansicht, steht die alte Liste nicht unter der neuen', async () => {
+			fetchMock.mockResolvedValueOnce(serverAntwort(503, { error: 'Datenbank kurz weg' }));
+			m.auchQuittierte = true;
+			await m.lade();
+
+			expect(m.ladefehler).toBe('Datenbank kurz weg');
+			expect(snackbars.toasts).toHaveLength(0);
+		});
+	});
+
+	// Die Leitung holt nach, wenn eine Antwort nicht kam (liveEvents.js). Ein fehlendes Recht kommt
+	// auch beim nächsten Versuch nicht.
+	describe('was der Leitung gemeldet wird', () => {
+		it('der Zähler meldet, ob die Antwort kam', async () => {
+			fetchMock.mockResolvedValueOnce(antwort({ offen: 1 }));
+			expect(await m.zaehle()).toBe(true);
+			fetchMock.mockResolvedValueOnce(antwort({}, 500));
+			expect(await m.zaehle()).toBe(false);
+			fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+			expect(await m.zaehle()).toBe(false);
+		});
+
+		it('die Liste meldet es ebenso, ein fehlendes Recht zählt nicht als nachzuholen', async () => {
+			fetchMock.mockResolvedValueOnce(antwort([]));
+			expect(await m.lade()).toBe(true);
+			fetchMock.mockResolvedValueOnce(antwort({}, 500));
+			expect(await m.lade()).toBe(false);
+			fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+			expect(await m.lade()).toBe(false);
+			fetchMock.mockResolvedValueOnce(antwort({}, 403));
+			expect(await m.lade()).toBe(true);
+		});
+
+		it('das Signal meldet false, wenn Zahl oder offene Liste nicht kamen', async () => {
+			fetchMock.mockResolvedValue(antwort({ offen: 0 }));
+			m.init();
+			await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+			fetchMock.mockResolvedValue(antwort({}, 500));
+			expect(await sse.handler?.()).toBe(false);
+
+			fetchMock.mockResolvedValue(antwort({ offen: 2 }));
+			expect(await sse.handler?.()).toBe(true);
+
+			m.geoeffnet = true;
+			fetchMock.mockImplementation(async (/** @type {string} */ url) =>
+				url.endsWith('/anzahl') ? antwort({ offen: 2 }) : antwort({}, 500)
+			);
+			expect(await sse.handler?.()).toBe(false);
+		});
 	});
 
 	// Der zweite Arbeitsplatz zeigte sonst die alte Zahl bis zur nächsten Anmeldung.

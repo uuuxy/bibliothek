@@ -25,7 +25,7 @@
 	 *   bestellungId: string,
 	 *   aktuell: string,
 	 *   onclose: () => void,
-	 *   onAktualisieren: () => Promise<void> | void
+	 *   onAktualisieren: () => Promise<unknown> | void
 	 * }}
 	 * aktuell — der heutige Topf ('' = ohne Zuordnung); onAktualisieren lädt die Bestellung neu.
 	 */

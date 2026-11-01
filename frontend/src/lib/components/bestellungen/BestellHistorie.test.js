@@ -190,6 +190,19 @@ describe('BestellHistorie: der Stand kommt, während die Liste offen ist', () =>
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 
+	// Danach holt die Leitung nach (liveEvents.js); die Ansicht sagt ihr, ob die Antwort kam.
+	it('meldet der Leitung, ob die Antwort kam', async () => {
+		antworte([wartet]);
+		const screen = render(BestellHistorie);
+		await screen.findByText('Buchhandlung Nord');
+		const holeNeu = () => [...(leitung.hoerer.get('bestellstand') ?? [])][0]();
+
+		expect(await holeNeu()).toBe(true);
+
+		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
+		expect(await holeNeu()).toBe(false);
+	});
+
 	// Unter dem neuen Filter stünde sonst die Liste des vorigen Topfes.
 	it('scheitert der Wechsel des Filters, steht die alte Liste nicht unter dem neuen', async () => {
 		antworte([wartet]);

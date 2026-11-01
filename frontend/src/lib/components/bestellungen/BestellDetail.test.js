@@ -176,6 +176,17 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 
+	// Danach holt die Leitung nach (liveEvents.js); die Ansicht sagt ihr, ob die Antwort kam.
+	it('meldet der Leitung, ob die Antwort kam', async () => {
+		await geoeffnet();
+		const holeNeu = () => [...(leitung.hoerer.get('bestellstand') ?? [])][0]();
+
+		expect(await holeNeu()).toBe(true);
+
+		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
+		expect(await holeNeu()).toBe(false);
+	});
+
 	it('hört nach dem Schließen nicht mehr zu', async () => {
 		const screen = await geoeffnet();
 		expect(leitung.hoerer.get('bestellstand')?.size).toBe(1);

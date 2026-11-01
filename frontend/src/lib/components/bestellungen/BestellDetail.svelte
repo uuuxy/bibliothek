@@ -56,12 +56,14 @@
 		try {
 			const antwort = await apiGet(`/api/bestellhistorie/${bestellungId}`);
 			if (nr === ladeNr) bestellung = antwort;
+			return true;
 		} catch (e) {
 			// Ein veralteter Verweis liefert 404. Die Meldung nennt den Rückweg, statt eine
 			// leere Seite stehen zu lassen, die aussieht wie eine leere Bestellung.
 			if (ersterAbruf && nr === ladeNr) {
 				fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden.';
 			}
+			return false;
 		} finally {
 			if (nr === ladeNr) laedt = false;
 		}
@@ -73,7 +75,7 @@
 	// Wechsel horcht, der nicht stattfinden kann, wäre nur eine Behauptung über den Ablauf.
 	onMount(() => {
 		void laden();
-		return abonniereNeuladen('bestellstand', () => void laden());
+		return abonniereNeuladen('bestellstand', laden);
 	});
 
 	/** @param {string} iso */

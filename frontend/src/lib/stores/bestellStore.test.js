@@ -718,4 +718,56 @@ describe('bestellStore.loadIncomingShipments: Reihenfolge', () => {
 			bestellStore.incomingShipments = [];
 		}
 	});
+
+	// Bei leerem Zulauf stünde sonst „Zulauf nicht geladen" statt „Keine Positionen".
+	it('lässt eine späte Absage keinen Fehler nennen, wenn die jüngere Anfrage kam', async () => {
+		/** @type {{ fertig: (liste: any[]) => void, nein: (grund: Error) => void }[]} */
+		const antworten = [];
+		vi.mocked(apiGet).mockImplementation(
+			() => new Promise((fertig, nein) => antworten.push({ fertig, nein }))
+		);
+		try {
+			const erste = bestellStore.loadIncomingShipments();
+			const zweite = bestellStore.loadIncomingShipments();
+
+			antworten[1].fertig([]);
+			await zweite;
+			antworten[0].nein(new Error('Zu spät'));
+
+			expect(await erste, 'die Anfrage selbst kam nicht durch').toBe(false);
+			expect(bestellStore.nichtGeladen.zulauf).toBe('');
+		} finally {
+			vi.mocked(apiGet).mockImplementation(async () => []);
+			bestellStore.nichtGeladen = {};
+		}
+	});
+
+	// Dieselbe Regel für jede Liste des Bestellwesens: Der Bedarf lädt beim Öffnen und nach dem Bestellen.
+	it('gilt ebenso für den Bedarf und die Lieferanten', async () => {
+		/** @type {((liste: any[]) => void)[]} */
+		const antworten = [];
+		vi.mocked(apiGet).mockImplementation(() => new Promise((fertig) => antworten.push(fertig)));
+		try {
+			const bedarfAlt = bestellStore.loadRecommendations();
+			const bedarfJung = bestellStore.loadRecommendations();
+			antworten[1]([{ id: 'jung' }]);
+			await bedarfJung;
+			antworten[0]([{ id: 'alt' }]);
+			await bedarfAlt;
+			expect(bestellStore.recommendations.map((/** @type {any} */ r) => r.id)).toEqual(['jung']);
+
+			const lieferantAlt = bestellStore.loadSuppliers();
+			const lieferantJung = bestellStore.loadSuppliers();
+			antworten[3]([{ id: 'jung', name: 'Jung' }]);
+			await lieferantJung;
+			antworten[2]([{ id: 'alt', name: 'Alt' }]);
+			await lieferantAlt;
+			expect(bestellStore.suppliers.map((s) => s.id)).toEqual(['jung']);
+		} finally {
+			vi.mocked(apiGet).mockImplementation(async () => []);
+			bestellStore.recommendations = [];
+			bestellStore.suppliers = [];
+			bestellStore.nichtGeladen = {};
+		}
+	});
 });
