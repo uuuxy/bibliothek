@@ -4,7 +4,7 @@ import { uiLogin, gehZu } from './helpers.js';
 // Nach dem Einlesen ist das Dateifeld im Ausweis-Designer wieder leer. Bliebe die Datei darin
 // stehen, meldete der Browser beim nächsten Wählen derselben Datei keine Änderung, und ein
 // gelöschtes Logo käme nicht mehr auf die Karte. Das Einlesen ist asynchron; nach dem await ist
-// currentTarget des Ereignisses im Browser null, das zeigt sich nur hier und nicht am Bauteil allein.
+// currentTarget des Ereignisses null.
 
 // Ein Bild aus einem Pixel, als PNG.
 const PIXEL = Buffer.from(

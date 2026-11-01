@@ -73,8 +73,8 @@ describe('SommerferienKategorie', () => {
 	});
 });
 
-// Der Wert „sommerferien" fehlt, solange die Schule nichts eingetragen hat. Die Kategorie geht
-// dann mit den Jahren des Programms auf, sonst wäre der Weg zum ersten Eintrag versperrt.
+// Hat die Schule nichts eingetragen, ist der Wert „sommerferien" leer oder fehlt. Die Kategorie
+// geht dann mit den Jahren des Programms auf, sonst wäre der Weg zum ersten Eintrag versperrt.
 describe('SommerferienKategorie: ohne eigene Termine', () => {
 	it.each([
 		['fehlt', undefined],

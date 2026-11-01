@@ -41,8 +41,7 @@ describe('GeraeteVerwaltung', () => {
 	});
 });
 
-// Nach dem Speichern geht die Maske zu. Blieb sie stehen, sähe es aus, als sei nichts geschehen,
-// und ein zweiter Klick legte das Gerät noch einmal an.
+// Nach dem Speichern geht die Maske zu. Bliebe sie stehen, sähe es aus, als sei nichts geschehen.
 describe('GeraeteVerwaltung: Speichern', () => {
 	it('schließt die Maske nach dem Anlegen', async () => {
 		vi.mocked(apiFetch).mockReset();

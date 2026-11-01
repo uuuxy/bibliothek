@@ -9,9 +9,9 @@ vi.mock('$lib/components/scanner/barcodeErkennung.js', () => ({
 
 import KameraScanner from './KameraScanner.svelte';
 
-// Die Kamera sieht denselben Strichcode in vielen Bildern hintereinander. Gemeldet wird er nur
-// einmal, sonst würde an der Theke ein Buch ausgeliehen und im nächsten Bild zurückgegeben. Ein
-// anderer Code zählt sofort, derselbe erst nach der Pause von drei Sekunden wieder.
+// Die Kamera sieht denselben Strichcode in vielen Bildern hintereinander. Bis der Aufrufer sie
+// abschaltet, wird er nur einmal gemeldet: Ein anderer Code zählt sofort, derselbe erst nach der
+// Pause von drei Sekunden wieder.
 describe('KameraScanner: ein Code wird einmal gemeldet', () => {
 	let jetzt = 1_000_000;
 
@@ -45,7 +45,7 @@ describe('KameraScanner: ein Code wird einmal gemeldet', () => {
 
 	it('meldet denselben Code einmal, einen anderen sofort, denselben nach der Pause wieder', async () => {
 		const onDecode = vi.fn();
-		render(KameraScanner, { props: { onDecode, onStatusChange: vi.fn() } });
+		const ansicht = render(KameraScanner, { props: { onDecode, onStatusChange: vi.fn() } });
 		await waitFor(() => expect(detect).toHaveBeenCalled(), { timeout: 2000 });
 
 		erkannt = 'B-1';
@@ -59,5 +59,8 @@ describe('KameraScanner: ein Code wird einmal gemeldet', () => {
 		jetzt += 3001;
 		await weitereBilder();
 		expect(onDecode.mock.calls).toEqual([['B-1'], ['B-2'], ['B-2']]);
+
+		// Hält die Schleife an, bevor das Aufräumen die Attrappen zurücknimmt.
+		ansicht.unmount();
 	});
 });
