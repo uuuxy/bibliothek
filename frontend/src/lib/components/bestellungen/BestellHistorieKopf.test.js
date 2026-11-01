@@ -18,6 +18,7 @@ const topfName = (/** @type {string} */ w) =>
 
 const basis = {
 	offeneBestaetigungen: 0,
+	standBekannt: true,
 	gesamtsumme: 255.5,
 	gesamtExemplare: 57,
 	zeigeKennzahlen: true,
@@ -55,6 +56,17 @@ describe('BestellHistorieKopf', () => {
 			'Keine Bestellung wartet auf die Bestätigung des Händlers'
 		);
 		expect(region?.querySelector('.sr-only')).toBeTruthy();
+	});
+
+	// Scheitert der Abruf oder läuft er noch, wartet vielleicht eine Bestellung.
+	it('sagt nichts über wartende Bestellungen, solange der Stand nicht bekannt ist', async () => {
+		const screen = render(BestellHistorieKopf, { ...basis, standBekannt: false, aufteilung: [] });
+		const region = screen.container.querySelector('[aria-live="polite"]');
+		expect(region?.textContent?.trim()).toBe('');
+
+		await screen.rerender({ standBekannt: true });
+		expect(screen.container.querySelector('[aria-live="polite"]')).toBe(region);
+		expect(region?.textContent).toContain('Keine Bestellung wartet');
 	});
 
 	it('zeigt die Aufteilung auf die Töpfe unter der Gesamtsumme', () => {

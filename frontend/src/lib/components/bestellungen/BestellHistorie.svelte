@@ -30,6 +30,8 @@
 		offene_bestaetigungen: 0,
 		nach_mittel: []
 	});
+	// Erst mit der ersten Antwort ist bekannt, ob etwas wartet.
+	let standBekannt = $state(false);
 
 	// Der Topf-Filter. Gefiltert wird SERVERSEITIG: Die Liste ist auf die neuesten 200
 	// Bestellungen gedeckelt, ein Filter im Browser zeigte also nur, was davon übrig
@@ -61,7 +63,10 @@
 			if (nr !== ladeNr) return;
 			bestellungen = liste || [];
 			geladenerTopf = topf;
-			if (summen) uebersicht = summen;
+			if (summen) {
+				uebersicht = summen;
+				standBekannt = true;
+			}
 			ladefehler = '';
 		} catch (e) {
 			if (nr !== ladeNr) return;
@@ -148,6 +153,7 @@
 	<div class="space-y-6">
 		<BestellHistorieKopf
 			{offeneBestaetigungen}
+			{standBekannt}
 			{gesamtsumme}
 			{gesamtExemplare}
 			{aufteilung}

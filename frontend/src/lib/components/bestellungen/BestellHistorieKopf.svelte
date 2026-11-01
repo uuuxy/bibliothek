@@ -11,6 +11,7 @@
 	/**
 	 * @type {{
 	 *   offeneBestaetigungen: number,
+	 *   standBekannt: boolean,
 	 *   gesamtsumme: number,
 	 *   gesamtExemplare: number,
 	 *   aufteilung: any[],
@@ -24,6 +25,7 @@
 	 */
 	let {
 		offeneBestaetigungen,
+		standBekannt,
 		gesamtsumme,
 		gesamtExemplare,
 		aufteilung,
@@ -46,7 +48,8 @@
 		     dieselbe Zeile ohne Nachricht — auffallen soll die Abweichung. Wer den Satz
 		     sieht, weiß ohne Scrollen, dass in der Statusspalte etwas auf ihn wartet.
 		     Die Zahl sinkt ohne Zutun, wenn der Händler bestätigt, und wird deshalb vorgelesen. In den
-		     Zeilen geht das nicht: Eine Zeile ist ein Knopf, und ein Knopf nennt nur seine Beschriftung. -->
+		     Zeilen geht das nicht: Eine Zeile ist ein Knopf, und ein Knopf nennt nur seine Beschriftung.
+		     Solange keine Antwort da ist, sagt der Kopf nichts: „Keine" wäre eine Behauptung. -->
 		<div aria-live="polite">
 			{#if offeneBestaetigungen > 0}
 				<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-warning">
@@ -55,7 +58,7 @@
 						? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
 						: `${offeneBestaetigungen} Bestellungen warten noch auf die Bestätigung des Händlers`}
 				</p>
-			{:else}
+			{:else if standBekannt}
 				<span class="sr-only">Keine Bestellung wartet auf die Bestätigung des Händlers</span>
 			{/if}
 		</div>

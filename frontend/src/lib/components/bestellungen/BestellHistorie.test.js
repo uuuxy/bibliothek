@@ -68,6 +68,21 @@ describe('BestellHistorie', () => {
 		expect(await screen.findByText('Buchhandlung Nord')).toBeTruthy();
 	});
 
+	// Im Barrierebaum stand „Keine Bestellung wartet", obwohl der Abruf gar nicht geantwortet hatte.
+	it('behauptet weder beim Laden noch nach einem Fehler, dass keine Bestellung wartet', async () => {
+		holen.mockRejectedValue(new Error('Server nicht erreichbar'));
+		const screen = render(BestellHistorie);
+		expect(screen.queryByText(/Keine Bestellung wartet/)).toBeNull();
+
+		await screen.findByRole('alert');
+		expect(screen.queryByText(/Keine Bestellung wartet/)).toBeNull();
+
+		holen.mockReset();
+		holen.mockImplementation(async (url) => (String(url).includes('uebersicht') ? SUMMEN : []));
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+		expect(await screen.findByText(/Keine Bestellung wartet/)).toBeTruthy();
+	});
+
 	// Zwei Filterwechsel kurz nacheinander: Es gilt die Antwort auf den jüngsten, auch wenn
 	// die ältere später eintrifft.
 	it('lässt eine späte Antwort auf den vorigen Filter die Liste nicht ersetzen', async () => {
