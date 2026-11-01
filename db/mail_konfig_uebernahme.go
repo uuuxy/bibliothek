@@ -52,9 +52,6 @@ func (v *Verbindung) UebernimmMailKonfig(ctx context.Context) error {
 	}
 
 	passwort := os.Getenv("SMTP_PASSWORD")
-	if passwort == "" {
-		passwort = os.Getenv("SMTP_PASS")
-	}
 	var verschluesselt []byte
 	if passwort != "" {
 		verschluesselt, err = crypto.Verschluessele([]byte(passwort))

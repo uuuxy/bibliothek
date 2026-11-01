@@ -20,10 +20,6 @@ import (
 // geprüften wären die Fotos und das Passwort des Mailservers nicht mehr zu entschlüsseln.
 const SchluesselVariable = "APP_ENCRYPTION_KEY"
 
-// FruehereVariable ist der frühere zweite Name. Das Programm liest ihn nicht; main bricht den
-// Start ab, wenn er gesetzt ist und abweicht, damit ein Rest in der Umgebung auffällt.
-const FruehereVariable = "ENCRYPTION_KEY"
-
 // SchluesselAusUmgebung liefert den Schlüssel von 32 Byte aus APP_ENCRYPTION_KEY: 32 Zeichen
 // Klartext oder 64 Zeichen Hex.
 func SchluesselAusUmgebung() ([]byte, error) {

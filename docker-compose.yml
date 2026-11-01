@@ -126,7 +126,6 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_PASS=${SMTP_PASSWORD:-}
       - SMTP_FROM=${SMTP_FROM:-}
       # Backup-Variablen stehen hier, weil Compose ohne env_file nur die hier gelisteten
       # Schlüssel durchreicht. Fehlte eine, fände der nächtliche Backup-Job im Container keinen
@@ -152,10 +151,6 @@ services:
       - IMAP_PORT=${IMAP_PORT:-}
       - SMTP_ALLOW_INSECURE_TLS=${SMTP_ALLOW_INSECURE_TLS:-}
       - SMTP_ALLOW_PLAINTEXT=${SMTP_ALLOW_PLAINTEXT:-}
-      # Der frühere Zweitname des AES-Schlüssels. Gelesen wird er nicht mehr — main.go bricht
-      # aber den Start ab, wenn er gesetzt ist und von APP_ENCRYPTION_KEY abweicht. Ohne diese
-      # Zeile käme er nie im Container an, und die Prüfung könnte dort nie auslösen.
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
     volumes:
       - bibliothek_uploads:/app/uploads
       - bibliothek_backups:/app/backups

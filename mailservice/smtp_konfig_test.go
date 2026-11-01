@@ -76,7 +76,6 @@ func TestLadeSMTPKonfigFaelltAufUmgebungZurueck(t *testing.T) {
 	t.Setenv("SMTP_PORT", "")
 	t.Setenv("SMTP_USER", "bib@umgebung.de")
 	t.Setenv("SMTP_PASSWORD", "")
-	t.Setenv("SMTP_PASS", "")
 	t.Setenv("SMTP_FROM", "")
 
 	mock := attrappe(t)

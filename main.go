@@ -208,17 +208,6 @@ func leseKonfig() (dsn, jwtGeheimnis, port string, server api.ServerKonfig) {
 		os.Exit(1)
 	}
 
-	// Der frühere Zweitname darf nicht unbemerkt danebenstehen. Er wird nicht mehr gelesen; wer ihn
-	// gesetzt hat, erwartet aber, dass er gilt. Also lieber hier laut abbrechen als mit einem
-	// Schlüssel verschlüsseln, mit dem der Betrieb nicht rechnet.
-	if alt := os.Getenv(crypto.FruehereVariable); alt != "" && alt != schluessel {
-		slog.Error("Der frühere Name des Schlüssels ist gesetzt und weicht ab. Er wird nicht mehr gelesen — "+
-			"bitte entfernen und ausschließlich den neuen Namen setzen. Achtung: Mit dem falschen Schlüssel sind "+
-			"Schülerfotos und das gespeicherte SMTP-Passwort nicht mehr entschlüsselbar.",
-			"frueher", crypto.FruehereVariable, "variable", crypto.SchluesselVariable)
-		os.Exit(1)
-	}
-
 	// Die Beispiel-Geheimnisse aus dem Repository dürfen im echten Betrieb nicht verwendet werden.
 	// Sonst könnte jeder mit Zugang zum Repository Tokens eines Admins fälschen (JWT_SECRET) oder die
 	// verschlüsselten Schülerfotos entschlüsseln (APP_ENCRYPTION_KEY).

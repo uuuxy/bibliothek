@@ -64,29 +64,6 @@ func TestSchluesselAusUmgebung(t *testing.T) {
 	}
 }
 
-// Der frühere zweite Name ENCRYPTION_KEY wird nicht gelesen. Gälte er, ginge er an jeder
-// Prüfung des Starts vorbei (Länge, Hex-Form, Beispielwerte unter ENFORCE_PROD_SECRETS), und
-// verschlüsselt würde mit einem anderen Schlüssel als dem geprüften: Die Fotos der Schüler und
-// das Passwort des Mailservers wären danach nicht mehr lesbar.
-func TestSchluesselAusUmgebung_LiestDenFrueherenNamenNicht(t *testing.T) {
-	t.Setenv(FruehereVariable, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	t.Setenv(SchluesselVariable, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-
-	schluessel, err := SchluesselAusUmgebung()
-	if err != nil {
-		t.Fatalf("SchluesselAusUmgebung() Fehler = %v", err)
-	}
-	if string(schluessel) != "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" {
-		t.Fatalf("SchluesselAusUmgebung() nahm %q: Der frühere Name %s gilt wieder", schluessel, FruehereVariable)
-	}
-
-	// Ohne den gültigen Namen trägt der frühere nichts.
-	t.Setenv(SchluesselVariable, "")
-	if _, err := SchluesselAusUmgebung(); err == nil {
-		t.Fatalf("%s allein hat gereicht: Er wird noch gelesen", FruehereVariable)
-	}
-}
-
 func TestVerschluesseleUndEntschluessele(t *testing.T) {
 	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 

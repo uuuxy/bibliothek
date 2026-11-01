@@ -74,10 +74,6 @@ func KonfigAusUmgebung() SMTPKonfig {
 		Passwort: os.Getenv("SMTP_PASSWORD"),
 		Absender: strings.TrimSpace(os.Getenv("SMTP_FROM")),
 	}
-	if k.Passwort == "" {
-		// docker-compose setzt beide Namen.
-		k.Passwort = os.Getenv("SMTP_PASS")
-	}
 	if k.Host != "" && k.Port == "" {
 		k.Port = "587"
 	}
