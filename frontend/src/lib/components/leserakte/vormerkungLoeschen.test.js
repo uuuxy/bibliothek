@@ -43,4 +43,20 @@ describe('Vormerkung löschen: ein Auftrag je Vormerkung', () => {
 		liefere(serverAntwort(503, { error: 'Datenbank nicht erreichbar' }));
 		await waitFor(() => expect(knopf.disabled).toBe(false));
 	});
+
+	// Die Akte lädt an der Theke auf ein Signal neu. Ein Enter darf danach nicht die falsche löschen.
+	it('der Fokus bleibt bei seiner Vormerkung, wenn die darüber wegfällt', async () => {
+		/** @param {string} id @param {string} titel */
+		const vormerkung = (id, titel) => ({ id, titel, status: 'wartend', erstellt_am: '2026-10-01' });
+		const zweite = vormerkung('v2', 'Faust');
+		const { rerender } = render(LeserVormerkungenKarte, {
+			vormerkungen: [vormerkung('v1', 'Momo'), zweite]
+		});
+		const knopf = screen.getAllByRole('button', { name: 'Vormerkung löschen' })[1];
+		knopf.focus();
+
+		await rerender({ vormerkungen: [zweite] });
+
+		expect(document.activeElement).toBe(knopf);
+	});
 });

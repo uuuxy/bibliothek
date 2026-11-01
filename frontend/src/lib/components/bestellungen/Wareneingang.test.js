@@ -35,7 +35,14 @@ const gruppe = (exemplare, stand = {}) => ({
 	date: '30.09.2026',
 	mit_bestaetigung: true,
 	items: [
-		{ titel: 'Titel A', isbn: '', cover_url: '', menge: exemplare.length, exemplar_ids: exemplare }
+		{
+			titel_id: 't1',
+			titel: 'Titel A',
+			isbn: '',
+			cover_url: '',
+			menge: exemplare.length,
+			exemplar_ids: exemplare
+		}
 	],
 	...stand
 });

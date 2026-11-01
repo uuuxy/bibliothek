@@ -8,7 +8,16 @@ const gruppe = (/** @type {string} */ name, /** @type {object} */ stand) => ({
 	id: name,
 	supplierName: name,
 	date: '30.09.2026',
-	items: [{ titel: `Titel ${name}`, isbn: '', cover_url: '', menge: 1, exemplar_ids: [name] }],
+	items: [
+		{
+			titel_id: name,
+			titel: `Titel ${name}`,
+			isbn: '',
+			cover_url: '',
+			menge: 1,
+			exemplar_ids: [name]
+		}
+	],
 	mit_bestaetigung: false,
 	...stand
 });
@@ -73,5 +82,35 @@ describe('WareneingangTabelle: Stand im Kopf der Bestellung', () => {
 		await screen.rerender({ incomingShipments: [gruppe('B', {}), gruppe('A', {})] });
 
 		expect(document.querySelector('[data-gruppe="A"]')).toBe(kopfVonA);
+	});
+
+	// Ein anderer Platz bucht den Titel darüber ein: An der Stelle in der Liste rückte der Fokus auf
+	// den nächsten Titel, und die Leertaste markierte den falschen.
+	it('der Fokus bleibt beim Titel, wenn der Titel darüber aus der Liste fällt', async () => {
+		/** @param {string[]} titel */
+		const bestellung = (titel) => [
+			{
+				...gruppe('A', {}),
+				items: titel.map((t) => ({
+					titel_id: t,
+					titel: t,
+					isbn: '',
+					cover_url: '',
+					menge: 1,
+					exemplar_ids: [`${t}-1`]
+				}))
+			}
+		];
+		const screen = render(WareneingangTabelle, {
+			incomingShipments: bestellung(['Alpha', 'Beta', 'Gamma']),
+			totalItems: 3
+		});
+		const kaestchen = screen.getByRole('checkbox', { name: 'Beta auswählen' });
+		kaestchen.focus();
+
+		await screen.rerender({ incomingShipments: bestellung(['Beta', 'Gamma']) });
+
+		expect(document.activeElement).toBe(kaestchen);
+		expect(kaestchen.getAttribute('aria-label')).toBe('Beta auswählen');
 	});
 });

@@ -77,8 +77,10 @@
 				Keine Positionen im Zulauf.
 			</div>
 		{:else}
-			<!-- Die Liste lädt neu, während jemand sie liest: Der Schlüssel hält jede Bestellung an ihren
-			     Zeilen, und role="status" liest vor, wenn ihr Stand ohne Zutun wechselt. -->
+			<!-- Die Liste lädt neu, während jemand sie liest: Die Schlüssel halten jede Bestellung an ihren
+			     Zeilen und jede Zeile an ihrem Titel. An der Stelle in der Liste stünde der Fokus auf dem
+			     nächsten Titel, wenn ein anderer Platz den Titel darüber einbucht, und die Leertaste
+			     markierte den falschen. role="status" liest vor, wenn der Stand ohne Zutun wechselt. -->
 			{#each incomingShipments as group (group.id)}
 				<div
 					data-gruppe={group.id}
@@ -95,7 +97,7 @@
 				</div>
 				<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
 					<tbody>
-						{#each group.items as item, _i (_i)}
+						{#each group.items as item (item.titel_id)}
 							{@const gewaehlt = item.exemplar_ids.every((/** @type {string} */ id) =>
 								gewaehlteExemplare.includes(id)
 							)}

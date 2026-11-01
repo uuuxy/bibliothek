@@ -46,7 +46,9 @@
 		</div>
 	{:else}
 		<div class="space-y-4">
-			{#each vormerkungen as v, _i (_i)}
+			<!-- Die Akte lädt an der Theke auf ein Signal der Leitung neu: An der Stelle in der Liste
+			     rückte der Fokus auf den Löschknopf der nächsten Vormerkung. -->
+			{#each vormerkungen as v (v.id)}
 				<div class="border-b border-outline-variant py-4 flex items-start justify-between">
 					<div class="flex flex-col gap-1">
 						<h4 class="font-bold text-on-surface">{v.titel}</h4>

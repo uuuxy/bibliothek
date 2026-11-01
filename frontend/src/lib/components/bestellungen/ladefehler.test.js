@@ -94,7 +94,7 @@ describe('Bestellwesen: eine Liste kommt nicht', () => {
 		const lieferung = {
 			supplierName: 'Hahn',
 			date: '01.10.2026',
-			items: [{ titel: 'Faust', exemplar_ids: ['e1'], menge: 1 }]
+			items: [{ titel_id: 't1', titel: 'Faust', exemplar_ids: ['e1'], menge: 1 }]
 		};
 		bestellStore.recommendations = [titel];
 		bestellStore.incomingShipments = [lieferung];
