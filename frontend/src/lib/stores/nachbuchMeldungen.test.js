@@ -276,6 +276,50 @@ describe('Meldungen aus dem Nachbuchen', () => {
 		});
 	});
 
+	// Der Store überlebt das Abmelden. Die Liste nennt Namen und Klassen, und das nächste Konto hat das
+	// Recht vielleicht nicht.
+	describe('die Liste bleibt nicht liegen', () => {
+		beforeEach(async () => {
+			for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
+			fetchMock.mockResolvedValueOnce(antwort([zeile('a')]));
+			await m.lade();
+		});
+
+		it('fehlt das Recht, geht auch die Liste von vorhin, ohne Meldung', async () => {
+			fetchMock.mockResolvedValueOnce(antwort({}, 403));
+			await m.lade();
+
+			expect(m.liste).toHaveLength(0);
+			expect(m.ladefehler).toMatch(/Recht/);
+			expect(snackbars.toasts).toHaveLength(0);
+		});
+
+		it('das Schließen leert sie, und ein späteres Scheitern zeigt sie nicht wieder', async () => {
+			m.schliesse();
+			expect(m.liste).toHaveLength(0);
+
+			fetchMock.mockResolvedValueOnce(serverAntwort(503, { error: 'Datenbank kurz weg' }));
+			await m.lade();
+
+			expect(m.ladefehler).toBe('Datenbank kurz weg');
+			expect(snackbars.toasts).toHaveLength(0);
+		});
+
+		it('eine Antwort, die nach dem Schließen kommt, schreibt nichts und beendet nichts', async () => {
+			/** @type {(wert: any) => void} */
+			let antworte = () => {};
+			fetchMock.mockReturnValueOnce(new Promise((fertig) => (antworte = fertig)));
+			const ladend = m.lade();
+			m.schliesse();
+			expect(m.laeuft).toBe(false);
+
+			antworte(antwort([zeile('spaet')]));
+			await ladend;
+
+			expect(m.liste).toHaveLength(0);
+		});
+	});
+
 	// Die Leitung holt nach, wenn eine Antwort nicht kam (liveEvents.js). Ein fehlendes Recht kommt
 	// auch beim nächsten Versuch nicht.
 	describe('was der Leitung gemeldet wird', () => {

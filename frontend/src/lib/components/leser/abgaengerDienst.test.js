@@ -125,6 +125,13 @@ describe('abgaengerDienst.ladeAbgaenger', () => {
 		);
 		await expect(ladeAbgaenger()).rejects.toThrow(/^Die Datenbank antwortet nicht\.$/);
 	});
+
+	// Ein fehlendes Recht nimmt die Liste weg, ein gestörtes Auffrischen nicht (Abgaenger.svelte).
+	it('nennt den Status, damit die Seite ein fehlendes Recht erkennt', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(403, { error: 'Keine Berechtigung' }));
+		await expect(ladeAbgaenger()).rejects.toMatchObject({ status: 403 });
+	});
 });
 
 describe('abgaengerDienst.zeigeKontoauszuege: im Tab', () => {

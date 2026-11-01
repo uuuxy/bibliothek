@@ -101,7 +101,14 @@ class NachbuchMeldungen {
 					res.status === 403
 						? 'Für die Meldungen fehlt das Recht, Schülerdaten zu sehen.'
 						: await leseApiFehler(res, `Meldungen nicht abrufbar (${res.status}).`);
-				if (lauf === this.#listenLauf) this.#scheitere(grund, auchQuittierte);
+				if (lauf === this.#listenLauf) {
+					// Ein fehlendes Recht ist kein gestörtes Auffrischen: Die Liste von vorhin nennt Namen.
+					if (res.status === 403) {
+						this.liste = [];
+						this.#geladenMit = null;
+					}
+					this.#scheitere(grund, auchQuittierte);
+				}
 				return res.status === 403;
 			}
 			const d = await res.json();
@@ -148,10 +155,16 @@ class NachbuchMeldungen {
 		this.lade();
 	}
 
+	// Die Liste nennt Namen und Klassen, und der Store überlebt das Abmelden (thekeLeeren.js): Sie geht
+	// mit zu, und eine Antwort, die noch unterwegs ist, schreibt nichts mehr.
 	schliesse() {
 		this.geoeffnet = false;
 		this.fehler = '';
 		this.ladefehler = '';
+		this.liste = [];
+		this.#geladenMit = null;
+		this.#listenLauf++;
+		this.laeuft = false;
 	}
 
 	/**
@@ -175,13 +188,9 @@ class NachbuchMeldungen {
 	_zuruecksetzen() {
 		this.#abmelden?.();
 		this.#abmelden = null;
-		this.#geladenMit = null;
+		this.schliesse();
 		this.offen = 0;
-		this.liste = [];
-		this.geoeffnet = false;
 		this.auchQuittierte = false;
-		this.fehler = '';
-		this.ladefehler = '';
 	}
 }
 

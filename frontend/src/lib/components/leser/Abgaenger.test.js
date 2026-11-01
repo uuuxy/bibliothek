@@ -173,6 +173,21 @@ describe('Abgaenger: die Liste bleibt aktuell', () => {
 		expect(await seite.findByText('Alle Abgänger entlastet!')).toBeTruthy();
 	});
 
+	it('fehlt das Recht, geht auch die Liste von vorhin', async () => {
+		vi.mocked(ladeAbgaenger).mockResolvedValueOnce(liste(abgaenger('a', 'Lange')));
+		const seite = render(Abgaenger);
+		await seite.findByText('Mia Lange');
+
+		vi.mocked(ladeAbgaenger).mockRejectedValueOnce(
+			Object.assign(new Error('Keine Berechtigung'), { status: 403 })
+		);
+		await holeNeuAuf('action', { event: 'rueckgabe' });
+
+		expect((await seite.findByRole('alert')).textContent).toContain('Keine Berechtigung');
+		expect(seite.queryByText('Mia Lange')).toBeNull();
+		expect(snackbars.toasts).toHaveLength(0);
+	});
+
 	it('scheitert der erste Abruf, nennt der Kasten den Grund, keine Meldung', async () => {
 		vi.mocked(ladeAbgaenger).mockRejectedValueOnce(new Error('Datenbank kurz weg'));
 		const seite = render(Abgaenger);

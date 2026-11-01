@@ -25,7 +25,6 @@
 		uiStore.oeffneAkte(student.id);
 	}
 
-	// State Runes
 	/** @type {any[]} */
 	let alleAbgaenger = $state([]);
 	let laedt = $state(true);
@@ -122,6 +121,11 @@
 			return true;
 		} catch (err) {
 			if (nr === ladeNr) {
+				// Ein fehlendes Recht ist kein gestörtes Auffrischen: Die Liste von vorhin nennt Namen.
+				if (/** @type {any} */ (err)?.status === 403) {
+					alleAbgaenger = [];
+					geladen = false;
+				}
 				// Scheitert nur das Auffrischen, bleibt die Liste stehen: An ihr wird gerade gearbeitet.
 				if (geladen) melde(`Die Liste wurde nicht aktualisiert: ${fehlertext(err)}`, 'error');
 				else
