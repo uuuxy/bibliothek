@@ -25,6 +25,10 @@ import (
 
 const genanntVorsatz = "Genannte-Felder-Probe "
 
+// genanntISBN trägt nur der Titel dieser Probe. Andere Tests des Pakets lassen Titel stehen, etwa
+// mit der Beispielnummer der ISBN-Norm, und die Tür lehnt eine vergebene Nummer ab.
+const genanntISBN = "9789997700995"
+
 type genanntProbe struct {
 	t      *testing.T
 	pool   *pgxpool.Pool
@@ -155,7 +159,7 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 		spalte string
 		soll   string
 	}{
-		"isbn":                    {"9783161484100", "isbn", `"9783161484100"`},
+		"isbn":                    {genanntISBN, "isbn", `"` + genanntISBN + `"`},
 		"title":                   {genanntVorsatz + "neu", "titel", `"` + genanntVorsatz + `neu"`},
 		"author":                  {"Neue Autorin", "autor", `"Neue Autorin"`},
 		"coverUrl":                {"/covers/neu.webp", "cover_url", `"/covers/neu.webp"`},
