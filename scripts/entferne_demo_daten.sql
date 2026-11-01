@@ -180,7 +180,7 @@ UNION ALL SELECT 'Inventur-Verluste ohne Exemplar', count(*) FROM inventur_verlu
 UNION ALL SELECT 'Abholbereit ohne Exemplar', count(*) FROM vormerkungen WHERE status = 'abholbereit' AND bereitgestellt_exemplar_id IS NULL;
 
 -- Ohne -v ausfuehren=ja bleibt es bei der Vorschau. Geprüft wird der WERT, nicht nur ob
--- die Variable gesetzt ist (Muster aus repair_fach_kategorie.sql).
+-- die Variable gesetzt ist.
 \if :{?ausfuehren}
 SELECT :'ausfuehren' = 'ja' AS schreiben \gset
 \else

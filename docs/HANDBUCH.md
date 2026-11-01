@@ -872,8 +872,7 @@ alle Zweige" — solche Bücher erscheinen deshalb unter **jedem** Zweig-Filter,
 Auswahl „Ohne Schulzweig" zeigt umgekehrt nur sie. Littera hat den Zweig nie mitgeliefert,
 der Altbestand ist also zunächst ohne. Ein Buch, dessen Coverbild von außerhalb kommt
 (Deutsche Nationalbibliothek, Google Books), erscheint im PDF ohne Bild: gedruckt wird nur,
-was auf dem Server liegt. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
-stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`).
+was auf dem Server liegt).
 (§12, Rolle Kollegium)
 
 ---
