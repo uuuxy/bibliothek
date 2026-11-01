@@ -177,6 +177,28 @@ func TestDoppelteISBNKostetDieISBNNichtDasBuch(t *testing.T) {
 	}
 }
 
+// Die Erkennung der Dubletten steht im Arbeitsspeicher, und der Savepoint rollt sie nicht zurück.
+// Ohne die Freigabe verlöre der nächste Titel seine ISBN an einen, der nicht in der Datenbank steht.
+func TestISBNReservierungWirdBeiRuecknahmeFrei(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+
+	ab := bestand(titel("1", "Kollidiert", isbnA), titel("2", "Kommt durch", isbnA))
+	erzwingeZeilenfehler(t, pool, "buecher_titel", "titel", "Kollidiert")
+
+	bericht, err := s.SchreibeBestand(context.Background(), ab)
+	if err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+	if bericht.Titel != 1 || bericht.Uebersprungen != 1 {
+		t.Fatalf("1 übernommen / 1 übersprungen erwartet, gemeldet: %d / %d", bericht.Titel, bericht.Uebersprungen)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM buecher_titel WHERE titel = 'Kommt durch' AND isbn IS NOT NULL`); n != 1 {
+		t.Errorf("Titel mit ISBN = %d, erwartet 1: Die Reservierung des zurückgenommenen Titels blieb stehen", n)
+	}
+}
+
 // TestVorhandeneISBNKollidiertNicht: läuft der Import in eine Datenbank, in der schon
 // Titel stehen (etwa aus dem MAB2-Import), wäre eine dort vergebene ISBN sonst ein 23505
 // — und der Littera-Titel ginge samt Exemplaren verloren.

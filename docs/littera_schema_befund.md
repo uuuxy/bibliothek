@@ -296,8 +296,7 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
 
 ## Der Schreibpfad — gemessen an einem echten Lauf
 
-Die Härtung steht in `internal/uebernahme`; `cmd/migrate` und die Übernahme aus Littera
-benutzen dieselbe. Bedienung: `docs/SCRIPTS.md`.
+Die Härtung steht in `internal/uebernahme`. Bedienung: `docs/SCRIPTS.md`.
 
 Vollständiger Lauf in der Generalprobe vom 28.09.2026 (`scripts/generalprobe/`, frische
 Datenbank aus den Migrationen), 22 Sekunden:

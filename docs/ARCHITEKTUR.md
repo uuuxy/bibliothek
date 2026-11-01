@@ -487,7 +487,7 @@ Stand: 29.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-na
 | **Frontend (SPA/PWA)**     | Bedienung, Ansichten, Offline-Warteschlange, Menü-Sichtbarkeit, Druckvorbereitung                     | Autorisierung (nur Blende — Autorität ist immer das Backend)          |
 | **Backend (Go)**           | Routing, Auth/RBAC, Fachlogik, Persistenz, PDF, Mail, Hintergrundjobs, Echtzeit, Auslieferung der SPA  | Rendering der Oberfläche; Zustandshaltung über Prozessgrenzen hinweg  |
 | **PostgreSQL**             | Datenhaltung **und Durchsetzung der Invarianten** (Constraints, partielle Unique-Indizes, Sichten)    | Geschäftsregeln, die Ermessen enthalten (Ersatzwert-Vorschlag, Übergehen eines Hinweises) |
-| **cmd-Werkzeuge**          | Übernahme aus Littera und aus MySQL, Backup verschlüsseln und zurückspielen, Schlüsselwechsel (5.2.3) | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
+| **cmd-Werkzeuge**          | Übernahme aus Littera, Backup verschlüsseln und zurückspielen, Schlüsselwechsel (5.2.3) | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
 
 ---
 
@@ -720,13 +720,11 @@ dieselbe Datenbank oder die Dateien einer Sicherung ([SCRIPTS.md](SCRIPTS.md)):
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cmd/littera-altbestand`, `internal/littera` | Liest den Littera-Export (`mdb-export`-CSVs), bildet ihn auf die Begriffe dieser Anwendung ab und schreibt ihn: Bestand, Personen, Barcodes, Verleih, Abgang |
 | `cmd/littera-import`                         | Übernimmt ein Katalogisat aus Littera (MAB2 als XML)                                                                                           |
-| `cmd/migrate`                                | Überträgt einmalig einen Bestand aus MySQL                                                                                                      |
 | `internal/uebernahme`                        | Das Gemeinsame **jeder** Übernahme: Savepoint je Datensatz, Einordnung von Postgres-Fehlern nach SQLSTATE, ISBN-Prüfung, Spaltenbreiten, Protokoll mit getrennten Zählern für Abwertung und Ausfall |
 | `cmd/encrypt-backup`, `cmd/restore-backup`, `cmd/rotate-encryption-key` | Sicherung verschlüsseln und zurückspielen, Schlüssel wechseln; sie liegen im Image (7.2)                                 |
 
-`internal/uebernahme` ist ein eigenes Paket, weil die Härtung gegen echtes PostgreSQL in
-`cmd/migrate` entstand: Eine zweite Fassung für Littera hätte dieselben Fehler noch einmal
-gemacht, etwa den fehlenden Savepoint je Datensatz, mit dem ein Fehler den ganzen Batch mitnimmt.
+`internal/uebernahme` hält die Härtung gegen echtes PostgreSQL von der Quelle getrennt, etwa den
+Savepoint je Datensatz, ohne den ein Fehler den ganzen Batch mitnimmt.
 
 #### 5.2.4 Fremdbibliotheken des Backends
 
@@ -749,7 +747,6 @@ gemessen über die Importe des Produktivcodes:
 | `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/kompression.go`)                                    |
 | `golang.org/x/crypto`                                          | `auth`, `internal/backupkrypto`                                  | Argon2id für den Prüfwert der Sperre (`auth/pruefwert.go`), scrypt-Schlüsselableitung des Backups |
 | `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `api`, `internal/katalogdienste`, `internal/service`, `pkg/imageutil`, `repository` | Cover skalieren (`image/draw`); Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) und Sortierung (`collate`) |
-| `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
 | `pashagolub/pgxmock/v5`, `google/go-cmp`, `uudashr/gocognit`, `golang.org/x/tools` | nur `*_test.go`                     | Prüfhilfen; cmp vergleicht zusammengesetzte Werte, gocognit misst für `komplexitaet_ratsche_test.go`, x/tools lädt die Pakete mit Typen für `sichtbarkeit_ratsche_test.go` |
 
 Nachmessen: `awk '/^require \(/{f=1;next} /^\)/{f=0} f&&!/indirect/{print $1}' go.mod` und je
@@ -3743,8 +3740,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Bewusst nicht entschieden
 
-Bundle-Splitting · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
-geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (25 Dateien
+Bundle-Splitting · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (25 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Bestandskartei-Ausdruck zum
 15.3. und 15.9. (nennt [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als
 Verfahrensvorgabe; nicht gebaut) ·

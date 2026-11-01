@@ -124,8 +124,6 @@ func TestComposeReichtDieFuenfVariablenDurch(t *testing.T) {
 // mit Parameter gelesen wird, bleibt unsichtbar. Geprüft wird nur docker-compose.yml, nicht
 // die lokale Datei.
 var composeAusnahmen = map[string]string{
-	"MYSQL_DSN":         "Werkzeug cmd/migrate (Littera-Übernahme), von Hand gestartet",
-	"PG_DSN":            "Werkzeug cmd/migrate (Littera-Übernahme), von Hand gestartet",
 	"TEST_DATABASE_URL": "internal/pgtest — nur für Tests, im Container gibt es keine Test-Datenbank",
 }
 

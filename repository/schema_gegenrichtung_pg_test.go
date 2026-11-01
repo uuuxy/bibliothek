@@ -267,7 +267,7 @@ var checkBedingungenBestand = []string{
 	// gesucht wird die Nummer, wie das Etikett sie liefert (exemplar_lmf_barcode_pg_test.go).
 	"chk_exemplar_lmf_barcode",
 	// Migration 168: Eine LMF-Nummer ist nie die Nummer eines Exemplars, in keiner Schreibweise.
-	// Bestellung, Titelmaske, Listenimport, Littera-Übernahme und cmd/migrate ziehen B-Nummern;
+	// Bestellung, Titelmaske, Listenimport und Littera-Übernahme ziehen B-Nummern;
 	// der Bestands-Import legt eine LMF-Nummer nach lmf_barcode (LegeImportExemplareAn). Nur der
 	// Barcode-Editor nimmt eine Nummer von Hand; seine Tür nennt die Ablehnung mit 400 und Satz
 	// (IstLMFNummerAlsBarcode, exemplar_barcode_tuer_pg_test.go). Gegenfrage: barcode_id und

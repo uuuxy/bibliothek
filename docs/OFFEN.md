@@ -41,7 +41,6 @@ Nur, was kein Test leisten kann.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 - [ ] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
   Danach prüfe ich in Safari, ob die Dokumente mit Personendaten im Tab erscheinen. (5.106)
-- [ ] Die Lösch-Liste mit Ja oder Nein beantworten. (5.168)
 
 ### Nebenbei
 
@@ -79,24 +78,6 @@ Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zei
 Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
-
-### 5.168 Lösch-Liste
-
-Gemessen am 31.10.2026, nichts gelöscht, Empfehlung Ja:
-
-- Bilder aus der Vite-Vorlage (`hero.png`, `svelte.svg`, `vite.svg`, `public/icons.svg` samt Eintrag
-  in `update_caddy.sh`).
-- `scripts/repair_fach_kategorie.sql` samt Satz im Handbuch; es lief am 29.10.2026.
-- `cmd/migrate` und `go-sql-driver/mysql`: Die Abdeckung von `internal/uebernahme` bleibt ohne seine
-  Tests bei 97,1 %.
-- `SMTP_PASS`, weil Compose denselben Wert setzt; der Wächter zu `ENCRYPTION_KEY`; `formatProzent`;
-  die Sonar-Ausnahme e15.
-- `mittel_konzept` 4.1 und 4.5, Schritte in 7.3, das Wort „Echtstart" in OFFEN und ARCHITEKTUR.
-- Fünf geschlossene Jules-Äste.
-- Mit Wirkung auf die Bedienung: der Knopf „Altbestand aufräumen" samt Flow 4 und die alten Adressen
-  `/lmf-plan` und `/lmf-aktionen`.
-
-Vor dem Löschen jede Stelle am dann gültigen Stand neu zählen.
 
 ### 5.169 Vorschläge #764 und #765
 

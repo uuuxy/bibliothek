@@ -61,8 +61,7 @@ func OptionenVorgabe(jetzt time.Time) Optionen {
 
 // Schreiber überträgt einen gelesenen Altbestand nach PostgreSQL.
 //
-// Die Härtung steckt in internal/uebernahme und ist dieselbe, die cmd/migrate benutzt:
-// ein Savepoint je Datensatz, Postgres-Fehler nach SQLSTATE eingeordnet, Abwertungen
+// Die Härtung steckt in internal/uebernahme: ein Savepoint je Datensatz, Postgres-Fehler nach SQLSTATE eingeordnet, Abwertungen
 // getrennt von Ausfällen protokolliert.
 type Schreiber struct {
 	pool *pgxpool.Pool

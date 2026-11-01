@@ -1,10 +1,6 @@
 // Package uebernahme trägt die Teile einer Übernahme des Altbestands, die nicht von der Quelle
 // abhängen: das Protokoll, das Abwertung und Ausfall trennt, die Einordnung der Fehler von
 // Postgres, die Prüfung der ISBN, die Spaltenbreiten und den Savepoint je Datensatz.
-//
-// Sie stehen in einem eigenen Paket, weil cmd/migrate und der Schreiber für Littera dieselben
-// brauchen. In zwei Fassungen fehlte der zweiten leicht, was die erste gelernt hat, und ein
-// fehlender Savepoint fällt lange nicht auf.
 package uebernahme
 
 import (
@@ -32,7 +28,7 @@ const (
 // Protokoll schreibt die Anmerkungen eines Laufs in eine Datei und zählt sie getrennt nach
 // Schweregrad.
 //
-// idFeld benennt den Schlüssel der Quelle („mysql_id", „littera_id"). Er steht in jeder Zeile,
+// idFeld benennt den Schlüssel der Quelle („littera_id"). Er steht in jeder Zeile,
 // damit sich der Datensatz in der Quelldatei wiederfinden lässt.
 type Protokoll struct {
 	datei     *os.File
