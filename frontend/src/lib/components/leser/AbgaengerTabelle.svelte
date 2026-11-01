@@ -64,7 +64,6 @@
 						}}
 						tabindex="0"
 						role="button"
-						aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
 						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
 					>
 						<td>{student.klasse}</td>
@@ -82,6 +81,7 @@
 							{#if student.ist_gesperrt}
 								<span class="text-sm font-medium text-error">Sperre aktiv</span>
 							{/if}
+							<span class="sr-only">Profil anzeigen</span>
 						</td>
 					</tr>
 				{/each}

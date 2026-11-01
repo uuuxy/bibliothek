@@ -316,7 +316,7 @@ export function seedBestellung() {
  */
 export async function oeffneBestellungsDetail(page, marke) {
 	await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
-	await page.getByRole('button', { name: new RegExp(`bei ${marke} öffnen`) }).click();
+	await page.getByRole('button', { name: new RegExp(`${marke}.*Bestellung öffnen`) }).click();
 	await page.getByRole('heading', { name: 'Bestellte Titel' }).waitFor({ timeout: 15_000 });
 	for (const symbol of [`Etiketten für ${marke} nachdrucken`, `Titelsatz von ${marke} öffnen`]) {
 		await page.getByRole('button', { name: symbol }).waitFor({ timeout: 15_000 });

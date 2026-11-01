@@ -45,7 +45,7 @@ test('Abgänger-Zeile klickbar → Schülerprofil öffnet sich', async ({ page }
 
 	// Die Abgänger-Zeile ist als Button zugänglich (a11y) — anklicken.
 	await page
-		.getByRole('button', { name: new RegExp(`Profil von Abgklick${s} Testschueler`) })
+		.getByRole('button', { name: new RegExp(`Abgklick${s} Testschueler.*Profil anzeigen`) })
 		.click();
 
 	// BEWEIS: Das Profil ist offen, sobald die profil-spezifischen Tabs erscheinen
@@ -94,7 +94,7 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 	// Weg 1: aus den Abgängern heraus — die Frage ist "hat der noch Bücher?"
 	await menuepunkt(page, 'Abgänger').click();
 	await page
-		.getByRole('button', { name: new RegExp(`Profil von Reiter${s} Testschueler`) })
+		.getByRole('button', { name: new RegExp(`Reiter${s} Testschueler.*Profil anzeigen`) })
 		.click();
 
 	const ausleihReiter = page.getByRole('tab', { name: 'Ausleihen & Vormerkungen' });

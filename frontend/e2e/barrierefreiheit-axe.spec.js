@@ -15,7 +15,7 @@
 // Dieses Gate wurde vor dem ersten Fix ROT gesehen (09.09.2026, 17 von 19 Tests).
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { uiLogin, gehZu, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, gehZu, seedSQL, seedBestellung, uniqueSuffix } from './helpers.js';
 
 /** Öffentlich, ohne Anmeldung. */
 const OEFFENTLICH = [
@@ -166,6 +166,27 @@ test.describe('axe: keine WCAG-A/AA-Verstöße im dunklen Schema', () => {
 	for (const [name, pfad] of INTERN) {
 		test(`intern · ${name}`, ({ page, colorScheme }) =>
 			pruefeSeite(page, name, pfad, true, colorScheme));
+	}
+});
+
+// Die Bestellhistorie zeigt ihre Zeilen erst mit einer Bestellung, und die Zeile ist ein Knopf: Eine
+// eigene Beschriftung verdeckte ihren Inhalt (axe: label-content-name-mismatch), im Grundzustand der
+// Testdatenbank fiele das nicht auf.
+test('axe: Bestellhistorie mit einer Zeile, keine WCAG-A/AA-Verstöße', async ({ page }) => {
+	test.setTimeout(90_000);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	const { marke, aufraeumen } = seedBestellung();
+	try {
+		await uiLogin(page);
+		await gehZu(page, '/bestellungen');
+		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
+		await expect(
+			page.getByRole('button', { name: new RegExp(`${marke}.*Bestellung öffnen`) })
+		).toBeVisible();
+		await zurRuhe(page);
+		expect(await verstoesse(page), 'Bestellhistorie').toEqual([]);
+	} finally {
+		aufraeumen();
 	}
 });
 

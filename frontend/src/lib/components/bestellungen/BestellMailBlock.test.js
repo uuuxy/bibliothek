@@ -190,6 +190,23 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 		expect(screen.getAllByText('Mail nicht versendet')).toHaveLength(1);
 		expect(screen.getAllByText('Wartet auf Händler')).toHaveLength(1);
 	});
+
+	// Die Zeile ist ein Knopf, und ein Knopf nennt nur seinen Namen: Mit einer eigenen Beschriftung
+	// erführe der Bildschirmleser nicht, ob die Bestellung bestätigt ist.
+	it('die Zeile der Bestellhistorie nennt den Stand auch im Namen des Knopfs', () => {
+		const screen = render(BestellHistorieTabelle, {
+			bestellungen: [{ ...gescheitert, lieferant_name: 'Naacher', mail_gescheitert_am: undefined }],
+			euro: String,
+			datum: () => '07.10.2026',
+			onOeffnen: () => {}
+		});
+
+		expect(
+			screen.getByRole('button', {
+				name: /^07\.10\.2026 Naacher .*Wartet auf Händler.*Bestellung öffnen$/
+			})
+		).toBeTruthy();
+	});
 });
 
 // Über den Link hat der Händler selbst bestätigt; ein Nachtrag in der Bibliothek nennt keinen Link.

@@ -173,7 +173,7 @@ test('Im Haus einen neuen Link erzeugen: Er steht da und trägt, der alte ist to
 		await uiLogin(page);
 		await menuepunkt(page, 'Bestellungen').click();
 		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
-		await page.getByRole('button', { name: new RegExp(`bei E2E-Naacher ${s} öffnen`) }).click();
+		await page.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) }).click();
 		await page.getByRole('button', { name: 'Neuen Link erzeugen' }).click();
 
 		const feld = page.getByLabel('Bestätigungs-Link');
@@ -265,7 +265,7 @@ test('Eine in der Historie nachgetragene Zusage steht beim Wechsel des Reiters i
 		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
 
 		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
-		await page.getByRole('button', { name: new RegExp(`bei E2E-Naacher ${s} öffnen`) }).click();
+		await page.getByRole('button', { name: new RegExp(`E2E-Naacher ${s}.*Bestellung öffnen`) }).click();
 		await page.getByRole('button', { name: 'Kleine Etiketten' }).click();
 		await expect(page.getByText('Bestätigung in der Bibliothek nachgetragen')).toBeVisible();
 

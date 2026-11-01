@@ -69,7 +69,10 @@ describe('AbgaengerTabelle', () => {
 			onProfil: () => {}
 		});
 		expect(getByRole('table')).toBeTruthy();
-		expect(getByRole('button', { name: /Profil von Anna Test \(Klasse 09H1\)/ })).toBeTruthy();
+		// Der Name kommt aus den Zellen: Die Zahl der Bücher hört auch der Bildschirmleser.
+		expect(
+			getByRole('button', { name: /^09H1 Anna Test .*1 überfällig.*Profil anzeigen$/ })
+		).toBeTruthy();
 		expect(getByText(/1 überfällig/)).toBeTruthy();
 	});
 });

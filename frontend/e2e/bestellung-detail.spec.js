@@ -73,7 +73,7 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 		await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
 
 		await page
-			.getByRole('button', { name: new RegExp(`bei ${LIEFERANT} öffnen`) })
+			.getByRole('button', { name: new RegExp(`${LIEFERANT}.*Bestellung öffnen`) })
 			.first()
 			.click();
 

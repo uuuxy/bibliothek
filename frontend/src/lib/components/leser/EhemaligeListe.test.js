@@ -40,7 +40,8 @@ describe('EhemaligeListe', () => {
 		const { findByRole, getByText } = render(EhemaligeListe, { onSelect: () => {} });
 
 		expect(
-			await findByRole('button', { name: 'Profil von Wera Weggegangen anzeigen' })
+			// Der Name kommt aus den Zellen, damit auch der Bildschirmleser die offenen Bücher hört.
+			await findByRole('button', { name: /Wera Weggegangen .*Profil anzeigen$/ })
 		).toBeTruthy();
 		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/schueler?status=ehemalige');
 		expect(getByText('2026')).toBeTruthy();

@@ -123,7 +123,6 @@
 						}}
 						tabindex="0"
 						role="button"
-						aria-label="Profil von {s.vorname} {s.nachname} anzeigen"
 						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
 					>
 						<td>{s.abgaenger_jahr || '–'}</td>
@@ -144,6 +143,7 @@
 							{#if s.ist_gesperrt}
 								<span class="text-sm font-medium text-error">Sperre aktiv</span>
 							{/if}
+							<span class="sr-only">Profil anzeigen</span>
 						</td>
 					</tr>
 				{/each}

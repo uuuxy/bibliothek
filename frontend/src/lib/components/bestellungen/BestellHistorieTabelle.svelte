@@ -6,7 +6,8 @@
 
      Die Zeile führt in die Detailansicht, statt aufzuklappen und dieselben Angaben noch
      einmal untereinander zu zeigen: role="button" samt Tastaturbedienung, das Chevron zeigt
-     nach rechts.
+     nach rechts. Ihren Namen nimmt sie aus den Zellen: Eine eigene Beschriftung verdeckte den
+     Stand der Bestellung vor dem Bildschirmleser (WCAG 2.5.3).
 
      Eigene Datei, weil die Historie den Detail-Zweig trägt: Beides zusammen läge über der
      200-Zeilen-Marke, die in diesem Projekt gilt. -->
@@ -52,7 +53,6 @@
 				<tr
 					role="button"
 					tabindex="0"
-					aria-label="Bestellung vom {datum(b.bestelldatum)} bei {b.lieferant_name} öffnen"
 					onclick={() => onOeffnen(b.id)}
 					onkeydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
@@ -94,6 +94,7 @@
 					<!-- Chevron nach rechts: Die Zeile führt weiter, sie klappt nicht mehr auf. -->
 					<td class="text-right">
 						<ChevronRight class="inline-block h-4 w-4 text-on-surface-variant" aria-hidden="true" />
+						<span class="sr-only">Bestellung öffnen</span>
 					</td>
 				</tr>
 			{/each}

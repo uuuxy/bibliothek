@@ -14,7 +14,7 @@ test('Bestellhistorie: der Name des Lieferanten steht ganz da, wenn die Zeile Pl
 		await gehZu(page, '/bestellungen');
 		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
-		const zeile = page.getByRole('button', { name: new RegExp(`bei ${marke} öffnen`) });
+		const zeile = page.getByRole('button', { name: new RegExp(`${marke}.*Bestellung öffnen`) });
 		await zeile.waitFor({ timeout: 15_000 });
 		const name = zeile.getByText(marke, { exact: true });
 		const mass = await name.evaluate((el) => ({
