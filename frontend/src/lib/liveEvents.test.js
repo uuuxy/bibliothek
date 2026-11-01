@@ -213,8 +213,6 @@ describe('liveEvents', () => {
 		expect(handler).toHaveBeenCalledTimes(1);
 	});
 
-	// Der Server beendet die Leitung auch, wenn die Anmeldung nicht mehr gilt. Was davon zutrifft,
-	// erfährt nur, wer nach einem Abriss fragt: bei jedem Abriss, nach trenne() nicht mehr.
 	// Was während einer Unterbrechung geschah, kommt nicht nach. Wer nur auf das Ereignis hört,
 	// zeigt danach unbemerkt den alten Stand.
 	it('abonniereNeuladen holt beim Ereignis und bei jedem Aufbau der Leitung neu', () => {
@@ -239,6 +237,8 @@ describe('liveEvents', () => {
 		expect(holeNeu).toHaveBeenCalledTimes(3);
 	});
 
+	// Der Server beendet die Leitung auch, wenn die Anmeldung nicht mehr gilt. Was davon zutrifft,
+	// erfährt nur, wer nach einem Abriss fragt: bei jedem Abriss, nach trenne() nicht mehr.
 	it('meldet jeden Abriss, solange die Leitung bestehen soll', () => {
 		const abriss = vi.fn();
 		registriereAbrissHandler(abriss);

@@ -138,13 +138,17 @@ describe('BestellHistorie: der Stand kommt, während die Liste offen ist', () =>
 		leitung.hoerer.clear();
 	});
 
+	// Dieselbe Zeile, nicht nur derselbe Text: Eine neu aufgebaute Liste nähme der Zeile den Fokus.
 	it('wechselt den Chip und die Zahl im Kopf, ohne die Liste auszutauschen', async () => {
+		const zeile = () =>
+			screen.getByRole('button', { name: /Buchhandlung Nord.*Bestellung öffnen/ });
 		antworte([wartet], { ...SUMMEN, offene_bestaetigungen: 1 });
 		const screen = render(BestellHistorie);
 		await screen.findByText('Wartet auf Händler');
 		expect(
 			screen.getByText('1 Bestellung wartet noch auf die Bestätigung des Händlers')
 		).toBeTruthy();
+		const vorher = zeile();
 
 		antworte([bestaetigt]);
 		leitung.sende('bestellstand');
@@ -153,6 +157,7 @@ describe('BestellHistorie: der Stand kommt, während die Liste offen ist', () =>
 		expect(await screen.findByText('Bestätigt · 12.10.')).toBeTruthy();
 		expect(screen.queryByText('Wartet auf Händler')).toBeNull();
 		expect(screen.queryByText(/wartet noch/)).toBeNull();
+		expect(zeile()).toBe(vorher);
 	});
 
 	// Die Liste zeigt weiter, was sie weiß, und apiGet nennt den Fehler. Ein Kasten „nicht geladen"

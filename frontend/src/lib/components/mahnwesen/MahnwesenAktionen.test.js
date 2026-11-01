@@ -132,10 +132,6 @@ describe('MahnwesenAktionen', () => {
 		}
 	});
 
-	// Ein Mahnlauf dauert je Klasse eine Mail lang; ein zweiter Start verschickte jede Mahnliste
-	// noch einmal (stores/sammelversand.svelte.js). M3, Progress indicators: „A circular
-	// indicator can be placed in a button to show that the button's action is currently in
-	// progress."
 	it('sagt es nur, wenn der Browser das Druckfenster sperrt', async () => {
 		const meldung = vi.spyOn(snackbars, 'addToast');
 		const oeffnen = vi.spyOn(window, 'open');
@@ -162,6 +158,10 @@ describe('MahnwesenAktionen', () => {
 		}
 	});
 
+	// Ein Mahnlauf dauert je Klasse eine Mail lang; ein zweiter Start verschickte jede Mahnliste
+	// noch einmal (stores/sammelversand.svelte.js). M3, Progress indicators: „A circular
+	// indicator can be placed in a button to show that the button's action is currently in
+	// progress."
 	it('sperrt „Alle anmahnen" und zeigt den Lauf, solange ein Mahnlauf läuft', async () => {
 		/** @type {(wert: any) => void} */
 		let antworte = () => {};
