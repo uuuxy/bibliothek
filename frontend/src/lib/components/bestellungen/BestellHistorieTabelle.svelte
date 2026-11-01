@@ -13,8 +13,9 @@
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { CircleCheck, Clock, ChevronRight, MailWarning } from '@lucide/svelte';
+	import { ChevronRight } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
+	import BestellStandChip from './BestellStandChip.svelte';
 	import { mittelBeschriftung } from './mittel.js';
 
 	/**
@@ -22,11 +23,10 @@
 	 *   bestellungen: any[],
 	 *   euro: (n: number) => string,
 	 *   datum: (iso: string) => string,
-	 *   kurzdatum: (iso: string) => string,
 	 *   onOeffnen: (id: string) => void
 	 * }}
 	 */
-	let { bestellungen, euro, datum, kurzdatum, onOeffnen } = $props();
+	let { bestellungen, euro, datum, onOeffnen } = $props();
 </script>
 
 <div class="overflow-x-auto rounded-xl border border-outline-variant bg-surface-container-lowest">
@@ -80,36 +80,8 @@
 							<span class="text-sm text-on-surface-variant">ohne Zuordnung</span>
 						{/if}
 					</td>
-					<!-- Nur Lieferanten mit dem externen Schritt und Bestellungen, deren Mail nicht
-				     rausging, tragen hier etwas. Ein „—" in jeder anderen Zeile wäre Rauschen:
-				     Auffallen soll die Abweichung. Der gescheiterte Versand steht zuerst, ohne
-				     Mail kann der Händler nichts bestätigen. -->
 					<td class="whitespace-nowrap">
-						{#if b.mail_gescheitert_am}
-							<StatusChip
-								ton="fehler"
-								icon={MailWarning}
-								text="Mail nicht versendet"
-								tip="Die Bestellmail ist nicht rausgegangen. In der Bestellung lässt sie sich erneut senden."
-							/>
-						{:else if b.mit_bestaetigung && b.bestaetigt_am}
-							<StatusChip
-								ton="erfolg"
-								icon={CircleCheck}
-								text="Bestätigt"
-								detail={kurzdatum(b.bestaetigt_am)}
-								tip={b.bestaetigt_durch === 'lieferant'
-									? 'Der Lieferant hat die Bestellung über den Link bestätigt'
-									: 'Bestätigung wurde in der Bibliothek von Hand nachgetragen'}
-							/>
-						{:else if b.mit_bestaetigung}
-							<StatusChip
-								ton="warten"
-								icon={Clock}
-								text="Wartet auf Händler"
-								tip="Der Lieferant hat die Bestellung noch nicht über den Link bestätigt"
-							/>
-						{/if}
+						<BestellStandChip bestellung={b} />
 					</td>
 					<td class="text-right whitespace-nowrap tabular-nums">
 						{b.anzahl_exemplare}

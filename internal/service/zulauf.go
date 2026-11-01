@@ -19,6 +19,12 @@ type Zulaufgruppe struct {
 	Datum         string          `json:"date"`
 	Zeitpunkt     time.Time       `json:"-"`
 	Posten        []*ZulaufPosten `json:"items"`
+	// Der Stand der Bestellung unter denselben Namen wie in der Bestellhistorie, denn beide
+	// zeigen denselben Chip. Der Altbestand ohne Bestellung trägt keinen.
+	MitBestaetigung   bool       `json:"mit_bestaetigung"`
+	BestaetigtAm      *time.Time `json:"bestaetigt_am,omitempty"`
+	BestaetigtDurch   *string    `json:"bestaetigt_durch,omitempty"`
+	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
 // ZulaufPosten ist ein Titel einer Zulaufgruppe mit der Zahl und den Kennungen seiner
@@ -72,6 +78,11 @@ func LadeZulauf(ctx context.Context, pool db.Pool) ([]*Zulaufgruppe, error) {
 				Datum:         datum,
 				Zeitpunkt:     zeitpunkt,
 				Posten:        []*ZulaufPosten{},
+
+				MitBestaetigung:   e.MitBestaetigung,
+				BestaetigtAm:      e.BestaetigtAm,
+				BestaetigtDurch:   e.BestaetigtDurch,
+				MailGescheitertAm: e.MailGescheitertAm,
 			}
 			nachSchluessel[schluessel] = gruppe
 		}

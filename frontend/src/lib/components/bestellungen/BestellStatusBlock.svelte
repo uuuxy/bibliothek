@@ -44,7 +44,7 @@
 		}
 		if (!b.link_aktiv) return 'Für diese Bestellung ist kein gültiger Link unterwegs.';
 		const frist = b.link_gueltig_bis ? ` und gilt bis zum ${langdatum(b.link_gueltig_bis)}` : '';
-		return `Der Bestätigungs-Link ging mit der Bestellmail raus${frist}. Sobald der Händler dort bestätigt, erscheint es hier von selbst.`;
+		return `Der Bestätigungs-Link ging mit der Bestellmail raus${frist}. Sobald der Händler dort bestätigt, steht es beim nächsten Öffnen hier.`;
 	});
 
 	/** @param {string} iso */

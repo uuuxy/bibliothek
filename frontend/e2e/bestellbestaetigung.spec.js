@@ -215,3 +215,36 @@ test('Die Bestellung erscheint im Haus als bestätigt — ohne die Zeile aufzukl
 	await expect(zeile).toContainText('Bestätigt');
 	await expect(zeile.getByText('Wartet auf Händler')).toHaveCount(0);
 });
+
+test('Der Wareneingang nennt im Kopf der Bestellung, ob der Händler bestätigt hat', async ({
+	page
+}) => {
+	const token = `E2E-WARE-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	seedSQL(`UPDATE buecher_exemplare SET bestellstatus = 'im_zulauf'
+	         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
+
+	try {
+		await uiLogin(page);
+		await menuepunkt(page, 'Bestellungen').click();
+		await page.getByRole('tab', { name: /^Wareneingang/ }).click();
+		const kopf = page.locator('[data-gruppe]', { hasText: `E2E-Naacher ${s}` });
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+
+		await page.goto(`/bestellung/${token}`);
+		await page.getByRole('button', { name: 'Bestellung jetzt bestätigen' }).click();
+		await expect(page.getByRole('heading', { name: 'Bestellung bestätigt' })).toBeVisible();
+
+		// Die öffentliche Seite hat keine Navigation; die Sitzung trägt noch.
+		await page.goto('/');
+		await menuepunkt(page, 'Bestellungen').click();
+		await page.getByRole('tab', { name: /^Wareneingang/ }).click();
+		await expect(kopf.getByText(/Bestätigt · \d\d\.\d\d\./)).toBeVisible();
+		await expect(kopf.getByText('Wartet auf Händler')).toHaveCount(0);
+	} finally {
+		// Der Zulauf ist eine gemeinsame Liste: Ohne das stünden die Exemplare dort weiter, nach dem
+		// Teardown unter „Unbekannter Lieferant".
+		seedSQL(`UPDATE buecher_exemplare SET bestellstatus = NULL
+		         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
+	}
+});

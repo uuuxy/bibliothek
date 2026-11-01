@@ -69,6 +69,104 @@ func TestLadeExemplareImZulauf_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 	}
 }
 
+// Der Stand der Bestellung kommt an jedem Exemplar an, wie die Bestellhistorie ihn liest: Der
+// Vermerk zur Mail gilt nur, solange kein Exemplar der Bestellung eingetroffen ist, und ein
+// Exemplar ohne Bestellung trägt keinen Stand, statt das Lesen an einer NULL abzubrechen.
+func TestLadeExemplareImZulauf_TraegtDenStandDerBestellung(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	tx := beginne(t, pool)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			t.Errorf("zurückrollen: %v", err)
+		}
+	}()
+
+	bestaetigt := time.Date(2026, 10, 12, 8, 0, 0, 0, time.UTC)
+	gescheitert := time.Date(2026, 10, 13, 9, 0, 0, 0, time.UTC)
+	var titelID string
+	if err := tx.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Zulauf-Stand') RETURNING id::text`).Scan(&titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	legeBestellungAn := func(hash, durch *string, bestaetigtAm, gescheitertAm *time.Time) string {
+		t.Helper()
+		var id string
+		if err := tx.QueryRow(ctx, `INSERT INTO bestellungen_verlauf
+				(lieferant_name, lieferant_email, bestaetigungs_token_hash, bestaetigt_durch, bestaetigt_am, mail_gescheitert_am)
+			VALUES ('Zulauf-Stand Händler', 'zulauf-stand@example.org', $1, $2, $3, $4) RETURNING id::text`,
+			hash, durch, bestaetigtAm, gescheitertAm).Scan(&id); err != nil {
+			t.Fatalf("Bestellung anlegen: %v", err)
+		}
+		return id
+	}
+	legeZulaufAn := func(barcode string, bestellung *string) string {
+		t.Helper()
+		var id string
+		if err := tx.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus, bestellung_id)
+			VALUES ($1, $2, false, 'im_zulauf', $3) RETURNING id::text`, titelID, barcode, bestellung).Scan(&id); err != nil {
+			t.Fatalf("Exemplar %s anlegen: %v", barcode, err)
+		}
+		return id
+	}
+	hash := func(wert string) *string { return &wert }
+
+	ohneLink := legeBestellungAn(nil, nil, nil, nil)
+	wartet := legeBestellungAn(hash("h-wartet"), nil, nil, nil)
+	bestaetigung := legeBestellungAn(hash("h-bestaetigt"), hash("lieferant"), &bestaetigt, &gescheitert)
+	mailOffen := legeBestellungAn(hash("h-mail"), nil, nil, &gescheitert)
+	teilGeliefert := legeBestellungAn(hash("h-teil"), nil, nil, &gescheitert)
+
+	if _, err := tx.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellung_id, zugang_am)
+		VALUES ($1, 'ZST-GELIEFERT', true, $2, now())`, titelID, teilGeliefert); err != nil {
+		t.Fatalf("eingetroffenes Exemplar anlegen: %v", err)
+	}
+
+	type stand struct {
+		mitBestaetigung bool
+		bestaetigtAm    *time.Time
+		durch           string
+		gescheitertAm   *time.Time
+	}
+	erwartet := map[string]stand{
+		legeZulaufAn("ZST-OHNE-LINK", &ohneLink):      {},
+		legeZulaufAn("ZST-WARTET", &wartet):           {mitBestaetigung: true},
+		legeZulaufAn("ZST-BESTAETIGT", &bestaetigung): {mitBestaetigung: true, bestaetigtAm: &bestaetigt, durch: "lieferant"},
+		legeZulaufAn("ZST-MAIL", &mailOffen):          {mitBestaetigung: true, gescheitertAm: &gescheitert},
+		legeZulaufAn("ZST-TEIL", &teilGeliefert):      {mitBestaetigung: true},
+		legeZulaufAn("ZST-ALTBESTAND", nil):           {},
+	}
+
+	zeilen, err := LadeExemplareImZulauf(ctx, tx)
+	if err != nil {
+		t.Fatalf("LadeExemplareImZulauf: %v", err)
+	}
+	gleicheZeit := func(a, b *time.Time) bool {
+		if a == nil || b == nil {
+			return a == b
+		}
+		return a.Equal(*b)
+	}
+	for _, z := range zeilen {
+		soll, unsere := erwartet[z.ExemplarID]
+		if !unsere {
+			continue
+		}
+		delete(erwartet, z.ExemplarID)
+		durch := ""
+		if z.BestaetigtDurch != nil {
+			durch = *z.BestaetigtDurch
+		}
+		if z.MitBestaetigung != soll.mitBestaetigung || !gleicheZeit(z.BestaetigtAm, soll.bestaetigtAm) ||
+			durch != soll.durch || !gleicheZeit(z.MailGescheitertAm, soll.gescheitertAm) {
+			t.Errorf("Exemplar %s: mit=%v am=%v durch=%q Mail=%v, erwartet %+v",
+				z.ExemplarID, z.MitBestaetigung, z.BestaetigtAm, durch, z.MailGescheitertAm, soll)
+		}
+	}
+	if len(erwartet) != 0 {
+		t.Errorf("%d Exemplare fehlen in der Liste des Zulaufs", len(erwartet))
+	}
+}
+
 // Im Zulauf steht, was bestellt und noch nicht eingetroffen ist, das jüngste zuerst. Ein
 // Exemplar ohne Bestellstatus gehört nicht dazu, auch wenn es nicht ausleihbar ist. Bestellung,
 // Lieferant und Bestelldatum fehlen am Altbestand, eine Notiz und eine ISBN können fehlen:

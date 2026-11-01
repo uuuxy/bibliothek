@@ -4,6 +4,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import BestellStandChip from './BestellStandChip.svelte';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 
 	/**
@@ -78,10 +79,16 @@
 		{:else}
 			{#each incomingShipments as group, _i (_i)}
 				<div
-					class="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant bg-surface/80 px-6 py-3 backdrop-blur-sm"
+					data-gruppe={group.id}
+					class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-outline-variant bg-surface/80 px-6 py-3 backdrop-blur-sm"
 				>
 					<div class="font-bold text-on-surface">{group.supplierName}</div>
-					<div class="text-xs font-semibold text-on-surface-variant">Bestellt am {group.date}</div>
+					<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<BestellStandChip bestellung={group} />
+						<div class="text-xs font-semibold text-on-surface-variant">
+							Bestellt am {group.date}
+						</div>
+					</div>
 				</div>
 				<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
 					<tbody>

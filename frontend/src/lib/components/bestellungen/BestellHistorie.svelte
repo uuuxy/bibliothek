@@ -105,13 +105,6 @@
 		});
 	}
 
-	// Im Chip zählt Kürze: „05.08." genügt neben dem Wort „Bestätigt", das Jahr steht
-	// bereits in der Datumsspalte derselben Zeile.
-	/** @param {string} iso */
-	function kurzdatum(iso) {
-		return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-	}
-
 	/** @param {string} id */
 	function oeffne(id) {
 		geoeffneteId = id;
@@ -172,13 +165,7 @@
 				{/if}
 			</div>
 		{:else}
-			<BestellHistorieTabelle
-				{bestellungen}
-				euro={formatEuro}
-				{datum}
-				{kurzdatum}
-				onOeffnen={oeffne}
-			/>
+			<BestellHistorieTabelle {bestellungen} euro={formatEuro} {datum} onOeffnen={oeffne} />
 
 			<!-- Ehrlich sagen, dass die Liste nicht alles zeigt. Ohne den Satz sucht jemand eine
 		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->

@@ -184,11 +184,31 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 			bestellungen: zeilen,
 			euro: String,
 			datum: () => '07.10.2026',
-			kurzdatum: () => '07.10.',
 			onOeffnen: () => {}
 		});
 
 		expect(screen.getAllByText('Mail nicht versendet')).toHaveLength(1);
 		expect(screen.getAllByText('Wartet auf Händler')).toHaveLength(1);
+	});
+});
+
+// Über den Link hat der Händler selbst bestätigt; ein Nachtrag in der Bibliothek nennt keinen Link.
+describe('BestellStatusBlock: die Quittung', () => {
+	const bestaetigt = (/** @type {string} */ durch) =>
+		render(BestellStatusBlock, {
+			b: /** @type {any} */ ({
+				id: 'b1',
+				mit_bestaetigung: true,
+				bestaetigt_am: '2026-10-12T10:00:00Z',
+				bestaetigt_durch: durch
+			}),
+			onAktualisieren: async () => {}
+		});
+
+	it('nennt den Link nur, wenn der Händler ihn benutzt hat', () => {
+		expect(bestaetigt('lieferant').container.textContent).toContain('über den zugeschickten Link');
+		expect(bestaetigt('bibliothek').container.textContent).not.toContain(
+			'über den zugeschickten Link'
+		);
 	});
 });

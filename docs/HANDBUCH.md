@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-31. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-01. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -650,7 +650,8 @@ Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücher
 (Schulträger)_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
 sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich der Topf einer
 Bestellung nachträglich mit Grund korrigieren) ·
-**Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
+**Wareneingang** (Positionen einbuchen → Etiketten; der Kopf jeder Bestellung
+nennt ihren Stand: bestätigt, wartet auf den Händler oder Mail nicht versendet) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
 im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·

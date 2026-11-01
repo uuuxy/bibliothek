@@ -21,6 +21,12 @@ type ZulaufExemplar struct {
 	BestellungID  *string
 	LieferantName *string
 	Bestelldatum  *time.Time
+	// Der Stand der Bestellung, wie ihn die Bestellhistorie liest. Ohne Bestellung ist
+	// MitBestaetigung false und die Zeiger bleiben leer.
+	MitBestaetigung   bool
+	BestaetigtAm      *time.Time
+	BestaetigtDurch   *string
+	MailGescheitertAm *time.Time
 }
 
 // LadeExemplareImZulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, das jüngste
@@ -29,7 +35,8 @@ func LadeExemplareImZulauf(ctx context.Context, db Datenbank) ([]ZulaufExemplar,
 	rows, err := db.Query(ctx, `
 		SELECT e.id, e.titel_id, e.erstellt_am, COALESCE(e.zustand_notiz, ''), t.titel, COALESCE(t.isbn, ''),
 		       `+sqlCoverOderDNB("t")+`,
-		       e.bestellung_id::text, b.lieferant_name, b.bestelldatum
+		       e.bestellung_id::text, b.lieferant_name, b.bestelldatum,
+		       `+sqlBestellungMitBestaetigung+`, b.bestaetigt_am, b.bestaetigt_durch, `+sqlBestellmailOffen+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		LEFT JOIN bestellungen_verlauf b ON b.id = e.bestellung_id
@@ -47,7 +54,8 @@ func LadeExemplareImZulauf(ctx context.Context, db Datenbank) ([]ZulaufExemplar,
 	for rows.Next() {
 		var e ZulaufExemplar
 		if err := rows.Scan(&e.ExemplarID, &e.TitelID, &e.ErstelltAm, &e.ZustandNotiz, &e.Titel, &e.ISBN, &e.CoverURL,
-			&e.BestellungID, &e.LieferantName, &e.Bestelldatum); err != nil {
+			&e.BestellungID, &e.LieferantName, &e.Bestelldatum,
+			&e.MitBestaetigung, &e.BestaetigtAm, &e.BestaetigtDurch, &e.MailGescheitertAm); err != nil {
 			return nil, err
 		}
 		exemplare = append(exemplare, e)

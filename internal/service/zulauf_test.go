@@ -10,9 +10,10 @@ import (
 )
 
 // Spalten der Zulauf-Abfrage: die sieben alten plus bestellung_id, lieferant_name,
-// bestelldatum (NULL bei Altbestand ohne Bestellung).
+// bestelldatum (NULL bei Altbestand ohne Bestellung) und der Stand der Bestellung.
 var zulaufSpalten = []string{"id", "titel_id", "erstellt_am", "zustand_notiz", "titel", "isbn", "cover_url",
-	"bestellung_id", "lieferant_name", "bestelldatum"}
+	"bestellung_id", "lieferant_name", "bestelldatum",
+	"mit_bestaetigung", "bestaetigt_am", "bestaetigt_durch", "mail_gescheitert_am"}
 
 const zulaufAbfrage = `LEFT JOIN bestellungen_verlauf b ON b\.id = e\.bestellung_id\s*WHERE e\.ist_ausleihbar = false\s*AND e\.bestellstatus IS NOT NULL\s*AND e\.ist_ausgesondert = false\s*ORDER BY e\.erstellt_am DESC`
 
@@ -28,16 +29,18 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 	bestellt := time.Date(2026, 9, 29, 22, 30, 0, 0, time.UTC)
 	alt := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
 	haendler := "Buchhandlung Probe"
+	bestaetigt := time.Date(2026, 10, 12, 8, 0, 0, 0, time.UTC)
+	gescheitert := time.Date(2026, 9, 29, 22, 31, 0, 0, time.UTC)
 
 	rows := pgxmock.NewRows(zulaufSpalten).
 		// Zwei Exemplare derselben Bestellung und desselben Titels: eine Gruppe, eine Position, Menge 2.
-		AddRow("ex1", "t1", bestellt, "Im Zulauf - "+haendler, "Titel 1", "123", "cover1", ptr("B1"), &haendler, &bestellt).
-		AddRow("ex2", "t1", bestellt, "Im Zulauf - "+haendler, "Titel 1", "123", "cover1", ptr("B1"), &haendler, &bestellt).
+		AddRow("ex1", "t1", bestellt, "Im Zulauf - "+haendler, "Titel 1", "123", "cover1", ptr("B1"), &haendler, &bestellt, true, &bestaetigt, ptr("lieferant"), nil).
+		AddRow("ex2", "t1", bestellt, "Im Zulauf - "+haendler, "Titel 1", "123", "cover1", ptr("B1"), &haendler, &bestellt, true, &bestaetigt, ptr("lieferant"), nil).
 		// Zweiter Topf am selben Tag beim selben Händler: eigene Gruppe.
-		AddRow("ex3", "t2", bestellt, "Bestellt (ohne Vorab-Barcode) - "+haendler, "Titel 2", "456", "cover2", ptr("B2"), &haendler, &bestellt).
+		AddRow("ex3", "t2", bestellt, "Bestellt (ohne Vorab-Barcode) - "+haendler, "Titel 2", "456", "cover2", ptr("B2"), &haendler, &bestellt, true, nil, nil, &gescheitert).
 		// Altbestand ohne Bestellung (vor Migration 063): der Name kommt aus der Notiz.
-		AddRow("ex4", "t3", alt, "Im Zulauf - Lieferant A", "Titel 3", "", "", nil, nil, nil).
-		AddRow("ex5", "t4", alt, "andere notiz", "Titel 4", "", "", nil, nil, nil)
+		AddRow("ex4", "t3", alt, "Im Zulauf - Lieferant A", "Titel 3", "", "", nil, nil, nil, false, nil, nil, nil).
+		AddRow("ex5", "t4", alt, "andere notiz", "Titel 4", "", "", nil, nil, nil, false, nil, nil, nil)
 
 	mock.ExpectQuery(zulaufAbfrage).WillReturnRows(rows)
 
@@ -95,6 +98,25 @@ func TestLadeZulauf_GruppiertNachBestellung(t *testing.T) {
 		if p.TitelID != "t1" || p.Titel != "Titel 1" || p.ISBN != "123" || p.CoverURL != "cover1" ||
 			len(p.ExemplarIDs) != 2 || p.ExemplarIDs[0] != "ex1" || p.ExemplarIDs[1] != "ex2" {
 			t.Errorf("Position der Bestellung B1: %+v", *p)
+		}
+	}
+	// Die Gruppe trägt den Stand ihrer Bestellung, der Altbestand keinen.
+	for _, g := range groups {
+		switch g.ID {
+		case "B1":
+			if !g.MitBestaetigung || g.BestaetigtAm == nil || !g.BestaetigtAm.Equal(bestaetigt) ||
+				g.BestaetigtDurch == nil || *g.BestaetigtDurch != "lieferant" || g.MailGescheitertAm != nil {
+				t.Errorf("Stand von B1: %+v", *g)
+			}
+		case "B2":
+			if !g.MitBestaetigung || g.BestaetigtAm != nil || g.BestaetigtDurch != nil ||
+				g.MailGescheitertAm == nil || !g.MailGescheitertAm.Equal(gescheitert) {
+				t.Errorf("Stand von B2: %+v", *g)
+			}
+		default:
+			if g.MitBestaetigung || g.BestaetigtAm != nil || g.BestaetigtDurch != nil || g.MailGescheitertAm != nil {
+				t.Errorf("der Altbestand %q trägt einen Stand: %+v", g.ID, *g)
+			}
 		}
 	}
 	// Neueste Bestellung zuerst.
