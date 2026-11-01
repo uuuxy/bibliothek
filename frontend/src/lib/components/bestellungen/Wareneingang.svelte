@@ -1,5 +1,7 @@
 <script>
+	import { onMount } from 'svelte';
 	import { apiPost } from '../../apiFetch.js';
+	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import WareneingangTabelle from './WareneingangTabelle.svelte';
@@ -7,6 +9,10 @@
 	import Button from '../ui/Button.svelte';
 
 	let { incomingShipments = [], onBack, onReceived } = $props();
+
+	// Der Stand im Kopf einer Bestellung ändert sich außerhalb dieses Reiters: Der Händler bestätigt
+	// über seinen Link, die Historie trägt nach oder sendet neu. Die Liste kommt deshalb frisch.
+	onMount(() => void bestellStore.loadIncomingShipments());
 
 	let laeuft = $state(false);
 	/** @type {string[]} */

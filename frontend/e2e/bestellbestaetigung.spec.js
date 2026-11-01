@@ -248,3 +248,31 @@ test('Der Wareneingang nennt im Kopf der Bestellung, ob der Händler bestätigt 
 		         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
 	}
 });
+
+test('Eine in der Historie nachgetragene Zusage steht beim Wechsel des Reiters im Wareneingang', async ({
+	page
+}) => {
+	const token = `E2E-NACH-${uniqueSuffix()}`;
+	const s = seedBestellungMitLink(token);
+	seedSQL(`UPDATE buecher_exemplare SET bestellstatus = 'im_zulauf'
+	         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
+
+	try {
+		await uiLogin(page);
+		await menuepunkt(page, 'Bestellungen').click();
+		await page.getByRole('tab', { name: /^Wareneingang/ }).click();
+		const kopf = page.locator('[data-gruppe]', { hasText: `E2E-Naacher ${s}` });
+		await expect(kopf.getByText('Wartet auf Händler')).toBeVisible();
+
+		await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
+		await page.getByRole('button', { name: new RegExp(`bei E2E-Naacher ${s} öffnen`) }).click();
+		await page.getByRole('button', { name: 'Kleine Etiketten' }).click();
+		await expect(page.getByText('Bestätigung in der Bibliothek nachgetragen')).toBeVisible();
+
+		await page.getByRole('tab', { name: /^Wareneingang/ }).click();
+		await expect(kopf.getByText(/Bestätigt · \d\d\.\d\d\./)).toBeVisible();
+	} finally {
+		seedSQL(`UPDATE buecher_exemplare SET bestellstatus = NULL
+		         WHERE barcode_id LIKE 'E2E-BC-${s}-%';`);
+	}
+});

@@ -114,6 +114,7 @@ class BestellStore {
 
 	/** Zeitpunkt des letzten vollständigen Ladens (0 = noch nie). */
 	#zuletztGeladen = 0;
+	#zulaufLauf = 0;
 
 	/**
 	 * Lädt die Arbeitsdaten des Bestellwesens.
@@ -121,7 +122,8 @@ class BestellStore {
 	 * Der Store ist ein Singleton, seine Daten überleben den Unmount der Ansicht, und Bestellwesen
 	 * wird bei jedem Tab-Wechsel neu aufgebaut. Deshalb stehen vorhandene Daten sofort da und
 	 * werden erst nach frischeDauerMs im Hintergrund aufgefrischt. Nach jeder verändernden
-	 * Aktion (Wareneingang, Bestellung) laden die Aufrufer ohnehin gezielt neu.
+	 * Aktion (Wareneingang, Bestellung) laden die Aufrufer ohnehin gezielt neu, den Zulauf
+	 * außerdem sein Reiter beim Öffnen (Wareneingang.svelte).
 	 */
 	async init() {
 		const frischeDauerMs = 60_000;
@@ -174,19 +176,13 @@ class BestellStore {
 		if (liste) this.suppliers = liste;
 		// Auswahl per ID stabil halten; Index-basierte Auswahl kippt bei Reload/Umsortierung
 		//
-		// Vorgewaehlt wird der als Standard hinterlegte Lieferant. Vorher gewann schlicht der
-		// alphabetisch erste (die Liste kommt mit ORDER BY name) — wer immer beim selben
-		// Haendler bestellt, musste ihn also jedes Mal neu auswaehlen, und einmal vergessen
-		// heisst, die Bestellung geht an den falschen raus.
+		// Vorgewählt wird der als Standard hinterlegte Lieferant: Einmal vergessen hieße, die
+		// Bestellung geht an den falschen raus.
 		const standard = this.suppliers.find((s) => s.ist_hauptlieferant);
 		const auswahlUngueltig = !this.suppliers.some((s) => s.id === this.selectedSupplierId);
 
-		// Der hinterlegte Standard muss auch dann greifen, wenn schon eine GÜLTIGE Auswahl
-		// steht. Vorher prüfte hier nur `auswahlUngueltig` — wer einen Lieferanten neu als
-		// Standard markierte, sah deshalb nichts passieren: Die Liste wurde neu geladen, die
-		// alte Auswahl war weiterhin gültig, und der frische Standard blieb wirkungslos. In
-		// der Datenbank stand er richtig, nur die Oberfläche folgte nicht. Ein Haken, der
-		// nichts tut, ist schlimmer als keiner — man verlässt sich darauf.
+		// Der hinterlegte Standard greift auch, wenn schon eine gültige Auswahl steht. Sonst bliebe
+		// ein neu markierter Standard an der Oberfläche wirkungslos.
 		//
 		// Nur bei LEEREM Warenkorb: Mitten in einer angefangenen Bestellung darf der
 		// Lieferant nicht unter der Hand wechseln, sonst geht sie an den falschen raus.
@@ -225,9 +221,12 @@ class BestellStore {
 		}
 	}
 
+	// Es gilt die jüngste Anfrage: Der Reiter lädt beim Öffnen, das Einbuchen danach. Käme die erste
+	// Antwort zuletzt, stünden eben eingebuchte Exemplare wieder in der Liste.
 	async loadIncomingShipments() {
+		const lauf = ++this.#zulaufLauf;
 		const liste = await this.#hole('zulauf', '/api/bestellungen/zulauf');
-		if (liste) this.incomingShipments = liste;
+		if (liste && lauf === this.#zulaufLauf) this.incomingShipments = liste;
 		return liste !== null;
 	}
 

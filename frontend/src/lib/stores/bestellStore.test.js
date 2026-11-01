@@ -695,3 +695,27 @@ describe('bestellStore: später Preisvorschlag', () => {
 		expect(await vorschlagNach(0)).toBe(19.9);
 	});
 });
+
+// Der Reiter Wareneingang lädt beim Öffnen, das Einbuchen danach. Es gilt die jüngste Anfrage, auch
+// wenn die ältere später antwortet: Sonst stünden eben eingebuchte Exemplare wieder in der Liste.
+describe('bestellStore.loadIncomingShipments: Reihenfolge', () => {
+	it('lässt eine späte Antwort die jüngere nicht ersetzen', async () => {
+		/** @type {((liste: any[]) => void)[]} */
+		const antworten = [];
+		vi.mocked(apiGet).mockImplementation(() => new Promise((fertig) => antworten.push(fertig)));
+		try {
+			const erste = bestellStore.loadIncomingShipments();
+			const zweite = bestellStore.loadIncomingShipments();
+
+			antworten[1]([{ id: 'jung', items: [] }]);
+			await zweite;
+			antworten[0]([{ id: 'alt', items: [] }]);
+			await erste;
+
+			expect(bestellStore.incomingShipments.map((/** @type {any} */ g) => g.id)).toEqual(['jung']);
+		} finally {
+			vi.mocked(apiGet).mockImplementation(async () => []);
+			bestellStore.incomingShipments = [];
+		}
+	});
+});
