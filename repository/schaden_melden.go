@@ -173,14 +173,14 @@ func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, meldung schadensMeldu
 
 	// Blieb der Dialog offen, während das Buch zurückkam und neu verliehen wurde, träfe die
 	// Aussonderung die Ausleihe eines anderen.
-	var fremdeAktive int
+	var fremdeAktive bool
 	if err := tx.QueryRow(ctx, `
-		SELECT count(*) FROM ausleihen
-		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
+		SELECT EXISTS(SELECT 1 FROM ausleihen
+		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2)
 	`, a.exemplarID, meldung.ausleiheID).Scan(&fremdeAktive); err != nil {
 		return "", false, err
 	}
-	if fremdeAktive > 0 {
+	if fremdeAktive {
 		return "", false, ErrExemplarNeuVerliehen
 	}
 

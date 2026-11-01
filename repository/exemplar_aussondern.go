@@ -48,12 +48,12 @@ func (a *KatalogAbfragen) SondereExemplarAus(ctx context.Context, exemplarID str
 		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
 	}
 
-	var offeneAusleihen int
-	err = tx.QueryRow(ctx, "SELECT count(*) FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL", exemplarID).Scan(&offeneAusleihen)
+	var offeneAusleihen bool
+	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL)", exemplarID).Scan(&offeneAusleihen)
 	if err != nil {
 		return fmt.Errorf("failed to check active loans for copy: %w", err)
 	}
-	if offeneAusleihen > 0 {
+	if offeneAusleihen {
 		return ErrExemplarNochVerliehen
 	}
 
