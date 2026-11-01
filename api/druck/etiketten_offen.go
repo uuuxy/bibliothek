@@ -3,8 +3,6 @@ package druck
 import (
 	"errors"
 	"net/http"
-	"strings"
-	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -76,58 +74,13 @@ func (t *Tueren) EtikettenOffen() http.HandlerFunc {
 // Exemplare es über die gezeigten hinaus gibt.
 func (t *Tueren) EtikettenOffenAnzahl() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		// Mit Stichtag nennt dieselbe Tür, wie viele Exemplare das Aufräumen des Altbestands
-		// träfe: die Zahl, die der Betreiber vor dem Bestätigen sieht.
-		bisText := strings.TrimSpace(r.URL.Query().Get("bis"))
-		var bis *time.Time
-		if bisText != "" {
-			geparst, err := time.Parse(tuer.DatumsformatISO, bisText)
-			if err != nil {
-				return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
-			}
-			bis = &geparst
-		}
-
 		anzahl, err := repository.ZaehleEtikettenExemplare(r.Context(), t.DB.Pool,
-			r.URL.Query().Get("status"), bis, etikettenSuchtext(r))
+			r.URL.Query().Get("status"), etikettenSuchtext(r))
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)
 		}
 
 		tuer.AntworteJSON(w, http.StatusOK, map[string]int{"anzahl": anzahl})
-		return nil
-	})
-}
-
-// etikettenAltbestandAnfrage nennt den Stichtag, bis zu dem aufgeräumt wird.
-type etikettenAltbestandAnfrage struct {
-	Bis string `json:"bis"` // JJJJ-MM-TT, einschließlich
-}
-
-// EtikettenAltbestandVermerken vermerkt alle Exemplare bis zu einem Stichtag als gedruckt.
-//
-// Für den Altbestand hat niemand ein Etikett vermerkt, und ohne Vermerk zeigt die
-// Nachdruck-Liste den ganzen Bestand. Den Stichtag wählt der Betreiber, weil nur er weiß, ab
-// wann sein Regal beklebt ist; eine Migration träfe auch die Lieferung, die wirklich kein
-// Etikett hat. Die Oberfläche nennt vorher die Zahl und verlangt eine Bestätigung;
-// zurücknehmen lässt sich der Vermerk mit EtikettenZuruecksetzen.
-func (t *Tueren) EtikettenAltbestandVermerken() http.HandlerFunc {
-	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
-		var req etikettenAltbestandAnfrage
-		if !tuer.LeseAnfrage(w, r, &req) {
-			return nil
-		}
-		bis, err := time.Parse(tuer.DatumsformatISO, req.Bis)
-		if err != nil {
-			return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
-		}
-
-		markiert, err := repository.VermerkeAltbestandEtiketten(r.Context(), t.DB.Pool, bis)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Vermerken des Altbestands", err)
-		}
-
-		tuer.AntworteJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
 		return nil
 	})
 }
@@ -163,10 +116,9 @@ func (t *Tueren) EtikettenGedrucktVermerken() http.HandlerFunc {
 // EtikettenZuruecksetzen nimmt den Vermerk „Etikett gedruckt" wieder zurück.
 //
 // Ob ein Etikett aus dem Drucker kam, weiß das Programm nicht: Der Druck wird gegengebucht,
-// sobald das PDF erzeugt ist (vermerkeGedruckt in frontend/src/lib/stores/etiketten.svelte.js),
-// und ein zu später Stichtag beim Altbestand trifft auch die frische Lieferung. Nach einem
-// Papierstau oder einem solchen Stichtag holt diese Tür die Exemplare in die Liste zurück; erst
-// damit ist auch das Vermerken von Hand unbedenklich.
+// sobald das PDF erzeugt ist (vermerkeGedruckt in frontend/src/lib/stores/etiketten.svelte.js).
+// Nach einem Papierstau holt diese Tür die Exemplare in die Liste zurück; erst damit ist auch das
+// Vermerken von Hand unbedenklich.
 func (t *Tueren) EtikettenZuruecksetzen() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		var req etikettenVermerkAnfrage

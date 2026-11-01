@@ -180,7 +180,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | Go-Tests                          | 147.685 Zeilen in 1.032 Testdateien        |
 | Svelte/JavaScript (`frontend/src`) | 101.666 Zeilen in 900 Dateien, davon 319 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 198 Dateien, davon 189 Specs               |
-| Registrierte HTTP-Routen          | 226                                        |
+| Registrierte HTTP-Routen          | 225                                        |
 | Datenbank-Migrationen             | 173 Dateien, die höchste Nummer ist 170    |
 | Tabellen / Sichten in `schema.sql`| 43 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 

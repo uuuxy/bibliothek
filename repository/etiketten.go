@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"time"
 )
 
 // etikettenStatusBedingung übersetzt den Status der Nachdruck-Liste in sein Prädikat. Vorgabe
@@ -66,35 +65,19 @@ func LadeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche str
 }
 
 // ZaehleEtikettenExemplare zählt die Exemplare eines Status mit denselben Filtern wie die
-// Liste; mit bis nur die, die bis zu diesem Tag in den Bestand kamen. Derselbe JOIN wie in der
-// Liste, er ist verlustfrei: titel_id ist NOT NULL.
-func ZaehleEtikettenExemplare(ctx context.Context, db Datenbank, status string, bis *time.Time, suche string) (int, error) {
+// Liste. Derselbe JOIN wie in der Liste, er ist verlustfrei: titel_id ist NOT NULL.
+func ZaehleEtikettenExemplare(ctx context.Context, db Datenbank, status string, suche string) (int, error) {
 	var anzahl int
 	err := db.QueryRow(ctx, `
 			SELECT count(*)
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE `+etikettenStatusBedingung(status)+`
-			  AND ($1::date IS NULL OR COALESCE(e.zugang_am, e.erworben_am) <= $1)
-			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%'
-			       OR e.lmf_barcode ILIKE '%' || $2 || '%')`,
-		bis, suche,
+			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%'
+			       OR e.lmf_barcode ILIKE '%' || $1 || '%')`,
+		suche,
 	).Scan(&anzahl)
 	return anzahl, err
-}
-
-// VermerkeAltbestandEtiketten vermerkt jedes Exemplar ohne Vermerk, das bis zum Stichtag in
-// den Bestand kam, als beklebt und liefert die Zahl der Zeilen. Ausgesonderte bleiben außen
-// vor.
-func VermerkeAltbestandEtiketten(ctx context.Context, db Datenbank, bis time.Time) (int64, error) {
-	tag, err := db.Exec(ctx, `
-			UPDATE buecher_exemplare e SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE `+EtikettOffenBedingung+` AND COALESCE(e.zugang_am, e.erworben_am) <= $1
-		`, bis)
-	if err != nil {
-		return 0, err
-	}
-	return tag.RowsAffected(), nil
 }
 
 // VermerkeEtikettenGedruckt vermerkt die genannten Exemplare als beklebt und liefert die Zahl

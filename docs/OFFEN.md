@@ -165,9 +165,7 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
 
 - Flows 1–3 mit dem Sekretariat: LUSD-Import, Versetzung (vor dem Schuljahreswechsel),
   Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten.
-- Flow 4 entfällt: Die Littera-Übernahme setzt den Etikett-Vermerk selbst
-  (`internal/littera/schreiber_bestand.go`).
-- Flow 5: Selbstanmeldung einer Lehrkraft.
+- Flow 4: Selbstanmeldung einer Lehrkraft.
 
 ### 7.8 Am Server nachsehen
 

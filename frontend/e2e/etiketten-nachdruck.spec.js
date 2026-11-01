@@ -238,61 +238,10 @@ test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es 
 	await expect(page.getByLabel(`${offenerTitel} (E2E-HO-${s}) auswählen`)).toBeVisible();
 });
 
-// Der Altbestand. etikett_gedruckt wurde bis vor Kurzem NIRGENDS gesetzt — für den
-// gesamten Bestand steht deshalb "kein Etikett", nicht weil keins da wäre, sondern weil es
-// nie jemand vermerkt hat. Ohne Aufräummöglichkeit zeigte diese Liste dauerhaft den
-// ganzen Bestand, und der Hinweis im Bestellwesen nennte eine Zahl ohne Bedeutung.
-//
-// Bewusst KEINE Migration: Die hätte beim Update stillschweigend zugeschlagen und dabei
-// genau die Exemplare mitversteckt, wegen denen die Liste überhaupt entstand. Der Stichtag
-// gehört dem Betreiber — deshalb prüft der Test auch, dass NEUERES stehen bleibt.
-test('Altbestand aufräumen vermerkt nur Exemplare bis zum Stichtag', async ({ page }) => {
-	const s = uniqueSuffix();
-	seedSQL(`
-		WITH t AS (
-			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Alt-Titel ${s}', 'A') RETURNING id
-		)
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
-		SELECT t.id, 'E2E-ALT-${s}', false, CURRENT_DATE - 400 FROM t
-		UNION ALL
-		SELECT t.id, 'E2E-NEU-${s}', false, CURRENT_DATE FROM t;
-	`);
-
-	await uiLogin(page);
-	await menuepunkt(page, 'Druck-Center').click();
-	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
-
-	// Seit dem 04.09.2026 ein Dialog statt eines <details> am Fuß der Liste: Die Aktion ist
-	// unumkehrbar und stand ausgerechnet hinter 300 Zeilen Scrollen.
-	await page.getByRole('button', { name: 'Altbestand aufräumen' }).click();
-	// Stichtag: gestern — trifft das alte Exemplar, nicht das heutige.
-	const gestern = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-	await page.locator('#altbestand-stichtag').fill(gestern);
-	await page.locator('#altbestand-stichtag').dispatchEvent('change');
-
-	// Die Zahl steht VOR der Bestätigung — die Aktion ist nicht umkehrbar.
-	await expect(page.getByText(/Exemplare.*als erledigt vermerkt/)).toBeVisible();
-	const knopf = page.getByRole('button', { name: 'Als erledigt vermerken', exact: true });
-	await expect(knopf).toBeEnabled();
-	await knopf.click();
-
-	// BEWEIS an der Datenbank: das alte vermerkt, das neue unberührt.
-	await expect
-		.poll(() =>
-			querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-ALT-${s}'`)
-		)
-		.toBe('t');
-	expect(
-		querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = 'E2E-NEU-${s}'`)
-	).toBe('f');
-});
-
 // Der Weg zurück — beide Richtungen von Hand, ohne zu drucken.
 //
-// Vorher setzten alle drei Wege das Kennzeichen nur in EINE Richtung: Stapeldruck,
-// Einzeldruck aus der Buchakte und das Altbestand-Aufräumen. Blieb der Bogen im Drucker
-// stecken oder war der Stichtag zu weit gefasst, galten Exemplare als erledigt, ohne dass
-// ein Etikett am Buch klebte — und sie waren dauerhaft aus der Liste verschwunden.
+// Bleibt der Bogen im Drucker stecken, gelten Exemplare als erledigt, ohne dass ein Etikett am
+// Buch klebt; ohne den Rückweg wären sie dauerhaft aus der Liste verschwunden.
 //
 // Belegt wird am Datenbankzustand, nicht an der Meldung: Ob ein Exemplar wieder auf der
 // Liste erscheint, entscheidet allein etikett_gedruckt.

@@ -1,6 +1,6 @@
 // Package druck trägt die Türen des Druck-Centers: die Suche nach einem Titel und die Etiketten
 // aller seiner Exemplare oder eines Druckauftrags als PDF, die Liste der Exemplare ohne Etikett
-// mit ihrem Zähler, der Vermerk „gedruckt" und sein Rückweg, der Stichtag für den Altbestand,
+// mit ihrem Zähler, der Vermerk „gedruckt" und sein Rückweg,
 // die Etiketten für Schüler, das Design der Ausweise und ein Strichcode als Bild.
 package druck
 

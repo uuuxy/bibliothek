@@ -84,7 +84,7 @@ func TestAltesLMFEtikett_NachdruckSucheFindetDasExemplar(t *testing.T) {
 	if len(liste) != 1 || liste[0].BarcodeID != "B-LMFN-1" {
 		t.Errorf("Suche über das alte Etikett = %+v, erwartet das Exemplar B-LMFN-1", liste)
 	}
-	if n, err := ZaehleEtikettenExemplare(ctx, pool, "alle", nil, "lmf-9783060158423-951"); err != nil || n != 1 {
+	if n, err := ZaehleEtikettenExemplare(ctx, pool, "alle", "lmf-9783060158423-951"); err != nil || n != 1 {
 		t.Errorf("Zahl zur Suche über das alte Etikett = %d (%v), erwartet 1", n, err)
 	}
 }

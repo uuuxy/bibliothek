@@ -47,7 +47,7 @@ var bestandKalendertag = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"repository/statistik.go":  {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
+	"repository/statistik.go": {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
 	// Ein Datum aus einer Eingabe, als Tag in UTC gelesen: geduldet, wo danach kein Zeitpunkt
 	// in UTC verglichen wird.
 	"internal/service/frist.go":           {1, "Ferien-Leseclub: nimmt Jahr, Monat und Tag und baut daraus das Tagesende der Schule"},
@@ -56,7 +56,6 @@ var bestandKalendertag = map[string]struct {
 	"api/lernmittel/lmf_plan.go":          {3, "prüft nur die Form der Tage; gerechnet wird mit schulzeit.Kalendertag"},
 	"api/leser/leser_anlegen.go":          {1, "Geburtsdatum: trifft eine Datumsspalte"},
 	"api/leser/leser_aendern.go":          {1, "Geburtsdatum: trifft eine Datumsspalte"},
-	"api/druck/etiketten_offen.go":        {2, "Stichtag der Etiketten: verglichen mit Datumsspalten"},
 	"pkg/lmfplan/sommerferien.go":         {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
 	"pkg/lmfplan/ferien_einstellung.go":   {2, "Ferientage als Kalendertage in UTC, verglichen mit Tagen derselben Form (kalendertagUTC)"},
 }

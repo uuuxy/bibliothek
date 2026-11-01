@@ -24,7 +24,6 @@
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import EtikettenListe from './EtikettenListe.svelte';
-	import AltbestandDialog from './AltbestandDialog.svelte';
 
 	/** @type {{ onUebergeben?: () => void }} */
 	let { onUebergeben } = $props();
@@ -35,7 +34,6 @@
 	let ladefehler = $state(''); // Grund, wenn die Liste nicht kam
 	let suche = $state('');
 	let arbeitet = $state(false);
-	let altbestandOffen = $state(false);
 
 	/**
 	 * Wie viele Exemplare der Filter insgesamt trifft: Die Liste ist bei 300 gedeckelt
@@ -173,8 +171,7 @@
 	 *
 	 * Der Druck wird gegengebucht, sobald das PDF erzeugt ist; ob das Etikett wirklich aus
 	 * dem Gerät kam, weiss das Programm nicht. Nach einem Papierstau stehen die Exemplare
-	 * also als erledigt da, ohne Etikett am Buch. Dasselbe nach einem zu weit gefassten
-	 * Stichtag beim Altbestand-Aufräumen.
+	 * also als erledigt da, ohne Etikett am Buch.
 	 */
 	async function wiederOeffnen() {
 		await vermerken(
@@ -299,12 +296,6 @@
 					{zahl(gewaehltErledigt.length)} noch einmal drucken
 				</Button>
 			{/if}
-
-			<!-- Bei einem Altbestand ohne Etikett-Vermerk ist DAS die Aufgabe der Seite.
-			     Deshalb steht sie oben und nicht mehr am Fuß hinter 300 Zeilen. -->
-			<Button variant="ghost" size="lg" class="ml-auto" onclick={() => (altbestandOffen = true)}>
-				Altbestand aufräumen
-			</Button>
 		</div>
 	</div>
 
@@ -350,10 +341,4 @@
 			onalleUmschalten={alleUmschalten}
 		/>
 	{/if}
-
-	<AltbestandDialog
-		open={altbestandOffen}
-		onclose={() => (altbestandOffen = false)}
-		onfertig={laden}
-	/>
 </div>

@@ -1,22 +1,17 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
 > Stand: 2026-10-27. Für die Abnahme mit dem Sekretariat.
-> Alle fünf Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
+> Alle vier Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
 > erwartet.
 >
 > **Sicherheitsnetz für alle Abnahmen:** Vorher ein Backup ziehen
-> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Die Flows 1 bis 4 haben
+> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Die Flows 1 bis 3 haben
 > zusätzlich eine unverbindliche Vorschau-Stufe, die **nichts verändert** — erst der jeweils
-> letzte, deutlich beschriftete Button schreibt in die Datenbank. Flow 5 hat keine Vorschau:
+> letzte, deutlich beschriftete Button schreibt in die Datenbank. Flow 4 hat keine Vorschau:
 > Dort entscheidet ein Mensch über eine einzelne Person, und die Freischaltung ist
 > zurücknehmbar.
->
-> **Flow 4 genau ansehen:** Ein zu später Stichtag lässt die frische Lieferung still aus der
-> Liste der fehlenden Etiketten verschwinden. Zurückholen lässt sie sich nur Exemplar für
-> Exemplar und nur, wenn es jemand bemerkt; die Vorschau-Zahl verdient deshalb einen zweiten
-> Blick.
 
 ---
 
@@ -126,56 +121,7 @@ Bestand nach dem Erledigen stimmt.
 
 ---
 
-## 4. Altbestand-Etiketten aufräumen (einmalig)
-
-⚠️ **Der Rückweg geht nur Exemplar für Exemplar.** Kein Knopf nimmt einen zu weit gefassten
-Stichtag als Ganzes zurück. Druck-Center → **Fehlende Etiketten** → **Erledigt** zeigt die
-vermerkten Exemplare, die neuesten zuerst; markieren und **Wieder als offen vermerken**. Für
-eine Lieferung genügt das, für den halben Bestand nicht. Vorher ein Backup ziehen.
-
-**Mit dem Neuaufbau am Schulserver entfällt dieser Flow** ([OFFEN.md](OFFEN.md) 7.7): Die
-Littera-Übernahme setzt den Vermerk selbst, weil der Altbestand seine Etiketten trägt. Gebraucht
-wird er nur auf einer Datenbank, deren Exemplare ohne den Vermerk angelegt wurden.
-
-**Warum es das gibt:** `etikett_gedruckt` wurde bis vor Kurzem nirgends gesetzt. Für den
-gesamten Altbestand steht deshalb „kein Etikett" — nicht weil keins am Buch klebt, sondern
-weil es nie jemand vermerkt hat. Ohne dieses Aufräumen zeigt die Nachdruck-Liste dauerhaft
-den ganzen Bestand, und der Hinweis im Bestellwesen nennt eine Zahl ohne Bedeutung.
-
-**Vorbereitung:** Klären, **ab wann das Regal nachweislich beklebt ist**. Das weiß nur der
-Betreiber — die Software kann es nicht wissen und rät deshalb bewusst nicht.
-
-**Ablauf** (Druck-Center → **Fehlende Etiketten** → Abschnitt „Altbestand aufräumen" aufklappen):
-
-1. [ ] Stichtag eintragen. Die Zahl der betroffenen Exemplare erscheint sofort — es wird
-       noch **nichts** geändert.
-2. [ ] Zahl prüfen: Liegt sie in der Größenordnung des Altbestands? Ist sie **auffällig
-       nah an der Gesamtzahl der Exemplare**, ist der Stichtag zu spät gewählt.
-3. [ ] Bestätigen → Meldung „_n_ Exemplare als erledigt vermerkt".
-4. [ ] Gegenprobe: Die Nachdruck-Liste enthält jetzt **nur noch** Exemplare aus jüngeren
-       Lieferungen. Stichprobe: Ein Buch aus der letzten Lieferung muss noch dastehen.
-
-**Die eine echte Gefahr:** Ein **zu später** Stichtag (z. B. heute). Dann verschwindet die
-frische Lieferung, die noch gar kein Etikett hat, still aus der Liste — und niemand
-bemerkt es, weil eine leere Liste wie ein erledigter Stapel aussieht. Im Zweifel den
-Stichtag **früher** setzen: Zu wenig aufgeräumt ist folgenlos (die Zeilen bleiben sichtbar
-und lassen sich jederzeit erneut aufräumen), zu viel aufgeräumt muss Exemplar für Exemplar
-zurückgeholt werden.
-
-**Eingebaute Bremsen:**
-
-- Vorschau-Zahl und Aktion nutzen dieselbe Bedingung — die genannte Zahl ist die, die
-  wirklich zuschlägt.
-- Ausgesonderte Exemplare bleiben unberührt.
-- Bereits vermerkte Exemplare werden nicht erneut angefasst; ein zweiter Lauf mit demselben
-  Stichtag meldet folgerichtig `0`.
-
-**Bestanden, wenn:** Nach dem Aufräumen stehen genau die Exemplare auf der Liste, für die
-tatsächlich noch ein Etikett gedruckt werden muss.
-
----
-
-## 5. Selbstanmeldung einer Lehrkraft
+## 4. Selbstanmeldung einer Lehrkraft
 
 **Vorbereitung:** `SELBSTANMELDUNG_DOMAIN` ist auf dem Server gesetzt
 ([DEPLOYMENT.md §2.5](DEPLOYMENT.md)); die Betriebsbereitschaft zeigt „Selbstanmeldung
