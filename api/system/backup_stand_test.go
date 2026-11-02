@@ -131,8 +131,8 @@ func TestBackupStand_Schwellen(t *testing.T) {
 	}
 }
 
-// juengstesBackup nimmt die jüngste Sicherung nach Änderungszeit — nicht die
-// lexikographisch letzte (die Liste ist nach Namen sortiert, die Zeit steht am Inode).
+// Ohne Zeitstempel im Namen nimmt juengstesBackup die jüngste Sicherung nach Änderungszeit,
+// nicht die lexikographisch letzte.
 func TestJuengstesBackup_NimmtDieJuengste(t *testing.T) {
 	dir := t.TempDir()
 	for name, alter := range map[string]time.Duration{
@@ -155,5 +155,28 @@ func TestJuengstesBackup_NimmtDieJuengste(t *testing.T) {
 	}
 	if juengstesBackup(filepath.Join(dir, "nein")) != nil {
 		t.Errorf("fehlendes Verzeichnis = nil")
+	}
+}
+
+// Nach dem Zurückspielen des Ordners trägt die ältere Sicherung die jüngere Änderungszeit. Die
+// Zeit kommt dann aus dem Namen; sonst meldete der Stand eine frische Sicherung, die es nicht gibt.
+func TestJuengstesBackup_ZeitAusDemNamenStattAenderungszeit(t *testing.T) {
+	dir := t.TempDir()
+	for name, alter := range map[string]time.Duration{
+		"backup_2026-09-01T023000Z.sql.gz.enc": 0,
+		"backup_2026-09-02T023000Z.sql.gz.enc": 48 * time.Hour,
+	} {
+		f := filepath.Join(dir, name)
+		if err := os.WriteFile(f, []byte("x"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		mtime := time.Now().Add(-alter)
+		if err := os.Chtimes(f, mtime, mtime); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := time.Date(2026, 9, 2, 2, 30, 0, 0, time.UTC)
+	if got := juengstesBackup(dir); got == nil || !got.Equal(want) {
+		t.Errorf("jüngste Sicherung = %v, erwartet %v aus dem Namen", got, want)
 	}
 }

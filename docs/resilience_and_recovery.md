@@ -290,7 +290,8 @@ shred -u wiederherstellung.sql vor-restore.sql 2>/dev/null \
 Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup.
 
 > **Automatisch läuft das bereits wöchentlich** (`jobs/restore_probe.go`, So 03:30 UTC):
-> Der Job entschlüsselt das jüngste Backup, spielt es in eine Wegwerf-Datenbank
+> Der Job entschlüsselt das jüngste Backup (nach dem Zeitstempel im Namen, nicht nach der
+> Änderungszeit der Datei), spielt es in eine Wegwerf-Datenbank
 > (`bibliothek_restore_probe_wegwerf`) ein, zählt die Tabellen und meldet das Ergebnis
 > als Befund der Betriebsbereitschafts-Seite (fehlgeschlagen oder älter als 9 Tage =
 > kritisch = tägliche Alarm-Mail). Die manuelle Probe unten bleibt trotzdem sinnvoll:

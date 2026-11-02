@@ -13,30 +13,30 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"bibliothek/internal/backupkrypto"
 )
 
-// juengsteBackupDatei liefert die neueste backup_*.sql.gz.enc im Verzeichnis.
+// juengsteBackupDatei liefert die neueste backup_*.sql.gz.enc im Verzeichnis, nach
+// BackupDatei.SicherungsZeit: Nach dem Zurückspielen des Ordners sagt die Änderungszeit nichts
+// über das Alter einer Sicherung.
 func juengsteBackupDatei(verzeichnis string) (string, error) {
-	treffer, err := filepath.Glob(filepath.Join(verzeichnis, "backup_*.sql.gz.enc"))
-	if err != nil || len(treffer) == 0 {
+	dateien, err := LeseBackupDateien(verzeichnis)
+	if err != nil {
+		return "", fmt.Errorf("keine Backup-Datei lesbar in %s: %w", verzeichnis, err)
+	}
+	if len(dateien) == 0 {
 		return "", fmt.Errorf("keine Backup-Datei in %s gefunden", verzeichnis)
 	}
-	juengste, juengsteZeit := "", time.Time{}
-	for _, pfad := range treffer {
-		info, statFehler := os.Stat(pfad)
-		if statFehler == nil && info.ModTime().After(juengsteZeit) {
-			juengste, juengsteZeit = pfad, info.ModTime()
+	juengste := dateien[0]
+	for _, d := range dateien[1:] {
+		if d.SicherungsZeit().After(juengste.SicherungsZeit()) {
+			juengste = d
 		}
 	}
-	if juengste == "" {
-		return "", fmt.Errorf("keine lesbare Backup-Datei in %s", verzeichnis)
-	}
-	return juengste, nil
+	return filepath.Join(verzeichnis, juengste.Name), nil
 }
 
 // entschluesseleBackup entschlüsselt (AES-256-GCM) und entpackt (gzip) ein Backup.

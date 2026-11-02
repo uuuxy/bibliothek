@@ -11,8 +11,9 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// Die Sicherungen im Backup-Verzeichnis: eine Liste, zwei Verbraucher, die Aufbewahrung
-// (rotiereBackups) und der Wächter des Stands (api/system/backup_stand.go).
+// Die Sicherungen im Backup-Verzeichnis: eine Liste, drei Verbraucher, die Aufbewahrung
+// (rotiereBackups), die Restore-Probe (juengsteBackupDatei) und der Wächter des Stands
+// (api/system/backup_stand.go).
 //
 // Gelesen wird über os.OpenRoot, wie überall im Projekt bei Verzeichnissen mit Dateinamen von
 // außen (pkg/coverablage/coverablage.go): Die Wurzel bindet jeden Zugriff im Betriebssystem an das
@@ -30,6 +31,17 @@ const (
 type BackupDatei struct {
 	Name        string
 	GeaendertAm time.Time
+}
+
+// SicherungsZeit ist der Zeitpunkt aus dem Namen, nicht die Änderungszeit, die ein Kopieren
+// oder Zurückspielen verschiebt. Passt der Name nicht zum Stempel, gilt die Änderungszeit.
+// Aufbewahrung, Restore-Probe und der Stand der Sicherungen lesen die Zeit nur hier.
+func (d BackupDatei) SicherungsZeit() time.Time {
+	stempel := strings.TrimSuffix(strings.TrimPrefix(d.Name, backupPraefix), backupEndung)
+	if t, err := time.Parse(sicherungsStempel, stempel); err == nil {
+		return t
+	}
+	return d.GeaendertAm
 }
 
 // LeseBackupDateien liest die backup_*.sql.gz.enc des Verzeichnisses, nach Namen sortiert; die

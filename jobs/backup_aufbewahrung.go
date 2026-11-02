@@ -1,9 +1,6 @@
 package jobs
 
 import (
-	"strings"
-	"time"
-
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -25,7 +22,7 @@ const (
 )
 
 // sicherungsStempel ist das Zeitformat im Namen der Nachtsicherung (UTC), geschrieben von
-// BackupLauf.FuehreAus und gelesen von sicherungsZeit.
+// BackupLauf.FuehreAus und gelesen von BackupDatei.SicherungsZeit.
 const sicherungsStempel = "2006-01-02T150405Z"
 
 // zuLoeschen liefert die Sicherungen, die die Aufbewahrung nicht hält. dateien ist nach Namen
@@ -40,7 +37,7 @@ func zuLoeschen(dateien []BackupDatei, naechte, wochen int) []BackupDatei {
 	bleibt := make(map[string]bool, wochen)
 	gesehen := make(map[[2]int]bool, wochen)
 	for i := len(aelter) - 1; i >= 0 && len(gesehen) < wochen; i-- {
-		jahr, woche := sicherungsZeit(aelter[i]).In(schulzeit.Zone()).ISOWeek()
+		jahr, woche := aelter[i].SicherungsZeit().In(schulzeit.Zone()).ISOWeek()
 		if !gesehen[[2]int{jahr, woche}] {
 			gesehen[[2]int{jahr, woche}] = true
 			bleibt[aelter[i].Name] = true
@@ -53,14 +50,4 @@ func zuLoeschen(dateien []BackupDatei, naechte, wochen int) []BackupDatei {
 		}
 	}
 	return weg
-}
-
-// sicherungsZeit ist der Zeitpunkt aus dem Namen, nicht die Änderungszeit, die ein Kopieren
-// oder Zurückspielen verschiebt. Passt der Name nicht zum Stempel, gilt die Änderungszeit.
-func sicherungsZeit(d BackupDatei) time.Time {
-	stempel := strings.TrimSuffix(strings.TrimPrefix(d.Name, backupPraefix), backupEndung)
-	if t, err := time.Parse(sicherungsStempel, stempel); err == nil {
-		return t
-	}
-	return d.GeaendertAm
 }

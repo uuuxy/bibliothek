@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // Die Tests für das Lesen der Sicherungen und die Aufbewahrung. Löscht die Aufbewahrung eine
@@ -42,6 +43,26 @@ func TestLeseBackupDateien_NurSicherungenUndNachNamenSortiert(t *testing.T) {
 	want := []string{"backup_2026-09-01T02-30.sql.gz.enc", "backup_2026-09-02T02-30.sql.gz.enc"}
 	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
 		t.Errorf("Liste = %v, erwartet %v (nur Sicherungen, älteste zuerst)", got, want)
+	}
+}
+
+// Nach dem Zurückspielen des Ordners trägt die ältere Sicherung die jüngere Änderungszeit. Die
+// Restore-Probe nimmt trotzdem die jüngste nach dem Namen, wie die Aufbewahrung.
+func TestJuengsteBackupDatei_ZeitAusDemNamenStattAenderungszeit(t *testing.T) {
+	verzeichnis := t.TempDir()
+	alt, neu := "backup_2026-09-01T023000Z.sql.gz.enc", "backup_2026-09-02T023000Z.sql.gz.enc"
+	legeDateiAn(t, verzeichnis, alt)
+	legeDateiAn(t, verzeichnis, neu)
+	frueher := time.Now().Add(-48 * time.Hour)
+	if err := os.Chtimes(filepath.Join(verzeichnis, neu), frueher, frueher); err != nil {
+		t.Fatal(err)
+	}
+	got, err := juengsteBackupDatei(verzeichnis)
+	if err != nil {
+		t.Fatalf("juengsteBackupDatei: %v", err)
+	}
+	if filepath.Base(got) != neu {
+		t.Errorf("die Probe nimmt %s, erwartet %s (Zeit aus dem Namen)", filepath.Base(got), neu)
 	}
 }
 
