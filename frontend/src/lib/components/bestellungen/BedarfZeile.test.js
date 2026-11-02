@@ -93,3 +93,20 @@ describe('BedarfZeile: Neue Auflage bestellen', () => {
 		expect(screen.queryByRole('button', { name: /Weitere Aktionen/ })).toBeNull();
 	});
 });
+
+// Im Kopf steht, wie viele Titel der Liste kein einziges Exemplar mehr haben. Ein Titel mit
+// Bestand unter der Schwelle zählt dort nicht mit.
+describe('Bestellbedarf: Titel ohne ein Exemplar', () => {
+	it('zählt nur die Titel ohne eigenes Exemplar', () => {
+		const screen = render(Bestellbedarf, {
+			vorschlaege: [
+				einzeln,
+				{ ...einzeln, id: 'leer1', titel: 'Chemie 9', gesamt_bestand: 0, verfuegbarer_bestand: 0 },
+				{ ...einzeln, id: 'leer2', titel: 'Biologie 9', gesamt_bestand: 0, verfuegbarer_bestand: 0 }
+			],
+			onAddToCart: vi.fn()
+		});
+
+		expect(screen.getByText('2 von 3 Titeln ohne ein einziges Exemplar')).toBeTruthy();
+	});
+});

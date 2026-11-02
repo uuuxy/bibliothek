@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import Select from './Select.svelte';
 
@@ -101,5 +101,27 @@ describe('Select: Fokus beim Öffnen mit der Maus', () => {
 		await fireEvent.click(feld);
 
 		expect(document.activeElement).toBe(feld);
+	});
+});
+
+// Ein gesperrter Eintrag steht in der Liste, lässt sich aber nicht wählen: abgeschaltet statt
+// versteckt (LeserArtWahl, die Grenze zum Schüler). Sonst käme die Ablehnung erst beim Speichern.
+describe('Select: gesperrter Eintrag', () => {
+	it('ein Klick auf ihn wählt nichts', async () => {
+		const geaendert = vi.fn();
+		const screen = render(Select, {
+			options: [
+				{ value: 'a', label: 'Anna' },
+				{ value: 'b', label: 'Bernd', disabled: true }
+			],
+			value: 'a',
+			onchange: geaendert
+		});
+
+		await fireEvent.click(screen.getByRole('combobox'));
+		await fireEvent.click(await screen.findByRole('option', { name: 'Bernd' }));
+
+		expect(geaendert).not.toHaveBeenCalled();
+		expect(screen.getByRole('combobox').textContent).toContain('Anna');
 	});
 });

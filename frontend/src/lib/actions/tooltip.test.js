@@ -65,3 +65,45 @@ describe('Sprechblase: geht mit ihrem Ziel', () => {
 		expect(zeigen).not.toHaveBeenCalled();
 	});
 });
+
+// Wer sich mit der Tastatur durchtabbt, sieht die Beschriftung sofort. Ein Ziel ohne Beschriftung
+// bekommt keine und wirft auch nichts.
+describe('Sprechblase: Tastaturfokus', () => {
+	/** @type {() => void} */
+	let abmelden;
+	/** @type {ReturnType<typeof vi.fn>} */
+	let zeigen;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		zeigen = vi.fn();
+		Object.assign(HTMLElement.prototype, { showPopover: zeigen, hidePopover: vi.fn() });
+		document.body.innerHTML =
+			'<button id="mit" data-tip="Exemplar löschen">x</button><button id="ohne">Speichern</button>';
+		abmelden = initTooltips();
+	});
+	afterEach(() => {
+		abmelden();
+		vi.useRealTimers();
+		document.body.innerHTML = '';
+	});
+
+	it('zeigt die Beschriftung ohne Verzögerung', () => {
+		document.getElementById('mit')?.focus();
+
+		expect(zeigen).toHaveBeenCalledTimes(1);
+	});
+
+	it('ein Ziel ohne Beschriftung bleibt ohne Blase und ohne Fehler', () => {
+		/** @type {unknown[]} */
+		const fehler = [];
+		const merke = (/** @type {ErrorEvent} */ e) => fehler.push(e.error);
+		window.addEventListener('error', merke);
+
+		document.getElementById('ohne')?.focus();
+
+		window.removeEventListener('error', merke);
+		expect(fehler).toEqual([]);
+		expect(zeigen).not.toHaveBeenCalled();
+	});
+});

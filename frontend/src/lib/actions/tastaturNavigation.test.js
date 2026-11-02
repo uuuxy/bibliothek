@@ -99,3 +99,28 @@ describe('tastaturNavigation', () => {
 		}
 	});
 });
+
+// Bei geschlossener Liste gehören Pfeile und Enter dem Feld: Ein Pfeil markierte sonst unsichtbar
+// einen Eintrag, und das Enter des nächsten Scans nähme ihn.
+describe('tastaturNavigation: geschlossene Liste', () => {
+	it('die Pfeile bewegen nichts, und Enter wählt nichts', () => {
+		const node = document.createElement('input');
+		const onSelect = vi.fn();
+		const onIndexChange = vi.fn();
+		const aktion = tastaturNavigation(node, {
+			totalItems: 3,
+			isOpen: false,
+			selectedIndex: -1,
+			onSelect,
+			onIndexChange,
+			onEscape: () => {}
+		});
+
+		taste(node, 'ArrowDown');
+		taste(node, 'Enter');
+
+		expect(onIndexChange).not.toHaveBeenCalled();
+		expect(onSelect).not.toHaveBeenCalled();
+		aktion.destroy?.();
+	});
+});

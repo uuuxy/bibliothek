@@ -347,12 +347,12 @@ describe('bestellStore Suche', () => {
 		await vi.advanceTimersByTimeAsync(400);
 		expect(apiClient.post).not.toHaveBeenCalled();
 
-		bestellStore.searchQuery = 'faust';
+		bestellStore.searchQuery = 'fa';
 		bestellStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(299);
 		expect(apiClient.post).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(1);
-		expect(apiClient.post).toHaveBeenCalledWith('/api/bestellungen/suche', { query: 'faust' });
+		expect(apiClient.post).toHaveBeenCalledWith('/api/bestellungen/suche', { query: 'fa' });
 	});
 
 	it('verwirft veraltete Antworten (Out-of-Order-Race)', async () => {

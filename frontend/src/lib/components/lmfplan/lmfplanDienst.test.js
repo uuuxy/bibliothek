@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { artErklaerung, entwurfAus, ladePdf, ladePlan, ladeStand } from './lmfplanDienst.js';
+import {
+	artErklaerung,
+	entwurfAus,
+	ladePdf,
+	ladePlan,
+	ladeStand,
+	veroeffentlichePlan
+} from './lmfplanDienst.js';
 import { apiFetch } from '../../apiFetch.js';
 import { serverAntwort } from '../../serverAntwort.js';
 
@@ -71,5 +78,27 @@ describe('Abrufe des Plans: der Grund des Servers', () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(502));
 
 		await expect(ladeStand('rueckgabe')).rejects.toThrow('LMF-Plan konnte nicht geladen werden');
+	});
+});
+
+// Ein veröffentlichter Rückgabe-Plan verschiebt die Fristen der Klassen; die Meldung nennt, wie viele
+// Ausleihen das traf, und schweigt, wenn es keine waren.
+describe('veroeffentlichePlan: die Meldung', () => {
+	it('nennt die Zahl der angepassten Fristen', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(200, { fristen_angepasst: 3 }));
+
+		expect(await veroeffentlichePlan('rueckgabe')).toEqual({
+			ok: true,
+			meldung: 'Plan veröffentlicht · Frist von 3 Ausleihen angepasst.'
+		});
+	});
+
+	it('ohne angepasste Frist nur die Veröffentlichung', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(serverAntwort(200, { fristen_angepasst: 0 }));
+
+		expect(await veroeffentlichePlan('ausgabe')).toEqual({
+			ok: true,
+			meldung: 'Plan veröffentlicht.'
+		});
 	});
 });

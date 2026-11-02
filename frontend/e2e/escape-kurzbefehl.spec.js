@@ -40,6 +40,25 @@ test('Escape außerhalb von Eingabefeldern führt weiter zur Ausleihe', async ({
 	await expect(page.locator('#omnibox-input')).toBeVisible();
 });
 
+// Nur Escape führt zur Ausleihe. Eine andere Taste außerhalb eines Feldes, etwa ein Zeichen des
+// Handscanners, bleibt auf der Seite.
+test('Eine andere Taste außerhalb von Eingabefeldern bleibt auf der Seite', async ({ page }) => {
+	await uiLogin(page);
+	await menuepunkt(page, 'Bestellungen').click();
+	const reiter = page.getByRole('tab', { name: 'Bestellhistorie', exact: true });
+	await expect(reiter).toBeVisible();
+
+	await page.locator('body').click({ position: { x: 5, y: 5 } });
+	await page.keyboard.press('a');
+	// Ein Seitenwechsel käme mit dem nächsten Bild; erst danach zählt, dass er ausblieb.
+	await page.evaluate(
+		() => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig)))
+	);
+
+	await expect(reiter).toBeVisible();
+	await expect(page.locator('#omnibox-input')).toHaveCount(0);
+});
+
 // Der zweite Teil derselben Fehlerklasse: Ein aufgeklapptes Menü ist kein Eingabefeld,
 // sein Auslöser ist ein Knopf. Die Feld-Ausnahme greift hier also nicht — das Menü muss
 // den Tastendruck selbst als verarbeitet melden. Tat es keins, schloss Escape das Menü

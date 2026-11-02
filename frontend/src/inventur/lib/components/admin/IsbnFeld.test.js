@@ -196,3 +196,25 @@ describe('IsbnFeld: vorhandener Titel', () => {
 		expect(vi.mocked(apiFetch)).not.toHaveBeenCalled();
 	});
 });
+
+// Ein Handscanner tippt in das Feld mit dem Fokus. Zeigt die Maske nach der Frage den vorhandenen
+// Titel, verlässt der Fokus das ISBN-Feld; der nächste Scan träfe sonst dessen ISBN.
+describe('IsbnFeld: die Maske zeigt den vorhandenen Titel', () => {
+	it('nimmt dem ISBN-Feld den Fokus', async () => {
+		const abfrage = erzeugeIsbnAbfrage(
+			() => ({ id: null, isbn: ISBN, title: '' }),
+			() => undefined
+		);
+		const screen = render(IsbnFeld, {
+			formular: { id: null, isbn: ISBN, title: '' },
+			wirdGescannt: false,
+			abfrage
+		});
+		const eingabe = screen.getByLabelText('ISBN');
+		expect(document.activeElement, 'in der neuen Maske steht der Scanner im Feld').toBe(eingabe);
+
+		await screen.rerender({ formular: { id: 'titel-1', isbn: ISBN, title: 'Tintenherz' } });
+
+		expect(document.activeElement).not.toBe(eingabe);
+	});
+});

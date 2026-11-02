@@ -124,3 +124,28 @@ describe('fuegeRahmenHinzu', () => {
 		expect(idStore.front.elements).toHaveLength(vorn + 1);
 	});
 });
+
+// Ein zentral gespeichertes Design kann noch den abgeschafften A4-Bogen tragen. Es wird auf den
+// Kartendrucker gelesen; sonst stünde beim nächsten Speichern 'a4' wieder in der Datenbank.
+describe('applyDesign: die Druckart', () => {
+	beforeEach(() => resetDesign());
+
+	it('liest den alten A4-Bogen als Kartendrucker', () => {
+		idStore.printMode = 'etikett';
+
+		applyDesign({ printMode: 'a4' });
+
+		expect(idStore.printMode).toBe('card');
+	});
+
+	it('übernimmt Kartendrucker und Etikettenbogen, ein Design ohne Druckart lässt sie stehen', () => {
+		applyDesign({ printMode: 'etikett' });
+		expect(idStore.printMode).toBe('etikett');
+
+		applyDesign({});
+		expect(idStore.printMode).toBe('etikett');
+
+		applyDesign({ printMode: 'card' });
+		expect(idStore.printMode).toBe('card');
+	});
+});

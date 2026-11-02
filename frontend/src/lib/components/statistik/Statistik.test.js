@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import Statistik from './Statistik.svelte';
 import { apiFetch } from '../../apiFetch.js';
 
@@ -58,5 +58,28 @@ describe('Statistik', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Ladenhüter' }));
 		expect(screen.getByText('Ladenhüter nicht geladen')).toBeTruthy();
 		expect(screen.queryByText(/Keine Ladenhüter/)).toBeNull();
+	});
+});
+
+// Der gewählte Zeitraum geht als Parameter an den Server; „Alle" schickt keinen.
+describe('Statistik: Zeitraum', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	it('fragt den gewählten Zeitraum ab', async () => {
+		antworte([]);
+		const screen = render(Statistik);
+		await screen.findByText('Gesamtbestand');
+		const kennzahlen = () =>
+			vi
+				.mocked(apiFetch)
+				.mock.calls.map(([url]) => String(url))
+				.filter((url) => !url.startsWith('/api/dashboard/summary'));
+		expect(kennzahlen().at(-1)).not.toContain('zeitraum=');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Monat' }));
+
+		await waitFor(() => expect(kennzahlen().at(-1)).toContain('zeitraum=monat'));
 	});
 });

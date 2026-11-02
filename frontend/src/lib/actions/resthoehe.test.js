@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { resthoeheAus } from './resthoehe.js';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { resthoehe, resthoeheAus } from './resthoehe.js';
 
 // Die Höhe bis zum unteren Rand des Scrollbereichs. Am Bildschirm misst
 // e2e/bestellung-erreichbar.spec.js; hier steht die Rechnung.
@@ -26,5 +26,40 @@ describe('resthoeheAus', () => {
 		expect(resthoeheAus({ bereichUnten: 400, gescrollt: 0, oben: 321 }, { mindestens: 0 })).toBe(
 			79
 		);
+	});
+});
+
+// In einem Scrollbereich beobachtet die Aktion die Vorfahren bis zu ihm, nicht weiter.
+describe('resthoehe in einem Scrollbereich', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		document.body.innerHTML = '';
+	});
+
+	it('hängt sich ein und setzt die Höhe', () => {
+		const beobachtet = [];
+		vi.stubGlobal(
+			'ResizeObserver',
+			class {
+				/** @param {Element} el */
+				observe(el) {
+					beobachtet.push(el);
+				}
+				disconnect() {}
+			}
+		);
+		const bereich = document.createElement('div');
+		bereich.style.overflowY = 'auto';
+		const huelle = document.createElement('div');
+		const liste = document.createElement('div');
+		huelle.append(liste);
+		bereich.append(huelle);
+		document.body.append(bereich);
+
+		const aktion = resthoehe(liste);
+
+		expect(liste.style.getPropertyValue('--resthoehe')).toMatch(/px$/);
+		expect(beobachtet).toContain(huelle);
+		aktion.destroy();
 	});
 });

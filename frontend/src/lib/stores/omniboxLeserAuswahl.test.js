@@ -133,3 +133,47 @@ describe('Omnibox: Enter ohne Markierung', () => {
 		expect(await druecke([{ id: 'b1', titel: 'Hoffmanns Erzählungen' }])).not.toBe('leser:s1');
 	});
 });
+
+// Enter auf dem markierten Treffer nimmt ihn, auch wenn es der erste der Liste ist und daneben ein
+// Buch steht.
+describe('Omnibox: Enter auf dem markierten Treffer', () => {
+	const leser = {
+		id: 's1',
+		vorname: 'Lena',
+		nachname: 'Hoffmann',
+		art: 'schueler',
+		barcode_id: 'S-1'
+	};
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.mocked(apiClient.post).mockReset();
+	});
+	afterEach(() => vi.useRealTimers());
+
+	it('lädt den ersten Treffer, wenn er markiert ist', async () => {
+		const store = erzeugeOmniboxStore();
+		vi.mocked(apiFetch).mockImplementation(
+			async () =>
+				/** @type {any} */ ({
+					ok: true,
+					json: async () => ({
+						students: [leser],
+						books: [{ id: 'b1', titel: 'Hoffmanns Erzählungen' }]
+					})
+				})
+		);
+		vi.mocked(apiClient.post).mockImplementation(async () => geladen(leser));
+		store.eingabe = 'Hoffmann';
+		store.suche.verarbeiteEingabe();
+		await vi.advanceTimersByTimeAsync(300);
+		store.suche.markierterTreffer = 0;
+
+		await store.fuehreAktionAus(null);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(/** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0]?.[1])?.query).toBe(
+			'leser:s1'
+		);
+	});
+});
