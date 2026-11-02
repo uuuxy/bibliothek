@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+import { normalisiereScan } from '../../utils/scanEinordnen.js';
 
 /**
  * Die Kandidatensuche des Zusammenführen-Dialogs — eigene Datei wie schuelerSuche.svelte.js:
@@ -30,7 +31,7 @@ export function erzeugeKandidatenSuche(profilId) {
 
 	async function suchen() {
 		const meine = ++nr;
-		const q = suche.trim();
+		const q = normalisiereScan(suche);
 		if (q.length < 2) {
 			treffer = [];
 			fehler = '';

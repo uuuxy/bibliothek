@@ -27,6 +27,14 @@ describe('Schülersuche des Vormerkungs-Reiters', () => {
 		expect(url).not.toContain('/api/search');
 	});
 
+	// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den
+	// Bindestrich als ß (FACHKONZEPT §1).
+	it('liest in einer gescannten Nummer ein ß hinter der Vorsilbe als Bindestrich', async () => {
+		antwort([]);
+		await sucheSchuelerFuerVormerkung('Sß10001');
+		expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe('/api/schueler?q=S-10001');
+	});
+
 	it('bildet die Zeile der Schülerdatei auf die Auswahl des Reiters ab', async () => {
 		antwort([{ id: '42', vorname: 'Anna', nachname: 'Müller', klasse: '07A', barcode_id: 'S-1' }]);
 		expect(await sucheSchuelerFuerVormerkung('Müller')).toEqual([

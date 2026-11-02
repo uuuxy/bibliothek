@@ -43,7 +43,7 @@ Nur, was kein Test leisten kann.
 
 - [x] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen und die Äste von #759 bis #763
   löschen. (5.169)
-- [ ] Ein ß hinter einer Vorsilbe auch in den übrigen Feldern als Bindestrich lesen, in die gescannt
+- [x] Ein ß hinter einer Vorsilbe auch in den übrigen Feldern als Bindestrich lesen, in die gescannt
   wird: Inventur, Theken-Auskunft und Suchen. (5.170)
 
 ### Termin
@@ -78,18 +78,6 @@ Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zei
 Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
-
-### 5.170 Scanner mit amerikanischer Tastatur: die übrigen Felder
-
-Ein solcher Scanner tippt an einem deutschen Rechner den Bindestrich als ß ([FACHKONZEPT.md](FACHKONZEPT.md)
-§1). Über `normalisiereScan` lesen ihn richtig: die Theke, im Druck-Center das Nummernfeld beim
-Etikettendruck und die Masken, die eine Nummer speichern (Leserakte, Neuanlage, Konto, Exemplar,
-Gerät). Roh nehmen den Scan noch: Inventur („Barcode scannen"), Theken-Auskunft, die Schülersuche
-beim Vormerken, die Suche beim Zusammenführen von Lesern, die Suchen von Leserdatei, Ehemaligen und
-Katalog und der Nachdruck im Druck-Center; dort findet ein solcher Scan nichts. Nächster Schritt:
-dort `normalisiereScan` nehmen, je Feld ein Test. Bis dahin hilft die deutsche Tastatur am Scanner
-([HANDBUCH.md](HANDBUCH.md), „Wenn etwas nicht geht") oder die getippte Nummer. Der Scanner der
-Schule ist so eingestellt; bei Lieferung stand er auf amerikanischer Tastatur.
 
 ### 7.2 Frisches Littera-Backup
 

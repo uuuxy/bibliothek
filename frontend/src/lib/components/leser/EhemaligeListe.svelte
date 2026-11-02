@@ -9,6 +9,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Archive } from '@lucide/svelte';
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 
@@ -30,7 +31,7 @@
 		const nr = ++ladeNr;
 		laedt = true;
 		try {
-			const q = suche.trim();
+			const q = normalisiereScan(suche);
 			const res = await apiFetch(
 				`/api/schueler?status=ehemalige${q ? `&q=${encodeURIComponent(q)}` : ''}`
 			);

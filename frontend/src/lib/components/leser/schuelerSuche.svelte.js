@@ -1,5 +1,6 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { fehlertext } from '../../utils/fehlertext.js';
+import { normalisiereScan } from '../../utils/scanEinordnen.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 
 /**
@@ -61,16 +62,15 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		const nr = ++ladeNr;
 		laedt = true;
 		try {
-			const q = suchtext.trim();
+			const q = normalisiereScan(suchtext);
 			const text = q ? `&q=${encodeURIComponent(q)}` : '';
 			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
 			const richtung = sortierAbsteigend ? 'ab' : 'auf';
 			const so = sortierSpalte
 				? `&sortierung=${encodeURIComponent(sortierSpalte)}&richtung=${richtung}`
 				: '';
-			// art=alle: die LESERDATEI. Ohne diesen Zusatz liefert die Tür nur Schüler —
-			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
-			// Vormerkungs-Reiters), für die ein Kollege in der Liste falsch wäre.
+			// art=alle: die Leserdatei. Ohne den Zusatz liefert die Tür nur Schüler, wie es Ehemalige
+			// und Vormerken brauchen; dort wäre ein Kollege in der Liste falsch.
 			const res = await apiFetch(`/api/schueler?art=alle${text}${jg}${so}`);
 			// Nur die jüngste Anfrage schreibt, aber sie schreibt in jedem Fall: Sonst blieben
 			// nach einem gescheiterten Lauf die Treffer der vorigen Suche unter dem neuen

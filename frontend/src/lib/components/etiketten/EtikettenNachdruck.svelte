@@ -23,6 +23,7 @@
 	import Suchpille from '../ui/Suchpille.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 	import EtikettenListe from './EtikettenListe.svelte';
 
 	/** @type {{ onUebergeben?: () => void }} */
@@ -63,9 +64,8 @@
 		laedt = true;
 		ladefehler = '';
 		try {
-			const q = suche.trim();
-			// Von Hand statt per URLSearchParams: Für die eingebaute Klasse verlangte die
-			// Svelte-Lint-Regel die reaktive Variante, für einen Wegwerf-Text.
+			const q = normalisiereScan(suche);
+			// Von Hand statt URLSearchParams: Die Lint-Regel verlangte sonst die reaktive Variante.
 			const teile = [];
 			if (q) teile.push(`q=${encodeURIComponent(q)}`);
 			if (status !== 'offen') teile.push(`status=${status}`);

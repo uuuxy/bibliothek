@@ -1,4 +1,5 @@
 import { apiFetch, leseApiFehler } from '../../lib/apiFetch.js';
+import { normalisiereScan } from '../../lib/utils/scanEinordnen.js';
 
 /**
  * Sieht die Eingabe aus wie eine Nummer? Ein Wort ohne Ziffer und ein Satz fragen den Server
@@ -38,7 +39,7 @@ export function erzeugeExemplarFrage() {
 	/** @param {string} eingabe */
 	function frage(eingabe) {
 		stoppe();
-		const code = eingabe.trim();
+		const code = normalisiereScan(eingabe);
 		if (!siehtAusWieNummer(code)) {
 			antwort = { code, stand: 'fertig' };
 			return;
@@ -77,7 +78,7 @@ export function erzeugeExemplarFrage() {
 	 * @returns {Antwort}
 	 */
 	function fuer(eingabe) {
-		const code = eingabe.trim();
+		const code = normalisiereScan(eingabe);
 		if (!siehtAusWieNummer(code)) return { code, stand: 'fertig' };
 		return antwort.code === code ? antwort : { code, stand: 'laeuft' };
 	}

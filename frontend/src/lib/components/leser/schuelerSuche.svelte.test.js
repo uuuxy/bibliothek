@@ -122,6 +122,24 @@ describe('Leserdatei-Suche', () => {
 			stopp();
 		}
 	});
+	// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den
+	// Bindestrich als ß (FACHKONZEPT §1).
+	it('liest in einer gescannten Nummer ein ß hinter der Vorsilbe als Bindestrich', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(ok(treffer));
+		/** @type {any} */
+		let suche;
+		const stopp = $effect.root(() => {
+			suche = erzeugeSchuelerSuche(() => {});
+		});
+		try {
+			suche.suchtext = 'Sß10001';
+			await suche.lade();
+			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe('/api/schueler?art=alle&q=S-10001');
+		} finally {
+			stopp();
+		}
+	});
+
 	it('hängt Suchtext, Jahrgang und Sortierung in dieser Reihenfolge an die Adresse', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(ok(treffer));
 		/** @type {any} */

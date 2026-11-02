@@ -16,8 +16,20 @@ import {
 	meldeVerlustGefunden,
 	loescheVerlustEndgueltig,
 	ladeFehlbestand,
-	loescheAbgeschlosseneInventur
+	loescheAbgeschlosseneInventur,
+	scanne
 } from './inventurApi.js';
+
+// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den Bindestrich
+// als ß (FACHKONZEPT §1); gezählt wird das Exemplar unter der Nummer, die die Theke nachschlägt.
+describe('inventurApi: Scan', () => {
+	it('schickt eine gescannte Nummer so, wie die Theke sie liest', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(serverAntwort(200, { barcode_id: 'B-00123' }));
+		await scanne('lauf-1', 'Bß00123');
+		const optionen = /** @type {any} */ (vi.mocked(apiFetch).mock.calls.at(-1)?.[1]);
+		expect(JSON.parse(optionen.body)).toEqual({ session_id: 'lauf-1', barcode_id: 'B-00123' });
+	});
+});
 
 // Eine leere Liste hieße „keine Inventur läuft" und „keine frühere"; lehnt der Server ab,
 // werfen die Abrufe deshalb mit seinem Grund.

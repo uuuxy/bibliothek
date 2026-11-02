@@ -5,6 +5,7 @@
 	// steht der Hinweis dazu sichtbar über dem Feld, nicht im Kleingedruckten. Recht:
 	// audit_details, ab Werk nur Admin.
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
+	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Button from '../ui/Button.svelte';
@@ -29,7 +30,7 @@
 	/** @param {SubmitEvent} event */
 	async function nachschlagen(event) {
 		event.preventDefault();
-		const wert = barcode.trim();
+		const wert = normalisiereScan(barcode);
 		if (!wert) return;
 		laedt = true;
 		fehler = null;

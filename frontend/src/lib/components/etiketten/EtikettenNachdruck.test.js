@@ -40,3 +40,24 @@ describe('Fehlende Etiketten: die Liste kommt nicht', () => {
 		expect(screen.queryByText('Exemplare nicht geladen')).toBeNull();
 	});
 });
+
+// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den Bindestrich
+// als ß (FACHKONZEPT §1); wer ein Etikett zum Nachdruck scannt, sucht nach der Nummer.
+describe('Fehlende Etiketten: Suche nach einem gescannten Etikett', () => {
+	it('liest ein ß hinter der Vorsilbe als Bindestrich', async () => {
+		vi.mocked(apiGet).mockReset();
+		vi.mocked(apiGet).mockImplementation(async (/** @type {string} */ url) =>
+			url.includes('/anzahl') ? { anzahl: 0 } : []
+		);
+		render(EtikettenNachdruck);
+		await vi.waitFor(() => expect(vi.mocked(apiGet)).toHaveBeenCalled());
+
+		await fireEvent.input(screen.getByRole('searchbox', { name: 'Exemplare filtern' }), {
+			target: { value: 'Bß00123' }
+		});
+		await vi.waitFor(() => {
+			const urls = vi.mocked(apiGet).mock.calls.map((c) => String(c[0]));
+			expect(urls).toContain('/api/exemplare/etiketten-offen?q=B-00123');
+		});
+	});
+});

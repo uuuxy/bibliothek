@@ -43,11 +43,11 @@ dort Nummer und Scanwert zwei verschiedene Felder sind und der Scanwert vom
 Kartenhersteller stammt; dieses zweite Feld haben wir nicht.
 
 **Der Bindestrich als ß:** Ein Handscanner mit amerikanischer Tastatur tippt an einem
-Rechner mit deutscher jeden Bindestrich als ß; aus `S-10001` wird `Sß10001`. Die Theke liest
-ein ß hinter einer Vorsilbe als Bindestrich, auch das zweite einer LMF-Nummer
-(`normalisiereScan` in `frontend/src/lib/utils/scanEinordnen.js`). In einer Nummer steht nie ein ß.
-Die Masken für Ausweis, Exemplar und Gerät speichern die Nummer so, wie die Theke sie nachschlägt
-(`mitVereinheitlichterNummer`, beim Bearbeiten erst nach dem Vergleich mit dem Stand vom Öffnen).
+Rechner mit deutscher jeden Bindestrich als ß; aus `S-10001` wird `Sß10001`. Jedes Feld, in das
+gescannt wird, liest ein ß hinter einer Vorsilbe als Bindestrich, auch das zweite einer
+LMF-Nummer: Theke, Inventur, Suchen und die Masken, die eine Nummer speichern (`normalisiereScan`
+in `frontend/src/lib/utils/scanEinordnen.js`; beim Bearbeiten erst nach dem Vergleich mit dem
+Stand vom Öffnen, `mitVereinheitlichterNummer`). In einer Nummer steht nie ein ß.
 
 **Ablauflogik:**
 

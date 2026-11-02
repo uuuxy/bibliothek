@@ -1,5 +1,6 @@
 import { apiFetch, leseApiFehler, leseApiFehlerMitDaten } from '../../apiFetch.js';
 import { fehlertext } from '../../utils/fehlertext.js';
+import { normalisiereScan } from '../../utils/scanEinordnen.js';
 
 // Reine API-Aufrufe der Inventur, getrennt von der Zustandslogik im Hook.
 // Jede Funktion liefert ein { ok, data?, status, error? }-Objekt, damit der Hook
@@ -65,7 +66,7 @@ export async function scanne(sessionId, barcode) {
 	const res = await apiFetch('/api/inventur/scan', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ session_id: sessionId, barcode_id: barcode })
+		body: JSON.stringify({ session_id: sessionId, barcode_id: normalisiereScan(barcode) })
 	});
 	return auswerten(res);
 }

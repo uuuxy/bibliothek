@@ -73,6 +73,22 @@ describe('EhemaligeListe', () => {
 		});
 	});
 
+	// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den
+	// Bindestrich als ß (FACHKONZEPT §1).
+	it('liest in einer gescannten Nummer ein ß hinter der Vorsilbe als Bindestrich', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort([]));
+		const { getByRole, findByText } = render(EhemaligeListe, { onSelect: () => {} });
+		await findByText('Keine Ehemaligen im Archiv.');
+
+		await fireEvent.input(getByRole('searchbox', { name: 'Ehemalige suchen' }), {
+			target: { value: 'Sß10001' }
+		});
+		await vi.waitFor(() => {
+			const urls = vi.mocked(apiFetch).mock.calls.map((c) => c[0]);
+			expect(urls).toContain('/api/schueler?status=ehemalige&q=S-10001');
+		});
+	});
+
 	// Ein gescheiterter Abruf ist KEINE Trefferliste. Bis zum 12.09.2026 schrieb `if
 	// (res.ok && nr === ladeNr)` die Liste nur im Erfolgsfall — scheiterte die Suche,
 	// blieben die Treffer der VORIGEN Suche stehen, unter dem neuen Suchtext. Genau die
