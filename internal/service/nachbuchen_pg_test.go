@@ -420,3 +420,25 @@ func TestBucheNach_UnbekanntesBuchUndUnbekannterAusweis(t *testing.T) {
 		t.Errorf("Meldung trägt den Ausweis-Text %q, erwartet %q", text, ausweis)
 	}
 }
+
+// Nachgebucht gilt dieselbe Frist wie am Netz: Eine Schülerin bekommt die Leihfrist ab dem Scan,
+// nicht das Jahr des Kollegiums.
+func TestBucheNach_SchuelerinBekommtDieLeihfristAbDemScan(t *testing.T) {
+	w := nbAufbau(t)
+	ctx := context.Background()
+	gescannt := time.Now().Add(-time.Hour)
+
+	erg, err := w.dienst.BucheNach(ctx, w.eintrag(NachbuchAbsichtAusleihe, &w.anna, gescannt))
+	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
+		t.Fatalf("Ausleihe: %v %+v", err, erg)
+	}
+	var frist time.Time
+	if err := w.pool.QueryRow(ctx, `SELECT rueckgabe_frist FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`,
+		w.exemplarID).Scan(&frist); err != nil {
+		t.Fatalf("Frist lesen: %v", err)
+	}
+	if !frist.After(gescannt) || !frist.Before(gescannt.AddDate(0, 6, 0)) {
+		t.Errorf("Frist %v nach dem Scan %v: erwartet die Leihfrist eines Freihand-Buchs, nicht das Jahr des Kollegiums",
+			frist, gescannt)
+	}
+}

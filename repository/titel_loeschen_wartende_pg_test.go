@@ -127,6 +127,17 @@ func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 	if stand != "offen" {
 		t.Errorf("Reservierungs-Spur nennt den Stand %q, erwartet offen", stand)
 	}
+	// Der Stand steht als festes Wort in der Abfrage; welche Reservierung gemeint ist, sagt die Klasse.
+	var reservierteKlasse string
+	if err := pool.QueryRow(ctx, `
+		SELECT coalesce(details->>'betrifft', '') FROM audit_log
+		WHERE datensatz_id = $1 AND tabelle = 'klassensatz_reservierungen'`, titelID).Scan(&reservierteKlasse); err != nil {
+		t.Fatalf("Klasse der Reservierung lesen: %v", err)
+	}
+	if reservierteKlasse != klasse {
+		t.Errorf("Reservierungs-Spur nennt die Klasse %q, erwartet die offene Reservierung (%s), nicht die erledigte (05B)",
+			reservierteKlasse, klasse)
+	}
 	var fremd int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE datensatz_id = $1`, andererTitel).Scan(&fremd); err != nil {
 		t.Fatalf("fremde Spur lesen: %v", err)

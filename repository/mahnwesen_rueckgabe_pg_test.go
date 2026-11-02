@@ -50,3 +50,45 @@ func TestMahnbriefe_ZurueckgegebeneRausfiltern(t *testing.T) {
 			"eine zurückgegebene Ausleihe landete in der Mahnung", len(briefe), buecher)
 	}
 }
+
+// TestMahnbriefe_JederSchuelerEinBrief: Die Abfrage liefert je Buch eine Zeile; je Schüler entsteht
+// genau ein Brief mit allen seinen Büchern. Ein Brief, der die Bücher eines anderen nennt, ginge
+// mit fremden Ausleihen an die Eltern.
+func TestMahnbriefe_JederSchuelerEinBrief(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	ex := legeSignaturMitExemplarenAn(t, pool, "MahnBrief", 3)
+	anna := legeSchuelerAn(t, pool, "MB-ANNA", "Anna", "7a")
+	ben := legeSchuelerAn(t, pool, "MB-BEN", "Ben", "7b")
+	bearbeiter := legeBearbeiterAn(t, pool)
+	ausleihen := []string{
+		legeAusleiheAn(t, pool, ex[0], anna, bearbeiter),
+		legeAusleiheAn(t, pool, ex[1], anna, bearbeiter),
+		legeAusleiheAn(t, pool, ex[2], ben, bearbeiter),
+	}
+	if _, err := pool.Exec(ctx,
+		`UPDATE ausleihen SET rueckgabe_frist = CURRENT_TIMESTAMP - interval '30 days' WHERE id = ANY($1)`,
+		ausleihen); err != nil {
+		t.Fatalf("Fristen ablaufen lassen: %v", err)
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // Rollback nach dem Lesen ist hier der Normalfall
+	briefe, err := NewMahnwesenAbfragen(pool).LadeMahnbriefe(ctx, tx, ausleihen)
+	if err != nil {
+		t.Fatalf("LadeMahnbriefe: %v", err)
+	}
+
+	buecherJe := map[string]int{}
+	for _, b := range briefe {
+		buecherJe[b.SchuelerID] += len(b.Buecher)
+	}
+	if len(briefe) != 2 || buecherJe[anna] != 2 || buecherJe[ben] != 1 {
+		t.Errorf("erwartet je Schüler einen Brief (Anna 2 Bücher, Ben 1), waren %d Briefe: %v", len(briefe), buecherJe)
+	}
+}

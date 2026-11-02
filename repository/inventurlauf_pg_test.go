@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Zwei Läufe in verschiedenen Bereichen beeinflussen sich weder im Fortschritt noch beim
@@ -289,5 +291,37 @@ func TestVerwerfeLauf_UnbekannterLaufIstNichtGefunden(t *testing.T) {
 	err := repo.VerwerfeLauf(context.Background(), "00000000-0000-0000-0000-000000000000")
 	if !errors.Is(err, ErrInventurlaufNichtGefunden) {
 		t.Errorf("VerwerfeLauf(unbekannt) = %v, erwartet ErrInventurlaufNichtGefunden", err)
+	}
+}
+
+// Der Abschluss sperrt genau den genannten, noch offenen Lauf. Ist er schon abgeschlossen (ein
+// zweiter Klick, ein anderer Platz), gibt es keinen; ein anderer offener Lauf bleibt unberührt.
+// Sonst buchte der Abschluss dessen Bereich als Verlust.
+func TestSperreLaufFuerAbschluss_NurDerGenannteOffeneLauf(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewInventurAbfragen(pool)
+
+	deu, mat := "BIB Deu", "BIB Mat"
+	erster, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &deu}, "Signatur BIB Deu", "")
+	if err != nil {
+		t.Fatalf("Lauf Deu: %v", err)
+	}
+	zweiter, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &mat}, "Signatur BIB Mat", "")
+	if err != nil {
+		t.Fatalf("Lauf Mat: %v", err)
+	}
+
+	gesperrt, err := repo.SperreLaufFuerAbschluss(ctx, zweiter.ID)
+	if err != nil || gesperrt.ID != zweiter.ID {
+		t.Fatalf("offener Lauf: %v, Kennung %v, erwartet %s", err, gesperrt, zweiter.ID)
+	}
+
+	if _, err := pool.Exec(ctx, `UPDATE inventur_sessions SET abgeschlossen_am = now() WHERE id = $1`, erster.ID); err != nil {
+		t.Fatalf("ersten Lauf abschließen: %v", err)
+	}
+	if lauf, err := repo.SperreLaufFuerAbschluss(ctx, erster.ID); !errors.Is(err, pgx.ErrNoRows) {
+		t.Errorf("abgeschlossener Lauf: %v, Lauf %+v; erwartet keinen (pgx.ErrNoRows), nicht den anderen offenen", err, lauf)
 	}
 }
