@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Klassensätze zählen am Buch, nicht an der Auflage. Ein Buch mit zwei Auflagen, der 3. von
@@ -22,6 +23,9 @@ import (
 func TestLadeKlassensatzGruppen_ZaehltAmBuch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
+	// Die Klassen sind fest, und die Abfrage zählt jedes Kind darin: Lässt ein anderer Test Schüler
+	// in der 07B stehen, liegen sieben Leser nicht mehr über der Hälfte der Klasse.
+	testdaten.LeereBestandsdaten(t, pool)
 	const (
 		werk = "00000000-0000-0000-0000-0000000a5000"
 		alt  = "00000000-0000-0000-0000-0000000a5001"
