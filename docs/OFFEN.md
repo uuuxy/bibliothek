@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 01.11.2026
+Stand: 02.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -44,7 +44,7 @@ Nur, was kein Test leisten kann.
 
 ### Nebenbei
 
-- [ ] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen und die Äste von #759 bis #763
+- [x] Die abgelehnten Vorschläge #764 und #765 auf GitHub schließen und die Äste von #759 bis #763
   löschen. (5.169)
 
 ### Termin
@@ -79,18 +79,6 @@ Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zei
 Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
 zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
 Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
-
-### 5.169 Vorschläge #764 und #765
-
-Geprüft und abgelehnt. Es fehlt nur noch, sie auf GitHub zu schließen. Dazu die Äste der schon
-geschlossenen Vorschläge #759 bis #763 löschen; aus der Sitzung heraus lehnt die Rechteprüfung beides ab.
-
-- #764 senkt `maxMemory` von `ParseMultipartForm` an fünf Stellen auf 1 MB, wie zuvor #759, #761 und
-  #763. Alle fünf Stellen begrenzen die Anfrage schon vorher mit `http.MaxBytesReader`. Mit 1 MB legt
-  Go jede größere Datei als Zwischendatei auf die Platte, beim LUSD-Import samt Schülerdaten.
-- #765 ersetzt zwei `count(*)` durch `EXISTS`. Der eindeutige Index `uniq_ausleihen_aktiv_exemplar`
-  lässt je Exemplar nur eine offene Ausleihe zu; beide Abfragen lesen über ihn gleich viele Blöcke.
-  Nebenbei überschreibt der Vorschlag den Inhalt von `.jules/bolt.md`.
 
 ### 7.2 Frisches Littera-Backup
 
