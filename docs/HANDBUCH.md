@@ -36,6 +36,12 @@ nicht. Gebucht wird nur an der Theke.
 
 ## Ausleihe (Theke)
 
+**Vor dem ersten Scan: Der Scanner muss auf deutsche Tastatur eingestellt sein.** Ein
+Datalogic-Scanner wird dafür auf „Country Mode = Germany" umgestellt; die Anleitungen des
+Herstellers stehen im Netz, die Schritte unter _Wenn etwas nicht geht_. Auf amerikanischer
+Tastatur tippt er den Bindestrich als ß: Die Theke findet den Ausweis trotzdem, andere Felder wie
+Inventur und Ausweisnummern nicht.
+
 Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 
 1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status mit dem
