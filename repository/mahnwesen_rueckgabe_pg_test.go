@@ -89,6 +89,6 @@ func TestMahnbriefe_JederSchuelerEinBrief(t *testing.T) {
 		buecherJe[b.SchuelerID] += len(b.Buecher)
 	}
 	if len(briefe) != 2 || buecherJe[anna] != 2 || buecherJe[ben] != 1 {
-		t.Errorf("erwartet je Schüler einen Brief (Anna 2 Bücher, Ben 1), waren %d Briefe: %v", len(briefe), buecherJe)
+		t.Errorf("Briefe = %d, Bücher je Schüler %v; erwartet je Schüler einen Brief (Anna 2 Bücher, Ben 1)", len(briefe), buecherJe)
 	}
 }
