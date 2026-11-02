@@ -35,6 +35,8 @@ Nur, was kein Test leisten kann.
 - [x] Im Ausweis-Designer eine Vorlage neu anwenden oder das gespeicherte Design hinter die
   gestrichelte Linie schieben und an beiden Kartendruckern eine Karte drucken. (7.10)
 - [ ] Die Blätter des Programms einmal auf Papier ansehen. (7.10)
+- [ ] Mit dem Scanner je ein Littera-Etikett, ein gedrucktes Etikett und eine ISBN mit Preiszusatz
+  scannen. (7.10)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 - [ ] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
   Danach prüfe ich in Safari, ob die Dokumente mit Personendaten im Tab erscheinen. (5.106)
@@ -161,6 +163,10 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
 - Flows 1–3 mit dem Sekretariat: LUSD-Import, Versetzung (vor dem Schuljahreswechsel),
   Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten.
 - Flow 4: Selbstanmeldung einer Lehrkraft.
+- Ohne Netz an einem Theken-Rechner der Schule: Netzkabel ziehen, einen Ausweis und zwei Bücher
+  scannen, den Rechner neu starten, das Kabel wieder einstecken. Erwartet: Beide Buchungen kommen
+  an. Setzt die Schul-IT die Rechner beim Neustart zurück, ginge die Warteschlange verloren; das
+  sieht kein Test.
 
 ### 7.8 Am Server nachsehen
 
@@ -170,6 +176,14 @@ Schulserver, und erst nach der Littera-Übernahme (7.2).
   `docker exec bibliothek-backend sh -c 'wget -q -T 8 -O /dev/null "https://services.dnb.de/sru/dnb?version=1.1&operation=explain" && echo erreichbar || echo nicht erreichbar'`
 
 ### 7.10 Was nur ein Mensch am Gerät sieht
+
+**Etiketten am Scanner.** Die Tests tippen wie ein Handscanner (`scanneWieScanner`), wissen aber
+nicht, was der Scanner der Schule bei EAN-13 mitschickt: Prüfziffer und Preiszusatz (P2/P5) sind
+Einstellungen des Geräts. Je einmal scannen, zuerst im Editor, dann an Theke und Inventur: ein
+Littera-Etikett an einem Buch (im Editor 13 Ziffern; Theke und Inventur finden das Buch), ein vom
+Programm gedrucktes Etikett mit `B-` oder `LMF-`, den ISBN-Strichcode auf der Rückseite eines Buchs
+mit fünfstelligem Preiszusatz (im ISBN-Feld beim Titel anlegen kommen 13 Ziffern an; `isbnFormen.js`
+kennt nur 10 oder 13).
 
 **Blätter auf Papier.** Die Tests messen Text und Lage auf der PDF-Seite (`pdf/orte_test.go`),
 Rand und Maßstab des Druckers nicht. Je einmal drucken: einen Mahnbrief für einen Schüler mit
