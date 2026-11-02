@@ -46,9 +46,6 @@ Kartenhersteller stammt; dieses zweite Feld haben wir nicht.
 Rechner mit deutscher jeden Bindestrich als ß; aus `S-10001` wird `Sß10001`. Die Theke liest
 ein ß hinter einer Vorsilbe als Bindestrich, auch das zweite einer LMF-Nummer
 (`normalisiereScan` in `frontend/src/lib/utils/scanEinordnen.js`). In einer Nummer steht nie ein ß.
-Nicht heilen kann die Regel das Prüfzeichen älterer Drucke in Code 39: Ist es `/`, `+`, `Y` oder
-`Z`, etwa bei jedem elften, kommt es mit dieser Belegung als anderes Zeichen an, hinter einer
-nackten Nummer auch das `-`. Das behebt nur die deutsche Belegung am Scanner.
 
 **Ablauflogik:**
 
