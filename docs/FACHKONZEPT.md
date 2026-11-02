@@ -42,6 +42,11 @@ unterscheiden kann.** Offline gibt es niemanden zu fragen. Littera kommt ohne au
 dort Nummer und Scanwert zwei verschiedene Felder sind und der Scanwert vom
 Kartenhersteller stammt; dieses zweite Feld haben wir nicht.
 
+**Der Bindestrich als ß:** Ein Handscanner mit amerikanischer Tastatur tippt an einem
+Rechner mit deutscher jeden Bindestrich als ß; aus `S-10001` wird `Sß10001`. Die Theke liest
+ein ß hinter einer Vorsilbe als Bindestrich, auch das zweite einer LMF-Nummer
+(`normalisiereScan` in `frontend/src/lib/utils/scanEinordnen.js`). In einer Nummer steht nie ein ß.
+
 **Ablauflogik:**
 
 1. Wird ein Buch gescannt, _ohne_ dass ein Schüler/Lehrer aufgerufen ist, wird das Buch **zurückgegeben**.

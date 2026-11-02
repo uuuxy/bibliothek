@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ordneScanEin } from './scanEinordnen.js';
+import { normalisiereScan, ordneScanEin } from './scanEinordnen.js';
 
 // Je FORM ein Fall — das ist der Punkt dieser Datei.
 //
@@ -99,6 +99,32 @@ describe('Scan ohne Netz einordnen', () => {
 
 	it('leerer Scan ist unklar, nicht Buch', () => {
 		expect(ein('   ')).toEqual({ art: 'unklar', nummer: '' });
+	});
+});
+
+// Am Rechner der Schule im Editor gemessen: Der Handscanner tippt mit amerikanischer Tastatur,
+// Windows hat eine deutsche, und aus jedem Bindestrich wird ein ß.
+describe('Handscanner mit amerikanischer Tastatur an einem deutschen Rechner', () => {
+	/** @param {string} s */
+	const ein = (s) => ordneScanEin(s, () => false);
+
+	it('liest das ß hinter der Vorsilbe als Bindestrich', () => {
+		expect(ein('Sß10001')).toEqual({ art: 'ausweis', nummer: 'S-10001' });
+		expect(ein('Sß3344070029')).toEqual({ art: 'ausweis', nummer: 'S-3344070029' });
+		expect(ein('Aß10006')).toEqual({ art: 'ausweis', nummer: 'A-10006' });
+		expect(ein('Bß00123')).toEqual({ art: 'buch', nummer: 'B-00123' });
+		expect(ein('Gß17')).toEqual({ art: 'geraet', nummer: 'G-17' });
+		expect(ein('sß10001')).toEqual({ art: 'ausweis', nummer: 'S-10001' });
+	});
+
+	it('liest auch den zweiten Bindestrich einer LMF-Nummer', () => {
+		expect(ein('LMFß2025ß0007')).toEqual({ art: 'buch', nummer: 'LMF-2025-0007' });
+	});
+
+	it('lässt ein Wort mit ß stehen', () => {
+		expect(normalisiereScan('Straße')).toBe('Straße');
+		expect(normalisiereScan('Aßmann')).toBe('Aßmann');
+		expect(normalisiereScan('Sß')).toBe('Sß');
 	});
 });
 

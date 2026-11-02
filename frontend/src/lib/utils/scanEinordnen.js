@@ -42,18 +42,19 @@ import { ohnePruefzeichen } from './code39Pruefzeichen.js';
  * Ausweis „S-bahn". Deshalb greift die Vereinheitlichung nur, wenn hinter der Vorsilbe
  * wirklich eine ZIFFER steht — das trennt eine Nummer von einem Wort mit Bindestrich.
  *
+ * Warum das ß: Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner
+ * jeden Bindestrich als ß (`Sß10001`). In einer Nummer steht nie ein ß.
+ *
  * @param {string} roh
  * @returns {string}
  */
 export function normalisiereScan(roh) {
 	const scan = (roh ?? '').trim();
 	for (const v of ['LMF-', 'A-', 'S-', 'L-', 'B-', 'G-']) {
-		if (
-			scan.length > v.length &&
-			scan.slice(0, v.length).toUpperCase() === v &&
-			/\d/.test(scan[v.length])
-		) {
-			return v + scan.slice(v.length);
+		const kopf = scan.slice(0, v.length);
+		const vorsilbe = kopf.slice(0, -1).toUpperCase() + (kopf.endsWith('ß') ? '-' : kopf.slice(-1));
+		if (scan.length > v.length && vorsilbe === v && /\d/.test(scan[v.length])) {
+			return v + scan.slice(v.length).replaceAll('ß', '-');
 		}
 	}
 	return scan;

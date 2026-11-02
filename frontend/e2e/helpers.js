@@ -544,10 +544,15 @@ function scannerTaste(zeichen) {
  * macht aus dem Scan sonst eine Eingabe von Hand (scanErkennung.js, 50 ms).
  * @param {import('@playwright/test').Page} page
  * @param {string} nummer Ziffern, Buchstaben und Bindestrich
+ * @param {{ deutscherRechner?: boolean }} [optionen] Der Rechner hat eine deutsche Tastatur: Die
+ *   Taste, die der Scanner für den Bindestrich drückt, ergibt dort ein ß.
  */
-export async function scanneWieScanner(page, nummer) {
+export async function scanneWieScanner(page, nummer, { deutscherRechner = false } = {}) {
 	const abstand = 0.005;
-	const tasten = [...nummer].map((z) => ({ key: z, text: z, ...scannerTaste(z) }));
+	const tasten = [...nummer].map((z) => {
+		const zeichen = deutscherRechner && z === '-' ? 'ß' : z;
+		return { key: zeichen, text: zeichen, ...scannerTaste(z) };
+	});
 	tasten.push({ key: 'Enter', text: '\r', code: 'Enter', keyCode: 13 });
 
 	const client = await page.context().newCDPSession(page);
