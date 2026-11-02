@@ -47,7 +47,7 @@ export function erzeugeBestellLader(bestellungId) {
 		return abruf;
 	}
 
-	return {
+	return /** @satisfies {object} */ ({
 		get bestellung() {
 			return bestellung;
 		},
@@ -58,5 +58,5 @@ export function erzeugeBestellLader(bestellungId) {
 			return fehler;
 		},
 		laden
-	};
+	});
 }
