@@ -42,6 +42,8 @@
 	// Es gilt die jüngste Anfrage: Ein Signal der Leitung und das Laden nach einer eigenen Aktion
 	// können sich überholen, und die ältere Antwort nennte dann eine überholte Frist des Links.
 	let ladeNr = 0;
+	/** @type {Promise<boolean>} */
+	let juengsterAbruf = Promise.resolve(true);
 	/** @type {HTMLElement | undefined} */
 	let wurzel = $state();
 	// Der Block zur gescheiterten Mail verschwindet, wenn der Händler bestätigt.
@@ -50,8 +52,17 @@
 		() => wurzel
 	);
 
-	async function laden() {
+	// Wer auf das Laden wartet, etwa um danach den Fokus auf die Quittung zu setzen, wartet bis zum
+	// jüngsten Abruf: Die überholte Antwort fällt weg, und bis dahin stünde der alte Stand noch da.
+	function laden() {
 		const nr = ++ladeNr;
+		const abruf = holeBestellung(nr).then((kam) => (nr === ladeNr ? kam : juengsterAbruf));
+		juengsterAbruf = abruf;
+		return abruf;
+	}
+
+	/** @param {number} nr */
+	async function holeBestellung(nr) {
 		// Beim Aktualisieren bleibt die Ansicht stehen, auch wenn der Abruf scheitert (die Meldung
 		// zeigt apiGet): Baute sie sich neu auf, wäre der Link weg, der nur einmal zu sehen ist.
 		const ersterAbruf = !bestellung;

@@ -206,6 +206,35 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		await waitFor(() => expect(region?.contains(document.activeElement)).toBe(true));
 	});
 
+	// Kommt das Signal der Leitung, während die Bestellung nach dem Nachtrag neu lädt, gilt die jüngere
+	// Anfrage, und die eigene kommt ohne die Quittung zurück. Der Fokus wartet auf die jüngere.
+	it('überholt das Signal das Laden nach dem Nachtrag, steht der Fokus auf der Quittung', async () => {
+		const nachgetragen = { ...BESTAETIGT, bestaetigt_durch: 'bibliothek' };
+		const screen = await geoeffnet();
+		screen.getByRole('button', { name: 'Kleine Etiketten' }).focus();
+		/** @type {(wert: any) => void} */
+		let eigeneAntwort = () => {};
+		/** @type {(wert: any) => void} */
+		let antwortAufsSignal = () => {};
+		holen.mockReturnValueOnce(new Promise((fertig) => (eigeneAntwort = fertig)));
+		holen.mockReturnValueOnce(new Promise((fertig) => (antwortAufsSignal = fertig)));
+		vi.mocked(apiPut).mockImplementation(async () => {
+			/** @type {HTMLElement} */ (document.activeElement).blur();
+		});
+		const anfragen = holen.mock.calls.length;
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Kleine Etiketten' }));
+		await waitFor(() => expect(holen.mock.calls.length).toBe(anfragen + 1));
+		leitung.sende('bestellstand');
+		eigeneAntwort(nachgetragen);
+		await new Promise((fertig) => setTimeout(fertig));
+		antwortAufsSignal(nachgetragen);
+
+		const quittung = await screen.findByText('Bestätigung in der Bibliothek nachgetragen');
+		const region = quittung.closest('[role="status"]');
+		await waitFor(() => expect(region?.contains(document.activeElement)).toBe(true));
+	});
+
 	it('steht der Fokus woanders, bleibt er dort', async () => {
 		const screen = await geoeffnet();
 		const zurueck = screen.getByRole('button', { name: 'Zurück zur Bestellhistorie' });

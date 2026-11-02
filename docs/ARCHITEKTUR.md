@@ -2006,7 +2006,9 @@ Antwort nicht, und `abonniereNeuladen` holt beim nächsten Lebenszeichen der Lei
 Das Nachladen läuft, während jemand arbeitet. Daraus folgen sechs Regeln:
 
 - Es gilt die jüngste Anfrage, auch beim Fehler: Eine späte Antwort oder Absage schreibt nichts mehr
-  (Laufnummer hinter dem letzten `await`).
+  (Laufnummer hinter dem letzten `await`). Wer auf das Nachladen wartet, um danach mit den neuen
+  Daten zu arbeiten, wartet bis zum jüngsten Abruf: Sonst setzt er den Fokus auf eine Quittung, die
+  erst die jüngere Antwort bringt (`BestellDetail.laden`).
 - Scheitert nur das Auffrischen, bleibt der Inhalt stehen, und eine Meldung nennt den Grund. Der
   Kasten „nicht geladen" gehört dem ersten Abruf und dem Wechsel der Ansicht, unter dem sonst die
   falsche Liste stünde.
