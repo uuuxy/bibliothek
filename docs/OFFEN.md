@@ -85,12 +85,14 @@ Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](AR
 ### 5.170 Scanner mit amerikanischer Tastatur: die übrigen Felder
 
 Ein solcher Scanner tippt an einem deutschen Rechner den Bindestrich als ß ([FACHKONZEPT.md](FACHKONZEPT.md)
-§1). Theke und Druck-Center lesen ihn über `normalisiereScan` richtig. Roh nehmen den Scan noch:
-Inventur („Barcode scannen"), Barcode des Exemplars in der Buchakte, Ausweisnummer in Leserakte,
-Kollegium, Konto und Neuanlage, Barcode eines Geräts, Theken-Auskunft, die Schülersuche beim
-Vormerken und die Suchen von Leserdatei und Katalog. Ein speicherndes Feld legte „Sß…" als Nummer
-ab. Nächster Schritt: dort `normalisiereScan` nehmen, je Feld ein Test. Bis dahin hilft die deutsche
-Tastatur am Scanner (Einstell-Strichcode im Handbuch) oder die getippte Nummer.
+§1). Über `normalisiereScan` lesen ihn die Theke und im Druck-Center das Nummernfeld beim
+Etikettendruck richtig. Roh nehmen den Scan noch: Inventur („Barcode scannen"), Barcode des
+Exemplars in der Buchakte, Ausweisnummer in Leserakte, Kollegium, Konto und Neuanlage, Barcode
+eines Geräts, Theken-Auskunft, die Schülersuche beim Vormerken, die Suche beim Zusammenführen von
+Lesern, die Suchen von Leserdatei, Ehemaligen und Katalog und der Nachdruck im Druck-Center. Ein
+speicherndes Feld legte „Sß…" als Nummer ab; der Server prüft die Zeichen nicht. Nächster Schritt:
+dort `normalisiereScan` nehmen, je Feld ein Test. Bis dahin hilft die deutsche Tastatur am Scanner
+(Einstell-Strichcode im Handbuch) oder die getippte Nummer.
 
 ### 7.2 Frisches Littera-Backup
 
