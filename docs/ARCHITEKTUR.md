@@ -2450,6 +2450,8 @@ sieht.
   Pfad; Vorlage `frontend/e2e/cover-aendern.spec.js`): Mit einem Pfad geht Playwright den Weg
   des Browsers, und dieselbe Datei ein zweites Mal meldet in Chromium und WebKit kein change,
   wie von Hand. Mit einem Puffer setzt Playwright die Datei selbst und meldet change jedes Mal.
+  `setInputFiles` prüft nicht, ob der Bereich Eingaben annimmt: Ist er `inert`, solange er lädt
+  (Ausweis-Designer), wartet vorher ein Probeklick auf einen Knopf daneben (`click({ trial: true })`).
   Ein Knopf unter einem Feld, das mit `transition:slide` aufklappt, rückt, bis das Feld offen ist:
   Ein Doppelklick von Hand an seinen Koordinaten davor trifft mit dem zweiten Klick daneben und
   sieht harmlos aus. Die Maus trifft nur, was im Bild steht: Ein Knopf unterhalb des sichtbaren
