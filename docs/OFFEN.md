@@ -92,7 +92,8 @@ eines Geräts, Theken-Auskunft, die Schülersuche beim Vormerken, die Suche beim
 Lesern, die Suchen von Leserdatei, Ehemaligen und Katalog und der Nachdruck im Druck-Center. Ein
 speicherndes Feld legte „Sß…" als Nummer ab; der Server prüft die Zeichen nicht. Nächster Schritt:
 dort `normalisiereScan` nehmen, je Feld ein Test. Bis dahin hilft die deutsche Tastatur am Scanner
-(Einstell-Strichcode im Handbuch) oder die getippte Nummer.
+([HANDBUCH.md](HANDBUCH.md), „Wenn etwas nicht geht") oder die getippte Nummer. Der Scanner der
+Schule ist so eingestellt; bei Lieferung stand er auf amerikanischer Tastatur.
 
 ### 7.2 Frisches Littera-Backup
 

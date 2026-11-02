@@ -919,6 +919,13 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
   einmal klicken.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.
+- **Scanner tippt ß statt Bindestrich** (im Editor erscheint „Sß10001" statt „S-10001") → Der
+  Scanner steht auf amerikanischer Tastatur. Die Theke liest die Nummer trotzdem, andere Felder
+  nicht. Stell den Scanner um: In seiner Kurzanleitung (Datalogic QuickScan QM21X1, „Quick
+  Reference Guide", Seiten 17 und 18) nacheinander _ENTER/EXIT PROGRAMMING MODE_, _Country Mode =
+  Germany_ und noch einmal _ENTER/EXIT PROGRAMMING MODE_ scannen. Geklappt hat es, wenn er einen
+  hohen und vier tiefe Töne gibt und neu startet. Die Einstellung liegt im Scanner, nicht am
+  Rechner.
 - **Netz weg** → weiterarbeiten. Oben erscheint ein schmales Band, die Theke bleibt bedienbar,
   und der Bildschirm sperrt sich nicht. Scanne wie sonst: erst den Ausweis, dann die Bücher.
   Beides wird auf diesem Rechner gemerkt und gebucht, sobald die Verbindung zurück ist — du musst
