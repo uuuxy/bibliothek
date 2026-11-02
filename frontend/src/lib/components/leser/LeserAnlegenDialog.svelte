@@ -16,6 +16,7 @@
 	import LeserArtWahl from './LeserArtWahl.svelte';
 	import KollegiumEingabeFelder from './KollegiumEingabeFelder.svelte';
 	import { leserArtText, istKollegium, artMitKonto } from './leserArt.js';
+	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 	import { TriangleAlert } from '@lucide/svelte';
 	import { erzeugeDialogAnfrage } from '../ui/dialogAnfrage.svelte.js';
 
@@ -89,7 +90,7 @@
 				vorname: newVorname.trim(),
 				nachname: newNachname.trim(),
 				klasse: kollege ? '' : newKlasse.trim(),
-				barcode_id: newBarcode.trim(),
+				barcode_id: normalisiereScan(newBarcode),
 				geburtsdatum: kollege ? null : newGeburtsdatum.trim(),
 				// Nur wo ein Zugang dazugehört: Ein Schüler, ein Praktikum und ein Fachbereich
 				// bekommen kein Konto, und der Server weist eine Adresse dort ausdrücklich ab.

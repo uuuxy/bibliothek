@@ -4,6 +4,7 @@
  */
 
 import { nurGeaendertes } from '../../utils/geaendert.js';
+import { normalisiereScan } from '../../utils/scanEinordnen.js';
 
 /** Die Felder, die sich an einem vorhandenen Gerät ändern lassen. Der Barcode klebt. */
 const AENDERBAR = ['modellname', 'seriennummer', 'zubehoer', 'zustand_notiz'];
@@ -40,7 +41,7 @@ export function geraetNutzlast(form, vorhanden) {
 	if (!vorhanden) {
 		return {
 			modellname: form.modellname,
-			barcode_id: form.barcode_id,
+			barcode_id: normalisiereScan(form.barcode_id),
 			seriennummer: form.seriennummer,
 			zubehoer: form.zubehoer,
 			zustand_notiz: form.zustand_notiz

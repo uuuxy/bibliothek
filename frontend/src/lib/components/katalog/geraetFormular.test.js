@@ -23,6 +23,13 @@ describe('geraetFormular', () => {
 		});
 	});
 
+	// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den
+	// Bindestrich als ß (FACHKONZEPT §1): Gespeichert wird, was die Theke beim Scan nachschlägt.
+	it('ein neues Gerät schickt einen gescannten Barcode so, wie die Theke ihn liest', () => {
+		const form = { ...leeresGeraetFormular(), modellname: 'iPad', barcode_id: 'Gß17' };
+		expect(geraetNutzlast(form, false).barcode_id).toBe('G-17');
+	});
+
 	// Die Maske füllt sich aus der Zeile der Liste. Schickte sie jedes Feld zurück, schriebe
 	// sie den Stand vom Öffnen über das, was ein anderer Platz inzwischen gespeichert hat.
 	it('ein vorhandenes Gerät schickt nur, was seit dem Öffnen geändert wurde', () => {

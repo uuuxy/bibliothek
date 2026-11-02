@@ -12,6 +12,7 @@
  */
 
 import { nurGeaendertes } from '../../utils/geaendert.js';
+import { mitVereinheitlichterNummer } from '../../utils/scanEinordnen.js';
 
 export function leeresBenutzerFormular() {
 	return {
@@ -60,11 +61,12 @@ export function benutzerNutzlast(form) {
 		rolle: form.rolle,
 		aktiv: form.aktiv
 	};
-	if (!form.id) return felder;
+	if (!form.id) return mitVereinheitlichterNummer(felder);
 	if (!form.geladen) {
 		throw new Error(
 			'Der Stand vom Öffnen des Kontos fehlt. Nichts gespeichert: bitte das Konto neu öffnen.'
 		);
 	}
-	return nurGeaendertes(form.geladen, felder);
+	// Erst vergleichen, dann vereinheitlichen: Eine unberührte Nummer geht so nicht mit.
+	return mitVereinheitlichterNummer(nurGeaendertes(form.geladen, felder));
 }

@@ -71,6 +71,30 @@ describe('Neuen Leser anlegen', () => {
 		expect(/** @type {any} */ (koerper).geburtsdatum).toBeNull();
 	});
 
+	// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den
+	// Bindestrich als ß (FACHKONZEPT §1): Gespeichert wird, was die Theke beim Scan nachschlägt.
+	it('schickt eine gescannte Ausweisnummer so, wie die Theke sie liest', async () => {
+		const screen = render(LeserAnlegenDialog, {
+			open: true,
+			klassen: ['07A'],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
+		await waehleArt(screen, 'Lehrkraft');
+		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Katrin' } });
+		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Wendland' } });
+		await fireEvent.input(screen.getByLabelText('Schul-E-Mail *'), {
+			target: { value: 'katrin.wendland@schule.invalid' }
+		});
+		await fireEvent.input(screen.getByLabelText('Ausweisnummer (optional)'), {
+			target: { value: 'Aß10007' }
+		});
+		await fireEvent.click(screen.getByText('Speichern'));
+
+		const [, koerper] = vi.mocked(apiClient.post).mock.calls[0];
+		expect(/** @type {any} */ (koerper).barcode_id).toBe('A-10007');
+	});
+
 	it('nennt die LiV als eigene Art', async () => {
 		await anlegen('liv');
 		expect(/** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]).art).toBe('liv');

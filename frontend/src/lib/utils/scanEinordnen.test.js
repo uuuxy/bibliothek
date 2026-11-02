@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalisiereScan, ordneScanEin } from './scanEinordnen.js';
+import { mitVereinheitlichterNummer, normalisiereScan, ordneScanEin } from './scanEinordnen.js';
 
 // Je FORM ein Fall — das ist der Punkt dieser Datei.
 //
@@ -119,6 +119,15 @@ describe('Handscanner mit amerikanischer Tastatur an einem deutschen Rechner', (
 
 	it('liest auch den zweiten Bindestrich einer LMF-Nummer', () => {
 		expect(ein('LMFß2025ß0007')).toEqual({ art: 'buch', nummer: 'LMF-2025-0007' });
+	});
+
+	it('vereinheitlicht die Nummer im Rumpf einer Maske und lässt eine fehlende draußen', () => {
+		expect(mitVereinheitlichterNummer({ barcode_id: 'Aß10007', vorname: 'N' })).toEqual({
+			barcode_id: 'A-10007',
+			vorname: 'N'
+		});
+		expect(mitVereinheitlichterNummer({ barcode_id: '' })).toEqual({ barcode_id: '' });
+		expect(mitVereinheitlichterNummer({ vorname: 'N' })).toEqual({ vorname: 'N' });
 	});
 
 	it('lässt ein Wort mit ß stehen', () => {

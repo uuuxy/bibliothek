@@ -39,8 +39,8 @@ nicht. Gebucht wird nur an der Theke.
 **Vor dem ersten Scan: Der Scanner muss auf deutsche Tastatur eingestellt sein.** Ein
 Datalogic-Scanner wird dafür auf „Country Mode = Germany" umgestellt; die Anleitungen des
 Herstellers stehen im Netz, die Schritte unter _Wenn etwas nicht geht_. Auf amerikanischer
-Tastatur tippt er den Bindestrich als ß: Die Theke findet den Ausweis trotzdem, andere Felder wie
-Inventur und Ausweisnummern nicht.
+Tastatur tippt er den Bindestrich als ß: Die Theke und die Masken, die eine Nummer speichern, lesen
+ihn trotzdem richtig, Inventur und Suchen nicht.
 
 Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 
@@ -927,8 +927,8 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.
 - **Scanner tippt ß statt Bindestrich** (im Editor erscheint „Sß10001" statt „S-10001") → Der
-  Scanner steht auf amerikanischer Tastatur. Die Theke liest die Nummer trotzdem, andere Felder
-  nicht. Stell den Scanner um: In seiner Kurzanleitung (Datalogic QuickScan QM21X1, „Quick
+  Scanner steht auf amerikanischer Tastatur. Die Theke und die Masken, die eine Nummer speichern,
+  lesen sie trotzdem richtig, Inventur und Suchen nicht. Stell den Scanner um: In seiner Kurzanleitung (Datalogic QuickScan QM21X1, „Quick
   Reference Guide", Seiten 17 und 18) nacheinander _ENTER/EXIT PROGRAMMING MODE_, _Country Mode =
   Germany_ und noch einmal _ENTER/EXIT PROGRAMMING MODE_ scannen. Geklappt hat es, wenn er einen
   hohen und vier tiefe Töne gibt und neu startet. Die Einstellung liegt im Scanner, nicht am

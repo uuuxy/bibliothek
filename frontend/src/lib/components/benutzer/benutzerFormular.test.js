@@ -104,11 +104,28 @@ describe('benutzerFormular', () => {
 			expect(benutzerNutzlast(form)).toEqual({});
 		});
 
+		it('liest in einer geänderten Nummer ein ß hinter der Vorsilbe als Bindestrich', () => {
+			const form = benutzerFormularAus(konto);
+			form.barcode_id = 'Aß10007';
+			expect(benutzerNutzlast(form)).toEqual({ barcode_id: 'A-10007' });
+		});
+
+		it('schickt eine unberührte Nummer nicht mit, auch wenn sie anders geschrieben ist', () => {
+			const form = benutzerFormularAus({ ...konto, barcode_id: 'a-10001' });
+			form.vorname = 'Gerdi';
+			expect(benutzerNutzlast(form)).toEqual({ vorname: 'Gerdi' });
+		});
+
 		it('weigert sich ohne den Stand vom Öffnen: Sonst gälte jedes Feld als geändert', () => {
 			expect(() => benutzerNutzlast({ ...leeresBenutzerFormular(), id: '7' })).toThrow(
 				/Stand vom Öffnen/
 			);
 		});
+	});
+
+	it('ein neues Konto schickt eine gescannte Nummer so, wie die Theke sie liest', () => {
+		const form = { ...leeresBenutzerFormular(), vorname: 'N', barcode_id: 'Aß10007' };
+		expect(benutzerNutzlast(form).barcode_id).toBe('A-10007');
 	});
 
 	it('ein neues Konto schickt alle Felder', () => {

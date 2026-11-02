@@ -281,6 +281,36 @@ describe('useLeserakteFormular.save', () => {
 	// Der Server schreibt jedes Feld, das der Rumpf nennt. Schickte die Maske alle Felder mit
 	// dem Stand vom Laden der Akte, schriebe sie zurück, was die Versetzung, der LUSD-Import
 	// oder ein anderer Platz inzwischen geändert hat — mit der Meldung „gespeichert".
+	// Ein Handscanner mit amerikanischer Tastatur tippt an einem deutschen Rechner den
+	// Bindestrich als ß (FACHKONZEPT §1): Gespeichert wird, was die Theke beim Scan nachschlägt.
+	describe('Ausweisnummer vom Handscanner', () => {
+		it('liest ein ß hinter der Vorsilbe als Bindestrich', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.eingaben.barcode_id = 'Sß10007';
+			await hook.speichere();
+
+			expect(patchMock).toHaveBeenCalledWith('/api/schueler/abc', { barcode_id: 'S-10007' });
+		});
+
+		it('schickt eine unberührte Nummer nicht mit, auch wenn sie anders geschrieben ist', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const alt = { ...schueler, barcode_id: 's-1' };
+			const hook = useLeserakteFormular({
+				getStudent: () => alt,
+				onSave: () => {},
+				showSnackbar: () => {}
+			});
+			hook.uebernimmLeser();
+
+			hook.eingaben.ort = 'Offenbach';
+			await hook.speichere();
+
+			expect(patchMock).toHaveBeenCalledWith('/api/schueler/abc', { ort: 'Offenbach' });
+		});
+	});
+
 	describe('nur die geänderten Felder', () => {
 		it('nennt nach einer Änderung an der Eltern-Adresse kein anderes Feld', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));

@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { normalisiereScan } from '../../utils/scanEinordnen.js';
 
 	/**
 	 * Barcode-Editor eines Exemplars: Feld, „Interne ID generieren" und „Speichern".
@@ -31,7 +32,7 @@
 
 	async function speichereBarcode() {
 		if (speichert) return;
-		const barcode = neuerBarcode.trim();
+		const barcode = normalisiereScan(neuerBarcode);
 		verlangt = true;
 		if (!barcode) return feld?.focus();
 		if (barcode === ex.barcode_id) return onDone();

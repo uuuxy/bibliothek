@@ -2,6 +2,7 @@ import { apiClient, leseApiFehler } from '../../apiFetch.js';
 import { istKollegium, artMitKonto } from '../leser/leserArt.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { nurGeaendertes } from '../../utils/geaendert.js';
+import { mitVereinheitlichterNummer } from '../../utils/scanEinordnen.js';
 
 /**
  * Klasse, Abgangsjahr und LUSD-ID gehören dem Schüler, die Schul-Adresse dem Kollegium:
@@ -160,7 +161,7 @@ export function useLeserakteFormular({ getStudent, onSave, showSnackbar }) {
 			showSnackbar('Kein Schüler ausgewählt.', 'error');
 			return;
 		}
-		const payload = geaendert();
+		const payload = mitVereinheitlichterNummer(geaendert());
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(payload).length === 0) {
 			showSnackbar('Änderungen gespeichert.', 'success');

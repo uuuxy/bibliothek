@@ -60,6 +60,20 @@ export function normalisiereScan(roh) {
 	return scan;
 }
 
+/**
+ * Vereinheitlicht die Nummer in einem Rumpf, den eine Maske an den Server schickt: gespeichert
+ * wird, was die Theke beim Scan nachschlägt. Fehlt die Nummer im Rumpf, bleibt sie draußen, denn
+ * ein leerer Wert hieße am Server „Nummer leeren".
+ *
+ * @template {Record<string, unknown>} T
+ * @param {T} rumpf
+ * @returns {T}
+ */
+export function mitVereinheitlichterNummer(rumpf) {
+	const nummer = rumpf.barcode_id;
+	return typeof nummer === 'string' ? { ...rumpf, barcode_id: normalisiereScan(nummer) } : rumpf;
+}
+
 /** Die Vorsilben eines Ausweises — dieselbe Menge wie im Server-Switch. */
 export const AUSWEIS_VORSILBEN = ['A-', 'S-', 'L-'];
 
