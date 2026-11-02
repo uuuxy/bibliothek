@@ -15,7 +15,7 @@ cat << 'EOF' > /root/caddy/Caddyfile
 # =============================================================================
 # Schul-Orga (Go-Backend + Svelte-Frontend, alles in einem Container)
 # =============================================================================
-flasch.herzog-dupont.de {
+orga.fla-dev.de {
     reverse_proxy school-calendar-app:8080 {
         # Timeouts für 150+ Nutzer mit SSE-Verbindungen
         transport http {
@@ -30,33 +30,6 @@ flasch.herzog-dupont.de {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
-    }
-}
-
-# =============================================================================
-# Inventur-Programm (Bücherverwaltung)
-# =============================================================================
-flasch2.herzog-dupont.de {
-    # API-Anfragen an das Go-Backend
-    handle /api/* {
-        reverse_proxy inventur-backend-1:8080
-    }
-
-    # Statische Upload-Dateien (Buchcover etc.) vom Backend
-    handle /uploads/* {
-        reverse_proxy inventur-backend-1:8080
-    }
-
-    # Alles andere: Svelte-Frontend (SvelteKit Node-Server)
-    handle {
-        reverse_proxy inventur-frontend-1:3000
-    }
-
-    # Security Headers
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
     }
 }
 
@@ -84,7 +57,7 @@ flasch2.herzog-dupont.de {
 # Der zweite handle-Block hat bewusst keinen Pfad: Caddy sortiert handle-Blöcke selbst, und ein
 # Block mit Pfad wie /* liefe vor dem mit @draussen. Welche Dateien die Seite vom Wurzelpfad lädt,
 # hält caddy_von_aussen_test.go gegen index.html und frontend/public.
-flasch3.herzog-dupont.de {
+bibliothek.fla-dev.de {
     @draussen {
         expression `{env.SCHULNETZ} != ""`
         not remote_ip {$SCHULNETZ:0.0.0.0/0 ::/0}
@@ -102,6 +75,21 @@ flasch3.herzog-dupont.de {
                 write_timeout 600s
             }
         }
+    }
+}
+
+# =============================================================================
+# Schadenmeldung (eigener Stack in /root/schadenmeldung)
+# =============================================================================
+# Die Fehlversuchsbremse der Schadenmeldung zählt nach X-Real-IP (PROXY_VERTRAUEN=1). Ohne die
+# Zeile zählte sie alle Anmeldungen als eine Adresse, und ein Client könnte den Kopf selbst setzen.
+schaden.fla-dev.de {
+    encode zstd gzip
+    reverse_proxy schaden:8090 {
+        header_up X-Real-IP {remote_host}
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
     }
 }
 EOF

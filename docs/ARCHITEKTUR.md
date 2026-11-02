@@ -334,7 +334,7 @@ graph TB
 ```
                    ┌──────────────────────────────────────────┐
   Browser          │  Caddy (Host, ACME/Let's Encrypt)        │
-  (SPA, PWA)  ────► │  flasch3.herzog-dupont.de :443          │
+  (SPA, PWA)  ────► │  bibliothek.fla-dev.de :443             │
                    │  response_header_timeout 300s            │
                    │  read/write_timeout 600s                 │
                    └───────────────┬──────────────────────────┘

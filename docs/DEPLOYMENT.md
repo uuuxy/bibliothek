@@ -289,7 +289,10 @@ die Adresse im Header `X-Forwarded-For`.
 ### Konfiguration
 
 Die Caddy-Konfiguration des Testservers schreibt `./update_caddy.sh`: alle Dienste des Hosts in
-`/root/caddy/Caddyfile`, erst `caddy validate`, dann `caddy reload`. Auf einem anderen Host
+`/root/caddy/Caddyfile`, erst `caddy validate`, dann `caddy reload`. Die Datei ist als einzelne
+Datei in den Caddy-Container eingehängt: Von Hand wird sie an Ort und Stelle überschrieben wie im
+Skript (`cat … >`); eine ersetzte Datei (neu geschrieben und umbenannt) sieht der Container nicht.
+Auf einem anderen Host
 gehört der Abschnitt „Bibliothek" daraus in dessen Caddyfile, samt den Fristen unter
 `transport http`: Sie müssen zur Anwendung passen, denn ein Import darf 5 Minuten dauern
 (`langLaufendeFrist` in `api/middleware.go`), und der SSE-Strom `/events` läuft dauerhaft. Eine
@@ -484,7 +487,7 @@ wegsichern — Pflicht ist es nicht.
 Alle Wächter unten laufen AUF dem Server: Fällt er ganz aus (Strom, Netz, Hetzner),
 meldet es niemand — die Nutzer merken es zuerst. Abhilfe ist kein Code, sondern ein
 externer Monitor (z. B. UptimeRobot, kostenloser Plan), der alle 5 Minuten
-`https://flasch3.herzog-dupont.de/health` abruft und bei Ausfall eine Mail schickt.
+`https://bibliothek.fla-dev.de/health` abruft und bei Ausfall eine Mail schickt.
 Der Endpunkt ist öffentlich und gibt keine Interna preis (`{"status":"healthy"}`).
 
 Es gibt **zwei** Health Checks, und sie prüfen Verschiedenes.
