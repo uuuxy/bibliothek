@@ -497,6 +497,9 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
 14. **Der Aufbau der Schule:** die ganze Suite hinter dem Block aus `update_caddy.sh`, mit TLS und HTTP/2.
     `cover-grossansicht` schreibt in den Container des Backends und läuft nur am Stack.
 
+Bedienung per Touch und ein langsamer Rechner gehören nicht zu den Läufen; für die Schule spielen
+beide keine Rolle.
+
 ## Katalogdienste nicht erreichbar
 
 Die drei Abfragen bei DNB, Google und OpenLibrary (`api/katalog/isbn_zu_titel.go`,

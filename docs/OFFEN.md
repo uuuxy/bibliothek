@@ -221,9 +221,8 @@ zufällige Reihenfolge und die Rundgänge je Rolle und je Recht (`e2e/rundgang-r
 `e2e/rundgang-rechte.spec.js`); bei den übrigen
 muss jemand die Funde lesen, oder sie werden auch ohne Fehler rot. Die Skripte stehen nicht im
 Repository; fehlen sie, werden sie nach den Punkten dort neu geschrieben. Bisher in keinem Lauf:
-die Suite mit Touch und auf einem langsamen Rechner und eine CSV aus Excel für Windows. Der
-Mailversand mit STARTTLS und Anmeldung ist einmal gelaufen, ohne Fund; `internal/smtptest` kündigt
-weiter kein STARTTLS an, die Tests sehen ihn also nicht.
+eine CSV aus Excel für Windows. Der Mailversand mit STARTTLS und Anmeldung ist einmal gelaufen,
+ohne Fund; `internal/smtptest` kündigt weiter kein STARTTLS an, die Tests sehen ihn also nicht.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 
