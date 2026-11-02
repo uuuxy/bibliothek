@@ -430,11 +430,15 @@ Ob die Tests prüfen, was sie zusagen, zeigt ein Durchgang über vier Fragen:
    `networkidle` tritt wegen der Live-Leitung nie ein.
 4. **Was der Durchgang nicht neu beweist:** Die Gates im Browser (`druck-sektionen-gate.mjs`,
    `typo-rollen`, `kontrast`) und die Ratschen an der Datenbank brauchen den gebauten Stack
-   bzw. Postgres. Nach einem Umbau an ihnen erneut rot sehen.
+   bzw. Postgres. Nach einem Umbau an ihnen erneut rot sehen. Den Mailversand mit STARTTLS und
+   Anmeldung sehen die Tests nicht: `internal/smtptest` kündigt kein STARTTLS an. Gegen einen
+   echten Server ist er einmal gelaufen, ohne Fund.
 
 Was der gewohnte Lauf nicht zeigen kann, zeigen zehn Läufe mit anderen Bedingungen. Bis auf den
 letzten hat jeder echte Fehler oder falsche Tests gefunden; alle laufen auf einer Wegwerf-Instanz ohne Mailserver.
 Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der Lauf einen alten Stand.
+Die Skripte der Läufe stehen nicht im Repository; fehlen sie, werden sie nach den Punkten hier neu
+geschrieben.
 
 5. **Reihenfolge:** `go test -shuffle=on ./...` und `vitest run --sequence.shuffle`. Die CI fährt
    beide so. Ein roter Lauf nennt die Folge (`-test.shuffle 1234`), `-shuffle=1234` wiederholt sie.
@@ -452,7 +456,9 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
    heutigen Tag, und die Zeitgeber von `page.clock` laufen über, sobald Seite und Test mehr als
    2^31 ms auseinanderliegen. Die Nachtläufe gehen dazu Woche für Woche über mehrere Schuljahre
    eines Bestands, mit den Zusagen nach jedem Schritt: keine offene Ausleihe und keine offene Forderung ohne Person,
-   kein aktives Konto gelöscht, nichts anonymisiert, was nicht weg ist.
+   kein aktives Konto gelöscht, nichts anonymisiert, was nicht weg ist. Rot ohne Fehler im Programm
+   bleiben die zwei Shell-Tests in `docs/`, die mit der echten Uhr rechnen, und Jahre voraus die
+   Horizonte der Ferientabellen und des LMF-Plans.
 8. **Felder, die nie kommen:** Die Antworten der Schnittstelle in der Seite als Proxy umhüllen und
    über die ganze Suite sammeln, was gelesen wird und in keiner Antwort stand. Am Go-Code einordnen:
    `omitempty`, Attrappe im Test oder Fehler. Eine Attrappe im Unit-Test beweist das Feld nicht.
@@ -469,8 +475,14 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
    wenn er im Nachlauf gegen denselben Rückbau rot wird: Eine Prüfung auf `IS NOT NULL` ergab
    zufällig dieselbe Zahl und übersah die Lücke.
    Eine Probe zählt nur, wenn der Test ohne Rückbau grün ist und mit ihm ein Test fehlschlägt: Ein
-   toter Entwicklungsserver und ein unbehandelter Fehler im Test machen sonst jeden Rückbau
-   scheinbar erkannt.
+   toter Entwicklungsserver, ein unbehandelter Fehler im Test und der Merkzettel einer abgebrochenen
+   Suite, an dem das Setup scheitert, machen sonst jeden Rückbau scheinbar erkannt. Unter Last ist eine Zeitüberschreitung kein Erkennen: Sie zählt erst, wenn sie
+   bei ruhigem Rechner mit längerer Grenze wiederkehrt. Ein Rückbau, der eine Schleife über `await`
+   nicht enden lässt, hält Vitest ganz an; er zählt als erkannt. Welche Specs eine Zeile ausführen,
+   misst ein Lauf der Suite am Entwicklungsserver mit der Abdeckung je Test, über die Quellkarte
+   jedes Moduls auf Zeilen umgerechnet: Geladen wird fast jedes Modul in fast jeder Spec. Ein neues
+   Dokument verwirft die Messung des alten, darum vor jedem `goto` und `reload` sichern; die Zeile
+   der Anmeldung muss in jeder Spec treffen.
 10. **Alle Rollen, alle Bildschirme:** Je Rolle jeden Bildschirm und Reiter öffnen und Ablehnungen
     des Servers, 5xx, Abstürze und Meldungen der Konsole sammeln. Die Suite fährt das selbst
     (`e2e/rundgang-rollen.spec.js`) und dazu jedes einzelne Recht (`e2e/rundgang-rechte.spec.js`),
@@ -486,17 +498,23 @@ Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der L
 11. **Firefox und WebKit:** die ganze Suite. Rot nur am Werkzeug bleiben: `newCDPSession` und
     `page.pdf` gibt es nur in Chromium, `window.print` hält den Klick in Firefox ohne Fenster an,
     WebKit druckt keine PDFs und lässt bei Tab Knöpfe aus, wie Safari ab Werk. Einen Knopf macht ein
-    Klick in Safari nicht zum Fokus: Was auf Tasten hört, nimmt ihn sich selbst.
+    Klick in Safari nicht zum Fokus: Was auf Tasten hört, nimmt ihn sich selbst. In Firefox bleiben
+    `abmelden-tab-zu` (`route.continue` nach `page.close`) und die Messhilfe von `control-hoehen`
+    und `typo-rollen` rot, die dort nicht zur Ruhe kommt.
 12. **Verzögerte Antworten:** Die ganze Suite, jede Anfrage an die Schnittstelle um einen Zufallswert
     bis 700 ms verzögert (`context.route`). So kommen Antworten in anderer Folge an, und Bedienung, die
     vor der Antwort Eingaben annimmt, fällt auf. Rot werden auch Prüfungen, die die Seite messen, bevor
     sie steht (Gerüst, Feldbreite, Rundgang, Schrift, Höhen, Rücken des Inhalts): Sie melden es laut,
-    falsch grün werden sie nicht.
+    falsch grün werden sie nicht. `neue-fassung` schaltet den Stand schlagartig um; die verzögerten
+    alten Antworten kommen danach, und die Seite folgt der letzten.
 13. **Dateien aus dem echten Programm:** CSV aus Excel in jedem Format durch alle Türen bis in die
     Datenbank, am Stand davor rot. Excel für Mac schreibt anders als das, was eine Tabelle über Excel sagt:
     In jeder Form Macintosh, nur eine mit CR als Zeilentrenner.
 14. **Der Aufbau der Schule:** die ganze Suite hinter dem Block aus `update_caddy.sh`, mit TLS und HTTP/2.
     `cover-grossansicht` schreibt in den Container des Backends und läuft nur am Stack.
+
+Nicht alle Läufe auf einmal: Mit zehn Kernen stieg die Last dabei über 50, Zeitgrenzen rissen, und
+Prüfungen, die die Seite messen, wurden rot. Jeden roten Test am selben Tag einzeln nachfahren.
 
 Bedienung per Touch und ein langsamer Rechner gehören nicht zu den Läufen; für die Schule spielen
 beide keine Rolle.
