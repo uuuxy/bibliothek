@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 01.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 03.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1655,7 +1655,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 01.11.2026
+Stand: 03.11.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2008,7 +2008,7 @@ Das Nachladen läuft, während jemand arbeitet. Daraus folgen sechs Regeln:
 - Es gilt die jüngste Anfrage, auch beim Fehler: Eine späte Antwort oder Absage schreibt nichts mehr
   (Laufnummer hinter dem letzten `await`). Wer auf das Nachladen wartet, um danach mit den neuen
   Daten zu arbeiten, wartet bis zum jüngsten Abruf: Sonst setzt er den Fokus auf eine Quittung, die
-  erst die jüngere Antwort bringt (`BestellDetail.laden`).
+  erst die jüngere Antwort bringt (`bestellungen/bestellLader.svelte.js`).
 - Scheitert nur das Auffrischen, bleibt der Inhalt stehen, und eine Meldung nennt den Grund. Der
   Kasten „nicht geladen" gehört dem ersten Abruf und dem Wechsel der Ansicht, unter dem sonst die
   falsche Liste stünde.

@@ -7,11 +7,11 @@
      einzige Bestellung angesehen wird. -->
 <script>
 	import { onMount } from 'svelte';
-	import { apiGet } from '../../apiFetch.js';
 	import { abonniereNeuladen } from '../../liveEvents.js';
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
+	import { erzeugeBestellLader } from './bestellLader.svelte.js';
 	import BestellStatusBlock from './BestellStatusBlock.svelte';
 	import BestellMailBlock from './BestellMailBlock.svelte';
 	import BestellDetailPositionen from './BestellDetailPositionen.svelte';
@@ -30,20 +30,16 @@
 	/** @type {{ bestellungId: string, onBack: () => void }} */
 	let { bestellungId, onBack } = $props();
 
-	/** @type {any} */
-	let bestellung = $state(null);
-	let laedt = $state(true);
-	/** @type {string} */
-	let fehler = $state('');
+	// Laden und die Regel der jüngsten Anfrage: bestellLader.svelte.js.
+	const lader = erzeugeBestellLader(() => bestellungId);
+	const bestellung = $derived(lader.bestellung);
+	const laedt = $derived(lader.laedt);
+	const fehler = $derived(lader.fehler);
+	const laden = lader.laden;
 	// Der Rückweg für den Topf: nur mit dem Recht, das auch bestellen darf (dieselbe Tür
 	// wie der Endpunkt — UI entscheidet nach Recht, nicht nach Rolle).
 	let mittelDialogOffen = $state(false);
 	const darfKorrigieren = $derived(hatRecht(authStore.currentUser, 'create_orders'));
-	// Es gilt die jüngste Anfrage: Ein Signal der Leitung und das Laden nach einer eigenen Aktion
-	// können sich überholen, und die ältere Antwort nennte dann eine überholte Frist des Links.
-	let ladeNr = 0;
-	/** @type {Promise<boolean>} */
-	let juengsterAbruf = Promise.resolve(true);
 	/** @type {HTMLElement | undefined} */
 	let wurzel = $state();
 	// Der Block zur gescheiterten Mail verschwindet, wenn der Händler bestätigt.
@@ -51,38 +47,6 @@
 		() => bestellung,
 		() => wurzel
 	);
-
-	// Wer auf das Laden wartet, etwa um danach den Fokus auf die Quittung zu setzen, wartet bis zum
-	// jüngsten Abruf: Die überholte Antwort fällt weg, und bis dahin stünde der alte Stand noch da.
-	function laden() {
-		const nr = ++ladeNr;
-		const abruf = holeBestellung(nr).then((kam) => (nr === ladeNr ? kam : juengsterAbruf));
-		juengsterAbruf = abruf;
-		return abruf;
-	}
-
-	/** @param {number} nr */
-	async function holeBestellung(nr) {
-		// Beim Aktualisieren bleibt die Ansicht stehen, auch wenn der Abruf scheitert (die Meldung
-		// zeigt apiGet): Baute sie sich neu auf, wäre der Link weg, der nur einmal zu sehen ist.
-		const ersterAbruf = !bestellung;
-		laedt = ersterAbruf;
-		fehler = '';
-		try {
-			const antwort = await apiGet(`/api/bestellhistorie/${bestellungId}`);
-			if (nr === ladeNr) bestellung = antwort;
-			return true;
-		} catch (e) {
-			// Ein veralteter Verweis liefert 404. Die Meldung nennt den Rückweg, statt eine
-			// leere Seite stehen zu lassen, die aussieht wie eine leere Bestellung.
-			if (ersterAbruf && nr === ladeNr) {
-				fehler = /** @type {any} */ (e)?.message || 'Bestellung konnte nicht geladen werden.';
-			}
-			return false;
-		} finally {
-			if (nr === ladeNr) laedt = false;
-		}
-	}
 
 	// onMount statt $effect auf bestellungId: Die Historie zeigt Liste ODER Detail, der
 	// Weg von einer Bestellung zur nächsten führt zwingend über den Zurück-Knopf. Damit
