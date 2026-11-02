@@ -11,17 +11,19 @@ import { nachbuchMeldungen } from './nachbuchMeldungen.svelte.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {() => void} räumt die Timer wieder ab
+ * @returns {() => void} räumt Timer und Abos wieder ab
  */
 export function starteHintergrundAbrufe(user) {
 	/** @type {ReturnType<typeof setInterval>[]} */
 	const timer = [];
+	/** @type {(() => void)[]} */
+	const enden = [];
 	if (hatRecht(user, 'perform_actions')) {
 		offlineSync.init(); // POST /api/action/nachbuchen
 		// GET /api/action/nachbuch-meldungen/anzahl — die Zahl fürs Band, ohne Personenbezug.
 		// Aktuell bleibt sie über die SSE-Leitung; ein Zeitgeber wäre ein zweiter Takt für
-		// dieselbe Zahl.
-		nachbuchMeldungen.init();
+		// dieselbe Zahl. Das Abo endet wie die Zeitgeber mit der Anmeldung.
+		enden.push(nachbuchMeldungen.init());
 	}
 	if (hatRecht(user, 'view_orders')) {
 		// GET /api/reservierungen/klassensatz/anzahl + /api/anliegen/anzahl — beide view_orders,
@@ -42,5 +44,6 @@ export function starteHintergrundAbrufe(user) {
 	}
 	return () => {
 		for (const t of timer) clearInterval(t);
+		for (const ende of enden) ende();
 	};
 }

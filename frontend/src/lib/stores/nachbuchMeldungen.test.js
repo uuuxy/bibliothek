@@ -320,6 +320,36 @@ describe('Meldungen aus dem Nachbuchen', () => {
 		});
 	});
 
+	// Der Store überlebt das Abmelden, das Abo nicht: Sonst stünde die Zahl der vorigen Sitzung im
+	// Band, auch auf der Anmeldeseite, und ein Konto ohne Theken-Recht fragte sie weiter ab.
+	describe('die Zahl gehört zur Anmeldung', () => {
+		it('das Abmelden beendet das Abo und leert die Zahl', async () => {
+			fetchMock.mockResolvedValue(antwort({ offen: 3 }));
+			const beende = m.init();
+			await vi.waitFor(() => expect(m.offen).toBe(3));
+
+			beende();
+			expect(sse.handler, 'nach dem Abmelden hört der Store nicht mehr zu').toBeNull();
+			expect(m.offen, 'die Zahl der vorigen Sitzung steht nicht im Band').toBe(0);
+
+			m.init();
+			expect(sse.handler, 'die nächste Anmeldung hört wieder zu').not.toBeNull();
+		});
+
+		it('eine Zahl, die nach dem Abmelden kommt, steht nicht im Band', async () => {
+			/** @type {(wert: any) => void} */
+			let antworte = () => {};
+			fetchMock.mockReturnValueOnce(new Promise((fertig) => (antworte = fertig)));
+			const beende = m.init();
+			beende();
+
+			antworte(antwort({ offen: 4 }));
+			await new Promise((fertig) => setTimeout(fertig, 0));
+
+			expect(m.offen).toBe(0);
+		});
+	});
+
 	// Die Leitung holt nach, wenn eine Antwort nicht kam (liveEvents.js). Ein fehlendes Recht kommt
 	// auch beim nächsten Versuch nicht.
 	describe('was der Leitung gemeldet wird', () => {
@@ -330,6 +360,11 @@ describe('Meldungen aus dem Nachbuchen', () => {
 			expect(await m.zaehle()).toBe(false);
 			fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
 			expect(await m.zaehle()).toBe(false);
+		});
+
+		it('ein fehlendes Recht beim Zähler zählt nicht als nachzuholen', async () => {
+			fetchMock.mockResolvedValueOnce(antwort({}, 403));
+			expect(await m.zaehle()).toBe(true);
 		});
 
 		it('die Liste meldet es ebenso, ein fehlendes Recht zählt nicht als nachzuholen', async () => {

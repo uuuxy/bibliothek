@@ -2003,7 +2003,7 @@ bei jedem Aufbau der Leitung neu. Das Signal kommt nur einmal: Liefert das Holen
 Antwort nicht, und `abonniereNeuladen` holt beim nächsten Lebenszeichen der Leitung nach (alle
 15 s), danach im doppelten Abstand bis vier Minuten, damit ein gestörter Abruf nicht im Takt meldet.
 
-Das Nachladen läuft, während jemand arbeitet. Daraus folgen fünf Regeln für jede solche Ansicht:
+Das Nachladen läuft, während jemand arbeitet. Daraus folgen sechs Regeln:
 
 - Es gilt die jüngste Anfrage, auch beim Fehler: Eine späte Antwort oder Absage schreibt nichts mehr
   (Laufnummer hinter dem letzten `await`).
@@ -2018,6 +2018,9 @@ Das Nachladen läuft, während jemand arbeitet. Daraus folgen fünf Regeln für 
 - Eine Eingabe, die ein `$effect` beim Öffnen eines Dialogs aus einem Prop vorbelegt, liest ihn mit
   `untrack`; sonst nähme ein Nachladen, das den Wert ändert, den getippten Text mit
   (`BestellMittelDialog`).
+- Ein Abo, das in einem Store lebt statt in einer Ansicht, endet mit der Anmeldung: Der Store
+  überlebt das Abmelden, und das nächste Konto hat das Recht vielleicht nicht.
+  `starteHintergrundAbrufe` räumt es mit den Zeitgebern ab (Zahl der Nachbuch-Meldungen).
 
 #### Offline
 

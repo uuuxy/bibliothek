@@ -53,15 +53,14 @@ class NachbuchMeldungen {
 	}
 
 	/**
-	 * Den Zähler holen. Leise: Ein Fehler hier ist kein Grund, an der Theke etwas zu
-	 * melden — die Zahl ist ein Hinweis, keine Buchung.
-	 * @returns {Promise<boolean>} ob die Antwort kam
+	 * Den Zähler holen, leise: Die Zahl ist ein Hinweis, keine Buchung.
+	 * @returns {Promise<boolean>} false, wenn sich ein neuer Versuch lohnt (ein fehlendes Recht nicht)
 	 */
 	async zaehle() {
 		const anfrage = ++this.#zahlAnfrage;
 		try {
 			const res = await apiFetch('/api/action/nachbuch-meldungen/anzahl');
-			if (!res.ok) return false;
+			if (!res.ok) return res.status === 403;
 			const d = await res.json();
 			if (Number.isFinite(d?.offen)) this.#setzeZahl(anfrage, d.offen);
 			return true;
@@ -168,28 +167,32 @@ class NachbuchMeldungen {
 	}
 
 	/**
-	 * Beim Anmelden: Zahl holen und auf Änderungen hören.
-	 *
-	 * Nur abonnieren, nicht verbinden — die Leitung gehört der Sitzung (liveEvents.js).
-	 * Einmal je Seite, sonst stapelten Abmelden→Anmelden die Zuhörer.
+	 * Beim Anmelden: Zahl holen und auf Änderungen hören, bis das Ende läuft (Abmelden, Sperre). Sonst
+	 * stünde die Zahl der vorigen Sitzung im Band, und ein Konto ohne Theken-Recht fragte weiter.
+	 * @returns {() => void}
 	 */
 	init() {
 		this.zaehle();
-		if (this.#abmelden) return;
-		// Kein Zeitgeber fragt die Zahl: Nach einer Unterbrechung stünde sonst bis zur nächsten
-		// Anmeldung die alte im Band.
-		this.#abmelden = abonniereNeuladen('nachbuch-meldungen', async () => {
+		// Kein Zeitgeber: Nach einer Unterbrechung holt die Leitung die Zahl selbst nach.
+		this.#abmelden ??= abonniereNeuladen('nachbuch-meldungen', async () => {
 			const antworten = await Promise.all([this.zaehle(), this.geoeffnet ? this.lade() : true]);
 			return antworten.every(Boolean);
 		});
+		return () => this.#beende();
+	}
+
+	// Eine Zahl, die danach ankommt, ist älter als #zahlStand und bleibt draußen (#setzeZahl).
+	#beende() {
+		this.#abmelden?.();
+		this.#abmelden = null;
+		this.#zahlStand = ++this.#zahlAnfrage;
+		this.offen = 0;
 	}
 
 	/** Nur für Tests. */
 	_zuruecksetzen() {
-		this.#abmelden?.();
-		this.#abmelden = null;
+		this.#beende();
 		this.schliesse();
-		this.offen = 0;
 		this.auchQuittierte = false;
 	}
 }
