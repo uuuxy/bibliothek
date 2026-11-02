@@ -639,3 +639,44 @@ describe('offlineSync: die Uhr des Rechners', () => {
 		expect(await bucheMitVersatz(-60)).toEqual([]);
 	});
 });
+
+// Fällt der Rechner aus, solange Vorgänge warten, sind sie verloren. Die Sicherung legt sie als
+// Datei ab.
+describe('offlineSync: Sicherung der Warteschlange als Datei', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.restoreAllMocks();
+	});
+
+	/** @returns {{ dateien: Blob[], klick: import('vitest').MockInstance }} */
+	function fangeDownload() {
+		/** @type {Blob[]} */
+		const dateien = [];
+		URL.createObjectURL = vi.fn((/** @type {Blob} */ datei) => {
+			dateien.push(datei);
+			return 'blob:sicherung';
+		});
+		URL.revokeObjectURL = vi.fn();
+		const klick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+		return { dateien, klick };
+	}
+
+	it('legt die wartenden Vorgänge als Datei zum Herunterladen an', async () => {
+		await enqueueOfflineAction(ausleihe('B-SICHERUNG', 'schueler-1'));
+		const { dateien, klick } = fangeDownload();
+
+		await offlineSync.exportiereWarteschlange();
+
+		expect(klick).toHaveBeenCalledTimes(1);
+		const inhalt = JSON.parse(await dateien[0].text());
+		expect(inhalt.map((/** @type {any} */ e) => e.barcode)).toEqual(['B-SICHERUNG']);
+	});
+
+	it('ohne wartende Vorgänge entsteht keine Datei', async () => {
+		const { klick } = fangeDownload();
+
+		await offlineSync.exportiereWarteschlange();
+
+		expect(klick).not.toHaveBeenCalled();
+	});
+});

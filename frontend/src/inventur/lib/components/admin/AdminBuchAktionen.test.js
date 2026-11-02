@@ -17,7 +17,11 @@ vi.mock('$lib/store.svelte.js', () => ({
 }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
-import { bestaetigen, fragen } from '../../../../lib/stores/bestaetigung.svelte.js';
+import {
+	bestaetigen,
+	fragen,
+	loeschenBestaetigen
+} from '../../../../lib/stores/bestaetigung.svelte.js';
 import { appState, melde } from '$lib/store.svelte.js';
 import AdminBuchAktionen from './AdminBuchAktionen.svelte';
 
@@ -306,5 +310,33 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 
 		expect(apiFetch).toHaveBeenCalledTimes(2);
 		expect(melde).toHaveBeenLastCalledWith('Buch erfolgreich gespeichert!', 'success');
+	});
+});
+
+// Löschen aus der Maske nimmt den Titel mit allen Exemplaren: Erst das Ja auf die Rückfrage
+// schickt die Anfrage.
+describe('AdminBuchAktionen: Titel löschen', () => {
+	const titel = () => ({ id: 'titel-1', isbn: '9783791504544', title: 'Drachenreiter', stock: 1 });
+
+	it('nach dem Ja geht die Anfrage hinaus, und die Maske meldet es', async () => {
+		vi.mocked(loeschenBestaetigen).mockResolvedValue(true);
+		vi.mocked(apiFetch).mockResolvedValue(antwort(204, null));
+
+		await maske(titel()).titelLoeschen();
+
+		expect(apiFetch).toHaveBeenCalledWith(
+			'/api/buecher/titel/titel-1',
+			expect.objectContaining({ method: 'DELETE' })
+		);
+		expect(melde).toHaveBeenCalledWith('Titel gelöscht.', 'success');
+	});
+
+	it('Abbrechen löscht nichts', async () => {
+		vi.mocked(loeschenBestaetigen).mockResolvedValue(false);
+
+		await maske(titel()).titelLoeschen();
+
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(melde).not.toHaveBeenCalled();
 	});
 });

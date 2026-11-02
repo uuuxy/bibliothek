@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
 import StatistikDetail from './StatistikDetail.svelte';
 import { apiFetch } from '../../apiFetch.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -69,5 +69,20 @@ describe('Statistik-Detailseite: Hinweis je Liste', () => {
 		expect(
 			await ladenhueter.findByText('Seit über 2 Jahren nicht ausgeliehen — oder noch nie.')
 		).toBeTruthy();
+	});
+});
+
+// Die Suche auf der Seite filtert die geladene Liste nach Titel oder Autor.
+describe('Statistik-Detailseite: Suche', () => {
+	it('zeigt nur die Titel, die zum Suchwort passen', async () => {
+		const screen = render(StatistikDetail);
+		await screen.findByText('Momo');
+
+		await fireEvent.input(screen.getByLabelText('Titel oder Autor suchen'), {
+			target: { value: 'pater' }
+		});
+
+		expect(screen.getByText('Brücke nach Terabithia')).toBeTruthy();
+		expect(screen.queryByText('Momo')).toBeNull();
 	});
 });

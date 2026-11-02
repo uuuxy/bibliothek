@@ -9,7 +9,7 @@ vi.mock('../../apiFetch.js', async (original) => ({
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
-import { apiGet, apiPut } from '../../apiFetch.js';
+import { apiGet, apiPut, apiPost } from '../../apiFetch.js';
 import MailEinstellungen from './MailEinstellungen.svelte';
 
 // Scheitert das Laden, steht kein Formular da: Mit leeren Feldern speicherte „Speichern" einen
@@ -43,5 +43,33 @@ describe('MailEinstellungen', () => {
 		const host = /** @type {HTMLInputElement} */ (await screen.findByLabelText('SMTP Host *'));
 		expect(host.value).toBe('mail.schule.example');
 		expect(screen.queryByRole('alert')).toBeNull();
+	});
+});
+
+// Die Testmail geht an die Adresse im Feld; vorbelegt ist der Absender.
+describe('MailEinstellungen: Verbindung testen', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it('schickt die Testmail an die Adresse im Feld und meldet den Versand', async () => {
+		vi.mocked(apiGet).mockResolvedValueOnce({
+			smtp_host: 'mail.schule.example',
+			smtp_port: '587',
+			smtp_user: 'bibliothek',
+			sender_email: 'bibliothek@schule.example',
+			has_password: true
+		});
+		vi.mocked(apiPost).mockResolvedValueOnce({ status: 'ok' });
+		const screen = render(MailEinstellungen);
+
+		await fireEvent.click(await screen.findByRole('button', { name: 'Test-E-Mail senden' }));
+
+		await waitFor(() =>
+			expect(apiPost).toHaveBeenCalledWith(
+				'/api/admin/settings/mail/test',
+				{ to: 'bibliothek@schule.example' },
+				expect.anything()
+			)
+		);
+		expect(await screen.findByText('Test-E-Mail versendet')).toBeTruthy();
 	});
 });

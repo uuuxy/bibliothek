@@ -9,7 +9,7 @@ vi.mock('./store.svelte.js', () => ({
 }));
 import { apiFetch } from '../../lib/apiFetch.js';
 import { appState } from './store.svelte.js';
-import { holeBuecherListe } from './admin_api.js';
+import { holeBuecherListe, holeBuchDetail } from './admin_api.js';
 import { serverAntwort } from '../../lib/serverAntwort.js';
 
 // Die Titelverwaltung hat zwei Sichten derselben Liste (docs/OFFEN.md 9.4, 22.09.2026):
@@ -46,5 +46,32 @@ describe('admin_api: holeBuecherListe', () => {
 
 		await expect(holeBuecherListe()).rejects.toThrow('Nicht angemeldet. Bitte neu anmelden.');
 		expect(appState.adminAuthenticated).toBe(false);
+	});
+});
+
+// Das Laden eines Titels nimmt die Anmeldung nur bei 401 zurück. Ein anderer Fehler betrifft den
+// Titel, nicht die Anmeldung.
+describe('admin_api: holeBuchDetail', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+		appState.adminAuthenticated = true;
+	});
+
+	it('nimmt bei 401 die Anmeldung zurück', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(401, { error: 'Nicht angemeldet. Bitte neu anmelden.' })
+		);
+
+		await expect(holeBuchDetail('titel-1')).rejects.toThrow();
+		expect(appState.adminAuthenticated).toBe(false);
+	});
+
+	it('ein anderer Fehler nennt den Grund und lässt die Anmeldung stehen', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			serverAntwort(404, { error: 'Titel nicht gefunden' })
+		);
+
+		await expect(holeBuchDetail('titel-1')).rejects.toThrow('Titel nicht gefunden');
+		expect(appState.adminAuthenticated).toBe(true);
 	});
 });

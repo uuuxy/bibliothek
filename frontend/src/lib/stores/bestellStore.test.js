@@ -771,3 +771,22 @@ describe('bestellStore.loadIncomingShipments: Reihenfolge', () => {
 		}
 	});
 });
+
+describe('bestellStore.removeFromCart', () => {
+	beforeEach(() => {
+		resetStore();
+		vi.clearAllMocks();
+	});
+
+	// Der erste Posten steht an der Stelle 0; auch er geht weg.
+	it('nimmt jeden Posten heraus, auch den ersten', () => {
+		bestellStore.addToCart({ titel_id: 't1', titel: 'Faust', autor: 'Goethe', isbn: '978-1' });
+		bestellStore.addToCart({ titel_id: 't2', titel: 'Woyzeck', autor: 'Büchner', isbn: '978-2' });
+
+		bestellStore.removeFromCart(bestellStore.cart[0]);
+
+		expect(bestellStore.cart.map((p) => p.id)).toEqual(['t2']);
+		bestellStore.removeFromCart(bestellStore.cart[0]);
+		expect(bestellStore.cart).toEqual([]);
+	});
+});

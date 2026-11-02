@@ -6,7 +6,8 @@ import {
 	defaultFrontElements,
 	wendeSchulstammdatenAn,
 	PLATZHALTER_SCHULNAME,
-	PLATZHALTER_ADRESSE
+	PLATZHALTER_ADRESSE,
+	fuegeRahmenHinzu
 } from './idDesignerStore.svelte.js';
 
 function header() {
@@ -104,5 +105,22 @@ describe('Klassenzeile auf dem Ausweis', () => {
 		expect(idStore.front.elements.some((e) => e.type === 'details')).toBe(false);
 		// Die übrigen Elemente bleiben unangetastet — gefiltert wird genau eines.
 		expect(idStore.front.elements.map((e) => e.id)).toEqual(['name', 'barcode']);
+	});
+});
+
+// Eine Fläche kommt auf die Seite, die gerade offen ist.
+describe('fuegeRahmenHinzu', () => {
+	beforeEach(() => resetDesign());
+
+	it('legt die Fläche auf die genannte Seite und lässt die andere', () => {
+		const vorn = idStore.front.elements.length;
+		const hinten = idStore.back.elements.length;
+
+		fuegeRahmenHinzu('back');
+		expect(idStore.back.elements).toHaveLength(hinten + 1);
+		expect(idStore.front.elements).toHaveLength(vorn);
+
+		fuegeRahmenHinzu('front');
+		expect(idStore.front.elements).toHaveLength(vorn + 1);
 	});
 });

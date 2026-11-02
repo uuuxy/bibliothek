@@ -201,6 +201,27 @@ describe('useLeserakte.ladeAkte', () => {
 		expect(st.ladefehler).toBe('Keine Verbindung zum Server.');
 	});
 
+	// Ein Rumpf, der sich nicht lesen lässt, ist ein Ladefehler: Die Akte des vorigen Lesers bleibt
+	// nicht stehen, und die Seite nennt den Grund.
+	it('ein unlesbarer Rumpf nennt den Fehler und räumt den vorigen Leser ab', async () => {
+		antwortenJe({});
+		const st = useLeserakte();
+		await st.ladeAkte('A');
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				status: 200,
+				json: async () => {
+					throw new SyntaxError('Unexpected token < in JSON');
+				}
+			})
+		);
+		await st.ladeAkte('B');
+		expect(st.akte).toBeNull();
+		expect(st.ladefehler).not.toBe('');
+	});
+
 	it('lässt die überholte Antwort nicht gewinnen', async () => {
 		/** @type {() => void} */
 		let loesenA = () => {};
