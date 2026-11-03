@@ -28,7 +28,7 @@ test('Auflagen: in der Titelmaske zuordnen und wieder lösen', async ({ page }) 
 			.getByRole('searchbox', { name: 'Suchen nach Titel, Fach, Klasse oder Autor' })
 			.fill(marke);
 		const karteAlt = page
-			.locator('div.m3-state')
+			.locator('[data-kachel]')
 			.filter({ hasText: marke })
 			.filter({ hasText: '3. Aufl.' });
 		await karteAlt.getByRole('button', { name: 'Buch schnell bearbeiten' }).click();

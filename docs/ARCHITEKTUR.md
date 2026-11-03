@@ -810,7 +810,7 @@ frontend/src
 - **Logikfreie Teilkomponenten mit `{#snippet}` / `{@render}`** statt kopierter
   Markup-Blöcke.
 - **Flat & Edge-to-Edge:** Trennung über `border-b`, nicht über Karten; Karten bleiben
-  Modals, Toasts, Dropdowns und Cover-Kacheln. Gemeint sind die Flächen der Seite, nicht die
+  Modals, Toasts und Dropdowns. Gemeint sind die Flächen der Seite, nicht die
   Eingabefelder: Ein Textfeld läuft nicht über die volle Breite
   eines großen Bildschirms (Material 3, Text fields: „Text fields shouldn't span the full
   width of a large screen").
@@ -823,6 +823,13 @@ frontend/src
   highest" ohne Rahmen, die erhöhte „Surface container low" mit Schatten. Im Haus ist die
   Karte umrandet und zeigt die Fläche der Seite; ihre Ecke ist 12 px (`rounded-xl`). Den Ton
   hält `frontend-hygiene-karten.test.js` fern.
+- **Buchkacheln sind keine Karten.** Katalog, Klassensätze und Portal zeigen das Cover ohne
+  Rahmen wie Google Play; Cover und Zeile darunter gehören durch den Abstand zusammen
+  (Material 3, Spacing: „Implicit grouping uses close proximity and open space (rather than
+  lines and shadows) to group related items."). Beim Zeigen hellt das Cover auf, und die
+  Einblendung nennt Fach, Titel, Auflage und ISBN. Kopiert wird die ISBN in der Akte; auch
+  Google Books nennt sie erst auf der Detailseite. Aufbau und Abstand: `KACHEL` und
+  `RASTER_ABSTAND` in `BuchKarte.svelte`.
 - **Ein Knopf ohne Fläche steht in der Hauptfarbe; trägt er nur ein Symbol, nicht.**
   Material 3, Buttons: „since there's no container, the label text color must always be
   recognizable from non-button text and elements" (Specs: „Text icon & label: Primary");

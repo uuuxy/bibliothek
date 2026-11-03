@@ -1,5 +1,6 @@
 <script>
 	import KlassenBuchKachel from '$lib/components/admin/KlassenBuchKachel.svelte';
+	import { RASTER_ABSTAND } from '$lib/components/BuchKarte.svelte';
 	import { sortiereNachFachUndTitel } from '$lib/titelSortierung.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ChevronDown, Pencil, Trash } from '@lucide/svelte';
@@ -91,9 +92,12 @@
 	{#if offen}
 		<!-- Umbrechendes Raster statt waagerechtem Karussell: Ein Karussell legt den größeren
 		     Teil eines Satzes außerhalb des Bildes ab. M3 sieht es für das Stöbern in
-		     Bildmaterial vor, nicht für das Prüfen eines Bestands. Abstand wie im Katalog, 8 px in
-		     beide Richtungen (M3 Cards, Specs: „Padding between cards: 8dp max"). -->
-		<div id={rasterID} class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2 pt-1 pb-6">
+		     Bildmaterial vor, nicht für das Prüfen eines Bestands. Abstand wie im Katalog
+		     (RASTER_ABSTAND). -->
+		<div
+			id={rasterID}
+			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] {RASTER_ABSTAND} pt-1 pb-6"
+		>
 			{#each sortierteTitel as book (book.id)}
 				<KlassenBuchKachel titel={book} {onEdit} bearbeitbar={darfPflegen} />
 			{/each}

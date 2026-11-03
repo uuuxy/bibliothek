@@ -11,6 +11,7 @@
 <script>
 	import { ChevronDown, Download } from '@lucide/svelte';
 	import KlassenBuchKachel from '../../../inventur/lib/components/admin/KlassenBuchKachel.svelte';
+	import { RASTER_ABSTAND } from '../../../inventur/lib/components/BuchKarte.svelte';
 
 	/**
 	 * @type {{
@@ -67,11 +68,10 @@
 
 	{#if offen}
 		<!-- Umbrechendes Raster, kein Karussell, wie bei den Klassensätzen: Pfeile auf :hover
-		     gibt es am Tablet nicht. Abstand wie im Katalog, 8 px in beide Richtungen (M3 Cards,
-		     Specs: „Padding between cards: 8dp max"). -->
+		     gibt es am Tablet nicht. Abstand wie im Katalog (RASTER_ABSTAND). -->
 		<div
 			id={rasterID}
-			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2 pt-1 pb-6"
+			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] {RASTER_ABSTAND} pt-1 pb-6"
 			data-testid="schulbuecher-raster"
 		>
 			{#each buecher as book (book.id)}

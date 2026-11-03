@@ -5,7 +5,7 @@ import { tick } from 'svelte';
 import { srcRoot, sammleQuelldateien, relPfad } from '../hygiene-quellen.js';
 import { kopiere } from './zwischenablage.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
-import BuchKarte from '../../inventur/lib/components/BuchKarte.svelte';
+import BuchakteKopf from '../components/buchakte/BuchakteKopf.svelte';
 
 const writeText = vi.fn();
 
@@ -45,7 +45,8 @@ describe('kopiere', () => {
 	});
 });
 
-describe('Die Knöpfe „ISBN kopieren“', () => {
+// Kopiert wird die ISBN in der Akte; die Kachel des Katalogs zeigt sie nur in der Einblendung.
+describe('Der Knopf „ISBN kopieren“ in der Akte', () => {
 	const buch = {
 		id: 'b-1',
 		isbn: '9783123456789',
@@ -59,14 +60,14 @@ describe('Die Knöpfe „ISBN kopieren“', () => {
 
 	it('sagt „Kopiert!“ erst, wenn es gelungen ist', async () => {
 		writeText.mockResolvedValue(undefined);
-		const { getByRole, findByText } = render(BuchKarte, { titel: buch });
+		const { getByRole, findByText } = render(BuchakteKopf, { titel: buch, exemplare: [] });
 		await fireEvent.click(getByRole('button', { name: /ISBN/ }));
 		expect(await findByText('Kopiert!')).toBeTruthy();
 	});
 
 	it('sagt nicht „Kopiert!“, wenn es scheitert', async () => {
 		writeText.mockRejectedValue(new Error('Write permission denied.'));
-		const { getByRole, queryByText } = render(BuchKarte, { titel: buch });
+		const { getByRole, queryByText } = render(BuchakteKopf, { titel: buch, exemplare: [] });
 		await fireEvent.click(getByRole('button', { name: /ISBN/ }));
 		await tick();
 		await new Promise((fertig) => setTimeout(fertig, 0));

@@ -30,11 +30,12 @@ test('Medienkatalog: ein Buch in zwei Auflagen ist eine Kachel mit Summe und Auf
 		await page.goto('/medienkatalog');
 		const suche = page.locator('#katalog-suchfeld');
 		const kacheln = page.getByRole('heading', { level: 2, name: titel });
-		const karte = page.locator('div.m3-state').filter({ has: kacheln });
+		const karte = page.locator('[data-kachel]').filter({ has: kacheln });
 
 		await suche.fill(titel);
 		await expect(kacheln).toHaveCount(1);
-		await expect(karte.getByText(neueIsbn, { exact: true })).toBeVisible();
+		// Oben steht die getroffene Auflage; ihre ISBN nennt die Einblendung auf dem Cover.
+		await expect(karte.locator('[data-nummer]')).toHaveText(`ISBN ${neueIsbn}`);
 		await expect(karte.getByText('3 / 3', { exact: true })).toBeVisible();
 		// Woraus die Summe besteht, steht in der Einblendung auf dem Cover. Sichtbar wird sie
 		// beim Zeigen; toBeVisible allein sähe keinen Unterschied, weil es die Deckkraft nicht prüft.
@@ -50,7 +51,7 @@ test('Medienkatalog: ein Buch in zwei Auflagen ist eine Kachel mit Summe und Auf
 
 		await suche.fill(alteIsbn);
 		await expect(kacheln).toHaveCount(1);
-		await expect(karte.getByText(alteIsbn, { exact: true })).toBeVisible();
+		await expect(karte.locator('[data-nummer]')).toHaveText(`ISBN ${alteIsbn}`);
 		await expect(karte.getByText('3 / 3', { exact: true })).toBeVisible();
 	} finally {
 		seedSQL(`

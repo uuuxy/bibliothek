@@ -17,6 +17,7 @@
 	 *   titel: string,
 	 *   coverUrl?: string,
 	 *   isbn?: string,
+	 *   nummerArt?: string,
 	 *   fach?: string,
 	 *   auflage?: string,
 	 *   aufschluesselung?: string,
@@ -30,6 +31,7 @@
 		titel,
 		coverUrl = '',
 		isbn = '',
+		nummerArt = 'ISBN',
 		fach = '',
 		auflage = '',
 		aufschluesselung = '',
@@ -43,13 +45,14 @@
 <div class="group/cover relative">
 	<!-- Der Knopf trägt die Semantik (Tastatur, Screenreader) mit dem Titel als Namen, die
 	     Überschrift macht die Kacheln für Hilfstechnik einzeln anspringbar. Einen eigenen
-	     Handler hat er nicht: Sein Klick steigt zur Karte auf und öffnet dort die Akte, ein
-	     Handler hier navigierte doppelt. Die Zustandsschicht gibt die Karte, nicht der Knopf. -->
+	     Handler hat er nicht: Sein Klick steigt zur Kachel auf und öffnet dort die Akte, ein
+	     Handler hier navigierte doppelt. Die Zustandsschicht beim Zeigen trägt er selbst: Die
+	     Kachel hat keinen Rahmen, den sie füllen könnte. -->
 	<h2>
 		<button
 			type="button"
 			aria-label={titel}
-			class="no-state-layer block w-full cursor-pointer rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+			class="block w-full cursor-pointer rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			<BuchCover {coverUrl} {isbn} {titel} {fach} groesse="kachel" dekorativ />
 		</button>
@@ -57,7 +60,7 @@
 
 	<!-- Die Auflage gehört zum Titel: Zwei Kacheln „Lambacher Schweizer 7" sind zwei verschiedene
 	     Bücher, und das sieht man sonst nirgends. -->
-	<CoverEinblendung {titel} {fach} zeilen={[auflage, aufschluesselung]} />
+	<CoverEinblendung {titel} {fach} zeilen={[auflage, aufschluesselung]} nummer={isbn} {nummerArt} />
 
 	<div class="absolute inset-x-2 bottom-2 flex items-center gap-2">
 		<BestandChip {gesamt} {verfuegbar} {imZulauf} />

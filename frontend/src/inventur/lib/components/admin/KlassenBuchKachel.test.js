@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
 import KlassenBuchKachel from './KlassenBuchKachel.svelte';
-import BuchKarte, { KARTE } from '../BuchKarte.svelte';
+import BuchKarte, { KACHEL } from '../BuchKarte.svelte';
 
 // Die Kachel eines Klassensatzes mit gemischten Auflagen (docs/OFFEN.md 4.18, Stufe 5):
 // GetClassGroups liefert `auflagen` nur, wenn Kinder der Klasse eine andere Auflage als die der
@@ -69,19 +69,41 @@ describe('KlassenBuchKachel: Bestand aus mehreren Auflagen', () => {
 	});
 });
 
-// Die Klassenkachel ist gebaut wie die Katalog-Kachel: derselbe Rahmen aus einer Quelle (KARTE),
-// der Bestand als Chip auf dem Cover und Fach und Titel in derselben Einblendung. Den Titel trägt
-// das Cover; sichtbar darunter stehen nur die Hinweise der Klasse, wenn es welche gibt.
+// Die Klassenkachel ist gebaut wie die Katalog-Kachel: derselbe Aufbau ohne Rahmen aus einer
+// Quelle (KACHEL), der Bestand als Chip auf dem Cover und Fach und Titel in derselben Einblendung.
+// Den Titel trägt das Cover; sichtbar darunter stehen nur die Hinweise der Klasse, wenn es welche
+// gibt.
 describe('KlassenBuchKachel: gebaut wie die Katalog-Kachel', () => {
-	it('Katalog- und Klassenkachel tragen denselben Rahmen, bearbeitbar oder nicht', () => {
+	it('Katalog- und Klassenkachel haben denselben Aufbau ohne Rahmen, bearbeitbar oder nicht', () => {
 		const katalog = render(BuchKarte, { titel: { ...buch(), author: '' } });
-		expect(katalog.container.firstElementChild?.className).toContain(KARTE);
+		const wurzeln = [katalog.container.firstElementChild?.className ?? ''];
 		katalog.unmount();
 		for (const bearbeitbar of [true, false]) {
 			const klasse = render(KlassenBuchKachel, { titel: buch(), bearbeitbar });
-			expect(klasse.container.firstElementChild?.className).toContain(KARTE);
+			wurzeln.push(klasse.container.firstElementChild?.className ?? '');
 			klasse.unmount();
 		}
+		for (const klassen of wurzeln) {
+			expect(klassen).toContain(KACHEL);
+			expect(klassen).not.toMatch(/(^|\s)border(\s|$)/);
+		}
+	});
+
+	it('beim Zeigen hellt nur das Cover auf, und nur, wo die Kachel etwas tut', () => {
+		const katalog = render(BuchKarte, { titel: { ...buch(), author: '' } });
+		expect(katalog.container.querySelector('h2 button')?.classList).not.toContain('no-state-layer');
+		expect(katalog.container.firstElementChild?.classList).not.toContain('m3-state');
+		katalog.unmount();
+
+		const bearbeitbar = render(KlassenBuchKachel, { titel: buch(), bearbeitbar: true });
+		const schichten = bearbeitbar.container.querySelectorAll('.m3-state');
+		expect(schichten).toHaveLength(1);
+		expect(schichten[0]).not.toBe(bearbeitbar.container.firstElementChild);
+		expect(schichten[0].textContent).toContain('Mathe 7');
+		bearbeitbar.unmount();
+
+		const ansicht = render(KlassenBuchKachel, { titel: buch(), bearbeitbar: false });
+		expect(ansicht.container.querySelectorAll('.m3-state')).toHaveLength(0);
 	});
 
 	it('zeigt den Bestand als Chip auf dem Cover und liest ihn als ganzen Satz vor', () => {

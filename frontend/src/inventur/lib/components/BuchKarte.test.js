@@ -76,22 +76,27 @@ describe('BuchKarte — ein Buch in mehreren Auflagen', () => {
 	});
 });
 
-// Unter dem Cover stehen zwei Zeilen fester Höhe: der ISBN-Balken und die Fußzeile. Beide
-// sind auch ohne ISBN und ohne Prüfdatum gleich hoch, damit das Raster nicht verrutscht.
-describe('BuchKarte — ISBN-Balken, Prüfdatum und Bestand', () => {
-	it('der ISBN-Balken kopiert, ohne die Akte zu öffnen', async () => {
-		const akte = vi.fn();
-		const { getByRole } = render(BuchKarte, { titel: buch, onclick: akte });
-
-		await fireEvent.click(getByRole('button', { name: 'ISBN 9783123456789 kopieren' }));
-
-		expect(akte).not.toHaveBeenCalled();
+// Unter dem Cover steht nur die Fußzeile in fester Höhe. Die ISBN steht in der Einblendung auf
+// dem Cover; kopiert wird sie in der Akte (BuchakteKopf), die Kachel hat dafür keinen Knopf.
+describe('BuchKarte — ISBN, Prüfdatum und Bestand', () => {
+	it('die ISBN steht in der Einblendung, in Festbreite; unter dem Cover nur die Fußzeile', () => {
+		const { container, queryByRole } = render(BuchKarte, { titel: buch });
+		const nummer = container.querySelector('[data-einblendung] [data-nummer]');
+		expect(nummer?.textContent?.replace(/\s+/g, ' ').trim()).toBe('ISBN 9783123456789');
+		expect(nummer?.querySelector('.font-mono')?.textContent).toBe('9783123456789');
+		expect(queryByRole('button', { name: /kopieren/i })).toBeNull();
+		expect(container.querySelector('[data-kachel]')?.children).toHaveLength(2);
 	});
 
-	it('ohne ISBN steht „Keine ISBN" an seiner Stelle, ohne Knopf', () => {
-		const { getByText, queryByRole } = render(BuchKarte, { titel: { ...buch, isbn: '' } });
-		expect(getByText('Keine ISBN')).toBeTruthy();
-		expect(queryByRole('button', { name: /kopieren/ })).toBeNull();
+	it('bei CD und DVD heißt die Nummer EAN', () => {
+		const { container } = render(BuchKarte, { titel: { ...buch, medientyp: 'CD' } });
+		expect(container.querySelector('[data-nummer]')?.textContent).toContain('EAN');
+	});
+
+	it('ohne ISBN steht keine Nummer und kein „Keine ISBN"', () => {
+		const { container, queryByText } = render(BuchKarte, { titel: { ...buch, isbn: '' } });
+		expect(container.querySelector('[data-nummer]')).toBeNull();
+		expect(queryByText(/Keine ISBN/)).toBeNull();
 	});
 
 	it('das Prüfdatum steht mit Häkchen; ohne Datum steht dort nichts', () => {
