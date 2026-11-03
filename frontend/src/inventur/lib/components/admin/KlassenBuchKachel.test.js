@@ -69,9 +69,9 @@ describe('KlassenBuchKachel: Bestand aus mehreren Auflagen', () => {
 	});
 });
 
-// Die Klassenkachel ist gebaut wie die Katalog-Kachel: derselbe Rahmen aus einer Quelle (KARTE)
-// und der Bestand als Chip auf dem Cover. Titel und Hinweise stehen weiter sichtbar darunter,
-// weil es am Tablet kein Zeigen gibt.
+// Die Klassenkachel ist gebaut wie die Katalog-Kachel: derselbe Rahmen aus einer Quelle (KARTE),
+// der Bestand als Chip auf dem Cover und Fach und Titel in derselben Einblendung. Den Titel trägt
+// das Cover; sichtbar darunter stehen nur die Hinweise der Klasse, wenn es welche gibt.
 describe('KlassenBuchKachel: gebaut wie die Katalog-Kachel', () => {
 	it('Katalog- und Klassenkachel tragen denselben Rahmen, bearbeitbar oder nicht', () => {
 		const katalog = render(BuchKarte, { titel: { ...buch(), author: '' } });
@@ -95,11 +95,44 @@ describe('KlassenBuchKachel: gebaut wie die Katalog-Kachel', () => {
 		const saetze = getAllByText('2 von 30 verfügbar');
 		expect(saetze).toHaveLength(1);
 		expect(saetze[0].classList.contains('sr-only')).toBe(true);
-		// Der Chip gehört zum Cover und steht deshalb vor dem Titel darunter. Ohne Bild trägt
-		// auch der Platzhalter den Titel, darum die Überschrift.
+		// Die Überschrift steht vor dem Chip: Hilfstechnik nennt zuerst den Titel.
 		const ueberschrift = getByRole('heading', { level: 3, name: 'Mathe 7' });
-		const position = chip?.compareDocumentPosition(ueberschrift) ?? 0;
+		const position = ueberschrift.compareDocumentPosition(/** @type {Node} */ (chip));
 		expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
+	it('der Titel steht nicht als Zeile unter dem Cover, nur als Überschrift für Hilfstechnik', () => {
+		const { getByRole } = render(KlassenBuchKachel, { titel: buch(), bearbeitbar: true });
+		expect(getByRole('heading', { level: 3, name: 'Mathe 7' }).classList.contains('sr-only')).toBe(
+			true
+		);
+		// Der Name der bearbeitbaren Kachel beginnt mit dem Titel und endet mit dem, was sie tut.
+		expect(getByRole('button', { name: /^Mathe 7 .*bearbeiten$/ })).toBeTruthy();
+	});
+
+	it('Katalog- und Klassenkachel blenden Fach und Titel in derselben Einblendung ein', () => {
+		const katalog = render(BuchKarte, { titel: { ...buch(), author: '' } });
+		expect(katalog.container.querySelector('[data-einblendung]')?.textContent).toContain('Mathe 7');
+		katalog.unmount();
+		const klasse = render(KlassenBuchKachel, { titel: buch(), bearbeitbar: false });
+		const einblendung = klasse.container.querySelector('[data-einblendung]');
+		expect(einblendung?.textContent).toContain('Mathematik');
+		expect(einblendung?.textContent).toContain('Mathe 7');
+	});
+
+	it('ohne Hinweise der Klasse steht unter dem Cover nichts', () => {
+		const ohne = render(KlassenBuchKachel, {
+			titel: buch({ quelle: undefined }),
+			bearbeitbar: false
+		});
+		// Nur die Hülle des Covers; ein leerer Textblock gäbe der Karte unten mehr Rand als oben.
+		expect(ohne.container.firstElementChild?.querySelectorAll(':scope > div')).toHaveLength(1);
+		ohne.unmount();
+		const mit = render(KlassenBuchKachel, { titel: buch(), bearbeitbar: false });
+		expect(mit.container.firstElementChild?.querySelectorAll(':scope > div')).toHaveLength(2);
+		expect(mit.getByTestId('klassensatz-aus-ausleihen').textContent?.trim()).toBe(
+			'aus Ausleihen · 7 Leser'
+		);
 	});
 
 	it('zeigt ohne Zahlen im Payload keinen Chip', () => {

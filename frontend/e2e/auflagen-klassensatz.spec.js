@@ -52,6 +52,14 @@ test('Klassensätze: ein Buch in zwei Auflagen zählt einmal und zeigt die Misch
 			'4. Aufl. · 2023: 4 Kinder — diese Auflage',
 			'3. Aufl. · 2019: 2 Kinder'
 		]);
+
+		// Den Titel trägt das Cover; beim Zeigen blendet die Kachel ihn ein wie die Katalog-Kachel.
+		const einblendung = kachel.locator('[data-einblendung]');
+		await page.mouse.move(1270, 710);
+		await expect(einblendung).toHaveCSS('opacity', '0');
+		await kachel.hover();
+		await expect(einblendung).toHaveCSS('opacity', '1');
+		await expect(einblendung).toContainText(titel);
 	} finally {
 		seedSQL(`
 			DELETE FROM ausleihen WHERE exemplar_id IN (

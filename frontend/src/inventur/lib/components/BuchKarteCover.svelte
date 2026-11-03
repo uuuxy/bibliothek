@@ -6,9 +6,10 @@
      hellen wie im dunklen Design zum Text passt, und die Chips sind deckend. Ohne Bild trägt
      der Platzhalter von BuchCover Fach, Jahrgang und Titel. -->
 <script>
-	import BuchCover, { PLATZHALTER } from '../../../lib/components/ui/BuchCover.svelte';
+	import BuchCover from '../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../lib/components/ui/StatusChip.svelte';
 	import BestandChip from './BestandChip.svelte';
+	import CoverEinblendung from './CoverEinblendung.svelte';
 	import { MapPin } from '@lucide/svelte';
 
 	/**
@@ -54,26 +55,9 @@
 		</button>
 	</h2>
 
-	<!-- Die Einblendung setzt Fach und Titel in den Klassen des Platzhalters von BuchCover
-	     (PLATZHALTER) und deckt: Ohne Bild verlängert sie den Platzhalter nur um Auflage und
-	     Aufschlüsselung, statt den Titel ein zweites Mal versetzt darüberzulegen. Ohne
-	     Zeigerereignisse, damit ein Klick auf sie den Knopf darunter trifft. -->
-	<div
-		class="pointer-events-none absolute inset-x-0 top-0 max-h-full overflow-hidden rounded-t-lg {PLATZHALTER.flaeche} text-left opacity-0 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]/cover:opacity-100"
-	>
-		<div aria-hidden="true">
-			<p class={PLATZHALTER.fach}>{fach}</p>
-			<p class={PLATZHALTER.titel}>{titel}</p>
-		</div>
-		<!-- Die Auflage gehört zum Titel: Zwei Kacheln „Lambacher Schweizer 7" sind zwei
-		     verschiedene Bücher, und das sieht man sonst nirgends. -->
-		{#if auflage}
-			<p class="mt-1.5 text-xs text-on-surface-variant">{auflage}</p>
-		{/if}
-		{#if aufschluesselung}
-			<p class="mt-1.5 text-xs text-on-surface-variant">{aufschluesselung}</p>
-		{/if}
-	</div>
+	<!-- Die Auflage gehört zum Titel: Zwei Kacheln „Lambacher Schweizer 7" sind zwei verschiedene
+	     Bücher, und das sieht man sonst nirgends. -->
+	<CoverEinblendung {titel} {fach} zeilen={[auflage, aufschluesselung]} />
 
 	<div class="absolute inset-x-2 bottom-2 flex items-center gap-2">
 		<BestandChip {gesamt} {verfuegbar} {imZulauf} />

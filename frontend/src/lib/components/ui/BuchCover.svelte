@@ -1,11 +1,12 @@
 <script module>
-	/** Fläche, Rand und Schrift des Platzhalters im Maß `kachel`. Die Einblendung der
-	 *  Katalogkachel (BuchKarteCover) setzt Fach und Titel in denselben Klassen und deckt den
-	 *  Platzhalter damit genau; stünden sie zweimal da, liefen sie auseinander. */
+	/** Fläche, Rand und Schrift des Platzhalters im Maß `kachel`. Die Einblendung der Kacheln
+	 *  (CoverEinblendung) setzt Fach und Titel in denselben Klassen und deckt den Platzhalter
+	 *  damit genau; stünden sie zweimal da, liefen sie auseinander. Lange Wörter brechen um,
+	 *  denn ohne Bild ist der Platzhalter die einzige Stelle, an der der Titel sichtbar steht. */
 	export const PLATZHALTER = {
 		flaeche: 'bg-surface-container-highest p-5',
-		fach: 'text-xs font-extrabold text-on-surface-variant',
-		titel: 'mt-1.5 text-sm leading-snug font-extrabold text-on-surface'
+		fach: 'text-xs font-extrabold wrap-break-word text-on-surface-variant',
+		titel: 'mt-1.5 text-sm leading-snug font-extrabold wrap-break-word text-on-surface'
 	};
 </script>
 
