@@ -4,6 +4,8 @@ import {
 	formatZeitpunkt,
 	formatZahl,
 	bestandSatz,
+	bestandKurz,
+	bestandLage,
 	zulaufSatz,
 	jahrgangSpanne
 } from './format.js';
@@ -53,6 +55,26 @@ describe('format.js — eine deutsche Schreibweise', () => {
 		expect(zulaufSatz(0)).toBe('');
 		expect(zulaufSatz(null)).toBe('');
 		expect(zulaufSatz(undefined)).toBe('');
+	});
+
+	// Der Chip auf der Katalogkachel: kurz, aber ohne Exemplare in denselben Worten wie der Satz.
+	it('Bestand kurz: „27 / 28", ohne Exemplare die Worte des Satzes', () => {
+		expect(bestandKurz(28, 27)).toBe('27 / 28');
+		expect(bestandKurz(5, 0)).toBe('0 / 5');
+		expect(bestandKurz(3, undefined)).toBe('0 / 3');
+		expect(bestandKurz(0, 0)).toBe('Keine Exemplare');
+		expect(bestandKurz(0, 0, 2)).toBe('2 bestellt');
+		expect(bestandKurz(null, null)).toBe('');
+		expect(bestandKurz(undefined, undefined, 2)).toBe('');
+	});
+
+	it('Bestand im Regal: alles, ein Teil oder nichts', () => {
+		expect(bestandLage(28, 28)).toBe('alle');
+		expect(bestandLage(28, 27)).toBe('teil');
+		expect(bestandLage(28, 0)).toBe('keins');
+		expect(bestandLage(28, undefined)).toBe('keins');
+		expect(bestandLage(0, 0)).toBe('keins');
+		expect(bestandLage(null, null)).toBe('keins');
 	});
 
 	// Dieselben Fälle prüft die Go-Seite am Ausdruck der Schulbuchliste

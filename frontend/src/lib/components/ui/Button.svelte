@@ -1,7 +1,7 @@
 <script>
 	/** @type {{
 	 *   children?: any,
-	 *   variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'danger-solid' | 'ghost' | 'symbol',
+	 *   variant?: 'primary' | 'secondary' | 'tonal' | 'danger' | 'success' | 'danger-solid' | 'ghost' | 'symbol',
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   class?: string,
 	 *   element?: HTMLButtonElement,
@@ -23,9 +23,9 @@
 	// trägt ein Bauteil entweder einen Rahmen oder eine Erhebung, nie beides.
 	//
 	// Farben nach M3, Buttons, Specs: gefüllt „Primary" mit „On primary"; umrandet „Outline
-	// variant" mit „On surface variant"; der Textknopf (ghost) „Primary". danger und success
-	// sind getönte Knöpfe in den Container-Rollen von error und success, danger-solid der
-	// gefüllte in error.
+	// variant" mit „On surface variant"; tonal „Secondary container" mit „On secondary
+	// container"; der Textknopf (ghost) „Primary". danger und success sind getönte Knöpfe in
+	// den Container-Rollen von error und success, danger-solid der gefüllte in error.
 	//
 	// ghost steht in der Hauptfarbe, weil er keine Fläche hat (M3 Buttons, Guidelines): „the
 	// label text color must always be recognizable from non-button text and elements". symbol
@@ -35,6 +35,7 @@
 	const variants = {
 		primary: 'bg-primary text-on-primary border-transparent',
 		secondary: 'bg-surface-container-lowest border-outline-variant text-on-surface-variant',
+		tonal: 'bg-secondary-container text-on-secondary-container border-transparent',
 		danger: 'bg-error-container text-on-error-container border-transparent',
 		'danger-solid': 'bg-error text-on-error border-transparent',
 		success: 'bg-success-container text-on-success-container border-transparent',

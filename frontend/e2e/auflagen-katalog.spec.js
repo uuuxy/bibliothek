@@ -34,18 +34,24 @@ test('Medienkatalog: ein Buch in zwei Auflagen ist eine Kachel mit Summe und Auf
 
 		await suche.fill(titel);
 		await expect(kacheln).toHaveCount(1);
-		await expect(karte.getByText(`ISBN: ${neueIsbn}`, { exact: true })).toBeVisible();
-		await expect(karte.getByText('3 von 3 verfügbar', { exact: true })).toBeVisible();
-		await expect(
-			karte.getByText('Bestand aus 2 Auflagen: 4. Aufl. · 2023 (1), 3. Aufl. · 2019 (2)', {
+		await expect(karte.getByText(neueIsbn, { exact: true })).toBeVisible();
+		await expect(karte.getByText('3 / 3', { exact: true })).toBeVisible();
+		// Woraus die Summe besteht, steht in der Einblendung auf dem Cover. Sichtbar wird sie
+		// beim Zeigen; toBeVisible allein sähe keinen Unterschied, weil es die Deckkraft nicht prüft.
+		const einblendung = karte
+			.getByText('Bestand aus 2 Auflagen: 4. Aufl. · 2023 (1), 3. Aufl. · 2019 (2)', {
 				exact: true
 			})
-		).toBeVisible();
+			.locator('..');
+		await page.mouse.move(0, 0);
+		await expect(einblendung).toHaveCSS('opacity', '0');
+		await karte.hover();
+		await expect(einblendung).toHaveCSS('opacity', '1');
 
 		await suche.fill(alteIsbn);
 		await expect(kacheln).toHaveCount(1);
-		await expect(karte.getByText(`ISBN: ${alteIsbn}`, { exact: true })).toBeVisible();
-		await expect(karte.getByText('3 von 3 verfügbar', { exact: true })).toBeVisible();
+		await expect(karte.getByText(alteIsbn, { exact: true })).toBeVisible();
+		await expect(karte.getByText('3 / 3', { exact: true })).toBeVisible();
 	} finally {
 		seedSQL(`
 			DELETE FROM werke WHERE id IN (SELECT werk_id FROM buecher_titel WHERE titel = '${titel}');

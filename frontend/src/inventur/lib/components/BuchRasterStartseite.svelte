@@ -11,10 +11,11 @@
 	let { titelListe, onBookClick, onEditClick } = $props();
 </script>
 
-<!-- Feste Kachelbreite, variable Anzahl (wie Google Play Books): mindestens 192 px, damit
-     „ISBN: 9783127335712" in Festbreite neben dem Kopieren-Symbol Platz hat. Bei 960 px
-     Inhalt sind das vier je Reihe, auf einem breiten Monitor acht. -->
-<div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-x-3 gap-y-4">
+<!-- Feste Kachelbreite, variable Anzahl: mindestens 192 px, damit eine 13-stellige ISBN in
+     Festbreite neben dem Kopieren-Symbol im Balken Platz hat. Bei 960 px Inhalt sind das vier
+     je Reihe, auf einem breiten Monitor acht. Gleicher Abstand in beide Richtungen, weil die
+     Karten einen Rahmen tragen und ungleiche Fugen sichtbar wären. -->
+<div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">
 	{#each titelListe as book (book.id)}
 		<BuchKarte
 			titel={book}

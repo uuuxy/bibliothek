@@ -75,3 +75,37 @@ describe('BuchKarte — ein Buch in mehreren Auflagen', () => {
 		expect(queryByText(/Bestand aus/)).toBeNull();
 	});
 });
+
+// Unter dem Cover stehen zwei Zeilen fester Höhe: der ISBN-Balken und die Fußzeile. Beide
+// sind auch ohne ISBN und ohne Prüfdatum gleich hoch, damit das Raster nicht verrutscht.
+describe('BuchKarte — ISBN-Balken, Prüfdatum und Bestand', () => {
+	it('der ISBN-Balken kopiert, ohne die Akte zu öffnen', async () => {
+		const akte = vi.fn();
+		const { getByRole } = render(BuchKarte, { titel: buch, onclick: akte });
+
+		await fireEvent.click(getByRole('button', { name: 'ISBN 9783123456789 kopieren' }));
+
+		expect(akte).not.toHaveBeenCalled();
+	});
+
+	it('ohne ISBN steht „Keine ISBN" an seiner Stelle, ohne Knopf', () => {
+		const { getByText, queryByRole } = render(BuchKarte, { titel: { ...buch, isbn: '' } });
+		expect(getByText('Keine ISBN')).toBeTruthy();
+		expect(queryByRole('button', { name: /kopieren/ })).toBeNull();
+	});
+
+	it('das Prüfdatum steht mit Häkchen; ohne Datum steht dort nichts', () => {
+		const mit = render(BuchKarte, { titel: { ...buch, lastCounted: '2026-03-26' } });
+		expect(mit.getByText('26.03.2026')).toBeTruthy();
+		mit.unmount();
+
+		const ohne = render(BuchKarte, { titel: buch });
+		expect(ohne.queryByText(/geprüft/i)).toBeNull();
+	});
+
+	it('der Bestand steht kurz im Chip und als Satz für Hilfstechnik', () => {
+		const { getByText } = render(BuchKarte, { titel: buch });
+		expect(getByText('27 / 28')).toBeTruthy();
+		expect(getByText('27 von 28 verfügbar')).toBeTruthy();
+	});
+});

@@ -88,6 +88,34 @@ export function zulaufSatz(imZulauf) {
 }
 
 /**
+ * Der Bestand für einen Chip: „27 / 28". Ohne Exemplare bleibt es bei den Worten aus
+ * bestandSatz („Keine Exemplare", „2 bestellt"), sonst stünde dort „0 / 0".
+ *
+ * @param {number | null | undefined} gesamt
+ * @param {number | null | undefined} verfuegbar
+ * @param {number | null | undefined} [imZulauf] bestellt, noch nicht eingetroffen
+ * @returns {string} leer, wenn keine Zahl vorliegt
+ */
+export function bestandKurz(gesamt, verfuegbar, imZulauf) {
+	if (!gesamt) return bestandSatz(gesamt, verfuegbar, imZulauf);
+	return `${verfuegbar ?? 0} / ${gesamt}`;
+}
+
+/**
+ * Wie viel vom Bestand im Regal steht: alles, ein Teil oder nichts. Ein Titel ohne Exemplare
+ * hat nichts im Regal, auch wenn etwas bestellt ist.
+ *
+ * @param {number | null | undefined} gesamt
+ * @param {number | null | undefined} verfuegbar
+ * @returns {'alle' | 'teil' | 'keins'}
+ */
+export function bestandLage(gesamt, verfuegbar) {
+	const imRegal = verfuegbar ?? 0;
+	if (!gesamt || imRegal <= 0) return 'keins';
+	return imRegal >= gesamt ? 'alle' : 'teil';
+}
+
+/**
  * Der Jahrgang eines Titels als Text: „7" für ein Jahr, „7–10" für eine Spanne. Ohne Eintrag
  * ist er unbekannt und der Text leer. Dieselbe Regel wie im Ausdruck der Schulbuchliste
  * (pdf/schulbuecher.go, jahrgangText); beide Seiten lesen dieselben Prüffälle

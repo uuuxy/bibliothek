@@ -1,3 +1,14 @@
+<script module>
+	/** Fläche, Rand und Schrift des Platzhalters im Maß `kachel`. Die Einblendung der
+	 *  Katalogkachel (BuchKarteCover) setzt Fach und Titel in denselben Klassen und deckt den
+	 *  Platzhalter damit genau; stünden sie zweimal da, liefen sie auseinander. */
+	export const PLATZHALTER = {
+		flaeche: 'bg-surface-container-highest p-5',
+		fach: 'text-xs font-extrabold text-on-surface-variant',
+		titel: 'mt-1.5 text-sm leading-snug font-extrabold text-on-surface'
+	};
+</script>
+
 <script>
 	/**
 	 * @component BuchCover — das Coverbild eines Titels, an EINER Stelle.
@@ -117,11 +128,11 @@
 	/>
 {:else if groesse === 'kachel'}
 	<div
-		class="{MASSE.kachel} aspect-2/3 shrink-0 overflow-hidden bg-surface-container-highest p-5 text-left {klasse}"
+		class="{MASSE.kachel} aspect-2/3 shrink-0 overflow-hidden {PLATZHALTER.flaeche} text-left {klasse}"
 		aria-hidden="true"
 	>
-		<p class="text-xs font-extrabold text-on-surface-variant">{fach}</p>
-		<p class="mt-1.5 line-clamp-3 text-sm leading-snug font-extrabold text-on-surface">{titel}</p>
+		<p class={PLATZHALTER.fach}>{fach}</p>
+		<p class="{PLATZHALTER.titel} line-clamp-4">{titel}</p>
 	</div>
 {:else}
 	<div

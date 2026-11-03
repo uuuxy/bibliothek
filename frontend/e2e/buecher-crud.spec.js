@@ -56,7 +56,7 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 		await expect(suche).toBeVisible({ timeout: 15000 });
 		await suche.fill(titel);
 		await expect(page.getByText(titel).first()).toBeVisible();
-		await expect(page.getByText(`ISBN: ${isbn}`).first()).toBeVisible();
+		await expect(page.getByText(isbn, { exact: true }).first()).toBeVisible();
 
 		// 3. Signatur-Schutz über den ECHTEN Import-Pfad: Littera-CSV hat
 		//    keine Buchrücken-Signaturspalte → Upsert kommt mit leerer

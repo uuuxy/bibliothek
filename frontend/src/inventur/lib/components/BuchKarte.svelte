@@ -1,20 +1,26 @@
-<!-- @component BuchKarte — eine Kachel des Medienkatalogs, gebaut wie Google Play Books: Das
-     Cover ist die Kachel, der Text steht darunter auf der Fläche. Kein Kartenrahmen, kein
-     Schatten, kein Trennstrich, kein Kasten um das Prüfdatum; beim Zeigen nur die
-     M3-Zustandsschicht (m3-state) als weiche Tonfläche um Bild und Text.
+<!-- @component BuchKarte — eine Kachel des Medienkatalogs als umrandete Karte nach Material 3
+     (Cards, Specs: Fläche „Surface", Rahmen „Outline variant"). Beim Zeigen kommt nur die
+     Zustandsschicht (m3-state) dazu; der Rahmen bleibt, wie er ist.
 
-     Fünf Informationen, in dieser Reihenfolge, und keine weiteren: Titel, ISBN mit
-     Kopieren (die Nummer liest man gegen das Buch in der Hand ab), Signatur (die
-     Regaladresse), Bestand als Satz statt Ampelpunkt, Prüfdatum nur wenn es eines gibt.
+     Drei Zeilen mit fester Höhe, damit alle Kacheln einer Reihe gleich hoch sind und ISBN und
+     Fußzeile auf einer Linie liegen: das Cover mit Titel, Bestand und Signatur
+     (BuchKarteCover), der ISBN-Balken zum Kopieren, die Fußzeile mit Prüfdatum und Stift.
      Fach-, Klassen- und Zweig-Chips fehlen mit Absicht, das Suchfeld findet sie. Der Autor
-     interessiert im Schulkatalog nicht. Ein Buch in mehreren Auflagen zählt die Summe; eine
-     Zeile darunter sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch). -->
+     interessiert im Schulkatalog nicht. Ein Buch in mehreren Auflagen zählt die Summe; die
+     Einblendung auf dem Cover sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch). -->
 <script>
-	import BuchCover from '../../../lib/components/ui/BuchCover.svelte';
-	import { bestandSatz, formatDatum } from '../../../lib/utils/format.js';
+	import BuchKarteCover from './BuchKarteCover.svelte';
+	import Button from '../../../lib/components/ui/Button.svelte';
+	import {
+		bestandKurz,
+		bestandLage,
+		bestandSatz,
+		formatDatum,
+		jahrgangSpanne
+	} from '../../../lib/utils/format.js';
 	import { auflagenAufschluesselung } from '../../../lib/utils/auflagenText.js';
 	import { kopiere } from '../../../lib/utils/zwischenablage.js';
-	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
+	import { Check, Copy, SquarePen } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -32,6 +38,8 @@
 	 *     signatur?: string,
 	 *     medientyp?: string,
 	 *     auflage?: string,
+	 *     jahrgangVon?: number | string | null,
+	 *     jahrgangBis?: number | string | null,
 	 *     buch?: { gesamt: number, verfuegbar: number, imZulauf: number, auflagen: any[] }
 	 *   },
 	 *   onclick?: (event: Event) => void,
@@ -46,12 +54,16 @@
 		titel.medientyp === 'CD' || titel.medientyp === 'DVD' ? 'EAN' : 'ISBN'
 	);
 
-	/** Bestand als Satz: „27 von 28 verfügbar", „Keine Exemplare" bei einem Titel ohne
-	 *  Exemplare; ein Farbpunkt sähe für beides gleich aus. Kein Rot bei 0: Im Schuljahr ist
-	 *  fast jedes Lernmittel komplett verliehen, und ein Katalog, der überall rot ist, sagt
-	 *  nichts mehr. Der Wortlaut kommt aus format.js, weil ihn auch die Theke braucht. */
+	const jahrgang = $derived(jahrgangSpanne(titel.jahrgangVon, titel.jahrgangBis));
+	const fachZeile = $derived(
+		[titel.subject, jahrgang && `Jahrgang ${jahrgang}`].filter(Boolean).join(' · ')
+	);
+
+	/** Ein Buch in mehreren Auflagen zählt die Summe. Die Worte kommen aus format.js, weil
+	 *  Theke, Portal und Klassensätze denselben Bestand in denselben Worten nennen. */
 	const zahlen = $derived(titel.buch ?? titel);
-	const bestand = $derived(bestandSatz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
+	const bestand = $derived(bestandKurz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
+	const satz = $derived(bestandSatz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
 
 	const geprueft = $derived(titel.lastCounted ? formatDatum(titel.lastCounted) : '');
 
@@ -64,87 +76,75 @@
 	}
 </script>
 
-<!-- Die Kachel ist für Hilfstechnik kein Knopf: Mit Kopieren-Knopf und Stift darin wäre sie
-     ein Bedienelement im Bedienelement (axe: nested-interactive). Der Knopf ist der Titel,
-     ein echter <button> in der Überschrift. Der Klick auf die ganze Fläche bleibt als Komfort
-     für Maus und Finger, ohne Rolle, deshalb die beiden Ausnahmen darunter. Die inneren
-     Knöpfe stoppen die Weitergabe: Der Stift öffnet nur die Bearbeitung, nicht auch die Akte
-     (BuchKarte.test.js). -->
+<!-- Die Karte ist für Hilfstechnik kein Knopf: Mit Kopieren-Knopf und Stift darin wäre sie
+     ein Bedienelement im Bedienelement (axe: nested-interactive). Der Knopf ist das Cover.
+     Der Klick auf die ganze Fläche bleibt als Komfort für Maus und Finger, ohne Rolle, deshalb
+     die beiden Ausnahmen darunter. Die inneren Knöpfe stoppen die Weitergabe: Kopieren und
+     Stift öffnen nicht auch die Akte (BuchKarte.test.js). -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
-<div class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3" {onclick}>
-	<BuchCover
+<div
+	class="m3-state group flex h-full cursor-pointer flex-col gap-2 rounded-xl border border-outline-variant p-2 text-on-surface"
+	{onclick}
+>
+	<BuchKarteCover
+		titel={titel.title}
 		coverUrl={titel.coverUrl}
 		isbn={titel.isbn}
-		titel={titel.title}
-		fach={titel.subject}
-		groesse="kachel"
+		fach={fachZeile}
+		auflage={titel.auflage}
+		aufschluesselung={titel.buch ? auflagenAufschluesselung(titel.buch.auflagen) : ''}
+		{bestand}
+		bestandSatz={satz}
+		lage={bestandLage(zahlen.gesamt, zahlen.verfuegbar)}
+		signatur={titel.signatur}
 	/>
 
-	<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
-		<h2 class="text-base leading-snug font-semibold text-on-surface" title={titel.title}>
-			<!-- Ohne eigenen Handler: Enter/Leertaste erzeugen ein click-Ereignis, das zur
-			     Fläche aufsteigt und dort die Akte öffnet — ein Handler hier navigierte doppelt.
-			     Der Knopf trägt die Semantik (Tastatur, Screenreader), die Fläche das Verhalten. -->
-			<button
-				type="button"
-				class="line-clamp-2 block w-full cursor-pointer text-left wrap-break-word hover:underline"
-			>
-				{titel.title}
-			</button>
-		</h2>
-
-		<!-- Die Auflage steht direkt unter dem Titel: Zwei Zeilen „Lambacher Schweizer 7"
-		     im Katalog sind zwei verschiedene Bücher, und das sieht man sonst nirgends. -->
-		{#if titel.auflage}
-			<p class="truncate text-xs" title={titel.auflage}>{titel.auflage}</p>
-		{/if}
-
-		<button
-			class="flex cursor-pointer items-center gap-1.5 text-left font-mono transition-colors hover:text-primary"
-			onclick={copyIsbn}
-			title="{nummerArt} kopieren"
-		>
-			<span class="truncate" title={titel.isbn}>{nummerArt}: {titel.isbn || '–'}</span>
+	<!-- Die Nummer liest man gegen das Buch in der Hand ab, deshalb in Festbreite. Die Worte für
+	     Hilfstechnik stehen unsichtbar daneben: Sie geben dem Balken seinen Namen, und eine Zahl
+	     allein zählte für die Messung der Trefferflächen als Symbol. -->
+	{#if titel.isbn}
+		<Button type="button" variant="tonal" class="w-full" onclick={copyIsbn}>
 			{#if copied}
-				<span class="font-sans text-xs font-medium text-primary">Kopiert!</span>
-			{:else if titel.isbn}
-				<Copy class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+				<span class="mr-auto flex items-center gap-1.5">
+					<Check class="h-4 w-4" aria-hidden="true" />
+					Kopiert!
+				</span>
+			{:else}
+				<span class="sr-only">{nummerArt}</span>
+				<span class="truncate font-mono font-normal">{titel.isbn}</span>
+				<span class="sr-only">kopieren</span>
+				<Copy class="ml-auto h-4 w-4 shrink-0" aria-hidden="true" />
 			{/if}
-		</button>
-
-		{#if titel.signatur}
-			<div class="flex items-center gap-1.5">
-				<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-				<span class="truncate font-mono">{titel.signatur}</span>
-			</div>
-		{/if}
-
-		<!-- mt-2: Die Trefferfläche des Stifts ragt 8 px über ihn hinaus und berührt so die
-		     Zeile darüber nicht. -->
-		<div class="mt-2 flex items-center justify-between gap-2">
-			<span>{bestand}</span>
-			{#if onEditClick}
-				<!-- Ruhig grau; sitzt im Text statt auf dem Cover. -->
-				<button
-					class="icon-btn -my-1 shrink-0"
-					onclick={(e) => {
-						e.stopPropagation();
-						onEditClick();
-					}}
-					data-tip="Schnell bearbeiten"
-					aria-label="Buch schnell bearbeiten"
-				>
-					<SquarePen class="h-4 w-4" aria-hidden="true" />
-				</button>
-			{/if}
+		</Button>
+	{:else}
+		<div
+			class="flex h-9 items-center rounded-full bg-surface-container px-3 text-sm text-on-surface-variant"
+		>
+			Keine {nummerArt}
 		</div>
-		{#if titel.buch}
-			<p class="text-xs">{auflagenAufschluesselung(titel.buch.auflagen)}</p>
-		{/if}
+	{/if}
 
+	<div class="flex h-9 items-center gap-2 pl-1 text-xs text-on-surface-variant">
 		{#if geprueft}
-			<span>Geprüft {geprueft}</span>
+			<span class="flex items-center gap-1" data-tip="Geprüft am {geprueft}">
+				<Check class="h-3.5 w-3.5" aria-hidden="true" />
+				<span class="sr-only">Geprüft</span>
+				{geprueft}
+			</span>
+		{/if}
+		{#if onEditClick}
+			<button
+				class="icon-btn ml-auto shrink-0"
+				onclick={(e) => {
+					e.stopPropagation();
+					onEditClick();
+				}}
+				data-tip="Schnell bearbeiten"
+				aria-label="Buch schnell bearbeiten"
+			>
+				<SquarePen class="h-4 w-4" aria-hidden="true" />
+			</button>
 		{/if}
 	</div>
 </div>
