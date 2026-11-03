@@ -1043,8 +1043,8 @@ der hat nicht stattgefunden.
   `role="alert"`; die Omnibox führt per `aria-activedescendant` durch die
   Trefferliste.
 - Zeile und Kachel sind keine Knöpfe mehr: In Leserdatei und Signaturen-Regal öffnet der
-  **Name bzw. Titel** die Akte, im Medienkatalog der Titel (die Kachelfläche bleibt ein
-  Mausziel ohne Rolle).
+  **Name bzw. Titel** die Akte, im Medienkatalog das Cover, das den Titel als Namen trägt
+  (die Kachelfläche bleibt ein Mausziel ohne Rolle).
 
 **Bekannte Lücken (offen, keine davon im Gate versteckt):**
 
