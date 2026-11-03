@@ -8,6 +8,7 @@
 <script>
 	import BuchCover, { PLATZHALTER } from '../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../lib/components/ui/StatusChip.svelte';
+	import BestandChip from './BestandChip.svelte';
 	import { MapPin } from '@lucide/svelte';
 
 	/**
@@ -18,9 +19,9 @@
 	 *   fach?: string,
 	 *   auflage?: string,
 	 *   aufschluesselung?: string,
-	 *   bestand: string,
-	 *   bestandSatz: string,
-	 *   lage: 'alle' | 'teil' | 'keins',
+	 *   gesamt?: number,
+	 *   verfuegbar?: number,
+	 *   imZulauf?: number,
 	 *   signatur?: string
 	 * }}
 	 */
@@ -31,16 +32,11 @@
 		fach = '',
 		auflage = '',
 		aufschluesselung = '',
-		bestand,
-		bestandSatz,
-		lage,
+		gesamt,
+		verfuegbar,
+		imZulauf,
 		signatur = ''
 	} = $props();
-
-	/** Grün, wenn alles im Regal steht, gelb bei einem Teil. Nichts im Regal ist grau, nicht
-	 *  rot: Im Schuljahr ist fast jedes Lernmittel verliehen, und ein überall roter Katalog
-	 *  sagt nichts mehr. */
-	const PUNKT = { alle: 'erfolg', teil: 'warten', keins: 'aus' };
 </script>
 
 <div class="group/cover relative">
@@ -80,14 +76,7 @@
 	</div>
 
 	<div class="absolute inset-x-2 bottom-2 flex items-center gap-2">
-		{#if bestand}
-			<StatusChip
-				text={bestand}
-				punkt={PUNKT[lage]}
-				vorlesen={bestand === bestandSatz ? '' : bestandSatz}
-				tip={bestandSatz}
-			/>
-		{/if}
+		<BestandChip {gesamt} {verfuegbar} {imZulauf} />
 		{#if signatur}
 			<span class="ml-auto flex min-w-0">
 				<StatusChip text={signatur} icon={MapPin} tip="Signatur {signatur}" kuerzen />

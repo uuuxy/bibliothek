@@ -1,9 +1,12 @@
 <!-- @component KlassenBuchKachel — ein Titel im Klassensatz, gebaut wie die Katalog-Kachel
-     (BuchKarte): Cover ohne Rahmen, darunter Titel und Bestand („82 von 82 verfügbar"). Der
-     Bestand steht immer da, nicht erst beim Zeigen, denn am Tablet gibt es kein Zeigen. -->
+     (BuchKarte): umrandete Karte, der Bestand als Chip auf dem Cover, darunter der Titel und die
+     Hinweise der Klasse. Die stehen immer da, nicht erst beim Zeigen wie im Katalog, denn am
+     Tablet gibt es kein Zeigen. ISBN-Balken, Prüfdatum und Stift fehlen: Hier zählt, was die
+     Klasse hat und ob der Bestand reicht. -->
 <script>
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
-	import { bestandSatz } from '../../../../lib/utils/format.js';
+	import BestandChip from '../BestandChip.svelte';
+	import { KARTE } from '../BuchKarte.svelte';
 	import {
 		auflagenDerKlasse,
 		auflagenAufschluesselung
@@ -32,22 +35,25 @@
 	 * wäre jede Kachel dort ein Knopf, hinter dem für die Rolle ein 403 liegt.
 	 */
 	let { titel, onEdit = undefined, bearbeitbar = true } = $props();
-
-	/** Bestand als Satz wie auf der Katalog-Kachel; ohne Zahlen im Payload bleibt die Zeile leer. */
-	const bestand = $derived(bestandSatz(titel.gesamt, titel.verfuegbar, titel.imZulauf));
 </script>
 
 <!-- Zwei Hüllen, ein Inhalt: Die Rolle „button" muss für svelte-check STATISCH am Element
      stehen (a11y_no_noninteractive_tabindex). Der Inhalt liegt einmal im Snippet. -->
 {#snippet inhalt()}
-	<BuchCover
-		coverUrl={titel.coverUrl}
-		isbn={titel.isbn}
-		titel={titel.title}
-		fach={titel.subject}
-		groesse="kachel"
-		dekorativ
-	/>
+	<!-- Der Chip liegt unten auf dem Cover wie in der Katalog-Kachel (BuchKarteCover). -->
+	<div class="relative">
+		<BuchCover
+			coverUrl={titel.coverUrl}
+			isbn={titel.isbn}
+			titel={titel.title}
+			fach={titel.subject}
+			groesse="kachel"
+			dekorativ
+		/>
+		<div class="absolute inset-x-2 bottom-2 flex">
+			<BestandChip gesamt={titel.gesamt} verfuegbar={titel.verfuegbar} imZulauf={titel.imZulauf} />
+		</div>
+	</div>
 	<div class="flex flex-col gap-0.5 text-sm">
 		<!-- text-base ausdrücklich am Titel: Sonst erbt er die 14 px vom Container darüber,
 		     und eine geerbte Größe sieht kein Grep, nur die Messung im Browser. -->
@@ -57,9 +63,6 @@
 		>
 			{titel.title}
 		</h3>
-		{#if bestand}
-			<span class="text-on-surface-variant">{bestand}</span>
-		{/if}
 		{#if titel.auflagenBestand?.length}
 			<!-- Ein Buch in mehreren Auflagen (Portal „Schulbücher", docs/OFFEN.md 4.18, Stufe 6):
 			     Die Zahlen darüber sind die Summe; hier steht, woraus sie besteht — wie auf der
@@ -94,7 +97,7 @@
 
 {#if bearbeitbar}
 	<div
-		class="m3-state flex cursor-pointer flex-col gap-2 rounded-2xl p-2"
+		class="m3-state flex cursor-pointer flex-col gap-2 {KARTE}"
 		onclick={() => onEdit?.(titel)}
 		role="button"
 		tabindex="0"
@@ -112,7 +115,7 @@
 		<span class="sr-only">bearbeiten</span>
 	</div>
 {:else}
-	<div class="flex flex-col gap-2 rounded-2xl p-2">
+	<div class="flex flex-col gap-2 {KARTE}">
 		{@render inhalt()}
 	</div>
 {/if}

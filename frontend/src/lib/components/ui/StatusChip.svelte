@@ -8,8 +8,8 @@
 	// Farben sind die Paare container / on-container aus styles/rollen.css; sie halten den
 	// Kontrast auch bei kleinem Text.
 	//
-	// punkt: ein Statuspunkt vor dem Text, wo die Fläche neutral bleibt (Bestand auf dem Cover
-	// der Katalogkachel). vorlesen: der ganze Satz für Hilfstechnik, wenn der sichtbare Text eine
+	// punkt: ein Statuspunkt vor dem Text, wo die Fläche neutral bleibt (BestandChip auf dem
+	// Cover der Buchkacheln). vorlesen: der ganze Satz für Hilfstechnik, wenn der sichtbare Text eine
 	// Kurzform ist. kuerzen: Der Text endet mit Auslassung, statt aus seinem Platz zu ragen; den
 	// ganzen Text zeigt dann tip.
 	let {

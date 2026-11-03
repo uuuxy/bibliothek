@@ -8,16 +8,17 @@
      Fach-, Klassen- und Zweig-Chips fehlen mit Absicht, das Suchfeld findet sie. Der Autor
      interessiert im Schulkatalog nicht. Ein Buch in mehreren Auflagen zählt die Summe; die
      Einblendung auf dem Cover sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch). -->
+<script module>
+	/** Rahmen der Buchkacheln: umrandete Karte nach Material 3 (Cards, Specs: „Shape: 12dp
+	 *  corner radius", Rahmen „Outline variant"). Katalog- und Klassenkachel nehmen ihn von
+	 *  hier, damit sie nicht auseinanderlaufen. */
+	export const KARTE = 'rounded-xl border border-outline-variant p-2';
+</script>
+
 <script>
 	import BuchKarteCover from './BuchKarteCover.svelte';
 	import Button from '../../../lib/components/ui/Button.svelte';
-	import {
-		bestandKurz,
-		bestandLage,
-		bestandSatz,
-		formatDatum,
-		jahrgangSpanne
-	} from '../../../lib/utils/format.js';
+	import { formatDatum, jahrgangSpanne } from '../../../lib/utils/format.js';
 	import { auflagenAufschluesselung } from '../../../lib/utils/auflagenText.js';
 	import { kopiere } from '../../../lib/utils/zwischenablage.js';
 	import { Check, Copy, SquarePen } from '@lucide/svelte';
@@ -59,11 +60,8 @@
 		[titel.subject, jahrgang && `Jahrgang ${jahrgang}`].filter(Boolean).join(' · ')
 	);
 
-	/** Ein Buch in mehreren Auflagen zählt die Summe. Die Worte kommen aus format.js, weil
-	 *  Theke, Portal und Klassensätze denselben Bestand in denselben Worten nennen. */
+	/** Ein Buch in mehreren Auflagen zählt die Summe. */
 	const zahlen = $derived(titel.buch ?? titel);
-	const bestand = $derived(bestandKurz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
-	const satz = $derived(bestandSatz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
 
 	const geprueft = $derived(titel.lastCounted ? formatDatum(titel.lastCounted) : '');
 
@@ -84,7 +82,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
-	class="m3-state group flex h-full cursor-pointer flex-col gap-2 rounded-xl border border-outline-variant p-2 text-on-surface"
+	class="m3-state group flex h-full cursor-pointer flex-col gap-2 {KARTE} text-on-surface"
 	{onclick}
 >
 	<BuchKarteCover
@@ -94,9 +92,9 @@
 		fach={fachZeile}
 		auflage={titel.auflage}
 		aufschluesselung={titel.buch ? auflagenAufschluesselung(titel.buch.auflagen) : ''}
-		{bestand}
-		bestandSatz={satz}
-		lage={bestandLage(zahlen.gesamt, zahlen.verfuegbar)}
+		gesamt={zahlen.gesamt}
+		verfuegbar={zahlen.verfuegbar}
+		imZulauf={zahlen.imZulauf}
 		signatur={titel.signatur}
 	/>
 

@@ -67,10 +67,11 @@
 
 	{#if offen}
 		<!-- Umbrechendes Raster, kein Karussell, wie bei den Klassensätzen: Pfeile auf :hover
-		     gibt es am Tablet nicht. -->
+		     gibt es am Tablet nicht. Abstand wie im Katalog, 8 px in beide Richtungen (M3 Cards,
+		     Specs: „Padding between cards: 8dp max"). -->
 		<div
 			id={rasterID}
-			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-4 pt-1 pb-6"
+			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2 pt-1 pb-6"
 			data-testid="schulbuecher-raster"
 		>
 			{#each buecher as book (book.id)}
