@@ -118,9 +118,10 @@
 			{/if}
 		</Button>
 	{:else}
-		<div
-			class="flex h-9 items-center rounded-full bg-surface-container px-3 text-sm text-on-surface-variant"
-		>
+		<!-- Ohne Fläche: Eine gefüllte runde Fläche hat in Material 3 die Form eines Knopfs, und hier
+		     gibt es nichts zu kopieren. Die Höhe bleibt, damit Balken und Fußzeile in jeder Kachel auf
+		     einer Linie liegen; eingerückt wie die Fußzeile. -->
+		<div class="flex h-9 items-center pl-1 text-sm text-on-surface-variant">
 			Keine {nummerArt}
 		</div>
 	{/if}
