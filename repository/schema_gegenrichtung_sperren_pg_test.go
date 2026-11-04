@@ -27,14 +27,13 @@ import "testing"
 
 // Fremdschlüssel, an denen ein Löschen scheitert.
 var fkSperrenBestand = []string{
-	// Befragt: Drei Wege löschen Exemplare und räumen vorher ab. Das Löschen eines Titels lehnt
-	// verliehene Exemplare mit Satz ab (400 mit den Barcodes, repository.LoescheTitel); die
-	// Massenaktion der Bestandstabelle löscht auch die offenen Ausleihen, mit Spur im Protokoll
-	// (TitelAbfragen.LoescheTitelSamtAusleihen). Das Löschen von Verlusten weist offene Vorgänge mit Satz ab (409,
-	// ErrVerlustNochGebunden). Danach fallen Schadensfälle und zurückgegebene Ausleihen in
-	// derselben Transaktion. Die Sperre trifft nur eine Ausleihe oder Forderung, die zwischen
-	// Abräumen und Löschen entsteht: Dann bricht das Löschen mit 500 ab, mit dem neutralen Satz
-	// von apierrors, an der Massenaktion mit deren festem Satz.
+	// Befragt: Zwei Wege löschen Exemplare und räumen vorher ab. Das Löschen von Titeln
+	// (TitelAbfragen.LoescheTitel) nimmt ein verliehenes Exemplar nur mit, wenn der Mensch es
+	// bestätigt hat, sonst bleibt sein Titel; die offenen Ausleihen fallen mit Spur im Protokoll.
+	// Das Löschen von Verlusten weist offene Vorgänge mit Satz ab (409, ErrVerlustNochGebunden).
+	// Danach fallen Schadensfälle und zurückgegebene Ausleihen in derselben Transaktion. Die
+	// Sperre trifft nur eine Ausleihe oder Forderung, die zwischen Abräumen und Löschen entsteht:
+	// Dann bricht das Löschen mit 500 ab.
 	"RESTRICT  ausleihen.exemplar_id -> buecher_exemplare",
 	// Befragt: Kein Schreiber löscht ein Gerät, es gibt keine Route dafür; die Oberfläche führt
 	// es höchstens als nicht ausleihbar (repository/geraete.go). Die Sperre trifft nur ein

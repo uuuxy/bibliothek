@@ -90,8 +90,9 @@ func TestAuflagen_EinSchreibpfad(t *testing.T) {
 	}
 
 	// Nicht-leer-Garantie je Quelle, von Hand gezählt: In der Tür stehen
-	// INSERT INTO werke, drei SET werk_id und DELETE FROM werke; Titel löschen LoescheTitel und
-	// TitelAbfragen.LoescheTitelSamtAusleihen. Findet der Detektor weniger, misst er nichts mehr.
+	// INSERT INTO werke, drei SET werk_id und DELETE FROM werke; Titel löschen loescheGanzeTitel
+	// (TitelAbfragen.LoescheTitel) und loescheQuelle (Titel zusammenführen). Findet der Detektor
+	// weniger, misst er nichts mehr.
 	if schreiberInTuer < 5 {
 		t.Errorf("nur %d Schreiber in %s gefunden — erwartet mindestens 5: misst der Detektor noch?", schreiberInTuer, tuer)
 	}
