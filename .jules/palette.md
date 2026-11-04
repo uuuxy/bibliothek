@@ -22,3 +22,6 @@
 ## 2026-09-05 - ARIA Labels on Icon-only Buttons
 **Learning:** When using components like `<Trash2>` inside a `<button>` without visible text, the `title` attribute alone is insufficient for screen readers. An explicit `aria-label` must be provided on the button element itself.
 **Action:** Always ensure icon-only buttons include an `aria-label` attribute describing their function, regardless of whether a `title` attribute (for tooltips) is present.
+## 2024-11-04 - Back Button ARIA Label Context
+**Learning:** Back buttons in detail views (like `StatistikDetail.svelte`) that visually just say "Statistik" lack context for screen reader users on where they actually navigate to. Adding a descriptive `aria-label="Zurück zur Statistik-Übersicht"` provides clear context that the button returns to the overview page.
+**Action:** When adding back buttons to detail views, always evaluate if the visible text provides enough context on its own. If not, add an `aria-label` that explicitly describes the destination.

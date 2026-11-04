@@ -76,6 +76,7 @@
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}
 		class="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-5"
+		aria-label="Zurück zur Statistik-Übersicht"
 	>
 		<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 		Statistik
