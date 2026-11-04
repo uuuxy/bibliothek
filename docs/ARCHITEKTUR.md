@@ -2204,6 +2204,13 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   keine Domain.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
+- **Ein Alarm wiederholt sich einmal am Tag:** Was die letzte Mail des Bereitschafts-Wächters
+  nannte, liegt in `system_einstellungen` (`bereitschafts_alarm_gemeldet`): je kritischem Befund
+  der Bereich, je Fehlermeldung Text und Route, ohne Zahlen und Uhrzeiten. Eine Mail ohne neuen
+  Punkt geht erst 23 Stunden nach der letzten wieder hinaus, auch wenn der Wächter nach einem
+  Neustart früher läuft (`internal/bereitschaft/alarm.go`). Ein
+  gescheiterter Versand zählt nicht als gemeldet. Vorbild ist `repeat_interval` von Prometheus
+  Alertmanager.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.
 
 ---

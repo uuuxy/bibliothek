@@ -758,7 +758,10 @@ die Meldung auf einem Zettel statt in der `.env`. Dazu eine **Stufe**: `ok` (in 
 Alarm-Mail aus). Bewusst nur drei — eine feinere Skala liest niemand.
 
 **Der Wächter meldet sich selbst:** Kritische Befunde gehen täglich
-per Mail — solange sie bestehen, mit Befund, Folge und Abhilfe je Punkt. Der
+per Mail — solange sie bestehen, mit Befund, Folge und Abhilfe je Punkt. Der Wächter läuft drei
+Minuten nach jedem Start und danach täglich; dieselbe Mail geht trotzdem höchstens einmal am Tag
+hinaus, ein neuer Punkt (ein weiterer kritischer Bereich, eine neue Fehlermeldung) mit dem
+nächsten Lauf. Ein gescheiterter Versand zählt nicht als gemeldet. Der
 Empfängerkreis ist einstellbar (Einstellungen → Erreichbarkeit & Alarme,
 `alarm_empfaenger`, mehrere Adressen mit Komma); ist er leer, gehen die Mails als
 sicherer Rückfall an alle aktiven Admin-Konten — ein Alarm, der niemanden erreicht,
@@ -777,8 +780,7 @@ eine Zeile ist ein Grund für die tägliche Mail; sie nennt die Fehler in einem 
 kritischen Befunden, höchstens fünf Meldungen einzeln, und der Betreff nennt ihre Zahl. Jede
 einzelne Zeile zeigt der Befehl im Betriebshandbuch ([DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im
 Log finden“). Der Zählerstand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`)
-und übersteht so ein Update: Die Mail, die der Wächter drei Minuten nach dem Start schickt, nennt
-auch die Fehler davor.
+und übersteht so ein Update: Die nächste Mail des Wächters nennt auch die Fehler davor.
 
 Die Seite ist eine **reine Prüffunktion**: Sie ändert nichts, sie schaltet nichts frei.
 Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut

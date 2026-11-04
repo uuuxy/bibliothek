@@ -512,3 +512,19 @@ func TestGesamt(t *testing.T) {
 		}
 	}
 }
+
+// Der Bereitschafts-Alarm erkennt einen neuen kritischen Befund an seinem Bereich (AlarmPunkte).
+// Trügen zwei Prüfungen denselben, käme ein neuer Befund der zweiten erst mit der Erinnerung am
+// nächsten Tag.
+func TestPruefe_JederBereichKommtEinmalVor(t *testing.T) {
+	gesehen := map[string]bool{}
+	for _, b := range Pruefe(Lage{}) {
+		if b.Bereich == "" || gesehen[b.Bereich] {
+			t.Errorf("Bereich %q ist leer oder kommt doppelt vor", b.Bereich)
+		}
+		gesehen[b.Bereich] = true
+	}
+	if len(gesehen) < 20 {
+		t.Fatalf("nur %d Bereiche geprüft, die Selbstprüfung hat 21", len(gesehen))
+	}
+}

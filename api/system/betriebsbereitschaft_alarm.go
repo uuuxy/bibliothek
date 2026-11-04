@@ -6,7 +6,8 @@ package system
 // eingerichtet, aber nicht in Betrieb ist, doch nur dem, der hinschaut; ein Backup, das nicht
 // läuft, bliebe so unbemerkt. Dieser Alarm schickt kritische Befunde täglich per Mail an alle
 // aktiven Admins, täglich, solange sie bestehen:
-// Kritisch soll drücken.
+// Kritisch soll drücken. Ein Neustart wiederholt die letzte Mail nicht
+// (internal/bereitschaft/alarm.go).
 //
 // Warnungen lösen bewusst keine Mail aus (die Demo-Daten-Warnung wäre Dauerrauschen,
 // und ein Alarm, der dauernd feuert, wird stummgeschaltet); ihre Zahl steht als
@@ -14,6 +15,8 @@ package system
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -21,11 +24,18 @@ import (
 	"bibliothek/internal/bereitschaft"
 	"bibliothek/mailservice"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
+// alarmGemeldetSchluessel ist der Eintrag in system_einstellungen, der festhält, was die letzte
+// Alarm-Mail nannte (bereitschaft.GemeldeterAlarm).
+const alarmGemeldetSchluessel = "bereitschafts_alarm_gemeldet"
+
 // BereitschaftsAlarm sammelt die Lage, prüft sie und mailt kritische Befunde und die Fehler im
-// Log. Läuft nur im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
-// ein Entwicklungsrechner darf niemals Alarm-Mails auslösen.
+// Log, wenn ein neuer Punkt dabei ist oder die letzte Mail einen Tag zurückliegt. Läuft nur im
+// echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP — ein Entwicklungsrechner darf
+// niemals Alarm-Mails auslösen.
 func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	einstellungsAbfragen := repository.NewEinstellungsAbfragen(t.DB.Pool)
 	mailAbfragen := repository.NewMailEinstellungsAbfragen(t.DB.Pool)
@@ -37,9 +47,17 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	}
 
 	befunde := bereitschaft.Pruefe(lage)
-	fehler := baueFehlerImLog(t.fehlergruppen(lage.Jetzt), lage.Jetzt, hoechstzahlMeldungenInDerMail)
+	gruppen := t.fehlergruppen(lage.Jetzt)
+	fehler := baueFehlerImLog(gruppen, lage.Jetzt, hoechstzahlMeldungenInDerMail)
 	betreff, textkoerper, kritische := formatiereAlarmMail(befunde, fehler)
 	if betreff == "" {
+		return
+	}
+	punkte := bereitschaft.AlarmPunkte(befunde, gruppen)
+	zuletzt := ladeGemeldetenAlarm(ctx, zustandAbfragen)
+	if !bereitschaft.IstMailFaellig(zuletzt, punkte, lage.Jetzt) {
+		slog.Info("Bereitschafts-Alarm: nichts Neues seit der letzten Mail", "befunde", kritische,
+			"fehlermeldungen", fehler.Anzahl, "letzte_mail", zuletzt.Zeit)
 		return
 	}
 
@@ -61,15 +79,54 @@ func (t *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	// Admin-Konto fiele so auf).
 	textkoerper += "\nDiese Mail ging an " + beschreibung + "\n"
 
+	zugestellt := 0
 	for _, an := range empfaenger {
 		if err := t.Post().Sende(ctx, mailservice.Nachricht{An: an, Betreff: betreff, Text: textkoerper}); err != nil {
 			// Kaputter Mailversand ist selbst ein Befund der Seite — hier bleibt nur
 			// das Log; eine Mail über den kaputten Mailversand gibt es nicht.
 			slog.Error("Bereitschafts-Alarm: Versand fehlgeschlagen", "empfaenger", an, "fehler", err)
+			continue
 		}
+		zugestellt++
 	}
+	// Gemeldet ist der Alarm erst, wenn ihn jemand bekam; sonst geht er beim nächsten Lauf noch
+	// einmal hinaus.
+	if zugestellt == 0 {
+		return
+	}
+	schreibeGemeldetenAlarm(ctx, zustandAbfragen, bereitschaft.GemeldeterAlarm{Zeit: lage.Jetzt, Punkte: punkte})
 	slog.Info("Bereitschafts-Alarm: gemeldet", "befunde", kritische, "fehlermeldungen", fehler.Anzahl,
-		"anzahl_empfaenger", len(empfaenger))
+		"anzahl_empfaenger", zugestellt)
+}
+
+// ladeGemeldetenAlarm liest, was die letzte Alarm-Mail nannte. Fehlt der Eintrag oder ist er nicht
+// lesbar, gilt nichts als gemeldet: lieber eine Mail zu viel als ein verschluckter Alarm.
+func ladeGemeldetenAlarm(ctx context.Context, zustand *repository.BetriebszustandAbfragen) bereitschaft.GemeldeterAlarm {
+	var alarm bereitschaft.GemeldeterAlarm
+	roh, err := zustand.LadeEinstellungswert(ctx, alarmGemeldetSchluessel)
+	if err == nil {
+		err = json.Unmarshal([]byte(roh), &alarm)
+	}
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			slog.Warn("Bereitschafts-Alarm: letzte Mail nicht lesbar, die Mail geht hinaus", "fehler", err)
+		}
+		return bereitschaft.GemeldeterAlarm{}
+	}
+	return alarm
+}
+
+// schreibeGemeldetenAlarm hält fest, was die Mail nannte; scheitert das, kommt sie beim nächsten
+// Lauf noch einmal.
+func schreibeGemeldetenAlarm(ctx context.Context, zustand *repository.BetriebszustandAbfragen, alarm bereitschaft.GemeldeterAlarm) {
+	wert, err := json.Marshal(alarm)
+	if err == nil {
+		err = zustand.SchreibeEinstellungswert(ctx, alarmGemeldetSchluessel, string(wert))
+	}
+	if err != nil {
+		slog.Warn("Bereitschafts-Alarm: Mail nicht als gemeldet festgehalten, sie kommt beim nächsten Lauf noch einmal",
+			"fehler", err)
+	}
 }
 
 // formatiereAlarmMail baut Betreff und Text aus den Befunden und den Fehlern im Log. Reine

@@ -95,7 +95,8 @@ func starteServer(port string, server *api.Server) *http.Server {
 // Admins, ein Wächter, der sich meldet, statt gelesen werden zu müssen
 // (api/system/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst). Der erste
 // Lauf kommt drei Minuten nach dem Start: Ein Deploy mit kaputter Umgebung meldet sich so noch am
-// selben Vormittag, nicht erst am nächsten Tag.
+// selben Vormittag, nicht erst am nächsten Tag. Dieselbe Mail wie zuletzt schickt er dabei nicht
+// noch einmal (internal/bereitschaft/alarm.go).
 func starteBereitschaftsWaechter(ctx context.Context, server *api.Server) {
 	go func() {
 		// Ein Panic beendet nur den einen Lauf; der Wächter meldet sich am nächsten Tag wieder.
