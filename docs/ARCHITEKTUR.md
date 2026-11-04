@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 03.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 04.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1666,7 +1666,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 03.11.2026
+Stand: 04.11.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2219,7 +2219,7 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
 | `GET /health`                | Prozess **und** DB-Ping                                                                                              |
 | Selbstprüfung                | „Was ist eingerichtet, aber nicht in Betrieb?" — Mail, Selbstanmeldung, Geheimnisse, Backup, Restore-Probe            |
 | Bereitschafts-Wächter        | Meldet kritische Befunde per Mail an die Admins: 3 Minuten nach dem Start, danach täglich. Auf Spielwiesen schweigt er von selbst |
-| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update; den Vermerk „beendet“ trägt er erst ab dem Signal zum Herunterfahren. Fehlt er, meldet der nächste Start den vorigen Lauf als abgebrochen (Absturz, Abbruch von außen, Stromausfall). Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht, und einen Fehler-Tracker hat das Programm nicht |
+| Fehler im Log                | `logger.Fehlerstand` steht vor dem JSON-Handler und zählt die Zeilen der Stufe ERROR je Meldung über 24 Stunden, die Zeile zu einer Anfrage je Route; über 500 Gruppen zählt eine Sammelgruppe weiter, verworfen wird keine Zeile. Die Seite „Fehler im Log“ neben der Betriebsbereitschaft zeigt sie, der Wächter mailt sie. Der Stand liegt alle zehn Sekunden in `system_einstellungen` (`fehler_im_log`) und übersteht ein Update. Endete der vorige Lauf nicht geordnet, meldet `pkg/laufvermerk` beim Start, wie: abgestürzt (Stelle und erste Zeile der Meldung, die Go über `debug.SetCrashOutput` in eine Datei schreibt), hart beendet oder Ausfall des Rechners (neue Startkennung von Linux). Der Vermerk ist eine Datei im Container, keine Zeile in der Datenbank: Hält Docker selbst an, endet die Datenbank im selben Augenblick wie der Server. Ein Abbruch des Browsers ist kein Fehler: Eine Zeile der Stufe ERROR, deren Ursache einen abgebrochenen Kontext einwickelt, schreibt das Log als WARN und zählt nicht. Fehler im Browser zählt der Server nicht, und einen Fehler-Tracker hat das Programm nicht |
 | `GIT_COMMIT` im Image        | „Gesund" heißt nicht „aktuell" — `update.sh` vergleicht nach dem Deploy                                              |
 | Stand der Oberfläche         | Jede Antwort nennt ihn im Kopf `X-Oberflaechenstand`: den Namen der Programmdatei aus `index.html`, der mit jeder geänderten Oberfläche wechselt und ohnehin in der Startseite steht (der Commit verriete, welcher Stand des öffentlichen Repositorys läuft). Weicht er vom Stand eines offenen Fensters ab, steht dort „Neu laden" |
 

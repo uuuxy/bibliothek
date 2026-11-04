@@ -63,10 +63,9 @@ func TestFehlerstandAblage_SchreibtNichtVorDerUebernahme(t *testing.T) {
 	ctx := context.Background()
 	ablage := &fehlerAblageAttrappe{ladeFehler: errors.New("verbindung abgelehnt")}
 	vorher := standMitFehler(t, "Alt")
-	if _, err := vorher.Uebernimm("", time.Now()); err != nil {
+	if err := vorher.Uebernimm("", time.Now()); err != nil {
 		t.Fatalf("Uebernimm: %v", err)
 	}
-	vorher.Beende()
 	if err := vorher.LegeAb(time.Now(), func(wert string) error { ablage.wert = wert; return nil }); err != nil {
 		t.Fatalf("LegeAb: %v", err)
 	}
@@ -106,48 +105,5 @@ func TestFehlerstandAblage_UnlesbarerStandWirdErsetzt(t *testing.T) {
 	legeFehlerstandAb(context.Background(), ablage, standMitFehler(t, "A"), time.Now())
 	if ablage.geschrieben != 1 || !strings.Contains(ablage.wert, `"A"`) {
 		t.Errorf("abgelegt = %d-mal %s, erwartet den Stand dieses Laufs", ablage.geschrieben, ablage.wert)
-	}
-}
-
-// Ein Lauf, der nicht geordnet herunterfuhr, hinterlässt einen Stand ohne den Vermerk beendet: Er
-// stürzte ab, wurde von außen beendet, oder der Strom fiel aus. Der nächste Start meldet das als
-// Fehler; nach einem geordneten Herunterfahren meldet er nichts.
-func TestFehlerstandAblage_MeldetDenAbgebrochenenLauf(t *testing.T) {
-	const meldung = "Voriger Lauf des Servers endete ohne geordnetes Herunterfahren"
-	faelle := []struct {
-		name          string
-		beendet       bool
-		meldungAnzahl int
-	}{
-		{"abgebrochen", false, 1},
-		{"heruntergefahren", true, 0},
-	}
-	for _, f := range faelle {
-		t.Run(f.name, func(t *testing.T) {
-			ctx := context.Background()
-			ablage := &fehlerAblageAttrappe{}
-			vorher := logger.NewFehlerstand()
-			legeFehlerstandAb(ctx, ablage, vorher, time.Now())
-			if f.beendet {
-				vorher.Beende()
-				legeFehlerstandAb(ctx, ablage, vorher, time.Now())
-			}
-
-			nachher := logger.NewFehlerstand()
-			vorherLog := slog.Default()
-			slog.SetDefault(slog.New(nachher.SchalteVor(slog.DiscardHandler)))
-			t.Cleanup(func() { slog.SetDefault(vorherLog) })
-			legeFehlerstandAb(ctx, ablage, nachher, time.Now())
-
-			anzahl := 0
-			for _, g := range nachher.Gruppen(time.Now()) {
-				if g.Meldung == meldung {
-					anzahl += g.Anzahl
-				}
-			}
-			if anzahl != f.meldungAnzahl {
-				t.Errorf("%d Zeilen „%s“, erwartet %d", anzahl, meldung, f.meldungAnzahl)
-			}
-		})
 	}
 }

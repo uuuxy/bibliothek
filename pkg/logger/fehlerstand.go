@@ -46,11 +46,8 @@ type Fehlerstand struct {
 	fassung     uint64
 	abgelegt    uint64
 	uebernommen bool
-	// beendet heißt, der Server fährt geordnet herunter. Fehlt der Vermerk im abgelegten Stand,
-	// endete der Lauf unerwartet.
-	beendet bool
 	// ablageSperre reiht das Ablegen: Beim Herunterfahren legen der Takt und main zugleich ab, und
-	// ein älterer Stand ohne den Vermerk beendet darf den jüngeren nicht überschreiben.
+	// ein älterer Stand darf den jüngeren nicht überschreiben.
 	ablageSperre sync.Mutex
 }
 
@@ -72,7 +69,6 @@ type gruppe struct {
 type abgelegterStand struct {
 	Gruppen []abgelegteGruppe `json:"gruppen"`
 	Sammel  *gruppe           `json:"sammel,omitempty"`
-	Beendet bool              `json:"beendet"`
 }
 
 type abgelegteGruppe struct {
@@ -132,27 +128,26 @@ func (f *Fehlerstand) Gruppen(jetzt time.Time) []Fehlergruppe {
 	return gruppen
 }
 
-// Uebernimm rechnet den abgelegten Stand des vorigen Laufs ein; leer heißt, es gibt keinen.
-// abgebrochen heißt, dem Stand fehlt der Vermerk, dass der vorige Lauf geordnet herunterfuhr. Erst
-// nach Uebernimm legt LegeAb etwas ab, und die erste Ablage kommt gleich: Sie trägt den Vermerk
-// nicht, solange dieser Lauf läuft. Ein unlesbarer Stand zählt als keiner und wird ersetzt; ein
-// zweiter Aufruf ändert nichts, sonst zählte der vorige Lauf doppelt.
-func (f *Fehlerstand) Uebernimm(abgelegt string, jetzt time.Time) (abgebrochen bool, err error) {
+// Uebernimm rechnet den abgelegten Stand des vorigen Laufs ein; leer heißt, es gibt keinen. Erst
+// nach Uebernimm legt LegeAb etwas ab, und die erste Ablage kommt gleich. Ein unlesbarer Stand
+// zählt als keiner und wird ersetzt; ein zweiter Aufruf ändert nichts, sonst zählte der vorige Lauf
+// doppelt.
+func (f *Fehlerstand) Uebernimm(abgelegt string, jetzt time.Time) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.uebernommen {
-		return false, nil
+		return nil
 	}
 	f.uebernommen = true
 	f.fassung++
 	if abgelegt == "" {
-		return false, nil
+		return nil
 	}
 	var vorige abgelegterStand
 	leser := json.NewDecoder(strings.NewReader(abgelegt))
 	leser.DisallowUnknownFields()
 	if err := leser.Decode(&vorige); err != nil {
-		return false, fmt.Errorf("abgelegter Fehlerstand unlesbar: %w", err)
+		return fmt.Errorf("abgelegter Fehlerstand unlesbar: %w", err)
 	}
 	for _, g := range vorige.Gruppen {
 		rechneEin(f.gruppeFuer(schluessel{g.Meldung, g.Route}), g.gruppe)
@@ -161,7 +156,7 @@ func (f *Fehlerstand) Uebernimm(abgelegt string, jetzt time.Time) (abgebrochen b
 		rechneEin(f.sammelgruppe(), *vorige.Sammel)
 	}
 	f.raeumeAuf(jetzt)
-	return !vorige.Beendet, nil
+	return nil
 }
 
 // IstUebernommen sagt, ob der Stand des vorigen Laufs eingerechnet ist.
@@ -169,14 +164,6 @@ func (f *Fehlerstand) IstUebernommen() bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.uebernommen
-}
-
-// Beende vermerkt, dass der Server geordnet herunterfährt; die nächste Ablage trägt den Vermerk.
-func (f *Fehlerstand) Beende() {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.beendet = true
-	f.fassung++
 }
 
 // LegeAb übergibt den Stand an schreibe, wenn seit dem letzten Ablegen etwas dazukam und der Stand
@@ -204,7 +191,7 @@ func (f *Fehlerstand) ablage(jetzt time.Time) (wert string, fassung uint64, ok b
 		return "", 0, false
 	}
 	f.raeumeAuf(jetzt)
-	stand := abgelegterStand{Gruppen: make([]abgelegteGruppe, 0, len(f.gruppen)), Sammel: f.sammel, Beendet: f.beendet}
+	stand := abgelegterStand{Gruppen: make([]abgelegteGruppe, 0, len(f.gruppen)), Sammel: f.sammel}
 	for k, g := range f.gruppen {
 		stand.Gruppen = append(stand.Gruppen, abgelegteGruppe{Meldung: k.meldung, Route: k.route, gruppe: *g})
 	}

@@ -771,7 +771,8 @@ Recht `manage_settings`, `GET /api/admin/system/fehler-im-log`): Die Betriebsber
 Zustände, das Log Ereignisse. Der Server zählt die Zeilen der Stufe ERROR selbst, vor der Ausgabe
 des Logs (`logger.Fehlerstand`), damit sie auffallen, ohne dass jemand das Log liest: je Meldung
 mit Anzahl, letzter Uhrzeit und Ursache, eine fehlgeschlagene Anfrage je Route, über die letzten
-24 Stunden, die jüngste zuerst. Einen Absturz des Servers meldet der nächste Start. Schon
+24 Stunden, die jüngste zuerst. Einen Absturz des Servers meldet der nächste Start mit der Stelle im
+Code, ebenso einen harten Abbruch und einen Ausfall des Rechners; Update und Neustart melden nichts. Schon
 eine Zeile ist ein Grund für die tägliche Mail; sie nennt die Fehler in einem eigenen Teil nach den
 kritischen Befunden, höchstens fünf Meldungen einzeln, und der Betreff nennt ihre Zahl. Jede
 einzelne Zeile zeigt der Befehl im Betriebshandbuch ([DEPLOYMENT.md](DEPLOYMENT.md), „Fehler im

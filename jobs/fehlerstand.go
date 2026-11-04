@@ -52,8 +52,8 @@ func FuehreFehlerstandAblageAus(ctx context.Context, pool db.Pool, stand *logger
 	}
 }
 
-// SchreibeFehlerstand legt den Fehlerstand ab; main ruft es beim Herunterfahren, nach
-// logger.Fehlerstand.Beende und noch einmal, wenn der Server keine Anfrage mehr annimmt.
+// SchreibeFehlerstand legt den Fehlerstand ab; main ruft es beim Herunterfahren und noch einmal,
+// wenn der Server keine Anfrage mehr annimmt.
 func SchreibeFehlerstand(ctx context.Context, pool db.Pool, stand *logger.Fehlerstand) {
 	legeFehlerstandAb(ctx, repository.NewBetriebszustandAbfragen(pool), stand, time.Now())
 }
@@ -62,10 +62,6 @@ func SchreibeFehlerstand(ctx context.Context, pool db.Pool, stand *logger.Fehler
 // dann ab, was neu ist. Scheitert das Lesen, unterbleibt das Ablegen bis zum nächsten Versuch: Es
 // überschriebe sonst den Stand des vorigen Laufs. Beides meldet WARN, damit der Fehlerstand nicht
 // sein eigenes Scheitern zählt.
-//
-// Fuhr der vorige Lauf nicht geordnet herunter, steht das als ERROR im Log: Einen Absturz, den kein
-// Code abfangen kann (Speicher, Laufzeitfehler), einen Abbruch von außen und einen Stromausfall
-// sieht erst der nächste Start.
 func legeFehlerstandAb(ctx context.Context, ablage fehlerAblage, stand *logger.Fehlerstand, jetzt time.Time) {
 	if !stand.IstUebernommen() {
 		abgelegt, err := ablage.LadeEinstellungswert(ctx, fehlerstandSchluessel)
@@ -73,13 +69,8 @@ func legeFehlerstandAb(ctx context.Context, ablage fehlerAblage, stand *logger.F
 			slog.Warn("Fehlerstand: abgelegter Stand nicht lesbar, nächster Versuch im nächsten Takt", "fehler", err)
 			return
 		}
-		abgebrochen, err := stand.Uebernimm(abgelegt, jetzt)
-		if err != nil {
+		if err := stand.Uebernimm(abgelegt, jetzt); err != nil {
 			slog.Warn("Fehlerstand: abgelegter Stand unlesbar, er wird ersetzt", "fehler", err)
-		}
-		if abgebrochen {
-			slog.Error("Voriger Lauf des Servers endete ohne geordnetes Herunterfahren",
-				"fehler", "Absturz, Abbruch von außen oder Stromausfall; die Ursache steht im Log des Containers vor diesem Start")
 		}
 	}
 	err := stand.LegeAb(jetzt, func(wert string) error {

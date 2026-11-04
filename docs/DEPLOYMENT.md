@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-10-29
+> Zuletzt aktualisiert: 2026-11-04
 
 ---
 
@@ -565,15 +565,26 @@ grep -h '"level":"ERROR"' logs/backend_*.log
 
 Warnungen zeigt derselbe Befehl mit `"level":"WARN"`.
 
-Steht dort „Voriger Lauf des Servers endete ohne geordnetes Herunterfahren“, ist der Server
-abgestürzt, wurde von außen beendet, oder der Strom fiel aus; Docker hat ihn neu gestartet. Was
-vorher geschah, zeigen:
+Endete der vorige Lauf nicht geordnet, meldet der nächste Start, wie er endete
+(`pkg/laufvermerk`, der Vermerk liegt im Container unter `/app/laufvermerk`). Ein Update und ein
+Neustart von Docker oder des Rechners halten den Server geordnet an und melden nichts.
+
+- „Voriger Lauf des Servers ist abgestürzt“: ein Programmfehler. Die Ursache nennt die Stelle im
+  Code und die erste Zeile der Meldung von Go.
+- „Voriger Lauf des Servers wurde hart beendet“: Speichermangel oder Abbruch von außen
+  (`docker kill`); der Rechner lief weiter.
+- „Voriger Lauf des Servers endete mit einem Ausfall des Rechners“: Stromausfall, Absturz oder
+  harter Neustart des Rechners.
+
+Was vorher geschah, zeigen:
 
 ```bash
 # Neustarts durch Docker, Abbruch wegen Speichermangels, Start des laufenden Backends
 docker inspect -f '{{.RestartCount}} Neustarts, OOMKilled={{.State.OOMKilled}}, läuft seit {{.State.StartedAt}}' bibliothek-backend
 # Absturzmeldung von Go vor dem Neustart, mit dem Stack
 docker logs bibliothek-backend --since 24h 2>&1 | grep -A 20 -E '^(panic|fatal error):'
+# Hoch- und Herunterfahren des Rechners; nach einem Ausfall steht „crash“ statt „shutdown“
+last -x reboot shutdown | head -6
 ```
 
 ### Neustart nach Host-Neustart

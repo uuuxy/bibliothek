@@ -70,6 +70,8 @@ Thumbs.db
 backups/
 # Logs ersetzter Container, abgelegt von update.sh
 logs/
+# Laufvermerk des Servers (pkg/laufvermerk), wenn er außerhalb von Docker läuft
+/laufvermerk/
 *.sql.gz
 *.sql.gz.enc
 # Arbeitsdateien der Wiederherstellung und der Schlüsselwechsel

@@ -118,7 +118,7 @@ func TestFehlerstand_ZaehltDenZeitraum(t *testing.T) {
 // ablageNachUebernahme übernimmt einen leeren vorigen Stand und liefert die Ablage.
 func ablageNachUebernahme(t *testing.T, stand *Fehlerstand, jetzt time.Time) (string, uint64, bool) {
 	t.Helper()
-	if _, err := stand.Uebernimm("", jetzt); err != nil {
+	if err := stand.Uebernimm("", jetzt); err != nil {
 		t.Fatalf("Uebernimm: %v", err)
 	}
 	return stand.ablage(jetzt)
@@ -141,7 +141,7 @@ func TestFehlerstand_UeberstehtDenNeustart(t *testing.T) {
 		t.Fatal("Ablage vor der Übernahme geliefert: Der neue Lauf überschriebe den Stand des vorigen")
 	}
 	for range 2 {
-		if _, err := nachher.Uebernimm(abgelegt, testStart.Add(time.Hour)); err != nil {
+		if err := nachher.Uebernimm(abgelegt, testStart.Add(time.Hour)); err != nil {
 			t.Fatalf("Uebernimm: %v", err)
 		}
 	}
@@ -191,7 +191,7 @@ func TestFehlerstand_AblageNurBeiNeuem(t *testing.T) {
 func TestFehlerstand_UnlesbarerStandWirdErsetzt(t *testing.T) {
 	stand := NewFehlerstand()
 	trageZeileEin(t, stand, testStart, slog.LevelError, "A")
-	if _, err := stand.Uebernimm("{kaputt", testStart); err == nil {
+	if err := stand.Uebernimm("{kaputt", testStart); err == nil {
 		t.Error("Uebernimm eines unlesbaren Stands: kein Fehler, erwartet einen")
 	}
 	wert, _, ok := stand.ablage(testStart)
@@ -244,7 +244,7 @@ func TestFehlerstand_HoechstzahlDerGruppen(t *testing.T) {
 
 	wert, _, _ := ablageNachUebernahme(t, stand, testStart.Add(time.Hour))
 	nachher := NewFehlerstand()
-	if _, err := nachher.Uebernimm(wert, testStart.Add(time.Hour)); err != nil {
+	if err := nachher.Uebernimm(wert, testStart.Add(time.Hour)); err != nil {
 		t.Fatalf("Uebernimm: %v", err)
 	}
 	if g := nachher.Gruppen(testStart.Add(time.Hour)); len(g) != len(gruppen) {
@@ -256,7 +256,7 @@ func TestFehlerstand_HoechstzahlDerGruppen(t *testing.T) {
 func TestFehlerstand_Nebenlaeufig(t *testing.T) {
 	stand := NewFehlerstand()
 	log := slog.New(stand.SchalteVor(slog.NewJSONHandler(&sicheresSchreiben{}, nil)))
-	if _, err := stand.Uebernimm("", time.Now()); err != nil {
+	if err := stand.Uebernimm("", time.Now()); err != nil {
 		t.Fatalf("Uebernimm: %v", err)
 	}
 	var warten sync.WaitGroup
@@ -327,7 +327,7 @@ func TestFehlerstand_ZaehltJeRoute(t *testing.T) {
 	wert, _, _ := ablageNachUebernahme(t, stand, testStart.Add(time.Hour))
 
 	nachher := NewFehlerstand()
-	if _, err := nachher.Uebernimm(wert, testStart.Add(time.Hour)); err != nil {
+	if err := nachher.Uebernimm(wert, testStart.Add(time.Hour)); err != nil {
 		t.Fatalf("Uebernimm: %v", err)
 	}
 	will := []Fehlergruppe{
@@ -339,31 +339,15 @@ func TestFehlerstand_ZaehltJeRoute(t *testing.T) {
 	}
 }
 
-// Der Vermerk beendet steht im abgelegten Stand erst nach Beende. Ein Stand ohne ihn stammt aus
-// einem Lauf, der nicht geordnet herunterfuhr; ein Stand in der früheren Form gilt als unlesbar,
-// nicht als abgebrochen.
-func TestFehlerstand_VermerkBeendet(t *testing.T) {
-	lauf := NewFehlerstand()
-	laufend, _, _ := ablageNachUebernahme(t, lauf, testStart)
-	lauf.Beende()
-	beendet, _, ok := lauf.ablage(testStart)
-	if !ok {
-		t.Fatal("Ablage nach Beende: nichts geliefert, der Vermerk käme nicht in die Datenbank")
-	}
-	faelle := []struct {
-		name            string
-		abgelegt        string
-		willAbgebrochen bool
-		willFehler      bool
-	}{
-		{"während des Laufs abgelegt", laufend, true, false},
-		{"nach Beende abgelegt", beendet, false, false},
-		{"frühere Form", `{"A":{"faecher":{"1792836000":1},"zuletzt":"2026-10-24T10:00:00Z"}}`, false, true},
-	}
-	for _, f := range faelle {
-		abgebrochen, err := NewFehlerstand().Uebernimm(f.abgelegt, testStart)
-		if abgebrochen != f.willAbgebrochen || (err != nil) != f.willFehler {
-			t.Errorf("%s: Uebernimm = %v, %v; erwartet abgebrochen %v, Fehler %v", f.name, abgebrochen, err, f.willAbgebrochen, f.willFehler)
+// Ein Stand in einer früheren Form gilt als unlesbar und wird ersetzt, statt halb gelesen zu werden;
+// dazu zählt der Stand mit dem Feld beendet, dessen Vermerk pkg/laufvermerk hält.
+func TestFehlerstand_FruehereFormUnlesbar(t *testing.T) {
+	for _, abgelegt := range []string{
+		`{"A":{"faecher":{"1792836000":1},"zuletzt":"2026-10-24T10:00:00Z"}}`,
+		`{"gruppen":[],"beendet":true}`,
+	} {
+		if err := NewFehlerstand().Uebernimm(abgelegt, testStart); err == nil {
+			t.Errorf("Uebernimm(%s) = nil, erwartet unlesbar", abgelegt)
 		}
 	}
 }

@@ -22,7 +22,6 @@ func TestFehlerstandAblage_UeberstehtDenNeustartAnDerDatenbank(t *testing.T) {
 	t.Cleanup(loesche)
 
 	vorher := standMitFehler(t, "Backup: S3 upload failed")
-	vorher.Beende()
 	SchreibeFehlerstand(ctx, pool, vorher)
 	nachher := standMitFehler(t, "Backup: S3 upload failed")
 	SchreibeFehlerstand(ctx, pool, nachher)
@@ -35,12 +34,8 @@ func TestFehlerstandAblage_UeberstehtDenNeustartAnDerDatenbank(t *testing.T) {
 		t.Fatalf("LadeEinstellungswert: %v", err)
 	}
 	dritter := logger.NewFehlerstand()
-	abgebrochen, err := dritter.Uebernimm(abgelegt, time.Now())
-	if err != nil {
+	if err := dritter.Uebernimm(abgelegt, time.Now()); err != nil {
 		t.Fatalf("Uebernimm: %v", err)
-	}
-	if !abgebrochen {
-		t.Error("der zweite Lauf fuhr nicht herunter, sein Stand gilt aber als beendet")
 	}
 	if g := dritter.Gruppen(time.Now()); len(g) != 1 || g[0].Anzahl != 2 {
 		t.Errorf("abgelegter Stand = %+v, erwartet eine Gruppe mit beiden Zeilen", g)

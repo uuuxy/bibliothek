@@ -35,6 +35,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
 	"bibliothek/pkg/clientip"
+	"bibliothek/pkg/laufvermerk"
 	"bibliothek/pkg/logger"
 	"bibliothek/pkg/safego"
 	"bibliothek/repository"
@@ -47,6 +48,10 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 )
+
+// laufVerzeichnis hält den Laufvermerk. Im Container liegt es unter /app und übersteht Neustarts von
+// Docker und des Rechners; ein Update hält den Server geordnet an, bevor es den Container ersetzt.
+const laufVerzeichnis = "laufvermerk"
 
 // starteServer startet den HTTP-Server im Hintergrund und liefert ihn für das Herunterfahren.
 func starteServer(port string, server *api.Server) *http.Server {
@@ -349,6 +354,9 @@ func main() {
 	server := api.NewServer(verbindung, anmeldung, broker, serverKonfig)
 	starteBereitschaftsWaechter(ctx, server)
 	httpServer := starteServer(port, server)
+	// Erst mit laufendem Server gilt der Lauf als begonnen: Ein Ausstieg beim Start, etwa weil die
+	// Datenbank noch nicht bereit ist, ist kein Absturz.
+	laufvermerk.Beginne(laufVerzeichnis)
 
 	// 7. Fehlende Cover im Hintergrund nachladen.
 	go coverAbgleich.GleicheFehlendeCoverAb(ctx)
@@ -361,9 +369,9 @@ func main() {
 	herunterfahrKontext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Der Vermerk „geordnet beendet" geht hinaus, bevor der Server auf offene Anfragen wartet:
-	// Docker bricht nach derselben Frist ab, und ein Update ist kein Absturz.
-	fehlerstand.Beende()
+	// Der Vermerk „geordnet beendet" kommt, bevor der Server auf offene Anfragen wartet: Docker
+	// bricht nach derselben Frist ab, und ein Update ist kein Absturz.
+	laufvermerk.Beende(laufVerzeichnis)
 	jobs.SchreibeFehlerstand(herunterfahrKontext, verbindung.Pool, fehlerstand)
 
 	if err := httpServer.Shutdown(herunterfahrKontext); err != nil {
