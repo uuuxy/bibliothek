@@ -40,7 +40,7 @@ Nur, was kein Test leisten kann.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 - [ ] In Excel für Windows eine kleine Leserliste anlegen und in jedem CSV-Format speichern, das
   „Speichern unter" anbietet; die Dateien gibst du mir. (7.10)
-- [ ] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
+- [x] In Safari unter Einstellungen → Entwickler „Entfernte Automatisierung erlauben" einschalten.
   Danach prüfe ich in Safari, ob die Dokumente mit Personendaten im Tab erscheinen. (5.106)
 
 ### Nebenbei
@@ -74,14 +74,6 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.106 Safari: Dokumente mit Personendaten im Tab
-
-DSGVO-Auskunft, Kontoauszug und Rechnung aus der Leserakte, Mahnbriefe, Bescheide und die
-Kontoauszüge der Abgänger gehen im Tab auf, nicht in den Download-Ordner (`zeigePdf`, für die
-Bescheide `zeigePdfAdresse`, beide in `frontend/src/lib/utils/pdfImFenster.js`). Ob Safari sie
-zeigt, ist nicht gemessen; der WebKit-Testbrowser zeichnet keine PDFs. Nächster Schritt: nach dem
-Schalter in Safari über `safaridriver` messen (Handgriff in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 
 ### 7.2 Frisches Littera-Backup
 

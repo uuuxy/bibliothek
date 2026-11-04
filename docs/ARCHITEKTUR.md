@@ -2461,8 +2461,13 @@ sieht.
   lädt an `page.route` vorbei; seine Anfragen fängt `context.route`. Die Meldungen schreibt ein
   `MutationObserver` aus `page.addInitScript` mit, sobald sie erscheinen: Eine neue ersetzt die
   stehende, und ein Blick nach dem Klick sieht nur die letzte. Der WebKit-Testbrowser zeichnet
-  keine PDFs; ob Safari eines zeigt, beantwortet nur Safari über `safaridriver`, dort mit
-  „Entfernte Automatisierung erlauben". Eine Kamera ist eine Attrappe von
+  keine PDFs; ob Safari eines zeigt, beantwortet nur Safari über `safaridriver`. Safari 27.2 zeigt
+  beide Wege aus `frontend/src/lib/utils/pdfImFenster.js` im neuen Tab: das geholte PDF
+  (`zeigePdf`, Adresse `blob:`) und das über seine Adresse geöffnete (`zeigePdfAdresse`). Dafür
+  muss in den Einstellungen unter „Entwickler" „Entfernte Automatisierung erlauben" an sein, und
+  Safari muss danach einmal ganz beendet werden; sonst endet jede Sitzung mit „The session timed
+  out while connecting to a Safari instance". Bei gesperrtem Bildschirm startet die Seite nicht,
+  und das Bildschirmfoto ist schwarz. Eine Kamera ist eine Attrappe von
   `navigator.mediaDevices.getUserMedia`, die den Strom einer Zeichenfläche liefert
   (`captureStream`, Vorlage `frontend/e2e/passbild-ausschnitt.spec.js`) oder mit
   `NotAllowedError` die Verweigerung nachstellt. Merkt sie sich jeden Strom, zeigt der

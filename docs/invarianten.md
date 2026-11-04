@@ -477,7 +477,7 @@ Schärfungen ohne neue Nummer, je mit dem Test, der die Antwort an einer Stelle 
   meldet, nicht erreichbar ist oder ein Teil mehrerer Anfragen scheitert? Die Meldung des Servers
   auf Deutsch, und nichts als erledigt vermerkt (`frontend/src/lib/apiFetch.test.js`,
   `frontend/src/lib/components/buchakte/ExemplarLoeschen.test.js`). Geprüft wird durch
-  Herbeiführen im Browser ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, [OFFEN.md](OFFEN.md) 5.106).
+  Herbeiführen im Browser ([ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
 - **Frage 18, die jüngste Öffnung:** Fordert ein Bildschirm nacheinander zwei Inhalte an
   (zweiter Klick, „Neu"), welche Antwort gilt, wenn die erste später ankommt?
   (`frontend/e2e/titel-oeffnen-rennen.spec.js`.)
