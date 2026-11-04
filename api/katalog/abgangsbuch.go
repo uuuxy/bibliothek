@@ -26,9 +26,9 @@ type abgangsbuchAntwort struct {
 	Abschnitte    []topfAbschnitt[repository.AbgangsZeile] `json:"abschnitte"`
 	Gesamt        int                                      `json:"gesamt"`
 	OhneZeitpunkt int                                      `json:"ohne_zeitpunkt"`
-	// AusKatalogGeloescht zählt die im Zeitraum körperlich gelöschten Exemplare. Sie stehen
-	// in keinem Abschnitt, denn mit der Zeile ist auch ihr Titel gegangen
-	// (repository/abgangsbuch.go).
+	// AusKatalogGeloescht zählt die im Zeitraum gelöschten Exemplare ohne Zeile in den
+	// Bestandsbüchern, also aus der Zeit vor Migration 171. Sie stehen in keinem Abschnitt, denn
+	// mit dem Exemplar ist auch sein Titel gegangen (repository/abgangsbuch.go).
 	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 

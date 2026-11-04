@@ -65,14 +65,25 @@ func LadeZugangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Zuga
 	// `zugang_am` ist ein Datum, kein Zeitpunkt — hier wird deshalb auf Tagen verglichen,
 	// anders als beim Abgangsbuch. Ein AT TIME ZONE darum herum wäre nicht nur überflüssig,
 	// sondern falsch: Es machte aus dem 16.09. je nach Sitzungszeitzone den 15.
+	//
+	// Gelöschte Exemplare stehen mit ihrer Zeile aus geloeschte_exemplare darin
+	// (loescheExemplareMitBuchzeile): Gelöscht ist ein Abgang, kein Zugang, der nie war.
 	rows, err := q.Query(ctx, `
-		SELECT e.zugang_am, e.barcode_id, t.titel, COALESCE(t.signatur, ''),
-		       COALESCE(bv_topf.lieferant_name, ''), COALESCE(`+exemplarTopfBelegtSQL+`, '')
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		`+ExemplarTopfJoin+`
-		WHERE e.zugang_am >= $1::date AND e.zugang_am <= $2::date
-		ORDER BY e.zugang_am, t.titel COLLATE deutsch, e.barcode_id
+		SELECT datum, barcode, titel, signatur, lieferant, topf FROM (
+			SELECT e.zugang_am AS datum, e.barcode_id AS barcode, t.titel AS titel,
+			       COALESCE(t.signatur, '') AS signatur,
+			       COALESCE(bv_topf.lieferant_name, '') AS lieferant,
+			       COALESCE(`+exemplarTopfBelegtSQL+`, '') AS topf
+			FROM buecher_exemplare e
+			JOIN buecher_titel t ON t.id = e.titel_id
+			`+ExemplarTopfJoin+`
+			WHERE e.zugang_am >= $1::date AND e.zugang_am <= $2::date
+			UNION ALL
+			SELECT g.zugang_am, g.barcode, g.titel, g.signatur, g.lieferant, COALESCE(g.topf_belegt, '')
+			FROM geloeschte_exemplare g
+			WHERE g.zugang_am >= $1::date AND g.zugang_am <= $2::date
+		) zugang
+		ORDER BY datum, titel COLLATE deutsch, barcode
 	`, abVon, bisTag)
 	if err != nil {
 		return buch, err

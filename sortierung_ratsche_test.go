@@ -95,9 +95,8 @@ func TestSortierung_TextspaltenOrdnenDeutsch(t *testing.T) {
 // die Kollation stehen, je mit Grund. Der Schlüssel ist Datei:Funktion: Glied, wie die Meldung
 // ihn nennt; eine Konstante der Paketebene steht ohne Funktion.
 var ohneSprachregel = map[string]string{
-	"repository/dsgvo_konto.go: 7 DESC":            "Spalte 7 ist erstellt_am, ein Zeitpunkt",
-	"repository/abgangsbuch.go:LadeAbgangsbuch: 6": "Spalte 6 ist der Topf als Code: „land\" vor „schultraeger\" ist die Reihenfolge des Ausdrucks",
-	"repository/auflagen.go:ladeWerkeDerTitel: 1":  "Spalte 1 ist eine Kennung (werk_id), geordnet für die Reihenfolge des Sperrens",
+	"repository/dsgvo_konto.go: 7 DESC":           "Spalte 7 ist erstellt_am, ein Zeitpunkt",
+	"repository/auflagen.go:ladeWerkeDerTitel: 1": "Spalte 1 ist eine Kennung (werk_id), geordnet für die Reihenfolge des Sperrens",
 }
 
 // nachStelle fasst ein Glied, das nach der Stelle in der Auswahl ordnet (ORDER BY 1). Welchen

@@ -220,3 +220,53 @@ func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
 	}
 	_ = unterwegs
 }
+
+// Ein gelöschter Titel nimmt seine Exemplare nicht aus dem Zugangsbuch: Die Lieferung bleibt mit
+// Lieferant und Topf stehen, und im Abgangsbuch steht der Abgang mit demselben Topf.
+func TestZugangsbuch_GeloeschtesExemplarBleibtDrin(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	loc := schulzeit.Zone()
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "zugang-geloescht@test.invalid")
+
+	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Geloeschter Zugang", "Gel 1", 0)
+	var bestellID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
+		VALUES ('Buchhandlung Land', 'haendler@example.org', $1) RETURNING id`, mitteltopf.Land).Scan(&bestellID); err != nil {
+		t.Fatalf("Bestellung: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, bestellung_id)
+		VALUES ($1, 'ZUG-GELOESCHT', '2026-04-12'::date, $2)`, titelID, bestellID); err != nil {
+		t.Fatalf("Zugang: %v", err)
+	}
+
+	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+		t.Fatalf("Titel löschen: %v", err)
+	}
+
+	zugaenge, err := repository.LadeZugangsbuch(ctx, pool,
+		time.Date(2026, time.March, 16, 0, 0, 0, 0, loc), time.Date(2026, time.September, 15, 0, 0, 0, 0, loc))
+	if err != nil {
+		t.Fatalf("Zugangsbuch: %v", err)
+	}
+	if len(zugaenge.Zeilen) != 1 {
+		t.Fatalf("Zugangsbuch nach dem Löschen: %d Zeilen, erwartet die eine Lieferung", len(zugaenge.Zeilen))
+	}
+	z := zugaenge.Zeilen[0]
+	if z.Barcode != "ZUG-GELOESCHT" || z.Titel != "Geloeschter Zugang" || z.Signatur != "Gel 1" ||
+		z.Lieferant != "Buchhandlung Land" || z.Topf != mitteltopf.Land || z.Datum.Format("2006-01-02") != "2026-04-12" {
+		t.Errorf("Zeile im Zugangsbuch: %+v", z)
+	}
+
+	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
+	abgaenge, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
+	if err != nil {
+		t.Fatalf("Abgangsbuch: %v", err)
+	}
+	if len(abgaenge.Zeilen) != 1 || abgaenge.Zeilen[0].Topf != mitteltopf.Land {
+		t.Errorf("Abgangsbuch nach dem Löschen: %+v, erwartet ZUG-GELOESCHT im Topf des Landes", abgaenge.Zeilen)
+	}
+}

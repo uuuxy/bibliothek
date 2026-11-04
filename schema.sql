@@ -1972,7 +1972,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('167_lmf_kurze_nummer.sql'),
 ('168_barcode_keine_lmf_nummer.sql'),
 ('169_passwort_geprueft_am.sql'),
-('170_ausweisnummer_nicht_am_buch.sql')
+('170_ausweisnummer_nicht_am_buch.sql'),
+('171_geloeschte_exemplare.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2251,3 +2252,35 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_exemplare_aussonderung_grund
     ON buecher_exemplare (aussonderung_grund) WHERE aussonderung_grund IS NOT NULL;
+
+-- Migration 171: Was Zugangs- und Abgangsbuch von einem gelöschten Exemplar behalten
+-- (repository.loescheExemplareMitBuchzeile). Kein Fremdschlüssel, keine Personendaten.
+CREATE TABLE IF NOT EXISTS geloeschte_exemplare (
+    -- Die Kennung des gelöschten Exemplars. Über sie erkennt das Abgangsbuch, welche Spur im
+    -- Protokoll schon eine Zeile hat.
+    exemplar_id UUID PRIMARY KEY,
+    barcode     TEXT NOT NULL,
+    titel       TEXT NOT NULL,
+    signatur    TEXT NOT NULL DEFAULT '',
+    -- Nur Exemplare, die im Bestand waren: Ein bestelltes, nie eingetroffenes steht in keinem
+    -- der beiden Bücher (repository.sqlWarImBestand).
+    zugang_am   DATE NOT NULL,
+    lieferant   TEXT NOT NULL DEFAULT '',
+    -- Die beiden Topf-Regeln der Bücher: belegt (Zugangsbuch, exemplarTopfBelegtSQL) und mit
+    -- der Vorgabe des Titels (Abgangsbuch, ExemplarTopfSQL).
+    topf_belegt TEXT
+        CONSTRAINT chk_geloeschte_exemplare_topf_belegt CHECK (topf_belegt IN ('land', 'schultraeger')),
+    topf        TEXT NOT NULL
+        CONSTRAINT chk_geloeschte_exemplare_topf CHECK (topf IN ('land', 'schultraeger')),
+    -- War das Exemplar schon ausgesondert, Tag und Grund von damals; sonst der Zeitpunkt des
+    -- Löschens und der Grund, den der Mensch gewählt hat. NULL nur bei Altbestand, der ohne
+    -- Datum ausgesondert ist (Abgangsbuch: „ohne Zeitpunkt").
+    abgang_am   TIMESTAMP WITH TIME ZONE,
+    grund       VARCHAR(20) NOT NULL
+        CONSTRAINT chk_geloeschte_exemplare_grund
+        CHECK (grund IN ('VERLUST', 'BESCHAEDIGUNG', 'AUSSORTIERT', 'BESTANDSKORREKTUR')),
+    geloescht_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_geloeschte_exemplare_abgang_am ON geloeschte_exemplare (abgang_am);
+CREATE INDEX IF NOT EXISTS idx_geloeschte_exemplare_zugang_am ON geloeschte_exemplare (zugang_am);

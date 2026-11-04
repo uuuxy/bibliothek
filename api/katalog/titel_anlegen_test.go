@@ -125,6 +125,9 @@ func TestTitelLoeschen(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "schueler_id", "seit"}))
 
+		mock.ExpectQuery("WITH weg AS").
+			WithArgs(pgxmock.AnyArg(), "AUSSORTIERT").
+			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(int64(1)))
 		mock.ExpectExec("DELETE FROM buecher_titel").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))

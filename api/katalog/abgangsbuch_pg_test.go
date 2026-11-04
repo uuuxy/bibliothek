@@ -186,25 +186,30 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	}
 }
 
-// Auch die Zahl der aus dem Katalog gelöschten Exemplare nennt nur, was im Bestand war. Die
-// Spur trägt dafür einen Vermerk; eine Spur ohne ihn zählt mit, weil niemand mehr weiß, ob
-// das Exemplar eingetroffen war.
-func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
+// Ein gelöschtes Exemplar aus dem Bestand steht mit seiner Zeile im Buch; ein bestelltes, nie
+// eingetroffenes steht weder darin noch in der Zahl darunter. Beide Wege, die Exemplare löschen:
+// Titel löschen und „Verlust endgültig löschen".
+func TestAbgangsbuch_GeloeschtesStehtMitZeileDrin(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "abgang-geloescht@test.invalid")
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
-	geloescht := func() int {
+	lade := func() repository.Abgangsbuch {
 		t.Helper()
 		buch, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
 		if err != nil {
 			t.Fatalf("Abgangsbuch laden: %v", err)
 		}
-		return buch.AusKatalogGeloescht
+		return buch
 	}
-	if n := geloescht(); n != 0 {
-		t.Fatalf("vor dem Löschen: %d gelöschte, erwartet 0", n)
+	zeile := func(buch repository.Abgangsbuch, barcode string) (repository.AbgangsZeile, bool) {
+		for _, z := range buch.Zeilen {
+			if z.Barcode == barcode {
+				return z, true
+			}
+		}
+		return repository.AbgangsZeile{}, false
 	}
 
 	// Titel löschen: ein Exemplar aus dem Bestand, eines aus dem Zulauf.
@@ -214,8 +219,16 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
-	if n := geloescht(); n != 1 {
-		t.Errorf("nach dem Löschen des Titels: %d gelöschte, erwartet 1 — AG-ZULAUF war nie im Bestand", n)
+	buch := lade()
+	z, ok := zeile(buch, "AG-BESTAND")
+	if !ok || z.Titel != "Mit Zulauf geloescht" || z.Signatur != "Zul 1" || z.Grund != "AUSSORTIERT" {
+		t.Errorf("AG-BESTAND nach dem Löschen des Titels: %+v (gefunden %v), erwartet Titel, Signatur und Grund", z, ok)
+	}
+	if _, ok := zeile(buch, "AG-ZULAUF"); ok {
+		t.Error("AG-ZULAUF steht im Abgangsbuch, war aber nie im Bestand")
+	}
+	if buch.AusKatalogGeloescht != 0 {
+		t.Errorf("nach dem Löschen des Titels: %d ohne Zeile, erwartet 0", buch.AusKatalogGeloescht)
 	}
 
 	// Verlust endgültig löschen: ein bestelltes Exemplar, im Status-Editor als verloren ausgebucht.
@@ -228,17 +241,21 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	if err != nil || len(entfernt) != 1 {
 		t.Fatalf("Verlust endgültig löschen: %v, entfernt %v — dann misst dieser Test nichts", err, entfernt)
 	}
-	if n := geloescht(); n != 1 {
-		t.Errorf("nach dem endgültigen Löschen: %d gelöschte, erwartet 1 — AG-ZULAUF-VERLOREN war nie im Bestand", n)
+	buch = lade()
+	if _, ok := zeile(buch, "AG-ZULAUF-VERLOREN"); ok || buch.AusKatalogGeloescht != 0 {
+		t.Errorf("AG-ZULAUF-VERLOREN war nie im Bestand: Zeile %v, ohne Zeile %d, erwartet keins von beidem", ok, buch.AusKatalogGeloescht)
 	}
 
-	// Gegenprobe: Ohne den Vermerk zählt dieselbe Spur mit.
-	if _, err := pool.Exec(ctx, `UPDATE audit_log SET details = details - $1 WHERE details->>'barcode_id' = 'AG-ZULAUF'`,
-		repository.ProtokollDetailWarImBestand); err != nil {
-		t.Fatalf("Vermerk entfernen: %v", err)
+	// Eine Spur ohne Vermerk und ohne Zeile zählt weiter mit: So sehen Löschungen aus der Zeit vor
+	// den Buchzeilen aus. Hat das Exemplar eine Zeile, zählt seine Spur nicht noch einmal.
+	for _, barcode := range []string{"AG-ZULAUF", "AG-BESTAND"} {
+		if _, err := pool.Exec(ctx, `UPDATE audit_log SET details = details - $1 WHERE details->>'barcode_id' = $2`,
+			repository.ProtokollDetailWarImBestand, barcode); err != nil {
+			t.Fatalf("Vermerk entfernen: %v", err)
+		}
 	}
-	if n := geloescht(); n != 2 {
-		t.Errorf("Spur ohne Vermerk: %d gelöschte, erwartet 2", n)
+	if n := lade().AusKatalogGeloescht; n != 1 {
+		t.Errorf("Spuren ohne Vermerk: %d ohne Zeile, erwartet 1 (AG-ZULAUF; AG-BESTAND hat seine Zeile)", n)
 	}
 }
 
@@ -304,77 +321,64 @@ func TestAbgangsbuchPDF_LeererZeitraumSagtEs(t *testing.T) {
 	}
 }
 
-// Ein Exemplar, das gelöscht statt ausgesondert wird, fällt aus jeder Abfrage über
-// `buecher_exemplare`, auch aus diesem Nachweis, rückwirkend und ohne ein Wort.
-//
-// Der Abgang verschwindet aus der Liste, und deshalb muss die Zahl darunter ihn nennen: Ein
-// Halbjahr, das jemand unterschrieben hat, darf nicht stillschweigend eine Zeile verlieren.
-func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
+// Ein Exemplar, das schon im vorigen Halbjahr ausgesondert war, bleibt dort stehen, wenn später
+// sein Titel gelöscht wird: Ein Halbjahr, das jemand unterschrieben hat, darf keine Zeile
+// verlieren, und im laufenden steht es nicht noch einmal.
+func TestAbgangsbuch_GeloeschterTitelBehaeltSeineZeile(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
+	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "abgangsbuch-loeschen@test.invalid")
 
-	var bearbeiterID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Abgang', 'Loescher', 'abgangsbuch-loeschen@test.invalid', 'admin', true)
-		ON CONFLICT (email) DO UPDATE SET vorname = EXCLUDED.vorname
-		RETURNING id`).Scan(&bearbeiterID); err != nil {
-		t.Fatalf("Bearbeiter anlegen: %v", err)
-	}
+	jetzt := schulzeit.Jetzt()
+	vonJetzt, bisJetzt := schulzeit.Halbjahr(jetzt)
+	vonVorher, bisVorher := schulzeit.Halbjahr(vonJetzt.AddDate(0, 0, -1))
+	ausgesondertAm := time.Date(vonVorher.Year(), vonVorher.Month(), vonVorher.Day(), 10, 0, 0, 0, loc).AddDate(0, 0, 7)
 
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Bald geloescht", "Loe 1", 0)
 	exID := testdaten.LegeExemplarAn(t, pool, titelID, "AB-WEG", true, "")
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
-		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT'
+		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESCHAEDIGUNG'
 		WHERE id = $1`, exID); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
-
-	// Der Zeitraum liegt um heute: Die Löschung zählt mit dem Tag, an dem der Test läuft.
-	heute := time.Now().In(loc)
-	von, bis := heute.AddDate(0, -6, 0), heute.AddDate(0, 6, 0)
-
-	// Vorher: Das Exemplar steht als Zeile im Buch.
-	vorher, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
-	if err != nil {
-		t.Fatalf("Abgangsbuch vorher: %v", err)
+	// Ein eigenes UPDATE: trg_exemplar_abgangsdatum stempelt beim Aussondern die Uhrzeit.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ausgesondert_am = $2 WHERE id = $1`,
+		exID, ausgesondertAm); err != nil {
+		t.Fatalf("Abgangsdatum ins vorige Halbjahr legen: %v", err)
 	}
-	if len(vorher.Zeilen) != 1 {
-		t.Fatalf("Zeilen vor dem Löschen = %d, erwartet eine", len(vorher.Zeilen))
+	lade := func(von, bis time.Time) repository.Abgangsbuch {
+		t.Helper()
+		buch, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
+		if err != nil {
+			t.Fatalf("Abgangsbuch %s bis %s: %v", von.Format("02.01.2006"), bis.Format("02.01.2006"), err)
+		}
+		return buch
 	}
-	if vorher.AusKatalogGeloescht != 0 {
-		t.Fatalf("AusKatalogGeloescht vor dem Löschen = %d, erwartet 0", vorher.AusKatalogGeloescht)
+	if n := len(lade(vonVorher, bisVorher).Zeilen); n != 1 {
+		t.Fatalf("voriges Halbjahr vor dem Löschen: %d Zeilen, erwartet eine — dann misst dieser Test nichts", n)
 	}
 
-	// Durch die echte Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal
-	// nimmt — samt der Protokollspur, aus der die Zahl entsteht.
-	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
+	// Durch die echte Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal nimmt.
+	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 
-	nachher, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
-	if err != nil {
-		t.Fatalf("Abgangsbuch nachher: %v", err)
+	vorher := lade(vonVorher, bisVorher)
+	if len(vorher.Zeilen) != 1 {
+		t.Fatalf("voriges Halbjahr nach dem Löschen: %d Zeilen, erwartet eine", len(vorher.Zeilen))
 	}
-	if len(nachher.Zeilen) != 0 {
-		t.Errorf("die Zeile steht noch in der Liste (%d) — dann misst dieser Test nichts", len(nachher.Zeilen))
+	z := vorher.Zeilen[0]
+	if z.Barcode != "AB-WEG" || z.Grund != "BESCHAEDIGUNG" || !z.Datum.Equal(ausgesondertAm) || z.Titel != "Bald geloescht" {
+		t.Errorf("Zeile nach dem Löschen: %+v, erwartet AB-WEG, BESCHAEDIGUNG, %s, Bald geloescht", z, ausgesondertAm)
 	}
-	if nachher.AusKatalogGeloescht != 1 {
-		t.Errorf("gelöschtes Exemplar wird nicht gezählt: %d — der Nachweis behauptet Vollständigkeit, die er nicht hat",
-			nachher.AusKatalogGeloescht)
+	if vorher.AusKatalogGeloescht != 0 {
+		t.Errorf("voriges Halbjahr: %d ohne Zeile, erwartet 0", vorher.AusKatalogGeloescht)
 	}
-
-	// Und die Zahl gehört zum Zeitraum: Ein Blatt über ein anderes Halbjahr darf sie nicht
-	// mitschleppen, sonst stünde dieselbe Löschung auf jedem Ausdruck der Schule.
-	fremd, err := repository.LadeAbgangsbuch(ctx,
-		pool, time.Date(2020, time.March, 16, 0, 0, 0, 0, loc), time.Date(2020, time.September, 15, 0, 0, 0, 0, loc))
-	if err != nil {
-		t.Fatalf("fremdes Halbjahr: %v", err)
-	}
-	if fremd.AusKatalogGeloescht != 0 {
-		t.Errorf("die Löschung zählt in einem fremden Halbjahr mit: %d", fremd.AusKatalogGeloescht)
+	if laufend := lade(vonJetzt, bisJetzt); len(laufend.Zeilen) != 0 || laufend.AusKatalogGeloescht != 0 {
+		t.Errorf("laufendes Halbjahr: %d Zeilen, %d ohne Zeile — das Exemplar ging im vorigen ab",
+			len(laufend.Zeilen), laufend.AusKatalogGeloescht)
 	}
 }

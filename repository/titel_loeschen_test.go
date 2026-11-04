@@ -106,8 +106,8 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 	mock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
-	mock.ExpectExec("DELETE FROM buecher_exemplare").WithArgs(titelID).
-		WillReturnResult(pgxmock.NewResult("DELETE", 3))
+	mock.ExpectQuery("WITH weg AS").WithArgs([]string{titelID}, "AUSSORTIERT").
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(int64(3)))
 	mock.ExpectExec("DELETE FROM buecher_titel").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	// Vom Eintrag sind Tabelle, Aktion und Datensatz festgelegt, der Rest (Bearbeiter, Kontext,

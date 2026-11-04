@@ -62,8 +62,8 @@ func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bear
 		return fmt.Errorf("failed to delete past loans for title: %w", err)
 	}
 
-	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titelID); err != nil {
-		return fmt.Errorf("failed to delete associated copies: %w", err)
+	if _, err = loescheExemplareMitBuchzeile(ctx, tx, exemplareNachTitel, []string{titelID}, grundAussortiert); err != nil {
+		return err
 	}
 
 	// Keine getroffene Zeile heißt unbekannte ID: Die Aufnahme oben lässt einen fehlenden Titel

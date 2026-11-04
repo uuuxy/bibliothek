@@ -66,12 +66,9 @@ type Abgangsbuch struct {
 	Bis           time.Time      `json:"bis"`
 	Zeilen        []AbgangsZeile `json:"zeilen"`
 	OhneZeitpunkt int            `json:"ohne_zeitpunkt"`
-	// AusKatalogGeloescht ist die zweite Lücke dieses Nachweises: Drei Türen entfernen ein
-	// Exemplar körperlich, statt es auszusondern, nämlich Titel löschen (einzeln und als
-	// Massenaktion) und „Verlust endgültig löschen" in der Inventur. Danach steht die Zeile in
-	// keiner Abfrage über `buecher_exemplare` mehr, auch nicht in diesem Buch: Ein Exemplar,
-	// das mit Abgangsdatum hier stand, verschwindet mit seinem Titel rückwirkend aus einem
-	// Halbjahr, das vielleicht schon unterschrieben ist.
+	// AusKatalogGeloescht zählt Exemplare, die gelöscht wurden, bevor die Bestandsbücher ihre
+	// Zeile behielten (Migration 171). Seither legt jedes Löschen die Zeile in
+	// geloeschte_exemplare an, und das Exemplar steht oben in der Liste.
 	//
 	// Gezählt wird, was das Protokoll hergibt. Titel, Signatur und Abgangsgrund sind mit dem
 	// Exemplar gegangen; sie aus dem Protokolltext zu rekonstruieren hieße, einen Nachweis aus
@@ -104,17 +101,25 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 
 	buch := Abgangsbuch{Von: abVon, Bis: bisAusschliesslich.AddDate(0, 0, -1), Zeilen: []AbgangsZeile{}}
 
+	// Die gelöschten Exemplare stehen mit ihrer Zeile aus geloeschte_exemplare darin
+	// (loescheExemplareMitBuchzeile), am Tag ihres Abgangs.
 	rows, err := q.Query(ctx, `
-		SELECT e.ausgesondert_am, e.barcode_id, t.titel,
-		       COALESCE(t.signatur, ''), COALESCE(e.aussonderung_grund, ''),
-		       `+ExemplarTopfSQL+`
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		`+ExemplarTopfJoin+`
-		WHERE `+sqlIstAbgang+`
-		  AND e.ausgesondert_am >= $1 AND e.ausgesondert_am < $2
-		-- Spalte 6 ist der Topf: 'land' vor 'schultraeger', die Reihenfolge des Ausdrucks.
-		ORDER BY 6, e.ausgesondert_am, t.titel COLLATE deutsch, e.barcode_id
+		SELECT datum, barcode, titel, signatur, grund, topf FROM (
+			SELECT e.ausgesondert_am AS datum, e.barcode_id AS barcode, t.titel AS titel,
+			       COALESCE(t.signatur, '') AS signatur, COALESCE(e.aussonderung_grund, '') AS grund,
+			       `+ExemplarTopfSQL+` AS topf
+			FROM buecher_exemplare e
+			JOIN buecher_titel t ON t.id = e.titel_id
+			`+ExemplarTopfJoin+`
+			WHERE `+sqlIstAbgang+`
+			  AND e.ausgesondert_am >= $1 AND e.ausgesondert_am < $2
+			UNION ALL
+			SELECT g.abgang_am, g.barcode, g.titel, g.signatur, g.grund, g.topf
+			FROM geloeschte_exemplare g
+			WHERE g.abgang_am >= $1 AND g.abgang_am < $2
+		) abgang
+		-- Der Topf zuerst: 'land' vor 'schultraeger', die Reihenfolge des Ausdrucks.
+		ORDER BY topf, datum, titel COLLATE deutsch, barcode
 	`, abVon, bisAusschliesslich)
 	if err != nil {
 		return buch, err
@@ -135,16 +140,16 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 	}
 
 	if err := q.QueryRow(ctx, `
-		SELECT count(*) FROM buecher_exemplare e
-		WHERE `+sqlIstAbgang+` AND e.ausgesondert_am IS NULL
+		SELECT (SELECT count(*) FROM buecher_exemplare e
+		        WHERE `+sqlIstAbgang+` AND e.ausgesondert_am IS NULL)
+		     + (SELECT count(*) FROM geloeschte_exemplare WHERE abgang_am IS NULL)
 	`).Scan(&buch.OhneZeitpunkt); err != nil {
 		return buch, err
 	}
 
-	// Die körperlich gelöschten Exemplare des Zeitraums — die einzige Spur, die von ihnen
-	// bleibt. Gezählt wird am Zeitpunkt der Löschung, und das ist hier auch der richtige
-	// Zeitpunkt: Für ein Exemplar, das aus der Tabelle verschwindet, ist die Löschung der
-	// Abgang. Ein Ausbuchen davor stünde ohnehin schon in der Liste oben.
+	// Die gelöschten Exemplare des Zeitraums, die keine Zeile in geloeschte_exemplare haben:
+	// gelöscht, bevor es die Tabelle gab (Migration 171). Für sie bleibt nur die Spur im
+	// Protokoll; gezählt wird am Zeitpunkt der Löschung.
 	if err := q.QueryRow(ctx, `
 		SELECT count(*) FROM audit_log
 		WHERE tabelle = 'buecher_exemplare' AND aktion = 'DELETE'
@@ -152,6 +157,7 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 		  AND timestamp >= $2 AND timestamp < $3
 		  -- Ältere Spuren tragen den Vermerk nicht und zählen weiter mit.
 		  AND COALESCE((details->>'`+ProtokollDetailWarImBestand+`')::boolean, true)
+		  AND NOT EXISTS (SELECT 1 FROM geloeschte_exemplare g WHERE g.exemplar_id = audit_log.datensatz_id)
 	`, []string{ProtokollAktionTitelGeloescht, ProtokollAktionVerlustEndgueltigGeloescht},
 		abVon, bisAusschliesslich).Scan(&buch.AusKatalogGeloescht); err != nil {
 		return buch, err

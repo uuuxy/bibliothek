@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-11-01. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-04. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -763,8 +763,12 @@ Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellung
 Wareneingang_ eingebucht haben — mit dem Tag der Lieferung, nicht dem der Bestellung.
 Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Händler. Ein
 bestelltes Buch, das nie geliefert wurde und das Sie in der Buchakte löschen, steht in keinem
-der beiden Bücher. Es zählt auch nicht in der Zahl der gelöschten Exemplare unter dem
-Abgangsbuch und in der Statistik nicht als Verlust.
+der beiden Bücher und zählt in der Statistik nicht als Verlust.
+
+**Gelöschte Bücher bleiben in beiden Büchern.** Löschen Sie einen Titel oder nach der Inventur
+einen Verlust endgültig, steht jedes Buch, das im Bestand war, weiter im Zugangsbuch, mit seiner
+Lieferung, und im Abgangsbuch, mit dem Tag des Löschens. War es schon ausgesondert, behält es Tag
+und Grund von damals; ein abgehefteter Ausdruck stimmt also auch nach dem Löschen noch.
 
 **Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
 Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl

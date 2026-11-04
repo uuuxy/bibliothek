@@ -360,6 +360,14 @@ var checkBedingungenBestand = []string{
 	// er lässt „A-0" aus, statt an der Bedingung zu scheitern — sonst bräche das Löschen eines
 	// Lesers mit dieser Nummer ab (repository/ausweisnummer_kommt_nie_wieder_pg_test.go).
 	"chk_ausweisnummer_ausgeschieden_positiv",
+	// Migration 171: Grund und Töpfe der Buchzeile eines gelöschten Exemplars.
+	// Frage 12: Einziger Schreiber ist loescheExemplareMitBuchzeile. Den Grund übernimmt er von
+	// einem ausgesonderten Exemplar, wo chk_aussonderung_grund dieselbe Menge verlangt, oder vom
+	// Rufer, der ihn an der Tür prüft; die Töpfe kommen aus ExemplarTopfSQL und
+	// exemplarTopfBelegtSQL, die nur 'land' und 'schultraeger' liefern. Scheitert eine Bedingung
+	// doch, bricht das Löschen laut ab, statt ein Exemplar ohne Zeile zu entfernen.
+	"chk_geloeschte_exemplare_grund", "chk_geloeschte_exemplare_topf",
+	"chk_geloeschte_exemplare_topf_belegt",
 }
 
 // Trigger ändern Daten, ohne dass eine Zeile Go-Code davon weiß. Hier stehen drei Sorten:

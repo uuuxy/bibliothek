@@ -10,8 +10,8 @@ import (
 )
 
 // Die Massenaktion „Titel löschen" vermerkt an der Spur jedes Exemplars, ob es im Bestand
-// war. Das Abgangsbuch zählt danach; ein bestelltes, nie eingetroffenes Exemplar ist kein
-// Abgang.
+// war, und das Abgangsbuch behält die Zeile des Exemplars aus dem Bestand; ein bestelltes, nie
+// eingetroffenes Exemplar ist kein Abgang.
 func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -22,6 +22,10 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM audit_log WHERE datensatz_id = ANY($1)`,
 			[]string{titelID, imBestand, imZulauf}); err != nil {
 			t.Errorf("Protokoll aufräumen: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM geloeschte_exemplare WHERE exemplar_id = ANY($1)`,
+			[]string{imBestand, imZulauf}); err != nil {
+			t.Errorf("Buchzeilen aufräumen: %v", err)
 		}
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = 'Bestand und Zulauf'`); err != nil {
 			t.Errorf("Titel aufräumen: %v", err)
@@ -35,25 +39,29 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		t.Fatalf("Exemplar im Zulauf: %v", err)
 	}
 
-	// Das Abgangsbuch zählt gelöschte Exemplare nur über ihre Spur. Gemessen wird der Zuwachs, weil
-	// andere Tests auch Spuren hinterlassen, über drei Tage, damit Mitternacht nicht dazwischenfällt.
+	// Über drei Tage, damit Mitternacht nicht dazwischenfällt. Andere Tests hinterlassen auch
+	// Zeilen; gezählt werden nur die beiden Barcodes dieses Tests.
 	jetzt := schulzeit.Jetzt()
-	abgaenge := func() int {
+	zeilen := func() map[string]int {
 		t.Helper()
 		buch, err := LadeAbgangsbuch(ctx, pool, jetzt.AddDate(0, 0, -1), jetzt.AddDate(0, 0, 1))
 		if err != nil {
 			t.Fatalf("Abgangsbuch: %v", err)
 		}
-		return buch.AusKatalogGeloescht
+		gezaehlt := map[string]int{}
+		for _, z := range buch.Zeilen {
+			gezaehlt[z.Barcode]++
+		}
+		return gezaehlt
 	}
-	vorher := abgaenge()
 
 	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 
-	if zuwachs := abgaenge() - vorher; zuwachs != 1 {
-		t.Errorf("Das Abgangsbuch zählt %d gelöschte Exemplare mehr, erwartet 1: das im Bestand, nicht das im Zulauf", zuwachs)
+	if gezaehlt := zeilen(); gezaehlt["DB-BESTAND"] != 1 || gezaehlt["DB-ZULAUF"] != 0 {
+		t.Errorf("Abgangsbuch nach dem Löschen: DB-BESTAND %d-mal, DB-ZULAUF %d-mal, erwartet 1 und 0",
+			gezaehlt["DB-BESTAND"], gezaehlt["DB-ZULAUF"])
 	}
 
 	for _, fall := range []struct {

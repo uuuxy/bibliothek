@@ -175,9 +175,9 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 	); err != nil {
 		return nil, fmt.Errorf("ausleihhistorie der verlust-exemplare löschen fehlgeschlagen: %w", err)
 	}
-	if _, err := a.db.Exec(ctx,
-		`DELETE FROM buecher_exemplare WHERE id = ANY($1)`, ids,
-	); err != nil {
+	// Die Exemplare sind als Verlust ausgesondert; ihre Zeile in den Bestandsbüchern behält Tag
+	// und Grund der Aussonderung.
+	if _, err := loescheExemplareMitBuchzeile(ctx, a.db, exemplareNachKennung, ids, grundVerlust); err != nil {
 		return nil, fmt.Errorf("verlust-exemplare endgültig löschen fehlgeschlagen: %w", err)
 	}
 

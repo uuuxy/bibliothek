@@ -120,6 +120,9 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectQuery(`DELETE FROM ausleihen a`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows(ausleiheSpalten))
+		mock.ExpectQuery(`WITH weg AS`).
+			WithArgs(ids, "AUSSORTIERT").
+			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(int64(2)))
 		mock.ExpectExec(`DELETE FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 2))
@@ -156,6 +159,9 @@ func TestLoescheTitel(t *testing.T) {
 		mock.ExpectQuery(`DELETE FROM ausleihen a`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows(ausleiheSpalten))
+		mock.ExpectQuery(`WITH weg AS`).
+			WithArgs(ids, "AUSSORTIERT").
+			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(int64(0)))
 		mock.ExpectExec(`DELETE FROM buecher_titel`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))

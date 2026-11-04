@@ -452,7 +452,7 @@ ausführliche Fassung mit Datum, Anlass und Folge steht in
 
 ## 5. Bausteinsicht
 
-Stand: 29.10.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
+Stand: 04.11.2026 · Befehle zum Messen im [Anhang](#anhang-die-zahlen-selbst-nachmessen)
 
 ---
 
@@ -1039,6 +1039,7 @@ Vollständig: `schema.sql` und [invarianten.md](invarianten.md).
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `buecher_titel`                | Katalog: Metadaten (ISBN, Titel, Autor, Verlag, Jahrgang, `ist_lernmittel`), `erweiterte_eigenschaften JSONB`      |
 | `buecher_exemplare`            | Bestand: das physische Stück (Barcode, Zustand, `standort`, `ist_ausleihbar`, `letzte_bewegung_am`)              |
+| `geloeschte_exemplare`         | Was Zugangs- und Abgangsbuch von einem gelöschten Exemplar behalten (Barcode, Titel, Signatur, Lieferung, Topf, Abgang, Grund), ohne Person und ohne Fremdschlüssel; angelegt nur von `repository.loescheExemplareMitBuchzeile` |
 | `ausleihen`                    | Aktive und historische Ausleihen; `exemplar_id` XOR `geraet_id`; aktiv = `rueckgabe_am IS NULL`                    |
 | `leser`                        | **Alle** Entleiher mit ihrer `art` (`schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus`, `fachbereich`), ein gemeinsamer Ausweis-Nummernkreis |
 | `ausweisnummern_ausgeschieden` | Jede `A-`-Nummer, die eine Leserzeile verlassen hat — nur die Zahl, ohne Person; der Generator zählt über sie hinweg (Migration 146) |

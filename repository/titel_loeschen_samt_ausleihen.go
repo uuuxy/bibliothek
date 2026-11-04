@@ -84,6 +84,11 @@ func (a *TitelAbfragen) LoescheTitelSamtAusleihen(ctx context.Context, ids []str
 		return err
 	}
 
+	// Die Exemplare vor ihren Titeln: Über den CASCADE des Titels fielen sie ohne ihre Zeile in
+	// den Bestandsbüchern.
+	if _, err := loescheExemplareMitBuchzeile(ctx, tx, exemplareNachTitel, ids, grundAussortiert); err != nil {
+		return err
+	}
 	ergebnis, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
 	if err != nil {
 		return fmt.Errorf("bücher konnten nicht gelöscht werden: %w", err)

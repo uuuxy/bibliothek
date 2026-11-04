@@ -533,7 +533,7 @@ Eintrag nennt Bearbeiter, Weg und Grund; den Grund liest er vom Exemplar. Nach e
 oder Schaden nennt er auch die Forderung (`schadensfall_id`), und damit, wer sie angelegt hat.
 Die Zustandsnotiz steht nicht darin: Sie ist Freitext, kann eine Person nennen und bliebe bis
 zur Audit-Aufbewahrung. Das Abgangsbuch liest diese Einträge nicht, es zählt im Protokoll nur
-gelöschte Exemplare (`aktion = 'DELETE'`).
+gelöschte Exemplare ohne Zeile in `geloeschte_exemplare` (`aktion = 'DELETE'`).
 
 ### Frontend-Lesart
 

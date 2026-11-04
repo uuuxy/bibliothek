@@ -20,21 +20,23 @@ import (
 // einem Halbjahr, das vielleicht schon unterschrieben ist.
 //
 // Die Antwort darauf ist kein Verbot: Dass „Titel löschen" wirklich alles löscht, hat der
-// Betreiber entschieden. Die Antwort ist die Zahl unter der Liste
-// (repository/abgangsbuch.go), und die kann nur zählen, was eine Protokollspur hinterlässt.
-// Deshalb ist eine weitere Anweisung hier eine Frage: Wer eine hinzufügt, schreibt daneben,
-// welche Spur sie legt, oder merkt beim Schreiben, dass sie keine legt und der Nachweis ab
-// dann lügt.
+// Betreiber entschieden. Die Antwort ist die Zeile in geloeschte_exemplare, die
+// repository.loescheExemplareMitBuchzeile in derselben Anweisung anlegt, die das Exemplar
+// löscht (Migration 171), dazu die Spur im Protokoll, über die die Theke ein gelöschtes Buch
+// findet. Deshalb ist eine weitere Anweisung hier eine Frage: Wer eine hinzufügt, schreibt
+// daneben, wie das Exemplar in den Bestandsbüchern bleibt und welche Spur sie legt.
 var koerperlicheLoeschungBestand = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"repository/titel_loeschen.go": {2, "Titel löschen (einzeln): erst die Exemplare, dann der Titel. " +
-		"Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
-	"repository/titel_loeschen_samt_ausleihen.go": {1, "Titel löschen (Massenaktion): die Exemplare fallen per " +
-		"ON DELETE CASCADE. Spur je Exemplar in titel_loeschen_spur.go, ebenfalls ProtokollAktionTitelGeloescht."},
-	"repository/inventur_verluste.go": {1, "Verlust endgültig löschen (Inventur). " +
-		"Spur je Exemplar mit ProtokollAktionVerlustEndgueltigGeloescht."},
+	"repository/geloeschte_exemplare.go": {1, "loescheExemplareMitBuchzeile, die eine Anweisung, die Exemplare " +
+		"löscht: Jedes aus dem Bestand bekommt darin seine Zeile in geloeschte_exemplare. Die Spur legen die Rufer: " +
+		"Titel löschen (ProtokollAktionTitelGeloescht), Verlust endgültig löschen (ProtokollAktionVerlustEndgueltigGeloescht)."},
+	"repository/titel_loeschen.go": {1, "Titel löschen (einzeln): der Titel, nachdem loescheExemplareMitBuchzeile " +
+		"seine Exemplare gelöscht hat. Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
+	"repository/titel_loeschen_samt_ausleihen.go": {1, "Titel löschen (Massenaktion): die Titel, nachdem " +
+		"loescheExemplareMitBuchzeile ihre Exemplare gelöscht hat. Spur je Exemplar in titel_loeschen_spur.go, " +
+		"ebenfalls ProtokollAktionTitelGeloescht."},
 	"repository/titel_zusammenfuehren.go": {1, "Titel zusammenführen: gelöscht wird nur der Titel, " +
 		"nachdem seine Exemplare zum anderen gewandert sind; kein Exemplar verlässt den Bestand. Spur am " +
 		"bleibenden Titel mit den Kennungen der gewanderten Exemplare (protokollAktionTitelZusammengefuehrt)."},

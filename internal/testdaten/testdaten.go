@@ -29,7 +29,7 @@ func LeereBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
 		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, leser, benutzer, klassen,
-		         ausweisnummern_ausgeschieden
+		         ausweisnummern_ausgeschieden, geloeschte_exemplare
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {
