@@ -343,8 +343,9 @@ Läuft die Datenbank noch nicht (Ersteinrichtung), überspringt `update.sh` das 
 macht den Rest; einen zweiten Weg für die Einrichtung gibt es nicht.
 
 `./update_caddy.sh` schreibt die Caddy-Konfiguration des Servers neu
-(`/root/caddy/Caddyfile`, alle Dienste des Hosts), prüft sie mit `caddy validate` und lädt
-sie per `caddy reload` neu, ohne Caddy neu zu starten. Der Abschnitt der Bibliothek trägt die
+(`/root/caddy/Caddyfile`, alle Dienste des Hosts). Die neue Fassung prüft es mit `caddy validate`
+im Container, bevor sie die laufende ersetzt, und lädt sie per `caddy reload`, ohne Caddy neu zu
+starten. Der Abschnitt der Bibliothek trägt die
 Sperre für Anfragen von außen ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 3).
 
 ### `scripts/stack-neu.sh` — dasselbe lokal, mit Beweis

@@ -1,5 +1,15 @@
 #!/bin/bash
-cat << 'EOF' > /root/caddy/Caddyfile
+# Schreibt die Caddy-Konfiguration des Testservers und lädt sie. Die neue Fassung wird im Container
+# geprüft, bevor sie die laufende ersetzt: Eine ungültige Datei an deren Stelle ließe den nächsten
+# Neustart von Caddy scheitern, und mit ihm alle drei Dienste.
+set -eu
+# Zum Ausprobieren mit einem Wegwerf-Caddy lassen sich Datei und Container umlenken.
+ziel=${CADDY_DATEI:-/root/caddy/Caddyfile}
+container=${CADDY_CONTAINER:-caddy}
+neu=$(mktemp)
+trap 'rm -f "$neu"' EXIT
+
+cat << 'EOF' > "$neu"
 {
     # Global options
     email admin@philipp-reis-schule.de
@@ -94,15 +104,21 @@ schaden.fla-dev.de {
 }
 EOF
 
-# Erst prüfen, dann laden. `caddy validate` liest die Datei, ohne sie zu übernehmen —
-# ein Tippfehler fällt damit auf, bevor er den Reverse Proxy aller drei Dienste trifft.
-docker exec caddy caddy validate --config /etc/caddy/Caddyfile || {
-    echo "FEHLER: Caddyfile ist ungültig — nichts geladen, alter Stand läuft weiter." >&2
+# Erst prüfen, dann ersetzen. `caddy validate` liest die Datei, ohne sie zu übernehmen. Die laufende
+# ist als einzelne Datei in den Container eingehängt; die neue kommt darum per docker cp hinein.
+docker cp "$neu" "$container:/tmp/Caddyfile.neu"
+if ! docker exec "$container" caddy validate --config /tmp/Caddyfile.neu --adapter caddyfile; then
+    docker exec "$container" rm -f /tmp/Caddyfile.neu || true
+    echo "FEHLER: Die neue Caddyfile ist ungültig — die laufende bleibt, wie sie ist." >&2
     exit 1
-}
+fi
+docker exec "$container" rm -f /tmp/Caddyfile.neu
+
+# An Ort und Stelle überschreiben (cat >): Eine ersetzte Datei sähe der Container nicht.
+cat "$neu" > "$ziel"
 
 # reload statt restart: Caddy übernimmt die neue Konfiguration unterbrechungsfrei und
 # behält bestehende Verbindungen. `docker restart` trennt jede laufende SSE-Verbindung
 # und wirft für ein paar Sekunden 502 — bei einem Reverse Proxy für drei produktive
 # Dienste ist das der teurere Weg.
-docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec "$container" caddy reload --config /etc/caddy/Caddyfile

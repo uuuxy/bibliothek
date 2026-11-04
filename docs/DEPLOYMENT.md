@@ -289,9 +289,11 @@ die Adresse im Header `X-Forwarded-For`.
 ### Konfiguration
 
 Die Caddy-Konfiguration des Testservers schreibt `./update_caddy.sh`: alle Dienste des Hosts in
-`/root/caddy/Caddyfile`, erst `caddy validate`, dann `caddy reload`. Die Datei ist als einzelne
-Datei in den Caddy-Container eingehängt: Von Hand wird sie an Ort und Stelle überschrieben wie im
-Skript (`cat … >`); eine ersetzte Datei (neu geschrieben und umbenannt) sieht der Container nicht.
+`/root/caddy/Caddyfile`. Die neue Fassung prüft `caddy validate` im Container, bevor sie die
+laufende ersetzt; ist sie ungültig, bleibt die laufende unverändert. Danach `caddy reload`. Die
+Datei ist als einzelne Datei in den Caddy-Container eingehängt: Von Hand wird sie an Ort und Stelle
+überschrieben wie im Skript (`cat … >`); eine ersetzte Datei (neu geschrieben und umbenannt) sieht
+der Container nicht.
 Auf einem anderen Host
 gehört der Abschnitt „Bibliothek" daraus in dessen Caddyfile, samt den Fristen unter
 `transport http`: Sie müssen zur Anwendung passen, denn ein Import darf 5 Minuten dauern
