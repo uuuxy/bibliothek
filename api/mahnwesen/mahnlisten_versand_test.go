@@ -409,35 +409,6 @@ func TestProtokolliereKlassenVersand_SchreibtGueltigesJSONMitEmpfaenger(t *testi
 	}
 }
 
-// Alle Dienstadressen der Schule liegen auf derselben Domain. Sie jedes Mal
-// mitzutippen ist Fehlerquelle — „mueller" muss reichen. Die Domain kommt aus ihrer einen
-// Quelle, SELBSTANMELDUNG_DOMAIN. Vollständige Adressen bleiben unangetastet, damit der
-// Versand an externe Stellen möglich bleibt.
-func TestErgaenzeSchulDomain(t *testing.T) {
-	t.Setenv("SELBSTANMELDUNG_DOMAIN", "schule.example")
-
-	tests := []struct{ eingabe, want string }{
-		{"mueller", "mueller@schule.example"},
-		{"m.mueller", "m.mueller@schule.example"},
-		{"extern@schulamt.hessen.de", "extern@schulamt.hessen.de"}, // vollständig → unverändert
-		{"", ""},
-	}
-	for _, tt := range tests {
-		if got := ergaenzeSchulDomain(tt.eingabe); got != tt.want {
-			t.Errorf("ergaenzeSchulDomain(%q) = %q, erwartet %q", tt.eingabe, got, tt.want)
-		}
-	}
-}
-
-// Ohne eingetragene Domain wird nicht geraten: Die Eingabe läuft unverändert in
-// die Adressprüfung und scheitert dort mit einer klaren Meldung.
-func TestErgaenzeSchulDomain_OhneDomainKeineRaterei(t *testing.T) {
-	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
-	if got := ergaenzeSchulDomain("mueller"); got != "mueller" {
-		t.Fatalf("ergaenzeSchulDomain = %q, erwartet unverändert %q", got, "mueller")
-	}
-}
-
 // Der Weg über den echten Rumpf: „mueller" kommt als vollständige Adresse heraus.
 func TestLeseKlassenVersandAnfrage_ErgaenztDomaene(t *testing.T) {
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "schule.example")

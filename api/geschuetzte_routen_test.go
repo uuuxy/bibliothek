@@ -39,6 +39,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/auth/refresh": "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/me":      "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/logout":  "Auth-Endpunkt",
+		"/api/auth/domain":  "Anmeldeseite: die Domain der Schule für den Hinweis am Namensfeld, vor jeder Anmeldung",
 		// Sperre nach Inaktivität: Beide prüfen das Token selbst und wirken nur auf die
 		// Anmeldung, mit der die Anfrage kommt. Hinter VerlangeAnmeldung ginge Entsperren
 		// nicht — die Tür lehnt eine gesperrte Anmeldung ab.

@@ -133,6 +133,9 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
 			return
 		}
+		// Vor allem anderen: Bremse, Mailserver und Konto sehen dieselbe volle Adresse. Getrimmt wird
+		// hier, weil das Feld mit Domain ein Textfeld ist und der Browser Leerzeichen dann stehen lässt.
+		anfrage.Email = ErgaenzeSchulDomain(strings.TrimSpace(anfrage.Email))
 
 		ctx, cancel := context.WithTimeout(r.Context(), anmeldeFrist)
 		defer cancel()

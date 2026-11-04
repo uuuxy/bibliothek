@@ -247,6 +247,9 @@ func (s *Server) registriereAnmeldeRouten(mux *http.ServeMux) {
 	// Datenbank und antwortet wie die Anmeldung.
 	mux.HandleFunc("GET /api/auth/me", auth.AngemeldetesKonto(s.DB.Pool, s.Auth))
 
+	// Die Domain der Schule für die Anmeldeseite, ohne Anmeldung: Mit ihr genügt der Name vor dem @.
+	mux.HandleFunc("GET /api/auth/domain", auth.Domain())
+
 	// Abmelden: widerruft das Token und löscht das Sitzungscookie.
 	mux.HandleFunc("POST /api/auth/logout", s.abmelden())
 

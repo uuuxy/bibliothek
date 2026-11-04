@@ -7,7 +7,8 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 **Zwei Grundsätze, die überall gelten:**
 
 - Es gibt **keine Passwörter** zu verwalten. Angemeldet wird mit dem Schul-Postfach
-  (E-Mail + Mail-Passwort). Wer kein Konto hat, kann sich damit selbst anmelden und wird von
+  (E-Mail + Mail-Passwort). Ist die Domain der Schule eingerichtet, genügt der Name vor dem @;
+  den Rest ergänzt das Programm. Wer kein Konto hat, kann sich damit selbst anmelden und wird von
   der Bibliothek freigeschaltet (→ Benutzer & Rechte).
 - **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
   Theke ohne Leserakten, Mitarbeitende den Thekenbetrieb, Admins alles.

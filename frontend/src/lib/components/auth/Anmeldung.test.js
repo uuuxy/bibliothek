@@ -47,7 +47,54 @@ describe('Anmeldung: leeres Feld', () => {
 		expect(passwort.getAttribute('aria-invalid')).toBe('true');
 		expect(beschreibung(passwort)).toBe('Bitte dein Passwort eintragen.');
 		expect(document.activeElement).toBe(passwort);
-		expect(globalThis.fetch).not.toHaveBeenCalled();
+		// Hinaus geht nur die Frage nach der Domain der Schule, keine Anmeldung.
+		expect(vi.mocked(globalThis.fetch).mock.calls.map(([adresse]) => adresse)).toEqual([
+			'/api/auth/domain'
+		]);
+	});
+});
+
+// Mit der Domain der Schule genügt der Name: Das Feld nimmt ihn an und sagt darunter, was der
+// Server ergänzt. Der Fehler bei leerem Feld ersetzt diesen Hinweis.
+describe('Anmeldung: Domain der Schule', () => {
+	const fetchVorher = globalThis.fetch;
+
+	/** @param {unknown} domain */
+	function serverNennt(domain) {
+		globalThis.fetch = vi.fn(async () => new Response(JSON.stringify(domain), { status: 200 }));
+	}
+
+	beforeEach(() => {
+		authStore.loginEmail = '';
+		authStore.loginPassword = '';
+	});
+
+	afterEach(() => {
+		globalThis.fetch = fetchVorher;
+	});
+
+	it('nimmt den Namen an und nennt die Domain unter dem Feld', async () => {
+		serverNennt('schule.example');
+		const k = render(Anmeldung);
+		const feld = await k.findByLabelText('Name oder E-Mail');
+		expect(feld.getAttribute('type')).toBe('text');
+		expect(feld.getAttribute('autocomplete')).toBe('username');
+		expect(beschreibung(feld)).toBe(
+			'Der Name vor dem @ genügt – @schule.example ergänzt das Programm.'
+		);
+
+		await klicke(k.getByRole('button', { name: 'Anmelden' }));
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		expect(beschreibung(feld)).toBe('Bitte deinen Namen oder deine Schul-E-Mail eintragen.');
+	});
+
+	it('bleibt ohne Domain bei der vollen Adresse', async () => {
+		serverNennt('');
+		const k = render(Anmeldung);
+		await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/domain'));
+		const feld = k.getByLabelText('E-Mail');
+		expect(feld.getAttribute('type')).toBe('email');
+		expect(beschreibung(feld) ?? '').toBe('');
 	});
 });
 

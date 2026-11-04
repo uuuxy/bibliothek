@@ -17,6 +17,31 @@
 	const emailFehlt = $derived(verlangt && !authStore.loginEmail.trim());
 	const passwortFehlt = $derived(verlangt && !authStore.loginPassword);
 
+	// Ist die Domain der Schule gesetzt, genügt der Name vor dem @; den Rest ergänzt der Server.
+	// Ohne Antwort bleibt das Feld bei der vollen Adresse.
+	let domain = $state('');
+	async function ladeDomain() {
+		try {
+			const res = await fetch('/api/auth/domain');
+			if (!res.ok) {
+				domain = '';
+				return;
+			}
+			const wert = await res.json();
+			domain = typeof wert === 'string' ? wert : '';
+		} catch {
+			domain = '';
+		}
+	}
+	// Ein Text unter dem Feld: Der Fehler ersetzt den Hinweis, statt unter ihm zu stehen.
+	const emailHinweis = $derived.by(() => {
+		if (emailFehlt)
+			return domain
+				? 'Bitte deinen Namen oder deine Schul-E-Mail eintragen.'
+				: 'Bitte deine Schul-E-Mail eintragen.';
+		return domain ? `Der Name vor dem @ genügt – @${domain} ergänzt das Programm.` : '';
+	});
+
 	/** @param {SubmitEvent} e */
 	function absenden(e) {
 		e.preventDefault();
@@ -28,6 +53,7 @@
 
 	$effect(() => {
 		setTimeout(() => document.getElementById('login-email')?.focus(), 50);
+		ladeDomain();
 	});
 </script>
 
@@ -50,13 +76,15 @@
 			<div>
 				<Feld
 					id="login-email"
-					type="email"
-					autocomplete="email"
-					aria-label="E-Mail"
+					type={domain ? 'text' : 'email'}
+					autocomplete={domain ? 'username' : 'email'}
+					autocapitalize="none"
+					spellcheck="false"
+					aria-label={domain ? 'Name oder E-Mail' : 'E-Mail'}
 					bind:value={authStore.loginEmail}
-					placeholder="Schul-E-Mail"
+					placeholder={domain ? 'Name oder Schul-E-Mail' : 'Schul-E-Mail'}
 					ungueltig={emailFehlt}
-					hint={emailFehlt ? 'Bitte deine Schul-E-Mail eintragen.' : ''}
+					hint={emailHinweis}
 				/>
 			</div>
 			<div>

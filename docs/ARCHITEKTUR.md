@@ -2199,10 +2199,11 @@ und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
   anderem Weg bestellt, nimmt `DELETE /api/bestellungen/{id}/mail` den Vermerk ohne Versand, nur
   bei Bestellungen ohne Bestätigungs-Link.
 - **Die Domain der Schule hat eine Quelle:** `SELBSTANMELDUNG_DOMAIN`
-  (`auth.SelbstanmeldeDomain`). Selbstanmeldung, Prüfung der Kollegiums-Adresse und Sammelversand
-  lesen sie; der Sammelversand hängt sie an einen Namen ohne „@". Die Anmeldung nimmt die volle
-  Adresse und ergänzt nichts, denn das Konto wird mit der Eingabe gesucht. Die Oberfläche nennt
-  keine Domain.
+  (`auth.SelbstanmeldeDomain`). Selbstanmeldung, Prüfung der Kollegiums-Adresse, Sammelversand und
+  Anmeldung lesen sie; Sammelversand und Anmeldung hängen sie mit derselben Funktion an einen Namen
+  ohne „@" (`auth.ErgaenzeSchulDomain`). Die Anmeldung ergänzt vor allem anderen: Bremse,
+  Mailserver, Kontosuche und Selbstanmeldung sehen dieselbe volle Adresse. Im Code der Oberfläche steht keine Domain; die
+  Anmeldeseite holt sie vom Server (`GET /api/auth/domain`) und nennt sie im Hinweis am Feld.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - **Ein Alarm wiederholt sich einmal am Tag:** Was die letzte Mail des Bereitschafts-Wächters

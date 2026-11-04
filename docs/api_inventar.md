@@ -6,6 +6,7 @@
 
 (SSE `/events`, Dashboards und Public-Endpoints können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `GET /api/auth/domain`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -14,7 +15,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (225)
+## Alle registrierten Routen (226)
 
 - `/`
 - `/favicon.ico`
@@ -52,6 +53,7 @@
 - `GET /api/audit`
 - `GET /api/audit/tresen-auskunft`
 - `GET /api/ausweis-layout`
+- `GET /api/auth/domain`
 - `GET /api/auth/me`
 - `GET /api/barcode`
 - `GET /api/barcode/next`

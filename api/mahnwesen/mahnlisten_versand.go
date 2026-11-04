@@ -151,7 +151,7 @@ func leseKlassenVersandAnfrage(w http.ResponseWriter, r *http.Request) (klassenV
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
 	// nicht in einen „erfolgreichen" Lauf ins Leere münden, deshalb dieselbe
 	// Prüfung, die auch der Versand selbst anlegt (mailservice/mail_sender.go).
-	req.Umleitung = ergaenzeSchulDomain(strings.TrimSpace(req.Umleitung))
+	req.Umleitung = auth.ErgaenzeSchulDomain(strings.TrimSpace(req.Umleitung))
 	if req.Umleitung != "" {
 		if _, err := mail.ParseAddress(req.Umleitung); err != nil {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("„%s“ ist keine E-Mail-Adresse", req.Umleitung), err)
@@ -171,31 +171,6 @@ func leseKlassenVersandAnfrage(w http.ResponseWriter, r *http.Request) (klassenV
 	}
 	req.Klassen = gesaeubert
 	return req, true
-}
-
-// ergaenzeSchulDomain vervollständigt eine von Hand eingetippte Adresse ohne „@"
-// um die Domain der Schule: „mueller" wird zu „mueller@schule.example".
-//
-// Alle Dienstadressen der Schule liegen auf derselben Domain — sie jedes Mal
-// mitzutippen ist reine Fehlerquelle, und ein Vertipper darin fällt niemandem auf
-// (der Lauf meldet Erfolg, die Post kommt nie an).
-//
-// Die Domain kommt aus ihrer einen Quelle, SELBSTANMELDUNG_DOMAIN: Das ist die Domain der
-// Postfächer des Kollegiums, und an sie geht der Versand. Ist keine eingetragen, bleibt die
-// Eingabe unverändert und läuft in die normale Adressprüfung — lieber eine klare
-// Fehlermeldung als eine geratene Domain.
-//
-// Eine vollständige Adresse (mit „@") bleibt unangetastet: Der Versand an eine
-// externe Stelle — Schulamt, Vertretung, private Adresse — muss möglich bleiben.
-func ergaenzeSchulDomain(eingabe string) string {
-	if eingabe == "" || strings.Contains(eingabe, "@") {
-		return eingabe
-	}
-	domain := auth.SelbstanmeldeDomain()
-	if domain == "" {
-		return eingabe
-	}
-	return eingabe + "@" + domain
 }
 
 // nurKlassen lässt die Gruppe der Ehemaligen fallen. Sie ist keine Klasse: Ihre Liste geht

@@ -423,6 +423,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/images/cover": {URL: "/api/images/cover"},
 		"GET /api/csrf-token":   {URL: "/api/csrf-token"},
 		"GET /api/auth/me":      {URL: "/api/auth/me"},
+		"GET /api/auth/domain":  {URL: "/api/auth/domain"},
 		"GET /health":           {URL: "/health"},
 
 		// routen_katalog.go und router.go: der Medienkatalog
