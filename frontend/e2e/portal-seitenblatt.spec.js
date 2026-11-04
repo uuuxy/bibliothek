@@ -8,14 +8,17 @@ import { uiLogin, querySQL, seedSQL, uniqueSuffix } from './helpers.js';
 const s = uniqueSuffix();
 const TITEL = `E2E-Blatt ${s}`;
 const ISBN = `SBL1${s.slice(-12)}`;
-/** @type {string} */
-let titelId = '';
+// Ein eigenes Fach: Die Datenbank der CI kennt keine Fächer, die lokale schon.
+const FACH = `E2E-Fach ${s}`;
 
 test.beforeEach(() => {
-	titelId = querySQL(`
+	seedSQL(
+		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('E2EB${s}', '${FACH}');`
+	);
+	querySQL(`
 		WITH t AS (
 			INSERT INTO buecher_titel (titel, autor, isbn, subject, jahrgang_von, jahrgang_bis, ist_lernmittel)
-			VALUES ('${TITEL}', 'Blattprobe ${s}', '${ISBN}', 'Mathematik', 7, 7, true)
+			VALUES ('${TITEL}', 'Blattprobe ${s}', '${ISBN}', '${FACH}', 7, 7, true)
 			RETURNING id
 		),
 		ex AS (
@@ -28,10 +31,10 @@ test.beforeEach(() => {
 });
 
 test.afterEach(() => {
-	if (!titelId) return;
 	seedSQL(`
-		DELETE FROM buecher_exemplare WHERE titel_id = '${titelId}';
-		DELETE FROM buecher_titel WHERE id = '${titelId}';
+		DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn = '${ISBN}');
+		DELETE FROM buecher_titel WHERE isbn = '${ISBN}';
+		DELETE FROM systematik_kategorien WHERE bezeichnung = '${FACH}';
 	`);
 });
 
@@ -48,20 +51,20 @@ test('Mein Portal: Ein Klick auf die Kachel zeigt die ISBN im Seitenblatt, der K
 	const gefiltert = page.waitForResponse((r) => r.url().includes('/api/portal/lernmittel?q='));
 	await page.getByRole('searchbox', { name: 'Schulbücher durchsuchen' }).fill(TITEL);
 	await gefiltert;
-	await page.getByRole('button', { name: /Mathematik/ }).click();
+	await page.getByRole('button', { name: new RegExp(FACH) }).click();
 
 	const kachel = page.getByRole('button', { name: new RegExp(`^${TITEL} .*Angaben zeigen$`) });
 	await kachel.click();
 	const blatt = page.getByRole('complementary', { name: TITEL });
 	await expect(blatt).toBeVisible();
-	await expect(blatt).toContainText('Mathematik · Jahrgang 7');
+	await expect(blatt).toContainText(`${FACH} · Jahrgang 7`);
 	await expect(blatt).toContainText('3 von 3');
 	await expect(kachel).toHaveAttribute('aria-pressed', 'true');
 
 	// Das Blatt steht neben dem Inhalt, nicht darüber: „Als PDF" am rechten Ende der Fachzeile
 	// endet links vom Blatt.
 	const pdf = await page
-		.getByTitle('Mathematik: Bestandsliste als PDF, mit Buchbildern')
+		.getByTitle(`${FACH}: Bestandsliste als PDF, mit Buchbildern`)
 		.boundingBox();
 	const b = await blatt.boundingBox();
 	expect(
