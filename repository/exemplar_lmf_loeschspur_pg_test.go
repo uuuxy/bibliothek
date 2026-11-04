@@ -41,7 +41,7 @@ func TestAltesLMFEtikett_GeloeschtesExemplarBleibtAuffindbar(t *testing.T) {
 		}
 	})
 
-	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare

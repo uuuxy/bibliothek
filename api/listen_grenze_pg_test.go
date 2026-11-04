@@ -74,6 +74,7 @@ var listenGrenze = map[string]string{
 	"GET /api/buecher/titel/{id}/ausleiher $":                             "keine Obergrenze in der Abfrage; die offenen Ausleihen des einen Titels, höchstens so viele wie seine Exemplare (repository.LadeAusleiherDesTitels)",
 	"GET /api/buecher/titel/{id}/exemplare $":                             "keine Obergrenze in der Abfrage; die Exemplare des einen Titels, bei einem Klassensatz einige Hundert (repository.LadeExemplareDesTitels)",
 	"GET /api/buecher/titel/{id}/historie $":                              "LIMIT 200, die jüngsten Ausleihen des einen Titels zuerst (repository.LadeAusleihhistorieDesTitels)",
+	"GET /api/buecher/titel/loeschfolgen $.verliehen":                     "keine Obergrenze in der Abfrage; die offenen Ausleihen der gewählten Titel, höchstens so viele wie ihre Exemplare, und die Tür nimmt höchstens 200 Titel (repository.LadeLoeschfolgen, maxTitelJeLoeschen)",
 	"GET /api/buecher/titel/{id}/schlagworte $.schlagworte":               "keine Obergrenze in der Abfrage; die Schlagworte des einen Titels, beim Schreiben auf SchlagworteJeTitelMax begrenzt (repository.LadeSchlagworteDesTitels)",
 	"GET /api/books/{id} $.schlagworte":                                   "keine Obergrenze in der Abfrage; die Schlagworte des einen Titels, beim Schreiben auf SchlagworteJeTitelMax begrenzt (api/katalog/titel_lesen.go)",
 	"GET /api/schueler/{id}/zusammenfuehren-kandidaten $":                 "LIMIT 20 (api/leser/leser_zusammenfuehren.go; repository.FindeZusammenfuehrenKandidaten)",

@@ -1,8 +1,12 @@
 <script>
 	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
-	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
+	import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, melde } from '$lib/store.svelte.js';
-	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
+	import { coverNeuHolen } from '../../admin_api.js';
+	import {
+		loescheTitelMitRueckfrage,
+		meldungZumErgebnis
+	} from '../../../../lib/components/buchakte/titelLoeschen.js';
 	import {
 		stehtInSicht,
 		verringernRueckfrage,
@@ -21,15 +25,15 @@
 		return hatRecht(authStore.currentUser, 'delete_books');
 	}
 
-	/** Löschen aus der Maske: ein Titel, Rückfrage, der Server verweigert bei Ausleihen. */
+	/** Löschen aus der Maske: derselbe Dialog wie in der Buchakte (titelLoeschen.js). */
 	export async function titelLoeschen() {
 		if (!formular.id) return;
-		if (!(await loeschenBestaetigen(`„${formular.title}“ mit allen Exemplaren löschen?`))) return;
 		try {
-			await loescheTitel(formular.id);
-			titelListe = titelListe.filter((/** @type {any} */ b) => b.id !== formular.id);
+			const ergebnis = await loescheTitelMitRueckfrage([formular.id], formular.title);
+			if (!ergebnis) return;
+			titelListe = titelListe.filter((/** @type {any} */ b) => !ergebnis.geloescht.includes(b.id));
 			istBearbeitung = false;
-			melde('Titel gelöscht.', 'success');
+			melde(meldungZumErgebnis(ergebnis), 'success');
 		} catch (fehler) {
 			melde(fehlertext(fehler), 'error');
 		}

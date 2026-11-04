@@ -1,6 +1,9 @@
 <script>
 	import { apiFetch, leseApiFehler } from '../../../../lib/apiFetch.js';
-	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
+	import {
+		frageGrundFuerExemplare,
+		loescheExemplarMitGrund
+	} from '../../../../lib/components/buchakte/exemplareLoeschen.js';
 	import { melde } from '$lib/store.svelte.js';
 	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
@@ -64,25 +67,19 @@
 	/** @param {any} ex */
 	async function loescheExemplar(ex) {
 		if (loescht.has(ex.id)) return;
-		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
+		const grund = await frageGrundFuerExemplare([ex.barcode_id]);
+		if (!grund) return;
 		loescht.add(ex.id);
 		try {
-			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
-				method: 'DELETE',
-				credentials: 'include'
-			});
-			if (res.ok) {
-				// „Löschen" sondert aus: Das Exemplar verlässt den Bestand und die Liste.
-				exemplare = exemplare.filter((e) => e.id !== ex.id);
-				ausgesondert += 1;
-				// Die Zahl im Feld kommt neu vom Server, die Maske zählt nicht selbst.
-				await ladeBestandNach(formular);
-				melde('Exemplar erfolgreich gelöscht', 'success');
-			} else {
-				melde(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'), 'error');
-			}
-		} catch {
-			melde('Netzwerkfehler beim Löschen.', 'error');
+			await loescheExemplarMitGrund(ex.id, grund);
+			// „Löschen" sondert aus: Das Exemplar verlässt den Bestand und die Liste.
+			exemplare = exemplare.filter((e) => e.id !== ex.id);
+			ausgesondert += 1;
+			// Die Zahl im Feld kommt neu vom Server, die Maske zählt nicht selbst.
+			await ladeBestandNach(formular);
+			melde('Exemplar erfolgreich gelöscht', 'success');
+		} catch (e) {
+			melde(fehlertext(e), 'error');
 		} finally {
 			loescht.delete(ex.id);
 		}

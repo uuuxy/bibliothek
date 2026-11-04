@@ -14,13 +14,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
-	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
 )
 
@@ -202,16 +200,9 @@ func leseAbgaengerAuswahl(q url.Values) ([]string, error) {
 	if !q.Has("ids") {
 		return nil, nil
 	}
-	var ids []string
-	for _, teil := range strings.Split(q.Get("ids"), ",") {
-		id := strings.TrimSpace(teil)
-		if id == "" {
-			continue
-		}
-		if !kennung.IstUUID(id) {
-			return nil, apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine gültige Kennung", id), nil)
-		}
-		ids = append(ids, id)
+	ids, err := tuer.LeseUUIDListe(q, "ids")
+	if err != nil {
+		return nil, err
 	}
 	if len(ids) == 0 {
 		return nil, apierrors.BadRequest("Niemand ausgewählt", nil)

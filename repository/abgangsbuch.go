@@ -33,27 +33,6 @@ type AbgangsZeile struct {
 	Topf string `json:"topf"`
 }
 
-// abgangsgrundText übersetzt den gespeicherten Grund (chk_aussonderung_grund) in die
-// Sprache des Nachweises.
-func abgangsgrundText(grund string) string {
-	switch grund {
-	case "VERLUST":
-		return "Verlust"
-	case "BESCHAEDIGUNG":
-		return "Beschädigung"
-	case "AUSSORTIERT":
-		return "Aussortiert"
-	case "BESTANDSKORREKTUR":
-		return "Bestandskorrektur"
-	case "":
-		// Kommt nur bei Altdaten vor: chk_aussonderung_grund verlangt einen Grund. Ein leeres
-		// Feld im Nachweis sähe nach Druckfehler aus.
-		return "ohne Angabe"
-	default:
-		return grund
-	}
-}
-
 // Abgangsbuch bündelt Zeitraum, Zeilen und die beiden Zahlen, die sagen, was nicht in der Liste
 // steht.
 //

@@ -60,10 +60,10 @@ func TestLoescheTitel_NurOffeneForderungHinterlaesstSpur(t *testing.T) {
 	einzeln, exEinzeln := titelMitForderungen("Forderungsspur einzeln", "TFS-1")
 	gesammelt, exGesammelt := titelMitForderungen("Forderungsspur gesammelt", "TFS-2")
 
-	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, einzeln, bearbeiter); err != nil {
+	if _, err := repository.NewTitelAbfragen(pool).LoescheTitel(ctx, repository.TitelLoeschauftrag{TitelIDs: []string{einzeln}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("einzelnen Titel löschen: %v", err)
 	}
-	if err := repository.NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{gesammelt}, bearbeiter); err != nil {
+	if _, err := repository.NewTitelAbfragen(pool).LoescheTitel(ctx, repository.TitelLoeschauftrag{TitelIDs: []string{gesammelt}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("Sammellöschung: %v", err)
 	}
 

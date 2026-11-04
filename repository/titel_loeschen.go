@@ -10,84 +10,240 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TitelHatAusleihenFehler meldet, dass ein Titel nicht gelöscht werden kann, weil noch
-// Exemplare verliehen sind: ein Bedienfehler (400), keine Störung. Barcodes nennt die
-// verliehenen Exemplare; die Tür nennt sie in ihrer Meldung.
-type TitelHatAusleihenFehler struct{ Barcodes []string }
-
-func (e *TitelHatAusleihenFehler) Error() string {
-	return fmt.Sprintf("titel hat verliehene exemplare: %v", e.Barcodes)
-}
-
 // ErrTitelNichtGefunden meldet einen Titel, den es unter der genannten Kennung nicht gibt.
 var ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 
-// LoescheTitel löscht einen Titel mit seinen Exemplaren und schreibt die Einträge dazu. Ist ein
-// Exemplar verliehen, lehnt es ab. Zurückgegebene Ausleihen und alle Schadensfälle des Titels
-// fallen mit, weil ihre Fremdschlüssel den Titel sonst hielten; unbezahlte Forderungen stehen
-// vorher im Protokoll (protokolliereOffeneForderungen).
-func (a *KatalogAbfragen) LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error {
-	tx, err := a.db.Begin(ctx)
+// ErrTitelInzwischenVerliehen meldet ein Exemplar, das zwischen der Rückfrage und dem Löschen
+// ausgeliehen wurde. Gelöscht wird nur, was der Mensch gesehen und bestätigt hat.
+var ErrTitelInzwischenVerliehen = errors.New("exemplar inzwischen verliehen")
+
+// TitelLoeschauftrag sagt, was beim Löschen von Titeln gilt.
+type TitelLoeschauftrag struct {
+	TitelIDs []string
+	// Grund gilt für jedes Exemplar, das mit dem Löschen aus dem Bestand geht
+	// (IstAussonderungsgrund); ein schon ausgesondertes behält seinen.
+	Grund string
+	// Verliehene sind die verliehenen Exemplare, die der Mensch zum Mitlöschen bestätigt hat.
+	Verliehene   []string
+	BearbeiterID string
+}
+
+// TitelLoeschergebnis nennt die Titel, die gelöscht sind, und die, die bleiben.
+type TitelLoeschergebnis struct {
+	Geloescht []string `json:"geloescht"`
+	// Geblieben sind Titel mit einem verliehenen Exemplar, das nicht bestätigt war. Ihre
+	// Exemplare im Haus sind mit dem Grund ausgesondert; der Titel bleibt, bis die verliehenen
+	// zurück sind.
+	Geblieben []string `json:"geblieben"`
+}
+
+// LoescheTitel löscht Titel samt allem, was an ihnen hängt: Schadensfälle, Ausleihen, Exemplare,
+// Vormerkungen und Reservierungen. Alles läuft in einer Transaktion; ohne sie hinterließe ein
+// Absturz zwischen zwei Schritten Forderungen und Ausleihen gelöscht, Titel und Exemplare aber
+// erhalten. Es ist der einzige Weg, auf dem ein Titel mit seinen Exemplaren geht.
+//
+// Ein verliehenes Exemplar fällt nur, wenn der Mensch es bestätigt hat. Dann liegt das Buch bei
+// jemandem zu Hause, und das Programm vergisst es; deshalb steht jede dabei abgeräumte Ausleihe
+// einzeln im Protokoll (protokolliereOffeneAusleihen), damit die Rückgabe nachzuschlagen bleibt.
+// Der Barcode wird frei, neu vergeben wird er nicht (barcode_seq zählt nur vorwärts). Fehlt die
+// Bestätigung für ein verliehenes Exemplar, bleibt sein Titel, und nur seine Exemplare im Haus
+// werden mit dem Grund ausgesondert. Jedes Exemplar aus dem Bestand behält seine Zeile in den
+// Bestandsbüchern (loescheExemplareMitBuchzeile).
+func (a *TitelAbfragen) LoescheTitel(ctx context.Context, auftrag TitelLoeschauftrag) (TitelLoeschergebnis, error) {
+	ergebnis := TitelLoeschergebnis{Geloescht: []string{}, Geblieben: []string{}}
+	if len(auftrag.TitelIDs) == 0 {
+		return ergebnis, nil
+	}
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return err
+		return ergebnis, fmt.Errorf("löschen konnte nicht begonnen werden: %w", err)
 	}
 	defer db.Verwerfe(ctx, tx)
-
-	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen.
-	// Zuerst, weil die Sperre der Auflagen vor jeder Zeilensperre kommt.
-	werke, err := ladeWerkeDerTitel(ctx, tx, []string{titelID})
+	// Als erstes die Sperre der Auflagen: Sie kommt vor jeder Zeilensperre, auch vor der des
+	// Aussonderns (ladeWerkeDerTitel nimmt sie beim Löschen der Titel noch einmal).
+	if err := nimmAuflagenSperre(ctx, tx); err != nil {
+		return ergebnis, err
+	}
+	// Angaben und Exemplare der Titel, bevor die Zeilen fallen, in der Transaktion: Was ein Lesen
+	// davor sähe, wäre nicht zwingend das, was fällt.
+	titel, err := leseTitelFuersProtokoll(ctx, tx, auftrag.TitelIDs)
 	if err != nil {
-		return err
+		return ergebnis, err
 	}
-
-	vorher, err := leseTitelVorDemLoeschen(ctx, tx, titelID)
+	if len(titel) == 0 {
+		return ergebnis, ErrTitelNichtGefunden
+	}
+	ganz, bleiben, err := teileNachBestaetigung(ctx, tx, titel, auftrag.Verliehene)
 	if err != nil {
-		return err
+		return ergebnis, err
 	}
-	if err = protokolliereWasMitDemTitelFaellt(ctx, tx, titelID); err != nil {
-		return err
+	if err := sondereExemplareImHausAus(ctx, tx, kennungenDer(bleiben), auftrag.Grund, auftrag.BearbeiterID); err != nil {
+		return ergebnis, err
 	}
-	// Das lokal gespeicherte Cover fällt mit dem Titel, wie in der Massenaktion der
-	// Bestandstabelle (TitelAbfragen.LoescheTitelSamtAusleihen).
-	cover, err := ladeLokaleCoverNurDieserTitel(ctx, tx, []string{titelID})
+	cover, err := loescheGanzeTitel(ctx, tx, ganz, auftrag)
 	if err != nil {
-		return err
+		return ergebnis, err
 	}
-	// Schadensfälle und zurückgegebene Ausleihen zuerst: Ihre Fremdschlüssel hielten die
-	// Exemplare sonst fest (ON DELETE RESTRICT).
-	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titelID); err != nil {
-		return fmt.Errorf("failed to delete damage records for title: %w", err)
+	if err := tx.Commit(ctx); err != nil {
+		return ergebnis, fmt.Errorf("löschen konnte nicht abgeschlossen werden: %w", err)
 	}
-	if _, err = tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1) AND rueckgabe_am IS NOT NULL", titelID); err != nil {
-		return fmt.Errorf("failed to delete past loans for title: %w", err)
-	}
-
-	if _, err = loescheExemplareMitBuchzeile(ctx, tx, exemplareNachTitel, []string{titelID}, grundAussortiert); err != nil {
-		return err
-	}
-
-	// Keine getroffene Zeile heißt unbekannte ID: Die Aufnahme oben lässt einen fehlenden Titel
-	// durch, und ohne diese Prüfung entstünde ein Eintrag über einen Titel, den es nie gab.
-	tag, err := tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titelID)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return ErrTitelNichtGefunden
-	}
-	if err = raeumeWerkeAuf(ctx, tx, werke); err != nil {
-		return err
-	}
-
-	if err = protokolliereTitelLoeschung(ctx, tx, vorher, bearbeiterID); err != nil {
-		return err
-	}
-
-	if err = tx.Commit(ctx); err != nil {
-		return err
-	}
+	// Erst nach dem Commit: Die Cover-Dateien kommen nicht zurück, wenn das Löschen in der
+	// Datenbank doch scheitert.
 	loescheCoverDateien(cover)
+	ergebnis.Geloescht = kennungenDer(ganz)
+	ergebnis.Geblieben = kennungenDer(bleiben)
+	return ergebnis, nil
+}
+
+// teileNachBestaetigung trennt die Titel, die ganz gehen, von denen, die bleiben: Ein Titel
+// bleibt, solange eines seiner verliehenen Exemplare nicht bestätigt ist.
+func teileNachBestaetigung(ctx context.Context, tx pgx.Tx, titel []titelVorDemLoeschen, bestaetigt []string) (ganz, bleiben []titelVorDemLoeschen, err error) {
+	zeilen, err := tx.Query(ctx, `
+		SELECT e.titel_id::text, e.id::text FROM buecher_exemplare e
+		WHERE e.titel_id = ANY($1::uuid[]) AND `+sqlIstVerliehen, kennungenDer(titel))
+	if err != nil {
+		return nil, nil, fmt.Errorf("verliehene exemplare lesen: %w", err)
+	}
+	defer zeilen.Close()
+	ja := make(map[string]bool, len(bestaetigt))
+	for _, id := range bestaetigt {
+		ja[id] = true
+	}
+	offen := map[string]bool{}
+	for zeilen.Next() {
+		var titelID, exemplarID string
+		if err := zeilen.Scan(&titelID, &exemplarID); err != nil {
+			return nil, nil, fmt.Errorf("verliehene exemplare lesen: %w", zeileUnlesbar(err))
+		}
+		if !ja[exemplarID] {
+			offen[titelID] = true
+		}
+	}
+	// Bräche die Iteration ab, sähe ein Titel mit verliehenem Exemplar aus wie einer ohne.
+	if err := zeilen.Err(); err != nil {
+		return nil, nil, fmt.Errorf("verliehene exemplare lesen: %w", err)
+	}
+	for _, t := range titel {
+		if offen[t.id] {
+			bleiben = append(bleiben, t)
+		} else {
+			ganz = append(ganz, t)
+		}
+	}
+	return ganz, bleiben, nil
+}
+
+// sondereExemplareImHausAus sondert die Exemplare im Haus der Titel aus, die bleiben, mit dem
+// Grund des Auftrags und dem Eintrag dazu. Ein Exemplar, das inzwischen verliehen wurde, bleibt
+// unberührt (sqlIstImHaus).
+func sondereExemplareImHausAus(ctx context.Context, tx pgx.Tx, titelIDs []string, grund, bearbeiterID string) error {
+	if len(titelIDs) == 0 {
+		return nil
+	}
+	zeilen, err := tx.Query(ctx, `
+		UPDATE buecher_exemplare e SET `+sqlSetzeAusgesondert+`
+		WHERE e.titel_id = ANY($1::uuid[]) AND `+sqlIstImHaus+`
+		RETURNING e.id::text`, titelIDs, grund)
+	if err != nil {
+		return fmt.Errorf("exemplare im haus aussondern: %w", err)
+	}
+	var ids []string
+	for zeilen.Next() {
+		var id string
+		if err := zeilen.Scan(&id); err != nil {
+			zeilen.Close()
+			return fmt.Errorf("exemplare im haus aussondern: %w", zeileUnlesbar(err))
+		}
+		ids = append(ids, id)
+	}
+	zeilen.Close()
+	if err := zeilen.Err(); err != nil {
+		return fmt.Errorf("exemplare im haus aussondern: %w", err)
+	}
+	return protokolliereAussonderung(ctx, tx, ids, bearbeiterID, AussonderungsWegTitelLoeschen, nil)
+}
+
+// loescheGanzeTitel löscht die Titel, deren verliehene Exemplare bestätigt sind, und liefert die
+// lokalen Cover, die nach dem Commit von der Platte gehen.
+func loescheGanzeTitel(ctx context.Context, tx pgx.Tx, titel []titelVorDemLoeschen, auftrag TitelLoeschauftrag) ([]string, error) {
+	if len(titel) == 0 {
+		return nil, nil
+	}
+	ids := kennungenDer(titel)
+	// Bücher in mehreren Auflagen: Ihre Werke müssen danach noch stimmen.
+	werke, err := ladeWerkeDerTitel(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	// Vormerkungen, Reservierungen und Zuordnungen von Klassensätzen fallen über ON DELETE CASCADE
+	// mit dem Titel; die DDL sagt das, der Code soll es auch sagen. Vorher lesen, danach ist es
+	// weg.
+	wartende, err := ladeWartendeBezuege(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	cover, err := ladeLokaleCoverNurDieserTitel(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	// Die Reihenfolge Schadensfall, Ausleihe, Exemplar, Titel erzwingen die RESTRICT-FKs. Die
+	// beiden ersten Löschbefehle liefern ihre Spur gleich mit (RETURNING): die unbezahlten
+	// Forderungen und die laufenden Ausleihen, genau die Zeilen, die fallen.
+	offeneSchaeden, err := loescheSchaedenMitSpur(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	offene, err := loescheAusleihenMitSpur(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	if err := pruefeVerlieheneBestaetigt(offene, auftrag.Verliehene); err != nil {
+		return nil, err
+	}
+	// Die Exemplare vor ihren Titeln: Über den CASCADE des Titels fielen sie ohne ihre Zeile in
+	// den Bestandsbüchern.
+	if _, err := loescheExemplareMitBuchzeile(ctx, tx, exemplareNachTitel, ids, auftrag.Grund); err != nil {
+		return nil, err
+	}
+	geloescht, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("bücher konnten nicht gelöscht werden: %w", err)
+	}
+	if geloescht.RowsAffected() == 0 {
+		return nil, ErrTitelNichtGefunden
+	}
+	if err := raeumeWerkeAuf(ctx, tx, werke); err != nil {
+		return nil, err
+	}
+	// In derselben Transaktion: entweder die Löschung und ihre Spur oder keins von beidem.
+	if err := protokolliereWasMitDenTitelnFiel(ctx, tx, offeneSchaeden, wartende, offene, titel, auftrag.BearbeiterID); err != nil {
+		return nil, err
+	}
+	return cover, nil
+}
+
+// pruefeVerlieheneBestaetigt lehnt ab, wenn das Löschen eine laufende Ausleihe abräumen würde,
+// deren Exemplar der Mensch nicht bestätigt hat: Es wurde nach der Rückfrage ausgeliehen.
+func pruefeVerlieheneBestaetigt(offene []offeneAusleihe, bestaetigt []string) error {
+	ja := make(map[string]bool, len(bestaetigt))
+	for _, id := range bestaetigt {
+		ja[id] = true
+	}
+	for _, o := range offene {
+		if !ja[o.ExemplarID] {
+			return ErrTitelInzwischenVerliehen
+		}
+	}
 	return nil
+}
+
+// kennungenDer liefert die Kennungen der Titel in ihrer Reihenfolge.
+func kennungenDer(titel []titelVorDemLoeschen) []string {
+	ids := make([]string, 0, len(titel))
+	for _, t := range titel {
+		ids = append(ids, t.id)
+	}
+	return ids
 }
 
 // titelVorDemLoeschen hält fest, was nach dem Löschen nicht mehr zu lesen ist: die Angaben
@@ -102,54 +258,8 @@ type titelExemplar struct {
 	warImBestand            bool
 }
 
-// leseTitelVorDemLoeschen liest die Angaben fürs Protokoll und lehnt ab, solange ein Exemplar
-// verliehen ist. Einen unbekannten Titel lässt sie durch; den meldet das DELETE.
-func leseTitelVorDemLoeschen(ctx context.Context, tx pgx.Tx, titelID string) (titelVorDemLoeschen, error) {
-	if err := pruefeKeineAktivenAusleihen(ctx, tx, titelID); err != nil {
-		return titelVorDemLoeschen{id: titelID}, err
-	}
-	gelesen, err := leseTitelFuersProtokoll(ctx, tx, []string{titelID})
-	if err != nil || len(gelesen) == 0 {
-		return titelVorDemLoeschen{id: titelID}, err
-	}
-	return gelesen[0], nil
-}
-
-// pruefeKeineAktivenAusleihen lehnt das Löschen ab, solange ein Exemplar des Titels verliehen
-// ist; der Fehler nennt die Barcodes.
-func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string) error {
-	var verliehen []string
-	rows, err := tx.Query(ctx, `
-		SELECT e.barcode_id 
-		FROM ausleihen a 
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id 
-		WHERE e.titel_id = $1 AND a.rueckgabe_am IS NULL
-	`, titelID)
-	if err != nil {
-		return fmt.Errorf("failed to check active loans for title: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var barcode string
-		if err := rows.Scan(&barcode); err != nil {
-			return fmt.Errorf("failed to read active loans for title: %w", zeileUnlesbar(err))
-		}
-		verliehen = append(verliehen, barcode)
-	}
-	// Bricht die Iteration durch einen Verbindungsfehler vorzeitig ab, heißt das nicht
-	// „keine aktiven Ausleihen"; der Titel darf dann nicht gelöscht werden.
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to read active loans for title: %w", err)
-	}
-	if len(verliehen) > 0 {
-		return &TitelHatAusleihenFehler{Barcodes: verliehen}
-	}
-	return nil
-}
-
-// leseTitelFuersProtokoll liest Angaben und Exemplare der Titel, bevor sie fallen; beide
-// Löschwege schreiben daraus dieselben Einträge (protokolliereTitelLoeschung). Eine unbekannte
+// leseTitelFuersProtokoll liest Angaben und Exemplare der Titel, bevor sie fallen; daraus
+// schreibt das Löschen die Einträge (protokolliereTitelLoeschung). Eine unbekannte
 // Kennung fehlt in der Antwort. Die Theken-Auskunft findet gelöschte Exemplare nur über
 // Protokollzeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
 // (FindeThekenExemplare); ohne sie hieße ein später gescanntes Buch „nie gesehen" statt
@@ -204,21 +314,6 @@ func leseTitelFuersProtokoll(ctx context.Context, tx pgx.Tx, ids []string) ([]ti
 	return titel, nil
 }
 
-// protokolliereWasMitDemTitelFaellt hält vor dem Löschen fest, was mit dem Titel verschwindet:
-// unbezahlte Forderungen (wer wie viel wofür schuldete) und, per ON DELETE CASCADE, wer auf
-// den Titel wartet. Dieselbe Regel wie in der Massenaktion der Bestandstabelle
-// (titel_loeschen_wartende.go).
-func protokolliereWasMitDemTitelFaellt(ctx context.Context, tx pgx.Tx, titelID string) error {
-	if err := protokolliereOffeneForderungen(ctx, tx, titelID); err != nil {
-		return err
-	}
-	wartende, err := ladeWartendeBezuege(ctx, tx, []string{titelID})
-	if err != nil {
-		return err
-	}
-	return ProtokolliereWartendeBezuege(ctx, tx, wartende)
-}
-
 // protokolliereTitelLoeschung schreibt den Eintrag zum Titel und je Exemplar den
 // Barcode-Eintrag in der Form der Geschwister-Pfade (SondereExemplarAus, Verlust-Löschen), in der
 // Transaktion des Löschens: entweder Löschung und Spur oder keins von beiden.
@@ -254,8 +349,7 @@ func protokolliereTitelLoeschung(ctx context.Context, tx pgx.Tx, vorher titelVor
 // Spur. Wer den Text an einer Tür ändert, ohne die Abfrage zu kennen, senkt die Zahl auf 0, und
 // ein Nachweis, der schweigt, sieht aus wie ein vollständiger.
 const (
-	// ProtokollAktionTitelGeloescht: Das Exemplar ging mit seinem Titel, an beiden Türen zum
-	// Löschen.
+	// ProtokollAktionTitelGeloescht: Das Exemplar ging mit seinem Titel.
 	ProtokollAktionTitelGeloescht = "titel_geloescht"
 	// ProtokollAktionVerlustEndgueltigGeloescht: Ein als Verlust gebuchtes Exemplar wurde in
 	// der Inventur endgültig entfernt (api/inventurlauf/inventur_verlust_aktionen.go).
@@ -288,3 +382,24 @@ const (
 	// wartete oder ein Klassensatz ihn führte (ProtokolliereWartendeBezuege).
 	ProtokollAktionTitelMitBezug = "titel_geloescht_mit_offenem_bezug"
 )
+
+// protokolliereWasMitDenTitelnFiel schreibt fest, was das Löschen mitgenommen hat: unbezahlte
+// Forderungen, Wartende und laufende Ausleihen, dann je Titel den Eintrag mit dem Bearbeiter und
+// die Barcodes seiner Exemplare, wie beim Löschen eines einzelnen Titels.
+func protokolliereWasMitDenTitelnFiel(ctx context.Context, tx pgx.Tx, schaeden []offenerSchaden, wartende []WartenderBezug, ausleihen []offeneAusleihe, titel []titelVorDemLoeschen, bearbeiterID string) error {
+	if err := protokolliereOffeneSchaeden(ctx, tx, schaeden); err != nil {
+		return err
+	}
+	if err := ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
+		return err
+	}
+	if err := protokolliereOffeneAusleihen(ctx, tx, ausleihen); err != nil {
+		return err
+	}
+	for _, vorher := range titel {
+		if err := protokolliereTitelLoeschung(ctx, tx, vorher, bearbeiterID); err != nil {
+			return err
+		}
+	}
+	return nil
+}

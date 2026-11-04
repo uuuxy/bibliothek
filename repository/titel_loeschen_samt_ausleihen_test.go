@@ -22,7 +22,7 @@ func TestLoescheTitel(t *testing.T) {
 	// Nicht-gefunden-Fall unterscheidet erst der Titel-DELETE danach.
 	erwarteLeser := func(mock pgxmock.PgxPoolIface, cover string) {
 		mock.ExpectBegin()
-		erwarteAuflagenSperre(mock, ids)
+		erwarteSperreDerAuflagen(mock)
 		// Angaben und Exemplare der Titel vor den DELETEs: Daraus entstehen der Eintrag zum Titel mit
 		// dem Bearbeiter und die Spur jedes Exemplars, über die die Theken-Auskunft es findet.
 		mock.ExpectQuery(`FROM buecher_titel WHERE id = ANY`).
@@ -33,6 +33,11 @@ func TestLoescheTitel(t *testing.T) {
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id", "barcode_id", "lmf_barcode", "war_im_bestand"}).
 				AddRow("id-1", "ex-1", "BC-1", "", true))
+		// Die verliehenen Exemplare der Titel: Ein unbestätigtes hielte seinen Titel fest.
+		mock.ExpectQuery(`SELECT e\.titel_id::text, e\.id::text FROM buecher_exemplare e`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id"}))
+		erwarteAuflagenSperre(mock, ids)
 		// Die drei Kinder des Titels über CASCADE: Vormerkungen, Reservierungen und Zuordnungen von
 		// Klassensätzen.
 		mock.ExpectQuery(`FROM vormerkungen v`).
@@ -63,9 +68,9 @@ func TestLoescheTitel(t *testing.T) {
 		defer mock.Close()
 		abfragen := NewTitelAbfragen(mock)
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, []string{}, "konto-1")
+		_, err = abfragen.LoescheTitel(ctx, TitelLoeschauftrag{BearbeiterID: "konto-1"})
 		if err != nil {
-			t.Fatalf("abfragen.LoescheTitelSamtAusleihen: %v", err)
+			t.Fatalf("abfragen.LoescheTitel: %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)
@@ -75,7 +80,7 @@ func TestLoescheTitel(t *testing.T) {
 	// Scheitert das Löschen der Ausleihen, bleibt nichts stehen: kein Titel-DELETE,
 	// keine Spur, Rollback. Ohne die Spur verschwände ein verliehenes Buch lautlos.
 	t.Run("Ausleihen nicht löschbar", func(t *testing.T) {
-		t.Chdir(t.TempDir()) // LoescheTitelSamtAusleihen legt sonst repository/uploads/ an
+		t.Chdir(t.TempDir()) // LoescheTitel legt sonst repository/uploads/ an
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatalf("pgxmock.NewPool: %v", err)
@@ -92,9 +97,9 @@ func TestLoescheTitel(t *testing.T) {
 			WillReturnError(fmt.Errorf("db error"))
 		mock.ExpectRollback()
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids, "konto-1")
+		_, err = abfragen.LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: ids, Grund: "AUSSORTIERT", BearbeiterID: "konto-1"})
 		if err == nil || !strings.Contains(err.Error(), "ausleihen konnten nicht gelöscht werden") {
-			t.Errorf("abfragen.LoescheTitelSamtAusleihen: Fehler %v, erwartet einen mit %q", err, "ausleihen konnten nicht gelöscht werden")
+			t.Errorf("abfragen.LoescheTitel: Fehler %v, erwartet einen mit %q", err, "ausleihen konnten nicht gelöscht werden")
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)
@@ -102,7 +107,7 @@ func TestLoescheTitel(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		t.Chdir(t.TempDir()) // LoescheTitelSamtAusleihen legt sonst repository/uploads/ an
+		t.Chdir(t.TempDir()) // LoescheTitel legt sonst repository/uploads/ an
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatalf("pgxmock.NewPool: %v", err)
@@ -134,9 +139,9 @@ func TestLoescheTitel(t *testing.T) {
 		}
 		mock.ExpectCommit()
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids, "konto-1")
+		_, err = abfragen.LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: ids, Grund: "AUSSORTIERT", BearbeiterID: "konto-1"})
 		if err != nil {
-			t.Fatalf("abfragen.LoescheTitelSamtAusleihen: %v", err)
+			t.Fatalf("abfragen.LoescheTitel: %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)
@@ -144,7 +149,7 @@ func TestLoescheTitel(t *testing.T) {
 	})
 
 	t.Run("book not found", func(t *testing.T) {
-		t.Chdir(t.TempDir()) // LoescheTitelSamtAusleihen legt sonst repository/uploads/ an
+		t.Chdir(t.TempDir()) // LoescheTitel legt sonst repository/uploads/ an
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatalf("pgxmock.NewPool: %v", err)
@@ -167,9 +172,9 @@ func TestLoescheTitel(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 		mock.ExpectRollback()
 
-		err = abfragen.LoescheTitelSamtAusleihen(ctx, ids, "konto-1")
+		_, err = abfragen.LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: ids, Grund: "AUSSORTIERT", BearbeiterID: "konto-1"})
 		if !errors.Is(err, ErrTitelNichtGefunden) {
-			t.Errorf("abfragen.LoescheTitelSamtAusleihen: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
+			t.Errorf("abfragen.LoescheTitel: Fehler %v, erwartet %v", err, ErrTitelNichtGefunden)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("offene Erwartungen: %v", err)

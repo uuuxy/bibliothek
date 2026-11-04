@@ -8,7 +8,7 @@ vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({
 	bestaetigen: vi.fn(),
 	fragen: vi.fn(),
-	loeschenBestaetigen: vi.fn()
+	loeschenMitGrund: vi.fn()
 }));
 vi.mock('../../../../lib/stores/authStore.svelte.js', () => ({ authStore: { currentUser: null } }));
 vi.mock('$lib/store.svelte.js', () => ({
@@ -20,7 +20,7 @@ import { apiFetch } from '../../../../lib/apiFetch.js';
 import {
 	bestaetigen,
 	fragen,
-	loeschenBestaetigen
+	loeschenMitGrund
 } from '../../../../lib/stores/bestaetigung.svelte.js';
 import { appState, melde } from '$lib/store.svelte.js';
 import AdminBuchAktionen from './AdminBuchAktionen.svelte';
@@ -313,30 +313,38 @@ describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () =>
 	});
 });
 
-// Löschen aus der Maske nimmt den Titel mit allen Exemplaren: Erst das Ja auf die Rückfrage
-// schickt die Anfrage.
+// Löschen aus der Maske geht über denselben Dialog wie in der Buchakte: Erst das Ja auf die
+// Rückfrage schickt die Anfrage, mit dem gewählten Grund.
 describe('AdminBuchAktionen: Titel löschen', () => {
 	const titel = () => ({ id: 'titel-1', isbn: '9783791504544', title: 'Drachenreiter', stock: 1 });
 
-	it('nach dem Ja geht die Anfrage hinaus, und die Maske meldet es', async () => {
-		vi.mocked(loeschenBestaetigen).mockResolvedValue(true);
-		vi.mocked(apiFetch).mockResolvedValue(antwort(204, null));
+	it('nach dem Ja geht die Anfrage mit dem Grund hinaus, und die Maske meldet es', async () => {
+		vi.mocked(loeschenMitGrund).mockResolvedValue({ grund: 'BESCHAEDIGUNG', zusatz: false });
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(antwort(200, { titel: 1, im_haus: 2, verliehen: [] }))
+			.mockResolvedValueOnce(antwort(200, { geloescht: ['titel-1'], geblieben: [] }));
 
 		await maske(titel()).titelLoeschen();
 
-		expect(apiFetch).toHaveBeenCalledWith(
-			'/api/buecher/titel/titel-1',
-			expect.objectContaining({ method: 'DELETE' })
+		expect(apiFetch).toHaveBeenLastCalledWith(
+			'/api/books',
+			expect.objectContaining({
+				method: 'DELETE',
+				body: JSON.stringify({ ids: ['titel-1'], grund: 'BESCHAEDIGUNG', verliehene: [] })
+			})
 		);
-		expect(melde).toHaveBeenCalledWith('Titel gelöscht.', 'success');
+		expect(melde).toHaveBeenCalledWith('Titel gelöscht', 'success');
 	});
 
 	it('Abbrechen löscht nichts', async () => {
-		vi.mocked(loeschenBestaetigen).mockResolvedValue(false);
+		vi.mocked(loeschenMitGrund).mockResolvedValue(null);
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			antwort(200, { titel: 1, im_haus: 2, verliehen: [] })
+		);
 
 		await maske(titel()).titelLoeschen();
 
-		expect(apiFetch).not.toHaveBeenCalled();
+		expect(apiFetch, 'nur die Vorschau').toHaveBeenCalledTimes(1);
 		expect(melde).not.toHaveBeenCalled();
 	});
 });

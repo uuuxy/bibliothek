@@ -185,7 +185,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
 - **Titel-Verwaltung**: neuen Titel anlegen (die ISBN-Eingabe holt die Angaben zum Buch — vor
   dem Speichern prüfen; die Signatur trägt man selbst ein, das Feld bietet die Signaturen des
   Bestands an), bearbeiten, Cover tauschen,
-  Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Die Maske beginnt mit der ISBN
+  Exemplare aussondern (Alter Bestand, Beschädigt, Verlust, Falsch angelegt). Die Maske beginnt mit der ISBN
   und den Angaben zum Buch. Pflicht ist der Titel; die ISBN darf fehlen, etwa bei einer
   Zeitschrift, einem Spiel oder einem alten Buch. Heißt beim Anlegen ohne
   ISBN schon ein Titel mit demselben Autor gleich, fragt die Maske _Ist es dasselbe Medium?_:
@@ -211,6 +211,14 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   gespeichert, fragt sie vorher: _Bleiben_ lässt die Eingaben stehen, _Verwerfen_ schließt ohne
   sie. Ebenso fragt sie, wenn man bei offener Maske einen anderen Menüpunkt oder Reiter wählt
   (_Verwerfen und weiter_); beim Schließen oder Neuladen des Fensters fragt der Browser.
+- **Löschen:** _Titel löschen_ in der Buchakte und in der Maske, in der Titelliste _Löschen_
+  für mehrere angekreuzte Titel, fragt nach dem Grund; vorgewählt ist _Alter Bestand_, dazu
+  _Beschädigt_, _Verlust_ und _Falsch angelegt_. Die Exemplare im Haus kommen mit diesem Grund
+  ins Abgangsbuch. Ist ein Exemplar verliehen, nennt der Dialog, wer es hat: Es bleibt beim Leser,
+  und der Titel bleibt, bis es zurück ist. Erst wer _Auch diese … Exemplare löschen_ ankreuzt,
+  löscht auch die verliehenen; der Knopf nennt dann die Zahl aller Exemplare. Ein einzelnes
+  Exemplar löschen Sie in der Buchakte am Exemplar, ebenfalls mit Grund. Ist ein verliehenes
+  Buch verloren, melden Sie das in der Leserakte unter _Verlust oder Schaden melden_. (§13)
 - **Auflagen** (bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
   ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
   in der Gruppe _An der Schule_ die Angabe _Andere Auflagen_: _Andere Auflage zuordnen_ sucht unter den

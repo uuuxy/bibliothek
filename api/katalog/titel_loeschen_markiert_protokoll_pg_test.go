@@ -30,7 +30,7 @@ func TestMarkierteTitelLoeschen_NenntWerGeloeschtHat(t *testing.T) {
 	ohneExemplar := testdaten.LegeTitelAn(t, pool, "Sammel ohne Exemplar", 0)
 
 	tueren := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
-	rumpf := fmt.Sprintf(`{"ids":[%q,%q]}`, mitExemplar, ohneExemplar)
+	rumpf := fmt.Sprintf(`{"ids":[%q,%q],"grund":"AUSSORTIERT"}`, mitExemplar, ohneExemplar)
 	anfrage := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(rumpf))
 	anfrage = anfrage.WithContext(context.WithValue(anfrage.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: bearbeiter}))
 	rec := httptest.NewRecorder()

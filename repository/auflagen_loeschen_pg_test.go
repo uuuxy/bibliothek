@@ -31,7 +31,7 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	}
 
 	// Drei Auflagen, eine gelöscht: Das Buch bleibt mit zweien.
-	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, c, bearbeiter); err != nil {
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{c}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if n := werke(); n != 1 {
@@ -42,7 +42,7 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	}
 
 	// Noch eine gelöscht: Das Werk fällt, der letzte Titel ist wieder sein eigenes Buch.
-	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, b, bearbeiter); err != nil {
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{b}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	var werkID *string

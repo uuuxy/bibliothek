@@ -99,8 +99,7 @@ var phantomBestand = map[string]int{
 	// Dieselbe Bauart wie die Zeile darüber: ein INSERT ins Protokoll je gelesener Zeile. Ein
 	// CommandTag zu prüfen hieße, einen INSERT ohne ON CONFLICT auf 1 zu vergleichen; die
 	// Fehlerrückgabe deckt den Fall schon ab.
-	"repository/titel_loeschen_spur.go:protokolliereOffeneSchaeden":         1,
-	"repository/titel_loeschen_forderung.go:protokolliereOffeneForderungen": 1,
+	"repository/titel_loeschen_spur.go:protokolliereOffeneSchaeden": 1,
 	// Dritte Zeile derselben Bauart: ein INSERT ins Protokoll je Zeile, die der CASCADE gleich
 	// nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
@@ -138,7 +137,6 @@ var phantomBestand = map[string]int{
 	"repository/auflagen.go:nimmAuflagenSperre":               1,
 	"repository/auflagen.go:raeumeWerkAuf":                    1,
 	"repository/protokoll.go:SchreibeAdminProtokoll":          1,
-	"repository/titel_loeschen.go:LoescheTitel":               2,
 	"repository/forderung_erledigen.go:VerbucheZahlung":       1,
 	"repository/leser_loeschen.go:tilgeSpurenUndLoescheLeser": 2,
 	"repository/barcode_vergabe.go:hebeSequenzUeberBestand":   1,

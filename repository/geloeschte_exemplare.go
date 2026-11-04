@@ -22,15 +22,6 @@ const (
 	exemplareNachTitel exemplareNach = "e.titel_id"
 )
 
-// Die Gründe einer Aussonderung (chk_aussonderung_grund). Das Abgangsbuch übersetzt sie in
-// abgangsgrundText.
-const (
-	grundVerlust           = "VERLUST"
-	grundBeschaedigung     = "BESCHAEDIGUNG"
-	grundAussortiert       = "AUSSORTIERT"
-	grundBestandskorrektur = "BESTANDSKORREKTUR"
-)
-
 // loescheExemplareMitBuchzeile löscht die gewählten Exemplare und legt für jedes, das im Bestand
 // war, die Zeile der Bestandsbücher an. Löschen und Anlegen sind eine Anweisung (DELETE …
 // RETURNING in einer schreibenden CTE): Genau die Zeilen, die fallen, bekommen ihre Buchzeile,

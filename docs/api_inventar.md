@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-11-01. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-11-04. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -23,7 +23,6 @@
 - `DELETE /api/bestellungen/{id}/mail`
 - `DELETE /api/books`
 - `DELETE /api/buecher/exemplare/{id}`
-- `DELETE /api/buecher/titel/{id}`
 - `DELETE /api/buecher/titel/{id}/auflagen`
 - `DELETE /api/inventur/abgeschlossen/{id}`
 - `DELETE /api/klassen-mapping/{klasse}`
@@ -77,6 +76,7 @@
 - `GET /api/books/{id}`
 - `GET /api/buecher/exemplare/erkennen`
 - `GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag`
+- `GET /api/buecher/titel/loeschfolgen`
 - `GET /api/buecher/titel/suche`
 - `GET /api/buecher/titel/{id}/auflagen`
 - `GET /api/buecher/titel/{id}/ausleiher`

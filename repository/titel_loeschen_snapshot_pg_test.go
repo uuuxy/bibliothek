@@ -29,7 +29,7 @@ func TestLoescheTitel_ThekenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 	testdaten.LegeExemplarAn(t, pool, titelID, "SNAP-TITELDEL-2", true, "")
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "titelloescher@test.invalid")
 
-	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+	if _, err := repository.NewTitelAbfragen(pool).LoescheTitel(ctx, repository.TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 

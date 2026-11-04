@@ -41,7 +41,7 @@ func (s *Server) registriereKatalogRouten(mux *http.ServeMux, katalogAbfragen *r
 	mux.Handle("GET /api/portal/lernmittel/export", s.VerlangeAnmeldung()(s.portal().SchulbuecherExport()))
 
 	// ── Titel und Exemplare ──
-	mux.Handle("DELETE /api/buecher/titel/{id}", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschen(katalogAbfragen)))
+	mux.Handle("GET /api/buecher/titel/loeschfolgen", s.verlangeRecht("delete_books")(s.katalog().TitelLoeschfolgen()))
 	// Zwei Titel desselben Buchs zu einem: delete_books wie das Löschen, denn danach gibt es einen
 	// der beiden nicht mehr. Die Vorschau läuft durch denselben Weg und nimmt ihn am Ende zurück.
 	mux.Handle("GET /api/buecher/titel/{id}/zusammenfuehren", s.verlangeRecht("delete_books")(s.katalog().TitelZusammenfuehrungVorschau()))

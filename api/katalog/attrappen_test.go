@@ -17,8 +17,15 @@ import (
 // errTest ist ein beliebiger Fehler der Datenbank in den Tests der Türen.
 var errTest = errors.New("test error")
 
-// erwarteAuflagenSperre: LoescheTitel nimmt als Erstes die Sperre der Auflagen und liest die
-// Werke der Titel (repository.ladeWerkeDerTitel); hier gehört keiner zu einem, also räumt
+// erwarteSperreDerAuflagen: LoescheTitel nimmt als Erstes die Sperre der Auflagen, vor jeder
+// Zeilensperre.
+func erwarteSperreDerAuflagen(mock pgxmock.PgxPoolIface) {
+	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("SELECT", 1))
+}
+
+// erwarteAuflagenSperre: Vor dem Löschen der Titel nimmt repository.ladeWerkeDerTitel die Sperre
+// noch einmal und liest die Werke; hier gehört keiner zu einem, also räumt
 // repository.raeumeWerkeAuf danach nichts auf.
 func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids any) {
 	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).

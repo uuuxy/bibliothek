@@ -284,8 +284,8 @@ func raeumeWerkAuf(ctx context.Context, tx pgx.Tx, werkID string) error {
 }
 
 // ladeWerkeDerTitel nimmt die Sperre der Auflagen und liefert die Werke, zu denen die genannten
-// Titel gehören. Die Löschwege eines Titels (KatalogAbfragen.LoescheTitel, TitelAbfragen.LoescheTitelSamtAusleihen) rufen das als
-// Erstes in ihrer Transaktion auf: erst die Sperre, dann die Zeilen, dieselbe Reihenfolge wie
+// Titel gehören. Das Löschen von Titeln (TitelAbfragen.LoescheTitel) ruft das als
+// Erstes in seiner Transaktion auf: erst die Sperre, dann die Zeilen, dieselbe Reihenfolge wie
 // Zusammenfassen und Lösen (sperreAuflagen); umgekehrt warteten zwei Transaktionen aufeinander.
 //
 // Nach dem Löschen räumt raeumeWerkeAuf auf: Die Regel „ein Werk mit weniger als zwei Titeln

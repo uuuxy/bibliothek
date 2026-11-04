@@ -20,11 +20,8 @@ package repository
 // Dieselbe Antwort wie bei den offenen Ausleihen und Forderungen: Was verschwindet, steht davor
 // im Protokoll.
 //
-// Warum hier und nicht im Paket inventur: Es gibt zwei Türen zum Löschen eines Titels, die
-// Massenaktion der Bestandstabelle (DELETE /api/books, repository/titel_loeschen_samt_ausleihen.go) und den
-// Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/titel_loeschen.go). Beide
-// fahren über denselben CASCADE, und zwei Fassungen derselben Regel liefen auseinander;
-// `inventur` importiert `repository`, also steht sie hier.
+// Warum hier und nicht im Paket inventur: Das Löschen von Titeln (TitelAbfragen.LoescheTitel)
+// fährt über den CASCADE, und `inventur` importiert `repository`, also steht die Regel hier.
 
 import (
 	"context"

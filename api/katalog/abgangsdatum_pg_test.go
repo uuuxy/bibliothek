@@ -75,7 +75,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 
 	// Tür 3: Ausbuchen (SondereExemplarAus) — sondert aus, statt zu löschen.
 	drei := testdaten.LegeExemplarAn(t, pool, titelID, "ABG-3", true, "")
-	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, drei, bearbeiterID); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, drei, "AUSSORTIERT", bearbeiterID); err != nil {
 		t.Fatalf("Ausbuchen: %v", err)
 	}
 

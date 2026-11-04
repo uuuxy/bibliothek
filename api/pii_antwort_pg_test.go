@@ -335,6 +335,8 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/buecher/exemplare/erkennen":   {URL: "/api/buecher/exemplare/erkennen?code=" + w.buchBarcode, Positiv: []string{w.exemplarID}},
 		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
 		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
+		// Vorschau des Löschdialogs: das verliehene Exemplar mit Name und Klasse des Lesers, Stufe 1.
+		"GET /api/buecher/titel/loeschfolgen": {URL: "/api/buecher/titel/loeschfolgen?ids=" + w.titelID, Positiv: []string{"Vogelbeere"}},
 		// Vorschau des Zusammenführens: zählt die Vormerkung des Schülers, nennt ihn nicht.
 		"GET /api/buecher/titel/{id}/zusammenfuehren": {URL: "/api/buecher/titel/" + w.titelID + "/zusammenfuehren?quelle_id=" + w.zweitTitelID,
 			Positiv: []string{"Antwortgate Zweitband"}},

@@ -12,25 +12,36 @@ import (
 	"bibliothek/repository"
 )
 
-// MarkierteTitelLoeschen ist die Tür DELETE /api/books: Sie löscht die in der Titelliste
-// markierten Titel ({"ids": [...]}) samt allem, was an ihnen hängt, auch verliehene Exemplare
-// (TitelAbfragen.LoescheTitelSamtAusleihen). Die Tür für einen einzelnen Titel lehnt einen
-// verliehenen ab (TitelLoeschen). Im Protokoll steht, wer gelöscht hat, wie dort.
+// maxTitelJeLoeschen begrenzt, wie viele Titel ein Auftrag löscht. Die Vorschau trägt die
+// Kennungen in der Adresse, und für beide Türen gilt dieselbe Grenze; an einem Aufräumtag gingen
+// in Littera höchstens 20 Titel auf einmal.
+const maxTitelJeLoeschen = 200
+
+// MarkierteTitelLoeschen ist die Tür DELETE /api/books, der einzige Weg, Titel mit ihren Exemplaren
+// zu löschen: die markierten der Bestandstabelle und der eine aus Buchakte und Buchmaske. Der Körper
+// nennt die Titel, den Grund für die Exemplare im Haus und die verliehenen Exemplare, die der
+// Mensch zum Mitlöschen bestätigt hat ({"ids": [...], "grund": "AUSSORTIERT", "verliehene": [...]};
+// TitelAbfragen.LoescheTitel). Die Antwort nennt die gelöschten Titel und die, die bleiben.
 func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 	return func(antwort http.ResponseWriter, anfrage *http.Request) {
 		var eingabe struct {
-			IDs []string `json:"ids"`
+			IDs        []string `json:"ids"`
+			Grund      string   `json:"grund"`
+			Verliehene []string `json:"verliehene"`
 		}
 		if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
 			return
 		}
-
-		if len(eingabe.IDs) == 0 {
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Keine Titel ausgewählt", nil)
+		if meldung := meldungZuTitelKennungen(eingabe.IDs, alleUUIDs(eingabe.IDs)); meldung != "" {
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, meldung, nil)
 			return
 		}
-		if !alleUUIDs(eingabe.IDs) {
+		if !repository.IstAussonderungsgrund(eingabe.Grund) {
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, meldungGrundFehlt, nil)
+			return
+		}
+		if !alleUUIDs(eingabe.Verliehene) {
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Eine der Kennungen ist ungültig", nil)
 			return
 		}
@@ -39,16 +50,34 @@ func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusUnauthorized, auth.MeldungNichtAngemeldet, nil)
 			return
 		}
-
-		if fehler := t.titelAbfragen().LoescheTitelSamtAusleihen(anfrage.Context(), eingabe.IDs, claims.KontoID); fehler != nil {
-			if errors.Is(fehler, repository.ErrTitelNichtGefunden) {
-				apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden", nil)
-				return
-			}
+		ergebnis, fehler := t.titelAbfragen().LoescheTitel(anfrage.Context(), repository.TitelLoeschauftrag{
+			TitelIDs: eingabe.IDs, Grund: eingabe.Grund, Verliehene: eingabe.Verliehene, BearbeiterID: claims.KontoID,
+		})
+		switch {
+		case errors.Is(fehler, repository.ErrTitelNichtGefunden):
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusNotFound, "Keiner der ausgewählten Titel wurde gefunden", nil)
+		case errors.Is(fehler, repository.ErrTitelInzwischenVerliehen):
+			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusConflict,
+				"Inzwischen wurde ein Exemplar ausgeliehen. Bitte noch einmal löschen.", fehler)
+		case fehler != nil:
 			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Löschen der Bücher", fmt.Errorf("markierte titel löschen: %w", fehler))
-			return
+		default:
+			tuer.AntworteJSON(antwort, http.StatusOK, ergebnis)
 		}
-
-		tuer.AntworteJSON(antwort, http.StatusOK, map[string]string{"message": "Titel gelöscht"})
 	}
+}
+
+// meldungZuTitelKennungen liefert die Meldung zu den Kennungen eines Lösch- oder
+// Vorschauauftrags, wenn sie nicht taugen, sonst "". Ob alle Kennungen UUIDs sind, prüft die Tür
+// selbst mit alleUUIDs und gibt es mit.
+func meldungZuTitelKennungen(ids []string, alleSindUUIDs bool) string {
+	switch {
+	case len(ids) == 0:
+		return "Keine Titel ausgewählt"
+	case len(ids) > maxTitelJeLoeschen:
+		return fmt.Sprintf("Höchstens %d Titel auf einmal", maxTitelJeLoeschen)
+	case !alleSindUUIDs:
+		return "Eine der Kennungen ist ungültig"
+	}
+	return ""
 }

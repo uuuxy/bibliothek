@@ -74,7 +74,7 @@ export function verringernRueckfrage(formular) {
 			: `${weg} Exemplare werden ausgesondert und stehen`;
 	return {
 		titel: `Bestand von ${stockGesehen} auf ${stock} verringern?`,
-		text: `${wer} im Abgangsbuch unter „Bestandskorrektur“. Welche es trifft, wählt das Programm: zuerst nicht ausgeliehene.`,
+		text: `${wer} im Abgangsbuch unter „Falsch angelegt“. Welche es trifft, wählt das Programm: zuerst nicht ausgeliehene.`,
 		aktion: 'Verringern',
 		gefaehrlich: true
 	};

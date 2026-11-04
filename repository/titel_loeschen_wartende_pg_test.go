@@ -89,8 +89,8 @@ func TestLoescheTitel_WartendeHinterlassenEineSpur(t *testing.T) {
 		t.Fatalf("fremde Reservierung anlegen: %v", err)
 	}
 
-	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
-		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
+	if _, err := abfragen.LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: testdaten.LegeBearbeiterAn(t, pool)}); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 
 	// Die drei Zeilen sind weg (das tut der CASCADE) — aber jede hat eine Spur.

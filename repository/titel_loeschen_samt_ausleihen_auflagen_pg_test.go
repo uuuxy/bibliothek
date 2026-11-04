@@ -47,8 +47,8 @@ func TestLoescheTitelSamtAusleihen_HaeltDieRegelDerAuflagen(t *testing.T) {
 	werkBeide, beide := buch()
 	werkEiner, einer := buch()
 
-	if err := abfragen.LoescheTitelSamtAusleihen(ctx, append(beide, einer[0]), testdaten.LegeBearbeiterAn(t, pool)); err != nil {
-		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
+	if _, err := abfragen.LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: append(beide, einer[0]), Grund: "AUSSORTIERT", BearbeiterID: testdaten.LegeBearbeiterAn(t, pool)}); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 	var rest []string
 	if err := pool.QueryRow(ctx, `SELECT coalesce(array_agg(id::text), '{}') FROM werke`).Scan(&rest); err != nil {

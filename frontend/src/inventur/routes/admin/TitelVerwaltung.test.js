@@ -1,27 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import TitelVerwaltung from './TitelVerwaltung.svelte';
-import {
-	holeBuecherListe,
-	loescheBuecher,
-	holeExterneCover,
-	retryExterneCover
-} from '$lib/admin_api.js';
+import { holeBuecherListe, holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
 import { appState } from '$lib/store.svelte.js';
-import { bestaetigen, loeschenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
+import { bestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
+import { loescheTitelMitRueckfrage } from '../../../lib/components/buchakte/titelLoeschen.js';
 import { snackbars } from '../../../lib/stores/snackbars.svelte.js';
 
 vi.mock('$lib/admin_api.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	holeBuecherListe: vi.fn(),
-	loescheBuecher: vi.fn(),
 	holeExterneCover: vi.fn(),
 	retryExterneCover: vi.fn()
 }));
 vi.mock('../../../lib/stores/bestaetigung.svelte.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
-	bestaetigen: vi.fn(),
-	loeschenBestaetigen: vi.fn()
+	bestaetigen: vi.fn()
+}));
+vi.mock('../../../lib/components/buchakte/titelLoeschen.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
+	loescheTitelMitRueckfrage: vi.fn()
 }));
 
 const TITEL = { id: 't1', title: 'Mathe 9', author: 'Autor', isbn: '', verfuegbar: 1, gesamt: 1 };
@@ -72,8 +70,7 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 	beforeEach(() => {
 		vi.mocked(holeBuecherListe).mockReset();
 		vi.mocked(holeBuecherListe).mockResolvedValue([TITEL]);
-		vi.mocked(loescheBuecher).mockReset();
-		vi.mocked(loescheBuecher).mockResolvedValue(/** @type {any} */ ({}));
+		vi.mocked(loescheTitelMitRueckfrage).mockReset();
 		vi.mocked(holeExterneCover).mockReset();
 		vi.mocked(retryExterneCover).mockReset();
 		vi.mocked(retryExterneCover).mockResolvedValue(
@@ -81,21 +78,38 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 		);
 		vi.mocked(bestaetigen).mockReset();
 		vi.mocked(bestaetigen).mockResolvedValue(true);
-		vi.mocked(loeschenBestaetigen).mockReset();
-		vi.mocked(loeschenBestaetigen).mockResolvedValue(true);
 		appState.adminAuthenticated = true;
 		appState.searchQuery = '';
 		for (const t of [...snackbars.toasts]) snackbars.removeToast(t.id);
 	});
 
-	it('löscht die gewählten Titel nach der Rückfrage', async () => {
+	it('löscht die gewählten Titel über den Löschdialog und nimmt sie aus der Liste', async () => {
+		vi.mocked(loescheTitelMitRueckfrage).mockResolvedValue({ geloescht: ['t1'], geblieben: [] });
 		const screen = render(TitelVerwaltung);
 		await screen.findByText('Mathe 9');
 
 		await fireEvent.click(screen.getByLabelText('Buch auswählen'));
 		await fireEvent.click(screen.getByRole('button', { name: /Löschen \(1\)/ }));
 
-		await waitFor(() => expect(loescheBuecher).toHaveBeenCalledWith(['t1']));
+		await waitFor(() => expect(loescheTitelMitRueckfrage).toHaveBeenCalledWith(['t1']));
+		await waitFor(() => expect(screen.queryByText('Mathe 9')).toBeNull());
+		expect(snackbars.toasts.map((t) => t.message)).toContain('Titel gelöscht');
+	});
+
+	it('lässt einen Titel stehen, der bleibt, weil verliehene Exemplare nicht bestätigt sind', async () => {
+		vi.mocked(loescheTitelMitRueckfrage).mockResolvedValue({ geloescht: [], geblieben: ['t1'] });
+		const screen = render(TitelVerwaltung);
+		await screen.findByText('Mathe 9');
+
+		await fireEvent.click(screen.getByLabelText('Buch auswählen'));
+		await fireEvent.click(screen.getByRole('button', { name: /Löschen \(1\)/ }));
+
+		await waitFor(() =>
+			expect(snackbars.toasts.map((t) => t.message)).toContain(
+				'Der Titel bleibt, bis die verliehenen Exemplare zurück sind'
+			)
+		);
+		expect(screen.getByText('Mathe 9')).toBeTruthy();
 	});
 
 	it('lokalisiert externe Cover nach der Rückfrage', async () => {

@@ -40,8 +40,8 @@ func TestLoescheTitel_AltesLMFEtikettBleibtAuffindbar(t *testing.T) {
 		}
 	})
 
-	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
-		t.Fatalf("LoescheTitelSamtAusleihen: %v", err)
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: testdaten.LegeBearbeiterAn(t, pool)}); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 
 	zeilen, err := FindeThekenExemplare(ctx, pool, alt)

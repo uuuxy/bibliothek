@@ -1,12 +1,11 @@
 <script>
 	import { melde } from '../../../inventur/lib/store.svelte.js';
-	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
+	import { frageGrundFuerExemplare, loescheExemplarMitGrund } from './exemplareLoeschen.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
 	import { rechteDesReiters } from '../etiketten/druckCenterReiter.js';
 	import { druckWarteschlange } from '../../stores/druckWarteschlange.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
 	import ExemplarKarte from './ExemplarKarte.svelte';
 	import { exemplarZahlen } from './exemplarStatus.js';
@@ -70,28 +69,22 @@
 	/** @param {any} ex */
 	async function loescheExemplar(ex) {
 		if (loescht.has(ex.id)) return;
-		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
+		const grund = await frageGrundFuerExemplare([ex.barcode_id]);
+		if (!grund) return;
 		loescht.add(ex.id);
 		try {
-			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
-				method: 'DELETE',
-				credentials: 'include'
-			});
-			if (res.ok) {
-				exemplare = exemplare.filter((e) => e.id !== ex.id);
-				// Den Kopf aus der Liste nachführen, nach der Grenze der Karten: Ein bestelltes
-				// Exemplar stand nie im Bestand, sein Löschen ändert „1 von 2 verfügbar" nicht.
-				if (titel) {
-					const zahlen = exemplarZahlen(exemplare);
-					titel.gesamt = zahlen.bestand;
-					if (titel.verfuegbar !== undefined) titel.verfuegbar = zahlen.verfuegbar;
-				}
-				melde('Exemplar erfolgreich gelöscht', 'success');
-			} else {
-				melde(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'), 'error');
+			await loescheExemplarMitGrund(ex.id, grund);
+			exemplare = exemplare.filter((e) => e.id !== ex.id);
+			// Den Kopf aus der Liste nachführen, nach der Grenze der Karten: Ein bestelltes
+			// Exemplar stand nie im Bestand, sein Löschen ändert „1 von 2 verfügbar" nicht.
+			if (titel) {
+				const zahlen = exemplarZahlen(exemplare);
+				titel.gesamt = zahlen.bestand;
+				if (titel.verfuegbar !== undefined) titel.verfuegbar = zahlen.verfuegbar;
 			}
-		} catch {
-			melde('Netzwerkfehler beim Löschen.', 'error');
+			melde('Exemplar erfolgreich gelöscht', 'success');
+		} catch (e) {
+			melde(fehlertext(e), 'error');
 		} finally {
 			loescht.delete(ex.id);
 		}
@@ -100,17 +93,14 @@
 	async function loescheGewaehlte() {
 		const ids = [...gewaehlteExemplare].filter((id) => !loescht.has(id));
 		if (ids.length === 0) return;
-		if (!(await loeschenBestaetigen(`${ids.length} Exemplare löschen?`))) return;
+		const barcodes = ids.map((id) => exemplare.find((e) => e.id === id)?.barcode_id ?? id);
+		const grund = await frageGrundFuerExemplare(barcodes);
+		if (!grund) return;
 		for (const id of ids) loescht.add(id);
 
 		const ergebnisse = await Promise.allSettled(
 			ids.map(async (id) => {
-				const res = await apiFetch(`/api/buecher/exemplare/${id}`, {
-					method: 'DELETE',
-					credentials: 'include'
-				});
-				if (!res.ok)
-					throw new Error(await leseApiFehler(res, 'Fehler beim Löschen des Exemplars.'));
+				await loescheExemplarMitGrund(id, grund);
 				return id;
 			})
 		);

@@ -85,9 +85,9 @@ func TestTitelLoeschen(t *testing.T) {
 
 		// Die Erwartungen in der Reihenfolge von LoescheTitel (Begin zuerst, jedes Lesen in der
 		// Transaktion, die Befehle des Löschens liefern ihre Spur über RETURNING). Die Reihenfolge selbst
-		// prüft titel_loeschen_test.go; hier zählt, dass die Tür mit 200 antwortet.
+		// prüft titel_loeschen_samt_ausleihen_test.go; hier zählt, dass die Tür mit 200 antwortet.
 		mock.ExpectBegin()
-		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
+		erwarteSperreDerAuflagen(mock)
 
 		// Angaben und Exemplare des Titels vor den DELETEs: Daraus entsteht der Eintrag mit dem
 		// Bearbeiter (hier: ein Titel ohne Exemplare).
@@ -98,6 +98,11 @@ func TestTitelLoeschen(t *testing.T) {
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id", "barcode_id", "lmf_barcode", "war_im_bestand"}))
+		// Kein verliehenes Exemplar: Der Titel geht ganz.
+		mock.ExpectQuery(`SELECT e\.titel_id::text, e\.id::text FROM buecher_exemplare e`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id"}))
+		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
 
 		// Die drei Kinder des Titels über CASCADE im Protokoll: Vormerkungen, Reservierungen und
 		// Zuordnungen von Klassensätzen.
@@ -137,7 +142,7 @@ func TestTitelLoeschen(t *testing.T) {
 
 		mock.ExpectCommit()
 
-		rumpf := `{"ids": ["11111111-1111-1111-1111-111111111111"]}`
+		rumpf := `{"ids": ["11111111-1111-1111-1111-111111111111"], "grund": "AUSSORTIERT"}`
 		anfrage := httptest.NewRequest(http.MethodDelete, "/api/books", strings.NewReader(rumpf))
 		anfrage = anfrage.WithContext(context.WithValue(anfrage.Context(), auth.ClaimsSchluessel, &auth.Claims{KontoID: "22222222-2222-2222-2222-222222222222"}))
 		rec := httptest.NewRecorder()

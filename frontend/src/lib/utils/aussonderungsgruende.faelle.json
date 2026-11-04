@@ -1,0 +1,10 @@
+{
+	"_zweck": "Geteilte Prüffälle: Die vier Gründe einer Aussonderung stehen in der Datenbank (chk_aussonderung_grund, chk_geloeschte_exemplare_grund), im Server (repository/aussonderungsgrund.go: IstAussonderungsgrund und der Text im Abgangsbuch) und im Browser (aussonderungsgruende.js: die Auswahl im Löschdialog). Die Go-Tests halten diese Datei gegen Server und Datenbank (repository/aussonderungsgrund_zwilling_pg_test.go), der Vitest (aussonderungsgruende.test.js) gegen den Browser. Reihenfolge = Reihenfolge der Auswahl im Dialog; die Wörter sind die, die in Littera am häufigsten standen.",
+	"vorgabe": "AUSSORTIERT",
+	"gruende": [
+		{ "wert": "AUSSORTIERT", "text": "Alter Bestand" },
+		{ "wert": "BESCHAEDIGUNG", "text": "Beschädigt" },
+		{ "wert": "VERLUST", "text": "Verlust" },
+		{ "wert": "BESTANDSKORREKTUR", "text": "Falsch angelegt" }
+	]
+}

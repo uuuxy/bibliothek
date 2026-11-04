@@ -143,7 +143,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 		_, titelID := storniere(t, leser, "C", grund)
 		stehtAnBeidenStellen(t, grund)
 
-		if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, kontoID); err != nil {
+		if _, err := repository.NewTitelAbfragen(pool).LoescheTitel(ctx, repository.TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: kontoID}); err != nil {
 			t.Fatalf("Titel löschen: %v", err)
 		}
 		if n := imProtokoll(t, grund); n != 1 {

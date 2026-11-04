@@ -1,11 +1,7 @@
 <!-- Titel-Verwaltung: lädt die Titelliste, öffnet die Maske und steuert die Unterkomponenten. -->
 <script>
 	import { onMount, untrack } from 'svelte';
-	import {
-		bestaetigen,
-		loeschenBestaetigen,
-		verwerfenBestaetigen
-	} from '../../../lib/stores/bestaetigung.svelte.js';
+	import { bestaetigen, verwerfenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
 	import { schuetzeUngespeichertes } from '../../../lib/stores/verlassenSchutz.svelte.js';
 	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
 	import LadeFehler from '../../../lib/components/ui/LadeFehler.svelte';
@@ -16,7 +12,11 @@
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
 	import KlassensatzZuweisenDialog from '$lib/components/admin/KlassensatzZuweisenDialog.svelte';
 	import { leeresBuchFormular } from '$lib/components/admin/buchFormularRegeln.js';
-	import { loescheBuecher, holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
+	import { holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
+	import {
+		loescheTitelMitRueckfrage,
+		meldungZumErgebnis
+	} from '../../../lib/components/buchakte/titelLoeschen.js';
 	import { hatUngespeichertes, titelFuerMaske } from '$lib/buch_speichern.js';
 	import { erstelleTitelListe } from '$lib/titelListe.svelte.js';
 
@@ -109,10 +109,11 @@
 	/** @param {any} ids */
 	async function aktionBuecherLoeschen(ids) {
 		if (!ids.length) return;
-		if (!(await loeschenBestaetigen(`${ids.length} Bücher mit allen Exemplaren löschen?`))) return;
 		try {
-			await loescheBuecher(ids);
-			liste.buecher = liste.buecher.filter((b) => !ids.includes(b.id));
+			const ergebnis = await loescheTitelMitRueckfrage(ids);
+			if (!ergebnis) return;
+			liste.buecher = liste.buecher.filter((b) => !ergebnis.geloescht.includes(b.id));
+			melde(meldungZumErgebnis(ergebnis), 'success');
 		} catch (fehler) {
 			melde(fehlertext(fehler), 'error');
 		}

@@ -7,12 +7,12 @@ vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
 	apiFetch: vi.fn()
 }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({
-	loeschenBestaetigen: vi.fn()
+	loeschenMitGrund: vi.fn()
 }));
 vi.mock('$lib/store.svelte.js', () => ({ melde: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
-import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
+import { loeschenMitGrund } from '../../../../lib/stores/bestaetigung.svelte.js';
 import BuchExemplareListe from './BuchExemplareListe.svelte';
 import { serverAntwort } from '../../../../lib/serverAntwort.js';
 
@@ -80,7 +80,7 @@ describe('BuchExemplareListe', () => {
 			if (String(url).endsWith('/exemplare')) return antwort([exemplar('1'), exemplar('2')]);
 			return antwort({ stock: 1 });
 		});
-		vi.mocked(loeschenBestaetigen).mockResolvedValue(true);
+		vi.mocked(loeschenMitGrund).mockResolvedValue({ grund: 'BESCHAEDIGUNG', zusatz: false });
 		const formular = { id: 't-1', stock: 2, stockGesehen: 2 };
 		const screen = render(BuchExemplareListe, { formular });
 		await screen.findByText('B-1');
@@ -88,6 +88,13 @@ describe('BuchExemplareListe', () => {
 		await fireEvent.click(screen.getAllByRole('button', { name: 'Exemplar löschen' })[0]);
 
 		expect(await screen.findByRole('heading', { name: 'Exemplare (1)' })).toBeTruthy();
+		expect(apiFetch, 'der gewählte Grund geht mit').toHaveBeenCalledWith(
+			'/api/buecher/exemplare/e-1',
+			expect.objectContaining({
+				method: 'DELETE',
+				body: JSON.stringify({ grund: 'BESCHAEDIGUNG' })
+			})
+		);
 		expect(screen.getByText(/Nicht im Bestand: 1 ausgesondert\./)).toBeTruthy();
 		expect(formular.stock, 'die Zahl im Feld kommt vom Server').toBe(1);
 	});
@@ -151,7 +158,7 @@ describe('BuchExemplareListe: Exemplar löschen', () => {
 				? new Promise((fertig) => (liefere = fertig))
 				: antwort([exemplar('1')])
 		);
-		vi.mocked(loeschenBestaetigen).mockResolvedValue(true);
+		vi.mocked(loeschenMitGrund).mockResolvedValue({ grund: 'BESCHAEDIGUNG', zusatz: false });
 		const deletes = () =>
 			vi.mocked(apiFetch).mock.calls.filter(([, optionen]) => optionen?.method === 'DELETE').length;
 		const screen = render(BuchExemplareListe, { formular: { id: 't-1', stock: 1 } });

@@ -39,7 +39,7 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 	bearbeiter := testdaten.LegeKollegiumskontoAn(t, pool, "ausbucher@test.invalid")
 
 	loesche := func(id string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodDelete, "/api/buecher/exemplare/"+id, nil)
+		req := httptest.NewRequest(http.MethodDelete, "/api/buecher/exemplare/"+id, strings.NewReader(`{"grund":"BESCHAEDIGUNG"}`))
 		req.SetPathValue("id", id)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
 			&auth.Claims{KontoID: bearbeiter}))
@@ -74,6 +74,26 @@ func TestExemplarAussondern_VerliehenIst400_PhantomIst404(t *testing.T) {
 	}
 	if n := protokollEintraege(t, pool, frei); n != 1 {
 		t.Errorf("nach dem Ausbuchen: %d Audit-Einträge, erwartet 1", n)
+	}
+	// Der gewählte Grund steht am Exemplar, die Zustandsnotiz bleibt, und der Eintrag nennt Weg,
+	// Grund und Barcode, aber nicht die Notiz: Sie ist Freitext und kann eine Person nennen.
+	var grund, notiz, details string
+	if err := pool.QueryRow(context.Background(), `
+		SELECT e.aussonderung_grund, coalesce(e.zustand_notiz, ''), a.details::text
+		FROM buecher_exemplare e JOIN audit_log a ON a.datensatz_id = e.id
+		WHERE e.id = $1`, frei).Scan(&grund, &notiz, &details); err != nil {
+		t.Fatalf("Exemplar und Eintrag lesen: %v", err)
+	}
+	if grund != "BESCHAEDIGUNG" || notiz != "Eselsohr S. 12" {
+		t.Errorf("nach dem Löschen: Grund %q, Notiz %q, erwartet BESCHAEDIGUNG und die Notiz von vorher", grund, notiz)
+	}
+	for _, teil := range []string{`"grund": "BESCHAEDIGUNG"`, `"barcode_id": "DEL-FREI"`, `"action": "ausgesondert"`} {
+		if !strings.Contains(details, teil) {
+			t.Errorf("Eintrag %s nennt nicht %s", details, teil)
+		}
+	}
+	if strings.Contains(details, "Eselsohr") {
+		t.Errorf("Eintrag %s trägt die Zustandsnotiz", details)
 	}
 
 	// … und der Doppelklick ist ein 404, kein zweiter „Erfolg" mit zweitem Eintrag.

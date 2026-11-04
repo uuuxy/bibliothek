@@ -1,5 +1,6 @@
 import { appState } from '../../../inventur/lib/store.svelte.js';
-import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
+import { loescheTitelMitRueckfrage, meldungZumErgebnis } from './titelLoeschen.js';
+import { fehlertext } from '../../utils/fehlertext.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 import { authStore } from '../../stores/authStore.svelte.js';
 import { hatRecht } from '../../menue.js';
@@ -114,24 +115,17 @@ export function useBuchakte() {
 		laedt = false;
 	}
 
+	// Bleibt der Titel, weil verliehene Exemplare nicht bestätigt waren, lädt die Akte neu.
 	async function loescheTitel(melde, onBack) {
 		if (!buch) return;
-		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
-			return;
 		try {
-			const res = await apiFetch(`/api/buecher/titel/${buch.id}`, {
-				method: 'DELETE',
-				credentials: 'include'
-			});
-			if (res.ok) {
-				if (melde) melde('Titel erfolgreich gelöscht', 'success');
-				if (onBack) onBack();
-			} else if (melde) {
-				melde(await leseApiFehler(res, 'Fehler beim Löschen des Titels.'), 'error');
-			}
+			const ergebnis = await loescheTitelMitRueckfrage([buch.id], buch.titel);
+			if (!ergebnis) return;
+			if (melde) melde(meldungZumErgebnis(ergebnis), 'success');
+			if (ergebnis.geloescht.length > 0) onBack?.();
+			else await ladeAlles(buch.id);
 		} catch (e) {
-			console.error('Titel löschen fehlgeschlagen:', e);
-			if (melde) melde('Netzwerkfehler beim Löschen des Titels.', 'error');
+			if (melde) melde(fehlertext(e), 'error');
 		}
 	}
 

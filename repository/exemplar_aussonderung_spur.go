@@ -9,9 +9,10 @@ import (
 
 // Die Spur des Aussonderns (docs/invarianten.md, Frage 19): Das Abgangsbuch nennt Datum und
 // Grund eines ausgesonderten Exemplars, der Eintrag hier nennt die Person. Geschrieben wird er
-// auf den Wegen, die ein Exemplar ohne eigene Protokollzeile aussondern: der Status in der
-// Buchakte, ein kleinerer Bestand in „Buch bearbeiten", der Abschluss einer Inventur, ein
-// Verlust oder Schaden aus der Leserakte oder dem Schadensersatz-Bescheid.
+// auf den Wegen, die ein Exemplar aussondern: der Status in der Buchakte, „Exemplar löschen" in
+// der Buchakte, ein kleinerer Bestand in „Buch bearbeiten", der Abschluss einer Inventur, ein
+// Verlust oder Schaden aus der Leserakte oder dem Schadensersatz-Bescheid, und ein gelöschter
+// Titel, dessen verliehene Exemplare bleiben.
 //
 // Die Zustandsnotiz steht nicht im Eintrag: Sie ist Freitext und kann eine Person nennen, und
 // ein Protokolleintrag bleibt bis zur Audit-Aufbewahrung.
@@ -26,6 +27,8 @@ const (
 	AussonderungsWegInventur          = "Exemplar ausgesondert: Abschluss einer Inventur"
 	AussonderungsWegSchaden           = "Exemplar ausgesondert: Verlust oder Schaden in der Leserakte gemeldet"
 	AussonderungsWegBescheid          = "Exemplar ausgesondert: Verlust mit dem Schadensersatz-Bescheid gebucht"
+	AussonderungsWegExemplarLoeschen  = "Exemplar ausgesondert: in der Buchakte gelöscht"
+	AussonderungsWegTitelLoeschen     = "Exemplar ausgesondert: Titel gelöscht, verliehene Exemplare blieben"
 )
 
 // ErrAussonderungOhneBearbeiter lehnt ein Aussondern ab, das keine Person nennt.

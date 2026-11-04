@@ -121,15 +121,21 @@ func TestUnlesbareZeileBrichtAb(t *testing.T) {
 			_, err := NewReservierungsAbfragen(mock).LadeAlle(ctx)
 			return err
 		}},
-		{"offene Ausleihen vor dem Löschen eines Titels", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
+		{"verliehene Exemplare vor dem Löschen eines Titels", func(ctx context.Context, mock pgxmock.PgxPoolIface) error {
 			const titelID = "33333333-3333-3333-3333-333333333333"
 			mock.ExpectBegin()
-			erwarteAuflagenSperre(mock, []string{titelID})
-			mock.ExpectQuery("FROM ausleihen a").WithArgs(titelID).WillReturnRows(
-				pgxmock.NewRows([]string{"barcode_id"}).AddRow(nil))
-			// Kein ExpectExec: Bei unklarer Lage wird nichts gelöscht.
+			erwarteSperreDerAuflagen(mock)
+			mock.ExpectQuery(`FROM buecher_titel WHERE id = ANY`).WithArgs([]string{titelID}).
+				WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn"}).AddRow(titelID, "Titel", "", ""))
+			mock.ExpectQuery(`FROM buecher_exemplare e WHERE e\.titel_id = ANY`).WithArgs([]string{titelID}).
+				WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id", "barcode_id", "lmf_barcode", "war_im_bestand"}))
+			mock.ExpectQuery(`SELECT e\.titel_id::text, e\.id::text FROM buecher_exemplare e`).WithArgs([]string{titelID}).
+				WillReturnRows(pgxmock.NewRows([]string{"titel_id", "id"}).AddRow(titelID, nil))
+			// Kein Löschen: Bei unklarer Lage wird nichts entfernt.
 			mock.ExpectRollback()
-			return NewKatalogAbfragen(mock).LoescheTitel(ctx, titelID, "admin-1")
+			_, err := NewTitelAbfragen(mock).LoescheTitel(ctx, TitelLoeschauftrag{
+				TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: "admin-1"})
+			return err
 		}},
 	}
 	for _, f := range faelle {

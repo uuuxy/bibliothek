@@ -61,20 +61,6 @@ export async function importiereListe(datei, schluessel) {
 	return await res.json();
 }
 
-/** @param {string[]} ids */
-export async function loescheBuecher(ids) {
-	const res = await apiFetch('/api/books', {
-		method: 'DELETE',
-		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({ ids })
-	});
-	if (!res.ok) throw new Error(await leseApiFehler(res, 'Löschen fehlgeschlagen'));
-	return true;
-}
-
 export async function holeExterneCover() {
 	const res = await apiFetch('/api/admin/books/external-covers', {
 		credentials: 'include'
@@ -115,20 +101,6 @@ export async function exportiereCSV() {
 	a.click();
 	window.URL.revokeObjectURL(url);
 	a.remove();
-}
-
-/**
- * Löscht EINEN Titel samt Exemplaren über DELETE /api/buecher/titel/{id} — der Endpunkt
- * verweigert (400) mit Klartext, solange Exemplare verliehen sind. Nicht der Sammel-
- * Endpunkt DELETE /api/books der Mehrfachauswahl: Der kennt die Ausleih-Sperre nicht.
- * @param {string} id
- */
-export async function loescheTitel(id) {
-	const res = await apiFetch(`/api/buecher/titel/${encodeURIComponent(id)}`, {
-		method: 'DELETE',
-		credentials: 'include'
-	});
-	if (!res.ok) throw new Error(await leseApiFehler(res, 'Titel konnte nicht gelöscht werden.'));
 }
 
 /**

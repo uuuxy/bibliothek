@@ -56,7 +56,7 @@ func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 
 	bearbeiter := legeBearbeiterAn(t, pool)
 	for _, id := range []string{allein, erster} {
-		if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, id, bearbeiter); err != nil {
+		if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{id}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 			t.Fatalf("LoescheTitel: %v", err)
 		}
 	}
@@ -67,7 +67,7 @@ func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 		t.Fatalf("%s ist entfernt, ein zweiter Titel trägt es noch", geteilt)
 	}
 
-	if err := NewKatalogAbfragen(pool).LoescheTitel(ctx, zweiter, bearbeiter); err != nil {
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{zweiter}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if vorhanden(geteilt) {

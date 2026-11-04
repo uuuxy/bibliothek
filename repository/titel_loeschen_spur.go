@@ -20,6 +20,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// sqlEntleiherName ist der Name des Lesers l einer Ausleihe; „(unbekannt)" statt eines leeren
+// Feldes, wenn die Zuordnung fehlt oder getilgt ist.
+const sqlEntleiherName = `coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''), '(unbekannt)')`
+
 // offeneAusleihe ist eine laufende Ausleihe, die eine Titel-Löschung mit abräumt.
 type offeneAusleihe struct {
 	AusleiheID string
@@ -56,8 +60,7 @@ func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]of
 			RETURNING a.id, a.exemplar_id, a.schueler_id, a.ausgeliehen_am, a.rueckgabe_am
 		)
 		SELECT w.id, e.id, e.barcode_id, t.titel,
-		       coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''),
-		                '(unbekannt)'),
+		       `+sqlEntleiherName+`,
 		       w.schueler_id, to_char(w.ausgeliehen_am, 'YYYY-MM-DD')
 		FROM weg w
 		JOIN buecher_exemplare e ON w.exemplar_id = e.id
@@ -140,7 +143,7 @@ type offenerSchaden struct {
 // loescheSchaedenMitSpur entfernt alle Schadensfälle der Titel und liefert die unbezahlten, nicht
 // stornierten als Spur zurück, aus demselben Befehl wie bei den Ausleihen.
 //
-// Warum das eine eigene Spur braucht: Beide Wege der Löschung räumen `schadensfaelle` ohne
+// Warum das eine eigene Spur braucht: Das Löschen eines Titels räumt `schadensfaelle` ohne
 // Rücksicht auf `ist_bezahlt` ab. Ein unbezahlter Schadensfall ist aber Geld, das ein Schüler
 // der Schule schuldet, und er steuert sechs Entscheidungen: Anzeige des Kontos, Sperre der
 // Löschung, Zusammenführen, Wächter der Abgänger, Bremse der Anonymisierung beim Abgleich mit der

@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../../../inventur/lib/store.svelte.js', () => ({ melde: vi.fn() }));
 vi.mock('../../stores/bestaetigung.svelte.js', () => ({
-	loeschenBestaetigen: vi.fn(async () => true)
+	loeschenMitGrund: vi.fn(async () => ({ grund: 'BESCHAEDIGUNG', zusatz: false }))
 }));
 vi.mock('../../apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),

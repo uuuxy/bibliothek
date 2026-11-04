@@ -39,8 +39,11 @@ func (t *Tueren) katalogdienste() *katalogdienste.MetadatenClient {
 
 // Sätze der Türen zum Exemplar, die mehrere Türen dieses Pakets ausgeben.
 const (
-	meldungExemplarVerliehen     = "Das Exemplar ist noch verliehen. Bitte zuerst die Rückgabe buchen."
+	meldungExemplarVerliehen     = "Das Exemplar ist noch verliehen. Erst die Rückgabe buchen oder in der Leserakte den Verlust melden."
 	meldungExemplarNichtGefunden = "Exemplar nicht gefunden oder schon ausgebucht"
+	// meldungGrundFehlt antwortet auf ein Löschen ohne einen der vier Gründe; der Dialog wählt
+	// immer einen vor (repository.IstAussonderungsgrund).
+	meldungGrundFehlt = "Bitte einen Grund wählen"
 	// meldungExemplarInzwischenGeaendert steht im Dialog der Buchakte; die Seite zeigt den
 	// neuen Status erst nach dem Neuladen.
 	meldungExemplarInzwischenGeaendert = "Ein anderer Platz hat den Status dieses Exemplars inzwischen geändert. Bitte die Buchakte neu laden und dann noch einmal speichern."

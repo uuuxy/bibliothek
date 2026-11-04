@@ -35,8 +35,8 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	// abgeräumt. Die Kennungen stehen vor dem Cleanup, damit die Closure sie sieht; die Prüfungen
 	// greifen, wenn ein frühes t.Fatal einen Teil nie angelegt hat. Reihenfolge wegen ON DELETE
 	// RESTRICT (ausleihen/schadensfaelle → exemplare): erst die abhängigen Zeilen, dann der Titel
-	// (Exemplare kaskadieren), dann der Schüler; die Zeilen im Protokoll aus LoescheTitelSamtAusleihen zuletzt,
-	// über datensatz_id begrenzt. Im Erfolgsfall hat LoescheTitelSamtAusleihen das meiste schon entfernt; die
+	// (Exemplare kaskadieren), dann der Schüler; die Zeilen im Protokoll aus LoescheTitel zuletzt,
+	// über datensatz_id begrenzt. Im Erfolgsfall hat LoescheTitel das meiste schon entfernt; die
 	// DELETEs treffen dann 0 Zeilen, und genau das ist in Ordnung.
 	var titelID, imRegal, verliehen, schuelerID string
 	t.Cleanup(func() {
@@ -48,7 +48,7 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 			}
 		}
 		if len(exemplare) > 0 {
-			for _, tabelle := range []string{"schadensfaelle", "ausleihen"} {
+			for _, tabelle := range []string{"schadensfaelle", "ausleihen", "geloeschte_exemplare"} {
 				if _, err := pool.Exec(ctx,
 					`DELETE FROM `+tabelle+` WHERE exemplar_id = ANY($1)`, exemplare); err != nil {
 					t.Errorf("Aufräumen %s: %v", tabelle, err)
@@ -101,7 +101,7 @@ func TestLoescheTitel_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		VALUES ($1, $2, $3, 'Fleck', 3.00, false)
 		RETURNING to_char(erstellt_am, 'YYYY-MM-DD')`, imRegal, altAusleihe, schuelerID)
 
-	if err := abfragen.LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if _, err := abfragen.LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", Verliehene: []string{verliehen}, BearbeiterID: testdaten.LegeBearbeiterAn(t, pool)}); err != nil {
 		t.Fatalf("Titel mit verliehenem Exemplar muss löschbar sein: %v", err)
 	}
 

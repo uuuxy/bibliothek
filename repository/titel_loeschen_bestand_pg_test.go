@@ -55,7 +55,7 @@ func TestLoescheTitel_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		return gezaehlt
 	}
 
-	if err := NewTitelAbfragen(pool).LoescheTitelSamtAusleihen(ctx, []string{titelID}, testdaten.LegeBearbeiterAn(t, pool)); err != nil {
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(ctx, TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: testdaten.LegeBearbeiterAn(t, pool)}); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 
@@ -94,7 +94,7 @@ func TestLoescheTitel_AusleiheEinesAnderenTitelsHaeltNichtAuf(t *testing.T) {
 	fremd := legeSignaturMitExemplarenAn(t, pool, "LoeschFremd", 1)
 	legeAusleiheAn(t, pool, fremd[0], legeSchuelerAn(t, pool, "LOESCH-A", "Cora", "8a"), bearbeiter)
 
-	if err := NewKatalogAbfragen(pool).LoescheTitel(context.Background(), titelIDVonExemplar(t, pool, eigen[0]), bearbeiter); err != nil {
+	if _, err := NewTitelAbfragen(pool).LoescheTitel(context.Background(), TitelLoeschauftrag{TitelIDs: []string{titelIDVonExemplar(t, pool, eigen[0])}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Errorf("LoescheTitel = %v, erwartet Erfolg", err)
 	}
 }

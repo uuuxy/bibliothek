@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -107,6 +108,25 @@ func LeseUUIDParameter(r *http.Request, name string) (string, error) {
 		return "", apierrors.BadRequest(fmt.Sprintf("In der Adresse ist „%s“ keine gültige Kennung", name), nil)
 	}
 	return wert, nil
+}
+
+// LeseUUIDListe liest einen Parameter der Adresse mit Kennungen, durch Komma getrennt. Leere Teile
+// fallen weg, ein fehlender Parameter ist eine leere Liste; ein Teil, der keine UUID ist, wird ein
+// Bedienfehler mit Meldung statt eines 500 aus Postgres. Was eine leere Liste bedeutet, entscheidet
+// die Tür.
+func LeseUUIDListe(q url.Values, name string) ([]string, error) {
+	var ids []string
+	for _, teil := range strings.Split(q.Get(name), ",") {
+		id := strings.TrimSpace(teil)
+		if id == "" {
+			continue
+		}
+		if !kennung.IstUUID(id) {
+			return nil, apierrors.BadRequest(fmt.Sprintf("„%s“ ist keine gültige Kennung", id), nil)
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
 
 // LeseAnfrageStreng liest wie LeseAnfrage, lehnt aber ein Feld, das das Ziel nicht kennt, mit

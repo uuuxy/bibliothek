@@ -146,7 +146,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Nie geliefert", "Nie 1", 0)
 
 	geloescht := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-LOESCHEN")
-	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, geloescht, bearbeiter); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, geloescht, "AUSSORTIERT", bearbeiter); err != nil {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
 	ausgesondert := testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AB-ZULAUF-STATUS")
@@ -155,7 +155,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
 	imBestand := testdaten.LegeExemplarAn(t, pool, titelID, "AB-BESTAND", true, "")
-	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, imBestand, bearbeiter); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).SondereExemplarAus(ctx, imBestand, "AUSSORTIERT", bearbeiter); err != nil {
 		t.Fatalf("Exemplar aus dem Bestand löschen: %v", err)
 	}
 
@@ -216,7 +216,7 @@ func TestAbgangsbuch_GeloeschtesStehtMitZeileDrin(t *testing.T) {
 	titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Mit Zulauf geloescht", "Zul 1", 0)
 	testdaten.LegeExemplarAn(t, pool, titelID, "AG-BESTAND", true, "")
 	testdaten.LegeExemplarImZulaufAn(t, pool, titelID, "AG-ZULAUF")
-	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+	if _, err := repository.NewTitelAbfragen(pool).LoescheTitel(ctx, repository.TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 	buch := lade()
@@ -362,7 +362,7 @@ func TestAbgangsbuch_GeloeschterTitelBehaeltSeineZeile(t *testing.T) {
 	}
 
 	// Durch die echte Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal nimmt.
-	if err := repository.NewKatalogAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+	if _, err := repository.NewTitelAbfragen(pool).LoescheTitel(ctx, repository.TitelLoeschauftrag{TitelIDs: []string{titelID}, Grund: "AUSSORTIERT", BearbeiterID: bearbeiter}); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 

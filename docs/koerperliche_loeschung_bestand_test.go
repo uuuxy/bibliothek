@@ -32,11 +32,8 @@ var koerperlicheLoeschungBestand = map[string]struct {
 	"repository/geloeschte_exemplare.go": {1, "loescheExemplareMitBuchzeile, die eine Anweisung, die Exemplare " +
 		"löscht: Jedes aus dem Bestand bekommt darin seine Zeile in geloeschte_exemplare. Die Spur legen die Rufer: " +
 		"Titel löschen (ProtokollAktionTitelGeloescht), Verlust endgültig löschen (ProtokollAktionVerlustEndgueltigGeloescht)."},
-	"repository/titel_loeschen.go": {1, "Titel löschen (einzeln): der Titel, nachdem loescheExemplareMitBuchzeile " +
-		"seine Exemplare gelöscht hat. Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
-	"repository/titel_loeschen_samt_ausleihen.go": {1, "Titel löschen (Massenaktion): die Titel, nachdem " +
-		"loescheExemplareMitBuchzeile ihre Exemplare gelöscht hat. Spur je Exemplar in titel_loeschen_spur.go, " +
-		"ebenfalls ProtokollAktionTitelGeloescht."},
+	"repository/titel_loeschen.go": {1, "Titel löschen (loescheGanzeTitel): die Titel, nachdem " +
+		"loescheExemplareMitBuchzeile ihre Exemplare gelöscht hat. Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
 	"repository/titel_zusammenfuehren.go": {1, "Titel zusammenführen: gelöscht wird nur der Titel, " +
 		"nachdem seine Exemplare zum anderen gewandert sind; kein Exemplar verlässt den Bestand. Spur am " +
 		"bleibenden Titel mit den Kennungen der gewanderten Exemplare (protokollAktionTitelZusammengefuehrt)."},
