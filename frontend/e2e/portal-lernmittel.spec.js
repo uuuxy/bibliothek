@@ -62,14 +62,19 @@ test.describe('Lehrerportal: Lernmittel', () => {
 		await page.getByRole('tab', { name: 'Klassensätze' }).click();
 
 		// Klassensätze: dieselbe Karte wie unter Bibliothek → Klassensätze (25.08.2026),
-		// nur lesend — die Klasse aufklappen, der Titel steht als Cover-Kachel darin,
-		// und KEINE Kachel ist ein Knopf (für die Rolle läge dahinter ein 403).
+		// nur lesend — die Klasse aufklappen, der Titel steht als Cover-Kachel darin.
+		// Die Kachel bearbeitet nichts (für die Rolle läge dahinter ein 403): Ihr Knopf heißt
+		// „… Angaben zeigen" und öffnet das Seitenblatt, keinen Dialog.
 		// Ein Titel mit drei Exemplaren ist „1 Buch" — die Zeile zählt Titel, nicht Exemplare.
 		await page.getByRole('button', { name: new RegExp(`(Buch|Bücher)\\s+${klasse}$`) }).click();
 		const kachel = page.locator('h3').filter({ hasText: TITEL });
 		await expect(kachel).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
-		await expect(page.locator('[role="button"]').filter({ has: kachel })).toHaveCount(0);
+		const knopf = page.locator('[role="button"]').filter({ has: kachel });
+		await expect(knopf).toHaveAccessibleName(/Angaben zeigen$/);
+		await knopf.click();
+		await expect(page.getByRole('complementary', { name: TITEL })).toBeVisible();
+		await expect(page.getByRole('dialog')).toHaveCount(0);
 	});
 
 	test('ohne Anmeldung bleiben die Portal-Türen zu', async ({ request }) => {

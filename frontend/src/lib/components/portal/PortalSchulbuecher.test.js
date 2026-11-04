@@ -53,3 +53,41 @@ describe('PortalSchulbuecher: der Server lehnt ab', () => {
 		expect(screen.getByTestId('schulbuecher-faecher')).toBeTruthy();
 	});
 });
+
+// Der Fachsprecher braucht zum Nachbestellen die genaue ISBN: Ein Klick auf die Kachel öffnet das
+// Seitenblatt mit Bestand und ISBN zum Kopieren; ein zweiter Klick oder das Kreuz schließt es.
+describe('PortalSchulbuecher: das Seitenblatt', () => {
+	const BUCH = {
+		id: 'm-7',
+		title: 'Lambacher Schweizer 7',
+		subject: 'Mathematik',
+		isbn: '9783127345678',
+		coverUrl: '',
+		gesamt: 30,
+		verfuegbar: 12,
+		jahrgangVon: 7,
+		jahrgangBis: 7
+	};
+
+	it('ein Klick auf die Kachel zeigt Bestand und ISBN, ein zweiter und das Kreuz schließen', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(serverAntwort(200, { ...LISTE, titel: [BUCH] }));
+		const screen = render(PortalSchulbuecher);
+		await fireEvent.click(await screen.findByRole('button', { name: /Mathematik/ }));
+		const kachel = await screen.findByRole('button', {
+			name: /^Lambacher Schweizer 7 .*Angaben zeigen$/
+		});
+
+		await fireEvent.click(kachel);
+		const blatt = screen.getByRole('complementary', { name: 'Lambacher Schweizer 7' });
+		expect(blatt.textContent).toContain('Mathematik · Jahrgang 7');
+		expect(blatt.textContent).toContain('12 von 30');
+		expect(screen.getByRole('button', { name: 'ISBN: 9783127345678' })).toBeTruthy();
+
+		await fireEvent.click(kachel);
+		expect(screen.queryByRole('complementary')).toBeNull();
+
+		await fireEvent.click(kachel);
+		await fireEvent.click(screen.getByRole('button', { name: 'Schließen' }));
+		expect(screen.queryByRole('complementary')).toBeNull();
+	});
+});

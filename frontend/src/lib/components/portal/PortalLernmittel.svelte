@@ -14,6 +14,8 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import KlassenKarte from '../../../inventur/lib/components/admin/KlassenKarte.svelte';
+	import SchulbuchBlatt from './SchulbuchBlatt.svelte';
+	import { SEITENBLATT_PLATZ } from '../ui/Seitenblatt.svelte';
 
 	/** @type {{ className: string, books: any[] }[]} */
 	let klassensaetze = $state.raw([]);
@@ -21,6 +23,16 @@
 	let offeneKlasse = $state(null);
 	let laedt = $state(true);
 	let ladefehler = $state(false);
+
+	// Das Seitenblatt zeigt ein Buch der offenen Klasse; wechselt die Klasse, schließt es.
+	let gewaehltId = $state(/** @type {string | null} */ (null));
+	const gewaehlt = $derived(
+		klassensaetze
+			.find((g) => g.className === offeneKlasse)
+			?.books.find((b) => b.id === gewaehltId) ?? null
+	);
+	/** @param {any} b */
+	const waehle = (b) => (gewaehltId = gewaehltId === b.id ? null : b.id);
 
 	onMount(async () => {
 		try {
@@ -44,7 +56,7 @@
 {:else}
 	<!-- Ein Reiter = eine Liste. Der Reiter ist die Überschrift; Beitexte wären eine dritte
 	     Ebene unter Reiter und Abschnitt. -->
-	<div class="pt-2">
+	<div class="pt-2 {gewaehlt ? SEITENBLATT_PLATZ : ''}">
 		{#if ladefehler}
 			<p class="py-4 text-sm font-semibold text-error" role="alert">
 				Die Klassensätze konnten nicht geladen werden. Bitte die Seite neu laden — das hier bedeutet
@@ -63,9 +75,14 @@
 						offen={offeneKlasse === gruppe.className}
 						onToggle={() =>
 							(offeneKlasse = offeneKlasse === gruppe.className ? null : gruppe.className)}
+						onwahl={waehle}
+						{gewaehltId}
 					/>
 				{/each}
 			</div>
 		{/if}
 	</div>
+	{#if gewaehlt}
+		<SchulbuchBlatt buch={gewaehlt} onschliessen={() => (gewaehltId = null)} />
+	{/if}
 {/if}

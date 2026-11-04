@@ -19,10 +19,12 @@
 	 *   buecher: any[],
 	 *   offen?: boolean,
 	 *   exportUrl: string,
-	 *   onToggle: () => void
+	 *   onToggle: () => void,
+	 *   onwahl?: (book: any) => void,
+	 *   gewaehltId?: string | null
 	 * }}
 	 */
-	let { fach, buecher, offen = false, exportUrl, onToggle } = $props();
+	let { fach, buecher, offen = false, exportUrl, onToggle, onwahl, gewaehltId = null } = $props();
 
 	const name = $derived(fach.fach || 'Ohne Fach');
 	const rasterID = $derived(`schulbuecher-${(fach.fach || 'ohne-fach').replace(/\s+/g, '-')}`);
@@ -75,7 +77,12 @@
 			data-testid="schulbuecher-raster"
 		>
 			{#each buecher as book (book.id)}
-				<KlassenBuchKachel titel={book} bearbeitbar={false} />
+				<KlassenBuchKachel
+					titel={book}
+					bearbeitbar={false}
+					{onwahl}
+					gewaehlt={book.id === gewaehltId}
+				/>
 			{/each}
 		</div>
 	{/if}

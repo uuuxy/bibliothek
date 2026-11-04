@@ -829,7 +829,11 @@ frontend/src
   lines and shadows) to group related items."). Beim Zeigen hellt das Cover auf, und die
   Einblendung nennt Fach, Titel, Auflage und ISBN. Kopiert wird die ISBN in der Akte; auch
   Google Books nennt sie erst auf der Detailseite. Aufbau und Abstand: `KACHEL` und
-  `RASTER_ABSTAND` in `BuchKarte.svelte`.
+  `RASTER_ABSTAND` in `BuchKarte.svelte`. In Mein Portal, wo es keine Akte gibt, öffnet ein
+  Klick auf die Kachel ein Seitenblatt (`ui/Seitenblatt`, Material 3, Side sheets: „Standard
+  side sheets display content that complements the screen's primary content.") mit Bestand und
+  ISBN; kopiert wird mit demselben Knopf wie im Kopf der Akte (`ui/NummerKopieren`). Ein Dialog
+  wäre zu laut („Don't use dialogs for low- or medium-priority information.").
 - **Ein Knopf ohne Fläche steht in der Hauptfarbe; trägt er nur ein Symbol, nicht.**
   Material 3, Buttons: „since there's no container, the label text color must always be
   recognizable from non-button text and elements" (Specs: „Text icon & label: Primary");

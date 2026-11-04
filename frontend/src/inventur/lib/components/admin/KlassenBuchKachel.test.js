@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
 import KlassenBuchKachel from './KlassenBuchKachel.svelte';
 import BuchKarte, { KACHEL } from '../BuchKarte.svelte';
 
@@ -163,5 +163,41 @@ describe('KlassenBuchKachel: gebaut wie die Katalog-Kachel', () => {
 			bearbeitbar: false
 		});
 		expect(container.querySelector('[data-chip]')).toBeNull();
+	});
+});
+
+// In Mein Portal zeigt ein Klick auf die Kachel die Angaben im Seitenblatt (SchulbuchBlatt), dort
+// steht die ISBN zum Kopieren. Beim Zeigen nennt schon die Einblendung die ISBN, wie im Katalog.
+describe('KlassenBuchKachel: im Portal', () => {
+	it('die Einblendung nennt die ISBN', () => {
+		const { container } = render(KlassenBuchKachel, {
+			titel: buch({ isbn: '9783123456789' }),
+			bearbeitbar: false
+		});
+		const nummer = container.querySelector('[data-einblendung] [data-nummer]');
+		expect(nummer?.textContent?.replace(/\s+/g, ' ').trim()).toBe('ISBN 9783123456789');
+	});
+
+	it('mit onwahl ist die Ansicht ein Knopf, der die Angaben zeigt; die gewählte trägt den Ring', async () => {
+		const onwahl = vi.fn();
+		const titel = buch({ isbn: '9783123456789' });
+		const screen = render(KlassenBuchKachel, { titel, bearbeitbar: false, onwahl });
+		const knopf = screen.getByRole('button', { name: /^Mathe 7 .*Angaben zeigen$/ });
+		expect(knopf.getAttribute('aria-pressed')).toBe('false');
+		await fireEvent.click(knopf);
+		expect(onwahl).toHaveBeenCalledWith(titel);
+
+		await screen.rerender({ titel, bearbeitbar: false, onwahl, gewaehlt: true });
+		expect(knopf.getAttribute('aria-pressed')).toBe('true');
+		expect(screen.container.querySelector('.m3-state')?.classList).toContain('outline-primary');
+	});
+
+	it('ohne onwahl bleibt die Ansicht ohne Knopf und ohne Ring', () => {
+		const { queryByRole, container } = render(KlassenBuchKachel, {
+			titel: buch(),
+			bearbeitbar: false
+		});
+		expect(queryByRole('button')).toBeNull();
+		expect(container.querySelector('.outline-primary')).toBeNull();
 	});
 });

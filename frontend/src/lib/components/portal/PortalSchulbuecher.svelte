@@ -18,6 +18,8 @@
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
 	import FachKarte from './FachKarte.svelte';
+	import SchulbuchBlatt from './SchulbuchBlatt.svelte';
+	import { SEITENBLATT_PLATZ } from '../ui/Seitenblatt.svelte';
 
 	/** @type {{ fach: string, titel: number, gesamt: number, verliehen: number, verfuegbar: number }[]} */
 	let faecher = $state.raw([]);
@@ -114,9 +116,16 @@
 
 	/** @param {string} fach */
 	const buecherDesFachs = (fach) => titel.filter((b) => (b.subject ?? '') === fach);
+
+	// Das Seitenblatt zeigt das Buch aus der aktuellen Liste: Lädt sie neu, stimmen die Zahlen,
+	// und fällt das Buch heraus, schließt das Blatt. Ein zweiter Klick auf die Kachel schließt.
+	let gewaehltId = $state(/** @type {string | null} */ (null));
+	const gewaehlt = $derived(titel.find((b) => b.id === gewaehltId) ?? null);
+	/** @param {any} b */
+	const waehle = (b) => (gewaehltId = gewaehltId === b.id ? null : b.id);
 </script>
 
-<div class="flex flex-col gap-4 pt-2">
+<div class="flex flex-col gap-4 pt-2 {gewaehlt ? SEITENBLATT_PLATZ : ''}">
 	<div class="flex flex-wrap items-center gap-3">
 		<Feld
 			id="schulbuecher-suche"
@@ -162,8 +171,14 @@
 					offen={offen.has(f.fach)}
 					exportUrl={exportUrl(f.fach)}
 					onToggle={() => klappe(f.fach)}
+					onwahl={waehle}
+					{gewaehltId}
 				/>
 			{/each}
 		</div>
+	{/if}
+
+	{#if gewaehlt}
+		<SchulbuchBlatt buch={gewaehlt} onschliessen={() => (gewaehltId = null)} />
 	{/if}
 </div>

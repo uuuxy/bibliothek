@@ -864,7 +864,10 @@ für alle gleich, als PDF; → _LMF-Plan_) · **Schulbücher** (für die Fachspr
 Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach) und die
 Filter Jahrgang und Schulzweig (der Filter Jahrgang zeigt nur Bücher, an denen ein Jahrgang
 eingetragen ist); darunter je Fach eine Zeile mit Exemplaren, Titeln und
-Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als PDF" sitzt an
+Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. Beim Zeigen nennt das Cover
+Fach, Titel und ISBN; ein Klick auf eine Kachel öffnet rechts ein Blatt mit dem Bestand und der
+ISBN zum Kopieren (am Handy über die ganze Breite); das Kreuz, Escape oder ein zweiter Klick
+schließt es. Dasselbe Blatt zeigen die Kacheln unter **Klassensätze**. „Als PDF" sitzt an
 jedem Fach und druckt genau dieses Fach mit der aktuellen Filterung: eine Zeile je Buch
 mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig, Zähldatum und den Zahlen. Die
 Spalte **Gezählt** erscheint nur, wenn in der Auswahl überhaupt schon gezählt wurde. Im Kopf steht,

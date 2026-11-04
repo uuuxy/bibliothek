@@ -7,14 +7,14 @@
      Der Standort steht am Exemplar: Die Zeile nennt die Standorte der Exemplare im Bestand
      mit ihrer Zahl, gezählt aus den Karten des Reiters „Exemplare". -->
 <script>
-	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
+	import { MapPin, SquarePen } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import NummerKopieren from '../ui/NummerKopieren.svelte';
 	import TitelLoeschen from './TitelLoeschen.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { standorteAusExemplaren, standortZeile } from '../../utils/standorte.js';
 	import { exemplarZahlen } from './exemplarStatus.js';
 	import { jahrgangSpanne } from '../../utils/format.js';
-	import { kopiere } from '../../utils/zwischenablage.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -34,8 +34,6 @@
 		onEdit = undefined,
 		onDelete = undefined
 	} = $props();
-
-	let copied = $state(false);
 
 	const jahrgang = $derived(jahrgangSpanne(titel.jahrgangVon, titel.jahrgangBis));
 
@@ -59,12 +57,6 @@
 	const standort = $derived(standortZeile(standorteAusExemplaren(exemplare)));
 	// Den Bestand nennt „1 von 2 verfügbar"; daneben steht nur, was diese Zahl nicht sagt.
 	const bestellt = $derived(exemplarZahlen(exemplare).bestellt);
-
-	async function kopieren() {
-		if (!titel.isbn || !(await kopiere(titel.isbn))) return;
-		copied = true;
-		setTimeout(() => (copied = false), 2000);
-	}
 </script>
 
 <div class="flex flex-col-reverse gap-8 sm:flex-row sm:items-start">
@@ -80,18 +72,7 @@
 		{/if}
 
 		<div class="mt-4 flex flex-col gap-1 text-sm text-on-surface-variant">
-			<button
-				class="flex w-fit cursor-pointer items-center gap-1.5 font-mono transition-colors hover:text-primary"
-				onclick={kopieren}
-				title="{nummerArt} kopieren"
-			>
-				<span>{nummerArt}: {titel.isbn || '–'}</span>
-				{#if copied}
-					<span class="font-sans text-xs font-medium text-primary">Kopiert!</span>
-				{:else if titel.isbn}
-					<Copy class="h-3.5 w-3.5" aria-hidden="true" />
-				{/if}
-			</button>
+			<NummerKopieren nummer={titel.isbn} art={nummerArt} />
 			{#if signatur}
 				<span class="flex items-center gap-1.5">
 					<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

@@ -32,12 +32,27 @@
 	 *     auflagenBestand?: { auflage?: string, erscheinungsjahr?: number, gesamt_bestand: number }[]
 	 *   },
 	 *   onEdit?: (book: any) => void,
-	 *   bearbeitbar?: boolean
+	 *   bearbeitbar?: boolean,
+	 *   onwahl?: (book: any) => void,
+	 *   gewaehlt?: boolean
 	 * }}
 	 * bearbeitbar=false: reine Ansicht (Kollegiums-Portal). Ohne den Schalter
-	 * wäre jede Kachel dort ein Knopf, hinter dem für die Rolle ein 403 liegt.
+	 * wäre jede Kachel dort ein Knopf, hinter dem für die Rolle ein 403 liegt. onwahl macht die
+	 * Ansicht zum Knopf, der die Angaben im Seitenblatt zeigt (SchulbuchBlatt); gewaehlt trägt
+	 * den Ring der angetippten Kachel.
 	 */
-	let { titel, onEdit = undefined, bearbeitbar = true } = $props();
+	let {
+		titel,
+		onEdit = undefined,
+		bearbeitbar = true,
+		onwahl = undefined,
+		gewaehlt = false
+	} = $props();
+
+	/** Was ein Klick tut: bearbeiten (Klassensätze) oder die Angaben zeigen (Portal). */
+	const aktion = $derived(
+		bearbeitbar ? () => onEdit?.(titel) : onwahl ? () => onwahl?.(titel) : undefined
+	);
 
 	const hinweise = $derived(
 		Boolean(titel.auflagenBestand?.length || titel.quelle === 'ausleihe' || titel.auflagen?.length)
@@ -51,9 +66,13 @@
 	<h3 class="sr-only">{titel.title}</h3>
 	<!-- Einblendung und Chip liegen auf dem Cover wie in der Katalog-Kachel (BuchKarteCover). -->
 	<div class="relative">
-		<!-- Beim Zeigen hellt nur das Cover auf, wie im Katalog, und nur an der bearbeitbaren
-		     Kachel: Die Ansicht im Portal ist kein Bedienelement. -->
-		<div class="rounded-lg" class:m3-state={bearbeitbar}>
+		<!-- Beim Zeigen hellt nur das Cover auf, wie im Katalog, und nur, wo ein Klick etwas tut.
+		     Die angetippte Kachel trägt einen Ring als outline: Dessen Abstand bleibt durchsichtig,
+		     auch im dunklen Design. -->
+		<div
+			class="rounded-lg {gewaehlt ? 'outline-2 outline-offset-2 outline-primary' : ''}"
+			class:m3-state={!!aktion}
+		>
 			<BuchCover
 				coverUrl={titel.coverUrl}
 				isbn={titel.isbn}
@@ -63,7 +82,7 @@
 				dekorativ
 			/>
 		</div>
-		<CoverEinblendung titel={titel.title} fach={titel.subject} />
+		<CoverEinblendung titel={titel.title} fach={titel.subject} nummer={titel.isbn} />
 		<div class="absolute inset-x-2 bottom-2 flex">
 			<BestandChip gesamt={titel.gesamt} verfuegbar={titel.verfuegbar} imZulauf={titel.imZulauf} />
 		</div>
@@ -107,24 +126,25 @@
 	{/if}
 {/snippet}
 
-{#if bearbeitbar}
+{#if aktion}
 	<div
 		class="group cursor-pointer rounded-lg {KACHEL} focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-		onclick={() => onEdit?.(titel)}
+		onclick={aktion}
+		aria-pressed={bearbeitbar ? undefined : gewaehlt}
 		role="button"
 		tabindex="0"
 		onkeydown={(e) => {
 			if (e.target !== e.currentTarget) return;
 			if (e.key === 'Enter' || e.key === ' ') {
 				e.preventDefault();
-				onEdit?.(titel);
+				aktion?.();
 			}
 		}}
 	>
 		{@render inhalt()}
 		<!-- Der Name des Knopfs kommt aus seinem Inhalt und endet mit dem, was er tut: Ein fremder
 		     aria-label verschwiege, was auf der Kachel steht (WCAG 2.5.3, Beschriftung im Namen). -->
-		<span class="sr-only">bearbeiten</span>
+		<span class="sr-only">{bearbeitbar ? 'bearbeiten' : 'Angaben zeigen'}</span>
 	</div>
 {:else}
 	<div class="group {KACHEL}">

@@ -15,7 +15,9 @@
 	 *   darfPflegen?: boolean,
 	 *   onToggle: () => void,
 	 *   onEdit?: () => void,
-	 *   onDelete?: () => void
+	 *   onDelete?: () => void,
+	 *   onwahl?: (book: any) => void,
+	 *   gewaehltId?: string | null
 	 * }}
 	 * Ohne darfPflegen (Kollegiums-Portal) braucht es keine Aktionen — die Karte ist dann
 	 * dieselbe Ansicht wie unter Bibliothek → Klassensätze, nur lesend.
@@ -29,7 +31,9 @@
 		darfPflegen = false,
 		onToggle,
 		onEdit = undefined,
-		onDelete = undefined
+		onDelete = undefined,
+		onwahl = undefined,
+		gewaehltId = null
 	} = $props();
 	const zeilenTitel = 'truncate text-base font-medium text-on-surface';
 	// Feste Mindestbreite und Tabellenziffern: Sonst ist der Chip bei „28 Bücher" breiter als
@@ -99,7 +103,13 @@
 			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] {RASTER_ABSTAND} pt-1 pb-6"
 		>
 			{#each sortierteTitel as book (book.id)}
-				<KlassenBuchKachel titel={book} {onEdit} bearbeitbar={darfPflegen} />
+				<KlassenBuchKachel
+					titel={book}
+					{onEdit}
+					bearbeitbar={darfPflegen}
+					{onwahl}
+					gewaehlt={book.id === gewaehltId}
+				/>
 			{/each}
 		</div>
 	{/if}

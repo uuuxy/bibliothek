@@ -5,7 +5,7 @@ import { tick } from 'svelte';
 import { srcRoot, sammleQuelldateien, relPfad } from '../hygiene-quellen.js';
 import { kopiere } from './zwischenablage.js';
 import { snackbars } from '../stores/snackbars.svelte.js';
-import BuchakteKopf from '../components/buchakte/BuchakteKopf.svelte';
+import NummerKopieren from '../components/ui/NummerKopieren.svelte';
 
 const writeText = vi.fn();
 
@@ -45,8 +45,9 @@ describe('kopiere', () => {
 	});
 });
 
-// Kopiert wird die ISBN in der Akte; die Kachel des Katalogs zeigt sie nur in der Einblendung.
-describe('Der Knopf „ISBN kopieren“ in der Akte', () => {
+// Die ISBN kopiert nur ein Knopf (NummerKopieren): im Kopf der Akte und im Seitenblatt von Mein
+// Portal. Die Kacheln nennen sie nur in der Einblendung.
+describe('Der Knopf „ISBN kopieren“', () => {
 	const buch = {
 		id: 'b-1',
 		isbn: '9783123456789',
@@ -60,14 +61,14 @@ describe('Der Knopf „ISBN kopieren“ in der Akte', () => {
 
 	it('sagt „Kopiert!“ erst, wenn es gelungen ist', async () => {
 		writeText.mockResolvedValue(undefined);
-		const { getByRole, findByText } = render(BuchakteKopf, { titel: buch, exemplare: [] });
+		const { getByRole, findByText } = render(NummerKopieren, { nummer: buch.isbn });
 		await fireEvent.click(getByRole('button', { name: /ISBN/ }));
 		expect(await findByText('Kopiert!')).toBeTruthy();
 	});
 
 	it('sagt nicht „Kopiert!“, wenn es scheitert', async () => {
 		writeText.mockRejectedValue(new Error('Write permission denied.'));
-		const { getByRole, queryByText } = render(BuchakteKopf, { titel: buch, exemplare: [] });
+		const { getByRole, queryByText } = render(NummerKopieren, { nummer: buch.isbn });
 		await fireEvent.click(getByRole('button', { name: /ISBN/ }));
 		await tick();
 		await new Promise((fertig) => setTimeout(fertig, 0));
