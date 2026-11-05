@@ -65,7 +65,7 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen *repos
 	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.verlangeRecht("manage_settings")(s.mahnwesen().KlassenleitungLoeschen()))
 
 	// Import aus der LUSD: import_students statt manage_users, das Recht, das die Rechte-Oberfläche
-	// als „LUSD / CSV Import" zeigt. Ein Schalter, der nichts schaltet, wäre schlimmer als keiner:
+	// als „LUSD-Import" zeigt. Ein Schalter, der nichts schaltet, wäre schlimmer als keiner:
 	// Er behauptete eine Einstellung, die es nicht gibt. Ab Werk haben es Admin, Leitung und
 	// Mitarbeiter (db/rechte_vorgabe.go).
 	mux.Handle("POST /api/lusd/preview", s.verlangeRecht("import_students")(s.leser().LUSDVorschau()))

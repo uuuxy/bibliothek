@@ -149,7 +149,7 @@ Hand). Ein anonymisierter Datensatz ist dafür verloren.
 ## 5. Reparatur von Hand: zwei Datensätze zusammenführen
 
 Fällt eine Dublette erst später auf — das Kind steht mit dem alten Ausweis an der Theke und
-gilt als gesperrter Abgänger — führt ein Admin (Recht `merge_students`, „Schüler zusammenführen" — einzeln delegierbar) beide
+gilt als gesperrter Abgänger — führt ein Admin (Recht `merge_students`, „Leser zusammenführen" — einzeln delegierbar) beide
 Datensätze zusammen: **Leserakte → Stammdaten & Adresse → „Doppelter Datensatz?"**.
 
 Regeln (`repository/leser_zusammenfuehren.go`):

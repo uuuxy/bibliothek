@@ -116,11 +116,11 @@ nach der Frist, nach der sich die Theke von selbst leert.
   nächste Leserin wartet. Das Buch liegt drei Tage für sie bereit; fällt das Ende auf ein
   Wochenende oder in die Ferien, bis zum nächsten Schultag. (§4)
 - Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Dann geht nur die
-  Rückgabe. Wer Schülerdaten ändern darf, hebt die Sperre im Dialog auf („Sperre aufheben"),
+  Rückgabe. Wer das Recht „Leser bearbeiten“ hat, hebt die Sperre im Dialog auf („Sperre aufheben"),
   und das Buch geht raus. Das gilt für die Sperre von Hand und für die, die das Programm
   Ehemaligen setzt. (§2.2)
 - Eine **offene Forderung** oder zu viele überfällige Bücher halten Schülerbücherei und Geräte
-  an. Wer Schülerdaten ändern darf, übergeht das einmalig („Einmalig ignorieren").
+  an. Wer das Recht „Leser bearbeiten“ hat, übergeht das einmalig („Einmalig ignorieren").
 - Ein **Schulbuch** geht trotzdem raus — die Lernmittelfreiheit lässt keine automatische Sperre
   zu, und darum fragt die Theke dabei auch nicht nach. Nur eine Sperre von Hand hält auch das
   Schulbuch an. Dasselbe gilt fürs Verlängern: an der Buchzeile, für die ganze Klasse
@@ -551,7 +551,7 @@ Liste.
   Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
   anonymisiert, wenn sie früher abläuft. _Endgültig löschen_ im Papierkorb wirkt sofort und
   braucht ein eigenes Recht (DSGVO-Kette, §8).
-- **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
+- **Doppelter Datensatz?** (Recht „Leser zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
   Person zweimal in der Kartei, beide Datensätze zusammenführen. Der Grund ist je nach Art
   ein anderer, und er steht im Dialog: beim Schüler eine Namensänderung in der LUSD, die
   der Export ohne Schüler-ID nicht wiedererkannt hat; beim Kollegen ein Eintrag von Hand,

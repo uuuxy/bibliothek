@@ -10,7 +10,7 @@ import { BookOpen, Settings, ShoppingCart, Users } from '@lucide/svelte';
 
 export const rechteBeschreibungen = [
 	{
-		category: 'Schülerverwaltung',
+		category: 'Leserdatei',
 		icon: Users,
 		items: [
 			{
@@ -20,22 +20,22 @@ export const rechteBeschreibungen = [
 			},
 			{
 				key: 'create_students',
-				label: 'Schüler hinzufügen',
-				desc: 'Ermöglicht das manuelle Anlegen neuer Schüler'
+				label: 'Leser anlegen',
+				desc: 'Leser von Hand anlegen („Leser anlegen“ in der Leserdatei)'
 			},
 			{
 				key: 'edit_students',
-				label: 'Schülerdaten ändern',
+				label: 'Leser bearbeiten',
 				desc: 'Stammdaten und Abgangsjahr ändern, Ausleihsperre setzen/aufheben, Buchschäden melden sowie Schadensfälle als bezahlt buchen oder stornieren'
 			},
 			{
 				key: 'delete_students',
-				label: 'Schüler löschen',
+				label: 'Leser löschen',
 				desc: 'Schüler und Kollegen in den Papierkorb verschieben, Papierkorb einsehen und Einträge wiederherstellen. Mit einem Kollegen fällt sein Zugang zu „Mein Portal"; hat er einen, nur zusammen mit „Benutzer & Rechte verwalten", ein Administrator-Konto nur als Administrator'
 			},
 			{
 				key: 'import_students',
-				label: 'LUSD / CSV Import',
+				label: 'LUSD-Import',
 				desc: 'LUSD-Export (CSV/XLSX) als Vorschau prüfen und einspielen'
 			},
 			{
@@ -52,16 +52,16 @@ export const rechteBeschreibungen = [
 			{
 				key: 'view_books',
 				label: 'Medienkatalog anzeigen',
-				desc: 'Titel, Exemplare, Signaturen, Systematik und Geräte einsehen; Buch-Etiketten drucken, im Druck-Center zusammen mit „Bücher bearbeiten“; Schulklassen-Übersicht'
+				desc: 'Titel, Exemplare, Signaturen, Systematik und Geräte einsehen; Buch-Etiketten drucken, im Druck-Center zusammen mit „Medienkatalog bearbeiten“; Schulklassen-Übersicht'
 			},
 			{
 				key: 'edit_books',
-				label: 'Bücher bearbeiten',
+				label: 'Medienkatalog bearbeiten',
 				desc: 'Titel und Exemplare anlegen und ändern: Barcode, Status, Schadensnotiz, Defekt, Aussonderung; Ausleihen verlängern und Fälligkeit setzen; Etiketten-Druckstatus, Geräte und Systematik pflegen'
 			},
 			{
 				key: 'delete_books',
-				label: 'Bücher & Exemplare löschen',
+				label: 'Titel und Exemplare löschen',
 				desc: 'Exemplare und ganze Titel endgültig löschen'
 			},
 			{
@@ -82,8 +82,8 @@ export const rechteBeschreibungen = [
 		items: [
 			{
 				key: 'perform_actions',
-				label: 'Kiosk / Terminal bedienen',
-				desc: 'Ausleihe, Rückgabe, Scan und Suche am Terminal — die Kernfunktion der Helfer-Rolle (ohne Zugriff auf Schülerlisten oder Mahnwesen)'
+				label: 'Kiosk bedienen',
+				desc: 'Ausleihe, Rückgabe, Scan und Suche am Kiosk — die Kernfunktion der Helfer-Rolle (ohne Leserdatei und Mahnwesen)'
 			},
 			{
 				key: 'create_reservations',
@@ -123,7 +123,7 @@ export const rechteBeschreibungen = [
 			},
 			{
 				key: 'audit_logs',
-				label: 'Sicherheits-Logbuch einsehen',
+				label: 'System-Logs einsehen',
 				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Verwaltungsprotokoll zusätzlich: „Benutzer & Rechte verwalten")'
 			},
 			{
@@ -138,18 +138,18 @@ export const rechteBeschreibungen = [
 			},
 			{
 				key: 'manage_students_admin',
-				label: 'Schülerverwaltung: Sonderrechte',
+				label: 'Leserdatei: Sonderrechte',
 				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb (Knopf „Endgültig löschen"). Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler spätestens nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen löscht er nach 180 Tagen endgültig'
 			},
 			{
 				key: 'merge_students',
-				label: 'Schüler zusammenführen',
+				label: 'Leser zusammenführen',
 				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Leserakte, Reiter Stammdaten & Adresse) — unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar'
 			},
 			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
-				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Verwaltungsprotokoll einsehen — öffnet den Menüpunkt „Berechtigungen". Zusammen mit „Schülerverwaltung: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Schüler löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei'
+				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Verwaltungsprotokoll einsehen — öffnet den Menüpunkt „Benutzer & Rechte". Zusammen mit „Leserdatei: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Leser löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei'
 			}
 		]
 	}

@@ -133,13 +133,13 @@ func wiederherstellungsKollision(err error) (string, bool) {
 	}
 	switch pgErr.ConstraintName {
 	case "unique_schueler_name_gebdatum":
-		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits denselben Namen und dasselbe Geburtsdatum. Beide über „Schüler zusammenführen“ vereinen, statt zwei Zeilen für denselben Menschen zu führen.", true
+		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits denselben Namen und dasselbe Geburtsdatum. Beide in der Leserakte über „Doppelter Datensatz?“ zusammenführen, statt zwei Zeilen für denselben Menschen zu führen.", true
 	case "uniq_schueler_barcode_active":
 		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits dieselbe Ausweisnummer. Erst die Ausweisnummer des aktiven Datensatzes ändern.", true
 	case "uniq_ausweis_ueber_personen":
 		return "Wiederherstellen nicht möglich: Eine Lehrkraft trägt inzwischen dieselbe Ausweisnummer. Erst einer der beiden Personen eine andere Nummer geben.", true
 	case "uniq_schueler_lusd_id_active":
-		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits dieselbe LUSD-ID. Beide über „Schüler zusammenführen“ vereinen.", true
+		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits dieselbe LUSD-ID. Beide in der Leserakte über „Doppelter Datensatz?“ zusammenführen.", true
 	case repository.ConstraintNummerUeberBuchUndAusweis:
 		return "Wiederherstellen nicht möglich: Die Ausweisnummer ist inzwischen der Barcode eines Buchs. Erst dem Buch eine andere Nummer geben.", true
 	}
