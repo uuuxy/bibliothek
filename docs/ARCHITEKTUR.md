@@ -2066,7 +2066,10 @@ Das Nachladen läuft, während jemand arbeitet. Daraus folgen sechs Regeln:
   des Browsers, sobald eines von ihnen die Seite lädt; neu geladen wird davon nur ein Fenster, in
   dem noch niemand etwas bedient hat (`navigator.userActivation`, `stores/programmstand.svelte.js`).
   Jedes andere zeigt den Hinweis „Neu laden", sobald der Server einen anderen Stand der
-  Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der Live-Leitung. Der
+  Oberfläche nennt: in jeder Antwort und gleich nach dem Neuaufbau der Live-Leitung. Der Knopf
+  lässt erst den Browser den neuen Service Worker holen (`registration.update()`) und lädt neu,
+  wenn dieser aktiv ist, höchstens nach 30 s: Sofort neu geladen, bekäme das Fenster die alte
+  App-Shell aus dem Cache, solange der neue sich noch einrichtet. Der
   öffentliche Katalog hat weder Anmeldung noch Live-Leitung und liest den Stand aus der Antwort
   auf die Suche (`katalog/OpacSuche.svelte`).
 - **IndexedDB-Warteschlange** (`idb`): Scans werden lokal gehalten und gehen später durch

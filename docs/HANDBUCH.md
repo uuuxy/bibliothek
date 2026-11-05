@@ -939,8 +939,9 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
   fehlt und wie es zu beheben ist.
 - **Hinweis „Eine neue Fassung des Programms ist eingespielt"** → Nach einem Update arbeitet ein
   offenes Fenster noch mit dem alten Programm. Erst abschließen, was offen ist (eine Ausleihe,
-  eine Maske mit Eingaben), dann _Neu laden_. Ein Fenster, an dem noch niemand gearbeitet hat,
-  lädt sich selbst neu.
+  eine Maske mit Eingaben), dann _Neu laden_. Der Knopf zeigt „Wird geladen …“, bis das neue
+  Programm da ist, und lädt dann einmal neu; ein Klick genügt. Ein Fenster, an dem noch niemand
+  gearbeitet hat, lädt sich selbst neu.
 - **„Bitte erlaube Popups, um das PDF zu öffnen."** → Der Browser hat den neuen Tab blockiert;
   gedruckt und gezählt ist nichts. In der Adresszeile für diese Seite Pop-ups erlauben und noch
   einmal klicken.

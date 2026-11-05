@@ -30,9 +30,10 @@
 			variant="secondary"
 			size="sm"
 			onclick={() => programmstand.ladeNeu()}
+			disabled={programmstand.laedt}
 			class="mt-0.5 shrink-0"
 		>
-			Neu laden
+			{programmstand.laedt ? 'Wird geladen …' : 'Neu laden'}
 		</Button>
 	</div>
 {/if}

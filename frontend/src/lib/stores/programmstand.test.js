@@ -9,7 +9,8 @@ vi.mock('../liveEvents.js', () => ({
 	}
 }));
 
-const { Programmstand, KOPF_OBERFLAECHENSTAND } = await import('./programmstand.svelte.js');
+const { Programmstand, KOPF_OBERFLAECHENSTAND, WARTEZEIT_NEUE_FASSUNG_MS } =
+	await import('./programmstand.svelte.js');
 
 const ALT = '/assets/index-alt111.js';
 const NEU = '/assets/index-neu222.js';
@@ -107,6 +108,101 @@ describe('programmstand', () => {
 			const ladeNeu = vi.fn();
 			new Programmstand(ladeNeu).neuerServiceWorker();
 			expect(ladeNeu).not.toHaveBeenCalled();
+		});
+	});
+
+	// Ein Klick genügt: Sofort neu geladen, bekäme die Seite die alte Kopie aus dem Service Worker,
+	// solange der neue sich noch einrichtet, und der Hinweis stünde wieder da.
+	describe('„Neu laden"', () => {
+		afterEach(() => vi.useRealTimers());
+
+		it('wartet, bis die neue Fassung bereit ist, und lädt dann genau einmal neu', async () => {
+			/** @type {() => void} */
+			let bereit = () => {};
+			const hole = vi.fn(() => new Promise((fertig) => (bereit = () => fertig(undefined))));
+			const ladeNeu = vi.fn();
+			const stand = new Programmstand(ladeNeu, hole);
+
+			const lauf = stand.ladeNeu();
+			void stand.ladeNeu();
+			expect(stand.laedt).toBe(true);
+			expect(hole).toHaveBeenCalledOnce();
+			expect(ladeNeu).not.toHaveBeenCalled();
+
+			bereit();
+			await lauf;
+			expect(ladeNeu).toHaveBeenCalledOnce();
+			// Bricht jemand das Neuladen bei der Rückfrage zu ungespeicherten Eingaben ab, bleibt die
+			// Seite stehen; der Knopf darf dann nicht auf „Wird geladen …" hängen.
+			expect(stand.laedt).toBe(false);
+		});
+
+		it('scheitert das Holen, lädt es trotzdem neu', async () => {
+			const ladeNeu = vi.fn();
+			await new Programmstand(ladeNeu, () => Promise.reject(new Error('offline'))).ladeNeu();
+			expect(ladeNeu).toHaveBeenCalledOnce();
+		});
+
+		it('hängt das Holen, lädt es nach der Wartezeit trotzdem neu', async () => {
+			vi.useFakeTimers();
+			const ladeNeu = vi.fn();
+			void new Programmstand(ladeNeu, () => new Promise(() => {})).ladeNeu();
+			await vi.advanceTimersByTimeAsync(WARTEZEIT_NEUE_FASSUNG_MS - 1);
+			expect(ladeNeu).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1);
+			expect(ladeNeu).toHaveBeenCalledOnce();
+		});
+
+		describe('mit dem Service Worker des Browsers', () => {
+			/** @param {any} registrierung */
+			function mitRegistrierung(registrierung) {
+				vi.stubGlobal('navigator', {
+					...navigator,
+					serviceWorker:
+						registrierung === undefined ? undefined : { getRegistration: async () => registrierung }
+				});
+			}
+
+			it('lässt den neuen holen und lädt erst neu, wenn er aktiv ist', async () => {
+				const neu = Object.assign(new EventTarget(), { state: 'installing' });
+				const registrierung = {
+					installing: /** @type {any} */ (null),
+					waiting: null,
+					update: vi.fn(async () => {
+						registrierung.installing = neu;
+					})
+				};
+				mitRegistrierung(registrierung);
+				const ladeNeu = vi.fn();
+				const lauf = new Programmstand(ladeNeu).ladeNeu();
+
+				await vi.waitFor(() => expect(registrierung.update).toHaveBeenCalledOnce());
+				neu.state = 'installed';
+				neu.dispatchEvent(new Event('statechange'));
+				await Promise.resolve();
+				expect(ladeNeu).not.toHaveBeenCalled();
+
+				neu.state = 'activated';
+				neu.dispatchEvent(new Event('statechange'));
+				await lauf;
+				expect(ladeNeu).toHaveBeenCalledOnce();
+			});
+
+			it('findet der Browser keinen neuen, lädt es sofort neu', async () => {
+				const registrierung = { installing: null, waiting: null, update: vi.fn(async () => {}) };
+				mitRegistrierung(registrierung);
+				const ladeNeu = vi.fn();
+				await new Programmstand(ladeNeu).ladeNeu();
+				expect(registrierung.update).toHaveBeenCalledOnce();
+				expect(ladeNeu).toHaveBeenCalledOnce();
+			});
+
+			it('ohne Service Worker lädt es sofort neu', async () => {
+				mitRegistrierung(undefined);
+				const ladeNeu = vi.fn();
+				await new Programmstand(ladeNeu).ladeNeu();
+				expect(ladeNeu).toHaveBeenCalledOnce();
+			});
 		});
 	});
 });

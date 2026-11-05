@@ -9,6 +9,7 @@ describe('NeueFassung', () => {
 	afterEach(() => {
 		programmstand.eigener = '';
 		programmstand.server = '';
+		programmstand.laedt = false;
 		vi.restoreAllMocks();
 	});
 
@@ -20,7 +21,7 @@ describe('NeueFassung', () => {
 	});
 
 	it('nennt die neue Fassung und lädt erst auf den Knopf neu', async () => {
-		const ladeNeu = vi.spyOn(programmstand, 'ladeNeu').mockImplementation(() => {});
+		const ladeNeu = vi.spyOn(programmstand, 'ladeNeu').mockImplementation(async () => {});
 		programmstand.eigener = '/assets/index-alt111.js';
 		programmstand.server = '/assets/index-neu222.js';
 		render(NeueFassung);
@@ -31,5 +32,13 @@ describe('NeueFassung', () => {
 		expect(ladeNeu).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'Neu laden' }));
 		expect(ladeNeu).toHaveBeenCalledOnce();
+	});
+
+	it('zeigt „Wird geladen …“, solange die neue Fassung kommt, und nimmt keinen zweiten Klick an', () => {
+		programmstand.eigener = '/assets/index-alt111.js';
+		programmstand.server = '/assets/index-neu222.js';
+		programmstand.laedt = true;
+		render(NeueFassung);
+		expect(screen.getByRole('button', { name: 'Wird geladen …' })).toHaveProperty('disabled', true);
 	});
 });
