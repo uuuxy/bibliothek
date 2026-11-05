@@ -47,7 +47,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(`RT Neu ${s}`);
 		await page.locator('#buch-isbn').fill(ISBN);
 		await page.locator('#buch-signatur').fill('BIB Rt');
@@ -69,7 +69,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(`RT Lernmittel ${s}`);
 		await page.locator('#buch-isbn').fill(ISBN_LM);
 		// Ein Bibliotheksbuch braucht die Signatur. „Speichern“ bleibt bedienbar: Der Klick
@@ -79,7 +79,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await expect(speichern).toBeEnabled();
 		await speichern.click();
 		await expect(signatur, 'der Klick ohne Signatur führt ins Feld').toBeFocused();
-		const kopf = await page.getByRole('heading', { name: 'Neuer Titel' }).boundingBox();
+		const kopf = await page.getByRole('heading', { name: 'Titel anlegen' }).boundingBox();
 		const feld = await signatur.boundingBox();
 		expect(feld?.y, 'das Feld steht unter dem stehenden Kopf der Maske').toBeGreaterThan(
 			(kopf?.y ?? 0) + (kopf?.height ?? 0)
@@ -134,7 +134,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(titel);
 		await page.locator('#buch-signatur').fill('BIB Rt');
 		await expect(von).toHaveValue('');

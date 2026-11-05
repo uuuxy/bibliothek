@@ -55,7 +55,7 @@ func (s *Server) registriereLeserRouten(mux *http.ServeMux, leserAbfragen *repos
 
 	// Klassen. Die Namen sind keine Schülerdaten, und gewählt wird die Klasse mit verschiedenen
 	// Rechten: Leserdatei (view_students), Klassensätze und LMF-Verlängerung (edit_books),
-	// Mahnwesen-Routing (manage_settings). Hinge die Liste an einem davon, sähen die anderen
+	// Klassenleitungen (manage_settings). Hinge die Liste an einem davon, sähen die anderen
 	// „Klassen nicht geladen".
 	mux.Handle("GET /api/klassen", s.VerlangeAnmeldung()(s.leser().Klassen(leserAbfragen)))
 	// Die besetzten Jahrgänge für das Auswahlfeld des Filters in der Leserdatei.

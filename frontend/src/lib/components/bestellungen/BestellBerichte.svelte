@@ -88,7 +88,7 @@
 		<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
 		<section class="space-y-3">
 			<div class="border-b border-outline-variant pb-3">
-				<h2 class="text-lg font-bold text-on-surface">Bestellbericht erstellen</h2>
+				<h2 class="text-base font-bold text-on-surface">Bestellbericht erstellen</h2>
 			</div>
 			<div class="divide-y divide-outline-variant">
 				{#each berichtOptionen as opt, _i (_i)}
@@ -176,7 +176,7 @@
 					: 'pointer-events-none bg-on-surface/12 text-on-surface/38'}"
 			>
 				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
-				PDF herunterladen
+				Als PDF
 			</a>
 			<p class="text-xs text-on-surface-variant">
 				Das PDF öffnet sich im Browser — von dort ausdrucken oder als Datei speichern.

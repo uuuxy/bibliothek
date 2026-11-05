@@ -15,7 +15,7 @@ test('System-Logs: Administrative Aktionen werden protokolliert', async ({ page 
 
 	try {
 		await gehZu(page, '/system-logs');
-		await page.getByRole('tab', { name: 'Admin-Audit-Log' }).click();
+		await page.getByRole('tab', { name: 'Verwaltungsprotokoll' }).click();
 		const zeile = page.getByRole('row').filter({ hasText: marke });
 		await expect(zeile).toHaveCount(1);
 		await expect(zeile).toContainText('UPDATE_SETTINGS');

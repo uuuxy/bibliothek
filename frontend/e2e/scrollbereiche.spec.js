@@ -112,12 +112,12 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 		await uiLogin(page);
 		await gehZu(page, '/bestellungen');
 		await page.getByRole('tab', { name: /Wareneingang/ }).click();
-		await expect(page.getByRole('heading', { name: 'Wareneingang bearbeiten' })).toBeVisible();
+		await expect(page.getByText('Wähle die Positionen aus')).toBeVisible();
 		await expect(page.getByText(`E2E Scroll-Zulauf ${s} 8`)).toBeAttached();
 
 		const lage = await page.evaluate(scrollLage, {
 			beschriftung: 'Bestellte Exemplare im Zulauf',
-			ueberschrift: 'Wareneingang bearbeiten'
+			ueberschrift: 'Wareneingang'
 		});
 		expect(lage, 'Tabelle oder Überschrift des Wareneingangs nicht gefunden').not.toBeNull();
 		expect(lage?.tabellen, 'Die Testdaten ergeben keine vier Lieferanten.').toBeGreaterThanOrEqual(
@@ -144,7 +144,7 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 		await expect(leiste).toContainText('1 Exemplar markiert');
 		await page.getByText(`E2E Scroll-Zulauf ${s} 8`).scrollIntoViewIfNeeded();
 		await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
-		await page.getByRole('heading', { name: 'Wareneingang bearbeiten' }).scrollIntoViewIfNeeded();
+		await page.getByText('Wähle die Positionen aus').scrollIntoViewIfNeeded();
 		await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
 		await leiste.getByRole('button', { name: 'Markierung aufheben' }).click();
 		await expect(leiste).toHaveCount(0);

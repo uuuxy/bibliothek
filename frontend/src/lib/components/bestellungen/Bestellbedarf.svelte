@@ -68,12 +68,9 @@
 			<div class="min-w-0">
 				<h2 class="text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
 					Bestellbedarf
-					{#if vorschlaege.length}
-						<span
-							class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
-							>{vorschlaege.length}</span
-						>
-					{/if}
+					<!-- Die Zahl in Klammern wie bei „Titel (4440)“: Ein Badge gehört in M3 an Navigation
+					     und Symbole, nicht an eine Überschrift. -->
+					{#if vorschlaege.length}({vorschlaege.length}){/if}
 				</h2>
 				{#if kritischeAnzahl}
 					<!-- Eine Aussage, nicht zwei. Vorher stand hier „{'{n}'}× komplett fehlend · 0 Exemplare":
@@ -151,7 +148,7 @@
 		     auf, auf der flachen Flaeche sofort. -->
 		<div class="-mx-3 border-b border-outline-variant">
 			<div
-				class="flex items-center gap-3 border border-transparent px-3 py-2 text-label-small font-semibold uppercase tracking-wider text-on-surface-variant select-none"
+				class="flex items-center gap-3 border border-transparent px-3 py-2 text-xs font-medium text-on-surface-variant select-none"
 			>
 				<span class="w-8 shrink-0" aria-hidden="true"></span>
 				<span class="flex-1 min-w-0">Titel</span>

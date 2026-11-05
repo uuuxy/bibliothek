@@ -75,7 +75,7 @@ test('ein neuer Titel bleibt stehen, wenn die ganze Liste erst danach ankommt', 
 		});
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(neu);
 		await page.locator('#buch-signatur').fill('BIB Spae');
 		const gespeichert = page.waitForResponse(

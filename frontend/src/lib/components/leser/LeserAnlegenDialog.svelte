@@ -122,7 +122,7 @@
 
 <Dialog {open} onclose={() => onclose?.()} size="md">
 	{#snippet header()}
-		<h3 class="text-base font-bold text-on-surface">Neuen Leser anlegen</h3>
+		<h3 class="text-base font-bold text-on-surface">Leser anlegen</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
 		<LeserArtWahl bind:art disabled={speichert} />

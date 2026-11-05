@@ -36,7 +36,7 @@ describe('Inventur nach Rechten', () => {
 		const screen = render(Inventur);
 
 		await screen.findByRole('button', { name: 'Fortsetzen' });
-		expect(screen.queryByRole('button', { name: 'Neue Inventur' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Inventur starten' })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Verwerfen' })).toBeNull();
 		expect(screen.getByText(/Recht „Bestand verwalten“/)).toBeTruthy();
 		expect(abgerufen()).toEqual(['/api/inventur/sessions']);
@@ -51,7 +51,7 @@ describe('Inventur nach Rechten', () => {
 		const screen = render(Inventur);
 
 		await screen.findByRole('button', { name: 'Verwerfen' });
-		expect(screen.getByRole('button', { name: 'Neue Inventur' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Inventur starten' })).toBeTruthy();
 		await waitFor(() =>
 			expect(abgerufen()).toEqual([
 				'/api/inventur/sessions',

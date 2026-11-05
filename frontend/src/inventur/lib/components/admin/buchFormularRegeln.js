@@ -71,7 +71,7 @@ export function bestandHinweis(id, bestand) {
 }
 
 /**
- * leeresBuchFormular: die eine Vorlage für ein neues Buch. Anfangszustand und „Neuer Titel"
+ * leeresBuchFormular: die eine Vorlage für ein neues Buch. Anfangszustand und „Titel anlegen"
  * lesen sie beide, ein neues Feld steht damit an einer Stelle. Einen Jahrgang trägt sie
  * nicht: Ohne Eintrag ist er unbekannt.
  * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, istLernmittel: boolean, track: string, mehrjahresband: boolean, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, schlagworte: string[], listenpreis: number|null }}

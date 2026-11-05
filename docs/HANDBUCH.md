@@ -295,7 +295,7 @@ Vermerk. (§9)
 
 ## Klassensätze
 
-Welche Klasse hat welche Lektüre? Klasse suchen, _Klasse hinzufügen_ öffnet den Dialog:
+Welche Klasse hat welche Lektüre? Klasse suchen, _Klassensatz anlegen_ öffnet den Dialog:
 Bücher auswählen, Zielklasse wählen, speichern. Zur Wahl stehen die Klassen der Schüler und
 die Klassen, die schon eine Buchliste haben; eintippen lässt sich eine Klasse nicht — neue
 Klassen kommen mit dem LUSD-Abgleich. Der Papierkorb an einer Klasse löscht nur ihre Buchliste. Reservierungen aus dem Kollegium stehen im Bestellwesen
@@ -526,7 +526,7 @@ Liste.
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke. **Sperre aufheben**
   nimmt jede Sperre weg, auch die, die das Programm Ehemaligen setzt. Beides steht im
   Protokoll. Einen Kollegen sperrt man nicht; der Knopf ist bei ihm grau.
-- **Neuer Leser** per Formular. Der Dialog fragt zuerst nach der **Art des Lesers**
+- **Leser anlegen** per Formular. Der Dialog fragt zuerst nach der **Art des Lesers**
   (Auswahlliste). Klassenweise legt man Schüler besser über den LUSD-Import an
   (_Einstellungen → LUSD & Versetzung_).
 
@@ -591,7 +591,7 @@ Mahnungen — so, wie Reiter, Klassenfilter und Suche sie gerade zeigen, geordne
 Name. Mail und Liste zählen nicht. Lehrkräfte werden nie angemahnt. Wer die Schule verlassen hat,
 steht in der Liste unter „Ehemalige" statt unter seiner früheren Klasse. Er bekommt den Mahnbrief
 wie alle über die Auswahl; an eine Klassenleitung geht er nicht. Welche Klasse an welche
-Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
+Lehrkraft geht, steht unter _Einstellungen → Klassenleitungen_. Diese Liste wird dort von Hand
 gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
 sendet (Mahnlauf, Abgänger-Kontoauszüge).
 Die Versetzung rückt die Zuordnungen eine Stufe hoch, außer von 6 nach 7 und von 10 in die
@@ -718,7 +718,7 @@ noch nicht trägt.
 **Dieselbe ISBN, zehn- oder dreizehnstellig:** Auf dem Titelblatt älterer
 Bücher steht die zehnstellige ISBN, auf dem Buchrücken die dreizehnstellige. Für das Programm
 ist es dieselbe Nummer. Es speichert eine zehnstellige ISBN mit richtiger Prüfziffer
-dreizehnstellig und findet den Titel über beide Längen: in der Maske _Neuer Titel_, bei _Titel
+dreizehnstellig und findet den Titel über beide Längen: in der Maske _Titel anlegen_, bei _Titel
 suchen & hinzufügen_ und _Neue Auflage bestellen_, in den Importen und in den Suchfeldern. Steht
 das Buch schon im Katalog, wird kein zweiter Titel angelegt. Eine zehnstellige Nummer mit
 falscher Prüfziffer bleibt, wie sie eingegeben wurde, und gilt als eigene Nummer: Umgerechnet
@@ -726,7 +726,7 @@ führte sie auf ein anderes Buch.
 
 ## Inventur
 
-_Neue Inventur_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
+_Inventur starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
 scannen; Fortschrittsbalken. Gezählt wird, was der Abschluss erwartet: Ein gesperrtes Buch im
 Regal zählt nicht mit, und die Rückfrage vor dem Abschluss nennt genau die Zahl, die als verloren
 gebucht wird. Ein Buch, das laut Programm verliehen ist und im Regal gescannt wird, bucht der Scan
@@ -795,7 +795,7 @@ entsprechend. (§7)
 
 ## System-Logs
 
-_Allgemeines Logbuch_ (jede Buchung) und _Admin-Audit-Log_ (wer hat wann was geändert).
+_Allgemeines Logbuch_ (jede Buchung) und _Verwaltungsprotokoll_ (wer hat wann was geändert).
 Aufbewahrung 24 Monate, einstellbar. Dritter Reiter **Theken-Auskunft** (eigenes Recht
 `audit_details`, ab Werk nur Admin): Ein Buch liegt auf der Theke, sein Exemplar ist
 längst gelöscht — die Barcode-Suche zeigt, was das Protokoll dazu noch weiß (Titel,
@@ -836,7 +836,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Schule                  | Name, Anschrift, Eigentumsvermerk auf Etiketten                                                                                                                                                                                                                                                                                                                                               |
 | Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                                                                                                                                                                                                                                                                                   |
 | Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                                                                                                                                                                                                                                                                                 |
-| Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
+| Klassenleitungen        | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
 | Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                                                                                                                                                                                                                                                                                              |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
 | Schlagworte             | Wörter am Titel umbenennen und zusammenführen (alle Titel ändern sich mit), löschen — auch mehrere auf einmal: vorn markieren, unten „Löschen“ —, Verweise für andere Schreibweisen („Tierfantasy“ → „Fantasy“), Filter-Markierung fürs Portal. Die Suche oben findet jedes Wort und jeden Verweis; gezeigt werden höchstens 200 Treffer, und die Zeile darunter sagt, wie viele es sind                                                                                                                                                |
@@ -930,7 +930,7 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
 
 - **Bestellung geht ohne Link raus / Katalog-Adresse fehlt** → _Erreichbarkeit & Alarme_:
   öffentliche Adresse eintragen.
-- **Mahnliste kommt bei niemandem an** → _Mahnwesen-Routing_: Klasse hat keine Lehrkraft.
+- **Mahnliste kommt bei niemandem an** → _Klassenleitungen_: Klasse hat keine Lehrkraft.
 - **Rote Meldung „Kein Backup"** → _Betriebsbereitschaft_ öffnen; dort steht je Punkt, was
   fehlt und wie es zu beheben ist.
 - **Hinweis „Eine neue Fassung des Programms ist eingespielt"** → Nach einem Update arbeitet ein

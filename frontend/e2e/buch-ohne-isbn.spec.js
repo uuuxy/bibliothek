@@ -17,10 +17,10 @@ async function zurTitelVerwaltung(page) {
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 }
 
-/** Öffnet „Neuer Titel" und trägt das Heft ohne ISBN ein.
+/** Öffnet „Titel anlegen" und trägt das Heft ohne ISBN ein.
  * @param {import('@playwright/test').Page} page */
 async function neuesHeft(page) {
-	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+	await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 	await page.locator('#buch-titel').fill(HEFT);
 	await page.locator('#buch-autor').fill('Redaktion');
 	await page.locator('#buch-signatur').fill('Z 1');
@@ -69,7 +69,7 @@ test.describe.serial('Titel ohne ISBN', () => {
 				geschickt.push(anfrage.url());
 		});
 		await zurTitelVerwaltung(page);
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		const fehler = page.getByText('Bitte den Titel eintragen. Gespeichert wird erst mit ihm.');
 		await expect(fehler, 'vor dem Klick steht kein Fehler am Feld').toHaveCount(0);
 
@@ -110,7 +110,7 @@ test.describe.serial('Titel ohne ISBN', () => {
 		await expect(frage.getByRole('button', { name: 'Titel öffnen' })).toBeFocused();
 		await page.keyboard.press('Escape');
 		await expect(frage).toHaveCount(0);
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(HEFT);
 		expect(zaehle(HEFT), 'Escape hat einen Titel angelegt').toBe('1');
 

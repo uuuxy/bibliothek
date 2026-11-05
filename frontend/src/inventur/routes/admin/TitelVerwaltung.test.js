@@ -64,7 +64,7 @@ describe('TitelVerwaltung: die Liste lädt nicht', () => {
 	});
 });
 
-// Löschen und „Cover lokalisieren“ gehen beide erst nach einer Rückfrage los und nur, wenn es
+// Löschen und „Cover herunterladen“ gehen beide erst nach einer Rückfrage los und nur, wenn es
 // etwas zu tun gibt.
 describe('TitelVerwaltung: Aktionen der Leiste', () => {
 	beforeEach(() => {
@@ -112,12 +112,12 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 		expect(screen.getByText('Mathe 9')).toBeTruthy();
 	});
 
-	it('lokalisiert externe Cover nach der Rückfrage', async () => {
+	it('lädt Cover aus dem Netz nach der Rückfrage herunter', async () => {
 		vi.mocked(holeExterneCover).mockResolvedValue(/** @type {any} */ ([{ id: 't1' }]));
 		const screen = render(TitelVerwaltung);
 		await screen.findByText('Mathe 9');
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Cover lokalisieren' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Cover herunterladen' }));
 
 		await waitFor(() => expect(retryExterneCover).toHaveBeenCalledWith(['t1']));
 	});
@@ -127,7 +127,7 @@ describe('TitelVerwaltung: Aktionen der Leiste', () => {
 		const screen = render(TitelVerwaltung);
 		await screen.findByText('Mathe 9');
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Cover lokalisieren' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Cover herunterladen' }));
 
 		await waitFor(() =>
 			expect(snackbars.toasts.map((t) => t.message)).toContain(

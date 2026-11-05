@@ -127,7 +127,9 @@ test.describe.serial('Portal: Problem melden', () => {
 		await page.goto('/bestellungen');
 		await page.getByRole('tab', { name: 'Meldungen', exact: true }).click();
 
-		await expect(page.getByRole('heading', { name: 'Meldungen', exact: true })).toBeVisible();
+		await expect(
+			page.getByText('Meldungen der Lehrkräfte aus dem Kollegiums-Portal')
+		).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Wünsche', exact: true })).toBeVisible();
 		const meldung = await page.getByText(TITEL, { exact: true }).boundingBox();
 		const wunsch = await page.getByText(`Alter Wunsch ${s}`, { exact: true }).boundingBox();

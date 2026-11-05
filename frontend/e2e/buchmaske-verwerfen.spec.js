@@ -61,15 +61,15 @@ test.describe.serial('Buchmaske: Schließen mit Ungespeichertem', () => {
 		);
 	});
 
-	test('ohne Eingabe schließt die Maske ohne Frage, auch „Neuer Titel"', async ({ page }) => {
+	test('ohne Eingabe schließt die Maske ohne Frage, auch „Titel anlegen"', async ({ page }) => {
 		await oeffneTitel(page);
 		await schliessen(page).click();
 		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toHaveCount(0);
 
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await schliessen(page).click();
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toHaveCount(0);
 		await expect(rueckfrage(page)).toHaveCount(0);
 	});
 

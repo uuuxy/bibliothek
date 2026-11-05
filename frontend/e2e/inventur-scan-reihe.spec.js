@@ -34,10 +34,10 @@ async function starteInventur(page, suffix, barcodes) {
 		SELECT id, b, true FROM t, unnest(ARRAY[${liste(barcodes)}]) AS b;
 	`);
 	await menuepunkt(page, 'Inventur').click();
-	await page.getByRole('button', { name: 'Neue Inventur' }).click();
+	await page.getByRole('button', { name: 'Inventur starten' }).click();
 	await page.getByText('Nur bestimmte Signatur').click();
 	await page.getByLabel('Signatur auswählen').fill(`E2E-INVR-${suffix}`);
-	await page.getByRole('button', { name: 'Inventur starten' }).click();
+	await page.getByRole('button', { name: 'Starten', exact: true }).click();
 	const feld = page.getByPlaceholder('Barcode scannen...');
 	await expect(feld).toBeFocused();
 	return feld;

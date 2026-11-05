@@ -443,9 +443,9 @@ export async function navigationSteht(page, zustand) {
 export function einstellungsKategorie(page, titel) {
 	return page.getByRole('navigation', { name: 'Einstellungs-Kategorien' }).getByRole('button', {
 		// Anker auf Titel PLUS Leerzeichen: Der zugängliche Name eines Eintrags ist
-		// „<Titel> <Beitext>". Ohne das Leerzeichen trifft „Mahnwesen" auch
-		// „Mahnwesen-Routing" — Playwright bricht dann mit strict mode ab, oder klickt
-		// in einer künftigen Liste stillschweigend die falsche Kategorie.
+		// „<Titel> <Beitext>". Ohne das Leerzeichen träfe ein Titel auch jeden längeren, der
+		// mit ihm beginnt — Playwright bräche dann mit strict mode ab oder klickte
+		// stillschweigend die falsche Kategorie.
 		name: new RegExp(`^${woertlich(titel)} `)
 	});
 }

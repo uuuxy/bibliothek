@@ -29,7 +29,7 @@
 >
 	<div class="min-w-0 space-y-0.5">
 		{#if etikett}
-			<p class="text-label-small font-semibold text-on-surface-variant uppercase tracking-wide">
+			<p class="text-label-small font-semibold text-on-surface-variant">
 				{etikett}
 			</p>
 		{/if}

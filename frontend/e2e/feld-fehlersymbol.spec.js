@@ -73,7 +73,7 @@ test('Signaturen: Symbol im Formular und in der Tabelle; wer tippt, bleibt im Fe
 
 		// In der Tabelle ist das Feld 96 px breit; die Zelle ist breiter.
 		const zeile = page.getByRole('row').filter({ hasText: `Fehlersymbol ${s}` });
-		await zeile.getByRole('button', { name: 'Ändern' }).click();
+		await zeile.getByRole('button', { name: 'Bearbeiten' }).click();
 		const tabellenKuerzel = page.locator('#sys-aendern-kuerzel');
 		await tabellenKuerzel.fill('');
 		await page.getByRole('button', { name: 'Sichern' }).click();
@@ -90,7 +90,7 @@ test('Buchmaske: Das Symbol steht vor den Knöpfen der ISBN, die Knöpfe bleiben
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+	await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 	const isbn = page.locator('#buch-isbn');
 	const knoepfe = [
 		page.getByRole('button', { name: 'Daten aus dem Internet aktualisieren' }),

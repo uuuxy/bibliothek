@@ -147,7 +147,7 @@
 					}}
 				>
 					<Plus class="w-4 h-4" aria-hidden="true" />
-					Klasse hinzufügen
+					Klassensatz anlegen
 				</Button>
 			{/if}
 		</div>

@@ -3674,7 +3674,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 - **Die Rate-Limiter** räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
   CPU-Thema.
 - **Katalogdienste in einer Anfrage, die die Oberfläche nach 10 s aufgibt:**
-  `POST /api/buecher/aus-isbn` und „Cover erneut lokalisieren" (`FremdeCoverNeuLaden`). Anlass:
+  `POST /api/buecher/aus-isbn` und „Cover herunterladen" (`FremdeCoverNeuLaden`). Anlass:
   ein Abbruch, nach dem unklar ist, was gespeichert wurde.
 - **Der Medienkatalog lädt die ganze Titelliste** (`GET /api/books`, gekappt bei 50.000), am
   lokalen Stack 9.738 Titel mit 4,87 MB, gepackt 0,43 MB. Anlass: Der Katalog öffnet am Server
@@ -3742,7 +3742,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   verliert in Chromium und Firefox den Fokus. Auf einer Seite führt die nächste Tab-Taste trotzdem
   zum nächsten Element. In einem Dialog verlässt sie ihn, wenn die Anfrage scheitert und der Knopf
   der letzte im Dialog ist: `fokusFalle` hört nur auf Tasten innerhalb des Dialogs (gemessen am Dialog
-  „Neuer Leser"; in WebKit lief die Messung nicht durch). Escape schließt ihn weiter. An der Schule
+  „Leser anlegen"; in WebKit lief die Messung nicht durch). Escape schließt ihn weiter. An der Schule
   bedient man mit der Maus und ohne Bildschirmleser. Anlass: Jemand arbeitet nur mit der Tastatur oder
   mit einem Bildschirmleser. Dann gehört die Änderung nach `ui/fokusFalle.js`, nicht in den gemeinsamen
   Knopf, der jede Seite samt Theke träfe.
@@ -3834,7 +3834,7 @@ Einstieg.
 | **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben; in der Oberfläche „Inventur“, im Code auch Inventurlauf                                                                                            | `inventur_sessions`, `repository/inventurlauf.go`   |
 | **Jahrgang** (am Titel)     | „Im Unterricht von Jahrgang … bis": ganz eingetragen oder gar nicht. Ohne Eintrag ist der Jahrgang unbekannt; eine Vorgabe gibt es nicht | `buecher_titel.jahrgang_von`, `jahrgang_bis` |
 | **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.sqlKarenzUhr`, `PraedikatAnonymisierung` |
-| **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**. In der Oberfläche „Titel“ („Neuer Titel“, „Titel bearbeiten“), nicht „Buch“: Der Katalog führt auch CDs, DVDs und Hörbücher                                                                                            | `buecher_titel`                                            |
+| **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**. In der Oberfläche „Titel“ („Titel anlegen“, „Titel bearbeiten“), nicht „Buch“: Der Katalog führt auch CDs, DVDs und Hörbücher                                                                                            | `buecher_titel`                                            |
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
 | **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/rechte_vorgabe.go`            |
 | **Leser**                   | Jeder Entleiher — Schüler und Kollegium, jeweils mit seiner Art. Eine Tabelle, ein Ausweis-Nummernkreis                                                                 | `leser`                                                    |

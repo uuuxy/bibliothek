@@ -42,7 +42,7 @@ func TestKollegeLoeschen(t *testing.T) {
 		return rec
 	}
 
-	// Ein Kollege mit Konto, wie ihn „Neuer Leser" anlegt.
+	// Ein Kollege mit Konto, wie ihn „Leser anlegen" erzeugt.
 	kollegeMitKonto := func(t *testing.T, vorname, nachname, email string) (leserID, kontoID string) {
 		t.Helper()
 		if err := pool.QueryRow(ctx, `

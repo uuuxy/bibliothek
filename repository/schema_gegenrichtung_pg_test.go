@@ -172,7 +172,7 @@ var fkAktionenBestand = []string{
 	// Angabe über den Vorgang, nicht der Vorgang selbst. Verlässt die Bearbeiterin die
 	// Schule und wird ihr Konto gelöscht, bleibt der Brief samt Referenznummer gültig —
 	// die Zuordnung der Zahlung hängt an der Nummer, nicht an der Person. Wer ihn
-	// erstellt hat, steht zusätzlich im Admin-Audit-Log, das die Löschung überlebt.
+	// erstellt hat, steht zusätzlich im Verwaltungsprotokoll, das die Löschung überlebt.
 	// Die Lesepfade nehmen die Spalte als *string (kein NULL-Scan).
 	"SET NULL  schadensersatz_bescheide.erstellt_von -> benutzer",
 	// Fällt das Konto, fallen seine laufenden Anmeldungen samt dem Prüfwert des Passworts —

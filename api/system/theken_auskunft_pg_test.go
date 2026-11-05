@@ -149,7 +149,7 @@ func TestThekenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	}
 
 	// Die Zusage „jeder Abruf protokolliert sich selbst": genau ein Eintrag mit
-	// Barcode und Trefferzahlen im Admin-Audit-Log.
+	// Barcode und Trefferzahlen im Verwaltungsprotokoll.
 	var protokolle int
 	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FROM audit_logs

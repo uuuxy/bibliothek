@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Titel-Verwaltung: Es gilt die zuletzt angeforderte Maske. Wer einen Titel anklickt und
-// gleich darauf einen anderen (oder „Neuer Titel"), bekam die Antwort zum ersten über die
+// gleich darauf einen anderen (oder „Titel anlegen"), bekam die Antwort zum ersten über die
 // offene Maske gelegt, sobald sie später ankam: Der Titel in der Maske wechselte, und was
 // dort getippt war, ging verloren.
 const s = uniqueSuffix().slice(0, 6);
@@ -70,7 +70,7 @@ test.describe('Titel-Verwaltung: die jüngste Öffnung gilt', () => {
 		await expect(page.locator('#buch-signatur'), 'das Getippte').toHaveValue('Getippt 9');
 	});
 
-	test('die späte Antwort legt sich nicht über die Maske „Neuer Titel"', async ({ page }) => {
+	test('die späte Antwort legt sich nicht über die Maske „Titel anlegen"', async ({ page }) => {
 		const frei = await halteTitel(
 			page,
 			querySQL(`SELECT id FROM buecher_titel WHERE titel = '${ALT}'`)
@@ -78,7 +78,7 @@ test.describe('Titel-Verwaltung: die jüngste Öffnung gilt', () => {
 		await zurTabelle(page);
 
 		await page.getByText(ALT).first().click();
-		await page.getByRole('button', { name: 'Neuer Titel' }).click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).click();
 		await expect(page.locator('#buch-titel')).toHaveValue('');
 		await page.locator('#buch-titel').fill('Frisch getippt');
 

@@ -7,7 +7,7 @@
 // Oberfläche.
 //
 // Der Test geht deshalb den Weg, den eine Bibliothekskraft geht: Schulklassen öffnen,
-// „Klasse hinzufügen", Zielklasse eintippen, im Dialog nach einem Buch SUCHEN, es
+// „Klassensatz anlegen", Zielklasse eintippen, im Dialog nach einem Buch SUCHEN, es
 // auswählen, speichern — und danach nachsehen, ob der Satz wirklich in der Datenbank steht.
 //
 // Der Kern ist die Suche: Ohne sie findet man in einem Bestand von mehreren tausend Titeln
@@ -54,7 +54,7 @@ test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet 
 	seedTitelMitExemplar(angelegt, titel, `E2E-Dialog-Anderer ${s}`);
 
 	await page.goto('/schulklassen');
-	await page.getByRole('button', { name: 'Klasse hinzufügen' }).click();
+	await page.getByRole('button', { name: 'Klassensatz anlegen' }).click();
 
 	// Über die id und nicht über den Platzhalter: Dieser Test entstand unmittelbar VOR dem
 	// Umbau des Feldes auf das gemeinsame Bauteil. Nur ein Selektor, der beide Fassungen

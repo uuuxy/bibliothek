@@ -191,6 +191,6 @@
 	>
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'}{gesperrt
 			? ''
-			: ' · Drag & Drop zum Verschieben · Ecken zum Skalieren'} · Gestrichelt: sicherer Druckbereich
+			: ' · Ziehen zum Verschieben · Ecken zum Skalieren'} · Gestrichelt: sicherer Druckbereich
 	</span>
 </div>

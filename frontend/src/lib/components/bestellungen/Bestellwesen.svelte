@@ -195,11 +195,7 @@
 		     den Wareneingang nicht mehr. Als Reiter steht er gleichrangig neben den anderen
 		     Ansichten dieser Seite — und die Zahl im Badge sagt dasselbe wie der Streifen,
 		     ohne die halbe Breite zu belegen. -->
-		<Wareneingang
-			incomingShipments={bestellStore.incomingShipments}
-			onBack={() => (aktiverReiter = 'bestellungen')}
-			onReceived={beiWareneingang}
-		/>
+		<Wareneingang incomingShipments={bestellStore.incomingShipments} onReceived={beiWareneingang} />
 	{/if}
 
 	{#if aktiverReiter === 'historie'}

@@ -61,7 +61,7 @@
 		onerneut={ablauf.ladeOffeneLaeufe}
 	/>
 {:else if ablauf.offeneLaeufe.length > 0}
-	<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
+	<div class="space-y-2 pt-4">
 		<h4 class="text-sm font-semibold text-on-surface-variant">Laufende Inventuren</h4>
 		{#each ablauf.offeneLaeufe as session (session.session_id)}
 			<div
@@ -100,7 +100,7 @@
 		onerneut={ablauf.frueher.lade}
 	/>
 {:else if ablauf.frueher.laeufe.length > 0}
-	<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
+	<div class="space-y-2 pt-4">
 		<h4 class="text-sm font-semibold text-on-surface-variant">Frühere Inventuren</h4>
 		{#each ablauf.frueher.laeufe as inventur (inventur.session_id)}
 			<div

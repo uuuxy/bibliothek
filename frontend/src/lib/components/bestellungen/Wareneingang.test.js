@@ -27,7 +27,7 @@ import { bestellStore } from '../../stores/bestellStore.svelte.js';
 import Wareneingang from './Wareneingang.svelte';
 
 const holen = vi.mocked(apiGet);
-const offen = { incomingShipments: [], onBack: vi.fn(), onReceived: vi.fn() };
+const offen = { incomingShipments: [], onReceived: vi.fn() };
 /** @param {string[]} exemplare @param {object} [stand] */
 const gruppe = (exemplare, stand = {}) => ({
 	id: 'b1',

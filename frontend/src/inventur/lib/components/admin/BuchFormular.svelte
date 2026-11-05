@@ -116,7 +116,7 @@
 			<X class="w-6 h-6" aria-hidden="true" />
 		</button>
 		<h2 class="min-w-0 truncate text-xl font-bold text-on-surface">
-			{formular.id ? 'Titel bearbeiten' : 'Neuer Titel'}
+			{formular.id ? 'Titel bearbeiten' : 'Titel anlegen'}
 		</h2>
 		<Button onclick={speichern} class="ml-auto shrink-0 px-5">Speichern</Button>
 	</div>

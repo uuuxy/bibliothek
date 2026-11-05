@@ -8,7 +8,7 @@
 	import { hatRecht } from '../../menue.js';
 
 	let aktiverReiter = $state('system');
-	// Das Admin-Audit-Log liest GET /api/admin/auditlog, und die Route verlangt
+	// Das Verwaltungsprotokoll liest GET /api/admin/auditlog, und die Route verlangt
 	// manage_users — der Reiter folgt demselben Recht, nicht der Rolle.
 	const darfAdminLog = $derived(hatRecht(authStore.currentUser, 'manage_users'));
 	// Theken-Auskunft: GET /api/audit/tresen-auskunft verlangt audit_details.
@@ -16,7 +16,7 @@
 
 	const reiter = $derived([
 		{ id: 'system', label: 'Allgemeines Logbuch' },
-		...(darfAdminLog ? [{ id: 'admin', label: 'Admin-Audit-Log' }] : []),
+		...(darfAdminLog ? [{ id: 'admin', label: 'Verwaltungsprotokoll' }] : []),
 		...(darfThekenAuskunft ? [{ id: 'thekenauskunft', label: 'Theken-Auskunft' }] : [])
 	]);
 </script>

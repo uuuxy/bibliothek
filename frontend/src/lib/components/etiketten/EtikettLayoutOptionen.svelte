@@ -17,7 +17,7 @@
 </script>
 
 <div class="py-5 space-y-4 border-b border-outline-variant">
-	<h3 class="text-base font-semibold text-on-surface-variant">3. Layout-Optionen</h3>
+	<h3 class="text-base font-semibold text-on-surface-variant">3. Druckeinstellungen</h3>
 
 	<div class="space-y-3.5">
 		<div class="space-y-1.5">

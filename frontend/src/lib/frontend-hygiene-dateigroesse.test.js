@@ -13,7 +13,7 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 const BESTAND = {
 	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 209,
-	'src/lib/components/bestellungen/Bestellwesen.svelte': 216,
+	'src/lib/components/bestellungen/Bestellwesen.svelte': 212,
 	'src/lib/components/omnibox/Omnibox.svelte': 202,
 	'src/lib/components/statistik/Statistik.svelte': 341,
 	'src/lib/components/leserakte/Leserakte.svelte': 211,

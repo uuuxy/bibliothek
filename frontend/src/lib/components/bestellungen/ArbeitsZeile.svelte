@@ -60,7 +60,7 @@
 	<div class="w-24 shrink-0 text-right">
 		{#if anzahl != null}
 			<p class="text-lg font-semibold tabular-nums leading-tight text-on-surface">{anzahl}</p>
-			<p class="text-label-small uppercase tracking-wide text-on-surface-variant">{anzahlText}</p>
+			<p class="text-label-small text-on-surface-variant">{anzahlText}</p>
 		{/if}
 	</div>
 	<div class="shrink-0">{@render aktion()}</div>

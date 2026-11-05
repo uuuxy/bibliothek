@@ -219,7 +219,7 @@ describe('Benutzerliste: Namen für Vorleseprogramme', () => {
 		const screen = await benutzerliste();
 
 		await fireEvent.click(screen.getByRole('button', { name: /Benutzer anlegen/ }));
-		const anlegen = screen.getByRole('dialog', { name: 'Neuen Benutzer anlegen' });
+		const anlegen = screen.getByRole('dialog', { name: 'Benutzer anlegen' });
 		await fireEvent.click(within(anlegen).getByRole('button', { name: 'Abbrechen' }));
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Bearbeiten' }));

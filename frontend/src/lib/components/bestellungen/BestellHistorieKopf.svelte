@@ -5,7 +5,7 @@
      BestellHistorie.svelte über der 200-Zeilen-Regel aus docs/ARCHITEKTUR.md (5.3). -->
 <script>
 	import { bestellStore } from '../../stores/bestellStore.svelte.js';
-	import Select from '../ui/Select.svelte';
+	import FilterChips from '../ui/FilterChips.svelte';
 	import { Clock } from '@lucide/svelte';
 
 	/**
@@ -36,12 +36,23 @@
 		topfName,
 		onFilterWechsel
 	} = $props();
+
+	// Alle Chips aus heißt kein Filter, wie im Bestandsbuch.
+	const chips = $derived(
+		mittelFilter.filter((o) => o.value !== '').map((o) => ({ wert: o.value, text: o.label }))
+	);
+
+	/** @param {string | null} wert */
+	function waehle(wert) {
+		mittel = wert ?? '';
+		onFilterWechsel();
+	}
 </script>
 
 <div class="flex items-center justify-between border-b border-outline-variant pb-4">
 	<div>
-		<h2 class="text-base font-bold text-on-surface">Bestellhistorie</h2>
-		<p class="text-sm text-on-surface-variant mt-0.5">
+		<h2 class="sr-only">Bestellhistorie</h2>
+		<p class="text-sm text-on-surface-variant">
 			Alle aufgegebenen Bestellungen — automatisch erfasst beim Bestellen
 		</p>
 		<!-- Nur wenn wirklich etwas aussteht. „Alles bestätigt" jeden Tag zu lesen, wäre
@@ -94,15 +105,11 @@
 </div>
 
 <!-- Der Filter steht über der Liste und lädt neu: Gefiltert wird am Server, weil
-	     die Liste gedeckelt ist. -->
-<div class="flex items-center gap-3">
-	<label class="text-sm font-medium text-on-surface" for="historie-mittel">Mittelherkunft</label>
-	<div class="w-72">
-		<Select
-			id="historie-mittel"
-			bind:value={mittel}
-			options={mittelFilter}
-			onchange={onFilterWechsel}
-		/>
-	</div>
-</div>
+	     die Liste gedeckelt ist. M3, Chips: „Filter chips use tags or descriptive words to filter
+     content". -->
+<FilterChips
+	etikett="Nach Mittelherkunft filtern"
+	optionen={chips}
+	wert={mittel || null}
+	onwahl={waehle}
+/>

@@ -18,7 +18,7 @@ import (
 
 // Die Schul-E-Mail in der Akte nachtragen: die Reparatur für den Altbestand.
 //
-// „Neuer Leser" verlangt bei Lehrkraft und LiV die Adresse, und damit entsteht das Konto
+// „Leser anlegen" verlangt bei Lehrkraft und LiV die Adresse, und damit entsteht das Konto
 // sofort: Die spätere Selbstanmeldung findet es und legt nichts Zweites an
 // (leser_kollegium_konto_pg_test.go). Wer ohne Adresse und ohne Konto in der Leserdatei
 // steht, bekäme bei der Selbstanmeldung einen zweiten Eintrag; ohne das Feld in der Akte

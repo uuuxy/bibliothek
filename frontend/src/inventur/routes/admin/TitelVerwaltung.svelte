@@ -84,7 +84,7 @@
 		istBearbeitenModus = false;
 	}
 
-	/** Der Knopf „Scanner": dieselbe Maske wie „Neuer Titel", die Kamera ist schon an. */
+	/** Der Knopf „Scanner": dieselbe Maske wie „Titel anlegen", die Kamera ist schon an. */
 	function neuesBuchScannen() {
 		neuesBuchErstellen();
 		wirdGescannt = true;
@@ -128,8 +128,8 @@
 			}
 			if (
 				!(await bestaetigen({
-					titel: `${externe.length} externe Cover erneut lokalisieren?`,
-					aktion: 'Lokalisieren'
+					titel: `${externe.length} Cover aus dem Netz herunterladen?`,
+					aktion: 'Herunterladen'
 				}))
 			)
 				return;
@@ -138,7 +138,7 @@
 			const ergebnis = await retryExterneCover(ids);
 			await aktualisiereBuecher();
 			melde(
-				`Cover lokalisiert. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
+				`Cover heruntergeladen. Gespeichert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
 				'info'
 			);
 		} catch (fehler) {

@@ -190,9 +190,9 @@ Regeln (`repository/leser_zusammenfuehren.go`):
    Bestätigung (Massenabgang) — beim echten Schuljahreswechsel normal.
 5. Gegenprobe: je Rubrik zwei, drei Schüler in der Leserdatei aufrufen.
 6. Danach die Versetzung (Klassen hochzählen), falls der Export noch die alten Klassen trug.
-   Die Klassenleitungen aus dem Mahnwesen-Routing rücken mit hoch, außer von 6 nach 7 und von
+   Die eingetragenen Klassenleitungen rücken mit hoch, außer von 6 nach 7 und von
    10 in die Oberstufe: Dort entfällt die Zuordnung, und die neuen Klassen bekommen sie unter
-   _Einstellungen → Mahnwesen-Routing_ von Hand. Ein zweiter Wechsel geht erst ein halbes Jahr
+   _Einstellungen → Klassenleitungen_ von Hand. Ein zweiter Wechsel geht erst ein halbes Jahr
    nach dem letzten; bis dahin nennt schon die Vorschau Tag und Uhrzeit des letzten Laufs. Kommt
    nach _Ja, unwiderruflich ausführen_ keine Antwort, fragt die Seite selbst nach, ob er lief.
 

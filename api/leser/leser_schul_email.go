@@ -14,7 +14,7 @@ import (
 
 // Die Schul-E-Mail in der Leserakte: nachtragbar, nicht änderbar.
 //
-// „Neuer Leser" verlangt bei Lehrkraft und LiV die Schul-Adresse: Aus ihr entsteht das Konto,
+// „Leser anlegen" verlangt bei Lehrkraft und LiV die Schul-Adresse: Aus ihr entsteht das Konto,
 // und weil die Selbstanmeldung nur dann eine Zugangsanfrage anlegt, wenn zu der Adresse gar
 // kein Konto existiert, findet sie später genau diesen Eintrag. Wer ohne Adresse in der
 // Leserdatei steht, bekäme bei der Selbstanmeldung einen zweiten Eintrag, und reparieren

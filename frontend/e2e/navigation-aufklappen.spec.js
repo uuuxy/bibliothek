@@ -92,7 +92,7 @@ for (const breite of [1100, 1710]) {
 		await page.setViewportSize({ width: breite, height: 900 });
 		await uiLogin(page);
 		await gehZu(page, '/schulklassen');
-		await page.getByRole('button', { name: 'Klasse hinzufügen' }).click();
+		await page.getByRole('button', { name: 'Klassensatz anlegen' }).click();
 		await expect(page.locator('#book-search-field')).toBeVisible();
 		const leisteOben = await page.evaluate(() => {
 			const leiste = document.querySelector('aside:has(nav)');

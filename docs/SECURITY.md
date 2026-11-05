@@ -116,7 +116,7 @@ Gates: `TestErmittler_LanClientHinterProxy`, `TestErmittler_DurchgereichterHeade
 
 ### `manage_users` ist nicht Administrator
 
-`manage_users` ist ein **delegierbares** Recht (Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — die Benutzerverwaltung bietet es auch für
+`manage_users` ist ein **delegierbares** Recht (Konten, Rechte-Matrix und Verwaltungsprotokoll; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — die Benutzerverwaltung bietet es auch für
 MITARBEITER, KOLLEGIUM und HELFER an. Drei Wege führten von ihm zum Administrator; jeder ist
 geschlossen (`api/benutzer/admin_schutz.go`):
 

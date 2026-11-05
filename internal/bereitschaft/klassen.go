@@ -86,7 +86,7 @@ func pruefeKlassenDrift(l Lage) Befund {
 	b.Stufe = StufeWarnung
 	b.Befund = strings.Join(probleme, " — ")
 	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
-	b.Abhilfe = "Einstellungen → Mahnwesen-Routing: Zuordnung nachtragen oder verwaiste Zeilen entfernen. " +
+	b.Abhilfe = "Einstellungen → Klassenleitungen: Zuordnung nachtragen oder verwaiste Zeilen entfernen. " +
 		"Eine Buchliste ohne Klasse unter Klassensätze löschen."
 	return b
 }

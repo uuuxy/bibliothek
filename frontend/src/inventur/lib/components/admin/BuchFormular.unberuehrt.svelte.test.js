@@ -141,7 +141,7 @@ describe('BuchFormular: was vor dem Schließen als ungespeichert gilt', () => {
 		expect(hatUngespeichertes(formular, leeresBuchFormular())).toBe(true);
 	});
 
-	it('„Neuer Titel": leer nichts, mit einem Titel etwas', async () => {
+	it('„Titel anlegen": leer nichts, mit einem Titel etwas', async () => {
 		vi.mocked(apiFetch).mockImplementation(async () => antwort(200, []));
 		const formular = $state(leeresBuchFormular());
 		const screen = render(BuchFormular, {

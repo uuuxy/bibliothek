@@ -138,7 +138,7 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 	});
 });
 
-// Der Knopf „Scanner" der Titelliste öffnet dieselbe Maske wie „Neuer Titel", nur mit
+// Der Knopf „Scanner" der Titelliste öffnet dieselbe Maske wie „Titel anlegen", nur mit
 // eingeschalteter Kamera. Ein eigenes Fenster mit eigenem Speichern gibt es nicht mehr.
 describe('BuchFormular: geöffnet mit eingeschalteter Kamera', () => {
 	it('das Kamera-Fenster steht sofort, der Scan trägt die ISBN ein und schließt es', async () => {
@@ -147,7 +147,7 @@ describe('BuchFormular: geöffnet mit eingeschalteter Kamera', () => {
 		const screen = maske(formular, { wirdGescannt: true });
 
 		expect(screen.getByRole('heading', { name: 'ISBN scannen' })).toBeTruthy();
-		expect(screen.getByRole('heading', { name: 'Neuer Titel' })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: 'Titel anlegen' })).toBeTruthy();
 
 		await waitFor(() => expect(formular.isbn).toBe(GESCANNT), { timeout: 4000 });
 		await waitFor(() => expect(screen.queryByRole('heading', { name: 'ISBN scannen' })).toBeNull());

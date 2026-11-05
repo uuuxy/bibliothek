@@ -67,7 +67,7 @@
 		{#if darfAnlegen}
 			<Button variant="primary" onclick={oncreate}>
 				<Plus class="w-4 h-4" />
-				Neuer Leser
+				Leser anlegen
 			</Button>
 		{/if}
 

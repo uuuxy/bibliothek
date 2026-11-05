@@ -107,13 +107,6 @@
 					An Klassenleitungen mailen
 				</Button>
 			{/if}
-			<div
-				class="flex items-center gap-1.5 text-label-small font-semibold text-success shrink-0"
-				title="Änderungen an allen Arbeitsplätzen sofort sichtbar (Live-Synchronisation)"
-			>
-				<span class="h-2 w-2 rounded-full bg-success animate-pulse shrink-0"></span>
-				Live
-			</div>
 		</div>
 	</div>
 </div>

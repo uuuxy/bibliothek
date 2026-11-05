@@ -18,7 +18,7 @@ import (
 )
 
 // Die Klasse wählt man in der Leserdatei (view_students), in den Klassensätzen und der
-// LMF-Verlängerung (edit_books) und im Mahnwesen-Routing (manage_settings). Die Liste der
+// LMF-Verlängerung (edit_books) und in den Klassenleitungen (manage_settings). Die Liste der
 // Klassen hängt deshalb an der Sitzung und nicht an einem dieser Rechte. Am echten Router: Mit
 // jedem der drei Rechte allein kommt die Liste, ohne Sitzung kommt sie nicht.
 func TestKlassen_JedeRolleMitKlassenauswahlBekommtDieListe(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// „Neuer Leser" legt bei einer Lehrkraft das Anmeldekonto gleich mit an — und genau das
+// „Leser anlegen" legt bei einer Lehrkraft das Anmeldekonto gleich mit an — und genau das
 // verhindert den Doppeleintrag.
 //
 // Der Fall, um den es geht: Eine Lehrkraft wird von Hand in die Leserdatei eingetragen und

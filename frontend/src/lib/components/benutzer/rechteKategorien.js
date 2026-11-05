@@ -124,7 +124,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'audit_logs',
 				label: 'Sicherheits-Logbuch einsehen',
-				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Admin-Audit-Log zusätzlich: „Benutzer & Rechte verwalten")'
+				desc: 'Allgemeines Logbuch der Systemereignisse einsehen (das Verwaltungsprotokoll zusätzlich: „Benutzer & Rechte verwalten")'
 			},
 			{
 				key: 'audit_details',
@@ -149,7 +149,7 @@ export const rechteBeschreibungen = [
 			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
-				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Admin-Audit-Log einsehen — öffnet den Menüpunkt „Berechtigungen". Zusammen mit „Schülerverwaltung: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Schüler löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei'
+				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Verwaltungsprotokoll einsehen — öffnet den Menüpunkt „Berechtigungen". Zusammen mit „Schülerverwaltung: Sonderrechte" auch die DSGVO-Auskunft über einen Leser mit Zugangskonto, zusammen mit „Schüler löschen" das Löschen eines Kollegen mit Zugang in der Leserdatei'
 			}
 		]
 	}

@@ -52,7 +52,7 @@
 		<h2 class="text-base font-semibold text-on-surface">Wem gehörte dieses Buch?</h2>
 		<p class="text-sm text-on-surface-variant">
 			Schlägt zu einem Buch-Barcode die protokollierte Ausleihhistorie nach — auch für längst
-			gelöschte Exemplare. Jeder Abruf wird im Admin-Audit-Log protokolliert.
+			gelöschte Exemplare. Jeder Abruf steht im Verwaltungsprotokoll.
 		</p>
 	</div>
 

@@ -50,7 +50,7 @@ export const KATEGORIEN = [
 		icon: CalendarClock
 	},
 	{ id: 'mahnwesen', titel: 'Mahnwesen', kurz: 'Automatische Ausleihsperre', icon: BellRing },
-	{ id: 'routing', titel: 'Mahnwesen-Routing', kurz: 'Klasse → Lehrkraft', icon: Route },
+	{ id: 'routing', titel: 'Klassenleitungen', kurz: 'Klasse → Lehrkraft', icon: Route },
 	{
 		id: 'bestellwesen',
 		titel: 'Bestellwesen',

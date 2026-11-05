@@ -5,7 +5,7 @@
      rechnen, dauerhaft im falschen Block, und Alt-Bestellungen „ohne Zuordnung" blieben es
      für immer. Der Dialog ändert nur die
      eigene Zuordnung: Das Anschreiben, das der Händler bekommen hat, bleibt, wie es
-     rausging. Deshalb ist der Grund Pflicht, und der Eingriff steht im Admin-Audit-Log.
+     rausging. Deshalb ist der Grund Pflicht, und der Eingriff steht im Verwaltungsprotokoll.
 
      Bauform wie der Storno-Dialog der Gebühren (LeserGebuehrenKarte): Modal, Radio-Gruppe,
      ein Feld für den Grund, die Aktion erst mit Grund freigegeben. -->

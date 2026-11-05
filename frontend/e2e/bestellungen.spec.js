@@ -27,7 +27,7 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 
 	// Bewusst kein getByRole('link'): im disabled-Zustand entfällt das href,
 	// und ein <a> ohne href hat keine Link-Rolle mehr.
-	const download = page.locator('a').filter({ hasText: 'PDF herunterladen' });
+	const download = page.locator('a').filter({ hasText: 'Als PDF' });
 	await expect(download).toBeVisible();
 	await expect(download).not.toHaveAttribute('aria-disabled', 'true');
 

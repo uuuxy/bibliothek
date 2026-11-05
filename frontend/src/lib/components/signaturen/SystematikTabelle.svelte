@@ -141,7 +141,7 @@
 						<td>{eintrag.bezeichnung}</td>
 						<td class="text-right whitespace-nowrap">
 							<Button size="sm" variant="secondary" onclick={() => starteBearbeiten(eintrag)}>
-								Ändern
+								Bearbeiten
 							</Button>
 							<Button
 								size="sm"

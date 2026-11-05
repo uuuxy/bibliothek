@@ -19,7 +19,7 @@ test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }
 	// Bestellwesen) — der Klick geht über den Menüpunkt, damit der Weg mitgeprüft wird.
 	await menuepunkt(page, 'Bestellberichte').click();
 
-	const link = page.getByRole('link', { name: /PDF herunterladen/ });
+	const link = page.getByRole('link', { name: /Als PDF/ });
 	await expect(link).toHaveAttribute('href', /\/api\/bestellhistorie\/bericht\?/);
 
 	// Vor dem Klick lauschen: Die Antwort kann da sein, bevor wir den neuen Tab in der
@@ -50,11 +50,11 @@ test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }
 test('Ein unlesbarer Monat sperrt den Download und sagt warum', async ({ page }) => {
 	await uiLogin(page);
 	await menuepunkt(page, 'Bestellberichte').click();
-	const link = page.getByRole('link', { name: /PDF herunterladen/ });
+	const link = page.getByRole('link', { name: /Als PDF/ });
 	await expect(link).toHaveAttribute('aria-disabled', 'false');
 
 	await page.locator('#monat').fill('');
 
 	await expect(page.getByText('Monat als Jahr und Monat eingeben')).toBeVisible();
-	await expect(page.getByText('PDF herunterladen')).toHaveAttribute('aria-disabled', 'true');
+	await expect(page.getByText('Als PDF')).toHaveAttribute('aria-disabled', 'true');
 });

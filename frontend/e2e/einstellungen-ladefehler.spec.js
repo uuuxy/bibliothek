@@ -41,9 +41,7 @@ test('Einstellungen: Ladefehler zeigt Hinweis statt Vorgabewerten zum Überspeic
 // Die Klassenleitungen laden ihre Liste selbst. Scheitert der Abruf, steht der Fehler da statt
 // „Noch keine Zuordnungen", und das Formular nicht: Hinzufügen ersetzte die Zuordnung derselben
 // Klasse, ohne dass sie zu sehen war.
-test('Mahnwesen-Routing: Ladefehler zeigt den Fehler statt einer leeren Liste', async ({
-	page
-}) => {
+test('Klassenleitungen: Ladefehler zeigt den Fehler statt einer leeren Liste', async ({ page }) => {
 	await uiLogin(page);
 	await page.route('**/api/klassen-mapping', async (route) => {
 		if (route.request().method() === 'GET') {
@@ -54,7 +52,7 @@ test('Mahnwesen-Routing: Ladefehler zeigt den Fehler statt einer leeren Liste', 
 	});
 
 	await gehZu(page, '/einstellungen');
-	await einstellungsKategorie(page, 'Mahnwesen-Routing').click();
+	await einstellungsKategorie(page, 'Klassenleitungen').click();
 
 	await expect(page.getByText('Zuordnungen nicht geladen')).toBeVisible();
 	await expect(page.getByText('Noch keine Zuordnungen vorhanden.')).toHaveCount(0);

@@ -158,8 +158,8 @@
 
 <div class="space-y-6">
 	<div>
-		<h2 class="text-base font-bold text-on-surface">Meldungen</h2>
-		<p class="text-sm text-on-surface-variant mt-0.5">
+		<h2 class="sr-only">Meldungen</h2>
+		<p class="text-sm text-on-surface-variant">
 			Meldungen der Lehrkräfte aus dem Kollegiums-Portal, je die ältesten zuerst. „Abhaken" schließt
 			die Meldung ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine schreibst.
 		</p>

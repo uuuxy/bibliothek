@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Ein Handscanner tippt blind in das Feld mit dem Fokus und schließt mit der Eingabetaste. In
-// der Maske „Neuer Titel" steht der Fokus deshalb im ISBN-Feld, und die Eingabetaste fragt wie
+// der Maske „Titel anlegen" steht der Fokus deshalb im ISBN-Feld, und die Eingabetaste fragt wie
 // das Verlassen des Feldes. Getippt wird über page.keyboard und ohne Klick ins Feld: fill()
 // und click() setzten den Fokus selbst und sähen nicht, dass er fehlt.
 const s = uniqueSuffix().slice(0, 6);
@@ -32,8 +32,8 @@ async function oeffneNeuesBuch(page) {
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
-	await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+	await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
+	await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 }
 
 test.describe.serial('Buch anlegen mit dem Handscanner', () => {

@@ -40,7 +40,7 @@
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print">
-	<!-- Keine eigene Ueberschrift: Der Reiter darueber heisst schon "Admin-Audit-Log",
+	<!-- Keine eigene Ueberschrift: Der Reiter darueber heisst schon "Verwaltungsprotokoll",
 	     und der Seitentitel steht im Seitenrahmen von SystemLogs. Zwei <h1> auf einer Seite
 	     waeren auch fuer Screenreader falsch. -->
 	<div class="flex items-center justify-end">
@@ -52,10 +52,10 @@
 
 	{#if laedt}
 		<div class="flex justify-center py-20">
-			<Ladekreis size="lg" etikett="Admin-Audit-Log lädt" />
+			<Ladekreis size="lg" etikett="Verwaltungsprotokoll lädt" />
 		</div>
 	{:else if fehler}
-		<LadeFehler onerneut={fetchLogs} titel="Admin-Audit-Log nicht geladen" text={fehler} />
+		<LadeFehler onerneut={fetchLogs} titel="Verwaltungsprotokoll nicht geladen" text={fehler} />
 	{:else if logs.length === 0}
 		<div class="py-16 text-center text-base text-on-surface-variant">
 			Keine administrativen Eingriffe protokolliert.
@@ -63,7 +63,7 @@
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">
-				<Tabelle beschriftung="Admin-Audit-Log">
+				<Tabelle beschriftung="Verwaltungsprotokoll">
 					<thead>
 						<tr>
 							<th>Zeitstempel</th>

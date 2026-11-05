@@ -4,7 +4,7 @@ import { isbnFormen } from '../src/lib/utils/isbnFormen.js';
 
 // Die zehnstellige ISBN vom Titelblatt und die dreizehnstellige vom Strichcode sind dieselbe
 // Nummer (Migration 157). Der Katalog führt sie dreizehnstellig, auch wenn der Titel
-// zehnstellig angelegt wurde. Die Maske „Neuer Titel" findet ihn in beiden Längen und fragt wie
+// zehnstellig angelegt wurde. Die Maske „Titel anlegen" findet ihn in beiden Längen und fragt wie
 // bei jeder vergebenen ISBN „Vorhandenen Titel öffnen?". Eine zehnstellige Nummer mit falschem
 // Prüfzeichen ist eine andere Nummer: Zu ihr fragt die Maske nicht, und das Speichern legt an.
 const s = uniqueSuffix().slice(0, 6);
@@ -22,13 +22,13 @@ async function neuesBuchMitIsbn(page, isbn) {
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+	await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 	await page.locator('#buch-isbn').fill(isbn);
 	await page.locator('#buch-isbn').press('Tab');
 	return page.getByRole('dialog').filter({ hasText: 'Vorhandenen Titel öffnen?' });
 }
 
-test.describe('Neuer Titel: die ISBN in der anderen Länge ist dieselbe Nummer', () => {
+test.describe('Titel anlegen: die ISBN in der anderen Länge ist dieselbe Nummer', () => {
 	test.beforeAll(() => {
 		// Zehnstellig angelegt, wie vom Titelblatt abgeschrieben.
 		seedSQL(`

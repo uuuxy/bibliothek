@@ -86,7 +86,7 @@
 		<div class="grow flex flex-col items-center justify-center text-on-surface-variant py-12">
 			<span>Kein Buch ausgewählt</span>
 			<span class="mt-1 text-xs text-on-surface-variant"
-				>Suche einen Titel links, um die Live-Vorschau zu aktivieren.</span
+				>Suche links einen Titel, dann erscheint hier die Vorschau.</span
 			>
 		</div>
 	{:else if etikettenStore.bogen.length === 0}

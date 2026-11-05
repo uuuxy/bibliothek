@@ -92,7 +92,7 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 
 		// --- Zurück führt zur Liste ----------------------------------------------
 		await page.getByRole('button', { name: 'Zurück zur Bestellhistorie' }).click();
-		await expect(page.getByRole('heading', { name: 'Bestellhistorie' })).toBeVisible();
+		await expect(page.getByRole('group', { name: 'Nach Mittelherkunft filtern' })).toBeVisible();
 	} finally {
 		const token = await csrfToken(page);
 		await page.request.delete(`/api/lieferanten/${lieferantId}`, {

@@ -74,10 +74,10 @@
 
 		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
 			<RefreshCw class="w-4 h-4" aria-hidden="true" />
-			Cover lokalisieren
+			Cover herunterladen
 		</Button>
 
-		<!-- Öffnet die Maske „Neuer Titel" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
+		<!-- Öffnet die Maske „Titel anlegen" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
 		     an der Kamera im ISBN-Feld und in der Suchpille. -->
 		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
 			<Camera class="w-4 h-4" aria-hidden="true" />
@@ -86,7 +86,7 @@
 
 		<Button onclick={onCreateNew} class="mt-2 w-full sm:mt-0 sm:w-auto">
 			<Plus class="w-4 h-4" aria-hidden="true" />
-			Neuer Titel
+			Titel anlegen
 		</Button>
 	</div>
 </div>

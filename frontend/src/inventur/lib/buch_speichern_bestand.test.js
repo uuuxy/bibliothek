@@ -107,7 +107,7 @@ describe('buch_speichern: der Bestand eines neuen Titels', () => {
 });
 
 // Die Rückfrage verglich gegen die geladene Titelliste. Stand der Titel nicht in ihr (über
-// „Neuer Titel" und eine vergebene ISBN geöffnet, Liste gefiltert), kam sie nicht.
+// „Titel anlegen" und eine vergebene ISBN geöffnet, Liste gefiltert), kam sie nicht.
 describe('buch_speichern: verringernRueckfrage', () => {
 	it('nennt beide Zahlen und wie viele Exemplare es trifft', () => {
 		const frage = verringernRueckfrage({ id: 'abc', stock: 1, stockGesehen: 3 });

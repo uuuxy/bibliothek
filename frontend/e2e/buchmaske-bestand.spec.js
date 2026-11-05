@@ -107,7 +107,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		await zurTitelVerwaltung(page);
 		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`kein-treffer-${s}`);
 		await expect(page.getByRole('heading', { name: 'Titel (0)' })).toBeVisible();
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-isbn').fill(ISBN);
 		await page.locator('#buch-isbn').press('Tab');
 		await page

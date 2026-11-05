@@ -91,7 +91,7 @@ describe('Bestellberichte: Zeitraum der Lieferantenabrechnung', () => {
 		const hinweis = document.getElementById(bis.getAttribute('aria-describedby') ?? '');
 		expect(hinweis?.textContent?.trim()).toBe('Das Von-Datum liegt nach dem Bis-Datum.');
 
-		const download = screen.getByText('PDF herunterladen').closest('a');
+		const download = screen.getByText('Als PDF').closest('a');
 		expect(download?.getAttribute('aria-disabled')).toBe('true');
 		expect(download?.hasAttribute('href')).toBe(false);
 	});

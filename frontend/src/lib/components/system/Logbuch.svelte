@@ -94,7 +94,7 @@
 							<th>Aktion</th>
 							<th>Tabelle</th>
 							<th>Datensatz-ID</th>
-							<th>Bearbeiter (Operator)</th>
+							<th>Bearbeiter</th>
 						</tr>
 					</thead>
 					<tbody>

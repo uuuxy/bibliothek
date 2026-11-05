@@ -38,7 +38,7 @@
 <Dialog {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
 	{#snippet header()}
 		<h3 id="benutzer-formular-titel" class="text-base font-bold text-on-surface">
-			{istAenderung ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
+			{istAenderung ? 'Benutzer bearbeiten' : 'Benutzer anlegen'}
 		</h3>
 	{/snippet}
 	<form onsubmit={speichereKonto} class="p-6 space-y-4">

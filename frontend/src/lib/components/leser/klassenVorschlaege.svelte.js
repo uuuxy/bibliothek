@@ -3,7 +3,7 @@ import { fehlertext } from '../../utils/fehlertext.js';
 
 /**
  * Die Klassen der Schule für jede Klassenauswahl — Anlegen-Dialog, Leserakte,
- * Mahnwesen-Routing, Klassensätze, LMF-Verlängerung. Eigene Datei aus demselben Grund wie
+ * Klassenleitungen, Klassensätze, LMF-Verlängerung. Eigene Datei aus demselben Grund wie
  * schuelerSuche.svelte.js und ausweisdruck.svelte.js: Schuelerdatei steht an der
  * Größen-Ratsche (200 Zeilen), und das Nachschlagen der Klassen hat mit dem Führen der
  * Liste nichts zu tun.

@@ -65,21 +65,21 @@ test('Die Kamera der Theke startet und meldet sich aktiv', async () => {
 });
 
 // Der Knopf „Scanner" der Titel-Verwaltung hatte ein eigenes Fenster mit eigenem Speichern,
-// das ein gefundenes Buch nicht speichern konnte. Er öffnet jetzt die Maske „Neuer Titel" mit
+// das ein gefundenes Buch nicht speichern konnte. Er öffnet jetzt die Maske „Titel anlegen" mit
 // eingeschalteter Kamera; wer das Kamera-Fenster schließt, tippt die ISBN in die Maske.
-test('Der Knopf „Scanner" öffnet die Maske „Neuer Titel" mit laufender Kamera', async () => {
+test('Der Knopf „Scanner" öffnet die Maske „Titel anlegen" mit laufender Kamera', async () => {
 	await mitKuenstlicherKamera(async (page, seitenfehler) => {
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 		await page.getByRole('button', { name: 'Scanner', exact: true }).click();
 
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'ISBN scannen' })).toBeVisible();
 		await erwarteLaufendeKamera(page);
 
 		await page.getByRole('button', { name: 'Scanner schließen' }).click();
 		await expect(page.getByRole('heading', { name: 'ISBN scannen' })).toHaveCount(0);
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await expect(page.locator('#buch-isbn')).toHaveValue('');
 		await expect(page.locator('#buch-bestand')).toHaveValue('1');
 		expect(seitenfehler, 'Kein Fehler beim Öffnen und Schließen').toEqual([]);

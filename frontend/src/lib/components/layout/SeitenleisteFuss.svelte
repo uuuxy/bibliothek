@@ -21,7 +21,9 @@
 	);
 
 	// Eine Aussage, zwei Darstellungen — der Text steht deshalb nur einmal hier.
-	const DSGVO_HINWEIS = 'Scans werden nach 14 Tagen anonymisiert';
+	// Was jobs/cron_dsgvo.go (FuehreBearbeiterAnonymisierungAus) jede Nacht tut.
+	const DSGVO_HINWEIS =
+		'Wer an der Theke ausgeliehen oder zurückgenommen hat, steht 14 Tage nach der Rückgabe nicht mehr an der Ausleihe';
 </script>
 
 {#if collapsed}
@@ -85,7 +87,7 @@
 			title={DSGVO_HINWEIS}
 		>
 			<ShieldCheck class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-			<span>DSGVO anonymisiert</span>
+			<span>Scans nach 14 Tagen anonymisiert</span>
 		</div>
 	</div>
 {/if}

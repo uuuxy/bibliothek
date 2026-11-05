@@ -44,7 +44,7 @@
 		<MahnwesenKategorie {daten} {onSaved} />
 	{:else if aktiv === 'routing'}
 		<KategorieRahmen
-			titel="Mahnwesen-Routing"
+			titel="Klassenleitungen"
 			kurz="Welche Lehrkraft die Mahnliste einer Klasse bekommt."
 		>
 			<Klassenleitungen />

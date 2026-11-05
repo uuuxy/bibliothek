@@ -70,7 +70,7 @@ beforeEach(() => {
 	appState.bookToEdit = null;
 });
 
-// Littera prüft bei der Eingabe der ISBN auf Dubletten. Die Maske „Neuer Titel" fragt deshalb
+// Littera prüft bei der Eingabe der ISBN auf Dubletten. Die Maske „Titel anlegen" fragt deshalb
 // den eigenen Katalog, sobald die ISBN im Feld steht — und nicht erst beim Speichern, wenn
 // Signatur, Fach und alles Weitere eingetragen sind.
 describe('IsbnFeld: neue Maske, die ISBN trägt schon ein Titel', () => {

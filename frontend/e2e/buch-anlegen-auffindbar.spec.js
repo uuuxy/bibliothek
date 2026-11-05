@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
-// Ein Buch aus der Maske „Neuer Titel" ist danach zu finden, und eine vergebene ISBN führt zu
+// Ein Buch aus der Maske „Titel anlegen" ist danach zu finden, und eine vergebene ISBN führt zu
 // ihrem Titel. Ohne Exemplar zeigt keine Suche einen Titel (docs/OFFEN.md 9.4): Mit der
 // Vorgabe Bestand 0 hieß das Speichern „erfolgreich", das Buch stand nirgends, und der zweite
 // Versuch endete mit „existiert bereits". Gefragt wird, sobald die ISBN im Feld steht — wie in
@@ -30,7 +30,7 @@ async function zurTitelVerwaltung(page) {
 /** Titel zuerst: Mit Titel schlägt das ISBN-Feld beim Verlassen nicht bei der DNB nach.
  * @param {import('@playwright/test').Page} page @param {string} titel @param {string} nummer */
 async function neuesBuch(page, titel, nummer) {
-	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+	await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 	await page.locator('#buch-titel').fill(titel);
 	await page.locator('#buch-isbn').fill(nummer);
 	await page.locator('#buch-signatur').fill('BIB An');
@@ -104,7 +104,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 				unnoetig.push(`${anfrage.method()} ${pfad}`);
 		});
 		await zurTitelVerwaltung(page);
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-isbn').fill(ISBN_OHNE);
 		await page.locator('#buch-isbn').press('Tab');
 
@@ -139,7 +139,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		await expect(frage).not.toContainText('„Ohne Exemplare“');
 		await frage.getByRole('button', { name: 'Abbrechen' }).click();
 		await expect(frage).toHaveCount(0);
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(`Zweiter Versuch ${s}`);
 
 		await page.getByRole('button', { name: 'Speichern' }).click();

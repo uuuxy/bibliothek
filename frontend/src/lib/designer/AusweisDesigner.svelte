@@ -8,6 +8,7 @@
 	import { authStore } from '../stores/authStore.svelte.js';
 	import { hatRecht } from '../menue.js';
 	import Ladekreis from '../components/ui/Ladekreis.svelte';
+	import Button from '../components/ui/Button.svelte';
 	import CanvasFlaeche from './CanvasFlaeche.svelte';
 	import Druckvorschau from './Druckvorschau.svelte';
 	import Eigenschaften from './Eigenschaften.svelte';
@@ -132,22 +133,11 @@
 			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
 		{:else if ablage.zustand === 'error'}
 			<span role="alert" class="text-error">Speichern fehlgeschlagen: {ablage.speicherfehler}</span>
-			<button
-				type="button"
-				onclick={() => ablage.erneutSpeichern()}
-				class="text-on-surface-variant underline underline-offset-2 cursor-pointer"
-			>
-				Erneut speichern
-			</button>
+			<Button variant="ghost" onclick={() => ablage.erneutSpeichern()}>Erneut speichern</Button>
 		{/if}
-		<button
-			type="button"
-			onclick={zuruecksetzen}
-			disabled={gesperrt}
-			class="text-on-surface-variant underline underline-offset-2 cursor-pointer disabled:cursor-not-allowed disabled:text-on-surface/38"
-		>
+		<Button variant="ghost" onclick={zuruecksetzen} disabled={gesperrt}>
 			Standardwerte wiederherstellen
-		</button>
+		</Button>
 	</div>
 
 	<!-- printMode zentral aus idStore, nicht lokal — Begruendung in AusweisStapeldruck.svelte -->

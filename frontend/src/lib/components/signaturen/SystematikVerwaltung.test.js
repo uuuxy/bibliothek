@@ -72,7 +72,7 @@ describe('Sachgruppen: leeres Feld', () => {
 
 	it('„Sichern" nennt am geleerten Feld, was fehlt, und schickt nichts ab', async () => {
 		const k = render(SystematikVerwaltung);
-		await fireEvent.click(await k.findByRole('button', { name: 'Ändern' }));
+		await fireEvent.click(await k.findByRole('button', { name: 'Bearbeiten' }));
 		const kuerzel = k.getByLabelText('Kürzel bearbeiten');
 		await fireEvent.input(kuerzel, { target: { value: '  ' } });
 
@@ -94,7 +94,7 @@ describe('Sachgruppen: offene Zeile beim Nachladen', () => {
 
 	it('lässt die getippte Änderung stehen, wenn oben eine Sachgruppe angelegt wird', async () => {
 		const k = render(SystematikVerwaltung);
-		await fireEvent.click(await k.findByRole('button', { name: 'Ändern' }));
+		await fireEvent.click(await k.findByRole('button', { name: 'Bearbeiten' }));
 		await fireEvent.input(k.getByLabelText('Bezeichnung bearbeiten'), {
 			target: { value: 'Deutsch als Zweitsprache' }
 		});

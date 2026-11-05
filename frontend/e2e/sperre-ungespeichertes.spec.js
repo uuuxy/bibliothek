@@ -54,7 +54,7 @@ test.describe('Sperre: Ungespeichertes bleibt', () => {
 		page
 	}) => {
 		await anmelden(page);
-		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await page.getByRole('button', { name: 'Titel anlegen' }).first().click();
 		await page.locator('#buch-titel').fill(`Ungespeichert ${s}`);
 		await page.locator('#buch-signatur').fill('UNG 1');
 
@@ -65,7 +65,7 @@ test.describe('Sperre: Ungespeichertes bleibt', () => {
 		for (const medium of /** @type {const} */ (['screen', 'print'])) {
 			await page.emulateMedia({ media: medium });
 			const text = await gezeigterText(page);
-			expect(text, `${medium}: die Maske hinter der Sperre`).not.toContain('Neuer Titel');
+			expect(text, `${medium}: die Maske hinter der Sperre`).not.toContain('Titel anlegen');
 			expect(text, `${medium}: die Seitenleiste hinter der Sperre`).not.toContain('Leserdatei');
 			expect(text, medium).toContain('Gesperrt wegen Inaktivität');
 		}
@@ -74,7 +74,7 @@ test.describe('Sperre: Ungespeichertes bleibt', () => {
 		// Nicht für Screenreader: Im Zugänglichkeitsbaum steht nur der Sperrbildschirm.
 		await expect(page.getByRole('navigation')).toHaveCount(0);
 		await expect(page.getByRole('textbox')).toHaveCount(1);
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toHaveCount(0);
 
 		// Nicht mit der Tastatur zu erreichen: Tab bleibt im Sperrbildschirm.
 		for (let i = 0; i < 8; i++) {
@@ -97,7 +97,7 @@ test.describe('Sperre: Ungespeichertes bleibt', () => {
 		await expect(bildschirm).toBeVisible();
 
 		await schliesseAuf(page);
-		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel anlegen' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(`Ungespeichert ${s}`);
 		await expect(page.locator('#buch-signatur')).toHaveValue('UNG 1');
 		await expect(page).toHaveURL(/\/medienkatalog/);

@@ -89,7 +89,7 @@
 			{#if darfVerwalten}
 				<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
 					<Plus class="w-5 h-5" aria-hidden="true" />
-					<span>Neue Inventur</span>
+					<span>Inventur starten</span>
 				</Button>
 			{/if}
 
@@ -103,9 +103,9 @@
 					{ablauf.fehler}
 				</div>
 			{/if}
-
-			<InventurLaeufe {ablauf} {darfVerwalten} />
 		</div>
+
+		<InventurLaeufe {ablauf} {darfVerwalten} />
 	{:else}
 		<div class="space-y-6">
 			<!-- Progress & Stats -->

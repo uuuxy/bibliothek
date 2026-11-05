@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent, within } from '@testing-library/svelte';
 
 vi.mock('../../stores/bestellStore.svelte.js', () => ({
 	bestellStore: { preiseErfassen: true }
@@ -79,7 +79,7 @@ describe('BestellHistorieKopf', () => {
 		});
 
 		expect(screen.getByText('255,50 €')).toBeTruthy();
-		expect(screen.getByText(/Lernmittelfreiheit/)).toBeTruthy();
+		expect(screen.getByText(/Lernmittelfreiheit:/)).toBeTruthy();
 		expect(screen.getByText('200,00 €')).toBeTruthy();
 		expect(screen.getByText(/ohne Zuordnung:/)).toBeTruthy();
 	});
@@ -95,17 +95,31 @@ describe('BestellHistorieKopf', () => {
 		expect(screen.queryByText(/Lernmittelfreiheit:/)).toBeNull();
 	});
 
-	// Das Auswahlfeld ist das hauseigene Select (Tastaturbedienung, ui/Select.svelte) —
-	// eine Liste, die erst beim Öffnen entsteht. Geprüft wird deshalb, was nach dem Klick
-	// zur Wahl steht.
-	it('bietet den Filter samt der Alt-Bestellungen ohne Zuordnung an', async () => {
+	// Filter-Chips wie im Bestandsbuch: je Topf ein Chip, auch für die Alt-Bestellungen ohne
+	// Zuordnung. Alle aus heißt kein Filter, deshalb gibt es keinen Chip „Alle Mittel".
+	it('bietet je Topf einen Chip an, auch für die Alt-Bestellungen ohne Zuordnung', () => {
 		const screen = render(BestellHistorieKopf, { ...basis, aufteilung: [] });
+		const chips = within(screen.getByRole('group', { name: 'Nach Mittelherkunft filtern' }));
 
-		screen.getByRole('combobox').click();
-		await Promise.resolve();
+		expect(chips.getAllByRole('button').map((b) => b.textContent?.trim())).toEqual([
+			'Lernmittelfreiheit (Land)',
+			'Schülerbücherei (Schulträger)',
+			'ohne Zuordnung'
+		]);
+	});
 
-		expect(screen.getByText('Lernmittelfreiheit (Land)')).toBeTruthy();
-		expect(screen.getByText('Schülerbücherei (Schulträger)')).toBeTruthy();
-		expect(screen.getByText('ohne Zuordnung')).toBeTruthy();
+	// Jede Wahl lädt die Liste neu, weil am Server gefiltert wird; ein zweiter Klick hebt sie auf.
+	it('filtert mit einem Chip und hebt den Filter mit einem zweiten Klick auf', async () => {
+		const onFilterWechsel = vi.fn();
+		const screen = render(BestellHistorieKopf, { ...basis, aufteilung: [], onFilterWechsel });
+		const land = screen.getByRole('button', { name: 'Lernmittelfreiheit (Land)' });
+
+		await fireEvent.click(land);
+		expect(land.getAttribute('aria-pressed')).toBe('true');
+		expect(onFilterWechsel).toHaveBeenCalledTimes(1);
+
+		await fireEvent.click(land);
+		expect(land.getAttribute('aria-pressed')).toBe('false');
+		expect(onFilterWechsel).toHaveBeenCalledTimes(2);
 	});
 });
