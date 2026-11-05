@@ -65,40 +65,32 @@
 	>
 		<img src={logoUrl} alt="Bibliosys Logo" class="w-24 h-24 object-contain" />
 		<div class="text-center space-y-1.5">
-			<h2 class="text-base font-bold text-on-surface">Webmail-Login erforderlich</h2>
-			<p class="text-xs text-on-surface-variant font-medium">
-				Bitte logge dich mit deiner Schul-E-Mail ein.
-			</p>
+			<h2 class="text-base font-bold text-on-surface">Anmelden</h2>
+			<p class="text-sm text-on-surface-variant">Mit den Zugangsdaten deiner Schul-E-Mail.</p>
 		</div>
-		<!-- Je Feld ein Block: Ohne Beschriftung legt ui/Feld Eingabe und Fehlertext als Geschwister
-		     in den Elternblock, und space-y-3 rückte den Fehlertext vom eigenen Feld ab. -->
-		<div class="w-full space-y-3">
-			<div>
-				<Feld
-					id="login-email"
-					type={domain ? 'text' : 'email'}
-					autocomplete={domain ? 'username' : 'email'}
-					autocapitalize="none"
-					spellcheck="false"
-					aria-label={domain ? 'Name oder E-Mail' : 'E-Mail'}
-					bind:value={authStore.loginEmail}
-					placeholder={domain ? 'Name oder Schul-E-Mail' : 'Schul-E-Mail'}
-					ungueltig={emailFehlt}
-					hint={emailHinweis}
-				/>
-			</div>
-			<div>
-				<Feld
-					id="login-password"
-					type="password"
-					autocomplete="current-password"
-					aria-label="Passwort"
-					bind:value={authStore.loginPassword}
-					placeholder="Passwort"
-					ungueltig={passwortFehlt}
-					hint={passwortFehlt ? 'Bitte dein Passwort eintragen.' : ''}
-				/>
-			</div>
+		<!-- Die Beschriftung steht über dem Feld wie in jeder Maske: Ein Platzhalter verschwände beim
+		     Tippen, und M3 verlangt „Label text should always be visible". -->
+		<div class="w-full space-y-4">
+			<Feld
+				id="login-email"
+				etikett={domain ? 'Name oder E-Mail' : 'E-Mail'}
+				type={domain ? 'text' : 'email'}
+				autocomplete={domain ? 'username' : 'email'}
+				autocapitalize="none"
+				spellcheck="false"
+				bind:value={authStore.loginEmail}
+				ungueltig={emailFehlt}
+				hint={emailHinweis}
+			/>
+			<Feld
+				id="login-password"
+				etikett="Passwort"
+				type="password"
+				autocomplete="current-password"
+				bind:value={authStore.loginPassword}
+				ungueltig={passwortFehlt}
+				hint={passwortFehlt ? 'Bitte dein Passwort eintragen.' : ''}
+			/>
 		</div>
 		<Button type="submit" size="lg" disabled={authStore.isLoggingIn} class="w-full">
 			{#if authStore.isLoggingIn}
