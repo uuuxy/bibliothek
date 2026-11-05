@@ -24,7 +24,8 @@
 
 	let grenze = $state(SCHRITT);
 	// Die Überschrift zählt Exemplare, „Mehr laden" Zeilen: Eine Zeile trägt alle Exemplare
-	// eines Titels von einem Tag.
+	// eines Titels von einem Tag. Der Knopf nennt deshalb das Wort, sonst läse sich „5 weitere"
+	// als fünf Bücher.
 	const exemplare = $derived(abschnitt.exemplare);
 	const anzahl = $derived(abschnitt.zeilen.length);
 	const sichtbar = $derived(abschnitt.zeilen.slice(0, grenze));
@@ -66,7 +67,9 @@
 	{#if grenze < anzahl}
 		<div class="flex justify-center pt-2">
 			<Button variant="secondary" onclick={() => (grenze += SCHRITT)}>
-				Mehr laden ({formatZahl(anzahl - grenze)} weitere)
+				Mehr laden ({formatZahl(anzahl - grenze)} weitere {anzahl - grenze === 1
+					? 'Zeile'
+					: 'Zeilen'})
 			</Button>
 		</div>
 	{/if}

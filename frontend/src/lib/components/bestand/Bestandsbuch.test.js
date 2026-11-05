@@ -203,7 +203,7 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 	it('baut eine ausgeblendete Liste beim Zurückschalten nicht neu auf', async () => {
 		const screen = await zugangsbuch({ land: 1, traeger: 60 });
 		const vorher = screen.getByRole('table', { name: `Zugangsbuch — ${TRAEGER}` });
-		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (10 weitere)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (10 weitere Zeilen)' }));
 
 		const feld = screen.getByRole('button', { name: `${LAND} · 1` });
 		await fireEvent.click(feld);
@@ -224,20 +224,20 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 		expect(screen.getByRole('heading', { name: `${TRAEGER} · 120 Exemplare` })).toBeTruthy();
 		expect(screen.getAllByRole('button', { name: /^Mehr laden/ })).toHaveLength(1);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (70 weitere)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (70 weitere Zeilen)' }));
 		expect(gezeichnet(screen, TRAEGER)).toBe(100);
-		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (20 weitere)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (20 weitere Zeilen)' }));
 		expect(gezeichnet(screen, TRAEGER)).toBe(120);
 		expect(screen.queryByRole('button', { name: /^Mehr laden/ })).toBeNull();
 	});
 
 	it('beginnt nach „Anzeigen" wieder mit den ersten 50 Zeilen', async () => {
 		const screen = await zugangsbuch({ traeger: 120 });
-		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (70 weitere)' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Mehr laden (70 weitere Zeilen)' }));
 		expect(gezeichnet(screen, TRAEGER)).toBe(100);
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Anzeigen' }));
-		await screen.findByRole('button', { name: 'Mehr laden (70 weitere)' });
+		await screen.findByRole('button', { name: 'Mehr laden (70 weitere Zeilen)' });
 		expect(gezeichnet(screen, TRAEGER)).toBe(50);
 	});
 
@@ -245,7 +245,7 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 		const screen = await zugangsbuch({ ohne: 1050 });
 		expect(screen.getByRole('button', { name: `${OHNE} · 1.050` })).toBeTruthy();
 		expect(screen.getByRole('heading', { name: `${OHNE} · 1.050 Exemplare` })).toBeTruthy();
-		expect(screen.getByRole('button', { name: 'Mehr laden (1.000 weitere)' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Mehr laden (1.000 weitere Zeilen)' })).toBeTruthy();
 	});
 
 	// Der Satz erklärt die Liste „ohne Zuordnung“; ohne die Liste erklärt er nichts.

@@ -149,7 +149,7 @@ test('Zugangsbuch: Ein Topf mit mehr als 50 Zeilen zeigt 50 und „Mehr laden"',
 		await expect(erste.getByRole('cell').nth(2)).toHaveText('3');
 		await expect(erste).toContainText(`E2E-ZUG-V-${s}-010\u00a0–\u00a0E2E-ZUG-V-${s}-012`);
 
-		await page.getByRole('button', { name: 'Mehr laden (5 weitere)' }).click();
+		await page.getByRole('button', { name: 'Mehr laden (5 weitere Zeilen)' }).click();
 		await expect(ohne.locator('tbody tr')).toHaveCount(55);
 		await expect(page.getByRole('button', { name: /^Mehr laden/ })).toHaveCount(0);
 	} finally {
