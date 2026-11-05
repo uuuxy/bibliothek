@@ -26,7 +26,7 @@ test('Lieferant bearbeiten: das Speichern nimmt einem anderen Händler nicht das
 	await uiLogin(page);
 	await page.goto('/einstellungen');
 	await einstellungsKategorie(page, 'Lieferanten').click();
-	await page.getByRole('heading', { name: 'Neuer Lieferant' }).waitFor();
+	await page.getByRole('heading', { name: 'Lieferant anlegen' }).waitFor();
 	await page.locator('tr', { hasText: alt }).getByRole('button', { name: 'Bearbeiten' }).click();
 	const maske = page.locator('tr', { hasText: /Speichern/ });
 	const mail = maske.locator('input[type="email"]');

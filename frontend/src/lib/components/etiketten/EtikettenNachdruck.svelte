@@ -326,8 +326,8 @@
 		     Fuß, und im Screenshot war von ihr nichts zu sehen. -->
 		<p class="py-3 text-sm text-on-surface-variant">
 			{#if gesamt > offen.length}
-				<strong class="font-medium text-on-surface">{zahl(offen.length)} von {zahl(gesamt)}</strong>
-				— die neuesten zuerst. Suche nach Titel oder Barcode, um an die übrigen zu kommen.
+				{zahl(offen.length)} von {zahl(gesamt)} Exemplaren, die neuesten zuerst. Suche nach Titel oder
+				Barcode, um die übrigen zu finden.
 			{:else}
 				{zahl(offen.length)}
 				{offen.length === 1 ? 'Exemplar' : 'Exemplare'}, neueste zuerst.

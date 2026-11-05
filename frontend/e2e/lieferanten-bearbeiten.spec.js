@@ -37,12 +37,14 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 	await einstellungsKategorie(page, 'Lieferanten').click();
 	await page.getByRole('table').waitFor();
 
-	const sicht = await page.evaluate(() => {
+	const sicht = await page.evaluate((name) => {
 		const tabelle = /** @type {HTMLElement} */ (document.querySelector('table'));
 		const box = /** @type {HTMLElement} */ (tabelle.parentElement);
 		const zelle = /** @type {HTMLElement} */ (box.parentElement);
+		// Der Mülleimer steht ganz rechts in der Zeile, rechts vom Stift: Liegt er im Fenster,
+		// liegen es beide. Die Symbolknöpfe tragen keinen Text, nur ihren Namen.
 		const knopf = [...document.querySelectorAll('button')].find(
-			(b) => b.textContent?.trim() === 'Bearbeiten'
+			(b) => b.getAttribute('aria-label') === `Lieferant ${name} löschen`
 		);
 		return {
 			knopfRechts: knopf ? Math.round(knopf.getBoundingClientRect().right) : null,
@@ -52,11 +54,11 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 			zelleScrolltQuer: zelle.scrollWidth > zelle.clientWidth + 1,
 			boxScrollt: getComputedStyle(box).overflowX
 		};
-	});
+	}, LANGER_NAME);
 
 	expect(
 		sicht.knopfRechts,
-		'"Bearbeiten" liegt rechts ausserhalb des Fensters'
+		'Die Knöpfe der Zeile liegen rechts ausserhalb des Fensters'
 	).toBeLessThanOrEqual(sicht.fenster);
 	expect(sicht.zelleScrolltQuer, 'Die Tabelle schiebt ihre Rasterzelle auf').toBe(false);
 	expect(sicht.boxScrollt, 'Die Tabelle braucht einen eigenen Scrollbereich').toMatch(

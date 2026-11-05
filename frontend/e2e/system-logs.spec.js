@@ -18,7 +18,7 @@ test('System-Logs: Administrative Aktionen werden protokolliert', async ({ page 
 		await page.getByRole('tab', { name: 'Verwaltungsprotokoll' }).click();
 		const zeile = page.getByRole('row').filter({ hasText: marke });
 		await expect(zeile).toHaveCount(1);
-		await expect(zeile).toContainText('UPDATE_SETTINGS');
+		await expect(zeile).toContainText('Einstellungen geändert');
 	} finally {
 		seedSQL(`
 			DELETE FROM system_einstellungen WHERE schluessel = 'etikett_eigentumsvermerk' AND wert = '${marke}';

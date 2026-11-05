@@ -211,7 +211,7 @@ Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
   „N bestellt" und lässt sich reservieren; stehen Exemplare im Haus und sind weitere bestellt,
   steht „N bestellt" neben dem Bestand. Zur Tür gehört der Filter nach Schlagwort
   (`?schlagwort_id=`, Liste über `…/katalog/filter`, §13); gibt es mehr als 50 Treffer, sagt
-  das Portal über den Kopf `X-Treffer-Gesamt` „Gezeigt werden 50 von 312 Treffern".
+  das Portal über den Kopf `X-Treffer-Gesamt` „50 von 312 Treffern. Ein Suchwort grenzt ein.“
 - Die Bibliothek arbeitet die Schlange unter Bestellungen → Klassensatz-Reservierungen
   ab: je Zeile Anfragende(r) mit Namen und der aktuelle Regal-Bestand („N verfügbar“).
   „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst
@@ -810,8 +810,8 @@ Ausleihe. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarke
 dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`, ein Feld am Titel, Migration 093) und
 mindestens ein Exemplar im Haus (nicht
 ausgesondert, nicht nur bestellt). Maximal 50 Treffer; der Kopf `X-Treffer-Gesamt` nennt, wie
-viele es insgesamt sind, und die Seite sagt dann „Gezeigt werden 50 von N
-Treffern" statt „50 Treffer".
+viele es insgesamt sind, und die Seite sagt dann „50 von N Treffern. Ein Suchwort grenzt
+ein.“ statt „50 Treffer“.
 Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Nach einem Update steht mit der
 nächsten Suche über dem Suchfeld der Hinweis „Neu laden", wie in der Verwaltung (§16.2). Das
 Kollegiums-Portal sucht mit derselben Abfrage über eine eigene Tür hinter der Anmeldung, die

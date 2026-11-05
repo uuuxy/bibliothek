@@ -76,19 +76,27 @@
 		     Server entscheidet ohnehin (POST/DELETE hängen an edit_books) — hier geht
 		     es darum, niemandem einen Knopf anzubieten, der im 403 endet. -->
 		{#if darfPflegen}
-			<div class="flex shrink-0 gap-2">
-				<Button variant="secondary" onclick={onEdit}>
-					<Pencil class="w-4 h-4" aria-hidden="true" />
-					Bücher verwalten
+			<!-- Symbolknöpfe mit Sprechblase wie in den Zeilen von Gmail und Drive; 16 px Abstand,
+			     damit sich die Trefferflächen nicht berühren. -->
+			<div class="flex shrink-0 items-center gap-4">
+				<Button
+					variant="symbol"
+					size="sm"
+					onclick={onEdit}
+					data-tip="Bücher verwalten"
+					aria-label="Bücher verwalten"
+				>
+					<Pencil class="h-4 w-4" aria-hidden="true" />
 				</Button>
-				<button
+				<Button
+					variant="symbol"
+					size="sm"
 					onclick={onDelete}
-					class="icon-btn h-9 w-9 text-error"
 					data-tip="Buchliste löschen"
 					aria-label="Buchliste löschen"
 				>
-					<Trash class="w-5 h-5" aria-hidden="true" />
-				</button>
+					<Trash class="h-4 w-4" aria-hidden="true" />
+				</Button>
 			</div>
 		{/if}
 	</div>

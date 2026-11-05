@@ -41,8 +41,6 @@
 </script>
 
 <div class="mb-4 px-1">
-	<p class="text-xs text-on-surface-variant font-medium mb-1">BÜCHER FINDEN</p>
-
 	<Suchpille
 		id="book-search-field"
 		bind:wert={suche}
@@ -54,15 +52,14 @@
 
 	{#if buecherFehler}
 		<p class="mt-2 px-1 text-sm font-semibold text-error" role="alert">
-			Die Bücherliste konnte nicht geladen werden — hier steht deshalb nichts. Das heißt NICHT, dass
-			keine Bücher im Bestand sind.
+			Die Titelliste konnte nicht geladen werden. Deshalb steht hier nichts; das heißt nicht, dass
+			der Bestand leer ist.
 		</p>
 	{/if}
 
 	{#if gefilterteTitel.length > ANZEIGE_GRENZE}
-		<p class="mt-2 px-1 text-xs text-on-surface-variant">
-			Gezeigt werden die ersten {ANZEIGE_GRENZE} von {gefilterteTitel.length}. Suchbegriff
-			eingrenzen, um das gesuchte Buch zu sehen.
+		<p class="mt-2 px-1 text-sm text-on-surface-variant">
+			{ANZEIGE_GRENZE} von {gefilterteTitel.length} Titeln. Grenze die Suche ein, um die übrigen zu sehen.
 		</p>
 	{/if}
 </div>

@@ -7,6 +7,7 @@
 	import { hatRecht } from '../../menue.js';
 	import InventurStartDialog from './InventurStartDialog.svelte';
 	import Button from '../ui/Button.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import FehlbestandBericht from './FehlbestandBericht.svelte';
 	import InventurLaeufe from './InventurLaeufe.svelte';
@@ -66,44 +67,30 @@
 	{/if}
 
 	{#if ablauf.status === 'idle'}
-		<div class="p-12 text-center flex flex-col items-center justify-center space-y-6">
-			<!-- Neutral wie der Leerzustand der Abgängerliste (AbgaengerTabelle.svelte): Die
-			     Hauptfarbe bleibt dem einen gefüllten Knopf darunter. -->
+		{#snippet startknopf()}
+			<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
+				<Plus class="w-5 h-5" aria-hidden="true" />
+				<span>Inventur starten</span>
+			</Button>
+		{/snippet}
+		<SuchZustand
+			symbol={ClipboardCheck}
+			titel="Keine Inventur aktiv"
+			hinweis={darfVerwalten
+				? 'Starte eine neue Inventur. Du kannst entweder die gesamte Bibliothek prüfen oder gezielt nach einer bestimmten Signatur / Kategorie scannen.'
+				: 'Eine Inventur starten darf, wer das Recht „Bestand verwalten“ hat. Läuft eine, lässt sie sich unten fortsetzen.'}
+			aktion={darfVerwalten ? startknopf : undefined}
+		/>
+		{#if ablauf.fehler}
+			<!-- role="alert" wie dieselbe Meldung im Start-Dialog: Sie erscheint nach einem Klick,
+			     ohne dass der Fokus hierher wandert. -->
 			<div
-				class="w-20 h-20 rounded-full bg-surface-container-low border border-outline-variant text-on-surface-variant flex items-center justify-center"
+				role="alert"
+				class="w-full max-w-lg mx-auto p-3 bg-warning-container rounded-lg text-sm text-on-warning-container"
 			>
-				<ClipboardCheck class="w-10 h-10" aria-hidden="true" />
+				{ablauf.fehler}
 			</div>
-			<div>
-				<h3 class="text-xl font-bold text-on-surface">Keine Inventur aktiv</h3>
-				<p class="text-on-surface-variant mt-2 max-w-md mx-auto">
-					{#if darfVerwalten}
-						Starte eine neue Inventur. Du kannst entweder die gesamte Bibliothek prüfen oder gezielt
-						nach einer bestimmten Signatur / Kategorie scannen.
-					{:else}
-						Eine Inventur starten darf, wer das Recht „Bestand verwalten“ hat. Läuft eine, lässt sie
-						sich unten fortsetzen.
-					{/if}
-				</p>
-			</div>
-			{#if darfVerwalten}
-				<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
-					<Plus class="w-5 h-5" aria-hidden="true" />
-					<span>Inventur starten</span>
-				</Button>
-			{/if}
-
-			{#if ablauf.fehler}
-				<!-- role="alert" wie dieselbe Meldung im Start-Dialog: Sie erscheint nach einem Klick,
-				     ohne dass der Fokus hierher wandert. -->
-				<div
-					role="alert"
-					class="w-full max-w-lg mx-auto p-3 bg-warning-container rounded-lg text-sm text-on-warning-container"
-				>
-					{ablauf.fehler}
-				</div>
-			{/if}
-		</div>
+		{/if}
 
 		<InventurLaeufe {ablauf} {darfVerwalten} />
 	{:else}

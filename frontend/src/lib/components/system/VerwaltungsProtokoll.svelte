@@ -4,9 +4,12 @@
 	import { onMount } from 'svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { VERWALTUNG_AKTIONEN } from './protokollWoerter.js';
+	import { formatZeitpunkt } from '../../utils/format.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { RefreshCw } from '@lucide/svelte';
+	import { RefreshCw, ShieldCheck } from '@lucide/svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
 
 	/** @type {any[]} */
@@ -57,9 +60,7 @@
 	{:else if fehler}
 		<LadeFehler onerneut={fetchLogs} titel="Verwaltungsprotokoll nicht geladen" text={fehler} />
 	{:else if logs.length === 0}
-		<div class="py-16 text-center text-base text-on-surface-variant">
-			Keine administrativen Eingriffe protokolliert.
-		</div>
+		<SuchZustand symbol={ShieldCheck} titel="Keine administrativen Eingriffe protokolliert" />
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">
@@ -77,11 +78,15 @@
 						{#each logs as log, _i (_i)}
 							<tr>
 								<td class="whitespace-nowrap">
-									{new Date(log.zeitstempel).toLocaleString('de-DE')}
+									{formatZeitpunkt(log.zeitstempel)}
 								</td>
 								<!-- Neutral wie im Logbuch daneben: Farbe trägt dort nur das Unumkehrbare. -->
 								<td>
-									<StatusChip ton="neutral" text={log.aktion} />
+									<StatusChip
+										ton="neutral"
+										text={VERWALTUNG_AKTIONEN[log.aktion] ?? log.aktion}
+										tip={log.aktion}
+									/>
 								</td>
 								<td class="whitespace-nowrap font-medium">
 									{log.admin_name}

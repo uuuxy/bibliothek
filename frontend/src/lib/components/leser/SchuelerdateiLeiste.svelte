@@ -78,7 +78,7 @@
 		     egal warum die Liste eingegrenzt wurde. -->
 		<div class="ml-auto shrink-0 text-xs font-semibold text-on-surface-variant">
 			{#if gekuerzt}
-				Erste {trefferzahl} — zum Finden bitte suchen
+				<!-- Der Satz unter der Zeile sagt es. -->
 			{:else if suchend}
 				Treffer: {trefferzahl}
 			{:else}
@@ -86,6 +86,13 @@
 			{/if}
 		</div>
 	</div>
+	<!-- Eine gekürzte Liste sagt es über der Liste, in einem Satz mit dem Weg zum Rest; dieselbe
+	     Form in Etiketten, Bestellhistorie, Signaturen, Klassensätzen, Katalog und Portal. -->
+	{#if gekuerzt}
+		<p class="text-sm text-on-surface-variant">
+			Die ersten {trefferzahl} Leser. Suche nach Name, Klasse oder Ausweisnummer, um die übrigen zu finden.
+		</p>
+	{/if}
 	<!-- Der Grund, warum der Filter gesperrt ist, unter der Zeile wie an den Klassenwahlen
 	     (klassenVorschlaege.svelte.js; M3 Text fields, „Error text"). -->
 	{#if jahrgaengeFehler}

@@ -12,7 +12,8 @@
 	import Button from '../ui/Button.svelte';
 	import ArbeitsZeile from './ArbeitsZeile.svelte';
 	import Feld from '../ui/Feld.svelte';
-	import { Check } from '@lucide/svelte';
+	import { Check, Inbox } from '@lucide/svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, von?: string, erstellt_am: string }} Anliegen */
 
@@ -172,7 +173,7 @@
 	{:else if ladefehler}
 		<LadeFehler onerneut={ladeAnliegen} titel="Meldungen nicht geladen" text={ladefehler} />
 	{:else if anliegen.length === 0}
-		<div class="py-16 text-center text-on-surface-variant text-base">Keine offenen Meldungen.</div>
+		<SuchZustand symbol={Inbox} titel="Keine offenen Meldungen" />
 	{:else}
 		<!-- M3 Lists: Ein Abstand trennt die Gruppen, die Linien nur die Zeilen einer Gruppe. -->
 		{#each abschnitte as g (g.titel)}

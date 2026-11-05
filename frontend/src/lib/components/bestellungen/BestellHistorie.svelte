@@ -6,6 +6,8 @@
 	import BestellHistorieTabelle from './BestellHistorieTabelle.svelte';
 	import BestellHistorieKopf from './BestellHistorieKopf.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { ShoppingBag } from '@lucide/svelte';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 	import { formatEuro } from '../../utils/format.js';
 
@@ -176,25 +178,23 @@
 				text={ladefehler}
 			/>
 		{:else if bestellungen.length === 0}
-			<div class="py-16 text-center text-on-surface-variant text-base">
-				{#if mittel}
-					Keine Bestellungen in diesem Topf.<br />
-					<span class="text-sm">Andere Mittelherkunft wählen, um alle zu sehen.</span>
-				{:else}
-					Noch keine Bestellungen aufgegeben.<br />
-					<span class="text-sm">Bestellungen werden hier automatisch gespeichert.</span>
-				{/if}
-			</div>
+			<SuchZustand
+				symbol={ShoppingBag}
+				titel={mittel ? 'Keine Bestellungen in diesem Topf' : 'Noch keine Bestellungen aufgegeben'}
+				hinweis={mittel
+					? 'Den Filter aufheben, um alle zu sehen.'
+					: 'Bestellungen werden hier automatisch gespeichert.'}
+			/>
 		{:else}
-			<BestellHistorieTabelle {bestellungen} euro={formatEuro} {datum} onOeffnen={oeffne} />
-
 			<!-- Ehrlich sagen, dass die Liste nicht alles zeigt. Ohne den Satz sucht jemand eine
 		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->
 			{#if gekappt}
-				<p class="text-center text-xs text-on-surface-variant">
-					Neueste {bestellungen.length} von {gesamtImBlick} Bestellungen — ältere stehen im Bericht.
+				<p class="text-sm text-on-surface-variant">
+					{bestellungen.length} von {gesamtImBlick} Bestellungen, die neuesten zuerst. Ältere stehen in
+					den Bestellberichten.
 				</p>
 			{/if}
+			<BestellHistorieTabelle {bestellungen} euro={formatEuro} {datum} onOeffnen={oeffne} />
 		{/if}
 	</div>
 {/if}

@@ -1,5 +1,5 @@
 <script>
-	import { Search } from '@lucide/svelte';
+	import { Pencil, Search, Trash } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import SuchZustand from '../ui/SuchZustand.svelte';
@@ -94,13 +94,29 @@
 								<StatusChip text="Inaktiv" />
 							{/if}
 						</td>
-						<td class="space-x-2 text-right whitespace-nowrap">
-							<Button variant="secondary" size="sm" onclick={() => oeffneKonto(user)}>
-								Bearbeiten
-							</Button>
-							<Button variant="danger" size="sm" onclick={() => frageLoeschen(user)}>
-								Löschen
-							</Button>
+						<!-- Symbolknöpfe mit Sprechblase wie in den Zeilen von Gmail und Drive; 16 px Abstand,
+						     damit sich die Trefferflächen nicht berühren. -->
+						<td class="text-right whitespace-nowrap">
+							<div class="inline-flex items-center gap-4">
+								<Button
+									variant="symbol"
+									size="sm"
+									onclick={() => oeffneKonto(user)}
+									data-tip="Bearbeiten"
+									aria-label="{user.vorname} {user.nachname} bearbeiten"
+								>
+									<Pencil class="h-4 w-4" aria-hidden="true" />
+								</Button>
+								<Button
+									variant="symbol"
+									size="sm"
+									onclick={() => frageLoeschen(user)}
+									data-tip="Löschen"
+									aria-label="{user.vorname} {user.nachname} löschen"
+								>
+									<Trash class="h-4 w-4" aria-hidden="true" />
+								</Button>
+							</div>
 						</td>
 					</tr>
 				{/each}

@@ -9,6 +9,8 @@
      (Block in der Zelle — max-width auf <td> ignoriert das Auto-Layout), der volle Text
      steht im title. -->
 <script>
+	import { Pencil, Trash } from '@lucide/svelte';
+	import Button from '../ui/Button.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { untrack } from 'svelte';
@@ -110,19 +112,30 @@
 				{/if}
 			</span>
 		</td>
+		<!-- Symbolknöpfe mit Sprechblase wie in den Zeilen von Gmail und Drive; 16 px Abstand,
+		     damit sich die Trefferflächen nicht berühren. -->
 		<td class="text-right whitespace-nowrap">
-			<button
-				onclick={() => onEdit(s)}
-				aria-label="Lieferant {s.name} bearbeiten"
-				class="text-on-surface-variant cursor-pointer text-sm mr-3">Bearbeiten</button
-			>
-			<button
-				onclick={() => onRemove(s)}
-				disabled={loescht}
-				aria-label="Lieferant {s.name} löschen"
-				class="text-error cursor-pointer text-sm disabled:cursor-not-allowed disabled:text-on-surface/38"
-				>Löschen</button
-			>
+			<div class="inline-flex items-center gap-4">
+				<Button
+					variant="symbol"
+					size="sm"
+					onclick={() => onEdit(s)}
+					data-tip="Bearbeiten"
+					aria-label="Lieferant {s.name} bearbeiten"
+				>
+					<Pencil class="h-4 w-4" aria-hidden="true" />
+				</Button>
+				<Button
+					variant="symbol"
+					size="sm"
+					onclick={() => onRemove(s)}
+					disabled={loescht}
+					data-tip="Löschen"
+					aria-label="Lieferant {s.name} löschen"
+				>
+					<Trash class="h-4 w-4" aria-hidden="true" />
+				</Button>
+			</div>
 		</td>
 	</tr>
 {/if}

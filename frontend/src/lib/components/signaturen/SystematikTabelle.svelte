@@ -8,6 +8,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import { Pencil, Trash } from '@lucide/svelte';
 
 	/**
 	 * Die Sachgruppen als Tabelle; je Zeile ändern oder löschen. Nach jeder Änderung lädt
@@ -132,28 +133,41 @@
 						</td>
 						<td class="align-top">
 							<div class="flex h-9 items-center justify-end gap-1 whitespace-nowrap">
-								<Button size="sm" onclick={speichereBearbeitung}>Sichern</Button>
+								<Button size="sm" onclick={speichereBearbeitung}>Speichern</Button>
 								<Button size="sm" variant="ghost" onclick={brichBearbeitenAb}>Abbrechen</Button>
 							</div>
 						</td>
 					{:else}
 						<td class="font-mono">{eintrag.kuerzel}</td>
 						<td>{eintrag.bezeichnung}</td>
+						<!-- Symbolknöpfe mit Sprechblase wie in den Zeilen von Gmail und Drive; 16 px Abstand,
+						     damit sich die Trefferflächen nicht berühren. -->
 						<td class="text-right whitespace-nowrap">
-							<Button size="sm" variant="secondary" onclick={() => starteBearbeiten(eintrag)}>
-								Bearbeiten
-							</Button>
-							<Button
-								size="sm"
-								variant="danger"
-								onclick={() => loeschen(eintrag)}
-								disabled={loescht !== null}
-							>
-								{#if loescht === eintrag.id}
-									<Ladekreis size="sm" farbe="aktuell" />
-								{/if}
-								Löschen
-							</Button>
+							<div class="inline-flex items-center gap-4">
+								<Button
+									variant="symbol"
+									size="sm"
+									onclick={() => starteBearbeiten(eintrag)}
+									data-tip="Bearbeiten"
+									aria-label="Sachgruppe {eintrag.kuerzel} bearbeiten"
+								>
+									<Pencil class="h-4 w-4" aria-hidden="true" />
+								</Button>
+								<Button
+									variant="symbol"
+									size="sm"
+									onclick={() => loeschen(eintrag)}
+									disabled={loescht !== null}
+									data-tip="Löschen"
+									aria-label="Sachgruppe {eintrag.kuerzel} löschen"
+								>
+									{#if loescht === eintrag.id}
+										<Ladekreis size="sm" farbe="aktuell" />
+									{:else}
+										<Trash class="h-4 w-4" aria-hidden="true" />
+									{/if}
+								</Button>
+							</div>
 						</td>
 					{/if}
 				</tr>

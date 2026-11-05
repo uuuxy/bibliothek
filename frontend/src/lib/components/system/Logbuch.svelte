@@ -9,6 +9,7 @@
 	import { formatZeitpunkt } from '../../utils/format.js';
 	import { RefreshCw } from '@lucide/svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { BEREICHE, kurzeKennung } from './protokollWoerter.js';
 
 	// Aktionen lesbar und mit BEDEUTUNG in der Farbe: Vorher stand jede Aktion in
 	// derselben roten Pille — CHECKOUT wie DELETE — und Rot heißt überall sonst
@@ -92,8 +93,8 @@
 						<tr>
 							<th>Zeitstempel</th>
 							<th>Aktion</th>
-							<th>Tabelle</th>
-							<th>Datensatz-ID</th>
+							<th>Bereich</th>
+							<th>Kennung</th>
 							<th>Bearbeiter</th>
 						</tr>
 					</thead>
@@ -110,11 +111,13 @@
 										tip={log.aktion}
 									/>
 								</td>
+								<!-- Das Wort der Oberfläche statt des Tabellennamens, die Kennung kurz; der Rohwert
+								     steht in der Sprechblase. -->
 								<td>
-									{log.tabelle}
+									<span data-tip={log.tabelle}>{BEREICHE[log.tabelle] ?? log.tabelle}</span>
 								</td>
-								<td>
-									{log.datensatz_id}
+								<td class="font-mono whitespace-nowrap">
+									<span data-tip={log.datensatz_id}>{kurzeKennung(log.datensatz_id)}</span>
 								</td>
 								<td>
 									<!-- Systemgesteuerte Vorgänge haben keinen Bearbeiter. Sie als leere

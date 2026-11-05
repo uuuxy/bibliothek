@@ -53,7 +53,7 @@ describe('AbgaengerTabelle', () => {
 		expect(getByText('Abschlussklassen erscheinen hier ab Mai')).toBeTruthy();
 		expect(getByText(/01\.05\./)).toBeTruthy();
 		expect(getByText(/31\.07\./)).toBeTruthy();
-		expect(queryByText('Alle Abgänger entlastet!')).toBeNull();
+		expect(queryByText('Alle Abgänger entlastet')).toBeNull();
 		expect(queryByRole('table')).toBeNull();
 	});
 
@@ -64,13 +64,13 @@ describe('AbgaengerTabelle', () => {
 			fenster: saison,
 			onProfil: () => {}
 		});
-		expect(getByText('Alle Abgänger entlastet!')).toBeTruthy();
+		expect(getByText('Alle Abgänger entlastet')).toBeTruthy();
 		expect(queryByText('Abschlussklassen erscheinen hier ab Mai')).toBeNull();
 	});
 
 	// Bestands-Durchgang 10.09.2026: Scheiterte der erste Abruf (500, 429, Netz), blieb die
 	// Liste leer und das Fenster auf seiner Vorgabe „offen" — die Tabelle meldete in der
-	// Saison „Alle Abgänger entlastet!", und die Bibliothek entließ Schüler, ohne Bücher
+	// Saison „Alle Abgänger entlastet", und die Bibliothek entließ Schüler, ohne Bücher
 	// einzusammeln. Ein Ladefehler ist ein eigener Zustand, und er schlägt die anderen.
 	it('Ladefehler: Fehlermeldung mit Wiederholen, nicht „alle entlastet"', () => {
 		const { getByRole, queryByText } = render(AbgaengerTabelle, {
@@ -83,7 +83,7 @@ describe('AbgaengerTabelle', () => {
 		});
 		expect(getByRole('alert').textContent).toContain('konnte nicht geladen werden');
 		expect(getByRole('button', { name: /Erneut versuchen/ })).toBeTruthy();
-		expect(queryByText('Alle Abgänger entlastet!')).toBeNull();
+		expect(queryByText('Alle Abgänger entlastet')).toBeNull();
 	});
 
 	it('in der Saison mit Posten: Tabelle mit Klasse, Name und Überfälligkeit', () => {

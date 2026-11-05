@@ -30,13 +30,13 @@ describe('AnliegenListe', () => {
 		const { findByText, queryByText } = render(AnliegenListe);
 
 		expect(await findByText('Datenbank nicht erreichbar')).toBeTruthy();
-		expect(queryByText('Keine offenen Meldungen.')).toBeNull();
+		expect(queryByText('Keine offenen Meldungen')).toBeNull();
 	});
 
 	it('leer bleibt leer', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		const { findByText } = render(AnliegenListe);
-		expect(await findByText('Keine offenen Meldungen.')).toBeTruthy();
+		expect(await findByText('Keine offenen Meldungen')).toBeTruthy();
 	});
 
 	// Ein Wunsch wartet auf die nächste Bestellung, ein Problem soll am selben Tag erledigt

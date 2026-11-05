@@ -104,7 +104,7 @@
 <div class="flex flex-col gap-10">
 	<div class="space-y-4 max-w-md">
 		<h2 class="text-base font-bold text-on-surface border-b border-outline-variant pb-3">
-			Neuer Lieferant
+			Lieferant anlegen
 		</h2>
 		<form onsubmit={speichere} class="space-y-4 text-sm">
 			<Feld id="n" etikett="Name" bind:value={newName} required />

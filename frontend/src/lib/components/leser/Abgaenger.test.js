@@ -122,13 +122,13 @@ describe('Abgaenger: die Liste bleibt aktuell', () => {
 		leitung.sende('action', { event: 'rueckgabe' });
 		vi.mocked(ladeAbgaenger).mockResolvedValueOnce(liste());
 		leitung.sende('action', { event: 'rueckgabe' });
-		await seite.findByText('Alle Abgänger entlastet!');
+		await seite.findByText('Alle Abgänger entlastet');
 
 		aeltereAntwort(liste(abgaenger('a', 'Lange')));
 		await new Promise((fertig) => setTimeout(fertig));
 
 		expect(seite.queryByText('Mia Lange')).toBeNull();
-		expect(seite.getByText('Alle Abgänger entlastet!')).toBeTruthy();
+		expect(seite.getByText('Alle Abgänger entlastet')).toBeTruthy();
 	});
 
 	it('eine späte Absage nennt keinen Fehler, wenn die jüngere Anfrage kam', async () => {
@@ -171,7 +171,7 @@ describe('Abgaenger: die Liste bleibt aktuell', () => {
 
 		vi.mocked(ladeAbgaenger).mockResolvedValueOnce(liste());
 		expect(await holeNeuAuf('connected')).toBe(true);
-		expect(await seite.findByText('Alle Abgänger entlastet!')).toBeTruthy();
+		expect(await seite.findByText('Alle Abgänger entlastet')).toBeTruthy();
 	});
 
 	it('fehlt das Recht, geht auch die Liste von vorhin', async () => {

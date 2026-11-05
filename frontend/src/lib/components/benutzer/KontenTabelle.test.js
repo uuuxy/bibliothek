@@ -84,8 +84,8 @@ describe('KontenTabelle', () => {
 		const eins = konto();
 		const screen = tabelle([eins], { oeffneKonto, frageLoeschen });
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Bearbeiten' }));
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster bearbeiten' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 
 		expect(oeffneKonto).toHaveBeenCalledWith(eins);
 		expect(frageLoeschen).toHaveBeenCalledWith(eins);

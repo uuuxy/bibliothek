@@ -131,19 +131,20 @@
 						<td class="font-semibold">{row.klasse}</td>
 						<td>{row.lehrer_email}</td>
 						<td class="text-right">
-							<button
+							<Button
+								variant="symbol"
+								size="sm"
 								onclick={() => loescheZuordnung(row.klasse)}
 								disabled={loeschtKlasse !== null}
-								class="icon-btn h-9 w-9 text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
 								aria-label="Zuordnung für {row.klasse} löschen"
 								data-tip="Zuordnung löschen"
 							>
 								{#if loeschtKlasse === row.klasse}
 									<Ladekreis size="sm" farbe="aktuell" />
 								{:else}
-									<Trash class="w-5 h-5" aria-hidden="true" />
+									<Trash class="h-4 w-4" aria-hidden="true" />
 								{/if}
-							</button>
+							</Button>
 						</td>
 					</tr>
 				{/each}

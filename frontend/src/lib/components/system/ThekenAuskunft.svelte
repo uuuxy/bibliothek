@@ -12,6 +12,7 @@
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { ScanBarcode, Search } from '@lucide/svelte';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { formatZeitpunkt } from '../../utils/format.js';
 
 	let barcode = $state('');
 	/** @type {{ barcode: string, exemplare: any[], ereignisse: any[] } | null} */
@@ -125,7 +126,7 @@
 							{#each auskunft.ereignisse as e, i (i)}
 								<tr>
 									<td>
-										{new Date(e.zeitpunkt).toLocaleString('de-DE')}
+										{formatZeitpunkt(e.zeitpunkt)}
 									</td>
 									<td class="font-medium">{aktionsText[e.aktion] ?? e.aktion}</td>
 									{#if e.personenbezug_getilgt}

@@ -45,7 +45,7 @@ describe('OpacSuche: Zahl der Treffer', () => {
 		);
 		const screen = render(OpacSuche);
 		await suche(screen, 'Buch');
-		expect(screen.getByText(/Gezeigt werden 50 von 312 Treffern/)).toBeTruthy();
+		expect(screen.getByText(/50 von 312 Treffern/)).toBeTruthy();
 	});
 
 	it('schreibt die Zahl allein, wenn alle Treffer da sind', async () => {
@@ -57,7 +57,7 @@ describe('OpacSuche: Zahl der Treffer', () => {
 		const screen = render(OpacSuche);
 		await suche(screen, 'Buch');
 		expect(screen.getByText('3 Treffer')).toBeTruthy();
-		expect(screen.queryByText(/Gezeigt werden/)).toBeNull();
+		expect(screen.queryByText(/von 312 Treffern/)).toBeNull();
 	});
 });
 

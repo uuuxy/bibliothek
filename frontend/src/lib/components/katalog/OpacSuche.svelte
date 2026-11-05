@@ -103,9 +103,9 @@
 		{:else if ergebnisse.length > 0}
 			<!-- Ist die Antwort gekappt, nennt die Zeile beide Zahlen: Sonst stünde die Kappung
 			     des Servers da wie die Zahl der Bücher. Derselbe Satz wie in „Mein Portal". -->
-			<p class="text-xs text-on-surface-variant font-medium mb-4">
+			<p class="text-sm text-on-surface-variant mb-4">
 				{#if gesamt > ergebnisse.length}
-					Gezeigt werden {ergebnisse.length} von {gesamt} Treffern — ein Suchwort grenzt ein.
+					{ergebnisse.length} von {gesamt} Treffern. Ein Suchwort grenzt ein.
 				{:else}
 					{ergebnisse.length} Treffer
 				{/if}

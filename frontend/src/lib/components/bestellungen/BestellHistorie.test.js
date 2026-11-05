@@ -112,8 +112,8 @@ describe('BestellHistorie', () => {
 	});
 });
 
-// Die Zeile unter der Liste sagt, ob sie alles zeigt. Beim gefilterten Blick zählt die Zahl des
-// Topfes: Sonst stünde unter einer vollständigen Liste „Neueste 1 von 137“.
+// Die Zeile über der Liste sagt, ob sie alles zeigt. Beim gefilterten Blick zählt die Zahl des
+// Topfes: Sonst stünde über einer vollständigen Liste „1 von 137 Bestellungen“.
 describe('BestellHistorie: die Liste zeigt nicht alles', () => {
 	beforeEach(() => vi.clearAllMocks());
 
@@ -124,11 +124,11 @@ describe('BestellHistorie: die Liste zeigt nicht alles', () => {
 				: [bestellung('Buchhandlung Nord', 'land')]
 		);
 		const screen = render(BestellHistorie);
-		expect(await screen.findByText(/Neueste 1 von 137 Bestellungen/)).toBeTruthy();
+		expect(await screen.findByText(/1 von 137 Bestellungen, die neuesten zuerst/)).toBeTruthy();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Lernmittelfreiheit (Land)' }));
 
-		await waitFor(() => expect(screen.queryByText(/Neueste 1 von/)).toBeNull());
+		await waitFor(() => expect(screen.queryByText(/Bestellungen, die neuesten zuerst/)).toBeNull());
 	});
 });
 

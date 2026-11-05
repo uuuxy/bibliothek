@@ -7,6 +7,7 @@
      Bibliothek Schüler, ohne Bücher einzusammeln. -->
 <script>
 	import { CalendarClock, Check } from '@lucide/svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { fokusAuffangen } from '../ui/fokusAuffangen.svelte.js';
@@ -25,31 +26,17 @@
 {#if ladefehler}
 	<LadeFehler onerneut={onErneut} titel="Abgängerliste nicht geladen" text={ladefehler} />
 {:else if !fenster.offen}
-	<div class="py-12 text-center space-y-3 animate-fade-in">
-		<div
-			class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center text-on-surface-variant mx-auto"
-		>
-			<CalendarClock class="h-8 w-8" aria-hidden="true" />
-		</div>
-		<h3 class="font-bold text-on-surface">Abschlussklassen erscheinen hier ab Mai</h3>
-		<p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-			Vom {fenster.von} bis {fenster.bis} zeigt diese Liste die Abschlussklassen (9H, 10R, 13) mit noch
-			offenen Büchern — zum Einsammeln vor der Entlassung. Wer die Schule schon verlassen hat und noch
-			Bücher schuldet, steht im Mahnwesen.
-		</p>
-	</div>
+	<SuchZustand
+		symbol={CalendarClock}
+		titel="Abschlussklassen erscheinen hier ab Mai"
+		hinweis="Vom {fenster.von} bis {fenster.bis} zeigt diese Liste die Abschlussklassen (9H, 10R, 13) mit noch offenen Büchern — zum Einsammeln vor der Entlassung. Wer die Schule schon verlassen hat und noch Bücher schuldet, steht im Mahnwesen."
+	/>
 {:else if leer}
-	<div class="py-12 text-center space-y-3 animate-fade-in">
-		<div
-			class="w-16 h-16 rounded-full bg-success-container flex items-center justify-center text-on-success-container mx-auto"
-		>
-			<Check class="h-8 w-8" aria-hidden="true" />
-		</div>
-		<h3 class="font-bold text-on-surface">Alle Abgänger entlastet!</h3>
-		<p class="text-xs text-on-surface-variant max-w-xs mx-auto">
-			Kein Schüler der Abschlussklassen hat noch offene Lehrmittel.
-		</p>
-	</div>
+	<SuchZustand
+		symbol={Check}
+		titel="Alle Abgänger entlastet"
+		hinweis="Kein Schüler der Abschlussklassen hat noch offene Lehrmittel."
+	/>
 {:else}
 	<div bind:this={liste} class="overflow-x-auto">
 		<Tabelle beschriftung="Abgänger mit offenen Büchern">

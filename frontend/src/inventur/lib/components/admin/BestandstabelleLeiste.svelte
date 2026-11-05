@@ -48,7 +48,6 @@
 		     switch views, or sort elements"): der Katalog und die Aufräumsicht mit den Titeln,
 		     die er nicht zeigt. -->
 		<Segmente
-			klasse="mr-auto"
 			etikett="Sicht der Titelliste"
 			optionen={[
 				{ wert: 'mit', text: 'Mit Exemplaren' },
@@ -57,6 +56,23 @@
 			wert={appState.bestandsAnsicht}
 			onwahl={(wert) => (appState.bestandsAnsicht = wert === 'ohne' ? 'ohne' : 'mit')}
 		/>
+		<!-- Anlegen steht vorn bei der Liste wie in Leserdatei, Klassensätzen und Benutzern (M3,
+		     Spacing: „buttons should be close to the content they're affecting“). Die Aktionen für
+		     markierte Titel kommen zuletzt, damit beim Markieren nichts verrutscht. -->
+		<Button onclick={onCreateNew} class="mt-2 w-full sm:mt-0 sm:w-auto">
+			<Plus class="w-4 h-4" aria-hidden="true" />
+			Titel anlegen
+		</Button>
+		<!-- Öffnet die Maske „Titel anlegen" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
+		     an der Kamera im ISBN-Feld und in der Suchpille. -->
+		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
+			<Camera class="w-4 h-4" aria-hidden="true" />
+			Scanner
+		</Button>
+		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
+			<RefreshCw class="w-4 h-4" aria-hidden="true" />
+			Cover herunterladen
+		</Button>
 		{#if anzahlGewaehlt > 0}
 			<Button variant="secondary" onclick={onAssignClass}>
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
@@ -71,22 +87,5 @@
 				Löschen ({anzahlGewaehlt})
 			</Button>
 		{/if}
-
-		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
-			<RefreshCw class="w-4 h-4" aria-hidden="true" />
-			Cover herunterladen
-		</Button>
-
-		<!-- Öffnet die Maske „Titel anlegen" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
-		     an der Kamera im ISBN-Feld und in der Suchpille. -->
-		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
-			<Camera class="w-4 h-4" aria-hidden="true" />
-			Scanner
-		</Button>
-
-		<Button onclick={onCreateNew} class="mt-2 w-full sm:mt-0 sm:w-auto">
-			<Plus class="w-4 h-4" aria-hidden="true" />
-			Titel anlegen
-		</Button>
 	</div>
 </div>

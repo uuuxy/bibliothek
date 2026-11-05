@@ -1,16 +1,18 @@
 <script>
 	/**
-	 * Der Zustand unter einer Suchpille: „noch nichts gesucht" oder „nichts gefunden".
+	 * Der leere Zustand einer Liste: noch nichts gesucht, nichts gefunden oder nichts da.
 	 *
-	 * Eine Form für alle Suchseiten: Symbol, Überschrift, erklärender Satz darunter.
+	 * Eine Form für alle Listen und Suchseiten: Symbol, Überschrift, erklärender Satz darunter,
+	 * wo es einen gibt, der Knopf, der die Liste füllt.
 	 *
 	 * @type {{
 	 *   symbol: any,
 	 *   titel: string,
-	 *   hinweis?: string
+	 *   hinweis?: string,
+	 *   aktion?: import('svelte').Snippet
 	 * }}
 	 */
-	let { symbol, titel, hinweis = '' } = $props();
+	let { symbol, titel, hinweis = '', aktion } = $props();
 
 	const Symbol = $derived(symbol);
 </script>
@@ -21,6 +23,9 @@
 	<Symbol class="h-10 w-10 mx-auto mb-3" aria-hidden="true" />
 	<p class="text-xl font-semibold">{titel}</p>
 	{#if hinweis}
-		<p class="text-sm mt-1">{hinweis}</p>
+		<p class="text-sm mt-1 max-w-md mx-auto">{hinweis}</p>
+	{/if}
+	{#if aktion}
+		<div class="mt-6 flex justify-center">{@render aktion()}</div>
 	{/if}
 </div>

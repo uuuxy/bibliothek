@@ -73,7 +73,7 @@ describe('Benutzerliste: Meldungen', () => {
 
 	it('meldet das Löschen über die Meldungen der Anwendung', async () => {
 		const screen = await benutzerliste();
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 		await fireEvent.click(
 			within(screen.getByRole('dialog')).getByRole('button', { name: 'Löschen' })
 		);
@@ -89,7 +89,7 @@ describe('Benutzerliste: Meldungen', () => {
 	it('lässt den Dialog offen, wenn das Löschen scheitert, und nennt dort den Grund', async () => {
 		server(antwort({}, false, 409));
 		const screen = await benutzerliste();
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 		const dialog = screen.getByRole('dialog');
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
 
@@ -109,7 +109,7 @@ describe('Benutzerliste: Meldungen', () => {
 				: new Promise((fertig) => (beantworte = fertig))
 		);
 		const screen = await benutzerliste();
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 		const dialog = screen.getByRole('dialog');
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
 
@@ -129,7 +129,7 @@ describe('Benutzerliste: Meldungen', () => {
 	// button is always closest to the edge." So steht es auch in der Rückfrage des Hauses.
 	it('stellt die Knöpfe der Lösch-Rückfrage an den rechten Rand, Löschen außen', async () => {
 		const screen = await benutzerliste();
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 		const dialog = screen.getByRole('dialog');
 
 		const knoepfe = within(dialog).getAllByRole('button');
@@ -222,11 +222,11 @@ describe('Benutzerliste: Namen für Vorleseprogramme', () => {
 		const anlegen = screen.getByRole('dialog', { name: 'Benutzer anlegen' });
 		await fireEvent.click(within(anlegen).getByRole('button', { name: 'Abbrechen' }));
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Bearbeiten' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster bearbeiten' }));
 		const bearbeiten = screen.getByRole('dialog', { name: 'Benutzer bearbeiten' });
 		await fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 		expect(screen.getByRole('dialog', { name: 'Benutzer unwiderruflich löschen?' })).toBeTruthy();
 	});
 });
@@ -268,7 +268,7 @@ describe('Benutzerliste: nach einem Fehler neu laden', () => {
 	it('lädt die Liste nach einem gescheiterten Löschen neu und lässt den Grund im Dialog', async () => {
 		const abrufe = ohneAntwort([KONTO], []);
 		const screen = await benutzerliste();
-		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
 		const dialog = screen.getByRole('dialog');
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
 

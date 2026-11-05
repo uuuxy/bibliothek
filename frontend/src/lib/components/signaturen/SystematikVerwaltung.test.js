@@ -27,7 +27,7 @@ async function klicke(knopf) {
 	await fireEvent.click(knopf);
 }
 
-// „Anlegen" und „Sichern" bleiben bei leerem Feld bedienbar: Der Klick nennt am Feld, was
+// „Anlegen" und „Speichern" bleiben bei leerem Feld bedienbar: Der Klick nennt am Feld, was
 // fehlt, führt dorthin und schickt nichts ab.
 describe('Sachgruppen: leeres Feld', () => {
 	beforeEach(() => {
@@ -70,13 +70,13 @@ describe('Sachgruppen: leeres Feld', () => {
 		expect(k.getByLabelText('Bezeichnung').getAttribute('aria-invalid')).toBeNull();
 	});
 
-	it('„Sichern" nennt am geleerten Feld, was fehlt, und schickt nichts ab', async () => {
+	it('„Speichern" nennt am geleerten Feld, was fehlt, und schickt nichts ab', async () => {
 		const k = render(SystematikVerwaltung);
-		await fireEvent.click(await k.findByRole('button', { name: 'Bearbeiten' }));
+		await fireEvent.click(await k.findByRole('button', { name: 'Sachgruppe Deu bearbeiten' }));
 		const kuerzel = k.getByLabelText('Kürzel bearbeiten');
 		await fireEvent.input(kuerzel, { target: { value: '  ' } });
 
-		await klicke(k.getByRole('button', { name: 'Sichern' }));
+		await klicke(k.getByRole('button', { name: 'Speichern' }));
 		expect(kuerzel.getAttribute('aria-invalid')).toBe('true');
 		expect(beschreibung(kuerzel)).toBe('Bitte ein Kürzel eintragen.');
 		expect(document.activeElement).toBe(kuerzel);
@@ -94,7 +94,7 @@ describe('Sachgruppen: offene Zeile beim Nachladen', () => {
 
 	it('lässt die getippte Änderung stehen, wenn oben eine Sachgruppe angelegt wird', async () => {
 		const k = render(SystematikVerwaltung);
-		await fireEvent.click(await k.findByRole('button', { name: 'Bearbeiten' }));
+		await fireEvent.click(await k.findByRole('button', { name: 'Sachgruppe Deu bearbeiten' }));
 		await fireEvent.input(k.getByLabelText('Bezeichnung bearbeiten'), {
 			target: { value: 'Deutsch als Zweitsprache' }
 		});
@@ -127,7 +127,7 @@ describe('Sachgruppen: Löschen', () => {
 		);
 		const k = render(SystematikVerwaltung);
 		const knopf = /** @type {HTMLButtonElement} */ (
-			await k.findByRole('button', { name: 'Löschen' })
+			await k.findByRole('button', { name: 'Sachgruppe Deu löschen' })
 		);
 
 		await fireEvent.click(knopf);

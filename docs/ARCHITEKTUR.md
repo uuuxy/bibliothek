@@ -842,6 +842,17 @@ frontend/src
   Die Beschriftung nennt die Handlung („It describes the action that will occur").
 - **Ein Knopf steht bei dem Inhalt, den er betrifft** (Material 3, Spacing: „buttons should be
   close to the content they're affecting"), nicht am fernen Rand der Zeile.
+  Deshalb steht „<Sache> anlegen“ vorn bei der Liste, unter Suche und Filtern.
+- **Die Aktionen einer Zeile sind Symbolknöpfe mit Sprechblase** (`ui/Button`, Variante
+  `symbol`): Stift für Bearbeiten, Mülleimer für Löschen, 16 px Abstand. Material 3, Icon
+  buttons: „Use icon buttons to display common actions“ und „On hover, the icon button displays
+  a tooltip describing its action“. Text bleibt, wo ein Symbol den Zustand nicht sagt
+  („Defekt melden“).
+- **Eine leere Liste zeigt `ui/SuchZustand`:** Symbol, Überschrift, ein Satz und, wo es ihn
+  gibt, der Knopf, der die Liste füllt.
+- **Eine gekürzte Liste sagt es in einem Satz über der Liste** (`text-sm
+  text-on-surface-variant`): wie viele zu sehen sind, in welcher Reihenfolge und wie man an die
+  übrigen kommt („50 von 312 Treffern. Ein Suchwort grenzt ein.“).
 - **Ein leeres Pflichtfeld sperrt den Knopf nicht.** Der Klick nennt am Feld, was fehlt, und
   führt dorthin; der Fehlertext steht ab dem ersten Klick und geht, sobald das Feld gefüllt ist
   (`verlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,

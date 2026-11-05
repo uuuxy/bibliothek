@@ -76,7 +76,7 @@ test('Signaturen: Symbol im Formular und in der Tabelle; wer tippt, bleibt im Fe
 		await zeile.getByRole('button', { name: 'Bearbeiten' }).click();
 		const tabellenKuerzel = page.locator('#sys-aendern-kuerzel');
 		await tabellenKuerzel.fill('');
-		await page.getByRole('button', { name: 'Sichern' }).click();
+		await page.getByRole('button', { name: 'Speichern', exact: true }).click();
 		await expect(tabellenKuerzel).toHaveAttribute('aria-invalid', 'true');
 		await symbolStehtImFeld(tabellenKuerzel, 'Kürzel in der Tabelle');
 	} finally {

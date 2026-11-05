@@ -22,7 +22,7 @@ import { uiLogin, querySQL, uniqueSuffix, einstellungsKategorie } from './helper
 async function zuLieferanten(page) {
 	await page.goto('/einstellungen');
 	await einstellungsKategorie(page, 'Lieferanten').click();
-	await page.getByRole('heading', { name: 'Neuer Lieferant' }).waitFor();
+	await page.getByRole('heading', { name: 'Lieferant anlegen' }).waitFor();
 }
 
 /** @param {string} name */

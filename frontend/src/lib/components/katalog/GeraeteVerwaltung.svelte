@@ -7,7 +7,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
+	import { Pencil, Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
 
 	/**
 	 * Geräte-Verwaltung, ein Bereich im Medienkatalog und kein eigener Menüpunkt: Ausgebucht
@@ -86,7 +86,8 @@
 </script>
 
 <div class="space-y-6 pt-2">
-	<div class="flex items-center justify-between border-b border-outline-variant pb-3">
+	<!-- Anlegen vorn bei der Liste wie in Leserdatei und Benutzern, nicht am fernen Rand. -->
+	<div class="space-y-3 border-b border-outline-variant pb-3">
 		<div>
 			<h2 class="text-base font-bold text-on-surface">Geräte ({geraete.liste.length})</h2>
 			<p class="mt-0.5 text-sm text-on-surface-variant">
@@ -170,9 +171,17 @@
 								? 'im Schrank'
 								: 'defekt/gesperrt'}
 					</span>
-					<div class="flex shrink-0 items-center gap-2">
-						<Button variant="secondary" size="sm" onclick={() => oeffneBearbeiten(g)}>
-							Bearbeiten
+					<!-- Bearbeiten als Symbolknopf wie in jeder Zeile; „Defekt melden" schaltet einen Zustand
+					     um, den ein Symbol allein nicht sagt. 16 px Abstand für die Trefferfläche. -->
+					<div class="flex shrink-0 items-center gap-4">
+						<Button
+							variant="symbol"
+							size="sm"
+							onclick={() => oeffneBearbeiten(g)}
+							data-tip="Bearbeiten"
+							aria-label="{g.modellname} bearbeiten"
+						>
+							<Pencil class="h-4 w-4" aria-hidden="true" />
 						</Button>
 						<Button
 							variant={g.ist_ausleihbar ? 'danger' : 'secondary'}

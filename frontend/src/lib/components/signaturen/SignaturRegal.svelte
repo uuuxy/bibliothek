@@ -84,9 +84,8 @@
 		</div>
 
 		{#if gekappt}
-			<p class="text-xs bg-warning-container text-on-warning-container rounded-lg px-3 py-2">
-				Es werden nur die ersten {buecher.length} Titel angezeigt. Grenze die Signatur weiter ein, um
-				den Rest zu sehen.
+			<p class="text-sm text-on-surface-variant">
+				Die ersten {buecher.length} Titel. Grenze die Signatur weiter ein, um die übrigen zu sehen.
 			</p>
 		{/if}
 

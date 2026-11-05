@@ -131,7 +131,7 @@
 		{#if suche.treffer.length > 0}
 			{#if suche.gesamt > suche.treffer.length}
 				<p class="text-sm text-on-surface-variant">
-					Gezeigt werden {suche.treffer.length} von {suche.gesamt} Treffern — ein Suchwort grenzt ein.
+					{suche.treffer.length} von {suche.gesamt} Treffern. Ein Suchwort grenzt ein.
 				</p>
 			{/if}
 			<div class="space-y-4">
