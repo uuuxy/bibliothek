@@ -59,7 +59,7 @@ test('Etiketten: ein abgewähltes Exemplar steht weder in der Vorschau noch im D
 
 	await uiLogin(page);
 	await gehZu(page, '/druck-center');
-	await page.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' }).fill(titel);
+	await page.getByRole('searchbox', { name: 'Titel im Katalog suchen' }).fill(titel);
 	await page.getByRole('button', { name: new RegExp(titel) }).click();
 	await expect(page.getByText('Exemplare auswählen: 3 von 3')).toBeVisible();
 
@@ -111,7 +111,7 @@ test('Etiketten: ein Kästchen für alle, die Nummer für ein einzelnes, kein au
 
 	await uiLogin(page);
 	await gehZu(page, '/druck-center');
-	await page.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' }).fill(titel);
+	await page.getByRole('searchbox', { name: 'Titel im Katalog suchen' }).fill(titel);
 	await page.getByRole('button', { name: new RegExp(titel) }).click();
 
 	const alle = page.getByRole('checkbox', { name: 'Alle 8 Exemplare' });

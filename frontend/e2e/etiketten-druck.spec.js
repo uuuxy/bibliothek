@@ -25,7 +25,7 @@ test('Etiketten: „Barcodes drucken" druckt im Druck-Center ein echtes PDF', as
 	// Exemplare sind angehakt, und der Druck schickt genau sie.
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`E2E Etikettenbuch ${s}`);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`E2E Etikettenbuch ${s}`);
 	await page.getByText(`E2E Etikettenbuch ${s}`).first().click();
 	await page.getByRole('button', { name: 'Barcodes drucken', exact: true }).click();
 	await expect(page.getByText('Exemplare auswählen: 2 von 2')).toBeVisible();

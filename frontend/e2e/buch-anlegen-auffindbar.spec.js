@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
-// Ein Buch aus der Maske „Neues Buch" ist danach zu finden, und eine vergebene ISBN führt zu
+// Ein Buch aus der Maske „Neuer Titel" ist danach zu finden, und eine vergebene ISBN führt zu
 // ihrem Titel. Ohne Exemplar zeigt keine Suche einen Titel (docs/OFFEN.md 9.4): Mit der
 // Vorgabe Bestand 0 hieß das Speichern „erfolgreich", das Buch stand nirgends, und der zweite
 // Versuch endete mit „existiert bereits". Gefragt wird, sobald die ISBN im Feld steht — wie in
@@ -30,7 +30,7 @@ async function zurTitelVerwaltung(page) {
 /** Titel zuerst: Mit Titel schlägt das ISBN-Feld beim Verlassen nicht bei der DNB nach.
  * @param {import('@playwright/test').Page} page @param {string} titel @param {string} nummer */
 async function neuesBuch(page, titel, nummer) {
-	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 	await page.locator('#buch-titel').fill(titel);
 	await page.locator('#buch-isbn').fill(nummer);
 	await page.locator('#buch-signatur').fill('BIB An');
@@ -42,8 +42,8 @@ async function trefferInDerTitelliste(page, sicht, nummer) {
 		.getByRole('group', { name: 'Sicht der Titelliste' })
 		.getByRole('button', { name: sicht })
 		.click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(nummer);
-	return page.getByRole('heading', { name: /^Bücher \(\d+\)$/ });
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(nummer);
+	return page.getByRole('heading', { name: /^Titel \(\d+\)$/ });
 }
 
 test.describe.serial('Buch anlegen: danach auffindbar', () => {
@@ -64,9 +64,9 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		expect(exemplare(ISBN_MIT)).toBe('1');
 
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_MIT)).toHaveText(
-			'Bücher (1)'
+			'Titel (1)'
 		);
-		await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill('');
+		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill('');
 		await page.getByRole('tab', { name: 'Suche & Filter' }).click();
 		await page
 			.getByRole('searchbox', { name: 'Suchen nach Titel, Fach, Klasse oder Autor' })
@@ -84,10 +84,10 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		expect(exemplare(ISBN_OHNE)).toBe('0');
 
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_OHNE)).toHaveText(
-			'Bücher (0)'
+			'Titel (0)'
 		);
 		await expect(await trefferInDerTitelliste(page, 'Ohne Exemplare', ISBN_OHNE)).toHaveText(
-			'Bücher (1)'
+			'Titel (1)'
 		);
 	});
 
@@ -104,7 +104,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 				unnoetig.push(`${anfrage.method()} ${pfad}`);
 		});
 		await zurTitelVerwaltung(page);
-		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 		await page.locator('#buch-isbn').fill(ISBN_OHNE);
 		await page.locator('#buch-isbn').press('Tab');
 
@@ -113,7 +113,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		await expect(frage).toContainText('„Ohne Exemplare“');
 		await frage.getByRole('button', { name: 'Titel öffnen' }).click();
 
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(`Nur Titel ${s}`);
 		await page.locator('#buch-bestand').fill('1');
 		await page.getByRole('button', { name: 'Speichern' }).click();
@@ -123,7 +123,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		expect(exemplare(ISBN_OHNE)).toBe('1');
 		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ISBN_OHNE}'`)).toBe('1');
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_OHNE)).toHaveText(
-			'Bücher (1)'
+			'Titel (1)'
 		);
 	});
 
@@ -139,7 +139,7 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		await expect(frage).not.toContainText('„Ohne Exemplare“');
 		await frage.getByRole('button', { name: 'Abbrechen' }).click();
 		await expect(frage).toHaveCount(0);
-		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(`Zweiter Versuch ${s}`);
 
 		await page.getByRole('button', { name: 'Speichern' }).click();

@@ -15,7 +15,7 @@
 	let ergebnisse = $state.raw([]);
 	let laedt = $state(false);
 	let searched = $state(false);
-	// Der Grund, wenn die Suche scheiterte: „Keine Bücher gefunden" hieße, der Katalog habe das Buch
+	// Der Grund, wenn die Suche scheiterte: „Keine Titel gefunden" hieße, der Katalog habe das Buch
 	// nicht.
 	let ladefehler = $state('');
 	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/portal/opac.go). */
@@ -153,7 +153,7 @@
 		{:else if searched && !laedt}
 			<SuchZustand
 				symbol={Search}
-				titel="Keine Bücher gefunden"
+				titel="Keine Titel gefunden"
 				hinweis="Versuche es mit einem anderen Titel oder Autor."
 			/>
 		{:else if !searched}

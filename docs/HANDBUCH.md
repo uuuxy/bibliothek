@@ -147,7 +147,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
 ## Medienkatalog
 
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur und Schlagwort;
-  Kartenansicht mit Cover und Signatur. Eine Exemplarnummer, gescannt oder getippt, zeigt den
+  Kartenansicht mit Cover und Signatur. Ein Barcode, gescannt oder getippt, zeigt den
   Titel des Exemplars, auch über das alte Littera-Etikett und ein Etikett mit langer LMF-Nummer; über den
   Karten steht dann, zu welchem Titel das Exemplar gehört. Ein Verweis findet sein Schlagwort: „Tierfantasy"
   findet die Bücher mit „Fantasy", wenn es unter _Einstellungen → Schlagworte_ so
@@ -471,7 +471,7 @@ Liste.
   „ohne Frist".
 - **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
   _Papierkorb_.
-- **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
+- **Suche** über den ganzen Bestand (Name, Klasse, Ausweisnummer). Zeile anklicken → Akte.
 - **Akte**: drei Reiter — _Ausleihen & Vormerkungen_, _Gebühren & Schäden_ und _Stammdaten &
   Adresse_. Aus der Leserdatei öffnet sie auf _Stammdaten & Adresse_, aus Mahnliste und
   Abgängern auf _Ausleihen & Vormerkungen_, aus dem Reiter _Schadensersatz_ des Mahnwesens auf
@@ -718,7 +718,7 @@ noch nicht trägt.
 **Dieselbe ISBN, zehn- oder dreizehnstellig:** Auf dem Titelblatt älterer
 Bücher steht die zehnstellige ISBN, auf dem Buchrücken die dreizehnstellige. Für das Programm
 ist es dieselbe Nummer. Es speichert eine zehnstellige ISBN mit richtiger Prüfziffer
-dreizehnstellig und findet den Titel über beide Längen: in der Maske _Neues Buch_, bei _Titel
+dreizehnstellig und findet den Titel über beide Längen: in der Maske _Neuer Titel_, bei _Titel
 suchen & hinzufügen_ und _Neue Auflage bestellen_, in den Importen und in den Suchfeldern. Steht
 das Buch schon im Katalog, wird kein zweiter Titel angelegt. Eine zehnstellige Nummer mit
 falscher Prüfziffer bleibt, wie sie eingegeben wurde, und gilt als eigene Nummer: Umgerechnet
@@ -726,7 +726,7 @@ führte sie auf ein anderes Buch.
 
 ## Inventur
 
-_Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
+_Neue Inventur_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
 scannen; Fortschrittsbalken. Gezählt wird, was der Abschluss erwartet: Ein gesperrtes Buch im
 Regal zählt nicht mit, und die Rückfrage vor dem Abschluss nennt genau die Zahl, die als verloren
 gebucht wird. Ein Buch, das laut Programm verliehen ist und im Regal gescannt wird, bucht der Scan

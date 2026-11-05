@@ -136,7 +136,7 @@ test('Etikettenbogen und Ausweiskarte bleiben im dunklen Schema hell', async ({ 
 		expect(await rolle(karte, '--color-on-surface-variant')).toBe('#42474e');
 
 		await page.getByText('Buch-Etiketten', { exact: true }).first().click();
-		await page.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' }).fill(`Papier ${s}`);
+		await page.getByRole('searchbox', { name: 'Titel im Katalog suchen' }).fill(`Papier ${s}`);
 		await page.getByRole('button', { name: new RegExp(`E2E Papier ${s}`) }).click();
 		// Der Etikettenbogen ist ein Bild des Druck-PDFs: Sein Papier bleibt weiß, auch im dunklen
 		// Schema. Gelesen wird ein Bildpunkt am Rand des Blatts, oberhalb der ersten Etikettenreihe,

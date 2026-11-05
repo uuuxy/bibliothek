@@ -144,7 +144,7 @@ func TestDSGVOProtokollZeit(t *testing.T) {
 	}
 }
 
-// Auf dem gedruckten Blatt: Worte statt der Schreibweise des Programms, Titel und Nummer des
+// Auf dem gedruckten Blatt: Worte statt der Schreibweise des Programms, Titel und Barcode des
 // Buchs, keine Kennung und kein buchendes Konto.
 func TestBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	const kennung = "3f2a9c1e-0000-4000-8000-000000000001"
@@ -172,7 +172,7 @@ func TestBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 	blatt := strings.Join(pdftest.Texte(t, roh), "\n")
 	for _, soll := range []string{
-		"Ausleihe", "Mathematik heute 6 (Nummer 2424)", "Rückgabe", "nicht mehr im Bestand",
+		"Ausleihe", "Mathematik heute 6 (Barcode 2424)", "Rückgabe", "nicht mehr im Bestand",
 		"Forderung storniert", "Betrag: 24,50 EUR", "Grund: Buch im Regal gefunden",
 		"Von Hand gesperrt", "Sperrgrund: Buch seit Mai überfällig", "LUSD-ID nachgetragen", "LUSD-ID: 4711",
 		"Art. 15 Abs. 4 DSGVO",

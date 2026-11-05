@@ -30,11 +30,11 @@ test('Schlagworte: eintragen, erhalten beim Speichern ohne Änderung, einzeln en
 			JOIN buecher_titel t ON t.id = ts.titel_id
 			WHERE t.isbn = '${isbn}'`);
 
-	/** Öffnet die Maske „Buch bearbeiten" über die Titel-Verwaltung. */
+	/** Öffnet die Maske „Titel bearbeiten" über die Titel-Verwaltung. */
 	async function oeffne() {
 		await menuepunkt(page, 'Medienkatalog').click();
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
+		const suche = page.getByRole('searchbox', { name: 'Titel durchsuchen' });
 		await expect(suche).toBeVisible({ timeout: 15000 });
 		await suche.fill(titel);
 		await page.getByText(titel).first().click();
@@ -45,7 +45,7 @@ test('Schlagworte: eintragen, erhalten beim Speichern ohne Änderung, einzeln en
 	 *  steht 5 s, ab dem zweiten Speichern genügte also die des vorigen. */
 	async function speichere() {
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeHidden({
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeHidden({
 			timeout: 15000
 		});
 	}

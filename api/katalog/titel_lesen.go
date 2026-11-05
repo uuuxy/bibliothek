@@ -203,7 +203,7 @@ func (t *Tueren) gespeichert(ctx context.Context, gesendet repository.KatalogTit
 
 // TitelVorhanden sagt vor dem Speichern, was die Dublettenkontrolle zu einer ISBN
 // sagen wird: den Titel, der sie schon trägt, samt der Meldung der Ablehnung — oder keinen.
-// Die Maske „Neues Buch" fragt damit schon bei der Eingabe der ISBN, wie Littera; das Format
+// Die Maske „Neuer Titel" fragt damit schon bei der Eingabe der ISBN, wie Littera; das Format
 // der Nummer prüft erst das Speichern. Die zehn- und die dreizehnstellige Form einer ISBN sind
 // dabei dieselbe Nummer (isbn_normalform).
 func (t *Tueren) TitelVorhanden() http.HandlerFunc {

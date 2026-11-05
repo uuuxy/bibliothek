@@ -32,7 +32,7 @@ test.describe.serial('Portal: Problem melden', () => {
 	test('Am Treffer: das Buch ist gewählt, die Beschreibung ist Pflicht', async ({ page }) => {
 		await uiLogin(page, LEHRER);
 		await menuepunkt(page, 'Mein Portal').click();
-		await page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }).fill(TITEL);
+		await page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }).fill(TITEL);
 		await expect(page.getByRole('heading', { name: TITEL })).toBeVisible();
 
 		const melden = page.getByRole('button', { name: `Problem melden zu ${TITEL}` });
@@ -115,10 +115,8 @@ test.describe.serial('Portal: Problem melden', () => {
 		await uiLogin(page, LEHRER);
 		await menuepunkt(page, 'Mein Portal').click();
 		const getippt = `Scanner kaputt ${s}`;
-		await page
-			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
-			.fill(getippt);
-		await expect(page.getByText('Keine Bücher gefunden')).toBeVisible();
+		await page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }).fill(getippt);
+		await expect(page.getByText('Keine Titel gefunden')).toBeVisible();
 
 		await page.getByRole('button', { name: 'Problem melden', exact: true }).click();
 		await expect(page.getByLabel('Worum geht es? *')).toHaveValue(getippt);

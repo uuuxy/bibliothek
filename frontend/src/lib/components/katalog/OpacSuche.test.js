@@ -91,7 +91,7 @@ describe('OpacSuche: neue Fassung', () => {
 	});
 });
 
-// Scheiterte die Suche, stand „Keine Bücher gefunden" da: Der Katalog hätte das Buch nicht,
+// Scheiterte die Suche, stand „Keine Titel gefunden" da: Der Katalog hätte das Buch nicht,
 // während nur der Server nicht antwortete.
 describe('OpacSuche: die Suche scheitert', () => {
 	afterEach(() => {
@@ -99,7 +99,7 @@ describe('OpacSuche: die Suche scheitert', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('nennt den Grund des Servers statt „Keine Bücher gefunden" und sucht auf Wunsch neu', async () => {
+	it('nennt den Grund des Servers statt „Keine Titel gefunden" und sucht auf Wunsch neu', async () => {
 		vi.useFakeTimers();
 		const abruf = vi.fn(async () => ({
 			ok: false,
@@ -113,7 +113,7 @@ describe('OpacSuche: die Suche scheitert', () => {
 
 		expect(screen.getByText('Katalog nicht geladen')).toBeTruthy();
 		expect(screen.getByText('Die Datenbank antwortet nicht')).toBeTruthy();
-		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 
 		abruf.mockImplementation(async () => /** @type {any} */ (antwort(3, 3)));
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
@@ -134,6 +134,6 @@ describe('OpacSuche: die Suche scheitert', () => {
 
 		expect(screen.getByText('Keine Verbindung zum Server.')).toBeTruthy();
 		expect(screen.queryByText(/Failed to fetch/)).toBeNull();
-		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 	});
 });

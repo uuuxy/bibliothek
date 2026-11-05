@@ -78,8 +78,8 @@
 				<h3 class="text-xl font-bold text-on-surface">Keine Inventur aktiv</h3>
 				<p class="text-on-surface-variant mt-2 max-w-md mx-auto">
 					{#if darfVerwalten}
-						Starte einen neuen Inventur-Lauf. Du kannst entweder die gesamte Bibliothek prüfen oder
-						gezielt nach einer bestimmten Signatur / Kategorie scannen.
+						Starte eine neue Inventur. Du kannst entweder die gesamte Bibliothek prüfen oder gezielt
+						nach einer bestimmten Signatur / Kategorie scannen.
 					{:else}
 						Eine Inventur starten darf, wer das Recht „Bestand verwalten“ hat. Läuft eine, lässt sie
 						sich unten fortsetzen.
@@ -89,7 +89,7 @@
 			{#if darfVerwalten}
 				<Button size="lg" onclick={() => (ablauf.startOffen = true)} class="px-6">
 					<Plus class="w-5 h-5" aria-hidden="true" />
-					<span>Neue Bestandsprüfung starten</span>
+					<span>Neue Inventur</span>
 				</Button>
 			{/if}
 

@@ -111,7 +111,7 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 
 		await menuepunkt(page, 'Medienkatalog').click();
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
+		const suche = page.getByRole('searchbox', { name: 'Titel durchsuchen' });
 		await expect(suche).toBeVisible({ timeout: 15000 });
 		await suche.fill(titel);
 		await page.getByText(titel).first().click();

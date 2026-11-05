@@ -121,7 +121,7 @@ func TestLeserTueren_MeldungJeAblehnung(t *testing.T) {
 	t.Run("Anlegen: Ausweisnummer vergeben", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Ali","nachname":"Ausweiserst","klasse":"7a","geburtsdatum":"2012-07-08","barcode_id":"S-MELDUNG-1"}`)
 		erwarte(t, anlegen(t, `{"vorname":"Ben","nachname":"Ausweiszweit","klasse":"7a","geburtsdatum":"2012-07-09","barcode_id":"S-MELDUNG-1"}`),
-			http.StatusBadRequest, "Barcode-ID 'S-MELDUNG-1' wird bereits verwendet")
+			http.StatusBadRequest, "Ausweisnummer 'S-MELDUNG-1' wird bereits verwendet")
 	})
 	t.Run("Anlegen: Schul-E-Mail mit Zugang", func(t *testing.T) {
 		legeAn(t, `{"vorname":"Kai","nachname":"Kontoerst","art":"lehrkraft","email":"kai.konto@lesertest.invalid"}`)

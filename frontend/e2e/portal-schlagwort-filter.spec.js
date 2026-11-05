@@ -71,7 +71,7 @@ test.describe('Mein Portal: Filter nach Schlagwort', () => {
 
 		// Mit Suchtext grenzt der Filter ein: Die Kennung des Laufs steht in beiden Titeln,
 		// der Filter lässt einen übrig.
-		const suche = page.getByLabel('Bücher für einen Klassensatz suchen');
+		const suche = page.getByLabel('Titel für einen Klassensatz suchen');
 		await suche.fill(s);
 		await expect(treffer.filter({ hasText: MIT })).toHaveCount(1);
 		await expect(treffer.filter({ hasText: OHNE })).toHaveCount(0);

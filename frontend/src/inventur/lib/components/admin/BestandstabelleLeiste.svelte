@@ -37,12 +37,12 @@
 		id="titelverwaltung-suchfeld"
 		bind:wert={appState.searchQuery}
 		platzhalter="Titel, Autor oder ISBN eingeben …"
-		etikett="Bücher durchsuchen"
+		etikett="Titel durchsuchen"
 	/>
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
 		<h2 class="shrink-0 text-lg font-bold text-on-surface">
-			Bücher ({titelAnzahl})
+			Titel ({titelAnzahl})
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,
 		     switch views, or sort elements"): der Katalog und die Aufräumsicht mit den Titeln,
@@ -77,7 +77,7 @@
 			Cover lokalisieren
 		</Button>
 
-		<!-- Öffnet die Maske „Neues Buch" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
+		<!-- Öffnet die Maske „Neuer Titel" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
 		     an der Kamera im ISBN-Feld und in der Suchpille. -->
 		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
 			<Camera class="w-4 h-4" aria-hidden="true" />
@@ -86,7 +86,7 @@
 
 		<Button onclick={onCreateNew} class="mt-2 w-full sm:mt-0 sm:w-auto">
 			<Plus class="w-4 h-4" aria-hidden="true" />
-			Neues Buch
+			Neuer Titel
 		</Button>
 	</div>
 </div>

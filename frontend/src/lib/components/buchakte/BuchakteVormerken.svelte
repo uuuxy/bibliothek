@@ -93,7 +93,7 @@
 				<div class="flex flex-1 w-full items-end gap-2">
 					<Feld
 						id="student-search-input"
-						etikett="Schüler suchen (Name oder Barcode)"
+						etikett="Schüler suchen (Name oder Ausweisnummer)"
 						bind:value={suche}
 						onkeydown={(e) => e.key === 'Enter' && sucheLeser()}
 						placeholder="z.B. Max Mustermann"

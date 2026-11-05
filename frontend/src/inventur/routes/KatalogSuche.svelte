@@ -80,7 +80,7 @@
 		try {
 			buecher = await buecherLaden();
 		} catch (e) {
-			// Ohne Liste sagte jede Suche „Keine Bücher gefunden"; ein gescheitertes Laden ist auch
+			// Ohne Liste sagte jede Suche „Keine Titel gefunden"; ein gescheitertes Laden ist auch
 			// keine Abmeldung (die meldet apiFetch bei 401).
 			ladefehler = fehlertext(e);
 		}
@@ -114,7 +114,7 @@
 		{:else if suche.trim() !== '' && gefilterteTitel.length === 0 && exemplar.stand !== 'laeuft'}
 			<SuchZustand
 				symbol={Search}
-				titel="Keine Bücher gefunden"
+				titel="Keine Titel gefunden"
 				hinweis={hinweisOhneTreffer(suche.trim(), exemplar)}
 			/>
 		{/if}

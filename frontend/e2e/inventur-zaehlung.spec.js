@@ -35,10 +35,10 @@ test('Inventur: Zählung wie beim Abschluss, ein verliehenes Buch wird zurückge
 		`);
 
 		await menuepunkt(page, 'Inventur').click();
-		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		await page.getByRole('button', { name: 'Neue Inventur' }).click();
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(signatur);
-		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+		await page.getByRole('button', { name: 'Inventur starten' }).click();
 		const fortschritt = page.getByText(/^\s*\d+ \/ \d+\s*erfasst\s*$/);
 		await expect(fortschritt).toHaveText(/0 \/ 2/);
 
@@ -71,7 +71,7 @@ test('Inventur: Zählung wie beim Abschluss, ein verliehenes Buch wird zurückge
 			page.getByText(/^1 Buch aus dem Bereich dieser Inventur ist nicht gescannt\./)
 		).toBeVisible();
 		await page.getByRole('button', { name: 'Ja, unwiderruflich abschließen' }).click();
-		await expect(page.getByRole('button', { name: 'Neue Bestandsprüfung starten' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Neue Inventur' })).toBeVisible();
 
 		// An der Datenbank: gebucht ist genau das eine Buch, das die Rückfrage nannte.
 		expect(
@@ -122,10 +122,10 @@ test('Inventur: Ein Buch, das während der Inventur zurückkommt, gilt nicht als
 		`);
 
 		await menuepunkt(page, 'Inventur').click();
-		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		await page.getByRole('button', { name: 'Neue Inventur' }).click();
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(signatur);
-		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+		await page.getByRole('button', { name: 'Inventur starten' }).click();
 		const fortschritt = page.getByText(/^\s*\d+ \/ \d+\s*erfasst\s*$/);
 		await expect(fortschritt).toHaveText(/0 \/ 2/);
 		const scan = page.getByPlaceholder('Barcode scannen...');
@@ -142,7 +142,7 @@ test('Inventur: Ein Buch, das während der Inventur zurückkommt, gilt nicht als
 			page.getByText(/^1 Buch aus dem Bereich dieser Inventur ist nicht gescannt\./)
 		).toBeVisible();
 		await page.getByRole('button', { name: 'Ja, unwiderruflich abschließen' }).click();
-		await expect(page.getByRole('button', { name: 'Neue Bestandsprüfung starten' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Neue Inventur' })).toBeVisible();
 		expect(
 			querySQL(
 				`SELECT string_agg(barcode_id, ',') FROM buecher_exemplare
@@ -163,7 +163,7 @@ test('Inventur: Ein Buch, das während der Inventur zurückkommt, gilt nicht als
 });
 
 // Läuft im gewählten Bereich schon eine Inventur, nennt der Kasten über der Liste den Grund. Er
-// erscheint nach dem Klick auf „Inventur Starten", ohne dass der Fokus zu ihm wandert; vorgelesen
+// erscheint nach dem Klick auf „Inventur starten", ohne dass der Fokus zu ihm wandert; vorgelesen
 // wird er deshalb nur als Meldung (role="alert"), wie dieselbe Meldung im Start-Dialog.
 test('Inventur: Der Grund über der Liste wird als Meldung vorgelesen', async ({ page }) => {
 	await uiLogin(page);
@@ -177,10 +177,10 @@ test('Inventur: Der Grund über der Liste wird als Meldung vorgelesen', async ({
 		`);
 
 		await menuepunkt(page, 'Inventur').click();
-		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		await page.getByRole('button', { name: 'Neue Inventur' }).click();
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(signatur);
-		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+		await page.getByRole('button', { name: 'Inventur starten' }).click();
 
 		// Der Dialog schließt nach der Ablehnung; dieselbe Meldung in ihm zählt nicht.
 		await expect(page.getByRole('heading', { name: 'Bereich der Inventur wählen' })).toBeHidden();

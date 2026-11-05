@@ -85,7 +85,7 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	// Die Titel-Verwaltung nennt dieselben Standorte mit derselben Zahl.
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(titel);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(titel);
 	await expect(page.getByRole('row').filter({ hasText: titel })).toContainText(
 		'Bibliothek, Regal 3B (1) · Lehrerschrank (1)'
 	);

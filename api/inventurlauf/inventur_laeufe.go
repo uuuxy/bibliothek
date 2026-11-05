@@ -194,7 +194,7 @@ func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 			return
 		}
 		if req.LaufID == "" {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Inventurlaufs fehlt", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Inventur fehlt", nil)
 			return
 		}
 
@@ -202,7 +202,7 @@ func (t *Tueren) InventurVerwerfen() http.HandlerFunc {
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)
 		if err := abfragen.VerwerfeLauf(ctx, req.LaufID); err != nil {
 			if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
-				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Inventurlauf nicht gefunden", err)
+				apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Inventur nicht gefunden", err)
 				return
 			}
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

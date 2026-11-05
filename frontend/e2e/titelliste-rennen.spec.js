@@ -39,13 +39,13 @@ test('ein Suchergebnis bleibt stehen, wenn die ganze Liste erst danach ankommt',
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(TITEL);
-	await expect(page.getByRole('heading', { name: 'Bücher (1)' })).toBeVisible();
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(TITEL);
+	await expect(page.getByRole('heading', { name: 'Titel (1)' })).toBeVisible();
 
 	// Erst jetzt kommt die ganze Liste an. Sie gehört zu keinem Suchwort mehr.
 	await ganzeListe;
 	await page.waitForTimeout(1000);
-	await expect(page.getByRole('heading', { name: 'Bücher (1)' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Titel (1)' })).toBeVisible();
 	await expect(page.getByText(TITEL).first()).toBeVisible();
 });
 
@@ -75,7 +75,7 @@ test('ein neuer Titel bleibt stehen, wenn die ganze Liste erst danach ankommt', 
 		});
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 		await page.locator('#buch-titel').fill(neu);
 		await page.locator('#buch-signatur').fill('BIB Spae');
 		const gespeichert = page.waitForResponse(
@@ -93,7 +93,7 @@ test('ein neuer Titel bleibt stehen, wenn die ganze Liste erst danach ankommt', 
 		await expect
 			.poll(
 				async () => {
-					const kopf = await page.getByRole('heading', { name: /Bücher \(\d+\)/ }).textContent();
+					const kopf = await page.getByRole('heading', { name: /Titel \(\d+\)/ }).textContent();
 					return Number(kopf?.match(/\((\d+)\)/)?.[1] ?? 0);
 				},
 				{

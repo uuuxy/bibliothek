@@ -47,7 +47,7 @@
 		id="book-search-field"
 		bind:wert={suche}
 		platzhalter="Titel, Fach oder ISBN eingeben …"
-		etikett="Bücher durchsuchen"
+		etikett="Titel durchsuchen"
 		autofokus
 		{nachlaufend}
 	/>

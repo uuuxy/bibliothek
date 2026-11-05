@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Titel-Verwaltung: Es gilt die zuletzt angeforderte Maske. Wer einen Titel anklickt und
-// gleich darauf einen anderen (oder „Neues Buch"), bekam die Antwort zum ersten über die
+// gleich darauf einen anderen (oder „Neuer Titel"), bekam die Antwort zum ersten über die
 // offene Maske gelegt, sobald sie später ankam: Der Titel in der Maske wechselte, und was
 // dort getippt war, ging verloren.
 const s = uniqueSuffix().slice(0, 6);
@@ -30,7 +30,7 @@ async function zurTabelle(page) {
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(s);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(s);
 	await expect(page.getByText(ALT).first()).toBeVisible();
 	await expect(page.getByText(NEU).first()).toBeVisible();
 }
@@ -60,7 +60,7 @@ test.describe('Titel-Verwaltung: die jüngste Öffnung gilt', () => {
 
 		await page.getByText(ALT).first().click();
 		await page.getByText(NEU).first().click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(NEU);
 		await page.locator('#buch-signatur').fill('Getippt 9');
 
@@ -70,7 +70,7 @@ test.describe('Titel-Verwaltung: die jüngste Öffnung gilt', () => {
 		await expect(page.locator('#buch-signatur'), 'das Getippte').toHaveValue('Getippt 9');
 	});
 
-	test('die späte Antwort legt sich nicht über die Maske „Neues Buch"', async ({ page }) => {
+	test('die späte Antwort legt sich nicht über die Maske „Neuer Titel"', async ({ page }) => {
 		const frei = await halteTitel(
 			page,
 			querySQL(`SELECT id FROM buecher_titel WHERE titel = '${ALT}'`)
@@ -78,7 +78,7 @@ test.describe('Titel-Verwaltung: die jüngste Öffnung gilt', () => {
 		await zurTabelle(page);
 
 		await page.getByText(ALT).first().click();
-		await page.getByRole('button', { name: 'Neues Buch' }).click();
+		await page.getByRole('button', { name: 'Neuer Titel' }).click();
 		await expect(page.locator('#buch-titel')).toHaveValue('');
 		await page.locator('#buch-titel').fill('Frisch getippt');
 
@@ -87,6 +87,6 @@ test.describe('Titel-Verwaltung: die jüngste Öffnung gilt', () => {
 		await expect(page.locator('#buch-titel'), 'der Titel in der Maske').toHaveValue(
 			'Frisch getippt'
 		);
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toHaveCount(0);
 	});
 });

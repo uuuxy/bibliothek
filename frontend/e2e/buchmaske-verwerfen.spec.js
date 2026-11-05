@@ -13,9 +13,9 @@ async function oeffneTitel(page) {
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(TITEL);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(TITEL);
 	await page.getByText(TITEL).first().click();
-	await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -55,21 +55,21 @@ test.describe.serial('Buchmaske: Schließen mit Ungespeichertem', () => {
 
 		await schliessen(page).click();
 		await rueckfrage(page).getByRole('button', { name: 'Verwerfen' }).click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toHaveCount(0);
 		expect(querySQL(`SELECT verlag FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe(
 			'Thienemann'
 		);
 	});
 
-	test('ohne Eingabe schließt die Maske ohne Frage, auch „Neues Buch"', async ({ page }) => {
+	test('ohne Eingabe schließt die Maske ohne Frage, auch „Neuer Titel"', async ({ page }) => {
 		await oeffneTitel(page);
 		await schliessen(page).click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toHaveCount(0);
 
-		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
-		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toBeVisible();
+		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
 		await schliessen(page).click();
-		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toHaveCount(0);
 		await expect(rueckfrage(page)).toHaveCount(0);
 	});
 
@@ -94,7 +94,7 @@ test.describe.serial('Buchmaske: Schließen mit Ungespeichertem', () => {
 			'aria-selected',
 			'true'
 		);
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toHaveCount(0);
 
 		await menuepunkt(page, 'Ausleihe').click();
 		await expect(page, 'ohne offene Maske fragt nichts').toHaveURL(/\/kiosk$/);

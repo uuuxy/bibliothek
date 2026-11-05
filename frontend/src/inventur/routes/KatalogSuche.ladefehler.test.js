@@ -16,13 +16,13 @@ vi.mock('$lib/startseiten_api.js', async (importOriginal) => ({
 const BUCH = { id: 'b1', title: 'Green Line 3', isbn: '978-3-06-013076-4', author: 'Cornelsen' };
 
 // Scheitert das Laden des Katalogs, sagt die Seite es mit dem Grund des Servers. Ohne Liste
-// antwortete sonst jede Suche „Keine Bücher gefunden", als hätte die Schule das Buch nicht.
+// antwortete sonst jede Suche „Keine Titel gefunden", als hätte die Schule das Buch nicht.
 describe('Medienkatalog: der Katalog lädt nicht', () => {
 	beforeEach(() => {
 		vi.mocked(buecherLaden).mockReset();
 	});
 
-	it('nennt den Grund statt „Keine Bücher gefunden"', async () => {
+	it('nennt den Grund statt „Keine Titel gefunden"', async () => {
 		vi.mocked(buecherLaden).mockRejectedValueOnce(
 			new Error('Ein interner Serverfehler ist aufgetreten')
 		);
@@ -33,7 +33,7 @@ describe('Medienkatalog: der Katalog lädt nicht', () => {
 
 		expect(await screen.findByText('Katalog nicht geladen')).toBeTruthy();
 		expect(screen.getByText('Ein interner Serverfehler ist aufgetreten')).toBeTruthy();
-		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 	});
 
 	it('lädt auf „Erneut versuchen" und zeigt dann den Katalog', async () => {

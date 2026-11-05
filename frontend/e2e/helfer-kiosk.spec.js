@@ -94,7 +94,7 @@ test('Helfer: kommt weder per UI noch per API an fremde Bereiche', async ({ page
 
 	// Direkter URL-Aufruf umgeht die Router-Weiche nicht: keine Daten, kein Absturz.
 	await page.goto('/schuelerdatei');
-	await expect(page.getByText('Barcode-ID')).toHaveCount(0);
+	await expect(page.locator('table')).toHaveCount(0);
 });
 
 // Der Scan eines Ausweises zeigt, was die Antwort der Theke trägt: Name, Klasse, Nummer, Sperre.

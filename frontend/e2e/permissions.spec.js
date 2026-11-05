@@ -68,7 +68,6 @@ test('Lehrer: /abgaenger direkt aufgerufen leakt keine Schülerdaten', async ({ 
 	// Direkter URL-Aufruf: kein Crash, keine Datenzeilen
 	await page.goto('/abgaenger');
 	await expect(page.locator('table')).toHaveCount(0);
-	await expect(page.getByText('Barcode-ID')).toHaveCount(0);
 
 	// Schreibende Admin-API ebenfalls dicht
 	const createUser = await apiPost(page, '/api/benutzer', {

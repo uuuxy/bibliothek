@@ -234,7 +234,7 @@ describe('AdminBuchAktionen: neuer Titel ohne Exemplar', () => {
 });
 
 // Die Rückfrage misst an der Zahl vom Öffnen der Maske, nicht an der Titelliste: Über
-// „Neues Buch" und eine vergebene ISBN geöffnet, steht der Titel bei gefilterter Liste
+// „Neuer Titel" und eine vergebene ISBN geöffnet, steht der Titel bei gefilterter Liste
 // nicht in ihr (books ist hier leer).
 describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 	const titel = { id: 'titel-3', isbn: '9783791504544', title: 'Tintenherz', stockGesehen: 3 };

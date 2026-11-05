@@ -120,7 +120,7 @@ func dsgvoProtokollAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege [
 		details, rest := dsgvoDetails(e.Details)
 		zeilen := dsgvoAngabenZeilen(details, e.Tabelle == "schueler", e.Aktion)
 		if e.Gegenstand != "" || e.Barcode != "" {
-			zeilen = append([]string{fmt.Sprintf("%s (Nummer %s)", dsgvoWertOderStrich(e.Gegenstand), dsgvoWertOderStrich(e.Barcode))}, zeilen...)
+			zeilen = append([]string{fmt.Sprintf("%s (Barcode %s)", dsgvoWertOderStrich(e.Gegenstand), dsgvoWertOderStrich(e.Barcode))}, zeilen...)
 		} else if e.Tabelle == "ausleihen" && (e.Aktion == "CHECKOUT" || e.Aktion == "RETURN") {
 			zeilen = append([]string{"Das Buch oder Gerät ist nicht mehr im Bestand."}, zeilen...)
 		}

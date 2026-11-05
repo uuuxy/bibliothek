@@ -24,7 +24,7 @@ test('Etikett für ein Lernmittel mit altem LMF-Etikett: kurze Nummer, ohne Rüc
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`E2E Lernmittel ${s}`);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`E2E Lernmittel ${s}`);
 	await page.getByText(`E2E Lernmittel ${s}`).first().click();
 	await page.getByRole('button', { name: 'Barcodes drucken', exact: true }).click();
 	await expect(page.getByText('Exemplare auswählen: 1 von 1')).toBeVisible();

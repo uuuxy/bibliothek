@@ -70,6 +70,6 @@ test('Selbstanmeldung: Antrag → sichtbar → freigeschaltet → nur Mein Porta
 	await expect(punkte).toHaveCount(1);
 	await expect(punkte.first()).toHaveAttribute('title', 'Mein Portal');
 	await expect(
-		page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
+		page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' })
 	).toBeVisible();
 });

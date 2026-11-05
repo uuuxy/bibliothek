@@ -31,7 +31,7 @@ test('Etiketten-Titelsuche im Druck-Center fragt die Titel-Tür, nicht die Theke
 	const anfragen = [];
 	page.on('request', (r) => anfragen.push(r.url()));
 
-	await page.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' }).fill(`Tuersuche ${s}`);
+	await page.getByRole('searchbox', { name: 'Titel im Katalog suchen' }).fill(`Tuersuche ${s}`);
 	await expect(page.getByRole('button', { name: new RegExp(`E2E Tuersuche ${s}`) })).toBeVisible();
 
 	expect(

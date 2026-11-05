@@ -20,7 +20,7 @@ import (
 // ist eine Auskunft, kein Serverfehler.
 //
 // Drei Teilindizes gelten nur für aktive Zeilen (WHERE deleted_at IS NULL): der Namensindex
-// (seit Migration 108 in der Normalform suchnorm), die LUSD-ID und der Ausweis-Barcode.
+// (seit Migration 108 in der Normalform suchnorm), die LUSD-ID und die Ausweisnummer.
 // Solange die Zeile im Papierkorb liegt, ist ihr Platz frei; ein Import oder eine Handanlage
 // kann ihn besetzen. Liefe das Wiederherstellen blind hinein (23505 → 500 „Ein Eintrag mit
 // denselben Angaben besteht bereits"), wäre das für die Bibliothek eine Sackgasse: Die Meldung
@@ -81,13 +81,13 @@ func TestLeserWiederherstellen_KollisionMitAktivemZwillingIstKonflikt(t *testing
 		pruefe(t, wiederherstellen(id), "Name")
 	})
 
-	t.Run("gleicher Ausweis-Barcode", func(t *testing.T) {
+	t.Run("gleiche Ausweisnummer", func(t *testing.T) {
 		id := vorbereiten(t,
 			`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 			 VALUES ('S-ZW-BC', 'Ben', 'Bach', '7a', 2030) RETURNING id`,
 			`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 			 VALUES ('S-ZW-BC', 'Bea', 'Bund', '7b', 2030)`)
-		pruefe(t, wiederherstellen(id), "Barcode")
+		pruefe(t, wiederherstellen(id), "Ausweisnummer")
 	})
 
 	t.Run("ohne Zwilling gelingt die Wiederherstellung", func(t *testing.T) {

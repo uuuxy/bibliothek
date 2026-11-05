@@ -10,7 +10,7 @@ import (
 // Die Spur des Aussonderns (docs/invarianten.md, Frage 19): Das Abgangsbuch nennt Datum und
 // Grund eines ausgesonderten Exemplars, der Eintrag hier nennt die Person. Geschrieben wird er
 // auf den Wegen, die ein Exemplar aussondern: der Status in der Buchakte, „Exemplar löschen" in
-// der Buchakte, ein kleinerer Bestand in „Buch bearbeiten", der Abschluss einer Inventur, ein
+// der Buchakte, ein kleinerer Bestand in „Titel bearbeiten", der Abschluss einer Inventur, ein
 // Verlust oder Schaden aus der Leserakte oder dem Schadensersatz-Bescheid, und ein gelöschter
 // Titel, dessen verliehene Exemplare bleiben.
 //
@@ -23,7 +23,7 @@ const ProtokollAktionAusgesondert = "ausgesondert"
 // Die Wege stehen im Feld kontext des Eintrags.
 const (
 	AussonderungsWegStatus            = "Exemplar ausgesondert: Status in der Buchakte"
-	AussonderungsWegBestandskorrektur = "Exemplar ausgesondert: Bestand in „Buch bearbeiten“ verkleinert"
+	AussonderungsWegBestandskorrektur = "Exemplar ausgesondert: Bestand in „Titel bearbeiten“ verkleinert"
 	AussonderungsWegInventur          = "Exemplar ausgesondert: Abschluss einer Inventur"
 	AussonderungsWegSchaden           = "Exemplar ausgesondert: Verlust oder Schaden in der Leserakte gemeldet"
 	AussonderungsWegBescheid          = "Exemplar ausgesondert: Verlust mit dem Schadensersatz-Bescheid gebucht"

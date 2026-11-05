@@ -42,7 +42,7 @@
 	 */
 	let { open, ablauf, onClose, onStart } = $props();
 
-	// Solange der Start am Server ist, bleibt „Inventur Starten" gesperrt. Ein zweiter Klick
+	// Solange der Start am Server ist, bleibt „Inventur starten" gesperrt. Ein zweiter Klick
 	// schickte einen zweiten Start, den der Server ablehnt; nach dem Abschluss stand dann „Für
 	// diesen Bereich läuft bereits eine Inventur", obwohl keine lief.
 	let startet = $state(false);
@@ -141,7 +141,7 @@
 				{#if startet}
 					<Ladekreis size="sm" farbe="aktuell" />
 				{/if}
-				Inventur Starten
+				Inventur starten
 			</Button>
 		</div>
 	</div>

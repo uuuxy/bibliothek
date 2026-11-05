@@ -87,7 +87,7 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *Stammd
 	// Jedes Feld der Stammdaten hat in dieser Funktion seine Zeile;
 	// TestBlatt_DrucktJedesStammdatenfeld liest ihren Quelltext dagegen.
 	dsgvoZeile(p, tr, "Art des Lesers", dsgvoLeserart(st.Art))
-	dsgvoZeile(p, tr, "Ausweis-Barcode", st.BarcodeID)
+	dsgvoZeile(p, tr, "Ausweisnummer", st.BarcodeID)
 	dsgvoZeile(p, tr, "Vorname", st.Vorname)
 	dsgvoZeile(p, tr, "Nachname", st.Nachname)
 	dsgvoZeile(p, tr, "Klasse", st.Klasse)

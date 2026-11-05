@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import InventurStartDialog from './InventurStartDialog.svelte';
 
-// Ein zweiter Klick auf „Inventur Starten" vor der Antwort schickte einen zweiten Start. Der
+// Ein zweiter Klick auf „Inventur starten" vor der Antwort schickte einen zweiten Start. Der
 // Server lehnt ihn ab, weil der Bereich schon läuft; nach dem Abschluss stand dann „Für diesen
 // Bereich läuft bereits eine Inventur", obwohl keine lief. Gleich in Chromium, Firefox und WebKit
 // (OFFEN.md 5.106).
@@ -28,7 +28,7 @@ describe('InventurStartDialog: Start', () => {
 			}
 		});
 		const knopf = /** @type {HTMLButtonElement} */ (
-			k.getByRole('button', { name: /Inventur Starten/ })
+			k.getByRole('button', { name: /Inventur starten/ })
 		);
 
 		await fireEvent.click(knopf);

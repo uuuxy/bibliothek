@@ -26,7 +26,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
         `);
 
 		await menuepunkt(page, 'Inventur').click();
-		const neu = page.getByRole('button', { name: 'Neue Bestandsprüfung starten' });
+		const neu = page.getByRole('button', { name: 'Neue Inventur' });
 		await neu.click();
 
 		// Escape schließt den Dialog, und der Knopf öffnet ihn danach wieder.
@@ -38,7 +38,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		await expect(startTitel).toBeVisible();
 
 		// Scope: nur die Test-Signatur. Ohne Signatur lässt sich nicht starten.
-		const starten = page.getByRole('button', { name: 'Inventur Starten' });
+		const starten = page.getByRole('button', { name: 'Inventur starten' });
 		await page.getByText('Nur bestimmte Signatur').click();
 		await expect(starten).toBeDisabled();
 		await page.getByLabel('Signatur auswählen').fill(sigName);
@@ -132,10 +132,10 @@ test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ p
         `);
 
 		await menuepunkt(page, 'Inventur').click();
-		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		await page.getByRole('button', { name: 'Neue Inventur' }).click();
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(sigName);
-		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+		await page.getByRole('button', { name: 'Inventur starten' }).click();
 
 		const scan = page.getByPlaceholder('Barcode scannen...');
 		await expect(scan).toBeVisible();

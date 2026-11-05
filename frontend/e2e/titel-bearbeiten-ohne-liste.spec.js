@@ -57,12 +57,12 @@ test('„Titel bearbeiten" öffnet die Maske, ohne auf die Titelliste zu warten'
 	// Der Titel kommt an, die Liste liegt noch: Die Maske steht.
 	einzeln.frei();
 	await expect
-		.soft(page.getByRole('heading', { name: 'Buch bearbeiten' }), 'die Maske wartet auf die Liste')
+		.soft(page.getByRole('heading', { name: 'Titel bearbeiten' }), 'die Maske wartet auf die Liste')
 		.toBeVisible();
 
 	// Die Liste lädt einmal. Die verzögerte Suche der Titel-Verwaltung (300 ms) zählt mit.
 	liste.frei();
-	await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 	await page.waitForTimeout(800);
 	expect(liste.zahl(), 'Abrufe der ganzen Titelliste').toBe(1);
 });

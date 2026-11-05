@@ -16,7 +16,7 @@ import (
 )
 
 // Fünf Wege sondern ein Exemplar aus, ohne es zu löschen: der Status in der Buchakte, ein
-// kleinerer Bestand in „Buch bearbeiten", der Abschluss einer Inventur, „Verlust oder Schaden
+// kleinerer Bestand in „Titel bearbeiten", der Abschluss einer Inventur, „Verlust oder Schaden
 // melden" in der Leserakte und der Verlust im Schadensersatz-Bescheid. Das Abgangsbuch nennt
 // Datum und Grund; wer es war, steht im Protokoll (docs/invarianten.md, Frage 19): Bearbeiter,
 // Weg und Grund, ohne die Zustandsnotiz. Was nichts aussondert oder abgelehnt wird, schreibt
@@ -130,7 +130,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 		}
 	})
 
-	t.Run("kleinerer Bestand in Buch bearbeiten", func(t *testing.T) {
+	t.Run("kleinerer Bestand in Titel bearbeiten", func(t *testing.T) {
 		titelID := testdaten.LegeTitelMitSignaturAn(t, pool, "Spur Bestand", "Spu 2", 0)
 		for i := 1; i <= 3; i++ {
 			testdaten.LegeExemplarAn(t, pool, titelID, fmt.Sprintf("SPUR-BESTAND-%d", i), true, "")

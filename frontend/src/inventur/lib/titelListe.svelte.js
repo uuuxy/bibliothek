@@ -34,7 +34,7 @@ export function erstelleTitelListe() {
 			appState.adminAuthenticated = true;
 		} catch (e) {
 			// Ein gescheitertes Laden ist keine Abmeldung (die meldet apiFetch bei 401): Die Suche
-			// lädt weiter, und die Seite nennt den Grund statt „Keine Bücher gefunden".
+			// lädt weiter, und die Seite nennt den Grund statt „Keine Titel gefunden".
 			if (meiner === lauf) ladefehler = fehlertext(e);
 		} finally {
 			if (meiner === lauf) wirdGeladen = false;

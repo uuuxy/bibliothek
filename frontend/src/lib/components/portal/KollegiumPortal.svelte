@@ -100,8 +100,8 @@
 			<Suchpille
 				id="portal-suchfeld"
 				bind:wert={suche.text}
-				platzhalter="Buch suchen für Reservierung oder Meldung …"
-				etikett="Bücher für einen Klassensatz suchen"
+				platzhalter="Titel suchen für Reservierung oder Meldung …"
+				etikett="Titel für einen Klassensatz suchen"
 				autofokus
 				{nachlaufend}
 			/>
@@ -154,7 +154,7 @@
 			<!-- Nicht bei einem Fehler: Dann ist nichts gefunden, weil nicht gesucht wurde. -->
 			<SuchZustand
 				symbol={Search}
-				titel="Keine Bücher gefunden"
+				titel="Keine Titel gefunden"
 				hinweis={suche.schlagwort
 					? 'Versuche es mit einem anderen Suchwort oder nimm den Filter zurück.'
 					: 'Versuche es mit einem anderen Titel oder Autor.'}

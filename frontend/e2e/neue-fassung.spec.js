@@ -76,7 +76,7 @@ test('der öffentliche Katalog zeigt den Hinweis nach einer Suche', async ({ pag
 	await page.goto('/katalog');
 	const suchfeld = page.getByRole('searchbox', { name: 'Im Medienkatalog suchen' });
 	const hinweis = page.getByRole('status').filter({ hasText: HINWEIS });
-	const ergebnis = page.getByText(/\d+ Treffer|Keine Bücher gefunden/).first();
+	const ergebnis = page.getByText(/\d+ Treffer|Keine Titel gefunden/).first();
 	const programmdatei = await page
 		.locator('script[type="module"][src]')
 		.first()

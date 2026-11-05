@@ -63,7 +63,7 @@
 </div>
 
 <Feld
-	etikett="Barcode-ID (optional)"
+	etikett="Ausweisnummer (optional)"
 	bind:value={barcode}
 	placeholder="Wird automatisch generiert, wenn leer"
 />

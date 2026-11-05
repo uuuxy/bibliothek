@@ -36,9 +36,9 @@ async function zurTitelVerwaltung(page) {
 /** @param {import('@playwright/test').Page} page @param {string} bestand */
 async function oeffneTitel(page, bestand) {
 	await zurTitelVerwaltung(page);
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(TITEL);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(TITEL);
 	await page.getByText(TITEL).first().click();
-	await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 	await expect(page.locator('#buch-bestand')).toHaveValue(bestand);
 }
 
@@ -96,7 +96,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		await expect(page.getByText(/jetzt 7 statt 6/)).toBeVisible();
 		await expect(page.locator('#buch-bestand')).toHaveValue('7');
 		await expect(page.locator('#buch-signatur')).toHaveValue('Bes 3');
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 		expect(stand()).toBe('7/0/0');
 		expect(signatur()).toBe('Bes 2');
 	});
@@ -105,9 +105,9 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		page
 	}) => {
 		await zurTitelVerwaltung(page);
-		await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`kein-treffer-${s}`);
-		await expect(page.getByRole('heading', { name: 'Bücher (0)' })).toBeVisible();
-		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`kein-treffer-${s}`);
+		await expect(page.getByRole('heading', { name: 'Titel (0)' })).toBeVisible();
+		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 		await page.locator('#buch-isbn').fill(ISBN);
 		await page.locator('#buch-isbn').press('Tab');
 		await page
@@ -115,7 +115,7 @@ test.describe.serial('Buchmaske: Bestand', () => {
 			.filter({ hasText: 'Vorhandenen Titel öffnen?' })
 			.getByRole('button', { name: 'Titel öffnen' })
 			.click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 		await expect(page.locator('#buch-bestand')).toHaveValue('7');
 
 		await page.locator('#buch-bestand').fill('5');

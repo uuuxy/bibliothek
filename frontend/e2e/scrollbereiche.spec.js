@@ -173,7 +173,7 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 		await uiLogin(page);
 		await gehZu(page, '/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`E2E Scrollmaske ${s}`);
+		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`E2E Scrollmaske ${s}`);
 		await page.getByText(`E2E Scrollmaske ${s}`).first().click();
 		await expect(page.getByRole('heading', { name: 'Exemplare (20)' })).toBeVisible();
 
@@ -197,7 +197,7 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 		await page.getByText(`B-scm-${s}-20`).scrollIntoViewIfNeeded();
 		const baender = await page.evaluate(() => {
 			const kopf = [...document.querySelectorAll('h2')].find((h) =>
-				h.textContent?.includes('Buch bearbeiten')
+				h.textContent?.includes('Titel bearbeiten')
 			);
 			const liste = [...document.querySelectorAll('h3')].find((h) =>
 				h.textContent?.includes('Exemplare (')

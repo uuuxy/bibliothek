@@ -27,7 +27,7 @@ test('Titel zusammenführen: der Titel mit ISBN bleibt und hat danach alle Exemp
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`E2E Zwilling ${s} Liste`);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(`E2E Zwilling ${s} Liste`);
 	await page.getByText(`E2E Zwilling ${s} Liste`).first().click();
 	await expect(page.getByRole('heading', { name: 'Exemplare (1)' })).toBeVisible();
 

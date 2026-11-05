@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 04.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 05.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -3719,7 +3719,7 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   nur die Liste (`escapeSchliesst` übergeht eine Taste mit `defaultPrevented`); das Standortfeld
   bleibt in `scanSchutz`. Anlass: ein Fehler der Liste des Browsers an einem der sechs Felder.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
-  der Seite (`e2e/scrollbereiche.spec.js`). In „Buch bearbeiten" lässt sich in den Exemplaren
+  der Seite (`e2e/scrollbereiche.spec.js`). In „Titel bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der
   Ausleihliste ab 1066 px mindestens 140 px, darunter bis 1024 px weniger; dort ist auch die
   Reiterzeile 12 px zu schmal. Autor und Nummer eines Exemplars stehen in der Akte nur in einer Sprechblase, an einem Tablet ohne Maus also
@@ -3802,7 +3802,7 @@ Frage).
 
 ## 12. Glossar
 
-Stand: 31.10.2026
+Stand: 05.11.2026
 
 Die Fachsprache des Hauses, mit dem Code-Bezug daneben. Wo ein Begriff im Code **anders**
 heißt als in der Oberfläche, steht beides — das ist die häufigste Stolperstelle beim
@@ -3821,20 +3821,20 @@ Einstieg.
 | **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `repository/auflagen.go` |
 | **Art** (des Lesers)        | `schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus` oder `fachbereich` (Migration 153). Sagt, **wer an der Theke Bücher bekommt** — entscheidet **keine** Rechte | `leser.art`                                                |
 | **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Alter Bestand, Beschädigt, Verlust, Falsch angelegt)                                                                                       | `repository/aussonderung_paritaet_test.go`                  |
-| **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**                                                             | `internal/ausweis`, `api/druck/ausweis_layout.go`                 |
+| **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**. Die Nummer heißt in der Oberfläche „Ausweisnummer“ (`leser.barcode_id`)                                                             | `internal/ausweis`, `api/druck/ausweis_layout.go`                 |
 | **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `pdf/bescheid.go`               |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
 | **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `ladeVorgang` (`internal/service/ausleih_vorgang.go`) |
 | **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/katalog/bestandsbuch.go`                                      |
 | **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/system/betriebsbereitschaft*.go`                              |
-| **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode                                                                                                                       | `buecher_exemplare`                                        |
+| **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode; so heißt die Nummer in der Oberfläche. Zugangs- und Abgangsbuch schreiben „Nummer“, die Inventarnummer der Arbeitshilfe (mittel_konzept 7.1)                                                                                                                       | `buecher_exemplare`                                        |
 | **Ersatzwert**              | Was ein Buch **heute noch wert** ist — als Vorschlag **mit Herleitung**, weil der Betrag im Ermessen der Schule liegt                                                    | `pkg/ersatzwert`                                            |
 | **Freihand**                | Sonderbestände (CDs, DVDs, Hörbücher) mit rollierender Frist statt Jahresfrist                                                                                          | `internal/service/frist.go`                            |
 | **Gerät**                   | Ausleihbare Hardware (Laptop, Tablet) mit Zubehör-Checkliste; Vorsilbe `G-`                                                                                             | `geraete`, `internal/service/geraet.go`             |
-| **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben                                                                                            | `inventur_sessions`, `repository/inventurlauf.go`   |
+| **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben; in der Oberfläche „Inventur“, im Code auch Inventurlauf                                                                                            | `inventur_sessions`, `repository/inventurlauf.go`   |
 | **Jahrgang** (am Titel)     | „Im Unterricht von Jahrgang … bis": ganz eingetragen oder gar nicht. Ohne Eintrag ist der Jahrgang unbekannt; eine Vorgabe gibt es nicht | `buecher_titel.jahrgang_von`, `jahrgang_bis` |
 | **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.sqlKarenzUhr`, `PraedikatAnonymisierung` |
-| **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**                                                                                            | `buecher_titel`                                            |
+| **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**. In der Oberfläche „Titel“ („Neuer Titel“, „Titel bearbeiten“), nicht „Buch“: Der Katalog führt auch CDs, DVDs und Hörbücher                                                                                            | `buecher_titel`                                            |
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
 | **Kollegium**               | **Grundzustand** jeder Lehrkraft, keine vergebene Rolle. Ein Recht: `create_reservations`                                                                                | Enum `benutzer_rolle = 'kollegium'`, `db/rechte_vorgabe.go`            |
 | **Leser**                   | Jeder Entleiher — Schüler und Kollegium, jeweils mit seiner Art. Eine Tabelle, ein Ausweis-Nummernkreis                                                                 | `leser`                                                    |
@@ -3847,6 +3847,7 @@ Einstieg.
 | **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/leser/lusd*.go`, [LUSD.md](LUSD.md)                       |
 | **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen/mahnbriefe.go`                                     |
 | **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
+| **Meldung**                 | Was eine Lehrkraft im Portal meldet; die Liste der Bibliothek heißt „Meldungen“. Im Code heißt sie **Anliegen**, ebenso die Löschfrist „Erledigte Anliegen aufbewahren“, die auch erledigte Klassensatz-Reservierungen löscht | `lehrer_anliegen`, `api/portal/anliegen.go` |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
 | **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen.go`, `internal/service/nachbuchen.go`         |
 | **Omnibox**                 | Das **eine** Eingabefeld der Theke für alle Scans und Suchen                                                                                                          | `internal/service/omnibox.go`, `frontend/src/lib/components/omnibox/Omnibox.svelte` |

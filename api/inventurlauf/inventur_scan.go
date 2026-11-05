@@ -68,7 +68,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request, rueckgabe 
 		return
 	}
 	if req.LaufID == "" {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Inventurlaufs fehlt", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Inventur fehlt", nil)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (t *Tueren) verbucheScan(w http.ResponseWriter, r *http.Request, rueckgabe 
 	lauf, err := abfragen.LadeLauf(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein laufender Inventurlauf mit dieser Kennung", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Keine laufende Inventur mit dieser Kennung", nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)

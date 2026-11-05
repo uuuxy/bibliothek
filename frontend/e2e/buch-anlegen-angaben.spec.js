@@ -38,7 +38,7 @@ test('die ISBN-Abfrage zeigt Untertitel, Listenpreis und Jahrgang; gespeichert w
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 
 	await page.locator('#buch-isbn').fill(ISBN);
 	await page.locator('#buch-isbn').press('Tab');

@@ -25,7 +25,7 @@ vi.mock('../../../lib/components/buchakte/titelLoeschen.js', async (importOrigin
 const TITEL = { id: 't1', title: 'Mathe 9', author: 'Autor', isbn: '', verfuegbar: 1, gesamt: 1 };
 
 // Scheitert das Laden der Liste, nennt die Seite den Grund. Eine leere Tabelle sagte sonst
-// „Keine Bücher gefunden", und weil der Fehler die Anmeldung zurücknahm, lud danach auch die
+// „Keine Titel gefunden", und weil der Fehler die Anmeldung zurücknahm, lud danach auch die
 // Suche nicht mehr.
 describe('TitelVerwaltung: die Liste lädt nicht', () => {
 	beforeEach(() => {
@@ -42,7 +42,7 @@ describe('TitelVerwaltung: die Liste lädt nicht', () => {
 
 		expect(await screen.findByText('Titel nicht geladen')).toBeTruthy();
 		expect(screen.getByText('Ein interner Serverfehler ist aufgetreten')).toBeTruthy();
-		expect(screen.queryByText('Keine Bücher gefunden.')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden.')).toBeNull();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
 

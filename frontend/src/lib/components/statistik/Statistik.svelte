@@ -150,7 +150,7 @@
 {#snippet rennerTabelle()}
 	<Tabelle beschriftung="Renner: meistausgeliehene Titel" sticky>
 		{@render spaltenKopf([
-			{ label: 'Buchtitel' },
+			{ label: 'Titel' },
 			{ label: 'Autor' },
 			{ label: 'Ausleihen', right: true }
 		])}
@@ -180,7 +180,7 @@
 {#snippet ladenhueterTabelle()}
 	<Tabelle beschriftung="Ladenhüter: seit über zwei Jahren nicht ausgeliehen" sticky>
 		{@render spaltenKopf([
-			{ label: 'Buchtitel' },
+			{ label: 'Titel' },
 			{ label: 'Autor' },
 			{ label: 'Zuletzt geliehen', right: true }
 		])}
@@ -260,7 +260,7 @@
 					{@render kpi(
 						'Gesamtbestand',
 						num(kennzahlen.loss_stats.gesamt_bestand),
-						'Physische Buchkopien im System',
+						'Exemplare im System',
 						'text-on-surface'
 					)}
 					{@render kpi(

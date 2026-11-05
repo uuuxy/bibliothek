@@ -89,7 +89,7 @@
 		<p class="text-sm text-on-surface-variant leading-relaxed">
 			Zwei Datensätze für dieselbe Person — etwa nach einer Namensänderung in der LUSD, die der
 			Export ohne Schüler-ID nicht wiedererkannt hat. Der bleibende Datensatz behält Kennung und
-			Ausweis-Barcode; Ausleihen, Gebühren, Vormerkungen und Foto des anderen wandern hinüber.
+			Ausweisnummer; Ausleihen, Gebühren, Vormerkungen und Foto des anderen wandern hinüber.
 			Stammdaten kommen von dem Datensatz, den die LUSD zuletzt bestätigt hat.
 			<strong class="font-bold">Der andere Datensatz wird endgültig gelöscht</strong> — das lässt sich
 			nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach nur noch im Protokoll.
@@ -100,7 +100,7 @@
 		<div class="space-y-2">
 			<Suchfeld
 				bind:wert={s.suche}
-				platzhalter="Anderen Datensatz suchen (Name, Klasse, Barcode) …"
+				platzhalter="Anderen Datensatz suchen (Name, Klasse, Ausweisnummer) …"
 				etikett="Anderen Datensatz suchen"
 				oninput={s.tippen}
 			/>

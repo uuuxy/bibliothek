@@ -43,14 +43,14 @@
 				<!-- Autocomplete search -->
 				<div class="space-y-1.5">
 					<span class="block text-xs font-medium text-on-surface-variant"
-						>Buchtitel im Katalog suchen</span
+						>Titel im Katalog suchen</span
 					>
 					<!-- Suchfeld-Rolle (Autocomplete), Spinner im nachlaufend-Snippet. -->
 					<Suchfeld
 						bind:wert={etikettenStore.suche}
 						oninput={etikettenStore.verarbeiteSuche}
 						platzhalter="Titel, Autor oder ISBN eingeben..."
-						etikett="Buchtitel im Katalog suchen"
+						etikett="Titel im Katalog suchen"
 					>
 						{#snippet nachlaufend()}
 							{#if etikettenStore.sucht}

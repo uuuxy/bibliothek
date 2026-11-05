@@ -49,7 +49,7 @@
 			}
 		} catch {
 			anliegen = [];
-			ladefehler = 'Die Anliegen konnten nicht geladen werden (Netzwerkfehler).';
+			ladefehler = 'Die Meldungen konnten nicht geladen werden (Netzwerkfehler).';
 		} finally {
 			laedt = false;
 		}
@@ -79,11 +79,11 @@
 				anliegen = anliegen.filter((a) => a.id !== id);
 				if (confirmingId === id) confirmingId = null;
 				uiStore.fetchOffeneAnliegen();
-				snackbars.addToast('Anliegen war bereits erledigt.', 'success');
+				snackbars.addToast('Meldung war bereits erledigt.', 'success');
 				return;
 			}
 			if (!res.ok)
-				throw new Error(await leseApiFehler(res, 'Anliegen konnte nicht abgehakt werden.'));
+				throw new Error(await leseApiFehler(res, 'Meldung konnte nicht abgehakt werden.'));
 			anliegen = anliegen.filter((a) => a.id !== id);
 			if (confirmingId === id) confirmingId = null;
 			uiStore.fetchOffeneAnliegen();
@@ -160,20 +160,19 @@
 	<div>
 		<h2 class="text-base font-bold text-on-surface">Meldungen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
-			Anliegen der Lehrkräfte aus dem Kollegiums-Portal, je die ältesten zuerst. „Abhaken" schließt
-			das Anliegen ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine
-			schreibst.
+			Meldungen der Lehrkräfte aus dem Kollegiums-Portal, je die ältesten zuerst. „Abhaken" schließt
+			die Meldung ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine schreibst.
 		</p>
 	</div>
 
 	{#if laedt}
 		<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
-			Lade Anliegen…
+			Lade Meldungen…
 		</div>
 	{:else if ladefehler}
-		<LadeFehler onerneut={ladeAnliegen} titel="Anliegen nicht geladen" text={ladefehler} />
+		<LadeFehler onerneut={ladeAnliegen} titel="Meldungen nicht geladen" text={ladefehler} />
 	{:else if anliegen.length === 0}
-		<div class="py-16 text-center text-on-surface-variant text-base">Keine offenen Anliegen.</div>
+		<div class="py-16 text-center text-on-surface-variant text-base">Keine offenen Meldungen.</div>
 	{:else}
 		<!-- M3 Lists: Ein Abstand trennt die Gruppen, die Linien nur die Zeilen einer Gruppe. -->
 		{#each abschnitte as g (g.titel)}

@@ -40,7 +40,7 @@ test('zehn Stunden nach der Passworteingabe kommt der Sperrbildschirm; die Einga
 	await uiLogin(page);
 	await menuepunkt(page, 'Medienkatalog').click();
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 	await page.locator('#buch-titel').fill(TITEL);
 	await page.locator('#buch-signatur').fill('Hoe 1');
 

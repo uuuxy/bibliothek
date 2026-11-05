@@ -23,9 +23,7 @@ test('Druck-Center: Das Vorschaublatt bleibt in seiner Spalte', async ({ page })
 		await uiLogin(page);
 		await gehZu(page, '/druck-center');
 		await page.getByText('Buch-Etiketten', { exact: true }).first().click();
-		await page
-			.getByRole('searchbox', { name: 'Buchtitel im Katalog suchen' })
-			.fill(`Vorschau ${s}`);
+		await page.getByRole('searchbox', { name: 'Titel im Katalog suchen' }).fill(`Vorschau ${s}`);
 		await page.getByRole('button', { name: new RegExp(`E2E Vorschau ${s}`) }).click();
 		const blatt = page.getByTestId('etiketten-blatt');
 		await expect(blatt).toBeVisible();

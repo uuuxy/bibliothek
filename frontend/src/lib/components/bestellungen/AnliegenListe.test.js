@@ -9,7 +9,7 @@ vi.mock('../../apiFetch.js', () => ({
 }));
 vi.mock('../../stores/snackbars.svelte.js', () => ({ snackbars: { addToast: vi.fn() } }));
 
-// „Keine offenen Anliegen" ist eine Aussage über die Arbeit der Bibliothek: nichts zu tun.
+// „Keine offenen Meldungen" ist eine Aussage über die Arbeit der Bibliothek: nichts zu tun.
 // Bis zum 12.09.2026 stand derselbe Satz da, wenn der Abruf gescheitert war
 // (`anliegen = res.ok ? await res.json() : []`) — die Wünsche und Meldungen des
 // Kollegiums blieben dann liegen, ohne dass jemand davon wusste (Register,
@@ -30,13 +30,13 @@ describe('AnliegenListe', () => {
 		const { findByText, queryByText } = render(AnliegenListe);
 
 		expect(await findByText('Datenbank nicht erreichbar')).toBeTruthy();
-		expect(queryByText('Keine offenen Anliegen.')).toBeNull();
+		expect(queryByText('Keine offenen Meldungen.')).toBeNull();
 	});
 
 	it('leer bleibt leer', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: true, json: async () => [] }));
 		const { findByText } = render(AnliegenListe);
-		expect(await findByText('Keine offenen Anliegen.')).toBeTruthy();
+		expect(await findByText('Keine offenen Meldungen.')).toBeTruthy();
 	});
 
 	// Ein Wunsch wartet auf die nächste Bestellung, ein Problem soll am selben Tag erledigt

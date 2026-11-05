@@ -328,7 +328,7 @@ describe('Abschluss ohne Antwort', () => {
 		['ohne Antwort', { ok: false, status: 0, error: 'Keine Verbindung zum Server.' }],
 		[
 			'auf „kein laufender Lauf"',
-			{ ok: false, status: 404, error: 'Kein laufender Inventurlauf mit dieser Kennung' }
+			{ ok: false, status: 404, error: 'Keine laufende Inventur mit dieser Kennung' }
 		]
 	])('zeigt %s den Stand des Servers statt des Scanfelds', async (_name, antwort) => {
 		abschluss.mockResolvedValue(/** @type {any} */ (antwort));

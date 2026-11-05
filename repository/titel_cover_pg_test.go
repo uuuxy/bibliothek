@@ -9,7 +9,7 @@ import (
 )
 
 // Das lokal gespeicherte Cover fällt mit seinem Titel, an beiden Lösch-Türen. Die Maske
-// „Buch bearbeiten" (LoescheTitel) ließ die Datei liegen, nur die Massenaktion der
+// „Titel bearbeiten" (LoescheTitel) ließ die Datei liegen, nur die Massenaktion der
 // Bestandstabelle nahm sie mit. Eine Datei, die ein weiterer Titel trägt, bleibt.
 func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 	pool := pgTestPool(t)

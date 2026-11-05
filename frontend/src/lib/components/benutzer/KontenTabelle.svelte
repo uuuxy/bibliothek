@@ -58,7 +58,7 @@
 				<tr>
 					<th>Name</th>
 					<th>E-Mail</th>
-					<th>Barcode</th>
+					<th>Ausweisnummer</th>
 					<th>Rolle</th>
 					<th>Status</th>
 					<th class="w-px text-right whitespace-nowrap">Aktionen</th>

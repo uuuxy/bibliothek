@@ -31,7 +31,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 	test('Ein Schulbuch wird gefunden und lässt sich reservieren', async ({ page }) => {
 		await uiLogin(page, LEHRER);
 		await menuepunkt(page, 'Mein Portal').click();
-		const suchfeld = page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' });
+		const suchfeld = page.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' });
 
 		await suchfeld.fill(SCHULBUCH);
 		await expect(page.getByRole('heading', { name: SCHULBUCH })).toBeVisible();
@@ -59,7 +59,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 		await uiLogin(page, LEHRER);
 		await menuepunkt(page, 'Mein Portal').click();
 		await page
-			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
+			.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' })
 			.fill(SCHULBUCH);
 
 		await expect(page.getByText('3 von 3 verfügbar')).toBeVisible();
@@ -70,7 +70,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 		await uiLogin(page, LEHRER);
 		await menuepunkt(page, 'Mein Portal').click();
 		await page
-			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
+			.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' })
 			.fill(BESTELLT);
 
 		await expect(page.getByRole('heading', { name: BESTELLT })).toBeVisible();

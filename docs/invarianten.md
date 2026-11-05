@@ -526,7 +526,7 @@ selbst festhält:
   Bildschirms, An- und Abmelden.
 
 Das Aussondern steht mit der Person im Protokoll, auch auf diesen fünf Wegen: der Status in
-der Buchakte, ein kleinerer Bestand in „Buch bearbeiten", der Abschluss einer Inventur,
+der Buchakte, ein kleinerer Bestand in „Titel bearbeiten", der Abschluss einer Inventur,
 „Verlust/Schaden melden" in der Leserakte und der Verlust im Schadensersatz-Bescheid
 (`repository.protokolliereAussonderung`, `TestAussondern_StehtMitDerPersonImProtokoll`). Der
 Eintrag nennt Bearbeiter, Weg und Grund; den Grund liest er vom Exemplar. Nach einem Verlust

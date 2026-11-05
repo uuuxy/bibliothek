@@ -133,9 +133,9 @@ test('Cover: nach einem gescheiterten Hochladen geht dieselbe Datei noch einmal 
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(titel);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(titel);
 	await page.getByText(titel, { exact: true }).click();
-	await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 
 	const waehle = async () => {
 		const dialog = page.waitForEvent('filechooser');

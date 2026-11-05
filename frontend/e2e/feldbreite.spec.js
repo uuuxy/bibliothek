@@ -130,7 +130,7 @@ for (const fenster of [
 		await uiLogin(page);
 		await gehZu(page, '/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 
 		for (const id of ['buch-titel', 'buch-autor']) {
 			const feld = await page.locator(`#${id}`).boundingBox();
@@ -142,7 +142,7 @@ for (const fenster of [
 
 		// Begrenzt sind die Felder, nicht die Seite: Der Kopf der Maske reicht weiter über die Fläche.
 		const kopf = await page
-			.getByRole('heading', { name: 'Neues Buch' })
+			.getByRole('heading', { name: 'Neuer Titel' })
 			.locator('xpath=..')
 			.boundingBox();
 		expect(kopf?.width, 'der Kopf der Maske').toBeGreaterThan(fenster.width - 400);

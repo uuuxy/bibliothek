@@ -25,7 +25,7 @@ async function anmeldenMitUhr(page) {
 async function neuesBuchMitEingabe(page) {
 	await menuepunkt(page, 'Medienkatalog').click();
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 	await page.locator('#buch-titel').fill(TITEL);
 }
 

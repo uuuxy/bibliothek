@@ -32,7 +32,7 @@ test('Auflagen: in der Titelmaske zuordnen und wieder lösen', async ({ page }) 
 			.filter({ hasText: marke })
 			.filter({ hasText: '3. Aufl.' });
 		await karteAlt.getByRole('button', { name: 'Buch schnell bearbeiten' }).click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 
 		// „Andere Auflagen" steht in der Gruppe „An der Schule"; ohne Zuordnung gibt es keine Liste.
 		const auflagen = page.getByRole('group', { name: 'Andere Auflagen' });

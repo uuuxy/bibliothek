@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Ein Handscanner tippt blind in das Feld mit dem Fokus und schließt mit der Eingabetaste. In
-// der Maske „Neues Buch" steht der Fokus deshalb im ISBN-Feld, und die Eingabetaste fragt wie
+// der Maske „Neuer Titel" steht der Fokus deshalb im ISBN-Feld, und die Eingabetaste fragt wie
 // das Verlassen des Feldes. Getippt wird über page.keyboard und ohne Klick ins Feld: fill()
 // und click() setzten den Fokus selbst und sähen nicht, dass er fehlt.
 const s = uniqueSuffix().slice(0, 6);
@@ -32,8 +32,8 @@ async function oeffneNeuesBuch(page) {
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
-	await expect(page.getByRole('heading', { name: 'Neues Buch' })).toBeVisible();
+	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
+	await expect(page.getByRole('heading', { name: 'Neuer Titel' })).toBeVisible();
 }
 
 test.describe.serial('Buch anlegen mit dem Handscanner', () => {
@@ -109,7 +109,7 @@ test.describe.serial('Buch anlegen mit dem Handscanner', () => {
 
 		// Der zweite Scan trifft die Frage: Seine Eingabetaste nimmt die Vorgabe „Titel öffnen".
 		await scanne(page, ISBN_FREMD);
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 		await expect(page.locator('#buch-titel')).toHaveValue(TITEL_DA);
 		await expect(page.locator('#buch-isbn')).toHaveValue(ISBN_DA);
 
@@ -121,13 +121,13 @@ test.describe.serial('Buch anlegen mit dem Handscanner', () => {
 		expect(querySQL(`SELECT isbn FROM buecher_titel WHERE titel = '${TITEL_DA}'`)).toBe(ISBN_DA);
 	});
 
-	test('„Buch bearbeiten" öffnet ohne Fokus im ISBN-Feld', async ({ page }) => {
+	test('„Titel bearbeiten" öffnet ohne Fokus im ISBN-Feld', async ({ page }) => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-		await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(TITEL_DA);
+		await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(TITEL_DA);
 		await page.getByText(TITEL_DA).first().click();
-		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 		await expect(page.locator('#buch-isbn')).toHaveValue(ISBN_DA);
 
 		expect(await fokus(page)).not.toBe('buch-isbn');

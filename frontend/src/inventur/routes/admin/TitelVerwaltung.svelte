@@ -84,7 +84,7 @@
 		istBearbeitenModus = false;
 	}
 
-	/** Der Knopf „Scanner": dieselbe Maske wie „Neues Buch", die Kamera ist schon an. */
+	/** Der Knopf „Scanner": dieselbe Maske wie „Neuer Titel", die Kamera ist schon an. */
 	function neuesBuchScannen() {
 		neuesBuchErstellen();
 		wirdGescannt = true;

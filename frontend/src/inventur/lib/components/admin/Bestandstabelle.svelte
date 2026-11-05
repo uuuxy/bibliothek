@@ -106,7 +106,7 @@
 
 				{#if titelListe.length === 0 && !laedt}
 					<tr>
-						<td colspan="10" class="text-center">Keine Bücher gefunden.</td>
+						<td colspan="10" class="text-center">Keine Titel gefunden.</td>
 					</tr>
 				{/if}
 			</tbody>

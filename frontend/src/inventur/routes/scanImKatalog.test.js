@@ -86,7 +86,7 @@ describe('Kamera-Scan im Medienkatalog', () => {
 		// Das Kachelraster wäre schlicht leer.
 		await fireEvent.input(feld, { target: { value: '9781234567897' } });
 
-		expect(await screen.findByText('Keine Bücher gefunden')).toBeTruthy();
+		expect(await screen.findByText('Keine Titel gefunden')).toBeTruthy();
 		expect(screen.getByText(/9781234567897/)).toBeTruthy();
 		expect(screen.queryByText('Green Line 3')).toBeNull();
 	});
@@ -122,7 +122,7 @@ describe('Exemplarnummer im Medienkatalog', () => {
 		expect(await screen.findByText('Exemplar 101634 gehört zu „Ganz anderes Buch“.')).toBeTruthy();
 		expect(screen.getByText('Ganz anderes Buch')).toBeTruthy();
 		expect(screen.queryByText('Green Line 3')).toBeNull();
-		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 	});
 
 	it('sagt, wenn sich die Nummer nicht prüfen ließ, statt „kein Exemplar“', async () => {
@@ -163,7 +163,7 @@ describe('Exemplarnummer im Medienkatalog', () => {
 		await sucheNach('101634');
 
 		await new Promise((r) => setTimeout(r, 400));
-		expect(screen.queryByText('Keine Bücher gefunden')).toBeNull();
+		expect(screen.queryByText('Keine Titel gefunden')).toBeNull();
 	});
 
 	it('fragt bei einem Wort ohne Ziffer nicht nach einem Exemplar', async () => {

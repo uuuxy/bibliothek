@@ -40,7 +40,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.LaufID == "" {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung des Inventurlaufs fehlt", nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Kennung der Inventur fehlt", nil)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (t *Tueren) schliesseInventurAb(w http.ResponseWriter, r *http.Request) {
 	lauf, err := abfragen.SperreLaufFuerAbschluss(ctx, req.LaufID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Kein laufender Inventurlauf mit dieser Kennung", nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, "Keine laufende Inventur mit dieser Kennung", nil)
 			return
 		}
 		apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
@@ -116,7 +116,7 @@ func (t *Tueren) Fehlbestand() http.HandlerFunc {
 			return err
 		}
 		if laufID == "" {
-			return apierrors.BadRequest("Die Kennung des Inventurlaufs fehlt", nil)
+			return apierrors.BadRequest("Die Kennung der Inventur fehlt", nil)
 		}
 
 		abfragen := repository.NewInventurAbfragen(t.DB.Pool)

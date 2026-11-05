@@ -90,7 +90,7 @@ test('Buchmaske: Das Symbol steht vor den Knöpfen der ISBN, die Knöpfe bleiben
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+	await page.getByRole('button', { name: 'Neuer Titel' }).first().click();
 	const isbn = page.locator('#buch-isbn');
 	const knoepfe = [
 		page.getByRole('button', { name: 'Daten aus dem Internet aktualisieren' }),

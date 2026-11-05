@@ -37,7 +37,7 @@ function suchtreffer(verfuegbar = 12, gesamt = 30, im_zulauf = 0) {
 /** Sucht wie das Portal: debounced, deshalb über findBy* abwarten. */
 async function sucheUndOeffneFormular(screen) {
 	await fireEvent.input(
-		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }),
 		{
 			target: { value: 'Seydlitz' }
 		}
@@ -92,7 +92,7 @@ describe('KollegiumPortal', () => {
 		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 
 		await fireEvent.input(
-			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }),
 			{
 				target: { value: 'Seydlitz' }
 			}
@@ -113,7 +113,7 @@ describe('KollegiumPortal', () => {
 
 		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 		await fireEvent.input(
-			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }),
 			{
 				target: { value: 'Seydlitz' }
 			}
@@ -138,7 +138,7 @@ describe('KollegiumPortal', () => {
 
 		const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 		await fireEvent.input(
-			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }),
 			{ target: { value: 'Seydlitz' } }
 		);
 
@@ -191,7 +191,7 @@ function portalMitTreffer() {
 /** @param {any} screen */
 async function suche(screen) {
 	await fireEvent.input(
-		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }),
 		{ target: { value: 'Seydlitz' } }
 	);
 	await screen.findByRole('button', { name: 'Klassensatz reservieren' });
@@ -289,7 +289,9 @@ describe('Problem melden im Portal', () => {
 	// Wer ein Problem ins Suchfeld schreibt, schickt es von dort ab.
 	it('lässt „Problem melden" beim Tippen stehen und übernimmt das Getippte', async () => {
 		const screen = portalMitTreffer();
-		expect(screen.getByPlaceholderText('Buch suchen für Reservierung oder Meldung …')).toBeTruthy();
+		expect(
+			screen.getByPlaceholderText('Titel suchen für Reservierung oder Meldung …')
+		).toBeTruthy();
 		await suche(screen);
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
@@ -380,7 +382,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	const screen = render(KollegiumPortal, { konto: { klasse: '' } });
 
 	await fireEvent.input(
-		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		screen.getByRole('searchbox', { name: 'Titel für einen Klassensatz suchen' }),
 		{ target: { value: 'Seydlitz' } }
 	);
 

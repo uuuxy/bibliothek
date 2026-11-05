@@ -20,9 +20,9 @@ async function oeffneTitel(page) {
 	await uiLogin(page);
 	await page.goto('/medienkatalog');
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(TITEL);
+	await page.getByRole('searchbox', { name: 'Titel durchsuchen' }).fill(TITEL);
 	await page.getByText(TITEL).first().click();
-	await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Titel bearbeiten' })).toBeVisible();
 	await expect(page.locator('#buch-verlag')).toHaveValue(/Verlag/);
 }
 

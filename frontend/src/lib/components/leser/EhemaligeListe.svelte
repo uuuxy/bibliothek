@@ -72,7 +72,7 @@
 	<Suchpille
 		id="ehemalige-suchfeld"
 		bind:wert={suche}
-		platzhalter="Name oder Barcode suchen …"
+		platzhalter="Name oder Ausweisnummer suchen …"
 		etikett="Ehemalige suchen"
 		oninput={sucheAngestossen}
 	/>
@@ -107,7 +107,7 @@
 				<tr>
 					<th>Abgang</th>
 					<th>Name</th>
-					<th>Barcode</th>
+					<th>Ausweisnummer</th>
 					<th>Offene Bücher</th>
 					<th>Sperr-Status</th>
 				</tr>

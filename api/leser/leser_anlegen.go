@@ -398,7 +398,7 @@ func bestimmeNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter
 		return "", false
 	}
 	if vorhanden {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Barcode-ID '%s' wird bereits verwendet", gewuenscht), nil)
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Ausweisnummer '%s' wird bereits verwendet", gewuenscht), nil)
 		return "", false
 	}
 	return gewuenscht, true
