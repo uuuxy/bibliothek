@@ -104,19 +104,24 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 
 // Ein Zeitraum kann Zehntausende Zugänge haben, etwa am Tag eines Listenimports, und sie alle zu
 // zeichnen hält die Seite Sekunden an. Ein Topf zeigt deshalb zuerst 50 Zeilen; die Zahl in
-// Feld und Überschrift nennt alle.
-test('Zugangsbuch: Ein Topf mit mehr als 50 Zugängen zeigt 50 Zeilen und „Mehr laden"', async ({
-	page
-}) => {
+// Feld und Überschrift nennt alle Exemplare. Eine Zeile trägt die Exemplare eines Titels von
+// einem Tag: 55 Titel ergeben 55 Zeilen, der erste mit drei Exemplaren.
+test('Zugangsbuch: Ein Topf mit mehr als 50 Zeilen zeigt 50 und „Mehr laden"', async ({ page }) => {
 	const s = uniqueSuffix();
 	const tag = '2003-04-08';
 	seedSQL(`
-		INSERT INTO buecher_titel (titel, signatur) VALUES ('E2E-Zugang-Viele ${s}', 'Zug ${s}');
+		INSERT INTO buecher_titel (titel, signatur)
+		SELECT 'E2E-Zugang-Viele ${s} ' || lpad(n::text, 2, '0'), 'Zug ${s}'
+		FROM generate_series(1, 55) n;
 
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am)
-		SELECT t.id, 'E2E-ZUG-V-${s}-' || lpad(n::text, 2, '0'), DATE '${tag}'
-		FROM buecher_titel t, generate_series(1, 55) n
-		WHERE t.titel = 'E2E-Zugang-Viele ${s}';
+		SELECT t.id, 'E2E-ZUG-V-${s}-' || right(t.titel, 2) || '0', DATE '${tag}'
+		FROM buecher_titel t WHERE t.titel LIKE 'E2E-Zugang-Viele ${s} %';
+
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am)
+		SELECT t.id, 'E2E-ZUG-V-${s}-01' || n, DATE '${tag}'
+		FROM buecher_titel t, generate_series(1, 2) n
+		WHERE t.titel = 'E2E-Zugang-Viele ${s} 01';
 	`);
 
 	try {
@@ -132,17 +137,22 @@ test('Zugangsbuch: Ein Topf mit mehr als 50 Zugängen zeigt 50 Zeilen und „Meh
 		await page.getByRole('button', { name: 'Anzeigen' }).click();
 
 		const felder = page.getByRole('group', { name: 'Nach Mittelherkunft filtern' });
-		await expect(felder.getByRole('button', { name: 'ohne Zuordnung · 55' })).toBeVisible();
+		await expect(felder.getByRole('button', { name: 'ohne Zuordnung · 57' })).toBeVisible();
 		await expect(
-			page.getByRole('heading', { name: 'ohne Zuordnung · 55 Exemplare' })
+			page.getByRole('heading', { name: 'ohne Zuordnung · 57 Exemplare' })
 		).toBeVisible();
 		const ohne = page.getByRole('table', { name: 'Zugangsbuch — ohne Zuordnung' });
 		await expect(ohne.locator('tbody tr')).toHaveCount(50);
+
+		// Die drei Exemplare des ersten Titels: eine Zeile mit Anzahl und Bereich.
+		const erste = ohne.getByRole('row').filter({ hasText: `E2E-Zugang-Viele ${s} 01` });
+		await expect(erste.getByRole('cell').nth(2)).toHaveText('3');
+		await expect(erste).toContainText(`E2E-ZUG-V-${s}-010\u00a0–\u00a0E2E-ZUG-V-${s}-012`);
 
 		await page.getByRole('button', { name: 'Mehr laden (5 weitere)' }).click();
 		await expect(ohne.locator('tbody tr')).toHaveCount(55);
 		await expect(page.getByRole('button', { name: /^Mehr laden/ })).toHaveCount(0);
 	} finally {
-		seedSQL(`DELETE FROM buecher_titel WHERE titel = 'E2E-Zugang-Viele ${s}';`);
+		seedSQL(`DELETE FROM buecher_titel WHERE titel LIKE 'E2E-Zugang-Viele ${s} %';`);
 	}
 });

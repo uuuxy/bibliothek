@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/bestandsbuch"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
@@ -80,11 +81,11 @@ func TestBestandsbuch_OhneZuordnungNurMitZeilenUndZuletzt(t *testing.T) {
 	if ohne := abschnitte[2]; ohne.Titel != mitteltopf.OhneZuordnung {
 		t.Errorf("Überschrift des dritten Abschnitts: %q, erwartet %q", ohne.Titel, mitteltopf.OhneZuordnung)
 	}
-	var zeilen []repository.ZugangsZeile
+	var zeilen []bestandsbuch.Zugang
 	if err := json.Unmarshal(abschnitte[2].Zeilen, &zeilen); err != nil {
 		t.Fatalf("Zeilen lesen: %v", err)
 	}
-	if len(zeilen) != 1 || zeilen[0].Barcode != "OHNE-1" {
+	if len(zeilen) != 1 || zeilen[0].Barcodes != "OHNE-1" {
 		t.Errorf("Zeilen ohne Zuordnung: %+v, erwartet nur OHNE-1", zeilen)
 	}
 }
@@ -109,10 +110,10 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	want := pdf.Abgangsbuch{
 		Von: von, Bis: bis,
 		Abschnitte: []pdf.AbgangsAbschnitt{
-			{Titel: mitteltopf.Beschriftung(mitteltopf.Land), Zeilen: []pdf.AbgangsZeile{
-				{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", GrundText: "Aussortiert"}}},
-			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Zeilen: []pdf.AbgangsZeile{
-				{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", GrundText: "Verlust"}}},
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Land), Exemplare: 1, Zeilen: []pdf.AbgangsZeile{
+				{Datum: tag.AddDate(0, 0, 1), Titel: "Titel 2", Signatur: "Sig 2", GrundText: "Aussortiert", Anzahl: 1, Barcodes: "B-2"}}},
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Exemplare: 1, Zeilen: []pdf.AbgangsZeile{
+				{Datum: tag, Titel: "Titel 1", Signatur: "Sig 1", GrundText: "Verlust", Anzahl: 1, Barcodes: "B-1"}}},
 		},
 		Gesamt: 2, OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}
@@ -141,12 +142,12 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	want := pdf.Zugangsbuch{
 		Von: von, Bis: bis,
 		Abschnitte: []pdf.ZugangsAbschnitt{
-			{Titel: mitteltopf.Beschriftung(mitteltopf.Land), Zeilen: []pdf.ZugangsZeile{
-				{Datum: tag.AddDate(0, 0, 2), Barcode: "B-3", Titel: "Titel 3", Lieferant: "Lieferant 3"}}},
-			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Zeilen: []pdf.ZugangsZeile{
-				{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Lieferant: "Lieferant 2"}}},
-			{Titel: mitteltopf.OhneZuordnung, Zeilen: []pdf.ZugangsZeile{
-				{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Lieferant: "Lieferant 1"}}},
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Land), Exemplare: 1, Zeilen: []pdf.ZugangsZeile{
+				{Datum: tag.AddDate(0, 0, 2), Titel: "Titel 3", Anzahl: 1, Barcodes: "B-3", Lieferant: "Lieferant 3"}}},
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Exemplare: 1, Zeilen: []pdf.ZugangsZeile{
+				{Datum: tag.AddDate(0, 0, 1), Titel: "Titel 2", Anzahl: 1, Barcodes: "B-2", Lieferant: "Lieferant 2"}}},
+			{Titel: mitteltopf.OhneZuordnung, Exemplare: 1, Zeilen: []pdf.ZugangsZeile{
+				{Datum: tag, Titel: "Titel 1", Anzahl: 1, Barcodes: "B-1", Lieferant: "Lieferant 1"}}},
 		},
 		Gesamt: 3, OhneZuordnung: true,
 	}
@@ -172,5 +173,26 @@ func TestZugangsbuchBlatt_OhneZuordnungNurMitSolchenZeilen(t *testing.T) {
 		Zeilen: []repository.ZugangsZeile{{Barcode: "OHNE-1"}}}))
 	if !mit.OhneZuordnung {
 		t.Error("mit einer Zeile ohne Topf fehlt die Erklärung zu „ohne Zuordnung“")
+	}
+}
+
+// Ein Abschnitt zählt Exemplare, nicht Zeilen: Eine Zeile trägt alle Exemplare eines Titels von
+// einem Tag (internal/bestandsbuch). Überschrift, Feld und Summe auf dem Blatt lesen die Zahl.
+func TestBestandsbuch_AbschnittZaehltExemplare(t *testing.T) {
+	tag := time.Date(2026, time.May, 3, 0, 0, 0, 0, time.UTC)
+	antwort := zugangsbuchAntwortAus(repository.Zugangsbuch{Zeilen: []repository.ZugangsZeile{
+		{Datum: tag, Barcode: "B-00100", Titel: "Atlas", Topf: mitteltopf.Land},
+		{Datum: tag, Barcode: "B-00101", Titel: "Atlas", Topf: mitteltopf.Land},
+		{Datum: tag, Barcode: "B-00102", Titel: "Atlas", Topf: mitteltopf.Land},
+		{Datum: tag, Barcode: "B-00200", Titel: "Lesebuch", Topf: mitteltopf.Land},
+	}})
+	if a := antwort.Abschnitte[0]; a.Exemplare != 4 || len(a.Zeilen) != 2 {
+		t.Errorf("Abschnitt Land: %d Exemplare in %d Zeilen, erwartet 4 in 2", a.Exemplare, len(a.Zeilen))
+	}
+	if antwort.Gesamt != 4 {
+		t.Errorf("Gesamt = %d, erwartet 4 Exemplare", antwort.Gesamt)
+	}
+	if blatt := zugangsbuchBlatt(antwort); blatt.Abschnitte[0].Exemplare != 4 {
+		t.Errorf("Blatt, Abschnitt Land: %d Exemplare, erwartet 4", blatt.Abschnitte[0].Exemplare)
 	}
 }

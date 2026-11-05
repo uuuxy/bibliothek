@@ -16,9 +16,10 @@
 	import FilterChips from '../ui/FilterChips.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BestandsbuchAbschnitt from './BestandsbuchAbschnitt.svelte';
 	import { formatZahl } from '../../utils/format.js';
-	import { Printer } from '@lucide/svelte';
+	import { BookBookmark, Printer } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -36,7 +37,7 @@
 	let laeuft = $state(true);
 	let fehler = $state('');
 
-	/** @typedef {{ topf: string, titel: string, zeilen: any[] }} Topf */
+	/** @typedef {{ topf: string, titel: string, exemplare: number, zeilen: any[] }} Topf */
 	const abschnitte = $derived(/** @type {Topf[]} */ (buch?.abschnitte ?? []));
 
 	// Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein leerer Topf belegt
@@ -45,7 +46,7 @@
 	// wie Überschrift und Blatt, auch wo er länger ist als die 20 Zeichen, die M3 für Chips nennt.
 	let nurTopf = $state(/** @type {string | null} */ (null));
 	const felder = $derived(
-		abschnitte.map((a) => ({ wert: a.topf, text: `${a.titel} · ${formatZahl(a.zeilen.length)}` }))
+		abschnitte.map((a) => ({ wert: a.topf, text: `${a.titel} · ${formatZahl(a.exemplare)}` }))
 	);
 	// „Ohne Zuordnung" fehlt in einem Zeitraum ohne solche Zeilen; die Wahl darauf gilt dann nicht.
 	const wahl = $derived(abschnitte.some((a) => a.topf === nurTopf) ? nurTopf : null);
@@ -94,8 +95,9 @@
 	onMount(laden);
 </script>
 
+<!-- Das Symbol des Menüpunkts „Bestandsbücher". -->
 {#snippet nichts()}
-	<p class="text-sm text-on-surface-variant">Kein {wortSingular} in diesem Zeitraum.</p>
+	<SuchZustand symbol={BookBookmark} titel="Kein {wortSingular} in diesem Zeitraum" />
 {/snippet}
 
 <div class="py-6 space-y-6">

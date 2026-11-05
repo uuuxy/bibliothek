@@ -14,7 +14,7 @@
 
 	/**
 	 * @type {{
-	 *   abschnitt: { topf: string, titel: string, zeilen: any[] },
+	 *   abschnitt: { topf: string, titel: string, exemplare: number, zeilen: any[] },
 	 *   spalten: {kopf: string, feld: string, klasse?: string}[],
 	 *   buchname: string,
 	 *   nichts: import('svelte').Snippet
@@ -23,12 +23,15 @@
 	let { abschnitt, spalten, buchname, nichts } = $props();
 
 	let grenze = $state(SCHRITT);
+	// Die Überschrift zählt Exemplare, „Mehr laden" Zeilen: Eine Zeile trägt alle Exemplare
+	// eines Titels von einem Tag.
+	const exemplare = $derived(abschnitt.exemplare);
 	const anzahl = $derived(abschnitt.zeilen.length);
 	const sichtbar = $derived(abschnitt.zeilen.slice(0, grenze));
 </script>
 
 <Abschnitt
-	titel="{abschnitt.titel} · {formatZahl(anzahl)} {anzahl === 1 ? 'Exemplar' : 'Exemplare'}"
+	titel="{abschnitt.titel} · {formatZahl(exemplare)} {exemplare === 1 ? 'Exemplar' : 'Exemplare'}"
 />
 {#if anzahl === 0}
 	{@render nichts()}
@@ -42,11 +45,18 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each sichtbar as zeile (zeile.barcode)}
+			{#each sichtbar as zeile, i (i)}
 				<tr>
 					{#each spalten as spalte (spalte.feld)}
 						<td class={spalte.klasse ?? ''}>
-							{spalte.feld === 'datum' ? formatDatum(zeile.datum) : zeile[spalte.feld]}
+							{#if spalte.feld === 'barcodes'}
+								<!-- Ein Barcode bricht nicht an seinem Bindestrich um, nur zwischen zweien. -->
+								{#each zeile.barcodes.split(', ') as teil, k (k)}{k > 0 ? ', ' : ''}<span
+										class="whitespace-nowrap">{teil}</span
+									>{/each}
+							{:else}
+								{spalte.feld === 'datum' ? formatDatum(zeile.datum) : zeile[spalte.feld]}
+							{/if}
 						</td>
 					{/each}
 				</tr>

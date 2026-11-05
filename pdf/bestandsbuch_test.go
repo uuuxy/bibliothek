@@ -1,6 +1,7 @@
 package pdf
 
 import (
+	"bytes"
 	"fmt"
 	"slices"
 	"strings"
@@ -49,12 +50,12 @@ func TestAbgangsbuch_DrucktAbschnitteZahlenUndHinweise(t *testing.T) {
 	roh, err := ErzeugeAbgangsbuch(Abgangsbuch{
 		Von: buchVon, Bis: buchBis,
 		Abschnitte: []AbgangsAbschnitt{
-			{Titel: "Topf Eins", Zeilen: []AbgangsZeile{
-				{Datum: tag, Barcode: "B-00042", Titel: "Mathebuch 7", Signatur: "Mat 7", GrundText: "Verlust"}}},
+			{Titel: "Topf Eins", Exemplare: 1, Zeilen: []AbgangsZeile{
+				{Datum: tag, Anzahl: 1, Barcodes: "B-00042", Titel: "Mathebuch 7", Signatur: "Mat 7", GrundText: "Verlust"}}},
 			{Titel: "Topf Leer"},
-			{Titel: "Topf Zwei", Zeilen: []AbgangsZeile{
-				{Datum: tag.AddDate(0, 0, 1), Barcode: "B-00815", Titel: "Gregs Tagebuch", Signatur: "Jug Gre", GrundText: "Aussortiert"},
-				{Datum: tag.AddDate(0, 0, 2), Barcode: "B-00816", Titel: "Atlas", Signatur: "Erd 1", GrundText: "Sonstiges"}}},
+			{Titel: "Topf Zwei", Exemplare: 2, Zeilen: []AbgangsZeile{
+				{Datum: tag.AddDate(0, 0, 1), Anzahl: 1, Barcodes: "B-00815", Titel: "Gregs Tagebuch", Signatur: "Jug Gre", GrundText: "Aussortiert"},
+				{Datum: tag.AddDate(0, 0, 2), Anzahl: 1, Barcodes: "B-00816", Titel: "Atlas", Signatur: "Erd 1", GrundText: "Sonstiges"}}},
 		},
 		Gesamt: 9, OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}, SchuleInfo{Name: "Philipp-Reis-Schule", Strasse: "Schulstr. 1", PLZ: "61440", Ort: "Oberursel"})
@@ -94,8 +95,8 @@ func TestZugangsbuch_DrucktAbschnitteUndZahlen(t *testing.T) {
 	roh, err := ErzeugeZugangsbuch(Zugangsbuch{
 		Von: buchVon, Bis: buchBis,
 		Abschnitte: []ZugangsAbschnitt{
-			{Titel: "Topf Eins", Zeilen: []ZugangsZeile{
-				{Datum: tag, Barcode: "B-00100", Titel: "Mathebuch 7", Lieferant: "Buchhandlung Land"}}},
+			{Titel: "Topf Eins", Exemplare: 1, Zeilen: []ZugangsZeile{
+				{Datum: tag, Anzahl: 1, Barcodes: "B-00100", Titel: "Mathebuch 7", Lieferant: "Buchhandlung Land"}}},
 			{Titel: "Topf Leer"},
 		},
 		Gesamt: 5,
@@ -114,8 +115,8 @@ func TestZugangsbuch_DrucktAbschnitteUndZahlen(t *testing.T) {
 func TestZugangsbuch_ErklaertOhneZuordnungNurAufVerlangen(t *testing.T) {
 	buch := Zugangsbuch{
 		Von: buchVon, Bis: buchBis,
-		Abschnitte: []ZugangsAbschnitt{{Titel: "ohne Zuordnung", Zeilen: []ZugangsZeile{
-			{Datum: buchVon, Barcode: "B-00300", Titel: "Fundstück aus dem Schrank"}}}},
+		Abschnitte: []ZugangsAbschnitt{{Titel: "ohne Zuordnung", Exemplare: 1, Zeilen: []ZugangsZeile{
+			{Datum: buchVon, Anzahl: 1, Barcodes: "B-00300", Titel: "Fundstück aus dem Schrank"}}}},
 		Gesamt: 1,
 	}
 	roh, err := ErzeugeZugangsbuch(buch, SchuleInfo{})
@@ -139,8 +140,8 @@ func TestBestandsbuch_JedeSeiteMitZeilenTraegtDieSpaltenkoepfe(t *testing.T) {
 		nummer := fmt.Sprintf("B-%05d", 70000+i)
 		// Keine Zelle einer Zeile trägt den Wortlaut eines Spaltenkopfs: Sonst hielte der Test
 		// die Zeile für den Kopf.
-		abgaenge = append(abgaenge, AbgangsZeile{Datum: buchVon, Barcode: nummer, Titel: "Mathebuch", Signatur: "Mat 7", GrundText: "Verlust"})
-		zugaenge = append(zugaenge, ZugangsZeile{Datum: buchVon, Barcode: nummer, Titel: "Mathebuch", Lieferant: "Buchhandlung"})
+		abgaenge = append(abgaenge, AbgangsZeile{Datum: buchVon, Anzahl: 1, Barcodes: nummer, Titel: "Mathebuch", Signatur: "Mat 7", GrundText: "Verlust"})
+		zugaenge = append(zugaenge, ZugangsZeile{Datum: buchVon, Anzahl: 1, Barcodes: nummer, Titel: "Mathebuch", Lieferant: "Buchhandlung"})
 	}
 	abgang, err := ErzeugeAbgangsbuch(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: anzahl,
 		Abschnitte: []AbgangsAbschnitt{{Titel: "Topf Eins", Zeilen: abgaenge}}}, SchuleInfo{})
@@ -196,29 +197,36 @@ func TestBestandsbuecher_TitelSignaturUndLieferantBleibenInIhrerSpalte(t *testin
 	tag := time.Date(2026, time.April, 12, 10, 0, 0, 0, time.UTC)
 	abgang, err := ErzeugeAbgangsbuch(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
 		Abschnitte: []AbgangsAbschnitt{{Titel: "Topf Eins", Zeilen: []AbgangsZeile{
-			{Datum: tag, Barcode: "B-81", Titel: gross, Signatur: signatur, GrundText: "Verlust"},
-			{Datum: tag, Barcode: "B-82", Titel: "Atlas", Signatur: "Erd 1", GrundText: "Verlust"}}}}}, SchuleInfo{})
+			{Datum: tag, Anzahl: 1, Barcodes: "B-81", Titel: gross, Signatur: signatur, GrundText: "Verlust"},
+			{Datum: tag, Anzahl: 1, Barcodes: "B-82", Titel: "Atlas", Signatur: "Erd 1", GrundText: "Verlust"}}}}}, SchuleInfo{})
 	if err != nil {
 		t.Fatalf("Abgangsbuch drucken: %v", err)
 	}
 	zugang, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
 		Abschnitte: []ZugangsAbschnitt{{Titel: "Topf Eins", Zeilen: []ZugangsZeile{
-			{Datum: tag, Barcode: "B-91", Titel: gross, Lieferant: haendler},
-			{Datum: tag, Barcode: "B-92", Titel: "Atlas", Lieferant: "Naacher"}}}}}, SchuleInfo{})
+			{Datum: tag, Anzahl: 1, Barcodes: "B-91", Titel: gross, Lieferant: haendler},
+			{Datum: tag, Anzahl: 1, Barcodes: "B-92", Titel: "Atlas", Lieferant: "Naacher"}}}}}, SchuleInfo{})
 	if err != nil {
 		t.Fatalf("Zugangsbuch drucken: %v", err)
 	}
 
-	// Hinter der Nummer stehen Titel und Signatur oder Lieferant der Zeile.
-	nach := func(roh []byte, nummer string) (string, string) {
+	// Die Zellen einer Zeile stehen in ihrer Reihenfolge um den Barcode herum: im Abgangsbuch
+	// Titel, Signatur, Grund, Anzahl, Barcodes; im Zugangsbuch Titel, Anzahl, Barcodes, Lieferant.
+	um := func(roh []byte, nummer string, erste, zweite int) (string, string) {
 		texte := pdftest.TexteInReihenfolge(t, roh)
 		for stelle, text := range texte {
 			if text == nummer {
-				return texte[stelle+1], texte[stelle+2]
+				return texte[stelle+erste], texte[stelle+zweite]
 			}
 		}
 		t.Fatalf("%s steht nicht auf dem Blatt", nummer)
 		return "", ""
+	}
+	nach := func(roh []byte, nummer string) (string, string) {
+		if bytes.Equal(roh, abgang) {
+			return um(roh, nummer, -4, -3)
+		}
+		return um(roh, nummer, -2, 1)
 	}
 	titel, sig := nach(abgang, "B-81")
 	pdftest.InSpalte(t, titel, gross, 9, abgangSpalteTitel-2)
@@ -246,7 +254,7 @@ func TestBestandsbuecher_TitelSignaturUndLieferantBleibenInIhrerSpalte(t *testin
 func TestZugangsbuch_ZaehltSeitenJeAusdruck(t *testing.T) {
 	zeilen := make([]ZugangsZeile, 0, 120)
 	for i := 0; i < cap(zeilen); i++ {
-		zeilen = append(zeilen, ZugangsZeile{Datum: buchVon, Barcode: fmt.Sprintf("B-%05d", 80000+i), Titel: "Lesebuch", Lieferant: "Buchhandlung"})
+		zeilen = append(zeilen, ZugangsZeile{Datum: buchVon, Anzahl: 1, Barcodes: fmt.Sprintf("B-%05d", 80000+i), Titel: "Lesebuch", Lieferant: "Buchhandlung"})
 	}
 	for name, abschnitte := range map[string][]ZugangsAbschnitt{
 		"leer": nil,
@@ -266,5 +274,59 @@ func TestZugangsbuch_ZaehltSeitenJeAusdruck(t *testing.T) {
 		if name == "lang" && len(seiten) < 2 {
 			t.Errorf("lang: %d Seite, erwartet mehrere", len(seiten))
 		}
+	}
+}
+
+// Eine Zeile mit vielen Barcodes läuft in ihrer Spalte um; reicht eine Seite nicht, geht sie auf
+// der nächsten unter den Spaltenköpfen weiter, mit Titel und Datum. Kein Barcode fehlt, keine
+// gedruckte Zeile ist breiter als die Spalte, und ein Bereich bricht nicht um.
+func TestBestandsbuch_BarcodesLaufenUmUndKeinerFehlt(t *testing.T) {
+	const anzahl = 300
+	nummern := make([]string, anzahl)
+	for i := range nummern {
+		nummern[i] = fmt.Sprintf("B-%05d", 60000+2*i) // jede zweite Nummer: kein Bereich
+	}
+	bereich := "B-50000\u00a0–\u00a0B-50044"
+	roh, err := ErzeugeZugangsbuch(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: anzahl + 46,
+		Abschnitte: []ZugangsAbschnitt{{Titel: "Topf Eins", Exemplare: anzahl + 46, Zeilen: []ZugangsZeile{
+			{Datum: buchVon, Titel: "Lesebuch", Anzahl: 46, Barcodes: bereich + ", B-50050", Lieferant: "Naacher"},
+			{Datum: buchVon, Titel: "Mathebuch", Anzahl: anzahl, Barcodes: strings.Join(nummern, ", "), Lieferant: "Naacher"},
+		}}}}, SchuleInfo{})
+	if err != nil {
+		t.Fatalf("Zugangsbuch drucken: %v", err)
+	}
+
+	seiten := pdftest.TexteJeSeite(t, roh)
+	if len(seiten) < 2 {
+		t.Fatalf("%d Seite(n) für %d Barcodes in einer Zeile, erwartet mindestens 2", len(seiten), anzahl)
+	}
+	gesehen := map[string]bool{}
+	bereichGesehen := false
+	for nr, seite := range seiten {
+		stuecke := 0
+		for _, text := range seite {
+			bereichGesehen = bereichGesehen || strings.HasPrefix(text, bereich)
+			if !strings.HasPrefix(text, "B-6") {
+				continue
+			}
+			stuecke++
+			pdftest.InSpalte(t, text, text, 9, zugangSpalteBarcodes-2)
+			for _, n := range strings.Split(text, ",") {
+				if n = strings.TrimSpace(n); n != "" {
+					gesehen[n] = true
+				}
+			}
+		}
+		if stuecke > 0 && (!slices.Contains(seite, "Barcodes") || !slices.Contains(seite, "Mathebuch")) {
+			t.Errorf("Seite %d: %d Zeilen mit Barcodes ohne Spaltenköpfe oder ohne Titel der Zeile", nr+1, stuecke)
+		}
+	}
+	for _, n := range nummern {
+		if !gesehen[n] {
+			t.Errorf("%s fehlt auf dem Blatt", n)
+		}
+	}
+	if !bereichGesehen {
+		t.Errorf("der Bereich %q steht nicht zusammen in einer Zeile", bereich)
 	}
 }

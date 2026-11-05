@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/internal/bestandsbuch"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -21,11 +22,11 @@ import (
 // Abschnitte geteilt, mit den Überschriften des Servers. Die Oberfläche gruppiert nicht selbst,
 // sonst stünden auf dem Blatt und auf dem Bildschirm zwei Wörter für denselben Topf.
 type abgangsbuchAntwort struct {
-	Von           time.Time                                `json:"von"`
-	Bis           time.Time                                `json:"bis"`
-	Abschnitte    []topfAbschnitt[repository.AbgangsZeile] `json:"abschnitte"`
-	Gesamt        int                                      `json:"gesamt"`
-	OhneZeitpunkt int                                      `json:"ohne_zeitpunkt"`
+	Von           time.Time                            `json:"von"`
+	Bis           time.Time                            `json:"bis"`
+	Abschnitte    []topfAbschnitt[bestandsbuch.Abgang] `json:"abschnitte"`
+	Gesamt        int                                  `json:"gesamt"`
+	OhneZeitpunkt int                                  `json:"ohne_zeitpunkt"`
 	// AusKatalogGeloescht zählt die im Zeitraum gelöschten Exemplare ohne Zeile in den
 	// Bestandsbüchern, also aus der Zeit vor Migration 171. Sie stehen in keinem Abschnitt, denn
 	// mit dem Exemplar ist auch sein Titel gegangen (repository/abgangsbuch.go).
@@ -34,9 +35,10 @@ type abgangsbuchAntwort struct {
 
 func abgangsbuchAntwortAus(buch repository.Abgangsbuch) abgangsbuchAntwort {
 	return abgangsbuchAntwort{
-		Von:           buch.Von,
-		Bis:           buch.Bis,
-		Abschnitte:    abschnitteAus(buch.Zeilen, func(z repository.AbgangsZeile) string { return z.Topf }),
+		Von: buch.Von,
+		Bis: buch.Bis,
+		Abschnitte: abschnitteAus(bestandsbuch.Abgaenge(buch.Zeilen),
+			func(z bestandsbuch.Abgang) string { return z.Topf }, func(z bestandsbuch.Abgang) int { return z.Anzahl }),
 		Gesamt:        len(buch.Zeilen),
 		OhneZeitpunkt: buch.OhneZeitpunkt,
 
@@ -59,10 +61,12 @@ func abgangsbuchBlatt(antwort abgangsbuchAntwort) pdf.Abgangsbuch {
 		zeilen := make([]pdf.AbgangsZeile, 0, len(abschnitt.Zeilen))
 		for _, z := range abschnitt.Zeilen {
 			zeilen = append(zeilen, pdf.AbgangsZeile{
-				Datum: z.Datum, Barcode: z.Barcode, Titel: z.Titel, Signatur: z.Signatur, GrundText: z.GrundText,
+				Datum: z.Datum, Titel: z.Titel, Signatur: z.Signatur, GrundText: z.GrundText,
+				Anzahl: z.Anzahl, Barcodes: z.Barcodes,
 			})
 		}
-		blatt.Abschnitte = append(blatt.Abschnitte, pdf.AbgangsAbschnitt{Titel: abschnitt.Titel, Zeilen: zeilen})
+		blatt.Abschnitte = append(blatt.Abschnitte,
+			pdf.AbgangsAbschnitt{Titel: abschnitt.Titel, Exemplare: abschnitt.Exemplare, Zeilen: zeilen})
 	}
 	return blatt
 }

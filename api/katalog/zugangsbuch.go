@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/internal/bestandsbuch"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -17,18 +18,19 @@ import (
 
 // zugangsbuchAntwort ist das Zugangsbuch, fertig in Abschnitte geteilt.
 type zugangsbuchAntwort struct {
-	Von        time.Time                                `json:"von"`
-	Bis        time.Time                                `json:"bis"`
-	Abschnitte []topfAbschnitt[repository.ZugangsZeile] `json:"abschnitte"`
-	Gesamt     int                                      `json:"gesamt"`
+	Von        time.Time                            `json:"von"`
+	Bis        time.Time                            `json:"bis"`
+	Abschnitte []topfAbschnitt[bestandsbuch.Zugang] `json:"abschnitte"`
+	Gesamt     int                                  `json:"gesamt"`
 }
 
 func zugangsbuchAntwortAus(buch repository.Zugangsbuch) zugangsbuchAntwort {
 	return zugangsbuchAntwort{
-		Von:        buch.Von,
-		Bis:        buch.Bis,
-		Abschnitte: abschnitteAus(buch.Zeilen, func(z repository.ZugangsZeile) string { return z.Topf }),
-		Gesamt:     len(buch.Zeilen),
+		Von: buch.Von,
+		Bis: buch.Bis,
+		Abschnitte: abschnitteAus(bestandsbuch.Zugaenge(buch.Zeilen),
+			func(z bestandsbuch.Zugang) string { return z.Topf }, func(z bestandsbuch.Zugang) int { return z.Anzahl }),
+		Gesamt: len(buch.Zeilen),
 	}
 }
 
@@ -48,9 +50,11 @@ func zugangsbuchBlatt(antwort zugangsbuchAntwort) pdf.Zugangsbuch {
 		}
 		zeilen := make([]pdf.ZugangsZeile, 0, len(abschnitt.Zeilen))
 		for _, z := range abschnitt.Zeilen {
-			zeilen = append(zeilen, pdf.ZugangsZeile{Datum: z.Datum, Barcode: z.Barcode, Titel: z.Titel, Lieferant: z.Lieferant})
+			zeilen = append(zeilen, pdf.ZugangsZeile{Datum: z.Datum, Titel: z.Titel, Anzahl: z.Anzahl,
+				Barcodes: z.Barcodes, Lieferant: z.Lieferant})
 		}
-		blatt.Abschnitte = append(blatt.Abschnitte, pdf.ZugangsAbschnitt{Titel: abschnitt.Titel, Zeilen: zeilen})
+		blatt.Abschnitte = append(blatt.Abschnitte,
+			pdf.ZugangsAbschnitt{Titel: abschnitt.Titel, Exemplare: abschnitt.Exemplare, Zeilen: zeilen})
 	}
 	return blatt
 }

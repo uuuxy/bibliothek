@@ -23,8 +23,11 @@ type topfAbschnitt[T any] struct {
 	// Topf ist der gespeicherte Wert ('land', 'schultraeger', '' = ohne Zuordnung).
 	Topf string `json:"topf"`
 	// Titel ist die Überschrift, wie ein Mensch sie liest.
-	Titel  string `json:"titel"`
-	Zeilen []T    `json:"zeilen"`
+	Titel string `json:"titel"`
+	// Exemplare zählt die Exemplare des Abschnitts. Eine Zeile kann mehrere tragen
+	// (internal/bestandsbuch); Überschrift, Filter und Summe zählen Exemplare.
+	Exemplare int `json:"exemplare"`
+	Zeilen    []T `json:"zeilen"`
 }
 
 // abschnitteAus gruppiert Zeilen nach Topf, in der Reihenfolge, die im ganzen Programm gilt
@@ -41,7 +44,7 @@ type topfAbschnitt[T any] struct {
 // eine Antwort), beim Zugangsbuch schon: Ein Exemplar ohne Eigentum am Exemplar und ohne
 // Bestellung trägt keinen Beleg darüber, aus welchem Geld es bezahlt wurde, und geraten wird
 // das nicht (repository.exemplarTopfBelegtSQL).
-func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []topfAbschnitt[T] {
+func abschnitteAus[T any](zeilen []T, topfVon func(T) string, anzahl func(T) int) []topfAbschnitt[T] {
 	nach := map[string][]T{}
 	for _, z := range zeilen {
 		topf := topfVon(z)
@@ -56,7 +59,11 @@ func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []topfAbschnitt[T]
 		if zeilenDesTopfs == nil {
 			zeilenDesTopfs = []T{}
 		}
-		aus = append(aus, topfAbschnitt[T]{Topf: topf, Titel: mitteltopf.Beschriftung(topf), Zeilen: zeilenDesTopfs})
+		exemplare := 0
+		for _, z := range zeilenDesTopfs {
+			exemplare += anzahl(z)
+		}
+		aus = append(aus, topfAbschnitt[T]{Topf: topf, Titel: mitteltopf.Beschriftung(topf), Exemplare: exemplare, Zeilen: zeilenDesTopfs})
 	}
 	return aus
 }

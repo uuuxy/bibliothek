@@ -9,7 +9,9 @@
      Richtungen, was kam und was ging.
 
      Die Spaltenbeschreibungen stehen hier, weil sie zum Buch gehören und nicht zum
-     Bauteil: Bestandsbuch.svelte zeichnet, was es bekommt. -->
+     Bauteil: Bestandsbuch.svelte zeichnet, was es bekommt. Eine Zeile fasst die Exemplare
+     eines Titels von einem Tag zusammen, mit Anzahl und Barcodes; welche zusammengehören,
+     entscheidet der Server (internal/bestandsbuch). -->
 <script>
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import Reiter from '../ui/Reiter.svelte';
@@ -38,8 +40,9 @@
 			wortSingular="Zugang"
 			spalten={[
 				{ kopf: 'Zugang', feld: 'datum', klasse: 'whitespace-nowrap' },
-				{ kopf: 'Nummer', feld: 'barcode', klasse: 'whitespace-nowrap font-mono' },
 				{ kopf: 'Titel', feld: 'titel' },
+				{ kopf: 'Anzahl', feld: 'anzahl', klasse: 'whitespace-nowrap tabular-nums' },
+				{ kopf: 'Barcodes', feld: 'barcodes', klasse: 'font-mono min-w-48' },
 				{ kopf: 'Lieferant', feld: 'lieferant', klasse: 'whitespace-nowrap' }
 			]}
 		/>
@@ -50,10 +53,11 @@
 			wortSingular="Abgang"
 			spalten={[
 				{ kopf: 'Abgang', feld: 'datum', klasse: 'whitespace-nowrap' },
-				{ kopf: 'Nummer', feld: 'barcode', klasse: 'whitespace-nowrap font-mono' },
 				{ kopf: 'Titel', feld: 'titel' },
 				{ kopf: 'Signatur', feld: 'signatur', klasse: 'whitespace-nowrap' },
-				{ kopf: 'Grund', feld: 'grund_text', klasse: 'whitespace-nowrap' }
+				{ kopf: 'Grund', feld: 'grund_text', klasse: 'whitespace-nowrap' },
+				{ kopf: 'Anzahl', feld: 'anzahl', klasse: 'whitespace-nowrap tabular-nums' },
+				{ kopf: 'Barcodes', feld: 'barcodes', klasse: 'font-mono min-w-48' }
 			]}
 		/>
 	{/if}

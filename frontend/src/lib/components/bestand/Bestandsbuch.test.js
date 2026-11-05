@@ -13,29 +13,42 @@ import { serverAntwort } from '../../serverAntwort.js';
 const LAND = 'Lernmittelfreiheit (Land)';
 const TRAEGER = 'Schülerbücherei (Schulträger)';
 const OHNE = 'ohne Zuordnung';
-const LEER = 'Kein Zugang in diesem Zeitraum.';
+const LEER = 'Kein Zugang in diesem Zeitraum';
 
 const spalten = [
 	{ kopf: 'Zugang', feld: 'datum' },
-	{ kopf: 'Nummer', feld: 'barcode' },
-	{ kopf: 'Titel', feld: 'titel' }
+	{ kopf: 'Titel', feld: 'titel' },
+	{ kopf: 'Anzahl', feld: 'anzahl' },
+	{ kopf: 'Barcodes', feld: 'barcodes' }
 ];
 
 /** @param {number} anzahl @param {string} kuerzel */
 const zeilen = (anzahl, kuerzel) =>
 	Array.from({ length: anzahl }, (_, i) => ({
 		datum: '2026-09-20T00:00:00Z',
-		barcode: `${kuerzel}-${i + 1}`,
-		titel: `Titel ${kuerzel} ${i + 1}`
+		titel: `Titel ${kuerzel} ${i + 1}`,
+		anzahl: 1,
+		barcodes: `${kuerzel}-${i + 1}`
 	}));
 
 /** Die Antwort des Servers: Land und Schulträger stehen immer da, „ohne Zuordnung" nur mit Zeilen. */
 const antwort = (/** @type {{ land?: number, traeger?: number, ohne?: number }} */ zahl) => {
 	const abschnitte = [
-		{ topf: 'land', titel: LAND, zeilen: zeilen(zahl.land ?? 0, 'L') },
-		{ topf: 'schultraeger', titel: TRAEGER, zeilen: zeilen(zahl.traeger ?? 0, 'T') }
+		{ topf: 'land', titel: LAND, exemplare: zahl.land ?? 0, zeilen: zeilen(zahl.land ?? 0, 'L') },
+		{
+			topf: 'schultraeger',
+			titel: TRAEGER,
+			exemplare: zahl.traeger ?? 0,
+			zeilen: zeilen(zahl.traeger ?? 0, 'T')
+		}
 	];
-	if (zahl.ohne) abschnitte.push({ topf: '', titel: OHNE, zeilen: zeilen(zahl.ohne, 'O') });
+	if (zahl.ohne)
+		abschnitte.push({
+			topf: '',
+			titel: OHNE,
+			exemplare: zahl.ohne,
+			zeilen: zeilen(zahl.ohne, 'O')
+		});
 	return /** @type {any} */ ({
 		ok: true,
 		json: async () => ({ von: '2026-09-16', bis: '2027-03-15', abschnitte })
@@ -83,6 +96,77 @@ describe('Bestandsbuch: die Töpfe als Felder mit Zahl', () => {
 		expect(tabellen(screen)).toEqual([`Zugangsbuch — ${OHNE}`]);
 		expect(screen.queryByText(LEER)).toBeNull();
 		expect(screen.getByRole('heading', { name: `${OHNE} · 2 Exemplare` })).toBeTruthy();
+	});
+
+	// Eine Zeile trägt alle Exemplare eines Titels von einem Tag: Feld und Überschrift zählen
+	// Exemplare, nicht Zeilen.
+	it('zählt Exemplare, auch wenn eine Zeile mehrere trägt', async () => {
+		const klassensatz = {
+			datum: '2026-09-20T00:00:00Z',
+			titel: 'Mathebuch 7',
+			anzahl: 28,
+			barcodes: 'B-00100 – B-00127'
+		};
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					von: '2026-09-16',
+					bis: '2027-03-15',
+					abschnitte: [
+						{ topf: 'land', titel: LAND, exemplare: 28, zeilen: [klassensatz] },
+						{ topf: 'schultraeger', titel: TRAEGER, exemplare: 0, zeilen: [] }
+					]
+				})
+			})
+		);
+		const screen = render(Bestandsbuch, {
+			pfad: 'zugangsbuch',
+			buchname: 'Zugangsbuch',
+			wortSingular: 'Zugang',
+			spalten
+		});
+
+		expect(await screen.findByRole('button', { name: `${LAND} · 28` })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: `${LAND} · 28 Exemplare` })).toBeTruthy();
+		expect(gezeichnet(screen, LAND)).toBe(1);
+		// Testing Library liest den Text mit gewöhnlichen Leerzeichen; im Dokument sind sie geschützt.
+		expect(screen.getByText(klassensatz.barcodes.replaceAll('\u00a0', ' '))).toBeTruthy();
+	});
+
+	// Der Browser bricht an einem Bindestrich um; ein Barcode stünde dann als „B-" und „00200" auf
+	// zwei Zeilen. Jeder Barcode und jeder Bereich steht deshalb für sich und bricht nicht um.
+	it('bricht einen Barcode nicht in sich um, nur zwischen zweien', async () => {
+		const zeile = {
+			datum: '2026-09-20T00:00:00Z',
+			titel: 'Deutschbuch 7',
+			anzahl: 5,
+			barcodes: 'B-00200, B-00201, B-00300\u00a0–\u00a0B-00302'
+		};
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					von: '2026-09-16',
+					bis: '2027-03-15',
+					abschnitte: [
+						{ topf: 'land', titel: LAND, exemplare: 5, zeilen: [zeile] },
+						{ topf: 'schultraeger', titel: TRAEGER, exemplare: 0, zeilen: [] }
+					]
+				})
+			})
+		);
+		const screen = render(Bestandsbuch, {
+			pfad: 'zugangsbuch',
+			buchname: 'Zugangsbuch',
+			wortSingular: 'Zugang',
+			spalten
+		});
+		const tabelle = await screen.findByRole('table', { name: `Zugangsbuch — ${LAND}` });
+		const zelle = /** @type {HTMLElement} */ (tabelle.querySelectorAll('tbody td')[3]);
+		const teile = [...zelle.querySelectorAll('span.whitespace-nowrap')].map((t) => t.textContent);
+		expect(teile).toEqual(['B-00200', 'B-00201', 'B-00300\u00a0–\u00a0B-00302']);
+		expect(zelle.textContent?.trim()).toBe(zeile.barcodes);
 	});
 
 	it('zeigt nach einem Klick nur diesen Topf und nach dem zweiten wieder alle', async () => {

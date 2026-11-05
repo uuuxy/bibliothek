@@ -13,29 +13,35 @@ import (
 // Der Ausdruck des Zugangsbuchs. Aufbau wie beim Abgangsbuch (abgangsbuch.go): ein
 // Abschnitt je Topf, jeder mit eigener Stückzahl, leere werden übersprungen.
 //
-// Die Spalten sind die der Arbeitshilfe: Eingangsdatum, Inventarnummer, Titel, Lieferant
-// (docs/mittel_konzept.md 7.1). „Anzahl" ist die Stückzahl des Abschnitts; jede Zeile ist ein
-// Exemplar mit seiner eigenen Nummer, denn genau die braucht die Bestandskartei.
+// Die Spalten sind die der Arbeitshilfe: Eingangsdatum, Titel, Anzahl, Lieferant und
+// Inventarnummer (docs/mittel_konzept.md 7.1), die Nummer auf dem Etikett, im Programm der
+// Barcode. Eine Zeile fasst die Exemplare eines Titels zusammen, die am selben Tag vom selben
+// Lieferanten kamen; jeder Barcode steht darin, denn genau die braucht die Bestandskartei.
 
 const (
-	zugangSpalteDatum     = 24.0
-	zugangSpalteNummer    = 30.0
-	zugangSpalteTitel     = 74.0
-	zugangSpalteLieferant = 52.0
+	zugangSpalteDatum     = 22.0
+	zugangSpalteTitel     = 66.0
+	zugangSpalteAnzahl    = 14.0
+	zugangSpalteBarcodes  = 40.0
+	zugangSpalteLieferant = 38.0
 )
 
-// ZugangsZeile ist ein Zugang, wie er auf dem Blatt steht.
+// ZugangsZeile ist eine Zeile des Blatts: die Exemplare eines Titels von einem Tag.
 type ZugangsZeile struct {
-	Datum     time.Time
-	Barcode   string
-	Titel     string
+	Datum  time.Time
+	Titel  string
+	Anzahl int
+	// Barcodes ist der fertige Text der Tür, fortlaufende als Bereich.
+	Barcodes  string
 	Lieferant string
 }
 
-// ZugangsAbschnitt ist ein Topf des Blatts mit seiner Überschrift.
+// ZugangsAbschnitt ist ein Topf des Blatts mit seiner Überschrift und der Zahl seiner
+// Exemplare.
 type ZugangsAbschnitt struct {
-	Titel  string
-	Zeilen []ZugangsZeile
+	Titel     string
+	Exemplare int
+	Zeilen    []ZugangsZeile
 }
 
 // Zugangsbuch ist die Eingabe des Blatts. Gliederung, Überschriften und Zahlen kommen von der
@@ -107,22 +113,22 @@ func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Zuga
 	p.SetFillColor(255, 255, 255)
 	p.Ln(2)
 
-	zugangsbuchSpaltenkoepfe(p, tr)
+	koepfe := func() { zugangsbuchSpaltenkoepfe(p, tr) }
+	koepfe()
 	for _, z := range zeilen {
-		if p.GetY() > abgangUmbruchAbY {
-			p.AddPage()
-			zugangsbuchSpaltenkoepfe(p, tr)
-		}
 		p.SetFont("Arial", "", 9)
-		p.CellFormat(zugangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(datumsformat)), "LB", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, zugangSpalteTitel)), "B", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Lieferant, zugangSpalteLieferant)), "BR", 1, "L", false, 0, "")
+		zeichneBuchzeile(p, tr, []buchzelle{
+			{breite: zugangSpalteDatum, text: z.Datum.Format(datumsformat)},
+			{breite: zugangSpalteTitel, text: pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, zugangSpalteTitel)},
+			{breite: zugangSpalteAnzahl, text: fmt.Sprint(z.Anzahl)},
+			{breite: zugangSpalteBarcodes, text: z.Barcodes, umbrechen: true},
+			{breite: zugangSpalteLieferant, text: pdfzeichen.KuerzeAufZelle(p, tr, z.Lieferant, zugangSpalteLieferant)},
+		}, koepfe)
 	}
 
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
-	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %d Exemplare  ", abschnitt.Titel, len(zeilen))), "1", 1, "R", true, 0, "")
+	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %d Exemplare  ", abschnitt.Titel, abschnitt.Exemplare)), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(6)
 	return len(zeilen)
@@ -131,8 +137,9 @@ func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Zuga
 func zugangsbuchSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
 	p.SetFont("Arial", "B", 9)
 	p.CellFormat(zugangSpalteDatum, abgangZeilenHoehe, tr("Zugang"), "LTB", 0, "L", false, 0, "")
-	p.CellFormat(zugangSpalteNummer, abgangZeilenHoehe, tr("Nummer"), "TB", 0, "L", false, 0, "")
 	p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr("Titel"), "TB", 0, "L", false, 0, "")
+	p.CellFormat(zugangSpalteAnzahl, abgangZeilenHoehe, tr("Anzahl"), "TB", 0, "L", false, 0, "")
+	p.CellFormat(zugangSpalteBarcodes, abgangZeilenHoehe, tr("Barcodes"), "TB", 0, "L", false, 0, "")
 	p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr("Lieferant"), "TBR", 1, "L", false, 0, "")
 }
 

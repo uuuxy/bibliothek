@@ -17,29 +17,37 @@ import (
 // aus einer gemischten Liste von Hand zieht, zieht sie jedes Halbjahr neu und anders.
 // Dieselbe Regel und dieselben Überschriften wie im Bestellbericht.
 
+// Eine Zeile fasst die Exemplare eines Titels zusammen, die am selben Tag aus demselben Grund
+// gingen, mit Anzahl und allen Barcodes (internal/bestandsbuch).
 const (
-	abgangSpalteDatum    = 24.0
-	abgangSpalteNummer   = 30.0
-	abgangSpalteTitel    = 78.0
+	abgangSpalteDatum    = 22.0
+	abgangSpalteTitel    = 56.0
 	abgangSpalteSignatur = 20.0
 	abgangSpalteGrund    = 28.0
+	abgangSpalteAnzahl   = 14.0
+	abgangSpalteBarcodes = 40.0
 	abgangZeilenHoehe    = 6.0
 	abgangUmbruchAbY     = 250.0
 )
 
-// AbgangsZeile ist ein Abgang, wie er auf dem Blatt steht.
+// AbgangsZeile ist eine Zeile des Blatts: die Exemplare eines Titels, die an einem Tag aus
+// einem Grund gingen.
 type AbgangsZeile struct {
 	Datum     time.Time
-	Barcode   string
 	Titel     string
 	Signatur  string
 	GrundText string
+	Anzahl    int
+	// Barcodes ist der fertige Text der Tür, fortlaufende als Bereich.
+	Barcodes string
 }
 
-// AbgangsAbschnitt ist ein Topf des Blatts mit seiner Überschrift.
+// AbgangsAbschnitt ist ein Topf des Blatts mit seiner Überschrift und der Zahl seiner
+// Exemplare.
 type AbgangsAbschnitt struct {
-	Titel  string
-	Zeilen []AbgangsZeile
+	Titel     string
+	Exemplare int
+	Zeilen    []AbgangsZeile
 }
 
 // Abgangsbuch ist die Eingabe des Blatts. Gliederung, Überschriften und Zahlen kommen von der
@@ -107,27 +115,27 @@ func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abga
 	p.SetFillColor(255, 255, 255)
 	p.Ln(2)
 
-	abgangsbuchSpaltenkoepfe(p, tr)
+	koepfe := func() { abgangsbuchSpaltenkoepfe(p, tr) }
+	koepfe()
 	for _, z := range zeilen {
-		if p.GetY() > abgangUmbruchAbY {
-			p.AddPage()
-			abgangsbuchSpaltenkoepfe(p, tr)
-		}
 		// Ein überlanger Titel schöbe die Spalten der Zeile nach rechts. Gekürzt wird mit
 		// Auslassungszeichen: Auf einem Nachweis, den jemand unterschreibt, muss ein gekürzter
-		// Titel als gekürzt erkennbar sein.
+		// Titel als gekürzt erkennbar sein. Die Barcodes laufen um, keiner fehlt.
 		p.SetFont("Arial", "", 9)
-		p.CellFormat(abgangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(datumsformat)), "LB", 0, "L", false, 0, "")
-		p.CellFormat(abgangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
-		p.CellFormat(abgangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, abgangSpalteTitel)), "B", 0, "L", false, 0, "")
-		p.CellFormat(abgangSpalteSignatur, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Signatur, abgangSpalteSignatur)), "B", 0, "L", false, 0, "")
-		p.CellFormat(abgangSpalteGrund, abgangZeilenHoehe, tr(z.GrundText), "BR", 1, "L", false, 0, "")
+		zeichneBuchzeile(p, tr, []buchzelle{
+			{breite: abgangSpalteDatum, text: z.Datum.Format(datumsformat)},
+			{breite: abgangSpalteTitel, text: pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, abgangSpalteTitel)},
+			{breite: abgangSpalteSignatur, text: pdfzeichen.KuerzeAufZelle(p, tr, z.Signatur, abgangSpalteSignatur)},
+			{breite: abgangSpalteGrund, text: z.GrundText},
+			{breite: abgangSpalteAnzahl, text: fmt.Sprint(z.Anzahl)},
+			{breite: abgangSpalteBarcodes, text: z.Barcodes, umbrechen: true},
+		}, koepfe)
 	}
 
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
 	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %d Exemplare  ",
-		abschnitt.Titel, len(zeilen))), "1", 1, "R", true, 0, "")
+		abschnitt.Titel, abschnitt.Exemplare)), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(6)
 	return len(zeilen)
@@ -136,10 +144,11 @@ func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abga
 func abgangsbuchSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
 	p.SetFont("Arial", "B", 9)
 	p.CellFormat(abgangSpalteDatum, abgangZeilenHoehe, tr("Abgang"), "LTB", 0, "L", false, 0, "")
-	p.CellFormat(abgangSpalteNummer, abgangZeilenHoehe, tr("Nummer"), "TB", 0, "L", false, 0, "")
 	p.CellFormat(abgangSpalteTitel, abgangZeilenHoehe, tr("Titel"), "TB", 0, "L", false, 0, "")
 	p.CellFormat(abgangSpalteSignatur, abgangZeilenHoehe, tr("Signatur"), "TB", 0, "L", false, 0, "")
-	p.CellFormat(abgangSpalteGrund, abgangZeilenHoehe, tr("Grund"), "TBR", 1, "L", false, 0, "")
+	p.CellFormat(abgangSpalteGrund, abgangZeilenHoehe, tr("Grund"), "TB", 0, "L", false, 0, "")
+	p.CellFormat(abgangSpalteAnzahl, abgangZeilenHoehe, tr("Anzahl"), "TB", 0, "L", false, 0, "")
+	p.CellFormat(abgangSpalteBarcodes, abgangZeilenHoehe, tr("Barcodes"), "TBR", 1, "L", false, 0, "")
 }
 
 // abgangsbuchFuss nennt die Gesamtzahl und darunter, was nicht in der Liste steht.
