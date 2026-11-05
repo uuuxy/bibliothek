@@ -7,7 +7,9 @@
 	import { ChevronsLeft } from '@lucide/svelte';
 	import SeitenleisteZiele from './SeitenleisteZiele.svelte';
 	import SeitenleisteFuss from './SeitenleisteFuss.svelte';
-	import logoUrl from '../../../assets/logo.png';
+	// Das Zeichen ohne Schriftzug, der Name steht daneben: So setzen Googles Programme Logo und
+	// Namen oben links. Das Logo mit Schriftzug trägt die Anmeldeseite.
+	import logoUrl from '../../../assets/logo-zeichen.png';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
@@ -90,7 +92,7 @@
 			<div class="border-outline-variant/60 flex h-16 shrink-0 items-center gap-3 border-b px-4">
 				{@render klappPfeil(!zu)}
 				{#if !schmal}
-					<img src={logoUrl} alt="Logo" class="animate-fade-in h-12 w-12 shrink-0 object-contain" />
+					<img src={logoUrl} alt="" class="animate-fade-in h-10 w-10 shrink-0 object-contain" />
 					<span
 						class="text-on-surface animate-fade-in whitespace-nowrap text-xl font-bold tracking-tight"
 						>Bibliosys</span
