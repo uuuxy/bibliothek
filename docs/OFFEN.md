@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 03.11.2026
+Stand: 05.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -49,6 +49,10 @@ Nur, was kein Test leisten kann.
   löschen. (5.169)
 - [x] Ein ß hinter einer Vorsilbe auch in den übrigen Feldern als Bindestrich lesen, in die gescannt
   wird: Inventur, Theken-Auskunft und Suchen. (5.170)
+- [ ] Frage an dich: Soll die Spalte „Nummer“ in Zugangs- und Abgangsbuch „Inventarnummer“
+  heißen wie in der Arbeitshilfe? (5.172)
+- [ ] Frage an dich: Sollen Zugangs- und Abgangsbuch je Tag und Titel eine Zeile mit Anzahl und
+  Barcodes zeigen statt einer Zeile je Exemplar? (5.173)
 
 ### Termin
 
@@ -74,6 +78,24 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.172 Zugangs- und Abgangsbuch: „Nummer“ oder „Inventarnummer“
+
+Die Oberfläche nennt die Nummer eines Exemplars „Barcode“ (ARCHITEKTUR 12.1). Zugangs- und
+Abgangsbuch schreiben am Bildschirm und im Ausdruck „Nummer“; die Arbeitshilfe verlangt im
+Zugangsbuch die „Inventarnummer“ ([mittel_konzept.md](mittel_konzept.md) 7.1). Frage: Soll die
+Spalte „Inventarnummer“ heißen? Betroffen: `components/bestand/Bestandsbuecher.svelte`,
+`pdf/zugangsbuch.go`, `pdf/abgangsbuch.go`.
+
+### 5.173 Zugangs- und Abgangsbuch: eine Zeile je Exemplar oder je Titel
+
+Löschen mit Grund legt für jedes Exemplar, das im Bestand war, eine Zeile an
+(`repository.loescheExemplareMitBuchzeile`): Ein Titel mit 45 Exemplaren steht mit 45 Zeilen
+da, und jeder Abschnitt zeigt zuerst 50. Alle vier Gründe kommen gleich hinein; ein Titel ohne
+Exemplar hinterlässt keine Zeile. Die Arbeitshilfe beschreibt das Zugangsbuch je Lieferung mit
+„Titel, Anzahl, … Inventarnummer“ (mittel_konzept 7.1); Littera wertete das Abgangsbuch je
+Exemplar aus. Beide Bücher teilen ein Bauteil (`components/bestand/Bestandsbuch.svelte`). Frage: Je
+Tag und Titel eine Zeile mit der Anzahl und den Barcodes, im Abgangsbuch zusätzlich je Grund?
 
 ### 7.2 Frisches Littera-Backup
 
