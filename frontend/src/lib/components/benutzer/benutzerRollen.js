@@ -1,6 +1,6 @@
 // Die Rollen eines Kontos mit ihrem Namen für Menschen: eine Liste für das Auswahlfeld im
-// Bearbeiten-Dialog und für die Spalte „Rolle" der Benutzerliste, damit beide dasselbe Wort
-// zeigen.
+// Bearbeiten-Dialog, für die Spalte „Rolle" der Benutzerliste und für den Fuß der Seitenleiste,
+// damit alle dasselbe Wort zeigen.
 //
 // Kollegium steht oben, weil es keine Rolle ist, sondern der Grundzustand: Wer sich übers
 // Portal selbst anmeldet und freigeschaltet wird, ist Kollegium. Darunter die Erhebungen, die

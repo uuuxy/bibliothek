@@ -11,6 +11,7 @@
 	import Button from '../ui/Button.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import { darstellung } from '../../stores/darstellung.svelte.js';
+	import { rollenName } from '../benutzer/benutzerRollen.js';
 
 	/** @type {{ collapsed: boolean, benutzer: any, onLogout: () => void }} */
 	let { collapsed, benutzer, onLogout } = $props();
@@ -65,8 +66,8 @@
 					{benutzer.vorname}
 					{benutzer.nachname}
 				</span>
-				<span class="text-on-surface-variant text-label-small mt-0.5 font-medium capitalize">
-					Rolle: {benutzer.rolle}
+				<span class="text-on-surface-variant text-label-small mt-0.5 font-medium">
+					Rolle: {rollenName(benutzer.rolle)}
 				</span>
 			</div>
 		{/if}
