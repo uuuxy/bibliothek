@@ -51,9 +51,11 @@
 		authStore.handleLogin(e, undefined);
 	}
 
+	// Der Zeitgeber geht mit der Seite: Feuerte er nach dem Abbau, griffe er ins Leere.
 	$effect(() => {
-		setTimeout(() => document.getElementById('login-email')?.focus(), 50);
+		const fokus = setTimeout(() => document.getElementById('login-email')?.focus(), 50);
 		ladeDomain();
+		return () => clearTimeout(fokus);
 	});
 </script>
 

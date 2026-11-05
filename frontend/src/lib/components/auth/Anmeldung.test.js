@@ -111,3 +111,28 @@ describe('Anmeldung: der Grund einer Ablehnung', () => {
 		expect((await k.findByRole('alert')).textContent).toContain('E-Mail oder Passwort falsch.');
 	});
 });
+
+// Der Fokus ins E-Mail-Feld kommt 50 ms nach dem Aufbau. Ein Zeitgeber, der den Abbau überlebt,
+// griff in der CI nach dem Ende der Testdatei auf `document` zu, das es dann nicht mehr gab.
+describe('Anmeldung: Abbau', () => {
+	const fetchVorher = globalThis.fetch;
+
+	beforeEach(() => {
+		globalThis.fetch = vi.fn(() => new Promise(() => {}));
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		globalThis.fetch = fetchVorher;
+	});
+
+	it('räumt den Zeitgeber für den Fokus ab', () => {
+		const k = render(Anmeldung);
+		const suche = vi.spyOn(document, 'getElementById');
+		k.unmount();
+		vi.advanceTimersByTime(100);
+		expect(suche).not.toHaveBeenCalledWith('login-email');
+		suche.mockRestore();
+	});
+});
