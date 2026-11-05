@@ -192,3 +192,65 @@ describe('Seitenleiste: klappt beim Überfahren über dem Inhalt auf', () => {
 		expect(screen.queryByText('Medienkatalog')).toBeNull();
 	});
 });
+
+// Wie bei Gmail steht jede Zeile schmal wie aufgeklappt auf derselben Höhe: Die Überschriften
+// behalten schmal ihre leere Zeile, und „System" ist ein Eintrag wie Gmails „Mehr", der seine
+// Ziele erst auf Klick zeigt. Die Höhen misst e2e/navigation-aufklappen.spec.js.
+describe('Seitenleiste: Überschriften und „System" wie bei Gmail', () => {
+	const vorher = window.matchMedia;
+	const seiteVorher = uiStore.activeTab;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		window.matchMedia = /** @type {any} */ (
+			() => Object.assign(new EventTarget(), { matches: true })
+		);
+		uiStore.sidebarWahl = null;
+		uiStore.activeTab = 'media_catalog';
+		authStore.currentUser = {
+			vorname: 'Kim',
+			nachname: 'Probe',
+			rolle: 'mitarbeiter',
+			permissions: ['view_books', 'audit_logs']
+		};
+	});
+	afterEach(() => {
+		vi.useRealTimers();
+		window.matchMedia = vorher;
+		authStore.currentUser = null;
+		uiStore.sidebarWahl = null;
+		uiStore.activeTab = seiteVorher;
+	});
+
+	it('zeigt schmal den Eintrag „System" und seine Ziele erst nach dem Klick', async () => {
+		const screen = render(Seitenleiste);
+		const knopf = screen.getByRole('button', { name: 'System' });
+		expect(knopf.getAttribute('aria-expanded')).toBe('false');
+		expect(screen.queryByTitle('System-Logs')).toBeNull();
+
+		await fireEvent.click(knopf);
+		expect(knopf.getAttribute('aria-expanded')).toBe('true');
+		expect(screen.getByTitle('System-Logs')).toBeTruthy();
+	});
+
+	it('nennt die Überschriften, sobald die Leiste unter der Maus aufklappt', async () => {
+		const screen = render(Seitenleiste);
+		expect(screen.queryByText('Bibliothek')).toBeNull();
+
+		const leiste = /** @type {HTMLElement} */ (screen.container.querySelector('aside'));
+		await fireEvent.pointerEnter(leiste, { pointerType: 'mouse' });
+		vi.advanceTimersByTime(200);
+		await tick();
+		expect(screen.getByText('Bibliothek')).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'System' }).textContent?.trim()).toBe('System');
+	});
+
+	it('ist offen, wenn die angezeigte Seite in „System" liegt', () => {
+		uiStore.activeTab = 'system-logs';
+		const screen = render(Seitenleiste);
+		expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-expanded')).toBe(
+			'true'
+		);
+		expect(screen.getByTitle('System-Logs')).toBeTruthy();
+	});
+});

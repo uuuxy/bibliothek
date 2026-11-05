@@ -3691,12 +3691,17 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
 
 #### Oberfläche
 
-- **Die eingeklappte Navigation bleibt 64 px breit** und zeigt ihre 18 Ziele als Symbole ohne
+- **Die eingeklappte Navigation bleibt 64 px breit** und zeigt ihre Ziele als Symbole ohne
   Namen. Material 3, Navigation rail: „All navigation items require a one word label text".
   Entschieden gegen die Regel, weil der Platz für den Inhalt gebraucht wird; Namen unter den
   Symbolen brauchen eine breitere Leiste. Die Namen zeigt sie wie Gmail: Steht die Maus 200 ms
   über ihr, klappt sie über dem Inhalt auf, ohne dass ein Symbol seinen Platz wechselt oder der
-  Inhalt rückt (`Seitenleiste.svelte`, `e2e/navigation-aufklappen.spec.js`). Material 3 öffnet
+  Inhalt rückt (`Seitenleiste.svelte`, `e2e/navigation-aufklappen.spec.js`). Ebenfalls wie Gmail
+  steht jede Zeile schmal wie aufgeklappt auf derselben Höhe: Die Überschrift einer Gruppe behält
+  schmal ihre Zeile, ohne Text (bei Gmail die Zeile „Labels" mit dem Plus), und „System" ist ein
+  Eintrag mit Pfeil wie Gmails „Mehr", dessen vier Ziele erst ein Klick zeigt; liegt die
+  angezeigte Seite darin, ist er offen (`SeitenleisteZiele.svelte`). Material 3 erlaubt das: „An
+  expanded rail can reveal secondary destinations not visible when collapsed". Material 3 öffnet
   die ausgeklappte Leiste nur über das Menüsymbol („should always open from a menu icon");
   über dem Inhalt trägt sie dessen Werte für die überlagernde Leiste (nav-rail-expanded,
   modal-container-*). Ohne Maus, am Tablet, bleibt es bei den Symbolen und dem `title`.

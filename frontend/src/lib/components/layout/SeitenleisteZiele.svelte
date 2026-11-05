@@ -16,6 +16,18 @@
 	let { zu, schmal, nachWahl } = $props();
 
 	let systemOpen = $state(false);
+	// Liegt die angezeigte Seite in der Gruppe „System", ist sie offen: Der ausgewählte Eintrag
+	// soll zu sehen sein, auch in der schmalen Leiste.
+	const systemZiele = menueGruppen.find((g) => g.name === 'System')?.items.map((i) => i.id) ?? [];
+	$effect(() => {
+		if (systemZiele.includes(uiStore.activeTab)) systemOpen = true;
+	});
+
+	// Höhe und Polsterung einer Zeile, für die Ziele und den Eintrag „System" gleich: Über dem
+	// Inhalt behält die Zeile die Höhe der schmalen Leiste, damit unter der Maus nichts rückt.
+	const zeile = $derived(
+		schmal ? 'justify-center px-0 py-2.5' : zu ? 'gap-3 pr-3 pl-2.5 py-2.5' : 'gap-3 px-3 py-2'
+	);
 
 	/** @param {string} id */
 	function navigiere(id) {
@@ -50,7 +62,7 @@
 	<button
 		onclick={() => navigiere(item.id)}
 		class="relative flex w-full items-center rounded-full text-sm font-medium transition-colors
-			{schmal ? 'justify-center px-0 py-2.5' : zu ? 'gap-3 pr-3 pl-2.5 py-2.5' : 'gap-3 px-3 py-2'}
+			{zeile}
 			{uiStore.activeTab === item.id
 			? 'bg-secondary-container text-on-secondary-container font-semibold'
 			: 'text-on-surface-variant hover:bg-surface-container cursor-pointer'}"
@@ -70,33 +82,32 @@
 	</button>
 {/snippet}
 
-<!-- Gruppenüberschriften und die aufklappbare Gruppe „System" nur bei ausgeklappter Leiste:
-     Über dem Inhalt aufgeklappt rückten sie die Ziele unter der Maus nach unten. -->
+<!-- Wie bei Gmail steht jede Zeile in allen Zuständen auf derselben Höhe: Die Überschrift einer
+     Gruppe behält ihre Zeile auch in der schmalen Leiste, dort leer, und „System" ist ein Eintrag
+     wie Gmails „Mehr", schmal nur der Pfeil. So rückt beim Aufklappen unter der Maus nichts. -->
 <nav class="space-y-6 px-3 py-6">
 	{#each menueGruppen as group (group.name)}
 		{#if group.items.some((item) => darfSehen(item, authStore.currentUser))}
 			<div class="space-y-1">
 				{#if group.name === 'System'}
-					{#if !zu}
-						<button
-							onclick={() => (systemOpen = !systemOpen)}
-							class="group/sys mb-2 flex w-full cursor-pointer items-center justify-between px-3 text-left"
-							aria-expanded={systemOpen}
-							aria-controls="seitenleiste-system"
-						>
-							<span
-								class="text-on-surface-variant group-hover/sys:text-on-surface animate-fade-in text-sm font-medium transition-colors"
-								>{group.name}</span
-							>
-							<ChevronDown
-								class="text-on-surface-variant group-hover/sys:text-on-surface h-3.5 w-3.5 transition-transform duration-200 {systemOpen
-									? 'rotate-180'
-									: ''}"
-								aria-hidden="true"
-							/>
-						</button>
-					{/if}
-					{#if systemOpen || zu}
+					<button
+						onclick={() => (systemOpen = !systemOpen)}
+						class="text-on-surface-variant hover:bg-surface-container flex w-full cursor-pointer items-center rounded-full text-sm font-medium transition-colors {zeile}"
+						aria-label={group.name}
+						aria-expanded={systemOpen}
+						aria-controls="seitenleiste-system"
+					>
+						<ChevronDown
+							class="h-5 w-5 shrink-0 transition-transform duration-200 {systemOpen
+								? 'rotate-180'
+								: ''}"
+							aria-hidden="true"
+						/>
+						{#if !schmal}
+							<span class="animate-fade-in flex-1 whitespace-nowrap text-left">{group.name}</span>
+						{/if}
+					</button>
+					{#if systemOpen}
 						<div id="seitenleiste-system" class="animate-fade-in space-y-1">
 							{#each group.items as item (item.id)}
 								{#if darfSehen(item, authStore.currentUser)}
@@ -106,15 +117,14 @@
 						</div>
 					{/if}
 				{:else}
-					{#if !zu}
-						<!-- Sektions-Überschrift in der M3-Form: title-small auf on-surface-variant
-						     (Material Components Android, NavigationView: `subheaderTextAppearance` =
-						     `textAppearanceTitleSmall`, `subheaderColor` = `colorOnSurfaceVariant`). -->
-						<span
-							class="text-on-surface-variant animate-fade-in mb-2 block px-3 text-sm font-medium"
-							>{group.name}</span
-						>
-					{/if}
+					<!-- Sektions-Überschrift in der M3-Form: title-small auf on-surface-variant
+					     (Material Components Android, NavigationView: `subheaderTextAppearance` =
+					     `textAppearanceTitleSmall`, `subheaderColor` = `colorOnSurfaceVariant`).
+					     Schmal bleibt die Zeile leer, wie bei Gmail die Zeile „Labels". -->
+					<span
+						class="text-on-surface-variant mb-2 block h-5 px-3 text-sm font-medium whitespace-nowrap"
+						>{#if !schmal}<span class="animate-fade-in">{group.name}</span>{/if}</span
+					>
 					{#each group.items as item (item.id)}
 						{#if darfSehen(item, authStore.currentUser)}
 							{@render navItem(item)}

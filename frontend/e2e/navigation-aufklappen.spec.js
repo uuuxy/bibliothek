@@ -1,7 +1,8 @@
 // Die eingeklappte Navigation (64 px) klappt wie bei Gmail auf, solange die Maus über ihr steht,
 // und liegt dabei über dem Inhalt. Gemessen wird, was nur der Browser zeigt: Kein Symbol wechselt
-// seinen Platz, der Inhalt rückt nicht, die Fläche liegt oben und trägt Erhebung statt Rahmen
-// (e2e/m3-bauform.spec.js). Nach der Wahl eines Ziels ist der Inhalt wieder frei.
+// seinen Platz, die Überschriften erscheinen in ihrer Zeile, der Inhalt rückt nicht, die Fläche
+// liegt oben und trägt Erhebung statt Rahmen (e2e/m3-bauform.spec.js). Nach der Wahl eines Ziels
+// ist der Inhalt wieder frei.
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, menuepunkt } from './helpers.js';
 
@@ -25,6 +26,12 @@ test('Eingeklappte Navigation: klappt unter der Maus über dem Inhalt auf, ohne 
 	const suche = page.getByRole('searchbox', { name: 'Leser suchen' });
 	await expect(leiste.getByRole('button', { name: 'Navigation ausklappen' })).toBeVisible();
 	await expect(leiste.getByText('Mahnwesen', { exact: true })).toHaveCount(0);
+	// Wie bei Gmail: Die Überschrift hat schmal ihre Zeile ohne Text, „System" ist ein Eintrag wie
+	// „Mehr", und seine Ziele erscheinen erst nach dem Klick.
+	await expect(leiste.getByText('Verwaltung', { exact: true })).toHaveCount(0);
+	const system = leiste.getByRole('button', { name: 'System', exact: true });
+	await expect(system).toBeVisible();
+	await expect(menuepunkt(page, 'System-Logs')).toHaveCount(0);
 
 	const vorher = await page.evaluate(LAGE);
 	const sucheVorher = await suche.boundingBox();
@@ -38,6 +45,10 @@ test('Eingeklappte Navigation: klappt unter der Maus über dem Inhalt auf, ohne 
 	// Die Breite wächst über 300 ms; gemessen wird danach.
 	await expect.poll(async () => (await leiste.locator('> div').boundingBox())?.width).toBe(256);
 
+	await expect(
+		leiste.getByText('Verwaltung', { exact: true }),
+		'Überschrift aufgeklappt'
+	).toBeVisible();
 	expect(await page.evaluate(LAGE), 'Symbole nach dem Aufklappen').toEqual(vorher);
 	expect(await suche.boundingBox(), 'der Inhalt darf nicht rücken').toEqual(sucheVorher);
 	expect((await leiste.boundingBox())?.width, 'Platz der Leiste im Seitenaufbau').toBe(64);
@@ -55,6 +66,11 @@ test('Eingeklappte Navigation: klappt unter der Maus über dem Inhalt auf, ohne 
 	expect(flaeche.rahmen, 'über dem Inhalt kein Rahmen (M3: Rahmen oder Erhebung)').toBe('0px');
 	expect(flaeche.schatten, 'über dem Inhalt mit Erhebung').not.toBe('none');
 	expect(flaeche.obenAuf, 'die Fläche liegt über dem Inhalt').toBe(true);
+
+	// „System" aufklappen ist keine Wahl: Die Leiste bleibt offen und zeigt seine Ziele.
+	await system.click();
+	await expect(menuepunkt(page, 'System-Logs')).toBeVisible();
+	await expect(name, 'nach „System" noch aufgeklappt').toBeVisible();
 
 	await name.click();
 	await expect(page).toHaveURL(/\/mahnwesen$/);
