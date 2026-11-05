@@ -73,15 +73,40 @@ func NewLMFAbfragen(pool db.Pool) *LMFAbfragen {
 // Klassen kommen sortiert mit, damit „6F1/6F2" in Oberfläche und PDF gleich aussieht.
 // Entwürfe sieht nur, wer MitEntwuerfen setzt.
 func (a *LMFAbfragen) LadeTermine(ctx context.Context, ab time.Time, f LMFListenFilter) ([]LMFTermin, error) {
-	rows, err := a.db.Query(ctx, `
-		SELECT t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
-		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse) COLLATE deutsch)
-		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
+	return a.ladeTermine(ctx, `
+		SELECT `+sqlLMFTerminSpalten+`
 		FROM lmf_termine t
 		JOIN lmf_plaene p ON p.id = t.plan_id
 		WHERE ($1::date IS NULL OR t.datum >= $1::date)
 		  AND ($2 OR p.veroeffentlicht_am IS NOT NULL)
 		ORDER BY t.datum, t.stunde, t.position`, nullbaresDatum(ab), f.MitEntwuerfen)
+}
+
+// LadeNaechstenPlan liefert die Termine des veröffentlichten Plans, der als nächster dran ist:
+// des Plans mit dem frühesten Termin am oder nach dem Tag. Ein laufender Plan steht so bis
+// einschließlich zu seinem letzten Tag, ab dem Tag danach der folgende. Gibt es keinen solchen
+// Termin, ist die Liste leer.
+func (a *LMFAbfragen) LadeNaechstenPlan(ctx context.Context, tag time.Time) ([]LMFTermin, error) {
+	return a.ladeTermine(ctx, `
+		SELECT `+sqlLMFTerminSpalten+`
+		FROM lmf_termine t
+		WHERE t.plan_id = (
+			SELECT n.plan_id FROM lmf_termine n
+			JOIN lmf_plaene p ON p.id = n.plan_id
+			WHERE p.veroeffentlicht_am IS NOT NULL AND n.datum >= $1::date
+			ORDER BY n.datum, n.stunde, n.position
+			LIMIT 1)
+		ORDER BY t.datum, t.stunde, t.position`, tag.In(schulzeit.Zone()).Format("2006-01-02"))
+}
+
+// sqlLMFTerminSpalten sind die Spalten eines Termins (Alias t) in der Reihenfolge, in der
+// ladeTermine sie liest.
+const sqlLMFTerminSpalten = `t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
+		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse) COLLATE deutsch)
+		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')`
+
+func (a *LMFAbfragen) ladeTermine(ctx context.Context, sql string, args ...any) ([]LMFTermin, error) {
+	rows, err := a.db.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}

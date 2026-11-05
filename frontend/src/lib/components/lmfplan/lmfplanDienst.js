@@ -91,12 +91,11 @@ export function artBeschriftung(art) {
 	return ARTEN.find((a) => a.wert === art)?.label ?? art;
 }
 
-/** Lädt die Termine veröffentlichter Pläne ab Schuljahresbeginn (alle = true: auch
- *  ältere) — die Tabelle des Portals und der PDF.
- *  @param {boolean} [alle]
- *  @returns {Promise<{ ab: string, termine: LmfTermin[], eingangsjahrgaenge?: number[] }>} */
-export async function ladePlan(alle = false) {
-	const res = await apiFetch(`/api/lmf-termine${alle ? '?alle=1' : ''}`);
+/** Lädt die Termine des nächsten veröffentlichten Plans (Server: LMFAbfragen.LadeNaechstenPlan)
+ *  — die Tabelle des Portals; das PDF des Portals zeigt denselben Plan.
+ *  @returns {Promise<{ termine: LmfTermin[], eingangsjahrgaenge?: number[] }>} */
+export async function ladePlan() {
+	const res = await apiFetch('/api/lmf-termine');
 	if (!res.ok) throw new Error(await leseApiFehler(res, 'LMF-Plan konnte nicht geladen werden'));
 	return await res.json();
 }
@@ -306,10 +305,9 @@ export async function verwerfePlan(art) {
 /** Lädt das PDF und öffnet den Download — Verwaltung und Portal gleich. entwurf = true
  *  (nur der Planer, edit_books) nimmt den unveröffentlichten Entwurf mit: das PDF für
  *  die Abnahme durch die Schulleitung.
- *  @param {boolean} [alle] @param {boolean} [entwurf] */
-export async function ladePdf(alle = false, entwurf = false) {
-	const pfad = entwurf ? '/api/lmf-termine/entwurf/pdf' : '/api/lmf-termine/pdf';
-	const res = await apiFetch(`${pfad}${alle ? '?alle=1' : ''}`);
+ *  @param {boolean} [entwurf] */
+export async function ladePdf(entwurf = false) {
+	const res = await apiFetch(entwurf ? '/api/lmf-termine/entwurf/pdf' : '/api/lmf-termine/pdf');
 	if (!res.ok) throw new Error(await leseApiFehler(res, 'PDF konnte nicht erzeugt werden'));
 	const blob = await res.blob();
 	const url = URL.createObjectURL(blob);

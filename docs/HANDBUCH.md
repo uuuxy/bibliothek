@@ -435,9 +435,12 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   Regel: Abschlussklassen zuerst, dann Jahrgang absteigend, Oberstufe unten, am Ende die Zeilen „Nachzügler" und „Aufräumen" wie im Plan der Schule.
 
 Das Kollegium sieht den **veröffentlichten** Plan in _Mein Portal → LMF-Plan_, für alle
-gleich und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (Wochentag,
-Datum, Stunde, Klassen, Besonderheiten — so, wie sie im Planer eingetragen sind),
-getrennt nach Büchertausch und Bücherausgabe.
+gleich und immer auf dem aktuellen Stand, und zwar nur den, der als nächster dran ist: bis
+einschließlich zum letzten Tag des Büchertauschs diesen, ab dem Tag danach die Ausgabe nach den
+Sommerferien. Ist der nächste Plan noch nicht veröffentlicht, steht dort „Der nächste Plan folgt“.
+Die Zeilen von heute sind farbig hinterlegt, damit man sofort sieht, welche Klassen dran sind.
+_Als PDF_ liefert denselben Plan als die gewohnte Liste (Wochentag, Datum, Stunde, Klassen,
+Besonderheiten — so, wie sie im Planer eingetragen sind), ohne Hervorhebung.
 
 **In die Spalte „Besonderheiten" gehört kein Schülername.** Was dort steht, liest das ganze
 Kollegium im Portal und steht im PDF, das weitergegeben und ausgedruckt wird — der Plan ordnet

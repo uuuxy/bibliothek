@@ -1,5 +1,8 @@
 <!-- @component PortalLmfPlan — der LMF-Plan im Kollegiums-Portal: dieselbe Tabelle wie
      in der Bibliothek, für alle gleich, immer der aktuelle Stand (kein abgelegtes PDF).
+     Nur der Plan, der als nächster dran ist (Server: LMFAbfragen.LadeNaechstenPlan): bis zum
+     letzten Tag des Büchertauschs dieser, danach die Ausgabe. Die Zeilen von heute sind
+     hervorgehoben, im PDF nicht.
      Kein Bezug auf Klassenleitungen: Auch Fachlehrer gehen mit ihren Klassen zum
      Büchertausch, und nicht jede Klasse hat eine hinterlegte Adresse. -->
 <script>
@@ -11,6 +14,7 @@
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
 	import * as dienst from '../lmfplan/lmfplanDienst.js';
 	import { fehlertext } from '../../utils/fehlertext.js';
+	import { localISO } from '../../utils/datum.js';
 	import { abonniereNeuladen } from '../../liveEvents.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 
@@ -20,6 +24,7 @@
 	let eingangsjahrgaenge = $state([]);
 	let laedt = $state(true);
 	let fehler = $state('');
+	let heute = $state(localISO(new Date()));
 	// Es gilt die jüngste Anfrage: Der alte Plan stünde sonst wieder da, wenn seine Antwort zuletzt kommt.
 	let ladeNr = 0;
 	let geladen = false;
@@ -54,6 +59,16 @@
 		hole();
 	}
 
+	// Mit dem Tag wechseln die hervorgehobenen Zeilen und nach dem letzten Tag eines Plans der Plan
+	// selbst. Der Rechner im Lehrerzimmer läuft über Nacht; die Minute holt auch ein aufgewachter
+	// Rechner nach, dessen Zeitgeber im Schlaf stand.
+	function pruefeTag() {
+		const tag = localISO(new Date());
+		if (tag === heute) return;
+		heute = tag;
+		hole();
+	}
+
 	onMount(() => {
 		hole();
 		// „Immer auf dem aktuellen Stand" galt bisher nur im Moment des Öffnens: Im
@@ -62,15 +77,19 @@
 		// (liveEvents.js). Das Signal trägt keine Daten; geholt wird über den eigenen
 		// Endpunkt, der nur veröffentlichte Pläne kennt. Auch nach einer Unterbrechung: Der Rechner
 		// im Lehrerzimmer schläft zwischendurch.
-		return abonniereNeuladen('lmf-plan', hole);
+		const abbestellen = abonniereNeuladen('lmf-plan', hole);
+		const takt = setInterval(pruefeTag, 60_000);
+		return () => {
+			abbestellen();
+			clearInterval(takt);
+		};
 	});
 </script>
 
 <div class="flex flex-wrap items-center justify-between gap-3 pb-2">
 	<p class="text-sm text-on-surface-variant max-w-2xl">
-		Wann welche Klasse ihre Schulbücher tauscht oder bekommt: der Büchertausch vor den Sommerferien
-		und die Ausgabe an die neuen Klassen danach — der Plan der Bibliothek, immer auf dem aktuellen
-		Stand.
+		Wann welche Klasse ihre Schulbücher tauscht oder bekommt: immer der Plan, der als nächster dran
+		ist, auf dem aktuellen Stand der Bibliothek.
 	</p>
 	<Button
 		variant="secondary"
@@ -95,11 +114,11 @@
 		>
 			<CalendarDays class="h-8 w-8" aria-hidden="true" />
 		</div>
-		<h3 class="font-bold text-on-surface">Noch kein Plan für dieses Schuljahr</h3>
+		<h3 class="font-bold text-on-surface">Der nächste Plan folgt</h3>
 		<p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-			Sobald die Bibliothek den Plan veröffentlicht, steht er hier.
+			Sobald die Bibliothek ihn veröffentlicht, steht er hier.
 		</p>
 	</div>
 {:else}
-	<LmfPlanTabelle {termine} {eingangsjahrgaenge} />
+	<LmfPlanTabelle {termine} {eingangsjahrgaenge} {heute} />
 {/if}

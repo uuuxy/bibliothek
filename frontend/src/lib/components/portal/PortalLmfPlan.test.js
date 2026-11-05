@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, screen, waitFor } from '@testing-library/svelte';
 import PortalLmfPlan from './PortalLmfPlan.svelte';
 import { ladePdf, ladePlan } from '../lmfplan/lmfplanDienst.js';
@@ -20,9 +20,8 @@ vi.mock('../../liveEvents.js', () => ({
 	}
 }));
 
-/** @type {{ ab: string, termine: import('../lmfplan/lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge: number[] }} */
+/** @type {{ termine: import('../lmfplan/lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge: number[] }} */
 const PLAN = {
-	ab: '2026-08-01',
 	termine: [
 		{ id: 'a', datum: '2027-06-28', stunde: 3, art: 'rueckgabe', klassen: ['09H1'], vermerk: '' }
 	],
@@ -148,5 +147,24 @@ describe('PortalLmfPlan: der Plan bleibt aktuell', () => {
 
 		seite.unmount();
 		expect(leitung.hoerer.has('lmf-plan')).toBe(false);
+	});
+});
+
+// Im Lehrerzimmer läuft die Seite über Nacht. Am Morgen sind die Zeilen von gestern nicht mehr
+// hervorgehoben, und der Plan kommt neu, denn nach dem letzten Tag des Büchertauschs gilt die Ausgabe.
+describe('PortalLmfPlan: heute', () => {
+	afterEach(() => vi.useRealTimers());
+
+	it('hebt die Zeilen von heute hervor; nach Mitternacht wandert die Hervorhebung, und der Plan kommt neu', async () => {
+		vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+		vi.setSystemTime(new Date(2027, 5, 28, 23, 59, 30));
+		const { container } = render(PortalLmfPlan);
+		const heutige = () => container.querySelector('tr[aria-current="date"]');
+		await waitFor(() => expect(heutige()?.textContent).toContain('09H1'));
+		const vorher = vi.mocked(ladePlan).mock.calls.length;
+
+		await vi.advanceTimersByTimeAsync(60_000);
+		await waitFor(() => expect(heutige()).toBeNull());
+		expect(vi.mocked(ladePlan).mock.calls.length).toBe(vorher + 1);
 	});
 });

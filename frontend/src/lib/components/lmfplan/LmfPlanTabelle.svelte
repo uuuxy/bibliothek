@@ -2,7 +2,9 @@
      ein Block (Büchertausch vor den Sommerferien, Bücherausgabe nach den Sommerferien),
      darunter der eine Satz, was dort geschieht, darin Wochentag, Datum, Stunde, Klassen,
      Besonderheiten (Vermerk, wie die Bibliothek ihn geschrieben hat). Lesend — der Portal-Reiter
-     und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer. -->
+     und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer.
+     `heute` (JJJJ-MM-TT) hebt die Zeilen dieses Tages hervor, damit man sofort sieht, welche
+     Klassen heute dran sind (Tabelle: aria-current="date"). -->
 <script>
 	import Tabelle from '../ui/Tabelle.svelte';
 	import {
@@ -14,8 +16,8 @@
 		wochentag
 	} from './lmfplanDienst.js';
 
-	/** @type {{ termine: import('./lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[] }} */
-	let { termine, eingangsjahrgaenge = [] } = $props();
+	/** @type {{ termine: import('./lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[], heute?: string }} */
+	let { termine, eingangsjahrgaenge = [], heute = '' } = $props();
 
 	const bloecke = $derived(
 		ARTEN.map((a) => ({
@@ -45,7 +47,7 @@
 				</thead>
 				<tbody>
 					{#each block.zeilen as t (t.id)}
-						<tr>
+						<tr aria-current={heute !== '' && t.datum === heute ? 'date' : undefined}>
 							<td>{wochentag(t.datum)}</td>
 							<td class="tabular-nums">{datumKurz(t.datum)}</td>
 							<td>{stundeText(t.stunde)}</td>

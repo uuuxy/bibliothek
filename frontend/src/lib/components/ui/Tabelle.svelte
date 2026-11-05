@@ -11,6 +11,8 @@
        - Hover: State-Layer 8 % `on-surface` — dieselbe Regel wie bei den Knöpfen.
        - Gewählt: `aria-selected="true"` an der Zeile → `secondary-container`, wie in
          M3-Listen.
+       - Heute: `aria-current="date"` an der Zeile (LMF-Plan im Portal) → dieselbe Fläche, nur auf
+         dem Bildschirm: die Zeile, die jetzt gilt. Eine Tabelle mit beiden Zuständen gibt es nicht.
        - Waagerechter Innenabstand 16 px; die erste und letzte Zelle bekommen ihn auch,
          damit Text und Kopf am Seitenrand auf einer Linie stehen.
      Was die Zellen noch selbst bestimmen: Breite (w-*), Ausrichtung (text-right; senkrecht
@@ -96,14 +98,21 @@
 	table :global(tbody tr:hover) {
 		background-color: color-mix(in oklab, var(--color-on-surface) 8%, transparent);
 	}
-	table :global(tbody tr[aria-selected='true']) {
+	table :global(tbody tr[aria-selected='true']),
+	table :global(tbody tr[aria-current='date']) {
 		background-color: var(--color-secondary-container);
 	}
-	table :global(tbody tr[aria-selected='true']:hover) {
+	table :global(tbody tr[aria-selected='true']:hover),
+	table :global(tbody tr[aria-current='date']:hover) {
 		background-color: color-mix(
 			in oklab,
 			var(--color-on-surface) 8%,
 			var(--color-secondary-container)
 		);
+	}
+	@media print {
+		table :global(tbody tr[aria-current='date']) {
+			background-color: transparent;
+		}
 	}
 </style>

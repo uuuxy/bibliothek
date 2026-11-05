@@ -75,4 +75,18 @@ describe('LmfPlanTabelle', () => {
 		expect(zeilen.find((z) => z.includes('07G1'))).not.toContain('nur Rückgabe');
 		expect(getByText(/Jahrgang 5 und 7/)).toBeTruthy();
 	});
+
+	// Wer im Portal nachsieht, will wissen, welche Klassen heute dran sind: Die Zeilen des Tages
+	// tragen aria-current="date", das die Tabelle hervorhebt; ohne heute keine.
+	it('hebt die Zeilen von heute hervor und nur diese', () => {
+		const { getAllByRole, rerender } = render(LmfPlanTabelle, { termine, heute: '2027-07-01' });
+		const aktuelle = () =>
+			getAllByRole('row')
+				.filter((tr) => tr.getAttribute('aria-current') === 'date')
+				.map((tr) => tr.textContent ?? '');
+		expect(aktuelle()).toHaveLength(1);
+		expect(aktuelle()[0]).toContain('10R2 / 10R3');
+		rerender({ termine, heute: '' });
+		expect(aktuelle()).toHaveLength(0);
+	});
 });

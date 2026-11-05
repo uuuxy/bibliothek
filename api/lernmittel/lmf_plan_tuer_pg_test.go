@@ -57,20 +57,31 @@ func TestLMFPlan_UeberDenRouter_StehtAufDerBasisDesServers(t *testing.T) {
 		t.Errorf("%d Pläne der Art ausgabe in der Datenbank, erwartet 1", n)
 	}
 
-	// Die Liste für das Kollegium beginnt am 1. August des Schuljahres, das die Uhr des Servers
-	// nennt.
-	rec = rufe(http.MethodGet, "/api/lmf-termine", "")
-	if rec.Code != http.StatusOK {
-		t.Fatalf("GET /api/lmf-termine: Status %d: %s", rec.Code, rec.Body.String())
+	// Die Liste für das Kollegium zeigt den nächsten Plan, gesehen vom Tag, den die Uhr des Servers
+	// nennt: 2001 steht die Ausgabe 2027 noch an, 2030 ist sie vorbei.
+	if rec := rufe(http.MethodPost, "/api/lmf-plan/ausgabe/veroeffentlichen", ""); rec.Code != http.StatusOK {
+		t.Fatalf("POST /api/lmf-plan/ausgabe/veroeffentlichen: Status %d: %s", rec.Code, rec.Body.String())
 	}
-	var antwort struct {
-		Ab string `json:"ab"`
+	zaehleTermine := func() int {
+		t.Helper()
+		rec := rufe(http.MethodGet, "/api/lmf-termine", "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("GET /api/lmf-termine: Status %d: %s", rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Termine []struct{} `json:"termine"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort ist kein JSON (%s): %v", rec.Body.String(), err)
+		}
+		return len(antwort.Termine)
 	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
-		t.Fatalf("Antwort ist kein JSON (%s): %v", rec.Body.String(), err)
+	if n := zaehleTermine(); n != 1 {
+		t.Errorf("%d Termine am 01.03.2001, erwartet den einen der Ausgabe 2027", n)
 	}
-	if antwort.Ab != "2000-08-01" {
-		t.Errorf("Liste ab %q, erwartet 2000-08-01: Die Türen rechnen nicht mit der Uhr des Servers", antwort.Ab)
+	srv.Uhr = func() time.Time { return time.Date(2030, time.March, 1, 10, 0, 0, 0, schulzeit.Zone()) }
+	if n := zaehleTermine(); n != 0 {
+		t.Errorf("%d Termine am 01.03.2030, erwartet keinen: Die Türen rechnen nicht mit der Uhr des Servers", n)
 	}
 }
 

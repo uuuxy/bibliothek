@@ -221,7 +221,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		await lehrer.getByRole('tab', { name: 'LMF-Plan' }).click();
 		const portal = lehrer.getByRole('region', { name: 'Bücherausgabe nach den Sommerferien' });
 		const portalZeile = portal.getByRole('row').filter({ hasText: vermerk });
-		await expect(lehrer.getByText('Noch kein Plan für dieses Schuljahr')).toBeVisible();
+		await expect(lehrer.getByText('Der nächste Plan folgt')).toBeVisible();
 		await expect(portalZeile).toHaveCount(0);
 		// Der Entwurf ist auch über die Leitung unsichtbar, nicht nur in der Oberfläche.
 		const entwurfListe = await lehrer.request.get('/api/lmf-termine');

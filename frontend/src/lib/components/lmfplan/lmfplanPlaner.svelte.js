@@ -214,7 +214,7 @@ export function erzeugePlaner() {
 	}
 
 	// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
-	const pdf = () => dienst.ladePdf(false, true).catch((e) => melde(fehlertext(e), 'error'));
+	const pdf = () => dienst.ladePdf(true).catch((e) => melde(fehlertext(e), 'error'));
 
 	return {
 		zustand,

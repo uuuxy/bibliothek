@@ -8,6 +8,7 @@ package lernmittel
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -22,42 +23,27 @@ import (
 
 // lmfTermineAntwort ist die Antwort von GET /api/lmf-termine.
 type lmfTermineAntwort struct {
-	// Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.
-	Ab      string                 `json:"ab"`
+	// Termine sind die des nächsten Plans (LMFAbfragen.LadeNaechstenPlan).
 	Termine []repository.LMFTermin `json:"termine"`
 	// Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher
 	// bekommen — für den erklärenden Satz über der Tabelle.
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
 }
 
-// lmfPlanAb bestimmt, ab wann gelistet wird: der 1. August des laufenden Schuljahres,
-// damit im Juni die neue Rückgabe und die August-Ausgabe zusammen stehen und im
-// Herbst die alte Rückgabe verschwunden ist; ?alle=1 hebt die Grenze auf.
-func (t *Tueren) lmfPlanAb(r *http.Request) time.Time {
-	if r.URL.Query().Get("alle") == "1" {
-		return time.Time{}
-	}
-	return repository.SchuljahrBeginn(t.Jetzt())
-}
-
-// LMFTermine listet den Plan.
+// LMFTermine listet den Plan für das Kollegium: nur den nächsten, damit niemand zwischen
+// Büchertausch und Ausgabe suchen muss, welcher gerade gilt.
 func (t *Tueren) LMFTermine() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
-		ab := t.lmfPlanAb(r)
 		eingang, err := t.lmfEingangsjahrgaenge(r.Context())
 		if err != nil {
 			return apierrors.Internal("Einstellungen laden", err)
 		}
-		termine, err := abfragen.LadeTermine(r.Context(), ab, repository.LMFListenFilter{})
+		termine, err := abfragen.LadeNaechstenPlan(r.Context(), t.Jetzt())
 		if err != nil {
 			return apierrors.Internal("LMF-Plan laden", err)
 		}
-		antwort := lmfTermineAntwort{Termine: termine, Eingangsjahrgaenge: eingang}
-		if !ab.IsZero() {
-			antwort.Ab = ab.Format("2006-01-02")
-		}
-		tuer.AntworteJSON(w, http.StatusOK, antwort)
+		tuer.AntworteJSON(w, http.StatusOK, lmfTermineAntwort{Termine: termine, Eingangsjahrgaenge: eingang})
 		return nil
 	})
 }
@@ -129,9 +115,10 @@ func lmfPlanAbschnitte(termine []repository.LMFTermin, eingang []int) ([]pdf.LMF
 	return abschnitte, nil
 }
 
-// LMFPlanPDF liefert den Plan als PDF in der Form der früheren Excel-Liste.
-// mitEntwuerfen = true ist die Planer-Route (edit_books): auch der unveröffentlichte
-// Entwurf, damit er zur Abnahme an die Schulleitung gehen kann.
+// LMFPlanPDF liefert den Plan als PDF in der Form der früheren Excel-Liste: für das Kollegium
+// denselben Plan wie LMFTermine. mitEntwuerfen = true ist die Planer-Route (edit_books): alle
+// Pläne ab Beginn des Schuljahres samt unveröffentlichtem Entwurf, damit er zur Abnahme an die
+// Schulleitung gehen kann.
 func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		abfragen := repository.NewLMFAbfragen(t.DB.Pool)
@@ -140,8 +127,7 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-		termine, err := abfragen.LadeTermine(r.Context(), t.lmfPlanAb(r),
-			repository.LMFListenFilter{MitEntwuerfen: mitEntwuerfen})
+		termine, err := t.lmfPlanFuerPDF(r.Context(), abfragen, mitEntwuerfen)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
@@ -166,4 +152,12 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
 		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))
 	}
+}
+
+func (t *Tueren) lmfPlanFuerPDF(ctx context.Context, abfragen *repository.LMFAbfragen, mitEntwuerfen bool) ([]repository.LMFTermin, error) {
+	if mitEntwuerfen {
+		return abfragen.LadeTermine(ctx, repository.SchuljahrBeginn(t.Jetzt()),
+			repository.LMFListenFilter{MitEntwuerfen: true})
+	}
+	return abfragen.LadeNaechstenPlan(ctx, t.Jetzt())
 }

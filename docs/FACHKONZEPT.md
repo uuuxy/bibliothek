@@ -139,7 +139,9 @@ die Versetzung verschiebt Schüler, nicht Namen), ohne Vorjahr die Regel
 `LMFAbfragen.LadeKlassenMitSchuelern` (Abschluss zuerst via `AbschlussklasseSQL`, Jahrgang absteigend,
 Jahrgang ≥ 11 oder ohne Ziffer = Oberstufe → ausgelassen). `PUT` rechnet und speichert
 (gleiches Schuljahr = ersetzen, anderes = neuer Plan), `DELETE` verwirft den neuesten.
-Lesen für Portal und PDF: `GET /api/lmf-termine[/pdf]` mit Sitzung. Einzel-
+Lesen für Portal und PDF: `GET /api/lmf-termine[/pdf]` mit Sitzung, beide nur der
+nächste veröffentlichte Plan (`LMFAbfragen.LadeNaechstenPlan`: der Plan des frühesten Termins
+ab heute; ein laufender Plan steht bis einschließlich zu seinem letzten Tag). Einzel-
 Termin-Routen gibt es nicht — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
 Seite: Menü _System → Schuljahreswechsel_ (`LmfPlan.svelte`; der Plan
 wird ein- bis zweimal im Jahr gebraucht — Abgänger bleiben unter Verwaltung, LUSD und
