@@ -14,6 +14,7 @@
 	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import { BookOpen, Trash } from '@lucide/svelte';
 
 	/** @type {{ exemplare: any[], titel: any, ladeAlles: (id: string) => void }} */
@@ -128,10 +129,11 @@
 </script>
 
 {#if exemplare.length === 0}
-	<div class="py-16 flex flex-col items-center text-on-surface-variant gap-3">
-		<BookOpen class="w-10 h-10" aria-hidden="true" />
-		<p class="font-semibold text-sm">Keine physischen Exemplare mit Barcodes angelegt.</p>
-	</div>
+	<SuchZustand
+		symbol={BookOpen}
+		titel="Keine Exemplare"
+		hinweis="„Titel bearbeiten“ trägt den Bestand ein."
+	/>
 {:else}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 		{#each exemplare as ex (ex.id)}

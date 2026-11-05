@@ -300,7 +300,7 @@
 	</div>
 
 	{#if laedt}
-		<p class="animate-pulse py-16 text-center text-on-surface-variant">Lade Exemplare…</p>
+		<p class="animate-pulse py-16 text-center text-on-surface-variant">Lade Exemplare …</p>
 	{:else if ladefehler}
 		<!-- Nicht „Für alle Exemplare wurden Etiketten gedruckt": Die Liste kam nicht. -->
 		<LadeFehler titel="Exemplare nicht geladen" text={ladefehler} onerneut={laden} />

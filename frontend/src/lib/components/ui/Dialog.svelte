@@ -88,9 +88,11 @@
 			use:fokusFalle
 		>
 			{#if header}
-				<div
-					class="p-6 border-b border-outline-variant bg-surface/50 flex items-center justify-between"
-				>
+				<!-- Ohne Linie und eigene Fläche: Der einfache Dialog von Material 3 hat keine
+				     Kopfzeile, der Titel steht auf der Fläche des Dialogs. -mb-2 ergibt mit den
+				     24 px Innenabstand des Inhalts die 16 px zwischen Titel und Text (Specs:
+				     „Padding between title and body 16dp"). -->
+				<div class="px-6 pt-6 -mb-2 flex items-center justify-between gap-4">
 					{@render header()}
 					{#if onclose}
 						<button

@@ -114,7 +114,7 @@
 		<!-- Die Auswahl in der Form der Kategorienliste daneben (settings/KategorieListe). -->
 		<div class="lg:w-1/3 flex flex-col gap-1">
 			{#if laedt}
-				<div class="py-4 text-sm text-center text-on-surface-variant">Lade Vorlagen...</div>
+				<div class="py-4 text-sm text-center text-on-surface-variant">Lade Vorlagen …</div>
 			{:else}
 				{#each vorlagen as t, _i (_i)}
 					{@const gewaehlt = gewaehlteKennung === t.id}
@@ -164,7 +164,7 @@
 
 					<div class="flex justify-end pt-2">
 						<Button size="lg" onclick={speichereVorlage} disabled={speichert} class="px-6">
-							{speichert ? 'Speichern...' : 'Vorlage Speichern'}
+							{speichert ? 'Wird gespeichert …' : 'Vorlage speichern'}
 						</Button>
 					</div>
 				</div>

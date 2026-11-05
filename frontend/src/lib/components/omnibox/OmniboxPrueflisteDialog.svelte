@@ -43,7 +43,7 @@
 		<div class="p-8">
 			<div class="flex items-center gap-3 mb-2">
 				<ClipboardCheck class="h-8 w-8 text-primary" aria-hidden="true" />
-				<h2 id="zubehoer-titel" class="text-xl font-bold text-on-surface">Zubehör prüfen</h2>
+				<h2 id="zubehoer-titel" class="dialog-titel">Zubehör prüfen</h2>
 			</div>
 			<p class="text-sm text-on-surface-variant mb-4">
 				<strong>{omniboxStore.prueflisteAnfrage.geraet?.modellname}</strong>

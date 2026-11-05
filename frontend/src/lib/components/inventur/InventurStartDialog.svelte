@@ -66,9 +66,7 @@
 
 <Dialog {open} onclose={onClose} size="md" beschriftetDurch="inventur-start-titel">
 	<div class="space-y-4 p-6">
-		<h2 id="inventur-start-titel" class="text-lg font-bold text-on-surface">
-			Bereich der Inventur wählen
-		</h2>
+		<h2 id="inventur-start-titel" class="dialog-titel">Bereich der Inventur wählen</h2>
 		<p class="text-sm leading-relaxed text-on-surface-variant">
 			Welcher Teil der Bibliothek soll geprüft werden?
 		</p>

@@ -10,6 +10,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import { Plus } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[], titel: any }} */
 	let { vormerkungen = $bindable(), titel } = $props();
@@ -74,9 +75,11 @@
 	}
 </script>
 
-<div class="flex justify-end">
+<!-- Vorn bei der Liste wie „<Sache> anlegen“ (ARCHITEKTUR 5.3), das Plus als Symbol. -->
+<div class="flex">
 	<Button onclick={() => (isAdding = !isAdding)}>
-		{isAdding ? 'Abbrechen' : '+ Schüler vormerken'}
+		{#if !isAdding}<Plus class="w-4 h-4" aria-hidden="true" />{/if}
+		{isAdding ? 'Abbrechen' : 'Schüler vormerken'}
 	</Button>
 </div>
 
@@ -85,7 +88,7 @@
 		{#if !rechte.einsehen}
 			<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
 			<p class="text-sm text-on-surface-variant">
-				Die Suche nach Lesern braucht das Recht „Leserdatei anzeigen“ (view_students).
+				Die Suche nach Schülern braucht das Recht „Leserdatei anzeigen“.
 			</p>
 		{:else}
 			<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht. -->
@@ -96,18 +99,18 @@
 						etikett="Schüler suchen (Name oder Ausweisnummer)"
 						bind:value={suche}
 						onkeydown={(e) => e.key === 'Enter' && sucheLeser()}
-						placeholder="z.B. Max Mustermann"
+						placeholder="z. B. Max Mustermann"
 						class="flex-1"
 					/>
 					<Button variant="secondary" onclick={sucheLeser} disabled={isSearching}>
-						{isSearching ? '...' : 'Suchen'}
+						{isSearching ? 'Wird gesucht …' : 'Suchen'}
 					</Button>
 				</div>
 				<Feld
 					id="notiz-input"
 					etikett="Interne Notiz (optional)"
 					bind:value={notiz}
-					placeholder="z.B. Braucht es dringend für Referat"
+					placeholder="z. B. Braucht es dringend für Referat"
 					class="flex-1 w-full"
 				/>
 			</div>

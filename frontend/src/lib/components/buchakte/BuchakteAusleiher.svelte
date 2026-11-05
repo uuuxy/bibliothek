@@ -8,6 +8,7 @@
 	import { fmtDateDE as fmtDate } from '../../utils/datum.js';
 	import { Printer, Users } from '@lucide/svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 
 	/** @type {{ ausleiher: any[], titel: any, onBack: () => void }} */
 	let { ausleiher, titel, onBack } = $props();
@@ -39,10 +40,11 @@
 </script>
 
 {#if ausleiher.length === 0}
-	<div class="py-16 flex flex-col items-center text-on-surface-variant gap-3">
-		<Users class="w-10 h-10" aria-hidden="true" />
-		<p class="font-semibold text-sm">Aktuell niemand hat dieses Buch ausgeliehen.</p>
-	</div>
+	<SuchZustand
+		symbol={Users}
+		titel="Keine Ausleihen"
+		hinweis="Kein Exemplar dieses Titels ist ausgeliehen."
+	/>
 {:else}
 	<!-- Filters -->
 	<div class="flex gap-3 mb-4">

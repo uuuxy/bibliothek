@@ -70,9 +70,7 @@
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch="mittel-dialog-titel">
 	<div class="space-y-4 p-6">
-		<h2 id="mittel-dialog-titel" class="text-lg font-bold text-on-surface">
-			Topf der Bestellung ändern
-		</h2>
+		<h2 id="mittel-dialog-titel" class="dialog-titel">Topf der Bestellung ändern</h2>
 		<p class="text-sm leading-relaxed text-on-surface-variant">
 			Ändert nur die Zuordnung in dieser Anwendung. Das Anschreiben, das der Händler bekommen hat,
 			bleibt unverändert. Die Änderung wird mit Grund protokolliert.

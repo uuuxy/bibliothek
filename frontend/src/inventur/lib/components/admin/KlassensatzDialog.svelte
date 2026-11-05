@@ -142,13 +142,8 @@
 			<!-- Left Content Area -->
 			<div class="grow flex flex-col gap-4 sm:gap-6 relative z-10 w-full overflow-hidden">
 				<div class="shrink-0">
-					<h2
-						id="zuweisung-titel"
-						class="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface leading-none"
-					>
-						Klasse & Bücher zuweisen
-					</h2>
-					<p class="mt-1 sm:mt-2 text-on-surface-variant font-medium text-sm sm:text-lg">
+					<h2 id="zuweisung-titel" class="dialog-titel-vollbild">Klasse & Bücher zuweisen</h2>
+					<p class="mt-1 text-sm text-on-surface-variant">
 						Wähle Zielklassen und die entsprechenden Schulbücher aus.
 					</p>
 				</div>

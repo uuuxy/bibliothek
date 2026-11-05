@@ -39,13 +39,13 @@
 <Feld
 	etikett="Vorname *"
 	bind:value={vorname}
-	placeholder={fachbereich ? 'z.B. Fachbereich' : 'z.B. Katrin'}
+	placeholder={fachbereich ? 'z. B. Fachbereich' : 'z. B. Katrin'}
 />
 
 <Feld
 	etikett="Nachname *"
 	bind:value={nachname}
-	placeholder={fachbereich ? 'z.B. Erdkunde' : 'z.B. Wendland'}
+	placeholder={fachbereich ? 'z. B. Erdkunde' : 'z. B. Wendland'}
 />
 
 <Feld

@@ -80,7 +80,7 @@
 
 <Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="zf-titel">
 	{#snippet header()}
-		<h3 id="zf-titel" class="text-lg font-bold text-on-surface flex items-center gap-2">
+		<h3 id="zf-titel" class="dialog-titel flex items-center gap-2">
 			<Merge class="w-5 h-5 text-primary" aria-hidden="true" />
 			Datensatz zusammenführen
 		</h3>
@@ -159,9 +159,7 @@
 		{/if}
 	</div>
 
-	<div
-		class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex justify-end gap-3"
-	>
+	<div class="px-6 pb-6 flex justify-end gap-2">
 		<Button variant="secondary" onclick={() => (open = false)}>Abbrechen</Button>
 		<Button variant="danger-solid" onclick={bestaetigen} disabled={!anderer || laeuft}>
 			{laeuft ? 'Wird zusammengeführt …' : 'Zusammenführen'}

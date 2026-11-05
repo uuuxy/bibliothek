@@ -49,7 +49,7 @@
 					<Suchfeld
 						bind:wert={etikettenStore.suche}
 						oninput={etikettenStore.verarbeiteSuche}
-						platzhalter="Titel, Autor oder ISBN eingeben..."
+						platzhalter="Titel, Autor oder ISBN eingeben …"
 						etikett="Titel im Katalog suchen"
 					>
 						{#snippet nachlaufend()}

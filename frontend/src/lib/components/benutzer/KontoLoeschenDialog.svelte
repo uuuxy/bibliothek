@@ -24,9 +24,7 @@
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
 	<div class="space-y-4 p-6">
-		<h2 id="benutzer-loeschen-titel" class="text-lg font-bold text-on-surface">
-			Benutzer unwiderruflich löschen?
-		</h2>
+		<h2 id="benutzer-loeschen-titel" class="dialog-titel">Benutzer unwiderruflich löschen?</h2>
 		<p class="text-sm leading-relaxed text-on-surface-variant">
 			Sind Sie sicher, dass Sie den Benutzer <strong
 				>{zuLoeschen?.vorname} {zuLoeschen?.nachname}</strong

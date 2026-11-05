@@ -147,14 +147,14 @@
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
 				<Ladekreis size="sm" />
-				Suche läuft...
+				Suche läuft …
 			</div>
 		{:else if resolvingDnb}
 			<div
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
 				<Ladekreis size="sm" />
-				Titel wird im Katalog angelegt...
+				Titel wird im Katalog angelegt …
 			</div>
 		{/if}
 	</div>

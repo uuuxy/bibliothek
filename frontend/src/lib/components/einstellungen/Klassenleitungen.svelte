@@ -181,7 +181,7 @@
 				disabled={zuordnungSpeichert || !newMappingKlasse.trim() || !newMappingEmail.trim()}
 				class="w-full md:w-auto whitespace-nowrap"
 			>
-				{zuordnungSpeichert ? 'Lädt…' : 'Hinzufügen'}
+				{zuordnungSpeichert ? 'Lädt …' : 'Hinzufügen'}
 			</Button>
 		</div>
 		<!-- Unter der Zeile, nicht unter der Auswahl: Auswahl, Feld und Knopf stehen bündig unten. -->

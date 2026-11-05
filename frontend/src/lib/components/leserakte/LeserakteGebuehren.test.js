@@ -53,7 +53,7 @@ describe('LeserakteGebuehren', () => {
 
 	it('sagt, wenn es nichts gibt', () => {
 		const screen = render(LeserakteGebuehren, { ...daten, gebuehren: [], bescheide: [] });
-		expect(screen.getByText('Keine Gebühren, Schäden oder Bescheide.')).toBeTruthy();
+		expect(screen.getByText('Keine Gebühren oder Schäden')).toBeTruthy();
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 

@@ -104,7 +104,7 @@
 		<div class="mt-4">
 			{#if laedt}
 				<div class="text-sm text-on-surface-variant py-4 flex items-center justify-center">
-					Lade Exemplare...
+					Lade Exemplare …
 				</div>
 			{:else if fehler}
 				<div role="alert" class="text-sm text-error py-4">{fehler}</div>

@@ -32,7 +32,7 @@
 	// Proxy und überlebt die Destrukturierung, ein einfacher Wert nicht. `speichert` und
 	// `kontoVorhanden` sind Getter auf $state — einmal herausdestrukturiert, stünde für
 	// immer der Wert vom Aufbau der Komponente da (der Speichern-Knopf hätte nie
-	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `formular.`, dort wo sie
+	// „Speichert …" gezeigt). Gelesen werden sie deshalb über `formular.`, dort wo sie
 	// gebraucht werden.
 	//
 	// Die Meldungen gehen an die gemeinsame Anzeige (SnackbarAnzeige.svelte): Die Maske schließt
@@ -93,7 +93,7 @@
 			<Button size="lg" onclick={speichere} disabled={formular.speichert} class="px-6">
 				{#if formular.speichert}
 					<Ladekreis size="sm" farbe="aktuell" />
-					Speichert…
+					Speichert …
 				{:else}
 					<Check class="w-4 h-4" aria-hidden="true" />
 					Speichern

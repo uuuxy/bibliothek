@@ -34,7 +34,7 @@ beforeEach(() => {
 describe('Mail-Vorlagen', () => {
 	it('meldet das Speichern über die Meldungen der Anwendung', async () => {
 		const screen = await vorlagen();
-		await fireEvent.click(screen.getByRole('button', { name: /Speichern/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorlage speichern' }));
 
 		await waitFor(() =>
 			expect(snackbars.toasts.map((t) => [t.message, t.type])).toEqual([
@@ -108,7 +108,7 @@ describe('Mail-Vorlagen', () => {
 			serverAntwort(404, { error: 'Mail-Vorlage nicht gefunden' })
 		);
 		const screen = await vorlagen();
-		await fireEvent.click(screen.getByRole('button', { name: /Speichern/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorlage speichern' }));
 
 		const meldung = await screen.findByRole('alert');
 		expect(meldung.textContent).toContain('Mail-Vorlage nicht gefunden');

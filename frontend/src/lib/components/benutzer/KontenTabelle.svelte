@@ -44,7 +44,7 @@
 
 {#if laedt}
 	<div class="animate-pulse p-12 text-center font-medium text-on-surface-variant">
-		Lade Systembenutzer...
+		Lade Systembenutzer …
 	</div>
 {:else if ladefehler}
 	<!-- Nicht „Keine Systembenutzer gefunden": Die Konten kamen nicht. -->

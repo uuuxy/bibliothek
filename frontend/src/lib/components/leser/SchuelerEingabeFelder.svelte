@@ -35,9 +35,9 @@
 	const klassenOptionen = $derived(klassen.map((k) => ({ value: k, label: k })));
 </script>
 
-<Feld etikett="Vorname *" bind:value={vorname} placeholder="z.B. Max" />
+<Feld etikett="Vorname *" bind:value={vorname} placeholder="z. B. Max" />
 
-<Feld etikett="Nachname *" bind:value={nachname} placeholder="z.B. Mustermann" />
+<Feld etikett="Nachname *" bind:value={nachname} placeholder="z. B. Mustermann" />
 
 <Feld
 	etikett="Geburtsdatum *"

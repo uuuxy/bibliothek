@@ -63,7 +63,7 @@
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch="eigentum-dialog-titel">
 	<div class="space-y-4 p-6">
-		<h2 id="eigentum-dialog-titel" class="text-lg font-bold text-on-surface">Eigentum ändern</h2>
+		<h2 id="eigentum-dialog-titel" class="dialog-titel">Eigentum ändern</h2>
 		<p class="text-sm leading-relaxed text-on-surface-variant">
 			Gilt für {anzahl}
 			{anzahl === 1 ? 'Exemplar' : 'Exemplare'}. Wirkt auf Etikett, Bestandsbücher und

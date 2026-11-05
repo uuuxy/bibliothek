@@ -40,48 +40,42 @@
 		</h3>
 	</div>
 
-	{#if !vormerkungen || vormerkungen.length === 0}
-		<div class="py-16 text-center text-base text-on-surface-variant">
-			Aktuell keine Bücher vorgemerkt.
-		</div>
-	{:else}
-		<div class="space-y-4">
-			<!-- Die Akte lädt an der Theke auf ein Signal der Leitung neu: An der Stelle in der Liste
+	<div class="space-y-4">
+		<!-- Die Akte lädt an der Theke auf ein Signal der Leitung neu: An der Stelle in der Liste
 			     rückte der Fokus auf den Löschknopf der nächsten Vormerkung. -->
-			{#each vormerkungen as v (v.id)}
-				<div class="border-b border-outline-variant py-4 flex items-start justify-between">
-					<div class="flex flex-col gap-1">
-						<h4 class="font-bold text-on-surface">{v.titel}</h4>
-						<div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
-							<!-- Ein Span, Text je Status: 'abholbereit' zeigt die Abholfrist,
+		{#each vormerkungen as v (v.id)}
+			<div class="border-b border-outline-variant py-4 flex items-start justify-between">
+				<div class="flex flex-col gap-1">
+					<h4 class="font-bold text-on-surface">{v.titel}</h4>
+					<div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
+						<!-- Ein Span, Text je Status: 'abholbereit' zeigt die Abholfrist,
 							     alles andere ('wartend' und Unbekanntes) die Wartezeit. Das Status-Konsistenz-Gate erzwingt, dass jeder von
 							     der DB erlaubte Nicht-Default-Status hier vorkommt. -->
-							<span class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary-container">
-								{v.status === 'abholbereit'
-									? `Abholbereit${v.bereitgestellt_bis ? ' bis: ' + new Date(v.bereitgestellt_bis).toLocaleDateString('de-DE') : ''}`
-									: `Wartet seit: ${new Date(v.erstellt_am).toLocaleDateString('de-DE')}`}
-							</span>
-						</div>
-						{#if v.notiz}
-							<p class="text-sm text-on-surface-variant mt-1 italic">Notiz: {v.notiz}</p>
-						{/if}
+						<span class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary-container">
+							{v.status === 'abholbereit'
+								? `Abholbereit${v.bereitgestellt_bis ? ' bis: ' + new Date(v.bereitgestellt_bis).toLocaleDateString('de-DE') : ''}`
+								: `Wartet seit: ${new Date(v.erstellt_am).toLocaleDateString('de-DE')}`}
+						</span>
 					</div>
-					<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie „Verlängern" daneben. -->
-					<button
-						onclick={() => loescheVormerkung(v.id)}
-						disabled={loescht.has(v.id)}
-						class="icon-btn text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
-						data-tip="Vormerkung löschen"
-						aria-label="Vormerkung löschen"
-					>
-						{#if loescht.has(v.id)}
-							<Ladekreis size="sm" farbe="aktuell" />
-						{:else}
-							<Trash class="w-5 h-5" aria-hidden="true" />
-						{/if}
-					</button>
+					{#if v.notiz}
+						<p class="text-sm text-on-surface-variant mt-1 italic">Notiz: {v.notiz}</p>
+					{/if}
 				</div>
-			{/each}
-		</div>
-	{/if}
+				<!-- Gesperrt mit Ladekreis, solange die Anfrage läuft, wie „Verlängern" daneben. -->
+				<button
+					onclick={() => loescheVormerkung(v.id)}
+					disabled={loescht.has(v.id)}
+					class="icon-btn text-error disabled:cursor-not-allowed disabled:text-on-surface/38"
+					data-tip="Vormerkung löschen"
+					aria-label="Vormerkung löschen"
+				>
+					{#if loescht.has(v.id)}
+						<Ladekreis size="sm" farbe="aktuell" />
+					{:else}
+						<Trash class="w-5 h-5" aria-hidden="true" />
+					{/if}
+				</button>
+			</div>
+		{/each}
+	</div>
 </div>

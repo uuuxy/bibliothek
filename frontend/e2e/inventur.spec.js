@@ -45,7 +45,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		await starten.click();
 
 		// Exemplar A scannen → als erfasst bestätigt
-		const scan = page.getByPlaceholder('Barcode scannen...');
+		const scan = page.getByPlaceholder('Barcode scannen …');
 		await expect(scan).toBeVisible();
 		await scan.fill(`B-INVA-${suffix}`);
 		await scan.press('Enter');
@@ -137,7 +137,7 @@ test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ p
 		await page.getByLabel('Signatur auswählen').fill(sigName);
 		await page.getByRole('button', { name: 'Starten', exact: true }).click();
 
-		const scan = page.getByPlaceholder('Barcode scannen...');
+		const scan = page.getByPlaceholder('Barcode scannen …');
 		await expect(scan).toBeVisible();
 		await scan.fill(`B-VERWA-${suffix}`);
 		await scan.press('Enter');

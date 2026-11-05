@@ -86,7 +86,7 @@
 			<Lock class="w-6 h-6 text-on-secondary-container" aria-hidden="true" />
 		</div>
 		<div class="text-center space-y-1">
-			<h2 id="sperre-titel" class="text-base font-bold text-on-surface">
+			<h2 id="sperre-titel" class="dialog-titel">
 				{grund === 'hoechstdauer' ? 'Gesperrt nach 10 Stunden' : 'Gesperrt wegen Inaktivität'}
 			</h2>
 			{#if leerlaufSperre.anwendungSteht}
@@ -110,7 +110,7 @@
 		<Button type="submit" size="lg" disabled={leerlaufSperre.entsperreLaeuft} class="w-full">
 			{#if leerlaufSperre.entsperreLaeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
-				Prüfe…
+				Prüfe …
 			{:else}
 				Entsperren
 			{/if}

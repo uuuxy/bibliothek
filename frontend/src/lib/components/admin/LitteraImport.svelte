@@ -75,14 +75,14 @@
 			<div
 				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
 			>
-				{datei ? datei.name : 'Datei auswählen...'}
+				{datei ? datei.name : 'Datei auswählen …'}
 			</div>
 		</label>
 
 		<Button size="lg" onclick={ladeHoch} disabled={isImporting || !datei} class="px-6">
 			{#if isImporting}
 				<Ladekreis size="sm" farbe="aktuell" />
-				<span>Importiere...</span>
+				<span>Importiere …</span>
 			{:else}
 				<span>Import starten</span>
 			{/if}

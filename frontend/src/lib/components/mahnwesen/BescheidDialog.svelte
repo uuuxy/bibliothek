@@ -63,7 +63,7 @@
 <Dialog open={true} {onclose} size="2xl" {ebene} beschriftetDurch="bescheid-titel">
 	<div class="space-y-5 p-6">
 		<div>
-			<h2 id="bescheid-titel" class="text-lg font-bold text-on-surface">
+			<h2 id="bescheid-titel" class="dialog-titel">
 				Schadensersatz-Bescheid{formular.vorschlag?.schueler_name
 					? ` für ${formular.vorschlag.schueler_name}`
 					: ''}

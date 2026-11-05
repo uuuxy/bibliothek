@@ -65,7 +65,7 @@
 		beschriftetDurch="rueckfrage-titel"
 	>
 		<div class="space-y-4 p-6">
-			<h2 id="rueckfrage-titel" class="text-lg font-bold text-on-surface">{frage.titel}</h2>
+			<h2 id="rueckfrage-titel" class="dialog-titel">{frage.titel}</h2>
 			{#if frage.text}
 				<p class="text-sm leading-relaxed whitespace-pre-line text-on-surface-variant">
 					{frage.text}

@@ -85,7 +85,7 @@
 	<Button variant="secondary" size="lg" class="px-6" {onclick} disabled={laeuft}>
 		{#if laeuft}
 			<Ladekreis size="sm" farbe="aktuell" />
-			<span>Bitte warten...</span>
+			<span>Wird ausgeführt …</span>
 		{:else}
 			<Symbol class="h-4 w-4" aria-hidden="true" />
 			<span>{label}</span>
@@ -103,7 +103,7 @@
 		<div class="border-t border-outline-variant pt-6">
 			<h4 class="mb-1 text-sm font-bold text-on-surface">Cover-Synchronisation</h4>
 			<p class="mb-4 text-xs text-on-surface-variant">
-				Laden Sie fehlende Buchcover im Hintergrund asynchron aus externen APIs herunter (z.B.
+				Laden Sie fehlende Buchcover im Hintergrund asynchron aus externen APIs herunter (z. B.
 				Google Books, DNB).
 			</p>
 

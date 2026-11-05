@@ -56,9 +56,7 @@
 	beschriftetDurch="nachbuch-titel"
 >
 	{#snippet header()}
-		<h3 id="nachbuch-titel" class="text-lg font-bold text-on-surface">
-			Meldungen aus dem Nachbuchen
-		</h3>
+		<h3 id="nachbuch-titel" class="dialog-titel">Meldungen aus dem Nachbuchen</h3>
 	{/snippet}
 	<div bind:this={inhalt} tabindex="-1" class="p-4 outline-none">
 		<p class="mb-3 text-sm text-on-surface-variant">

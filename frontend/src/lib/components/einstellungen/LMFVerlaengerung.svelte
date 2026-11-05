@@ -98,7 +98,7 @@
 			disabled={isExtending || !klasse.trim() || !neuesDatum}
 			class="px-6"
 		>
-			{isExtending ? 'Wird verarbeitet...' : 'Klassen-LMF global verlängern'}
+			{isExtending ? 'Wird verarbeitet …' : 'Klassen-LMF global verlängern'}
 		</Button>
 	</div>
 	<!-- Unter der Zeile, nicht unter der Auswahl: Auswahl, Feld und Knopf stehen bündig unten. -->

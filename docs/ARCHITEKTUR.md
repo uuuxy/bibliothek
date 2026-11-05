@@ -858,6 +858,16 @@ frontend/src
   (`verlangt` in `BuchFormular.svelte`). Ein gesperrter Knopf sagt nicht, warum. Material 3,
   Text fields: „If only one error is possible, error text should describe how to avoid the
   error".
+- **Ein Dialog hat eine Form.** Sein Titel trägt die Klasse `dialog-titel` aus
+  `styles/komponenten.css`: Headline small, Regular, On surface (material-web,
+  `md.comp.dialog.headline`), im Vollbild-Dialog `dialog-titel-vollbild` mit Title large
+  (`md.comp.full-screen-dialog.header.headline`). Farbe trägt höchstens ein Symbol davor. Keine
+  getönte Kopfzeile und keine Linie über oder unter dem Inhalt, die Knöpfe rechts mit 8 px
+  Abstand (Material 3, Dialogs, Specs: „Padding between title and body 16dp", „Padding between
+  buttons 8dp"; die Linie ist „optional" für scrollenden Inhalt). Ausgenommen sind die zwei
+  Alarme der Theke, die den Scan unterbrechen. Gemessen: `frontend-hygiene-dialogtitel.test.js`.
+- **Ein Text, der auf etwas wartet, endet mit Leerzeichen und Auslassungszeichen** („Wird
+  gespeichert …“, „Lade Exemplare …“) und sagt den Zustand, nicht die Handlung des Knopfs.
 - **„Abbrechen" ist nie gesperrt,** auch nicht, während eine Anfrage läuft (Material 3,
   Dialogs: „Dismissive actions are never disabled."). Was beim Schließen schon abgeschickt ist,
   läuft zu Ende. Ein Dialog, der Fehler bei sich zeigt, meldet nach dem Schließen Erfolg und

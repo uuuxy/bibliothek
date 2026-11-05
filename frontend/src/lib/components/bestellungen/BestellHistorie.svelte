@@ -169,7 +169,7 @@
 
 		{#if laedt}
 			<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
-				Lade Bestellhistorie…
+				Lade Bestellhistorie …
 			</div>
 		{:else if ladefehler}
 			<LadeFehler

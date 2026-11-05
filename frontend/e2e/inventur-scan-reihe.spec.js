@@ -38,7 +38,7 @@ async function starteInventur(page, suffix, barcodes) {
 	await page.getByText('Nur bestimmte Signatur').click();
 	await page.getByLabel('Signatur auswählen').fill(`E2E-INVR-${suffix}`);
 	await page.getByRole('button', { name: 'Starten', exact: true }).click();
-	const feld = page.getByPlaceholder('Barcode scannen...');
+	const feld = page.getByPlaceholder('Barcode scannen …');
 	await expect(feld).toBeFocused();
 	return feld;
 }

@@ -72,15 +72,12 @@
 
 <Dialog {open} onclose={() => (open = false)} beschriftetDurch="sperre-titel">
 	{#snippet header()}
-		<h3
-			id="sperre-titel"
-			class="text-lg font-bold {gesperrt ? 'text-success' : 'text-error'} flex items-center gap-2"
-		>
+		<h3 id="sperre-titel" class="dialog-titel flex items-center gap-2">
 			{#if gesperrt}
-				<LockOpen class="w-5 h-5" aria-hidden="true" />
+				<LockOpen class="w-5 h-5 text-success" aria-hidden="true" />
 				Sperre aufheben
 			{:else}
-				<Lock class="w-5 h-5" aria-hidden="true" />
+				<Lock class="w-5 h-5 text-error" aria-hidden="true" />
 				Ausleihe sperren
 			{/if}
 		</h3>
@@ -125,12 +122,12 @@
 		{/if}
 	</div>
 
-	<div class="px-6 py-4 border-t border-outline-variant flex justify-end gap-3">
+	<div class="px-6 pb-6 flex justify-end gap-2">
 		<Button variant="secondary" onclick={() => (open = false)}>Abbrechen</Button>
 		<Button variant={gesperrt ? 'success' : 'danger-solid'} onclick={bestaetige} disabled={laeuft}>
 			{#if laeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
-				Wird verarbeitet...
+				Wird verarbeitet …
 			{:else}
 				Bestätigen
 			{/if}

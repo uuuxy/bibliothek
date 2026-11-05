@@ -91,7 +91,7 @@
 		<div class="flex flex-wrap items-center gap-3">
 			<Suchfeld
 				bind:wert={suchbegriff}
-				platzhalter="Titel oder Autor…"
+				platzhalter="Titel oder Autor …"
 				etikett="Titel oder Autor suchen"
 				klasse="flex-1 min-w-40"
 			/>

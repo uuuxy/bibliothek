@@ -61,7 +61,7 @@ test('Vormerkungs-Schülersuche in der Buchakte fragt die Leserdatei, nicht die 
 		.getByText(/^Vormerkungen \(/)
 		.first()
 		.click();
-	await page.getByRole('button', { name: '+ Schüler vormerken' }).click();
+	await page.getByRole('button', { name: 'Schüler vormerken' }).click();
 
 	/** @type {string[]} */
 	const anfragen = [];

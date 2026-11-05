@@ -1,7 +1,7 @@
 <script>
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
-	import { Receipt, CircleCheck, Ban, FileText } from '@lucide/svelte';
+	import { ReceiptEuro, CircleCheck, Ban, FileText } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Dialog from '../ui/Dialog.svelte';
@@ -152,9 +152,7 @@
 	<!-- Ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist. -->
 	<Dialog open={true} onclose={schliesseStorno} ebene="darueber" beschriftetDurch="storno-titel">
 		<div class="p-6">
-			<h3 id="storno-titel" class="text-xl font-bold text-on-surface mb-2">
-				Gebühr wirklich stornieren?
-			</h3>
+			<h3 id="storno-titel" class="dialog-titel mb-2">Gebühr wirklich stornieren?</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
 				<strong>{euro(stornoFall.betrag)}</strong> für
 				<strong>{stornoFall.titel || stornoFall.beschreibung}</strong> werden erlassen. Der Vorgang wird
@@ -165,7 +163,7 @@
 				id="storno-grund"
 				etikett="Stornierungsgrund"
 				bind:value={stornoGrund}
-				placeholder="z.B. Buch wiedergefunden, Kulanzentscheidung..."
+				placeholder="z. B. Buch wiedergefunden, Kulanzentscheidung …"
 			/>
 
 			<div class="flex justify-end gap-2 mt-6">
@@ -176,7 +174,7 @@
 						erledige(`/api/schadensfaelle/${stornoFall.id}/storno`, 'Gebühr storniert.')}
 					disabled={laeuft || stornoGrund.trim() === ''}
 				>
-					<Receipt class="h-4 w-4" aria-hidden="true" />
+					<ReceiptEuro class="h-4 w-4" aria-hidden="true" />
 					Stornieren
 				</Button>
 			</div>

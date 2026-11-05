@@ -97,7 +97,7 @@
 
 <Dialog {open} {onclose} size="lg">
 	{#snippet header()}
-		<h3 class="text-lg font-bold text-on-surface">{titel}</h3>
+		<h3 class="dialog-titel">{titel}</h3>
 	{/snippet}
 
 	<div class="p-6 space-y-5">
@@ -171,7 +171,7 @@
 		/>
 	</div>
 
-	<div class="flex justify-end gap-3 p-4 border-t border-outline-variant bg-surface/50">
+	<div class="flex justify-end gap-2 px-6 pb-6">
 		<Button variant="secondary" onclick={onclose}>Abbrechen</Button>
 		<Button
 			{variant}

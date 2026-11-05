@@ -67,7 +67,7 @@
 			</button>
 			<span class="text-on-surface-variant">/</span>
 			<span class="text-on-surface-variant text-sm truncate max-w-xs"
-				>{akte.buch?.title ?? 'Lade...'}</span
+				>{akte.buch?.title ?? 'Lädt …'}</span
 			>
 		</div>
 	</div>

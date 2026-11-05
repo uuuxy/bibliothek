@@ -37,7 +37,7 @@
 
 <Dialog {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
 	{#snippet header()}
-		<h3 id="benutzer-formular-titel" class="text-base font-bold text-on-surface">
+		<h3 id="benutzer-formular-titel" class="dialog-titel">
 			{istAenderung ? 'Benutzer bearbeiten' : 'Benutzer anlegen'}
 		</h3>
 	{/snippet}
@@ -85,7 +85,7 @@
 				</label>
 			</div>
 		{/if}
-		<div class="flex items-center justify-end gap-3 border-t border-outline-variant pt-3">
+		<div class="flex items-center justify-end gap-2 pt-2">
 			<Button variant="secondary" type="button" onclick={onclose}>Abbrechen</Button>
 			<Button type="submit" disabled={speichert}>
 				{#if speichert}<Ladekreis size="sm" farbe="aktuell" />{/if}

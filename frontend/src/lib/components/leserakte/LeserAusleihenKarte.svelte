@@ -1,6 +1,7 @@
 <script>
 	import LeserAusleihenListe from './LeserAusleihenListe.svelte';
 	import { BookOpen } from '@lucide/svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 
 	/** @type {{ ausleihen: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
 	let { ausleihen = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
@@ -14,10 +15,7 @@
 	</div>
 
 	{#if !ausleihen || ausleihen.length === 0}
-		<div class="py-16 flex flex-col items-center justify-center text-on-surface-variant space-y-3">
-			<BookOpen class="h-12 w-12" aria-hidden="true" />
-			<span class="text-sm font-semibold">Aktuell keine Bücher entliehen.</span>
-		</div>
+		<SuchZustand symbol={BookOpen} titel="Keine Ausleihen" />
 	{:else}
 		<LeserAusleihenListe {ausleihen} {onReturnClick} {onDamageClick} />
 	{/if}

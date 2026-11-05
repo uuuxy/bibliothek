@@ -128,7 +128,7 @@
 		{#if ablage.ladekreis}
 			<Ladekreis size="sm" etikett="Ausweis-Design lädt" />
 		{:else if ablage.zustand === 'saving'}
-			<span class="text-on-surface-variant">Speichert…</span>
+			<span class="text-on-surface-variant">Speichert …</span>
 		{:else if ablage.zustand === 'saved'}
 			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
 		{:else if ablage.zustand === 'error'}

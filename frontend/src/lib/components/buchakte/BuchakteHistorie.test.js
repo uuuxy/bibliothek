@@ -40,6 +40,6 @@ describe('BuchakteHistorie', () => {
 
 	it('sagt, wenn es noch keine Ausleihe gab', () => {
 		const screen = render(BuchakteHistorie, { verlauf: [] });
-		expect(screen.getByText('Noch keine Ausleihen in der Datenbank vorhanden.')).toBeTruthy();
+		expect(screen.getByText('Noch keine Ausleihen')).toBeTruthy();
 	});
 });

@@ -251,7 +251,7 @@
 		{#if stage === 'upload'}
 			<div class="flex justify-end">
 				<Button onclick={starteProbe} disabled={!gewaehlteDatei || probeLaeuft}>
-					{#if probeLaeuft}{@render spinner('Vorschau wird geladen…')}{:else}Vorschau laden{/if}
+					{#if probeLaeuft}{@render spinner('Vorschau wird geladen …')}{:else}Vorschau laden{/if}
 				</Button>
 			</div>
 		{/if}
@@ -294,12 +294,12 @@
 							onclick={() => finalizeImport(true)}
 							disabled={importLaeuft}
 						>
-							{#if importLaeuft}{@render spinner('Import wird übernommen…')}{:else}Massenabgang
+							{#if importLaeuft}{@render spinner('Import wird übernommen …')}{:else}Massenabgang
 								bestätigen &amp; endgültig importieren{/if}
 						</Button>
 					{:else}
 						<Button onclick={() => finalizeImport(false)} disabled={importLaeuft}>
-							{#if importLaeuft}{@render spinner('Import wird übernommen…')}{:else}Import
+							{#if importLaeuft}{@render spinner('Import wird übernommen …')}{:else}Import
 								finalisieren{/if}
 						</Button>
 					{/if}

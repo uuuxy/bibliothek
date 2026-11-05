@@ -129,7 +129,7 @@
 
 <Dialog open={true} onclose={onClose} size="lg" ebene="darueber" beschriftetDurch="webcam-titel">
 	{#snippet header()}
-		<h3 id="webcam-titel" class="text-base font-bold text-on-surface">Passbild aufnehmen</h3>
+		<h3 id="webcam-titel" class="dialog-titel">Passbild aufnehmen</h3>
 	{/snippet}
 	<!-- Hinter der Sperre läuft keine Kamera (wie KameraScanner). -->
 	<div

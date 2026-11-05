@@ -70,7 +70,7 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		holen.mockResolvedValue(BESTAETIGT);
 		leitung.sende('bestellstand');
 
-		expect(screen.queryByText('Lade Bestellung…')).toBeNull();
+		expect(screen.queryByText('Lade Bestellung …')).toBeNull();
 		expect(await screen.findByText(QUITTUNG)).toBeTruthy();
 		expect(screen.queryByText('Warten auf den Händler')).toBeNull();
 	});
@@ -157,7 +157,7 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 
 		aeltereScheitert(new Error('Server nicht erreichbar'));
 		await new Promise((fertig) => setTimeout(fertig));
-		expect(screen.getByText('Lade Bestellung…')).toBeTruthy();
+		expect(screen.getByText('Lade Bestellung …')).toBeTruthy();
 		expect(screen.queryByRole('alert')).toBeNull();
 
 		juengereAntwort(WARTET);

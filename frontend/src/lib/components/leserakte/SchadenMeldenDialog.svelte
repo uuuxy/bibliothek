@@ -80,9 +80,7 @@
 {#if ausleihe}
 	<Dialog open={true} onclose={onCancel} ebene="darueber" beschriftetDurch="schaden-titel">
 		<div class="p-6">
-			<h3 id="schaden-titel" class="text-xl font-bold text-on-surface mb-2">
-				Verlust/Schaden melden
-			</h3>
+			<h3 id="schaden-titel" class="dialog-titel mb-2">Verlust/Schaden melden</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
 				Für <strong>{ausleihe.titel}</strong> ({ausleihe.barcode_id}).
 				{#if ohneForderung}
@@ -109,7 +107,7 @@
 					id="damage-reason"
 					etikett="Grund"
 					bind:value={grund}
-					placeholder="z.B. Wasserschaden, Verloren..."
+					placeholder="z. B. Wasserschaden, Verloren …"
 				/>
 				{#if !ohneForderung}
 					<Feld
@@ -132,7 +130,7 @@
 						onclick={melde}
 						disabled={isSubmitting || !grund.trim() || schadensbetrag < 0}
 					>
-						{isSubmitting ? 'Wird gemeldet...' : 'Melden'}
+						{isSubmitting ? 'Wird gemeldet …' : 'Melden'}
 					</Button>
 				</div>
 			</div>

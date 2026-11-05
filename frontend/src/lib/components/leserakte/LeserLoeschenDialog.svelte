@@ -73,7 +73,7 @@
 {#if open && leser}
 	<Dialog open={true} onclose={schliesse} beschriftetDurch="loeschen-titel">
 		<div class="p-6 text-on-surface text-left">
-			<h3 id="loeschen-titel" class="text-lg font-bold text-error flex items-center gap-2">
+			<h3 id="loeschen-titel" class="dialog-titel flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
 				<span>{kollege ? 'Kollegen löschen' : 'Schüler löschen'}</span>
 			</h3>
@@ -125,7 +125,7 @@
 						{fehler}
 					</div>
 				{/if}
-				<div class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
+				<div class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2">
 					<Button variant="secondary" size="lg" onclick={schliesse} class="w-full sm:w-auto"
 						>Abbrechen</Button
 					>

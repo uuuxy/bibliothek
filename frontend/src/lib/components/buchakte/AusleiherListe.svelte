@@ -6,6 +6,8 @@
      (UeberfaelligZeichen.svelte). -->
 <script>
 	import UeberfaelligZeichen from './UeberfaelligZeichen.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { Search } from '@lucide/svelte';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menue.js';
@@ -88,8 +90,6 @@
 		{/each}
 	</ul>
 	{#if zeilen.length === 0}
-		<div class="py-8 text-center text-sm text-on-surface-variant">
-			Keine Ausleihen entsprechen dem Filter.
-		</div>
+		<SuchZustand symbol={Search} titel="Keine Ausleihen gefunden" />
 	{/if}
 </div>

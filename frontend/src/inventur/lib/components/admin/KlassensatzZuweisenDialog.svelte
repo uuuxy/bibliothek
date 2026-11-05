@@ -77,7 +77,7 @@
      `beschriftung`. -->
 <Dialog open={true} onclose={onClose} beschriftung="Zum Klassensatz hinzufügen">
 	<div class="p-6 space-y-5">
-		<h3 class="text-lg font-bold text-on-surface">Zum Klassensatz hinzufügen</h3>
+		<h3 class="dialog-titel">Zum Klassensatz hinzufügen</h3>
 		<p class="text-sm text-on-surface-variant">
 			{titelIds.length}
 			{titelIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
@@ -100,10 +100,10 @@
 			<div role="alert" class="text-sm text-error">{fehler}</div>
 		{/if}
 
-		<div class="flex justify-end gap-3">
+		<div class="flex justify-end gap-2">
 			<Button variant="ghost" onclick={onClose}>Abbrechen</Button>
 			<Button onclick={weiseZu} disabled={speichert}>
-				{speichert ? 'Speichern...' : 'Zuweisen'}
+				{speichert ? 'Wird gespeichert …' : 'Zuweisen'}
 			</Button>
 		</div>
 	</div>

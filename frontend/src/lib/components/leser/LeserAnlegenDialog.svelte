@@ -122,7 +122,7 @@
 
 <Dialog {open} onclose={() => onclose?.()} size="md">
 	{#snippet header()}
-		<h3 class="text-base font-bold text-on-surface">Leser anlegen</h3>
+		<h3 class="dialog-titel">Leser anlegen</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
 		<LeserArtWahl bind:art disabled={speichert} />
@@ -165,10 +165,10 @@
 			/>
 		{/if}
 
-		<div class="flex justify-end gap-3 pt-2 border-t border-outline-variant">
+		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="secondary" onclick={() => onclose?.()}>Abbrechen</Button>
 			<Button onclick={legeAn} disabled={speichert}>
-				{speichert ? 'Speichern...' : 'Speichern'}
+				{speichert ? 'Wird gespeichert …' : 'Speichern'}
 			</Button>
 		</div>
 	</div>

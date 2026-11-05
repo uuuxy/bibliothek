@@ -42,7 +42,7 @@ test('Inventur: Zählung wie beim Abschluss, ein verliehenes Buch wird zurückge
 		const fortschritt = page.getByText(/^\s*\d+ \/ \d+\s*erfasst\s*$/);
 		await expect(fortschritt).toHaveText(/0 \/ 2/);
 
-		const scan = page.getByPlaceholder('Barcode scannen...');
+		const scan = page.getByPlaceholder('Barcode scannen …');
 		await scan.fill(da);
 		await scan.press('Enter');
 		await expect(fortschritt).toHaveText(/1 \/ 2/);
@@ -128,7 +128,7 @@ test('Inventur: Ein Buch, das während der Inventur zurückkommt, gilt nicht als
 		await page.getByRole('button', { name: 'Starten', exact: true }).click();
 		const fortschritt = page.getByText(/^\s*\d+ \/ \d+\s*erfasst\s*$/);
 		await expect(fortschritt).toHaveText(/0 \/ 2/);
-		const scan = page.getByPlaceholder('Barcode scannen...');
+		const scan = page.getByPlaceholder('Barcode scannen …');
 		await scan.fill(da);
 		await scan.press('Enter');
 		await expect(fortschritt).toHaveText(/1 \/ 2/);

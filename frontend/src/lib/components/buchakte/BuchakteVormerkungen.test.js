@@ -52,7 +52,7 @@ describe('BuchakteVormerkungen', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(antwort({}));
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
 		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
 			target: { value: 'Ida' }
 		});
@@ -84,7 +84,7 @@ describe('BuchakteVormerkungen', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(antwort({}));
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
 		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
 			target: { value: 'Ida' }
 		});
@@ -107,7 +107,7 @@ describe('BuchakteVormerkungen', () => {
 			titel: { id: 't1' }
 		});
 		expect(screen.queryAllByRole('heading')).toEqual([]);
-		expect(screen.getByRole('button', { name: '+ Schüler vormerken' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Schüler vormerken' })).toBeTruthy();
 	});
 
 	it('löscht eine Vormerkung nach der Rückfrage', async () => {
@@ -123,9 +123,7 @@ describe('BuchakteVormerkungen', () => {
 			expect(apiFetch).toHaveBeenCalledWith('/api/vormerkungen/v1', { method: 'DELETE' })
 		);
 		expect(loeschenBestaetigen).toHaveBeenCalledWith('Vormerkung löschen?');
-		expect(
-			await screen.findByText('Keine ausstehenden Vormerkungen für diesen Titel.')
-		).toBeTruthy();
+		expect(await screen.findByText('Keine Vormerkungen')).toBeTruthy();
 	});
 
 	// Lehnt der Server die Suche ab, steht sein Grund da. „Keine Schüler gefunden" hieße, es gebe
@@ -136,7 +134,7 @@ describe('BuchakteVormerkungen', () => {
 		);
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
 
-		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
 		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
 			target: { value: 'Ida' }
 		});
@@ -169,7 +167,7 @@ describe('BuchakteVormerkungen: ein Auftrag zur Zeit', () => {
 		);
 		vi.mocked(apiClient.post).mockImplementation(() => new Promise((fertig) => (liefere = fertig)));
 		const screen = render(BuchakteVormerkungen, { vormerkungen: [], titel: { id: 't1' } });
-		await fireEvent.click(screen.getByRole('button', { name: '+ Schüler vormerken' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Schüler vormerken' }));
 		await fireEvent.input(screen.getByLabelText('Schüler suchen (Name oder Ausweisnummer)'), {
 			target: { value: 'Ida' }
 		});

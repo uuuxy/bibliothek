@@ -33,7 +33,7 @@ describe('Buchakte: Reiter', () => {
 		const historie = screen.getByRole('tab', { name: 'Historie' });
 		await fireEvent.click(historie);
 		expect(historie.getAttribute('aria-selected')).toBe('true');
-		expect(screen.getByText('Noch keine Ausleihen in der Datenbank vorhanden.')).toBeTruthy();
+		expect(screen.getByText('Noch keine Ausleihen')).toBeTruthy();
 	});
 });
 

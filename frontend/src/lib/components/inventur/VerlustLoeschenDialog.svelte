@@ -13,7 +13,7 @@
 
 <Dialog {open} onclose={onClose} size="sm">
 	{#snippet header()}
-		<h3 class="text-base font-bold text-on-surface">Endgültig löschen?</h3>
+		<h3 class="dialog-titel">Endgültig löschen?</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
 		<p class="text-sm text-on-surface-variant">
@@ -22,10 +22,10 @@
 			Fehlbestandsbericht selbst bleibt erhalten — nur die Datensätze der Exemplare sind danach weg, das
 			lässt sich nicht rückgängig machen.
 		</p>
-		<div class="flex justify-end gap-3 pt-2 border-t border-outline-variant">
+		<div class="flex justify-end gap-2 pt-2">
 			<Button variant="secondary" onclick={onClose}>Abbrechen</Button>
 			<Button variant="danger-solid" onclick={onConfirm} disabled={laeuft}>
-				{laeuft ? 'Wird gelöscht…' : `${anzahl} endgültig löschen`}
+				{laeuft ? 'Wird gelöscht …' : `${anzahl} endgültig löschen`}
 			</Button>
 		</div>
 	</div>

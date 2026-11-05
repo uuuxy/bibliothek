@@ -7,6 +7,8 @@
 	import LeserGebuehrenKarte from './LeserGebuehrenKarte.svelte';
 	import LeserBescheideKarte from './LeserBescheideKarte.svelte';
 	import ListenNichtGeladen from '../leser/ListenNichtGeladen.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
+	import { ReceiptEuro } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -32,7 +34,7 @@
 	<ListenNichtGeladen listen={fehlendeListen} onErneut={onChanged} />
 
 	{#if fehlendeListen.length === 0 && gebuehren.length === 0 && bescheide.length === 0}
-		<p class="text-sm text-on-surface-variant">Keine Gebühren, Schäden oder Bescheide.</p>
+		<SuchZustand symbol={ReceiptEuro} titel="Keine Gebühren oder Schäden" />
 	{/if}
 
 	<LeserGebuehrenKarte {schuelerId} {gebuehren} {darfBearbeiten} {onChanged} />

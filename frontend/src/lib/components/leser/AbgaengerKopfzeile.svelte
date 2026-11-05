@@ -85,7 +85,7 @@
 			>
 				{#if druckLaeuft}
 					<Ladekreis size="sm" />
-					Lade Daten…
+					Lade Daten …
 				{:else}
 					<Printer class="h-4 w-4" aria-hidden="true" />
 					{klasse ? `Kontoauszüge ${klasse}` : 'Kontoauszüge drucken'}

@@ -84,9 +84,7 @@
 
 <Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="auflage-zuordnen-titel">
 	{#snippet header()}
-		<h3 id="auflage-zuordnen-titel" class="text-lg font-bold text-on-surface">
-			Andere Auflage zuordnen
-		</h3>
+		<h3 id="auflage-zuordnen-titel" class="dialog-titel">Andere Auflage zuordnen</h3>
 	{/snippet}
 	<div class="space-y-5 px-6 py-6 text-on-surface">
 		<p class="text-sm text-on-surface-variant">
@@ -172,9 +170,7 @@
 		{/if}
 	</div>
 
-	<div
-		class="flex justify-end gap-3 border-t border-outline-variant bg-surface-container-low px-6 py-4"
-	>
+	<div class="flex justify-end gap-2 px-6 pb-6">
 		<Button variant="secondary" onclick={() => (open = false)}>Abbrechen</Button>
 		<Button onclick={zuordnen} disabled={!gewaehlt || laeuft}>
 			{laeuft ? 'Wird zugeordnet …' : 'Zuordnen'}

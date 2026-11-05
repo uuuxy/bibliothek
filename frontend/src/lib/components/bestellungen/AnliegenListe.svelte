@@ -168,7 +168,7 @@
 
 	{#if laedt}
 		<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
-			Lade Meldungen…
+			Lade Meldungen …
 		</div>
 	{:else if ladefehler}
 		<LadeFehler onerneut={ladeAnliegen} titel="Meldungen nicht geladen" text={ladefehler} />

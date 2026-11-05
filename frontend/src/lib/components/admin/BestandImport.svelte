@@ -67,14 +67,14 @@
 			<div
 				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
 			>
-				{datei ? datei.name : 'CSV-Datei auswählen...'}
+				{datei ? datei.name : 'CSV-Datei auswählen …'}
 			</div>
 		</label>
 
 		<Button size="lg" onclick={importieren} disabled={laeuft || !datei} class="px-6">
 			{#if laeuft}
 				<Ladekreis size="sm" farbe="aktuell" />
-				<span>Importiere Bestand...</span>
+				<span>Importiere Bestand …</span>
 			{:else}
 				<span>Bestand importieren</span>
 			{/if}

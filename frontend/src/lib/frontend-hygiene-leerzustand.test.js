@@ -49,10 +49,6 @@ const AUSNAHMEN = {
 		1,
 		'Leserakte nennt, was nicht geladen ist (ListenNichtGeladen)'
 	],
-	'src/lib/components/leserakte/LeserVormerkungenKarte.svelte': [
-		1,
-		'steht nur mit Vormerkungen; Leserakte nennt, was nicht geladen ist'
-	],
 	'src/inventur/lib/components/admin/Bestandstabelle.svelte': [
 		1,
 		'steht nur, wenn die Titelliste geladen ist (TitelVerwaltung)'

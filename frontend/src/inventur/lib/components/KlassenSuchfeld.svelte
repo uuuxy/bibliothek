@@ -34,7 +34,7 @@
 			id="klassensaetze-suchfeld"
 			bind:wert={klassenSuche}
 			etikett="Klasse suchen"
-			platzhalter="Klasse suchen (z.B. 5f1) …"
+			platzhalter="Klasse suchen (z. B. 5f1) …"
 			onfocus={() => (isKlasseDropdownOpen = true)}
 			onblur={() => setTimeout(() => (isKlasseDropdownOpen = false), 150)}
 		>

@@ -97,7 +97,7 @@
 		<Button type="submit" size="lg" disabled={authStore.isLoggingIn} class="w-full">
 			{#if authStore.isLoggingIn}
 				<Ladekreis size="sm" farbe="aktuell" />
-				Anmelden...
+				Anmelden …
 			{:else}
 				Anmelden
 			{/if}

@@ -92,7 +92,7 @@
 
 <Dialog {open} onclose={() => (open = false)} size="2xl" beschriftetDurch="titel-zf-titel">
 	{#snippet header()}
-		<h3 id="titel-zf-titel" class="flex items-center gap-2 text-lg font-bold text-on-surface">
+		<h3 id="titel-zf-titel" class="dialog-titel flex items-center gap-2">
 			<Merge class="h-5 w-5 text-primary" aria-hidden="true" />
 			Mit anderem Titel zusammenführen
 		</h3>
@@ -150,9 +150,7 @@
 		{/if}
 	</div>
 
-	<div
-		class="flex justify-end gap-3 border-t border-outline-variant bg-surface-container-low px-6 py-4"
-	>
+	<div class="flex justify-end gap-2 px-6 pb-6">
 		<Button variant="secondary" onclick={() => (open = false)}>Abbrechen</Button>
 		<Button variant="danger-solid" onclick={zusammenfuehren} disabled={!v.vorschau || laeuft}>
 			{laeuft ? 'Wird zusammengeführt …' : 'Zusammenführen'}

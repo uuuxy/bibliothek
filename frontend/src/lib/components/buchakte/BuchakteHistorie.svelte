@@ -1,5 +1,6 @@
 <script>
 	import { Clock } from '@lucide/svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	/** @type {{ verlauf: any[] }} */
 	let { verlauf } = $props();
 
@@ -15,10 +16,7 @@
 </script>
 
 {#if verlauf.length === 0}
-	<div class="py-16 flex flex-col items-center text-on-surface-variant gap-3">
-		<Clock class="w-10 h-10" aria-hidden="true" />
-		<p class="font-semibold text-sm">Noch keine Ausleihen in der Datenbank vorhanden.</p>
-	</div>
+	<SuchZustand symbol={Clock} titel="Noch keine Ausleihen" />
 {:else}
 	<div class="w-full">
 		<div class="px-1 py-3 border-b border-outline-variant flex items-center justify-between">

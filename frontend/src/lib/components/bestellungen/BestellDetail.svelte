@@ -88,7 +88,7 @@
 
 	{#if laedt}
 		<div class="animate-pulse py-16 text-center text-base text-on-surface-variant">
-			Lade Bestellung…
+			Lade Bestellung …
 		</div>
 	{:else if fehler}
 		<LadeFehler onerneut={laden} titel="Bestellung nicht geladen" text={fehler} />

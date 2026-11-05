@@ -139,7 +139,7 @@
 		<div class="flex justify-end">
 			<Button onclick={starteProbe} disabled={laedt}>
 				{#if laedt}
-					<Ladekreis size="sm" farbe="aktuell" /> Vorschau wird berechnet…
+					<Ladekreis size="sm" farbe="aktuell" /> Vorschau wird berechnet …
 				{:else}
 					Vorschau berechnen
 				{/if}
@@ -178,7 +178,7 @@
 				>
 				<Button variant="danger-solid" onclick={executePromotion} disabled={laedt}>
 					{#if laedt}
-						<Ladekreis size="sm" farbe="aktuell" /> Wird ausgeführt…
+						<Ladekreis size="sm" farbe="aktuell" /> Wird ausgeführt …
 					{:else}
 						Ja, unwiderruflich ausführen
 					{/if}

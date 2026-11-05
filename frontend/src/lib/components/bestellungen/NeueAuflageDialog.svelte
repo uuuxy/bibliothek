@@ -111,9 +111,7 @@
 
 <Dialog open={offen} onclose={onschliessen} size="2xl" beschriftetDurch="neue-auflage-titel">
 	{#snippet header()}
-		<h3 id="neue-auflage-titel" class="text-lg font-bold text-on-surface">
-			Neue Auflage bestellen
-		</h3>
+		<h3 id="neue-auflage-titel" class="dialog-titel">Neue Auflage bestellen</h3>
 	{/snippet}
 	<div class="space-y-5 px-6 py-6 text-on-surface">
 		<p class="text-sm text-on-surface-variant">
@@ -168,9 +166,7 @@
 		{/if}
 	</div>
 
-	<div
-		class="flex justify-end gap-3 border-t border-outline-variant bg-surface-container-low px-6 py-4"
-	>
+	<div class="flex justify-end gap-2 px-6 pb-6">
 		<Button variant="secondary" onclick={onschliessen}>Abbrechen</Button>
 		{#if gefunden}
 			<Button onclick={zuordnen} disabled={schonDabei || laeuft}>

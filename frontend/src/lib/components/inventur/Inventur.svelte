@@ -131,7 +131,7 @@
 					bind:element={barcodeInputEl}
 					bind:wert={ablauf.barcodeEingabe}
 					etikett="Barcode scannen"
-					platzhalter="Barcode scannen..."
+					platzhalter="Barcode scannen …"
 				>
 					{#snippet nachlaufend()}
 						{#if ablauf.scanLaeuft}

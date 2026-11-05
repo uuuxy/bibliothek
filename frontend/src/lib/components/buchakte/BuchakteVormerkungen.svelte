@@ -5,6 +5,7 @@
 	import { melde } from '../../../inventur/lib/store.svelte.js';
 	import { formatDatum } from '../../utils/format.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import SuchZustand from '../ui/SuchZustand.svelte';
 	import BuchakteVormerken from './BuchakteVormerken.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { Clock, Trash } from '@lucide/svelte';
@@ -42,12 +43,7 @@
 	<BuchakteVormerken bind:vormerkungen {titel} />
 
 	{#if vormerkungen.length === 0}
-		<div
-			class="py-12 flex flex-col items-center text-on-surface-variant gap-3 border-2 border-dashed border-outline-variant rounded-xl bg-surface/50"
-		>
-			<Clock class="w-10 h-10" aria-hidden="true" />
-			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>
-		</div>
+		<SuchZustand symbol={Clock} titel="Keine Vormerkungen" />
 	{:else}
 		<Tabelle beschriftung="Vormerkungen" class="whitespace-nowrap">
 			<thead>

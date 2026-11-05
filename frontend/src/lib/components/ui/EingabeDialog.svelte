@@ -35,7 +35,7 @@
 
 <Dialog {open} {onclose} size="sm" beschriftetDurch={titelId}>
 	<form bind:this={formular} onsubmit={absenden} class="space-y-6 p-6">
-		<h2 id={titelId} class="text-lg font-medium text-on-surface">{titel}</h2>
+		<h2 id={titelId} class="dialog-titel">{titel}</h2>
 		<div class="space-y-4">
 			{@render children()}
 		</div>

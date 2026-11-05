@@ -92,6 +92,25 @@
 		height: max(3rem, 100%);
 		transform: translate(-50%, -50%);
 	}
+
+	/* Der Titel eines Dialogs: Headline small in On surface, Regular (material-web,
+	   md.comp.dialog.headline); im Vollbild-Dialog Title large
+	   (md.comp.full-screen-dialog.header.headline). Farbe trägt höchstens ein Symbol davor.
+	   Gate: frontend-hygiene-dialogtitel.test.js. */
+	.dialog-titel {
+		font-size: var(--text-xl);
+		line-height: var(--text-xl--line-height);
+		letter-spacing: var(--text-xl--letter-spacing);
+		font-weight: 400;
+		color: var(--color-on-surface);
+	}
+	.dialog-titel-vollbild {
+		font-size: var(--text-lg);
+		line-height: var(--text-lg--line-height);
+		letter-spacing: var(--text-lg--letter-spacing);
+		font-weight: 400;
+		color: var(--color-on-surface);
+	}
 }
 
 /* Card & Label layouts */
