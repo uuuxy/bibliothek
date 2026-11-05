@@ -8,11 +8,12 @@
 	 * Sie ersetzt sechs Reiter, von denen einer sieben fremde Themen trug und einer
 	 * genau einen Inhalt hatte. Reiter sind für drei bis fünf gleichgewichtige
 	 * Bereiche gedacht; Einstellungen sind eine Aufzählung ungleicher Themen, und
-	 * dafür kennt M3 die Liste mit führendem Symbol, Titel und einer Zeile Beitext.
+	 * dafür kennt M3 die Liste mit führendem Symbol, Titel und Beitext.
 	 *
 	 * Der Beitext ist kein Zierrat: Er beantwortet die Frage, die einen überhaupt auf
 	 * diese Seite geführt hat („wo stelle ich die Mahnfrist ein?"), ohne dass man
-	 * sieben Bildschirme durchklickt.
+	 * sieben Bildschirme durchklickt. Deshalb bricht er um, statt abgeschnitten zu werden: Die
+	 * Detailseite wiederholt ihn nicht, ein „…" ließe keinen Weg zum Rest (M3 „Text truncation").
 	 *
 	 * @prop {{ id: string, titel: string, kurz: string, icon: unknown }[]} kategorien
 	 * @prop {string} aktiv
@@ -35,10 +36,8 @@
 			<k.icon size={20} strokeWidth={gewaehlt ? 2.25 : 2} class="shrink-0" />
 			<span class="flex min-w-0 flex-col">
 				<span class="truncate text-sm font-medium">{k.titel}</span>
-				<span
-					class="truncate text-sm {gewaehlt
-						? 'text-on-secondary-container'
-						: 'text-on-surface-variant'}">{k.kurz}</span
+				<span class="text-sm {gewaehlt ? 'text-on-secondary-container' : 'text-on-surface-variant'}"
+					>{k.kurz}</span
 				>
 			</span>
 		</button>
