@@ -53,7 +53,7 @@ grep -rn "<Funktionsname>" --include="*.go" .      # Schreibpfade und Türen
 BestaetigungsDialog · BuchCover · Button · ChipAngebote · ChipFeld · CoverVorschau · Dialog · EingabeDialog · Feld · FilterChips · Kaestchen ·
 KlassenVersandDialog · LadeFehler · Ladekreis · LogoRelief · Menue · NummerKopieren · Radio · Reiter ·
 Segmente · Seitenblatt · Select · SelectListe · StatusChip · SuchZustand · Suchfeld · Suchpille · Switch ·
-Tabelle · TabelleSortierKopf · Zaehlerpille.
+Tabelle · TabelleSortierKopf · VorschlagFeld · Zaehlerpille.
 
 - Eine vorhandene Tür erweitern statt eine zweite anzulegen: Ein Zustand hat einen Schreibpfad.
 - Ein neues Bauteil braucht in der Commit-Nachricht die Begründung, warum keins der

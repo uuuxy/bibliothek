@@ -124,12 +124,10 @@ describe('TrefferPruefung: die Signatur kommt aus dem Bestand', () => {
 		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Signatur/));
 		expect(feld.value, 'ein neuer Titel bekommt keine erfundene Signatur').toBe('');
 
-		await vi.waitFor(() => {
-			const optionen = [...screen.container.querySelectorAll('datalist option')].map(
-				(o) => /** @type {HTMLOptionElement} */ (o).value
-			);
-			expect(optionen).toEqual(['JF', 'MANGA']);
-		});
+		await fireEvent.click(await screen.findByRole('button', { name: 'Vorschläge zeigen' }));
+		expect(
+			screen.getAllByRole('option').map((o) => o.textContent?.replace(/\s+/g, ' ').trim())
+		).toEqual(['JF 351 Titel', 'MANGA 155 Titel']);
 		expect(apiFetch).toHaveBeenCalledWith('/api/signaturen');
 	});
 });

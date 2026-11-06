@@ -107,17 +107,27 @@ describe('ExemplarStandortDialog', () => {
 	});
 
 	it('schlägt die Standorte aus dem Bestand vor, den häufigsten zuerst', async () => {
-		const { getByLabelText, baseElement } = dialog();
-		await waitFor(() => expect(baseElement.querySelectorAll('datalist option')).toHaveLength(2));
+		const { getByLabelText, getByRole, getAllByRole, findByRole } = dialog();
+		await fireEvent.click(await findByRole('button', { name: 'Vorschläge zeigen' }));
 		expect(apiFetch).toHaveBeenCalledWith('/api/exemplare/standorte');
-		const liste = /** @type {HTMLDataListElement} */ (baseElement.querySelector('datalist'));
-		expect(feld(getByLabelText).getAttribute('list')).toBe(liste.id);
-		expect(
-			[...liste.querySelectorAll('option')].map((o) => [o.value, o.textContent?.trim()])
-		).toEqual([
-			['Lehrerschrank', '3 Exemplare'],
-			['Bibliothek, Regal 3B', '1 Exemplar']
+		expect(feld(getByLabelText).getAttribute('aria-controls')).toBe(getByRole('listbox').id);
+		expect(getAllByRole('option').map((o) => o.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+			'Lehrerschrank 3 Exemplare',
+			'Bibliothek, Regal 3B 1 Exemplar'
 		]);
+	});
+
+	it('schließt mit Escape zuerst nur die Vorschläge und erst danach den Dialog', async () => {
+		const onclose = vi.fn();
+		const { getByLabelText, findByRole, queryByRole } = dialog({ onclose });
+		await fireEvent.click(await findByRole('button', { name: 'Vorschläge zeigen' }));
+
+		await fireEvent.keyDown(feld(getByLabelText), { key: 'Escape' });
+		expect(queryByRole('listbox')).toBeNull();
+		expect(onclose, 'ein Escape schlösse sonst Liste und Dialog zugleich').not.toHaveBeenCalled();
+
+		await fireEvent.keyDown(feld(getByLabelText), { key: 'Escape' });
+		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 
 	// Ein Handscanner tippt in das Feld mit dem Fokus und endet mit Enter; im Dialog bestätigte

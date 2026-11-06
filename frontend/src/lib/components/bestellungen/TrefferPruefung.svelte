@@ -17,6 +17,7 @@
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { untrack } from 'svelte';
 
@@ -125,18 +126,13 @@
 				<span class="text-primary font-normal">(bitte eintragen)</span>
 			{/if}
 		</label>
-		<Feld
+		<VorschlagFeld
 			id="stagedSignaturInput"
 			bind:value={signatur}
-			list="staging-signatur-vorschlaege"
+			vorschlaege={vorhandene.map((s) => ({ wert: s.signatur, zusatz: `${s.titel} Titel` }))}
 			placeholder="Regaladresse wählen"
 			feld="font-medium"
 		/>
-		<datalist id="staging-signatur-vorschlaege">
-			{#each vorhandene as s (s.signatur)}
-				<option value={s.signatur}>{s.signatur} — {s.titel} Titel</option>
-			{/each}
-		</datalist>
 	</div>
 
 	<TrefferPruefungSchlagworte

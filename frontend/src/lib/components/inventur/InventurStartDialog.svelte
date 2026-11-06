@@ -9,7 +9,7 @@
 	import Dialog from '../ui/Dialog.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 
@@ -89,19 +89,17 @@
 				<!-- Freie Eingabe mit Vorschlagsliste: Die Signatur wird als Präfix gelesen,
 				     „LMF Deu 7" erfasst also auch „LMF Deu 7 / Bie". Eine reine Auswahlliste
 				     könnte nur vorhandene Werte anbieten und damit kein ganzes Regal. -->
-				<Feld
+				<VorschlagFeld
 					id="inv-signatur"
 					etikett="Signatur auswählen"
-					list="inv-signatur-vorschlaege"
 					bind:value={ablauf.gewaehlteSignatur}
+					vorschlaege={ablauf.signaturen.map((s) => ({
+						wert: s.signatur,
+						zusatz: `${s.exemplare} ${s.exemplare === 1 ? 'Exemplar' : 'Exemplare'}`
+					}))}
 					placeholder="z. B. LMF Deu 7"
 					hint="Erfasst alles, was mit dieser Signatur beginnt — „LMF Deu 7“ also auch „LMF Deu 7 / Bie“."
 				/>
-				<datalist id="inv-signatur-vorschlaege">
-					{#each ablauf.signaturen as sig (sig.signatur)}
-						<option value={sig.signatur}>{sig.signatur} — {sig.exemplare} Exemplare</option>
-					{/each}
-				</datalist>
 			</div>
 		{/if}
 

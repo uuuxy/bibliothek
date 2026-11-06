@@ -5,7 +5,7 @@
 	 * zusammenführen, Verweis anlegen. Welche, sagt `auftrag`; null = geschlossen.
 	 *
 	 * Das Ziel beim Zusammenführen wird getippt und aus den vorhandenen Wörtern vorgeschlagen
-	 * (datalist wie im ChipFeld am Titel); die Aktion bleibt gesperrt, bis die Eingabe ein
+	 * (ui/VorschlagFeld); die Aktion bleibt gesperrt, bis die Eingabe ein
 	 * vorhandenes anderes Wort trifft — ein neues Wort anzulegen ist Umbenennen, nicht
 	 * Zusammenführen. Die Vorschläge sucht der Dialog selbst am Server, mit derselben Suche
 	 * wie die Pflegeseite (schlagwortPflegeListe.svelte.js), damit er auch ein Ziel jenseits
@@ -25,7 +25,7 @@
 	import { apiPost, apiPut } from '../../apiFetch.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { verweisWahl, dialogHinweis } from './schlagwortPflege.js';
 	import { erzeugeSchlagwortPflegeListe } from './schlagwortPflegeListe.svelte.js';
@@ -43,8 +43,6 @@
 		kandidaten.angestossen();
 	}
 
-	const eigen = $props.id();
-	const listeId = `${eigen}-woerter`;
 	let laeuft = $state(false);
 
 	// Beim Öffnen vorbelegt (Umbenennen beginnt mit der alten Schreibweise), danach die
@@ -130,22 +128,18 @@
 	{onclose}
 	onbestaetigen={ausfuehren}
 >
-	<Feld
+	<VorschlagFeld
 		etikett={texte.label}
 		bind:value={eingabe}
 		hint={hinweis}
-		list={auftrag?.art === 'zusammenfuehren' ? listeId : undefined}
+		vorschlaege={auftrag?.art === 'zusammenfuehren'
+			? gefunden
+					.filter((z) => z.id !== auftrag?.zeile.id && !z.verweis_auf_id)
+					.map((z) => ({ wert: z.wort, zusatz: `${z.titel} Titel` }))
+			: []}
 		oninput={sucheZiel}
-		autocomplete="off"
 	/>
 	{#if wahl}
 		<Kaestchen bind:checked={behalten} etikett="„{wort}“ als Verweis behalten" />
-	{/if}
-	{#if auftrag?.art === 'zusammenfuehren'}
-		<datalist id={listeId}>
-			{#each gefunden.filter((z) => z.id !== auftrag?.zeile.id && !z.verweis_auf_id) as z (z.id)}
-				<option value={z.wort}>{z.titel} Titel</option>
-			{/each}
-		</datalist>
 	{/if}
 </EingabeDialog>

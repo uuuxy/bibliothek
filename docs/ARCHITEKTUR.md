@@ -877,7 +877,8 @@ frontend/src
   Gemessen: `frontend-hygiene-abbrechen.test.js`, `LeserSperreDialog.test.js`.
 - **Enter speichert eine Maske ohne `<form>` über `use:enterSpeichert`** (`scanErkennung.js`):
   aus jedem einzeiligen Feld, wie ein Formular des Browsers (HTML, „Implicit submission"). Ein
-  Feld, das Enter selbst nutzt, ruft `preventDefault` (ISBN-Abfrage, `ui/ChipFeld`), und das
+  Feld, das Enter selbst nutzt, ruft `preventDefault` (ISBN-Abfrage, `ui/ChipFeld`,
+  `ui/VorschlagFeld` mit markiertem Vorschlag), und das
   Enter am Ende eines Scans speichert nie. Ein Lauscher am Container, der auf die Tasten der
   Felder darin wartet, hängt mit `on` aus `svelte/events` und nicht mit `addEventListener`:
   Svelte führt die `onkeydown` der Felder an der Wurzel der Seite aus, ein `addEventListener`
@@ -894,6 +895,21 @@ frontend/src
   state"). Wer `ungueltig` nutzt, gibt immer true oder false, nie undefined: Davon hängt ab, ob
   das Feld die Hülle der Symbole hat, und käme sie erst mit dem Fehler, baute Svelte das Feld
   neu und nähme ihm den Fokus. Gemessen: `frontend/e2e/feld-fehlersymbol.spec.js`.
+- **Vorschläge an einem Textfeld zeigt `ui/VorschlagFeld`,** nicht die Liste des Browsers
+  (`<datalist>`): die Signatur (`SignaturFeld`, `InventurStartDialog`, `TrefferPruefung`), der
+  Standort (`ExemplarStandortDialog`) und das Ziel beim Zusammenführen (`SchlagwortPflegeDialog`).
+  Die Liste des Browsers zeigt bei leerem Feld alle Werte ohne Höchsthöhe, und eine lange setzt
+  Chrome neben das Feld über die Seite. Das Menü ist die Fläche von `ui/Select` (`SelectListe`)
+  unter dem Feld, höchstens 320 px hoch, die Zahl rechts im Eintrag (Material 3, Menus: „As
+  someone types, the list of menu options filters to show relevant results. This helps people
+  quickly find the right option from a long list."; Specs: „List item trailing text",
+  material-web: label-small, on-surface-variant). Bei leerem Feld bleibt die Liste zu, bis jemand
+  tippt, Pfeil abwärts drückt oder den Pfeil im Feld anklickt; was vorn passt, steht vorn. Enter
+  ohne markierten Vorschlag geht an das Formular oder `use:enterSpeichert`, Escape schließt zuerst
+  nur die Liste (`escapeSchliesst` übergeht eine Taste mit `defaultPrevented`), und ein Klick in
+  die Liste nimmt dem Feld den Fokus nicht (`SelectListe` verhindert `mousedown`). Das
+  Standortfeld bleibt in `scanSchutz`. Gemessen: `VorschlagFeld.test.js`,
+  `vorschlagRegeln.test.js`, `ExemplarStandortDialog.test.js`.
 - **Ein Abschnitt, der nicht geladen wurde, zeigt keinen Leerzustand.** Nennt die Antwort ihn
   in `nicht_gelesen` (`GET /api/statistiken`) oder scheitert der Abruf einer Kachel, steht an
   der Stelle des Leerzustands `ui/LadeFehler` in der knappen Form: nur der Titel in der
@@ -3730,19 +3746,6 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   die ausgeklappte Leiste nur über das Menüsymbol („should always open from a menu icon");
   über dem Inhalt trägt sie dessen Werte für die überlagernde Leiste (nav-rail-expanded,
   modal-container-*). Ohne Maus, am Tablet, bleibt es bei den Symbolen und dem `title`.
-- **Die Vorschläge an sechs Textfeldern zeichnet der Browser** (`<datalist>`): die Signatur in
-  `SignaturFeld`, `InventurStartDialog` und `TrefferPruefung`, der Standort in
-  `ExemplarStandortDialog`, die Schlagworte in `ui/ChipFeld` und das Ziel beim Zusammenführen in
-  `SchlagwortPflegeDialog`. Material 3, Menus: „A menu can include a text field to filter
-  options. This pattern is also known as autocomplete." Entschieden, es so zu lassen: An allen
-  sechs Feldern leistet die Liste des Browsers, was gebraucht wird (freie Eingabe, die Werte aus
-  dem Bestand mit ihrer Zahl, ein angeklicktes Schlagwort wird sofort übernommen). Eine eigene
-  Liste änderte nur das Aussehen, und einheitlich würde es auch damit nicht: Die Datumsfelder
-  öffnen ebenfalls den Kalender des Browsers. Beim Bau mitnehmen: `ChipFeld` übernimmt beim
-  Verlassen des Felds, ein Klick in die Liste darf es also nicht verlassen; Enter ohne markierten
-  Vorschlag sendet weiter das Formular ab oder übernimmt das getippte Wort; Escape schließt zuerst
-  nur die Liste (`escapeSchliesst` übergeht eine Taste mit `defaultPrevented`); das Standortfeld
-  bleibt in `scanSchutz`. Anlass: ein Fehler der Liste des Browsers an einem der sechs Felder.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
   der Seite (`e2e/scrollbereiche.spec.js`). In „Titel bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der

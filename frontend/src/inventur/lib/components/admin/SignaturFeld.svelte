@@ -4,7 +4,7 @@
      Die Pflicht zeigt der Stern an der Beschriftung; den Fehlerzustand bekommt das leere Feld
      wie der Titel erst, wenn ein Klick auf „Speichern" es vermisst hat (BuchFormular). -->
 <script>
-	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import VorschlagFeld from '../../../../lib/components/ui/VorschlagFeld.svelte';
 	import { ladeSignaturen } from '../../../../lib/utils/signaturen.js';
 	import { signaturFehlt, signaturPflicht } from './buchFormularRegeln.js';
 
@@ -34,11 +34,11 @@
 	const fehlt = $derived(verlangt && signaturFehlt(formular));
 </script>
 
-<Feld
+<VorschlagFeld
 	id="buch-signatur"
 	etikett={pflicht ? 'Signatur (Buchrücken) *' : 'Signatur (Buchrücken)'}
 	bind:value={formular.signatur}
-	list="signatur-vorschlaege"
+	vorschlaege={vorhandene.map((s) => ({ wert: s.signatur, zusatz: `${s.titel} Titel` }))}
 	placeholder={beispiele ? `z. B. ${beispiele}` : 'Signatur des Regals'}
 	required={pflicht}
 	ungueltig={fehlt}
@@ -48,8 +48,3 @@
 			? 'Lernmittel tragen kein Rückenetikett — die Signatur ist hier nur eine Notiz.'
 			: 'Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse.'}
 />
-<datalist id="signatur-vorschlaege">
-	{#each vorhandene as s (s.signatur)}
-		<option value={s.signatur}>{s.signatur} — {s.titel} Titel</option>
-	{/each}
-</datalist>

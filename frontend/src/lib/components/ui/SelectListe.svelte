@@ -1,4 +1,5 @@
-<!-- @component SelectListe — die Menüfläche des M3-Auswahlfelds.
+<!-- @component SelectListe — die Menüfläche des M3-Auswahlfelds und des Felds mit
+     Vorschlägen (Select, VorschlagFeld).
 
      Eigene Datei aus zwei Gründen: Sie ist ein eigenes Bauteil (M3 nennt das
      „menu" und gibt ihm eigene Maße — 4-px-Ecken, 8-px-Innenabstand,
@@ -13,7 +14,7 @@
 
 	/**
 	 * @type {{
-	 *   options: Array<{ value: any, label: string, disabled?: boolean }>,
+	 *   options: Array<{ value: any, label: string, disabled?: boolean, zusatz?: string }>,
 	 *   value: any,
 	 *   aktiv: number,
 	 *   box: { left: number, top: number, breite: number },
@@ -42,6 +43,8 @@
 	});
 </script>
 
+<!-- Ein Klick in die Liste lässt den Fokus, wo er ist: Ein Textfeld mit Vorschlägen schlösse
+     beim Verlassen seine Liste, bevor der Klick ankommt. -->
 <div
 	bind:this={el}
 	id={`${kennung}-liste`}
@@ -49,6 +52,7 @@
 	tabindex="-1"
 	style="position:fixed; left:{box.left}px; top:{box.top}px; width:{box.breite}px; z-index:60;"
 	class="max-h-80 overflow-y-auto rounded-sm bg-surface-container py-2 shadow-xl"
+	onmousedown={(e) => e.preventDefault()}
 >
 	{#each options as o, i (o.value)}
 		<div
@@ -70,6 +74,11 @@
 					: 'text-on-surface'}"
 		>
 			<span class="min-w-0 flex-1 truncate">{o.label}</span>
+			<!-- M3 nennt das „List item trailing text“; Schrift und Farbe wie in material-web
+			     (list-item-trailing-supporting-text: label-small, on-surface-variant). -->
+			{#if o.zusatz}
+				<span class="shrink-0 text-label-small text-on-surface-variant">{o.zusatz}</span>
+			{/if}
 			{#if o.value === value}
 				<Check class="h-5 w-5 shrink-0" aria-hidden="true" />
 			{/if}

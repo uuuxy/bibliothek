@@ -7,7 +7,7 @@
      keinen zweiten Namen für dasselbe Regal. -->
 <script>
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { apiPut } from '../../apiFetch.js';
 	import { scanSchutz } from '../../utils/scanErkennung.js';
@@ -18,9 +18,6 @@
 	 * @type {{ open: boolean, exemplarIds: string[], onclose: () => void, onGeaendert: () => Promise<void> | void }}
 	 */
 	let { open, exemplarIds, onclose, onGeaendert } = $props();
-
-	const eigen = $props.id();
-	const listeId = `${eigen}-standorte`;
 
 	let standort = $state('');
 	let entfernen = $state(false);
@@ -85,18 +82,12 @@
 	<p class="text-sm text-on-surface-variant">Gilt für {anzahlText(anzahl)}.</p>
 	<!-- Ein Scan in das offene Feld wäre sonst der Standort der markierten Exemplare. -->
 	<div use:scanSchutz={() => {}}>
-		<Feld
+		<VorschlagFeld
 			etikett="Standort"
 			bind:value={standort}
-			list={listeId}
-			autocomplete="off"
+			vorschlaege={vorhandene.map((s) => ({ wert: s.standort, zusatz: anzahlText(s.anzahl) }))}
 			disabled={entfernen}
 		/>
 	</div>
 	<Kaestchen bind:checked={entfernen} etikett="Standort entfernen" />
-	<datalist id={listeId}>
-		{#each vorhandene as s (s.standort)}
-			<option value={s.standort}>{anzahlText(s.anzahl)}</option>
-		{/each}
-	</datalist>
 </EingabeDialog>
