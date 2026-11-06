@@ -28,7 +28,7 @@ import (
 
 func leseImportZeilen(w http.ResponseWriter, r *http.Request) ([][]string, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, 100<<20)
-	if err := r.ParseMultipartForm(100 << 20); err != nil { // 100 MB
+	if err := r.ParseMultipartForm(1 << 20); err != nil { // 100 MB
 		return nil, apierrors.BadRequest("Die Datei ließ sich nicht hochladen. Möglich sind höchstens 100 MB.", err)
 	}
 

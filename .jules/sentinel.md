@@ -40,3 +40,7 @@
 **Vulnerability:** None. gosec G120 flags `r.ParseMultipartForm` in the import and upload handlers, but each of them bounds the request with `http.MaxBytesReader` first. #759, #761, #763 and #764 proposed the same change and were rejected.
 **Learning:** With `maxMemory` at 1 MB, Go writes every larger upload to a temporary file on disk, for the LUSD import including student data. gosec reports G120 with that change as well; `scripts/gosec-gate.sh` lists the exception with its reason.
 **Prevention:** Keep `maxMemory` equal to the body limit. Do not propose this change again.
+## 2024-11-06 - Limit ParseMultipartForm memory allocation
+**Vulnerability:** Unbounded form parsing (G120) could cause memory exhaustion during large file uploads in `net/http` handlers.
+**Learning:** `http.MaxBytesReader` restricts the total payload size, but `ParseMultipartForm` determines how much of that payload is buffered in RAM versus disk.
+**Prevention:** Always supply a strict, small memory threshold (e.g., `1 << 20` for 1MB) to `ParseMultipartForm` to force large payloads directly to disk, regardless of the overall request limit.
