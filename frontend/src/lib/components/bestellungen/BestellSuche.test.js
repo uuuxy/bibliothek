@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
-vi.mock('../../apiFetch.js', () => ({
+vi.mock('../../apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiPost: vi.fn(async () => ({
 		exists: false,
 		titel_id: 't-9',

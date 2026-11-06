@@ -38,6 +38,25 @@ describe('ladeCoverZurSignatur', () => {
 		expect(apiFetch).toHaveBeenCalledTimes(1);
 	});
 
+	it('fragt nach einer Minute neu, damit ein neues Cover nicht bis zum Neuladen fehlt', async () => {
+		vi.useFakeTimers();
+		try {
+			vi.mocked(apiFetch).mockResolvedValue(
+				/** @type {any} */ ({ ok: true, json: async () => ({ buecher: [titel] }) })
+			);
+			await ladeCoverZurSignatur('Zeit');
+			vi.advanceTimersByTime(59_000);
+			await ladeCoverZurSignatur('Zeit');
+			expect(apiFetch).toHaveBeenCalledTimes(1);
+
+			vi.advanceTimersByTime(2_000);
+			await ladeCoverZurSignatur('Zeit');
+			expect(apiFetch).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it('liefert ohne Antwort eine leere Liste und fragt beim nächsten Mal neu', async () => {
 		// Mit Rumpf wie vom Server: Ohne die Prüfung auf ok käme er als leere Liste in den Speicher.
 		vi.mocked(apiFetch).mockResolvedValueOnce(

@@ -25,7 +25,11 @@ export async function ladeSignaturen() {
 	}
 }
 
-/** Je Signatur eine Anfrage: Wer im Menü auf und ab fährt, zeigt mehrmals auf dieselbe. */
+/** Je Signatur eine Anfrage in LEBENSDAUER_MS: Wer im Menü auf und ab fährt, zeigt mehrmals auf
+ *  dieselbe. Danach fragt das nächste Zeigen neu, sonst fehlte ein neues Cover oder zeigte ein
+ *  umgezogener Titel bis zum Neuladen der Seite. */
+const LEBENSDAUER_MS = 60_000;
+/** @type {Map<string, { seit: number, antwort: Promise<any[]> }>} */
 const coverJeSignatur = new Map();
 
 /**
@@ -38,7 +42,8 @@ const coverJeSignatur = new Map();
  * @returns {Promise<{ titel_id: string, titel: string, isbn: string, cover_url: string }[]>}
  */
 export function ladeCoverZurSignatur(signatur) {
-	let antwort = coverJeSignatur.get(signatur);
+	const eintrag = coverJeSignatur.get(signatur);
+	let antwort = eintrag && Date.now() - eintrag.seit < LEBENSDAUER_MS ? eintrag.antwort : null;
 	if (!antwort) {
 		const frage = new URLSearchParams({ signatur, limit: '2', nur_mit_cover: 'true' });
 		// Ein Fehlschlag bleibt nicht im Speicher: Das nächste Zeigen fragt neu.
@@ -52,7 +57,7 @@ export function ladeCoverZurSignatur(signatur) {
 				return (await res.json())?.buecher ?? [];
 			})
 			.catch(vergessen);
-		coverJeSignatur.set(signatur, antwort);
+		coverJeSignatur.set(signatur, { seit: Date.now(), antwort });
 	}
 	return antwort;
 }

@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 
-vi.mock('../../../../lib/apiFetch.js', () => ({
+vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
+	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn(),
 	apiPut: vi.fn(),
 	apiClient: { post: vi.fn() },

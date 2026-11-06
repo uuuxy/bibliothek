@@ -7,6 +7,8 @@
 <script>
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { ladeCoverZurSignatur } from '../../utils/signaturen.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menue.js';
 
 	/** @type {{ signatur: string }} */
 	let { signatur } = $props();
@@ -14,12 +16,18 @@
 	let titel = $state(
 		/** @type {{ titel_id: string, titel: string, isbn: string, cover_url: string }[]} */ ([])
 	);
+	// Die Abfrage verlangt view_books. Das Menü der Signatur steht auch Konten mit create_orders
+	// offen, die den Katalog nicht sehen (api/nur_sitzung_liste_test.go); sie bekämen je Zeigen
+	// eine Ablehnung.
+	const darf = $derived(hatRecht(authStore.currentUser, 'view_books'));
 	$effect(() => {
 		let abgebrochen = false;
 		titel = [];
-		ladeCoverZurSignatur(signatur).then((liste) => {
-			if (!abgebrochen) titel = liste;
-		});
+		if (darf) {
+			ladeCoverZurSignatur(signatur).then((liste) => {
+				if (!abgebrochen) titel = liste;
+			});
+		}
 		return () => {
 			abgebrochen = true;
 		};
