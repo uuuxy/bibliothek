@@ -83,10 +83,11 @@
 	onpointerleave={zeigerGeht}
 >
 	<div
-		class="border-outline-variant bg-surface absolute inset-y-0 left-0 flex flex-col justify-between overflow-x-hidden overflow-y-auto border-r transition-all duration-300
+		class="leiste-bildlauf border-outline-variant bg-surface absolute inset-y-0 left-0 flex flex-col justify-between overflow-x-hidden border-r transition-all duration-300
 			data-ueber-inhalt:bg-surface-container data-ueber-inhalt:rounded-r-2xl data-ueber-inhalt:border-r-0 data-ueber-inhalt:shadow-xl
 			{schmal ? 'w-16' : 'w-64'} {obenAuf ? 'z-40' : ''}"
 		data-ueber-inhalt={zu && !schmal ? '' : undefined}
+		data-schmal={schmal ? '' : undefined}
 	>
 		<div>
 			<div class="border-outline-variant/60 flex h-16 shrink-0 items-center gap-3 border-b px-4">

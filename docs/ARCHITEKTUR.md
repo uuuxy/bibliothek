@@ -3758,6 +3758,12 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   die ausgeklappte Leiste nur über das Menüsymbol („should always open from a menu icon");
   über dem Inhalt trägt sie dessen Werte für die überlagernde Leiste (nav-rail-expanded,
   modal-container-*). Ohne Maus, am Tablet, bleibt es bei den Symbolen und dem `title`.
+  Den Bildlauf der Leiste zeigt sie wie Gmail, an dessen Leiste gemessen: ein Daumen von 8 px mit
+  halbrunden Enden ohne Spur, nur solange die Maus über ihr steht; schmal kein Balken, die 8 px
+  bleiben breit immer frei (`styles/komponenten.css`, `.leiste-bildlauf`,
+  `e2e/navigation-bildlauf.spec.js`). Material 3 sagt nur, dass sie in sich rollt („If the list of
+  navigation destinations is longer than the height of the drawer, the drawer's contents can be
+  scrolled within the drawer"), nicht, wie der Balken aussieht.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
   der Seite (`e2e/scrollbereiche.spec.js`). In „Titel bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der

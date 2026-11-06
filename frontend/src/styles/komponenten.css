@@ -111,6 +111,58 @@
 		font-weight: 400;
 		color: var(--color-on-surface);
 	}
+
+	/* ── Bildlauf der Seitenleiste wie bei Gmail ──────────────────────────────
+	   An Gmail gemessen (Chrome, macOS, Maus angeschlossen): ein Daumen von 8 px mit halbrunden
+	   Enden, Grau #a6a8ab auf #f8fafd, ohne Spur, bündig an der rechten Kante, nur solange die
+	   Maus über der Leiste steht; eingeklappt kein Balken. Ohne diese Regel zeichnet macOS den
+	   15 px breiten Balken samt heller Spur, sobald die Einträge höher als das Fenster sind.
+	   Das Grau ist on-surface-variant mit 46 % Deckkraft, auf surface derselbe Wert.
+
+	   Chromium zeichnet den Daumen nicht nach, wenn nur seine Farbe an :hover der Leiste hängt.
+	   Deshalb rollt die Leiste mit Maus nur unter ihr (overflow-y), wie bei Gmail, und
+	   scrollbar-gutter hält die 8 px frei, damit beim Überfahren nichts springt. Ohne Maus
+	   (Touch) rollt sie immer. Chrome und Safari lesen ::-webkit-scrollbar nur, solange
+	   scrollbar-width und scrollbar-color auf auto stehen; die beiden stehen deshalb nur für
+	   Firefox. Gemessen in e2e/navigation-bildlauf.spec.js. */
+	.leiste-bildlauf {
+		overflow-y: auto;
+	}
+	.leiste-bildlauf::-webkit-scrollbar {
+		width: 8px;
+	}
+	.leiste-bildlauf::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.leiste-bildlauf::-webkit-scrollbar-thumb {
+		border-radius: 4px;
+		background: color-mix(in srgb, var(--color-on-surface-variant) 46%, transparent);
+	}
+	.leiste-bildlauf[data-schmal]::-webkit-scrollbar {
+		display: none;
+	}
+	@media (hover: hover) {
+		.leiste-bildlauf {
+			overflow-y: hidden;
+			scrollbar-gutter: stable;
+		}
+		.leiste-bildlauf:hover {
+			overflow-y: auto;
+		}
+		.leiste-bildlauf[data-schmal] {
+			scrollbar-gutter: auto;
+		}
+	}
+	@supports not selector(::-webkit-scrollbar) {
+		.leiste-bildlauf {
+			scrollbar-width: thin;
+			scrollbar-color: color-mix(in srgb, var(--color-on-surface-variant) 46%, transparent)
+				transparent;
+		}
+		.leiste-bildlauf[data-schmal] {
+			scrollbar-width: none;
+		}
+	}
 }
 
 /* Card & Label layouts */
