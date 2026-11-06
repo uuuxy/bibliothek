@@ -41,14 +41,17 @@ export function ladeCoverZurSignatur(signatur) {
 	let antwort = coverJeSignatur.get(signatur);
 	if (!antwort) {
 		const frage = new URLSearchParams({ signatur, limit: '2', nur_mit_cover: 'true' });
+		// Ein Fehlschlag bleibt nicht im Speicher: Das nächste Zeigen fragt neu.
+		const vergessen = () => {
+			coverJeSignatur.delete(signatur);
+			return [];
+		};
 		antwort = apiFetch(`/api/signaturen/buecher?${frage}`)
-			.then(async (res) => (res.ok ? ((await res.json())?.buecher ?? []) : null))
-			.catch(() => null)
-			.then((liste) => {
-				if (liste) return liste;
-				coverJeSignatur.delete(signatur);
-				return [];
-			});
+			.then(async (res) => {
+				if (!res.ok) return vergessen();
+				return (await res.json())?.buecher ?? [];
+			})
+			.catch(vergessen);
 		coverJeSignatur.set(signatur, antwort);
 	}
 	return antwort;

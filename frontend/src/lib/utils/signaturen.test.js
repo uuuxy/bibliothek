@@ -39,7 +39,10 @@ describe('ladeCoverZurSignatur', () => {
 	});
 
 	it('liefert ohne Antwort eine leere Liste und fragt beim nächsten Mal neu', async () => {
-		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }));
+		// Mit Rumpf wie vom Server: Ohne die Prüfung auf ok käme er als leere Liste in den Speicher.
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: false, status: 500, json: async () => ({ error: 'kaputt' }) })
+		);
 		await expect(ladeCoverZurSignatur('Pg')).resolves.toEqual([]);
 
 		vi.mocked(apiFetch).mockRejectedValueOnce(new Error('offline'));
