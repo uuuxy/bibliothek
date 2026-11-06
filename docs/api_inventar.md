@@ -1,12 +1,11 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-11-04. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-11-06. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards und Public-Endpoints können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `GET /api/auth/domain`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
