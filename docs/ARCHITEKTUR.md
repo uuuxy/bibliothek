@@ -897,7 +897,8 @@ frontend/src
   neu und nähme ihm den Fokus. Gemessen: `frontend/e2e/feld-fehlersymbol.spec.js`.
 - **Vorschläge an einem Textfeld zeigt `ui/VorschlagFeld`,** nicht die Liste des Browsers
   (`<datalist>`): die Signatur (`SignaturFeld`, `InventurStartDialog`, `TrefferPruefung`), der
-  Standort (`ExemplarStandortDialog`) und das Ziel beim Zusammenführen (`SchlagwortPflegeDialog`).
+  Standort (`ExemplarStandortDialog`), die Schlagworte (`ui/ChipFeld`) und das Ziel beim
+  Zusammenführen (`SchlagwortPflegeDialog`).
   Die Liste des Browsers zeigt bei leerem Feld alle Werte ohne Höchsthöhe, und eine lange setzt
   Chrome neben das Feld über die Seite. Das Menü ist die Fläche von `ui/Select` (`SelectListe`)
   unter dem Feld, höchstens 320 px hoch, die Zahl rechts im Eintrag (Material 3, Menus: „As
@@ -907,9 +908,12 @@ frontend/src
   tippt, Pfeil abwärts drückt oder den Pfeil im Feld anklickt; was vorn passt, steht vorn. Enter
   ohne markierten Vorschlag geht an das Formular oder `use:enterSpeichert`, Escape schließt zuerst
   nur die Liste (`escapeSchliesst` übergeht eine Taste mit `defaultPrevented`), und ein Klick in
-  die Liste nimmt dem Feld den Fokus nicht (`SelectListe` verhindert `mousedown`). Das
+  die Liste nimmt dem Feld den Fokus nicht (`SelectListe` verhindert `mousedown`). Ein
+  `onkeydown` des Aufrufers bekommt nur Tasten, die die Liste nicht verbraucht hat. In
+  `ui/ChipFeld` ist die Wahl eines Vorschlags schon der Chip, Enter ohne Markierung und Komma
+  übernehmen das getippte Wort, und das Menü bietet nicht an, was schon gewählt ist. Das
   Standortfeld bleibt in `scanSchutz`. Gemessen: `VorschlagFeld.test.js`,
-  `vorschlagRegeln.test.js`, `ExemplarStandortDialog.test.js`.
+  `vorschlagRegeln.test.js`, `ChipFeld.test.js`, `ExemplarStandortDialog.test.js`.
 - **Ein Abschnitt, der nicht geladen wurde, zeigt keinen Leerzustand.** Nennt die Antwort ihn
   in `nicht_gelesen` (`GET /api/statistiken`) oder scheitert der Abruf einer Kachel, steht an
   der Stelle des Leerzustands `ui/LadeFehler` in der knappen Form: nur der Titel in der

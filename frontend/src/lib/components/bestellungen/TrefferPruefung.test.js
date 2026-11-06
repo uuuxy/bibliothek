@@ -182,8 +182,11 @@ describe('TrefferPruefung: Schlagworte', () => {
 		antworten(['Tiere']);
 		const screen = fenster();
 		const feld = await feldBereit(screen);
+		// Die Vorschläge sind geladen, sobald das Feld seinen Pfeil zeigt.
 		await vi.waitFor(() =>
-			expect(screen.container.querySelector('#stagedSchlagworte-vorschlaege option')).toBeTruthy()
+			expect(
+				feld.parentElement?.querySelector('button[aria-label="Vorschläge zeigen"]')
+			).toBeTruthy()
 		);
 
 		await fireEvent.input(feld, { target: { value: 'fantasy' }, inputType: 'insertText' });
@@ -313,9 +316,7 @@ describe('TrefferPruefung: Schlagworte', () => {
 
 		await fireEvent.input(feld, { target: { value: 'zwerg' }, inputType: 'insertText' });
 		await vi.waitFor(() =>
-			expect(
-				screen.container.querySelector('#stagedSchlagworte-vorschlaege option[value="Zwergpilze"]')
-			).toBeTruthy()
+			expect(screen.queryByRole('option', { name: /Zwergpilze/ })).toBeTruthy()
 		);
 	});
 

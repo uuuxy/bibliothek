@@ -53,7 +53,7 @@ Nur, was kein Test leisten kann.
   (5.172)
 - [x] Zugangs- und Abgangsbuch: je Tag und Titel eine Zeile mit Anzahl und Barcodes statt einer
   Zeile je Exemplar. (5.173)
-- [ ] Schlagwort-Chips: die Vorschläge im Menü von `ui/VorschlagFeld` statt in der Liste des
+- [x] Schlagwort-Chips: die Vorschläge im Menü von `ui/VorschlagFeld` statt in der Liste des
   Browsers. (5.174)
 
 ### Termin
@@ -80,15 +80,6 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.174 Schlagwort-Chips mit dem Vorschlagsmenü
-
-`ui/ChipFeld` ist das letzte Textfeld, dessen Vorschläge der Browser zeichnet (`<datalist>`);
-Signatur, Standort und das Ziel beim Zusammenführen zeigen sie in `ui/VorschlagFeld`
-([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.3). Beim Umbau bleibt: Das Feld übernimmt beim Verlassen,
-ein Klick in die Liste verlässt es nicht; Enter ohne markierten Vorschlag und Komma übernehmen
-das getippte Wort; ein angeklicktes Schlagwort wird sofort übernommen; die Vorschläge kommen beim
-Tippen vom Server (`ontippen`).
 
 ### 7.2 Frisches Littera-Backup
 

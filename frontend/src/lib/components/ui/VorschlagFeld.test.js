@@ -124,4 +124,40 @@ describe('VorschlagFeld', () => {
 		expect(screen.queryByRole('listbox')).toBeNull();
 		expect(eingabe.getAttribute('aria-expanded')).toBe('false');
 	});
+
+	// ChipFeld macht aus einer Wahl sofort einen Chip und übernimmt mit Enter und Komma selbst.
+	it('meldet eine Wahl an onwaehlen, mit Klick wie mit Enter', async () => {
+		const onwaehlen = vi.fn();
+		const { screen, eingabe } = feld({ onwaehlen });
+		await tippe(eingabe, 'sd');
+		await fireEvent.click(screen.getByRole('option', { name: /Sdk 2/ }));
+		await tippe(eingabe, 'p');
+		await fireEvent.keyDown(eingabe, { key: 'ArrowDown' });
+		await fireEvent.keyDown(eingabe, { key: 'Enter' });
+		expect(onwaehlen.mock.calls).toEqual([['Sdk 2'], ['Pg']]);
+	});
+
+	it('gibt dem onkeydown des Aufrufers nur Tasten, die die Liste nicht verbraucht hat', async () => {
+		/** @type {string[]} */
+		const bekommen = [];
+		const { eingabe } = feld({
+			onkeydown: (/** @type {KeyboardEvent} */ e) => bekommen.push(e.key)
+		});
+		await tippe(eingabe, 's');
+		await fireEvent.keyDown(eingabe, { key: 'ArrowDown' });
+		await fireEvent.keyDown(eingabe, { key: 'Enter' });
+		await fireEvent.keyDown(eingabe, { key: 'Enter' });
+		await tippe(eingabe, 's');
+		await fireEvent.keyDown(eingabe, { key: 'Escape' });
+		await fireEvent.keyDown(eingabe, { key: ',' });
+		expect(bekommen, 'Pfeil, Wahl und Escape gehören der Liste').toEqual(['Enter', ',']);
+	});
+
+	it('schließt die Liste, wenn der Aufrufer das Feld leert', async () => {
+		const { screen, eingabe } = feld();
+		await tippe(eingabe, 's');
+		expect(screen.getByRole('listbox')).toBeTruthy();
+		await screen.rerender({ value: '' });
+		expect(screen.queryByRole('listbox')).toBeNull();
+	});
 });

@@ -14,8 +14,8 @@
 	 * Gebaut für die Schlagworte am Titel (Migration 138). Keins der vorhandenen Bauteile
 	 * nimmt mehrere freie Werte: Feld nimmt einen, Select einen aus fester Liste, und
 	 * LmfKlasseChip ist ein einzelner Chip ohne Eingabe. Deshalb setzt sich dieses Bauteil
-	 * aus den beiden zusammen, statt sie nachzubauen — das Feld IST ui/Feld (36 px, derselbe
-	 * Rahmen), die Chips haben die Form von LmfKlasseChip (32 px, Radius 8 px,
+	 * aus den beiden zusammen, statt sie nachzubauen — das Feld IST ui/VorschlagFeld (ui/Feld
+	 * mit dem Menü der Vorschläge, 36 px, derselbe Rahmen), die Chips haben die Form von LmfKlasseChip (32 px, Radius 8 px,
 	 * secondary-container, × auf 32 × 32 px wie das Gate icon-trefferflaechen verlangt).
 	 *
 	 * Übernommen wird mit Enter, mit Komma, mit der Auswahl eines Vorschlags und beim
@@ -47,7 +47,7 @@
 	 */
 	import { X } from '@lucide/svelte';
 	import ChipAngebote from './ChipAngebote.svelte';
-	import Feld from './Feld.svelte';
+	import VorschlagFeld from './VorschlagFeld.svelte';
 
 	/** @type {{ werte?: string[] | null, id?: string, etikett?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], ontippen?: (text: string) => void, max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, angeboteNeu?: string[], angeboteNeuEtikett?: string, 'aria-label'?: string }} */
 	let {
@@ -70,7 +70,6 @@
 
 	const nummer = ++zaehler;
 	const feldId = $derived(id ?? `chipfeld-${nummer}`);
-	const listeId = $derived(`${feldId}-vorschlaege`);
 
 	// null heißt beim Aufrufer „nicht geladen" (die Katalogliste liefert Schlagworte so).
 	// Angezeigt wird dann nichts; ob das Feld offen ist, entscheidet der Aufrufer.
@@ -106,13 +105,11 @@
 		}
 	}
 
-	/** Auswahl aus der Vorschlagsliste: Der Browser meldet sie als Ersetzung, nicht als
-	 *  getippten Text. Ein Klick auf den Vorschlag ist damit schon die Übernahme.
-	 *  @param {Event} e */
-	function eingegeben(e) {
-		const art = /** @type {InputEvent} */ (e).inputType;
-		if (art === 'insertReplacementText' || art === undefined) uebernimm();
-		else ontippen?.(/** @type {HTMLInputElement} */ (e.target).value);
+	/** Die Wahl eines Vorschlags ist schon die Übernahme, mit Klick wie mit Enter.
+	 *  @param {string} wert */
+	function gewaehlt(wert) {
+		eingabe = wert;
+		uebernimm();
 	}
 
 	/** Die Angebote, die noch nicht gewählt sind.
@@ -139,28 +136,26 @@
 </script>
 
 <div class="space-y-2">
-	<Feld
+	<!-- Was schon gewählt ist, bietet das Menü nicht an, wie die Angebote darunter. -->
+	<VorschlagFeld
 		id={feldId}
 		{etikett}
 		aria-label={etikett ? undefined : ariaLabel}
 		bind:value={eingabe}
 		bind:element={feldElement}
-		list={listeId}
+		vorschlaege={vorschlaege
+			.filter((v) => !liste.some((w) => schluessel(w) === schluessel(v.wert)))
+			.map((v) => ({ wert: v.wert, zusatz: v.beschreibung }))}
 		{placeholder}
 		{disabled}
 		maxlength={maxZeichen}
-		autocomplete="off"
 		ungueltig={voll}
 		hint={voll ? `Höchstens ${max} — zuerst einen entfernen.` : hint}
 		onkeydown={taste}
-		oninput={eingegeben}
+		oninput={(e) => ontippen?.(e.currentTarget.value)}
+		onwaehlen={gewaehlt}
 		onblur={uebernimm}
 	/>
-	<datalist id={listeId}>
-		{#each vorschlaege as v (v.wert)}
-			<option value={v.wert}>{v.beschreibung ? `${v.wert} — ${v.beschreibung}` : v.wert}</option>
-		{/each}
-	</datalist>
 	{#if liste.length}
 		<!-- Eigener Name, nicht der des Feldes: Zwei Elemente mit demselben Namen sagt ein
 		     Screenreader als dasselbe an. -->

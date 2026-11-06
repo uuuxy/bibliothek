@@ -11,7 +11,7 @@ import ChipFeld from './ChipFeld.svelte';
 const aufbau = (/** @type {Record<string, any>} */ props = {}) =>
 	render(ChipFeld, { etikett: 'Schlagworte', ...props });
 
-/** Getippter Text: Der Browser meldet ihn als insertText, nicht als Auswahl. */
+/** Getippter Text, wie der Browser ihn meldet. */
 const tippe = (/** @type {HTMLElement} */ feld, /** @type {string} */ text) =>
 	fireEvent.input(feld, { target: { value: text }, inputType: 'insertText' });
 
@@ -39,35 +39,55 @@ describe('ChipFeld', () => {
 		expect(chips(container)).toEqual(['Krimi', 'Pferde', 'Freundschaft']);
 	});
 
-	it('übernimmt eine Auswahl aus der Vorschlagsliste sofort, getippten Text nicht', async () => {
-		const { getByLabelText, container } = aufbau({ vorschlaege: [{ wert: 'Fantasy' }] });
-		const feld = getByLabelText('Schlagworte');
-		await tippe(feld, 'Fantasy');
-		expect(chips(container)).toEqual([]);
-		await fireEvent.input(feld, {
-			target: { value: 'Fantasy' },
-			inputType: 'insertReplacementText'
+	it('übernimmt eine Wahl aus dem Menü sofort, mit Klick wie mit Enter, getippten Text nicht', async () => {
+		const { getByLabelText, getByRole, container } = aufbau({
+			vorschlaege: [{ wert: 'Fantasy', beschreibung: '12 Titel' }, { wert: 'Fabel' }]
 		});
+		const feld = /** @type {HTMLInputElement} */ (getByLabelText('Schlagworte'));
+		await tippe(feld, 'Fan');
+		expect(chips(container)).toEqual([]);
+		await fireEvent.click(getByRole('option', { name: /Fantasy/ }));
 		expect(chips(container)).toEqual(['Fantasy']);
+		expect(feld.value).toBe('');
+		expect(document.activeElement).toBe(feld);
+
+		await tippe(feld, 'Fa');
+		await fireEvent.keyDown(feld, { key: 'ArrowDown' });
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+		expect(chips(container), 'ein gewähltes Wort steht nicht mehr im Menü').toEqual([
+			'Fantasy',
+			'Fabel'
+		]);
+	});
+
+	it('übernimmt mit Enter ohne Markierung das getippte Wort, auch bei offenem Menü', async () => {
+		const { getByLabelText, queryByRole, container } = aufbau({
+			vorschlaege: [{ wert: 'Fantasy' }]
+		});
+		const feld = getByLabelText('Schlagworte');
+		await tippe(feld, 'Fan');
+		expect(queryByRole('listbox')).toBeTruthy();
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+		expect(chips(container)).toEqual(['Fan']);
+		expect(queryByRole('listbox'), 'nach dem Chip ist das Feld leer, das Menü zu').toBeNull();
 	});
 
 	// Beim Tippen fragt der Aufrufer die Vorschläge beim Server nach (seit dem 30.09.2026,
 	// utils/schlagwortVorschlaege.svelte.js). Gemeldet wird getippter Text, keine Auswahl:
 	// Die ist schon die Übernahme.
-	it('meldet getippten Text an ontippen, eine Auswahl aus der Liste nicht', async () => {
+	it('meldet getippten Text an ontippen, eine Wahl aus dem Menü nicht', async () => {
 		/** @type {string[]} */
 		const gemeldet = [];
-		const { getByLabelText } = aufbau({
+		const { getByLabelText, getByRole, container } = aufbau({
+			vorschlaege: [{ wert: 'Pilze' }],
 			ontippen: (/** @type {string} */ text) => gemeldet.push(text)
 		});
 		const feld = getByLabelText('Schlagworte');
 		await tippe(feld, 'pil');
 		await tippe(feld, 'pilz');
-		await fireEvent.input(feld, {
-			target: { value: 'Pilze' },
-			inputType: 'insertReplacementText'
-		});
+		await fireEvent.click(getByRole('option', { name: 'Pilze' }));
 		expect(gemeldet).toEqual(['pil', 'pilz']);
+		expect(chips(container)).toEqual(['Pilze']);
 	});
 
 	it('zählt Doppelte ohne Groß- und Kleinschreibung, und ein Vorschlag gibt die Schreibweise vor', async () => {
