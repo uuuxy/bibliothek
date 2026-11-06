@@ -64,9 +64,13 @@ test('Standort: Karte und Kopf nennen ihn, markierte Exemplare bekommen und verl
 	await expect(dialog).toContainText('Gilt für 1 Exemplar.');
 	const bestaetigen = dialog.getByRole('button', { name: 'Standort ändern' });
 	await expect(bestaetigen).toBeDisabled();
-	// Der vorhandene Standort steht in der Vorschlagsliste des Felds.
-	await expect(dialog.locator('datalist option[value="Lehrerschrank"]')).toHaveCount(1);
-	await dialog.getByLabel('Standort', { exact: true }).fill('Bibliothek, Regal 3B');
+	// Der vorhandene Standort steht im Menü des Felds; der Pfeil im Feld zeigt es ohne Tippen.
+	await dialog.getByRole('button', { name: 'Vorschläge zeigen' }).click();
+	await expect(dialog.getByRole('option', { name: /^Lehrerschrank/ })).toBeVisible();
+	const standortFeld = dialog.getByLabel('Standort', { exact: true });
+	await standortFeld.fill('Bibliothek, Regal 3B');
+	// Tab verlässt das Feld, bevor der Knopf gedrückt wird; ein offenes Menü läge über ihm.
+	await standortFeld.press('Tab');
 	await bestaetigen.click();
 
 	await expect(dialog).toBeHidden();
