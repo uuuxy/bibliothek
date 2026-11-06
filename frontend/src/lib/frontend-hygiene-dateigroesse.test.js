@@ -11,7 +11,6 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 //   - Eine Datei aus dem Bestand, die weiter wächst, ist rot; die Ausnahme ist kein Freibrief.
 //   - Wer eine Datei unter 200 bringt, trägt sie aus: Der Bestand ist eine Arbeitsliste.
 const BESTAND = {
-	'src/inventur/lib/components/admin/KlassensatzDialog.svelte': 201,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 209,
 	'src/lib/components/bestellungen/Bestellwesen.svelte': 212,
 	'src/lib/components/omnibox/Omnibox.svelte': 202,

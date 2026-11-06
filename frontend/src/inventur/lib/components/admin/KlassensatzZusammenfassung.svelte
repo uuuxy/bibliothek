@@ -25,9 +25,7 @@
 	</div>
 </div>
 
-<div
-	class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full p-4 space-y-2"
->
+<div class="flex-1 overflow-y-auto p-4 space-y-2">
 	{#if gewaehlteTitel.length === 0}
 		<div
 			class="h-full flex flex-col items-center justify-center text-center p-8 text-on-surface-variant"

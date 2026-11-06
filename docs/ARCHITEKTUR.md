@@ -3764,6 +3764,11 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `e2e/navigation-bildlauf.spec.js`). Material 3 sagt nur, dass sie in sich rollt („If the list of
   navigation destinations is longer than the height of the drawer, the drawer's contents can be
   scrolled within the drawer"), nicht, wie der Balken aussieht.
+- **Ein Balken für jeden Bildlauf.** Jede andere Fläche, die rollt (Inhaltsbereich, Dialoge,
+  Menüs, Tabellen), zeigt dieselbe Pille, dort auch ohne Maus, wie Gmails Mailliste
+  (`styles/basis.css`, `e2e/bildlauf-einheitlich.spec.js`). Gmail selbst zeichnet in der Liste
+  einen eckigen, helleren Daumen; hier gilt überall die Pille der Leiste. Eigene Regeln für den
+  Balken an einzelnen Flächen gibt es nicht; die zwei der Klassensatz-Dialoge sind entfallen.
 - **Lange Listen und schmale Fenster.** Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich
   der Seite (`e2e/scrollbereiche.spec.js`). In „Titel bearbeiten" lässt sich in den Exemplaren
   nicht suchen (der größte Titel am Testserver hat 383). Die Leserakte lässt dem Titel in der

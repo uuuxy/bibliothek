@@ -148,9 +148,7 @@
 					</p>
 				</div>
 
-				<div
-					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
-				>
+				<div class="flex-1 overflow-y-auto pr-4 pb-4">
 					<KlassensatzKlassenwahl bind:gewaehlteKlassen {vorhandeneGruppen} />
 
 					{#if ueberschriebeneKlassen.length > 0}

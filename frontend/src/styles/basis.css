@@ -25,6 +25,35 @@
 	select {
 		height: 2.25rem; /* 36 px — dieselbe Control-Höhe wie Button size="md" (h-9) */
 	}
+
+	/* ── Bildlauf: ein Balken für jede Fläche, wie in Gmails Leiste ────────────
+	   An Gmail gemessen (Chrome, macOS, Maus angeschlossen): ein Daumen von 8 px mit halbrunden
+	   Enden, Grau #a6a8ab auf #f8fafd, ohne Spur. Ohne diese Regel hing das Aussehen an der
+	   Hardware: mit Maus 15 px samt heller Spur, mit Trackpad ein Balken nur beim Rollen. Das Grau
+	   ist on-surface-variant mit 46 % Deckkraft, auf surface derselbe Wert. Gmails Mailliste hat
+	   einen eckigen, helleren Daumen; hier gilt überall die Pille. Die Seitenleiste zeigt ihn nur
+	   unter der Maus (komponenten.css, .leiste-bildlauf). Chrome und Safari lesen
+	   ::-webkit-scrollbar nur, solange scrollbar-width und scrollbar-color auf auto stehen; die
+	   beiden stehen deshalb nur für Firefox. Gemessen in e2e/bildlauf-einheitlich.spec.js. */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-track,
+	::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+	::-webkit-scrollbar-thumb {
+		border-radius: 4px;
+		background: color-mix(in srgb, var(--color-on-surface-variant) 46%, transparent);
+	}
+	@supports not selector(::-webkit-scrollbar) {
+		* {
+			scrollbar-width: thin;
+			scrollbar-color: color-mix(in srgb, var(--color-on-surface-variant) 46%, transparent)
+				transparent;
+		}
+	}
 }
 
 /* Bewegung reduzieren (WCAG 2.3.3, Gate e2e/barrierefreiheit-dialog.spec.js).
