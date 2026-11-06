@@ -31,3 +31,23 @@ export function berechneMenueBox(anker, hoehe, breite, ausrichtung, fenster) {
 		top: nachOben ? Math.max(RAND, anker.top - hoehe - ABSTAND) : anker.bottom + ABSTAND
 	};
 }
+
+/**
+ * Lage einer Vorschau neben dem markierten Menüeintrag, wie ein Untermenü: oben bündig mit dem
+ * Eintrag an der hinteren Kante der Menüfläche (material-web, md-sub-menu: anchor-corner
+ * „start-end“, menu-corner „start-start“). Reicht rechts der Platz nicht, liegt sie links an der
+ * Menüfläche; senkrecht bleibt sie im Fenster.
+ *
+ * @param {{ top: number }} eintrag Rechteck des markierten Eintrags
+ * @param {{ left: number, right: number }} menue Rechteck der Menüfläche
+ * @param {{ breite: number, hoehe: number }} flaeche Gemessene Maße der Vorschau
+ * @param {{ breite: number, hoehe: number }} fenster
+ * @returns {{ left: number, top: number }}
+ */
+export function berechneVorschauBox(eintrag, menue, flaeche, fenster) {
+	const passtRechts = menue.right + flaeche.breite <= fenster.breite - RAND;
+	return {
+		left: passtRechts ? menue.right : Math.max(RAND, menue.left - flaeche.breite),
+		top: Math.max(RAND, Math.min(eintrag.top, fenster.hoehe - flaeche.hoehe - RAND))
+	};
+}

@@ -211,3 +211,74 @@ func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 		}
 	}
 }
+
+// Die Vorschau am Vorschlagsmenü der Signatur fragt zwei Titel mit Cover ab. Ohne den Filter kämen
+// bei einem Regal, dessen erste Titel kein Bild haben, leere Plätze zurück; ohne die Grenze bis
+// zu 500 Zeilen für zwei Bilder.
+func TestTitelUnterSignatur_NurMitCoverUndLimit(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	basis := "BIB Cover " + suffix
+	// Im Regal zuerst der Titel ohne Cover: Fehlte der Filter, stünde er vorn in der Antwort.
+	for i, signatur := range []string{basis + " 1", basis + " 2", basis + " 3"} {
+		testdaten.LegeExemplarMitSignaturAn(t, pool, signatur, fmt.Sprintf("SIGC-%d-%s", i, suffix))
+	}
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE buecher_titel SET cover_url = '/uploads/cover_' || id || '.webp' WHERE signatur IN ($1, $2)`,
+		basis+" 2", basis+" 3"); err != nil {
+		t.Fatalf("Cover setzen: %v", err)
+	}
+
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	frage := func(zusatz string) titelUnterSignaturAntwort {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		srv.TitelUnterSignatur().ServeHTTP(rec, httptest.NewRequest(http.MethodGet,
+			"/api/signaturen/buecher?signatur="+url.QueryEscape(basis)+zusatz, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%q: Status %d", zusatz, rec.Code)
+		}
+		var antwort titelUnterSignaturAntwort
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("%q: Antwort unlesbar: %v", zusatz, err)
+		}
+		return antwort
+	}
+	signaturen := func(a titelUnterSignaturAntwort) string {
+		namen := make([]string, 0, len(a.Titel))
+		for _, b := range a.Titel {
+			namen = append(namen, b.Signatur)
+		}
+		return strings.Join(namen, " | ")
+	}
+
+	// Ohne Zusatz wie bisher alle drei; die Adresse des Covers steht dabei.
+	alle := frage("")
+	if len(alle.Titel) != 3 || alle.Gekappt {
+		t.Fatalf("ohne Zusatz: %q, gekappt %v; erwartet drei Titel", signaturen(alle), alle.Gekappt)
+	}
+	if alle.Titel[0].CoverURL != "" || alle.Titel[1].CoverURL == "" {
+		t.Errorf("cover_url = %q, %q; erwartet leer am ersten, gesetzt am zweiten Titel",
+			alle.Titel[0].CoverURL, alle.Titel[1].CoverURL)
+	}
+
+	// Nur mit Cover und höchstens einer: der erste Titel mit Bild, die Kappung wird angesagt.
+	eins := frage("&nur_mit_cover=true&limit=1")
+	if signaturen(eins) != basis+" 2" || !eins.Gekappt {
+		t.Errorf("nur_mit_cover, limit=1: %q, gekappt %v; erwartet %q, gekappt", signaturen(eins), eins.Gekappt, basis+" 2")
+	}
+
+	// Nur mit Cover ohne Grenze: beide mit Bild.
+	if beide := frage("&nur_mit_cover=true"); signaturen(beide) != basis+" 2 | "+basis+" 3" || beide.Gekappt {
+		t.Errorf("nur_mit_cover: %q, gekappt %v; erwartet die beiden Titel mit Cover", signaturen(beide), beide.Gekappt)
+	}
+
+	// Ein unbrauchbares limit gilt als nicht gesetzt, statt die Antwort zu leeren.
+	for _, roh := range []string{"0", "-1", "abc"} {
+		if a := frage("&limit=" + roh); len(a.Titel) != 3 {
+			t.Errorf("limit=%s: %d Titel, erwartet 3", roh, len(a.Titel))
+		}
+	}
+}

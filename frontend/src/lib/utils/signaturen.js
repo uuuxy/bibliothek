@@ -24,3 +24,32 @@ export async function ladeSignaturen() {
 		return [];
 	}
 }
+
+/** Je Signatur eine Anfrage: Wer im Menü auf und ab fährt, zeigt mehrmals auf dieselbe. */
+const coverJeSignatur = new Map();
+
+/**
+ * Bis zu zwei Titel mit gespeichertem Cover unter einer Signatur, für die Vorschau am
+ * Vorschlagsmenü. Dieselbe Abfrage wie die Regalansicht, mit kleiner Grenze und nur Titeln mit
+ * Cover. Antwortet der Server nicht, bleibt die Liste leer und wird beim nächsten Zeigen neu
+ * erfragt.
+ *
+ * @param {string} signatur
+ * @returns {Promise<{ titel_id: string, titel: string, isbn: string, cover_url: string }[]>}
+ */
+export function ladeCoverZurSignatur(signatur) {
+	let antwort = coverJeSignatur.get(signatur);
+	if (!antwort) {
+		const frage = new URLSearchParams({ signatur, limit: '2', nur_mit_cover: 'true' });
+		antwort = apiFetch(`/api/signaturen/buecher?${frage}`)
+			.then(async (res) => (res.ok ? ((await res.json())?.buecher ?? []) : null))
+			.catch(() => null)
+			.then((liste) => {
+				if (liste) return liste;
+				coverJeSignatur.delete(signatur);
+				return [];
+			});
+		coverJeSignatur.set(signatur, antwort);
+	}
+	return antwort;
+}

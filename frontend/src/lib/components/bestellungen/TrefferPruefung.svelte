@@ -18,6 +18,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
+	import SignaturCoverVorschau from '../signaturen/SignaturCoverVorschau.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { untrack } from 'svelte';
 
@@ -132,7 +133,11 @@
 			vorschlaege={vorhandene.map((s) => ({ wert: s.signatur, zusatz: `${s.titel} Titel` }))}
 			placeholder="Regaladresse wählen"
 			feld="font-medium"
-		/>
+		>
+			{#snippet vorschau(/** @type {string} */ wert)}
+				<SignaturCoverVorschau signatur={wert} />
+			{/snippet}
+		</VorschlagFeld>
 	</div>
 
 	<TrefferPruefungSchlagworte

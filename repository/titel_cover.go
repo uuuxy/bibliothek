@@ -65,6 +65,14 @@ const CoverAbgleichAuswahl = `
 // ein in dieser Zeit von Hand hochgeladenes Cover bleibt mit seinem Stand stehen.
 const coverNichtLokal = `COALESCE(cover_url, '') NOT LIKE '/uploads/%'`
 
+// sqlHatCover ist die Bedingung „der Titel hat ein gespeichertes Cover“ für die Spalte cover_url
+// unter ihrem Alias. Flur-Monitor und Vorschau am Vorschlagsmenü der Signatur nehmen nur Titel
+// mit Bild; eine Regel für beide, damit kein Titel an der einen Stelle als bebildert gilt und an
+// der anderen nicht.
+func sqlHatCover(spalte string) string {
+	return "(" + spalte + " IS NOT NULL AND " + spalte + " <> '')"
+}
+
 // TitelMitISBN ist ein Titel, wie der Cover-Abgleich ihn braucht.
 type TitelMitISBN struct {
 	ID   string

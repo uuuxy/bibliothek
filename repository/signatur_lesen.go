@@ -50,20 +50,23 @@ type SignaturTitel struct {
 	Titel     string
 	Autor     string
 	ISBN      string
+	CoverURL  string
 	Exemplare int
 	Verliehen int
 }
 
 // LadeTitelUnterSignatur liefert die Titel, deren Signatur mit dem Präfix beginnt, in der
 // Reihenfolge des Regals und höchstens limit Zeilen. Das Prädikat ist signaturPraefixBedingung,
-// dasselbe wie beim Bereich einer Inventur.
-func LadeTitelUnterSignatur(ctx context.Context, db Datenbank, signatur string, limit int) ([]SignaturTitel, error) {
+// dasselbe wie beim Bereich einer Inventur. nurMitCover lässt Titel ohne gespeichertes Cover weg:
+// Die Vorschau am Vorschlagsmenü will zwei Bilder, und ein Drittel der Titel hat keins.
+func LadeTitelUnterSignatur(ctx context.Context, db Datenbank, signatur string, limit int, nurMitCover bool) ([]SignaturTitel, error) {
 	rows, err := db.Query(ctx, fmt.Sprintf(`
 			SELECT t.id::text,
 			       btrim(t.signatur),
 			       t.titel,
 			       COALESCE(t.autor, ''),
 			       COALESCE(t.isbn, ''),
+			       COALESCE(t.cover_url, ''),
 			       count(e.id) FILTER (WHERE e.ist_ausgesondert = false) AS exemplare,
 			       count(e.id) FILTER (
 			           WHERE e.ist_ausgesondert = false
@@ -73,10 +76,11 @@ func LadeTitelUnterSignatur(ctx context.Context, db Datenbank, signatur string, 
 			FROM buecher_titel t
 			LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
 			WHERE %s
-			GROUP BY t.id, t.signatur, t.titel, t.autor, t.isbn
+			  AND (NOT $3 OR %s)
+			GROUP BY t.id, t.signatur, t.titel, t.autor, t.isbn, t.cover_url
 			ORDER BY btrim(t.signatur) COLLATE deutsch, t.titel COLLATE deutsch
 			LIMIT $2
-		`, signaturPraefixBedingung("t.signatur", 1)), signatur, limit)
+		`, signaturPraefixBedingung("t.signatur", 1), sqlHatCover("t.cover_url")), signatur, limit, nurMitCover)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +89,7 @@ func LadeTitelUnterSignatur(ctx context.Context, db Datenbank, signatur string, 
 	buecher := []SignaturTitel{}
 	for rows.Next() {
 		var b SignaturTitel
-		if err := rows.Scan(&b.TitelID, &b.Signatur, &b.Titel, &b.Autor, &b.ISBN, &b.Exemplare, &b.Verliehen); err != nil {
+		if err := rows.Scan(&b.TitelID, &b.Signatur, &b.Titel, &b.Autor, &b.ISBN, &b.CoverURL, &b.Exemplare, &b.Verliehen); err != nil {
 			return nil, zeileUnlesbar(err)
 		}
 		buecher = append(buecher, b)

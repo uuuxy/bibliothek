@@ -276,7 +276,8 @@ Sachgruppen (Kürzel + Bezeichnung, z. B. _Jug_ – Jugendliteratur) pflegen und
 Präfixsuche durchsehen („Jug" findet „Jug Her", „Jug Pre" …). Trägt ein Buch eine zweiteilige
 Aufschrift wie „LMF Deu 7 / Bie" — so kommen die Signaturen aus Littera —, fasst die Liste
 nach dem Teil vor „ / " zusammen; am Titel und im Regal steht die ganze Aufschrift. Dasselbe
-gilt für die Vorschläge im Feld _Signatur_ und für die Auswahl der Inventur. (§13)
+gilt für die Vorschläge im Feld _Signatur_ und für die Auswahl der Inventur. Wer dort auf einen
+Vorschlag zeigt, sieht daneben bis zu zwei Cover von Titeln unter dieser Signatur. (§13)
 
 ## Druck-Center
 

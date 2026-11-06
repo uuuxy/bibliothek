@@ -323,11 +323,12 @@ export async function oeffneBestellungsDetail(page, marke) {
 	}
 }
 
-/** 8×8-PNG, damit ein Test ein ECHTES Bild bekommt. Die Größe ist der Punkt: Der
+/** 20×30-PNG, damit ein Test ein ECHTES Bild bekommt. Die Größe ist der Punkt: Der
  *  Cover-Proxy liefert bei jedem Fehler ein 1×1-GIF mit Status 200 aus, ein Test gegen
- *  "Bild geladen" ginge daran vorbei. Nur naturalWidth > 1 trennt beides. */
+ *  "Bild geladen" ginge daran vorbei. CoverVorschau trennt beides mit naturalWidth > 1,
+ *  BuchCover verlangt mindestens 10 Pixel je Seite. */
 const TESTBILD_PNG_BASE64 =
-	'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGM4EaCBFTEMLQkAaplQAc/OcKAAAAAASUVORK5CYII=';
+	'iVBORw0KGgoAAAANSUhEUgAAABQAAAAeCAIAAACjcKk8AAAAHklEQVR42mNwy1tANmIY1TyqeVTzqOZRzaOah7NmAA+2HQ7RS5hQAAAAAElFTkSuQmCC';
 
 /**
  * Legt ein echtes Bild im uploads-Verzeichnis des Backends ab und gibt dessen

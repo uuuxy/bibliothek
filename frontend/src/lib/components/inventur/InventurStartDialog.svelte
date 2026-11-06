@@ -10,6 +10,7 @@
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
 	import VorschlagFeld from '../ui/VorschlagFeld.svelte';
+	import SignaturCoverVorschau from '../signaturen/SignaturCoverVorschau.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 
@@ -99,7 +100,11 @@
 					}))}
 					placeholder="z. B. LMF Deu 7"
 					hint="Erfasst alles, was mit dieser Signatur beginnt — „LMF Deu 7“ also auch „LMF Deu 7 / Bie“."
-				/>
+				>
+					{#snippet vorschau(/** @type {string} */ wert)}
+						<SignaturCoverVorschau signatur={wert} />
+					{/snippet}
+				</VorschlagFeld>
 			</div>
 		{/if}
 

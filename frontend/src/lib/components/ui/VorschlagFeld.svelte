@@ -17,13 +17,15 @@
 
 	/**
 	 * vorschlaege: die Werte zur Wahl; `zusatz` steht rechts im Eintrag (etwa „21 Titel“).
-	 * onwaehlen: meldet eine Wahl aus der Liste (ChipFeld macht daraus sofort einen Chip).
+	 * onwaehlen: meldet eine Wahl aus der Liste (ChipFeld macht daraus sofort einen Chip). vorschau
+	 * zeichnet, was hinter dem markierten Wert steht, neben der Liste (ui/MenueVorschau).
 	 * onkeydown bekommt nur Tasten, die die Liste nicht verbraucht hat. Alles Weitere (etikett,
 	 * hint, placeholder, required …) geht an Feld.
 	 * @type {{
 	 *   value?: string | null,
 	 *   vorschlaege?: Array<{ wert: string, zusatz?: string }>,
 	 *   element?: HTMLInputElement,
+	 *   vorschau?: import('svelte').Snippet<[string]>,
 	 *   onwaehlen?: (wert: string) => void,
 	 *   oninput?: (e: Event & { currentTarget: EventTarget & HTMLInputElement }) => void,
 	 *   onkeydown?: (e: KeyboardEvent & { currentTarget: EventTarget & HTMLInputElement }) => void,
@@ -36,6 +38,7 @@
 		element = $bindable(),
 		id = undefined,
 		disabled = false,
+		vorschau = undefined,
 		onwaehlen = undefined,
 		oninput = undefined,
 		onkeydown = undefined,
@@ -192,5 +195,6 @@
 		onwaehlen={waehlen}
 		onaktiv={(i) => (aktiv = i)}
 		onelement={(el) => (liste = el)}
+		{vorschau}
 	/>
 {/if}

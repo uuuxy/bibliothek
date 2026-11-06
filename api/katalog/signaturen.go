@@ -3,6 +3,7 @@ package katalog
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"bibliothek/api/tuer"
@@ -59,6 +60,7 @@ type signaturTitel struct {
 	Titel     string `json:"titel"`
 	Autor     string `json:"autor"`
 	ISBN      string `json:"isbn"`
+	CoverURL  string `json:"cover_url"`
 	Exemplare int    `json:"exemplare"`
 	Verliehen int    `json:"verliehen"`
 }
@@ -77,6 +79,9 @@ type titelUnterSignaturAntwort struct {
 // derselben Funktion, aus der der Bereich einer Inventur entsteht; zwei Kopien liefen
 // auseinander, und der Unterschied fiele erst auf, wenn eine Inventur andere Bücher bucht, als
 // die Regalansicht zeigt.
+//
+// Wahlweise: ?limit= senkt die Grenze von 500, ?nur_mit_cover=true lässt Titel ohne gespeichertes
+// Cover weg. Beides braucht die Vorschau am Vorschlagsmenü der Signatur, die zwei Cover zeigt.
 func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		signatur := strings.TrimSpace(r.URL.Query().Get("signatur"))
@@ -84,7 +89,13 @@ func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
 			return apierrors.BadRequest("Bitte eine Signatur angeben", errors.New("leere signatur"))
 		}
 
-		zeilen, err := repository.LadeTitelUnterSignatur(r.Context(), t.DB.Pool, signatur, regalansichtGrenze+1)
+		grenze := regalansichtGrenze
+		if n, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && n > 0 {
+			grenze = min(n, regalansichtGrenze)
+		}
+		nurMitCover := r.URL.Query().Get("nur_mit_cover") == "true"
+
+		zeilen, err := repository.LadeTitelUnterSignatur(r.Context(), t.DB.Pool, signatur, grenze+1, nurMitCover)
 		if err != nil {
 			if errors.Is(err, repository.ErrZeileUnlesbar) {
 				return apierrors.Internal("Buchzeile unlesbar", err)
@@ -99,9 +110,9 @@ func (t *Tueren) TitelUnterSignatur() http.HandlerFunc {
 
 		// Eine Zeile mehr als die Grenze geholt: Nur so lässt sich „es gibt noch mehr" von
 		// „genau voll" unterscheiden, ohne eine zweite Abfrage zum Zählen.
-		gekappt := len(titel) > regalansichtGrenze
+		gekappt := len(titel) > grenze
 		if gekappt {
-			titel = titel[:regalansichtGrenze]
+			titel = titel[:grenze]
 		}
 
 		tuer.AntworteJSON(w, http.StatusOK, titelUnterSignaturAntwort{

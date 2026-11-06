@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { berechneMenueBox } from './menueGeometrie.js';
+import { berechneMenueBox, berechneVorschauBox } from './menueGeometrie.js';
 
 const fenster = { breite: 1200, hoehe: 800 };
 
@@ -43,5 +43,33 @@ describe('berechneMenueBox', () => {
 			fenster
 		);
 		expect(box.left).toBe(8);
+	});
+});
+
+// Die Vorschau am Menüeintrag geht auf wie ein Untermenü: oben bündig mit dem Eintrag, an der
+// hinteren Kante der Menüfläche, links davon, wenn rechts der Platz fehlt (das Menü der
+// Signatur im Bestellfenster steht am rechten Rand).
+describe('berechneVorschauBox', () => {
+	const menue = { left: 700, right: 1000 };
+	const flaeche = { breite: 248, hoehe: 184 };
+
+	it('legt die Vorschau rechts an die Menüfläche, oben bündig mit dem Eintrag', () => {
+		expect(berechneVorschauBox({ top: 300 }, { left: 300, right: 600 }, flaeche, fenster)).toEqual({
+			left: 600,
+			top: 300
+		});
+	});
+	it('kippt nach links, wenn rechts der Platz fehlt', () => {
+		expect(berechneVorschauBox({ top: 300 }, menue, flaeche, fenster)).toEqual({
+			left: 452,
+			top: 300
+		});
+	});
+	it('hält 8 px Abstand zum Fensterrand, unten wie links', () => {
+		expect(berechneVorschauBox({ top: 700 }, menue, flaeche, fenster).top).toBe(608);
+		expect(berechneVorschauBox({ top: 0 }, { left: 100, right: 1100 }, flaeche, fenster)).toEqual({
+			left: 8,
+			top: 8
+		});
 	});
 });

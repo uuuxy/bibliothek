@@ -912,8 +912,16 @@ frontend/src
   `onkeydown` des Aufrufers bekommt nur Tasten, die die Liste nicht verbraucht hat. In
   `ui/ChipFeld` ist die Wahl eines Vorschlags schon der Chip, Enter ohne Markierung und Komma
   übernehmen das getippte Wort, und das Menü bietet nicht an, was schon gewählt ist. Das
-  Standortfeld bleibt in `scanSchutz`. Gemessen: `VorschlagFeld.test.js`,
-  `vorschlagRegeln.test.js`, `ChipFeld.test.js`, `ExemplarStandortDialog.test.js`.
+  Standortfeld bleibt in `scanSchutz`. Am Menü der Signatur steht neben dem markierten Eintrag
+  `ui/MenueVorschau` mit bis zu zwei Covern der Titel darunter (`SignaturCoverVorschau`,
+  `GET /api/signaturen/buecher?limit=2&nur_mit_cover=true`), ohne Titel mit Cover nichts. Sie
+  geht auf wie ein Untermenü: oben bündig an der hinteren Kante, nach 400 ms, für Maus und
+  Pfeiltasten (material-web, md-sub-menu: anchor-corner „start-end“, hover-open-delay 400),
+  links vom Menü, wenn rechts der Platz fehlt. Ein Tooltip wäre der falsche Ort, M3 sieht darin
+  kein Bild vor („They can optionally contain a subhead, buttons, and hyperlinks“). Gemessen:
+  `VorschlagFeld.test.js`, `vorschlagRegeln.test.js`, `ChipFeld.test.js`,
+  `ExemplarStandortDialog.test.js`, `menueGeometrie.test.js`, `signaturen.test.js`,
+  `frontend/e2e/signatur-cover-vorschau.spec.js`.
 - **Ein Abschnitt, der nicht geladen wurde, zeigt keinen Leerzustand.** Nennt die Antwort ihn
   in `nicht_gelesen` (`GET /api/statistiken`) oder scheitert der Abruf einer Kachel, steht an
   der Stelle des Leerzustands `ui/LadeFehler` in der knappen Form: nur der Titel in der

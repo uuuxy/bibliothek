@@ -73,7 +73,7 @@ const monitorSpalten = `bt.id, bt.titel, COALESCE(bt.autor, ''), COALESCE(bt.cov
 // monitorMitCover hält Titel ohne Cover von „Buch des Monats" und „Neu eingetroffen" fern:
 // Eine Folie ohne Bild taugt auf einem Bildschirm im Flur nicht. „Beliebt" zeigt auch Titel
 // ohne Cover, mit einem Platzhalter; sonst wäre die Liste nur kürzer.
-const monitorMitCover = `bt.cover_url IS NOT NULL AND bt.cover_url <> ''`
+func monitorMitCover() string { return sqlHatCover("bt.cover_url") }
 
 // MonitorAbfragen liest die drei Folien des Flur-Monitors.
 type MonitorAbfragen struct {
@@ -124,7 +124,7 @@ func (a *MonitorAbfragen) LadeFolien(ctx context.Context) (MonitorFolien, error)
 func (a *MonitorAbfragen) ladeMeistgelesene(ctx context.Context, tage, anzahl int, nurMitCover bool) ([]MonitorTitel, error) {
 	cover := "TRUE"
 	if nurMitCover {
-		cover = monitorMitCover
+		cover = monitorMitCover()
 	}
 	return a.ladeTitelListe(ctx, `
 		SELECT `+monitorSpalten+`
@@ -152,7 +152,7 @@ func (a *MonitorAbfragen) ladeNeuEingetroffene(ctx context.Context, anzahl int) 
 	return a.ladeTitelListe(ctx, `
 		SELECT `+monitorSpalten+`
 		FROM buecher_titel bt
-		WHERE `+monitorMitCover+`
+		WHERE `+monitorMitCover()+`
 		  AND `+OeffentlichSichtbar("bt")+`
 		ORDER BY bt.erstellt_am DESC, bt.titel COLLATE deutsch ASC
 		LIMIT $1::int`, anzahl)

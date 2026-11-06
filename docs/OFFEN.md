@@ -55,7 +55,7 @@ Nur, was kein Test leisten kann.
   Zeile je Exemplar. (5.173)
 - [x] Schlagwort-Chips: die Vorschläge im Menü von `ui/VorschlagFeld` statt in der Liste des
   Browsers. (5.174)
-- [ ] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
+- [x] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
   Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
 
 ### Termin
@@ -82,20 +82,6 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.175 Cover beim Zeigen auf eine Signatur
-
-Wunsch: Wer im Vorschlagsmenü der Signatur auf einen Eintrag („21 Titel“) zeigt, sieht zwei
-vorhandene Cover der Titel unter dieser Signatur. Entschieden: erst das Vorschlagsmenü ausliefern
-und am Testserver ausprobieren, dann bauen, zuerst nur für die Signatur; für Schlagworte fehlt am
-Server die Abfrage „Titel zu einem Schlagwort“.
-
-Vorhanden: `GET /api/signaturen/buecher?signatur=` (die Titel einer Signatur mit ISBN, bis zu
-500, `regalansichtGrenze`) und `ui/CoverVorschau` (lädt erst bei Bedarf, liegt `fixed`, spiegelt
-an den Rändern). Beim Bau zu klären: eine kleine Grenze für die Abfrage, damit zwei Cover nicht
-bis zu 500 Titel holen; der Platz links neben dem Menü, das im Bestellfenster am rechten Rand
-steht; Titel ohne Cover (`CoverVorschau`: in der Bestellliste „fast immer leer“). Material 3
-kennt kein Bild in Tooltips („They can optionally contain a subhead, buttons, and hyperlinks“).
 
 ### 7.2 Frisches Littera-Backup
 

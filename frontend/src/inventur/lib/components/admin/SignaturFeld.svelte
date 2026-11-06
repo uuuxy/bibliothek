@@ -5,6 +5,7 @@
      wie der Titel erst, wenn ein Klick auf „Speichern" es vermisst hat (BuchFormular). -->
 <script>
 	import VorschlagFeld from '../../../../lib/components/ui/VorschlagFeld.svelte';
+	import SignaturCoverVorschau from '../../../../lib/components/signaturen/SignaturCoverVorschau.svelte';
 	import { ladeSignaturen } from '../../../../lib/utils/signaturen.js';
 	import { signaturFehlt, signaturPflicht } from './buchFormularRegeln.js';
 
@@ -47,4 +48,8 @@
 		: formular.istLernmittel
 			? 'Lernmittel tragen kein Rückenetikett — die Signatur ist hier nur eine Notiz.'
 			: 'Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse.'}
-/>
+>
+	{#snippet vorschau(/** @type {string} */ wert)}
+		<SignaturCoverVorschau signatur={wert} />
+	{/snippet}
+</VorschlagFeld>

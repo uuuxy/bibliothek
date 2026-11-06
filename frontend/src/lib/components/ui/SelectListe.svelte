@@ -11,6 +11,7 @@
      CoverVorschau schon dokumentiert ist. -->
 <script>
 	import { Check } from '@lucide/svelte';
+	import MenueVorschau from './MenueVorschau.svelte';
 
 	/**
 	 * @type {{
@@ -22,11 +23,22 @@
 	 *   zeilenKennung: (i: number) => string,
 	 *   onwaehlen: (i: number) => void,
 	 *   onaktiv: (i: number) => void,
-	 *   onelement: (el: HTMLDivElement | undefined) => void
+	 *   onelement: (el: HTMLDivElement | undefined) => void,
+	 *   vorschau?: import('svelte').Snippet<[any]>
 	 * }}
 	 */
-	let { options, value, aktiv, box, kennung, zeilenKennung, onwaehlen, onaktiv, onelement } =
-		$props();
+	let {
+		options,
+		value,
+		aktiv,
+		box,
+		kennung,
+		zeilenKennung,
+		onwaehlen,
+		onaktiv,
+		onelement,
+		vorschau = undefined
+	} = $props();
 
 	/** @type {HTMLDivElement | undefined} */
 	let el = $state();
@@ -90,3 +102,8 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Die Vorschau zum markierten Eintrag (ui/MenueVorschau), etwa die Cover unter einer Signatur. -->
+{#if vorschau && options[aktiv]}
+	<MenueVorschau liste={el} {aktiv} wert={options[aktiv].value} inhalt={vorschau} />
+{/if}

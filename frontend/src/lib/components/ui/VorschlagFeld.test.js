@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
+import { createRawSnippet } from 'svelte';
 import VorschlagFeld from './VorschlagFeld.svelte';
 
 // Ein Textfeld mit Vorschlägen aus dem Bestand (Signatur, Standort, Ziel beim Zusammenführen).
@@ -159,5 +160,32 @@ describe('VorschlagFeld', () => {
 		expect(screen.getByRole('listbox')).toBeTruthy();
 		await screen.rerender({ value: '' });
 		expect(screen.queryByRole('listbox')).toBeNull();
+	});
+
+	// Die Vorschau (Cover unter einer Signatur) geht auf wie ein Untermenü in material-web: nach
+	// 400 ms, für Maus und Pfeiltasten. Ein anderer Eintrag nimmt die alte sofort weg.
+	it('zeigt die Vorschau zum markierten Wert nach 400 ms, ein neuer Eintrag nimmt sie sofort weg', async () => {
+		vi.useFakeTimers();
+		try {
+			const vorschau = createRawSnippet((/** @type {() => string} */ wert) => ({
+				render: () => `<p data-testid="vorschau">${wert()}</p>`
+			}));
+			const { screen, eingabe } = feld({ vorschau });
+			const gezeigt = () => screen.queryByTestId('vorschau')?.textContent ?? null;
+			await tippe(eingabe, 's');
+			await fireEvent.pointerEnter(screen.getByRole('option', { name: /Sdk 2/ }));
+			await vi.advanceTimersByTimeAsync(399);
+			expect(gezeigt(), 'vor der Wartezeit').toBeNull();
+			await vi.advanceTimersByTimeAsync(1);
+			expect(gezeigt()).toBe('Sdk 2');
+			await fireEvent.keyDown(eingabe, { key: 'ArrowDown' });
+			expect(gezeigt(), 'der alte Eintrag verschwindet sofort').toBeNull();
+			await vi.advanceTimersByTimeAsync(400);
+			expect(gezeigt()).toBe('Wsd');
+			await fireEvent.keyDown(eingabe, { key: 'Escape' });
+			expect(gezeigt(), 'mit der Liste geht die Vorschau').toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
