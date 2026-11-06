@@ -204,9 +204,11 @@ func leseExemplare(r io.Reader) ([]Exemplar, error) {
 	for _, z := range zeilen {
 		id := strings.TrimSpace(z["Buchungsnummer"])
 		titelID := strings.TrimSpace(z["Titel"])
-		if id == "" || titelID == "" {
-			continue // ein Exemplar ohne Titel ist im Katalog nicht darstellbar
+		if id == "" {
+			continue // ohne Schlüssel lässt sich kein Exemplar zuordnen
 		}
+		// Ein Exemplar ohne Titel bleibt stehen: trenneOhneTitel nimmt es heraus, und der Schreiber
+		// meldet es als FEHLER, statt es hier still zu verwerfen.
 		exemplare = append(exemplare, Exemplar{
 			ID:                id,
 			Exemplarnummer:    strings.TrimSpace(z["Exemplarnummer"]),

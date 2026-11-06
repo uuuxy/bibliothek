@@ -96,6 +96,33 @@ func TestBestandUeberlebtEinzelnenZeilenfehler(t *testing.T) {
 	}
 }
 
+// Ein Exemplar, dessen Titel nicht in der Tabelle Titel steht, lässt sich nicht übernehmen. Es
+// steht als FEHLER im Protokoll und in QuellExemplare; sonst meldete der Bericht eine vollständige
+// Übernahme, in der ein Buch aus dem Regal fehlt.
+func TestExemplarOhneTitelStehtImProtokoll(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+
+	ab := bestand(titel("1", "Ein Buch", ""))
+	ab.ExemplareOhneTitel = []Exemplar{{ID: "E99", Exemplarnummer: "990", Bibliotheksnummer: testBibliothek, TitelID: "77"}}
+
+	bericht, err := s.SchreibeBestand(context.Background(), ab)
+	if err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+	if bericht.QuellExemplare != 2 || bericht.OhneTitel != 1 || bericht.Exemplare != 1 {
+		t.Errorf("Quelle 2, ohne Titel 1, geschrieben 1 erwartet, gemeldet: %+v", bericht)
+	}
+	if !bericht.AbgleichOK {
+		t.Error("der Abgleich mit der Datenbank muss für das übernommene Exemplar stimmen")
+	}
+	text := protokoll()
+	if !strings.Contains(text, "FEHLER") || !strings.Contains(text, "E99") || !strings.Contains(text, "keinen Titel") {
+		t.Errorf("das Exemplar ohne Titel fehlt im Protokoll:\n%s", text)
+	}
+}
+
 // TestTitelKommtGanzOderGarNicht sichert die Wahl der atomaren Einheit ab: buecher_titel.stock
 // trägt die Stückzahl. Ein Titel mit stock=3 und nur zwei Exemplaren wäre ein stiller
 // Bestandsfehler, den niemand je bemerkt.

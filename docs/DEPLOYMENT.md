@@ -719,7 +719,8 @@ Verfasser ohne Komma, beim nächsten Aufruf ausnehmen:
 Abschnitt 1).
 
 Rückgabe: 0 vollständig übernommen, 1 angehalten oder abgebrochen, 2 übernommen, aber Datensätze
-fehlen (FEHLER-Zeilen im Protokoll). Das Protokoll nennt Namen; das Skript gibt seinen Pfad aus,
+fehlen (FEHLER-Zeilen im Protokoll, etwa ein Exemplar, dessen Titel in Littera fehlt). Das
+Protokoll nennt Namen; das Skript gibt seinen Pfad aus,
 nach der Durchsicht löschen. Danach kommt der LUSD-Import.
 
 Die Sicherung trägt alle Schülerdaten, unverschlüsselt. Wie lange sie aufgehoben wird und wo, am

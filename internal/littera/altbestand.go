@@ -12,13 +12,17 @@ import (
 // Die Nachschlagetabellen sind hier bereits aufgelöst gehalten (Schlüssel → Name), damit
 // der Schreibpfad keine Littera-Interna mehr kennen muss.
 type Altbestand struct {
-	Titel       []Titel
-	Exemplare   []Exemplar
-	Leser       []Leser
-	Ausleihen   []Ausleihe
-	Verlage     map[string]string // Verlag.Buchungsnummer → Name
-	Medienarten map[string]string // Medienart.Buchungsnummer → Bezeichnung
-	Signaturen  map[string]string // Titel.Buchungsnummer → Signatur (aus den Exemplaren)
+	Titel     []Titel
+	Exemplare []Exemplar
+	// ExemplareOhneTitel verweisen auf keinen Titel der Tabelle Titel, leer oder ins Leere. Sie
+	// lassen sich nicht übernehmen und stehen einzeln als FEHLER im Protokoll, damit der Bericht
+	// keine vollständige Übernahme meldet, in der ein Buch aus dem Regal fehlt.
+	ExemplareOhneTitel []Exemplar
+	Leser              []Leser
+	Ausleihen          []Ausleihe
+	Verlage            map[string]string // Verlag.Buchungsnummer → Name
+	Medienarten        map[string]string // Medienart.Buchungsnummer → Bezeichnung
+	Signaturen         map[string]string // Titel.Buchungsnummer → Signatur (aus den Exemplaren)
 	// SignaturAbweichend nennt die Titel, deren Exemplare untereinander verschiedene
 	// Signaturen tragen. Sie werden übernommen (häufigster Wert gewinnt), stehen aber
 	// hier, damit der Bericht sie nennen kann.
@@ -103,6 +107,7 @@ func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, er
 	if ab.Exemplare, err = mitDatei(verzeichnis, dateiExemplar, leseExemplare); err != nil {
 		return nil, err
 	}
+	ab.Exemplare, ab.ExemplareOhneTitel = trenneOhneTitel(ab.Exemplare, ab.Titel)
 	regel.wendeStandortregelAn(ab.Exemplare)
 	if ab.Verlage, err = mitDatei(verzeichnis, dateiVerlag, leseVerlage); err != nil {
 		return nil, err
@@ -250,6 +255,23 @@ func mitDatei[T any](verzeichnis, name string, lies func(io.Reader) (T, error)) 
 // Der Schreibpfad braucht diese Sicht, weil der Titel die atomare Einheit ist: Er trägt
 // Exemplar-Zeilen, und ein Titel mit 5 Stück, dem nur drei Exemplare folgen, wäre ein
 // stiller Bestandsfehler.
+// trenneOhneTitel trennt die Exemplare ab, deren Titel nicht in titel steht. Vor allem anderen,
+// damit für sie weder eine Nummer gezogen noch eine Signatur gezählt wird.
+func trenneOhneTitel(exemplare []Exemplar, titel []Titel) (mitTitel, ohneTitel []Exemplar) {
+	bekannt := make(map[string]bool, len(titel))
+	for _, t := range titel {
+		bekannt[t.ID] = true
+	}
+	for _, e := range exemplare {
+		if bekannt[e.TitelID] {
+			mitTitel = append(mitTitel, e)
+		} else {
+			ohneTitel = append(ohneTitel, e)
+		}
+	}
+	return mitTitel, ohneTitel
+}
+
 func exemplareJeTitel(exemplare []Exemplar) map[string][]Exemplar {
 	jeTitel := make(map[string][]Exemplar)
 	for _, e := range exemplare {

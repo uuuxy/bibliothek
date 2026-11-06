@@ -334,8 +334,8 @@ func drucke(b littera.Bericht, s schalter) {
 	log.Print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	if s.bestand {
 		log.Printf("Bestand    Quelle %6d Titel / %6d Exemplare", b.Bestand.QuellTitel, b.Bestand.QuellExemplare)
-		log.Printf("           geschrieben %6d / %6d, übersprungen %d",
-			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
+		log.Printf("           geschrieben %6d / %6d, übersprungen %d, Exemplare ohne Titel %d",
+			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen, b.Bestand.OhneTitel)
 		meldeAbgleich(b.Bestand.AbgleichOK, fmt.Sprintf("%d Titel / %d Exemplare tatsächlich neu",
 			b.Bestand.IstTitel, b.Bestand.IstExemplare))
 		log.Printf("           Standort: %d Exemplare aus dem eigenen Sonderstandort, %d aus dem Vermerk am Titel",

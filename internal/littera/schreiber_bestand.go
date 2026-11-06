@@ -21,6 +21,9 @@ type BestandBericht struct {
 	Titel          int // gemeldet: geschrieben
 	Exemplare      int
 	Uebersprungen  int
+	// OhneTitel zählt die Exemplare, deren Titel nicht in der Tabelle Titel steht; sie stehen in
+	// QuellExemplare und einzeln als FEHLER im Protokoll.
+	OhneTitel int
 
 	IstTitel     int // tatsächlicher Zeilenzuwachs in PostgreSQL
 	IstExemplare int
@@ -80,9 +83,15 @@ const sqlExemplarEinfuegen = `
 func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (BestandBericht, error) {
 	bericht := BestandBericht{
 		QuellTitel:     len(ab.Titel),
-		QuellExemplare: len(ab.Exemplare),
+		QuellExemplare: len(ab.Exemplare) + len(ab.ExemplareOhneTitel),
+		OhneTitel:      len(ab.ExemplareOhneTitel),
 		TitelIDs:       make(map[string]string, len(ab.Titel)),
 		ExemplarIDs:    make(map[string]string, len(ab.Exemplare)),
+	}
+
+	for _, e := range ab.ExemplareOhneTitel {
+		s.prot.Fehler(e.ID, e.Exemplarnummer,
+			"das Exemplar verweist auf keinen Titel der Tabelle Titel (\""+e.TitelID+"\") – nicht übernommen")
 	}
 
 	vorherT, vorherE, err := s.zaehleBestand(ctx)

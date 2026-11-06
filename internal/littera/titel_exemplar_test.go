@@ -81,9 +81,13 @@ func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
 		t.Fatalf("Exemplare lesen: %v", err)
 	}
 
-	// Das Exemplar ohne Titel-Fremdschluessel faellt raus.
-	if len(ex) != 4 {
-		t.Fatalf("len(ex) = %d, erwartet 4 Exemplare", len(ex))
+	// Das Exemplar ohne Titel-Fremdschluessel bleibt stehen, mit leerem Titel: trenneOhneTitel
+	// nimmt es heraus, und der Schreiber meldet es als FEHLER.
+	if len(ex) != 5 {
+		t.Fatalf("len(ex) = %d, erwartet 5 Exemplare", len(ex))
+	}
+	if ex[4].ID != "4487" || ex[4].TitelID != "" {
+		t.Errorf("letztes Exemplar %q mit Titel %q, erwartet 4487 ohne Titel", ex[4].ID, ex[4].TitelID)
 	}
 
 	if ex[0].Signatur != "LMF Deu 7 / Bie" {
@@ -191,5 +195,48 @@ func TestCSVMitKommaImFeld(t *testing.T) {
 	}
 	if titel[0].ISBN != "978-3-12-000000-0" {
 		t.Errorf("ISBN verrutscht: %q", titel[0].ISBN)
+	}
+}
+
+// Ein Exemplar ohne Titel oder mit einem Titel, den die Tabelle Titel nicht kennt, kommt in die
+// zweite Liste; die übrigen behalten ihre Reihenfolge.
+func TestTrenneOhneTitel(t *testing.T) {
+	titel := []Titel{{ID: "1"}, {ID: "2"}}
+	exemplare := []Exemplar{{ID: "a", TitelID: "1"}, {ID: "b"}, {ID: "c", TitelID: "9"}, {ID: "d", TitelID: "2"}}
+	mitTitel, ohneTitel := trenneOhneTitel(exemplare, titel)
+
+	kennungen := func(liste []Exemplar) string {
+		var k []string
+		for _, e := range liste {
+			k = append(k, e.ID)
+		}
+		return strings.Join(k, ",")
+	}
+	if got := kennungen(mitTitel); got != "a,d" {
+		t.Errorf("mit Titel %q, erwartet a,d", got)
+	}
+	if got := kennungen(ohneTitel); got != "b,c" {
+		t.Errorf("ohne Titel %q, erwartet b,c", got)
+	}
+}
+
+// Der ganze Leseweg trennt die Exemplare ohne vorhandenen Titel ab, eines ohne Verweis und eines
+// mit einem Verweis ins Leere, bevor Nummern, Signaturen oder Standorte sie sehen.
+func TestLeseAltbestandMitTrenntExemplareOhneTitel(t *testing.T) {
+	verzeichnis := schreibeExport(t, map[string]string{
+		dateiTitel: "Buchungsnummer,Haupttitel\n17,\"Ein Buch\"\n",
+		dateiExemplar: "Buchungsnummer,Titel,Exemplarnummer,Sig1,Sig2\n" +
+			"1,17,101,\"Ea 1\",\"Xyz\"\n2,,102,\"Ea 1\",\"Xyz\"\n3,99,103,\"Ea 1\",\"Xyz\"\n",
+	})
+
+	ab, err := LeseAltbestandMit(verzeichnis, Standortregel{})
+	if err != nil {
+		t.Fatalf("LeseAltbestandMit: %v", err)
+	}
+	if len(ab.Exemplare) != 1 || ab.Exemplare[0].ID != "1" {
+		t.Errorf("mit Titel: %+v, erwartet nur Exemplar 1", ab.Exemplare)
+	}
+	if len(ab.ExemplareOhneTitel) != 2 {
+		t.Errorf("ohne Titel: %+v, erwartet die Exemplare 2 und 3", ab.ExemplareOhneTitel)
 	}
 }
