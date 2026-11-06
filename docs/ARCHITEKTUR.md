@@ -2213,8 +2213,10 @@ Anfrage hinaus. Die Adresse im Speicher gibt die Seite erst frei, wenn der Tab z
 einen Dateinamen aus Zufallszeichen; die Bescheide öffnet die Oberfläche über ihre Adresse, sie
 behalten den Namen, den der Server nennt. Als Datei kommen nur Dokumente ohne Personendaten
 (Bestellliste, Bestellbericht, Katalog als CSV, LMF-Plan, die Bücher eines Fachs im Portal) und
-die Sicherung der Offline-Scans. Gates: `frontend/src/lib/frontend-hygiene-downloads.test.js`
-und `api/anhang_ratsche_test.go`; dass das PDF im Tab ankommt, prüfen `e2e/mahnwesen.spec.js`
+die Sicherung der Offline-Scans. Den Kopf setzt jede Tür über `tuer.AntworteDatei` oder
+`tuer.SetzeDateiKopf`, mit `tuer.Zeigen` für den Tab und `tuer.Speichern` für die Datei; den
+Namen kodiert `mime.FormatMediaType` nach RFC 6266. Gates:
+`frontend/src/lib/frontend-hygiene-downloads.test.js` und `api/anhang_ratsche_test.go`; dass das PDF im Tab ankommt, prüfen `e2e/mahnwesen.spec.js`
 und `e2e/abgaenger-management.spec.js` über `pdfImFenster` in `e2e/helpers.js`.
 
 ---

@@ -61,8 +61,7 @@ func (t *Tueren) SchuelerEtiketten(leserAbfragen *repository.LeserAbfragen) http
 			return
 		}
 
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, "inline; filename=\"schueler_etiketten.pdf\"")
+		tuer.SetzeDateiKopf(w, tuer.ContentTypePDF, tuer.Zeigen, "schueler_etiketten.pdf")
 		if err := bogen.Output(w); err != nil {
 			slog.Error("Fehler beim Senden des Etikettenbogens", "fehler", err)
 		}

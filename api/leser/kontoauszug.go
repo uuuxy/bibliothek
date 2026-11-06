@@ -1,12 +1,10 @@
 package leser
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -81,10 +79,6 @@ func (t *Tueren) KontoauszugPDF() http.HandlerFunc {
 
 		dateiname := fmt.Sprintf("Kontoauszug_%s_%s.pdf", schueler.Vorname, schueler.Nachname)
 
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="%s"`, dateiname))
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
-
-		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, dateiname, pdfDaten)
 	}
 }

@@ -226,7 +226,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		if ist := rec.Header().Get("Content-Type"); ist != "application/pdf" {
 			t.Errorf("Content-Type %q, erwartet application/pdf", ist)
 		}
-		if ist, will := rec.Header().Get("Content-Disposition"), `attachment; filename="bestellbericht_2019-09-01_2019-09-30.pdf"`; ist != will {
+		if ist, will := rec.Header().Get("Content-Disposition"), `attachment; filename=bestellbericht_2019-09-01_2019-09-30.pdf`; ist != will {
 			t.Errorf("Content-Disposition %q, erwartet %q", ist, will)
 		}
 		for query, nennt := range map[string]string{

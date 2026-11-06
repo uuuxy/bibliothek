@@ -10,7 +10,6 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/internal/buchetikett"
 	"bibliothek/pdf"
-	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -88,10 +87,8 @@ func (t *Tueren) gibOeffentlicheEtiketten(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-	// inline: Der Lieferant soll den Bogen im Browser sehen und direkt drucken können.
-	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", groesse))
-	httpresp.Schreibe(w, daten)
+	// Zeigen: Der Lieferant soll den Bogen im Browser sehen und direkt drucken können.
+	tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, fmt.Sprintf("etiketten_%s.pdf", groesse), daten)
 }
 
 // baueEtikettenPDF erzeugt den Bogen in der gewünschten Größe.

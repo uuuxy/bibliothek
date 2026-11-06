@@ -94,7 +94,7 @@ func TestPortalLernmittelExport_FachUndFilterGeltenUndStehenImKopf(t *testing.T)
 
 	// Ein Fach mit allen drei Filtern: Jahrgang, „ohne Schulzweig" und Suche.
 	rec, texte := exportiere("/api/portal/lernmittel/export?fach=Exportprobe+Erdkunde&jahrgang=7&zweig=-&q=Exportprobe")
-	dateiname := regexp.MustCompile(`^attachment; filename="schulbuecher_exportprobe-erdkunde_\d{4}-\d{2}-\d{2}\.pdf"$`)
+	dateiname := regexp.MustCompile(`^attachment; filename=schulbuecher_exportprobe-erdkunde_\d{4}-\d{2}-\d{2}\.pdf$`)
 	if got := rec.Header().Get("Content-Disposition"); !dateiname.MatchString(got) {
 		t.Errorf("Content-Disposition = %q, erwartet den Dateinamen mit dem Fach", got)
 	}
@@ -110,7 +110,7 @@ func TestPortalLernmittelExport_FachUndFilterGeltenUndStehenImKopf(t *testing.T)
 	// Ohne ?fach alle Fächer, und ein Schulzweig nennt sich mit Namen. Ein Titel ohne Zweig gilt
 	// für jeden Zweig und bleibt deshalb in der Auswahl.
 	rec, texte = exportiere("/api/portal/lernmittel/export?jahrgang=7&zweig=Gymnasium&q=Exportprobe")
-	dateiname = regexp.MustCompile(`^attachment; filename="schulbuecher_\d{4}-\d{2}-\d{2}\.pdf"$`)
+	dateiname = regexp.MustCompile(`^attachment; filename=schulbuecher_\d{4}-\d{2}-\d{2}\.pdf$`)
 	if got := rec.Header().Get("Content-Disposition"); !dateiname.MatchString(got) {
 		t.Errorf("Content-Disposition = %q, erwartet den Dateinamen ohne Fach", got)
 	}

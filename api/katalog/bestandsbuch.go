@@ -1,13 +1,17 @@
 package katalog
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 )
 
 // Die Abschnitte eines Bestandsnachweises: ein Ort für Reihenfolge und Überschriften.
@@ -112,4 +116,21 @@ func bestandsbuchZeitraum(r *http.Request, vorgabe func(time.Time) (time.Time, t
 		return von, bis, apierrors.BadRequest(meldungZeitraumUeberEinJahr, nil)
 	}
 	return von, bis, nil
+}
+
+// antworteBestandsbuchBlatt druckt ein geladenes Bestandsbuch als Blatt und zeigt es im Tab. Zugangs-
+// und Abgangsbuch unterscheiden sich nur im Namen, im Zeitraum und in zeichne.
+func (t *Tueren) antworteBestandsbuchBlatt(ctx context.Context, w http.ResponseWriter, name string,
+	von, bis time.Time, zeichne func(pdf.SchuleInfo) ([]byte, error)) error {
+	einst, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
+	if err != nil {
+		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
+	}
+	blatt, err := zeichne(tuer.SchuleAus(einst))
+	if err != nil {
+		return apierrors.Internal(name+" konnte nicht gedruckt werden", err)
+	}
+	dateiname := fmt.Sprintf("%s_%s_bis_%s.pdf", name, von.Format(tuer.DatumsformatISO), bis.Format(tuer.DatumsformatISO))
+	tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, dateiname, blatt)
+	return nil
 }

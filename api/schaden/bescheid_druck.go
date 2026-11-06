@@ -3,7 +3,6 @@ package schaden
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -41,14 +40,8 @@ func (t *Tueren) BescheidPDF(bescheidAbfragen *repository.BescheidAbfragen) http
 			slog.Error("Druckvermerk für Bescheid fehlgeschlagen", "bescheid", id, "fehler", err)
 		}
 
-		w.Header().Set("Content-Type", tuer.ContentTypePDF)
-		w.Header().Set("Content-Disposition",
-			fmt.Sprintf(`inline; filename="bescheid_%s.pdf"`,
-				strings.ReplaceAll(bescheid.Referenznummer, " ", "-")))
-		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, nosniff); aus der Anfrage stammt nur die Kennung des Bescheids
-		if _, err := w.Write(roh); err != nil {
-			slog.Warn("Bescheid-PDF: Antwort an den Browser abgebrochen", "fehler", err)
-		}
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen,
+			"bescheid_"+strings.ReplaceAll(bescheid.Referenznummer, " ", "-")+".pdf", roh)
 		return nil
 	})
 }

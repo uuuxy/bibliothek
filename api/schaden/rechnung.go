@@ -6,12 +6,10 @@ import (
 	"bibliothek/db"
 	"bibliothek/pdf"
 	"bibliothek/repository"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -108,9 +106,5 @@ func liefereRechnung(w http.ResponseWriter, r *http.Request, datenbank db.Pool) 
 		return
 	}
 
-	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-	w.Header().Set(tuer.HeaderContentDisposition, `inline; filename="Rechnung.pdf"`)
-	w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
-
-	http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfDaten))
+	tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, "Rechnung.pdf", pdfDaten)
 }

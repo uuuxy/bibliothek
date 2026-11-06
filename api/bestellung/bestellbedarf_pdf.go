@@ -33,8 +33,7 @@ func (t *Tueren) BestellbedarfPDF() http.HandlerFunc {
 
 		pdf := baueBestelllistePDF(bedarf, einstellungen.BestellbedarfSchwelle)
 
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set("Content-Disposition", "attachment; filename=bestellliste.pdf")
+		tuer.SetzeDateiKopf(w, tuer.ContentTypePDF, tuer.Speichern, "bestellliste.pdf")
 		if err := pdf.Output(w); err != nil {
 			slog.Error("Bestellliste: PDF stream output failed", "fehler", err)
 		}

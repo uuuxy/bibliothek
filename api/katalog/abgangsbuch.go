@@ -1,7 +1,6 @@
 package katalog
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -96,29 +95,13 @@ func (t *Tueren) AbgangsbuchPDF() http.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		ctx := r.Context()
-		buch, err := repository.LadeAbgangsbuch(ctx, t.DB.Pool, von, bis)
+		buch, err := repository.LadeAbgangsbuch(r.Context(), t.DB.Pool, von, bis)
 		if err != nil {
 			return apierrors.Internal("Abgangsbuch konnte nicht gelesen werden", err)
 		}
-
-		einst, err := repository.NewEinstellungsAbfragen(t.DB.Pool).Lade(ctx)
-		if err != nil {
-			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
-		}
-		schule := tuer.SchuleAus(einst)
-
-		blatt, err := pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), schule)
-		if err != nil {
-			return apierrors.Internal("Abgangsbuch konnte nicht gedruckt werden", err)
-		}
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="Abgangsbuch_%s_bis_%s.pdf"`,
-			buch.Von.Format(tuer.DatumsformatISO), buch.Bis.Format(tuer.DatumsformatISO)))
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(blatt)))
-		if _, err := w.Write(blatt); err != nil {
-			return nil // Die Verbindung ist weg, der Browser hat abgebrochen.
-		}
-		return nil
+		return t.antworteBestandsbuchBlatt(r.Context(), w, "Abgangsbuch", buch.Von, buch.Bis,
+			func(schule pdf.SchuleInfo) ([]byte, error) {
+				return pdf.ErzeugeAbgangsbuch(abgangsbuchBlatt(abgangsbuchAntwortAus(buch)), schule)
+			})
 	})
 }

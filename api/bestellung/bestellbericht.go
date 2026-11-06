@@ -157,10 +157,7 @@ func (t *Tueren) BestellberichtPDF() http.HandlerFunc {
 		}
 
 		dateiname := fmt.Sprintf("bestellbericht_%s_%s.pdf", a.vonText, a.bisText)
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(pdfDaten) //nolint:errcheck
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Speichern, dateiname, pdfDaten)
 	}
 }
 

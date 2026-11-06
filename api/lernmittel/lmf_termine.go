@@ -7,12 +7,10 @@ package lernmittel
 // für die Schulleitung bekommt nur der Planer (edit_books) über eine eigene Route.
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -146,11 +144,7 @@ func (t *Tueren) LMFPlanPDF(mitEntwuerfen bool) http.HandlerFunc {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, err)
 			return
 		}
-		dateiname := "LMF-Plan.pdf"
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
-		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Speichern, "LMF-Plan.pdf", pdfDaten)
 	}
 }
 

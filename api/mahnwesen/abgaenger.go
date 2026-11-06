@@ -9,12 +9,10 @@ package mahnwesen
 // sondern im Mahnwesen; zwei Bedeutungen unter einem Namen hielte jeder Leser für eine.
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -178,10 +176,7 @@ func (t *Tueren) AbgaengerKontoauszuegePDF() http.HandlerFunc {
 			dateiname = fmt.Sprintf("Kontoauszuege_Klasse_%s.pdf", klasse)
 		}
 
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="%s"`, dateiname))
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
-		http.ServeContent(w, r, dateiname, time.Now(), bytes.NewReader(pdfDaten))
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, dateiname, pdfDaten)
 	}
 }
 

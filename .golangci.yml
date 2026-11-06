@@ -20,6 +20,7 @@ linters:
     - ireturn       # Ein Erzeuger liefert den Typ, keine Schnittstelle (docs/STIL.md, Abschnitt 14)
     - errorlint     # Ein Fehler im Text eines Fehlers bleibt eingewickelt, %w statt %v (docs/STIL.md, Abschnitt 11)
     - sloglint      # Die Meldung einer Logzeile ist fest, Werte stehen in Feldern (docs/STIL.md, Abschnitt 11)
+    - dupl          # Kopierter Code im Programm: eine Stelle statt zwei (CLAUDE.md, Abschnitt 2)
   settings:
     errorlint:
       # Nur fmt.Errorf: Mit %v reißt die Kette, und die Antwort erkennt einen Abbruch des Browsers
@@ -117,3 +118,7 @@ linters:
       - path: _test\.go
         linters:
           - contextcheck
+      # Tabellengetriebene Tests gleichen sich gewollt Fall für Fall; dupl gilt dem Programmcode.
+      - path: _test\.go
+        linters:
+          - dupl

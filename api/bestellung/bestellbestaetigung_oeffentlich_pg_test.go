@@ -172,7 +172,7 @@ func TestOeffentlicheEtiketten_BogenOeffnetSichImBrowser(t *testing.T) {
 	if typ := rec.Header().Get("Content-Type"); typ != tuer.ContentTypePDF {
 		t.Errorf("Content-Type %q, erwartet %q", typ, tuer.ContentTypePDF)
 	}
-	if art := rec.Header().Get("Content-Disposition"); art != `inline; filename="etiketten_klein.pdf"` {
+	if art := rec.Header().Get("Content-Disposition"); art != `inline; filename=etiketten_klein.pdf` {
 		t.Errorf("Content-Disposition %q, erwartet inline mit dem Namen des Bogens", art)
 	}
 }

@@ -51,8 +51,8 @@ func TestCSVExport(t *testing.T) {
 		if got := ergebnis.Header.Get("Content-Type"); got != "text/csv; charset=utf-8" {
 			t.Errorf("Content-Type = %q, erwartet %q", got, "text/csv; charset=utf-8")
 		}
-		if got := ergebnis.Header.Get("Content-Disposition"); !strings.Contains(got, "attachment; filename=\"bestand_export_") {
-			t.Errorf("Content-Disposition = %q, erwartet darin %q", got, "attachment; filename=\"bestand_export_")
+		if got := ergebnis.Header.Get("Content-Disposition"); !strings.Contains(got, "attachment; filename=bestand_export_") {
+			t.Errorf("Content-Disposition = %q, erwartet darin %q", got, "attachment; filename=bestand_export_")
 		}
 
 		rumpf, err := io.ReadAll(ergebnis.Body)

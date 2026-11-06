@@ -15,8 +15,9 @@ import (
 // (ARCHITEKTUR.md 8.9). Für die Oberfläche hält dieselbe Regel
 // frontend/src/lib/frontend-hygiene-downloads.test.js.
 //
-// Blindheit: ein Anhang, dessen Angabe nicht als Text unter api/ steht, etwa aus einer Konstante
-// eines anderen Pakets.
+// Einen Anhang erkennt der Test an tuer.Speichern, dem Wert für tuer.AntworteDatei und
+// tuer.SetzeDateiKopf, oder am Text "attachment;". Blindheit: ein Anhang aus einer Konstante
+// eines anderen Pakets und eine Tür im Paket tuer selbst.
 func TestAnhangNurOhnePersonendaten(t *testing.T) {
 	alsAnhang := map[string]string{
 		"bestellung/bestellbedarf_pdf.go": "die Bestellliste",
@@ -38,7 +39,7 @@ func TestAnhangNurOhnePersonendaten(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if strings.Contains(string(inhalt), "attachment;") {
+		if istAnhang(string(inhalt)) {
 			gefunden = append(gefunden, filepath.ToSlash(pfad))
 		}
 		return nil
@@ -58,5 +59,59 @@ func TestAnhangNurOhnePersonendaten(t *testing.T) {
 		if !slices.Contains(gefunden, pfad) {
 			t.Errorf("api/%s steht in alsAnhang, schickt aber keinen Anhang mehr: austragen", pfad)
 		}
+	}
+}
+
+// istAnhang erkennt eine Tür, die ein Dokument als Anhang schickt.
+func istAnhang(text string) bool {
+	return strings.Contains(text, "tuer.Speichern") || strings.Contains(text, "attachment;")
+}
+
+// setztDateiKopf erkennt den Kopf einer Datei in jeder Schreibweise, auch über die Konstante.
+func setztDateiKopf(text string) bool {
+	text = strings.ToLower(text)
+	return strings.Contains(text, "content-disposition") || strings.Contains(text, "headercontentdisposition")
+}
+
+// Gate: Den Kopf einer Datei (Content-Disposition) setzt unter api/ nur das Paket tuer. Von Hand
+// geschrieben fehlte ihm die Kodierung des Namens nach RFC 6266, und TestAnhangNurOhnePersonendaten
+// sähe einen Anhang nur, wenn er als Text dasteht.
+//
+// Blindheit: ein Kopf, dessen Name nicht als Text in der Datei steht, etwa aus einer Variablen.
+func TestDateiKopfNurUeberTuer(t *testing.T) {
+	// Der Erkenner muss den Kopf im Helfer selbst finden, sonst misst der Test nichts.
+	helfer, err := os.ReadFile(filepath.Join("tuer", "datei.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !setztDateiKopf(string(helfer)) {
+		t.Fatal("setztDateiKopf erkennt den Kopf in tuer/datei.go nicht")
+	}
+
+	err = filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if eintrag.IsDir() {
+			if pfad == "tuer" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(pfad, ".go") || strings.HasSuffix(pfad, "_test.go") {
+			return nil
+		}
+		inhalt, err := os.ReadFile(pfad)
+		if err != nil {
+			return err
+		}
+		if setztDateiKopf(string(inhalt)) {
+			t.Errorf("api/%s setzt Content-Disposition selbst: tuer.AntworteDatei oder tuer.SetzeDateiKopf nehmen",
+				filepath.ToSlash(pfad))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

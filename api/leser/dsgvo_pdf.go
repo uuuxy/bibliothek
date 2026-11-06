@@ -1,8 +1,6 @@
 package leser
 
 import (
-	"bytes"
-	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -45,10 +43,7 @@ func (t *Tueren) DSGVOAuskunftPDF() http.HandlerFunc {
 		// am Bildschirm. Erst hier, wenn das Blatt steht: Der Eintrag sagt, dass es erteilt ist.
 		t.protokolliereDSGVOAuskunft(ctx, id)
 
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, `inline; filename="DSGVO-Auskunft.pdf"`)
-		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfDaten)))
-		http.ServeContent(w, r, "DSGVO-Auskunft.pdf", schulzeit.Jetzt(), bytes.NewReader(pdfDaten))
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Zeigen, "DSGVO-Auskunft.pdf", pdfDaten)
 		return nil
 	})
 }

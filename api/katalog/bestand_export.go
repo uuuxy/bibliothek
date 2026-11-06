@@ -2,9 +2,9 @@ package katalog
 
 import (
 	"encoding/csv"
-	"fmt"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/csvutil"
 	"bibliothek/pkg/schulzeit"
@@ -28,8 +28,8 @@ func (t *Tueren) CSVExport() http.HandlerFunc {
 		// gelungener (aber leerer) Export aussähe.
 		kopfGesendet := false
 		kopf := func() error {
-			w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, schulzeit.Jetzt().Format("2006-01-02")))
+			tuer.SetzeDateiKopf(w, "text/csv; charset=utf-8", tuer.Speichern,
+				"bestand_export_"+schulzeit.Jetzt().Format(tuer.DatumsformatISO)+".csv")
 			// Das BOM für UTF-8, damit Excel die Datei richtig öffnet.
 			_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 			kopfGesendet = true

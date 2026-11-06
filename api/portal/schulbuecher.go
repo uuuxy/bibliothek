@@ -2,7 +2,6 @@ package portal
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -70,11 +69,8 @@ func (t *Tueren) SchulbuecherExport() http.HandlerFunc {
 		if gewaehlt {
 			name += "_" + dateinamenTeil(fachName)
 		}
-		w.Header().Set("Content-Type", "application/pdf")
-		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s_%s.pdf"`, name, schulzeit.Jetzt().Format("2006-01-02")))
-		if _, err := w.Write(datei); err != nil {
-			slog.Warn("Portal Lernmittel-Export: Antwort an den Browser abgebrochen", "fehler", err)
-		}
+		tuer.AntworteDatei(w, tuer.ContentTypePDF, tuer.Speichern,
+			name+"_"+schulzeit.Jetzt().Format(tuer.DatumsformatISO)+".pdf", datei)
 	}
 }
 

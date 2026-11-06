@@ -44,8 +44,7 @@ func (t *Tueren) Etikettenbogen() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
-		w.Header().Set(tuer.HeaderContentDisposition, "inline; filename=\"etiketten_custom.pdf\"")
+		tuer.SetzeDateiKopf(w, tuer.ContentTypePDF, tuer.Zeigen, "etiketten_custom.pdf")
 
 		if err := bogen.Output(w); err != nil {
 			slog.Error("Fehler beim Senden des PDFs", "fehler", err)
