@@ -18,7 +18,7 @@ var (
 	lernmittelFachSpalten  = []string{"subject", "titel", "gesamt", "verliehen", "verfuegbar"}
 	lernmittelTitelSpalten = []string{
 		"id", "titel", "autor", "subject", "cover_url", "isbn", "jahrgang_von", "jahrgang_bis",
-		"track", "gezaehlt", "gesamt", "verliehen", "verfuegbar", "auflagen",
+		"track", "gezaehlt", "gesamt", "verliehen", "verfuegbar", "im_zulauf", "auflagen",
 	}
 )
 
@@ -91,7 +91,7 @@ func TestLadeLernmittelTitel_ReichtFehlerWeiter(t *testing.T) {
 	zeile := func(jahrgangVon any, auflagen []byte) *pgxmock.Rows {
 		return pgxmock.NewRows(lernmittelTitelSpalten).AddRow(
 			"titel-1", "Physik 1", "Autorin", "Physik", "", "9783000000001", jahrgangVon, 6,
-			"Gymnasium", "01.01.2026", 10, 2, 8, auflagen)
+			"Gymnasium", "01.01.2026", 10, 2, 8, 0, auflagen)
 	}
 
 	t.Run("die Abfrage scheitert", func(t *testing.T) {

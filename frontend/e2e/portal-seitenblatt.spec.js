@@ -25,8 +25,14 @@ test.beforeEach(() => {
 			INSERT INTO buecher_exemplare (titel_id, barcode_id)
 			SELECT id, 'B-SBL-' || g || '-${s}' FROM t, generate_series(1, 3) g
 			RETURNING titel_id
+		),
+		-- Ein viertes ist bestellt und noch nicht da: Es steht im Blatt als „bestellt“, nicht im Bestand.
+		zulauf AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
+			SELECT id, 'B-SBL-Z-${s}', false, 'im_zulauf' FROM t
+			RETURNING titel_id
 		)
-		SELECT DISTINCT titel_id FROM ex;
+		SELECT DISTINCT titel_id FROM ex UNION SELECT titel_id FROM zulauf;
 	`);
 });
 
@@ -59,6 +65,9 @@ test('Mein Portal: Ein Klick auf die Kachel zeigt die ISBN im Seitenblatt, der K
 	await expect(blatt).toBeVisible();
 	await expect(blatt).toContainText(`${FACH} · Jahrgang 7`);
 	await expect(blatt).toContainText('3 von 3');
+	await expect(
+		blatt.locator('dt', { hasText: /^bestellt$/ }).locator('xpath=preceding-sibling::dd[1]')
+	).toHaveText('1');
 	await expect(kachel).toHaveAttribute('aria-pressed', 'true');
 
 	// Das Blatt steht neben dem Inhalt, nicht darüber: „Als PDF" am rechten Ende der Fachzeile

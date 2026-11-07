@@ -35,6 +35,10 @@ type LernmittelTitel struct {
 	Gesamt     int    `json:"gesamt"`
 	Verliehen  int    `json:"verliehen"`
 	Verfuegbar int    `json:"verfuegbar"`
+	// ImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare aller Auflagen
+	// (sqlFilterImZulauf). Das Seitenblatt im Portal nennt sie „bestellt“, damit der Fachsprecher
+	// nicht nachbestellt, was schon unterwegs ist.
+	ImZulauf int `json:"imZulauf"`
 	// Jahrgang aus Signatur, Import oder Maske; 0 und 0 heißt „unbekannt".
 	JahrgangVon int `json:"jahrgangVon"`
 	JahrgangBis int `json:"jahrgangBis"`
@@ -93,7 +97,8 @@ var lernmittelFilterSQL = `
 const lernmittelZaehlung = `
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND a.id IS NOT NULL) AS verliehen,
-	COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar`
+	COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
+	` + sqlFilterImZulauf + ` AS im_zulauf`
 
 const lernmittelJoins = `
 	FROM buecher_titel b
@@ -122,7 +127,7 @@ func lernmittelJeBuchSQL() string {
 		),
 		buch AS (
 			SELECT t.buch, sum(t.gesamt)::int AS gesamt, sum(t.verliehen)::int AS verliehen,
-			       sum(t.verfuegbar)::int AS verfuegbar, count(*) AS anzahl,
+			       sum(t.verfuegbar)::int AS verfuegbar, sum(t.im_zulauf)::int AS im_zulauf, count(*) AS anzahl,
 			       json_agg(json_build_object('id', t.id, 'auflage', coalesce(t.auflage, ''),
 			           'erscheinungsjahr', coalesce(t.erscheinungsjahr, 0), 'gesamt_bestand', t.gesamt)
 			           ORDER BY ` + neueste + `) AS auflagen
@@ -134,7 +139,7 @@ func lernmittelJeBuchSQL() string {
 			SELECT DISTINCT ON (t.buch) t.* FROM titel t WHERE t.getroffen ORDER BY t.buch, ` + neueste + `
 		)
 		SELECT v.id, v.titel, v.autor, v.subject, v.cover_url, v.isbn, v.jahrgang_von, v.jahrgang_bis,
-		       v.track, v.gezaehlt, b.gesamt, b.verliehen, b.verfuegbar,
+		       v.track, v.gezaehlt, b.gesamt, b.verliehen, b.verfuegbar, b.im_zulauf,
 		       CASE WHEN b.anzahl > 1 THEN b.auflagen END AS auflagen
 		FROM buch b
 		JOIN vertreter v ON v.buch = b.buch`
@@ -179,7 +184,7 @@ func (a *TitelAbfragen) LadeLernmittelTitel(ctx context.Context, fach string, al
 	for zeilen.Next() {
 		var t LernmittelTitel
 		var auflagen []byte
-		if err := zeilen.Scan(&t.ID, &t.Titel, &t.Autor, &t.Fach, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Zweig, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar, &auflagen); err != nil {
+		if err := zeilen.Scan(&t.ID, &t.Titel, &t.Autor, &t.Fach, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Zweig, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar, &t.ImZulauf, &auflagen); err != nil {
 			return nil, err
 		}
 		if len(auflagen) > 0 {

@@ -257,6 +257,11 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES
 			('`+alt+`', 'LMA-1'), ('`+alt+`', 'LMA-2'), ('`+neu+`', 'LMA-3'), ('`+m8+`', 'LMA-4'),
 			('`+weg+`', 'LMA-5'), ('`+weg+`', 'LMA-6'), ('`+weg+`', 'LMA-7')`,
+		// Bestellt, noch nicht da: zählen als imZulauf über beide Auflagen, nicht im Bestand; die
+		// alte Auflage ohne Schulbuch-Schalter zählt auch hier nicht.
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus) VALUES
+			('`+alt+`', 'LMA-Z1', false, 'im_zulauf'), ('`+neu+`', 'LMA-Z2', false, 'bestellt'),
+			('`+weg+`', 'LMA-Z3', false, 'im_zulauf')`,
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			SELECT e.id, s.id, now() + interval '14 days' FROM buecher_exemplare e, schueler s WHERE e.barcode_id = 'LMA-1' AND s.barcode_id = 'LM-S1'`,
 	) {
@@ -282,6 +287,9 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 			t.Errorf("%s: %s/%s %d/%d/%d — erwartet %s/%s mit 3 gesamt, 1 verliehen, 2 verfügbar (die alte Auflage ohne Schulbuch-Schalter zählt nicht)",
 				name, z.ID, z.ISBN, z.Gesamt, z.Verliehen, z.Verfuegbar, id, isbn)
 		}
+		if z.ImZulauf != 2 {
+			t.Errorf("%s: %d im Zulauf — erwartet 2, je eins aus beiden Schulbuch-Auflagen", name, z.ImZulauf)
+		}
 		if len(z.AuflagenBestand) != 2 || z.AuflagenBestand[0] != aufschluesselung[0] || z.AuflagenBestand[1] != aufschluesselung[1] {
 			t.Errorf("%s: Aufschlüsselung %+v — erwartet %+v", name, z.AuflagenBestand, aufschluesselung)
 		}
@@ -295,7 +303,7 @@ func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
 		t.Fatalf("Mathematik: %d Zeilen %+v — erwartet das Buch einmal und Mathe 8", len(zeilen), zeilen)
 	}
 	pruefeBuch("ohne Suche", zeilen[0], neu, "978-B2")
-	if zeilen[1].ID != m8 || zeilen[1].AuflagenBestand != nil {
+	if zeilen[1].ID != m8 || zeilen[1].AuflagenBestand != nil || zeilen[1].ImZulauf != 0 {
 		t.Errorf("Mathe 8 ohne Buch: %+v — erwartet eine gewöhnliche Zeile ohne Aufschlüsselung", zeilen[1])
 	}
 
