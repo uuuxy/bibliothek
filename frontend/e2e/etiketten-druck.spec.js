@@ -114,6 +114,12 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 	// Die Übergabe an den Etikettendruck liegt jetzt in der Snackbar-Aktion (M3: genau
 	// eine Folgehandlung) statt in einem stehenden Vorschlagsstreifen. Der geprüfte Pfad
 	// ist derselbe: druckWarteschlange.copies bekommt GENAU die Exemplare dieser Lieferung.
+	// Zahl und Form gehören zusammen: „1 Exemplar braucht", „3 Exemplare brauchen".
+	await expect(
+		page.getByText(
+			/Eingebucht\. (?:1 Exemplar braucht|(?!1 )\d+ Exemplare brauchen) noch ein Etikett\./
+		)
+	).toBeVisible();
 	const printBtn = page.getByRole('button', { name: 'Etiketten drucken' });
 	await expect(printBtn).toBeVisible();
 	await printBtn.click();

@@ -2,9 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { istNichtsGefunden, GELESENE_FORMATE, erzeugeBarcodeErkenner } from './barcodeErkennung.js';
 
 // Die Rückfall-Bibliothek, wie der Erkenner sie braucht: ein Objekt, das eine Bilddatei liest.
+// Wie die Bibliothek bricht es ab, wenn der Knoten mit seiner Kennung nicht im Dokument steht.
 const { scanFileV2 } = vi.hoisted(() => ({ scanFileV2: vi.fn() }));
 vi.mock('html5-qrcode', () => ({
 	Html5Qrcode: class {
+		/** @param {string} kennung */
+		constructor(kennung) {
+			if (!document.getElementById(kennung)) throw `HTML Element with id=${kennung} not found`;
+		}
 		/** @param {File} datei @param {boolean} zeigen */
 		scanFileV2(datei, zeigen) {
 			return scanFileV2(datei, zeigen);

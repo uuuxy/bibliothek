@@ -89,6 +89,7 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 			'Zusammenführen',
 			`„${detektiv}“ als Verweis behalten`
 		);
+		await expect(page.getByText(`Zusammengeführt: 1 Titel trägt jetzt „${roman}“.`)).toBeVisible();
 		await expect.poll(amTitel).toBe(`${abenteuer}|${roman}`);
 		expect(querySQL(`SELECT count(*) FROM schlagworte WHERE wort = '${detektiv}'`)).toBe('0');
 

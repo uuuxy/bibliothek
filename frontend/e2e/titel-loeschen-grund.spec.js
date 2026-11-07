@@ -75,6 +75,8 @@ test.describe.serial('Titel löschen mit Grund', () => {
 		await expect(
 			page.getByText('Der Titel bleibt, bis die verliehenen Exemplare zurück sind')
 		).toBeVisible();
+		// Die Maske schließt, und die Liste darunter führt den Titel weiter.
+		await expect(page.getByText(TITEL).first()).toBeVisible();
 		expect(stand(), 'eines im Bestand, zwei beschädigt ausgesondert, die Ausleihe offen').toBe(
 			'1/2/1'
 		);
@@ -95,6 +97,10 @@ test.describe.serial('Titel löschen mit Grund', () => {
 		await dialog.getByRole('button', { name: 'Das Exemplar löschen' }).click();
 
 		await expect(page.getByText('Titel gelöscht')).toBeVisible();
+		await expect(
+			page.getByText(TITEL),
+			'die Liste führt den gelöschten Titel nicht mehr'
+		).toHaveCount(0);
 		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE titel = '${TITEL}'`)).toBe('0');
 		expect(
 			querySQL(`

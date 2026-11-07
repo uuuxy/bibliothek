@@ -39,6 +39,7 @@
 		{ "scan": "", "kern": null, "fall": "leer" },
 		{ "scan": "B", "kern": null, "fall": "ein Zeichen" },
 		{ "scan": "B-", "kern": null, "fall": "zwei Zeichen — nach dem Kürzen bliebe eines übrig" },
+		{ "scan": "B1C", "kern": "B1", "fall": "drei Zeichen — der Kern aus zweien bleibt" },
 		{
 			"scan": "müller",
 			"kern": null,

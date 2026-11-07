@@ -67,6 +67,23 @@ describe('Select: was der Screenreader mitbekommt', () => {
 		expect(document.getElementById(/** @type {string} */ (aktiv))?.textContent).toContain('Bernd');
 	});
 
+	it('springt mit Pos1 an den Anfang und mit Ende ans Ende', async () => {
+		const screen = render(Select, { options: optionen, value: 'b' });
+		const knopf = screen.getByRole('combobox');
+		const markiert = () =>
+			document.getElementById(/** @type {string} */ (knopf.getAttribute('aria-activedescendant')))
+				?.textContent;
+
+		tippe(knopf, 'ArrowDown'); // öffnet, steht auf „Bernd"
+		await Promise.resolve();
+		tippe(knopf, 'End');
+		await Promise.resolve();
+		expect(markiert()).toContain('Cem');
+		tippe(knopf, 'Home');
+		await Promise.resolve();
+		expect(markiert()).toContain('Anna');
+	});
+
 	// Zwei Felder auf einer Seite dürfen nicht auf dieselben Zeilen verweisen — sonst
 	// liest der Screenreader die Zeile des anderen Feldes vor.
 	it('vergibt je Feld eigene Kennungen, auch ohne id von außen', async () => {

@@ -26,4 +26,18 @@ describe('StatistikVerlauf: der Monat unter dem Zeiger', () => {
 		await fireEvent.mouseMove(flaeche, { clientX: 639 });
 		expect(markiert()).toBe(0);
 	});
+
+	it('nennt auch zum ersten Monat die Zahlen', async () => {
+		const { container } = render(StatistikVerlauf, { daten: DATEN });
+		const flaeche = /** @type {SVGSVGElement} */ (container.querySelector('svg'));
+		vi.spyOn(flaeche, 'getBoundingClientRect').mockReturnValue(
+			/** @type {any} */ ({ left: 0, width: 640 })
+		);
+
+		await fireEvent.mouseMove(flaeche, { clientX: 100 });
+
+		const einblendung = container.querySelector('.bg-inverse-surface')?.textContent ?? '';
+		expect(einblendung).toContain('Ausleihen: 4');
+		expect(einblendung).toContain('Rückgaben: 2');
+	});
 });

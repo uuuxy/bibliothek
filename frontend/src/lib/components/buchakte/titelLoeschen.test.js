@@ -45,6 +45,24 @@ describe('baueLoeschfrage', () => {
 		);
 	});
 
+	it('ohne jedes Exemplar bleibt der Hinweis, dass es endgültig ist', () => {
+		expect(baueLoeschfrage(1, 'X', { titel: 1, im_haus: 0, verliehen: [] })).toEqual({
+			titel: '„X“ löschen?',
+			text: 'Das lässt sich nicht rückgängig machen.'
+		});
+	});
+
+	it('genau fünf Namen stehen alle da, ohne Zählzeile', () => {
+		const frage = baueLoeschfrage(1, 'X', { titel: 1, im_haus: 0, verliehen: verliehene(5) });
+		expect(frage.zusatz?.liste).toEqual([
+			'Leser 1',
+			'Leser 2 (7b)',
+			'Leser 3 (7b)',
+			'Leser 4 (7b)',
+			'Leser 5 (7b)'
+		]);
+	});
+
 	it('mit verliehenen: Namen, eigenes Kästchen und der Knopf nennt die Zahl', () => {
 		const frage = baueLoeschfrage(1, 'Mathematik 7', {
 			titel: 1,

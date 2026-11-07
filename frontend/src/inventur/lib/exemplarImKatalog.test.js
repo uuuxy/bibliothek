@@ -6,7 +6,7 @@ vi.mock('../../lib/apiFetch.js', () => ({
 }));
 
 import { apiFetch } from '../../lib/apiFetch.js';
-import { erzeugeExemplarFrage } from './exemplarImKatalog.svelte.js';
+import { erzeugeExemplarFrage, hinweisOhneTreffer } from './exemplarImKatalog.svelte.js';
 
 afterEach(() => {
 	vi.useRealTimers();
@@ -33,5 +33,31 @@ describe('Katalogsuche nach einem Exemplar', () => {
 			'/api/buecher/exemplare/erkennen?code=B-00123'
 		);
 		expect(exemplar.fuer('Bß00123')).toMatchObject({ stand: 'fertig', titelId: 't1' });
+	});
+});
+
+// Zeigt der Katalog zur Nummer keine Karte, sagt der Hinweis, warum: Das Exemplar ist ausgesondert,
+// oder sein Titel fehlt in der Liste bis zum Neuladen. Ein Exemplar im Bestand heißt nie ausgesondert.
+describe('Hinweis ohne Treffer zu einem gefundenen Exemplar', () => {
+	/** @param {boolean} ausgesondert */
+	const antwort = (ausgesondert) =>
+		/** @type {const} */ ({
+			code: 'B-7',
+			stand: 'fertig',
+			titelId: 't-1',
+			barcode: 'B-7',
+			ausgesondert
+		});
+
+	it('nennt ein ausgesondertes Exemplar ausgesondert', () => {
+		expect(hinweisOhneTreffer('B-7', antwort(true))).toBe(
+			'Exemplar B-7 ist ausgesondert. Sein Titel hat kein Exemplar mehr im Bestand und steht in der Titelliste unter „Ohne Exemplare“.'
+		);
+	});
+
+	it('nennt bei einem Exemplar im Bestand den fehlenden Titel', () => {
+		expect(hinweisOhneTreffer('B-7', antwort(false))).toBe(
+			'Exemplar B-7 gehört zu einem Titel, der in dieser Liste noch fehlt. Neu laden zeigt ihn.'
+		);
 	});
 });

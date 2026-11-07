@@ -150,6 +150,17 @@ describe('Neuen Leser anlegen', () => {
 		expect(screen.container.textContent ?? '').toContain('Schul-E-Mail-Adresse fehlt');
 	});
 
+	// Die Namen prüft an dieser Tür nur der Dialog: pruefeLeserAngaben im Backend fragt nach Art,
+	// Klasse und E-Mail, und die Datenbank nimmt einen leeren Text.
+	it('lässt niemanden ohne Nachnamen los, auch wenn der Vorname dasteht', async () => {
+		const screen = await anlegen('lehrkraft', 'Katrin', '');
+
+		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
+		expect(screen.container.textContent ?? '').toContain(
+			'Vorname und Nachname sind Pflichtfelder.'
+		);
+	});
+
 	// UMGEKEHRT seit dem 16.09.2026 : Aus der Schul-E-Mail entsteht der Zugang gleich
 	// mit. Vorher stand hier ausdrücklich „kein Zugang zum Programm" — das war richtig,
 	// solange die Adresse fehlte, und führte genau zu dem Doppeleintrag, den die Pflicht

@@ -478,14 +478,16 @@ geschrieben.
    (`<` zu `<=`, `&&` zu `||`, Zeile weg): rund 1.100 Proben, drei Stunden mit vier Arbeitern, jeder
    an einem eigenen Postgres-Server: Die Wiederherstellungsprobe legt immer
    `bibliothek_restore_probe_wegwerf` an und verwirft sie mit `DROP … WITH (FORCE)`. Über
-   die Oberfläche eine Stichprobe von 300 mit Vitest, und was dort unbemerkt bleibt, gezielt gegen
+   die Oberfläche eine Stichprobe von rund 400 mit Vitest, und was dort unbemerkt bleibt, gezielt gegen
    die zuständigen Specs an einem Entwicklungsserver aus einer eigenen Arbeitskopie. Die
    Überlebenden am Code lesen; ein Teil ist ohne Folge. Eine Logzeile der Stufe ERROR gehört nicht
    dazu: Jede zählt der Fehlerstand, und sein Wächter mailt sie. Text-Prüfungen lesen die Datei auf der
    Platte und sehen das Overlay nicht. `golangci-lint` zeigt je Meldungstext nur drei Funde, wer
    Rückbauten mit Meldungen abgleicht, braucht `--max-same-issues=0`. Ein neuer Test zählt erst,
    wenn er im Nachlauf gegen denselben Rückbau rot wird: Eine Prüfung auf `IS NOT NULL` ergab
-   zufällig dieselbe Zahl und übersah die Lücke.
+   zufällig dieselbe Zahl und übersah die Lücke. Ein serieller Block in Playwright hört beim ersten
+   roten Test auf: Eine neue Prüfung in einem späteren Test braucht einen eigenen Rückbau, der nur
+   ihren Fall trifft.
    Eine Probe zählt nur, wenn der Test ohne Rückbau grün ist und mit ihm ein Test fehlschlägt: Ein
    toter Entwicklungsserver, ein unbehandelter Fehler im Test und der Merkzettel einer abgebrochenen
    Suite, an dem das Setup scheitert, machen sonst jeden Rückbau scheinbar erkannt; ebenso eine
