@@ -61,9 +61,13 @@ func (t *Tueren) legeKontoAn(w http.ResponseWriter, r *http.Request, kontoAbfrag
 		return
 	}
 
-	if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte alle Felder ausfüllen", nil)
-		return
+	// `validate:"required"` lässt ein Feld aus Leerzeichen durch; wie beim Ändern
+	// (pruefeGenanntePflichtfelder) zählt es als leer.
+	for _, wert := range []string{req.Vorname, req.Nachname, req.Email, req.Rolle} {
+		if strings.TrimSpace(wert) == "" {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Bitte alle Felder ausfüllen", nil)
+			return
+		}
 	}
 
 	// Einen Administrator darf nur ein Administrator anlegen (siehe admin_schutz.go).

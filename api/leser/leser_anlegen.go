@@ -91,14 +91,22 @@ func pruefeKollegiumEmail(roh string) error {
 	return nil
 }
 
-// pruefeLeserAngaben paart die Pflichtfelder an die Art — dieselbe Paarung, die
-// chk_leser_schueler_pflichtfelder in der Datenbank hält.
+// pruefeLeserAngaben verlangt die Namen und paart die übrigen Pflichtfelder an die Art —
+// dieselbe Paarung, die chk_leser_schueler_pflichtfelder in der Datenbank hält.
 //
 // Die Paarung ist der Punkt und nicht der Wert: Ein Gate, das den Wert prüft und nicht die
 // Paarung, übersieht genau diese Bugklasse. Ein Schüler ohne Klasse fällt in jeder
 // Klassenliste und jeder Mahnung lautlos hinten runter; ein Kollege mit Klasse stünde
 // umgekehrt in den Klassenlisten und im LUSD-Abgleich.
 func pruefeLeserAngaben(req *leserAnlegenAnfrage) error {
+	// Die Namen kommen gekürzt an; `validate:"required"` sah sie davor und ließ einen Namen aus
+	// Leerzeichen durch, der dann leer in der Leserzeile stünde.
+	if req.Vorname == "" {
+		return apierrors.BadRequest(meldungFeldLeer("Vorname"), nil)
+	}
+	if req.Nachname == "" {
+		return apierrors.BadRequest(meldungFeldLeer("Nachname"), nil)
+	}
 	if !leserart.IstBekannt(req.Art) {
 		return apierrors.BadRequest(meldungUnbekannteArt(req.Art), nil)
 	}

@@ -451,6 +451,12 @@ type leserAendernAnfrage struct {
 	Email *string `json:"email"`
 }
 
+// meldungFeldLeer nennt das Pflichtfeld, das leer blieb; Anlage und Änderung eines Lesers sagen
+// es mit denselben Worten.
+func meldungFeldLeer(bezeichnung string) string {
+	return fmt.Sprintf("Bitte das Feld „%s“ ausfüllen", bezeichnung)
+}
+
 // kuerzeRand nimmt den Leerraum am Rand der Felder weg, die auch die Anlage kürzt (LeserAnlegen):
 // Sonst wäre „09H1 " aus der Akte eine andere Klasse als „09H1" aus Anlage und LUSD-Import.
 func (req *leserAendernAnfrage) kuerzeRand() {
@@ -505,7 +511,7 @@ func baueLeserAenderung(w http.ResponseWriter, req *leserAendernAnfrage) (*repos
 		{"Klasse", req.Klasse},
 	} {
 		if feld.wert != nil && strings.TrimSpace(*feld.wert) == "" {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, fmt.Sprintf("Bitte das Feld „%s“ ausfüllen", feld.bezeichnung), nil)
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungFeldLeer(feld.bezeichnung), nil)
 			return nil, false
 		}
 	}
