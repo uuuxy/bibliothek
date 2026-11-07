@@ -230,7 +230,9 @@ describe('BestellStatusBlock: die Quittung', () => {
 		const screen = render(BestellStatusBlock, { b: offen, onAktualisieren: async () => {} });
 		const region = screen.getByRole('status');
 		expect(region.textContent?.trim()).toBe('');
-		expect(screen.getByText(/Sobald der Händler dort bestätigt, erscheint es hier von selbst/));
+		expect(
+			screen.getByText(/Sobald der Händler dort bestätigt, erscheint es hier von selbst/)
+		).toBeTruthy();
 
 		await screen.rerender({
 			b: { ...offen, bestaetigt_am: '2026-10-12T10:00:00Z', bestaetigt_durch: 'lieferant' }

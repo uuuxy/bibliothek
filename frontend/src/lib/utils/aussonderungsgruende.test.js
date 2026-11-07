@@ -6,7 +6,7 @@ import { AUSSONDERUNGSGRUENDE, GRUND_VORGABE } from './aussonderungsgruende.js';
 // Abgangsbuch des Servers; beide lesen aussonderungsgruende.faelle.json.
 describe('AUSSONDERUNGSGRUENDE', () => {
 	it('liest die geteilten Fälle', () => {
-		expect(pruefung.gruende.length).toBe(4);
+		expect(pruefung.gruende).toHaveLength(4);
 	});
 
 	it('nennt Wert, Wort und Reihenfolge der geteilten Fälle', () => {

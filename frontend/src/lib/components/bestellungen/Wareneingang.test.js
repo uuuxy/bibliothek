@@ -83,7 +83,7 @@ describe('Wareneingang: der Zulauf bleibt aktuell', () => {
 		await vi.waitFor(() => expect(bestellStore.incomingShipments).toEqual(bestaetigt));
 		await screen.rerender({ incomingShipments: bestellStore.incomingShipments });
 
-		expect(holen.mock.calls.length).toBe(anfragen + 1);
+		expect(holen.mock.calls).toHaveLength(anfragen + 1);
 		expect(screen.getByText('Bestätigt · 12.10.')).toBeTruthy();
 		expect(screen.getByText('2 Exemplare markiert')).toBeTruthy();
 		expect(screen.getByRole('checkbox', { name: 'Titel A auswählen' })).toHaveProperty(

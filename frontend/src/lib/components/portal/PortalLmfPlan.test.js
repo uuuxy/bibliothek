@@ -143,7 +143,7 @@ describe('PortalLmfPlan: der Plan bleibt aktuell', () => {
 		const vorher = vi.mocked(ladePlan).mock.calls.length;
 
 		leitung.hoerer.get('lmf-plan')?.();
-		await waitFor(() => expect(vi.mocked(ladePlan).mock.calls.length).toBe(vorher + 1));
+		await waitFor(() => expect(vi.mocked(ladePlan).mock.calls).toHaveLength(vorher + 1));
 
 		seite.unmount();
 		expect(leitung.hoerer.has('lmf-plan')).toBe(false);
@@ -165,6 +165,6 @@ describe('PortalLmfPlan: heute', () => {
 
 		await vi.advanceTimersByTimeAsync(60_000);
 		await waitFor(() => expect(heutige()).toBeNull());
-		expect(vi.mocked(ladePlan).mock.calls.length).toBe(vorher + 1);
+		expect(vi.mocked(ladePlan).mock.calls).toHaveLength(vorher + 1);
 	});
 });

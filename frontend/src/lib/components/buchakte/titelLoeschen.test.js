@@ -52,6 +52,23 @@ describe('baueLoeschfrage', () => {
 		});
 	});
 
+	it('ohne Namen heißt die Frage nur „Titel löschen?"', () => {
+		expect(baueLoeschfrage(1, undefined, { titel: 1, im_haus: 2, verliehen: [] }).titel).toBe(
+			'Titel löschen?'
+		);
+	});
+
+	it('ein verliehenes Exemplar: Es bleibt beim Leser, mit seinem Titel', () => {
+		const nachsatz = (/** @type {number} */ anzahlTitel) =>
+			baueLoeschfrage(anzahlTitel, undefined, {
+				titel: anzahlTitel,
+				im_haus: 2,
+				verliehen: verliehene(1)
+			}).zusatz?.nachsatz;
+		expect(nachsatz(1)).toBe('Es bleibt beim Leser, und der Titel bleibt, bis es zurück ist.');
+		expect(nachsatz(3)).toBe('Es bleibt beim Leser, und sein Titel bleibt, bis es zurück ist.');
+	});
+
 	it('genau fünf Namen stehen alle da, ohne Zählzeile', () => {
 		const frage = baueLoeschfrage(1, 'X', { titel: 1, im_haus: 0, verliehen: verliehene(5) });
 		expect(frage.zusatz?.liste).toEqual([
@@ -121,6 +138,10 @@ describe('meldungZumErgebnis', () => {
 		[
 			{ geloescht: [], geblieben: ['a', 'b'] },
 			'2 Titel bleiben, bis die verliehenen Exemplare zurück sind'
+		],
+		[
+			{ geloescht: ['a'], geblieben: ['b', 'c'] },
+			'1 Titel gelöscht. 2 Titel bleiben, bis die verliehenen Exemplare zurück sind'
 		]
 	])('%o', (ergebnis, meldung) => {
 		expect(meldungZumErgebnis(ergebnis)).toBe(meldung);

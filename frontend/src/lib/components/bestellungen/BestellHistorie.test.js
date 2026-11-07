@@ -229,7 +229,7 @@ describe('BestellHistorie: der Stand kommt, während die Liste offen ist', () =>
 
 		leitung.sende('bestellstand');
 
-		await waitFor(() => expect(holen.mock.calls.length).toBe(alle + 1));
+		await waitFor(() => expect(holen.mock.calls).toHaveLength(alle + 1));
 		expect(holen.mock.calls.at(-1)?.[0]).toBe(`/api/bestellhistorie/${wartet.id}`);
 		expect(listenAbrufe()).toBe(liste);
 	});

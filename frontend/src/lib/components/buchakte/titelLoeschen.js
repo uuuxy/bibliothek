@@ -21,6 +21,25 @@ const MAX_NAMEN = 5;
 const exemplare = (n) => (n === 1 ? '1 Exemplar' : `${n} Exemplare`);
 
 /**
+ * Die Überschrift der Rückfrage: die Zahl der Titel, sonst der Name des einen.
+ * @param {number} anzahlTitel @param {string | undefined} name
+ */
+function frageTitel(anzahlTitel, name) {
+	if (anzahlTitel > 1) return `${anzahlTitel} Titel löschen?`;
+	return name ? `„${name}“ löschen?` : 'Titel löschen?';
+}
+
+/**
+ * Was bleibt, bis das Verliehene zurück ist: von mehreren Titeln der des einen Exemplars oder
+ * die der verliehenen, sonst der eine Titel.
+ * @param {number} anzahlTitel @param {number} anzahlVerliehen
+ */
+function bleibendeTitel(anzahlTitel, anzahlVerliehen) {
+	if (anzahlTitel > 1) return anzahlVerliehen === 1 ? 'sein Titel bleibt' : 'ihre Titel bleiben';
+	return 'der Titel bleibt';
+}
+
+/**
  * Baut die Rückfrage aus der Vorschau des Servers.
  * @param {number} anzahlTitel
  * @param {string | undefined} name der Titel, wenn es einer ist
@@ -30,12 +49,7 @@ const exemplare = (n) => (n === 1 ? '1 Exemplar' : `${n} Exemplare`);
 export function baueLoeschfrage(anzahlTitel, name, folgen) {
 	const imHaus = folgen.im_haus;
 	const verliehen = folgen.verliehen;
-	const titel =
-		anzahlTitel > 1
-			? `${anzahlTitel} Titel löschen?`
-			: name
-				? `„${name}“ löschen?`
-				: 'Titel löschen?';
+	const titel = frageTitel(anzahlTitel, name);
 	let text = 'Das lässt sich nicht rückgängig machen.';
 	if (imHaus === 1) text = 'Das Exemplar im Haus kommt mit diesem Grund ins Abgangsbuch.';
 	else if (imHaus > 1)
@@ -44,6 +58,7 @@ export function baueLoeschfrage(anzahlTitel, name, folgen) {
 	if (verliehen.length === 0) return { titel, text };
 
 	const eines = verliehen.length === 1;
+	const bleibt = bleibendeTitel(anzahlTitel, verliehen.length);
 	const namen = verliehen
 		.slice(0, MAX_NAMEN)
 		.map((v) => (v.klasse ? `${v.leser} (${v.klasse})` : v.leser));
@@ -58,8 +73,8 @@ export function baueLoeschfrage(anzahlTitel, name, folgen) {
 				: `${verliehen.length} Exemplare sind verliehen:`,
 			liste: namen,
 			nachsatz: eines
-				? `Es bleibt beim Leser, und ${anzahlTitel > 1 ? 'sein Titel bleibt' : 'der Titel bleibt'}, bis es zurück ist.`
-				: `Sie bleiben bei den Lesern, und ${anzahlTitel > 1 ? 'ihre Titel bleiben' : 'der Titel bleibt'}, bis sie zurück sind.`,
+				? `Es bleibt beim Leser, und ${bleibt}, bis es zurück ist.`
+				: `Sie bleiben bei den Lesern, und ${bleibt}, bis sie zurück sind.`,
 			kaestchen: eines
 				? 'Auch dieses Exemplar löschen und aus dem Leserkonto austragen'
 				: `Auch diese ${verliehen.length} Exemplare löschen und aus den Leserkonten austragen`,
@@ -81,9 +96,10 @@ export function meldungZumErgebnis(ergebnis) {
 	const g = ergebnis.geloescht.length;
 	const b = ergebnis.geblieben.length;
 	if (b === 0) return g === 1 ? 'Titel gelöscht' : `${g} Titel gelöscht`;
-	const bleibt = b > 1 ? `${b} Titel bleiben` : g === 0 ? 'Der Titel bleibt' : '1 Titel bleibt';
 	const rest = 'bis die verliehenen Exemplare zurück sind';
-	return g === 0 ? `${bleibt}, ${rest}` : `${g} Titel gelöscht. ${bleibt}, ${rest}`;
+	const mehrere = `${b} Titel bleiben`;
+	if (g === 0) return `${b > 1 ? mehrere : 'Der Titel bleibt'}, ${rest}`;
+	return `${g} Titel gelöscht. ${b > 1 ? mehrere : '1 Titel bleibt'}, ${rest}`;
 }
 
 /**

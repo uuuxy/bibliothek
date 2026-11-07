@@ -87,7 +87,7 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		// Eine andere Bestellung ist bestätigt worden; diese hier wartet weiter.
 		leitung.sende('bestellstand');
 
-		await waitFor(() => expect(holen.mock.calls.length).toBe(anfragen + 1));
+		await waitFor(() => expect(holen.mock.calls).toHaveLength(anfragen + 1));
 		await Promise.resolve();
 		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Bestätigungs-Link')).value).toBe(
 			'https://schule.example/bestellung/neu'
@@ -106,7 +106,7 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		leitung.sende('bestellstand');
 
 		expect(await screen.findByText(QUITTUNG)).toBeTruthy();
-		expect(holen.mock.calls.length).toBe(anfragen + 1);
+		expect(holen.mock.calls).toHaveLength(anfragen + 1);
 		expect(grund.value).toBe('falsch gekennzeichnet');
 	});
 
@@ -224,7 +224,7 @@ describe('BestellDetail: der Stand kommt, während die Bestellung offen ist', ()
 		const anfragen = holen.mock.calls.length;
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Kleine Etiketten' }));
-		await waitFor(() => expect(holen.mock.calls.length).toBe(anfragen + 1));
+		await waitFor(() => expect(holen.mock.calls).toHaveLength(anfragen + 1));
 		leitung.sende('bestellstand');
 		eigeneAntwort(nachgetragen);
 		await new Promise((fertig) => setTimeout(fertig));

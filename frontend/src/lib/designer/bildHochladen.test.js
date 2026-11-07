@@ -42,7 +42,7 @@ describe('Ausweis-Designer: Bild hochladen', () => {
 
 		await fireEvent.change(feld, { target: { files: [datei(), datei()] } });
 
-		await waitFor(() => expect(idStore.front.elements.length).toBe(vorher + 2));
+		await waitFor(() => expect(idStore.front.elements).toHaveLength(vorher + 2));
 	});
 
 	// Bliebe die Datei im Feld stehen, meldete der Browser beim zweiten Wählen derselben Datei
