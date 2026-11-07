@@ -442,6 +442,8 @@ Ob die Tests prüfen, was sie zusagen, zeigt ein Durchgang über vier Fragen:
 Was der gewohnte Lauf nicht zeigen kann, zeigen zehn Läufe mit anderen Bedingungen. Bis auf den
 letzten hat jeder echte Fehler oder falsche Tests gefunden; alle laufen auf einer Wegwerf-Instanz ohne Mailserver.
 Sie liefert eine Kopie von `frontend/dist`: vorher neu bauen, sonst prüft der Lauf einen alten Stand.
+`cover-grossansicht` und `signatur-cover-vorschau` schreiben per `docker exec` in den Container des
+Backends und laufen deshalb nur am Stack.
 Die Skripte der Läufe stehen nicht im Repository; fehlen sie, werden sie nach den Punkten hier neu
 geschrieben.
 
@@ -450,10 +452,12 @@ geschrieben.
    Ein Test an der Datenbank, der einen eindeutigen Wert fest nennt (ISBN, Nummer) oder die Kinder
    einer festen Klasse zählen lässt (Klassensatz: mehr als die Hälfte der Klasse), leert vorher den
    Bestand: Den Rest eines anderen Tests trifft er sonst nur in manchen Folgen. Ob zwei Tests
-   zusammenhängen, zeigen sie allein mit `-run` über mehrere Zufallswerte.
+   zusammenhängen, zeigen sie allein mit `-run` über mehrere Zufallswerte. Vitest läuft im
+   Repository selbst: In einer Arbeitskopie mit verlinktem `node_modules` liegt der PDF-Worker
+   außerhalb der Wurzel, Vite verweigert ihn („Denied ID"), und `DruckCenter.test.js` und
+   `bogenDoppelklick.test.js` werden ohne Fehler im Programm rot.
 6. **Jede Browser-Testdatei allein auf einer frischen Datenbank:** Vorlage mit `CREATE DATABASE …
    TEMPLATE`, Backend je Datei neu. Rot heißt: Die Datei lebt von den Resten der Dateien vor ihr.
-   `cover-grossansicht` schreibt in den Container des Backends und läuft nur am Stack.
 7. **Andere Kalendertage:** Eine Kopie der Go-Toolchain, deren `time.Now` einen Versatz aus der
    Umgebung addiert, Postgres unter `libfaketime` und in der Seite ein verschobenes `Date`. Gefahren
    an Monatsenden, Schaltjahr, Umstellung der Uhr, Schuljahreswechsel, in der Saison der Abgänger und
@@ -503,9 +507,11 @@ geschrieben.
 11. **Firefox und WebKit:** die ganze Suite. Rot nur am Werkzeug bleiben: `newCDPSession` und
     `page.pdf` gibt es nur in Chromium, `window.print` hält den Klick in Firefox ohne Fenster an,
     WebKit druckt keine PDFs und lässt bei Tab Knöpfe aus, wie Safari ab Werk. Einen Knopf macht ein
-    Klick in Safari nicht zum Fokus: Was auf Tasten hört, nimmt ihn sich selbst. In Firefox bleiben
-    `abmelden-tab-zu` (`route.continue` nach `page.close`) und die Messhilfe von `control-hoehen`
-    und `typo-rollen` rot, die dort nicht zur Ruhe kommt.
+    Klick in Safari nicht zum Fokus: Was auf Tasten hört, nimmt ihn sich selbst. Firefox kennt die
+    Berechtigung `clipboard-read` nicht, WebKit `clipboard-write` nicht (`portal-seitenblatt`), und
+    WebKit erfüllt eine Route nicht mit 304 (`neue-fassung`). `bildlauf-einheitlich` und
+    `navigation-bildlauf` messen den Balken, den Chromium zeichnet. In Firefox bleibt außerdem
+    `abmelden-tab-zu` rot (`route.continue` nach `page.close`).
 12. **Verzögerte Antworten:** Die ganze Suite, jede Anfrage an die Schnittstelle um einen Zufallswert
     bis 700 ms verzögert (`context.route`). So kommen Antworten in anderer Folge an, und Bedienung, die
     vor der Antwort Eingaben annimmt, fällt auf. Rot werden auch Prüfungen, die die Seite messen, bevor
@@ -516,10 +522,12 @@ geschrieben.
     Datenbank, am Stand davor rot. Excel für Mac schreibt anders als das, was eine Tabelle über Excel sagt:
     In jeder Form Macintosh, nur eine mit CR als Zeilentrenner.
 14. **Der Aufbau der Schule:** die ganze Suite hinter dem Block aus `update_caddy.sh`, mit TLS und HTTP/2.
-    `cover-grossansicht` schreibt in den Container des Backends und läuft nur am Stack.
 
 Nicht alle Läufe auf einmal: Mit zehn Kernen stieg die Last dabei über 50, Zeitgrenzen rissen, und
 Prüfungen, die die Seite messen, wurden rot. Jeden roten Test am selben Tag einzeln nachfahren.
+Der Rückbau (9) läuft allein: Belegte er alle Kerne und lief daneben WebKit, wartete das
+Fenstersystem von macOS 40 s auf den Datenschutzdienst (TCC) und wurde beendet, mit ihm die
+Anmeldung, Docker Desktop und die IDE.
 
 Bedienung per Touch und ein langsamer Rechner gehören nicht zu den Läufen; für die Schule spielen
 beide keine Rolle.
