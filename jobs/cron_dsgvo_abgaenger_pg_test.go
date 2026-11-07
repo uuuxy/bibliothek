@@ -1,8 +1,11 @@
 package jobs
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
 	"os"
+	"strings"
 	"testing"
 
 	"bibliothek/internal/testdaten"
@@ -80,8 +83,18 @@ func TestAbgaengerLoeschung_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Foto: %v", err)
 	}
 
+	// Ein Lauf ohne Fehlschlag schreibt keine Zeile der Stufe ERROR: Jede zählt der Fehlerstand,
+	// und sein Wächter mailt sie (pkg/logger/fehlerstand.go).
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
 	z := NewZeitplan(pool, repository.NewProtokollAbfragen(pool))
 	z.FuehreAbgaengerLoeschungAus(ctx)
+	if strings.Contains(protokoll.String(), "level=ERROR") {
+		t.Errorf("Lauf ohne Fehlschlag meldet einen Fehler:\n%s", protokoll.String())
+	}
 
 	zaehle := func(abfrage string, argumente ...any) int {
 		t.Helper()

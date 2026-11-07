@@ -118,6 +118,41 @@ func TestLasseAbgelaufeneVerfallen(t *testing.T) {
 	}
 }
 
+// Eine abholbereite Vormerkung, deren Abholfrist noch läuft, übersteht den Lauf: Gelöscht wird
+// nur, was abholbereit und zugleich abgelaufen ist.
+func TestLasseAbgelaufeneVerfallen_FristLaeuftNoch(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	exID := legeSignaturMitExemplarenAn(t, pool, "Frist", 1)[0]
+	titelID := titelIDVonExemplar(t, pool, exID)
+	abholer := legeSchuelerAn(t, pool, "VF-FRIST", "Frieda", "7c")
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis, erstellt_am)
+		VALUES ($1,$2,'abholbereit',$3, CURRENT_TIMESTAMP + INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '2 days')`,
+		titelID, abholer, exID); err != nil {
+		t.Fatalf("Vormerkung mit laufender Frist: %v", err)
+	}
+
+	verfallen, neuBereit, err := NewVormerkungsAbfragen(pool).LasseAbgelaufeneVerfallen(ctx)
+	if err != nil {
+		t.Fatalf("Verfall: %v", err)
+	}
+	if verfallen != 0 || neuBereit != 0 {
+		t.Errorf("LasseAbgelaufeneVerfallen(ctx) = %d/%d, erwartet 0/0: die Frist läuft noch", verfallen, neuBereit)
+	}
+	var status, exemplar string
+	if err := pool.QueryRow(ctx,
+		`SELECT status, COALESCE(bereitgestellt_exemplar_id::text,'') FROM vormerkungen WHERE schueler_id=$1`,
+		abholer).Scan(&status, &exemplar); err != nil {
+		t.Fatalf("Vormerkung mit laufender Frist nicht mehr lesbar: %v", err)
+	}
+	if status != "abholbereit" || exemplar != exID {
+		t.Errorf("Vormerkung mit laufender Frist: status=%q exemplar=%q, erwartet abholbereit/%s", status, exemplar, exID)
+	}
+}
+
 // Ist das frei gewordene Exemplar inzwischen ausgeliehen, wird die nicht abgeholte Vormerkung
 // trotzdem gelöscht, der Nächste aber nicht bedient; das erledigt die nächste Rückgabe.
 func TestLasseAbgelaufeneVerfallen_ExemplarWeg(t *testing.T) {

@@ -475,18 +475,24 @@ geschrieben.
    Zieltyp halten und loggen, was der Server still verwirft. Null Treffer zählen erst, wenn ein
    Fremdfeld anschlägt; Stellen mit eigenem Decoder gegen die Rümpfe der Oberfläche lesen.
 9. **Rückbau in Bedingungen und SQL:** Über den ganzen fachlichen Go-Code mit `go test -overlay`
-   (`<` zu `<=`, `&&` zu `||`, Zeile weg): rund 1.100 Proben, drei Stunden mit vier Arbeitern. Über
+   (`<` zu `<=`, `&&` zu `||`, Zeile weg): rund 1.100 Proben, drei Stunden mit vier Arbeitern, jeder
+   an einem eigenen Postgres-Server: Die Wiederherstellungsprobe legt immer
+   `bibliothek_restore_probe_wegwerf` an und verwirft sie mit `DROP … WITH (FORCE)`. Über
    die Oberfläche eine Stichprobe von 300 mit Vitest, und was dort unbemerkt bleibt, gezielt gegen
    die zuständigen Specs an einem Entwicklungsserver aus einer eigenen Arbeitskopie. Die
-   Überlebenden am Code lesen; ein Teil ist ohne Folge. Text-Prüfungen lesen die Datei auf der
+   Überlebenden am Code lesen; ein Teil ist ohne Folge. Eine Logzeile der Stufe ERROR gehört nicht
+   dazu: Jede zählt der Fehlerstand, und sein Wächter mailt sie. Text-Prüfungen lesen die Datei auf der
    Platte und sehen das Overlay nicht. `golangci-lint` zeigt je Meldungstext nur drei Funde, wer
    Rückbauten mit Meldungen abgleicht, braucht `--max-same-issues=0`. Ein neuer Test zählt erst,
    wenn er im Nachlauf gegen denselben Rückbau rot wird: Eine Prüfung auf `IS NOT NULL` ergab
    zufällig dieselbe Zahl und übersah die Lücke.
    Eine Probe zählt nur, wenn der Test ohne Rückbau grün ist und mit ihm ein Test fehlschlägt: Ein
    toter Entwicklungsserver, ein unbehandelter Fehler im Test und der Merkzettel einer abgebrochenen
-   Suite, an dem das Setup scheitert, machen sonst jeden Rückbau scheinbar erkannt. Unter Last ist eine Zeitüberschreitung kein Erkennen: Sie zählt erst, wenn sie
-   bei ruhigem Rechner mit längerer Grenze wiederkehrt. Ein Rückbau, der eine Schleife über `await`
+   Suite, an dem das Setup scheitert, machen sonst jeden Rückbau scheinbar erkannt; ebenso eine
+   Test-Datenbank, deren Name nicht „test" enthält: `pgtest` verweigert sie, und jede Probe dauert
+   dann ein bis zwei Sekunden statt einer halben Minute. Unter Last ist eine Zeitüberschreitung kein Erkennen: Sie zählt erst, wenn sie
+   bei ruhigem Rechner mit längerer Grenze wiederkehrt oder `pg_stat_activity` zeigt, dass der Test
+   auf eine Sperre seiner eigenen offenen Transaktion wartet. Ein Rückbau, der eine Schleife über `await`
    nicht enden lässt, hält Vitest ganz an; er zählt als erkannt. Welche Specs eine Zeile ausführen,
    misst ein Lauf der Suite am Entwicklungsserver mit der Abdeckung je Test, über die Quellkarte
    jedes Moduls auf Zeilen umgerechnet: Geladen wird fast jedes Modul in fast jeder Spec. Ein neues

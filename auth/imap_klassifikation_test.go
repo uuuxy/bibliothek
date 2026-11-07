@@ -24,11 +24,17 @@ import (
 // Logik.
 
 // miniIMAP startet einen Mailserver über TLS, der seine Begrüßung schickt und auf LOGIN mit
-// `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort. logins erhält
-// jede LOGIN-Zeile, wie sie ankam.
-func miniIMAP(t *testing.T, antwort string) (host, port string, logins <-chan string) {
+// `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort. befehle erhält
+// jede Zeile mit LOGIN oder LOGOUT, wie sie ankam.
+func miniIMAP(t *testing.T, antwort string) (host, port string, befehle <-chan string) {
 	t.Helper()
 	eingegangen := make(chan string, 8)
+	melde := func(zeile string) {
+		select {
+		case eingegangen <- zeile:
+		default:
+		}
+	}
 	schluessel, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatal(err)
@@ -76,10 +82,7 @@ func miniIMAP(t *testing.T, antwort string) (host, port string, logins <-chan st
 					tag := strings.Fields(eingang)[0]
 					switch {
 					case strings.Contains(strings.ToUpper(eingang), "LOGIN"):
-						select {
-						case eingegangen <- eingang:
-						default:
-						}
+						melde(eingang)
 						if antwort == "CLOSE" {
 							return
 						}
@@ -87,6 +90,7 @@ func miniIMAP(t *testing.T, antwort string) (host, port string, logins <-chan st
 							return
 						}
 					case strings.Contains(strings.ToUpper(eingang), "LOGOUT"):
+						melde(eingang)
 						schreibe("* BYE\r\n" + tag + " OK\r\n")
 						return
 					default:
@@ -108,12 +112,12 @@ func miniIMAP(t *testing.T, antwort string) (host, port string, logins <-chan st
 // mitMiniIMAP stellt den Testserver ein und lässt a sein Wegwerf-Zertifikat zu.
 func mitMiniIMAP(t *testing.T, a *Anmeldung, antwort string) <-chan string {
 	t.Helper()
-	host, port, logins := miniIMAP(t, antwort)
+	host, port, befehle := miniIMAP(t, antwort)
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("IMAP_HOST", host)
 	t.Setenv("IMAP_PORT", port)
 	a.imapTLS = func(c *tls.Config) { c.InsecureSkipVerify = true } //nolint:gosec // Testserver mit Wegwerf-Zertifikat
-	return logins
+	return befehle
 }
 
 func TestPruefeIMAPAnmeldung_NOIstFalschesPasswortKeinAusfall(t *testing.T) {
@@ -140,11 +144,22 @@ func TestPruefeIMAPAnmeldung_VerbindungsabbruchBeimAnmeldenIstAusfall(t *testing
 	}
 }
 
+// Nach dem Erfolg meldet sich die Prüfung beim Mailserver ab. Ohne LOGOUT bliebe je Anmeldung
+// eine Verbindung offen, bis der Server sie von sich aus schließt.
 func TestPruefeIMAPAnmeldung_OKMeldetErfolg(t *testing.T) {
 	a := &Anmeldung{}
-	mitMiniIMAP(t, a, "OK LOGIN completed")
+	befehle := mitMiniIMAP(t, a, "OK LOGIN completed")
 	if err := a.pruefeIMAPAnmeldung(context.Background(), "wer@schule.de", "richtig"); err != nil {
 		t.Fatalf("OK vom Server muss Erfolg sein: %v", err)
+	}
+	<-befehle // LOGIN
+	select {
+	case zeile := <-befehle:
+		if !strings.Contains(strings.ToUpper(zeile), "LOGOUT") {
+			t.Errorf("nach dem LOGIN kam %q, erwartet LOGOUT", zeile)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("nach der erfolgreichen Anmeldung kein LOGOUT: die Verbindung zum Mailserver bliebe offen")
 	}
 }
 
@@ -153,11 +168,11 @@ func TestPruefeIMAPAnmeldung_OKMeldetErfolg(t *testing.T) {
 // Domain fände danach ohnehin kein Konto, weil die Kontosuche die Eingabe nimmt.
 func TestPruefeIMAPAnmeldung_HaengtKeineDomainAn(t *testing.T) {
 	a := &Anmeldung{}
-	logins := mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
+	befehle := mitMiniIMAP(t, a, "NO [AUTHENTICATIONFAILED] Authentication failed.")
 	if err := a.pruefeIMAPAnmeldung(context.Background(), "nberger", "egal"); !errors.Is(err, errAnmeldungAbgelehnt) {
 		t.Fatalf("a.pruefeIMAPAnmeldung(…) = %v, erwartet errAnmeldungAbgelehnt", err)
 	}
-	zeile := <-logins
+	zeile := <-befehle
 	if felder := strings.Fields(zeile); len(felder) < 3 || felder[2] != "nberger" && felder[2] != `"nberger"` {
 		t.Fatalf("LOGIN-Zeile = %q, erwartet den Namen „nberger“ ohne Domain", zeile)
 	}

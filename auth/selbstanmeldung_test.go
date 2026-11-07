@@ -1,6 +1,9 @@
 package auth
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // Die Prüfung der Domain ist die einzige Schranke zwischen „hat irgendein Postfach" und „steht
 // im Programm". Sie muss die naheliegenden Umgehungen aushalten; deshalb steht hier eine Liste
@@ -41,8 +44,8 @@ func TestSelbstanmeldungIstOhneEinstellungAus(t *testing.T) {
 	if darfSichSelbstAnmelden("nina.berger@philipp-reis-schule.de") {
 		t.Error("ohne SELBSTANMELDUNG_DOMAIN darf sich niemand selbst anlegen")
 	}
-	if got := SelbstanmeldungStatus(); got == "" {
-		t.Error("der Zustand muss protokollierbar sein, sonst fällt eine vergessene Einstellung nicht auf")
+	if got := SelbstanmeldungStatus(); !strings.Contains(got, "abgeschaltet") {
+		t.Errorf("SelbstanmeldungStatus() = %q, erwartet „abgeschaltet“: sonst fällt eine vergessene Einstellung nicht auf", got)
 	}
 }
 
