@@ -3,9 +3,29 @@
 // Gemessen wird, was der Browser zeichnet. Dafür startet Chromium hier mit Balken: Playwright setzt
 // sonst --hide-scrollbars, und dann belegt kein Balken Platz.
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin, gehZu, seedSQL, uniqueSuffix } from './helpers.js';
 
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } });
+
+// Gemessen wird nur, wenn der Katalog länger ist als das Fenster. Auf einer frischen Datenbank
+// ist er leer; deshalb legt der Test 40 Titel mit je einem Exemplar an und nimmt sie danach weg.
+const s = uniqueSuffix().slice(0, 8);
+test.beforeAll(() => {
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel)
+			SELECT 'E2E-Balken-${s}-' || g FROM generate_series(1, 40) g RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+		SELECT id, 'BAL-${s}-' || row_number() OVER (), true FROM t;
+	`);
+});
+test.afterAll(() => {
+	seedSQL(`
+		DELETE FROM buecher_exemplare WHERE barcode_id LIKE 'BAL-${s}-%';
+		DELETE FROM buecher_titel WHERE titel LIKE 'E2E-Balken-${s}-%';
+	`);
+});
 
 /** Die Fläche, die den Inhalt rollt (main in Hauptbereich.svelte): rechts am Fensterrand, mit
  *  Bildlauf. Läuft im Browser. */
