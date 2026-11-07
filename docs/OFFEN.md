@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 05.11.2026
+Stand: 08.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -26,7 +26,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 - [x] Die Läufe unter anderen Bedingungen wiederholen, wenn die übrigen Änderungen drin sind. (7.15)
-- [ ] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
+- [x] Lasttest wiederholen, als letzter Schritt, wenn alle übrigen Änderungen drin sind. (7.14)
 
 ### Bei dir
 
@@ -207,18 +207,6 @@ Passwort des Mailversands und die Sicherungen ([datenschutz/nachweis.md](datensc
 „Verschlüsselung"). Wer die Platte bekommt, bei Diebstahl, Austausch oder Entsorgung, liest alle
 Daten der Schüler. Beim Einrichten des Schulservers die Platte verschlüsseln, danach den Nachweis
 um den Satz ergänzen.
-
-### 7.14 Lasttest wiederholen
-
-Entschieden am 25.10.2026: Der Lasttest läuft noch einmal, nach allen übrigen
-Schritten der Etappe 1. Er findet, was kein Test von selbst findet: eine Tür, die einem fehlenden
-Feld eine eigene Bedeutung gibt, etwa „fehlt die Klassenliste, gilt es für alle Klassen". Vorlage
-sind die Läufe mit k6 gegen eine abgeschottete Kopie der Generalprobe in 1c86bc51
-(Gleichzeitigkeit an demselben Buch, Stoßzeit, eine Stunde Dauerlast, Büchertausch-Tag) und am
-Stand 26937182 (ein Schultag mit zehn Theken über sechs Stunden, mit Neustart des Servers und
-einer Theke ohne Netz; Ergebnis in [ARCHITEKTUR.md](ARCHITEKTUR.md) 10.3), dazu die Rechte je
-Rolle über alle Routen und kaputte Rümpfe an jeder Tür. Die Skripte kommen nicht ins Repository
-(bf8f0580); fehlen sie, werden sie neu geschrieben, der Aufbau steht in ARCHITEKTUR 8.14.
 
 ### 9.9 Pflegekonzept und Datenschutz-Nachweis
 

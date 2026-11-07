@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 05.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
+Stand: 08.11.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · jedes
 Kapitel nennt seinen eigenen Stand
 
 ---
@@ -1721,7 +1721,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 04.11.2026
+Stand: 08.11.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2591,7 +2591,7 @@ sieht.
 
 **Unter Last:**
 
-- **Der Lasttest** ([OFFEN.md](OFFEN.md) 7.14) läuft mit k6 gegen die Kopie, die
+- **Der Lasttest** (Ergebnis in 10.3) läuft mit k6 gegen die Kopie, die
   `scripts/generalprobe/generalprobe.sh … --behalten` stehen lässt; die Skripte liegen außerhalb
   des Repositorys. Der Aufbau braucht:
   - **HTTPS davor.** Die Cookies tragen immer `Secure`, k6 schickt sie über HTTP nicht zurück:
@@ -2603,14 +2603,33 @@ sieht.
     Backend bekommt `TRUSTED_PROXIES` mit den privaten Netzen. Wer alle Türen nacheinander
     abfragt, braucht dazu eine Pause je Anfrage, sonst antwortet die Bremse statt der Tür.
   - **Ein Postfach ohne Anmeldung** im selben Netz und `SMTP_ALLOW_PLAINTEXT=true` am Backend:
-    Mit Zugangsdaten verweigert der Versand eine Verbindung ohne TLS.
+    Mit Zugangsdaten verweigert der Versand eine Verbindung ohne TLS. Versendet wird mit der
+    Einstellung in der Datenbank; die Umgebung übernimmt der Start nur, solange dort die Vorgabe
+    des Schemas steht (`UebernimmMailKonfig`). In der Kopie zeigt deshalb
+    `PUT /api/admin/settings/mail` auf das Postfach.
   - **Daten eines Schultags.** Die offenen Ausleihen der Littera-Sicherung von 2010 sind alle
-    überfällig; in der Kopie werden sie auf die letzten Wochen gelegt. Den Startzustand hält
-    `CREATE DATABASE … TEMPLATE`, damit der lange Lauf am Stand vor dem Probelauf beginnt.
+    überfällig; in der Kopie werden sie auf die letzten Wochen gelegt. Überfällig bleiben nur
+    Ausleihen von Lesern, die im Lauf nicht vorkommen: Bei rund acht Büchern je Kind trüge sonst
+    fast jeder Besucher eines, und die Sperr-Automatik wiese ihn ab. Lehrkräfte stehen in `leser`,
+    die Sicht `schueler` zeigt nur Schüler. Den Startzustand hält `CREATE DATABASE … TEMPLATE`,
+    damit der lange Lauf am Stand vor dem Probelauf beginnt.
+  - **Nachbuchen wie ein Theken-Rechner.** Eine Ausleihe eines Buchs, das die Person schon hat,
+    wird nur mit `besuch_seit_ms` zur Rückgabe (`ausleiheVorDemBesuch`); ohne das Feld antwortet
+    die Tür `bereits_ausgeliehen`.
+  - **Ausgaben nur als Zahl.** Die Gründe der Nachbuch-Meldungen nennen Personen
+    („… reserviert"); die Skripte geben nur die Form aus. Pläne, Konten und Ausgaben tragen
+    Ausweisnummern und Namen aus der Sicherung und werden nach dem Lauf gelöscht.
   - **Kein Fund:** Das Ausleihlimit lässt sich nicht übergehen (403), `GET /api/einstellungen`
     verlangt `manage_settings`, und `GET /api/reservierungen/klassensatz/offen` gehört zum Portal
     und trägt keine Kennung der Reservierung; erledigt wird über
-    `GET /api/reservierungen/klassensatz`.
+    `GET /api/reservierungen/klassensatz`. Dasselbe Buch an zwei Theken für zwei Leser wird
+    umgebucht (Fremdrückgabe), nicht abgewiesen. Dieselbe Portion zweimal zugleich antwortet für
+    Einträge, deren Buchung noch läuft, `wiederholen`; der Theken-Rechner schickt sie später.
+    Fünf Türen nehmen einen kaputten Rumpf an, ohne Folge: Cover-Abgleich und Sitzung verlängern
+    lesen keinen; Cover erneut laden und die Bestellsuche lesen `null` und unbekannte Felder als
+    leere Anfrage (alle Cover von außen, wie der Knopf der Oberfläche; keine Treffer); das
+    Ausweis-Design speichert jedes gültige JSON, und `designMitSchule` liest alles außer einem
+    Objekt als nicht gespeichert.
 - **Echte CSV aus Excel für Mac.** Ohne Hand am Programm über AppleScript: `make new workbook`, Zellen
   setzen, `save workbook as active workbook filename "<Pfad mit Doppelpunkten>" file format CSV file format`,
   ebenso `CSV Mac file format`, `CSV MSDos file format`, `CSV Windows file format`. Nach dem ersten Speichern
@@ -3294,7 +3313,7 @@ sind von außen gesperrt. Einrichtung und Probe: DEPLOYMENT.md 3.
 
 ## 10. Qualitätsanforderungen
 
-Stand: 25.10.2026
+Stand: 08.11.2026
 
 ---
 
@@ -3401,7 +3420,7 @@ gemessenes Limit:
 | Globales Rate-Limit                 | 50 Anfragen/s/IP, Auslieferungspfade ausgenommen                                          |
 | Nachbuch-Portion                    | 1–50 Einträge je Aufruf (mehr wäre eine zu lange offene Transaktion)                      |
 | Cover-Sync                          | Worker-Pool 8, alle 6 Stunden und auf Anforderung                                         |
-| Lastprüfung                         | Lasttest mit k6 außerhalb des Repositorys ([OFFEN.md](OFFEN.md) 7.14), zuletzt am Stand 26937182: zehn Theken über sechs Stunden, 81.518 Anfragen ohne 5xx, Scan p95 18 ms, Speicher des Backends ohne Wachstum; ein Neustart mit 20 s Pause in der Stoßstunde ging ohne verlorene oder doppelte Buchung durch. Gleichzeitige Scans prüfen dazu Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
+| Lastprüfung                         | Lasttest mit k6 außerhalb des Repositorys (Aufbau in 8.14), zuletzt am Stand b8080659: zehn Theken über sechs Stunden mit 1.398 Besuchen, Fehlerantworten nur während eines Neustarts mit 20 s Pause in der Stoßstunde, danach keine verlorene oder doppelte Buchung; Scan p95 16 ms, Speicher des Backends ohne Wachstum (22–42 MiB nach den Anmeldungen). 25 Theken eine Stunde lang: 103.076 Anfragen ohne Fehler, Scan p95 4 ms, daneben 56 Katalogsuchen je Sekunde und die Nachtsicherung. Gleichzeitige Scans prüfen dazu Tests an der Datenbank (`repository/ausleihe_zeilensperren_pg_test.go`, `internal/service/nachbuchen_pg_test.go`) |
 
 **Nicht Teil der Zusage:** horizontale Skalierung, Mehrmandantenfähigkeit, Hochverfügbarkeit
 ohne Wartungsfenster. Ein Deploy ist ein kurzer, geordneter Abriss der Verbindungen
@@ -3430,7 +3449,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 01.11.2026
+Stand: 08.11.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3699,6 +3718,15 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   trägt zu jeder Ausleihe und Rückgabe die Kennung des Lesers und den Zeitpunkt, aber weder
   Namen noch Buch (PII-Matrix, Stufe 0). Zuhörer sind nur Theke und Abgänger-Seite. Frage mit
   Anlass: Braucht jeder Empfänger die Kennung?
+- **Ausleihe und Rückgabe stempeln den Beginn ihrer Transaktion** (`CURRENT_TIMESTAMP` in
+  `sqlAusleihe` und `BucheRueckgabeZum`, `repository/ausleihe.go`). Beginnt eine Ausleihe vor
+  der Rückgabe desselben Exemplars und wartet an dessen Zeilensperre, liegt ihr `ausgeliehen_am`
+  vor dem `rueckgabe_am` der vorigen Ausleihe. Im Lasttest am Stand b8080659 (dasselbe Buch an
+  20 Theken zugleich) überlappten so 4 Paare von Ausleihen an 3 Exemplaren um 1 bis 19 ms; zwei
+  offene Ausleihen eines Exemplars gab es nie.
+  Keine Abfrage fragt, wer ein Exemplar zu einem Zeitpunkt hatte, und eine Reihenfolge nach
+  einer der beiden Spalten bleibt richtig. Anlass: eine solche Abfrage; dann mit
+  `clock_timestamp()` stempeln.
 
 #### Theke, Netz und Zwischenspeicher
 
