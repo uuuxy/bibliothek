@@ -60,6 +60,35 @@ func TestImportiereLitteraXML_FalscheWurzelIstKeinKatalogisat(t *testing.T) {
 	}
 }
 
+// Eine Datei, die ISO-8859-1 oder Windows-1252 erklärt, liest der Decoder nur über den
+// CharsetReader aus golang.org/x/net/html/charset; ohne ihn bricht er am erklärten Zeichensatz ab.
+// Den Halbgeviertstrich (0x96) gibt es nur in Windows-1252.
+func TestImportiereLitteraXML_LiestErklaertenZeichensatz(t *testing.T) {
+	faelle := []struct {
+		zeichensatz string
+		titel       string
+		erwartet    string
+	}{
+		{"ISO-8859-1", "Gr\xf6\xdfe und \xdcbung", "Größe und Übung"},
+		{"windows-1252", "Gr\xf6\xdfe \x96 \xdcbung", "Größe – Übung"},
+	}
+	for _, f := range faelle {
+		t.Run(f.zeichensatz, func(t *testing.T) {
+			xmlDaten := `<?xml version="1.0" encoding="` + f.zeichensatz + `"?><Katalogisate><Katalogisat>` +
+				`<Feld MAB="310 ">` + f.titel + `</Feld><Feld MAB="700 " Reihung="1">Pg</Feld>` +
+				`</Katalogisat></Katalogisate>`
+			repo := &titelSchreiberAttrappe{}
+			anzahl, err := NewImportDienst(repo, nil).ImportiereLitteraXML(context.Background(), strings.NewReader(xmlDaten))
+			if err != nil || anzahl != 1 {
+				t.Fatalf("%d Titel, Fehler %v; erwartet ein Titel ohne Fehler", anzahl, err)
+			}
+			if repo.titel[0].Titel != f.erwartet {
+				t.Errorf("Titel %q, erwartet %q", repo.titel[0].Titel, f.erwartet)
+			}
+		})
+	}
+}
+
 func TestBereinigeImportTitel(t *testing.T) {
 	tests := []struct {
 		in, want string
