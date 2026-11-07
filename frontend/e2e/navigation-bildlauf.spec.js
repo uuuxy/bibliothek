@@ -27,6 +27,9 @@ test('Seitenleiste: Balken wie bei Gmail nur unter der Maus, eingeklappt keiner'
 	await uiLogin(page);
 	await gehZu(page, '/schuelerdatei');
 	const leiste = page.locator('aside .leiste-bildlauf');
+	// Erst messen, wenn die Leiste steht: Bei langsamer Antwort fehlte sie sonst noch, und
+	// BELEGT bräche mit einem TypeError statt einer Meldung ab.
+	await expect(leiste).toBeVisible();
 	const lage = () => page.evaluate(BELEGT);
 	// Oben in der Spur steht der Daumen (Bildlauf ganz oben), unten nicht: Gleichen sich beide
 	// Streifen, ist kein Daumen gezeichnet.
