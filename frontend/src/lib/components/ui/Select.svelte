@@ -14,6 +14,7 @@
 	import { ChevronDown } from '@lucide/svelte';
 	import SelectListe from './SelectListe.svelte';
 	import { berechneBox } from './selectGeometrie.js';
+	import { folgeLage } from './lageFolgen.js';
 	import { naechsterIndex, tastenBefehl, tippsprungSammler } from './selectTastatur.js';
 
 	/**
@@ -134,13 +135,7 @@
 
 	$effect(() => {
 		if (!offen) return;
-		const neu = () => messen();
-		window.addEventListener('scroll', neu, true);
-		window.addEventListener('resize', neu);
-		return () => {
-			window.removeEventListener('scroll', neu, true);
-			window.removeEventListener('resize', neu);
-		};
+		return folgeLage(() => ausloeser, messen);
 	});
 
 	// Der Tippsprung-Timer gehört geräumt: Ein Timer, den niemand abbaut, läuft nach dem

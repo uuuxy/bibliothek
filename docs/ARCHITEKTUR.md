@@ -918,10 +918,14 @@ frontend/src
   geht auf wie ein Untermenü: oben bündig an der hinteren Kante, nach 400 ms, für Maus und
   Pfeiltasten (material-web, md-sub-menu: anchor-corner „start-end“, hover-open-delay 400),
   links vom Menü, wenn rechts der Platz fehlt. Ein Tooltip wäre der falsche Ort, M3 sieht darin
-  kein Bild vor („They can optionally contain a subhead, buttons, and hyperlinks“). Gemessen:
+  kein Bild vor („They can optionally contain a subhead, buttons, and hyperlinks“). Menü und
+  Vorschau folgen ihrem Auslöser in jedem Bild, in dem er oder das Fenster sich ändert
+  (`ui/lageFolgen.js`, auch in `ui/Select`): Fährt neben dem Feld etwas ein und rückt ein
+  zentrierter Dialog dabei, feuert weder Bildlauf noch Größenänderung. Gemessen:
   `VorschlagFeld.test.js`, `vorschlagRegeln.test.js`, `ChipFeld.test.js`,
   `ExemplarStandortDialog.test.js`, `menueGeometrie.test.js`, `signaturen.test.js`,
-  `frontend/e2e/signatur-cover-vorschau.spec.js`.
+  `lageFolgen.test.js`, `frontend/e2e/signatur-cover-vorschau.spec.js`,
+  `frontend/e2e/vorschlag-folgt-dem-feld.spec.js`.
 - **Ein Abschnitt, der nicht geladen wurde, zeigt keinen Leerzustand.** Nennt die Antwort ihn
   in `nicht_gelesen` (`GET /api/statistiken`) oder scheitert der Abruf einer Kachel, steht an
   der Stelle des Leerzustands `ui/LadeFehler` in der knappen Form: nur der Titel in der

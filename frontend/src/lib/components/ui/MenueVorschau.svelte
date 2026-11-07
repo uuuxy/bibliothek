@@ -8,6 +8,7 @@
      und Pfeiltasten, und lässt sich nicht bedienen. -->
 <script>
 	import { berechneVorschauBox } from './menueGeometrie.js';
+	import { folgeLage } from './lageFolgen.js';
 
 	/**
 	 * liste: die Menüfläche; aktiv: Index des markierten Eintrags (data-i); inhalt zeichnet die
@@ -52,13 +53,7 @@
 				}
 			);
 		};
-		messen();
-		window.addEventListener('scroll', messen, true);
-		window.addEventListener('resize', messen);
-		return () => {
-			window.removeEventListener('scroll', messen, true);
-			window.removeEventListener('resize', messen);
-		};
+		return folgeLage(() => liste.querySelector(`[data-i="${aktiv}"]`), messen);
 	});
 </script>
 

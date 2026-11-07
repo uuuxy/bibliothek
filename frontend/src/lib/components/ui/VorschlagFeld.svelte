@@ -13,6 +13,7 @@
 	import Feld from './Feld.svelte';
 	import SelectListe from './SelectListe.svelte';
 	import { berechneBox } from './selectGeometrie.js';
+	import { folgeLage } from './lageFolgen.js';
 	import { passendeVorschlaege, vorschlagTaste } from './vorschlagRegeln.js';
 
 	/**
@@ -75,16 +76,12 @@
 
 	$effect(() => {
 		if (!sichtbar) return;
-		const messen = () => {
-			if (element) box = berechneBox(element, treffer.length);
-		};
-		messen();
-		window.addEventListener('scroll', messen, true);
-		window.addEventListener('resize', messen);
-		return () => {
-			window.removeEventListener('scroll', messen, true);
-			window.removeEventListener('resize', messen);
-		};
+		return folgeLage(
+			() => element,
+			() => {
+				if (element) box = berechneBox(element, treffer.length);
+			}
+		);
 	});
 
 	function schliessen() {
