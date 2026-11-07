@@ -7,6 +7,7 @@
 	import { IdCard, X } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { meldungenWeichenAus } from '../../actions/meldungenWeichenAus.js';
 
 	/**
@@ -16,7 +17,7 @@
 	 * @property {boolean} [etikettModus] Klebebogen statt Ausweiskarten (idStore.printMode)
 	 * @property {number} [maxPosition]   Felder auf dem gewählten Bogen
 	 * @property {number} [startPosition] erstes zu bedruckendes Feld (bindable)
-	 * @property {() => void} onDrucken
+	 * @property {() => void | Promise<void>} onDrucken
 	 * @property {() => void} onLeeren
 	 */
 	/** @type {Props} */
@@ -29,6 +30,19 @@
 		onDrucken,
 		onLeeren
 	} = $props();
+
+	// Ein zweiter Klick vor dem Ende des Drucks schickte den Etikettenbogen noch einmal und öffnete
+	// ihn in einem zweiten Tab; im Kartenmodus liegt vor dem Druckdialog der Abruf des Designs.
+	let druckt = $state(false);
+	async function drucke() {
+		if (druckt) return;
+		druckt = true;
+		try {
+			await onDrucken();
+		} finally {
+			druckt = false;
+		}
+	}
 </script>
 
 {#if anzahl > 0}
@@ -71,8 +85,12 @@
 			{/if}
 
 			<div class="ml-auto flex items-center gap-2">
-				<Button variant="primary" onclick={onDrucken}>
-					<IdCard class="h-4 w-4" />
+				<Button variant="primary" onclick={drucke} disabled={druckt}>
+					{#if druckt}
+						<Ladekreis size="sm" farbe="aktuell" />
+					{:else}
+						<IdCard class="h-4 w-4" />
+					{/if}
 					{etikettModus ? 'Etiketten drucken' : 'Ausweise drucken'}
 				</Button>
 				<button

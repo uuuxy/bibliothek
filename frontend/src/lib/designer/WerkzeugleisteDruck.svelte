@@ -13,6 +13,7 @@
 	import { idStore } from './idDesignerStore.svelte.js';
 	import { ETIKETT_FORMATE } from '../components/etiketten/etikettformate.js';
 	import Button from '../components/ui/Button.svelte';
+	import Ladekreis from '../components/ui/Ladekreis.svelte';
 	import Select from '../components/ui/Select.svelte';
 
 	/**
@@ -20,11 +21,24 @@
 	 *   druckArt: 'card'|'etikett',
 	 *   onDruckArt: (m: 'card'|'etikett') => void,
 	 *   side: 'front'|'back',
-	 *   onPrint: () => void,
+	 *   onPrint: () => void | Promise<void>,
 	 *   gesperrt?: boolean
 	 * }}
 	 */
 	const { druckArt, onDruckArt, side, onPrint, gesperrt = false } = $props();
+
+	// Das Muster-Etikett holt der Server: Ein zweiter Klick vor der Antwort öffnete einen zweiten Tab
+	// mit demselben Bogen, wie beim Stapeldruck der Schülerdatei (AuswahlAktionsleiste).
+	let druckt = $state(false);
+	async function drucke() {
+		if (druckt) return;
+		druckt = true;
+		try {
+			await onPrint();
+		} finally {
+			druckt = false;
+		}
+	}
 
 	const MODI = [
 		{ value: 'card', label: 'Kartendrucker' },
@@ -71,8 +85,12 @@
 		{/if}
 	</div>
 
-	<Button onclick={onPrint} class="px-5">
-		<Printer class="h-4 w-4" aria-hidden="true" />
+	<Button onclick={drucke} disabled={druckt} class="px-5">
+		{#if druckt}
+			<Ladekreis size="sm" farbe="aktuell" />
+		{:else}
+			<Printer class="h-4 w-4" aria-hidden="true" />
+		{/if}
 		{knopfText}
 	</Button>
 </div>
