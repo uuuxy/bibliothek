@@ -69,7 +69,7 @@
 
 	<!-- Die Art, wie bei Littera in den Stammdaten: eine Auswahlliste (sieben Arten), im
 	     selben Raster wie die Felder darunter und so breit wie eines davon. -->
-	<div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+	<div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
 		<LeserArtWahl
 			id="art"
 			bind:art={eingaben.art}
@@ -80,7 +80,7 @@
 		/>
 	</div>
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<Feld id="vorname" etikett="Vorname *" bind:value={eingaben.vorname} feld="font-semibold" />
 		<Feld id="nachname" etikett="Nachname *" bind:value={eingaben.nachname} feld="font-semibold" />
 		<Feld
@@ -97,7 +97,7 @@
 <section>
 	<Abschnitt titel="Schuldaten" />
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<!-- Wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die Nachbarn fluchten. -->
 		<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
 			<label for="klasse" class="text-sm font-medium text-on-surface-variant"

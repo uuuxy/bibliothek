@@ -70,7 +70,7 @@
 			bind:value={zeile.vermerk}
 			placeholder={zeile.klassen.length === 0 ? 'Pflicht ohne Klasse' : ''}
 			ungueltig={zeile.klassen.length === 0 && !zeile.vermerk.trim()}
-			feld="w-full"
+			feld="w-full max-w-maske"
 		/>
 	</td>
 	<td class="px-4 py-1 text-right whitespace-nowrap">

@@ -25,12 +25,14 @@ const SUCHLEISTEN_MIN = 10;
  * @param {{ maske: number, suche: number }} grenzen
  */
 const MESSE = (grenzen) => {
+	// Die Ausnahmen nach `type` gelten nur für <input>: ui/Select ist ein <button type="button">
+	// mit role="combobox" und wird gemessen.
 	const OHNE = ['checkbox', 'radio', 'hidden', 'file', 'range', 'color', 'button', 'submit'];
 	const felder = [
 		...document.querySelectorAll('input, textarea, select, [role="combobox"]')
 	].filter(
 		(e) =>
-			!OHNE.includes(e.getAttribute('type') || '') &&
+			!(e.tagName === 'INPUT' && OHNE.includes(e.getAttribute('type') || '')) &&
 			e.getBoundingClientRect().height > 0 &&
 			e.checkVisibility()
 	);
@@ -46,78 +48,85 @@ const MESSE = (grenzen) => {
 	return { gemessen: felder.length, suchleisten: felder.filter(istSuche).length, breiter };
 };
 
-test('Kein Textfeld ist breiter als eine Maske, keine Suchleiste breiter als 720 px', async ({
-	page
-}) => {
-	test.setTimeout(300_000);
-	await page.setViewportSize({ width: 1710, height: 952 });
-	const s = uniqueSuffix();
-	const vorname = `Breit${s}`;
-	seedSQL(`
+// Zwei Fenster: Ein Feld ohne Grenze wächst mit dem Fenster und kann bei 1710 px noch knapp unter
+// der Maske liegen; bei 2560 px läuft es sichtbar darüber.
+for (const fenster of [
+	{ width: 1710, height: 952 },
+	{ width: 2560, height: 1440 }
+]) {
+	test(`Kein Textfeld ist breiter als eine Maske, keine Suchleiste breiter als 720 px (${fenster.width} px)`, async ({
+		page
+	}) => {
+		test.setTimeout(300_000);
+		await page.setViewportSize(fenster);
+		const s = uniqueSuffix();
+		const vorname = `Breit${s}`;
+		seedSQL(`
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('E2E-FB-${s}', '${vorname}', 'Feld', '08a', EXTRACT(YEAR FROM CURRENT_DATE)::int + 3);
 	`);
-	/** @type {string[]} */
-	const funde = [];
-	let gemessen = 0;
-	let suchleisten = 0;
-	const grenzen = { maske: MASKE, suche: SUCHE };
-	const anfragen = beobachteDatenanfragen(page);
-	const zaehle = async () => (await page.evaluate(MESSE, grenzen)).gemessen;
-	/** @param {string} wo */
-	const pruefe = async (wo) => {
-		await warteAufInhalt(anfragen, zaehle).catch((err) => {
-			throw new Error(`${wo}: ${err.message}`, { cause: err });
-		});
-		const m = await page.evaluate(MESSE, grenzen);
-		gemessen += m.gemessen;
-		suchleisten += m.suchleisten;
-		funde.push(...m.breiter.map((b) => `${wo}: ${b}`));
-	};
+		/** @type {string[]} */
+		const funde = [];
+		let gemessen = 0;
+		let suchleisten = 0;
+		const grenzen = { maske: MASKE, suche: SUCHE };
+		const anfragen = beobachteDatenanfragen(page);
+		const zaehle = async () => (await page.evaluate(MESSE, grenzen)).gemessen;
+		/** @param {string} wo */
+		const pruefe = async (wo) => {
+			await warteAufInhalt(anfragen, zaehle).catch((err) => {
+				throw new Error(`${wo}: ${err.message}`, { cause: err });
+			});
+			const m = await page.evaluate(MESSE, grenzen);
+			gemessen += m.gemessen;
+			suchleisten += m.suchleisten;
+			funde.push(...m.breiter.map((b) => `${wo}: ${b}`));
+		};
 
-	try {
-		await uiLogin(page);
-		for (const [seite, pfad] of SEITEN) {
-			await gehZu(page, pfad);
-			await pruefe(seite);
+		try {
+			await uiLogin(page);
+			for (const [seite, pfad] of SEITEN) {
+				await gehZu(page, pfad);
+				await pruefe(seite);
+			}
+
+			await gehZu(page, '/einstellungen');
+			const kategorien = page.getByRole('navigation', { name: 'Einstellungs-Kategorien' });
+			const titel = (await kategorien.getByRole('button').allInnerTexts()).map((t) =>
+				t.split('\n')[0].trim()
+			);
+			expect(titel.length, 'keine Kategorien gefunden').toBeGreaterThan(10);
+			for (const t of titel) {
+				await einstellungsKategorie(page, t).click();
+				await page.getByRole('heading', { level: 2, name: t, exact: true }).first().waitFor();
+				await pruefe(`Einstellungen → ${t}`);
+			}
+
+			await gehZu(page, '/schuelerdatei');
+			await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
+			await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
+			await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
+			await page.getByRole('button', { name: 'Bearbeiten' }).click();
+			await page.locator('#ort').waitFor();
+			await pruefe('Stammdaten bearbeiten');
+		} finally {
+			seedSQL(`DELETE FROM schueler WHERE barcode_id = 'E2E-FB-${s}';`);
 		}
 
-		await gehZu(page, '/einstellungen');
-		const kategorien = page.getByRole('navigation', { name: 'Einstellungs-Kategorien' });
-		const titel = (await kategorien.getByRole('button').allInnerTexts()).map((t) =>
-			t.split('\n')[0].trim()
+		// Selbstschutz: Bricht eine Navigation, misst der Test still nichts mehr.
+		expect(gemessen, 'Der Test hat fast keine Textfelder gefunden.').toBeGreaterThan(40);
+		expect(suchleisten, 'Der Test hat fast keine Suchleisten gefunden.').toBeGreaterThan(
+			SUCHLEISTEN_MIN
 		);
-		expect(titel.length, 'keine Kategorien gefunden').toBeGreaterThan(10);
-		for (const t of titel) {
-			await einstellungsKategorie(page, t).click();
-			await page.getByRole('heading', { level: 2, name: t, exact: true }).first().waitFor();
-			await pruefe(`Einstellungen → ${t}`);
-		}
-
-		await gehZu(page, '/schuelerdatei');
-		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
-		await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
-		await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
-		await page.getByRole('button', { name: 'Bearbeiten' }).click();
-		await page.locator('#ort').waitFor();
-		await pruefe('Stammdaten bearbeiten');
-	} finally {
-		seedSQL(`DELETE FROM schueler WHERE barcode_id = 'E2E-FB-${s}';`);
-	}
-
-	// Selbstschutz: Bricht eine Navigation, misst der Test still nichts mehr.
-	expect(gemessen, 'Der Test hat fast keine Textfelder gefunden.').toBeGreaterThan(40);
-	expect(suchleisten, 'Der Test hat fast keine Suchleisten gefunden.').toBeGreaterThan(
-		SUCHLEISTEN_MIN
-	);
-	expect(
-		funde,
-		`Textfelder breiter als die Maske (${MASKE} px) oder Suchleisten breiter als ${SUCHE} px.\n` +
-			'Behebung: Die Felder der Maske in eine Hülle mit max-w-maske legen, die Suchleiste ' +
-			'über ui/Suchpille bauen (max-w-suche).\n\n' +
-			funde.join('\n')
-	).toEqual([]);
-});
+		expect(
+			funde,
+			`Textfelder breiter als die Maske (${MASKE} px) oder Suchleisten breiter als ${SUCHE} px.\n` +
+				'Behebung: Die Felder der Maske in eine Hülle mit max-w-maske legen, die Suchleiste ' +
+				'über ui/Suchpille bauen (max-w-suche).\n\n' +
+				funde.join('\n')
+		).toEqual([]);
+	});
+}
 
 for (const fenster of [
 	{ width: 1710, height: 952 },

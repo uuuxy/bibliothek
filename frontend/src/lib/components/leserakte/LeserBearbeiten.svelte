@@ -104,13 +104,17 @@
 
 	<!-- ── Scrollable Body ────────────────────────────────────────────────── -->
 	<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
-		<LeserakteFelder
-			{eingaben}
-			klassen={klassenListe.liste}
-			klassenFehler={klassenListe.ladefehler}
-			lusdVerknuepft={!!leser?.lusd_id}
-			kontoVorhanden={formular.kontoVorhanden}
-		/>
+		<!-- Die Felder enden an der Breite der Masken (max-w-maske) wie in der Buchmaske; Kopf
+		     und Bildlauf bleiben breit. -->
+		<div class="max-w-maske space-y-8">
+			<LeserakteFelder
+				{eingaben}
+				klassen={klassenListe.liste}
+				klassenFehler={klassenListe.ladefehler}
+				lusdVerknuepft={!!leser?.lusd_id}
+				kontoVorhanden={formular.kontoVorhanden}
+			/>
+		</div>
 
 		<!-- Bottom spacing -->
 		<div class="h-4"></div>

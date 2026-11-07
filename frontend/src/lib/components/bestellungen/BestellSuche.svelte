@@ -43,7 +43,7 @@
 	}
 </script>
 
-<div class="space-y-4">
+<div class="max-w-maske space-y-4">
 	<div class="space-y-1.5">
 		<label for="supplier" class="block text-xs font-medium text-on-surface-variant">Lieferant</label
 		>

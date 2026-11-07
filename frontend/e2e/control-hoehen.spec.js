@@ -97,14 +97,14 @@ const AUSNAHMEN = [
 	{ kennung: 'abgaenger-suchfeld', grund: 'Suchpille der Abgänger-Ansicht' }
 ];
 
-// `[role=combobox]` steht hier seit der Ablösung der nativen <select>: Ohne den
-// Zusatz hätte die Umstellung die Messmenge still verkleinert — der Test wäre grün
-// geblieben, gerade WEIL er die neuen Auswahlfelder nicht mehr gesehen hätte.
+// `[role=combobox]` misst die Auswahlfelder: ui/Select ist ein <button type="button">. Die
+// Ausnahmen nach `type` gelten deshalb nur für <input>, sonst fiele jedes Auswahlfeld still heraus.
 const MESSEN = () =>
 	[...document.querySelectorAll('input, select, [role="combobox"]')]
 		.filter((el) => {
 			const t = (el.getAttribute('type') || 'text').toLowerCase();
 			if (
+				el.tagName === 'INPUT' &&
 				['checkbox', 'radio', 'hidden', 'file', 'range', 'color', 'submit', 'button'].includes(t)
 			) {
 				return false;
