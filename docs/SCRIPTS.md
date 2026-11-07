@@ -285,6 +285,10 @@ Was die Probe tut, in dieser Reihenfolge:
 **Die Probe läuft in keinem Prüflauf der CI.** Sie spricht die Türen der Anwendung selbst an
 (`scripts/generalprobe/theke.py`); wer eine Route entfernt oder umbenennt, sucht sie auch dort.
 Eine entfernte Route fällt dort erst beim nächsten Lauf der Probe auf. Die Probe deshalb laufen lassen, bevor ein Stand als Beleg für die Übernahme dient.
+Ebenso nur von Hand läuft der Test am echten Altbestand (`internal/littera/altbestand_test.go`):
+Mit `--behalten` liegt die CSV-Ausgabe der Sicherung im Arbeitsverzeichnis, und
+`LITTERA_CSV_DIR=<Arbeitsverzeichnis>/export go test ./internal/littera/ -run TestEchterAltbestand`
+prüft sie.
 
 **Ergebnis am 28.09.2026** mit der Sicherung von 2010 (Stand `0437fecc`): jede Prüfung
 bestanden. 10.732 Titel, 61.520 Exemplare, 1.991 Leser (1.810 Schüler, 181 im Kollegium),

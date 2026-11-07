@@ -188,27 +188,30 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 		len(leser), len(schueler), len(lehrkraefte), len(abgegangen),
 		sonderkonten, len(nurArt(leser, ArtUnbekannt)))
 
-	// schueler.abgaenger_jahr ist NOT NULL. Jeder Schueler, der geschrieben werden
-	// soll, braucht also einen Wert — sonst bricht der Import auf halber Strecke ab.
+	// Das Abgangsjahr kommt aus der Klasse. Eine Klasse ohne Jahrgang („AUS" der Gruppe „Im
+	// Ausland") bekommt beim Schreiben das Jahr für Schüler ohne Klasse, mit Warnung
+	// (personenlauf.abgangsjahr). Eine Klasse mit Ziffer, aus der abgaengerJahr nichts ableitet,
+	// bekäme es still, und die Löschung griffe zur falschen Zeit.
 	const schuljahrEnde = 2027
-	ohneJahr, abschlussklassen := 0, 0
-	unbekannteKlassen := map[string]int{}
+	ausKlasse, abschlussklassen := 0, 0
+	ohneJahrgang := map[string]int{}
 	for _, s := range schueler {
 		if _, ok := abgaengerJahr(s.Klasse, schuljahrEnde); !ok {
-			ohneJahr++
-			unbekannteKlassen[s.Klasse]++
+			ohneJahrgang[s.Klasse]++
 			continue
 		}
+		ausKlasse++
 		if istAbschlussklasse(s.Klasse) {
 			abschlussklassen++
 		}
 	}
-	if ohneJahr > 0 {
-		t.Errorf("%d Schueler ohne ableitbares Abgangsjahr (Klassen: %v) — abgaenger_jahr ist NOT NULL",
-			ohneJahr, unbekannteKlassen)
+	for klasse := range ohneJahrgang {
+		if strings.ContainsAny(klasse, "0123456789") {
+			t.Errorf("Klasse %q trägt einen Jahrgang, aber abgaengerJahr leitet keinen ab: Ihre Schüler bekämen das Jahr für Schüler ohne Klasse", klasse)
+		}
 	}
-	t.Logf("Abgangsjahr: fuer alle %d Schueler ableitbar, davon %d in einer Abschlussklasse (9H/10R/13)",
-		len(schueler), abschlussklassen)
+	t.Logf("Abgangsjahr: %d aus der Klasse, davon %d in einer Abschlussklasse (9H/10R/13); ohne Jahrgang mit dem Jahr für Schüler ohne Klasse: %v",
+		ausKlasse, abschlussklassen, ohneJahrgang)
 
 	return leser
 }
