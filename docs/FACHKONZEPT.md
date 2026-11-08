@@ -407,7 +407,7 @@ in der Gruppe der Ehemaligen (§3); das Mahnwesen kennt nur die Frist.
 ## 9. Druck-Center und Ausweise
 
 Das Druck-Center hat vier Reiter (`DruckCenter.svelte`): _Buch-Etiketten_, _Fehlende
-Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
+Etiketten_, _Ausweis-Design_ und _Ausweise je Klasse_.
 
 - **Buch-Etiketten:** PDF-Bögen mit Strichcode (Code 128) oder QR-Code für vorgestanzte
   Etikettenbögen, in den drei Rastern aus §7, mit Startposition für einen angebrochenen
@@ -435,7 +435,7 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
   es neu gedruckt und überklebt. Den Bestand stellt Migration 167 um, der Bestands-Import legt
   solche Exemplare gleich so an (§13). Als Nummer eines Exemplars nimmt die Datenbank keine
   LMF-Nummer an (Migration 168); der Barcode-Editor nennt die Ablehnung.
-- **Ausweise:** Der Reiter _Schülerausweise_ ist der Designer — Vorlagen, Vorder- und
+- **Ausweis-Design:** Der Reiter ist der Designer — Vorlagen, Vorder- und
   Rückseite, Elemente wie Name, Gültigkeit, Logo, Passbild, Strichcode und Farbfläche. Das
   Design gilt für alle Arbeitsplätze: Es liegt am Server (`/api/ausweis-layout`), speichern
   verlangt `manage_settings`. Wer dieses Recht nicht hat, sieht den Designer gesperrt und kann
@@ -458,8 +458,13 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
   Server). Das Passbild kommt aus der Theke (§18.2; die LUSD liefert keine), die Aufschrift
   richtet sich nach der Art des Lesers (§12.3). Einen A4-Bogen mit acht Karten zum Ausschneiden
   gibt es nicht (§20).
-- **Klassenweise drucken:** Ausweise oder Etiketten für eine ganze Klasse, bei Etiketten mit
-  der Startposition des Bogens.
+- **Ausweise je Klasse:** Klasse wählen, und die Ausweise all ihrer Schüler gehen in den Druck,
+  als Karte oder auf dem Etikettenbogen ab einem wählbaren Feld, wie unter _Ausweis-Design_
+  eingestellt. Wer keine Ausweisnummer hat, fällt heraus; die Zeile unter der Auswahl nennt, wie
+  viele Schüler es sind und wie vielen die Nummer fehlt. Gedruckt wird über denselben Baustein
+  und mit derselben Steuerung wie in der Leserdatei (`ausweisdruck.svelte.js`,
+  `AusweisDruckSteuerung.svelte`): Warnung ohne Ablaufjahr, erstes Feld des Bogens, Druckknopf.
+  Einzelne Schüler druckt die Leserdatei.
 
 Wie die Karte auf Bildschirm und Papier gezeichnet wird und wie die Wege zum selben Etikett
 zusammengehalten werden, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.9.

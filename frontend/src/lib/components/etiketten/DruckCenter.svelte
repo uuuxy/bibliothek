@@ -1,6 +1,6 @@
 <script>
 	import AusweisDesigner from '../../designer/AusweisDesigner.svelte';
-	import KlassenDruckEinstieg from '../leser/KlassenDruckEinstieg.svelte';
+	import AusweiseJeKlasse from '../leser/AusweiseJeKlasse.svelte';
 	import Etikettendruck from './Etikettendruck.svelte';
 	import EtikettenNachdruck from './EtikettenNachdruck.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -70,7 +70,7 @@
 			</div>
 		{:else if aktiverReiter === 'klassen'}
 			<div class="animate-fade-in h-full py-6">
-				<KlassenDruckEinstieg />
+				<AusweiseJeKlasse />
 			</div>
 		{:else if aktiverReiter === 'ids'}
 			<div class="animate-fade-in h-full py-6">

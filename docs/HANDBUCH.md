@@ -283,12 +283,15 @@ Vorschlag zeigt, sieht daneben bis zu zwei Cover von Titeln unter dieser Signatu
 
 Vier Reiter: **Buch-Etiketten** (Format, Startposition auf dem Bogen, Titel aus dem Katalog
 oder aus einer Klasse) · **Fehlende Etiketten** (alle Exemplare, die noch keins haben — die
-Zahl steht als Badge in der Navigation) · **Schülerausweise** (Designer für Vorder- und
+Zahl steht als Badge in der Navigation) · **Ausweis-Design** (Designer für Vorder- und
 Rückseite; bis zur gestrichelten Linie druckt der Kartendrucker sicher, Text, Bilder und
 Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand. Beim Ziehen rastet ein Element
 an der Linie ein, weiter gezogen läuft es darüber hinaus; steht etwas zu nah am Rand, wird die
-Linie rot, und der Satz unter der Karte sagt warum) · **Klassenweise drucken**
-(Ausweise für eine ganze Klasse). Der Druck läuft
+Linie rot, und der Satz unter der Karte sagt warum) · **Ausweise je Klasse** (Klasse wählen;
+die Zeile darunter nennt, wie viele Schüler es sind und wie vielen die Ausweisnummer fehlt. Wer
+keine hat, wird nicht gedruckt. Gedruckt wird direkt im Reiter, als Karte oder auf dem
+Etikettenbogen ab einem wählbaren Feld, je nachdem, was unter _Ausweis-Design_ eingestellt ist;
+einzelne Schüler druckt die Leserdatei). Der Druck läuft
 über den Browser-Druckdialog. Der Kartendrucker erscheint dort unter Windows als XPS-Drucker
 (Treiber „XPS Card Printer" von Datacard); „Microsoft XPS Document Writer" schreibt nur eine Datei. Die Vorschau der Buch-Etiketten ist das Druck-PDF selbst und zeigt
 den ersten Bogen, genau wie er gedruckt wird; darunter steht, wie viele es werden („Bogen 1 von 3
@@ -519,9 +522,10 @@ Liste.
   mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen. Eine
   `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
   bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.
-  Gedruckt wird mit dem Design aus dem Ausweis-Designer. Lässt es sich gerade nicht laden,
-  druckt das Programm nicht und meldet _Nicht gedruckt, das Ausweis-Design ist nicht geladen_;
-  der nächste Klick versucht es erneut. Dasselbe gilt für _Ausweise drucken_ in der Leserdatei.
+  Gedruckt wird mit dem Design aus _Druck-Center → Ausweis-Design_. Lässt es sich gerade nicht
+  laden, druckt das Programm nicht und meldet _Nicht gedruckt, das Ausweis-Design ist nicht
+  geladen_; der nächste Klick versucht es erneut. Dasselbe gilt für _Ausweise drucken_ in der
+  Leserdatei und unter _Druck-Center → Ausweise je Klasse_.
 - **Gebühren & Schäden** (eigener Reiter; die Zahl daran nennt die offenen Forderungen): offen /
   bezahlt / storniert; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_

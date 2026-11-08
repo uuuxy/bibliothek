@@ -1,7 +1,6 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 import { fehlertext } from '../../utils/fehlertext.js';
 import { normalisiereScan } from '../../utils/scanEinordnen.js';
-import { uiStore } from '../../stores/uiStore.svelte.js';
 
 /**
  * Die Serversuche der Schülerdatei. Eigene Datei wie ausweisdruck.svelte.js:
@@ -16,11 +15,8 @@ import { uiStore } from '../../stores/uiStore.svelte.js';
  * Nebeneffekt, der den Ausschlag gab: Die Serversuche ist dieselbe wie an der Theke
  * (suchnorm) — "Muller" findet Müller, "Hoffmann Lena" dasselbe wie "Lena Hoffmann".
  * Der Browser-Filter konnte beides nicht.
- *
- * @param {() => void} nachKlassenDruck — läuft, wenn ein aus dem Druck-Center
- *   angeforderter Klassen-Stapeldruck fertig geladen ist (Treffer markieren).
  */
-export function erzeugeSchuelerSuche(nachKlassenDruck) {
+export function erzeugeSchuelerSuche() {
 	/** @type {any[]} */
 	let schueler = $state.raw([]);
 	let laedt = $state(false);
@@ -53,9 +49,8 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	 *  Liste diese Länge, ist sie gekappt und die Ansicht sagt das auch. */
 	const LISTEN_GRENZE = 500;
 
-	// Nur die JÜNGSTE Anfrage darf die Liste schreiben: Beim Sprung aus dem
-	// Druck-Center laufen die ungefilterte Mount-Ladung und die Klassensuche
-	// gleichzeitig — welche Antwort zuletzt eintrifft, entschiede sonst der Server.
+	// Nur die JÜNGSTE Anfrage darf die Liste schreiben: Überholen sich zwei Suchen, entschiede
+	// sonst der Server, welche Antwort zuletzt eintrifft.
 	let ladeNr = 0;
 
 	async function lade() {
@@ -98,25 +93,8 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		}
 	}
 
-	// Erste Ladung sofort (wie erzeugeAusweisdruck sein Design lädt) — AUSSER ein
-	// Klassen-Stapeldruck ist angefordert: Dann lädt gleich der Effekt unten mit der
-	// Klasse im Suchfeld. Eine ungefilterte Parallel-Ladung daneben hieße, dass die
-	// Antwort-Reihenfolge entscheidet, ob der Rückruf eine leere Liste markiert —
-	// genau so ist es beim ersten Bau passiert (der Effekt läuft vor onMount).
-	if (!uiStore.requestedKlassenDruck) lade();
-
-	// Aus dem Druck-Center angeforderter Klassen-Stapeldruck (gleiche Mechanik wie
-	// requestedStudentId): Klasse suchen, dann markiert der Aufrufer die Treffer.
-	// Gedruckt wird in der Schülerdatei, hinter der Aktionsleiste — ihre Warnungen
-	// (fehlendes Ablaufdatum, Etiketten-Startposition) stehen damit auch auf diesem
-	// Weg vor dem Stapel.
-	$effect(() => {
-		const klasse = uiStore.requestedKlassenDruck;
-		if (!klasse) return;
-		uiStore.requestedKlassenDruck = null;
-		suchtext = klasse;
-		lade().then(nachKlassenDruck);
-	});
+	// Erste Ladung sofort, wie erzeugeAusweisdruck sein Design lädt.
+	lade();
 
 	/** Die Jahrgangsliste einmal holen.
 	 *

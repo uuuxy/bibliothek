@@ -34,13 +34,8 @@
 	const gewaehlt = erzeugeLeserAuswahl(() => suche.schueler);
 
 	// Serversuche & Laden der Liste liegen in schuelerSuche.svelte.js (Größen-Ratsche);
-	// die erste Ladung stößt das Modul selbst an. Der Rückruf läuft nach dem Sprung aus
-	// dem Druck-Center („Klassenweise drucken"): Die Klasse ist dann gesucht und
-	// geladen, hier werden die Treffer markiert.
-	const suche = erzeugeSchuelerSuche(() => {
-		aktiverReiter = 'active';
-		gewaehlt.alleSichtbarenMarkieren();
-	});
+	// die erste Ladung stößt das Modul selbst an.
+	const suche = erzeugeSchuelerSuche();
 
 	/** Selbst gesucht und angeklickt = Datenpflege-Absicht: Profil öffnet Stammdaten. @param {any} s */
 	function oeffneStammdaten(s) {

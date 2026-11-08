@@ -36,7 +36,7 @@ describe('Druck-Center', () => {
 		expect(reiter(['view_books'])).toEqual([]);
 	});
 
-	it('zeigt mit view_students Ausweise und Klassendruck', () => {
-		expect(reiter(['view_students'])).toEqual(['Schülerausweise', 'Klassenweise drucken']);
+	it('zeigt mit view_students das Ausweis-Design und die Ausweise je Klasse', () => {
+		expect(reiter(['view_students'])).toEqual(['Ausweis-Design', 'Ausweise je Klasse']);
 	});
 });

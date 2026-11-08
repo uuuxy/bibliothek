@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 	);
 	await uiLogin(page);
 	await gehZu(page, '/druck-center');
-	await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+	await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 	await expect(page.getByRole('button', { name: /Testdruck Vorderseite/ })).toBeVisible();
 	// Bis das Design geladen ist, ist der Designer inert, und die Antwort überschriebe ein Bild.
 	// setInputFiles prüft das nicht; der Probeklick wartet, bis der Designer Eingaben annimmt.

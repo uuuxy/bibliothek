@@ -39,7 +39,7 @@ describe('Leserdatei-Suche', () => {
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
-			suche = erzeugeSchuelerSuche(() => {});
+			suche = erzeugeSchuelerSuche();
 		});
 		try {
 			await suche.lade();
@@ -79,7 +79,7 @@ describe('Leserdatei-Suche', () => {
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
-			suche = erzeugeSchuelerSuche(() => {});
+			suche = erzeugeSchuelerSuche();
 		});
 		try {
 			// Der Lauf beim Erzeugen ist der alte: Er liest seinen Rumpf, wenn die neue Suche beginnt.
@@ -109,7 +109,7 @@ describe('Leserdatei-Suche', () => {
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
-			suche = erzeugeSchuelerSuche(() => {});
+			suche = erzeugeSchuelerSuche();
 		});
 		try {
 			await suche.lade();
@@ -129,7 +129,7 @@ describe('Leserdatei-Suche', () => {
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
-			suche = erzeugeSchuelerSuche(() => {});
+			suche = erzeugeSchuelerSuche();
 		});
 		try {
 			suche.suchtext = 'Sß10001';
@@ -145,7 +145,7 @@ describe('Leserdatei-Suche', () => {
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
-			suche = erzeugeSchuelerSuche(() => {});
+			suche = erzeugeSchuelerSuche();
 		});
 		const letzte = () => vi.mocked(apiFetch).mock.calls.at(-1)?.[0];
 		try {
@@ -187,7 +187,7 @@ describe('Leserdatei-Suche', () => {
 		/** @type {any} */
 		let suche;
 		const stopp = $effect.root(() => {
-			suche = erzeugeSchuelerSuche(() => {});
+			suche = erzeugeSchuelerSuche();
 		});
 		try {
 			suche.jahrgang = '5';
@@ -225,7 +225,7 @@ describe('Leserdatei-Suche', () => {
 			/** @type {any} */
 			let suche;
 			const stopp = $effect.root(() => {
-				suche = erzeugeSchuelerSuche(() => {});
+				suche = erzeugeSchuelerSuche();
 			});
 			try {
 				await vi.waitFor(() => expect(suche.jahrgaengeFehler).toBe(grund));

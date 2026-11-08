@@ -151,10 +151,10 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 			}
 		},
 		{
-			name: 'Druck-Center › Schülerausweise',
+			name: 'Druck-Center › Ausweis-Design',
 			oeffne: async () => {
 				await page.goto('/druck-center');
-				await page.getByRole('tab', { name: /Schülerausweise/ }).click();
+				await page.getByRole('tab', { name: /Ausweis-Design/ }).click();
 			}
 		},
 		{ name: 'Klassensätze', oeffne: () => page.goto('/schulklassen') },

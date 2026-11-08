@@ -18,6 +18,15 @@ export function mitAusweisnummer(markierte) {
 	return markierte.filter((leser) => !!leser.barcode_id);
 }
 
+/**
+ * Wie viele keine ableitbare Gültigkeit haben: Ihre Karte trüge „31.07.–". Die Leserdatei und
+ * der Reiter „Ausweise je Klasse" sagen es vor dem Druck, nicht der fertige Stapel hinterher.
+ * @param {any[]} leser
+ */
+export function ohneAblaufjahr(leser) {
+	return leser.filter((l) => l.ausweis_gueltig_bis == null).length;
+}
+
 /** @param {any[]} ohneNummer */
 function meldeOhneNummer(ohneNummer) {
 	const namen = ohneNummer.slice(0, 3).map((l) => `${l.vorname} ${l.nachname}`);

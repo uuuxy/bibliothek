@@ -41,7 +41,7 @@ test.describe('Schüler-Etiketten', () => {
 
 		// ── Ausweis-Designer: der Schalter, wo früher „A4-Bogen" stand ──
 		await menuepunkt(page, 'Druck-Center').click();
-		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 
 		const kartendrucker = page.getByRole('button', { name: 'Kartendrucker', exact: true });
 		const etikettenbogen = page.getByRole('button', { name: 'Etikettenbogen', exact: true });
@@ -124,34 +124,6 @@ test.describe('Schüler-Etiketten', () => {
 		expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
 	});
 
-	// Der sichtbare Einstieg (24.08.2026, auf die Ansage): Der Weg über Suche +
-	// Kopf-Kästchen funktioniert, ist aber für neue Benutzer unauffindbar. Der Block
-	// im Druck-Center druckt bewusst nicht selbst — er landet VOR der Aktionsleiste,
-	// damit deren Warnungen auch auf diesem Weg vor dem Stapel stehen.
-	test('Druck-Center: „Klassenweise drucken" springt mit fertig markierter Klasse in die Leserdatei', async ({
-		page
-	}) => {
-		await uiLogin(page);
-		await menuepunkt(page, 'Druck-Center').click();
-		await page.getByRole('tab', { name: 'Klassenweise drucken' }).click();
-
-		await page.getByRole('combobox', { name: 'Klasse' }).click();
-		await page.getByRole('option', { name: '08G2', exact: true }).click();
-		await page.getByRole('button', { name: 'Klasse zum Druck markieren' }).click();
-
-		// Gelandet in der Schülerdatei: Suche vorbefüllt, die Aktionsleiste steht ohne
-		// weiteres Zutun da, und JEDE angezeigte Zeile trägt den Haken.
-		await expect(page.getByLabel('Leser suchen')).toHaveValue('08G2');
-		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toBeVisible();
-
-		const zeilen = page.locator('tbody tr');
-		await expect(zeilen.filter({ hasText: `Etikett${s}` })).toHaveCount(2);
-		const kaestchen = zeilen.getByRole('checkbox');
-		for (const box of await kaestchen.all()) {
-			await expect(box).toBeChecked();
-		}
-	});
-
 	test('Kartenmodus bleibt der Kartenmodus — der Stapel liegt weiter im DOM', async ({ page }) => {
 		// Gegenprobe zum Test darüber. Ohne sie belegte er nur, dass IRGENDETWAS anders
 		// wird, sobald man den Schalter umlegt — nicht, dass der Kartenweg heil ist.
@@ -165,5 +137,40 @@ test.describe('Schüler-Etiketten', () => {
 		await expect(balken.getByRole('button', { name: 'Ausweise drucken' })).toBeVisible();
 		await expect(balken.getByRole('spinbutton')).toHaveCount(0);
 		await expect(page.locator('.print-section-card .print-card-box')).toHaveCount(2);
+	});
+
+	// Der Reiter druckt über denselben Baustein wie die Leserdatei und liest dieselbe zentrale
+	// Betriebsart. Geprüft wird, was er dem Server schickt: die Schüler genau der gewählten
+	// Klasse und das erste Feld des Bogens.
+	test('Druck-Center: „Ausweise je Klasse" druckt die Etiketten der gewählten Klasse', async ({
+		page
+	}) => {
+		await uiLogin(page);
+		await menuepunkt(page, 'Druck-Center').click();
+		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
+		await page.getByRole('button', { name: 'Etikettenbogen', exact: true }).click();
+		// Der Auto-Save braucht 800 ms Ruhe; erst danach steht die Betriebsart auf dem Server.
+		await expect(page.getByText('Zentral gespeichert')).toBeVisible();
+
+		await page.getByRole('tab', { name: 'Ausweise je Klasse' }).click();
+		await page.getByRole('combobox', { name: 'Klasse' }).click();
+		await page.getByRole('option', { name: '08G2', exact: true }).click();
+		await expect(page.getByText('2 Schüler', { exact: true })).toBeVisible();
+		await expect(page.locator('.print-section-card')).toHaveCount(0);
+
+		const startfeld = page.getByRole('spinbutton');
+		await expect(startfeld).toHaveValue('1');
+		await startfeld.fill('3');
+		const bogenAntwort = page.waitForResponse(
+			(r) => r.url().includes('/api/print/schueler-etiketten') && r.request().method() === 'POST'
+		);
+		await page.getByRole('button', { name: 'Etiketten drucken' }).click();
+		const bogen = await bogenAntwort;
+		expect(bogen.status()).toBe(200);
+		expect(bogen.headers()['content-type']).toContain('application/pdf');
+
+		const gesendet = JSON.parse(bogen.request().postData() ?? '{}');
+		expect(gesendet.startPosition).toBe(3);
+		expect(gesendet.schuelerIds).toHaveLength(2);
 	});
 });

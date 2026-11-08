@@ -84,11 +84,14 @@ test.describe('Ausweis: die Druckseite trägt nur die Karte', () => {
 	const s = uniqueSuffix();
 	const ausweis = `E2E-ADS-${s}`;
 	const vorname = `Seite${s}`;
+	// Eine eigene Klasse, weil „Ausweise je Klasse“ alle Schüler der gewählten Klasse druckt; in
+	// den Testdaten hat eine gewöhnliche Klasse mehrere Hundert.
+	const klasse = `ZZZ-ADS-${s}`;
 
 	test.beforeAll(() => {
 		seedSQL(`
 			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-			VALUES ('${ausweis}', '${vorname}', 'Druckprobe', '08a', EXTRACT(YEAR FROM CURRENT_DATE)::int + 3);
+			VALUES ('${ausweis}', '${vorname}', 'Druckprobe', '${klasse}', EXTRACT(YEAR FROM CURRENT_DATE)::int + 3);
 		`);
 	});
 
@@ -171,12 +174,27 @@ test.describe('Ausweis: die Druckseite trägt nur die Karte', () => {
 		await druckdialogAnhalten(page);
 		await uiLogin(page);
 		await gehZu(page, '/druck-center');
-		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 		await expect(page.locator('[data-ausweis-vorschau]')).toBeVisible();
 		await page.getByRole('button', { name: 'Testdruck Vorderseite' }).click();
 
 		const lage = await druckseite(page);
 		expect(lage.betriebsart).toBe('card');
 		erwarteNurKarten(lage, 'Testdruck');
+	});
+
+	test('Stapeldruck aus dem Reiter „Ausweise je Klasse“', async ({ page }) => {
+		await druckdialogAnhalten(page);
+		await uiLogin(page);
+		await gehZu(page, '/druck-center');
+		await page.getByRole('tab', { name: 'Ausweise je Klasse' }).click();
+		await page.getByRole('combobox', { name: 'Klasse' }).click();
+		await page.getByRole('option', { name: klasse, exact: true }).click();
+		await expect(page.getByText('1 Schüler', { exact: true })).toBeVisible();
+		await page.getByRole('button', { name: 'Ausweise drucken' }).click();
+
+		const lage = await druckseite(page);
+		expect(lage.betriebsart).toBe('card');
+		erwarteNurKarten(lage, 'Ausweise je Klasse');
 	});
 });

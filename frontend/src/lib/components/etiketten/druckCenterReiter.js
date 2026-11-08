@@ -11,9 +11,10 @@ export const DRUCK_CENTER_REITER = [
 	// GET /api/exemplare/etiketten-offen, POST /api/exemplare/etiketten-gedruckt
 	{ id: 'nachdruck', label: 'Fehlende Etiketten', rechte: ['edit_books'] },
 	// GET /api/ausweis-layout
-	{ id: 'ids', label: 'Schülerausweise', rechte: ['view_students'] },
-	// öffnet die Leserdatei mit markierter Klasse
-	{ id: 'klassen', label: 'Klassenweise drucken', rechte: ['view_students'] }
+	{ id: 'ids', label: 'Ausweis-Design', rechte: ['view_students'] },
+	// GET /api/schueler?klasse=, POST /api/print/schueler-etiketten (beide view_students); das
+	// Wort „drucken" steht im Seitentitel, wie bei den Buch-Etiketten.
+	{ id: 'klassen', label: 'Ausweise je Klasse', rechte: ['view_students'] }
 ];
 
 /**

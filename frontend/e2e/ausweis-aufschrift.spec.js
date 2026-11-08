@@ -37,7 +37,7 @@ async function alterTitelImGespeichertenDesign(page) {
 	);
 	if (gespeichert === '0') {
 		await gehZu(page, '/druck-center');
-		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 		const schreiben = page.waitForResponse(
 			(a) => a.url().endsWith('/api/ausweis-layout') && a.request().method() === 'PUT'
 		);

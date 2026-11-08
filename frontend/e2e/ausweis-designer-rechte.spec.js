@@ -20,7 +20,7 @@ function zaehleSchreiben(page) {
 /** @param {import('@playwright/test').Page} page */
 async function oeffneDesigner(page) {
 	await gehZu(page, '/druck-center');
-	await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+	await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 	await expect(page.getByRole('button', { name: /Testdruck Vorderseite/ })).toBeVisible();
 }
 

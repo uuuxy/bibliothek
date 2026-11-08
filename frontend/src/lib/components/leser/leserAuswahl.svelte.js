@@ -1,4 +1,5 @@
 import { SvelteSet } from 'svelte/reactivity';
+import { ohneAblaufjahr } from './ausweisdruck.svelte.js';
 
 /**
  * Die Markierung der Leserdatei — welche Zeilen für den Ausweis-Stapeldruck angekreuzt
@@ -23,11 +24,8 @@ export function erzeugeLeserAuswahl(sichtbare) {
 
 	const markierte = $derived(sichtbare().filter((/** @type {any} */ s) => auswahl.has(s.id)));
 
-	// Karten ohne ableitbares Ablaufjahr würden „31.07.–" tragen. Der Balken sagt das VOR
-	// dem Druck, nicht der fertige Stapel hinterher.
-	const ohneDatum = $derived(
-		markierte.filter((/** @type {any} */ s) => s.ausweis_gueltig_bis == null).length
-	);
+	// Der Balken sagt VOR dem Druck, wie viele Karten „31.07.–" trügen.
+	const ohneDatum = $derived(ohneAblaufjahr(markierte));
 
 	return /** @satisfies {object} */ ({
 		get auswahl() {
@@ -57,12 +55,6 @@ export function erzeugeLeserAuswahl(sichtbare) {
 
 		leeren() {
 			auswahl.clear();
-		},
-
-		/** Alle sichtbaren markieren — nach dem Sprung aus dem Druck-Center. */
-		alleSichtbarenMarkieren() {
-			auswahl.clear();
-			for (const s of sichtbare()) auswahl.add(s.id);
 		}
 	});
 }

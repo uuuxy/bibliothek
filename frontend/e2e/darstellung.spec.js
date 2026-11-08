@@ -130,7 +130,7 @@ test('Etikettenbogen und Ausweiskarte bleiben im dunklen Schema hell', async ({ 
 		await uiLogin(page);
 		await gehZu(page, '/druck-center');
 
-		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
+		await page.getByRole('tab', { name: 'Ausweis-Design' }).click();
 		const karte = page.locator('[data-ausweis-vorschau]');
 		await expect(karte).toBeVisible();
 		expect(await rolle(karte, '--color-on-surface-variant')).toBe('#42474e');
