@@ -39,7 +39,6 @@ func TestGueltigBisJahr(t *testing.T) {
 		// Zweig endet sonst mit 9; ein Zehntklässler darin ist trotzdem kein Datenfehler und
 		// braucht in diesem Jahr einen neuen Ausweis.
 		{"10H1", 2027, "10. Hauptschuljahr: gilt bis zum Ende dieses Jahrgangs"},
-		{"11H1", 2027, "auch darüber hinaus wird kein Datum in der Vergangenheit erzeugt"},
 
 		// Ohne erkennbaren Zweigbuchstaben gilt der längste Weg der Mittelstufe (10) —
 		// dieselbe Regel wie für die Förderstufe. Der Ausweis eines Hauptschülers gilt
@@ -61,13 +60,21 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"Q4", 2027, "Q4 ebenfalls Jahrgang 13"},
 
 		// Die Oberstufe in der Schreibweise dieser Schule: ET, 12T, 13T. 12T und 13T beginnen
-		// mit einer Ziffer und kommen deshalb nicht über die Erkennung von E und Q. Gälte „T"
-		// als unbekannter Zweig, liefe der Ausweis eines Schülers in 12T ein Jahr zu früh ab,
-		// und das fiele erst an der Ausleihe auf.
+		// mit einer Ziffer und fallen unter die Regel ab Jahrgang 11.
 		{"12T1", 2028, "Q-Phase dieser Schule: Jahrgang 12 → Ende 13"},
 		{"13T1", 2027, "Jahrgang 13 ist der Abschlussjahrgang selbst"},
 		{"12T", 2028, "auch ohne Zug"},
 		{"ET", 2029, "Einführungsphase mit T — dieselbe Regel wie E1/E2"},
+
+		// Ab Jahrgang 11 ist jede Klasse Oberstufe, gleich welcher Buchstabe folgt. Der
+		// Schuljahreswechsel macht aus „10G1" „11G1", bevor der LUSD-Import die Namen der
+		// Oberstufe bringt; ein Ausweis bis Ende 11 liefe dann zwei Jahre zu früh ab.
+		{"11G1", 2029, "vom Schuljahreswechsel aus 10G1: Jahrgang 11 → Ende 13"},
+		{"12G1", 2028, "Jahrgang 12 → Ende 13"},
+		{"11A", 2029, "Buchstabe wie in der Mittelstufe"},
+		{"12", 2028, "Jahrgang ohne Zusatz"},
+		{"13", 2027, "Abschlussjahrgang selbst"},
+		{"11H1", 2029, "auch mit H: Der Hauptschulzweig endet vor 11"},
 
 		// Schreibweise darf egal sein.
 		{"7h1", 2029, "Kleinschreibung"},
@@ -122,6 +129,8 @@ func TestAblaufJahrgang(t *testing.T) {
 		{"E1", AbschlussOberstufe, 11},
 		{"Q1", AbschlussOberstufe, 12},
 		{"Q4", AbschlussOberstufe, 13},
+		{"11G1", AbschlussOberstufe, 11},
+		{"12A", AbschlussOberstufe, 12},
 	}
 	for _, f := range faelle {
 		ablauf, aktuell, ok := AblaufJahrgang(f.klasse)

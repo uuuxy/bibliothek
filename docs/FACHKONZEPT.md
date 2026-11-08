@@ -640,7 +640,13 @@ findet danach an der Theke niemanden. Von Hand bleibt eine frühere Nummer eintr
 alte Karte eines Schülers, der zurückkommt. Die Aufschrift der gedruckten Karte
 richtet sich nach der Art — „Schülerausweis", „Lehrerausweis" (Lehrkraft und LiV) oder
 „Leserausweis" (die Sonderkonten; so nennt Littera jeden Ausweis); eine Gültigkeit trägt nur
-der Schülerausweis, weil ein Ausweis im Kollegium mit keinem Schuljahr abläuft.
+der Schülerausweis, weil ein Ausweis im Kollegium mit keinem Schuljahr abläuft. Ihr Jahr rechnet
+das Programm bei jedem Druck aus der Klasse (`internal/ausweis`), der Tag ist der 31.07., das
+Ende des Schuljahres: im Hauptschulzweig bis zum Ende von Jahrgang 9, in der übrigen Mittelstufe
+bis zum Ende von 10, auch im Gymnasialzweig, weil offen ist, wer in die Oberstufe geht. Ab
+Jahrgang 11 ist jede Klasse Oberstufe, gleich wie sie heißt, und bekommt einen neuen Ausweis bis
+zum Ende von 13. Lässt sich aus der Klasse nichts ableiten, wird nichts geraten; in der Akte ist
+das Jahr für einen Druck änderbar.
 
 ---
 

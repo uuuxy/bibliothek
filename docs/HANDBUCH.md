@@ -518,7 +518,9 @@ Liste.
 - **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_, _Lehrerausweis_
   (Lehrkraft und LiV) oder _Leserausweis_ (Praktikum, Sekretariat, U-plus, Fachbereich). Die
   Gültigkeit („Gültig bis 31.07. …") trägt nur der Schülerausweis; ein Ausweis im Kollegium
-  läuft mit keinem Schuljahr ab. Neue Ausweisnummern beginnen
+  läuft mit keinem Schuljahr ab. Das Jahr rechnet das Programm aus der Klasse: im
+  Hauptschulzweig bis Ende Klasse 9, sonst bis Ende 10, ab Klasse 11 bis Ende 13. In der Akte
+  lässt es sich für diesen einen Druck ändern. Neue Ausweisnummern beginnen
   mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen. Eine
   `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
   bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.

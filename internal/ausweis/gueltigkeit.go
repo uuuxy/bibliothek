@@ -82,6 +82,7 @@ const (
 //	7G1, 8G2 (Gymnasialzweig)  → gilt bis Ende Jahrgang 10, nicht 13
 //	E1, E2, Q1…Q4 (Oberstufe)  → gilt bis Ende Jahrgang 13
 //	ET, 12T, 13T (Oberstufe)   → gilt bis Ende Jahrgang 13, Schreibweise dieser Schule
+//	11G1, 12A (ab Jahrgang 11) → gilt bis Ende Jahrgang 13: Ab 11 ist jede Klasse Oberstufe
 //
 // Der Gymnasialzweig endet hier mit 10, obwohl der Schüler die Schule erst nach 13 verlässt:
 // Die Schule stellt Ausweise für die Mittelstufe aus, für die Oberstufe gibt es einen neuen.
@@ -105,6 +106,13 @@ func AblaufJahrgang(klasse string) (ablauf int, aktuell int, ok bool) {
 	jahrgang, err := strconv.Atoi(teile[1])
 	if err != nil || jahrgang < 1 || jahrgang > 13 {
 		return 0, 0, false
+	}
+
+	// Ab Jahrgang 11 ist jede Klasse Oberstufe, gleich welcher Buchstabe folgt: „12T" in der
+	// Schreibweise dieser Schule ebenso wie „11G1", das der Schuljahreswechsel aus „10G1" macht,
+	// bevor der LUSD-Import die Namen der Oberstufe bringt.
+	if jahrgang >= jahrgangEinfuehrungsphase {
+		return AbschlussOberstufe, jahrgang, true
 	}
 
 	abschluss := abschlussAusZweig(teile[2])
@@ -148,21 +156,13 @@ func oberstufenJahrgang(k string) (int, bool) {
 // Ausleihe abgewiesen, während der Schüler noch zur Schule geht.
 //
 // Ohne diese Annahme bräuchte fast jeder Ausweis ein Datum von Hand, wo die Klassen keinen
-// Buchstaben für den Zweig tragen (5a bis 10d).
+// Buchstaben für den Zweig tragen (5a bis 10d). Gefragt wird nur bis Jahrgang 10; ab 11 gilt
+// die Oberstufe (AblaufJahrgang).
 func abschlussAusZweig(zweigUndZug string) int {
 	rest := strings.TrimSpace(zweigUndZug)
-	if rest != "" {
-		// []rune, damit ein Umlaut nicht zerschnitten wird.
-		switch []rune(rest)[0] {
-		case 'H':
-			return AbschlussHauptschule
-		case 'T':
-			// Die Oberstufe dieser Schule heißt ET, 12T und 13T. 12T und 13T beginnen mit
-			// einer Ziffer und kommen deshalb nicht über die Erkennung von E und Q, sondern
-			// hierher. Als unbekannter Zweig gälte 12T bis Ende Jahrgang 12 und liefe ein
-			// Jahr zu früh ab.
-			return AbschlussOberstufe
-		}
+	// []rune, damit ein Umlaut nicht zerschnitten wird.
+	if rest != "" && []rune(rest)[0] == 'H' {
+		return AbschlussHauptschule
 	}
 	return AbschlussMittelstufe
 }
