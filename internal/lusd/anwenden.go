@@ -155,20 +155,20 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, abgaengerIDs []string, ka
 		return err
 	}
 
-	offeneAusleihen, err := repository.ZaehleOffeneAusleihenJeSchueler(ctx, tx, abgaengerIDs)
+	offeneAusleihen, err := repository.HatOffeneAusleihenJeSchueler(ctx, tx, abgaengerIDs)
 	if err != nil {
 		return err
 	}
 
 	// Auch ein unbezahlter Schaden hält die Anonymisierung auf: Ohne Name und Anschrift
 	// ließe sich der Schüler nicht mehr anschreiben.
-	offeneSchaeden, err := repository.ZaehleOffeneSchaedenJeSchueler(ctx, tx, abgaengerIDs)
+	offeneSchaeden, err := repository.HatOffeneSchaedenJeSchueler(ctx, tx, abgaengerIDs)
 	if err != nil {
 		return err
 	}
 
 	for _, schuelerID := range abgaengerIDs {
-		offen := offeneAusleihen[schuelerID] > 0 || offeneSchaeden[schuelerID] > 0
+		offen := offeneAusleihen[schuelerID] || offeneSchaeden[schuelerID]
 		if err := sperreOderAnonymisiere(ctx, tx, schuelerID, offen, karenzTage); err != nil {
 			return err
 		}

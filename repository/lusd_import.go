@@ -197,39 +197,37 @@ func LoescheWartendeVormerkungen(ctx context.Context, tx pgx.Tx, schuelerIDs []s
 	return err
 }
 
-// ZaehleOffeneAusleihenJeSchueler zählt je Schüler die nicht zurückgegebenen Ausleihen.
-func ZaehleOffeneAusleihenJeSchueler(ctx context.Context, tx pgx.Tx, schuelerIDs []string) (map[string]int, error) {
-	return zaehleJeSchueler(ctx, tx, "SELECT schueler_id, COUNT(*) FROM ausleihen WHERE schueler_id = ANY($1) AND rueckgabe_am IS NULL GROUP BY schueler_id", schuelerIDs)
+// HatOffeneAusleihenJeSchueler meldet je Schüler, ob er nicht zurückgegebene Ausleihen hat.
+func HatOffeneAusleihenJeSchueler(ctx context.Context, tx pgx.Tx, schuelerIDs []string) (map[string]bool, error) {
+	return hatJeSchueler(ctx, tx, "SELECT u.id, EXISTS(SELECT 1 FROM ausleihen WHERE schueler_id = u.id AND rueckgabe_am IS NULL) FROM unnest($1::uuid[]) AS u(id)", schuelerIDs)
 }
 
-// ZaehleOffeneSchaedenJeSchueler zählt je Schüler die unbezahlten Schadensfälle. Eine Stornierung
-// setzt ist_bezahlt, deshalb genügt die eine Bedingung.
-func ZaehleOffeneSchaedenJeSchueler(ctx context.Context, tx pgx.Tx, schuelerIDs []string) (map[string]int, error) {
-	return zaehleJeSchueler(ctx, tx, "SELECT schueler_id, COUNT(*) FROM schadensfaelle WHERE schueler_id = ANY($1) AND ist_bezahlt = false GROUP BY schueler_id", schuelerIDs)
+// HatOffeneSchaedenJeSchueler meldet je Schüler, ob er unbezahlte Schadensfälle hat.
+func HatOffeneSchaedenJeSchueler(ctx context.Context, tx pgx.Tx, schuelerIDs []string) (map[string]bool, error) {
+	return hatJeSchueler(ctx, tx, "SELECT u.id, EXISTS(SELECT 1 FROM schadensfaelle WHERE schueler_id = u.id AND ist_bezahlt = false) FROM unnest($1::uuid[]) AS u(id)", schuelerIDs)
 }
 
-// zaehleJeSchueler führt eine Zählabfrage mit den Spalten schueler_id und Anzahl aus und
+// hatJeSchueler führt eine Zählabfrage mit den Spalten schueler_id und bool aus und
 // liest sie ganz, bevor die Transaktion weiterbenutzt wird.
-func zaehleJeSchueler(ctx context.Context, tx pgx.Tx, abfrage string, schuelerIDs []string) (map[string]int, error) {
-	zahlen := make(map[string]int, len(schuelerIDs))
+func hatJeSchueler(ctx context.Context, tx pgx.Tx, abfrage string, schuelerIDs []string) (map[string]bool, error) {
+	vorhanden := make(map[string]bool, len(schuelerIDs))
 	rows, err := tx.Query(ctx, abfrage, schuelerIDs)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var sID string
-		var count int
-		if err := rows.Scan(&sID, &count); err != nil {
-			rows.Close()
+		var hat bool
+		if err := rows.Scan(&sID, &hat); err != nil {
 			return nil, err
 		}
-		zahlen[sID] = count
+		vorhanden[sID] = hat
 	}
-	rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return zahlen, nil
+	return vorhanden, nil
 }
 
 // SperreAbgaenger sperrt einen Abgänger und lässt Name und Kontaktdaten stehen: Mahnung und
