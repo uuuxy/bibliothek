@@ -11,6 +11,7 @@
 		children,
 		variant = 'primary',
 		size = 'md',
+		type = 'button',
 		class: className = '',
 		element = $bindable(),
 		...rest
@@ -89,6 +90,7 @@
 
 <button
 	bind:this={element}
+	{type}
 	class="{baseClasses} {sizes[size]} {variantClasses} {className}"
 	{...rest}
 >
