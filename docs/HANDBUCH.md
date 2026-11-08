@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-11-04. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-11-08. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit an der Theke, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -285,7 +285,9 @@ Vier Reiter: **Buch-Etiketten** (Format, Startposition auf dem Bogen, Titel aus 
 oder aus einer Klasse) · **Fehlende Etiketten** (alle Exemplare, die noch keins haben — die
 Zahl steht als Badge in der Navigation) · **Schülerausweise** (Designer für Vorder- und
 Rückseite; bis zur gestrichelten Linie druckt der Kartendrucker sicher, Text, Bilder und
-Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand) · **Klassenweise drucken**
+Strichcode gehören innerhalb, Farbflächen dürfen bis an den Rand. Beim Ziehen rastet ein Element
+an der Linie ein, weiter gezogen läuft es darüber hinaus; steht etwas zu nah am Rand, wird die
+Linie rot, und der Satz unter der Karte sagt warum) · **Klassenweise drucken**
 (Ausweise für eine ganze Klasse). Der Druck läuft
 über den Browser-Druckdialog. Der Kartendrucker erscheint dort unter Windows als XPS-Drucker
 (Treiber „XPS Card Printer" von Datacard); „Microsoft XPS Document Writer" schreibt nur eine Datei. Die Vorschau der Buch-Etiketten ist das Druck-PDF selbst und zeigt

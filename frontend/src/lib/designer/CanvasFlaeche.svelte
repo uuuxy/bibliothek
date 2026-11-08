@@ -10,7 +10,15 @@
 	import { idStore } from './idDesignerStore.svelte.js';
 	import CanvasElement from './CanvasElement.svelte';
 	import { kartenStil } from './kartenFarben.js';
-	import { SICHERHEITSRAND_MM } from './kartenRand.js';
+	import {
+		KARTE_BREITE_MM,
+		KARTE_HOEHE_MM,
+		rasteEin,
+		sichererAbstand,
+		stehtImRand
+	} from './kartenRand.js';
+	import { hinweisZumRand, linienAbstand, linienStil } from './randLinie.js';
+	import { skaliere } from './skalieren.js';
 
 	/** @type {{ side: 'front'|'back', gewaehlteKennung: string|null, onSelect: (id: string|null)=>void, leser: any, zoom: number, barcodeType: string, gesperrt?: boolean }} */
 	const { side, gewaehlteKennung, onSelect, leser, zoom, barcodeType, gesperrt = false } = $props();
@@ -25,6 +33,13 @@
 
 	const theme = $derived(side === 'front' ? idStore.front.theme : idStore.back.theme);
 
+	// Das Element, das gerade gezogen wird, und ob eine seiner Kanten an der Linie eingerastet ist.
+	/** @type {any} */
+	let gezogen = $state(null);
+	let eingerastet = $state(false);
+	const zuNah = $derived(elements.filter(stehtImRand));
+	const aktiv = $derived(eingerastet || (!!gezogen && stehtImRand(gezogen)));
+
 	/** @type {(() => void) | null} */
 	let ziehenAufraeumen = null;
 	// Called on unmount — removes any stale window listeners from an in-progress drag.
@@ -36,7 +51,7 @@
 	/** Convert screen-space pixel delta to card-space millimetres. */
 	function pxToMm() {
 		if (!karteEl) return 1;
-		return 85.6 / karteEl.getBoundingClientRect().width;
+		return KARTE_BREITE_MM / karteEl.getBoundingClientRect().width;
 	}
 
 	/**
@@ -49,6 +64,8 @@
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
 			ziehenAufraeumen = null;
+			gezogen = null;
+			eingerastet = false;
 		}
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
@@ -80,9 +97,12 @@
 		function onMove(mv) {
 			const dx = (mv.clientX - startX) * scale;
 			const dy = (mv.clientY - startY) * scale;
-			el.x = Math.max(0, Math.min(85.6 - el.width, Math.round((ix + dx) * 10) / 10));
-			el.y = Math.max(0, Math.min(53.98 - el.height, Math.round((iy + dy) * 10) / 10));
+			const lage = rasteEin({ ...el, x: ix + dx, y: iy + dy });
+			el.x = Math.max(0, Math.min(KARTE_BREITE_MM - el.width, lage.x));
+			el.y = Math.max(0, Math.min(KARTE_HOEHE_MM - el.height, lage.y));
+			eingerastet = lage.eingerastet;
 		}
+		gezogen = el;
 		verfolge(onMove);
 	}
 
@@ -104,43 +124,14 @@
 		const scale = pxToMm();
 		const startX = e.clientX,
 			startY = e.clientY;
-		const ix = el.x,
-			iy = el.y,
-			iw = el.width,
-			ih = el.height;
-		const aspectRatio = iw / ih;
+		const start = { x: el.x, y: el.y, width: el.width, height: el.height };
+		const proportional = !!el.proportional;
 
-		/** @param {PointerEvent} mv */
-		function onMove(mv) {
-			let dx = (mv.clientX - startX) * scale;
-			let dy = (mv.clientY - startY) * scale;
-
-			if (corner === 'se') {
-				const newW = Math.max(5, iw + dx);
-				el.width = newW;
-				el.height = el.proportional ? newW / aspectRatio : Math.max(3, ih + dy);
-			} else if (corner === 'sw') {
-				const newW = Math.max(5, iw - dx);
-				el.x = Math.max(0, ix + (iw - newW));
-				el.width = newW;
-				el.height = el.proportional ? newW / aspectRatio : Math.max(3, ih + dy);
-			} else if (corner === 'ne') {
-				const newW = Math.max(5, iw + dx);
-				const newH = Math.max(3, ih - dy);
-				el.y = Math.max(0, iy + (ih - newH));
-				el.width = newW;
-				el.height = el.proportional ? newW / aspectRatio : newH;
-			} else {
-				// nw
-				const newW = Math.max(5, iw - dx);
-				const newH = el.proportional ? newW / aspectRatio : Math.max(3, ih - dy);
-				el.x = Math.max(0, ix + (iw - newW));
-				el.y = Math.max(0, iy + (ih - newH));
-				el.width = newW;
-				el.height = newH;
-			}
-		}
-		verfolge(onMove);
+		verfolge((mv) => {
+			const dx = (mv.clientX - startX) * scale;
+			const dy = (mv.clientY - startY) * scale;
+			Object.assign(el, skaliere(corner, { ...start, proportional }, dx, dy));
+		});
 	}
 </script>
 
@@ -175,12 +166,17 @@
 						onStartResize={startResize}
 					/>
 				{/each}
-				<!-- Bis hierher druckt der Kartendrucker sicher (kartenRand.js); die Linie wird nicht gedruckt. -->
+				<!-- Bis hierher druckt der Kartendrucker sicher (kartenRand.js); die Linie wird nicht
+				     gedruckt. Beim Ziehen zeigt sie die Grenze des gezogenen Elements, beim Strichcode die seiner Striche. -->
 				<div
 					data-sicherheitsrand
 					aria-hidden="true"
-					class="pointer-events-none absolute z-50 border border-dashed border-outline"
-					style="inset: {SICHERHEITSRAND_MM}mm;"
+					class="pointer-events-none absolute z-50 border-dashed {linienStil({
+						zuNah: zuNah.length > 0,
+						eingerastet,
+						aktiv
+					})}"
+					style="inset: {linienAbstand(gezogen ? sichererAbstand(gezogen) : null)};"
 				></div>
 			</div>
 		</div>
@@ -191,6 +187,6 @@
 	>
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'}{gesperrt
 			? ''
-			: ' · Ziehen zum Verschieben · Ecken zum Skalieren'} · Gestrichelt: sicherer Druckbereich
+			: ' · Ziehen zum Verschieben · Ecken zum Skalieren'} · {hinweisZumRand(zuNah)}
 	</span>
 </div>

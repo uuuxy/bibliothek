@@ -443,7 +443,12 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
   und DS2) drucken bis an den Rand, lassen dort aber einen schmalen weißen Streifen frei; für
   Strichcodes verlangt Datacard 6,3 mm Abstand zum Rand. Der Designer zeigt 3 mm innen eine
   gestrichelte Linie, die nicht mitdruckt (`designer/kartenRand.js`); verschieben lässt sich
-  weiter bis an den Rand. Was in Standard-Design und Vorlagen außen steht, steht bündig an der
+  weiter bis an den Rand. Beim Ziehen rastet eine Kante ein, die ihrer Linie auf 1 mm nahe kommt,
+  beim Strichcode an der Grenze seiner Striche, die die Linie dann zeigt; weiter gezogen läuft
+  das Element frei darüber hinaus. Steht ein Element zu nah am Rand, ist die Linie rot, und der
+  Satz unter der Karte nennt den Grund; Farbflächen und Motive über die ganze Breite zählen
+  nicht. Die Linie folgt dem Rand eines Textfelds in Material 3: Outline, beim Einrasten Primary
+  in doppelter Stärke, sonst Error (`designer/randLinie.js`). Was in Standard-Design und Vorlagen außen steht, steht bündig an der
   Linie, damit alle denselben Rand haben; ein Strichcode unten steht 0,3 mm darüber, so enden
   seine Striche 6,3 mm über der Kante (`designer/kartenRand.test.js`). **Der Designer legt fest,
   wie gedruckt wird, die Leserdatei, wer.** Die
