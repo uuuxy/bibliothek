@@ -57,6 +57,7 @@ Nur, was kein Test leisten kann.
   Browsers. (5.174)
 - [x] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
   Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
+- [ ] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
 
 ### Termin
 
@@ -82,6 +83,13 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
+
+### 5.176 Vorschlag #774 schließen
+
+Der Vorschlag setzt den Typ eines `ui/Button` ohne Angabe auf „button". Am Code gezählt tragen die
+Knöpfe in allen 11 Formularen bereits eine Typangabe, und kein Knopf nutzt `form=`; die Änderung
+hätte nichts geändert. Abgelehnt. Der GitHub-Zugang der Arbeitskopie darf keine Pull Requests
+schließen, deshalb von Hand auf GitHub: „Close pull request".
 
 ### 7.2 Frisches Littera-Backup
 
