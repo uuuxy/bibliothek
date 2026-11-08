@@ -58,6 +58,7 @@ Nur, was kein Test leisten kann.
 - [x] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
   Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
 - [ ] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
+- [ ] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
 
 ### Termin
 
@@ -90,6 +91,14 @@ Der Vorschlag setzt den Typ eines `ui/Button` ohne Angabe auf „button". Am Cod
 Knöpfe in allen 11 Formularen bereits eine Typangabe, und kein Knopf nutzt `form=`; die Änderung
 hätte nichts geändert. Abgelehnt. Der GitHub-Zugang der Arbeitskopie darf keine Pull Requests
 schließen, deshalb von Hand auf GitHub: „Close pull request".
+
+### 5.177 Vorschlag #775: Existenzprüfung im LUSD-Import
+
+Der Vorschlag ändert, wie der LUSD-Import prüft, ob ein Schüler schon da ist
+(`repository/lusd_import.go`, `internal/lusd/anwenden.go`), und hängt eine Zeile an
+`.jules/bolt.md` an. Noch nicht geprüft. Nächster Schritt: Beifang und Drei-Punkt-Diff ansehen,
+die behauptete Ersparnis an einem Import messen, die vorhandenen Tests des Imports am Rückbau
+der geänderten Stelle laufen lassen; nur übernehmen, was messbar spart und dasselbe tut.
 
 ### 7.2 Frisches Littera-Backup
 
