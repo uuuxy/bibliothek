@@ -22,7 +22,7 @@ require (
 	github.com/phpdave11/gofpdf v1.4.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/uudashr/gocognit v1.3.0
-	github.com/xuri/excelize/v2 v2.11.1-0.20261003002531-6258dcebc4e2
+	github.com/xuri/excelize/v2 v2.11.1
 	golang.org/x/crypto v0.58.0
 	golang.org/x/image v0.47.0
 	golang.org/x/net v0.62.0
@@ -51,13 +51,13 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/pdfcpu/pdfcpu v0.16.2 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
-	github.com/richardlehane/mscfb v1.0.8 // indirect
+	github.com/richardlehane/mscfb v1.0.9 // indirect
 	github.com/richardlehane/msoleps v1.0.6 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/tiendc/go-deepcopy v1.7.2 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	github.com/xuri/efp v0.0.2 // indirect
+	github.com/xuri/efp v0.0.3-0.20260924042702-217b81952dec // indirect
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
