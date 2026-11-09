@@ -457,6 +457,10 @@ func jsonEigenschaften(werte map[string]string) (string, error) {
 			gefiltert[k] = v
 		}
 	}
+	// json.Marshal allokiert und kostet Zeit; ein leeres Objekt ist statisch.
+	if len(gefiltert) == 0 {
+		return "{}", nil
+	}
 	b, err := json.Marshal(gefiltert)
 	if err != nil {
 		return "", fmt.Errorf("%w: erweiterte_eigenschaften nicht serialisierbar: %w",

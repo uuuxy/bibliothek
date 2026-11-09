@@ -44,15 +44,16 @@ type protokollEintrag struct {
 // ProtokolliereAdminAktion schreibt einen Eintrag ins Protokoll der Verwaltung (audit_logs).
 // Details, die sich nicht als JSON schreiben lassen, stehen als leeres Objekt im Eintrag.
 func (a *ProtokollAbfragen) ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
+	// json.Marshal allokiert und kostet Zeit; ein leeres Objekt ist statisch.
 	var detailsJSON []byte
-	if details != nil {
+	if len(details) == 0 {
+		detailsJSON = []byte("{}")
+	} else {
 		var err error
 		detailsJSON, err = json.Marshal(details)
 		if err != nil {
 			detailsJSON = []byte("{}")
 		}
-	} else {
-		detailsJSON = []byte("{}")
 	}
 	return SchreibeAdminProtokoll(ctx, a.db, adminID, aktion, ip, string(detailsJSON))
 }
@@ -131,12 +132,17 @@ func (a *ProtokollAbfragen) protokolliereLeihvorgang(ctx context.Context, tx pgx
 // schreibeProtokollEintrag fügt einen Eintrag an audit_log an. db ist der Pool oder die
 // Transaktion des Rufers; ein Vorgang und sein Eintrag gelten so zusammen oder gar nicht.
 func schreibeProtokollEintrag(ctx context.Context, db Datenbank, e protokollEintrag) error {
+	// json.Marshal allokiert und kostet Zeit; ein leeres Objekt ist statisch.
 	var detailsJSON []byte
 	if e.Details != nil {
-		var err error
-		detailsJSON, err = json.Marshal(e.Details)
-		if err != nil {
-			return fmt.Errorf("audit details serialization: %w", err)
+		if len(e.Details) == 0 {
+			detailsJSON = []byte("{}")
+		} else {
+			var err error
+			detailsJSON, err = json.Marshal(e.Details)
+			if err != nil {
+				return fmt.Errorf("audit details serialization: %w", err)
+			}
 		}
 	}
 	_, err := db.Exec(ctx, `
