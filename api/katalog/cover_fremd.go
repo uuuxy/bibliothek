@@ -2,7 +2,6 @@ package katalog
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -35,8 +34,8 @@ func (t *Tueren) FremdeCoverNeuLaden() http.HandlerFunc {
 			IDs   []string `json:"ids"`
 			Limit int      `json:"limit"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
+		if err := tuer.DekodiereRumpf(w, r, &eingabe); err != nil {
+			tuer.AntworteUnlesbar(w, err)
 			return
 		}
 		if !alleUUIDs(eingabe.IDs) {

@@ -25,9 +25,9 @@ func (t *Tueren) TitelAendern() http.HandlerFunc {
 			return
 		}
 
-		eingabe, felder, fehler := leseAenderung(anfrage)
+		eingabe, felder, fehler := leseAenderung(antwort, anfrage)
 		if fehler != nil {
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, fehler)
+			tuer.AntworteUnlesbar(antwort, fehler)
 			return
 		}
 
@@ -88,11 +88,11 @@ func (t *Tueren) TitelAendern() http.HandlerFunc {
 // nennt. Ein Feld, das fehlt, bleibt am Titel, wie es ist; eines, das titelAnfrage nicht kennt,
 // ist ein Fehler, sonst hielte der Aufrufer ein vertipptes Feld für gespeichert. Groß- und
 // Kleinschreibung der Namen zählt nicht, wie beim Dekodieren in titelAnfrage.
-func leseAenderung(anfrage *http.Request) (titelAnfrage, []string, error) {
+func leseAenderung(antwort http.ResponseWriter, anfrage *http.Request) (titelAnfrage, []string, error) {
 	var eingabe titelAnfrage
 	var roh json.RawMessage
 	var genannt map[string]json.RawMessage
-	if fehler := json.NewDecoder(anfrage.Body).Decode(&roh); fehler != nil {
+	if fehler := tuer.DekodiereRumpf(antwort, anfrage, &roh); fehler != nil {
 		return eingabe, nil, fehler
 	}
 	streng := json.NewDecoder(bytes.NewReader(roh))

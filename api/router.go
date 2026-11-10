@@ -288,20 +288,11 @@ func (s *Server) registriereOberflaechenRouten(mux *http.ServeMux) string {
 
 // baueKette legt die Schichten um mux; stand ist der Stand der Oberfläche, leer ohne gebaute.
 func (s *Server) baueKette(mux http.Handler, stand string) http.Handler {
-	// 100 MB — bewusst großzügig und bewusst global.
-	//
-	// Die Zahl klingt nach Speicherrisiko, ist aber keins: rumpfGrenzeMiddleware setzt
-	// http.MaxBytesReader, und der begrenzt nur, wie viel eine Tür lesen darf. Er
-	// puffert nichts. Wer 100 MB schickt, ohne dass eine Tür sie liest, belegt keinen
-	// Speicher; wer mehr schickt, bekommt einen Lesefehler. Vorab liest nur die Prüfung auf
-	// Null-Zeichen, von einem JSON-Rumpf höchstens 64 KiB (nullZeichenVorlauf).
-	//
-	// Kleiner setzen wäre riskanter als es aussieht: Über diesen einen Wert laufen auch
-	// der Littera-Import, der Bestands-Import und der Excel-Katalogimport. Ein zu enger
-	// Wert bricht sie mitten im Lauf, und zwar mit einer Meldung, die nicht nach
-	// "Datei zu groß" klingt. Eine getrennte, kleinere Grenze für alles außer den
-	// Import-Routen wäre der saubere Weg; dafür muss aber jede Upload-Route einzeln
-	// belegt sein, sonst bricht genau die eine, die man übersehen hat.
+	// 100 MB gelten jeder Anfrage und sind für die Dateien der Importe da (Littera, Bestand,
+	// Excel-Katalog); enger bräche ein Import mitten im Lauf mit einer Meldung, die nicht nach
+	// "Datei zu groß" klingt. rumpfGrenzeMiddleware puffert nichts. Ein JSON-Rumpf wird beim
+	// Lesen gepuffert und ist deshalb an der Tür enger begrenzt (maxRumpfJSON in api/tuer); vorab liest
+	// nur die Prüfung auf Null-Zeichen, höchstens 64 KiB (nullZeichenVorlauf).
 	rumpfGrenze := rumpfGrenzeMiddleware(100 * 1024 * 1024)
 	bremse := anfrageBremse(anfragenJeSekundeAusUmgebung())
 	frist := fristMiddleware(bearbeitungsfristVorgabe)

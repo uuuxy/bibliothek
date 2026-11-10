@@ -1,9 +1,7 @@
 package katalog
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -30,7 +28,7 @@ func (t *Tueren) ExemplarAussondern(katalogAbfragen *repository.KatalogAbfragen)
 			return
 		}
 
-		grund, meldung := leseGrund(r.Body)
+		grund, meldung := leseGrund(w, r)
 		if meldung != "" {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, nil)
 			return
@@ -60,11 +58,11 @@ func (t *Tueren) ExemplarAussondern(katalogAbfragen *repository.KatalogAbfragen)
 
 // leseGrund liest den Grund einer Aussonderung aus dem Körper {"grund": "AUSSORTIERT"} und liefert
 // die Meldung, wenn der Körper nicht lesbar oder der Grund keiner der vier ist.
-func leseGrund(koerper io.Reader) (grund, meldung string) {
+func leseGrund(w http.ResponseWriter, r *http.Request) (grund, meldung string) {
 	var eingabe struct {
 		Grund string `json:"grund"`
 	}
-	if err := json.NewDecoder(koerper).Decode(&eingabe); err != nil {
+	if err := tuer.DekodiereRumpf(w, r, &eingabe); err != nil {
 		return "", "Die Anfrage ließ sich nicht lesen"
 	}
 	if !repository.IstAussonderungsgrund(eingabe.Grund) {

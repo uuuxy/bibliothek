@@ -365,7 +365,7 @@ graph TB
 
 | Schnittstelle                    | Protokoll / Format                              | Richtung        | Absicherung                                                                                                                       |
 | -------------------------------- | ----------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Browser → Backend**            | HTTPS, JSON über `/api`, `POST /login`          | eingehend       | Security-Header/CSP, CORS auf die Schuldomain, Body-Limit 100 MB, Timeouts, Rate-Limit, CSRF (Double-Submit), JWT im HttpOnly-Cookie |
+| **Browser → Backend**            | HTTPS, JSON über `/api`, `POST /login`          | eingehend       | Security-Header/CSP, CORS auf die Schuldomain, Body-Limit 100 MB (JSON an der Tür 5 MB), Timeouts, Rate-Limit, CSRF (Double-Submit), JWT im HttpOnly-Cookie |
 | **Backend → Browser (Echtzeit)** | Server-Sent Events, `GET /events`               | ausgehend       | Nur authentifiziert, beim Aufbau und vor jedem Heartbeat (alle 15 s, `IstSitzungGueltig`); **kein** `WriteTimeout` am Server, weil der Strom nie endet |
 | **Statische Auslieferung**       | SPA aus `frontend/dist`, PWA-Service-Worker      | ausgehend       | Dateizugriffe OS-seitig an `dist/` gebunden (`os.OpenRoot`); ein unbekannter `/api/`-Pfad antwortet 404 statt App-Shell            |
 | **Cover-Dateien**                | `GET /uploads/...`                              | ausgehend       | **Bewusst ohne Anmeldung** (Katalog/Monitor brauchen Cover); in der Allowlist von `geschuetzte_routen_test.go` vermerkt          |
@@ -506,7 +506,7 @@ HTTP-Anfrage
    ├─ 4 Logging ──────────────── nur 5xx: Status, Methode, Pfad, Route, Ursache — ohne IP, Token maskiert
    ├─ 5 HTTPSRedirect ────────── HTTP auf HTTPS, außer lokal und für /health
    ├─ 6 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
-   ├─ 7 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
+   ├─ 7 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts; JSON an der Tür 5 MB
    ├─ 8 Timeout ──────────────── Kontext-Deadline je Route (bearbeitungsfristVorgabe)
    ├─ 9 RateLimit ────────────── je Client-IP (pkg/clientip: genau ein Proxy-Hop)
    ├─10 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
@@ -1801,7 +1801,7 @@ in JSON, Tabellen und Spalten behalten ihre Namen, auch englische (STIL.md, Absc
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Security-Header**       | CSP `default-src 'self'` mit `script-src 'self'`, `img-src 'self' data: blob:`, `frame-ancestors 'none'`, `object-src 'none'`; HSTS 1 Jahr inkl. Subdomains; `X-Frame-Options: DENY`; `Referrer-Policy: strict-origin-when-cross-origin`; `Permissions-Policy: geolocation=(), microphone=(), camera=(self)` (Kamera: Barcode-Scan und Passbild); `Cache-Control: no-store` für jede Antwort unter `/api/` — der Browser legt keine Personendaten ab (OWASP ASVS 5.0, 14.3.2); eigene Köpfe nur an Buchcover und Buchnummern der Theke ([SECURITY.md](SECURITY.md)) |
 | **CORS**                  | Nur die konfigurierte Schuldomain (`ALLOWED_ORIGIN`)                                                                                               |
-| **Body-Limit**            | 100 MB global über `http.MaxBytesReader` — begrenzt nur, **wie viel ein Handler lesen darf**, puffert nichts. Bewusst großzügig, weil Littera-, Bestands- und Excel-Import durch denselben Wert laufen. Für `/login` gilt zusätzlich eine eigene, enge Grenze (16 KB): Es ist der einzige unangemeldete Endpunkt, der JSON liest |
+| **Body-Limit**            | 100 MB global über `http.MaxBytesReader` — begrenzt nur, **wie viel ein Handler lesen darf**, puffert nichts. Bewusst großzügig, weil Littera-, Bestands- und Excel-Import durch denselben Wert laufen. Ein JSON-Rumpf ist an der Tür auf 5 MB begrenzt (`maxRumpfJSON` in `api/tuer/eingabe.go`, darüber 413): Der Decoder hält ihn im Speicher, eine Anfrage von 100 MB belegte über 300 MB. Jede Tür liest JSON über `tuer.LeseAnfrage`, `LeseAnfrageStreng` oder `DekodiereRumpf` (`rumpfgrenze_ratsche_test.go`). Für `/login` gilt zusätzlich eine eigene, enge Grenze (16 KB): Es ist der einzige unangemeldete Endpunkt, der JSON liest |
 | **Fristen (Slowloris)**   | `ReadHeaderTimeout` 5 s, `ReadTimeout` als Lesefrist, `IdleTimeout` 120 s, kein `WriteTimeout` (SSE) — siehe [7.1](#fristen-müssen-zueinander-passen) |
 | **Rate-Limit**            | 50 Anfragen/s/IP (Map + Mutex, kein externer Cache). Ausgenommen sind Auslieferungspfade (`/api/images/cover`, `/uploads/`, `/api/barcode`, `/events`) — ein Seitenaufruf lädt dutzende Bilder, SSE ist eine Dauerverbindung. Der **teure** Zweig des Cover-Proxys hat eine eigene Bremse |
 | **CSRF**                  | Double-Submit-Cookie; `GET /api/csrf-token` holt Token und Cookie vor der ersten Änderung; die Refresh-Route ist ausgenommen                        |
@@ -3850,10 +3850,8 @@ nicht hier, sondern dort. Die Reihenfolge sagt nichts über das Gewicht.
   `auflagenSuche`, `schuelerSuche`, `portalSuche` und andere); die Prüfung danach hält
   `frontend-hygiene-spaete-pruefung.test.js`, einen gemeinsamen Baustein gibt es nicht. Rund
   fünfzehn Türen setzen die Kopfzeilen eines PDF je selbst; Zugangs- und Abgangsbuch
-  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich. An neun
-  Stellen lesen Türen ihren Rumpf mit `json.NewDecoder` selbst statt über `tuer.LeseAnfrage`, darunter
-  das Löschen markierter Titel und die Klassensätze (`api/katalog`); die Größe des Rumpfs begrenzt
-  die Middleware für alle. Bestands-, Listen- und Littera-Import bauen die Dateiwahl je selbst
+  (`api/katalog/zugangsbuch.go`, `abgangsbuch.go`) sind bis auf Abfrage und Blatt gleich.
+  Bestands-, Listen- und Littera-Import bauen die Dateiwahl je selbst
   (`frontend/src/lib/components/admin/`). Anlass: ein Fehler in einer der Kopien.
 - **Zwei Ordner der Oberfläche heißen nicht nach ihrem Thema.** `frontend/src/inventur/` hält die
   Oberfläche des Medienkatalogs (5.3); „Inventur" heißt sonst der Inventurlauf, und `$lib` zeigt

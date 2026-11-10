@@ -2,7 +2,6 @@ package leser
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -178,8 +177,8 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, antwort *sch
 // Bestätigung (außer im Probelauf). ok=false: die Fehlerantwort wurde bereits geschrieben.
 func leseSchuljahreswechselAnfrage(w http.ResponseWriter, r *http.Request) (schuljahreswechselAnfrage, bool) {
 	var anfrage schuljahreswechselAnfrage
-	if err := json.NewDecoder(r.Body).Decode(&anfrage); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
+	if err := tuer.DekodiereRumpf(w, r, &anfrage); err != nil {
+		tuer.AntworteUnlesbar(w, err)
 		return anfrage, false
 	}
 	if !anfrage.Probelauf && !anfrage.Bestaetigt {

@@ -1,7 +1,6 @@
 package leser
 
 import (
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -32,7 +31,7 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen *repository.ProtokollAbf
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zielID := r.PathValue("id")
 		var rumpf leserZusammenfuehrenAnfrage
-		if err := json.NewDecoder(r.Body).Decode(&rumpf); err != nil || strings.TrimSpace(rumpf.QuelleID) == "" {
+		if err := tuer.DekodiereRumpf(w, r, &rumpf); err != nil || strings.TrimSpace(rumpf.QuelleID) == "" {
 			return apierrors.BadRequest("Die Kennung des zweiten Datensatzes fehlt", err)
 		}
 		if !kennung.IstUUID(rumpf.QuelleID) {

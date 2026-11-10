@@ -129,6 +129,41 @@ func LeseUUIDListe(q url.Values, name string) ([]string, error) {
 	return ids, nil
 }
 
+// maxRumpfJSON ist die Grenze für den Rumpf einer JSON-Anfrage. Der größte ist das Ausweisfoto
+// als Base64, gut 1 MB; Listen wie die Etiketten eines ganzen Bestands bleiben darunter. Der
+// Decoder hält etwa das Dreifache des Rumpfs im Speicher, eine Anfrage also höchstens rund 16 MB.
+// Die Grenze aller Anfragen (100 MB) gilt den Dateien der Importe.
+const maxRumpfJSON = 5 << 20
+
+// begrenzterDecoder liest den Rumpf der Anfrage, höchstens maxRumpfJSON.
+func begrenzterDecoder(w http.ResponseWriter, r *http.Request) *json.Decoder {
+	r.Body = http.MaxBytesReader(w, r.Body, maxRumpfJSON)
+	return json.NewDecoder(r.Body)
+}
+
+// DekodiereRumpf liest den JSON-Rumpf der Anfrage in das Ziel, höchstens maxRumpfJSON. Eine Tür
+// liest ihren Rumpf hierüber oder über LeseAnfrage: Ein eigener Decoder am Rumpf hätte die Grenze
+// nicht (rumpfgrenze_ratsche_test.go).
+func DekodiereRumpf(w http.ResponseWriter, r *http.Request, ziel any) error {
+	return begrenzterDecoder(w, r).Decode(ziel)
+}
+
+// AntworteUnlesbar antwortet auf einen Rumpf, der sich nicht lesen ließ: mit 413 und der Grenze,
+// wenn er zu groß war, sonst mit 400.
+func AntworteUnlesbar(w http.ResponseWriter, err error) {
+	var zuGross *http.MaxBytesError
+	if errors.As(err, &zuGross) {
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusRequestEntityTooLarge, meldungAnfrageZuGross(), err)
+		return
+	}
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
+}
+
+// meldungAnfrageZuGross nennt die Grenze eines JSON-Rumpfs.
+func meldungAnfrageZuGross() string {
+	return fmt.Sprintf("Die Anfrage ist zu groß. Möglich sind höchstens %d MB.", maxRumpfJSON>>20)
+}
+
 // LeseAnfrageStreng liest wie LeseAnfrage, lehnt aber ein Feld, das das Ziel nicht kennt, mit
 // 400 ab, statt es still zu verwerfen.
 //
@@ -139,10 +174,10 @@ func LeseUUIDListe(q url.Values, name string) ([]string, error) {
 // immer ein Fehler. Ohne Strenge verschwände es still, und die Oberfläche
 // meldete „gespeichert“: 200 trotz Datenverlust, die teuerste Klasse von Fehlern im Projekt.
 func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
-	dec := json.NewDecoder(r.Body)
+	dec := begrenzterDecoder(w, r)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(ziel); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
+		AntworteUnlesbar(w, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {
@@ -156,8 +191,8 @@ func LeseAnfrageStreng[T any](w http.ResponseWriter, r *http.Request, ziel *T) b
 // Fehler hat sie die Antwort (400) schon geschrieben und liefert false. Ein Feld, das das Ziel
 // nicht kennt, verwirft sie still; wo das nicht genügt, gilt LeseAnfrageStreng.
 func LeseAnfrage[T any](w http.ResponseWriter, r *http.Request, ziel *T) bool {
-	if err := json.NewDecoder(r.Body).Decode(ziel); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, apierrors.MeldungAnfrageUnlesbar, err)
+	if err := DekodiereRumpf(w, r, ziel); err != nil {
+		AntworteUnlesbar(w, err)
 		return false
 	}
 	if err := Pruefer.Struct(ziel); err != nil {

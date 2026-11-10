@@ -2,7 +2,6 @@ package katalog
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -142,8 +141,8 @@ func (t *Tueren) TitelAnlegen() http.HandlerFunc {
 	return func(antwort http.ResponseWriter, anfrage *http.Request) {
 		var eingabe titelAnfrage
 
-		if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
+		if fehler := tuer.DekodiereRumpf(antwort, anfrage, &eingabe); fehler != nil {
+			tuer.AntworteUnlesbar(antwort, fehler)
 			return
 		}
 

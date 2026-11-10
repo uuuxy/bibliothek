@@ -1,7 +1,6 @@
 package katalog
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -29,8 +28,8 @@ func (t *Tueren) MarkierteTitelLoeschen() http.HandlerFunc {
 			Grund      string   `json:"grund"`
 			Verliehene []string `json:"verliehene"`
 		}
-		if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
-			apierrors.AntworteFehlerMitMeldung(antwort, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
+		if fehler := tuer.DekodiereRumpf(antwort, anfrage, &eingabe); fehler != nil {
+			tuer.AntworteUnlesbar(antwort, fehler)
 			return
 		}
 		if meldung := meldungZuTitelKennungen(eingabe.IDs, alleUUIDs(eingabe.IDs)); meldung != "" {

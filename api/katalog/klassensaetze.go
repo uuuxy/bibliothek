@@ -1,7 +1,6 @@
 package katalog
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -46,8 +45,8 @@ func (t *Tueren) aendereKlassensaetze(w http.ResponseWriter, r *http.Request) {
 		TitelIDs   []string `json:"bookIds"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
+	if err := tuer.DekodiereRumpf(w, r, &eingabe); err != nil {
+		tuer.AntworteUnlesbar(w, err)
 		return
 	}
 
@@ -141,8 +140,8 @@ func (t *Tueren) ordneKlassensaetzeZu(w http.ResponseWriter, r *http.Request) {
 		TitelIDs []string `json:"bookIds"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&eingabe); err != nil {
-		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, "Die Anfrage ließ sich nicht lesen", nil)
+	if err := tuer.DekodiereRumpf(w, r, &eingabe); err != nil {
+		tuer.AntworteUnlesbar(w, err)
 		return
 	}
 
