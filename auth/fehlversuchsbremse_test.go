@@ -6,8 +6,9 @@ import (
 	"time"
 )
 
-// Abgelaufene Fehlversuche fallen heraus, sobald die Liste groß wird. Sonst wüchse sie mit jeder
-// durchprobierten Adresse ohne Grenze.
+// Abgelaufene Fehlversuche fallen heraus, sobald die Liste groß wird, schon beim ersten
+// Fehlversuch eines neuen Schlüssels: Nur neue Schlüssel lassen sie wachsen, und sonst wüchse sie
+// mit jeder durchprobierten Adresse ohne Grenze.
 func TestFehlversuchsBremse_RaeumtAbgelaufenes(t *testing.T) {
 	b := newFehlversuchsBremse(3, time.Minute)
 	vorbei := time.Now().Add(-time.Hour)
@@ -15,8 +16,6 @@ func TestFehlversuchsBremse_RaeumtAbgelaufenes(t *testing.T) {
 		b.eintraege[fmt.Sprintf("alt-%d", i)] = &fehlversuche{anzahl: 1, fensterEnde: vorbei}
 	}
 
-	// Der erste Fehlversuch beginnt ein Fenster, erst der zweite zählt und räumt.
-	b.merkeFehlversuch("frisch")
 	b.merkeFehlversuch("frisch")
 
 	if len(b.eintraege) != 1 {

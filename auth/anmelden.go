@@ -57,24 +57,28 @@ func (b *fehlversuchsBremse) istGesperrt(schluessel string) bool {
 	return e.anzahl >= b.maxFehlversuche
 }
 
-// merkeFehlversuch zählt einen Fehlversuch; der erste beginnt ein neues Fenster.
+// raeumenAbEintraegen ist die Größe, ab der ein neuer Eintrag die abgelaufenen wegräumt.
+const raeumenAbEintraegen = 2000
+
+// merkeFehlversuch zählt einen Fehlversuch; der erste beginnt ein neues Fenster. Vor einem neuen
+// Eintrag räumt sie die abgelaufenen weg: Nur neue Schlüssel lassen die Map wachsen, und jeder
+// Fehlversuch mit einer neuen Adresse oder E-Mail bliebe sonst bis zum Neustart liegen.
 func (b *fehlversuchsBremse) merkeFehlversuch(schluessel string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	e, ok := b.eintraege[schluessel]
-	if !ok || time.Now().After(e.fensterEnde) {
-		b.eintraege[schluessel] = &fehlversuche{anzahl: 1, fensterEnde: time.Now().Add(b.fenster)}
+	jetzt := time.Now()
+	if e, ok := b.eintraege[schluessel]; ok && !jetzt.After(e.fensterEnde) {
+		e.anzahl++
 		return
 	}
-	e.anzahl++
-	// Abgelaufene Einträge räumen, damit die Map nicht ohne Grenze wächst.
-	if len(b.eintraege) > 2000 {
+	if len(b.eintraege) >= raeumenAbEintraegen {
 		for k, v := range b.eintraege {
-			if time.Now().After(v.fensterEnde) {
+			if jetzt.After(v.fensterEnde) {
 				delete(b.eintraege, k)
 			}
 		}
 	}
+	b.eintraege[schluessel] = &fehlversuche{anzahl: 1, fensterEnde: jetzt.Add(b.fenster)}
 }
 
 // adresseDerAnfrage liefert die Adresse des Browsers über pkg/clientip, das den vertrauten
