@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"bibliothek/repository"
@@ -33,7 +34,9 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("BC-A-123"))
 
 	resp := &AusleihErgebnis{}
-	entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", resp)
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyB, "s1", resp); err != nil {
+		t.Fatalf("entferneErfuellteVormerkung: %v", err)
+	}
 
 	if resp.RegalfreigabeBarcode != "BC-A-123" {
 		t.Errorf("Regal-Hinweis = %q, erwartet 'BC-A-123'", resp.RegalfreigabeBarcode)
@@ -60,7 +63,9 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 	// kein barcode-Lookup erwartet.
 
 	resp := &AusleihErgebnis{}
-	entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", resp)
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyA, "s1", resp); err != nil {
+		t.Fatalf("entferneErfuellteVormerkung: %v", err)
+	}
 
 	if resp.RegalfreigabeBarcode != "" {
 		t.Errorf("resp.RegalfreigabeBarcode = %q, erwartet kein Regal-Hinweis", resp.RegalfreigabeBarcode)
@@ -86,12 +91,44 @@ func TestRegalfreigabe_KeineVormerkung(t *testing.T) {
 		WillReturnError(pgx.ErrNoRows)
 
 	resp := &AusleihErgebnis{}
-	entferneErfuellteVormerkung(context.Background(), tx, copyX, "s1", resp)
+	if err := entferneErfuellteVormerkung(context.Background(), tx, copyX, "s1", resp); err != nil {
+		t.Fatalf("entferneErfuellteVormerkung: %v", err)
+	}
 
 	if resp.RegalfreigabeBarcode != "" {
 		t.Errorf("resp.RegalfreigabeBarcode = %q, erwartet kein Hinweis", resp.RegalfreigabeBarcode)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Mock-Erwartungen: %v", err)
+	}
+}
+
+// Ein Fehler der Datenbank geht an den Rufer: Nach ihm ist die Transaktion abgebrochen, und die
+// Ausleihe muss mit dem wahren Grund scheitern statt am nächsten Schritt. Gibt es nur das
+// reservierte Exemplar nicht mehr, entfällt der Regal-Hinweis, und die Ausleihe läuft weiter.
+func TestRegalfreigabe_FehlerGehtAnDenRufer(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("Mock-Pool: %v", err)
+	}
+	defer mock.Close()
+	tx := beginneTx(t, mock)
+	exemplar := &repository.Exemplar{ID: "exB", TitelID: "titel1"}
+
+	ursache := errors.New("verbindung abgebrochen")
+	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel1", "s1").WillReturnError(ursache)
+	if err := entferneErfuellteVormerkung(context.Background(), tx, exemplar, "s1", &AusleihErgebnis{}); !errors.Is(err, ursache) {
+		t.Errorf("entferneErfuellteVormerkung bei Datenbankfehler = %v, erwartet %v", err, ursache)
+	}
+
+	mock.ExpectQuery(loescheVormerkungAbfrage).WithArgs("titel1", "s1").
+		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
+	mock.ExpectQuery("SELECT barcode_id FROM buecher_exemplare").WithArgs("exA").WillReturnError(pgx.ErrNoRows)
+	resp := &AusleihErgebnis{}
+	if err := entferneErfuellteVormerkung(context.Background(), tx, exemplar, "s1", resp); err != nil || resp.RegalfreigabeBarcode != "" {
+		t.Errorf("entferneErfuellteVormerkung ohne reserviertes Exemplar = %v, Hinweis %q, erwartet nil und keinen", err, resp.RegalfreigabeBarcode)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
 	}
 }

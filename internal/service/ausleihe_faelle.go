@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"bibliothek/repository"
@@ -96,24 +97,29 @@ func deuteAnlegeFehler(err error) error {
 
 // entferneErfuellteVormerkung löscht die Vormerkung des Schülers für den Titel, den er gerade
 // ausgeliehen hat. Lag für ihn ein anderes Exemplar im Abholfach als das, das er genommen hat,
-// muss es zurück ins Regal: Seine Nummer geht als Regal-Hinweis in die Antwort. Einen Fehler
-// meldet die Funktion nicht weiter, sie schreibt ihn ins Log.
-func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, schuelerID string, erg *AusleihErgebnis) {
+// muss es zurück ins Regal: Seine Nummer geht als Regal-Hinweis in die Antwort. Einen Fehler der
+// Datenbank gibt die Funktion zurück: Nach ihm ist die Transaktion abgebrochen, und die Ausleihe
+// ließe sich ohnehin nicht festschreiben. Gibt es nur das reservierte Exemplar nicht mehr,
+// entfällt der Hinweis.
+func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, exemplar *repository.Exemplar, schuelerID string, erg *AusleihErgebnis) error {
 	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, exemplar.TitelID, schuelerID)
 	if err != nil {
-		slog.Error("ausleihe: Vormerkung konnte nicht entfernt werden", "titel", exemplar.TitelID, "fehler", err)
-		return
+		return fmt.Errorf("erfüllte vormerkung entfernen: %w", err)
 	}
 	if bereitgestellt == nil || *bereitgestellt == exemplar.ID {
-		return // keine Vormerkung, nichts reserviert, oder genau dieses Exemplar wurde genommen
+		return nil // keine Vormerkung, nichts reserviert, oder genau dieses Exemplar wurde genommen
 	}
 
 	barcode, err := repository.LadeExemplarNummer(ctx, tx, *bereitgestellt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		slog.Warn("ausleihe: das reservierte Exemplar gibt es nicht mehr", "exemplar", *bereitgestellt)
+		return nil
+	}
 	if err != nil {
-		slog.Warn("ausleihe: Barcode des reservierten Exemplars nicht ladbar", "exemplar", *bereitgestellt, "fehler", err)
-		return
+		return fmt.Errorf("nummer des reservierten exemplars laden: %w", err)
 	}
 	erg.RegalfreigabeBarcode = barcode
+	return nil
 }
 
 // verarbeiteAusleihe bucht die Ausleihe eines freien Exemplars an den geöffneten Leser.
@@ -131,7 +137,9 @@ func (d *AusleihDienst) verarbeiteAusleihe(
 	}
 
 	if vorgang.istSchueler() {
-		entferneErfuellteVormerkung(ctx, tx, exemplar, vorgang.leserID, erg)
+		if err := entferneErfuellteVormerkung(ctx, tx, exemplar, vorgang.leserID, erg); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := d.protokollAbfragen.ProtokolliereAusleihe(ctx, tx, exemplar.ID, vorgang.leserID, "", bearbeiterID); err != nil {
