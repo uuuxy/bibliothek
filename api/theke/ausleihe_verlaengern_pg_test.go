@@ -92,15 +92,16 @@ func TestAusleiheVerlaengern(t *testing.T) {
 			},
 		},
 		{
-			name:           "Happy Path - Falls back to 28 days if interval missing",
+			name:           "Happy Path - Falls back to the default interval if missing",
 			ausleiheID:     ausleiheNormal, // dieselbe Ausleihe, sie wird erneut verlängert
 			jetzt:          november,
-			extensionDays:  0, // ohne Einstellung gelten 28 Tage
+			extensionDays:  0, // ohne Einstellung gilt die Vorgabe der Leihfrist, 21 Tage
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]any) {
 				// Der vorige Fall hat die Frist bereits auf den 16.11. gesetzt. Die liegt
-				// in der Zukunft, also rechnet die Verlängerung ab ihr: 16.11. plus 28 Tage.
-				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.December, 14))
+				// in der Zukunft, also rechnet die Verlängerung ab ihr: 16.11. plus 21 Tage
+				// (repository.FristBuchTageVorgabe), wie die Ausleihe ohne Einstellung.
+				pruefeFrist(t, testdaten.LadeFrist(t, pool, ausleiheNormal), testdaten.FristEnde(2026, time.December, 7))
 			},
 		},
 		{
@@ -273,7 +274,8 @@ func TestAusleiheVerlaengern_SperrgrundNurMitRechtSchuelerdateiAnzeigenUndMahnst
 }
 
 // Die Verlängerung rechnet mit den Sommerferien aus den Einstellungen, auch für ein Jahr, das die
-// Tabelle des Programms nicht kennt. Sind die Einstellungen nicht lesbar, gelten 28 Tage.
+// Tabelle des Programms nicht kennt. Sind die Einstellungen nicht lesbar, gilt die Vorgabe der
+// Leihfrist (repository.FristBuchTageVorgabe), mit der dann auch die Ausleihe rechnet.
 func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.LeereBestandsdaten(t, pool)
@@ -303,11 +305,11 @@ func TestAusleiheVerlaengern_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t
 	})
 	pruefeFrist(t, testdaten.LadeFrist(t, pool, inDenFerien), testdaten.FristEnde(2031, time.August, 18))
 
-	// Montag 02.11.2026 plus 28 Tage ist Montag, der 30.11.2026.
+	// Montag 02.11.2026 plus 21 Tage ist Montag, der 23.11.2026.
 	ohneEinstellungen := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch ohne Einstellungen", alteFrist)
 	verlaengere(ohneEinstellungen, time.Date(2026, time.November, 2, 10, 0, 0, 0, schulzeit.Zone()),
 		&tuertest.EinstellungenAttrappe{Fehler: errors.New("einstellungen nicht lesbar")})
-	pruefeFrist(t, testdaten.LadeFrist(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 30))
+	pruefeFrist(t, testdaten.LadeFrist(t, pool, ohneEinstellungen), testdaten.FristEnde(2026, time.November, 23))
 }
 
 // Ging die Antwort auf eine Verlängerung verloren, verlängerte der zweite Auftrag noch einmal: Aus
