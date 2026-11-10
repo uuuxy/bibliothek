@@ -98,8 +98,8 @@ func (d *AusleihDienst) bestimmeFristAm(ctx context.Context, exemplar *repositor
 			IstLernmittel:   exemplar.IstLernmittel,
 			Medientyp:       exemplar.Medientyp,
 			LMFStichtag:     repository.LMFStichtagVorgabe,
-			FristBuchTage:   21,
-			FristMedienTage: 7,
+			FristBuchTage:   repository.FristBuchTageVorgabe,
+			FristMedienTage: repository.FristMedienTageVorgabe,
 			ZusatzJahre:     zusatzJahre,
 			Sommerferien:    "",
 		}), nil

@@ -134,6 +134,14 @@ func NewEinstellungsAbfragen(pool db.Pool) *EinstellungsAbfragen {
 	return &EinstellungsAbfragen{db: pool}
 }
 
+// Die Leihfristen, solange keine eingestellt ist. Wer die Einstellungen nicht lesen kann, rechnet
+// mit denselben Werten (Ausleihe und Verlängerung); zwei Vorgaben für dieselbe Frist gäben je nach
+// Weg verschiedene Fristen.
+const (
+	FristBuchTageVorgabe   = 21
+	FristMedienTageVorgabe = 7
+)
+
 // einstellungenVorgabe liefert die Werte, die gelten, solange zu einem Schlüssel keine Zeile
 // gespeichert ist.
 func einstellungenVorgabe() *SystemEinstellungen {
@@ -142,8 +150,8 @@ func einstellungenVorgabe() *SystemEinstellungen {
 		LMFEingangsjahrgaenge:      lmfEingangsjahrgaengeVorgabe,
 		SommerferienProgramm:       lmfplan.ProgrammEintraege(),
 		MaxAusleihenSchueler:       5,
-		FristBuchTage:              21,
-		FristMedienTage:            7,
+		FristBuchTage:              FristBuchTageVorgabe,
+		FristMedienTage:            FristMedienTageVorgabe,
 		UeberfaelligKarenzTage:     14,
 		UeberfaelligSperreAbMedien: 1,
 		// Die Warnung ist an; die Schwelle 3 hält sie ruhig, bis die Schule sie einstellt.

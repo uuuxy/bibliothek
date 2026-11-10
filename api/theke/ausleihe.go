@@ -277,13 +277,14 @@ func leseFaelligAm(text string) (time.Time, error) {
 }
 
 // verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den
-// Einstellungen. Sind sie nicht lesbar, gelten 28 Tage und die Ferientabelle des Programms.
+// Einstellungen. Sind sie nicht lesbar, gelten die Vorgabe der Leihfrist, mit der auch die
+// Ausleihe dann rechnet, und die Ferientabelle des Programms.
 func verlaengerungsRegel(ctx context.Context, einstellungsAbfragen einstellungsAbruf) (tage int, sommerferien string) {
 	einstellungen, err := einstellungsAbfragen.Lade(ctx)
 	if err != nil {
-		return 28, ""
+		return repository.FristBuchTageVorgabe, ""
 	}
-	tage = 28
+	tage = repository.FristBuchTageVorgabe
 	if einstellungen.FristBuchTage > 0 {
 		tage = einstellungen.FristBuchTage
 	}
