@@ -134,12 +134,15 @@ func pruefeKeineOffenenVorgaenge(ctx context.Context, tx pgx.Tx, leserID string)
 }
 
 // tilgeSpurenUndLoescheLeser ist das endgültige Löschen für beide Wege, aus dem Papierkorb und
-// für Abgänger: Die Ausleihen verlieren ihren Leser, die erledigten Schadensfälle werden
-// gelöscht, die Spuren in den Nebentabellen getilgt (TilgeSchuelerSpuren, dabei fallen auch die
+// für Abgänger: Die zurückgegebenen Ausleihen verlieren ihren Leser, die erledigten Schadensfälle
+// werden gelöscht, die Spuren in den Nebentabellen getilgt (TilgeSchuelerSpuren, dabei fallen auch die
 // Vormerkungen), die Zeile des Lesers entfernt und das Löschen ohne Personenbezug
 // protokolliert.
 func tilgeSpurenUndLoescheLeser(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID, kontextText string) error {
-	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1`, leserID); err != nil {
+	// Eine offene Ausleihe behält ihren Leser, und der Fremdschlüssel hält das Löschen auf. Die
+	// Rufer prüfen vorher (pruefeKeineOffenenVorgaenge); dies ist die letzte Sicherung, falls eine
+	// Ausleihe dazwischen entsteht.
+	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1 AND rueckgabe_am IS NOT NULL`, leserID); err != nil {
 		return fmt.Errorf("anonymizing loans: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `DELETE FROM schadensfaelle WHERE schueler_id = $1`, leserID); err != nil {
