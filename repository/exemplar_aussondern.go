@@ -33,6 +33,20 @@ const sqlIstImHaus = `e.ist_ausgesondert = false AND ` + sqlWarImBestand + ` AND
 const sqlSetzeAusgesondert = `ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = $2, ` +
 	`bestellstatus = NULL, letzte_bewegung_am = ` + sqlStempelJetzt
 
+// sperreExemplareDerTitel sperrt die Exemplare der Titel, die nicht ausgesondert sind, bis zum
+// Ende der Transaktion. Ein Aussondern mit der Bedingung „nicht verliehen" ruft es vor seiner
+// Anweisung: Wartet ein UPDATE auf eine Zeile, die die Theke gerade verleiht, prüft Postgres
+// danach nur die Zeile neu und nicht die Ausleihen. Erst eine Anweisung nach der Sperre sieht sie.
+func sperreExemplareDerTitel(ctx context.Context, q Datenbank, titelIDs []string) error {
+	_, err := q.Exec(ctx, `SELECT e.id FROM buecher_exemplare e
+		WHERE e.titel_id = ANY($1::uuid[]) AND e.ist_ausgesondert = false
+		ORDER BY e.id FOR UPDATE`, titelIDs)
+	if err != nil {
+		return fmt.Errorf("exemplare sperren: %w", err)
+	}
+	return nil
+}
+
 // SondereExemplarAus sondert ein Exemplar mit dem genannten Grund aus („Exemplar löschen" in der
 // Buchakte) und schreibt den Eintrag dazu. Die Zeile bleibt in der Tabelle und steht im
 // Abgangsbuch; Ausleihen und Schadensfälle hängen an ihr. Ein verliehenes Exemplar lehnt es ab:
@@ -47,12 +61,16 @@ func (a *KatalogAbfragen) SondereExemplarAus(ctx context.Context, exemplarID, gr
 
 	// Was der Eintrag nennt, wird vor dem Ändern gelesen. Ein unbekanntes Exemplar ist ein
 	// Fehler: Sonst entstünde ein Eintrag über ein Aussondern, das es nicht gab.
+	//
+	// Die Zeile wird dabei gesperrt, und gezählt wird erst danach: Die Theke schreibt eine
+	// Ausleihe nur unter derselben Sperre, die Zählung sieht also jede, die vorher entstand.
 	var barcode, titel, titelID string
 	err = tx.QueryRow(ctx,
 		`SELECT e.barcode_id, e.titel_id, t.titel
 		 FROM buecher_exemplare e
 		 JOIN buecher_titel t ON e.titel_id = t.id
-		 WHERE e.id = $1`,
+		 WHERE e.id = $1
+		 FOR UPDATE OF e`,
 		exemplarID,
 	).Scan(&barcode, &titelID, &titel)
 	if errors.Is(err, pgx.ErrNoRows) {

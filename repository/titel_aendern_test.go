@@ -168,6 +168,7 @@ func TestGleicheBestandAb(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
+		erwarteSperreDerExemplare(mock, "book-123")
 		// Zwei ungenutzte aussondern.
 		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
 			WithArgs("book-123", 2).
@@ -188,6 +189,7 @@ func TestGleicheBestandAb(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
+		erwarteSperreDerExemplare(mock, "book-123")
 		// Zwei ungenutzte aussondern, aber nur eines gefunden.
 		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
 			WithArgs("book-123", 2).
@@ -235,6 +237,13 @@ func TestGleicheBestandAb(t *testing.T) {
 			t.Errorf("offene Erwartungen: %v", err)
 		}
 	})
+}
+
+// erwarteSperreDerExemplare erwartet die Sperre der Exemplare des Titels vor dem Aussondern.
+func erwarteSperreDerExemplare(mock pgxmock.PgxPoolIface, titelID string) {
+	mock.ExpectExec(`SELECT e.id FROM buecher_exemplare e`).
+		WithArgs([]string{titelID}).
+		WillReturnResult(pgxmock.NewResult("SELECT", 5))
 }
 
 // erwarteAussonderungsSpur erwartet den Protokolleintrag für die genannten Exemplare.

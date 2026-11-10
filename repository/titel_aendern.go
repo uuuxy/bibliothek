@@ -344,6 +344,9 @@ func (a *TitelAbfragen) gleicheExemplareAn(ctx context.Context, q Datenbank, tit
 		return ErrAussonderungOhneBearbeiter
 	}
 	auszusondern := aktuellerBestand - erwarteterBestand
+	if err := sperreExemplareDerTitel(ctx, q, []string{titelID}); err != nil {
+		return err
+	}
 
 	// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
 	//

@@ -32,6 +32,24 @@ func istEigeneRueckgabe(vorgang *ausleihVorgang, offeneAusleihe *repository.Ausl
 	return offeneAusleihe.SchuelerID != nil && *offeneAusleihe.SchuelerID == vorgang.leserID
 }
 
+// sperreUndPruefeExemplar sperrt die Zeile des Exemplars, nach Leser und Ausleihe wie beim
+// Nachbuchen, und liest seinen Stand unter der Sperre neu. Der Scan hat das Exemplar vor der
+// Transaktion gelesen; wurde es seitdem ausgesondert oder gesperrt, etwa vom Abschluss einer
+// Inventur, entsteht keine Ausleihe, und der nächste Scan holt es zurück wie jedes andere.
+func sperreUndPruefeExemplar(ctx context.Context, tx pgx.Tx, exemplarID string, neueAusleihe bool) error {
+	stand, err := repository.SperreExemplarzeile(ctx, tx, exemplarID)
+	if err != nil || !neueAusleihe {
+		return err
+	}
+	if stand.Ausgesondert {
+		return meldung(ErrUngueltigerZustand, "Das Buch wurde eben ausgesondert. Ein zweiter Scan reaktiviert es.")
+	}
+	if !stand.Ausleihbar {
+		return meldung(ErrUngueltigerZustand, "Das Buch wurde eben gesperrt. Ein zweiter Scan reaktiviert es.")
+	}
+	return nil
+}
+
 // pruefeSchuelerAusleihlimit hält das Ausleihlimit eines Schülers. Lernmittel und jede Rückgabe
 // sind ausgenommen: Bei einer Rückgabe entsteht keine Ausleihe, die zählen könnte.
 func (d *AusleihDienst) pruefeSchuelerAusleihlimit(ctx context.Context, vorgang *ausleihVorgang, exemplar *repository.Exemplar, anzahlOffene int, neueAusleihe bool) error {
@@ -111,6 +129,10 @@ func (d *AusleihDienst) BucheAmLeser(
 	// Eine Ausleihe entsteht nur am freien Exemplar. Beide Rückgaben nehmen bloß zurück; die
 	// Fremdrückgabe bekommt den Vorgang nicht einmal.
 	neueAusleihe := offeneAusleihe == nil
+
+	if err := sperreUndPruefeExemplar(ctx, tx, exemplar.ID, neueAusleihe); err != nil {
+		return nil, err
+	}
 
 	// Die Schranken der Ausleihe (Sperren, Ausleihlimit, fremde Vormerkung) gelten nur, wenn
 	// wirklich eine Ausleihe entsteht: Wer gesperrt oder am Limit ist, muss sein Buch und auch

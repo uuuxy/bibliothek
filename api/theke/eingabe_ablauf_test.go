@@ -66,6 +66,11 @@ func TestAusleiheAnDerTheke(t *testing.T) {
 		WithArgs(exemplar.ID).
 		WillReturnRows(pgxmock.NewRows([]string{}))
 
+	// repository.SperreExemplarzeile: Unter der Sperre ist das Exemplar weiter ausleihbar.
+	mock.ExpectQuery("SELECT ist_ausleihbar, ist_ausgesondert, letzte_bewegung_am FROM buecher_exemplare WHERE id = \\$1 FOR UPDATE").
+		WithArgs(exemplar.ID).
+		WillReturnRows(pgxmock.NewRows([]string{"ist_ausleihbar", "ist_ausgesondert", "letzte_bewegung_am"}).AddRow(true, false, nil))
+
 	// Sperrgründe erst jetzt, nach dem Lesen der Ausleihe, weil die eigene Rückgabe nie
 	// gesperrt ist: offene Schäden (0), Einstellungen, Überfällige (0).
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\) FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").

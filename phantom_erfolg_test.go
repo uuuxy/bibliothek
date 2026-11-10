@@ -85,6 +85,10 @@ var phantomBestand = map[string]int{
 	// Exemplar). Die Anweisung sperrt und schreibt nicht; dass es den Leser gibt, steht beim
 	// Aufrufer schon fest. Null Zeilen meldet hier niemand als Erfolg.
 	"repository/ausleihe_zeilensperren.go:SperreLeserzeile": 1,
+	// Sperre der Exemplare vor einem Aussondern mit der Bedingung „nicht verliehen". Die
+	// Anweisung sperrt und schreibt nicht; null Zeilen heißt, kein Exemplar steht mehr im Bestand,
+	// und die folgende Anweisung sondert dann auch nichts aus.
+	"repository/exemplar_aussondern.go:sperreExemplareDerTitel": 1,
 	// Signaturen aus dem Bestands-Import: Null Zeilen heißt, der Titel wurde seit dem Laden des
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,

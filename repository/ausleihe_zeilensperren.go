@@ -21,7 +21,7 @@ func SperreLeserzeile(ctx context.Context, tx pgx.Tx, leserID string) error {
 	return err
 }
 
-// ExemplarStand ist der Stand eines Exemplars, den das Nachbuchen unter der Sperre liest.
+// ExemplarStand ist der Stand eines Exemplars, den Scan und Nachbuchen unter der Sperre lesen.
 type ExemplarStand struct {
 	Ausleihbar   bool
 	Ausgesondert bool

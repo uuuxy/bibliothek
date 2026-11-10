@@ -140,6 +140,9 @@ func sondereExemplareImHausAus(ctx context.Context, tx pgx.Tx, titelIDs []string
 	if len(titelIDs) == 0 {
 		return nil
 	}
+	if err := sperreExemplareDerTitel(ctx, tx, titelIDs); err != nil {
+		return err
+	}
 	zeilen, err := tx.Query(ctx, `
 		UPDATE buecher_exemplare e SET `+sqlSetzeAusgesondert+`
 		WHERE e.titel_id = ANY($1::uuid[]) AND `+sqlIstImHaus+`
