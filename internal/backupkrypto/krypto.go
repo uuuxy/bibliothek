@@ -27,6 +27,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
+	"io"
 
 	"golang.org/x/crypto/scrypt"
 )
@@ -93,6 +94,16 @@ func Entschluessele(passphrase string, daten []byte) ([]byte, error) {
 		return nil, fmt.Errorf("scrypt-Ableitung: %w", err)
 	}
 	return oeffneGCM(schluessel, hinterSalt)
+}
+
+// HatKopf sagt, ob der Leser mit Kennung und Fassung des Formats beginnt. Der Stand der
+// Sicherungen prüft damit eine Datei, ohne sie ganz zu lesen.
+func HatKopf(r io.Reader) bool {
+	kopf := make([]byte, len(kennung)+1)
+	if _, err := io.ReadFull(r, kopf); err != nil {
+		return false
+	}
+	return IstScryptFormat(kopf)
 }
 
 // IstScryptFormat prüft Kennung und Fassung am Anfang der Datei. Dass eine Datei im früheren

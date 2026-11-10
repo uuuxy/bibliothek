@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/internal/backupkrypto"
 	"bibliothek/pkg/closeutil"
 )
 
@@ -42,6 +43,23 @@ func (d BackupDatei) SicherungsZeit() time.Time {
 		return t
 	}
 	return d.GeaendertAm
+}
+
+// HatKopf sagt, ob die Sicherung im Verzeichnis mit dem Kopf ihres Formats beginnt. Eine leere
+// oder fremde Datei unter dem Namen einer Sicherung lässt sich nicht zurückspielen; der Stand der
+// Sicherungen zählt sie nicht.
+func (d BackupDatei) HatKopf(verzeichnis string) bool {
+	wurzel, err := os.OpenRoot(verzeichnis)
+	if err != nil {
+		return false
+	}
+	defer closeutil.Schliesse(wurzel, "backup dir")
+	datei, err := wurzel.Open(d.Name)
+	if err != nil {
+		return false
+	}
+	defer closeutil.Schliesse(datei, "backup file")
+	return backupkrypto.HatKopf(datei)
 }
 
 // LeseBackupDateien liest die backup_*.sql.gz.enc des Verzeichnisses, nach Namen sortiert; die

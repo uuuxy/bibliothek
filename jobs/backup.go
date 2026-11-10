@@ -3,8 +3,10 @@ package jobs
 import (
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"math"
 	"os"
@@ -79,10 +81,7 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 		return
 	}
 
-	// Die verschlüsselte Sicherung mit engen Rechten auf die Platte schreiben: nur der
-	// Eigentümer liest.
-	// #nosec G304 - zieldatei entsteht aus BACKUP_DIR und einem Zeitstempel
-	if err := os.WriteFile(zieldatei, verschluesselt, 0600); err != nil {
+	if err := schreibeSicherungsdatei(zieldatei, verschluesselt); err != nil {
 		// #nosec G706
 		slog.Error("Backup: writing backup file failed", "fehler", err)
 		return
@@ -99,6 +98,44 @@ func (b *BackupLauf) FuehreAus(ctx context.Context) {
 
 	// Aufbewahrung: die jüngsten Nächte und je Woche ein älterer Stand (backup_aufbewahrung.go).
 	rotiereBackups(verzeichnis, AufbewahrteNaechte, AufbewahrteWochen)
+}
+
+// endungUnfertig trägt eine Sicherung, solange sie geschrieben wird. LeseBackupDateien sieht sie
+// nicht (backupEndung): Ein Absturz beim Schreiben hinterlässt keine Datei, die als Sicherung zählt.
+const endungUnfertig = ".teil"
+
+// schreibeSicherungsdatei schreibt die verschlüsselte Sicherung unter vorläufigem Namen, bringt sie
+// auf die Platte und benennt sie dann um. Unter dem endgültigen Namen steht so nie eine halbe Datei.
+func schreibeSicherungsdatei(zieldatei string, daten []byte) error {
+	vorlaeufig := zieldatei + endungUnfertig
+	err := schreibeUndSichere(vorlaeufig, daten)
+	if err == nil {
+		err = os.Rename(vorlaeufig, zieldatei)
+	}
+	if err != nil {
+		if loeschFehler := os.Remove(vorlaeufig); loeschFehler != nil && !errors.Is(loeschFehler, fs.ErrNotExist) {
+			// #nosec G706
+			slog.Warn("Backup: unfinished file not removed", "datei", vorlaeufig, "fehler", loeschFehler)
+		}
+	}
+	return err
+}
+
+// schreibeUndSichere schreibt die Daten in eine Datei, die nur der Eigentümer liest, und wartet,
+// bis sie auf der Platte stehen.
+func schreibeUndSichere(pfad string, daten []byte) error {
+	// #nosec G304 - der Pfad entsteht aus BACKUP_DIR und einem Zeitstempel
+	datei, err := os.OpenFile(pfad, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := datei.Write(daten); err != nil {
+		return errors.Join(err, datei.Close())
+	}
+	if err := datei.Sync(); err != nil {
+		return errors.Join(err, datei.Close())
+	}
+	return datei.Close()
 }
 
 // leseBackupUmgebung liest die Umgebungsvariablen der Sicherung und legt bei Bedarf das
@@ -277,6 +314,37 @@ func rotiereBackups(verzeichnis string, naechte, wochen int) {
 		} else {
 			// #nosec G706
 			slog.Info("Backup rotation: deleted old backup", "datei", d.Name)
+		}
+	}
+	loescheUnfertige(wurzel)
+}
+
+// loescheUnfertige räumt weg, was ein abgebrochener Lauf unter vorläufigem Namen hinterließ
+// (endungUnfertig). Die Aufbewahrung läuft nach einem gelungenen Lauf, und Läufe überschneiden
+// sich nicht: Eine solche Datei gehört keinem laufenden Schreiben.
+func loescheUnfertige(wurzel *os.Root) {
+	verzeichnis, err := wurzel.Open(".")
+	if err != nil {
+		slog.Warn("Backup rotation: unfinished files not checked", "fehler", err)
+		return
+	}
+	defer closeutil.Schliesse(verzeichnis, "backup dir")
+	eintraege, err := verzeichnis.ReadDir(-1)
+	if err != nil {
+		slog.Warn("Backup rotation: unfinished files not checked", "fehler", err)
+		return
+	}
+	for _, e := range eintraege {
+		name := e.Name()
+		if e.IsDir() || !strings.HasPrefix(name, backupPraefix) || !strings.HasSuffix(name, backupEndung+endungUnfertig) {
+			continue
+		}
+		if err := wurzel.Remove(name); err != nil {
+			// #nosec G706
+			slog.Warn("Backup rotation: failed to delete unfinished file", "datei", name, "fehler", err)
+		} else {
+			// #nosec G706
+			slog.Info("Backup rotation: deleted unfinished file", "datei", name)
 		}
 	}
 }

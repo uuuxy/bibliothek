@@ -32,6 +32,11 @@ Die Dateien liegen im **Docker-Volume `bibliothek_backups`** (`/app/backups` im 
   eine für **12** Wochen — zusammen etwa drei Monate (`jobs/backup_aufbewahrung.go`). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
   von davor.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind; dort gilt dieselbe Rotation.
+- Die Datei entsteht als `backup_<ZEITSTEMPEL>.sql.gz.enc.teil`, wird auf die Platte gebracht und
+  erst dann umbenannt. Eine `.teil`-Datei stammt von einem abgebrochenen Lauf: Sie zählt nirgends
+  (Aufbewahrung, Restore-Probe, Stand), und der nächste gelungene Lauf löscht sie. Der Stand der Sicherungen im
+  Fuß der Navigation und auf der Betriebsbereitschafts-Seite zählt nur Dateien mit der
+  `BKDF`-Kennung; eine leere Datei gilt dort nicht als Sicherung.
 
 > ⚠️ **Wichtig:** Diese Dateien sind verschlüsselt. `zcat`/`gunzip`/`psql` funktionieren darauf **nicht**
 > direkt — sie müssen zuerst mit dem `restore-backup`-Tool entschlüsselt werden (siehe Abschnitt 2a).

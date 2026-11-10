@@ -24,8 +24,9 @@ type backupStandAntwort struct {
 
 // juengstesBackup liefert den Zeitpunkt der jüngsten Sicherung (jobs.BackupDatei.SicherungsZeit)
 // oder nil, wenn (noch) keine existiert. Nach dem Zurückspielen des Ordners meldete die
-// Änderungszeit eine frische Sicherung, auch wenn seit Wochen keine entstanden ist. Ein fehlendes
-// Verzeichnis ist kein Fehler, sondern schlicht "kein Backup vorhanden".
+// Änderungszeit eine frische Sicherung, auch wenn seit Wochen keine entstanden ist. Eine Datei ohne
+// den Kopf des Formats zählt nicht (jobs.BackupDatei.HatKopf). Ein fehlendes Verzeichnis ist kein
+// Fehler, sondern schlicht "kein Backup vorhanden".
 func juengstesBackup(verzeichnis string) *time.Time {
 	dateien, err := jobs.LeseBackupDateien(verzeichnis)
 	if err != nil || len(dateien) == 0 {
@@ -33,7 +34,7 @@ func juengstesBackup(verzeichnis string) *time.Time {
 	}
 	var juengstes time.Time
 	for _, d := range dateien {
-		if zeit := d.SicherungsZeit(); zeit.After(juengstes) {
+		if zeit := d.SicherungsZeit(); zeit.After(juengstes) && d.HatKopf(verzeichnis) {
 			juengstes = zeit
 		}
 	}
