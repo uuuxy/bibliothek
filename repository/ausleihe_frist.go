@@ -33,13 +33,29 @@ func VerlaengereAusleihe(ctx context.Context, db Datenbank, ausleiheID string, n
 	return id, frist, err
 }
 
+// FristVorDerAusleihe heißt: Die Frist von Hand läge vor dem Zeitpunkt der Ausleihe.
+type FristVorDerAusleihe struct {
+	Ausgeliehen time.Time
+}
+
+func (e *FristVorDerAusleihe) Error() string {
+	return "frist vor der ausleihe vom " + e.Ausgeliehen.Format(time.RFC3339)
+}
+
 // SetzeAusleihFrist setzt die Frist einer offenen Ausleihe von Hand und liefert Kennung und
-// gespeicherte Frist; pgx.ErrNoRows, wenn die Ausleihe nicht mehr offen ist.
-//
-// Wie bei der Verlängerung: Eine neue Frist in der Zukunft macht die Ausleihe wieder „nicht
-// überfällig" und beginnt die Mahnfolge neu. Ein vorgezogenes Datum (Rückruf) lässt die
-// Mahnstufe unberührt.
+// gespeicherte Frist; pgx.ErrNoRows, wenn die Ausleihe nicht mehr offen ist, und
+// *FristVorDerAusleihe für ein Datum vor der Ausleihe. Ein vorgezogenes Datum (Rückruf) lässt die
+// Mahnstufe unberührt; eine neue Frist in der Zukunft macht die Ausleihe wie bei der Verlängerung
+// wieder „nicht überfällig" und beginnt die Mahnfolge neu.
 func SetzeAusleihFrist(ctx context.Context, db Datenbank, ausleiheID string, neueFrist time.Time) (id string, frist time.Time, err error) {
+	var ausgeliehen time.Time
+	if err := db.QueryRow(ctx, `SELECT ausgeliehen_am FROM ausleihen WHERE id = $1 AND rueckgabe_am IS NULL`,
+		ausleiheID).Scan(&ausgeliehen); err != nil {
+		return "", time.Time{}, err
+	}
+	if neueFrist.Before(ausgeliehen) {
+		return "", time.Time{}, &FristVorDerAusleihe{Ausgeliehen: ausgeliehen}
+	}
 	q := `
 			UPDATE ausleihen
 			SET rueckgabe_frist = $1,

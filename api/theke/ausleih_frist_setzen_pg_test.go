@@ -15,7 +15,19 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// beginneAusleihenVorDerAltenFrist legt den Beginn der Ausleihen auf den 03.01.2022, vor ihre
+// alte Frist: Ein Rückruf auf den 01.06.2022 liegt dann nach dem Tag der Ausleihe.
+func beginneAusleihenVorDerAltenFrist(t *testing.T, pool *pgxpool.Pool, ausleiheIDs ...string) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(), `UPDATE ausleihen SET ausgeliehen_am = '2022-01-03T08:00:00+01:00'
+		WHERE id = ANY($1::uuid[])`, ausleiheIDs); err != nil {
+		t.Fatalf("Beginn der Ausleihen setzen: %v", err)
+	}
+}
 
 // Die Frist von Hand darf bei einem gesperrten Schüler die Sanktion nicht aushebeln: Eine
 // Frist in der Zukunft macht die Ausleihe wieder "nicht überfällig" und löscht die
@@ -46,6 +58,7 @@ func TestAusleihFristSetzen_SperrKonsistenzUndProtokoll(t *testing.T) {
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 	ausleiheNormal := testdaten.LegeAusleiheMitFristAn(t, pool, sidNormal, "Buch Normal", alteFrist)
 	ausleiheGesperrt := testdaten.LegeAusleiheMitFristAn(t, pool, sidGesperrt, "Buch Gesperrt", alteFrist)
+	beginneAusleihenVorDerAltenFrist(t, pool, ausleiheNormal, ausleiheGesperrt)
 
 	zukunft := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
 	vergangenheit := "2022-06-01"
@@ -185,6 +198,7 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch Tuer", alteFrist)
 	zurueck := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch zurueck", alteFrist)
+	beginneAusleihenVorDerAltenFrist(t, pool, ausleihe, zurueck)
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1`, zurueck); err != nil {
 		t.Fatalf("Rückgabe buchen: %v", err)
 	}
@@ -293,5 +307,50 @@ func TestAusleihFristSetzen_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 	}
 	if len(protokolliert) != 2 || !protokolliert[1].Equal(stempel) {
 		t.Errorf("Protokoll nennt die Fristen %v — erwartet zwei Einträge, der zweite mit %s", protokolliert, stempel.Format(time.RFC3339))
+	}
+}
+
+// Eine Frist von Hand vor dem Tag der Ausleihe ist ein Tippfehler; die Antwort nennt den Tag.
+// Der Tag der Ausleihe selbst geht als Rückruf durch.
+func TestAusleihFristSetzen_NichtVorDemTagDerAusleihe(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	adminID := testdaten.LegeKontoAn(t, pool, "Tag", "Admin", "frist-tag@test.invalid", "admin", true)
+	sid := testdaten.LegeSchuelerAn(t, pool, "S-FTA-1", "Tag", "5a")
+	frist := time.Now().AddDate(0, 0, 21)
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, sid, "Buch Tag", frist)
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET ausgeliehen_am = '2026-09-01T10:00:00+02:00' WHERE id = $1`, ausleihe); err != nil {
+		t.Fatalf("Beginn der Ausleihe setzen: %v", err)
+	}
+
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	mux := http.NewServeMux()
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.AusleihFristSetzen(repository.NewProtokollAbfragen(pool)))
+	rufe := func(datum string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleihe+"/faelligkeit",
+			strings.NewReader(`{"faellig_am":"`+datum+`"}`))
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel,
+			&auth.Claims{KontoID: adminID, Rolle: auth.RolleAdmin}))
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		return w
+	}
+
+	for _, datum := range []string{"2026-08-31", "1926-03-01", "0001-01-01"} {
+		w := rufe(datum)
+		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "vor dem Tag der Ausleihe, dem 01.09.2026") {
+			t.Errorf("Frist %s: Status %d, %s, erwartet 400 mit dem Tag der Ausleihe", datum, w.Code, w.Body.String())
+		}
+	}
+	var gespeichert time.Time
+	if err := pool.QueryRow(ctx, `SELECT rueckgabe_frist FROM ausleihen WHERE id = $1`, ausleihe).Scan(&gespeichert); err != nil {
+		t.Fatalf("Frist lesen: %v", err)
+	}
+	if !gespeichert.Equal(frist.Truncate(time.Microsecond)) {
+		t.Errorf("Frist nach den Ablehnungen = %s, erwartet unverändert %s", gespeichert, frist)
+	}
+	if w := rufe("2026-09-01"); w.Code != http.StatusOK {
+		t.Errorf("Frist am Tag der Ausleihe: Status %d, %s, erwartet 200", w.Code, w.Body.String())
 	}
 }
