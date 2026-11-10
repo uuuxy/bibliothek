@@ -4,6 +4,7 @@ package sse
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,6 +22,22 @@ const pufferJeFenster = 10
 // Sekunden ohne Lebenszeichen (App.svelte).
 const lebenszeichenTakt = 15 * time.Second
 
+// hoechstensJeKonto ist die Zahl der Ströme, die ein Konto zugleich offen halten darf: einer je
+// Fenster, auch über mehrere Rechner. Jeder Strom hält einen Faden und fragt alle 15 Sekunden die
+// Datenbank, ob die Anmeldung noch gilt; ohne Grenze bremste ein einziges Konto mit vielen Strömen
+// Server und Datenbank aus.
+const hoechstensJeKonto = 20
+
+// hoechstensGesamt begrenzt die Ströme aller Konten zusammen.
+const hoechstensGesamt = 1000
+
+// Die Gründe, aus denen meldeAn einen Strom abweist.
+var (
+	errHerunterfahren = errors.New("broker fährt herunter")
+	errZuVieleJeKonto = errors.New("höchstzahl der ströme je konto erreicht")
+	errZuVieleGesamt  = errors.New("höchstzahl aller ströme erreicht")
+)
+
 // Broker verteilt Ereignisse an alle offenen Ströme.
 //
 // Der Zustand liegt hinter einem RWMutex statt hinter einer Ereignisschleife mit Kanälen zum
@@ -28,16 +45,29 @@ const lebenszeichenTakt = 15 * time.Second
 // aus den Kanälen, jede Tür bleibt beim Abmelden stehen, und httpServer.Shutdown wartet bis
 // zu seiner Frist.
 type Broker struct {
-	mu          sync.RWMutex
-	fenster     map[chan string]struct{}
-	geschlossen bool
+	mu sync.RWMutex
+	// fenster ordnet jedem offenen Strom das Konto zu, das ihn geöffnet hat.
+	fenster map[chan string]string
+	jeKonto map[string]int
+	// gemeldet sind die Konten, deren Abweisung schon im Log steht, solange sie an der Grenze
+	// bleiben; gesamtGemeldet dasselbe für die Grenze aller Ströme. Ein Konto, das immer wieder
+	// anklopft, schreibt so eine Zeile und nicht eine je Versuch.
+	gemeldet       map[string]bool
+	gesamtGemeldet bool
+	geschlossen    bool
 	// takt ist der Abstand der Lebenszeichen; ein Test verkürzt ihn, statt 15 Sekunden zu warten.
 	takt time.Duration
+	// grenzeJeKonto und grenzeGesamt sind hoechstensJeKonto und hoechstensGesamt; ein Test setzt
+	// sie klein.
+	grenzeJeKonto, grenzeGesamt int
 }
 
 // NewBroker baut einen Broker ohne angemeldete Fenster.
 func NewBroker() *Broker {
-	return &Broker{fenster: make(map[chan string]struct{}), takt: lebenszeichenTakt}
+	return &Broker{
+		fenster: make(map[chan string]string), jeKonto: make(map[string]int), gemeldet: make(map[string]bool),
+		takt: lebenszeichenTakt, grenzeJeKonto: hoechstensJeKonto, grenzeGesamt: hoechstensGesamt,
+	}
 }
 
 // FuehreAus hält den Broker am Leben, bis ctx abgebrochen wird, und fährt ihn dann herunter;
@@ -64,22 +94,38 @@ func (b *Broker) fahreHerunter() {
 		close(kanal)
 		delete(b.fenster, kanal)
 	}
+	clear(b.jeKonto)
 	slog.Info("SSE: Broker heruntergefahren, alle Ströme geschlossen")
 }
 
-// meldeAn meldet einen neuen Strom an. nil heißt, dass der Broker gerade herunterfährt: Die
-// Tür weist die Anfrage dann ab, statt zu warten.
-func (b *Broker) meldeAn() chan string {
+// meldeAn meldet einen neuen Strom des Kontos an. Fährt der Broker gerade herunter oder ist eine
+// Grenze erreicht, weist er ihn mit dem Grund ab, und die Tür antwortet sofort, statt zu warten.
+func (b *Broker) meldeAn(konto string) (chan string, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	if b.geschlossen {
-		return nil
+		return nil, errHerunterfahren
+	}
+	if b.jeKonto[konto] >= b.grenzeJeKonto {
+		if !b.gemeldet[konto] {
+			b.gemeldet[konto] = true
+			slog.Warn("SSE: Höchstzahl der Ströme je Konto erreicht, weitere werden abgewiesen", "konto", konto, "grenze", b.grenzeJeKonto)
+		}
+		return nil, errZuVieleJeKonto
+	}
+	if len(b.fenster) >= b.grenzeGesamt {
+		if !b.gesamtGemeldet {
+			b.gesamtGemeldet = true
+			slog.Error("SSE: Höchstzahl aller Ströme erreicht, weitere werden abgewiesen", "grenze", b.grenzeGesamt)
+		}
+		return nil, errZuVieleGesamt
 	}
 	kanal := make(chan string, pufferJeFenster)
-	b.fenster[kanal] = struct{}{}
+	b.fenster[kanal] = konto
+	b.jeKonto[konto]++
 	slog.Info("SSE: New client registered")
-	return kanal
+	return kanal, nil
 }
 
 // meldeAb meldet einen Strom ab und schließt seinen Kanal. Ein zweiter Aufruf tut nichts: Nach
@@ -89,11 +135,21 @@ func (b *Broker) meldeAb(kanal chan string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if _, offen := b.fenster[kanal]; !offen {
+	konto, offen := b.fenster[kanal]
+	if !offen {
 		return
 	}
 	delete(b.fenster, kanal)
 	close(kanal)
+	if b.jeKonto[konto]--; b.jeKonto[konto] <= 0 {
+		delete(b.jeKonto, konto)
+	}
+	if b.jeKonto[konto] < b.grenzeJeKonto {
+		delete(b.gemeldet, konto)
+	}
+	if len(b.fenster) < b.grenzeGesamt {
+		b.gesamtGemeldet = false
+	}
 	slog.Info("SSE: Client disconnected")
 }
 
@@ -121,14 +177,20 @@ func (b *Broker) Verteile(ereignis, daten string) {
 //
 // Vor jedem Lebenszeichen fragt die Tür gilt, ob die Anmeldung noch gilt, mit der der Strom
 // aufgebaut wurde, und beendet ihn sonst. Der Strom hat keine Frist: Wer ihn mit einem kopierten
-// Token geöffnet hat, läse nach Abmelden oder Sperre sonst bis zum nächsten Neustart mit.
-func (b *Broker) Tuer(gilt func(*http.Request) bool) http.HandlerFunc {
+// Token geöffnet hat, läse nach Abmelden oder Sperre sonst bis zum nächsten Neustart mit. konto
+// nennt das Konto der Anmeldung; je Konto und insgesamt ist die Zahl der Ströme begrenzt.
+func (b *Broker) Tuer(gilt func(*http.Request) bool, konto func(*http.Request) string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		kanal := b.meldeAn()
-		if kanal == nil {
-			// Der Broker fährt herunter. 503, damit die Tür das Herunterfahren nicht aufhält;
-			// der Browser verbindet sich später neu.
+		kanal, err := b.meldeAn(konto(r))
+		if errors.Is(err, errHerunterfahren) {
+			// 503, damit die Tür das Herunterfahren nicht aufhält; der Browser verbindet sich
+			// später neu.
 			http.Error(w, "Server fährt herunter", http.StatusServiceUnavailable)
+			return
+		}
+		if err != nil {
+			// Die Oberfläche versucht es mit wachsender Wartezeit wieder (liveEvents.js).
+			http.Error(w, "Zu viele offene Live-Verbindungen", http.StatusTooManyRequests)
 			return
 		}
 		defer b.meldeAb(kanal)

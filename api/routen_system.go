@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/repository"
 	"net/http"
@@ -124,6 +125,15 @@ func (s *Server) registriereSystemRouten(mux *http.ServeMux, protokollAbfragen *
 	// Kennungen, Zeitstempel), keinen Namen und kein Buch (thekenEreignis in
 	// api/theke/eingabe_anfrage_antwort.go, VerlangeAnmeldung in api/tuer/sitzung.go). Die
 	// Anmeldung prüft er beim Aufbau und vor jedem Lebenszeichen (IstSitzungGueltig).
-	liveLeitung := s.Broker.Tuer(s.IstSitzungGueltig)
+	liveLeitung := s.Broker.Tuer(s.IstSitzungGueltig, kontoDerAnfrage)
 	mux.Handle("GET /events", s.VerlangeAnmeldung()(liveLeitung))
+}
+
+// kontoDerAnfrage nennt das Konto der Anmeldung, die VerlangeAnmeldung in den Kontext gelegt hat;
+// die Live-Leitung zählt ihre Ströme je Konto.
+func kontoDerAnfrage(r *http.Request) string {
+	if claims, ok := auth.ClaimsAusKontext(r.Context()); ok {
+		return claims.KontoID
+	}
+	return ""
 }

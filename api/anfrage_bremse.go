@@ -29,9 +29,10 @@ func anfrageBremse(jeSekunde int) func(http.Handler) http.Handler {
 			// davon als 429 zurück. Der Browser legt die Bilder nicht ab
 			// (internal/middleware/sicherheitskopfzeilen.go), jeder Seitenaufruf holt sie neu.
 			// Der Pfad muss genau passen, damit /api/barcode/next (JSON) gebremst bleibt.
-			// /events (SSE) ist eine lange Verbindung, die sonst bei jedem neuen Aufbau vom
-			// Kontingent nähme und unruhige Verbindungen unnötig ausbremste.
-			if strings.HasPrefix(r.URL.Path, "/api/images/cover") || strings.HasPrefix(r.URL.Path, "/uploads/") || r.URL.Path == "/api/barcode" || r.URL.Path == "/events" {
+			// Der Aufbau der Live-Leitung (/events) zählt mit: Jeder prüft die Anmeldung in der
+			// Datenbank, und die Oberfläche baut eine abgebrochene Leitung mit wachsender
+			// Wartezeit wieder auf (liveEvents.js), nimmt also kaum vom Kontingent.
+			if strings.HasPrefix(r.URL.Path, "/api/images/cover") || strings.HasPrefix(r.URL.Path, "/uploads/") || r.URL.Path == "/api/barcode" {
 				next.ServeHTTP(w, r)
 				return
 			}

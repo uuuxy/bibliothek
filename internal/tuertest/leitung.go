@@ -23,7 +23,7 @@ func BeobachteLeitung(t *testing.T) (broker *sse.Broker, zaehleBisMarke func(ere
 	broker = sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
-	strom := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }))
+	strom := httptest.NewServer(broker.Tuer(func(*http.Request) bool { return true }, func(*http.Request) string { return "" }))
 	t.Cleanup(func() {
 		cancel()
 		strom.CloseClientConnections()

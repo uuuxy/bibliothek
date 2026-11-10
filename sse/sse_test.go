@@ -3,6 +3,7 @@ package sse
 import (
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +25,7 @@ func TestMeldeAbNachDemHerunterfahrenBlockiertNicht(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
 
-	fenster := broker.meldeAn()
+	fenster := angemeldet(broker.meldeAn(""))
 	if fenster == nil {
 		t.Fatal("Anmeldung am laufenden Broker muss gelingen")
 	}
@@ -58,7 +59,7 @@ func TestAnmeldungNachDemHerunterfahrenWirdAbgelehnt(t *testing.T) {
 	warteAufHerunterfahren(t, broker)
 
 	ergebnis := make(chan chan string, 1)
-	go func() { ergebnis <- broker.meldeAn() }()
+	go func() { ergebnis <- angemeldet(broker.meldeAn("")) }()
 
 	select {
 	case ch := <-ergebnis:
@@ -78,7 +79,7 @@ func TestHerunterfahrenSchliesstOffeneStroeme(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go broker.FuehreAus(ctx)
 
-	fenster := broker.meldeAn()
+	fenster := angemeldet(broker.meldeAn(""))
 	if fenster == nil {
 		t.Fatal("Anmeldung muss gelingen")
 	}
@@ -118,7 +119,7 @@ func TestVerteileErreichtAlleFenster(t *testing.T) {
 
 	fenster := make([]chan string, 3)
 	for i := range fenster {
-		fenster[i] = broker.meldeAn()
+		fenster[i] = angemeldet(broker.meldeAn(""))
 		if fenster[i] == nil {
 			t.Fatalf("Client %d konnte sich nicht anmelden", i)
 		}
@@ -143,8 +144,8 @@ func TestVerteileErreichtAlleFenster(t *testing.T) {
 // Verteile darf ihn danach nicht mehr kennen.
 func TestAbgemeldetesFensterBekommtNichtsMehr(t *testing.T) {
 	broker := NewBroker()
-	bleibt := broker.meldeAn()
-	geht := broker.meldeAn()
+	bleibt := angemeldet(broker.meldeAn(""))
+	geht := angemeldet(broker.meldeAn(""))
 
 	broker.meldeAb(geht)
 	broker.Verteile("test", "{}") // sendete sonst auf einem geschlossenen Kanal
@@ -163,8 +164,8 @@ func TestAbgemeldetesFensterBekommtNichtsMehr(t *testing.T) {
 // zu warten, und überspringt volle Puffer.
 func TestLangsamesFensterBremstDieAnderenNicht(t *testing.T) {
 	broker := NewBroker()
-	langsam := broker.meldeAn()
-	schnell := broker.meldeAn()
+	langsam := angemeldet(broker.meldeAn(""))
+	schnell := angemeldet(broker.meldeAn(""))
 
 	// Den Puffer des langsamen Fensters randvoll laufen lassen.
 	for i := 0; i < pufferJeFenster+5; i++ {
@@ -222,7 +223,7 @@ func TestNebenlaeufigkeit(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 200; j++ {
-				if c := broker.meldeAn(); c != nil {
+				if c := angemeldet(broker.meldeAn("")); c != nil {
 					broker.meldeAb(c)
 				}
 			}
@@ -240,7 +241,7 @@ func TestNebenlaeufigkeit(t *testing.T) {
 // verteiltes Ereignis kommt beim Browser an.
 func TestTuerLiefertStromUndEreignisse(t *testing.T) {
 	broker := NewBroker()
-	srv := httptest.NewServer(broker.Tuer(immerGueltig))
+	srv := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto))
 	defer srv.Close()
 
 	ctx, abbrechen := context.WithCancel(context.Background())
@@ -304,7 +305,7 @@ func TestTuerBeendetDenStromOhneGueltigeAnmeldung(t *testing.T) {
 		gefragt.Add(1)
 		return gueltig.Load()
 	}
-	srv := httptest.NewServer(broker.Tuer(gilt))
+	srv := httptest.NewServer(broker.Tuer(gilt, ohneKonto))
 	defer srv.Close()
 
 	ctx, abbrechen := context.WithCancel(context.Background())
@@ -361,7 +362,7 @@ func TestTuerWeistNachDemHerunterfahrenAb(t *testing.T) {
 	cancel()
 	warteAufHerunterfahren(t, broker)
 
-	srv := httptest.NewServer(broker.Tuer(immerGueltig))
+	srv := httptest.NewServer(broker.Tuer(immerGueltig, ohneKonto))
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL) //nolint:noctx // Testaufruf gegen den lokalen Testserver
@@ -378,6 +379,66 @@ func TestTuerWeistNachDemHerunterfahrenAb(t *testing.T) {
 
 // immerGueltig ist die Prüfung der Anmeldung für die Tests, die nur den Strom ansehen.
 func immerGueltig(*http.Request) bool { return true }
+
+// ohneKonto ist das Konto für die Tests, die die Grenzen nicht ansehen.
+func ohneKonto(*http.Request) string { return "" }
+
+// angemeldet ist der Kanal einer Anmeldung, ohne ihren Fehler: nil, wenn der Broker abwies.
+func angemeldet(kanal chan string, _ error) chan string { return kanal }
+
+// Ein Konto hält höchstens grenzeJeKonto Ströme offen, alle Konten zusammen höchstens
+// grenzeGesamt; ein abgemeldeter Strom macht wieder Platz.
+func TestMeldeAn_GrenzenJeKontoUndGesamt(t *testing.T) {
+	broker := NewBroker()
+	broker.grenzeJeKonto, broker.grenzeGesamt = 2, 3
+	erster, err1 := broker.meldeAn("a")
+	_, err2 := broker.meldeAn("a")
+	if err1 != nil || err2 != nil {
+		t.Fatalf("meldeAn(a) zweimal = %v, %v, erwartet angenommen", err1, err2)
+	}
+	if _, err := broker.meldeAn("a"); !errors.Is(err, errZuVieleJeKonto) {
+		t.Errorf("meldeAn(a) zum dritten = %v, erwartet errZuVieleJeKonto", err)
+	}
+	if _, err := broker.meldeAn("b"); err != nil {
+		t.Errorf("meldeAn(b) = %v, erwartet angenommen", err)
+	}
+	if _, err := broker.meldeAn("c"); !errors.Is(err, errZuVieleGesamt) {
+		t.Errorf("meldeAn(c) als vierter Strom = %v, erwartet errZuVieleGesamt", err)
+	}
+	broker.meldeAb(erster)
+	if _, err := broker.meldeAn("a"); err != nil {
+		t.Errorf("meldeAn(a) nach dem Abmelden eines Stroms von a = %v, erwartet angenommen", err)
+	}
+}
+
+// Über der Grenze antwortet die Tür sofort mit 429, statt einen Strom zu öffnen.
+func TestTuerWeistUeberDerGrenzeAb(t *testing.T) {
+	broker := NewBroker()
+	broker.grenzeJeKonto = 1
+	srv := httptest.NewServer(broker.Tuer(immerGueltig, func(*http.Request) string { return "konto-1" }))
+	defer srv.Close()
+	ctx, abbrechen := context.WithCancel(context.Background())
+	defer abbrechen()
+
+	oeffne := func() *http.Response {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL, nil)
+		if err != nil {
+			t.Fatalf("Anfrage: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Verbindung: %v", err)
+		}
+		return resp
+	}
+	erster := oeffne()
+	defer closeutil.Schliesse(erster.Body, "sse-test response body")
+	zweiter := oeffne()
+	defer closeutil.Schliesse(zweiter.Body, "sse-test response body")
+	if erster.StatusCode != http.StatusOK || zweiter.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("Status = %d und %d, erwartet 200 und 429", erster.StatusCode, zweiter.StatusCode)
+	}
+}
 
 func leseZeile(t *testing.T, r *bufio.Reader) string {
 	t.Helper()

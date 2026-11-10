@@ -61,9 +61,11 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
 - **Schlüssel:** `lower(email)|ip` — sperrt ein Konto für eine IP-Adresse (5 Fehlversuche / 15 min).
 - **Warum nicht nur IP?** An einer Schulnetzwerk-NAT sind alle Geräte hinter einer IP. Würde nur die IP gesperrt, würde ein einziger Fehlversuch die gesamte Schule aussperren. Der Composite-Key (`email|ip`) isoliert das betroffene Konto auf dieser IP und schützt trotzdem gegen gezielte Account-Angriffe.
 - **Globaler Rate-Limiter:** Zusätzlich 50 Requests/s/IP über alle Endpunkte (Map+Mutex, kein externer Cache nötig).
-  Ausgenommen sind `/api/images/cover`, `/uploads/`, `/api/barcode` und `/events` — ein
-  Seitenaufruf lädt dutzende Bilder gleichzeitig, und SSE ist eine Dauerverbindung. Die
-  Ausnahme gilt der **Auslieferung**; der teure Zweig des Cover-Proxys (fremder Download)
+  Ausgenommen sind `/api/images/cover`, `/uploads/` und `/api/barcode` — ein Seitenaufruf
+  lädt dutzende Bilder gleichzeitig. Der Aufbau der Live-Leitung (`/events`) zählt mit, und
+  offen hält ein Konto höchstens 20 Ströme, alle Konten zusammen höchstens 1000
+  (`sse/sse.go`, darüber 429): Jeder Strom prüft alle 15 Sekunden die Anmeldung in der
+  Datenbank. Die Ausnahme gilt der **Auslieferung**; der teure Zweig des Cover-Proxys (fremder Download)
   hat eine eigene Bremse, siehe „Cover-Proxy" weiter unten. Ein Strichcode-Bild ist höchstens
   2000 × 2000 Pixel groß und trägt höchstens 80 Zeichen (`pkg/strichcode`, Gate
   `api/druck/barcode_bild_grenze_pg_test.go`); ohne die Grenze legte eine Anfrage ein Bild in

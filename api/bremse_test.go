@@ -73,6 +73,13 @@ func TestAnfrageBremse_BarcodeSalveIstAusgenommen(t *testing.T) {
 	}
 }
 
+// Der Aufbau der Live-Leitung zählt mit: Jeder Aufbau prüft die Anmeldung in der Datenbank.
+func TestAnfrageBremse_LiveLeitungZaehltMit(t *testing.T) {
+	if got := schickeNAnfragen(t, "/events", 40); got == 0 {
+		t.Fatal("/events: 0 Anfragen mit 429, erwartet mehr als 0 (der Aufbau der Live-Leitung ist gebremst)")
+	}
+}
+
 // Hinter einem vertrauten Proxy haben zwei echte Aufrufer getrennte Zähler für Fehlversuche.
 // Zählte die Bremse an r.RemoteAddr, also an der Adresse des Proxys, sperrten die Fehlversuche
 // irgendeines Nutzers alle aus.
