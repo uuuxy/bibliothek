@@ -213,7 +213,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		// Nur der eingestellte Ursprung, sonst nichts.
 		if erlaubterUrsprung != "" && ursprung == erlaubterUrsprung {
 			w.Header().Set("Access-Control-Allow-Origin", erlaubterUrsprung)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 			// X-CSRF-Token gehört zwingend dazu: Ohne den Header in dieser Liste
 			// scheitert bei gesetztem ALLOWED_ORIGIN jede ändernde Anfrage eines anderen Ursprungs
 			// schon am Preflight: Der Schutz gegen CSRF sperrte die Oberfläche aus statt
