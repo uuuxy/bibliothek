@@ -58,7 +58,7 @@ Nur, was kein Test leisten kann.
 - [x] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
   Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
 - [x] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
-- [ ] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
+- [x] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
 
 ### Termin
 
@@ -84,15 +84,6 @@ und die Übernahme bauen.
 Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten (entschieden
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
-
-### 5.177 Vorschlag #775: Existenzprüfung im LUSD-Import
-
-Der Vorschlag ändert, wie der LUSD-Import prüft, ob ein Schüler schon da ist
-(`repository/lusd_import.go`, `internal/lusd/anwenden.go`), und hängt eine Zeile an
-`.jules/bolt.md` an. Der Pull Request ist geschlossen und sein Branch gelöscht; den Stand holt
-`git fetch origin pull/775/head`. Noch nicht geprüft. Nächster Schritt: Beifang und Drei-Punkt-Diff ansehen,
-die behauptete Ersparnis an einem Import messen, die vorhandenen Tests des Imports am Rückbau
-der geänderten Stelle laufen lassen; nur übernehmen, was messbar spart und dasselbe tut.
 
 ### 7.2 Frisches Littera-Backup
 
