@@ -498,7 +498,7 @@ wegsichern — Pflicht ist es nicht.
 Alle Wächter unten laufen AUF dem Server: Fällt er ganz aus (Strom, Netz, Hetzner),
 meldet es niemand — die Nutzer merken es zuerst. Abhilfe ist kein Code, sondern ein
 externer Monitor (z. B. UptimeRobot, kostenloser Plan), der alle 5 Minuten
-`https://bibliothek.fla-dev.de/health` abruft und bei Ausfall eine Mail schickt.
+`https://<schule>/health` abruft und bei Ausfall eine Mail schickt.
 Der Endpunkt ist öffentlich und gibt keine Interna preis (`{"status":"healthy"}`).
 
 Es gibt **zwei** Health Checks, und sie prüfen Verschiedenes.

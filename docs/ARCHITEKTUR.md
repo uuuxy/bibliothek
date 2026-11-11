@@ -334,7 +334,7 @@ graph TB
 ```
                    ┌──────────────────────────────────────────┐
   Browser          │  Caddy (Host, ACME/Let's Encrypt)        │
-  (SPA, PWA)  ────► │  bibliothek.fla-dev.de :443             │
+  (SPA, PWA)  ────► │  <Adresse der Schule> :443              │
                    │  response_header_timeout 300s            │
                    │  read/write_timeout 600s                 │
                    └───────────────┬──────────────────────────┘
