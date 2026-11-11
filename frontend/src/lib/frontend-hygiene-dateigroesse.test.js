@@ -16,7 +16,7 @@ const BESTAND = {
 	'src/lib/components/omnibox/Omnibox.svelte': 202,
 	'src/lib/components/statistik/Statistik.svelte': 334,
 	'src/lib/components/leserakte/Leserakte.svelte': 211,
-	'src/lib/components/benutzer/Konten.svelte': 208,
+	'src/lib/components/benutzer/Konten.svelte': 207,
 	'src/lib/components/etiketten/EtikettenNachdruck.svelte': 344,
 	'src/lib/components/statistik/StatistikVerlauf.svelte': 236,
 	'src/lib/components/leser/LusdImport.svelte': 310,

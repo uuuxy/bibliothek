@@ -25,10 +25,13 @@
 <Dialog {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
 	<div class="space-y-4 p-6">
 		<h2 id="benutzer-loeschen-titel" class="dialog-titel">Benutzer unwiderruflich löschen?</h2>
+		<!-- Der Text sagt, was gelöscht wird und was bleibt (M3, Dialogs: die Überschrift stellt die
+		     Frage, kein „Sind Sie sicher?"). Ohne den zweiten Satz gälte eine Lehrkraft, die die
+		     Schule verlassen hat, als gelöscht, während Name und Ausweis in der Leserdatei stehen. -->
 		<p class="text-sm leading-relaxed text-on-surface-variant">
-			Sind Sie sicher, dass Sie den Benutzer <strong
-				>{zuLoeschen?.vorname} {zuLoeschen?.nachname}</strong
-			> löschen möchten? Diese Aktion wird im Logbuch vermerkt.
+			Gelöscht wird der Zugang von <strong>{zuLoeschen?.vorname} {zuLoeschen?.nachname}</strong> zum Programm.
+			Trägt die Person einen Ausweis, bleibt ihr Eintrag in der Leserdatei stehen; dort lässt er sich
+			löschen. Der Vorgang wird im Logbuch vermerkt.
 		</p>
 		{#if fehler}
 			<!-- Etwa offene Ausleihen im Handapparat: Der Satz des Servers sagt, was zu tun ist. -->

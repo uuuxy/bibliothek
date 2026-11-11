@@ -23,12 +23,16 @@ func TestLoescheKonto_LeserzeileGehtMitWennUnberuehrt(t *testing.T) {
 	ctx := context.Background()
 
 	konto, leser := legeZugangsanfrageAn(t, pool, "anfrage.unberuehrt@schule.example")
-	if err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
+	bleibt, err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool))
+	if err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
 	if leserzeileExistiert(t, pool, leser) {
 		t.Error("die Leserzeile blieb als Waise in der Leserdatei stehen")
+	}
+	if bleibt {
+		t.Error("LoescheKonto meldet, die Leserzeile bleibe; sie ist mitgelöscht")
 	}
 }
 
@@ -47,12 +51,16 @@ func TestLoescheKonto_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 	loan := legeAusleiheAn(t, pool, copyID, leser, bearbeiter)
 	bucheRueckgabe(t, pool, loan)
 
-	if err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, bearbeiter); err != nil {
+	bleibt, err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, bearbeiter)
+	if err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
 	if !leserzeileExistiert(t, pool, leser) {
 		t.Error("die Leserzeile mit einer Ausleihe wurde mitgelöscht")
+	}
+	if !bleibt {
+		t.Error("LoescheKonto meldet nicht, dass die Leserzeile stehen bleibt")
 	}
 }
 
@@ -68,12 +76,19 @@ func TestLoescheKonto_LeserzeileBleibtMitAusweis(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool)); err != nil {
+	// Der Fall der Lehrkraft, die die Schule verlässt: Der Zugang ist gelöscht, die Person steht
+	// mit Namen und Ausweis weiter in der Leserdatei. Das Ergebnis sagt es, damit die Oberfläche
+	// nicht „gelöscht" meldet und die Daten für gelöscht gelten.
+	bleibt, err := NewKontoAbfragen(pool).LoescheKonto(ctx, konto, legeBearbeiterAn(t, pool))
+	if err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
 	if !leserzeileExistiert(t, pool, leser) {
 		t.Error("die Leserzeile mit Ausweisnummer wurde mitgelöscht")
+	}
+	if !bleibt {
+		t.Error("LoescheKonto meldet nicht, dass die Leserzeile mit Ausweis stehen bleibt")
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
-	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
 
@@ -52,7 +51,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 		return
 	}
 
-	err := kontoAbfragen.LoescheKonto(ctx, id, claims.KontoID)
+	leserBleibt, err := kontoAbfragen.LoescheKonto(ctx, id, claims.KontoID)
 	if err != nil {
 		if errors.Is(err, repository.ErrKontoNichtGefunden) {
 			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungKontoNichtGefunden, err)
@@ -70,6 +69,7 @@ func (t *Tueren) loescheKonto(w http.ResponseWriter, r *http.Request, kontoAbfra
 		return
 	}
 
-	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
-	httpresp.Schreibe(w, []byte(`{"status":"success"}`))
+	// leser_bleibt: Gelöscht ist der Zugang. Trägt die Person einen Ausweis oder hängt etwas an
+	// ihrer Leserzeile, steht sie weiter in der Leserdatei, und die Oberfläche sagt das.
+	tuer.AntworteJSON(w, http.StatusOK, map[string]any{"status": "success", "leser_bleibt": leserBleibt})
 }

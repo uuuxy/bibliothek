@@ -14,6 +14,7 @@
 		benutzerFormularAus,
 		benutzerNutzlast
 	} from './benutzerFormular.js';
+	import { meldungNachLoeschung } from './kontoLoeschung.js';
 	import { snackbars } from '../../stores/snackbars.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
@@ -96,14 +97,12 @@
 		fehler = null;
 		try {
 			const res = await apiFetch(`/api/benutzer/${zuLoeschen.id}`, { method: 'DELETE' });
-			if (!res.ok) {
-				// Bei 409 (offene Handapparat-Ausleihen) trägt die Server-Meldung bereits den
-				// Hinweis „Bitte zuerst zurückbuchen.“; leseApiFehler packt sie aus dem JSON aus.
-				throw new Error(await leseApiFehler(res));
-			}
+			// Bei 409 (offene Handapparat-Ausleihen) trägt die Server-Meldung bereits den
+			// Hinweis „Bitte zuerst zurückbuchen.“; leseApiFehler packt sie aus dem JSON aus.
+			if (!res.ok) throw new Error(await leseApiFehler(res));
 			loeschfrageOffen = false;
 			zuLoeschen = null;
-			snackbars.addToast('Benutzer erfolgreich gelöscht.', 'success');
+			snackbars.addToast(meldungNachLoeschung(await res.json()), 'success');
 			ladeKonten();
 		} catch (err) {
 			// Der Dialog bleibt offen und nennt den Satz des Servers, der sagt, was zu tun ist. Neu geladen

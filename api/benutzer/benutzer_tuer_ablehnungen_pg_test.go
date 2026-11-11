@@ -2,6 +2,7 @@ package benutzer
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -94,11 +95,30 @@ func TestKontoLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 		t.Fatalf("nach fünf Ablehnungen stehen %d von 5 Konten", n)
 	}
 
-	if rec := loesche(ohneBuch, alsMitarbeiter); rec.Code != http.StatusOK {
+	// Die Person hinter dem Konto trägt einen Ausweis. Gelöscht wird dann nur der Zugang; die
+	// Antwort sagt, dass der Eintrag in der Leserdatei bleibt, damit die Oberfläche nicht
+	// „gelöscht" meldet und die Daten für gelöscht gelten.
+	var leserOhneBuch string
+	if err := pool.QueryRow(ctx, `
+		UPDATE leser SET barcode_id = 'A-99046' WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)
+		RETURNING id::text`, ohneBuch).Scan(&leserOhneBuch); err != nil {
+		t.Fatalf("Ausweis an die Leserzeile des Kontos: %v", err)
+	}
+	rec := loesche(ohneBuch, alsMitarbeiter)
+	if rec.Code != http.StatusOK {
 		t.Fatalf("ein Kollegiumskonto ohne Ausleihen: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 	}
 	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM benutzer WHERE id = $1`, ohneBuch); n != 0 {
 		t.Errorf("das gelöschte Konto steht noch da")
+	}
+	var antwort struct {
+		LeserBleibt bool `json:"leser_bleibt"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort lesen: %v: %s", err, rec.Body.String())
+	}
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1`, leserOhneBuch); n != 1 || !antwort.LeserBleibt {
+		t.Errorf("Leserzeile mit Ausweis: %d Zeilen, leser_bleibt = %v; erwartet eine Zeile und true", n, antwort.LeserBleibt)
 	}
 	// Das Protokoll nennt, wer gelöscht hat; ohne Bearbeiter stünde die Löschung als SYSTEM da.
 	if n := pgtest.ZaehleZeilen(t, pool, `

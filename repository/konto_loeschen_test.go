@@ -41,7 +41,7 @@ func TestLoescheKonto_LehntAbBeiOffenenAusleihen(t *testing.T) {
 	// Kein ExpectExec("DELETE …"): Das Löschen scheitert vor der Anweisung, die löscht.
 	mock.ExpectRollback()
 
-	err = NewKontoAbfragen(mock).LoescheKonto(context.Background(), userID, "admin-1")
+	_, err = NewKontoAbfragen(mock).LoescheKonto(context.Background(), userID, "admin-1")
 	var mitAusleihen *KontoHatAusleihenFehler
 	if !errors.As(err, &mitAusleihen) {
 		t.Fatalf("LoescheKonto = %v, erwartet KontoHatAusleihenFehler", err)
@@ -81,7 +81,7 @@ func TestLoescheKonto_LoeschtOhneOffeneAusleihen(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	if err := NewKontoAbfragen(mock).LoescheKonto(context.Background(), userID, "admin-1"); err != nil {
+	if _, err := NewKontoAbfragen(mock).LoescheKonto(context.Background(), userID, "admin-1"); err != nil {
 		t.Fatalf("unerwarteter Fehler bei Löschung ohne offene Ausleihen: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

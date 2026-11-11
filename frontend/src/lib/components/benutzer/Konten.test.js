@@ -84,6 +84,33 @@ describe('Benutzerliste: Meldungen', () => {
 		expect(screen.queryByRole('dialog')).toBeNull();
 	});
 
+	// „Benutzer unwiderruflich löschen?" entfernt nur den Zugang. Trägt die Person einen Ausweis,
+	// bleibt ihr Eintrag mit Namen in der Leserdatei, ohne Frist. Dialog und Meldung sagten das
+	// nicht: Wer das Konto einer Lehrkraft löschte, die die Schule verlassen hat, hielt ihre
+	// Daten für gelöscht.
+	it('sagt vor dem Löschen, was bleibt, und danach, dass der Eintrag in der Leserdatei steht', async () => {
+		const screen = await benutzerliste();
+		server(antwort({ status: 'success', leser_bleibt: true }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Kora Muster löschen' }));
+		const dialog = screen.getByRole('dialog', { name: 'Benutzer unwiderruflich löschen?' });
+		const text = (dialog.textContent ?? '').replace(/\s+/g, ' ');
+		expect(text).toContain(
+			'Gelöscht wird der Zugang von Kora Muster zum Programm. Trägt die Person einen Ausweis, bleibt ihr Eintrag in der Leserdatei stehen; dort lässt er sich löschen.'
+		);
+		expect(text).not.toContain('Sind Sie sicher');
+
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
+
+		await waitFor(() =>
+			expect(meldungen()).toEqual([
+				[
+					'Zugang gelöscht. Der Eintrag der Person in der Leserdatei bleibt; dort lässt er sich löschen.',
+					'success'
+				]
+			])
+		);
+	});
+
 	// Ein Konto mit offenen Ausleihen lässt sich nicht löschen. Der Satz des Servers sagt, was
 	// zu tun ist, und steht deshalb im Dialog, an dem die Frage gestellt wurde.
 	it('lässt den Dialog offen, wenn das Löschen scheitert, und nennt dort den Grund', async () => {

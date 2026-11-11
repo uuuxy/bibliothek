@@ -827,6 +827,11 @@ Die **Ausweisnummer** eines freigeschalteten Zugangs vergibt das Programm. Leere
 bekommt die Person die nächste freie Nummer — die alte Karte gilt dann nicht mehr, ein neuer
 Ausweis ist zu drucken.
 
+**Löschen entfernt den Zugang, nicht die Person.** Wer einen Ausweis trägt, steht nach dem Löschen
+des Benutzers weiter mit Namen in der Leserdatei, und die Karte gilt an der Theke weiter; Dialog
+und Meldung sagen es. Verlässt jemand die Schule, löschen Sie die Person deshalb in der
+_Leserdatei_: Der Zugang geht dabei sofort mit, der Eintrag nach 180 Tagen aus dem Papierkorb.
+
 **Vier Rollen vergeben Sie hier: Admin, Leitung, Mitarbeit, Helfer.** Die Leitung darf
 alles, was der Admin darf, außer zwei Dingen: Benutzer & Rechte und die Einstellungen, die
 das Recht „Einstellungen verwalten" verlangen (Schule, Ausleihe & Fristen, Mahnwesen, Mail und

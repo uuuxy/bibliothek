@@ -19,11 +19,13 @@ func (e *KontoHatAusleihenFehler) Error() string {
 }
 
 // LoescheKonto löscht ein Konto und schreibt den Eintrag dazu. Offene Ausleihen auf seiner
-// Leserzeile verhindern es; eine unberührte Leserzeile geht mit.
-func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error {
+// Leserzeile verhindern es; eine unberührte Leserzeile geht mit. leserBleibt sagt, dass die
+// Leserzeile stehen geblieben ist (Ausweis, oder etwas hängt an ihr): Die Person steht dann
+// weiter mit Namen in der Leserdatei, und die Oberfläche sagt es, statt „gelöscht" zu melden.
+func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) (leserBleibt bool, err error) {
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer db.Verwerfe(ctx, tx)
 
@@ -37,7 +39,7 @@ func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbe
 		kontoID,
 	).Scan(&vorname, &nachname, &email, &rolle, &leserID)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return fmt.Errorf("failed to snapshot user for audit: %w", err)
+		return false, fmt.Errorf("failed to snapshot user for audit: %w", err)
 	}
 
 	// Die Bücher hängen an der Leserzeile des Kontos und blieben nach seinem Löschen als
@@ -49,20 +51,20 @@ func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbe
 		 WHERE b.id = $1 AND a.rueckgabe_am IS NULL`,
 		kontoID,
 	).Scan(&aktiveAusleihen); err != nil {
-		return fmt.Errorf("failed to check active loans for user: %w", err)
+		return false, fmt.Errorf("failed to check active loans for user: %w", err)
 	}
 	if aktiveAusleihen > 0 {
-		return &KontoHatAusleihenFehler{Offen: aktiveAusleihen}
+		return false, &KontoHatAusleihenFehler{Offen: aktiveAusleihen}
 	}
 
 	// Keine getroffene Zeile heißt unbekannte ID: Die Aufnahme oben lässt ein fehlendes Konto
 	// durch, und ohne diese Prüfung entstünde ein Eintrag über ein Konto, das es nie gab.
 	tag, err := tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", kontoID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if tag.RowsAffected() == 0 {
-		return ErrKontoNichtGefunden
+		return false, ErrKontoNichtGefunden
 	}
 
 	// Die Leserzeile des Kontos geht mit, wenn sie unberührt ist. Der Fall ist die abgelehnte
@@ -76,7 +78,7 @@ func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbe
 	// Menschen in der Lesertabelle und nicht dem Konto.
 	geloescht, grund, err := loescheUnberuehrteLeserzeile(ctx, tx, leserID)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Die Leserkennung kommt nur in den Eintrag, wenn die Leserzeile stehen bleibt: Über sie
@@ -91,10 +93,14 @@ func (a *KontoAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbe
 		leserID: bleibenderLeser, bearbeiterID: bearbeiterID,
 		ueberBenutzerverwaltung: true, leserzeileGeloescht: geloescht, leserzeileBleibtWegen: grund,
 	}); err != nil {
-		return err
+		return false, err
 	}
 
-	return tx.Commit(ctx)
+	if err = tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	// „schon weg" heißt: Zwischen Prüfung und Löschung hat jemand die Zeile entfernt.
+	return !geloescht && leserID != nil && grund != "" && grund != "schon weg", nil
 }
 
 // loescheUnberuehrteLeserzeile entfernt die Leserzeile eines gelöschten Kontos, sofern nichts
