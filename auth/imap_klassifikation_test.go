@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -10,6 +11,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"errors"
+	"log/slog"
 	"math/big"
 	"net"
 	"strings"
@@ -24,8 +26,11 @@ import (
 // Logik.
 
 // miniIMAP startet einen Mailserver über TLS, der seine Begrüßung schickt und auf LOGIN mit
-// `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort. befehle erhält
-// jede Zeile mit LOGIN oder LOGOUT, wie sie ankam.
+// `antwort` reagiert; "CLOSE" schließt stattdessen die Verbindung ohne Antwort, "SCHWEIGT"
+// antwortet nicht. befehle erhält jede Zeile mit LOGIN oder LOGOUT, wie sie ankam, und
+// verbindungZu, wenn der Client die Verbindung schließt.
+const verbindungZu = "(Verbindung vom Client geschlossen)"
+
 func miniIMAP(t *testing.T, antwort string) (host, port string, befehle <-chan string) {
 	t.Helper()
 	eingegangen := make(chan string, 8)
@@ -77,6 +82,7 @@ func miniIMAP(t *testing.T, antwort string) (host, port string, befehle <-chan s
 				for {
 					eingang, err := r.ReadString('\n')
 					if err != nil {
+						melde(verbindungZu) // der Client hat die Verbindung geschlossen
 						return
 					}
 					tag := strings.Fields(eingang)[0]
@@ -85,6 +91,9 @@ func miniIMAP(t *testing.T, antwort string) (host, port string, befehle <-chan s
 						melde(eingang)
 						if antwort == "CLOSE" {
 							return
+						}
+						if antwort == "SCHWEIGT" {
+							continue
 						}
 						if !schreibe(tag + " " + antwort + "\r\n") {
 							return
@@ -183,5 +192,54 @@ func TestPruefeIMAPAnmeldung_HaengtKeineDomainAn(t *testing.T) {
 func TestAnmeldeFrist_LaesstIMAPLuft(t *testing.T) {
 	if anmeldeFrist <= imapFrist+2*time.Second {
 		t.Fatalf("anmeldeFrist (%v) muss deutlich über imapFrist (%v) liegen", anmeldeFrist, imapFrist)
+	}
+}
+
+// Ein gescheitertes LOGIN schließt die Verbindung einmal und meldet sich nicht mehr ab. Ein
+// LOGOUT über die geschlossene Verbindung schrieb bei jedem falschen Passwort „imap: Logout
+// fehlgeschlagen … use of closed network connection“, die abgelaufene Frist dazu „close failed“.
+// Geschlossen wird trotzdem: Sonst bliebe je Fehlversuch eine Verbindung zum Mailserver offen.
+func TestPruefeIMAPAnmeldung_FehlschlagSchliesstOhneWarnung(t *testing.T) {
+	for _, fall := range []struct {
+		name, antwort   string
+		serverSchliesst bool
+	}{
+		{"falsches Passwort", "NO [AUTHENTICATIONFAILED] Authentication failed.", false},
+		{"Server bricht ab", "CLOSE", true},
+		{"Server schweigt bis zur Frist", "SCHWEIGT", false},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			a := &Anmeldung{}
+			befehle := mitMiniIMAP(t, a, fall.antwort)
+			var protokoll bytes.Buffer
+			vorher := slog.Default()
+			slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
+			t.Cleanup(func() { slog.SetDefault(vorher) })
+			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+			defer cancel()
+
+			if err := a.pruefeIMAPAnmeldung(ctx, "wer@schule.de", "falsch"); err == nil {
+				t.Fatal("pruefeIMAPAnmeldung(…) = nil, erwartet einen Fehler")
+			}
+			for _, warnung := range []string{"Logout fehlgeschlagen", "close failed"} {
+				if strings.Contains(protokoll.String(), warnung) {
+					t.Errorf("Protokoll enthält %q: %s", warnung, protokoll.String())
+				}
+			}
+			if fall.serverSchliesst {
+				return
+			}
+			frist := time.After(2 * time.Second)
+			for {
+				select {
+				case zeile := <-befehle:
+					if zeile == verbindungZu {
+						return
+					}
+				case <-frist:
+					t.Fatal("die Verbindung zum Mailserver bleibt nach dem Fehlschlag offen")
+				}
+			}
+		})
 	}
 }

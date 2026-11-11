@@ -90,6 +90,9 @@ func verbindeIMAP(ctx context.Context, adresse string, tlsKonfig *tls.Config) (*
 // c.Execute statt c.Login: Login faltet die Antwort des Servers in errors.New(info), und am
 // Fehler ließe sich „Server hat abgelehnt" nicht mehr von „Server ist weg" unterscheiden. Genau
 // das trennt den Fehlversuch vom Ausfall.
+//
+// Bei einem Fehlschlag ist die Verbindung danach geschlossen, genau einmal; der Aufrufer meldet
+// sich dann nicht mehr ab.
 func meldeBeiIMAPAn(ctx context.Context, c *client.Client, verbindung net.Conn, email, passwort string) error {
 	ergebnis := make(chan error, 1)
 	go func() {
@@ -109,6 +112,9 @@ func meldeBeiIMAPAn(ctx context.Context, c *client.Client, verbindung net.Conn, 
 
 	select {
 	case err := <-ergebnis:
+		if err != nil {
+			closeutil.Schliesse(verbindung, imapVerbindung)
+		}
 		return err
 	case <-ctx.Done():
 		// Die Verbindung schließen, damit die Goroutine aus c.Execute zurückkehrt, und ihr
@@ -256,7 +262,9 @@ func (a *Anmeldung) pruefeIMAPAnmeldung(ctx context.Context, email, passwort str
 
 	if err := meldeBeiIMAPAn(ctx, c, verbindung, email, passwort); err != nil {
 		slog.Warn("IMAP Login failed", "fehler", err)
-		closeutil.Schliesse(verbindung, imapVerbindung)
+		// meldeBeiIMAPAn hat die Verbindung geschlossen. Ein LOGOUT darüber scheiterte und
+		// schriebe bei jedem falschen Passwort eine Warnung.
+		c = nil
 		// Es entscheidet der Inhalt, nicht die Uhr: Nur eine Antwort des Servers (NO oder BAD)
 		// heißt falsche Zugangsdaten. Frist, EOF, Abbruch von TLS oder fehlende Begrüßung sind
 		// ein Ausfall.

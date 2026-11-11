@@ -70,7 +70,15 @@ func versendeMitFristen(fristen smtpFristen, konfig SMTPKonfig, absender string,
 		_ = conn.Close() //nolint:errcheck
 		return BeschreibeSMTPFehler(adresse, err)
 	}
-	defer closeutil.Schliesse(c, "smtp client")
+	// Ein gelungenes QUIT schließt die Verbindung selbst; geschlossen wird hier nur, wenn die
+	// Sitzung vorher abbricht oder das QUIT scheitert. Ein zweites Schließen schriebe nach jedem
+	// Versand eine Warnung ins Protokoll.
+	verabschiedet := false
+	defer func() {
+		if !verabschiedet {
+			closeutil.Schliesse(c, "smtp client")
+		}
+	}()
 
 	if err := c.Hello("localhost"); err != nil {
 		return BeschreibeSMTPFehler(adresse, err)
@@ -91,7 +99,9 @@ func versendeMitFristen(fristen smtpFristen, konfig SMTPKonfig, absender string,
 	// die Verbindung nach der Annahme einfach. Als Fehlschlag gemeldet, zählte der Mahnlauf eine
 	// zugestellte Mahnung als „nicht versendet", und der nächste Lauf schickte sie ein zweites
 	// Mal an dieselbe Klassenleitung.
-	if err := c.Quit(); err != nil {
+	err = c.Quit()
+	verabschiedet = err == nil
+	if err != nil {
 		slog.Warn("mail: Verbindung wurde nach der Annahme nicht sauber beendet (Nachricht ist zugestellt)", "adresse", adresse, "fehler", err)
 	}
 	return nil

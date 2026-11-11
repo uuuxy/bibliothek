@@ -1,7 +1,9 @@
 package mailservice
 
 import (
+	"bytes"
 	"errors"
+	"log/slog"
 	"net"
 	"strings"
 	"testing"
@@ -89,6 +91,29 @@ func TestVersendeUeberSMTPStelltZu(t *testing.T) {
 	}
 	if !strings.Contains(sitzung.Nachricht, "Inhalt") {
 		t.Errorf("Nachricht kam nicht an: %q", sitzung.Nachricht)
+	}
+}
+
+// Ein gelungener Versand hinterlässt keine Warnung: Das QUIT schließt die Verbindung, und ein
+// zweites Schließen meldete „use of closed network connection“ nach jeder Mail. Eine Warnung, die
+// jeder Versand schreibt, verdeckt die eine, die etwas bedeutet.
+func TestVersendeUeberSMTP_GelungenerVersandOhneWarnung(t *testing.T) {
+	erlaubeKlartext(t)
+	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
+	var protokoll bytes.Buffer
+	vorher := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
+	t.Cleanup(func() { slog.SetDefault(vorher) })
+
+	err := versendeUeberSMTP(testKonfig(host, port), "bibliothek@schule.de",
+		[]string{"lehrerin@schule.de"}, []byte("Subject: Test\r\n\r\nInhalt\r\n"))
+	if err != nil {
+		t.Fatalf("Versand fehlgeschlagen: %v", err)
+	}
+	<-sitzungen
+	// Die Warnung zum Klartext gehört zum Testserver ohne STARTTLS; gesucht ist die zum Schließen.
+	if strings.Contains(protokoll.String(), "close failed") {
+		t.Errorf("gelungener Versand schreibt eine Warnung zum Schließen: %q", protokoll.String())
 	}
 }
 
