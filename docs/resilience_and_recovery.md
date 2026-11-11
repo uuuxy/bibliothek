@@ -37,6 +37,11 @@ Die Dateien liegen im **Docker-Volume `bibliothek_backups`** (`/app/backups` im 
   (Aufbewahrung, Restore-Probe, Stand), und der nächste gelungene Lauf löscht sie. Der Stand der Sicherungen im
   Fuß der Navigation und auf der Betriebsbereitschafts-Seite zählt nur Dateien mit der
   `BKDF`-Kennung; eine leere Datei gilt dort nicht als Sicherung.
+- Größe: Fast die ganze Sicherung sind Passbilder. Gemessen mit 1.900 Passbildern aus dem Weg der
+  Kamera (810 × 1080 als WebP, im Mittel 97 KB): Sicherung 201 MB, Nachtlauf und Restore-Probe je
+  wenige Sekunden und je etwa 0,5 GB Arbeitsspeicher zusätzlich (die Probe entpackt im Fluss in
+  `psql`). Bei voller Aufbewahrung (26 Dateien) belegt das Volume gut 5 GB, dazu kommen die
+  Vorab-Sicherungen von `update.sh` in `./backups`.
 
 > ⚠️ **Wichtig:** Diese Dateien sind verschlüsselt. `zcat`/`gunzip`/`psql` funktionieren darauf **nicht**
 > direkt — sie müssen zuerst mit dem `restore-backup`-Tool entschlüsselt werden (siehe Abschnitt 2a).

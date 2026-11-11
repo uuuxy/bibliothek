@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,28 +38,32 @@ func juengsteBackupDatei(verzeichnis string) (string, error) {
 	return filepath.Join(verzeichnis, juengste.Name), nil
 }
 
-// entschluesseleBackup entschlüsselt (AES-256-GCM) und entpackt (gzip) ein Backup.
+// entschluesseleBackup entschlüsselt (AES-256-GCM) ein Backup und liefert den gepackten Dump.
+// Den Kopf von gzip prüft es schon hier, damit eine Datei, die kein gzip ist, vor dem Anlegen der
+// Wegwerf-Datenbank scheitert.
 func entschluesseleBackup(schluessel string, roh []byte) ([]byte, error) {
-	klar, err := backupkrypto.Entschluessele(schluessel, roh)
+	gepackt, err := backupkrypto.Entschluessele(schluessel, roh)
 	if err != nil {
 		return nil, fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte Datei): %w", err)
 	}
-	leser, err := gzip.NewReader(bytes.NewReader(klar))
-	if err != nil {
+	if _, err := gzip.NewReader(bytes.NewReader(gepackt)); err != nil {
 		return nil, fmt.Errorf("entpacken fehlgeschlagen: %w", err)
 	}
-	defer leser.Close() //nolint:errcheck
-	sqlText, err := io.ReadAll(leser)
-	if err != nil {
-		return nil, fmt.Errorf("entpacken fehlgeschlagen: %w", err)
-	}
-	return sqlText, nil
+	return gepackt, nil
 }
 
-// spieleDumpEin spielt den Dump mit psql in die Wegwerf-Datenbank ein. ON_ERROR_STOP=1 ist
-// Pflicht: Ohne den Schalter endet psql auch nach gescheiterten Anweisungen mit 0, und eine halbe
-// Wiederherstellung sähe gelungen aus (wie in der Übung der CI).
-func spieleDumpEin(ctx context.Context, dsn string, sqlText []byte) error {
+// spieleDumpEin entpackt den Dump im Fluss in psql und spielt ihn so in die Wegwerf-Datenbank ein:
+// Ganz entpackt im Speicher brauchte die Probe mit 1.900 Passbildern 1,3 GB. Scheitert das
+// Entpacken mittendrin, meldet psql.Run den Fehler auch dann, wenn psql selbst mit 0 endet.
+// ON_ERROR_STOP=1 ist Pflicht: Ohne den Schalter endet psql auch nach gescheiterten Anweisungen
+// mit 0, und eine halbe Wiederherstellung sähe gelungen aus (wie in der Übung der CI).
+func spieleDumpEin(ctx context.Context, dsn string, gepackt []byte) error {
+	sqlLeser, err := gzip.NewReader(bytes.NewReader(gepackt))
+	if err != nil {
+		return fmt.Errorf("entpacken fehlgeschlagen: %w", err)
+	}
+	defer sqlLeser.Close() //nolint:errcheck
+
 	konfig, err := pgconn.ParseConfig(dsn)
 	if err != nil {
 		return fmt.Errorf("DSN unlesbar: %w", err)
@@ -82,7 +85,7 @@ func spieleDumpEin(ctx context.Context, dsn string, sqlText []byte) error {
 		"--dbname="+probeDatenbank, "--no-password", "--no-psqlrc", "--quiet",
 		"-v", "ON_ERROR_STOP=1")
 	psql.Env = append(os.Environ(), "PGPASSFILE="+pgpassDatei)
-	psql.Stdin = bytes.NewReader(sqlText)
+	psql.Stdin = sqlLeser
 	var stderr bytes.Buffer
 	psql.Stderr = &stderr
 	if err := psql.Run(); err != nil {

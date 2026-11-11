@@ -86,7 +86,7 @@ func (z *Zeitplan) probeJuengsteSicherung(ctx context.Context, schluessel, dsn, 
 		e.Fehler = fmt.Sprintf("Backup-Datei nicht lesbar: %v", err)
 		return e
 	}
-	sqlText, err := entschluesseleBackup(schluessel, roh)
+	gepackt, err := entschluesseleBackup(schluessel, roh)
 	if err != nil {
 		e.Fehler = fmt.Sprintf("%s: %v", e.BackupDatei, err)
 		return e
@@ -116,7 +116,7 @@ func (z *Zeitplan) probeJuengsteSicherung(ctx context.Context, schluessel, dsn, 
 		}
 	}()
 
-	if err := spieleDumpEin(ctx, dsn, sqlText); err != nil {
+	if err := spieleDumpEin(ctx, dsn, gepackt); err != nil {
 		e.Fehler = err.Error()
 		return e
 	}

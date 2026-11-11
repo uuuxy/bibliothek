@@ -15,8 +15,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"bibliothek/internal/backupkrypto"
 )
 
 func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
@@ -65,6 +68,39 @@ func TestRestoreProbe_EchterDurchlaufUndKorrupteDatei(t *testing.T) {
 		}
 		if existiert {
 			t.Errorf("die Wegwerf-Datenbank %s blieb stehen", probeDatenbank)
+		}
+	})
+
+	// Die Probe entpackt im Fluss in psql. Fehlt dem gzip-Strom nur das Ende, hat psql alle
+	// Anweisungen schon ausgeführt und endet mit 0; den Fehlschlag meldet allein das Entpacken.
+	t.Run("abgeschnittener Dump wird als Fehlschlag gemeldet", func(t *testing.T) {
+		const schluessel = "probe-passphrase-mit-mehr-als-32-zeichen"
+		roh, err := os.ReadFile(sicherung) // #nosec G304 - Pfad aus t.TempDir()
+		if err != nil {
+			t.Fatalf("Backup-Datei nicht lesbar: %v", err)
+		}
+		gepackt, err := backupkrypto.Entschluessele(schluessel, roh)
+		if err != nil {
+			t.Fatalf("Sicherung nicht entschlüsselbar: %v", err)
+		}
+		// Die letzten acht Bytes von gzip sind Prüfsumme und Länge; der Dump davor ist vollständig.
+		abgeschnitten, err := backupkrypto.Verschluessele(schluessel, gepackt[:len(gepackt)-8])
+		if err != nil {
+			t.Fatalf("Verschlüsseln: %v", err)
+		}
+		juenger := filepath.Join(verzeichnis, "backup_"+time.Now().UTC().Add(time.Hour).Format(sicherungsStempel)+".sql.gz.enc")
+		if err := os.WriteFile(juenger, abgeschnitten, 0o600); err != nil {
+			t.Fatalf("Schreiben: %v", err)
+		}
+		defer os.Remove(juenger) //nolint:errcheck
+
+		z.fuehreRestoreProbeAus(ctx)
+		e := leseProbeErgebnis(t, pool)
+		if e.BackupDatei != filepath.Base(juenger) {
+			t.Fatalf("Probe prüfte %q statt %q", e.BackupDatei, filepath.Base(juenger))
+		}
+		if e.Erfolg {
+			t.Fatal("Probe meldet Erfolg für einen Dump ohne gzip-Abschluss")
 		}
 	})
 
