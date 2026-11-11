@@ -8,11 +8,13 @@
 	 */
 	import { idStore, bringForward, sendBackward, entferne } from './idDesignerStore.svelte.js';
 	import EigenschaftenText from './EigenschaftenText.svelte';
+	import EigenschaftenLeer from './EigenschaftenLeer.svelte';
+	import { elementName } from './elementName.js';
 	import ZahlenFeld from './ZahlenFeld.svelte';
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
 	import Switch from '../components/ui/Switch.svelte';
 	import { nimmDatei } from '../utils/dateiwahl.js';
-	import { Lock, MousePointer2, Trash } from '@lucide/svelte';
+	import { Trash } from '@lucide/svelte';
 
 	/** @type {{ gewaehlteKennung: string|null, side: 'front'|'back', gesperrt?: boolean }} */
 	const { gewaehlteKennung, side, gesperrt = false } = $props();
@@ -65,18 +67,10 @@
 	class="w-full lg:w-80 bg-surface-container-lowest border border-outline-variant p-5 rounded-xl space-y-5 shrink-0 text-left overflow-y-auto max-h-[80vh]"
 >
 	{#if !el}
-		{@const Symbol = gesperrt ? Lock : MousePointer2}
-		<div class="flex flex-col items-center justify-center py-12 text-center gap-3">
-			<Symbol class="w-10 h-10 text-outline-variant" aria-hidden="true" />
-			<span class="text-sm text-on-surface-variant"
-				>{gesperrt
-					? 'Das Design ändern kann, wer die Einstellungen verwalten darf. Ansehen und Testdruck gehen auch so.'
-					: 'Element auf der Karte anklicken'}</span
-			>
-		</div>
+		<EigenschaftenLeer {side} {gesperrt} />
 	{:else}
 		<div class="flex items-center justify-between">
-			<h3 class="text-base font-medium text-on-surface">{el.id}</h3>
+			<h3 class="text-base font-medium text-on-surface">{elementName(el)}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={loesche}
