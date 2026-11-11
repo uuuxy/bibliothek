@@ -18,14 +18,16 @@ describe('Zaehlerpille', () => {
 		expect(getByText('999+')).toBeTruthy();
 	});
 
-	it('nennt die volle Zahl trotzdem — im aria-label', () => {
-		const { container } = render(Zaehlerpille, {
+	// Nicht im aria-label: An einem <span> ohne Rolle ist es nicht erlaubt (axe
+	// „aria-prohibited-attr"), und Bildschirmleser lesen dort den sichtbaren Text „999+".
+	it('nennt die volle Zahl trotzdem — als Text für den Screenreader, die Kurzform ist ausgeblendet', () => {
+		const { container, getByText } = render(Zaehlerpille, {
 			anzahl: 30674,
 			beschreibung: 'Etiketten offen'
 		});
-		expect(container.querySelector('span')?.getAttribute('aria-label')).toBe(
-			'30674 Etiketten offen'
-		);
+		expect(getByText('30674 Etiketten offen').className).toContain('sr-only');
+		expect(getByText('999+').getAttribute('aria-hidden')).toBe('true');
+		expect(container.querySelector('[aria-label]')).toBeNull();
 	});
 
 	it('zeigt Zahlen bis 999 unverändert', () => {
