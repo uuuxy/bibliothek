@@ -29,7 +29,7 @@ async function akteVonA() {
 	vi.mocked(apiFetch).mockImplementation(
 		async (/** @type {any} */ url) =>
 			/** @type {any} */ (
-				ok(String(url).startsWith('/api/books/') ? { id: 'A', titel: 'Titel A' } : [])
+				ok(String(url).startsWith('/api/books/') ? { id: 'A', title: 'Titel A' } : [])
 			)
 	);
 	const akte = useBuchakte();
@@ -66,6 +66,17 @@ describe('useBuchakte.loescheTitel', () => {
 
 		expect(melde).toHaveBeenCalledWith('Ergebnis der Löschung', 'success');
 		expect(zurueck).toHaveBeenCalledOnce();
+	});
+
+	// Die Rückfrage nennt den Titel („‚Titel A' löschen?“). GET /api/books/{id} trägt ihn als
+	// title (repository/katalog_titel.go); unter titel stand nichts, und sie hieß „Titel löschen?“.
+	it('gibt der Rückfrage den Namen des Titels', async () => {
+		const { akte } = await akteVonA();
+		vi.mocked(loescheTitelMitRueckfrage).mockResolvedValue(null);
+
+		await akte.loescheTitel(vi.fn(), vi.fn());
+
+		expect(loescheTitelMitRueckfrage).toHaveBeenCalledWith(['A'], 'Titel A');
 	});
 
 	it('bleibt beim Titel, der wegen eines verliehenen Exemplars bleibt, und lädt ihn neu', async () => {

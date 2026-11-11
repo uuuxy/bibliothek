@@ -119,7 +119,7 @@ export function useBuchakte() {
 	async function loescheTitel(melde, onBack) {
 		if (!buch) return;
 		try {
-			const ergebnis = await loescheTitelMitRueckfrage([buch.id], buch.titel);
+			const ergebnis = await loescheTitelMitRueckfrage([buch.id], buch.title);
 			if (!ergebnis) return;
 			if (melde) melde(meldungZumErgebnis(ergebnis), 'success');
 			if (ergebnis.geloescht.length > 0) onBack?.();
