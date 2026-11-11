@@ -268,7 +268,9 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   aber nicht weg: In der Titel-Verwaltung schaltet der Umschalter _Mit Exemplaren | Ohne
   Exemplare_ auf die Aufräumsicht. Dort bekommt so ein Titel Exemplare, oder er wird
   gelöscht. Auf der Bestellliste steht er ohnehin, sein Bestand liegt unter jeder Schwelle.
-- **Geräte**: anlegen mit Modell, Seriennummer, Barcode `G-…` und Zubehör-Checkliste.
+- **Geräte**: anlegen mit Modell, Seriennummer, Barcode `G-…` und Zubehör-Checkliste. Beim
+  Bearbeiten bleibt der Barcode fest, er klebt am Gerät; Modell, Seriennummer, Zubehör und
+  Zustandsnotiz lassen sich ändern, eine fehlende Seriennummer auch nachtragen.
 
 ## Signaturen
 
