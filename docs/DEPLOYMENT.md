@@ -399,9 +399,14 @@ cd /root/bibliothek
 DB_USER=$(grep '^POSTGRES_USER=' .env | cut -d= -f2); DB_USER=${DB_USER:-postgres}
 DB_NAME=$(grep '^POSTGRES_DB=' .env | cut -d= -f2);  DB_NAME=${DB_NAME:-bibliothek}
 
-# 1. Stack anhalten (Backend zuerst, damit nichts mehr schreibt), Dump mit dem ALTEN Container
+# 1. Stack anhalten (Backend zuerst, damit nichts mehr schreibt), Dump mit dem ALTEN Container.
+#    Der Abzug trägt alle Schülerdaten im Klartext. Er liegt deshalb gepackt im Sicherungsordner
+#    und ist nur für den eigenen Benutzer lesbar (umask 077, in Klammern nur für diese Zeile).
+#    Bleibt er liegen, räumt ihn die Uhr für den Klartext-Rest nach zwei Tagen weg (Abschnitt 6).
 docker compose stop backend
-docker compose exec postgres-db pg_dump -U "$DB_USER" -d "$DB_NAME" > /tmp/upgrade_dump.sql
+mkdir -p backups
+( umask 077; docker compose exec -T postgres-db pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > backups/upgrade_dump.sql.gz )
+gzip -t backups/upgrade_dump.sql.gz && ls -lh backups/upgrade_dump.sql.gz
 
 # 2. Alten Stand behalten, bis der neue nachweislich läuft: Volume NICHT löschen,
 #    sondern umbenennen ist mit Docker-Volumes nicht möglich — deshalb bleibt das alte
@@ -416,15 +421,18 @@ git pull
 #    Dump einspielen, dann den Rest des Stacks hochziehen
 docker compose up -d postgres-db
 sleep 10
-docker compose exec -T postgres-db psql -U "$DB_USER" -d "$DB_NAME" \
-  -v ON_ERROR_STOP=1 -f /dev/stdin < /tmp/upgrade_dump.sql
+gunzip -c backups/upgrade_dump.sql.gz | docker compose exec -T postgres-db psql -U "$DB_USER" -d "$DB_NAME" \
+  -v ON_ERROR_STOP=1 -f /dev/stdin
 ./update.sh
 
 # 5. Beweis statt Hoffnung: Version und Datenbestand ansehen, dann erst aufräumen
 docker compose exec postgres-db psql -U "$DB_USER" -d "$DB_NAME" \
   -c "SELECT version();" -c "SELECT count(*) FROM buecher_exemplare;"
-rm /tmp/upgrade_dump.sql
+rm backups/upgrade_dump.sql.gz
 ```
+
+Bricht Schritt 4 ab, bleibt der Abzug für den nächsten Versuch liegen. Er gehört dann spätestens
+gelöscht, wenn der alte oder der neue Stand wieder läuft; sonst nimmt ihn nach zwei Tagen die Uhr.
 
 Beim **nächsten** Major-Upgrade müssen vier Stellen gemeinsam wandern, sonst schlägt
 die Restore-Probe (`jobs/restore_probe.go`) am ersten Sonntag Alarm:

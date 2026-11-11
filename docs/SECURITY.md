@@ -469,9 +469,13 @@ Shell-Sitzung ausführen, damit `$NEU` erhalten bleibt:
 ```bash
 cd /root/bibliothek
 
-# 0. Backup ziehen. Immer.
-docker compose exec -T postgres-db pg_dump -U postgres bibliothek > vor-rotation.sql
-ls -lh vor-rotation.sql
+# 0. Backup ziehen. Immer. Der Abzug trägt alle Schülerdaten im Klartext: Er liegt gepackt im
+#    Sicherungsordner und ist nur für den eigenen Benutzer lesbar (umask 077, in Klammern nur
+#    für diese Zeile). Gelöscht wird er im letzten Schritt unten; bleibt er liegen, räumt ihn die
+#    Uhr für den Klartext-Rest nach zwei Tagen weg (DEPLOYMENT.md, Abschnitt 6).
+mkdir -p backups
+( umask 077; docker compose exec -T postgres-db pg_dump -U postgres bibliothek | gzip > backups/vor-rotation.sql.gz )
+gzip -t backups/vor-rotation.sql.gz && ls -lh backups/vor-rotation.sql.gz
 
 # 1. Schlüssel erzeugen und merken
 NEU=$(openssl rand -hex 32)
@@ -500,6 +504,12 @@ grep -c APP_ENCRYPTION_KEY .env      # genau 1
 Und die Prüfung, die kein Skript ersetzt: in der Oberfläche einen Schüler **mit Foto**
 öffnen. Erscheint das Bild, ist die Umschlüsselung wirklich durch — nicht nur laut
 Logzeile.
+
+Danach den Abzug aus Schritt 0 löschen, er trägt die Schülerdaten im Klartext:
+
+```bash
+rm backups/vor-rotation.sql.gz
+```
 
 **Lokal / ohne Container:**
 
@@ -550,7 +560,7 @@ docker compose up -d backend
 
 Wurde bereits rotiert, darf die Zeile **nicht** gelöscht werden: Dann muss der richtige
 neue Schlüssel hinein (er steht im Scrollback des Rotationslaufs, den das Kommando
-ausdrücklich ausgibt). Im Notfall führt der Weg über `vor-rotation.sql` und
+ausdrücklich ausgibt). Im Notfall führt der Weg über `backups/vor-rotation.sql.gz` und
 `cmd/restore-backup`.
 
 #### `BACKUP_ENCRYPTION_KEY` wechseln
