@@ -85,6 +85,7 @@ internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leere
 # Helfer in api/lusd_quelle_test.go, seit dem 09.10.2026 von internal/lusd und api
 # gebraucht). Wird ausschließlich von *_test.go importiert.
 internal/xlsxtest/xlsxtest.go: unreachable func: Baue
+internal/xlsxtest/xlsxtest.go: unreachable func: BaueInReihenfolge
 internal/xlsxtest/xlsxtest.go: unreachable func: legeBlattAn
 internal/xlsxtest/xlsxtest.go: unreachable func: fuelleBlatt
 
