@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"bibliothek/db"
 )
 
 // Die Oberfläche der Rechte und die Routen müssen dieselbe Menge kennen.
@@ -45,6 +47,36 @@ func TestRechteInOberflaecheUndRoutenSindDeckungsgleich(t *testing.T) {
 		if !inOberflaeche[recht] {
 			t.Errorf("Route verlangt %q, aber die Rechte-Oberfläche kennt es nicht — niemand kann es "+
 				"erteilen. Zeile in frontend/src/lib/components/benutzer/rechteKategorien.js ergänzen.", recht)
+		}
+	}
+}
+
+// Jeder Schalter der Rechte-Matrix braucht eine Zeile in role_permissions: Die Tür ändert die Zeile
+// (UPDATE) und antwortet ohne sie mit 400, „Rolle und Recht passen nicht zusammen“. Die Zeilen
+// legt die Vorgabe an (db.RechteVorgabe, beim Start); sie nennt deshalb jedes Recht der Oberfläche
+// für jede Rolle, auch mit „nein“, und kein Recht, das die Oberfläche nicht kennt.
+func TestRechteVorgabeNenntJedesRechtFuerJedeRolle(t *testing.T) {
+	inOberflaeche := rechteAusOberflaeche(t)
+	jeRolle := map[string]map[string]bool{}
+	for _, e := range db.RechteVorgabe {
+		if jeRolle[e.Rolle] == nil {
+			jeRolle[e.Rolle] = map[string]bool{}
+		}
+		jeRolle[e.Rolle][e.Recht] = true
+	}
+	if len(jeRolle) < 5 {
+		t.Fatalf("die Vorgabe nennt %d Rollen, erwartet die fünf aus auth: liest der Test noch db.RechteVorgabe?", len(jeRolle))
+	}
+	for rolle, rechte := range jeRolle {
+		for _, recht := range sortiert(inOberflaeche) {
+			if !rechte[recht] {
+				t.Errorf("Die Vorgabe nennt %s/%s nicht: Der Schalter in der Rechte-Matrix bliebe ohne Wirkung (400).", rolle, recht)
+			}
+		}
+		for _, recht := range sortiert(rechte) {
+			if !inOberflaeche[recht] {
+				t.Errorf("Die Vorgabe nennt %s/%s, die Oberfläche kennt das Recht nicht.", rolle, recht)
+			}
 		}
 	}
 }
