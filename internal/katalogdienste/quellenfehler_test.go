@@ -66,7 +66,7 @@ func TestAufloeseCover_AlleQuellenScheitern(t *testing.T) {
 		},
 	}})
 
-	cover := client.aufloeseCover(context.Background(), &MetadatenErgebnis{}, "9783141011540")
+	cover := client.aufloeseCover(context.Background(), &MetadatenErgebnis{}, "9783141011540", false)
 
 	if cover != "" {
 		t.Errorf("Cover %q, obwohl keine Quelle geantwortet hat", cover)
@@ -100,7 +100,7 @@ func TestAufloeseCover_FragtMitDerNormalform(t *testing.T) {
 				},
 			}})
 
-			client.aufloeseCover(context.Background(), &MetadatenErgebnis{}, f.isbn)
+			client.aufloeseCover(context.Background(), &MetadatenErgebnis{}, f.isbn, false)
 
 			for _, erwartet := range []string{
 				"https://portal.dnb.de/opac/mvb/cover?isbn=" + f.gefragt,

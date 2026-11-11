@@ -147,17 +147,24 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 	// Der Reihe nach: DNB (beste Quelle für deutsche Schulbücher), Google, OpenLibrary.
 	// Nebenbei wird gezählt, ob überhaupt eine Quelle geantwortet hat: „alle nicht
 	// erreichbar" ist ein Ausfall (Sentinel → 502 beim Aufrufer), kein Nicht-Treffer.
-	quellen := []func(context.Context, string) (*MetadatenErgebnis, error){
-		c.sucheDNB,
-		c.sucheBeiGoogle,
-		c.sucheOpenLibrary,
+	// google merkt sich, ob Google schon gefragt ist: Die Cover-Suche fragt es dann nicht noch
+	// einmal (aufloeseCover).
+	quellen := []struct {
+		frage  func(context.Context, string) (*MetadatenErgebnis, error)
+		google bool
+	}{
+		{c.sucheDNB, false},
+		{c.sucheBeiGoogle, true},
+		{c.sucheOpenLibrary, false},
 	}
 	erreichbar := false
+	googleGefragt := false
 	var letzterAusfall error
 	for _, quelle := range quellen {
-		ergebnis, fehler = quelle(kontext, saubereISBN)
+		ergebnis, fehler = quelle.frage(kontext, saubereISBN)
+		googleGefragt = googleGefragt || quelle.google
 		if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
-			return c.beendeSuche(kontext, ergebnis, saubereISBN), nil
+			return c.beendeSuche(kontext, ergebnis, saubereISBN, googleGefragt), nil
 		}
 		if errors.Is(fehler, errQuelleNichtErreichbar) {
 			letzterAusfall = fehler
@@ -175,8 +182,8 @@ func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*
 
 // beendeSuche füllt das MetadatenErgebnis mit fehlenden Informationen auf:
 // automatische Kategorisierung (Fach und Schulstufe) sowie das lokal gespeicherte Cover.
-func (c *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) *MetadatenErgebnis {
-	ergebnis.CoverURL = c.aufloeseCover(kontext, ergebnis, isbn)
+func (c *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string, googleGefragt bool) *MetadatenErgebnis {
+	ergebnis.CoverURL = c.aufloeseCover(kontext, ergebnis, isbn, googleGefragt)
 
 	ergebnis.Fach, ergebnis.JahrgangVon, ergebnis.JahrgangBis = automatischeKategorisierung(ergebnis.Titel, ergebnis.Untertitel)
 	return ergebnis
@@ -192,36 +199,42 @@ func (c *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Metadat
 // HTML-Seite statt eines Bildes lieferte. Stattdessen laden wir jeden Kandidaten echt herunter;
 // downloadAndSaveCoverLocally akzeptiert nur dekodierbare Bilder ausreichender Größe. Ein
 // fehlgeschlagener Download verwirft hier nicht mehr ein bereits gefundenes Cover.
-func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) string {
+//
+// Google wird erst gefragt, wenn die Kandidaten davor nichts liefern, und gar nicht, wenn die
+// Suche es schon gefragt hat (googleGefragt): Ohne Schlüssel teilt die Schule das tägliche
+// Kontingent mit allen Nutzern, und ein Treffer von Google steht als Kandidat 1 schon da.
+func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string, googleGefragt bool) string {
 	// DNB und OpenLibrary werden mit der Normalform gefragt, derselben Regel wie in der
 	// Datenbank: Eine zehnstellige ISBN wird nur mit richtigem Prüfzeichen dreizehnstellig.
 	nummer := isbnutil.Normalform(isbn)
-
-	// Kandidaten in Prioritätsreihenfolge: DNB primär (beste Quelle für deutsche Schulbücher).
-	kandidaten := make([]string, 0, 4)
+	probiere := func(kandidat string) string {
+		return speichereCoverLokal(kontext, c.httpClient, kandidat, isbn)
+	}
 
 	// 1. Bereits aus der Metadatensuche (Google/OpenLibrary) bekanntes Cover.
 	if ergebnis.CoverURL != "" && strings.HasPrefix(ergebnis.CoverURL, "http") {
-		kandidaten = append(kandidaten, ergebnis.CoverURL)
-	}
-
-	// 2. DNB MVB Cover (primär).
-	kandidaten = append(kandidaten, fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(nummer)))
-
-	// 3. Google Books — separat abfragen, falls die Metadaten von DNB kamen (DNB liefert keine Cover-URL im Datensatz).
-	if gb, err := c.sucheBeiGoogle(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
-		kandidaten = append(kandidaten, gb.CoverURL)
-	}
-
-	// 4. OpenLibrary — default=false erzwingt ein echtes 404 statt eines 1×1-Platzhalters.
-	kandidaten = append(kandidaten, fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", nummer))
-
-	for _, kandidat := range kandidaten {
-		if lokal := speichereCoverLokal(kontext, c.httpClient, kandidat, isbn); lokal != "" {
+		if lokal := probiere(ergebnis.CoverURL); lokal != "" {
 			return lokal
 		}
 	}
-	return ""
+
+	// 2. DNB MVB Cover (primär, beste Quelle für deutsche Schulbücher).
+	if lokal := probiere(fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(nummer))); lokal != "" {
+		return lokal
+	}
+
+	// 3. Google Books, wenn die Metadaten von der DNB kamen (sie liefert keine Cover-URL im
+	// Datensatz) und die DNB kein Cover hat.
+	if !googleGefragt {
+		if gb, err := c.sucheBeiGoogle(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
+			if lokal := probiere(gb.CoverURL); lokal != "" {
+				return lokal
+			}
+		}
+	}
+
+	// 4. OpenLibrary — default=false erzwingt ein echtes 404 statt eines 1×1-Platzhalters.
+	return probiere(fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", nummer))
 }
 
 // holeInhalt holt eine Adresse mit GET und liefert den Rumpf der Antwort.
