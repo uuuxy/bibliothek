@@ -10,12 +10,12 @@ package main
 // (fehler_kollaps_test.go); ein kaputter Wert, den der Server erzeugt, sähe dann aus wie ein
 // Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe ankommt.
 //
-// Regel: In jedem Struct, das eine Tür aus dem Rumpf der Anfrage liest (tuer.LeseAnfrage oder
-// json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" oder, für den
-// Schlüssel gegen Doppelbuchung, auf „key"/„schluessel" vom Typ string,
+// Regel: In jedem Struct, das eine Tür aus dem Rumpf der Anfrage liest (tuer.LeseAnfrage,
+// tuer.DekodiereRumpf oder json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf
+// „id"/„ids" oder, für den Schlüssel gegen Doppelbuchung, auf „key"/„schluessel" vom Typ string,
 // *string oder []string einen validate-Tag mit „uuid", oder es steht mit Grund in
-// uuidEingabenAusnahmen. Liest eine Tür direkt per json.NewDecoder, muss sie außerdem selbst
-// prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
+// uuidEingabenAusnahmen. Liest eine Tür über DekodiereRumpf oder json.NewDecoder, muss sie außerdem
+// selbst prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
 // tuer.Pruefer.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
 //
 // uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen nicht als Prüfung und
@@ -153,7 +153,7 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, namen eing
 		if name, ok := idParameterName(call, queryVars); ok {
 			melde(fmt.Sprintf("%s:%s:query:%s", paket, fn.Name.Name, name), fn.Name.Name)
 		}
-		ziel, direkt := dekodierZiel(call, namen.dekodierer)
+		ziel, direkt := dekodierZiel(call, namen)
 		if ziel == "" || typen[ziel] == nil || (direkt && uuidSichtbar) {
 			return true
 		}
@@ -265,7 +265,10 @@ func ruftAuf(body *ast.BlockStmt, paket string, namen ...string) bool {
 // sie nicht blind macht.
 type eingabeDerTueren struct {
 	dekodierer map[string]bool
-	validator  string
+	// roh sind die Leser, die nur dekodieren und den Fehler liefern (tuer.DekodiereRumpf): Sie
+	// prüfen keine Felder, ihr Ziel zählt deshalb wie ein eigenes json.NewDecoder.
+	roh       map[string]bool
+	validator string
 }
 
 // ladeEingabeDerTueren erkennt einen Dekodierer daran, dass er generisch ist, als dritten
@@ -273,7 +276,7 @@ type eingabeDerTueren struct {
 // er DisallowUnknownFields ruft. Der Validator ist die Variable, deren Wert eine Funktion
 // liefert, die *validator.Validate zurückgibt.
 func ladeEingabeDerTueren() (eingabeDerTueren, error) {
-	namen := eingabeDerTueren{dekodierer: map[string]bool{}}
+	namen := eingabeDerTueren{dekodierer: map[string]bool{}, roh: map[string]bool{}}
 	pfade, err := filepath.Glob(filepath.Join("api", "tuer", "*.go"))
 	if err != nil {
 		return namen, err
@@ -296,6 +299,9 @@ func ladeEingabeDerTueren() (eingabeDerTueren, error) {
 			}
 			if istDekodiererForm(fn) {
 				namen.dekodierer[fn.Name.Name] = ruftMethodeAuf(fn.Body, "DisallowUnknownFields")
+			}
+			if istRohDekodiererForm(fn) {
+				namen.roh[fn.Name.Name] = true
 			}
 			if liefertValidator(fn) {
 				erzeuger[fn.Name.Name] = true
@@ -346,12 +352,37 @@ func istDekodiererForm(fn *ast.FuncDecl) bool {
 	if id, ok := zeiger.X.(*ast.Ident); !ok || id.Name != tp.List[0].Names[0].Name {
 		return false
 	}
+	return liefertNur(fn, "bool")
+}
+
+// istRohDekodiererForm: func X(w, r, ziel any) error, nicht generisch.
+func istRohDekodiererForm(fn *ast.FuncDecl) bool {
+	if fn.Type.TypeParams != nil {
+		return false
+	}
+	var parameter []ast.Expr
+	for _, feld := range fn.Type.Params.List {
+		for range max(1, len(feld.Names)) {
+			parameter = append(parameter, feld.Type)
+		}
+	}
+	if len(parameter) != 3 {
+		return false
+	}
+	if id, ok := parameter[2].(*ast.Ident); !ok || id.Name != "any" {
+		return false
+	}
+	return liefertNur(fn, "error")
+}
+
+// liefertNur: Die Funktion hat genau einen Rückgabewert, und sein Typ heißt so.
+func liefertNur(fn *ast.FuncDecl, typ string) bool {
 	ergebnis := fn.Type.Results
-	if ergebnis == nil || len(ergebnis.List) != 1 {
+	if ergebnis == nil || len(ergebnis.List) != 1 || len(ergebnis.List[0].Names) > 1 {
 		return false
 	}
 	id, ok := ergebnis.List[0].Type.(*ast.Ident)
-	return ok && id.Name == "bool"
+	return ok && id.Name == typ
 }
 
 // liefertValidator: func x() *validator.Validate.
@@ -398,10 +429,10 @@ func pruefeEingabeDerTueren(t *testing.T) eingabeDerTueren {
 			streng++
 		}
 	}
-	if len(namen.dekodierer) != 2 || streng != 1 || namen.validator == "" {
-		t.Fatalf("api/tuer: erwartet zwei Dekodierer, einer davon streng, und einen Validator; "+
-			"gefunden %v und %q. Die Form der Erklärung passt nicht mehr zu ladeEingabeDerTueren.",
-			namen.dekodierer, namen.validator)
+	if len(namen.dekodierer) != 2 || streng != 1 || len(namen.roh) != 1 || namen.validator == "" {
+		t.Fatalf("api/tuer: erwartet zwei Dekodierer, einer davon streng, einen rohen Leser und einen "+
+			"Validator; gefunden %v, %v und %q. Die Form der Erklärung passt nicht mehr zu ladeEingabeDerTueren.",
+			namen.dekodierer, namen.roh, namen.validator)
 	}
 	return namen
 }
@@ -442,22 +473,26 @@ func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
 // (tuer.<Dekodierer>(w, r, &x)) oder in json.NewDecoder(...).Decode(&x); direkt=true für den
 // zweiten Weg. Der Dekodierer der Türen zählt mit und ohne Paketnamen: Die Türen rufen ihn
 // aus api/tuer, das Paket selbst ohne Namen davor.
-func dekodierZiel(call *ast.CallExpr, dekodierer map[string]bool) (string, bool) {
+func dekodierZiel(call *ast.CallExpr, namen eingabeDerTueren) (string, bool) {
 	var arg ast.Expr
 	direkt := false
-	istDekodierer := func(name string) bool {
-		_, ok := dekodierer[name]
-		return ok
+	// Ein roher Leser prüft nichts: Sein Ziel zählt wie ein eigenes json.NewDecoder (direkt).
+	nimm := func(name string) {
+		if _, ok := namen.dekodierer[name]; ok && len(call.Args) == 3 {
+			arg = call.Args[2]
+		} else if namen.roh[name] && len(call.Args) == 3 {
+			arg, direkt = call.Args[2], true
+		}
 	}
 	switch f := call.Fun.(type) {
 	case *ast.Ident:
-		if istDekodierer(f.Name) && len(call.Args) == 3 {
-			arg = call.Args[2]
-		}
+		nimm(f.Name)
 	case *ast.SelectorExpr:
-		if _, paket := f.X.(*ast.Ident); paket && istDekodierer(f.Sel.Name) && len(call.Args) == 3 {
-			arg = call.Args[2]
-			break
+		if _, paket := f.X.(*ast.Ident); paket {
+			nimm(f.Sel.Name)
+			if arg != nil {
+				break
+			}
 		}
 		if inner, ok := f.X.(*ast.CallExpr); ok && f.Sel.Name == "Decode" && len(call.Args) == 1 {
 			if sel, ok := inner.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "NewDecoder" {
@@ -754,6 +789,9 @@ type schluesselOhneTag struct { Schluessel string ` + "`json:\"idempotency_key\"
 type schluesselMitTag struct { Schluessel string ` + "`json:\"idempotency_key\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
 func aaSchluessel(w, r any) { var req schluesselOhneTag; LESE(w, r, &req) }
 func abSchluesselSauber(w, r any) { var req schluesselMitTag; LESE(w, r, &req) }
+type ohneTag5 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+func acRumpf(w, r any) { var req ohneTag5; tuer.ROH(w, r, &req) }
+func adRumpfGeprueft(w, r any) { var req liste; tuer.ROH(w, r, &req); alleUUIDs(req.IDs) }
 `
 	namen := pruefeEingabeDerTueren(t)
 	var lese, leseStreng string
@@ -764,7 +802,11 @@ func abSchluesselSauber(w, r any) { var req schluesselMitTag; LESE(w, r, &req) }
 			lese = name
 		}
 	}
-	quelle = strings.NewReplacer("LESESTRENG", leseStreng, "LESE", lese, "VALIDATOR", namen.validator).Replace(quelle)
+	var roh string
+	for name := range namen.roh {
+		roh = name
+	}
+	quelle = strings.NewReplacer("LESESTRENG", leseStreng, "LESE", lese, "ROH", roh, "VALIDATOR", namen.validator).Replace(quelle)
 	fremdQuelle := `package fremd
 type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 `
@@ -789,7 +831,8 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	// xTuerStreng) zählt wie ohne; yTuerSauber und zDirektTuerValidator sind die Gegenproben,
 	// die zweite für den Validator der Türen nach einem eigenen Dekodieren. Ein Schlüssel gegen
 	// Doppelbuchung heißt auf key und geht ebenfalls als UUID in die Datenbank (aaSchluessel);
-	// abSchluesselSauber ist seine Gegenprobe.
+	// abSchluesselSauber ist seine Gegenprobe. Der rohe Leser der Türen (tuer.DekodiereRumpf)
+	// prüft nichts und zählt wie ein eigenes Dekodieren (acRumpf); adRumpfGeprueft prüft selbst.
 	erwartet := []string{
 		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",
@@ -799,8 +842,10 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 		"p.ohneTag2.SessionID (oKurz)",
 		"p.ohneTag3.SessionID (wTuer)",
 		"p.ohneTag4.SessionID (xTuerStreng)",
+		"p.ohneTag5.SessionID (acRumpf)",
 		"p.schluesselOhneTag.Schluessel (aaSchluessel)",
 		"p.stapel.Eintraege:ohne dive (qStapel)",
+		"p:acRumpf:ohne Validierung (acRumpf)",
 		"p:cQuery:query:titel_id (cQuery)",
 		"p:dDirekt:ohne Validierung (dDirekt)",
 		"p:iLocker:lockere UUID-Prüfung (iLocker)",
