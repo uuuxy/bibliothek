@@ -97,6 +97,9 @@ export function normalisiereEintrag(roh) {
 	// „läuft", und bis zum Neuladen liefe kein Sync mehr; ein einziger Eintrag einer fremden
 	// oder von Hand gebauten Sicherungsdatei legte so die ganze Warteschlange still.
 	//
+	// Dasselbe gilt für eine Zahl außerhalb dessen, was ein Date darstellt (Betrag über
+	// 8,64·10¹⁵ ms): Sie ist endlich, und toISOString wirft trotzdem.
+	//
 	// Verworfen wird deshalb nicht: Der Scan ist eine echte Buchung, und der Server begrenzt
 	// den Zeitpunkt ohnehin auf seine eigene Uhr. Lieber eine Buchung mit dem Zeitpunkt des
 	// Einspielens als eine verlorene.
@@ -107,7 +110,7 @@ export function normalisiereEintrag(roh) {
 		art,
 		barcode: String(barcode),
 		leser_id: roh.leser_id ?? roh.schueler_id ?? null,
-		gescannt_am: Number.isFinite(zeit) ? zeit : Date.now()
+		gescannt_am: Math.abs(zeit) <= 8.64e15 ? zeit : Date.now()
 	};
 	// Nur uebernehmen, was wirklich dasteht: Ein `undefined` in IndexedDB waere ein Feld,
 	// das es gibt und das nichts bedeutet.

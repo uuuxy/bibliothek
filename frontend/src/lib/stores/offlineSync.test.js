@@ -680,3 +680,95 @@ describe('offlineSync: Sicherung der Warteschlange als Datei', () => {
 		expect(klick).not.toHaveBeenCalled();
 	});
 });
+
+// Die zweite Sicherung eines Rechners trägt die Vorgänge der ersten noch einmal, solange sie
+// nicht übertragen sind. Das zweite Einreihen derselben ID wies IndexedDB ab (ConstraintError),
+// die Datei galt als unlesbar („Fehler beim Einlesen der Backup-Datei"), obwohl ihre übrigen
+// Vorgänge eingereiht waren; gezählt und übertragen wurde danach nichts. Geprüft an der echten
+// Warteschlange: offlineImport.test.js ersetzt das Einreihen durch eine Attrappe, die immer
+// gelingt, und sah den Fall deshalb nicht.
+describe('offlineSync: Sicherung einspielen, die schon Wartendes enthält', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.clearAllMocks();
+		// Der Server ist nicht erreichbar: Was eingereiht ist, bleibt in der Warteschlange.
+		vi.mocked(apiClient.post).mockResolvedValue(serverAntwort(503, {}));
+	});
+
+	/** @param {any[]} eintraege */
+	const datei = (eintraege) =>
+		/** @type {File} */ (
+			/** @type {unknown} */ ({
+				name: 'offline_scans_backup.json',
+				text: async () => JSON.stringify(eintraege)
+			})
+		);
+	const barcodes = async () => (await ladeWarteschlange()).map((e) => e.barcode).sort();
+
+	it('übernimmt die übrigen Vorgänge, zählt sie und stößt den Abgleich an', async () => {
+		const [a, b, c] = [rueckgabe('B-A'), rueckgabe('B-B'), rueckgabe('B-C')];
+		await enqueueOfflineAction(a);
+
+		expect(await offlineSync.importiereWarteschlange(datei([a, b, c]))).toBe(3);
+
+		expect(await barcodes()).toEqual(['B-A', 'B-B', 'B-C']);
+		expect(offlineSync.wartendeAnzahl).toBe(3);
+		await vi.waitFor(() => expect(apiClient.post).toHaveBeenCalled());
+		await offlineSync.starteAbgleich();
+	});
+
+	it('reiht einen Vorgang, der in der Datei doppelt steht, einmal ein', async () => {
+		const a = rueckgabe('B-DOPPELT');
+
+		expect(await offlineSync.importiereWarteschlange(datei([a, a]))).toBe(2);
+
+		expect(await barcodes()).toEqual(['B-DOPPELT']);
+		await offlineSync.starteAbgleich();
+	});
+});
+
+// Ein Zeitpunkt außerhalb dessen, was ein Date darstellt, ist eine endliche Zahl, und
+// toISOString wirft trotzdem. Beim Bauen der Portion brach damit die Runde ab, die Anzeige blieb
+// auf „gleicht ab", und jede weitere Runde scheiterte an derselben Portion.
+describe('offlineSync: ein Zeitpunkt außerhalb des Datumsbereichs', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.clearAllMocks();
+	});
+
+	it('wird beim Lesen zu jetzt, und der Vorgang geht hinaus', async () => {
+		await enqueueOfflineAction({ ...rueckgabe('B-WEIT'), gescannt_am: 1e20 });
+		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
+
+		await offlineSync.starteAbgleich();
+
+		expect(offlineSync.gleichtAb).toBe(false);
+		expect(await ladeWarteschlange()).toEqual([]);
+		const [, rumpf] = vi.mocked(apiClient.post).mock.calls[0];
+		expect(Math.abs(Date.parse(rumpf.eintraege[0].gescannt_am) - Date.now())).toBeLessThan(60_000);
+	});
+
+	// Das Fangnetz dahinter: Wirft beim Bauen der Portion künftig etwas anderes, endet die Runde
+	// mit dem Fehler, aber die Anzeige geht zurück, und die nächste Runde läuft.
+	it('eine Ausnahme in der Runde lässt die Anzeige nicht auf „gleicht ab" stehen', async () => {
+		await enqueueOfflineAction(rueckgabe('B-AUSNAHME'));
+		vi.mocked(apiClient.post).mockImplementation(antworte(wieGescannt));
+		const uhr = vi.spyOn(performance, 'now').mockImplementation(() => {
+			throw new Error('Uhr kaputt');
+		});
+		let fehler;
+		try {
+			await offlineSync.starteAbgleich();
+		} catch (e) {
+			fehler = e;
+		} finally {
+			uhr.mockRestore();
+		}
+
+		expect(String(fehler)).toContain('Uhr kaputt');
+		expect(offlineSync.gleichtAb).toBe(false);
+
+		await offlineSync.starteAbgleich();
+		expect(await ladeWarteschlange()).toEqual([]);
+	});
+});

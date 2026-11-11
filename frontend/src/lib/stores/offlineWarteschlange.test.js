@@ -56,3 +56,27 @@ describe('normalisiereEintrag: eine fremde Sicherungsdatei', () => {
 		}
 	});
 });
+
+// Ein Zeitpunkt, den ein Date nicht darstellt, ist kein Zeitpunkt: endlich, aber
+// `new Date(1e20).toISOString()` wirft. Er wird wie ein unlesbarer zu jetzt.
+describe('normalisiereEintrag: der Zeitpunkt', () => {
+	it.each([1e20, -1e20, Infinity, 'kein Datum'])('macht aus %s den Zeitpunkt von jetzt', (wert) => {
+		const vorher = Date.now();
+		const zeit = normalisiereEintrag({
+			barcode: 'B-1',
+			art: 'rueckgabe',
+			gescannt_am: wert
+		})?.gescannt_am;
+		expect(zeit).toBeGreaterThanOrEqual(vorher);
+		expect(zeit).toBeLessThanOrEqual(Date.now());
+		expect(() => new Date(/** @type {number} */ (zeit)).toISOString()).not.toThrow();
+	});
+
+	it('lässt einen gültigen Zeitpunkt stehen, auch den äußersten (Gegenprobe)', () => {
+		for (const wert of [0, 1_794_000_000_000, 8.64e15, -8.64e15]) {
+			expect(
+				normalisiereEintrag({ barcode: 'B-1', art: 'rueckgabe', gescannt_am: wert })?.gescannt_am
+			).toBe(wert);
+		}
+	});
+});

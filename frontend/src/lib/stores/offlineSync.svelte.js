@@ -2,64 +2,13 @@ import {
 	ladeWarteschlange,
 	dequeueOfflineAction,
 	enqueueOfflineAction,
-	normalisiereEintrag,
-	leserFuerVersand
+	normalisiereEintrag
 } from './offlineWarteschlange.js';
+import { baueNachbuchPayload } from './offlineNachbuchPayload.js';
 import { apiClient, leseApiFehler } from '../apiFetch.js';
 import { spieleErfolgston } from '../utils/audio.js';
 import { melde } from '../../inventur/lib/store.svelte.js';
 import { netzLage } from './netzLage.svelte.js';
-
-// Baut die Portion für die Nachbuch-Tür (POST /api/action/nachbuchen). Sie kann den
-// Scan-Zeitpunkt buchen, einen Schlüssel genau einmal buchen, einen offline gescannten
-// Ausweis auflösen und jede Abweichung als Meldung festhalten.
-//
-// Die Uhr: `gescannt_am` und `gesendet_am` müssen von derselben Uhr kommen, sonst rechnet
-// der Server den Versatz falsch. Das ist hier kein Randfall: Die Uhr eines Theken-Rechners
-// wird oft in dem Moment korrigiert, in dem das Netz zurückkommt, also zwischen Scan und
-// Versand.
-//
-// Deshalb wird der Scan-Zeitpunkt neu bestimmt, wenn der Eintrag aus diesem Seitenaufruf
-// stammt: `performance.now()` läuft gleichmäßig weiter und springt nicht. Aus dem Abstand
-// seit dem Scan und der Wanduhr von jetzt ergibt sich ein Scan-Zeitpunkt, der zu
-// `gesendet_am` passt, auch wenn die Wanduhr dazwischen gesprungen ist. Stammt der Eintrag
-// aus einem früheren Seitenaufruf (Neuladen, eingespielte Sicherung), gilt der gespeicherte
-// Wert; dort gibt es nichts Besseres.
-/**
- * @param {import('./offlineWarteschlange.js').OfflineEintrag[]} batchItems
- * @returns {{ gesendet_am: string, eintraege: any[] }}
- */
-function baueNachbuchPayload(batchItems) {
-	const jetzt = Date.now();
-	const mono = typeof performance !== 'undefined' ? Math.round(performance.now()) : null;
-	const ursprung =
-		typeof performance !== 'undefined' ? Math.round(performance.timeOrigin ?? 0) : null;
-
-	return {
-		gesendet_am: new Date(jetzt).toISOString(),
-		eintraege: batchItems.map((posten) => {
-			let gescannt = posten.gescannt_am;
-			if (mono !== null && posten.ursprung === ursprung && typeof posten.mono === 'number') {
-				gescannt = jetzt - (mono - posten.mono);
-			}
-			/** @type {any} */
-			const e = {
-				schluessel: posten.id,
-				absicht: posten.art,
-				barcode: posten.barcode,
-				gescannt_am: new Date(gescannt).toISOString()
-			};
-			// Die Person nur bei einer Ausleihe (leserFuerVersand); ein ohne Netz gescannter
-			// Ausweis steht in `ausweis_barcode`, die Dauer des Besuchs in `besuch_seit_ms`.
-			if (leserFuerVersand(posten)) e.leser_id = leserFuerVersand(posten);
-			if (posten.ausweis_barcode) e.ausweis_barcode = posten.ausweis_barcode;
-			if (posten.art === 'ausleihe' && typeof posten.besuch_seit_ms === 'number') {
-				e.besuch_seit_ms = posten.besuch_seit_ms;
-			}
-			return e;
-		})
-	};
-}
 
 // Endgueltige Ergebnisse: Der Eintrag ist erledigt und fliegt aus der Warteschlange.
 // „wiederholen" ist das einzige, das NICHT endgueltig ist (Server nicht erreichbar, oder
@@ -281,7 +230,15 @@ function erzeugeOfflineSync() {
 
 	async function sendeWarteschlange() {
 		gleichtAb = true;
+		// finally: Wirft etwas in der Runde, bliebe die Anzeige sonst für immer auf „gleicht ab".
+		try {
+			await sendeRunden();
+		} finally {
+			gleichtAb = false;
+		}
+	}
 
+	async function sendeRunden() {
 		let syncedAny = false;
 
 		while (!netzLage.offline) {
@@ -312,7 +269,6 @@ function erzeugeOfflineSync() {
 		if (syncedAny && wartendeAnzahl === 0) {
 			spieleErfolgston();
 		}
-		gleichtAb = false;
 	}
 
 	/**
@@ -333,23 +289,30 @@ function erzeugeOfflineSync() {
 	 */
 	async function importiereWarteschlange(file) {
 		try {
-			const text = await file.text();
-			const items = JSON.parse(text);
+			const items = JSON.parse(await file.text());
 			if (!Array.isArray(items)) throw new Error('Invalid format');
 
-			let importedCount = 0;
-			const promises = [];
-			for (const roh of items) {
-				const eintrag = normalisiereEintrag(roh);
-				if (!eintrag) continue;
-				promises.push(enqueueOfflineAction(eintrag));
-				importedCount++;
+			// Was schon wartet, bleibt stehen: Die zweite Sicherung eines Rechners trägt die Vorgänge
+			// der ersten noch einmal. Ein zweites Einreihen derselben ID wiese IndexedDB ab, und die
+			// Datei gälte als unlesbar, obwohl ihre übrigen Vorgänge schon eingereiht sind.
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- lebt nur in diesem Aufruf
+			const wartend = new Set((await ladeWarteschlange()).map((e) => e.id));
+			let gelesen = 0;
+			try {
+				for (const roh of items) {
+					const eintrag = normalisiereEintrag(roh);
+					if (!eintrag) continue;
+					gelesen++;
+					if (wartend.has(eintrag.id)) continue;
+					wartend.add(eintrag.id);
+					await enqueueOfflineAction(eintrag);
+				}
+			} finally {
+				// Auch nach einem Abbruch mittendrin: Was eingereiht ist, zählt und geht hinaus.
+				await zaehleNeu();
+				starteAbgleich();
 			}
-			await Promise.all(promises);
-
-			await zaehleNeu();
-			starteAbgleich();
-			return importedCount;
+			return gelesen;
 		} catch (e) {
 			console.error(e);
 			throw new Error('Fehler beim Einlesen der Backup-Datei.');
