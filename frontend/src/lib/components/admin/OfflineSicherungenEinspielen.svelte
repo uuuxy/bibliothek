@@ -48,7 +48,10 @@
 		}
 
 		laeuft = false;
-		bericht = { dateien: files.length - fehler.length, vorgaenge };
+		// Der Erfolgskasten nur, wenn eine Datei gelesen wurde; scheitern alle, spricht allein
+		// die Fehlermeldung.
+		const gelesen = files.length - fehler.length;
+		bericht = gelesen > 0 ? { dateien: gelesen, vorgaenge } : null;
 		if (fehler.length > 0) snackbars.addToast(fehler.join(' · '), 'error');
 	}
 </script>
