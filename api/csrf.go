@@ -17,6 +17,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -63,7 +64,7 @@ func (s *Server) csrfToken() http.HandlerFunc {
 		if token == "" {
 			erzeugt, err := erzeugeCSRFToken()
 			if err != nil {
-				apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("CSRF-Token konnte nicht erzeugt werden"))
+				apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("CSRF-Token konnte nicht erzeugt werden: %w", err))
 				return
 			}
 			token = erzeugt

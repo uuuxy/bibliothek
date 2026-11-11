@@ -188,7 +188,7 @@ func Anmelden(pool db.Pool, anmeldung *Anmeldung) http.HandlerFunc {
 
 		rechte, err := ladeRechteDerRolle(ctx, pool, konto.rolle)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("berechtigungen konnten nicht geladen werden: %w", err))
 			return
 		}
 
@@ -404,7 +404,7 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, pool db.Pool, kont
 
 	rechte, err := ladeRechteDerRolle(ctx, pool, konto.Rolle)
 	if err != nil {
-		apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("berechtigungen konnten nicht geladen werden: %w", err))
 		return anmeldeAntwort{}, false
 	}
 

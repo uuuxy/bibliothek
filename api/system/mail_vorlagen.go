@@ -2,6 +2,7 @@ package system
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,7 +19,7 @@ func (t *Tueren) MailVorlagen() http.HandlerFunc {
 		ctx := r.Context()
 		vorlagen, err := repository.LadeMailVorlagen(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim Laden der Vorlagen: %w", err))
 			return
 		}
 
@@ -69,7 +70,7 @@ func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim Aktualisieren der Vorlage: %w", err))
 			return
 		}
 		t.ProtokolliereGeaenderteFelder(ctx, tuer.AktionMailvorlageGeaendert, map[string]any{"vorlage": typ},

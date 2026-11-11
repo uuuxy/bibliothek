@@ -1,7 +1,7 @@
 package katalog
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -15,7 +15,7 @@ func (t *Tueren) Systematik() http.HandlerFunc {
 		ctx := r.Context()
 		kategorien, err := repository.LadeSystematikKategorien(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("database error"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("systematik laden: %w", err))
 			return
 		}
 
@@ -40,7 +40,7 @@ func (t *Tueren) Faecher() http.HandlerFunc {
 		ctx := r.Context()
 		faecher, err := repository.LadeFaecher(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("database error"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fächer laden: %w", err))
 			return
 		}
 		tuer.AntworteJSON(w, http.StatusOK, faecher)

@@ -1,7 +1,7 @@
 package system
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/api/tuer"
@@ -38,7 +38,7 @@ func (t *Tueren) MahnUebersicht() http.HandlerFunc {
 
 		k, err := repository.LadeMahnKennzahlen(ctx, t.DB.Pool)
 		if err != nil {
-			apierrors.AntworteFehler(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Mahnkennzahlen"))
+			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim Laden der Mahnkennzahlen: %w", err))
 			return
 		}
 
