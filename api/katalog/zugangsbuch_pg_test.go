@@ -129,9 +129,9 @@ func TestZugangsbuchPDF_AbschnitteUndHinweis(t *testing.T) {
 		"16.03.2026", "15.09.2026",
 		"B-00100", "B-00200", "B-00300",
 		"Buchhandlung Land",
-		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
-		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplare",
-		"Summe " + mitteltopf.OhneZuordnung + ": 1 Exemplare",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplar",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplar",
+		"Summe " + mitteltopf.OhneZuordnung + ": 1 Exemplar",
 		"keine Bestellung hinterlegt", // der Hinweis, der die Einschränkung nennt
 		"Zugänge im Zeitraum: 3 Exemplare",
 	} {

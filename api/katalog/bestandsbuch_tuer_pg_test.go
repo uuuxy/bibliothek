@@ -105,9 +105,9 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		pruefe(t, blatt(t, "abgangsbuch", "Abgangsbuch_2026-03-16_bis_2026-09-15.pdf"), []string{
 			"Zeitraum: 16.03.2026 bis 15.09.2026",
 			"TUER-AB-LAND", "Mathebuch 7", "Mat 7", "12.04.2026", "Verlust",
-			"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
+			"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplar",
 			"TUER-AB-BUE", "Gregs Tagebuch",
-			"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplare",
+			"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplar",
 			"Abgänge im Zeitraum: 2 Exemplare",
 		}, "TUER-AB-SPAET")
 	})
@@ -116,9 +116,9 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		pruefe(t, blatt(t, "zugangsbuch", "Zugangsbuch_2026-03-16_bis_2026-09-15.pdf"), []string{
 			"Zeitraum: 16.03.2026 bis 15.09.2026",
 			"TUER-ZU-LAND", "12.04.2026", "Buchhandlung Land",
-			"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
+			"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplar",
 			"TUER-ZU-OHNE",
-			"Summe " + mitteltopf.OhneZuordnung + ": 1 Exemplare",
+			"Summe " + mitteltopf.OhneZuordnung + ": 1 Exemplar",
 			"keine Bestellung hinterlegt",
 			"Zugänge im Zeitraum: 2 Exemplare",
 		}, "TUER-ZU-SPAET")

@@ -292,8 +292,8 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		"16.03.2026", "15.09.2026", // der Zeitraum steht auf dem Blatt
 		"B-00042", "B-00815",
 		"Verlust", "Aussortiert",
-		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
-		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplare",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplar",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplar",
 		"7 weitere Exemplare", // der Hinweis auf die Abgänge ohne Zeitpunkt
 		"3 Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht", // die zweite Lücke
 	} {

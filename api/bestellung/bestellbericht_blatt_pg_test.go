@@ -150,9 +150,9 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 			"30.09.2019  ·  Bericht-Probe Land-B  ·  Kd.-Nr. KD-Land-B", "Titel Land-B",
 			"Summe Lernmittelfreiheit (Land) (2 Bestellungen, 50 Exemplare)", "200,00 €",
 			"Schülerbücherei (Schulträger)", "03.09.2019  ·  Bericht-Probe Kreis  ·  Kd.-Nr. KD-Kreis",
-			"Summe Schülerbücherei (Schulträger) (1 Bestellungen, 5 Exemplare)", "45,50 €",
+			"Summe Schülerbücherei (Schulträger) (1 Bestellung, 5 Exemplare)", "45,50 €",
 			"ohne Zuordnung", "02.09.2019  ·  Bericht-Probe Alt  ·  Kd.-Nr. KD-Alt",
-			"Summe ohne Zuordnung (1 Bestellungen, 2 Exemplare)", "10,00 €",
+			"Summe ohne Zuordnung (1 Bestellung, 2 Exemplare)", "10,00 €",
 			"Gesamtbetrag 01.09.2019 – 30.09.2019", "255,50 €")
 		text := strings.Join(texte, "\n")
 		if strings.Contains(text, "Probe August") || strings.Contains(text, "Probe Oktober") {
@@ -177,7 +177,7 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		setzePreise(t, "true")
 		texte := blatt(t, "von=2019-09-01&bis=2019-09-30&mittel=schultraeger")
 		folge(t, texte, "Bestellbericht — Schülerbücherei (Schulträger)", "Bestellungen: 1", "Gesamtbetrag: 45,50 €",
-			"Schülerbücherei (Schulträger)", "Summe Schülerbücherei (Schulträger) (1 Bestellungen, 5 Exemplare)", "45,50 €")
+			"Schülerbücherei (Schulträger)", "Summe Schülerbücherei (Schulträger) (1 Bestellung, 5 Exemplare)", "45,50 €")
 		if text := strings.Join(texte, "\n"); strings.Contains(text, "Lernmittelfreiheit") || strings.Contains(text, "ohne Zuordnung") {
 			t.Errorf("der Bericht über einen Topf nennt einen anderen: %q", texte)
 		}
