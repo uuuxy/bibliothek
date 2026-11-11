@@ -59,6 +59,12 @@ func TestLadeBestellMailVorlage_RueckfallAufDenVorgabetext(t *testing.T) {
 	setze("Eigener Betreff", "")
 	pruefe("leerer Text", bestellMailVorgabeBetreff, bestellMailVorgabeText)
 
+	setze("  ", "Eigener Text")
+	pruefe("Betreff nur aus Leerraum", bestellMailVorgabeBetreff, bestellMailVorgabeText)
+
+	setze("Eigener Betreff", "\n \t")
+	pruefe("Text nur aus Leerraum", bestellMailVorgabeBetreff, bestellMailVorgabeText)
+
 	entferne()
 	pruefe("keine Vorlage", bestellMailVorgabeBetreff, bestellMailVorgabeText)
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"unicode/utf8"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -43,6 +44,9 @@ func (t *Tueren) MailVorlagen() http.HandlerFunc {
 	}
 }
 
+// maxBetreffZeichen ist die Länge der Spalte mail_vorlagen.betreff (VARCHAR(255)).
+const maxBetreffZeichen = 255
+
 // MailVorlageAendern aktualisiert eine Mail-Vorlage
 func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +61,13 @@ func (t *Tueren) MailVorlageAendern() http.HandlerFunc {
 			TextBody string `json:"text_body"`
 		}
 		if !tuer.LeseAnfrage(w, r, &req) {
+			return
+		}
+		// Gezählt in Zeichen wie VARCHAR in PostgreSQL; ein längerer Betreff liefe sonst in die
+		// Spalte und käme als 500 zurück.
+		if utf8.RuneCountInString(req.Betreff) > maxBetreffZeichen {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest,
+				fmt.Sprintf("Der Betreff ist zu lang, höchstens %d Zeichen", maxBetreffZeichen), nil)
 			return
 		}
 

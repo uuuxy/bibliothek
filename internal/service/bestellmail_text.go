@@ -29,10 +29,11 @@ const (
 )
 
 // LadeBestellMailVorlage lädt Betreff und Text der Bestellmail. Fehlt die gespeicherte Vorlage, ist ein
-// Feld leer oder lässt sie sich nicht lesen, gilt der Text oben.
+// Feld leer oder nur Leerraum, oder lässt sie sich nicht lesen, gilt der Text oben; der Mahnbrief
+// liest seine Vorlage genauso (ladeMahnVorlageText).
 func LadeBestellMailVorlage(ctx context.Context, pool db.Pool) (betreff, text string) {
 	betreff, text, err := repository.LadeBestellVorlage(ctx, pool)
-	if err != nil || betreff == "" || text == "" {
+	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(text) == "" {
 		return bestellMailVorgabeBetreff, bestellMailVorgabeText
 	}
 	return betreff, text
