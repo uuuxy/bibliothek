@@ -59,3 +59,34 @@ describe('GeraeteVerwaltung: Speichern', () => {
 		await waitFor(() => expect(screen.queryByLabelText(/Modell/)).toBeNull());
 	});
 });
+
+// Beim Bearbeiten bleibt nur der Barcode gesperrt, er klebt am Gerät. Die Seriennummer lässt sich
+// nachtragen: Ein Gerät, das ohne sie angelegt wurde, bekäme sie sonst nie.
+describe('GeraeteVerwaltung: Bearbeiten', () => {
+	it('nimmt eine Seriennummer an und schickt sie', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{ id: 'g1', modellname: 'iPad 9', barcode_id: 'G-0001', seriennummer: '' }
+				]
+			})
+		);
+		vi.mocked(apiClient.put).mockResolvedValue(/** @type {any} */ ({ ok: true }));
+		const screen = render(GeraeteVerwaltung);
+
+		await fireEvent.click(await screen.findByLabelText('iPad 9 bearbeiten'));
+		const barcode = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Barcode/));
+		const serie = /** @type {HTMLInputElement} */ (screen.getByLabelText('Seriennummer'));
+		expect(barcode.disabled).toBe(true);
+		expect(serie.disabled).toBe(false);
+
+		await fireEvent.input(serie, { target: { value: 'DMPXK12345' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+
+		await waitFor(() =>
+			expect(apiClient.put).toHaveBeenCalledWith('/api/geraete/g1', { seriennummer: 'DMPXK12345' })
+		);
+	});
+});

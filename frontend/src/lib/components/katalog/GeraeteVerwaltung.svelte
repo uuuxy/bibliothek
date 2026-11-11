@@ -114,11 +114,9 @@
 					bind:value={formular.barcode_id}
 					disabled={bearbeiteId != null}
 				/>
-				<Feld
-					etikett="Seriennummer"
-					bind:value={formular.seriennummer}
-					disabled={bearbeiteId != null}
-				/>
+				<!-- Der Barcode klebt am Gerät und bleibt; die Seriennummer lässt sich nachtragen und
+				     berichtigen (geraetFormular.js, AENDERBAR). -->
+				<Feld etikett="Seriennummer" bind:value={formular.seriennummer} />
 				<Feld
 					etikett="Zubehör (Checkliste, mit Komma getrennt)"
 					bind:value={formular.zubehoer}
