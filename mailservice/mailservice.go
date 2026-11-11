@@ -4,14 +4,19 @@
 package mailservice
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"mime"
 	"net/mail"
 	"strings"
+	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 )
 
 // errUmbruchInKopfzeile meldet einen Zeilenumbruch in einem Kopfzeilen-Wert.
@@ -62,6 +67,26 @@ func pruefeKopfzeilen(absender, an, betreff string) (string, string, string, err
 	return absender, an, betreff, nil
 }
 
+// schreibeKopf schreibt die Kopfzeilen, die jede Mail trägt, mit den Werten aus
+// pruefeKopfzeilen: Absender, Empfänger, Betreff, Datum, Kennung und MIME-Version. Datum und
+// Kennung verlangt RFC 5322 (3.6.1, 3.6.4); nicht jeder Mailserver ergänzt sie, und Filter werten
+// eine Mail ohne sie als verdächtig. Den Content-Type schreibt der Rufer.
+func schreibeKopf(buf *bytes.Buffer, absender, an, betreff string) {
+	fmt.Fprintf(buf, "From: %s\r\n", absender)
+	fmt.Fprintf(buf, "To: %s\r\n", an)
+	fmt.Fprintf(buf, "Subject: %s\r\n", kodiereBetreff(betreff))
+	fmt.Fprintf(buf, "Date: %s\r\n", time.Now().In(schulzeit.Zone()).Format(time.RFC1123Z))
+	fmt.Fprintf(buf, "Message-ID: <%s@%s>\r\n", rand.Text(), absender[strings.LastIndex(absender, "@")+1:])
+	buf.WriteString("MIME-Version: 1.0\r\n")
+}
+
+// kodiereBetreff schreibt einen Betreff mit Zeichen außerhalb von ASCII als kodierte Wörter (RFC
+// 2047), denn eine Kopfzeile ist ASCII. Zwischen den Wörtern wird umbrochen: Auch ein Betreff aus
+// 255 Umlauten hebt so keine Zeile über die 998 Zeichen aus RFC 5322.
+func kodiereBetreff(betreff string) string {
+	return strings.ReplaceAll(mime.QEncoding.Encode("utf-8", betreff), "?= =?", "?=\r\n =?")
+}
+
 // baueTextNachricht setzt eine einfache Textmail zusammen und prüft dabei jede Kopfzeile.
 func baueTextNachricht(absender, an, betreff, text string) ([]byte, error) {
 	absender, an, betreff, err := pruefeKopfzeilen(absender, an, betreff)
@@ -69,12 +94,10 @@ func baueTextNachricht(absender, an, betreff, text string) ([]byte, error) {
 		return nil, err
 	}
 
-	return []byte(fmt.Sprintf("From: %s\r\n"+
-		"To: %s\r\n"+
-		"Subject: %s\r\n"+
-		"Content-Type: text/plain; charset=UTF-8\r\n"+
-		"\r\n"+
-		"%s\r\n", absender, an, betreff, text)), nil
+	var buf bytes.Buffer
+	schreibeKopf(&buf, absender, an, betreff)
+	fmt.Fprintf(&buf, "Content-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n", text)
+	return buf.Bytes(), nil
 }
 
 // ErrSMTPVersand markiert jeden Fehler aus dem Gespräch mit dem SMTP-Server, im Unterschied zu

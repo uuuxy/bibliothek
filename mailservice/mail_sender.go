@@ -122,10 +122,7 @@ func baueMailNachricht(nachricht Nachricht, absender string) ([]byte, error) {
 	teile := multipart.NewWriter(&buf)
 	grenze := teile.Boundary()
 
-	fmt.Fprintf(&buf, "From: %s\r\n", absender)
-	fmt.Fprintf(&buf, "To: %s\r\n", an)
-	fmt.Fprintf(&buf, "Subject: %s\r\n", betreff)
-	fmt.Fprintf(&buf, "MIME-Version: 1.0\r\n")
+	schreibeKopf(&buf, absender, an, betreff)
 	fmt.Fprintf(&buf, "Content-Type: multipart/mixed; boundary=%s\r\n\r\n", grenze)
 
 	kopfDesTexts := make(textproto.MIMEHeader)

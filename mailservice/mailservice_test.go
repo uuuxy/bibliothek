@@ -5,6 +5,7 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"net/mail"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -82,8 +83,16 @@ func TestBaueTextNachrichtGlaettetBetreff(t *testing.T) {
 			t.Errorf("Bcc-Kopfzeile eingeschmuggelt:\n%s", kopf)
 		}
 	}
-	if len(zeilen) != 4 {
-		t.Errorf("Kopf sollte 4 Zeilen haben, hatte %d:\n%s", len(zeilen), kopf)
+	// Jede Zeile ist eine der Kopfzeilen, die schreibeKopf und der Content-Type setzen; eine
+	// eingeschmuggelte stünde als weitere Zeile darin.
+	var namen []string
+	for _, z := range zeilen {
+		name, _, _ := strings.Cut(z, ":")
+		namen = append(namen, name)
+	}
+	want := []string{"From", "To", "Subject", "Date", "Message-ID", "MIME-Version", "Content-Type"}
+	if !slices.Equal(namen, want) {
+		t.Errorf("Kopfzeilen %v, erwartet %v:\n%s", namen, want, kopf)
 	}
 }
 
