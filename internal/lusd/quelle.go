@@ -26,12 +26,28 @@ var (
 	xlsSignatur  = []byte{0xD0, 0xCF, 0x11, 0xE0}
 )
 
-// tabellenZeile ist eine Zeile der Quelle samt ihrer echten Zeilennummer in der Datei
-// (CSV: Dateizeile inkl. übersprungener Leerzeilen, Excel: Blattzeile). Die Nummer steht
-// in jeder Fehlermeldung — das Sekretariat muss die Zeile in seiner Datei finden können.
+// tabellenZeile ist eine Zeile der Quelle. nr kennt sie in der ganzen Datei (siehe Zeile.Nr),
+// fundstelle nennt sie für Meldungen: Das Sekretariat muss die Zeile in seiner Datei finden können.
 type tabellenZeile struct {
-	nr     int
-	zellen []string
+	nr         int
+	fundstelle Fundstelle
+	zellen     []string
+}
+
+// Fundstelle nennt eine Zeile so, wie das Sekretariat sie in seiner Datei findet: die Zeile, wie
+// Editor oder Excel sie zählen (CSV: Dateizeile samt übersprungener Leerzeilen), und in einer
+// Mappe mit mehreren Blättern das Blatt.
+type Fundstelle struct {
+	Blatt string
+	Zeile int
+}
+
+// text ist die Fundstelle im Fehlertext für das Log.
+func (f Fundstelle) text() string {
+	if f.Blatt == "" {
+		return fmt.Sprintf("zeile %d", f.Zeile)
+	}
+	return fmt.Sprintf("blatt %q, zeile %d", f.Blatt, f.Zeile)
 }
 
 // ErrAltesExcel meldet eine Datei im alten Binärformat von Excel (.xls), das der Import nicht
@@ -53,16 +69,16 @@ var (
 // seiner Datei finden. Art ist einer der benannten Fehler, Ursache der Fehler darunter oder nil.
 // Einen Namen trägt er nicht, weil der Fehler auch ins Log des Servers geht.
 type ZeileFehler struct {
-	Zeile   int
+	Fundstelle
 	Art     error
 	Ursache error
 }
 
 func (e *ZeileFehler) Error() string {
 	if e.Ursache != nil {
-		return fmt.Sprintf("zeile %d: %v: %v", e.Zeile, e.Art, e.Ursache)
+		return fmt.Sprintf("%s: %v: %v", e.text(), e.Art, e.Ursache)
 	}
-	return fmt.Sprintf("zeile %d: %v", e.Zeile, e.Art)
+	return fmt.Sprintf("%s: %v", e.text(), e.Art)
 }
 
 // Unwrap gibt Art und Ursache frei, damit errors.Is beide findet.
@@ -111,12 +127,12 @@ func leseCSVZeilen(inhalt []byte) ([]tabellenZeile, error) {
 			break
 		}
 		if err != nil {
-			return nil, &ZeileFehler{Zeile: gelesen, Art: errZeileUnlesbar, Ursache: err}
+			return nil, &ZeileFehler{Fundstelle: Fundstelle{Zeile: gelesen}, Art: errZeileUnlesbar, Ursache: err}
 		}
 		// FieldPos liefert die Dateizeile — der Reader überspringt Leerzeilen still,
 		// ein eigener Zähler läge danach daneben.
 		nr, _ := csvLeser.FieldPos(0)
-		tabelle = append(tabelle, tabellenZeile{nr: nr, zellen: zellen})
+		tabelle = append(tabelle, tabellenZeile{nr: nr, fundstelle: Fundstelle{Zeile: nr}, zellen: zellen})
 	}
 	if len(tabelle) == 0 {
 		return nil, ErrDateiLeer
@@ -157,7 +173,8 @@ func leseXLSXZeilen(inhalt []byte) ([]tabellenZeile, error) {
 
 // fuegeBlaetterZusammen sammelt aus den Blättern die mit Kopfzeile zu einer Tabelle; ohne
 // ein solches Blatt kommen die Zeilen des ersten nicht leeren zurück, damit die
-// Kopfzeilen-Meldung dort entsteht.
+// Kopfzeilen-Meldung dort entsteht. Den Namen des Blatts behält die Fundstelle nur, wenn mehr
+// als ein Blatt beiträgt: Bei einem Blatt genügt die Zeile.
 func fuegeBlaetterZusammen(blaetter [][]tabellenZeile) ([]tabellenZeile, error) {
 	var ersteZeilen []tabellenZeile
 	var gesamt xlsxTabelle
@@ -175,6 +192,11 @@ func fuegeBlaetterZusammen(blaetter [][]tabellenZeile) ([]tabellenZeile, error) 
 		gesamt.nimm(tabelle, kopfNr, kopf)
 	}
 	if gesamt.zeilen != nil {
+		if gesamt.blaetter == 1 {
+			for i := range gesamt.zeilen {
+				gesamt.zeilen[i].fundstelle.Blatt = ""
+			}
+		}
 		return gesamt.zeilen, nil
 	}
 	if ersteZeilen == nil {
@@ -183,7 +205,7 @@ func fuegeBlaetterZusammen(blaetter [][]tabellenZeile) ([]tabellenZeile, error) 
 	return ersteZeilen, nil // die Kopfzeilen-Meldung formuliert findeKopfzeile am ersten Blatt
 }
 
-// leseXLSXBlatt liest ein Blatt als Rohwerte und nummeriert seine Zeilen ab 1.
+// leseXLSXBlatt liest ein Blatt als Rohwerte und nummeriert seine Zeilen ab 1, wie Excel.
 func leseXLSXBlatt(f *excelize.File, blatt string) ([]tabellenZeile, error) {
 	roh, err := f.GetRows(blatt, excelize.Options{RawCellValue: true})
 	if err != nil {
@@ -191,7 +213,7 @@ func leseXLSXBlatt(f *excelize.File, blatt string) ([]tabellenZeile, error) {
 	}
 	tabelle := make([]tabellenZeile, len(roh))
 	for i, zellen := range roh {
-		tabelle[i] = tabellenZeile{nr: i + 1, zellen: zellen}
+		tabelle[i] = tabellenZeile{nr: i + 1, fundstelle: Fundstelle{Blatt: blatt, Zeile: i + 1}, zellen: zellen}
 	}
 	return tabelle, nil
 }
@@ -199,20 +221,29 @@ func leseXLSXBlatt(f *excelize.File, blatt string) ([]tabellenZeile, error) {
 // xlsxTabelle fügt die Blätter mit Kopfzeile zu einer Tabelle zusammen. Das erste gibt das
 // Spaltenbild vor, an dem der Parser seine Indizes abliest.
 type xlsxTabelle struct {
-	zeilen []tabellenZeile
-	kopf   map[string]int
-	breite int
+	zeilen   []tabellenZeile
+	kopf     map[string]int
+	breite   int
+	blaetter int
 }
 
 // nimm übernimmt das erste Blatt ganz und von jedem weiteren die Zeilen hinter der Kopfzeile,
-// umsortiert auf das Spaltenbild des ersten.
+// umsortiert auf das Spaltenbild des ersten. Ein weiteres Blatt zählt hinter der höchsten Nummer
+// weiter: Jedes Blatt beginnt in Excel bei Zeile 1, die Nummer muss aber in der Datei eindeutig
+// sein.
 func (t *xlsxTabelle) nimm(tabelle []tabellenZeile, kopfNr int, kopf map[string]int) {
+	t.blaetter++
 	if t.zeilen == nil {
 		t.zeilen, t.kopf, t.breite = tabelle, kopf, len(tabelle[kopfNr].zellen)
 		return
 	}
+	hoechste := t.zeilen[len(t.zeilen)-1].nr
 	for _, z := range tabelle[kopfNr+1:] {
-		t.zeilen = append(t.zeilen, tabellenZeile{nr: z.nr, zellen: umsortiert(z.zellen, kopf, t.kopf, t.breite)})
+		t.zeilen = append(t.zeilen, tabellenZeile{
+			nr:         hoechste + z.nr,
+			fundstelle: z.fundstelle,
+			zellen:     umsortiert(z.zellen, kopf, t.kopf, t.breite),
+		})
 	}
 }
 

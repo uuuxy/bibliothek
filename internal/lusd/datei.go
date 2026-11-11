@@ -26,7 +26,12 @@ type Zeile struct {
 	// EintrittAm ist der Schuleintritt laut Bericht (Schueler_Eintritt_AktuelleSchule) —
 	// der zweite Schlüssel der Umbenennungs-Paarung (paarung.go); nil ohne Spalte.
 	EintrittAm *time.Time
-	Nr         int
+	// Nr kennt die Zeile in der ganzen Datei: Vorschau und Import führen Zeilen und Paare unter
+	// ihr. In einer CSV-Datei und im ersten Blatt einer Mappe ist sie die Zeile, wie Editor und
+	// Excel sie zählen; jedes weitere Blatt zählt weiter, weil Excel in jedem Blatt bei 1 beginnt.
+	Nr int
+	// fundstelle nennt die Zeile für Meldungen.
+	fundstelle Fundstelle
 	// geburtsdatumUebernehmen: nur für bestätigte Umbenennungs-Paare — der Bestands-Batch
 	// schreibt dann das Geburtsdatum des Exports (Datumskorrektur der LUSD).
 	geburtsdatumUebernehmen bool
@@ -177,13 +182,14 @@ func plausiblerEintritt(eintritt, geburtsdatum *time.Time) *time.Time {
 
 // leseZeile parst eine Datenzeile und validiert die Pflichtfelder. Alle Spalten
 // laufen über spaltenWert, weil ID- und Geburtsdatum-Spalte fehlen dürfen.
-func leseZeile(zellen []string, spalten map[string]int, nr int) (Zeile, error) {
+func leseZeile(quelle tabellenZeile, spalten map[string]int) (Zeile, error) {
+	zellen := quelle.zellen
 	vorname := spaltenWert(zellen, spalten, spalteVorname)
 	nachname := spaltenWert(zellen, spalten, spalteNachname)
 	klasse := spaltenWert(zellen, spalten, spalteKlasse)
 
 	if vorname == "" || nachname == "" || klasse == "" {
-		return Zeile{}, &ZeileFehler{Zeile: nr, Art: ErrPflichtfeldLeer}
+		return Zeile{}, &ZeileFehler{Fundstelle: quelle.fundstelle, Art: ErrPflichtfeldLeer}
 	}
 
 	geb := leseDatum(zellen, spalten, spalteGeburtsdatum)
@@ -199,7 +205,8 @@ func leseZeile(zellen []string, spalten map[string]int, nr int) (Zeile, error) {
 		PLZ:          spaltenWert(zellen, spalten, spaltePLZ),
 		Ort:          spaltenWert(zellen, spalten, spalteOrt),
 		ElternEmail:  spaltenWert(zellen, spalten, spalteElternEmail),
-		Nr:           nr,
+		Nr:           quelle.nr,
+		fundstelle:   quelle.fundstelle,
 	}, nil
 }
 
@@ -234,7 +241,7 @@ func LeseDatei(inhalt []byte) (Datei, error) {
 		if istLeereZeile(tabelle[i].zellen) {
 			continue
 		}
-		zeile, err := leseZeile(tabelle[i].zellen, spalten, tabelle[i].nr)
+		zeile, err := leseZeile(tabelle[i], spalten)
 		if err != nil {
 			return Datei{}, err
 		}
@@ -261,7 +268,7 @@ func LeseDatei(inhalt []byte) (Datei, error) {
 func pruefeGeburtsdatumJeZeile(zeilen []Zeile) error {
 	for _, z := range zeilen {
 		if z.Geburtsdatum == nil {
-			return &ZeileFehler{Zeile: z.Nr, Art: ErrGeburtsdatumFehlt}
+			return &ZeileFehler{Fundstelle: z.fundstelle, Art: ErrGeburtsdatumFehlt}
 		}
 	}
 	return nil

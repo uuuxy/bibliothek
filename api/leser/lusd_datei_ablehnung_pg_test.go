@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
+	"bibliothek/internal/xlsxtest"
 )
 
 // Was der LUSD-Upload ablehnt, kommt über die Route mit dem Status an, an dem die Oberfläche
@@ -125,6 +126,40 @@ func TestLUSDDatei_AblehnungenUeberDieRoute(t *testing.T) {
 		wahl := `[{"zeile":2,"schueler_id":"00000000-0000-0000-0000-000000000000"}]`
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, map[string]string{"umbenennungen": wahl}),
 			http.StatusBadRequest, "Die Zuordnung für Zeile 2 ist nicht mehr gültig. Bitte die Vorschau neu laden.")
+	})
+	// In einer Mappe beginnt jedes Blatt bei Zeile 1; die Meldung nennt deshalb das Blatt, bei
+	// einer Mappe mit einem Blatt nur die Zeile.
+	kopf := []any{"vorname", "nachname", "klasse", "geburtsdatum"}
+	t.Run("Pflichtfeld leer im zweiten Blatt", func(t *testing.T) {
+		mappe := xlsxtest.BaueInReihenfolge(t,
+			xlsxtest.Blatt{Name: "7a", Zeilen: [][]any{kopf, {"Kind", "Nummer01", "7a", "2012-01-01"}}},
+			xlsxtest.Blatt{Name: "7b", Zeilen: [][]any{kopf, {"Kind", "Nummer02", "7b", "2012-01-02"}, {"", "Nummer03", "7b", "2012-01-03"}}})
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", mappe, nil),
+			http.StatusBadRequest, "In Zeile 3 im Blatt „7b“ ist Vorname, Nachname oder Klasse leer")
+	})
+	t.Run("Pflichtfeld leer in einer Mappe mit einem Blatt", func(t *testing.T) {
+		mappe := xlsxtest.BaueInReihenfolge(t,
+			xlsxtest.Blatt{Name: "Hinweise", Zeilen: [][]any{{"Stand März 2026"}}},
+			xlsxtest.Blatt{Name: "Klassenliste", Zeilen: [][]any{{"Schuljahr 2026/27"}, kopf, {"Kind", "Nummer01", "7a", "2012-01-01"}, {"Kind", "", "7a", "2012-01-02"}}})
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", mappe, nil),
+			http.StatusBadRequest, "In Zeile 4 ist Vorname, Nachname oder Klasse leer")
+	})
+	t.Run("Geburtsdatum fehlt im zweiten Blatt", func(t *testing.T) {
+		mappe := xlsxtest.BaueInReihenfolge(t,
+			xlsxtest.Blatt{Name: "7a", Zeilen: [][]any{kopf, {"Kind", "Nummer01", "7a", "2012-01-01"}}},
+			xlsxtest.Blatt{Name: "7b", Zeilen: [][]any{kopf, {"Kind", "Nummer02", "7b", ""}}})
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/preview", mappe, nil),
+			http.StatusBadRequest, "In Zeile 2 im Blatt „7b“ fehlt das Geburtsdatum oder ist unlesbar. Ohne LUSD-ID ordnen "+
+				"Name und Geburtsdatum die Zeile zu, deshalb muss es in jeder Zeile stehen.")
+	})
+	t.Run("Zuordnung im zweiten Blatt nicht vorgeschlagen", func(t *testing.T) {
+		mappe := xlsxtest.BaueInReihenfolge(t,
+			xlsxtest.Blatt{Name: "7a", Zeilen: [][]any{kopf, {"Kind", "Nummer01", "7a", "2012-01-01"}}},
+			xlsxtest.Blatt{Name: "7b", Zeilen: [][]any{kopf, {"Kind", "Nummer02", "7b", "2012-01-02"}}})
+		// Das erste Blatt hat zwei Zeilen; Zeile 2 des zweiten trägt deshalb die Nr 4.
+		wahl := `[{"zeile":4,"schueler_id":"00000000-0000-0000-0000-000000000000"}]`
+		erwarteMeldung(t, sendeDatei(t, "/api/lusd/import", mappe, map[string]string{"umbenennungen": wahl}),
+			http.StatusBadRequest, "Die Zuordnung für Zeile 2 im Blatt „7b“ ist nicht mehr gültig. Bitte die Vorschau neu laden.")
 	})
 	t.Run("Massenabgang ohne Bestätigung", func(t *testing.T) {
 		erwarteMeldung(t, sende(t, "/api/lusd/import", true, nil), http.StatusConflict,

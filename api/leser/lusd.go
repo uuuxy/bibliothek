@@ -127,12 +127,22 @@ func lusdDateiMeldung(err error) string {
 func lusdZeilenMeldung(zeile *lusd.ZeileFehler) string {
 	switch {
 	case errors.Is(zeile, lusd.ErrPflichtfeldLeer):
-		return fmt.Sprintf("In Zeile %d ist Vorname, Nachname oder Klasse leer", zeile.Zeile)
+		return fmt.Sprintf("In %s ist Vorname, Nachname oder Klasse leer", fundstelleText(zeile.Fundstelle))
 	case errors.Is(zeile, lusd.ErrGeburtsdatumFehlt):
-		return fmt.Sprintf("In Zeile %d fehlt das Geburtsdatum oder ist unlesbar. Ohne LUSD-ID ordnen Name und "+
-			"Geburtsdatum die Zeile zu, deshalb muss es in jeder Zeile stehen.", zeile.Zeile)
+		return fmt.Sprintf("In %s fehlt das Geburtsdatum oder ist unlesbar. Ohne LUSD-ID ordnen Name und "+
+			"Geburtsdatum die Zeile zu, deshalb muss es in jeder Zeile stehen.", fundstelleText(zeile.Fundstelle))
 	}
+	// Unlesbar ist nur eine Zeile einer CSV-Datei; sie hat kein Blatt.
 	return fmt.Sprintf("Zeile %d der Datei ist nicht lesbar", zeile.Zeile)
+}
+
+// fundstelleText nennt eine Zeile so, wie das Sekretariat sie in seiner Datei findet; in einer
+// Mappe mit mehreren Blättern steht das Blatt dabei, weil jedes Blatt bei Zeile 1 beginnt.
+func fundstelleText(f lusd.Fundstelle) string {
+	if f.Blatt == "" {
+		return fmt.Sprintf("Zeile %d", f.Zeile)
+	}
+	return fmt.Sprintf("Zeile %d im Blatt „%s“", f.Zeile, f.Blatt)
 }
 
 // lusdLaufFehler ordnet den Fehler eines Laufs ein und nennt den Satz dazu: Der Massenabgang
@@ -147,7 +157,7 @@ func lusdLaufFehler(err error) (status int, meldung string) {
 			"Bitte die Datei prüfen. Ist der Massenabgang beabsichtigt (Schuljahreswechsel), den Import mit "+
 			"Bestätigung wiederholen.", massenabgang.Abgaenger, massenabgang.Aktive, massenabgang.SchwelleProzent)
 	case errors.As(err, &wahl):
-		return http.StatusBadRequest, fmt.Sprintf("Die Zuordnung für Zeile %d ist nicht mehr gültig. Bitte die Vorschau neu laden.", wahl.Zeile)
+		return http.StatusBadRequest, fmt.Sprintf("Die Zuordnung für %s ist nicht mehr gültig. Bitte die Vorschau neu laden.", fundstelleText(wahl.Fundstelle))
 	}
 	return http.StatusInternalServerError, ""
 }

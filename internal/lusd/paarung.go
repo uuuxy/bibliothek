@@ -272,31 +272,35 @@ func uebernimmUmbenennungen(datei Datei, wahl []UmbenennungWahl, paare []Vorscha
 		vorgeschlagen[p.Zeile] = i
 	}
 	for _, w := range wahl {
+		i, inDatei := zeilenIndex[w.Zeile]
 		pi, ok := vorgeschlagen[w.Zeile]
-		if !ok || paare[pi].SchuelerID != w.SchuelerID {
-			return &UmbenennungUngueltigFehler{Zeile: w.Zeile}
+		if !ok || !inDatei || paare[pi].SchuelerID != w.SchuelerID {
+			ort := Fundstelle{Zeile: w.Zeile}
+			if inDatei {
+				ort = datei.Zeilen[i].fundstelle
+			}
+			return &UmbenennungUngueltigFehler{Fundstelle: ort}
 		}
 		p := &paare[pi]
 		if p.Bestaetigt {
 			continue
 		}
 		p.Bestaetigt = true
-		i := zeilenIndex[w.Zeile]
 		z.zielID[i] = p.SchuelerID
 		z.geburtsdatumSetzen[i] = true
 		z.abgaengerIDs = entferneID(z.abgaengerIDs, p.SchuelerID)
 		vorschau.Abgaenger = entferneAusVorschau(vorschau.Abgaenger, p.SchuelerID)
-		vorschau.Neuzugaenge = entferneAusVorschau(vorschau.Neuzugaenge, "zeile-"+strconv.Itoa(w.Zeile))
+		vorschau.Neuzugaenge = entferneAusVorschau(vorschau.Neuzugaenge, datei.Zeilen[i].zeilenKennung())
 	}
 	return nil
 }
 
 // UmbenennungUngueltigFehler meldet eine gewählte Umbenennung, die es im Lauf nicht mehr
 // gibt: Der Bestand hat sich seit der Vorschau geändert.
-type UmbenennungUngueltigFehler struct{ Zeile int }
+type UmbenennungUngueltigFehler struct{ Fundstelle }
 
 func (e *UmbenennungUngueltigFehler) Error() string {
-	return "zuordnung für zeile " + strconv.Itoa(e.Zeile) + " nicht mehr gültig"
+	return "zuordnung für " + e.text() + " nicht mehr gültig"
 }
 
 func entferneID(ids []string, id string) []string {

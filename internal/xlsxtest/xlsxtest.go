@@ -11,15 +11,32 @@ import (
 )
 
 // Baue erzeugt eine Arbeitsmappe: je Blatt die Zellen je Zeile. Eine Zelle vom Typ time.Time
-// wird als echte Datumszelle geschrieben (Excel-Serienzahl).
+// wird als echte Datumszelle geschrieben (Excel-Serienzahl). Die Reihenfolge der Blätter ist die
+// der Map, also zufällig; wer sie braucht, nimmt BaueInReihenfolge.
 func Baue(t *testing.T, blaetter map[string][][]any) []byte {
 	t.Helper()
-	mappe := excelize.NewFile()
-	erstes := true
+	var liste []Blatt
 	for name, zeilen := range blaetter {
-		legeBlattAn(t, mappe, name, erstes)
-		erstes = false
-		fuelleBlatt(t, mappe, name, zeilen)
+		liste = append(liste, Blatt{Name: name, Zeilen: zeilen})
+	}
+	return BaueInReihenfolge(t, liste...)
+}
+
+// Blatt ist ein Blatt der Arbeitsmappe: sein Name und die Zellen je Zeile.
+type Blatt struct {
+	Name   string
+	Zeilen [][]any
+}
+
+// BaueInReihenfolge erzeugt eine Arbeitsmappe mit den Blättern in der genannten Reihenfolge. Ein
+// Test, dessen Aussage am ersten oder letzten Blatt hängt, wäre mit der Map von Baue nur
+// manchmal rot.
+func BaueInReihenfolge(t *testing.T, blaetter ...Blatt) []byte {
+	t.Helper()
+	mappe := excelize.NewFile()
+	for i, blatt := range blaetter {
+		legeBlattAn(t, mappe, blatt.Name, i == 0)
+		fuelleBlatt(t, mappe, blatt.Name, blatt.Zeilen)
 	}
 	var puffer bytes.Buffer
 	if err := mappe.Write(&puffer); err != nil {

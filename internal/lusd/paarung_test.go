@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/xlsxtest"
 	"bibliothek/repository"
 )
 
@@ -196,7 +197,7 @@ func TestOrdneSpaltenZu_SchreibweisenDesSchuleintritts(t *testing.T) {
 	if idx, ok := m[spalteEintritt]; !ok || idx != 4 {
 		t.Errorf("Schueler_Eintritt_AktuelleSchule nicht als Schuleintritt erkannt: %+v", m)
 	}
-	row, err := leseZeile([]string{"Anna", "Müller", "05F1", "04.05.2013", "19.08.2024"}, m, 2)
+	row, err := leseZeile(tabellenZeile{nr: 2, zellen: []string{"Anna", "Müller", "05F1", "04.05.2013", "19.08.2024"}}, m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,5 +290,43 @@ func TestFindeUmbenennungen_RueckkehrerIstKeinKandidat(t *testing.T) {
 	z := Zuordnung{neuZeilen: []int{1}, zielID: map[int]string{0: "alt"}}
 	if p := findeUmbenennungen(datei, nil, idx, z); len(p) != 0 {
 		t.Errorf("schon zugeordneter Rückkehrer darf kein Paar-Kandidat sein: %+v", p)
+	}
+}
+
+// Bestätigt der Admin ein Paar im ersten Blatt einer Mappe mit mehreren Blättern, bekommt der
+// Bestandsschüler die Zeile dieses Blatts, nicht die Zeile gleicher Nummer im letzten Blatt. Aus
+// den Neuzugängen fällt nur das Kind des Paars.
+func TestUebernimmUmbenennungen_TrifftDieZeileSeinesBlatts(t *testing.T) {
+	kopf := []any{"Nachname", "Vorname", "Klasse", "Geburtsdatum"}
+	datei, err := LeseDatei(xlsxtest.BaueInReihenfolge(t,
+		xlsxtest.Blatt{Name: "6a", Zeilen: [][]any{kopf, {"Mueller-Schmidt", "Anna", "06A", "04.05.2013"}}},
+		xlsxtest.Blatt{Name: "6b", Zeilen: [][]any{kopf, {"Cato", "Cem", "06B", "03.03.2013"}}},
+	))
+	if err != nil {
+		t.Fatalf("LeseDatei: %v", err)
+	}
+	anna, cem := datei.Zeilen[0], datei.Zeilen[1]
+	if anna.Vorname != "Anna" || cem.Vorname != "Cem" {
+		t.Fatalf("Reihenfolge der Zeilen: %s, %s; erwartet Anna, Cem", anna.Vorname, cem.Vorname)
+	}
+	paare := []VorschauUmbenennung{{Zeile: anna.Nr, SchuelerID: "alt"}}
+	z := Zuordnung{zielID: map[int]string{}, geburtsdatumSetzen: map[int]bool{}, abgaengerIDs: []string{"alt"}}
+	vorschau := &Vorschau{Neuzugaenge: []VorschauSchueler{{ID: anna.zeilenKennung()}, {ID: cem.zeilenKennung()}}}
+	if err := uebernimmUmbenennungen(datei, []UmbenennungWahl{{Zeile: anna.Nr, SchuelerID: "alt"}}, paare, &z, vorschau); err != nil {
+		t.Fatal(err)
+	}
+	if len(z.zielID) != 1 || z.zielID[0] != "alt" || !z.geburtsdatumSetzen[0] {
+		t.Errorf("Zuordnung %v (Geburtsdatum setzen: %v), erwartet die Zeile von Anna (0) für „alt“", z.zielID, z.geburtsdatumSetzen)
+	}
+	if len(vorschau.Neuzugaenge) != 1 || vorschau.Neuzugaenge[0].ID != cem.zeilenKennung() {
+		t.Errorf("Neuzugänge %+v, erwartet nur noch Cem (%s)", vorschau.Neuzugaenge, cem.zeilenKennung())
+	}
+
+	// Ein Paar zu einer Nr, die die Datei nicht kennt, wird abgewiesen statt auf Index 0 gelegt.
+	fremd := Zuordnung{zielID: map[int]string{}, geburtsdatumSetzen: map[int]bool{}}
+	err = uebernimmUmbenennungen(datei, []UmbenennungWahl{{Zeile: 99, SchuelerID: "alt"}},
+		[]VorschauUmbenennung{{Zeile: 99, SchuelerID: "alt"}}, &fremd, &Vorschau{})
+	if _, ok := err.(*UmbenennungUngueltigFehler); !ok || len(fremd.zielID) != 0 {
+		t.Errorf("Paar zu Nr 99: Fehler %v, Zuordnung %v; erwartet UmbenennungUngueltigFehler und keine Zuordnung", err, fremd.zielID)
 	}
 }

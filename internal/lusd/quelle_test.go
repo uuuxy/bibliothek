@@ -197,3 +197,57 @@ func TestLeseDatei_XLSXTitelzeileUeberJedemBlatt(t *testing.T) {
 		t.Errorf("gelesen = %v, erwartet Adler (Ava 06F1) und Cato (Cem 06F2)", gelesen)
 	}
 }
+
+// Excel zählt die Zeilen jedes Blatts ab 1. Vorschau und Import führen Zeilen und Paare unter
+// Nr; trügen Zeile 2 im Blatt 5a und Zeile 2 im Blatt 5c dieselbe Nr, landete die Bestätigung
+// eines Paars auf dem Kind im letzten Blatt. Das erste Blatt behält die Zeilen, wie Excel sie
+// zählt: Eine Datei mit einem Blatt ändert sich dadurch nicht.
+func TestLeseDatei_XLSXNrIstUeberAlleBlaetterEindeutig(t *testing.T) {
+	kopf := []any{"Nachname", "Vorname", "Klasse", "Geburtsdatum"}
+	xlsx := xlsxtest.BaueInReihenfolge(t,
+		xlsxtest.Blatt{Name: "5a", Zeilen: [][]any{kopf, {"Adler", "Anna", "05A", "04.05.2013"}, {"Arndt", "Alma", "05A", "05.05.2013"}}},
+		xlsxtest.Blatt{Name: "Hinweise", Zeilen: [][]any{{"Stand März 2026"}}},
+		xlsxtest.Blatt{Name: "5b", Zeilen: [][]any{{"Klasse 5b"}, kopf, {"Beck", "Ben", "05B", "01.02.2013"}}},
+		xlsxtest.Blatt{Name: "5c", Zeilen: [][]any{kopf, {"Cato", "Cem", "05C", "03.03.2013"}, {"Celik", "Can", "05C", "04.03.2013"}}},
+	)
+	datei, err := LeseDatei(xlsx)
+	if err != nil {
+		t.Fatalf("LeseDatei: %v", err)
+	}
+	if len(datei.Zeilen) != 5 {
+		t.Fatalf("len(datei.Zeilen) = %d, erwartet 5 Kinder aus drei Blättern", len(datei.Zeilen))
+	}
+	gesehen := map[int]string{}
+	for _, z := range datei.Zeilen {
+		name := z.Vorname + " " + z.Nachname
+		if vorher, doppelt := gesehen[z.Nr]; doppelt {
+			t.Errorf("Nr %d tragen %s und %s", z.Nr, vorher, name)
+		}
+		gesehen[z.Nr] = name
+	}
+	if datei.Zeilen[0].Nr != 2 || datei.Zeilen[1].Nr != 3 {
+		t.Errorf("erstes Blatt: Nr %d und %d, erwartet 2 und 3 wie in Excel", datei.Zeilen[0].Nr, datei.Zeilen[1].Nr)
+	}
+	// Meldungen nennen Blatt und Zeile, wie Excel sie zeigt.
+	for i, want := range []Fundstelle{{"5a", 2}, {"5a", 3}, {"5b", 3}, {"5c", 2}, {"5c", 3}} {
+		if got := datei.Zeilen[i].fundstelle; got != want {
+			t.Errorf("%s %s: Fundstelle %+v, erwartet %+v", datei.Zeilen[i].Vorname, datei.Zeilen[i].Nachname, got, want)
+		}
+	}
+}
+
+// Trägt nur ein Blatt die Klassenliste (daneben ein Deckblatt), nennt die Fundstelle kein Blatt:
+// Die Zeile allein findet das Sekretariat.
+func TestLeseDatei_XLSXEinBlattNenntKeinBlatt(t *testing.T) {
+	xlsx := xlsxtest.BaueInReihenfolge(t,
+		xlsxtest.Blatt{Name: "Hinweise", Zeilen: [][]any{{"Stand März 2026"}}},
+		xlsxtest.Blatt{Name: "Klassenliste", Zeilen: [][]any{{"Schuljahr 2026/27"}, {"Nachname", "Vorname", "Klasse"}, {"Adler", "Anna", "05A"}}},
+	)
+	datei, err := LeseDatei(xlsx)
+	if err != nil {
+		t.Fatalf("LeseDatei: %v", err)
+	}
+	if len(datei.Zeilen) != 1 || datei.Zeilen[0].Nr != 3 || datei.Zeilen[0].fundstelle != (Fundstelle{Zeile: 3}) {
+		t.Errorf("Zeilen %+v, erwartet Anna mit Nr 3 und Fundstelle Zeile 3 ohne Blatt", datei.Zeilen)
+	}
+}

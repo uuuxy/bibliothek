@@ -46,7 +46,8 @@ sie einführt, klärt vorher den Kontakt und ergänzt VVT und Datenschutzhinweis
 
 Formate: CSV (Komma/Semikolon; UTF-8, auch mit BOM, oder was Excel als „CSV" speichert: Windows-1252,
 MS-DOS, Macintosh; bleibt die Kodierung unklar, weist der Import die Datei mit einer Anleitung ab)
-oder XLSX; mehrere Blätter (eines je Klasse) werden als eine Tabelle gelesen;
+oder XLSX; mehrere Blätter (eines je Klasse) werden als eine Tabelle gelesen, jede Zeile behält
+darin eine eigene Nummer, und eine Meldung nennt Blatt und Zeile (`lusd.Fundstelle`);
 Kopfzeilen in drei Stilen (`Vorname`, `Schueler_Vorname`, `SLR_Vorname`). Altes `.xls` wird mit
 Anleitung abgewiesen.
 
