@@ -144,7 +144,9 @@ func leseGezeigteFrist(w http.ResponseWriter, r *http.Request) (*time.Time, bool
 	if req.FristBisher == "" {
 		return nil, true
 	}
-	gezeigt, err := leseFaelligAm(req.FristBisher)
+	// Ohne die Grenze der Frist von Hand: Die gezeigte Frist ist die des Servers und dient nur dem
+	// Abgleich, und eine Frist aus den Altdaten darf dahinter liegen.
+	gezeigt, err := leseFristText(req.FristBisher)
 	if err != nil {
 		apierrors.AntworteFehler(w, http.StatusBadRequest, err)
 		return nil, false
@@ -255,19 +257,28 @@ func (t *Tueren) setzeAusleihFrist(w http.ResponseWriter, r *http.Request, proto
 // nächsten Stichtag. Ein Datum dahinter ist ein Tippfehler.
 const fristHoechstensJahre = 13
 
-// leseFaelligAm liest die Frist als Zeitstempel (ISO 8601) oder als Datum. Ein Datum gilt bis
+// leseFristText liest eine Frist als Zeitstempel (ISO 8601) oder als Datum. Ein Datum gilt bis
 // zum Tagesende in der Schulzeitzone, nach derselben Definition wie die berechnete Frist
 // (schulzeit.TagesEnde): Roh in UTC wäre die gesetzte Frist ein bis zwei Stunden später fällig
-// als eine berechnete zum selben Datum. Die Untergrenze, den Tag der Ausleihe, prüft
+// als eine berechnete zum selben Datum.
+func leseFristText(text string) (time.Time, error) {
+	if frist, err := time.Parse(time.RFC3339, text); err == nil {
+		return frist, nil
+	}
+	datum, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		return time.Time{}, apierrors.BadRequest("Das Fälligkeitsdatum muss ein Datum der Form JJJJ-MM-TT sein", err)
+	}
+	return schulzeit.TagesEnde(datum), nil
+}
+
+// leseFaelligAm liest eine Frist von Hand wie leseFristText und weist ein Datum hinter der
+// längsten Frist des Programms ab. Die Untergrenze, den Tag der Ausleihe, prüft
 // repository.SetzeAusleihFrist.
 func leseFaelligAm(text string) (time.Time, error) {
-	frist, err := time.Parse(time.RFC3339, text)
+	frist, err := leseFristText(text)
 	if err != nil {
-		datum, datumFehler := time.Parse("2006-01-02", text)
-		if datumFehler != nil {
-			return time.Time{}, apierrors.BadRequest("Das Fälligkeitsdatum muss ein Datum der Form JJJJ-MM-TT sein", datumFehler)
-		}
-		frist = schulzeit.TagesEnde(datum)
+		return time.Time{}, err
 	}
 	if grenze := schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(fristHoechstensJahre, 0, 0)); frist.After(grenze) {
 		return time.Time{}, apierrors.BadRequest(fmt.Sprintf("Das Rückgabedatum liegt zu weit in der Zukunft. Möglich ist höchstens der %s.",

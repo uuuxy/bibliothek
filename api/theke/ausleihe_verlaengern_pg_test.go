@@ -370,3 +370,33 @@ func TestAusleiheVerlaengern_ZweiterAuftragMitAlterFristVerlaengertNichtNochEinm
 		t.Errorf("Verlängerung mit der jetzigen Frist: Status %d: %s", rec.Code, rec.Body.String())
 	}
 }
+
+// Die gezeigte Frist dient nur dem Abgleich mit dem Server. Die Grenze der Frist von Hand
+// (fristHoechstensJahre) galt auch ihr, und eine Ausleihe mit einer Frist dahinter, etwa aus den
+// Altdaten, ließ sich nicht mehr verlängern: 400 „zu weit in der Zukunft".
+func TestAusleiheVerlaengern_GezeigteFristHinterDerGrenzeDerHandeingabe(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+
+	schueler := testdaten.LegeSchuelerAn(t, pool, "S-VG-4", "Fern", "5a")
+	gezeigt := schulzeit.TagesEnde(schulzeit.Jetzt().AddDate(fristHoechstensJahre+7, 0, 0))
+	ausleihe := testdaten.LegeAusleiheMitFristAn(t, pool, schueler, "Buch mit ferner Frist", gezeigt)
+
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+	rumpf := `{"frist_bisher":"` + gezeigt.Format(time.RFC3339) + `"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/"+ausleihe+"/verlaengern", strings.NewReader(rumpf))
+	req.Header.Set("Content-Type", "application/json")
+	req.SetPathValue("ausleihe_id", ausleihe)
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsSchluessel, &auth.Claims{Rolle: auth.RolleAdmin}))
+	rec := httptest.NewRecorder()
+	srv.AusleiheVerlaengern(&tuertest.EinstellungenAttrappe{
+		Einstellungen: &repository.SystemEinstellungen{FristBuchTage: 21},
+	})(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	if frist := testdaten.LadeFrist(t, pool, ausleihe); !frist.After(gezeigt) {
+		t.Errorf("Frist %s, erwartet nach der bisherigen %s", frist.Format(time.RFC3339), gezeigt.Format(time.RFC3339))
+	}
+}
