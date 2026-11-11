@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 08.11.2026
+Stand: 11.11.2026
 
 Oben der Fahrplan: je Schritt eine Zeile mit Kästchen, in der Reihenfolge der Arbeit. Die Nummer
 in Klammern führt zu den Einzelheiten. Einen zweiten Ort für Offenes gibt es nicht; wie die Liste
@@ -57,7 +57,7 @@ Nur, was kein Test leisten kann.
   Browsers. (5.174)
 - [x] Signatur: beim Zeigen auf einen Vorschlag zwei vorhandene Cover der Titel unter dieser
   Signatur, nach dem Ausliefern des Vorschlagsmenüs. (5.175)
-- [ ] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
+- [x] Den abgelehnten Vorschlag #774 auf GitHub schließen. (5.176)
 - [ ] Den Vorschlag #775 zum LUSD-Import prüfen: erst messen, dann entscheiden. (5.177)
 
 ### Termin
@@ -85,18 +85,12 @@ Neue Etiketten der Schülerbücherei tragen den Wortlaut der alten Littera-Etike
 am 28.09.2026). Er wird beim Einrichten unter Einstellungen → Schule eingetragen; ohne Eintrag
 trägt ein neues Etikett keinen Vermerk.
 
-### 5.176 Vorschlag #774 schließen
-
-Der Vorschlag setzt den Typ eines `ui/Button` ohne Angabe auf „button". Am Code gezählt tragen die
-Knöpfe in allen 11 Formularen bereits eine Typangabe, und kein Knopf nutzt `form=`; die Änderung
-hätte nichts geändert. Abgelehnt. Der GitHub-Zugang der Arbeitskopie darf keine Pull Requests
-schließen, deshalb von Hand auf GitHub: „Close pull request".
-
 ### 5.177 Vorschlag #775: Existenzprüfung im LUSD-Import
 
 Der Vorschlag ändert, wie der LUSD-Import prüft, ob ein Schüler schon da ist
 (`repository/lusd_import.go`, `internal/lusd/anwenden.go`), und hängt eine Zeile an
-`.jules/bolt.md` an. Noch nicht geprüft. Nächster Schritt: Beifang und Drei-Punkt-Diff ansehen,
+`.jules/bolt.md` an. Der Pull Request ist geschlossen und sein Branch gelöscht; den Stand holt
+`git fetch origin pull/775/head`. Noch nicht geprüft. Nächster Schritt: Beifang und Drei-Punkt-Diff ansehen,
 die behauptete Ersparnis an einem Import messen, die vorhandenen Tests des Imports am Rückbau
 der geänderten Stelle laufen lassen; nur übernehmen, was messbar spart und dasselbe tut.
 
