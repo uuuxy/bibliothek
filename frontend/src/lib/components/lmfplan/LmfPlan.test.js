@@ -268,3 +268,65 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		).toBe(true);
 	});
 });
+
+// Wer eine Klasse aus dem Plan nimmt, findet sie unter „Noch nicht im Plan" wieder und
+// speichert sie als ausgelassen. Die Reihenfolge meldete die Klasse früher, bevor sie aus der
+// Zeile ging; der Planer sah sie dann noch im Plan, merkte nichts, und sie war aus beiden
+// Listen verschwunden. Geprüft an der ganzen Seite, weil der Fehler zwischen Reihenfolge und
+// Planer lag: Die Tests der Reihenfolge allein ersetzen den Planer durch eine Attrappe.
+describe('LmfPlan: Klasse aus dem Plan nehmen', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	/** @param {string[][]} klassenJeZeile */
+	function zeigePlan(klassenJeZeile) {
+		const zeilen = klassenJeZeile.map((klassen, n) => ({
+			position: n + 1,
+			datum: '2027-06-28',
+			stunde: n + 1,
+			fest: false,
+			klassen,
+			vermerk: ''
+		}));
+		const stand = {
+			...STAND,
+			plan: PLAN,
+			zeilen,
+			klassen: klassenJeZeile.flat(),
+			vorschlag: undefined
+		};
+		vi.mocked(apiFetch).mockImplementation(async (url, init) => {
+			if (init?.method === 'PUT')
+				return new Response(JSON.stringify({ zeilen: [], ausfaelle: [] }), { status: 200 });
+			return new Response(JSON.stringify(stand), { status: 200 });
+		});
+		render(LmfPlan);
+	}
+
+	const vorrat = () => screen.getByTestId('lmf-vorrat').textContent ?? '';
+
+	it('über das Zeilenmenü: Die Klasse steht danach unter „Noch nicht im Plan"', async () => {
+		zeigePlan([['09H1'], ['09H2']]);
+		await fireEvent.click(await screen.findByLabelText('Aktionen Zeile 1'));
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Klasse aus dem Plan nehmen' }));
+		expect(vorrat()).toContain('09H1');
+		expect(vorrat()).not.toContain('09H2');
+	});
+
+	it('über das × am Chip einer geteilten Stunde', async () => {
+		zeigePlan([['09H1', '09H2']]);
+		await fireEvent.click(await screen.findByRole('button', { name: '09H2 aus dem Plan nehmen' }));
+		expect(vorrat()).toContain('09H2');
+		expect(vorrat()).not.toContain('09H1');
+	});
+
+	it('über „Zeile entfernen": beide Klassen der Stunde', async () => {
+		zeigePlan([['09H1', '09H2'], ['10R1']]);
+		await fireEvent.click(await screen.findByLabelText('Aktionen Zeile 1'));
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Zeile entfernen' }));
+		expect(vorrat()).toContain('09H1');
+		expect(vorrat()).toContain('09H2');
+		expect(vorrat()).not.toContain('10R1');
+	});
+});

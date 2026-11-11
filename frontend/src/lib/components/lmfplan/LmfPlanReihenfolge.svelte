@@ -71,16 +71,19 @@
 		ziel = null;
 	}
 
+	// Erst die Zeile ändern, dann melden: Der Planer merkt eine Klasse nur als ausgelassen,
+	// wenn sie in keiner Zeile mehr steht, und liest dafür die gebundenen Zeilen.
 	/** @param {number} i */
 	function entfernen(i) {
-		for (const k of zeilen[i].klassen) onklasseraus(k);
+		const klassen = zeilen[i].klassen;
 		zeilen = op.entfernen(zeilen, i);
+		for (const k of klassen) onklasseraus(k);
 	}
 
 	/** @param {number} i @param {string} k */
 	function klasseRaus(i, k) {
-		onklasseraus(k);
 		zeilen = op.klasseRaus(zeilen, i, k);
+		onklasseraus(k);
 	}
 </script>
 
