@@ -59,8 +59,18 @@ UPDATE_STAND="${UPDATE_STAND:-main}"
 ZIEL_TAG=""
 
 DB_CONTAINER="bibliothek-db"
-DB_USER="postgres"
-DB_NAME="bibliothek"
+# Benutzer und Name der Datenbank aus der .env, sonst die Vorgaben aus docker-compose.yml
+# (${POSTGRES_USER:-postgres}, ${POSTGRES_DB:-bibliothek}); scripts/backup.sh liest sie genauso.
+# Nur diese zwei Werte: Mit der ganzen Datei stünde jedes Geheimnis in der Umgebung der
+# Kindprozesse. Die letzte Zuweisung gewinnt, umschließende Anführungszeichen fallen weg.
+lies_env() {
+  grep -E "^${1}=" "$(cd "$(dirname "$0")" && pwd)/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r' \
+    | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/" || true
+}
+DB_USER="$(lies_env POSTGRES_USER)"
+DB_USER="${DB_USER:-postgres}"
+DB_NAME="$(lies_env POSTGRES_DB)"
+DB_NAME="${DB_NAME:-bibliothek}"
 # Ein Name für den Backend-Container, für alle Schritte: Ein zweiter Platz für denselben
 # Wert liefe auseinander. scripts/backup_krypto.sh liest ihn als BACKEND_CONTAINER, deshalb
 # steht er hier, bevor der Helfer eingebunden wird.

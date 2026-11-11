@@ -214,3 +214,23 @@ func TestUpdate_ReleaseHinterDemStandBrichtAb(t *testing.T) {
 		t.Errorf("vor dem Abbruch lief schon etwas (Server %s, docker: %s)", lauf.kopf, lauf.docker)
 	}
 }
+
+// Die Sicherung vor dem Update nimmt Benutzer und Datenbank aus der .env wie docker-compose.yml
+// und scripts/backup.sh; ohne Eintrag gelten deren Vorgaben. Mit festen Werten scheiterte
+// pg_dump an einer Anlage mit anderen Namen, und das Update brach ab.
+func TestUpdate_SichertMitBenutzerUndDatenbankAusDerEnv(t *testing.T) {
+	for _, fall := range []struct{ name, env, soll string }{
+		{"aus der .env", "POSTGRES_USER=gateuser\nPOSTGRES_DB=\"gatedb\"", "pg_dump -U gateuser -d gatedb"},
+		{"Vorgaben", "", "pg_dump -U postgres -d bibliothek"},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			lauf := fahreUpdate(t, fall.env, true, false)
+			if lauf.err != nil {
+				t.Fatalf("update.sh: %v\n%s", lauf.err, lauf.ausgabe)
+			}
+			if !strings.Contains(lauf.docker, fall.soll) {
+				t.Errorf("Sicherung ohne %q:\n%s", fall.soll, lauf.docker)
+			}
+		})
+	}
+}
