@@ -465,6 +465,11 @@ Draußen bleibt, was Zugänge, Orte oder Namen nennt (Abschnitt 7.3), was nur de
 der Entwicklung betrifft, und der Verlauf einzelner Sitzungen; der steht in den
 Commit-Nachrichten.
 
+Dasselbe gilt für die Einstellung des Werkzeugs: Die versionierte `.claude/settings.json` trägt
+den Hinweis-Hook und nur Freigaben, die für jeden gelten, der das Repository klont. Persönliche
+Freigaben stehen in der unversionierten `.claude/settings.local.json`
+(`werkzeug_einstellung_test.go`).
+
 Neue Notizen entstehen weiter. Damit sich nichts ansammelt, gilt: Was für die Pflege zählt,
 kommt mit dem Commit, der es hervorbringt, in eines der Dokumente oben (`CLAUDE.md`,
 Abschnitt 4).
