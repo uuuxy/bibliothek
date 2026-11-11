@@ -3,6 +3,7 @@ package repository_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"bibliothek/internal/lusd"
@@ -268,6 +269,41 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 	for _, z := range zaehlungen {
 		if n := zfZaehle(t, pool, z.sql, quelle); n != 0 {
 			t.Errorf("%s: Quelle hat noch %d Zeile(n)", z.was, n)
+		}
+	}
+
+	// Der Rückweg-Eintrag nennt jede gewanderte Zeile (Rasterfrage 10). Die Protokollzeilen
+	// stehen nicht darin: Sie tragen den Leser nur als Schlüssel in den Details.
+	rueckwegSchluessel := map[string]string{
+		"ausleihen": "ausleihen", "schadensfaelle": "schadensfaelle", "vormerkungen": "vormerkungen",
+		"schueler_fotos": "foto", "schadensersatz_bescheide": "bescheide",
+		"nachbuch_meldungen": "nachbuch_meldungen", "benutzer": "konten",
+	}
+	var gewandert map[string]any
+	if err := pool.QueryRow(ctx, `SELECT details->'gewandert' FROM audit_log
+		WHERE tabelle = 'schueler' AND aktion = 'ZUSAMMENGEFUEHRT' AND datensatz_id = $1::uuid`, ziel).Scan(&gewandert); err != nil {
+		t.Fatalf("Rückweg-Eintrag lesen: %v", err)
+	}
+	for _, z := range zaehlungen {
+		if strings.HasPrefix(z.was, "audit_log") {
+			continue
+		}
+		schluessel, bekannt := rueckwegSchluessel[z.was]
+		if !bekannt {
+			t.Errorf("%s wandert, rueckwegSchluessel kennt die Tabelle nicht — schreibeRueckwegEintrag und diesen Test nachziehen", z.was)
+			continue
+		}
+		switch wert := gewandert[schluessel].(type) {
+		case []any:
+			if len(wert) != 1 {
+				t.Errorf("Rückweg-Eintrag: %s nennt %d Kennungen, erwartet 1", schluessel, len(wert))
+			}
+		case bool:
+			if !wert {
+				t.Errorf("Rückweg-Eintrag: %s = false, erwartet true", schluessel)
+			}
+		default:
+			t.Errorf("Rückweg-Eintrag ohne %s (Tabelle %s): %+v", schluessel, z.was, gewandert)
 		}
 	}
 }

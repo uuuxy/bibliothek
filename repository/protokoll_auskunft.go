@@ -90,6 +90,8 @@ var protokollAngaben = []ProtokollAngabe{
 	{"vormerkungen", "umgehängte Vormerkungen", ProtokollAnzahl},
 	{"vormerkungen_doppelt_geloescht", "doppelte Vormerkungen gelöscht", ProtokollAnzahl},
 	{"bescheide", "umgehängte Bescheide", ProtokollAnzahl},
+	{"nachbuch_meldungen", "umgehängte Meldungen zu Buchungen nach einem Netzausfall", ProtokollAnzahl},
+	{"konten", "umgehängte Zugangskonten", ProtokollAnzahl},
 	{"foto", "Foto übernommen", ProtokollJaNein},
 	{"ziel_foto_gewichen", "bisheriges Foto ersetzt", ProtokollJaNein},
 	{"platzhalter_konten", "gelöschte Platzhalter-Konten", ProtokollAnzahl},

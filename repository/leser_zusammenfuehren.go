@@ -461,8 +461,9 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintrag) 
 		"gewandert": map[string]any{
 			"ausleihen": p.Gewandert.Ausleihen, "schadensfaelle": p.Gewandert.Schadensfaelle,
 			"vormerkungen": p.Gewandert.Vormerkungen, "vormerkungen_doppelt_geloescht": p.Gewandert.VormerkungenDoppelt,
-			"bescheide": p.Gewandert.Bescheide,
-			"foto":      p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
+			"bescheide": p.Gewandert.Bescheide, "nachbuch_meldungen": p.Gewandert.NachbuchMeldungen,
+			"konten": p.Gewandert.Konten,
+			"foto":   p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
 			// Das einzige, was der Vorgang löscht statt umzuhängen — steht deshalb im
 			// Rückweg, auch wenn es kein Zugang war.
 			"platzhalter_konten": p.Gewandert.PlatzhalterKonten,
