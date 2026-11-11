@@ -9,9 +9,11 @@
 	 * Information, und eine fünfstellige Zahl machte aus der 16-px-Pille einen 45 px langen
 	 * Strich.
 	 *
-	 * Die volle Zahl geht nicht verloren: Sie steht als unsichtbarer Text daneben, damit ein
-	 * Screenreader sie vorliest; die sichtbare Kurzform ist für ihn ausgeblendet. Ein aria-label
-	 * ist an einem <span> ohne Rolle nicht erlaubt und wird dort meist nicht vorgelesen.
+	 * Die volle Zahl geht nicht verloren: Sie steht als unsichtbarer Text hinter der Pille, damit
+	 * ein Screenreader sie vorliest; die sichtbare Kurzform ist für ihn ausgeblendet. Ein
+	 * aria-label ist an einem <span> ohne Rolle nicht erlaubt und wird dort meist nicht
+	 * vorgelesen. Der Text steht neben der Pille und nicht in ihr: Dort gälte für ihn die
+	 * Schriftgröße des Badges (e2e/typo-rollen.spec.js misst jeden Text in einer Pille).
 	 *
 	 * Maße nach M3: 16 dp Höhe, 4 dp Polsterung, label-small, voll gerundet, und die
 	 * Farbrolle ist `error` — auch am Reiter. M3 kennt für das Badge keine zweite.
@@ -30,8 +32,9 @@
 {#if anzahl > 0}
 	<span
 		class="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-label-small font-medium text-on-error {klasse}"
+		aria-hidden="true"
 	>
-		<span aria-hidden="true">{text}</span>
-		<span class="sr-only">{anzahl} {beschreibung}</span>
+		{text}
 	</span>
+	<span class="sr-only">{anzahl} {beschreibung}</span>
 {/if}
