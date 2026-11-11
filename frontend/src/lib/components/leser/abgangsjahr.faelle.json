@@ -1,0 +1,75 @@
+{
+	"_zweck": "Geteilte Prüffälle: Das Abgangsjahr aus der Klasse rechnen der Server (repository.AbgaengerJahrAm, bei Anlage, Klassenwechsel, Zusammenführen und LUSD-Import) und der Browser (abgangsjahr.js, Knopf „Neu berechnen“ in der Akte). Der Go-Test TestAbgaengerJahrAm_WieImBrowser hält diese Datei gegen den Server, der Vitest abgangsjahr.test.js gegen den Browser. Datum = Tag der Rechnung; ab dem 1. August zählt das folgende Schuljahr.",
+	"faelle": [
+		{
+			"fall": "Gymnasialzweig läuft bis 13",
+			"klasse": "10G1",
+			"datum": "2026-09-07",
+			"soll": 2030
+		},
+		{ "fall": "dasselbe Schuljahr im Mai", "klasse": "10G1", "datum": "2027-05-03", "soll": 2030 },
+		{ "fall": "Gymnasialzweig Jahrgang 7", "klasse": "07G1", "datum": "2026-11-11", "soll": 2033 },
+		{
+			"fall": "Förderstufe: der längste Weg",
+			"klasse": "05F1",
+			"datum": "2026-09-07",
+			"soll": 2035
+		},
+		{
+			"fall": "Realschulzweig endet mit 10",
+			"klasse": "10R1",
+			"datum": "2026-09-07",
+			"soll": 2027
+		},
+		{
+			"fall": "Hauptschulzweig endet mit 9",
+			"klasse": "09H1",
+			"datum": "2026-09-07",
+			"soll": 2027
+		},
+		{
+			"fall": "freiwilliges 10. Hauptschuljahr",
+			"klasse": "10H1",
+			"datum": "2026-09-07",
+			"soll": 2027
+		},
+		{ "fall": "Klasse ohne Zweigbuchstaben", "klasse": "9a", "datum": "2026-07-31", "soll": 2030 },
+		{
+			"fall": "dieselbe Klasse im neuen Schuljahr",
+			"klasse": "9a",
+			"datum": "2026-08-01",
+			"soll": 2031
+		},
+		{ "fall": "Oberstufe als Zahl", "klasse": "12", "datum": "2026-11-11", "soll": 2028 },
+		{ "fall": "Oberstufe Jahrgang 13", "klasse": "13T", "datum": "2026-09-07", "soll": 2027 },
+		{ "fall": "Einführungsphase", "klasse": "ET", "datum": "2026-09-07", "soll": 2029 },
+		{ "fall": "Einführungsphase mit Zug", "klasse": "E1", "datum": "2026-11-11", "soll": 2029 },
+		{
+			"fall": "Leerzeichen zwischen Jahrgang und Zweig",
+			"klasse": " 10 r1 ",
+			"datum": "2026-11-11",
+			"soll": 2027
+		},
+		{
+			"fall": "geschütztes Leerzeichen vor dem Zweig",
+			"klasse": "10 R1",
+			"datum": "2026-11-11",
+			"soll": 2027
+		},
+		{
+			"fall": "kein Jahrgang lesbar: Rückfall in fünf Jahren",
+			"klasse": "ABG",
+			"datum": "2026-09-07",
+			"soll": 2031
+		},
+		{
+			"fall": "Q-Phase ohne Ziffer am Anfang",
+			"klasse": "Q1",
+			"datum": "2026-11-11",
+			"soll": 2031
+		},
+		{ "fall": "Jahrgang über 13", "klasse": "14a", "datum": "2026-11-11", "soll": 2031 },
+		{ "fall": "Jahrgang 0", "klasse": "0a", "datum": "2026-11-11", "soll": 2031 },
+		{ "fall": "keine Klasse", "klasse": "", "datum": "2026-11-11", "soll": 2031 }
+	]
+}

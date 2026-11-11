@@ -2,11 +2,15 @@ package repository_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -107,28 +111,45 @@ func TestJahrgang_GoUndSQLSindEineRegel(t *testing.T) {
 	}
 }
 
-// Das Anzeigejahr selbst, an festen Daten: 10G geht nicht dieses Jahr ab.
-func TestAbgaengerJahrAm(t *testing.T) {
-	sept := time.Date(2026, time.September, 7, 12, 0, 0, 0, time.UTC) // Schuljahr 2026/27
-	mai := time.Date(2027, time.May, 3, 12, 0, 0, 0, time.UTC)        // dasselbe Schuljahr
-	faelle := []struct {
-		klasse string
-		jetzt  time.Time
-		want   int
-	}{
-		{"10G1", sept, 2030}, // G läuft bis 13: 2027 + 3
-		{"10G1", mai, 2030},
-		{"10R1", sept, 2027},
-		{"09H1", sept, 2027},
-		{"10H1", sept, 2027}, // freiwilliges 10. Hauptschuljahr: Ende erreicht
-		{"05F1", sept, 2035},
-		{"ET", sept, 2029},
-		{"13T", sept, 2027},
-		{"ABG", sept, 2031}, // kein Jahrgang lesbar: Rückfall Jahr+5
+// Das Abgangsjahr an festen Daten. Der Browser rechnet für „Neu berechnen" denselben Wert
+// (frontend/src/lib/components/leser/abgangsjahr.js); beide Seiten lesen dieselben Prüffälle.
+// Rechneten sie verschieden, schriebe der Knopf ein anderes Jahr als der nächste Klassenwechsel.
+func TestAbgaengerJahrAm_WieImBrowser(t *testing.T) {
+	const ordner = "../frontend/src/lib/components/leser/"
+	roh, err := os.ReadFile(ordner + "abgangsjahr.faelle.json")
+	if err != nil {
+		t.Fatalf("Prüffälle lesen: %v", err)
 	}
-	for _, f := range faelle {
-		if got := repository.AbgaengerJahrAm(f.klasse, f.jetzt); got != f.want {
-			t.Errorf("%s am %s = %d, erwartet %d", f.klasse, f.jetzt.Format("2006-01"), got, f.want)
+	var pruefung struct {
+		Faelle []struct {
+			Fall   string `json:"fall"`
+			Klasse string `json:"klasse"`
+			Datum  string `json:"datum"`
+			Soll   int    `json:"soll"`
+		} `json:"faelle"`
+	}
+	if err := json.Unmarshal(roh, &pruefung); err != nil {
+		t.Fatalf("Prüffälle parsen: %v", err)
+	}
+	if len(pruefung.Faelle) < 15 {
+		t.Fatalf("%d Prüffälle, erwartet mindestens 15: liest der Test noch auf abgangsjahr.faelle.json?",
+			len(pruefung.Faelle))
+	}
+	for _, f := range pruefung.Faelle {
+		tag, err := time.ParseInLocation("2006-01-02", f.Datum, schulzeit.Zone())
+		if err != nil {
+			t.Fatalf("%s: Datum %q: %v", f.Fall, f.Datum, err)
 		}
+		if ist := repository.AbgaengerJahrAm(f.Klasse, tag.Add(12*time.Hour)); ist != f.Soll {
+			t.Errorf("%s: %q am %s = %d, erwartet %d", f.Fall, f.Klasse, f.Datum, ist, f.Soll)
+		}
+	}
+	// Die Browser-Seite muss dieselbe Datei lesen, sonst prüft jede Seite ihre eigenen Fälle.
+	vitest, err := os.ReadFile(ordner + "abgangsjahr.test.js")
+	if err != nil {
+		t.Fatalf("abgangsjahr.test.js lesen: %v", err)
+	}
+	if !strings.Contains(string(vitest), "./abgangsjahr.faelle.json") {
+		t.Error("abgangsjahr.test.js liest abgangsjahr.faelle.json nicht mehr ein")
 	}
 }

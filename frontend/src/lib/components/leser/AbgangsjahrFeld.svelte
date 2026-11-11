@@ -10,6 +10,7 @@
 	import { apiClient, leseApiFehler } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { abgangsjahrAm } from './abgangsjahr.js';
 
 	/** @type {{ leser: any, darfBearbeiten?: boolean }} */
 	let { leser = $bindable(), darfBearbeiten = false } = $props();
@@ -23,20 +24,6 @@
 		eingabe = leser.abgaenger_jahr;
 		fehler = '';
 		bearbeiten = true;
-	}
-
-	/** Rechnet das Abgangsjahr aus der Klasse (Zwilling der Backend-Regel). @param {string} klasse */
-	function ausKlasse(klasse) {
-		const kl = (klasse || '').toLowerCase().trim();
-		const m = kl.match(/^(\d+)(.*)/);
-		if (!m) return new Date().getFullYear() + 5;
-		const jahrgang = parseInt(m[1], 10);
-		const suffix = m[2] || '';
-		const abschluss = suffix.startsWith('h') ? 9 : jahrgang >= 11 ? 13 : 10;
-		const restJahre = Math.max(0, abschluss - jahrgang);
-		const jetzt = new Date();
-		const basis = jetzt.getMonth() >= 7 ? jetzt.getFullYear() + 1 : jetzt.getFullYear();
-		return basis + restJahre;
 	}
 
 	async function speichere() {
@@ -76,7 +63,7 @@
 		<Button
 			variant="secondary"
 			size="sm"
-			onclick={() => (eingabe = ausKlasse(leser.klasse))}
+			onclick={() => (eingabe = abgangsjahrAm(leser.klasse, new Date()))}
 			title="Automatisch aus Klasse berechnen"
 			><RotateCcw class="h-3.5 w-3.5" aria-hidden="true" /> Neu berechnen</Button
 		>
