@@ -126,7 +126,7 @@ das die Nummer behalten hat.
 
 Trägt Litteras Tabelle `FremdBarcode` für ein Exemplar ein Ersatzetikett, gewinnt das
 gegen die EAN-13 des Etiketts. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
-die Nummer des Kartenherstellers (`B97601826457`), und die steht in keinem Stammdatenfeld.
+die Nummer des Kartenherstellers (`B12345678901`), und die steht in keinem Stammdatenfeld.
 Beide Dateien sind optional; fehlen sie, rechnet der Import mit den Littera-Nummern.
 
 **Härtung:** Ein Savepoint je Datensatz (`internal/uebernahme`), Postgres-Fehler nach

@@ -246,7 +246,7 @@ describe('Omnibox offline', () => {
 		});
 
 		it('nennt eine unbekannte Nummer unklar und bucht sie NICHT', async () => {
-			omniboxStore.eingabe = 'B97601826457';
+			omniboxStore.eingabe = 'B12345678901';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 			expect(await ladeWarteschlange()).toHaveLength(0);
 			expect(omniboxStore.rueckmeldung.fehler).toMatch(/nicht eindeutig|NICHT gebucht/);
@@ -327,7 +327,7 @@ describe('Omnibox offline', () => {
 		it('ein unklarer Scan sperrt die Zuordnung: der Merker faellt', async () => {
 			omniboxStore.eingabe = 'S-10001';
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
-			omniboxStore.eingabe = 'B97601826457'; // weder Buch noch erkennbarer Ausweis
+			omniboxStore.eingabe = 'B12345678901'; // weder Buch noch erkennbarer Ausweis
 			await omniboxStore.fuehreAktionAus(new Event('submit'));
 
 			expect(omniboxStore.offlineAusweis, 'bis zum naechsten eindeutigen Ausweis').toBe('');

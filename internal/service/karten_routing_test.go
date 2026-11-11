@@ -8,13 +8,14 @@ import (
 	"bibliothek/repository"
 )
 
-// TestEchteKartennummerFindetDenSchueler prüft die gemessene Nummer eines echten
-// Schülerausweises: aufgedruckt "[0395] 37", gescannt "B97601826457".
+// TestEchteKartennummerFindetDenSchueler prüft eine Nummer in der Form eines echten
+// Schülerausweises (ein Buchstabe und elf Ziffern; die Nummer selbst ist erfunden): aufgedruckt
+// "[1234] 56", gescannt "B12345678901".
 //
 // Sie fängt mit "B" an, und "B-" ist bei uns die Vorsilbe eines Buchs. Zwischen „funktioniert"
 // und „jeder Ausweis landet beim Buch" liegt genau ein Bindestrich.
 func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
-	const karte = "B97601826457"
+	const karte = "B12345678901"
 	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{
@@ -36,7 +37,7 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 // bis in die Volltextsuche und meldete „keine Treffer". Beide stehen in der Tabelle leser; die
 // Antwort heißt darum für beide „student" und trägt die Art.
 func TestLehrerausweisOhnePraefix(t *testing.T) {
-	const karte = "B97601826458"
+	const karte = "B12345678902"
 	svc := &OmniboxDienst{
 		katalogAbfragen: &weicheKatalogAttrappe{exemplare: map[string]*repository.Exemplar{}},
 		leserAbfragen: &weicheLeserAttrappe{leser: map[string]*repository.Leser{

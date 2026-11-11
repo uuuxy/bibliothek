@@ -44,7 +44,7 @@ describe('isbnFormen', () => {
 	it('meldet leere Liste, wo keine ISBN ist — dann bleibt es bei der Textsuche', () => {
 		expect(isbnFormen('mathematik')).toEqual([]);
 		expect(isbnFormen('7')).toEqual([]);
-		expect(isbnFormen('B97601826457')).toEqual([]); // Ausweis-Fremdnummer, keine ISBN
+		expect(isbnFormen('B12345678901')).toEqual([]); // Ausweis-Fremdnummer, keine ISBN
 		expect(isbnFormen('')).toEqual([]);
 	});
 });

@@ -8,8 +8,8 @@ import (
 
 func TestLeseAusweisnummern(t *testing.T) {
 	csv := `Leser,FremdNummer
-1,B97601826457
-2,B97601826458
+1,B12345678901
+2,B12345678902
 1,B97601826459
 ,B97601826460
 3,
@@ -26,8 +26,8 @@ func TestLeseAusweisnummern(t *testing.T) {
 	if nummern["1"] != "B97601826459" {
 		t.Errorf("leseAusweisnummern(…)[\"1\"] = %q, erwartet die letzte Nummer 'B97601826459'", nummern["1"])
 	}
-	if nummern["2"] != "B97601826458" {
-		t.Errorf("leseAusweisnummern(…)[\"2\"] = %q, erwartet 'B97601826458'", nummern["2"])
+	if nummern["2"] != "B12345678902" {
+		t.Errorf("leseAusweisnummern(…)[\"2\"] = %q, erwartet 'B12345678902'", nummern["2"])
 	}
 	if _, ok := nummern["3"]; ok {
 		t.Errorf("Leser 3 ohne FremdNummer sollte ignoriert werden")

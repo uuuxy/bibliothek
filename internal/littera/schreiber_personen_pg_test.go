@@ -316,7 +316,7 @@ func TestErsatznummerKommtNieWieder(t *testing.T) {
 }
 
 // TestFremdLeserNummerGewinnt: Der Ausweis liefert beim Scannen die Nummer seines Herstellers
-// (gemessen „B97601826457"); Littera hält sie in FremdLeserNummer. Steht eine da, wird sie die
+// (ein Buchstabe und elf Ziffern, hier erfunden: „B12345678901"); Littera hält sie in FremdLeserNummer. Steht eine da, wird sie die
 // Ausweisnummer, nicht die Lesernummer; sonst fände kein alter Ausweis seine Person.
 func TestFremdLeserNummerGewinnt(t *testing.T) {
 	pool := pgTestPool(t)
@@ -329,12 +329,12 @@ func TestFremdLeserNummerGewinnt(t *testing.T) {
 			leser("2", "25", "07H1", ArtSchueler),
 			leser("3", "26", "", ArtLehrkraft),
 		},
-		Ausweisnummern: map[string]string{"1": "B97601826457", "3": "B97601826458"},
+		Ausweisnummern: map[string]string{"1": "B12345678901", "3": "B12345678902"},
 	}
 	if _, err := s.SchreibePersonen(context.Background(), ab); err != nil {
 		t.Fatalf("SchreibePersonen: %v", err)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'B97601826457'`); n != 1 {
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'B12345678901'`); n != 1 {
 		t.Errorf("die Herstellernummer muss der Ausweis des Schülers sein, gefunden: %d", n)
 	}
 	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '24'`); n != 0 {
@@ -343,7 +343,7 @@ func TestFremdLeserNummerGewinnt(t *testing.T) {
 	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '25'`); n != 1 {
 		t.Errorf("ohne Herstellernummer bleibt die Lesernummer der Ausweis, gefunden: %d", n)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = 'B97601826458' AND art = 'lehrkraft'`); n != 1 {
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = 'B12345678902' AND art = 'lehrkraft'`); n != 1 {
 		t.Errorf("auch die Lehrkraft bekommt die Herstellernummer, gefunden: %d", n)
 	}
 	// Leser 2 hat keine Karte, obwohl die Schule Herstellerausweise nutzt: Ein Ausweis in
@@ -512,14 +512,14 @@ func TestImportierteLehrkraftIstAmScannerAuffindbar(t *testing.T) {
 	leereAlles(t, pool)
 	s, _ := testSchreiber(t, pool, nil)
 
-	l := leser("2", "B97601826458", "", ArtLehrkraft)
+	l := leser("2", "B12345678902", "", ArtLehrkraft)
 	if _, err := s.SchreibePersonen(context.Background(), &Altbestand{Leser: []Leser{l}}); err != nil {
 		t.Fatalf("SchreibePersonen: %v", err)
 	}
 
 	// Genau die Abfrage, die die Omnibox stellt.
 	lehrkraft, err := repository.NewLeserAbfragen(pool).
-		FindeZuBarcode(context.Background(), "B97601826458")
+		FindeZuBarcode(context.Background(), "B12345678902")
 	if err != nil {
 		t.Fatalf("Ausweis-Abfrage: %v", err)
 	}

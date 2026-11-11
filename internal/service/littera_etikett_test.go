@@ -17,7 +17,7 @@ func TestDekodiereLitteraEtikett(t *testing.T) {
 		{"9783464034408", "", false, "Verlags-ISBN (echt, gültige EAN): Stellenzahl 0 → kein Etikett"},
 		{"589680003955", "", false, "nur 12 Stellen"},
 		{"58968000395568", "", false, "14 Stellen"},
-		{"B97601826457", "", false, "Schülerausweis-Herstellernummer, keine reine Zahl"},
+		{"B12345678901", "", false, "Schülerausweis-Herstellernummer, keine reine Zahl"},
 		{"5896810039553", "", false, "Polsterung verletzt: Ziffer im Null-Bereich (EAN selbst gültig)"},
 		{"5896800039501", "", false, "Stellenzahl 0 ist unzulässig (EAN selbst gültig)"},
 		{"0896800039551", "", false, "Mediennummer mit führender Null (EAN selbst gültig)"},

@@ -210,7 +210,7 @@ func (d *OmniboxDienst) verarbeite(ctx context.Context, eingabe OmniboxEingabe) 
 // Suche zu. Die Vorsilben sind eine Abkürzung und keine Voraussetzung: Littera kennt sie nicht,
 // und Ausweise und Etiketten aus dem Altbestand tragen nackte Nummern. Die Formen sind
 // verschieden genug, dass die Reihenfolge eindeutig entscheidet: Ein Schülerausweis liefert
-// etwa `B97601826457` (die Nummer des Kartenherstellers), ein Buchetikett eine EAN-13. Ein
+// etwa `B12345678901` (die Nummer des Kartenherstellers), ein Buchetikett eine EAN-13. Ein
 // Ausweis wird über LeserAbfragen.FindeZuBarcode gefunden, gleich welcher Art der Leser ist.
 //
 // Die Suchen liefern ohne Treffer (nil, nil); ein Fehler ist deshalb einer der Datenbank und

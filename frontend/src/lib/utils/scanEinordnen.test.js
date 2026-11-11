@@ -51,10 +51,10 @@ describe('Scan ohne Netz einordnen', () => {
 	});
 
 	it('haelt eine unbekannte Nummer fuer unklar — und raet NICHT auf Ausweis', () => {
-		// Ein Schuelerausweis des Altbestands liefert gemessen B97601826457, ein
+		// Ein Schuelerausweis des Altbestands liefert einen Buchstaben und elf Ziffern (B12345678901), ein
 		// Buchetikett eine 13-stellige EAN. Wer hier raet, schreibt die naechsten Buecher
 		// einem fremden Kind zu.
-		expect(ein('B97601826457')).toEqual({ art: 'unklar', nummer: 'B97601826457' });
+		expect(ein('B12345678901')).toEqual({ art: 'unklar', nummer: 'B12345678901' });
 		expect(ein('999999')).toEqual({ art: 'unklar', nummer: '999999' });
 	});
 
@@ -72,9 +72,9 @@ describe('Scan ohne Netz einordnen', () => {
 	});
 
 	it('eine Nummer mit Ziffern bleibt unklar und wird NICHT zur Suche', () => {
-		// Gegenprobe: Ein alter Ausweis liefert gemessen B97601826457 — Ziffern, kein
+		// Gegenprobe: Ein alter Ausweis liefert einen Buchstaben und elf Ziffern (B12345678901) — Ziffern, kein
 		// Leerzeichen. Der gehoert nicht in die Namenssuche.
-		expect(ein('B97601826457').art).toBe('unklar');
+		expect(ein('B12345678901').art).toBe('unklar');
 	});
 
 	// Von Hand getippt: Gespeichert sind die Nummern mit grosser Vorsilbe, und der Server

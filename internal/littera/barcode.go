@@ -150,7 +150,7 @@ func etikettZiffern(roh string) (string, bool) {
 // internal/service/littera_etikett_uebernahme_test.go.
 //
 // Aufdruck und Scanwert sind verschiedene Werte — dieselbe Falle wie beim Schülerausweis,
-// wo unter dem Strichcode „[0395] 37" steht, der Scanner aber „B97601826457" liefert.
+// wo unter dem Strichcode „[1234] 56" steht, der Scanner aber „B12345678901" liefert.
 const (
 	etikettNummerLaenge = 7 // erste Ziffer und linke Hälfte des EAN-13
 	etikettBibLaenge    = 4

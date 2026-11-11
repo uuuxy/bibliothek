@@ -35,9 +35,9 @@ describe('scanTreffer', () => {
 	});
 
 	it('nimmt bei einem Code ohne Ziffern trotzdem den einzigen Treffer', () => {
-		// Ein Ausweis- oder Etikettencode („B97601826457") ist keine ISBN. Ein einziger
+		// Ein Ausweis- oder Etikettencode („B12345678901") ist keine ISBN. Ein einziger
 		// Treffer bleibt trotzdem eindeutig.
-		expect(scanTreffer('B97601826457', [buch('9783060130764', 'Einziger')])?.titel).toBe(
+		expect(scanTreffer('B12345678901', [buch('9783060130764', 'Einziger')])?.titel).toBe(
 			'Einziger'
 		);
 	});

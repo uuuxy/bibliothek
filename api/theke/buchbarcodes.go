@@ -18,8 +18,8 @@ import (
 //
 // Ohne Netz muss der Theken-Rechner eine nackte Ziffernfolge selbst einordnen: Buch oder
 // Ausweis? Die Vorsilben B-/LMF- und S-/L- sagen es; die Littera-Etiketten des Altbestands
-// und die alten Ausweise sagen es nicht — ein Schülerausweis liefert gemessen
-// `B97601826457`, ein Buchetikett eine 13-stellige EAN. Verwechselt der Rechner beides,
+// und die alten Ausweise sagen es nicht — ein Schülerausweis liefert einen Buchstaben und elf
+// Ziffern (etwa `B12345678901`), ein Buchetikett eine 13-stellige EAN. Verwechselt der Rechner beides,
 // laufen die folgenden Bücher auf die falsche Person, und das fällt erst beim Nachbuchen
 // auf.
 //

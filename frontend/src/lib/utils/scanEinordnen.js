@@ -23,7 +23,7 @@
  *    Steht sie drauf, ist es ein Buch; sonst „unklar".
  *
  * Warum „unklar" und nicht „dann eben Ausweis": Ein Schülerausweis des Altbestands
- * liefert gemessen `B97601826457`, ein Buchetikett eine 13-stellige EAN. Wer hier rät,
+ * liefert einen Buchstaben und elf Ziffern (etwa `B12345678901`), ein Buchetikett eine 13-stellige EAN. Wer hier rät,
  * schreibt die nächsten Bücher einem fremden Kind zu. Ein unklarer Scan sperrt deshalb
  * die Zuordnung, bis ein eindeutiger Ausweis kommt.
  */
@@ -105,7 +105,7 @@ export function ordneScanEin(roh, istBuch) {
 	// schlicht falsch und hülfe niemandem weiter.
 	//
 	// Erkannt am Fehlen von Ziffern oder an einem Leerzeichen — beides kommt aus keinem
-	// Strichcode. Eine Nummer wie B97601826457 bleibt damit „unklar", ein „Mueller" oder
+	// Strichcode. Eine Nummer wie B12345678901 bleibt damit „unklar", ein „Mueller" oder
 	// „Anna Mueller" wird zur Suche.
 	if (!/\d/.test(scan) || /\s/.test(scan)) return { art: 'suche', nummer: scan };
 
