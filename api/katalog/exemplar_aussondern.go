@@ -28,9 +28,8 @@ func (t *Tueren) ExemplarAussondern(katalogAbfragen *repository.KatalogAbfragen)
 			return
 		}
 
-		grund, meldung := leseGrund(w, r)
-		if meldung != "" {
-			apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, nil)
+		grund, ok := leseGrund(w, r)
+		if !ok {
 			return
 		}
 
@@ -56,17 +55,19 @@ func (t *Tueren) ExemplarAussondern(katalogAbfragen *repository.KatalogAbfragen)
 	}
 }
 
-// leseGrund liest den Grund einer Aussonderung aus dem Körper {"grund": "AUSSORTIERT"} und liefert
-// die Meldung, wenn der Körper nicht lesbar oder der Grund keiner der vier ist.
-func leseGrund(w http.ResponseWriter, r *http.Request) (grund, meldung string) {
+// leseGrund liest den Grund einer Aussonderung aus dem Körper {"grund": "AUSSORTIERT"}. Ist der
+// Körper nicht lesbar, zu groß oder der Grund keiner der vier, ist die Antwort geschrieben und ok
+// false.
+func leseGrund(w http.ResponseWriter, r *http.Request) (grund string, ok bool) {
 	var eingabe struct {
 		Grund string `json:"grund"`
 	}
-	if err := tuer.DekodiereRumpf(w, r, &eingabe); err != nil {
-		return "", "Die Anfrage ließ sich nicht lesen"
+	if !tuer.LeseAnfrage(w, r, &eingabe) {
+		return "", false
 	}
 	if !repository.IstAussonderungsgrund(eingabe.Grund) {
-		return "", meldungGrundFehlt
+		apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldungGrundFehlt, nil)
+		return "", false
 	}
-	return eingabe.Grund, ""
+	return eingabe.Grund, true
 }

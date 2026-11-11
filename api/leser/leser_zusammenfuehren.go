@@ -31,8 +31,12 @@ func (t *Tueren) LeserZusammenfuehren(protokollAbfragen *repository.ProtokollAbf
 	return apierrors.MitFehlerantwort(func(w http.ResponseWriter, r *http.Request) error {
 		zielID := r.PathValue("id")
 		var rumpf leserZusammenfuehrenAnfrage
-		if err := tuer.DekodiereRumpf(w, r, &rumpf); err != nil || strings.TrimSpace(rumpf.QuelleID) == "" {
-			return apierrors.BadRequest("Die Kennung des zweiten Datensatzes fehlt", err)
+		if err := tuer.DekodiereRumpf(w, r, &rumpf); err != nil {
+			tuer.AntworteUnlesbar(w, err)
+			return nil
+		}
+		if strings.TrimSpace(rumpf.QuelleID) == "" {
+			return apierrors.BadRequest("Die Kennung des zweiten Datensatzes fehlt", nil)
 		}
 		if !kennung.IstUUID(rumpf.QuelleID) {
 			return apierrors.BadRequest("Die Kennung des zweiten Datensatzes ist ungültig", nil)
