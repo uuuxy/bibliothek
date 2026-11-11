@@ -9,7 +9,7 @@
 	import BuchCover from '../ui/BuchCover.svelte';
 	import Seitenrahmen from '../layout/Seitenrahmen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { statistikAbruf } from './statistikAbruf.svelte.js';
+	import { statistikAbruf, statistikParameter } from './statistikAbruf.svelte.js';
 	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
 	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau.
@@ -28,6 +28,7 @@
 	 *  @param {'renner' | 'ladenhueter'} kind */
 	function openDetail(kind) {
 		uiStore.statsDetailKind = kind;
+		uiStore.statsDetailFilter = { zeitraum, medientyp };
 		uiStore.activeTab = 'stats_detail';
 	}
 
@@ -63,22 +64,11 @@
 	// Rot seine Signalwirkung. Das Warn-Dreieck trägt die Aussage ohne Farbe mit (WCAG 1.4.1).
 	const hatVerluste = $derived((kennzahlen?.loss_stats?.verlorene_exemplare ?? 0) > 0);
 
-	// limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
-	// dadurch keinen einzigen weiteren API-Call.
-	function ladeKennzahlen() {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const params = new URLSearchParams({ limit: '100' });
-		if (zeitraum !== 'all') params.set('zeitraum', zeitraum);
-		if (medientyp) params.set('type', medientyp);
-		abruf.laden(params);
-	}
+	// Dieselbe Anfrage stellt die Detailseite für „Alle anzeigen" (statistikParameter).
+	const ladeKennzahlen = () => abruf.laden(statistikParameter({ zeitraum, medientyp }));
 
-	// Re-fetch whenever timeframe or Bestandsfilter changes
+	// Lädt neu, sobald Zeitraum oder Bestand wechseln: ladeKennzahlen liest beide.
 	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		zeitraum; // track dependency
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		medientyp;
 		ladeKennzahlen();
 	});
 </script>
@@ -298,7 +288,10 @@
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
 				<div class="{FLAECHE} p-5 h-72 flex flex-col">
-					<UeberfaelligQuote aktuellVerliehen={kennzahlen.zirkulation?.aktuell_verliehen ?? 0} />
+					<UeberfaelligQuote
+						aktuellVerliehen={kennzahlen.zirkulation?.aktuell_verliehen ?? 0}
+						{medientyp}
+					/>
 				</div>
 			</div>
 

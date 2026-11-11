@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import Statistik from './Statistik.svelte';
 import { apiFetch } from '../../apiFetch.js';
+import { uiStore } from '../../stores/uiStore.svelte.js';
 
 vi.mock('../../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
@@ -81,5 +82,42 @@ describe('Statistik: Zeitraum', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Monat' }));
 
 		await waitFor(() => expect(kennzahlen().at(-1)).toContain('zeitraum=monat'));
+	});
+});
+
+// „Alle anzeigen" öffnete die Detailseite ohne Zeitraum und Bestand; sie zeigte den Gesamtbestand
+// aller Zeiten unter dem Satz „im gewählten Zeitraum". Die Kachel der Überfälligen teilte eine
+// Zahl der ganzen Schule durch die gefilterten laufenden Ausleihen.
+describe('Statistik: Auswahl geht mit', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+		uiStore.statsDetailFilter = { zeitraum: 'all', medientyp: '' };
+	});
+
+	it('gibt Zeitraum und Bestand an „Alle anzeigen" weiter', async () => {
+		antworte([]);
+		const screen = render(Statistik);
+		await screen.findByText('Gesamtbestand');
+		await fireEvent.click(screen.getByRole('button', { name: 'LMF' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Monat' }));
+		await fireEvent.click(await screen.findByText('Alle anzeigen'));
+		expect(uiStore.statsDetailFilter).toEqual({ zeitraum: 'monat', medientyp: 'lmf' });
+		expect(uiStore.activeTab).toBe('stats_detail');
+	});
+
+	it('fragt die Überfälligen mit dem Bestandsfilter ab', async () => {
+		antworte([]);
+		const screen = render(Statistik);
+		await screen.findByText('Gesamtbestand');
+		const uebersicht = () =>
+			vi
+				.mocked(apiFetch)
+				.mock.calls.map(([url]) => String(url))
+				.filter((url) => url.startsWith('/api/dashboard/summary'));
+		expect(uebersicht().at(-1)).toBe('/api/dashboard/summary');
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Freihand' }));
+
+		await waitFor(() => expect(uebersicht().at(-1)).toBe('/api/dashboard/summary?type=freihand'));
 	});
 });

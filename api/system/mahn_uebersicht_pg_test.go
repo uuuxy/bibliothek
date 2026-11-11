@@ -76,3 +76,56 @@ func TestMahnUebersicht_ZaehltUeberfaelligeJeZeitspanne(t *testing.T) {
 		t.Errorf("Mahnübersicht (-erwartet +ist):\n%s", diff)
 	}
 }
+
+// Die Kachel „Überfällige Ausleihen" teilt die Zahl durch die laufenden Ausleihen aus
+// /api/statistiken, und die folgen dem Bestandsfilter. Ohne denselben Filter stand eine Zahl
+// der ganzen Schule über einer aus Freihand oder LMF („≈ 240 % der laufenden Ausleihen"). Ein
+// Gerät hat kein Exemplar: Ohne Filter zählt es mit, mit Filter gehört es zu keinem Bestand.
+func TestMahnUebersicht_FolgtDemBestandsfilter(t *testing.T) {
+	pool := pgtest.Pool(t)
+	testdaten.LeereBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Verbindung{Pool: pool}}}
+
+	var gestern time.Time
+	if err := pool.QueryRow(ctx, `SELECT now() - interval '1 day'`).Scan(&gestern); err != nil {
+		t.Fatalf("Uhr der Datenbank: %v", err)
+	}
+	leser := testdaten.LegeSchuelerAn(t, pool, "M-FILTER", "Filter", "07A")
+	schulbuch := testdaten.LegeAusleiheMitFristAn(t, pool, leser, "Filter Schulbuch", gestern)
+	testdaten.LegeAusleiheMitFristAn(t, pool, leser, "Filter Roman 1", gestern)
+	testdaten.LegeAusleiheMitFristAn(t, pool, leser, "Filter Roman 2", gestern)
+	if _, err := pool.Exec(ctx, `
+		UPDATE buecher_titel SET ist_lernmittel = true
+		WHERE id = (SELECT e.titel_id FROM ausleihen a JOIN buecher_exemplare e ON e.id = a.exemplar_id WHERE a.id = $1)`,
+		schulbuch); err != nil {
+		t.Fatalf("Schulbuch kennzeichnen: %v", err)
+	}
+	var geraet string
+	if err := pool.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Filter Tablet', 'G-FILTER') RETURNING id::text`).Scan(&geraet); err != nil {
+		t.Fatalf("Gerät anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, $3)`,
+		geraet, leser, gestern); err != nil {
+		t.Fatalf("Geräteausleihe anlegen: %v", err)
+	}
+
+	for adresse, erwartet := range map[string]int{
+		"/api/dashboard/summary":               4,
+		"/api/dashboard/summary?type=lmf":      1,
+		"/api/dashboard/summary?type=freihand": 2,
+	} {
+		rec := httptest.NewRecorder()
+		srv.MahnUebersicht().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, adresse, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("GET %s = %d: %s", adresse, rec.Code, rec.Body.String())
+		}
+		var ist mahnUebersicht
+		if err := json.Unmarshal(rec.Body.Bytes(), &ist); err != nil {
+			t.Fatalf("Antwort unlesbar: %v", err)
+		}
+		if ist.Ueberfaellig != erwartet {
+			t.Errorf("GET %s: %d überfällig, erwartet %d", adresse, ist.Ueberfaellig, erwartet)
+		}
+	}
+}

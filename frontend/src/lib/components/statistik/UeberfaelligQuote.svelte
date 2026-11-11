@@ -8,8 +8,10 @@
 	import { ChevronRight, CircleCheck } from '@lucide/svelte';
 
 	/** aktuellVerliehen: laufende Ausleihen — Basis für die neutrale Überfälligkeitsquote.
-	 * @type {{ aktuellVerliehen?: number }} */
-	let { aktuellVerliehen = 0 } = $props();
+	 *  medientyp: der Bestandsfilter der Übersicht ('' Gesamt, 'freihand', 'lmf'). Die Zahl
+	 *  der Überfälligen folgt ihm, damit Zähler und Nenner aus derselben Grundmenge stammen.
+	 * @type {{ aktuellVerliehen?: number, medientyp?: string }} */
+	let { aktuellVerliehen = 0, medientyp = '' } = $props();
 
 	/** @type {any} */
 	let uebersicht = $state(null);
@@ -34,11 +36,18 @@
 	const buckets = $derived(uebersicht?.overdue_buckets ?? []);
 	const maxBucket = $derived(Math.max(1, ...buckets.map((b) => b.count)));
 
-	async function ladeUebersicht() {
+	// Beim Wechsel des Filters zählt nur die jüngste Antwort.
+	let laufNr = 0;
+	/** @param {string} typ */
+	async function ladeUebersicht(typ) {
+		const meine = ++laufNr;
 		try {
-			const res = await apiFetch('/api/dashboard/summary');
+			const res = await apiFetch(`/api/dashboard/summary${typ ? `?type=${typ}` : ''}`);
+			if (meine !== laufNr) return;
 			if (res.ok) {
-				uebersicht = await res.json();
+				const daten = await res.json();
+				if (meine !== laufNr) return;
+				uebersicht = daten;
 				fehler = false;
 			} else {
 				// Ohne uebersicht rendert unten gar nichts, eine leere Kachel in der Bento-Reihe,
@@ -47,15 +56,16 @@
 				fehler = true;
 			}
 		} catch (err) {
+			if (meine !== laufNr) return;
 			fehler = true;
 			console.error(err);
 		} finally {
-			laedt = false;
+			if (meine === laufNr) laedt = false;
 		}
 	}
 
 	$effect(() => {
-		ladeUebersicht();
+		ladeUebersicht(medientyp);
 	});
 </script>
 

@@ -1,11 +1,12 @@
 <!-- @component StatistikDetail — Vollwertige, deep-linkbare Detailseite für die
      Statistik-Listen (Renner / Ladenhüter). Ersetzt das frühere Slide-in-Panel: eigene
      URL (/statistiken/renner|ladenhueter), funktionierender Zurück-Button, refresh-fest.
-     Lädt die volle Liste selbst (limit=100); alle Filter laufen rein clientseitig. -->
+     Lädt die volle Liste selbst (limit=100) mit Zeitraum und Bestand der Übersicht; die
+     Filter der Seite laufen rein clientseitig. -->
 <script>
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { statistikAbruf } from './statistikAbruf.svelte.js';
+	import { statistikAbruf, statistikParameter, statistikSatz } from './statistikAbruf.svelte.js';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
@@ -23,11 +24,9 @@
 
 	const kind = $derived(uiStore.statsDetailKind);
 	const title = $derived(kind === 'renner' ? 'Beliebteste Titel (Die Renner)' : 'Ladenhüter');
-	const hint = $derived(
-		kind === 'renner'
-			? 'Nach Anzahl der Ausleihen im gewählten Zeitraum.'
-			: 'Seit über 2 Jahren nicht ausgeliehen — oder noch nie.'
-	);
+	// Zeitraum und Bestand der Übersicht: „Alle anzeigen" zeigt dieselbe Auswahl wie die Karte.
+	const filter = $derived(uiStore.statsDetailFilter);
+	const hint = $derived(statistikSatz(kind, filter));
 
 	// Refresh-fest: die Seite lädt ihre Daten selbst (kein Übergabe-Prop vom Dashboard).
 	// Reihenfolge-Schutz und Fehlerzustand: statistikAbruf.
@@ -36,13 +35,13 @@
 	const items = $derived(
 		(kind === 'renner' ? abruf.daten?.popular_titles : abruf.daten?.shelf_warmers) ?? []
 	);
-	const fetchListe = () => abruf.laden('limit=100');
+	const fetchListe = () => abruf.laden(statistikParameter(filter));
 	// Eine leere Liste, die der Server nicht lesen konnte, ist kein leerer Bestand.
 	const nichtGeladen = $derived(abruf.fehler || abruf.fehlt(kind));
 
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		kind; // bei Wechsel Renner↔Ladenhüter neu laden
+		kind; // bei Wechsel Renner↔Ladenhüter neu laden; die Auswahl liest fetchListe selbst
 		fetchListe();
 	});
 

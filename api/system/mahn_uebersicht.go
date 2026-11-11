@@ -36,7 +36,10 @@ func (t *Tueren) MahnUebersicht() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		k, err := repository.LadeMahnKennzahlen(ctx, t.DB.Pool)
+		// Derselbe Bestandsfilter wie bei /api/statistiken: Die Kachel steht neben gefilterten
+		// Zahlen und teilt durch eine davon.
+		typFilter, _ := repository.BestandsFilterBedingung(r.URL.Query().Get("type"))
+		k, err := repository.LadeMahnKennzahlen(ctx, t.DB.Pool, typFilter)
 		if err != nil {
 			apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("fehler beim Laden der Mahnkennzahlen: %w", err))
 			return

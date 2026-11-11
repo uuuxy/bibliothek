@@ -20,6 +20,39 @@ beforeEach(() => {
 		/** @type {any} */ ({ ok: true, json: async () => ({ popular_titles: RENNER }) })
 	);
 	uiStore.statsDetailKind = 'renner';
+	uiStore.statsDetailFilter = { zeitraum: 'all', medientyp: '' };
+});
+
+// Die Detailseite lud immer ohne Zeitraum und Bestand und sagte trotzdem „im gewählten
+// Zeitraum". Jetzt lädt sie die Auswahl der Übersicht und nennt sie.
+describe('Statistik-Detailseite: Auswahl der Übersicht', () => {
+	it('lädt Zeitraum und Bestand und nennt sie unter der Überschrift', async () => {
+		uiStore.statsDetailFilter = { zeitraum: 'monat', medientyp: 'lmf' };
+		const screen = render(StatistikDetail);
+		await screen.findByText('Brücke nach Terabithia');
+		expect(String(vi.mocked(apiFetch).mock.calls.at(-1)?.[0])).toBe(
+			'/api/statistiken?limit=100&zeitraum=monat&type=lmf'
+		);
+		expect(
+			screen.getByText('Nach Anzahl der Ausleihen in den letzten 30 Tagen, nur LMF.')
+		).toBeTruthy();
+	});
+
+	it('nennt ohne Auswahl alle Zeiträume und den ganzen Bestand (direkter Aufruf)', async () => {
+		const screen = render(StatistikDetail);
+		await screen.findByText('Brücke nach Terabithia');
+		expect(String(vi.mocked(apiFetch).mock.calls.at(-1)?.[0])).toBe('/api/statistiken?limit=100');
+		expect(screen.getByText('Nach Anzahl der Ausleihen, alle Zeiträume.')).toBeTruthy();
+	});
+
+	it('nennt bei den Ladenhütern nur den Bestand', async () => {
+		uiStore.statsDetailKind = 'ladenhueter';
+		uiStore.statsDetailFilter = { zeitraum: 'monat', medientyp: 'freihand' };
+		const screen = render(StatistikDetail);
+		expect(
+			await screen.findByText('Seit über 2 Jahren nicht ausgeliehen — oder noch nie, nur Freihand.')
+		).toBeTruthy();
+	});
 });
 
 describe('Statistik-Detailseite', () => {
@@ -59,9 +92,7 @@ describe('Statistik-Detailseite', () => {
 describe('Statistik-Detailseite: Hinweis je Liste', () => {
 	it('nennt je Liste ihren eigenen Maßstab', async () => {
 		const renner = render(StatistikDetail);
-		expect(
-			await renner.findByText('Nach Anzahl der Ausleihen im gewählten Zeitraum.')
-		).toBeTruthy();
+		expect(await renner.findByText('Nach Anzahl der Ausleihen, alle Zeiträume.')).toBeTruthy();
 		renner.unmount();
 
 		uiStore.statsDetailKind = 'ladenhueter';

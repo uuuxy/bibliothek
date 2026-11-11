@@ -1,5 +1,41 @@
 import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 
+/** @typedef {{ zeitraum: string, medientyp: string }} StatistikFilter */
+
+/**
+ * Die Anfrage an `/api/statistiken` zur Auswahl der Übersicht. Übersicht und Detailseite bauen
+ * sie hier, damit „Alle anzeigen" dieselben Titel zeigt wie die Karte davor.
+ * @param {StatistikFilter} filter
+ */
+export function statistikParameter({ zeitraum, medientyp }) {
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const params = new URLSearchParams({ limit: '100' });
+	if (zeitraum !== 'all') params.set('zeitraum', zeitraum);
+	if (medientyp) params.set('type', medientyp);
+	return params;
+}
+
+const ZEITRAUM_SATZ = /** @type {Record<string, string>} */ ({
+	schuljahr: ' im laufenden Schuljahr',
+	monat: ' in den letzten 30 Tagen'
+});
+const BESTAND_SATZ = /** @type {Record<string, string>} */ ({
+	freihand: ', nur Freihand',
+	lmf: ', nur LMF'
+});
+
+/**
+ * Der Satz unter der Überschrift der Detailseite: was die Liste zeigt, mit der Auswahl, die sie
+ * geladen hat. Die Ladenhüter hängen nicht am Zeitraum (zwei Jahre ohne Ausleihe).
+ * @param {'renner' | 'ladenhueter'} art @param {StatistikFilter} filter
+ */
+export function statistikSatz(art, { zeitraum, medientyp }) {
+	const bestand = BESTAND_SATZ[medientyp] ?? '';
+	if (art === 'ladenhueter')
+		return `Seit über 2 Jahren nicht ausgeliehen — oder noch nie${bestand}.`;
+	return `Nach Anzahl der Ausleihen${ZEITRAUM_SATZ[zeitraum] ?? ', alle Zeiträume'}${bestand}.`;
+}
+
 /**
  * Der eine Abruf der Statistik (`/api/statistiken`) für Übersicht und Detailseite —
  * mit Reihenfolge-Schutz und Fehlerzustand.

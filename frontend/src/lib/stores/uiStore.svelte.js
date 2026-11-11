@@ -68,6 +68,9 @@ class UIStore {
 	isInitialRouteMatched = $state(false);
 	/** Welche Statistik-Detailliste die stats_detail-Seite zeigt (deep-linkbar via URL). */
 	statsDetailKind = $state(/** @type {'renner' | 'ladenhueter'} */ ('renner'));
+	/** Zeitraum und Bestand der Übersicht, mit denen „Alle anzeigen" die Detailseite öffnet. Wer
+	 *  die Adresse direkt aufruft, bekommt alle Zeiträume und den ganzen Bestand. */
+	statsDetailFilter = $state({ zeitraum: 'all', medientyp: '' });
 	/**
 	 * Aus einer anderen Ansicht (Mahnwesen/Abgänger) angefordertes Schülerprofil.
 	 * Zentral im Store, bewusst NICHT localStorage: welches Profil DU gerade ansiehst,
