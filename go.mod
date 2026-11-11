@@ -1,6 +1,6 @@
 module bibliothek
 
-go 1.27.3
+go 1.27.4
 
 // Ein npm-Paket kann Go-Code mitbringen (flatted tut es); ohne diese Zeile baut ./... ihn mit, und
 // go test ./... im Hook vor dem Push führte die Tests eines Pakets aus npm aus.
