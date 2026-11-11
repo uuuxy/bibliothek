@@ -14,7 +14,7 @@ const KANTE_PIXEL = 1200;
 const HOECHSTENS_BYTES = 1_000_000;
 
 /** @param {Blob} blob @returns {Promise<string>} */
-function alsDataUrl(blob) {
+function alsDatenAdresse(blob) {
 	return new Promise((resolve, reject) => {
 		const leser = new FileReader();
 		leser.onload = () => resolve(/** @type {string} */ (leser.result));
@@ -34,7 +34,7 @@ const megabyte = (bytes) =>
  * @returns {Promise<string>}
  */
 export async function leseKartenBild(datei) {
-	if (datei.size <= UNVERAENDERT_BIS_BYTES) return alsDataUrl(datei);
+	if (datei.size <= UNVERAENDERT_BIS_BYTES) return alsDatenAdresse(datei);
 	/** @type {Blob} */
 	let bild = datei;
 	// Eine Vektorgrafik bleibt Vektor; sie durch ein Pixelbild zu ersetzen, machte sie unscharf.
@@ -54,5 +54,5 @@ export async function leseKartenBild(datei) {
 			`„${datei.name}“ ist auch verkleinert zu groß (${megabyte(bild.size)} MB). Bitte kleiner zuschneiden oder als JPEG speichern.`
 		);
 	}
-	return alsDataUrl(bild);
+	return alsDatenAdresse(bild);
 }

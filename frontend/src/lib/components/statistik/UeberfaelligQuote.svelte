@@ -1,5 +1,5 @@
 <script>
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -36,7 +36,7 @@
 	const buckets = $derived(uebersicht?.overdue_buckets ?? []);
 	const maxBucket = $derived(Math.max(1, ...buckets.map((b) => b.count)));
 
-	// Beim Wechsel des Filters zählt nur die jüngste Antwort.
+	// Beim Wechsel des Filters zählt nur die jüngste Antwort (wie statistikAbruf).
 	let laufNr = 0;
 	/** @param {string} typ */
 	async function ladeUebersicht(typ) {
@@ -44,19 +44,16 @@
 		try {
 			const res = await apiFetch(`/api/dashboard/summary${typ ? `?type=${typ}` : ''}`);
 			if (meine !== laufNr) return;
-			if (res.ok) {
-				const daten = await res.json();
-				if (meine !== laufNr) return;
-				uebersicht = daten;
-				fehler = false;
-			} else {
-				// Ohne uebersicht rendert unten gar nichts, eine leere Kachel in der Bento-Reihe,
-				// die wie „nichts überfällig" aussieht. Eine Zahl, die fehlt, muss sich als
-				// fehlend zeigen.
-				fehler = true;
-			}
+			if (!res.ok) throw new Error(await leseApiFehler(res));
+			const daten = await res.json();
+			if (meine !== laufNr) return;
+			uebersicht = daten;
+			fehler = false;
 		} catch (err) {
 			if (meine !== laufNr) return;
+			// Ohne uebersicht rendert unten gar nichts, eine leere Kachel in der Bento-Reihe,
+			// die wie „nichts überfällig" aussieht. Eine Zahl, die fehlt, muss sich als
+			// fehlend zeigen.
 			fehler = true;
 			console.error(err);
 		} finally {
