@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, leseApiFehler } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
+	import ProtokollGrenze from './ProtokollGrenze.svelte';
 	import { onMount } from 'svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
@@ -46,7 +47,8 @@
 	<!-- Keine eigene Ueberschrift: Der Reiter darueber heisst schon "Verwaltungsprotokoll",
 	     und der Seitentitel steht im Seitenrahmen von SystemLogs. Zwei <h1> auf einer Seite
 	     waeren auch fuer Screenreader falsch. -->
-	<div class="flex items-center justify-end">
+	<div class="flex items-center justify-end gap-4">
+		<ProtokollGrenze anzahl={logs.length} />
 		<Button variant="secondary" onclick={fetchLogs}>
 			<RefreshCw class="h-4 w-4" aria-hidden="true" />
 			Aktualisieren
