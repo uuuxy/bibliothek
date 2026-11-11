@@ -117,33 +117,40 @@ Allgemeine Schritte: (1) Anwendung stoppen, (2) Backup auswählen, (3) Datenbank
 
 ### 2a. Verschlüsseltes `.sql.gz.enc`-Backup (Abschnitt 1a)
 
-Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben. Die beiden Blöcke
-sind an einem frischen Ziel wörtlich gelaufen (Postgres 18, frischer Klon, Sicherung im Format des
-Nachtlaufs; Schritt 1 ohne Backend-Container von Hand): `psql` endete mit 0, Schritt 7 zählte in
-Sicherung und Datenbank gleich, und Schritt 8 nannte den Leser, der nach der Sicherung gelöscht
-worden war.
+Alles in **derselben** Shell-Sitzung (bash), im Programmverzeichnis des Servers, damit die
+Variablen erhalten bleiben. Auf dem Server gibt es nur Docker, kein Go und keine
+Postgres-Programme: Jeder Befehl läuft deshalb im Container der Datenbank oder des Backends.
+Die Blöcke hier und die aus 2b, 2c und 2e sind am Entwicklungs-Stack wörtlich gelaufen, mit
+denselben Containern wie am Server (Postgres 18, eine Sicherung des Nachtlaufs): Entschlüsseln
+und Einspielen endeten mit 0, Schritt 7 zählte in Sicherung und Datenbank gleich, das Backend
+meldete danach „healthy", und der Rückweg aus 2c stellte den Stand von vorher wieder her. Am
+Schulserver steht die Probe aus ([OFFEN.md](OFFEN.md) 7.4).
 
 ```bash
-# 0. Restore-Tool: liegt im Image (`docker compose exec backend ./restore-backup …`).
-#    Außerhalb des Containers (Entwicklungsrechner mit Go) einmalig bauen:
-go build -o restore-backup ./cmd/restore-backup
+# 0. Benutzer und Name der Datenbank aus der .env (Vorgaben wie in docker-compose.yml)
+DB_USER=$(grep '^POSTGRES_USER=' .env | cut -d= -f2); DB_USER=${DB_USER:-postgres}
+DB_NAME=$(grep '^POSTGRES_DB=' .env | cut -d= -f2);  DB_NAME=${DB_NAME:-bibliothek}
 
 # 1. Backup auswählen — das neueste NÄCHTLICHE Backup. Es liegt im Volume des Containers
 #    (/app/backups), nicht in ./backups auf dem Host — also erst herauskopieren.
 #    (Nach einem fehlgeschlagenen Deploy ist stattdessen die Vorab-Sicherung gemeint:
 #     ENC=$(ls -t backups/vordeploy_*.sql.gz.enc | head -1) — und dann ab Schritt 2.)
 IM_CONTAINER=$(docker compose exec -T backend sh -c 'ls -t /app/backups/backup_*.sql.gz.enc | head -1')
+mkdir -p backups
 docker compose cp "backend:${IM_CONTAINER}" ./backups/
 ENC="backups/$(basename "$IM_CONTAINER")"
 echo "Verwende: $ENC"
 
-# 2. Schlüssel setzen (der ORIGINALE aus der Zeit des Backups; nach einem Wechsel der alte,
-#    SECURITY.md, „BACKUP_ENCRYPTION_KEY wechseln")
-read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
+# 2. Schlüssel. Das Werkzeug nimmt den BACKUP_ENCRYPTION_KEY des Containers (aus der .env).
+#    Nur wenn die Sicherung aus der Zeit vor einem Schlüsselwechsel stammt, hier den ALTEN
+#    eintippen (SECURITY.md, „BACKUP_ENCRYPTION_KEY wechseln"); sonst die Eingabe leer lassen.
+read -rsp "Alter BACKUP_ENCRYPTION_KEY (meist leer): " KEY; echo
 
-# 3. Entschlüsseln in eine Datei — noch wird nichts gelöscht
+# 3. Entschlüsseln in eine Datei — noch wird nichts gelöscht. Das Werkzeug liegt im Image des
+#    Backends und liest die Sicherung über die Standardeingabe. Die Datei trägt alle
+#    Schülerdaten im Klartext und ist nur für den eigenen Benutzer lesbar (umask 077).
 DUMP=wiederherstellung.sql
-BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" "$DUMP"
+( umask 077; docker compose exec -T ${KEY:+-e BACKUP_ENCRYPTION_KEY="$KEY"} backend ./restore-backup /dev/stdin < "$ENC" > "$DUMP" ); echo "Exit: $? (muss 0 sein)"
 
 # 4. Gegenprobe VOR dem Löschen: hat die Datei Inhalt und sieht sie aus wie ein pg_dump?
 ls -lh "$DUMP"
@@ -156,7 +163,7 @@ Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
 
 ```bash
 # 5. Sicherheitsnetz: aktuellen Stand wegsichern (der Rückweg, falls der Restore misslingt)
-pg_dump -U postgres bibliothek > vor-restore.sql
+( umask 077; docker compose exec -T postgres-db pg_dump -U "$DB_USER" -d "$DB_NAME" > vor-restore.sql )
 ls -lh vor-restore.sql
 
 # 5b. Was von Hand endgültig gelöscht wurde, festhalten.
@@ -165,7 +172,7 @@ ls -lh vor-restore.sql
 #     nur im Protokoll dieser Datenbank und geht mit dem Einspielen verloren. Festgehalten
 #     werden ALLE Kennungen; welche davon zurückkommen, zeigt Schritt 8. Die Datei enthält
 #     nur Kennungen, keine Namen. Die Löschläufe nach Frist holen ihren Teil selbst nach.
-psql -U postgres -d bibliothek -tA -F ' ' > geloescht.txt <<'SQL'
+docker compose exec -T postgres-db psql -U "$DB_USER" -d "$DB_NAME" -tA -F ' ' > geloescht.txt <<'SQL'
 SELECT 'leser', details->>'schueler_id', '' FROM audit_logs WHERE aktion = 'PURGE_STUDENT'
 UNION ALL
 SELECT 'konto', datensatz_id::text, '' FROM audit_log WHERE tabelle = 'benutzer' AND aktion = 'DELETE' AND akteur = 'USER'
@@ -174,22 +181,24 @@ SELECT 'zusammengefuehrt', details->>'aufgeloest_id', details->>'schueler_id' FR
 SQL
 wc -l geloescht.txt
 
-# 6. Datenbank neu anlegen und einspielen. ON_ERROR_STOP bricht beim ersten Fehler ab —
-#    ohne es endet psql auch nach einer Fehlerflut mit 0 und lässt eine halbe Datenbank.
-dropdb -U postgres bibliothek
-createdb -U postgres bibliothek
-psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -f "$DUMP"; echo "psql-Exit: $? (muss 0 sein)"
+# 6. Das Programm anhalten, damit niemand mehr schreibt und die Datenbank sich löschen lässt.
+#    Dann die Datenbank neu anlegen und einspielen. ON_ERROR_STOP bricht beim ersten Fehler
+#    ab — ohne es endet psql auch nach einer Fehlerflut mit 0 und lässt eine halbe Datenbank.
+docker compose stop backend
+docker compose exec -T postgres-db dropdb --force -U "$DB_USER" "$DB_NAME"; echo "dropdb: $? (muss 0 sein)"
+docker compose exec -T postgres-db createdb -U "$DB_USER" "$DB_NAME"; echo "createdb: $? (muss 0 sein)"
+docker compose exec -T postgres-db psql -v ON_ERROR_STOP=1 -q -o /dev/null -U "$DB_USER" -d "$DB_NAME" -f /dev/stdin < "$DUMP"; echo "psql-Exit: $? (muss 0 sein)"
 
 # 7. Erfolg prüfen: Zeilen je Tabelle in der Datenbank gegen die Zeilen im Dump.
 #    Weicht eine Zahl ab oder war der Exit nicht 0: weiter mit 2c (Rückweg).
 for t in leser buecher_titel buecher_exemplare ausleihen audit_logs; do
   im_dump=$(awk -v kopf="COPY public.$t " 'index($0, kopf) == 1 {f = 1; next} /^\\\.$/ {f = 0} f' "$DUMP" | wc -l)
-  in_db=$(psql -U postgres -d bibliothek -tAc "SELECT count(*) FROM $t")
+  in_db=$(docker compose exec -T postgres-db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT count(*) FROM $t")
   echo "$t: Dump $im_dump / Datenbank $in_db"
 done
 
 # 8. Wer aus Schritt 5b wieder da ist. Keine Zeile: nichts nachzuholen.
-psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -v liste="$(tr '\n' ';' < geloescht.txt)" <<'SQL'
+docker compose exec -T postgres-db psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d "$DB_NAME" -v liste="$(tr '\n' ';' < geloescht.txt)" <<'SQL'
 WITH g AS (
     SELECT split_part(z, ' ', 1) AS art, split_part(z, ' ', 2) AS id, split_part(z, ' ', 3) AS ziel
     FROM unnest(string_to_array(:'liste', ';')) AS z
@@ -207,6 +216,11 @@ FROM g JOIN benutzer b ON b.id::text = g.id
 WHERE g.art = 'konto'
 ORDER BY 1, 2;
 SQL
+
+# 9. Das Programm wieder starten. Es zieht die Migrationen nach, die seit der Sicherung
+#    dazugekommen sind.
+docker compose up -d backend
+for i in $(seq 1 60); do st=$(docker inspect -f '{{.State.Health.Status}}' bibliothek-backend); [ "$st" = "healthy" ] && break; sleep 2; done; echo "Backend: $st"
 ```
 
 Jede Zeile aus Schritt 8 wird in der Anwendung nachgeholt, auf demselben Weg wie beim ersten Mal
@@ -238,18 +252,24 @@ Vorab-Sicherungen vor dem 10.09.2026 heißen noch `backup_<ZEITSTEMPEL>.sql.gz.e
 einspielen — das ist ihr Zweck:
 
 ```bash
+DB_USER=$(grep '^POSTGRES_USER=' .env | cut -d= -f2); DB_USER=${DB_USER:-postgres}
+DB_NAME=$(grep '^POSTGRES_DB=' .env | cut -d= -f2);  DB_NAME=${DB_NAME:-bibliothek}
+
 GZ=$(ls -t backups/*.sql.gz | head -1)
 echo "Verwende: $GZ"
-zcat "$GZ" | head -5                 # Gegenprobe: echter SQL-Text, keine Fehlermeldung
+gunzip -c "$GZ" | head -5            # Gegenprobe: echter SQL-Text, keine Fehlermeldung
 
-pg_dump -U postgres bibliothek > vor-restore.sql   # Rückweg
-dropdb -U postgres bibliothek
-createdb -U postgres bibliothek
-zcat "$GZ" | psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek; echo "psql-Exit: $? (muss 0 sein)"
+( umask 077; docker compose exec -T postgres-db pg_dump -U "$DB_USER" -d "$DB_NAME" > vor-restore.sql )   # Rückweg
+docker compose stop backend
+docker compose exec -T postgres-db dropdb --force -U "$DB_USER" "$DB_NAME"; echo "dropdb: $? (muss 0 sein)"
+docker compose exec -T postgres-db createdb -U "$DB_USER" "$DB_NAME"; echo "createdb: $? (muss 0 sein)"
+gunzip -c "$GZ" | docker compose exec -T postgres-db psql -v ON_ERROR_STOP=1 -q -o /dev/null -U "$DB_USER" -d "$DB_NAME"; echo "psql-Exit: $? (muss 0 sein)"
+docker compose up -d backend
 ```
 
-Vor dem `dropdb` Schritt 5b aus 2a; danach die Schritte 7 und 8 aus 2a, in Schritt 7 mit
-`zcat "$GZ"` an der Stelle von `"$DUMP"` im `awk`.
+Vor dem `docker compose stop backend` Schritt 5b aus 2a; nach dem Einspielen die Schritte 7 und
+8 aus 2a, in Schritt 7 mit `gunzip -c "$GZ"` an der Stelle von `"$DUMP"` im `awk`
+(`gunzip -c "$GZ" | awk …`).
 
 > Die Gegenprobe mit `head` zeigt, ob die Datei einen Dump enthält: Ohne `pipefail` entstünde
 > auch dann eine gzip-Datei, wenn `pg_dump` abbricht, mit einer Fehlermeldung darin
@@ -264,12 +284,14 @@ Misslingt der Restore, führt `vor-restore.sql` aus Schritt 5 zurück auf den St
 vorher:
 
 ```bash
-dropdb -U postgres bibliothek
-createdb -U postgres bibliothek
-psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -f vor-restore.sql; echo "psql-Exit: $? (muss 0 sein)"
+docker compose stop backend
+docker compose exec -T postgres-db dropdb --force -U "$DB_USER" "$DB_NAME"; echo "dropdb: $? (muss 0 sein)"
+docker compose exec -T postgres-db createdb -U "$DB_USER" "$DB_NAME"; echo "createdb: $? (muss 0 sein)"
+docker compose exec -T postgres-db psql -v ON_ERROR_STOP=1 -q -o /dev/null -U "$DB_USER" -d "$DB_NAME" -f /dev/stdin < vor-restore.sql; echo "psql-Exit: $? (muss 0 sein)"
+docker compose up -d backend
 ```
 
-Danach die Anwendung neu starten. Ist auch das nicht möglich, bleibt das nächstältere
+`$DB_USER` und `$DB_NAME` stammen aus Schritt 0 in 2a. Ist auch das nicht möglich, bleibt das nächstältere
 verschlüsselte Backup — es liegen die der letzten 14 Nächte und 12 Wochenstände vor
 (Abschnitt 1a).
 
@@ -313,21 +335,22 @@ Diese manuelle Probe fasst die Produktivdatenbank **nicht** an:
 ```bash
 # Das neueste NÄCHTLICHE Backup aus dem Volume holen (siehe 2a, Schritt 1):
 IM_CONTAINER=$(docker compose exec -T backend sh -c 'ls -t /app/backups/backup_*.sql.gz.enc | head -1')
+mkdir -p backups
 docker compose cp "backend:${IM_CONTAINER}" ./backups/
 ENC="backups/$(basename "$IM_CONTAINER")"
-read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
+DB_USER=$(grep '^POSTGRES_USER=' .env | cut -d= -f2); DB_USER=${DB_USER:-postgres}
 
-createdb -U postgres bibliothek_restore_test
-BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" \
-  | psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek_restore_test; echo "psql-Exit: $? (muss 0 sein)"
+docker compose exec -T postgres-db createdb -U "$DB_USER" bibliothek_restore_test
+docker compose exec -T backend ./restore-backup /dev/stdin < "$ENC" | docker compose exec -T postgres-db psql -v ON_ERROR_STOP=1 -q -o /dev/null -U "$DB_USER" -d bibliothek_restore_test; echo "Exit: ${PIPESTATUS[*]} (beide müssen 0 sein)"
 
 # Stichprobe, danach Wegwerf-DB entfernen. `leser` und nicht `schueler`: Letzteres ist
 # seit Migration 124 eine Sicht mit WHERE art = 'schueler' und zählt das Kollegium nicht mit.
-psql -U postgres -d bibliothek_restore_test -c "SELECT art, count(*) FROM leser GROUP BY art;"
-dropdb -U postgres bibliothek_restore_test
+docker compose exec -T postgres-db psql -U "$DB_USER" -d bibliothek_restore_test -c "SELECT art, count(*) FROM leser GROUP BY art;"
+docker compose exec -T postgres-db dropdb -U "$DB_USER" bibliothek_restore_test
 ```
 
-Anschließend die Anwendung neu starten.
+Das Werkzeug nimmt den `BACKUP_ENCRYPTION_KEY` des Containers. Das laufende Programm bleibt
+dabei unberührt.
 
 ### 2f. Totalverlust: Der Server ist weg
 

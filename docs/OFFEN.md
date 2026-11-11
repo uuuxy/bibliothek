@@ -148,8 +148,9 @@ getauschte Platte leisten dasselbe außerhalb des Programms.
 
 ### 7.4 Wiederherstellung an einem fremden Ziel
 
-Die Anleitung ([resilience_and_recovery.md](resilience_and_recovery.md), 2a, 2e und 2f) ist
-erprobt. Offen ist die Probe durch die Vertretung allein mit dem Pflegekonzept (9.9); die
+Die Anleitung ([resilience_and_recovery.md](resilience_and_recovery.md), 2a bis 2c, 2e und 2f)
+ist erprobt: 2f an einem frischen Klon, die übrigen am Entwicklungs-Stack mit denselben
+Containern wie am Server. Offen ist die Probe durch die Vertretung allein mit dem Pflegekonzept (9.9); die
 Wochenprobe im Container ersetzt sie nicht. Sie wartet auf den Schulserver und die benannte
 Vertretung.
 
