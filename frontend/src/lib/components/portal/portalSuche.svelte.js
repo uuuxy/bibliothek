@@ -90,6 +90,9 @@ export function erzeugePortalSuche() {
 			laedt = false;
 			return;
 		}
+		// Schon während der Wartezeit lädt die Suche: Sonst stünde in diesen 300 ms
+		// „Keine Titel gefunden" da, obwohl noch gar nicht gesucht wurde.
+		laedt = true;
 		const zeitgeber = setTimeout(() => suche(q, wort, dieser), 300);
 		return () => clearTimeout(zeitgeber);
 	});

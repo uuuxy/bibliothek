@@ -56,6 +56,27 @@ describe('Portal-Suche', () => {
 		}
 	});
 
+	// In den 300 ms vor der Anfrage galt „aktiv, lädt nicht, kein Fehler, keine Treffer", und
+	// dafür zeigt das Portal „Keine Titel gefunden".
+	it('lädt schon während der Wartezeit, nicht erst mit der Anfrage', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort([{ id: 't1', titel: 'Mathe 7' }]));
+		const { suche, stopp } = aufbau();
+		try {
+			suche.text = 'Ma';
+			flushSync();
+			expect(apiFetch).not.toHaveBeenCalled();
+			expect(suche.laedt).toBe(true);
+			await vi.advanceTimersByTimeAsync(300);
+			expect(suche.laedt).toBe(false);
+			// Zurück auf leer: Nichts lädt mehr.
+			suche.text = '';
+			flushSync();
+			expect(suche.laedt).toBe(false);
+		} finally {
+			stopp();
+		}
+	});
+
 	it('schickt Text und Filter zusammen; ein Zeichen allein sucht noch nicht', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort([]));
 		const { suche, stopp } = aufbau();
