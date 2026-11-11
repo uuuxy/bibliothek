@@ -226,6 +226,10 @@ type leserAenderung struct {
 // eigene Regeln hat. false heißt: Die Ablehnung ist schon beantwortet.
 func (t *Tueren) pruefeLeserAenderung(ctx context.Context, w http.ResponseWriter, id string, req *leserAendernAnfrage) (leserAenderung, bool) {
 	var keine leserAenderung
+	// Vor baueLeserAenderung: Sie leitet aus einer Klasse das Abgangsjahr ab.
+	if !t.pruefeSchuelerfelder(ctx, w, id, req) {
+		return keine, false
+	}
 	b, ok := baueLeserAenderung(w, req)
 	if !ok {
 		return keine, false
@@ -344,6 +348,36 @@ func (t *Tueren) pruefeUndSetzeLUSDID(ctx context.Context, w http.ResponseWriter
 
 	b.LUSDID = &neu
 	return neu, true
+}
+
+// pruefeSchuelerfelder weist Klasse, Abgangsjahr und LUSD-ID an einem Leser ab, der kein
+// Schüler ist; die Anlage tut es für die Klasse ebenso. Mit einer Klasse stünde ein Kollege in
+// Klassenlisten, und eine LUSD-ID verletzte chk_leser_nur_schueler_werden_abgaenger und käme als
+// 500 zurück. Die Akte schickt die Felder bei einem Kollegen nicht mit (schulfelder in
+// useLeserakteFormular.svelte.js). Gelesen wird die Art aus der Datenbank: Über die Grenze zum
+// Schüler wechselt sie nicht (pruefeUndSetzeArt).
+func (t *Tueren) pruefeSchuelerfelder(ctx context.Context, w http.ResponseWriter, id string, req *leserAendernAnfrage) bool {
+	if req.Klasse == nil && req.AbgaengerJahr == nil && req.LUSDID == nil {
+		return true
+	}
+	art, err := repository.LadeLeserArt(ctx, t.DB.Pool, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrLeserNichtGefunden) {
+			apierrors.AntworteFehlerMitMeldung(w, http.StatusNotFound, meldungLeserNichtGefunden, nil)
+			return false
+		}
+		apierrors.AntworteFehler(w, http.StatusInternalServerError, fmt.Errorf("art des lesers laden: %w", err))
+		return false
+	}
+	if !leserart.IstKollegium(art) {
+		return true
+	}
+	meldung := meldungNurSchuelerHatKlasse
+	if req.Klasse == nil {
+		meldung = "Nur ein Schüler hat ein Abgangsjahr und eine LUSD-ID."
+	}
+	apierrors.AntworteFehlerMitMeldung(w, http.StatusBadRequest, meldung, nil)
+	return false
 }
 
 // pruefeUndSetzeArt ändert die Art eines Lesers (Migration 123). Erlaubt ist der Wechsel

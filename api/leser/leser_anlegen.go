@@ -120,10 +120,14 @@ func pruefeLeserAngaben(req *leserAnlegenAnfrage) error {
 		return pruefeKlassenname(req.Klasse)
 	}
 	if req.Klasse != "" {
-		return apierrors.BadRequest("Nur ein Schüler hat eine Klasse. Mit einer Klasse stünde die Person in den Klassenlisten und im LUSD-Abgleich.", nil)
+		return apierrors.BadRequest(meldungNurSchuelerHatKlasse, nil)
 	}
 	return nil
 }
+
+// meldungNurSchuelerHatKlasse weist eine Klasse an einem Leser ab, der kein Schüler ist, beim
+// Anlegen wie in der Akte (pruefeSchuelerfelder).
+const meldungNurSchuelerHatKlasse = "Nur ein Schüler hat eine Klasse. Mit einer Klasse stünde die Person in den Klassenlisten und im LUSD-Abgleich."
 
 // meldungKeinZugang weist eine Schul-E-Mail bei Praktikum und Fachbereich ab. Aus der Adresse
 // entstünde ein Zugang zu „Mein Portal", und den bekommen sie nicht (leserart.HatKonto).
