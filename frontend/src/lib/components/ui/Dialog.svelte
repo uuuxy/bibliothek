@@ -24,7 +24,8 @@
 	 *                      unsichtbar dahinter.
 	 *   beschriftung     — aria-label des Dialogs; beschriftetDurch — aria-labelledby
 	 *                      (die id der Überschrift). Ohne Namen findet ihn weder ein
-	 *                      Screenreader noch getByRole('dialog', { name }).
+	 *                      Screenreader noch getByRole('dialog', { name }). Fehlen beide,
+	 *                      benennt der header den Dialog.
 	 *   size "voll"      — der M3 full-screen dialog: Vollbild auf dem Handy, 90 vh ab
 	 *                      Tablet (Klasse & Bücher zuweisen).
 	 */
@@ -40,6 +41,11 @@
 		header,
 		children
 	} = $props();
+
+	// Wer den Titel nur als header übergibt, bekäme sonst einen Dialog ohne Namen: Der
+	// Bildschirmleser sagte nur „Dialog", ausgerechnet bei „Endgültig löschen?".
+	const kopfId = $props.id();
+	const benanntDurch = $derived(beschriftetDurch ?? (header && !beschriftung ? kopfId : undefined));
 
 	const voll = $derived(size === 'voll');
 	const breitenKlasse = $derived(
@@ -82,7 +88,7 @@
 			role="dialog"
 			aria-modal="true"
 			aria-label={beschriftung}
-			aria-labelledby={beschriftetDurch}
+			aria-labelledby={benanntDurch}
 			tabindex="-1"
 			use:escapeSchliesst={onclose}
 			use:fokusFalle
@@ -93,7 +99,8 @@
 				     24 px Innenabstand des Inhalts die 16 px zwischen Titel und Text (Specs:
 				     „Padding between title and body 16dp"). -->
 				<div class="px-6 pt-6 -mb-2 flex items-center justify-between gap-4">
-					{@render header()}
+					<!-- display: contents: Die Hülle trägt nur die id, die Kopfzeile bleibt, wie sie war. -->
+					<div id={kopfId} class="contents">{@render header()}</div>
 					{#if onclose}
 						<button
 							onclick={onclose}
