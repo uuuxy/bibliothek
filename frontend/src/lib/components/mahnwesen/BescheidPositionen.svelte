@@ -12,6 +12,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { gemahntSatz } from './mahnungen.js';
+	import { betragGueltig } from './bescheidFormular.svelte.js';
 
 	/** @param {string} iso */
 	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
@@ -44,6 +45,7 @@
 		<section class="space-y-2">
 			<h3 class="text-xs font-semibold text-on-surface">{g.titel}</h3>
 			{#each g.items as p (p.key)}
+				{@const ungueltig = gewaehlt[p.key] && !betragGueltig(betraege[p.key])}
 				<div class="flex items-start gap-3 border-b border-outline-variant py-2 last:border-0">
 					<div class="pt-1">
 						<Kaestchen
@@ -72,17 +74,19 @@
 							</div>
 						{/if}
 					</div>
-					<div class="flex shrink-0 items-center gap-1.5">
+					<div class="flex shrink-0 items-start gap-1.5">
 						<Feld
 							type="number"
 							step="0.01"
-							min="0"
+							min="0.01"
 							bind:value={betraege[p.key]}
 							aria-label="Betrag für {p.titel}"
 							feld="w-24 text-right"
 							disabled={!gewaehlt[p.key]}
+							{ungueltig}
+							hint={ungueltig ? 'Betrag eintragen' : ''}
 						/>
-						<span class="text-sm text-on-surface-variant">€</span>
+						<span class="pt-2 text-sm text-on-surface-variant">€</span>
 					</div>
 				</div>
 			{/each}

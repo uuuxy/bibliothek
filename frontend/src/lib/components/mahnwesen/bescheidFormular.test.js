@@ -98,6 +98,26 @@ describe('BescheidFormular', () => {
 		expect(g.bereit).toBe(false);
 	});
 
+	// Ein leeres Feld zählte als 0 €: Der Brief entstand, verbrauchte die Referenznummer und
+	// buchte das Buch als Verlust, ohne etwas zu fordern. Ein negativer Betrag endete als
+	// Serverfehler ohne Grund.
+	it('ist erst bereit, wenn jedes gewählte Buch einen Betrag ab einem Cent hat', async () => {
+		vi.mocked(apiGet).mockResolvedValue(vorschlag);
+		const f = new BescheidFormular('s1');
+		await f.laden();
+		for (const leer of [/** @type {any} */ (''), null, 0, -25, 0.004]) {
+			f.betraege.a1 = leer;
+			expect(f.bereit, `Betrag ${leer}`).toBe(false);
+			expect(await f.erstellen()).toBeNull();
+		}
+		expect(apiPost).not.toHaveBeenCalled();
+		f.betraege.a1 = 0.01;
+		expect(f.bereit).toBe(true);
+		// Ein Buch, das nicht gewählt ist, zählt nicht mit, auch ohne Betrag.
+		f.betraege.f2 = /** @type {any} */ ('');
+		expect(f.bereit).toBe(true);
+	});
+
 	it('schickt beim Erstellen den Rumpf und liefert den Brief', async () => {
 		vi.mocked(apiGet).mockResolvedValue(vorschlag);
 		vi.mocked(apiPost).mockResolvedValue({ id: 'b1', referenznummer: '5830 2026 1234 0001' });

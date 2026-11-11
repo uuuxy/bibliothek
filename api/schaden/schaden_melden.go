@@ -51,6 +51,11 @@ func (t *Tueren) SchadenMelden(schadensAbfragen schadensMeldung) http.HandlerFun
 			return apierrors.BadRequest("Bitte angeben, ob das Buch nicht zurückgegeben oder beschädigt zurückgegeben wurde",
 				errors.New("art fehlt oder ist ungültig"))
 		}
+		// 0 € ist erlaubt (beim Kollegium fragt der Dialog keinen Betrag); ein negativer Betrag
+		// scheiterte sonst erst an der Regel der Datenbank, als Serverfehler ohne Grund.
+		if req.Betrag < 0 {
+			return apierrors.BadRequest("Der Betrag darf nicht negativ sein", errors.New("betrag negativ"))
+		}
 
 		schadensID, err := schadensAbfragen.Melde(r.Context(), req.AusleiheID, claims.KontoID, req.Beschreibung, art, req.Betrag)
 		if err != nil {

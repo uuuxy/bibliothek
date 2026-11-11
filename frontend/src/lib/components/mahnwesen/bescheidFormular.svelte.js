@@ -35,6 +35,13 @@ export function zeilenAus(vorschlag) {
 	return [...buecher, ...forderungen];
 }
 
+/** Ein Betrag gilt ab einem Cent; leer, 0 und negativ nicht. Der Server rundet auf den Cent
+ *  und weist dieselben Beträge ab (api/schaden/bescheid_erstellen.go, pruefeBescheidBetraege).
+ *  @param {unknown} wert */
+export function betragGueltig(wert) {
+	return Math.round(Number(wert) * 100) > 0;
+}
+
 export class BescheidFormular {
 	/** @type {any} */
 	vorschlag = $state(null);
@@ -65,7 +72,11 @@ export class BescheidFormular {
 	/** @type {string[]} */
 	fehlt = $derived(this.vorschlag?.fehlende_angaben ?? []);
 	bereit = $derived(
-		this.ausgewaehlt.length > 0 && this.frist !== '' && this.fehlt.length === 0 && !this.sendet
+		this.ausgewaehlt.length > 0 &&
+			this.ausgewaehlt.every((p) => betragGueltig(this.betraege[p.key])) &&
+			this.frist !== '' &&
+			this.fehlt.length === 0 &&
+			!this.sendet
 	);
 
 	/** Der Vorschlag wird EINMAL geholt; danach gehört das Formular dem Menschen.

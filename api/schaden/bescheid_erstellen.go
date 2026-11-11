@@ -131,6 +131,9 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 	if len(req.Positionen) == 0 && len(req.Ausleihen) == 0 {
 		return time.Time{}, apierrors.BadRequest("Bitte mindestens ein Buch auswählen", errors.New("keine positionen"))
 	}
+	if err := pruefeBescheidBetraege(req); err != nil {
+		return time.Time{}, err
+	}
 	frist, err := schulzeit.Kalendertag(req.FristBis)
 	if err != nil {
 		return time.Time{}, apierrors.BadRequest("Die Frist muss ein Datum der Form JJJJ-MM-TT sein", err)
@@ -150,6 +153,26 @@ func pruefeBescheidAnfrage(req bescheidErstellenAnfrage) (time.Time, error) {
 			errors.New("frist mehr als ein jahr voraus"))
 	}
 	return frist, nil
+}
+
+// pruefeBescheidBetraege verlangt für jedes Buch einen Betrag ab einem Cent. Ein Bescheid über
+// 0 € verbrauchte eine Referenznummer und buchte das Buch als Verlust, ohne etwas zu fordern;
+// ein negativer Betrag scheiterte erst an der Regel der Datenbank, als Serverfehler ohne Grund.
+func pruefeBescheidBetraege(req bescheidErstellenAnfrage) error {
+	betraege := make([]betrag.Cent, 0, len(req.Positionen)+len(req.Ausleihen))
+	for _, p := range req.Positionen {
+		betraege = append(betraege, p.Betrag)
+	}
+	for _, a := range req.Ausleihen {
+		betraege = append(betraege, a.Betrag)
+	}
+	for _, b := range betraege {
+		if b <= 0 {
+			return apierrors.BadRequest("Bitte für jedes Buch einen Betrag über 0 € eintragen",
+				fmt.Errorf("betrag %d cent nicht über 0", b))
+		}
+	}
+	return nil
 }
 
 // bescheidPostenAus übersetzt die Auswahl des Dialogs: Forderungen, die es schon gibt, und

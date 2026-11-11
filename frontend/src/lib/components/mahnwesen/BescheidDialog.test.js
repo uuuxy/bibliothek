@@ -70,3 +70,48 @@ describe('BescheidDialog: Brief öffnen', () => {
 		vi.unstubAllGlobals();
 	});
 });
+
+// Ein leeres Betragsfeld zählte als 0 €. Jetzt ist das Feld eines gewählten Buchs ohne Betrag
+// als Fehler markiert (M3: Fehlerfarbe, Symbol, Fehlertext statt Hilfetext), und „Bescheid
+// erstellen" bleibt gesperrt.
+describe('BescheidDialog: Betrag', () => {
+	it('markiert ein gewähltes Buch ohne Betrag und sperrt den Brief', async () => {
+		vi.mocked(apiGet).mockResolvedValue({
+			frist_bis: '2026-12-01',
+			fehlende_angaben: [],
+			positionen: [],
+			ausleihen: [
+				{
+					ausleihe_id: 'a1',
+					titel: 'Physik 8',
+					betrag: 24.9,
+					topf: 'land',
+					faellig_seit: '2026-08-15'
+				}
+			]
+		});
+		const screen = render(BescheidDialog, {
+			schuelerId: 's1',
+			onclose: vi.fn(),
+			onErstellt: vi.fn()
+		});
+		const feld = /** @type {HTMLInputElement} */ (
+			await screen.findByLabelText('Betrag für Physik 8')
+		);
+		const knopf = /** @type {HTMLButtonElement} */ (
+			screen.getByRole('button', { name: 'Bescheid erstellen' })
+		);
+		expect(feld.getAttribute('aria-invalid')).toBeNull();
+		expect(knopf.disabled).toBe(false);
+
+		await fireEvent.input(feld, { target: { value: '' } });
+		expect(feld.getAttribute('aria-invalid')).toBe('true');
+		expect(screen.getByText('Betrag eintragen')).toBeTruthy();
+		expect(knopf.disabled).toBe(true);
+
+		await fireEvent.input(feld, { target: { value: '7.5' } });
+		expect(feld.getAttribute('aria-invalid')).toBeNull();
+		expect(screen.queryByText('Betrag eintragen')).toBeNull();
+		expect(knopf.disabled).toBe(false);
+	});
+});
