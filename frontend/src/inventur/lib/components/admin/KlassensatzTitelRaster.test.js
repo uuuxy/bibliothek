@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
 import KlassensatzTitelRaster from './KlassensatzTitelRaster.svelte';
 
 /** @param {Record<string, any>} zusatz */
@@ -35,5 +35,30 @@ describe('Klassenzuweisung: die Marke für den Jahrgang', () => {
 		const [karte] = karten([buch({ jahrgangVon: 0, jahrgangBis: 0 })]);
 		expect(karte).toContain('Natura');
 		expect(karte).not.toMatch(/Jg\.|Kl\./);
+	});
+});
+
+// Der Platzhalter verspricht die ISBN; sie trifft auch in der anderen Länge und mit Bindestrichen.
+describe('Klassenzuweisung: Suche nach der ISBN', () => {
+	const buecher = [
+		buch({ id: 'a', title: 'Lambacher Schweizer 7', isbn: '9783127338713' }),
+		buch({ id: 'b', title: 'Green Line 3', isbn: '9783128342306' })
+	];
+
+	it.each([
+		['dreizehnstellig', '9783128342306'],
+		['mit Bindestrichen', '978-3-12-834230-6'],
+		['zehnstellig', '3128342309'],
+		['Teil der Nummer', '834230']
+	])('%s', async (_wie, eingabe) => {
+		const ansicht = render(KlassensatzTitelRaster, { titelListe: buecher });
+		await fireEvent.input(ansicht.getByLabelText('Titel durchsuchen'), {
+			target: { value: eingabe }
+		});
+		const titel = [...ansicht.container.querySelectorAll('button')]
+			.map((k) => (k.textContent ?? '').trim())
+			.filter((t) => t.includes('Green') || t.includes('Lambacher'));
+		expect(titel).toHaveLength(1);
+		expect(titel[0]).toContain('Green Line 3');
 	});
 });

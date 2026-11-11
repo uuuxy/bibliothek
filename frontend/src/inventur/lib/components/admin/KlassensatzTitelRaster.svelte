@@ -3,6 +3,7 @@
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
+	import { isbnFormen, normalisiereIsbn } from '../../../../lib/utils/isbnFormen.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
 	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
 	let {
@@ -13,14 +14,20 @@
 
 	let suche = $state('');
 
-	const gefilterteTitel = $derived(
-		titelListe.filter(
+	// Die ISBN trifft wie im Bestellbedarf (bedarfFilter.js) auch in der anderen Länge und mit
+	// Bindestrichen: Getippt wird oft die zehnstellige vom Titelblatt.
+	const gefilterteTitel = $derived.by(() => {
+		const q = suche.toLowerCase();
+		const formen = isbnFormen(q);
+		return titelListe.filter(
 			(b) =>
-				b.title.toLowerCase().includes(suche.toLowerCase()) ||
-				b.subject.toLowerCase().includes(suche.toLowerCase()) ||
-				b.author.toLowerCase().includes(suche.toLowerCase())
-		)
-	);
+				b.title.toLowerCase().includes(q) ||
+				b.subject.toLowerCase().includes(q) ||
+				b.author.toLowerCase().includes(q) ||
+				(b.isbn || '').toLowerCase().includes(q) ||
+				(formen.length > 0 && formen.includes(normalisiereIsbn(b.isbn)))
+		);
+	});
 
 	// Nicht den ganzen Bestand zeichnen: Mit 5.875 Titeln sind es 59.120 DOM-Knoten und 2,5
 	// Sekunden, bis der Dialog steht. Die Zahl im Suchfeld nennt alle Treffer, nicht die
