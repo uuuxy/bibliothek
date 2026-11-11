@@ -565,7 +565,7 @@ Liste.
   Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
   anonymisiert, wenn sie früher abläuft. _Endgültig löschen_ im Papierkorb wirkt sofort und
   braucht ein eigenes Recht (DSGVO-Kette, §8).
-- **Doppelter Datensatz?** (Recht „Leser zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
+- **Doppelter Datensatz?** (Recht „Leser zusammenführen", ab Werk Admin und Leitung; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
   Person zweimal in der Kartei, beide Datensätze zusammenführen. Der Grund ist je nach Art
   ein anderer, und er steht im Dialog: beim Schüler eine Namensänderung in der LUSD, die
   der Export ohne Schüler-ID nicht wiedererkannt hat; beim Kollegen ein Eintrag von Hand,
@@ -812,7 +812,7 @@ entsprechend. (§7)
 
 _Allgemeines Logbuch_ (jede Buchung) und _Verwaltungsprotokoll_ (wer hat wann was geändert).
 Aufbewahrung 24 Monate, einstellbar. Dritter Reiter **Theken-Auskunft** (eigenes Recht
-`audit_details`, ab Werk nur Admin): Ein Buch liegt auf der Theke, sein Exemplar ist
+`audit_details`, ab Werk Admin und Leitung): Ein Buch liegt auf der Theke, sein Exemplar ist
 längst gelöscht — die Barcode-Suche zeigt, was das Protokoll dazu noch weiß (Titel,
 letzte Ausleihen), auch wenn der Titel komplett gelöscht wurde. Jede Abfrage wird
 selbst protokolliert; nach DSGVO-Tilgung zeigt auch dieser Weg nichts mehr. (§10)
@@ -933,7 +933,7 @@ die Stelle zurück, von der er kam. In Listen öffnet der **Name** (Schüler) be
 der **Titel** (Buch, Signaturen-Regal) die Akte. Im LMF-Planer lassen sich Zeilen außer per
 Ziehen auch über ihr Zeilenmenü verschieben (nach oben, nach unten, an den Anfang, ans Ende).
 Wer im Betriebssystem „Bewegung reduzieren" eingestellt hat, sieht keine Ein- und
-Ausblendungen. Meldungen am oberen Rand bleiben stehen, solange die Maus oder der Fokus
+Ausblendungen. Meldungen am unteren Rand bleiben stehen, solange die Maus oder der Fokus
 darauf liegt. An der Theke hält das Scanfeld den Fokus — das ist gewollt, der Scanner tippt
 blind. Steht der Sperr-Dialog („Ausleihe blockiert"), liegt der Fokus auf „Abbrechen": Ein
 weiterer Scan bricht dort ab, statt eine Sperre aufzuheben oder zu übergehen.
